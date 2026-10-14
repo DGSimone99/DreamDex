@@ -1,0 +1,37 @@
+import { describe, expect, it } from 'vitest';
+import { loadSavedTeams, saveTeams } from '../../src/storage';
+
+const throwing = {
+  getItem: () => { throw new Error('bloccato'); },
+  setItem: () => { throw new Error('bloccato'); },
+} as unknown as Storage;
+
+const memory = (initial: string | null) => {
+  let value = initial;
+  return {
+    getItem: () => value,
+    setItem: (_: string, v: string) => { value = v; },
+  } as unknown as Storage;
+};
+
+describe('storage', () => {
+  it('storage che lancia errori: lista vuota, salvataggio fallito', () => {
+    expect(loadSavedTeams(throwing)).toEqual([]);
+    expect(saveTeams([{ name: 'a', text: 'x' }], throwing)).toBe(false);
+  });
+
+  it('JSON corrotto o di forma sbagliata: lista vuota', () => {
+    expect(loadSavedTeams(memory('{non json'))).toEqual([]);
+    expect(loadSavedTeams(memory('{"a":1}'))).toEqual([]);
+  });
+
+  it('round-trip', () => {
+    const storage = memory(null);
+    expect(saveTeams([{ name: 'Prova', text: 'Great Tusk' }], storage)).toBe(true);
+    expect(loadSavedTeams(storage)).toEqual([{ name: 'Prova', text: 'Great Tusk' }]);
+  });
+
+  it('storage assente', () => {
+    expect(loadSavedTeams(undefined)).toEqual([]);
+  });
+});
