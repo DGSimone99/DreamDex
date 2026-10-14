@@ -96,7 +96,7 @@ function synergyRaw(set: TeamSet, team: TeamSet[], data: EngineData) {
 
 const LOG_MIN = Math.log(0.001);
 const LOG_MAX = Math.log(0.5);
-function strengthComponent(usage: number): number {
+export function strengthComponent(usage: number): number {
   return usage > 0 ? clamp01((Math.log(usage) - LOG_MIN) / (LOG_MAX - LOG_MIN)) : 0;
 }
 

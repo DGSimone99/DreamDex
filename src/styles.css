@@ -81,3 +81,8 @@ small { color: var(--muted); display: block; }
 .swaps.recommended { background: var(--warn-bg); border-color: var(--warn); }
 .swaps.optional { background: var(--good); border-color: var(--good-text); }
 .swaps h3 { margin-top: 2px; }
+.rating .grade { font-size: 16px; margin: 4px 0; }
+.rating .grade strong { font-size: 22px; padding: 0 8px; border-radius: 6px; background: var(--bg); }
+.grade-S strong, .grade-A strong { color: var(--good-text); }
+.grade-C strong { color: var(--warn); }
+.grade-D strong { color: var(--bad-text); }

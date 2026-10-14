@@ -1,16 +1,19 @@
 import type { TeamAnalysis } from '../engine/analysis';
 import type { Coaching } from '../engine/coach';
+import type { TeamRating } from '../engine/rating';
 import { DESIRABLE_ROLES, detectRoles, ESSENTIAL_ROLES, ROLE_LABELS } from '../engine/roles';
 import type { TeamSet } from '../engine/sets';
 import { CoachPanel } from './CoachPanel';
+import { RatingPanel } from './RatingPanel';
 
 const MULTIPLIER_LABELS: Record<string, string> = { '4': '×4', '2': '×2', '1': '', '0.5': '×½', '0.25': '×¼', '0': '×0' };
 const formatMultiplier = (m: number) => MULTIPLIER_LABELS[String(m)] ?? `×${m}`;
 const STYLE_LABELS = { physical: 'fisico', special: 'speciale' } as const;
 
-export function AnalysisPanel({ team, analysis, coaching, onReplace }: {
+export function AnalysisPanel({ team, analysis, rating, coaching, onReplace }: {
   team: TeamSet[];
   analysis: TeamAnalysis;
+  rating?: TeamRating | null;
   coaching?: Coaching;
   onReplace?: (index: number) => void;
 }) {
@@ -26,6 +29,7 @@ export function AnalysisPanel({ team, analysis, coaching, onReplace }: {
   return (
     <section aria-label="Analisi" className="analysis">
       <h2>Analisi</h2>
+      {rating && <RatingPanel rating={rating} />}
       {coaching && onReplace && <CoachPanel coaching={coaching} onReplace={onReplace} />}
 
       <details className="block">
