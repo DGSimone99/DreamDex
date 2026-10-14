@@ -1,6 +1,6 @@
 import { analyzeTeam, checksThreat, type TeamAnalysis } from './analysis';
 import type { EngineData } from './data';
-import { battleName, getSpecies, isAllowed, isDefined } from './dex';
+import { battleName, getSpecies, isAllowed, isDefined, toID } from './dex';
 import { explain, type Components, type Facts, type Reason } from './explain';
 import type { Format } from './format';
 import { attackStyle, detectRoles, ESSENTIAL_ROLES, type Role } from './roles';
@@ -57,7 +57,7 @@ function defenseComponent(set: TeamSet, analysis: TeamAnalysis) {
 }
 
 function threatsComponent(set: TeamSet, analysis: TeamAnalysis, data: EngineData) {
-  const open = analysis.threats.filter(t => t.handledBy.length === 0 && t.name !== set.species);
+  const open = analysis.threats.filter(t => t.handledBy.length === 0 && toID(t.name) !== toID(set.species));
   const checked = open.filter(t => checksThreat(data, set, t.name));
   const total = sum(open.map(t => t.usage));
   return {

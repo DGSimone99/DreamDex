@@ -12,9 +12,9 @@ interface Props {
 
 export function SetEditor({ set, onChange }: Props) {
   const species = getSpecies(set.species);
-  const abilities = species
-    ? (Object.values(species.abilities).filter(Boolean) as string[])
-    : [set.ability].filter(Boolean);
+  const standard = species ? (Object.values(species.abilities).filter(Boolean) as string[]) : [];
+  // Abilità fuori dalla lista ufficiale (hackrom, import): restano visibili e selezionate
+  const abilities = set.ability && !standard.includes(set.ability) ? [set.ability, ...standard] : standard;
   const moves = [0, 1, 2, 3].map(i => set.moves[i] ?? '');
   const update = (patch: Partial<TeamSet>) => onChange({ ...set, ...patch });
 

@@ -18,3 +18,13 @@ export async function loadData(): Promise<EngineData> {
   const stats: StatsData | null = pokemon && meta ? { meta, pokemon } : null;
   return { stats, sets };
 }
+
+/** Come loadData, ma un file corrotto non lascia la pagina vuota: si parte senza statistiche. */
+export async function loadDataOrEmpty(load: () => Promise<EngineData> = loadData): Promise<EngineData> {
+  try {
+    return await load();
+  } catch (error) {
+    console.error('Dati Smogon non leggibili, rilancia npm run fetch-data:', error);
+    return { stats: null, sets: null };
+  }
+}

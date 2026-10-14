@@ -1,4 +1,4 @@
-import { getSpecies } from './dex';
+import { getSpecies, toID } from './dex';
 import { TYPES, type TypeName } from './types';
 
 export interface SpeciesStats {
@@ -91,18 +91,34 @@ export function reduceChaos(chaos: ChaosFile, minUsage = 0.001): Record<string, 
   return result;
 }
 
+/**
+ * Cerca una chiave per nome esatto o per ID: Smogon scrive "Sirfetch'd",
+ * @pkmn/dex "Sirfetch’d" (apostrofo tipografico).
+ */
+export function findByName<T>(record: Record<string, T> | undefined, name: string): T | undefined {
+  if (!record) return undefined;
+  if (name in record) return record[name];
+  const id = toID(name);
+  const key = Object.keys(record).find(k => toID(k) === id);
+  return key === undefined ? undefined : record[key];
+}
+
+export function statsEntry(stats: StatsData | null, name: string): SpeciesStats | undefined {
+  return findByName(stats?.pokemon, name);
+}
+
 export function usageOf(stats: StatsData | null, name: string): number {
-  return stats?.pokemon[name]?.usage ?? 0;
+  return statsEntry(stats, name)?.usage ?? 0;
 }
 
 export function teammatePct(stats: StatsData | null, member: string, candidate: string): number {
-  return stats?.pokemon[member]?.teammates[candidate] ?? 0;
+  return findByName(statsEntry(stats, member)?.teammates, candidate) ?? 0;
 }
 
 export function checkScore(stats: StatsData | null, threat: string, candidate: string): number | null {
-  const entry = stats?.pokemon[threat];
+  const entry = statsEntry(stats, threat);
   if (!entry || Object.keys(entry.checks).length === 0) return null;
-  return entry.checks[candidate] ?? 0;
+  return findByName(entry.checks, candidate) ?? 0;
 }
 
 function byUsage(stats: StatsData): [string, SpeciesStats][] {
@@ -111,9 +127,10 @@ function byUsage(stats: StatsData): [string, SpeciesStats][] {
 
 export function topThreats(stats: StatsData | null, n: number, exclude: string[]): string[] {
   if (!stats) return [];
+  const excluded = new Set(exclude.map(toID));
   return byUsage(stats)
     .map(([name]) => name)
-    .filter(name => !exclude.includes(name) && getSpecies(name) !== null)
+    .filter(name => !excluded.has(toID(name)) && getSpecies(name) !== null)
     .slice(0, n);
 }
 
