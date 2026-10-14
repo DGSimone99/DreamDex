@@ -55,6 +55,15 @@ describe('set delle analisi Smogon', () => {
   });
 });
 
+describe('set delle analisi con più spread di EV', () => {
+  it('prende il primo spread', () => {
+    const raw = {
+      Diancie: { Set: { moves: ['Diamond Storm'], evs: [{ atk: 28, spa: 228, spe: 252 }, { spa: 252, spd: 4, spe: 252 }] } },
+    };
+    expect(normalizeAnalysisSets(raw).Diancie.evs).toEqual({ atk: 28, spa: 228, spe: 252 });
+  });
+});
+
 describe('Showdown', () => {
   const team: TeamSet[] = [
     { species: 'Great Tusk', item: 'Booster Energy', ability: 'Protosynthesis', moves: ['Headlong Rush', 'Rapid Spin', 'Close Combat', 'Ice Spinner'], nature: 'Jolly', evs: { atk: 252, def: 4, spe: 252 }, teraType: 'Steel' },

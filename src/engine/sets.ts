@@ -74,13 +74,22 @@ export interface RawAnalysisSet {
   item?: OneOrMany<string>;
   ability?: OneOrMany<string>;
   nature?: OneOrMany<string>;
-  evs?: Partial<Record<StatID, number>>;
+  evs?: OneOrMany<Partial<Record<StatID, number>>>;
   teraType?: OneOrMany<string>;
   teratypes?: OneOrMany<string>;
 }
 
 const first = <T,>(value: OneOrMany<T> | undefined): T | undefined =>
   Array.isArray(value) ? value[0] : value;
+
+function pickEvs(evs: Partial<Record<StatID, number>> | undefined): Partial<Record<StatID, number>> {
+  const result: Partial<Record<StatID, number>> = {};
+  for (const stat of STAT_IDS) {
+    const value = evs?.[stat];
+    if (typeof value === 'number' && value > 0) result[stat] = value;
+  }
+  return result;
+}
 
 export function normalizeAnalysisSets(raw: Record<string, Record<string, RawAnalysisSet>>): SetsData {
   const result: SetsData = {};
@@ -94,7 +103,7 @@ export function normalizeAnalysisSets(raw: Record<string, Record<string, RawAnal
       ability: first(set.ability) ?? '',
       moves: (set.moves ?? []).map(move => first(move) ?? '').filter(Boolean).slice(0, 4),
       nature: first(set.nature) ?? 'Serious',
-      evs: { ...(set.evs ?? {}) },
+      evs: pickEvs(first(set.evs)),
       ...(tera ? { teraType: tera } : {}),
     };
   }

@@ -45,6 +45,15 @@ describe('TeamPanel', () => {
     expect(within(teamRegion()).getByLabelText('Mossa 4')).toHaveValue('Stealth Rock');
   });
 
+  it('mostra i tipi della forma Mega se tiene la pietra', async () => {
+    const user = userEvent.setup();
+    render(<App data={fixtureData} />);
+    await addPokemon(user, 'Lopunny');
+    const item = within(teamRegion()).getByLabelText('Strumento');
+    await user.type(item, 'Lopunnite');
+    expect(within(teamRegion()).getByText(/^Normal\/Fighting/)).toBeInTheDocument();
+  });
+
   it('segnala un membro oltre il limite di generazione senza rimuoverlo', async () => {
     const user = userEvent.setup();
     render(<App data={fixtureData} />);
