@@ -1,11 +1,12 @@
 import { analyzeTeam, type TeamAnalysis } from './analysis';
 import type { EngineData } from './data';
-import { isDefined, isMega, toID } from './dex';
+import { battleName, isDefined, isMega, toID } from './dex';
 import type { Format } from './format';
 import { diffContribution, similarity, type Diff } from './replace';
 import { detectRoles, ESSENTIAL_ROLES, ROLE_LABELS } from './roles';
 import { scoreCandidates, type Suggestion } from './scoring';
 import type { TeamSet } from './sets';
+import { defensiveMultiplier } from './types';
 
 export const SERIOUS_THREAT_USAGE = 0.1;
 export const SWAP_MARGIN = 10;
@@ -75,8 +76,7 @@ function findProblems(team: TeamSet[], format: Format, analysis: TeamAnalysis, c
     const text = isSerious
       ? `Debole a ${row.type}: ${row.weak} membri su ${team.length} subiscono danni super efficaci${row.resist === 0 ? ' e nessuno resiste' : ''}`
       : `Debole a ${row.type}: ${row.weak} ${row.weak === 1 ? 'debole' : 'deboli'} contro ${row.resist} che resistono`;
-    const fixes = fixesFor(candidates, s =>
-      Number(s.facts.defense.covered.includes(row.type) || s.facts.defense.immune.includes(row.type)));
+    const fixes = fixesFor(candidates, s => Number(defensiveMultiplier(row.type, s.set) < 1));
     add(isSerious, text, fixes);
   }
 
@@ -114,26 +114,39 @@ function findProblems(team: TeamSet[], format: Format, analysis: TeamAnalysis, c
 }
 
 function findSwaps(team: TeamSet[], format: Format, data: EngineData): CoachSwap[] {
-  return team
-    .map((member, index): CoachSwap | null => {
+  const options = team
+    .map((member, index) => {
       const rest = team.filter((_, i) => i !== index);
       const scored = scoreCandidates(rest, format, data, [member]);
       const self = scored.find(s => s.set === member);
-      const best = scored.find(s => s.set !== member && toID(s.species) !== toID(member.species));
-      if (!self || !best || best.score - self.score < SWAP_MARGIN) return null;
-      return {
-        index,
-        member: member.species,
-        fit: self.score,
-        replacement: best.species,
-        score: best.score,
-        similar: similarity(member, best.set) >= SIMILAR_THRESHOLD,
-        diff: diffContribution(member, best.set, analyzeTeam(rest, data)),
-      };
+      if (!self) return null;
+      const own = toID(battleName(member));
+      const better = scored.filter(s =>
+        s.set !== member && toID(battleName(s.set)) !== own && s.score - self.score >= SWAP_MARGIN);
+      return better.length ? { index, member, rest, fit: self.score, better } : null;
     })
     .filter(isDefined)
-    .sort((a, b) => b.score - b.fit - (a.score - a.fit))
-    .slice(0, MAX_SWAPS);
+    .sort((a, b) => b.better[0].score - b.fit - (a.better[0].score - a.fit));
+
+  // Ogni sostituzione propone un Pokémon diverso: due consigli con lo stesso nome si escludono a vicenda
+  const used = new Set<string>();
+  const swaps: CoachSwap[] = [];
+  for (const option of options) {
+    if (swaps.length === MAX_SWAPS) break;
+    const pick = option.better.find(s => !used.has(s.species));
+    if (!pick) continue;
+    used.add(pick.species);
+    swaps.push({
+      index: option.index,
+      member: option.member.species,
+      fit: option.fit,
+      replacement: pick.species,
+      score: pick.score,
+      similar: similarity(option.member, pick.set) >= SIMILAR_THRESHOLD,
+      diff: diffContribution(option.member, pick.set, analyzeTeam(option.rest, data)),
+    });
+  }
+  return swaps;
 }
 
 function verdictFor(team: TeamSet[], problems: CoachProblem[]): string {
@@ -149,12 +162,16 @@ function verdictFor(team: TeamSet[], problems: CoachProblem[]): string {
 }
 
 export function describeSwap(swap: CoachSwap): string {
-  const changes = [...swap.diff.gains, ...swap.diff.losses].join(' · ');
+  const unsign = (items: string[]) => items.map(item => item.replace(/^[+-] /, '')).join(', ');
+  const changes = [
+    swap.diff.gains.length ? `porta ${unsign(swap.diff.gains)}` : '',
+    swap.diff.losses.length ? `perdi ${unsign(swap.diff.losses)}` : '',
+  ].filter(Boolean).join('; ');
   const head = swap.similar
     ? `${swap.replacement} (${swap.score}) fa un lavoro simile a ${swap.member} (${swap.fit}) ma si adatta meglio al team`
     : `Valuta di sostituire ${swap.member} (${swap.fit}): ${swap.replacement} (${swap.score})`;
   if (!changes) return head;
-  return swap.similar ? `${head}: ${changes}` : `${head} porta ${changes}`;
+  return swap.similar ? `${head}; ${changes}` : `${head} ${changes}`;
 }
 
 export function coachTeam(team: TeamSet[], format: Format, data: EngineData): Coaching {
