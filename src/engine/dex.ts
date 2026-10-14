@@ -46,6 +46,10 @@ export function battleSpecies(set: { species: string; item: string }): Species |
 export const battleName = (set: { species: string; item: string }): string =>
   battleSpecies(set)?.name ?? set.species;
 
+/** Vero se il set è una Mega in battaglia (pietra o forma Mega). Le forme Primal non contano. */
+export const isMega = (set: { species: string; item: string }): boolean =>
+  !!battleSpecies(set)?.isMega;
+
 export function getMove(name: string): Move | null {
   if (!name) return null;
   const move = dex.moves.get(name);

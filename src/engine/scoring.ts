@@ -1,6 +1,6 @@
 import { analyzeTeam, checksThreat, type TeamAnalysis } from './analysis';
 import type { EngineData } from './data';
-import { battleName, getSpecies, isAllowed, isDefined, toID } from './dex';
+import { battleName, getSpecies, isAllowed, isDefined, isMega, toID } from './dex';
 import { explain, type Components, type Facts, type Reason } from './explain';
 import type { Format } from './format';
 import { attackStyle, detectRoles, ESSENTIAL_ROLES, type Role } from './roles';
@@ -111,8 +111,11 @@ const NO_FACTS = (usage: number): Facts => ({
 
 export function scoreCandidates(team: TeamSet[], format: Format, data: EngineData): Suggestion[] {
   const analysis = analyzeTeam(team, data);
-  const partial = candidatePool(team, format, data).map(species => {
-    const set = defaultSet(data, species);
+  const megaTaken = !format.allowMultipleMegas && team.some(isMega);
+  const entries = candidatePool(team, format, data)
+    .map(species => ({ species, set: defaultSet(data, species) }))
+    .filter(({ set }) => !(megaTaken && isMega(set)));
+  const partial = entries.map(({ species, set }) => {
     const usage = usageOf(data.stats, species);
     if (team.length === 0) return { species, set, usage, empty: true as const };
     return {
