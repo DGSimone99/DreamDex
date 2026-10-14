@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { gradeFor, rateTeam, typeSafety } from '../../src/engine/rating';
+import { AREA_WEIGHTS, gradeFor, rateTeam, typeSafety } from '../../src/engine/rating';
 import { mostCommonSet } from '../../src/engine/sets';
 import { fixtureData, fixtureStats, gholdengo, tusk } from '../fixtures/data';
 
@@ -13,6 +13,13 @@ describe('gradeFor', () => {
     expect(gradeFor(70)).toEqual({ grade: 'B', label: 'Buono' });
     expect(gradeFor(55)).toEqual({ grade: 'C', label: 'Discreto' });
     expect(gradeFor(54)).toEqual({ grade: 'D', label: 'Debole' });
+  });
+});
+
+describe('pesi delle aree', () => {
+  it('Forza al 20%, somma 1', () => {
+    expect(AREA_WEIGHTS).toEqual({ defense: 0.25, coverage: 0.15, threats: 0.15, roles: 0.15, strength: 0.2, synergy: 0.1 });
+    expect(Object.values(AREA_WEIGHTS).reduce((a, b) => a + b, 0)).toBeCloseTo(1);
   });
 });
 
@@ -39,7 +46,7 @@ describe('rateTeam', () => {
   });
 
   it('voto complessivo pesato, provvisorio con meno di 6 membri', () => {
-    expect(rating).toMatchObject({ overall: 66, grade: 'C', label: 'Discreto', provisional: true });
+    expect(rating).toMatchObject({ overall: 69, grade: 'C', label: 'Discreto', provisional: true });
   });
 
   it('ordine e nomi delle aree', () => {
@@ -67,6 +74,6 @@ describe('rateTeam', () => {
     const d = value(noData, 'defense')!;
     const c = value(noData, 'coverage')!;
     const r = value(noData, 'roles')!;
-    expect(Math.abs(noData.overall - (0.25 * d + 0.2 * c + 0.15 * r) / 0.6)).toBeLessThanOrEqual(1);
+    expect(Math.abs(noData.overall - (0.25 * d + 0.15 * c + 0.15 * r) / 0.55)).toBeLessThanOrEqual(1);
   });
 });
