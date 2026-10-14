@@ -5,6 +5,8 @@ import { DEFAULT_FORMAT, type Format } from './engine/format';
 import type { TeamSet } from './engine/sets';
 import { AnalysisPanel } from './ui/AnalysisPanel';
 import { DataLists } from './ui/DataLists';
+import { SavedTeams } from './ui/SavedTeams';
+import { ShowdownPanel } from './ui/ShowdownPanel';
 import { SuggestionsPanel } from './ui/SuggestionsPanel';
 import { TeamPanel } from './ui/TeamPanel';
 import { TopBar } from './ui/TopBar';
@@ -26,7 +28,10 @@ export function App({ data }: { data: EngineData }) {
 
   return (
     <div className="app">
-      <TopBar format={format} onFormatChange={setFormat} meta={data.stats?.meta ?? null} />
+      <TopBar format={format} onFormatChange={setFormat} meta={data.stats?.meta ?? null}>
+        <ShowdownPanel team={team} onImport={changeTeam} />
+        <SavedTeams team={team} onLoad={changeTeam} />
+      </TopBar>
       {!data.stats && (
         <p className="banner" role="alert">
           Dati Smogon non trovati: esegui <code>npm run fetch-data</code> e ricarica la pagina.
