@@ -14,6 +14,13 @@ export const SIMILAR_THRESHOLD = 0.6;
 export const MAX_SWAPS = 2;
 export const MIN_COVERAGE_WEIGHT = 0.05;
 export const STRONG_COVERAGE = 15;
+/** Oltre questa quota di alternative che si adattano meglio, la sostituzione è consigliata (gialla). */
+export const RECOMMEND_SHARE = 0.5;
+
+export type SwapLevel = 'recommended' | 'optional';
+
+export const classifySwap = (betterShare: number): SwapLevel =>
+  betterShare > RECOMMEND_SHARE ? 'recommended' : 'optional';
 
 export interface CoachProblem {
   severity: 'serious' | 'minor';
@@ -28,6 +35,7 @@ export interface CoachSwap {
   replacement: string;
   score: number;
   similar: boolean;
+  level: SwapLevel;
   diff: Diff;
 }
 
@@ -123,10 +131,14 @@ function findSwaps(team: TeamSet[], format: Format, data: EngineData): CoachSwap
       const own = toID(battleName(member));
       const better = scored.filter(s =>
         s.set !== member && toID(battleName(s.set)) !== own && s.score - self.score >= SWAP_MARGIN);
-      return better.length ? { index, member, rest, fit: self.score, better } : null;
+      const others = scored.length - 1;
+      const level = classifySwap(others > 0 ? scored.filter(s => s.score > self.score).length / others : 0);
+      return better.length ? { index, member, rest, fit: self.score, better, level } : null;
     })
     .filter(isDefined)
-    .sort((a, b) => b.better[0].score - b.fit - (a.better[0].score - a.fit));
+    .sort((a, b) =>
+      (a.level === b.level ? 0 : a.level === 'recommended' ? -1 : 1)
+      || b.better[0].score - b.fit - (a.better[0].score - a.fit));
 
   // Ogni sostituzione propone un Pokémon diverso: due consigli con lo stesso nome si escludono a vicenda
   const used = new Set<string>();
@@ -143,6 +155,7 @@ function findSwaps(team: TeamSet[], format: Format, data: EngineData): CoachSwap
       replacement: pick.species,
       score: pick.score,
       similar: similarity(option.member, pick.set) >= SIMILAR_THRESHOLD,
+      level: option.level,
       diff: diffContribution(option.member, pick.set, analyzeTeam(option.rest, data)),
     });
   }
@@ -169,7 +182,9 @@ export function describeSwap(swap: CoachSwap): string {
   ].filter(Boolean).join('; ');
   const head = swap.similar
     ? `${swap.replacement} (${swap.score}) fa un lavoro simile a ${swap.member} (${swap.fit}) ma si adatta meglio al team`
-    : `Valuta di sostituire ${swap.member} (${swap.fit}): ${swap.replacement} (${swap.score})`;
+    : swap.level === 'optional'
+      ? `${swap.member} va già bene (${swap.fit}); in alternativa ${swap.replacement} (${swap.score})`
+      : `Valuta di sostituire ${swap.member} (${swap.fit}): ${swap.replacement} (${swap.score})`;
   if (!changes) return head;
   return swap.similar ? `${head}; ${changes}` : `${head} ${changes}`;
 }

@@ -1,4 +1,9 @@
-import { describeSwap, type Coaching } from '../engine/coach';
+import { describeSwap, type Coaching, type SwapLevel } from '../engine/coach';
+
+const SWAP_GROUPS: { level: SwapLevel; title: string }[] = [
+  { level: 'recommended', title: 'Valuta di sostituire' },
+  { level: 'optional', title: 'Possibili raccomandazioni' },
+];
 
 export function CoachPanel({ coaching, onReplace }: { coaching: Coaching; onReplace: (index: number) => void }) {
   const { verdict, strengths, problems, swaps } = coaching;
@@ -24,21 +29,25 @@ export function CoachPanel({ coaching, onReplace }: { coaching: Coaching; onRepl
           </ul>
         </>
       )}
-      {swaps.length > 0 && (
-        <>
-          <h3>Sostituzioni consigliate</h3>
-          <ul>
-            {swaps.map(swap => (
-              <li key={swap.index}>
-                {describeSwap(swap)}{' '}
-                <button type="button" aria-label={`Vedi sostituti per ${swap.member}`} onClick={() => onReplace(swap.index)}>
-                  ⇄ Vedi sostituti
-                </button>
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
+      {SWAP_GROUPS.map(({ level, title }) => {
+        const group = swaps.filter(swap => swap.level === level);
+        if (group.length === 0) return null;
+        return (
+          <div key={level} role="group" aria-label={title} className={`swaps ${level}`}>
+            <h3>{title}</h3>
+            <ul>
+              {group.map(swap => (
+                <li key={swap.index}>
+                  {describeSwap(swap)}{' '}
+                  <button type="button" aria-label={`Vedi sostituti per ${swap.member}`} onClick={() => onReplace(swap.index)}>
+                    ⇄ Vedi sostituti
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        );
+      })}
     </details>
   );
 }

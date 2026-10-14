@@ -66,7 +66,7 @@ describe('sostituzioni distinte', () => {
 
 describe('testo: porta …; perdi …', () => {
   it('separa guadagni e perdite', () => {
-    const swap = { index: 0, member: 'Magikarp', fit: 20, replacement: 'Corviknight', score: 60, similar: false,
+    const swap = { index: 0, member: 'Magikarp', fit: 20, replacement: 'Corviknight', score: 60, similar: false, level: 'recommended' as const,
       diff: { gains: ['+ Pivot', '+ resiste Ground'], losses: ['- copre Fire'] } };
     expect(describeSwap(swap)).toBe('Valuta di sostituire Magikarp (20): Corviknight (60) porta Pivot, resiste Ground; perdi copre Fire');
     expect(describeSwap({ ...swap, similar: true, diff: { gains: [], losses: ['- copre Fire'] } }))

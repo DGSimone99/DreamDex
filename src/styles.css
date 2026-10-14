@@ -11,6 +11,7 @@
   --bad-text: #b42318;
   --warn: #b54708;
   --warn-bg: #fef0c7;
+  --good-text: #067647;
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -25,6 +26,7 @@
     --bad-text: #ff8a80;
     --warn: #fdb022;
     --warn-bg: #4e3a10;
+    --good-text: #75e0a7;
   }
 }
 * { box-sizing: border-box; }
@@ -75,3 +77,7 @@ small { color: var(--muted); display: block; }
 .coach h3 { font-size: 13px; margin: 8px 0 2px; }
 .coach ul { margin: 0; padding-left: 18px; }
 .coach li { margin: 2px 0; }
+.swaps { border-radius: 8px; padding: 4px 8px; margin-top: 6px; border-left: 4px solid; }
+.swaps.recommended { background: var(--warn-bg); border-color: var(--warn); }
+.swaps.optional { background: var(--good); border-color: var(--good-text); }
+.swaps h3 { margin-top: 2px; }
