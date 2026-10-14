@@ -39,6 +39,15 @@ export function TopBar({ format, onFormatChange, meta, children }: Props) {
           ))}
         </select>
       </label>
+      <label>
+        <input
+          type="checkbox"
+          aria-label="Più Mega ammesse"
+          checked={format.allowMultipleMegas}
+          onChange={e => onFormatChange({ ...format, allowMultipleMegas: e.target.checked })}
+        />{' '}
+        Più Mega ammesse
+      </label>
       {children}
       <span className="meta">
         {meta ? `Statistiche: ${meta.month} (rating ${meta.cutoff}+)` : 'Statistiche: assenti'}
