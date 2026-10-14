@@ -57,7 +57,7 @@ function defenseComponent(set: TeamSet, analysis: TeamAnalysis) {
 }
 
 function threatsComponent(set: TeamSet, analysis: TeamAnalysis, data: EngineData) {
-  const open = analysis.threats.filter(t => t.handledBy.length === 0 && toID(t.name) !== toID(set.species));
+  const open = analysis.threats.filter(t => t.handledBy.length === 0 && toID(t.name) !== toID(battleName(set)));
   const checked = open.filter(t => checksThreat(data, set, t.name));
   const total = sum(open.map(t => t.usage));
   return {
@@ -89,7 +89,7 @@ function rolesComponent(set: TeamSet, analysis: TeamAnalysis) {
 
 function synergyRaw(set: TeamSet, team: TeamSet[], data: EngineData) {
   if (team.length === 0) return { raw: 0, best: null };
-  const pcts = team.map(member => ({ member: member.species, pct: teammatePct(data.stats, battleName(member), set.species) }));
+  const pcts = team.map(member => ({ member: member.species, pct: teammatePct(data.stats, battleName(member), battleName(set)) }));
   const best = pcts.reduce((a, b) => (b.pct > a.pct ? b : a));
   return { raw: sum(pcts.map(p => p.pct)) / team.length, best: best.pct > 0 ? best : null };
 }
@@ -112,7 +112,7 @@ const NO_FACTS = (usage: number): Facts => ({
 export function scoreCandidates(team: TeamSet[], format: Format, data: EngineData, extraSets: TeamSet[] = []): Suggestion[] {
   const analysis = analyzeTeam(team, data);
   const megaTaken = !format.allowMultipleMegas && team.some(isMega);
-  const extraIds = new Set(extraSets.map(set => toID(set.species)));
+  const extraIds = new Set(extraSets.map(set => toID(battleName(set))));
   const entries = [
     ...candidatePool(team, format, data)
       .filter(species => !extraIds.has(toID(species)))
@@ -161,7 +161,7 @@ export function scoreCandidates(team: TeamSet[], format: Format, data: EngineDat
       const score = Math.round(100 * sum(COMPONENT_KEYS.map(key => WEIGHTS[key] * components[key])));
       return { species: p.species, set: p.set, score, components, facts, reasons: explain(facts, components) };
     })
-    .sort((a, b) => b.score - a.score || usageOf(data.stats, b.species) - usageOf(data.stats, a.species));
+    .sort((a, b) => b.score - a.score || usageOf(data.stats, battleName(b.set)) - usageOf(data.stats, battleName(a.set)));
 }
 
 export function suggest(team: TeamSet[], format: Format, data: EngineData, limit = 20): Suggestion[] {
