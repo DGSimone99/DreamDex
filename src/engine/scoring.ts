@@ -109,14 +109,19 @@ const NO_FACTS = (usage: number): Facts => ({
   strength: { usage },
 });
 
-export function scoreCandidates(team: TeamSet[], format: Format, data: EngineData): Suggestion[] {
+export function scoreCandidates(team: TeamSet[], format: Format, data: EngineData, extraSets: TeamSet[] = []): Suggestion[] {
   const analysis = analyzeTeam(team, data);
   const megaTaken = !format.allowMultipleMegas && team.some(isMega);
-  const entries = candidatePool(team, format, data)
-    .map(species => ({ species, set: defaultSet(data, species) }))
-    .filter(({ set }) => !(megaTaken && isMega(set)));
+  const extraIds = new Set(extraSets.map(set => toID(set.species)));
+  const entries = [
+    ...candidatePool(team, format, data)
+      .filter(species => !extraIds.has(toID(species)))
+      .map(species => ({ species, set: defaultSet(data, species) }))
+      .filter(({ set }) => !(megaTaken && isMega(set))),
+    ...extraSets.map(set => ({ species: set.species, set })),
+  ];
   const partial = entries.map(({ species, set }) => {
-    const usage = usageOf(data.stats, species);
+    const usage = usageOf(data.stats, battleName(set));
     if (team.length === 0) return { species, set, usage, empty: true as const };
     return {
       species, set, usage, empty: false as const,
