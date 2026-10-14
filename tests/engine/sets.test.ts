@@ -89,6 +89,11 @@ describe('Showdown', () => {
     expect(result.errors).toEqual(['Blocco 2 non leggibile: "- Tackle"', 'Pokémon sconosciuto: Fakemon-Xyz']);
   });
 
+  it('limita gli EV importati a 0–252', () => {
+    const result = importShowdown('Great Tusk\nEVs: 999 Atk / 4 Def\n- Headlong Rush');
+    expect(result.sets[0].evs).toEqual({ atk: 252, def: 4 });
+  });
+
   it('al massimo 6 Pokémon', () => {
     const names = ['Great Tusk', 'Gholdengo', 'Kingambit', 'Dragapult', 'Corviknight', 'Toxapex', 'Rotom-Wash'];
     const result = importShowdown(names.join('\n\n'));

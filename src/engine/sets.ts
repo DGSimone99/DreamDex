@@ -1,7 +1,7 @@
 import { Sets } from '@pkmn/sets';
 import { dex, getMove, getSpecies } from './dex';
 import type { EngineData } from './data';
-import type { StatsData } from './stats';
+import { findByName, statsEntry, type StatsData } from './stats';
 
 export type StatID = 'hp' | 'atk' | 'def' | 'spa' | 'spd' | 'spe';
 export const STAT_IDS: StatID[] = ['hp', 'atk', 'def', 'spa', 'spd', 'spe'];
@@ -47,7 +47,7 @@ export function parseSpread(spread: string | undefined): { nature: string; evs: 
 }
 
 export function mostCommonSet(stats: StatsData | null, speciesName: string): TeamSet | null {
-  const entry = stats?.pokemon[speciesName];
+  const entry = statsEntry(stats, speciesName);
   if (!entry) return null;
   const { nature, evs } = parseSpread(sortedKeys(entry.spreads)[0]);
   const itemId = sortedKeys(entry.items)[0];
@@ -65,7 +65,7 @@ export function mostCommonSet(stats: StatsData | null, speciesName: string): Tea
 }
 
 export function defaultSet(data: EngineData, speciesName: string): TeamSet {
-  return mostCommonSet(data.stats, speciesName) ?? data.sets?.[speciesName] ?? emptySet(speciesName);
+  return mostCommonSet(data.stats, speciesName) ?? findByName(data.sets ?? undefined, speciesName) ?? emptySet(speciesName);
 }
 
 type OneOrMany<T> = T | T[];
@@ -133,7 +133,7 @@ function fromPkmn(parsed: Partial<PkmnSet>): TeamSet {
   const evs: Partial<Record<StatID, number>> = {};
   for (const stat of STAT_IDS) {
     const value = (parsed.evs as Partial<Record<StatID, number>> | undefined)?.[stat];
-    if (value) evs[stat] = value;
+    if (value && value > 0) evs[stat] = Math.min(252, value);
   }
   const teraType = (parsed as { teraType?: string }).teraType;
   return {
