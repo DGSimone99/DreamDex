@@ -1,6 +1,6 @@
 import { analyzeTeam, checksThreat, type TeamAnalysis } from './analysis';
 import type { EngineData } from './data';
-import { getSpecies, isAllowed, isDefined } from './dex';
+import { battleName, getSpecies, isAllowed, isDefined } from './dex';
 import { explain, type Components, type Facts, type Reason } from './explain';
 import type { Format } from './format';
 import { attackStyle, detectRoles, ESSENTIAL_ROLES, type Role } from './roles';
@@ -89,7 +89,7 @@ function rolesComponent(set: TeamSet, analysis: TeamAnalysis) {
 
 function synergyRaw(set: TeamSet, team: TeamSet[], data: EngineData) {
   if (team.length === 0) return { raw: 0, best: null };
-  const pcts = team.map(member => ({ member: member.species, pct: teammatePct(data.stats, member.species, set.species) }));
+  const pcts = team.map(member => ({ member: member.species, pct: teammatePct(data.stats, battleName(member), set.species) }));
   const best = pcts.reduce((a, b) => (b.pct > a.pct ? b : a));
   return { raw: sum(pcts.map(p => p.pct)) / team.length, best: best.pct > 0 ? best : null };
 }

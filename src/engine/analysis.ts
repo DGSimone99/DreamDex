@@ -1,5 +1,5 @@
 import type { EngineData } from './data';
-import { getSpecies } from './dex';
+import { battleName, getSpecies } from './dex';
 import { teamNeeds, type TeamNeeds } from './roles';
 import type { TeamSet } from './sets';
 import { checkScore, metaTypeWeights, topThreats, usageOf } from './stats';
@@ -30,13 +30,14 @@ export function resistsAllStabs(set: TeamSet, threat: string): boolean {
 }
 
 export function checksThreat(data: EngineData, set: TeamSet, threat: string): boolean {
-  if (set.species === threat) return false;
-  const score = checkScore(data.stats, threat, set.species);
+  const name = battleName(set);
+  if (name === threat) return false;
+  const score = checkScore(data.stats, threat, name);
   return score === null ? resistsAllStabs(set, threat) : score >= CHECK_THRESHOLD;
 }
 
 export function analyzeTeam(team: TeamSet[], data: EngineData): TeamAnalysis {
-  const names = team.map(set => set.species);
+  const names = team.map(battleName);
   return {
     weakness: weaknessTable(team),
     coverage: coverageTable(team),

@@ -1,6 +1,6 @@
 import { analyzeTeam, type TeamAnalysis } from './analysis';
 import type { EngineData } from './data';
-import { getSpecies } from './dex';
+import { battleSpecies } from './dex';
 import type { Format } from './format';
 import { detectRoles, ROLE_LABELS } from './roles';
 import { scoreCandidates, type Suggestion } from './scoring';
@@ -32,8 +32,8 @@ function cosine(a: number[], b: number[]): number {
 }
 
 export function similarity(a: TeamSet, b: TeamSet): number {
-  const sa = getSpecies(a.species);
-  const sb = getSpecies(b.species);
+  const sa = battleSpecies(a);
+  const sb = battleSpecies(b);
   if (!sa || !sb) return 0;
   const vector = (s: typeof sa) => [s.baseStats.hp, s.baseStats.atk, s.baseStats.def, s.baseStats.spa, s.baseStats.spd, s.baseStats.spe];
   const speedGap = Math.abs(sa.baseStats.spe - sb.baseStats.spe);

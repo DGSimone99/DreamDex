@@ -1,4 +1,4 @@
-import { dex, getMove, getSpecies, isDefined, toID } from './dex';
+import { battleSpecies, dex, getMove, getSpecies, isDefined, toID } from './dex';
 import type { TeamSet } from './sets';
 
 export const TYPES = [
@@ -36,10 +36,12 @@ const ABILITY_MODIFIERS: Record<string, Partial<Record<TypeName, number>>> = {
 };
 
 export function defensiveMultiplier(attack: TypeName, set: TeamSet): number {
-  const species = getSpecies(set.species);
+  const species = battleSpecies(set);
   if (!species) return 1;
+  const transformed = species.name !== getSpecies(set.species)?.name;
+  const ability = transformed ? species.abilities[0] : set.ability;
   const base = effectiveness(attack, species.types);
-  const modifier = ABILITY_MODIFIERS[toID(set.ability)]?.[attack];
+  const modifier = ABILITY_MODIFIERS[toID(ability)]?.[attack];
   return modifier === undefined ? base : base * modifier;
 }
 

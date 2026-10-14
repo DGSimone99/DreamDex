@@ -21,6 +21,31 @@ export function getSpecies(name: string): Species | null {
   return species?.exists ? species : null;
 }
 
+const PRIMAL_ORBS: Record<string, [base: string, forme: string]> = {
+  redorb: ['Groudon', 'Groudon-Primal'],
+  blueorb: ['Kyogre', 'Kyogre-Primal'],
+};
+
+/**
+ * La specie in battaglia: Showdown esporta le Mega come specie base + pietra
+ * (es. "Lopunny @ Lopunnite"), ma tipi, statistiche e dati Smogon sono della forma Mega.
+ */
+export function battleSpecies(set: { species: string; item: string }): Species | null {
+  const species = getSpecies(set.species);
+  if (!species || !set.item) return species;
+  const item = dex.items.get(set.item);
+  if (!item?.exists) return species;
+  const megaStone = item.megaStone as unknown as Record<string, string> | undefined;
+  const primal = PRIMAL_ORBS[item.id];
+  const forme = megaStone?.[species.baseSpecies]
+    ?? (primal && primal[0] === species.baseSpecies ? primal[1] : undefined);
+  return (forme && getSpecies(forme)) || species;
+}
+
+/** Nome con cui la specie compare nelle statistiche Smogon. */
+export const battleName = (set: { species: string; item: string }): string =>
+  battleSpecies(set)?.name ?? set.species;
+
 export function getMove(name: string): Move | null {
   if (!name) return null;
   const move = dex.moves.get(name);

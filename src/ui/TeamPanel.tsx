@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { EngineData } from '../engine/data';
-import { getSpecies, isLegal, withinGen } from '../engine/dex';
+import { battleSpecies, getSpecies, isLegal, withinGen } from '../engine/dex';
 import type { Format } from '../engine/format';
 import { detectRoles, ROLE_LABELS } from '../engine/roles';
 import { defaultSet, type TeamSet } from '../engine/sets';
@@ -30,7 +30,7 @@ function TeamSlot({ set, format, onChange, onRemove, onReplace }: {
   onRemove: () => void;
   onReplace: () => void;
 }) {
-  const species = getSpecies(set.species);
+  const species = battleSpecies(set);
   const problem = slotProblem(set, format);
   const roles = detectRoles(set).slice(0, 2).map(role => ROLE_LABELS[role]);
   return (

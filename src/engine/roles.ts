@@ -1,4 +1,4 @@
-import { getMove, getSpecies, isDefined, toID } from './dex';
+import { battleSpecies, getMove, isDefined, toID } from './dex';
 import type { TeamSet } from './sets';
 
 export type Role =
@@ -31,7 +31,7 @@ const SPEED_MOVES = new Set(['trickroom', 'thunderwave', 'tailwind', 'stickyweb'
 const BREAKER_ITEMS = new Set(['choiceband', 'choicespecs', 'lifeorb']);
 
 export function detectRoles(set: TeamSet): Role[] {
-  const species = getSpecies(set.species);
+  const species = battleSpecies(set);
   if (!species) return [];
   const ids = set.moves.map(toID);
   const moves = set.moves.map(getMove).filter(isDefined);
