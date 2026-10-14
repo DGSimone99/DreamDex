@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { analyzeTeam } from './engine/analysis';
 import { coachTeam } from './engine/coach';
+import { rateTeam } from './engine/rating';
 import type { EngineData } from './engine/data';
 import { DEFAULT_FORMAT, type Format } from './engine/format';
 import type { TeamSet } from './engine/sets';
@@ -17,6 +18,7 @@ export function App({ data }: { data: EngineData }) {
   const [team, setTeam] = useState<TeamSet[]>([]);
   const [replaceIndex, setReplaceIndex] = useState<number | null>(null);
   const analysis = useMemo(() => analyzeTeam(team, data), [team, data]);
+  const rating = useMemo(() => rateTeam(team, data), [team, data]);
   const coaching = useMemo(() => coachTeam(team, format, data), [team, format, data]);
 
   const changeTeam = (next: TeamSet[]) => {
@@ -44,7 +46,7 @@ export function App({ data }: { data: EngineData }) {
         <div className="left">
           <TeamPanel team={team} format={format} data={data} onChange={changeTeam} onAdd={addSet} onReplace={setReplaceIndex}
             onAllowMultipleMegas={() => setFormat(f => ({ ...f, allowMultipleMegas: true }))} />
-          <AnalysisPanel team={team} analysis={analysis} coaching={coaching} onReplace={setReplaceIndex} />
+          <AnalysisPanel team={team} analysis={analysis} rating={rating} coaching={coaching} onReplace={setReplaceIndex} />
         </div>
         <div className="right">
           <SuggestionsPanel
