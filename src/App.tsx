@@ -1,11 +1,23 @@
 import { useState } from 'react';
 import type { EngineData } from './engine/data';
 import { DEFAULT_FORMAT, type Format } from './engine/format';
+import type { TeamSet } from './engine/sets';
 import { DataLists } from './ui/DataLists';
+import { TeamPanel } from './ui/TeamPanel';
 import { TopBar } from './ui/TopBar';
 
 export function App({ data }: { data: EngineData }) {
   const [format, setFormat] = useState<Format>(DEFAULT_FORMAT);
+  const [team, setTeam] = useState<TeamSet[]>([]);
+  const [, setReplaceIndex] = useState<number | null>(null);
+
+  const changeTeam = (next: TeamSet[]) => {
+    setTeam(next.slice(0, 6));
+    setReplaceIndex(null);
+  };
+  const addSet = (set: TeamSet) => {
+    if (team.length < 6) changeTeam([...team, set]);
+  };
 
   return (
     <div className="app">
@@ -17,7 +29,9 @@ export function App({ data }: { data: EngineData }) {
         </p>
       )}
       <main className="columns">
-        <div className="left" />
+        <div className="left">
+          <TeamPanel team={team} format={format} data={data} onChange={changeTeam} onAdd={addSet} onReplace={setReplaceIndex} />
+        </div>
         <div className="right" />
       </main>
       <DataLists />
