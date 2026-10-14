@@ -5,13 +5,14 @@ import { DEFAULT_FORMAT, type Format } from './engine/format';
 import type { TeamSet } from './engine/sets';
 import { AnalysisPanel } from './ui/AnalysisPanel';
 import { DataLists } from './ui/DataLists';
+import { SuggestionsPanel } from './ui/SuggestionsPanel';
 import { TeamPanel } from './ui/TeamPanel';
 import { TopBar } from './ui/TopBar';
 
 export function App({ data }: { data: EngineData }) {
   const [format, setFormat] = useState<Format>(DEFAULT_FORMAT);
   const [team, setTeam] = useState<TeamSet[]>([]);
-  const [, setReplaceIndex] = useState<number | null>(null);
+  const [replaceIndex, setReplaceIndex] = useState<number | null>(null);
   const analysis = useMemo(() => analyzeTeam(team, data), [team, data]);
 
   const changeTeam = (next: TeamSet[]) => {
@@ -21,6 +22,7 @@ export function App({ data }: { data: EngineData }) {
   const addSet = (set: TeamSet) => {
     if (team.length < 6) changeTeam([...team, set]);
   };
+  const replaceAt = (index: number, set: TeamSet) => changeTeam(team.map((s, i) => (i === index ? set : s)));
 
   return (
     <div className="app">
@@ -36,7 +38,17 @@ export function App({ data }: { data: EngineData }) {
           <TeamPanel team={team} format={format} data={data} onChange={changeTeam} onAdd={addSet} onReplace={setReplaceIndex} />
           <AnalysisPanel team={team} analysis={analysis} />
         </div>
-        <div className="right" />
+        <div className="right">
+          <SuggestionsPanel
+            team={team}
+            format={format}
+            data={data}
+            replaceIndex={replaceIndex}
+            onAdd={addSet}
+            onReplaceWith={replaceAt}
+            onCancelReplace={() => setReplaceIndex(null)}
+          />
+        </div>
       </main>
       <DataLists />
     </div>
