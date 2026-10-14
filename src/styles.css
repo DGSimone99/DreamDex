@@ -72,3 +72,6 @@ small { color: var(--muted); display: block; }
 .errors { color: var(--bad-text); }
 .slot.warn { border-color: var(--warn); }
 .slot .warning { color: var(--warn); }
+.coach h3 { font-size: 13px; margin: 8px 0 2px; }
+.coach ul { margin: 0; padding-left: 18px; }
+.coach li { margin: 2px 0; }

@@ -1,12 +1,19 @@
 import type { TeamAnalysis } from '../engine/analysis';
+import type { Coaching } from '../engine/coach';
 import { DESIRABLE_ROLES, detectRoles, ESSENTIAL_ROLES, ROLE_LABELS } from '../engine/roles';
 import type { TeamSet } from '../engine/sets';
+import { CoachPanel } from './CoachPanel';
 
 const MULTIPLIER_LABELS: Record<string, string> = { '4': '×4', '2': '×2', '1': '', '0.5': '×½', '0.25': '×¼', '0': '×0' };
 const formatMultiplier = (m: number) => MULTIPLIER_LABELS[String(m)] ?? `×${m}`;
 const STYLE_LABELS = { physical: 'fisico', special: 'speciale' } as const;
 
-export function AnalysisPanel({ team, analysis }: { team: TeamSet[]; analysis: TeamAnalysis }) {
+export function AnalysisPanel({ team, analysis, coaching, onReplace }: {
+  team: TeamSet[];
+  analysis: TeamAnalysis;
+  coaching?: Coaching;
+  onReplace?: (index: number) => void;
+}) {
   const problems = analysis.weakness.filter(row => row.pressure > 0);
   const uncovered = analysis.coverage.filter(row => row.hitters.length === 0);
   const open = analysis.threats.filter(t => t.handledBy.length === 0);
@@ -19,6 +26,7 @@ export function AnalysisPanel({ team, analysis }: { team: TeamSet[]; analysis: T
   return (
     <section aria-label="Analisi" className="analysis">
       <h2>Analisi</h2>
+      {coaching && onReplace && <CoachPanel coaching={coaching} onReplace={onReplace} />}
 
       <details className="block">
         <summary><span>Debolezze difensive</span><span>{problems.length} problemi</span></summary>
