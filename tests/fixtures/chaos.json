@@ -1,0 +1,125 @@
+{
+  "info": { "metagame": "gen9nationaldex", "cutoff": 1695, "cutoff deviation": 0, "team type": null, "number of battles": 1000 },
+  "data": {
+    "Great Tusk": {
+      "Raw count": 1200, "usage": 0.30,
+      "Abilities": { "protosynthesis": 1000 },
+      "Items": { "boosterenergy": 600, "rockyhelmet": 400 },
+      "Moves": { "headlongrush": 950, "rapidspin": 900, "closecombat": 800, "icespinner": 700, "stealthrock": 500, "": 50 },
+      "Spreads": { "Jolly:0/252/4/0/0/252": 700, "Impish:252/0/252/0/4/0": 300 },
+      "Tera Types": { "steel": 600, "water": 400 },
+      "Teammates": { "Gholdengo": 300, "Kingambit": 250, "Dragapult": 200, "Corviknight": 180, "Toxapex": 100, "Rotom-Wash": 90 },
+      "Checks and Counters": {
+        "Corviknight": { "n": 40, "p": 0.80, "d": 0.03 },
+        "Toxapex": { "n": 35, "p": 0.70, "d": 0.04 },
+        "Rotom-Wash": { "n": 30, "p": 0.65, "d": 0.05 }
+      }
+    },
+    "Gholdengo": {
+      "Raw count": 900, "usage": 0.25,
+      "Abilities": { "goodasgold": 800 },
+      "Items": { "airballoon": 500, "choicescarf": 300 },
+      "Moves": { "makeitrain": 800, "shadowball": 780, "recover": 650, "nastyplot": 600, "trick": 200 },
+      "Spreads": { "Timid:0/0/4/252/0/252": 800 },
+      "Tera Types": { "nothing": 800 },
+      "Teammates": { "Great Tusk": 300, "Kingambit": 200, "Dragapult": 150, "Toxapex": 120, "Corviknight": 100, "Rotom-Wash": 60 },
+      "Checks and Counters": {
+        "Great Tusk": { "n": 50, "p": 0.85, "d": 0.02 },
+        "Kingambit": { "n": 40, "p": 0.75, "d": 0.03 },
+        "Rotom-Wash": { "n": 20, "p": 0.50, "d": 0.05 }
+      }
+    },
+    "Kingambit": {
+      "Raw count": 850, "usage": 0.20,
+      "Abilities": { "supremeoverlord": 800 },
+      "Items": { "blackglasses": 400, "leftovers": 400 },
+      "Moves": { "kowtowcleave": 780, "suckerpunch": 760, "swordsdance": 700, "ironhead": 600, "lowkick": 200 },
+      "Spreads": { "Adamant:252/252/0/0/4/0": 800 },
+      "Tera Types": { "nothing": 800 },
+      "Teammates": { "Great Tusk": 250, "Gholdengo": 200, "Dragapult": 150, "Rotom-Wash": 50, "Corviknight": 40, "Toxapex": 30 },
+      "Checks and Counters": {
+        "Great Tusk": { "n": 60, "p": 0.90, "d": 0.02 },
+        "Corviknight": { "n": 30, "p": 0.70, "d": 0.04 }
+      }
+    },
+    "Dragapult": {
+      "Raw count": 750, "usage": 0.18,
+      "Abilities": { "infiltrator": 400, "clearbody": 300 },
+      "Items": { "heavydutyboots": 400, "choiceband": 300 },
+      "Moves": { "dragondarts": 600, "uturn": 500, "shadowball": 400, "willowisp": 300, "dracometeor": 250, "suckerpunch": 200 },
+      "Spreads": { "Jolly:0/252/0/0/4/252": 700 },
+      "Tera Types": { "nothing": 700 },
+      "Teammates": { "Great Tusk": 200, "Gholdengo": 150, "Kingambit": 150, "Rotom-Wash": 40, "Corviknight": 30, "Toxapex": 20 },
+      "Checks and Counters": {
+        "Kingambit": { "n": 50, "p": 0.80, "d": 0.03 },
+        "Gholdengo": { "n": 30, "p": 0.60, "d": 0.05 }
+      }
+    },
+    "Corviknight": {
+      "Raw count": 550, "usage": 0.15,
+      "Abilities": { "pressure": 500 },
+      "Items": { "leftovers": 400, "rockyhelmet": 100 },
+      "Moves": { "roost": 490, "bravebird": 480, "defog": 450, "uturn": 420, "bodypress": 100 },
+      "Spreads": { "Impish:252/0/168/0/88/0": 500 },
+      "Tera Types": { "nothing": 500 },
+      "Teammates": { "Great Tusk": 180, "Gholdengo": 100, "Toxapex": 80, "Kingambit": 40, "Dragapult": 30, "Rotom-Wash": 20 },
+      "Checks and Counters": {
+        "Rotom-Wash": { "n": 30, "p": 0.70, "d": 0.04 },
+        "Gholdengo": { "n": 25, "p": 0.55, "d": 0.05 }
+      }
+    },
+    "Toxapex": {
+      "Raw count": 420, "usage": 0.10,
+      "Abilities": { "regenerator": 400 },
+      "Items": { "blacksludge": 350, "rockyhelmet": 50 },
+      "Moves": { "recover": 390, "toxic": 350, "surf": 300, "toxicspikes": 250, "haze": 200, "banefulbunker": 100 },
+      "Spreads": { "Bold:252/0/252/0/4/0": 400 },
+      "Tera Types": { "nothing": 400 },
+      "Teammates": { "Gholdengo": 120, "Great Tusk": 100, "Corviknight": 80, "Kingambit": 30, "Dragapult": 20, "Rotom-Wash": 10 },
+      "Checks and Counters": {
+        "Great Tusk": { "n": 40, "p": 0.80, "d": 0.03 },
+        "Gholdengo": { "n": 20, "p": 0.60, "d": 0.05 }
+      }
+    },
+    "Rotom-Wash": {
+      "Raw count": 320, "usage": 0.08,
+      "Abilities": { "levitate": 300 },
+      "Items": { "leftovers": 300 },
+      "Moves": { "voltswitch": 290, "hydropump": 280, "willowisp": 250, "painsplit": 200, "trick": 100 },
+      "Spreads": { "Bold:252/0/252/0/4/0": 300 },
+      "Tera Types": { "nothing": 300 },
+      "Teammates": { "Great Tusk": 90, "Gholdengo": 60, "Kingambit": 50, "Dragapult": 40, "Corviknight": 20, "Toxapex": 10 },
+      "Checks and Counters": {
+        "Toxapex": { "n": 20, "p": 0.70, "d": 0.04 }
+      }
+    },
+    "Garchomp": {
+      "Raw count": 25, "usage": 0.005,
+      "Abilities": { "roughskin": 20 },
+      "Items": { "rockyhelmet": 20 },
+      "Moves": { "earthquake": 20, "stealthrock": 20, "spikes": 15, "dragontail": 15 },
+      "Spreads": { "Jolly:0/252/4/0/0/252": 20 },
+      "Tera Types": { "nothing": 20 },
+      "Teammates": {},
+      "Checks and Counters": {}
+    },
+    "Fakemon-Xyz": {
+      "Raw count": 200, "usage": 0.05,
+      "Abilities": { "levitate": 200 },
+      "Items": { "leftovers": 200 },
+      "Moves": { "tackle": 200 },
+      "Spreads": { "Hardy:0/0/0/0/0/0": 200 },
+      "Teammates": {},
+      "Checks and Counters": {}
+    },
+    "Pikachu": {
+      "Raw count": 2, "usage": 0.0005,
+      "Abilities": { "static": 2 },
+      "Items": { "lightball": 2 },
+      "Moves": { "voltswitch": 2 },
+      "Spreads": { "Timid:0/0/0/252/4/252": 2 },
+      "Teammates": {},
+      "Checks and Counters": {}
+    }
+  }
+}
