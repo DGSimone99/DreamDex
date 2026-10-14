@@ -9,6 +9,8 @@
   --bad: #fde2e1;
   --good: #dcf5e3;
   --bad-text: #b42318;
+  --warn: #b54708;
+  --warn-bg: #fef0c7;
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -21,6 +23,8 @@
     --bad: #4a1f1d;
     --good: #1c3b27;
     --bad-text: #ff8a80;
+    --warn: #fdb022;
+    --warn-bg: #4e3a10;
   }
 }
 * { box-sizing: border-box; }
@@ -66,3 +70,5 @@ small { color: var(--muted); display: block; }
 .bars meter { width: 100%; }
 .set { background: var(--bg); padding: 6px; border-radius: 6px; white-space: pre-wrap; font-size: 12px; }
 .errors { color: var(--bad-text); }
+.slot.warn { border-color: var(--warn); }
+.slot .warning { color: var(--warn); }

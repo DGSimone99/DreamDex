@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { EngineData } from '../engine/data';
-import { battleSpecies, getSpecies, isLegal, withinGen } from '../engine/dex';
+import { battleSpecies, getSpecies, isLegal, isMega, withinGen } from '../engine/dex';
 import type { Format } from '../engine/format';
 import { detectRoles, ROLE_LABELS } from '../engine/roles';
 import { defaultSet, type TeamSet } from '../engine/sets';
@@ -13,6 +13,7 @@ interface Props {
   onChange: (team: TeamSet[]) => void;
   onAdd: (set: TeamSet) => void;
   onReplace: (index: number) => void;
+  onAllowMultipleMegas: () => void;
 }
 
 function slotProblem(set: TeamSet, format: Format): string | null {
@@ -23,9 +24,13 @@ function slotProblem(set: TeamSet, format: Format): string | null {
   return null;
 }
 
-function TeamSlot({ set, format, onChange, onRemove, onReplace }: {
+const MEGA_WARNING = 'Seconda Mega: in National Dex ne è ammessa una sola';
+
+function TeamSlot({ set, format, warning, onIgnoreWarning, onChange, onRemove, onReplace }: {
   set: TeamSet;
   format: Format;
+  warning: string | null;
+  onIgnoreWarning: () => void;
   onChange: (set: TeamSet) => void;
   onRemove: () => void;
   onReplace: () => void;
@@ -34,16 +39,18 @@ function TeamSlot({ set, format, onChange, onRemove, onReplace }: {
   const problem = slotProblem(set, format);
   const roles = detectRoles(set).slice(0, 2).map(role => ROLE_LABELS[role]);
   return (
-    <details className={`slot filled${problem ? ' invalid' : ''}`}>
+    <details className={`slot filled${problem ? ' invalid' : warning ? ' warn' : ''}`}>
       <summary>
         <strong>{set.species}</strong>
         <small>{species?.types.join('/') ?? '?'}{roles.length ? ` · ${roles.join(', ')}` : ''}</small>
         {problem && <small className="problem">{problem}</small>}
+        {warning && <small className="warning">{warning}</small>}
       </summary>
       <SetEditor set={set} onChange={onChange} />
       <div className="actions">
         <button type="button" aria-label={`Sostituisci ${set.species}`} onClick={onReplace}>⇄ Sostituisci</button>
         <button type="button" aria-label={`Rimuovi ${set.species}`} onClick={onRemove}>✕ Rimuovi</button>
+        {warning && <button type="button" onClick={onIgnoreWarning}>Lo so, tengo un'altra Mega</button>}
       </div>
     </details>
   );
@@ -72,7 +79,10 @@ function SpeciesSearch({ onSelect }: { onSelect: (name: string) => void }) {
   );
 }
 
-export function TeamPanel({ team, format, data, onChange, onAdd, onReplace }: Props) {
+export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onAllowMultipleMegas }: Props) {
+  const firstMega = team.findIndex(isMega);
+  const warningFor = (set: TeamSet, i: number) =>
+    !format.allowMultipleMegas && firstMega !== -1 && i > firstMega && isMega(set) ? MEGA_WARNING : null;
   return (
     <section aria-label="Team">
       <h2>Team ({team.length}/6)</h2>
@@ -82,6 +92,8 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace }: Pr
             key={`${i}-${set.species}`}
             set={set}
             format={format}
+            warning={warningFor(set, i)}
+            onIgnoreWarning={onAllowMultipleMegas}
             onChange={next => onChange(team.map((s, j) => (j === i ? next : s)))}
             onRemove={() => onChange(team.filter((_, j) => j !== i))}
             onReplace={() => onReplace(i)}

@@ -40,7 +40,8 @@ export function App({ data }: { data: EngineData }) {
       )}
       <main className="columns">
         <div className="left">
-          <TeamPanel team={team} format={format} data={data} onChange={changeTeam} onAdd={addSet} onReplace={setReplaceIndex} />
+          <TeamPanel team={team} format={format} data={data} onChange={changeTeam} onAdd={addSet} onReplace={setReplaceIndex}
+            onAllowMultipleMegas={() => setFormat(f => ({ ...f, allowMultipleMegas: true }))} />
           <AnalysisPanel team={team} analysis={analysis} />
         </div>
         <div className="right">
