@@ -21,6 +21,7 @@ describe('dex', () => {
     expect(isLegal(getSpecies('Charizard-Mega-X')!)).toBe(true);
     expect(isLegal(getSpecies('Koraidon')!)).toBe(false); // AG
     expect(isLegal(getSpecies('Syclant')!)).toBe(false); // CAP
+    expect(isLegal(getSpecies('Gengar-Gmax')!)).toBe(false); // Gigantamax: non esiste in National Dex
   });
 
   it('filtro per generazione di origine della specie o forma', () => {
@@ -41,6 +42,7 @@ describe('dex', () => {
     const species = speciesNames();
     expect(species).toContain('Great Tusk');
     expect(species).not.toContain('Syclant');
+    expect(species).not.toContain('Charizard-Gmax');
     const moves = moveNames();
     expect(moves).toContain('Hidden Power');
     expect(moves).not.toContain('G-Max Wildfire');
