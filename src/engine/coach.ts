@@ -1,12 +1,13 @@
 import { analyzeTeam, type TeamAnalysis } from './analysis';
 import type { EngineData } from './data';
-import { battleName, isDefined, isMega, toID } from './dex';
+import { battleName, battleSpecies, getSpecies, isDefined, isMega, isSelectable, toID, withinGen } from './dex';
+import { formatLabel, isBannedIn, meetsTeamRules } from './formats';
 import type { Format } from './format';
 import { diffContribution, similarity, type Diff } from './replace';
 import { detectRoles, ESSENTIAL_ROLES, ROLE_LABELS } from './roles';
 import { scoreCandidates, type Suggestion } from './scoring';
 import { roleAndTypeRedundancies, weatherClashes } from './rating';
-import { benefits, CONDITION_LABELS, enables, neededConditions, providesAll, teamSynergies, unmetBeneficiaries, unusedEnablers, weatherMitigations } from './synergy';
+import { benefits, CONDITION_LABELS, enables, neededConditions, providesAll, teamSynergies, unmetBeneficiaries, unusedEnablers } from './synergy';
 import type { TeamSet } from './sets';
 import { defensiveMultiplier } from './types';
 
@@ -25,8 +26,13 @@ export type SwapLevel = 'recommended' | 'optional';
 export const classifySwap = (betterShare: number, gain: number): SwapLevel =>
   betterShare > RECOMMEND_SHARE || gain >= RECOMMEND_GAIN ? 'recommended' : 'optional';
 
+/** Categorie dei problemi, nell'ordine in cui si mostrano. */
+export const PROBLEM_CATEGORIES = ['Regole', 'Difese', 'Coverage', 'Ruoli', 'Meteo e campi', 'Ridondanze'] as const;
+export type ProblemCategory = typeof PROBLEM_CATEGORIES[number];
+
 export interface CoachProblem {
   severity: 'serious' | 'minor';
+  category: ProblemCategory;
   text: string;
   fixes: string[];
 }
@@ -36,6 +42,8 @@ export interface CoachSwap {
   member: string;
   fit: number;
   replacement: string;
+  /** Il set del sostituto, pronto da mettere nel team. */
+  set: TeamSet;
   score: number;
   similar: boolean;
   level: SwapLevel;
@@ -71,53 +79,63 @@ function findStrengths(team: TeamSet[], analysis: TeamAnalysis): string[] {
   if (roles.length) strengths.push(`Ruoli coperti: ${list(roles)}`);
   const synergies = teamSynergies(team);
   if (synergies.length) strengths.push(`Sinergie: ${synergies.join('; ')}`);
-  for (const m of weatherMitigations(team)) {
-    const label = CONDITION_LABELS[m.condition];
-    strengths.push(`${label.charAt(0).toUpperCase()}${label.slice(1)} di ${m.source.split(' (')[0]} smorza la debolezza a ${m.type} di ${m.members.map(x => x.species).join(', ')}`);
-  }
   const covered = analysis.coverage.filter(r => r.hitters.length > 0).length;
   if (covered >= STRONG_COVERAGE) strengths.push(`Colpisce super efficace ${covered}/18 tipi`);
   return strengths;
 }
 
+/** Gravità di una debolezza difensiva: grave se ne soffrono in tanti senza chi resista. */
+export function weaknessSeverity(row: TeamAnalysis['weakness'][number]): 'serious' | 'minor' | null {
+  if (row.weak >= 3 || (row.weak >= 2 && row.resist === 0)) return 'serious';
+  return row.pressure > 0 ? 'minor' : null;
+}
+
 function findProblems(team: TeamSet[], format: Format, analysis: TeamAnalysis, candidates: Suggestion[]): CoachProblem[] {
   const serious: CoachProblem[] = [];
   const minor: CoachProblem[] = [];
-  const add = (isSerious: boolean, text: string, fixes: string[]) =>
-    (isSerious ? serious : minor).push({ severity: isSerious ? 'serious' : 'minor', text, fixes });
+  const add = (category: ProblemCategory, isSerious: boolean, text: string, fixes: string[]) =>
+    (isSerious ? serious : minor).push({ severity: isSerious ? 'serious' : 'minor', category, text, fixes });
 
   for (const row of analysis.weakness) {
-    const isSerious = row.weak >= 3 || (row.weak >= 2 && row.resist === 0);
-    if (!isSerious && row.pressure === 0) continue;
-    const text = isSerious
-      ? `Debole a ${row.type}: ${row.weak} membri su ${team.length} subiscono danni super efficaci${row.resist === 0 ? ' e nessuno resiste' : ''}`
-      : `Debole a ${row.type}: ${row.weak} ${row.weak === 1 ? 'debole' : 'deboli'} contro ${row.resist} che resistono`;
+    const severity = weaknessSeverity(row);
+    if (!severity) continue;
+    const isSerious = severity === 'serious';
+    const text = `Debole a ${row.type}: ${row.weak} ${row.weak === 1 ? 'Debole' : 'Deboli'} – ${row.resist} ${row.resist === 1 ? 'Resiste' : 'Resistono'}`;
     const fixes = fixesFor(candidates, s => Number(defensiveMultiplier(row.type, s.set) < 1));
-    add(isSerious, text, fixes);
+    add('Difese', isSerious, text, fixes);
+  }
+
+  for (const set of team) {
+    const species = getSpecies(set.species);
+    if (!species) continue;
+    const forme = battleSpecies(set) ?? species;
+    if (!isSelectable(species) || isBannedIn(forme, format)) add('Regole', true, `${set.species} non è legale in ${formatLabel(format)}`, []);
+    else if (!meetsTeamRules(forme, format)) add('Regole', true, `${set.species} non è di tipo ${format.monotype}`, []);
+    else if (!withinGen(species, format)) add('Regole', true, `${set.species} è oltre la Gen ${format.genLimit}`, []);
   }
 
   const megas = team.filter(isMega);
   if (!format.allowMultipleMegas && megas.length > 1) {
-    add(true, `Più Mega nel team (${list(megas.map(m => m.species))}): in National Dex ne è ammessa una sola`, []);
+    add('Regole', true, `Più Mega nel team (${list(megas.map(m => m.species))}): in National Dex ne è ammessa una sola`, []);
   }
 
   const missing = analysis.needs.missingRoles.filter(r => ESSENTIAL_ROLES.includes(r));
   if (missing.length) {
-    add(false, `Ruoli mancanti: ${list(missing.map(r => ROLE_LABELS[r]))}`,
+    add('Ruoli', false, `Ruoli mancanti: ${list(missing.map(r => ROLE_LABELS[r]))}`,
       fixesFor(candidates, s => s.facts.roles.filled.filter(r => missing.includes(r)).length));
   }
 
-  for (const item of roleAndTypeRedundancies(team)) add(false, `Ridondanza: ${item.text}`, []);
-  for (const item of weatherClashes(team)) add(false, item.text, []);
+  for (const item of roleAndTypeRedundancies(team)) add('Ridondanze', false, item.text, []);
+  for (const item of weatherClashes(team)) add('Meteo e campi', false, item.text, []);
 
   for (const issue of unusedEnablers(team)) {
-    add(false, issue.selfBoost
+    add('Meteo e campi', false, issue.selfBoost
       ? `${issue.via} di ${issue.member} potenzia solo le sue mosse: nessun altro ne beneficia`
       : `${issue.via} di ${issue.member} non sfruttato: nessuno ne beneficia`,
       fixesFor(candidates, s => Number(benefits(s.set).some(b => b.condition === issue.condition && !['Weather Ball', 'Terrain Pulse'].includes(b.via)))));
   }
   for (const issue of unmetBeneficiaries(team)) {
-    add(false, `${issue.member} ha ${issue.via} ma il team non porta ${CONDITION_LABELS[issue.condition]}`,
+    add('Meteo e campi', false, `${issue.member} ha ${issue.via} ma il team non porta ${CONDITION_LABELS[issue.condition]}`,
       fixesFor(candidates, s => Number(enables(s.set).some(e => e.condition === issue.condition))));
   }
 
@@ -125,7 +143,7 @@ function findProblems(team: TeamSet[], format: Format, analysis: TeamAnalysis, c
     .filter(r => r.hitters.length === 0 && analysis.typeWeights[r.type] >= MIN_COVERAGE_WEIGHT)
     .map(r => r.type);
   if (gaps.length) {
-    add(false, `Nessuna mossa super efficace contro ${list(gaps)}`,
+    add('Coverage', false, `Nessuna mossa super efficace contro ${list(gaps)}`,
       fixesFor(candidates, s => s.facts.coverage.types.filter(t => gaps.includes(t)).length));
   }
 
@@ -169,6 +187,7 @@ function findSwaps(team: TeamSet[], format: Format, data: EngineData): CoachSwap
       member: option.member.species,
       fit: option.fit,
       replacement: pick.species,
+      set: pick.set,
       score: pick.score,
       similar: similarity(option.member, pick.set) >= SIMILAR_THRESHOLD,
       level: option.level,
@@ -178,44 +197,58 @@ function findSwaps(team: TeamSet[], format: Format, data: EngineData): CoachSwap
   return swaps;
 }
 
+/** Giudizio breve sul team; i conteggi dei problemi li mostra l'interfaccia. */
 function verdictFor(team: TeamSet[], problems: CoachProblem[]): string {
+  if (team.length < 6) return 'Team incompleto';
   const serious = problems.filter(p => p.severity === 'serious').length;
-  const minor = problems.length - serious;
-  const counts = `${serious} ${serious === 1 ? 'problema serio' : 'problemi seri'}, ${minor} ${minor === 1 ? 'minore' : 'minori'}`;
-  if (team.length < 6) {
-    const missing = 6 - team.length;
-    return `Team incompleto: ${missing === 1 ? 'manca 1 membro' : `mancano ${missing} membri`} · ${counts}`;
-  }
-  const label = serious === 0 ? 'Team solido' : serious === 1 ? 'Buona base' : 'Da rivedere';
-  return `${label} · ${counts}`;
+  return serious === 0 ? 'Team solido' : serious === 1 ? 'Buona base' : 'Da rivedere';
 }
 
-/** Raggruppa le voci del diff: ruoli, "copre X, Y", "resiste X, Y". */
-function describeChanges(diff: Diff): string {
-  const group = (items: string[], sign: '+' | '-') => {
-    const plain = items.map(item => item.replace(/^[+-] /, ''));
-    const covers = plain.filter(i => i.startsWith('copre ')).map(i => i.slice('copre '.length));
-    const resists = plain.filter(i => i.startsWith('resiste ')).map(i => i.slice('resiste '.length));
-    const roles = plain.filter(i => !i.startsWith('copre ') && !i.startsWith('resiste '));
-    const gain = sign === '+';
-    return [
-      roles.length ? `${gain ? 'porta' : 'perdi'} ${roles.join(', ')}` : '',
-      covers.length ? `${gain ? 'copre' : 'non copre più'} ${covers.join(', ')}` : '',
-      resists.length ? `${gain ? 'resiste' : 'non resiste più'} ${resists.join(', ')}` : '',
-    ].filter(Boolean);
-  };
-  return [...group(diff.gains, '+'), ...group(diff.losses, '-')].join('; ');
+/** Voci del diff raggruppate per tipo: ruoli, "Forte contro X, Y", "Resistente a X, Y". */
+function groupChanges(items: string[], gain: boolean): string[] {
+  const plain = items.map(item => item.replace(/^[+-] /, ''));
+  const covers = plain.filter(i => i.startsWith('copre ')).map(i => i.slice('copre '.length));
+  const resists = plain.filter(i => i.startsWith('resiste ')).map(i => i.slice('resiste '.length));
+  const roles = plain.filter(i => !i.startsWith('copre ') && !i.startsWith('resiste '));
+  return [
+    ...roles,
+    covers.length ? `${gain ? 'Forte' : 'Non più forte'} contro ${covers.join(', ')}` : '',
+    resists.length ? `${gain ? 'Resistente' : 'Non più resistente'} a ${resists.join(', ')}` : '',
+  ].filter(Boolean);
 }
 
-export function describeSwap(swap: CoachSwap): string {
-  const gain = `(+${swap.score - swap.fit})`;
-  const head = swap.similar
-    ? `${swap.replacement} fa un lavoro simile a ${swap.member} ma si adatta meglio ${gain}`
-    : swap.level === 'optional'
-      ? `${swap.member} va già bene · in alternativa ${swap.replacement} si adatta meglio ${gain}`
-      : `Valuta di sostituire ${swap.member} · ${swap.replacement} si adatta meglio ${gain}`;
-  const changes = describeChanges(swap.diff);
-  return changes ? `${head}: ${changes}` : head;
+export interface SwapSummary {
+  /** Quanto il sostituto si adatta meglio del membro attuale. */
+  gain: number;
+  /** Cosa porta il sostituto. */
+  pros: string[];
+  /** Cosa perde il team. */
+  cons: string[];
+}
+
+/** Un sostituto scelto a mano tra i "Altri sostituti": prende il posto di quello proposto dal coaching. */
+export interface SwapPreview {
+  index: number;
+  replacement: string;
+  set: TeamSet;
+  score: number;
+  similar: boolean;
+  diff: Diff;
+}
+
+export const previewSwap = (swap: CoachSwap, preview: SwapPreview | null): CoachSwap =>
+  preview && preview.index === swap.index
+    ? { ...swap, replacement: preview.replacement, set: preview.set, score: preview.score, similar: preview.similar, diff: preview.diff }
+    : swap;
+
+/** Cosa porta il sostituto e cosa perde il team, raggruppato per tipo. */
+export const describeDiff = (diff: Diff) => ({
+  pros: groupChanges(diff.gains, true),
+  cons: groupChanges(diff.losses, false),
+});
+
+export function describeSwap(swap: CoachSwap): SwapSummary {
+  return { gain: swap.score - swap.fit, ...describeDiff(swap.diff) };
 }
 
 export function coachTeam(team: TeamSet[], format: Format, data: EngineData): Coaching {

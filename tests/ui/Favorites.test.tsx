@@ -17,17 +17,17 @@ describe('preferiti', () => {
 
   it('un preferito non riceve suggerimenti di sostituzione', async () => {
     const user = await setup('Great Tusk', 'Gholdengo', 'Magikarp');
-    expect(within(analysis()).getByRole('button', { name: 'Vedi sostituti per Magikarp' })).toBeInTheDocument();
+    expect(within(analysis()).getByRole('button', { name: 'Altri sostituti per Magikarp' })).toBeInTheDocument();
     const star = screen.getByRole('button', { name: 'Preferito Magikarp' });
     await user.click(star);
     expect(star).toHaveAttribute('aria-pressed', 'true');
-    expect(within(analysis()).queryByRole('button', { name: 'Vedi sostituti per Magikarp' })).toBeNull();
+    expect(within(analysis()).queryByRole('button', { name: 'Altri sostituti per Magikarp' })).toBeNull();
   });
 
   it("la stella si vede nell'anteprima dello slot e resta nei team salvati", async () => {
     const user = await setup('Great Tusk', 'Magikarp');
     await user.click(screen.getByRole('button', { name: 'Preferito Magikarp' }));
-    expect(within(screen.getByRole('region', { name: 'Team' })).getByText('★')).toBeInTheDocument();
+    expect(within(screen.getByRole('region', { name: 'Team' })).getByRole('button', { name: 'Preferito Magikarp' })).toHaveAttribute('aria-pressed', 'true');
     await user.type(screen.getByLabelText('Nome team'), 'Prova');
     await user.click(screen.getByRole('button', { name: 'Salva team' }));
     await user.click(screen.getByRole('button', { name: 'Rimuovi Magikarp' }));

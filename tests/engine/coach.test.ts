@@ -11,7 +11,9 @@ describe('coachTeam', () => {
   const coaching = coachTeam([tusk, gholdengo], DEFAULT_FORMAT, fixtureData);
 
   it('verdetto con conteggi', () => {
-    expect(coaching.verdict).toBe('Team incompleto: mancano 4 membri · 0 problemi seri, 6 minori');
+    expect(coaching.verdict).toBe('Team incompleto');
+    expect(coaching.problems.filter(p => p.severity === 'serious')).toHaveLength(0);
+    expect(coaching.problems).toHaveLength(6);
   });
 
   it('punti di forza', () => {
@@ -32,10 +34,10 @@ describe('coachTeam', () => {
   it('problemi minori: debolezze, minacce, ruoli, coverage', () => {
     const minor = coaching.problems.filter(p => p.severity === 'minor').map(p => p.text);
     expect(minor).toEqual([
-      'Debole a Fire: 1 debole contro 0 che resistono',
-      'Debole a Water: 1 debole contro 0 che resistono',
-      'Debole a Ground: 1 debole contro 0 che resistono',
-      'Debole a Ghost: 1 debole contro 0 che resistono',
+      'Debole a Fire: 1 Debole – 0 Resistono',
+      'Debole a Water: 1 Debole – 0 Resistono',
+      'Debole a Ground: 1 Debole – 0 Resistono',
+      'Debole a Ghost: 1 Debole – 0 Resistono',
       'Ruoli mancanti: Hazard, Pivot, Priorità, Controllo velocità',
       'Nessuna mossa super efficace contro Water, Fighting',
     ]);
@@ -46,7 +48,7 @@ describe('coachTeam', () => {
   it('debolezza seria: 3 membri deboli a Ice', () => {
     const team = ['Great Tusk', 'Garchomp', 'Dragapult'].map(n => mostCommonSet(fixtureStats, n)!);
     const ice = coachTeam(team, DEFAULT_FORMAT, fixtureData).problems.find(p => p.text.startsWith('Debole a Ice'));
-    expect(ice).toMatchObject({ severity: 'serious', text: 'Debole a Ice: 3 membri su 3 subiscono danni super efficaci e nessuno resiste' });
+    expect(ice).toMatchObject({ severity: 'serious', text: 'Debole a Ice: 3 Deboli – 0 Resistono' });
   });
 
   it('sostituzioni: il membro peggiore per primo, guadagno ≥ 10, massimo 2', () => {
@@ -66,10 +68,17 @@ describe('coachTeam', () => {
   });
 
   it('testo della sostituzione', () => {
-    const swap = { index: 2, member: 'Magikarp', fit: 20, replacement: 'Corviknight', score: 60, similar: false, level: 'recommended' as const, diff: { gains: ['+ Pivot'], losses: [] } };
-    expect(describeSwap(swap)).toBe('Valuta di sostituire Magikarp · Corviknight si adatta meglio (+40): porta Pivot');
+    const swap = { index: 2, member: 'Magikarp', fit: 20, replacement: 'Corviknight', set: emptySet('Corviknight'), score: 60, similar: false, level: 'recommended' as const, diff: { gains: ['+ Pivot'], losses: [] } };
+    expect(describeSwap(swap)).toEqual({ gain: 40, pros: ['Pivot'], cons: [] });
     expect(describeSwap({ ...swap, similar: true, diff: { gains: [], losses: [] } }))
-      .toBe('Corviknight fa un lavoro simile a Magikarp ma si adatta meglio (+40)');
+      .toEqual({ gain: 40, pros: [], cons: [] });
+  });
+
+  it('un membro non legale nel formato è un problema serio (Regole)', () => {
+    const team = [tusk, gholdengo, { ...emptySet('Mewtwo'), item: 'Mewtwonite Y' }];
+    const problems = coachTeam(team, DEFAULT_FORMAT, fixtureData).problems;
+    expect(problems).toContainEqual({ severity: 'serious', category: 'Regole', text: 'Mewtwo non è legale in National Dex OU', fixes: [] });
+    expect(problems.filter(p => p.category === 'Regole')).toHaveLength(1);
   });
 
   it('seconda Mega: problema serio, assente se ammessa', () => {
@@ -79,7 +88,7 @@ describe('coachTeam', () => {
     ];
     const text = 'Più Mega nel team (Lopunny, Charizard-Mega-Y): in National Dex ne è ammessa una sola';
     const strict = coachTeam(megas, DEFAULT_FORMAT, megaData).problems;
-    expect(strict).toContainEqual({ severity: 'serious', text, fixes: [] });
+    expect(strict).toContainEqual({ severity: 'serious', category: 'Regole', text, fixes: [] });
     const relaxed = coachTeam(megas, { ...DEFAULT_FORMAT, allowMultipleMegas: true }, megaData).problems;
     expect(relaxed.map(p => p.text)).not.toContain(text);
   });

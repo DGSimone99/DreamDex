@@ -28,9 +28,9 @@ describe('livello delle sostituzioni', () => {
     expect(levels).toEqual([...levels].sort((a, b) => (a === b ? 0 : a === 'recommended' ? -1 : 1)));
   });
 
-  it('testo di una possibile raccomandazione', () => {
-    const swap: CoachSwap = { index: 0, member: 'Great Tusk', fit: 50, replacement: 'Corviknight', score: 62, similar: false,
+  it('vantaggi di una possibile raccomandazione', () => {
+    const swap: CoachSwap = { index: 0, member: 'Great Tusk', fit: 50, replacement: 'Corviknight', set: emptySet('Corviknight'), score: 62, similar: false,
       level: 'optional', diff: { gains: ['+ Pivot'], losses: [] } };
-    expect(describeSwap(swap)).toBe('Great Tusk va già bene · in alternativa Corviknight si adatta meglio (+12): porta Pivot');
+    expect(describeSwap(swap)).toEqual({ gain: 12, pros: ['Pivot'], cons: [] });
   });
 });

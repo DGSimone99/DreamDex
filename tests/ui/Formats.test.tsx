@@ -71,7 +71,7 @@ describe('dati per formato', () => {
 describe('pannello Avanzate', () => {
   const team = () => screen.getByRole('region', { name: 'Team' });
   const suggestions = () => screen.getByRole('region', { name: 'Suggerimenti' });
-  const cardNames = () => [...suggestions().querySelectorAll('details.suggestion summary strong')].map(el => el.textContent!.replace(/^\d+\. /, ''));
+  const cardNames = () => [...suggestions().querySelectorAll('details.suggestion summary .name-line > strong')].map(el => el.textContent!.replace(/^\d+\. /, ''));
   const add = async (user: ReturnType<typeof userEvent.setup>, name: string) =>
     user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
 
@@ -92,7 +92,7 @@ describe('pannello Avanzate', () => {
     await add(user, 'Great Tusk');
     await user.click(screen.getByRole('checkbox', { name: 'Monotype' }));
     await user.selectOptions(screen.getByLabelText('Tipo del team'), 'Steel');
-    expect(await within(team()).findByText('Non è di tipo Steel')).toBeInTheDocument();
+    expect(await within(team()).findByText((_, el) => el?.textContent === 'Non è di tipo Steel', { selector: '.alert-line' })).toBeInTheDocument();
     expect(cardNames().length).toBeGreaterThan(0);
     expect([...cardNames()].sort()).toEqual(['Corviknight', 'Gholdengo', 'Kingambit']);
   });

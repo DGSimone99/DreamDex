@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { analyzeTeam } from './engine/analysis';
-import { coachTeam } from './engine/coach';
+import { coachTeam, type SwapPreview } from './engine/coach';
 import { rateTeam } from './engine/rating';
 import type { EngineData } from './engine/data';
 import { DEFAULT_FORMAT, type Format } from './engine/format';
 import { dataLabel, dataSource } from './engine/formats';
 import type { TeamSet } from './engine/sets';
 import { AnalysisPanel } from './ui/AnalysisPanel';
-import { DataLists } from './ui/DataLists';
+import { GradeBadge } from './ui/RatingPanel';
 import { SavedTeams } from './ui/SavedTeams';
 import { ShowdownPanel } from './ui/ShowdownPanel';
 import { SuggestionsPanel } from './ui/SuggestionsPanel';
@@ -45,7 +45,16 @@ export function App({ data: initialData, loadSource, storage }: AppProps) {
   useEffect(() => {
     if (storage) saveSession({ team, format }, storage);
   }, [team, format, storage]);
-  const [replaceIndex, setReplaceIndex] = useState<number | null>(null);
+  const [replaceIndex, setReplaceIndexState] = useState<number | null>(null);
+  // Sostituto aperto in "Altri sostituti": vale solo per il membro che si sta sostituendo
+  const [preview, setPreview] = useState<SwapPreview | null>(null);
+  const setReplaceIndex = (index: number | null) => {
+    setReplaceIndexState(index);
+    setPreview(null);
+  };
+  const changePreview = (next: SwapPreview, open: boolean) =>
+    setPreview(current => (open ? next
+      : current?.index === next.index && current.replacement === next.replacement ? null : current));
   const analysis = useMemo(() => analyzeTeam(team, data), [team, data]);
   const rating = useMemo(() => rateTeam(team, data), [team, data]);
   const coaching = useMemo(() => coachTeam(team, format, data), [team, format, data]);
@@ -72,11 +81,15 @@ export function App({ data: initialData, loadSource, storage }: AppProps) {
           L'analisi di tipo e la ricerca per nome restano disponibili.
         </p>
       )}
+      <div className="band">
+        <TeamPanel team={team} format={format} data={data} onChange={changeTeam} onAdd={addSet} onReplace={setReplaceIndex}
+          onAllowMultipleMegas={() => setFormat(f => ({ ...f, allowMultipleMegas: true }))} />
+        <GradeBadge rating={rating} />
+      </div>
       <main className="columns">
         <div className="left">
-          <TeamPanel team={team} format={format} data={data} onChange={changeTeam} onAdd={addSet} onReplace={setReplaceIndex}
-            onAllowMultipleMegas={() => setFormat(f => ({ ...f, allowMultipleMegas: true }))} />
-          <AnalysisPanel team={team} analysis={analysis} data={data} rating={rating} coaching={coaching} onReplace={setReplaceIndex} />
+          <AnalysisPanel team={team} analysis={analysis} data={data} rating={rating} coaching={coaching}
+            preview={preview?.index === replaceIndex ? preview : null} onReplace={setReplaceIndex} onSwap={replaceAt} />
         </div>
         <div className="right">
           <SuggestionsPanel
@@ -87,10 +100,10 @@ export function App({ data: initialData, loadSource, storage }: AppProps) {
             onAdd={addSet}
             onReplaceWith={replaceAt}
             onCancelReplace={() => setReplaceIndex(null)}
+            onPreview={changePreview}
           />
         </div>
       </main>
-      <DataLists />
     </div>
   );
 }

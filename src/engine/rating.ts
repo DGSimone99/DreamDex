@@ -149,7 +149,7 @@ export function weatherBonus(team: TeamSet[]): Redundancies {
     .map(m => ({ m, neutral: m.members.filter(x => x.to <= 1) }))
     .filter(x => x.neutral.length > 0)
     .map(({ m, neutral }) => ({
-      text: `${capitalize(CONDITION_LABELS[m.condition])} di ${m.source.split(' (')[0]} smorza ${m.type}: ${neutral.map(x => x.species).join(', ')}`,
+      text: `${capitalize(CONDITION_LABELS[m.condition])} di ${m.source.split(' (')[0]} smorza la debolezza a ${m.type} di ${neutral.map(x => x.species).join(', ')}`,
       points: 2 * neutral.length,
     }));
   return { total: Math.min(MAX_BONUS, sum(items.map(i => i.points))), items };

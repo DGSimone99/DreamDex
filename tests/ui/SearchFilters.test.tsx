@@ -6,7 +6,7 @@ import { fixtureData } from '../fixtures/data';
 
 const suggestions = () => screen.getByRole('region', { name: 'Suggerimenti' });
 const team = () => screen.getByRole('region', { name: 'Team' });
-const cardNames = () => [...suggestions().querySelectorAll('details.suggestion summary strong')].map(el => el.textContent!.replace(/^\d+\. /, ''));
+const cardNames = () => [...suggestions().querySelectorAll('details.suggestion summary .name-line > strong')].map(el => el.textContent!.replace(/^\d+\. /, ''));
 
 async function setup(...names: string[]) {
   const user = userEvent.setup();
@@ -58,11 +58,27 @@ describe('ricerca e filtri nei suggerimenti', () => {
     expect(types.getByRole('button', { name: 'Fire' })).toBeEnabled();
   });
 
-  it('filtro a tendina: resiste a', async () => {
+  it('resiste a: più tipi, devono essere tutti resistiti', async () => {
     const user = await setup('Great Tusk');
     await user.selectOptions(screen.getByLabelText('Uso nel meta'), 'common');
-    await user.selectOptions(screen.getByLabelText('Resiste a'), 'Ground');
+    const resists = within(screen.getByRole('group', { name: 'Resiste a' }));
+    await user.click(resists.getByRole('button', { name: 'Ground' }));
     await waitFor(() => expect([...cardNames()].sort()).toEqual(['Corviknight', 'Rotom-Wash']));
+    await user.click(resists.getByRole('button', { name: 'Fire' }));
+    await waitFor(() => expect(cardNames()).toEqual(['Rotom-Wash']));
+    expect(within(suggestions()).getByText('Filtri (2 attivi)')).toBeInTheDocument();
+  });
+
+  it('leggendari, mitici e generazione massima', async () => {
+    const user = await setup('Great Tusk');
+    await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'garch');
+    await waitFor(() => expect(cardNames()).toContain('Garchomp'));
+    await user.selectOptions(screen.getByLabelText('Fino alla gen'), '3');
+    expect(await within(suggestions()).findByText('Nessun Pokémon corrisponde ai filtri')).toBeInTheDocument();
+    await user.selectOptions(screen.getByLabelText('Fino alla gen'), '4');
+    await waitFor(() => expect(cardNames()).toContain('Garchomp'));
+    expect(within(screen.getByRole('group', { name: 'Leggendari' })).getByRole('button', { name: 'Tutti' })).toHaveAttribute('aria-pressed', 'true');
+    expect(within(screen.getByRole('group', { name: 'Mitici' })).getByRole('button', { name: 'No' })).toBeInTheDocument();
   });
 
   it('tier: gli Uber compaiono nella ricerca con il tag di ban', async () => {
@@ -74,9 +90,14 @@ describe('ricerca e filtri nei suggerimenti', () => {
     expect(await within(suggestions()).findByText('Nessun Pokémon corrisponde ai filtri')).toBeInTheDocument();
   });
 
-  it('tag del tier anche sui suggerimenti normali', async () => {
-    await setup('Great Tusk');
-    expect(within(suggestions()).getAllByText('OU').length).toBeGreaterThan(0);
+  it('niente badge del tier: solo il triangolo rosso per chi è bannato', async () => {
+    const user = await setup('Great Tusk');
+    expect(suggestions().querySelector('.tag.tier')).toBeNull();
+    expect(suggestions().querySelector('.alert-mark')).toBeNull();
+    await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'dragapu');
+    await waitFor(() => expect(cardNames()).toEqual(['Dragapult']));
+    const mark = suggestions().querySelector('.alert-mark.danger')!;
+    expect(mark).toHaveTextContent('Uber · bannato in National Dex OU');
   });
 
   it('team completo: ricerca nascosta', async () => {
@@ -84,3 +105,49 @@ describe('ricerca e filtri nei suggerimenti', () => {
     expect(screen.queryByLabelText('Aggiungi Pokémon')).toBeNull();
   });
 });
+
+describe('ricerca: Invio aggiunge il primo risultato', () => {
+  it('nome parziale + Invio aggiunge la riga dorata; Esc svuota', async () => {
+    const user = await setup('Great Tusk');
+    const search = screen.getByLabelText('Aggiungi Pokémon');
+    await user.type(search, 'kinga');
+    await waitFor(() => expect(cardNames()).toEqual(['Kingambit']));
+    expect(within(suggestions()).getByText('Kingambit', { selector: '.search-hint strong' })).toBeInTheDocument();
+    await user.keyboard('{Enter}');
+    expect(within(team()).getByText('Kingambit')).toBeInTheDocument();
+    expect(search).toHaveValue('');
+
+    await user.type(search, 'zzz');
+    await user.keyboard('{Escape}');
+    expect(search).toHaveValue('');
+  });
+
+  it('nessun menu a tendina sul campo di ricerca', async () => {
+    await setup();
+    expect(screen.getByLabelText('Aggiungi Pokémon')).not.toHaveAttribute('list');
+  });
+
+  it('frecce su/giù cambiano il risultato scelto; Invio aggiunge quello', async () => {
+    const user = await setup('Great Tusk');
+    const search = screen.getByLabelText('Aggiungi Pokémon');
+    await user.type(search, 'a');
+    // La lista filtrata è pronta quando compare il suggerimento nel campo
+    await waitFor(() => expect(suggestions().querySelector('.search-hint')).not.toBeNull());
+    const names = cardNames();
+    expect(names.length).toBeGreaterThan(2);
+    const hint = () => suggestions().querySelector('.search-hint strong')!.textContent;
+    const picked = () => suggestions().querySelector('li.picked summary strong')!.textContent!.replace(/^\d+\. /, '');
+    expect(hint()).toBe(names[0]);
+    expect(picked()).toBe(names[0]);
+
+    await user.keyboard('{ArrowDown}{ArrowDown}');
+    expect(hint()).toBe(names[2]);
+    expect(picked()).toBe(names[2]);
+    await user.keyboard('{ArrowUp}');
+    expect(hint()).toBe(names[1]);
+
+    await user.keyboard('{Enter}');
+    expect(within(team()).getByText(names[1])).toBeInTheDocument();
+  });
+});
+

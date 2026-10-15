@@ -54,7 +54,7 @@ function topShares(
 ): Record<string, number> {
   return Object.fromEntries(
     Object.entries(record ?? {})
-      .filter(([key, value]) => !IGNORED_KEYS.has(key) && value > 0)
+      .filter(([key, value]) => !IGNORED_KEYS.has(key.toLowerCase()) && value > 0)
       .sort(byValueDesc)
       .slice(0, limit)
       .map(([key, value]) => [mapKey(key), value / total]),
@@ -64,6 +64,41 @@ function topShares(
 export function checkValueScore(value: CheckValue): number {
   const [, p, d] = Array.isArray(value) ? value : [value.n, value.p, value.d];
   return p - 4 * d;
+}
+
+/** Statistiche già ridotte di data.pkmn.cc (frazioni per nome). */
+export interface PkmnStatsFile {
+  battles: number;
+  pokemon: Record<string, {
+    usage: { weighted: number };
+    count: number;
+    abilities?: Record<string, number>;
+    items?: Record<string, number>;
+    moves?: Record<string, number>;
+    teraTypes?: Record<string, number>;
+    spreads?: Record<string, number>;
+    teammates?: Record<string, number>;
+  }>;
+}
+
+/** Converte le statistiche di data.pkmn.cc nello stesso formato di `reduceChaos`. */
+export function reducePkmnStats(file: PkmnStatsFile, minUsage = 0.001): Record<string, SpeciesStats> {
+  const result: Record<string, SpeciesStats> = {};
+  for (const [name, entry] of Object.entries(file.pokemon)) {
+    if (entry.usage.weighted < minUsage) continue;
+    result[name] = {
+      usage: entry.usage.weighted,
+      count: entry.count,
+      abilities: topShares(entry.abilities, 1, 3),
+      items: topShares(entry.items, 1, 5),
+      moves: topShares(entry.moves, 1, 10),
+      teraTypes: topShares(entry.teraTypes, 1, 3, capitalize),
+      spreads: topShares(entry.spreads, 1, 3),
+      teammates: topShares(entry.teammates, 1, 40),
+      checks: {},
+    };
+  }
+  return result;
 }
 
 export function reduceChaos(chaos: ChaosFile, minUsage = 0.001): Record<string, SpeciesStats> {
