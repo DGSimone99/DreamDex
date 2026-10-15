@@ -351,7 +351,7 @@ export function providesAll(set: TeamSet, needed: NeededCondition[]): boolean {
 }
 
 /** Setter del team il cui meteo (o campo) è diverso da quello che porterebbe il candidato. */
-export function clashesWith(candidate: TeamSet, team: TeamSet[]): string[] {
+export function clashesWith(candidate: TeamSet, team: TeamSet[], lang: Lang = 'it'): string[] {
   const groups = [WEATHERS, TERRAINS];
   const result: string[] = [];
   for (const own of enables(candidate)) {
@@ -360,7 +360,7 @@ export function clashesWith(candidate: TeamSet, team: TeamSet[]): string[] {
     for (const member of team) {
       for (const other of enables(member)) {
         if (group.includes(other.condition) && other.condition !== own.condition) {
-          result.push(`${member.species} (${other.via})`);
+          result.push(`${member.species} (${viaName(other.via, lang)})`);
         }
       }
     }

@@ -34,3 +34,15 @@ describe('testi del motore', () => {
     expect(texts).toContain('Meta usage: 12.3%');
   });
 });
+
+describe('conflitto di meteo in italiano', () => {
+  it('l\'abilità che porta il meteo in conflitto è tradotta', async () => {
+    const { clashesWith } = await import('../../src/engine/synergy');
+    const { emptySet } = await import('../../src/engine/sets');
+    initGameNames({ moves: {}, abilities: { drought: { name: 'Siccità' } }, items: {}, natures: {}, types: {} });
+    const ninetales = { ...emptySet('Ninetales'), ability: 'Drought' };
+    const pelipper = { ...emptySet('Pelipper'), ability: 'Drizzle' };
+    expect(clashesWith(pelipper, [ninetales], 'it')).toEqual(['Ninetales (Siccità)']);
+    expect(clashesWith(pelipper, [ninetales], 'en')).toEqual(['Ninetales (Drought)']);
+  });
+});

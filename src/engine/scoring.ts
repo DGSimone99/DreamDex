@@ -37,7 +37,7 @@ export const WEAKENED_STAB_PENALTY = 3;
 export const WEAKENED_COVERAGE_PENALTY = 1;
 
 function clashFacts(set: TeamSet, team: TeamSet[], lang: Lang): { texts: string[]; penalty: number } {
-  const conflicts = clashesWith(set, team);
+  const conflicts = clashesWith(set, team, lang);
   const weakened = weakenedMoves([...team, set]).filter(w => w.member === set.species && w.setter !== set.species);
   const cap = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
   return {
