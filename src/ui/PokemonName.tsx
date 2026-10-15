@@ -2,9 +2,12 @@ import { Icons } from '@pkmn/img';
 import { Fragment } from 'react';
 import { getSpecies } from '../engine/dex';
 import { typeColor } from './Sprite';
+import { typeName } from '../i18n/game';
+import { useLang } from '../i18n/react';
 
 /** Pallino nel colore del tipo del Pokémon: diviso a metà per i doppi tipi. */
 export function TypeDot({ name }: { name: string }) {
+  const lang = useLang();
   const types = getSpecies(name)?.types;
   if (!types) return null;
   const [first, second = first] = types.map(typeColor);
@@ -12,7 +15,7 @@ export function TypeDot({ name }: { name: string }) {
     <span
       className="type-dot"
       aria-hidden="true"
-      title={types.join(' / ')}
+      title={types.map(type => typeName(type, lang)).join(' / ')}
       style={{ background: `linear-gradient(90deg, ${first} 50%, ${second} 50%)` }}
     />
   );

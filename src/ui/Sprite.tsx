@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { battleSpecies, getSpecies, toID } from '../engine/dex';
 import type { TypeName } from '../engine/types';
+import { typeName } from '../i18n/game';
+import { useLang } from '../i18n/react';
 
 /** Colori classici dei tipi. */
 export const TYPE_COLORS: Record<TypeName, string> = {
@@ -19,8 +21,9 @@ export function inkFor(hex: string): string {
 export const typeColor = (type: string): string => TYPE_COLORS[type as TypeName] ?? '#8890b0';
 
 export function TypeChip({ type }: { type: string }) {
+  const lang = useLang();
   const color = typeColor(type);
-  return <span className="type-chip" style={{ background: color, color: inkFor(color) }}>{type}</span>;
+  return <span className="type-chip" style={{ background: color, color: inkFor(color) }}>{typeName(type, lang)}</span>;
 }
 
 /** Id degli sprite di Showdown: "landorus-therian", "charizard-megay". */

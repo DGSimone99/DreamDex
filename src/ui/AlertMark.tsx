@@ -1,6 +1,7 @@
 import { useId } from 'react';
 import { Typed } from './TypeText';
 import { Icon, type IconName } from './icons';
+import { useT } from '../i18n/react';
 
 export interface Alert {
   /** danger: non legale (rosso); warn: da controllare, es. seconda Mega (giallo); info: solo informativo (blu). */
@@ -14,6 +15,7 @@ export interface Alert {
  */
 export function AlertMark({ alerts, className = '', icon = 'warning' }: { alerts: Alert[]; className?: string; icon?: IconName }) {
   const id = useId();
+  const t = useT();
   if (alerts.length === 0) return null;
   const level = alerts.some(a => a.level === 'danger') ? 'danger' : alerts.some(a => a.level === 'warn') ? 'warn' : 'info';
   return (
@@ -25,7 +27,7 @@ export function AlertMark({ alerts, className = '', icon = 'warning' }: { alerts
       onClick={e => { e.preventDefault(); e.stopPropagation(); }}
     >
       <Icon name={icon} />
-      <span className="visually-hidden">{level === 'danger' ? 'Problema' : level === 'warn' ? 'Avviso' : 'Nota'}</span>
+      <span className="visually-hidden">{t(`alert.${level}`)}</span>
       <span id={id} role="tooltip" className="alert-pop">
         {alerts.map(alert => (
           // Nomi di mosse come "Dragon Darts" non vanno colorati come tipi: solo i problemi di legalità

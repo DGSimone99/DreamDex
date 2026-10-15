@@ -3,12 +3,14 @@ import type { Format } from '../engine/format';
 import { exportShowdown, importShowdown, type TeamSet } from '../engine/sets';
 import { Icon } from './icons';
 import { loadSavedTeams, saveTeams, type SavedTeam } from '../storage';
+import { useT } from '../i18n/react';
 
 export function SavedTeams({ team, format, onLoad }: {
   team: TeamSet[];
   format: Format;
   onLoad: (team: TeamSet[], format?: Format) => void;
 }) {
+  const t = useT();
   const [saved, setSaved] = useState<SavedTeam[]>(() => loadSavedTeams());
   const [name, setName] = useState('');
   const [failed, setFailed] = useState(false);
@@ -29,26 +31,26 @@ export function SavedTeams({ team, format, onLoad }: {
 
   return (
     <details className="popover">
-      <summary>Team salvati ({saved.length})</summary>
+      <summary>{t('saved.title', { n: saved.length })}</summary>
       <div>
         <div className="actions">
-          <input aria-label="Nome team" value={name} placeholder="Nome del team" onChange={e => setName(e.target.value)} />
-          <button type="button" onClick={save}>Salva team</button>
+          <input aria-label={t('saved.name')} value={name} placeholder={t('saved.namePlaceholder')} onChange={e => setName(e.target.value)} />
+          <button type="button" onClick={save}>{t('saved.save')}</button>
         </div>
         {failed && (
           <p role="status" className="errors">
-            Salvataggio non riuscito: il browser non permette di salvare dati per questa pagina.
+            {t('saved.failed')}
           </p>
         )}
         <ul>
-          {saved.map(t => (
-            <li key={t.name} className="actions">
-              <button type="button" onClick={() => onLoad(importShowdown(t.text).sets.map((set, i) => ({
+          {saved.map(entry => (
+            <li key={entry.name} className="actions">
+              <button type="button" onClick={() => onLoad(importShowdown(entry.text).sets.map((set, i) => ({
                 ...set,
-                ...(t.favorites?.includes(i) ? { favorite: true } : {}),
-                ...(t.custom?.includes(i) ? { customSkillset: true } : {}),
-              })), t.format)}>{t.name}</button>
-              <button type="button" aria-label={`Elimina ${t.name}`} onClick={() => update(saved.filter(s => s.name !== t.name))}><Icon name="close" /></button>
+                ...(entry.favorites?.includes(i) ? { favorite: true } : {}),
+                ...(entry.custom?.includes(i) ? { customSkillset: true } : {}),
+              })), entry.format)}>{entry.name}</button>
+              <button type="button" aria-label={t('saved.delete', { name: entry.name })} onClick={() => update(saved.filter(s => s.name !== entry.name))}><Icon name="close" /></button>
             </li>
           ))}
         </ul>

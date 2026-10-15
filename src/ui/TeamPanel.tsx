@@ -12,6 +12,9 @@ import { AlertMark, type Alert } from './AlertMark';
 import { Sprite, TypeChip, typeColor } from './Sprite';
 import { Icon } from './icons';
 import { illegalParts } from '../engine/learnsets';
+import { t, type Lang } from '../i18n';
+import { gameName, typeName } from '../i18n/game';
+import { useLang, useT } from '../i18n/react';
 
 interface Props {
   team: TeamSet[];
@@ -24,18 +27,16 @@ interface Props {
 }
 
 /** Tutti i problemi di legalità del membro (possono essere più d'uno). */
-function slotProblems(set: TeamSet, format: Format): string[] {
+function slotProblems(set: TeamSet, format: Format, lang: Lang): string[] {
   const species = getSpecies(set.species);
-  if (!species) return ['Pokémon sconosciuto'];
+  if (!species) return [t(lang, 'team.unknown')];
   const forme = battleSpecies(set) ?? species;
   return [
-    !isSelectable(species) || isBannedIn(forme, format) ? `Non legale in ${formatLabel(format)}` : null,
-    !meetsTeamRules(forme, format) ? `Non è di tipo ${format.monotype}` : null,
-    !withinGen(species, format) ? `Oltre la Gen ${format.genLimit}` : null,
+    !isSelectable(species) || isBannedIn(forme, format) ? t(lang, 'team.notLegal', { format: formatLabel(format, lang) }) : null,
+    !meetsTeamRules(forme, format) ? t(lang, 'team.notType', { type: typeName(format.monotype ?? '', lang) }) : null,
+    !withinGen(species, format) ? t(lang, 'team.beyondGen', { gen: format.genLimit }) : null,
   ].filter((p): p is string => !!p);
 }
-
-const MEGA_WARNING = 'Seconda Mega: in National Dex ne è ammessa una sola';
 
 function TeamSlot({ set, presets, format, warning: megaWarning, open, onToggle, onIgnoreWarning, onChange, onRemove, onReplace }: {
   presets: Preset[];
@@ -49,14 +50,16 @@ function TeamSlot({ set, presets, format, warning: megaWarning, open, onToggle, 
   onRemove: () => void;
   onReplace: () => void;
 }) {
+  const lang = useLang();
+  const tr = useT();
   const species = battleSpecies(set);
-  const problems = slotProblems(set, format);
-  const roles = detectRoles(set).slice(0, 2).map(role => roleLabel(role));
+  const problems = slotProblems(set, format, lang);
+  const roles = detectRoles(set).slice(0, 2).map(role => roleLabel(role, lang));
   const illegal = illegalParts(set, format.genLimit);
   const warnings = [
     megaWarning,
-    illegal.moves.length ? `Mosse non legali: ${illegal.moves.join(', ')}` : null,
-    illegal.ability ? `Abilità non legale: ${illegal.ability}` : null,
+    illegal.moves.length ? tr('team.illegalMoves', { list: illegal.moves.map(m => gameName('move', m, lang)).join(', ') }) : null,
+    illegal.ability ? tr('team.illegalAbility', { name: gameName('ability', illegal.ability, lang) }) : null,
   ].filter((w): w is string => !!w);
   // Problemi di legalità in rosso, avvisi in giallo: due triangoli distinti sullo sprite, il dettaglio nei tooltip
   const dangers: Alert[] = problems.map(text => ({ level: 'danger', text }));
@@ -81,15 +84,15 @@ function TeamSlot({ set, presets, format, warning: megaWarning, open, onToggle, 
         {set.customSkillset && (
           // Non è un problema: sta allineato al nome, fuori dal cerchietto degli avvisi
           <AlertMark icon="unlock" className="slot-custom"
-            alerts={[{ level: 'info', text: 'Custom Skillset: qualunque mossa e abilità, anche non imparabili' }]} />
+            alerts={[{ level: 'info', text: tr('team.customMark') }]} />
         )}
         <span className="slot-stats"><StatsBadge species={set.species} item={set.item} /></span>
         <button
           type="button"
           className="favorite"
-          aria-label={`Preferito ${set.species}`}
+          aria-label={tr('team.favorite', { species: set.species })}
           aria-pressed={!!set.favorite}
-          title={set.favorite ? 'Preferito: il coaching non ne suggerisce la sostituzione' : 'Segna come preferito'}
+          title={tr(set.favorite ? 'team.favoriteOn' : 'team.favoriteOff')}
           onClick={e => { e.preventDefault(); onChange({ ...set, favorite: !set.favorite }); }}
         >
           <Icon name="star" filled={!!set.favorite} />
@@ -97,8 +100,8 @@ function TeamSlot({ set, presets, format, warning: megaWarning, open, onToggle, 
         <button
           type="button"
           className="remove"
-          aria-label={`Rimuovi ${set.species}`}
-          title="Rimuovi dal team"
+          aria-label={tr('team.remove', { species: set.species })}
+          title={tr('team.removeTitle')}
           onClick={e => { e.preventDefault(); onRemove(); }}
         >
           <Icon name="close" />
@@ -107,17 +110,17 @@ function TeamSlot({ set, presets, format, warning: megaWarning, open, onToggle, 
         {/* Strumento (con icona) e abilità su due righe: le card restano allineate */}
         <small className="held" title={set.item || undefined}>
           <ItemIcon item={set.item} />
-          <span>{set.item || 'Nessuno strumento'}</span>
+          <span>{set.item ? gameName('item', set.item, lang) : tr('team.noItem')}</span>
         </small>
-        <small className="ability" title={set.ability || undefined}>{set.ability || '—'}</small>
+        <small className="ability" title={set.ability || undefined}>{set.ability ? gameName('ability', set.ability, lang) : '—'}</small>
         <span className="types">{species?.types.map(type => <TypeChip key={type} type={type} />) ?? <TypeChip type="?" />}</span>
         {roles.length > 0 && <small className="roles">{roles.join(' · ')}</small>}
       </summary>
       <div className="drawer">
       <SetEditor set={set} presets={presets} genLimit={format.genLimit} onChange={onChange} />
       <div className="actions">
-        <button type="button" aria-label={`Sostituisci ${set.species}`} onClick={onReplace}><Icon name="swap" /> Sostituisci</button>
-        {megaWarning && <button type="button" onClick={onIgnoreWarning}>Lo so, tengo un'altra Mega</button>}
+        <button type="button" aria-label={tr('team.replace', { species: set.species })} onClick={onReplace}><Icon name="swap" /> {tr('team.replaceButton')}</button>
+        {megaWarning && <button type="button" onClick={onIgnoreWarning}>{tr('team.keepMega')}</button>}
       </div>
       </div>
     </details>
@@ -125,14 +128,15 @@ function TeamSlot({ set, presets, format, warning: megaWarning, open, onToggle, 
 }
 
 export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onAllowMultipleMegas }: Props) {
+  const lang = useLang();
   // Un solo membro aperto alla volta: il suo editor scende sotto la fila del team
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const firstMega = team.findIndex(isMega);
   const warningFor = (set: TeamSet, i: number) =>
-    !format.allowMultipleMegas && firstMega !== -1 && i > firstMega && isMega(set) ? MEGA_WARNING : null;
+    !format.allowMultipleMegas && firstMega !== -1 && i > firstMega && isMega(set) ? t(lang, 'team.secondMega') : null;
   return (
-    <section aria-label="Team" className="team">
-      <h2>Team ({team.length}/6)</h2>
+    <section aria-label={t(lang, 'team.region')} className="team">
+      <h2>{t(lang, 'team.title', { n: team.length })}</h2>
       <div className="slots">
         {team.map((set, i) => (
           <TeamSlot
@@ -152,7 +156,7 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onAl
         {Array.from({ length: 6 - team.length }, (_, i) => (
           <div className="slot empty" key={`empty-${i}`}>
             <span className="sprite missing" aria-hidden="true" />
-            <span>Posto libero</span>
+            <span>{t(lang, 'team.empty')}</span>
           </div>
         ))}
       </div>

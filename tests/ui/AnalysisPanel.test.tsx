@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { analyzeTeam } from '../../src/engine/analysis';
 import { AnalysisPanel } from '../../src/ui/AnalysisPanel';
 import { fixtureData, gholdengo, tusk } from '../fixtures/data';
+import { renderIt } from '../helpers/italian';
 
 /** Riga di un elenco dell'analisi, cercata per nome (ruolo o Pokémon). */
 const row = (name: string) => screen.getAllByRole('listitem')
@@ -10,7 +11,7 @@ const row = (name: string) => screen.getAllByRole('listitem')
 
 describe('AnalysisPanel', () => {
   const team = [tusk, gholdengo];
-  const renderPanel = () => render(<AnalysisPanel team={team} analysis={analyzeTeam(team, fixtureData)} />);
+  const renderPanel = () => renderIt(<AnalysisPanel team={team} analysis={analyzeTeam(team, fixtureData)} />);
 
   it('anteprime di una riga', () => {
     renderPanel();

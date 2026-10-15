@@ -14,7 +14,7 @@ import { SuggestionsPanel } from './ui/SuggestionsPanel';
 import { TeamPanel } from './ui/TeamPanel';
 import { TopBar } from './ui/TopBar';
 import { loadLang, loadSession, saveLang, saveSession } from './storage';
-import type { Lang } from './i18n';
+import { t, type Lang } from './i18n';
 import { LangProvider } from './i18n/react';
 
 const NO_DATA: EngineData = { stats: null, sets: null };
@@ -65,8 +65,8 @@ export function App({ data: initialData, loadSource, storage, initialLang }: App
     setPreview(current => (open ? next
       : current?.index === next.index && current.replacement === next.replacement ? null : current));
   const analysis = useMemo(() => analyzeTeam(team, data), [team, data]);
-  const rating = useMemo(() => rateTeam(team, data), [team, data]);
-  const coaching = useMemo(() => coachTeam(team, format, data), [team, format, data]);
+  const rating = useMemo(() => rateTeam(team, data, lang), [team, data, lang]);
+  const coaching = useMemo(() => coachTeam(team, format, data, lang), [team, format, data, lang]);
 
   const changeTeam = (next: TeamSet[]) => {
     setTeam(next.slice(0, 6));
@@ -84,11 +84,10 @@ export function App({ data: initialData, loadSource, storage, initialLang }: App
         <ShowdownPanel team={team} onImport={changeTeam} />
         <SavedTeams team={team} format={format} onLoad={(loaded, savedFormat) => { changeTeam(loaded); if (savedFormat) setFormat(savedFormat); }} />
       </TopBar>
-      {loading && <p className="banner info">Caricamento statistiche…</p>}
+      {loading && <p className="banner info">{t(lang, 'app.loading')}</p>}
       {!loading && !data.stats && (
         <p className="banner" role="alert">
-          Statistiche {dataLabel(format)} non scaricate: esegui <code>npm run fetch-data</code> e ricarica la pagina.
-          L'analisi di tipo e la ricerca per nome restano disponibili.
+          {t(lang, 'app.noData', { format: dataLabel(format, lang) })} <code>npm run fetch-data</code> {t(lang, 'app.noDataAfter')}
         </p>
       )}
       <div className="band">
