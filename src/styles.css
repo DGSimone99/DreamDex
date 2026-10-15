@@ -88,3 +88,5 @@ small { color: var(--muted); display: block; }
 .grade-D strong { color: var(--bad-text); }
 .rating .penalty { color: var(--warn); margin-top: 4px; }
 .rating .penalty ul { margin: 2px 0 0; padding-left: 18px; }
+.tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
+.tag { font-size: 11px; padding: 1px 6px; border-radius: 10px; background: var(--good); color: var(--good-text); }

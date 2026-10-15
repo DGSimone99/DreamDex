@@ -4,19 +4,18 @@ import { battleName, battleSpecies, toID } from './dex';
 import { DESIRABLE_ROLES, detectRoles, ESSENTIAL_ROLES } from './roles';
 import { strengthComponent } from './scoring';
 import type { TeamSet } from './sets';
-import { teammatePct, usageOf } from './stats';
+import { usageOf } from './stats';
 import { TYPES } from './types';
 
-export type AreaKey = 'defense' | 'coverage' | 'threats' | 'roles' | 'strength' | 'synergy';
+export type AreaKey = 'defense' | 'coverage' | 'threats' | 'roles' | 'strength';
 
 /** Pesi delle aree nel voto complessivo. Somma = 1. */
 export const AREA_WEIGHTS: Record<AreaKey, number> = {
-  defense: 0.25,
-  coverage: 0.175,
-  threats: 0.175,
-  roles: 0.15,
+  defense: 0.275,
+  coverage: 0.2,
+  threats: 0.2,
+  roles: 0.175,
   strength: 0.15,
-  synergy: 0.1,
 };
 
 const AREA_LABELS: Record<AreaKey, string> = {
@@ -25,11 +24,8 @@ const AREA_LABELS: Record<AreaKey, string> = {
   threats: 'Minacce',
   roles: 'Ruoli',
   strength: 'Forza',
-  synergy: 'Sinergia',
 };
 
-/** Frequenza media di coppia (Smogon) oltre la quale la sinergia vale 100. */
-export const SYNERGY_FULL = 0.25;
 
 /**
  * Soglie tarate sui dati reali (2026-09, 1630+): team ben costruiti 86–87,
@@ -130,18 +126,6 @@ export function gradeFor(score: number): { grade: string; label: string } {
   return { grade, label };
 }
 
-function synergyOf(team: TeamSet[], data: EngineData): number | null {
-  if (!data.stats || team.length < 2) return null;
-  const names = team.map(battleName);
-  const pairs: number[] = [];
-  for (let i = 0; i < names.length; i++) {
-    for (let j = i + 1; j < names.length; j++) {
-      pairs.push((teammatePct(data.stats, names[i], names[j]) + teammatePct(data.stats, names[j], names[i])) / 2);
-    }
-  }
-  return Math.min(1, mean(pairs) / SYNERGY_FULL);
-}
-
 export function rateTeam(team: TeamSet[], data: EngineData): TeamRating | null {
   if (team.length === 0) return null;
   const analysis = analyzeTeam(team, data);
@@ -157,9 +141,8 @@ export function rateTeam(team: TeamSet[], data: EngineData): TeamRating | null {
   const roles = (ESSENTIAL_ROLES.filter(r => present.has(r)).length + 0.5 * DESIRABLE_ROLES.filter(r => present.has(r)).length)
     / (ESSENTIAL_ROLES.length + 0.5 * DESIRABLE_ROLES.length);
   const strength = data.stats ? mean(team.map(set => strengthComponent(usageOf(data.stats, battleName(set))))) : null;
-  const synergy = synergyOf(team, data);
 
-  const raw: Record<AreaKey, number | null> = { defense, coverage, threats, roles, strength, synergy };
+  const raw: Record<AreaKey, number | null> = { defense, coverage, threats, roles, strength };
   const areas = (Object.keys(AREA_WEIGHTS) as AreaKey[]).map(key => ({
     key,
     label: AREA_LABELS[key],

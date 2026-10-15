@@ -18,6 +18,16 @@ export interface Suggestion {
   components: Components;
   facts: Facts;
   reasons: Reason[];
+  /** Etichette brevi mostrate sulla carta (es. "Spesso usati insieme: X (23%)"). */
+  tags: string[];
+}
+
+/** Quota di team in comune oltre la quale un candidato è "spesso usato insieme" a un membro. */
+export const OFTEN_TOGETHER = 0.15;
+
+function tagsFor(facts: Facts): string[] {
+  const s = facts.synergy;
+  return s && s.pct >= OFTEN_TOGETHER ? [`Spesso usati insieme: ${s.member} (${Math.round(s.pct * 100)}%)`] : [];
 }
 
 const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
@@ -140,7 +150,7 @@ export function scoreCandidates(team: TeamSet[], format: Format, data: EngineDat
       if (p.empty) {
         const components: Components = { defense: 0, threats: 0, coverage: 0, roles: 0, synergy: 0, strength };
         const facts = NO_FACTS(p.usage);
-        return { species: p.species, set: p.set, score: Math.round(100 * strength), components, facts, reasons: explain(facts, components) };
+        return { species: p.species, set: p.set, score: Math.round(100 * strength), components, facts, reasons: explain(facts, components), tags: [] };
       }
       const components: Components = {
         defense: p.defense.value,
@@ -159,7 +169,7 @@ export function scoreCandidates(team: TeamSet[], format: Format, data: EngineDat
         strength: { usage: p.usage },
       };
       const score = Math.round(100 * sum(COMPONENT_KEYS.map(key => WEIGHTS[key] * components[key])));
-      return { species: p.species, set: p.set, score, components, facts, reasons: explain(facts, components) };
+      return { species: p.species, set: p.set, score, components, facts, reasons: explain(facts, components), tags: tagsFor(facts) };
     })
     .sort((a, b) => b.score - a.score || usageOf(data.stats, battleName(b.set)) - usageOf(data.stats, battleName(a.set)));
 }

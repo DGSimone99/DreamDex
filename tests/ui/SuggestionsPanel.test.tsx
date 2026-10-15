@@ -23,6 +23,11 @@ describe('SuggestionsPanel', () => {
     expect(within(suggestions()).getAllByLabelText(/^Punteggio \d+$/)).toHaveLength(4);
   });
 
+  it('mostra i tag sulle carte', async () => {
+    await setup('Great Tusk', 'Gholdengo');
+    expect(within(suggestions()).getByText('Spesso usati insieme: Great Tusk (25%)')).toBeInTheDocument();
+  });
+
   it('aggiunge un suggerimento al team', async () => {
     const user = await setup('Great Tusk');
     await user.click(within(suggestions()).getAllByRole('button', { name: 'Aggiungi al team' })[0]);
