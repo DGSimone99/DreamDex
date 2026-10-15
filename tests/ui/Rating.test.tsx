@@ -10,7 +10,8 @@ describe('Valutazione team', () => {
     render(<App data={fixtureData} />);
     for (const name of ['Great Tusk', 'Gholdengo']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
     const rating = screen.getByRole('group', { name: 'Valutazione team' });
-    expect(rating).toHaveTextContent(/[SABCD] · \d+\/100 · \w+ \(provvisoria\)/);
+    expect(rating).toHaveTextContent(/[SABCD] · \d+\/100 · \w+/);
+    expect(rating).not.toHaveTextContent('provvisoria');
     expect(rating).toHaveTextContent('Statistiche: Great Tusk');
     expect(rating).toHaveTextContent('Difesa 73');
     expect(rating).not.toHaveTextContent('Sinergia');

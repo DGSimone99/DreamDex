@@ -57,7 +57,7 @@ describe('SuggestionsPanel', () => {
     const user = await setup('Great Tusk', 'Gholdengo');
     await user.click(screen.getByRole('button', { name: 'Sostituisci Great Tusk' }));
     expect(within(suggestions()).getByRole('heading', { name: 'Sostituisci Great Tusk' })).toBeInTheDocument();
-    expect(within(suggestions()).getAllByText(/\+ Pivot/).length).toBeGreaterThan(0);
+    expect(within(suggestions()).getAllByText(/\+Pivot/).length).toBeGreaterThan(0);
 
     await user.click(within(suggestions()).getByRole('button', { name: 'Sostituto simile' }));
     expect(within(suggestions()).getByRole('button', { name: 'Sostituto simile' })).toHaveAttribute('aria-pressed', 'true');

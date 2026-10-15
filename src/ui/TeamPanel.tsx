@@ -71,6 +71,15 @@ function TeamSlot({ set, format, warning: megaWarning, open, onToggle, onIgnoreW
         >
           <Icon name="star" filled={!!set.favorite} />
         </button>
+        <button
+          type="button"
+          className="remove"
+          aria-label={`Rimuovi ${set.species}`}
+          title="Rimuovi dal team"
+          onClick={e => { e.preventDefault(); onRemove(); }}
+        >
+          <Icon name="close" />
+        </button>
         <strong className="name">{set.species}</strong>
         <small className="held">{[set.item, set.ability].filter(Boolean).join(' · ') || 'Nessuno strumento'}</small>
         <span className="types">{species?.types.map(type => <TypeChip key={type} type={type} />) ?? <TypeChip type="?" />}</span>
@@ -83,7 +92,6 @@ function TeamSlot({ set, format, warning: megaWarning, open, onToggle, onIgnoreW
       <SetEditor set={set} genLimit={format.genLimit} onChange={onChange} />
       <div className="actions">
         <button type="button" aria-label={`Sostituisci ${set.species}`} onClick={onReplace}><Icon name="swap" /> Sostituisci</button>
-        <button type="button" className="danger" aria-label={`Rimuovi ${set.species}`} onClick={onRemove}><Icon name="close" /> Rimuovi</button>
         {megaWarning && <button type="button" onClick={onIgnoreWarning}>Lo so, tengo un'altra Mega</button>}
       </div>
       </div>

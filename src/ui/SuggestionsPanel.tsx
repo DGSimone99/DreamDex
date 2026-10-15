@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { EngineData } from '../engine/data';
 import type { Format } from '../engine/format';
-import { improveReplacements, similarReplacements, type Replacement } from '../engine/replace';
+import { improveReplacements, similarity, similarReplacements, type Replacement } from '../engine/replace';
+import { describeDiff, SIMILAR_THRESHOLD, type SwapPreview } from '../engine/coach';
 import { suggest, type Suggestion } from '../engine/scoring';
 import { exportShowdown, type TeamSet } from '../engine/sets';
 import { getSpecies } from '../engine/dex';
@@ -13,6 +14,8 @@ import { FilterBar } from './FilterBar';
 import { CONDITION_LABELS, neededConditions, providesAll } from '../engine/synergy';
 import { copyText } from './clipboard';
 import { Sprite, TypeChip } from './Sprite';
+import { Icon } from './icons';
+import { ProsCons } from './ProsCons';
 
 /** Barre mostrate sulle carte: come il candidato si adatta al team, più le sue statistiche. */
 const FIT_BARS: { key: 'defense' | 'coverage' | 'roles'; label: string }[] = [
@@ -33,6 +36,8 @@ interface Props {
   onAdd: (set: TeamSet) => void;
   onReplaceWith: (index: number, set: TeamSet) => void;
   onCancelReplace: () => void;
+  /** Sostituto aperto (o chiuso) nella lista: il coaching mostra i suoi pro e contro. */
+  onPreview?: (preview: SwapPreview, open: boolean) => void;
 }
 
 function TierTag({ species, format }: { species: string; format: Format }) {
@@ -42,8 +47,13 @@ function TierTag({ species, format }: { species: string; format: Format }) {
     : <span className="tag tier">{label}</span>;
 }
 
-function SuggestionItem({ rank, item, actionLabel, onAction, emptyTeam, format }: {
+function SuggestionItem({ rank, item, actionLabel, quickLabel, replacing, member, onAction, onToggle, emptyTeam, format }: {
+  /** Il membro che questo candidato sostituirebbe. */
+  member?: string;
+  onToggle?: (open: boolean) => void;
   emptyTeam: boolean;
+  quickLabel: string;
+  replacing: boolean;
   format: Format;
   rank: number;
   item: Suggestion | Replacement;
@@ -51,12 +61,15 @@ function SuggestionItem({ rank, item, actionLabel, onAction, emptyTeam, format }
   onAction: () => void;
 }) {
   const diff = 'diff' in item ? item.diff : null;
-  const diffText = diff ? [...diff.gains, ...diff.losses].join(' · ') || 'Nessuna differenza rilevante' : null;
+  const changes = diff ? describeDiff(diff) : null;
+  const diffText = changes
+    ? [...changes.pros.map(p => `+${p}`), ...changes.cons.map(c => `−${c}`)].join(' · ') || 'Nessuna differenza rilevante'
+    : null;
   const setText = exportShowdown([item.set]);
   const types = getSpecies(item.species)?.types ?? [];
   return (
     <li>
-      <details className="suggestion">
+      <details className="suggestion" name="suggestion" onToggle={e => onToggle?.(e.currentTarget.open)}>
         <summary>
           <span className="rank" aria-hidden="true">{rank}</span>
           <Sprite species={item.species} item={item.set.item} size={64} />
@@ -84,10 +97,28 @@ function SuggestionItem({ rank, item, actionLabel, onAction, emptyTeam, format }
             </div>
           </dl>
           <span className="score" aria-label={`Punteggio ${item.score}`}>{item.score}</span>
+          <button
+            type="button"
+            className="quick"
+            aria-label={quickLabel}
+            title={actionLabel}
+            onClick={e => { e.preventDefault(); onAction(); }}
+          >
+            <Icon name={replacing ? 'swap' : 'plus'} />
+          </button>
         </summary>
         {'similarity' in item && item.similarity !== undefined && (
           <p>Somiglianza: {Math.round(item.similarity * 100)}%</p>
         )}
+        {changes && member && (
+          <p className="swap-head replaces">
+            <span>{member}</span>
+            <Icon name="arrow" />
+            <span className="visually-hidden">con</span>
+            <strong>{item.species}</strong>
+          </p>
+        )}
+        {changes && <ProsCons pros={changes.pros} cons={changes.cons} />}
         <ul className="reasons">{item.reasons.map(reason => <li key={reason.text}>{reason.text}</li>)}</ul>
         <pre className="set">{setText}</pre>
         <div className="actions">
@@ -111,7 +142,7 @@ function useDebounced<T>(value: T, delay: number): T {
 
 export const SEARCH_DELAY = 200;
 
-export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onReplaceWith, onCancelReplace }: Props) {
+export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onReplaceWith, onCancelReplace, onPreview }: Props) {
   const [mode, setMode] = useState<ReplaceMode>('improve');
   const [limit, setLimit] = useState(PAGE);
   const [filters, setFilters] = useState<CandidateFilters>(EMPTY_FILTERS);
@@ -199,7 +230,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
         )}
         <div className="board-head" aria-hidden="true">
           <span>#</span><span /><span>Pokémon</span>
-          <span>Difesa</span><span>Coverage</span><span>Ruoli</span><span>Statistiche</span><span>Punti</span>
+          <span>Difesa</span><span>Coverage</span><span>Ruoli</span><span>Statistiche</span><span>Punti</span><span />
         </div>
         <ol className="suggestions">
           {items.slice(0, limit).map((item, i) => (
@@ -208,7 +239,17 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
               rank={i + 1}
               item={item}
               actionLabel={replacing ? 'Sostituisci con questo' : 'Aggiungi al team'}
+              quickLabel={replacing ? `Sostituisci con ${item.species}` : `Aggiungi ${item.species} al team`}
+              replacing={replacing}
+              member={replacing ? team[replaceIndex].species : undefined}
               onAction={() => (replacing ? onReplaceWith(replaceIndex, item.set) : onAdd(item.set))}
+              onToggle={replacing && 'diff' in item && onPreview ? open => onPreview({
+                index: replaceIndex,
+                replacement: item.species,
+                score: item.score,
+                similar: similarity(team[replaceIndex], item.set) >= SIMILAR_THRESHOLD,
+                diff: item.diff,
+              }, open) : undefined}
               emptyTeam={emptyTeam}
               format={format}
             />

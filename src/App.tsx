@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { analyzeTeam } from './engine/analysis';
-import { coachTeam } from './engine/coach';
+import { coachTeam, type SwapPreview } from './engine/coach';
 import { rateTeam } from './engine/rating';
 import type { EngineData } from './engine/data';
 import { DEFAULT_FORMAT, type Format } from './engine/format';
@@ -46,7 +46,16 @@ export function App({ data: initialData, loadSource, storage }: AppProps) {
   useEffect(() => {
     if (storage) saveSession({ team, format }, storage);
   }, [team, format, storage]);
-  const [replaceIndex, setReplaceIndex] = useState<number | null>(null);
+  const [replaceIndex, setReplaceIndexState] = useState<number | null>(null);
+  // Sostituto aperto in "Vedi sostituti": vale solo per il membro che si sta sostituendo
+  const [preview, setPreview] = useState<SwapPreview | null>(null);
+  const setReplaceIndex = (index: number | null) => {
+    setReplaceIndexState(index);
+    setPreview(null);
+  };
+  const changePreview = (next: SwapPreview, open: boolean) =>
+    setPreview(current => (open ? next
+      : current?.index === next.index && current.replacement === next.replacement ? null : current));
   const analysis = useMemo(() => analyzeTeam(team, data), [team, data]);
   const rating = useMemo(() => rateTeam(team, data), [team, data]);
   const coaching = useMemo(() => coachTeam(team, format, data), [team, format, data]);
@@ -80,7 +89,8 @@ export function App({ data: initialData, loadSource, storage }: AppProps) {
       </div>
       <main className="columns">
         <div className="left">
-          <AnalysisPanel team={team} analysis={analysis} data={data} rating={rating} coaching={coaching} onReplace={setReplaceIndex} />
+          <AnalysisPanel team={team} analysis={analysis} data={data} rating={rating} coaching={coaching}
+            preview={preview?.index === replaceIndex ? preview : null} onReplace={setReplaceIndex} />
         </div>
         <div className="right">
           <SuggestionsPanel
@@ -91,6 +101,7 @@ export function App({ data: initialData, loadSource, storage }: AppProps) {
             onAdd={addSet}
             onReplaceWith={replaceAt}
             onCancelReplace={() => setReplaceIndex(null)}
+            onPreview={changePreview}
           />
         </div>
       </main>

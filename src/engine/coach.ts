@@ -190,32 +190,50 @@ function verdictFor(team: TeamSet[], problems: CoachProblem[]): string {
   return `${label} · ${counts}`;
 }
 
-/** Raggruppa le voci del diff: ruoli, "copre X, Y", "resiste X, Y". */
-function describeChanges(diff: Diff): string {
-  const group = (items: string[], sign: '+' | '-') => {
-    const plain = items.map(item => item.replace(/^[+-] /, ''));
-    const covers = plain.filter(i => i.startsWith('copre ')).map(i => i.slice('copre '.length));
-    const resists = plain.filter(i => i.startsWith('resiste ')).map(i => i.slice('resiste '.length));
-    const roles = plain.filter(i => !i.startsWith('copre ') && !i.startsWith('resiste '));
-    const gain = sign === '+';
-    return [
-      roles.length ? `${gain ? 'porta' : 'perdi'} ${roles.join(', ')}` : '',
-      covers.length ? `${gain ? 'copre' : 'non copre più'} ${covers.join(', ')}` : '',
-      resists.length ? `${gain ? 'resiste' : 'non resiste più'} ${resists.join(', ')}` : '',
-    ].filter(Boolean);
-  };
-  return [...group(diff.gains, '+'), ...group(diff.losses, '-')].join('; ');
+/** Voci del diff raggruppate per tipo: ruoli, "Forte contro X, Y", "Resistente a X, Y". */
+function groupChanges(items: string[], gain: boolean): string[] {
+  const plain = items.map(item => item.replace(/^[+-] /, ''));
+  const covers = plain.filter(i => i.startsWith('copre ')).map(i => i.slice('copre '.length));
+  const resists = plain.filter(i => i.startsWith('resiste ')).map(i => i.slice('resiste '.length));
+  const roles = plain.filter(i => !i.startsWith('copre ') && !i.startsWith('resiste '));
+  return [
+    ...roles,
+    covers.length ? `${gain ? 'Forte' : 'Non più forte'} contro ${covers.join(', ')}` : '',
+    resists.length ? `${gain ? 'Resistente' : 'Non più resistente'} a ${resists.join(', ')}` : '',
+  ].filter(Boolean);
 }
 
-export function describeSwap(swap: CoachSwap): string {
-  const gain = `(+${swap.score - swap.fit})`;
-  const head = swap.similar
-    ? `${swap.replacement} fa un lavoro simile a ${swap.member} ma si adatta meglio ${gain}`
-    : swap.level === 'optional'
-      ? `${swap.member} va già bene · in alternativa ${swap.replacement} si adatta meglio ${gain}`
-      : `Valuta di sostituire ${swap.member} · ${swap.replacement} si adatta meglio ${gain}`;
-  const changes = describeChanges(swap.diff);
-  return changes ? `${head}: ${changes}` : head;
+export interface SwapSummary {
+  /** Quanto il sostituto si adatta meglio del membro attuale. */
+  gain: number;
+  /** Cosa porta il sostituto. */
+  pros: string[];
+  /** Cosa perde il team. */
+  cons: string[];
+}
+
+/** Un sostituto scelto a mano tra i "Vedi sostituti": prende il posto di quello proposto dal coaching. */
+export interface SwapPreview {
+  index: number;
+  replacement: string;
+  score: number;
+  similar: boolean;
+  diff: Diff;
+}
+
+export const previewSwap = (swap: CoachSwap, preview: SwapPreview | null): CoachSwap =>
+  preview && preview.index === swap.index
+    ? { ...swap, replacement: preview.replacement, score: preview.score, similar: preview.similar, diff: preview.diff }
+    : swap;
+
+/** Cosa porta il sostituto e cosa perde il team, raggruppato per tipo. */
+export const describeDiff = (diff: Diff) => ({
+  pros: groupChanges(diff.gains, true),
+  cons: groupChanges(diff.losses, false),
+});
+
+export function describeSwap(swap: CoachSwap): SwapSummary {
+  return { gain: swap.score - swap.fit, ...describeDiff(swap.diff) };
 }
 
 export function coachTeam(team: TeamSet[], format: Format, data: EngineData): Coaching {

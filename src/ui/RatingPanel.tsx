@@ -5,8 +5,7 @@ export function RatingPanel({ rating }: { rating: TeamRating }) {
     <div role="group" aria-label="Valutazione team" className="block rating">
       <h3>Valutazione team</h3>
       <p className={`grade grade-${rating.grade}`}>
-        <strong>{rating.grade}</strong> <span>· {rating.overall}/100 · {rating.label}
-        {rating.provisional ? ' (provvisoria)' : ''}</span>
+        <strong>{rating.grade}</strong> <span>· {rating.overall}/100 · {rating.label}</span>
       </p>
       <dl className="bars">
         {rating.areas.map(area => (
@@ -54,7 +53,7 @@ export function GradeBadge({ rating }: { rating: TeamRating | null }) {
     <div className={`grade-badge${rating ? ` grade-${rating.grade}` : ' none'}`} aria-hidden="true">
       <span className="letter">{rating?.grade ?? '–'}</span>
       <span className="overall">{rating ? `${rating.overall} / 100` : 'Nessun voto'}</span>
-      <span className="label">{rating ? `${rating.label}${rating.provisional ? ' · provvisoria' : ''}` : 'Aggiungi un Pokémon'}</span>
+      <span className="label">{rating ? rating.label : 'Aggiungi un Pokémon'}</span>
     </div>
   );
 }

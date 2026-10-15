@@ -6,6 +6,7 @@ import { DESIRABLE_ROLES, detectRoles, ESSENTIAL_ROLES, ROLE_LABELS } from '../e
 import { weatherMitigations, type WeatherMitigation } from '../engine/synergy';
 import type { TeamSet } from '../engine/sets';
 import { CoachPanel } from './CoachPanel';
+import type { SwapPreview } from '../engine/coach';
 import { MetaUsePanel } from './MetaUsePanel';
 import { RatingPanel } from './RatingPanel';
 
@@ -29,7 +30,8 @@ function mitigationNote(m: WeatherMitigation): string {
   return `${MITIGATION_LABELS[m.condition]} (${source}): ${changes} · il meteo non è sempre attivo`;
 }
 
-export function AnalysisPanel({ team, analysis, rating, coaching, onReplace, data }: {
+export function AnalysisPanel({ team, analysis, rating, coaching, preview, onReplace, data }: {
+  preview?: SwapPreview | null;
   team: TeamSet[];
   analysis: TeamAnalysis;
   rating?: TeamRating | null;
@@ -51,7 +53,7 @@ export function AnalysisPanel({ team, analysis, rating, coaching, onReplace, dat
     <section aria-label="Analisi" className="analysis">
       <h2>Analisi</h2>
       {rating && <RatingPanel rating={rating} />}
-      {coaching && onReplace && <CoachPanel coaching={coaching} onReplace={onReplace} />}
+      {coaching && onReplace && <CoachPanel coaching={coaching} preview={preview} onReplace={onReplace} />}
 
       <details className="block">
         <summary><span>Debolezze difensive</span><span>{problems.length} problemi</span></summary>

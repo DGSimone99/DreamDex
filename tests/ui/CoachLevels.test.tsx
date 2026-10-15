@@ -35,6 +35,23 @@ describe('sostituzioni gialle e verdi', () => {
   });
 });
 
+describe('sostituto selezionato in "Vedi sostituti"', () => {
+  it('aggiorna la raccomandazione dello stesso membro con i suoi pro e contro', () => {
+    const preview = { index: 0, replacement: 'Skarmory', score: 35, similar: false,
+      diff: { gains: ['+ resiste Ground'], losses: ['- copre Fire'] } };
+    render(<CoachPanel coaching={coaching} preview={preview} onReplace={vi.fn()} />);
+    const recommended = screen.getByRole('group', { name: 'Valuta di sostituire' });
+    expect(within(recommended).getByText('Skarmory')).toBeInTheDocument();
+    expect(within(recommended).queryByText('Corviknight')).toBeNull();
+    expect(within(recommended).getByText('Selezionato')).toBeInTheDocument();
+    expect(within(recommended).getByLabelText('si adatta peggio di 5 punti')).toBeInTheDocument();
+    expect(within(recommended).getByRole('list', { name: 'Vantaggi' })).toHaveTextContent('Resistente a Ground');
+    expect(within(recommended).getByRole('list', { name: 'Svantaggi' })).toHaveTextContent('Non più forte contro Fire');
+    // L'altra raccomandazione resta quella del coaching
+    expect(within(screen.getByRole('group', { name: 'Possibili raccomandazioni' })).getByText('Gliscor')).toBeInTheDocument();
+  });
+});
+
 describe('interruttore "Più Mega ammesse"', () => {
   const WARNING = 'Seconda Mega: in National Dex ne è ammessa una sola';
 

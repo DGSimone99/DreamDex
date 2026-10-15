@@ -67,9 +67,9 @@ describe('coachTeam', () => {
 
   it('testo della sostituzione', () => {
     const swap = { index: 2, member: 'Magikarp', fit: 20, replacement: 'Corviknight', score: 60, similar: false, level: 'recommended' as const, diff: { gains: ['+ Pivot'], losses: [] } };
-    expect(describeSwap(swap)).toBe('Valuta di sostituire Magikarp · Corviknight si adatta meglio (+40): porta Pivot');
+    expect(describeSwap(swap)).toEqual({ gain: 40, pros: ['Pivot'], cons: [] });
     expect(describeSwap({ ...swap, similar: true, diff: { gains: [], losses: [] } }))
-      .toBe('Corviknight fa un lavoro simile a Magikarp ma si adatta meglio (+40)');
+      .toEqual({ gain: 40, pros: [], cons: [] });
   });
 
   it('seconda Mega: problema serio, assente se ammessa', () => {
