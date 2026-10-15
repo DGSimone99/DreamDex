@@ -1,8 +1,13 @@
 import { useState } from 'react';
+import type { Format } from '../engine/format';
 import { exportShowdown, importShowdown, type TeamSet } from '../engine/sets';
 import { loadSavedTeams, saveTeams, type SavedTeam } from '../storage';
 
-export function SavedTeams({ team, onLoad }: { team: TeamSet[]; onLoad: (team: TeamSet[]) => void }) {
+export function SavedTeams({ team, format, onLoad }: {
+  team: TeamSet[];
+  format: Format;
+  onLoad: (team: TeamSet[], format?: Format) => void;
+}) {
   const [saved, setSaved] = useState<SavedTeam[]>(() => loadSavedTeams());
   const [name, setName] = useState('');
   const [failed, setFailed] = useState(false);
@@ -16,7 +21,7 @@ export function SavedTeams({ team, onLoad }: { team: TeamSet[]; onLoad: (team: T
     const trimmed = name.trim();
     if (!trimmed || team.length === 0) return;
     const favorites = team.flatMap((set, i) => (set.favorite ? [i] : []));
-    update([...saved.filter(t => t.name !== trimmed), { name: trimmed, text: exportShowdown(team), favorites }]);
+    update([...saved.filter(t => t.name !== trimmed), { name: trimmed, text: exportShowdown(team), favorites, format }]);
     setName('');
   };
 
@@ -36,7 +41,7 @@ export function SavedTeams({ team, onLoad }: { team: TeamSet[]; onLoad: (team: T
         <ul>
           {saved.map(t => (
             <li key={t.name} className="actions">
-              <button type="button" onClick={() => onLoad(importShowdown(t.text).sets.map((set, i) => (t.favorites?.includes(i) ? { ...set, favorite: true } : set)))}>{t.name}</button>
+              <button type="button" onClick={() => onLoad(importShowdown(t.text).sets.map((set, i) => (t.favorites?.includes(i) ? { ...set, favorite: true } : set)), t.format)}>{t.name}</button>
               <button type="button" aria-label={`Elimina ${t.name}`} onClick={() => update(saved.filter(s => s.name !== t.name))}>✕</button>
             </li>
           ))}

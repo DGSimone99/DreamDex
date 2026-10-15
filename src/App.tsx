@@ -13,6 +13,7 @@ import { ShowdownPanel } from './ui/ShowdownPanel';
 import { SuggestionsPanel } from './ui/SuggestionsPanel';
 import { TeamPanel } from './ui/TeamPanel';
 import { TopBar } from './ui/TopBar';
+import { loadSession, saveSession } from './storage';
 
 const NO_DATA: EngineData = { stats: null, sets: null };
 
@@ -21,10 +22,13 @@ interface AppProps {
   data: EngineData;
   /** Carica i dati di un'altra fonte quando si cambia formato. */
   loadSource?: (source: string) => Promise<EngineData>;
+  /** Dove salvare la sessione (team e formato). Senza, si parte sempre da zero. */
+  storage?: Storage;
 }
 
-export function App({ data: initialData, loadSource }: AppProps) {
-  const [format, setFormat] = useState<Format>(DEFAULT_FORMAT);
+export function App({ data: initialData, loadSource, storage }: AppProps) {
+  const [session] = useState(() => (storage ? loadSession(storage) : null));
+  const [format, setFormat] = useState<Format>(session?.format ?? DEFAULT_FORMAT);
   // Dati per fonte: ogni formato carica la sua la prima volta, poi resta in memoria.
   // Un caricamento finito tardi si salva sotto la sua fonte, quindi non tocca il formato attuale.
   const [cache, setCache] = useState<Record<string, EngineData>>({ [dataSource(DEFAULT_FORMAT)]: initialData });
@@ -37,7 +41,10 @@ export function App({ data: initialData, loadSource }: AppProps) {
     loadSource(source).then(result => setCache(c => ({ ...c, [source]: result })));
   }, [source, cache, loadSource]);
   const data = cache[source] ?? NO_DATA;
-  const [team, setTeam] = useState<TeamSet[]>([]);
+  const [team, setTeam] = useState<TeamSet[]>(session?.team ?? []);
+  useEffect(() => {
+    if (storage) saveSession({ team, format }, storage);
+  }, [team, format, storage]);
   const [replaceIndex, setReplaceIndex] = useState<number | null>(null);
   const analysis = useMemo(() => analyzeTeam(team, data), [team, data]);
   const rating = useMemo(() => rateTeam(team, data), [team, data]);
@@ -56,7 +63,7 @@ export function App({ data: initialData, loadSource }: AppProps) {
     <div className="app">
       <TopBar format={format} onFormatChange={setFormat} meta={data.stats?.meta ?? null}>
         <ShowdownPanel team={team} onImport={changeTeam} />
-        <SavedTeams team={team} onLoad={changeTeam} />
+        <SavedTeams team={team} format={format} onLoad={(loaded, savedFormat) => { changeTeam(loaded); if (savedFormat) setFormat(savedFormat); }} />
       </TopBar>
       {loading && <p className="banner info">Caricamento statistiche…</p>}
       {!loading && !data.stats && (
