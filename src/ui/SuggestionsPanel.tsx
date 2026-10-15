@@ -11,7 +11,7 @@ import { EMPTY_FILTERS, isFiltering, searchCandidates, searchPool, tierLabel, ty
 import { memberPower } from '../engine/power';
 import { defaultSet } from '../engine/sets';
 import { FilterBar } from './FilterBar';
-import { CONDITION_LABELS, neededConditions, providesAll } from '../engine/synergy';
+import { conditionLabel, neededConditions, providesAll, viaName } from '../engine/synergy';
 import { copyText } from './clipboard';
 import { Sprite, TypeChip } from './Sprite';
 import { Icon } from './icons';
@@ -20,12 +20,14 @@ import { StatsBadge } from './StatsBadge';
 import { PokemonName } from './PokemonName';
 import { AlertMark } from './AlertMark';
 import { Typed } from './TypeText';
+import { t, type MessageKey } from '../i18n';
+import { useLang, useT } from '../i18n/react';
 
 /** Barre mostrate sulle carte: come il candidato si adatta al team, più le sue statistiche. */
-const FIT_BARS: { key: 'defense' | 'coverage' | 'roles'; label: string }[] = [
-  { key: 'defense', label: 'Difesa' },
-  { key: 'coverage', label: 'Coverage' },
-  { key: 'roles', label: 'Ruoli' },
+const FIT_BARS: { key: 'defense' | 'coverage' | 'roles'; label: MessageKey }[] = [
+  { key: 'defense', label: 'suggest.col.defense' },
+  { key: 'coverage', label: 'suggest.col.coverage' },
+  { key: 'roles', label: 'suggest.col.roles' },
 ];
 const PAGE = 10;
 const MAX = 20;
@@ -46,8 +48,9 @@ interface Props {
 
 /** Solo se il Pokémon è bannato nel formato: triangolo rosso con il tier nel tooltip. */
 function BanMark({ species, format }: { species: string; format: Format }) {
+  const lang = useLang();
   const { label, banned } = tierLabel(species, format);
-  return banned ? <AlertMark alerts={[{ level: 'danger', text: `${label} · bannato in ${formatLabel(format)}` }]} /> : null;
+  return banned ? <AlertMark alerts={[{ level: 'danger', text: t(lang, 'suggest.banned', { tier: label, format: formatLabel(format, lang) }) }]} /> : null;
 }
 
 function SuggestionItem({ rank, item, actionLabel, quickLabel, replacing, member, picked, onAction, onToggle, emptyTeam, format }: {
@@ -65,10 +68,12 @@ function SuggestionItem({ rank, item, actionLabel, quickLabel, replacing, member
   actionLabel: string;
   onAction: () => void;
 }) {
+  const tr = useT();
+  const lang = useLang();
   const diff = 'diff' in item ? item.diff : null;
-  const changes = diff ? describeDiff(diff) : null;
+  const changes = diff ? describeDiff(diff, lang) : null;
   const diffText = changes
-    ? [...changes.pros.map(p => `+${p}`), ...changes.cons.map(c => `−${c}`)].join(' · ') || 'Nessuna differenza rilevante'
+    ? [...changes.pros.map(p => `+${p}`), ...changes.cons.map(c => `−${c}`)].join(' · ') || tr('suggest.noDifference')
     : null;
   // La riga sotto il nome; le etichette uguali a questa riga non si ripetono
   const summaryText = diffText ?? item.reasons[0]?.text ?? '';
@@ -99,16 +104,16 @@ function SuggestionItem({ rank, item, actionLabel, quickLabel, replacing, member
               ? <div key={bar.key} className="bar-empty" aria-hidden="true" />
               : (
                 <div key={bar.key}>
-                  <dt>{bar.label}</dt>
+                  <dt>{tr(bar.label)}</dt>
                   <dd><meter min={0} max={1} value={item.components[bar.key]} /></dd>
                 </div>
               )))}
             <div>
-              <dt>Statistiche</dt>
+              <dt>{tr('suggest.col.stats')}</dt>
               <dd><meter min={0} max={100} value={memberPower(item.set)?.power ?? 0} /></dd>
             </div>
           </dl>
-          <span className="score" aria-label={`Punteggio ${item.score}`}>{item.score}</span>
+          <span className="score" aria-label={tr('suggest.score', { n: item.score })}>{item.score}</span>
           <button
             type="button"
             className="quick"
@@ -120,13 +125,13 @@ function SuggestionItem({ rank, item, actionLabel, quickLabel, replacing, member
           </button>
         </summary>
         {'similarity' in item && item.similarity !== undefined && (
-          <p>Somiglianza: {Math.round(item.similarity * 100)}%</p>
+          <p>{tr('suggest.similarity', { pct: Math.round(item.similarity * 100) })}</p>
         )}
         {changes && member && (
           <p className="swap-head replaces">
             <PokemonName name={member} muted />
             <Icon name="arrow" />
-            <span className="visually-hidden">con</span>
+            <span className="visually-hidden">{tr('coach.with')}</span>
             <PokemonName name={item.species} />
           </p>
         )}
@@ -135,7 +140,7 @@ function SuggestionItem({ rank, item, actionLabel, quickLabel, replacing, member
         <pre className="set">{setText}</pre>
         <div className="actions">
           <button type="button" className={rank === 1 ? 'primary' : undefined} onClick={onAction}>{actionLabel}</button>
-          <button type="button" onClick={() => copyText(setText)}>Copia set</button>
+          <button type="button" onClick={() => copyText(setText)}>{tr('suggest.copySet')}</button>
         </div>
       </details>
     </li>
@@ -155,6 +160,8 @@ function useDebounced<T>(value: T, delay: number): T {
 export const SEARCH_DELAY = 200;
 
 export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onReplaceWith, onCancelReplace, onPreview }: Props) {
+  const tr = useT();
+  const lang = useLang();
   const [mode, setMode] = useState<ReplaceMode>('improve');
   const [limit, setLimit] = useState(PAGE);
   const [filters, setFilters] = useState<CandidateFilters>(EMPTY_FILTERS);
@@ -171,12 +178,12 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
       const pool = filtering ? searchPool(team.filter((_, i) => i !== replaceIndex), format, data, applied) : undefined;
       if (!pool && !data.stats) return [];
       return mode === 'improve'
-        ? improveReplacements(team, replaceIndex, format, data, MAX, pool)
-        : similarReplacements(team, replaceIndex, format, data, MAX, pool);
+        ? improveReplacements(team, replaceIndex, format, data, MAX, pool, lang)
+        : similarReplacements(team, replaceIndex, format, data, MAX, pool, lang);
     }
-    if (filtering) return searchCandidates(team, format, data, applied, MAX);
-    return data.stats ? suggest(team, format, data, MAX) : [];
-  }, [team, format, data, replacing, replaceIndex, mode, applied, filtering]);
+    if (filtering) return searchCandidates(team, format, data, applied, MAX, lang);
+    return data.stats ? suggest(team, format, data, MAX, lang) : [];
+  }, [team, format, data, replacing, replaceIndex, mode, applied, filtering, lang]);
 
   const query = filters.query.trim();
   // I risultati valgono solo se la lista è già aggiornata su quello che hai scritto
@@ -208,18 +215,22 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
     listRef.current?.children[next]?.scrollIntoView?.({ block: 'nearest' });
   };
 
-  const title = replacing ? `Sostituisci ${team[replaceIndex].species}` : 'Suggerimenti';
+  const title = replacing ? tr('suggest.replaceTitle', { species: team[replaceIndex].species }) : tr('suggest.title');
 
   // Sostituendo un setter di cui altri membri hanno bisogno, si mostrano solo setter della stessa condizione
   let setterNote: string | null = null;
   if (replacing) {
     const needed = neededConditions(team, replaceIndex);
     if (needed.length) {
-      const labels = needed.map(n => CONDITION_LABELS[n.condition]).join(' e ');
+      const labels = needed.map(n => conditionLabel(n.condition, lang)).join(` ${tr('suggest.and')} `);
       const who = [...new Set(needed.flatMap(n => n.beneficiaries.map(b => b.species)))].join(', ');
       setterNote = items.length > 0 && items.every(item => providesAll(item.set, needed))
-        ? `Mostro solo chi porta ${labels}: ${who} ne ha bisogno`
-        : `Nessun altro Pokémon porta ${labels}: se sostituisci ${team[replaceIndex].species}, ${needed.flatMap(n => n.beneficiaries.map(b => `${b.species} perde ${b.via}`)).join(', ')}`;
+        ? tr('suggest.setterOnly', { conditions: labels, who })
+        : tr('suggest.setterNone', {
+          conditions: labels,
+          species: team[replaceIndex].species,
+          losses: needed.flatMap(n => n.beneficiaries.map(b => tr('suggest.loses', { species: b.species, via: viaName(b.via, lang) }))).join(', '),
+        });
     }
   }
 
@@ -230,9 +241,9 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
         <span className={`search-field${target ? ' has-hint' : ''}`}>
           <Icon name="search" />
           <input
-            aria-label="Aggiungi Pokémon"
+            aria-label={tr('suggest.search')}
             aria-describedby={target ? 'search-hint' : undefined}
-            placeholder="Cerca un Pokémon…"
+            placeholder={tr('suggest.searchPlaceholder')}
             value={filters.query}
             onChange={e => { setFilters({ ...filters, query: e.target.value }); setLimit(PAGE); }}
             onKeyDown={e => {
@@ -245,11 +256,11 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
           {target && (
             // Dentro il campo, a destra: comparendo non sposta il resto
             <span id="search-hint" className="search-hint">
-              <kbd>Invio</kbd> {replacing ? 'sostituisce con' : 'aggiunge'} <strong>{target}</strong>
+              <kbd>{tr('suggest.enter')}</kbd> {tr(replacing ? 'suggest.enterReplaces' : 'suggest.enterAdds')} <strong>{target}</strong>
             </span>
           )}
           {filters.query && (
-            <button type="button" className="clear" aria-label="Svuota la ricerca" onClick={() => setFilters({ ...filters, query: '' })}>
+            <button type="button" className="clear" aria-label={tr('suggest.clear')} onClick={() => setFilters({ ...filters, query: '' })}>
               <Icon name="close" />
             </button>
           )}
@@ -260,28 +271,31 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   );
 
   // Il numero di risultati sta nell'intestazione della classifica: comparendo non sposta la lista
-  const countText = `${items.length === 1 ? '1 risultato' : `${items.length} risultati`}${items.length === MAX ? ' (i migliori per il team)' : ''}`;
+  const countText = `${items.length === 1 ? tr('suggest.resultsOne') : tr('suggest.resultsMany', { n: items.length })}${items.length === MAX ? tr('suggest.best') : ''}`;
 
   let body;
   if (full) {
-    body = <p>Team completo: usa ⇄ Sostituisci su un membro per cercare alternative.</p>;
+    body = <p>{tr('suggest.full')}</p>;
   } else if (!data.stats && !filtering) {
-    body = <p>Servono i dati Smogon per i suggerimenti. Puoi comunque cercare un Pokémon per nome.</p>;
+    body = <p>{tr('suggest.needData')}</p>;
   } else if (filtering && items.length === 0) {
-    body = <p className="note">Nessun Pokémon corrisponde ai filtri</p>;
+    body = <p className="note">{tr('suggest.noMatch')}</p>;
   } else {
     body = (
       <>
-        {filtering && <p className="visually-hidden" aria-live="polite">Risultati: {countText}</p>}
+        {filtering && <p className="visually-hidden" aria-live="polite">{tr('suggest.resultsAria', { text: countText })}</p>}
         {setterNote && <p className="note">{setterNote}</p>}
         {emptyTeam && (
-          <p className="note">Aggiungi un Pokémon per vedere come si adatta al team — per ora ordinati per uso nel meta</p>
+          <p className="note">{tr('suggest.emptyTeam')}</p>
         )}
         <div className="board-head" aria-hidden="true">
           <span>#</span><span />
-          <span>Pokémon{filtering && <span className="count">{countText}</span>}</span>
-          {[['Difesa', 'Dif.'], ['Coverage', 'Cov.'], ['Ruoli', 'Ruoli'], ['Statistiche', 'Stat.'], ['Punti', 'Punti']].map(([long, short]) => (
-            <span key={long}><span className="long">{long}</span><span className="short">{short}</span></span>
+          <span>{tr('suggest.col.pokemon')}{filtering && <span className="count">{countText}</span>}</span>
+          {([
+            ['suggest.col.defense', 'suggest.col.defenseShort'], ['suggest.col.coverage', 'suggest.col.coverageShort'],
+            ['suggest.col.roles', 'suggest.col.roles'], ['suggest.col.stats', 'suggest.col.statsShort'], ['suggest.col.points', 'suggest.col.points'],
+          ] as [MessageKey, MessageKey][]).map(([long, short]) => (
+            <span key={long}><span className="long">{tr(long)}</span><span className="short">{tr(short)}</span></span>
           ))}
           <span />
         </div>
@@ -292,8 +306,8 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
               picked={i === pickedIndex}
               rank={i + 1}
               item={item}
-              actionLabel={replacing ? 'Sostituisci con questo' : 'Aggiungi al team'}
-              quickLabel={replacing ? `Sostituisci con ${item.species}` : `Aggiungi ${item.species} al team`}
+              actionLabel={tr(replacing ? 'suggest.replaceWith' : 'suggest.add')}
+              quickLabel={replacing ? tr('suggest.replaceQuick', { species: item.species }) : tr('suggest.addQuick', { species: item.species })}
               replacing={replacing}
               member={replacing ? team[replaceIndex].species : undefined}
               onAction={() => (replacing ? onReplaceWith(replaceIndex, item.set) : onAdd(item.set))}
@@ -312,7 +326,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
         </ol>
         {items.length > limit && (
           <button type="button" onClick={() => setLimit(MAX)}>
-            Mostra altri ({limit + 1}–{Math.min(MAX, items.length)})
+            {tr('suggest.more', { from: limit + 1, to: Math.min(MAX, items.length) })}
           </button>
         )}
       </>
@@ -320,13 +334,13 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   }
 
   return (
-    <section aria-label="Suggerimenti" className="suggestions-panel">
+    <section aria-label={tr('suggest.title')} className="suggestions-panel">
       <h2>{title}</h2>
       {replacing && (
-        <div className="actions" role="group" aria-label="Modalità sostituzione">
-          <button type="button" aria-pressed={mode === 'improve'} onClick={() => setMode('improve')}>Migliora team</button>
-          <button type="button" aria-pressed={mode === 'similar'} onClick={() => setMode('similar')}>Sostituto simile</button>
-          <button type="button" onClick={onCancelReplace}>Annulla</button>
+        <div className="actions" role="group" aria-label={tr('suggest.mode')}>
+          <button type="button" aria-pressed={mode === 'improve'} onClick={() => setMode('improve')}>{tr('suggest.improve')}</button>
+          <button type="button" aria-pressed={mode === 'similar'} onClick={() => setMode('similar')}>{tr('suggest.similar')}</button>
+          <button type="button" onClick={onCancelReplace}>{tr('suggest.cancel')}</button>
         </div>
       )}
       {search}

@@ -11,7 +11,7 @@ describe('import / export / salvataggio', () => {
 
   it('importa un team Showdown e mostra gli errori', async () => {
     const user = userEvent.setup();
-    render(<App data={fixtureData} />);
+    render(<App initialLang="it" data={fixtureData} />);
     await user.click(screen.getByLabelText('Testo Showdown'));
     await user.paste('Corviknight @ Leftovers\nAbility: Pressure\n- Defog\n\n- Tackle\n\nToxapex\nAbility: Regenerator\n- Toxic');
     await user.click(screen.getByRole('button', { name: 'Importa' }));
@@ -22,7 +22,7 @@ describe('import / export / salvataggio', () => {
 
   it('esporta il team nel campo di testo', async () => {
     const user = userEvent.setup();
-    render(<App data={fixtureData} />);
+    render(<App initialLang="it" data={fixtureData} />);
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Great Tusk{Enter}');
     await user.click(screen.getByRole('button', { name: 'Esporta team' }));
     expect((screen.getByLabelText('Testo Showdown') as HTMLTextAreaElement).value).toContain('Great Tusk @ Booster Energy');
@@ -30,7 +30,7 @@ describe('import / export / salvataggio', () => {
 
   it('salva e ricarica un team', async () => {
     const user = userEvent.setup();
-    render(<App data={fixtureData} />);
+    render(<App initialLang="it" data={fixtureData} />);
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Great Tusk{Enter}');
     await user.type(screen.getByLabelText('Nome team'), 'Prova');
     await user.click(screen.getByRole('button', { name: 'Salva team' }));
@@ -42,7 +42,7 @@ describe('import / export / salvataggio', () => {
 
   it('elimina un team salvato', async () => {
     const user = userEvent.setup();
-    render(<App data={fixtureData} />);
+    render(<App initialLang="it" data={fixtureData} />);
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Great Tusk{Enter}');
     await user.type(screen.getByLabelText('Nome team'), 'Prova');
     await user.click(screen.getByRole('button', { name: 'Salva team' }));

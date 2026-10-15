@@ -7,7 +7,7 @@ import { fixtureData } from '../fixtures/data';
 describe('Valutazione team', () => {
   it('voto, punteggio, etichetta e aree', async () => {
     const user = userEvent.setup();
-    render(<App data={fixtureData} />);
+    render(<App initialLang="it" data={fixtureData} />);
     for (const name of ['Great Tusk', 'Gholdengo']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
     const rating = screen.getByRole('group', { name: 'Valutazione team' });
     expect(rating).toHaveTextContent(/[SABCD]\s*\d+\/100 · \w+/);
@@ -21,7 +21,7 @@ describe('Valutazione team', () => {
 
   it('Difesa, Coverage e Ruoli portano alla loro scheda aprendola', async () => {
     const user = userEvent.setup();
-    render(<App data={fixtureData} />);
+    render(<App initialLang="it" data={fixtureData} />);
     for (const name of ['Great Tusk', 'Gholdengo']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
     const rating = screen.getByRole('group', { name: 'Valutazione team' });
     const coverage = screen.getByText('Coverage offensiva').closest('details')!;
@@ -34,7 +34,7 @@ describe('Valutazione team', () => {
 
   it('mostra le ridondanze con il dettaglio', async () => {
     const user = userEvent.setup();
-    render(<App data={fixtureData} />);
+    render(<App initialLang="it" data={fixtureData} />);
     await user.click(screen.getByLabelText('Testo Showdown'));
     await user.paste('Great Tusk\n- Stealth Rock\n\nGarchomp\n- Stealth Rock');
     await user.click(screen.getByRole('button', { name: 'Importa' }));
@@ -45,7 +45,7 @@ describe('Valutazione team', () => {
 
   it('mostra il bonus del meteo e la nota sotto la tabella delle debolezze', async () => {
     const user = userEvent.setup();
-    render(<App data={fixtureData} />);
+    render(<App initialLang="it" data={fixtureData} />);
     await user.click(screen.getByLabelText('Testo Showdown'));
     await user.paste('Ninetales\nAbility: Drought\n- Flamethrower\n\nGreat Tusk\n- Headlong Rush');
     await user.click(screen.getByRole('button', { name: 'Importa' }));
@@ -55,19 +55,19 @@ describe('Valutazione team', () => {
 
   it('nessuna riga ridondanze se non ce ne sono', async () => {
     const user = userEvent.setup();
-    render(<App data={fixtureData} />);
+    render(<App initialLang="it" data={fixtureData} />);
     for (const name of ['Great Tusk', 'Gholdengo']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
     expect(screen.getByRole('group', { name: 'Valutazione team' })).not.toHaveTextContent('Penalità');
   });
 
   it('nessuna valutazione con il team vuoto', () => {
-    render(<App data={fixtureData} />);
+    render(<App initialLang="it" data={fixtureData} />);
     expect(screen.queryByRole('group', { name: 'Valutazione team' })).toBeNull();
   });
 
   it('senza dati Smogon la forza resta calcolata, il Meta Use avvisa', async () => {
     const user = userEvent.setup();
-    render(<App data={{ stats: null, sets: null }} />);
+    render(<App initialLang="it" data={{ stats: null, sets: null }} />);
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Great Tusk{Enter}');
     expect(screen.getByRole('group', { name: 'Valutazione team' })).not.toHaveTextContent('Statistiche n/d');
     expect(screen.getByRole('group', { name: 'Meta Use' })).toHaveTextContent('Statistiche Smogon assenti');
@@ -75,7 +75,7 @@ describe('Valutazione team', () => {
 
   it('Meta Use sta in fondo, subito prima di Minacce del meta', async () => {
     const user = userEvent.setup();
-    render(<App data={fixtureData} />);
+    render(<App initialLang="it" data={fixtureData} />);
     for (const name of ['Great Tusk', 'Gholdengo']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
     const meta = screen.getByRole('group', { name: 'Meta Use' });
     const roles = screen.getByText('Ruoli', { selector: 'summary span' });
@@ -86,11 +86,11 @@ describe('Valutazione team', () => {
 
   it('Meta Use: uso nel meta di ogni membro, fuori dalla valutazione', async () => {
     const user = userEvent.setup();
-    render(<App data={fixtureData} />);
+    render(<App initialLang="it" data={fixtureData} />);
     for (const name of ['Great Tusk', 'Gholdengo', 'Magikarp']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
     const meta = screen.getByRole('group', { name: 'Meta Use' });
-    expect(meta).toHaveTextContent('Great Tusk 30.0%');
-    expect(meta).toHaveTextContent('Gholdengo 25.0%');
+    expect(meta).toHaveTextContent('Great Tusk 30,0%');
+    expect(meta).toHaveTextContent('Gholdengo 25,0%');
     expect(meta).toHaveTextContent('Magikarp non presente nelle statistiche');
   });
 });

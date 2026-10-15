@@ -2,15 +2,23 @@ import { analyzeTeam, type TeamAnalysis } from './analysis';
 import type { EngineData } from './data';
 import { battleSpecies } from './dex';
 import type { Format } from './format';
-import { detectRoles, ROLE_LABELS } from './roles';
+import { detectRoles, type Role } from './roles';
+import type { Lang } from '../i18n';
 import { scoreCandidates, scoreSets, type Suggestion } from './scoring';
 import type { TeamSet } from './sets';
 import { neededConditions, providesAll } from './synergy';
-import { defensiveMultiplier, superEffectiveMove } from './types';
+import { defensiveMultiplier, superEffectiveMove, type TypeName } from './types';
+
+/** Cosa un membro porta al team: ruoli mancanti, tipi scoperti che colpisce, debolezze che resiste. */
+export interface Contribution {
+  roles: Role[];
+  covers: TypeName[];
+  resists: TypeName[];
+}
 
 export interface Diff {
-  gains: string[];
-  losses: string[];
+  gains: Contribution;
+  losses: Contribution;
 }
 
 export interface Replacement extends Suggestion {
@@ -47,7 +55,7 @@ export function similarity(a: TeamSet, b: TeamSet): number {
   );
 }
 
-function contribution(set: TeamSet, analysis: TeamAnalysis) {
+function contribution(set: TeamSet, analysis: TeamAnalysis): Contribution {
   return {
     roles: detectRoles(set).filter(role => analysis.needs.missingRoles.includes(role)),
     covers: analysis.coverage
@@ -63,19 +71,19 @@ export function diffContribution(original: TeamSet, candidate: TeamSet, analysis
   const before = contribution(original, analysis);
   const after = contribution(candidate, analysis);
   const minus = <T,>(x: T[], y: T[]) => x.filter(value => !y.includes(value));
-  const describe = (sign: '+' | '-', from: typeof before, to: typeof before) => [
-    ...minus(from.roles, to.roles).map(role => `${sign} ${ROLE_LABELS[role]}`),
-    ...minus(from.covers, to.covers).map(type => `${sign} copre ${type}`),
-    ...minus(from.resists, to.resists).map(type => `${sign} resiste ${type}`),
-  ];
-  return { gains: describe('+', after, before), losses: describe('-', before, after) };
+  const minusAll = (from: Contribution, to: Contribution): Contribution => ({
+    roles: minus(from.roles, to.roles),
+    covers: minus(from.covers, to.covers),
+    resists: minus(from.resists, to.resists),
+  });
+  return { gains: minusAll(after, before), losses: minusAll(before, after) };
 }
 
 /** `pool`: se indicato, si valutano solo questi set (ricerca e filtri) invece dei candidati delle statistiche. */
-function candidatesFor(team: TeamSet[], index: number, format: Format, data: EngineData, pool?: TeamSet[]) {
+function candidatesFor(team: TeamSet[], index: number, format: Format, data: EngineData, pool: TeamSet[] | undefined, lang: Lang) {
   const original = team[index];
   const rest = team.filter((_, i) => i !== index);
-  const scored = (pool ? scoreSets(rest, format, data, pool) : scoreCandidates(rest, format, data))
+  const scored = (pool ? scoreSets(rest, format, data, pool, lang) : scoreCandidates(rest, format, data, [], lang))
     .filter(s => s.species !== original.species);
   // Se l'originale porta un meteo/campo di cui altri membri hanno bisogno, il sostituto deve portarlo anch'esso
   const needed = neededConditions(team, index);
@@ -83,13 +91,13 @@ function candidatesFor(team: TeamSet[], index: number, format: Format, data: Eng
   return { original, analysis: analyzeTeam(rest, data), scored: keepers.length ? keepers : scored };
 }
 
-export function improveReplacements(team: TeamSet[], index: number, format: Format, data: EngineData, limit = 20, pool?: TeamSet[]): Replacement[] {
-  const { original, analysis, scored } = candidatesFor(team, index, format, data, pool);
+export function improveReplacements(team: TeamSet[], index: number, format: Format, data: EngineData, limit = 20, pool?: TeamSet[], lang: Lang = 'it'): Replacement[] {
+  const { original, analysis, scored } = candidatesFor(team, index, format, data, pool, lang);
   return scored.slice(0, limit).map(s => ({ ...s, diff: diffContribution(original, s.set, analysis) }));
 }
 
-export function similarReplacements(team: TeamSet[], index: number, format: Format, data: EngineData, limit = 20, pool?: TeamSet[]): Replacement[] {
-  const { original, analysis, scored } = candidatesFor(team, index, format, data, pool);
+export function similarReplacements(team: TeamSet[], index: number, format: Format, data: EngineData, limit = 20, pool?: TeamSet[], lang: Lang = 'it'): Replacement[] {
+  const { original, analysis, scored } = candidatesFor(team, index, format, data, pool, lang);
   const rank = (r: Replacement) => 0.8 * (r.similarity ?? 0) + 0.2 * (r.score / 100);
   return scored
     .map(s => ({ ...s, similarity: similarity(original, s.set), diff: diffContribution(original, s.set, analysis) }))

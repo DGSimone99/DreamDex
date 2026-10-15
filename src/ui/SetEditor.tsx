@@ -1,64 +1,57 @@
 import { useMemo } from 'react';
-import { dex, getMove, getSpecies, itemNames, moveNames, natureNames } from '../engine/dex';
+import { battleSpecies, dex, getMove, getSpecies, itemNames, moveNames, natureNames } from '../engine/dex';
 import { legalAbilities, legalMoves } from '../engine/learnsets';
-import { formatName, sameSet, STAT_IDS, type Preset, type TeamSet } from '../engine/sets';
+import { formatName, sameSet, STAT_IDS, type Preset, type StatID, type TeamSet } from '../engine/sets';
 import { TYPES } from '../engine/types';
+import type { Lang } from '../i18n';
+import { gameDesc, gameName, natureName, statShort, typeName } from '../i18n/game';
+import { useLang, useT } from '../i18n/react';
 import { Combobox, type ComboOption } from './Combobox';
 import { TypeChip } from './Sprite';
 import { ItemIcon } from './ItemIcon';
 import { Icon } from './icons';
 import { typeTextColor } from './TypeText';
 
-const STAT_SHORT: Record<string, string> = { atk: 'Atk', def: 'Def', spa: 'SpA', spd: 'SpD', spe: 'Spe' };
 function NatureEffect({ name }: { name: string }) {
+  const lang = useLang();
+  const t = useT();
   const { plus, minus } = dex.natures.get(name);
-  if (!plus || !minus) return <span className="nature-fx neutral">neutra</span>;
+  if (!plus || !minus) return <span className="nature-fx neutral">{t('editor.neutral')}</span>;
   return (
     <span className="nature-fx">
-      <span className="up">+{STAT_SHORT[plus]}</span>, <span className="down">−{STAT_SHORT[minus]}</span>
+      <span className="up">+{statShort(plus as StatID, lang)}</span>, <span className="down">−{statShort(minus as StatID, lang)}</span>
     </span>
   );
 }
-/** "Modest (+SpA, −Atk)", "Hardy (neutra)" */
-const NATURE_OPTIONS: ComboOption[] = natureNames().map(name => {
-  const { plus, minus } = dex.natures.get(name);
-  return {
-    value: name,
-    detail: <NatureEffect name={name} />,
-    ariaLabel: plus && minus ? `${name} (+${STAT_SHORT[plus]}, −${STAT_SHORT[minus]})` : `${name} (neutra)`,
-  };
-});
-const TERA_OPTIONS: ComboOption[] = [
-  { value: '', label: 'Nessuno', ariaLabel: 'Nessuno' },
-  ...TYPES.map(type => ({ value: type, content: <TypeChip type={type} />, ariaLabel: type })),
-];
-const CATEGORY_LABELS: Record<string, string> = { Physical: 'Fisica', Special: 'Speciale', Status: 'Stato' };
+
 const CATEGORY_ICONS = { Physical: 'physical', Special: 'special', Status: 'status' } as const;
 
-/** Descrizioni dei dati di Showdown (in inglese), mostrate al passaggio del mouse. */
+/** Descrizioni: quelle dei giochi in italiano, altrimenti quelle di Showdown (in inglese). */
 const describe = {
-  item: (name: string) => (name ? dex.items.get(name) : null)?.shortDesc || undefined,
-  ability: (name: string) => (name ? dex.abilities.get(name) : null)?.shortDesc || undefined,
-  move: (name: string) => {
+  item: (name: string, lang: Lang) => (name ? gameDesc('item', name, lang, dex.items.get(name).shortDesc || undefined) : undefined),
+  ability: (name: string, lang: Lang) => (name ? gameDesc('ability', name, lang, dex.abilities.get(name).shortDesc || undefined) : undefined),
+  move: (name: string, lang: Lang) => {
     const move = getMove(name);
-    return move ? move.shortDesc || move.desc || undefined : undefined;
+    return move ? gameDesc('move', move.name, lang, move.shortDesc || move.desc || undefined) : undefined;
   },
 };
 
 function MoveDetail({ name }: { name: string }) {
+  const t = useT();
   const move = getMove(name);
   if (!move) return null;
   const accuracy = move.accuracy === true ? null : move.accuracy;
+  const category = t(`editor.category.${move.category}`);
   return (
     <span className="move-meta">
-      <span className={`move-stat cat-${move.category.toLowerCase()}`} title={CATEGORY_LABELS[move.category]}>
+      <span className={`move-stat cat-${move.category.toLowerCase()}`} title={category}>
         <Icon name={CATEGORY_ICONS[move.category]} filled={move.category === 'Physical'} />
-        <span className="visually-hidden">{CATEGORY_LABELS[move.category]}, potenza </span>
+        <span className="visually-hidden">{category}, {t('editor.power')} </span>
         {move.basePower || '—'}
       </span>
-      <span className="move-stat accuracy" title="Precisione">
+      <span className="move-stat accuracy" title={t('editor.accuracy')}>
         <Icon name="target" />
-        <span className="visually-hidden">precisione </span>
+        <span className="visually-hidden">{t('editor.accuracyShort')} </span>
         {accuracy === null ? '—' : `${accuracy}%`}
       </span>
       <TypeChip type={move.type} />
@@ -66,21 +59,29 @@ function MoveDetail({ name }: { name: string }) {
   );
 }
 
-// Voci dei menu, calcolate una volta sola
+// Voci dei menu, calcolate una volta per lingua
 const moveOptionCache = new Map<string, ComboOption>();
-function moveOption(name: string): ComboOption {
-  let option = moveOptionCache.get(name);
+function moveOption(name: string, lang: Lang): ComboOption {
+  const key = `${lang}:${name}`;
+  let option = moveOptionCache.get(key);
   if (!option) {
     const move = getMove(name);
-    option = { value: name, detail: <MoveDetail name={name} />, description: describe.move(name), color: move ? typeTextColor(move.type) : undefined };
-    moveOptionCache.set(name, option);
+    option = {
+      value: name,
+      label: gameName('move', name, lang),
+      detail: <MoveDetail name={name} />,
+      description: describe.move(name, lang),
+      color: move ? typeTextColor(move.type) : undefined,
+    };
+    moveOptionCache.set(key, option);
   }
   return option;
 }
 const ALL_MOVES = moveNames();
-const ITEM_OPTIONS: ComboOption[] = itemNames().map(name => ({ value: name, description: describe.item(name), icon: <ItemIcon item={name} /> }));
+const ITEMS = itemNames();
 const ALL_ABILITIES = dex.abilities.all().filter(a => a.exists && !a.isNonstandard).map(a => a.name).sort();
-const abilityOption = (name: string): ComboOption => ({ value: name, description: describe.ability(name) });
+const abilityOption = (name: string, lang: Lang): ComboOption =>
+  ({ value: name, label: gameName('ability', name, lang), description: describe.ability(name, lang) });
 
 const clampEv = (value: number) => Math.min(252, Math.max(0, Number.isFinite(value) ? value : 0));
 
@@ -96,22 +97,44 @@ interface Props {
 /** Voce del menu dei preset per un set che non coincide con nessun preset. */
 const CUSTOM_PRESET = 'custom';
 
-const CUSTOM_TOOLTIP = 'Permette qualunque mossa e abilità, anche non imparabili (pensato per le hackrom). Vale solo per questo Pokémon.';
-
 export function SetEditor({ set, presets = [], genLimit, onChange }: Props) {
+  const t = useT();
+  const lang = useLang();
   const custom = !!set.customSkillset;
   const species = getSpecies(set.species);
   const standard = legalAbilities(set.species, genLimit)
     ?? (species ? (Object.values(species.abilities).filter(Boolean) as string[]) : []);
   // L'abilità attuale resta visibile anche se non legale (viene segnalata nello slot)
   const abilities = set.ability && !standard.includes(set.ability) ? [set.ability, ...standard] : standard;
-  const abilityOptions = useMemo(() => (custom ? ALL_ABILITIES : abilities).map(abilityOption), [custom, abilities.join()]);
+  const abilityOptions = useMemo(
+    () => (custom ? ALL_ABILITIES : abilities).map(name => abilityOption(name, lang)),
+    [custom, abilities.join(), lang],
+  );
   // Mosse proposte: solo quelle imparabili, tranne con Custom Skillset
   const moveOptions = useMemo(() => {
     const legal = custom ? null : legalMoves(set.species, genLimit);
     const names = legal ? [...legal].map(id => getMove(id)?.name ?? id).sort() : ALL_MOVES;
-    return names.map(moveOption);
-  }, [custom, set.species, genLimit]);
+    return names.map(name => moveOption(name, lang));
+  }, [custom, set.species, genLimit, lang]);
+  const itemOptions = useMemo<ComboOption[]>(() => ITEMS.map(name => ({
+    value: name, label: gameName('item', name, lang), description: describe.item(name, lang), icon: <ItemIcon item={name} />,
+  })), [lang]);
+  const natureOptions = useMemo<ComboOption[]>(() => natureNames().map(name => {
+    const { plus, minus } = dex.natures.get(name);
+    const label = natureName(name, lang);
+    return {
+      value: name,
+      label,
+      detail: <NatureEffect name={name} />,
+      ariaLabel: plus && minus
+        ? `${label} (+${statShort(plus as StatID, lang)}, −${statShort(minus as StatID, lang)})`
+        : `${label} (${t('editor.neutral')})`,
+    };
+  }), [lang, t]);
+  const teraOptions = useMemo<ComboOption[]>(() => [
+    { value: '', label: t('editor.none'), ariaLabel: t('editor.none') },
+    ...TYPES.map(type => ({ value: type, label: typeName(type, lang), content: <TypeChip type={type} />, ariaLabel: typeName(type, lang) })),
+  ], [lang, t]);
   const moves = [0, 1, 2, 3].map(i => set.moves[i] ?? '');
   const update = (patch: Partial<TeamSet>) => onChange({ ...set, ...patch });
   // Preset: la chiave è la posizione. Se il set coincide con un preset è selezionato quello,
@@ -121,82 +144,95 @@ export function SetEditor({ set, presets = [], genLimit, onChange }: Props) {
       value: String(i),
       label: preset.name,
       detail: <span className="preset-format">{formatName(preset.format)}</span>,
-      description: preset.set.moves.join(' · '),
+      description: preset.set.moves.map(move => gameName('move', move, lang)).join(' · '),
     })),
-    { value: CUSTOM_PRESET, label: 'Custom', detail: <span className="preset-format">Il tuo set</span>, description: 'Il set modificato a mano' },
+    { value: CUSTOM_PRESET, label: t('editor.customPreset'), detail: <span className="preset-format">{t('editor.customPresetTag')}</span>, description: t('editor.customPresetDesc') },
   ];
   const appliedIndex = presets.findIndex(p => sameSet(p.set, set));
   const applyPreset = (key: string) => {
     const preset = presets[Number(key)];
     if (preset) onChange({ ...preset.set, species: set.species, favorite: set.favorite, customSkillset: set.customSkillset });
   };
+  const itemDesc = describe.item(set.item, lang);
+  // Con la megapietra l'abilità è quella della Mega: si mostra bloccata, quella del set torna togliendo la pietra
+  const forme = battleSpecies(set);
+  const megaAbility = forme && species && forme.name !== species.name ? forme.abilities[0] : null;
+  const shownAbility = megaAbility ?? set.ability;
+  const abilityDesc = describe.ability(shownAbility, lang);
 
   return (
     <div className="set-editor">
       <div className="editor-head">
         <div className="field preset-field">
           <Combobox
-            label="Preset Smogon"
+            label={t('editor.presets')}
             value={presets.length === 0 ? '' : appliedIndex >= 0 ? String(appliedIndex) : CUSTOM_PRESET}
             options={presetOptions}
             restricted
             disabled={presets.length === 0}
-            placeholder={presets.length ? 'Preset Smogon…' : 'Nessun preset Smogon'}
+            placeholder={presets.length ? t('editor.presetsPlaceholder') : t('editor.noPresets')}
             display={presets.length === 0 ? undefined : appliedIndex >= 0
               ? <><span>{presets[appliedIndex].name}</span><span className="preset-format">{formatName(presets[appliedIndex].format)}</span></>
-              : <><span>Custom</span><span className="preset-format">Il tuo set</span></>}
+              : <><span>{t('editor.customPreset')}</span><span className="preset-format">{t('editor.customPresetTag')}</span></>}
             onChange={applyPreset}
           />
         </div>
-      <label className="custom-toggle" title={CUSTOM_TOOLTIP}>
-        <input
-          type="checkbox"
-          aria-label={`Custom Skillset ${set.species}`}
-          checked={custom}
-          onChange={e => update({ customSkillset: e.target.checked || undefined })}
-        />{' '}
-        Custom Skillset
-      </label>
+        <label className="custom-toggle" title={t('editor.customTooltip')}>
+          <input
+            type="checkbox"
+            aria-label={t('editor.custom', { species: set.species })}
+            checked={custom}
+            onChange={e => update({ customSkillset: e.target.checked || undefined })}
+          />{' '}
+          {t('editor.customLabel')}
+        </label>
       </div>
       <fieldset className="editor-group">
-        <legend>Set</legend>
-        <div className="field" data-tip={describe.item(set.item)}>
-          <span className="field-head">Strumento</span>
-          <Combobox label="Strumento" value={set.item} options={ITEM_OPTIONS} description={describe.item(set.item)}
+        <legend>{t('editor.set')}</legend>
+        <div className="field" data-tip={itemDesc}>
+          <span className="field-head">{t('editor.item')}</span>
+          <Combobox label={t('editor.item')} value={set.item} options={itemOptions} description={itemDesc}
             leading={set.item ? <ItemIcon item={set.item} /> : undefined}
             onChange={item => update({ item })} />
         </div>
-        <div className="field" data-tip={describe.ability(set.ability)}>
-          <span className="field-head">Abilità</span>
-          <Combobox label="Abilità" value={set.ability} options={abilityOptions} restricted={!custom}
-            description={describe.ability(set.ability)} onChange={ability => update({ ability })} />
+        <div className="field" data-tip={abilityDesc}>
+          <span className="field-head">{t('editor.ability')}</span>
+          {megaAbility ? (
+            <span title={t('editor.megaAbility')}>
+              <Combobox label={t('editor.ability')} value={megaAbility} options={[abilityOption(megaAbility, lang)]} restricted disabled
+                description={abilityDesc} onChange={() => undefined} />
+            </span>
+          ) : (
+            <Combobox label={t('editor.ability')} value={set.ability} options={abilityOptions} restricted={!custom}
+              description={abilityDesc} onChange={ability => update({ ability })} />
+          )}
         </div>
         <div className="field">
-          <span className="field-head">Natura</span>
-          <Combobox label="Natura" value={set.nature} options={NATURE_OPTIONS} restricted
-            display={<><span>{set.nature}</span>{set.nature && <NatureEffect name={set.nature} />}</>}
+          <span className="field-head">{t('editor.nature')}</span>
+          <Combobox label={t('editor.nature')} value={set.nature} options={natureOptions} restricted
+            display={<><span>{natureName(set.nature, lang)}</span>{set.nature && <NatureEffect name={set.nature} />}</>}
             onChange={nature => update({ nature })} />
         </div>
         <div className="field">
-          <span className="field-head">Tera</span>
-          <Combobox label="Tera" value={set.teraType ?? ''} options={TERA_OPTIONS} restricted
-            display={set.teraType ? <TypeChip type={set.teraType} /> : <span className="faint">Nessuno</span>}
+          <span className="field-head">{t('editor.tera')}</span>
+          <Combobox label={t('editor.tera')} value={set.teraType ?? ''} options={teraOptions} restricted
+            display={set.teraType ? <TypeChip type={set.teraType} /> : <span className="faint">{t('editor.none')}</span>}
             onChange={tera => update({ teraType: tera || undefined })} />
         </div>
       </fieldset>
       <fieldset className="editor-group moves">
-        <legend>Mosse</legend>
+        <legend>{t('editor.moves')}</legend>
         {moves.map((move, i) => (
-          <div key={i} className="field" data-tip={describe.move(move)}>
+          <div key={i} className="field" data-tip={describe.move(move, lang)}>
             <span className="field-head">
-              Mossa {i + 1}
+              {t('editor.move', { n: i + 1 })}
               <MoveDetail name={move} />
             </span>
             <Combobox
-              label={`Mossa ${i + 1}`}
+              label={t('editor.move', { n: i + 1 })}
               value={move}
               options={moveOptions}
-              description={describe.move(move)}
+              description={describe.move(move, lang)}
               onChange={value => {
                 const next = [...moves];
                 next[i] = value;
@@ -207,10 +243,10 @@ export function SetEditor({ set, presets = [], genLimit, onChange }: Props) {
         ))}
       </fieldset>
       <fieldset className="evs">
-        <legend>EV</legend>
+        <legend>{t('editor.evs')}</legend>
         {STAT_IDS.map(stat => (
           <label key={stat}>
-            {stat.toUpperCase()}
+            {statShort(stat, lang).toUpperCase()}
             <input
               type="number"
               min={0}

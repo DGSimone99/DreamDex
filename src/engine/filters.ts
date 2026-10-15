@@ -1,3 +1,4 @@
+import type { Lang } from '../i18n';
 import type { EngineData } from './data';
 import { battleName, battleSpecies, dex, getSpecies, isDefined, isMega, isTeambuildable, natDexTier, toID, withinGen } from './dex';
 import { isBannedIn, meetsTeamRules } from './formats';
@@ -155,8 +156,8 @@ export function searchPool(team: TeamSet[], format: Format, data: EngineData, f:
 }
 
 /** Ricerca e filtri sui candidati, su tutto il Pokédex. Sempre ordinati per adattamento al team. */
-export function searchCandidates(team: TeamSet[], format: Format, data: EngineData, f: CandidateFilters, limit = 20): Suggestion[] {
-  return scoreSets(team, format, data, searchPool(team, format, data, f)).slice(0, limit);
+export function searchCandidates(team: TeamSet[], format: Format, data: EngineData, f: CandidateFilters, limit = 20, lang: Lang = 'it'): Suggestion[] {
+  return scoreSets(team, format, data, searchPool(team, format, data, f), lang).slice(0, limit);
 }
 
 /** Applica ricerca e filtri a una lista di sostituti già calcolata. */

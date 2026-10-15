@@ -34,25 +34,25 @@ describe('sessione salvata', () => {
   it('team, preferiti e formato restano dopo un ricaricamento', async () => {
     const storage = memory();
     const user = userEvent.setup();
-    const { unmount } = render(<App data={fixtureData} storage={storage} />);
+    const { unmount } = render(<App initialLang="it" data={fixtureData} storage={storage} />);
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Great Tusk{Enter}');
     await user.click(screen.getByRole('button', { name: 'Preferito Great Tusk' }));
     await user.selectOptions(screen.getByLabelText('Formato'), 'uu');
     unmount();
-    render(<App data={fixtureData} storage={storage} />);
+    render(<App initialLang="it" data={fixtureData} storage={storage} />);
     expect(within(team()).getByText('Great Tusk')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Preferito Great Tusk' })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByLabelText('Formato')).toHaveValue('uu');
   });
 
   it('senza storage (test, browser bloccato) si parte da zero', () => {
-    render(<App data={fixtureData} />);
+    render(<App initialLang="it" data={fixtureData} />);
     expect(within(team()).getByRole('heading', { name: 'Team (0/6)' })).toBeInTheDocument();
   });
 
   it('i team salvati ricordano il formato', async () => {
     const user = userEvent.setup();
-    render(<App data={fixtureData} />);
+    render(<App initialLang="it" data={fixtureData} />);
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Great Tusk{Enter}');
     await user.selectOptions(screen.getByLabelText('Formato'), 'ubers');
     await user.type(screen.getByLabelText('Nome team'), 'Ubers team');

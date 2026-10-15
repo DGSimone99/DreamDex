@@ -3,11 +3,13 @@ import type { EngineData } from './data';
 import { battleName, battleSpecies, getSpecies, isDefined, isMega, isSelectable, toID, withinGen } from './dex';
 import { formatLabel, isBannedIn, meetsTeamRules } from './formats';
 import type { Format } from './format';
-import { diffContribution, similarity, type Diff } from './replace';
-import { detectRoles, ESSENTIAL_ROLES, ROLE_LABELS } from './roles';
+import { diffContribution, similarity, type Contribution, type Diff } from './replace';
+import { t, type Lang } from '../i18n';
+import { typeName } from '../i18n/game';
+import { detectRoles, ESSENTIAL_ROLES, roleLabel } from './roles';
 import { scoreCandidates, type Suggestion } from './scoring';
 import { roleAndTypeRedundancies, weatherClashes } from './rating';
-import { benefits, CONDITION_LABELS, enables, neededConditions, providesAll, teamSynergies, unmetBeneficiaries, unusedEnablers } from './synergy';
+import { benefits, conditionLabel, viaName, enables, neededConditions, providesAll, teamSynergies, unmetBeneficiaries, unusedEnablers } from './synergy';
 import type { TeamSet } from './sets';
 import { defensiveMultiplier } from './types';
 
@@ -27,7 +29,7 @@ export const classifySwap = (betterShare: number, gain: number): SwapLevel =>
   betterShare > RECOMMEND_SHARE || gain >= RECOMMEND_GAIN ? 'recommended' : 'optional';
 
 /** Categorie dei problemi, nell'ordine in cui si mostrano. */
-export const PROBLEM_CATEGORIES = ['Regole', 'Difese', 'Coverage', 'Ruoli', 'Meteo e campi', 'Ridondanze'] as const;
+export const PROBLEM_CATEGORIES = ['rules', 'defense', 'coverage', 'roles', 'conditions', 'redundancy'] as const;
 export type ProblemCategory = typeof PROBLEM_CATEGORIES[number];
 
 export interface CoachProblem {
@@ -70,17 +72,17 @@ function fixesFor(candidates: Suggestion[], rank: (s: Suggestion) => number): st
     .map(x => x.s.species);
 }
 
-function findStrengths(team: TeamSet[], analysis: TeamAnalysis): string[] {
+function findStrengths(team: TeamSet[], analysis: TeamAnalysis, lang: Lang): string[] {
   const strengths: string[] = [];
   const solid = analysis.weakness.filter(r => r.resist >= 2 && r.weak === 0).map(r => r.type);
-  if (solid.length) strengths.push(`Gestisce bene ${list(solid)}`);
+  if (solid.length) strengths.push(t(lang, 'coach.strength.handles', { types: list(solid.map(type => typeName(type, lang))) }));
   const present = new Set(team.flatMap(detectRoles));
-  const roles = ESSENTIAL_ROLES.filter(r => present.has(r)).map(r => ROLE_LABELS[r]);
-  if (roles.length) strengths.push(`Ruoli coperti: ${list(roles)}`);
-  const synergies = teamSynergies(team);
-  if (synergies.length) strengths.push(`Sinergie: ${synergies.join('; ')}`);
+  const roles = ESSENTIAL_ROLES.filter(r => present.has(r)).map(r => roleLabel(r, lang));
+  if (roles.length) strengths.push(t(lang, 'coach.strength.roles', { roles: list(roles) }));
+  const synergies = teamSynergies(team, lang);
+  if (synergies.length) strengths.push(t(lang, 'coach.strength.synergies', { list: synergies.join('; ') }));
   const covered = analysis.coverage.filter(r => r.hitters.length > 0).length;
-  if (covered >= STRONG_COVERAGE) strengths.push(`Colpisce super efficace ${covered}/18 tipi`);
+  if (covered >= STRONG_COVERAGE) strengths.push(t(lang, 'coach.strength.coverage', { n: covered }));
   return strengths;
 }
 
@@ -90,7 +92,7 @@ export function weaknessSeverity(row: TeamAnalysis['weakness'][number]): 'seriou
   return row.pressure > 0 ? 'minor' : null;
 }
 
-function findProblems(team: TeamSet[], format: Format, analysis: TeamAnalysis, candidates: Suggestion[]): CoachProblem[] {
+function findProblems(team: TeamSet[], format: Format, analysis: TeamAnalysis, candidates: Suggestion[], lang: Lang): CoachProblem[] {
   const serious: CoachProblem[] = [];
   const minor: CoachProblem[] = [];
   const add = (category: ProblemCategory, isSerious: boolean, text: string, fixes: string[]) =>
@@ -100,42 +102,44 @@ function findProblems(team: TeamSet[], format: Format, analysis: TeamAnalysis, c
     const severity = weaknessSeverity(row);
     if (!severity) continue;
     const isSerious = severity === 'serious';
-    const text = `Debole a ${row.type}: ${row.weak} ${row.weak === 1 ? 'Debole' : 'Deboli'} – ${row.resist} ${row.resist === 1 ? 'Resiste' : 'Resistono'}`;
+    const text = t(lang, 'coach.problem.weak', {
+      type: typeName(row.type, lang), weak: row.weak, resist: row.resist,
+      weakWord: t(lang, row.weak === 1 ? 'coach.word.weakOne' : 'coach.word.weakMany'),
+      resistWord: t(lang, row.resist === 1 ? 'coach.word.resistOne' : 'coach.word.resistMany'),
+    });
     const fixes = fixesFor(candidates, s => Number(defensiveMultiplier(row.type, s.set) < 1));
-    add('Difese', isSerious, text, fixes);
+    add('defense', isSerious, text, fixes);
   }
 
   for (const set of team) {
     const species = getSpecies(set.species);
     if (!species) continue;
     const forme = battleSpecies(set) ?? species;
-    if (!isSelectable(species) || isBannedIn(forme, format)) add('Regole', true, `${set.species} non è legale in ${formatLabel(format)}`, []);
-    else if (!meetsTeamRules(forme, format)) add('Regole', true, `${set.species} non è di tipo ${format.monotype}`, []);
-    else if (!withinGen(species, format)) add('Regole', true, `${set.species} è oltre la Gen ${format.genLimit}`, []);
+    if (!isSelectable(species) || isBannedIn(forme, format)) add('rules', true, t(lang, 'coach.problem.illegal', { species: battleName(set), format: formatLabel(format, lang) }), []);
+    else if (!meetsTeamRules(forme, format)) add('rules', true, t(lang, 'coach.problem.monotype', { species: battleName(set), type: typeName(format.monotype ?? '', lang) }), []);
+    else if (!withinGen(species, format)) add('rules', true, t(lang, 'coach.problem.gen', { species: battleName(set), gen: format.genLimit }), []);
   }
 
   const megas = team.filter(isMega);
   if (!format.allowMultipleMegas && megas.length > 1) {
-    add('Regole', true, `Più Mega nel team (${list(megas.map(m => m.species))}): in National Dex ne è ammessa una sola`, []);
+    add('rules', true, t(lang, 'coach.problem.megas', { list: list(megas.map(battleName)) }), []);
   }
 
   const missing = analysis.needs.missingRoles.filter(r => ESSENTIAL_ROLES.includes(r));
   if (missing.length) {
-    add('Ruoli', false, `Ruoli mancanti: ${list(missing.map(r => ROLE_LABELS[r]))}`,
+    add('roles', false, t(lang, 'coach.problem.missingRoles', { roles: list(missing.map(r => roleLabel(r, lang))) }),
       fixesFor(candidates, s => s.facts.roles.filled.filter(r => missing.includes(r)).length));
   }
 
-  for (const item of roleAndTypeRedundancies(team)) add('Ridondanze', false, item.text, []);
-  for (const item of weatherClashes(team)) add('Meteo e campi', false, item.text, []);
+  for (const item of roleAndTypeRedundancies(team, lang)) add('redundancy', false, item.text, []);
+  for (const item of weatherClashes(team, lang)) add('conditions', false, item.text, []);
 
   for (const issue of unusedEnablers(team)) {
-    add('Meteo e campi', false, issue.selfBoost
-      ? `${issue.via} di ${issue.member} potenzia solo le sue mosse: nessun altro ne beneficia`
-      : `${issue.via} di ${issue.member} non sfruttato: nessuno ne beneficia`,
+    add('conditions', false, t(lang, issue.selfBoost ? 'coach.problem.selfBoost' : 'coach.problem.unused', { via: viaName(issue.via, lang), member: issue.member }),
       fixesFor(candidates, s => Number(benefits(s.set).some(b => b.condition === issue.condition && !['Weather Ball', 'Terrain Pulse'].includes(b.via)))));
   }
   for (const issue of unmetBeneficiaries(team)) {
-    add('Meteo e campi', false, `${issue.member} ha ${issue.via} ma il team non porta ${CONDITION_LABELS[issue.condition]}`,
+    add('conditions', false, t(lang, 'coach.problem.unmet', { member: issue.member, via: viaName(issue.via, lang), condition: conditionLabel(issue.condition, lang) }),
       fixesFor(candidates, s => Number(enables(s.set).some(e => e.condition === issue.condition))));
   }
 
@@ -143,7 +147,7 @@ function findProblems(team: TeamSet[], format: Format, analysis: TeamAnalysis, c
     .filter(r => r.hitters.length === 0 && analysis.typeWeights[r.type] >= MIN_COVERAGE_WEIGHT)
     .map(r => r.type);
   if (gaps.length) {
-    add('Coverage', false, `Nessuna mossa super efficace contro ${list(gaps)}`,
+    add('coverage', false, t(lang, 'coach.problem.noCoverage', { types: list(gaps.map(type => typeName(type, lang))) }),
       fixesFor(candidates, s => s.facts.coverage.types.filter(t => gaps.includes(t)).length));
   }
 
@@ -184,7 +188,7 @@ function findSwaps(team: TeamSet[], format: Format, data: EngineData): CoachSwap
     used.add(pick.species);
     swaps.push({
       index: option.index,
-      member: option.member.species,
+      member: battleName(option.member),
       fit: option.fit,
       replacement: pick.species,
       set: pick.set,
@@ -198,22 +202,19 @@ function findSwaps(team: TeamSet[], format: Format, data: EngineData): CoachSwap
 }
 
 /** Giudizio breve sul team; i conteggi dei problemi li mostra l'interfaccia. */
-function verdictFor(team: TeamSet[], problems: CoachProblem[]): string {
-  if (team.length < 6) return 'Team incompleto';
+function verdictFor(team: TeamSet[], problems: CoachProblem[], lang: Lang): string {
+  if (team.length < 6) return t(lang, 'coach.verdict.incomplete');
   const serious = problems.filter(p => p.severity === 'serious').length;
-  return serious === 0 ? 'Team solido' : serious === 1 ? 'Buona base' : 'Da rivedere';
+  return t(lang, serious === 0 ? 'coach.verdict.solid' : serious === 1 ? 'coach.verdict.good' : 'coach.verdict.review');
 }
 
 /** Voci del diff raggruppate per tipo: ruoli, "Forte contro X, Y", "Resistente a X, Y". */
-function groupChanges(items: string[], gain: boolean): string[] {
-  const plain = items.map(item => item.replace(/^[+-] /, ''));
-  const covers = plain.filter(i => i.startsWith('copre ')).map(i => i.slice('copre '.length));
-  const resists = plain.filter(i => i.startsWith('resiste ')).map(i => i.slice('resiste '.length));
-  const roles = plain.filter(i => !i.startsWith('copre ') && !i.startsWith('resiste '));
+function groupChanges(change: Contribution, gain: boolean, lang: Lang): string[] {
+  const types = (list: string[]) => list.map(type => typeName(type, lang)).join(', ');
   return [
-    ...roles,
-    covers.length ? `${gain ? 'Forte' : 'Non più forte'} contro ${covers.join(', ')}` : '',
-    resists.length ? `${gain ? 'Resistente' : 'Non più resistente'} a ${resists.join(', ')}` : '',
+    ...change.roles.map(role => roleLabel(role, lang)),
+    change.covers.length ? t(lang, gain ? 'diff.strong' : 'diff.notStrong', { types: types(change.covers) }) : '',
+    change.resists.length ? t(lang, gain ? 'diff.resists' : 'diff.notResists', { types: types(change.resists) }) : '',
   ].filter(Boolean);
 }
 
@@ -242,25 +243,25 @@ export const previewSwap = (swap: CoachSwap, preview: SwapPreview | null): Coach
     : swap;
 
 /** Cosa porta il sostituto e cosa perde il team, raggruppato per tipo. */
-export const describeDiff = (diff: Diff) => ({
-  pros: groupChanges(diff.gains, true),
-  cons: groupChanges(diff.losses, false),
+export const describeDiff = (diff: Diff, lang: Lang = 'it') => ({
+  pros: groupChanges(diff.gains, true, lang),
+  cons: groupChanges(diff.losses, false, lang),
 });
 
-export function describeSwap(swap: CoachSwap): SwapSummary {
-  return { gain: swap.score - swap.fit, ...describeDiff(swap.diff) };
+export function describeSwap(swap: CoachSwap, lang: Lang = 'it'): SwapSummary {
+  return { gain: swap.score - swap.fit, ...describeDiff(swap.diff, lang) };
 }
 
-export function coachTeam(team: TeamSet[], format: Format, data: EngineData): Coaching {
+export function coachTeam(team: TeamSet[], format: Format, data: EngineData, lang: Lang = 'it'): Coaching {
   if (team.length < 2) {
-    return { verdict: 'Aggiungi almeno 2 Pokémon per ricevere il coaching', strengths: [], problems: [], swaps: [], threatFixes: {} };
+    return { verdict: t(lang, 'coach.addTwo'), strengths: [], problems: [], swaps: [], threatFixes: {} };
   }
   const analysis = analyzeTeam(team, data);
   const candidates = data.stats ? scoreCandidates(team, format, data) : [];
-  const problems = findProblems(team, format, analysis, candidates);
+  const problems = findProblems(team, format, analysis, candidates, lang);
   return {
-    verdict: verdictFor(team, problems),
-    strengths: findStrengths(team, analysis),
+    verdict: verdictFor(team, problems, lang),
+    strengths: findStrengths(team, analysis, lang),
     problems,
     swaps: data.stats ? findSwaps(team, format, data) : [],
     threatFixes: Object.fromEntries(analysis.threats

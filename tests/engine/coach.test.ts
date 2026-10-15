@@ -68,17 +68,17 @@ describe('coachTeam', () => {
   });
 
   it('testo della sostituzione', () => {
-    const swap = { index: 2, member: 'Magikarp', fit: 20, replacement: 'Corviknight', set: emptySet('Corviknight'), score: 60, similar: false, level: 'recommended' as const, diff: { gains: ['+ Pivot'], losses: [] } };
+    const swap = { index: 2, member: 'Magikarp', fit: 20, replacement: 'Corviknight', set: emptySet('Corviknight'), score: 60, similar: false, level: 'recommended' as const, diff: { gains: { roles: ['pivot' as const], covers: [], resists: [] }, losses: { roles: [], covers: [], resists: [] } } };
     expect(describeSwap(swap)).toEqual({ gain: 40, pros: ['Pivot'], cons: [] });
-    expect(describeSwap({ ...swap, similar: true, diff: { gains: [], losses: [] } }))
+    expect(describeSwap({ ...swap, similar: true, diff: { gains: { roles: [], covers: [], resists: [] }, losses: { roles: [], covers: [], resists: [] } } }))
       .toEqual({ gain: 40, pros: [], cons: [] });
   });
 
   it('un membro non legale nel formato è un problema serio (Regole)', () => {
     const team = [tusk, gholdengo, { ...emptySet('Mewtwo'), item: 'Mewtwonite Y' }];
     const problems = coachTeam(team, DEFAULT_FORMAT, fixtureData).problems;
-    expect(problems).toContainEqual({ severity: 'serious', category: 'Regole', text: 'Mewtwo non è legale in National Dex OU', fixes: [] });
-    expect(problems.filter(p => p.category === 'Regole')).toHaveLength(1);
+    expect(problems).toContainEqual({ severity: 'serious', category: 'rules', text: 'Mewtwo-Mega-Y non è legale in National Dex OU', fixes: [] });
+    expect(problems.filter(p => p.category === 'rules')).toHaveLength(1);
   });
 
   it('seconda Mega: problema serio, assente se ammessa', () => {
@@ -86,9 +86,9 @@ describe('coachTeam', () => {
       { ...emptySet('Lopunny'), item: 'Lopunnite' },
       { ...emptySet('Charizard-Mega-Y') },
     ];
-    const text = 'Più Mega nel team (Lopunny, Charizard-Mega-Y): in National Dex ne è ammessa una sola';
+    const text = 'Più Mega nel team (Lopunny-Mega, Charizard-Mega-Y): in National Dex ne è ammessa una sola';
     const strict = coachTeam(megas, DEFAULT_FORMAT, megaData).problems;
-    expect(strict).toContainEqual({ severity: 'serious', category: 'Regole', text, fixes: [] });
+    expect(strict).toContainEqual({ severity: 'serious', category: 'rules', text, fixes: [] });
     const relaxed = coachTeam(megas, { ...DEFAULT_FORMAT, allowMultipleMegas: true }, megaData).problems;
     expect(relaxed.map(p => p.text)).not.toContain(text);
   });

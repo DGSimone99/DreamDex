@@ -1,11 +1,13 @@
 import type { AreaKey, TeamRating } from '../engine/rating';
 import { Typed } from './TypeText';
+import type { MessageKey } from '../i18n';
+import { useT } from '../i18n/react';
 
 /** Le aree con una scheda propria nell'analisi: cliccandole ci si arriva. */
-export const AREA_SECTIONS: Partial<Record<AreaKey, { id: string; title: string }>> = {
-  defense: { id: 'analysis-defense', title: 'Debolezze difensive' },
-  coverage: { id: 'analysis-coverage', title: 'Coverage offensiva' },
-  roles: { id: 'analysis-roles', title: 'Ruoli' },
+export const AREA_SECTIONS: Partial<Record<AreaKey, { id: string; title: MessageKey }>> = {
+  defense: { id: 'analysis-defense', title: 'analysis.weakness' },
+  coverage: { id: 'analysis-coverage', title: 'analysis.coverage' },
+  roles: { id: 'analysis-roles', title: 'analysis.roles' },
 };
 
 /** Apre la scheda (se chiusa) e ci scorre sopra. */
@@ -18,9 +20,10 @@ function goToSection(id: string) {
 }
 
 export function RatingPanel({ rating }: { rating: TeamRating }) {
+  const t = useT();
   return (
-    <details open aria-label="Valutazione team" className="block rating">
-      <summary><span>Valutazione team</span><span>{rating.grade} · {rating.overall}/100</span></summary>
+    <details open aria-label={t('rating.title')} className="block rating">
+      <summary><span>{t('rating.title')}</span><span>{rating.grade} · {rating.overall}/100</span></summary>
       <p className={`grade grade-${rating.grade}`}>
         <strong>{rating.grade}</strong> <span>{rating.overall}/100 · {rating.label}</span>
       </p>
@@ -36,7 +39,7 @@ export function RatingPanel({ rating }: { rating: TeamRating }) {
             <div key={area.key}>
               <dt>
                 {section ? (
-                  <button type="button" className="area-link" title={`Vai a ${section.title}`} onClick={() => goToSection(section.id)}>
+                  <button type="button" className="area-link" title={t('rating.goTo', { section: t(section.title) })} onClick={() => goToSection(section.id)}>
                     {text}
                   </button>
                 ) : members ? (
@@ -50,7 +53,7 @@ export function RatingPanel({ rating }: { rating: TeamRating }) {
       </dl>
       {rating.bonus.total > 0 && (
         <div className="bonus">
-          <strong>Bonus +{rating.bonus.total}</strong>
+          <strong>{t('rating.bonus', { n: rating.bonus.total })}</strong>
           <ul>
             {rating.bonus.items.map(item => <li key={item.text}><Typed text={item.text} /> (+{item.points})</li>)}
           </ul>
@@ -58,7 +61,7 @@ export function RatingPanel({ rating }: { rating: TeamRating }) {
       )}
       {rating.penalty.total > 0 && (
         <div className="penalty">
-          <strong>Penalità −{rating.penalty.total}</strong>
+          <strong>{t('rating.penalty', { n: rating.penalty.total })}</strong>
           <ul>
             {rating.penalty.items.map(item => <li key={item.text}><Typed text={item.text} /> (−{item.points})</li>)}
           </ul>
@@ -70,11 +73,12 @@ export function RatingPanel({ rating }: { rating: TeamRating }) {
 
 /** Voto grande accanto alla fila del team (riassunto visivo; i dettagli sono nella valutazione). */
 export function GradeBadge({ rating }: { rating: TeamRating | null }) {
+  const t = useT();
   return (
     <div className={`grade-badge${rating ? ` grade-${rating.grade}` : ' none'}`} aria-hidden="true">
       {rating && <span className="letter">{rating.grade}</span>}
-      <span className="overall">{rating ? `${rating.overall} / 100` : 'Nessun voto'}</span>
-      <span className="label">{rating ? rating.label : 'Aggiungi un Pokémon'}</span>
+      <span className="overall">{rating ? `${rating.overall} / 100` : t('rating.noGrade')}</span>
+      <span className="label">{rating ? rating.label : t('rating.addPokemon')}</span>
     </div>
   );
 }

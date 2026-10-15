@@ -1,5 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
 import { toID } from '../engine/dex';
+import { useT } from '../i18n/react';
 
 export interface ComboOption {
   value: string;
@@ -40,6 +41,7 @@ interface Props {
 
 /** Campo con menu a tendina: cerca mentre scrivi, frecce e Invio per scegliere, ogni voce con la sua descrizione. */
 export function Combobox({ label, value, options, onChange, restricted = false, description, display, placeholder, disabled, leading }: Props) {
+  const t = useT();
   const listId = useId();
   const [open, setOpen] = useState(false);
   // null: mostra tutto (appena aperto); stringa: filtra su quello che hai scritto
@@ -56,6 +58,8 @@ export function Combobox({ label, value, options, onChange, restricted = false, 
     return [...starts, ...contains];
   }, [options, query]);
   const shown = matches.slice(0, MAX_SHOWN);
+  // Il campo mostra l'etichetta del valore (es. il nome italiano); il valore salvato resta quello della voce
+  const shownValue = options.find(o => o.value === value)?.label ?? value;
   /** Porta la voce in vista scorrendo solo la lista, non la pagina. */
   const reveal = (index: number, center = false) => {
     const list = listRef.current;
@@ -104,11 +108,15 @@ export function Combobox({ label, value, options, onChange, restricted = false, 
         readOnly={restricted}
         disabled={disabled}
         placeholder={placeholder}
-        value={value}
+        // Mentre scrivi si vede il testo digitato; l'etichetta del valore torna quando esci dal campo
+        value={query ?? shownValue}
         onClick={() => (open ? setOpen(false) : show())}
-        onBlur={() => setOpen(false)}
+        onBlur={() => { setOpen(false); setQuery(null); }}
         onChange={e => {
-          onChange(e.target.value);
+          // Testo uguale all'etichetta di una voce: si salva il valore della voce; altrimenti il testo libero
+          const typed = toID(e.target.value);
+          const exact = typed ? options.find(o => o.label !== undefined && toID(o.label) === typed) : undefined;
+          onChange(exact ? exact.value : e.target.value);
           setQuery(e.target.value);
           setActive(0);
           setOpen(true);
@@ -121,7 +129,7 @@ export function Combobox({ label, value, options, onChange, restricted = false, 
         }}
       />
       {open && (
-        <ul id={listId} role="listbox" aria-label={`${label}: opzioni`} ref={listRef}>
+        <ul id={listId} role="listbox" aria-label={t("combobox.options", { label })} ref={listRef}>
           {shown.map((option, i) => (
             <li
               key={option.value}
@@ -142,9 +150,9 @@ export function Combobox({ label, value, options, onChange, restricted = false, 
               {option.description && <small>{option.description}</small>}
             </li>
           ))}
-          {shown.length === 0 && <li className="empty" aria-disabled="true">Nessun risultato</li>}
+          {shown.length === 0 && <li className="empty" aria-disabled="true">{t("combobox.none")}</li>}
           {matches.length > MAX_SHOWN && (
-            <li className="empty" aria-disabled="true">Altri {matches.length - MAX_SHOWN}: scrivi per restringere</li>
+            <li className="empty" aria-disabled="true">{t("combobox.more", { n: matches.length - MAX_SHOWN })}</li>
           )}
         </ul>
       )}

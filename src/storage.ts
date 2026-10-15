@@ -1,7 +1,8 @@
 import { DEFAULT_FORMAT, type Format } from './engine/format';
-import { FORMAT_OPTIONS } from './engine/formats';
+import { formatOptions } from './engine/formats';
 import type { TeamSet } from './engine/sets';
 import { TYPES } from './engine/types';
+import { isLang, type Lang } from './i18n';
 
 export interface SavedTeam {
   name: string;
@@ -62,7 +63,7 @@ const SESSION_KEY = 'dreamdex.session';
 function sanitizeFormat(raw: unknown): Format {
   const f = (typeof raw === 'object' && raw !== null ? raw : {}) as Partial<Format>;
   return {
-    formatId: FORMAT_OPTIONS.some(o => o.id === f.formatId) ? f.formatId! : DEFAULT_FORMAT.formatId,
+    formatId: formatOptions().some(o => o.id === f.formatId) ? f.formatId! : DEFAULT_FORMAT.formatId,
     genLimit: typeof f.genLimit === 'number' && f.genLimit >= 1 && f.genLimit <= 9 ? f.genLimit : DEFAULT_FORMAT.genLimit,
     minUsage: typeof f.minUsage === 'number' && f.minUsage >= 0 ? f.minUsage : DEFAULT_FORMAT.minUsage,
     allowMultipleMegas: f.allowMultipleMegas === true,
@@ -100,3 +101,24 @@ export function saveSession(session: Session, storage: Storage | undefined = def
 
 /** localStorage del browser, se accessibile. */
 export const browserStorage = (): Storage | undefined => defaultStorage();
+
+const LANG_KEY = 'dreamdex.lang';
+
+/** Lingua salvata, o null se assente o non valida. */
+export function loadLang(storage: Storage | undefined = defaultStorage()): Lang | null {
+  try {
+    const raw = storage?.getItem(LANG_KEY);
+    const parsed: unknown = raw ? JSON.parse(raw) : null;
+    return isLang(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+export function saveLang(lang: Lang, storage: Storage | undefined = defaultStorage()): void {
+  try {
+    storage?.setItem(LANG_KEY, JSON.stringify(lang));
+  } catch {
+    // Archivio non disponibile: la scelta vale solo per questa sessione
+  }
+}

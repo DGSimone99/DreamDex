@@ -162,7 +162,7 @@ DreamDex reads like the team preview shown before a World Championship final: si
 
 The layout is dense on purpose, because a player builds teams on a desktop next to Showdown and wants the team, its grade and the best next additions readable in one look. Depth comes from tonal navy steps and thin rules, not from cards with shadows. The one shape motif is the slanted team card; everything else is quiet rectangles with small radii, so the slant stays special.
 
-Colour carries meaning, not decoration. Gold belongs to the grade and the number-one suggestion. Blue is the working accent: hover, pressed, focus on fields, bars, swaps and minor issues. Red, yellow and green are status only. Classic Pokémon type colours are the one source of hue in content. The interface is written in Italian; Pokémon, move, ability and item names stay in their official English form.
+Colour carries meaning, not decoration. Gold belongs to the grade and the number-one suggestion. Blue is the working accent: hover, pressed, focus on fields, bars, swaps and minor issues. Red, yellow and green are status only. Classic Pokémon type colours are the one source of hue in content. The interface is in English by default or Italian from the switch; Pokémon names stay official English, while move, ability, item, type and nature names follow the chosen language.
 
 **Key Characteristics:**
 - Six slanted team cards (skew -8deg) with a type-colour bottom stripe, split in half for dual types.
@@ -224,7 +224,7 @@ The 18 classic type colours (Normal #A8A878 … Fairy #EE99AC, defined in the Sp
 - **Chip** (600, 11px, uppercase, 0.04em): type chips (10px in cards at ≤1440px); 10px in the type filter grid.
 
 ### Named Rules
-**The Official Names Rule.** Pokémon, move, ability and item names stay in official English; all other UI copy is Italian. Move, item and ability descriptions are English data until the planned English UI switch.
+**The Official Names Rule.** UI copy follows the EN | IT switch (English by default). Pokémon names always stay official English. Move, ability, item, type and nature names, and move/ability/item descriptions, use the official Italian text from PokeAPI in Italian (English where a translation is missing) and Showdown's English data in English. Team data, saves and Showdown import/export are always English.
 
 **The Names In Text Rule.** A Pokémon name inside prose is bold Broadcast White preceded by a 9px type dot (split vertically for dual types). Type names inside prose take their lightened type colour, weight 600. Move names take their type's text colour.
 
@@ -232,7 +232,7 @@ The 18 classic type colours (Normal #A8A878 … Fairy #EE99AC, defined in the Sp
 
 Desktop first, single screen, one 28px page gutter.
 
-- **Top bar:** sticky, Ink Ground, controls aligned to the baseline of their small uppercase labels, stats month pushed to the right.
+- **Top bar:** sticky, Ink Ground, controls aligned to the baseline of their small uppercase labels; an EN | IT segmented switch on the right, before the stats month.
 - **Team band:** full width, Navy Band, a grid of the six-card row and a 210px grade column (28px gap). Cards sit in a 6-column grid with 14px by 16px gaps. Opening a card drops the set editor full width under the row (a drawer in the second grid row), one card open at a time.
 - **Columns:** Analysis left and Suggestions right at 5fr / 7fr with a 28px gap.
 - **Suggestion board:** fixed columns (rank 34, sprite 64, name flexible, four bar columns of 64, score 52, action 34; 12px gap). Expanded content indents to align under the name column.
@@ -310,7 +310,7 @@ Bold Broadcast White with a 9px type dot. Chibi menu icons (40×30) replace the 
 - **Do** put collapsible block titles left and their summary right beside the chevron, hiding zero counts.
 - **Do** use Barlow Condensed uppercase for names, section heads and scoreboard numbers, with tabular figures.
 - **Do** reserve shadows for floating surfaces and the selected card.
-- **Do** write UI copy in Italian and keep Pokémon, move, ability and item names in official English.
+- **Do** put every UI string in both dictionaries (`src/i18n/en.ts`, `it.ts`); keep Pokémon names in official English and show game names through `gameName`/`typeName`.
 
 ### Don't:
 - **Don't** make any other button or call to action gold, including swap recommendations.
