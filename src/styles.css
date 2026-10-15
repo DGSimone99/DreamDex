@@ -592,6 +592,7 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .tag.warn .icon { width: 13px; height: 13px; }
 /* Tutti i chip della stessa larghezza: in liste e tabelle si allineano in colonna */
 .type-chip { display: inline-block; flex: none; width: 66px; text-align: center; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; padding: 1px 0; border-radius: 2px; line-height: 1.5; }
+.type-chip.long { font-size: 9px; letter-spacing: 0; }
 
 .actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .errors { color: var(--bad); }
@@ -839,6 +840,7 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 /* Schermi più stretti (≈1280px): card e classifica restano leggibili */
 @media (max-width: 1440px) {
   .slot .type-chip { width: 56px; font-size: 10px; }
+  .slot .type-chip.long { font-size: 8px; letter-spacing: -0.02em; }
   .slot > summary .sprite { width: 80px; height: 80px; }
   .slot > summary { padding-top: 30px; }
   .slot .roles { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
