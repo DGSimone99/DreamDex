@@ -2,7 +2,7 @@ import { analyzeTeam, type TeamAnalysis } from './analysis';
 import type { EngineData } from './data';
 import { battleSpecies } from './dex';
 import type { Format } from './format';
-import { detectRoles, ROLE_LABELS } from './roles';
+import { detectRoles, roleLabel } from './roles';
 import { scoreCandidates, scoreSets, type Suggestion } from './scoring';
 import type { TeamSet } from './sets';
 import { neededConditions, providesAll } from './synergy';
@@ -64,7 +64,7 @@ export function diffContribution(original: TeamSet, candidate: TeamSet, analysis
   const after = contribution(candidate, analysis);
   const minus = <T,>(x: T[], y: T[]) => x.filter(value => !y.includes(value));
   const describe = (sign: '+' | '-', from: typeof before, to: typeof before) => [
-    ...minus(from.roles, to.roles).map(role => `${sign} ${ROLE_LABELS[role]}`),
+    ...minus(from.roles, to.roles).map(role => `${sign} ${roleLabel(role)}`),
     ...minus(from.covers, to.covers).map(type => `${sign} copre ${type}`),
     ...minus(from.resists, to.resists).map(type => `${sign} resiste ${type}`),
   ];

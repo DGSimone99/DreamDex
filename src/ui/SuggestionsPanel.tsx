@@ -11,7 +11,7 @@ import { EMPTY_FILTERS, isFiltering, searchCandidates, searchPool, tierLabel, ty
 import { memberPower } from '../engine/power';
 import { defaultSet } from '../engine/sets';
 import { FilterBar } from './FilterBar';
-import { CONDITION_LABELS, neededConditions, providesAll } from '../engine/synergy';
+import { conditionLabel, neededConditions, providesAll } from '../engine/synergy';
 import { copyText } from './clipboard';
 import { Sprite, TypeChip } from './Sprite';
 import { Icon } from './icons';
@@ -215,7 +215,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   if (replacing) {
     const needed = neededConditions(team, replaceIndex);
     if (needed.length) {
-      const labels = needed.map(n => CONDITION_LABELS[n.condition]).join(' e ');
+      const labels = needed.map(n => conditionLabel(n.condition)).join(' e ');
       const who = [...new Set(needed.flatMap(n => n.beneficiaries.map(b => b.species)))].join(', ');
       setterNote = items.length > 0 && items.every(item => providesAll(item.set, needed))
         ? `Mostro solo chi porta ${labels}: ${who} ne ha bisogno`

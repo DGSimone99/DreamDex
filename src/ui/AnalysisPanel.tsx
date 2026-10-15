@@ -2,7 +2,7 @@ import { threatScore, type TeamAnalysis } from '../engine/analysis';
 import type { Coaching } from '../engine/coach';
 import type { EngineData } from '../engine/data';
 import type { TeamRating } from '../engine/rating';
-import { DESIRABLE_ROLES, detectRoles, ESSENTIAL_ROLES, ROLE_LABELS } from '../engine/roles';
+import { DESIRABLE_ROLES, detectRoles, ESSENTIAL_ROLES, roleLabel } from '../engine/roles';
 import { weatherMitigations, type WeatherMitigation } from '../engine/synergy';
 import type { TeamSet } from '../engine/sets';
 import { CoachPanel } from './CoachPanel';
@@ -134,7 +134,7 @@ export function AnalysisPanel({ team, analysis, rating, coaching, preview, onRep
               {group.rows.map(({ role, owners }) => (
                 <li key={role} className={owners.length ? '' : 'bad'}>
                   <Icon name={owners.length ? 'check' : 'close'} />
-                  <span className="role">{ROLE_LABELS[role]}</span>
+                  <span className="role">{roleLabel(role)}</span>
                   <span className="owners">
                     {owners.length ? owners.map(name => <span key={name} className="owner">{name}</span>) : 'Mancante'}
                   </span>

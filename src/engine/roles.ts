@@ -1,5 +1,6 @@
 import { battleSpecies, getMove, isDefined, toID } from './dex';
 import type { TeamSet } from './sets';
+import { t, type Lang } from '../i18n';
 
 export type Role =
   | 'hazards' | 'removal' | 'pivot' | 'priority' | 'speed'
@@ -10,19 +11,8 @@ export const ROLE_ORDER: Role[] = [
   'physicalSweeper', 'specialSweeper', 'physicalWall', 'specialWall',
 ];
 
-export const ROLE_LABELS: Record<Role, string> = {
-  hazards: 'Hazard',
-  removal: 'Rimozione hazard',
-  pivot: 'Pivot',
-  priority: 'Priorità',
-  speed: 'Controllo velocità',
-  setup: 'Setup',
-  wallbreaker: 'Wallbreaker',
-  physicalSweeper: 'Sweeper fisico',
-  specialSweeper: 'Sweeper speciale',
-  physicalWall: 'Wall fisico',
-  specialWall: 'Wall speciale',
-};
+/** Nome del ruolo nella lingua data. */
+export const roleLabel = (role: Role, lang: Lang = 'it'): string => t(lang, `role.${role}`);
 
 export const ESSENTIAL_ROLES: Role[] = ['hazards', 'removal', 'pivot', 'priority', 'speed'];
 export const DESIRABLE_ROLES: Role[] = ['wallbreaker', 'physicalSweeper', 'specialSweeper', 'physicalWall', 'specialWall'];

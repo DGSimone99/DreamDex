@@ -1,5 +1,5 @@
 import { DEFAULT_FORMAT, type Format } from './engine/format';
-import { FORMAT_OPTIONS } from './engine/formats';
+import { formatOptions } from './engine/formats';
 import type { TeamSet } from './engine/sets';
 import { TYPES } from './engine/types';
 import { isLang, type Lang } from './i18n';
@@ -63,7 +63,7 @@ const SESSION_KEY = 'dreamdex.session';
 function sanitizeFormat(raw: unknown): Format {
   const f = (typeof raw === 'object' && raw !== null ? raw : {}) as Partial<Format>;
   return {
-    formatId: FORMAT_OPTIONS.some(o => o.id === f.formatId) ? f.formatId! : DEFAULT_FORMAT.formatId,
+    formatId: formatOptions().some(o => o.id === f.formatId) ? f.formatId! : DEFAULT_FORMAT.formatId,
     genLimit: typeof f.genLimit === 'number' && f.genLimit >= 1 && f.genLimit <= 9 ? f.genLimit : DEFAULT_FORMAT.genLimit,
     minUsage: typeof f.minUsage === 'number' && f.minUsage >= 0 ? f.minUsage : DEFAULT_FORMAT.minUsage,
     allowMultipleMegas: f.allowMultipleMegas === true,

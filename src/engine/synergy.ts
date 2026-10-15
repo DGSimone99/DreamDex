@@ -1,6 +1,7 @@
 import { battleAbility, battleSpecies, getMove, isDefined, toID } from './dex';
 import { attackStyle } from './roles';
 import type { TeamSet } from './sets';
+import { t, type Lang } from '../i18n';
 import { attackingMoves, defensiveMultiplier, type TypeName } from './types';
 
 export type Condition =
@@ -9,17 +10,10 @@ export type Condition =
   | 'trickroom';
 
 /** Come la condizione compare nelle frasi: "il team non porta il sole". */
-export const CONDITION_LABELS: Record<Condition, string> = {
-  sun: 'il sole',
-  rain: 'la pioggia',
-  sand: 'la sabbia',
-  snow: 'la neve',
-  electricterrain: 'il Campo Elettrico',
-  psychicterrain: 'il Campo Psichico',
-  grassyterrain: 'il Campo Erboso',
-  mistyterrain: 'il Campo Nebbioso',
-  trickroom: 'Trick Room',
-};
+export const conditionLabel = (condition: Condition, lang: Lang = 'it'): string => t(lang, `condition.${condition}`);
+
+/** Nome della condizione nei menu: "Sole", "Campo Erboso". */
+export const conditionName = (condition: Condition, lang: Lang = 'it'): string => t(lang, `conditionName.${condition}`);
 
 interface Rule {
   enablerAbilities: string[];
@@ -85,7 +79,7 @@ const RULES: Record<Condition, Rule> = {
   },
 };
 
-const CONDITIONS = Object.keys(RULES) as Condition[];
+export const CONDITIONS = Object.keys(RULES) as Condition[];
 
 /** Attaccanti con velocità base fino a questa soglia beneficiano di Trick Room. */
 export const TRICK_ROOM_SPEED = 50;

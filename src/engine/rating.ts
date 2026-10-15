@@ -4,8 +4,9 @@ import { battleSpecies, toID } from './dex';
 import { teamPower, type MemberPower } from './power';
 import { DESIRABLE_ROLES, detectRoles, ESSENTIAL_ROLES } from './roles';
 import type { TeamSet } from './sets';
+import { t, type Lang } from '../i18n';
 import { TYPES } from './types';
-import { conditionConflicts, CONDITION_LABELS, unmetBeneficiaries, unusedEnablers, weakenedMoves, weatherMitigations } from './synergy';
+import { conditionConflicts, conditionLabel, unmetBeneficiaries, unusedEnablers, weakenedMoves, weatherMitigations } from './synergy';
 
 export type AreaKey = 'defense' | 'coverage' | 'roles' | 'strength';
 
@@ -17,24 +18,18 @@ export const AREA_WEIGHTS: Record<AreaKey, number> = {
   strength: 0.2,
 };
 
-const AREA_LABELS: Record<AreaKey, string> = {
-  defense: 'Difesa',
-  coverage: 'Coverage',
-  roles: 'Ruoli',
-  strength: 'Statistiche',
-};
 
 
 /**
  * Soglie tarate sui dati reali (2026-09, 1630+): team ben costruiti 88–90,
  * team casuali di Pokémon del meta mediana 74, team con membri inutili sotto 60.
  */
-const GRADES: { min: number; grade: string; label: string }[] = [
-  { min: 90, grade: 'S', label: 'Eccellente' },
-  { min: 82, grade: 'A', label: 'Ottimo' },
-  { min: 70, grade: 'B', label: 'Buono' },
-  { min: 60, grade: 'C', label: 'Discreto' },
-  { min: 0, grade: 'D', label: 'Debole' },
+const GRADES: { min: number; grade: 'S' | 'A' | 'B' | 'C' | 'D' }[] = [
+  { min: 90, grade: 'S' },
+  { min: 82, grade: 'A' },
+  { min: 70, grade: 'B' },
+  { min: 60, grade: 'C' },
+  { min: 0, grade: 'D' },
 ];
 
 export interface RatingArea {
@@ -108,7 +103,7 @@ export function weatherClashes(team: TeamSet[]): Redundancy[] {
   return [
     ...conditionConflicts(team).map(c => ({ text: `${cap(c.kind)} in conflitto: ${c.setters.join(', ')}`, points: 3 })),
     ...weakenedMoves(team).map(w => ({
-      text: `${cap(CONDITION_LABELS[w.condition])} di ${w.setter} indebolisce le mosse ${w.type} di ${w.member}`,
+      text: `${cap(conditionLabel(w.condition))} di ${w.setter} indebolisce le mosse ${w.type} di ${w.member}`,
       points: w.stab ? 2 : 1,
     })),
   ];
@@ -123,7 +118,7 @@ export function redundancies(team: TeamSet[], analysis: TeamAnalysis): Redundanc
       points: (row.weak - row.resist - 1) * (analysis.typeWeights[row.type] >= common ? 2 : 1),
     }));
   const dependencies = [
-    ...unmetBeneficiaries(team).map(i => ({ text: `${i.member} ha ${i.via} ma il team non porta ${CONDITION_LABELS[i.condition]}`, points: 3 })),
+    ...unmetBeneficiaries(team).map(i => ({ text: `${i.member} ha ${i.via} ma il team non porta ${conditionLabel(i.condition)}`, points: 3 })),
     ...unusedEnablers(team).map(i => i.selfBoost
       ? { text: `${i.via} di ${i.member} potenzia solo le sue mosse`, points: 1 }
       : { text: `${i.via} di ${i.member} non sfruttato`, points: 2 }),
@@ -149,18 +144,18 @@ export function weatherBonus(team: TeamSet[]): Redundancies {
     .map(m => ({ m, neutral: m.members.filter(x => x.to <= 1) }))
     .filter(x => x.neutral.length > 0)
     .map(({ m, neutral }) => ({
-      text: `${capitalize(CONDITION_LABELS[m.condition])} di ${m.source.split(' (')[0]} smorza la debolezza a ${m.type} di ${neutral.map(x => x.species).join(', ')}`,
+      text: `${capitalize(conditionLabel(m.condition))} di ${m.source.split(' (')[0]} smorza la debolezza a ${m.type} di ${neutral.map(x => x.species).join(', ')}`,
       points: 2 * neutral.length,
     }));
   return { total: Math.min(MAX_BONUS, sum(items.map(i => i.points))), items };
 }
 
-export function gradeFor(score: number): { grade: string; label: string } {
-  const { grade, label } = GRADES.find(g => score >= g.min)!;
-  return { grade, label };
+export function gradeFor(score: number, lang: Lang = 'it'): { grade: string; label: string } {
+  const { grade } = GRADES.find(g => score >= g.min)!;
+  return { grade, label: t(lang, `grade.${grade}`) };
 }
 
-export function rateTeam(team: TeamSet[], data: EngineData): TeamRating | null {
+export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): TeamRating | null {
   if (team.length === 0) return null;
   const analysis = analyzeTeam(team, data);
   const weights = analysis.typeWeights;
@@ -176,7 +171,7 @@ export function rateTeam(team: TeamSet[], data: EngineData): TeamRating | null {
   const raw: Record<AreaKey, number | null> = { defense, coverage, roles, strength };
   const areas = (Object.keys(AREA_WEIGHTS) as AreaKey[]).map(key => ({
     key,
-    label: AREA_LABELS[key],
+    label: t(lang, `area.${key}`),
     value: raw[key] === null ? null : Math.round(100 * raw[key]!),
   }));
   const available = (Object.keys(AREA_WEIGHTS) as AreaKey[]).filter(key => raw[key] !== null);
@@ -186,6 +181,6 @@ export function rateTeam(team: TeamSet[], data: EngineData): TeamRating | null {
   const penalty = redundancies(team, analysis);
   const bonus = weatherBonus(team);
   const overall = Math.min(100, Math.max(0, base - penalty.total + bonus.total));
-  return { base, penalty, bonus, power: power.members, overall, ...gradeFor(overall), provisional: team.length < 6, areas };
+  return { base, penalty, bonus, power: power.members, overall, ...gradeFor(overall, lang), provisional: team.length < 6, areas };
 }
 

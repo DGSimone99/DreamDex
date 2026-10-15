@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import type { Format, FormatId } from '../engine/format';
-import { FORMAT_OPTIONS } from '../engine/formats';
+import { formatOptions } from '../engine/formats';
 import { TYPES, type TypeName } from '../engine/types';
 import type { StatsMeta } from '../engine/stats';
 import { LANGS, type Lang } from '../i18n';
@@ -30,7 +30,7 @@ export function TopBar({ format, onFormatChange, meta, lang, onLangChange, child
           value={format.formatId}
           onChange={e => onFormatChange({ ...format, formatId: e.target.value as FormatId })}
         >
-          {FORMAT_OPTIONS.map(option => <option key={option.id} value={option.id}>{option.label}</option>)}
+          {formatOptions().map(option => <option key={option.id} value={option.id}>{option.label}</option>)}
         </select>
       </label>
       <label>

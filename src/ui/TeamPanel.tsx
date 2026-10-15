@@ -2,7 +2,7 @@ import type { EngineData } from '../engine/data';
 import { battleSpecies, getSpecies, isMega, isSelectable, withinGen } from '../engine/dex';
 import { formatLabel, isBannedIn, meetsTeamRules } from '../engine/formats';
 import type { Format } from '../engine/format';
-import { detectRoles, ROLE_LABELS } from '../engine/roles';
+import { detectRoles, roleLabel } from '../engine/roles';
 import { presetsFor, type Preset, type TeamSet } from '../engine/sets';
 import { useState } from 'react';
 import { SetEditor } from './SetEditor';
@@ -51,7 +51,7 @@ function TeamSlot({ set, presets, format, warning: megaWarning, open, onToggle, 
 }) {
   const species = battleSpecies(set);
   const problems = slotProblems(set, format);
-  const roles = detectRoles(set).slice(0, 2).map(role => ROLE_LABELS[role]);
+  const roles = detectRoles(set).slice(0, 2).map(role => roleLabel(role));
   const illegal = illegalParts(set, format.genLimit);
   const warnings = [
     megaWarning,

@@ -7,7 +7,7 @@ import type { Format } from './format';
 import { attackStyle, detectRoles, ESSENTIAL_ROLES, type Role } from './roles';
 import { defaultSet, type TeamSet } from './sets';
 import { teammatePct, usageOf } from './stats';
-import { clashesWith, CONDITION_LABELS, mechanicalLinks, weakenedMoves } from './synergy';
+import { clashesWith, conditionLabel, mechanicalLinks, weakenedMoves } from './synergy';
 import { defensiveMultiplier, superEffectiveMove } from './types';
 import { COMPONENT_KEYS, WEIGHTS } from './weights';
 
@@ -41,7 +41,7 @@ function clashFacts(set: TeamSet, team: TeamSet[]): { texts: string[]; penalty: 
   return {
     texts: [
       ...conflicts.map(c => `⚠ Meteo in conflitto con ${c}`),
-      ...weakened.map(w => `⚠ ${cap(CONDITION_LABELS[w.condition])} di ${w.setter} indebolisce le sue mosse ${w.type}`),
+      ...weakened.map(w => `⚠ ${cap(conditionLabel(w.condition))} di ${w.setter} indebolisce le sue mosse ${w.type}`),
     ],
     penalty: CLASH_PENALTY * conflicts.length
       + weakened.reduce((acc, w) => acc + (w.stab ? WEAKENED_STAB_PENALTY : WEAKENED_COVERAGE_PENALTY), 0),

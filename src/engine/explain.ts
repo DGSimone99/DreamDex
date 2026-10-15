@@ -1,4 +1,4 @@
-import { ROLE_LABELS, type Role } from './roles';
+import { roleLabel, type Role } from './roles';
 import type { TypeName } from './types';
 import { WEIGHTS, type ComponentKey } from './weights';
 
@@ -44,7 +44,7 @@ export function explain(facts: Facts, components: Components): Reason[] {
   if (facts.coverage.types.length) {
     add('coverage', `Colpisce super efficace ${list(facts.coverage.types)}, scoperti dal team`);
   }
-  const roles = facts.roles.filled.map(role => ROLE_LABELS[role]);
+  const roles = facts.roles.filled.map(role => roleLabel(role));
   if (facts.roles.style) roles.push(`attaccante ${STYLE_LABELS[facts.roles.style]}`);
   if (roles.length) add('roles', `Porta ${list(roles)} (mancanti nel team)`);
   for (const text of facts.mechanical) add('synergy', text);

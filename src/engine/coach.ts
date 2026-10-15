@@ -4,10 +4,10 @@ import { battleName, battleSpecies, getSpecies, isDefined, isMega, isSelectable,
 import { formatLabel, isBannedIn, meetsTeamRules } from './formats';
 import type { Format } from './format';
 import { diffContribution, similarity, type Diff } from './replace';
-import { detectRoles, ESSENTIAL_ROLES, ROLE_LABELS } from './roles';
+import { detectRoles, ESSENTIAL_ROLES, roleLabel } from './roles';
 import { scoreCandidates, type Suggestion } from './scoring';
 import { roleAndTypeRedundancies, weatherClashes } from './rating';
-import { benefits, CONDITION_LABELS, enables, neededConditions, providesAll, teamSynergies, unmetBeneficiaries, unusedEnablers } from './synergy';
+import { benefits, conditionLabel, enables, neededConditions, providesAll, teamSynergies, unmetBeneficiaries, unusedEnablers } from './synergy';
 import type { TeamSet } from './sets';
 import { defensiveMultiplier } from './types';
 
@@ -75,7 +75,7 @@ function findStrengths(team: TeamSet[], analysis: TeamAnalysis): string[] {
   const solid = analysis.weakness.filter(r => r.resist >= 2 && r.weak === 0).map(r => r.type);
   if (solid.length) strengths.push(`Gestisce bene ${list(solid)}`);
   const present = new Set(team.flatMap(detectRoles));
-  const roles = ESSENTIAL_ROLES.filter(r => present.has(r)).map(r => ROLE_LABELS[r]);
+  const roles = ESSENTIAL_ROLES.filter(r => present.has(r)).map(r => roleLabel(r));
   if (roles.length) strengths.push(`Ruoli coperti: ${list(roles)}`);
   const synergies = teamSynergies(team);
   if (synergies.length) strengths.push(`Sinergie: ${synergies.join('; ')}`);
@@ -121,7 +121,7 @@ function findProblems(team: TeamSet[], format: Format, analysis: TeamAnalysis, c
 
   const missing = analysis.needs.missingRoles.filter(r => ESSENTIAL_ROLES.includes(r));
   if (missing.length) {
-    add('Ruoli', false, `Ruoli mancanti: ${list(missing.map(r => ROLE_LABELS[r]))}`,
+    add('Ruoli', false, `Ruoli mancanti: ${list(missing.map(r => roleLabel(r)))}`,
       fixesFor(candidates, s => s.facts.roles.filled.filter(r => missing.includes(r)).length));
   }
 
@@ -135,7 +135,7 @@ function findProblems(team: TeamSet[], format: Format, analysis: TeamAnalysis, c
       fixesFor(candidates, s => Number(benefits(s.set).some(b => b.condition === issue.condition && !['Weather Ball', 'Terrain Pulse'].includes(b.via)))));
   }
   for (const issue of unmetBeneficiaries(team)) {
-    add('Meteo e campi', false, `${issue.member} ha ${issue.via} ma il team non porta ${CONDITION_LABELS[issue.condition]}`,
+    add('Meteo e campi', false, `${issue.member} ha ${issue.via} ma il team non porta ${conditionLabel(issue.condition)}`,
       fixesFor(candidates, s => Number(enables(s.set).some(e => e.condition === issue.condition))));
   }
 

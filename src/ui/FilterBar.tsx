@@ -1,15 +1,13 @@
 import type { CSSProperties } from 'react';
 import { activeFilterCount, EMPTY_FILTERS, MAX_TYPES, type CandidateFilters, type Inclusion } from '../engine/filters';
-import { DESIRABLE_ROLES, ESSENTIAL_ROLES, ROLE_LABELS, type Role } from '../engine/roles';
-import { CONDITION_LABELS, type Condition } from '../engine/synergy';
+import { DESIRABLE_ROLES, ESSENTIAL_ROLES, roleLabel, type Role } from '../engine/roles';
+import { CONDITIONS, conditionName, type Condition } from '../engine/synergy';
 import { TYPES, type TypeName } from '../engine/types';
 import { inkFor, typeColor } from './Sprite';
 import { typeTextColor } from './TypeText';
 
 const ROLES: Role[] = [...ESSENTIAL_ROLES, 'setup', ...DESIRABLE_ROLES];
-const CONDITIONS = Object.keys(CONDITION_LABELS) as Condition[];
 const GENS = [1, 2, 3, 4, 5, 6, 7, 8, 9];
-const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
 const toggle = <T,>(list: T[], value: T) => (list.includes(value) ? list.filter(v => v !== value) : [...list, value]);
 
 /** Griglia dei 18 tipi da accendere e spegnere, nei loro colori. */
@@ -88,7 +86,7 @@ export function FilterBar({ filters, onChange }: Props) {
         <div role="group" aria-label="Ruolo" className="chips">
           {ROLES.map(role => (
             <button key={role} type="button" aria-pressed={filters.roles.includes(role)} onClick={() => set({ roles: toggle(filters.roles, role) })}>
-              {ROLE_LABELS[role]}
+              {roleLabel(role)}
             </button>
           ))}
         </div>
@@ -99,14 +97,14 @@ export function FilterBar({ filters, onChange }: Props) {
           <span className="control-label">Imposta</span>
           <select aria-label="Imposta" value={filters.provides} onChange={e => set({ provides: e.target.value as Condition | '' })}>
             <option value="">Qualsiasi</option>
-            {CONDITIONS.map(c => <option key={c} value={c}>{capitalize(CONDITION_LABELS[c])}</option>)}
+            {CONDITIONS.map(c => <option key={c} value={c}>{conditionName(c)}</option>)}
           </select>
         </label>
         <label className="control">
           <span className="control-label">Sfrutta</span>
           <select aria-label="Sfrutta" value={filters.benefitsFrom} onChange={e => set({ benefitsFrom: e.target.value as Condition | '' })}>
             <option value="">Qualsiasi</option>
-            {CONDITIONS.map(c => <option key={c} value={c}>{capitalize(CONDITION_LABELS[c])}</option>)}
+            {CONDITIONS.map(c => <option key={c} value={c}>{conditionName(c)}</option>)}
           </select>
         </label>
         <label className="control">
