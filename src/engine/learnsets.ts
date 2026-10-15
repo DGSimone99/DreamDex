@@ -1,5 +1,5 @@
 import type { Species } from '@pkmn/dex';
-import { dex, getMove, getSpecies, toID } from './dex';
+import { battleSpecies, dex, getMove, getSpecies, toID } from './dex';
 import type { TeamSet } from './sets';
 
 /** Per ogni specie: mossa → prima generazione in cui è imparabile (senza ereditarietà). */
@@ -48,9 +48,19 @@ function inherited(species: Species): Map<string, number> | null {
   return result;
 }
 
+/** Smeargle impara con Sketch ogni mossa normale della generazione, tranne Chatter e Struggle. */
+function sketchable(genLimit: number): Set<string> | null {
+  if (!raw) return null;
+  return new Set(dex.moves.all()
+    .filter(m => m.exists && m.gen <= genLimit && !m.isZ && !m.isMax && (!m.isNonstandard || m.isNonstandard === 'Past')
+      && m.id !== 'chatter' && m.id !== 'struggle')
+    .map(m => m.id));
+}
+
 /** Mosse imparabili fino alla generazione indicata (id), o null se mancano i dati. */
 export function legalMoves(speciesName: string, genLimit: number): Set<string> | null {
   const species = getSpecies(speciesName);
+  if (species?.id === 'smeargle') return sketchable(genLimit);
   const moves = species ? inherited(species) : null;
   if (!moves) return null;
   const legal = new Set<string>();
@@ -61,13 +71,33 @@ export function legalMoves(speciesName: string, genLimit: number): Set<string> |
   return legal;
 }
 
-/** Abilità della specie esistenti fino alla generazione indicata; null prima della Gen 3 (niente abilità). */
+/** Mossa imparabile: Hidden Power di un tipo ("Hidden Power Fire") conta come Hidden Power. */
+export function isLearnable(legal: Set<string>, move: string): boolean {
+  const id = toID(move);
+  return legal.has(id) || (id.startsWith('hiddenpower') && legal.has('hiddenpower'));
+}
+
+/**
+ * Abilità della specie esistenti fino alla generazione indicata; null prima della Gen 3 (niente abilità).
+ * Comprende quelle delle forme solo-battaglia raggiunte senza strumento (Terapagos-Terastal: Tera Shell).
+ */
 export function legalAbilities(speciesName: string, genLimit: number): string[] | null {
   const species = getSpecies(speciesName);
   if (!species || genLimit < 3) return null;
-  return Object.entries(species.abilities)
+  const own = Object.entries(species.abilities)
     .filter(([slot, name]) => name && (slot !== 'H' || genLimit >= 5) && dex.abilities.get(name).gen <= genLimit)
     .map(([, name]) => name as string);
+  const battleOnly = (species.otherFormes ?? []).map(getSpecies)
+    .filter(forme => forme && forme.battleOnly === species.name && !forme.requiredItem && forme.gen <= genLimit)
+    .flatMap(forme => Object.values(forme!.abilities).filter(Boolean) as string[]);
+  return [...new Set([...own, ...battleOnly])];
+}
+
+/** Abilità legale per il set: della specie, o della forma in cui combatte (con la megapietra: quella della Mega). */
+export function isLegalAbility(set: TeamSet, abilities: string[]): boolean {
+  const forme = battleSpecies(set);
+  const mega = forme && forme.name !== getSpecies(set.species)?.name ? forme : null;
+  return abilities.includes(set.ability) || (!!mega && Object.values(mega.abilities).includes(set.ability));
 }
 
 /** Mosse e abilità non legali del set (vuoto con Custom Skillset o senza dati). */
@@ -76,7 +106,7 @@ export function illegalParts(set: TeamSet, genLimit: number): { moves: string[];
   const moves = legalMoves(set.species, genLimit);
   const abilities = legalAbilities(set.species, genLimit);
   return {
-    moves: moves ? set.moves.filter(m => m && getMove(m) && !moves.has(toID(m))) : [],
-    ability: abilities && set.ability && !abilities.includes(set.ability) ? set.ability : null,
+    moves: moves ? set.moves.filter(m => m && getMove(m) && !isLearnable(moves, m)) : [],
+    ability: abilities && set.ability && !isLegalAbility(set, abilities) ? set.ability : null,
   };
 }

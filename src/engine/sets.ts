@@ -2,7 +2,7 @@ import { t, type Lang } from '../i18n';
 import { Sets } from '@pkmn/sets';
 import { dex, getMove, getSpecies, toID } from './dex';
 import type { EngineData } from './data';
-import { legalAbilities, legalMoves } from './learnsets';
+import { isLearnable, isLegalAbility, legalAbilities, legalMoves } from './learnsets';
 import { findByName, statsEntry, type StatsData } from './stats';
 import { generatedSet } from './generatedSet';
 
@@ -106,13 +106,16 @@ function baseFormeSet(sets: SetsData | null | undefined, speciesName: string): T
 }
 
 /**
- * Set di riferimento: statistiche del formato → analisi → riserva (il formato in cui è più popolare)
+ * Set di riferimento: primo preset Smogon del formato (così l'editor lo riconosce) → statistiche del formato
+ * → analisi → primo preset di un altro formato → riserva (il formato in cui è più popolare)
  * → set della forma base → set generato dalle mosse imparabili.
  * Reso legale fino a `genLimit` (mosse non imparabili sostituite dalle successive più usate).
  */
 export function defaultSet(data: EngineData, speciesName: string, genLimit = 9): TeamSet {
-  const base = mostCommonSet(data.stats, speciesName)
+  const base = findByName(data.presets ?? undefined, speciesName)?.[0]?.set
+    ?? mostCommonSet(data.stats, speciesName)
     ?? findByName(data.sets ?? undefined, speciesName)
+    ?? findByName(data.fallbackPresets ?? undefined, speciesName)?.[0]?.set
     ?? findByName(data.fallback ?? undefined, speciesName)
     ?? baseFormeSet(data.fallback, speciesName);
   if (!base) return generatedSet(getSpecies(speciesName)?.name ?? speciesName, genLimit);
@@ -128,14 +131,14 @@ function makeLegal(set: TeamSet, data: EngineData, genLimit: number): TeamSet {
   const abilities = legalAbilities(set.species, genLimit);
   const entry = statsEntry(data.stats, set.species);
   let result = set;
-  const isLegal = (name: string) => !moves || moves.has(toID(name));
+  const isLegal = (name: string) => !moves || isLearnable(moves, name);
   if (set.moves.some(m => !isLegal(m))) {
     const kept = set.moves.filter(isLegal);
     const ranking = entry ? sortedKeys(entry.moves).map(id => getMove(id)?.name ?? id) : [];
     const extra = ranking.filter(name => isLegal(name) && !kept.includes(name));
     result = { ...result, moves: [...kept, ...extra].slice(0, 4) };
   }
-  if (abilities && set.ability && !abilities.includes(set.ability)) {
+  if (abilities && set.ability && !isLegalAbility(set, abilities)) {
     const ranked = entry ? sortedKeys(entry.abilities).map(id => dex.abilities.get(id).name) : [];
     result = { ...result, ability: ranked.find(a => abilities.includes(a)) ?? abilities[0] ?? set.ability };
   }
