@@ -1,10 +1,12 @@
 import { threatScore, type TeamAnalysis } from '../engine/analysis';
 import type { Coaching } from '../engine/coach';
+import type { EngineData } from '../engine/data';
 import type { TeamRating } from '../engine/rating';
 import { DESIRABLE_ROLES, detectRoles, ESSENTIAL_ROLES, ROLE_LABELS } from '../engine/roles';
 import { weatherMitigations, type WeatherMitigation } from '../engine/synergy';
 import type { TeamSet } from '../engine/sets';
 import { CoachPanel } from './CoachPanel';
+import { MetaUsePanel } from './MetaUsePanel';
 import { RatingPanel } from './RatingPanel';
 
 const MULTIPLIER_LABELS: Record<string, string> = { '4': '×4', '2': '×2', '1': '', '0.5': '×½', '0.25': '×¼', '0': '×0' };
@@ -27,10 +29,11 @@ function mitigationNote(m: WeatherMitigation): string {
   return `${MITIGATION_LABELS[m.condition]} (${source}): ${changes} · il meteo non è sempre attivo`;
 }
 
-export function AnalysisPanel({ team, analysis, rating, coaching, onReplace }: {
+export function AnalysisPanel({ team, analysis, rating, coaching, onReplace, data }: {
   team: TeamSet[];
   analysis: TeamAnalysis;
   rating?: TeamRating | null;
+  data?: EngineData;
   coaching?: Coaching;
   onReplace?: (index: number) => void;
 }) {
@@ -52,6 +55,7 @@ export function AnalysisPanel({ team, analysis, rating, coaching, onReplace }: {
     <section aria-label="Analisi" className="analysis">
       <h2>Analisi</h2>
       {rating && <RatingPanel rating={rating} />}
+      {data && team.length > 0 && <MetaUsePanel team={team} data={data} />}
       {coaching && onReplace && <CoachPanel coaching={coaching} onReplace={onReplace} />}
 
       <details className="block">

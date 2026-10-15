@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { teamPower } from '../../src/engine/power';
 import { AREA_WEIGHTS, gradeFor, rateTeam, typeSafety } from '../../src/engine/rating';
 import { mostCommonSet } from '../../src/engine/sets';
 import { fixtureData, fixtureStats, gholdengo, tusk } from '../fixtures/data';
@@ -41,11 +42,14 @@ describe('rateTeam', () => {
     expect(value(rating, 'defense')).toBe(73);
     expect(value(rating, 'coverage')).toBe(81);
     expect(value(rating, 'roles')).toBe(31);
-    expect(value(rating, 'strength')).toBe(90);
+    // Forza dalle statistiche base: media dei membri, indipendente dall'uso nel meta
+    expect(value(rating, 'strength')).toBe(teamPower([tusk, gholdengo]).value);
   });
 
   it('voto complessivo pesato, provvisorio con meno di 6 membri', () => {
-    expect(rating).toMatchObject({ overall: 69, grade: 'C', label: 'Discreto', provisional: true });
+    const expected = Math.round(rating.areas.reduce((acc, a) => acc + AREA_WEIGHTS[a.key] * a.value!, 0));
+    expect(Math.abs(rating.base - expected)).toBeLessThanOrEqual(1);
+    expect(rating).toMatchObject({ overall: rating.base, provisional: true });
   });
 
   it('ordine e nomi delle aree', () => {
@@ -61,12 +65,8 @@ describe('rateTeam', () => {
     expect(rateTeam([], fixtureData)).toBeNull();
   });
 
-  it('senza statistiche: forza n/d, voto sulle aree disponibili', () => {
+  it('senza statistiche Smogon la forza resta calcolabile (statistiche base)', () => {
     const noData = rateTeam([tusk, gholdengo], { stats: null, sets: null })!;
-    expect(value(noData, 'strength')).toBeNull();
-    const d = value(noData, 'defense')!;
-    const c = value(noData, 'coverage')!;
-    const r = value(noData, 'roles')!;
-    expect(Math.abs(noData.overall - (0.325 * d + 0.25 * c + 0.225 * r) / 0.8)).toBeLessThanOrEqual(1);
+    expect(value(noData, 'strength')).toBe(teamPower([tusk, gholdengo]).value);
   });
 });

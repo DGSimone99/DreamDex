@@ -16,6 +16,16 @@ export function RatingPanel({ rating }: { rating: TeamRating }) {
           </div>
         ))}
       </dl>
+      {rating.power.length > 0 && (
+        <p className="note">
+          Forza:{' '}
+          {rating.power.map((m, i) => (
+            <span key={`${i}-${m.species}`} title={`Offesa ${m.offense} · Robustezza ${m.bulk}`}>
+              {i > 0 ? ' · ' : ''}{m.species} {m.power}
+            </span>
+          ))}
+        </p>
+      )}
       {rating.bonus.total > 0 && (
         <div className="bonus">
           <strong>Bonus +{rating.bonus.total}</strong>{' '}

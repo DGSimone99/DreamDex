@@ -8,7 +8,7 @@ import { COMPONENT_KEYS, type ComponentKey } from '../engine/weights';
 import { copyText } from './clipboard';
 
 const COMPONENT_LABELS: Record<ComponentKey, string> = {
-  defense: 'Difesa', threats: 'Minacce', coverage: 'Coverage', roles: 'Ruoli', synergy: 'Sinergia', strength: 'Forza',
+  defense: 'Difesa', threats: 'Minacce', coverage: 'Coverage', roles: 'Ruoli', synergy: 'Sinergia', strength: 'Meta',
 };
 const PAGE = 10;
 const MAX = 20;
