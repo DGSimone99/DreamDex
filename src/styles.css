@@ -103,3 +103,4 @@ small { color: var(--muted); display: block; }
 .tag.tier { background: var(--bg); color: var(--muted); border: 1px solid var(--line); }
 .tag.banned { background: var(--bad); color: var(--bad-text); }
 .banner.info { background: var(--good); color: var(--good-text); }
+.advanced[open] > div { display: flex; flex-direction: column; gap: 6px; width: 240px; }
