@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/App';
@@ -57,5 +57,59 @@ describe('dati per formato', () => {
     expect(screen.getByLabelText('Formato')).toHaveValue('ou');
     expect(screen.getAllByRole('option', { name: /National Dex/ }).length).toBe(3);
     expect(screen.getByRole('option', { name: 'Tutti i Pokémon (senza limiti)' })).toBeInTheDocument();
+  });
+});
+
+describe('pannello Avanzate', () => {
+  const team = () => screen.getByRole('region', { name: 'Team' });
+  const suggestions = () => screen.getByRole('region', { name: 'Suggerimenti' });
+  const cardNames = () => [...suggestions().querySelectorAll('details.suggestion summary strong')].map(el => el.textContent!.replace(/^\d+\. /, ''));
+  const add = async (user: ReturnType<typeof userEvent.setup>, name: string) =>
+    user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
+
+  it('contatore delle opzioni attive e tipo del Monotype solo quando serve', async () => {
+    const user = userEvent.setup();
+    render(<App data={fixtureData} loadSource={async () => fixtureData} />);
+    expect(screen.getByText('Avanzate')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Tipo del team')).toBeNull();
+    await user.click(screen.getByRole('checkbox', { name: 'Monotype' }));
+    await user.selectOptions(screen.getByLabelText('Tipo del team'), 'Steel');
+    await user.click(screen.getByRole('checkbox', { name: 'Ignora ban' }));
+    expect(screen.getByText('Avanzate (2)')).toBeInTheDocument();
+  });
+
+  it('Monotype: avviso negli slot e suggerimenti solo del tipo scelto', async () => {
+    const user = userEvent.setup();
+    render(<App data={fixtureData} loadSource={async () => fixtureData} />);
+    await add(user, 'Great Tusk');
+    await user.click(screen.getByRole('checkbox', { name: 'Monotype' }));
+    await user.selectOptions(screen.getByLabelText('Tipo del team'), 'Steel');
+    expect(await within(team()).findByText('Non è di tipo Steel')).toBeInTheDocument();
+    expect(cardNames().length).toBeGreaterThan(0);
+    expect([...cardNames()].sort()).toEqual(['Corviknight', 'Gholdengo', 'Kingambit']);
+  });
+
+  it('cambiando formato i membri illegali vengono segnalati, non rimossi', async () => {
+    const user = userEvent.setup();
+    render(<App data={fixtureData} loadSource={async () => fixtureData} />);
+    await add(user, 'Great Tusk');
+    await user.selectOptions(screen.getByLabelText('Formato'), 'uu');
+    expect(await within(team()).findByText('Non legale in National Dex UU')).toBeInTheDocument();
+    expect(within(team()).getByText('Great Tusk')).toBeInTheDocument();
+  });
+
+  it('Ignora ban: gli Uber non hanno più il tag rosso', async () => {
+    const user = userEvent.setup();
+    render(<App data={fixtureData} />);
+    await user.click(screen.getByRole('checkbox', { name: 'Ignora ban' }));
+    await add(user, 'Great Tusk');
+    await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'dragapu');
+    await waitFor(() => expect(cardNames()).toEqual(['Dragapult']));
+    expect(within(suggestions()).queryByText(/bannato/)).toBeNull();
+  });
+
+  it('"Più Mega ammesse" sta nel pannello', () => {
+    render(<App data={fixtureData} />);
+    expect(screen.getByRole('checkbox', { name: 'Più Mega ammesse' }).closest('details')).toHaveTextContent('Avanzate');
   });
 });
