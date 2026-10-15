@@ -231,7 +231,6 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
   padding: 18px 20px;
   background: var(--raised);
   border-top: 3px solid var(--gold);
-  border-radius: 0 0 6px 6px;
   animation: drawer 0.3s var(--ease);
 }
 @keyframes drawer { from { opacity: 0; transform: translateY(-8px); } }
