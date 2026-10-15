@@ -3,7 +3,8 @@ import { battleSpecies, dex, getMove, getSpecies, itemNames, moveNames, natureNa
 import { legalAbilities, legalMoves } from '../engine/learnsets';
 import { formatName, sameSet, STAT_IDS, type Preset, type StatID, type TeamSet } from '../engine/sets';
 import { TYPES } from '../engine/types';
-import type { Lang } from '../i18n';
+import type { CommonChoice, CommonChoices, CommonSpread } from '../engine/common';
+import { formatPercent, type Lang } from '../i18n';
 import { gameDesc, gameName, natureName, statShort, typeName } from '../i18n/game';
 import { useLang, useT } from '../i18n/react';
 import { Combobox, type ComboOption } from './Combobox';
@@ -83,6 +84,14 @@ const ALL_ABILITIES = dex.abilities.all().filter(a => a.exists && !a.isNonstanda
 const abilityOption = (name: string, lang: Lang): ComboOption =>
   ({ value: name, label: gameName('ability', name, lang), description: describe.ability(name, lang) });
 
+/** Natura ed EV come chiave, per riconoscere lo spread attuale. */
+const spreadKey = (s: Pick<CommonSpread, 'nature' | 'evs'>) => `${s.nature}:${STAT_IDS.map(stat => s.evs[stat] ?? 0).join('/')}`;
+/** "252 Att / 252 Vel / 4 PS": prima gli EV più alti. */
+const spreadText = (s: Pick<CommonSpread, 'evs'>, lang: Lang) =>
+  STAT_IDS.filter(stat => (s.evs[stat] ?? 0) > 0)
+    .sort((a, b) => (s.evs[b] ?? 0) - (s.evs[a] ?? 0))
+    .map(stat => `${s.evs[stat]} ${statShort(stat, lang)}`).join(' / ') || '—';
+
 const clampEv = (value: number) => Math.min(252, Math.max(0, Number.isFinite(value) ? value : 0));
 
 interface Props {
@@ -91,15 +100,30 @@ interface Props {
   presets?: Preset[];
   /** Limite di generazione: mosse e abilità legali fino a questa gen. */
   genLimit: number;
+  /** Scelte più usate del membro, mostrate in cima ai menu. */
+  common?: CommonChoices;
   onChange: (set: TeamSet) => void;
 }
 
 /** Voce del menu dei preset per un set che non coincide con nessun preset. */
 const CUSTOM_PRESET = 'custom';
 
-export function SetEditor({ set, presets = [], genLimit, onChange }: Props) {
+export function SetEditor({ set, presets = [], genLimit, common, onChange }: Props) {
   const t = useT();
   const lang = useLang();
+  // Le più usate vanno in cima al menu, con la quota d'uso (o "Preset" se vengono dalle analisi)
+  const withCommon = (options: ComboOption[], choices: CommonChoice[] | undefined): ComboOption[] => {
+    if (!choices?.length) return options;
+    const byValue = new Map(options.map(o => [o.value, o]));
+    const top = choices.flatMap(c => {
+      const option = byValue.get(c.name);
+      return option ? [{ ...option, common: c.share === null ? t('combobox.preset') : formatPercent(lang, c.share, 0) }] : [];
+    });
+    const picked = new Set(top.map(o => o.value));
+    return [...top, ...options.filter(o => !picked.has(o.value))];
+  };
+  const commonKey = JSON.stringify(common ?? null);
+  const shareLabel = (c: { share: number | null }) => (c.share === null ? t('combobox.preset') : formatPercent(lang, c.share, 0));
   const custom = !!set.customSkillset;
   const species = getSpecies(set.species);
   const standard = legalAbilities(set.species, genLimit)
@@ -107,19 +131,19 @@ export function SetEditor({ set, presets = [], genLimit, onChange }: Props) {
   // L'abilità attuale resta visibile anche se non legale (viene segnalata nello slot)
   const abilities = set.ability && !standard.includes(set.ability) ? [set.ability, ...standard] : standard;
   const abilityOptions = useMemo(
-    () => (custom ? ALL_ABILITIES : abilities).map(name => abilityOption(name, lang)),
-    [custom, abilities.join(), lang],
+    () => withCommon((custom ? ALL_ABILITIES : abilities).map(name => abilityOption(name, lang)), common?.abilities),
+    [custom, abilities.join(), lang, commonKey],
   );
   // Mosse proposte: solo quelle imparabili, tranne con Custom Skillset
   const moveOptions = useMemo(() => {
     const legal = custom ? null : legalMoves(set.species, genLimit);
     const names = legal ? [...legal].map(id => getMove(id)?.name ?? id).sort() : ALL_MOVES;
-    return names.map(name => moveOption(name, lang));
-  }, [custom, set.species, genLimit, lang]);
-  const itemOptions = useMemo<ComboOption[]>(() => ITEMS.map(name => ({
+    return withCommon(names.map(name => moveOption(name, lang)), common?.moves);
+  }, [custom, set.species, genLimit, lang, commonKey]);
+  const itemOptions = useMemo<ComboOption[]>(() => withCommon(ITEMS.map(name => ({
     value: name, label: gameName('item', name, lang), description: describe.item(name, lang), icon: <ItemIcon item={name} />,
-  })), [lang]);
-  const natureOptions = useMemo<ComboOption[]>(() => natureNames().map(name => {
+  })), common?.items), [lang, commonKey]);
+  const natureOptions = useMemo<ComboOption[]>(() => withCommon(natureNames().map(name => {
     const { plus, minus } = dex.natures.get(name);
     const label = natureName(name, lang);
     return {
@@ -130,11 +154,11 @@ export function SetEditor({ set, presets = [], genLimit, onChange }: Props) {
         ? `${label} (+${statShort(plus as StatID, lang)}, −${statShort(minus as StatID, lang)})`
         : `${label} (${t('editor.neutral')})`,
     };
-  }), [lang, t]);
-  const teraOptions = useMemo<ComboOption[]>(() => [
+  }), common?.natures), [lang, t, commonKey]);
+  const teraOptions = useMemo<ComboOption[]>(() => withCommon([
     { value: '', label: t('editor.none'), ariaLabel: t('editor.none') },
     ...TYPES.map(type => ({ value: type, label: typeName(type, lang), content: <TypeChip type={type} />, ariaLabel: typeName(type, lang) })),
-  ], [lang, t]);
+  ], common?.teraTypes), [lang, t, commonKey]);
   const moves = [0, 1, 2, 3].map(i => set.moves[i] ?? '');
   const update = (patch: Partial<TeamSet>) => onChange({ ...set, ...patch });
   // Preset: la chiave è la posizione. Se il set coincide con un preset è selezionato quello,
@@ -244,6 +268,26 @@ export function SetEditor({ set, presets = [], genLimit, onChange }: Props) {
       </fieldset>
       <fieldset className="evs">
         <legend>{t('editor.evs')}</legend>
+        {!!common?.spreads.length && (
+          // Chiuso di norma
+          <details className="spread-panel">
+          <summary>{t('editor.spreads')}</summary>
+          <div className="spread-presets" role="group" aria-label={t('editor.spreads')}>
+            {common.spreads.map(spread => (
+              <button
+                key={spreadKey(spread)}
+                type="button"
+                aria-pressed={spreadKey(spread) === spreadKey(set)}
+                onClick={() => update({ nature: spread.nature, evs: { ...spread.evs } })}
+              >
+                <strong>{natureName(spread.nature, lang)}</strong>
+                <span className="spread-evs">{spreadText(spread, lang)}</span>
+                <span className="common-share">{shareLabel(spread)}</span>
+              </button>
+            ))}
+          </div>
+          </details>
+        )}
         {STAT_IDS.map(stat => (
           <label key={stat}>
             {statShort(stat, lang).toUpperCase()}

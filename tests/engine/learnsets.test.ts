@@ -80,3 +80,37 @@ describe('set di riferimento resi legali', () => {
     expect(defaultSet(data, 'Garchomp', 9).ability).toBe('Rough Skin');
   });
 });
+
+describe('set delle analisi Smogon considerati legali', () => {
+  it('Hidden Power di un tipo è legale se il Pokémon impara Hidden Power', () => {
+    expect(illegalParts(set('Serperior', 'Contrary', ['Leaf Storm', 'Hidden Power Fire', 'Glare']), 9).moves).toEqual([]);
+    expect(illegalParts(set('Serperior', 'Contrary', ['Hidden Power Fire']), 1).moves).toEqual(['Hidden Power Fire']);
+  });
+
+  it('Smeargle impara con Sketch qualsiasi mossa della generazione (tranne Chatter)', () => {
+    expect(illegalParts(set('Smeargle', 'Own Tempo', ['Spore', 'Ceaseless Edge', 'Sticky Web']), 9).moves).toEqual([]);
+    expect(legalMoves('Smeargle', 9)!.has('chatter')).toBe(false);
+    expect(legalMoves('Smeargle', 4)!.has('stickyweb')).toBe(false);
+  });
+
+  it('abilità della Mega con la megapietra; senza pietra resta non legale', () => {
+    expect(illegalParts(set('Diancie', 'Magic Bounce', [], { item: 'Diancite' }), 9).ability).toBeNull();
+    expect(illegalParts(set('Diancie', 'Magic Bounce', [], { item: 'Leftovers' }), 9).ability).toBe('Magic Bounce');
+  });
+
+  it('abilità di una forma solo-battaglia senza strumento (Terapagos-Terastal)', () => {
+    expect(legalAbilities('Terapagos', 9)).toContain('Tera Shell');
+    expect(legalAbilities('Charizard', 9)).not.toContain('Drought');
+  });
+
+  it('defaultSet tiene Hidden Power e l\'abilità della Mega del preset', () => {
+    const preset = set('Diancie', 'Magic Bounce', ['Moonblast', 'Diamond Storm'], { item: 'Diancite' });
+    const hp = set('Serperior', 'Contrary', ['Leaf Storm', 'Hidden Power Fire', 'Substitute', 'Glare']);
+    const data: EngineData = { stats: null, sets: null, presets: {
+      Diancie: [{ name: 'Mega', format: 'gen9nationaldex', set: preset }],
+      Serperior: [{ name: 'Contrary', format: 'gen9nationaldex', set: hp }],
+    } };
+    expect(defaultSet(data, 'Diancie')).toEqual(preset);
+    expect(defaultSet(data, 'Serperior')).toEqual(hp);
+  });
+});
