@@ -24,7 +24,7 @@ export function MetaUsePanel({ team, data }: { team: TeamSet[]; data: EngineData
             return (
               <li key={`${i}-${set.species}`} className={entry ? '' : 'absent'}>
                 <Sprite species={set.species} item={set.item} size={40} />
-                <span className="who"><strong>{set.species}</strong></span>
+                <span className="who"><strong>{battleName(set)}</strong></span>
                 {entry ? (
                   <span className="status">
                     <meter min={0} max={0.5} value={entry.usage} aria-hidden="true" />

@@ -1,5 +1,5 @@
 import type { EngineData } from '../engine/data';
-import { battleSpecies, getSpecies, isMega, isSelectable, withinGen } from '../engine/dex';
+import { battleAbility, battleName, battleSpecies, getSpecies, isMega, isSelectable, withinGen } from '../engine/dex';
 import { formatLabel, isBannedIn, meetsTeamRules } from '../engine/formats';
 import type { Format } from '../engine/format';
 import { detectRoles, roleLabel } from '../engine/roles';
@@ -53,6 +53,9 @@ function TeamSlot({ set, presets, format, warning: megaWarning, open, onToggle, 
   const lang = useLang();
   const tr = useT();
   const species = battleSpecies(set);
+  // Con la megapietra il membro è la Mega: nome e abilità della forma in battaglia (il set resta quello di Showdown)
+  const name = battleName(set);
+  const ability = battleAbility(set);
   const problems = slotProblems(set, format, lang);
   const roles = detectRoles(set).slice(0, 2).map(role => roleLabel(role, lang));
   const illegal = illegalParts(set, format.genLimit);
@@ -90,7 +93,7 @@ function TeamSlot({ set, presets, format, warning: megaWarning, open, onToggle, 
         <button
           type="button"
           className="favorite"
-          aria-label={tr('team.favorite', { species: set.species })}
+          aria-label={tr('team.favorite', { species: name })}
           aria-pressed={!!set.favorite}
           title={tr(set.favorite ? 'team.favoriteOn' : 'team.favoriteOff')}
           onClick={e => { e.preventDefault(); onChange({ ...set, favorite: !set.favorite }); }}
@@ -100,26 +103,26 @@ function TeamSlot({ set, presets, format, warning: megaWarning, open, onToggle, 
         <button
           type="button"
           className="remove"
-          aria-label={tr('team.remove', { species: set.species })}
+          aria-label={tr('team.remove', { species: name })}
           title={tr('team.removeTitle')}
           onClick={e => { e.preventDefault(); onRemove(); }}
         >
           <Icon name="close" />
         </button>
-        <strong className="name">{set.species}</strong>
+        <strong className="name">{name}</strong>
         {/* Strumento (con icona) e abilità su due righe: le card restano allineate */}
         <small className="held" title={set.item || undefined}>
           <ItemIcon item={set.item} />
           <span>{set.item ? gameName('item', set.item, lang) : tr('team.noItem')}</span>
         </small>
-        <small className="ability" title={set.ability || undefined}>{set.ability ? gameName('ability', set.ability, lang) : '—'}</small>
+        <small className="ability" title={ability || undefined}>{ability ? gameName('ability', ability, lang) : '—'}</small>
         <span className="types">{species?.types.map(type => <TypeChip key={type} type={type} />) ?? <TypeChip type="?" />}</span>
         {roles.length > 0 && <small className="roles">{roles.join(' · ')}</small>}
       </summary>
       <div className="drawer">
       <SetEditor set={set} presets={presets} genLimit={format.genLimit} onChange={onChange} />
       <div className="actions">
-        <button type="button" aria-label={tr('team.replace', { species: set.species })} onClick={onReplace}><Icon name="swap" /> {tr('team.replaceButton')}</button>
+        <button type="button" aria-label={tr('team.replace', { species: name })} onClick={onReplace}><Icon name="swap" /> {tr('team.replaceButton')}</button>
         {megaWarning && <button type="button" onClick={onIgnoreWarning}>{tr('team.keepMega')}</button>}
       </div>
       </div>

@@ -115,14 +115,14 @@ function findProblems(team: TeamSet[], format: Format, analysis: TeamAnalysis, c
     const species = getSpecies(set.species);
     if (!species) continue;
     const forme = battleSpecies(set) ?? species;
-    if (!isSelectable(species) || isBannedIn(forme, format)) add('rules', true, t(lang, 'coach.problem.illegal', { species: set.species, format: formatLabel(format, lang) }), []);
-    else if (!meetsTeamRules(forme, format)) add('rules', true, t(lang, 'coach.problem.monotype', { species: set.species, type: typeName(format.monotype ?? '', lang) }), []);
-    else if (!withinGen(species, format)) add('rules', true, t(lang, 'coach.problem.gen', { species: set.species, gen: format.genLimit }), []);
+    if (!isSelectable(species) || isBannedIn(forme, format)) add('rules', true, t(lang, 'coach.problem.illegal', { species: battleName(set), format: formatLabel(format, lang) }), []);
+    else if (!meetsTeamRules(forme, format)) add('rules', true, t(lang, 'coach.problem.monotype', { species: battleName(set), type: typeName(format.monotype ?? '', lang) }), []);
+    else if (!withinGen(species, format)) add('rules', true, t(lang, 'coach.problem.gen', { species: battleName(set), gen: format.genLimit }), []);
   }
 
   const megas = team.filter(isMega);
   if (!format.allowMultipleMegas && megas.length > 1) {
-    add('rules', true, t(lang, 'coach.problem.megas', { list: list(megas.map(m => m.species)) }), []);
+    add('rules', true, t(lang, 'coach.problem.megas', { list: list(megas.map(battleName)) }), []);
   }
 
   const missing = analysis.needs.missingRoles.filter(r => ESSENTIAL_ROLES.includes(r));
@@ -188,7 +188,7 @@ function findSwaps(team: TeamSet[], format: Format, data: EngineData): CoachSwap
     used.add(pick.species);
     swaps.push({
       index: option.index,
-      member: option.member.species,
+      member: battleName(option.member),
       fit: option.fit,
       replacement: pick.species,
       set: pick.set,

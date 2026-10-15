@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { dex, getMove, getSpecies, itemNames, moveNames, natureNames } from '../engine/dex';
+import { battleSpecies, dex, getMove, getSpecies, itemNames, moveNames, natureNames } from '../engine/dex';
 import { legalAbilities, legalMoves } from '../engine/learnsets';
 import { formatName, sameSet, STAT_IDS, type Preset, type StatID, type TeamSet } from '../engine/sets';
 import { TYPES } from '../engine/types';
@@ -154,7 +154,11 @@ export function SetEditor({ set, presets = [], genLimit, onChange }: Props) {
     if (preset) onChange({ ...preset.set, species: set.species, favorite: set.favorite, customSkillset: set.customSkillset });
   };
   const itemDesc = describe.item(set.item, lang);
-  const abilityDesc = describe.ability(set.ability, lang);
+  // Con la megapietra l'abilità è quella della Mega: si mostra bloccata, quella del set torna togliendo la pietra
+  const forme = battleSpecies(set);
+  const megaAbility = forme && species && forme.name !== species.name ? forme.abilities[0] : null;
+  const shownAbility = megaAbility ?? set.ability;
+  const abilityDesc = describe.ability(shownAbility, lang);
 
   return (
     <div className="set-editor">
@@ -193,8 +197,15 @@ export function SetEditor({ set, presets = [], genLimit, onChange }: Props) {
         </div>
         <div className="field" data-tip={abilityDesc}>
           <span className="field-head">{t('editor.ability')}</span>
-          <Combobox label={t('editor.ability')} value={set.ability} options={abilityOptions} restricted={!custom}
-            description={abilityDesc} onChange={ability => update({ ability })} />
+          {megaAbility ? (
+            <span title={t('editor.megaAbility')}>
+              <Combobox label={t('editor.ability')} value={megaAbility} options={[abilityOption(megaAbility, lang)]} restricted disabled
+                description={abilityDesc} onChange={() => undefined} />
+            </span>
+          ) : (
+            <Combobox label={t('editor.ability')} value={set.ability} options={abilityOptions} restricted={!custom}
+              description={abilityDesc} onChange={ability => update({ ability })} />
+          )}
         </div>
         <div className="field">
           <span className="field-head">{t('editor.nature')}</span>

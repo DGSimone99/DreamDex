@@ -1,4 +1,4 @@
-import { battleAbility, battleSpecies, getMove, isDefined, toID } from './dex';
+import { battleAbility, battleName, battleSpecies, getMove, isDefined, toID } from './dex';
 import { attackStyle } from './roles';
 import type { TeamSet } from './sets';
 import { t, type Lang } from '../i18n';
@@ -149,7 +149,7 @@ export function mechanicalLinks(candidate: TeamSet, team: TeamSet[], lang: Lang 
     const enabler = enables(member).find(e => candidateBenefits.some(b => b.condition === e.condition));
     if (enabler) {
       const benefit = candidateBenefits.find(b => b.condition === enabler.condition)!;
-      links.push({ text: t(lang, 'synergy.enabledBy', { member: member.species, via: viaName(enabler.via, lang), benefit: viaName(benefit.via, lang) }) });
+      links.push({ text: t(lang, 'synergy.enabledBy', { member: battleName(member), via: viaName(enabler.via, lang), benefit: viaName(benefit.via, lang) }) });
     }
   }
   const candidateEnables = enables(candidate);
@@ -158,7 +158,7 @@ export function mechanicalLinks(candidate: TeamSet, team: TeamSet[], lang: Lang 
     const enabler = candidateEnables.find(e => memberBenefits.some(b => b.condition === e.condition));
     if (enabler) {
       const benefit = memberBenefits.find(b => b.condition === enabler.condition)!;
-      links.push({ text: t(lang, 'synergy.enables', { member: member.species, via: viaName(enabler.via, lang), benefit: viaName(benefit.via, lang) }) });
+      links.push({ text: t(lang, 'synergy.enables', { member: battleName(member), via: viaName(enabler.via, lang), benefit: viaName(benefit.via, lang) }) });
     }
   }
   return links;
@@ -194,7 +194,7 @@ export function unusedEnablers(team: TeamSet[]): UnusedEnabler[] {
     const usedByOthers = new Set(team.filter(o => o !== member).flatMap(specific).map(b => b.condition));
     return enables(member)
       .filter(e => !usedByOthers.has(e.condition))
-      .map(e => ({ member: member.species, ...e, selfBoost: boostsItself(member, e.condition) }));
+      .map(e => ({ member: battleName(member), ...e, selfBoost: boostsItself(member, e.condition) }));
   });
 }
 
@@ -207,7 +207,7 @@ export function unmetBeneficiaries(team: TeamSet[]): TeamConditionIssue[] {
       .filter(b => !GENERIC_MOVES.has(toID(b.via)))
       .filter(b => !PARADOX.has(toID(b.via)))
       .filter(b => b.via !== SLOW)
-      .map(b => ({ member: member.species, ...b })));
+      .map(b => ({ member: battleName(member), ...b })));
 }
 
 /** Sinergie già attive nel team, una riga per abilitatore: "Ninetales (Drought) → Leafeon (Chlorophyll)". */
@@ -222,8 +222,8 @@ export function teamSynergies(team: TeamSet[], lang: Lang = 'it'): string[] {
           benefit: benefits(other).find(b => b.condition === enabler.condition && !GENERIC_MOVES.has(toID(b.via))),
         }))
         .filter(x => x.benefit)
-        .map(x => `${x.other.species} (${viaName(x.benefit!.via, lang)})`);
-      if (beneficiaries.length) lines.push(`${member.species} (${viaName(enabler.via, lang)}) → ${beneficiaries.join(', ')}`);
+        .map(x => `${battleName(x.other)} (${viaName(x.benefit!.via, lang)})`);
+      if (beneficiaries.length) lines.push(`${battleName(member)} (${viaName(enabler.via, lang)}) → ${beneficiaries.join(', ')}`);
     }
   }
   return lines;
@@ -260,10 +260,10 @@ export function weatherMitigations(team: TeamSet[]): WeatherMitigation[] {
     seen.add(e.condition);
     const members = team
       .filter(m => !effect.groundedOnly || isGrounded(m))
-      .map(m => ({ species: m.species, from: defensiveMultiplier(effect.type, m) }))
+      .map(m => ({ species: battleName(m), from: defensiveMultiplier(effect.type, m) }))
       .filter(m => m.from > 1)
       .map(m => ({ ...m, to: m.from / 2 }));
-    return members.length ? { condition: e.condition, source: `${enabler.species} (${e.via})`, type: effect.type, members } : null;
+    return members.length ? { condition: e.condition, source: `${battleName(enabler)} (${e.via})`, type: effect.type, members } : null;
   })).filter(isDefined);
 }
 
@@ -283,7 +283,7 @@ export function conditionConflicts(team: TeamSet[], lang: Lang = 'it'): Conditio
     const setters = team.flatMap(member =>
       enables(member)
         .filter(e => group.includes(e.condition))
-        .map(e => ({ condition: e.condition, label: `${member.species} (${viaName(e.via, lang)})` })));
+        .map(e => ({ condition: e.condition, label: `${battleName(member)} (${viaName(e.via, lang)})` })));
     return new Set(setters.map(s => s.condition)).size > 1 ? [{ kind, setters: setters.map(s => s.label) }] : [];
   });
 }
@@ -313,7 +313,7 @@ export function weakenedMoves(team: TeamSet[]): WeakenedMove[] {
         const hit = attackingMoves(member).some(m => m.type === type && toID(m.name) !== 'hydrosteam');
         if (!hit) continue;
         const stab = ((battleSpecies(member)?.types ?? []) as readonly string[]).includes(type);
-        result.push({ condition: e.condition, setter: setter.species, member: member.species, type, stab });
+        result.push({ condition: e.condition, setter: battleName(setter), member: battleName(member), type, stab });
       }
     }
   }
@@ -338,7 +338,7 @@ export function neededConditions(team: TeamSet[], index: number): NeededConditio
       beneficiaries: others.flatMap(member => {
         const benefit = benefits(member).find(b =>
           b.condition === e.condition && !GENERIC_MOVES.has(toID(b.via)) && !PARADOX.has(toID(b.via)));
-        return benefit ? [{ species: member.species, via: benefit.via }] : [];
+        return benefit ? [{ species: battleName(member), via: benefit.via }] : [];
       }),
     }))
     .filter(n => n.beneficiaries.length > 0);
@@ -360,7 +360,7 @@ export function clashesWith(candidate: TeamSet, team: TeamSet[], lang: Lang = 'i
     for (const member of team) {
       for (const other of enables(member)) {
         if (group.includes(other.condition) && other.condition !== own.condition) {
-          result.push(`${member.species} (${viaName(other.via, lang)})`);
+          result.push(`${battleName(member)} (${viaName(other.via, lang)})`);
         }
       }
     }

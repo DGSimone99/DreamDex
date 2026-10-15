@@ -3,6 +3,7 @@ import type { Coaching } from '../engine/coach';
 import type { EngineData } from '../engine/data';
 import type { TeamRating } from '../engine/rating';
 import { DESIRABLE_ROLES, detectRoles, ESSENTIAL_ROLES, roleLabel } from '../engine/roles';
+import { battleName } from '../engine/dex';
 import { weatherMitigations, type WeatherMitigation } from '../engine/synergy';
 import { formatPercent, t, type Lang } from '../i18n';
 import { anyGameName, typeName } from '../i18n/game';
@@ -51,7 +52,7 @@ export function AnalysisPanel({ team, analysis, rating, coaching, preview, onRep
   const minorWeak = severities.filter(s => s === 'minor').length;
   const uncovered = analysis.coverage.filter(row => row.hitters.length === 0);
   const open = analysis.threats.filter(t => t.handledBy.length === 0);
-  const rolesOf = team.map(set => ({ name: set.species, roles: detectRoles(set) }));
+  const rolesOf = team.map(set => ({ name: battleName(set), roles: detectRoles(set) }));
   const roleGroups = [
     { title: tr('analysis.essential'), roles: ESSENTIAL_ROLES },
     { title: tr('analysis.useful'), roles: DESIRABLE_ROLES },
@@ -86,7 +87,7 @@ export function AnalysisPanel({ team, analysis, rating, coaching, preview, onRep
           <thead>
             <tr>
               <th>{tr('analysis.type')}</th>
-              {team.map((set, i) => <th key={i}>{set.species}</th>)}
+              {team.map((set, i) => <th key={i}>{battleName(set)}</th>)}
               <th>{tr('analysis.weakCol')}</th>
               <th>{tr('analysis.resistCol')}</th>
             </tr>

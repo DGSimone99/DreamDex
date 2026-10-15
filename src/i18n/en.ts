@@ -345,6 +345,7 @@ export const en = {
   'filters.allGens': "All",
   'filters.gen': "Gen {n}",
   'filters.reset': "Reset filters",
+  'editor.megaAbility': "Mega ability: it always applies in battle",
   'stat.hp': 'HP',
   'stat.atk': 'Atk',
   'stat.def': 'Def',

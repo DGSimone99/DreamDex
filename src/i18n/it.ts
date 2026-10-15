@@ -347,6 +347,7 @@ export const it: Record<keyof typeof en, string> = {
   'filters.allGens': "Tutte",
   'filters.gen': "Gen {n}",
   'filters.reset': "Azzera filtri",
+  'editor.megaAbility': "Abilità della Mega: in battaglia vale sempre questa",
   'stat.hp': 'PS',
   'stat.atk': 'Att',
   'stat.def': 'Dif',

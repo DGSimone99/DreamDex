@@ -9,7 +9,7 @@ describe('coaching e valutazione in inglese', () => {
   it('verdetto, problemi e categorie', () => {
     const coaching = coachTeam([tusk, gholdengo, { ...emptySet('Mewtwo'), item: 'Mewtwonite Y' }], DEFAULT_FORMAT, fixtureData, 'en');
     expect(coaching.verdict).toBe('Incomplete team');
-    expect(coaching.problems).toContainEqual({ severity: 'serious', category: 'rules', text: 'Mewtwo is not legal in National Dex OU', fixes: [] });
+    expect(coaching.problems).toContainEqual({ severity: 'serious', category: 'rules', text: 'Mewtwo-Mega-Y is not legal in National Dex OU', fixes: [] });
     expect(coaching.problems.some(p => /^Weak to \w+: \d+ weak – \d+ resist/.test(p.text))).toBe(true);
   });
 

@@ -38,7 +38,7 @@ export const WEAKENED_COVERAGE_PENALTY = 1;
 
 function clashFacts(set: TeamSet, team: TeamSet[], lang: Lang): { texts: string[]; penalty: number } {
   const conflicts = clashesWith(set, team, lang);
-  const weakened = weakenedMoves([...team, set]).filter(w => w.member === set.species && w.setter !== set.species);
+  const weakened = weakenedMoves([...team, set]).filter(w => w.member === battleName(set) && w.setter !== battleName(set));
   const cap = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
   return {
     texts: [
@@ -128,7 +128,7 @@ function rolesComponent(set: TeamSet, analysis: TeamAnalysis) {
 
 function synergyRaw(set: TeamSet, team: TeamSet[], data: EngineData) {
   if (team.length === 0) return { raw: 0, best: null };
-  const pcts = team.map(member => ({ member: member.species, pct: teammatePct(data.stats, battleName(member), battleName(set)) }));
+  const pcts = team.map(member => ({ member: battleName(member), pct: teammatePct(data.stats, battleName(member), battleName(set)) }));
   const best = pcts.reduce((a, b) => (b.pct > a.pct ? b : a));
   return { raw: sum(pcts.map(p => p.pct)) / team.length, best: best.pct > 0 ? best : null };
 }

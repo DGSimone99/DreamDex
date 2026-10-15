@@ -45,7 +45,7 @@ export function analyzeTeam(team: TeamSet[], data: EngineData): TeamAnalysis {
     threats: topThreats(data.stats, THREAT_COUNT, names).map(name => ({
       name,
       usage: usageOf(data.stats, name),
-      handledBy: team.filter(set => checksThreat(data, set, name)).map(set => set.species),
+      handledBy: team.filter(set => checksThreat(data, set, name)).map(battleName),
     })),
     typeWeights: metaTypeWeights(data.stats),
   };
