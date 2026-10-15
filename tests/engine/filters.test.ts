@@ -41,8 +41,17 @@ describe('filtri', () => {
     expect(sorted(search({ types: ['Water'] }))).toEqual(['Rotom-Wash', 'Toxapex']);
   });
 
+  it('due tipi: devono esserci entrambi', () => {
+    expect(search({ types: ['Water', 'Poison'] })).toEqual(['Toxapex']);
+    expect(search({ types: ['Water', 'Fire'] })).toEqual([]);
+  });
+
   it('ruolo', () => {
     expect(sorted(search({ roles: ['pivot'] }))).toEqual(['Corviknight', 'Rotom-Wash']);
+  });
+
+  it('più ruoli: devono esserci tutti', () => {
+    expect(search({ roles: ['pivot', 'physicalWall'] })).toEqual(['Corviknight']);
   });
 
   it('resiste a', () => {

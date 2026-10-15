@@ -45,6 +45,18 @@ describe('ricerca e filtri nei suggerimenti', () => {
     expect(cardNames().length).toBeGreaterThan(2);
   });
 
+  it('al massimo due tipi: gli altri si disattivano', async () => {
+    const user = await setup('Great Tusk');
+    const types = within(screen.getByRole('group', { name: 'Tipo' }));
+    await user.click(types.getByRole('button', { name: 'Water' }));
+    await user.click(types.getByRole('button', { name: 'Poison' }));
+    expect(cardNames()).toEqual(['Toxapex']);
+    expect(types.getByRole('button', { name: 'Fire' })).toBeDisabled();
+    expect(types.getByRole('button', { name: 'Water' })).toBeEnabled();
+    await user.click(types.getByRole('button', { name: 'Poison' }));
+    expect(types.getByRole('button', { name: 'Fire' })).toBeEnabled();
+  });
+
   it('filtro a tendina: resiste a', async () => {
     const user = await setup('Great Tusk');
     await user.selectOptions(screen.getByLabelText('Resiste a'), 'Ground');
