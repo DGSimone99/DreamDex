@@ -4,7 +4,8 @@ import { formatLabel, isBannedIn, meetsTeamRules } from '../engine/formats';
 import type { Format } from '../engine/format';
 import { detectRoles, roleLabel } from '../engine/roles';
 import { presetsFor, type Preset, type TeamSet } from '../engine/sets';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import { useSlant } from './slant';
 import { SetEditor } from './SetEditor';
 import { commonChoices, type CommonChoices } from '../engine/common';
 import { StatsBadge } from './StatsBadge';
@@ -54,6 +55,8 @@ function TeamSlot({ set, presets, common, format, warning: megaWarning, open, on
 }) {
   const lang = useLang();
   const tr = useT();
+  const card = useRef<HTMLElement>(null);
+  useSlant(card);
   const species = battleSpecies(set);
   // Con la megapietra il membro è la Mega: nome e abilità della forma in battaglia (il set resta quello di Showdown)
   const name = battleName(set);
@@ -76,7 +79,7 @@ function TeamSlot({ set, presets, common, format, warning: megaWarning, open, on
       style={{ '--t1': typeColor(species?.types[0] ?? ''), '--t2': typeColor(species?.types[1] ?? species?.types[0] ?? '') } as React.CSSProperties}
       onToggle={e => onToggle(e.currentTarget.open)}
     >
-      <summary>
+      <summary ref={card}>
         <span className="sprite-wrap">
           <Sprite species={set.species} item={set.item} />
           {(dangers.length > 0 || warns.length > 0) && (
@@ -87,7 +90,7 @@ function TeamSlot({ set, presets, common, format, warning: megaWarning, open, on
           )}
         </span>
         {set.customSkillset && (
-          // Non è un problema: sta allineato al nome, fuori dal cerchietto degli avvisi
+          // Non è un problema: piccolo, nell'angolo in alto a sinistra
           <AlertMark icon="unlock" className="slot-custom"
             alerts={[{ level: 'info', text: tr('team.customMark') }]} />
         )}
