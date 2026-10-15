@@ -134,7 +134,7 @@ function SuggestionItem({ rank, item, actionLabel, quickLabel, replacing, member
         <ul className="reasons">{item.reasons.map(reason => <li key={reason.text}><Typed text={reason.text} /></li>)}</ul>
         <pre className="set">{setText}</pre>
         <div className="actions">
-          <button type="button" className="primary" onClick={onAction}>{actionLabel}</button>
+          <button type="button" className={rank === 1 ? 'primary' : undefined} onClick={onAction}>{actionLabel}</button>
           <button type="button" onClick={() => copyText(setText)}>Copia set</button>
         </div>
       </details>

@@ -646,7 +646,7 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .combobox [role='option'] { margin: 0; padding: 8px 10px; cursor: pointer; border-bottom: 1px solid var(--line-soft); transition: background 0.1s; }
 .combobox [role='option']:last-of-type { border-bottom: 0; }
 .combobox [role='option'].active { background: var(--raised); border-radius: 3px; border-bottom-color: transparent; }
-.combobox [role='option'][aria-selected='true'] { box-shadow: inset 2px 0 0 var(--gold); }
+.combobox [role='option'][aria-selected='true'] { background: var(--blue-soft); border-radius: 3px; border-bottom-color: transparent; }
 /* Valore scelto mostrato con stile (chip del tipo, effetti della natura) */
 .combobox.has-display input { color: transparent; caret-color: transparent; }
 .combobox-display {
@@ -706,7 +706,7 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
   select option { padding: 8px 10px; font-size: 14px; color: var(--text); border-bottom: 1px solid var(--line-soft); cursor: pointer; }
   select option:last-child { border-bottom: 0; }
   select option:hover, select option:focus-visible { background: var(--raised); border-radius: 3px; outline: none; }
-  select option:checked { font-weight: 600; box-shadow: inset 2px 0 0 var(--gold); background: none; }
+  select option:checked { font-weight: 600; background: var(--blue-soft); border-radius: 3px; }
   select option::checkmark { display: none; }
 }
 
@@ -802,10 +802,11 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
   cursor: default;
 }
 .alert-mark:hover .alert-pop, .alert-mark:focus-visible .alert-pop { display: flex; animation: tip 0.15s var(--ease); }
-.alert-line { color: var(--text); padding-left: 10px; border-left: 2px solid; }
-.alert-line.danger { border-color: var(--bad); }
-.alert-line.warn { border-color: var(--warn); }
-.alert-line.info { border-color: var(--blue); }
+.alert-line { position: relative; color: var(--text); padding-left: 14px; }
+.alert-line::before { content: ''; position: absolute; left: 0; top: 0.5em; width: 6px; height: 6px; border-radius: 50%; background: var(--c); }
+.alert-line.danger { --c: var(--bad); }
+.alert-line.warn { --c: var(--warn); }
+.alert-line.info { --c: var(--blue); }
 .slot > summary:has(.alert-mark:hover, .alert-mark:focus-visible) { z-index: 5; }
 
 /* Icone degli strumenti (24px, dal foglio di Showdown) */
