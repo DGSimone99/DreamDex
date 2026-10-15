@@ -108,9 +108,10 @@ export function Combobox({ label, value, options, onChange, restricted = false, 
         readOnly={restricted}
         disabled={disabled}
         placeholder={placeholder}
-        value={shownValue}
+        // Mentre scrivi si vede il testo digitato; l'etichetta del valore torna quando esci dal campo
+        value={query ?? shownValue}
         onClick={() => (open ? setOpen(false) : show())}
-        onBlur={() => setOpen(false)}
+        onBlur={() => { setOpen(false); setQuery(null); }}
         onChange={e => {
           // Testo uguale all'etichetta di una voce: si salva il valore della voce; altrimenti il testo libero
           const typed = toID(e.target.value);
