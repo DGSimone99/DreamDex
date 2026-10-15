@@ -81,6 +81,18 @@ export function FilterBar({ filters, onChange }: Props) {
           </select>
         </label>
         <label>
+          Tier
+          <select aria-label="Tier" value={filters.tier} onChange={e => set({ tier: e.target.value as CandidateFilters['tier'] })}>
+            <option value="all">Tutti</option>
+            <option value="legal">Legali in National Dex OU</option>
+            <option value="uber">Uber e AG</option>
+            <option value="ou">OU</option>
+            <option value="uu">UU (UUBL + UU)</option>
+            <option value="ru">RU e inferiori</option>
+            <option value="nfe">Non evoluti</option>
+          </select>
+        </label>
+        <label>
           Uso nel meta
           <select aria-label="Uso nel meta" value={filters.usage} onChange={e => set({ usage: e.target.value as CandidateFilters['usage'] })}>
             <option value="all">Tutti</option>

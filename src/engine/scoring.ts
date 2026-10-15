@@ -186,3 +186,8 @@ export function suggest(team: TeamSet[], format: Format, data: EngineData, limit
   if (team.length >= 6) return [];
   return scoreCandidates(team, format, data).slice(0, limit);
 }
+
+/** Valuta solo i set indicati (nessun candidato preso dalle statistiche). */
+export function scoreSets(team: TeamSet[], format: Format, data: EngineData, sets: TeamSet[]): Suggestion[] {
+  return scoreCandidates(team, { ...format, minUsage: Infinity }, data, sets);
+}

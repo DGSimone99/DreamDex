@@ -1,11 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { EngineData } from '../engine/data';
 import type { Format } from '../engine/format';
 import { improveReplacements, similarReplacements, type Replacement } from '../engine/replace';
 import { suggest, type Suggestion } from '../engine/scoring';
 import { exportShowdown, type TeamSet } from '../engine/sets';
 import { getSpecies } from '../engine/dex';
-import { EMPTY_FILTERS, filterList, isFiltering, searchCandidates, type CandidateFilters } from '../engine/filters';
+import { EMPTY_FILTERS, isFiltering, searchCandidates, searchPool, tierLabel, type CandidateFilters } from '../engine/filters';
 import { memberPower } from '../engine/power';
 import { defaultSet } from '../engine/sets';
 import { FilterBar } from './FilterBar';
@@ -33,6 +33,13 @@ interface Props {
   onCancelReplace: () => void;
 }
 
+function TierTag({ species }: { species: string }) {
+  const { label, banned } = tierLabel(species);
+  return banned
+    ? <span className="tag banned">{label} · bannato in National Dex OU</span>
+    : <span className="tag tier">{label}</span>;
+}
+
 function SuggestionItem({ rank, item, actionLabel, onAction, emptyTeam }: {
   emptyTeam: boolean;
   rank: number;
@@ -50,9 +57,10 @@ function SuggestionItem({ rank, item, actionLabel, onAction, emptyTeam }: {
           <span>
             <strong>{rank}. {item.species}</strong>
             <small>{diffText ?? item.reasons[0]?.text ?? ''}</small>
-            {item.tags.length > 0 && (
-              <span className="tags">{item.tags.map(tag => <span key={tag} className="tag">{tag}</span>)}</span>
-            )}
+            <span className="tags">
+              <TierTag species={item.species} />
+              {item.tags.map(tag => <span key={tag} className="tag">{tag}</span>)}
+            </span>
           </span>
           <span className="score" aria-label={`Punteggio ${item.score}`}>{item.score}</span>
         </summary>
@@ -82,28 +90,41 @@ function SuggestionItem({ rank, item, actionLabel, onAction, emptyTeam }: {
   );
 }
 
+/** Il valore si aggiorna solo dopo `delay` ms senza modifiche (per non ricalcolare a ogni lettera). */
+function useDebounced<T>(value: T, delay: number): T {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const id = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(id);
+  }, [value, delay]);
+  return debounced;
+}
+
+export const SEARCH_DELAY = 200;
+
 export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onReplaceWith, onCancelReplace }: Props) {
   const [mode, setMode] = useState<ReplaceMode>('improve');
   const [limit, setLimit] = useState(PAGE);
   const [filters, setFilters] = useState<CandidateFilters>(EMPTY_FILTERS);
-  const filtering = isFiltering(filters);
+  // La lista si ricalcola sui filtri "stabili"; l'input mostra subito quello che scrivi
+  const applied = useDebounced(filters, SEARCH_DELAY);
+  const filtering = isFiltering(applied);
   const replacing = replaceIndex !== null && replaceIndex < team.length;
   /** Il team contro cui si valutano i candidati è vuoto: niente adattamento da mostrare. */
   const emptyTeam = (replacing ? team.length - 1 : team.length) === 0;
 
   const items: (Suggestion | Replacement)[] = useMemo(() => {
     if (replacing) {
-      if (!data.stats) return [];
-      // Con ricerca o filtri si guarda oltre la soglia di uso minimo, poi si filtra
-      const open = filtering ? { ...format, minUsage: 0 } : format;
-      const all = mode === 'improve'
-        ? improveReplacements(team, replaceIndex, open, data, filtering ? Infinity : MAX)
-        : similarReplacements(team, replaceIndex, open, data, filtering ? Infinity : MAX);
-      return filtering ? filterList(all, filters, data, MAX) : all;
+      // Con ricerca o filtri i sostituti vengono da tutto il Pokédex, non solo dalle statistiche
+      const pool = filtering ? searchPool(team.filter((_, i) => i !== replaceIndex), format, data, applied) : undefined;
+      if (!pool && !data.stats) return [];
+      return mode === 'improve'
+        ? improveReplacements(team, replaceIndex, format, data, MAX, pool)
+        : similarReplacements(team, replaceIndex, format, data, MAX, pool);
     }
-    if (filtering) return searchCandidates(team, format, data, filters, MAX);
+    if (filtering) return searchCandidates(team, format, data, applied, MAX);
     return data.stats ? suggest(team, format, data, MAX) : [];
-  }, [team, format, data, replacing, replaceIndex, mode, filters, filtering]);
+  }, [team, format, data, replacing, replaceIndex, mode, applied, filtering]);
 
   /** Invio su un nome esatto: aggiunge (o sostituisce) subito con il set di riferimento. */
   const pickExact = () => {
