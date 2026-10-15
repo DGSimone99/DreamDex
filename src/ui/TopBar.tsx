@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import type { Format } from '../engine/format';
+import type { Format, FormatId } from '../engine/format';
+import { FORMAT_OPTIONS } from '../engine/formats';
 import type { StatsMeta } from '../engine/stats';
 
 const GENERATIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9];
@@ -16,7 +17,16 @@ export function TopBar({ format, onFormatChange, meta, children }: Props) {
   return (
     <header className="topbar">
       <h1>DreamDex</h1>
-      <span>National Dex OU</span>
+      <label>
+        Formato{' '}
+        <select
+          aria-label="Formato"
+          value={format.formatId}
+          onChange={e => onFormatChange({ ...format, formatId: e.target.value as FormatId })}
+        >
+          {FORMAT_OPTIONS.map(option => <option key={option.id} value={option.id}>{option.label}</option>)}
+        </select>
+      </label>
       <label>
         Fino a Gen{' '}
         <select
