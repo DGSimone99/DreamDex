@@ -7,7 +7,7 @@ import { fixtureData } from '../fixtures/data';
 describe('anteprima del sostituto nel coaching', () => {
   it('aprire un sostituto aggiorna la raccomandazione; annullare la ripristina', async () => {
     const user = userEvent.setup();
-    render(<App data={fixtureData} />);
+    render(<App initialLang="it" data={fixtureData} />);
     for (const name of ['Great Tusk', 'Gholdengo', 'Magikarp']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
     const card = () => screen.getByRole('button', { name: 'Altri sostituti per Magikarp' }).closest('li')!;
     const proposed = card().querySelector('.swap-head .mon-name:not(.muted) strong')!.textContent;
@@ -30,7 +30,7 @@ describe('anteprima del sostituto nel coaching', () => {
 
   it('"Sostituisci" nella card mette subito nel team il sostituto mostrato', async () => {
     const user = userEvent.setup();
-    render(<App data={fixtureData} />);
+    render(<App initialLang="it" data={fixtureData} />);
     for (const name of ['Great Tusk', 'Gholdengo', 'Magikarp']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
     const card = screen.getByRole('button', { name: 'Altri sostituti per Magikarp' }).closest('li')!;
     const proposed = card.querySelector('.swap-head .mon-name:not(.muted) strong')!.textContent!;
@@ -44,7 +44,7 @@ describe('anteprima del sostituto nel coaching', () => {
 
   it('"Sostituisci" usa il sostituto selezionato in "Altri sostituti"', async () => {
     const user = userEvent.setup();
-    render(<App data={fixtureData} />);
+    render(<App initialLang="it" data={fixtureData} />);
     for (const name of ['Great Tusk', 'Gholdengo', 'Magikarp']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
     const card = () => screen.getByRole('button', { name: 'Altri sostituti per Magikarp' }).closest('li')!;
     const proposed = card().querySelector('.swap-head .mon-name:not(.muted) strong')!.textContent!;

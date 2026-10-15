@@ -6,7 +6,7 @@ import { fixtureData } from '../fixtures/data';
 
 async function setup(...names: string[]) {
   const user = userEvent.setup();
-  render(<App data={fixtureData} />);
+  render(<App initialLang="it" data={fixtureData} />);
   for (const name of names) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
   return user;
 }

@@ -120,7 +120,9 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 .topbar h1 span { color: var(--gold); }
 .topbar > label { display: flex; flex-direction: column; gap: 3px; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
 .topbar > label select { font-size: 14px; text-transform: none; letter-spacing: 0; font-weight: 500; color: var(--text); min-width: 70px; }
-.topbar .meta { margin-left: auto; color: var(--muted); font-size: 13px; align-self: center; }
+.topbar .lang-switch { margin-left: auto; align-self: center; }
+.topbar .lang-switch button { padding: 5px 10px; }
+.topbar .meta { margin-left: 14px; color: var(--muted); font-size: 13px; align-self: center; }
 
 .popover { position: relative; }
 .popover > summary {

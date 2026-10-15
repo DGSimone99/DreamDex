@@ -3,6 +3,8 @@ import type { Format, FormatId } from '../engine/format';
 import { FORMAT_OPTIONS } from '../engine/formats';
 import { TYPES, type TypeName } from '../engine/types';
 import type { StatsMeta } from '../engine/stats';
+import { LANGS, type Lang } from '../i18n';
+import { useT } from '../i18n/react';
 
 const GENERATIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 const USAGE_THRESHOLDS = [0, 0.005, 0.01, 0.02, 0.05];
@@ -11,10 +13,13 @@ interface Props {
   format: Format;
   onFormatChange: (format: Format) => void;
   meta: StatsMeta | null;
+  lang: Lang;
+  onLangChange: (lang: Lang) => void;
   children?: ReactNode;
 }
 
-export function TopBar({ format, onFormatChange, meta, children }: Props) {
+export function TopBar({ format, onFormatChange, meta, lang, onLangChange, children }: Props) {
+  const t = useT();
   return (
     <header className="topbar">
       <h1>Dream<span>Dex</span></h1>
@@ -52,6 +57,13 @@ export function TopBar({ format, onFormatChange, meta, children }: Props) {
       </label>
       <AdvancedOptions format={format} onFormatChange={onFormatChange} />
       {children}
+      <div role="group" aria-label={t('lang.label')} className="segmented lang-switch">
+        {LANGS.map(code => (
+          <button key={code} type="button" aria-pressed={lang === code} onClick={() => onLangChange(code)}>
+            {t(`lang.${code}`)}
+          </button>
+        ))}
+      </div>
       <span className="meta">
         {meta ? `Statistiche: ${meta.month} (rating ${meta.cutoff}+)` : 'Statistiche: assenti'}
       </span>

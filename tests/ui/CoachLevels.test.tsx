@@ -58,7 +58,7 @@ describe('interruttore "Più Mega ammesse"', () => {
 
   it('si attiva e si disattiva dalla barra in alto', async () => {
     const user = userEvent.setup();
-    render(<App data={fixtureData} />);
+    render(<App initialLang="it" data={fixtureData} />);
     for (const name of ['Lopunny-Mega', 'Charizard-Mega-Y']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
     const toggle = screen.getByRole('checkbox', { name: 'Più Mega ammesse' });
     expect(toggle).not.toBeChecked();
@@ -70,7 +70,7 @@ describe('interruttore "Più Mega ammesse"', () => {
 
   it('"Lo so, tengo un\'altra Mega" spunta l\'interruttore', async () => {
     const user = userEvent.setup();
-    render(<App data={fixtureData} />);
+    render(<App initialLang="it" data={fixtureData} />);
     for (const name of ['Lopunny-Mega', 'Charizard-Mega-Y']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
     await user.click(screen.getByRole('button', { name: "Lo so, tengo un'altra Mega" }));
     expect(screen.getByRole('checkbox', { name: 'Più Mega ammesse' })).toBeChecked();

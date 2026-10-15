@@ -2,6 +2,7 @@ import { DEFAULT_FORMAT, type Format } from './engine/format';
 import { FORMAT_OPTIONS } from './engine/formats';
 import type { TeamSet } from './engine/sets';
 import { TYPES } from './engine/types';
+import { isLang, type Lang } from './i18n';
 
 export interface SavedTeam {
   name: string;
@@ -100,3 +101,24 @@ export function saveSession(session: Session, storage: Storage | undefined = def
 
 /** localStorage del browser, se accessibile. */
 export const browserStorage = (): Storage | undefined => defaultStorage();
+
+const LANG_KEY = 'dreamdex.lang';
+
+/** Lingua salvata, o null se assente o non valida. */
+export function loadLang(storage: Storage | undefined = defaultStorage()): Lang | null {
+  try {
+    const raw = storage?.getItem(LANG_KEY);
+    const parsed: unknown = raw ? JSON.parse(raw) : null;
+    return isLang(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+export function saveLang(lang: Lang, storage: Storage | undefined = defaultStorage()): void {
+  try {
+    storage?.setItem(LANG_KEY, JSON.stringify(lang));
+  } catch {
+    // Archivio non disponibile: la scelta vale solo per questa sessione
+  }
+}

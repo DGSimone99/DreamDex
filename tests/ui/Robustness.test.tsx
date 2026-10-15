@@ -13,7 +13,7 @@ describe('robustezza UI', () => {
 
   it('mostra un\'abilità non standard (hackrom/import) nel menu', async () => {
     const user = userEvent.setup();
-    render(<App data={fixtureData} />);
+    render(<App initialLang="it" data={fixtureData} />);
     await user.click(screen.getByLabelText('Testo Showdown'));
     await user.paste('Garchomp\nAbility: Huge Power\n- Earthquake');
     await user.click(screen.getByRole('button', { name: 'Importa' }));
@@ -23,7 +23,7 @@ describe('robustezza UI', () => {
   it('salvataggio fallito: avviso e nessun team fantasma', async () => {
     vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new Error('quota'); });
     const user = userEvent.setup();
-    render(<App data={fixtureData} />);
+    render(<App initialLang="it" data={fixtureData} />);
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Great Tusk{Enter}');
     await user.type(screen.getByLabelText('Nome team'), 'Prova');
     await user.click(screen.getByRole('button', { name: 'Salva team' }));

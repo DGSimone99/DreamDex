@@ -8,7 +8,7 @@ const team = () => screen.getByRole('region', { name: 'Team' });
 
 async function importTeam(text: string) {
   const user = userEvent.setup();
-  render(<App data={fixtureData} />);
+  render(<App initialLang="it" data={fixtureData} />);
   await user.click(screen.getByLabelText('Testo Showdown'));
   await user.paste(text);
   await user.click(screen.getByRole('button', { name: 'Importa' }));

@@ -9,7 +9,7 @@ const team = () => screen.getByRole('region', { name: 'Team' });
 
 async function setup(...names: string[]) {
   const user = userEvent.setup();
-  render(<App data={fixtureData} />);
+  render(<App initialLang="it" data={fixtureData} />);
   for (const name of names) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
   return user;
 }
@@ -43,7 +43,7 @@ describe('avviso seconda Mega', () => {
 
   it('seconda Mega anche bannata: triangolo rosso e giallo insieme, ognuno col suo tooltip', async () => {
     const user = userEvent.setup();
-    render(<App data={fixtureData} />);
+    render(<App initialLang="it" data={fixtureData} />);
     await user.click(screen.getByLabelText('Testo Showdown'));
     await user.paste('Lopunny @ Lopunnite\nAbility: Limber\n- Fake Out\n\nMewtwo @ Mewtwonite Y\nAbility: Pressure\n- Psystrike');
     await user.click(screen.getByRole('button', { name: 'Importa' }));

@@ -13,7 +13,9 @@ import { ShowdownPanel } from './ui/ShowdownPanel';
 import { SuggestionsPanel } from './ui/SuggestionsPanel';
 import { TeamPanel } from './ui/TeamPanel';
 import { TopBar } from './ui/TopBar';
-import { loadSession, saveSession } from './storage';
+import { loadLang, loadSession, saveLang, saveSession } from './storage';
+import type { Lang } from './i18n';
+import { LangProvider } from './i18n/react';
 
 const NO_DATA: EngineData = { stats: null, sets: null };
 
@@ -24,9 +26,16 @@ interface AppProps {
   loadSource?: (source: string) => Promise<EngineData>;
   /** Dove salvare la sessione (team e formato). Senza, si parte sempre da zero. */
   storage?: Storage;
+  /** Lingua iniziale; senza, quella salvata o l'inglese. */
+  initialLang?: Lang;
 }
 
-export function App({ data: initialData, loadSource, storage }: AppProps) {
+export function App({ data: initialData, loadSource, storage, initialLang }: AppProps) {
+  const [lang, setLang] = useState<Lang>(() => initialLang ?? (storage ? loadLang(storage) : null) ?? 'en');
+  useEffect(() => {
+    document.documentElement.lang = lang;
+    if (storage) saveLang(lang, storage);
+  }, [lang, storage]);
   const [session] = useState(() => (storage ? loadSession(storage) : null));
   const [format, setFormat] = useState<Format>(session?.format ?? DEFAULT_FORMAT);
   // Dati per fonte: ogni formato carica la sua la prima volta, poi resta in memoria.
@@ -69,8 +78,9 @@ export function App({ data: initialData, loadSource, storage }: AppProps) {
   const replaceAt = (index: number, set: TeamSet) => changeTeam(team.map((s, i) => (i === index ? set : s)));
 
   return (
+    <LangProvider lang={lang}>
     <div className="app">
-      <TopBar format={format} onFormatChange={setFormat} meta={data.stats?.meta ?? null}>
+      <TopBar format={format} onFormatChange={setFormat} meta={data.stats?.meta ?? null} lang={lang} onLangChange={setLang}>
         <ShowdownPanel team={team} onImport={changeTeam} />
         <SavedTeams team={team} format={format} onLoad={(loaded, savedFormat) => { changeTeam(loaded); if (savedFormat) setFormat(savedFormat); }} />
       </TopBar>
@@ -105,5 +115,6 @@ export function App({ data: initialData, loadSource, storage }: AppProps) {
         </div>
       </main>
     </div>
+    </LangProvider>
   );
 }
