@@ -43,19 +43,14 @@ export function AnalysisPanel({ team, analysis, rating, coaching, onReplace, dat
   const rolesOf = team.map(set => ({ name: set.species, roles: detectRoles(set) }));
   const present = new Set(rolesOf.flatMap(r => r.roles));
   const score = threatScore(analysis);
-  const handledCount = analysis.threats.length - open.length;
-  const missing = open.length === 0
-    ? ''
-    : ` · mancano ${open.slice(0, 2).map(t => t.name).join(', ')}${open.length > 2 ? ` +${open.length - 2}` : ''}`;
   const threatSummary = score === null
     ? 'nessun dato Smogon'
-    : `Gestite ${score}/100 · ${handledCount}/${analysis.threats.length}${missing}`;
+    : open.length === 0 ? 'Nessuna mancante' : `Mancano ${open.length}`;
 
   return (
     <section aria-label="Analisi" className="analysis">
       <h2>Analisi</h2>
       {rating && <RatingPanel rating={rating} />}
-      {data && team.length > 0 && <MetaUsePanel team={team} data={data} />}
       {coaching && onReplace && <CoachPanel coaching={coaching} onReplace={onReplace} />}
 
       <details className="block">
@@ -111,6 +106,8 @@ export function AnalysisPanel({ team, analysis, rating, coaching, onReplace, dat
           <p>Il team è sbilanciato: serve un attaccante {STYLE_LABELS[analysis.needs.needStyle]}.</p>
         )}
       </details>
+
+      {data && team.length > 0 && <MetaUsePanel team={team} data={data} />}
 
       <details className="block">
         <summary><span>Minacce del meta</span><span>{threatSummary}</span></summary>

@@ -57,6 +57,17 @@ describe('Valutazione team', () => {
     expect(screen.getByRole('group', { name: 'Meta Use' })).toHaveTextContent('Statistiche Smogon assenti');
   });
 
+  it('Meta Use sta in fondo, subito prima di Minacce del meta', async () => {
+    const user = userEvent.setup();
+    render(<App data={fixtureData} />);
+    for (const name of ['Great Tusk', 'Gholdengo']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
+    const meta = screen.getByRole('group', { name: 'Meta Use' });
+    const roles = screen.getByText('Ruoli', { selector: 'summary span' });
+    const threats = screen.getByText('Minacce del meta');
+    expect(roles.compareDocumentPosition(meta) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(meta.compareDocumentPosition(threats) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it('Meta Use: uso nel meta di ogni membro, fuori dalla valutazione', async () => {
     const user = userEvent.setup();
     render(<App data={fixtureData} />);
