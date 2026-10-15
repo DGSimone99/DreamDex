@@ -1,4 +1,6 @@
 import type { EngineData } from '../engine/data';
+import { DEFAULT_FORMAT } from '../engine/format';
+import { dataSource } from '../engine/formats';
 import type { SetsData } from '../engine/sets';
 import type { SpeciesStats, StatsData, StatsMeta } from '../engine/stats';
 
@@ -6,22 +8,26 @@ type Loaders = Record<string, () => Promise<unknown>>;
 
 const files: Loaders = import.meta.glob<unknown>('/data/*/*.json', { import: 'default' });
 
-const EMPTY: EngineData = { stats: null, sets: null };
+const EMPTY: EngineData = { stats: null, sets: null, fallback: null };
+
+/** Cartella dei set di riserva comuni a tutti i formati. */
+export const FALLBACK_DIR = '_fallback';
 
 /** Legge i dati di una fonte (`data/<fonte>/`). Fonte assente o file corrotto: statistiche nulle. */
 export async function readSource(loaders: Loaders, source: string): Promise<EngineData> {
-  const read = async <T,>(name: string): Promise<T | null> => {
-    const loader = loaders[`/data/${source}/${name}.json`];
+  const read = async <T,>(dir: string, name: string): Promise<T | null> => {
+    const loader = loaders[`/data/${dir}/${name}.json`];
     return loader ? ((await loader()) as T) : null;
   };
   try {
-    const [pokemon, meta, sets] = await Promise.all([
-      read<Record<string, SpeciesStats>>('stats'),
-      read<StatsMeta>('meta'),
-      read<SetsData>('sets'),
+    const [pokemon, meta, sets, fallback] = await Promise.all([
+      read<Record<string, SpeciesStats>>(source, 'stats'),
+      read<StatsMeta>(source, 'meta'),
+      read<SetsData>(source, 'sets'),
+      read<SetsData>(FALLBACK_DIR, 'sets').catch(() => null),
     ]);
     const stats: StatsData | null = pokemon && meta ? { meta, pokemon } : null;
-    return stats || sets ? { stats, sets } : EMPTY;
+    return { ...(stats || sets ? { stats, sets } : { stats: null, sets: null }), fallback };
   } catch (error) {
     console.error(`Dati Smogon di ${source} non leggibili, rilancia npm run fetch-data:`, error);
     return EMPTY;
@@ -31,4 +37,4 @@ export async function readSource(loaders: Loaders, source: string): Promise<Engi
 export const loadSource = (source: string): Promise<EngineData> => readSource(files, source);
 
 /** Fonte iniziale (National Dex OU). */
-export const loadDataOrEmpty = (): Promise<EngineData> => loadSource('gen9nationaldex');
+export const loadDataOrEmpty = (): Promise<EngineData> => loadSource(dataSource(DEFAULT_FORMAT));

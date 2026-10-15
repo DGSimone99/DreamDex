@@ -1,6 +1,7 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { normalizeAnalysisSets, type SetsData } from '../src/engine/sets';
+import type { EngineData } from '../src/engine/data';
+import { buildFallbackSets, normalizeAnalysisSets, type SetsData } from '../src/engine/sets';
 import { reduceChaos, type ChaosFile, type StatsMeta } from '../src/engine/stats';
 import { listMonths, pickCutoff } from './smogon-index';
 import { SOURCES } from './sources';
@@ -33,7 +34,7 @@ async function fetchSets(source: string): Promise<SetsData> {
   }
 }
 
-async function fetchSource(source: string, months: string[]) {
+async function fetchSource(source: string, months: string[]): Promise<EngineData> {
   const [{ meta, chaos }, sets] = await Promise.all([fetchStats(source, months), fetchSets(source)]);
   const pokemon = reduceChaos(chaos);
   const outDir = join('data', source);
@@ -47,21 +48,26 @@ async function fetchSource(source: string, months: string[]) {
     `[${source}] Fatto: ${Object.keys(pokemon).length} Pokémon, ${Object.keys(sets).length} set, ` +
       `${meta.battles} battaglie (${meta.month}, rating ${meta.cutoff}+).`,
   );
+  return { stats: { meta, pokemon }, sets };
 }
 
 async function main() {
   const months = listMonths(await (await get(STATS_BASE)).text());
-  let failures = 0;
+  const downloaded: EngineData[] = [];
   // Una fonte che fallisce non blocca le altre
   for (const source of SOURCES) {
     try {
-      await fetchSource(source, months);
+      downloaded.push(await fetchSource(source, months));
     } catch (error) {
-      failures++;
       console.error(`[${source}] Errore: ${(error as Error).message}`);
     }
   }
-  if (failures === SOURCES.length) process.exit(1);
+  if (downloaded.length === 0) process.exit(1);
+  // Set di riserva: per ogni Pokémon, il set del formato in cui è più usato
+  const fallback = buildFallbackSets(downloaded);
+  await mkdir(join('data', '_fallback'), { recursive: true });
+  await writeFile(join('data', '_fallback', 'sets.json'), JSON.stringify(fallback));
+  console.log(`Set di riserva: ${Object.keys(fallback).length} Pokémon.`);
 }
 
 main().catch(error => {

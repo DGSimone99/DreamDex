@@ -66,8 +66,31 @@ export function mostCommonSet(stats: StatsData | null, speciesName: string): Tea
   };
 }
 
+/**
+ * Un set per ogni Pokémon presente in almeno una fonte: dal formato in cui è più usato,
+ * altrimenti dai set delle analisi. Serve come riserva quando il formato scelto non ha dati.
+ */
+export function buildFallbackSets(sources: EngineData[]): SetsData {
+  const best = new Map<string, { usage: number; stats: StatsData }>();
+  for (const source of sources) {
+    for (const [name, entry] of Object.entries(source.stats?.pokemon ?? {})) {
+      const current = best.get(name);
+      if (!current || entry.usage > current.usage) best.set(name, { usage: entry.usage, stats: source.stats! });
+    }
+  }
+  const result: SetsData = {};
+  for (const source of sources) {
+    for (const [name, set] of Object.entries(source.sets ?? {})) if (!result[name]) result[name] = set;
+  }
+  for (const [name, { stats }] of best) result[name] = mostCommonSet(stats, name)!;
+  return result;
+}
+
 export function defaultSet(data: EngineData, speciesName: string): TeamSet {
-  return mostCommonSet(data.stats, speciesName) ?? findByName(data.sets ?? undefined, speciesName) ?? emptySet(speciesName);
+  return mostCommonSet(data.stats, speciesName)
+    ?? findByName(data.sets ?? undefined, speciesName)
+    ?? findByName(data.fallback ?? undefined, speciesName)
+    ?? emptySet(speciesName);
 }
 
 type OneOrMany<T> = T | T[];
