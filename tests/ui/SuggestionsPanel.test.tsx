@@ -71,6 +71,6 @@ describe('SuggestionsPanel', () => {
 
   it('senza dati: messaggio', () => {
     render(<App data={{ stats: null, sets: null }} />);
-    expect(within(suggestions()).getByText('Servono i dati Smogon per i suggerimenti.')).toBeInTheDocument();
+    expect(within(suggestions()).getByText('Servono i dati Smogon per i suggerimenti. Puoi comunque cercare un Pokémon per nome.')).toBeInTheDocument();
   });
 });

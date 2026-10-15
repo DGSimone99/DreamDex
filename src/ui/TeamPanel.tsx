@@ -1,9 +1,8 @@
-import { useState } from 'react';
 import type { EngineData } from '../engine/data';
 import { battleSpecies, getSpecies, isLegal, isMega, withinGen } from '../engine/dex';
 import type { Format } from '../engine/format';
 import { detectRoles, ROLE_LABELS } from '../engine/roles';
-import { defaultSet, type TeamSet } from '../engine/sets';
+import type { TeamSet } from '../engine/sets';
 import { SetEditor } from './SetEditor';
 
 interface Props {
@@ -66,29 +65,6 @@ function TeamSlot({ set, format, warning, onIgnoreWarning, onChange, onRemove, o
   );
 }
 
-function SpeciesSearch({ onSelect }: { onSelect: (name: string) => void }) {
-  const [value, setValue] = useState('');
-  const submit = () => {
-    const species = getSpecies(value.trim());
-    if (!species) return;
-    onSelect(species.name);
-    setValue('');
-  };
-  return (
-    <div className="search">
-      <input
-        aria-label="Aggiungi Pokémon"
-        list="species-list"
-        placeholder="Cerca un Pokémon…"
-        value={value}
-        onChange={e => setValue(e.target.value)}
-        onKeyDown={e => { if (e.key === 'Enter') submit(); }}
-      />
-      <button type="button" onClick={submit}>Aggiungi</button>
-    </div>
-  );
-}
-
 export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onAllowMultipleMegas }: Props) {
   const firstMega = team.findIndex(isMega);
   const warningFor = (set: TeamSet, i: number) =>
@@ -113,7 +89,6 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onAl
           <div className="slot empty" key={`empty-${i}`}>vuoto</div>
         ))}
       </div>
-      {team.length < 6 && <SpeciesSearch onSelect={name => onAdd(defaultSet(data, name))} />}
     </section>
   );
 }

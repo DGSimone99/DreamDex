@@ -4,7 +4,11 @@ import type { Format } from '../engine/format';
 import { improveReplacements, similarReplacements, type Replacement } from '../engine/replace';
 import { suggest, type Suggestion } from '../engine/scoring';
 import { exportShowdown, type TeamSet } from '../engine/sets';
+import { getSpecies } from '../engine/dex';
+import { EMPTY_FILTERS, filterList, isFiltering, searchCandidates, type CandidateFilters } from '../engine/filters';
 import { memberPower } from '../engine/power';
+import { defaultSet } from '../engine/sets';
+import { FilterBar } from './FilterBar';
 import { CONDITION_LABELS, neededConditions, providesAll } from '../engine/synergy';
 import { copyText } from './clipboard';
 
@@ -81,19 +85,35 @@ function SuggestionItem({ rank, item, actionLabel, onAction, emptyTeam }: {
 export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onReplaceWith, onCancelReplace }: Props) {
   const [mode, setMode] = useState<ReplaceMode>('improve');
   const [limit, setLimit] = useState(PAGE);
+  const [filters, setFilters] = useState<CandidateFilters>(EMPTY_FILTERS);
+  const filtering = isFiltering(filters);
   const replacing = replaceIndex !== null && replaceIndex < team.length;
   /** Il team contro cui si valutano i candidati è vuoto: niente adattamento da mostrare. */
   const emptyTeam = (replacing ? team.length - 1 : team.length) === 0;
 
   const items: (Suggestion | Replacement)[] = useMemo(() => {
-    if (!data.stats) return [];
     if (replacing) {
-      return mode === 'improve'
-        ? improveReplacements(team, replaceIndex, format, data, MAX)
-        : similarReplacements(team, replaceIndex, format, data, MAX);
+      if (!data.stats) return [];
+      // Con ricerca o filtri si guarda oltre la soglia di uso minimo, poi si filtra
+      const open = filtering ? { ...format, minUsage: 0 } : format;
+      const all = mode === 'improve'
+        ? improveReplacements(team, replaceIndex, open, data, filtering ? Infinity : MAX)
+        : similarReplacements(team, replaceIndex, open, data, filtering ? Infinity : MAX);
+      return filtering ? filterList(all, filters, data, MAX) : all;
     }
-    return suggest(team, format, data, MAX);
-  }, [team, format, data, replacing, replaceIndex, mode]);
+    if (filtering) return searchCandidates(team, format, data, filters, MAX);
+    return data.stats ? suggest(team, format, data, MAX) : [];
+  }, [team, format, data, replacing, replaceIndex, mode, filters, filtering]);
+
+  /** Invio su un nome esatto: aggiunge (o sostituisce) subito con il set di riferimento. */
+  const pickExact = () => {
+    const species = getSpecies(filters.query.trim());
+    if (!species) return;
+    const set = defaultSet(data, species.name);
+    if (replacing) onReplaceWith(replaceIndex, set);
+    else onAdd(set);
+    setFilters({ ...filters, query: '' });
+  };
 
   const title = replacing ? `Sostituisci ${team[replaceIndex].species}` : 'Suggerimenti';
 
@@ -110,14 +130,39 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
     }
   }
 
+  const full = !replacing && team.length >= 6;
+  const search = full ? null : (
+    <>
+      <div className="search">
+        <input
+          aria-label="Aggiungi Pokémon"
+          list="species-list"
+          placeholder="Cerca un Pokémon…"
+          value={filters.query}
+          onChange={e => { setFilters({ ...filters, query: e.target.value }); setLimit(PAGE); }}
+          onKeyDown={e => { if (e.key === 'Enter') pickExact(); }}
+        />
+        <button type="button" onClick={pickExact}>Aggiungi</button>
+      </div>
+      <FilterBar filters={filters} onChange={next => { setFilters(next); setLimit(PAGE); }} />
+    </>
+  );
+
   let body;
-  if (!data.stats) {
-    body = <p>Servono i dati Smogon per i suggerimenti.</p>;
-  } else if (!replacing && team.length >= 6) {
+  if (full) {
     body = <p>Team completo: usa ⇄ Sostituisci su un membro per cercare alternative.</p>;
+  } else if (!data.stats && !filtering) {
+    body = <p>Servono i dati Smogon per i suggerimenti. Puoi comunque cercare un Pokémon per nome.</p>;
+  } else if (filtering && items.length === 0) {
+    body = <p className="note">Nessun Pokémon corrisponde ai filtri</p>;
   } else {
     body = (
       <>
+        {filtering && (
+          <p className="note">
+            {items.length === 1 ? '1 risultato' : `${items.length} risultati`}{items.length === MAX ? ' (i migliori per il team)' : ''}
+          </p>
+        )}
         {setterNote && <p className="note">{setterNote}</p>}
         {emptyTeam && (
           <p className="note">Aggiungi un Pokémon per vedere come si adatta al team — per ora ordinati per uso nel meta</p>
@@ -153,6 +198,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
           <button type="button" onClick={onCancelReplace}>Annulla</button>
         </div>
       )}
+      {search}
       {body}
     </section>
   );
