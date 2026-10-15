@@ -9,10 +9,10 @@ describe('anteprima del sostituto nel coaching', () => {
     const user = userEvent.setup();
     render(<App data={fixtureData} />);
     for (const name of ['Great Tusk', 'Gholdengo', 'Magikarp']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
-    const card = () => screen.getByRole('button', { name: 'Vedi sostituti per Magikarp' }).closest('li')!;
+    const card = () => screen.getByRole('button', { name: 'Altri sostituti per Magikarp' }).closest('li')!;
     const proposed = within(card()).getByText((_, el) => el?.tagName === 'STRONG').textContent;
 
-    await user.click(screen.getByRole('button', { name: 'Vedi sostituti per Magikarp' }));
+    await user.click(screen.getByRole('button', { name: 'Altri sostituti per Magikarp' }));
     const rows = within(screen.getByRole('region', { name: 'Suggerimenti' })).getAllByRole('listitem');
     const name = (row: HTMLElement) => row.querySelector('.who strong')?.textContent?.replace(/^\d+\. /, '');
     const row = rows.find(r => name(r) && name(r) !== proposed)!;
@@ -26,5 +26,37 @@ describe('anteprima del sostituto nel coaching', () => {
     await user.click(screen.getByRole('button', { name: 'Annulla' }));
     expect(within(card()).getByText(proposed!)).toBeInTheDocument();
     expect(within(card()).queryByText('Selezionato')).toBeNull();
+  });
+
+  it('"Sostituisci" nella card mette subito nel team il sostituto mostrato', async () => {
+    const user = userEvent.setup();
+    render(<App data={fixtureData} />);
+    for (const name of ['Great Tusk', 'Gholdengo', 'Magikarp']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
+    const card = screen.getByRole('button', { name: 'Altri sostituti per Magikarp' }).closest('li')!;
+    const proposed = card.querySelector('.swap-head strong')!.textContent!;
+
+    await user.click(within(card).getByRole('button', { name: `Sostituisci Magikarp con ${proposed}` }));
+
+    const team = screen.getByRole('region', { name: 'Team' });
+    expect(within(team).getByText(proposed)).toBeInTheDocument();
+    expect(within(team).queryByText('Magikarp')).toBeNull();
+  });
+
+  it('"Sostituisci" usa il sostituto selezionato in "Altri sostituti"', async () => {
+    const user = userEvent.setup();
+    render(<App data={fixtureData} />);
+    for (const name of ['Great Tusk', 'Gholdengo', 'Magikarp']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
+    const card = () => screen.getByRole('button', { name: 'Altri sostituti per Magikarp' }).closest('li')!;
+    const proposed = card().querySelector('.swap-head strong')!.textContent!;
+    await user.click(screen.getByRole('button', { name: 'Altri sostituti per Magikarp' }));
+    const rows = within(screen.getByRole('region', { name: 'Suggerimenti' })).getAllByRole('listitem');
+    const name = (row: HTMLElement) => row.querySelector('.who strong')?.textContent?.replace(/^\d+\. /, '');
+    const row = rows.find(r => name(r) && name(r) !== proposed)!;
+    const other = name(row)!;
+    await user.click(row.querySelector('summary')!);
+
+    await user.click(within(card()).getByRole('button', { name: `Sostituisci Magikarp con ${other}` }));
+
+    expect(within(screen.getByRole('region', { name: 'Team' })).getByText(other)).toBeInTheDocument();
   });
 });

@@ -4,6 +4,10 @@ import { analyzeTeam } from '../../src/engine/analysis';
 import { AnalysisPanel } from '../../src/ui/AnalysisPanel';
 import { fixtureData, gholdengo, tusk } from '../fixtures/data';
 
+/** Riga di un elenco dell'analisi, cercata per nome (ruolo o Pokémon). */
+const row = (name: string) => screen.getAllByRole('listitem')
+  .find(li => li.querySelector('.role, .who strong')?.textContent === name)!;
+
 describe('AnalysisPanel', () => {
   const team = [tusk, gholdengo];
   const renderPanel = () => render(<AnalysisPanel team={team} analysis={analyzeTeam(team, fixtureData)} />);
@@ -23,15 +27,19 @@ describe('AnalysisPanel', () => {
     expect(within(row).getByText('×2')).toBeInTheDocument();
   });
 
-  it('dettaglio ruoli', () => {
+  it('ruoli: nel riassunto solo quanti sono coperti, nel dettaglio chi li copre', () => {
     renderPanel();
-    expect(screen.getByText('Pivot: mancante')).toBeInTheDocument();
-    expect(screen.getByText('Rimozione hazard: Great Tusk')).toBeInTheDocument();
+    expect(screen.getByText(/^\d+\/10 coperti$/)).toBeInTheDocument();
+    expect(row('Pivot')).toHaveTextContent('Mancante');
+    expect(row('Pivot')).toHaveClass('bad');
+    expect(row('Rimozione hazard')).toHaveTextContent('Great Tusk');
   });
 
   it('dettaglio minacce', () => {
     renderPanel();
-    expect(screen.getByText('Kingambit (20.0%): gestito da Great Tusk')).toBeInTheDocument();
-    expect(screen.getByText('Dragapult (18.0%): nessun check')).toBeInTheDocument();
+    expect(row('Kingambit')).toHaveTextContent('20.0%');
+    expect(row('Kingambit')).toHaveTextContent('Gestito da Great Tusk');
+    expect(row('Dragapult')).toHaveTextContent('Nessun check');
+    expect(row('Dragapult')).toHaveClass('bad');
   });
 });

@@ -1,15 +1,18 @@
 import { Icon } from './icons';
+import type { TeamSet } from '../engine/sets';
 import { ProsCons } from './ProsCons';
-import { describeSwap, previewSwap, type Coaching, type SwapLevel, type SwapPreview } from '../engine/coach';
+import { describeSwap, previewSwap, PROBLEM_CATEGORIES, type Coaching, type SwapLevel, type SwapPreview } from '../engine/coach';
 
 const SWAP_GROUPS: { level: SwapLevel; title: string }[] = [
   { level: 'recommended', title: 'Valuta di sostituire' },
   { level: 'optional', title: 'Possibili raccomandazioni' },
 ];
 
-export function CoachPanel({ coaching, preview = null, onReplace }: {
+export function CoachPanel({ coaching, preview = null, onReplace, onSwap }: {
+  /** Mette subito nel team il sostituto mostrato nella card. */
+  onSwap?: (index: number, set: TeamSet) => void;
   coaching: Coaching;
-  /** Sostituto aperto in "Vedi sostituti": aggiorna la raccomandazione dello stesso membro. */
+  /** Sostituto aperto in "Altri sostituti": aggiorna la raccomandazione dello stesso membro. */
   preview?: SwapPreview | null;
   onReplace: (index: number) => void;
 }) {
@@ -20,20 +23,37 @@ export function CoachPanel({ coaching, preview = null, onReplace }: {
       {strengths.length > 0 && (
         <>
           <h3>Punti di forza</h3>
-          <ul>{strengths.map(text => <li key={text}>{text}</li>)}</ul>
+          <ul className="checklist">
+            {strengths.map(text => <li key={text}><Icon name="check" />{text}</li>)}
+          </ul>
         </>
       )}
       {problems.length > 0 && (
         <>
           <h3>Problemi</h3>
-          <ul>
-            {problems.map(p => (
-              <li key={p.text} className={p.severity === 'serious' ? 'bad' : ''}>
-                <strong>{p.severity === 'serious' ? 'Serio' : 'Minore'}:</strong> {p.text}
-                {p.fixes.length > 0 && <small>Considera {p.fixes.join(' o ')}</small>}
-              </li>
-            ))}
-          </ul>
+          {PROBLEM_CATEGORIES.map(category => {
+            const group = problems.filter(p => p.category === category);
+            if (group.length === 0) return null;
+            return (
+              <details key={category} open aria-label={`Problemi: ${category}`} className="problem-group">
+                <summary>
+                  <h4>{category} <span className="count">{group.length}</span></h4>
+                  {group.some(p => p.severity === 'serious') && <span className="serious-flag">Serio</span>}
+                </summary>
+                <ul>
+                  {group.map(p => (
+                    <li key={p.text} className={p.severity === 'serious' ? 'bad' : ''}>
+                      <span className="severity">{p.severity === 'serious' ? 'Serio' : 'Minore'}</span>
+                      <span>
+                        {p.text}
+                        {p.fixes.length > 0 && <small>Considera <b>{p.fixes.join(' o ')}</b></small>}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            );
+          })}
         </>
       )}
       {SWAP_GROUPS.map(({ level, title }) => {
@@ -61,9 +81,18 @@ export function CoachPanel({ coaching, preview = null, onReplace }: {
                       {picked && <small className="picked-tag">Selezionato</small>}
                     </p>
                     <ProsCons pros={pros} cons={cons} />
-                    <button type="button" aria-label={`Vedi sostituti per ${swap.member}`} onClick={() => onReplace(swap.index)}>
-                      <Icon name="swap" /> Vedi sostituti
-                    </button>
+                    <div className="swap-actions">
+                      {onSwap && (
+                        <button type="button" className="primary swap-now" aria-label={`Sostituisci ${swap.member} con ${swap.replacement}`}
+                          title={`Sostituisci ${swap.member} con ${swap.replacement}`}
+                          onClick={() => onSwap(swap.index, swap.set)}>
+                          <Icon name="swap" />
+                        </button>
+                      )}
+                      <button type="button" aria-label={`Altri sostituti per ${swap.member}`} onClick={() => onReplace(swap.index)}>
+                        Altri sostituti
+                      </button>
+                    </div>
                   </li>
                 );
               })}

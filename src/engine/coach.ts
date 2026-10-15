@@ -25,8 +25,13 @@ export type SwapLevel = 'recommended' | 'optional';
 export const classifySwap = (betterShare: number, gain: number): SwapLevel =>
   betterShare > RECOMMEND_SHARE || gain >= RECOMMEND_GAIN ? 'recommended' : 'optional';
 
+/** Categorie dei problemi, nell'ordine in cui si mostrano. */
+export const PROBLEM_CATEGORIES = ['Regole', 'Tipi', 'Coverage', 'Ruoli', 'Meteo e campi', 'Ridondanze'] as const;
+export type ProblemCategory = typeof PROBLEM_CATEGORIES[number];
+
 export interface CoachProblem {
   severity: 'serious' | 'minor';
+  category: ProblemCategory;
   text: string;
   fixes: string[];
 }
@@ -36,6 +41,8 @@ export interface CoachSwap {
   member: string;
   fit: number;
   replacement: string;
+  /** Il set del sostituto, pronto da mettere nel team. */
+  set: TeamSet;
   score: number;
   similar: boolean;
   level: SwapLevel;
@@ -83,8 +90,8 @@ function findStrengths(team: TeamSet[], analysis: TeamAnalysis): string[] {
 function findProblems(team: TeamSet[], format: Format, analysis: TeamAnalysis, candidates: Suggestion[]): CoachProblem[] {
   const serious: CoachProblem[] = [];
   const minor: CoachProblem[] = [];
-  const add = (isSerious: boolean, text: string, fixes: string[]) =>
-    (isSerious ? serious : minor).push({ severity: isSerious ? 'serious' : 'minor', text, fixes });
+  const add = (category: ProblemCategory, isSerious: boolean, text: string, fixes: string[]) =>
+    (isSerious ? serious : minor).push({ severity: isSerious ? 'serious' : 'minor', category, text, fixes });
 
   for (const row of analysis.weakness) {
     const isSerious = row.weak >= 3 || (row.weak >= 2 && row.resist === 0);
@@ -93,31 +100,31 @@ function findProblems(team: TeamSet[], format: Format, analysis: TeamAnalysis, c
       ? `Debole a ${row.type}: ${row.weak} membri su ${team.length} subiscono danni super efficaci${row.resist === 0 ? ' e nessuno resiste' : ''}`
       : `Debole a ${row.type}: ${row.weak} ${row.weak === 1 ? 'debole' : 'deboli'} contro ${row.resist} che resistono`;
     const fixes = fixesFor(candidates, s => Number(defensiveMultiplier(row.type, s.set) < 1));
-    add(isSerious, text, fixes);
+    add('Tipi', isSerious, text, fixes);
   }
 
   const megas = team.filter(isMega);
   if (!format.allowMultipleMegas && megas.length > 1) {
-    add(true, `Più Mega nel team (${list(megas.map(m => m.species))}): in National Dex ne è ammessa una sola`, []);
+    add('Regole', true, `Più Mega nel team (${list(megas.map(m => m.species))}): in National Dex ne è ammessa una sola`, []);
   }
 
   const missing = analysis.needs.missingRoles.filter(r => ESSENTIAL_ROLES.includes(r));
   if (missing.length) {
-    add(false, `Ruoli mancanti: ${list(missing.map(r => ROLE_LABELS[r]))}`,
+    add('Ruoli', false, `Ruoli mancanti: ${list(missing.map(r => ROLE_LABELS[r]))}`,
       fixesFor(candidates, s => s.facts.roles.filled.filter(r => missing.includes(r)).length));
   }
 
-  for (const item of roleAndTypeRedundancies(team)) add(false, `Ridondanza: ${item.text}`, []);
-  for (const item of weatherClashes(team)) add(false, item.text, []);
+  for (const item of roleAndTypeRedundancies(team)) add('Ridondanze', false, item.text, []);
+  for (const item of weatherClashes(team)) add('Meteo e campi', false, item.text, []);
 
   for (const issue of unusedEnablers(team)) {
-    add(false, issue.selfBoost
+    add('Meteo e campi', false, issue.selfBoost
       ? `${issue.via} di ${issue.member} potenzia solo le sue mosse: nessun altro ne beneficia`
       : `${issue.via} di ${issue.member} non sfruttato: nessuno ne beneficia`,
       fixesFor(candidates, s => Number(benefits(s.set).some(b => b.condition === issue.condition && !['Weather Ball', 'Terrain Pulse'].includes(b.via)))));
   }
   for (const issue of unmetBeneficiaries(team)) {
-    add(false, `${issue.member} ha ${issue.via} ma il team non porta ${CONDITION_LABELS[issue.condition]}`,
+    add('Meteo e campi', false, `${issue.member} ha ${issue.via} ma il team non porta ${CONDITION_LABELS[issue.condition]}`,
       fixesFor(candidates, s => Number(enables(s.set).some(e => e.condition === issue.condition))));
   }
 
@@ -125,7 +132,7 @@ function findProblems(team: TeamSet[], format: Format, analysis: TeamAnalysis, c
     .filter(r => r.hitters.length === 0 && analysis.typeWeights[r.type] >= MIN_COVERAGE_WEIGHT)
     .map(r => r.type);
   if (gaps.length) {
-    add(false, `Nessuna mossa super efficace contro ${list(gaps)}`,
+    add('Coverage', false, `Nessuna mossa super efficace contro ${list(gaps)}`,
       fixesFor(candidates, s => s.facts.coverage.types.filter(t => gaps.includes(t)).length));
   }
 
@@ -169,6 +176,7 @@ function findSwaps(team: TeamSet[], format: Format, data: EngineData): CoachSwap
       member: option.member.species,
       fit: option.fit,
       replacement: pick.species,
+      set: pick.set,
       score: pick.score,
       similar: similarity(option.member, pick.set) >= SIMILAR_THRESHOLD,
       level: option.level,
@@ -212,10 +220,11 @@ export interface SwapSummary {
   cons: string[];
 }
 
-/** Un sostituto scelto a mano tra i "Vedi sostituti": prende il posto di quello proposto dal coaching. */
+/** Un sostituto scelto a mano tra i "Altri sostituti": prende il posto di quello proposto dal coaching. */
 export interface SwapPreview {
   index: number;
   replacement: string;
+  set: TeamSet;
   score: number;
   similar: boolean;
   diff: Diff;
@@ -223,7 +232,7 @@ export interface SwapPreview {
 
 export const previewSwap = (swap: CoachSwap, preview: SwapPreview | null): CoachSwap =>
   preview && preview.index === swap.index
-    ? { ...swap, replacement: preview.replacement, score: preview.score, similar: preview.similar, diff: preview.diff }
+    ? { ...swap, replacement: preview.replacement, set: preview.set, score: preview.score, similar: preview.similar, diff: preview.diff }
     : swap;
 
 /** Cosa porta il sostituto e cosa perde il team, raggruppato per tipo. */

@@ -47,7 +47,7 @@ export function App({ data: initialData, loadSource, storage }: AppProps) {
     if (storage) saveSession({ team, format }, storage);
   }, [team, format, storage]);
   const [replaceIndex, setReplaceIndexState] = useState<number | null>(null);
-  // Sostituto aperto in "Vedi sostituti": vale solo per il membro che si sta sostituendo
+  // Sostituto aperto in "Altri sostituti": vale solo per il membro che si sta sostituendo
   const [preview, setPreview] = useState<SwapPreview | null>(null);
   const setReplaceIndex = (index: number | null) => {
     setReplaceIndexState(index);
@@ -90,7 +90,7 @@ export function App({ data: initialData, loadSource, storage }: AppProps) {
       <main className="columns">
         <div className="left">
           <AnalysisPanel team={team} analysis={analysis} data={data} rating={rating} coaching={coaching}
-            preview={preview?.index === replaceIndex ? preview : null} onReplace={setReplaceIndex} />
+            preview={preview?.index === replaceIndex ? preview : null} onReplace={setReplaceIndex} onSwap={replaceAt} />
         </div>
         <div className="right">
           <SuggestionsPanel

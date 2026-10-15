@@ -76,6 +76,6 @@ describe('Valutazione team', () => {
     const meta = screen.getByRole('group', { name: 'Meta Use' });
     expect(meta).toHaveTextContent('Great Tusk 30.0%');
     expect(meta).toHaveTextContent('Gholdengo 25.0%');
-    expect(meta).toHaveTextContent('Magikarp: non presente nelle statistiche');
+    expect(meta).toHaveTextContent('Magikarp non presente nelle statistiche');
   });
 });

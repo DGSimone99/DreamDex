@@ -9,6 +9,8 @@ import { CoachPanel } from './CoachPanel';
 import type { SwapPreview } from '../engine/coach';
 import { MetaUsePanel } from './MetaUsePanel';
 import { RatingPanel } from './RatingPanel';
+import { Sprite, TypeChip } from './Sprite';
+import { Icon } from './icons';
 
 const MULTIPLIER_LABELS: Record<string, string> = { '4': '×4', '2': '×2', '1': '', '0.5': '×½', '0.25': '×¼', '0': '×0' };
 const formatMultiplier = (m: number) => MULTIPLIER_LABELS[String(m)] ?? `×${m}`;
@@ -30,7 +32,8 @@ function mitigationNote(m: WeatherMitigation): string {
   return `${MITIGATION_LABELS[m.condition]} (${source}): ${changes} · il meteo non è sempre attivo`;
 }
 
-export function AnalysisPanel({ team, analysis, rating, coaching, preview, onReplace, data }: {
+export function AnalysisPanel({ team, analysis, rating, coaching, preview, onReplace, onSwap, data }: {
+  onSwap?: (index: number, set: TeamSet) => void;
   preview?: SwapPreview | null;
   team: TeamSet[];
   analysis: TeamAnalysis;
@@ -43,7 +46,17 @@ export function AnalysisPanel({ team, analysis, rating, coaching, preview, onRep
   const uncovered = analysis.coverage.filter(row => row.hitters.length === 0);
   const open = analysis.threats.filter(t => t.handledBy.length === 0);
   const rolesOf = team.map(set => ({ name: set.species, roles: detectRoles(set) }));
-  const present = new Set(rolesOf.flatMap(r => r.roles));
+  const roleGroups = [
+    { title: 'Essenziali', roles: ESSENTIAL_ROLES },
+    { title: 'Utili', roles: DESIRABLE_ROLES },
+  ].map(group => ({
+    ...group,
+    rows: group.roles.map(role => ({ role, owners: rolesOf.filter(r => r.roles.includes(role)).map(r => r.name) })),
+  }));
+  const allRoles = roleGroups.flatMap(g => g.rows);
+  const coveredRoles = allRoles.filter(r => r.owners.length > 0).length;
+  // Prima i tipi scoperti: sono quelli su cui intervenire
+  const coverageRows = [...uncovered, ...analysis.coverage.filter(row => row.hitters.length > 0)];
   const score = threatScore(analysis);
   const threatSummary = score === null
     ? 'nessun dato Smogon'
@@ -53,7 +66,7 @@ export function AnalysisPanel({ team, analysis, rating, coaching, preview, onRep
     <section aria-label="Analisi" className="analysis">
       <h2>Analisi</h2>
       {rating && <RatingPanel rating={rating} />}
-      {coaching && onReplace && <CoachPanel coaching={coaching} preview={preview} onReplace={onReplace} />}
+      {coaching && onReplace && <CoachPanel coaching={coaching} preview={preview} onReplace={onReplace} onSwap={onSwap} />}
 
       <details className="block">
         <summary><span>Debolezze difensive</span><span>{problems.length} problemi</span></summary>
@@ -82,12 +95,13 @@ export function AnalysisPanel({ team, analysis, rating, coaching, preview, onRep
 
       <details className="block">
         <summary><span>Coverage offensiva</span><span>{18 - uncovered.length}/18 tipi</span></summary>
-        <ul>
-          {analysis.coverage.map(row => (
-            <li key={row.type} className={row.hitters.length ? 'good' : 'bad'}>
-              {row.type}: {row.hitters.length
-                ? row.hitters.map(h => `${h.member} (${h.move})`).join(', ')
-                : 'nessuna mossa super efficace'}
+        <ul className="type-rows">
+          {coverageRows.map(row => (
+            <li key={row.type} className={row.hitters.length ? '' : 'bad'}>
+              <TypeChip type={row.type} />
+              {row.hitters.length
+                ? <span>{row.hitters.map((h, i) => <span key={i} className="hitter">{h.member} <small>{h.move}</small></span>)}</span>
+                : <span className="missing">Nessuna mossa super efficace</span>}
             </li>
           ))}
         </ul>
@@ -96,14 +110,24 @@ export function AnalysisPanel({ team, analysis, rating, coaching, preview, onRep
       <details className="block">
         <summary>
           <span>Ruoli</span>
-          <span>{ESSENTIAL_ROLES.map(role => `${present.has(role) ? '✔' : '✘'} ${ROLE_LABELS[role]}`).join('  ')}</span>
+          <span>{coveredRoles}/{allRoles.length} coperti</span>
         </summary>
-        <ul>
-          {[...ESSENTIAL_ROLES, ...DESIRABLE_ROLES].map(role => {
-            const owners = rolesOf.filter(r => r.roles.includes(role)).map(r => r.name);
-            return <li key={role}>{`${ROLE_LABELS[role]}: ${owners.length ? owners.join(', ') : 'mancante'}`}</li>;
-          })}
-        </ul>
+        {roleGroups.map(group => (
+          <div key={group.title} className="role-group">
+            <h4>{group.title}</h4>
+            <ul className="role-rows">
+              {group.rows.map(({ role, owners }) => (
+                <li key={role} className={owners.length ? '' : 'bad'}>
+                  <Icon name={owners.length ? 'check' : 'close'} />
+                  <span className="role">{ROLE_LABELS[role]}</span>
+                  <span className="owners">
+                    {owners.length ? owners.map(name => <span key={name} className="owner">{name}</span>) : 'Mancante'}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
         {analysis.needs.needStyle && (
           <p>Il team è sbilanciato: serve un attaccante {STYLE_LABELS[analysis.needs.needStyle]}.</p>
         )}
@@ -118,13 +142,24 @@ export function AnalysisPanel({ team, analysis, rating, coaching, preview, onRep
             I {analysis.threats.length} Pokémon più usati, pesati per uso. <meter min={0} max={100} value={score} />
           </p>
         )}
-        <ul>
+        <ul className="mon-rows">
           {analysis.threats.map(t => {
             const fixes = coaching?.threatFixes[t.name] ?? [];
-            const detail = t.handledBy.length
-              ? `gestito da ${t.handledBy.join(', ')}`
-              : `nessun check${fixes.length ? ` → considera ${fixes.join(' o ')}` : ''}`;
-            return <li key={t.name} className={t.handledBy.length ? '' : 'bad'}>{`${t.name} (${(t.usage * 100).toFixed(1)}%): ${detail}`}</li>;
+            return (
+              <li key={t.name} className={t.handledBy.length ? '' : 'bad'}>
+                <Sprite species={t.name} size={40} />
+                <span className="who">
+                  <strong>{t.name}</strong> <span className="usage">{(t.usage * 100).toFixed(1)}%</span>
+                </span>
+                <span className="status">
+                  <Icon name={t.handledBy.length ? 'check' : 'close'} />
+                  <span>
+                    {t.handledBy.length ? `Gestito da ${t.handledBy.join(', ')}` : 'Nessun check'}
+                    {fixes.length > 0 && <small>Considera <b>{fixes.join(' o ')}</b></small>}
+                  </span>
+                </span>
+              </li>
+            );
           })}
         </ul>
       </details>

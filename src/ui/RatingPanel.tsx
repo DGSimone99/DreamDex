@@ -2,8 +2,8 @@ import type { TeamRating } from '../engine/rating';
 
 export function RatingPanel({ rating }: { rating: TeamRating }) {
   return (
-    <div role="group" aria-label="Valutazione team" className="block rating">
-      <h3>Valutazione team</h3>
+    <details open aria-label="Valutazione team" className="block rating">
+      <summary><span>Valutazione team</span><span>{rating.grade} · {rating.overall}/100</span></summary>
       <p className={`grade grade-${rating.grade}`}>
         <strong>{rating.grade}</strong> <span>· {rating.overall}/100 · {rating.label}</span>
       </p>
@@ -43,7 +43,7 @@ export function RatingPanel({ rating }: { rating: TeamRating }) {
           </ul>
         </div>
       )}
-    </div>
+    </details>
   );
 }
 

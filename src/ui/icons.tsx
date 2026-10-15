@@ -6,6 +6,7 @@ const paths = {
   copy: 'M9 9h10v10H9zM5 15V5h10',
   plus: 'M12 5v14M5 12h14',
   arrow: 'M5 12h14m0 0-5-5m5 5-5 5',
+  check: 'M5 12.5l4.5 4.5L19 7.5',
 } as const;
 
 export function Icon({ name, filled = false }: { name: keyof typeof paths; filled?: boolean }) {

@@ -246,6 +246,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
               onToggle={replacing && 'diff' in item && onPreview ? open => onPreview({
                 index: replaceIndex,
                 replacement: item.species,
+                set: item.set,
                 score: item.score,
                 similar: similarity(team[replaceIndex], item.set) >= SIMILAR_THRESHOLD,
                 diff: item.diff,

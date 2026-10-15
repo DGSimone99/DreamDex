@@ -66,7 +66,7 @@ describe('coachTeam', () => {
   });
 
   it('testo della sostituzione', () => {
-    const swap = { index: 2, member: 'Magikarp', fit: 20, replacement: 'Corviknight', score: 60, similar: false, level: 'recommended' as const, diff: { gains: ['+ Pivot'], losses: [] } };
+    const swap = { index: 2, member: 'Magikarp', fit: 20, replacement: 'Corviknight', set: emptySet('Corviknight'), score: 60, similar: false, level: 'recommended' as const, diff: { gains: ['+ Pivot'], losses: [] } };
     expect(describeSwap(swap)).toEqual({ gain: 40, pros: ['Pivot'], cons: [] });
     expect(describeSwap({ ...swap, similar: true, diff: { gains: [], losses: [] } }))
       .toEqual({ gain: 40, pros: [], cons: [] });
@@ -79,7 +79,7 @@ describe('coachTeam', () => {
     ];
     const text = 'Più Mega nel team (Lopunny, Charizard-Mega-Y): in National Dex ne è ammessa una sola';
     const strict = coachTeam(megas, DEFAULT_FORMAT, megaData).problems;
-    expect(strict).toContainEqual({ severity: 'serious', text, fixes: [] });
+    expect(strict).toContainEqual({ severity: 'serious', category: 'Regole', text, fixes: [] });
     const relaxed = coachTeam(megas, { ...DEFAULT_FORMAT, allowMultipleMegas: true }, megaData).problems;
     expect(relaxed.map(p => p.text)).not.toContain(text);
   });

@@ -180,12 +180,12 @@ describe('effetti su suggerimenti e coaching', () => {
   it('coaching: Drought non sfruttato, con rimedi', () => {
     const team = [ninetales, mostCommonSet(data.stats, 'Garchomp')!];
     expect(coachTeam(team, DEFAULT_FORMAT, data).problems)
-      .toContainEqual({ severity: 'minor', text: 'Drought di Ninetales potenzia solo le sue mosse: nessun altro ne beneficia', fixes: ['Venusaur'] });
+      .toContainEqual({ severity: 'minor', category: 'Meteo e campi', text: 'Drought di Ninetales potenzia solo le sue mosse: nessun altro ne beneficia', fixes: ['Venusaur'] });
   });
 
   it('coaching: Chlorophyll senza sole, con rimedi', () => {
     const team = [venusaur, mostCommonSet(data.stats, 'Garchomp')!];
     expect(coachTeam(team, DEFAULT_FORMAT, data).problems)
-      .toContainEqual({ severity: 'minor', text: 'Venusaur ha Chlorophyll ma il team non porta il sole', fixes: ['Torkoal'] });
+      .toContainEqual({ severity: 'minor', category: 'Meteo e campi', text: 'Venusaur ha Chlorophyll ma il team non porta il sole', fixes: ['Torkoal'] });
   });
 });

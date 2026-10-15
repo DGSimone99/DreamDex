@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/App';
 import type { Coaching } from '../../src/engine/coach';
 import { CoachPanel } from '../../src/ui/CoachPanel';
+import { emptySet } from '../../src/engine/sets';
 import { fixtureData } from '../fixtures/data';
 
 const base = { index: 0, fit: 40, score: 60, similar: false, diff: { gains: [], losses: [] } };
@@ -13,8 +14,8 @@ const coaching: Coaching = {
   strengths: [],
   problems: [],
   swaps: [
-    { ...base, member: 'Magikarp', replacement: 'Corviknight', level: 'recommended' },
-    { ...base, index: 1, member: 'Great Tusk', replacement: 'Gliscor', level: 'optional' },
+    { ...base, member: 'Magikarp', replacement: 'Corviknight', set: emptySet('Corviknight'), level: 'recommended' },
+    { ...base, index: 1, member: 'Great Tusk', replacement: 'Gliscor', set: emptySet('Gliscor'), level: 'optional' },
   ],
 };
 
@@ -35,9 +36,9 @@ describe('sostituzioni gialle e verdi', () => {
   });
 });
 
-describe('sostituto selezionato in "Vedi sostituti"', () => {
+describe('sostituto selezionato in "Altri sostituti"', () => {
   it('aggiorna la raccomandazione dello stesso membro con i suoi pro e contro', () => {
-    const preview = { index: 0, replacement: 'Skarmory', score: 35, similar: false,
+    const preview = { index: 0, replacement: 'Skarmory', set: emptySet('Skarmory'), score: 35, similar: false,
       diff: { gains: ['+ resiste Ground'], losses: ['- copre Fire'] } };
     render(<CoachPanel coaching={coaching} preview={preview} onReplace={vi.fn()} />);
     const recommended = screen.getByRole('group', { name: 'Valuta di sostituire' });
