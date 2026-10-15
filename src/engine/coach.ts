@@ -1,12 +1,13 @@
 import { analyzeTeam, type TeamAnalysis } from './analysis';
 import type { EngineData } from './data';
-import { battleName, isDefined, isMega, toID } from './dex';
+import { battleName, battleSpecies, getSpecies, isDefined, isMega, isSelectable, toID, withinGen } from './dex';
+import { formatLabel, isBannedIn, meetsTeamRules } from './formats';
 import type { Format } from './format';
 import { diffContribution, similarity, type Diff } from './replace';
 import { detectRoles, ESSENTIAL_ROLES, ROLE_LABELS } from './roles';
 import { scoreCandidates, type Suggestion } from './scoring';
 import { roleAndTypeRedundancies, weatherClashes } from './rating';
-import { benefits, CONDITION_LABELS, enables, neededConditions, providesAll, teamSynergies, unmetBeneficiaries, unusedEnablers, weatherMitigations } from './synergy';
+import { benefits, CONDITION_LABELS, enables, neededConditions, providesAll, teamSynergies, unmetBeneficiaries, unusedEnablers } from './synergy';
 import type { TeamSet } from './sets';
 import { defensiveMultiplier } from './types';
 
@@ -78,10 +79,6 @@ function findStrengths(team: TeamSet[], analysis: TeamAnalysis): string[] {
   if (roles.length) strengths.push(`Ruoli coperti: ${list(roles)}`);
   const synergies = teamSynergies(team);
   if (synergies.length) strengths.push(`Sinergie: ${synergies.join('; ')}`);
-  for (const m of weatherMitigations(team)) {
-    const label = CONDITION_LABELS[m.condition];
-    strengths.push(`${label.charAt(0).toUpperCase()}${label.slice(1)} di ${m.source.split(' (')[0]} smorza la debolezza a ${m.type} di ${m.members.map(x => x.species).join(', ')}`);
-  }
   const covered = analysis.coverage.filter(r => r.hitters.length > 0).length;
   if (covered >= STRONG_COVERAGE) strengths.push(`Colpisce super efficace ${covered}/18 tipi`);
   return strengths;
@@ -106,6 +103,15 @@ function findProblems(team: TeamSet[], format: Format, analysis: TeamAnalysis, c
     const text = `Debole a ${row.type}: ${row.weak} ${row.weak === 1 ? 'Debole' : 'Deboli'} – ${row.resist} ${row.resist === 1 ? 'Resiste' : 'Resistono'}`;
     const fixes = fixesFor(candidates, s => Number(defensiveMultiplier(row.type, s.set) < 1));
     add('Difese', isSerious, text, fixes);
+  }
+
+  for (const set of team) {
+    const species = getSpecies(set.species);
+    if (!species) continue;
+    const forme = battleSpecies(set) ?? species;
+    if (!isSelectable(species) || isBannedIn(forme, format)) add('Regole', true, `${set.species} non è legale in ${formatLabel(format)}`, []);
+    else if (!meetsTeamRules(forme, format)) add('Regole', true, `${set.species} non è di tipo ${format.monotype}`, []);
+    else if (!withinGen(species, format)) add('Regole', true, `${set.species} è oltre la Gen ${format.genLimit}`, []);
   }
 
   const megas = team.filter(isMega);

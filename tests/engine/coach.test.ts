@@ -74,6 +74,13 @@ describe('coachTeam', () => {
       .toEqual({ gain: 40, pros: [], cons: [] });
   });
 
+  it('un membro non legale nel formato è un problema serio (Regole)', () => {
+    const team = [tusk, gholdengo, { ...emptySet('Mewtwo'), item: 'Mewtwonite Y' }];
+    const problems = coachTeam(team, DEFAULT_FORMAT, fixtureData).problems;
+    expect(problems).toContainEqual({ severity: 'serious', category: 'Regole', text: 'Mewtwo non è legale in National Dex OU', fixes: [] });
+    expect(problems.filter(p => p.category === 'Regole')).toHaveLength(1);
+  });
+
   it('seconda Mega: problema serio, assente se ammessa', () => {
     const megas: TeamSet[] = [
       { ...emptySet('Lopunny'), item: 'Lopunnite' },

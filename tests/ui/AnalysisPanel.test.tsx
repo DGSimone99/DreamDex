@@ -22,7 +22,7 @@ describe('AnalysisPanel', () => {
     expect(weakSummary).toHaveTextContent(/mancanz/);
     expect(within(panel).getByText('15/18 tipi')).toBeInTheDocument();
     expect(within(panel).getByText('Minacce del meta')).toBeInTheDocument();
-    expect(within(panel).getByText('Mancano 4')).toBeInTheDocument();
+    expect(within(panel).getByText('4 scoperte')).toBeInTheDocument();
   });
 
   it('dettaglio debolezze: riga per tipo con moltiplicatori', () => {

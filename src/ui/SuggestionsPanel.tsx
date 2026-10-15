@@ -89,7 +89,9 @@ function SuggestionItem({ rank, item, actionLabel, quickLabel, replacing, member
             <span className="types">{types.map(type => <TypeChip key={type} type={type} />)}</span>
             <small><Typed text={summaryText} /></small>
             <span className="tags">
-              {item.tags.filter(tag => tag !== summaryText).map(tag => <span key={tag} className={tag.startsWith('⚠') ? 'tag warn' : 'tag'}>{tag}</span>)}
+              {item.tags.filter(tag => tag !== summaryText).map(tag => (tag.startsWith('⚠')
+                ? <span key={tag} className="tag warn"><Icon name="warning" />{tag.replace(/^⚠\s*/, '')}</span>
+                : <span key={tag} className="tag">{tag}</span>))}
             </span>
           </span>
           <dl className="bars">

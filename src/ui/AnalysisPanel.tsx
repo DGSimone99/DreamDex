@@ -65,7 +65,7 @@ export function AnalysisPanel({ team, analysis, rating, coaching, preview, onRep
   const score = threatScore(analysis);
   const threatSummary = score === null
     ? 'nessun dato Smogon'
-    : open.length === 0 ? 'Nessuna mancante' : `Mancano ${open.length}`;
+    : open.length === 0 ? 'Tutte coperte' : `${open.length} scoperte`;
 
   return (
     <section aria-label="Analisi" className="analysis">
@@ -77,7 +77,7 @@ export function AnalysisPanel({ team, analysis, rating, coaching, preview, onRep
         <summary>
           <span>Debolezze difensive</span>
           <span className="summary-info">
-            {seriousWeak + minorWeak === 0 && 'Nessuna mancanza'}
+            {seriousWeak + minorWeak === 0 && (team.length ? 'Nessuna mancanza' : '—')}
             <IssueCounts serious={seriousWeak} minor={minorWeak} labels={WEAKNESS_LABELS} />
           </span>
         </summary>
