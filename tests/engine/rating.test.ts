@@ -7,9 +7,10 @@ const value = (rating: ReturnType<typeof rateTeam>, key: string) => rating!.area
 
 describe('gradeFor', () => {
   it('soglie S / A / B / C / D', () => {
-    expect(gradeFor(88)).toEqual({ grade: 'S', label: 'Eccellente' });
-    expect(gradeFor(87)).toEqual({ grade: 'A', label: 'Ottimo' });
-    expect(gradeFor(80)).toEqual({ grade: 'A', label: 'Ottimo' });
+    expect(gradeFor(90)).toEqual({ grade: 'S', label: 'Eccellente' });
+    expect(gradeFor(89)).toEqual({ grade: 'A', label: 'Ottimo' });
+    expect(gradeFor(82)).toEqual({ grade: 'A', label: 'Ottimo' });
+    expect(gradeFor(81)).toEqual({ grade: 'B', label: 'Buono' });
     expect(gradeFor(70)).toEqual({ grade: 'B', label: 'Buono' });
     expect(gradeFor(60)).toEqual({ grade: 'C', label: 'Discreto' });
     expect(gradeFor(59)).toEqual({ grade: 'D', label: 'Debole' });
@@ -17,8 +18,8 @@ describe('gradeFor', () => {
 });
 
 describe('pesi delle aree', () => {
-  it('senza Sinergia, Forza al 15%, somma 1', () => {
-    expect(AREA_WEIGHTS).toEqual({ defense: 0.275, coverage: 0.2, threats: 0.2, roles: 0.175, strength: 0.15 });
+  it('4 aree, Forza al 20%, somma 1', () => {
+    expect(AREA_WEIGHTS).toEqual({ defense: 0.325, coverage: 0.25, roles: 0.225, strength: 0.2 });
     expect(Object.values(AREA_WEIGHTS).reduce((a, b) => a + b, 0)).toBeCloseTo(1);
   });
 });
@@ -39,17 +40,16 @@ describe('rateTeam', () => {
   it('aree calcolate sulla fixture', () => {
     expect(value(rating, 'defense')).toBe(73);
     expect(value(rating, 'coverage')).toBe(81);
-    expect(value(rating, 'threats')).toBe(42);
     expect(value(rating, 'roles')).toBe(31);
     expect(value(rating, 'strength')).toBe(90);
   });
 
   it('voto complessivo pesato, provvisorio con meno di 6 membri', () => {
-    expect(rating).toMatchObject({ overall: 64, grade: 'C', label: 'Discreto', provisional: true });
+    expect(rating).toMatchObject({ overall: 69, grade: 'C', label: 'Discreto', provisional: true });
   });
 
   it('ordine e nomi delle aree', () => {
-    expect(rating.areas.map(a => a.label)).toEqual(['Difesa', 'Coverage', 'Minacce', 'Ruoli', 'Forza']);
+    expect(rating.areas.map(a => a.label)).toEqual(['Difesa', 'Coverage', 'Ruoli', 'Forza']);
   });
 
   it('team completo: non provvisorio', () => {
@@ -61,13 +61,12 @@ describe('rateTeam', () => {
     expect(rateTeam([], fixtureData)).toBeNull();
   });
 
-  it('senza statistiche: minacce e forza n/d, voto sulle aree disponibili', () => {
+  it('senza statistiche: forza n/d, voto sulle aree disponibili', () => {
     const noData = rateTeam([tusk, gholdengo], { stats: null, sets: null })!;
-    expect(value(noData, 'threats')).toBeNull();
     expect(value(noData, 'strength')).toBeNull();
     const d = value(noData, 'defense')!;
     const c = value(noData, 'coverage')!;
     const r = value(noData, 'roles')!;
-    expect(Math.abs(noData.overall - (0.275 * d + 0.2 * c + 0.175 * r) / 0.65)).toBeLessThanOrEqual(1);
+    expect(Math.abs(noData.overall - (0.325 * d + 0.25 * c + 0.225 * r) / 0.8)).toBeLessThanOrEqual(1);
   });
 });

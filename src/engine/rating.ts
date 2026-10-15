@@ -8,33 +8,31 @@ import { usageOf } from './stats';
 import { TYPES } from './types';
 import { CONDITION_LABELS, unmetBeneficiaries, unusedEnablers, weatherMitigations } from './synergy';
 
-export type AreaKey = 'defense' | 'coverage' | 'threats' | 'roles' | 'strength';
+export type AreaKey = 'defense' | 'coverage' | 'roles' | 'strength';
 
 /** Pesi delle aree nel voto complessivo. Somma = 1. */
 export const AREA_WEIGHTS: Record<AreaKey, number> = {
-  defense: 0.275,
-  coverage: 0.2,
-  threats: 0.2,
-  roles: 0.175,
-  strength: 0.15,
+  defense: 0.325,
+  coverage: 0.25,
+  roles: 0.225,
+  strength: 0.2,
 };
 
 const AREA_LABELS: Record<AreaKey, string> = {
   defense: 'Difesa',
   coverage: 'Coverage',
-  threats: 'Minacce',
   roles: 'Ruoli',
   strength: 'Forza',
 };
 
 
 /**
- * Soglie tarate sui dati reali (2026-09, 1630+): team ben costruiti 86–87,
- * team casuali di Pokémon del meta mediana 75, team con membri inutili sotto 60.
+ * Soglie tarate sui dati reali (2026-09, 1630+): team ben costruiti 88–90,
+ * team casuali di Pokémon del meta mediana 74, team con membri inutili sotto 60.
  */
 const GRADES: { min: number; grade: string; label: string }[] = [
-  { min: 88, grade: 'S', label: 'Eccellente' },
-  { min: 80, grade: 'A', label: 'Ottimo' },
+  { min: 90, grade: 'S', label: 'Eccellente' },
+  { min: 82, grade: 'A', label: 'Ottimo' },
   { min: 70, grade: 'B', label: 'Buono' },
   { min: 60, grade: 'C', label: 'Discreto' },
   { min: 0, grade: 'D', label: 'Debole' },
@@ -157,16 +155,12 @@ export function rateTeam(team: TeamSet[], data: EngineData): TeamRating | null {
 
   const defense = sum(analysis.weakness.map(row => weights[row.type] * typeSafety(row.weak, row.resist)));
   const coverage = sum(analysis.coverage.filter(row => row.hitters.length > 0).map(row => weights[row.type]));
-  const threatTotal = sum(analysis.threats.map(t => t.usage));
-  const threats = data.stats && threatTotal > 0
-    ? sum(analysis.threats.filter(t => t.handledBy.length > 0).map(t => t.usage)) / threatTotal
-    : null;
   const present = new Set(team.flatMap(detectRoles));
   const roles = (ESSENTIAL_ROLES.filter(r => present.has(r)).length + 0.5 * DESIRABLE_ROLES.filter(r => present.has(r)).length)
     / (ESSENTIAL_ROLES.length + 0.5 * DESIRABLE_ROLES.length);
   const strength = data.stats ? mean(team.map(set => strengthComponent(usageOf(data.stats, battleName(set))))) : null;
 
-  const raw: Record<AreaKey, number | null> = { defense, coverage, threats, roles, strength };
+  const raw: Record<AreaKey, number | null> = { defense, coverage, roles, strength };
   const areas = (Object.keys(AREA_WEIGHTS) as AreaKey[]).map(key => ({
     key,
     label: AREA_LABELS[key],

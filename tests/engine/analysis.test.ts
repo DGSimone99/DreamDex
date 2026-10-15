@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { analyzeTeam, checksThreat, resistsAllStabs } from '../../src/engine/analysis';
+import { analyzeTeam, checksThreat, resistsAllStabs, threatScore } from '../../src/engine/analysis';
 import { mostCommonSet } from '../../src/engine/sets';
 import { fixtureData, fixtureStats, gholdengo, tusk } from '../fixtures/data';
 
@@ -15,6 +15,12 @@ describe('analyzeTeam', () => {
       ['Rotom-Wash', []],
       ['Garchomp', []],
     ]);
+  });
+
+  it('punteggio minacce del meta: quota gestita pesata per uso', () => {
+    // gestite Kingambit (20%) e Toxapex (10%) su 71.5% totale
+    expect(threatScore(analysis)).toBe(42);
+    expect(threatScore(analyzeTeam([tusk], { stats: null, sets: null }))).toBeNull();
   });
 
   it('riusa tabelle di tipi e bisogni', () => {
