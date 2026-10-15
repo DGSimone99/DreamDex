@@ -29,13 +29,13 @@ const AREA_LABELS: Record<AreaKey, string> = {
 
 /**
  * Soglie tarate sui dati reali (2026-09, 1630+): team ben costruiti 86–87,
- * team casuali di Pokémon del meta mediana 77, team con membri inutili sotto 60.
+ * team casuali di Pokémon del meta mediana 75, team con membri inutili sotto 60.
  */
 const GRADES: { min: number; grade: string; label: string }[] = [
   { min: 88, grade: 'S', label: 'Eccellente' },
   { min: 80, grade: 'A', label: 'Ottimo' },
   { min: 70, grade: 'B', label: 'Buono' },
-  { min: 55, grade: 'C', label: 'Discreto' },
+  { min: 60, grade: 'C', label: 'Discreto' },
   { min: 0, grade: 'D', label: 'Debole' },
 ];
 

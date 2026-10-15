@@ -11,8 +11,8 @@ describe('gradeFor', () => {
     expect(gradeFor(87)).toEqual({ grade: 'A', label: 'Ottimo' });
     expect(gradeFor(80)).toEqual({ grade: 'A', label: 'Ottimo' });
     expect(gradeFor(70)).toEqual({ grade: 'B', label: 'Buono' });
-    expect(gradeFor(55)).toEqual({ grade: 'C', label: 'Discreto' });
-    expect(gradeFor(54)).toEqual({ grade: 'D', label: 'Debole' });
+    expect(gradeFor(60)).toEqual({ grade: 'C', label: 'Discreto' });
+    expect(gradeFor(59)).toEqual({ grade: 'D', label: 'Debole' });
   });
 });
 

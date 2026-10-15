@@ -92,8 +92,8 @@ const SLOW = 'Velocità bassa';
 
 /** Mosse che sfruttano qualunque meteo o campo: non bastano da sole a dire "manca la condizione". */
 const GENERIC_MOVES = new Set(['weatherball', 'terrainpulse']);
-/** Con Booster Energy queste abilità si attivano anche senza meteo o campo. */
-const BOOSTABLE = new Set(['protosynthesis', 'quarkdrive']);
+/** Abilità Paradox: il meteo/campo è un bonus, funzionano anche senza (Booster Energy o nessun boost). */
+const PARADOX = new Set(['protosynthesis', 'quarkdrive']);
 
 export interface ConditionLink {
   condition: Condition;
@@ -143,7 +143,9 @@ export interface MechanicalLink {
 /** Legami meccanici tra un candidato e i membri: chi lo abilita e chi abilita lui. */
 export function mechanicalLinks(candidate: TeamSet, team: TeamSet[]): MechanicalLink[] {
   const links: MechanicalLink[] = [];
-  const candidateBenefits = benefits(candidate);
+  // Weather Ball e Terrain Pulse funzionano con qualunque meteo/campo: non bastano per un legame
+  const specific = (set: TeamSet) => benefits(set).filter(b => !GENERIC_MOVES.has(toID(b.via)));
+  const candidateBenefits = specific(candidate);
   for (const member of team) {
     const enabler = enables(member).find(e => candidateBenefits.some(b => b.condition === e.condition));
     if (enabler) {
@@ -153,7 +155,7 @@ export function mechanicalLinks(candidate: TeamSet, team: TeamSet[]): Mechanical
   }
   const candidateEnables = enables(candidate);
   for (const member of team) {
-    const memberBenefits = benefits(member);
+    const memberBenefits = specific(member);
     const enabler = candidateEnables.find(e => memberBenefits.some(b => b.condition === e.condition));
     if (enabler) {
       const benefit = memberBenefits.find(b => b.condition === enabler.condition)!;
@@ -183,7 +185,7 @@ export function unmetBeneficiaries(team: TeamSet[]): TeamConditionIssue[] {
     benefits(member)
       .filter(b => !available.has(b.condition))
       .filter(b => !GENERIC_MOVES.has(toID(b.via)))
-      .filter(b => !(BOOSTABLE.has(toID(b.via)) && toID(member.item) === 'boosterenergy'))
+      .filter(b => !PARADOX.has(toID(b.via)))
       .filter(b => b.via !== SLOW)
       .map(b => ({ member: member.species, ...b })));
 }

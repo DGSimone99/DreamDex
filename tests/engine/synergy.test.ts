@@ -49,6 +49,17 @@ describe('legami nel team', () => {
     expect(unmetBeneficiaries([ninetales, venusaur])).toEqual([]);
   });
 
+  it('Weather Ball e Terrain Pulse non creano legami (meteo rivali non sono sinergia)', () => {
+    const charizardY = set('Charizard', 'Blaze', ['Weather Ball'], 'Charizardite Y');
+    expect(mechanicalLinks(set('Tyranitar', 'Sand Stream'), [charizardY])).toEqual([]);
+    expect(mechanicalLinks(set('Pelipper', 'Drizzle'), [set('Ninetales', 'Drought', ['Weather Ball'])])).toEqual([]);
+  });
+
+  it('i Paradox non vengono segnalati senza meteo o campo', () => {
+    expect(unmetBeneficiaries([set('Great Tusk', 'Protosynthesis', ['Headlong Rush'], 'Leftovers')])).toEqual([]);
+    expect(unmetBeneficiaries([set('Iron Valiant', 'Quark Drive', ['Moonblast'])])).toEqual([]);
+  });
+
   it('Weather Ball e Terrain Pulse non vengono segnalati come beneficiari senza condizione', () => {
     expect(unmetBeneficiaries([set('Pelipper', 'Keen Eye', ['Weather Ball'])])).toEqual([]);
   });
