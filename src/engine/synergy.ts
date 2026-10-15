@@ -321,3 +321,33 @@ export function weakenedMoves(team: TeamSet[]): WeakenedMove[] {
   }
   return result;
 }
+
+export interface NeededCondition {
+  condition: Condition;
+  beneficiaries: { species: string; via: string }[];
+}
+
+/**
+ * Condizioni portate da team[index] di cui altri membri hanno davvero bisogno
+ * (es. il sole di Ninetales per il Chlorophyll di Leafeon). Weather Ball, Terrain Pulse
+ * e i Paradox non contano: funzionano anche senza.
+ */
+export function neededConditions(team: TeamSet[], index: number): NeededCondition[] {
+  const others = team.filter((_, i) => i !== index);
+  return enables(team[index])
+    .map(e => ({
+      condition: e.condition,
+      beneficiaries: others.flatMap(member => {
+        const benefit = benefits(member).find(b =>
+          b.condition === e.condition && !GENERIC_MOVES.has(toID(b.via)) && !PARADOX.has(toID(b.via)));
+        return benefit ? [{ species: member.species, via: benefit.via }] : [];
+      }),
+    }))
+    .filter(n => n.beneficiaries.length > 0);
+}
+
+/** Vero se il set porta tutte le condizioni richieste. */
+export function providesAll(set: TeamSet, needed: NeededCondition[]): boolean {
+  const provided = new Set(enables(set).map(e => e.condition));
+  return needed.every(n => provided.has(n.condition));
+}

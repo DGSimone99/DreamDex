@@ -6,7 +6,7 @@ import { diffContribution, similarity, type Diff } from './replace';
 import { detectRoles, ESSENTIAL_ROLES, ROLE_LABELS } from './roles';
 import { scoreCandidates, type Suggestion } from './scoring';
 import { roleAndTypeRedundancies, weatherClashes } from './rating';
-import { benefits, CONDITION_LABELS, enables, teamSynergies, unmetBeneficiaries, unusedEnablers, weatherMitigations } from './synergy';
+import { benefits, CONDITION_LABELS, enables, neededConditions, providesAll, teamSynergies, unmetBeneficiaries, unusedEnablers, weatherMitigations } from './synergy';
 import type { TeamSet } from './sets';
 import { defensiveMultiplier } from './types';
 
@@ -141,8 +141,10 @@ function findSwaps(team: TeamSet[], format: Format, data: EngineData): CoachSwap
       const self = scored.find(s => s.set === member);
       if (!self) return null;
       const own = toID(battleName(member));
+      const needed = neededConditions(team, index);
       const better = scored.filter(s =>
-        s.set !== member && toID(battleName(s.set)) !== own && s.score - self.score >= SWAP_MARGIN);
+        s.set !== member && toID(battleName(s.set)) !== own && s.score - self.score >= SWAP_MARGIN
+        && (needed.length === 0 || providesAll(s.set, needed)));
       const others = scored.length - 1;
       if (!better.length) return null;
       const share = others > 0 ? scored.filter(s => s.score > self.score).length / others : 0;
