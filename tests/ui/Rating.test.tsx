@@ -15,6 +15,24 @@ describe('Valutazione team', () => {
     expect(rating).toHaveTextContent('Sinergia 100');
   });
 
+  it('mostra le ridondanze con il dettaglio', async () => {
+    const user = userEvent.setup();
+    render(<App data={fixtureData} />);
+    await user.click(screen.getByLabelText('Testo Showdown'));
+    await user.paste('Great Tusk\n- Stealth Rock\n\nGarchomp\n- Stealth Rock');
+    await user.click(screen.getByRole('button', { name: 'Importa' }));
+    const rating = screen.getByRole('group', { name: 'Valutazione team' });
+    expect(rating).toHaveTextContent(/Ridondanze −\d+/);
+    expect(rating).toHaveTextContent('2 setter di Stealth Rock (−2)');
+  });
+
+  it('nessuna riga ridondanze se non ce ne sono', async () => {
+    const user = userEvent.setup();
+    render(<App data={fixtureData} />);
+    for (const name of ['Great Tusk', 'Gholdengo']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
+    expect(screen.getByRole('group', { name: 'Valutazione team' })).not.toHaveTextContent('Ridondanze');
+  });
+
   it('nessuna valutazione con il team vuoto', () => {
     render(<App data={fixtureData} />);
     expect(screen.queryByRole('group', { name: 'Valutazione team' })).toBeNull();

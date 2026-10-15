@@ -16,6 +16,15 @@ export function RatingPanel({ rating }: { rating: TeamRating }) {
           </div>
         ))}
       </dl>
+      {rating.penalty.total > 0 && (
+        <div className="penalty">
+          <strong>Ridondanze −{rating.penalty.total}</strong>{' '}
+          <small>(voto senza penalità: {rating.base})</small>
+          <ul>
+            {rating.penalty.items.map(item => <li key={item.text}>{item.text} (−{item.points})</li>)}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }

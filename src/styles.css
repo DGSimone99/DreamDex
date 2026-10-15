@@ -86,3 +86,5 @@ small { color: var(--muted); display: block; }
 .grade-S strong, .grade-A strong { color: var(--good-text); }
 .grade-C strong { color: var(--warn); }
 .grade-D strong { color: var(--bad-text); }
+.rating .penalty { color: var(--warn); margin-top: 4px; }
+.rating .penalty ul { margin: 2px 0 0; padding-left: 18px; }
