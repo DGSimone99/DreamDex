@@ -12,10 +12,10 @@ export type AreaKey = 'defense' | 'coverage' | 'threats' | 'roles' | 'strength' 
 /** Pesi delle aree nel voto complessivo. Somma = 1. */
 export const AREA_WEIGHTS: Record<AreaKey, number> = {
   defense: 0.25,
-  coverage: 0.15,
-  threats: 0.15,
+  coverage: 0.175,
+  threats: 0.175,
   roles: 0.15,
-  strength: 0.2,
+  strength: 0.15,
   synergy: 0.1,
 };
 
