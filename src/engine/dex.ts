@@ -79,11 +79,6 @@ export function natDexTier(species: Species): string {
   return String((species as { natDexTier?: string }).natDexTier ?? '').replace(/[()]/g, '');
 }
 
-/** Bannato in National Dex OU (Uber, AG…). */
-export function isBanned(species: Species): boolean {
-  return BANNED_TIERS.has(natDexTier(species));
-}
-
 /** Scegliibile nel teambuilder: niente forme che esistono solo in battaglia (tranne Mega e Primal). */
 export function isTeambuildable(species: Species): boolean {
   return species.exists && isSelectable(species) && (!species.battleOnly || !!species.isMega || !!species.isPrimal);
@@ -91,10 +86,6 @@ export function isTeambuildable(species: Species): boolean {
 
 export function withinGen(species: Species, format: Format): boolean {
   return species.gen <= format.genLimit;
-}
-
-export function isAllowed(species: Species, format: Format): boolean {
-  return isLegal(species) && withinGen(species, format);
 }
 
 export function speciesNames(): string[] {

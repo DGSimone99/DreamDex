@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
-import { getMove, getSpecies, isAllowed, isLegal, moveNames, speciesNames, toID, withinGen } from '../../src/engine/dex';
+import { getMove, getSpecies, isLegal, moveNames, speciesNames, toID, withinGen } from '../../src/engine/dex';
 
 const gen = (genLimit: number) => ({ ...DEFAULT_FORMAT, genLimit });
 
@@ -29,7 +29,7 @@ describe('dex', () => {
     expect(withinGen(getSpecies('Great Tusk')!, gen(4))).toBe(false);
     expect(withinGen(getSpecies('Ninetales-Alola')!, gen(6))).toBe(false);
     expect(withinGen(getSpecies('Charizard-Mega-X')!, gen(6))).toBe(true);
-    expect(isAllowed(getSpecies('Rotom-Wash')!, gen(4))).toBe(true);
+    expect(isLegal(getSpecies('Rotom-Wash')!) && withinGen(getSpecies('Rotom-Wash')!, gen(4))).toBe(true);
   });
 
   it('mosse', () => {
