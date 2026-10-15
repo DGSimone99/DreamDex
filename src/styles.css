@@ -185,6 +185,8 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
   inset: 0;
   z-index: -1;
   transform: skewX(var(--skew));
+  /* Inclinata attorno al lato in basso: gli angoli in basso coincidono con i bordi della riga (e del box del set) */
+  transform-origin: bottom;
   background: var(--raised);
   border-bottom: 5px solid transparent;
   border-image: linear-gradient(90deg, var(--t1) 50%, var(--t2) 50%) 1;
