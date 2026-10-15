@@ -89,8 +89,8 @@ describe('Valutazione team', () => {
     render(<App initialLang="it" data={fixtureData} />);
     for (const name of ['Great Tusk', 'Gholdengo', 'Magikarp']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
     const meta = screen.getByRole('group', { name: 'Meta Use' });
-    expect(meta).toHaveTextContent('Great Tusk 30.0%');
-    expect(meta).toHaveTextContent('Gholdengo 25.0%');
+    expect(meta).toHaveTextContent('Great Tusk 30,0%');
+    expect(meta).toHaveTextContent('Gholdengo 25,0%');
     expect(meta).toHaveTextContent('Magikarp non presente nelle statistiche');
   });
 });

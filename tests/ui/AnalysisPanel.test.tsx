@@ -42,7 +42,7 @@ describe('AnalysisPanel', () => {
 
   it('dettaglio minacce', () => {
     renderPanel();
-    expect(row('Kingambit')).toHaveTextContent('20.0%');
+    expect(row('Kingambit')).toHaveTextContent('20,0%');
     expect(row('Kingambit')).toHaveTextContent('Gestito da Great Tusk');
     expect(row('Dragapult')).toHaveTextContent('Nessun check');
     expect(row('Dragapult')).toHaveClass('bad');
