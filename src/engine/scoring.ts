@@ -1,3 +1,5 @@
+import { t, type Lang } from '../i18n';
+import { typeName } from '../i18n/game';
 import { analyzeTeam, checksThreat, type TeamAnalysis } from './analysis';
 import type { EngineData } from './data';
 import { battleName, getSpecies, isDefined, isMega, toID, withinGen } from './dex';
@@ -34,26 +36,26 @@ export const CLASH_PENALTY = 5;
 export const WEAKENED_STAB_PENALTY = 3;
 export const WEAKENED_COVERAGE_PENALTY = 1;
 
-function clashFacts(set: TeamSet, team: TeamSet[]): { texts: string[]; penalty: number } {
+function clashFacts(set: TeamSet, team: TeamSet[], lang: Lang): { texts: string[]; penalty: number } {
   const conflicts = clashesWith(set, team);
   const weakened = weakenedMoves([...team, set]).filter(w => w.member === set.species && w.setter !== set.species);
   const cap = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
   return {
     texts: [
-      ...conflicts.map(c => `⚠ Meteo in conflitto con ${c}`),
-      ...weakened.map(w => `⚠ ${cap(conditionLabel(w.condition))} di ${w.setter} indebolisce le sue mosse ${w.type}`),
+      ...conflicts.map(c => `⚠ ${t(lang, 'tag.weatherConflict', { who: c })}`),
+      ...weakened.map(w => `⚠ ${t(lang, 'tag.weakened', { condition: cap(conditionLabel(w.condition, lang)), setter: w.setter, type: typeName(w.type, lang) })}`),
     ],
     penalty: CLASH_PENALTY * conflicts.length
       + weakened.reduce((acc, w) => acc + (w.stab ? WEAKENED_STAB_PENALTY : WEAKENED_COVERAGE_PENALTY), 0),
   };
 }
 
-function tagsFor(facts: Facts): string[] {
+function tagsFor(facts: Facts, lang: Lang): string[] {
   const s = facts.synergy;
   return [
     ...facts.clashes,
     ...facts.mechanical,
-    ...(s && s.pct >= OFTEN_TOGETHER ? [`Spesso usati insieme: ${s.member} (${Math.round(s.pct * 100)}%)`] : []),
+    ...(s && s.pct >= OFTEN_TOGETHER ? [t(lang, 'tag.oftenTogether', { member: s.member, pct: Math.round(s.pct * 100) })] : []),
   ];
 }
 
@@ -148,7 +150,7 @@ const NO_FACTS = (usage: number): Facts => ({
   strength: { usage },
 });
 
-export function scoreCandidates(team: TeamSet[], format: Format, data: EngineData, extraSets: TeamSet[] = []): Suggestion[] {
+export function scoreCandidates(team: TeamSet[], format: Format, data: EngineData, extraSets: TeamSet[] = [], lang: Lang = 'it'): Suggestion[] {
   const analysis = analyzeTeam(team, data);
   const megaTaken = !format.allowMultipleMegas && team.some(isMega);
   const extraIds = new Set(extraSets.map(set => toID(battleName(set))));
@@ -169,8 +171,8 @@ export function scoreCandidates(team: TeamSet[], format: Format, data: EngineDat
       coverage: coverageComponent(set, analysis),
       roles: rolesComponent(set, analysis),
       synergy: synergyRaw(set, team, data),
-      mechanical: mechanicalLinks(set, team).map(link => link.text),
-      clash: clashFacts(set, team),
+      mechanical: mechanicalLinks(set, team, lang).map(link => link.text),
+      clash: clashFacts(set, team, lang),
     };
   });
   const maxSynergy = Math.max(0, ...partial.map(p => (p.empty ? 0 : p.synergy.raw)));
@@ -181,7 +183,7 @@ export function scoreCandidates(team: TeamSet[], format: Format, data: EngineDat
       if (p.empty) {
         const components: Components = { defense: 0, threats: 0, coverage: 0, roles: 0, synergy: 0, strength };
         const facts = NO_FACTS(p.usage);
-        return { species: p.species, set: p.set, score: Math.round(100 * strength), components, facts, reasons: explain(facts, components), tags: [], penalty: 0 };
+        return { species: p.species, set: p.set, score: Math.round(100 * strength), components, facts, reasons: explain(facts, components, lang), tags: [], penalty: 0 };
       }
       const components: Components = {
         defense: p.defense.value,
@@ -204,17 +206,17 @@ export function scoreCandidates(team: TeamSet[], format: Format, data: EngineDat
       };
       const penalty = p.clash.penalty;
       const score = Math.max(0, Math.round(100 * sum(COMPONENT_KEYS.map(key => WEIGHTS[key] * components[key]))) - penalty);
-      return { species: p.species, set: p.set, score, components, facts, reasons: explain(facts, components), tags: tagsFor(facts), penalty };
+      return { species: p.species, set: p.set, score, components, facts, reasons: explain(facts, components, lang), tags: tagsFor(facts, lang), penalty };
     })
     .sort((a, b) => b.score - a.score || usageOf(data.stats, battleName(b.set)) - usageOf(data.stats, battleName(a.set)));
 }
 
-export function suggest(team: TeamSet[], format: Format, data: EngineData, limit = 20): Suggestion[] {
+export function suggest(team: TeamSet[], format: Format, data: EngineData, limit = 20, lang: Lang = 'it'): Suggestion[] {
   if (team.length >= 6) return [];
-  return scoreCandidates(team, format, data).slice(0, limit);
+  return scoreCandidates(team, format, data, [], lang).slice(0, limit);
 }
 
 /** Valuta solo i set indicati (nessun candidato preso dalle statistiche). */
-export function scoreSets(team: TeamSet[], format: Format, data: EngineData, sets: TeamSet[]): Suggestion[] {
-  return scoreCandidates(team, { ...format, minUsage: Infinity }, data, sets);
+export function scoreSets(team: TeamSet[], format: Format, data: EngineData, sets: TeamSet[], lang: Lang = 'it'): Suggestion[] {
+  return scoreCandidates(team, { ...format, minUsage: Infinity }, data, sets, lang);
 }

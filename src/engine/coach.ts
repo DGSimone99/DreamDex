@@ -3,7 +3,9 @@ import type { EngineData } from './data';
 import { battleName, battleSpecies, getSpecies, isDefined, isMega, isSelectable, toID, withinGen } from './dex';
 import { formatLabel, isBannedIn, meetsTeamRules } from './formats';
 import type { Format } from './format';
-import { diffContribution, similarity, type Diff } from './replace';
+import { diffContribution, similarity, type Contribution, type Diff } from './replace';
+import { t, type Lang } from '../i18n';
+import { typeName } from '../i18n/game';
 import { detectRoles, ESSENTIAL_ROLES, roleLabel } from './roles';
 import { scoreCandidates, type Suggestion } from './scoring';
 import { roleAndTypeRedundancies, weatherClashes } from './rating';
@@ -205,15 +207,12 @@ function verdictFor(team: TeamSet[], problems: CoachProblem[]): string {
 }
 
 /** Voci del diff raggruppate per tipo: ruoli, "Forte contro X, Y", "Resistente a X, Y". */
-function groupChanges(items: string[], gain: boolean): string[] {
-  const plain = items.map(item => item.replace(/^[+-] /, ''));
-  const covers = plain.filter(i => i.startsWith('copre ')).map(i => i.slice('copre '.length));
-  const resists = plain.filter(i => i.startsWith('resiste ')).map(i => i.slice('resiste '.length));
-  const roles = plain.filter(i => !i.startsWith('copre ') && !i.startsWith('resiste '));
+function groupChanges(change: Contribution, gain: boolean, lang: Lang): string[] {
+  const types = (list: string[]) => list.map(type => typeName(type, lang)).join(', ');
   return [
-    ...roles,
-    covers.length ? `${gain ? 'Forte' : 'Non più forte'} contro ${covers.join(', ')}` : '',
-    resists.length ? `${gain ? 'Resistente' : 'Non più resistente'} a ${resists.join(', ')}` : '',
+    ...change.roles.map(role => roleLabel(role, lang)),
+    change.covers.length ? t(lang, gain ? 'diff.strong' : 'diff.notStrong', { types: types(change.covers) }) : '',
+    change.resists.length ? t(lang, gain ? 'diff.resists' : 'diff.notResists', { types: types(change.resists) }) : '',
   ].filter(Boolean);
 }
 
@@ -242,13 +241,13 @@ export const previewSwap = (swap: CoachSwap, preview: SwapPreview | null): Coach
     : swap;
 
 /** Cosa porta il sostituto e cosa perde il team, raggruppato per tipo. */
-export const describeDiff = (diff: Diff) => ({
-  pros: groupChanges(diff.gains, true),
-  cons: groupChanges(diff.losses, false),
+export const describeDiff = (diff: Diff, lang: Lang = 'it') => ({
+  pros: groupChanges(diff.gains, true, lang),
+  cons: groupChanges(diff.losses, false, lang),
 });
 
-export function describeSwap(swap: CoachSwap): SwapSummary {
-  return { gain: swap.score - swap.fit, ...describeDiff(swap.diff) };
+export function describeSwap(swap: CoachSwap, lang: Lang = 'it'): SwapSummary {
+  return { gain: swap.score - swap.fit, ...describeDiff(swap.diff, lang) };
 }
 
 export function coachTeam(team: TeamSet[], format: Format, data: EngineData): Coaching {

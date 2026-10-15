@@ -26,9 +26,10 @@ describe('similarity', () => {
 describe('diffContribution', () => {
   it('Great Tusk → Corviknight accanto a Gholdengo', () => {
     const diff = diffContribution(tusk, corviknight, analyzeTeam([gholdengo], fixtureData));
-    expect(diff.gains).toEqual(['+ Pivot', '+ copre Fighting', '+ copre Bug', '+ resiste Ground']);
-    expect(diff.losses).toEqual(expect.arrayContaining(['- copre Fire', '- resiste Dark']));
-    expect(diff.losses).not.toContain('- Rimozione hazard');
+    expect(diff.gains).toEqual({ roles: ['pivot'], covers: ['Fighting', 'Bug'], resists: ['Ground'] });
+    expect(diff.losses.covers).toContain('Fire');
+    expect(diff.losses.resists).toContain('Dark');
+    expect(diff.losses.roles).not.toContain('removal');
   });
 });
 
@@ -43,7 +44,7 @@ describe('improveReplacements', () => {
   });
 
   it('ogni candidato ha un diff', () => {
-    expect(list.find(r => r.species === 'Corviknight')!.diff.gains).toContain('+ Pivot');
+    expect(list.find(r => r.species === 'Corviknight')!.diff.gains.roles).toContain('pivot');
   });
 });
 

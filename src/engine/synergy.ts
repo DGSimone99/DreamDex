@@ -2,6 +2,7 @@ import { battleAbility, battleSpecies, getMove, isDefined, toID } from './dex';
 import { attackStyle } from './roles';
 import type { TeamSet } from './sets';
 import { t, type Lang } from '../i18n';
+import { anyGameName } from '../i18n/game';
 import { attackingMoves, defensiveMultiplier, type TypeName } from './types';
 
 export type Condition =
@@ -85,6 +86,9 @@ export const CONDITIONS = Object.keys(RULES) as Condition[];
 export const TRICK_ROOM_SPEED = 50;
 const SLOW = 'Velocità bassa';
 
+/** Come si attiva o si sfrutta una condizione, nella lingua data: abilità, mossa o "velocità bassa". */
+export const viaName = (via: string, lang: Lang = 'it'): string => (via === SLOW ? t(lang, 'synergy.slow') : anyGameName(via, lang));
+
 /** Mosse che sfruttano qualunque meteo o campo: non bastano da sole a dire "manca la condizione". */
 const GENERIC_MOVES = new Set(['weatherball', 'terrainpulse']);
 /** Abilità Paradox: il meteo/campo è un bonus, funzionano anche senza (Booster Energy o nessun boost). */
@@ -136,7 +140,7 @@ export interface MechanicalLink {
 }
 
 /** Legami meccanici tra un candidato e i membri: chi lo abilita e chi abilita lui. */
-export function mechanicalLinks(candidate: TeamSet, team: TeamSet[]): MechanicalLink[] {
+export function mechanicalLinks(candidate: TeamSet, team: TeamSet[], lang: Lang = 'it'): MechanicalLink[] {
   const links: MechanicalLink[] = [];
   // Weather Ball e Terrain Pulse funzionano con qualunque meteo/campo: non bastano per un legame
   const specific = (set: TeamSet) => benefits(set).filter(b => !GENERIC_MOVES.has(toID(b.via)));
@@ -145,7 +149,7 @@ export function mechanicalLinks(candidate: TeamSet, team: TeamSet[]): Mechanical
     const enabler = enables(member).find(e => candidateBenefits.some(b => b.condition === e.condition));
     if (enabler) {
       const benefit = candidateBenefits.find(b => b.condition === enabler.condition)!;
-      links.push({ text: `Abilitato da ${member.species} (${enabler.via}): ${benefit.via}` });
+      links.push({ text: t(lang, 'synergy.enabledBy', { member: member.species, via: viaName(enabler.via, lang), benefit: viaName(benefit.via, lang) }) });
     }
   }
   const candidateEnables = enables(candidate);
@@ -154,7 +158,7 @@ export function mechanicalLinks(candidate: TeamSet, team: TeamSet[]): Mechanical
     const enabler = candidateEnables.find(e => memberBenefits.some(b => b.condition === e.condition));
     if (enabler) {
       const benefit = memberBenefits.find(b => b.condition === enabler.condition)!;
-      links.push({ text: `Abilita ${member.species}: ${enabler.via} → ${benefit.via}` });
+      links.push({ text: t(lang, 'synergy.enables', { member: member.species, via: viaName(enabler.via, lang), benefit: viaName(benefit.via, lang) }) });
     }
   }
   return links;
@@ -207,7 +211,7 @@ export function unmetBeneficiaries(team: TeamSet[]): TeamConditionIssue[] {
 }
 
 /** Sinergie già attive nel team, una riga per abilitatore: "Ninetales (Drought) → Leafeon (Chlorophyll)". */
-export function teamSynergies(team: TeamSet[]): string[] {
+export function teamSynergies(team: TeamSet[], lang: Lang = 'it'): string[] {
   const lines: string[] = [];
   for (const member of team) {
     for (const enabler of enables(member)) {
@@ -218,8 +222,8 @@ export function teamSynergies(team: TeamSet[]): string[] {
           benefit: benefits(other).find(b => b.condition === enabler.condition && !GENERIC_MOVES.has(toID(b.via))),
         }))
         .filter(x => x.benefit)
-        .map(x => `${x.other.species} (${x.benefit!.via})`);
-      if (beneficiaries.length) lines.push(`${member.species} (${enabler.via}) → ${beneficiaries.join(', ')}`);
+        .map(x => `${x.other.species} (${viaName(x.benefit!.via, lang)})`);
+      if (beneficiaries.length) lines.push(`${member.species} (${viaName(enabler.via, lang)}) → ${beneficiaries.join(', ')}`);
     }
   }
   return lines;
