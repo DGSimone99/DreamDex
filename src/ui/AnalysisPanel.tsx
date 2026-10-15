@@ -11,6 +11,7 @@ import { MetaUsePanel } from './MetaUsePanel';
 import { RatingPanel } from './RatingPanel';
 import { Sprite, TypeChip } from './Sprite';
 import { Icon } from './icons';
+import { MoveName, Typed } from './TypeText';
 
 const MULTIPLIER_LABELS: Record<string, string> = { '4': '×4', '2': '×2', '1': '', '0.5': '×½', '0.25': '×¼', '0': '×0' };
 const formatMultiplier = (m: number) => MULTIPLIER_LABELS[String(m)] ?? `×${m}`;
@@ -82,7 +83,7 @@ export function AnalysisPanel({ team, analysis, rating, coaching, preview, onRep
           <tbody>
             {analysis.weakness.map(row => (
               <tr key={row.type} className={row.pressure > 0 ? 'bad' : row.resist > row.weak ? 'good' : ''}>
-                <th scope="row">{row.type}</th>
+                <th scope="row"><TypeChip type={row.type} /></th>
                 {row.multipliers.map((m, i) => <td key={i}>{formatMultiplier(m)}</td>)}
                 <td>{row.weak}</td>
                 <td>{row.resist}</td>
@@ -90,7 +91,7 @@ export function AnalysisPanel({ team, analysis, rating, coaching, preview, onRep
             ))}
           </tbody>
         </table>
-        {weatherMitigations(team).map(m => <p key={m.condition} className="note">{mitigationNote(m)}</p>)}
+        {weatherMitigations(team).map(m => <p key={m.condition} className="note"><Typed text={mitigationNote(m)} /></p>)}
       </details>
 
       <details className="block">
@@ -100,7 +101,7 @@ export function AnalysisPanel({ team, analysis, rating, coaching, preview, onRep
             <li key={row.type} className={row.hitters.length ? '' : 'bad'}>
               <TypeChip type={row.type} />
               {row.hitters.length
-                ? <span>{row.hitters.map((h, i) => <span key={i} className="hitter">{h.member} <small>{h.move}</small></span>)}</span>
+                ? <span>{row.hitters.map((h, i) => <span key={i} className="hitter">{h.member} <small><MoveName move={h.move} /></small></span>)}</span>
                 : <span className="missing">Nessuna mossa super efficace</span>}
             </li>
           ))}

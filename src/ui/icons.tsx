@@ -7,6 +7,12 @@ const paths = {
   plus: 'M12 5v14M5 12h14',
   arrow: 'M5 12h14m0 0-5-5m5 5-5 5',
   check: 'M5 12.5l4.5 4.5L19 7.5',
+  search: 'M10.5 4a6.5 6.5 0 1 0 0 13 6.5 6.5 0 1 0 0-13zM15.5 15.5 20 20',
+  // Categorie delle mosse (come su Showdown) e precisione
+  physical: 'M12 2.5l2.3 5.2 5.4-1.6-2.6 5 4.4 3.3-5.6.6.3 5.6L12 17.3l-4.2 3.3.3-5.6-5.6-.6 4.4-3.3-2.6-5 5.4 1.6z',
+  special: 'M12 3a9 9 0 1 0 0 18 9 9 0 1 0 0-18zm0 4.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 1 0 0-9z',
+  status: 'M12 3a9 9 0 1 0 0 18 9 9 0 1 0 0-18zM12 3c-2.5 2.5-2.5 6.5 0 9s2.5 6.5 0 9',
+  target: 'M12 4a8 8 0 1 0 0 16 8 8 0 1 0 0-16zM12 2v5M12 17v5M2 12h5M17 12h5',
 } as const;
 
 export function Icon({ name, filled = false }: { name: keyof typeof paths; filled?: boolean }) {

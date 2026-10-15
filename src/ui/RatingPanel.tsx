@@ -1,4 +1,5 @@
 import type { TeamRating } from '../engine/rating';
+import { Typed } from './TypeText';
 
 export function RatingPanel({ rating }: { rating: TeamRating }) {
   return (
@@ -30,7 +31,7 @@ export function RatingPanel({ rating }: { rating: TeamRating }) {
           <strong>Bonus +{rating.bonus.total}</strong>{' '}
           <small>(meteo e campi che smorzano debolezze, non sempre attivi)</small>
           <ul>
-            {rating.bonus.items.map(item => <li key={item.text}>{item.text} (+{item.points})</li>)}
+            {rating.bonus.items.map(item => <li key={item.text}><Typed text={item.text} /> (+{item.points})</li>)}
           </ul>
         </div>
       )}
@@ -39,7 +40,7 @@ export function RatingPanel({ rating }: { rating: TeamRating }) {
           <strong>Penalità −{rating.penalty.total}</strong>{' '}
           <small>(voto senza bonus e penalità: {rating.base})</small>
           <ul>
-            {rating.penalty.items.map(item => <li key={item.text}>{item.text} (−{item.points})</li>)}
+            {rating.penalty.items.map(item => <li key={item.text}><Typed text={item.text} /> (−{item.points})</li>)}
           </ul>
         </div>
       )}

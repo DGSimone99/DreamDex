@@ -35,7 +35,7 @@ describe('Valutazione team', () => {
     await user.paste('Ninetales\nAbility: Drought\n- Flamethrower\n\nGreat Tusk\n- Headlong Rush');
     await user.click(screen.getByRole('button', { name: 'Importa' }));
     expect(screen.getByRole('group', { name: 'Valutazione team' })).toHaveTextContent('Bonus +4');
-    expect(screen.getByText('Col sole (Ninetales, Drought): Water ×2 → ×1 per Ninetales, Great Tusk · il meteo non è sempre attivo')).toBeInTheDocument();
+    expect(screen.getByText((_, el) => el?.textContent === 'Col sole (Ninetales, Drought): Water ×2 → ×1 per Ninetales, Great Tusk · il meteo non è sempre attivo')).toBeInTheDocument();
   });
 
   it('nessuna riga ridondanze se non ce ne sono', async () => {

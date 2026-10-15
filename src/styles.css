@@ -236,12 +236,50 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
   animation: drawer 0.3s var(--ease);
 }
 @keyframes drawer { from { opacity: 0; transform: translateY(-8px); } }
-.set-editor { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px 16px; }
-.set-editor label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
-.set-editor label input, .set-editor label select { font-size: 14px; color: var(--text); text-transform: none; letter-spacing: 0; font-weight: 400; }
+.set-editor { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px 18px; }
+.set-editor label, .set-editor .field { display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.set-editor label input, .set-editor label select, .set-editor .field input { font-size: 14px; color: var(--text); text-transform: none; letter-spacing: 0; font-weight: 400; width: 100%; }
 .set-editor .custom-toggle { grid-column: 1 / -1; flex-direction: row; align-items: center; gap: 8px; width: fit-content; text-transform: none; letter-spacing: 0; font-size: 14px; color: var(--text); cursor: help; }
-.set-editor fieldset { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; border: 1px solid var(--line); border-radius: 4px; padding: 10px 12px 12px; margin: 0; }
+.set-editor .custom-toggle input { width: 16px; }
+.set-editor fieldset { margin: 0; padding: 10px 14px 14px; border: 1px solid var(--line); border-radius: 4px; background: var(--panel); }
 .set-editor legend { font: 700 14px var(--display); text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); padding: 0 6px; }
+.editor-group { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 14px; }
+.set-editor .evs { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; }
+.field { position: relative; }
+.field-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 18px; }
+.move-meta { display: inline-flex; align-items: center; gap: 10px; text-transform: none; letter-spacing: 0; font-weight: 600; color: var(--muted); font-size: 12px; }
+.move-stat { display: inline-flex; align-items: center; gap: 3px; min-width: 38px; font-variant-numeric: tabular-nums; }
+.move-stat .icon { width: 13px; height: 13px; }
+.move-stat.cat-physical .icon { color: #ff9a5c; }
+.move-stat.cat-special .icon { color: #9aa8ff; }
+.move-stat.cat-status .icon { color: var(--faint); }
+.move-stat.accuracy .icon { color: var(--faint); }
+.nature-fx { font-size: 12px; font-weight: 600; text-transform: none; letter-spacing: 0; color: var(--faint); }
+.nature-fx .up { color: var(--good); }
+.nature-fx .down { color: var(--bad); }
+.faint { color: var(--faint); }
+/* Tooltip con la descrizione di strumento, abilità e mosse */
+.field[data-tip]:hover::after {
+  content: attr(data-tip);
+  position: absolute;
+  z-index: 40;
+  left: 0;
+  bottom: calc(100% + 6px);
+  width: max-content;
+  max-width: 300px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--ground);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
+  color: var(--text);
+  font: 400 13px/1.4 var(--ui);
+  text-transform: none;
+  letter-spacing: 0;
+  pointer-events: none;
+  animation: tip 0.15s var(--ease) 0.25s both;
+}
+@keyframes tip { from { opacity: 0; transform: translateY(4px); } }
 .drawer .actions { margin-top: 14px; justify-content: flex-end; }
 
 /* Voto */
@@ -321,10 +359,10 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 .swap-head .picked-tag { padding: 1px 6px; border-radius: 3px; background: var(--blue-soft); color: var(--text); font-weight: 600; }
 .pros-cons { grid-column: 1; display: grid; gap: 2px; font-size: 14px; }
 .pros-cons li { display: flex; gap: 6px; }
-.pros-cons li > span { flex: none; width: 10px; font-weight: 700; text-align: center; }
-.pros-cons .pro > span { color: var(--good); }
+.pros-cons li > span:first-child { flex: none; width: 10px; font-weight: 700; text-align: center; }
+.pros-cons .pro > span:first-child { color: var(--good); }
 .pros-cons .con { color: var(--muted); }
-.pros-cons .con > span { color: var(--bad); }
+.pros-cons .con > span:first-child { color: var(--bad); }
 .swaps .swap-actions { grid-column: 2; grid-row: 1; display: flex; gap: 6px; }
 .swaps .swap-actions button { font-size: 13px; padding: 4px 10px; }
 .swaps .swap-actions button.swap-now { width: 30px; justify-content: center; padding: 4px 0; }
@@ -379,13 +417,11 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 .role-rows li.bad .icon, .role-rows li.bad .owners { color: var(--bad); font-weight: 500; }
 
 .type-rows { display: grid; gap: 2px; }
-.type-rows li { display: grid; grid-template-columns: 74px minmax(0, 1fr); gap: 12px; align-items: center; margin: 0; padding: 4px 0; border-bottom: 1px solid var(--line-soft); font-size: 14px; }
-.type-rows .type-chip { text-align: center; }
+.type-rows li { display: grid; grid-template-columns: 66px minmax(0, 1fr); gap: 12px; align-items: center; margin: 0; padding: 4px 0; border-bottom: 1px solid var(--line-soft); font-size: 14px; }
 .type-rows .hitter { display: inline-flex; gap: 5px; align-items: baseline; margin-right: 14px; }
 .type-rows .hitter small { display: inline; font-size: 12px; color: var(--faint); }
 .type-rows .missing { color: var(--bad); font-weight: 500; }
 .type-rows li.bad { background: linear-gradient(90deg, var(--bad-bg), transparent 80%); }
-.type-rows li.bad .type-chip { margin-left: 4px; }
 
 .mon-rows li { display: grid; grid-template-columns: 40px minmax(0, 1fr) minmax(0, 1.3fr); gap: 10px; align-items: center; margin: 0; padding: 2px 0; border-bottom: 1px solid var(--line-soft); font-size: 14px; }
 .mon-rows .sprite { image-rendering: pixelated; }
@@ -402,7 +438,15 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 
 /* Suggerimenti */
 .search { display: flex; gap: 8px; margin-bottom: 10px; }
-.search input { flex: 1; padding: 9px 12px; font-size: 15px; }
+.search-field { position: relative; flex: 1; display: flex; align-items: center; }
+.search-field > .icon { position: absolute; left: 12px; color: var(--faint); pointer-events: none; }
+.search-field input { flex: 1; padding: 9px 36px; font-size: 15px; }
+.search-field:focus-within > .icon { color: var(--gold); }
+.search-field .clear { position: absolute; right: 6px; border: 0; background: none; padding: 4px; color: var(--faint); }
+.search-field .clear:hover { color: var(--text); }
+.search-hint { margin: -4px 0 10px; font-size: 13px; color: var(--muted); }
+.search-hint strong { color: var(--gold); font-weight: 600; }
+kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 3px; background: var(--raised); color: var(--text); }
 .filters > summary { font-weight: 600; }
 .filters .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
 .filters .chips button { font-size: 13px; padding: 3px 10px; }
@@ -469,7 +513,8 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 .tag.tier { background: transparent; color: var(--muted); border: 1px solid var(--line); }
 .tag.banned { background: var(--bad-bg); color: var(--bad); }
 .tag.warn { background: var(--warn-bg); color: var(--warn); }
-.type-chip { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; padding: 1px 6px; border-radius: 2px; line-height: 1.5; }
+/* Tutti i chip della stessa larghezza: in liste e tabelle si allineano in colonna */
+.type-chip { display: inline-block; flex: none; width: 66px; text-align: center; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; padding: 1px 0; border-radius: 2px; line-height: 1.5; }
 
 .actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .errors { color: var(--bad); }
@@ -482,4 +527,110 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before { transition: none !important; animation: none !important; }
+}
+
+/* Menu a tendina dell'editor (strumenti, abilità, mosse) */
+.combobox { position: relative; }
+.combobox input { width: 100%; padding-right: 26px; }
+.combobox input[readonly] { cursor: pointer; }
+.combobox::after {
+  content: '';
+  position: absolute;
+  right: 11px;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  border-right: 2px solid var(--faint);
+  border-bottom: 2px solid var(--faint);
+  transform: translateY(-70%) rotate(45deg);
+  pointer-events: none;
+  transition: transform 0.2s;
+}
+.combobox.open::after { transform: translateY(-30%) rotate(225deg); }
+.combobox [role='listbox'] {
+  position: absolute;
+  z-index: 50;
+  top: calc(100% + 4px);
+  left: 0;
+  width: max(100%, 380px);
+  max-height: 340px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  background: var(--ground);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+  text-transform: none;
+  letter-spacing: 0;
+  animation: tip 0.12s var(--ease);
+}
+/* Colonna destra: il menu si apre verso sinistra per non uscire dal pannello */
+.editor-group > .field:nth-child(odd) .combobox [role='listbox'] { left: auto; right: 0; }
+.combobox [role='option'] { margin: 0; padding: 8px 10px; cursor: pointer; border-bottom: 1px solid var(--line-soft); transition: background 0.1s; }
+.combobox [role='option']:last-of-type { border-bottom: 0; }
+.combobox [role='option'].active { background: var(--raised); border-radius: 3px; border-bottom-color: transparent; }
+.combobox [role='option'][aria-selected='true'] { box-shadow: inset 2px 0 0 var(--gold); }
+/* Valore scelto mostrato con stile (chip del tipo, effetti della natura) */
+.combobox.has-display input { color: transparent; caret-color: transparent; }
+.combobox-display {
+  position: absolute;
+  inset: 1px 28px 1px 11px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--text);
+  text-transform: none;
+  letter-spacing: 0;
+}
+.combobox .option-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.combobox .option-head strong { font-size: 14px; font-weight: 600; color: var(--text); }
+.combobox [role='option'] small {
+  margin-top: 2px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--faint);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.combobox [role='option'].active small { color: var(--muted); }
+.combobox .empty { margin: 0; padding: 8px; font-size: 13px; font-weight: 400; color: var(--faint); }
+.field:has(.combobox.open)::after { display: none; }
+.type-name, .move-name { font-weight: 600; }
+
+/* Tendine native (formato, filtri…) con lo stesso aspetto del menu dell'editor, dove il browser lo permette */
+@supports (appearance: base-select) {
+  select, ::picker(select) { appearance: base-select; }
+  select { display: flex; align-items: center; justify-content: space-between; gap: 8px; cursor: pointer; }
+  select::picker-icon {
+    content: '';
+    width: 6px;
+    height: 6px;
+    margin-right: 2px;
+    border-right: 2px solid var(--faint);
+    border-bottom: 2px solid var(--faint);
+    transform: translateY(-2px) rotate(45deg);
+    transition: transform 0.2s;
+  }
+  select:open::picker-icon { transform: translateY(2px) rotate(225deg); }
+  ::picker(select) {
+    margin-top: 4px;
+    padding: 4px;
+    background: var(--ground);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+    max-height: 340px;
+  }
+  select option { padding: 8px 10px; font-size: 14px; color: var(--text); border-bottom: 1px solid var(--line-soft); cursor: pointer; }
+  select option:last-child { border-bottom: 0; }
+  select option:hover, select option:focus-visible { background: var(--raised); border-radius: 3px; outline: none; }
+  select option:checked { font-weight: 600; box-shadow: inset 2px 0 0 var(--gold); background: none; }
+  select option::checkmark { display: none; }
 }

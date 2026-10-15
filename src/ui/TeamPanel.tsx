@@ -9,6 +9,7 @@ import { SetEditor } from './SetEditor';
 import { Sprite, TypeChip, typeColor } from './Sprite';
 import { Icon } from './icons';
 import { illegalParts } from '../engine/learnsets';
+import { Typed } from './TypeText';
 
 interface Props {
   team: TeamSet[];
@@ -84,7 +85,7 @@ function TeamSlot({ set, format, warning: megaWarning, open, onToggle, onIgnoreW
         <small className="held">{[set.item, set.ability].filter(Boolean).join(' · ') || 'Nessuno strumento'}</small>
         <span className="types">{species?.types.map(type => <TypeChip key={type} type={type} />) ?? <TypeChip type="?" />}</span>
         {roles.length > 0 && <small className="roles">{roles.join(' · ')}</small>}
-        {problem && <small className="problem">{problem}</small>}
+        {problem && <small className="problem"><Typed text={problem} /></small>}
         {set.customSkillset && <small className="custom">Custom</small>}
         {warnings.map(w => <small key={w} className="warning">{w}</small>)}
       </summary>

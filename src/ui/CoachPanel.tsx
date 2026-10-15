@@ -2,6 +2,7 @@ import { Icon } from './icons';
 import type { TeamSet } from '../engine/sets';
 import { ProsCons } from './ProsCons';
 import { describeSwap, previewSwap, PROBLEM_CATEGORIES, type Coaching, type SwapLevel, type SwapPreview } from '../engine/coach';
+import { Typed } from './TypeText';
 
 const SWAP_GROUPS: { level: SwapLevel; title: string }[] = [
   { level: 'recommended', title: 'Valuta di sostituire' },
@@ -24,7 +25,7 @@ export function CoachPanel({ coaching, preview = null, onReplace, onSwap }: {
         <>
           <h3>Punti di forza</h3>
           <ul className="checklist">
-            {strengths.map(text => <li key={text}><Icon name="check" />{text}</li>)}
+            {strengths.map(text => <li key={text}><Icon name="check" /><span><Typed text={text} /></span></li>)}
           </ul>
         </>
       )}
@@ -45,7 +46,7 @@ export function CoachPanel({ coaching, preview = null, onReplace, onSwap }: {
                     <li key={p.text} className={p.severity === 'serious' ? 'bad' : ''}>
                       <span className="severity">{p.severity === 'serious' ? 'Serio' : 'Minore'}</span>
                       <span>
-                        {p.text}
+                        <Typed text={p.text} />
                         {p.fixes.length > 0 && <small>Considera <b>{p.fixes.join(' o ')}</b></small>}
                       </span>
                     </li>

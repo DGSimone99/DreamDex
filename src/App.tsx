@@ -8,7 +8,6 @@ import { dataLabel, dataSource } from './engine/formats';
 import type { TeamSet } from './engine/sets';
 import { AnalysisPanel } from './ui/AnalysisPanel';
 import { GradeBadge } from './ui/RatingPanel';
-import { DataLists } from './ui/DataLists';
 import { SavedTeams } from './ui/SavedTeams';
 import { ShowdownPanel } from './ui/ShowdownPanel';
 import { SuggestionsPanel } from './ui/SuggestionsPanel';
@@ -105,7 +104,6 @@ export function App({ data: initialData, loadSource, storage }: AppProps) {
           />
         </div>
       </main>
-      <DataLists />
     </div>
   );
 }

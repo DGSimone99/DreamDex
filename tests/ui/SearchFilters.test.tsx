@@ -84,3 +84,25 @@ describe('ricerca e filtri nei suggerimenti', () => {
     expect(screen.queryByLabelText('Aggiungi Pokémon')).toBeNull();
   });
 });
+
+describe('ricerca: Invio aggiunge il primo risultato', () => {
+  it('nome parziale + Invio aggiunge la riga dorata; Esc svuota', async () => {
+    const user = await setup('Great Tusk');
+    const search = screen.getByLabelText('Aggiungi Pokémon');
+    await user.type(search, 'kinga');
+    await waitFor(() => expect(cardNames()).toEqual(['Kingambit']));
+    expect(within(suggestions()).getByText('Kingambit', { selector: '.search-hint strong' })).toBeInTheDocument();
+    await user.keyboard('{Enter}');
+    expect(within(team()).getByText('Kingambit')).toBeInTheDocument();
+    expect(search).toHaveValue('');
+
+    await user.type(search, 'zzz');
+    await user.keyboard('{Escape}');
+    expect(search).toHaveValue('');
+  });
+
+  it('nessun menu a tendina sul campo di ricerca', async () => {
+    await setup();
+    expect(screen.getByLabelText('Aggiungi Pokémon')).not.toHaveAttribute('list');
+  });
+});

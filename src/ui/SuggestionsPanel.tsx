@@ -16,6 +16,7 @@ import { copyText } from './clipboard';
 import { Sprite, TypeChip } from './Sprite';
 import { Icon } from './icons';
 import { ProsCons } from './ProsCons';
+import { Typed } from './TypeText';
 
 /** Barre mostrate sulle carte: come il candidato si adatta al team, più le sue statistiche. */
 const FIT_BARS: { key: 'defense' | 'coverage' | 'roles'; label: string }[] = [
@@ -76,7 +77,7 @@ function SuggestionItem({ rank, item, actionLabel, quickLabel, replacing, member
           <span className="who">
             <strong><span className="visually-hidden">{rank}. </span>{item.species}</strong>
             <span className="types">{types.map(type => <TypeChip key={type} type={type} />)}</span>
-            <small>{diffText ?? item.reasons[0]?.text ?? ''}</small>
+            <small><Typed text={diffText ?? item.reasons[0]?.text ?? ''} /></small>
             <span className="tags">
               <TierTag species={item.species} format={format} />
               {item.tags.map(tag => <span key={tag} className={tag.startsWith('⚠') ? 'tag warn' : 'tag'}>{tag}</span>)}
@@ -119,7 +120,7 @@ function SuggestionItem({ rank, item, actionLabel, quickLabel, replacing, member
           </p>
         )}
         {changes && <ProsCons pros={changes.pros} cons={changes.cons} />}
-        <ul className="reasons">{item.reasons.map(reason => <li key={reason.text}>{reason.text}</li>)}</ul>
+        <ul className="reasons">{item.reasons.map(reason => <li key={reason.text}><Typed text={reason.text} /></li>)}</ul>
         <pre className="set">{setText}</pre>
         <div className="actions">
           <button type="button" className="primary" onClick={onAction}>{actionLabel}</button>
@@ -166,15 +167,19 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
     return data.stats ? suggest(team, format, data, MAX) : [];
   }, [team, format, data, replacing, replaceIndex, mode, applied, filtering]);
 
-  /** Invio su un nome esatto: aggiunge (o sostituisce) subito con il set di riferimento. */
-  const pickExact = () => {
-    const species = getSpecies(filters.query.trim());
-    if (!species) return;
-    const set = defaultSet(data, species.name, format.genLimit);
+  const query = filters.query.trim();
+  // Il primo risultato vale solo se la lista è già aggiornata su quello che hai scritto
+  const top = query && applied.query.trim() === query ? items[0] : undefined;
+  const exact = getSpecies(query);
+  /** Invio: il nome esatto se c'è, altrimenti il primo risultato della lista (la riga dorata). */
+  const pickFromSearch = () => {
+    const set = exact ? defaultSet(data, exact.name, format.genLimit) : top?.set;
+    if (!set) return;
     if (replacing) onReplaceWith(replaceIndex, set);
     else onAdd(set);
     setFilters({ ...filters, query: '' });
   };
+  const target = exact?.name ?? top?.species;
 
   const title = replacing ? `Sostituisci ${team[replaceIndex].species}` : 'Suggerimenti';
 
@@ -195,16 +200,32 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   const search = full ? null : (
     <>
       <div className="search">
-        <input
-          aria-label="Aggiungi Pokémon"
-          list="species-list"
-          placeholder="Cerca un Pokémon…"
-          value={filters.query}
-          onChange={e => { setFilters({ ...filters, query: e.target.value }); setLimit(PAGE); }}
-          onKeyDown={e => { if (e.key === 'Enter') pickExact(); }}
-        />
-        <button type="button" onClick={pickExact}>Aggiungi</button>
+        <span className="search-field">
+          <Icon name="search" />
+          <input
+            aria-label="Aggiungi Pokémon"
+            aria-describedby={target ? 'search-hint' : undefined}
+            placeholder="Cerca un Pokémon…"
+            value={filters.query}
+            onChange={e => { setFilters({ ...filters, query: e.target.value }); setLimit(PAGE); }}
+            onKeyDown={e => {
+              if (e.key === 'Enter') pickFromSearch();
+              else if (e.key === 'Escape') setFilters({ ...filters, query: '' });
+            }}
+          />
+          {filters.query && (
+            <button type="button" className="clear" aria-label="Svuota la ricerca" onClick={() => setFilters({ ...filters, query: '' })}>
+              <Icon name="close" />
+            </button>
+          )}
+        </span>
+        <button type="button" onClick={pickFromSearch} disabled={!target}>{replacing ? 'Sostituisci' : 'Aggiungi'}</button>
       </div>
+      {target && (
+        <p id="search-hint" className="search-hint">
+          <kbd>Invio</kbd> {replacing ? 'sostituisce con' : 'aggiunge'} <strong>{target}</strong>
+        </p>
+      )}
       <FilterBar filters={filters} onChange={next => { setFilters(next); setLimit(PAGE); }} />
     </>
   );

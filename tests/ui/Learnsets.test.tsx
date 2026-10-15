@@ -15,8 +15,19 @@ async function importTeam(text: string) {
   return user;
 }
 
-const optionsOf = (listId: string | null) =>
-  [...(document.getElementById(listId ?? '')?.querySelectorAll('option') ?? [])].map(o => o.getAttribute('value'));
+/** Apre il menu del campo e ne legge le voci (si filtra scrivendo). */
+async function optionsOf(user: ReturnType<typeof userEvent.setup>, label: string, query = '') {
+  const field = within(team()).getByLabelText(label);
+  await user.click(field);
+  if (query) {
+    await user.clear(field);
+    await user.type(field, query);
+  }
+  const names = within(screen.getByRole('listbox', { name: `${label}: opzioni` })).queryAllByRole('option')
+    .map(o => o.querySelector('strong')?.textContent);
+  await user.keyboard('{Escape}');
+  return names;
+}
 
 describe('mosse e abilità legali nel team', () => {
   beforeEach(() => window.localStorage.clear());
@@ -40,21 +51,21 @@ describe('mosse e abilità legali nel team', () => {
 
   it('il menu delle mosse propone solo mosse imparabili, tranne con Custom Skillset', async () => {
     const user = await importTeam('Drakloak\nAbility: Infiltrator\n- U-turn');
-    const move = within(team()).getByLabelText('Mossa 1');
-    expect(optionsOf(move.getAttribute('list'))).toContain('U-turn');
-    expect(optionsOf(move.getAttribute('list'))).not.toContain('Dragon Darts');
+    expect(await optionsOf(user, 'Mossa 1', 'U-turn')).toContain('U-turn');
+    expect(await optionsOf(user, 'Mossa 1', 'Dragon Darts')).not.toContain('Dragon Darts');
     await user.click(screen.getByRole('checkbox', { name: 'Custom Skillset Drakloak' }));
-    expect(optionsOf(within(team()).getByLabelText('Mossa 1').getAttribute('list'))).toContain('Dragon Darts');
+    expect(await optionsOf(user, 'Mossa 1', 'Dragon Darts')).toContain('Dragon Darts');
   });
 
   it('abilità: solo quelle legali fino alla gen scelta, libere con Custom Skillset', async () => {
     const user = await importTeam('Ninetales\nAbility: Drought\n- Flamethrower');
     await user.selectOptions(screen.getByLabelText('Generazione massima'), '4');
     expect(within(team()).getByText('Abilità non legale: Drought')).toBeInTheDocument();
-    const ability = within(team()).getByLabelText('Abilità') as HTMLSelectElement;
-    expect([...ability.options].map(o => o.value)).toEqual(['Drought', 'Flash Fire']);
+    expect(within(team()).getByLabelText('Abilità')).toHaveAttribute('readonly');
+    expect(await optionsOf(user, 'Abilità')).toEqual(['Drought', 'Flash Fire']);
     await user.click(screen.getByRole('checkbox', { name: 'Custom Skillset Ninetales' }));
-    expect(within(team()).getByLabelText('Abilità').tagName).toBe('INPUT');
+    expect(within(team()).getByLabelText('Abilità')).not.toHaveAttribute('readonly');
+    expect(await optionsOf(user, 'Abilità', 'Levitate')).toContain('Levitate');
     expect(within(team()).queryByText('Abilità non legale: Drought')).toBeNull();
   });
 
