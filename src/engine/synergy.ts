@@ -351,3 +351,21 @@ export function providesAll(set: TeamSet, needed: NeededCondition[]): boolean {
   const provided = new Set(enables(set).map(e => e.condition));
   return needed.every(n => provided.has(n.condition));
 }
+
+/** Setter del team il cui meteo (o campo) è diverso da quello che porterebbe il candidato. */
+export function clashesWith(candidate: TeamSet, team: TeamSet[]): string[] {
+  const groups = [WEATHERS, TERRAINS];
+  const result: string[] = [];
+  for (const own of enables(candidate)) {
+    const group = groups.find(g => g.includes(own.condition));
+    if (!group) continue;
+    for (const member of team) {
+      for (const other of enables(member)) {
+        if (group.includes(other.condition) && other.condition !== own.condition) {
+          result.push(`${member.species} (${other.via})`);
+        }
+      }
+    }
+  }
+  return [...new Set(result)];
+}

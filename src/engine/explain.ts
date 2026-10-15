@@ -12,6 +12,8 @@ export interface Facts {
   synergy: { member: string; pct: number } | null;
   /** Legami meccanici con il team (meteo, campi, Trick Room). */
   mechanical: string[];
+  /** Avvisi: meteo in conflitto, mosse indebolite dal meteo del team. */
+  clashes: string[];
   strength: { usage: number };
 }
 
@@ -46,6 +48,8 @@ export function explain(facts: Facts, components: Components): Reason[] {
   if (facts.roles.style) roles.push(`attaccante ${STYLE_LABELS[facts.roles.style]}`);
   if (roles.length) add('roles', `Porta ${list(roles)} (mancanti nel team)`);
   for (const text of facts.mechanical) add('synergy', text);
+  // Gli avvisi vanno in fondo: peso negativo
+  for (const text of facts.clashes) reasons.push({ component: 'synergy', weight: -1, text });
   if (facts.synergy && facts.synergy.pct >= 0.05) {
     add('synergy', `Usato con ${facts.synergy.member} nel ${Math.round(facts.synergy.pct * 100)}% dei team`);
   }

@@ -31,6 +31,11 @@ describe('storage', () => {
     expect(loadSavedTeams(storage)).toEqual([{ name: 'Prova', text: 'Great Tusk' }]);
   });
 
+  it('formato di un team salvato non valido: torna ai valori di default', () => {
+    const saved = loadSavedTeams(memory(JSON.stringify([{ name: 'X', text: 'Great Tusk', format: { formatId: 'zzz' } }])));
+    expect(saved[0].format?.formatId).toBe('ou');
+  });
+
   it('storage assente', () => {
     expect(loadSavedTeams(undefined)).toEqual([]);
   });
