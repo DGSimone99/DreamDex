@@ -1,4 +1,4 @@
-import { activeFilterCount, EMPTY_FILTERS, type CandidateFilters } from '../engine/filters';
+import { activeFilterCount, EMPTY_FILTERS, MAX_TYPES, type CandidateFilters } from '../engine/filters';
 import { DESIRABLE_ROLES, ESSENTIAL_ROLES, ROLE_LABELS, type Role } from '../engine/roles';
 import { CONDITION_LABELS, type Condition } from '../engine/synergy';
 import { TYPES, type TypeName } from '../engine/types';
@@ -23,7 +23,13 @@ export function FilterBar({ filters, onChange }: Props) {
 
       <div role="group" aria-label="Tipo" className="chips">
         {TYPES.map(type => (
-          <button key={type} type="button" aria-pressed={filters.types.includes(type)} onClick={() => set({ types: toggle(filters.types, type) })}>
+          <button
+            key={type}
+            type="button"
+            aria-pressed={filters.types.includes(type)}
+            disabled={!filters.types.includes(type) && filters.types.length >= MAX_TYPES}
+            onClick={() => set({ types: toggle(filters.types, type) })}
+          >
             {type}
           </button>
         ))}

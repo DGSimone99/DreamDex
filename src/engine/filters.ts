@@ -10,9 +10,9 @@ import { defensiveMultiplier, superEffectiveMove, type TypeName } from './types'
 
 export interface CandidateFilters {
   query: string;
-  /** Basta uno dei tipi scelti. */
+  /** Il Pokémon deve avere tutti i tipi scelti (al massimo 2). */
   types: TypeName[];
-  /** Basta uno dei ruoli scelti. */
+  /** Il Pokémon deve avere tutti i ruoli scelti. */
   roles: Role[];
   provides: Condition | '';
   benefitsFrom: Condition | '';
@@ -27,6 +27,9 @@ export const EMPTY_FILTERS: CandidateFilters = {
 };
 
 /** Soglie del filtro "Uso nel meta". */
+/** Un Pokémon ha al massimo due tipi. */
+export const MAX_TYPES = 2;
+
 export const COMMON_USAGE = 0.05;
 export const NICHE_USAGE = 0.01;
 
@@ -48,11 +51,11 @@ export function matchesFilters(candidate: { species: string; set: TeamSet }, f: 
   if (query && !toID(candidate.species).includes(query)) return false;
   if (f.types.length) {
     const types = (battleSpecies(set)?.types ?? []) as readonly string[];
-    if (!f.types.some(t => types.includes(t))) return false;
+    if (!f.types.every(t => types.includes(t))) return false;
   }
   if (f.roles.length) {
     const roles = detectRoles(set);
-    if (!f.roles.some(r => roles.includes(r))) return false;
+    if (!f.roles.every(r => roles.includes(r))) return false;
   }
   if (f.provides && !enables(set).some(e => e.condition === f.provides)) return false;
   if (f.benefitsFrom && !benefits(set).some(b => b.condition === f.benefitsFrom)) return false;
