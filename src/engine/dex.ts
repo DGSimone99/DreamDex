@@ -63,7 +63,8 @@ export function getMove(name: string): Move | null {
 }
 
 export function isSelectable(species: Species): boolean {
-  return !excluded(species.isNonstandard);
+  // Le forme Gigantamax risultano "Past" ma non esistono in National Dex
+  return !excluded(species.isNonstandard) && !species.forme.endsWith('Gmax');
 }
 
 export function isLegal(species: Species): boolean {
