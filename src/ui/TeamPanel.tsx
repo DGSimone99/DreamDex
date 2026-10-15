@@ -1,5 +1,6 @@
 import type { EngineData } from '../engine/data';
-import { battleSpecies, getSpecies, isLegal, isMega, withinGen } from '../engine/dex';
+import { battleSpecies, getSpecies, isMega, isSelectable, withinGen } from '../engine/dex';
+import { formatLabel, isBannedIn, meetsTeamRules } from '../engine/formats';
 import type { Format } from '../engine/format';
 import { detectRoles, ROLE_LABELS } from '../engine/roles';
 import type { TeamSet } from '../engine/sets';
@@ -18,7 +19,9 @@ interface Props {
 function slotProblem(set: TeamSet, format: Format): string | null {
   const species = getSpecies(set.species);
   if (!species) return 'Pokémon sconosciuto';
-  if (!isLegal(species)) return 'Non legale in National Dex OU';
+  const forme = battleSpecies(set) ?? species;
+  if (!isSelectable(species) || isBannedIn(forme, format)) return `Non legale in ${formatLabel(format)}`;
+  if (!meetsTeamRules(forme, format)) return `Non è di tipo ${format.monotype}`;
   if (!withinGen(species, format)) return `Oltre la Gen ${format.genLimit}`;
   return null;
 }

@@ -52,10 +52,10 @@ describe('filtro tier', () => {
   it('OU', () => expect(search({ query: 'great', tier: 'ou' }, fixtureData, [])).toEqual(['Great Tusk']));
 
   it('etichetta del tier', () => {
-    expect(tierLabel('Dragapult')).toEqual({ label: 'Uber', banned: true });
-    expect(tierLabel('Great Tusk')).toEqual({ label: 'OU', banned: false });
-    expect(tierLabel('Dreepy')).toEqual({ label: 'LC', banned: false });
-    expect(tierLabel('Drakloak')).toEqual({ label: 'NFE', banned: false });
+    expect(tierLabel('Dragapult', DEFAULT_FORMAT)).toEqual({ label: 'Uber', banned: true });
+    expect(tierLabel('Great Tusk', DEFAULT_FORMAT)).toEqual({ label: 'OU', banned: false });
+    expect(tierLabel('Dreepy', DEFAULT_FORMAT)).toEqual({ label: 'LC', banned: false });
+    expect(tierLabel('Drakloak', DEFAULT_FORMAT)).toEqual({ label: 'NFE', banned: false });
   });
 });
 
