@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { EngineData } from '../engine/data';
 import type { Format } from '../engine/format';
-import { improveReplacements, similarReplacements, type Replacement } from '../engine/replace';
+import { improveReplacements, similarity, similarReplacements, type Replacement } from '../engine/replace';
+import { describeDiff, SIMILAR_THRESHOLD, type SwapPreview } from '../engine/coach';
 import { suggest, type Suggestion } from '../engine/scoring';
 import { exportShowdown, type TeamSet } from '../engine/sets';
 import { getSpecies } from '../engine/dex';
@@ -12,6 +13,13 @@ import { defaultSet } from '../engine/sets';
 import { FilterBar } from './FilterBar';
 import { CONDITION_LABELS, neededConditions, providesAll } from '../engine/synergy';
 import { copyText } from './clipboard';
+import { Sprite, TypeChip } from './Sprite';
+import { Icon } from './icons';
+import { ProsCons } from './ProsCons';
+import { StatsBadge } from './StatsBadge';
+import { PokemonName } from './PokemonName';
+import { AlertMark } from './AlertMark';
+import { Typed } from './TypeText';
 
 /** Barre mostrate sulle carte: come il candidato si adatta al team, più le sue statistiche. */
 const FIT_BARS: { key: 'defense' | 'coverage' | 'roles'; label: string }[] = [
@@ -32,17 +40,25 @@ interface Props {
   onAdd: (set: TeamSet) => void;
   onReplaceWith: (index: number, set: TeamSet) => void;
   onCancelReplace: () => void;
+  /** Sostituto aperto (o chiuso) nella lista: il coaching mostra i suoi pro e contro. */
+  onPreview?: (preview: SwapPreview, open: boolean) => void;
 }
 
-function TierTag({ species, format }: { species: string; format: Format }) {
+/** Solo se il Pokémon è bannato nel formato: triangolo rosso con il tier nel tooltip. */
+function BanMark({ species, format }: { species: string; format: Format }) {
   const { label, banned } = tierLabel(species, format);
-  return banned
-    ? <span className="tag banned">{label} · bannato in {formatLabel(format)}</span>
-    : <span className="tag tier">{label}</span>;
+  return banned ? <AlertMark alerts={[{ level: 'danger', text: `${label} · bannato in ${formatLabel(format)}` }]} /> : null;
 }
 
-function SuggestionItem({ rank, item, actionLabel, onAction, emptyTeam, format }: {
+function SuggestionItem({ rank, item, actionLabel, quickLabel, replacing, member, picked, onAction, onToggle, emptyTeam, format }: {
+  /** Riga scelta dalla ricerca (Invio la aggiunge). */
+  picked?: boolean;
+  /** Il membro che questo candidato sostituirebbe. */
+  member?: string;
+  onToggle?: (open: boolean) => void;
   emptyTeam: boolean;
+  quickLabel: string;
+  replacing: boolean;
   format: Format;
   rank: number;
   item: Suggestion | Replacement;
@@ -50,41 +66,75 @@ function SuggestionItem({ rank, item, actionLabel, onAction, emptyTeam, format }
   onAction: () => void;
 }) {
   const diff = 'diff' in item ? item.diff : null;
-  const diffText = diff ? [...diff.gains, ...diff.losses].join(' · ') || 'Nessuna differenza rilevante' : null;
+  const changes = diff ? describeDiff(diff) : null;
+  const diffText = changes
+    ? [...changes.pros.map(p => `+${p}`), ...changes.cons.map(c => `−${c}`)].join(' · ') || 'Nessuna differenza rilevante'
+    : null;
+  // La riga sotto il nome; le etichette uguali a questa riga non si ripetono
+  const summaryText = diffText ?? item.reasons[0]?.text ?? '';
   const setText = exportShowdown([item.set]);
+  const types = getSpecies(item.species)?.types ?? [];
   return (
-    <li>
-      <details className="suggestion">
+    <li className={picked ? 'picked' : undefined}>
+      <details className="suggestion" name="suggestion" onToggle={e => onToggle?.(e.currentTarget.open)}>
         <summary>
-          <span>
-            <strong>{rank}. {item.species}</strong>
-            <small>{diffText ?? item.reasons[0]?.text ?? ''}</small>
+          <span className="rank" aria-hidden="true">{rank}</span>
+          <Sprite species={item.species} item={item.set.item} size={64} />
+          <span className="who">
+            <span className="name-line">
+              <strong><span className="visually-hidden">{rank}. </span>{item.species}</strong>
+              <BanMark species={item.species} format={format} />
+              <StatsBadge species={item.species} item={item.set.item} />
+            </span>
+            <span className="types">{types.map(type => <TypeChip key={type} type={type} />)}</span>
+            <small><Typed text={summaryText} /></small>
             <span className="tags">
-              <TierTag species={item.species} format={format} />
-              {item.tags.map(tag => <span key={tag} className={tag.startsWith('⚠') ? 'tag warn' : 'tag'}>{tag}</span>)}
+              {item.tags.filter(tag => tag !== summaryText).map(tag => (tag.startsWith('⚠')
+                ? <span key={tag} className="tag warn"><Icon name="warning" />{tag.replace(/^⚠\s*/, '')}</span>
+                : <span key={tag} className="tag">{tag}</span>))}
             </span>
           </span>
+          <dl className="bars">
+            {FIT_BARS.map(bar => (emptyTeam
+              ? <div key={bar.key} className="bar-empty" aria-hidden="true" />
+              : (
+                <div key={bar.key}>
+                  <dt>{bar.label}</dt>
+                  <dd><meter min={0} max={1} value={item.components[bar.key]} /></dd>
+                </div>
+              )))}
+            <div>
+              <dt>Statistiche</dt>
+              <dd><meter min={0} max={100} value={memberPower(item.set)?.power ?? 0} /></dd>
+            </div>
+          </dl>
           <span className="score" aria-label={`Punteggio ${item.score}`}>{item.score}</span>
+          <button
+            type="button"
+            className="quick"
+            aria-label={quickLabel}
+            title={actionLabel}
+            onClick={e => { e.preventDefault(); onAction(); }}
+          >
+            <Icon name={replacing ? 'swap' : 'plus'} />
+          </button>
         </summary>
         {'similarity' in item && item.similarity !== undefined && (
           <p>Somiglianza: {Math.round(item.similarity * 100)}%</p>
         )}
-        <dl className="bars">
-          {(emptyTeam ? [] : FIT_BARS).map(bar => (
-            <div key={bar.key}>
-              <dt>{bar.label}</dt>
-              <dd><meter min={0} max={1} value={item.components[bar.key]} /></dd>
-            </div>
-          ))}
-          <div>
-            <dt>Statistiche</dt>
-            <dd><meter min={0} max={100} value={memberPower(item.set)?.power ?? 0} /></dd>
-          </div>
-        </dl>
-        <ul>{item.reasons.map(reason => <li key={reason.text}>{reason.text}</li>)}</ul>
+        {changes && member && (
+          <p className="swap-head replaces">
+            <PokemonName name={member} muted />
+            <Icon name="arrow" />
+            <span className="visually-hidden">con</span>
+            <PokemonName name={item.species} />
+          </p>
+        )}
+        {changes && <ProsCons pros={changes.pros} cons={changes.cons} />}
+        <ul className="reasons">{item.reasons.map(reason => <li key={reason.text}><Typed text={reason.text} /></li>)}</ul>
         <pre className="set">{setText}</pre>
         <div className="actions">
-          <button type="button" onClick={onAction}>{actionLabel}</button>
+          <button type="button" className={rank === 1 ? 'primary' : undefined} onClick={onAction}>{actionLabel}</button>
           <button type="button" onClick={() => copyText(setText)}>Copia set</button>
         </div>
       </details>
@@ -104,7 +154,7 @@ function useDebounced<T>(value: T, delay: number): T {
 
 export const SEARCH_DELAY = 200;
 
-export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onReplaceWith, onCancelReplace }: Props) {
+export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onReplaceWith, onCancelReplace, onPreview }: Props) {
   const [mode, setMode] = useState<ReplaceMode>('improve');
   const [limit, setLimit] = useState(PAGE);
   const [filters, setFilters] = useState<CandidateFilters>(EMPTY_FILTERS);
@@ -128,14 +178,34 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
     return data.stats ? suggest(team, format, data, MAX) : [];
   }, [team, format, data, replacing, replaceIndex, mode, applied, filtering]);
 
-  /** Invio su un nome esatto: aggiunge (o sostituisce) subito con il set di riferimento. */
-  const pickExact = () => {
-    const species = getSpecies(filters.query.trim());
-    if (!species) return;
-    const set = defaultSet(data, species.name, format.genLimit);
+  const query = filters.query.trim();
+  // I risultati valgono solo se la lista è già aggiornata su quello che hai scritto
+  const fresh = !!query && applied.query.trim() === query;
+  const exact = getSpecies(query);
+  // Riga scelta con le frecce; null: il nome esatto se c'è, altrimenti il primo risultato
+  const [cursor, setCursor] = useState<number | null>(null);
+  useEffect(() => setCursor(null), [items]);
+  const chosen = fresh && cursor !== null ? items[cursor] : undefined;
+  const fallback = fresh ? items[0] : undefined;
+  const pickedIndex = !fresh ? -1
+    : cursor ?? (exact ? items.findIndex(item => item.species === exact.name) : 0);
+  /** Invio: la riga scelta con le frecce, altrimenti il nome esatto, altrimenti il primo risultato. */
+  const pickFromSearch = () => {
+    const set = chosen?.set ?? (exact ? defaultSet(data, exact.name, format.genLimit) : fallback?.set);
+    if (!set) return;
     if (replacing) onReplaceWith(replaceIndex, set);
     else onAdd(set);
     setFilters({ ...filters, query: '' });
+  };
+  const target = chosen?.species ?? exact?.name ?? fallback?.species;
+  const listRef = useRef<HTMLOListElement>(null);
+  /** Frecce: passa al risultato successivo o precedente, tenendolo in vista. */
+  const moveCursor = (delta: number) => {
+    const last = Math.min(items.length, limit) - 1;
+    if (!fresh || last < 0) return;
+    const next = Math.min(last, Math.max(0, Math.max(pickedIndex, 0) + delta));
+    setCursor(next);
+    listRef.current?.children[next]?.scrollIntoView?.({ block: 'nearest' });
   };
 
   const title = replacing ? `Sostituisci ${team[replaceIndex].species}` : 'Suggerimenti';
@@ -157,19 +227,40 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   const search = full ? null : (
     <>
       <div className="search">
-        <input
-          aria-label="Aggiungi Pokémon"
-          list="species-list"
-          placeholder="Cerca un Pokémon…"
-          value={filters.query}
-          onChange={e => { setFilters({ ...filters, query: e.target.value }); setLimit(PAGE); }}
-          onKeyDown={e => { if (e.key === 'Enter') pickExact(); }}
-        />
-        <button type="button" onClick={pickExact}>Aggiungi</button>
+        <span className={`search-field${target ? ' has-hint' : ''}`}>
+          <Icon name="search" />
+          <input
+            aria-label="Aggiungi Pokémon"
+            aria-describedby={target ? 'search-hint' : undefined}
+            placeholder="Cerca un Pokémon…"
+            value={filters.query}
+            onChange={e => { setFilters({ ...filters, query: e.target.value }); setLimit(PAGE); }}
+            onKeyDown={e => {
+              if (e.key === 'Enter') pickFromSearch();
+              else if (e.key === 'ArrowDown') { e.preventDefault(); moveCursor(1); }
+              else if (e.key === 'ArrowUp') { e.preventDefault(); moveCursor(-1); }
+              else if (e.key === 'Escape') setFilters({ ...filters, query: '' });
+            }}
+          />
+          {target && (
+            // Dentro il campo, a destra: comparendo non sposta il resto
+            <span id="search-hint" className="search-hint">
+              <kbd>Invio</kbd> {replacing ? 'sostituisce con' : 'aggiunge'} <strong>{target}</strong>
+            </span>
+          )}
+          {filters.query && (
+            <button type="button" className="clear" aria-label="Svuota la ricerca" onClick={() => setFilters({ ...filters, query: '' })}>
+              <Icon name="close" />
+            </button>
+          )}
+        </span>
       </div>
       <FilterBar filters={filters} onChange={next => { setFilters(next); setLimit(PAGE); }} />
     </>
   );
+
+  // Il numero di risultati sta nell'intestazione della classifica: comparendo non sposta la lista
+  const countText = `${items.length === 1 ? '1 risultato' : `${items.length} risultati`}${items.length === MAX ? ' (i migliori per il team)' : ''}`;
 
   let body;
   if (full) {
@@ -181,23 +272,39 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   } else {
     body = (
       <>
-        {filtering && (
-          <p className="note">
-            {items.length === 1 ? '1 risultato' : `${items.length} risultati`}{items.length === MAX ? ' (i migliori per il team)' : ''}
-          </p>
-        )}
+        {filtering && <p className="visually-hidden" aria-live="polite">Risultati: {countText}</p>}
         {setterNote && <p className="note">{setterNote}</p>}
         {emptyTeam && (
           <p className="note">Aggiungi un Pokémon per vedere come si adatta al team — per ora ordinati per uso nel meta</p>
         )}
-        <ol className="suggestions">
+        <div className="board-head" aria-hidden="true">
+          <span>#</span><span />
+          <span>Pokémon{filtering && <span className="count">{countText}</span>}</span>
+          {[['Difesa', 'Dif.'], ['Coverage', 'Cov.'], ['Ruoli', 'Ruoli'], ['Statistiche', 'Stat.'], ['Punti', 'Punti']].map(([long, short]) => (
+            <span key={long}><span className="long">{long}</span><span className="short">{short}</span></span>
+          ))}
+          <span />
+        </div>
+        <ol className="suggestions" ref={listRef}>
           {items.slice(0, limit).map((item, i) => (
             <SuggestionItem
               key={item.species}
+              picked={i === pickedIndex}
               rank={i + 1}
               item={item}
               actionLabel={replacing ? 'Sostituisci con questo' : 'Aggiungi al team'}
+              quickLabel={replacing ? `Sostituisci con ${item.species}` : `Aggiungi ${item.species} al team`}
+              replacing={replacing}
+              member={replacing ? team[replaceIndex].species : undefined}
               onAction={() => (replacing ? onReplaceWith(replaceIndex, item.set) : onAdd(item.set))}
+              onToggle={replacing && 'diff' in item && onPreview ? open => onPreview({
+                index: replaceIndex,
+                replacement: item.species,
+                set: item.set,
+                score: item.score,
+                similar: similarity(team[replaceIndex], item.set) >= SIMILAR_THRESHOLD,
+                diff: item.diff,
+              }, open) : undefined}
               emptyTeam={emptyTeam}
               format={format}
             />
@@ -213,7 +320,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   }
 
   return (
-    <section aria-label="Suggerimenti">
+    <section aria-label="Suggerimenti" className="suggestions-panel">
       <h2>{title}</h2>
       {replacing && (
         <div className="actions" role="group" aria-label="Modalità sostituzione">

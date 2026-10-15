@@ -3,6 +3,7 @@ import { dex, getMove, getSpecies, toID } from './dex';
 import type { EngineData } from './data';
 import { legalAbilities, legalMoves } from './learnsets';
 import { findByName, statsEntry, type StatsData } from './stats';
+import { generatedSet } from './generatedSet';
 
 export type StatID = 'hp' | 'atk' | 'def' | 'spa' | 'spd' | 'spe';
 export const STAT_IDS: StatID[] = ['hp', 'atk', 'def', 'spa', 'spd', 'spe'];
@@ -70,35 +71,55 @@ export function mostCommonSet(stats: StatsData | null, speciesName: string): Tea
 }
 
 /**
- * Un set per ogni Pokémon presente in almeno una fonte: dal formato in cui è più usato,
- * altrimenti dai set delle analisi. Serve come riserva quando il formato scelto non ha dati.
+ * Un set per ogni Pokémon presente in almeno una fonte: dal formato in cui è più popolare
+ * (in più squadre in assoluto, non in percentuale), altrimenti dai set delle analisi nell'ordine dato.
+ * Serve come riserva quando il formato scelto non ha dati.
  */
-export function buildFallbackSets(sources: EngineData[]): SetsData {
-  const best = new Map<string, { usage: number; stats: StatsData }>();
+export function buildFallbackSets(sources: EngineData[], analyses: SetsData[] = []): SetsData {
+  const best = new Map<string, { count: number; usage: number; stats: StatsData }>();
   for (const source of sources) {
     for (const [name, entry] of Object.entries(source.stats?.pokemon ?? {})) {
       const current = best.get(name);
-      if (!current || entry.usage > current.usage) best.set(name, { usage: entry.usage, stats: source.stats! });
+      const count = entry.count ?? 0;
+      // Più squadre vince; a pari squadre, la percentuale d'uso più alta
+      if (!current || count > current.count || (count === current.count && entry.usage > current.usage)) {
+        best.set(name, { count, usage: entry.usage, stats: source.stats! });
+      }
     }
   }
   const result: SetsData = {};
-  for (const source of sources) {
-    for (const [name, set] of Object.entries(source.sets ?? {})) if (!result[name]) result[name] = set;
+  for (const sets of [...sources.map(s => s.sets), ...analyses]) {
+    for (const [name, set] of Object.entries(sets ?? {})) if (!result[name]) result[name] = set;
   }
   for (const [name, { stats }] of best) result[name] = mostCommonSet(stats, name)!;
   return result;
 }
 
+/** Il set della forma base, per forme senza dati proprie (Pikachu-Cosplay, Mega senza statistiche…). */
+function baseFormeSet(sets: SetsData | null | undefined, speciesName: string): TeamSet | null {
+  const species = getSpecies(speciesName);
+  if (!species || species.baseSpecies === species.name) return null;
+  const base = findByName(sets ?? undefined, species.baseSpecies);
+  if (!base) return null;
+  return { ...base, species: species.name, item: species.requiredItem ?? base.item };
+}
+
 /**
- * Set di riferimento: statistiche del formato → analisi → riserva → set vuoto,
- * reso legale fino a `genLimit` (mosse non imparabili sostituite dalle successive più usate).
+ * Set di riferimento: statistiche del formato → analisi → riserva (il formato in cui è più popolare)
+ * → set della forma base → set generato dalle mosse imparabili.
+ * Reso legale fino a `genLimit` (mosse non imparabili sostituite dalle successive più usate).
  */
 export function defaultSet(data: EngineData, speciesName: string, genLimit = 9): TeamSet {
   const base = mostCommonSet(data.stats, speciesName)
     ?? findByName(data.sets ?? undefined, speciesName)
     ?? findByName(data.fallback ?? undefined, speciesName)
-    ?? emptySet(speciesName);
-  return makeLegal(base, data, genLimit);
+    ?? baseFormeSet(data.fallback, speciesName);
+  if (!base) return generatedSet(getSpecies(speciesName)?.name ?? speciesName, genLimit);
+  const legal = makeLegal(base, data, genLimit);
+  // Se le mosse illegali non hanno sostituti dalle statistiche, si completa con quelle generate
+  if (legal.moves.length >= Math.min(4, base.moves.length)) return legal;
+  const extra = generatedSet(legal.species, genLimit).moves.filter(m => !legal.moves.includes(m));
+  return { ...legal, moves: [...legal.moves, ...extra].slice(0, 4) };
 }
 
 function makeLegal(set: TeamSet, data: EngineData, genLimit: number): TeamSet {
@@ -143,23 +164,84 @@ function pickEvs(evs: Partial<Record<StatID, number>> | undefined): Partial<Reco
   return result;
 }
 
+function fromAnalysis(species: string, set: RawAnalysisSet): TeamSet {
+  const tera = first(set.teraType ?? set.teratypes);
+  return {
+    species,
+    item: first(set.item) ?? '',
+    ability: first(set.ability) ?? '',
+    moves: (set.moves ?? []).map(move => first(move) ?? '').filter(Boolean).slice(0, 4),
+    nature: first(set.nature) ?? 'Serious',
+    evs: pickEvs(first(set.evs)),
+    ...(tera ? { teraType: tera } : {}),
+  };
+}
+
 export function normalizeAnalysisSets(raw: Record<string, Record<string, RawAnalysisSet>>): SetsData {
   const result: SetsData = {};
   for (const [species, named] of Object.entries(raw)) {
     const set = Object.values(named)[0];
-    if (!set) continue;
-    const tera = first(set.teraType ?? set.teratypes);
-    result[species] = {
-      species,
-      item: first(set.item) ?? '',
-      ability: first(set.ability) ?? '',
-      moves: (set.moves ?? []).map(move => first(move) ?? '').filter(Boolean).slice(0, 4),
-      nature: first(set.nature) ?? 'Serious',
-      evs: pickEvs(first(set.evs)),
-      ...(tera ? { teraType: tera } : {}),
-    };
+    if (set) result[species] = fromAnalysis(species, set);
   }
   return result;
+}
+
+/** Un set delle analisi Smogon con il suo nome ("Sun Wallbreaker") e il formato da cui viene. */
+export interface Preset {
+  name: string;
+  format: string;
+  set: TeamSet;
+}
+export type PresetsData = Record<string, Preset[]>;
+
+/** Quanti preset proporre per Pokémon. */
+export const MAX_PRESETS = 5;
+
+/** Tutti i set con nome delle analisi di un formato. */
+export function normalizeAnalysisPresets(raw: Record<string, Record<string, RawAnalysisSet>>, format: string): PresetsData {
+  return Object.fromEntries(Object.entries(raw).map(([species, named]) =>
+    [species, Object.entries(named).map(([name, set]) => ({ name, format, set: fromAnalysis(species, set) }))]));
+}
+
+/** Stesso set da giocare: strumento, abilità, natura, mosse (in qualsiasi ordine), EV e Tera. */
+export function sameSet(a: TeamSet, b: TeamSet): boolean {
+  const moves = (s: TeamSet) => s.moves.filter(Boolean).map(toID).sort().join();
+  const evs = (s: TeamSet) => STAT_IDS.map(stat => s.evs[stat] ?? 0).join();
+  return toID(a.item) === toID(b.item) && toID(a.ability) === toID(b.ability) && toID(a.nature) === toID(b.nature)
+    && moves(a) === moves(b) && evs(a) === evs(b) && toID(a.teraType ?? '') === toID(b.teraType ?? '');
+}
+
+const presetKey = (p: Preset) => `${toID(p.set.item)}|${p.set.moves.map(toID).sort().join(',')}`;
+
+/** Unisce più elenchi nell'ordine dato: niente doppioni (stesse mosse e strumento), al massimo `limit` per Pokémon. */
+export function mergePresets(lists: (PresetsData | null | undefined)[], limit = MAX_PRESETS): PresetsData {
+  const result: PresetsData = {};
+  for (const list of lists) {
+    for (const [species, presets] of Object.entries(list ?? {})) {
+      const current = (result[species] ??= []);
+      for (const preset of presets) {
+        if (current.length >= limit) break;
+        if (!current.some(p => presetKey(p) === presetKey(preset))) current.push(preset);
+      }
+    }
+  }
+  return result;
+}
+
+/** I preset per un Pokémon: prima quelli del formato scelto, poi quelli degli altri formati. */
+export function presetsFor(data: EngineData, speciesName: string): Preset[] {
+  const own = findByName(data.presets ?? undefined, speciesName) ?? [];
+  const other = findByName(data.fallbackPresets ?? undefined, speciesName) ?? [];
+  return mergePresets([{ x: own }, { x: other }]).x ?? [];
+}
+
+const TIER_NAMES: Record<string, string> = { '': 'OU', ubers: 'Ubers', monotype: 'Monotype', ag: 'AG', lc: 'LC' };
+/** "gen9nationaldexubers" → "NatDex Ubers", "gen8ou" → "Gen 8 OU". */
+export function formatName(id: string): string {
+  const match = /^gen(\d)(nationaldex)?(.*)$/.exec(id);
+  if (!match) return id;
+  const [, gen, natdex, tier] = match;
+  return `${natdex ? 'NatDex' : `Gen ${gen}`} ${TIER_NAMES[tier] ?? tier.toUpperCase()}`;
 }
 
 function toPkmn(set: TeamSet): PkmnSet {

@@ -21,6 +21,10 @@ describe('avviso seconda Mega', () => {
     const slot = within(team()).getByText('Charizard-Mega-Y').closest('details')!;
     expect(slot).toHaveClass('warn');
     expect(slot).not.toHaveClass('invalid');
+    // Triangolo giallo sullo sprite, con la spiegazione nel tooltip
+    const mark = slot.querySelector('.sprite-wrap .alert-mark')!;
+    expect(mark).toHaveClass('warn');
+    expect(within(mark as HTMLElement).getByRole('tooltip')).toHaveTextContent(WARNING);
   });
 
   it('"Lo so, tengo un\'altra Mega" nasconde l\'avviso e resta attivo', async () => {
@@ -36,4 +40,18 @@ describe('avviso seconda Mega', () => {
     await setup('Lopunny-Mega', 'Great Tusk');
     expect(within(team()).queryByText(WARNING)).toBeNull();
   });
+
+  it('seconda Mega anche bannata: triangolo rosso e giallo insieme, ognuno col suo tooltip', async () => {
+    const user = userEvent.setup();
+    render(<App data={fixtureData} />);
+    await user.click(screen.getByLabelText('Testo Showdown'));
+    await user.paste('Lopunny @ Lopunnite\nAbility: Limber\n- Fake Out\n\nMewtwo @ Mewtwonite Y\nAbility: Pressure\n- Psystrike');
+    await user.click(screen.getByRole('button', { name: 'Importa' }));
+    const slot = within(team()).getByText('Mewtwo').closest('details')!;
+    const danger = slot.querySelector('.sprite-alerts .alert-mark.danger') as HTMLElement;
+    const warn = slot.querySelector('.sprite-alerts .alert-mark.warn') as HTMLElement;
+    expect(within(danger).getByRole('tooltip')).toHaveTextContent('Non legale in National Dex OU');
+    expect(within(warn).getByRole('tooltip')).toHaveTextContent(WARNING);
+  });
 });
+

@@ -4,17 +4,18 @@ import { describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/App';
 import type { Coaching } from '../../src/engine/coach';
 import { CoachPanel } from '../../src/ui/CoachPanel';
+import { emptySet } from '../../src/engine/sets';
 import { fixtureData } from '../fixtures/data';
 
 const base = { index: 0, fit: 40, score: 60, similar: false, diff: { gains: [], losses: [] } };
 const coaching: Coaching = {
-  verdict: 'Team solido · 0 problemi seri, 0 minori',
+  verdict: 'Team solido',
   threatFixes: {},
   strengths: [],
   problems: [],
   swaps: [
-    { ...base, member: 'Magikarp', replacement: 'Corviknight', level: 'recommended' },
-    { ...base, index: 1, member: 'Great Tusk', replacement: 'Gliscor', level: 'optional' },
+    { ...base, member: 'Magikarp', replacement: 'Corviknight', set: emptySet('Corviknight'), level: 'recommended' },
+    { ...base, index: 1, member: 'Great Tusk', replacement: 'Gliscor', set: emptySet('Gliscor'), level: 'optional' },
   ],
 };
 
@@ -32,6 +33,23 @@ describe('sostituzioni gialle e verdi', () => {
   it('un gruppo vuoto non viene mostrato', () => {
     render(<CoachPanel coaching={{ ...coaching, swaps: [coaching.swaps[1]] }} onReplace={vi.fn()} />);
     expect(screen.queryByRole('group', { name: 'Valuta di sostituire' })).toBeNull();
+  });
+});
+
+describe('sostituto selezionato in "Altri sostituti"', () => {
+  it('aggiorna la raccomandazione dello stesso membro con i suoi pro e contro', () => {
+    const preview = { index: 0, replacement: 'Skarmory', set: emptySet('Skarmory'), score: 35, similar: false,
+      diff: { gains: ['+ resiste Ground'], losses: ['- copre Fire'] } };
+    render(<CoachPanel coaching={coaching} preview={preview} onReplace={vi.fn()} />);
+    const recommended = screen.getByRole('group', { name: 'Valuta di sostituire' });
+    expect(within(recommended).getByText('Skarmory')).toBeInTheDocument();
+    expect(within(recommended).queryByText('Corviknight')).toBeNull();
+    expect(within(recommended).getByText('Selezionato')).toBeInTheDocument();
+    expect(within(recommended).getByLabelText('si adatta peggio di 5 punti')).toBeInTheDocument();
+    expect(within(recommended).getByRole('list', { name: 'Vantaggi' })).toHaveTextContent('Resistente a Ground');
+    expect(within(recommended).getByRole('list', { name: 'Svantaggi' })).toHaveTextContent('Non più forte contro Fire');
+    // L'altra raccomandazione resta quella del coaching
+    expect(within(screen.getByRole('group', { name: 'Possibili raccomandazioni' })).getByText('Gliscor')).toBeInTheDocument();
   });
 });
 

@@ -2,27 +2,37 @@ import type { EngineData } from '../engine/data';
 import { battleName } from '../engine/dex';
 import type { TeamSet } from '../engine/sets';
 import { statsEntry } from '../engine/stats';
+import { Sprite } from './Sprite';
 
 /** Uso nel meta dei membri: solo informativo, non entra nella valutazione. */
 export function MetaUsePanel({ team, data }: { team: TeamSet[]; data: EngineData }) {
+  const usages = team.map(set => statsEntry(data.stats, battleName(set))?.usage ?? 0);
+  const average = usages.reduce((a, b) => a + b, 0) / (usages.length || 1);
   return (
-    <div role="group" aria-label="Meta Use" className="block meta-use">
-      <h3>Meta Use</h3>
+    <details aria-label="Meta Use" className="block meta-use">
+      <summary><span>Meta Use</span><span>{data.stats ? `Uso medio ${(average * 100).toFixed(1)}%` : 'Nessun dato'}</span></summary>
       {!data.stats ? (
         <p className="note">Statistiche Smogon assenti.</p>
       ) : (
-        <ul>
+        <ul className="mon-rows">
           {team.map((set, i) => {
             const entry = statsEntry(data.stats, battleName(set));
             return (
-              <li key={`${i}-${set.species}`}>
-                {entry ? `${set.species} ${(entry.usage * 100).toFixed(1)}%` : `${set.species}: non presente nelle statistiche`}
+              <li key={`${i}-${set.species}`} className={entry ? '' : 'absent'}>
+                <Sprite species={set.species} item={set.item} size={40} />
+                <span className="who"><strong>{set.species}</strong></span>
+                {entry ? (
+                  <span className="status">
+                    <meter min={0} max={0.5} value={entry.usage} aria-hidden="true" />
+                    <span className="usage"> {(entry.usage * 100).toFixed(1)}%</span>
+                  </span>
+                ) : <span className="status"> non presente nelle statistiche</span>}
               </li>
             );
           })}
         </ul>
       )}
       <p className="note">Solo informativo: non influisce sulla valutazione del team.</p>
-    </div>
+    </details>
   );
 }

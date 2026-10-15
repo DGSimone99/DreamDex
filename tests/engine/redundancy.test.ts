@@ -97,7 +97,7 @@ describe('penalità e bonus del meteo', () => {
   it('bonus: +2 per ogni membro riportato a neutro, massimo +6', () => {
     const team = [{ ...withMoves('Ninetales', ['Flamethrower']), ability: 'Drought' }, withMoves('Great Tusk', ['Headlong Rush'])];
     const rating = rateTeam(team, fixtureData)!;
-    expect(rating.bonus).toEqual({ total: 4, items: [{ text: 'Il sole di Ninetales smorza Water: Ninetales, Great Tusk', points: 4 }] });
+    expect(rating.bonus).toEqual({ total: 4, items: [{ text: 'Il sole di Ninetales smorza la debolezza a Water di Ninetales, Great Tusk', points: 4 }] });
     expect(rating.overall).toBe(Math.min(100, Math.max(0, rating.base - rating.penalty.total + rating.bonus.total)));
     expect(MAX_BONUS).toBe(6);
   });
@@ -118,6 +118,6 @@ describe('voto con ridondanze', () => {
   it('il coaching segnala i ruoli doppi e i tipi ripetuti', () => {
     const team = [withMoves('Great Tusk', ['Stealth Rock']), withMoves('Garchomp', ['Stealth Rock'])];
     expect(coachTeam(team, DEFAULT_FORMAT, fixtureData).problems)
-      .toContainEqual({ severity: 'minor', text: 'Ridondanza: 2 setter di Stealth Rock', fixes: [] });
+      .toContainEqual({ severity: 'minor', category: 'Ridondanze', text: '2 setter di Stealth Rock', fixes: [] });
   });
 });

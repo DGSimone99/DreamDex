@@ -1,3 +1,4 @@
+import { generatedSet } from '../../src/engine/generatedSet';
 import { describe, expect, it } from 'vitest';
 import {
   defaultSet, emptySet, exportShowdown, importShowdown, mostCommonSet, normalizeAnalysisSets, type TeamSet,
@@ -30,10 +31,10 @@ describe('set più comune', () => {
 describe('set di default', () => {
   const skarmory: TeamSet = { species: 'Skarmory', item: 'Rocky Helmet', ability: 'Sturdy', moves: ['Spikes'], nature: 'Impish', evs: { hp: 252 } };
 
-  it('statistiche → analisi → set vuoto', () => {
+  it('statistiche → analisi → set generato', () => {
     expect(defaultSet(fixtureData, 'Great Tusk').item).toBe('Booster Energy');
     expect(defaultSet({ ...fixtureData, sets: { Skarmory: skarmory } }, 'Skarmory')).toEqual(skarmory);
-    expect(defaultSet(fixtureData, 'Skarmory')).toEqual(emptySet('Skarmory'));
+    expect(defaultSet(fixtureData, 'Skarmory')).toEqual(generatedSet('Skarmory'));
     expect(emptySet('Skarmory').ability).toBe('Keen Eye');
   });
 });
