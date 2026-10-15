@@ -50,3 +50,11 @@ export function analyzeTeam(team: TeamSet[], data: EngineData): TeamAnalysis {
     typeWeights: metaTypeWeights(data.stats),
   };
 }
+
+/** Quota (0–100) delle minacce del meta gestite dal team, pesata per uso. null senza dati Smogon. */
+export function threatScore(analysis: TeamAnalysis): number | null {
+  const total = analysis.threats.reduce((acc, t) => acc + t.usage, 0);
+  if (total === 0) return null;
+  const handled = analysis.threats.filter(t => t.handledBy.length > 0).reduce((acc, t) => acc + t.usage, 0);
+  return Math.round((100 * handled) / total);
+}

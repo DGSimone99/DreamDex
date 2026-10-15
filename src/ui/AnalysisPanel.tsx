@@ -1,4 +1,4 @@
-import type { TeamAnalysis } from '../engine/analysis';
+import { threatScore, type TeamAnalysis } from '../engine/analysis';
 import type { Coaching } from '../engine/coach';
 import type { TeamRating } from '../engine/rating';
 import { DESIRABLE_ROLES, detectRoles, ESSENTIAL_ROLES, ROLE_LABELS } from '../engine/roles';
@@ -39,10 +39,14 @@ export function AnalysisPanel({ team, analysis, rating, coaching, onReplace }: {
   const open = analysis.threats.filter(t => t.handledBy.length === 0);
   const rolesOf = team.map(set => ({ name: set.species, roles: detectRoles(set) }));
   const present = new Set(rolesOf.flatMap(r => r.roles));
+  const score = threatScore(analysis);
   const handledCount = analysis.threats.length - open.length;
-  const threatSummary = open.length === 0
-    ? `${handledCount}/${analysis.threats.length} gestiti`
-    : `${handledCount}/${analysis.threats.length} gestiti · mancano ${open.slice(0, 2).map(t => t.name).join(', ')}${open.length > 2 ? ` +${open.length - 2}` : ''}`;
+  const missing = open.length === 0
+    ? ''
+    : ` · mancano ${open.slice(0, 2).map(t => t.name).join(', ')}${open.length > 2 ? ` +${open.length - 2}` : ''}`;
+  const threatSummary = score === null
+    ? 'nessun dato Smogon'
+    : `Gestite ${score}/100 · ${handledCount}/${analysis.threats.length}${missing}`;
 
   return (
     <section aria-label="Analisi" className="analysis">
@@ -105,7 +109,12 @@ export function AnalysisPanel({ team, analysis, rating, coaching, onReplace }: {
       </details>
 
       <details className="block">
-        <summary><span>Check contro i Pokémon più usati</span><span>{threatSummary}</span></summary>
+        <summary><span>Minacce del meta</span><span>{threatSummary}</span></summary>
+        {score !== null && (
+          <p className="note">
+            I {analysis.threats.length} Pokémon più usati, pesati per uso. <meter min={0} max={100} value={score} />
+          </p>
+        )}
         <ul>
           {analysis.threats.map(t => {
             const fixes = coaching?.threatFixes[t.name] ?? [];
