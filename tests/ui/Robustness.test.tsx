@@ -2,7 +2,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/App';
-import { loadDataOrEmpty } from '../../src/data/load';
+import { readSource } from '../../src/data/load';
 import { fixtureData } from '../fixtures/data';
 
 const team = () => screen.getByRole('region', { name: 'Team' });
@@ -33,7 +33,7 @@ describe('robustezza UI', () => {
 
   it('dati corrotti: si parte senza statistiche invece di una pagina vuota', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
-    const data = await loadDataOrEmpty(() => Promise.reject(new SyntaxError('JSON troncato')));
+    const data = await readSource({ '/data/gen9nationaldex/stats.json': () => Promise.reject(new SyntaxError('JSON troncato')) }, 'gen9nationaldex');
     expect(data).toEqual({ stats: null, sets: null });
   });
 });
