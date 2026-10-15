@@ -10,6 +10,8 @@ export interface Facts {
   coverage: { types: TypeName[] };
   roles: { filled: Role[]; style: 'physical' | 'special' | null };
   synergy: { member: string; pct: number } | null;
+  /** Legami meccanici con il team (meteo, campi, Trick Room). */
+  mechanical: string[];
   strength: { usage: number };
 }
 
@@ -43,6 +45,7 @@ export function explain(facts: Facts, components: Components): Reason[] {
   const roles = facts.roles.filled.map(role => ROLE_LABELS[role]);
   if (facts.roles.style) roles.push(`attaccante ${STYLE_LABELS[facts.roles.style]}`);
   if (roles.length) add('roles', `Porta ${list(roles)} (mancanti nel team)`);
+  for (const text of facts.mechanical) add('synergy', text);
   if (facts.synergy && facts.synergy.pct >= 0.05) {
     add('synergy', `Usato con ${facts.synergy.member} nel ${Math.round(facts.synergy.pct * 100)}% dei team`);
   }

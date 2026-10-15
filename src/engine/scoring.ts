@@ -6,6 +6,7 @@ import type { Format } from './format';
 import { attackStyle, detectRoles, ESSENTIAL_ROLES, type Role } from './roles';
 import { defaultSet, type TeamSet } from './sets';
 import { teammatePct, usageOf } from './stats';
+import { mechanicalLinks } from './synergy';
 import { defensiveMultiplier, superEffectiveMove } from './types';
 import { COMPONENT_KEYS, WEIGHTS } from './weights';
 
@@ -27,7 +28,10 @@ export const OFTEN_TOGETHER = 0.15;
 
 function tagsFor(facts: Facts): string[] {
   const s = facts.synergy;
-  return s && s.pct >= OFTEN_TOGETHER ? [`Spesso usati insieme: ${s.member} (${Math.round(s.pct * 100)}%)`] : [];
+  return [
+    ...facts.mechanical,
+    ...(s && s.pct >= OFTEN_TOGETHER ? [`Spesso usati insieme: ${s.member} (${Math.round(s.pct * 100)}%)`] : []),
+  ];
 }
 
 const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
@@ -116,6 +120,7 @@ const NO_FACTS = (usage: number): Facts => ({
   coverage: { types: [] },
   roles: { filled: [], style: null },
   synergy: null,
+  mechanical: [],
   strength: { usage },
 });
 
@@ -140,6 +145,7 @@ export function scoreCandidates(team: TeamSet[], format: Format, data: EngineDat
       coverage: coverageComponent(set, analysis),
       roles: rolesComponent(set, analysis),
       synergy: synergyRaw(set, team, data),
+      mechanical: mechanicalLinks(set, team).map(link => link.text),
     };
   });
   const maxSynergy = Math.max(0, ...partial.map(p => (p.empty ? 0 : p.synergy.raw)));
@@ -157,7 +163,8 @@ export function scoreCandidates(team: TeamSet[], format: Format, data: EngineDat
         threats: p.threats.value,
         coverage: p.coverage.value,
         roles: p.roles.value,
-        synergy: maxSynergy > 0 ? p.synergy.raw / maxSynergy : 0,
+        // Un legame meccanico (meteo, campo, Trick Room) vale la sinergia piena
+        synergy: p.mechanical.length > 0 ? 1 : maxSynergy > 0 ? p.synergy.raw / maxSynergy : 0,
         strength,
       };
       const facts: Facts = {
@@ -166,6 +173,7 @@ export function scoreCandidates(team: TeamSet[], format: Format, data: EngineDat
         coverage: p.coverage.facts,
         roles: p.roles.facts,
         synergy: p.synergy.best,
+        mechanical: p.mechanical,
         strength: { usage: p.usage },
       };
       const score = Math.round(100 * sum(COMPONENT_KEYS.map(key => WEIGHTS[key] * components[key])));

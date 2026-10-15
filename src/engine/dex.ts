@@ -42,6 +42,12 @@ export function battleSpecies(set: { species: string; item: string }): Species |
   return (forme && getSpecies(forme)) || species;
 }
 
+/** Abilità in battaglia: una forma Mega/Primal usa la propria abilità, non quella del set base. */
+export function battleAbility(set: { species: string; item: string; ability: string }): string {
+  const forme = battleSpecies(set);
+  return forme && forme.name !== getSpecies(set.species)?.name ? forme.abilities[0] : set.ability;
+}
+
 /** Nome con cui la specie compare nelle statistiche Smogon. */
 export const battleName = (set: { species: string; item: string }): string =>
   battleSpecies(set)?.name ?? set.species;
