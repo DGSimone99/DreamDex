@@ -5,6 +5,7 @@ import type { Format } from './format';
 import { diffContribution, similarity, type Diff } from './replace';
 import { detectRoles, ESSENTIAL_ROLES, ROLE_LABELS } from './roles';
 import { scoreCandidates, type Suggestion } from './scoring';
+import { roleAndTypeRedundancies } from './rating';
 import type { TeamSet } from './sets';
 import { defensiveMultiplier } from './types';
 
@@ -109,6 +110,8 @@ function findProblems(team: TeamSet[], format: Format, analysis: TeamAnalysis, c
     add(false, `Ruoli mancanti: ${list(missing.map(r => ROLE_LABELS[r]))}`,
       fixesFor(candidates, s => s.facts.roles.filled.filter(r => missing.includes(r)).length));
   }
+
+  for (const item of roleAndTypeRedundancies(team)) add(false, `Ridondanza: ${item.text}`, []);
 
   const gaps = analysis.coverage
     .filter(r => r.hitters.length === 0 && analysis.typeWeights[r.type] >= MIN_COVERAGE_WEIGHT)

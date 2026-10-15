@@ -1,6 +1,6 @@
-import { analyzeTeam } from './analysis';
+import { analyzeTeam, type TeamAnalysis } from './analysis';
 import type { EngineData } from './data';
-import { battleName } from './dex';
+import { battleName, battleSpecies, toID } from './dex';
 import { DESIRABLE_ROLES, detectRoles, ESSENTIAL_ROLES } from './roles';
 import { strengthComponent } from './scoring';
 import type { TeamSet } from './sets';
@@ -50,7 +50,20 @@ export interface RatingArea {
   value: number | null;
 }
 
+export interface Redundancy {
+  text: string;
+  points: number;
+}
+
+export interface Redundancies {
+  total: number;
+  items: Redundancy[];
+}
+
 export interface TeamRating {
+  /** Voto pesato delle aree, prima della penalità. */
+  base: number;
+  penalty: Redundancies;
   overall: number;
   grade: string;
   label: string;
@@ -59,6 +72,48 @@ export interface TeamRating {
 }
 
 const sum = (xs: number[]) => xs.reduce((a, b) => a + b, 0);
+
+/** Penalità massima per ridondanze: da sole non possono affossare un team. */
+export const MAX_PENALTY = 15;
+
+const HAZARDS: Record<string, string> = {
+  stealthrock: 'Stealth Rock', stoneaxe: 'Stealth Rock',
+  spikes: 'Spikes', ceaselessedge: 'Spikes',
+  toxicspikes: 'Toxic Spikes',
+  stickyweb: 'Sticky Web',
+};
+const REMOVAL = new Set(['defog', 'rapidspin', 'mortalspin', 'tidyup', 'courtchange']);
+
+/** Ruoli e tipi ripetuti senza bisogno: stesso hazard, più rimozioni, 3+ membri dello stesso tipo. */
+export function roleAndTypeRedundancies(team: TeamSet[]): Redundancy[] {
+  const items: Redundancy[] = [];
+  const setters = new Map<string, number>();
+  for (const set of team) {
+    for (const hazard of new Set(set.moves.map(m => HAZARDS[toID(m)]).filter(Boolean))) {
+      setters.set(hazard, (setters.get(hazard) ?? 0) + 1);
+    }
+  }
+  for (const [hazard, n] of setters) if (n > 1) items.push({ text: `${n} setter di ${hazard}`, points: 2 * (n - 1) });
+  const removers = team.filter(set => set.moves.some(m => REMOVAL.has(toID(m)))).length;
+  if (removers > 1) items.push({ text: `${removers} rimozioni hazard`, points: removers - 1 });
+  for (const type of TYPES) {
+    const n = team.filter(set => (battleSpecies(set)?.types as readonly string[] | undefined)?.includes(type)).length;
+    if (n >= 3) items.push({ text: `${n} membri di tipo ${type}`, points: n - 2 });
+  }
+  return items;
+}
+
+export function redundancies(team: TeamSet[], analysis: TeamAnalysis): Redundancies {
+  const common = 1 / TYPES.length;
+  const weaknesses = analysis.weakness
+    .filter(row => row.weak - row.resist >= 2)
+    .map(row => ({
+      text: `${row.weak} membri deboli a ${row.type}, ${row.resist === 0 ? 'nessuno resiste' : `${row.resist} resistono`}`,
+      points: (row.weak - row.resist - 1) * (analysis.typeWeights[row.type] >= common ? 2 : 1),
+    }));
+  const items = [...weaknesses, ...roleAndTypeRedundancies(team)];
+  return { total: Math.min(MAX_PENALTY, sum(items.map(i => i.points))), items };
+}
 const mean = (xs: number[]) => sum(xs) / xs.length;
 
 /**
@@ -111,9 +166,11 @@ export function rateTeam(team: TeamSet[], data: EngineData): TeamRating | null {
     value: raw[key] === null ? null : Math.round(100 * raw[key]!),
   }));
   const available = (Object.keys(AREA_WEIGHTS) as AreaKey[]).filter(key => raw[key] !== null);
-  const overall = Math.round(
+  const base = Math.round(
     100 * sum(available.map(key => AREA_WEIGHTS[key] * raw[key]!)) / sum(available.map(key => AREA_WEIGHTS[key])),
   );
-  return { overall, ...gradeFor(overall), provisional: team.length < 6, areas };
+  const penalty = redundancies(team, analysis);
+  const overall = Math.max(0, base - penalty.total);
+  return { base, penalty, overall, ...gradeFor(overall), provisional: team.length < 6, areas };
 }
 
