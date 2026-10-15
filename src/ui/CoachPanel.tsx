@@ -37,7 +37,7 @@ export function CoachPanel({ coaching, onReplace }: { coaching: Coaching; onRepl
             <h3>{title}</h3>
             <ul>
               {group.map(swap => (
-                <li key={swap.index}>
+                <li key={swap.index} title={`Adattamento al team: ${swap.member} ${swap.fit} · ${swap.replacement} ${swap.score}`}>
                   {describeSwap(swap)}{' '}
                   <button type="button" aria-label={`Vedi sostituti per ${swap.member}`} onClick={() => onReplace(swap.index)}>
                     ⇄ Vedi sostituti

@@ -6,9 +6,14 @@ import { fixtureData, gholdengo, tusk } from '../fixtures/data';
 
 describe('livello delle sostituzioni', () => {
   it('consigliata se più di metà delle alternative si adatta meglio', () => {
-    expect(classifySwap(0.51)).toBe('recommended');
-    expect(classifySwap(0.5)).toBe('optional');
-    expect(classifySwap(0.1)).toBe('optional');
+    expect(classifySwap(0.51, 5)).toBe('recommended');
+    expect(classifySwap(0.5, 5)).toBe('optional');
+    expect(classifySwap(0.1, 5)).toBe('optional');
+  });
+
+  it('consigliata anche se la differenza è di almeno +25', () => {
+    expect(classifySwap(0.1, 25)).toBe('recommended');
+    expect(classifySwap(0.1, 24)).toBe('optional');
   });
 
   it('un membro inutile riceve una sostituzione consigliata', () => {
@@ -26,6 +31,6 @@ describe('livello delle sostituzioni', () => {
   it('testo di una possibile raccomandazione', () => {
     const swap: CoachSwap = { index: 0, member: 'Great Tusk', fit: 50, replacement: 'Corviknight', score: 62, similar: false,
       level: 'optional', diff: { gains: ['+ Pivot'], losses: [] } };
-    expect(describeSwap(swap)).toBe('Great Tusk va già bene (50); in alternativa Corviknight (62) porta Pivot');
+    expect(describeSwap(swap)).toBe('Great Tusk va già bene · in alternativa Corviknight si adatta meglio (+12): porta Pivot');
   });
 });
