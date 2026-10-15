@@ -3,7 +3,8 @@ import { battleSpecies, dex, getMove, getSpecies, itemNames, moveNames, natureNa
 import { legalAbilities, legalMoves } from '../engine/learnsets';
 import { formatName, sameSet, STAT_IDS, type Preset, type StatID, type TeamSet } from '../engine/sets';
 import { TYPES } from '../engine/types';
-import type { Lang } from '../i18n';
+import type { CommonChoice, CommonChoices } from '../engine/common';
+import { formatPercent, type Lang } from '../i18n';
 import { gameDesc, gameName, natureName, statShort, typeName } from '../i18n/game';
 import { useLang, useT } from '../i18n/react';
 import { Combobox, type ComboOption } from './Combobox';
@@ -91,15 +92,29 @@ interface Props {
   presets?: Preset[];
   /** Limite di generazione: mosse e abilità legali fino a questa gen. */
   genLimit: number;
+  /** Scelte più usate del membro, mostrate in cima ai menu. */
+  common?: CommonChoices;
   onChange: (set: TeamSet) => void;
 }
 
 /** Voce del menu dei preset per un set che non coincide con nessun preset. */
 const CUSTOM_PRESET = 'custom';
 
-export function SetEditor({ set, presets = [], genLimit, onChange }: Props) {
+export function SetEditor({ set, presets = [], genLimit, common, onChange }: Props) {
   const t = useT();
   const lang = useLang();
+  // Le più usate vanno in cima al menu, con la quota d'uso (o "Preset" se vengono dalle analisi)
+  const withCommon = (options: ComboOption[], choices: CommonChoice[] | undefined): ComboOption[] => {
+    if (!choices?.length) return options;
+    const byValue = new Map(options.map(o => [o.value, o]));
+    const top = choices.flatMap(c => {
+      const option = byValue.get(c.name);
+      return option ? [{ ...option, common: c.share === null ? t('combobox.preset') : formatPercent(lang, c.share, 0) }] : [];
+    });
+    const picked = new Set(top.map(o => o.value));
+    return [...top, ...options.filter(o => !picked.has(o.value))];
+  };
+  const commonKey = JSON.stringify(common ?? null);
   const custom = !!set.customSkillset;
   const species = getSpecies(set.species);
   const standard = legalAbilities(set.species, genLimit)
@@ -107,19 +122,19 @@ export function SetEditor({ set, presets = [], genLimit, onChange }: Props) {
   // L'abilità attuale resta visibile anche se non legale (viene segnalata nello slot)
   const abilities = set.ability && !standard.includes(set.ability) ? [set.ability, ...standard] : standard;
   const abilityOptions = useMemo(
-    () => (custom ? ALL_ABILITIES : abilities).map(name => abilityOption(name, lang)),
-    [custom, abilities.join(), lang],
+    () => withCommon((custom ? ALL_ABILITIES : abilities).map(name => abilityOption(name, lang)), common?.abilities),
+    [custom, abilities.join(), lang, commonKey],
   );
   // Mosse proposte: solo quelle imparabili, tranne con Custom Skillset
   const moveOptions = useMemo(() => {
     const legal = custom ? null : legalMoves(set.species, genLimit);
     const names = legal ? [...legal].map(id => getMove(id)?.name ?? id).sort() : ALL_MOVES;
-    return names.map(name => moveOption(name, lang));
-  }, [custom, set.species, genLimit, lang]);
-  const itemOptions = useMemo<ComboOption[]>(() => ITEMS.map(name => ({
+    return withCommon(names.map(name => moveOption(name, lang)), common?.moves);
+  }, [custom, set.species, genLimit, lang, commonKey]);
+  const itemOptions = useMemo<ComboOption[]>(() => withCommon(ITEMS.map(name => ({
     value: name, label: gameName('item', name, lang), description: describe.item(name, lang), icon: <ItemIcon item={name} />,
-  })), [lang]);
-  const natureOptions = useMemo<ComboOption[]>(() => natureNames().map(name => {
+  })), common?.items), [lang, commonKey]);
+  const natureOptions = useMemo<ComboOption[]>(() => withCommon(natureNames().map(name => {
     const { plus, minus } = dex.natures.get(name);
     const label = natureName(name, lang);
     return {
@@ -130,7 +145,7 @@ export function SetEditor({ set, presets = [], genLimit, onChange }: Props) {
         ? `${label} (+${statShort(plus as StatID, lang)}, −${statShort(minus as StatID, lang)})`
         : `${label} (${t('editor.neutral')})`,
     };
-  }), [lang, t]);
+  }), common?.natures), [lang, t, commonKey]);
   const teraOptions = useMemo<ComboOption[]>(() => [
     { value: '', label: t('editor.none'), ariaLabel: t('editor.none') },
     ...TYPES.map(type => ({ value: type, label: typeName(type, lang), content: <TypeChip type={type} />, ariaLabel: typeName(type, lang) })),

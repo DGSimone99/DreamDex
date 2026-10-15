@@ -6,6 +6,7 @@ import { detectRoles, roleLabel } from '../engine/roles';
 import { presetsFor, type Preset, type TeamSet } from '../engine/sets';
 import { useState } from 'react';
 import { SetEditor } from './SetEditor';
+import { commonChoices, type CommonChoices } from '../engine/common';
 import { StatsBadge } from './StatsBadge';
 import { ItemIcon } from './ItemIcon';
 import { AlertMark, type Alert } from './AlertMark';
@@ -38,8 +39,9 @@ function slotProblems(set: TeamSet, format: Format, lang: Lang): string[] {
   ].filter((p): p is string => !!p);
 }
 
-function TeamSlot({ set, presets, format, warning: megaWarning, open, onToggle, onIgnoreWarning, onChange, onRemove, onReplace }: {
+function TeamSlot({ set, presets, common, format, warning: megaWarning, open, onToggle, onIgnoreWarning, onChange, onRemove, onReplace }: {
   presets: Preset[];
+  common: CommonChoices;
   set: TeamSet;
   open: boolean;
   onToggle: (open: boolean) => void;
@@ -120,7 +122,7 @@ function TeamSlot({ set, presets, format, warning: megaWarning, open, onToggle, 
         {roles.length > 0 && <small className="roles">{roles.join(' · ')}</small>}
       </summary>
       <div className="drawer">
-      <SetEditor set={set} presets={presets} genLimit={format.genLimit} onChange={onChange} />
+      <SetEditor set={set} presets={presets} common={common} genLimit={format.genLimit} onChange={onChange} />
       <div className="actions">
         <button type="button" aria-label={tr('team.replace', { species: name })} onClick={onReplace}><Icon name="swap" /> {tr('team.replaceButton')}</button>
         {megaWarning && <button type="button" onClick={onIgnoreWarning}>{tr('team.keepMega')}</button>}
@@ -146,6 +148,7 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onAl
             key={`${i}-${set.species}`}
             set={set}
             presets={presetsFor(data, set.species)}
+            common={commonChoices(data, set)}
             format={format}
             warning={warningFor(set, i)}
             open={openIndex === i}

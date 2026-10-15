@@ -18,6 +18,8 @@ export interface ComboOption {
   color?: string;
   /** Icona prima del nome (es. lo strumento). */
   icon?: ReactNode;
+  /** Scelta tra le più usate: va in cima, con questa etichetta (la quota d'uso, o "Preset"). */
+  common?: string;
 }
 
 /** Oltre questo numero di voci la lista chiede di affinare la ricerca (tutte le mosse ci stanno). */
@@ -49,21 +51,25 @@ export function Combobox({ label, value, options, onChange, restricted = false, 
   const [active, setActive] = useState(0);
   const listRef = useRef<HTMLUListElement>(null);
 
+  // Le più usate in cima, anche mentre cerchi
+  const ordered = useMemo(() => [...options.filter(o => o.common), ...options.filter(o => !o.common)], [options]);
+  const hasCommon = ordered.length > 0 && !!ordered[0].common;
   const matches = useMemo(() => {
-    if (!query) return options;
+    if (!query) return ordered;
     const q = toID(query);
     const name = (o: ComboOption) => toID(o.label ?? o.value);
-    const starts = options.filter(o => name(o).startsWith(q));
-    const contains = options.filter(o => !name(o).startsWith(q) && name(o).includes(q));
-    return [...starts, ...contains];
-  }, [options, query]);
+    const starts = ordered.filter(o => name(o).startsWith(q));
+    const contains = ordered.filter(o => !name(o).startsWith(q) && name(o).includes(q));
+    const found = [...starts, ...contains];
+    return [...found.filter(o => o.common), ...found.filter(o => !o.common)];
+  }, [ordered, query]);
   const shown = matches.slice(0, MAX_SHOWN);
   // Il campo mostra l'etichetta del valore (es. il nome italiano); il valore salvato resta quello della voce
   const shownValue = options.find(o => o.value === value)?.label ?? value;
   /** Porta la voce in vista scorrendo solo la lista, non la pagina. */
   const reveal = (index: number, center = false) => {
     const list = listRef.current;
-    const item = list?.children[index] as HTMLElement | undefined;
+    const item = document.getElementById(`${listId}-${index}`);
     if (!list || !item) return;
     if (center) list.scrollTop = item.offsetTop - (list.clientHeight - item.offsetHeight) / 2;
     else if (item.offsetTop < list.scrollTop) list.scrollTop = item.offsetTop;
@@ -78,7 +84,7 @@ export function Combobox({ label, value, options, onChange, restricted = false, 
     setOpen(true);
     setQuery(null);
     // Oltre le prime voci la scelta attuale non sarebbe mostrata: si parte dall'inizio
-    const index = options.findIndex(o => o.value === value);
+    const index = ordered.findIndex(o => o.value === value);
     setActive(index >= 0 && index < MAX_SHOWN ? index : 0);
   };
   const pick = (option: ComboOption) => {
@@ -130,14 +136,18 @@ export function Combobox({ label, value, options, onChange, restricted = false, 
       />
       {open && (
         <ul id={listId} role="listbox" aria-label={t("combobox.options", { label })} ref={listRef}>
-          {shown.map((option, i) => (
+          {shown.map((option, i) => [
+            hasCommon && i === 0 && option.common
+              ? <li key="common-head" role="presentation" className="group-head common-head">{t('combobox.common')}</li> : null,
+            hasCommon && !option.common && (i === 0 || shown[i - 1].common)
+              ? <li key="all-head" role="presentation" className="group-head">{t('combobox.all')}</li> : null,
             <li
               key={option.value}
               id={`${listId}-${i}`}
               role="option"
               aria-selected={option.value === value}
               aria-label={option.ariaLabel}
-              className={i === active ? 'active' : undefined}
+              className={[i === active ? 'active' : '', option.common ? 'common' : ''].filter(Boolean).join(' ') || undefined}
               title={option.description}
               onMouseDown={e => { e.preventDefault(); pick(option); }}
               onMouseEnter={() => setActive(i)}
@@ -146,10 +156,11 @@ export function Combobox({ label, value, options, onChange, restricted = false, 
                 {option.icon}
                 {option.content ?? <strong style={option.color ? { color: option.color } : undefined}>{option.label ?? option.value}</strong>}
                 {option.detail && <span className="option-detail">{option.detail}</span>}
+                {option.common && <span className="common-share">{option.common}</span>}
               </span>
               {option.description && <small>{option.description}</small>}
-            </li>
-          ))}
+            </li>,
+          ])}
           {shown.length === 0 && <li className="empty" aria-disabled="true">{t("combobox.none")}</li>}
           {matches.length > MAX_SHOWN && (
             <li className="empty" aria-disabled="true">{t("combobox.more", { n: matches.length - MAX_SHOWN })}</li>
