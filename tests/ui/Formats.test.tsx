@@ -52,6 +52,14 @@ describe('dati per formato', () => {
     expect(screen.getByText(/Statistiche: 2026-09/)).toBeInTheDocument();
   });
 
+  it('banner del Monotype col nome giusto', async () => {
+    const user = userEvent.setup();
+    render(<App data={fixtureData} loadSource={async () => NO_DATA} />);
+    await user.click(screen.getByRole('checkbox', { name: 'Monotype' }));
+    await user.selectOptions(screen.getByLabelText('Tipo del team'), 'Water');
+    expect(await screen.findByRole('alert')).toHaveTextContent('Statistiche National Dex Monotype non scaricate');
+  });
+
   it('non c\'è più l\'etichetta fissa del formato', () => {
     render(<App data={fixtureData} />);
     expect(screen.getByLabelText('Formato')).toHaveValue('ou');

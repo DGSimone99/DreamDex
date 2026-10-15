@@ -37,8 +37,9 @@ export function battleSpecies(set: { species: string; item: string }): Species |
   if (!item?.exists) return species;
   const megaStone = item.megaStone as unknown as Record<string, string> | undefined;
   const primal = PRIMAL_ORBS[item.id];
-  const forme = megaStone?.[species.baseSpecies]
-    ?? (primal && primal[0] === species.baseSpecies ? primal[1] : undefined);
+  // Solo la forma base può evolvere (Slowbro-Galar con Slowbronite resta Slowbro-Galar)
+  const forme = megaStone?.[species.name]
+    ?? (primal && primal[0] === species.name ? primal[1] : undefined);
   return (forme && getSpecies(forme)) || species;
 }
 
