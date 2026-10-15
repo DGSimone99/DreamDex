@@ -1,0 +1,29 @@
+import { describe, expect, it } from 'vitest';
+import { coachTeam } from '../../src/engine/coach';
+import { DEFAULT_FORMAT } from '../../src/engine/format';
+import { rateTeam } from '../../src/engine/rating';
+import { emptySet, importShowdown } from '../../src/engine/sets';
+import { fixtureData, gholdengo, tusk } from '../fixtures/data';
+
+describe('coaching e valutazione in inglese', () => {
+  it('verdetto, problemi e categorie', () => {
+    const coaching = coachTeam([tusk, gholdengo, { ...emptySet('Mewtwo'), item: 'Mewtwonite Y' }], DEFAULT_FORMAT, fixtureData, 'en');
+    expect(coaching.verdict).toBe('Incomplete team');
+    expect(coaching.problems).toContainEqual({ severity: 'serious', category: 'rules', text: 'Mewtwo is not legal in National Dex OU', fixes: [] });
+    expect(coaching.problems.some(p => /^Weak to \w+: \d+ weak – \d+ resist/.test(p.text))).toBe(true);
+  });
+
+  it('meno di due membri', () => {
+    expect(coachTeam([tusk], DEFAULT_FORMAT, fixtureData, 'en').verdict).toBe('Add at least 2 Pokémon to get coaching');
+  });
+
+  it('voto e aree in inglese', () => {
+    const rating = rateTeam([tusk, gholdengo], fixtureData, 'en')!;
+    expect(['Excellent', 'Great', 'Good', 'Fair', 'Weak']).toContain(rating.label);
+    expect(rating.areas.map(a => a.label)).toEqual(['Defense', 'Coverage', 'Roles', 'Stats']);
+  });
+
+  it('errori di import in inglese', () => {
+    expect(importShowdown('Notapokemon\n- Tackle', 'en').errors).toContain('Unknown Pokémon: Notapokemon');
+  });
+});

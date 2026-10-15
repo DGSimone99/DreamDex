@@ -1,4 +1,5 @@
 import { Icon } from './icons';
+import { useT } from '../i18n/react';
 import { PokemonList, PokemonName } from './PokemonName';
 import { IssueCounts, PROBLEM_LABELS } from './IssueCounts';
 import type { TeamSet } from '../engine/sets';
@@ -32,6 +33,7 @@ export function CoachPanel({ coaching, preview = null, onReplace, onSwap }: {
   preview?: SwapPreview | null;
   onReplace: (index: number) => void;
 }) {
+  const t = useT();
   const { verdict, strengths, problems, swaps } = coaching;
   return (
     <details className="block coach" open>
@@ -56,11 +58,12 @@ export function CoachPanel({ coaching, preview = null, onReplace, onSwap }: {
           <h3>Problemi</h3>
           {PROBLEM_CATEGORIES.map(category => {
             const group = problems.filter(p => p.category === category);
+            const label = t(`problemCategory.${category}`);
             if (group.length === 0) return null;
             return (
-              <details key={category} open aria-label={`Problemi: ${category}`} className="problem-group">
+              <details key={category} open aria-label={`Problemi: ${label}`} className="problem-group">
                 <summary>
-                  <h4>{category} <span className="count">{group.length}</span></h4>
+                  <h4>{label} <span className="count">{group.length}</span></h4>
                   {group.some(p => p.severity === 'serious') && (
                     <span className="issue serious" title="Contiene problemi seri"><Icon name="warning" /></span>
                   )}

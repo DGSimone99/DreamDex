@@ -277,13 +277,13 @@ export interface ConditionConflict {
 }
 
 /** Meteo (o campi) diversi nello stesso team si sovrascrivono a vicenda. */
-export function conditionConflicts(team: TeamSet[]): ConditionConflict[] {
+export function conditionConflicts(team: TeamSet[], lang: Lang = 'it'): ConditionConflict[] {
   const groups: [ConditionConflict['kind'], Condition[]][] = [['meteo', WEATHERS], ['campi', TERRAINS]];
   return groups.flatMap(([kind, group]) => {
     const setters = team.flatMap(member =>
       enables(member)
         .filter(e => group.includes(e.condition))
-        .map(e => ({ condition: e.condition, label: `${member.species} (${e.via})` })));
+        .map(e => ({ condition: e.condition, label: `${member.species} (${viaName(e.via, lang)})` })));
     return new Set(setters.map(s => s.condition)).size > 1 ? [{ kind, setters: setters.map(s => s.label) }] : [];
   });
 }
