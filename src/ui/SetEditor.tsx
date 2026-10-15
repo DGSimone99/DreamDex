@@ -3,7 +3,7 @@ import { battleSpecies, dex, getMove, getSpecies, itemNames, moveNames, natureNa
 import { legalAbilities, legalMoves } from '../engine/learnsets';
 import { formatName, sameSet, STAT_IDS, type Preset, type StatID, type TeamSet } from '../engine/sets';
 import { TYPES } from '../engine/types';
-import type { CommonChoice, CommonChoices } from '../engine/common';
+import type { CommonChoice, CommonChoices, CommonSpread } from '../engine/common';
 import { formatPercent, type Lang } from '../i18n';
 import { gameDesc, gameName, natureName, statShort, typeName } from '../i18n/game';
 import { useLang, useT } from '../i18n/react';
@@ -84,6 +84,14 @@ const ALL_ABILITIES = dex.abilities.all().filter(a => a.exists && !a.isNonstanda
 const abilityOption = (name: string, lang: Lang): ComboOption =>
   ({ value: name, label: gameName('ability', name, lang), description: describe.ability(name, lang) });
 
+/** Natura ed EV come chiave, per riconoscere lo spread attuale. */
+const spreadKey = (s: Pick<CommonSpread, 'nature' | 'evs'>) => `${s.nature}:${STAT_IDS.map(stat => s.evs[stat] ?? 0).join('/')}`;
+/** "252 Att / 252 Vel / 4 PS": prima gli EV più alti. */
+const spreadText = (s: Pick<CommonSpread, 'evs'>, lang: Lang) =>
+  STAT_IDS.filter(stat => (s.evs[stat] ?? 0) > 0)
+    .sort((a, b) => (s.evs[b] ?? 0) - (s.evs[a] ?? 0))
+    .map(stat => `${s.evs[stat]} ${statShort(stat, lang)}`).join(' / ') || '—';
+
 const clampEv = (value: number) => Math.min(252, Math.max(0, Number.isFinite(value) ? value : 0));
 
 interface Props {
@@ -146,10 +154,10 @@ export function SetEditor({ set, presets = [], genLimit, common, onChange }: Pro
         : `${label} (${t('editor.neutral')})`,
     };
   }), common?.natures), [lang, t, commonKey]);
-  const teraOptions = useMemo<ComboOption[]>(() => [
+  const teraOptions = useMemo<ComboOption[]>(() => withCommon([
     { value: '', label: t('editor.none'), ariaLabel: t('editor.none') },
     ...TYPES.map(type => ({ value: type, label: typeName(type, lang), content: <TypeChip type={type} />, ariaLabel: typeName(type, lang) })),
-  ], [lang, t]);
+  ], common?.teraTypes), [lang, t, commonKey]);
   const moves = [0, 1, 2, 3].map(i => set.moves[i] ?? '');
   const update = (patch: Partial<TeamSet>) => onChange({ ...set, ...patch });
   // Preset: la chiave è la posizione. Se il set coincide con un preset è selezionato quello,
@@ -259,6 +267,22 @@ export function SetEditor({ set, presets = [], genLimit, common, onChange }: Pro
       </fieldset>
       <fieldset className="evs">
         <legend>{t('editor.evs')}</legend>
+        {!!common?.spreads.length && (
+          <div className="spread-presets" role="group" aria-label={t('editor.spreads')}>
+            {common.spreads.map(spread => (
+              <button
+                key={spreadKey(spread)}
+                type="button"
+                aria-pressed={spreadKey(spread) === spreadKey(set)}
+                onClick={() => update({ nature: spread.nature, evs: { ...spread.evs } })}
+              >
+                <strong>{natureName(spread.nature, lang)}</strong>
+                <span className="spread-evs">{spreadText(spread, lang)}</span>
+                <span className="common-share">{spread.share === null ? t('combobox.preset') : formatPercent(lang, spread.share, 0)}</span>
+              </button>
+            ))}
+          </div>
+        )}
         {STAT_IDS.map(stat => (
           <label key={stat}>
             {statShort(stat, lang).toUpperCase()}

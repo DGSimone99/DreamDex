@@ -184,6 +184,7 @@ export const en = {
   'editor.moves': "Moves",
   'editor.move': "Move {n}",
   'editor.evs': "EVs",
+  'editor.spreads': "Most used spreads",
   'editor.neutral': "neutral",
   'editor.category.Physical': "Physical",
   'editor.category.Special': "Special",

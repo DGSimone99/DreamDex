@@ -5,7 +5,7 @@ import { emptySet } from '../../src/engine/sets';
 import type { SpeciesStats, StatsData } from '../../src/engine/stats';
 
 const entry: SpeciesStats = {
-  usage: 0.2, count: 100, teraTypes: {}, teammates: {}, checks: {},
+  usage: 0.2, count: 100, teraTypes: { Ground: 0.45, Steel: 0.2, Fire: 0.01 }, teammates: {}, checks: {},
   abilities: { roughskin: 0.9, sandveil: 0.1 },
   items: { rockyhelmet: 0.4, leftovers: 0.3, choicescarf: 0.02 },
   moves: { earthquake: 0.99, stealthrock: 0.7, swordsdance: 0.03 },
@@ -20,6 +20,21 @@ describe('scelte più usate per un membro', () => {
     expect(common.items).toEqual([{ name: 'Rocky Helmet', share: 0.4 }, { name: 'Leftovers', share: 0.3 }]);
     expect(common.abilities).toEqual([{ name: 'Rough Skin', share: 0.9 }, { name: 'Sand Veil', share: 0.1 }]);
     expect(common.natures).toEqual([{ name: 'Jolly', share: 0.5 }, { name: 'Impish', share: 0.1 }]);
+    expect(common.teraTypes).toEqual([{ name: 'Ground', share: 0.45 }, { name: 'Steel', share: 0.2 }]);
+  });
+
+  it('spread pronti: i più usati del formato, poi quelli dei preset non già presenti', () => {
+    const preset = { ...emptySet('Garchomp'), nature: 'Jolly', evs: { atk: 252, spe: 252, hp: 4 } };
+    const other = { ...emptySet('Garchomp'), moves: ['Earthquake'], nature: 'Adamant', evs: { hp: 252, atk: 252, spd: 4 }, teraType: 'Fire' };
+    const data: EngineData = { stats, sets: null, presets: { Garchomp: [
+      { name: 'A', format: 'gen9ou', set: preset }, { name: 'B', format: 'gen9ou', set: other },
+    ] } };
+    expect(commonChoices(data, emptySet('Garchomp')).spreads).toEqual([
+      { nature: 'Jolly', evs: { atk: 252, spd: 4, spe: 252 }, share: 0.3 },
+      { nature: 'Jolly', evs: { hp: 4, atk: 252, spe: 252 }, share: 0.2 },
+      { nature: 'Impish', evs: { hp: 252, def: 164, spe: 92 }, share: 0.1 },
+      { nature: 'Adamant', evs: { hp: 252, atk: 252, spd: 4 }, share: null },
+    ]);
   });
 
   it('senza statistiche: le scelte dei preset Smogon, senza percentuale', () => {
@@ -29,6 +44,7 @@ describe('scelte più usate per un membro', () => {
     expect(common.moves).toEqual([{ name: 'Earthquake', share: null }, { name: 'Scale Shot', share: null }]);
     expect(common.items).toEqual([{ name: 'Life Orb', share: null }]);
     expect(common.natures).toEqual([{ name: 'Jolly', share: null }]);
+    expect(common.spreads).toEqual([{ nature: 'Jolly', evs: {}, share: null }]);
   });
 
   it('nessun dato: nessuna scelta', () => {

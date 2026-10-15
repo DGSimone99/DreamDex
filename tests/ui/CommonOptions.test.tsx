@@ -65,3 +65,49 @@ describe('editor del team: più usati dalle statistiche del formato', () => {
     }
   });
 });
+
+describe('spread pronti sopra gli EV', () => {
+  it('un clic imposta natura ed EV; lo spread attuale risulta premuto', async () => {
+    const { useState } = await import('react');
+    const { SetEditor } = await import('../../src/ui/SetEditor');
+    const { emptySet } = await import('../../src/engine/sets');
+    type TeamSet = import('../../src/engine/sets').TeamSet;
+    const common = { items: [], abilities: [], natures: [], moves: [], teraTypes: [], spreads: [
+      { nature: 'Jolly', evs: { atk: 252, spe: 252, hp: 4 }, share: 0.32 },
+      { nature: 'Impish', evs: { hp: 252, def: 164, spe: 92 }, share: null },
+    ] };
+    function Editor() {
+      const [set, setSet] = useState<TeamSet>({ ...emptySet('Garchomp'), nature: 'Jolly', evs: { atk: 252, spe: 252, hp: 4 } });
+      return <SetEditor set={set} common={common} genLimit={9} onChange={setSet} />;
+    }
+    const user = userEvent.setup();
+    renderIt(<Editor />);
+    const group = screen.getByRole('group', { name: 'Spread più usati' });
+    const [jolly, impish] = within(group).getAllByRole('button');
+    expect(jolly).toHaveTextContent('Jolly');
+    expect(jolly).toHaveTextContent('252 Att / 252 Vel / 4 PS');
+    expect(jolly).toHaveTextContent('32%');
+    expect(jolly).toHaveAttribute('aria-pressed', 'true');
+    expect(impish).toHaveTextContent('Preset');
+    await user.click(impish);
+    expect(screen.getByLabelText('Natura')).toHaveValue('Impish');
+    const evs = screen.getByRole('group', { name: 'EV' });
+    expect(within(evs).getByLabelText('PS')).toHaveValue(252);
+    expect(within(evs).getByLabelText('DIF')).toHaveValue(164);
+    expect(within(evs).getByLabelText('ATT')).toHaveValue(0);
+    expect(impish).toHaveAttribute('aria-pressed', 'true');
+    expect(jolly).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('Tera più usati in cima alla tendina', async () => {
+    const { SetEditor } = await import('../../src/ui/SetEditor');
+    const { emptySet } = await import('../../src/engine/sets');
+    const common = { items: [], abilities: [], natures: [], moves: [], spreads: [], teraTypes: [{ name: 'Ground', share: 0.45 }] };
+    const user = userEvent.setup();
+    renderIt(<SetEditor set={emptySet('Garchomp')} common={common} genLimit={9} onChange={() => undefined} />);
+    await user.click(screen.getByLabelText('Tera'));
+    const first = within(screen.getByRole('listbox')).getAllByRole('option')[0];
+    expect(first).toHaveAccessibleName('Ground');
+    expect(first).toHaveTextContent('45%');
+  });
+});

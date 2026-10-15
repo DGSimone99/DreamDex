@@ -71,7 +71,8 @@ export function Combobox({ label, value, options, onChange, restricted = false, 
     const list = listRef.current;
     const item = document.getElementById(`${listId}-${index}`);
     if (!list || !item) return;
-    if (center) list.scrollTop = item.offsetTop - (list.clientHeight - item.offsetHeight) / 2;
+    // Se la voce è già visibile partendo dall'inizio, si resta in cima (intestazione "Più usati" compresa)
+    if (center) list.scrollTop = item.offsetTop + item.offsetHeight <= list.clientHeight ? 0 : item.offsetTop - (list.clientHeight - item.offsetHeight) / 2;
     else if (item.offsetTop < list.scrollTop) list.scrollTop = item.offsetTop;
     else if (item.offsetTop + item.offsetHeight > list.scrollTop + list.clientHeight) list.scrollTop = item.offsetTop + item.offsetHeight - list.clientHeight;
   };

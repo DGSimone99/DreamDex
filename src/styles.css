@@ -249,6 +249,27 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 .set-editor legend { font: 700 14px var(--display); text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); padding: 0 6px; }
 .editor-group { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 14px; }
 .set-editor .evs { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; }
+/* Spread pronti: un clic imposta natura ed EV; stesso linguaggio dorato dei "Più usati" */
+.spread-presets { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px; }
+.spread-presets button {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 10px;
+  font: 400 13px/1.2 var(--ui);
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--muted);
+  background: linear-gradient(90deg, rgba(255, 184, 0, 0.12), rgba(255, 184, 0, 0.02));
+  border: 1px solid rgba(255, 184, 0, 0.28);
+  border-left: 2px solid var(--gold);
+  border-radius: 0 3px 3px 0;
+  transform: none;
+}
+.spread-presets button:hover { background: linear-gradient(90deg, rgba(255, 184, 0, 0.22), var(--raised)); color: var(--text); }
+.spread-presets button strong { font-weight: 600; color: var(--text); }
+.spread-presets button .common-share { font: 600 13px/1 var(--display); font-variant-numeric: tabular-nums; color: var(--gold); }
+.spread-presets button[aria-pressed='true'] { background: var(--blue-soft); border-color: var(--blue); border-left-color: var(--gold); color: var(--text); }
 .field { position: relative; }
 .field-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 18px; }
 .move-meta { display: inline-flex; align-items: center; gap: 10px; text-transform: none; letter-spacing: 0; font-weight: 600; color: var(--muted); font-size: 12px; }

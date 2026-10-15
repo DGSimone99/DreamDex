@@ -186,6 +186,7 @@ export const it: Record<keyof typeof en, string> = {
   'editor.moves': "Mosse",
   'editor.move': "Mossa {n}",
   'editor.evs': "EV",
+  'editor.spreads': "Spread più usati",
   'editor.neutral': "neutra",
   'editor.category.Physical': "Fisica",
   'editor.category.Special': "Speciale",
