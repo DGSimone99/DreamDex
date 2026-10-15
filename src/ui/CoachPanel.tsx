@@ -110,7 +110,7 @@ export function CoachPanel({ coaching, preview = null, onReplace, onSwap }: {
                     <ProsCons pros={pros} cons={cons} />
                     <div className="swap-actions">
                       {onSwap && (
-                        <button type="button" className="primary swap-now" aria-label={`Sostituisci ${swap.member} con ${swap.replacement}`}
+                        <button type="button" className="swap-now" aria-label={`Sostituisci ${swap.member} con ${swap.replacement}`}
                           title={`Sostituisci ${swap.member} con ${swap.replacement}`}
                           onClick={() => onSwap(swap.index, swap.set)}>
                           <Icon name="swap" />

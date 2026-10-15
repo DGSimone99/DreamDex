@@ -189,7 +189,9 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
   transition: background 0.2s, box-shadow 0.2s;
 }
 .slot > summary:hover::before { background: #1d2959; }
-.slot[open] > summary::before { background: #1f2c62; box-shadow: inset 0 3px 0 var(--gold); }
+.slot > summary { transition: transform 0.3s var(--ease); }
+.slot[open] > summary { transform: translateY(-4px); }
+.slot[open] > summary::before { background: #1f2c62; border-image: linear-gradient(var(--gold), var(--gold)) 1; box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4); }
 .slot > summary .sprite-wrap { position: relative; align-self: center; }
 .slot > summary .sprite { display: block; image-rendering: pixelated; transition: transform 0.35s var(--ease); }
 .slot[open] > summary .sprite { transform: scale(1.12) translateY(-2px); }
@@ -214,8 +216,9 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 /* La card col tooltip aperto passa sopra alle vicine */
 .slot > summary:has(.stats-badge:hover, .stats-badge:focus-visible) { z-index: 5; }
 .slot .remove:hover { color: var(--bad); }
-.slot.invalid > summary::before { box-shadow: inset 0 0 0 2px var(--bad); }
-.slot.warn > summary::before { box-shadow: inset 0 0 0 2px var(--warn); }
+/* Bordo sottile: il triangolo dice il problema, la selezione resta la cosa più visibile */
+.slot.invalid > summary::before { outline: 1px solid color-mix(in srgb, var(--bad) 70%, transparent); outline-offset: -1px; }
+.slot.warn > summary::before { outline: 1px solid color-mix(in srgb, var(--warn) 70%, transparent); outline-offset: -1px; }
 .slot.empty { align-items: center; justify-content: center; color: var(--faint); font-weight: 500; }
 .slot.empty::before { background: transparent; border: 2px dashed var(--line); border-image: none; }
 .sprite.missing { display: block; width: 96px; height: 96px; }
@@ -354,12 +357,8 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 
 .coach h3 { font-size: 15px; margin: 12px 0 4px; color: var(--muted); }
 .coach li small { margin-top: 1px; }
-.swaps { border-radius: 4px; padding: 10px 12px; margin-top: 12px; }
-.swaps h3 { margin-top: 0; color: inherit; }
-.swaps.recommended { background: var(--gold-soft); }
-.swaps.recommended h3 { color: var(--gold); }
-.swaps.optional { background: var(--good-bg); }
-.swaps.optional h3 { color: var(--good); }
+.swaps { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line-soft); }
+.swaps h3 { margin-top: 0; color: var(--muted); }
 .swaps ul { list-style: none; padding: 0; margin: 0; }
 .swaps .swap { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; align-items: start; padding: 8px 0; }
 .swaps .swap + .swap { border-top: 1px solid var(--line-soft); }
@@ -378,7 +377,8 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 .pros-cons .con > span:first-child { color: var(--bad); }
 .swaps .swap-actions { grid-column: 2; grid-row: 1; display: flex; gap: 6px; }
 .swaps .swap-actions button { font-size: 13px; padding: 4px 10px; }
-.swaps .swap-actions button.swap-now { width: 30px; justify-content: center; padding: 4px 0; }
+.swaps .swap-actions button.swap-now { width: 30px; justify-content: center; padding: 4px 0; background: var(--blue-soft); border-color: var(--blue); color: var(--text); }
+.swaps .swap-actions button.swap-now:hover { background: var(--blue); color: var(--ground); }
 
 .analysis table { border-collapse: collapse; width: 100%; font-size: 13px; }
 .analysis th, .analysis td { padding: 4px 3px; text-align: center; border-bottom: 1px solid var(--line-soft); }
@@ -539,10 +539,11 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .board-head .count { margin-left: 10px; color: var(--muted); text-transform: none; letter-spacing: 0; font-weight: 500; }
 .suggestion .name-line { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .suggestion .name-line .tag { flex: none; }
-.suggestions { list-style: none; padding: 0; margin: 0; }
-.suggestions > li { margin: 0 0 6px; }
-.suggestion { background: var(--panel); border: 1px solid var(--line-soft); border-radius: 6px; transition: border-color 0.15s; }
-.suggestion:hover { border-color: var(--line); }
+.suggestions { list-style: none; padding: 0; margin: 0; background: var(--panel); border: 1px solid var(--line-soft); border-radius: 6px; overflow: hidden; }
+.suggestions > li { margin: 0; }
+.suggestions > li + li { border-top: 1px solid var(--line-soft); }
+.suggestion { position: relative; transition: background 0.15s; }
+.suggestion:hover { background: color-mix(in srgb, var(--raised) 55%, transparent); }
 .suggestion > summary { padding: 8px 16px; }
 .suggestion .rank { font: 700 30px/1 var(--display); color: var(--faint); }
 .suggestion .sprite { image-rendering: pixelated; }
@@ -566,12 +567,12 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .suggestion .quick:hover { color: var(--text); background: var(--blue-soft); }
 .suggestions > li:first-child .suggestion .quick { background: var(--gold); border-color: var(--gold); color: var(--gold-ink); }
 .suggestions > li:first-child .suggestion .quick:hover { background: #ffc933; }
-.suggestions > li:first-child .suggestion { border-color: var(--gold); background: linear-gradient(90deg, var(--gold-soft), var(--panel) 70%); }
+.suggestions > li:first-child .suggestion { background: linear-gradient(90deg, var(--gold-soft), var(--panel) 70%); }
 .suggestions > li:first-child .rank, .suggestions > li:first-child .score { color: var(--gold); }
-.suggestion[open] { border-color: var(--blue); }
+.suggestion[open] { background: color-mix(in srgb, var(--raised) 70%, transparent); }
 /* Riga scelta dalla ricerca con le frecce: Invio la aggiunge */
-.suggestions > li.picked .suggestion { border-color: var(--blue); box-shadow: 0 0 0 1px var(--blue), 0 6px 18px rgba(0, 0, 0, 0.35); }
-.suggestions > li.picked:first-child .suggestion { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold), 0 6px 18px rgba(0, 0, 0, 0.35); }
+.suggestions > li.picked .suggestion { box-shadow: inset 0 0 0 1px var(--blue); }
+.suggestions > li.picked:first-child .suggestion { box-shadow: inset 0 0 0 1px var(--gold); }
 .suggestion[open] > summary { border-bottom: 1px solid var(--line-soft); }
 .suggestion > :not(summary) { margin-left: 126px; margin-right: 16px; }
 .suggestion .replaces { margin-top: 12px; }
