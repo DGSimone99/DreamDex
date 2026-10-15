@@ -15,7 +15,11 @@ describe('AnalysisPanel', () => {
   it('anteprime di una riga', () => {
     renderPanel();
     const panel = screen.getByRole('region', { name: 'Analisi' });
-    expect(within(panel).getByText('4 problemi')).toBeInTheDocument();
+    // Debolezze: triangoli per gravi e minori, che insieme fanno 4
+    const weakSummary = within(panel).getByText('Debolezze difensive').closest('summary')!;
+    const counts = [...weakSummary.querySelectorAll('.issue [aria-hidden="true"]')].map(el => Number(el.textContent));
+    expect(counts.reduce((a, b) => a + b, 0)).toBe(4);
+    expect(weakSummary).toHaveTextContent(/mancanz/);
     expect(within(panel).getByText('15/18 tipi')).toBeInTheDocument();
     expect(within(panel).getByText('Minacce del meta')).toBeInTheDocument();
     expect(within(panel).getByText('Mancano 4')).toBeInTheDocument();

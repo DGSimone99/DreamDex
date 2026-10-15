@@ -26,7 +26,7 @@ export const classifySwap = (betterShare: number, gain: number): SwapLevel =>
   betterShare > RECOMMEND_SHARE || gain >= RECOMMEND_GAIN ? 'recommended' : 'optional';
 
 /** Categorie dei problemi, nell'ordine in cui si mostrano. */
-export const PROBLEM_CATEGORIES = ['Regole', 'Tipi', 'Coverage', 'Ruoli', 'Meteo e campi', 'Ridondanze'] as const;
+export const PROBLEM_CATEGORIES = ['Regole', 'Difese', 'Coverage', 'Ruoli', 'Meteo e campi', 'Ridondanze'] as const;
 export type ProblemCategory = typeof PROBLEM_CATEGORIES[number];
 
 export interface CoachProblem {
@@ -87,6 +87,12 @@ function findStrengths(team: TeamSet[], analysis: TeamAnalysis): string[] {
   return strengths;
 }
 
+/** Gravità di una debolezza difensiva: grave se ne soffrono in tanti senza chi resista. */
+export function weaknessSeverity(row: TeamAnalysis['weakness'][number]): 'serious' | 'minor' | null {
+  if (row.weak >= 3 || (row.weak >= 2 && row.resist === 0)) return 'serious';
+  return row.pressure > 0 ? 'minor' : null;
+}
+
 function findProblems(team: TeamSet[], format: Format, analysis: TeamAnalysis, candidates: Suggestion[]): CoachProblem[] {
   const serious: CoachProblem[] = [];
   const minor: CoachProblem[] = [];
@@ -94,13 +100,12 @@ function findProblems(team: TeamSet[], format: Format, analysis: TeamAnalysis, c
     (isSerious ? serious : minor).push({ severity: isSerious ? 'serious' : 'minor', category, text, fixes });
 
   for (const row of analysis.weakness) {
-    const isSerious = row.weak >= 3 || (row.weak >= 2 && row.resist === 0);
-    if (!isSerious && row.pressure === 0) continue;
-    const text = isSerious
-      ? `Debole a ${row.type}: ${row.weak} membri su ${team.length} subiscono danni super efficaci${row.resist === 0 ? ' e nessuno resiste' : ''}`
-      : `Debole a ${row.type}: ${row.weak} ${row.weak === 1 ? 'debole' : 'deboli'} contro ${row.resist} che resistono`;
+    const severity = weaknessSeverity(row);
+    if (!severity) continue;
+    const isSerious = severity === 'serious';
+    const text = `Debole a ${row.type}: ${row.weak} ${row.weak === 1 ? 'Debole' : 'Deboli'} – ${row.resist} ${row.resist === 1 ? 'Resiste' : 'Resistono'}`;
     const fixes = fixesFor(candidates, s => Number(defensiveMultiplier(row.type, s.set) < 1));
-    add('Tipi', isSerious, text, fixes);
+    add('Difese', isSerious, text, fixes);
   }
 
   const megas = team.filter(isMega);
@@ -186,16 +191,11 @@ function findSwaps(team: TeamSet[], format: Format, data: EngineData): CoachSwap
   return swaps;
 }
 
+/** Giudizio breve sul team; i conteggi dei problemi li mostra l'interfaccia. */
 function verdictFor(team: TeamSet[], problems: CoachProblem[]): string {
+  if (team.length < 6) return 'Team incompleto';
   const serious = problems.filter(p => p.severity === 'serious').length;
-  const minor = problems.length - serious;
-  const counts = `${serious} ${serious === 1 ? 'problema serio' : 'problemi seri'}, ${minor} ${minor === 1 ? 'minore' : 'minori'}`;
-  if (team.length < 6) {
-    const missing = 6 - team.length;
-    return `Team incompleto: ${missing === 1 ? 'manca 1 membro' : `mancano ${missing} membri`} · ${counts}`;
-  }
-  const label = serious === 0 ? 'Team solido' : serious === 1 ? 'Buona base' : 'Da rivedere';
-  return `${label} · ${counts}`;
+  return serious === 0 ? 'Team solido' : serious === 1 ? 'Buona base' : 'Da rivedere';
 }
 
 /** Voci del diff raggruppate per tipo: ruoli, "Forte contro X, Y", "Resistente a X, Y". */

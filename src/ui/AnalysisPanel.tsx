@@ -6,11 +6,12 @@ import { DESIRABLE_ROLES, detectRoles, ESSENTIAL_ROLES, ROLE_LABELS } from '../e
 import { weatherMitigations, type WeatherMitigation } from '../engine/synergy';
 import type { TeamSet } from '../engine/sets';
 import { CoachPanel } from './CoachPanel';
-import type { SwapPreview } from '../engine/coach';
+import { IssueCounts, WEAKNESS_LABELS } from './IssueCounts';
+import { Icon } from './icons';
+import { weaknessSeverity, type SwapPreview } from '../engine/coach';
 import { MetaUsePanel } from './MetaUsePanel';
 import { RatingPanel } from './RatingPanel';
 import { Sprite, TypeChip } from './Sprite';
-import { Icon } from './icons';
 import { MoveName, Typed } from './TypeText';
 
 const MULTIPLIER_LABELS: Record<string, string> = { '4': '×4', '2': '×2', '1': '', '0.5': '×½', '0.25': '×¼', '0': '×0' };
@@ -43,7 +44,9 @@ export function AnalysisPanel({ team, analysis, rating, coaching, preview, onRep
   coaching?: Coaching;
   onReplace?: (index: number) => void;
 }) {
-  const problems = analysis.weakness.filter(row => row.pressure > 0);
+  const severities = analysis.weakness.map(weaknessSeverity);
+  const seriousWeak = severities.filter(s => s === 'serious').length;
+  const minorWeak = severities.filter(s => s === 'minor').length;
   const uncovered = analysis.coverage.filter(row => row.hitters.length === 0);
   const open = analysis.threats.filter(t => t.handledBy.length === 0);
   const rolesOf = team.map(set => ({ name: set.species, roles: detectRoles(set) }));
@@ -70,7 +73,13 @@ export function AnalysisPanel({ team, analysis, rating, coaching, preview, onRep
       {coaching && onReplace && <CoachPanel coaching={coaching} preview={preview} onReplace={onReplace} onSwap={onSwap} />}
 
       <details className="block">
-        <summary><span>Debolezze difensive</span><span>{problems.length} problemi</span></summary>
+        <summary>
+          <span>Debolezze difensive</span>
+          <span className="summary-info">
+            {seriousWeak + minorWeak === 0 && 'Nessuna mancanza'}
+            <IssueCounts serious={seriousWeak} minor={minorWeak} labels={WEAKNESS_LABELS} />
+          </span>
+        </summary>
         <table>
           <thead>
             <tr>
@@ -81,9 +90,13 @@ export function AnalysisPanel({ team, analysis, rating, coaching, preview, onRep
             </tr>
           </thead>
           <tbody>
-            {analysis.weakness.map(row => (
-              <tr key={row.type} className={row.pressure > 0 ? 'bad' : row.resist > row.weak ? 'good' : ''}>
-                <th scope="row"><TypeChip type={row.type} /></th>
+            {analysis.weakness.map((row, r) => (
+              <tr key={row.type} className={severities[r] ?? (row.resist > row.weak ? 'good' : '')}>
+                <th scope="row">
+                  <TypeChip type={row.type} />
+                  {/* Il colore della riga dice la gravità; a parole per gli screen reader */}
+                  {severities[r] && <span className="visually-hidden">{severities[r] === 'serious' ? ' mancanza grave' : ' mancanza'}</span>}
+                </th>
                 {row.multipliers.map((m, i) => <td key={i}>{formatMultiplier(m)}</td>)}
                 <td>{row.weak}</td>
                 <td>{row.resist}</td>

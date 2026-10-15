@@ -11,7 +11,9 @@ describe('coachTeam', () => {
   const coaching = coachTeam([tusk, gholdengo], DEFAULT_FORMAT, fixtureData);
 
   it('verdetto con conteggi', () => {
-    expect(coaching.verdict).toBe('Team incompleto: mancano 4 membri · 0 problemi seri, 6 minori');
+    expect(coaching.verdict).toBe('Team incompleto');
+    expect(coaching.problems.filter(p => p.severity === 'serious')).toHaveLength(0);
+    expect(coaching.problems).toHaveLength(6);
   });
 
   it('punti di forza', () => {
@@ -32,10 +34,10 @@ describe('coachTeam', () => {
   it('problemi minori: debolezze, minacce, ruoli, coverage', () => {
     const minor = coaching.problems.filter(p => p.severity === 'minor').map(p => p.text);
     expect(minor).toEqual([
-      'Debole a Fire: 1 debole contro 0 che resistono',
-      'Debole a Water: 1 debole contro 0 che resistono',
-      'Debole a Ground: 1 debole contro 0 che resistono',
-      'Debole a Ghost: 1 debole contro 0 che resistono',
+      'Debole a Fire: 1 Debole – 0 Resistono',
+      'Debole a Water: 1 Debole – 0 Resistono',
+      'Debole a Ground: 1 Debole – 0 Resistono',
+      'Debole a Ghost: 1 Debole – 0 Resistono',
       'Ruoli mancanti: Hazard, Pivot, Priorità, Controllo velocità',
       'Nessuna mossa super efficace contro Water, Fighting',
     ]);
@@ -46,7 +48,7 @@ describe('coachTeam', () => {
   it('debolezza seria: 3 membri deboli a Ice', () => {
     const team = ['Great Tusk', 'Garchomp', 'Dragapult'].map(n => mostCommonSet(fixtureStats, n)!);
     const ice = coachTeam(team, DEFAULT_FORMAT, fixtureData).problems.find(p => p.text.startsWith('Debole a Ice'));
-    expect(ice).toMatchObject({ severity: 'serious', text: 'Debole a Ice: 3 membri su 3 subiscono danni super efficaci e nessuno resiste' });
+    expect(ice).toMatchObject({ severity: 'serious', text: 'Debole a Ice: 3 Deboli – 0 Resistono' });
   });
 
   it('sostituzioni: il membro peggiore per primo, guadagno ≥ 10, massimo 2', () => {

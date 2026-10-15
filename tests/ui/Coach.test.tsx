@@ -15,7 +15,11 @@ const analysis = () => screen.getByRole('region', { name: 'Analisi' });
 describe('CoachPanel', () => {
   it('mostra verdetto, punti di forza e problemi', async () => {
     await setup('Great Tusk', 'Gholdengo');
-    expect(within(analysis()).getByText('Team incompleto: mancano 4 membri · 0 problemi seri, 6 minori')).toBeInTheDocument();
+    const summary = within(analysis()).getByText('Coaching').closest('summary')!;
+    expect(summary).toHaveTextContent('Team incompleto');
+    // Solo il triangolo blu dei minori: gli zeri non compaiono
+    expect(summary.querySelector('.issue.minor')).toHaveTextContent('6 problemi minori');
+    expect(summary.querySelector('.issue.serious')).toBeNull();
     expect(within(analysis()).getAllByRole('listitem').some(li => li.textContent === 'Gestisce bene Poison, Bug, Rock')).toBe(true);
     const dragapult = within(analysis()).getAllByRole('listitem').find(li => li.querySelector('.who strong')?.textContent === 'Dragapult')!;
     expect(dragapult).toHaveTextContent('Nessun check');
@@ -26,7 +30,7 @@ describe('CoachPanel', () => {
     await setup('Great Tusk', 'Gholdengo');
     const groups = within(analysis()).getAllByRole('group', { name: /^Problemi: / });
     expect(groups.length).toBeGreaterThan(1);
-    expect(within(analysis()).getByRole('group', { name: 'Problemi: Tipi' })).toHaveTextContent(/Debole a /);
+    expect(within(analysis()).getByRole('group', { name: 'Problemi: Difese' })).toHaveTextContent(/Debole a /);
   });
 
   it('invito ad aggiungere con meno di 2 membri', async () => {

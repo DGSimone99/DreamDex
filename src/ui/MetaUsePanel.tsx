@@ -7,7 +7,7 @@ import { Sprite } from './Sprite';
 /** Uso nel meta dei membri: solo informativo, non entra nella valutazione. */
 export function MetaUsePanel({ team, data }: { team: TeamSet[]; data: EngineData }) {
   return (
-    <details open aria-label="Meta Use" className="block meta-use">
+    <details aria-label="Meta Use" className="block meta-use">
       <summary><span>Meta Use</span><span>Solo informativo</span></summary>
       {!data.stats ? (
         <p className="note">Statistiche Smogon assenti.</p>

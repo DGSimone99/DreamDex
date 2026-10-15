@@ -13,16 +13,15 @@ const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1
 const toggle = <T,>(list: T[], value: T) => (list.includes(value) ? list.filter(v => v !== value) : [...list, value]);
 
 /** Griglia dei 18 tipi da accendere e spegnere, nei loro colori. */
-function TypeGrid({ label, hint, selected, max, onChange }: {
+function TypeGrid({ label, selected, max, onChange }: {
   label: string;
-  hint: string;
   selected: TypeName[];
   max?: number;
   onChange: (types: TypeName[]) => void;
 }) {
   return (
     <div className="type-filter">
-      <h4>{label} <small>{hint}</small></h4>
+      <h4>{label}</h4>
       <div role="group" aria-label={label} className="type-grid">
         {TYPES.map(type => {
           const on = selected.includes(type);
@@ -79,9 +78,9 @@ export function FilterBar({ filters, onChange }: Props) {
       <summary>{count ? `Filtri (${count} ${count === 1 ? 'attivo' : 'attivi'})` : 'Filtri'}</summary>
 
       <div className="type-filters">
-        <TypeGrid label="Tipo" hint="fino a 2" selected={filters.types} max={MAX_TYPES} onChange={types => set({ types })} />
-        <TypeGrid label="Resiste a" hint="tutti quelli scelti" selected={filters.resists} onChange={resists => set({ resists })} />
-        <TypeGrid label="Superefficace contro" hint="tutti quelli scelti" selected={filters.hits} onChange={hits => set({ hits })} />
+        <TypeGrid label="Tipo" selected={filters.types} max={MAX_TYPES} onChange={types => set({ types })} />
+        <TypeGrid label="Resiste a" selected={filters.resists} onChange={resists => set({ resists })} />
+        <TypeGrid label="Superefficace contro" selected={filters.hits} onChange={hits => set({ hits })} />
       </div>
 
       <div className="filter-section">

@@ -310,8 +310,10 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
   padding: 12px 16px;
   margin-bottom: 10px;
 }
-.block > summary { display: flex; justify-content: space-between; align-items: center; gap: 12px; font-weight: 600; }
-.block > summary > span:last-child { color: var(--muted); font-weight: 500; font-size: 14px; text-align: right; }
+/* Titolo a sinistra; il riassunto allineato a destra, accanto alla freccia, in ogni blocco */
+.block > summary { display: flex; align-items: center; gap: 12px; font-weight: 600; }
+.block > summary > span:first-child { flex: 1; min-width: 0; }
+.block > summary > span + span { color: var(--muted); font-weight: 500; font-size: 14px; text-align: right; font-variant-numeric: tabular-nums; }
 .block > summary::after {
   content: '';
   flex: none;
@@ -319,6 +321,7 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
   height: 7px;
   border-right: 2px solid var(--faint);
   border-bottom: 2px solid var(--faint);
+  margin-left: auto;
   transform: rotate(45deg) translateY(-2px);
   transition: transform 0.2s;
 }
@@ -368,10 +371,20 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 .swaps .swap-actions button.swap-now { width: 30px; justify-content: center; padding: 4px 0; }
 
 .analysis table { border-collapse: collapse; width: 100%; font-size: 13px; }
-.analysis th, .analysis td { padding: 4px 6px; text-align: center; border-bottom: 1px solid var(--line-soft); }
-.analysis thead th { font-weight: 600; color: var(--muted); font-size: 12px; }
+.analysis th, .analysis td { padding: 4px 3px; text-align: center; border-bottom: 1px solid var(--line-soft); }
+.analysis thead th { font-weight: 600; color: var(--muted); font-size: 11px; max-width: 72px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .analysis tbody th { text-align: left; font-weight: 600; }
-.analysis tr.bad { background: var(--bad-bg); }
+.analysis tr.serious { background: var(--bad-bg); }
+.analysis tr.minor { background: color-mix(in srgb, var(--blue) 18%, transparent); }
+
+/* Avvisi: triangolo rosso per i gravi, blu per i minori */
+.summary-info { display: inline-flex; align-items: center; justify-content: flex-end; gap: 10px; }
+.issue-counts { display: inline-flex; align-items: center; gap: 8px; }
+.issue-counts:empty { display: none; }
+.issue { display: inline-flex; align-items: center; gap: 3px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.issue .icon { width: 15px; height: 15px; }
+.issue.serious { color: var(--bad); }
+.issue.minor { color: var(--blue); }
 .analysis tr.good td, .analysis tr.good th { color: var(--good); }
 
 /* Elenchi dell'analisi: righe allineate, niente pallini */
@@ -397,11 +410,11 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 .problem-group[open] > summary::after { transform: rotate(225deg) translateY(-2px); }
 .problem-group > summary:hover h4 { color: var(--muted); }
 .problem-group:not([open]) > summary { padding-bottom: 10px; }
-.problem-group .serious-flag { font: 700 11px/1.6 var(--display); text-transform: uppercase; letter-spacing: 0.05em; padding: 0 6px; border-radius: 2px; color: var(--bad); background: var(--bad-bg); }
 .problem-group ul { padding-bottom: 6px; }
-.problem-group li { display: grid; grid-template-columns: 58px minmax(0, 1fr); gap: 10px; align-items: baseline; margin: 0; padding: 5px 0; }
-.problem-group .severity { font: 700 12px/1.6 var(--display); text-transform: uppercase; letter-spacing: 0.05em; text-align: center; border-radius: 2px; color: var(--muted); background: var(--raised); }
-.problem-group li.bad .severity { color: var(--bad); background: var(--bad-bg); }
+.problem-group li { display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: 10px; align-items: baseline; margin: 0; padding: 5px 0; }
+.problem-group li > .issue .icon { position: relative; top: 2px; }
+.count-weak { color: var(--bad); font-weight: 600; }
+.count-resist { color: var(--good); font-weight: 600; }
 .problem-group li.bad > span:last-child { color: var(--text); }
 .problem-group small, .mon-rows small { color: var(--faint); margin-top: 2px; }
 .problem-group small b, .mon-rows small b { color: var(--muted); font-weight: 600; }
@@ -461,7 +474,6 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 3px; background: var(--raised); color: var(--text); }
 .filters > summary { font-weight: 600; }
 .filters h4, .filters .control-label { font: 600 12px/1 var(--ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--faint); margin: 0 0 8px; }
-.filters h4 small { display: inline; margin-left: 6px; font-size: 11px; text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--faint); }
 .filters[open] > summary { margin-bottom: 14px; }
 
 /* Tre griglie di tipi affiancate */

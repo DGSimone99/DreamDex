@@ -7,6 +7,7 @@ const paths = {
   plus: 'M12 5v14M5 12h14',
   arrow: 'M5 12h14m0 0-5-5m5 5-5 5',
   check: 'M5 12.5l4.5 4.5L19 7.5',
+  warning: 'M12 3.5 22 20H2zM12 10v4.5M12 17.2v.3',
   search: 'M10.5 4a6.5 6.5 0 1 0 0 13 6.5 6.5 0 1 0 0-13zM15.5 15.5 20 20',
   // Categorie delle mosse (come su Showdown) e precisione
   physical: 'M12 2.5l2.3 5.2 5.4-1.6-2.6 5 4.4 3.3-5.6.6.3 5.6L12 17.3l-4.2 3.3.3-5.6-5.6-.6 4.4-3.3-2.6-5 5.4 1.6z',

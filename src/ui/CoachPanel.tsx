@@ -1,8 +1,22 @@
 import { Icon } from './icons';
+import { IssueCounts, PROBLEM_LABELS } from './IssueCounts';
 import type { TeamSet } from '../engine/sets';
 import { ProsCons } from './ProsCons';
 import { describeSwap, previewSwap, PROBLEM_CATEGORIES, type Coaching, type SwapLevel, type SwapPreview } from '../engine/coach';
 import { Typed } from './TypeText';
+
+// "3 Deboli" in rosso e "0 Resistono" in verde, il resto con i tipi colorati
+const COUNT = /(\d+ (?:Debole|Deboli|Resiste|Resistono))/;
+
+function ProblemText({ text }: { text: string }) {
+  return (
+    <>
+      {text.split(COUNT).map((part, i) => (i % 2 === 1
+        ? <span key={i} className={/Resist/.test(part) ? 'count-resist' : 'count-weak'}>{part}</span>
+        : <Typed key={i} text={part} />))}
+    </>
+  );
+}
 
 const SWAP_GROUPS: { level: SwapLevel; title: string }[] = [
   { level: 'recommended', title: 'Valuta di sostituire' },
@@ -20,7 +34,14 @@ export function CoachPanel({ coaching, preview = null, onReplace, onSwap }: {
   const { verdict, strengths, problems, swaps } = coaching;
   return (
     <details className="block coach" open>
-      <summary><span>Coaching</span><span>{verdict}</span></summary>
+      <summary>
+        <span>Coaching</span>
+        <span className="summary-info">
+          {verdict}
+          <IssueCounts serious={problems.filter(p => p.severity === 'serious').length}
+            minor={problems.filter(p => p.severity === 'minor').length} labels={PROBLEM_LABELS} />
+        </span>
+      </summary>
       {strengths.length > 0 && (
         <>
           <h3>Punti di forza</h3>
@@ -39,14 +60,18 @@ export function CoachPanel({ coaching, preview = null, onReplace, onSwap }: {
               <details key={category} open aria-label={`Problemi: ${category}`} className="problem-group">
                 <summary>
                   <h4>{category} <span className="count">{group.length}</span></h4>
-                  {group.some(p => p.severity === 'serious') && <span className="serious-flag">Serio</span>}
+                  {group.some(p => p.severity === 'serious') && (
+                    <span className="issue serious" title="Contiene problemi seri"><Icon name="warning" /></span>
+                  )}
                 </summary>
                 <ul>
                   {group.map(p => (
                     <li key={p.text} className={p.severity === 'serious' ? 'bad' : ''}>
-                      <span className="severity">{p.severity === 'serious' ? 'Serio' : 'Minore'}</span>
+                      <span className={`issue ${p.severity}`} title={p.severity === 'serious' ? 'Serio' : 'Minore'}>
+                        <Icon name="warning" /><span className="visually-hidden">{p.severity === 'serious' ? 'Serio: ' : 'Minore: '}</span>
+                      </span>
                       <span>
-                        <Typed text={p.text} />
+                        <ProblemText text={p.text} />
                         {p.fixes.length > 0 && <small>Considera <b>{p.fixes.join(' o ')}</b></small>}
                       </span>
                     </li>
