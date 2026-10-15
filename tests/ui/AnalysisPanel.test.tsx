@@ -14,7 +14,7 @@ describe('AnalysisPanel', () => {
     expect(within(panel).getByText('4 problemi')).toBeInTheDocument();
     expect(within(panel).getByText('15/18 tipi')).toBeInTheDocument();
     expect(within(panel).getByText('Minacce del meta')).toBeInTheDocument();
-    expect(within(panel).getByText('Gestite 42/100 · 2/6 · mancano Dragapult, Corviknight +2')).toBeInTheDocument();
+    expect(within(panel).getByText('Mancano 4')).toBeInTheDocument();
   });
 
   it('dettaglio debolezze: riga per tipo con moltiplicatori', () => {
