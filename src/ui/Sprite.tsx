@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import { useState } from 'react';
 import { battleSpecies, getSpecies, toID } from '../engine/dex';
 import type { TypeName } from '../engine/types';
@@ -25,7 +26,8 @@ export function TypeChip({ type }: { type: string }) {
   const color = typeColor(type);
   const label = typeName(type, lang);
   // Nomi lunghi ("Coleottero"): testo ridotto, così il chip resta della stessa larghezza degli altri
-  return <span className={`type-chip${label.length > 8 ? ' long' : ''}`} style={{ background: color, color: inkFor(color) }}>{label}</span>;
+  // Colore in una variabile: nelle card del team lo sfondo è un parallelogramma disegnato a parte
+  return <span className={`type-chip${label.length > 8 ? ' long' : ''}`} style={{ '--chip': color, color: inkFor(color) } as CSSProperties}>{label}</span>;
 }
 
 /** Id degli sprite di Showdown: "landorus-therian", "charizard-megay". */

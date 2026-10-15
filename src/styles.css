@@ -213,8 +213,25 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 .slot .favorite[aria-pressed='true'] { color: var(--gold); background: none; }
 .slot .favorite:hover { color: var(--gold); }
 .slot .remove { right: 10px; }
-/* Badge Stats nell'angolo in alto a sinistra, simmetrico a stella e × */
-.slot .slot-stats { position: absolute; top: 9px; left: 18px; z-index: 2; }
+/* Righe della card lungo la diagonale: --dx lo calcola useSlant (sprite, stella e × restano fermi) */
+.slot > summary > * { translate: var(--dx, 0px) 0; }
+/* Badge Stats su una riga sua sopra il nome: spazio riservato, non va mai sopra lo sprite */
+.slot .slot-stats { position: relative; z-index: 2; display: flex; margin: 2px 0 3px; }
+.slot .stats-badge { font-size: 10px; border-color: transparent; isolation: isolate; }
+/* Stats e chip dei tipi come piccole card: parallelogrammi con la stessa pendenza, testo dritto */
+.slot .stats-badge::before, .slot .types .type-chip::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  transform: skewX(var(--skew));
+  border-radius: 2px;
+}
+.slot .stats-badge::before { border: 1px solid var(--line); }
+.slot .stats-badge:hover::before, .slot .stats-badge:focus-visible::before { border-color: var(--blue); }
+.slot .stats-badge:hover, .slot .stats-badge:focus-visible { border-color: transparent; }
+.slot .types .type-chip { position: relative; isolation: isolate; background: none; }
+.slot .types .type-chip::before { background: var(--chip); }
 /* La card col tooltip aperto passa sopra alle vicine */
 .slot > summary:has(.stats-badge:hover, .stats-badge:focus-visible) { z-index: 5; }
 .slot .remove:hover { color: var(--bad); }
@@ -635,7 +652,7 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .tag.warn { display: inline-flex; align-items: center; gap: 4px; background: var(--warn-bg); color: var(--warn); }
 .tag.warn .icon { width: 13px; height: 13px; }
 /* Tutti i chip della stessa larghezza: in liste e tabelle si allineano in colonna */
-.type-chip { display: inline-block; flex: none; width: 66px; text-align: center; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; padding: 1px 0; border-radius: 2px; line-height: 1.5; }
+.type-chip { display: inline-block; flex: none; width: 66px; background: var(--chip); text-align: center; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; padding: 1px 0; border-radius: 2px; line-height: 1.5; }
 .type-chip.long { font-size: 9px; letter-spacing: 0; }
 
 .actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
@@ -853,7 +870,7 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 }
 .alert-mark.on-sprite .icon { width: 15px; height: 15px; }
 /* Custom Skillset: etichetta del membro, a sinistra sopra l'inizio del nome */
-.alert-mark.slot-custom { position: absolute; left: 16px; top: 86px; padding: 2px; }
+.alert-mark.slot-custom { position: absolute; left: 14px; top: 8px; padding: 2px; }
 .alert-mark.slot-custom .icon { width: 16px; height: 16px; }
 .alert-pop {
   position: absolute;
