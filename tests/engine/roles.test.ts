@@ -20,7 +20,7 @@ describe('roles', () => {
   });
 
   it('Gholdengo: setup e wallbreaker', () => {
-    expect(detectRoles(gholdengo)).toEqual(['setup', 'wallbreaker']);
+    expect(detectRoles(gholdengo)).toEqual(['setup', 'wallbreaker', 'specialSweeper']);
   });
 
   it('Kingambit: priorità', () => {
@@ -47,9 +47,23 @@ describe('roles', () => {
 
   it('bisogni del team', () => {
     expect(teamNeeds([tusk, gholdengo])).toEqual({
-      missingRoles: ['hazards', 'pivot', 'priority', 'speed', 'specialWall'],
+      missingRoles: ['hazards', 'pivot', 'priority', 'speed', 'physicalSweeper', 'specialWall'],
       needStyle: null,
     });
     expect(teamNeeds([tusk, kingambit]).needStyle).toBe('special');
+  });
+});
+
+describe('sweeper', () => {
+  it('fisici e speciali', () => {
+    expect(detectRoles(kingambit)).toContain('physicalSweeper');
+    expect(detectRoles(set('Dragapult', ['Dragon Darts', 'U-turn']))).toContain('physicalSweeper');
+    expect(detectRoles(gholdengo)).toContain('specialSweeper');
+    expect(detectRoles(tusk)).not.toContain('physicalSweeper');
+    expect(detectRoles(corviknight).some(r => r.endsWith('Sweeper'))).toBe(false);
+  });
+
+  it('un attaccante lento senza setup non è sweeper', () => {
+    expect(detectRoles(set('Kingambit', ['Kowtow Cleave', 'Sucker Punch']))).not.toContain('physicalSweeper');
   });
 });
