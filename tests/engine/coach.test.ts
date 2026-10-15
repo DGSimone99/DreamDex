@@ -58,6 +58,13 @@ describe('coachTeam', () => {
     expect(coachTeam(junkTeam, DEFAULT_FORMAT, fixtureData).swaps).toHaveLength(2);
   });
 
+  it('i preferiti non ricevono mai suggerimenti di sostituzione', () => {
+    const team = [tusk, gholdengo, { ...junk('Magikarp'), favorite: true }];
+    expect(coachTeam(team, DEFAULT_FORMAT, fixtureData).swaps.some(s => s.member === 'Magikarp')).toBe(false);
+    const allFavorite = [tusk, gholdengo, junk('Magikarp')].map(s => ({ ...s, favorite: true }));
+    expect(coachTeam(allFavorite, DEFAULT_FORMAT, fixtureData).swaps).toEqual([]);
+  });
+
   it('testo della sostituzione', () => {
     const swap = { index: 2, member: 'Magikarp', fit: 20, replacement: 'Corviknight', score: 60, similar: false, level: 'recommended' as const, diff: { gains: ['+ Pivot'], losses: [] } };
     expect(describeSwap(swap)).toBe('Valuta di sostituire Magikarp · Corviknight si adatta meglio (+40): porta Pivot');
