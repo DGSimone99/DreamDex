@@ -5,6 +5,7 @@ import type { Format } from '../engine/format';
 import { detectRoles, ROLE_LABELS } from '../engine/roles';
 import type { TeamSet } from '../engine/sets';
 import { SetEditor } from './SetEditor';
+import { illegalParts } from '../engine/learnsets';
 
 interface Props {
   team: TeamSet[];
@@ -28,7 +29,7 @@ function slotProblem(set: TeamSet, format: Format): string | null {
 
 const MEGA_WARNING = 'Seconda Mega: in National Dex ne è ammessa una sola';
 
-function TeamSlot({ set, format, warning, onIgnoreWarning, onChange, onRemove, onReplace }: {
+function TeamSlot({ set, format, warning: megaWarning, onIgnoreWarning, onChange, onRemove, onReplace }: {
   set: TeamSet;
   format: Format;
   warning: string | null;
@@ -40,8 +41,14 @@ function TeamSlot({ set, format, warning, onIgnoreWarning, onChange, onRemove, o
   const species = battleSpecies(set);
   const problem = slotProblem(set, format);
   const roles = detectRoles(set).slice(0, 2).map(role => ROLE_LABELS[role]);
+  const illegal = illegalParts(set, format.genLimit);
+  const warnings = [
+    megaWarning,
+    illegal.moves.length ? `Mosse non legali: ${illegal.moves.join(', ')}` : null,
+    illegal.ability ? `Abilità non legale: ${illegal.ability}` : null,
+  ].filter((w): w is string => !!w);
   return (
-    <details className={`slot filled${problem ? ' invalid' : warning ? ' warn' : ''}`}>
+    <details className={`slot filled${problem ? ' invalid' : warnings.length ? ' warn' : ''}`}>
       <summary>
         <button
           type="button"
@@ -56,13 +63,14 @@ function TeamSlot({ set, format, warning, onIgnoreWarning, onChange, onRemove, o
         <strong>{set.species}</strong>
         <small>{species?.types.join('/') ?? '?'}{roles.length ? ` · ${roles.join(', ')}` : ''}</small>
         {problem && <small className="problem">{problem}</small>}
-        {warning && <small className="warning">{warning}</small>}
+        {set.customSkillset && <small className="custom">Custom</small>}
+        {warnings.map(w => <small key={w} className="warning">{w}</small>)}
       </summary>
-      <SetEditor set={set} onChange={onChange} />
+      <SetEditor set={set} genLimit={format.genLimit} onChange={onChange} />
       <div className="actions">
         <button type="button" aria-label={`Sostituisci ${set.species}`} onClick={onReplace}>⇄ Sostituisci</button>
         <button type="button" aria-label={`Rimuovi ${set.species}`} onClick={onRemove}>✕ Rimuovi</button>
-        {warning && <button type="button" onClick={onIgnoreWarning}>Lo so, tengo un'altra Mega</button>}
+        {megaWarning && <button type="button" onClick={onIgnoreWarning}>Lo so, tengo un'altra Mega</button>}
       </div>
     </details>
   );

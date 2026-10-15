@@ -8,6 +8,8 @@ export interface SavedTeam {
   text: string;
   /** Posizioni dei membri preferiti (il formato Showdown non li prevede). */
   favorites?: number[];
+  /** Posizioni dei membri con Custom Skillset. */
+  custom?: number[];
   /** Formato in cui il team è stato salvato. */
   format?: Format;
 }

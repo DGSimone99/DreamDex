@@ -21,7 +21,8 @@ export function SavedTeams({ team, format, onLoad }: {
     const trimmed = name.trim();
     if (!trimmed || team.length === 0) return;
     const favorites = team.flatMap((set, i) => (set.favorite ? [i] : []));
-    update([...saved.filter(t => t.name !== trimmed), { name: trimmed, text: exportShowdown(team), favorites, format }]);
+    const custom = team.flatMap((set, i) => (set.customSkillset ? [i] : []));
+    update([...saved.filter(t => t.name !== trimmed), { name: trimmed, text: exportShowdown(team), favorites, custom, format }]);
     setName('');
   };
 
@@ -41,7 +42,11 @@ export function SavedTeams({ team, format, onLoad }: {
         <ul>
           {saved.map(t => (
             <li key={t.name} className="actions">
-              <button type="button" onClick={() => onLoad(importShowdown(t.text).sets.map((set, i) => (t.favorites?.includes(i) ? { ...set, favorite: true } : set)), t.format)}>{t.name}</button>
+              <button type="button" onClick={() => onLoad(importShowdown(t.text).sets.map((set, i) => ({
+                ...set,
+                ...(t.favorites?.includes(i) ? { favorite: true } : {}),
+                ...(t.custom?.includes(i) ? { customSkillset: true } : {}),
+              })), t.format)}>{t.name}</button>
               <button type="button" aria-label={`Elimina ${t.name}`} onClick={() => update(saved.filter(s => s.name !== t.name))}>✕</button>
             </li>
           ))}
