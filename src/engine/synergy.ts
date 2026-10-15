@@ -268,3 +268,56 @@ export function weatherMitigations(team: TeamSet[]): WeatherMitigation[] {
     return members.length ? { condition: e.condition, source: `${enabler.species} (${e.via})`, type: effect.type, members } : null;
   })).filter(isDefined);
 }
+
+const WEATHERS: Condition[] = ['sun', 'rain', 'sand', 'snow'];
+const TERRAINS: Condition[] = ['electricterrain', 'psychicterrain', 'grassyterrain', 'mistyterrain'];
+
+export interface ConditionConflict {
+  kind: 'meteo' | 'campi';
+  /** Chi porta le condizioni in conflitto, es. "Ninetales (Drought)". */
+  setters: string[];
+}
+
+/** Meteo (o campi) diversi nello stesso team si sovrascrivono a vicenda. */
+export function conditionConflicts(team: TeamSet[]): ConditionConflict[] {
+  const groups: [ConditionConflict['kind'], Condition[]][] = [['meteo', WEATHERS], ['campi', TERRAINS]];
+  return groups.flatMap(([kind, group]) => {
+    const setters = team.flatMap(member =>
+      enables(member)
+        .filter(e => group.includes(e.condition))
+        .map(e => ({ condition: e.condition, label: `${member.species} (${e.via})` })));
+    return new Set(setters.map(s => s.condition)).size > 1 ? [{ kind, setters: setters.map(s => s.label) }] : [];
+  });
+}
+
+/** Il sole dimezza le mosse Water, la pioggia le Fire (Hydro Steam fa eccezione). */
+const WEAKENED_TYPE: Partial<Record<Condition, TypeName>> = { sun: 'Water', rain: 'Fire' };
+
+export interface WeakenedMove {
+  condition: Condition;
+  setter: string;
+  member: string;
+  type: TypeName;
+  /** Vero se le mosse indebolite sono del tipo del membro (STAB). */
+  stab: boolean;
+}
+
+/** Membri le cui mosse sono indebolite dal meteo portato dal team stesso. */
+export function weakenedMoves(team: TeamSet[]): WeakenedMove[] {
+  const seen = new Set<Condition>();
+  const result: WeakenedMove[] = [];
+  for (const setter of team) {
+    for (const e of enables(setter)) {
+      const type = WEAKENED_TYPE[e.condition];
+      if (!type || seen.has(e.condition)) continue;
+      seen.add(e.condition);
+      for (const member of team) {
+        const hit = attackingMoves(member).some(m => m.type === type && toID(m.name) !== 'hydrosteam');
+        if (!hit) continue;
+        const stab = ((battleSpecies(member)?.types ?? []) as readonly string[]).includes(type);
+        result.push({ condition: e.condition, setter: setter.species, member: member.species, type, stab });
+      }
+    }
+  }
+  return result;
+}

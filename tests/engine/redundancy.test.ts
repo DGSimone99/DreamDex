@@ -69,6 +69,31 @@ describe('penalità e bonus del meteo', () => {
       .toContainEqual({ text: 'Drizzle di Pelipper non sfruttato', points: 2 });
   });
 
+  it('meteo in conflitto: −3', () => {
+    const team = [{ ...withMoves('Ninetales', ['Flamethrower']), ability: 'Drought' }, { ...withMoves('Pelipper', ['Hurricane']), ability: 'Drizzle' }];
+    expect(texts(team)).toContainEqual({ text: 'Meteo in conflitto: Ninetales (Drought), Pelipper (Drizzle)', points: 3 });
+  });
+
+  it('mosse indebolite dal meteo del team: −2 se STAB, −1 se coverage', () => {
+    const team = [
+      { ...withMoves('Ninetales', ['Flamethrower']), ability: 'Drought' },
+      withMoves('Kingdra', ['Hydro Pump']),
+      withMoves('Kyurem', ['Surf']),
+    ];
+    expect(texts(team)).toContainEqual({ text: 'Il sole di Ninetales indebolisce le mosse Water di Kingdra', points: 2 });
+    expect(texts(team)).toContainEqual({ text: 'Il sole di Ninetales indebolisce le mosse Water di Kyurem', points: 1 });
+  });
+
+  it('il coaching segnala conflitti e mosse indebolite', () => {
+    const team = [
+      { ...withMoves('Ninetales', ['Flamethrower']), ability: 'Drought' },
+      { ...withMoves('Pelipper', ['Hurricane']), ability: 'Drizzle' },
+    ];
+    const problems = coachTeam(team, DEFAULT_FORMAT, fixtureData).problems.map(p => p.text);
+    expect(problems).toContain('Meteo in conflitto: Ninetales (Drought), Pelipper (Drizzle)');
+    expect(problems).toContain('La pioggia di Pelipper indebolisce le mosse Fire di Ninetales');
+  });
+
   it('bonus: +2 per ogni membro riportato a neutro, massimo +6', () => {
     const team = [{ ...withMoves('Ninetales', ['Flamethrower']), ability: 'Drought' }, withMoves('Great Tusk', ['Headlong Rush'])];
     const rating = rateTeam(team, fixtureData)!;

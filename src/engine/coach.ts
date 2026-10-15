@@ -5,7 +5,7 @@ import type { Format } from './format';
 import { diffContribution, similarity, type Diff } from './replace';
 import { detectRoles, ESSENTIAL_ROLES, ROLE_LABELS } from './roles';
 import { scoreCandidates, type Suggestion } from './scoring';
-import { roleAndTypeRedundancies } from './rating';
+import { roleAndTypeRedundancies, weatherClashes } from './rating';
 import { benefits, CONDITION_LABELS, enables, teamSynergies, unmetBeneficiaries, unusedEnablers, weatherMitigations } from './synergy';
 import type { TeamSet } from './sets';
 import { defensiveMultiplier } from './types';
@@ -106,6 +106,7 @@ function findProblems(team: TeamSet[], format: Format, analysis: TeamAnalysis, c
   }
 
   for (const item of roleAndTypeRedundancies(team)) add(false, `Ridondanza: ${item.text}`, []);
+  for (const item of weatherClashes(team)) add(false, item.text, []);
 
   for (const issue of unusedEnablers(team)) {
     add(false, issue.selfBoost

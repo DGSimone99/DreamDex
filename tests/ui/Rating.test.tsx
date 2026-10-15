@@ -11,7 +11,7 @@ describe('Valutazione team', () => {
     for (const name of ['Great Tusk', 'Gholdengo']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
     const rating = screen.getByRole('group', { name: 'Valutazione team' });
     expect(rating).toHaveTextContent(/[SABCD] · \d+\/100 · \w+ \(provvisoria\)/);
-    expect(rating).toHaveTextContent('Forza: Great Tusk');
+    expect(rating).toHaveTextContent('Statistiche: Great Tusk');
     expect(rating).toHaveTextContent('Difesa 73');
     expect(rating).not.toHaveTextContent('Sinergia');
   });
@@ -53,7 +53,7 @@ describe('Valutazione team', () => {
     const user = userEvent.setup();
     render(<App data={{ stats: null, sets: null }} />);
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Great Tusk{Enter}');
-    expect(screen.getByRole('group', { name: 'Valutazione team' })).not.toHaveTextContent('Forza n/d');
+    expect(screen.getByRole('group', { name: 'Valutazione team' })).not.toHaveTextContent('Statistiche n/d');
     expect(screen.getByRole('group', { name: 'Meta Use' })).toHaveTextContent('Statistiche Smogon assenti');
   });
 

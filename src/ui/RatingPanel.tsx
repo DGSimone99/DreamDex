@@ -18,7 +18,7 @@ export function RatingPanel({ rating }: { rating: TeamRating }) {
       </dl>
       {rating.power.length > 0 && (
         <p className="note">
-          Forza:{' '}
+          Statistiche:{' '}
           {rating.power.map((m, i) => (
             <span key={`${i}-${m.species}`} title={`Offesa ${m.offense} · Robustezza ${m.bulk}`}>
               {i > 0 ? ' · ' : ''}{m.species} {m.power}
