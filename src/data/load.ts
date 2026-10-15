@@ -2,29 +2,33 @@ import type { EngineData } from '../engine/data';
 import type { SetsData } from '../engine/sets';
 import type { SpeciesStats, StatsData, StatsMeta } from '../engine/stats';
 
-const files = import.meta.glob<unknown>('/data/gen9nationaldex/*.json', { import: 'default' });
+type Loaders = Record<string, () => Promise<unknown>>;
 
-async function read<T>(name: string): Promise<T | null> {
-  const loader = files[`/data/gen9nationaldex/${name}.json`];
-  return loader ? ((await loader()) as T) : null;
-}
+const files: Loaders = import.meta.glob<unknown>('/data/*/*.json', { import: 'default' });
 
-export async function loadData(): Promise<EngineData> {
-  const [pokemon, meta, sets] = await Promise.all([
-    read<Record<string, SpeciesStats>>('stats'),
-    read<StatsMeta>('meta'),
-    read<SetsData>('sets'),
-  ]);
-  const stats: StatsData | null = pokemon && meta ? { meta, pokemon } : null;
-  return { stats, sets };
-}
+const EMPTY: EngineData = { stats: null, sets: null };
 
-/** Come loadData, ma un file corrotto non lascia la pagina vuota: si parte senza statistiche. */
-export async function loadDataOrEmpty(load: () => Promise<EngineData> = loadData): Promise<EngineData> {
+/** Legge i dati di una fonte (`data/<fonte>/`). Fonte assente o file corrotto: statistiche nulle. */
+export async function readSource(loaders: Loaders, source: string): Promise<EngineData> {
+  const read = async <T,>(name: string): Promise<T | null> => {
+    const loader = loaders[`/data/${source}/${name}.json`];
+    return loader ? ((await loader()) as T) : null;
+  };
   try {
-    return await load();
+    const [pokemon, meta, sets] = await Promise.all([
+      read<Record<string, SpeciesStats>>('stats'),
+      read<StatsMeta>('meta'),
+      read<SetsData>('sets'),
+    ]);
+    const stats: StatsData | null = pokemon && meta ? { meta, pokemon } : null;
+    return stats || sets ? { stats, sets } : EMPTY;
   } catch (error) {
-    console.error('Dati Smogon non leggibili, rilancia npm run fetch-data:', error);
-    return { stats: null, sets: null };
+    console.error(`Dati Smogon di ${source} non leggibili, rilancia npm run fetch-data:`, error);
+    return EMPTY;
   }
 }
+
+export const loadSource = (source: string): Promise<EngineData> => readSource(files, source);
+
+/** Fonte iniziale (National Dex OU). */
+export const loadDataOrEmpty = (): Promise<EngineData> => loadSource('gen9nationaldex');

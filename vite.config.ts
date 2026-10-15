@@ -9,5 +9,7 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./tests/setup.ts'],
+    // I test UI digitano lettera per lettera in jsdom: sotto carico parallelo superano i 5 s di default
+    testTimeout: 15000,
   },
 });
