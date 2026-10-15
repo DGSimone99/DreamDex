@@ -102,3 +102,4 @@ small { color: var(--muted); display: block; }
 .filters .chips button:disabled { opacity: 0.4; cursor: not-allowed; }
 .tag.tier { background: var(--bg); color: var(--muted); border: 1px solid var(--line); }
 .tag.banned { background: var(--bad); color: var(--bad-text); }
+.banner.info { background: var(--good); color: var(--good-text); }
