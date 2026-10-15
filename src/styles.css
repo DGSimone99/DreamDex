@@ -249,6 +249,50 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 .set-editor legend { font: 700 14px var(--display); text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); padding: 0 6px; }
 .editor-group { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 14px; }
 .set-editor .evs { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; }
+/* Spread pronti: un clic imposta natura ed EV; stesso linguaggio dorato dei "Più usati" */
+.spread-panel { grid-column: 1 / -1; }
+.spread-panel > summary {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 2px 0;
+  font: 600 12px/1.2 var(--display);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+.spread-panel > summary::after {
+  content: '';
+  align-self: center;
+  width: 6px;
+  height: 6px;
+  border: solid var(--gold);
+  border-width: 0 1.5px 1.5px 0;
+  transform: translateY(-2px) rotate(45deg);
+  transition: transform 0.2s var(--ease);
+}
+.spread-panel[open] > summary::after { transform: translateY(1px) rotate(225deg); }
+.spread-panel > summary:hover { color: var(--text); }
+.spread-presets { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.spread-presets button {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 10px;
+  font: 400 13px/1.2 var(--ui);
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--muted);
+  background: linear-gradient(90deg, rgba(255, 184, 0, 0.12), rgba(255, 184, 0, 0.02));
+  border: 1px solid rgba(255, 184, 0, 0.28);
+  border-left: 2px solid var(--gold);
+  border-radius: 0 3px 3px 0;
+  transform: none;
+}
+.spread-presets button:hover { background: linear-gradient(90deg, rgba(255, 184, 0, 0.22), var(--raised)); color: var(--text); }
+.spread-presets button strong { font-weight: 600; color: var(--text); }
+.spread-presets button .common-share { font: 600 13px/1 var(--display); font-variant-numeric: tabular-nums; color: var(--gold); }
+.spread-presets button[aria-pressed='true'] { background: var(--blue-soft); border-color: var(--blue); border-left-color: var(--gold); color: var(--text); }
 .field { position: relative; }
 .field-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 18px; }
 .move-meta { display: inline-flex; align-items: center; gap: 10px; text-transform: none; letter-spacing: 0; font-weight: 600; color: var(--muted); font-size: 12px; }
@@ -679,6 +723,35 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 }
 .combobox [role='option'].active small { color: var(--muted); }
 .combobox .empty { margin: 0; padding: 8px; font-size: 13px; font-weight: 400; color: var(--faint); }
+/* Più usati: in cima alla tendina, filo e alone dorato, quota d'uso a destra */
+.combobox .group-head {
+  margin: 0;
+  padding: 8px 10px 4px;
+  font: 600 11px/1 var(--display);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.combobox .group-head.common-head { color: var(--gold); padding-top: 6px; }
+.combobox .group-head:not(.common-head) { margin-top: 4px; border-top: 1px solid var(--line); padding-top: 10px; }
+.combobox [role='option'].common {
+  background: linear-gradient(90deg, rgba(255, 184, 0, 0.13), rgba(255, 184, 0, 0.02) 70%);
+  box-shadow: inset 2px 0 0 var(--gold);
+  border-bottom-color: rgba(255, 184, 0, 0.12);
+  border-radius: 0 3px 3px 0;
+}
+.combobox [role='option'].common.active { background: linear-gradient(90deg, rgba(255, 184, 0, 0.22), var(--raised) 70%); }
+.combobox [role='option'].common[aria-selected='true'] { background: linear-gradient(90deg, rgba(255, 184, 0, 0.22), var(--blue-soft) 70%); }
+.combobox .common-share {
+  margin-left: auto;
+  flex: none;
+  min-width: 34px;
+  text-align: right;
+  font: 600 13px/1 var(--display);
+  font-variant-numeric: tabular-nums;
+  color: var(--gold);
+}
+.combobox .option-detail + .common-share { margin-left: 0; }
 .field:has(.combobox.open)::after { display: none; }
 .type-name, .move-name { font-weight: 600; }
 
