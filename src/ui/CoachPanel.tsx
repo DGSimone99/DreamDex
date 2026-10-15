@@ -1,4 +1,5 @@
 import { Icon } from './icons';
+import { PokemonList, PokemonName } from './PokemonName';
 import { IssueCounts, PROBLEM_LABELS } from './IssueCounts';
 import type { TeamSet } from '../engine/sets';
 import { ProsCons } from './ProsCons';
@@ -72,7 +73,7 @@ export function CoachPanel({ coaching, preview = null, onReplace, onSwap }: {
                       </span>
                       <span>
                         <ProblemText text={p.text} />
-                        {p.fixes.length > 0 && <small>Considera <b>{p.fixes.join(' o ')}</b></small>}
+                        {p.fixes.length > 0 && <small className="fixes">Considera <PokemonList names={p.fixes} separator=" o " /></small>}
                       </span>
                     </li>
                   ))}
@@ -96,10 +97,10 @@ export function CoachPanel({ coaching, preview = null, onReplace, onSwap }: {
                 return (
                   <li key={swap.index} className={`swap${picked ? ' picked' : ''}`} title={`Adattamento al team: ${swap.member} ${swap.fit} · ${swap.replacement} ${swap.score}`}>
                     <p className="swap-head">
-                      <span>{swap.member}</span>
+                      <PokemonName name={swap.member} muted icon />
                       <Icon name="arrow" />
                       <span className="visually-hidden">con</span>
-                      <strong>{swap.replacement}</strong>
+                      <PokemonName name={swap.replacement} icon />
                       {gain >= 0
                         ? <span className="gain" aria-label={`si adatta meglio di ${gain} punti`}>+{gain}</span>
                         : <span className="gain worse" aria-label={`si adatta peggio di ${-gain} punti`}>−{-gain}</span>}

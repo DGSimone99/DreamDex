@@ -1,7 +1,8 @@
-import { Fragment } from 'react';
-import { getMove } from '../engine/dex';
+import { Fragment, type ReactNode } from 'react';
+import { getMove, speciesNames } from '../engine/dex';
 import { TYPES, type TypeName } from '../engine/types';
 import { TYPE_COLORS } from './Sprite';
+import { TypeDot } from './PokemonName';
 
 const PANEL = '#0f1735';
 
@@ -38,18 +39,25 @@ export function MoveName({ move }: { move: string }) {
   return <span className="move-name" style={type ? { color: typeTextColor(type) } : undefined}>{move}</span>;
 }
 
-// Un tipo come parola a sé: "Debole a Ground" sì, "Calyrex-Ice" o "Rotom-Fire" no
-const TYPE_WORD = new RegExp(`(?<![\\w-])(${TYPES.join('|')})(?![\\w-])`, 'g');
+const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+// Nomi dei Pokémon (i più lunghi prima: "Charizard-Mega-Y" prima di "Charizard") e tipi, come parole a sé:
+// "Debole a Ground" sì, "Calyrex-Ice" o "Rotom-Fire" non sono tipi
+const SPECIES = speciesNames().sort((a, b) => b.length - a.length).map(escape);
+const NAMED = new RegExp(`(?<![\\w-])(?:(${SPECIES.join('|')})|(${TYPES.join('|')}))(?![\\w-])`, 'g');
 
-/** Testo libero con i nomi dei tipi colorati. */
+/** Testo libero con i nomi dei tipi colorati e quelli dei Pokémon in grassetto. */
 export function Typed({ text }: { text: string }) {
-  const parts = text.split(TYPE_WORD);
-  if (parts.length === 1) return <>{text}</>;
-  return (
-    <>
-      {parts.map((part, i) => (i % 2 === 1
-        ? <TypeLabel key={i} type={part} />
-        : <Fragment key={i}>{part}</Fragment>))}
-    </>
-  );
+  const parts: ReactNode[] = [];
+  let last = 0;
+  for (const match of text.matchAll(NAMED)) {
+    const index = match.index ?? 0;
+    if (index > last) parts.push(text.slice(last, index));
+    parts.push(match[1]
+      ? <span key={index} className="mon-ref"><TypeDot name={match[1]} /><strong>{match[1]}</strong></span>
+      : <TypeLabel key={index} type={match[2]} />);
+    last = index + match[0].length;
+  }
+  if (parts.length === 0) return <>{text}</>;
+  if (last < text.length) parts.push(text.slice(last));
+  return <>{parts.map((part, i) => <Fragment key={i}>{part}</Fragment>)}</>;
 }

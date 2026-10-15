@@ -10,7 +10,7 @@ describe('anteprima del sostituto nel coaching', () => {
     render(<App data={fixtureData} />);
     for (const name of ['Great Tusk', 'Gholdengo', 'Magikarp']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
     const card = () => screen.getByRole('button', { name: 'Altri sostituti per Magikarp' }).closest('li')!;
-    const proposed = within(card()).getByText((_, el) => el?.tagName === 'STRONG').textContent;
+    const proposed = card().querySelector('.swap-head .mon-name:not(.muted) strong')!.textContent;
 
     await user.click(screen.getByRole('button', { name: 'Altri sostituti per Magikarp' }));
     const rows = within(screen.getByRole('region', { name: 'Suggerimenti' })).getAllByRole('listitem');
@@ -33,7 +33,7 @@ describe('anteprima del sostituto nel coaching', () => {
     render(<App data={fixtureData} />);
     for (const name of ['Great Tusk', 'Gholdengo', 'Magikarp']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
     const card = screen.getByRole('button', { name: 'Altri sostituti per Magikarp' }).closest('li')!;
-    const proposed = card.querySelector('.swap-head strong')!.textContent!;
+    const proposed = card.querySelector('.swap-head .mon-name:not(.muted) strong')!.textContent!;
 
     await user.click(within(card).getByRole('button', { name: `Sostituisci Magikarp con ${proposed}` }));
 
@@ -47,7 +47,7 @@ describe('anteprima del sostituto nel coaching', () => {
     render(<App data={fixtureData} />);
     for (const name of ['Great Tusk', 'Gholdengo', 'Magikarp']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
     const card = () => screen.getByRole('button', { name: 'Altri sostituti per Magikarp' }).closest('li')!;
-    const proposed = card().querySelector('.swap-head strong')!.textContent!;
+    const proposed = card().querySelector('.swap-head .mon-name:not(.muted) strong')!.textContent!;
     await user.click(screen.getByRole('button', { name: 'Altri sostituti per Magikarp' }));
     const rows = within(screen.getByRole('region', { name: 'Suggerimenti' })).getAllByRole('listitem');
     const name = (row: HTMLElement) => row.querySelector('.who strong')?.textContent?.replace(/^\d+\. /, '');

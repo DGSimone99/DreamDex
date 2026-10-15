@@ -7,6 +7,7 @@ import { presetsFor, type Preset, type TeamSet } from '../engine/sets';
 import { useState } from 'react';
 import { SetEditor } from './SetEditor';
 import { StatsBadge } from './StatsBadge';
+import { ItemIcon } from './ItemIcon';
 import { AlertMark, type Alert } from './AlertMark';
 import { Sprite, TypeChip, typeColor } from './Sprite';
 import { Icon } from './icons';
@@ -22,14 +23,16 @@ interface Props {
   onAllowMultipleMegas: () => void;
 }
 
-function slotProblem(set: TeamSet, format: Format): string | null {
+/** Tutti i problemi di legalità del membro (possono essere più d'uno). */
+function slotProblems(set: TeamSet, format: Format): string[] {
   const species = getSpecies(set.species);
-  if (!species) return 'Pokémon sconosciuto';
+  if (!species) return ['Pokémon sconosciuto'];
   const forme = battleSpecies(set) ?? species;
-  if (!isSelectable(species) || isBannedIn(forme, format)) return `Non legale in ${formatLabel(format)}`;
-  if (!meetsTeamRules(forme, format)) return `Non è di tipo ${format.monotype}`;
-  if (!withinGen(species, format)) return `Oltre la Gen ${format.genLimit}`;
-  return null;
+  return [
+    !isSelectable(species) || isBannedIn(forme, format) ? `Non legale in ${formatLabel(format)}` : null,
+    !meetsTeamRules(forme, format) ? `Non è di tipo ${format.monotype}` : null,
+    !withinGen(species, format) ? `Oltre la Gen ${format.genLimit}` : null,
+  ].filter((p): p is string => !!p);
 }
 
 const MEGA_WARNING = 'Seconda Mega: in National Dex ne è ammessa una sola';
@@ -47,7 +50,7 @@ function TeamSlot({ set, presets, format, warning: megaWarning, open, onToggle, 
   onReplace: () => void;
 }) {
   const species = battleSpecies(set);
-  const problem = slotProblem(set, format);
+  const problems = slotProblems(set, format);
   const roles = detectRoles(set).slice(0, 2).map(role => ROLE_LABELS[role]);
   const illegal = illegalParts(set, format.genLimit);
   const warnings = [
@@ -55,14 +58,12 @@ function TeamSlot({ set, presets, format, warning: megaWarning, open, onToggle, 
     illegal.moves.length ? `Mosse non legali: ${illegal.moves.join(', ')}` : null,
     illegal.ability ? `Abilità non legale: ${illegal.ability}` : null,
   ].filter((w): w is string => !!w);
-  // Problemi di legalità in rosso, avvisi in giallo: un triangolo sullo sprite, il dettaglio nel tooltip
-  const alerts: Alert[] = [
-    ...(problem ? [{ level: 'danger' as const, text: problem }] : []),
-    ...warnings.map(text => ({ level: 'warn' as const, text })),
-  ];
+  // Problemi di legalità in rosso, avvisi in giallo: due triangoli distinti sullo sprite, il dettaglio nei tooltip
+  const dangers: Alert[] = problems.map(text => ({ level: 'danger', text }));
+  const warns: Alert[] = warnings.map(text => ({ level: 'warn', text }));
   return (
     <details
-      className={`slot filled${problem ? ' invalid' : warnings.length ? ' warn' : ''}`}
+      className={`slot filled${problems.length ? ' invalid' : warnings.length ? ' warn' : ''}`}
       open={open}
       style={{ '--t1': typeColor(species?.types[0] ?? ''), '--t2': typeColor(species?.types[1] ?? species?.types[0] ?? '') } as React.CSSProperties}
       onToggle={e => onToggle(e.currentTarget.open)}
@@ -70,8 +71,18 @@ function TeamSlot({ set, presets, format, warning: megaWarning, open, onToggle, 
       <summary>
         <span className="sprite-wrap">
           <Sprite species={set.species} item={set.item} />
-          <AlertMark alerts={alerts} className="on-sprite" />
+          {(dangers.length > 0 || warns.length > 0) && (
+            <span className="sprite-alerts">
+              <AlertMark alerts={warns} className="on-sprite" />
+              <AlertMark alerts={dangers} className="on-sprite" />
+            </span>
+          )}
         </span>
+        {set.customSkillset && (
+          // Non è un problema: sta allineato al nome, fuori dal cerchietto degli avvisi
+          <AlertMark icon="unlock" className="slot-custom"
+            alerts={[{ level: 'info', text: 'Custom Skillset: qualunque mossa e abilità, anche non imparabili' }]} />
+        )}
         <span className="slot-stats"><StatsBadge species={set.species} item={set.item} /></span>
         <button
           type="button"
@@ -93,10 +104,14 @@ function TeamSlot({ set, presets, format, warning: megaWarning, open, onToggle, 
           <Icon name="close" />
         </button>
         <strong className="name">{set.species}</strong>
-        <small className="held">{[set.item, set.ability].filter(Boolean).join(' · ') || 'Nessuno strumento'}</small>
+        {/* Strumento (con icona) e abilità su due righe: le card restano allineate */}
+        <small className="held" title={set.item || undefined}>
+          <ItemIcon item={set.item} />
+          <span>{set.item || 'Nessuno strumento'}</span>
+        </small>
+        <small className="ability" title={set.ability || undefined}>{set.ability || '—'}</small>
         <span className="types">{species?.types.map(type => <TypeChip key={type} type={type} />) ?? <TypeChip type="?" />}</span>
         {roles.length > 0 && <small className="roles">{roles.join(' · ')}</small>}
-        {set.customSkillset && <small className="custom">Custom</small>}
       </summary>
       <div className="drawer">
       <SetEditor set={set} presets={presets} genLimit={format.genLimit} onChange={onChange} />

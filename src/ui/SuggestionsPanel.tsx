@@ -17,6 +17,7 @@ import { Sprite, TypeChip } from './Sprite';
 import { Icon } from './icons';
 import { ProsCons } from './ProsCons';
 import { StatsBadge } from './StatsBadge';
+import { PokemonName } from './PokemonName';
 import { AlertMark } from './AlertMark';
 import { Typed } from './TypeText';
 
@@ -119,10 +120,10 @@ function SuggestionItem({ rank, item, actionLabel, quickLabel, replacing, member
         )}
         {changes && member && (
           <p className="swap-head replaces">
-            <span>{member}</span>
+            <PokemonName name={member} muted />
             <Icon name="arrow" />
             <span className="visually-hidden">con</span>
-            <strong>{item.species}</strong>
+            <PokemonName name={item.species} />
           </p>
         )}
         {changes && <ProsCons pros={changes.pros} cons={changes.cons} />}

@@ -15,6 +15,8 @@ export interface ComboOption {
   description?: string;
   /** Colore del nome (per le mosse: quello del tipo). */
   color?: string;
+  /** Icona prima del nome (es. lo strumento). */
+  icon?: ReactNode;
 }
 
 /** Oltre questo numero di voci la lista chiede di affinare la ricerca (tutte le mosse ci stanno). */
@@ -32,10 +34,12 @@ interface Props {
   display?: ReactNode;
   placeholder?: string;
   disabled?: boolean;
+  /** Elemento dentro il campo, a sinistra del testo (es. l'icona dello strumento scelto). */
+  leading?: ReactNode;
 }
 
 /** Campo con menu a tendina: cerca mentre scrivi, frecce e Invio per scegliere, ogni voce con la sua descrizione. */
-export function Combobox({ label, value, options, onChange, restricted = false, description, display, placeholder, disabled }: Props) {
+export function Combobox({ label, value, options, onChange, restricted = false, description, display, placeholder, disabled, leading }: Props) {
   const listId = useId();
   const [open, setOpen] = useState(false);
   // null: mostra tutto (appena aperto); stringa: filtra su quello che hai scritto
@@ -86,7 +90,8 @@ export function Combobox({ label, value, options, onChange, restricted = false, 
   };
 
   return (
-    <div className={`combobox${open ? ' open' : ''}${restricted && display ? ' has-display' : ''}`}>
+    <div className={`combobox${open ? ' open' : ''}${restricted && display ? ' has-display' : ''}${leading ? ' has-leading' : ''}`}>
+      {leading && <span className="combobox-leading" aria-hidden="true">{leading}</span>}
       {restricted && display && <span className="combobox-display" aria-hidden="true">{display}</span>}
       <input
         role="combobox"
@@ -130,6 +135,7 @@ export function Combobox({ label, value, options, onChange, restricted = false, 
               onMouseEnter={() => setActive(i)}
             >
               <span className="option-head">
+                {option.icon}
                 {option.content ?? <strong style={option.color ? { color: option.color } : undefined}>{option.label ?? option.value}</strong>}
                 {option.detail && <span className="option-detail">{option.detail}</span>}
               </span>

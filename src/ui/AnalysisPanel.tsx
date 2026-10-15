@@ -6,6 +6,7 @@ import { DESIRABLE_ROLES, detectRoles, ESSENTIAL_ROLES, ROLE_LABELS } from '../e
 import { weatherMitigations, type WeatherMitigation } from '../engine/synergy';
 import type { TeamSet } from '../engine/sets';
 import { CoachPanel } from './CoachPanel';
+import { PokemonList } from './PokemonName';
 import { IssueCounts, WEAKNESS_LABELS } from './IssueCounts';
 import { Icon } from './icons';
 import { weaknessSeverity, type SwapPreview } from '../engine/coach';
@@ -168,8 +169,8 @@ export function AnalysisPanel({ team, analysis, rating, coaching, preview, onRep
                 <span className="status">
                   <Icon name={t.handledBy.length ? 'check' : 'close'} />
                   <span>
-                    {t.handledBy.length ? `Gestito da ${t.handledBy.join(', ')}` : 'Nessun check'}
-                    {fixes.length > 0 && <small>Considera <b>{fixes.join(' o ')}</b></small>}
+                    {t.handledBy.length ? <span className="handled">Gestito da <PokemonList names={t.handledBy} /></span> : 'Nessun check'}
+                    {fixes.length > 0 && <small className="fixes">Considera <PokemonList names={fixes} separator=" o " /></small>}
                   </span>
                 </span>
               </li>

@@ -71,7 +71,7 @@ describe('dati per formato', () => {
 describe('pannello Avanzate', () => {
   const team = () => screen.getByRole('region', { name: 'Team' });
   const suggestions = () => screen.getByRole('region', { name: 'Suggerimenti' });
-  const cardNames = () => [...suggestions().querySelectorAll('details.suggestion summary strong')].map(el => el.textContent!.replace(/^\d+\. /, ''));
+  const cardNames = () => [...suggestions().querySelectorAll('details.suggestion summary .name-line > strong')].map(el => el.textContent!.replace(/^\d+\. /, ''));
   const add = async (user: ReturnType<typeof userEvent.setup>, name: string) =>
     user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
 

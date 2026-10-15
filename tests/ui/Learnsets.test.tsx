@@ -46,7 +46,10 @@ describe('mosse e abilità legali nel team', () => {
     await user.click(toggle);
     expect(within(team()).queryByText('Mosse non legali: Dragon Darts', { selector: '.slot:first-child *' })).toBeNull();
     expect(within(team()).getAllByText('Mosse non legali: Dragon Darts')).toHaveLength(1);
-    expect(within(team()).getByText('Custom')).toBeInTheDocument();
+    // Lucchetto blu in basso a sinistra dello sprite, solo sul membro sbloccato
+    const marks = team().querySelectorAll('.slot .alert-mark.info');
+    expect(marks).toHaveLength(1);
+    expect(within(marks[0] as HTMLElement).getByRole('tooltip')).toHaveTextContent('Custom Skillset');
   });
 
   it('il menu delle mosse propone solo mosse imparabili, tranne con Custom Skillset', async () => {

@@ -5,6 +5,7 @@ import { formatName, sameSet, STAT_IDS, type Preset, type TeamSet } from '../eng
 import { TYPES } from '../engine/types';
 import { Combobox, type ComboOption } from './Combobox';
 import { TypeChip } from './Sprite';
+import { ItemIcon } from './ItemIcon';
 import { Icon } from './icons';
 import { typeTextColor } from './TypeText';
 
@@ -77,7 +78,7 @@ function moveOption(name: string): ComboOption {
   return option;
 }
 const ALL_MOVES = moveNames();
-const ITEM_OPTIONS: ComboOption[] = itemNames().map(name => ({ value: name, description: describe.item(name) }));
+const ITEM_OPTIONS: ComboOption[] = itemNames().map(name => ({ value: name, description: describe.item(name), icon: <ItemIcon item={name} /> }));
 const ALL_ABILITIES = dex.abilities.all().filter(a => a.exists && !a.isNonstandard).map(a => a.name).sort();
 const abilityOption = (name: string): ComboOption => ({ value: name, description: describe.ability(name) });
 
@@ -162,6 +163,7 @@ export function SetEditor({ set, presets = [], genLimit, onChange }: Props) {
         <div className="field" data-tip={describe.item(set.item)}>
           <span className="field-head">Strumento</span>
           <Combobox label="Strumento" value={set.item} options={ITEM_OPTIONS} description={describe.item(set.item)}
+            leading={set.item ? <ItemIcon item={set.item} /> : undefined}
             onChange={item => update({ item })} />
         </div>
         <div className="field" data-tip={describe.ability(set.ability)}>

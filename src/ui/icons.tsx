@@ -7,6 +7,7 @@ const paths = {
   plus: 'M12 5v14M5 12h14',
   arrow: 'M5 12h14m0 0-5-5m5 5-5 5',
   check: 'M5 12.5l4.5 4.5L19 7.5',
+  unlock: 'M6 11h12v9H6zM9 11V8a3 3 0 0 1 5.8-1.1M12 14.5v2',
   warning: 'M12 3.5 22 20H2zM12 10v4.5M12 17.2v.3',
   search: 'M10.5 4a6.5 6.5 0 1 0 0 13 6.5 6.5 0 1 0 0-13zM15.5 15.5 20 20',
   // Categorie delle mosse (come su Showdown) e precisione
@@ -15,6 +16,8 @@ const paths = {
   status: 'M12 3a9 9 0 1 0 0 18 9 9 0 1 0 0-18zM12 3c-2.5 2.5-2.5 6.5 0 9s2.5 6.5 0 9',
   target: 'M12 4a8 8 0 1 0 0 16 8 8 0 1 0 0-16zM12 2v5M12 17v5M2 12h5M17 12h5',
 } as const;
+
+export type IconName = keyof typeof paths;
 
 export function Icon({ name, filled = false }: { name: keyof typeof paths; filled?: boolean }) {
   return (
