@@ -330,7 +330,8 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 .block[open] > summary { margin-bottom: 8px; }
 .block > h3 { margin-bottom: 8px; }
 .note { font-size: 13px; color: var(--muted); }
-.note meter { display: inline-block; width: 120px; vertical-align: middle; margin-left: 6px; }
+.note meter { display: inline-block; width: 120px; vertical-align: middle; margin-left: 8px; }
+.note strong { color: var(--text); }
 
 .rating .grade { display: flex; align-items: baseline; gap: 12px; margin: 0 0 10px; color: var(--muted); }
 .rating .grade strong { font: 700 44px/1 var(--display); color: var(--gold); }
@@ -345,7 +346,11 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 .rating .bars dd { margin: 0; }
 .rating .bonus { color: var(--good); }
 .rating .penalty { color: var(--warn); }
-.rating .bonus small, .rating .penalty small { display: inline; }
+.rating .bonus ul, .rating .penalty ul { list-style: none; padding: 0; margin: 4px 0 8px; }
+.rating .bonus li, .rating .penalty li { position: relative; padding-left: 18px; color: var(--text); }
+.rating .bonus li::before, .rating .penalty li::before { position: absolute; left: 0; width: 10px; text-align: center; font-weight: 700; }
+.rating .bonus li::before { content: '+'; color: var(--good); }
+.rating .penalty li::before { content: '−'; color: var(--warn); }
 
 .coach h3 { font-size: 15px; margin: 12px 0 4px; color: var(--muted); }
 .coach li small { margin-top: 1px; }
@@ -530,6 +535,7 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
   letter-spacing: 0.05em;
 }
 .board-head span:nth-last-child(2) { text-align: right; }
+.board-head .short { display: none; }
 .board-head .count { margin-left: 10px; color: var(--muted); text-transform: none; letter-spacing: 0; font-weight: 500; }
 .suggestion .name-line { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .suggestion .name-line .tag { flex: none; }
@@ -812,11 +818,30 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .combobox .option-head .option-detail, .combobox .option-head > .move-meta { margin-left: auto; }
 
 /* Nomi dei Pokémon nei testi: grassetto con il pallino del tipo (diviso a metà per i doppi tipi) */
-.mon-ref, .mon-name { display: inline-flex; align-items: baseline; gap: 4px; white-space: nowrap; }
+.mon-ref, .mon-name { display: inline; }
+.mon-ref .type-dot, .mon-name .type-dot { display: inline-block; margin-right: 4px; vertical-align: 0; }
+.mon-name .mon-icon { vertical-align: middle; }
 .mon-ref strong, .mon-name strong { font-weight: 700; color: var(--text); }
 .mon-name.muted strong { color: var(--muted); }
 /* Mini sprite solo nelle raccomandazioni: 40×30 con margini vuoti, rientra nella riga */
-.mon-icon { display: inline-block; flex: none; align-self: center; margin: -10px -6px -8px -4px; image-rendering: pixelated; }
-.type-dot { flex: none; align-self: center; width: 9px; height: 9px; border-radius: 50%; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35); }
-.fixes { display: flex; flex-wrap: wrap; align-items: center; column-gap: 4px; row-gap: 2px; }
-.mon-rows .status .handled { display: inline-flex; flex-wrap: wrap; align-items: center; column-gap: 4px; }
+.mon-icon { display: inline-block; flex: none; margin: -10px -2px -8px -4px; image-rendering: pixelated; }
+.type-dot { flex: none; width: 9px; height: 9px; border-radius: 50%; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35); }
+.mon-ref, .mon-name { white-space: nowrap; }
+
+/* Etichette dei suggerimenti: una riga, il resto con … */
+.suggestion .tags .tag { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Schermi più stretti (≈1280px): card e classifica restano leggibili */
+@media (max-width: 1440px) {
+  .slot .type-chip { width: 56px; font-size: 10px; }
+  .slot > summary .sprite { width: 80px; height: 80px; }
+  .slot .roles { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+  .board-head, .suggestion > summary { grid-template-columns: 26px 52px minmax(0, 1fr) repeat(4, 46px) 44px 32px; gap: 8px; }
+  .suggestion > summary { padding: 8px 12px; }
+  .suggestion > summary .sprite { width: 52px; height: 52px; }
+  .suggestion .rank, .suggestion .score { font-size: 26px; }
+  .suggestion > :not(summary) { margin-left: 98px; }
+  /* Intestazioni abbreviate: le colonne delle barre sono strette */
+  .board-head .long { display: none; }
+  .board-head .short { display: inline; }
+}

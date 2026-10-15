@@ -70,6 +70,8 @@ function SuggestionItem({ rank, item, actionLabel, quickLabel, replacing, member
   const diffText = changes
     ? [...changes.pros.map(p => `+${p}`), ...changes.cons.map(c => `−${c}`)].join(' · ') || 'Nessuna differenza rilevante'
     : null;
+  // La riga sotto il nome; le etichette uguali a questa riga non si ripetono
+  const summaryText = diffText ?? item.reasons[0]?.text ?? '';
   const setText = exportShowdown([item.set]);
   const types = getSpecies(item.species)?.types ?? [];
   return (
@@ -85,9 +87,9 @@ function SuggestionItem({ rank, item, actionLabel, quickLabel, replacing, member
               <StatsBadge species={item.species} item={item.set.item} />
             </span>
             <span className="types">{types.map(type => <TypeChip key={type} type={type} />)}</span>
-            <small><Typed text={diffText ?? item.reasons[0]?.text ?? ''} /></small>
+            <small><Typed text={summaryText} /></small>
             <span className="tags">
-              {item.tags.map(tag => <span key={tag} className={tag.startsWith('⚠') ? 'tag warn' : 'tag'}>{tag}</span>)}
+              {item.tags.filter(tag => tag !== summaryText).map(tag => <span key={tag} className={tag.startsWith('⚠') ? 'tag warn' : 'tag'}>{tag}</span>)}
             </span>
           </span>
           <dl className="bars">
@@ -276,7 +278,10 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
         <div className="board-head" aria-hidden="true">
           <span>#</span><span />
           <span>Pokémon{filtering && <span className="count">{countText}</span>}</span>
-          <span>Difesa</span><span>Coverage</span><span>Ruoli</span><span>Statistiche</span><span>Punti</span><span />
+          {[['Difesa', 'Dif.'], ['Coverage', 'Cov.'], ['Ruoli', 'Ruoli'], ['Statistiche', 'Stat.'], ['Punti', 'Punti']].map(([long, short]) => (
+            <span key={long}><span className="long">{long}</span><span className="short">{short}</span></span>
+          ))}
+          <span />
         </div>
         <ol className="suggestions" ref={listRef}>
           {items.slice(0, limit).map((item, i) => (

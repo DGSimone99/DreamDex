@@ -10,7 +10,7 @@ describe('Valutazione team', () => {
     render(<App data={fixtureData} />);
     for (const name of ['Great Tusk', 'Gholdengo']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
     const rating = screen.getByRole('group', { name: 'Valutazione team' });
-    expect(rating).toHaveTextContent(/[SABCD] · \d+\/100 · \w+/);
+    expect(rating).toHaveTextContent(/[SABCD]\s*\d+\/100 · \w+/);
     expect(rating).not.toHaveTextContent('provvisoria');
     // Il dettaglio per membro sta nel tooltip di "Statistiche", non più in una riga a parte
     expect(rating).not.toHaveTextContent('Statistiche: Great Tusk');

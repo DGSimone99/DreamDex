@@ -22,7 +22,7 @@ export function RatingPanel({ rating }: { rating: TeamRating }) {
     <details open aria-label="Valutazione team" className="block rating">
       <summary><span>Valutazione team</span><span>{rating.grade} · {rating.overall}/100</span></summary>
       <p className={`grade grade-${rating.grade}`}>
-        <strong>{rating.grade}</strong> <span>· {rating.overall}/100 · {rating.label}</span>
+        <strong>{rating.grade}</strong> <span>{rating.overall}/100 · {rating.label}</span>
       </p>
       <dl className="bars">
         {rating.areas.map(area => {
@@ -72,7 +72,7 @@ export function RatingPanel({ rating }: { rating: TeamRating }) {
 export function GradeBadge({ rating }: { rating: TeamRating | null }) {
   return (
     <div className={`grade-badge${rating ? ` grade-${rating.grade}` : ' none'}`} aria-hidden="true">
-      <span className="letter">{rating?.grade ?? '–'}</span>
+      {rating && <span className="letter">{rating.grade}</span>}
       <span className="overall">{rating ? `${rating.overall} / 100` : 'Nessun voto'}</span>
       <span className="label">{rating ? rating.label : 'Aggiungi un Pokémon'}</span>
     </div>

@@ -154,7 +154,8 @@ export function AnalysisPanel({ team, analysis, rating, coaching, preview, onRep
         <summary><span>Minacce del meta</span><span>{threatSummary}</span></summary>
         {score !== null && (
           <p className="note">
-            I {analysis.threats.length} Pokémon più usati, pesati per uso. <meter min={0} max={100} value={score} />
+            Copertura delle {analysis.threats.length} minacce più usate (pesata per uso): <strong>{Math.round(score)}%</strong>
+            <meter min={0} max={100} value={score} />
           </p>
         )}
         <ul className="mon-rows">
