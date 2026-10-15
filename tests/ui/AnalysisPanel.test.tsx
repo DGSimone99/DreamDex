@@ -13,7 +13,8 @@ describe('AnalysisPanel', () => {
     const panel = screen.getByRole('region', { name: 'Analisi' });
     expect(within(panel).getByText('4 problemi')).toBeInTheDocument();
     expect(within(panel).getByText('15/18 tipi')).toBeInTheDocument();
-    expect(within(panel).getByText('Dragapult, Corviknight +2')).toBeInTheDocument();
+    expect(within(panel).getByText('Check contro i Pokémon più usati')).toBeInTheDocument();
+    expect(within(panel).getByText('2/6 gestiti · mancano Dragapult, Corviknight +2')).toBeInTheDocument();
   });
 
   it('dettaglio debolezze: riga per tipo con moltiplicatori', () => {

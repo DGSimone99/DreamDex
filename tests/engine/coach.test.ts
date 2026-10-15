@@ -11,27 +11,22 @@ describe('coachTeam', () => {
   const coaching = coachTeam([tusk, gholdengo], DEFAULT_FORMAT, fixtureData);
 
   it('verdetto con conteggi', () => {
-    expect(coaching.verdict).toBe('Team incompleto: mancano 4 membri · 2 problemi seri, 7 minori');
+    expect(coaching.verdict).toBe('Team incompleto: mancano 4 membri · 0 problemi seri, 6 minori');
   });
 
   it('punti di forza', () => {
     expect(coaching.strengths).toEqual([
       'Gestisce bene Poison, Bug, Rock',
       'Ruoli coperti: Rimozione hazard',
-      'Ferma Kingambit, Toxapex',
       'Colpisce super efficace 15/18 tipi',
     ]);
   });
 
-  it('problemi seri prima, con rimedi', () => {
-    const serious = coaching.problems.filter(p => p.severity === 'serious');
-    expect(serious.map(p => p.text)).toEqual([
-      'Nessun check per Dragapult (18.0% di uso)',
-      'Nessun check per Corviknight (15.0% di uso)',
-    ]);
-    expect(serious[0].fixes).toContain('Kingambit');
-    expect(serious[1].fixes).toContain('Rotom-Wash');
-    expect(coaching.problems.slice(0, 2)).toEqual(serious);
+  it('i check contro i Pokémon più usati non sono tra i problemi, ma hanno i loro rimedi', () => {
+    expect(coaching.problems.some(p => p.text.includes('check') || p.text.includes('Minacce'))).toBe(false);
+    expect(coaching.threatFixes.Dragapult).toContain('Kingambit');
+    expect(coaching.threatFixes.Corviknight).toContain('Rotom-Wash');
+    expect(coaching.threatFixes.Kingambit).toBeUndefined();
   });
 
   it('problemi minori: debolezze, minacce, ruoli, coverage', () => {
@@ -41,7 +36,6 @@ describe('coachTeam', () => {
       'Debole a Water: 1 debole contro 0 che resistono',
       'Debole a Ground: 1 debole contro 0 che resistono',
       'Debole a Ghost: 1 debole contro 0 che resistono',
-      'Minacce minori non gestite: Rotom-Wash, Garchomp',
       'Ruoli mancanti: Hazard, Pivot, Priorità, Controllo velocità',
       'Nessuna mossa super efficace contro Water, Fighting',
     ]);
@@ -91,7 +85,7 @@ describe('coachTeam', () => {
 
   it('0–1 membri: solo invito ad aggiungere', () => {
     expect(coachTeam([tusk], DEFAULT_FORMAT, fixtureData)).toEqual({
-      verdict: 'Aggiungi almeno 2 Pokémon per ricevere il coaching', strengths: [], problems: [], swaps: [],
+      verdict: 'Aggiungi almeno 2 Pokémon per ricevere il coaching', strengths: [], problems: [], swaps: [], threatFixes: {},
     });
   });
 

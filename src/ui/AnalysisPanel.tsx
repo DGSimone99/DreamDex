@@ -22,9 +22,10 @@ export function AnalysisPanel({ team, analysis, rating, coaching, onReplace }: {
   const open = analysis.threats.filter(t => t.handledBy.length === 0);
   const rolesOf = team.map(set => ({ name: set.species, roles: detectRoles(set) }));
   const present = new Set(rolesOf.flatMap(r => r.roles));
+  const handledCount = analysis.threats.length - open.length;
   const threatSummary = open.length === 0
-    ? 'nessuna'
-    : `${open.slice(0, 2).map(t => t.name).join(', ')}${open.length > 2 ? ` +${open.length - 2}` : ''}`;
+    ? `${handledCount}/${analysis.threats.length} gestiti`
+    : `${handledCount}/${analysis.threats.length} gestiti · mancano ${open.slice(0, 2).map(t => t.name).join(', ')}${open.length > 2 ? ` +${open.length - 2}` : ''}`;
 
   return (
     <section aria-label="Analisi" className="analysis">
@@ -86,13 +87,15 @@ export function AnalysisPanel({ team, analysis, rating, coaching, onReplace }: {
       </details>
 
       <details className="block">
-        <summary><span>Minacce non gestite</span><span>{threatSummary}</span></summary>
+        <summary><span>Check contro i Pokémon più usati</span><span>{threatSummary}</span></summary>
         <ul>
-          {analysis.threats.map(t => (
-            <li key={t.name} className={t.handledBy.length ? '' : 'bad'}>
-              {`${t.name} (${(t.usage * 100).toFixed(1)}%): ${t.handledBy.length ? `gestito da ${t.handledBy.join(', ')}` : 'nessun check'}`}
-            </li>
-          ))}
+          {analysis.threats.map(t => {
+            const fixes = coaching?.threatFixes[t.name] ?? [];
+            const detail = t.handledBy.length
+              ? `gestito da ${t.handledBy.join(', ')}`
+              : `nessun check${fixes.length ? ` → considera ${fixes.join(' o ')}` : ''}`;
+            return <li key={t.name} className={t.handledBy.length ? '' : 'bad'}>{`${t.name} (${(t.usage * 100).toFixed(1)}%): ${detail}`}</li>;
+          })}
         </ul>
       </details>
     </section>
