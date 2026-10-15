@@ -93,3 +93,4 @@ small { color: var(--muted); display: block; }
 .rating .bonus { color: var(--good-text); margin-top: 4px; }
 .rating .bonus ul { margin: 2px 0 0; padding-left: 18px; }
 .analysis .note { font-size: 12px; color: var(--muted); margin: 4px 0 0; }
+.meta-use ul { margin: 2px 0; padding-left: 18px; }

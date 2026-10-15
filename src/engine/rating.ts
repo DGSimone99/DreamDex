@@ -1,10 +1,9 @@
 import { analyzeTeam, type TeamAnalysis } from './analysis';
 import type { EngineData } from './data';
-import { battleName, battleSpecies, toID } from './dex';
+import { battleSpecies, toID } from './dex';
+import { teamPower, type MemberPower } from './power';
 import { DESIRABLE_ROLES, detectRoles, ESSENTIAL_ROLES } from './roles';
-import { strengthComponent } from './scoring';
 import type { TeamSet } from './sets';
-import { usageOf } from './stats';
 import { TYPES } from './types';
 import { CONDITION_LABELS, unmetBeneficiaries, unusedEnablers, weatherMitigations } from './synergy';
 
@@ -60,6 +59,8 @@ export interface TeamRating {
   base: number;
   penalty: Redundancies;
   bonus: Redundancies;
+  /** Forza dei singoli membri dalle statistiche base. */
+  power: MemberPower[];
   overall: number;
   grade: string;
   label: string;
@@ -118,7 +119,6 @@ export function redundancies(team: TeamSet[], analysis: TeamAnalysis): Redundanc
   const items = [...weaknesses, ...roleAndTypeRedundancies(team), ...dependencies];
   return { total: Math.min(MAX_PENALTY, sum(items.map(i => i.points))), items };
 }
-const mean = (xs: number[]) => sum(xs) / xs.length;
 
 /**
  * Quanto il team è al sicuro da un tipo: 1 se qualcuno resiste e i deboli non superano chi resiste,
@@ -158,7 +158,8 @@ export function rateTeam(team: TeamSet[], data: EngineData): TeamRating | null {
   const present = new Set(team.flatMap(detectRoles));
   const roles = (ESSENTIAL_ROLES.filter(r => present.has(r)).length + 0.5 * DESIRABLE_ROLES.filter(r => present.has(r)).length)
     / (ESSENTIAL_ROLES.length + 0.5 * DESIRABLE_ROLES.length);
-  const strength = data.stats ? mean(team.map(set => strengthComponent(usageOf(data.stats, battleName(set))))) : null;
+  const power = teamPower(team);
+  const strength = power.value === null ? null : power.value / 100;
 
   const raw: Record<AreaKey, number | null> = { defense, coverage, roles, strength };
   const areas = (Object.keys(AREA_WEIGHTS) as AreaKey[]).map(key => ({
@@ -173,6 +174,6 @@ export function rateTeam(team: TeamSet[], data: EngineData): TeamRating | null {
   const penalty = redundancies(team, analysis);
   const bonus = weatherBonus(team);
   const overall = Math.min(100, Math.max(0, base - penalty.total + bonus.total));
-  return { base, penalty, bonus, overall, ...gradeFor(overall), provisional: team.length < 6, areas };
+  return { base, penalty, bonus, power: power.members, overall, ...gradeFor(overall), provisional: team.length < 6, areas };
 }
 

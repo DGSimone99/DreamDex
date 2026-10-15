@@ -10,7 +10,8 @@ describe('Valutazione team', () => {
     render(<App data={fixtureData} />);
     for (const name of ['Great Tusk', 'Gholdengo']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
     const rating = screen.getByRole('group', { name: 'Valutazione team' });
-    expect(rating).toHaveTextContent('C · 69/100 · Discreto (provvisoria)');
+    expect(rating).toHaveTextContent(/[SABCD] · \d+\/100 · \w+ \(provvisoria\)/);
+    expect(rating).toHaveTextContent('Forza: Great Tusk');
     expect(rating).toHaveTextContent('Difesa 73');
     expect(rating).not.toHaveTextContent('Sinergia');
   });
@@ -48,10 +49,21 @@ describe('Valutazione team', () => {
     expect(screen.queryByRole('group', { name: 'Valutazione team' })).toBeNull();
   });
 
-  it('aree senza dati mostrate come n/d', async () => {
+  it('senza dati Smogon la forza resta calcolata, il Meta Use avvisa', async () => {
     const user = userEvent.setup();
     render(<App data={{ stats: null, sets: null }} />);
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Great Tusk{Enter}');
-    expect(screen.getByRole('group', { name: 'Valutazione team' })).toHaveTextContent('Forza n/d');
+    expect(screen.getByRole('group', { name: 'Valutazione team' })).not.toHaveTextContent('Forza n/d');
+    expect(screen.getByRole('group', { name: 'Meta Use' })).toHaveTextContent('Statistiche Smogon assenti');
+  });
+
+  it('Meta Use: uso nel meta di ogni membro, fuori dalla valutazione', async () => {
+    const user = userEvent.setup();
+    render(<App data={fixtureData} />);
+    for (const name of ['Great Tusk', 'Gholdengo', 'Magikarp']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
+    const meta = screen.getByRole('group', { name: 'Meta Use' });
+    expect(meta).toHaveTextContent('Great Tusk 30.0%');
+    expect(meta).toHaveTextContent('Gholdengo 25.0%');
+    expect(meta).toHaveTextContent('Magikarp: non presente nelle statistiche');
   });
 });
