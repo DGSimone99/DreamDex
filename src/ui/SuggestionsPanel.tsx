@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { EngineData } from '../engine/data';
 import type { Format } from '../engine/format';
 import { improveReplacements, similarity, similarReplacements, type Replacement } from '../engine/replace';
@@ -48,7 +48,9 @@ function TierTag({ species, format }: { species: string; format: Format }) {
     : <span className="tag tier">{label}</span>;
 }
 
-function SuggestionItem({ rank, item, actionLabel, quickLabel, replacing, member, onAction, onToggle, emptyTeam, format }: {
+function SuggestionItem({ rank, item, actionLabel, quickLabel, replacing, member, picked, onAction, onToggle, emptyTeam, format }: {
+  /** Riga scelta dalla ricerca (Invio la aggiunge). */
+  picked?: boolean;
   /** Il membro che questo candidato sostituirebbe. */
   member?: string;
   onToggle?: (open: boolean) => void;
@@ -69,17 +71,19 @@ function SuggestionItem({ rank, item, actionLabel, quickLabel, replacing, member
   const setText = exportShowdown([item.set]);
   const types = getSpecies(item.species)?.types ?? [];
   return (
-    <li>
+    <li className={picked ? 'picked' : undefined}>
       <details className="suggestion" name="suggestion" onToggle={e => onToggle?.(e.currentTarget.open)}>
         <summary>
           <span className="rank" aria-hidden="true">{rank}</span>
           <Sprite species={item.species} item={item.set.item} size={64} />
           <span className="who">
-            <strong><span className="visually-hidden">{rank}. </span>{item.species}</strong>
+            <span className="name-line">
+              <strong><span className="visually-hidden">{rank}. </span>{item.species}</strong>
+              <TierTag species={item.species} format={format} />
+            </span>
             <span className="types">{types.map(type => <TypeChip key={type} type={type} />)}</span>
             <small><Typed text={diffText ?? item.reasons[0]?.text ?? ''} /></small>
             <span className="tags">
-              <TierTag species={item.species} format={format} />
               {item.tags.map(tag => <span key={tag} className={tag.startsWith('⚠') ? 'tag warn' : 'tag'}>{tag}</span>)}
             </span>
           </span>
@@ -168,18 +172,34 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   }, [team, format, data, replacing, replaceIndex, mode, applied, filtering]);
 
   const query = filters.query.trim();
-  // Il primo risultato vale solo se la lista è già aggiornata su quello che hai scritto
-  const top = query && applied.query.trim() === query ? items[0] : undefined;
+  // I risultati valgono solo se la lista è già aggiornata su quello che hai scritto
+  const fresh = !!query && applied.query.trim() === query;
   const exact = getSpecies(query);
-  /** Invio: il nome esatto se c'è, altrimenti il primo risultato della lista (la riga dorata). */
+  // Riga scelta con le frecce; null: il nome esatto se c'è, altrimenti il primo risultato
+  const [cursor, setCursor] = useState<number | null>(null);
+  useEffect(() => setCursor(null), [items]);
+  const chosen = fresh && cursor !== null ? items[cursor] : undefined;
+  const fallback = fresh ? items[0] : undefined;
+  const pickedIndex = !fresh ? -1
+    : cursor ?? (exact ? items.findIndex(item => item.species === exact.name) : 0);
+  /** Invio: la riga scelta con le frecce, altrimenti il nome esatto, altrimenti il primo risultato. */
   const pickFromSearch = () => {
-    const set = exact ? defaultSet(data, exact.name, format.genLimit) : top?.set;
+    const set = chosen?.set ?? (exact ? defaultSet(data, exact.name, format.genLimit) : fallback?.set);
     if (!set) return;
     if (replacing) onReplaceWith(replaceIndex, set);
     else onAdd(set);
     setFilters({ ...filters, query: '' });
   };
-  const target = exact?.name ?? top?.species;
+  const target = chosen?.species ?? exact?.name ?? fallback?.species;
+  const listRef = useRef<HTMLOListElement>(null);
+  /** Frecce: passa al risultato successivo o precedente, tenendolo in vista. */
+  const moveCursor = (delta: number) => {
+    const last = Math.min(items.length, limit) - 1;
+    if (!fresh || last < 0) return;
+    const next = Math.min(last, Math.max(0, Math.max(pickedIndex, 0) + delta));
+    setCursor(next);
+    listRef.current?.children[next]?.scrollIntoView?.({ block: 'nearest' });
+  };
 
   const title = replacing ? `Sostituisci ${team[replaceIndex].species}` : 'Suggerimenti';
 
@@ -200,7 +220,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   const search = full ? null : (
     <>
       <div className="search">
-        <span className="search-field">
+        <span className={`search-field${target ? ' has-hint' : ''}`}>
           <Icon name="search" />
           <input
             aria-label="Aggiungi Pokémon"
@@ -210,25 +230,30 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
             onChange={e => { setFilters({ ...filters, query: e.target.value }); setLimit(PAGE); }}
             onKeyDown={e => {
               if (e.key === 'Enter') pickFromSearch();
+              else if (e.key === 'ArrowDown') { e.preventDefault(); moveCursor(1); }
+              else if (e.key === 'ArrowUp') { e.preventDefault(); moveCursor(-1); }
               else if (e.key === 'Escape') setFilters({ ...filters, query: '' });
             }}
           />
+          {target && (
+            // Dentro il campo, a destra: comparendo non sposta il resto
+            <span id="search-hint" className="search-hint">
+              <kbd>Invio</kbd> {replacing ? 'sostituisce con' : 'aggiunge'} <strong>{target}</strong>
+            </span>
+          )}
           {filters.query && (
             <button type="button" className="clear" aria-label="Svuota la ricerca" onClick={() => setFilters({ ...filters, query: '' })}>
               <Icon name="close" />
             </button>
           )}
         </span>
-        <button type="button" onClick={pickFromSearch} disabled={!target}>{replacing ? 'Sostituisci' : 'Aggiungi'}</button>
       </div>
-      {target && (
-        <p id="search-hint" className="search-hint">
-          <kbd>Invio</kbd> {replacing ? 'sostituisce con' : 'aggiunge'} <strong>{target}</strong>
-        </p>
-      )}
       <FilterBar filters={filters} onChange={next => { setFilters(next); setLimit(PAGE); }} />
     </>
   );
+
+  // Il numero di risultati sta nell'intestazione della classifica: comparendo non sposta la lista
+  const countText = `${items.length === 1 ? '1 risultato' : `${items.length} risultati`}${items.length === MAX ? ' (i migliori per il team)' : ''}`;
 
   let body;
   if (full) {
@@ -240,23 +265,21 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   } else {
     body = (
       <>
-        {filtering && (
-          <p className="note">
-            {items.length === 1 ? '1 risultato' : `${items.length} risultati`}{items.length === MAX ? ' (i migliori per il team)' : ''}
-          </p>
-        )}
+        {filtering && <p className="visually-hidden" aria-live="polite">Risultati: {countText}</p>}
         {setterNote && <p className="note">{setterNote}</p>}
         {emptyTeam && (
           <p className="note">Aggiungi un Pokémon per vedere come si adatta al team — per ora ordinati per uso nel meta</p>
         )}
         <div className="board-head" aria-hidden="true">
-          <span>#</span><span /><span>Pokémon</span>
+          <span>#</span><span />
+          <span>Pokémon{filtering && <span className="count">{countText}</span>}</span>
           <span>Difesa</span><span>Coverage</span><span>Ruoli</span><span>Statistiche</span><span>Punti</span><span />
         </div>
-        <ol className="suggestions">
+        <ol className="suggestions" ref={listRef}>
           {items.slice(0, limit).map((item, i) => (
             <SuggestionItem
               key={item.species}
+              picked={i === pickedIndex}
               rank={i + 1}
               item={item}
               actionLabel={replacing ? 'Sostituisci con questo' : 'Aggiungi al team'}

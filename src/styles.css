@@ -444,15 +444,59 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 .search-field:focus-within > .icon { color: var(--gold); }
 .search-field .clear { position: absolute; right: 6px; border: 0; background: none; padding: 4px; color: var(--faint); }
 .search-field .clear:hover { color: var(--text); }
-.search-hint { margin: -4px 0 10px; font-size: 13px; color: var(--muted); }
+.search-field.has-hint input { padding-right: 250px; }
+.search-hint {
+  position: absolute;
+  right: 36px;
+  max-width: 220px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 13px;
+  color: var(--muted);
+  pointer-events: none;
+  animation: tip 0.15s var(--ease);
+}
 .search-hint strong { color: var(--gold); font-weight: 600; }
 kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 3px; background: var(--raised); color: var(--text); }
 .filters > summary { font-weight: 600; }
-.filters .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
-.filters .chips button { font-size: 13px; padding: 3px 10px; }
-.filter-selects { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px 12px; margin: 10px 0 12px; }
-.filter-selects label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); font-weight: 600; }
-.filter-selects select { color: var(--text); font-size: 14px; }
+.filters h4, .filters .control-label { font: 600 12px/1 var(--ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--faint); margin: 0 0 8px; }
+.filters h4 small { display: inline; margin-left: 6px; font-size: 11px; text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--faint); }
+.filters[open] > summary { margin-bottom: 14px; }
+
+/* Tre griglie di tipi affiancate */
+.type-filters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; padding-bottom: 16px; border-bottom: 1px solid var(--line-soft); }
+.type-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
+.type-grid button {
+  justify-content: center;
+  padding: 3px 0;
+  border-radius: 2px;
+  border: 1px solid color-mix(in srgb, var(--c) 45%, transparent);
+  background: color-mix(in srgb, var(--c) 12%, transparent);
+  font: 600 10px/1.5 var(--ui);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--tc);
+}
+.type-grid button:hover:not(:disabled) { border-color: var(--c); background: color-mix(in srgb, var(--c) 25%, transparent); }
+.type-grid button[aria-pressed='true'] { background: var(--c); border-color: var(--c); color: var(--ink); box-shadow: 0 0 0 1px var(--ground), 0 0 0 2px var(--c); }
+.type-grid button:disabled { opacity: 0.3; }
+
+.filter-section { padding: 14px 0; border-bottom: 1px solid var(--line-soft); }
+.filters .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.filters .chips button { font-size: 13px; padding: 4px 11px; border-radius: 14px; background: transparent; }
+.filters .chips button[aria-pressed='true'] { background: var(--blue-soft); border-color: var(--blue); color: var(--text); }
+
+/* Tendine e scelte tutti / no / solo */
+.filter-controls { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px 14px; padding: 14px 0; }
+.filters .control { display: flex; flex-direction: column; min-width: 0; }
+.filters .control select { width: 100%; font-size: 14px; color: var(--text); }
+.segmented { display: flex; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; background: var(--field); }
+.segmented button { flex: 1; justify-content: center; border: 0; border-radius: 0; background: transparent; padding: 6px 4px; font-size: 13px; color: var(--muted); }
+.segmented button + button { border-left: 1px solid var(--line); }
+.segmented button:hover { color: var(--text); }
+.segmented button[aria-pressed='true'] { background: var(--blue-soft); color: var(--text); font-weight: 600; }
+.filter-footer { display: flex; justify-content: flex-end; padding-top: 12px; border-top: 1px solid var(--line-soft); }
 
 .board-head, .suggestion > summary {
   display: grid;
@@ -469,6 +513,9 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
   letter-spacing: 0.05em;
 }
 .board-head span:nth-last-child(2) { text-align: right; }
+.board-head .count { margin-left: 10px; color: var(--muted); text-transform: none; letter-spacing: 0; font-weight: 500; }
+.suggestion .name-line { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.suggestion .name-line .tag { flex: none; }
 .suggestions { list-style: none; padding: 0; margin: 0; }
 .suggestions > li { margin: 0 0 6px; }
 .suggestion { background: var(--panel); border: 1px solid var(--line-soft); border-radius: 6px; transition: border-color 0.15s; }
@@ -499,6 +546,9 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .suggestions > li:first-child .suggestion { border-color: var(--gold); background: linear-gradient(90deg, var(--gold-soft), var(--panel) 70%); }
 .suggestions > li:first-child .rank, .suggestions > li:first-child .score { color: var(--gold); }
 .suggestion[open] { border-color: var(--blue); }
+/* Riga scelta dalla ricerca con le frecce: Invio la aggiunge */
+.suggestions > li.picked .suggestion { border-color: var(--blue); box-shadow: 0 0 0 1px var(--blue), 0 6px 18px rgba(0, 0, 0, 0.35); }
+.suggestions > li.picked:first-child .suggestion { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold), 0 6px 18px rgba(0, 0, 0, 0.35); }
 .suggestion[open] > summary { border-bottom: 1px solid var(--line-soft); }
 .suggestion > :not(summary) { margin-left: 126px; margin-right: 16px; }
 .suggestion .replaces { margin-top: 12px; }
