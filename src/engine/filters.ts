@@ -120,9 +120,11 @@ export function searchPool(team: TeamSet[], format: Format, data: EngineData, f:
   const teamNumbers = new Set(team.map(set => getSpecies(set.species)?.num).filter(isDefined));
   const query = toID(f.query);
   return dex.species.all()
-    .filter(s => isTeambuildable(s) && withinGen(s, format) && meetsTeamRules(s, format) && !teamNumbers.has(s.num))
+    .filter(s => isTeambuildable(s) && withinGen(s, format) && !teamNumbers.has(s.num))
     .filter(s => !query || toID(s.name).includes(query))
     .map(s => ({ species: s.name, set: cachedDefaultSet(data, s.name) }))
+    // Monotype: conta il tipo della forma in battaglia (es. Charizard con Charizardite X è Fire/Dragon)
+    .filter(c => meetsTeamRules(battleSpecies(c.set) ?? getSpecies(c.species)!, format))
     .filter(c => matchesFilters(c, f, data, format))
     .map(c => c.set);
 }

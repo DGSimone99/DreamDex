@@ -26,6 +26,10 @@ export const FORMAT_OPTIONS: { id: FormatId; label: string }[] = [
 
 export const formatLabel = (format: Format): string => FORMATS[format.formatId].label;
 
+/** Nome della fonte dati in uso (per i messaggi): il Monotype su OU ha statistiche proprie. */
+export const dataLabel = (format: Format): string =>
+  dataSource(format) === 'gen9nationaldexmonotype' ? 'National Dex Monotype' : formatLabel(format);
+
 /** Cartella dei dati Smogon da usare: il Monotype ha un meta proprio solo sopra OU. */
 export function dataSource(format: Format): string {
   if (format.monotype && format.formatId === 'ou') return 'gen9nationaldexmonotype';

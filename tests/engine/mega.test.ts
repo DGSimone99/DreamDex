@@ -34,6 +34,9 @@ describe('Mega Evoluzioni e forme Primal', () => {
     expect(battleSpecies(set('Charizard', 'Charizardite Y'))?.name).toBe('Charizard-Mega-Y');
     expect(battleSpecies(set('Groudon', 'Red Orb'))?.name).toBe('Groudon-Primal');
     expect(battleSpecies(set('Kyogre', 'Red Orb'))?.name).toBe('Kyogre');
+    // Le forme regionali non possono Megaevolvere con la pietra della forma base
+    expect(battleSpecies(set('Slowbro-Galar', 'Slowbronite'))?.name).toBe('Slowbro-Galar');
+    expect(battleSpecies(set('Slowbro', 'Slowbronite'))?.name).toBe('Slowbro-Mega');
   });
 
   it('tipi della forma Mega (Lopunny-Mega è Normal/Fighting)', () => {

@@ -4,7 +4,7 @@ import { coachTeam } from './engine/coach';
 import { rateTeam } from './engine/rating';
 import type { EngineData } from './engine/data';
 import { DEFAULT_FORMAT, type Format } from './engine/format';
-import { dataSource, formatLabel } from './engine/formats';
+import { dataLabel, dataSource } from './engine/formats';
 import type { TeamSet } from './engine/sets';
 import { AnalysisPanel } from './ui/AnalysisPanel';
 import { DataLists } from './ui/DataLists';
@@ -61,7 +61,7 @@ export function App({ data: initialData, loadSource }: AppProps) {
       {loading && <p className="banner info">Caricamento statistiche…</p>}
       {!loading && !data.stats && (
         <p className="banner" role="alert">
-          Statistiche {formatLabel(format)} non scaricate: esegui <code>npm run fetch-data</code> e ricarica la pagina.
+          Statistiche {dataLabel(format)} non scaricate: esegui <code>npm run fetch-data</code> e ricarica la pagina.
           L'analisi di tipo e la ricerca per nome restano disponibili.
         </p>
       )}
