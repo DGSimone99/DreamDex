@@ -1,8 +1,8 @@
 import type { EngineData } from './data';
-import { battleName, battleSpecies, getSpecies, isAllowed, isDefined, isMega, speciesNames, toID } from './dex';
+import { battleName, battleSpecies, dex, getSpecies, isBanned, isDefined, isMega, isTeambuildable, natDexTier, toID, withinGen } from './dex';
 import type { Format } from './format';
 import { detectRoles, type Role } from './roles';
-import { scoreCandidates, type Suggestion } from './scoring';
+import { scoreSets, type Suggestion } from './scoring';
 import { defaultSet, type TeamSet } from './sets';
 import { usageOf } from './stats';
 import { benefits, enables, type Condition } from './synergy';
@@ -20,10 +20,13 @@ export interface CandidateFilters {
   hits: TypeName | '';
   mega: 'all' | 'only' | 'none';
   usage: 'all' | 'common' | 'niche';
+  tier: TierFilter;
 }
 
+export type TierFilter = 'all' | 'legal' | 'uber' | 'ou' | 'uu' | 'ru' | 'nfe';
+
 export const EMPTY_FILTERS: CandidateFilters = {
-  query: '', types: [], roles: [], provides: '', benefitsFrom: '', resists: '', hits: '', mega: 'all', usage: 'all',
+  query: '', types: [], roles: [], provides: '', benefitsFrom: '', resists: '', hits: '', mega: 'all', usage: 'all', tier: 'all',
 };
 
 /** Soglie del filtro "Uso nel meta". */
@@ -37,7 +40,7 @@ export const NICHE_USAGE = 0.01;
 export function activeFilterCount(f: CandidateFilters): number {
   return [
     f.types.length > 0, f.roles.length > 0, f.provides !== '', f.benefitsFrom !== '',
-    f.resists !== '', f.hits !== '', f.mega !== 'all', f.usage !== 'all',
+    f.resists !== '', f.hits !== '', f.mega !== 'all', f.usage !== 'all', f.tier !== 'all',
   ].filter(Boolean).length;
 }
 
@@ -45,10 +48,36 @@ export function isFiltering(f: CandidateFilters): boolean {
   return f.query.trim() !== '' || activeFilterCount(f) > 0;
 }
 
+/** Etichetta del tier per le carte: 'Uber' bannato, 'OU', 'RU', 'LC', 'NFE'… */
+export function tierLabel(speciesName: string): { label: string; banned: boolean } {
+  const species = getSpecies(speciesName);
+  if (!species) return { label: '?', banned: false };
+  const tier = natDexTier(species);
+  // Senza tier National Dex, per i non evoluti si usa il tier singolo (LC / NFE)
+  const fallback = ['LC', 'NFE'].includes(String(species.tier)) ? String(species.tier) : species.nfe ? 'NFE' : '—';
+  return { label: tier || fallback, banned: isBanned(species) };
+}
+
+function matchesTier(speciesName: string, tier: TierFilter): boolean {
+  if (tier === 'all') return true;
+  const species = getSpecies(speciesName);
+  if (!species) return false;
+  const t = natDexTier(species);
+  switch (tier) {
+    case 'legal': return !isBanned(species);
+    case 'uber': return isBanned(species);
+    case 'ou': return t === 'OU';
+    case 'uu': return t === 'UU' || t === 'UUBL';
+    case 'ru': return t === 'RU' || t === 'RUBL';
+    case 'nfe': return species.nfe || ['NFE', 'LC'].includes(t) || ['NFE', 'LC'].includes(String(species.tier));
+  }
+}
+
 export function matchesFilters(candidate: { species: string; set: TeamSet }, f: CandidateFilters, data: EngineData): boolean {
   const { set } = candidate;
   const query = toID(f.query);
   if (query && !toID(candidate.species).includes(query)) return false;
+  if (!matchesTier(candidate.species, f.tier)) return false;
   if (f.types.length) {
     const types = (battleSpecies(set)?.types ?? []) as readonly string[];
     if (!f.types.every(t => types.includes(t))) return false;
@@ -72,25 +101,34 @@ export function matchesFilters(candidate: { species: string; set: TeamSet }, f: 
 }
 
 /**
- * Ricerca e filtri sui candidati: ignora la soglia di uso minimo e, con una ricerca per nome,
- * include anche i Pokémon senza dati Smogon. Sempre ordinati per adattamento al team.
+ * Tutti i Pokémon del Pokédex (Uber compresi, entro il limite di generazione) che rispettano
+ * ricerca e filtri, con il loro set di riferimento. I membri del team sono esclusi.
  */
-export function searchCandidates(team: TeamSet[], format: Format, data: EngineData, f: CandidateFilters, limit = 20): Suggestion[] {
-  const query = toID(f.query);
-  const inStats = new Set(Object.keys(data.stats?.pokemon ?? {}).map(toID));
+const setCache = new WeakMap<EngineData, Map<string, TeamSet>>();
+
+/** Set di riferimento, calcolato una volta per specie e riusato tra una ricerca e l'altra. */
+function cachedDefaultSet(data: EngineData, species: string): TeamSet {
+  let cache = setCache.get(data);
+  if (!cache) setCache.set(data, (cache = new Map()));
+  let set = cache.get(species);
+  if (!set) cache.set(species, (set = defaultSet(data, species)));
+  return set;
+}
+
+export function searchPool(team: TeamSet[], format: Format, data: EngineData, f: CandidateFilters): TeamSet[] {
   const teamNumbers = new Set(team.map(set => getSpecies(set.species)?.num).filter(isDefined));
-  const extra = query
-    ? speciesNames()
-      .filter(name => toID(name).includes(query) && !inStats.has(toID(name)))
-      .map(getSpecies)
-      .filter(isDefined)
-      .filter(s => isAllowed(s, format) && !teamNumbers.has(s.num))
-      .slice(0, 50)
-      .map(s => defaultSet(data, s.name))
-    : [];
-  return scoreCandidates(team, { ...format, minUsage: 0 }, data, extra)
-    .filter(s => matchesFilters(s, f, data))
-    .slice(0, limit);
+  const query = toID(f.query);
+  return dex.species.all()
+    .filter(s => isTeambuildable(s) && withinGen(s, format) && !teamNumbers.has(s.num))
+    .filter(s => !query || toID(s.name).includes(query))
+    .map(s => ({ species: s.name, set: cachedDefaultSet(data, s.name) }))
+    .filter(c => matchesFilters(c, f, data))
+    .map(c => c.set);
+}
+
+/** Ricerca e filtri sui candidati, su tutto il Pokédex. Sempre ordinati per adattamento al team. */
+export function searchCandidates(team: TeamSet[], format: Format, data: EngineData, f: CandidateFilters, limit = 20): Suggestion[] {
+  return scoreSets(team, format, data, searchPool(team, format, data, f)).slice(0, limit);
 }
 
 /** Applica ricerca e filtri a una lista di sostituti già calcolata. */

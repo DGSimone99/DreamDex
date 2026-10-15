@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { App } from '../../src/App';
@@ -25,24 +25,25 @@ describe('ricerca e filtri nei suggerimenti', () => {
   it('scrivere restringe la lista, ordinata per adattamento', async () => {
     const user = await setup('Great Tusk');
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'kinga');
-    expect(cardNames()).toEqual(['Kingambit']);
+    await waitFor(() => expect(cardNames()).toEqual(['Kingambit']));
     expect(within(suggestions()).getByText('1 risultato')).toBeInTheDocument();
   });
 
   it('nessun risultato', async () => {
     const user = await setup('Great Tusk');
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'zzzz');
-    expect(within(suggestions()).getByText('Nessun Pokémon corrisponde ai filtri')).toBeInTheDocument();
+    expect(await within(suggestions()).findByText('Nessun Pokémon corrisponde ai filtri')).toBeInTheDocument();
   });
 
   it('filtro per tipo, contatore dei filtri attivi e azzeramento', async () => {
     const user = await setup('Great Tusk');
     await user.click(within(screen.getByRole('group', { name: 'Tipo' })).getByRole('button', { name: 'Water' }));
-    expect([...cardNames()].sort()).toEqual(['Rotom-Wash', 'Toxapex']);
-    expect(within(suggestions()).getByText('Filtri (1 attivo)')).toBeInTheDocument();
+    await user.selectOptions(screen.getByLabelText('Uso nel meta'), 'common');
+    await waitFor(() => expect([...cardNames()].sort()).toEqual(['Rotom-Wash', 'Toxapex']));
+    expect(within(suggestions()).getByText('Filtri (2 attivi)')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Azzera filtri' }));
     expect(within(suggestions()).getByText('Filtri')).toBeInTheDocument();
-    expect(cardNames().length).toBeGreaterThan(2);
+    await waitFor(() => expect(cardNames().length).toBeGreaterThan(2));
   });
 
   it('al massimo due tipi: gli altri si disattivano', async () => {
@@ -50,7 +51,7 @@ describe('ricerca e filtri nei suggerimenti', () => {
     const types = within(screen.getByRole('group', { name: 'Tipo' }));
     await user.click(types.getByRole('button', { name: 'Water' }));
     await user.click(types.getByRole('button', { name: 'Poison' }));
-    expect(cardNames()).toEqual(['Toxapex']);
+    await waitFor(() => expect(cardNames()).toContain('Toxapex'));
     expect(types.getByRole('button', { name: 'Fire' })).toBeDisabled();
     expect(types.getByRole('button', { name: 'Water' })).toBeEnabled();
     await user.click(types.getByRole('button', { name: 'Poison' }));
@@ -59,8 +60,23 @@ describe('ricerca e filtri nei suggerimenti', () => {
 
   it('filtro a tendina: resiste a', async () => {
     const user = await setup('Great Tusk');
+    await user.selectOptions(screen.getByLabelText('Uso nel meta'), 'common');
     await user.selectOptions(screen.getByLabelText('Resiste a'), 'Ground');
-    expect([...cardNames()].sort()).toEqual(['Corviknight', 'Rotom-Wash']);
+    await waitFor(() => expect([...cardNames()].sort()).toEqual(['Corviknight', 'Rotom-Wash']));
+  });
+
+  it('tier: gli Uber compaiono nella ricerca con il tag di ban', async () => {
+    const user = await setup('Great Tusk');
+    await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'dragapu');
+    await waitFor(() => expect(cardNames()).toEqual(['Dragapult']));
+    expect(within(suggestions()).getByText('Uber · bannato in National Dex OU')).toBeInTheDocument();
+    await user.selectOptions(screen.getByLabelText('Tier'), 'legal');
+    expect(await within(suggestions()).findByText('Nessun Pokémon corrisponde ai filtri')).toBeInTheDocument();
+  });
+
+  it('tag del tier anche sui suggerimenti normali', async () => {
+    await setup('Great Tusk');
+    expect(within(suggestions()).getAllByText('OU').length).toBeGreaterThan(0);
   });
 
   it('team completo: ricerca nascosta', async () => {
