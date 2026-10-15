@@ -1,8 +1,17 @@
+import { DEFAULT_FORMAT, type Format } from './engine/format';
+import { FORMAT_OPTIONS } from './engine/formats';
+import type { TeamSet } from './engine/sets';
+import { TYPES } from './engine/types';
+
 export interface SavedTeam {
   name: string;
   text: string;
   /** Posizioni dei membri preferiti (il formato Showdown non li prevede). */
   favorites?: number[];
+  /** Posizioni dei membri con Custom Skillset. */
+  custom?: number[];
+  /** Formato in cui il team è stato salvato. */
+  format?: Format;
 }
 
 const KEY = 'dreamdex.savedTeams';
@@ -23,7 +32,9 @@ const isSavedTeam = (value: unknown): value is SavedTeam =>
 export function loadSavedTeams(storage: Storage | undefined = defaultStorage()): SavedTeam[] {
   try {
     const parsed: unknown = JSON.parse(storage?.getItem(KEY) ?? '[]');
-    return Array.isArray(parsed) ? parsed.filter(isSavedTeam) : [];
+    return Array.isArray(parsed)
+      ? parsed.filter(isSavedTeam).map(t => (t.format === undefined ? t : { ...t, format: sanitizeFormat(t.format) }))
+      : [];
   } catch {
     return [];
   }
@@ -38,3 +49,54 @@ export function saveTeams(teams: SavedTeam[], storage: Storage | undefined = def
     return false;
   }
 }
+
+
+export interface Session {
+  team: TeamSet[];
+  format: Format;
+}
+
+const SESSION_KEY = 'dreamdex.session';
+
+/** Ricostruisce un formato valido da dati salvati (campi sconosciuti o errati tornano ai valori di default). */
+function sanitizeFormat(raw: unknown): Format {
+  const f = (typeof raw === 'object' && raw !== null ? raw : {}) as Partial<Format>;
+  return {
+    formatId: FORMAT_OPTIONS.some(o => o.id === f.formatId) ? f.formatId! : DEFAULT_FORMAT.formatId,
+    genLimit: typeof f.genLimit === 'number' && f.genLimit >= 1 && f.genLimit <= 9 ? f.genLimit : DEFAULT_FORMAT.genLimit,
+    minUsage: typeof f.minUsage === 'number' && f.minUsage >= 0 ? f.minUsage : DEFAULT_FORMAT.minUsage,
+    allowMultipleMegas: f.allowMultipleMegas === true,
+    ignoreBans: f.ignoreBans === true,
+    monotype: (TYPES as readonly string[]).includes(f.monotype as string) ? f.monotype! : null,
+  };
+}
+
+const isTeamSet = (value: unknown): value is TeamSet =>
+  typeof value === 'object' && value !== null && typeof (value as TeamSet).species === 'string'
+  && Array.isArray((value as TeamSet).moves);
+
+/** Team e formato dell'ultima sessione, o null se assenti o non validi. */
+export function loadSession(storage: Storage | undefined = defaultStorage()): Session | null {
+  try {
+    const raw = storage?.getItem(SESSION_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { team?: unknown; format?: unknown };
+    if (!Array.isArray(parsed.team) || !parsed.team.every(isTeamSet)) return null;
+    return { team: parsed.team.slice(0, 6), format: sanitizeFormat(parsed.format) };
+  } catch {
+    return null;
+  }
+}
+
+export function saveSession(session: Session, storage: Storage | undefined = defaultStorage()): boolean {
+  try {
+    if (!storage) return false;
+    storage.setItem(SESSION_KEY, JSON.stringify(session));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** localStorage del browser, se accessibile. */
+export const browserStorage = (): Storage | undefined => defaultStorage();

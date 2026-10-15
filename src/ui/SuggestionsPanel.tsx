@@ -61,7 +61,7 @@ function SuggestionItem({ rank, item, actionLabel, onAction, emptyTeam, format }
             <small>{diffText ?? item.reasons[0]?.text ?? ''}</small>
             <span className="tags">
               <TierTag species={item.species} format={format} />
-              {item.tags.map(tag => <span key={tag} className="tag">{tag}</span>)}
+              {item.tags.map(tag => <span key={tag} className={tag.startsWith('⚠') ? 'tag warn' : 'tag'}>{tag}</span>)}
             </span>
           </span>
           <span className="score" aria-label={`Punteggio ${item.score}`}>{item.score}</span>
@@ -132,7 +132,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   const pickExact = () => {
     const species = getSpecies(filters.query.trim());
     if (!species) return;
-    const set = defaultSet(data, species.name);
+    const set = defaultSet(data, species.name, format.genLimit);
     if (replacing) onReplaceWith(replaceIndex, set);
     else onAdd(set);
     setFilters({ ...filters, query: '' });

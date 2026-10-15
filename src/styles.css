@@ -104,3 +104,6 @@ small { color: var(--muted); display: block; }
 .tag.banned { background: var(--bad); color: var(--bad-text); }
 .banner.info { background: var(--good); color: var(--good-text); }
 .advanced[open] > div { display: flex; flex-direction: column; gap: 6px; width: 240px; }
+.tag.warn { background: var(--warn-bg); color: var(--warn); }
+.slot .custom { color: var(--accent); font-weight: 600; }
+.custom-toggle { grid-column: 1 / -1; flex-direction: row !important; align-items: center; gap: 4px; }

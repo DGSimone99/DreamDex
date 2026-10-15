@@ -108,11 +108,12 @@ export function matchesFilters(candidate: { species: string; set: TeamSet }, f: 
 const setCache = new WeakMap<EngineData, Map<string, TeamSet>>();
 
 /** Set di riferimento, calcolato una volta per specie e riusato tra una ricerca e l'altra. */
-function cachedDefaultSet(data: EngineData, species: string): TeamSet {
+function cachedDefaultSet(data: EngineData, species: string, genLimit: number): TeamSet {
   let cache = setCache.get(data);
   if (!cache) setCache.set(data, (cache = new Map()));
-  let set = cache.get(species);
-  if (!set) cache.set(species, (set = defaultSet(data, species)));
+  const key = `${genLimit}:${species}`;
+  let set = cache.get(key);
+  if (!set) cache.set(key, (set = defaultSet(data, species, genLimit)));
   return set;
 }
 
@@ -122,7 +123,7 @@ export function searchPool(team: TeamSet[], format: Format, data: EngineData, f:
   return dex.species.all()
     .filter(s => isTeambuildable(s) && withinGen(s, format) && !teamNumbers.has(s.num))
     .filter(s => !query || toID(s.name).includes(query))
-    .map(s => ({ species: s.name, set: cachedDefaultSet(data, s.name) }))
+    .map(s => ({ species: s.name, set: cachedDefaultSet(data, s.name, format.genLimit) }))
     // Monotype: conta il tipo della forma in battaglia (es. Charizard con Charizardite X è Fire/Dragon)
     .filter(c => meetsTeamRules(battleSpecies(c.set) ?? getSpecies(c.species)!, format))
     .filter(c => matchesFilters(c, f, data, format))
