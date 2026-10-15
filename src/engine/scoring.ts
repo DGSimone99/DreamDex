@@ -7,7 +7,7 @@ import type { Format } from './format';
 import { attackStyle, detectRoles, ESSENTIAL_ROLES, type Role } from './roles';
 import { defaultSet, type TeamSet } from './sets';
 import { teammatePct, usageOf } from './stats';
-import { mechanicalLinks } from './synergy';
+import { clashesWith, CONDITION_LABELS, mechanicalLinks, weakenedMoves } from './synergy';
 import { defensiveMultiplier, superEffectiveMove } from './types';
 import { COMPONENT_KEYS, WEIGHTS } from './weights';
 
@@ -22,14 +22,36 @@ export interface Suggestion {
   reasons: Reason[];
   /** Etichette brevi mostrate sulla carta (es. "Spesso usati insieme: X (23%)"). */
   tags: string[];
+  /** Punti tolti per conflitti di meteo/campo e mosse indebolite dal meteo del team. */
+  penalty: number;
 }
 
 /** Quota di team in comune oltre la quale un candidato è "spesso usato insieme" a un membro. */
 export const OFTEN_TOGETHER = 0.15;
 
+/** Penalità dei conflitti di meteo/campo con il team (come nella valutazione del team). */
+export const CLASH_PENALTY = 5;
+export const WEAKENED_STAB_PENALTY = 3;
+export const WEAKENED_COVERAGE_PENALTY = 1;
+
+function clashFacts(set: TeamSet, team: TeamSet[]): { texts: string[]; penalty: number } {
+  const conflicts = clashesWith(set, team);
+  const weakened = weakenedMoves([...team, set]).filter(w => w.member === set.species && w.setter !== set.species);
+  const cap = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
+  return {
+    texts: [
+      ...conflicts.map(c => `⚠ Meteo in conflitto con ${c}`),
+      ...weakened.map(w => `⚠ ${cap(CONDITION_LABELS[w.condition])} di ${w.setter} indebolisce le sue mosse ${w.type}`),
+    ],
+    penalty: CLASH_PENALTY * conflicts.length
+      + weakened.reduce((acc, w) => acc + (w.stab ? WEAKENED_STAB_PENALTY : WEAKENED_COVERAGE_PENALTY), 0),
+  };
+}
+
 function tagsFor(facts: Facts): string[] {
   const s = facts.synergy;
   return [
+    ...facts.clashes,
     ...facts.mechanical,
     ...(s && s.pct >= OFTEN_TOGETHER ? [`Spesso usati insieme: ${s.member} (${Math.round(s.pct * 100)}%)`] : []),
   ];
@@ -122,6 +144,7 @@ const NO_FACTS = (usage: number): Facts => ({
   roles: { filled: [], style: null },
   synergy: null,
   mechanical: [],
+  clashes: [],
   strength: { usage },
 });
 
@@ -147,6 +170,7 @@ export function scoreCandidates(team: TeamSet[], format: Format, data: EngineDat
       roles: rolesComponent(set, analysis),
       synergy: synergyRaw(set, team, data),
       mechanical: mechanicalLinks(set, team).map(link => link.text),
+      clash: clashFacts(set, team),
     };
   });
   const maxSynergy = Math.max(0, ...partial.map(p => (p.empty ? 0 : p.synergy.raw)));
@@ -157,7 +181,7 @@ export function scoreCandidates(team: TeamSet[], format: Format, data: EngineDat
       if (p.empty) {
         const components: Components = { defense: 0, threats: 0, coverage: 0, roles: 0, synergy: 0, strength };
         const facts = NO_FACTS(p.usage);
-        return { species: p.species, set: p.set, score: Math.round(100 * strength), components, facts, reasons: explain(facts, components), tags: [] };
+        return { species: p.species, set: p.set, score: Math.round(100 * strength), components, facts, reasons: explain(facts, components), tags: [], penalty: 0 };
       }
       const components: Components = {
         defense: p.defense.value,
@@ -175,10 +199,12 @@ export function scoreCandidates(team: TeamSet[], format: Format, data: EngineDat
         roles: p.roles.facts,
         synergy: p.synergy.best,
         mechanical: p.mechanical,
+        clashes: p.clash.texts,
         strength: { usage: p.usage },
       };
-      const score = Math.round(100 * sum(COMPONENT_KEYS.map(key => WEIGHTS[key] * components[key])));
-      return { species: p.species, set: p.set, score, components, facts, reasons: explain(facts, components), tags: tagsFor(facts) };
+      const penalty = p.clash.penalty;
+      const score = Math.max(0, Math.round(100 * sum(COMPONENT_KEYS.map(key => WEIGHTS[key] * components[key]))) - penalty);
+      return { species: p.species, set: p.set, score, components, facts, reasons: explain(facts, components), tags: tagsFor(facts), penalty };
     })
     .sort((a, b) => b.score - a.score || usageOf(data.stats, battleName(b.set)) - usageOf(data.stats, battleName(a.set)));
 }

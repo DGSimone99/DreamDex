@@ -61,7 +61,7 @@ function SuggestionItem({ rank, item, actionLabel, onAction, emptyTeam, format }
             <small>{diffText ?? item.reasons[0]?.text ?? ''}</small>
             <span className="tags">
               <TierTag species={item.species} format={format} />
-              {item.tags.map(tag => <span key={tag} className="tag">{tag}</span>)}
+              {item.tags.map(tag => <span key={tag} className={tag.startsWith('⚠') ? 'tag warn' : 'tag'}>{tag}</span>)}
             </span>
           </span>
           <span className="score" aria-label={`Punteggio ${item.score}`}>{item.score}</span>
