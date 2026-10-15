@@ -9,7 +9,6 @@ import { roleAndTypeRedundancies } from './rating';
 import type { TeamSet } from './sets';
 import { defensiveMultiplier } from './types';
 
-export const SERIOUS_THREAT_USAGE = 0.1;
 export const SWAP_MARGIN = 10;
 export const SIMILAR_THRESHOLD = 0.6;
 export const MAX_SWAPS = 2;
@@ -45,10 +44,11 @@ export interface Coaching {
   strengths: string[];
   problems: CoachProblem[];
   swaps: CoachSwap[];
+  /** Per ogni minaccia del meta senza check nel team: i candidati che la gestiscono. */
+  threatFixes: Record<string, string[]>;
 }
 
 const list = (items: string[]) => items.join(', ');
-const pct = (usage: number) => `${(usage * 100).toFixed(1)}%`;
 
 function fixesFor(candidates: Suggestion[], rank: (s: Suggestion) => number): string[] {
   return candidates
@@ -66,8 +66,6 @@ function findStrengths(team: TeamSet[], analysis: TeamAnalysis): string[] {
   const present = new Set(team.flatMap(detectRoles));
   const roles = ESSENTIAL_ROLES.filter(r => present.has(r)).map(r => ROLE_LABELS[r]);
   if (roles.length) strengths.push(`Ruoli coperti: ${list(roles)}`);
-  const handled = analysis.threats.filter(t => t.handledBy.length > 0).slice(0, 5).map(t => t.name);
-  if (handled.length) strengths.push(`Ferma ${list(handled)}`);
   const covered = analysis.coverage.filter(r => r.hitters.length > 0).length;
   if (covered >= STRONG_COVERAGE) strengths.push(`Colpisce super efficace ${covered}/18 tipi`);
   return strengths;
@@ -92,17 +90,6 @@ function findProblems(team: TeamSet[], format: Format, analysis: TeamAnalysis, c
   const megas = team.filter(isMega);
   if (!format.allowMultipleMegas && megas.length > 1) {
     add(true, `Più Mega nel team (${list(megas.map(m => m.species))}): in National Dex ne è ammessa una sola`, []);
-  }
-
-  const open = analysis.threats.filter(t => t.handledBy.length === 0);
-  for (const threat of open.filter(t => t.usage >= SERIOUS_THREAT_USAGE)) {
-    add(true, `Nessun check per ${threat.name} (${pct(threat.usage)} di uso)`,
-      fixesFor(candidates, s => Number(s.facts.threats.checked.includes(threat.name))));
-  }
-  const minorThreats = open.filter(t => t.usage < SERIOUS_THREAT_USAGE).map(t => t.name);
-  if (minorThreats.length) {
-    add(false, `Minacce minori non gestite: ${list(minorThreats)}`,
-      fixesFor(candidates, s => s.facts.threats.checked.filter(n => minorThreats.includes(n)).length));
   }
 
   const missing = analysis.needs.missingRoles.filter(r => ESSENTIAL_ROLES.includes(r));
@@ -194,7 +181,7 @@ export function describeSwap(swap: CoachSwap): string {
 
 export function coachTeam(team: TeamSet[], format: Format, data: EngineData): Coaching {
   if (team.length < 2) {
-    return { verdict: 'Aggiungi almeno 2 Pokémon per ricevere il coaching', strengths: [], problems: [], swaps: [] };
+    return { verdict: 'Aggiungi almeno 2 Pokémon per ricevere il coaching', strengths: [], problems: [], swaps: [], threatFixes: {} };
   }
   const analysis = analyzeTeam(team, data);
   const candidates = data.stats ? scoreCandidates(team, format, data) : [];
@@ -204,5 +191,8 @@ export function coachTeam(team: TeamSet[], format: Format, data: EngineData): Co
     strengths: findStrengths(team, analysis),
     problems,
     swaps: data.stats ? findSwaps(team, format, data) : [],
+    threatFixes: Object.fromEntries(analysis.threats
+      .filter(t => t.handledBy.length === 0)
+      .map(t => [t.name, fixesFor(candidates, s => Number(s.facts.threats.checked.includes(t.name)))])),
   };
 }

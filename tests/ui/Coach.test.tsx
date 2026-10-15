@@ -15,9 +15,9 @@ const analysis = () => screen.getByRole('region', { name: 'Analisi' });
 describe('CoachPanel', () => {
   it('mostra verdetto, punti di forza e problemi', async () => {
     await setup('Great Tusk', 'Gholdengo');
-    expect(within(analysis()).getByText('Team incompleto: mancano 4 membri · 2 problemi seri, 7 minori')).toBeInTheDocument();
-    expect(within(analysis()).getByText('Ferma Kingambit, Toxapex')).toBeInTheDocument();
-    expect(within(analysis()).getByText(/Nessun check per Dragapult/)).toBeInTheDocument();
+    expect(within(analysis()).getByText('Team incompleto: mancano 4 membri · 0 problemi seri, 6 minori')).toBeInTheDocument();
+    expect(within(analysis()).getByText('Gestisce bene Poison, Bug, Rock')).toBeInTheDocument();
+    expect(within(analysis()).getByText('Dragapult (18.0%): nessun check → considera Kingambit')).toBeInTheDocument();
   });
 
   it('invito ad aggiungere con meno di 2 membri', async () => {

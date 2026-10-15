@@ -9,6 +9,7 @@ import { fixtureData } from '../fixtures/data';
 const base = { index: 0, fit: 40, score: 60, similar: false, diff: { gains: [], losses: [] } };
 const coaching: Coaching = {
   verdict: 'Team solido · 0 problemi seri, 0 minori',
+  threatFixes: {},
   strengths: [],
   problems: [],
   swaps: [
