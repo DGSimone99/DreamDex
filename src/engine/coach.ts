@@ -17,11 +17,13 @@ export const MIN_COVERAGE_WEIGHT = 0.05;
 export const STRONG_COVERAGE = 15;
 /** Oltre questa quota di alternative che si adattano meglio, la sostituzione è consigliata (gialla). */
 export const RECOMMEND_SHARE = 0.5;
+/** …oppure se la migliore alternativa si adatta meglio di almeno questi punti. */
+export const RECOMMEND_GAIN = 25;
 
 export type SwapLevel = 'recommended' | 'optional';
 
-export const classifySwap = (betterShare: number): SwapLevel =>
-  betterShare > RECOMMEND_SHARE ? 'recommended' : 'optional';
+export const classifySwap = (betterShare: number, gain: number): SwapLevel =>
+  betterShare > RECOMMEND_SHARE || gain >= RECOMMEND_GAIN ? 'recommended' : 'optional';
 
 export interface CoachProblem {
   severity: 'serious' | 'minor';
@@ -141,8 +143,10 @@ function findSwaps(team: TeamSet[], format: Format, data: EngineData): CoachSwap
       const better = scored.filter(s =>
         s.set !== member && toID(battleName(s.set)) !== own && s.score - self.score >= SWAP_MARGIN);
       const others = scored.length - 1;
-      const level = classifySwap(others > 0 ? scored.filter(s => s.score > self.score).length / others : 0);
-      return better.length ? { index, member, rest, fit: self.score, better, level } : null;
+      if (!better.length) return null;
+      const share = others > 0 ? scored.filter(s => s.score > self.score).length / others : 0;
+      const level = classifySwap(share, better[0].score - self.score);
+      return { index, member, rest, fit: self.score, better, level };
     })
     .filter(isDefined)
     .sort((a, b) =>
@@ -183,19 +187,32 @@ function verdictFor(team: TeamSet[], problems: CoachProblem[]): string {
   return `${label} · ${counts}`;
 }
 
+/** Raggruppa le voci del diff: ruoli, "copre X, Y", "resiste X, Y". */
+function describeChanges(diff: Diff): string {
+  const group = (items: string[], sign: '+' | '-') => {
+    const plain = items.map(item => item.replace(/^[+-] /, ''));
+    const covers = plain.filter(i => i.startsWith('copre ')).map(i => i.slice('copre '.length));
+    const resists = plain.filter(i => i.startsWith('resiste ')).map(i => i.slice('resiste '.length));
+    const roles = plain.filter(i => !i.startsWith('copre ') && !i.startsWith('resiste '));
+    const gain = sign === '+';
+    return [
+      roles.length ? `${gain ? 'porta' : 'perdi'} ${roles.join(', ')}` : '',
+      covers.length ? `${gain ? 'copre' : 'non copre più'} ${covers.join(', ')}` : '',
+      resists.length ? `${gain ? 'resiste' : 'non resiste più'} ${resists.join(', ')}` : '',
+    ].filter(Boolean);
+  };
+  return [...group(diff.gains, '+'), ...group(diff.losses, '-')].join('; ');
+}
+
 export function describeSwap(swap: CoachSwap): string {
-  const unsign = (items: string[]) => items.map(item => item.replace(/^[+-] /, '')).join(', ');
-  const changes = [
-    swap.diff.gains.length ? `porta ${unsign(swap.diff.gains)}` : '',
-    swap.diff.losses.length ? `perdi ${unsign(swap.diff.losses)}` : '',
-  ].filter(Boolean).join('; ');
+  const gain = `(+${swap.score - swap.fit})`;
   const head = swap.similar
-    ? `${swap.replacement} (${swap.score}) fa un lavoro simile a ${swap.member} (${swap.fit}) ma si adatta meglio al team`
+    ? `${swap.replacement} fa un lavoro simile a ${swap.member} ma si adatta meglio ${gain}`
     : swap.level === 'optional'
-      ? `${swap.member} va già bene (${swap.fit}); in alternativa ${swap.replacement} (${swap.score})`
-      : `Valuta di sostituire ${swap.member} (${swap.fit}): ${swap.replacement} (${swap.score})`;
-  if (!changes) return head;
-  return swap.similar ? `${head}; ${changes}` : `${head} ${changes}`;
+      ? `${swap.member} va già bene · in alternativa ${swap.replacement} si adatta meglio ${gain}`
+      : `Valuta di sostituire ${swap.member} · ${swap.replacement} si adatta meglio ${gain}`;
+  const changes = describeChanges(swap.diff);
+  return changes ? `${head}: ${changes}` : head;
 }
 
 export function coachTeam(team: TeamSet[], format: Format, data: EngineData): Coaching {

@@ -68,8 +68,14 @@ describe('testo: porta …; perdi …', () => {
   it('separa guadagni e perdite', () => {
     const swap = { index: 0, member: 'Magikarp', fit: 20, replacement: 'Corviknight', score: 60, similar: false, level: 'recommended' as const,
       diff: { gains: ['+ Pivot', '+ resiste Ground'], losses: ['- copre Fire'] } };
-    expect(describeSwap(swap)).toBe('Valuta di sostituire Magikarp (20): Corviknight (60) porta Pivot, resiste Ground; perdi copre Fire');
+    expect(describeSwap(swap)).toBe('Valuta di sostituire Magikarp · Corviknight si adatta meglio (+40): porta Pivot; resiste Ground; non copre più Fire');
     expect(describeSwap({ ...swap, similar: true, diff: { gains: [], losses: ['- copre Fire'] } }))
-      .toBe('Corviknight (60) fa un lavoro simile a Magikarp (20) ma si adatta meglio al team; perdi copre Fire');
+      .toBe('Corviknight fa un lavoro simile a Magikarp ma si adatta meglio (+40): non copre più Fire');
+  });
+
+  it('raggruppa copre/resiste e le perdite', () => {
+    const swap = { index: 0, member: 'Garchomp', fit: 38, replacement: 'Great Tusk', score: 56, similar: false, level: 'optional' as const,
+      diff: { gains: ['+ Rimozione hazard', '+ copre Normal', '+ copre Grass', '+ copre Ice'], losses: ['- Hazard', '- resiste Dark'] } };
+    expect(describeSwap(swap)).toBe('Garchomp va già bene · in alternativa Great Tusk si adatta meglio (+18): porta Rimozione hazard; copre Normal, Grass, Ice; perdi Hazard; non resiste più Dark');
   });
 });
