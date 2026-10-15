@@ -6,7 +6,7 @@ import { diffContribution, similarity, type Diff } from './replace';
 import { detectRoles, ESSENTIAL_ROLES, ROLE_LABELS } from './roles';
 import { scoreCandidates, type Suggestion } from './scoring';
 import { roleAndTypeRedundancies } from './rating';
-import { benefits, CONDITION_LABELS, enables, unmetBeneficiaries, unusedEnablers } from './synergy';
+import { benefits, CONDITION_LABELS, enables, teamSynergies, unmetBeneficiaries, unusedEnablers } from './synergy';
 import type { TeamSet } from './sets';
 import { defensiveMultiplier } from './types';
 
@@ -67,6 +67,8 @@ function findStrengths(team: TeamSet[], analysis: TeamAnalysis): string[] {
   const present = new Set(team.flatMap(detectRoles));
   const roles = ESSENTIAL_ROLES.filter(r => present.has(r)).map(r => ROLE_LABELS[r]);
   if (roles.length) strengths.push(`Ruoli coperti: ${list(roles)}`);
+  const synergies = teamSynergies(team);
+  if (synergies.length) strengths.push(`Sinergie: ${synergies.join('; ')}`);
   const covered = analysis.coverage.filter(r => r.hitters.length > 0).length;
   if (covered >= STRONG_COVERAGE) strengths.push(`Colpisce super efficace ${covered}/18 tipi`);
   return strengths;

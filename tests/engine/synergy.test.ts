@@ -5,7 +5,7 @@ import { DEFAULT_FORMAT } from '../../src/engine/format';
 import { scoreCandidates } from '../../src/engine/scoring';
 import { emptySet, mostCommonSet, type TeamSet } from '../../src/engine/sets';
 import type { SpeciesStats } from '../../src/engine/stats';
-import { benefits, enables, mechanicalLinks, unmetBeneficiaries, unusedEnablers } from '../../src/engine/synergy';
+import { benefits, enables, mechanicalLinks, teamSynergies, unmetBeneficiaries, unusedEnablers } from '../../src/engine/synergy';
 
 const set = (species: string, ability: string, moves: string[] = [], item = ''): TeamSet =>
   ({ ...emptySet(species), ability, moves, item });
@@ -62,6 +62,25 @@ describe('legami nel team', () => {
 
   it('Weather Ball e Terrain Pulse non vengono segnalati come beneficiari senza condizione', () => {
     expect(unmetBeneficiaries([set('Pelipper', 'Keen Eye', ['Weather Ball'])])).toEqual([]);
+  });
+});
+
+describe('sinergie già presenti nel team', () => {
+  const leafeon = set('Leafeon', 'Chlorophyll', ['Swords Dance', 'Solar Blade', 'Knock Off', 'Weather Ball']);
+
+  it('elenca abilitatore → beneficiari, senza Weather Ball', () => {
+    expect(teamSynergies([ninetales, leafeon])).toEqual(['Ninetales (Drought) → Leafeon (Chlorophyll)']);
+    expect(teamSynergies([ninetales, leafeon, tusk]))
+      .toEqual(['Ninetales (Drought) → Leafeon (Chlorophyll), Great Tusk (Protosynthesis)']);
+  });
+
+  it('nessuna sinergia: lista vuota', () => {
+    expect(teamSynergies([ninetales, set('Garchomp', 'Rough Skin', ['Earthquake'])])).toEqual([]);
+  });
+
+  it('il coaching la mostra tra i punti di forza', () => {
+    const strengths = coachTeam([ninetales, leafeon], DEFAULT_FORMAT, { stats: null, sets: null }).strengths;
+    expect(strengths).toContain('Sinergie: Ninetales (Drought) → Leafeon (Chlorophyll)');
   });
 });
 

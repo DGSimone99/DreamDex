@@ -189,3 +189,22 @@ export function unmetBeneficiaries(team: TeamSet[]): TeamConditionIssue[] {
       .filter(b => b.via !== SLOW)
       .map(b => ({ member: member.species, ...b })));
 }
+
+/** Sinergie già attive nel team, una riga per abilitatore: "Ninetales (Drought) → Leafeon (Chlorophyll)". */
+export function teamSynergies(team: TeamSet[]): string[] {
+  const lines: string[] = [];
+  for (const member of team) {
+    for (const enabler of enables(member)) {
+      const beneficiaries = team
+        .filter(other => other !== member)
+        .map(other => ({
+          other,
+          benefit: benefits(other).find(b => b.condition === enabler.condition && !GENERIC_MOVES.has(toID(b.via))),
+        }))
+        .filter(x => x.benefit)
+        .map(x => `${x.other.species} (${x.benefit!.via})`);
+      if (beneficiaries.length) lines.push(`${member.species} (${enabler.via}) → ${beneficiaries.join(', ')}`);
+    }
+  }
+  return lines;
+}
