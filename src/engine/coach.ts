@@ -135,6 +135,7 @@ function findProblems(team: TeamSet[], format: Format, analysis: TeamAnalysis, c
 function findSwaps(team: TeamSet[], format: Format, data: EngineData): CoachSwap[] {
   const options = team
     .map((member, index) => {
+      if (member.favorite) return null;
       const rest = team.filter((_, i) => i !== index);
       const scored = scoreCandidates(rest, format, data, [member]);
       const self = scored.find(s => s.set === member);

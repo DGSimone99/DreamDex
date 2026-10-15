@@ -41,6 +41,16 @@ function TeamSlot({ set, format, warning, onIgnoreWarning, onChange, onRemove, o
   return (
     <details className={`slot filled${problem ? ' invalid' : warning ? ' warn' : ''}`}>
       <summary>
+        <button
+          type="button"
+          className="favorite"
+          aria-label={`Preferito ${set.species}`}
+          aria-pressed={!!set.favorite}
+          title={set.favorite ? 'Preferito: il coaching non ne suggerisce la sostituzione' : 'Segna come preferito'}
+          onClick={e => { e.preventDefault(); onChange({ ...set, favorite: !set.favorite }); }}
+        >
+          {set.favorite ? '★' : '☆'}
+        </button>{' '}
         <strong>{set.species}</strong>
         <small>{species?.types.join('/') ?? '?'}{roles.length ? ` · ${roles.join(', ')}` : ''}</small>
         {problem && <small className="problem">{problem}</small>}

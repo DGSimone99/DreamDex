@@ -1,6 +1,8 @@
 export interface SavedTeam {
   name: string;
   text: string;
+  /** Posizioni dei membri preferiti (il formato Showdown non li prevede). */
+  favorites?: number[];
 }
 
 const KEY = 'dreamdex.savedTeams';
@@ -15,7 +17,8 @@ function defaultStorage(): Storage | undefined {
 
 const isSavedTeam = (value: unknown): value is SavedTeam =>
   typeof value === 'object' && value !== null
-  && typeof (value as SavedTeam).name === 'string' && typeof (value as SavedTeam).text === 'string';
+  && typeof (value as SavedTeam).name === 'string' && typeof (value as SavedTeam).text === 'string'
+  && ((value as SavedTeam).favorites === undefined || Array.isArray((value as SavedTeam).favorites));
 
 export function loadSavedTeams(storage: Storage | undefined = defaultStorage()): SavedTeam[] {
   try {

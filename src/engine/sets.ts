@@ -14,6 +14,8 @@ export interface TeamSet {
   nature: string;
   evs: Partial<Record<StatID, number>>;
   teraType?: string;
+  /** Preferito: il coaching non ne suggerisce mai la sostituzione. */
+  favorite?: boolean;
 }
 
 export type SetsData = Record<string, TeamSet>;
