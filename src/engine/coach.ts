@@ -6,6 +6,7 @@ import { diffContribution, similarity, type Diff } from './replace';
 import { detectRoles, ESSENTIAL_ROLES, ROLE_LABELS } from './roles';
 import { scoreCandidates, type Suggestion } from './scoring';
 import { roleAndTypeRedundancies } from './rating';
+import { benefits, CONDITION_LABELS, enables, unmetBeneficiaries, unusedEnablers } from './synergy';
 import type { TeamSet } from './sets';
 import { defensiveMultiplier } from './types';
 
@@ -99,6 +100,15 @@ function findProblems(team: TeamSet[], format: Format, analysis: TeamAnalysis, c
   }
 
   for (const item of roleAndTypeRedundancies(team)) add(false, `Ridondanza: ${item.text}`, []);
+
+  for (const issue of unusedEnablers(team)) {
+    add(false, `${issue.via} di ${issue.member} non sfruttato: nessuno ne beneficia`,
+      fixesFor(candidates, s => Number(benefits(s.set).some(b => b.condition === issue.condition && !['Weather Ball', 'Terrain Pulse'].includes(b.via)))));
+  }
+  for (const issue of unmetBeneficiaries(team)) {
+    add(false, `${issue.member} ha ${issue.via} ma il team non porta ${CONDITION_LABELS[issue.condition]}`,
+      fixesFor(candidates, s => Number(enables(s.set).some(e => e.condition === issue.condition))));
+  }
 
   const gaps = analysis.coverage
     .filter(r => r.hitters.length === 0 && analysis.typeWeights[r.type] >= MIN_COVERAGE_WEIGHT)
