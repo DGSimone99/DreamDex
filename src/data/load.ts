@@ -1,14 +1,14 @@
 import type { EngineData } from '../engine/data';
 import { DEFAULT_FORMAT } from '../engine/format';
 import { dataSource } from '../engine/formats';
-import type { SetsData } from '../engine/sets';
+import type { PresetsData, SetsData } from '../engine/sets';
 import type { SpeciesStats, StatsData, StatsMeta } from '../engine/stats';
 
 type Loaders = Record<string, () => Promise<unknown>>;
 
 const files: Loaders = import.meta.glob<unknown>('/data/*/*.json', { import: 'default' });
 
-const EMPTY: EngineData = { stats: null, sets: null, fallback: null };
+const EMPTY: EngineData = { stats: null, sets: null, fallback: null, presets: null, fallbackPresets: null };
 
 /** Cartella dei set di riserva comuni a tutti i formati. */
 export const FALLBACK_DIR = '_fallback';
@@ -20,14 +20,16 @@ export async function readSource(loaders: Loaders, source: string): Promise<Engi
     return loader ? ((await loader()) as T) : null;
   };
   try {
-    const [pokemon, meta, sets, fallback] = await Promise.all([
+    const [pokemon, meta, sets, fallback, presets, fallbackPresets] = await Promise.all([
       read<Record<string, SpeciesStats>>(source, 'stats'),
       read<StatsMeta>(source, 'meta'),
       read<SetsData>(source, 'sets'),
       read<SetsData>(FALLBACK_DIR, 'sets').catch(() => null),
+      read<PresetsData>(source, 'presets').catch(() => null),
+      read<PresetsData>(FALLBACK_DIR, 'presets').catch(() => null),
     ]);
     const stats: StatsData | null = pokemon && meta ? { meta, pokemon } : null;
-    return { ...(stats || sets ? { stats, sets } : { stats: null, sets: null }), fallback };
+    return { ...(stats || sets ? { stats, sets } : { stats: null, sets: null }), fallback, presets, fallbackPresets };
   } catch (error) {
     console.error(`Dati Smogon di ${source} non leggibili, rilancia npm run fetch-data:`, error);
     return EMPTY;

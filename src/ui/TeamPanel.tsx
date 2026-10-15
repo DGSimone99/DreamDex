@@ -3,13 +3,14 @@ import { battleSpecies, getSpecies, isMega, isSelectable, withinGen } from '../e
 import { formatLabel, isBannedIn, meetsTeamRules } from '../engine/formats';
 import type { Format } from '../engine/format';
 import { detectRoles, ROLE_LABELS } from '../engine/roles';
-import type { TeamSet } from '../engine/sets';
+import { presetsFor, type Preset, type TeamSet } from '../engine/sets';
 import { useState } from 'react';
 import { SetEditor } from './SetEditor';
+import { StatsBadge } from './StatsBadge';
+import { AlertMark, type Alert } from './AlertMark';
 import { Sprite, TypeChip, typeColor } from './Sprite';
 import { Icon } from './icons';
 import { illegalParts } from '../engine/learnsets';
-import { Typed } from './TypeText';
 
 interface Props {
   team: TeamSet[];
@@ -33,7 +34,8 @@ function slotProblem(set: TeamSet, format: Format): string | null {
 
 const MEGA_WARNING = 'Seconda Mega: in National Dex ne è ammessa una sola';
 
-function TeamSlot({ set, format, warning: megaWarning, open, onToggle, onIgnoreWarning, onChange, onRemove, onReplace }: {
+function TeamSlot({ set, presets, format, warning: megaWarning, open, onToggle, onIgnoreWarning, onChange, onRemove, onReplace }: {
+  presets: Preset[];
   set: TeamSet;
   open: boolean;
   onToggle: (open: boolean) => void;
@@ -53,6 +55,11 @@ function TeamSlot({ set, format, warning: megaWarning, open, onToggle, onIgnoreW
     illegal.moves.length ? `Mosse non legali: ${illegal.moves.join(', ')}` : null,
     illegal.ability ? `Abilità non legale: ${illegal.ability}` : null,
   ].filter((w): w is string => !!w);
+  // Problemi di legalità in rosso, avvisi in giallo: un triangolo sullo sprite, il dettaglio nel tooltip
+  const alerts: Alert[] = [
+    ...(problem ? [{ level: 'danger' as const, text: problem }] : []),
+    ...warnings.map(text => ({ level: 'warn' as const, text })),
+  ];
   return (
     <details
       className={`slot filled${problem ? ' invalid' : warnings.length ? ' warn' : ''}`}
@@ -61,7 +68,11 @@ function TeamSlot({ set, format, warning: megaWarning, open, onToggle, onIgnoreW
       onToggle={e => onToggle(e.currentTarget.open)}
     >
       <summary>
-        <Sprite species={set.species} item={set.item} />
+        <span className="sprite-wrap">
+          <Sprite species={set.species} item={set.item} />
+          <AlertMark alerts={alerts} className="on-sprite" />
+        </span>
+        <span className="slot-stats"><StatsBadge species={set.species} item={set.item} /></span>
         <button
           type="button"
           className="favorite"
@@ -85,12 +96,10 @@ function TeamSlot({ set, format, warning: megaWarning, open, onToggle, onIgnoreW
         <small className="held">{[set.item, set.ability].filter(Boolean).join(' · ') || 'Nessuno strumento'}</small>
         <span className="types">{species?.types.map(type => <TypeChip key={type} type={type} />) ?? <TypeChip type="?" />}</span>
         {roles.length > 0 && <small className="roles">{roles.join(' · ')}</small>}
-        {problem && <small className="problem"><Typed text={problem} /></small>}
         {set.customSkillset && <small className="custom">Custom</small>}
-        {warnings.map(w => <small key={w} className="warning">{w}</small>)}
       </summary>
       <div className="drawer">
-      <SetEditor set={set} genLimit={format.genLimit} onChange={onChange} />
+      <SetEditor set={set} presets={presets} genLimit={format.genLimit} onChange={onChange} />
       <div className="actions">
         <button type="button" aria-label={`Sostituisci ${set.species}`} onClick={onReplace}><Icon name="swap" /> Sostituisci</button>
         {megaWarning && <button type="button" onClick={onIgnoreWarning}>Lo so, tengo un'altra Mega</button>}
@@ -114,6 +123,7 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onAl
           <TeamSlot
             key={`${i}-${set.species}`}
             set={set}
+            presets={presetsFor(data, set.species)}
             format={format}
             warning={warningFor(set, i)}
             open={openIndex === i}

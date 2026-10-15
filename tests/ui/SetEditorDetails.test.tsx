@@ -69,3 +69,54 @@ describe('editor del set', () => {
     expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ moves: ['Flamethrower', 'Will-O-Wisp', 'Fire Blast', ''] }));
   });
 });
+
+describe('preset Smogon nell\'editor', () => {
+  it('scegliere un preset sostituisce il set, tenendo preferito e Custom Skillset', async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    const presets = [
+      { name: 'Sun Sweeper', format: 'gen9nationaldex', set: { ...emptySet('Ninetales'), item: 'Heat Rock', ability: 'Drought', moves: ['Solar Beam', 'Fire Blast'] } },
+      { name: 'Nasty Plot', format: 'gen8ou', set: { ...emptySet('Ninetales'), item: 'Life Orb', ability: 'Drought', moves: ['Nasty Plot', 'Fire Blast'] } },
+    ];
+    render(<SetEditor set={{ ...set, favorite: true }} presets={presets} genLimit={9} onChange={onChange} />);
+    await user.click(screen.getByLabelText('Preset Smogon'));
+    const option = within(screen.getByRole('listbox', { name: 'Preset Smogon: opzioni' })).getAllByRole('option')[1];
+    expect(option).toHaveTextContent('Nasty Plot');
+    expect(option).toHaveTextContent('Gen 8 OU');
+    await user.click(option);
+    expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ item: 'Life Orb', moves: ['Nasty Plot', 'Fire Blast'], favorite: true, species: 'Ninetales' }));
+  });
+
+  it('senza preset la tendina è disattivata', () => {
+    render(<SetEditor set={set} genLimit={9} onChange={vi.fn()} />);
+    expect(screen.getByLabelText('Preset Smogon')).toBeDisabled();
+  });
+
+  it('sesta voce Custom: selezionata appena il set non coincide più con un preset', async () => {
+    const user = userEvent.setup();
+    const sun = { ...set, item: 'Heat Rock', ability: 'Drought', nature: 'Timid', moves: ['Solar Beam', 'Fire Blast'], evs: { spa: 252, spe: 252, hp: 4 } };
+    const presets = [{ name: 'Sun Sweeper', format: 'gen9nationaldex', set: sun }];
+    function Editor() {
+      // Stesso set del preset, mosse in un altro ordine: risulta comunque il preset
+      const [current, setCurrent] = useState<TeamSet>({ ...sun, moves: ['Fire Blast', 'Solar Beam'] });
+      return <SetEditor set={current} presets={presets} genLimit={9} onChange={setCurrent} />;
+    }
+    render(<Editor />);
+    const field = () => screen.getByLabelText('Preset Smogon').closest('.combobox')!;
+    expect(field()).toHaveTextContent('Sun Sweeper');
+
+    await user.click(screen.getByLabelText('Preset Smogon'));
+    const options = within(screen.getByRole('listbox', { name: 'Preset Smogon: opzioni' })).getAllByRole('option');
+    expect(options).toHaveLength(2);
+    expect(options[1]).toHaveTextContent('Custom');
+    await user.keyboard('{Escape}');
+
+    await user.clear(screen.getByLabelText('Mossa 2'));
+    await user.type(screen.getByLabelText('Mossa 2'), 'Flamethrower');
+    expect(field()).toHaveTextContent('Custom');
+
+    await user.clear(screen.getByLabelText('Mossa 2'));
+    await user.type(screen.getByLabelText('Mossa 2'), 'Solar Beam');
+    expect(field()).toHaveTextContent('Sun Sweeper');
+  });
+});

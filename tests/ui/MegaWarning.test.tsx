@@ -21,6 +21,10 @@ describe('avviso seconda Mega', () => {
     const slot = within(team()).getByText('Charizard-Mega-Y').closest('details')!;
     expect(slot).toHaveClass('warn');
     expect(slot).not.toHaveClass('invalid');
+    // Triangolo giallo sullo sprite, con la spiegazione nel tooltip
+    const mark = slot.querySelector('.sprite-wrap .alert-mark')!;
+    expect(mark).toHaveClass('warn');
+    expect(within(mark as HTMLElement).getByRole('tooltip')).toHaveTextContent(WARNING);
   });
 
   it('"Lo so, tengo un\'altra Mega" nasconde l\'avviso e resta attivo', async () => {

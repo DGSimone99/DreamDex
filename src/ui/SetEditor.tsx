@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { dex, getMove, getSpecies, itemNames, moveNames, natureNames } from '../engine/dex';
 import { legalAbilities, legalMoves } from '../engine/learnsets';
-import { STAT_IDS, type TeamSet } from '../engine/sets';
+import { formatName, sameSet, STAT_IDS, type Preset, type TeamSet } from '../engine/sets';
 import { TYPES } from '../engine/types';
 import { Combobox, type ComboOption } from './Combobox';
 import { TypeChip } from './Sprite';
@@ -85,14 +85,19 @@ const clampEv = (value: number) => Math.min(252, Math.max(0, Number.isFinite(val
 
 interface Props {
   set: TeamSet;
+  /** Set con nome delle analisi Smogon (al massimo 5). */
+  presets?: Preset[];
   /** Limite di generazione: mosse e abilità legali fino a questa gen. */
   genLimit: number;
   onChange: (set: TeamSet) => void;
 }
 
+/** Voce del menu dei preset per un set che non coincide con nessun preset. */
+const CUSTOM_PRESET = 'custom';
+
 const CUSTOM_TOOLTIP = 'Permette qualunque mossa e abilità, anche non imparabili (pensato per le hackrom). Vale solo per questo Pokémon.';
 
-export function SetEditor({ set, genLimit, onChange }: Props) {
+export function SetEditor({ set, presets = [], genLimit, onChange }: Props) {
   const custom = !!set.customSkillset;
   const species = getSpecies(set.species);
   const standard = legalAbilities(set.species, genLimit)
@@ -108,9 +113,40 @@ export function SetEditor({ set, genLimit, onChange }: Props) {
   }, [custom, set.species, genLimit]);
   const moves = [0, 1, 2, 3].map(i => set.moves[i] ?? '');
   const update = (patch: Partial<TeamSet>) => onChange({ ...set, ...patch });
+  // Preset: la chiave è la posizione. Se il set coincide con un preset è selezionato quello,
+  // altrimenti (appena modifichi qualcosa) la voce "Custom"
+  const presetOptions: ComboOption[] = [
+    ...presets.map((preset, i) => ({
+      value: String(i),
+      label: preset.name,
+      detail: <span className="preset-format">{formatName(preset.format)}</span>,
+      description: preset.set.moves.join(' · '),
+    })),
+    { value: CUSTOM_PRESET, label: 'Custom', detail: <span className="preset-format">Il tuo set</span>, description: 'Il set modificato a mano' },
+  ];
+  const appliedIndex = presets.findIndex(p => sameSet(p.set, set));
+  const applyPreset = (key: string) => {
+    const preset = presets[Number(key)];
+    if (preset) onChange({ ...preset.set, species: set.species, favorite: set.favorite, customSkillset: set.customSkillset });
+  };
 
   return (
     <div className="set-editor">
+      <div className="editor-head">
+        <div className="field preset-field">
+          <Combobox
+            label="Preset Smogon"
+            value={presets.length === 0 ? '' : appliedIndex >= 0 ? String(appliedIndex) : CUSTOM_PRESET}
+            options={presetOptions}
+            restricted
+            disabled={presets.length === 0}
+            placeholder={presets.length ? 'Preset Smogon…' : 'Nessun preset Smogon'}
+            display={presets.length === 0 ? undefined : appliedIndex >= 0
+              ? <><span>{presets[appliedIndex].name}</span><span className="preset-format">{formatName(presets[appliedIndex].format)}</span></>
+              : <><span>Custom</span><span className="preset-format">Il tuo set</span></>}
+            onChange={applyPreset}
+          />
+        </div>
       <label className="custom-toggle" title={CUSTOM_TOOLTIP}>
         <input
           type="checkbox"
@@ -120,6 +156,7 @@ export function SetEditor({ set, genLimit, onChange }: Props) {
         />{' '}
         Custom Skillset
       </label>
+      </div>
       <fieldset className="editor-group">
         <legend>Set</legend>
         <div className="field" data-tip={describe.item(set.item)}>

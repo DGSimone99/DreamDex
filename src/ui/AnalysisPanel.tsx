@@ -72,7 +72,7 @@ export function AnalysisPanel({ team, analysis, rating, coaching, preview, onRep
       {rating && <RatingPanel rating={rating} />}
       {coaching && onReplace && <CoachPanel coaching={coaching} preview={preview} onReplace={onReplace} onSwap={onSwap} />}
 
-      <details className="block">
+      <details className="block" id="analysis-defense">
         <summary>
           <span>Debolezze difensive</span>
           <span className="summary-info">
@@ -107,7 +107,7 @@ export function AnalysisPanel({ team, analysis, rating, coaching, preview, onRep
         {weatherMitigations(team).map(m => <p key={m.condition} className="note"><Typed text={mitigationNote(m)} /></p>)}
       </details>
 
-      <details className="block">
+      <details className="block" id="analysis-coverage">
         <summary><span>Coverage offensiva</span><span>{18 - uncovered.length}/18 tipi</span></summary>
         <ul className="type-rows">
           {coverageRows.map(row => (
@@ -121,7 +121,7 @@ export function AnalysisPanel({ team, analysis, rating, coaching, preview, onRep
         </ul>
       </details>
 
-      <details className="block">
+      <details className="block" id="analysis-roles">
         <summary>
           <span>Ruoli</span>
           <span>{coveredRoles}/{allRoles.length} coperti</span>

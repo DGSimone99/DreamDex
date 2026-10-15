@@ -90,9 +90,14 @@ describe('ricerca e filtri nei suggerimenti', () => {
     expect(await within(suggestions()).findByText('Nessun Pokémon corrisponde ai filtri')).toBeInTheDocument();
   });
 
-  it('tag del tier anche sui suggerimenti normali', async () => {
-    await setup('Great Tusk');
-    expect(within(suggestions()).getAllByText('OU').length).toBeGreaterThan(0);
+  it('niente badge del tier: solo il triangolo rosso per chi è bannato', async () => {
+    const user = await setup('Great Tusk');
+    expect(suggestions().querySelector('.tag.tier')).toBeNull();
+    expect(suggestions().querySelector('.alert-mark')).toBeNull();
+    await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'dragapu');
+    await waitFor(() => expect(cardNames()).toEqual(['Dragapult']));
+    const mark = suggestions().querySelector('.alert-mark.danger')!;
+    expect(mark).toHaveTextContent('Uber · bannato in National Dex OU');
   });
 
   it('team completo: ricerca nascosta', async () => {

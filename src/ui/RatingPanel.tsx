@@ -1,5 +1,21 @@
-import type { TeamRating } from '../engine/rating';
+import type { AreaKey, TeamRating } from '../engine/rating';
 import { Typed } from './TypeText';
+
+/** Le aree con una scheda propria nell'analisi: cliccandole ci si arriva. */
+export const AREA_SECTIONS: Partial<Record<AreaKey, { id: string; title: string }>> = {
+  defense: { id: 'analysis-defense', title: 'Debolezze difensive' },
+  coverage: { id: 'analysis-coverage', title: 'Coverage offensiva' },
+  roles: { id: 'analysis-roles', title: 'Ruoli' },
+};
+
+/** Apre la scheda (se chiusa) e ci scorre sopra. */
+function goToSection(id: string) {
+  const section = document.getElementById(id) as HTMLDetailsElement | null;
+  if (!section) return;
+  section.open = true;
+  section.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+  section.querySelector('summary')?.focus({ preventScroll: true });
+}
 
 export function RatingPanel({ rating }: { rating: TeamRating }) {
   return (
@@ -9,27 +25,32 @@ export function RatingPanel({ rating }: { rating: TeamRating }) {
         <strong>{rating.grade}</strong> <span>· {rating.overall}/100 · {rating.label}</span>
       </p>
       <dl className="bars">
-        {rating.areas.map(area => (
-          <div key={area.key}>
-            <dt>{area.label} {area.value ?? 'n/d'}</dt>
-            <dd><meter min={0} max={100} value={area.value ?? 0} /></dd>
-          </div>
-        ))}
+        {rating.areas.map(area => {
+          const text = `${area.label} ${area.value ?? 'n/d'}`;
+          const section = AREA_SECTIONS[area.key];
+          // Statistiche: il dettaglio per membro sta nel tooltip
+          const members = area.key === 'strength' && rating.power.length
+            ? rating.power.map(m => `${m.species} ${m.power}`).join('\n')
+            : undefined;
+          return (
+            <div key={area.key}>
+              <dt>
+                {section ? (
+                  <button type="button" className="area-link" title={`Vai a ${section.title}`} onClick={() => goToSection(section.id)}>
+                    {text}
+                  </button>
+                ) : members ? (
+                  <span className="tip" tabIndex={0} data-tip={members} aria-description={members.replaceAll('\n', ' · ')}>{text}</span>
+                ) : text}
+              </dt>
+              <dd><meter min={0} max={100} value={area.value ?? 0} /></dd>
+            </div>
+          );
+        })}
       </dl>
-      {rating.power.length > 0 && (
-        <p className="note">
-          Statistiche:{' '}
-          {rating.power.map((m, i) => (
-            <span key={`${i}-${m.species}`} title={`Offesa ${m.offense} · Robustezza ${m.bulk}`}>
-              {i > 0 ? ' · ' : ''}{m.species} {m.power}
-            </span>
-          ))}
-        </p>
-      )}
       {rating.bonus.total > 0 && (
         <div className="bonus">
-          <strong>Bonus +{rating.bonus.total}</strong>{' '}
-          <small>(meteo e campi che smorzano debolezze, non sempre attivi)</small>
+          <strong>Bonus +{rating.bonus.total}</strong>
           <ul>
             {rating.bonus.items.map(item => <li key={item.text}><Typed text={item.text} /> (+{item.points})</li>)}
           </ul>
@@ -37,8 +58,7 @@ export function RatingPanel({ rating }: { rating: TeamRating }) {
       )}
       {rating.penalty.total > 0 && (
         <div className="penalty">
-          <strong>Penalità −{rating.penalty.total}</strong>{' '}
-          <small>(voto senza bonus e penalità: {rating.base})</small>
+          <strong>Penalità −{rating.penalty.total}</strong>
           <ul>
             {rating.penalty.items.map(item => <li key={item.text}><Typed text={item.text} /> (−{item.points})</li>)}
           </ul>

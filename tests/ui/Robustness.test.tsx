@@ -34,6 +34,6 @@ describe('robustezza UI', () => {
   it('dati corrotti: si parte senza statistiche invece di una pagina vuota', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     const data = await readSource({ '/data/gen9nationaldex/stats.json': () => Promise.reject(new SyntaxError('JSON troncato')) }, 'gen9nationaldex');
-    expect(data).toEqual({ stats: null, sets: null, fallback: null });
+    expect(data).toEqual({ stats: null, sets: null, fallback: null, presets: null, fallbackPresets: null });
   });
 });

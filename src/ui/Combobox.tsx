@@ -30,10 +30,12 @@ interface Props {
   description?: string;
   /** Come mostrare il valore scelto nel campo chiuso (solo con `restricted`). */
   display?: ReactNode;
+  placeholder?: string;
+  disabled?: boolean;
 }
 
 /** Campo con menu a tendina: cerca mentre scrivi, frecce e Invio per scegliere, ogni voce con la sua descrizione. */
-export function Combobox({ label, value, options, onChange, restricted = false, description, display }: Props) {
+export function Combobox({ label, value, options, onChange, restricted = false, description, display, placeholder, disabled }: Props) {
   const listId = useId();
   const [open, setOpen] = useState(false);
   // null: mostra tutto (appena aperto); stringa: filtra su quello che hai scritto
@@ -95,6 +97,8 @@ export function Combobox({ label, value, options, onChange, restricted = false, 
         aria-autocomplete="list"
         aria-activedescendant={open && shown[active] ? `${listId}-${active}` : undefined}
         readOnly={restricted}
+        disabled={disabled}
+        placeholder={placeholder}
         value={value}
         onClick={() => (open ? setOpen(false) : show())}
         onBlur={() => setOpen(false)}

@@ -16,6 +16,8 @@ import { copyText } from './clipboard';
 import { Sprite, TypeChip } from './Sprite';
 import { Icon } from './icons';
 import { ProsCons } from './ProsCons';
+import { StatsBadge } from './StatsBadge';
+import { AlertMark } from './AlertMark';
 import { Typed } from './TypeText';
 
 /** Barre mostrate sulle carte: come il candidato si adatta al team, più le sue statistiche. */
@@ -41,11 +43,10 @@ interface Props {
   onPreview?: (preview: SwapPreview, open: boolean) => void;
 }
 
-function TierTag({ species, format }: { species: string; format: Format }) {
+/** Solo se il Pokémon è bannato nel formato: triangolo rosso con il tier nel tooltip. */
+function BanMark({ species, format }: { species: string; format: Format }) {
   const { label, banned } = tierLabel(species, format);
-  return banned
-    ? <span className="tag banned">{label} · bannato in {formatLabel(format)}</span>
-    : <span className="tag tier">{label}</span>;
+  return banned ? <AlertMark alerts={[{ level: 'danger', text: `${label} · bannato in ${formatLabel(format)}` }]} /> : null;
 }
 
 function SuggestionItem({ rank, item, actionLabel, quickLabel, replacing, member, picked, onAction, onToggle, emptyTeam, format }: {
@@ -79,7 +80,8 @@ function SuggestionItem({ rank, item, actionLabel, quickLabel, replacing, member
           <span className="who">
             <span className="name-line">
               <strong><span className="visually-hidden">{rank}. </span>{item.species}</strong>
-              <TierTag species={item.species} format={format} />
+              <BanMark species={item.species} format={format} />
+              <StatsBadge species={item.species} item={item.set.item} />
             </span>
             <span className="types">{types.map(type => <TypeChip key={type} type={type} />)}</span>
             <small><Typed text={diffText ?? item.reasons[0]?.text ?? ''} /></small>
