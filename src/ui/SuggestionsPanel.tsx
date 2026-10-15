@@ -5,6 +5,7 @@ import { improveReplacements, similarReplacements, type Replacement } from '../e
 import { suggest, type Suggestion } from '../engine/scoring';
 import { exportShowdown, type TeamSet } from '../engine/sets';
 import { memberPower } from '../engine/power';
+import { CONDITION_LABELS, neededConditions, providesAll } from '../engine/synergy';
 import { copyText } from './clipboard';
 
 /** Barre mostrate sulle carte: come il candidato si adatta al team, più le sue statistiche. */
@@ -96,6 +97,19 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
 
   const title = replacing ? `Sostituisci ${team[replaceIndex].species}` : 'Suggerimenti';
 
+  // Sostituendo un setter di cui altri membri hanno bisogno, si mostrano solo setter della stessa condizione
+  let setterNote: string | null = null;
+  if (replacing) {
+    const needed = neededConditions(team, replaceIndex);
+    if (needed.length) {
+      const labels = needed.map(n => CONDITION_LABELS[n.condition]).join(' e ');
+      const who = [...new Set(needed.flatMap(n => n.beneficiaries.map(b => b.species)))].join(', ');
+      setterNote = items.length > 0 && items.every(item => providesAll(item.set, needed))
+        ? `Mostro solo chi porta ${labels}: ${who} ne ha bisogno`
+        : `Nessun altro Pokémon porta ${labels}: se sostituisci ${team[replaceIndex].species}, ${needed.flatMap(n => n.beneficiaries.map(b => `${b.species} perde ${b.via}`)).join(', ')}`;
+    }
+  }
+
   let body;
   if (!data.stats) {
     body = <p>Servono i dati Smogon per i suggerimenti.</p>;
@@ -104,6 +118,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   } else {
     body = (
       <>
+        {setterNote && <p className="note">{setterNote}</p>}
         {emptyTeam && (
           <p className="note">Aggiungi un Pokémon per vedere come si adatta al team — per ora ordinati per uso nel meta</p>
         )}

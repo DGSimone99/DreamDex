@@ -5,6 +5,7 @@ import type { Format } from './format';
 import { detectRoles, ROLE_LABELS } from './roles';
 import { scoreCandidates, type Suggestion } from './scoring';
 import type { TeamSet } from './sets';
+import { neededConditions, providesAll } from './synergy';
 import { defensiveMultiplier, superEffectiveMove } from './types';
 
 export interface Diff {
@@ -73,11 +74,11 @@ export function diffContribution(original: TeamSet, candidate: TeamSet, analysis
 function candidatesFor(team: TeamSet[], index: number, format: Format, data: EngineData) {
   const original = team[index];
   const rest = team.filter((_, i) => i !== index);
-  return {
-    original,
-    analysis: analyzeTeam(rest, data),
-    scored: scoreCandidates(rest, format, data).filter(s => s.species !== original.species),
-  };
+  const scored = scoreCandidates(rest, format, data).filter(s => s.species !== original.species);
+  // Se l'originale porta un meteo/campo di cui altri membri hanno bisogno, il sostituto deve portarlo anch'esso
+  const needed = neededConditions(team, index);
+  const keepers = needed.length ? scored.filter(s => providesAll(s.set, needed)) : scored;
+  return { original, analysis: analyzeTeam(rest, data), scored: keepers.length ? keepers : scored };
 }
 
 export function improveReplacements(team: TeamSet[], index: number, format: Format, data: EngineData, limit = 20): Replacement[] {
