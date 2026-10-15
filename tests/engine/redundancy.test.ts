@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { analyzeTeam } from '../../src/engine/analysis';
 import { coachTeam } from '../../src/engine/coach';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
-import { MAX_PENALTY, rateTeam, redundancies } from '../../src/engine/rating';
+import { MAX_BONUS, MAX_PENALTY, rateTeam, redundancies } from '../../src/engine/rating';
 import { emptySet, mostCommonSet, type TeamSet } from '../../src/engine/sets';
 import { fixtureData, fixtureStats, gholdengo, tusk } from '../fixtures/data';
 
@@ -50,12 +50,44 @@ describe('ridondanze', () => {
   });
 });
 
+describe('penalità e bonus del meteo', () => {
+  const garchomp = withMoves('Garchomp', ['Earthquake']);
+  const texts = (team: TeamSet[]) => rateTeam(team, fixtureData)!.penalty.items;
+
+  it('membro senza la condizione che gli serve: −3', () => {
+    expect(texts([{ ...withMoves('Leafeon', ['Leaf Blade']), ability: 'Chlorophyll' }, garchomp]))
+      .toContainEqual({ text: 'Leafeon ha Chlorophyll ma il team non porta il sole', points: 3 });
+  });
+
+  it('abilitatore che potenzia solo sé stesso: −1', () => {
+    expect(texts([{ ...withMoves('Ninetales', ['Flamethrower']), ability: 'Drought' }, garchomp]))
+      .toContainEqual({ text: 'Drought di Ninetales potenzia solo le sue mosse', points: 1 });
+  });
+
+  it('abilitatore che non serve a nessuno: −2', () => {
+    expect(texts([{ ...withMoves('Pelipper', ['U-turn', 'Roost']), ability: 'Drizzle' }, garchomp]))
+      .toContainEqual({ text: 'Drizzle di Pelipper non sfruttato', points: 2 });
+  });
+
+  it('bonus: +2 per ogni membro riportato a neutro, massimo +6', () => {
+    const team = [{ ...withMoves('Ninetales', ['Flamethrower']), ability: 'Drought' }, withMoves('Great Tusk', ['Headlong Rush'])];
+    const rating = rateTeam(team, fixtureData)!;
+    expect(rating.bonus).toEqual({ total: 4, items: [{ text: 'Il sole di Ninetales smorza Water: Ninetales, Great Tusk', points: 4 }] });
+    expect(rating.overall).toBe(Math.min(100, Math.max(0, rating.base - rating.penalty.total + rating.bonus.total)));
+    expect(MAX_BONUS).toBe(6);
+  });
+
+  it('senza meteo nessun bonus', () => {
+    expect(rateTeam([tusk, gholdengo], fixtureData)!.bonus).toEqual({ total: 0, items: [] });
+  });
+});
+
 describe('voto con ridondanze', () => {
   it('la penalità si sottrae al voto complessivo', () => {
     const team = [withMoves('Great Tusk', ['Stealth Rock']), withMoves('Garchomp', ['Stealth Rock'])];
     const rating = rateTeam(team, fixtureData)!;
     expect(rating.penalty.total).toBeGreaterThan(0);
-    expect(rating.overall).toBe(Math.max(0, rating.base - rating.penalty.total));
+    expect(rating.overall).toBe(Math.max(0, rating.base - rating.penalty.total + rating.bonus.total));
   });
 
   it('il coaching segnala i ruoli doppi e i tipi ripetuti', () => {

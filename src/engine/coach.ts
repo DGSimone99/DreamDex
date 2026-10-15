@@ -6,7 +6,7 @@ import { diffContribution, similarity, type Diff } from './replace';
 import { detectRoles, ESSENTIAL_ROLES, ROLE_LABELS } from './roles';
 import { scoreCandidates, type Suggestion } from './scoring';
 import { roleAndTypeRedundancies } from './rating';
-import { benefits, CONDITION_LABELS, enables, teamSynergies, unmetBeneficiaries, unusedEnablers } from './synergy';
+import { benefits, CONDITION_LABELS, enables, teamSynergies, unmetBeneficiaries, unusedEnablers, weatherMitigations } from './synergy';
 import type { TeamSet } from './sets';
 import { defensiveMultiplier } from './types';
 
@@ -69,6 +69,10 @@ function findStrengths(team: TeamSet[], analysis: TeamAnalysis): string[] {
   if (roles.length) strengths.push(`Ruoli coperti: ${list(roles)}`);
   const synergies = teamSynergies(team);
   if (synergies.length) strengths.push(`Sinergie: ${synergies.join('; ')}`);
+  for (const m of weatherMitigations(team)) {
+    const label = CONDITION_LABELS[m.condition];
+    strengths.push(`${label.charAt(0).toUpperCase()}${label.slice(1)} di ${m.source.split(' (')[0]} smorza la debolezza a ${m.type} di ${m.members.map(x => x.species).join(', ')}`);
+  }
   const covered = analysis.coverage.filter(r => r.hitters.length > 0).length;
   if (covered >= STRONG_COVERAGE) strengths.push(`Colpisce super efficace ${covered}/18 tipi`);
   return strengths;
@@ -104,7 +108,9 @@ function findProblems(team: TeamSet[], format: Format, analysis: TeamAnalysis, c
   for (const item of roleAndTypeRedundancies(team)) add(false, `Ridondanza: ${item.text}`, []);
 
   for (const issue of unusedEnablers(team)) {
-    add(false, `${issue.via} di ${issue.member} non sfruttato: nessuno ne beneficia`,
+    add(false, issue.selfBoost
+      ? `${issue.via} di ${issue.member} potenzia solo le sue mosse: nessun altro ne beneficia`
+      : `${issue.via} di ${issue.member} non sfruttato: nessuno ne beneficia`,
       fixesFor(candidates, s => Number(benefits(s.set).some(b => b.condition === issue.condition && !['Weather Ball', 'Terrain Pulse'].includes(b.via)))));
   }
   for (const issue of unmetBeneficiaries(team)) {

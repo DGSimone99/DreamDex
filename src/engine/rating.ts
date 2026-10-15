@@ -6,6 +6,7 @@ import { strengthComponent } from './scoring';
 import type { TeamSet } from './sets';
 import { usageOf } from './stats';
 import { TYPES } from './types';
+import { CONDITION_LABELS, unmetBeneficiaries, unusedEnablers, weatherMitigations } from './synergy';
 
 export type AreaKey = 'defense' | 'coverage' | 'threats' | 'roles' | 'strength';
 
@@ -60,6 +61,7 @@ export interface TeamRating {
   /** Voto pesato delle aree, prima della penalità. */
   base: number;
   penalty: Redundancies;
+  bonus: Redundancies;
   overall: number;
   grade: string;
   label: string;
@@ -71,6 +73,8 @@ const sum = (xs: number[]) => xs.reduce((a, b) => a + b, 0);
 
 /** Penalità massima per ridondanze: da sole non possono affossare un team. */
 export const MAX_PENALTY = 15;
+/** Bonus massimo per debolezze smorzate dal meteo: il meteo non è sempre attivo. */
+export const MAX_BONUS = 6;
 
 const HAZARDS: Record<string, string> = {
   stealthrock: 'Stealth Rock', stoneaxe: 'Stealth Rock',
@@ -107,7 +111,13 @@ export function redundancies(team: TeamSet[], analysis: TeamAnalysis): Redundanc
       text: `${row.weak} membri deboli a ${row.type}, ${row.resist === 0 ? 'nessuno resiste' : `${row.resist} resistono`}`,
       points: (row.weak - row.resist - 1) * (analysis.typeWeights[row.type] >= common ? 2 : 1),
     }));
-  const items = [...weaknesses, ...roleAndTypeRedundancies(team)];
+  const dependencies = [
+    ...unmetBeneficiaries(team).map(i => ({ text: `${i.member} ha ${i.via} ma il team non porta ${CONDITION_LABELS[i.condition]}`, points: 3 })),
+    ...unusedEnablers(team).map(i => i.selfBoost
+      ? { text: `${i.via} di ${i.member} potenzia solo le sue mosse`, points: 1 }
+      : { text: `${i.via} di ${i.member} non sfruttato`, points: 2 }),
+  ];
+  const items = [...weaknesses, ...roleAndTypeRedundancies(team), ...dependencies];
   return { total: Math.min(MAX_PENALTY, sum(items.map(i => i.points))), items };
 }
 const mean = (xs: number[]) => sum(xs) / xs.length;
@@ -119,6 +129,20 @@ const mean = (xs: number[]) => sum(xs) / xs.length;
 export function typeSafety(weak: number, resist: number): number {
   if (weak > resist) return weak - resist === 1 ? 0.25 : 0;
   return resist > 0 ? 1 : 0.5;
+}
+
+const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
+
+/** +2 per ogni membro che il meteo/campo del team riporta da debole a neutro, fino a MAX_BONUS. */
+export function weatherBonus(team: TeamSet[]): Redundancies {
+  const items = weatherMitigations(team)
+    .map(m => ({ m, neutral: m.members.filter(x => x.to <= 1) }))
+    .filter(x => x.neutral.length > 0)
+    .map(({ m, neutral }) => ({
+      text: `${capitalize(CONDITION_LABELS[m.condition])} di ${m.source.split(' (')[0]} smorza ${m.type}: ${neutral.map(x => x.species).join(', ')}`,
+      points: 2 * neutral.length,
+    }));
+  return { total: Math.min(MAX_BONUS, sum(items.map(i => i.points))), items };
 }
 
 export function gradeFor(score: number): { grade: string; label: string } {
@@ -153,7 +177,8 @@ export function rateTeam(team: TeamSet[], data: EngineData): TeamRating | null {
     100 * sum(available.map(key => AREA_WEIGHTS[key] * raw[key]!)) / sum(available.map(key => AREA_WEIGHTS[key])),
   );
   const penalty = redundancies(team, analysis);
-  const overall = Math.max(0, base - penalty.total);
-  return { base, penalty, overall, ...gradeFor(overall), provisional: team.length < 6, areas };
+  const bonus = weatherBonus(team);
+  const overall = Math.min(100, Math.max(0, base - penalty.total + bonus.total));
+  return { base, penalty, bonus, overall, ...gradeFor(overall), provisional: team.length < 6, areas };
 }
 

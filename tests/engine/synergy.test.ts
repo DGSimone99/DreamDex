@@ -5,7 +5,7 @@ import { DEFAULT_FORMAT } from '../../src/engine/format';
 import { scoreCandidates } from '../../src/engine/scoring';
 import { emptySet, mostCommonSet, type TeamSet } from '../../src/engine/sets';
 import type { SpeciesStats } from '../../src/engine/stats';
-import { benefits, enables, mechanicalLinks, teamSynergies, unmetBeneficiaries, unusedEnablers } from '../../src/engine/synergy';
+import { benefits, enables, mechanicalLinks, teamSynergies, unmetBeneficiaries, unusedEnablers, weatherMitigations } from '../../src/engine/synergy';
 
 const set = (species: string, ability: string, moves: string[] = [], item = ''): TeamSet =>
   ({ ...emptySet(species), ability, moves, item });
@@ -43,7 +43,7 @@ describe('legami nel team', () => {
   });
 
   it('abilitatori non sfruttati e beneficiari senza condizione', () => {
-    expect(unusedEnablers([ninetales, set('Garchomp', 'Rough Skin', ['Earthquake'])])).toEqual([{ member: 'Ninetales', condition: 'sun', via: 'Drought' }]);
+    expect(unusedEnablers([ninetales, set('Garchomp', 'Rough Skin', ['Earthquake'])])).toEqual([{ member: 'Ninetales', condition: 'sun', via: 'Drought', selfBoost: true }]);
     expect(unusedEnablers([ninetales, venusaur])).toEqual([]);
     expect(unmetBeneficiaries([venusaur, set('Garchomp', 'Rough Skin', ['Earthquake'])])).toEqual([{ member: 'Venusaur', condition: 'sun', via: 'Chlorophyll' }]);
     expect(unmetBeneficiaries([ninetales, venusaur])).toEqual([]);
@@ -58,6 +58,16 @@ describe('legami nel team', () => {
   it('i Paradox non vengono segnalati senza meteo o campo', () => {
     expect(unmetBeneficiaries([set('Great Tusk', 'Protosynthesis', ['Headlong Rush'], 'Leftovers')])).toEqual([]);
     expect(unmetBeneficiaries([set('Iron Valiant', 'Quark Drive', ['Moonblast'])])).toEqual([]);
+  });
+
+  it('abilitatore che non potenzia nemmeno sé stesso', () => {
+    const pelipper = set('Pelipper', 'Drizzle', ['U-turn', 'Roost']);
+    expect(unusedEnablers([pelipper, set('Garchomp', 'Rough Skin', ['Earthquake'])])).toEqual([{ member: 'Pelipper', condition: 'rain', via: 'Drizzle', selfBoost: false }]);
+  });
+
+  it("il Weather Ball dell'abilitatore non conta come uso da parte del team", () => {
+    const nineWB = set('Ninetales', 'Drought', ['Weather Ball']);
+    expect(unusedEnablers([nineWB, set('Garchomp', 'Rough Skin', ['Earthquake'])])).toEqual([{ member: 'Ninetales', condition: 'sun', via: 'Drought', selfBoost: true }]);
   });
 
   it('Weather Ball e Terrain Pulse non vengono segnalati come beneficiari senza condizione', () => {
@@ -81,6 +91,26 @@ describe('sinergie già presenti nel team', () => {
   it('il coaching la mostra tra i punti di forza', () => {
     const strengths = coachTeam([ninetales, leafeon], DEFAULT_FORMAT, { stats: null, sets: null }).strengths;
     expect(strengths).toContain('Sinergie: Ninetales (Drought) → Leafeon (Chlorophyll)');
+  });
+});
+
+describe('debolezze smorzate dal meteo', () => {
+  it('il sole dimezza Water: chi era ×2 torna neutro', () => {
+    expect(weatherMitigations([ninetales, tusk])).toEqual([{
+      condition: 'sun', source: 'Ninetales (Drought)', type: 'Water',
+      members: [{ species: 'Ninetales', from: 2, to: 1 }, { species: 'Great Tusk', from: 2, to: 1 }],
+    }]);
+  });
+
+  it('la pioggia dimezza Fire, anche quando resta una debolezza', () => {
+    const team = [set('Pelipper', 'Drizzle', ['Hurricane']), set('Scizor', 'Technician', ['Bullet Punch'])];
+    expect(weatherMitigations(team)).toEqual([{
+      condition: 'rain', source: 'Pelipper (Drizzle)', type: 'Fire', members: [{ species: 'Scizor', from: 4, to: 2 }],
+    }]);
+  });
+
+  it('nessun meteo, nessuna nota', () => {
+    expect(weatherMitigations([tusk, venusaur])).toEqual([]);
   });
 });
 
@@ -111,7 +141,7 @@ describe('effetti su suggerimenti e coaching', () => {
   it('coaching: Drought non sfruttato, con rimedi', () => {
     const team = [ninetales, mostCommonSet(data.stats, 'Garchomp')!];
     expect(coachTeam(team, DEFAULT_FORMAT, data).problems)
-      .toContainEqual({ severity: 'minor', text: 'Drought di Ninetales non sfruttato: nessuno ne beneficia', fixes: ['Venusaur'] });
+      .toContainEqual({ severity: 'minor', text: 'Drought di Ninetales potenzia solo le sue mosse: nessun altro ne beneficia', fixes: ['Venusaur'] });
   });
 
   it('coaching: Chlorophyll senza sole, con rimedi', () => {

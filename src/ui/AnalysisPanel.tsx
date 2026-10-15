@@ -2,6 +2,7 @@ import type { TeamAnalysis } from '../engine/analysis';
 import type { Coaching } from '../engine/coach';
 import type { TeamRating } from '../engine/rating';
 import { DESIRABLE_ROLES, detectRoles, ESSENTIAL_ROLES, ROLE_LABELS } from '../engine/roles';
+import { weatherMitigations, type WeatherMitigation } from '../engine/synergy';
 import type { TeamSet } from '../engine/sets';
 import { CoachPanel } from './CoachPanel';
 import { RatingPanel } from './RatingPanel';
@@ -9,6 +10,22 @@ import { RatingPanel } from './RatingPanel';
 const MULTIPLIER_LABELS: Record<string, string> = { '4': '×4', '2': '×2', '1': '', '0.5': '×½', '0.25': '×¼', '0': '×0' };
 const formatMultiplier = (m: number) => MULTIPLIER_LABELS[String(m)] ?? `×${m}`;
 const STYLE_LABELS = { physical: 'fisico', special: 'speciale' } as const;
+
+const MITIGATION_LABELS: Record<string, string> = {
+  sun: 'Col sole', rain: 'Con la pioggia', grassyterrain: 'Col Campo Erboso', mistyterrain: 'Col Campo Nebbioso',
+};
+
+/** "Col sole (Ninetales, Drought): Water ×2 → ×1 per Ninetales, Great Tusk · il meteo non è sempre attivo" */
+function mitigationNote(m: WeatherMitigation): string {
+  const groups = new Map<string, string[]>();
+  for (const x of m.members) {
+    const key = `${formatMultiplier(x.from)} → ${formatMultiplier(x.to) || '×1'}`;
+    groups.set(key, [...(groups.get(key) ?? []), x.species]);
+  }
+  const changes = [...groups].map(([change, names]) => `${m.type} ${change} per ${names.join(', ')}`).join('; ');
+  const source = m.source.replace(' (', ', ').replace(/\)$/, '');
+  return `${MITIGATION_LABELS[m.condition]} (${source}): ${changes} · il meteo non è sempre attivo`;
+}
 
 export function AnalysisPanel({ team, analysis, rating, coaching, onReplace }: {
   team: TeamSet[];
@@ -55,6 +72,7 @@ export function AnalysisPanel({ team, analysis, rating, coaching, onReplace }: {
             ))}
           </tbody>
         </table>
+        {weatherMitigations(team).map(m => <p key={m.condition} className="note">{mitigationNote(m)}</p>)}
       </details>
 
       <details className="block">
