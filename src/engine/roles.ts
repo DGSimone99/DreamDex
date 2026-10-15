@@ -3,10 +3,11 @@ import type { TeamSet } from './sets';
 
 export type Role =
   | 'hazards' | 'removal' | 'pivot' | 'priority' | 'speed'
-  | 'setup' | 'wallbreaker' | 'physicalWall' | 'specialWall';
+  | 'setup' | 'wallbreaker' | 'physicalSweeper' | 'specialSweeper' | 'physicalWall' | 'specialWall';
 
 export const ROLE_ORDER: Role[] = [
-  'hazards', 'removal', 'pivot', 'priority', 'speed', 'setup', 'wallbreaker', 'physicalWall', 'specialWall',
+  'hazards', 'removal', 'pivot', 'priority', 'speed', 'setup', 'wallbreaker',
+  'physicalSweeper', 'specialSweeper', 'physicalWall', 'specialWall',
 ];
 
 export const ROLE_LABELS: Record<Role, string> = {
@@ -17,12 +18,14 @@ export const ROLE_LABELS: Record<Role, string> = {
   speed: 'Controllo velocità',
   setup: 'Setup',
   wallbreaker: 'Wallbreaker',
+  physicalSweeper: 'Sweeper fisico',
+  specialSweeper: 'Sweeper speciale',
   physicalWall: 'Wall fisico',
   specialWall: 'Wall speciale',
 };
 
 export const ESSENTIAL_ROLES: Role[] = ['hazards', 'removal', 'pivot', 'priority', 'speed'];
-export const DESIRABLE_ROLES: Role[] = ['wallbreaker', 'physicalWall', 'specialWall'];
+export const DESIRABLE_ROLES: Role[] = ['wallbreaker', 'physicalSweeper', 'specialSweeper', 'physicalWall', 'specialWall'];
 
 const HAZARD_MOVES = new Set(['stealthrock', 'spikes', 'toxicspikes', 'stickyweb', 'stoneaxe', 'ceaselessedge']);
 const REMOVAL_MOVES = new Set(['defog', 'rapidspin', 'mortalspin', 'tidyup', 'courtchange']);
@@ -48,6 +51,13 @@ export function detectRoles(set: TeamSet): Role[] {
     && ((m.boosts?.atk ?? 0) > 0 || (m.boosts?.spa ?? 0) > 0 || (m.boosts?.spe ?? 0) > 0))) roles.add('setup');
   const offense = Math.max(stats.atk, stats.spa);
   if (offense >= 120 || (offense >= 100 && BREAKER_ITEMS.has(item))) roles.add('wallbreaker');
+  // Sweeper: attacca forte e ha un modo di superare in velocità (velocità alta, Scarf o setup)
+  const fast = stats.spe >= 100 || item === 'choicescarf';
+  const boosts = (stat: 'atk' | 'spa') => moves.some(m => m.category === 'Status' && m.target === 'self'
+    && ((m.boosts?.[stat] ?? 0) > 0 || (m.boosts?.spe ?? 0) > 0));
+  const style = attackStyle(set);
+  if (style === 'physical' && stats.atk >= 100 && (fast || boosts('atk'))) roles.add('physicalSweeper');
+  if (style === 'special' && stats.spa >= 100 && (fast || boosts('spa'))) roles.add('specialSweeper');
   if (stats.def >= 100 && stats.hp + stats.def >= 190) roles.add('physicalWall');
   if (stats.spd >= 100 && stats.hp + stats.spd >= 190) roles.add('specialWall');
 
