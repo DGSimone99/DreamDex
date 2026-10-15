@@ -7,13 +7,13 @@
 web
 
 ## Users
-Simone and a few friends who play competitive Pokémon singles (Smogon National Dex on Showdown) and hackroms. They open DreamDex on a desktop PC, usually next to Showdown, while building or fixing a 6-Pokémon team. The interface is in Italian.
+Simone and a few friends who play competitive Pokémon singles (Smogon National Dex on Showdown) and hackroms. They open DreamDex on a desktop PC, usually next to Showdown, while building or fixing a 6-Pokémon team. The interface is in English by default, with Italian available from the EN | IT switch.
 
 ## Product Purpose
 A team builder that tells you which Pokémon complete your team best, and why. You add one or more Pokémon; DreamDex ranks candidates by meta usage, types, coverage and roles, explains each suggestion, rates the team, flags weaknesses and meta threats, and coaches what to fix. Success: a better team in less time, with reasons the player understands.
 
 ## Positioning
-Not a damage calculator or a plain team editor: it reasons about the whole team against real Smogon usage data (monthly stats) and explains every suggestion and grade in plain Italian.
+Not a damage calculator or a plain team editor: it reasons about the whole team against real Smogon usage data (monthly stats) and explains every suggestion and grade in plain English or Italian.
 
 ## Operating Context
 - Teams move in and out as Showdown text (import/export), so the app sits beside Showdown.
@@ -23,14 +23,14 @@ Not a damage calculator or a plain team editor: it reasons about the whole team 
 
 ## Capabilities and Constraints
 - Features: team panel with set editor (item, ability, moves, EVs, nature, tera), suggestions with score bars (Difesa, Coverage, Ruoli, Statistiche) and tags, replacement mode, team analysis, team rating (grade S–D across 4 areas), coaching, meta threats, meta usage, search and filters over the whole Pokédex, favourites, saved teams, session persistence.
-- Stack: React 19 + TypeScript + Vite; tests with Testing Library rely on accessible names and Italian labels, which must be kept.
+- Stack: React 19 + TypeScript + Vite; tests with Testing Library rely on accessible names (Italian, rendered with `initialLang="it"`; dedicated tests cover English), which must be kept.
 - Desktop first. Mobile is wanted later but out of scope for now.
 
 ## Brand Commitments
 - Name: DreamDex.
 - Pokémon sprites must appear in the interface.
 - Pokémon type colors keep their classic, recognisable colors.
-- Pokémon, move, ability and item names stay the official (English) names.
+- Pokémon names stay the official English names; move, ability, item, type and nature names follow the chosen language (official Italian names from PokeAPI, English where missing). Team data, saves and Showdown import/export are always English.
 
 ## Evidence on Hand
 No logo, screenshots, testimonials or marketing material exist. Do not invent any.

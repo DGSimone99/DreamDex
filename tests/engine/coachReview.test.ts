@@ -67,13 +67,13 @@ describe('sostituzioni distinte', () => {
 describe('vantaggi e svantaggi', () => {
   it('separa guadagni e perdite', () => {
     const swap = { index: 0, member: 'Magikarp', fit: 20, replacement: 'Corviknight', set: emptySet('Corviknight'), score: 60, similar: false, level: 'recommended' as const,
-      diff: { gains: ['+ Pivot', '+ resiste Ground'], losses: ['- copre Fire'] } };
+      diff: { gains: { roles: ['pivot' as const], covers: [], resists: ['Ground' as const] }, losses: { roles: [], covers: ['Fire' as const], resists: [] } } };
     expect(describeSwap(swap)).toEqual({ gain: 40, pros: ['Pivot', 'Resistente a Ground'], cons: ['Non più forte contro Fire'] });
   });
 
   it('raggruppa copre/resiste e le perdite', () => {
     const swap = { index: 0, member: 'Garchomp', fit: 38, replacement: 'Great Tusk', set: emptySet('Great Tusk'), score: 56, similar: false, level: 'optional' as const,
-      diff: { gains: ['+ Rimozione hazard', '+ copre Normal', '+ copre Grass', '+ copre Ice'], losses: ['- Hazard', '- resiste Dark'] } };
+      diff: { gains: { roles: ['removal' as const], covers: ['Normal' as const, 'Grass' as const, 'Ice' as const], resists: [] }, losses: { roles: ['hazards' as const], covers: [], resists: ['Dark' as const] } } };
     expect(describeSwap(swap)).toEqual({
       gain: 18,
       pros: ['Rimozione hazard', 'Forte contro Normal, Grass, Ice'],

@@ -48,7 +48,7 @@ export function memberPower(set: TeamSet): MemberPower | null {
   const offense = percentile(ref.offense, offenseIndex(species.baseStats));
   const bulk = percentile(ref.bulk, bulkIndex(species.baseStats));
   const power = Math.round(STRONG_SIDE * Math.max(offense, bulk) + (1 - STRONG_SIDE) * Math.min(offense, bulk));
-  return { species: set.species, offense, bulk, power };
+  return { species: species.name, offense, bulk, power };
 }
 
 /** Forza del team: media dei membri presenti nel Pokédex (null se nessuno lo è). */

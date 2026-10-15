@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
 import { SetEditor } from '../../src/ui/SetEditor';
+import { renderIt } from '../helpers/italian';
 
 const set = { ...emptySet('Ninetales'), item: 'Heat Rock', ability: 'Drought', nature: 'Modest', moves: ['Flamethrower', 'Will-O-Wisp'] };
 
@@ -13,7 +14,7 @@ function renderEditor(onChange = vi.fn()) {
     const [current, setCurrent] = useState<TeamSet>(set);
     return <SetEditor set={current} genLimit={9} onChange={next => { setCurrent(next); onChange(next); }} />;
   }
-  render(<Editor />);
+  renderIt(<Editor />);
   return onChange;
 }
 
@@ -24,7 +25,7 @@ describe('editor del set', () => {
     expect(screen.getByLabelText('Natura')).toHaveValue('Modest');
     await user.click(screen.getByLabelText('Natura'));
     const list = screen.getByRole('listbox', { name: 'Natura: opzioni' });
-    expect(within(list).getByRole('option', { name: 'Modest (+SpA, −Atk)' })).toHaveAttribute('aria-selected', 'true');
+    expect(within(list).getByRole('option', { name: 'Modest (+AttSp, −Att)' })).toHaveAttribute('aria-selected', 'true');
     expect(within(list).getByRole('option', { name: 'Hardy (neutra)' })).toBeInTheDocument();
   });
 
@@ -78,7 +79,7 @@ describe('preset Smogon nell\'editor', () => {
       { name: 'Sun Sweeper', format: 'gen9nationaldex', set: { ...emptySet('Ninetales'), item: 'Heat Rock', ability: 'Drought', moves: ['Solar Beam', 'Fire Blast'] } },
       { name: 'Nasty Plot', format: 'gen8ou', set: { ...emptySet('Ninetales'), item: 'Life Orb', ability: 'Drought', moves: ['Nasty Plot', 'Fire Blast'] } },
     ];
-    render(<SetEditor set={{ ...set, favorite: true }} presets={presets} genLimit={9} onChange={onChange} />);
+    renderIt(<SetEditor set={{ ...set, favorite: true }} presets={presets} genLimit={9} onChange={onChange} />);
     await user.click(screen.getByLabelText('Preset Smogon'));
     const option = within(screen.getByRole('listbox', { name: 'Preset Smogon: opzioni' })).getAllByRole('option')[1];
     expect(option).toHaveTextContent('Nasty Plot');
@@ -88,7 +89,7 @@ describe('preset Smogon nell\'editor', () => {
   });
 
   it('senza preset la tendina è disattivata', () => {
-    render(<SetEditor set={set} genLimit={9} onChange={vi.fn()} />);
+    renderIt(<SetEditor set={set} genLimit={9} onChange={vi.fn()} />);
     expect(screen.getByLabelText('Preset Smogon')).toBeDisabled();
   });
 
@@ -101,7 +102,7 @@ describe('preset Smogon nell\'editor', () => {
       const [current, setCurrent] = useState<TeamSet>({ ...sun, moves: ['Fire Blast', 'Solar Beam'] });
       return <SetEditor set={current} presets={presets} genLimit={9} onChange={setCurrent} />;
     }
-    render(<Editor />);
+    renderIt(<Editor />);
     const field = () => screen.getByLabelText('Preset Smogon').closest('.combobox')!;
     expect(field()).toHaveTextContent('Sun Sweeper');
 

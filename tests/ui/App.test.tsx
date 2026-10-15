@@ -6,19 +6,19 @@ import { fixtureData } from '../fixtures/data';
 
 describe('App: struttura', () => {
   it('titolo e mese dei dati', () => {
-    render(<App data={fixtureData} />);
+    render(<App initialLang="it" data={fixtureData} />);
     expect(screen.getByRole('heading', { name: 'DreamDex' })).toBeInTheDocument();
     expect(screen.getByText('Statistiche: 2026-09 (rating 1695+)')).toBeInTheDocument();
   });
 
   it('avviso se mancano i dati', () => {
-    render(<App data={{ stats: null, sets: null }} />);
+    render(<App initialLang="it" data={{ stats: null, sets: null }} />);
     expect(screen.getByRole('alert')).toHaveTextContent('npm run fetch-data');
   });
 
   it('il selettore di generazione cambia valore', async () => {
     const user = userEvent.setup();
-    render(<App data={fixtureData} />);
+    render(<App initialLang="it" data={fixtureData} />);
     await user.selectOptions(screen.getByLabelText('Generazione massima'), '4');
     expect(screen.getByLabelText('Generazione massima')).toHaveValue('4');
   });

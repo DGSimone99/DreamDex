@@ -1,4 +1,6 @@
 import { Icon } from './icons';
+import { useLang, useT } from '../i18n/react';
+import { t, type MessageKey } from '../i18n';
 import { PokemonList, PokemonName } from './PokemonName';
 import { IssueCounts, PROBLEM_LABELS } from './IssueCounts';
 import type { TeamSet } from '../engine/sets';
@@ -6,22 +8,25 @@ import { ProsCons } from './ProsCons';
 import { describeSwap, previewSwap, PROBLEM_CATEGORIES, type Coaching, type SwapLevel, type SwapPreview } from '../engine/coach';
 import { Typed } from './TypeText';
 
-// "3 Deboli" in rosso e "0 Resistono" in verde, il resto con i tipi colorati
-const COUNT = /(\d+ (?:Debole|Deboli|Resiste|Resistono))/;
-
+// "3 Deboli" in rosso e "0 Resistono" in verde (parole del dizionario della lingua attiva), il resto con i tipi colorati
 function ProblemText({ text }: { text: string }) {
+  const lang = useLang();
+  const weak = [t(lang, 'coach.word.weakOne'), t(lang, 'coach.word.weakMany')];
+  const resist = [t(lang, 'coach.word.resistOne'), t(lang, 'coach.word.resistMany')];
+  const words = [...new Set([...weak, ...resist])].sort((x, y) => y.length - x.length);
+  const count = new RegExp(`(\\d+ (?:${words.join('|')}))(?![\\w])`);
   return (
     <>
-      {text.split(COUNT).map((part, i) => (i % 2 === 1
-        ? <span key={i} className={/Resist/.test(part) ? 'count-resist' : 'count-weak'}>{part}</span>
+      {text.split(count).map((part, i) => (i % 2 === 1
+        ? <span key={i} className={resist.some(w => part.endsWith(` ${w}`)) ? 'count-resist' : 'count-weak'}>{part}</span>
         : <Typed key={i} text={part} />))}
     </>
   );
 }
 
-const SWAP_GROUPS: { level: SwapLevel; title: string }[] = [
-  { level: 'recommended', title: 'Valuta di sostituire' },
-  { level: 'optional', title: 'Possibili raccomandazioni' },
+const SWAP_GROUPS: { level: SwapLevel; title: MessageKey }[] = [
+  { level: 'recommended', title: 'coach.swaps.recommended' },
+  { level: 'optional', title: 'coach.swaps.optional' },
 ];
 
 export function CoachPanel({ coaching, preview = null, onReplace, onSwap }: {
@@ -32,11 +37,13 @@ export function CoachPanel({ coaching, preview = null, onReplace, onSwap }: {
   preview?: SwapPreview | null;
   onReplace: (index: number) => void;
 }) {
+  const tr = useT();
+  const lang = useLang();
   const { verdict, strengths, problems, swaps } = coaching;
   return (
     <details className="block coach" open>
       <summary>
-        <span>Coaching</span>
+        <span>{tr('coach.title')}</span>
         <span className="summary-info">
           {verdict}
           <IssueCounts serious={problems.filter(p => p.severity === 'serious').length}
@@ -45,7 +52,7 @@ export function CoachPanel({ coaching, preview = null, onReplace, onSwap }: {
       </summary>
       {strengths.length > 0 && (
         <>
-          <h3>Punti di forza</h3>
+          <h3>{tr('coach.strengths')}</h3>
           <ul className="checklist">
             {strengths.map(text => <li key={text}><Icon name="check" /><span><Typed text={text} /></span></li>)}
           </ul>
@@ -53,27 +60,28 @@ export function CoachPanel({ coaching, preview = null, onReplace, onSwap }: {
       )}
       {problems.length > 0 && (
         <>
-          <h3>Problemi</h3>
+          <h3>{tr('coach.problems')}</h3>
           {PROBLEM_CATEGORIES.map(category => {
             const group = problems.filter(p => p.category === category);
+            const label = tr(`problemCategory.${category}`);
             if (group.length === 0) return null;
             return (
-              <details key={category} open aria-label={`Problemi: ${category}`} className="problem-group">
+              <details key={category} open aria-label={tr('coach.problemsGroup', { category: label })} className="problem-group">
                 <summary>
-                  <h4>{category} <span className="count">{group.length}</span></h4>
+                  <h4>{label} <span className="count">{group.length}</span></h4>
                   {group.some(p => p.severity === 'serious') && (
-                    <span className="issue serious" title="Contiene problemi seri"><Icon name="warning" /></span>
+                    <span className="issue serious" title={tr('coach.hasSerious')}><Icon name="warning" /></span>
                   )}
                 </summary>
                 <ul>
                   {group.map(p => (
                     <li key={p.text} className={p.severity === 'serious' ? 'bad' : ''}>
-                      <span className={`issue ${p.severity}`} title={p.severity === 'serious' ? 'Serio' : 'Minore'}>
-                        <Icon name="warning" /><span className="visually-hidden">{p.severity === 'serious' ? 'Serio: ' : 'Minore: '}</span>
+                      <span className={`issue ${p.severity}`} title={tr(p.severity === 'serious' ? 'coach.serious' : 'coach.minor')}>
+                        <Icon name="warning" /><span className="visually-hidden">{`${tr(p.severity === 'serious' ? 'coach.serious' : 'coach.minor')}: `}</span>
                       </span>
                       <span>
                         <ProblemText text={p.text} />
-                        {p.fixes.length > 0 && <small className="fixes">Considera <PokemonList names={p.fixes} separator=" o " /></small>}
+                        {p.fixes.length > 0 && <small className="fixes">{tr('analysis.consider')} <PokemonList names={p.fixes} separator={` ${tr('analysis.or')} `} /></small>}
                       </span>
                     </li>
                   ))}
@@ -83,7 +91,8 @@ export function CoachPanel({ coaching, preview = null, onReplace, onSwap }: {
           })}
         </>
       )}
-      {SWAP_GROUPS.map(({ level, title }) => {
+      {SWAP_GROUPS.map(({ level, title: titleKey }) => {
+        const title = tr(titleKey);
         const group = swaps.filter(swap => swap.level === level);
         if (group.length === 0) return null;
         return (
@@ -93,31 +102,31 @@ export function CoachPanel({ coaching, preview = null, onReplace, onSwap }: {
               {group.map(proposed => {
                 const swap = previewSwap(proposed, preview);
                 const picked = swap !== proposed;
-                const { gain, pros, cons } = describeSwap(swap);
+                const { gain, pros, cons } = describeSwap(swap, lang);
                 return (
-                  <li key={swap.index} className={`swap${picked ? ' picked' : ''}`} title={`Adattamento al team: ${swap.member} ${swap.fit} · ${swap.replacement} ${swap.score}`}>
+                  <li key={swap.index} className={`swap${picked ? ' picked' : ''}`} title={tr('coach.fitTitle', { member: swap.member, fit: swap.fit, replacement: swap.replacement, score: swap.score })}>
                     <p className="swap-head">
                       <PokemonName name={swap.member} muted icon />
                       <Icon name="arrow" />
-                      <span className="visually-hidden">con</span>
+                      <span className="visually-hidden">{tr('coach.with')}</span>
                       <PokemonName name={swap.replacement} icon />
                       {gain >= 0
-                        ? <span className="gain" aria-label={`si adatta meglio di ${gain} punti`}>+{gain}</span>
-                        : <span className="gain worse" aria-label={`si adatta peggio di ${-gain} punti`}>−{-gain}</span>}
-                      {swap.similar && <small>Ruolo simile</small>}
-                      {picked && <small className="picked-tag">Selezionato</small>}
+                        ? <span className="gain" aria-label={tr('coach.betterBy', { n: gain })}>+{gain}</span>
+                        : <span className="gain worse" aria-label={tr('coach.worseBy', { n: -gain })}>−{-gain}</span>}
+                      {swap.similar && <small>{tr('coach.similarRole')}</small>}
+                      {picked && <small className="picked-tag">{tr('coach.selected')}</small>}
                     </p>
                     <ProsCons pros={pros} cons={cons} />
                     <div className="swap-actions">
                       {onSwap && (
-                        <button type="button" className="swap-now" aria-label={`Sostituisci ${swap.member} con ${swap.replacement}`}
-                          title={`Sostituisci ${swap.member} con ${swap.replacement}`}
+                        <button type="button" className="swap-now" aria-label={tr('coach.swapNow', { member: swap.member, replacement: swap.replacement })}
+                          title={tr('coach.swapNow', { member: swap.member, replacement: swap.replacement })}
                           onClick={() => onSwap(swap.index, swap.set)}>
                           <Icon name="swap" />
                         </button>
                       )}
-                      <button type="button" aria-label={`Altri sostituti per ${swap.member}`} onClick={() => onReplace(swap.index)}>
-                        Altri sostituti
+                      <button type="button" aria-label={tr('coach.otherReplacements', { member: swap.member })} onClick={() => onReplace(swap.index)}>
+                        {tr('coach.otherReplacementsButton')}
                       </button>
                     </div>
                   </li>

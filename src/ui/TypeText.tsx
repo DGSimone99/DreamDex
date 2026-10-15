@@ -3,6 +3,9 @@ import { getMove, speciesNames } from '../engine/dex';
 import { TYPES, type TypeName } from '../engine/types';
 import { TYPE_COLORS } from './Sprite';
 import { TypeDot } from './PokemonName';
+import type { Lang } from '../i18n';
+import { gameName, typeName, typeNames } from '../i18n/game';
+import { useLang } from '../i18n/react';
 
 const PANEL = '#0f1735';
 
@@ -30,31 +33,49 @@ export const typeTextColor = (type: string): string | undefined => TEXT_COLORS[t
 
 /** Il nome di un tipo, nel suo colore. */
 export function TypeLabel({ type }: { type: string }) {
-  return <span className="type-name" style={{ color: typeTextColor(type) }}>{type}</span>;
+  const lang = useLang();
+  return <span className="type-name" style={{ color: typeTextColor(type) }}>{typeName(type, lang)}</span>;
 }
 
 /** Il nome di una mossa, nel colore del suo tipo. */
 export function MoveName({ move }: { move: string }) {
+  const lang = useLang();
   const type = getMove(move)?.type;
-  return <span className="move-name" style={type ? { color: typeTextColor(type) } : undefined}>{move}</span>;
+  return <span className="move-name" style={type ? { color: typeTextColor(type) } : undefined}>{gameName('move', move, lang)}</span>;
 }
 
 const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 // Nomi dei Pokémon (i più lunghi prima: "Charizard-Mega-Y" prima di "Charizard") e tipi, come parole a sé:
 // "Debole a Ground" sì, "Calyrex-Ice" o "Rotom-Fire" non sono tipi
 const SPECIES = speciesNames().sort((a, b) => b.length - a.length).map(escape);
-const NAMED = new RegExp(`(?<![\\w-])(?:(${SPECIES.join('|')})|(${TYPES.join('|')}))(?![\\w-])`, 'g');
+// Una regex per lingua: in italiano i tipi sono "Terra", "Spettro"… (solo con l'iniziale maiuscola)
+const NAMED = new Map<Lang, { regex: RegExp; english: Map<string, string> }>();
+function namedFor(lang: Lang) {
+  let entry = NAMED.get(lang);
+  if (!entry) {
+    const types = typeNames(lang);
+    const local = types.map(x => escape(x.local)).sort((a, b) => b.length - a.length);
+    entry = {
+      regex: new RegExp(`(?<![\\w-])(?:(${SPECIES.join('|')})|(${local.join('|')}))(?![\\w-])`, 'g'),
+      english: new Map(types.map(x => [x.local, x.english])),
+    };
+    NAMED.set(lang, entry);
+  }
+  return entry;
+}
 
 /** Testo libero con i nomi dei tipi colorati e quelli dei Pokémon in grassetto. */
 export function Typed({ text }: { text: string }) {
+  const lang = useLang();
+  const { regex, english } = namedFor(lang);
   const parts: ReactNode[] = [];
   let last = 0;
-  for (const match of text.matchAll(NAMED)) {
+  for (const match of text.matchAll(regex)) {
     const index = match.index ?? 0;
     if (index > last) parts.push(text.slice(last, index));
     parts.push(match[1]
       ? <span key={index} className="mon-ref"><TypeDot name={match[1]} /><strong>{match[1]}</strong></span>
-      : <TypeLabel key={index} type={match[2]} />);
+      : <TypeLabel key={index} type={english.get(match[2]) ?? match[2]} />);
     last = index + match[0].length;
   }
   if (parts.length === 0) return <>{text}</>;

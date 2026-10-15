@@ -13,7 +13,7 @@ async function addPokemon(user: ReturnType<typeof userEvent.setup>, name: string
 describe('TeamPanel', () => {
   it('aggiunge un Pokémon dalla ricerca con il set più comune', async () => {
     const user = userEvent.setup();
-    render(<App data={fixtureData} />);
+    render(<App initialLang="it" data={fixtureData} />);
     await addPokemon(user, 'Great Tusk');
     expect(within(teamRegion()).getByText('Great Tusk')).toBeInTheDocument();
     expect(within(teamRegion()).getByRole('heading', { name: 'Team (1/6)' })).toBeInTheDocument();
@@ -22,14 +22,14 @@ describe('TeamPanel', () => {
 
   it('ignora nomi inesistenti', async () => {
     const user = userEvent.setup();
-    render(<App data={fixtureData} />);
+    render(<App initialLang="it" data={fixtureData} />);
     await addPokemon(user, 'Nonesiste');
     expect(within(teamRegion()).getByRole('heading', { name: 'Team (0/6)' })).toBeInTheDocument();
   });
 
   it('rimuove un membro', async () => {
     const user = userEvent.setup();
-    render(<App data={fixtureData} />);
+    render(<App initialLang="it" data={fixtureData} />);
     await addPokemon(user, 'Great Tusk');
     await user.click(screen.getByRole('button', { name: 'Rimuovi Great Tusk' }));
     expect(within(teamRegion()).queryByText('Great Tusk')).toBeNull();
@@ -37,7 +37,7 @@ describe('TeamPanel', () => {
 
   it('modifica una mossa', async () => {
     const user = userEvent.setup();
-    render(<App data={fixtureData} />);
+    render(<App initialLang="it" data={fixtureData} />);
     await addPokemon(user, 'Great Tusk');
     const move = within(teamRegion()).getByLabelText('Mossa 4');
     await user.clear(move);
@@ -47,7 +47,7 @@ describe('TeamPanel', () => {
 
   it('mostra i tipi della forma Mega se tiene la pietra', async () => {
     const user = userEvent.setup();
-    render(<App data={fixtureData} />);
+    render(<App initialLang="it" data={fixtureData} />);
     await addPokemon(user, 'Lopunny');
     const item = within(teamRegion()).getByLabelText('Strumento');
     await user.clear(item);
@@ -57,7 +57,7 @@ describe('TeamPanel', () => {
 
   it('segnala un membro oltre il limite di generazione senza rimuoverlo', async () => {
     const user = userEvent.setup();
-    render(<App data={fixtureData} />);
+    render(<App initialLang="it" data={fixtureData} />);
     await addPokemon(user, 'Great Tusk');
     await user.selectOptions(screen.getByLabelText('Generazione massima'), '4');
     expect(within(teamRegion()).getByText('Oltre la Gen 4')).toBeInTheDocument();

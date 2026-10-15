@@ -5,6 +5,7 @@ import { buildFallbackSets, mergePresets, normalizeAnalysisPresets, normalizeAna
 import { reduceChaos, reducePkmnStats, type ChaosFile, type PkmnStatsFile, type StatsMeta } from '../src/engine/stats';
 import { listMonths, pickCutoff } from './smogon-index';
 import { FALLBACK_SETS, FALLBACK_STATS, SOURCES } from './sources';
+import { fetchItalianNames } from './pokeapi';
 
 const STATS_BASE = 'https://www.smogon.com/stats/';
 
@@ -95,6 +96,15 @@ async function main() {
   await mkdir(join('data', '_fallback'), { recursive: true });
   await writeFile(join('data', '_fallback', 'presets.json'), JSON.stringify(fallbackPresets));
   console.log(`Preset Smogon di riserva: ${Object.keys(fallbackPresets).length} Pokémon.`);
+  // Nomi e descrizioni italiane (mosse, abilità, strumenti, tipi, nature): un errore non blocca il resto
+  try {
+    const italian = await fetchItalianNames();
+    await mkdir(join('data', '_i18n'), { recursive: true });
+    await writeFile(join('data', '_i18n', 'it.json'), JSON.stringify(italian));
+    console.log(`Nomi italiani: ${Object.keys(italian.moves).length} mosse, ${Object.keys(italian.abilities).length} abilità, ${Object.keys(italian.items).length} strumenti.`);
+  } catch (error) {
+    console.warn(`Nomi italiani non disponibili (${(error as Error).message}): l'italiano userà i nomi inglesi.`);
+  }
   await mkdir(join('data', '_fallback'), { recursive: true });
   await writeFile(join('data', '_fallback', 'sets.json'), JSON.stringify(fallback));
   console.log(`Set di riserva: ${Object.keys(fallback).length} Pokémon.`);

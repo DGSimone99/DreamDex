@@ -1,9 +1,9 @@
 import type { Species } from '@pkmn/dex';
 import { isSelectable, natDexTier } from './dex';
 import type { Format, FormatId } from './format';
+import { t, type Lang } from '../i18n';
 
 interface FormatDef {
-  label: string;
   source: string;
   banned: Set<string>;
 }
@@ -11,24 +11,23 @@ interface FormatDef {
 const ALWAYS = ['Illegal', 'Unreleased'];
 
 const FORMATS: Record<FormatId, FormatDef> = {
-  ou: { label: 'National Dex OU', source: 'gen9nationaldex', banned: new Set(['Uber', 'AG', ...ALWAYS]) },
-  ubers: { label: 'National Dex Ubers', source: 'gen9nationaldexubers', banned: new Set(['AG', ...ALWAYS]) },
-  uu: { label: 'National Dex UU', source: 'gen9nationaldexuu', banned: new Set(['OU', 'UUBL', 'Uber', 'AG', ...ALWAYS]) },
-  all: { label: 'Tutti i Pokémon', source: 'gen9nationaldexubers', banned: new Set() },
+  ou: { source: 'gen9nationaldex', banned: new Set(['Uber', 'AG', ...ALWAYS]) },
+  ubers: { source: 'gen9nationaldexubers', banned: new Set(['AG', ...ALWAYS]) },
+  uu: { source: 'gen9nationaldexuu', banned: new Set(['OU', 'UUBL', 'Uber', 'AG', ...ALWAYS]) },
+  all: { source: 'gen9nationaldexubers', banned: new Set() },
 };
 
-export const FORMAT_OPTIONS: { id: FormatId; label: string }[] = [
-  { id: 'ou', label: 'National Dex OU' },
-  { id: 'ubers', label: 'National Dex Ubers' },
-  { id: 'uu', label: 'National Dex UU' },
-  { id: 'all', label: 'Tutti i Pokémon (senza limiti)' },
-];
+const FORMAT_IDS: FormatId[] = ['ou', 'ubers', 'uu', 'all'];
 
-export const formatLabel = (format: Format): string => FORMATS[format.formatId].label;
+/** I formati per il menu, con le etichette nella lingua data. */
+export const formatOptions = (lang: Lang = 'it'): { id: FormatId; label: string }[] =>
+  FORMAT_IDS.map(id => ({ id, label: t(lang, id === 'all' ? 'format.allOption' : `format.${id}`) }));
+
+export const formatLabel = (format: Format, lang: Lang = 'it'): string => t(lang, `format.${format.formatId}`);
 
 /** Nome della fonte dati in uso (per i messaggi): il Monotype su OU ha statistiche proprie. */
-export const dataLabel = (format: Format): string =>
-  dataSource(format) === 'gen9nationaldexmonotype' ? 'National Dex Monotype' : formatLabel(format);
+export const dataLabel = (format: Format, lang: Lang = 'it'): string =>
+  dataSource(format) === 'gen9nationaldexmonotype' ? t(lang, 'format.monotypeData') : formatLabel(format, lang);
 
 /** Cartella dei dati Smogon da usare: il Monotype ha un meta proprio solo sopra OU. */
 export function dataSource(format: Format): string {

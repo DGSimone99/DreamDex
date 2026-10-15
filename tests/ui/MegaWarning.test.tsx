@@ -9,7 +9,7 @@ const team = () => screen.getByRole('region', { name: 'Team' });
 
 async function setup(...names: string[]) {
   const user = userEvent.setup();
-  render(<App data={fixtureData} />);
+  render(<App initialLang="it" data={fixtureData} />);
   for (const name of names) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
   return user;
 }
@@ -43,11 +43,11 @@ describe('avviso seconda Mega', () => {
 
   it('seconda Mega anche bannata: triangolo rosso e giallo insieme, ognuno col suo tooltip', async () => {
     const user = userEvent.setup();
-    render(<App data={fixtureData} />);
+    render(<App initialLang="it" data={fixtureData} />);
     await user.click(screen.getByLabelText('Testo Showdown'));
     await user.paste('Lopunny @ Lopunnite\nAbility: Limber\n- Fake Out\n\nMewtwo @ Mewtwonite Y\nAbility: Pressure\n- Psystrike');
     await user.click(screen.getByRole('button', { name: 'Importa' }));
-    const slot = within(team()).getByText('Mewtwo').closest('details')!;
+    const slot = within(team()).getByText('Mewtwo-Mega-Y', { selector: '.name' }).closest('details')!;
     const danger = slot.querySelector('.sprite-alerts .alert-mark.danger') as HTMLElement;
     const warn = slot.querySelector('.sprite-alerts .alert-mark.warn') as HTMLElement;
     expect(within(danger).getByRole('tooltip')).toHaveTextContent('Non legale in National Dex OU');

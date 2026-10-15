@@ -1,3 +1,4 @@
+import { t, type Lang } from '../i18n';
 import { Sets } from '@pkmn/sets';
 import { dex, getMove, getSpecies, toID } from './dex';
 import type { EngineData } from './data';
@@ -286,7 +287,7 @@ export interface ImportResult {
   errors: string[];
 }
 
-export function importShowdown(text: string): ImportResult {
+export function importShowdown(text: string, lang: Lang = 'it'): ImportResult {
   const sets: TeamSet[] = [];
   const errors: string[] = [];
   const blocks = text
@@ -302,15 +303,15 @@ export function importShowdown(text: string): ImportResult {
     const parsed = Sets.importSet(block) as Partial<PkmnSet> | undefined;
     const name = String(parsed?.species ?? '').trim();
     if (!parsed || !name || name.startsWith('-')) {
-      errors.push(`Blocco ${i + 1} non leggibile: "${block.split('\n')[0]}"`);
+      errors.push(t(lang, 'import.unreadable', { n: i + 1, line: block.split('\n')[0] }));
       return;
     }
     if (sets.length === 6) {
-      errors.push(`Più di 6 Pokémon: ignorato ${name}`);
+      errors.push(t(lang, 'import.tooMany', { name }));
       return;
     }
     const set = fromPkmn(parsed);
-    if (!getSpecies(set.species)) errors.push(`Pokémon sconosciuto: ${set.species}`);
+    if (!getSpecies(set.species)) errors.push(t(lang, 'import.unknown', { name: set.species }));
     sets.push(set);
   });
   return { sets, errors };

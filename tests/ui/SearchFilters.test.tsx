@@ -10,7 +10,7 @@ const cardNames = () => [...suggestions().querySelectorAll('details.suggestion s
 
 async function setup(...names: string[]) {
   const user = userEvent.setup();
-  render(<App data={fixtureData} />);
+  render(<App initialLang="it" data={fixtureData} />);
   for (const name of names) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
   return user;
 }

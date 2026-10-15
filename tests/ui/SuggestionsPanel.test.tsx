@@ -9,7 +9,7 @@ const team = () => screen.getByRole('region', { name: 'Team' });
 
 async function setup(...names: string[]) {
   const user = userEvent.setup();
-  render(<App data={fixtureData} />);
+  render(<App initialLang="it" data={fixtureData} />);
   for (const name of names) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
   return user;
 }
@@ -70,7 +70,7 @@ describe('SuggestionsPanel', () => {
   });
 
   it('senza dati: messaggio', () => {
-    render(<App data={{ stats: null, sets: null }} />);
+    render(<App initialLang="it" data={{ stats: null, sets: null }} />);
     expect(within(suggestions()).getByText('Servono i dati Smogon per i suggerimenti. Puoi comunque cercare un Pokémon per nome.')).toBeInTheDocument();
   });
 });

@@ -3,6 +3,7 @@ import { DEFAULT_FORMAT } from '../engine/format';
 import { dataSource } from '../engine/formats';
 import type { PresetsData, SetsData } from '../engine/sets';
 import type { SpeciesStats, StatsData, StatsMeta } from '../engine/stats';
+import type { GameNames } from '../i18n/game';
 
 type Loaders = Record<string, () => Promise<unknown>>;
 
@@ -40,3 +41,14 @@ export const loadSource = (source: string): Promise<EngineData> => readSource(fi
 
 /** Fonte iniziale (National Dex OU). */
 export const loadDataOrEmpty = (): Promise<EngineData> => loadSource(dataSource(DEFAULT_FORMAT));
+
+/** Nomi italiani del gioco (`data/_i18n/it.json`), o null se non scaricati. */
+export async function loadItalianNames(loaders: Loaders = files): Promise<GameNames | null> {
+  const loader = loaders['/data/_i18n/it.json'];
+  if (!loader) return null;
+  try {
+    return (await loader()) as GameNames;
+  } catch {
+    return null;
+  }
+}
