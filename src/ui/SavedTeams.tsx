@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Format } from '../engine/format';
 import { exportShowdown, importShowdown, type TeamSet } from '../engine/sets';
+import { Icon } from './icons';
 import { loadSavedTeams, saveTeams, type SavedTeam } from '../storage';
 
 export function SavedTeams({ team, format, onLoad }: {
@@ -47,7 +48,7 @@ export function SavedTeams({ team, format, onLoad }: {
                 ...(t.favorites?.includes(i) ? { favorite: true } : {}),
                 ...(t.custom?.includes(i) ? { customSkillset: true } : {}),
               })), t.format)}>{t.name}</button>
-              <button type="button" aria-label={`Elimina ${t.name}`} onClick={() => update(saved.filter(s => s.name !== t.name))}>✕</button>
+              <button type="button" aria-label={`Elimina ${t.name}`} onClick={() => update(saved.filter(s => s.name !== t.name))}><Icon name="close" /></button>
             </li>
           ))}
         </ul>

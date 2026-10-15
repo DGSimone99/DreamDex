@@ -12,6 +12,7 @@ import { defaultSet } from '../engine/sets';
 import { FilterBar } from './FilterBar';
 import { CONDITION_LABELS, neededConditions, providesAll } from '../engine/synergy';
 import { copyText } from './clipboard';
+import { Sprite, TypeChip } from './Sprite';
 
 /** Barre mostrate sulle carte: come il candidato si adatta al team, più le sue statistiche. */
 const FIT_BARS: { key: 'defense' | 'coverage' | 'roles'; label: string }[] = [
@@ -52,39 +53,45 @@ function SuggestionItem({ rank, item, actionLabel, onAction, emptyTeam, format }
   const diff = 'diff' in item ? item.diff : null;
   const diffText = diff ? [...diff.gains, ...diff.losses].join(' · ') || 'Nessuna differenza rilevante' : null;
   const setText = exportShowdown([item.set]);
+  const types = getSpecies(item.species)?.types ?? [];
   return (
     <li>
       <details className="suggestion">
         <summary>
-          <span>
-            <strong>{rank}. {item.species}</strong>
+          <span className="rank" aria-hidden="true">{rank}</span>
+          <Sprite species={item.species} item={item.set.item} size={64} />
+          <span className="who">
+            <strong><span className="visually-hidden">{rank}. </span>{item.species}</strong>
+            <span className="types">{types.map(type => <TypeChip key={type} type={type} />)}</span>
             <small>{diffText ?? item.reasons[0]?.text ?? ''}</small>
             <span className="tags">
               <TierTag species={item.species} format={format} />
               {item.tags.map(tag => <span key={tag} className={tag.startsWith('⚠') ? 'tag warn' : 'tag'}>{tag}</span>)}
             </span>
           </span>
+          <dl className="bars">
+            {FIT_BARS.map(bar => (emptyTeam
+              ? <div key={bar.key} className="bar-empty" aria-hidden="true" />
+              : (
+                <div key={bar.key}>
+                  <dt>{bar.label}</dt>
+                  <dd><meter min={0} max={1} value={item.components[bar.key]} /></dd>
+                </div>
+              )))}
+            <div>
+              <dt>Statistiche</dt>
+              <dd><meter min={0} max={100} value={memberPower(item.set)?.power ?? 0} /></dd>
+            </div>
+          </dl>
           <span className="score" aria-label={`Punteggio ${item.score}`}>{item.score}</span>
         </summary>
         {'similarity' in item && item.similarity !== undefined && (
           <p>Somiglianza: {Math.round(item.similarity * 100)}%</p>
         )}
-        <dl className="bars">
-          {(emptyTeam ? [] : FIT_BARS).map(bar => (
-            <div key={bar.key}>
-              <dt>{bar.label}</dt>
-              <dd><meter min={0} max={1} value={item.components[bar.key]} /></dd>
-            </div>
-          ))}
-          <div>
-            <dt>Statistiche</dt>
-            <dd><meter min={0} max={100} value={memberPower(item.set)?.power ?? 0} /></dd>
-          </div>
-        </dl>
-        <ul>{item.reasons.map(reason => <li key={reason.text}>{reason.text}</li>)}</ul>
+        <ul className="reasons">{item.reasons.map(reason => <li key={reason.text}>{reason.text}</li>)}</ul>
         <pre className="set">{setText}</pre>
         <div className="actions">
-          <button type="button" onClick={onAction}>{actionLabel}</button>
+          <button type="button" className="primary" onClick={onAction}>{actionLabel}</button>
           <button type="button" onClick={() => copyText(setText)}>Copia set</button>
         </div>
       </details>
@@ -190,6 +197,10 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
         {emptyTeam && (
           <p className="note">Aggiungi un Pokémon per vedere come si adatta al team — per ora ordinati per uso nel meta</p>
         )}
+        <div className="board-head" aria-hidden="true">
+          <span>#</span><span /><span>Pokémon</span>
+          <span>Difesa</span><span>Coverage</span><span>Ruoli</span><span>Statistiche</span><span>Punti</span>
+        </div>
         <ol className="suggestions">
           {items.slice(0, limit).map((item, i) => (
             <SuggestionItem
@@ -213,7 +224,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   }
 
   return (
-    <section aria-label="Suggerimenti">
+    <section aria-label="Suggerimenti" className="suggestions-panel">
       <h2>{title}</h2>
       {replacing && (
         <div className="actions" role="group" aria-label="Modalità sostituzione">

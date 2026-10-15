@@ -17,7 +17,7 @@ interface Props {
 export function TopBar({ format, onFormatChange, meta, children }: Props) {
   return (
     <header className="topbar">
-      <h1>DreamDex</h1>
+      <h1>Dream<span>Dex</span></h1>
       <label>
         Formato{' '}
         <select

@@ -51,7 +51,7 @@ describe('TeamPanel', () => {
     await addPokemon(user, 'Lopunny');
     const item = within(teamRegion()).getByLabelText('Strumento');
     await user.type(item, 'Lopunnite');
-    expect(within(teamRegion()).getByText(/^Normal\/Fighting/)).toBeInTheDocument();
+    expect([...teamRegion().querySelectorAll('.type-chip')].map(chip => chip.textContent)).toEqual(['Normal', 'Fighting']);
   });
 
   it('segnala un membro oltre il limite di generazione senza rimuoverlo', async () => {

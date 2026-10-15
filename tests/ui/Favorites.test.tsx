@@ -27,7 +27,7 @@ describe('preferiti', () => {
   it("la stella si vede nell'anteprima dello slot e resta nei team salvati", async () => {
     const user = await setup('Great Tusk', 'Magikarp');
     await user.click(screen.getByRole('button', { name: 'Preferito Magikarp' }));
-    expect(within(screen.getByRole('region', { name: 'Team' })).getByText('★')).toBeInTheDocument();
+    expect(within(screen.getByRole('region', { name: 'Team' })).getByRole('button', { name: 'Preferito Magikarp' })).toHaveAttribute('aria-pressed', 'true');
     await user.type(screen.getByLabelText('Nome team'), 'Prova');
     await user.click(screen.getByRole('button', { name: 'Salva team' }));
     await user.click(screen.getByRole('button', { name: 'Rimuovi Magikarp' }));

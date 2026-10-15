@@ -7,6 +7,7 @@ import { DEFAULT_FORMAT, type Format } from './engine/format';
 import { dataLabel, dataSource } from './engine/formats';
 import type { TeamSet } from './engine/sets';
 import { AnalysisPanel } from './ui/AnalysisPanel';
+import { GradeBadge } from './ui/RatingPanel';
 import { DataLists } from './ui/DataLists';
 import { SavedTeams } from './ui/SavedTeams';
 import { ShowdownPanel } from './ui/ShowdownPanel';
@@ -72,10 +73,13 @@ export function App({ data: initialData, loadSource, storage }: AppProps) {
           L'analisi di tipo e la ricerca per nome restano disponibili.
         </p>
       )}
+      <div className="band">
+        <TeamPanel team={team} format={format} data={data} onChange={changeTeam} onAdd={addSet} onReplace={setReplaceIndex}
+          onAllowMultipleMegas={() => setFormat(f => ({ ...f, allowMultipleMegas: true }))} />
+        <GradeBadge rating={rating} />
+      </div>
       <main className="columns">
         <div className="left">
-          <TeamPanel team={team} format={format} data={data} onChange={changeTeam} onAdd={addSet} onReplace={setReplaceIndex}
-            onAllowMultipleMegas={() => setFormat(f => ({ ...f, allowMultipleMegas: true }))} />
           <AnalysisPanel team={team} analysis={analysis} data={data} rating={rating} coaching={coaching} onReplace={setReplaceIndex} />
         </div>
         <div className="right">

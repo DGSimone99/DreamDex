@@ -1,3 +1,4 @@
+import { Icon } from './icons';
 import { describeSwap, type Coaching, type SwapLevel } from '../engine/coach';
 
 const SWAP_GROUPS: { level: SwapLevel; title: string }[] = [
@@ -40,7 +41,7 @@ export function CoachPanel({ coaching, onReplace }: { coaching: Coaching; onRepl
                 <li key={swap.index} title={`Adattamento al team: ${swap.member} ${swap.fit} · ${swap.replacement} ${swap.score}`}>
                   {describeSwap(swap)}{' '}
                   <button type="button" aria-label={`Vedi sostituti per ${swap.member}`} onClick={() => onReplace(swap.index)}>
-                    ⇄ Vedi sostituti
+                    <Icon name="swap" /> Vedi sostituti
                   </button>
                 </li>
               ))}
