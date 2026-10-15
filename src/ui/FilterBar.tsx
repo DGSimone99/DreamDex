@@ -84,7 +84,7 @@ export function FilterBar({ filters, onChange }: Props) {
           Tier
           <select aria-label="Tier" value={filters.tier} onChange={e => set({ tier: e.target.value as CandidateFilters['tier'] })}>
             <option value="all">Tutti</option>
-            <option value="legal">Legali in National Dex OU</option>
+            <option value="legal">Legali nel formato</option>
             <option value="uber">Uber e AG</option>
             <option value="ou">OU</option>
             <option value="uu">UU (UUBL + UU)</option>

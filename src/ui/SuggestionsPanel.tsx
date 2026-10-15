@@ -5,6 +5,7 @@ import { improveReplacements, similarReplacements, type Replacement } from '../e
 import { suggest, type Suggestion } from '../engine/scoring';
 import { exportShowdown, type TeamSet } from '../engine/sets';
 import { getSpecies } from '../engine/dex';
+import { formatLabel } from '../engine/formats';
 import { EMPTY_FILTERS, isFiltering, searchCandidates, searchPool, tierLabel, type CandidateFilters } from '../engine/filters';
 import { memberPower } from '../engine/power';
 import { defaultSet } from '../engine/sets';
@@ -33,15 +34,16 @@ interface Props {
   onCancelReplace: () => void;
 }
 
-function TierTag({ species }: { species: string }) {
-  const { label, banned } = tierLabel(species);
+function TierTag({ species, format }: { species: string; format: Format }) {
+  const { label, banned } = tierLabel(species, format);
   return banned
-    ? <span className="tag banned">{label} · bannato in National Dex OU</span>
+    ? <span className="tag banned">{label} · bannato in {formatLabel(format)}</span>
     : <span className="tag tier">{label}</span>;
 }
 
-function SuggestionItem({ rank, item, actionLabel, onAction, emptyTeam }: {
+function SuggestionItem({ rank, item, actionLabel, onAction, emptyTeam, format }: {
   emptyTeam: boolean;
+  format: Format;
   rank: number;
   item: Suggestion | Replacement;
   actionLabel: string;
@@ -58,7 +60,7 @@ function SuggestionItem({ rank, item, actionLabel, onAction, emptyTeam }: {
             <strong>{rank}. {item.species}</strong>
             <small>{diffText ?? item.reasons[0]?.text ?? ''}</small>
             <span className="tags">
-              <TierTag species={item.species} />
+              <TierTag species={item.species} format={format} />
               {item.tags.map(tag => <span key={tag} className="tag">{tag}</span>)}
             </span>
           </span>
@@ -197,6 +199,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
               actionLabel={replacing ? 'Sostituisci con questo' : 'Aggiungi al team'}
               onAction={() => (replacing ? onReplaceWith(replaceIndex, item.set) : onAdd(item.set))}
               emptyTeam={emptyTeam}
+              format={format}
             />
           ))}
         </ol>

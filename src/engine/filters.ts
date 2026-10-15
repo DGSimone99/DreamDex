@@ -1,5 +1,6 @@
 import type { EngineData } from './data';
-import { battleName, battleSpecies, dex, getSpecies, isBanned, isDefined, isMega, isTeambuildable, natDexTier, toID, withinGen } from './dex';
+import { battleName, battleSpecies, dex, getSpecies, isDefined, isMega, isTeambuildable, natDexTier, toID, withinGen } from './dex';
+import { isBannedIn, meetsTeamRules } from './formats';
 import type { Format } from './format';
 import { detectRoles, type Role } from './roles';
 import { scoreSets, type Suggestion } from './scoring';
@@ -49,23 +50,23 @@ export function isFiltering(f: CandidateFilters): boolean {
 }
 
 /** Etichetta del tier per le carte: 'Uber' bannato, 'OU', 'RU', 'LC', 'NFE'… */
-export function tierLabel(speciesName: string): { label: string; banned: boolean } {
+export function tierLabel(speciesName: string, format: Format): { label: string; banned: boolean } {
   const species = getSpecies(speciesName);
   if (!species) return { label: '?', banned: false };
   const tier = natDexTier(species);
   // Senza tier National Dex, per i non evoluti si usa il tier singolo (LC / NFE)
   const fallback = ['LC', 'NFE'].includes(String(species.tier)) ? String(species.tier) : species.nfe ? 'NFE' : '—';
-  return { label: tier || fallback, banned: isBanned(species) };
+  return { label: tier || fallback, banned: isBannedIn(species, format) };
 }
 
-function matchesTier(speciesName: string, tier: TierFilter): boolean {
+function matchesTier(speciesName: string, tier: TierFilter, format: Format): boolean {
   if (tier === 'all') return true;
   const species = getSpecies(speciesName);
   if (!species) return false;
   const t = natDexTier(species);
   switch (tier) {
-    case 'legal': return !isBanned(species);
-    case 'uber': return isBanned(species);
+    case 'legal': return !isBannedIn(species, format);
+    case 'uber': return t === 'Uber' || t === 'AG';
     case 'ou': return t === 'OU';
     case 'uu': return t === 'UU' || t === 'UUBL';
     case 'ru': return t === 'RU' || t === 'RUBL';
@@ -73,11 +74,11 @@ function matchesTier(speciesName: string, tier: TierFilter): boolean {
   }
 }
 
-export function matchesFilters(candidate: { species: string; set: TeamSet }, f: CandidateFilters, data: EngineData): boolean {
+export function matchesFilters(candidate: { species: string; set: TeamSet }, f: CandidateFilters, data: EngineData, format: Format): boolean {
   const { set } = candidate;
   const query = toID(f.query);
   if (query && !toID(candidate.species).includes(query)) return false;
-  if (!matchesTier(candidate.species, f.tier)) return false;
+  if (!matchesTier(candidate.species, f.tier, format)) return false;
   if (f.types.length) {
     const types = (battleSpecies(set)?.types ?? []) as readonly string[];
     if (!f.types.every(t => types.includes(t))) return false;
@@ -119,10 +120,10 @@ export function searchPool(team: TeamSet[], format: Format, data: EngineData, f:
   const teamNumbers = new Set(team.map(set => getSpecies(set.species)?.num).filter(isDefined));
   const query = toID(f.query);
   return dex.species.all()
-    .filter(s => isTeambuildable(s) && withinGen(s, format) && !teamNumbers.has(s.num))
+    .filter(s => isTeambuildable(s) && withinGen(s, format) && meetsTeamRules(s, format) && !teamNumbers.has(s.num))
     .filter(s => !query || toID(s.name).includes(query))
     .map(s => ({ species: s.name, set: cachedDefaultSet(data, s.name) }))
-    .filter(c => matchesFilters(c, f, data))
+    .filter(c => matchesFilters(c, f, data, format))
     .map(c => c.set);
 }
 
@@ -132,6 +133,6 @@ export function searchCandidates(team: TeamSet[], format: Format, data: EngineDa
 }
 
 /** Applica ricerca e filtri a una lista di sostituti già calcolata. */
-export function filterList<T extends { species: string; set: TeamSet }>(list: T[], f: CandidateFilters, data: EngineData, limit = 20): T[] {
-  return list.filter(item => matchesFilters(item, f, data)).slice(0, limit);
+export function filterList<T extends { species: string; set: TeamSet }>(list: T[], f: CandidateFilters, data: EngineData, format: Format, limit = 20): T[] {
+  return list.filter(item => matchesFilters(item, f, data, format)).slice(0, limit);
 }

@@ -1,6 +1,7 @@
 import { analyzeTeam, checksThreat, type TeamAnalysis } from './analysis';
 import type { EngineData } from './data';
-import { battleName, getSpecies, isAllowed, isDefined, isMega, toID } from './dex';
+import { battleName, getSpecies, isDefined, isMega, toID, withinGen } from './dex';
+import { isLegalIn } from './formats';
 import { explain, type Components, type Facts, type Reason } from './explain';
 import type { Format } from './format';
 import { attackStyle, detectRoles, ESSENTIAL_ROLES, type Role } from './roles';
@@ -44,7 +45,7 @@ export function candidatePool(team: TeamSet[], format: Format, data: EngineData)
     .filter(([, entry]) => entry.usage >= format.minUsage)
     .map(([name]) => getSpecies(name))
     .filter(isDefined)
-    .filter(species => isAllowed(species, format) && !teamNumbers.has(species.num))
+    .filter(species => isLegalIn(species, format) && withinGen(species, format) && !teamNumbers.has(species.num))
     .map(species => species.name);
 }
 
