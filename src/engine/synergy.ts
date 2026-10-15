@@ -1,6 +1,7 @@
-import { battleAbility, battleSpecies, getMove, toID } from './dex';
+import { battleAbility, battleSpecies, getMove, isDefined, toID } from './dex';
 import { attackStyle } from './roles';
 import type { TeamSet } from './sets';
+import { attackingMoves, defensiveMultiplier, type TypeName } from './types';
 
 export type Condition =
   | 'sun' | 'rain' | 'sand' | 'snow'
@@ -171,11 +172,32 @@ export interface TeamConditionIssue {
   via: string;
 }
 
-/** Membri che portano un meteo/campo/Trick Room che nessuno nel team sfrutta. */
-export function unusedEnablers(team: TeamSet[]): TeamConditionIssue[] {
-  const used = new Set(team.flatMap(benefits).map(b => b.condition));
-  return team.flatMap(member =>
-    enables(member).filter(e => !used.has(e.condition)).map(e => ({ member: member.species, ...e })));
+/** Tipo di mossa potenziato dalla condizione (il sole potenzia Fire, la pioggia Water…). */
+const BOOSTED_TYPE: Partial<Record<Condition, TypeName>> = {
+  sun: 'Fire', rain: 'Water', electricterrain: 'Electric', psychicterrain: 'Psychic', grassyterrain: 'Grass',
+};
+
+/** L'abilitatore sfrutta da sé la condizione (mosse potenziate, Weather Ball, Solar Beam, velocità bassa in Trick Room). */
+function boostsItself(set: TeamSet, condition: Condition): boolean {
+  if (benefits(set).some(b => b.condition === condition)) return true;
+  const boosted = BOOSTED_TYPE[condition];
+  return !!boosted && attackingMoves(set).some(m => m.type === boosted);
+}
+
+export interface UnusedEnabler extends TeamConditionIssue {
+  /** Vero se la condizione potenzia almeno le mosse dell'abilitatore stesso. */
+  selfBoost: boolean;
+}
+
+/** Membri che portano un meteo/campo/Trick Room che nessun altro membro sfrutta. */
+export function unusedEnablers(team: TeamSet[]): UnusedEnabler[] {
+  const specific = (set: TeamSet) => benefits(set).filter(b => !GENERIC_MOVES.has(toID(b.via)));
+  return team.flatMap(member => {
+    const usedByOthers = new Set(team.filter(o => o !== member).flatMap(specific).map(b => b.condition));
+    return enables(member)
+      .filter(e => !usedByOthers.has(e.condition))
+      .map(e => ({ member: member.species, ...e, selfBoost: boostsItself(member, e.condition) }));
+  });
 }
 
 /** Membri che dipendono da una condizione che nessuno nel team porta. */
@@ -207,4 +229,42 @@ export function teamSynergies(team: TeamSet[]): string[] {
     }
   }
   return lines;
+}
+
+/** Condizioni che dimezzano i danni di un tipo: il sole Water, la pioggia Fire, i campi su chi tocca terra. */
+const MITIGATIONS: Partial<Record<Condition, { type: TypeName; groundedOnly: boolean }>> = {
+  sun: { type: 'Water', groundedOnly: false },
+  rain: { type: 'Fire', groundedOnly: false },
+  grassyterrain: { type: 'Ground', groundedOnly: true },
+  mistyterrain: { type: 'Dragon', groundedOnly: true },
+};
+
+function isGrounded(set: TeamSet): boolean {
+  const species = battleSpecies(set);
+  return !(species?.types as readonly string[] | undefined)?.includes('Flying')
+    && toID(battleAbility(set)) !== 'levitate' && toID(set.item) !== 'airballoon';
+}
+
+export interface WeatherMitigation {
+  condition: Condition;
+  /** Chi porta la condizione, es. "Ninetales (Drought)". */
+  source: string;
+  type: TypeName;
+  members: { species: string; from: number; to: number }[];
+}
+
+/** Debolezze del team smorzate dal meteo o dal campo che il team stesso porta. */
+export function weatherMitigations(team: TeamSet[]): WeatherMitigation[] {
+  const seen = new Set<Condition>();
+  return team.flatMap(enabler => enables(enabler).map(e => {
+    const effect = MITIGATIONS[e.condition];
+    if (!effect || seen.has(e.condition)) return null;
+    seen.add(e.condition);
+    const members = team
+      .filter(m => !effect.groundedOnly || isGrounded(m))
+      .map(m => ({ species: m.species, from: defensiveMultiplier(effect.type, m) }))
+      .filter(m => m.from > 1)
+      .map(m => ({ ...m, to: m.from / 2 }));
+    return members.length ? { condition: e.condition, source: `${enabler.species} (${e.via})`, type: effect.type, members } : null;
+  })).filter(isDefined);
 }

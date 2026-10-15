@@ -16,10 +16,19 @@ export function RatingPanel({ rating }: { rating: TeamRating }) {
           </div>
         ))}
       </dl>
+      {rating.bonus.total > 0 && (
+        <div className="bonus">
+          <strong>Bonus +{rating.bonus.total}</strong>{' '}
+          <small>(meteo e campi che smorzano debolezze, non sempre attivi)</small>
+          <ul>
+            {rating.bonus.items.map(item => <li key={item.text}>{item.text} (+{item.points})</li>)}
+          </ul>
+        </div>
+      )}
       {rating.penalty.total > 0 && (
         <div className="penalty">
-          <strong>Ridondanze −{rating.penalty.total}</strong>{' '}
-          <small>(voto senza penalità: {rating.base})</small>
+          <strong>Penalità −{rating.penalty.total}</strong>{' '}
+          <small>(voto senza bonus e penalità: {rating.base})</small>
           <ul>
             {rating.penalty.items.map(item => <li key={item.text}>{item.text} (−{item.points})</li>)}
           </ul>
