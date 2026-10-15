@@ -35,3 +35,29 @@ describe('il set iniziale è il primo preset Smogon del formato', () => {
     expect(within(team).getByLabelText('Preset Smogon').closest('.combobox')).toHaveTextContent('Offensive Spinner');
   });
 });
+
+describe('preset senza abilità (Pokémon con una sola abilità)', () => {
+  const noAbility = { ...emptySet('Dragapult'), ability: '', item: 'Choice Specs', nature: 'Timid', moves: ['Shadow Ball', 'Draco Meteor'] };
+  const single = { ...emptySet('Gholdengo'), ability: '', item: 'Choice Scarf', nature: 'Timid', moves: ['Make It Rain', 'Shadow Ball'] };
+  const withPresets: EngineData = { ...fixtureData, presets: {
+    Gholdengo: [{ name: 'Scarf', format: 'gen9nationaldex', set: single }],
+    Dragapult: [{ name: 'Specs', format: 'gen9nationaldex', set: noAbility }],
+  } };
+
+  it('presetsFor e defaultSet mettono la prima abilità della specie', async () => {
+    const { presetsFor } = await import('../../src/engine/sets');
+    expect(presetsFor(withPresets, 'Gholdengo')[0].set.ability).toBe('Good as Gold');
+    expect(defaultSet(withPresets, 'Gholdengo').ability).toBe('Good as Gold');
+    expect(defaultSet(withPresets, 'Dragapult').ability).toBe('Clear Body');
+  });
+
+  it('caricato dall’editor: abilità impostata e preset riconosciuto', async () => {
+    const user = userEvent.setup();
+    render(<App data={withPresets} initialLang="it" />);
+    await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Gholdengo{Enter}');
+    const team = screen.getByRole('region', { name: 'Team' });
+    await user.click(within(team).getByText('Gholdengo', { selector: '.name' }));
+    expect(within(team).getByLabelText('Abilità')).toHaveValue('Good as Gold');
+    expect(within(team).getByLabelText('Preset Smogon').closest('.combobox')).toHaveTextContent('Scarf');
+  });
+});

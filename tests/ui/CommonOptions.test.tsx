@@ -85,7 +85,8 @@ describe('spread pronti sopra gli EV', () => {
     // Chiuso di norma; il titolo dice quale spread noto stai usando
     const panel = screen.getByText('Spread più usati').closest('details')!;
     expect(panel).not.toHaveAttribute('open');
-    expect(panel.querySelector('summary')).toHaveTextContent('Jolly 252 Att / 252 Vel / 4 PS 32%');
+    // Da chiuso solo il titolo, senza lo spread scelto
+    expect(panel.querySelector('summary')).toHaveTextContent(/^Spread più usati$/);
     await user.click(panel.querySelector('summary')!);
     expect(panel).toHaveAttribute('open');
     const group = screen.getByRole('group', { name: 'Spread più usati' });
@@ -103,7 +104,6 @@ describe('spread pronti sopra gli EV', () => {
     expect(within(evs).getByLabelText('ATT')).toHaveValue(0);
     expect(impish).toHaveAttribute('aria-pressed', 'true');
     expect(jolly).toHaveAttribute('aria-pressed', 'false');
-    expect(panel.querySelector('summary')).toHaveTextContent('Impish 252 PS / 164 Dif / 92 Vel Preset');
   });
 
   it('Tera più usati in cima alla tendina', async () => {

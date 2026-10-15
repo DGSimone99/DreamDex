@@ -105,6 +105,11 @@ function baseFormeSet(sets: SetsData | null | undefined, speciesName: string): T
   return { ...base, species: species.name, item: species.requiredItem ?? base.item };
 }
 
+/** Le analisi non scrivono l'abilità quando la specie ne ha una sola: si mette la prima della specie. */
+export function withAbility(set: TeamSet): TeamSet {
+  return set.ability ? set : { ...set, ability: getSpecies(set.species)?.abilities[0] ?? '' };
+}
+
 /**
  * Set di riferimento: primo preset Smogon del formato (così l'editor lo riconosce) → statistiche del formato
  * → analisi → primo preset di un altro formato → riserva (il formato in cui è più popolare)
@@ -112,12 +117,13 @@ function baseFormeSet(sets: SetsData | null | undefined, speciesName: string): T
  * Reso legale fino a `genLimit` (mosse non imparabili sostituite dalle successive più usate).
  */
 export function defaultSet(data: EngineData, speciesName: string, genLimit = 9): TeamSet {
-  const base = findByName(data.presets ?? undefined, speciesName)?.[0]?.set
+  const found = findByName(data.presets ?? undefined, speciesName)?.[0]?.set
     ?? mostCommonSet(data.stats, speciesName)
     ?? findByName(data.sets ?? undefined, speciesName)
     ?? findByName(data.fallbackPresets ?? undefined, speciesName)?.[0]?.set
     ?? findByName(data.fallback ?? undefined, speciesName)
     ?? baseFormeSet(data.fallback, speciesName);
+  const base = found && withAbility(found);
   if (!base) return generatedSet(getSpecies(speciesName)?.name ?? speciesName, genLimit);
   const legal = makeLegal(base, data, genLimit);
   // Se le mosse illegali non hanno sostituti dalle statistiche, si completa con quelle generate
@@ -236,7 +242,7 @@ export function mergePresets(lists: (PresetsData | null | undefined)[], limit = 
 export function presetsFor(data: EngineData, speciesName: string): Preset[] {
   const own = findByName(data.presets ?? undefined, speciesName) ?? [];
   const other = findByName(data.fallbackPresets ?? undefined, speciesName) ?? [];
-  return mergePresets([{ x: own }, { x: other }]).x ?? [];
+  return (mergePresets([{ x: own }, { x: other }]).x ?? []).map(p => ({ ...p, set: withAbility(p.set) }));
 }
 
 const TIER_NAMES: Record<string, string> = { '': 'OU', ubers: 'Ubers', monotype: 'Monotype', ag: 'AG', lc: 'LC' };
