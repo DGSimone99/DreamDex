@@ -5,6 +5,8 @@ import { CONDITIONS, conditionName, type Condition } from '../engine/synergy';
 import { TYPES, type TypeName } from '../engine/types';
 import { inkFor, typeColor } from './Sprite';
 import { typeTextColor } from './TypeText';
+import { typeName } from '../i18n/game';
+import { useLang, useT } from '../i18n/react';
 
 const ROLES: Role[] = [...ESSENTIAL_ROLES, 'setup', ...DESIRABLE_ROLES];
 const GENS = [1, 2, 3, 4, 5, 6, 7, 8, 9];
@@ -17,6 +19,7 @@ function TypeGrid({ label, selected, max, onChange }: {
   max?: number;
   onChange: (types: TypeName[]) => void;
 }) {
+  const lang = useLang();
   return (
     <div className="type-filter">
       <h4>{label}</h4>
@@ -33,7 +36,7 @@ function TypeGrid({ label, selected, max, onChange }: {
               style={{ '--c': color, '--ink': inkFor(color), '--tc': typeTextColor(type) } as CSSProperties}
               onClick={() => onChange(toggle(selected, type))}
             >
-              {type}
+              {typeName(type, lang)}
             </button>
           );
         })}
@@ -43,12 +46,13 @@ function TypeGrid({ label, selected, max, onChange }: {
 }
 
 /** Tre scelte affiancate: tutti / esclusi / solo. */
-function Segmented({ label, value, onChange, labels = ['Tutti', 'No', 'Solo'] }: {
+function Segmented({ label, value, onChange }: {
   label: string;
   value: Inclusion;
   onChange: (value: Inclusion) => void;
-  labels?: [string, string, string];
 }) {
+  const t = useT();
+  const labels = [t('filters.incl.all'), t('filters.incl.none'), t('filters.incl.only')];
   const values: Inclusion[] = ['all', 'none', 'only'];
   return (
     <div className="control">
@@ -68,25 +72,27 @@ interface Props {
 }
 
 export function FilterBar({ filters, onChange }: Props) {
+  const t = useT();
+  const lang = useLang();
   const count = activeFilterCount(filters);
   const set = (patch: Partial<CandidateFilters>) => onChange({ ...filters, ...patch });
 
   return (
     <details className="block filters">
-      <summary>{count ? `Filtri (${count} ${count === 1 ? 'attivo' : 'attivi'})` : 'Filtri'}</summary>
+      <summary>{count === 0 ? t('filters.title') : count === 1 ? t('filters.activeOne') : t('filters.activeMany', { n: count })}</summary>
 
       <div className="type-filters">
-        <TypeGrid label="Tipo" selected={filters.types} max={MAX_TYPES} onChange={types => set({ types })} />
-        <TypeGrid label="Resiste a" selected={filters.resists} onChange={resists => set({ resists })} />
-        <TypeGrid label="Superefficace contro" selected={filters.hits} onChange={hits => set({ hits })} />
+        <TypeGrid label={t('filters.type')} selected={filters.types} max={MAX_TYPES} onChange={types => set({ types })} />
+        <TypeGrid label={t('filters.resists')} selected={filters.resists} onChange={resists => set({ resists })} />
+        <TypeGrid label={t('filters.hits')} selected={filters.hits} onChange={hits => set({ hits })} />
       </div>
 
       <div className="filter-section">
-        <h4>Ruolo</h4>
-        <div role="group" aria-label="Ruolo" className="chips">
+        <h4>{t('filters.role')}</h4>
+        <div role="group" aria-label={t('filters.role')} className="chips">
           {ROLES.map(role => (
             <button key={role} type="button" aria-pressed={filters.roles.includes(role)} onClick={() => set({ roles: toggle(filters.roles, role) })}>
-              {roleLabel(role)}
+              {roleLabel(role, lang)}
             </button>
           ))}
         </div>
@@ -94,53 +100,45 @@ export function FilterBar({ filters, onChange }: Props) {
 
       <div className="filter-controls">
         <label className="control">
-          <span className="control-label">Imposta</span>
-          <select aria-label="Imposta" value={filters.provides} onChange={e => set({ provides: e.target.value as Condition | '' })}>
-            <option value="">Qualsiasi</option>
-            {CONDITIONS.map(c => <option key={c} value={c}>{conditionName(c)}</option>)}
+          <span className="control-label">{t('filters.sets')}</span>
+          <select aria-label={t('filters.sets')} value={filters.provides} onChange={e => set({ provides: e.target.value as Condition | '' })}>
+            <option value="">{t('filters.any')}</option>
+            {CONDITIONS.map(c => <option key={c} value={c}>{conditionName(c, lang)}</option>)}
           </select>
         </label>
         <label className="control">
-          <span className="control-label">Sfrutta</span>
-          <select aria-label="Sfrutta" value={filters.benefitsFrom} onChange={e => set({ benefitsFrom: e.target.value as Condition | '' })}>
-            <option value="">Qualsiasi</option>
-            {CONDITIONS.map(c => <option key={c} value={c}>{conditionName(c)}</option>)}
+          <span className="control-label">{t('filters.benefits')}</span>
+          <select aria-label={t('filters.benefits')} value={filters.benefitsFrom} onChange={e => set({ benefitsFrom: e.target.value as Condition | '' })}>
+            <option value="">{t('filters.any')}</option>
+            {CONDITIONS.map(c => <option key={c} value={c}>{conditionName(c, lang)}</option>)}
           </select>
         </label>
         <label className="control">
-          <span className="control-label">Tier</span>
-          <select aria-label="Tier" value={filters.tier} onChange={e => set({ tier: e.target.value as CandidateFilters['tier'] })}>
-            <option value="all">Tutti</option>
-            <option value="legal">Legali nel formato</option>
-            <option value="uber">Uber e AG</option>
-            <option value="ou">OU</option>
-            <option value="uu">UU (UUBL + UU)</option>
-            <option value="ru">RU e inferiori</option>
-            <option value="nfe">Non evoluti</option>
+          <span className="control-label">{t('filters.tier')}</span>
+          <select aria-label={t('filters.tier')} value={filters.tier} onChange={e => set({ tier: e.target.value as CandidateFilters['tier'] })}>
+            {(['all', 'legal', 'uber', 'ou', 'uu', 'ru', 'nfe'] as const).map(tier => <option key={tier} value={tier}>{t(`filters.tier.${tier}`)}</option>)}
           </select>
         </label>
         <label className="control">
-          <span className="control-label">Uso nel meta</span>
-          <select aria-label="Uso nel meta" value={filters.usage} onChange={e => set({ usage: e.target.value as CandidateFilters['usage'] })}>
-            <option value="all">Tutti</option>
-            <option value="common">Comuni (≥ 5%)</option>
-            <option value="niche">Di nicchia (&lt; 1%)</option>
+          <span className="control-label">{t('filters.usage')}</span>
+          <select aria-label={t('filters.usage')} value={filters.usage} onChange={e => set({ usage: e.target.value as CandidateFilters['usage'] })}>
+            {(['all', 'common', 'niche'] as const).map(usage => <option key={usage} value={usage}>{t(`filters.usage.${usage}`)}</option>)}
           </select>
         </label>
-        <Segmented label="Mega" value={filters.mega} onChange={mega => set({ mega })} />
-        <Segmented label="Leggendari" value={filters.legendary} onChange={legendary => set({ legendary })} />
-        <Segmented label="Mitici" value={filters.mythical} onChange={mythical => set({ mythical })} />
+        <Segmented label={t('filters.mega')} value={filters.mega} onChange={mega => set({ mega })} />
+        <Segmented label={t('filters.legendary')} value={filters.legendary} onChange={legendary => set({ legendary })} />
+        <Segmented label={t('filters.mythical')} value={filters.mythical} onChange={mythical => set({ mythical })} />
         <label className="control">
-          <span className="control-label">Fino alla gen</span>
-          <select aria-label="Fino alla gen" value={filters.maxGen ?? ''} onChange={e => set({ maxGen: e.target.value ? Number(e.target.value) : null })}>
-            <option value="">Tutte</option>
-            {GENS.map(gen => <option key={gen} value={gen}>Gen {gen}</option>)}
+          <span className="control-label">{t('filters.maxGen')}</span>
+          <select aria-label={t('filters.maxGen')} value={filters.maxGen ?? ''} onChange={e => set({ maxGen: e.target.value ? Number(e.target.value) : null })}>
+            <option value="">{t('filters.allGens')}</option>
+            {GENS.map(gen => <option key={gen} value={gen}>{t('filters.gen', { n: gen })}</option>)}
           </select>
         </label>
       </div>
 
       <div className="filter-footer">
-        <button type="button" disabled={count === 0} onClick={() => onChange({ ...EMPTY_FILTERS, query: filters.query })}>Azzera filtri</button>
+        <button type="button" disabled={count === 0} onClick={() => onChange({ ...EMPTY_FILTERS, query: filters.query })}>{t('filters.reset')}</button>
       </div>
     </details>
   );
