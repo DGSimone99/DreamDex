@@ -199,6 +199,27 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 .slot > summary .sprite-wrap { position: relative; align-self: center; }
 .slot > summary .sprite { display: block; image-rendering: pixelated; transition: transform 0.35s var(--ease); }
 .slot[open] > summary .sprite { transform: scale(1.12) translateY(-2px); }
+/* Moveset aperto: il Pokémon "ruggisce" (scatto) e resta in idle animato (gen5ani, dimensioni naturali, centrato) */
+.slot > summary .sprite.covered { visibility: hidden; }
+.slot > summary .sprite-ani {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  max-width: none;
+  image-rendering: pixelated;
+  pointer-events: none;
+  transform: translate(-50%, -50%) translateY(-2px) scale(calc(1.12 * var(--sprite-scale, 1)));
+}
+.slot[open] > summary .sprite-wrap { animation: roar 0.55s var(--ease); }
+@keyframes roar {
+  0% { transform: none; }
+  22% { transform: translateY(-9px) scale(1.1); }
+  38% { transform: translateY(-7px) scale(1.1) rotate(-3deg); }
+  52% { transform: translateY(-6px) scale(1.08) rotate(3deg); }
+  66% { transform: translateY(-4px) scale(1.05) rotate(-2deg); }
+  80% { transform: translateY(-1px) rotate(1deg); }
+  100% { transform: none; }
+}
 .slot .name { font: 700 21px/1.05 var(--display); text-transform: uppercase; letter-spacing: 0.02em; }
 .slot .held { font-size: 13px; color: var(--muted); }
 .slot .roles { font-size: 12px; color: var(--faint); }
@@ -934,6 +955,7 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
   .slot .type-chip { width: 56px; font-size: 10px; }
   .slot .type-chip.long { font-size: 8px; letter-spacing: -0.02em; }
   .slot > summary .sprite { width: 80px; height: 80px; }
+  .slot > summary { --sprite-scale: 0.8333; }
   .slot > summary { padding-top: 30px; }
   .slot .roles { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
   .board-head, .suggestion > summary { grid-template-columns: 26px 52px minmax(0, 1fr) repeat(4, 46px) 44px 32px; gap: 8px; }
