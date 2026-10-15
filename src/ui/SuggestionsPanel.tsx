@@ -4,12 +4,15 @@ import type { Format } from '../engine/format';
 import { improveReplacements, similarReplacements, type Replacement } from '../engine/replace';
 import { suggest, type Suggestion } from '../engine/scoring';
 import { exportShowdown, type TeamSet } from '../engine/sets';
-import { COMPONENT_KEYS, type ComponentKey } from '../engine/weights';
+import { memberPower } from '../engine/power';
 import { copyText } from './clipboard';
 
-const COMPONENT_LABELS: Record<ComponentKey, string> = {
-  defense: 'Difesa', threats: 'Minacce', coverage: 'Coverage', roles: 'Ruoli', synergy: 'Sinergia', strength: 'Meta',
-};
+/** Barre mostrate sulle carte: come il candidato si adatta al team, più le sue statistiche. */
+const FIT_BARS: { key: 'defense' | 'coverage' | 'roles'; label: string }[] = [
+  { key: 'defense', label: 'Difesa' },
+  { key: 'coverage', label: 'Coverage' },
+  { key: 'roles', label: 'Ruoli' },
+];
 const PAGE = 10;
 const MAX = 20;
 
@@ -25,7 +28,8 @@ interface Props {
   onCancelReplace: () => void;
 }
 
-function SuggestionItem({ rank, item, actionLabel, onAction }: {
+function SuggestionItem({ rank, item, actionLabel, onAction, emptyTeam }: {
+  emptyTeam: boolean;
   rank: number;
   item: Suggestion | Replacement;
   actionLabel: string;
@@ -51,12 +55,16 @@ function SuggestionItem({ rank, item, actionLabel, onAction }: {
           <p>Somiglianza: {Math.round(item.similarity * 100)}%</p>
         )}
         <dl className="bars">
-          {COMPONENT_KEYS.map(key => (
-            <div key={key}>
-              <dt>{COMPONENT_LABELS[key]}</dt>
-              <dd><meter min={0} max={1} value={item.components[key]} /></dd>
+          {(emptyTeam ? [] : FIT_BARS).map(bar => (
+            <div key={bar.key}>
+              <dt>{bar.label}</dt>
+              <dd><meter min={0} max={1} value={item.components[bar.key]} /></dd>
             </div>
           ))}
+          <div>
+            <dt>Statistiche</dt>
+            <dd><meter min={0} max={100} value={memberPower(item.set)?.power ?? 0} /></dd>
+          </div>
         </dl>
         <ul>{item.reasons.map(reason => <li key={reason.text}>{reason.text}</li>)}</ul>
         <pre className="set">{setText}</pre>
@@ -73,6 +81,8 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   const [mode, setMode] = useState<ReplaceMode>('improve');
   const [limit, setLimit] = useState(PAGE);
   const replacing = replaceIndex !== null && replaceIndex < team.length;
+  /** Il team contro cui si valutano i candidati è vuoto: niente adattamento da mostrare. */
+  const emptyTeam = (replacing ? team.length - 1 : team.length) === 0;
 
   const items: (Suggestion | Replacement)[] = useMemo(() => {
     if (!data.stats) return [];
@@ -94,6 +104,9 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   } else {
     body = (
       <>
+        {emptyTeam && (
+          <p className="note">Aggiungi un Pokémon per vedere come si adatta al team — per ora ordinati per uso nel meta</p>
+        )}
         <ol className="suggestions">
           {items.slice(0, limit).map((item, i) => (
             <SuggestionItem
@@ -102,6 +115,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
               item={item}
               actionLabel={replacing ? 'Sostituisci con questo' : 'Aggiungi al team'}
               onAction={() => (replacing ? onReplaceWith(replaceIndex, item.set) : onAdd(item.set))}
+              emptyTeam={emptyTeam}
             />
           ))}
         </ol>

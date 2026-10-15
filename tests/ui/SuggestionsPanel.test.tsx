@@ -23,6 +23,20 @@ describe('SuggestionsPanel', () => {
     expect(within(suggestions()).getAllByLabelText(/^Punteggio \d+$/)).toHaveLength(4);
   });
 
+  it('barre delle carte: Difesa, Coverage, Ruoli, Statistiche', async () => {
+    await setup('Great Tusk');
+    const card = suggestions().querySelector('details.suggestion')!;
+    expect([...card.querySelectorAll('.bars dt')].map(dt => dt.textContent)).toEqual(['Difesa', 'Coverage', 'Ruoli', 'Statistiche']);
+  });
+
+  it('team vuoto: nota e solo la barra Statistiche', async () => {
+    await setup();
+    expect(within(suggestions()).getByText('Aggiungi un Pokémon per vedere come si adatta al team — per ora ordinati per uso nel meta')).toBeInTheDocument();
+    const card = suggestions().querySelector('details.suggestion')!;
+    expect([...card.querySelectorAll('.bars dt')].map(dt => dt.textContent)).toEqual(['Statistiche']);
+    expect(Number(card.querySelector('.bars meter')!.getAttribute('value'))).toBeGreaterThan(0);
+  });
+
   it('mostra i tag sulle carte', async () => {
     await setup('Great Tusk', 'Gholdengo');
     expect(within(suggestions()).getByText('Spesso usati insieme: Great Tusk (25%)')).toBeInTheDocument();
