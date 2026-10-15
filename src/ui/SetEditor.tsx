@@ -123,6 +123,8 @@ export function SetEditor({ set, presets = [], genLimit, common, onChange }: Pro
     return [...top, ...options.filter(o => !picked.has(o.value))];
   };
   const commonKey = JSON.stringify(common ?? null);
+  const shareLabel = (c: { share: number | null }) => (c.share === null ? t('combobox.preset') : formatPercent(lang, c.share, 0));
+  const currentSpread = common?.spreads.find(s => spreadKey(s) === spreadKey(set));
   const custom = !!set.customSkillset;
   const species = getSpecies(set.species);
   const standard = legalAbilities(set.species, genLimit)
@@ -268,6 +270,18 @@ export function SetEditor({ set, presets = [], genLimit, common, onChange }: Pro
       <fieldset className="evs">
         <legend>{t('editor.evs')}</legend>
         {!!common?.spreads.length && (
+          // Chiuso di norma: il titolo dice comunque quale spread noto stai usando
+          <details className="spread-panel">
+          <summary>
+            <span>{t('editor.spreads')}</span>
+            {currentSpread && (
+              <span className="spread-current">
+                <strong>{natureName(currentSpread.nature, lang)}</strong>{' '}
+                {spreadText(currentSpread, lang)}{' '}
+                <span className="common-share">{shareLabel(currentSpread)}</span>
+              </span>
+            )}
+          </summary>
           <div className="spread-presets" role="group" aria-label={t('editor.spreads')}>
             {common.spreads.map(spread => (
               <button
@@ -278,10 +292,11 @@ export function SetEditor({ set, presets = [], genLimit, common, onChange }: Pro
               >
                 <strong>{natureName(spread.nature, lang)}</strong>
                 <span className="spread-evs">{spreadText(spread, lang)}</span>
-                <span className="common-share">{spread.share === null ? t('combobox.preset') : formatPercent(lang, spread.share, 0)}</span>
+                <span className="common-share">{shareLabel(spread)}</span>
               </button>
             ))}
           </div>
+          </details>
         )}
         {STAT_IDS.map(stat => (
           <label key={stat}>

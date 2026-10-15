@@ -250,7 +250,34 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 .editor-group { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 14px; }
 .set-editor .evs { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; }
 /* Spread pronti: un clic imposta natura ed EV; stesso linguaggio dorato dei "Più usati" */
-.spread-presets { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px; }
+.spread-panel { grid-column: 1 / -1; }
+.spread-panel > summary {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 2px 0;
+  font: 600 12px/1.2 var(--display);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+.spread-panel > summary::after {
+  content: '';
+  align-self: center;
+  width: 6px;
+  height: 6px;
+  border: solid var(--gold);
+  border-width: 0 1.5px 1.5px 0;
+  transform: translateY(-2px) rotate(45deg);
+  transition: transform 0.2s var(--ease);
+}
+.spread-panel[open] > summary::after { transform: translateY(1px) rotate(225deg); }
+.spread-panel > summary:hover { color: var(--text); }
+.spread-current { font: 400 13px/1.2 var(--ui); letter-spacing: 0; text-transform: none; color: var(--muted); }
+.spread-current strong { font-weight: 600; color: var(--text); }
+.spread-current .common-share { font: 600 13px/1 var(--display); color: var(--gold); }
+.spread-panel[open] .spread-current { display: none; }
+.spread-presets { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .spread-presets button {
   display: inline-flex;
   align-items: baseline;
