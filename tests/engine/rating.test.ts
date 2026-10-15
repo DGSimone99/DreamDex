@@ -17,8 +17,8 @@ describe('gradeFor', () => {
 });
 
 describe('pesi delle aree', () => {
-  it('Forza al 15%, somma 1', () => {
-    expect(AREA_WEIGHTS).toEqual({ defense: 0.25, coverage: 0.175, threats: 0.175, roles: 0.15, strength: 0.15, synergy: 0.1 });
+  it('senza Sinergia, Forza al 15%, somma 1', () => {
+    expect(AREA_WEIGHTS).toEqual({ defense: 0.275, coverage: 0.2, threats: 0.2, roles: 0.175, strength: 0.15 });
     expect(Object.values(AREA_WEIGHTS).reduce((a, b) => a + b, 0)).toBeCloseTo(1);
   });
 });
@@ -42,15 +42,14 @@ describe('rateTeam', () => {
     expect(value(rating, 'threats')).toBe(42);
     expect(value(rating, 'roles')).toBe(31);
     expect(value(rating, 'strength')).toBe(90);
-    expect(value(rating, 'synergy')).toBe(100);
   });
 
   it('voto complessivo pesato, provvisorio con meno di 6 membri', () => {
-    expect(rating).toMatchObject({ overall: 68, grade: 'C', label: 'Discreto', provisional: true });
+    expect(rating).toMatchObject({ overall: 64, grade: 'C', label: 'Discreto', provisional: true });
   });
 
   it('ordine e nomi delle aree', () => {
-    expect(rating.areas.map(a => a.label)).toEqual(['Difesa', 'Coverage', 'Minacce', 'Ruoli', 'Forza', 'Sinergia']);
+    expect(rating.areas.map(a => a.label)).toEqual(['Difesa', 'Coverage', 'Minacce', 'Ruoli', 'Forza']);
   });
 
   it('team completo: non provvisorio', () => {
@@ -62,18 +61,13 @@ describe('rateTeam', () => {
     expect(rateTeam([], fixtureData)).toBeNull();
   });
 
-  it('un solo membro: sinergia n/d', () => {
-    expect(value(rateTeam([tusk], fixtureData), 'synergy')).toBeNull();
-  });
-
-  it('senza statistiche: minacce, forza e sinergia n/d, voto sulle aree disponibili', () => {
+  it('senza statistiche: minacce e forza n/d, voto sulle aree disponibili', () => {
     const noData = rateTeam([tusk, gholdengo], { stats: null, sets: null })!;
     expect(value(noData, 'threats')).toBeNull();
     expect(value(noData, 'strength')).toBeNull();
-    expect(value(noData, 'synergy')).toBeNull();
     const d = value(noData, 'defense')!;
     const c = value(noData, 'coverage')!;
     const r = value(noData, 'roles')!;
-    expect(Math.abs(noData.overall - (0.25 * d + 0.175 * c + 0.15 * r) / 0.575)).toBeLessThanOrEqual(1);
+    expect(Math.abs(noData.overall - (0.275 * d + 0.2 * c + 0.175 * r) / 0.65)).toBeLessThanOrEqual(1);
   });
 });

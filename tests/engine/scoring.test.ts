@@ -86,6 +86,11 @@ describe('scoreCandidates', () => {
     }
   });
 
+  it('tag "Spesso usati insieme" dal 15% di coppia in su', () => {
+    expect(byName(results, 'Kingambit').tags).toContain('Spesso usati insieme: Great Tusk (25%)');
+    expect(byName(results, 'Rotom-Wash').tags.some(t => t.startsWith('Spesso usati insieme'))).toBe(false);
+  });
+
   it('testo della motivazione difensiva', () => {
     const texts = byName(results, 'Rotom-Wash').reasons.map(r => r.text);
     expect(texts).toContain('Immune a Ground e resiste a Fire, Water: debolezze del team');

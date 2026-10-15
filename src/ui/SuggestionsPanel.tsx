@@ -41,6 +41,9 @@ function SuggestionItem({ rank, item, actionLabel, onAction }: {
           <span>
             <strong>{rank}. {item.species}</strong>
             <small>{diffText ?? item.reasons[0]?.text ?? ''}</small>
+            {item.tags.length > 0 && (
+              <span className="tags">{item.tags.map(tag => <span key={tag} className="tag">{tag}</span>)}</span>
+            )}
           </span>
           <span className="score" aria-label={`Punteggio ${item.score}`}>{item.score}</span>
         </summary>
