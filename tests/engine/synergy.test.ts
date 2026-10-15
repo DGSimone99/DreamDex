@@ -5,7 +5,7 @@ import { DEFAULT_FORMAT } from '../../src/engine/format';
 import { scoreCandidates } from '../../src/engine/scoring';
 import { emptySet, mostCommonSet, type TeamSet } from '../../src/engine/sets';
 import type { SpeciesStats } from '../../src/engine/stats';
-import { benefits, enables, mechanicalLinks, teamSynergies, unmetBeneficiaries, unusedEnablers, weatherMitigations } from '../../src/engine/synergy';
+import { benefits, conditionConflicts, enables, mechanicalLinks, teamSynergies, unmetBeneficiaries, unusedEnablers, weakenedMoves, weatherMitigations } from '../../src/engine/synergy';
 
 const set = (species: string, ability: string, moves: string[] = [], item = ''): TeamSet =>
   ({ ...emptySet(species), ability, moves, item });
@@ -111,6 +111,45 @@ describe('debolezze smorzate dal meteo', () => {
 
   it('nessun meteo, nessuna nota', () => {
     expect(weatherMitigations([tusk, venusaur])).toEqual([]);
+  });
+});
+
+describe('meteo e campi in conflitto', () => {
+  const pelipper = set('Pelipper', 'Drizzle', ['Hurricane']);
+
+  it('due meteo diversi sono in conflitto', () => {
+    expect(conditionConflicts([ninetales, pelipper])).toEqual([{ kind: 'meteo', setters: ['Ninetales (Drought)', 'Pelipper (Drizzle)'] }]);
+  });
+
+  it('due campi diversi sono in conflitto', () => {
+    const koko = set('Tapu Koko', 'Electric Surge', ['Thunderbolt']);
+    const lele = set('Tapu Lele', 'Psychic Surge', ['Psychic']);
+    expect(conditionConflicts([koko, lele])).toEqual([{ kind: 'campi', setters: ['Tapu Koko (Electric Surge)', 'Tapu Lele (Psychic Surge)'] }]);
+  });
+
+  it('due setter dello stesso meteo non sono in conflitto', () => {
+    expect(conditionConflicts([ninetales, set('Torkoal', 'Drought', ['Lava Plume'])])).toEqual([]);
+  });
+});
+
+describe('mosse indebolite dal meteo del team', () => {
+  it('il sole indebolisce le mosse Water: STAB o solo coverage', () => {
+    const kingdra = set('Kingdra', 'Sniper', ['Hydro Pump', 'Draco Meteor']);
+    const kyurem = set('Kyurem', 'Pressure', ['Ice Beam', 'Surf']);
+    expect(weakenedMoves([ninetales, kingdra, kyurem])).toEqual([
+      { condition: 'sun', setter: 'Ninetales', member: 'Kingdra', type: 'Water', stab: true },
+      { condition: 'sun', setter: 'Ninetales', member: 'Kyurem', type: 'Water', stab: false },
+    ]);
+  });
+
+  it('la pioggia indebolisce le mosse Fire, anche del setter di un altro meteo', () => {
+    expect(weakenedMoves([set('Pelipper', 'Drizzle', ['Hurricane']), ninetales])).toEqual([
+      { condition: 'rain', setter: 'Pelipper', member: 'Ninetales', type: 'Fire', stab: true },
+    ]);
+  });
+
+  it('Hydro Steam non è indebolito dal sole', () => {
+    expect(weakenedMoves([ninetales, set('Volcanion', 'Water Absorb', ['Hydro Steam'])])).toEqual([]);
   });
 });
 

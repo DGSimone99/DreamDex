@@ -53,7 +53,7 @@ describe('rateTeam', () => {
   });
 
   it('ordine e nomi delle aree', () => {
-    expect(rating.areas.map(a => a.label)).toEqual(['Difesa', 'Coverage', 'Ruoli', 'Forza']);
+    expect(rating.areas.map(a => a.label)).toEqual(['Difesa', 'Coverage', 'Ruoli', 'Statistiche']);
   });
 
   it('team completo: non provvisorio', () => {

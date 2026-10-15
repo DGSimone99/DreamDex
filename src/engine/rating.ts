@@ -5,7 +5,7 @@ import { teamPower, type MemberPower } from './power';
 import { DESIRABLE_ROLES, detectRoles, ESSENTIAL_ROLES } from './roles';
 import type { TeamSet } from './sets';
 import { TYPES } from './types';
-import { CONDITION_LABELS, unmetBeneficiaries, unusedEnablers, weatherMitigations } from './synergy';
+import { conditionConflicts, CONDITION_LABELS, unmetBeneficiaries, unusedEnablers, weakenedMoves, weatherMitigations } from './synergy';
 
 export type AreaKey = 'defense' | 'coverage' | 'roles' | 'strength';
 
@@ -21,7 +21,7 @@ const AREA_LABELS: Record<AreaKey, string> = {
   defense: 'Difesa',
   coverage: 'Coverage',
   roles: 'Ruoli',
-  strength: 'Forza',
+  strength: 'Statistiche',
 };
 
 
@@ -102,6 +102,18 @@ export function roleAndTypeRedundancies(team: TeamSet[]): Redundancy[] {
   return items;
 }
 
+/** Meteo/campi in conflitto (−3) e mosse indebolite dal meteo del team (−2 STAB, −1 coverage). */
+export function weatherClashes(team: TeamSet[]): Redundancy[] {
+  const cap = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
+  return [
+    ...conditionConflicts(team).map(c => ({ text: `${cap(c.kind)} in conflitto: ${c.setters.join(', ')}`, points: 3 })),
+    ...weakenedMoves(team).map(w => ({
+      text: `${cap(CONDITION_LABELS[w.condition])} di ${w.setter} indebolisce le mosse ${w.type} di ${w.member}`,
+      points: w.stab ? 2 : 1,
+    })),
+  ];
+}
+
 export function redundancies(team: TeamSet[], analysis: TeamAnalysis): Redundancies {
   const common = 1 / TYPES.length;
   const weaknesses = analysis.weakness
@@ -116,7 +128,7 @@ export function redundancies(team: TeamSet[], analysis: TeamAnalysis): Redundanc
       ? { text: `${i.via} di ${i.member} potenzia solo le sue mosse`, points: 1 }
       : { text: `${i.via} di ${i.member} non sfruttato`, points: 2 }),
   ];
-  const items = [...weaknesses, ...roleAndTypeRedundancies(team), ...dependencies];
+  const items = [...weaknesses, ...roleAndTypeRedundancies(team), ...dependencies, ...weatherClashes(team)];
   return { total: Math.min(MAX_PENALTY, sum(items.map(i => i.points))), items };
 }
 
