@@ -132,7 +132,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   const pickExact = () => {
     const species = getSpecies(filters.query.trim());
     if (!species) return;
-    const set = defaultSet(data, species.name);
+    const set = defaultSet(data, species.name, format.genLimit);
     if (replacing) onReplaceWith(replaceIndex, set);
     else onAdd(set);
     setFilters({ ...filters, query: '' });

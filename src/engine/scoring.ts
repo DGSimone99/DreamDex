@@ -155,7 +155,7 @@ export function scoreCandidates(team: TeamSet[], format: Format, data: EngineDat
   const entries = [
     ...candidatePool(team, format, data)
       .filter(species => !extraIds.has(toID(species)))
-      .map(species => ({ species, set: defaultSet(data, species) }))
+      .map(species => ({ species, set: defaultSet(data, species, format.genLimit) }))
       .filter(({ set }) => !(megaTaken && isMega(set))),
     ...extraSets.map(set => ({ species: set.species, set })),
   ];

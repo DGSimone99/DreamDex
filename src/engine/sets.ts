@@ -1,6 +1,7 @@
 import { Sets } from '@pkmn/sets';
-import { dex, getMove, getSpecies } from './dex';
+import { dex, getMove, getSpecies, toID } from './dex';
 import type { EngineData } from './data';
+import { legalAbilities, legalMoves } from './learnsets';
 import { findByName, statsEntry, type StatsData } from './stats';
 
 export type StatID = 'hp' | 'atk' | 'def' | 'spa' | 'spd' | 'spe';
@@ -16,6 +17,8 @@ export interface TeamSet {
   teraType?: string;
   /** Preferito: il coaching non ne suggerisce mai la sostituzione. */
   favorite?: boolean;
+  /** Custom Skillset: qualunque mossa e abilità (hackrom), solo per questo membro del team. */
+  customSkillset?: boolean;
 }
 
 export type SetsData = Record<string, TeamSet>;
@@ -86,11 +89,35 @@ export function buildFallbackSets(sources: EngineData[]): SetsData {
   return result;
 }
 
-export function defaultSet(data: EngineData, speciesName: string): TeamSet {
-  return mostCommonSet(data.stats, speciesName)
+/**
+ * Set di riferimento: statistiche del formato → analisi → riserva → set vuoto,
+ * reso legale fino a `genLimit` (mosse non imparabili sostituite dalle successive più usate).
+ */
+export function defaultSet(data: EngineData, speciesName: string, genLimit = 9): TeamSet {
+  const base = mostCommonSet(data.stats, speciesName)
     ?? findByName(data.sets ?? undefined, speciesName)
     ?? findByName(data.fallback ?? undefined, speciesName)
     ?? emptySet(speciesName);
+  return makeLegal(base, data, genLimit);
+}
+
+function makeLegal(set: TeamSet, data: EngineData, genLimit: number): TeamSet {
+  const moves = legalMoves(set.species, genLimit);
+  const abilities = legalAbilities(set.species, genLimit);
+  const entry = statsEntry(data.stats, set.species);
+  let result = set;
+  const isLegal = (name: string) => !moves || moves.has(toID(name));
+  if (set.moves.some(m => !isLegal(m))) {
+    const kept = set.moves.filter(isLegal);
+    const ranking = entry ? sortedKeys(entry.moves).map(id => getMove(id)?.name ?? id) : [];
+    const extra = ranking.filter(name => isLegal(name) && !kept.includes(name));
+    result = { ...result, moves: [...kept, ...extra].slice(0, 4) };
+  }
+  if (abilities && set.ability && !abilities.includes(set.ability)) {
+    const ranked = entry ? sortedKeys(entry.abilities).map(id => dex.abilities.get(id).name) : [];
+    result = { ...result, ability: ranked.find(a => abilities.includes(a)) ?? abilities[0] ?? set.ability };
+  }
+  return result;
 }
 
 type OneOrMany<T> = T | T[];
