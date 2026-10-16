@@ -1,6 +1,7 @@
+import type { Species } from '@pkmn/dex';
 import { t, type Lang } from '../i18n';
 import { Sets } from '@pkmn/sets';
-import { dex, getMove, getSpecies, teamFormeOf, toID } from './dex';
+import { battleSpecies, dex, getMove, getSpecies, teamFormeOf, toID } from './dex';
 import type { EngineData } from './data';
 import { isLearnable, isLegalAbility, legalAbilities, legalMoves } from './learnsets';
 import { findByName, statsEntry, type StatsData } from './stats';
@@ -125,18 +126,25 @@ export function defaultSet(data: EngineData, speciesName: string, genLimit = 9):
   }
   // Mega e Primal: il primo preset della specie base con la pietra giusta, come per le altre specie (l'editor lo riconosce)
   const forme = getSpecies(speciesName);
-  if (forme && (forme.isMega || forme.isPrimal) && forme.baseSpecies !== forme.name) {
-    const stone = toID(forme.requiredItem ?? '');
-    const preset = presetsFor(data, forme.name).find(p => toID(p.set.item) === stone);
+  if (forme && isStoneForme(forme)) {
+    const preset = presetsFor(data, forme.name)[0];
     if (preset) return makeLegal(preset.set, data, genLimit);
   }
-  const found = findByName(data.presets ?? undefined, speciesName)?.[0]?.set
-    ?? mostCommonSet(data.stats, speciesName)
-    ?? findByName(data.sets ?? undefined, speciesName)
-    ?? findByName(data.fallbackPresets ?? undefined, speciesName)?.[0]?.set
+  // Forma base di chi ha una Mega o una Primal: mai con la pietra (la Mega è un'altra voce)
+  const stones = formeItemIds(forme?.name ?? speciesName);
+  const plain = (list: Preset[] | undefined) => list?.find(p => !stones.has(toID(p.set.item)))?.set;
+  const noStone = (set: TeamSet | null | undefined) => (set && !stones.has(toID(set.item)) ? set : undefined);
+  const statsSet = mostCommonSet(data.stats, speciesName);
+  const found = plain(findByName(data.presets ?? undefined, speciesName))
+    ?? noStone(statsSet)
+    ?? noStone(findByName(data.sets ?? undefined, speciesName))
+    ?? plain(findByName(data.fallbackPresets ?? undefined, speciesName))
+    ?? noStone(findByName(data.fallback ?? undefined, speciesName))
+    // Solo set con la pietra: si tiene il set e le si toglie la pietra
+    ?? statsSet
     ?? findByName(data.fallback ?? undefined, speciesName)
     ?? baseFormeSet(data.fallback, speciesName);
-  const base = found && withAbility(found);
+  const base = found && withAbility(withoutStone(found, stones, data));
   if (!base) return generatedSet(getSpecies(speciesName)?.name ?? speciesName, genLimit);
   const legal = makeLegal(base, data, genLimit);
   // Se le mosse illegali non hanno sostituti dalle statistiche, si completa con quelle generate
@@ -251,15 +259,53 @@ export function mergePresets(lists: (PresetsData | null | undefined)[], limit = 
   return result;
 }
 
-/** I preset per un Pokémon: prima quelli del formato scelto, poi quelli degli altri formati. */
+/** Mega o Primal: forma raggiunta tenendo una pietra (o un'Orb) dalla specie base. */
+function isStoneForme(forme: Species): boolean {
+  return !!(forme.isMega || forme.isPrimal) && forme.baseSpecies !== forme.name;
+}
+
+/** Pietre Mega e Orb che fanno cambiare forma alla specie (Charizard: Charizardite X e Y). */
+export function formeItemIds(speciesName: string): Set<string> {
+  const species = getSpecies(speciesName);
+  if (!species) return new Set();
+  return new Set((species.otherFormes ?? [])
+    .map(name => getSpecies(name))
+    .filter((forme): forme is Species => !!forme && isStoneForme(forme))
+    .map(forme => toID(forme.requiredItem ?? '')));
+}
+
+/** Il set senza la pietra: lo strumento più usato che non la sia (o nessuno). */
+function withoutStone(set: TeamSet, stones: Set<string>, data: EngineData): TeamSet {
+  if (!stones.has(toID(set.item))) return set;
+  const entry = statsEntry(data.stats, set.species);
+  const item = entry ? sortedKeys(entry.items).find(id => !stones.has(id) && id !== 'nothing') : undefined;
+  return { ...set, item: item ? dex.items.get(item).name : '' };
+}
+
+/**
+ * I preset per un Pokémon, divisi per forma: una Mega o una Primal ha solo quelli con la sua pietra,
+ * la forma base solo quelli senza. Prima quelli del formato scelto, poi quelli degli altri formati.
+ */
 export function presetsFor(data: EngineData, speciesName: string): Preset[] {
   const forme = getSpecies(speciesName);
-  // Le analisi Smogon stanno sotto la specie base: per Gardevoir-Mega si prendono quelle di Gardevoir, prima le Mega
-  if (forme && (forme.isMega || forme.isPrimal) && forme.baseSpecies !== forme.name) {
+  // Le analisi Smogon stanno sotto la specie base: per Gardevoir-Mega si prendono quelle di Gardevoir con la pietra
+  if (forme && isStoneForme(forme)) {
     const stone = toID(forme.requiredItem ?? '');
-    const base = presetsFor(data, forme.baseSpecies);
-    return [...base.filter(p => toID(p.set.item) === stone), ...base.filter(p => toID(p.set.item) !== stone)];
+    return allPresetsFor(data, forme.baseSpecies).filter(p => toID(p.set.item) === stone);
   }
+  const stones = formeItemIds(forme?.name ?? speciesName);
+  return allPresetsFor(data, speciesName).filter(p => !stones.has(toID(p.set.item)));
+}
+
+/** I preset per il set così com'è: con la pietra quelli della Mega, senza quelli della forma base. */
+export function presetsForSet(data: EngineData, set: TeamSet): Preset[] {
+  const forme = battleSpecies(set);
+  return presetsFor(data, forme && isStoneForme(forme) ? forme.name : set.species);
+}
+
+/** Tutti i preset della specie, senza distinguere le forme. */
+function allPresetsFor(data: EngineData, speciesName: string): Preset[] {
+  const forme = getSpecies(speciesName);
   const species = forme?.name ?? speciesName;
   // I preset di Smogon per "Necrozma-Ultra" vanno sulla forma da team che la raggiunge, con lo Z-cristallo
   const battleFormePresets = (list: PresetsData | null | undefined) =>

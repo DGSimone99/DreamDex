@@ -176,7 +176,8 @@ export function scoreCandidates(team: TeamSet[], format: Format, data: EngineDat
       // Anche una voce con un altro nome può essere, in battaglia, il membro valutato (es. "Kyogre" con la Blue Orb)
       .filter(({ set }) => !extraIds.has(toID(battleName(set))))
       .filter(({ set }) => !(megaTaken && isMega(set))),
-    ...extraSets.map(set => ({ species: set.species, set })),
+    // Col nome della forma in battaglia: Gardevoir con la Gardevoirite è "Gardevoir-Mega"
+    ...extraSets.map(set => ({ species: battleName(set), set })),
   ];
   const partial = entries.map(({ species, set }) => {
     const usage = usageOf(data.stats, battleName(set));

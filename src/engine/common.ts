@@ -1,6 +1,6 @@
 import type { EngineData } from './data';
 import { battleName, dex, getMove, getSpecies } from './dex';
-import { parseSpread, presetsFor, STAT_IDS, type StatID, type TeamSet } from './sets';
+import { parseSpread, presetsForSet, STAT_IDS, type StatID, type TeamSet } from './sets';
 import { findByName, statsEntry } from './stats';
 
 /** Una scelta frequente: quota d'uso nel formato, o null se viene dai preset Smogon. */
@@ -77,7 +77,7 @@ export function commonChoices(data: EngineData, set: TeamSet): CommonChoices {
     : [battleName(set), set.species, base].map(name => findByName(data.fallbackStats ?? undefined, name)).find(Boolean);
   const entry = own ?? other;
   const source = other?.format ?? null;
-  const presets = presetsFor(data, set.species);
+  const presets = presetsForSet(data, set);
   const sets = presets.map(p => p.set);
   // Set del formato scelto e di altri formati (questi ultimi solo per completare gli spread)
   const ownFormats = new Set((findByName(data.presets ?? undefined, set.species) ?? []).map(p => p.format));
