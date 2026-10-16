@@ -4,7 +4,7 @@ import { coachTeam, type SwapPreview } from './engine/coach';
 import { rateTeam } from './engine/rating';
 import type { EngineData } from './engine/data';
 import { DEFAULT_FORMAT, type Format } from './engine/format';
-import { dataLabel, dataSource } from './engine/formats';
+import { dataLabel, dataSource, teraAllowed } from './engine/formats';
 import type { TeamSet } from './engine/sets';
 import { AnalysisPanel } from './ui/AnalysisPanel';
 import { GradeBadge } from './ui/RatingPanel';
@@ -81,7 +81,7 @@ export function App({ data: initialData, loadSource, storage, initialLang }: App
     <LangProvider lang={lang}>
     <div className="app">
       <TopBar format={format} onFormatChange={setFormat} meta={data.stats?.meta ?? null} lang={lang} onLangChange={setLang}>
-        <ShowdownPanel team={team} onImport={changeTeam} />
+        <ShowdownPanel team={team} tera={teraAllowed(format)} onImport={changeTeam} />
         <SavedTeams team={team} format={format} onLoad={(loaded, savedFormat) => { changeTeam(loaded); if (savedFormat) setFormat(savedFormat); }} />
       </TopBar>
       {loading && <p className="banner info">{t(lang, 'app.loading')}</p>}

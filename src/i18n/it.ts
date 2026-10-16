@@ -182,6 +182,7 @@ export const it: Record<keyof typeof en, string> = {
   'editor.ability': "Abilità",
   'editor.nature': "Natura",
   'editor.tera': "Tera",
+  'editor.teraBanned': "Tera non ammesso in {format}",
   'editor.none': "Nessuno",
   'editor.moves': "Mosse",
   'editor.move': "Mossa {n}",

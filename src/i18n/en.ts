@@ -180,6 +180,7 @@ export const en = {
   'editor.ability': "Ability",
   'editor.nature': "Nature",
   'editor.tera': "Tera",
+  'editor.teraBanned': "Tera not allowed in {format}",
   'editor.none': "None",
   'editor.moves': "Moves",
   'editor.move': "Move {n}",

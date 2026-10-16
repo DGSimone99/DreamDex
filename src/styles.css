@@ -278,6 +278,7 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 .set-editor fieldset { margin: 0; padding: 10px 14px 14px; border: 1px solid var(--line); border-radius: 4px; background: var(--panel); }
 .set-editor legend { font: 700 14px var(--display); text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); padding: 0 6px; }
 .editor-group { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 14px; }
+.set-editor .field-note { font-size: 12px; font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--faint); }
 .set-editor .evs { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; }
 /* Spread pronti: un clic imposta natura ed EV; stesso linguaggio dorato dei "Più usati" */
 .spread-panel { grid-column: 1 / -1; }
