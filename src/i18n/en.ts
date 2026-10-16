@@ -212,7 +212,7 @@ export const en = {
   'combobox.common': "Most used",
   'combobox.commonIn': "Most used · {format}",
   'combobox.all': "All",
-  'combobox.preset': "Preset",
+  'combobox.preset': "Alt",
   'combobox.more': "{n} more: type to narrow down",
   'stats.title': "Base stats",
   'stats.total': "Total",

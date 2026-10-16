@@ -177,7 +177,7 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
   const usual = (ESSENTIAL_ROLES.filter(r => present.has(r)).length + 0.5 * DESIRABLE_ROLES.filter(r => present.has(r)).length)
     / (ESSENTIAL_ROLES.length + 0.5 * DESIRABLE_ROLES.length);
   // Stall riconosciuto "senza esagerare": a metà tra la valutazione normale e quella da stall
-  const archetype = isStall(memberRoles) ? 'stall' as const : null;
+  const archetype = isStall(team, memberRoles) ? 'stall' as const : null;
   const roles = archetype ? (usual + STALL_ROLES.filter(r => present.has(r)).length / STALL_ROLES.length) / 2 : usual;
   const power = teamPower(team);
   const strength = power.value === null ? null : power.value / 100;
