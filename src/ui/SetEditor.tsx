@@ -8,6 +8,8 @@ import { formatPercent, type Lang } from '../i18n';
 import { gameDesc, gameName, natureName, statShort, typeName } from '../i18n/game';
 import { useLang, useT } from '../i18n/react';
 import { Combobox, type ComboOption } from './Combobox';
+import { SpeedLine } from './SpeedLine';
+import { speedStat, type SpeedTier } from '../engine/speed';
 import { TypeChip } from './Sprite';
 import { ItemIcon } from './ItemIcon';
 import { Icon } from './icons';
@@ -104,13 +106,15 @@ interface Props {
   common?: CommonChoices;
   /** Nome del formato se vieta il Tera: campo disattivato con la nota (il valore resta salvato). */
   teraBannedIn?: string;
+  /** Velocità del membro tra i più usati del meta (null senza statistiche). */
+  speed?: SpeedTier | null;
   onChange: (set: TeamSet) => void;
 }
 
 /** Voce del menu dei preset per un set che non coincide con nessun preset. */
 const CUSTOM_PRESET = 'custom';
 
-export function SetEditor({ set, presets = [], genLimit, common, teraBannedIn, onChange }: Props) {
+export function SetEditor({ set, presets = [], genLimit, common, teraBannedIn, speed, onChange }: Props) {
   const t = useT();
   const lang = useLang();
   // Le più usate vanno in cima al menu, con la quota d'uso (o "Preset" se vengono dalle analisi)
@@ -306,6 +310,7 @@ export function SetEditor({ set, presets = [], genLimit, common, teraBannedIn, o
             />
           </label>
         ))}
+        {speed && <SpeedLine name={battleSpecies(set)?.name ?? set.species} tier={speed} scarf={speedStat(set).scarf} />}
       </fieldset>
     </div>
   );

@@ -8,6 +8,7 @@ import { useRef, useState } from 'react';
 import { useSlant } from './slant';
 import { SetEditor } from './SetEditor';
 import { commonChoices, type CommonChoices } from '../engine/common';
+import { speedTier, type SpeedTier } from '../engine/speed';
 import { StatsBadge } from './StatsBadge';
 import { ItemIcon } from './ItemIcon';
 import { AlertMark, type Alert } from './AlertMark';
@@ -42,9 +43,10 @@ function slotProblems(set: TeamSet, format: Format, lang: Lang): string[] {
   ].filter((p): p is string => !!p);
 }
 
-function TeamSlot({ set, presets, common, format, warning: megaWarning, open, onToggle, onIgnoreWarning, onChange, onRemove, onReplace }: {
+function TeamSlot({ set, presets, common, speed, format, warning: megaWarning, open, onToggle, onIgnoreWarning, onChange, onRemove, onReplace }: {
   presets: Preset[];
   common: CommonChoices;
+  speed: SpeedTier | null;
   set: TeamSet;
   open: boolean;
   onToggle: (open: boolean) => void;
@@ -128,7 +130,7 @@ function TeamSlot({ set, presets, common, format, warning: megaWarning, open, on
       </summary>
       <div className="drawer">
       <SetEditor set={set} presets={presets} common={common} genLimit={format.genLimit}
-        teraBannedIn={teraAllowed(format) ? undefined : formatLabel(format, lang)} onChange={onChange} />
+        teraBannedIn={teraAllowed(format) ? undefined : formatLabel(format, lang)} speed={speed} onChange={onChange} />
       <div className="actions">
         <button type="button" aria-label={tr('team.replace', { species: name })} onClick={onReplace}><Icon name="swap" /> {tr('team.replaceButton')}</button>
         {megaWarning && <button type="button" onClick={onIgnoreWarning}>{tr('team.keepMega')}</button>}
@@ -155,6 +157,7 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
             set={set}
             presets={presetsFor(data, set.species)}
             common={commonChoices(data, set)}
+            speed={speedTier(set, data)}
             format={format}
             warning={warningFor(set, i)}
             open={openIndex === i}
