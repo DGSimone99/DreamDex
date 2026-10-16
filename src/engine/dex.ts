@@ -53,8 +53,21 @@ export function battleSpecies(set: { species: string; item: string }): Species |
   // Solo la forma base può evolvere (Slowbro-Galar con Slowbronite resta Slowbro-Galar)
   const forme = megaStone?.[species.name]
     ?? (primal && primal[0] === species.name ? primal[1] : undefined)
-    ?? (item.id === ULTRA_BURST.item && ULTRA_BURST.from.includes(species.name) ? ULTRA_BURST.forme : undefined);
+    ?? (item.id === ULTRA_BURST.item && ULTRA_BURST.from.includes(species.name) ? ULTRA_BURST.forme : undefined)
+    ?? itemFormes().get(`${species.name}|${item.id}`);
   return (forme && getSpecies(forme)) || species;
+}
+
+let itemFormeCache: Map<string, string> | null = null;
+/** Altre forme da battaglia attivate dallo strumento tenuto: Zacian con Rusted Sword → Zacian-Crowned. */
+function itemFormes(): Map<string, string> {
+  if (!itemFormeCache) {
+    itemFormeCache = new Map(dex.species.all()
+      // Le forme Tera (Ogerpon) arrivano con la Teracristallizzazione, non con lo strumento
+      .filter(s => s.exists && typeof s.battleOnly === 'string' && s.requiredItem && !s.isMega && !s.isPrimal && !s.name.endsWith('-Tera'))
+      .map(s => [`${s.battleOnly}|${toID(s.requiredItem!)}`, s.name] as [string, string]));
+  }
+  return itemFormeCache;
 }
 
 /** Abilità in battaglia: una forma Mega/Primal usa la propria abilità, non quella del set base. */
