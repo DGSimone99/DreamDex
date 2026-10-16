@@ -27,17 +27,18 @@ export interface CommonChoices {
   source: string | null;
 }
 
-/** Quanti spread pronti proporre al massimo; quelli di altri formati solo per arrivare al minimo. */
-const MAX_SPREADS = 4;
+/** Spread pronti: fino a 5, al massimo 4 dalle statistiche (così c'è posto per un set del formato); altri formati solo fino a 3. */
+const MAX_SPREADS = 5;
+const MAX_STATS_SPREADS = 4;
 const MIN_SPREADS = 3;
 
 const spreadKey = (s: { nature: string; evs: Partial<Record<StatID, number>> }) =>
   `${s.nature}:${STAT_IDS.map(stat => s.evs[stat] ?? 0).join('/')}`;
 
-/** Spread delle statistiche, poi quelli dei set del formato; i set di altri formati solo se non si arriva a 3. */
+/** Spread delle statistiche (fino a 4), poi quelli dei set del formato (fino a 5); i set di altri formati solo se non si arriva a 3. */
 function mergeSpreads(fromStats: CommonSpread[], own: TeamSet[], other: TeamSet[]): CommonSpread[] {
   const seen = new Set(fromStats.map(spreadKey));
-  const result = fromStats.slice(0, MAX_SPREADS);
+  const result = fromStats.slice(0, MAX_STATS_SPREADS);
   const add = (sets: TeamSet[], limit: number) => {
     for (const set of sets) {
       if (result.length >= limit) return;
