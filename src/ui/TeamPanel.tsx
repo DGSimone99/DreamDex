@@ -2,7 +2,8 @@ import type { EngineData } from '../engine/data';
 import { battleAbility, battleName, battleSpecies, getSpecies, isMega, isSelectable, withinGen } from '../engine/dex';
 import { formatLabel, isBannedIn, meetsTeamRules, teraAllowed } from '../engine/formats';
 import type { Format } from '../engine/format';
-import { detectRoles, roleLabel } from '../engine/roles';
+import { roleLabel } from '../engine/roles';
+import { cardRoles } from '../engine/archetype';
 import { presetsFor, type Preset, type TeamSet } from '../engine/sets';
 import { useRef, useState } from 'react';
 import { useSlant } from './slant';
@@ -67,7 +68,8 @@ function TeamSlot({ set, presets, common, speed, format, warning: megaWarning, o
   const name = battleName(set);
   const ability = battleAbility(set);
   const problems = slotProblems(set, format, lang);
-  const roles = detectRoles(set).slice(0, 2).map(role => roleLabel(role, lang));
+  // Ruolo principale e un supporto, per intero: uno per riga
+  const roles = cardRoles(set).map(role => roleLabel(role, lang));
   const illegal = illegalParts(set, format.genLimit);
   const warnings = [
     megaWarning,
@@ -127,7 +129,7 @@ function TeamSlot({ set, presets, common, speed, format, warning: megaWarning, o
         </small>
         <small className="ability" title={describe.ability(ability, lang)}>{ability ? gameName('ability', ability, lang) : '—'}</small>
         <span className="types">{species?.types.map(type => <TypeChip key={type} type={type} />) ?? <TypeChip type="?" />}</span>
-        {roles.length > 0 && <small className="roles">{roles.join(' · ')}</small>}
+        {roles.length > 0 && <small className="roles">{roles.map(role => <span key={role}>{role}</span>)}</small>}
       </summary>
       <div className="drawer">
       <SetEditor set={set} presets={presets} common={common} genLimit={format.genLimit}

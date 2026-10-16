@@ -213,6 +213,7 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 .slot .name { font: 700 21px/1.05 var(--display); text-transform: uppercase; letter-spacing: 0.02em; }
 .slot .held { font-size: 13px; color: var(--muted); }
 .slot .roles { font-size: 12px; color: var(--faint); }
+.slot .roles > span { display: block; }
 .slot .types { display: flex; gap: 4px; flex-wrap: wrap; margin: 2px 0; }
 .slot .favorite, .slot .remove {
   position: absolute;
@@ -960,7 +961,7 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
   .slot > summary .sprite { width: 80px; height: 80px; }
   .slot > summary { --sprite-scale: 0.8333; }
   .slot > summary { padding-top: 30px; }
-  .slot .roles { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+  .slot .roles > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
   .board-head, .suggestion > summary { grid-template-columns: 26px 52px minmax(0, 1fr) repeat(4, 46px) 44px 32px; gap: 8px; }
   .suggestion > summary { padding: 8px 12px; }
   .suggestion > summary .sprite { width: 52px; height: 52px; }

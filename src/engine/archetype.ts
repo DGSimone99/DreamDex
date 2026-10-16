@@ -1,6 +1,6 @@
 import { battleSpecies, toID } from './dex';
 import { memberPower } from './power';
-import { detectRoles, isPassive, isStall } from './roles';
+import { detectRoles, isPassive, isStall, type Role } from './roles';
 import type { TeamSet } from './sets';
 import { benefits, enables, type Condition } from './synergy';
 
@@ -82,6 +82,25 @@ export function fitsArchetype(set: TeamSet, archetype: FitArchetype): boolean {
   const sweeper = roles.includes('physicalSweeper') || roles.includes('specialSweeper');
   const lead = toID(set.item) === 'focussash' && roles.includes('hazards');
   return (sweeper && (fast || roles.includes('setup'))) || (power.offense >= FAST_ATTACKER_OFFENSE && fast) || lead;
+}
+
+const OFFENSIVE_ROLES: Role[] = ['physicalSweeper', 'specialSweeper', 'wallbreaker'];
+const WALL_ROLES: Role[] = ['physicalWall', 'specialWall'];
+const SUPPORT_ROLES: Role[] = ['hazards', 'removal', 'pivot', 'priority', 'speed', 'setup'];
+
+/**
+ * Ruoli da mostrare sulla carta del team: il ruolo principale (che cosa fa: sweeper, wallbreaker o wall;
+ * il wall prima solo per un muro da stall) e un ruolo di supporto. Il setup si salta per uno sweeper, che lo implica.
+ * Senza ruolo principale, due ruoli di supporto.
+ */
+export function cardRoles(set: TeamSet): Role[] {
+  const roles = detectRoles(set);
+  const order = fitsArchetype(set, 'stall') ? [...WALL_ROLES, ...OFFENSIVE_ROLES] : [...OFFENSIVE_ROLES, ...WALL_ROLES];
+  const main = order.find(role => roles.includes(role));
+  const support = SUPPORT_ROLES.filter(role => roles.includes(role));
+  if (!main) return support.slice(0, 2);
+  const sweeper = main === 'physicalSweeper' || main === 'specialSweeper';
+  return [main, ...support.filter(role => !(sweeper && role === 'setup')).slice(0, 1)];
 }
 
 /** Tipo di team con archetipo e stili, solo per un team completo. */
