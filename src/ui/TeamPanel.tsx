@@ -2,7 +2,7 @@ import type { EngineData } from '../engine/data';
 import { battleAbility, battleName, battleSpecies, getSpecies, isMega, isSelectable, withinGen } from '../engine/dex';
 import { formatLabel, isBannedIn, meetsTeamRules, teraAllowed } from '../engine/formats';
 import type { Format } from '../engine/format';
-import { roleLabel, roleShortLabel } from '../engine/roles';
+import { detectRoles, roleLabel, roleShortLabel } from '../engine/roles';
 import { cardRoles, weatherOf } from '../engine/archetype';
 import { conditionLabel, viaName } from '../engine/synergy';
 import { presetsFor, type Preset, type TeamSet } from '../engine/sets';
@@ -73,7 +73,9 @@ function TeamSlot({ set, presets, common, speed, format, warning: megaWarning, o
   const shownRoles = cardRoles(set);
   const weather = weatherOf(set);
   const roles = shownRoles.map(role => (role === 'weather' ? tr('card.weather') : roleShortLabel(role, lang)));
-  const rolesTitle = shownRoles.map(role => (role === 'weather' && weather
+  // Nel tooltip tutti i ruoli per esteso: prima i due mostrati, poi gli altri
+  const allRoles = [...shownRoles, ...detectRoles(set).filter(role => !shownRoles.includes(role))];
+  const rolesTitle = allRoles.map(role => (role === 'weather' && weather
     ? tr('card.weatherTitle', { condition: conditionLabel(weather.condition, lang), via: viaName(weather.via, lang) })
     : role === 'weather' ? tr('card.weather') : roleLabel(role, lang))).join(' · ');
   const illegal = illegalParts(set, format.genLimit);

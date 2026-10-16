@@ -17,8 +17,10 @@ export const roleLabel = (role: Role, lang: Lang = 'it'): string => t(lang, `rol
 /** Nome breve del ruolo, per le carte del team (il nome completo va nel tooltip). */
 export const roleShortLabel = (role: Role, lang: Lang = 'it'): string => t(lang, `roleShort.${role}`);
 
-export const ESSENTIAL_ROLES: Role[] = ['hazards', 'removal', 'pivot', 'priority', 'speed'];
-export const DESIRABLE_ROLES: Role[] = ['wallbreaker', 'physicalSweeper', 'specialSweeper', 'physicalWall', 'specialWall'];
+/** Ordine dei ruoli nei filtri (i ruoli richiesti dal voto dipendono dall'archetipo: vedi needs.ts). */
+export const ESSENTIAL_ROLES: Role[] = ['hazards', 'removal', 'pivot', 'speed'];
+export const DESIRABLE_ROLES: Role[] = ['wallbreaker', 'priority', 'physicalSweeper', 'specialSweeper', 'physicalWall', 'specialWall'];
+
 /** Ruoli di cui uno stall ha bisogno: niente priorità, velocità o sweeper, per scelta. */
 export const STALL_ROLES: Role[] = ['hazards', 'removal', 'physicalWall', 'specialWall'];
 const WALLS: Role[] = ['physicalWall', 'specialWall'];
@@ -46,9 +48,12 @@ export function isPassive(set: TeamSet, roles: Role[] = detectRoles(set)): boole
   return heals || roles.some(r => WALLS.includes(r));
 }
 
-/** Stall: almeno 5 membri passivi. */
+/** Membri passivi di uno stall: tutti e 6. Con una o due minacce offensive il team è un semi-stall. */
+export const STALL_PASSIVE = 6;
+
+/** Stall: tutti e 6 i membri passivi. */
 export function isStall(team: TeamSet[], roles: Role[][] = team.map(detectRoles)): boolean {
-  return team.filter((set, i) => isPassive(set, roles[i])).length >= 5;
+  return team.filter((set, i) => isPassive(set, roles[i])).length >= STALL_PASSIVE;
 }
 
 const HAZARD_MOVES = new Set(['stealthrock', 'spikes', 'toxicspikes', 'stickyweb', 'stoneaxe', 'ceaselessedge']);
@@ -122,17 +127,3 @@ export function teamRoles(set: TeamSet): Role[] {
   return isFast(set) && !roles.includes('speed') ? ROLE_ORDER.filter(role => role === 'speed' || roles.includes(role)) : roles;
 }
 
-export interface TeamNeeds {
-  missingRoles: Role[];
-  needStyle: 'physical' | 'special' | null;
-}
-
-export function teamNeeds(team: TeamSet[]): TeamNeeds {
-  const present = new Set(team.flatMap(teamRoles));
-  const missingRoles = [...ESSENTIAL_ROLES, ...DESIRABLE_ROLES].filter(role => !present.has(role));
-  const styles = team.map(attackStyle);
-  const physical = styles.filter(s => s === 'physical').length;
-  const special = styles.filter(s => s === 'special').length;
-  const needStyle = physical - special >= 2 ? 'special' : special - physical >= 2 ? 'physical' : null;
-  return { missingRoles, needStyle };
-}

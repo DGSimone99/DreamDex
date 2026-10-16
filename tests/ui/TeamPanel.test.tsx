@@ -45,6 +45,19 @@ describe('TeamPanel', () => {
     expect(roles.getAttribute('title')).toMatch(/^Porta la pioggia \(.+\) · Pivot$/);
   });
 
+  it('il tooltip dei ruoli elenca tutti i ruoli, non solo i due mostrati', () => {
+    const latias = { ...emptySet('Latias'), item: 'Latiasite', ability: 'Levitate', moves: ['Calm Mind', 'Mystical Fire', 'Mist Ball', 'Thunder Wave'] };
+    window.history.replaceState(null, '', `/#team=${encodeShare([latias], DEFAULT_FORMAT)}`);
+    render(<App initialLang="it" data={fixtureData} />);
+    const roles = teamRegion().querySelector('.slot .roles')!;
+    expect(roles.textContent!.split(' · ')).toHaveLength(2);
+    const all = roles.getAttribute('title')!.split(' · ');
+    expect(all.length).toBeGreaterThan(2);
+    expect(all.slice(0, 2)).toEqual(['Sweeper speciale', 'Controllo velocità']);
+    expect(all).toEqual(expect.arrayContaining(['Setup', 'Wallbreaker']));
+    expect(new Set(all).size).toBe(all.length);
+  });
+
   it('ignora nomi inesistenti', async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} />);
