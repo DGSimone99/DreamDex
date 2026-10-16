@@ -20,6 +20,17 @@ describe('TeamPanel', () => {
     expect(within(teamRegion()).getByLabelText('Strumento')).toHaveValue('Booster Energy');
   });
 
+  it('la carta mostra il ruolo principale e un supporto, per intero e su due righe', async () => {
+    const user = userEvent.setup();
+    render(<App initialLang="it" data={fixtureData} />);
+    await addPokemon(user, 'Great Tusk');
+    const roles = teamRegion().querySelector('.slot .roles')!;
+    const lines = [...roles.children].map(line => line.textContent);
+    expect(lines).toHaveLength(2);
+    expect(lines[0]).toMatch(/Sweeper fisico|Wallbreaker|Wall fisico/);
+    expect(roles.textContent).not.toContain('·');
+  });
+
   it('ignora nomi inesistenti', async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} />);
