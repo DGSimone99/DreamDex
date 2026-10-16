@@ -101,7 +101,7 @@ describe('coachTeam', () => {
 
   it('0–1 membri: solo invito ad aggiungere', () => {
     expect(coachTeam([tusk], DEFAULT_FORMAT, fixtureData)).toEqual({
-      verdict: 'Aggiungi almeno 2 Pokémon per ricevere il coaching', strengths: [], problems: [], swaps: [], threatFixes: {},
+      verdict: 'Aggiungi almeno 2 Pokémon per ricevere il coaching', teamType: null, strengths: [], problems: [], swaps: [], threatFixes: {},
     });
   });
 
