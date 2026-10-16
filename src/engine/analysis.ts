@@ -1,6 +1,6 @@
 import type { EngineData } from './data';
 import { battleName, getSpecies, toID } from './dex';
-import { teamNeeds, type TeamNeeds } from './roles';
+import { teamNeeds, type TeamNeeds } from './needs';
 import type { TeamSet } from './sets';
 import { checkScore, metaTypeWeights, topThreats, usageOf } from './stats';
 import {

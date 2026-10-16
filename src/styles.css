@@ -527,6 +527,7 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 .role-rows .owners { display: flex; flex-wrap: wrap; gap: 4px 6px; color: var(--muted); font-size: 13px; }
 .role-rows .owner { padding: 1px 7px; border-radius: 2px; background: var(--raised); color: var(--text); }
 .role-rows li.bad .icon, .role-rows li.bad .owners { color: var(--bad); font-weight: 500; }
+.role-rows li.soft { opacity: 0.55; }
 
 .type-rows { display: grid; gap: 2px; }
 .type-rows li { display: grid; grid-template-columns: 66px minmax(0, 1fr); gap: 12px; align-items: center; margin: 0; padding: 4px 0; border-bottom: 1px solid var(--line-soft); font-size: 14px; }

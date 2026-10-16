@@ -32,12 +32,43 @@ describe('AnalysisPanel', () => {
     expect(within(row).getByText('×2')).toBeInTheDocument();
   });
 
-  it('ruoli: nel riassunto solo quanti sono coperti, nel dettaglio chi li copre', () => {
+  it('ruoli: giudicati col tipo di team; nel riassunto gli essenziali coperti, nel dettaglio chi li copre', () => {
     renderPanel();
-    expect(screen.getByText(/^\d+\/10 coperti$/)).toBeInTheDocument();
+    // Team incompleto: giudicato come Balance (essenziali: hazard, rimozione, pivot, minaccia offensiva, due wall)
+    expect(screen.getByText('Balance · 3/6 essenziali')).toBeInTheDocument();
+    expect(screen.getByText(/Team incompleto/)).toBeInTheDocument();
     expect(row('Pivot')).toHaveTextContent('Mancante');
     expect(row('Pivot')).toHaveClass('bad');
     expect(row('Rimozione hazard')).toHaveTextContent('Great Tusk');
+    expect(row('Minaccia offensiva')).toHaveTextContent('Great Tusk');
+  });
+
+  it('ruoli utili mancanti: in grigio, senza croce rossa', () => {
+    renderPanel();
+    expect(row('Priorità')).toHaveClass('soft');
+    expect(row('Priorità')).not.toHaveClass('bad');
+    expect(row('Priorità')).toHaveTextContent('—');
+  });
+
+  it('per uno stall i ruoli offensivi non sono richiesti', () => {
+    const stall = [
+      { ...tusk, species: 'Toxapex', item: 'Black Sludge', ability: 'Regenerator', moves: ['Scald', 'Toxic', 'Recover', 'Haze'] },
+      { ...tusk, species: 'Blissey', item: 'Leftovers', ability: 'Natural Cure', moves: ['Seismic Toss', 'Soft-Boiled', 'Toxic', 'Wish'] },
+      { ...tusk, species: 'Corviknight', item: 'Leftovers', ability: 'Pressure', moves: ['Body Press', 'Defog', 'Iron Defense', 'Roost'] },
+      { ...tusk, species: 'Gliscor', item: 'Toxic Orb', ability: 'Poison Heal', moves: ['Earthquake', 'Protect', 'Stealth Rock', 'Toxic'] },
+      { ...tusk, species: 'Dondozo', item: 'Leftovers', ability: 'Unaware', moves: ['Body Press', 'Liquidation', 'Rest', 'Sleep Talk'] },
+      { ...tusk, species: 'Clodsire', item: 'Leftovers', ability: 'Unaware', moves: ['Amnesia', 'Poison Jab', 'Recover', 'Spikes'] },
+    ];
+    renderIt(<AnalysisPanel team={stall} analysis={analyzeTeam(stall, fixtureData)} />);
+    expect(screen.getByText('Stall · 4/4 essenziali')).toBeInTheDocument();
+    expect(row('Minaccia offensiva')).toHaveTextContent('Non richiesto');
+    expect(row('Minaccia offensiva')).toHaveClass('soft');
+  });
+
+  it('velocità coperta da membri veloci: indicati come "(veloce)"', () => {
+    const fast = [...team, { ...tusk, species: 'Dragapult', item: 'Choice Specs', ability: 'Infiltrator', moves: ['Shadow Ball', 'Draco Meteor'] }];
+    renderIt(<AnalysisPanel team={fast} analysis={analyzeTeam(fast, fixtureData)} />);
+    expect(row('Velocità')).toHaveTextContent('Dragapult (veloce)');
   });
 
   it('dettaglio minacce', () => {

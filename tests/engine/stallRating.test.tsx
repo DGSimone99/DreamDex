@@ -27,11 +27,11 @@ const stall: TeamSet[] = [
 ];
 
 describe('team stall', () => {
-  it('riconosciuto: ruoli a metà tra la valutazione normale e quella da stall', () => {
+  it('riconosciuto: ruoli giudicati come stall (niente sweeper né velocità richiesti)', () => {
     const rating = rateTeam(stall, fixtureData)!;
     expect(rating.archetype).toBe('stall');
-    // normale: 2 essenziali su 5 + 2 desiderabili su 5 (a metà peso) → 40; da stall: tutti → 100; a metà → 70
-    expect(rating.areas.find(a => a.key === 'roles')!.value).toBe(70);
+    // da stall: Hazard, Rimozione e i due Wall (1 + 1 + 1 + 1) su 4,5; manca solo il Pivot (utile, 0,5) → 89
+    expect(rating.areas.find(a => a.key === 'roles')!.value).toBe(89);
   });
 
   it('un team normale non è stall e non cambia', () => {
