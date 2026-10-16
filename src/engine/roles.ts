@@ -1,4 +1,4 @@
-import { battleSpecies, getMove, isDefined, toID } from './dex';
+import { battleAbility, battleSpecies, getMove, isDefined, toID } from './dex';
 import type { TeamSet } from './sets';
 import { t, type Lang } from '../i18n';
 
@@ -13,6 +13,9 @@ export const ROLE_ORDER: Role[] = [
 
 /** Nome del ruolo nella lingua data. */
 export const roleLabel = (role: Role, lang: Lang = 'it'): string => t(lang, `role.${role}`);
+
+/** Nome breve del ruolo, per le carte del team (il nome completo va nel tooltip). */
+export const roleShortLabel = (role: Role, lang: Lang = 'it'): string => t(lang, `roleShort.${role}`);
 
 export const ESSENTIAL_ROLES: Role[] = ['hazards', 'removal', 'pivot', 'priority', 'speed'];
 export const DESIRABLE_ROLES: Role[] = ['wallbreaker', 'physicalSweeper', 'specialSweeper', 'physicalWall', 'specialWall'];
@@ -51,7 +54,10 @@ export function isStall(team: TeamSet[], roles: Role[][] = team.map(detectRoles)
 const HAZARD_MOVES = new Set(['stealthrock', 'spikes', 'toxicspikes', 'stickyweb', 'stoneaxe', 'ceaselessedge']);
 const REMOVAL_MOVES = new Set(['defog', 'rapidspin', 'mortalspin', 'tidyup', 'courtchange']);
 const PIVOT_MOVES = new Set(['uturn', 'voltswitch', 'flipturn', 'partingshot', 'teleport', 'shedtail', 'chillyreception']);
-const SPEED_MOVES = new Set(['trickroom', 'thunderwave', 'tailwind', 'stickyweb']);
+/** Mosse che controllano la velocità: paralisi, Sticky Web, Trick Room, Tailwind e mosse che rallentano. */
+const SPEED_MOVES = new Set(['thunderwave', 'glare', 'nuzzle', 'stunspore', 'stickyweb', 'trickroom', 'tailwind', 'icywind', 'electroweb']);
+/** Abilità che raddoppiano la velocità (col meteo o il campo giusto, o da sé). */
+const SPEED_ABILITIES = new Set(['swiftswim', 'chlorophyll', 'sandrush', 'slushrush', 'surgesurfer', 'unburden', 'speedboost']);
 const BREAKER_ITEMS = new Set(['choiceband', 'choicespecs', 'lifeorb']);
 
 export function detectRoles(set: TeamSet): Role[] {
@@ -67,18 +73,22 @@ export function detectRoles(set: TeamSet): Role[] {
   if (ids.some(id => REMOVAL_MOVES.has(id))) roles.add('removal');
   if (ids.some(id => PIVOT_MOVES.has(id))) roles.add('pivot');
   if (moves.some(m => m.category !== 'Status' && m.priority > 0)) roles.add('priority');
-  if (stats.spe >= 100 || item === 'choicescarf' || ids.some(id => SPEED_MOVES.has(id))) roles.add('speed');
+  // Controllo velocità solo con mosse che la controllano: essere veloci è un'altra cosa (vedi teamRoles)
+  if (ids.some(id => SPEED_MOVES.has(id))) roles.add('speed');
   if (moves.some(m => m.category === 'Status' && m.target === 'self'
     && ((m.boosts?.atk ?? 0) > 0 || (m.boosts?.spa ?? 0) > 0 || (m.boosts?.spe ?? 0) > 0))) roles.add('setup');
   const offense = Math.max(stats.atk, stats.spa);
   if (offense >= 120 || (offense >= 100 && BREAKER_ITEMS.has(item))) roles.add('wallbreaker');
-  // Sweeper: attacca forte e ha un modo di superare in velocità (velocità alta, Scarf o setup)
-  const fast = stats.spe >= 100 || item === 'choicescarf';
-  const boosts = (stat: 'atk' | 'spa') => moves.some(m => m.category === 'Status' && m.target === 'self'
-    && ((m.boosts?.[stat] ?? 0) > 0 || (m.boosts?.spe ?? 0) > 0));
+  // Sweeper: attacca forte e può davvero muoversi per primo: velocità alta, Scarf o abilità di velocità,
+  // un setup che alza la velocità, oppure un setup qualunque con una mossa a priorità (Kingambit, Raging Bolt).
+  // Un Pokémon lento con un setup che alza solo l'attacco (Magearna con Calm Mind) è un wallbreaker, non uno sweeper.
+  const fast = stats.spe >= 100 || item === 'choicescarf' || SPEED_ABILITIES.has(toID(battleAbility(set)));
+  const selfBoost = (stat: 'atk' | 'spa' | 'spe') => moves.some(m => m.category === 'Status' && m.target === 'self' && (m.boosts?.[stat] ?? 0) > 0);
+  const priority = moves.some(m => m.category !== 'Status' && m.priority > 0);
+  const outspeeds = (stat: 'atk' | 'spa') => fast || selfBoost('spe') || (selfBoost(stat) && priority);
   const style = attackStyle(set);
-  if (style === 'physical' && stats.atk >= 100 && (fast || boosts('atk'))) roles.add('physicalSweeper');
-  if (style === 'special' && stats.spa >= 100 && (fast || boosts('spa'))) roles.add('specialSweeper');
+  if (style === 'physical' && stats.atk >= 100 && outspeeds('atk')) roles.add('physicalSweeper');
+  if (style === 'special' && stats.spa >= 100 && outspeeds('spa')) roles.add('specialSweeper');
   if (stats.def >= 100 && stats.hp + stats.def >= 190) roles.add('physicalWall');
   if (stats.spd >= 100 && stats.hp + stats.spd >= 190) roles.add('specialWall');
 
@@ -97,13 +107,28 @@ export function attackStyle(set: TeamSet): AttackStyle {
   return 'mixed';
 }
 
+/** Il membro è veloce: velocità di base almeno 100, Choice Scarf o un'abilità che raddoppia la velocità. */
+export function isFast(set: TeamSet): boolean {
+  const species = battleSpecies(set);
+  return !!species && (species.baseStats.spe >= 100 || toID(set.item) === 'choicescarf' || SPEED_ABILITIES.has(toID(battleAbility(set))));
+}
+
+/**
+ * Ruoli con cui si giudica il team (voto, bisogni, candidati): quelli del set, più la velocità per un membro veloce.
+ * In singolo un team con membri veloci ha già la sua velocità, anche senza mosse di controllo velocità.
+ */
+export function teamRoles(set: TeamSet): Role[] {
+  const roles = detectRoles(set);
+  return isFast(set) && !roles.includes('speed') ? ROLE_ORDER.filter(role => role === 'speed' || roles.includes(role)) : roles;
+}
+
 export interface TeamNeeds {
   missingRoles: Role[];
   needStyle: 'physical' | 'special' | null;
 }
 
 export function teamNeeds(team: TeamSet[]): TeamNeeds {
-  const present = new Set(team.flatMap(detectRoles));
+  const present = new Set(team.flatMap(teamRoles));
   const missingRoles = [...ESSENTIAL_ROLES, ...DESIRABLE_ROLES].filter(role => !present.has(role));
   const styles = team.map(attackStyle);
   const physical = styles.filter(s => s === 'physical').length;

@@ -1,10 +1,15 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
+import { DEFAULT_FORMAT } from '../../src/engine/format';
+import { emptySet } from '../../src/engine/sets';
+import { encodeShare } from '../../src/share';
 import { App } from '../../src/App';
 import { fixtureData } from '../fixtures/data';
 
 const teamRegion = () => screen.getByRole('region', { name: 'Team' });
+
+afterEach(() => window.history.replaceState(null, '', '/'));
 
 async function addPokemon(user: ReturnType<typeof userEvent.setup>, name: string) {
   await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
@@ -20,15 +25,24 @@ describe('TeamPanel', () => {
     expect(within(teamRegion()).getByLabelText('Strumento')).toHaveValue('Booster Energy');
   });
 
-  it('la carta mostra il ruolo principale e un supporto, per intero e su due righe', async () => {
+  it('la carta mostra il ruolo principale e un supporto affiancati, brevi, con i nomi completi nel tooltip', async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} />);
     await addPokemon(user, 'Great Tusk');
     const roles = teamRegion().querySelector('.slot .roles')!;
-    const lines = [...roles.children].map(line => line.textContent);
-    expect(lines).toHaveLength(2);
-    expect(lines[0]).toMatch(/Sweeper fisico|Wallbreaker|Wall fisico/);
-    expect(roles.textContent).not.toContain('·');
+    const [main, support] = roles.textContent!.split(' · ');
+    expect(main).toMatch(/^(Sweeper fis\.|Wallbreaker|Wall fis\.)$/);
+    expect(support).toBeTruthy();
+    expect(roles.getAttribute('title')).toMatch(/^(Sweeper fisico|Wallbreaker|Wall fisico) · /);
+  });
+
+  it('chi porta il meteo mostra "Meteo" sulla carta, con il meteo nel tooltip', () => {
+    const pelipper = { ...emptySet('Pelipper'), item: 'Damp Rock', ability: 'Drizzle', moves: ['Hurricane', 'Scald', 'U-turn', 'Roost'] };
+    window.history.replaceState(null, '', `/#team=${encodeShare([pelipper], DEFAULT_FORMAT)}`);
+    render(<App initialLang="it" data={fixtureData} />);
+    const roles = teamRegion().querySelector('.slot .roles')!;
+    expect(roles.textContent).toBe('Meteo · Pivot');
+    expect(roles.getAttribute('title')).toMatch(/^Porta la pioggia \(.+\) · Pivot$/);
   });
 
   it('ignora nomi inesistenti', async () => {

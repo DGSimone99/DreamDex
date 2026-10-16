@@ -2,8 +2,9 @@ import type { EngineData } from '../engine/data';
 import { battleAbility, battleName, battleSpecies, getSpecies, isMega, isSelectable, withinGen } from '../engine/dex';
 import { formatLabel, isBannedIn, meetsTeamRules, teraAllowed } from '../engine/formats';
 import type { Format } from '../engine/format';
-import { roleLabel } from '../engine/roles';
-import { cardRoles } from '../engine/archetype';
+import { roleLabel, roleShortLabel } from '../engine/roles';
+import { cardRoles, weatherOf } from '../engine/archetype';
+import { conditionLabel, viaName } from '../engine/synergy';
 import { presetsFor, type Preset, type TeamSet } from '../engine/sets';
 import { useRef, useState } from 'react';
 import { useSlant } from './slant';
@@ -68,8 +69,13 @@ function TeamSlot({ set, presets, common, speed, format, warning: megaWarning, o
   const name = battleName(set);
   const ability = battleAbility(set);
   const problems = slotProblems(set, format, lang);
-  // Ruolo principale e un supporto, per intero: uno per riga
-  const roles = cardRoles(set).map(role => roleLabel(role, lang));
+  // Ruolo principale e un supporto, affiancati con il nome breve (il completo nel tooltip); il meteo solo qui
+  const shownRoles = cardRoles(set);
+  const weather = weatherOf(set);
+  const roles = shownRoles.map(role => (role === 'weather' ? tr('card.weather') : roleShortLabel(role, lang)));
+  const rolesTitle = shownRoles.map(role => (role === 'weather' && weather
+    ? tr('card.weatherTitle', { condition: conditionLabel(weather.condition, lang), via: viaName(weather.via, lang) })
+    : role === 'weather' ? tr('card.weather') : roleLabel(role, lang))).join(' · ');
   const illegal = illegalParts(set, format.genLimit);
   const warnings = [
     megaWarning,
@@ -129,7 +135,7 @@ function TeamSlot({ set, presets, common, speed, format, warning: megaWarning, o
         </small>
         <small className="ability" title={describe.ability(ability, lang)}>{ability ? gameName('ability', ability, lang) : '—'}</small>
         <span className="types">{species?.types.map(type => <TypeChip key={type} type={type} />) ?? <TypeChip type="?" />}</span>
-        {roles.length > 0 && <small className="roles">{roles.map(role => <span key={role}>{role}</span>)}</small>}
+        {roles.length > 0 && <small className="roles" title={rolesTitle}>{roles.join(' · ')}</small>}
       </summary>
       <div className="drawer">
       <SetEditor set={set} presets={presets} common={common} genLimit={format.genLimit}
