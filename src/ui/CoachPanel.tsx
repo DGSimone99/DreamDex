@@ -39,7 +39,7 @@ export function CoachPanel({ coaching, preview = null, onReplace, onSwap }: {
 }) {
   const tr = useT();
   const lang = useLang();
-  const { verdict, strengths, problems, swaps } = coaching;
+  const { verdict, teamType, strengths, problems, swaps } = coaching;
   return (
     <details className="block coach" open>
       <summary>
@@ -50,6 +50,15 @@ export function CoachPanel({ coaching, preview = null, onReplace, onSwap }: {
             minor={problems.filter(p => p.severity === 'minor').length} labels={PROBLEM_LABELS} />
         </span>
       </summary>
+      {teamType && (
+        <p className="team-type">
+          <span className="team-type-label">{tr('coach.teamType')}</span>
+          <strong title={tr(`archetype.${teamType.archetype}.note`)}>{tr(`archetype.${teamType.archetype}`)}</strong>
+          {teamType.styles.map(style => (
+            <span key={style} className="team-style" title={tr(`teamStyle.${style}.note`)}>{tr(`teamStyle.${style}`)}</span>
+          ))}
+        </p>
+      )}
       {strengths.length > 0 && (
         <>
           <h3>{tr('coach.strengths')}</h3>

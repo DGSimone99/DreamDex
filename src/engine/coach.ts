@@ -1,4 +1,5 @@
 import { analyzeTeam, type TeamAnalysis } from './analysis';
+import { teamArchetype, type TeamArchetype } from './archetype';
 import type { EngineData } from './data';
 import { battleName, battleSpecies, getSpecies, isDefined, isMega, isSelectable, toID, withinGen } from './dex';
 import { formatLabel, isBannedIn, meetsTeamRules } from './formats';
@@ -60,6 +61,8 @@ export interface CoachSwap {
 
 export interface Coaching {
   verdict: string;
+  /** Archetipo e stili del team completo (solo descrittivo: non cambia voto né consigli). */
+  teamType: TeamArchetype | null;
   strengths: string[];
   problems: CoachProblem[];
   swaps: CoachSwap[];
@@ -306,13 +309,14 @@ export function describeSwap(swap: CoachSwap, lang: Lang = 'it'): SwapSummary {
 
 export function coachTeam(team: TeamSet[], format: Format, data: EngineData, lang: Lang = 'it'): Coaching {
   if (team.length < 2) {
-    return { verdict: t(lang, 'coach.addTwo'), strengths: [], problems: [], swaps: [], threatFixes: {} };
+    return { verdict: t(lang, 'coach.addTwo'), teamType: null, strengths: [], problems: [], swaps: [], threatFixes: {} };
   }
   const analysis = analyzeTeam(team, data);
   const candidates = data.stats ? scoreCandidates(team, format, data) : [];
   const problems = findProblems(team, format, data, analysis, candidates, lang);
   return {
     verdict: verdictFor(team, problems, rateTeam(team, data, lang)?.grade ?? 'D', lang),
+    teamType: teamArchetype(team),
     strengths: findStrengths(team, analysis, lang),
     problems,
     swaps: data.stats ? findSwaps(team, format, data) : [],
