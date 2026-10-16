@@ -81,7 +81,7 @@ function TeamSlot({ set, presets, common, format, warning: megaWarning, open, on
     >
       <summary ref={card}>
         <span className="sprite-wrap">
-          <Sprite species={set.species} item={set.item} />
+          <Sprite species={set.species} item={set.item} animated={open} />
           {(dangers.length > 0 || warns.length > 0) && (
             <span className="sprite-alerts">
               <AlertMark alerts={warns} className="on-sprite" />
