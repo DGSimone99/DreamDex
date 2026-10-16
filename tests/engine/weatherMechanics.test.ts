@@ -44,13 +44,23 @@ describe('Chilly Reception: mossa per cambiare, la neve è secondaria', () => {
 });
 
 describe('sabbia e neve potenziano chi le porta se del tipo giusto', () => {
-  it('Tyranitar (Roccia) con la sua sabbia: sfrutta da sé', () => {
+  it('Tyranitar (Roccia) con la sua sabbia: sfrutta da sé, nessun avviso', () => {
     const ttar = set('Tyranitar', 'Sand Stream', ['Knock Off']);
-    expect(unusedEnablers([ttar])).toEqual([expect.objectContaining({ via: 'Sand Stream', selfBoost: true })]);
+    expect(unusedEnablers([ttar])).toEqual([]);
   });
 
-  it('Ninetales-Alola (Ghiaccio) con la sua neve: sfrutta da sé', () => {
+  it('Ninetales-Alola (Ghiaccio) con la sua neve: sfrutta da sé, nessun avviso', () => {
     const ninetalesA = set('Ninetales-Alola', 'Snow Warning', ['Moonblast']);
-    expect(unusedEnablers([ninetalesA])).toEqual([expect.objectContaining({ via: 'Snow Warning', selfBoost: true })]);
+    expect(unusedEnablers([ninetalesA])).toEqual([]);
+  });
+
+  it('la sabbia fa danno agli avversari: mai "non sfruttata", anche su Hippowdon', () => {
+    const hippo = set('Hippowdon', 'Sand Stream', ['Stealth Rock', 'Slack Off', 'Earthquake', 'Whirlwind']);
+    expect(unusedEnablers([hippo])).toEqual([]);
+  });
+
+  it('la neve invece non fa danno: Snowscape senza chi la sfrutti resta segnalato', () => {
+    const chomp = set('Garchomp', 'Rough Skin', ['Snowscape', 'Earthquake']);
+    expect(unusedEnablers([chomp])).toEqual([{ member: 'Garchomp', condition: 'snow', via: 'Snowscape' }]);
   });
 });

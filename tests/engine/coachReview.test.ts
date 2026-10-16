@@ -39,8 +39,8 @@ describe('Mega scritta in due modi: stesso punteggio', () => {
   });
 });
 
-describe('debolezza seria con tante resistenze: i rimedi ci sono', () => {
-  it('Fairy: 3 deboli, 3 resistono, Corviknight proposto', () => {
+describe('debolezza seria anche con una resistenza: i rimedi ci sono', () => {
+  it('Fairy: 3 deboli, 1 resiste, Corviknight proposto', () => {
     const data: EngineData = {
       stats: {
         meta: { month: '2026-09', cutoff: 1630, battles: 1 },
@@ -48,7 +48,7 @@ describe('debolezza seria con tante resistenze: i rimedi ci sono', () => {
       },
       sets: {},
     };
-    const team = ['Great Tusk', 'Dragapult', 'Garchomp', 'Gholdengo', 'Toxapex', 'Heatran'].map(emptySet);
+    const team = ['Great Tusk', 'Dragapult', 'Garchomp', 'Gholdengo', 'Blissey', 'Rotom-Wash'].map(emptySet);
     const fairy = coachTeam(team, DEFAULT_FORMAT, data).problems.find(p => p.text.startsWith('Debole a Fairy'))!;
     expect(fairy.severity).toBe('serious');
     expect(fairy.fixes).toEqual(['Corviknight']);
@@ -66,16 +66,16 @@ describe('sostituzioni distinte', () => {
 
 describe('vantaggi e svantaggi', () => {
   it('separa guadagni e perdite', () => {
-    const swap = { index: 0, member: 'Magikarp', fit: 20, replacement: 'Corviknight', set: emptySet('Corviknight'), score: 60, similar: false, level: 'recommended' as const,
+    const swap = { index: 0, member: 'Magikarp', fit: 20, replacement: 'Corviknight', set: emptySet('Corviknight'), score: 60, similar: false, ratingGain: 6, level: 'recommended' as const,
       diff: { gains: { roles: ['pivot' as const], covers: [], resists: ['Ground' as const] }, losses: { roles: [], covers: ['Fire' as const], resists: [] } } };
-    expect(describeSwap(swap)).toEqual({ gain: 40, pros: ['Pivot', 'Resistente a Ground'], cons: ['Non più forte contro Fire'] });
+    expect(describeSwap(swap)).toEqual({ gain: 6, pros: ['Pivot', 'Resistente a Ground'], cons: ['Non più forte contro Fire'] });
   });
 
   it('raggruppa copre/resiste e le perdite', () => {
-    const swap = { index: 0, member: 'Garchomp', fit: 38, replacement: 'Great Tusk', set: emptySet('Great Tusk'), score: 56, similar: false, level: 'optional' as const,
+    const swap = { index: 0, member: 'Garchomp', fit: 38, replacement: 'Great Tusk', set: emptySet('Great Tusk'), score: 56, similar: false, ratingGain: 6, level: 'optional' as const,
       diff: { gains: { roles: ['removal' as const], covers: ['Normal' as const, 'Grass' as const, 'Ice' as const], resists: [] }, losses: { roles: ['hazards' as const], covers: [], resists: ['Dark' as const] } } };
     expect(describeSwap(swap)).toEqual({
-      gain: 18,
+      gain: 6,
       pros: ['Rimozione hazard', 'Forte contro Normal, Grass, Ice'],
       cons: ['Hazard', 'Non più resistente a Dark'],
     });

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { memberPower, teamPower } from '../../src/engine/power';
+import { hitQuality, memberPower, teamPower } from '../../src/engine/power';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
 
 const set = (species: string, item = ''): TeamSet => ({ ...emptySet(species), item });
@@ -44,5 +44,47 @@ describe('forza dalle statistiche base', () => {
     expect(result.members.map(m => m.species)).toEqual(['Great Tusk', 'Blissey']);
     expect(result.value).toBe(Math.round((known[0] + known[1]) / 2));
     expect(teamPower([set('Fakemon-Xyz')]).value).toBeNull();
+  });
+});
+
+describe('forza con membri passivi (stall)', () => {
+  it('per i passivi conta solo la robustezza', () => {
+    const team = [set('Blissey'), set('Great Tusk')];
+    const blissey = memberPower(team[0])!;
+    const tusk = memberPower(team[1])!;
+    expect(teamPower(team, [true, false]).value).toBe(Math.round((blissey.bulk + tusk.power) / 2));
+    expect(teamPower(team).value).toBe(Math.round((blissey.power + tusk.power) / 2));
+  });
+});
+
+describe('forza dal tipo di attacchi del set', () => {
+  const withMoves = (species: string, moves: string[]): TeamSet => ({ ...emptySet(species), moves });
+
+  it("l'offesa usa la statistica che il set sfrutta", () => {
+    const special = memberPower(withMoves('Alakazam', ['Psychic', 'Focus Blast']))!;
+    const physical = memberPower(withMoves('Alakazam', ['Close Combat', 'Body Slam']))!;
+    expect(physical.offense).toBeLessThan(special.offense);
+  });
+
+  it('senza attacchi o con set misto conta la migliore delle due', () => {
+    expect(memberPower(withMoves('Alakazam', ['Recover'])))
+      .toEqual(memberPower(withMoves('Alakazam', ['Psychic', 'Close Combat'])));
+  });
+});
+
+describe('qualità di un colpo', () => {
+  const withMoves = (species: string, moves: string[]): TeamSet => ({ ...emptySet(species), moves });
+  const q = (species: string, move: string) => hitQuality(withMoves(species, [move]), move);
+
+  it('piena per chi ha la statistica giusta, ridotta (mai sotto 0,4) per chi non ce l\'ha', () => {
+    expect(q('Great Tusk', 'Close Combat')).toBe(1);
+    expect(q('Alakazam', 'Close Combat')).toBeLessThan(1);
+    expect(q('Alakazam', 'Close Combat')).toBeGreaterThanOrEqual(0.4);
+  });
+
+  it('Body Press usa la Difesa, Seismic Toss e Foul Play hanno valori fissi', () => {
+    expect(q('Corviknight', 'Body Press')).toBe(1);
+    expect(q('Blissey', 'Seismic Toss')).toBe(0.6);
+    expect(q('Mandibuzz', 'Foul Play')).toBe(0.7);
   });
 });

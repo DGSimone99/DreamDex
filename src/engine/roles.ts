@@ -20,13 +20,32 @@ export const DESIRABLE_ROLES: Role[] = ['wallbreaker', 'physicalSweeper', 'speci
 export const STALL_ROLES: Role[] = ['hazards', 'removal', 'physicalWall', 'specialWall'];
 const WALLS: Role[] = ['physicalWall', 'specialWall'];
 
+const RECOVERY_MOVES = new Set([
+  'recover', 'roost', 'softboiled', 'slackoff', 'wish', 'rest', 'moonlight', 'synthesis', 'morningsun',
+  'strengthsap', 'shoreup', 'milkdrink', 'leechseed', 'painsplit',
+]);
+const RECOVERY_ABILITIES = new Set(['poisonheal', 'regenerator']);
+const SWEEPERS: Role[] = ['physicalSweeper', 'specialSweeper'];
+
+/** Sweeper veloce con mossa di setup (Volcarona con Quiver Dance, Garchomp con Swords Dance): vince attaccando. */
+const isFastSetupSweeper = (set: TeamSet, roles: Role[]) =>
+  roles.includes('setup') && roles.some(r => SWEEPERS.includes(r)) && (battleSpecies(set)?.baseStats.spe ?? 0) >= 100;
+
 /**
- * Stall: almeno 5 membri "passivi", cioè muri con al massimo 2 mosse d'attacco (il resto: status, recupero, hazard).
- * Si guarda il set, non solo le statistiche: un leggendario con quattro attacchi non è un muro da stall.
+ * Membro "passivo" da stall: al massimo 2 mosse d'attacco, non uno sweeper veloce con setup, e un muro o con un recupero affidabile.
+ * Si guarda il set, non solo le statistiche: un leggendario con quattro attacchi non è un muro da stall,
+ * mentre Mega Sableye o Quagsire lo sono anche senza statistiche da muro.
  */
+export function isPassive(set: TeamSet, roles: Role[] = detectRoles(set)): boolean {
+  const attacks = set.moves.filter(m => (getMove(m)?.category ?? 'Status') !== 'Status').length;
+  if (attacks > 2 || isFastSetupSweeper(set, roles)) return false;
+  const heals = set.moves.some(m => RECOVERY_MOVES.has(toID(m))) || RECOVERY_ABILITIES.has(toID(set.ability));
+  return heals || roles.some(r => WALLS.includes(r));
+}
+
+/** Stall: almeno 5 membri passivi. */
 export function isStall(team: TeamSet[], roles: Role[][] = team.map(detectRoles)): boolean {
-  const attacks = (set: TeamSet) => set.moves.filter(m => (getMove(m)?.category ?? 'Status') !== 'Status').length;
-  return team.filter((set, i) => roles[i].some(x => WALLS.includes(x)) && attacks(set) <= 2).length >= 5;
+  return team.filter((set, i) => isPassive(set, roles[i])).length >= 5;
 }
 
 const HAZARD_MOVES = new Set(['stealthrock', 'spikes', 'toxicspikes', 'stickyweb', 'stoneaxe', 'ceaselessedge']);

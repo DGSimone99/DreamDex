@@ -93,6 +93,10 @@ export const viaName = (via: string, lang: Lang = 'it'): string => (via === SLOW
 const GENERIC_MOVES = new Set(['weatherball', 'terrainpulse']);
 /** Abilità Paradox: il meteo/campo è un bonus, funzionano anche senza (Booster Energy o nessun boost). */
 const PARADOX = new Set(['protosynthesis', 'quarkdrive']);
+/** Mosse che il meteo migliora ma che funzionano bene anche senza (precisione o carica): sinergia sì, dipendenza no. */
+const OPTIONAL_MOVES = new Set(['hurricane', 'thunder', 'electroshot', 'blizzard']);
+/** Meteo che fa danno agli avversari a ogni turno: è sempre sfruttato. */
+const CHIP: Condition[] = ['sand'];
 /** Meteo primordiale: dura solo finché chi lo porta è in campo (non tocca i compagni, che entrano dopo). */
 const PRIMAL = new Set(['desolateland', 'primordialsea']);
 /** Abilitatori "di passaggio": la condizione è un effetto secondario (Chilly Reception serve a cambiare). */
@@ -193,20 +197,15 @@ function boostsItself(set: TeamSet, condition: Condition): boolean {
   return !!boosted && attackingMoves(set).some(m => m.type === boosted);
 }
 
-export interface UnusedEnabler extends TeamConditionIssue {
-  /** Vero se la condizione potenzia almeno le mosse dell'abilitatore stesso. */
-  selfBoost: boolean;
-}
-
-/** Membri che portano un meteo/campo/Trick Room che nessun altro membro sfrutta. */
-export function unusedEnablers(team: TeamSet[]): UnusedEnabler[] {
+/** Membri che portano un meteo/campo/Trick Room che nessuno sfrutta, nemmeno loro stessi. */
+export function unusedEnablers(team: TeamSet[]): TeamConditionIssue[] {
   const specific = (set: TeamSet) => benefits(set).filter(b => !GENERIC_MOVES.has(toID(b.via)));
   return team.flatMap(member => {
     const usedByOthers = new Set(team.filter(o => o !== member).flatMap(specific).map(b => b.condition));
     return enables(member)
       .filter(e => !isPrimal(e) && !isIncidental(e))
-      .filter(e => !usedByOthers.has(e.condition))
-      .map(e => ({ member: battleName(member), ...e, selfBoost: boostsItself(member, e.condition) }));
+      .filter(e => !usedByOthers.has(e.condition) && !CHIP.includes(e.condition) && !boostsItself(member, e.condition))
+      .map(e => ({ member: battleName(member), ...e }));
   });
 }
 
@@ -217,7 +216,7 @@ export function unmetBeneficiaries(team: TeamSet[]): TeamConditionIssue[] {
     benefits(member)
       .filter(b => !available.has(b.condition))
       .filter(b => !GENERIC_MOVES.has(toID(b.via)))
-      .filter(b => !PARADOX.has(toID(b.via)))
+      .filter(b => !PARADOX.has(toID(b.via)) && !OPTIONAL_MOVES.has(toID(b.via)))
       .filter(b => b.via !== SLOW)
       .map(b => ({ member: battleName(member), ...b })));
 }

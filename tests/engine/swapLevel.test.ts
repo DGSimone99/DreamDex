@@ -5,15 +5,16 @@ import { emptySet, type TeamSet } from '../../src/engine/sets';
 import { fixtureData, gholdengo, tusk } from '../fixtures/data';
 
 describe('livello delle sostituzioni', () => {
-  it('consigliata se più di metà delle alternative si adatta meglio', () => {
-    expect(classifySwap(0.51, 5)).toBe('recommended');
-    expect(classifySwap(0.5, 5)).toBe('optional');
-    expect(classifySwap(0.1, 5)).toBe('optional');
+  it('consigliata da +10 punti di voto, possibile da +5, sotto nulla', () => {
+    expect(classifySwap(10)).toBe('recommended');
+    expect(classifySwap(9)).toBe('optional');
+    expect(classifySwap(5)).toBe('optional');
+    expect(classifySwap(4)).toBeNull();
   });
 
-  it('consigliata anche se la differenza è di almeno +25', () => {
-    expect(classifySwap(0.1, 25)).toBe('recommended');
-    expect(classifySwap(0.1, 24)).toBe('optional');
+  it('un membro illegale ha sempre una sostituzione consigliata', () => {
+    expect(classifySwap(0, true)).toBe('recommended');
+    expect(classifySwap(-3, true)).toBe('recommended');
   });
 
   it('un membro inutile riceve una sostituzione consigliata', () => {
@@ -29,8 +30,8 @@ describe('livello delle sostituzioni', () => {
   });
 
   it('vantaggi di una possibile raccomandazione', () => {
-    const swap: CoachSwap = { index: 0, member: 'Great Tusk', fit: 50, replacement: 'Corviknight', set: emptySet('Corviknight'), score: 62, similar: false,
+    const swap: CoachSwap = { index: 0, member: 'Great Tusk', fit: 50, replacement: 'Corviknight', set: emptySet('Corviknight'), score: 62, similar: false, ratingGain: 6,
       level: 'optional', diff: { gains: { roles: ['pivot' as const], covers: [], resists: [] }, losses: { roles: [], covers: [], resists: [] } } };
-    expect(describeSwap(swap)).toEqual({ gain: 12, pros: ['Pivot'], cons: [] });
+    expect(describeSwap(swap)).toEqual({ gain: 6, pros: ['Pivot'], cons: [] });
   });
 });

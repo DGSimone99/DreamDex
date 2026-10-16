@@ -59,9 +59,12 @@ describe('penalità e bonus del meteo', () => {
       .toContainEqual({ text: 'Leafeon ha Chlorophyll ma il team non porta il sole', points: 3 });
   });
 
-  it('abilitatore che potenzia solo sé stesso: −1', () => {
-    expect(texts([{ ...withMoves('Ninetales', ['Flamethrower']), ability: 'Drought' }, garchomp]))
-      .toContainEqual({ text: 'Drought di Ninetales potenzia solo le sue mosse', points: 1 });
+  it('abilitatore che potenzia almeno sé stesso: nessuna penalità', () => {
+    expect(texts([{ ...withMoves('Ninetales', ['Flamethrower']), ability: 'Drought' }, garchomp]).map(i => i.text).join(' | ')).not.toMatch(/Drought/);
+  });
+
+  it('Hurricane senza pioggia: nessuna penalità', () => {
+    expect(texts([withMoves('Tornadus-Therian', ['Hurricane', 'U-turn']), garchomp]).map(i => i.text).join(' | ')).not.toMatch(/Hurricane/);
   });
 
   it('abilitatore che non serve a nessuno: −2', () => {
