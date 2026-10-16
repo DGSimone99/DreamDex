@@ -28,13 +28,16 @@ export function RatingPanel({ rating, ruleIssues = [] }: { rating: TeamRating; r
       <summary><span>{t('rating.title')}</span><span>{rating.grade} · {rating.overall}/100</span></summary>
       <p className={`grade grade-${rating.grade}`}>
         <strong>{rating.grade}</strong>
-        {ruleIssues.length > 0 && (
-          <AlertMark className="grade-alert" alerts={[
-            { level: 'danger', text: t('rating.rulesBroken') },
-            ...ruleIssues.map(text => ({ level: 'danger' as const, text })),
-          ]} />
-        )}
-        <span>{rating.overall}/100 · {rating.label}</span>
+        {/* Il triangolo delle regole sta subito sopra il punteggio */}
+        <span className="grade-side">
+          {ruleIssues.length > 0 && (
+            <AlertMark className="grade-alert" alerts={[
+              { level: 'danger', text: t('rating.rulesBroken') },
+              ...ruleIssues.map(text => ({ level: 'danger' as const, text })),
+            ]} />
+          )}
+          <span>{rating.overall}/100 · {rating.label}</span>
+        </span>
       </p>
       {rating.archetype === 'stall' && <p className="rating-note">{t('rating.stall')}</p>}
       <dl className="bars">

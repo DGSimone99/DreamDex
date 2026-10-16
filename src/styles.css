@@ -413,8 +413,9 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 .note meter { display: inline-block; width: 120px; vertical-align: middle; margin-left: 8px; }
 .note strong { color: var(--text); }
 
-.rating .grade { display: flex; align-items: baseline; gap: 12px; margin: 0 0 10px; color: var(--muted); }
-.rating .grade .grade-alert { align-self: flex-start; margin: 2px -2px 0 -6px; }
+.rating .grade { display: flex; align-items: flex-end; gap: 12px; margin: 0 0 10px; color: var(--muted); }
+.rating .grade-side { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding-bottom: 5px; }
+.rating .grade .grade-alert { margin-left: -2px; }
 .rating .grade .grade-alert .icon { width: 18px; height: 18px; }
 .rating .grade .grade-alert .alert-pop { font: 400 13px/1.45 var(--ui); color: var(--text); text-transform: none; letter-spacing: 0; }
 .rating .rating-note { margin: -4px 0 10px; font-size: 13px; color: var(--muted); }
