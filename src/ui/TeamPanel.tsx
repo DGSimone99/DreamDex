@@ -7,6 +7,7 @@ import { presetsFor, type Preset, type TeamSet } from '../engine/sets';
 import { useRef, useState } from 'react';
 import { useSlant } from './slant';
 import { SetEditor } from './SetEditor';
+import { describe } from './describe';
 import { commonChoices, type CommonChoices } from '../engine/common';
 import { speedTier, type SpeedTier } from '../engine/speed';
 import { StatsBadge } from './StatsBadge';
@@ -120,11 +121,11 @@ function TeamSlot({ set, presets, common, speed, format, warning: megaWarning, o
         </button>
         <strong className="name">{name}</strong>
         {/* Strumento (con icona) e abilità su due righe: le card restano allineate */}
-        <small className="held" title={set.item || undefined}>
+        <small className="held" title={describe.item(set.item, lang)}>
           <ItemIcon item={set.item} />
           <span>{set.item ? gameName('item', set.item, lang) : tr('team.noItem')}</span>
         </small>
-        <small className="ability" title={ability || undefined}>{ability ? gameName('ability', ability, lang) : '—'}</small>
+        <small className="ability" title={describe.ability(ability, lang)}>{ability ? gameName('ability', ability, lang) : '—'}</small>
         <span className="types">{species?.types.map(type => <TypeChip key={type} type={type} />) ?? <TypeChip type="?" />}</span>
         {roles.length > 0 && <small className="roles">{roles.join(' · ')}</small>}
       </summary>

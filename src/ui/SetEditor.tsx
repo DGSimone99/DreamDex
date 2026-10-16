@@ -8,6 +8,7 @@ import { formatPercent, type Lang } from '../i18n';
 import { gameDesc, gameName, natureName, statShort, typeName } from '../i18n/game';
 import { useLang, useT } from '../i18n/react';
 import { Combobox, type ComboOption } from './Combobox';
+import { describe } from './describe';
 import { SpeedLine } from './SpeedLine';
 import { speedStat, type SpeedTier } from '../engine/speed';
 import { TypeChip } from './Sprite';
@@ -29,15 +30,6 @@ function NatureEffect({ name }: { name: string }) {
 
 const CATEGORY_ICONS = { Physical: 'physical', Special: 'special', Status: 'status' } as const;
 
-/** Descrizioni: quelle dei giochi in italiano, altrimenti quelle di Showdown (in inglese). */
-const describe = {
-  item: (name: string, lang: Lang) => (name ? gameDesc('item', name, lang, dex.items.get(name).shortDesc || undefined) : undefined),
-  ability: (name: string, lang: Lang) => (name ? gameDesc('ability', name, lang, dex.abilities.get(name).shortDesc || undefined) : undefined),
-  move: (name: string, lang: Lang) => {
-    const move = getMove(name);
-    return move ? gameDesc('move', move.name, lang, move.shortDesc || move.desc || undefined) : undefined;
-  },
-};
 
 function MoveDetail({ name }: { name: string }) {
   const t = useT();
