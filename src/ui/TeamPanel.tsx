@@ -1,6 +1,6 @@
 import type { EngineData } from '../engine/data';
 import { battleAbility, battleName, battleSpecies, getSpecies, isMega, isSelectable, withinGen } from '../engine/dex';
-import { formatLabel, isBannedIn, meetsTeamRules } from '../engine/formats';
+import { formatLabel, isBannedIn, meetsTeamRules, teraAllowed } from '../engine/formats';
 import type { Format } from '../engine/format';
 import { detectRoles, roleLabel } from '../engine/roles';
 import { presetsFor, type Preset, type TeamSet } from '../engine/sets';
@@ -25,6 +25,8 @@ interface Props {
   onChange: (team: TeamSet[]) => void;
   onAdd: (set: TeamSet) => void;
   onReplace: (index: number) => void;
+  /** Membro tolto con la ×: se manca, si aggiorna solo il team (senza Annulla). */
+  onRemove?: (index: number) => void;
   onAllowMultipleMegas: () => void;
 }
 
@@ -125,7 +127,8 @@ function TeamSlot({ set, presets, common, format, warning: megaWarning, open, on
         {roles.length > 0 && <small className="roles">{roles.join(' · ')}</small>}
       </summary>
       <div className="drawer">
-      <SetEditor set={set} presets={presets} common={common} genLimit={format.genLimit} onChange={onChange} />
+      <SetEditor set={set} presets={presets} common={common} genLimit={format.genLimit}
+        teraBannedIn={teraAllowed(format) ? undefined : formatLabel(format, lang)} onChange={onChange} />
       <div className="actions">
         <button type="button" aria-label={tr('team.replace', { species: name })} onClick={onReplace}><Icon name="swap" /> {tr('team.replaceButton')}</button>
         {megaWarning && <button type="button" onClick={onIgnoreWarning}>{tr('team.keepMega')}</button>}
@@ -135,7 +138,7 @@ function TeamSlot({ set, presets, common, format, warning: megaWarning, open, on
   );
 }
 
-export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onAllowMultipleMegas }: Props) {
+export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRemove, onAllowMultipleMegas }: Props) {
   const lang = useLang();
   // Un solo membro aperto alla volta: il suo editor scende sotto la fila del team
   const [openIndex, setOpenIndex] = useState<number | null>(null);
@@ -158,7 +161,7 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onAl
             onToggle={open => setOpenIndex(current => (open ? i : current === i ? null : current))}
             onIgnoreWarning={onAllowMultipleMegas}
             onChange={next => onChange(team.map((s, j) => (j === i ? next : s)))}
-            onRemove={() => { setOpenIndex(null); onChange(team.filter((_, j) => j !== i)); }}
+            onRemove={() => { setOpenIndex(null); if (onRemove) onRemove(i); else onChange(team.filter((_, j) => j !== i)); }}
             onReplace={() => onReplace(i)}
           />
         ))}

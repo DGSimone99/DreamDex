@@ -4,7 +4,9 @@ import { coachTeam, type SwapPreview } from './engine/coach';
 import { rateTeam } from './engine/rating';
 import type { EngineData } from './engine/data';
 import { DEFAULT_FORMAT, type Format } from './engine/format';
-import { dataLabel, dataSource } from './engine/formats';
+import { dataLabel, dataSource, teraAllowed } from './engine/formats';
+import { battleName } from './engine/dex';
+import { UndoToast, type UndoAction } from './ui/UndoToast';
 import type { TeamSet } from './engine/sets';
 import { AnalysisPanel } from './ui/AnalysisPanel';
 import { GradeBadge } from './ui/RatingPanel';
@@ -69,19 +71,34 @@ export function App({ data: initialData, loadSource, storage, initialLang }: App
   const coaching = useMemo(() => coachTeam(team, format, data, lang), [team, format, data, lang]);
 
   const changeTeam = (next: TeamSet[]) => {
-    setTeam(next.slice(0, 6));
+    const value = next.slice(0, 6);
+    setTeam(value);
     setReplaceIndex(null);
+    return value;
   };
   const addSet = (set: TeamSet) => {
     if (team.length < 6) changeTeam([...team, set]);
   };
-  const replaceAt = (index: number, set: TeamSet) => changeTeam(team.map((s, i) => (i === index ? set : s)));
+  // Rimozioni e sostituzioni si possono annullare per qualche secondo
+  // (vale finché il team resta quello lasciato dall'azione: un'altra modifica chiude l'avviso)
+  const [undo, setUndo] = useState<(UndoAction & { before: TeamSet[]; after: TeamSet[] }) | null>(null);
+  const undoId = useRef(0);
+  const remember = (action: Omit<UndoAction, 'id'>, after: TeamSet[]) =>
+    setUndo({ ...action, id: ++undoId.current, before: team, after });
+  const replaceAt = (index: number, set: TeamSet) => {
+    const after = changeTeam(team.map((s, i) => (i === index ? set : s)));
+    if (team[index]) remember({ kind: 'replace', from: battleName(team[index]), to: battleName(set) }, after);
+  };
+  const removeAt = (index: number) => {
+    const after = changeTeam(team.filter((_, i) => i !== index));
+    remember({ kind: 'remove', from: battleName(team[index]) }, after);
+  };
 
   return (
     <LangProvider lang={lang}>
     <div className="app">
       <TopBar format={format} onFormatChange={setFormat} meta={data.stats?.meta ?? null} lang={lang} onLangChange={setLang}>
-        <ShowdownPanel team={team} onImport={changeTeam} />
+        <ShowdownPanel team={team} tera={teraAllowed(format)} onImport={changeTeam} />
         <SavedTeams team={team} format={format} onLoad={(loaded, savedFormat) => { changeTeam(loaded); if (savedFormat) setFormat(savedFormat); }} />
       </TopBar>
       {loading && <p className="banner info">{t(lang, 'app.loading')}</p>}
@@ -91,7 +108,7 @@ export function App({ data: initialData, loadSource, storage, initialLang }: App
         </p>
       )}
       <div className="band">
-        <TeamPanel team={team} format={format} data={data} onChange={changeTeam} onAdd={addSet} onReplace={setReplaceIndex}
+        <TeamPanel team={team} format={format} data={data} onChange={changeTeam} onAdd={addSet} onReplace={setReplaceIndex} onRemove={removeAt}
           onAllowMultipleMegas={() => setFormat(f => ({ ...f, allowMultipleMegas: true }))} />
         <GradeBadge rating={rating} />
       </div>
@@ -113,6 +130,10 @@ export function App({ data: initialData, loadSource, storage, initialLang }: App
           />
         </div>
       </main>
+      {undo && undo.after === team && (
+        <UndoToast action={undo} onClose={() => setUndo(null)}
+          onUndo={() => { changeTeam(undo.before); setUndo(null); }} />
+      )}
     </div>
     </LangProvider>
   );

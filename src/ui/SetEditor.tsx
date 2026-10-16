@@ -102,13 +102,15 @@ interface Props {
   genLimit: number;
   /** Scelte più usate del membro, mostrate in cima ai menu. */
   common?: CommonChoices;
+  /** Nome del formato se vieta il Tera: campo disattivato con la nota (il valore resta salvato). */
+  teraBannedIn?: string;
   onChange: (set: TeamSet) => void;
 }
 
 /** Voce del menu dei preset per un set che non coincide con nessun preset. */
 const CUSTOM_PRESET = 'custom';
 
-export function SetEditor({ set, presets = [], genLimit, common, onChange }: Props) {
+export function SetEditor({ set, presets = [], genLimit, common, teraBannedIn, onChange }: Props) {
   const t = useT();
   const lang = useLang();
   // Le più usate vanno in cima al menu, con la quota d'uso (o "Preset" se vengono dalle analisi)
@@ -238,8 +240,11 @@ export function SetEditor({ set, presets = [], genLimit, common, onChange }: Pro
             onChange={nature => update({ nature })} />
         </div>
         <div className="field">
-          <span className="field-head">{t('editor.tera')}</span>
-          <Combobox label={t('editor.tera')} value={set.teraType ?? ''} options={teraOptions} restricted
+          <span className="field-head">
+            {t('editor.tera')}
+            {teraBannedIn && <small className="field-note">{t('editor.teraBanned', { format: teraBannedIn })}</small>}
+          </span>
+          <Combobox label={t('editor.tera')} value={set.teraType ?? ''} options={teraOptions} restricted disabled={!!teraBannedIn}
             display={set.teraType ? <TypeChip type={set.teraType} /> : <span className="faint">{t('editor.none')}</span>}
             onChange={tera => update({ teraType: tera || undefined })} />
         </div>

@@ -254,7 +254,7 @@ export function formatName(id: string): string {
   return `${natdex ? 'NatDex' : `Gen ${gen}`} ${TIER_NAMES[tier] ?? tier.toUpperCase()}`;
 }
 
-function toPkmn(set: TeamSet): PkmnSet {
+function toPkmn(set: TeamSet, tera = true): PkmnSet {
   const table = (fill: (stat: StatID) => number) =>
     Object.fromEntries(STAT_IDS.map(stat => [stat, fill(stat)]));
   return {
@@ -268,7 +268,7 @@ function toPkmn(set: TeamSet): PkmnSet {
     evs: table(stat => set.evs[stat] ?? 0),
     ivs: table(() => 31),
     level: 100,
-    ...(set.teraType ? { teraType: set.teraType } : {}),
+    ...(tera && set.teraType ? { teraType: set.teraType } : {}),
   } as unknown as PkmnSet;
 }
 
@@ -326,6 +326,7 @@ export function importShowdown(text: string, lang: Lang = 'it'): ImportResult {
   return { sets, errors };
 }
 
-export function exportShowdown(team: TeamSet[]): string {
-  return team.map(set => Sets.exportSet(toPkmn(set)).trimEnd()).join('\n\n');
+/** Testo Showdown del team; `tera: false` lo toglie per i formati che lo vietano (i salvataggi lo tengono). */
+export function exportShowdown(team: TeamSet[], { tera = true }: { tera?: boolean } = {}): string {
+  return team.map(set => Sets.exportSet(toPkmn(set, tera)).trimEnd()).join('\n\n');
 }

@@ -6,15 +6,17 @@ import { t, type Lang } from '../i18n';
 interface FormatDef {
   source: string;
   banned: Set<string>;
+  /** Teracristallizzazione ammessa (vietata in National Dex OU e UU). */
+  tera: boolean;
 }
 
 const ALWAYS = ['Illegal', 'Unreleased'];
 
 const FORMATS: Record<FormatId, FormatDef> = {
-  ou: { source: 'gen9nationaldex', banned: new Set(['Uber', 'AG', ...ALWAYS]) },
-  ubers: { source: 'gen9nationaldexubers', banned: new Set(['AG', ...ALWAYS]) },
-  uu: { source: 'gen9nationaldexuu', banned: new Set(['OU', 'UUBL', 'Uber', 'AG', ...ALWAYS]) },
-  all: { source: 'gen9nationaldexubers', banned: new Set() },
+  ou: { source: 'gen9nationaldex', banned: new Set(['Uber', 'AG', ...ALWAYS]), tera: false },
+  ubers: { source: 'gen9nationaldexubers', banned: new Set(['AG', ...ALWAYS]), tera: true },
+  uu: { source: 'gen9nationaldexuu', banned: new Set(['OU', 'UUBL', 'Uber', 'AG', ...ALWAYS]), tera: false },
+  all: { source: 'gen9nationaldexubers', banned: new Set(), tera: true },
 };
 
 const FORMAT_IDS: FormatId[] = ['ou', 'ubers', 'uu', 'all'];
@@ -33,6 +35,11 @@ export const dataLabel = (format: Format, lang: Lang = 'it'): string =>
 export function dataSource(format: Format): string {
   if (format.monotype && format.formatId === 'ou') return 'gen9nationaldexmonotype';
   return FORMATS[format.formatId].source;
+}
+
+/** Tera ammesso nel formato: vietato in OU, UU e Monotype (il Monotype gioca col meta OU). */
+export function teraAllowed(format: Format): boolean {
+  return FORMATS[format.formatId].tera && dataSource(format) !== 'gen9nationaldexmonotype';
 }
 
 export function isBannedIn(species: Species, format: Format): boolean {
