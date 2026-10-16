@@ -76,6 +76,23 @@ export function battleAbility(set: { species: string; item: string; ability: str
   return forme && forme.name !== getSpecies(set.species)?.name ? forme.abilities[0] : set.ability;
 }
 
+/** Abilità che cambiano sempre una statistica (in battaglia): Huge Power raddoppia l'Attacco, Fur Coat la Difesa… */
+const STAT_ABILITIES: Record<string, Partial<Record<'atk' | 'def' | 'spa' | 'spd', number>>> = {
+  hugepower: { atk: 2 }, purepower: { atk: 2 }, gorillatactics: { atk: 1.5 }, hustle: { atk: 1.5 },
+  furcoat: { def: 2 }, icescales: { spd: 2 }, parentalbond: { atk: 1.25, spa: 1.25 },
+};
+
+/** Statistiche base della forma in battaglia, con l'effetto delle abilità che le cambiano sempre. */
+export function effectiveStats(set: { species: string; item: string; ability: string }): Species['baseStats'] {
+  const species = battleSpecies(set);
+  const base = species?.baseStats ?? { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 };
+  const mult = STAT_ABILITIES[toID(battleAbility(set))];
+  if (!mult) return base;
+  const stats = { ...base };
+  for (const [stat, m] of Object.entries(mult) as ['atk' | 'def' | 'spa' | 'spd', number][]) stats[stat] = Math.round(base[stat] * m);
+  return stats;
+}
+
 /** Nome con cui la specie compare nelle statistiche Smogon. */
 export const battleName = (set: { species: string; item: string }): string =>
   battleSpecies(set)?.name ?? set.species;
