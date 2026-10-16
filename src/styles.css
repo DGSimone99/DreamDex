@@ -416,7 +416,7 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 .rating .grade { display: flex; align-items: baseline; gap: 12px; margin: 0 0 10px; color: var(--muted); }
 /* Il punteggio resta sulla linea della lettera; il triangolo gli sta sopra, come un apostrofo della lettera */
 .rating .grade-side { position: relative; }
-.rating .grade .grade-alert { position: absolute; left: -6px; bottom: 100%; margin-bottom: 1px; }
+.rating .grade .grade-alert { position: absolute; left: -1.5px; bottom: 100%; margin-bottom: 1px; padding: 0; } /* -1.5px: margine interno del disegno */
 .rating .grade .grade-alert .icon { width: 18px; height: 18px; }
 .rating .grade .grade-alert .alert-pop { font: 400 13px/1.45 var(--ui); color: var(--text); text-transform: none; letter-spacing: 0; }
 .rating .rating-note { margin: -4px 0 10px; font-size: 13px; color: var(--muted); }
