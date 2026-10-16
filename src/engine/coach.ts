@@ -262,7 +262,7 @@ function groupChanges(change: Contribution, gain: boolean, lang: Lang): string[]
 }
 
 export interface SwapSummary {
-  /** Quanto il sostituto si adatta meglio del membro attuale. */
+  /** Punti di voto che il team guadagna con il sostituto (negativi se ne perde). */
   gain: number;
   /** Cosa porta il sostituto. */
   pros: string[];
@@ -277,13 +277,22 @@ export interface SwapPreview {
   set: TeamSet;
   score: number;
   similar: boolean;
+  /** Punti di voto che il team guadagna (o perde) con questo sostituto. */
+  ratingGain: number;
   diff: Diff;
 }
 
 export const previewSwap = (swap: CoachSwap, preview: SwapPreview | null): CoachSwap =>
   preview && preview.index === swap.index
-    ? { ...swap, replacement: preview.replacement, set: preview.set, score: preview.score, similar: preview.similar, diff: preview.diff }
+    ? { ...swap, replacement: preview.replacement, set: preview.set, score: preview.score, similar: preview.similar, ratingGain: preview.ratingGain, diff: preview.diff }
     : swap;
+
+/** Punti di voto che il team guadagna mettendo `set` al posto del membro `index` (negativi se ne perde). */
+export function ratingGainOf(team: TeamSet[], index: number, set: TeamSet, data: EngineData): number {
+  const before = rateTeam(team, data);
+  const after = rateTeam(team.map((member, i) => (i === index ? set : member)), data);
+  return before && after ? after.overall - before.overall : 0;
+}
 
 /** Cosa porta il sostituto e cosa perde il team, raggruppato per tipo. */
 export const describeDiff = (diff: Diff, lang: Lang = 'it') => ({
@@ -292,7 +301,7 @@ export const describeDiff = (diff: Diff, lang: Lang = 'it') => ({
 });
 
 export function describeSwap(swap: CoachSwap, lang: Lang = 'it'): SwapSummary {
-  return { gain: swap.score - swap.fit, ...describeDiff(swap.diff, lang) };
+  return { gain: swap.ratingGain, ...describeDiff(swap.diff, lang) };
 }
 
 export function coachTeam(team: TeamSet[], format: Format, data: EngineData, lang: Lang = 'it'): Coaching {

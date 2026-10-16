@@ -451,6 +451,8 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 .swap-head .gain { font: 700 15px/1 var(--display); color: var(--good); font-variant-numeric: tabular-nums; }
 .swap-head small { font-size: 12px; color: var(--faint); }
 .swap-head .gain.worse { color: var(--bad); }
+.swap-head .gain.same { color: var(--muted); }
+.swap-head .gain-unit { margin-left: 3px; font: 600 12px/1 var(--ui); color: var(--faint); }
 .swap-head .picked-tag { padding: 1px 6px; border-radius: 3px; background: var(--blue-soft); color: var(--text); font-weight: 600; }
 .pros-cons { grid-column: 1; display: grid; gap: 2px; font-size: 14px; }
 .pros-cons li { display: flex; gap: 6px; }

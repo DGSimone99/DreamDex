@@ -32,6 +32,6 @@ describe('livello delle sostituzioni', () => {
   it('vantaggi di una possibile raccomandazione', () => {
     const swap: CoachSwap = { index: 0, member: 'Great Tusk', fit: 50, replacement: 'Corviknight', set: emptySet('Corviknight'), score: 62, similar: false, ratingGain: 6,
       level: 'optional', diff: { gains: { roles: ['pivot' as const], covers: [], resists: [] }, losses: { roles: [], covers: [], resists: [] } } };
-    expect(describeSwap(swap)).toEqual({ gain: 12, pros: ['Pivot'], cons: [] });
+    expect(describeSwap(swap)).toEqual({ gain: 6, pros: ['Pivot'], cons: [] });
   });
 });

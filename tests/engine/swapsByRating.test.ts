@@ -56,3 +56,12 @@ describe('sostituzioni in uno stall', () => {
     }
   });
 });
+
+describe('punti di voto di un sostituto qualunque (anteprima da "Altri sostituti")', () => {
+  it('differenza tra il voto con il sostituto e quello attuale', async () => {
+    const { ratingGainOf } = await import('../../src/engine/coach');
+    const replacement = mostCommonSet(fixtureStats, 'Garchomp')!;
+    const expected = rateTeam(swapped(balance, 0, replacement), fixtureData)!.overall - rateTeam(balance, fixtureData)!.overall;
+    expect(ratingGainOf(balance, 0, replacement, fixtureData)).toBe(expected);
+  });
+});
