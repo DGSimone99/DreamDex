@@ -81,6 +81,10 @@ export interface PkmnStatsFile {
   }>;
 }
 
+/** Quanti strumenti e spread tenere per Pokémon (per i "Più usati" e gli spread pronti dell'editor). */
+const TOP_ITEMS = 8;
+const TOP_SPREADS = 6;
+
 /** Converte le statistiche di data.pkmn.cc nello stesso formato di `reduceChaos`. */
 export function reducePkmnStats(file: PkmnStatsFile, minUsage = 0.001): Record<string, SpeciesStats> {
   const result: Record<string, SpeciesStats> = {};
@@ -90,10 +94,10 @@ export function reducePkmnStats(file: PkmnStatsFile, minUsage = 0.001): Record<s
       usage: entry.usage.weighted,
       count: entry.count,
       abilities: topShares(entry.abilities, 1, 3),
-      items: topShares(entry.items, 1, 5),
+      items: topShares(entry.items, 1, TOP_ITEMS),
       moves: topShares(entry.moves, 1, 10),
       teraTypes: topShares(entry.teraTypes, 1, 3, capitalize),
-      spreads: topShares(entry.spreads, 1, 3),
+      spreads: topShares(entry.spreads, 1, TOP_SPREADS),
       teammates: topShares(entry.teammates, 1, 40),
       checks: {},
     };
@@ -115,10 +119,10 @@ export function reduceChaos(chaos: ChaosFile, minUsage = 0.001): Record<string, 
       usage: entry.usage,
       count,
       abilities: topShares(entry.Abilities, count, 3),
-      items: topShares(entry.Items, count, 5),
+      items: topShares(entry.Items, count, TOP_ITEMS),
       moves: topShares(entry.Moves, count, 10),
       teraTypes: topShares(entry['Tera Types'], count, 3, capitalize),
-      spreads: topShares(entry.Spreads, count, 3),
+      spreads: topShares(entry.Spreads, count, TOP_SPREADS),
       teammates: topShares(entry.Teammates, count, 40),
       checks: Object.fromEntries(checks),
     };

@@ -9,6 +9,18 @@ const pokemon = reduceChaos(chaos as unknown as ChaosFile);
 const stats: StatsData = { meta: { month: '2026-09', cutoff: 1695, battles: 1000 }, pokemon };
 
 describe('reduceChaos', () => {
+  it('tiene fino a 6 spread e 8 strumenti (per gli spread pronti e i "Più usati")', async () => {
+    const { reducePkmnStats } = await import('../../src/engine/stats');
+    const many = (prefix: string, n: number) => Object.fromEntries(Array.from({ length: n }, (_, i) => [`${prefix}${i}`, 10 - i]));
+    const reduced = reducePkmnStats({ battles: 10, pokemon: { Garchomp: {
+      lead: {}, usage: { weighted: 0.3 }, count: 100, weight: null, viability: [], abilities: { roughskin: 1 },
+      items: many('item', 10), moves: {}, teraTypes: {}, happinesses: {},
+      spreads: Object.fromEntries(Array.from({ length: 10 }, (_, i) => [`Jolly:0/252/0/0/${i}/252`, 10 - i])), teammates: {}, counters: {},
+    } } } as never);
+    expect(Object.keys(reduced.Garchomp.spreads)).toHaveLength(6);
+    expect(Object.keys(reduced.Garchomp.items)).toHaveLength(8);
+  });
+
   it('scarta i Pokémon sotto lo 0.1% di uso', () => {
     expect(pokemon.Pikachu).toBeUndefined();
     expect(pokemon.Garchomp).toBeDefined();

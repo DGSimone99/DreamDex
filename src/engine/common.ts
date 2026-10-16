@@ -26,7 +26,7 @@ export interface CommonChoices {
 }
 
 /** Quanti spread pronti proporre. */
-const MAX_SPREADS = 5;
+const MAX_SPREADS = 6;
 
 const spreadKey = (s: { nature: string; evs: Partial<Record<StatID, number>> }) =>
   `${s.nature}:${STAT_IDS.map(stat => s.evs[stat] ?? 0).join('/')}`;
