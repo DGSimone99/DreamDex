@@ -84,6 +84,16 @@ export function fitsArchetype(set: TeamSet, archetype: FitArchetype): boolean {
   return (sweeper && (fast || roles.includes('setup'))) || (power.offense >= FAST_ATTACKER_OFFENSE && fast) || lead;
 }
 
+/** Ruoli della carta del team: quelli del motore più il meteo, che compare solo lì. */
+export type CardRole = Role | 'weather';
+const WEATHERS: Condition[] = ['rain', 'sun', 'sand', 'snow'];
+
+/** Il meteo che il membro porta, con abilità o mossa (non la neve di passaggio di Chilly Reception). */
+export function weatherOf(set: TeamSet): { condition: Condition; via: string } | null {
+  const link = enables(set).find(e => WEATHERS.includes(e.condition) && toID(e.via) !== 'chillyreception');
+  return link ? { condition: link.condition, via: link.via } : null;
+}
+
 const OFFENSIVE_ROLES: Role[] = ['physicalSweeper', 'specialSweeper', 'wallbreaker'];
 const WALL_ROLES: Role[] = ['physicalWall', 'specialWall'];
 const SUPPORT_ROLES: Role[] = ['hazards', 'removal', 'pivot', 'priority', 'speed', 'setup'];
@@ -91,16 +101,17 @@ const SUPPORT_ROLES: Role[] = ['hazards', 'removal', 'pivot', 'priority', 'speed
 /**
  * Ruoli da mostrare sulla carta del team: il ruolo principale (che cosa fa: sweeper, wallbreaker o wall;
  * il wall prima solo per un muro da stall) e un ruolo di supporto. Il setup si salta per uno sweeper, che lo implica.
- * Senza ruolo principale, due ruoli di supporto.
+ * Chi porta il meteo lo mostra come supporto. Senza ruolo principale, due ruoli di supporto.
  */
-export function cardRoles(set: TeamSet): Role[] {
+export function cardRoles(set: TeamSet): CardRole[] {
   const roles = detectRoles(set);
   const order = fitsArchetype(set, 'stall') ? [...WALL_ROLES, ...OFFENSIVE_ROLES] : [...OFFENSIVE_ROLES, ...WALL_ROLES];
   const main = order.find(role => roles.includes(role));
+  const weather: CardRole[] = weatherOf(set) ? ['weather'] : [];
   const support = SUPPORT_ROLES.filter(role => roles.includes(role));
-  if (!main) return support.slice(0, 2);
+  if (!main) return [...weather, ...support].slice(0, 2);
   const sweeper = main === 'physicalSweeper' || main === 'specialSweeper';
-  return [main, ...support.filter(role => !(sweeper && role === 'setup')).slice(0, 1)];
+  return [main, ...weather, ...support.filter(role => !(sweeper && role === 'setup'))].slice(0, 2);
 }
 
 /** Tipo di team con archetipo e stili, solo per un team completo. */

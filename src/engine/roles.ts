@@ -1,4 +1,4 @@
-import { battleSpecies, getMove, isDefined, toID } from './dex';
+import { battleAbility, battleSpecies, getMove, isDefined, toID } from './dex';
 import type { TeamSet } from './sets';
 import { t, type Lang } from '../i18n';
 
@@ -82,7 +82,7 @@ export function detectRoles(set: TeamSet): Role[] {
   // Sweeper: attacca forte e può davvero muoversi per primo: velocità alta, Scarf o abilità di velocità,
   // un setup che alza la velocità, oppure un setup qualunque con una mossa a priorità (Kingambit, Raging Bolt).
   // Un Pokémon lento con un setup che alza solo l'attacco (Magearna con Calm Mind) è un wallbreaker, non uno sweeper.
-  const fast = stats.spe >= 100 || item === 'choicescarf' || SPEED_ABILITIES.has(toID(set.ability));
+  const fast = stats.spe >= 100 || item === 'choicescarf' || SPEED_ABILITIES.has(toID(battleAbility(set)));
   const selfBoost = (stat: 'atk' | 'spa' | 'spe') => moves.some(m => m.category === 'Status' && m.target === 'self' && (m.boosts?.[stat] ?? 0) > 0);
   const priority = moves.some(m => m.category !== 'Status' && m.priority > 0);
   const outspeeds = (stat: 'atk' | 'spa') => fast || selfBoost('spe') || (selfBoost(stat) && priority);
@@ -110,7 +110,7 @@ export function attackStyle(set: TeamSet): AttackStyle {
 /** Il membro è veloce: velocità di base almeno 100, Choice Scarf o un'abilità che raddoppia la velocità. */
 export function isFast(set: TeamSet): boolean {
   const species = battleSpecies(set);
-  return !!species && (species.baseStats.spe >= 100 || toID(set.item) === 'choicescarf' || SPEED_ABILITIES.has(toID(set.ability)));
+  return !!species && (species.baseStats.spe >= 100 || toID(set.item) === 'choicescarf' || SPEED_ABILITIES.has(toID(battleAbility(set))));
 }
 
 /**

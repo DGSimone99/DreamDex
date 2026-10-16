@@ -15,6 +15,8 @@ export const en = {
   'role.specialSweeper': "Special sweeper",
   'role.physicalWall': "Physical wall",
   'role.specialWall': "Special wall",
+  'card.weather': "Weather",
+  'card.weatherTitle': "Sets {condition} ({via})",
   'roleShort.hazards': "Hazards",
   'roleShort.removal': "Removal",
   'roleShort.pivot': "Pivot",

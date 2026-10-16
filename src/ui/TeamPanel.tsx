@@ -3,7 +3,8 @@ import { battleAbility, battleName, battleSpecies, getSpecies, isMega, isSelecta
 import { formatLabel, isBannedIn, meetsTeamRules, teraAllowed } from '../engine/formats';
 import type { Format } from '../engine/format';
 import { roleLabel, roleShortLabel } from '../engine/roles';
-import { cardRoles } from '../engine/archetype';
+import { cardRoles, weatherOf } from '../engine/archetype';
+import { conditionLabel, viaName } from '../engine/synergy';
 import { presetsFor, type Preset, type TeamSet } from '../engine/sets';
 import { useRef, useState } from 'react';
 import { useSlant } from './slant';
@@ -68,10 +69,13 @@ function TeamSlot({ set, presets, common, speed, format, warning: megaWarning, o
   const name = battleName(set);
   const ability = battleAbility(set);
   const problems = slotProblems(set, format, lang);
-  // Ruolo principale e un supporto, affiancati con il nome breve (il completo nel tooltip)
+  // Ruolo principale e un supporto, affiancati con il nome breve (il completo nel tooltip); il meteo solo qui
   const shownRoles = cardRoles(set);
-  const roles = shownRoles.map(role => roleShortLabel(role, lang));
-  const rolesTitle = shownRoles.map(role => roleLabel(role, lang)).join(' · ');
+  const weather = weatherOf(set);
+  const roles = shownRoles.map(role => (role === 'weather' ? tr('card.weather') : roleShortLabel(role, lang)));
+  const rolesTitle = shownRoles.map(role => (role === 'weather' && weather
+    ? tr('card.weatherTitle', { condition: conditionLabel(weather.condition, lang), via: viaName(weather.via, lang) })
+    : role === 'weather' ? tr('card.weather') : roleLabel(role, lang))).join(' · ');
   const illegal = illegalParts(set, format.genLimit);
   const warnings = [
     megaWarning,
