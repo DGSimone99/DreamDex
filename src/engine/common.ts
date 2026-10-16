@@ -27,23 +27,29 @@ export interface CommonChoices {
   source: string | null;
 }
 
-/** Quanti spread pronti proporre. */
-const MAX_SPREADS = 6;
+/** Quanti spread pronti proporre al massimo; quelli di altri formati solo per arrivare al minimo. */
+const MAX_SPREADS = 4;
+const MIN_SPREADS = 3;
 
 const spreadKey = (s: { nature: string; evs: Partial<Record<StatID, number>> }) =>
   `${s.nature}:${STAT_IDS.map(stat => s.evs[stat] ?? 0).join('/')}`;
 
-/** Spread delle statistiche, poi quelli dei preset non già presenti. */
-function mergeSpreads(fromStats: CommonSpread[], sets: TeamSet[]): CommonSpread[] {
+/** Spread delle statistiche, poi quelli dei set del formato; i set di altri formati solo se non si arriva a 3. */
+function mergeSpreads(fromStats: CommonSpread[], own: TeamSet[], other: TeamSet[]): CommonSpread[] {
   const seen = new Set(fromStats.map(spreadKey));
-  const result = [...fromStats];
-  for (const set of sets) {
-    const spread = { nature: set.nature, evs: set.evs, share: null };
-    if (!set.nature || seen.has(spreadKey(spread))) continue;
-    seen.add(spreadKey(spread));
-    result.push(spread);
-  }
-  return result.slice(0, MAX_SPREADS);
+  const result = fromStats.slice(0, MAX_SPREADS);
+  const add = (sets: TeamSet[], limit: number) => {
+    for (const set of sets) {
+      if (result.length >= limit) return;
+      const spread = { nature: set.nature, evs: set.evs, share: null };
+      if (!set.nature || seen.has(spreadKey(spread))) continue;
+      seen.add(spreadKey(spread));
+      result.push(spread);
+    }
+  };
+  add(own, MAX_SPREADS);
+  add(other, MIN_SPREADS);
+  return result;
 }
 
 /** Sotto questa quota d'uso una scelta non è "comune". */
@@ -70,7 +76,12 @@ export function commonChoices(data: EngineData, set: TeamSet): CommonChoices {
     : [battleName(set), set.species, base].map(name => findByName(data.fallbackStats ?? undefined, name)).find(Boolean);
   const entry = own ?? other;
   const source = other?.format ?? null;
-  const sets = presetsFor(data, set.species).map(p => p.set);
+  const presets = presetsFor(data, set.species);
+  const sets = presets.map(p => p.set);
+  // Set del formato scelto e di altri formati (questi ultimi solo per completare gli spread)
+  const ownFormats = new Set((findByName(data.presets ?? undefined, set.species) ?? []).map(p => p.format));
+  const ownSets = presets.filter(p => ownFormats.has(p.format)).map(p => p.set);
+  const otherSets = presets.filter(p => !ownFormats.has(p.format)).map(p => p.set);
   if (entry) {
     const natures: Record<string, number> = {};
     for (const [spread, share] of Object.entries(entry.spreads)) {
@@ -86,7 +97,7 @@ export function commonChoices(data: EngineData, set: TeamSet): CommonChoices {
       spreads: mergeSpreads(Object.entries(entry.spreads)
         .filter(([, share]) => share >= MIN_SHARE)
         .sort((a, b) => b[1] - a[1])
-        .map(([spread, share]) => ({ ...parseSpread(spread), share })), sets),
+        .map(([spread, share]) => ({ ...parseSpread(spread), share })), ownSets, otherSets),
       source,
     };
   }
@@ -96,7 +107,7 @@ export function commonChoices(data: EngineData, set: TeamSet): CommonChoices {
     natures: unique(sets.map(s => s.nature)),
     moves: unique(sets.flatMap(s => s.moves)),
     teraTypes: unique(sets.map(s => s.teraType ?? '')),
-    spreads: mergeSpreads([], sets),
+    spreads: mergeSpreads([], ownSets, otherSets),
     source: null,
   };
 }
