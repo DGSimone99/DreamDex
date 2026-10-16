@@ -38,7 +38,7 @@ function archetypeOf(team: TeamSet[]): Archetype {
   const roles = team.map(detectRoles);
   if (isStall(team, roles)) return 'stall';
   const passive = team.filter((set, i) => isPassive(set, roles[i])).length;
-  if (passive === 4) return 'semiStall';
+  if (passive === 4 || passive === 5) return 'semiStall';
   const healers = team.filter(heals).length;
   if (passive === 3 || (passive === 2 && healers >= 2)) return 'balance';
   const bulk = team.reduce((acc, set) => acc + (memberPower(set)?.bulk ?? 0), 0) / team.length;

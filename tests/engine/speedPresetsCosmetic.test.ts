@@ -5,7 +5,8 @@ import { getSpecies, isCosmeticForme } from '../../src/engine/dex';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
 import { EMPTY_FILTERS, searchCandidates } from '../../src/engine/filters';
 import { rateTeam } from '../../src/engine/rating';
-import { detectRoles, teamNeeds, teamRoles } from '../../src/engine/roles';
+import { detectRoles, teamRoles } from '../../src/engine/roles';
+import { teamNeeds } from '../../src/engine/needs';
 import { defaultSet, emptySet, presetsFor, sameSet, type TeamSet } from '../../src/engine/sets';
 import { fixtureData, tusk } from '../fixtures/data';
 

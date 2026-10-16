@@ -19,7 +19,7 @@ describe('coachTeam', () => {
   it('punti di forza', () => {
     expect(coaching.strengths).toEqual([
       'Gestisce bene Poison, Bug, Rock',
-      'Ruoli coperti: Rimozione hazard',
+      'Ruoli coperti: Rimozione hazard, Minaccia offensiva, Wall fisico',
       'Colpisce super efficace 15/18 tipi',
     ]);
   });
@@ -38,7 +38,7 @@ describe('coachTeam', () => {
       'Debole a Water: 1 Debole – 0 Resistono',
       'Debole a Ground: 1 Debole – 0 Resistono',
       'Debole a Ghost: 1 Debole – 0 Resistono',
-      'Ruoli mancanti: Hazard, Pivot, Controllo velocità',
+      'Ruoli mancanti: Hazard, Pivot, Wall speciale',
       'Nessuna mossa super efficace contro Water, Fighting',
     ]);
     const fire = coaching.problems.find(p => p.text.startsWith('Debole a Fire'))!;

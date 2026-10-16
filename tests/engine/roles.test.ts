@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { TeamSet } from '../../src/engine/sets';
-import { attackStyle, detectRoles, teamNeeds, teamRoles } from '../../src/engine/roles';
+import { attackStyle, detectRoles, teamRoles } from '../../src/engine/roles';
+import { teamNeeds } from '../../src/engine/needs';
 
 const set = (species: string, moves: string[], item = ''): TeamSet =>
   ({ species, ability: '', item, moves, nature: 'Serious', evs: {} });
@@ -46,11 +47,13 @@ describe('roles', () => {
   });
 
   it('bisogni del team', () => {
-    expect(teamNeeds([tusk, gholdengo])).toEqual({
-      missingRoles: ['hazards', 'pivot', 'speed', 'priority', 'physicalSweeper', 'specialSweeper', 'specialWall'],
-      needStyle: null,
-    });
-    expect(teamNeeds([tusk, kingambit]).needStyle).toBe('special');
+    // Team incompleto: si giudica come balance; Great Tusk e Gholdengo coprono rimozione, minaccia offensiva e wall fisico
+    expect(teamNeeds([tusk, gholdengo]).missing.map(m => m.need)).toEqual(['hazards', 'pivot', 'speed', 'priority', 'specialWall']);
+    expect(teamNeeds([tusk, gholdengo]).needStyle).toBeNull();
+    // Squilibrio solo con almeno 4 attaccanti tutti dello stesso tipo (come nel voto)
+    expect(teamNeeds([tusk, kingambit]).needStyle).toBeNull();
+    const physical = ['Great Tusk', 'Kingambit', 'Dragonite', 'Garchomp'].map(n => set(n, ['Earthquake', 'Close Combat']));
+    expect(teamNeeds(physical).needStyle).toBe('special');
   });
 });
 

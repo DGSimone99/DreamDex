@@ -8,7 +8,8 @@ import { diffContribution, similarity, type Contribution, type Diff } from './re
 import { t, type Lang } from '../i18n';
 import { gameName, typeName } from '../i18n/game';
 import { illegalParts } from './learnsets';
-import { detectRoles, ESSENTIAL_ROLES, isPassive, isStall, roleLabel, STALL_ROLES, teamRoles } from './roles';
+import { detectRoles, isPassive, isStall, roleLabel } from './roles';
+import { needLabel, NEED_ROLES } from './needs';
 import { scoreCandidates, type Suggestion } from './scoring';
 import { memberIssues, rateTeam, roleAndTypeRedundancies, weatherClashes } from './rating';
 import { benefits, conditionLabel, viaName, enables, neededConditions, providesAll, teamSynergies, unmetBeneficiaries, unusedEnablers } from './synergy';
@@ -85,8 +86,8 @@ function findStrengths(team: TeamSet[], analysis: TeamAnalysis, lang: Lang): str
   const strengths: string[] = [];
   const solid = analysis.weakness.filter(r => r.resist >= 2 && r.weak === 0).map(r => r.type);
   if (solid.length) strengths.push(t(lang, 'coach.strength.handles', { types: list(solid.map(type => typeName(type, lang))) }));
-  const present = new Set(team.flatMap(detectRoles));
-  const roles = ESSENTIAL_ROLES.filter(r => present.has(r)).map(r => roleLabel(r, lang));
+  // Ruoli essenziali per l'archetipo del team, coperti
+  const roles = analysis.needs.covered.filter(need => analysis.needs.weights[need] === 1).map(need => needLabel(need, lang));
   if (roles.length) strengths.push(t(lang, 'coach.strength.roles', { roles: list(roles) }));
   const synergies = teamSynergies(team, lang);
   if (synergies.length) strengths.push(t(lang, 'coach.strength.synergies', { list: synergies.join('; ') }));
@@ -140,15 +141,11 @@ function findProblems(team: TeamSet[], format: Format, data: EngineData, analysi
     add('rules', true, t(lang, 'coach.problem.megas', { list: list(megas.map(battleName)) }), []);
   }
 
-  // Uno stall non ha bisogno di pivot, priorità o velocità: si chiedono i suoi ruoli
-  const memberRoles = team.map(teamRoles);
-  const present = new Set(memberRoles.flat());
-  const missing = isStall(team, memberRoles)
-    ? STALL_ROLES.filter(r => !present.has(r))
-    : analysis.needs.missingRoles.filter(r => ESSENTIAL_ROLES.includes(r));
+  // Si chiedono solo i ruoli essenziali per l'archetipo del team (uno stall non ha bisogno di sweeper né di velocità)
+  const missing = analysis.needs.missing.filter(m => m.weight === 1).map(m => m.need);
   if (missing.length) {
-    add('roles', false, t(lang, 'coach.problem.missingRoles', { roles: list(missing.map(r => roleLabel(r, lang))) }),
-      fixesFor(candidates, s => s.facts.roles.filled.filter(r => missing.includes(r)).length));
+    add('roles', false, t(lang, 'coach.problem.missingRoles', { roles: list(missing.map(need => needLabel(need, lang))) }),
+      fixesFor(candidates, s => missing.filter(need => NEED_ROLES[need].some(role => s.facts.roles.filled.includes(role))).length));
   }
 
   for (const item of memberIssues(team, data, lang)) add('roles', false, item.text, []);

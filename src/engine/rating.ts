@@ -2,7 +2,8 @@ import { analyzeTeam, type TeamAnalysis } from './analysis';
 import type { EngineData } from './data';
 import { battleName, battleSpecies, toID } from './dex';
 import { hitQuality, memberPower, teamPower, type MemberPower } from './power';
-import { attackStyle, isPassive, isStall, roleCoverage, STALL_ROLES, teamRoles } from './roles';
+import { attackStyle, isPassive, isStall, teamRoles } from './roles';
+import { needCoverage } from './needs';
 import { usageOf } from './stats';
 import type { TeamSet } from './sets';
 import { t, type Lang } from '../i18n';
@@ -130,16 +131,19 @@ export const META_USAGE = 0.01;
 const ONE_STYLE_ATTACKERS = 4;
 
 /**
- * Membri deboli e poco usati nel formato (−3 ciascuno; servono le statistiche) e team senza attaccanti
+ * Membri deboli e poco usati nel formato (−3, −7, −12…; servono le statistiche) e team senza attaccanti
  * fisici o speciali (−3; mai per uno stall, che attacca poco per scelta).
  */
 export function memberIssues(team: TeamSet[], data: EngineData, lang: Lang = 'it'): Redundancy[] {
   const items: Redundancy[] = [];
   if (data.stats) {
+    // La penalità cresce col numero di membri deboli: −3, −7, −12… (il k-esimo pesa 2 + k)
+    let weak = 0;
     for (const set of team) {
       const power = memberPower(set);
       if (power && power.power < WEAK_POWER && usageOf(data.stats, battleName(set)) < META_USAGE) {
-        items.push({ text: t(lang, 'rating.redundancy.weakMember', { member: battleName(set) }), points: 3 });
+        weak += 1;
+        items.push({ text: t(lang, 'rating.redundancy.weakMember', { member: battleName(set) }), points: 2 + weak });
       }
     }
   }
@@ -224,9 +228,8 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
   const quality = (set: TeamSet, i: number, move: string) => (passive[i] ? 1 : hitQuality(set, move));
   const coverage = sum(TYPES.map(type => weights[type]
     * Math.max(0, ...team.flatMap((set, i) => superEffectiveMoves(set, type).map(move => quality(set, i, move))))));
-  const present = new Set(memberRoles.flat());
-  const usual = roleCoverage(present);
-  const roles = archetype ? (usual + STALL_ROLES.filter(r => present.has(r)).length / STALL_ROLES.length) / 2 : usual;
+  // Ruoli richiesti in base all'archetipo del team (uno stall non ha bisogno di sweeper, un hyper offense di wall)
+  const roles = needCoverage(analysis.needs);
   const power = teamPower(team, passive);
   const weightsFor = archetype ? STALL_AREA_WEIGHTS : AREA_WEIGHTS;
   const strength = power.value === null ? null : power.value / 100;

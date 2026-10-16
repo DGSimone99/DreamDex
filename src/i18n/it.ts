@@ -17,6 +17,8 @@ export const it: Record<keyof typeof en, string> = {
   'role.specialSweeper': "Sweeper speciale",
   'role.physicalWall': "Wall fisico",
   'role.specialWall': "Wall speciale",
+  'need.offense': "Minaccia offensiva",
+  'need.speed': "Velocità",
   'card.weather': "Meteo",
   'card.weatherTitle': "Porta {condition} ({via})",
   'roleShort.hazards': "Hazard",
