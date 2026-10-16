@@ -7,6 +7,7 @@ import { DEFAULT_FORMAT, type Format } from './engine/format';
 import { dataLabel, dataSource, teraAllowed } from './engine/formats';
 import { battleName } from './engine/dex';
 import { UndoToast, type UndoAction } from './ui/UndoToast';
+import { takeSharedTeam } from './share';
 import type { TeamSet } from './engine/sets';
 import { AnalysisPanel } from './ui/AnalysisPanel';
 import { GradeBadge } from './ui/RatingPanel';
@@ -39,7 +40,9 @@ export function App({ data: initialData, loadSource, storage, initialLang }: App
     if (storage) saveLang(lang, storage);
   }, [lang, storage]);
   const [session] = useState(() => (storage ? loadSession(storage) : null));
-  const [format, setFormat] = useState<Format>(session?.format ?? DEFAULT_FORMAT);
+  // Un link con un team (#team=...) vince sulla sessione salvata; quella resta recuperabile con Annulla
+  const [shared] = useState(takeSharedTeam);
+  const [format, setFormat] = useState<Format>(shared?.format ?? session?.format ?? DEFAULT_FORMAT);
   // Dati per fonte: ogni formato carica la sua la prima volta, poi resta in memoria.
   // Un caricamento finito tardi si salva sotto la sua fonte, quindi non tocca il formato attuale.
   const [cache, setCache] = useState<Record<string, EngineData>>({ [dataSource(DEFAULT_FORMAT)]: initialData });
@@ -52,7 +55,8 @@ export function App({ data: initialData, loadSource, storage, initialLang }: App
     loadSource(source).then(result => setCache(c => ({ ...c, [source]: result })));
   }, [source, cache, loadSource]);
   const data = cache[source] ?? NO_DATA;
-  const [team, setTeam] = useState<TeamSet[]>(session?.team ?? []);
+  const [initialTeam] = useState<TeamSet[]>(() => shared?.team ?? session?.team ?? []);
+  const [team, setTeam] = useState<TeamSet[]>(initialTeam);
   useEffect(() => {
     if (storage) saveSession({ team, format }, storage);
   }, [team, format, storage]);
@@ -81,7 +85,10 @@ export function App({ data: initialData, loadSource, storage, initialLang }: App
   };
   // Rimozioni e sostituzioni si possono annullare per qualche secondo
   // (vale finché il team resta quello lasciato dall'azione: un'altra modifica chiude l'avviso)
-  const [undo, setUndo] = useState<(UndoAction & { before: TeamSet[]; after: TeamSet[] }) | null>(null);
+  const [undo, setUndo] = useState<(UndoAction & { before: TeamSet[]; after: TeamSet[]; format?: Format }) | null>(() =>
+    shared && session?.team.length
+      ? { id: 0, kind: 'load', from: '', before: session.team, after: initialTeam, format: session.format }
+      : null);
   const undoId = useRef(0);
   const remember = (action: Omit<UndoAction, 'id'>, after: TeamSet[]) =>
     setUndo({ ...action, id: ++undoId.current, before: team, after });
@@ -98,7 +105,7 @@ export function App({ data: initialData, loadSource, storage, initialLang }: App
     <LangProvider lang={lang}>
     <div className="app">
       <TopBar format={format} onFormatChange={setFormat} meta={data.stats?.meta ?? null} lang={lang} onLangChange={setLang}>
-        <ShowdownPanel team={team} tera={teraAllowed(format)} onImport={changeTeam} />
+        <ShowdownPanel team={team} format={format} tera={teraAllowed(format)} onImport={changeTeam} />
         <SavedTeams team={team} format={format} onLoad={(loaded, savedFormat) => { changeTeam(loaded); if (savedFormat) setFormat(savedFormat); }} />
       </TopBar>
       {loading && <p className="banner info">{t(lang, 'app.loading')}</p>}
@@ -132,7 +139,7 @@ export function App({ data: initialData, loadSource, storage, initialLang }: App
       </main>
       {undo && undo.after === team && (
         <UndoToast action={undo} onClose={() => setUndo(null)}
-          onUndo={() => { changeTeam(undo.before); setUndo(null); }} />
+          onUndo={() => { changeTeam(undo.before); if (undo.format) setFormat(undo.format); setUndo(null); }} />
       )}
     </div>
     </LangProvider>

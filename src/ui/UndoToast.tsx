@@ -7,7 +7,8 @@ import { PokemonIcon } from './PokemonName';
 export interface UndoAction {
   /** Cambia a ogni nuova azione: riparte il tempo. */
   id: number;
-  kind: 'remove' | 'replace';
+  /** Membro rimosso o sostituito, o team caricato da un link. */
+  kind: 'remove' | 'replace' | 'load';
   from: string;
   to?: string;
 }
@@ -53,6 +54,7 @@ export function UndoToast({ action, onUndo, onClose }: { action: UndoAction; onU
       onBlur={e => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) resume(); }}
     >
       <p className="undo-text">
+        {action.kind === 'load' ? t('undo.loaded') : <>
         <PokemonIcon name={action.from} />
         <strong>{action.from}</strong>{' '}
         {action.kind === 'remove' ? t('undo.removed') : (
@@ -62,6 +64,7 @@ export function UndoToast({ action, onUndo, onClose }: { action: UndoAction; onU
             <strong>{action.to}</strong>
           </>
         )}
+        </>}
       </p>
       <div className="undo-actions">
         <button type="button" className="undo-button" onClick={onUndo}><Icon name="undo" /> {t('undo.undo')}</button>
