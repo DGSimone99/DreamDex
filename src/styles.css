@@ -452,6 +452,10 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 .swap-head small { font-size: 12px; color: var(--faint); }
 .swap-head .gain.worse { color: var(--bad); }
 .swap-head .gain.same { color: var(--muted); }
+.coach .team-type { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; margin: 2px 0 10px; }
+.coach .team-type-label { font: 700 13px/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.coach .team-type strong { font: 700 18px/1 var(--display); letter-spacing: 0.03em; text-transform: uppercase; color: var(--text); cursor: help; }
+.coach .team-style { font-size: 12px; font-weight: 600; padding: 1px 7px; border-radius: 3px; border: 1px solid var(--line); color: var(--muted); cursor: help; }
 .swap-head .gain-unit { margin-left: 3px; font: 600 12px/1 var(--ui); color: var(--faint); }
 .swap-head .picked-tag { padding: 1px 6px; border-radius: 3px; background: var(--blue-soft); color: var(--text); font-weight: 600; }
 .pros-cons { grid-column: 1; display: grid; gap: 2px; font-size: 14px; }

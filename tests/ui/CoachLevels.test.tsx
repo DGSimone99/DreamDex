@@ -11,6 +11,7 @@ import { renderIt } from '../helpers/italian';
 const base = { index: 0, fit: 40, score: 60, similar: false, ratingGain: 8, diff: { gains: { roles: [], covers: [], resists: [] }, losses: { roles: [], covers: [], resists: [] } } };
 const coaching: Coaching = {
   verdict: 'Team solido',
+  teamType: { archetype: 'balance', styles: ['rain'] },
   threatFixes: {},
   strengths: [],
   problems: [],
@@ -88,5 +89,19 @@ describe('interruttore "Più Mega ammesse"', () => {
     for (const name of ['Lopunny-Mega', 'Charizard-Mega-Y']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
     await user.click(screen.getByRole('button', { name: "Lo so, tengo un'altra Mega" }));
     expect(screen.getByRole('checkbox', { name: 'Più Mega ammesse' })).toBeChecked();
+  });
+});
+
+describe('tipo di team', () => {
+  it('archetipo e stili in cima al coaching, con la descrizione come tooltip', () => {
+    renderIt(<CoachPanel coaching={coaching} onReplace={vi.fn()} />);
+    expect(screen.getByText('Tipo di team')).toBeInTheDocument();
+    expect(screen.getByText('Balance')).toHaveAttribute('title', 'Muri e attaccanti in equilibrio');
+    expect(screen.getByText('Pioggia')).toHaveAttribute('title', 'Un membro porta la pioggia e almeno un compagno la sfrutta');
+  });
+
+  it('senza team completo non compare', () => {
+    renderIt(<CoachPanel coaching={{ ...coaching, teamType: null }} onReplace={vi.fn()} />);
+    expect(screen.queryByText('Tipo di team')).toBeNull();
   });
 });
