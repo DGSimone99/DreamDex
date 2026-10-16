@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react';
 import { activeFilterCount, EMPTY_FILTERS, MAX_TYPES, type CandidateFilters, type Inclusion } from '../engine/filters';
+import { FIT_ARCHETYPES, type FitArchetype } from '../engine/archetype';
 import { DESIRABLE_ROLES, ESSENTIAL_ROLES, roleLabel, type Role } from '../engine/roles';
 import { CONDITIONS, conditionName, type Condition } from '../engine/synergy';
 import { TYPES, type TypeName } from '../engine/types';
@@ -111,6 +112,13 @@ export function FilterBar({ filters, onChange }: Props) {
           <select aria-label={t('filters.benefits')} value={filters.benefitsFrom} onChange={e => set({ benefitsFrom: e.target.value as Condition | '' })}>
             <option value="">{t('filters.any')}</option>
             {CONDITIONS.map(c => <option key={c} value={c}>{conditionName(c, lang)}</option>)}
+          </select>
+        </label>
+        <label className="control">
+          <span className="control-label">{t('filters.fits')}</span>
+          <select aria-label={t('filters.fits')} title={t('filters.fitsTitle')} value={filters.fitsArchetype} onChange={e => set({ fitsArchetype: e.target.value as FitArchetype | '' })}>
+            <option value="">{t('filters.any')}</option>
+            {FIT_ARCHETYPES.map(a => <option key={a} value={a}>{t(`archetype.${a}`)}</option>)}
           </select>
         </label>
         <label className="control">

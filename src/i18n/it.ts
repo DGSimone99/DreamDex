@@ -375,6 +375,8 @@ export const it: Record<keyof typeof en, string> = {
   'filters.role': "Ruolo",
   'filters.sets': "Imposta",
   'filters.benefits': "Sfrutta",
+  'filters.fits': "Adatto a",
+  'filters.fitsTitle': "Pokémon adatti a un team di questo tipo, con il loro set di riferimento",
   'filters.any': "Qualsiasi",
   'filters.tier': "Tier",
   'filters.tier.all': "Tutti",

@@ -373,6 +373,8 @@ export const en = {
   'filters.role': "Role",
   'filters.sets': "Sets",
   'filters.benefits': "Benefits from",
+  'filters.fits': "Fits",
+  'filters.fitsTitle': "Pokémon that fit a team of this kind, with their reference set",
   'filters.any': "Any",
   'filters.tier': "Tier",
   'filters.tier.all': "All",

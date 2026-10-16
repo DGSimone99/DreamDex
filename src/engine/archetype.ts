@@ -59,6 +59,31 @@ function conditionStyles(team: TeamSet[]): TeamStyle[] {
     .map(([, style]) => style);
 }
 
+/** Archetipi per cui ha senso cercare un singolo Pokémon (Balance: ci rientrerebbero quasi tutti). */
+export type FitArchetype = 'stall' | 'hyperOffense' | 'bulkyOffense';
+export const FIT_ARCHETYPES: FitArchetype[] = ['stall', 'hyperOffense', 'bulkyOffense'];
+/** Offesa (percentile) da cui un membro passivo è un attaccante (Kyurem con Roost), non un muro da stall. */
+const STALL_MAX_OFFENSE = 85;
+/** Offesa minima di un attaccante veloce da Hyper Offense. */
+const FAST_ATTACKER_OFFENSE = 65;
+/** Offesa e robustezza minime di un membro da Bulky Offense. */
+const BULKY_MEMBER = 60;
+
+/** Il Pokémon, col suo set, è adatto a un team dell'archetipo dato. */
+export function fitsArchetype(set: TeamSet, archetype: FitArchetype): boolean {
+  const power = memberPower(set);
+  if (!power) return false;
+  const roles = detectRoles(set);
+  const stall = isPassive(set, roles) && power.offense < STALL_MAX_OFFENSE;
+  if (archetype === 'stall') return stall;
+  if (stall) return false;
+  if (archetype === 'bulkyOffense') return power.offense >= BULKY_MEMBER && power.bulk >= BULKY_MEMBER;
+  const fast = (battleSpecies(set)?.baseStats.spe ?? 0) >= 100 || toID(set.item) === 'choicescarf';
+  const sweeper = roles.includes('physicalSweeper') || roles.includes('specialSweeper');
+  const lead = toID(set.item) === 'focussash' && roles.includes('hazards');
+  return (sweeper && (fast || roles.includes('setup'))) || (power.offense >= FAST_ATTACKER_OFFENSE && fast) || lead;
+}
+
 /** Tipo di team con archetipo e stili, solo per un team completo. */
 export function teamArchetype(team: TeamSet[]): TeamArchetype | null {
   if (team.length < 6 || team.some(set => !battleSpecies(set))) return null;

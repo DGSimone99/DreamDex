@@ -46,6 +46,17 @@ describe('ricerca e filtri nei suggerimenti', () => {
     await waitFor(() => expect(cardNames().length).toBeGreaterThan(2));
   });
 
+  it('"Adatto a": solo Pokémon adatti all\'archetipo scelto, e si azzera con gli altri filtri', async () => {
+    const user = await setup('Great Tusk');
+    await user.selectOptions(screen.getByLabelText('Uso nel meta'), 'common');
+    await user.selectOptions(screen.getByLabelText('Adatto a'), 'stall');
+    await waitFor(() => expect(cardNames()).toContain('Toxapex'));
+    expect(cardNames()).not.toContain('Iron Valiant');
+    expect(within(suggestions()).getByText('Filtri (2 attivi)')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Azzera filtri' }));
+    expect(screen.getByLabelText('Adatto a')).toHaveValue('');
+  });
+
   it('al massimo due tipi: gli altri si disattivano', async () => {
     const user = await setup('Great Tusk');
     const types = within(screen.getByRole('group', { name: 'Tipo' }));
