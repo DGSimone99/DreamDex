@@ -60,7 +60,7 @@ export interface Session {
 const SESSION_KEY = 'dreamdex.session';
 
 /** Ricostruisce un formato valido da dati salvati (campi sconosciuti o errati tornano ai valori di default). */
-function sanitizeFormat(raw: unknown): Format {
+export function sanitizeFormat(raw: unknown): Format {
   const f = (typeof raw === 'object' && raw !== null ? raw : {}) as Partial<Format>;
   return {
     formatId: formatOptions().some(o => o.id === f.formatId) ? f.formatId! : DEFAULT_FORMAT.formatId,
@@ -72,7 +72,7 @@ function sanitizeFormat(raw: unknown): Format {
   };
 }
 
-const isTeamSet = (value: unknown): value is TeamSet =>
+export const isTeamSet = (value: unknown): value is TeamSet =>
   typeof value === 'object' && value !== null && typeof (value as TeamSet).species === 'string'
   && Array.isArray((value as TeamSet).moves);
 

@@ -414,9 +414,15 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 .note strong { color: var(--text); }
 
 .rating .grade { display: flex; align-items: baseline; gap: 12px; margin: 0 0 10px; color: var(--muted); }
-.rating .grade strong { font: 700 44px/1 var(--display); color: var(--gold); }
-.rating .grade-C strong { color: var(--warn); }
-.rating .grade-D strong { color: var(--bad); }
+/* Il punteggio resta sulla linea della lettera; il triangolo gli sta sopra, come un apostrofo della lettera */
+.rating .grade-side { position: relative; }
+.rating .grade .grade-alert { position: absolute; left: -1.5px; bottom: 100%; margin-bottom: 1px; padding: 0; } /* -1.5px: margine interno del disegno */
+.rating .grade .grade-alert .icon { width: 18px; height: 18px; }
+.rating .grade .grade-alert .alert-pop { font: 400 13px/1.45 var(--ui); color: var(--text); text-transform: none; letter-spacing: 0; }
+.rating .rating-note { margin: -4px 0 10px; font-size: 13px; color: var(--muted); }
+.rating .grade > strong { font: 700 44px/1 var(--display); color: var(--gold); }
+.rating .grade-C > strong { color: var(--warn); }
+.rating .grade-D > strong { color: var(--bad); }
 .rating .bars { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 20px; margin: 0 0 8px; }
 .rating .bars dt { font-size: 13px; color: var(--muted); margin-bottom: 4px; }
 .rating .area-link { padding: 0; border: 0; background: none; font: inherit; color: inherit; cursor: pointer; border-bottom: 1px dotted var(--faint); border-radius: 0; }
@@ -998,3 +1004,34 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 }
 .undo-toast:hover .undo-timer, .undo-toast:focus-within .undo-timer { animation-play-state: paused; }
 @keyframes undo-timer { to { transform: scaleX(0); } }
+
+/* Velocità finale e posto nel meta, sotto gli EV; i vicini nel tooltip */
+.speed-line { grid-column: 1 / -1; margin: 2px 0 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; font-size: 13px; font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--muted); }
+.speed-line strong { font: 700 16px/1 var(--display); color: var(--text); font-variant-numeric: tabular-nums; }
+.speed-scarf { font-size: 11px; color: var(--faint); }
+.speed-rank { position: relative; color: var(--text); border-bottom: 1px dotted var(--faint); cursor: help; }
+.speed-rank:focus-visible { outline: none; border-bottom-color: var(--blue); }
+.speed-pop {
+  position: absolute;
+  z-index: 60;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 260px;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  background: var(--ground);
+  border: 1px solid var(--line);
+  border-top: 2px solid var(--blue);
+  border-radius: 4px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+  cursor: default;
+}
+.speed-pop { display: flex; animation: tip 0.15s var(--ease); }
+.speed-group { display: flex; flex-direction: column; gap: 3px; }
+.speed-group-title { font: 700 12px/1 var(--display); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 2px; }
+.speed-rival { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text); }
+.speed-rival .mon-icon { margin: -8px -4px -6px -6px; }
+.speed-rival-value { margin-left: auto; font-weight: 700; font-variant-numeric: tabular-nums; }
+.speed-self { margin: 0 -8px; padding: 3px 8px; background: var(--blue-soft); border-radius: 3px; font-weight: 700; }
+.speed-note { font-size: 11px; color: var(--faint); }

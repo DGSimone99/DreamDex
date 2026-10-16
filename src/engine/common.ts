@@ -1,7 +1,7 @@
 import type { EngineData } from './data';
-import { battleName, dex, getMove } from './dex';
+import { battleName, dex, getMove, getSpecies } from './dex';
 import { parseSpread, presetsFor, STAT_IDS, type StatID, type TeamSet } from './sets';
-import { statsEntry } from './stats';
+import { findByName, statsEntry } from './stats';
 
 /** Una scelta frequente: quota d'uso nel formato, o null se viene dai preset Smogon. */
 export interface CommonChoice {
@@ -23,10 +23,12 @@ export interface CommonChoices {
   moves: CommonChoice[];
   teraTypes: CommonChoice[];
   spreads: CommonSpread[];
+  /** Formato da cui vengono le quote, se non è quello scelto (es. un Pokémon vietato: "gen9nationaldexubers"). */
+  source: string | null;
 }
 
 /** Quanti spread pronti proporre. */
-const MAX_SPREADS = 5;
+const MAX_SPREADS = 6;
 
 const spreadKey = (s: { nature: string; evs: Partial<Record<StatID, number>> }) =>
   `${s.nature}:${STAT_IDS.map(stat => s.evs[stat] ?? 0).join('/')}`;
@@ -61,7 +63,13 @@ const unique = (names: string[]): CommonChoice[] =>
  * (della forma in battaglia se ne ha, es. la Mega), altrimenti dai preset Smogon.
  */
 export function commonChoices(data: EngineData, set: TeamSet): CommonChoices {
-  const entry = statsEntry(data.stats, battleName(set)) ?? statsEntry(data.stats, set.species);
+  // Prima il formato scelto; poi quello in cui il Pokémon è più giocato (forma in battaglia, specie, forma base)
+  const own = statsEntry(data.stats, battleName(set)) ?? statsEntry(data.stats, set.species);
+  const base = getSpecies(set.species)?.baseSpecies ?? set.species;
+  const other = own ? undefined
+    : [battleName(set), set.species, base].map(name => findByName(data.fallbackStats ?? undefined, name)).find(Boolean);
+  const entry = own ?? other;
+  const source = other?.format ?? null;
   const sets = presetsFor(data, set.species).map(p => p.set);
   if (entry) {
     const natures: Record<string, number> = {};
@@ -79,6 +87,7 @@ export function commonChoices(data: EngineData, set: TeamSet): CommonChoices {
         .filter(([, share]) => share >= MIN_SHARE)
         .sort((a, b) => b[1] - a[1])
         .map(([spread, share]) => ({ ...parseSpread(spread), share })), sets),
+      source,
     };
   }
   return {
@@ -88,5 +97,6 @@ export function commonChoices(data: EngineData, set: TeamSet): CommonChoices {
     moves: unique(sets.flatMap(s => s.moves)),
     teraTypes: unique(sets.map(s => s.teraType ?? '')),
     spreads: mergeSpreads([], sets),
+    source: null,
   };
 }

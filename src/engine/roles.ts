@@ -16,6 +16,16 @@ export const roleLabel = (role: Role, lang: Lang = 'it'): string => t(lang, `rol
 
 export const ESSENTIAL_ROLES: Role[] = ['hazards', 'removal', 'pivot', 'priority', 'speed'];
 export const DESIRABLE_ROLES: Role[] = ['wallbreaker', 'physicalSweeper', 'specialSweeper', 'physicalWall', 'specialWall'];
+/** Ruoli di cui uno stall ha bisogno: niente priorità, velocità o sweeper, per scelta. */
+export const STALL_ROLES: Role[] = ['hazards', 'removal', 'physicalWall', 'specialWall'];
+const WALLS: Role[] = ['physicalWall', 'specialWall'];
+const ATTACKERS: Role[] = ['wallbreaker', 'physicalSweeper', 'specialSweeper'];
+
+/** Stall: almeno 4 muri e al massimo un attaccante (ruoli di ogni membro). */
+export function isStall(roles: Role[][]): boolean {
+  return roles.filter(r => r.some(x => WALLS.includes(x))).length >= 4
+    && roles.filter(r => r.some(x => ATTACKERS.includes(x))).length <= 1;
+}
 
 const HAZARD_MOVES = new Set(['stealthrock', 'spikes', 'toxicspikes', 'stickyweb', 'stoneaxe', 'ceaselessedge']);
 const REMOVAL_MOVES = new Set(['defog', 'rapidspin', 'mortalspin', 'tidyup', 'courtchange']);
