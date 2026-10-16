@@ -278,7 +278,7 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 .set-editor fieldset { margin: 0; padding: 10px 14px 14px; border: 1px solid var(--line); border-radius: 4px; background: var(--panel); }
 .set-editor legend { font: 700 14px var(--display); text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); padding: 0 6px; }
 .editor-group { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 14px; }
-.set-editor .field-note { font-size: 12px; font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--faint); }
+.set-editor .field-note { font-size: 11px; font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--faint); }
 .set-editor .evs { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; }
 /* Spread pronti: un clic imposta natura ed EV; stesso linguaggio dorato dei "Più usati" */
 .spread-panel { grid-column: 1 / -1; }
@@ -968,7 +968,7 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
   translate: -50% 0;
   min-width: 300px;
   max-width: calc(100vw - 32px);
-  padding: 12px 44px 14px 16px;
+  padding: 18px 44px 20px;
   overflow: hidden;
   background: var(--panel);
   border: 1px solid var(--line);
@@ -980,9 +980,11 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .undo-text strong { color: var(--text); font-weight: 700; }
 .undo-text .mon-icon { margin: -8px -4px -6px -6px; }
 .undo-text .icon { width: 16px; height: 16px; color: var(--faint); }
-.undo-actions { margin-top: 8px; }
-.undo-actions button:first-child { padding: 4px 14px; }
-.undo-toast .undo-close { position: absolute; top: 8px; right: 8px; padding: 2px; border: 0; background: none; color: var(--faint); }
+.undo-text { justify-content: center; }
+.undo-actions { margin-top: 12px; display: flex; justify-content: center; }
+.undo-button { display: inline-flex; align-items: center; gap: 6px; padding: 5px 16px; }
+.undo-button .icon { width: 16px; height: 16px; }
+.undo-toast .undo-close { position: absolute; top: 10px; right: 10px; padding: 2px; border: 0; background: none; color: var(--faint); }
 .undo-toast .undo-close:hover { color: var(--text); }
 .undo-timer {
   position: absolute;

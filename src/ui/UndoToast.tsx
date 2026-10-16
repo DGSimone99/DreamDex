@@ -64,7 +64,7 @@ export function UndoToast({ action, onUndo, onClose }: { action: UndoAction; onU
         )}
       </p>
       <div className="undo-actions">
-        <button type="button" onClick={onUndo}>{t('undo.undo')}</button>
+        <button type="button" className="undo-button" onClick={onUndo}><Icon name="undo" /> {t('undo.undo')}</button>
         <button type="button" className="undo-close" aria-label={t('undo.close')} onClick={onClose}><Icon name="close" /></button>
       </div>
       <span className="undo-timer" aria-hidden="true" style={{ animationDuration: `${UNDO_MS}ms` }} />

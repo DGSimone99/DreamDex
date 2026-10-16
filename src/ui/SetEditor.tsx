@@ -240,11 +240,13 @@ export function SetEditor({ set, presets = [], genLimit, common, teraBannedIn, o
             onChange={nature => update({ nature })} />
         </div>
         <div className="field">
-          <span className="field-head">{t('editor.tera')}</span>
+          <span className="field-head">
+            {t('editor.tera')}
+            {teraBannedIn && <small className="field-note">{t('editor.teraBanned', { format: teraBannedIn })}</small>}
+          </span>
           <Combobox label={t('editor.tera')} value={set.teraType ?? ''} options={teraOptions} restricted disabled={!!teraBannedIn}
             display={set.teraType ? <TypeChip type={set.teraType} /> : <span className="faint">{t('editor.none')}</span>}
             onChange={tera => update({ teraType: tera || undefined })} />
-          {teraBannedIn && <small className="field-note">{t('editor.teraBanned', { format: teraBannedIn })}</small>}
         </div>
       </fieldset>
       <fieldset className="editor-group moves">
