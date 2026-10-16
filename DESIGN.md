@@ -201,7 +201,7 @@ A night-navy broadcast palette: four navy steps over an ink ground, one gold res
 The 18 classic type colours (Normal #A8A878 … Fairy #EE99AC, defined in the Sprite module) are content, not theme. They appear as solid chips with dark or white ink chosen by luminance, as the team card's bottom stripe, as the type dot before Pokémon names, as tinted filter buttons, and as type words in running text, where each colour is lightened toward white until it reaches a contrast of at least 6:1 on Navy Panel.
 
 ### Named Rules
-**The Trophy Rule.** Gold is the grade and the #1 suggestion (row and its + button). No other call to action is gold; gold elsewhere only marks focus or selection.
+**The Trophy Rule.** Gold is the grade and the #1 suggestion (row and its + button). No other call to action is gold; gold elsewhere only marks focus or selection, plus one approved exception: the "Most used" markers in the set editor (a gold left rule, faint gold wash and the usage share on the most used items, abilities, natures, moves, Tera types and ready EV spreads).
 
 **The Status Means Status Rule.** Red, yellow and green never decorate. Red is a legality or serious problem, yellow is "check this", green is a strength or a gain.
 
@@ -255,9 +255,9 @@ Flat by default. Depth is tonal: Ink Ground, then Navy Band, then Navy Panel, th
 
 ## Shapes
 
-Small, square-ish corners: 2px for chips and meters, 3px for tags and badges, 4px for controls and tooltips, 6px for blocks and the board, 14px only for filter pills. Alert marks on sprites are circles. The single expressive shape is the slant: team cards are parallelograms (skewX -8deg) drawn by a pseudo-element so their content stays upright. Empty slots repeat the slant with a 2px dashed Navy Line outline. Chevrons are drawn as two-sided 2px borders rotated 45deg, pointing down closed and up open.
+Small, square-ish corners: 2px for chips and meters, 3px for tags and badges, 4px for controls and tooltips, 6px for blocks and the board, 14px only for filter pills. Alert marks on sprites are circles. The single expressive shape is the slant: team cards are parallelograms (skewX -8deg around their bottom edge, so the first and last cards' bottom corners line up with the set drawer below) drawn by a pseudo-element so their content stays upright. Empty slots repeat the slant with a 2px dashed Navy Line outline. Chevrons are drawn as two-sided 2px borders rotated 45deg, pointing down closed and up open.
 
-**The One Slant Rule.** Only team cards are slanted. Do not skew blocks, buttons or board rows.
+**The One Slant Rule.** Only team cards are slanted, together with the small shapes inside them that sit on the slanted edge (the Stats badge and the type chips, drawn as parallelograms with the same -8deg). Do not skew blocks, buttons or board rows.
 
 ## Components
 
@@ -289,11 +289,12 @@ Small, square-ish corners: 2px for chips and meters, 3px for tags and badges, 4p
 The top bar is the only navigation: logo, format, gen limit, usage threshold, Avanzate and Import / Export popovers, saved teams, and the stats month at the right. Popovers open below on Navy Raised with the Float shadow.
 
 ### Team Card (signature)
-A slanted Navy Raised parallelogram, 214px tall: Stats badge top-left, favourite and remove top-right, centred 96px pixelated sprite with round alert marks at its lower right, then name, item (with its 18px item icon), ability, type chips and roles. A 5px bottom stripe in the type colour, split half and half for dual types. Hover lightens the fill. Selected: the card lifts 4px with the Lift shadow, the sprite scales 1.12, and the stripe turns Trophy Gold; the set drawer opens beneath with a 3px gold top rule.
+A slanted Navy Raised parallelogram, 214px tall: Custom Skillset lock top-left, favourite and remove top-right, centred 96px pixelated sprite with round alert marks at its lower right, then the Stats badge on its own row, name, item (with its 18px item icon), ability, type chips and roles. Every row keeps the same 14px gap from the slanted left edge (measured, so it stays exact when a long name makes the card taller); the sprite stays centred within the slant. Holding a Mega Stone (or Ultranecrozium Z) the card shows the battle forme's name and ability. A 5px bottom stripe in the type colour, split half and half for dual types. Hover lightens the fill. Selected: the card lifts 4px with the Lift shadow, the sprite scales 1.12 and plays its animated idle (Showdown gen5ani, static under reduced motion or when missing), and the stripe turns Trophy Gold; the set drawer opens beneath with a 3px gold top rule.
 
 ### Issue Marks
 - **Red triangle:** a legality problem. **Yellow triangle:** needs checking (second Mega, illegal moves or ability). Both can sit on the same sprite.
-- **Blue unlock:** Custom Skillset; informational, placed above the start of the name, not a problem.
+- **Blue unlock:** Custom Skillset; informational, placed in the card's top-left corner, not a problem.
+- **Rules warning on the grade:** when members break the format's rules (banned, Monotype, gen limit, too many Megas, illegal moves or ability), a red triangle sits right above the score in the Valutazione block, starting where the score starts, like an apostrophe to the grade letter; its tooltip lists the reasons.
 - Every mark is focusable and opens a tooltip listing each reason.
 - **Summaries:** red and blue triangles with counts (serious and minor); zero counts are hidden. Problem cards get a thin 1px outline in their colour so the selection stays the most visible state.
 
