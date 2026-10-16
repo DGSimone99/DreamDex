@@ -47,7 +47,7 @@ describe('roles', () => {
 
   it('bisogni del team', () => {
     expect(teamNeeds([tusk, gholdengo])).toEqual({
-      missingRoles: ['hazards', 'pivot', 'priority', 'speed', 'physicalSweeper', 'specialSweeper', 'specialWall'],
+      missingRoles: ['hazards', 'pivot', 'speed', 'priority', 'physicalSweeper', 'specialSweeper', 'specialWall'],
       needStyle: null,
     });
     expect(teamNeeds([tusk, kingambit]).needStyle).toBe('special');

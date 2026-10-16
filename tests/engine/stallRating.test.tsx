@@ -30,8 +30,8 @@ describe('team stall', () => {
   it('riconosciuto: ruoli a metà tra la valutazione normale e quella da stall', () => {
     const rating = rateTeam(stall, fixtureData)!;
     expect(rating.archetype).toBe('stall');
-    // normale: 2 essenziali su 5 + 2 desiderabili su 5 (a metà peso) → 40; da stall: tutti → 100; a metà → 70
-    expect(rating.areas.find(a => a.key === 'roles')!.value).toBe(70);
+    // normale: Hazard e Rimozione (1 + 1) + i due Wall (0,5 + 0,5) su 6,5 → 46; da stall: tutti → 100; a metà → 73
+    expect(rating.areas.find(a => a.key === 'roles')!.value).toBe(73);
   });
 
   it('un team normale non è stall e non cambia', () => {

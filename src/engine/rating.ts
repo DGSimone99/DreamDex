@@ -2,7 +2,7 @@ import { analyzeTeam, type TeamAnalysis } from './analysis';
 import type { EngineData } from './data';
 import { battleName, battleSpecies, toID } from './dex';
 import { hitQuality, memberPower, teamPower, type MemberPower } from './power';
-import { attackStyle, DESIRABLE_ROLES, ESSENTIAL_ROLES, isPassive, isStall, STALL_ROLES, teamRoles } from './roles';
+import { attackStyle, isPassive, isStall, roleCoverage, STALL_ROLES, teamRoles } from './roles';
 import { usageOf } from './stats';
 import type { TeamSet } from './sets';
 import { t, type Lang } from '../i18n';
@@ -225,8 +225,7 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
   const coverage = sum(TYPES.map(type => weights[type]
     * Math.max(0, ...team.flatMap((set, i) => superEffectiveMoves(set, type).map(move => quality(set, i, move))))));
   const present = new Set(memberRoles.flat());
-  const usual = (ESSENTIAL_ROLES.filter(r => present.has(r)).length + 0.5 * DESIRABLE_ROLES.filter(r => present.has(r)).length)
-    / (ESSENTIAL_ROLES.length + 0.5 * DESIRABLE_ROLES.length);
+  const usual = roleCoverage(present);
   const roles = archetype ? (usual + STALL_ROLES.filter(r => present.has(r)).length / STALL_ROLES.length) / 2 : usual;
   const power = teamPower(team, passive);
   const weightsFor = archetype ? STALL_AREA_WEIGHTS : AREA_WEIGHTS;

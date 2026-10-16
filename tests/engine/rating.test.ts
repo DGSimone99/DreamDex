@@ -41,8 +41,8 @@ describe('rateTeam', () => {
   it('aree calcolate sulla fixture', () => {
     expect(value(rating, 'defense')).toBe(73);
     expect(value(rating, 'coverage')).toBe(81);
-    // Gholdengo con Nasty Plot è lento: wallbreaker, non sweeper
-    expect(value(rating, 'roles')).toBe(27);
+    // Rimozione (1) + Wallbreaker e Wall fisico (0,5 + 0,5) su 6,5; Gholdengo con Nasty Plot è lento: niente sweeper
+    expect(value(rating, 'roles')).toBe(31);
     // Forza dalle statistiche base: media dei membri, indipendente dall'uso nel meta
     expect(value(rating, 'strength')).toBe(teamPower([tusk, gholdengo]).value);
   });

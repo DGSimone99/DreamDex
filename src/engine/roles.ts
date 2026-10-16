@@ -17,8 +17,30 @@ export const roleLabel = (role: Role, lang: Lang = 'it'): string => t(lang, `rol
 /** Nome breve del ruolo, per le carte del team (il nome completo va nel tooltip). */
 export const roleShortLabel = (role: Role, lang: Lang = 'it'): string => t(lang, `roleShort.${role}`);
 
-export const ESSENTIAL_ROLES: Role[] = ['hazards', 'removal', 'pivot', 'priority', 'speed'];
-export const DESIRABLE_ROLES: Role[] = ['wallbreaker', 'physicalSweeper', 'specialSweeper', 'physicalWall', 'specialWall'];
+/** Ruoli essenziali: presenti in quasi tutti i team forti (campioni Smogon). */
+export const ESSENTIAL_ROLES: Role[] = ['hazards', 'removal', 'pivot', 'speed'];
+/** Ruoli utili: pesano la metà. La priorità manca in metà dei team forti: la sua assenza non è un difetto. */
+export const DESIRABLE_ROLES: Role[] = ['wallbreaker', 'priority', 'physicalSweeper', 'specialSweeper', 'physicalWall', 'specialWall'];
+
+/**
+ * Come si contano i ruoli nel voto: ogni gruppo è soddisfatto da uno qualunque dei suoi ruoli.
+ * Uno sweeper fisico o speciale basta (lo squilibrio fisico/speciale ha la sua penalità).
+ */
+export const ROLE_GROUPS: { roles: Role[]; weight: number }[] = [
+  ...ESSENTIAL_ROLES.map(role => ({ roles: [role], weight: 1 })),
+  { roles: ['wallbreaker'], weight: 0.5 },
+  { roles: ['priority'], weight: 0.5 },
+  { roles: ['physicalSweeper', 'specialSweeper'], weight: 0.5 },
+  { roles: ['physicalWall'], weight: 0.5 },
+  { roles: ['specialWall'], weight: 0.5 },
+];
+
+/** Quota (0–1) dei ruoli coperti dal team, pesata per gruppi. */
+export function roleCoverage(present: Set<Role>): number {
+  const total = ROLE_GROUPS.reduce((acc, g) => acc + g.weight, 0);
+  const covered = ROLE_GROUPS.filter(g => g.roles.some(role => present.has(role))).reduce((acc, g) => acc + g.weight, 0);
+  return covered / total;
+}
 /** Ruoli di cui uno stall ha bisogno: niente priorità, velocità o sweeper, per scelta. */
 export const STALL_ROLES: Role[] = ['hazards', 'removal', 'physicalWall', 'specialWall'];
 const WALLS: Role[] = ['physicalWall', 'specialWall'];
@@ -129,7 +151,8 @@ export interface TeamNeeds {
 
 export function teamNeeds(team: TeamSet[]): TeamNeeds {
   const present = new Set(team.flatMap(teamRoles));
-  const missingRoles = [...ESSENTIAL_ROLES, ...DESIRABLE_ROLES].filter(role => !present.has(role));
+  // Mancano i ruoli dei gruppi non coperti: con uno sweeper fisico, lo speciale non manca
+  const missingRoles = ROLE_GROUPS.filter(g => !g.roles.some(role => present.has(role))).flatMap(g => g.roles);
   const styles = team.map(attackStyle);
   const physical = styles.filter(s => s === 'physical').length;
   const special = styles.filter(s => s === 'special').length;

@@ -38,7 +38,7 @@ describe('coachTeam', () => {
       'Debole a Water: 1 Debole – 0 Resistono',
       'Debole a Ground: 1 Debole – 0 Resistono',
       'Debole a Ghost: 1 Debole – 0 Resistono',
-      'Ruoli mancanti: Hazard, Pivot, Priorità, Controllo velocità',
+      'Ruoli mancanti: Hazard, Pivot, Controllo velocità',
       'Nessuna mossa super efficace contro Water, Fighting',
     ]);
     const fire = coaching.problems.find(p => p.text.startsWith('Debole a Fire'))!;

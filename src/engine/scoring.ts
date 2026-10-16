@@ -6,7 +6,7 @@ import { battleName, getSpecies, isCosmeticForme, isDefined, isMega, toID, withi
 import { isLegalIn } from './formats';
 import { explain, type Components, type Facts, type Reason } from './explain';
 import type { Format } from './format';
-import { attackStyle, ESSENTIAL_ROLES, teamRoles, type Role } from './roles';
+import { attackStyle, ROLE_GROUPS, teamRoles } from './roles';
 import { defaultSet, type TeamSet } from './sets';
 import { teammatePct, usageOf } from './stats';
 import { clashesWith, conditionLabel, mechanicalLinks, weakenedMoves } from './synergy';
@@ -130,13 +130,14 @@ function coverageComponent(set: TeamSet, analysis: TeamAnalysis) {
 }
 
 function rolesComponent(set: TeamSet, analysis: TeamAnalysis) {
-  const roleWeight = (role: Role) => (ESSENTIAL_ROLES.includes(role) ? 1 : 0.5);
   const { missingRoles, needStyle } = analysis.needs;
   const candidateRoles = teamRoles(set);
   const filled = missingRoles.filter(role => candidateRoles.includes(role));
+  // Gruppi di ruoli che mancano al team (come nel voto): il candidato ne copre uno con uno qualunque dei suoi ruoli
+  const missingGroups = ROLE_GROUPS.filter(g => g.roles.every(role => missingRoles.includes(role)));
   const style = needStyle && attackStyle(set) === needStyle ? needStyle : null;
-  const total = sum(missingRoles.map(roleWeight)) + (needStyle ? 0.5 : 0);
-  const gained = sum(filled.map(roleWeight)) + (style ? 0.5 : 0);
+  const total = sum(missingGroups.map(g => g.weight)) + (needStyle ? 0.5 : 0);
+  const gained = sum(missingGroups.filter(g => g.roles.some(role => filled.includes(role))).map(g => g.weight)) + (style ? 0.5 : 0);
   return { value: total > 0 ? gained / total : 0, facts: { filled, style } };
 }
 
