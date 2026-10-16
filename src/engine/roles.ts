@@ -14,6 +14,9 @@ export const ROLE_ORDER: Role[] = [
 /** Nome del ruolo nella lingua data. */
 export const roleLabel = (role: Role, lang: Lang = 'it'): string => t(lang, `role.${role}`);
 
+/** Nome breve del ruolo, per le carte del team (il nome completo va nel tooltip). */
+export const roleShortLabel = (role: Role, lang: Lang = 'it'): string => t(lang, `roleShort.${role}`);
+
 export const ESSENTIAL_ROLES: Role[] = ['hazards', 'removal', 'pivot', 'priority', 'speed'];
 export const DESIRABLE_ROLES: Role[] = ['wallbreaker', 'physicalSweeper', 'specialSweeper', 'physicalWall', 'specialWall'];
 /** Ruoli di cui uno stall ha bisogno: niente priorità, velocità o sweeper, per scelta. */
