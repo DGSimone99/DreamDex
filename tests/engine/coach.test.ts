@@ -68,7 +68,7 @@ describe('coachTeam', () => {
   });
 
   it('testo della sostituzione', () => {
-    const swap = { index: 2, member: 'Magikarp', fit: 20, replacement: 'Corviknight', set: emptySet('Corviknight'), score: 60, similar: false, level: 'recommended' as const, diff: { gains: { roles: ['pivot' as const], covers: [], resists: [] }, losses: { roles: [], covers: [], resists: [] } } };
+    const swap = { index: 2, member: 'Magikarp', fit: 20, replacement: 'Corviknight', set: emptySet('Corviknight'), score: 60, similar: false, ratingGain: 6, level: 'recommended' as const, diff: { gains: { roles: ['pivot' as const], covers: [], resists: [] }, losses: { roles: [], covers: [], resists: [] } } };
     expect(describeSwap(swap)).toEqual({ gain: 40, pros: ['Pivot'], cons: [] });
     expect(describeSwap({ ...swap, similar: true, diff: { gains: { roles: [], covers: [], resists: [] }, losses: { roles: [], covers: [], resists: [] } } }))
       .toEqual({ gain: 40, pros: [], cons: [] });

@@ -7,7 +7,7 @@ import { diffContribution, similarity, type Contribution, type Diff } from './re
 import { t, type Lang } from '../i18n';
 import { gameName, typeName } from '../i18n/game';
 import { illegalParts } from './learnsets';
-import { detectRoles, ESSENTIAL_ROLES, isStall, roleLabel, STALL_ROLES } from './roles';
+import { detectRoles, ESSENTIAL_ROLES, isPassive, isStall, roleLabel, STALL_ROLES } from './roles';
 import { scoreCandidates, type Suggestion } from './scoring';
 import { rateTeam, roleAndTypeRedundancies, weatherClashes } from './rating';
 import { benefits, conditionLabel, viaName, enables, neededConditions, providesAll, teamSynergies, unmetBeneficiaries, unusedEnablers } from './synergy';
@@ -19,15 +19,18 @@ export const SIMILAR_THRESHOLD = 0.6;
 export const MAX_SWAPS = 2;
 export const MIN_COVERAGE_WEIGHT = 0.05;
 export const STRONG_COVERAGE = 15;
-/** Oltre questa quota di alternative che si adattano meglio, la sostituzione è consigliata (gialla). */
-export const RECOMMEND_SHARE = 0.5;
-/** …oppure se la migliore alternativa si adatta meglio di almeno questi punti. */
-export const RECOMMEND_GAIN = 25;
+/** Alternative per membro rivalutate col voto del team (le meglio adattate). */
+export const SWAP_CANDIDATES = 5;
+/** Punti di voto che una sostituzione deve guadagnare per essere proposta… */
+export const MIN_RATING_GAIN = 5;
+/** …e per essere consigliata (gialla). */
+export const RECOMMEND_RATING_GAIN = 10;
 
 export type SwapLevel = 'recommended' | 'optional';
 
-export const classifySwap = (betterShare: number, gain: number): SwapLevel =>
-  betterShare > RECOMMEND_SHARE || gain >= RECOMMEND_GAIN ? 'recommended' : 'optional';
+/** Livello di una sostituzione dai punti di voto guadagnati; un membro illegale va sempre sostituito. */
+export const classifySwap = (ratingGain: number, illegal = false): SwapLevel | null =>
+  illegal || ratingGain >= RECOMMEND_RATING_GAIN ? 'recommended' : ratingGain >= MIN_RATING_GAIN ? 'optional' : null;
 
 /** Categorie dei problemi, nell'ordine in cui si mostrano. */
 export const PROBLEM_CATEGORIES = ['rules', 'defense', 'coverage', 'roles', 'conditions', 'redundancy'] as const;
@@ -50,6 +53,8 @@ export interface CoachSwap {
   score: number;
   similar: boolean;
   level: SwapLevel;
+  /** Punti di voto che il team guadagna con la sostituzione. */
+  ratingGain: number;
   diff: Diff;
 }
 
@@ -166,7 +171,24 @@ function findProblems(team: TeamSet[], format: Format, analysis: TeamAnalysis, c
   return [...serious, ...minor];
 }
 
+/** Il membro non può stare nel formato (specie vietata, fuori dal Monotype o dalla generazione). */
+function breaksRules(set: TeamSet, format: Format): boolean {
+  const species = getSpecies(set.species);
+  if (!species) return false;
+  const forme = battleSpecies(set) ?? species;
+  return !isSelectable(species) || isBannedIn(forme, format) || !meetsTeamRules(forme, format) || !withinGen(species, format);
+}
+
+/**
+ * Sostituzioni giudicate col voto: per ogni membro le alternative meglio adattate vengono messe nel team
+ * e rivalutate; si propone solo chi alza il voto di almeno MIN_RATING_GAIN (consigliata da RECOMMEND_RATING_GAIN).
+ * In uno stall un muro passivo si sostituisce solo con un altro passivo, e il team deve restare stall.
+ */
 function findSwaps(team: TeamSet[], format: Format, data: EngineData): CoachSwap[] {
+  const current = rateTeam(team, data);
+  if (!current) return [];
+  const roles = team.map(detectRoles);
+  const stall = isStall(team, roles);
   const options = team
     .map((member, index) => {
       if (member.favorite) return null;
@@ -176,38 +198,46 @@ function findSwaps(team: TeamSet[], format: Format, data: EngineData): CoachSwap
       if (!self) return null;
       const own = toID(battleName(member));
       const needed = neededConditions(team, index);
-      const better = scored.filter(s =>
-        s.set !== member && toID(battleName(s.set)) !== own && s.score - self.score >= SWAP_MARGIN
-        && (needed.length === 0 || providesAll(s.set, needed)));
-      const others = scored.length - 1;
-      if (!better.length) return null;
-      const share = others > 0 ? scored.filter(s => s.score > self.score).length / others : 0;
-      const level = classifySwap(share, better[0].score - self.score);
-      return { index, member, rest, fit: self.score, better, level };
+      const illegal = breaksRules(member, format);
+      const keepPassive = stall && isPassive(member, roles[index]);
+      const rated = scored
+        .filter(s =>
+          s.set !== member && toID(battleName(s.set)) !== own && (illegal || s.score - self.score >= SWAP_MARGIN)
+          && (needed.length === 0 || providesAll(s.set, needed)) && (!keepPassive || isPassive(s.set)))
+        .slice(0, SWAP_CANDIDATES)
+        .map(s => ({ s, rating: rateTeam(team.map((m, i) => (i === index ? s.set : m)), data)! }))
+        .filter(x => !stall || x.rating.archetype === 'stall')
+        .map(x => ({ s: x.s, gain: x.rating.overall - current.overall, level: classifySwap(x.rating.overall - current.overall, illegal) }))
+        .filter((x): x is { s: Suggestion; gain: number; level: SwapLevel } => x.level !== null)
+        .sort((a, b) => b.gain - a.gain || b.s.score - a.s.score);
+      if (!rated.length) return null;
+      return { index, member, rest, fit: self.score, rated, illegal };
     })
     .filter(isDefined)
-    .sort((a, b) =>
-      (a.level === b.level ? 0 : a.level === 'recommended' ? -1 : 1)
-      || b.better[0].score - b.fit - (a.better[0].score - a.fit));
+    // Prima i membri illegali, poi le consigliate, poi per punti di voto guadagnati
+    .sort((a, b) => Number(b.illegal) - Number(a.illegal)
+      || (a.rated[0].level === b.rated[0].level ? 0 : a.rated[0].level === 'recommended' ? -1 : 1)
+      || b.rated[0].gain - a.rated[0].gain);
 
   // Ogni sostituzione propone un Pokémon diverso: due consigli con lo stesso nome si escludono a vicenda
   const used = new Set<string>();
   const swaps: CoachSwap[] = [];
   for (const option of options) {
     if (swaps.length === MAX_SWAPS) break;
-    const pick = option.better.find(s => !used.has(s.species));
+    const pick = option.rated.find(x => !used.has(x.s.species));
     if (!pick) continue;
-    used.add(pick.species);
+    used.add(pick.s.species);
     swaps.push({
       index: option.index,
       member: battleName(option.member),
       fit: option.fit,
-      replacement: pick.species,
-      set: pick.set,
-      score: pick.score,
-      similar: similarity(option.member, pick.set) >= SIMILAR_THRESHOLD,
-      level: option.level,
-      diff: diffContribution(option.member, pick.set, analyzeTeam(option.rest, data)),
+      replacement: pick.s.species,
+      set: pick.s.set,
+      score: pick.s.score,
+      similar: similarity(option.member, pick.s.set) >= SIMILAR_THRESHOLD,
+      level: pick.level,
+      ratingGain: pick.gain,
+      diff: diffContribution(option.member, pick.s.set, analyzeTeam(option.rest, data)),
     });
   }
   return swaps;

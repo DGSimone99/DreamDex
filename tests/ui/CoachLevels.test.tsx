@@ -8,7 +8,7 @@ import { emptySet } from '../../src/engine/sets';
 import { fixtureData } from '../fixtures/data';
 import { renderIt } from '../helpers/italian';
 
-const base = { index: 0, fit: 40, score: 60, similar: false, diff: { gains: { roles: [], covers: [], resists: [] }, losses: { roles: [], covers: [], resists: [] } } };
+const base = { index: 0, fit: 40, score: 60, similar: false, ratingGain: 8, diff: { gains: { roles: [], covers: [], resists: [] }, losses: { roles: [], covers: [], resists: [] } } };
 const coaching: Coaching = {
   verdict: 'Team solido',
   threatFixes: {},
