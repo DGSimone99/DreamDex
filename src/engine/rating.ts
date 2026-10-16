@@ -213,19 +213,22 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
   const analysis = analyzeTeam(team, data);
   const weights = analysis.typeWeights;
 
+  const memberRoles = team.map(detectRoles);
+  // Stall riconosciuto "senza esagerare": a metà tra la valutazione normale e quella da stall
+  const archetype = isStall(team, memberRoles) ? 'stall' as const : null;
+  // Nello stall un muro passivo non deve fare danni: conta la sua robustezza, e i suoi colpi valgono pieni
+  const passive = archetype ? team.map((set, i) => isPassive(set, memberRoles[i])) : [];
+
   const defense = sum(analysis.weakness.map(row => weights[row.type] * typeSafety(row.weak, row.resist)));
   // Ogni tipo vale secondo il colpo migliore che lo prende: un Close Combat di Alakazam non vale uno di Great Tusk
+  const quality = (set: TeamSet, i: number, move: string) => (passive[i] ? 1 : hitQuality(set, move));
   const coverage = sum(TYPES.map(type => weights[type]
-    * Math.max(0, ...team.flatMap(set => superEffectiveMoves(set, type).map(move => hitQuality(set, move))))));
-  const memberRoles = team.map(detectRoles);
+    * Math.max(0, ...team.flatMap((set, i) => superEffectiveMoves(set, type).map(move => quality(set, i, move))))));
   const present = new Set(memberRoles.flat());
   const usual = (ESSENTIAL_ROLES.filter(r => present.has(r)).length + 0.5 * DESIRABLE_ROLES.filter(r => present.has(r)).length)
     / (ESSENTIAL_ROLES.length + 0.5 * DESIRABLE_ROLES.length);
-  // Stall riconosciuto "senza esagerare": a metà tra la valutazione normale e quella da stall
-  const archetype = isStall(team, memberRoles) ? 'stall' as const : null;
   const roles = archetype ? (usual + STALL_ROLES.filter(r => present.has(r)).length / STALL_ROLES.length) / 2 : usual;
-  // Nello stall un muro passivo non deve fare danni: conta la sua robustezza
-  const power = teamPower(team, archetype ? team.map((set, i) => isPassive(set, memberRoles[i])) : []);
+  const power = teamPower(team, passive);
   const weightsFor = archetype ? STALL_AREA_WEIGHTS : AREA_WEIGHTS;
   const strength = power.value === null ? null : power.value / 100;
 
