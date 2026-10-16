@@ -39,8 +39,8 @@ describe('Mega scritta in due modi: stesso punteggio', () => {
   });
 });
 
-describe('debolezza seria con tante resistenze: i rimedi ci sono', () => {
-  it('Fairy: 3 deboli, 3 resistono, Corviknight proposto', () => {
+describe('debolezza seria anche con una resistenza: i rimedi ci sono', () => {
+  it('Fairy: 3 deboli, 1 resiste, Corviknight proposto', () => {
     const data: EngineData = {
       stats: {
         meta: { month: '2026-09', cutoff: 1630, battles: 1 },
@@ -48,7 +48,7 @@ describe('debolezza seria con tante resistenze: i rimedi ci sono', () => {
       },
       sets: {},
     };
-    const team = ['Great Tusk', 'Dragapult', 'Garchomp', 'Gholdengo', 'Toxapex', 'Heatran'].map(emptySet);
+    const team = ['Great Tusk', 'Dragapult', 'Garchomp', 'Gholdengo', 'Blissey', 'Rotom-Wash'].map(emptySet);
     const fairy = coachTeam(team, DEFAULT_FORMAT, data).problems.find(p => p.text.startsWith('Debole a Fairy'))!;
     expect(fairy.severity).toBe('serious');
     expect(fairy.fixes).toEqual(['Corviknight']);

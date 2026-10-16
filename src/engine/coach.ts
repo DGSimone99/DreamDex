@@ -9,7 +9,7 @@ import { gameName, typeName } from '../i18n/game';
 import { illegalParts } from './learnsets';
 import { detectRoles, ESSENTIAL_ROLES, isStall, roleLabel, STALL_ROLES } from './roles';
 import { scoreCandidates, type Suggestion } from './scoring';
-import { roleAndTypeRedundancies, weatherClashes } from './rating';
+import { rateTeam, roleAndTypeRedundancies, weatherClashes } from './rating';
 import { benefits, conditionLabel, viaName, enables, neededConditions, providesAll, teamSynergies, unmetBeneficiaries, unusedEnablers } from './synergy';
 import type { TeamSet } from './sets';
 import { defensiveMultiplier } from './types';
@@ -87,9 +87,9 @@ function findStrengths(team: TeamSet[], analysis: TeamAnalysis, lang: Lang): str
   return strengths;
 }
 
-/** Gravità di una debolezza difensiva: grave se ne soffrono in tanti senza chi resista. */
+/** Gravità di una debolezza difensiva, come nel voto: grave se i deboli superano di 2 chi resiste. */
 export function weaknessSeverity(row: TeamAnalysis['weakness'][number]): 'serious' | 'minor' | null {
-  if (row.weak >= 3 || (row.weak >= 2 && row.resist === 0)) return 'serious';
+  if (row.pressure >= 2) return 'serious';
   return row.pressure > 0 ? 'minor' : null;
 }
 
@@ -213,11 +213,11 @@ function findSwaps(team: TeamSet[], format: Format, data: EngineData): CoachSwap
   return swaps;
 }
 
-/** Giudizio breve sul team; i conteggi dei problemi li mostra l'interfaccia. */
-function verdictFor(team: TeamSet[], problems: CoachProblem[], lang: Lang): string {
+/** Giudizio breve sul team, coerente col voto; un problema di regole lo porta sempre a "da rivedere". */
+export function verdictFor(team: TeamSet[], problems: CoachProblem[], grade: string, lang: Lang): string {
   if (team.length < 6) return t(lang, 'coach.verdict.incomplete');
-  const serious = problems.filter(p => p.severity === 'serious').length;
-  return t(lang, serious === 0 ? 'coach.verdict.solid' : serious === 1 ? 'coach.verdict.good' : 'coach.verdict.review');
+  if (problems.some(p => p.category === 'rules')) return t(lang, 'coach.verdict.review');
+  return t(lang, grade === 'S' || grade === 'A' ? 'coach.verdict.solid' : grade === 'B' ? 'coach.verdict.good' : 'coach.verdict.review');
 }
 
 /** Voci del diff raggruppate per tipo: ruoli, "Forte contro X, Y", "Resistente a X, Y". */
@@ -272,7 +272,7 @@ export function coachTeam(team: TeamSet[], format: Format, data: EngineData, lan
   const candidates = data.stats ? scoreCandidates(team, format, data) : [];
   const problems = findProblems(team, format, analysis, candidates, lang);
   return {
-    verdict: verdictFor(team, problems, lang),
+    verdict: verdictFor(team, problems, rateTeam(team, data, lang)?.grade ?? 'D', lang),
     strengths: findStrengths(team, analysis, lang),
     problems,
     swaps: data.stats ? findSwaps(team, format, data) : [],
