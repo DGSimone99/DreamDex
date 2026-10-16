@@ -2,7 +2,7 @@ import { analyzeTeam, type TeamAnalysis } from './analysis';
 import type { EngineData } from './data';
 import { battleName, battleSpecies, toID } from './dex';
 import { hitQuality, memberPower, teamPower, type MemberPower } from './power';
-import { attackStyle, DESIRABLE_ROLES, detectRoles, ESSENTIAL_ROLES, isPassive, isStall, STALL_ROLES } from './roles';
+import { attackStyle, DESIRABLE_ROLES, ESSENTIAL_ROLES, isPassive, isStall, STALL_ROLES, teamRoles } from './roles';
 import { usageOf } from './stats';
 import type { TeamSet } from './sets';
 import { t, type Lang } from '../i18n';
@@ -213,7 +213,7 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
   const analysis = analyzeTeam(team, data);
   const weights = analysis.typeWeights;
 
-  const memberRoles = team.map(detectRoles);
+  const memberRoles = team.map(teamRoles);
   // Stall riconosciuto "senza esagerare": a metà tra la valutazione normale e quella da stall
   const archetype = isStall(team, memberRoles) ? 'stall' as const : null;
   // Nello stall un muro passivo non deve fare danni: conta la sua robustezza, e i suoi colpi valgono pieni

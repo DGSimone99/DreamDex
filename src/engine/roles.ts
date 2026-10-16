@@ -54,7 +54,8 @@ export function isStall(team: TeamSet[], roles: Role[][] = team.map(detectRoles)
 const HAZARD_MOVES = new Set(['stealthrock', 'spikes', 'toxicspikes', 'stickyweb', 'stoneaxe', 'ceaselessedge']);
 const REMOVAL_MOVES = new Set(['defog', 'rapidspin', 'mortalspin', 'tidyup', 'courtchange']);
 const PIVOT_MOVES = new Set(['uturn', 'voltswitch', 'flipturn', 'partingshot', 'teleport', 'shedtail', 'chillyreception']);
-const SPEED_MOVES = new Set(['trickroom', 'thunderwave', 'tailwind', 'stickyweb']);
+/** Mosse che controllano la velocità: paralisi, Sticky Web, Trick Room, Tailwind e mosse che rallentano. */
+const SPEED_MOVES = new Set(['thunderwave', 'glare', 'nuzzle', 'stunspore', 'stickyweb', 'trickroom', 'tailwind', 'icywind', 'electroweb']);
 /** Abilità che raddoppiano la velocità (col meteo o il campo giusto, o da sé). */
 const SPEED_ABILITIES = new Set(['swiftswim', 'chlorophyll', 'sandrush', 'slushrush', 'surgesurfer', 'unburden', 'speedboost']);
 const BREAKER_ITEMS = new Set(['choiceband', 'choicespecs', 'lifeorb']);
@@ -72,7 +73,8 @@ export function detectRoles(set: TeamSet): Role[] {
   if (ids.some(id => REMOVAL_MOVES.has(id))) roles.add('removal');
   if (ids.some(id => PIVOT_MOVES.has(id))) roles.add('pivot');
   if (moves.some(m => m.category !== 'Status' && m.priority > 0)) roles.add('priority');
-  if (stats.spe >= 100 || item === 'choicescarf' || ids.some(id => SPEED_MOVES.has(id))) roles.add('speed');
+  // Controllo velocità solo con mosse che la controllano: essere veloci è un'altra cosa (vedi teamRoles)
+  if (ids.some(id => SPEED_MOVES.has(id))) roles.add('speed');
   if (moves.some(m => m.category === 'Status' && m.target === 'self'
     && ((m.boosts?.atk ?? 0) > 0 || (m.boosts?.spa ?? 0) > 0 || (m.boosts?.spe ?? 0) > 0))) roles.add('setup');
   const offense = Math.max(stats.atk, stats.spa);
@@ -105,13 +107,28 @@ export function attackStyle(set: TeamSet): AttackStyle {
   return 'mixed';
 }
 
+/** Il membro è veloce: velocità di base almeno 100, Choice Scarf o un'abilità che raddoppia la velocità. */
+export function isFast(set: TeamSet): boolean {
+  const species = battleSpecies(set);
+  return !!species && (species.baseStats.spe >= 100 || toID(set.item) === 'choicescarf' || SPEED_ABILITIES.has(toID(set.ability)));
+}
+
+/**
+ * Ruoli con cui si giudica il team (voto, bisogni, candidati): quelli del set, più la velocità per un membro veloce.
+ * In singolo un team con membri veloci ha già la sua velocità, anche senza mosse di controllo velocità.
+ */
+export function teamRoles(set: TeamSet): Role[] {
+  const roles = detectRoles(set);
+  return isFast(set) && !roles.includes('speed') ? ROLE_ORDER.filter(role => role === 'speed' || roles.includes(role)) : roles;
+}
+
 export interface TeamNeeds {
   missingRoles: Role[];
   needStyle: 'physical' | 'special' | null;
 }
 
 export function teamNeeds(team: TeamSet[]): TeamNeeds {
-  const present = new Set(team.flatMap(detectRoles));
+  const present = new Set(team.flatMap(teamRoles));
   const missingRoles = [...ESSENTIAL_ROLES, ...DESIRABLE_ROLES].filter(role => !present.has(role));
   const styles = team.map(attackStyle);
   const physical = styles.filter(s => s === 'physical').length;

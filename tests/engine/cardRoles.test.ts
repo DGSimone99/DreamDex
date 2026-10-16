@@ -7,7 +7,7 @@ const set = (species: string, item: string, ability: string, moves: string[]): T
 describe('ruoli sulla carta: prima il ruolo principale, poi un supporto', () => {
   it('uno sweeper con setup: lo sweeper, non il setup (già implicito)', () => {
     const volcarona = set('Volcarona', 'Heavy-Duty Boots', 'Flame Body', ['Quiver Dance', 'Fiery Dance', 'Giga Drain', 'Roost']);
-    expect(cardRoles(volcarona)).toEqual(['specialSweeper', 'speed']);
+    expect(cardRoles(volcarona)).toEqual(['specialSweeper']);
   });
 
   it('un attaccante con utilità: offensivo prima della rimozione', () => {

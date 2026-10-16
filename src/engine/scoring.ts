@@ -2,11 +2,11 @@ import { t, type Lang } from '../i18n';
 import { typeName } from '../i18n/game';
 import { analyzeTeam, checksThreat, type TeamAnalysis } from './analysis';
 import type { EngineData } from './data';
-import { battleName, getSpecies, isDefined, isMega, toID, withinGen } from './dex';
+import { battleName, getSpecies, isCosmeticForme, isDefined, isMega, toID, withinGen } from './dex';
 import { isLegalIn } from './formats';
 import { explain, type Components, type Facts, type Reason } from './explain';
 import type { Format } from './format';
-import { attackStyle, detectRoles, ESSENTIAL_ROLES, type Role } from './roles';
+import { attackStyle, ESSENTIAL_ROLES, teamRoles, type Role } from './roles';
 import { defaultSet, type TeamSet } from './sets';
 import { teammatePct, usageOf } from './stats';
 import { clashesWith, conditionLabel, mechanicalLinks, weakenedMoves } from './synergy';
@@ -83,7 +83,7 @@ export function candidatePool(team: TeamSet[], format: Format, data: EngineData)
     .filter(([, entry]) => entry.usage >= format.minUsage)
     .map(([name]) => getSpecies(name))
     .filter(isDefined)
-    .filter(species => isLegalIn(species, format) && withinGen(species, format) && !teamNumbers.has(species.num))
+    .filter(species => isLegalIn(species, format) && !isCosmeticForme(species) && withinGen(species, format) && !teamNumbers.has(species.num))
     .map(species => species.name);
 }
 
@@ -132,7 +132,7 @@ function coverageComponent(set: TeamSet, analysis: TeamAnalysis) {
 function rolesComponent(set: TeamSet, analysis: TeamAnalysis) {
   const roleWeight = (role: Role) => (ESSENTIAL_ROLES.includes(role) ? 1 : 0.5);
   const { missingRoles, needStyle } = analysis.needs;
-  const candidateRoles = detectRoles(set);
+  const candidateRoles = teamRoles(set);
   const filled = missingRoles.filter(role => candidateRoles.includes(role));
   const style = needStyle && attackStyle(set) === needStyle ? needStyle : null;
   const total = sum(missingRoles.map(roleWeight)) + (needStyle ? 0.5 : 0);

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { TeamSet } from '../../src/engine/sets';
-import { attackStyle, detectRoles, teamNeeds } from '../../src/engine/roles';
+import { attackStyle, detectRoles, teamNeeds, teamRoles } from '../../src/engine/roles';
 
 const set = (species: string, moves: string[], item = ''): TeamSet =>
   ({ species, ability: '', item, moves, nature: 'Serious', evs: {} });
@@ -27,11 +27,11 @@ describe('roles', () => {
     expect(detectRoles(kingambit)).toContain('priority');
   });
 
-  it('hazard e velocità', () => {
-    expect(detectRoles(set('Garchomp', ['Stealth Rock', 'Earthquake']))).toEqual(
-      expect.arrayContaining(['hazards', 'speed']),
-    );
-    expect(detectRoles(set('Gholdengo', ['Make It Rain'], 'Choice Scarf'))).toContain('speed');
+  it('hazard; essere veloci o avere lo Scarf non è controllo velocità, ma per il team conta come velocità', () => {
+    expect(detectRoles(set('Garchomp', ['Stealth Rock', 'Earthquake']))).toContain('hazards');
+    expect(detectRoles(set('Garchomp', ['Stealth Rock', 'Earthquake']))).not.toContain('speed');
+    expect(detectRoles(set('Gholdengo', ['Make It Rain'], 'Choice Scarf'))).not.toContain('speed');
+    expect(teamRoles(set('Gholdengo', ['Make It Rain'], 'Choice Scarf'))).toContain('speed');
   });
 
   it('mosse vuote o sconosciute non rompono nulla', () => {

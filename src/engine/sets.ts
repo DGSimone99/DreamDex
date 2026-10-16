@@ -123,6 +123,13 @@ export function defaultSet(data: EngineData, speciesName: string, genLimit = 9):
     const ultra = presetsFor(data, team.species).find(p => p.set.item === team.item);
     return ultra ? makeLegal(ultra.set, data, genLimit) : { ...defaultSet(data, team.species, genLimit), item: team.item };
   }
+  // Mega e Primal: il primo preset della specie base con la pietra giusta, come per le altre specie (l'editor lo riconosce)
+  const forme = getSpecies(speciesName);
+  if (forme && (forme.isMega || forme.isPrimal) && forme.baseSpecies !== forme.name) {
+    const stone = toID(forme.requiredItem ?? '');
+    const preset = presetsFor(data, forme.name).find(p => toID(p.set.item) === stone);
+    if (preset) return makeLegal(preset.set, data, genLimit);
+  }
   const found = findByName(data.presets ?? undefined, speciesName)?.[0]?.set
     ?? mostCommonSet(data.stats, speciesName)
     ?? findByName(data.sets ?? undefined, speciesName)
@@ -246,7 +253,14 @@ export function mergePresets(lists: (PresetsData | null | undefined)[], limit = 
 
 /** I preset per un Pokémon: prima quelli del formato scelto, poi quelli degli altri formati. */
 export function presetsFor(data: EngineData, speciesName: string): Preset[] {
-  const species = getSpecies(speciesName)?.name ?? speciesName;
+  const forme = getSpecies(speciesName);
+  // Le analisi Smogon stanno sotto la specie base: per Gardevoir-Mega si prendono quelle di Gardevoir, prima le Mega
+  if (forme && (forme.isMega || forme.isPrimal) && forme.baseSpecies !== forme.name) {
+    const stone = toID(forme.requiredItem ?? '');
+    const base = presetsFor(data, forme.baseSpecies);
+    return [...base.filter(p => toID(p.set.item) === stone), ...base.filter(p => toID(p.set.item) !== stone)];
+  }
+  const species = forme?.name ?? speciesName;
   // I preset di Smogon per "Necrozma-Ultra" vanno sulla forma da team che la raggiunge, con lo Z-cristallo
   const battleFormePresets = (list: PresetsData | null | undefined) =>
     (findByName(list ?? undefined, 'Necrozma-Ultra') ?? [])
