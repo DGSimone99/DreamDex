@@ -2,7 +2,7 @@ import { analyzeTeam, type TeamAnalysis } from './analysis';
 import type { EngineData } from './data';
 import { battleSpecies, toID } from './dex';
 import { teamPower, type MemberPower } from './power';
-import { DESIRABLE_ROLES, detectRoles, ESSENTIAL_ROLES, isStall, STALL_ROLES } from './roles';
+import { DESIRABLE_ROLES, detectRoles, ESSENTIAL_ROLES, isPassive, isStall, STALL_ROLES } from './roles';
 import type { TeamSet } from './sets';
 import { t, type Lang } from '../i18n';
 import { gameName, typeName } from '../i18n/game';
@@ -17,6 +17,14 @@ export const AREA_WEIGHTS: Record<AreaKey, number> = {
   coverage: 0.25,
   roles: 0.225,
   strength: 0.2,
+};
+
+/** Pesi per uno stall: la copertura conta la metà (attacca poco per scelta), il resto va alla difesa. */
+export const STALL_AREA_WEIGHTS: Record<AreaKey, number> = {
+  defense: AREA_WEIGHTS.defense + AREA_WEIGHTS.coverage / 2,
+  coverage: AREA_WEIGHTS.coverage / 2,
+  roles: AREA_WEIGHTS.roles,
+  strength: AREA_WEIGHTS.strength,
 };
 
 
@@ -177,7 +185,9 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
   // Stall riconosciuto "senza esagerare": a metà tra la valutazione normale e quella da stall
   const archetype = isStall(team, memberRoles) ? 'stall' as const : null;
   const roles = archetype ? (usual + STALL_ROLES.filter(r => present.has(r)).length / STALL_ROLES.length) / 2 : usual;
-  const power = teamPower(team);
+  // Nello stall un muro passivo non deve fare danni: conta la sua robustezza
+  const power = teamPower(team, archetype ? team.map((set, i) => isPassive(set, memberRoles[i])) : []);
+  const weightsFor = archetype ? STALL_AREA_WEIGHTS : AREA_WEIGHTS;
   const strength = power.value === null ? null : power.value / 100;
 
   const raw: Record<AreaKey, number | null> = { defense, coverage, roles, strength };
@@ -188,7 +198,7 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
   }));
   const available = (Object.keys(AREA_WEIGHTS) as AreaKey[]).filter(key => raw[key] !== null);
   const base = Math.round(
-    100 * sum(available.map(key => AREA_WEIGHTS[key] * raw[key]!)) / sum(available.map(key => AREA_WEIGHTS[key])),
+    100 * sum(available.map(key => weightsFor[key] * raw[key]!)) / sum(available.map(key => weightsFor[key])),
   );
   const penalty = redundancies(team, analysis, lang);
   const bonus = weatherBonus(team, lang);

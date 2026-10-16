@@ -51,9 +51,16 @@ export function memberPower(set: TeamSet): MemberPower | null {
   return { species: species.name, offense, bulk, power };
 }
 
-/** Forza del team: media dei membri presenti nel Pokédex (null se nessuno lo è). */
-export function teamPower(team: TeamSet[]): { value: number | null; members: MemberPower[] } {
-  const members = team.map(memberPower).filter((m): m is MemberPower => m !== null);
+/**
+ * Forza del team: media dei membri presenti nel Pokédex (null se nessuno lo è).
+ * `passive[i]` vero: il membro è un muro passivo di uno stall e conta solo la sua robustezza.
+ */
+export function teamPower(team: TeamSet[], passive: boolean[] = []): { value: number | null; members: MemberPower[] } {
+  const scored = team
+    .map((set, i) => ({ member: memberPower(set), passive: passive[i] ?? false }))
+    .filter((x): x is { member: MemberPower; passive: boolean } => x.member !== null);
+  const members = scored.map(x => x.member);
   if (members.length === 0) return { value: null, members };
-  return { value: Math.round(members.reduce((acc, m) => acc + m.power, 0) / members.length), members };
+  const sum = scored.reduce((acc, x) => acc + (x.passive ? x.member.bulk : x.member.power), 0);
+  return { value: Math.round(sum / members.length), members };
 }

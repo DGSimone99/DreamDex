@@ -46,3 +46,13 @@ describe('forza dalle statistiche base', () => {
     expect(teamPower([set('Fakemon-Xyz')]).value).toBeNull();
   });
 });
+
+describe('forza con membri passivi (stall)', () => {
+  it('per i passivi conta solo la robustezza', () => {
+    const team = [set('Blissey'), set('Great Tusk')];
+    const blissey = memberPower(team[0])!;
+    const tusk = memberPower(team[1])!;
+    expect(teamPower(team, [true, false]).value).toBe(Math.round((blissey.bulk + tusk.power) / 2));
+    expect(teamPower(team).value).toBe(Math.round((blissey.power + tusk.power) / 2));
+  });
+});
