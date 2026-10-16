@@ -82,6 +82,11 @@ export function superEffectiveMove(set: TeamSet, defType: TypeName): string | nu
   return attackingMoves(set).find(move => moveEffectiveness(move, defType) > 1)?.name ?? null;
 }
 
+/** Tutte le mosse super efficaci del set contro un tipo. */
+export function superEffectiveMoves(set: TeamSet, defType: TypeName): string[] {
+  return attackingMoves(set).filter(move => moveEffectiveness(move, defType) > 1).map(move => move.name);
+}
+
 export interface CoverageRow {
   type: TypeName;
   hitters: { member: string; move: string }[];

@@ -111,6 +111,8 @@ export const it: Record<keyof typeof en, string> = {
   'rating.redundancy.someResist': "{n} resistono",
   'rating.redundancy.unmet': "{member} ha {via} ma il team non porta {condition}",
   'rating.redundancy.unused': "{via} di {member} non sfruttato",
+  'rating.redundancy.weakMember': "{member} è debole e poco usato in questo formato",
+  'rating.redundancy.oneStyle': "Nessun attaccante {style}",
   'rating.bonus.mitigates': "{condition} di {setter} smorza la debolezza a {type} di {member}",
   'import.unreadable': "Blocco {n} non leggibile: \"{line}\"",
   'import.tooMany': "Più di 6 Pokémon: ignorato {name}",

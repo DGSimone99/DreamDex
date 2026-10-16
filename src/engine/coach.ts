@@ -9,7 +9,7 @@ import { gameName, typeName } from '../i18n/game';
 import { illegalParts } from './learnsets';
 import { detectRoles, ESSENTIAL_ROLES, isPassive, isStall, roleLabel, STALL_ROLES } from './roles';
 import { scoreCandidates, type Suggestion } from './scoring';
-import { rateTeam, roleAndTypeRedundancies, weatherClashes } from './rating';
+import { memberIssues, rateTeam, roleAndTypeRedundancies, weatherClashes } from './rating';
 import { benefits, conditionLabel, viaName, enables, neededConditions, providesAll, teamSynergies, unmetBeneficiaries, unusedEnablers } from './synergy';
 import type { TeamSet } from './sets';
 import { defensiveMultiplier } from './types';
@@ -98,7 +98,7 @@ export function weaknessSeverity(row: TeamAnalysis['weakness'][number]): 'seriou
   return row.pressure > 0 ? 'minor' : null;
 }
 
-function findProblems(team: TeamSet[], format: Format, analysis: TeamAnalysis, candidates: Suggestion[], lang: Lang): CoachProblem[] {
+function findProblems(team: TeamSet[], format: Format, data: EngineData, analysis: TeamAnalysis, candidates: Suggestion[], lang: Lang): CoachProblem[] {
   const serious: CoachProblem[] = [];
   const minor: CoachProblem[] = [];
   const add = (category: ProblemCategory, isSerious: boolean, text: string, fixes: string[]) =>
@@ -148,6 +148,7 @@ function findProblems(team: TeamSet[], format: Format, analysis: TeamAnalysis, c
       fixesFor(candidates, s => s.facts.roles.filled.filter(r => missing.includes(r)).length));
   }
 
+  for (const item of memberIssues(team, data, lang)) add('roles', false, item.text, []);
   for (const item of roleAndTypeRedundancies(team, lang)) add('redundancy', false, item.text, []);
   for (const item of weatherClashes(team, lang)) add('conditions', false, item.text, []);
 
@@ -300,7 +301,7 @@ export function coachTeam(team: TeamSet[], format: Format, data: EngineData, lan
   }
   const analysis = analyzeTeam(team, data);
   const candidates = data.stats ? scoreCandidates(team, format, data) : [];
-  const problems = findProblems(team, format, analysis, candidates, lang);
+  const problems = findProblems(team, format, data, analysis, candidates, lang);
   return {
     verdict: verdictFor(team, problems, rateTeam(team, data, lang)?.grade ?? 'D', lang),
     strengths: findStrengths(team, analysis, lang),
