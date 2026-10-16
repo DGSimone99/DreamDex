@@ -199,7 +199,7 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 .slot > summary .sprite-wrap { position: relative; align-self: center; }
 .slot > summary .sprite { display: block; image-rendering: pixelated; transition: transform 0.35s var(--ease); }
 .slot[open] > summary .sprite { transform: scale(1.12) translateY(-2px); }
-/* Moveset aperto: il Pokémon "ruggisce" (scatto) e resta in idle animato (gen5ani, dimensioni naturali, centrato) */
+/* Moveset aperto: il Pokémon resta in idle animato (gen5ani, dimensioni naturali, centrato) */
 .slot > summary .sprite.covered { visibility: hidden; }
 .slot > summary .sprite-ani {
   position: absolute;
@@ -209,16 +209,6 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
   image-rendering: pixelated;
   pointer-events: none;
   transform: translate(-50%, -50%) translateY(-2px) scale(calc(1.12 * var(--sprite-scale, 1)));
-}
-.slot[open] > summary .sprite-wrap { animation: roar 0.55s var(--ease); }
-@keyframes roar {
-  0% { transform: none; }
-  22% { transform: translateY(-9px) scale(1.1); }
-  38% { transform: translateY(-7px) scale(1.1) rotate(-3deg); }
-  52% { transform: translateY(-6px) scale(1.08) rotate(3deg); }
-  66% { transform: translateY(-4px) scale(1.05) rotate(-2deg); }
-  80% { transform: translateY(-1px) rotate(1deg); }
-  100% { transform: none; }
 }
 .slot .name { font: 700 21px/1.05 var(--display); text-transform: uppercase; letter-spacing: 0.02em; }
 .slot .held { font-size: 13px; color: var(--muted); }
