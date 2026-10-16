@@ -126,9 +126,7 @@ export function redundancies(team: TeamSet[], analysis: TeamAnalysis, lang: Lang
     }));
   const dependencies = [
     ...unmetBeneficiaries(team).map(i => ({ text: t(lang, 'rating.redundancy.unmet', { member: i.member, via: viaName(i.via, lang), condition: conditionLabel(i.condition, lang) }), points: 3 })),
-    ...unusedEnablers(team).map(i => i.selfBoost
-      ? { text: t(lang, 'rating.redundancy.selfBoost', { via: viaName(i.via, lang), member: i.member }), points: 1 }
-      : { text: t(lang, 'rating.redundancy.unused', { via: viaName(i.via, lang), member: i.member }), points: 2 }),
+    ...unusedEnablers(team).map(i => ({ text: t(lang, 'rating.redundancy.unused', { via: viaName(i.via, lang), member: i.member }), points: 2 })),
   ];
   const items = [...weaknesses, ...roleAndTypeRedundancies(team, lang), ...dependencies, ...weatherClashes(team, lang)];
   return { total: Math.min(MAX_PENALTY, sum(items.map(i => i.points))), items };

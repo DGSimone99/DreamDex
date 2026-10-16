@@ -43,7 +43,8 @@ describe('legami nel team', () => {
   });
 
   it('abilitatori non sfruttati e beneficiari senza condizione', () => {
-    expect(unusedEnablers([ninetales, set('Garchomp', 'Rough Skin', ['Earthquake'])])).toEqual([{ member: 'Ninetales', condition: 'sun', via: 'Drought', selfBoost: true }]);
+    // Ninetales sfrutta da sé il sole: non è "non sfruttato" anche se nessun compagno lo usa
+    expect(unusedEnablers([ninetales, set('Garchomp', 'Rough Skin', ['Earthquake'])])).toEqual([]);
     expect(unusedEnablers([ninetales, venusaur])).toEqual([]);
     expect(unmetBeneficiaries([venusaur, set('Garchomp', 'Rough Skin', ['Earthquake'])])).toEqual([{ member: 'Venusaur', condition: 'sun', via: 'Chlorophyll' }]);
     expect(unmetBeneficiaries([ninetales, venusaur])).toEqual([]);
@@ -62,12 +63,28 @@ describe('legami nel team', () => {
 
   it('abilitatore che non potenzia nemmeno sé stesso', () => {
     const pelipper = set('Pelipper', 'Drizzle', ['U-turn', 'Roost']);
-    expect(unusedEnablers([pelipper, set('Garchomp', 'Rough Skin', ['Earthquake'])])).toEqual([{ member: 'Pelipper', condition: 'rain', via: 'Drizzle', selfBoost: false }]);
+    expect(unusedEnablers([pelipper, set('Garchomp', 'Rough Skin', ['Earthquake'])])).toEqual([{ member: 'Pelipper', condition: 'rain', via: 'Drizzle' }]);
   });
 
-  it("il Weather Ball dell'abilitatore non conta come uso da parte del team", () => {
+  it("il Weather Ball dell'abilitatore basta: sfrutta da sé il suo meteo", () => {
     const nineWB = set('Ninetales', 'Drought', ['Weather Ball']);
-    expect(unusedEnablers([nineWB, set('Garchomp', 'Rough Skin', ['Earthquake'])])).toEqual([{ member: 'Ninetales', condition: 'sun', via: 'Drought', selfBoost: true }]);
+    expect(unusedEnablers([nineWB, set('Garchomp', 'Rough Skin', ['Earthquake'])])).toEqual([]);
+  });
+
+  it('mosse che funzionano anche senza meteo: nessun avviso se manca', () => {
+    expect(unmetBeneficiaries([set('Tornadus-Therian', 'Regenerator', ['Hurricane', 'U-turn'])])).toEqual([]);
+    expect(unmetBeneficiaries([set('Zapdos', 'Static', ['Thunder'])])).toEqual([]);
+    expect(unmetBeneficiaries([set('Archaludon', 'Stamina', ['Electro Shot'])])).toEqual([]);
+    expect(unmetBeneficiaries([set('Kyurem', 'Pressure', ['Blizzard'])])).toEqual([]);
+  });
+
+  it('Solar Beam senza sole resta segnalato', () => {
+    expect(unmetBeneficiaries([set('Venusaur', 'Overgrow', ['Solar Beam'])])).toEqual([{ member: 'Venusaur', condition: 'sun', via: 'Solar Beam' }]);
+  });
+
+  it('Hurricane resta una sinergia con la pioggia', () => {
+    const team = [set('Pelipper', 'Drizzle', ['U-turn']), set('Tornadus-Therian', 'Regenerator', ['Hurricane'])];
+    expect(teamSynergies(team)).toEqual(['Pelipper (Drizzle) → Tornadus-Therian (Hurricane)']);
   });
 
   it('Weather Ball e Terrain Pulse non vengono segnalati come beneficiari senza condizione', () => {
@@ -177,10 +194,9 @@ describe('effetti su suggerimenti e coaching', () => {
     expect(venus.reasons.map(r => r.text)).toContain('Abilitato da Ninetales (Drought): Chlorophyll');
   });
 
-  it('coaching: Drought non sfruttato, con rimedi', () => {
+  it('coaching: Drought che potenzia Ninetales non è un problema', () => {
     const team = [ninetales, mostCommonSet(data.stats, 'Garchomp')!];
-    expect(coachTeam(team, DEFAULT_FORMAT, data).problems)
-      .toContainEqual({ severity: 'minor', category: 'conditions', text: 'Drought di Ninetales potenzia solo le sue mosse: nessun altro ne beneficia', fixes: ['Venusaur'] });
+    expect(coachTeam(team, DEFAULT_FORMAT, data).problems.map(p => p.text).join(' | ')).not.toMatch(/Drought/);
   });
 
   it('coaching: Chlorophyll senza sole, con rimedi', () => {

@@ -147,7 +147,7 @@ function findProblems(team: TeamSet[], format: Format, analysis: TeamAnalysis, c
   for (const item of weatherClashes(team, lang)) add('conditions', false, item.text, []);
 
   for (const issue of unusedEnablers(team)) {
-    add('conditions', false, t(lang, issue.selfBoost ? 'coach.problem.selfBoost' : 'coach.problem.unused', { via: viaName(issue.via, lang), member: issue.member }),
+    add('conditions', false, t(lang, 'coach.problem.unused', { via: viaName(issue.via, lang), member: issue.member }),
       fixesFor(candidates, s => Number(benefits(s.set).some(b => b.condition === issue.condition && !['Weather Ball', 'Terrain Pulse'].includes(b.via)))));
   }
   for (const issue of unmetBeneficiaries(team)) {
