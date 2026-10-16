@@ -55,6 +55,8 @@ const HAZARD_MOVES = new Set(['stealthrock', 'spikes', 'toxicspikes', 'stickyweb
 const REMOVAL_MOVES = new Set(['defog', 'rapidspin', 'mortalspin', 'tidyup', 'courtchange']);
 const PIVOT_MOVES = new Set(['uturn', 'voltswitch', 'flipturn', 'partingshot', 'teleport', 'shedtail', 'chillyreception']);
 const SPEED_MOVES = new Set(['trickroom', 'thunderwave', 'tailwind', 'stickyweb']);
+/** Abilità che raddoppiano la velocità (col meteo o il campo giusto, o da sé). */
+const SPEED_ABILITIES = new Set(['swiftswim', 'chlorophyll', 'sandrush', 'slushrush', 'surgesurfer', 'unburden', 'speedboost']);
 const BREAKER_ITEMS = new Set(['choiceband', 'choicespecs', 'lifeorb']);
 
 export function detectRoles(set: TeamSet): Role[] {
@@ -75,13 +77,16 @@ export function detectRoles(set: TeamSet): Role[] {
     && ((m.boosts?.atk ?? 0) > 0 || (m.boosts?.spa ?? 0) > 0 || (m.boosts?.spe ?? 0) > 0))) roles.add('setup');
   const offense = Math.max(stats.atk, stats.spa);
   if (offense >= 120 || (offense >= 100 && BREAKER_ITEMS.has(item))) roles.add('wallbreaker');
-  // Sweeper: attacca forte e ha un modo di superare in velocità (velocità alta, Scarf o setup)
-  const fast = stats.spe >= 100 || item === 'choicescarf';
-  const boosts = (stat: 'atk' | 'spa') => moves.some(m => m.category === 'Status' && m.target === 'self'
-    && ((m.boosts?.[stat] ?? 0) > 0 || (m.boosts?.spe ?? 0) > 0));
+  // Sweeper: attacca forte e può davvero muoversi per primo: velocità alta, Scarf o abilità di velocità,
+  // un setup che alza la velocità, oppure un setup qualunque con una mossa a priorità (Kingambit, Raging Bolt).
+  // Un Pokémon lento con un setup che alza solo l'attacco (Magearna con Calm Mind) è un wallbreaker, non uno sweeper.
+  const fast = stats.spe >= 100 || item === 'choicescarf' || SPEED_ABILITIES.has(toID(set.ability));
+  const selfBoost = (stat: 'atk' | 'spa' | 'spe') => moves.some(m => m.category === 'Status' && m.target === 'self' && (m.boosts?.[stat] ?? 0) > 0);
+  const priority = moves.some(m => m.category !== 'Status' && m.priority > 0);
+  const outspeeds = (stat: 'atk' | 'spa') => fast || selfBoost('spe') || (selfBoost(stat) && priority);
   const style = attackStyle(set);
-  if (style === 'physical' && stats.atk >= 100 && (fast || boosts('atk'))) roles.add('physicalSweeper');
-  if (style === 'special' && stats.spa >= 100 && (fast || boosts('spa'))) roles.add('specialSweeper');
+  if (style === 'physical' && stats.atk >= 100 && outspeeds('atk')) roles.add('physicalSweeper');
+  if (style === 'special' && stats.spa >= 100 && outspeeds('spa')) roles.add('specialSweeper');
   if (stats.def >= 100 && stats.hp + stats.def >= 190) roles.add('physicalWall');
   if (stats.spd >= 100 && stats.hp + stats.spd >= 190) roles.add('specialWall');
 
