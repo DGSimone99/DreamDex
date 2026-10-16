@@ -958,3 +958,41 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
   .board-head .long { display: none; }
   .board-head .short { display: inline; }
 }
+
+/* Avviso con Annulla: in basso al centro, 5 secondi (barra che si accorcia, ferma finché ci sei sopra) */
+.undo-toast {
+  position: fixed;
+  z-index: 80;
+  left: 50%;
+  bottom: 24px;
+  translate: -50% 0;
+  min-width: 300px;
+  max-width: calc(100vw - 32px);
+  padding: 12px 44px 14px 16px;
+  overflow: hidden;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+  animation: tip 0.2s var(--ease);
+}
+.undo-text { margin: 0; display: flex; align-items: center; flex-wrap: wrap; gap: 4px 6px; font-size: 14px; color: var(--muted); }
+.undo-text strong { color: var(--text); font-weight: 700; }
+.undo-text .mon-icon { margin: -8px -4px -6px -6px; }
+.undo-text .icon { width: 16px; height: 16px; color: var(--faint); }
+.undo-actions { margin-top: 8px; }
+.undo-actions button:first-child { padding: 4px 14px; }
+.undo-toast .undo-close { position: absolute; top: 8px; right: 8px; padding: 2px; border: 0; background: none; color: var(--faint); }
+.undo-toast .undo-close:hover { color: var(--text); }
+.undo-timer {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  width: 100%;
+  background: var(--blue);
+  transform-origin: left;
+  animation: undo-timer linear forwards;
+}
+.undo-toast:hover .undo-timer, .undo-toast:focus-within .undo-timer { animation-play-state: paused; }
+@keyframes undo-timer { to { transform: scaleX(0); } }

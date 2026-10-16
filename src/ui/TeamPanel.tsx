@@ -25,6 +25,8 @@ interface Props {
   onChange: (team: TeamSet[]) => void;
   onAdd: (set: TeamSet) => void;
   onReplace: (index: number) => void;
+  /** Membro tolto con la ×: se manca, si aggiorna solo il team (senza Annulla). */
+  onRemove?: (index: number) => void;
   onAllowMultipleMegas: () => void;
 }
 
@@ -136,7 +138,7 @@ function TeamSlot({ set, presets, common, format, warning: megaWarning, open, on
   );
 }
 
-export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onAllowMultipleMegas }: Props) {
+export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRemove, onAllowMultipleMegas }: Props) {
   const lang = useLang();
   // Un solo membro aperto alla volta: il suo editor scende sotto la fila del team
   const [openIndex, setOpenIndex] = useState<number | null>(null);
@@ -159,7 +161,7 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onAl
             onToggle={open => setOpenIndex(current => (open ? i : current === i ? null : current))}
             onIgnoreWarning={onAllowMultipleMegas}
             onChange={next => onChange(team.map((s, j) => (j === i ? next : s)))}
-            onRemove={() => { setOpenIndex(null); onChange(team.filter((_, j) => j !== i)); }}
+            onRemove={() => { setOpenIndex(null); if (onRemove) onRemove(i); else onChange(team.filter((_, j) => j !== i)); }}
             onReplace={() => onReplace(i)}
           />
         ))}
