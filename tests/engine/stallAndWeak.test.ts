@@ -30,11 +30,11 @@ describe('stall e semi-stall', () => {
   });
 });
 
-describe('membri deboli e poco usati: la penalità cresce col loro numero', () => {
+describe('membri deboli senza utilità: la penalità cresce col loro numero', () => {
   const entry = (usage: number): SpeciesStats => ({ usage, count: 100, abilities: {}, items: {}, teraTypes: {}, spreads: {}, moves: {}, teammates: {}, checks: {} });
   const data: EngineData = { stats: { meta: { month: '2026-09', cutoff: 1630, battles: 1 }, pokemon: { Kingambit: entry(0.3) } }, sets: {} };
   const weak = ['Raticate', 'Linoone', 'Delcatty'].map(s => set(s, 'Leftovers', '', ['Body Slam', 'Crunch']));
-  const points = (team: TeamSet[]) => rateTeam(team, data)!.penalty.items.filter(i => /debole e poco usato/.test(i.text)).reduce((acc, i) => acc + i.points, 0);
+  const points = (team: TeamSet[]) => rateTeam(team, data)!.penalty.items.filter(i => /debole e non porta utilità/.test(i.text)).reduce((acc, i) => acc + i.points, 0);
 
   it('uno −3, due −7, tre −12', () => {
     expect(points([kingambit, weak[0]])).toBe(3);

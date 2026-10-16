@@ -2,14 +2,13 @@ import { analyzeTeam, type TeamAnalysis } from './analysis';
 import type { EngineData } from './data';
 import { battleName, battleSpecies, toID } from './dex';
 import { hitQuality, memberPower, teamPower, type MemberPower } from './power';
-import { attackStyle, isPassive, isStall, teamRoles } from './roles';
+import { attackStyle, detectRoles, isPassive, isStall, teamRoles } from './roles';
 import { needCoverage } from './needs';
-import { usageOf } from './stats';
 import type { TeamSet } from './sets';
 import { t, type Lang } from '../i18n';
 import { gameName, typeName } from '../i18n/game';
 import { superEffectiveMoves, TYPES } from './types';
-import { conditionConflicts, conditionLabel, viaName, unmetBeneficiaries, unusedEnablers, weakenedMoves, weatherMitigations } from './synergy';
+import { conditionConflicts, conditionLabel, enables, viaName, unmetBeneficiaries, unusedEnablers, weakenedMoves, weatherMitigations } from './synergy';
 
 export type AreaKey = 'defense' | 'coverage' | 'roles' | 'strength';
 
@@ -123,28 +122,33 @@ export function weatherClashes(team: TeamSet[], lang: Lang = 'it'): Redundancy[]
   ];
 }
 
-/** Forza sotto cui un membro poco usato nel formato è considerato debole. */
+/** Forza sotto cui un membro senza utilità chiave è considerato debole. */
 export const WEAK_POWER = 30;
-/** Uso nel formato da cui un membro è "del meta", qualunque sia la sua forza. */
-export const META_USAGE = 0.01;
+/** Ruoli che danno al team un'utilità chiave anche a un Pokémon debole (Delibird con Spikes). */
+const UTILITY_ROLES = ['hazards', 'removal', 'speed'] as const;
+
+/** Il membro porta un'utilità chiave: hazard, rimozione, controllo velocità, meteo, campo o Trick Room. */
+function bringsUtility(set: TeamSet): boolean {
+  const roles = detectRoles(set);
+  return UTILITY_ROLES.some(role => roles.includes(role)) || enables(set).length > 0;
+}
 /** Attaccanti minimi perché un team tutto fisico o tutto speciale sia una scelta e non un caso. */
 const ONE_STYLE_ATTACKERS = 4;
 
 /**
- * Membri deboli e poco usati nel formato (−3, −7, −12…; servono le statistiche) e team senza attaccanti
- * fisici o speciali (−3; mai per uno stall, che attacca poco per scelta).
+ * Membri deboli senza utilità chiave (−3, −7, −12…; non dipende dal meta: Pelipper che porta la pioggia è esente)
+ * e team senza attaccanti fisici o speciali (−3; mai per uno stall, che attacca poco per scelta).
  */
-export function memberIssues(team: TeamSet[], data: EngineData, lang: Lang = 'it'): Redundancy[] {
+export function memberIssues(team: TeamSet[], lang: Lang = 'it'): Redundancy[] {
   const items: Redundancy[] = [];
-  if (data.stats) {
-    // La penalità cresce col numero di membri deboli: −3, −7, −12… (il k-esimo pesa 2 + k)
-    let weak = 0;
-    for (const set of team) {
-      const power = memberPower(set);
-      if (power && power.power < WEAK_POWER && usageOf(data.stats, battleName(set)) < META_USAGE) {
-        weak += 1;
-        items.push({ text: t(lang, 'rating.redundancy.weakMember', { member: battleName(set) }), points: 2 + weak });
-      }
+  // La penalità cresce col numero di membri deboli: −3, −7, −12… (il k-esimo pesa 2 + k)
+  let weak = 0;
+  for (const set of team) {
+    const power = memberPower(set);
+    // Un muro passivo si giudica dalla sua robustezza (Mega Sableye), gli altri dalla forza complessiva
+    if (power && (isPassive(set) ? power.bulk : power.power) < WEAK_POWER && !bringsUtility(set)) {
+      weak += 1;
+      items.push({ text: t(lang, 'rating.redundancy.weakMember', { member: battleName(set) }), points: 2 + weak });
     }
   }
   if (!isStall(team)) {
@@ -159,7 +163,7 @@ export function memberIssues(team: TeamSet[], data: EngineData, lang: Lang = 'it
   return items;
 }
 
-export function redundancies(team: TeamSet[], analysis: TeamAnalysis, lang: Lang = 'it', data: EngineData | null = null): Redundancies {
+export function redundancies(team: TeamSet[], analysis: TeamAnalysis, lang: Lang = 'it'): Redundancies {
   const common = 1 / TYPES.length;
   const weaknesses = analysis.weakness
     .filter(row => row.weak - row.resist >= 2)
@@ -176,7 +180,7 @@ export function redundancies(team: TeamSet[], analysis: TeamAnalysis, lang: Lang
   ];
   const items = [
     ...weaknesses, ...roleAndTypeRedundancies(team, lang), ...dependencies, ...weatherClashes(team, lang),
-    ...(data ? memberIssues(team, data, lang) : []),
+    ...memberIssues(team, lang),
   ];
   return { total: Math.min(MAX_PENALTY, sum(items.map(i => i.points))), items };
 }
@@ -244,7 +248,7 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
   const base = Math.round(
     100 * sum(available.map(key => weightsFor[key] * raw[key]!)) / sum(available.map(key => weightsFor[key])),
   );
-  const penalty = redundancies(team, analysis, lang, data);
+  const penalty = redundancies(team, analysis, lang);
   const bonus = weatherBonus(team, lang);
   const overall = Math.min(100, Math.max(0, base - penalty.total + bonus.total));
   return { base, penalty, bonus, power: power.members, overall, ...gradeFor(overall, lang), provisional: team.length < 6, areas, archetype };

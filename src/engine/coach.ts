@@ -102,7 +102,7 @@ export function weaknessSeverity(row: TeamAnalysis['weakness'][number]): 'seriou
   return row.pressure > 0 ? 'minor' : null;
 }
 
-function findProblems(team: TeamSet[], format: Format, data: EngineData, analysis: TeamAnalysis, candidates: Suggestion[], lang: Lang): CoachProblem[] {
+function findProblems(team: TeamSet[], format: Format, analysis: TeamAnalysis, candidates: Suggestion[], lang: Lang): CoachProblem[] {
   const serious: CoachProblem[] = [];
   const minor: CoachProblem[] = [];
   const add = (category: ProblemCategory, isSerious: boolean, text: string, fixes: string[]) =>
@@ -148,7 +148,7 @@ function findProblems(team: TeamSet[], format: Format, data: EngineData, analysi
       fixesFor(candidates, s => missing.filter(need => NEED_ROLES[need].some(role => s.facts.roles.filled.includes(role))).length));
   }
 
-  for (const item of memberIssues(team, data, lang)) add('roles', false, item.text, []);
+  for (const item of memberIssues(team, lang)) add('roles', false, item.text, []);
   for (const item of roleAndTypeRedundancies(team, lang)) add('redundancy', false, item.text, []);
   for (const item of weatherClashes(team, lang)) add('conditions', false, item.text, []);
 
@@ -310,7 +310,7 @@ export function coachTeam(team: TeamSet[], format: Format, data: EngineData, lan
   }
   const analysis = analyzeTeam(team, data);
   const candidates = data.stats ? scoreCandidates(team, format, data) : [];
-  const problems = findProblems(team, format, data, analysis, candidates, lang);
+  const problems = findProblems(team, format, analysis, candidates, lang);
   return {
     verdict: verdictFor(team, problems, rateTeam(team, data, lang)?.grade ?? 'D', lang),
     teamType: teamArchetype(team),

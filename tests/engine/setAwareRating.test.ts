@@ -19,28 +19,32 @@ describe('copertura pesata da chi colpisce', () => {
   });
 });
 
-describe('membri deboli e fuori dal meta', () => {
-  const data = (pokemon: Record<string, SpeciesStats>): EngineData => ({
-    stats: { meta: { month: '2026-09', cutoff: 1630, battles: 1 }, pokemon }, sets: {},
-  });
-  const team = [withMoves('Pelipper', ['Hurricane', 'U-turn']), withMoves('Great Tusk', ['Headlong Rush'])];
+describe('membri deboli senza utilità (indipendente dal meta)', () => {
+  const raticate = withMoves('Raticate', ['Body Slam', 'Crunch']);
+  const tusk = withMoves('Great Tusk', ['Headlong Rush']);
 
-  it('debole e poco usato: −3', () => {
-    expect(penalties(team, data({ 'Great Tusk': entry(0.3) })))
-      .toContainEqual({ text: 'Pelipper è debole e poco usato in questo formato', points: 3 });
+  it('debole e senza utilità: −3, anche senza statistiche Smogon', () => {
+    expect(penalties([raticate, tusk], { stats: null, sets: null }))
+      .toContainEqual({ text: 'Raticate è debole e non porta utilità al team', points: 3 });
   });
 
-  it('debole ma usato nel formato: nessuna penalità', () => {
-    expect(penalties(team, data({ Pelipper: entry(0.05), 'Great Tusk': entry(0.3) })).map(i => i.text).join(' | ')).not.toMatch(/Pelipper/);
+  it("debole ma con un'utilità chiave (meteo, hazard): nessuna penalità", () => {
+    const pelipper: TeamSet = { ...withMoves('Pelipper', ['Hurricane', 'U-turn']), ability: 'Drizzle' };
+    const delibird = withMoves('Delibird', ['Spikes', 'Ice Shard']);
+    expect(penalties([pelipper, delibird, tusk]).map(i => i.text).join(' | ')).not.toMatch(/debole/);
   });
 
-  it('senza statistiche non si penalizza', () => {
-    expect(penalties(team, { stats: null, sets: null }).map(i => i.text).join(' | ')).not.toMatch(/debole e poco usato/);
+  it('un muro passivo si giudica dalla robustezza: Mega Sableye non è debole, Shuckle senza hazard sì', () => {
+    const sableye: TeamSet = { ...withMoves('Sableye', ['Knock Off', 'Recover', 'Will-O-Wisp', 'Calm Mind']), item: 'Sablenite' };
+    const shuckle = withMoves('Shuckle', ['Toxic', 'Protect', 'Rest', 'Encore']);
+    const texts = penalties([sableye, shuckle, tusk]).map(i => i.text);
+    expect(texts.join(' | ')).not.toMatch(/Sableye.*debole/);
+    expect(texts).toContain('Shuckle è debole e non porta utilità al team');
   });
 
   it('il coaching lo segnala', () => {
-    const problems = coachTeam(team, DEFAULT_FORMAT, data({ 'Great Tusk': entry(0.3) })).problems;
-    expect(problems).toContainEqual(expect.objectContaining({ severity: 'minor', category: 'roles', text: 'Pelipper è debole e poco usato in questo formato' }));
+    const problems = coachTeam([raticate, tusk], DEFAULT_FORMAT, fixtureData).problems;
+    expect(problems).toContainEqual(expect.objectContaining({ severity: 'minor', category: 'roles', text: 'Raticate è debole e non porta utilità al team' }));
   });
 });
 

@@ -124,7 +124,7 @@ export const en = {
   'rating.redundancy.someResist': "{n} resist",
   'rating.redundancy.unmet': "{member} has {via} but the team doesn't bring {condition}",
   'rating.redundancy.unused': "{via} from {member} is unused",
-  'rating.redundancy.weakMember': "{member} is weak and rarely used in this format",
+  'rating.redundancy.weakMember': "{member} is weak and brings no utility to the team",
   'rating.redundancy.oneStyle': "No {style} attacker",
   'rating.bonus.mitigates': "{condition} from {setter} softens {member}'s weakness to {type}",
   'import.unreadable': "Block {n} can't be read: \"{line}\"",
