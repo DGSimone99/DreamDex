@@ -38,21 +38,42 @@ function spriteId(name: string): string | null {
   return species.forme ? `${base}-${toID(species.forme)}` : base;
 }
 
-/** Sprite del Pokémon (la forma Mega se tiene la sua pietra). Se manca, resta lo spazio vuoto. */
-export function Sprite({ species, item = '', size = 96 }: { species: string; item?: string; size?: number }) {
+const reducedMotion = () =>
+  typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/**
+ * Sprite del Pokémon (la forma Mega se tiene la sua pietra). Se manca, resta lo spazio vuoto.
+ * Con `animated` sopra lo statico va l'idle animato di Showdown (gen5ani): lo statico resta visibile
+ * finché l'animato non è caricato, e resta da solo se l'animazione non esiste o il sistema riduce le animazioni.
+ */
+export function Sprite({ species, item = '', size = 96, animated = false }: { species: string; item?: string; size?: number; animated?: boolean }) {
   const name = battleSpecies({ species, item })?.name ?? species;
   const id = spriteId(name);
   const [failed, setFailed] = useState<string | null>(null);
+  const [ani, setAni] = useState<{ id: string; ready: boolean; failed: boolean } | null>(null);
   if (!id || failed === id) return <span className="sprite missing" style={{ width: size, height: size }} aria-hidden="true" />;
+  const state = ani?.id === id ? ani : { id, ready: false, failed: false };
+  const showAni = animated && !state.failed && !reducedMotion();
   return (
-    <img
-      className="sprite"
-      src={`https://play.pokemonshowdown.com/sprites/gen5/${id}.png`}
-      alt=""
-      width={size}
-      height={size}
-      loading="lazy"
-      onError={() => setFailed(id)}
-    />
+    <>
+      <img
+        className={`sprite${showAni && state.ready ? ' covered' : ''}`}
+        src={`https://play.pokemonshowdown.com/sprites/gen5/${id}.png`}
+        alt=""
+        width={size}
+        height={size}
+        loading="lazy"
+        onError={() => setFailed(id)}
+      />
+      {showAni && (
+        <img
+          className="sprite-ani"
+          src={`https://play.pokemonshowdown.com/sprites/gen5ani/${id}.gif`}
+          alt=""
+          onLoad={() => setAni({ id, ready: true, failed: false })}
+          onError={() => setAni({ id, ready: false, failed: true })}
+        />
+      )}
+    </>
   );
 }
