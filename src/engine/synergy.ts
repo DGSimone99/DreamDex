@@ -93,6 +93,12 @@ export const viaName = (via: string, lang: Lang = 'it'): string => (via === SLOW
 const GENERIC_MOVES = new Set(['weatherball', 'terrainpulse']);
 /** Abilità Paradox: il meteo/campo è un bonus, funzionano anche senza (Booster Energy o nessun boost). */
 const PARADOX = new Set(['protosynthesis', 'quarkdrive']);
+/** Meteo primordiale: dura solo finché chi lo porta è in campo (non tocca i compagni, che entrano dopo). */
+const PRIMAL = new Set(['desolateland', 'primordialsea']);
+/** Abilitatori "di passaggio": la condizione è un effetto secondario (Chilly Reception serve a cambiare). */
+const INCIDENTAL = new Set(['chillyreception']);
+const isPrimal = (link: ConditionLink) => PRIMAL.has(toID(link.via));
+const isIncidental = (link: ConditionLink) => INCIDENTAL.has(toID(link.via));
 
 export interface ConditionLink {
   condition: Condition;
@@ -175,9 +181,14 @@ const BOOSTED_TYPE: Partial<Record<Condition, TypeName>> = {
   sun: 'Fire', rain: 'Water', electricterrain: 'Electric', psychicterrain: 'Psychic', grassyterrain: 'Grass',
 };
 
-/** L'abilitatore sfrutta da sé la condizione (mosse potenziate, Weather Ball, Solar Beam, velocità bassa in Trick Room). */
+/** Sabbia e neve rinforzano le difese dei tipi Roccia (Dif. Sp.) e Ghiaccio (Dif.). */
+const DEFENDED_TYPE: Partial<Record<Condition, string>> = { sand: 'Rock', snow: 'Ice' };
+
+/** L'abilitatore sfrutta da sé la condizione (mosse potenziate, difese, Weather Ball, Solar Beam, velocità bassa in Trick Room). */
 function boostsItself(set: TeamSet, condition: Condition): boolean {
   if (benefits(set).some(b => b.condition === condition)) return true;
+  const defended = DEFENDED_TYPE[condition];
+  if (defended && ((battleSpecies(set)?.types ?? []) as readonly string[]).includes(defended)) return true;
   const boosted = BOOSTED_TYPE[condition];
   return !!boosted && attackingMoves(set).some(m => m.type === boosted);
 }
@@ -193,6 +204,7 @@ export function unusedEnablers(team: TeamSet[]): UnusedEnabler[] {
   return team.flatMap(member => {
     const usedByOthers = new Set(team.filter(o => o !== member).flatMap(specific).map(b => b.condition));
     return enables(member)
+      .filter(e => !isPrimal(e) && !isIncidental(e))
       .filter(e => !usedByOthers.has(e.condition))
       .map(e => ({ member: battleName(member), ...e, selfBoost: boostsItself(member, e.condition) }));
   });
@@ -259,6 +271,7 @@ export function weatherMitigations(team: TeamSet[]): WeatherMitigation[] {
     if (!effect || seen.has(e.condition)) return null;
     seen.add(e.condition);
     const members = team
+      .filter(m => !isPrimal(e) || m === enabler)
       .filter(m => !effect.groundedOnly || isGrounded(m))
       .map(m => ({ species: battleName(m), from: defensiveMultiplier(effect.type, m) }))
       .filter(m => m.from > 1)
@@ -282,9 +295,11 @@ export function conditionConflicts(team: TeamSet[], lang: Lang = 'it'): Conditio
   return groups.flatMap(([kind, group]) => {
     const setters = team.flatMap(member =>
       enables(member)
-        .filter(e => group.includes(e.condition))
-        .map(e => ({ condition: e.condition, label: `${battleName(member)} (${viaName(e.via, lang)})` })));
-    return new Set(setters.map(s => s.condition)).size > 1 ? [{ kind, setters: setters.map(s => s.label) }] : [];
+        .filter(e => group.includes(e.condition) && !isIncidental(e))
+        .map(e => ({ condition: e.condition, primal: isPrimal(e), label: `${battleName(member)} (${viaName(e.via, lang)})` })));
+    // Due meteo primordiali non si incontrano mai (ognuno sparisce quando esce chi lo porta)
+    const clash = setters.some(a => setters.some(b => a.condition !== b.condition && !(a.primal && b.primal)));
+    return clash ? [{ kind, setters: setters.map(s => s.label) }] : [];
   });
 }
 
@@ -310,6 +325,7 @@ export function weakenedMoves(team: TeamSet[]): WeakenedMove[] {
       if (!type || seen.has(e.condition)) continue;
       seen.add(e.condition);
       for (const member of team) {
+        if (isPrimal(e) && member !== setter) continue;
         const hit = attackingMoves(member).some(m => m.type === type && toID(m.name) !== 'hydrosteam');
         if (!hit) continue;
         const stab = ((battleSpecies(member)?.types ?? []) as readonly string[]).includes(type);
