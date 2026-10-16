@@ -62,6 +62,20 @@ function tagsFor(facts: Facts, lang: Lang): string[] {
 const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
 const sum = (xs: number[]) => xs.reduce((a, b) => a + b, 0);
 
+/**
+ * Una sola voce per forma in battaglia: "Kyogre" col set delle analisi (Blue Orb) è Kyogre-Primal, come la voce
+ * "Kyogre-Primal" delle statistiche. Si tiene la voce col nome della forma; l'ordine resta quello dato.
+ */
+export function uniqueFormes<T extends { species: string; set: TeamSet }>(entries: T[]): T[] {
+  const byForme = new Map<string, T>();
+  for (const entry of entries) {
+    const forme = toID(battleName(entry.set));
+    const kept = byForme.get(forme);
+    if (!kept || (toID(entry.species) === forme && toID(kept.species) !== forme)) byForme.set(forme, entry);
+  }
+  return entries.filter(entry => byForme.get(toID(battleName(entry.set))) === entry);
+}
+
 export function candidatePool(team: TeamSet[], format: Format, data: EngineData): string[] {
   if (!data.stats) return [];
   const teamNumbers = new Set(team.map(set => getSpecies(set.species)?.num).filter(isDefined));
@@ -155,9 +169,11 @@ export function scoreCandidates(team: TeamSet[], format: Format, data: EngineDat
   const megaTaken = !format.allowMultipleMegas && team.some(isMega);
   const extraIds = new Set(extraSets.map(set => toID(battleName(set))));
   const entries = [
-    ...candidatePool(team, format, data)
+    ...uniqueFormes(candidatePool(team, format, data)
       .filter(species => !extraIds.has(toID(species)))
-      .map(species => ({ species, set: defaultSet(data, species, format.genLimit) }))
+      .map(species => ({ species, set: defaultSet(data, species, format.genLimit) })))
+      // Anche una voce con un altro nome può essere, in battaglia, il membro valutato (es. "Kyogre" con la Blue Orb)
+      .filter(({ set }) => !extraIds.has(toID(battleName(set))))
       .filter(({ set }) => !(megaTaken && isMega(set))),
     ...extraSets.map(set => ({ species: set.species, set })),
   ];

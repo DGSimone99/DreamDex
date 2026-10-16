@@ -5,7 +5,7 @@ import { battleName, battleSpecies, dex, getSpecies, isDefined, isMega, isTeambu
 import { isBannedIn, meetsTeamRules } from './formats';
 import type { Format } from './format';
 import { detectRoles, type Role } from './roles';
-import { scoreSets, type Suggestion } from './scoring';
+import { scoreSets, uniqueFormes, type Suggestion } from './scoring';
 import { defaultSet, type TeamSet } from './sets';
 import { usageOf } from './stats';
 import { benefits, enables, type Condition } from './synergy';
@@ -149,14 +149,14 @@ function cachedDefaultSet(data: EngineData, species: string, genLimit: number): 
 export function searchPool(team: TeamSet[], format: Format, data: EngineData, f: CandidateFilters): TeamSet[] {
   const teamNumbers = new Set(team.map(set => getSpecies(set.species)?.num).filter(isDefined));
   const query = toID(f.query);
-  return dex.species.all()
+  const candidates = dex.species.all()
     .filter(s => isTeambuildable(s) && withinGen(s, format) && !teamNumbers.has(s.num))
     .filter(s => !query || toID(s.name).includes(query))
     .map(s => ({ species: s.name, set: cachedDefaultSet(data, s.name, format.genLimit) }))
     // Monotype: conta il tipo della forma in battaglia (es. Charizard con Charizardite X è Fire/Dragon)
     .filter(c => meetsTeamRules(battleSpecies(c.set) ?? getSpecies(c.species)!, format))
-    .filter(c => matchesFilters(c, f, data, format))
-    .map(c => c.set);
+    .filter(c => matchesFilters(c, f, data, format));
+  return uniqueFormes(candidates).map(c => c.set);
 }
 
 /** Ricerca e filtri sui candidati, su tutto il Pokédex. Sempre ordinati per adattamento al team. */
