@@ -135,7 +135,7 @@ function findProblems(team: TeamSet[], format: Format, analysis: TeamAnalysis, c
   // Uno stall non ha bisogno di pivot, priorità o velocità: si chiedono i suoi ruoli
   const memberRoles = team.map(detectRoles);
   const present = new Set(memberRoles.flat());
-  const missing = isStall(memberRoles)
+  const missing = isStall(team, memberRoles)
     ? STALL_ROLES.filter(r => !present.has(r))
     : analysis.needs.missingRoles.filter(r => ESSENTIAL_ROLES.includes(r));
   if (missing.length) {

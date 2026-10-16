@@ -30,6 +30,22 @@ describe('team stall', () => {
   });
 });
 
+// "eternatus full stall" dai team campione Smogon di National Dex Ubers: muri che hanno anche statistiche offensive
+const ubersStall: TeamSet[] = [
+  set('Dondozo', 'Leftovers', 'Unaware', ['Avalanche', 'Body Press', 'Curse', 'Rest'], 'Impish', { hp: 252, def: 252, spd: 4 }),
+  set('Arceus-Dark', 'Dread Plate', 'Multitype', ['Foul Play', 'Recover', 'Refresh', 'Stealth Rock'], 'Timid', { hp: 248, def: 172, spe: 88 }),
+  set('Chansey', 'Eviolite', 'Natural Cure', ['Confide', 'Heal Bell', 'Seismic Toss', 'Soft-Boiled'], 'Calm', { hp: 8, def: 252, spd: 248 }),
+  set('Eternatus', 'Leftovers', 'Pressure', ['Dynamax Cannon', 'Recover', 'Sludge Bomb', 'Toxic Spikes'], 'Timid', { hp: 248, spd: 40, spe: 220 }),
+  set('Giratina-Origin', 'Griseous Core', 'Levitate', ['Defog', 'Hex', 'Rest', 'Toxic'], 'Bold', { hp: 248, def: 252, spd: 8 }),
+  set('Ho-Oh', 'Heavy-Duty Boots', 'Regenerator', ['Defog', 'Sacred Fire', 'Toxic', 'Whirlwind'], 'Impish', { hp: 248, def: 204, spd: 56 }),
+];
+
+describe('stall con muri dalle statistiche offensive', () => {
+  it('riconosciuto: chi è un muro o ha un solo attacco non conta come attaccante', () => {
+    expect(rateTeam(ubersStall, fixtureData)!.archetype).toBe('stall');
+  });
+});
+
 describe('pannello del voto', () => {
   it('dice che il team è valutato come stall', async () => {
     const { screen } = await import('@testing-library/react');

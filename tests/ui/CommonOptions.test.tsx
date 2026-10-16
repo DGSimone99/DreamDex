@@ -95,7 +95,7 @@ describe('spread pronti sopra gli EV', () => {
     expect(jolly).toHaveTextContent('252 Att / 252 Vel / 4 PS');
     expect(jolly).toHaveTextContent('32%');
     expect(jolly).toHaveAttribute('aria-pressed', 'true');
-    expect(impish).toHaveTextContent('Preset');
+    expect(impish).toHaveTextContent('Alt');
     await user.click(impish);
     expect(screen.getByLabelText('Natura')).toHaveValue('Impish');
     const evs = screen.getByRole('group', { name: 'EV' });

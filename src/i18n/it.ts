@@ -214,7 +214,7 @@ export const it: Record<keyof typeof en, string> = {
   'combobox.common': "Più usati",
   'combobox.commonIn': "Più usati · {format}",
   'combobox.all': "Tutti",
-  'combobox.preset': "Preset",
+  'combobox.preset': "Alt",
   'combobox.more': "Altri {n}: scrivi per restringere",
   'stats.title': "Statistiche base",
   'stats.total': "Totale",

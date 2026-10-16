@@ -26,6 +26,19 @@ const PRIMAL_ORBS: Record<string, [base: string, forme: string]> = {
   blueorb: ['Kyogre', 'Kyogre-Primal'],
 };
 
+/** Ultraesplosione: Necrozma-Dusk-Mane o Dawn-Wings con l'Ultranecrozium Z diventa Necrozma-Ultra (come una Mega). */
+const ULTRA_BURST = { item: 'ultranecroziumz', itemName: 'Ultranecrozium Z', from: ['Necrozma-Dusk-Mane', 'Necrozma-Dawn-Wings'], forme: 'Necrozma-Ultra' };
+
+/**
+ * Forma da mettere nel team per una forma che esiste solo in battaglia grazie a uno strumento
+ * (Necrozma-Ultra → Dusk-Mane se il set è fisico, Dawn-Wings se speciale), con quello strumento; null per le altre.
+ */
+export function teamFormeOf(speciesName: string, evs: Partial<Record<'atk' | 'spa', number>> = {}): { species: string; item: string } | null {
+  if (getSpecies(speciesName)?.name !== ULTRA_BURST.forme) return null;
+  const special = (evs.spa ?? 0) > (evs.atk ?? 0);
+  return { species: ULTRA_BURST.from[special ? 1 : 0], item: ULTRA_BURST.itemName };
+}
+
 /**
  * La specie in battaglia: Showdown esporta le Mega come specie base + pietra
  * (es. "Lopunny @ Lopunnite"), ma tipi, statistiche e dati Smogon sono della forma Mega.
@@ -39,7 +52,8 @@ export function battleSpecies(set: { species: string; item: string }): Species |
   const primal = PRIMAL_ORBS[item.id];
   // Solo la forma base può evolvere (Slowbro-Galar con Slowbronite resta Slowbro-Galar)
   const forme = megaStone?.[species.name]
-    ?? (primal && primal[0] === species.name ? primal[1] : undefined);
+    ?? (primal && primal[0] === species.name ? primal[1] : undefined)
+    ?? (item.id === ULTRA_BURST.item && ULTRA_BURST.from.includes(species.name) ? ULTRA_BURST.forme : undefined);
   return (forme && getSpecies(forme)) || species;
 }
 
