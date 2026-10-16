@@ -39,10 +39,12 @@ interface Props {
   disabled?: boolean;
   /** Elemento dentro il campo, a sinistra del testo (es. l'icona dello strumento scelto). */
   leading?: ReactNode;
+  /** Intestazione delle voci più usate, se diversa da "Più usati" (es. con il formato da cui vengono). */
+  commonLabel?: string;
 }
 
 /** Campo con menu a tendina: cerca mentre scrivi, frecce e Invio per scegliere, ogni voce con la sua descrizione. */
-export function Combobox({ label, value, options, onChange, restricted = false, description, display, placeholder, disabled, leading }: Props) {
+export function Combobox({ label, value, options, onChange, restricted = false, description, display, placeholder, disabled, leading, commonLabel }: Props) {
   const t = useT();
   const listId = useId();
   const [open, setOpen] = useState(false);
@@ -139,7 +141,7 @@ export function Combobox({ label, value, options, onChange, restricted = false, 
         <ul id={listId} role="listbox" aria-label={t("combobox.options", { label })} ref={listRef}>
           {shown.map((option, i) => [
             hasCommon && i === 0 && option.common
-              ? <li key="common-head" role="presentation" className="group-head common-head">{t('combobox.common')}</li> : null,
+              ? <li key="common-head" role="presentation" className="group-head common-head">{commonLabel ?? t('combobox.common')}</li> : null,
             hasCommon && !option.common && (i === 0 || shown[i - 1].common)
               ? <li key="all-head" role="presentation" className="group-head">{t('combobox.all')}</li> : null,
             <li

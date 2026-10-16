@@ -13,7 +13,7 @@ describe('fonti dati', () => {
       '/data/a/meta.json': async () => ({ month: 'm', cutoff: 1, battles: 1 }),
     };
     expect((await readSource(files, 'a')).stats).not.toBeNull();
-    expect((await readSource(files, 'b'))).toEqual({ stats: null, sets: null, fallback: null, presets: null, fallbackPresets: null });
+    expect((await readSource(files, 'b'))).toEqual({ stats: null, sets: null, fallback: null, presets: null, fallbackPresets: null, fallbackStats: null });
   });
 
   it('aggiunge i set di riserva a ogni fonte', async () => {
@@ -29,6 +29,6 @@ describe('fonti dati', () => {
 
   it('un file corrotto non blocca: statistiche nulle', async () => {
     const files = { '/data/a/stats.json': async () => { throw new SyntaxError('troncato'); } };
-    expect(await readSource(files, 'a')).toEqual({ stats: null, sets: null, fallback: null, presets: null, fallbackPresets: null });
+    expect(await readSource(files, 'a')).toEqual({ stats: null, sets: null, fallback: null, presets: null, fallbackPresets: null, fallbackStats: null });
   });
 });

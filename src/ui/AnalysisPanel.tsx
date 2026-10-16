@@ -72,7 +72,7 @@ export function AnalysisPanel({ team, analysis, rating, coaching, preview, onRep
   return (
     <section aria-label={tr('analysis.region')} className="analysis">
       <h2>{tr('analysis.region')}</h2>
-      {rating && <RatingPanel rating={rating} />}
+      {rating && <RatingPanel rating={rating} ruleIssues={coaching?.problems.filter(p => p.category === 'rules').map(p => p.text)} />}
       {coaching && onReplace && <CoachPanel coaching={coaching} preview={preview} onReplace={onReplace} onSwap={onSwap} />}
 
       <details className="block" id="analysis-defense">

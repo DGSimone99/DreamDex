@@ -142,6 +142,33 @@ export function findByName<T>(record: Record<string, T> | undefined, name: strin
   return key === undefined ? undefined : record[key];
 }
 
+/** Statistiche di un Pokémon prese da un altro formato, col nome del formato. */
+export type FallbackStats = Record<string, SpeciesStats & { format: string }>;
+
+/**
+ * Per ogni Pokémon le statistiche del formato in cui è in più squadre (a parità, uso più alto).
+ * I formati `preferred` (stesse regole, es. National Dex) vincono se il Pokémon ci compare; gli altri coprono il resto.
+ */
+export function buildFallbackStats(preferred: { format: string; stats: StatsData }[], others: { format: string; stats: StatsData }[] = []): FallbackStats {
+  const result = pickMostPlayed(preferred);
+  for (const [name, entry] of Object.entries(pickMostPlayed(others))) result[name] ??= entry;
+  return result;
+}
+
+function pickMostPlayed(sources: { format: string; stats: StatsData }[]): FallbackStats {
+  const result: FallbackStats = {};
+  for (const { format, stats } of sources) {
+    for (const [name, entry] of Object.entries(stats.pokemon)) {
+      const current = result[name];
+      if (!current || entry.count > current.count || (entry.count === current.count && entry.usage > current.usage)) {
+        // Compagni e counter non servono qui: il file resta leggero
+        result[name] = { ...entry, teammates: {}, checks: {}, format };
+      }
+    }
+  }
+  return result;
+}
+
 export function statsEntry(stats: StatsData | null, name: string): SpeciesStats | undefined {
   return findByName(stats?.pokemon, name);
 }

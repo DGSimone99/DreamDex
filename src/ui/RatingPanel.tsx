@@ -1,5 +1,6 @@
 import type { AreaKey, TeamRating } from '../engine/rating';
 import { Typed } from './TypeText';
+import { AlertMark } from './AlertMark';
 import type { MessageKey } from '../i18n';
 import { useT } from '../i18n/react';
 
@@ -19,13 +20,21 @@ function goToSection(id: string) {
   section.querySelector('summary')?.focus({ preventScroll: true });
 }
 
-export function RatingPanel({ rating }: { rating: TeamRating }) {
+/** `ruleIssues`: problemi di regole del team (vietati, Mega, mosse non legali…): triangolo rosso accanto al voto. */
+export function RatingPanel({ rating, ruleIssues = [] }: { rating: TeamRating; ruleIssues?: string[] }) {
   const t = useT();
   return (
     <details open aria-label={t('rating.title')} className="block rating">
       <summary><span>{t('rating.title')}</span><span>{rating.grade} · {rating.overall}/100</span></summary>
       <p className={`grade grade-${rating.grade}`}>
-        <strong>{rating.grade}</strong> <span>{rating.overall}/100 · {rating.label}</span>
+        <strong>{rating.grade}</strong>
+        {ruleIssues.length > 0 && (
+          <AlertMark className="grade-alert" alerts={[
+            { level: 'danger', text: t('rating.rulesBroken') },
+            ...ruleIssues.map(text => ({ level: 'danger' as const, text })),
+          ]} />
+        )}
+        <span>{rating.overall}/100 · {rating.label}</span>
       </p>
       {rating.archetype === 'stall' && <p className="rating-note">{t('rating.stall')}</p>}
       <dl className="bars">

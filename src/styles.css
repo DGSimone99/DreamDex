@@ -414,10 +414,13 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 .note strong { color: var(--text); }
 
 .rating .grade { display: flex; align-items: baseline; gap: 12px; margin: 0 0 10px; color: var(--muted); }
+.rating .grade .grade-alert { align-self: flex-start; margin: 2px -2px 0 -6px; }
+.rating .grade .grade-alert .icon { width: 18px; height: 18px; }
+.rating .grade .grade-alert .alert-pop { font: 400 13px/1.45 var(--ui); color: var(--text); text-transform: none; letter-spacing: 0; }
 .rating .rating-note { margin: -4px 0 10px; font-size: 13px; color: var(--muted); }
-.rating .grade strong { font: 700 44px/1 var(--display); color: var(--gold); }
-.rating .grade-C strong { color: var(--warn); }
-.rating .grade-D strong { color: var(--bad); }
+.rating .grade > strong { font: 700 44px/1 var(--display); color: var(--gold); }
+.rating .grade-C > strong { color: var(--warn); }
+.rating .grade-D > strong { color: var(--bad); }
 .rating .bars { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 20px; margin: 0 0 8px; }
 .rating .bars dt { font-size: 13px; color: var(--muted); margin-bottom: 4px; }
 .rating .area-link { padding: 0; border: 0; background: none; font: inherit; color: inherit; cursor: pointer; border-bottom: 1px dotted var(--faint); border-radius: 0; }

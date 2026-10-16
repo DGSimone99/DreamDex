@@ -72,7 +72,7 @@ describe('spread pronti sopra gli EV', () => {
     const { SetEditor } = await import('../../src/ui/SetEditor');
     const { emptySet } = await import('../../src/engine/sets');
     type TeamSet = import('../../src/engine/sets').TeamSet;
-    const common = { items: [], abilities: [], natures: [], moves: [], teraTypes: [], spreads: [
+    const common = { source: null, items: [], abilities: [], natures: [], moves: [], teraTypes: [], spreads: [
       { nature: 'Jolly', evs: { atk: 252, spe: 252, hp: 4 }, share: 0.32 },
       { nature: 'Impish', evs: { hp: 252, def: 164, spe: 92 }, share: null },
     ] };
@@ -109,12 +109,24 @@ describe('spread pronti sopra gli EV', () => {
   it('Tera più usati in cima alla tendina', async () => {
     const { SetEditor } = await import('../../src/ui/SetEditor');
     const { emptySet } = await import('../../src/engine/sets');
-    const common = { items: [], abilities: [], natures: [], moves: [], spreads: [], teraTypes: [{ name: 'Ground', share: 0.45 }] };
+    const common = { source: null, items: [], abilities: [], natures: [], moves: [], spreads: [], teraTypes: [{ name: 'Ground', share: 0.45 }] };
     const user = userEvent.setup();
     renderIt(<SetEditor set={emptySet('Garchomp')} common={common} genLimit={9} onChange={() => undefined} />);
     await user.click(screen.getByLabelText('Tera'));
     const first = within(screen.getByRole('listbox')).getAllByRole('option')[0];
     expect(first).toHaveAccessibleName('Ground');
     expect(first).toHaveTextContent('45%');
+  });
+});
+
+describe('più usati da un altro formato', () => {
+  it('l\u2019intestazione dice da dove vengono le quote', async () => {
+    const { SetEditor } = await import('../../src/ui/SetEditor');
+    const { emptySet } = await import('../../src/engine/sets');
+    const common = { source: 'gen9nationaldexubers', items: [{ name: 'Life Orb', share: 0.6 }], abilities: [], natures: [], moves: [], spreads: [], teraTypes: [] };
+    const user = userEvent.setup();
+    renderIt(<SetEditor set={emptySet('Mewtwo')} common={common} genLimit={9} onChange={() => undefined} />);
+    await user.click(screen.getByLabelText('Strumento'));
+    expect(screen.getByRole('listbox')).toHaveTextContent('Più usati · NatDex Ubers');
   });
 });
