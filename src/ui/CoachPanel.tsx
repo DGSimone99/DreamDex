@@ -110,9 +110,12 @@ export function CoachPanel({ coaching, preview = null, onReplace, onSwap }: {
                       <Icon name="arrow" />
                       <span className="visually-hidden">{tr('coach.with')}</span>
                       <PokemonName name={swap.replacement} icon />
-                      {gain >= 0
-                        ? <span className="gain" aria-label={tr('coach.betterBy', { n: gain })}>+{gain}</span>
-                        : <span className="gain worse" aria-label={tr('coach.worseBy', { n: -gain })}>−{-gain}</span>}
+                      {/* Punti di voto del team: il criterio con cui il coaching sceglie le sostituzioni */}
+                      {gain > 0
+                        ? <span className="gain" aria-label={tr('coach.betterBy', { n: gain })}>+{gain}<span className="gain-unit" aria-hidden="true">{tr('coach.ratingUnit')}</span></span>
+                        : gain === 0
+                          ? <span className="gain same" aria-label={tr('coach.sameRating')}>±0<span className="gain-unit" aria-hidden="true">{tr('coach.ratingUnit')}</span></span>
+                          : <span className="gain worse" aria-label={tr('coach.worseBy', { n: -gain })}>−{-gain}<span className="gain-unit" aria-hidden="true">{tr('coach.ratingUnit')}</span></span>}
                       {swap.similar && <small>{tr('coach.similarRole')}</small>}
                       {picked && <small className="picked-tag">{tr('coach.selected')}</small>}
                     </p>

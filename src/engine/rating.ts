@@ -1,12 +1,13 @@
 import { analyzeTeam, type TeamAnalysis } from './analysis';
 import type { EngineData } from './data';
-import { battleSpecies, toID } from './dex';
-import { teamPower, type MemberPower } from './power';
-import { DESIRABLE_ROLES, detectRoles, ESSENTIAL_ROLES, isStall, STALL_ROLES } from './roles';
+import { battleName, battleSpecies, toID } from './dex';
+import { hitQuality, memberPower, teamPower, type MemberPower } from './power';
+import { attackStyle, DESIRABLE_ROLES, detectRoles, ESSENTIAL_ROLES, isPassive, isStall, STALL_ROLES } from './roles';
+import { usageOf } from './stats';
 import type { TeamSet } from './sets';
 import { t, type Lang } from '../i18n';
 import { gameName, typeName } from '../i18n/game';
-import { TYPES } from './types';
+import { superEffectiveMoves, TYPES } from './types';
 import { conditionConflicts, conditionLabel, viaName, unmetBeneficiaries, unusedEnablers, weakenedMoves, weatherMitigations } from './synergy';
 
 export type AreaKey = 'defense' | 'coverage' | 'roles' | 'strength';
@@ -17,6 +18,14 @@ export const AREA_WEIGHTS: Record<AreaKey, number> = {
   coverage: 0.25,
   roles: 0.225,
   strength: 0.2,
+};
+
+/** Pesi per uno stall: la copertura conta la metà (attacca poco per scelta), il resto va alla difesa. */
+export const STALL_AREA_WEIGHTS: Record<AreaKey, number> = {
+  defense: AREA_WEIGHTS.defense + AREA_WEIGHTS.coverage / 2,
+  coverage: AREA_WEIGHTS.coverage / 2,
+  roles: AREA_WEIGHTS.roles,
+  strength: AREA_WEIGHTS.strength,
 };
 
 
@@ -113,7 +122,40 @@ export function weatherClashes(team: TeamSet[], lang: Lang = 'it'): Redundancy[]
   ];
 }
 
-export function redundancies(team: TeamSet[], analysis: TeamAnalysis, lang: Lang = 'it'): Redundancies {
+/** Forza sotto cui un membro poco usato nel formato è considerato debole. */
+export const WEAK_POWER = 30;
+/** Uso nel formato da cui un membro è "del meta", qualunque sia la sua forza. */
+export const META_USAGE = 0.01;
+/** Attaccanti minimi perché un team tutto fisico o tutto speciale sia una scelta e non un caso. */
+const ONE_STYLE_ATTACKERS = 4;
+
+/**
+ * Membri deboli e poco usati nel formato (−3 ciascuno; servono le statistiche) e team senza attaccanti
+ * fisici o speciali (−3; mai per uno stall, che attacca poco per scelta).
+ */
+export function memberIssues(team: TeamSet[], data: EngineData, lang: Lang = 'it'): Redundancy[] {
+  const items: Redundancy[] = [];
+  if (data.stats) {
+    for (const set of team) {
+      const power = memberPower(set);
+      if (power && power.power < WEAK_POWER && usageOf(data.stats, battleName(set)) < META_USAGE) {
+        items.push({ text: t(lang, 'rating.redundancy.weakMember', { member: battleName(set) }), points: 3 });
+      }
+    }
+  }
+  if (!isStall(team)) {
+    const styles = team.map(attackStyle);
+    const physical = styles.filter(s => s === 'physical' || s === 'mixed').length;
+    const special = styles.filter(s => s === 'special' || s === 'mixed').length;
+    if (physical + special >= ONE_STYLE_ATTACKERS && (physical === 0 || special === 0)) {
+      const missing = physical === 0 ? 'physical' : 'special';
+      items.push({ text: t(lang, 'rating.redundancy.oneStyle', { style: t(lang, `analysis.style.${missing}`) }), points: 3 });
+    }
+  }
+  return items;
+}
+
+export function redundancies(team: TeamSet[], analysis: TeamAnalysis, lang: Lang = 'it', data: EngineData | null = null): Redundancies {
   const common = 1 / TYPES.length;
   const weaknesses = analysis.weakness
     .filter(row => row.weak - row.resist >= 2)
@@ -126,11 +168,12 @@ export function redundancies(team: TeamSet[], analysis: TeamAnalysis, lang: Lang
     }));
   const dependencies = [
     ...unmetBeneficiaries(team).map(i => ({ text: t(lang, 'rating.redundancy.unmet', { member: i.member, via: viaName(i.via, lang), condition: conditionLabel(i.condition, lang) }), points: 3 })),
-    ...unusedEnablers(team).map(i => i.selfBoost
-      ? { text: t(lang, 'rating.redundancy.selfBoost', { via: viaName(i.via, lang), member: i.member }), points: 1 }
-      : { text: t(lang, 'rating.redundancy.unused', { via: viaName(i.via, lang), member: i.member }), points: 2 }),
+    ...unusedEnablers(team).map(i => ({ text: t(lang, 'rating.redundancy.unused', { via: viaName(i.via, lang), member: i.member }), points: 2 })),
   ];
-  const items = [...weaknesses, ...roleAndTypeRedundancies(team, lang), ...dependencies, ...weatherClashes(team, lang)];
+  const items = [
+    ...weaknesses, ...roleAndTypeRedundancies(team, lang), ...dependencies, ...weatherClashes(team, lang),
+    ...(data ? memberIssues(team, data, lang) : []),
+  ];
   return { total: Math.min(MAX_PENALTY, sum(items.map(i => i.points))), items };
 }
 
@@ -170,16 +213,23 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
   const analysis = analyzeTeam(team, data);
   const weights = analysis.typeWeights;
 
-  const defense = sum(analysis.weakness.map(row => weights[row.type] * typeSafety(row.weak, row.resist)));
-  const coverage = sum(analysis.coverage.filter(row => row.hitters.length > 0).map(row => weights[row.type]));
   const memberRoles = team.map(detectRoles);
+  // Stall riconosciuto "senza esagerare": a metà tra la valutazione normale e quella da stall
+  const archetype = isStall(team, memberRoles) ? 'stall' as const : null;
+  // Nello stall un muro passivo non deve fare danni: conta la sua robustezza, e i suoi colpi valgono pieni
+  const passive = archetype ? team.map((set, i) => isPassive(set, memberRoles[i])) : [];
+
+  const defense = sum(analysis.weakness.map(row => weights[row.type] * typeSafety(row.weak, row.resist)));
+  // Ogni tipo vale secondo il colpo migliore che lo prende: un Close Combat di Alakazam non vale uno di Great Tusk
+  const quality = (set: TeamSet, i: number, move: string) => (passive[i] ? 1 : hitQuality(set, move));
+  const coverage = sum(TYPES.map(type => weights[type]
+    * Math.max(0, ...team.flatMap((set, i) => superEffectiveMoves(set, type).map(move => quality(set, i, move))))));
   const present = new Set(memberRoles.flat());
   const usual = (ESSENTIAL_ROLES.filter(r => present.has(r)).length + 0.5 * DESIRABLE_ROLES.filter(r => present.has(r)).length)
     / (ESSENTIAL_ROLES.length + 0.5 * DESIRABLE_ROLES.length);
-  // Stall riconosciuto "senza esagerare": a metà tra la valutazione normale e quella da stall
-  const archetype = isStall(team, memberRoles) ? 'stall' as const : null;
   const roles = archetype ? (usual + STALL_ROLES.filter(r => present.has(r)).length / STALL_ROLES.length) / 2 : usual;
-  const power = teamPower(team);
+  const power = teamPower(team, passive);
+  const weightsFor = archetype ? STALL_AREA_WEIGHTS : AREA_WEIGHTS;
   const strength = power.value === null ? null : power.value / 100;
 
   const raw: Record<AreaKey, number | null> = { defense, coverage, roles, strength };
@@ -190,9 +240,9 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
   }));
   const available = (Object.keys(AREA_WEIGHTS) as AreaKey[]).filter(key => raw[key] !== null);
   const base = Math.round(
-    100 * sum(available.map(key => AREA_WEIGHTS[key] * raw[key]!)) / sum(available.map(key => AREA_WEIGHTS[key])),
+    100 * sum(available.map(key => weightsFor[key] * raw[key]!)) / sum(available.map(key => weightsFor[key])),
   );
-  const penalty = redundancies(team, analysis, lang);
+  const penalty = redundancies(team, analysis, lang, data);
   const bonus = weatherBonus(team, lang);
   const overall = Math.min(100, Math.max(0, base - penalty.total + bonus.total));
   return { base, penalty, bonus, power: power.members, overall, ...gradeFor(overall, lang), provisional: team.length < 6, areas, archetype };

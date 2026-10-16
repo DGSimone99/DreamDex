@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { EngineData } from '../engine/data';
 import type { Format } from '../engine/format';
 import { improveReplacements, similarity, similarReplacements, type Replacement } from '../engine/replace';
-import { describeDiff, SIMILAR_THRESHOLD, type SwapPreview } from '../engine/coach';
+import { describeDiff, ratingGainOf, SIMILAR_THRESHOLD, type SwapPreview } from '../engine/coach';
 import { suggest, type Suggestion } from '../engine/scoring';
 import { exportShowdown, type TeamSet } from '../engine/sets';
 import { getSpecies } from '../engine/dex';
@@ -317,6 +317,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
                 set: item.set,
                 score: item.score,
                 similar: similarity(team[replaceIndex], item.set) >= SIMILAR_THRESHOLD,
+                ratingGain: ratingGainOf(team, replaceIndex, item.set, data),
                 diff: item.diff,
               }, open) : undefined}
               emptyTeam={emptyTeam}

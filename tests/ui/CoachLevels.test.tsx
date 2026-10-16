@@ -8,7 +8,7 @@ import { emptySet } from '../../src/engine/sets';
 import { fixtureData } from '../fixtures/data';
 import { renderIt } from '../helpers/italian';
 
-const base = { index: 0, fit: 40, score: 60, similar: false, diff: { gains: { roles: [], covers: [], resists: [] }, losses: { roles: [], covers: [], resists: [] } } };
+const base = { index: 0, fit: 40, score: 60, similar: false, ratingGain: 8, diff: { gains: { roles: [], covers: [], resists: [] }, losses: { roles: [], covers: [], resists: [] } } };
 const coaching: Coaching = {
   verdict: 'Team solido',
   threatFixes: {},
@@ -31,6 +31,19 @@ describe('sostituzioni gialle e verdi', () => {
     expect(within(optional).getByText(/Great Tusk/)).toBeInTheDocument();
   });
 
+  it('ogni sostituzione mostra i punti di voto che fa guadagnare', () => {
+    renderIt(<CoachPanel coaching={coaching} onReplace={vi.fn()} />);
+    const recommended = screen.getByRole('group', { name: 'Valuta di sostituire' });
+    const gain = within(recommended).getByLabelText('alza il voto del team di 8 punti');
+    expect(gain).toHaveTextContent('+8al voto');
+  });
+
+  it('un sostituto che non cambia il voto mostra ±0', () => {
+    const same = { ...coaching, swaps: [{ ...coaching.swaps[0], ratingGain: 0 }] };
+    renderIt(<CoachPanel coaching={same} onReplace={vi.fn()} />);
+    expect(screen.getByLabelText('non cambia il voto del team')).toHaveTextContent('±0');
+  });
+
   it('un gruppo vuoto non viene mostrato', () => {
     renderIt(<CoachPanel coaching={{ ...coaching, swaps: [coaching.swaps[1]] }} onReplace={vi.fn()} />);
     expect(screen.queryByRole('group', { name: 'Valuta di sostituire' })).toBeNull();
@@ -39,14 +52,14 @@ describe('sostituzioni gialle e verdi', () => {
 
 describe('sostituto selezionato in "Altri sostituti"', () => {
   it('aggiorna la raccomandazione dello stesso membro con i suoi pro e contro', () => {
-    const preview = { index: 0, replacement: 'Skarmory', set: emptySet('Skarmory'), score: 35, similar: false,
+    const preview = { index: 0, replacement: 'Skarmory', set: emptySet('Skarmory'), score: 35, similar: false, ratingGain: -5,
       diff: { gains: { roles: [], covers: [], resists: ['Ground' as const] }, losses: { roles: [], covers: ['Fire' as const], resists: [] } } };
     renderIt(<CoachPanel coaching={coaching} preview={preview} onReplace={vi.fn()} />);
     const recommended = screen.getByRole('group', { name: 'Valuta di sostituire' });
     expect(within(recommended).getByText('Skarmory')).toBeInTheDocument();
     expect(within(recommended).queryByText('Corviknight')).toBeNull();
     expect(within(recommended).getByText('Selezionato')).toBeInTheDocument();
-    expect(within(recommended).getByLabelText('si adatta peggio di 5 punti')).toBeInTheDocument();
+    expect(within(recommended).getByLabelText('abbassa il voto del team di 5 punti')).toBeInTheDocument();
     expect(within(recommended).getByRole('list', { name: 'Vantaggi' })).toHaveTextContent('Resistente a Ground');
     expect(within(recommended).getByRole('list', { name: 'Svantaggi' })).toHaveTextContent('Non più forte contro Fire');
     // L'altra raccomandazione resta quella del coaching

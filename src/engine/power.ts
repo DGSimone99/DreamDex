@@ -1,5 +1,6 @@
-import type { Species } from '@pkmn/dex';
+import type { Move, Species } from '@pkmn/dex';
 import { battleSpecies, dex, isLegal } from './dex';
+import { attackStyle } from './roles';
 import type { TeamSet } from './sets';
 
 /** Quanto pesa il lato forte (offesa o robustezza) nella forza del membro. */
@@ -7,20 +8,24 @@ export const STRONG_SIDE = 0.65;
 
 type Stats = Species['baseStats'];
 
-/** Potenza offensiva: soprattutto la migliore tra Atk e SpA, con una quota per la velocità. */
-const offenseIndex = (bs: Stats) => 0.7 * Math.max(bs.atk, bs.spa) + 0.3 * bs.spe;
+/** Potenza offensiva: soprattutto la statistica d'attacco, con una quota per la velocità. */
+const offenseIndex = (bs: Stats, attack = Math.max(bs.atk, bs.spa)) => 0.7 * attack + 0.3 * bs.spe;
 /** Robustezza: PS combinati con la media delle due difese. */
 const bulkIndex = (bs: Stats) => (bs.hp * (bs.def + bs.spd)) / 2;
 
-let reference: { offense: number[]; bulk: number[] } | null = null;
+let reference: { offense: number[]; bulk: number[]; atk: number[]; spa: number[]; def: number[] } | null = null;
 
 /** Riferimento: tutti i Pokémon completamente evoluti legali in National Dex (Mega incluse). */
 function referencePool() {
   if (!reference) {
     const pool = dex.species.all().filter(s => s.exists && !s.nfe && isLegal(s));
+    const sorted = (f: (s: Species) => number) => pool.map(f).sort((a, b) => a - b);
     reference = {
-      offense: pool.map(s => offenseIndex(s.baseStats)).sort((a, b) => a - b),
-      bulk: pool.map(s => bulkIndex(s.baseStats)).sort((a, b) => a - b),
+      offense: sorted(s => offenseIndex(s.baseStats)),
+      bulk: sorted(s => bulkIndex(s.baseStats)),
+      atk: sorted(s => s.baseStats.atk),
+      spa: sorted(s => s.baseStats.spa),
+      def: sorted(s => s.baseStats.def),
     };
   }
   return reference;
@@ -40,20 +45,54 @@ export interface MemberPower {
   power: number;
 }
 
-/** Forza di un membro dalle statistiche base della forma in battaglia (la Mega se tiene la pietra). */
+/** Statistica d'attacco che il set sfrutta: Attacco se fisico, Attacco Speciale se speciale, altrimenti la migliore. */
+function usedAttack(set: TeamSet, bs: Stats): number {
+  const style = attackStyle(set);
+  return style === 'physical' ? bs.atk : style === 'special' ? bs.spa : Math.max(bs.atk, bs.spa);
+}
+
+/** Forza di un membro dalle statistiche base della forma in battaglia (la Mega se tiene la pietra) e dal tipo dei suoi attacchi. */
 export function memberPower(set: TeamSet): MemberPower | null {
   const species = battleSpecies(set);
   if (!species) return null;
   const ref = referencePool();
-  const offense = percentile(ref.offense, offenseIndex(species.baseStats));
+  const offense = percentile(ref.offense, offenseIndex(species.baseStats, usedAttack(set, species.baseStats)));
   const bulk = percentile(ref.bulk, bulkIndex(species.baseStats));
   const power = Math.round(STRONG_SIDE * Math.max(offense, bulk) + (1 - STRONG_SIDE) * Math.min(offense, bulk));
   return { species: species.name, offense, bulk, power };
 }
 
-/** Forza del team: media dei membri presenti nel Pokédex (null se nessuno lo è). */
-export function teamPower(team: TeamSet[]): { value: number | null; members: MemberPower[] } {
-  const members = team.map(memberPower).filter((m): m is MemberPower => m !== null);
+/** Valore minimo di un colpo super efficace, anche da chi ha la statistica d'attacco più bassa. */
+export const MIN_HIT_QUALITY = 0.4;
+/** Percentile della statistica d'attacco da cui il colpo vale pieno. */
+const FULL_HIT_PERCENTILE = 50;
+
+/**
+ * Quanto vale un colpo (0,4–1) dalla statistica che usa: Attacco, Attacco Speciale o Difesa (Body Press).
+ * Danno fisso (Seismic Toss) 0,6; Foul Play, che usa l'Attacco del bersaglio, 0,7.
+ */
+export function hitQuality(set: TeamSet, move: Move | string): number {
+  const m = typeof move === 'string' ? dex.moves.get(move) : move;
+  const species = battleSpecies(set);
+  if (!species || !m.exists) return MIN_HIT_QUALITY;
+  if (m.damage) return 0.6;
+  if (m.overrideOffensivePokemon === 'target') return 0.7;
+  const stat = (m.overrideOffensiveStat ?? (m.category === 'Physical' ? 'atk' : 'spa')) as 'atk' | 'spa' | 'def';
+  const ref = referencePool();
+  const p = percentile(ref[stat] ?? ref.atk, species.baseStats[stat]);
+  return Math.min(1, MIN_HIT_QUALITY + (1 - MIN_HIT_QUALITY) * p / FULL_HIT_PERCENTILE);
+}
+
+/**
+ * Forza del team: media dei membri presenti nel Pokédex (null se nessuno lo è).
+ * `passive[i]` vero: il membro è un muro passivo di uno stall e conta solo la sua robustezza.
+ */
+export function teamPower(team: TeamSet[], passive: boolean[] = []): { value: number | null; members: MemberPower[] } {
+  const scored = team
+    .map((set, i) => ({ member: memberPower(set), passive: passive[i] ?? false }))
+    .filter((x): x is { member: MemberPower; passive: boolean } => x.member !== null);
+  const members = scored.map(x => x.member);
   if (members.length === 0) return { value: null, members };
-  return { value: Math.round(members.reduce((acc, m) => acc + m.power, 0) / members.length), members };
+  const sum = scored.reduce((acc, x) => acc + (x.passive ? x.member.bulk : x.member.power), 0);
+  return { value: Math.round(sum / members.length), members };
 }

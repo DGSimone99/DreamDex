@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { rateTeam } from '../../src/engine/rating';
+import { AREA_WEIGHTS, rateTeam, STALL_AREA_WEIGHTS } from '../../src/engine/rating';
+import { memberPower, teamPower } from '../../src/engine/power';
+import { isPassive } from '../../src/engine/roles';
+import { metaTypeWeights } from '../../src/engine/stats';
+import { superEffectiveMove, TYPES } from '../../src/engine/types';
+
+/** Copertura con ogni colpo super efficace a valore pieno. */
+const fullCoverage = (team: TeamSet[]) => {
+  const w = metaTypeWeights(fixtureData.stats);
+  return Math.round(100 * TYPES.filter(type => team.some(s => superEffectiveMove(s, type))).reduce((acc, type) => acc + w[type], 0));
+};
 import { emptySet, type TeamSet } from '../../src/engine/sets';
 import { fixtureData, gholdengo, tusk } from '../fixtures/data';
 
@@ -70,5 +80,75 @@ describe('coaching di uno stall', () => {
     const noRemoval = stall.map(s => (s.species === 'Corviknight' ? { ...s, moves: ['Body Press', 'Iron Defense', 'Roost', 'Brave Bird'] } : s));
     const texts = coachTeam(noRemoval, DEFAULT_FORMAT, fixtureData, 'it').problems.map(p => p.text);
     expect(texts).toContainEqual(expect.stringMatching(/Ruoli mancanti: Rimozione hazard$/));
+  });
+});
+
+describe('membro passivo e riconoscimento dello stall', () => {
+  // Stall con Mega Sableye: Sableye-Mega e Quagsire non sono "muri" per statistiche, ma recuperano e attaccano poco
+  const sableyeStall: TeamSet[] = [
+    set('Sableye', 'Sablenite', 'Prankster', ['Knock Off', 'Recover', 'Will-O-Wisp', 'Calm Mind'], 'Careful', { hp: 252, def: 4, spd: 252 }),
+    set('Chansey', 'Eviolite', 'Natural Cure', ['Seismic Toss', 'Soft-Boiled', 'Toxic', 'Heal Bell'], 'Bold', { hp: 4, def: 252, spd: 252 }),
+    set('Skarmory', 'Rocky Helmet', 'Sturdy', ['Spikes', 'Roost', 'Brave Bird', 'Whirlwind'], 'Impish', { hp: 252, def: 252, spd: 4 }),
+    set('Quagsire', 'Leftovers', 'Unaware', ['Earthquake', 'Recover', 'Toxic', 'Scald'], 'Relaxed', { hp: 252, def: 252, spd: 4 }),
+    set('Mandibuzz', 'Heavy-Duty Boots', 'Overcoat', ['Foul Play', 'Roost', 'Defog', 'Toxic'], 'Impish', { hp: 252, def: 252, spd: 4 }),
+    set('Hippowdon', 'Leftovers', 'Sand Stream', ['Stealth Rock', 'Slack Off', 'Earthquake', 'Whirlwind'], 'Impish', { hp: 252, def: 252, spd: 4 }),
+  ];
+  // Muri e setup: Volcarona e Garchomp sono sweeper, non passivi
+  const setupBalance: TeamSet[] = [
+    set('Ferrothorn', 'Leftovers', 'Iron Barbs', ['Spikes', 'Leech Seed', 'Power Whip', 'Knock Off'], 'Relaxed', { hp: 252, def: 88, spd: 168 }),
+    set('Garchomp', 'Life Orb', 'Rough Skin', ['Swords Dance', 'Earthquake', 'Stone Edge', 'Fire Fang'], 'Jolly', { atk: 252, spd: 4, spe: 252 }),
+    set('Clefable', 'Leftovers', 'Magic Guard', ['Moonblast', 'Soft-Boiled', 'Calm Mind', 'Flamethrower'], 'Bold', { hp: 252, def: 252, spd: 4 }),
+    set('Heatran', 'Leftovers', 'Flash Fire', ['Magma Storm', 'Earth Power', 'Stealth Rock', 'Taunt'], 'Calm', { hp: 252, spd: 216, spe: 40 }),
+    set('Toxapex', 'Black Sludge', 'Regenerator', ['Scald', 'Toxic', 'Recover', 'Haze'], 'Bold', { hp: 252, def: 252, spd: 4 }),
+    set('Volcarona', 'Heavy-Duty Boots', 'Flame Body', ['Quiver Dance', 'Fiery Dance', 'Giga Drain', 'Roost'], 'Timid', { hp: 252, def: 4, spe: 252 }),
+  ];
+
+  it('passivo: al massimo 2 attacchi, non sweeper veloce con setup, muro o con recupero', () => {
+    expect(isPassive(sableyeStall[0])).toBe(true);
+    expect(isPassive(sableyeStall[3])).toBe(true);
+    expect(isPassive(setupBalance[1])).toBe(false);
+    expect(isPassive(setupBalance[5])).toBe(false);
+    expect(isPassive(set('Great Tusk', 'Leftovers', 'Protosynthesis', ['Headlong Rush', 'Ice Spinner', 'Close Combat', 'Rapid Spin'], 'Jolly', {}))).toBe(false);
+  });
+
+  it('lo stall con Mega Sableye è riconosciuto', () => {
+    expect(rateTeam(sableyeStall, fixtureData)!.archetype).toBe('stall');
+  });
+
+  it('muri con due sweeper in setup non sono stall', () => {
+    expect(rateTeam(setupBalance, fixtureData)!.archetype).toBeNull();
+  });
+});
+
+describe('voto dello stall', () => {
+  const weighted = (areas: { key: string; value: number | null }[], w: Record<string, number>) =>
+    Math.round(areas.reduce((acc, a) => acc + w[a.key] * a.value!, 0));
+
+  it('forza dei passivi dalla sola robustezza', () => {
+    const rating = rateTeam(stall, fixtureData)!;
+    const bulk = Math.round(stall.map(s => memberPower(s)!.bulk).reduce((a, b) => a + b, 0) / stall.length);
+    expect(rating.areas.find(a => a.key === 'strength')!.value).toBe(bulk);
+  });
+
+  it('pesi da stall: copertura dimezzata, il resto alla difesa', () => {
+    const rating = rateTeam(stall, fixtureData)!;
+    expect(Math.abs(rating.base - weighted(rating.areas, STALL_AREA_WEIGHTS))).toBeLessThanOrEqual(1);
+    expect(STALL_AREA_WEIGHTS.coverage).toBe(AREA_WEIGHTS.coverage / 2);
+  });
+
+  it('un team non stall usa pesi e forza di sempre', () => {
+    const team = [tusk, gholdengo];
+    const rating = rateTeam(team, fixtureData)!;
+    expect(Math.abs(rating.base - weighted(rating.areas, AREA_WEIGHTS))).toBeLessThanOrEqual(1);
+    expect(rating.areas.find(a => a.key === 'strength')!.value).toBe(teamPower(team).value);
+  });
+});
+
+describe('copertura di uno stall', () => {
+  it('i colpi dei muri passivi valgono pieni: copre un tipo chi può colpirlo, non chi fa più danni', () => {
+    const rating = rateTeam(stall, fixtureData)!;
+    expect(rating.archetype).toBe('stall');
+    // Toxapex (Scald) e Clodsire (Poison Jab) attaccano poco, ma nello stall i loro colpi contano interi
+    expect(rating.areas.find(a => a.key === 'coverage')!.value).toBe(fullCoverage(stall));
   });
 });
