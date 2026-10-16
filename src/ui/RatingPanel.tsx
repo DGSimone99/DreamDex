@@ -27,6 +27,7 @@ export function RatingPanel({ rating }: { rating: TeamRating }) {
       <p className={`grade grade-${rating.grade}`}>
         <strong>{rating.grade}</strong> <span>{rating.overall}/100 · {rating.label}</span>
       </p>
+      {rating.archetype === 'stall' && <p className="rating-note">{t('rating.stall')}</p>}
       <dl className="bars">
         {rating.areas.map(area => {
           const text = `${area.label} ${area.value ?? 'n/d'}`;

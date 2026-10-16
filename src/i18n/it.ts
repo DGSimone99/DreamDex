@@ -276,6 +276,7 @@ export const it: Record<keyof typeof en, string> = {
   'pros.label': "Vantaggi",
   'cons.label': "Svantaggi",
   'rating.title': "Valutazione team",
+  'rating.stall': "Valutato come stall: per i ruoli contano anche hazard, rimozione e muri",
   'rating.goTo': "Vai a {section}",
   'rating.bonus': "Bonus +{n}",
   'rating.penalty': "Penalità −{n}",

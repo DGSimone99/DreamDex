@@ -6,7 +6,7 @@ import type { Format } from './format';
 import { diffContribution, similarity, type Contribution, type Diff } from './replace';
 import { t, type Lang } from '../i18n';
 import { typeName } from '../i18n/game';
-import { detectRoles, ESSENTIAL_ROLES, roleLabel } from './roles';
+import { detectRoles, ESSENTIAL_ROLES, isStall, roleLabel, STALL_ROLES } from './roles';
 import { scoreCandidates, type Suggestion } from './scoring';
 import { roleAndTypeRedundancies, weatherClashes } from './rating';
 import { benefits, conditionLabel, viaName, enables, neededConditions, providesAll, teamSynergies, unmetBeneficiaries, unusedEnablers } from './synergy';
@@ -125,7 +125,12 @@ function findProblems(team: TeamSet[], format: Format, analysis: TeamAnalysis, c
     add('rules', true, t(lang, 'coach.problem.megas', { list: list(megas.map(battleName)) }), []);
   }
 
-  const missing = analysis.needs.missingRoles.filter(r => ESSENTIAL_ROLES.includes(r));
+  // Uno stall non ha bisogno di pivot, priorità o velocità: si chiedono i suoi ruoli
+  const memberRoles = team.map(detectRoles);
+  const present = new Set(memberRoles.flat());
+  const missing = isStall(memberRoles)
+    ? STALL_ROLES.filter(r => !present.has(r))
+    : analysis.needs.missingRoles.filter(r => ESSENTIAL_ROLES.includes(r));
   if (missing.length) {
     add('roles', false, t(lang, 'coach.problem.missingRoles', { roles: list(missing.map(r => roleLabel(r, lang))) }),
       fixesFor(candidates, s => s.facts.roles.filled.filter(r => missing.includes(r)).length));

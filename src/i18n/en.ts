@@ -274,6 +274,7 @@ export const en = {
   'pros.label': "Pros",
   'cons.label': "Cons",
   'rating.title': "Team rating",
+  'rating.stall': "Rated as stall: hazards, removal and walls also count for roles",
   'rating.goTo': "Go to {section}",
   'rating.bonus': "Bonus +{n}",
   'rating.penalty': "Penalty −{n}",

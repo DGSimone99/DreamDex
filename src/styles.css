@@ -414,6 +414,7 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 .note strong { color: var(--text); }
 
 .rating .grade { display: flex; align-items: baseline; gap: 12px; margin: 0 0 10px; color: var(--muted); }
+.rating .rating-note { margin: -4px 0 10px; font-size: 13px; color: var(--muted); }
 .rating .grade strong { font: 700 44px/1 var(--display); color: var(--gold); }
 .rating .grade-C strong { color: var(--warn); }
 .rating .grade-D strong { color: var(--bad); }
