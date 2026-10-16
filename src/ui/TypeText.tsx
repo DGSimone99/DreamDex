@@ -4,7 +4,7 @@ import { TYPES, type TypeName } from '../engine/types';
 import { TYPE_COLORS } from './Sprite';
 import { TypeDot } from './PokemonName';
 import type { Lang } from '../i18n';
-import { gameName, typeName, typeNames } from '../i18n/game';
+import { gameName, gameNamesVersion, namesWithTypes, typeName, typeNames } from '../i18n/game';
 import { useLang } from '../i18n/react';
 
 const PANEL = '#0f1735';
@@ -48,18 +48,22 @@ const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 // Nomi dei Pokémon (i più lunghi prima: "Charizard-Mega-Y" prima di "Charizard") e tipi, come parole a sé:
 // "Debole a Ground" sì, "Calyrex-Ice" o "Rotom-Fire" non sono tipi
 const SPECIES = speciesNames().sort((a, b) => b.length - a.length).map(escape);
-// Una regex per lingua: in italiano i tipi sono "Terra", "Spettro"… (solo con l'iniziale maiuscola)
-const NAMED = new Map<Lang, { regex: RegExp; english: Map<string, string> }>();
+// Una regex per lingua: in italiano i tipi sono "Terra", "Spettro"… (solo con l'iniziale maiuscola).
+// Per lingua e versione dei nomi: caricati i nomi italiani, si ricostruisce
+const NAMED = new Map<string, { regex: RegExp; english: Map<string, string> }>();
 function namedFor(lang: Lang) {
-  let entry = NAMED.get(lang);
+  const key = `${lang}:${gameNamesVersion()}`;
+  let entry = NAMED.get(key);
   if (!entry) {
     const types = typeNames(lang);
     const local = types.map(x => escape(x.local)).sort((a, b) => b.length - a.length);
+    // Mosse/abilità/strumenti che contengono un tipo ("Pugno Fuoco"): presi interi, così il tipo dentro non si colora
+    const kept = namesWithTypes(lang).sort((a, b) => b.length - a.length).map(escape);
     entry = {
-      regex: new RegExp(`(?<![\\w-])(?:(${SPECIES.join('|')})|(${local.join('|')}))(?![\\w-])`, 'g'),
+      regex: new RegExp(`(?<![\\w-])(?:(${SPECIES.join('|')})|(${kept.length ? kept.join('|') : '(?!)'})|(${local.join('|')}))(?![\\w-])`, 'g'),
       english: new Map(types.map(x => [x.local, x.english])),
     };
-    NAMED.set(lang, entry);
+    NAMED.set(key, entry);
   }
   return entry;
 }
@@ -75,7 +79,8 @@ export function Typed({ text }: { text: string }) {
     if (index > last) parts.push(text.slice(last, index));
     parts.push(match[1]
       ? <span key={index} className="mon-ref"><TypeDot name={match[1]} /><strong>{match[1]}</strong></span>
-      : <TypeLabel key={index} type={english.get(match[2]) ?? match[2]} />);
+      : match[2] ? match[2]
+      : <TypeLabel key={index} type={english.get(match[3]) ?? match[3]} />);
     last = index + match[0].length;
   }
   if (parts.length === 0) return <>{text}</>;

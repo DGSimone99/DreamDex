@@ -2,7 +2,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { EngineData } from '../src/engine/data';
 import { buildFallbackSets, mergePresets, normalizeAnalysisPresets, normalizeAnalysisSets, type PresetsData, type SetsData } from '../src/engine/sets';
-import { reduceChaos, reducePkmnStats, type ChaosFile, type PkmnStatsFile, type StatsMeta } from '../src/engine/stats';
+import { buildFallbackStats, reduceChaos, reducePkmnStats, type ChaosFile, type PkmnStatsFile, type StatsMeta } from '../src/engine/stats';
 import { listMonths, pickCutoff } from './smogon-index';
 import { FALLBACK_SETS, FALLBACK_STATS, SOURCES } from './sources';
 import { fetchItalianNames } from './pokeapi';
@@ -58,10 +58,12 @@ async function fetchSource(source: string, months: string[]): Promise<EngineData
 async function main() {
   const months = listMonths(await (await get(STATS_BASE)).text());
   const downloaded: EngineData[] = [];
+  const downloadedFormats: string[] = [];
   // Una fonte che fallisce non blocca le altre
   for (const source of SOURCES) {
     try {
       downloaded.push(await fetchSource(source, months));
+      downloadedFormats.push(source);
     } catch (error) {
       console.error(`[${source}] Errore: ${(error as Error).message}`);
     }
@@ -69,11 +71,13 @@ async function main() {
   if (downloaded.length === 0) process.exit(1);
   // Set di riserva: per ogni Pokémon, il set del formato in cui è in più squadre (anche fuori dal National Dex)
   const extraStats: EngineData[] = [];
+  const extraFormats: string[] = [];
   for (const format of FALLBACK_STATS) {
     try {
       const file = (await (await get(`https://data.pkmn.cc/stats/${format}.json`)).json()) as PkmnStatsFile;
       const pokemon = reducePkmnStats(file);
       extraStats.push({ stats: { meta: { month: '', cutoff: 0, battles: file.battles }, pokemon }, sets: null });
+      extraFormats.push(format);
       console.log(`[riserva] ${format}: ${Object.keys(pokemon).length} Pokémon`);
     } catch (error) {
       console.warn(`[riserva] ${format} non disponibile (${(error as Error).message})`);
@@ -95,6 +99,14 @@ async function main() {
   const fallbackPresets = mergePresets([...downloaded.map(d => d.presets), ...otherPresets]);
   await mkdir(join('data', '_fallback'), { recursive: true });
   await writeFile(join('data', '_fallback', 'presets.json'), JSON.stringify(fallbackPresets));
+  // Statistiche di riserva: per i Pokémon senza dati nel formato scelto (es. i vietati), i "Più usati" vengono da qui
+  // Prima i National Dex (stesse regole: Mega, Z), poi le altre generazioni per chi lì non è mai giocato
+  const fallbackStats = buildFallbackStats(
+    downloaded.flatMap((d, i) => (d.stats ? [{ format: downloadedFormats[i], stats: d.stats }] : [])),
+    extraStats.map((d, i) => ({ format: extraFormats[i], stats: d.stats! })),
+  );
+  await writeFile(join('data', '_fallback', 'stats.json'), JSON.stringify(fallbackStats));
+  console.log(`Statistiche di riserva: ${Object.keys(fallbackStats).length} Pokémon.`);
   console.log(`Preset Smogon di riserva: ${Object.keys(fallbackPresets).length} Pokémon.`);
   // Nomi e descrizioni italiane (mosse, abilità, strumenti, tipi, nature): un errore non blocca il resto
   try {

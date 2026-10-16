@@ -8,6 +8,9 @@ import { formatPercent, type Lang } from '../i18n';
 import { gameDesc, gameName, natureName, statShort, typeName } from '../i18n/game';
 import { useLang, useT } from '../i18n/react';
 import { Combobox, type ComboOption } from './Combobox';
+import { describe } from './describe';
+import { SpeedLine } from './SpeedLine';
+import { speedStat, type SpeedTier } from '../engine/speed';
 import { TypeChip } from './Sprite';
 import { ItemIcon } from './ItemIcon';
 import { Icon } from './icons';
@@ -27,15 +30,6 @@ function NatureEffect({ name }: { name: string }) {
 
 const CATEGORY_ICONS = { Physical: 'physical', Special: 'special', Status: 'status' } as const;
 
-/** Descrizioni: quelle dei giochi in italiano, altrimenti quelle di Showdown (in inglese). */
-const describe = {
-  item: (name: string, lang: Lang) => (name ? gameDesc('item', name, lang, dex.items.get(name).shortDesc || undefined) : undefined),
-  ability: (name: string, lang: Lang) => (name ? gameDesc('ability', name, lang, dex.abilities.get(name).shortDesc || undefined) : undefined),
-  move: (name: string, lang: Lang) => {
-    const move = getMove(name);
-    return move ? gameDesc('move', move.name, lang, move.shortDesc || move.desc || undefined) : undefined;
-  },
-};
 
 function MoveDetail({ name }: { name: string }) {
   const t = useT();
@@ -104,13 +98,15 @@ interface Props {
   common?: CommonChoices;
   /** Nome del formato se vieta il Tera: campo disattivato con la nota (il valore resta salvato). */
   teraBannedIn?: string;
+  /** Velocità del membro tra i più usati del meta (null senza statistiche). */
+  speed?: SpeedTier | null;
   onChange: (set: TeamSet) => void;
 }
 
 /** Voce del menu dei preset per un set che non coincide con nessun preset. */
 const CUSTOM_PRESET = 'custom';
 
-export function SetEditor({ set, presets = [], genLimit, common, teraBannedIn, onChange }: Props) {
+export function SetEditor({ set, presets = [], genLimit, common, teraBannedIn, speed, onChange }: Props) {
   const t = useT();
   const lang = useLang();
   // Le più usate vanno in cima al menu, con la quota d'uso (o "Preset" se vengono dalle analisi)
@@ -125,6 +121,8 @@ export function SetEditor({ set, presets = [], genLimit, common, teraBannedIn, o
     return [...top, ...options.filter(o => !picked.has(o.value))];
   };
   const commonKey = JSON.stringify(common ?? null);
+  // Quote da un altro formato (es. Pokémon vietato): l'intestazione dice da quale
+  const commonLabel = common?.source ? t('combobox.commonIn', { format: formatName(common.source) }) : undefined;
   const shareLabel = (c: { share: number | null }) => (c.share === null ? t('combobox.preset') : formatPercent(lang, c.share, 0));
   const custom = !!set.customSkillset;
   const species = getSpecies(set.species);
@@ -217,7 +215,7 @@ export function SetEditor({ set, presets = [], genLimit, common, teraBannedIn, o
         <legend>{t('editor.set')}</legend>
         <div className="field" data-tip={itemDesc}>
           <span className="field-head">{t('editor.item')}</span>
-          <Combobox label={t('editor.item')} value={set.item} options={itemOptions} description={itemDesc}
+          <Combobox label={t('editor.item')} commonLabel={commonLabel} value={set.item} options={itemOptions} description={itemDesc}
             leading={set.item ? <ItemIcon item={set.item} /> : undefined}
             onChange={item => update({ item })} />
         </div>
@@ -225,17 +223,17 @@ export function SetEditor({ set, presets = [], genLimit, common, teraBannedIn, o
           <span className="field-head">{t('editor.ability')}</span>
           {megaAbility ? (
             <span title={t('editor.megaAbility')}>
-              <Combobox label={t('editor.ability')} value={megaAbility} options={[abilityOption(megaAbility, lang)]} restricted disabled
+              <Combobox label={t('editor.ability')} commonLabel={commonLabel} value={megaAbility} options={[abilityOption(megaAbility, lang)]} restricted disabled
                 description={abilityDesc} onChange={() => undefined} />
             </span>
           ) : (
-            <Combobox label={t('editor.ability')} value={set.ability} options={abilityOptions} restricted={!custom}
+            <Combobox label={t('editor.ability')} commonLabel={commonLabel} value={set.ability} options={abilityOptions} restricted={!custom}
               description={abilityDesc} onChange={ability => update({ ability })} />
           )}
         </div>
         <div className="field">
           <span className="field-head">{t('editor.nature')}</span>
-          <Combobox label={t('editor.nature')} value={set.nature} options={natureOptions} restricted
+          <Combobox label={t('editor.nature')} commonLabel={commonLabel} value={set.nature} options={natureOptions} restricted
             display={<><span>{natureName(set.nature, lang)}</span>{set.nature && <NatureEffect name={set.nature} />}</>}
             onChange={nature => update({ nature })} />
         </div>
@@ -244,7 +242,7 @@ export function SetEditor({ set, presets = [], genLimit, common, teraBannedIn, o
             {t('editor.tera')}
             {teraBannedIn && <small className="field-note">{t('editor.teraBanned', { format: teraBannedIn })}</small>}
           </span>
-          <Combobox label={t('editor.tera')} value={set.teraType ?? ''} options={teraOptions} restricted disabled={!!teraBannedIn}
+          <Combobox label={t('editor.tera')} commonLabel={commonLabel} value={set.teraType ?? ''} options={teraOptions} restricted disabled={!!teraBannedIn}
             display={set.teraType ? <TypeChip type={set.teraType} /> : <span className="faint">{t('editor.none')}</span>}
             onChange={tera => update({ teraType: tera || undefined })} />
         </div>
@@ -261,6 +259,7 @@ export function SetEditor({ set, presets = [], genLimit, common, teraBannedIn, o
               label={t('editor.move', { n: i + 1 })}
               value={move}
               options={moveOptions}
+              commonLabel={commonLabel}
               description={describe.move(move, lang)}
               onChange={value => {
                 const next = [...moves];
@@ -306,6 +305,7 @@ export function SetEditor({ set, presets = [], genLimit, common, teraBannedIn, o
             />
           </label>
         ))}
+        {speed && <SpeedLine name={battleSpecies(set)?.name ?? set.species} tier={speed} scarf={speedStat(set).scarf} />}
       </fieldset>
     </div>
   );

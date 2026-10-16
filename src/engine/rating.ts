@@ -2,7 +2,7 @@ import { analyzeTeam, type TeamAnalysis } from './analysis';
 import type { EngineData } from './data';
 import { battleSpecies, toID } from './dex';
 import { teamPower, type MemberPower } from './power';
-import { DESIRABLE_ROLES, detectRoles, ESSENTIAL_ROLES } from './roles';
+import { DESIRABLE_ROLES, detectRoles, ESSENTIAL_ROLES, isStall, STALL_ROLES } from './roles';
 import type { TeamSet } from './sets';
 import { t, type Lang } from '../i18n';
 import { gameName, typeName } from '../i18n/game';
@@ -62,7 +62,10 @@ export interface TeamRating {
   label: string;
   provisional: boolean;
   areas: RatingArea[];
+  /** Archetipo riconosciuto che cambia il calcolo dei ruoli (per ora solo lo stall). */
+  archetype: 'stall' | null;
 }
+
 
 const sum = (xs: number[]) => xs.reduce((a, b) => a + b, 0);
 
@@ -169,9 +172,13 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
 
   const defense = sum(analysis.weakness.map(row => weights[row.type] * typeSafety(row.weak, row.resist)));
   const coverage = sum(analysis.coverage.filter(row => row.hitters.length > 0).map(row => weights[row.type]));
-  const present = new Set(team.flatMap(detectRoles));
-  const roles = (ESSENTIAL_ROLES.filter(r => present.has(r)).length + 0.5 * DESIRABLE_ROLES.filter(r => present.has(r)).length)
+  const memberRoles = team.map(detectRoles);
+  const present = new Set(memberRoles.flat());
+  const usual = (ESSENTIAL_ROLES.filter(r => present.has(r)).length + 0.5 * DESIRABLE_ROLES.filter(r => present.has(r)).length)
     / (ESSENTIAL_ROLES.length + 0.5 * DESIRABLE_ROLES.length);
+  // Stall riconosciuto "senza esagerare": a metà tra la valutazione normale e quella da stall
+  const archetype = isStall(memberRoles) ? 'stall' as const : null;
+  const roles = archetype ? (usual + STALL_ROLES.filter(r => present.has(r)).length / STALL_ROLES.length) / 2 : usual;
   const power = teamPower(team);
   const strength = power.value === null ? null : power.value / 100;
 
@@ -188,6 +195,6 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
   const penalty = redundancies(team, analysis, lang);
   const bonus = weatherBonus(team, lang);
   const overall = Math.min(100, Math.max(0, base - penalty.total + bonus.total));
-  return { base, penalty, bonus, power: power.members, overall, ...gradeFor(overall, lang), provisional: team.length < 6, areas };
+  return { base, penalty, bonus, power: power.members, overall, ...gradeFor(overall, lang), provisional: team.length < 6, areas, archetype };
 }
 
