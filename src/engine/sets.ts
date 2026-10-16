@@ -1,6 +1,6 @@
 import { t, type Lang } from '../i18n';
 import { Sets } from '@pkmn/sets';
-import { dex, getMove, getSpecies, toID } from './dex';
+import { dex, getMove, getSpecies, teamFormeOf, toID } from './dex';
 import type { EngineData } from './data';
 import { isLearnable, isLegalAbility, legalAbilities, legalMoves } from './learnsets';
 import { findByName, statsEntry, type StatsData } from './stats';
@@ -117,6 +117,12 @@ export function withAbility(set: TeamSet): TeamSet {
  * Reso legale fino a `genLimit` (mosse non imparabili sostituite dalle successive più usate).
  */
 export function defaultSet(data: EngineData, speciesName: string, genLimit = 9): TeamSet {
+  // Forma solo da battaglia (Necrozma-Ultra): nel team va la forma che la raggiunge, col suo strumento
+  const team = teamFormeOf(speciesName);
+  if (team) {
+    const ultra = presetsFor(data, team.species).find(p => p.set.item === team.item);
+    return ultra ? makeLegal(ultra.set, data, genLimit) : { ...defaultSet(data, team.species, genLimit), item: team.item };
+  }
   const found = findByName(data.presets ?? undefined, speciesName)?.[0]?.set
     ?? mostCommonSet(data.stats, speciesName)
     ?? findByName(data.sets ?? undefined, speciesName)
@@ -240,8 +246,14 @@ export function mergePresets(lists: (PresetsData | null | undefined)[], limit = 
 
 /** I preset per un Pokémon: prima quelli del formato scelto, poi quelli degli altri formati. */
 export function presetsFor(data: EngineData, speciesName: string): Preset[] {
-  const own = findByName(data.presets ?? undefined, speciesName) ?? [];
-  const other = findByName(data.fallbackPresets ?? undefined, speciesName) ?? [];
+  const species = getSpecies(speciesName)?.name ?? speciesName;
+  // I preset di Smogon per "Necrozma-Ultra" vanno sulla forma da team che la raggiunge, con lo Z-cristallo
+  const battleFormePresets = (list: PresetsData | null | undefined) =>
+    (findByName(list ?? undefined, 'Necrozma-Ultra') ?? [])
+      .map(p => ({ ...p, set: { ...p.set, ...teamFormeOf(p.set.species, p.set.evs) } }))
+      .filter(p => p.set.species === species);
+  const own = [...(findByName(data.presets ?? undefined, speciesName) ?? []), ...battleFormePresets(data.presets)];
+  const other = [...(findByName(data.fallbackPresets ?? undefined, speciesName) ?? []), ...battleFormePresets(data.fallbackPresets)];
   return (mergePresets([{ x: own }, { x: other }]).x ?? []).map(p => ({ ...p, set: withAbility(p.set) }));
 }
 
