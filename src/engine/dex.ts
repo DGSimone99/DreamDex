@@ -94,6 +94,20 @@ export function natDexTier(species: Species): string {
 }
 
 /** Scegliibile nel teambuilder: niente forme che esistono solo in battaglia (tranne Mega e Primal). */
+/**
+ * Forma solo estetica (Greninja-Bond, Vivillon, Pikachu col cappello…): stesse statistiche e tipi della specie base
+ * e abilità che la base ha già. Nei suggerimenti e nella ricerca sarebbe un doppione della base.
+ */
+export function isCosmeticForme(species: Species): boolean {
+  if (species.name === species.baseSpecies || species.battleOnly) return false;
+  const base = dex.species.get(species.baseSpecies);
+  if (!base?.exists) return false;
+  const abilities = Object.values(base.abilities);
+  return JSON.stringify(species.baseStats) === JSON.stringify(base.baseStats)
+    && species.types.join() === base.types.join()
+    && Object.values(species.abilities).every(a => abilities.includes(a));
+}
+
 export function isTeambuildable(species: Species): boolean {
   return species.exists && isSelectable(species) && (!species.battleOnly || !!species.isMega || !!species.isPrimal);
 }

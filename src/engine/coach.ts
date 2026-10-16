@@ -8,7 +8,7 @@ import { diffContribution, similarity, type Contribution, type Diff } from './re
 import { t, type Lang } from '../i18n';
 import { gameName, typeName } from '../i18n/game';
 import { illegalParts } from './learnsets';
-import { detectRoles, ESSENTIAL_ROLES, isPassive, isStall, roleLabel, STALL_ROLES } from './roles';
+import { detectRoles, ESSENTIAL_ROLES, isPassive, isStall, roleLabel, STALL_ROLES, teamRoles } from './roles';
 import { scoreCandidates, type Suggestion } from './scoring';
 import { memberIssues, rateTeam, roleAndTypeRedundancies, weatherClashes } from './rating';
 import { benefits, conditionLabel, viaName, enables, neededConditions, providesAll, teamSynergies, unmetBeneficiaries, unusedEnablers } from './synergy';
@@ -141,7 +141,7 @@ function findProblems(team: TeamSet[], format: Format, data: EngineData, analysi
   }
 
   // Uno stall non ha bisogno di pivot, priorità o velocità: si chiedono i suoi ruoli
-  const memberRoles = team.map(detectRoles);
+  const memberRoles = team.map(teamRoles);
   const present = new Set(memberRoles.flat());
   const missing = isStall(team, memberRoles)
     ? STALL_ROLES.filter(r => !present.has(r))
