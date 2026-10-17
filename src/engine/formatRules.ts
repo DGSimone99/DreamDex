@@ -32,9 +32,17 @@ export const UU_RULES: FormatRules = { ...DEFAULT_RULES, noHazardsPenalty: 4, st
 /** Gen 9: il Tera è una via d'uscita da una debolezza (una volta per partita): piccolo bonus, come il meteo. */
 export const GEN9_RULES: FormatRules = { ...DEFAULT_RULES, teraBonusCap: 3 };
 
+/** Gen 9 Ubers e UU: le regole di National Dex Ubers e UU, più il bonus Tera di Gen 9. */
+export const GEN9_UBERS_RULES: FormatRules = { ...UBERS_RULES, teraBonusCap: GEN9_RULES.teraBonusCap };
+export const GEN9_UU_RULES: FormatRules = { ...UU_RULES, strengthPool: 'gen9uu', teraBonusCap: GEN9_RULES.teraBonusCap };
+
+const RULES: Partial<Record<FormatId, FormatRules>> = {
+  ubers: UBERS_RULES, uu: UU_RULES,
+  gen9ou: GEN9_RULES, gen9ubers: GEN9_UBERS_RULES, gen9uu: GEN9_UU_RULES, gen9ag: GEN9_RULES,
+};
+
 export function formatRules(formatId: FormatId | undefined): FormatRules {
-  if (formatId === 'gen9ou') return GEN9_RULES;
-  return formatId === 'ubers' ? UBERS_RULES : formatId === 'uu' ? UU_RULES : DEFAULT_RULES;
+  return (formatId && RULES[formatId]) ?? DEFAULT_RULES;
 }
 
 /** Le regole del formato dei dati (impostato dall'app; senza, quelle di sempre). */

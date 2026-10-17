@@ -22,9 +22,13 @@ const FORMATS: Record<FormatId, FormatDef> = {
   uu: { source: 'gen9nationaldexuu', banned: new Set(['OU', 'UUBL', 'Uber', 'AG', ...ALWAYS]), tera: false, pokedex: 'natdex' },
   all: { source: 'gen9nationaldexubers', banned: new Set(), tera: true, pokedex: 'natdex' },
   gen9ou: { source: 'gen9ou', banned: new Set(['Uber', 'AG', ...ALWAYS]), tera: true, pokedex: 'sv' },
+  gen9ubers: { source: 'gen9ubers', banned: new Set(['AG', ...ALWAYS]), tera: true, pokedex: 'sv' },
+  gen9uu: { source: 'gen9uu', banned: new Set(['OU', 'UUBL', 'Uber', 'AG', ...ALWAYS]), tera: true, pokedex: 'sv' },
+  // Anything Goes: nessun Pokémon vietato, solo quelli ottenibili in Scarlatto/Violetto
+  gen9ag: { source: 'gen9anythinggoes', banned: new Set(ALWAYS), tera: true, pokedex: 'sv' },
 };
 
-const FORMAT_IDS: FormatId[] = ['ou', 'ubers', 'uu', 'all', 'gen9ou'];
+const FORMAT_IDS: FormatId[] = ['ou', 'ubers', 'uu', 'all', 'gen9ou', 'gen9ubers', 'gen9uu', 'gen9ag'];
 
 /** I formati per il menu, con le etichette nella lingua data. */
 export const formatOptions = (lang: Lang = 'it'): { id: FormatId; label: string }[] =>
@@ -37,7 +41,7 @@ export type DexId = 'gen9' | 'natdex' | 'nolimits';
 
 /** Per ogni Pokédex i suoi tier, nell'ordine del menu; Senza limiti ha un solo formato e nessun tier da scegliere. */
 const DEX_TIERS: Record<DexId, { formatId: FormatId; tier: string }[]> = {
-  gen9: [{ formatId: 'gen9ou', tier: 'OU' }],
+  gen9: [{ formatId: 'gen9ou', tier: 'OU' }, { formatId: 'gen9ubers', tier: 'Ubers' }, { formatId: 'gen9uu', tier: 'UU' }, { formatId: 'gen9ag', tier: 'Anything Goes' }],
   natdex: [{ formatId: 'ou', tier: 'OU' }, { formatId: 'ubers', tier: 'Ubers' }, { formatId: 'uu', tier: 'UU' }],
   nolimits: [{ formatId: 'all', tier: '' }],
 };
