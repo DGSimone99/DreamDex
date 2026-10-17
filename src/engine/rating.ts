@@ -54,7 +54,13 @@ const TRICK_ROOM_WEIGHTS: Record<BaseArea, number> = { ...OTHER_AREAS, speed: 0 
  * Valore da cui un'area è piena: un team da torneo non resiste a tutto né ha sei Pokémon fortissimi,
  * e non deve servire la perfezione per arrivare in S (come l'area Meta, piena a META_FULL).
  */
-export const AREA_FULL: Record<BaseArea, number> = { defense: 0.95, coverage: 0.97, roles: 0.95, strength: 0.92, speed: 0.9 };
+export const AREA_FULL: Record<BaseArea, number> = { defense: 0.95, coverage: 0.9, roles: 0.95, strength: 0.92, speed: 0.9 };
+
+/**
+ * Coverage in profondità: per ogni tipo, il colpo migliore del 1°, 2° e 3° membro che lo colpisce vale 70%, 20% e 10%.
+ * Un solo Pokémon che colpisce un tipo non basta per la copertura piena.
+ */
+export const COVERAGE_DEPTH = [0.7, 0.2, 0.1];
 
 /** Nei Ruoli: quota data da quanti compiti copre in media ogni membro ("role compression"), piena a 3. */
 export const ROLE_COMPRESSION = 0.3;
@@ -303,10 +309,14 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
   const passive = archetype ? team.map((set, i) => isPassive(set, memberRoles[i])) : [];
 
   const defense = sum(analysis.weakness.map(row => weights[row.type] * typeSafety(row.weak, row.resist)));
-  // Ogni tipo vale secondo il colpo migliore che lo prende: un Close Combat di Alakazam non vale uno di Great Tusk
+  // Ogni tipo vale secondo i colpi che lo prendono (un Close Combat di Alakazam non vale uno di Great Tusk)
+  // e secondo quanti membri diversi lo colpiscono: se l'unico che lo colpisce è KO, il tipo resta scoperto
   const quality = (set: TeamSet, i: number, move: string) => (passive[i] ? 1 : hitQuality(set, move));
-  const coverage = sum(TYPES.map(type => weights[type]
-    * Math.max(0, ...team.flatMap((set, i) => superEffectiveMoves(set, type).map(move => quality(set, i, move))))));
+  const coverage = sum(TYPES.map(type => {
+    const best = team.map((set, i) => Math.max(0, ...superEffectiveMoves(set, type).map(move => quality(set, i, move))))
+      .sort((a, b) => b - a);
+    return weights[type] * Math.min(1, sum(COVERAGE_DEPTH.map((share, i) => share * (best[i] ?? 0))));
+  }));
   // Ruoli richiesti in base all'archetipo del team (uno stall non ha bisogno di sweeper, un hyper offense di wall),
   // più quanti compiti copre ogni membro: nei team da torneo ognuno fa 2-3 cose
   const jobs = sum(team.map(set => NEEDS.filter(need => meetsNeed(need, set, rules)).length)) / team.length;

@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { teamPower } from '../../src/engine/power';
-import { AREA_FULL, AREA_WEIGHTS, META_WEIGHT, SPEED_WEIGHT, gradeFor, rateTeam, typeSafety } from '../../src/engine/rating';
+import { AREA_FULL, AREA_WEIGHTS, COVERAGE_DEPTH, META_WEIGHT, SPEED_WEIGHT, gradeFor, rateTeam, typeSafety } from '../../src/engine/rating';
+import { hitQuality } from '../../src/engine/power';
+import { metaTypeWeights } from '../../src/engine/stats';
+import { superEffectiveMoves, TYPES } from '../../src/engine/types';
 
 /** Valore mostrato di un'area: piena dal suo riferimento in su (AREA_FULL). */
 const full = (key: keyof typeof AREA_FULL, percent: number) => Math.round(Math.min(100, percent / AREA_FULL[key]));
@@ -48,7 +51,15 @@ describe('rateTeam', () => {
   it('aree calcolate sulla fixture', () => {
     // Difesa 73% e Coverage 81% della perfezione, tarate: piene a 95% e 97%
     expect(value(rating, 'defense')).toBe(full('defense', 73.2));
-    expect(Math.abs(value(rating, 'coverage')! - full('coverage', 81))).toBeLessThanOrEqual(1);
+    // Coverage in profondità: per tipo, il colpo migliore di ogni membro, 70% al primo e 20% al secondo
+    const w = metaTypeWeights(fixtureData.stats);
+    const coverage = TYPES.reduce((acc, type) => {
+      const best = [tusk, gholdengo].map(s => Math.max(0, ...superEffectiveMoves(s, type).map(m => hitQuality(s, m)))).sort((a, b) => b - a);
+      return acc + w[type] * Math.min(1, COVERAGE_DEPTH.reduce((a, share, i) => a + share * (best[i] ?? 0), 0));
+    }, 0);
+    expect(value(rating, 'coverage')).toBe(full('coverage', 100 * coverage));
+    // Un solo colpo per tipo non basta più per la copertura piena
+    expect(value(rating, 'coverage')).toBeLessThan(full('coverage', 81));
     // Forza dalle statistiche base: media dei membri, indipendente dall'uso nel meta
     expect(value(rating, 'strength')).toBe(full('strength', teamPower([tusk, gholdengo]).value!));
   });

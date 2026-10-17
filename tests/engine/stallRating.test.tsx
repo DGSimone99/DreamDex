@@ -1,6 +1,6 @@
 import { DEFAULT_RULES } from '../../src/engine/formatRules';
 import { describe, expect, it } from 'vitest';
-import { AREA_FULL, AREA_WEIGHTS, META_WEIGHT, rateTeam, ROLE_COMPRESSION, SPEED_WEIGHT, STALL_AREA_WEIGHTS } from '../../src/engine/rating';
+import { AREA_FULL, AREA_WEIGHTS, COVERAGE_DEPTH, META_WEIGHT, rateTeam, ROLE_COMPRESSION, SPEED_WEIGHT, STALL_AREA_WEIGHTS } from '../../src/engine/rating';
 import { meetsNeed, needCoverage, NEEDS, teamNeeds } from '../../src/engine/needs';
 
 const full = (key: keyof typeof AREA_FULL, percent: number) => Math.round(Math.min(100, percent / AREA_FULL[key]));
@@ -9,10 +9,13 @@ import { detectRoles, isPassive } from '../../src/engine/roles';
 import { metaTypeWeights } from '../../src/engine/stats';
 import { superEffectiveMove, TYPES } from '../../src/engine/types';
 
-/** Copertura con ogni colpo super efficace a valore pieno. */
+/** Copertura con ogni colpo super efficace a valore pieno, in profondità: 70/20/10 al 1°, 2° e 3° membro che colpisce il tipo. */
 const fullCoverage = (team: TeamSet[]) => {
   const w = metaTypeWeights(fixtureData.stats);
-  return Math.round(100 * TYPES.filter(type => team.some(s => superEffectiveMove(s, type))).reduce((acc, type) => acc + w[type], 0));
+  return 100 * TYPES.reduce((acc, type) => {
+    const hitters = team.filter(s => superEffectiveMove(s, type)).length;
+    return acc + w[type] * Math.min(1, COVERAGE_DEPTH.slice(0, hitters).reduce((a, b) => a + b, 0));
+  }, 0);
 };
 import { emptySet, type TeamSet } from '../../src/engine/sets';
 import { fixtureData, gholdengo, tusk } from '../fixtures/data';
