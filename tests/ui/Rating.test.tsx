@@ -15,22 +15,26 @@ describe('Valutazione team', () => {
     // Il dettaglio per membro (quanto colpisce) sta nel tooltip di "Offesa"
     expect(rating).not.toHaveTextContent('Offesa: Great Tusk');
     expect(within(rating).getByText(/^Offesa \d+$/)).toHaveAttribute('data-tip', expect.stringMatching(/^Great Tusk \d+\nGholdengo \d+$/));
-    // Difesa: tipi e robustezza dei membri
-    expect(rating).toHaveTextContent(/Difesa \d+/);
+    // Coverage difensiva (tipi) e Robustezza (quanto incassano i membri) sono due barre
+    expect(rating).toHaveTextContent(/Coverage difensiva \d+/);
+    expect(within(rating).getByText(/^Robustezza \d+$/)).toHaveAttribute('data-tip', expect.stringMatching(/^Quanto incassa ogni membro\n(Great Tusk|Gholdengo) \d+\n(Great Tusk|Gholdengo) \d+$/));
     expect(rating).toHaveTextContent(/Velocità \d+/);
     expect(rating).not.toHaveTextContent('Sinergia');
   });
 
-  it('Difesa, Coverage e Ruoli portano alla loro scheda aprendola', async () => {
+  it('Coverage offensiva, Coverage difensiva e Ruoli portano alla loro scheda aprendola', async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} />);
     for (const name of ['Great Tusk', 'Gholdengo']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
     const rating = screen.getByRole('group', { name: 'Valutazione team' });
     const coverage = screen.getByText('Coverage offensiva').closest('details')!;
     expect(coverage).not.toHaveAttribute('open');
-    await user.click(within(rating).getByRole('button', { name: /^Coverage \d+$/ }));
+    const offensive = within(rating).getByRole('button', { name: /^Coverage offensiva \d+$/ });
+    // Il tooltip mostra quanti tipi colpisce ogni membro e dove porta il clic
+    expect(offensive).toHaveAttribute('data-tip', expect.stringMatching(/^Tipi colpiti super efficace\n.+\nVai a Coverage offensiva$/s));
+    await user.click(offensive);
     expect(coverage).toHaveAttribute('open');
-    expect(within(rating).getByRole('button', { name: /^Difesa \d+$/ })).toHaveAttribute('title', 'Vai a Debolezze difensive');
+    expect(within(rating).getByRole('button', { name: /^Coverage difensiva \d+$/ })).toHaveAttribute('title', 'Vai a Debolezze difensive');
     expect(within(rating).queryByRole('button', { name: /^Offesa/ })).toBeNull();
   });
 

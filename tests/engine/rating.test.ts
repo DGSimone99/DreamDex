@@ -53,10 +53,12 @@ describe('rateTeam', () => {
   const rating = rateTeam([tusk, gholdengo], fixtureData)!;
 
   it('aree calcolate sulla fixture', () => {
-    // Difesa: tipi (73% della perfezione, pieni a 95%) e robustezza media (piena a 90%), 35% di robustezza per un balance
+    // Coverage difensiva: tipi (73% della perfezione, piena a 95%); Robustezza: media dei membri, piena a 90%
+    expect(value(rating, 'defense')).toBe(full('defense', 73.2));
     const bulk = [tusk, gholdengo].reduce((a, s) => a + memberPower(s)!.bulk, 0) / 2 / 100;
-    const defense = (1 - BULK_SHARE.balance) * Math.min(1, 0.732 / AREA_FULL.defense) + BULK_SHARE.balance * Math.min(1, bulk / BULK_FULL);
-    expect(Math.abs(value(rating, 'defense')! - Math.round(100 * defense))).toBeLessThanOrEqual(1);
+    expect(value(rating, 'bulk')).toBe(Math.round(100 * Math.min(1, bulk / BULK_FULL)));
+    // Le due si dividono il peso della difesa: per un balance (team incompleto) il 35% va alla Robustezza
+    expect(rating.weights.bulk! / (rating.weights.bulk! + rating.weights.defense!)).toBeCloseTo(BULK_SHARE.balance);
     // Coverage in profondità: per tipo, il colpo migliore di ogni membro, 70% al primo e 20% al secondo
     const w = metaTypeWeights(fixtureData.stats);
     const coverage = TYPES.reduce((acc, type) => {
@@ -71,14 +73,17 @@ describe('rateTeam', () => {
   });
 
   it('voto complessivo pesato, provvisorio con meno di 6 membri', () => {
-    const base = rating.areas.filter(a => a.key !== 'meta').reduce((acc, a) => acc + AREA_WEIGHTS[a.key as keyof typeof AREA_WEIGHTS] * a.value!, 0);
+    // Pesi effettivi delle aree (somma 1), poi l'area Meta
+    expect(Object.values(rating.weights).reduce((a, b) => a + b!, 0)).toBeCloseTo(1);
+    expect(rating.metaWeight).toBe(META_WEIGHT);
+    const base = rating.areas.filter(a => a.key !== 'meta').reduce((acc, a) => acc + rating.weights[a.key]! * a.value!, 0);
     const expected = Math.round((1 - META_WEIGHT) * base + META_WEIGHT * value(rating, 'meta')!);
     expect(Math.abs(rating.base - expected)).toBeLessThanOrEqual(1);
     expect(rating).toMatchObject({ overall: rating.base, provisional: true });
   });
 
   it('ordine e nomi delle aree', () => {
-    expect(rating.areas.map(a => a.label)).toEqual(['Difesa', 'Coverage', 'Ruoli', 'Offesa', 'Velocità', 'Meta']);
+    expect(rating.areas.map(a => a.label)).toEqual(['Coverage offensiva', 'Coverage difensiva', 'Offesa', 'Robustezza', 'Ruoli', 'Velocità', 'Meta']);
   });
 
   it('team completo: non provvisorio', () => {

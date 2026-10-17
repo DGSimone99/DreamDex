@@ -65,12 +65,61 @@ export interface AttackMove {
   type: TypeName;
 }
 
-export function attackingMoves(set: TeamSet): AttackMove[] {
+/** Meteo e campo in gioco: cambiano il tipo di Weather Ball e Terrain Pulse. */
+export interface Field {
+  weather: 'sun' | 'rain' | 'sand' | 'snow' | null;
+  terrain: 'electric' | 'grassy' | 'misty' | 'psychic' | null;
+}
+
+const WEATHER_SOURCES: Record<string, Field['weather']> = {
+  drought: 'sun', orichalcumpulse: 'sun', desolateland: 'sun', sunnyday: 'sun',
+  drizzle: 'rain', primordialsea: 'rain', raindance: 'rain',
+  sandstream: 'sand', sandstorm: 'sand',
+  snowwarning: 'snow', snowscape: 'snow', hail: 'snow', chillyreception: 'snow',
+};
+const TERRAIN_SOURCES: Record<string, Field['terrain']> = {
+  electricsurge: 'electric', hadronengine: 'electric', electricterrain: 'electric',
+  grassysurge: 'grassy', seedsower: 'grassy', grassyterrain: 'grassy',
+  mistysurge: 'misty', mistyterrain: 'misty',
+  psychicsurge: 'psychic', psychicterrain: 'psychic',
+};
+const WEATHER_BALL: Record<NonNullable<Field['weather']>, TypeName> = { sun: 'Fire', rain: 'Water', sand: 'Rock', snow: 'Ice' };
+const TERRAIN_PULSE: Record<NonNullable<Field['terrain']>, TypeName> = { electric: 'Electric', grassy: 'Grass', misty: 'Fairy', psychic: 'Psychic' };
+
+/** Meteo e campo che il Pokémon porta da sé (abilità o mossa). */
+export function ownField(set: TeamSet): Field {
+  const sources = [toID(battleAbility(set)), ...set.moves.map(toID)];
+  return {
+    weather: sources.map(id => WEATHER_SOURCES[id]).find(Boolean) ?? null,
+    terrain: sources.map(id => TERRAIN_SOURCES[id]).find(Boolean) ?? null,
+  };
+}
+
+/** Meteo e campo del team: quelli del primo membro che li porta. */
+export function teamField(team: TeamSet[]): Field {
+  const fields = team.map(ownField);
+  return { weather: fields.find(f => f.weather)?.weather ?? null, terrain: fields.find(f => f.terrain)?.terrain ?? null };
+}
+
+/**
+ * Mosse d'attacco col loro tipo in battaglia: Weather Ball e Terrain Pulse prendono il tipo del meteo o del campo
+ * (quello che il Pokémon porta da sé vince su quello del team).
+ */
+export function attackingMoves(set: TeamSet, field: Field = ownField(set)): AttackMove[] {
+  const own = ownField(set);
+  const weather = own.weather ?? field.weather;
+  const terrain = own.terrain ?? field.terrain;
   return set.moves
     .map(getMove)
     .filter(isDefined)
     .filter(move => move.category !== 'Status')
-    .map(move => ({ name: move.name, type: move.type as TypeName }));
+    .map(move => {
+      const id = toID(move.name);
+      const type = id === 'weatherball' && weather ? WEATHER_BALL[weather]
+        : id === 'terrainpulse' && terrain ? TERRAIN_PULSE[terrain]
+        : move.type as TypeName;
+      return { name: move.name, type };
+    });
 }
 
 function moveEffectiveness(move: AttackMove, defType: TypeName): number {
@@ -78,13 +127,13 @@ function moveEffectiveness(move: AttackMove, defType: TypeName): number {
   return effectiveness(move.type, [defType]);
 }
 
-export function superEffectiveMove(set: TeamSet, defType: TypeName): string | null {
-  return attackingMoves(set).find(move => moveEffectiveness(move, defType) > 1)?.name ?? null;
+export function superEffectiveMove(set: TeamSet, defType: TypeName, field?: Field): string | null {
+  return attackingMoves(set, field).find(move => moveEffectiveness(move, defType) > 1)?.name ?? null;
 }
 
-/** Tutte le mosse super efficaci del set contro un tipo. */
-export function superEffectiveMoves(set: TeamSet, defType: TypeName): string[] {
-  return attackingMoves(set).filter(move => moveEffectiveness(move, defType) > 1).map(move => move.name);
+/** Tutte le mosse super efficaci del set contro un tipo (`field`: meteo e campo del team). */
+export function superEffectiveMoves(set: TeamSet, defType: TypeName, field?: Field): string[] {
+  return attackingMoves(set, field).filter(move => moveEffectiveness(move, defType) > 1).map(move => move.name);
 }
 
 export interface CoverageRow {
@@ -93,10 +142,11 @@ export interface CoverageRow {
 }
 
 export function coverageTable(team: TeamSet[]): CoverageRow[] {
+  const field = teamField(team);
   return TYPES.map(type => ({
     type,
     hitters: team.flatMap(set => {
-      const move = superEffectiveMove(set, type);
+      const move = superEffectiveMove(set, type, field);
       return move ? [{ member: set.species, move }] : [];
     }),
   }));

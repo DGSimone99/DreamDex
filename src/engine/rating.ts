@@ -12,13 +12,14 @@ import { usageOf } from './stats';
 import type { TeamSet } from './sets';
 import { t, type Lang } from '../i18n';
 import { gameName, typeName } from '../i18n/game';
-import { effectiveness, superEffectiveMoves, TYPES } from './types';
+import { effectiveness, superEffectiveMoves, teamField, TYPES } from './types';
 import { conditionConflicts, conditionLabel, enables, viaName, unmetBeneficiaries, unusedEnablers, weakenedMoves, weatherMitigations } from './synergy';
 
-export type AreaKey = 'defense' | 'coverage' | 'roles' | 'strength' | 'speed' | 'meta';
+export type AreaKey = 'coverage' | 'defense' | 'strength' | 'bulk' | 'roles' | 'speed' | 'meta';
 /** Le aree del voto senza meta. */
 type BaseArea = Exclude<AreaKey, 'meta'>;
-const BASE_AREAS: BaseArea[] = ['defense', 'coverage', 'roles', 'strength', 'speed'];
+/** Nell'ordine del pannello, a coppie: Coverage offensiva e difensiva, Offesa e Robustezza, Ruoli e Velocità. */
+const BASE_AREAS: BaseArea[] = ['coverage', 'defense', 'strength', 'bulk', 'roles', 'speed'];
 
 /**
  * Peso dell'area Velocità: è ciò che più distingue i team da torneo (i loro due più veloci superano
@@ -35,6 +36,8 @@ export const AREA_WEIGHTS: Record<BaseArea, number> = {
   roles: (1 - SPEED_WEIGHT) * OTHER_AREAS.roles,
   strength: (1 - SPEED_WEIGHT) * OTHER_AREAS.strength,
   speed: SPEED_WEIGHT,
+  // La Robustezza prende la sua parte dal peso della difesa, secondo il tipo di team (BULK_SHARE)
+  bulk: 0,
 };
 
 /**
@@ -47,23 +50,24 @@ export const STALL_AREA_WEIGHTS: Record<BaseArea, number> = {
   roles: OTHER_AREAS.roles,
   strength: OTHER_AREAS.strength,
   speed: 0,
+  bulk: 0,
 };
 /** Pesi per un team con Trick Room, lento per scelta: la velocità non conta, il resto come sempre. */
-const TRICK_ROOM_WEIGHTS: Record<BaseArea, number> = { ...OTHER_AREAS, speed: 0 };
+const TRICK_ROOM_WEIGHTS: Record<BaseArea, number> = { ...OTHER_AREAS, speed: 0, bulk: 0 };
 
 /**
  * Valore da cui un'area è piena: un team da torneo non resiste a tutto né ha sei Pokémon fortissimi,
  * e non deve servire la perfezione per arrivare in S (come l'area Meta, piena a META_FULL).
  */
-export const AREA_FULL: Record<BaseArea, number> = { defense: 0.95, coverage: 0.9, roles: 0.95, strength: 0.92, speed: 0.9 };
+export const AREA_FULL: Record<BaseArea, number> = { defense: 0.95, coverage: 0.9, roles: 0.95, strength: 0.92, speed: 0.9, bulk: 0.9 };
 
 /**
  * Difesa = tipi coperti + robustezza media dei membri, con una quota di robustezza che cresce col tipo di team:
  * un hyper offense vince attaccando, uno stall incassando.
  */
 export const BULK_SHARE: Record<Archetype, number> = { hyperOffense: 0.2, bulkyOffense: 0.3, balance: 0.35, semiStall: 0.45, stall: 0.5 };
-/** Robustezza media (percentile) da cui la sua parte di Difesa è piena. */
-export const BULK_FULL = 0.9;
+/** Robustezza media (percentile) da cui l'area Robustezza è piena. */
+export const BULK_FULL = AREA_FULL.bulk;
 /**
  * Offesa media (percentile) da cui l'area Offesa è piena. L'area misura quanto colpiscono forte i membri:
  * i team da torneo stanno a 72, gli altri team buoni a 64. Nello stall resta "Statistiche" (robustezza dei muri passivi).
@@ -140,6 +144,11 @@ export interface TeamRating {
   archetype: 'stall' | null;
   /** Dettaglio dell'area Meta, o null se il voto è senza meta. */
   meta: MetaScore | null;
+  /** Peso di ogni area nel voto senza meta (somma 1) e peso dell'area Meta nel voto col meta (0 senza). */
+  weights: Partial<Record<AreaKey, number>>;
+  metaWeight: number;
+  /** Tipi colpiti super efficace da ogni membro (col meteo e il campo del team), per il tooltip della Coverage offensiva. */
+  coverageByMember: { species: string; types: number }[];
 }
 
 
@@ -326,8 +335,9 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
   // Ogni tipo vale secondo i colpi che lo prendono (un Close Combat di Alakazam non vale uno di Great Tusk)
   // e secondo quanti membri diversi lo colpiscono: se l'unico che lo colpisce è KO, il tipo resta scoperto
   const quality = (set: TeamSet, i: number, move: string) => (passive[i] ? 1 : hitQuality(set, move));
+  const field = teamField(team);
   const coverage = sum(TYPES.map(type => {
-    const best = team.map((set, i) => Math.max(0, ...superEffectiveMoves(set, type).map(move => quality(set, i, move))))
+    const best = team.map((set, i) => Math.max(0, ...superEffectiveMoves(set, type, field).map(move => quality(set, i, move))))
       .sort((a, b) => b - a);
     return weights[type] * Math.min(1, sum(COVERAGE_DEPTH.map((share, i) => share * (best[i] ?? 0))));
   }));
@@ -349,17 +359,19 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
 
   // Ogni area è piena dal suo valore di riferimento in su
   const full = (key: BaseArea, value: number | null) => (value === null ? null : Math.min(1, value / AREA_FULL[key]));
-  // Difesa: tipi e robustezza, ognuno pieno dal suo riferimento; Offesa: quanto colpiscono forte (nello stall: Statistiche)
-  const bulkShare = BULK_SHARE[analysis.needs.archetype];
-  const defense = bulk === null ? full('defense', typeDefense)
-    : (1 - bulkShare) * full('defense', typeDefense)! + bulkShare * Math.min(1, bulk / BULK_FULL);
+  // Coverage difensiva (tipi) e Robustezza si dividono il peso della difesa: la Robustezza conta di più in uno stall
+  const bulkShare = bulk === null ? 0 : BULK_SHARE[analysis.needs.archetype];
+  const effective: Record<BaseArea, number> = { ...weightsFor, defense: weightsFor.defense * (1 - bulkShare), bulk: weightsFor.defense * bulkShare };
+  // Offesa: quanto colpiscono forte i membri (nello stall: Statistiche, la robustezza dei muri passivi)
   const attack = archetype ? full('strength', strength) : offense === null ? null : Math.min(1, offense / OFFENSE_FULL);
   const raw: Record<AreaKey, number | null> = {
-    defense, coverage: full('coverage', coverage), roles: full('roles', roles),
-    strength: attack, speed: full('speed', speed), meta: null,
+    coverage: full('coverage', coverage), defense: full('defense', typeDefense), strength: attack, bulk: full('bulk', bulk),
+    roles: full('roles', roles), speed: full('speed', speed), meta: null,
   };
-  const available = BASE_AREAS.filter(key => raw[key] !== null && weightsFor[key] > 0);
-  let score = sum(available.map(key => weightsFor[key] * raw[key]!)) / sum(available.map(key => weightsFor[key]));
+  const available = BASE_AREAS.filter(key => raw[key] !== null && effective[key] > 0);
+  const totalWeight = sum(available.map(key => effective[key]));
+  const areaWeights = Object.fromEntries(available.map(key => [key, effective[key] / totalWeight])) as Partial<Record<AreaKey, number>>;
+  let score = sum(available.map(key => areaWeights[key]! * raw[key]!));
   // Col meta: minacce gestite (metà dalle 3 più usate) e uso dei membri contano per il 30%, il resto è il voto senza meta
   let meta: MetaScore | null = null;
   if (usesMeta(data)) {
@@ -373,7 +385,7 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
   }
   const areas = (Object.keys(raw) as AreaKey[])
     // Senza meta l'area Meta non c'è; con uno stall o Trick Room la Velocità non conta e non si mostra
-    .filter(key => (key === 'meta' ? !!meta : weightsFor[key] > 0))
+    .filter(key => (key === 'meta' ? !!meta : (areaWeights[key] ?? 0) > 0))
     .map(key => ({
       key,
       label: t(lang, key === 'strength' && archetype ? 'area.strengthStall' : `area.${key}`),
@@ -385,6 +397,10 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
   const tera = teraBonus(team, analysis, rules.teraBonusCap, lang);
   const bonus = { total: Math.min(MAX_BONUS, weather.total + sum(tera.map(i => i.points))), items: [...weather.items, ...tera] };
   const overall = Math.min(100, Math.max(0, base - penalty.total + bonus.total));
-  return { base, penalty, bonus, power: power.members, overall, ...gradeFor(overall, lang), provisional: team.length < 6, areas, archetype, meta };
+  const coverageByMember = team.map(set => ({ species: battleName(set), types: TYPES.filter(type => superEffectiveMoves(set, type, field).length > 0).length }));
+  return {
+    base, penalty, bonus, power: power.members, overall, ...gradeFor(overall, lang), provisional: team.length < 6, areas, archetype, meta,
+    weights: areaWeights, metaWeight: meta ? META_WEIGHT : 0, coverageByMember,
+  };
 }
 
