@@ -1,7 +1,8 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
-import { loadDataOrEmpty, loadItalianNames, loadSource, loadTiers } from './data/load';
+import { loadBans, loadDataOrEmpty, loadItalianNames, loadSource, loadTiers } from './data/load';
+import { initBans } from './engine/formats';
 import { initGameNames } from './i18n/game';
 import { initTiers } from './engine/dex';
 import { initLearnsets } from './engine/learnsets';
@@ -23,7 +24,7 @@ const loadNames = () => loadItalianNames().then(initGameNames);
 const names = storage && loadLang(storage) === 'it' ? loadNames() : Promise.resolve();
 
 // I tier di Showdown prima dei dati: decidono chi è legale in ogni formato
-Promise.all([loadTiers().then(initTiers).then(loadDataOrEmpty), initLearnsets(), names]).then(([data]) => {
+Promise.all([loadTiers().then(initTiers).then(loadDataOrEmpty), loadBans().then(initBans), initLearnsets(), names]).then(([data]) => {
   root.render(
     <StrictMode>
       <App data={data} loadSource={loadSource} storage={storage} loadNames={loadNames} />

@@ -1,6 +1,6 @@
 # DreamDex
 
-Team builder avanzato per Smogon (singolo 6v6): si sceglie il Pokédex (Gen 9, National Dex, Senza limiti) e il tier (Gen 9: OU; National Dex: OU, Ubers, UU).
+Team builder avanzato per Smogon (singolo 6v6): si sceglie il Pokédex (Gen 9, National Dex, Senza limiti) e il tier (Gen 9: OU, Ubers, UU, Anything Goes; National Dex: OU, Ubers, UU).
 Inserisci uno o più Pokémon e DreamDex suggerisce, in ordine, quelli che completano meglio il team, considerando meta, tipi, coverage e ruoli, con una motivazione per ciascuno. Interfaccia in inglese o italiano (interruttore EN | IT).
 
 ## Avvio
