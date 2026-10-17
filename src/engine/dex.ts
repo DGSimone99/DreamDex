@@ -53,14 +53,44 @@ export function battleSpecies(set: { species: string; item: string }): Species |
   // Solo la forma base può evolvere (Slowbro-Galar con Slowbronite resta Slowbro-Galar)
   const forme = megaStone?.[species.name]
     ?? (primal && primal[0] === species.name ? primal[1] : undefined)
-    ?? (item.id === ULTRA_BURST.item && ULTRA_BURST.from.includes(species.name) ? ULTRA_BURST.forme : undefined);
+    ?? (item.id === ULTRA_BURST.item && ULTRA_BURST.from.includes(species.name) ? ULTRA_BURST.forme : undefined)
+    ?? itemFormes().get(`${species.name}|${item.id}`);
   return (forme && getSpecies(forme)) || species;
+}
+
+let itemFormeCache: Map<string, string> | null = null;
+/** Altre forme da battaglia attivate dallo strumento tenuto: Zacian con Rusted Sword → Zacian-Crowned. */
+function itemFormes(): Map<string, string> {
+  if (!itemFormeCache) {
+    itemFormeCache = new Map(dex.species.all()
+      // Le forme Tera (Ogerpon) arrivano con la Teracristallizzazione, non con lo strumento
+      .filter(s => s.exists && typeof s.battleOnly === 'string' && s.requiredItem && !s.isMega && !s.isPrimal && !s.name.endsWith('-Tera'))
+      .map(s => [`${s.battleOnly}|${toID(s.requiredItem!)}`, s.name] as [string, string]));
+  }
+  return itemFormeCache;
 }
 
 /** Abilità in battaglia: una forma Mega/Primal usa la propria abilità, non quella del set base. */
 export function battleAbility(set: { species: string; item: string; ability: string }): string {
   const forme = battleSpecies(set);
   return forme && forme.name !== getSpecies(set.species)?.name ? forme.abilities[0] : set.ability;
+}
+
+/** Abilità che cambiano sempre una statistica (in battaglia): Huge Power raddoppia l'Attacco, Fur Coat la Difesa… */
+const STAT_ABILITIES: Record<string, Partial<Record<'atk' | 'def' | 'spa' | 'spd', number>>> = {
+  hugepower: { atk: 2 }, purepower: { atk: 2 }, gorillatactics: { atk: 1.5 }, hustle: { atk: 1.5 },
+  furcoat: { def: 2 }, icescales: { spd: 2 }, parentalbond: { atk: 1.25, spa: 1.25 },
+};
+
+/** Statistiche base della forma in battaglia, con l'effetto delle abilità che le cambiano sempre. */
+export function effectiveStats(set: { species: string; item: string; ability: string }): Species['baseStats'] {
+  const species = battleSpecies(set);
+  const base = species?.baseStats ?? { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 };
+  const mult = STAT_ABILITIES[toID(battleAbility(set))];
+  if (!mult) return base;
+  const stats = { ...base };
+  for (const [stat, m] of Object.entries(mult) as ['atk' | 'def' | 'spa' | 'spd', number][]) stats[stat] = Math.round(base[stat] * m);
+  return stats;
 }
 
 /** Nome con cui la specie compare nelle statistiche Smogon. */

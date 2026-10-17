@@ -5,7 +5,7 @@ import type { Format } from '../engine/format';
 import { detectRoles, roleLabel, roleShortLabel } from '../engine/roles';
 import { cardRoles, weatherOf } from '../engine/archetype';
 import { conditionLabel, viaName } from '../engine/synergy';
-import { presetsFor, type Preset, type TeamSet } from '../engine/sets';
+import { presetsForSet, type Preset, type TeamSet } from '../engine/sets';
 import { useRef, useState } from 'react';
 import { useSlant } from './slant';
 import { SetEditor } from './SetEditor';
@@ -166,7 +166,7 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
           <TeamSlot
             key={`${i}-${set.species}`}
             set={set}
-            presets={presetsFor(data, set.species)}
+            presets={presetsForSet(data, set)}
             common={commonChoices(data, set)}
             speed={speedTier(set, data)}
             format={format}

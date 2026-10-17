@@ -1,5 +1,5 @@
 import type { Move, Species } from '@pkmn/dex';
-import { battleSpecies, dex, isLegal } from './dex';
+import { battleSpecies, dex, effectiveStats, isLegal } from './dex';
 import { attackStyle } from './roles';
 import type { TeamSet } from './sets';
 
@@ -56,8 +56,10 @@ export function memberPower(set: TeamSet): MemberPower | null {
   const species = battleSpecies(set);
   if (!species) return null;
   const ref = referencePool();
-  const offense = percentile(ref.offense, offenseIndex(species.baseStats, usedAttack(set, species.baseStats)));
-  const bulk = percentile(ref.bulk, bulkIndex(species.baseStats));
+  // Statistiche effettive: Huge Power raddoppia l'Attacco di Azumarill, Fur Coat la Difesa…
+  const stats = effectiveStats(set);
+  const offense = percentile(ref.offense, offenseIndex(stats, usedAttack(set, stats)));
+  const bulk = percentile(ref.bulk, bulkIndex(stats));
   const power = Math.round(STRONG_SIDE * Math.max(offense, bulk) + (1 - STRONG_SIDE) * Math.min(offense, bulk));
   return { species: species.name, offense, bulk, power };
 }
@@ -79,7 +81,7 @@ export function hitQuality(set: TeamSet, move: Move | string): number {
   if (m.overrideOffensivePokemon === 'target') return 0.7;
   const stat = (m.overrideOffensiveStat ?? (m.category === 'Physical' ? 'atk' : 'spa')) as 'atk' | 'spa' | 'def';
   const ref = referencePool();
-  const p = percentile(ref[stat] ?? ref.atk, species.baseStats[stat]);
+  const p = percentile(ref[stat] ?? ref.atk, effectiveStats(set)[stat]);
   return Math.min(1, MIN_HIT_QUALITY + (1 - MIN_HIT_QUALITY) * p / FULL_HIT_PERCENTILE);
 }
 

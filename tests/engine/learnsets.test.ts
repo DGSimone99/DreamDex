@@ -110,7 +110,7 @@ describe('set delle analisi Smogon considerati legali', () => {
       Diancie: [{ name: 'Mega', format: 'gen9nationaldex', set: preset }],
       Serperior: [{ name: 'Contrary', format: 'gen9nationaldex', set: hp }],
     } };
-    expect(defaultSet(data, 'Diancie')).toEqual(preset);
+    expect(defaultSet(data, 'Diancie-Mega')).toEqual(preset);
     expect(defaultSet(data, 'Serperior')).toEqual(hp);
   });
 });
