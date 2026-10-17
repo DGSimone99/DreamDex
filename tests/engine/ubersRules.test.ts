@@ -56,12 +56,16 @@ describe('regole di Ubers', () => {
   });
 
   it('in Ubers il coach non propone sostituzioni che cambiano il tipo di team (team da B in su)', () => {
-    const format = { ...DEFAULT_FORMAT, formatId: 'ubers' as const };
-    const team = ['Great Tusk', 'Gholdengo', 'Rotom-Wash', 'Kingambit', 'Toxapex', 'Corviknight'].map(n => mostCommonSet(fixtureStats, n)!);
-    expect(['S', 'A', 'B']).toContain(rateTeam(team, ubers)!.grade);
+    const format = { ...DEFAULT_FORMAT, formatId: 'ubers' as const, meta: false };
+    // Senza meta: le minacce dei dati di prova sono di OU e abbasserebbero il voto con la penalità del meta
+    const data = { ...ubers, ignoreMeta: true };
+    const team = ['Great Tusk', 'Gholdengo', 'Kingambit', 'Dragapult', 'Corviknight', 'Garchomp'].map(n => mostCommonSet(fixtureStats, n)!);
+    const grade = rateTeam(team, data)!.grade;
+    expect(['S', 'A', 'B']).toContain(grade);
     const before = teamArchetype(team, UBERS_RULES)?.archetype;
-    const swaps = coachTeam(team, format, ubers).swaps;
-    expect(swaps.length).toBeGreaterThan(0);
+    // Da B in su il tipo di team è bloccato: ogni scambio proposto lo mantiene
+    expect(archetypeLock(team, UBERS_RULES, grade)).toBe(before);
+    const swaps = coachTeam(team, format, data).swaps;
     for (const swap of swaps) expect(teamArchetype(team.map((s, i) => (i === swap.index ? swap.set : s)), UBERS_RULES)?.archetype).toBe(before);
   });
 

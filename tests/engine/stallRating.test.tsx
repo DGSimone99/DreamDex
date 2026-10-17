@@ -1,6 +1,6 @@
 import { DEFAULT_RULES } from '../../src/engine/formatRules';
 import { describe, expect, it } from 'vitest';
-import { AREA_WEIGHTS, COVERAGE_DEPTH, META_WEIGHT, rateTeam, ROLE_COMPRESSION, SPEED_WEIGHT, STALL_AREA_WEIGHTS } from '../../src/engine/rating';
+import { AREA_WEIGHTS, COVERAGE_DEPTH, rateTeam, ROLE_COMPRESSION, SPEED_WEIGHT, STALL_AREA_WEIGHTS } from '../../src/engine/rating';
 import { meetsNeed, needCoverage, NEEDS, teamNeeds } from '../../src/engine/needs';
 
 import { memberPower, teamPower } from '../../src/engine/power';
@@ -133,13 +133,9 @@ describe('membro passivo e riconoscimento dello stall', () => {
 });
 
 describe('voto dello stall', () => {
-  // Le quattro aree coi loro pesi, poi l'area Meta per un quinto
-  // Le aree coi pesi effettivi del voto (la difesa divisa tra Coverage difensiva e Robustezza), poi l'area Meta
-  const weighted = (rating: NonNullable<ReturnType<typeof rateTeam>>) => {
-    const base = rating.areas.filter(a => a.key !== 'meta').reduce((acc, a) => acc + rating.weights[a.key]! * a.value!, 0);
-    const meta = rating.areas.find(a => a.key === 'meta');
-    return Math.round(meta ? (1 - META_WEIGHT) * base + META_WEIGHT * meta.value! : base);
-  };
+  // Le aree coi pesi effettivi del voto (la difesa divisa tra Coverage difensiva e Robustezza); il Meta non pesa
+  const weighted = (rating: NonNullable<ReturnType<typeof rateTeam>>) =>
+    Math.round(rating.areas.filter(a => a.key !== 'meta').reduce((acc, a) => acc + rating.weights[a.key]! * a.value!, 0));
   /** Quota di difesa che va alla Robustezza. */
   const bulkShare = (rating: NonNullable<ReturnType<typeof rateTeam>>) => rating.weights.bulk! / (rating.weights.bulk! + rating.weights.defense!);
 

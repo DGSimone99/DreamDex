@@ -5,11 +5,11 @@ import { App } from '../../src/App';
 import { analyzeTeam, UNIFORM_TYPE_WEIGHTS } from '../../src/engine/analysis';
 import { coachTeam } from '../../src/engine/coach';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
-import { META_FULL, META_THREATS, META_WEIGHT, rateTeam } from '../../src/engine/rating';
-import { emptySet } from '../../src/engine/sets';
+import { META_FLOOR, META_MAX_PENALTY, metaPenalty, rateTeam } from '../../src/engine/rating';
+import { emptySet, mostCommonSet } from '../../src/engine/sets';
 import { encodeShare } from '../../src/share';
 import { loadSession, sanitizeFormat } from '../../src/storage';
-import { fixtureData, gholdengo, tusk } from '../fixtures/data';
+import { fixtureData, fixtureStats, gholdengo, tusk } from '../fixtures/data';
 
 const noMeta = { ...fixtureData, ignoreMeta: true };
 const memoryStorage = (): Storage => {
@@ -20,13 +20,29 @@ const memoryStorage = (): Storage => {
 afterEach(() => window.history.replaceState(null, '', '/'));
 
 describe('voto col meta e senza', () => {
-  it('col meta: area Meta, il 30% del voto, da minacce (2/3) e uso dei membri (1/3)', () => {
+  it('col meta: la barra Meta mostra le minacce gestite; il voto è quello delle aree, meno la penalità del meta', () => {
+    const team = ['Great Tusk', 'Gholdengo', 'Kingambit', 'Dragapult', 'Corviknight', 'Toxapex'].map(n => mostCommonSet(fixtureStats, n)!);
+    const on = rateTeam(team, fixtureData)!;
+    const off = rateTeam(team, noMeta)!;
+    expect(on.areas.find(a => a.key === 'meta')!.value).toBe(on.meta!.threats);
+    expect(on.base).toBe(off.base);
+    const points = metaPenalty(on.meta!.threats);
+    const unready = on.penalty.items.find(i => i.text.startsWith('Poco preparato al meta'));
+    expect(unready?.points ?? 0).toBe(points);
+    expect(on.overall).toBe(Math.max(0, Math.min(100, off.overall - points)));
+  });
+
+  it('un team incompleto non paga la penalità del meta: mentre lo costruisci gestisce per forza poche minacce', () => {
     const rating = rateTeam([tusk, gholdengo], fixtureData)!;
-    const meta = rating.areas.find(a => a.key === 'meta')!;
-    expect(rating.meta).not.toBeNull();
-    const expected = Math.min(1, (META_THREATS * rating.meta!.threats + (1 - META_THREATS) * rating.meta!.usage) / 100 / META_FULL);
-    expect(Math.abs(meta.value! - 100 * expected)).toBeLessThanOrEqual(1);
-    expect(META_WEIGHT).toBe(0.3);
+    expect(rating.penalty.items.some(i => i.text.startsWith('Poco preparato al meta'))).toBe(false);
+  });
+
+  it('penalità del meta: niente sopra la soglia, 1 punto ogni 4% sotto, al massimo 12', () => {
+    expect(metaPenalty(META_FLOOR)).toBe(0);
+    expect(metaPenalty(100)).toBe(0);
+    expect(metaPenalty(META_FLOOR - 1)).toBe(1);
+    expect(metaPenalty(META_FLOOR - 8)).toBe(2);
+    expect(metaPenalty(0)).toBe(META_MAX_PENALTY);
   });
 
   it('senza meta: niente area Meta, tipi tutti uguali, nessuna minaccia', () => {
@@ -55,12 +71,12 @@ describe('interruttore nella barra in alto', () => {
     render(<App data={fixtureData} storage={storage} initialLang="it" />);
     const withMeta = screen.getByRole('button', { name: 'Col meta' });
     expect(withMeta).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByText(/Valutato col meta del formato/)).toBeInTheDocument();
+    expect(screen.getByText(/Col meta del formato/)).toBeInTheDocument();
     expect(screen.getByText(/^Meta \d+/)).toBeInTheDocument();
     expect(screen.getByText('Minacce del meta')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Senza meta' }));
     expect(screen.getByRole('button', { name: 'Senza meta' })).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByText('Valutato senza meta: tutti i tipi pesano allo stesso modo.')).toBeInTheDocument();
+    expect(screen.getByText('Senza meta: nessuna penalità per le minacce del mese.')).toBeInTheDocument();
     expect(screen.queryByText(/^Meta \d+/)).toBeNull();
     expect(screen.queryByText('Minacce del meta')).toBeNull();
     expect(loadSession(storage)?.format.meta).toBe(false);

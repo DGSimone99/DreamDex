@@ -41,12 +41,6 @@ export function RatingPanel({ rating, ruleIssues = [], metaMonth }: { rating: Te
         </span>
       </p>
       {metaMonth && <p className="rating-note">{rating.meta ? t('rating.metaOn', { month: metaMonth }) : t('rating.metaOff')}</p>}
-      {/* Col meta: quanto viene dalle aree (uguali senza meta) e quanto dall'area Meta */}
-      {rating.meta && (() => {
-        const areas = rating.areas.filter(a => a.key !== 'meta').reduce((sum, a) => sum + (rating.weights[a.key] ?? 0) * (a.value ?? 0), 0);
-        const meta = rating.areas.find(a => a.key === 'meta')?.value ?? 0;
-        return <p className="rating-note">{t('rating.metaSplit', { areas: Math.round(areas), meta, areaShare: Math.round(100 * (1 - rating.metaWeight)), metaShare: Math.round(100 * rating.metaWeight) })}</p>;
-      })()}
       {rating.archetype === 'stall' && <p className="rating-note">{t('rating.stall')}</p>}
       <dl className="bars">
         {rating.areas.map(area => {

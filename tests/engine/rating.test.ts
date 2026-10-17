@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { teamPower } from '../../src/engine/power';
-import { AREA_KNEE, AREA_WEIGHTS, BULK_SHARE, COVERAGE_DEPTH, DEFENSE_FULL, DEFENSIVE_BLEND, META_WEIGHT, SPEED_WEIGHT, areaValue, gradeFor, rateTeam, typeSafety } from '../../src/engine/rating';
+import { AREA_KNEE, AREA_WEIGHTS, BULK_SHARE, COVERAGE_DEPTH, DEFENSE_FULL, DEFENSIVE_BLEND, SPEED_WEIGHT, areaValue, gradeFor, rateTeam, typeSafety } from '../../src/engine/rating';
 import { memberPower } from '../../src/engine/power';
 
 // Offesa 1:1: la media dei percentili d'attacco dei membri
@@ -81,12 +81,10 @@ describe('rateTeam', () => {
   });
 
   it('voto complessivo pesato, provvisorio con meno di 6 membri', () => {
-    // Pesi effettivi delle aree (somma 1), poi l'area Meta
+    // Pesi effettivi delle aree (somma 1); il Meta non pesa, è una penalità
     expect(Object.values(rating.weights).reduce((a, b) => a + b!, 0)).toBeCloseTo(1);
-    expect(rating.metaWeight).toBe(META_WEIGHT);
     const base = rating.areas.filter(a => a.key !== 'meta').reduce((acc, a) => acc + rating.weights[a.key]! * a.value!, 0);
-    const expected = Math.round((1 - META_WEIGHT) * base + META_WEIGHT * value(rating, 'meta')!);
-    expect(Math.abs(rating.base - expected)).toBeLessThanOrEqual(1);
+    expect(Math.abs(rating.base - Math.round(base))).toBeLessThanOrEqual(1);
     expect(rating).toMatchObject({ overall: rating.base, provisional: true });
   });
 
@@ -141,7 +139,7 @@ describe('pesi secondo il tipo di team', () => {
 
   it('un team incompleto non si sposta: il suo tipo è solo presunto', () => {
     const rating = rateTeam([tusk, gholdengo], fixtureData)!;
-    expect(rating.weights.speed! / (1 - rating.metaWeight || 1)).toBeGreaterThan(0);
+    expect(rating.weights.speed!).toBeGreaterThan(0);
     expect(value(rating, 'strength')).toBe(offenseArea([tusk, gholdengo]));
   });
 });

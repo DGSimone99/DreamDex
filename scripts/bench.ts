@@ -23,7 +23,7 @@ import { bestSwaps, withCandidate } from '../src/engine/teamGain';
 interface BenchTeam {
   name: string;
   fmt: FormatId;
-  /** riferimento, torneo, buono, generato, medio, brutto */
+  /** riferimento, torneo, datato (torneo di un meta passato), buono, generato, medio, brutto */
   cat: string;
   /** Banco per archetipi: archetipo atteso, livello e gruppo (la stessa base in tre livelli). */
   archetype?: string;
@@ -81,7 +81,8 @@ function summary() {
       console.log(`  ${reference.name}: ${r.overall} ${r.grade}  (${areas(r)})`);
     }
     const averages: Record<string, number> = {};
-    for (const cat of ['torneo', 'buono', 'generato', 'medio', 'brutto']) {
+    // 'datato': squadre di torneo di un meta passato (Gen 9 UU di Smogon), a parte
+    for (const cat of ['torneo', 'datato', 'buono', 'generato', 'medio', 'brutto']) {
       const rs = unique.filter(t => t.cat === cat).map(rate);
       averages[cat] = mean(rs.map(r => r.overall));
       console.log(`  ${cat.padEnd(9)} ${String(rs.length).padStart(3)} team  media ${averages[cat].toFixed(1).padStart(4)}  ${grades(rs)}`);
