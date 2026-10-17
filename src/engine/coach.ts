@@ -3,7 +3,7 @@ import { teamArchetype, type TeamArchetype } from './archetype';
 import type { EngineData } from './data';
 import { rulesOf } from './formatRules';
 import { battleName, battleSpecies, getSpecies, isDefined, isMega, isSelectable, toID, withinGen } from './dex';
-import { formatLabel, isBannedIn } from './formats';
+import { formatLabel, isLegalIn, pokedexOf } from './formats';
 import type { Format } from './format';
 import { diffContribution, similarity, type Contribution, type Diff } from './replace';
 import { t, type Lang } from '../i18n';
@@ -126,10 +126,10 @@ function findProblems(team: TeamSet[], format: Format, analysis: TeamAnalysis, c
     const species = getSpecies(set.species);
     if (!species) continue;
     const forme = battleSpecies(set) ?? species;
-    if (!isSelectable(species) || isBannedIn(forme, format)) add('rules', true, t(lang, 'coach.problem.illegal', { species: battleName(set), format: formatLabel(format, lang) }), []);
+    if (!isSelectable(species) || !isLegalIn(forme, format)) add('rules', true, t(lang, 'coach.problem.illegal', { species: battleName(set), format: formatLabel(format, lang) }), []);
     else if (!withinGen(species, format)) add('rules', true, t(lang, 'coach.problem.gen', { species: battleName(set), gen: format.genLimit }), []);
     // Mosse e abilità che il Pokémon non può avere (senza Custom Skillset)
-    const illegal = illegalParts(set, format.genLimit);
+    const illegal = illegalParts(set, format.genLimit, pokedexOf(format));
     if (illegal.moves.length) {
       add('rules', true, `${battleName(set)}: ${t(lang, 'team.illegalMoves', { list: illegal.moves.map(m => gameName('move', m, lang)).join(', ') })}`, []);
     }
@@ -177,7 +177,7 @@ function breaksRules(set: TeamSet, format: Format): boolean {
   const species = getSpecies(set.species);
   if (!species) return false;
   const forme = battleSpecies(set) ?? species;
-  return !isSelectable(species) || isBannedIn(forme, format) || !withinGen(species, format);
+  return !isSelectable(species) || !isLegalIn(forme, format) || !withinGen(species, format);
 }
 
 /**

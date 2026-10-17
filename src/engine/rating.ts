@@ -10,7 +10,7 @@ import { usageOf } from './stats';
 import type { TeamSet } from './sets';
 import { t, type Lang } from '../i18n';
 import { gameName, typeName } from '../i18n/game';
-import { superEffectiveMoves, TYPES } from './types';
+import { effectiveness, superEffectiveMoves, TYPES } from './types';
 import { conditionConflicts, conditionLabel, enables, viaName, unmetBeneficiaries, unusedEnablers, weakenedMoves, weatherMitigations } from './synergy';
 
 export type AreaKey = 'defense' | 'coverage' | 'roles' | 'strength' | 'meta';
@@ -241,6 +241,24 @@ export function weatherBonus(team: TeamSet[], lang: Lang = 'it'): Redundancies {
   return { total: Math.min(MAX_BONUS, sum(items.map(i => i.points))), items };
 }
 
+/**
+ * Tera come via d'uscita (Gen 9): +1 per ogni tipo a cui il team è debole (più deboli che resistenti)
+ * e che il Tera dichiarato di un membro fa resistere, fino al limite del formato. Non cambia la difesa del team:
+ * il Tera si usa una volta sola per partita.
+ */
+export function teraBonus(team: TeamSet[], analysis: TeamAnalysis, cap: number, lang: Lang = 'it'): Redundancy[] {
+  if (cap <= 0) return [];
+  const items: Redundancy[] = [];
+  for (const row of analysis.weakness.filter(r => r.weak > r.resist)) {
+    const member = team.find(set => (TYPES as readonly string[]).includes(set.teraType ?? '')
+      && effectiveness(row.type, [set.teraType!]) < 1);
+    if (!member) continue;
+    items.push({ text: t(lang, 'rating.bonus.tera', { tera: typeName(member.teraType!, lang), member: battleName(member), type: typeName(row.type, lang) }), points: 1 });
+    if (items.length === cap) break;
+  }
+  return items;
+}
+
 export function gradeFor(score: number, lang: Lang = 'it'): { grade: string; label: string } {
   const { grade } = GRADES.find(g => score >= g.min)!;
   return { grade, label: t(lang, `grade.${grade}`) };
@@ -290,7 +308,9 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
     }));
   const base = Math.round(100 * score);
   const penalty = redundancies(team, analysis, lang);
-  const bonus = weatherBonus(team, lang);
+  const weather = weatherBonus(team, lang);
+  const tera = teraBonus(team, analysis, rules.teraBonusCap, lang);
+  const bonus = { total: Math.min(MAX_BONUS, weather.total + sum(tera.map(i => i.points))), items: [...weather.items, ...tera] };
   const overall = Math.min(100, Math.max(0, base - penalty.total + bonus.total));
   return { base, penalty, bonus, power: power.members, overall, ...gradeFor(overall, lang), provisional: team.length < 6, areas, archetype, meta };
 }

@@ -17,7 +17,7 @@ Not a damage calculator or a plain team editor: it reasons about the whole team 
 
 ## Operating Context
 - Teams move in and out as Showdown text (import/export), so the app sits beside Showdown.
-- Formats: chosen as Pokédex (National Dex, "Senza limiti"; Gen 9 coming) plus tier (OU, Ubers, UU), with advanced options (ignore bans, multiple Megas, minimum usage of suggestions) and a gen limit.
+- Formats: chosen as Pokédex (Gen 9 = Scarlet/Violet only, National Dex, "Senza limiti") plus tier (Gen 9 OU; National Dex OU, Ubers, UU), with advanced options (ignore bans, multiple Megas, minimum usage of suggestions) and a gen limit. In Gen 9 a declared Tera that resists a team weakness gives a small bonus (+1 each, max 3). Banned moves, abilities and items (e.g. Shed Tail) are not checked yet.
 - Hackrom use: per-member "Custom Skillset" unlocks any move/ability; illegal moves are flagged, never deleted.
 - Data is local (`npm run fetch-data`), refreshed monthly; the app must still work for name search and type analysis without stats.
 

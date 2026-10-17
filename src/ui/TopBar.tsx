@@ -41,8 +41,8 @@ export function TopBar({ format, onFormatChange, meta, lang, onLangChange, child
           ))}
         </select>
       </label>
-      {/* Senza limiti ha un solo formato: niente tier da scegliere */}
-      {tiers.length > 1 && (
+      {/* Senza limiti ha un solo formato senza nome di tier: niente menu */}
+      {tiers.some(x => x.tier) && (
         <label>
           {t('top.tier')}{' '}
           <select

@@ -85,8 +85,10 @@ export function detectRoles(set: TeamSet, rules: FormatRules): Role[] {
   if (moves.some(m => m.category !== 'Status' && m.priority > 0)) roles.add('priority');
   // Controllo velocità solo con mosse che la controllano: essere veloci è un'altra cosa (vedi teamRoles)
   if (ids.some(id => SPEED_MOVES.has(id))) roles.add('speed');
+  // Setup: mosse che alzano attacco, attacco speciale o velocità; anche la Difesa con Body Press, che colpisce con la Difesa
+  const bodyPress = ids.includes('bodypress');
   if (moves.some(m => m.category === 'Status' && m.target === 'self'
-    && ((m.boosts?.atk ?? 0) > 0 || (m.boosts?.spa ?? 0) > 0 || (m.boosts?.spe ?? 0) > 0))) roles.add('setup');
+    && ((m.boosts?.atk ?? 0) > 0 || (m.boosts?.spa ?? 0) > 0 || (m.boosts?.spe ?? 0) > 0 || (bodyPress && (m.boosts?.def ?? 0) > 0)))) roles.add('setup');
   const offense = Math.max(stats.atk, stats.spa);
   if (offense >= 120 || (offense >= 100 && BREAKER_ITEMS.has(item))) roles.add('wallbreaker');
   // Sweeper: attacca forte e può davvero muoversi per primo: velocità alta, Scarf o abilità di velocità,

@@ -3,6 +3,7 @@ import { t, type Lang } from '../i18n';
 import { Sets } from '@pkmn/sets';
 import { battleSpecies, dex, getMove, getSpecies, teamFormeOf, toID } from './dex';
 import type { EngineData } from './data';
+import { pokedexOfId } from './formats';
 import { isLearnable, isLegalAbility, legalAbilities, legalMoves } from './learnsets';
 import { findByName, statsEntry, type StatsData } from './stats';
 import { generatedSet } from './generatedSet';
@@ -158,12 +159,19 @@ function makeLegal(set: TeamSet, data: EngineData, genLimit: number): TeamSet {
   const abilities = legalAbilities(set.species, genLimit);
   const entry = statsEntry(data.stats, set.species);
   let result = set;
-  const isLegal = (name: string) => !moves || isLearnable(moves, name);
+  // Scarlatto/Violetto: niente mosse e strumenti che lì non esistono (Hidden Power, Pursuit, cristalli Z, megapietre)
+  const sv = !!data.formatId && pokedexOfId(data.formatId) === 'sv';
+  const inPokedex = (thing: { isNonstandard?: string | null } | null | undefined) => !sv || !thing?.isNonstandard;
+  const isLegal = (name: string) => (!moves || isLearnable(moves, name)) && inPokedex(getMove(name));
   if (set.moves.some(m => !isLegal(m))) {
     const kept = set.moves.filter(isLegal);
     const ranking = entry ? sortedKeys(entry.moves).map(id => getMove(id)?.name ?? id) : [];
     const extra = ranking.filter(name => isLegal(name) && !kept.includes(name));
     result = { ...result, moves: [...kept, ...extra].slice(0, 4) };
+  }
+  if (set.item && !inPokedex(dex.items.get(set.item))) {
+    const ranked = entry ? sortedKeys(entry.items).map(id => dex.items.get(id)).filter(item => item.exists && inPokedex(item)) : [];
+    result = { ...result, item: ranked[0]?.name ?? '' };
   }
   if (abilities && set.ability && !isLegalAbility(set, abilities)) {
     const ranked = entry ? sortedKeys(entry.abilities).map(id => dex.abilities.get(id).name) : [];
