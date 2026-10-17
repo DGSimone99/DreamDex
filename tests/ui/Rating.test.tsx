@@ -27,7 +27,10 @@ describe('Valutazione team', () => {
     render(<App initialLang="it" data={fixtureData} />);
     for (const name of ['Great Tusk', 'Gholdengo']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
     const rating = screen.getByRole('group', { name: 'Valutazione team' });
-    const coverage = screen.getByText('Coverage offensiva').closest('details')!;
+    const coverage = screen.getByText('Coverage offensiva', { selector: 'summary span' }).closest('details')!;
+    // Nella scheda Analisi parte aperta: si chiude per vedere che il link la riapre
+    expect(coverage).toHaveAttribute('open');
+    await user.click(coverage.querySelector('summary')!);
     expect(coverage).not.toHaveAttribute('open');
     const offensive = within(rating).getByRole('button', { name: /^Coverage offensiva \d+$/ });
     // Il tooltip mostra quanti tipi colpisce ogni membro e dove porta il clic

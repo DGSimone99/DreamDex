@@ -11,6 +11,7 @@ async function setup(...names: string[]) {
   return user;
 }
 const analysis = () => screen.getByRole('region', { name: 'Analisi' });
+const meta = () => screen.getByRole('region', { name: 'Meta' });
 
 describe('CoachPanel', () => {
   it('mostra verdetto, punti di forza e problemi', async () => {
@@ -21,7 +22,8 @@ describe('CoachPanel', () => {
     expect(summary.querySelector('.issue.minor')).toHaveTextContent('6 problemi minori');
     expect(summary.querySelector('.issue.serious')).toBeNull();
     expect(within(analysis()).getAllByRole('listitem').some(li => li.textContent === 'Gestisce bene Poison, Bug, Rock')).toBe(true);
-    const dragapult = within(analysis()).getAllByRole('listitem').find(li => li.querySelector('.who strong')?.textContent === 'Dragapult')!;
+    // Le minacce stanno nella scheda Meta
+    const dragapult = within(meta()).getAllByRole('listitem').find(li => li.querySelector('.who strong')?.textContent === 'Dragapult')!;
     expect(dragapult).toHaveTextContent('Nessun check');
     expect(dragapult).toHaveTextContent('Considera Kingambit');
   });

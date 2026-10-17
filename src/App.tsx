@@ -9,7 +9,7 @@ import { battleName } from './engine/dex';
 import { UndoToast, type UndoAction } from './ui/UndoToast';
 import { takeSharedTeam } from './share';
 import type { TeamSet } from './engine/sets';
-import { AnalysisPanel } from './ui/AnalysisPanel';
+import { AnalysisPanel, MetaPanel } from './ui/AnalysisPanel';
 import { GradeBadge } from './ui/RatingPanel';
 import { MemberSheet } from './ui/MemberSheet';
 import { SavedTeams } from './ui/SavedTeams';
@@ -17,7 +17,8 @@ import { ShowdownPanel } from './ui/ShowdownPanel';
 import { SuggestionsPanel } from './ui/SuggestionsPanel';
 import { TeamPanel } from './ui/TeamPanel';
 import { TopBar } from './ui/TopBar';
-import { loadLang, loadSession, saveLang, saveSession } from './storage';
+import { TabPanel, Tabs, type TabId } from './ui/Tabs';
+import { loadLang, loadSession, loadTab, saveLang, saveSession, saveTab } from './storage';
 import { t, type Lang } from './i18n';
 import { LangProvider } from './i18n/react';
 import { hasItalianNames } from './i18n/game';
@@ -75,6 +76,12 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   useEffect(() => {
     if (storage) saveSession({ team, format }, storage);
   }, [team, format, storage]);
+  // Scheda aperta sotto il team: col team vuoto si parte dai Pokémon, poi vale l'ultima scelta
+  const [tab, setTabState] = useState<TabId>(() => (initialTeam.length && storage ? loadTab(storage) : null) ?? 'pokemon');
+  const setTab = (next: TabId) => {
+    setTabState(next);
+    if (storage) saveTab(next, storage);
+  };
   const [replaceIndex, setReplaceIndexState] = useState<number | null>(null);
   // Sostituto aperto in "Altri sostituti": vale solo per il membro che si sta sostituendo
   const [preview, setPreview] = useState<SwapPreview | null>(null);
@@ -82,12 +89,24 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
     setReplaceIndexState(index);
     setPreview(null);
   };
+  /** Scegliere chi sostituire (dal coach o da una carta) porta alla scheda Pokémon, dove ci sono i candidati. */
+  const startReplace = (index: number | null) => {
+    setReplaceIndex(index);
+    if (index !== null) setTab('pokemon');
+  };
   const changePreview = (next: SwapPreview, open: boolean) =>
     setPreview(current => (open ? next
       : current?.index === next.index && current.replacement === next.replacement ? null : current));
   const analysis = useMemo(() => analyzeTeam(team, data), [team, data]);
   const rating = useMemo(() => rateTeam(team, data, lang), [team, data, lang]);
   const coaching = useMemo(() => coachTeam(team, format, data, lang), [team, format, data, lang]);
+
+  // Contatori delle schede: problemi del coach e minacce del meta senza check
+  const problems = coaching.problems;
+  const metaOn = !data.ignoreMeta && !!data.stats;
+  const openThreats = analysis.threats.filter(threat => threat.handledBy.length === 0).length;
+  // Senza meta la scheda Meta è spenta: si resta sull'Analisi
+  const shownTab: TabId = tab === 'meta' && !metaOn ? 'analysis' : tab;
 
   const changeTeam = (next: TeamSet[]) => {
     const value = next.slice(0, 6);
@@ -130,28 +149,42 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
         </p>
       )}
       <div className="band">
-        <TeamPanel team={team} format={format} data={data} onChange={changeTeam} onAdd={addSet} onReplace={setReplaceIndex} onRemove={removeAt}
+        <TeamPanel team={team} format={format} data={data} onChange={changeTeam} onAdd={addSet} onReplace={startReplace} onRemove={removeAt}
           onAllowMultipleMegas={() => setFormat(f => ({ ...f, allowMultipleMegas: true }))} />
         <GradeBadge rating={rating} />
       </div>
-      {team.length > 0 && <MemberSheet team={team} data={data} />}
-      <main className="columns">
-        <div className="left">
-          <AnalysisPanel team={team} analysis={analysis} data={data} rating={rating} coaching={coaching}
-            preview={preview?.index === replaceIndex ? preview : null} onReplace={setReplaceIndex} onSwap={replaceAt} />
-        </div>
-        <div className="right">
+      <Tabs active={shownTab} onChange={setTab} tabs={[
+        { id: 'pokemon', label: t(lang, 'tabs.pokemon'),
+          count: replaceIndex !== null && team[replaceIndex] ? { text: t(lang, 'suggest.replaceTitle', { species: team[replaceIndex].species }), level: 'info' } : null },
+        { id: 'analysis', label: t(lang, 'tabs.analysis'),
+          count: problems.length ? { text: t(lang, problems.length === 1 ? 'tabs.problemsOne' : 'tabs.problemsMany', { n: problems.length }),
+            level: problems.some(p => p.severity === 'serious') ? 'serious' : 'minor' } : null },
+        { id: 'meta', label: t(lang, 'tabs.meta'), disabled: !metaOn, note: metaOn ? undefined : t(lang, 'tabs.metaOff'),
+          count: metaOn && openThreats ? { text: t(lang, openThreats === 1 ? 'tabs.threatsOne' : 'tabs.threatsMany', { n: openThreats }), level: 'warn' } : null },
+        { id: 'compare', label: t(lang, 'tabs.compare'), disabled: true, note: t(lang, 'tabs.soon') },
+      ]} />
+      <main className="tab-body">
+        <TabPanel id="pokemon" active={shownTab}>
           <SuggestionsPanel
             team={team}
             format={format}
             data={data}
+            rating={rating}
             replaceIndex={replaceIndex}
             onAdd={addSet}
             onReplaceWith={replaceAt}
             onCancelReplace={() => setReplaceIndex(null)}
             onPreview={changePreview}
           />
-        </div>
+        </TabPanel>
+        <TabPanel id="analysis" active={shownTab}>
+          <AnalysisPanel team={team} analysis={analysis} data={data} rating={rating} coaching={coaching} withMeta={false} expanded
+            preview={preview?.index === replaceIndex ? preview : null} onReplace={startReplace} onSwap={replaceAt} />
+          {team.length > 0 && <MemberSheet team={team} data={data} />}
+        </TabPanel>
+        <TabPanel id="meta" active={shownTab}>
+          <MetaPanel team={team} analysis={analysis} data={data} coaching={coaching} />
+        </TabPanel>
       </main>
       {undo && undo.after === team && (
         <UndoToast action={undo} onClose={() => setUndo(null)}

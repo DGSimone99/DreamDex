@@ -17,8 +17,8 @@ describe('anteprima del sostituto nel coaching', () => {
     const name = (row: HTMLElement) => row.querySelector('.who strong')?.textContent?.replace(/^\d+\. /, '');
     const row = rows.find(r => name(r) && name(r) !== proposed)!;
     const other = name(row)!;
-    await user.click(row.querySelector('summary')!);
-    expect(within(row).getByText(/Magikarp/)).toBeInTheDocument();
+    await user.click(row.querySelector('.pick')!);
+    expect(within(screen.getByRole('complementary', { name: `Dettaglio di ${other}` })).getByText(/Magikarp/)).toBeInTheDocument();
 
     expect(within(card()).getByText(other)).toBeInTheDocument();
     expect(within(card()).getByText('Selezionato')).toBeInTheDocument();
@@ -53,7 +53,7 @@ describe('anteprima del sostituto nel coaching', () => {
     const name = (row: HTMLElement) => row.querySelector('.who strong')?.textContent?.replace(/^\d+\. /, '');
     const row = rows.find(r => name(r) && name(r) !== proposed)!;
     const other = name(row)!;
-    await user.click(row.querySelector('summary')!);
+    await user.click(row.querySelector('.pick')!);
 
     await user.click(within(card()).getByRole('button', { name: `Sostituisci Magikarp con ${other}` }));
 

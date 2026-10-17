@@ -169,7 +169,8 @@ Colour carries meaning, not decoration. Gold belongs to the grade and the number
 - Huge gold grade letter at the right of the team band.
 - Barlow Condensed uppercase for headings, names and scoreboard numbers; Barlow for UI text; tabular figures throughout.
 - Flat navy tonal layering; shadows only on things that float (popovers, tooltips, menus, the lifted selected card).
-- Suggestions as one ruled ranked board with fixed columns; the #1 row is the only gold row.
+- Below the team, tabs show one section at a time (Pokémon, Analisi, Meta, Confronto later), each at full width.
+- Suggestions as a compact ruled ranked list beside a detail panel for the selected candidate; the #1 row is the only gold row.
 - Collapsible analysis blocks: title left, summary and chevron right.
 - Desktop first; mobile is not designed yet.
 
@@ -234,11 +235,13 @@ Desktop first, single screen, one 28px page gutter.
 
 - **Top bar:** sticky, Ink Ground, controls aligned to the baseline of their small uppercase labels; an EN | IT segmented switch on the right, before the stats month.
 - **Team band:** full width, Navy Band, a grid of the six-card row and a 210px grade column (28px gap). Cards sit in a 6-column grid with 14px by 16px gaps. Opening a card drops the set editor full width under the row (a drawer in the second grid row), one card open at a time.
-- **Columns:** Analysis left and Suggestions right at 5fr / 7fr with a 28px gap.
-- **Suggestion board:** fixed columns (rank 34, sprite 64, name flexible, four bar columns of 64, score 52, action 34; 12px gap). Expanded content indents to align under the name column.
+- **Tabs:** a tab bar under the team band (Barlow Condensed 20px uppercase, 3px Trophy Gold underline on the active tab, status-coloured count pills: problems red or blue, open threats yellow, replacing blue). Inactive panels stay mounted and are hidden with CSS, so search, filters and page survive a tab switch. Choosing a member to replace switches to the Pokémon tab. The Meta tab is disabled when the rating is without meta.
+- **Analisi tab:** two columns at 5fr / 6fr (rating and coaching left; weaknesses, coverage and roles right, open by default), the member sheet full width below.
+- **Meta tab:** Meta Use left and Meta threats right at 5fr / 6fr, both open.
+- **Pokémon tab:** a 500px list (rank 26, sprite 48, name flexible, score 40, action 34; 10px gap) with search and filters above and numbered pages of 10 (up to 50 candidates) below; a sticky detail panel fills the rest: hero (128px sprite, name, types, tags, score with its parts), "What changes" when replacing, "Effect on the team" (team grade before → after and every rating area with its change), "Why", the suggested set and the add/replace action.
 - **Rhythm:** spacing steps of 4, 8, 12, 16 and 28px; blocks stack with 10px between them.
 
-**Breakpoints.** At ≤1440px the team cards compact (56px type chips, 80px sprites, roles truncated) and the board tightens (bars 46px, 8px gap, 52px sprites) with abbreviated column heads. At ≤1100px the band and columns stack and the team row becomes three across; this is a fallback, not a designed layout. Mobile is not designed yet.
+**Breakpoints.** At ≤1440px the team cards compact (56px type chips, 80px sprites, roles truncated) and the list narrows to 440px and the detail hero shrinks (96px sprite). At ≤1100px the band, the tab columns and list/detail stack and the team row becomes three across; this is a fallback, not a designed layout. Mobile is not designed yet.
 
 ## Elevation & Depth
 
@@ -277,7 +280,8 @@ Small, square-ish corners: 2px for chips and meters, 3px for tags and badges, 4p
 
 ### Cards / Containers
 - **Analysis block:** Navy Panel, 1px Navy Line Soft border, 6px radius, 12px by 16px padding, collapsible. Summary row: title left (weight 600), summary text in Slate Muted 14px right-aligned beside the chevron, issue triangles with counts where relevant. Valutazione and Coaching start open; Meta Use and the deeper analysis blocks start collapsed.
-- **Suggestion board:** one Navy Panel list with 6px radius, rows ruled by Navy Line Soft. Row hover tints toward Navy Raised; the open row tints further. The #1 row carries a Trophy Gold Soft wash fading to the panel by 70%, gold rank and gold score.
+- **Suggestion list:** one Navy Panel list with 6px radius, rows ruled by Navy Line Soft. Row hover tints toward Navy Raised; the selected row is Navy Raised with a 1px Signal Blue inset outline (Trophy Gold on the #1 row). The #1 row carries a Trophy Gold Soft wash fading to the panel by 70%, gold rank and gold score.
+- **Candidate detail:** Navy Panel, Navy Band hero, sections ruled by Navy Line Soft with Label-style heads; the main action is gold only for the #1 candidate, Signal Blue Soft otherwise.
 
 ### Inputs / Fields
 - **Style:** Ink Field fill, 1px Navy Line border, 4px radius; labels above in the Label style.

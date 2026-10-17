@@ -121,3 +121,25 @@ export function saveLang(lang: Lang, storage: Storage | undefined = defaultStora
     // Archivio non disponibile: la scelta vale solo per questa sessione
   }
 }
+
+const TAB_KEY = 'dreamdex.tab';
+const TABS = ['pokemon', 'analysis', 'meta'] as const;
+export type SavedTab = typeof TABS[number];
+
+/** Ultima scheda aperta (Pokémon, Analisi, Meta), o null. */
+export function loadTab(storage: Storage | undefined = defaultStorage()): SavedTab | null {
+  try {
+    const raw = storage?.getItem(TAB_KEY);
+    return (TABS as readonly string[]).includes(raw ?? '') ? raw as SavedTab : null;
+  } catch {
+    return null;
+  }
+}
+
+export function saveTab(tab: SavedTab, storage: Storage | undefined = defaultStorage()): void {
+  try {
+    storage?.setItem(TAB_KEY, tab);
+  } catch {
+    // Archivio non disponibile: la scheda vale solo per questa sessione
+  }
+}

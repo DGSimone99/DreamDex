@@ -6,7 +6,7 @@ import { fixtureData } from '../fixtures/data';
 
 const suggestions = () => screen.getByRole('region', { name: 'Suggerimenti' });
 const team = () => screen.getByRole('region', { name: 'Team' });
-const cardNames = () => [...suggestions().querySelectorAll('details.suggestion summary .name-line > strong')].map(el => el.textContent!.replace(/^\d+\. /, ''));
+const cardNames = () => [...suggestions().querySelectorAll('.suggestions .name-line strong')].map(el => el.textContent!.replace(/^\d+\. /, ''));
 
 async function setup(...names: string[]) {
   const user = userEvent.setup();
@@ -96,7 +96,9 @@ describe('ricerca e filtri nei suggerimenti', () => {
     const user = await setup('Great Tusk');
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'dragapu');
     await waitFor(() => expect(cardNames()).toEqual(['Dragapult']));
-    expect(within(suggestions()).getByText('Uber · bannato in National Dex OU')).toBeInTheDocument();
+    // Il triangolo sta sulla riga e nel dettaglio
+    expect(within(suggestions().querySelector<HTMLElement>('.suggestions')!).getByText('Uber · bannato in National Dex OU')).toBeInTheDocument();
+    expect(within(screen.getByRole('complementary', { name: 'Dettaglio di Dragapult' })).getByText('Uber · bannato in National Dex OU')).toBeInTheDocument();
     await user.selectOptions(screen.getByRole('combobox', { name: 'Tier' }), 'legal');
     expect(await within(suggestions()).findByText('Nessun Pokémon corrisponde ai filtri')).toBeInTheDocument();
   });
@@ -147,7 +149,7 @@ describe('ricerca: Invio aggiunge il primo risultato', () => {
     const names = cardNames();
     expect(names.length).toBeGreaterThan(2);
     const hint = () => suggestions().querySelector('.search-hint strong')!.textContent;
-    const picked = () => suggestions().querySelector('li.picked summary strong')!.textContent!.replace(/^\d+\. /, '');
+    const picked = () => suggestions().querySelector('li.picked .name-line strong')!.textContent!.replace(/^\d+\. /, '');
     expect(hint()).toBe(names[0]);
     expect(picked()).toBe(names[0]);
 

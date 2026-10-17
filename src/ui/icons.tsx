@@ -7,6 +7,8 @@ const paths = {
   copy: 'M9 9h10v10H9zM5 15V5h10',
   plus: 'M12 5v14M5 12h14',
   arrow: 'M5 12h14m0 0-5-5m5 5-5 5',
+  prev: 'M14.5 6 8.5 12l6 6',
+  next: 'M9.5 6l6 6-6 6',
   check: 'M5 12.5l4.5 4.5L19 7.5',
   unlock: 'M6 11h12v9H6zM9 11V8a3 3 0 0 1 5.8-1.1M12 14.5v2',
   warning: 'M12 3.5 22 20H2zM12 10v4.5M12 17.2v.3',
