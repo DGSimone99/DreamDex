@@ -6,7 +6,7 @@ import { memberPower } from '../../src/engine/power';
 // Offesa 1:1: la media dei percentili d'attacco dei membri
 const offenseArea = (team: TeamSet[]) => Math.round(Math.min(100, team.reduce((a, s) => a + memberPower(s)!.offense, 0) / team.length));
 import { hitQuality } from '../../src/engine/power';
-import { metaTypeWeights } from '../../src/engine/stats';
+import { UNIFORM_TYPE_WEIGHTS } from '../../src/engine/analysis';
 import { superEffectiveMoves, TYPES, weaknessTable } from '../../src/engine/types';
 
 /** Coverage difensiva mostrata: riferimento all'80%, poi la cima più lenta. */
@@ -61,7 +61,7 @@ describe('rateTeam', () => {
 
   it('aree calcolate sulla fixture', () => {
     // Coverage difensiva: saldo resistenze/debolezze per tipo, pesato per il meta (piena a 80%); Robustezza: media dei membri
-    const weights = metaTypeWeights(fixtureData.stats);
+    const weights = UNIFORM_TYPE_WEIGHTS;
     const defense = weaknessTable([tusk, gholdengo]).reduce((acc, row) => acc + weights[row.type] * typeSafety(row.multipliers), 0);
     expect(value(rating, 'defense')).toBe(defenseShown(100 * defense));
     const bulk = [tusk, gholdengo].reduce((a, s) => a + memberPower(s)!.bulk, 0) / 2 / 100;
@@ -69,7 +69,7 @@ describe('rateTeam', () => {
     // Le due si dividono il peso della difesa: per un balance (team incompleto) il 35% va alla Robustezza
     expect(rating.weights.bulk! / (rating.weights.bulk! + rating.weights.defense!)).toBeCloseTo(BULK_SHARE.balance);
     // Coverage in profondità: per tipo, il colpo migliore di ogni membro, 70% al primo e 20% al secondo
-    const w = metaTypeWeights(fixtureData.stats);
+    const w = UNIFORM_TYPE_WEIGHTS;
     const coverage = TYPES.reduce((acc, type) => {
       const best = [tusk, gholdengo].map(s => Math.max(0, ...superEffectiveMoves(s, type).map(m => hitQuality(s, m)))).sort((a, b) => b - a);
       return acc + w[type] * Math.min(1, COVERAGE_DEPTH.reduce((a, share, i) => a + share * (best[i] ?? 0), 0));
@@ -143,5 +143,17 @@ describe('pesi secondo il tipo di team', () => {
     const rating = rateTeam([tusk, gholdengo], fixtureData)!;
     expect(rating.weights.speed! / (1 - rating.metaWeight || 1)).toBeGreaterThan(0);
     expect(value(rating, 'strength')).toBe(offenseArea([tusk, gholdengo]));
+  });
+});
+
+describe('il meta conta solo nella sua area', () => {
+  it('le aree sono le stesse col meta e senza; col meta si aggiunge solo il Meta', () => {
+    const team = ['Great Tusk', 'Gholdengo', 'Kingambit', 'Corviknight', 'Toxapex', 'Rotom-Wash'].map(n => mostCommonSet(fixtureStats, n)!);
+    const on = rateTeam(team, fixtureData)!;
+    const off = rateTeam(team, { ...fixtureData, ignoreMeta: true })!;
+    const areas = (r: typeof on) => r.areas.filter(a => a.key !== 'meta').map(a => [a.key, a.value]);
+    expect(areas(on)).toEqual(areas(off));
+    expect(on.areas.some(a => a.key === 'meta')).toBe(true);
+    expect(off.areas.some(a => a.key === 'meta')).toBe(false);
   });
 });

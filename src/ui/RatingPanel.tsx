@@ -41,6 +41,12 @@ export function RatingPanel({ rating, ruleIssues = [], metaMonth }: { rating: Te
         </span>
       </p>
       {metaMonth && <p className="rating-note">{rating.meta ? t('rating.metaOn', { month: metaMonth }) : t('rating.metaOff')}</p>}
+      {/* Col meta: quanto viene dalle aree (uguali senza meta) e quanto dall'area Meta */}
+      {rating.meta && (() => {
+        const areas = rating.areas.filter(a => a.key !== 'meta').reduce((sum, a) => sum + (rating.weights[a.key] ?? 0) * (a.value ?? 0), 0);
+        const meta = rating.areas.find(a => a.key === 'meta')?.value ?? 0;
+        return <p className="rating-note">{t('rating.metaSplit', { areas: Math.round(areas), meta, areaShare: Math.round(100 * (1 - rating.metaWeight)), metaShare: Math.round(100 * rating.metaWeight) })}</p>;
+      })()}
       {rating.archetype === 'stall' && <p className="rating-note">{t('rating.stall')}</p>}
       <dl className="bars">
         {rating.areas.map(area => {
@@ -51,7 +57,7 @@ export function RatingPanel({ rating, ruleIssues = [], metaMonth }: { rating: Te
           const tip = area.key === 'strength' && rating.power.length
             ? rating.power.map(m => `${m.species} ${rating.archetype ? m.power : m.offense}`).join('\n')
             : area.key === 'meta' && rating.meta ? t('rating.metaTip', { threats: rating.meta.threats, usage: rating.meta.usage })
-            : area.key === 'speed' ? t(rating.meta ? 'rating.speedTipMeta' : 'rating.speedTipFree')
+            : area.key === 'speed' ? t('rating.speedTip')
             : area.key === 'coverage' && rating.coverageByMember.length
               ? [t('rating.coverageTip'), ...[...rating.coverageByMember].sort((a, b) => b.types - a.types).map(m => `${m.species} ${m.types}`)].join('\n')
             : area.key === 'defense' ? t('rating.defenseTip')

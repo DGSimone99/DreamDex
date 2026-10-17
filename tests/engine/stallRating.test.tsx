@@ -5,12 +5,12 @@ import { meetsNeed, needCoverage, NEEDS, teamNeeds } from '../../src/engine/need
 
 import { memberPower, teamPower } from '../../src/engine/power';
 import { detectRoles, isPassive } from '../../src/engine/roles';
-import { metaTypeWeights } from '../../src/engine/stats';
+import { UNIFORM_TYPE_WEIGHTS } from '../../src/engine/analysis';
 import { superEffectiveMove, TYPES } from '../../src/engine/types';
 
 /** Copertura con ogni colpo super efficace a valore pieno, in profondità: 70/20/10 al 1°, 2° e 3° membro che colpisce il tipo. */
 const fullCoverage = (team: TeamSet[]) => {
-  const w = metaTypeWeights(fixtureData.stats);
+  const w = UNIFORM_TYPE_WEIGHTS;
   return 100 * TYPES.reduce((acc, type) => {
     const hitters = team.filter(s => superEffectiveMove(s, type)).length;
     return acc + w[type] * Math.min(1, COVERAGE_DEPTH.slice(0, hitters).reduce((a, b) => a + b, 0));

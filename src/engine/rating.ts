@@ -1,4 +1,4 @@
-import { analyzeTeam, threatScore, usesMeta, type TeamAnalysis } from './analysis';
+import { analyzeTeam, threatScore, UNIFORM_TYPE_WEIGHTS, usesMeta, type TeamAnalysis } from './analysis';
 import type { EngineData } from './data';
 import { battleName, battleSpecies, toID } from './dex';
 import { hitQuality, memberPower, teamPower, type MemberPower } from './power';
@@ -263,7 +263,7 @@ export function formatIssues(team: TeamSet[], rules: FormatRules, lang: Lang = '
 }
 
 export function redundancies(team: TeamSet[], analysis: TeamAnalysis, lang: Lang = 'it'): Redundancies {
-  const common = 1 / TYPES.length;
+  // Ogni membro debole scoperto oltre il primo costa 2 punti, su qualsiasi tipo (il meta conta solo nell'area Meta)
   const weaknesses = analysis.weakness
     .filter(row => row.weak - row.resist >= 2)
     .map(row => ({
@@ -271,7 +271,7 @@ export function redundancies(team: TeamSet[], analysis: TeamAnalysis, lang: Lang
         n: row.weak, type: typeName(row.type, lang),
         resistText: row.resist === 0 ? t(lang, 'rating.redundancy.noneResist') : t(lang, 'rating.redundancy.someResist', { n: row.resist }),
       }),
-      points: (row.weak - row.resist - 1) * (analysis.typeWeights[row.type] >= common ? 2 : 1),
+      points: (row.weak - row.resist - 1) * 2,
     }));
   const dependencies = [
     ...unmetBeneficiaries(team).map(i => ({ text: t(lang, 'rating.redundancy.unmet', { member: i.member, via: viaName(i.via, lang), condition: conditionLabel(i.condition, lang) }), points: 3 })),
@@ -367,7 +367,8 @@ export function gradeFor(score: number, lang: Lang = 'it'): { grade: string; lab
 export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): TeamRating | null {
   if (team.length === 0) return null;
   const analysis = analyzeTeam(team, data);
-  const weights = analysis.typeWeights;
+  // Le aree non dipendono dal meta del mese: i 18 tipi pesano uguale (il meta conta solo nell'area Meta)
+  const weights = UNIFORM_TYPE_WEIGHTS;
 
   const rules = rulesOf(data);
   const memberRoles = team.map(set => teamRoles(set, rules));
@@ -402,7 +403,8 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
   const weightsFor = archetype ? STALL_AREA_WEIGHTS : trickRoom ? TRICK_ROOM_WEIGHTS : blendWeights(blend);
   const strength = power.value === null ? null : power.value / 100;
   // Velocità: col meta contro le minacce più usate, senza contro tutti i Pokémon
-  const speed = teamSpeed(team, data, usesMeta(data) ? analysis.threats.map(x => x.name) : null);
+  // Velocità: contro il riferimento del formato, uguale col meta e senza (il meta conta solo nell'area Meta)
+  const speed = teamSpeed(team, data);
 
   // Coverage difensiva (tipi) e Robustezza si dividono il peso della difesa: la Robustezza conta di più in uno stall
   const bulkShare = bulk === null ? 0 : BULK_SHARE[analysis.needs.archetype];
