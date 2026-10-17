@@ -1,4 +1,4 @@
-export type FormatId = 'ou' | 'ubers' | 'uu' | 'all';
+export type FormatId = 'ou' | 'ubers' | 'uu' | 'all' | 'gen9ou';
 
 export interface Format {
   formatId: FormatId;

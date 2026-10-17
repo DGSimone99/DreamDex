@@ -10,7 +10,7 @@ import { rateTeam } from '../../src/engine/rating';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
 import { unusedEnablers } from '../../src/engine/synergy';
 import { fixtureData } from '../fixtures/data';
-import { parseNatDexTiers } from '../../scripts/showdown-tiers';
+import { parseTiers } from '../../scripts/showdown-tiers';
 
 const set = (species: string, item: string, ability: string, moves: string[]): TeamSet => ({ ...emptySet(species), item, ability, moves });
 const uu = { ...DEFAULT_FORMAT, formatId: 'uu' as const };
@@ -18,7 +18,7 @@ const uu = { ...DEFAULT_FORMAT, formatId: 'uu' as const };
 describe('tier National Dex di Showdown', () => {
   afterEach(() => initTiers(null));
 
-  it('legge natDexTier, o tier quando natDexTier manca (come Showdown)', () => {
+  it('legge natDexTier, o tier quando natDexTier manca (come Showdown); per Gen 9 il tier', () => {
     const source = [
       'export const FormatsData = {',
       '\tslowbro: {',
@@ -34,14 +34,14 @@ describe('tier National Dex di Showdown', () => {
       '\t},',
       '};',
     ].join('\n');
-    expect(parseNatDexTiers(source)).toEqual({ slowbro: 'UU', chansey: 'RU' });
+    expect(parseTiers(source)).toEqual({ natdex: { slowbro: 'UU', chansey: 'RU' }, gen9: { slowbro: 'RU', chansey: 'RU' } });
   });
 
   it('aggiornano quelli della libreria: Slowbro passa da OU a UU ed è legale in UU', () => {
     const slowbro = getSpecies('Slowbro')!;
     expect(natDexTier(slowbro)).toBe('OU');
     expect(isLegalIn(slowbro, uu)).toBe(false);
-    initTiers({ slowbro: 'UU' });
+    initTiers({ natdex: { slowbro: 'UU' }, gen9: {} });
     expect(natDexTier(slowbro)).toBe('UU');
     expect(isLegalIn(slowbro, uu)).toBe(true);
   });
@@ -49,12 +49,13 @@ describe('tier National Dex di Showdown', () => {
   it('solo dove la libreria ha già un tier: le forme senza tier restano come sono', () => {
     const forme = ['Venusaur-Gmax', 'Raichu-Mega-X', 'Pikachu-Cosplay'].map(getSpecies).find(s => s && natDexTier(s) === '');
     expect(forme).toBeDefined();
-    initTiers({ [forme!.id]: 'Illegal' });
+    initTiers({ natdex: { [forme!.id]: 'Illegal' }, gen9: {} });
     expect(natDexTier(forme!)).toBe('');
   });
 
-  it('caricati da data/_tiers/natdex.json, null se non scaricati', async () => {
-    expect(await loadTiers({ '/data/_tiers/natdex.json': async () => ({ slowbro: 'UU' }) })).toEqual({ slowbro: 'UU' });
+  it('caricati da data/_tiers/tiers.json, null se non scaricati', async () => {
+    const tiers = { natdex: { slowbro: 'UU' }, gen9: { slowbro: 'RU' } };
+    expect(await loadTiers({ '/data/_tiers/tiers.json': async () => tiers })).toEqual(tiers);
     expect(await loadTiers({})).toBeNull();
   });
 });

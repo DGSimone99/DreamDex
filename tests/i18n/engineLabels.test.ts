@@ -21,7 +21,7 @@ describe('etichette del motore', () => {
 
   it('formati e voti', () => {
     expect(formatLabel({ ...DEFAULT_FORMAT, formatId: 'all' }, 'en')).toBe('All Pokémon');
-    expect(formatOptions('en').at(-1)!.label).toBe('All Pokémon (no limits)');
+    expect(formatOptions('en').find(o => o.id === 'all')!.label).toBe('All Pokémon (no limits)');
     expect(gradeFor(85, 'en')).toEqual({ grade: 'A', label: 'Great' });
     expect(gradeFor(85, 'it')).toEqual({ grade: 'A', label: 'Ottimo' });
   });

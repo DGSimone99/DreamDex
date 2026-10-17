@@ -6,7 +6,7 @@ import { buildFallbackStats, reduceChaos, reducePkmnStats, type ChaosFile, type 
 import { listMonths, pickCutoff } from './smogon-index';
 import { FALLBACK_SETS, FALLBACK_STATS, SOURCES } from './sources';
 import { fetchItalianNames } from './pokeapi';
-import { FORMATS_DATA_URL, parseNatDexTiers } from './showdown-tiers';
+import { FORMATS_DATA_URL, parseTiers } from './showdown-tiers';
 
 const STATS_BASE = 'https://www.smogon.com/stats/';
 
@@ -58,6 +58,12 @@ async function fetchSource(source: string, months: string[]): Promise<EngineData
 
 async function main() {
   const months = listMonths(await (await get(STATS_BASE)).text());
+  // `npm run fetch-data -- gen9ou`: scarica solo le fonti indicate, senza ricostruire i dati di riserva
+  const only = process.argv.slice(2);
+  if (only.length) {
+    for (const source of only) await fetchSource(source, months);
+    return;
+  }
   const downloaded: EngineData[] = [];
   const downloadedFormats: string[] = [];
   // Una fonte che fallisce non blocca le altre
@@ -120,10 +126,10 @@ async function main() {
   }
   // Tier National Dex aggiornati da Showdown: un errore non blocca il resto (restano quelli della libreria)
   try {
-    const tiers = parseNatDexTiers(await (await get(FORMATS_DATA_URL)).text());
+    const tiers = parseTiers(await (await get(FORMATS_DATA_URL)).text());
     await mkdir(join('data', '_tiers'), { recursive: true });
-    await writeFile(join('data', '_tiers', 'natdex.json'), JSON.stringify(tiers));
-    console.log(`Tier National Dex da Showdown: ${Object.keys(tiers).length} specie.`);
+    await writeFile(join('data', '_tiers', 'tiers.json'), JSON.stringify(tiers));
+    console.log(`Tier da Showdown: ${Object.keys(tiers.natdex).length} specie National Dex, ${Object.keys(tiers.gen9).length} di Gen 9.`);
   } catch (error) {
     console.warn(`Tier di Showdown non disponibili (${(error as Error).message}): restano quelli della libreria.`);
   }

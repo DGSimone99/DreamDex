@@ -100,13 +100,17 @@ export function isLegalAbility(set: TeamSet, abilities: string[]): boolean {
   return abilities.includes(set.ability) || (!!mega && Object.values(mega.abilities).includes(set.ability));
 }
 
-/** Mosse e abilità non legali del set (vuoto con Custom Skillset o senza dati). */
-export function illegalParts(set: TeamSet, genLimit: number): { moves: string[]; ability: string | null } {
+/**
+ * Mosse e abilità non legali del set (vuoto con Custom Skillset o senza dati).
+ * Con il Pokédex di Scarlatto/Violetto ('sv') sono illegali anche le mosse che lì non esistono (Pursuit, Hidden Power).
+ */
+export function illegalParts(set: TeamSet, genLimit: number, pokedex: 'natdex' | 'sv' = 'natdex'): { moves: string[]; ability: string | null } {
   if (set.customSkillset) return { moves: [], ability: null };
   const moves = legalMoves(set.species, genLimit);
   const abilities = legalAbilities(set.species, genLimit);
+  const outside = (m: string) => pokedex === 'sv' && !!getMove(m)?.isNonstandard;
   return {
-    moves: moves ? set.moves.filter(m => m && getMove(m) && !isLearnable(moves, m)) : [],
+    moves: moves ? set.moves.filter(m => m && getMove(m) && (!isLearnable(moves, m) || outside(m))) : [],
     ability: abilities && set.ability && !isLegalAbility(set, abilities) ? set.ability : null,
   };
 }

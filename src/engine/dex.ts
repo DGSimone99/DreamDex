@@ -117,9 +117,13 @@ export function isLegal(species: Species): boolean {
   return !BANNED_TIERS.has(natDexTier(species));
 }
 
-/** Tier National Dex aggiornati da Showdown (`npm run fetch-data`); senza, quelli della libreria. */
-let tierOverrides: Record<string, string> | null = null;
-export function initTiers(tiers: Record<string, string> | null): void {
+/** Tier aggiornati da Showdown (`npm run fetch-data`): National Dex e Gen 9; senza, quelli della libreria. */
+export interface TierOverrides {
+  natdex: Record<string, string>;
+  gen9: Record<string, string>;
+}
+let tierOverrides: TierOverrides | null = null;
+export function initTiers(tiers: TierOverrides | null): void {
   tierOverrides = tiers;
 }
 
@@ -129,7 +133,13 @@ export function initTiers(tiers: Record<string, string> | null): void {
  */
 export function natDexTier(species: Species): string {
   const library = String((species as { natDexTier?: string }).natDexTier ?? '');
-  return (library ? tierOverrides?.[species.id] ?? library : '').replace(/[()]/g, '');
+  return (library ? tierOverrides?.natdex[species.id] ?? library : '').replace(/[()]/g, '');
+}
+
+/** Tier di Gen 9 (Scarlatto/Violetto), con lo stesso aggiornamento da Showdown. */
+export function gen9Tier(species: Species): string {
+  const library = String(species.tier ?? '');
+  return (library ? tierOverrides?.gen9[species.id] ?? library : '').replace(/[()]/g, '');
 }
 
 /** Scegliibile nel teambuilder: niente forme che esistono solo in battaglia (tranne Mega e Primal). */

@@ -52,13 +52,15 @@ describe('dati per formato', () => {
     expect(screen.getByText(/Statistiche: 2026-09/)).toBeInTheDocument();
   });
 
-  it('menu Pokédex e Tier: Gen 9 in arrivo, Senza limiti senza tier', async () => {
+  it('menu Pokédex e Tier: Gen 9 con OU, Senza limiti senza tier', async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} loadSource={async () => fixtureData} />);
     expect(screen.getByLabelText('Pokédex')).toHaveValue('natdex');
     expect(screen.getByLabelText('Tier del formato')).toHaveValue('ou');
     expect(within(screen.getByLabelText('Tier del formato')).getAllByRole('option').map(o => o.textContent)).toEqual(['OU', 'Ubers', 'UU']);
-    expect(screen.getByRole('option', { name: 'Gen 9 (in arrivo)' })).toBeDisabled();
+    await user.selectOptions(screen.getByLabelText('Pokédex'), 'gen9');
+    expect(screen.getByLabelText('Tier del formato')).toHaveValue('gen9ou');
+    expect(within(screen.getByLabelText('Tier del formato')).getAllByRole('option').map(o => o.textContent)).toEqual(['OU']);
     await user.selectOptions(screen.getByLabelText('Pokédex'), 'nolimits');
     expect(screen.queryByLabelText('Tier del formato')).toBeNull();
     // Tornando a National Dex si riparte da OU

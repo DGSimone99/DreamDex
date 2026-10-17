@@ -3,6 +3,7 @@ import { battleSpecies, dex, getMove, getSpecies, itemNames, moveNames, natureNa
 import { legalAbilities, legalMoves } from '../engine/learnsets';
 import { formatName, sameSet, STAT_IDS, type Preset, type StatID, type TeamSet } from '../engine/sets';
 import { TYPES } from '../engine/types';
+import type { Pokedex } from '../engine/formats';
 import type { CommonChoice, CommonChoices, CommonSpread } from '../engine/common';
 import { formatPercent, type Lang } from '../i18n';
 import { gameDesc, gameName, natureName, statShort, typeName } from '../i18n/game';
@@ -94,6 +95,8 @@ interface Props {
   presets?: Preset[];
   /** Limite di generazione: mosse e abilità legali fino a questa gen. */
   genLimit: number;
+  /** Pokédex del formato: con Scarlatto/Violetto ('sv') solo mosse e strumenti che esistono lì. */
+  pokedex?: Pokedex;
   /** Scelte più usate del membro, mostrate in cima ai menu. */
   common?: CommonChoices;
   /** Nome del formato se vieta il Tera: campo disattivato con la nota (il valore resta salvato). */
@@ -106,7 +109,7 @@ interface Props {
 /** Voce del menu dei preset per un set che non coincide con nessun preset. */
 const CUSTOM_PRESET = 'custom';
 
-export function SetEditor({ set, presets = [], genLimit, common, teraBannedIn, speed, onChange }: Props) {
+export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', common, teraBannedIn, speed, onChange }: Props) {
   const t = useT();
   const lang = useLang();
   // Le più usate vanno in cima al menu, con la quota d'uso (o "Preset" se vengono dalle analisi)
@@ -137,12 +140,15 @@ export function SetEditor({ set, presets = [], genLimit, common, teraBannedIn, s
   // Mosse proposte: solo quelle imparabili, tranne con Custom Skillset
   const moveOptions = useMemo(() => {
     const legal = custom ? null : legalMoves(set.species, genLimit);
-    const names = legal ? [...legal].map(id => getMove(id)?.name ?? id).sort() : ALL_MOVES;
+    const names = (legal ? [...legal].map(id => getMove(id)?.name ?? id).sort() : ALL_MOVES)
+      .filter(name => pokedex !== 'sv' || !getMove(name)?.isNonstandard);
     return withCommon(names.map(name => moveOption(name, lang)), common?.moves);
-  }, [custom, set.species, genLimit, lang, commonKey]);
-  const itemOptions = useMemo<ComboOption[]>(() => withCommon(ITEMS.map(name => ({
-    value: name, label: gameName('item', name, lang), description: describe.item(name, lang), icon: <ItemIcon item={name} />,
-  })), common?.items), [lang, commonKey]);
+  }, [custom, set.species, genLimit, pokedex, lang, commonKey]);
+  const itemOptions = useMemo<ComboOption[]>(() => withCommon(ITEMS
+    .filter(name => pokedex !== 'sv' || !dex.items.get(name).isNonstandard)
+    .map(name => ({
+      value: name, label: gameName('item', name, lang), description: describe.item(name, lang), icon: <ItemIcon item={name} />,
+    })), common?.items), [pokedex, lang, commonKey]);
   const natureOptions = useMemo<ComboOption[]>(() => withCommon(natureNames().map(name => {
     const { plus, minus } = dex.natures.get(name);
     const label = natureName(name, lang);

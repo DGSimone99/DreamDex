@@ -1,8 +1,8 @@
 import type { Lang } from '../i18n';
 import { fitsArchetype, type FitArchetype } from './archetype';
 import type { EngineData } from './data';
-import { battleName, battleSpecies, dex, getSpecies, isCosmeticForme, isDefined, isMega, isTeambuildable, natDexTier, toID, withinGen } from './dex';
-import { isBannedIn } from './formats';
+import { battleName, battleSpecies, dex, getSpecies, isCosmeticForme, isDefined, isMega, isTeambuildable, toID, withinGen } from './dex';
+import { isBannedIn, speciesInPokedex, tierIn } from './formats';
 import type { Format } from './format';
 import { formatRules } from './formatRules';
 import { detectRoles, type Role } from './roles';
@@ -68,7 +68,7 @@ export function isFiltering(f: CandidateFilters): boolean {
 export function tierLabel(speciesName: string, format: Format): { label: string; banned: boolean } {
   const species = getSpecies(speciesName);
   if (!species) return { label: '?', banned: false };
-  const tier = natDexTier(species);
+  const tier = tierIn(species, format);
   // Senza tier National Dex, per i non evoluti si usa il tier singolo (LC / NFE)
   const fallback = ['LC', 'NFE'].includes(String(species.tier)) ? String(species.tier) : species.nfe ? 'NFE' : '—';
   return { label: tier || fallback, banned: isBannedIn(species, format) };
@@ -87,7 +87,7 @@ function matchesTier(speciesName: string, tier: TierFilter, format: Format): boo
   if (tier === 'all') return true;
   const species = getSpecies(speciesName);
   if (!species) return false;
-  const t = natDexTier(species);
+  const t = tierIn(species, format);
   switch (tier) {
     case 'legal': return !isBannedIn(species, format);
     case 'uber': return t === 'Uber' || t === 'AG';
@@ -152,7 +152,7 @@ export function searchPool(team: TeamSet[], format: Format, data: EngineData, f:
   const teamNumbers = new Set(team.map(set => getSpecies(set.species)?.num).filter(isDefined));
   const query = toID(f.query);
   const candidates = dex.species.all()
-    .filter(s => isTeambuildable(s) && !isCosmeticForme(s) && withinGen(s, format) && !teamNumbers.has(s.num))
+    .filter(s => isTeambuildable(s) && speciesInPokedex(s, format) && !isCosmeticForme(s) && withinGen(s, format) && !teamNumbers.has(s.num))
     .filter(s => !query || toID(s.name).includes(query))
     .map(s => ({ species: s.name, set: cachedDefaultSet(data, s.name, format.genLimit) }))
     .filter(c => matchesFilters(c, f, data, format));
