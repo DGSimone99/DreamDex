@@ -82,9 +82,40 @@ describe('SuggestionsPanel', () => {
     expect(within(team()).getByRole('heading', { name: 'Team (2/6)' })).toBeInTheDocument();
   });
 
-  it('team completo: messaggio al posto dei suggerimenti', async () => {
-    await setup('Great Tusk', 'Gholdengo', 'Kingambit', 'Dragapult', 'Corviknight', 'Toxapex');
-    expect(within(suggestions()).getByText(/Team completo/)).toBeInTheDocument();
+  it('team completo: raccomandazioni libere, ognuna dice chi esce', async () => {
+    const user = await setup('Great Tusk', 'Gholdengo', 'Kingambit', 'Dragapult', 'Corviknight', 'Toxapex');
+    expect(within(suggestions()).getByRole('heading', { name: 'Migliora il team' })).toBeInTheDocument();
+    expect(within(suggestions()).getByRole('button', { name: 'Aggiungi' })).toBeDisabled();
+    expect(within(screen.getByRole('group', { name: 'Chi sostituire' })).getByRole('button', { name: 'Tutti' })).toHaveAttribute('aria-pressed', 'true');
+    // Dal voto più alto; ogni riga dice chi esce, e il pulsante rapido fa lo scambio
+    const grades = within(list()).getAllByLabelText(/^Voto del team: /).map(cell => Number(/ (\d+) \(/.exec(cell.getAttribute('aria-label')!)![1]));
+    expect(grades.length).toBeGreaterThan(0);
+    expect(grades).toEqual([...grades].sort((a, b) => b - a));
+    const first = list().querySelector('li')!;
+    const out = within(first).getAllByText(/^Al posto di /)[0].textContent!.replace('Al posto di ', '');
+    const name = rowNames()[0];
+    await user.click(within(first).getByRole('button', { name: `Metti ${name} al posto di ${out}` }));
+    expect(within(team()).getByText(name)).toBeInTheDocument();
+    expect(within(team()).queryByText(out)).toBeNull();
+  });
+
+  it('team completo: scegliere un membro mostra solo i suoi sostituti; Tutti torna agli scambi liberi', async () => {
+    const user = await setup('Great Tusk', 'Gholdengo', 'Kingambit', 'Dragapult', 'Corviknight', 'Toxapex');
+    const targets = () => screen.getByRole('group', { name: 'Chi sostituire' });
+    await user.click(within(targets()).getByRole('button', { name: 'Sostituisci Toxapex' }));
+    expect(within(suggestions()).getByRole('heading', { name: 'Sostituisci Toxapex' })).toBeInTheDocument();
+    expect(within(list()).queryAllByText(/^Al posto di /)).toHaveLength(0);
+    await user.click(within(targets()).getByRole('button', { name: 'Tutti' }));
+    expect(within(suggestions()).getByRole('heading', { name: 'Migliora il team' })).toBeInTheDocument();
+  });
+
+  it('team incompleto: da Aggiungi a Migliora team e ritorno', async () => {
+    const user = await setup('Great Tusk', 'Gholdengo');
+    expect(within(suggestions()).getByRole('heading', { name: 'Suggerimenti' })).toBeInTheDocument();
+    await user.click(within(suggestions()).getByRole('button', { name: 'Migliora team' }));
+    expect(within(suggestions()).getByRole('heading', { name: 'Migliora il team' })).toBeInTheDocument();
+    await user.click(within(suggestions()).getByRole('button', { name: 'Aggiungi' }));
+    expect(within(suggestions()).getByRole('heading', { name: 'Suggerimenti' })).toBeInTheDocument();
   });
 
   it('sostituzione: modalità, diff e sostituzione del membro', async () => {

@@ -23,7 +23,8 @@ describe('anteprima del sostituto nel coaching', () => {
     expect(within(card()).getByText(other)).toBeInTheDocument();
     expect(within(card()).getByText('Selezionato')).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'Annulla' }));
+    // Tornare ad aggiungere chiude la sostituzione
+    await user.click(screen.getByRole('button', { name: 'Aggiungi' }));
     expect(within(card()).getByText(proposed!)).toBeInTheDocument();
     expect(within(card()).queryByText('Selezionato')).toBeNull();
   });

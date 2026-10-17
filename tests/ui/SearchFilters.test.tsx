@@ -113,9 +113,10 @@ describe('ricerca e filtri nei suggerimenti', () => {
     expect(mark).toHaveTextContent('Uber · bannato in National Dex OU');
   });
 
-  it('team completo: ricerca nascosta', async () => {
+  it('team completo: la ricerca resta, per cercare tra gli scambi', async () => {
     await setup('Great Tusk', 'Gholdengo', 'Kingambit', 'Corviknight', 'Toxapex', 'Rotom-Wash');
-    expect(screen.queryByLabelText('Aggiungi Pokémon')).toBeNull();
+    expect(screen.getByLabelText('Aggiungi Pokémon')).toBeInTheDocument();
+    expect(within(suggestions()).getByRole('heading', { name: 'Migliora il team' })).toBeInTheDocument();
   });
 });
 

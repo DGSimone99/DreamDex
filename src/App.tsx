@@ -175,6 +175,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
             onReplaceWith={replaceAt}
             onCancelReplace={() => setReplaceIndex(null)}
             onPreview={changePreview}
+            onTarget={setReplaceIndex}
           />
         </TabPanel>
         <TabPanel id="analysis" active={shownTab}>

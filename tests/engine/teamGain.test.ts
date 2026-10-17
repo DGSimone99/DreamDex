@@ -3,7 +3,8 @@ import { DEFAULT_FORMAT } from '../../src/engine/format';
 import { rateTeam } from '../../src/engine/rating';
 import { suggest } from '../../src/engine/scoring';
 import { emptySet } from '../../src/engine/sets';
-import { rankByTeamGain, withCandidate } from '../../src/engine/teamGain';
+import { bestSwaps, rankByTeamGain, withCandidate } from '../../src/engine/teamGain';
+import { improveReplacements } from '../../src/engine/replace';
 import { fixtureData } from '../fixtures/data';
 
 describe('voto del team col candidato', () => {
@@ -37,5 +38,32 @@ describe('voto del team col candidato', () => {
     const kept = rankByTeamGain(items, team, null, fixtureData, 'it', false);
     expect(kept.map(r => r.species)).toEqual(items.map(r => r.species));
     expect(kept.every(r => r.teamGain)).toBe(true);
+  });
+});
+
+describe('raccomandazioni libere', () => {
+  const team = ['Great Tusk', 'Gholdengo', 'Kingambit'].map(name => ({ ...emptySet(name), moves: [] as string[] }));
+  const candidates = (index: number) => improveReplacements(team, index, DEFAULT_FORMAT, fixtureData, 15);
+
+  it('ogni candidato una volta, col membro che conviene di più sostituire; gli altri in alternativa', () => {
+    const swaps = bestSwaps(team, fixtureData, 'it', candidates);
+    expect(new Set(swaps.map(s => s.species)).size).toBe(swaps.length);
+    const before = rateTeam(team, fixtureData)!.overall;
+    for (const swap of swaps) {
+      const after = rateTeam(withCandidate(team, swap.set, swap.replaces), fixtureData)!.overall;
+      expect(swap.teamGain.gain).toBe(after - before);
+      expect(swap.alternatives.every(alt => alt.gain <= swap.teamGain.gain && alt.index !== swap.replaces)).toBe(true);
+    }
+    expect(swaps.map(s => s.teamGain.overall)).toEqual([...swaps.map(s => s.teamGain.overall)].sort((a, b) => b - a));
+  });
+
+  it('i preferiti non escono mai', () => {
+    const starred = team.map((set, i) => (i === 0 ? { ...set, favorite: true } : set));
+    expect(bestSwaps(starred, fixtureData, 'it', candidates).every(s => s.replaces !== 0)).toBe(true);
+  });
+
+  it('niente doppioni di specie già nel team', () => {
+    const names = team.map(s => s.species);
+    expect(bestSwaps(team, fixtureData, 'it', candidates).every(s => !names.includes(s.species))).toBe(true);
   });
 });

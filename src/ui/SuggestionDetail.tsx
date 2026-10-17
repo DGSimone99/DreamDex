@@ -3,7 +3,7 @@ import type { EngineData } from '../engine/data';
 import { describeDiff } from '../engine/coach';
 import { getSpecies } from '../engine/dex';
 import { rateTeam, type TeamRating } from '../engine/rating';
-import { withCandidate, type TeamGain } from '../engine/teamGain';
+import { withCandidate, type SwapOption, type TeamGain } from '../engine/teamGain';
 import { formatPercent } from '../i18n';
 import type { Replacement } from '../engine/replace';
 import type { Suggestion } from '../engine/scoring';
@@ -13,7 +13,8 @@ import { useLang, useT } from '../i18n/react';
 import { copyText } from './clipboard';
 import { Icon } from './icons';
 import { ItemIcon } from './ItemIcon';
-import { PokemonName } from './PokemonName';
+import { PokemonIcon, PokemonName } from './PokemonName';
+import { battleName } from '../engine/dex';
 import { ProsCons } from './ProsCons';
 import { Sprite, TypeChip } from './Sprite';
 import { StatsBadge } from './StatsBadge';
@@ -24,7 +25,7 @@ import { MoveName, Typed } from './TypeText';
  * cosa cambia (in sostituzione), i motivi e il set.
  */
 export function SuggestionDetail({ item, rank, team, replaceIndex, data, rating, usage, banMark, actionLabel, onAction }: {
-  item: (Suggestion | Replacement) & { teamGain?: TeamGain };
+  item: (Suggestion | Replacement) & { teamGain?: TeamGain; alternatives?: SwapOption[] };
   rank: number;
   team: TeamSet[];
   /** Il membro che il candidato sostituirebbe, o null se si aggiunge. */
@@ -97,6 +98,19 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, rating,
               <p className="note">{tr('suggest.similarity', { pct: Math.round(item.similarity * 100) })}</p>
             )}
             <ProsCons pros={changes.pros} cons={changes.cons} />
+            {/* Raccomandazioni libere: quanto renderebbe al posto degli altri membri */}
+            {item.alternatives && item.alternatives.length > 0 && (
+              <p className="detail-alts">
+                <span>{tr('detail.alternatives')}</span>
+                {item.alternatives.slice(0, 4).map(alt => (
+                  <span key={alt.index} className="alt">
+                    <PokemonIcon name={battleName(team[alt.index])} />
+                    {battleName(team[alt.index])}
+                    <strong className={alt.gain < 0 ? 'worse' : alt.gain === 0 ? 'same' : undefined}>{delta(alt.gain) || '±0'}</strong>
+                  </span>
+                ))}
+              </p>
+            )}
           </section>
         )}
 

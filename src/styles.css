@@ -642,6 +642,19 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 
 /* Suggerimenti: lista compatta a sinistra, il candidato selezionato a destra */
 .picker { margin-top: 12px; }
+/* Modalità sempre visibili; negli scambi, la scelta di chi sostituire con le icone dei membri */
+.modes { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; margin-bottom: 12px; }
+.modes .segmented { flex: none; }
+.modes .segmented button { gap: 6px; padding: 7px 14px; font-size: 14px; white-space: nowrap; }
+.modes .segmented .icon { width: 14px; height: 14px; }
+.targets { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.targets-label { font: 600 12px/1 var(--ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--faint); margin-right: 4px; }
+.targets button { gap: 4px; padding: 3px 11px 3px 6px; border-radius: 14px; background: transparent; font-size: 13px; color: var(--muted); }
+.targets button:first-of-type { padding-left: 11px; }
+.targets button:hover { color: var(--text); }
+.targets button[aria-pressed='true'] { background: var(--blue-soft); border-color: var(--blue); color: var(--text); font-weight: 600; }
+.targets button .mon-icon { margin: -4px -2px -4px -4px; }
+.targets button .icon { width: 12px; height: 12px; color: var(--gold); }
 .picker.has-detail { display: grid; grid-template-columns: minmax(0, 560px) minmax(0, 1fr); gap: 28px; align-items: start; }
 .picker-list { min-width: 0; }
 .list-count { margin: 0 0 6px; font-size: 13px; color: var(--muted); }
@@ -683,6 +696,16 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .suggestion .result small { font-size: 12px; color: var(--muted); white-space: nowrap; }
 .suggestion .result strong.worse { color: var(--bad); }
 .suggestion .result strong.same { color: var(--muted); }
+/* Scambi liberi: chi esce, tra il nome e il voto */
+.suggestion.swap { grid-template-columns: 26px 48px minmax(0, 1fr) 40px 52px 34px; }
+.suggestion .out { display: flex; flex-direction: column; align-items: center; gap: 1px; color: var(--faint); }
+.suggestion .out .icon { width: 13px; height: 13px; }
+.detail-alts { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin: 8px 0 0; font-size: 13px; color: var(--muted); }
+.detail-alts .alt { display: inline-flex; align-items: center; gap: 4px; color: var(--text); }
+.detail-alts .alt .mon-icon { margin: -6px -4px -6px -6px; }
+.detail-alts strong { font-variant-numeric: tabular-nums; }
+.detail-alts strong.worse { color: var(--bad); }
+.detail-alts strong.same { color: var(--muted); }
 .suggestion .quick { display: grid; place-items: center; width: 34px; height: 34px; padding: 0; border-radius: 4px; color: var(--muted); }
 .suggestion .quick:hover { color: var(--text); background: var(--blue-soft); }
 .suggestion.first .quick { background: var(--gold); border-color: var(--gold); color: var(--gold-ink); }
