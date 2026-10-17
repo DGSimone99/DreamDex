@@ -1,6 +1,6 @@
-import { battleSpecies, toID } from './dex';
+import { battleSpecies, getMove, toID } from './dex';
 import { memberPower } from './power';
-import { detectRoles, isPassive, isStall, type Role } from './roles';
+import { detectRoles, isFast, isPassive, isStall, type Role } from './roles';
 import type { TeamSet } from './sets';
 import { benefits, enables, type Condition } from './synergy';
 
@@ -19,6 +19,8 @@ export const MAX_STYLES = 2;
 const BULKY = 55;
 /** …e sotto cui un team senza muri passivi è Hyper Offense. */
 const FRAIL = 65;
+/** Membri veloci (o con un setup che alza la velocità) da cui un team senza muri passivi è Hyper Offense anche se robusto (Ubers). */
+const HO_FAST_MEMBERS = 5;
 /** Membri con un pivot offensivo perché il team sia Volt-turn. */
 const VOLT_TURN_PIVOTS = 4;
 
@@ -32,6 +34,9 @@ const CONDITION_STYLES: [Condition, TeamStyle][] = [['rain', 'rain'], ['sun', 's
 
 const heals = (set: TeamSet) => set.moves.some(m => HEAL_MOVES.has(toID(m))) || HEAL_ABILITIES.has(toID(set.ability));
 const hasMove = (set: TeamSet, ids: Set<string>) => set.moves.some(m => ids.has(toID(m)));
+/** Veloce di suo (statistica, Scarf, abilità) o con una mossa che gli alza la velocità (Dragon Dance, Quiver Dance…). */
+const fastOrSpeedSetup = (set: TeamSet) => isFast(set)
+  || set.moves.some(m => { const move = getMove(m); return move?.category === 'Status' && move.target === 'self' && (move.boosts?.spe ?? 0) > 0; });
 
 /** Archetipo dal numero di muri passivi (e dal recupero e dalla robustezza per distinguere i team offensivi). */
 function archetypeOf(team: TeamSet[]): Archetype {
@@ -44,6 +49,8 @@ function archetypeOf(team: TeamSet[]): Archetype {
   const bulk = team.reduce((acc, set) => acc + (memberPower(set)?.bulk ?? 0), 0) / team.length;
   const sash = team.some(set => toID(set.item) === 'focussash');
   if (bulk < BULKY || (passive === 0 && (bulk < FRAIL || sash))) return 'hyperOffense';
+  // In Ubers anche gli HO sono robusti: li distingue la velocità di quasi tutti i membri
+  if (passive === 0 && team.filter(fastOrSpeedSetup).length >= HO_FAST_MEMBERS) return 'hyperOffense';
   return 'bulkyOffense';
 }
 
