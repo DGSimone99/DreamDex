@@ -320,6 +320,8 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   // Il numero di risultati, sopra la lista quando si cerca o si filtra
   const countText = `${items.length === 1 ? tr('suggest.resultsOne') : tr('suggest.resultsMany', { n: items.length })}${items.length === MAX ? tr('suggest.best') : ''}`;
 
+  // Note sopra (a tutta larghezza); sotto, lista e dettaglio partono alla stessa altezza
+  let notes = null;
   let body;
   if (full) {
     body = <p>{tr('suggest.full')}</p>;
@@ -328,7 +330,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   } else if (filtering && items.length === 0) {
     body = <p className="note">{tr('suggest.noMatch')}</p>;
   } else {
-    body = (
+    notes = (
       <>
         {filtering && <p className="visually-hidden" aria-live="polite">{tr('suggest.resultsAria', { text: countText })}</p>}
         {setterNote && <p className="note">{setterNote}</p>}
@@ -336,6 +338,10 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
           <p className="note">{tr('suggest.emptyTeam')}</p>
         )}
         {filtering && <p className="list-count">{countText}</p>}
+      </>
+    );
+    body = (
+      <>
         <ol className={`suggestions${stale ? ' stale' : ''}`} ref={listRef} aria-busy={stale || undefined}>
           {pageItems.map((item, i) => (
             <SuggestionRow
@@ -375,8 +381,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   }
 
   return (
-    <section aria-label={tr('suggest.title')} className={`suggestions-panel${selected && !full ? ' has-detail' : ''}`}>
-      <div className="picker">
+    <section aria-label={tr('suggest.title')} className="suggestions-panel">
       <h2>{title}</h2>
       {replacing && (
         <div className="actions" role="group" aria-label={tr('suggest.mode')}>
@@ -386,23 +391,25 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
         </div>
       )}
       {search}
-      {body}
+      {notes}
+      <div className={`picker${selected && !full ? ' has-detail' : ''}`}>
+        <div className="picker-list">{body}</div>
+        {selected && !full && (
+          <SuggestionDetail
+            key={selected.species}
+            item={selected}
+            rank={selectedRank}
+            team={team}
+            replaceIndex={replacing ? replaceIndex : null}
+            data={data}
+            rating={rating}
+            usage={emptyTeam ? usageOf(selected.species) : null}
+            banMark={<BanMark species={selected.species} format={format} />}
+            actionLabel={tr(replacing ? 'suggest.replaceWith' : 'suggest.add')}
+            onAction={() => act(selected)}
+          />
+        )}
       </div>
-      {selected && !full && (
-        <SuggestionDetail
-          key={selected.species}
-          item={selected}
-          rank={selectedRank}
-          team={team}
-          replaceIndex={replacing ? replaceIndex : null}
-          data={data}
-          rating={rating}
-          usage={emptyTeam ? usageOf(selected.species) : null}
-          banMark={<BanMark species={selected.species} format={format} />}
-          actionLabel={tr(replacing ? 'suggest.replaceWith' : 'suggest.add')}
-          onAction={() => act(selected)}
-        />
-      )}
     </section>
   );
 }
