@@ -4,7 +4,8 @@ import { AREA_FULL, AREA_KNEE, DEFENSIVE_BLEND, AREA_WEIGHTS, BULK_FULL, BULK_SH
 import { memberPower } from '../../src/engine/power';
 
 /** Offesa media dei membri, piena a OFFENSE_FULL. */
-const offenseArea = (team: TeamSet[]) => Math.round(100 * areaValue(team.reduce((a, s) => a + memberPower(s)!.offense, 0) / team.length / 100, OFFENSE_FULL));
+// Offesa 1:1: la media dei percentili d'attacco dei membri
+const offenseArea = (team: TeamSet[]) => Math.round(Math.min(100, team.reduce((a, s) => a + memberPower(s)!.offense, 0) / team.length));
 import { hitQuality } from '../../src/engine/power';
 import { metaTypeWeights } from '../../src/engine/stats';
 import { superEffectiveMoves, TYPES, weaknessTable } from '../../src/engine/types';
@@ -65,7 +66,7 @@ describe('rateTeam', () => {
     const defense = weaknessTable([tusk, gholdengo]).reduce((acc, row) => acc + weights[row.type] * typeSafety(row.multipliers), 0);
     expect(value(rating, 'defense')).toBe(full('defense', 100 * defense));
     const bulk = [tusk, gholdengo].reduce((a, s) => a + memberPower(s)!.bulk, 0) / 2 / 100;
-    expect(value(rating, 'bulk')).toBe(Math.round(100 * areaValue(bulk, BULK_FULL)));
+    expect(value(rating, 'bulk')).toBe(Math.round(100 * Math.min(1, bulk)));
     // Le due si dividono il peso della difesa: per un balance (team incompleto) il 35% va alla Robustezza
     expect(rating.weights.bulk! / (rating.weights.bulk! + rating.weights.defense!)).toBeCloseTo(BULK_SHARE.balance);
     // Coverage in profondità: per tipo, il colpo migliore di ogni membro, 70% al primo e 20% al secondo

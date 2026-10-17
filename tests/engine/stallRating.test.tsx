@@ -146,7 +146,8 @@ describe('voto dello stall', () => {
   it('forza dei passivi dalla sola robustezza', () => {
     const rating = rateTeam(stall, fixtureData)!;
     const bulk = Math.round(stall.map(s => memberPower(s)!.bulk).reduce((a, b) => a + b, 0) / stall.length);
-    expect(rating.areas.find(a => a.key === 'strength')!.value).toBe(full('strength', bulk));
+    // Statistiche 1:1: la media è il valore dell'area
+    expect(rating.areas.find(a => a.key === 'strength')!.value).toBe(Math.min(100, bulk));
     expect(rating.areas.find(a => a.key === 'strength')!.label).toBe('Statistiche');
   });
 
@@ -165,7 +166,7 @@ describe('voto dello stall', () => {
     const rating = rateTeam(team, fixtureData)!;
     expect(Math.abs(rating.base - weighted(rating))).toBeLessThanOrEqual(1);
     const offense = team.reduce((a, s) => a + memberPower(s)!.offense, 0) / team.length / 100;
-    expect(rating.areas.find(a => a.key === 'strength')!.value).toBe(Math.round(100 * areaValue(offense, OFFENSE_FULL)));
+    expect(rating.areas.find(a => a.key === 'strength')!.value).toBe(Math.round(100 * Math.min(1, offense)));
     expect(rating.areas.find(a => a.key === 'strength')!.label).toBe('Offesa');
   });
 });

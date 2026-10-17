@@ -420,13 +420,14 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
   // Un semi-stall o un balance ha muri passivi per scelta: con la stessa quota dei pesi, l'Offesa si avvicina
   // alle Statistiche dello stall (quanto incassano i muri, quanto colpiscono gli altri)
   const walls = blend > 0 ? teamPower(team, team.map((set, i) => isPassive(set, memberRoles[i])), rules).value : null;
-  const offenseArea = offense === null ? null : areaValue(offense, OFFENSE_FULL);
-  const attack = archetype ? full('strength', strength)
+  // Offesa, Robustezza e Statistiche 1:1: la media dei membri è il valore dell'area (89, 90, 88, 96, 100, 75 → 90)
+  const offenseArea = offense === null ? null : Math.min(1, offense);
+  const attack = archetype ? (strength === null ? null : Math.min(1, strength))
     : offenseArea === null ? null
-    : walls === null ? offenseArea : (1 - blend) * offenseArea + blend * areaValue(walls / 100, AREA_FULL.strength);
+    : walls === null ? offenseArea : (1 - blend) * offenseArea + blend * Math.min(1, walls / 100);
   const raw: Record<AreaKey, number | null> = {
     // Coverage offensiva 1:1: un membro su ogni tipo vale 70, due 90, tre 100
-    coverage: Math.min(1, coverage), defense: full('defense', typeDefense), strength: attack, bulk: full('bulk', bulk),
+    coverage: Math.min(1, coverage), defense: full('defense', typeDefense), strength: attack, bulk: bulk === null ? null : Math.min(1, bulk),
     roles: full('roles', roles), speed: full('speed', speed), meta: null,
   };
   const available = BASE_AREAS.filter(key => raw[key] !== null && effective[key] > 0);
