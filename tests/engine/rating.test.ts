@@ -1,17 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { teamPower } from '../../src/engine/power';
-import { AREA_FULL, AREA_KNEE, DEFENSIVE_BLEND, AREA_WEIGHTS, BULK_FULL, BULK_SHARE, COVERAGE_DEPTH, META_WEIGHT, OFFENSE_FULL, SPEED_WEIGHT, areaValue, gradeFor, rateTeam, typeSafety } from '../../src/engine/rating';
+import { AREA_KNEE, AREA_WEIGHTS, BULK_SHARE, COVERAGE_DEPTH, DEFENSE_FULL, DEFENSIVE_BLEND, META_WEIGHT, SPEED_WEIGHT, areaValue, gradeFor, rateTeam, typeSafety } from '../../src/engine/rating';
 import { memberPower } from '../../src/engine/power';
 
-/** Offesa media dei membri, piena a OFFENSE_FULL. */
 // Offesa 1:1: la media dei percentili d'attacco dei membri
 const offenseArea = (team: TeamSet[]) => Math.round(Math.min(100, team.reduce((a, s) => a + memberPower(s)!.offense, 0) / team.length));
 import { hitQuality } from '../../src/engine/power';
 import { metaTypeWeights } from '../../src/engine/stats';
 import { superEffectiveMoves, TYPES, weaknessTable } from '../../src/engine/types';
 
-/** Valore mostrato di un'area: piena dal suo riferimento in su (AREA_FULL). */
-const full = (key: keyof typeof AREA_FULL, percent: number) => Math.round(100 * areaValue(percent / 100, AREA_FULL[key]));
+/** Coverage difensiva mostrata: riferimento all'80%, poi la cima più lenta. */
+const defenseShown = (percent: number) => Math.round(100 * areaValue(percent / 100, DEFENSE_FULL));
 import { mostCommonSet, type TeamSet } from '../../src/engine/sets';
 import { fixtureData, fixtureStats, gholdengo, tusk } from '../fixtures/data';
 
@@ -64,7 +63,7 @@ describe('rateTeam', () => {
     // Coverage difensiva: saldo resistenze/debolezze per tipo, pesato per il meta (piena a 80%); Robustezza: media dei membri
     const weights = metaTypeWeights(fixtureData.stats);
     const defense = weaknessTable([tusk, gholdengo]).reduce((acc, row) => acc + weights[row.type] * typeSafety(row.multipliers), 0);
-    expect(value(rating, 'defense')).toBe(full('defense', 100 * defense));
+    expect(value(rating, 'defense')).toBe(defenseShown(100 * defense));
     const bulk = [tusk, gholdengo].reduce((a, s) => a + memberPower(s)!.bulk, 0) / 2 / 100;
     expect(value(rating, 'bulk')).toBe(Math.round(100 * Math.min(1, bulk)));
     // Le due si dividono il peso della difesa: per un balance (team incompleto) il 35% va alla Robustezza

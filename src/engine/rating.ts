@@ -64,15 +64,15 @@ const blendWeights = (amount: number): Record<BaseArea, number> => Object.fromEn
 const TRICK_ROOM_WEIGHTS: Record<BaseArea, number> = { ...OTHER_AREAS, speed: 0, bulk: 0 };
 
 /**
- * Valore da cui un'area è piena: un team da torneo non resiste a tutto né ha sei Pokémon fortissimi,
- * e non deve servire la perfezione per arrivare in S (come l'area Meta, piena a META_FULL).
+ * Quasi tutte le aree sono 1:1: la media o la quota calcolata è il valore (Offesa 90 = media dei membri 90).
+ * La Coverage difensiva ha un riferimento: è piena all'80% del saldo perfetto (ogni tipo resistito due volte).
+ * Il Meta ha il suo (META_FULL).
  */
-export const AREA_FULL: Record<BaseArea, number> = { defense: 0.8, coverage: 0.9, roles: 0.95, strength: 0.92, speed: 0.9, bulk: 0.9 };
+export const DEFENSE_FULL = 0.8;
 
 /**
- * Oltre il 95% del valore di riferimento l'area sale più piano: arrivare al riferimento vale circa 97,
- * il 100 solo con la perfezione (per la coverage offensiva: tre membri diversi su ogni tipo).
- * Sotto il ginocchio il valore resta quello di prima, così i voti dei team normali non cambiano.
+ * Per le aree con un riferimento: oltre il 95% del riferimento l'area sale più piano,
+ * il 100 arriva solo con la perfezione. Sotto il ginocchio il valore è lineare.
  */
 export const AREA_KNEE = 0.95;
 export function areaValue(value: number, full: number): number {
@@ -87,13 +87,6 @@ export function areaValue(value: number, full: number): number {
  * un hyper offense vince attaccando, uno stall incassando.
  */
 export const BULK_SHARE: Record<Archetype, number> = { hyperOffense: 0.2, bulkyOffense: 0.3, balance: 0.35, semiStall: 0.45, stall: 0.5 };
-/** Robustezza media (percentile) da cui l'area Robustezza è piena. */
-export const BULK_FULL = AREA_FULL.bulk;
-/**
- * Offesa media (percentile) da cui l'area Offesa è piena. L'area misura quanto colpiscono forte i membri:
- * i team da torneo stanno a 72, gli altri team buoni a 64. Nello stall resta "Statistiche" (robustezza dei muri passivi).
- */
-export const OFFENSE_FULL = 0.8;
 
 /**
  * Coverage in profondità: per ogni tipo, il colpo migliore del 1°, 2° e 3° membro che lo colpisce vale 70%, 20% e 10%.
@@ -411,8 +404,6 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
   // Velocità: col meta contro le minacce più usate, senza contro tutti i Pokémon
   const speed = teamSpeed(team, data, usesMeta(data) ? analysis.threats.map(x => x.name) : null);
 
-  // Ogni area sale fino al suo valore di riferimento, poi più piano fino alla perfezione
-  const full = (key: BaseArea, value: number | null) => (value === null ? null : areaValue(value, AREA_FULL[key]));
   // Coverage difensiva (tipi) e Robustezza si dividono il peso della difesa: la Robustezza conta di più in uno stall
   const bulkShare = bulk === null ? 0 : BULK_SHARE[analysis.needs.archetype];
   const effective: Record<BaseArea, number> = { ...weightsFor, defense: weightsFor.defense * (1 - bulkShare), bulk: weightsFor.defense * bulkShare };
@@ -427,8 +418,8 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
     : walls === null ? offenseArea : (1 - blend) * offenseArea + blend * Math.min(1, walls / 100);
   const raw: Record<AreaKey, number | null> = {
     // Coverage offensiva 1:1: un membro su ogni tipo vale 70, due 90, tre 100
-    coverage: Math.min(1, coverage), defense: full('defense', typeDefense), strength: attack, bulk: bulk === null ? null : Math.min(1, bulk),
-    roles: full('roles', roles), speed: full('speed', speed), meta: null,
+    coverage: Math.min(1, coverage), defense: areaValue(typeDefense, DEFENSE_FULL), strength: attack, bulk: bulk === null ? null : Math.min(1, bulk),
+    roles: Math.min(1, roles), speed: Math.min(1, speed), meta: null,
   };
   const available = BASE_AREAS.filter(key => raw[key] !== null && effective[key] > 0);
   const totalWeight = sum(available.map(key => effective[key]));

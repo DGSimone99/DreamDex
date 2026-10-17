@@ -273,7 +273,7 @@ export const en = {
   'analysis.essential': "Essential",
   'analysis.useful': "Useful",
   'analysis.missing': "Missing",
-  'analysis.notRequired': "Not required for this kind of team",
+  'analysis.notRequired': "Not required for this kind of team (they count little in the grade)",
   'analysis.notRequiredValue': "Not required",
   'analysis.judgedAs': "Judged as {archetype}: the required roles depend on the kind of team.",
   'analysis.judgedIncomplete': "Incomplete team: roles judged as for a {archetype}.",

@@ -275,7 +275,7 @@ export const it: Record<keyof typeof en, string> = {
   'analysis.essential': "Essenziali",
   'analysis.useful': "Utili",
   'analysis.missing': "Mancante",
-  'analysis.notRequired': "Non richiesti per questo tipo di team",
+  'analysis.notRequired': "Non richiesti per questo tipo di team (contano poco nel voto)",
   'analysis.notRequiredValue': "Non richiesto",
   'analysis.judgedAs': "Giudicati come {archetype}: i ruoli richiesti cambiano col tipo di team.",
   'analysis.judgedIncomplete': "Team incompleto: ruoli giudicati come per un {archetype}.",

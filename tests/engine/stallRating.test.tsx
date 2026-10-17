@@ -1,9 +1,8 @@
 import { DEFAULT_RULES } from '../../src/engine/formatRules';
 import { describe, expect, it } from 'vitest';
-import { AREA_FULL, AREA_WEIGHTS, areaValue, COVERAGE_DEPTH, META_WEIGHT, OFFENSE_FULL, rateTeam, ROLE_COMPRESSION, SPEED_WEIGHT, STALL_AREA_WEIGHTS } from '../../src/engine/rating';
+import { AREA_WEIGHTS, COVERAGE_DEPTH, META_WEIGHT, rateTeam, ROLE_COMPRESSION, SPEED_WEIGHT, STALL_AREA_WEIGHTS } from '../../src/engine/rating';
 import { meetsNeed, needCoverage, NEEDS, teamNeeds } from '../../src/engine/needs';
 
-const full = (key: keyof typeof AREA_FULL, percent: number) => Math.round(Math.min(100, percent / AREA_FULL[key]));
 import { memberPower, teamPower } from '../../src/engine/power';
 import { detectRoles, isPassive } from '../../src/engine/roles';
 import { metaTypeWeights } from '../../src/engine/stats';
@@ -37,11 +36,12 @@ describe('team stall', () => {
   it('riconosciuto: ruoli giudicati come stall (niente sweeper né velocità richiesti)', () => {
     const rating = rateTeam(stall, fixtureData)!;
     expect(rating.archetype).toBe('stall');
-    // da stall: Hazard, Rimozione e i due Wall (1 + 1 + 1 + 1) su 4,8; mancano Pivot e Controllo velocità (utili, 0,4)
-    expect(needCoverage(teamNeeds(stall, DEFAULT_RULES))).toBeCloseTo(4 / 4.8);
+    // da stall: Hazard, Rimozione e i due Wall (1 + 1 + 1 + 1); mancano Pivot e Controllo velocità (utili, 0,4)
+    const needs = teamNeeds(stall, DEFAULT_RULES);
+    expect(needs.missing.map(m => m.need)).toEqual(['pivot', 'speedControl']);
     const jobs = stall.reduce((acc, s) => acc + NEEDS.filter(need => meetsNeed(need, s, DEFAULT_RULES)).length, 0) / stall.length;
-    const roles = (1 - ROLE_COMPRESSION) * (4 / 4.8) + ROLE_COMPRESSION * Math.min(1, jobs / 3);
-    expect(rating.areas.find(a => a.key === 'roles')!.value).toBe(full('roles', 100 * roles));
+    const roles = (1 - ROLE_COMPRESSION) * needCoverage(needs) + ROLE_COMPRESSION * Math.min(1, jobs / 3);
+    expect(rating.areas.find(a => a.key === 'roles')!.value).toBe(Math.round(100 * Math.min(1, roles)));
     // Nello stall la velocità non conta
     expect(rating.areas.map(a => a.key)).not.toContain('speed');
   });
