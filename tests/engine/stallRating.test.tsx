@@ -1,6 +1,6 @@
 import { DEFAULT_RULES } from '../../src/engine/formatRules';
 import { describe, expect, it } from 'vitest';
-import { AREA_WEIGHTS, COVERAGE_DEPTH, rateTeam, ROLE_COMPRESSION, SPEED_WEIGHT, STALL_AREA_WEIGHTS } from '../../src/engine/rating';
+import { ARCHETYPE_WEIGHTS, COVERAGE_DEPTH, rateTeam, ROLE_COMPRESSION } from '../../src/engine/rating';
 import { meetsNeed, needCoverage, NEEDS, teamNeeds } from '../../src/engine/needs';
 
 import { memberPower, teamPower } from '../../src/engine/power';
@@ -136,28 +136,23 @@ describe('voto dello stall', () => {
   // Le aree coi pesi effettivi del voto (la difesa divisa tra Coverage difensiva e Robustezza); il Meta non pesa
   const weighted = (rating: NonNullable<ReturnType<typeof rateTeam>>) =>
     Math.round(rating.areas.filter(a => a.key !== 'meta').reduce((acc, a) => acc + rating.weights[a.key]! * a.value!, 0));
-  /** Quota di difesa che va alla Robustezza. */
-  const bulkShare = (rating: NonNullable<ReturnType<typeof rateTeam>>) => rating.weights.bulk! / (rating.weights.bulk! + rating.weights.defense!);
-
-  it('forza dei passivi dalla sola robustezza', () => {
+  it('anche nello stall l\'Offesa è la media dei membri, ma pesa poco', () => {
     const rating = rateTeam(stall, fixtureData)!;
-    const bulk = Math.round(stall.map(s => memberPower(s)!.bulk).reduce((a, b) => a + b, 0) / stall.length);
-    // Statistiche 1:1: la media è il valore dell'area
-    expect(rating.areas.find(a => a.key === 'strength')!.value).toBe(Math.min(100, bulk));
-    expect(rating.areas.find(a => a.key === 'strength')!.label).toBe('Statistiche');
+    const offense = stall.map(s => memberPower(s, DEFAULT_RULES.strengthPool)!.offense).reduce((a, b) => a + b, 0) / stall.length;
+    // Fino a mezzo punto di scarto: 14,5 può diventare 14 per la virgola mobile
+    expect(Math.abs(rating.areas.find(a => a.key === 'strength')!.value! - Math.min(100, offense))).toBeLessThanOrEqual(0.5);
+    expect(rating.areas.find(a => a.key === 'strength')!.label).toBe('Offesa');
+    expect(rating.weights.strength!).toBeCloseTo(ARCHETYPE_WEIGHTS.stall.strength / 100);
   });
 
-  it('pesi da stall: copertura dimezzata, il resto alla difesa', () => {
+  it('pesi da stall: la Robustezza pesa più di tutto, la Velocità non conta', () => {
     const rating = rateTeam(stall, fixtureData)!;
     expect(Math.abs(rating.base - weighted(rating))).toBeLessThanOrEqual(1);
-    // Nello stall metà della difesa è Robustezza
-    expect(bulkShare(rating)).toBeCloseTo(0.5);
-    // Nello stall la velocità non pesa e la copertura vale metà di quella di un team normale (senza contare la velocità)
-    expect(STALL_AREA_WEIGHTS.speed).toBe(0);
-    expect(STALL_AREA_WEIGHTS.coverage).toBeCloseTo(AREA_WEIGHTS.coverage / (1 - SPEED_WEIGHT) / 2);
+    expect(rating.weights.bulk!).toBeCloseTo(ARCHETYPE_WEIGHTS.stall.bulk / 100);
+    expect(rating.areas.map(a => a.key)).not.toContain('speed');
   });
 
-  it('un team non stall usa i pesi di sempre e l\'Offesa al posto delle Statistiche', () => {
+  it('un team incompleto usa i pesi del balance e l\'Offesa media dei membri', () => {
     const team = [tusk, gholdengo];
     const rating = rateTeam(team, fixtureData)!;
     expect(Math.abs(rating.base - weighted(rating))).toBeLessThanOrEqual(1);
