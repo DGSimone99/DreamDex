@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import type { Format, FormatId } from '../engine/format';
-import { formatOptions } from '../engine/formats';
+import { DEX_IDS, dexOf, formatInDex, tiersOf, type DexId } from '../engine/formats';
 import type { StatsMeta } from '../engine/stats';
 import { LANGS, type Lang } from '../i18n';
 import { useT } from '../i18n/react';
@@ -19,19 +19,41 @@ interface Props {
 
 export function TopBar({ format, onFormatChange, meta, lang, onLangChange, children }: Props) {
   const t = useT();
+  const dex = dexOf(format.formatId);
+  const tiers = tiersOf(dex);
   return (
     <header className="topbar">
       <h1>Dream<span>Dex</span></h1>
       <label>
-        {t('top.format')}{' '}
+        {t('top.dex')}{' '}
         <select
-          aria-label={t('top.format')}
-          value={format.formatId}
-          onChange={e => onFormatChange({ ...format, formatId: e.target.value as FormatId })}
+          aria-label={t('top.dex')}
+          value={dex}
+          onChange={e => {
+            const formatId = formatInDex(e.target.value as DexId, format.formatId);
+            if (formatId) onFormatChange({ ...format, formatId });
+          }}
         >
-          {formatOptions(lang).map(option => <option key={option.id} value={option.id}>{option.label}</option>)}
+          {DEX_IDS.map(id => (
+            <option key={id} value={id} disabled={tiersOf(id).length === 0}>
+              {t(`dex.${id}`)}{tiersOf(id).length === 0 ? ` (${t('top.soon')})` : ''}
+            </option>
+          ))}
         </select>
       </label>
+      {/* Senza limiti ha un solo formato: niente tier da scegliere */}
+      {tiers.length > 1 && (
+        <label>
+          {t('top.tier')}{' '}
+          <select
+            aria-label={t('top.tierAria')}
+            value={format.formatId}
+            onChange={e => onFormatChange({ ...format, formatId: e.target.value as FormatId })}
+          >
+            {tiers.map(x => <option key={x.formatId} value={x.formatId}>{x.tier}</option>)}
+          </select>
+        </label>
+      )}
       <label>
         {t('top.genLimit')}{' '}
         <select
@@ -40,18 +62,6 @@ export function TopBar({ format, onFormatChange, meta, lang, onLangChange, child
           onChange={e => onFormatChange({ ...format, genLimit: Number(e.target.value) })}
         >
           {GENERATIONS.map(gen => <option key={gen} value={gen}>{gen}</option>)}
-        </select>
-      </label>
-      <label>
-        {t('top.minUsage')}{' '}
-        <select
-          aria-label={t('top.minUsageAria')}
-          value={String(format.minUsage)}
-          onChange={e => onFormatChange({ ...format, minUsage: Number(e.target.value) })}
-        >
-          {USAGE_THRESHOLDS.map(value => (
-            <option key={value} value={value}>{value === 0 ? t('top.usageAll') : `${value * 100}%`}</option>
-          ))}
         </select>
       </label>
       <div className="rating-mode">
@@ -79,7 +89,7 @@ export function TopBar({ format, onFormatChange, meta, lang, onLangChange, child
   );
 }
 
-/** Varianti di regole sopra il formato: Ignora ban, Più Mega ammesse (in futuro Doubles). */
+/** Varianti di regole sopra il formato (Ignora ban, Più Mega ammesse) e uso minimo dei suggerimenti. */
 function AdvancedOptions({ format, onFormatChange }: { format: Format; onFormatChange: (format: Format) => void }) {
   const t = useT();
   const active = [format.ignoreBans, format.allowMultipleMegas].filter(Boolean).length;
@@ -104,6 +114,18 @@ function AdvancedOptions({ format, onFormatChange }: { format: Format; onFormatC
             onChange={e => onFormatChange({ ...format, allowMultipleMegas: e.target.checked })}
           />{' '}
           {t('top.multipleMegas')}
+        </label>
+        <label>
+          {t('top.minUsageLong')}{' '}
+          <select
+            aria-label={t('top.minUsageAria')}
+            value={String(format.minUsage)}
+            onChange={e => onFormatChange({ ...format, minUsage: Number(e.target.value) })}
+          >
+            {USAGE_THRESHOLDS.map(value => (
+              <option key={value} value={value}>{value === 0 ? t('top.usageAll') : `${value * 100}%`}</option>
+            ))}
+          </select>
         </label>
       </div>
     </details>

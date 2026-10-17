@@ -13,7 +13,7 @@ describe('dati per formato', () => {
     const loadSource = vi.fn(() => new Promise<EngineData>(r => { resolve = r; }));
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} loadSource={loadSource} />);
-    await user.selectOptions(screen.getByLabelText('Formato'), 'ubers');
+    await user.selectOptions(screen.getByLabelText('Tier del formato'), 'ubers');
     expect(loadSource).toHaveBeenCalledWith('gen9nationaldexubers');
     expect(screen.getByText('Caricamento statistiche…')).toBeInTheDocument();
     await act(async () => resolve(fixtureData));
@@ -25,16 +25,16 @@ describe('dati per formato', () => {
     const loadSource = vi.fn(async () => fixtureData);
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} loadSource={loadSource} />);
-    await user.selectOptions(screen.getByLabelText('Formato'), 'ubers');
-    await user.selectOptions(screen.getByLabelText('Formato'), 'ou');
-    await user.selectOptions(screen.getByLabelText('Formato'), 'ubers');
+    await user.selectOptions(screen.getByLabelText('Tier del formato'), 'ubers');
+    await user.selectOptions(screen.getByLabelText('Tier del formato'), 'ou');
+    await user.selectOptions(screen.getByLabelText('Tier del formato'), 'ubers');
     expect(loadSource).toHaveBeenCalledTimes(1);
   });
 
   it('fonte non scaricata: banner con il nome del formato', async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} loadSource={async () => NO_DATA} />);
-    await user.selectOptions(screen.getByLabelText('Formato'), 'uu');
+    await user.selectOptions(screen.getByLabelText('Tier del formato'), 'uu');
     expect(await screen.findByRole('alert')).toHaveTextContent('Statistiche National Dex UU non scaricate');
   });
 
@@ -43,8 +43,8 @@ describe('dati per formato', () => {
     const loadSource = vi.fn((source: string) => new Promise<EngineData>(r => { pending[source] = r; }));
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} loadSource={loadSource} />);
-    await user.selectOptions(screen.getByLabelText('Formato'), 'ubers');
-    await user.selectOptions(screen.getByLabelText('Formato'), 'uu');
+    await user.selectOptions(screen.getByLabelText('Tier del formato'), 'ubers');
+    await user.selectOptions(screen.getByLabelText('Tier del formato'), 'uu');
     await act(async () => pending.gen9nationaldexuu(fixtureData));
     await act(async () => pending.gen9nationaldexubers(NO_DATA));
     expect(screen.queryByRole('alert')).toBeNull();
@@ -52,11 +52,23 @@ describe('dati per formato', () => {
     expect(screen.getByText(/Statistiche: 2026-09/)).toBeInTheDocument();
   });
 
-  it('non c\'è più l\'etichetta fissa del formato', () => {
+  it('menu Pokédex e Tier: Gen 9 in arrivo, Senza limiti senza tier', async () => {
+    const user = userEvent.setup();
+    render(<App initialLang="it" data={fixtureData} loadSource={async () => fixtureData} />);
+    expect(screen.getByLabelText('Pokédex')).toHaveValue('natdex');
+    expect(screen.getByLabelText('Tier del formato')).toHaveValue('ou');
+    expect(within(screen.getByLabelText('Tier del formato')).getAllByRole('option').map(o => o.textContent)).toEqual(['OU', 'Ubers', 'UU']);
+    expect(screen.getByRole('option', { name: 'Gen 9 (in arrivo)' })).toBeDisabled();
+    await user.selectOptions(screen.getByLabelText('Pokédex'), 'nolimits');
+    expect(screen.queryByLabelText('Tier del formato')).toBeNull();
+    // Tornando a National Dex si riparte da OU
+    await user.selectOptions(screen.getByLabelText('Pokédex'), 'natdex');
+    expect(screen.getByLabelText('Tier del formato')).toHaveValue('ou');
+  });
+
+  it('l\'uso minimo dei suggerimenti sta in Avanzate', () => {
     render(<App initialLang="it" data={fixtureData} />);
-    expect(screen.getByLabelText('Formato')).toHaveValue('ou');
-    expect(screen.getAllByRole('option', { name: /National Dex/ }).length).toBe(3);
-    expect(screen.getByRole('option', { name: 'Tutti i Pokémon (senza limiti)' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Uso minimo').closest('details')).toHaveTextContent('Avanzate');
   });
 });
 
@@ -81,7 +93,7 @@ describe('pannello Avanzate', () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} loadSource={async () => fixtureData} />);
     await add(user, 'Great Tusk');
-    await user.selectOptions(screen.getByLabelText('Formato'), 'uu');
+    await user.selectOptions(screen.getByLabelText('Tier del formato'), 'uu');
     expect(await within(team()).findByText('Non legale in National Dex UU')).toBeInTheDocument();
     expect(within(team()).getByText('Great Tusk')).toBeInTheDocument();
   });

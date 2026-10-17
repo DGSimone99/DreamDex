@@ -27,6 +27,30 @@ export const formatOptions = (lang: Lang = 'it'): { id: FormatId; label: string 
 
 export const formatLabel = (format: Format, lang: Lang = 'it'): string => t(lang, `format.${format.formatId}`);
 
+/** Pokédex del menu: Gen 9 (in arrivo), National Dex, Senza limiti. Ogni formato appartiene a uno solo. */
+export type DexId = 'gen9' | 'natdex' | 'nolimits';
+
+/** Per ogni Pokédex i suoi tier, nell'ordine del menu; Senza limiti ha un solo formato e nessun tier da scegliere. */
+const DEX_TIERS: Record<DexId, { formatId: FormatId; tier: string }[]> = {
+  gen9: [],
+  natdex: [{ formatId: 'ou', tier: 'OU' }, { formatId: 'ubers', tier: 'Ubers' }, { formatId: 'uu', tier: 'UU' }],
+  nolimits: [{ formatId: 'all', tier: '' }],
+};
+export const DEX_IDS: DexId[] = ['gen9', 'natdex', 'nolimits'];
+
+/** Il Pokédex del formato. */
+export const dexOf = (formatId: FormatId): DexId => DEX_IDS.find(dex => DEX_TIERS[dex].some(x => x.formatId === formatId))!;
+
+/** I tier del Pokédex (vuoto se non ancora disponibile). */
+export const tiersOf = (dex: DexId): { formatId: FormatId; tier: string }[] => DEX_TIERS[dex];
+
+/** Il formato scelto passando a un altro Pokédex: lo stesso tier se c'è (OU resta OU), altrimenti il primo. */
+export function formatInDex(dex: DexId, current: FormatId): FormatId | null {
+  const tiers = DEX_TIERS[dex];
+  const tier = DEX_TIERS[dexOf(current)].find(x => x.formatId === current)?.tier;
+  return (tiers.find(x => x.tier === tier) ?? tiers[0])?.formatId ?? null;
+}
+
 /** Cartella dei dati Smogon da usare. */
 export function dataSource(format: Format): string {
   return FORMATS[format.formatId].source;
