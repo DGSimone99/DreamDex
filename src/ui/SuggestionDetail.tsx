@@ -54,7 +54,7 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, rating,
   return (
     <aside className={`detail${rank === 1 ? ' first' : ''}`} aria-label={tr('detail.region', { species: item.species })}>
       <header className="detail-hero">
-        <Sprite species={item.species} item={set.item} size={128} />
+        <Sprite species={item.species} item={set.item} size={88} />
         <div className="detail-id">
           <h3>
             <span>{item.species}</span>
