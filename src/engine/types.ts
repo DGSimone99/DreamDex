@@ -1,5 +1,6 @@
 import { battleAbility, battleSpecies, dex, getMove, isDefined, toID } from './dex';
 import type { TeamSet } from './sets';
+import { memoBySet } from './memo';
 
 export const TYPES = [
   'Normal', 'Fire', 'Water', 'Electric', 'Grass', 'Ice', 'Fighting', 'Poison', 'Ground',
@@ -88,12 +89,15 @@ const TERRAIN_PULSE: Record<NonNullable<Field['terrain']>, TypeName> = { electri
 
 /** Meteo e campo che il Pokémon porta da sé (abilità o mossa). */
 export function ownField(set: TeamSet): Field {
+  return ownFieldOf(set, null);
+}
+const ownFieldOf = memoBySet((set: TeamSet, _: null): Field => {
   const sources = [toID(battleAbility(set)), ...set.moves.map(toID)];
   return {
     weather: sources.map(id => WEATHER_SOURCES[id]).find(Boolean) ?? null,
     terrain: sources.map(id => TERRAIN_SOURCES[id]).find(Boolean) ?? null,
   };
-}
+});
 
 /** Meteo e campo del team: quelli del primo membro che li porta. */
 export function teamField(team: TeamSet[]): Field {
@@ -106,6 +110,9 @@ export function teamField(team: TeamSet[]): Field {
  * (quello che il Pokémon porta da sé vince su quello del team).
  */
 export function attackingMoves(set: TeamSet, field: Field = ownField(set)): AttackMove[] {
+  return attackingMovesOf(set, field);
+}
+const attackingMovesOf = memoBySet((set: TeamSet, field: Field): AttackMove[] => {
   const own = ownField(set);
   const weather = own.weather ?? field.weather;
   const terrain = own.terrain ?? field.terrain;
@@ -120,7 +127,7 @@ export function attackingMoves(set: TeamSet, field: Field = ownField(set)): Atta
         : move.type as TypeName;
       return { name: move.name, type };
     });
-}
+}, field => `${field.weather}|${field.terrain}`);
 
 function moveEffectiveness(move: AttackMove, defType: TypeName): number {
   if (toID(move.name) === 'freezedry' && defType === 'Water') return 2;
