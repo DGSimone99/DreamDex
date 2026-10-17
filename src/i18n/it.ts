@@ -126,7 +126,7 @@ export const it: Record<keyof typeof en, string> = {
   'rating.redundancy.unmet': "{member} ha {via} ma il team non porta {condition}",
   'rating.redundancy.unused': "{via} di {member} non sfruttato",
   'rating.redundancy.weakMember': "{member} è debole e non porta utilità al team",
-  'rating.redundancy.noHazards': "Nessun hazard: in Ubers Stealth Rock è fondamentale",
+  'rating.redundancy.noHazards': "Nessun hazard: senza Stealth Rock o Spikes gli avversari cambiano senza perdere niente",
   'rating.redundancy.oneStyle': "Nessun attaccante {style}",
   'rating.bonus.mitigates': "{condition} di {setter} smorza la debolezza a {type} di {member}",
   'import.unreadable': "Blocco {n} non leggibile: \"{line}\"",

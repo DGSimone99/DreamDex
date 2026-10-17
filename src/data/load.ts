@@ -43,6 +43,17 @@ export const loadSource = (source: string): Promise<EngineData> => readSource(fi
 /** Fonte iniziale (National Dex OU). */
 export const loadDataOrEmpty = (): Promise<EngineData> => loadSource(dataSource(DEFAULT_FORMAT));
 
+/** Tier National Dex di Showdown (`data/_tiers/natdex.json`), o null se non scaricati. */
+export async function loadTiers(loaders: Loaders = files): Promise<Record<string, string> | null> {
+  const loader = loaders['/data/_tiers/natdex.json'];
+  if (!loader) return null;
+  try {
+    return (await loader()) as Record<string, string>;
+  } catch {
+    return null;
+  }
+}
+
 /** Nomi italiani del gioco (`data/_i18n/it.json`), o null se non scaricati. */
 export async function loadItalianNames(loaders: Loaders = files): Promise<GameNames | null> {
   const loader = loaders['/data/_i18n/it.json'];
