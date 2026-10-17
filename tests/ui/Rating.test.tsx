@@ -15,7 +15,9 @@ describe('Valutazione team', () => {
     // Il dettaglio per membro sta nel tooltip di "Statistiche", non più in una riga a parte
     expect(rating).not.toHaveTextContent('Statistiche: Great Tusk');
     expect(within(rating).getByText(/^Statistiche \d+$/)).toHaveAttribute('data-tip', expect.stringMatching(/^Great Tusk \d+\nGholdengo \d+$/));
-    expect(rating).toHaveTextContent('Difesa 73');
+    // Difesa 73% della perfezione, piena a 95%: 77
+    expect(rating).toHaveTextContent('Difesa 77');
+    expect(rating).toHaveTextContent(/Velocità \d+/);
     expect(rating).not.toHaveTextContent('Sinergia');
   });
 

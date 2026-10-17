@@ -1,15 +1,21 @@
 import { DEFAULT_RULES } from '../../src/engine/formatRules';
 import { describe, expect, it } from 'vitest';
-import { AREA_WEIGHTS, META_WEIGHT, rateTeam, STALL_AREA_WEIGHTS } from '../../src/engine/rating';
+import { AREA_FULL, AREA_WEIGHTS, COVERAGE_DEPTH, META_WEIGHT, rateTeam, ROLE_COMPRESSION, SPEED_WEIGHT, STALL_AREA_WEIGHTS } from '../../src/engine/rating';
+import { meetsNeed, needCoverage, NEEDS, teamNeeds } from '../../src/engine/needs';
+
+const full = (key: keyof typeof AREA_FULL, percent: number) => Math.round(Math.min(100, percent / AREA_FULL[key]));
 import { memberPower, teamPower } from '../../src/engine/power';
 import { detectRoles, isPassive } from '../../src/engine/roles';
 import { metaTypeWeights } from '../../src/engine/stats';
 import { superEffectiveMove, TYPES } from '../../src/engine/types';
 
-/** Copertura con ogni colpo super efficace a valore pieno. */
+/** Copertura con ogni colpo super efficace a valore pieno, in profondità: 70/20/10 al 1°, 2° e 3° membro che colpisce il tipo. */
 const fullCoverage = (team: TeamSet[]) => {
   const w = metaTypeWeights(fixtureData.stats);
-  return Math.round(100 * TYPES.filter(type => team.some(s => superEffectiveMove(s, type))).reduce((acc, type) => acc + w[type], 0));
+  return 100 * TYPES.reduce((acc, type) => {
+    const hitters = team.filter(s => superEffectiveMove(s, type)).length;
+    return acc + w[type] * Math.min(1, COVERAGE_DEPTH.slice(0, hitters).reduce((a, b) => a + b, 0));
+  }, 0);
 };
 import { emptySet, type TeamSet } from '../../src/engine/sets';
 import { fixtureData, gholdengo, tusk } from '../fixtures/data';
@@ -31,8 +37,13 @@ describe('team stall', () => {
   it('riconosciuto: ruoli giudicati come stall (niente sweeper né velocità richiesti)', () => {
     const rating = rateTeam(stall, fixtureData)!;
     expect(rating.archetype).toBe('stall');
-    // da stall: Hazard, Rimozione e i due Wall (1 + 1 + 1 + 1) su 4,75; manca solo il Pivot (utile, 0,75) → 84
-    expect(rating.areas.find(a => a.key === 'roles')!.value).toBe(84);
+    // da stall: Hazard, Rimozione e i due Wall (1 + 1 + 1 + 1) su 4,8; mancano Pivot e Controllo velocità (utili, 0,4)
+    expect(needCoverage(teamNeeds(stall, DEFAULT_RULES))).toBeCloseTo(4 / 4.8);
+    const jobs = stall.reduce((acc, s) => acc + NEEDS.filter(need => meetsNeed(need, s, DEFAULT_RULES)).length, 0) / stall.length;
+    const roles = (1 - ROLE_COMPRESSION) * (4 / 4.8) + ROLE_COMPRESSION * Math.min(1, jobs / 3);
+    expect(rating.areas.find(a => a.key === 'roles')!.value).toBe(full('roles', 100 * roles));
+    // Nello stall la velocità non conta
+    expect(rating.areas.map(a => a.key)).not.toContain('speed');
   });
 
   it('un team normale non è stall e non cambia', () => {
@@ -132,20 +143,22 @@ describe('voto dello stall', () => {
   it('forza dei passivi dalla sola robustezza', () => {
     const rating = rateTeam(stall, fixtureData)!;
     const bulk = Math.round(stall.map(s => memberPower(s)!.bulk).reduce((a, b) => a + b, 0) / stall.length);
-    expect(rating.areas.find(a => a.key === 'strength')!.value).toBe(bulk);
+    expect(rating.areas.find(a => a.key === 'strength')!.value).toBe(full('strength', bulk));
   });
 
   it('pesi da stall: copertura dimezzata, il resto alla difesa', () => {
     const rating = rateTeam(stall, fixtureData)!;
     expect(Math.abs(rating.base - weighted(rating.areas, STALL_AREA_WEIGHTS))).toBeLessThanOrEqual(1);
-    expect(STALL_AREA_WEIGHTS.coverage).toBe(AREA_WEIGHTS.coverage / 2);
+    // Nello stall la velocità non pesa e la copertura vale metà di quella di un team normale (senza contare la velocità)
+    expect(STALL_AREA_WEIGHTS.speed).toBe(0);
+    expect(STALL_AREA_WEIGHTS.coverage).toBeCloseTo(AREA_WEIGHTS.coverage / (1 - SPEED_WEIGHT) / 2);
   });
 
   it('un team non stall usa pesi e forza di sempre', () => {
     const team = [tusk, gholdengo];
     const rating = rateTeam(team, fixtureData)!;
     expect(Math.abs(rating.base - weighted(rating.areas, AREA_WEIGHTS))).toBeLessThanOrEqual(1);
-    expect(rating.areas.find(a => a.key === 'strength')!.value).toBe(teamPower(team).value);
+    expect(rating.areas.find(a => a.key === 'strength')!.value).toBe(full('strength', teamPower(team).value!));
   });
 });
 
@@ -154,6 +167,6 @@ describe('copertura di uno stall', () => {
     const rating = rateTeam(stall, fixtureData)!;
     expect(rating.archetype).toBe('stall');
     // Toxapex (Scald) e Clodsire (Poison Jab) attaccano poco, ma nello stall i loro colpi contano interi
-    expect(rating.areas.find(a => a.key === 'coverage')!.value).toBe(fullCoverage(stall));
+    expect(Math.abs(rating.areas.find(a => a.key === 'coverage')!.value! - full('coverage', fullCoverage(stall)))).toBeLessThanOrEqual(1);
   });
 });
