@@ -52,14 +52,6 @@ describe('dati per formato', () => {
     expect(screen.getByText(/Statistiche: 2026-09/)).toBeInTheDocument();
   });
 
-  it('banner del Monotype col nome giusto', async () => {
-    const user = userEvent.setup();
-    render(<App initialLang="it" data={fixtureData} loadSource={async () => NO_DATA} />);
-    await user.click(screen.getByRole('checkbox', { name: 'Monotype' }));
-    await user.selectOptions(screen.getByLabelText('Tipo del team'), 'Water');
-    expect(await screen.findByRole('alert')).toHaveTextContent('Statistiche National Dex Monotype non scaricate');
-  });
-
   it('non c\'è più l\'etichetta fissa del formato', () => {
     render(<App initialLang="it" data={fixtureData} />);
     expect(screen.getByLabelText('Formato')).toHaveValue('ou');
@@ -75,26 +67,14 @@ describe('pannello Avanzate', () => {
   const add = async (user: ReturnType<typeof userEvent.setup>, name: string) =>
     user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
 
-  it('contatore delle opzioni attive e tipo del Monotype solo quando serve', async () => {
+  it('contatore delle opzioni attive, senza Monotype', async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} loadSource={async () => fixtureData} />);
     expect(screen.getByText('Avanzate')).toBeInTheDocument();
-    expect(screen.queryByLabelText('Tipo del team')).toBeNull();
-    await user.click(screen.getByRole('checkbox', { name: 'Monotype' }));
-    await user.selectOptions(screen.getByLabelText('Tipo del team'), 'Steel');
+    expect(screen.queryByRole('checkbox', { name: 'Monotype' })).toBeNull();
     await user.click(screen.getByRole('checkbox', { name: 'Ignora ban' }));
+    await user.click(screen.getByRole('checkbox', { name: 'Più Mega ammesse' }));
     expect(screen.getByText('Avanzate (2)')).toBeInTheDocument();
-  });
-
-  it('Monotype: avviso negli slot e suggerimenti solo del tipo scelto', async () => {
-    const user = userEvent.setup();
-    render(<App initialLang="it" data={fixtureData} loadSource={async () => fixtureData} />);
-    await add(user, 'Great Tusk');
-    await user.click(screen.getByRole('checkbox', { name: 'Monotype' }));
-    await user.selectOptions(screen.getByLabelText('Tipo del team'), 'Steel');
-    expect(await within(team()).findByText((_, el) => el?.textContent === 'Non è di tipo Steel', { selector: '.alert-line' })).toBeInTheDocument();
-    expect(cardNames().length).toBeGreaterThan(0);
-    expect([...cardNames()].sort()).toEqual(['Corviknight', 'Gholdengo', 'Kingambit']);
   });
 
   it('cambiando formato i membri illegali vengono segnalati, non rimossi', async () => {

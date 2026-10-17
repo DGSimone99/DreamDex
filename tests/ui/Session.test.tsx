@@ -26,7 +26,7 @@ describe('sessione salvata', () => {
     expect(loadSession(storage)).toEqual({ team: [tusk], format: { ...DEFAULT_FORMAT, formatId: 'uu' } });
     expect(loadSession(memory({ 'dreamdex.session': '{rotto' }))).toBeNull();
     expect(loadSession(memory({ 'dreamdex.session': JSON.stringify({ team: 'x', format: {} }) }))).toBeNull();
-    const weird = loadSession(memory({ 'dreamdex.session': JSON.stringify({ team: [tusk], format: { formatId: 'zzz', monotype: 'Pizza' } }) }));
+    const weird = loadSession(memory({ 'dreamdex.session': JSON.stringify({ team: [tusk], format: { formatId: 'zzz', genLimit: 'x' } }) }));
     expect(weird?.format).toEqual(DEFAULT_FORMAT);
     expect(loadSession(undefined)).toBeNull();
   });

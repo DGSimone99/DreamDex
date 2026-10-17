@@ -3,7 +3,7 @@ import { teamArchetype, type TeamArchetype } from './archetype';
 import type { EngineData } from './data';
 import { rulesOf } from './formatRules';
 import { battleName, battleSpecies, getSpecies, isDefined, isMega, isSelectable, toID, withinGen } from './dex';
-import { formatLabel, isBannedIn, meetsTeamRules } from './formats';
+import { formatLabel, isBannedIn } from './formats';
 import type { Format } from './format';
 import { diffContribution, similarity, type Contribution, type Diff } from './replace';
 import { t, type Lang } from '../i18n';
@@ -127,7 +127,6 @@ function findProblems(team: TeamSet[], format: Format, analysis: TeamAnalysis, c
     if (!species) continue;
     const forme = battleSpecies(set) ?? species;
     if (!isSelectable(species) || isBannedIn(forme, format)) add('rules', true, t(lang, 'coach.problem.illegal', { species: battleName(set), format: formatLabel(format, lang) }), []);
-    else if (!meetsTeamRules(forme, format)) add('rules', true, t(lang, 'coach.problem.monotype', { species: battleName(set), type: typeName(format.monotype ?? '', lang) }), []);
     else if (!withinGen(species, format)) add('rules', true, t(lang, 'coach.problem.gen', { species: battleName(set), gen: format.genLimit }), []);
     // Mosse e abilità che il Pokémon non può avere (senza Custom Skillset)
     const illegal = illegalParts(set, format.genLimit);
@@ -173,12 +172,12 @@ function findProblems(team: TeamSet[], format: Format, analysis: TeamAnalysis, c
   return [...serious, ...minor];
 }
 
-/** Il membro non può stare nel formato (specie vietata, fuori dal Monotype o dalla generazione). */
+/** Il membro non può stare nel formato (specie vietata o fuori dalla generazione). */
 function breaksRules(set: TeamSet, format: Format): boolean {
   const species = getSpecies(set.species);
   if (!species) return false;
   const forme = battleSpecies(set) ?? species;
-  return !isSelectable(species) || isBannedIn(forme, format) || !meetsTeamRules(forme, format) || !withinGen(species, format);
+  return !isSelectable(species) || isBannedIn(forme, format) || !withinGen(species, format);
 }
 
 /**

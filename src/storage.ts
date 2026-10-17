@@ -1,7 +1,6 @@
 import { DEFAULT_FORMAT, type Format } from './engine/format';
 import { formatOptions } from './engine/formats';
 import type { TeamSet } from './engine/sets';
-import { TYPES } from './engine/types';
 import { isLang, type Lang } from './i18n';
 
 export interface SavedTeam {
@@ -68,7 +67,6 @@ export function sanitizeFormat(raw: unknown): Format {
     minUsage: typeof f.minUsage === 'number' && f.minUsage >= 0 ? f.minUsage : DEFAULT_FORMAT.minUsage,
     allowMultipleMegas: f.allowMultipleMegas === true,
     ignoreBans: f.ignoreBans === true,
-    monotype: (TYPES as readonly string[]).includes(f.monotype as string) ? f.monotype! : null,
     meta: f.meta !== false,
   };
 }

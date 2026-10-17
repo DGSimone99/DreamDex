@@ -1,11 +1,9 @@
-import { useState, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import type { Format, FormatId } from '../engine/format';
 import { formatOptions } from '../engine/formats';
-import { TYPES, type TypeName } from '../engine/types';
 import type { StatsMeta } from '../engine/stats';
 import { LANGS, type Lang } from '../i18n';
-import { useLang, useT } from '../i18n/react';
-import { typeName } from '../i18n/game';
+import { useT } from '../i18n/react';
 
 const GENERATIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 const USAGE_THRESHOLDS = [0, 0.005, 0.01, 0.02, 0.05];
@@ -81,42 +79,14 @@ export function TopBar({ format, onFormatChange, meta, lang, onLangChange, child
   );
 }
 
-/** Varianti di regole sopra il formato: Monotype, Ignora ban, Più Mega ammesse (in futuro Doubles). */
+/** Varianti di regole sopra il formato: Ignora ban, Più Mega ammesse (in futuro Doubles). */
 function AdvancedOptions({ format, onFormatChange }: { format: Format; onFormatChange: (format: Format) => void }) {
   const t = useT();
-  const lang = useLang();
-  // Monotype acceso ma tipo non ancora scelto: nessun vincolo finché non si sceglie
-  const [monotypeOn, setMonotypeOn] = useState(format.monotype !== null);
-  const active = [monotypeOn, format.ignoreBans, format.allowMultipleMegas].filter(Boolean).length;
+  const active = [format.ignoreBans, format.allowMultipleMegas].filter(Boolean).length;
   return (
     <details className="popover advanced">
       <summary>{active ? t('top.advancedCount', { n: active }) : t('top.advanced')}</summary>
       <div>
-        <label>
-          <input
-            type="checkbox"
-            aria-label={t('top.monotype')}
-            checked={monotypeOn}
-            onChange={e => {
-              setMonotypeOn(e.target.checked);
-              if (!e.target.checked) onFormatChange({ ...format, monotype: null });
-            }}
-          />{' '}
-          {t('top.monotype')}
-        </label>
-        {monotypeOn && (
-          <label>
-            {t('top.teamType')}{' '}
-            <select
-              aria-label={t('top.teamType')}
-              value={format.monotype ?? ''}
-              onChange={e => onFormatChange({ ...format, monotype: (e.target.value || null) as TypeName | null })}
-            >
-              <option value="">—</option>
-              {TYPES.map(type => <option key={type} value={type}>{typeName(type, lang)}</option>)}
-            </select>
-          </label>
-        )}
         <label>
           <input
             type="checkbox"

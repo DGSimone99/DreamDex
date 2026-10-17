@@ -2,7 +2,7 @@ import type { Lang } from '../i18n';
 import { fitsArchetype, type FitArchetype } from './archetype';
 import type { EngineData } from './data';
 import { battleName, battleSpecies, dex, getSpecies, isCosmeticForme, isDefined, isMega, isTeambuildable, natDexTier, toID, withinGen } from './dex';
-import { isBannedIn, meetsTeamRules } from './formats';
+import { isBannedIn } from './formats';
 import type { Format } from './format';
 import { formatRules } from './formatRules';
 import { detectRoles, type Role } from './roles';
@@ -155,8 +155,6 @@ export function searchPool(team: TeamSet[], format: Format, data: EngineData, f:
     .filter(s => isTeambuildable(s) && !isCosmeticForme(s) && withinGen(s, format) && !teamNumbers.has(s.num))
     .filter(s => !query || toID(s.name).includes(query))
     .map(s => ({ species: s.name, set: cachedDefaultSet(data, s.name, format.genLimit) }))
-    // Monotype: conta il tipo della forma in battaglia (es. Charizard con Charizardite X è Fire/Dragon)
-    .filter(c => meetsTeamRules(battleSpecies(c.set) ?? getSpecies(c.species)!, format))
     .filter(c => matchesFilters(c, f, data, format));
   return uniqueFormes(candidates).map(c => c.set);
 }

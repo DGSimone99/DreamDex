@@ -294,7 +294,7 @@ A slanted Navy Raised parallelogram, 214px tall: Custom Skillset lock top-left, 
 ### Issue Marks
 - **Red triangle:** a legality problem. **Yellow triangle:** needs checking (second Mega, illegal moves or ability). Both can sit on the same sprite.
 - **Blue unlock:** Custom Skillset; informational, placed in the card's top-left corner, not a problem.
-- **Rules warning on the grade:** when members break the format's rules (banned, Monotype, gen limit, too many Megas, illegal moves or ability), a red triangle sits right above the score in the Valutazione block, starting where the score starts, like an apostrophe to the grade letter; its tooltip lists the reasons.
+- **Rules warning on the grade:** when members break the format's rules (banned, gen limit, too many Megas, illegal moves or ability), a red triangle sits right above the score in the Valutazione block, starting where the score starts, like an apostrophe to the grade letter; its tooltip lists the reasons.
 - Every mark is focusable and opens a tooltip listing each reason.
 - **Summaries:** red and blue triangles with counts (serious and minor); zero counts are hidden. Problem cards get a thin 1px outline in their colour so the selection stays the most visible state.
 

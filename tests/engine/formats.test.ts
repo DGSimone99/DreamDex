@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { getSpecies } from '../../src/engine/dex';
 import { DEFAULT_FORMAT, type Format } from '../../src/engine/format';
-import { dataSource, formatLabel, isBannedIn, isLegalIn, meetsTeamRules } from '../../src/engine/formats';
+import { dataSource, formatLabel, isBannedIn, isLegalIn } from '../../src/engine/formats';
 import { candidatePool } from '../../src/engine/scoring';
 import { fixtureData, tusk } from '../fixtures/data';
 
@@ -13,8 +13,6 @@ describe('formati', () => {
     expect(formatLabel(DEFAULT_FORMAT)).toBe('National Dex OU');
     expect(formatLabel(f({ formatId: 'all' }))).toBe('Tutti i Pokémon');
     expect(dataSource(f({}))).toBe('gen9nationaldex');
-    expect(dataSource(f({ monotype: 'Water' }))).toBe('gen9nationaldexmonotype');
-    expect(dataSource(f({ formatId: 'ubers', monotype: 'Water' }))).toBe('gen9nationaldexubers');
     expect(dataSource(f({ formatId: 'uu' }))).toBe('gen9nationaldexuu');
     expect(dataSource(f({ formatId: 'all' }))).toBe('gen9nationaldexubers');
   });
@@ -29,11 +27,7 @@ describe('formati', () => {
     expect(isBannedIn(sp('Dragapult'), f({ ignoreBans: true }))).toBe(false);
   });
 
-  it('Monotype: tipo della forma, nessun vincolo senza tipo', () => {
-    expect(meetsTeamRules(sp('Gholdengo'), f({ monotype: 'Steel' }))).toBe(true);
-    expect(meetsTeamRules(sp('Great Tusk'), f({ monotype: 'Steel' }))).toBe(false);
-    expect(meetsTeamRules(sp('Charizard-Mega-X'), f({ monotype: 'Dragon' }))).toBe(true);
-    expect(meetsTeamRules(sp('Great Tusk'), f({ monotype: null }))).toBe(true);
+  it('CAP sempre escluso', () => {
     expect(isLegalIn(sp('Syclant'), f({ formatId: 'all' }))).toBe(false); // CAP sempre escluso
   });
 
@@ -42,6 +36,5 @@ describe('formati', () => {
     expect(candidatePool([tusk], f(open), fixtureData)).not.toContain('Dragapult');
     expect(candidatePool([tusk], f({ ...open, formatId: 'ubers' }), fixtureData)).toContain('Dragapult');
     expect(candidatePool([tusk], f({ ...open, formatId: 'uu' }), fixtureData)).toEqual(['Rotom-Wash']);
-    expect(candidatePool([tusk], f({ ...open, monotype: 'Steel' }), fixtureData).sort()).toEqual(['Corviknight', 'Gholdengo', 'Kingambit']);
   });
 });

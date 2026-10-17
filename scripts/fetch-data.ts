@@ -6,6 +6,7 @@ import { buildFallbackStats, reduceChaos, reducePkmnStats, type ChaosFile, type 
 import { listMonths, pickCutoff } from './smogon-index';
 import { FALLBACK_SETS, FALLBACK_STATS, SOURCES } from './sources';
 import { fetchItalianNames } from './pokeapi';
+import { FORMATS_DATA_URL, parseNatDexTiers } from './showdown-tiers';
 
 const STATS_BASE = 'https://www.smogon.com/stats/';
 
@@ -116,6 +117,15 @@ async function main() {
     console.log(`Nomi italiani: ${Object.keys(italian.moves).length} mosse, ${Object.keys(italian.abilities).length} abilità, ${Object.keys(italian.items).length} strumenti.`);
   } catch (error) {
     console.warn(`Nomi italiani non disponibili (${(error as Error).message}): l'italiano userà i nomi inglesi.`);
+  }
+  // Tier National Dex aggiornati da Showdown: un errore non blocca il resto (restano quelli della libreria)
+  try {
+    const tiers = parseNatDexTiers(await (await get(FORMATS_DATA_URL)).text());
+    await mkdir(join('data', '_tiers'), { recursive: true });
+    await writeFile(join('data', '_tiers', 'natdex.json'), JSON.stringify(tiers));
+    console.log(`Tier National Dex da Showdown: ${Object.keys(tiers).length} specie.`);
+  } catch (error) {
+    console.warn(`Tier di Showdown non disponibili (${(error as Error).message}): restano quelli della libreria.`);
   }
   await mkdir(join('data', '_fallback'), { recursive: true });
   await writeFile(join('data', '_fallback', 'sets.json'), JSON.stringify(fallback));

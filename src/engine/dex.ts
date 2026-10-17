@@ -114,13 +114,22 @@ export function isSelectable(species: Species): boolean {
 
 export function isLegal(species: Species): boolean {
   if (!isSelectable(species)) return false;
-  const tier = String((species as { natDexTier?: string }).natDexTier ?? '').replace(/[()]/g, '');
-  return !BANNED_TIERS.has(tier);
+  return !BANNED_TIERS.has(natDexTier(species));
 }
 
-/** Tier National Dex ripulito dalle parentesi ('' se assente). */
+/** Tier National Dex aggiornati da Showdown (`npm run fetch-data`); senza, quelli della libreria. */
+let tierOverrides: Record<string, string> | null = null;
+export function initTiers(tiers: Record<string, string> | null): void {
+  tierOverrides = tiers;
+}
+
+/**
+ * Tier National Dex ripulito dalle parentesi ('' se assente). Quello di Showdown aggiorna il tier della libreria
+ * (Slowbro passato da OU a UU), ma solo dove la libreria ne ha uno: le forme senza tier restano come sono.
+ */
 export function natDexTier(species: Species): string {
-  return String((species as { natDexTier?: string }).natDexTier ?? '').replace(/[()]/g, '');
+  const library = String((species as { natDexTier?: string }).natDexTier ?? '');
+  return (library ? tierOverrides?.[species.id] ?? library : '').replace(/[()]/g, '');
 }
 
 /** Scegliibile nel teambuilder: niente forme che esistono solo in battaglia (tranne Mega e Primal). */

@@ -1,5 +1,8 @@
 import type { Move, Species } from '@pkmn/dex';
 import { battleSpecies, dex, effectiveStats, isLegal } from './dex';
+import { DEFAULT_FORMAT, type FormatId } from './format';
+import { isLegalIn } from './formats';
+import type { FormatRules } from './formatRules';
 import { attackStyle } from './roles';
 import type { TeamSet } from './sets';
 
@@ -13,12 +16,18 @@ const offenseIndex = (bs: Stats, attack = Math.max(bs.atk, bs.spa)) => 0.7 * att
 /** Robustezza: PS combinati con la media delle due difese. */
 const bulkIndex = (bs: Stats) => (bs.hp * (bs.def + bs.spd)) / 2;
 
-let reference: { offense: number[]; bulk: number[]; atk: number[]; spa: number[]; def: number[] } | null = null;
+type Reference = { offense: number[]; bulk: number[]; atk: number[]; spa: number[]; def: number[] };
+const references = new Map<FormatId | 'all', Reference>();
 
-/** Riferimento: tutti i Pokémon completamente evoluti legali in National Dex (Mega incluse). */
-function referencePool() {
+/**
+ * Riferimento: tutti i Pokémon completamente evoluti legali in National Dex (Mega incluse),
+ * oppure solo quelli legali nel formato dato (UU: i Pokémon di UU si confrontano tra loro).
+ */
+function referencePool(formatId: FormatId | null = null) {
+  let reference = references.get(formatId ?? 'all');
   if (!reference) {
-    const pool = dex.species.all().filter(s => s.exists && !s.nfe && isLegal(s));
+    const format = formatId ? { ...DEFAULT_FORMAT, formatId } : null;
+    const pool = dex.species.all().filter(s => s.exists && !s.nfe && isLegal(s) && (!format || isLegalIn(s, format)));
     const sorted = (f: (s: Species) => number) => pool.map(f).sort((a, b) => a - b);
     reference = {
       offense: sorted(s => offenseIndex(s.baseStats)),
@@ -27,6 +36,7 @@ function referencePool() {
       spa: sorted(s => s.baseStats.spa),
       def: sorted(s => s.baseStats.def),
     };
+    references.set(formatId ?? 'all', reference);
   }
   return reference;
 }
@@ -51,11 +61,14 @@ function usedAttack(set: TeamSet, bs: Stats): number {
   return style === 'physical' ? bs.atk : style === 'special' ? bs.spa : Math.max(bs.atk, bs.spa);
 }
 
-/** Forza di un membro dalle statistiche base della forma in battaglia (la Mega se tiene la pietra) e dal tipo dei suoi attacchi. */
-export function memberPower(set: TeamSet): MemberPower | null {
+/**
+ * Forza di un membro dalle statistiche base della forma in battaglia (la Mega se tiene la pietra) e dal tipo dei suoi attacchi.
+ * `pool`: formato con cui confrontarlo (null = tutti i Pokémon).
+ */
+export function memberPower(set: TeamSet, pool: FormatId | null = null): MemberPower | null {
   const species = battleSpecies(set);
   if (!species) return null;
-  const ref = referencePool();
+  const ref = referencePool(pool);
   // Statistiche effettive: Huge Power raddoppia l'Attacco di Azumarill, Fur Coat la Difesa…
   const stats = effectiveStats(set);
   const offense = percentile(ref.offense, offenseIndex(stats, usedAttack(set, stats)));
@@ -89,9 +102,9 @@ export function hitQuality(set: TeamSet, move: Move | string): number {
  * Forza del team: media dei membri presenti nel Pokédex (null se nessuno lo è).
  * `passive[i]` vero: il membro è un muro passivo di uno stall e conta solo la sua robustezza.
  */
-export function teamPower(team: TeamSet[], passive: boolean[] = []): { value: number | null; members: MemberPower[] } {
+export function teamPower(team: TeamSet[], passive: boolean[] = [], rules?: FormatRules): { value: number | null; members: MemberPower[] } {
   const scored = team
-    .map((set, i) => ({ member: memberPower(set), passive: passive[i] ?? false }))
+    .map((set, i) => ({ member: memberPower(set, rules?.strengthPool ?? null), passive: passive[i] ?? false }))
     .filter((x): x is { member: MemberPower; passive: boolean } => x.member !== null);
   const members = scored.map(x => x.member);
   if (members.length === 0) return { value: null, members };

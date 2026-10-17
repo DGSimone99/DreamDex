@@ -1,4 +1,4 @@
-import { battleAbility, battleName, battleSpecies, getMove, isDefined, toID } from './dex';
+import { battleAbility, battleName, battleSpecies, dex, getMove, isDefined, toID } from './dex';
 import { attackStyle } from './roles';
 import type { TeamSet } from './sets';
 import { t, type Lang } from '../i18n';
@@ -103,6 +103,12 @@ const PRIMAL = new Set(['desolateland', 'primordialsea']);
 const INCIDENTAL = new Set(['chillyreception']);
 const isPrimal = (link: ConditionLink) => PRIMAL.has(toID(link.via));
 const isIncidental = (link: ConditionLink) => INCIDENTAL.has(toID(link.via));
+/**
+ * Campo portato da un'abilità (Misty Surge di Tapu Fini): non è una scelta e aiuta comunque tutto il team
+ * (niente stati, niente priorità, cure, niente sonno), anche senza compagni che lo sfruttino.
+ */
+const isTerrainAbility = (link: ConditionLink) =>
+  link.condition.endsWith('terrain') && dex.abilities.get(link.via).exists;
 
 export interface ConditionLink {
   condition: Condition;
@@ -203,7 +209,7 @@ export function unusedEnablers(team: TeamSet[]): TeamConditionIssue[] {
   return team.flatMap(member => {
     const usedByOthers = new Set(team.filter(o => o !== member).flatMap(specific).map(b => b.condition));
     return enables(member)
-      .filter(e => !isPrimal(e) && !isIncidental(e))
+      .filter(e => !isPrimal(e) && !isIncidental(e) && !isTerrainAbility(e))
       .filter(e => !usedByOthers.has(e.condition) && !CHIP.includes(e.condition) && !boostsItself(member, e.condition))
       .map(e => ({ member: battleName(member), ...e }));
   });

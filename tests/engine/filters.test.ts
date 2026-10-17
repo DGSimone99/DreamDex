@@ -123,15 +123,3 @@ describe('filtri', () => {
     expect(scores).toEqual([...scores].sort((a, b) => b - a));
   });
 });
-
-describe('Monotype nella ricerca', () => {
-  it('controlla il tipo della forma in battaglia (Mega)', () => {
-    const data = { ...megaData, stats: { ...megaData.stats!, pokemon: { ...megaData.stats!.pokemon, Charizard: { ...megaData.stats!.pokemon['Charizard-Mega-Y'], items: { charizarditex: 1 } } } } };
-    const flying = { ...DEFAULT_FORMAT, monotype: 'Flying' as const };
-    const names = searchCandidates([], flying, data, { ...EMPTY_FILTERS, query: 'charizard' }).map(s => s.species);
-    // Charizard base è Fuoco/Volante (la forma base non tiene più la pietra); la Mega X è Fuoco/Drago e resta fuori
-    expect(names).toContain('Charizard');
-    expect(names).toContain('Charizard-Mega-Y');
-    expect(names).not.toContain('Charizard-Mega-X');
-  });
-});
