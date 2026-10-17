@@ -30,3 +30,15 @@ describe('area Velocità', () => {
     expect(rateTeam([dragapult, toxapex], noMeta)!.areas.map(a => a.key)).toContain('speed');
   });
 });
+
+describe('riferimento della velocità', () => {
+  it('i Pokémon del tier del formato, evoluti, alla velocità massima', async () => {
+    const { referenceSpeeds } = await import('../../src/engine/speed');
+    const ou = referenceSpeeds('ou');
+    const ubers = referenceSpeeds('ubers');
+    expect(ou.length).toBeGreaterThan(0);
+    // In Ubers giocano anche gli OU: il riferimento è più ampio
+    expect(ubers.length).toBeGreaterThan(ou.length);
+    expect([...ou].sort((a, b) => a - b)).toEqual(ou);
+  });
+});

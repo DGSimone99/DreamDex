@@ -1,7 +1,9 @@
 import type { EngineData } from './data';
-import { battleSpecies, dex, getSpecies, isLegal, toID } from './dex';
+import { battleSpecies, dex, getSpecies, isSelectable, toID } from './dex';
 import { memberPower } from './power';
 import { parseSpread, type TeamSet } from './sets';
+import { DEFAULT_FORMAT, type FormatId } from './format';
+import { isLegalIn, tierIn } from './formats';
 
 /** Velocità finale al livello 100 (IV 31); `scarf` se la Sciarpa Scelta la moltiplica per 1,5. */
 export interface Speed {
@@ -74,25 +76,42 @@ export function metaSpeed(data: EngineData, name: string): number {
   return speedStat({ species: name, item: dex.items.get(top(entry.items) ?? '').name ?? '', nature, evs }).value;
 }
 
-/** Velocità massima (252 EV, natura che la alza) di tutti i completamente evoluti legali: il riferimento senza meta. */
-let maxSpeeds: number[] | null = null;
-function referenceSpeeds(): number[] {
-  maxSpeeds ??= dex.species.all()
-    .filter(s => s.exists && !s.nfe && isLegal(s))
-    .map(s => Math.floor((2 * s.baseStats.spe + 31 + 63 + 5) * 1.1))
-    .sort((a, b) => a - b);
-  return maxSpeeds;
+/** Tier che contano come "il formato" per la velocità: chi ci gioca davvero (in Ubers anche gli OU). */
+const SPEED_TIERS: Partial<Record<FormatId, string[]>> = {
+  ou: ['OU'], uu: ['UU'], ubers: ['Uber', 'OU'], all: ['AG', 'Uber', 'OU'],
+  gen9ou: ['OU'], gen9uu: ['UU'], gen9ubers: ['Uber', 'OU'], gen9ag: ['AG', 'Uber', 'OU'],
+};
+
+/**
+ * Velocità massima (252 EV, natura che la alza) dei Pokémon che giocano nel formato: i completamente evoluti
+ * del suo tier (in OU gli OU, in Ubers anche gli OU). Il tier cambia di rado: non dipende dal meta del mese.
+ */
+const maxSpeeds = new Map<string, number[]>();
+export function referenceSpeeds(formatId: FormatId = 'ou'): number[] {
+  const key = formatId;
+  let speeds = maxSpeeds.get(key);
+  if (!speeds) {
+    const format = { ...DEFAULT_FORMAT, formatId };
+    const tiers = SPEED_TIERS[formatId] ?? ['OU'];
+    speeds = dex.species.all()
+      .filter(s => s.exists && !s.nfe && isSelectable(s) && isLegalIn(s, format) && tiers.includes(tierIn(s, format)))
+      .map(s => Math.floor((2 * s.baseStats.spe + 31 + 63 + 5) * 1.1))
+      .sort((a, b) => a - b);
+    maxSpeeds.set(key, speeds);
+  }
+  return speeds;
 }
+
 
 /** Offesa (percentile) da cui un membro conta per la velocità del team: un Pokémon veloce che non fa danni non serve. */
 export const SPEED_ATTACKER = 60;
 
 /**
  * Velocità del team (0–1), dai suoi due attaccanti più veloci: vince chi si muove per primo e fa danno.
- * Col meta: quota delle minacce date (le più usate) che ognuno dei due supera; senza: quota di tutti i Pokémon più lenti.
+ * Quota del riferimento del formato che ognuno dei due supera (non dipende dal meta del mese).
  * Con meno di due attaccanti, il posto mancante vale zero.
  */
-export function teamSpeed(team: TeamSet[], data: EngineData, threats: string[] | null): number {
+export function teamSpeed(team: TeamSet[], data: EngineData, threats: string[] | null = null): number {
   const fastest = team
     .filter(set => (memberPower(set)?.offense ?? 0) >= SPEED_ATTACKER)
     .map(set => speedStat(set).value)
@@ -100,6 +119,6 @@ export function teamSpeed(team: TeamSet[], data: EngineData, threats: string[] |
     .slice(0, 2);
   const share = threats?.length
     ? (speed: number) => { const rivals = threats.map(name => metaSpeed(data, name)); return rivals.filter(r => r < speed).length / rivals.length; }
-    : (speed: number) => { const pool = referenceSpeeds(); return pool.filter(v => v < speed).length / pool.length; };
+    : (speed: number) => { const pool = referenceSpeeds(data.formatId ?? 'ou'); return pool.filter(v => v < speed).length / pool.length; };
   return fastest.reduce((acc, speed) => acc + share(speed), 0) / 2;
 }

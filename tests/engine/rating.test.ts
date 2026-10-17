@@ -1,16 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { teamPower } from '../../src/engine/power';
-import { AREA_FULL, AREA_KNEE, DEFENSIVE_BLEND, AREA_WEIGHTS, BULK_FULL, BULK_SHARE, COVERAGE_DEPTH, META_WEIGHT, OFFENSE_FULL, SPEED_WEIGHT, areaValue, gradeFor, rateTeam, typeSafety } from '../../src/engine/rating';
+import { AREA_KNEE, AREA_WEIGHTS, BULK_SHARE, COVERAGE_DEPTH, DEFENSE_FULL, DEFENSIVE_BLEND, SPEED_WEIGHT, areaValue, gradeFor, rateTeam, typeSafety } from '../../src/engine/rating';
 import { memberPower } from '../../src/engine/power';
 
-/** Offesa media dei membri, piena a OFFENSE_FULL. */
-const offenseArea = (team: TeamSet[]) => Math.round(100 * areaValue(team.reduce((a, s) => a + memberPower(s)!.offense, 0) / team.length / 100, OFFENSE_FULL));
+// Offesa 1:1: la media dei percentili d'attacco dei membri
+const offenseArea = (team: TeamSet[]) => Math.round(Math.min(100, team.reduce((a, s) => a + memberPower(s)!.offense, 0) / team.length));
 import { hitQuality } from '../../src/engine/power';
-import { metaTypeWeights } from '../../src/engine/stats';
+import { UNIFORM_TYPE_WEIGHTS } from '../../src/engine/analysis';
 import { superEffectiveMoves, TYPES, weaknessTable } from '../../src/engine/types';
 
-/** Valore mostrato di un'area: piena dal suo riferimento in su (AREA_FULL). */
-const full = (key: keyof typeof AREA_FULL, percent: number) => Math.round(100 * areaValue(percent / 100, AREA_FULL[key]));
+/** Coverage difensiva mostrata: riferimento all'80%, poi la cima più lenta. */
+const defenseShown = (percent: number) => Math.round(100 * areaValue(percent / 100, DEFENSE_FULL));
 import { mostCommonSet, type TeamSet } from '../../src/engine/sets';
 import { fixtureData, fixtureStats, gholdengo, tusk } from '../fixtures/data';
 
@@ -61,15 +61,15 @@ describe('rateTeam', () => {
 
   it('aree calcolate sulla fixture', () => {
     // Coverage difensiva: saldo resistenze/debolezze per tipo, pesato per il meta (piena a 80%); Robustezza: media dei membri
-    const weights = metaTypeWeights(fixtureData.stats);
+    const weights = UNIFORM_TYPE_WEIGHTS;
     const defense = weaknessTable([tusk, gholdengo]).reduce((acc, row) => acc + weights[row.type] * typeSafety(row.multipliers), 0);
-    expect(value(rating, 'defense')).toBe(full('defense', 100 * defense));
+    expect(value(rating, 'defense')).toBe(defenseShown(100 * defense));
     const bulk = [tusk, gholdengo].reduce((a, s) => a + memberPower(s)!.bulk, 0) / 2 / 100;
-    expect(value(rating, 'bulk')).toBe(Math.round(100 * areaValue(bulk, BULK_FULL)));
+    expect(value(rating, 'bulk')).toBe(Math.round(100 * Math.min(1, bulk)));
     // Le due si dividono il peso della difesa: per un balance (team incompleto) il 35% va alla Robustezza
     expect(rating.weights.bulk! / (rating.weights.bulk! + rating.weights.defense!)).toBeCloseTo(BULK_SHARE.balance);
     // Coverage in profondità: per tipo, il colpo migliore di ogni membro, 70% al primo e 20% al secondo
-    const w = metaTypeWeights(fixtureData.stats);
+    const w = UNIFORM_TYPE_WEIGHTS;
     const coverage = TYPES.reduce((acc, type) => {
       const best = [tusk, gholdengo].map(s => Math.max(0, ...superEffectiveMoves(s, type).map(m => hitQuality(s, m)))).sort((a, b) => b - a);
       return acc + w[type] * Math.min(1, COVERAGE_DEPTH.reduce((a, share, i) => a + share * (best[i] ?? 0), 0));
@@ -81,12 +81,10 @@ describe('rateTeam', () => {
   });
 
   it('voto complessivo pesato, provvisorio con meno di 6 membri', () => {
-    // Pesi effettivi delle aree (somma 1), poi l'area Meta
+    // Pesi effettivi delle aree (somma 1); il Meta non pesa, è una penalità
     expect(Object.values(rating.weights).reduce((a, b) => a + b!, 0)).toBeCloseTo(1);
-    expect(rating.metaWeight).toBe(META_WEIGHT);
     const base = rating.areas.filter(a => a.key !== 'meta').reduce((acc, a) => acc + rating.weights[a.key]! * a.value!, 0);
-    const expected = Math.round((1 - META_WEIGHT) * base + META_WEIGHT * value(rating, 'meta')!);
-    expect(Math.abs(rating.base - expected)).toBeLessThanOrEqual(1);
+    expect(Math.abs(rating.base - Math.round(base))).toBeLessThanOrEqual(1);
     expect(rating).toMatchObject({ overall: rating.base, provisional: true });
   });
 
@@ -141,7 +139,19 @@ describe('pesi secondo il tipo di team', () => {
 
   it('un team incompleto non si sposta: il suo tipo è solo presunto', () => {
     const rating = rateTeam([tusk, gholdengo], fixtureData)!;
-    expect(rating.weights.speed! / (1 - rating.metaWeight || 1)).toBeGreaterThan(0);
+    expect(rating.weights.speed!).toBeGreaterThan(0);
     expect(value(rating, 'strength')).toBe(offenseArea([tusk, gholdengo]));
+  });
+});
+
+describe('il meta conta solo nella sua area', () => {
+  it('le aree sono le stesse col meta e senza; col meta si aggiunge solo il Meta', () => {
+    const team = ['Great Tusk', 'Gholdengo', 'Kingambit', 'Corviknight', 'Toxapex', 'Rotom-Wash'].map(n => mostCommonSet(fixtureStats, n)!);
+    const on = rateTeam(team, fixtureData)!;
+    const off = rateTeam(team, { ...fixtureData, ignoreMeta: true })!;
+    const areas = (r: typeof on) => r.areas.filter(a => a.key !== 'meta').map(a => [a.key, a.value]);
+    expect(areas(on)).toEqual(areas(off));
+    expect(on.areas.some(a => a.key === 'meta')).toBe(true);
+    expect(off.areas.some(a => a.key === 'meta')).toBe(false);
   });
 });

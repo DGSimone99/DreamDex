@@ -21,6 +21,8 @@ export const NEED_ROLES: Record<Need, Role[]> = {
 /** Pesi dei bisogni: essenziale, utile, non richiesto. */
 export const ESSENTIAL = 1;
 export const USEFUL = 0.4;
+/** Un ruolo non richiesto dal tipo di team conta poco nel voto: averlo aggiunge, non averlo toglie appena. */
+export const NOT_REQUIRED = 0.15;
 const E = ESSENTIAL, U = USEFUL;
 
 /**
@@ -52,6 +54,8 @@ export interface TeamNeeds {
   covered: Need[];
   /** Bisogni richiesti e non coperti, col loro peso. */
   missing: { need: Need; weight: number }[];
+  /** Bisogni non richiesti dal tipo di team ma coperti lo stesso. */
+  extras: Need[];
   /** I ruoli che coprirebbero i bisogni mancanti (per il punteggio dei candidati). */
   missingRoles: Role[];
   /** Tipo di attaccante che manca del tutto (team con almeno 4 attaccanti tutti dello stesso tipo, non stall). */
@@ -80,6 +84,7 @@ export function teamNeeds(team: TeamSet[], rules: FormatRules): TeamNeeds {
     archetype, weights,
     covered,
     missing,
+    extras: NEEDS.filter(need => weights[need] === 0 && team.some(set => meetsNeed(need, set, rules))),
     missingRoles: missing.flatMap(m => NEED_ROLES[m.need]),
     needStyle: lopsided ? (physical === 0 ? 'physical' : 'special') : null,
     rules,
@@ -88,9 +93,11 @@ export function teamNeeds(team: TeamSet[], rules: FormatRules): TeamNeeds {
 
 /** Quota (0–1) dei bisogni coperti, pesata come nella tabella dell'archetipo. */
 export function needCoverage(needs: TeamNeeds): number {
-  const total = NEEDS.reduce((acc, need) => acc + needs.weights[need], 0);
-  const missing = needs.missing.reduce((acc, m) => acc + m.weight, 0);
-  return total > 0 ? (total - missing) / total : 1;
+  // Anche i ruoli non richiesti contano, poco: il 100 vuol dire tutti i ruoli coperti
+  const weightOf = (need: Need) => needs.weights[need] || NOT_REQUIRED;
+  const total = NEEDS.reduce((acc, need) => acc + weightOf(need), 0);
+  const got = [...needs.covered, ...needs.extras].reduce((acc, need) => acc + weightOf(need), 0);
+  return total > 0 ? got / total : 1;
 }
 
 /** Nome del bisogno: i ruoli col loro nome, più "Minaccia offensiva" e "Velocità" (membri veloci o controllo velocità). */
