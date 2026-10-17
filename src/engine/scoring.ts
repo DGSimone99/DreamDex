@@ -11,7 +11,7 @@ import { meetsNeed, NEED_ROLES } from './needs';
 import { defaultSet, type TeamSet } from './sets';
 import { teammatePct, usageOf } from './stats';
 import { clashesWith, conditionLabel, mechanicalLinks, weakenedMoves } from './synergy';
-import { defensiveMultiplier, superEffectiveMove } from './types';
+import { defensiveMultiplier, superEffectiveMove, teamField } from './types';
 import { COMPONENT_KEYS, WEIGHTS } from './weights';
 
 export type { Components, Facts, Reason };
@@ -120,9 +120,11 @@ function threatsComponent(set: TeamSet, analysis: TeamAnalysis, data: EngineData
   };
 }
 
-function coverageComponent(set: TeamSet, analysis: TeamAnalysis) {
+function coverageComponent(set: TeamSet, analysis: TeamAnalysis, team: TeamSet[]) {
   const open = analysis.coverage.filter(row => row.hitters.length === 0).map(row => row.type);
-  const types = open.filter(type => superEffectiveMove(set, type) !== null);
+  // Il candidato col meteo e il campo del team (Weather Ball nel sole è Fuoco)
+  const field = teamField([...team, set]);
+  const types = open.filter(type => superEffectiveMove(set, type, field) !== null);
   const total = sum(open.map(type => analysis.typeWeights[type]));
   return {
     value: total > 0 ? sum(types.map(type => analysis.typeWeights[type])) / total : 0,
@@ -186,7 +188,7 @@ export function scoreCandidates(team: TeamSet[], format: Format, data: EngineDat
       species, set, usage, empty: false as const,
       defense: defenseComponent(set, analysis),
       threats: threatsComponent(set, analysis, data),
-      coverage: coverageComponent(set, analysis),
+      coverage: coverageComponent(set, analysis, team),
       roles: rolesComponent(set, analysis),
       synergy: synergyRaw(set, team, data),
       mechanical: mechanicalLinks(set, team, lang).map(link => link.text),

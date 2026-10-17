@@ -134,11 +134,14 @@ describe('membro passivo e riconoscimento dello stall', () => {
 
 describe('voto dello stall', () => {
   // Le quattro aree coi loro pesi, poi l'area Meta per un quinto
-  const weighted = (areas: { key: string; value: number | null }[], w: Record<string, number>) => {
-    const base = areas.filter(a => a.key !== 'meta').reduce((acc, a) => acc + w[a.key] * a.value!, 0);
-    const meta = areas.find(a => a.key === 'meta');
+  // Le aree coi pesi effettivi del voto (la difesa divisa tra Coverage difensiva e Robustezza), poi l'area Meta
+  const weighted = (rating: NonNullable<ReturnType<typeof rateTeam>>) => {
+    const base = rating.areas.filter(a => a.key !== 'meta').reduce((acc, a) => acc + rating.weights[a.key]! * a.value!, 0);
+    const meta = rating.areas.find(a => a.key === 'meta');
     return Math.round(meta ? (1 - META_WEIGHT) * base + META_WEIGHT * meta.value! : base);
   };
+  /** Quota di difesa che va alla Robustezza. */
+  const bulkShare = (rating: NonNullable<ReturnType<typeof rateTeam>>) => rating.weights.bulk! / (rating.weights.bulk! + rating.weights.defense!);
 
   it('forza dei passivi dalla sola robustezza', () => {
     const rating = rateTeam(stall, fixtureData)!;
@@ -149,7 +152,9 @@ describe('voto dello stall', () => {
 
   it('pesi da stall: copertura dimezzata, il resto alla difesa', () => {
     const rating = rateTeam(stall, fixtureData)!;
-    expect(Math.abs(rating.base - weighted(rating.areas, STALL_AREA_WEIGHTS))).toBeLessThanOrEqual(1);
+    expect(Math.abs(rating.base - weighted(rating))).toBeLessThanOrEqual(1);
+    // Nello stall metà della difesa è Robustezza
+    expect(bulkShare(rating)).toBeCloseTo(0.5);
     // Nello stall la velocità non pesa e la copertura vale metà di quella di un team normale (senza contare la velocità)
     expect(STALL_AREA_WEIGHTS.speed).toBe(0);
     expect(STALL_AREA_WEIGHTS.coverage).toBeCloseTo(AREA_WEIGHTS.coverage / (1 - SPEED_WEIGHT) / 2);
@@ -158,7 +163,7 @@ describe('voto dello stall', () => {
   it('un team non stall usa i pesi di sempre e l\'Offesa al posto delle Statistiche', () => {
     const team = [tusk, gholdengo];
     const rating = rateTeam(team, fixtureData)!;
-    expect(Math.abs(rating.base - weighted(rating.areas, AREA_WEIGHTS))).toBeLessThanOrEqual(1);
+    expect(Math.abs(rating.base - weighted(rating))).toBeLessThanOrEqual(1);
     const offense = team.reduce((a, s) => a + memberPower(s)!.offense, 0) / team.length / 100;
     expect(rating.areas.find(a => a.key === 'strength')!.value).toBe(Math.round(100 * Math.min(1, offense / OFFENSE_FULL)));
     expect(rating.areas.find(a => a.key === 'strength')!.label).toBe('Offesa');
