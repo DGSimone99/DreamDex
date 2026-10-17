@@ -2,8 +2,9 @@ import { useMemo } from 'react';
 import type { EngineData } from '../engine/data';
 import { describeDiff } from '../engine/coach';
 import { getSpecies } from '../engine/dex';
-import { memberPower } from '../engine/power';
 import { rateTeam, type TeamRating } from '../engine/rating';
+import { withCandidate, type TeamGain } from '../engine/teamGain';
+import { formatPercent } from '../i18n';
 import type { Replacement } from '../engine/replace';
 import type { Suggestion } from '../engine/scoring';
 import { exportShowdown, STAT_IDS, type TeamSet } from '../engine/sets';
@@ -18,19 +19,12 @@ import { Sprite, TypeChip } from './Sprite';
 import { StatsBadge } from './StatsBadge';
 import { MoveName, Typed } from './TypeText';
 
-/** Le parti del punteggio del candidato, sotto il numero: come si adatta al team, più le sue statistiche. */
-const SCORE_PARTS = [
-  { key: 'defense', label: 'suggest.col.defense' },
-  { key: 'coverage', label: 'suggest.col.coverage' },
-  { key: 'roles', label: 'suggest.col.roles' },
-] as const;
-
 /**
- * Il candidato selezionato nella lista: punteggio e sue parti, cosa cambia (in sostituzione),
- * come cambia il voto del team area per area, i motivi e il set.
+ * Il candidato selezionato nella lista: come cambia il voto del team (in tutto e area per area),
+ * cosa cambia (in sostituzione), i motivi e il set.
  */
-export function SuggestionDetail({ item, rank, team, replaceIndex, data, rating, emptyTeam, banMark, actionLabel, onAction }: {
-  item: Suggestion | Replacement;
+export function SuggestionDetail({ item, rank, team, replaceIndex, data, rating, usage, banMark, actionLabel, onAction }: {
+  item: (Suggestion | Replacement) & { teamGain?: TeamGain };
   rank: number;
   team: TeamSet[];
   /** Il membro che il candidato sostituirebbe, o null se si aggiunge. */
@@ -38,7 +32,8 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, rating,
   data: EngineData;
   /** Voto del team attuale. */
   rating: TeamRating | null;
-  emptyTeam: boolean;
+  /** Uso nel meta, mostrato al posto del voto col primo Pokémon. */
+  usage: number | null;
   banMark: React.ReactNode;
   actionLabel: string;
   onAction: () => void;
@@ -47,15 +42,14 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, rating,
   const lang = useLang();
   const set = item.set;
   const replacing = replaceIndex !== null;
-  const after = useMemo(
-    () => rateTeam(replacing ? team.map((member, i) => (i === replaceIndex ? set : member)) : [...team, set], data, lang),
-    [team, replaceIndex, replacing, set, data, lang],
-  );
-  const before = team.length ? rating : null;
+  const after = useMemo(() => rateTeam(withCandidate(team, set, replaceIndex), data, lang), [team, replaceIndex, set, data, lang]);
+  // Senza altri membri non c'è un voto da confrontare
+  const before = item.teamGain ? rating : null;
   const changes = 'diff' in item && item.diff ? describeDiff(item.diff, lang) : null;
   const types = getSpecies(item.species)?.types ?? [];
   const evs = STAT_IDS.filter(stat => (set.evs[stat] ?? 0) > 0).map(stat => `${set.evs[stat]} ${statShort(stat, lang)}`).join(' / ');
   const delta = (value: number) => (value > 0 ? `+${value}` : value < 0 ? `−${-value}` : '');
+  const result = item.teamGain;
 
   return (
     <aside className={`detail${rank === 1 ? ' first' : ''}`} aria-label={tr('detail.region', { species: item.species })}>
@@ -76,17 +70,17 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, rating,
             </span>
           )}
         </div>
-        <div className="detail-score">
-          <strong>{item.score}</strong>
-          <span>{tr('detail.rank', { n: rank })}</span>
-        </div>
-        {/* Da cosa viene il punteggio */}
-        <dl className="detail-parts">
-          {!emptyTeam && SCORE_PARTS.map(part => (
-            <div key={part.key}><dt>{tr(part.label)}</dt><dd>{Math.round(100 * item.components[part.key])}</dd></div>
-          ))}
-          <div><dt>{tr('suggest.col.stats')}</dt><dd>{memberPower(set)?.power ?? 0}</dd></div>
-        </dl>
+        {result && before ? (
+          <div className="detail-score">
+            <strong className={result.gain < 0 ? 'worse' : result.gain === 0 ? 'same' : undefined}>{delta(result.gain) || '±0'}</strong>
+            <span>{tr('detail.gradeChange', { from: `${before.grade} ${before.overall}`, to: `${result.grade} ${result.overall}` })}</span>
+          </div>
+        ) : usage !== null && (
+          <div className="detail-score">
+            <strong>{formatPercent(lang, usage)}</strong>
+            <span>{tr('detail.usage')}</span>
+          </div>
+        )}
       </header>
 
       <div className="detail-body">
@@ -108,13 +102,7 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, rating,
 
         {after && (
           <section className="detail-sec">
-            <h4>{tr('detail.team')}</h4>
-            <p className="detail-grade">
-              <span>{tr('detail.grade')}</span>
-              {before && <><span className={`grade-${before.grade}`}>{before.grade} {before.overall}</span><Icon name="arrow" /></>}
-              <strong className={`grade-${after.grade}`}>{after.grade} {after.overall}</strong>
-              {before && <span className={`gain${after.overall < before.overall ? ' worse' : after.overall === before.overall ? ' same' : ''}`}>{delta(after.overall - before.overall) || '±0'}</span>}
-            </p>
+            <h4>{tr(before ? 'detail.team' : 'detail.teamAlone')}</h4>
             <dl className="detail-areas">
               {after.areas.map(area => {
                 const was = before?.areas.find(a => a.key === area.key)?.value;

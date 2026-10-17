@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import type { EngineData } from '../engine/data';
 import type { Format } from '../engine/format';
 import { formatRules } from '../engine/formatRules';
@@ -7,6 +7,9 @@ import { describeDiff, ratingGainOf, SIMILAR_THRESHOLD, type SwapPreview } from 
 import { suggest, type Suggestion } from '../engine/scoring';
 import type { TeamSet } from '../engine/sets';
 import type { TeamRating } from '../engine/rating';
+import { rankByTeamGain, type TeamGain } from '../engine/teamGain';
+import { statsEntry } from '../engine/stats';
+import { formatPercent } from '../i18n';
 import { getSpecies } from '../engine/dex';
 import { formatLabel } from '../engine/formats';
 import { EMPTY_FILTERS, isFiltering, searchCandidates, searchPool, tierLabel, type CandidateFilters } from '../engine/filters';
@@ -22,9 +25,13 @@ import { Typed } from './TypeText';
 import { t } from '../i18n';
 import { useLang, useT } from '../i18n/react';
 
-/** Candidati per pagina e in tutto. */
+/** Candidati per pagina e in tutto; il voto del team si calcola sui primi POOL per punteggio. */
 export const PAGE = 10;
 export const MAX = 50;
+const POOL = 100;
+
+/** Candidato in lista, col voto che darebbe al team (assente col primo Pokémon). */
+type Item = (Suggestion | Replacement) & { teamGain?: TeamGain };
 
 type ReplaceMode = 'improve' | 'similar';
 
@@ -49,7 +56,33 @@ function BanMark({ species, format }: { species: string; format: Format }) {
   return banned ? <AlertMark alerts={[{ level: 'danger', text: t(lang, 'suggest.banned', { tier: label, format: formatLabel(format, lang) }) }]} /> : null;
 }
 
-function SuggestionRow({ rank, item, quickLabel, actionLabel, replacing, picked, selected, onSelect, onAction, format }: {
+/** Il voto del team col candidato (+7, B 80); col primo Pokémon, il suo uso nel meta. */
+function ResultCell({ item, usage }: { item: Item; usage: number | null }) {
+  const tr = useT();
+  const lang = useLang();
+  const result = item.teamGain;
+  if (!result) {
+    return usage === null
+      ? <span className="result" aria-hidden="true" />
+      : (
+        <span className="result" aria-label={tr('suggest.usageAria', { pct: formatPercent(lang, usage) })}>
+          <strong>{formatPercent(lang, usage)}</strong><small>{tr('suggest.usageShort')}</small>
+        </span>
+      );
+  }
+  const gain = signed(result.gain);
+  return (
+    <span className="result" aria-label={tr('suggest.teamGrade', { grade: result.grade, n: result.overall, gain })}>
+      <strong className={result.gain < 0 ? 'worse' : result.gain === 0 ? 'same' : undefined}>{gain}</strong>
+      <small>{result.grade} {result.overall}</small>
+    </span>
+  );
+}
+
+/** +7, −3, ±0. */
+export const signed = (n: number) => (n > 0 ? `+${n}` : n < 0 ? `−${-n}` : '±0');
+
+function SuggestionRow({ rank, item, usage, quickLabel, actionLabel, replacing, picked, selected, onSelect, onAction, format }: {
   /** Riga scelta dalla ricerca (Invio la aggiunge). */
   picked?: boolean;
   /** Riga mostrata nel dettaglio. */
@@ -60,7 +93,9 @@ function SuggestionRow({ rank, item, quickLabel, actionLabel, replacing, picked,
   replacing: boolean;
   format: Format;
   rank: number;
-  item: Suggestion | Replacement;
+  item: Item;
+  /** Uso nel meta, mostrato al posto del voto col primo Pokémon. */
+  usage: number | null;
   onAction: () => void;
 }) {
   const tr = useT();
@@ -98,7 +133,7 @@ function SuggestionRow({ rank, item, quickLabel, actionLabel, replacing, picked,
           </span>
         )}
       </span>
-      <span className="score" aria-label={tr('suggest.score', { n: item.score })}>{item.score}</span>
+      <ResultCell item={item} usage={usage} />
       <button
         type="button"
         className="quick"
@@ -137,18 +172,28 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   /** Il team contro cui si valutano i candidati è vuoto: niente adattamento da mostrare. */
   const emptyTeam = (replacing ? team.length - 1 : team.length) === 0;
 
-  const items: (Suggestion | Replacement)[] = useMemo(() => {
-    if (replacing) {
+  // Il voto del team per ogni candidato richiede un attimo: la lista si ricalcola senza bloccare il resto
+  // (il team si aggiorna subito, la lista resta attenuata finché non è pronta)
+  const source = useMemo(() => ({ team, replaceIndex, format, data }), [team, replaceIndex, format, data]);
+  const deferred = useDeferredValue(source);
+  const stale = deferred !== source;
+  const items: Item[] = useMemo(() => {
+    const { team, format, data } = deferred;
+    const replaceIndex = deferred.replaceIndex !== null && deferred.replaceIndex < team.length ? deferred.replaceIndex : null;
+    // Prima i candidati migliori per punteggio, poi ordinati per il voto che darebbero al team
+    const rank = (list: (Suggestion | Replacement)[], sort = true) => rankByTeamGain(list, team, replaceIndex, data, lang, sort).slice(0, MAX);
+    if (replaceIndex !== null) {
       // Con ricerca o filtri i sostituti vengono da tutto il Pokédex, non solo dalle statistiche
       const pool = filtering ? searchPool(team.filter((_, i) => i !== replaceIndex), format, data, applied) : undefined;
       if (!pool && !data.stats) return [];
+      // Sostituto simile: l'ordine resta per somiglianza, il voto si mostra soltanto
       return mode === 'improve'
-        ? improveReplacements(team, replaceIndex, format, data, MAX, pool, lang)
-        : similarReplacements(team, replaceIndex, format, data, MAX, pool, lang);
+        ? rank(improveReplacements(team, replaceIndex, format, data, POOL, pool, lang))
+        : rank(similarReplacements(team, replaceIndex, format, data, MAX, pool, lang), false);
     }
-    if (filtering) return searchCandidates(team, format, data, applied, MAX, lang);
-    return data.stats ? suggest(team, format, data, MAX, lang) : [];
-  }, [team, format, data, replacing, replaceIndex, mode, applied, filtering, lang]);
+    if (filtering) return rank(searchCandidates(team, format, data, applied, POOL, lang));
+    return data.stats ? rank(suggest(team, format, data, POOL, lang)) : [];
+  }, [deferred, mode, applied, filtering, lang]);
 
   const query = filters.query.trim();
   // I risultati valgono solo se la lista è già aggiornata su quello che hai scritto
@@ -158,7 +203,12 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   const [cursor, setCursor] = useState<number | null>(null);
   // Riga aperta nel dettaglio col clic; null: quella scelta dalla ricerca o la prima della pagina
   const [selectedName, setSelectedName] = useState<string | null>(null);
-  useEffect(() => { setCursor(null); setSelectedName(null); setPage(0); }, [items]);
+  // Una lista nuova riparte dalla prima pagina; il candidato aperto resta finché c'è ancora
+  useEffect(() => {
+    setCursor(null);
+    setPage(0);
+    setSelectedName(name => (name && items.some(item => item.species === name) ? name : null));
+  }, [items]);
   const pages = Math.ceil(items.length / PAGE);
   const pageItems = items.slice(page * PAGE, (page + 1) * PAGE);
   const chosen = fresh && cursor !== null ? items[cursor] : undefined;
@@ -194,9 +244,10 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
     ?? (pickedIndex >= page * PAGE && pickedIndex < (page + 1) * PAGE ? items[pickedIndex] : undefined)
     ?? pageItems[0];
   const selectedRank = selected ? items.indexOf(selected) + 1 : 0;
-  const act = (item: Suggestion | Replacement) => (replacing ? onReplaceWith(replaceIndex, item.set) : onAdd(item.set));
+  const usageOf = (species: string) => statsEntry(data.stats, species)?.usage ?? null;
+  const act = (item: Item) => (replacing ? onReplaceWith(replaceIndex, item.set) : onAdd(item.set));
   /** Apre il candidato nel dettaglio; in sostituzione il coaching mostra il sostituto scelto. */
-  const select = (item: Suggestion | Replacement) => {
+  const select = (item: Item) => {
     setSelectedName(item.species);
     if (replacing && 'diff' in item && onPreview) {
       onPreview({
@@ -241,7 +292,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
             aria-describedby={target ? 'search-hint' : undefined}
             placeholder={tr('suggest.searchPlaceholder')}
             value={filters.query}
-            onChange={e => setFilters({ ...filters, query: e.target.value })}
+            onChange={e => { setFilters({ ...filters, query: e.target.value }); setSelectedName(null); }}
             onKeyDown={e => {
               if (e.key === 'Enter') pickFromSearch();
               else if (e.key === 'ArrowDown') { e.preventDefault(); moveCursor(1); }
@@ -285,7 +336,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
           <p className="note">{tr('suggest.emptyTeam')}</p>
         )}
         {filtering && <p className="list-count">{countText}</p>}
-        <ol className="suggestions" ref={listRef}>
+        <ol className={`suggestions${stale ? ' stale' : ''}`} ref={listRef} aria-busy={stale || undefined}>
           {pageItems.map((item, i) => (
             <SuggestionRow
               key={item.species}
@@ -294,6 +345,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
               onSelect={() => select(item)}
               rank={page * PAGE + i + 1}
               item={item}
+              usage={emptyTeam ? usageOf(item.species) : null}
               actionLabel={tr(replacing ? 'suggest.replaceWith' : 'suggest.add')}
               quickLabel={replacing ? tr('suggest.replaceQuick', { species: item.species }) : tr('suggest.addQuick', { species: item.species })}
               replacing={replacing}
@@ -345,7 +397,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
           replaceIndex={replacing ? replaceIndex : null}
           data={data}
           rating={rating}
-          emptyTeam={emptyTeam}
+          usage={emptyTeam ? usageOf(selected.species) : null}
           banMark={<BanMark species={selected.species} format={format} />}
           actionLabel={tr(replacing ? 'suggest.replaceWith' : 'suggest.add')}
           onAction={() => act(selected)}

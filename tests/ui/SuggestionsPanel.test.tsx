@@ -17,19 +17,21 @@ async function setup(...names: string[]) {
 }
 
 describe('SuggestionsPanel', () => {
-  it('mostra suggerimenti ordinati con punteggio e motivazione', async () => {
+  it('ordina i suggerimenti per il voto che darebbero al team', async () => {
     await setup('Great Tusk', 'Gholdengo');
     // Corviknight, Kingambit, Rotom-Wash, Toxapex (Dragapult è Uber in National Dex)
     expect(within(suggestions()).getAllByRole('button', { name: /^Aggiungi .+ al team$/ })).toHaveLength(4);
-    expect(within(suggestions()).getAllByLabelText(/^Punteggio \d+$/)).toHaveLength(4);
+    const grades = within(list()).getAllByLabelText(/^Voto del team: [SABCD] \d+ \((\+\d+|−\d+|±0)\)$/)
+      .map(cell => Number(/ (\d+) \(/.exec(cell.getAttribute('aria-label')!)![1]));
+    expect(grades).toHaveLength(4);
+    expect(grades).toEqual([...grades].sort((a, b) => b - a));
   });
 
-  it('il dettaglio mostra il primo candidato: parti del punteggio e voto del team prima e dopo', async () => {
+  it('il dettaglio mostra il primo candidato: quanto sale il voto del team, in tutto e per area', async () => {
     await setup('Great Tusk');
     const first = rowNames()[0];
     const detail = screen.getByRole('complementary', { name: `Dettaglio di ${first}` });
-    expect([...detail.querySelectorAll('.detail-parts dt')].map(dt => dt.textContent)).toEqual(['Difesa', 'Coverage', 'Ruoli', 'Statistiche']);
-    expect(detail.querySelector('.detail-grade')).toHaveTextContent(/^Voto del team[SABCD] \d+[SABCD] \d+(\+\d+|−\d+|±0)$/);
+    expect(detail.querySelector('.detail-score')).toHaveTextContent(/^(\+\d+|−\d+|±0)voto del team [SABCD] \d+ → [SABCD] \d+$/);
     const areas = [...detail.querySelectorAll('.detail-areas dt')].map(dt => dt.textContent);
     expect(areas).toEqual(expect.arrayContaining(['Coverage offensiva', 'Coverage difensiva', 'Offesa', 'Robustezza', 'Ruoli']));
     expect(within(detail).getByRole('list', { name: 'Mosse' }).children.length).toBeGreaterThan(0);
@@ -47,13 +49,15 @@ describe('SuggestionsPanel', () => {
     expect(within(team()).getByText(second)).toBeInTheDocument();
   });
 
-  it('team vuoto: nota e, nel dettaglio, solo le Statistiche', async () => {
+  it("team vuoto: niente voto da confrontare, si mostra l'uso nel meta", async () => {
     await setup();
     expect(within(suggestions()).getByText('Aggiungi un Pokémon per vedere come si adatta al team — per ora ordinati per uso nel meta')).toBeInTheDocument();
+    const usages = within(list()).getAllByLabelText(/^Uso nel meta \d/).map(cell => parseFloat(cell.getAttribute('aria-label')!.replace('Uso nel meta ', '').replace(',', '.')));
+    expect(usages).toEqual([...usages].sort((a, b) => b - a));
     const detail = screen.getByRole('complementary', { name: /^Dettaglio di / });
-    expect([...detail.querySelectorAll('.detail-parts dt')].map(dt => dt.textContent)).toEqual(['Statistiche']);
-    expect(Number(detail.querySelector('.detail-parts dd')!.textContent)).toBeGreaterThan(0);
-    expect(detail.querySelector('.detail-grade .gain')).toBeNull();
+    expect(detail.querySelector('.detail-score')).toHaveTextContent(/uso nel meta$/);
+    expect(within(detail).getByText('Voto con lui da solo')).toBeInTheDocument();
+    expect(detail.querySelector('.detail-areas .change')!.textContent).toBe('');
   });
 
   it('mostra i tag sulle righe', async () => {
