@@ -4,7 +4,8 @@ import { battleName, battleSpecies, toID } from './dex';
 import { hitQuality, memberPower, teamPower, type MemberPower } from './power';
 import { attackStyle, detectRoles, isPassive, isStall, teamRoles } from './roles';
 import { rulesOf, type FormatRules } from './formatRules';
-import { needCoverage } from './needs';
+import { meetsNeed, needCoverage, NEEDS } from './needs';
+import { teamSpeed } from './speed';
 import { strengthComponent } from './scoring';
 import { usageOf } from './stats';
 import type { TeamSet } from './sets';
@@ -13,31 +14,56 @@ import { gameName, typeName } from '../i18n/game';
 import { effectiveness, superEffectiveMoves, TYPES } from './types';
 import { conditionConflicts, conditionLabel, enables, viaName, unmetBeneficiaries, unusedEnablers, weakenedMoves, weatherMitigations } from './synergy';
 
-export type AreaKey = 'defense' | 'coverage' | 'roles' | 'strength' | 'meta';
+export type AreaKey = 'defense' | 'coverage' | 'roles' | 'strength' | 'speed' | 'meta';
 /** Le aree del voto senza meta. */
 type BaseArea = Exclude<AreaKey, 'meta'>;
-const BASE_AREAS: BaseArea[] = ['defense', 'coverage', 'roles', 'strength'];
+const BASE_AREAS: BaseArea[] = ['defense', 'coverage', 'roles', 'strength', 'speed'];
+
+/**
+ * Peso dell'area Velocità: è ciò che più distingue i team da torneo (i loro due più veloci superano
+ * il 78% delle minacce più usate, gli altri team il 58%). Le altre aree si dividono il resto.
+ */
+export const SPEED_WEIGHT = 0.2;
+/** Proporzioni delle altre aree (Statistiche 30%). */
+const OTHER_AREAS = { defense: 0.284375, coverage: 0.21875, roles: 0.196875, strength: 0.3 };
 
 /** Pesi delle aree nel voto senza meta. Somma = 1. */
 export const AREA_WEIGHTS: Record<BaseArea, number> = {
-  defense: 0.284375,
-  coverage: 0.21875,
-  roles: 0.196875,
-  strength: 0.3,
+  defense: (1 - SPEED_WEIGHT) * OTHER_AREAS.defense,
+  coverage: (1 - SPEED_WEIGHT) * OTHER_AREAS.coverage,
+  roles: (1 - SPEED_WEIGHT) * OTHER_AREAS.roles,
+  strength: (1 - SPEED_WEIGHT) * OTHER_AREAS.strength,
+  speed: SPEED_WEIGHT,
 };
 
-/** Pesi per uno stall: la copertura conta la metà (attacca poco per scelta), il resto va alla difesa. */
+/**
+ * Pesi per uno stall: la velocità non conta, la copertura conta la metà (attacca poco per scelta)
+ * e il resto va alla difesa.
+ */
 export const STALL_AREA_WEIGHTS: Record<BaseArea, number> = {
-  defense: AREA_WEIGHTS.defense + AREA_WEIGHTS.coverage / 2,
-  coverage: AREA_WEIGHTS.coverage / 2,
-  roles: AREA_WEIGHTS.roles,
-  strength: AREA_WEIGHTS.strength,
+  defense: OTHER_AREAS.defense + OTHER_AREAS.coverage / 2,
+  coverage: OTHER_AREAS.coverage / 2,
+  roles: OTHER_AREAS.roles,
+  strength: OTHER_AREAS.strength,
+  speed: 0,
 };
+/** Pesi per un team con Trick Room, lento per scelta: la velocità non conta, il resto come sempre. */
+const TRICK_ROOM_WEIGHTS: Record<BaseArea, number> = { ...OTHER_AREAS, speed: 0 };
 
+/**
+ * Valore da cui un'area è piena: un team da torneo non resiste a tutto né ha sei Pokémon fortissimi,
+ * e non deve servire la perfezione per arrivare in S (come l'area Meta, piena a META_FULL).
+ */
+export const AREA_FULL: Record<BaseArea, number> = { defense: 0.95, coverage: 0.97, roles: 0.95, strength: 0.92, speed: 0.9 };
 
+/** Nei Ruoli: quota data da quanti compiti copre in media ogni membro ("role compression"), piena a 3. */
+export const ROLE_COMPRESSION = 0.3;
+const FULL_JOBS = 3;
 
 /** Peso dell'area Meta nel voto col meta; il resto è il voto senza meta. */
-export const META_WEIGHT = 0.2;
+export const META_WEIGHT = 0.3;
+/** Nelle minacce gestite: quota delle 3 più usate (il resto: tutte, pesate per uso). */
+export const TOP_THREATS = 0.5;
 /** Nell'area Meta: quota delle minacce gestite (il resto è l'uso dei membri nel formato). */
 export const META_THREATS = 2 / 3;
 /** Punteggio meta che vale l'area piena: i team Smogon stanno intorno a questo valore. */
@@ -281,26 +307,39 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
   const quality = (set: TeamSet, i: number, move: string) => (passive[i] ? 1 : hitQuality(set, move));
   const coverage = sum(TYPES.map(type => weights[type]
     * Math.max(0, ...team.flatMap((set, i) => superEffectiveMoves(set, type).map(move => quality(set, i, move))))));
-  // Ruoli richiesti in base all'archetipo del team (uno stall non ha bisogno di sweeper, un hyper offense di wall)
-  const roles = needCoverage(analysis.needs);
+  // Ruoli richiesti in base all'archetipo del team (uno stall non ha bisogno di sweeper, un hyper offense di wall),
+  // più quanti compiti copre ogni membro: nei team da torneo ognuno fa 2-3 cose
+  const jobs = sum(team.map(set => NEEDS.filter(need => meetsNeed(need, set, rules)).length)) / team.length;
+  const roles = (1 - ROLE_COMPRESSION) * needCoverage(analysis.needs) + ROLE_COMPRESSION * Math.min(1, jobs / FULL_JOBS);
   const power = teamPower(team, passive, rules);
-  const weightsFor = archetype ? STALL_AREA_WEIGHTS : AREA_WEIGHTS;
+  const trickRoom = team.some(set => set.moves.some(move => toID(move) === 'trickroom'));
+  const weightsFor = archetype ? STALL_AREA_WEIGHTS : trickRoom ? TRICK_ROOM_WEIGHTS : AREA_WEIGHTS;
   const strength = power.value === null ? null : power.value / 100;
+  // Velocità: col meta contro le minacce più usate, senza contro tutti i Pokémon
+  const speed = teamSpeed(team, data, usesMeta(data) ? analysis.threats.map(x => x.name) : null);
 
-  const raw: Record<AreaKey, number | null> = { defense, coverage, roles, strength, meta: null };
-  const available = BASE_AREAS.filter(key => raw[key] !== null);
+  // Ogni area è piena dal suo valore di riferimento in su
+  const full = (key: BaseArea, value: number | null) => (value === null ? null : Math.min(1, value / AREA_FULL[key]));
+  const raw: Record<AreaKey, number | null> = {
+    defense: full('defense', defense), coverage: full('coverage', coverage), roles: full('roles', roles),
+    strength: full('strength', strength), speed: full('speed', speed), meta: null,
+  };
+  const available = BASE_AREAS.filter(key => raw[key] !== null && weightsFor[key] > 0);
   let score = sum(available.map(key => weightsFor[key] * raw[key]!)) / sum(available.map(key => weightsFor[key]));
-  // Col meta: minacce gestite e uso dei membri contano per un quinto, il resto è il voto senza meta
+  // Col meta: minacce gestite (metà dalle 3 più usate) e uso dei membri contano per il 30%, il resto è il voto senza meta
   let meta: MetaScore | null = null;
   if (usesMeta(data)) {
-    const threats = (threatScore(analysis) ?? 50) / 100;
+    const top = analysis.threats.slice(0, 3);
+    const topHandled = top.length ? top.filter(x => x.handledBy.length > 0).length / top.length : 0.5;
+    const threats = (1 - TOP_THREATS) * ((threatScore(analysis) ?? 50) / 100) + TOP_THREATS * topHandled;
     const usage = sum(team.map(set => strengthComponent(usageOf(data.stats, battleName(set))))) / team.length;
     meta = { threats: Math.round(100 * threats), usage: Math.round(100 * usage) };
     raw.meta = Math.min(1, (META_THREATS * threats + (1 - META_THREATS) * usage) / META_FULL);
     score = (1 - META_WEIGHT) * score + META_WEIGHT * raw.meta;
   }
   const areas = (Object.keys(raw) as AreaKey[])
-    .filter(key => key !== 'meta' || meta)
+    // Senza meta l'area Meta non c'è; con uno stall o Trick Room la Velocità non conta e non si mostra
+    .filter(key => (key === 'meta' ? !!meta : weightsFor[key] > 0))
     .map(key => ({
       key,
       label: t(lang, `area.${key}`),

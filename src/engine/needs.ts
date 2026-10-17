@@ -20,19 +20,19 @@ export const NEED_ROLES: Record<Need, Role[]> = {
 
 /** Pesi dei bisogni: essenziale, utile, non richiesto. */
 export const ESSENTIAL = 1;
-export const USEFUL = 0.75;
+export const USEFUL = 0.4;
 const E = ESSENTIAL, U = USEFUL;
 
 /**
  * Peso dei bisogni per archetipo. Uno stall non ha bisogno di minacce offensive né di velocità;
- * un hyper offense non ha bisogno di wall.
+ * un hyper offense non ha bisogno di wall. Il controllo velocità è sempre utile, mai essenziale.
  */
 export const NEEDS_BY_ARCHETYPE: Record<Archetype, Record<Need, number>> = {
   hyperOffense: { hazards: E, removal: U, pivot: U, speed: E, speedControl: U, offense: E, priority: U, physicalWall: 0, specialWall: 0 },
   bulkyOffense: { hazards: E, removal: E, pivot: E, speed: E, speedControl: U, offense: E, priority: U, physicalWall: U, specialWall: U },
   balance: { hazards: E, removal: E, pivot: E, speed: U, speedControl: U, offense: E, priority: U, physicalWall: E, specialWall: E },
   semiStall: { hazards: E, removal: E, pivot: U, speed: U, speedControl: U, offense: E, priority: 0, physicalWall: E, specialWall: E },
-  stall: { hazards: E, removal: E, pivot: U, speed: 0, speedControl: 0, offense: 0, priority: 0, physicalWall: E, specialWall: E },
+  stall: { hazards: E, removal: E, pivot: U, speed: 0, speedControl: U, offense: 0, priority: 0, physicalWall: E, specialWall: E },
 };
 
 /** Il membro soddisfa il bisogno: il controllo velocità vuole le mosse, la velocità basta che sia veloce. */

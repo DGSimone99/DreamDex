@@ -1,5 +1,6 @@
 import type { EngineData } from './data';
-import { battleSpecies, dex, getSpecies, toID } from './dex';
+import { battleSpecies, dex, getSpecies, isLegal, toID } from './dex';
+import { memberPower } from './power';
 import { parseSpread, type TeamSet } from './sets';
 
 /** Velocità finale al livello 100 (IV 31); `scarf` se la Sciarpa Scelta la moltiplica per 1,5. */
@@ -63,4 +64,42 @@ export function speedTier(set: TeamSet, data: EngineData): SpeedTier | null {
     slower: rivals.filter(r => r.value < speed).sort((a, b) => b.value - a.value).slice(0, NEIGHBOURS),
     ties: rivals.filter(r => r.value === speed),
   };
+}
+
+/** Velocità di un Pokémon del meta col suo spread e strumento più usati (0 se non ha statistiche). */
+export function metaSpeed(data: EngineData, name: string): number {
+  const entry = data.stats?.pokemon[name];
+  if (!entry) return 0;
+  const { nature, evs } = parseSpread(top(entry.spreads));
+  return speedStat({ species: name, item: dex.items.get(top(entry.items) ?? '').name ?? '', nature, evs }).value;
+}
+
+/** Velocità massima (252 EV, natura che la alza) di tutti i completamente evoluti legali: il riferimento senza meta. */
+let maxSpeeds: number[] | null = null;
+function referenceSpeeds(): number[] {
+  maxSpeeds ??= dex.species.all()
+    .filter(s => s.exists && !s.nfe && isLegal(s))
+    .map(s => Math.floor((2 * s.baseStats.spe + 31 + 63 + 5) * 1.1))
+    .sort((a, b) => a - b);
+  return maxSpeeds;
+}
+
+/** Offesa (percentile) da cui un membro conta per la velocità del team: un Pokémon veloce che non fa danni non serve. */
+export const SPEED_ATTACKER = 60;
+
+/**
+ * Velocità del team (0–1), dai suoi due attaccanti più veloci: vince chi si muove per primo e fa danno.
+ * Col meta: quota delle minacce date (le più usate) che ognuno dei due supera; senza: quota di tutti i Pokémon più lenti.
+ * Con meno di due attaccanti, il posto mancante vale zero.
+ */
+export function teamSpeed(team: TeamSet[], data: EngineData, threats: string[] | null): number {
+  const fastest = team
+    .filter(set => (memberPower(set)?.offense ?? 0) >= SPEED_ATTACKER)
+    .map(set => speedStat(set).value)
+    .sort((a, b) => b - a)
+    .slice(0, 2);
+  const share = threats?.length
+    ? (speed: number) => { const rivals = threats.map(name => metaSpeed(data, name)); return rivals.filter(r => r < speed).length / rivals.length; }
+    : (speed: number) => { const pool = referenceSpeeds(); return pool.filter(v => v < speed).length / pool.length; };
+  return fastest.reduce((acc, speed) => acc + share(speed), 0) / 2;
 }
