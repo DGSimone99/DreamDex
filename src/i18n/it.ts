@@ -403,7 +403,7 @@ export const it: Record<keyof typeof en, string> = {
   'rating.speedTipMeta': "Quante delle minacce più usate i tuoi due attaccanti più veloci superano in velocità",
   'rating.speedTipFree': "Quanto sono veloci i tuoi due attaccanti più veloci rispetto a tutti i Pokémon",
   'rating.bulkTip': "Quanto incassa ogni membro",
-  'rating.coverageTip': "Tipi colpiti super efficace",
+  'rating.coverageTip': "Tipi colpiti super efficace (su ogni tipo: 1 membro vale 70, 2 vale 90, 3 vale 100)",
   'rating.metaOn': "Valutato col meta del formato (statistiche {month}).",
   'rating.metaOff': "Valutato senza meta: tutti i tipi pesano allo stesso modo.",
   'rating.metaTip': "Minacce del meta gestite: {threats}%\nUso dei membri nel formato: {usage}%",

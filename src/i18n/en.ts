@@ -401,7 +401,7 @@ export const en = {
   'rating.speedTipMeta': "How many of the most used threats your two fastest attackers outspeed",
   'rating.speedTipFree': "How fast your two fastest attackers are compared with every Pokémon",
   'rating.bulkTip': "How much each member can take",
-  'rating.coverageTip': "Types hit super effectively",
+  'rating.coverageTip': "Types hit super effectively (on each type: 1 member is worth 70, 2 are 90, 3 are 100)",
   'rating.metaOn': "Rated with the format's meta (stats {month}).",
   'rating.metaOff': "Rated without meta: all types weigh the same.",
   'rating.metaTip': "Meta threats handled: {threats}%\nMembers' usage in the format: {usage}%",

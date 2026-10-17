@@ -175,6 +175,6 @@ describe('copertura di uno stall', () => {
     const rating = rateTeam(stall, fixtureData)!;
     expect(rating.archetype).toBe('stall');
     // Toxapex (Scald) e Clodsire (Poison Jab) attaccano poco, ma nello stall i loro colpi contano interi
-    expect(Math.abs(rating.areas.find(a => a.key === 'coverage')!.value! - full('coverage', fullCoverage(stall)))).toBeLessThanOrEqual(1);
+    expect(Math.abs(rating.areas.find(a => a.key === 'coverage')!.value! - Math.round(fullCoverage(stall)))).toBeLessThanOrEqual(1);
   });
 });

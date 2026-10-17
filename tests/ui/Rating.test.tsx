@@ -34,7 +34,7 @@ describe('Valutazione team', () => {
     expect(coverage).not.toHaveAttribute('open');
     const offensive = within(rating).getByRole('button', { name: /^Coverage offensiva \d+$/ });
     // Il tooltip mostra quanti tipi colpisce ogni membro e dove porta il clic
-    expect(offensive).toHaveAttribute('data-tip', expect.stringMatching(/^Tipi colpiti super efficace\n.+\nVai a Coverage offensiva$/s));
+    expect(offensive).toHaveAttribute('data-tip', expect.stringMatching(/^Tipi colpiti super efficace \(su ogni tipo: 1 membro vale 70, 2 vale 90, 3 vale 100\)\n.+\nVai a Coverage offensiva$/s));
     await user.click(offensive);
     expect(coverage).toHaveAttribute('open');
     expect(within(rating).getByRole('button', { name: /^Coverage difensiva \d+$/ })).toHaveAttribute('title', 'Vai a Debolezze difensive');

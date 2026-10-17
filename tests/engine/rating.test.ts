@@ -65,9 +65,8 @@ describe('rateTeam', () => {
       const best = [tusk, gholdengo].map(s => Math.max(0, ...superEffectiveMoves(s, type).map(m => hitQuality(s, m)))).sort((a, b) => b - a);
       return acc + w[type] * Math.min(1, COVERAGE_DEPTH.reduce((a, share, i) => a + share * (best[i] ?? 0), 0));
     }, 0);
-    expect(value(rating, 'coverage')).toBe(full('coverage', 100 * coverage));
-    // Un solo colpo per tipo non basta più per la copertura piena
-    expect(value(rating, 'coverage')).toBeLessThan(full('coverage', 81));
+    // 1:1: la percentuale è il voto dell'area
+    expect(value(rating, 'coverage')).toBe(Math.round(100 * coverage));
     // Offesa: quanto colpiscono forte i membri (statistiche base), indipendente dall'uso nel meta
     expect(value(rating, 'strength')).toBe(offenseArea([tusk, gholdengo]));
   });
@@ -110,10 +109,15 @@ describe('cima delle aree', () => {
     expect(areaValue(1, 0.9)).toBe(1);
   });
 
-  it('coverage offensiva: un colpo per tipo non basta più per il 100, ne servono tre da membri diversi', () => {
-    // Su un tipo: 70% + 20% è il riferimento di prima (90%), solo il terzo membro porta al 100
-    expect(Math.round(100 * areaValue(0.9, AREA_FULL.coverage))).toBeLessThan(100);
-    expect(Math.round(100 * areaValue(1, AREA_FULL.coverage))).toBe(100);
+  it('coverage offensiva 1:1: un membro su ogni tipo vale 70, due 90, tre 100', () => {
+    const team = (n: number) => Array.from({ length: n }, () => tusk);
+    // Con lo stesso membro ripetuto ogni tipo che colpisce è preso 1, 2 o 3 volte: il valore scala come le quote
+    const one = value(rateTeam(team(1), fixtureData)!, 'coverage')!;
+    const two = value(rateTeam(team(2), fixtureData)!, 'coverage')!;
+    const three = value(rateTeam(team(3), fixtureData)!, 'coverage')!;
+    expect(two / one).toBeCloseTo(0.9 / 0.7, 1);
+    expect(three / one).toBeCloseTo(1 / 0.7, 1);
+    expect(COVERAGE_DEPTH).toEqual([0.7, 0.2, 0.1]);
   });
 });
 

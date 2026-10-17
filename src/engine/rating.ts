@@ -397,7 +397,8 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
   // Offesa: quanto colpiscono forte i membri (nello stall: Statistiche, la robustezza dei muri passivi)
   const attack = archetype ? full('strength', strength) : offense === null ? null : areaValue(offense, OFFENSE_FULL);
   const raw: Record<AreaKey, number | null> = {
-    coverage: full('coverage', coverage), defense: full('defense', typeDefense), strength: attack, bulk: full('bulk', bulk),
+    // Coverage offensiva 1:1: un membro su ogni tipo vale 70, due 90, tre 100
+    coverage: Math.min(1, coverage), defense: full('defense', typeDefense), strength: attack, bulk: full('bulk', bulk),
     roles: full('roles', roles), speed: full('speed', speed), meta: null,
   };
   const available = BASE_AREAS.filter(key => raw[key] !== null && effective[key] > 0);
