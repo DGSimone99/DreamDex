@@ -3,6 +3,7 @@
  *
  *   npm run bench            medie e voti per categoria, col meta e senza; ordine buono > medio > scarso; archetipi
  *   npm run bench -- --climb  la "salita": da alcuni team si applica sempre lo scambio libero migliore finché il voto sale
+ *   npm run bench -- --replays partite vere di alto livello (scripts/bench/replays.json): quante ne vince il team col voto più alto
  *
  * Serve a verificare ogni modifica al voto: i team da torneo devono stare in alto, i brutti in basso,
  * e la salita non deve arrivare a 100 né portare ogni team allo stesso archetipo.
@@ -16,7 +17,7 @@ import { DEFAULT_FORMAT, type FormatId } from '../src/engine/format';
 import { formatRules } from '../src/engine/formatRules';
 import { rateTeam, type TeamRating } from '../src/engine/rating';
 import { improveReplacements } from '../src/engine/replace';
-import type { TeamSet } from '../src/engine/sets';
+import { defaultSet, type TeamSet } from '../src/engine/sets';
 import { bestSwaps, withCandidate } from '../src/engine/teamGain';
 
 interface BenchTeam {
@@ -31,7 +32,9 @@ interface BenchTeam {
   team: TeamSet[];
 }
 
-const SOURCES: Partial<Record<FormatId, string>> = { ou: 'gen9nationaldex', ubers: 'gen9nationaldexubers', uu: 'gen9nationaldexuu', gen9ou: 'gen9ou' };
+const SOURCES: Partial<Record<FormatId, string>> = {
+  ou: 'gen9nationaldex', ubers: 'gen9nationaldexubers', uu: 'gen9nationaldexuu', gen9ou: 'gen9ou', gen9uu: 'gen9uu', gen9ag: 'gen9anythinggoes',
+};
 const read = (dir: string, name: string) => {
   const path = join('data', dir, `${name}.json`);
   return existsSync(path) ? JSON.parse(readFileSync(path, 'utf8')) : null;
@@ -119,7 +122,47 @@ function climb(start: BenchTeam, steps = 10) {
   console.log(`  ${areas(last)}`);
 }
 
-if (process.argv.includes('--climb')) {
+/**
+ * Partite vere: i due team (set più usati di ogni Pokémon) valutati col voto; quante ne vince il team col voto più alto.
+ * La bravura dei giocatori pesa molto: il 50% è il caso puro, ogni punto sopra è un segnale.
+ */
+function replays() {
+  const file = join('scripts', 'bench', 'replays.json');
+  if (!existsSync(file)) {
+    console.error('Mancano le partite: lancia npx tsx scripts/fetch-replays.ts');
+    return;
+  }
+  const FORMAT: Record<string, FormatId> = { gen9nationaldex: 'ou', gen9ou: 'gen9ou', gen9nationaldexubers: 'ubers', gen9uu: 'gen9uu', gen9nationaldexuu: 'uu' };
+  const games = (JSON.parse(readFileSync(file, 'utf8')) as { format: string; rating: number; p1: string[]; p2: string[]; winner: 1 | 2 }[])
+    .filter(g => FORMAT[g.format] && DATA[FORMAT[g.format]]);
+  for (const withMeta of [true, false]) {
+    const bins = [[1, 4], [5, 9], [10, 100]] as const;
+    const stats = bins.map(() => ({ right: 0, total: 0 }));
+    let skipped = 0;
+    for (const game of games) {
+      const formatId = FORMAT[game.format];
+      const data = withMeta ? DATA[formatId] : { ...DATA[formatId], ignoreMeta: true };
+      const build = (names: string[]) => names.map(name => defaultSet(DATA[formatId], name, 9)).filter((s): s is TeamSet => !!s);
+      const [a, b] = [build(game.p1), build(game.p2)];
+      if (a.length !== 6 || b.length !== 6) { skipped++; continue; }
+      const diff = rateTeam(a, data)!.overall - rateTeam(b, data)!.overall;
+      const bin = bins.findIndex(([lo, hi]) => Math.abs(diff) >= lo && Math.abs(diff) <= hi);
+      if (bin < 0) continue;
+      stats[bin].total++;
+      if ((diff > 0 && game.winner === 1) || (diff < 0 && game.winner === 2)) stats[bin].right++;
+    }
+    const all = stats.reduce((acc, s) => ({ right: acc.right + s.right, total: acc.total + s.total }), { right: 0, total: 0 });
+    const pct = (s: { right: number; total: number }) => (s.total ? `${(100 * s.right / s.total).toFixed(1)}% su ${s.total}` : '–');
+    console.log(`
+[${withMeta ? 'col meta' : 'senza meta'}] ${games.length} partite (${skipped} saltate: Pokémon senza set)`);
+    console.log(`  vince il voto più alto: ${pct(all)}`);
+    bins.forEach(([lo, hi], i) => console.log(`  differenza ${lo}–${hi === 100 ? '…' : hi}: ${pct(stats[i])}`));
+  }
+}
+
+if (process.argv.includes('--replays')) {
+  replays();
+} else if (process.argv.includes('--climb')) {
   // Il team di riferimento e la base migliore di ogni archetipo in OU
   const starts = [reference, ...['hyperOffense', 'bulkyOffense', 'balance', 'semiStall', 'stall']
     .map(arch => teams.find(t => t.fmt === 'ou' && t.archetype === arch && t.tier === 'buono'))]
