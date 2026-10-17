@@ -7,6 +7,7 @@ import { listMonths, pickCutoff } from './smogon-index';
 import { FALLBACK_SETS, FALLBACK_STATS, SOURCES } from './sources';
 import { fetchItalianNames } from './pokeapi';
 import { FORMATS_DATA_URL, parseTiers } from './showdown-tiers';
+import { buildBans, FORMATS_URL, parseFormats, parseRulesets, RULESETS_URL } from './showdown-bans';
 
 const STATS_BASE = 'https://www.smogon.com/stats/';
 
@@ -132,6 +133,16 @@ async function main() {
     console.log(`Tier da Showdown: ${Object.keys(tiers.natdex).length} specie National Dex, ${Object.keys(tiers.gen9).length} di Gen 9.`);
   } catch (error) {
     console.warn(`Tier di Showdown non disponibili (${(error as Error).message}): restano quelli della libreria.`);
+  }
+  // Ban di mosse, abilità, strumenti e Pokémon per formato (Shed Tail, Moody, King's Rock…)
+  try {
+    const rules = [...parseFormats(await (await get(FORMATS_URL)).text()), ...parseRulesets(await (await get(RULESETS_URL)).text())];
+    const bans = buildBans(rules);
+    await mkdir(join('data', '_rules'), { recursive: true });
+    await writeFile(join('data', '_rules', 'bans.json'), JSON.stringify(bans));
+    console.log(`Ban per formato da Showdown: ${Object.entries(bans).map(([id, b]) => `${id} ${b.moves.length + b.abilities.length + b.items.length + b.species.length}`).join(', ')}.`);
+  } catch (error) {
+    console.warn(`Ban di Showdown non disponibili (${(error as Error).message}): si controllano solo i Pokémon vietati.`);
   }
   await mkdir(join('data', '_fallback'), { recursive: true });
   await writeFile(join('data', '_fallback', 'sets.json'), JSON.stringify(fallback));

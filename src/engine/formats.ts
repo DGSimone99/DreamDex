@@ -1,5 +1,5 @@
 import type { Item, Move, Species } from '@pkmn/dex';
-import { gen9Tier, isSelectable, natDexTier } from './dex';
+import { gen9Tier, isSelectable, natDexTier, toID } from './dex';
 import type { Format, FormatId } from './format';
 import { t, type Lang } from '../i18n';
 
@@ -89,8 +89,40 @@ export const itemInPokedex = (item: Item, format: Format): boolean => pokedexOf(
 export const tierIn = (species: Species, format: Format): string =>
   (pokedexOf(format) === 'sv' ? gen9Tier(species) : natDexTier(species));
 
+/** Mosse, abilità, strumenti e Pokémon vietati per nome in un formato (da Showdown, `npm run fetch-data`). */
+export interface FormatBans {
+  moves: string[];
+  abilities: string[];
+  items: string[];
+  species: string[];
+}
+let bans: Partial<Record<FormatId, FormatBans>> | null = null;
+export function initBans(loaded: Partial<Record<FormatId, FormatBans>> | null): void {
+  bans = loaded;
+}
+
 export function isBannedIn(species: Species, format: Format): boolean {
-  return !format.ignoreBans && FORMATS[format.formatId].banned.has(tierIn(species, format));
+  if (format.ignoreBans) return false;
+  return FORMATS[format.formatId].banned.has(tierIn(species, format))
+    || !!bans?.[format.formatId]?.species.some(name => toID(name) === species.id);
+}
+
+/** Il nome (mossa, abilità o strumento) è vietato nel formato con quell'id. */
+export function isBannedName(formatId: FormatId | undefined, kind: 'moves' | 'abilities' | 'items', name: string): boolean {
+  const list = formatId ? bans?.[formatId] : undefined;
+  return !!list && !!name && list[kind].some(n => toID(n) === toID(name));
+}
+
+/** Mosse, abilità e strumento del set vietati nel formato (Shed Tail in Gen 9 OU, King's Rock…). */
+export function bannedParts(set: { moves: string[]; ability: string; item: string }, format: Format): { moves: string[]; ability: string | null; item: string | null } {
+  const list = format.ignoreBans ? null : bans?.[format.formatId];
+  if (!list) return { moves: [], ability: null, item: null };
+  const has = (names: string[], name: string) => !!name && names.some(n => toID(n) === toID(name));
+  return {
+    moves: set.moves.filter(move => has(list.moves, move)),
+    ability: has(list.abilities, set.ability) ? set.ability : null,
+    item: has(list.items, set.item) ? set.item : null,
+  };
 }
 
 export function isLegalIn(species: Species, format: Format): boolean {
