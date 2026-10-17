@@ -12,4 +12,6 @@ export interface EngineData {
   fallbackPresets?: PresetsData | null;
   /** Statistiche dal formato in cui ogni Pokémon è più giocato, per chi non ne ha in questo (es. i vietati). */
   fallbackStats?: FallbackStats | null;
+  /** Valutazione senza meta: tipi tutti uguali, niente minacce né uso dei membri (giochi in single player). */
+  ignoreMeta?: boolean;
 }

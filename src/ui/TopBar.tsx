@@ -56,6 +56,15 @@ export function TopBar({ format, onFormatChange, meta, lang, onLangChange, child
           ))}
         </select>
       </label>
+      <div className="rating-mode">
+        <span id="rating-mode-label">{t('top.rating')}</span>
+        <div role="group" aria-labelledby="rating-mode-label" className="segmented" title={meta ? undefined : t('top.metaUnavailable')}>
+          <button type="button" aria-pressed={!!meta && format.meta} disabled={!meta} title={t('top.withMetaTip')}
+            onClick={() => onFormatChange({ ...format, meta: true })}>{t('top.withMeta')}</button>
+          <button type="button" aria-pressed={!meta || !format.meta} disabled={!meta} title={t('top.withoutMetaTip')}
+            onClick={() => onFormatChange({ ...format, meta: false })}>{t('top.withoutMeta')}</button>
+        </div>
+      </div>
       <AdvancedOptions format={format} onFormatChange={onFormatChange} />
       {children}
       <div role="group" aria-label={t('lang.label')} className="segmented lang-switch">

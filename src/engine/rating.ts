@@ -1,27 +1,32 @@
-import { analyzeTeam, type TeamAnalysis } from './analysis';
+import { analyzeTeam, threatScore, usesMeta, type TeamAnalysis } from './analysis';
 import type { EngineData } from './data';
 import { battleName, battleSpecies, toID } from './dex';
 import { hitQuality, memberPower, teamPower, type MemberPower } from './power';
 import { attackStyle, detectRoles, isPassive, isStall, teamRoles } from './roles';
 import { needCoverage } from './needs';
+import { strengthComponent } from './scoring';
+import { usageOf } from './stats';
 import type { TeamSet } from './sets';
 import { t, type Lang } from '../i18n';
 import { gameName, typeName } from '../i18n/game';
 import { superEffectiveMoves, TYPES } from './types';
 import { conditionConflicts, conditionLabel, enables, viaName, unmetBeneficiaries, unusedEnablers, weakenedMoves, weatherMitigations } from './synergy';
 
-export type AreaKey = 'defense' | 'coverage' | 'roles' | 'strength';
+export type AreaKey = 'defense' | 'coverage' | 'roles' | 'strength' | 'meta';
+/** Le aree del voto senza meta. */
+type BaseArea = Exclude<AreaKey, 'meta'>;
+const BASE_AREAS: BaseArea[] = ['defense', 'coverage', 'roles', 'strength'];
 
-/** Pesi delle aree nel voto complessivo. Somma = 1. */
-export const AREA_WEIGHTS: Record<AreaKey, number> = {
-  defense: 0.325,
-  coverage: 0.25,
-  roles: 0.225,
-  strength: 0.2,
+/** Pesi delle aree nel voto senza meta. Somma = 1. */
+export const AREA_WEIGHTS: Record<BaseArea, number> = {
+  defense: 0.284375,
+  coverage: 0.21875,
+  roles: 0.196875,
+  strength: 0.3,
 };
 
 /** Pesi per uno stall: la copertura conta la metà (attacca poco per scelta), il resto va alla difesa. */
-export const STALL_AREA_WEIGHTS: Record<AreaKey, number> = {
+export const STALL_AREA_WEIGHTS: Record<BaseArea, number> = {
   defense: AREA_WEIGHTS.defense + AREA_WEIGHTS.coverage / 2,
   coverage: AREA_WEIGHTS.coverage / 2,
   roles: AREA_WEIGHTS.roles,
@@ -29,6 +34,13 @@ export const STALL_AREA_WEIGHTS: Record<AreaKey, number> = {
 };
 
 
+
+/** Peso dell'area Meta nel voto col meta; il resto è il voto senza meta. */
+export const META_WEIGHT = 0.2;
+/** Nell'area Meta: quota delle minacce gestite (il resto è l'uso dei membri nel formato). */
+export const META_THREATS = 2 / 3;
+/** Punteggio meta che vale l'area piena: i team Smogon stanno intorno a questo valore. */
+export const META_FULL = 0.78;
 
 /**
  * Soglie tarate sui dati reali (2026-09, 1630+): team ben costruiti 88–90,
@@ -59,6 +71,12 @@ export interface Redundancies {
   items: Redundancy[];
 }
 
+/** L'area Meta scomposta: minacce gestite e uso dei membri nel formato (0–100). */
+export interface MetaScore {
+  threats: number;
+  usage: number;
+}
+
 export interface TeamRating {
   /** Voto pesato delle aree, prima della penalità. */
   base: number;
@@ -73,6 +91,8 @@ export interface TeamRating {
   areas: RatingArea[];
   /** Archetipo riconosciuto che cambia il calcolo dei ruoli (per ora solo lo stall). */
   archetype: 'stall' | null;
+  /** Dettaglio dell'area Meta, o null se il voto è senza meta. */
+  meta: MetaScore | null;
 }
 
 
@@ -238,19 +258,29 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
   const weightsFor = archetype ? STALL_AREA_WEIGHTS : AREA_WEIGHTS;
   const strength = power.value === null ? null : power.value / 100;
 
-  const raw: Record<AreaKey, number | null> = { defense, coverage, roles, strength };
-  const areas = (Object.keys(AREA_WEIGHTS) as AreaKey[]).map(key => ({
-    key,
-    label: t(lang, `area.${key}`),
-    value: raw[key] === null ? null : Math.round(100 * raw[key]!),
-  }));
-  const available = (Object.keys(AREA_WEIGHTS) as AreaKey[]).filter(key => raw[key] !== null);
-  const base = Math.round(
-    100 * sum(available.map(key => weightsFor[key] * raw[key]!)) / sum(available.map(key => weightsFor[key])),
-  );
+  const raw: Record<AreaKey, number | null> = { defense, coverage, roles, strength, meta: null };
+  const available = BASE_AREAS.filter(key => raw[key] !== null);
+  let score = sum(available.map(key => weightsFor[key] * raw[key]!)) / sum(available.map(key => weightsFor[key]));
+  // Col meta: minacce gestite e uso dei membri contano per un quinto, il resto è il voto senza meta
+  let meta: MetaScore | null = null;
+  if (usesMeta(data)) {
+    const threats = (threatScore(analysis) ?? 50) / 100;
+    const usage = sum(team.map(set => strengthComponent(usageOf(data.stats, battleName(set))))) / team.length;
+    meta = { threats: Math.round(100 * threats), usage: Math.round(100 * usage) };
+    raw.meta = Math.min(1, (META_THREATS * threats + (1 - META_THREATS) * usage) / META_FULL);
+    score = (1 - META_WEIGHT) * score + META_WEIGHT * raw.meta;
+  }
+  const areas = (Object.keys(raw) as AreaKey[])
+    .filter(key => key !== 'meta' || meta)
+    .map(key => ({
+      key,
+      label: t(lang, `area.${key}`),
+      value: raw[key] === null ? null : Math.round(100 * raw[key]!),
+    }));
+  const base = Math.round(100 * score);
   const penalty = redundancies(team, analysis, lang);
   const bonus = weatherBonus(team, lang);
   const overall = Math.min(100, Math.max(0, base - penalty.total + bonus.total));
-  return { base, penalty, bonus, power: power.members, overall, ...gradeFor(overall, lang), provisional: team.length < 6, areas, archetype };
+  return { base, penalty, bonus, power: power.members, overall, ...gradeFor(overall, lang), provisional: team.length < 6, areas, archetype, meta };
 }
 

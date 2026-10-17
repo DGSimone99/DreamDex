@@ -43,9 +43,12 @@ describe('ruoli richiesti in base all\'archetipo', () => {
     expect(needs.missing.map(m => m.need)).not.toContain('offense');
   });
 
-  it('copertura pesata: essenziali 1, utili 0,5, non richiesti 0', () => {
-    expect(needCoverage(teamNeeds(stall))).toBeGreaterThan(0.85);
-    expect(needCoverage(teamNeeds(hyperOffense))).toBeGreaterThan(0.85);
+  it('copertura pesata: essenziali 1, utili 0,75, non richiesti 0', () => {
+    // Stall: manca solo il Pivot (utile) → 4 su 4,75
+    expect(needCoverage(teamNeeds(stall))).toBeCloseTo(4 / 4.75);
+    // Hyper offense: mancano Pivot e Controllo velocità (utili) → 4,5 su 6
+    expect(teamNeeds(hyperOffense).missing.map(m => m.need)).toEqual(['pivot', 'speedControl']);
+    expect(needCoverage(teamNeeds(hyperOffense))).toBeCloseTo(4.5 / 6);
   });
 
   it('la minaccia offensiva è coperta da uno sweeper o da un wallbreaker', () => {
@@ -60,6 +63,7 @@ describe('ruoli richiesti in base all\'archetipo', () => {
   it('etichette: minaccia offensiva e velocità', () => {
     expect(needLabel('offense', 'it')).toBe('Minaccia offensiva');
     expect(needLabel('speed', 'it')).toBe('Velocità');
+    expect(needLabel('speedControl', 'it')).toBe('Controllo velocità');
     expect(needLabel('hazards', 'it')).toBe('Hazard');
   });
 });

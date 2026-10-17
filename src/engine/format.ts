@@ -14,8 +14,10 @@ export interface Format {
   ignoreBans: boolean;
   /** Monotype: tutti i membri devono avere questo tipo (null = disattivato). */
   monotype: TypeName | null;
+  /** Se true, il voto usa il meta del formato (tipi pesati per uso, minacce, uso dei membri); se false, tutti i tipi pesano uguale. */
+  meta: boolean;
 }
 
 export const DEFAULT_FORMAT: Format = {
-  formatId: 'ou', genLimit: 9, minUsage: 0.01, allowMultipleMegas: false, ignoreBans: false, monotype: null,
+  formatId: 'ou', genLimit: 9, minUsage: 0.01, allowMultipleMegas: false, ignoreBans: false, monotype: null, meta: true,
 };

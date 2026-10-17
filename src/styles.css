@@ -120,6 +120,10 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 .topbar h1 span { color: var(--gold); }
 .topbar > label { display: flex; flex-direction: column; gap: 3px; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
 .topbar > label select { font-size: 14px; text-transform: none; letter-spacing: 0; font-weight: 500; color: var(--text); min-width: 70px; }
+.topbar .rating-mode { display: flex; flex-direction: column; gap: 3px; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.topbar .rating-mode .segmented { white-space: nowrap; text-transform: none; letter-spacing: 0; }
+.topbar .rating-mode button { padding: 6px 10px; font-weight: 500; }
+.topbar .rating-mode button:disabled { cursor: not-allowed; opacity: .6; }
 .topbar .lang-switch { margin-left: auto; align-self: center; }
 .topbar .lang-switch button { padding: 5px 10px; }
 .topbar .meta { margin-left: 14px; color: var(--muted); font-size: 13px; align-self: center; }
@@ -956,6 +960,10 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 
 /* Schermi più stretti (≈1280px): card e classifica restano leggibili */
 @media (max-width: 1440px) {
+  /* Barra in alto su una riga anche con l'interruttore del meta: spazi più stretti, statistiche su due righe */
+  .topbar { gap: 10px; }
+  .topbar h1 { margin-right: 4px; }
+  .topbar .meta { max-width: 112px; font-size: 12px; line-height: 1.3; margin-left: 0; }
   .slot .type-chip { width: 56px; font-size: 10px; }
   .slot .type-chip.long { font-size: 8px; letter-spacing: -0.02em; }
   .slot > summary .sprite { width: 80px; height: 80px; }
