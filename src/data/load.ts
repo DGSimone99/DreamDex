@@ -1,4 +1,5 @@
 import type { EngineData } from '../engine/data';
+import type { TierOverrides } from '../engine/dex';
 import { DEFAULT_FORMAT } from '../engine/format';
 import { dataSource } from '../engine/formats';
 import type { PresetsData, SetsData } from '../engine/sets';
@@ -43,12 +44,12 @@ export const loadSource = (source: string): Promise<EngineData> => readSource(fi
 /** Fonte iniziale (National Dex OU). */
 export const loadDataOrEmpty = (): Promise<EngineData> => loadSource(dataSource(DEFAULT_FORMAT));
 
-/** Tier National Dex di Showdown (`data/_tiers/natdex.json`), o null se non scaricati. */
-export async function loadTiers(loaders: Loaders = files): Promise<Record<string, string> | null> {
-  const loader = loaders['/data/_tiers/natdex.json'];
+/** Tier di Showdown, National Dex e Gen 9 (`data/_tiers/tiers.json`), o null se non scaricati. */
+export async function loadTiers(loaders: Loaders = files): Promise<TierOverrides | null> {
+  const loader = loaders['/data/_tiers/tiers.json'];
   if (!loader) return null;
   try {
-    return (await loader()) as Record<string, string>;
+    return (await loader()) as TierOverrides;
   } catch {
     return null;
   }
