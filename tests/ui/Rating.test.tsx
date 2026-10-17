@@ -12,11 +12,11 @@ describe('Valutazione team', () => {
     const rating = screen.getByRole('group', { name: 'Valutazione team' });
     expect(rating).toHaveTextContent(/[SABCD]\s*\d+\/100 · \w+/);
     expect(rating).not.toHaveTextContent('provvisoria');
-    // Il dettaglio per membro sta nel tooltip di "Statistiche", non più in una riga a parte
-    expect(rating).not.toHaveTextContent('Statistiche: Great Tusk');
-    expect(within(rating).getByText(/^Statistiche \d+$/)).toHaveAttribute('data-tip', expect.stringMatching(/^Great Tusk \d+\nGholdengo \d+$/));
-    // Difesa 73% della perfezione, piena a 95%: 77
-    expect(rating).toHaveTextContent('Difesa 77');
+    // Il dettaglio per membro (quanto colpisce) sta nel tooltip di "Offesa"
+    expect(rating).not.toHaveTextContent('Offesa: Great Tusk');
+    expect(within(rating).getByText(/^Offesa \d+$/)).toHaveAttribute('data-tip', expect.stringMatching(/^Great Tusk \d+\nGholdengo \d+$/));
+    // Difesa: tipi e robustezza dei membri
+    expect(rating).toHaveTextContent(/Difesa \d+/);
     expect(rating).toHaveTextContent(/Velocità \d+/);
     expect(rating).not.toHaveTextContent('Sinergia');
   });
@@ -31,7 +31,7 @@ describe('Valutazione team', () => {
     await user.click(within(rating).getByRole('button', { name: /^Coverage \d+$/ }));
     expect(coverage).toHaveAttribute('open');
     expect(within(rating).getByRole('button', { name: /^Difesa \d+$/ })).toHaveAttribute('title', 'Vai a Debolezze difensive');
-    expect(within(rating).queryByRole('button', { name: /^Statistiche/ })).toBeNull();
+    expect(within(rating).queryByRole('button', { name: /^Offesa/ })).toBeNull();
   });
 
   it('mostra le ridondanze con il dettaglio', async () => {

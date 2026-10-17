@@ -1,13 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { teamPower } from '../../src/engine/power';
-import { AREA_FULL, AREA_WEIGHTS, COVERAGE_DEPTH, META_WEIGHT, SPEED_WEIGHT, gradeFor, rateTeam, typeSafety } from '../../src/engine/rating';
+import { AREA_FULL, AREA_WEIGHTS, BULK_FULL, BULK_SHARE, COVERAGE_DEPTH, META_WEIGHT, OFFENSE_FULL, SPEED_WEIGHT, gradeFor, rateTeam, typeSafety } from '../../src/engine/rating';
+import { memberPower } from '../../src/engine/power';
+
+/** Offesa media dei membri, piena a OFFENSE_FULL. */
+const offenseArea = (team: TeamSet[]) => Math.round(100 * Math.min(1, team.reduce((a, s) => a + memberPower(s)!.offense, 0) / team.length / 100 / OFFENSE_FULL));
 import { hitQuality } from '../../src/engine/power';
 import { metaTypeWeights } from '../../src/engine/stats';
 import { superEffectiveMoves, TYPES } from '../../src/engine/types';
 
 /** Valore mostrato di un'area: piena dal suo riferimento in su (AREA_FULL). */
 const full = (key: keyof typeof AREA_FULL, percent: number) => Math.round(Math.min(100, percent / AREA_FULL[key]));
-import { mostCommonSet } from '../../src/engine/sets';
+import { mostCommonSet, type TeamSet } from '../../src/engine/sets';
 import { fixtureData, fixtureStats, gholdengo, tusk } from '../fixtures/data';
 
 const value = (rating: ReturnType<typeof rateTeam>, key: string) => rating!.areas.find(a => a.key === key)!.value;
@@ -49,8 +53,10 @@ describe('rateTeam', () => {
   const rating = rateTeam([tusk, gholdengo], fixtureData)!;
 
   it('aree calcolate sulla fixture', () => {
-    // Difesa 73% e Coverage 81% della perfezione, tarate: piene a 95% e 97%
-    expect(value(rating, 'defense')).toBe(full('defense', 73.2));
+    // Difesa: tipi (73% della perfezione, pieni a 95%) e robustezza media (piena a 90%), 35% di robustezza per un balance
+    const bulk = [tusk, gholdengo].reduce((a, s) => a + memberPower(s)!.bulk, 0) / 2 / 100;
+    const defense = (1 - BULK_SHARE.balance) * Math.min(1, 0.732 / AREA_FULL.defense) + BULK_SHARE.balance * Math.min(1, bulk / BULK_FULL);
+    expect(Math.abs(value(rating, 'defense')! - Math.round(100 * defense))).toBeLessThanOrEqual(1);
     // Coverage in profondità: per tipo, il colpo migliore di ogni membro, 70% al primo e 20% al secondo
     const w = metaTypeWeights(fixtureData.stats);
     const coverage = TYPES.reduce((acc, type) => {
@@ -60,8 +66,8 @@ describe('rateTeam', () => {
     expect(value(rating, 'coverage')).toBe(full('coverage', 100 * coverage));
     // Un solo colpo per tipo non basta più per la copertura piena
     expect(value(rating, 'coverage')).toBeLessThan(full('coverage', 81));
-    // Forza dalle statistiche base: media dei membri, indipendente dall'uso nel meta
-    expect(value(rating, 'strength')).toBe(full('strength', teamPower([tusk, gholdengo]).value!));
+    // Offesa: quanto colpiscono forte i membri (statistiche base), indipendente dall'uso nel meta
+    expect(value(rating, 'strength')).toBe(offenseArea([tusk, gholdengo]));
   });
 
   it('voto complessivo pesato, provvisorio con meno di 6 membri', () => {
@@ -72,7 +78,7 @@ describe('rateTeam', () => {
   });
 
   it('ordine e nomi delle aree', () => {
-    expect(rating.areas.map(a => a.label)).toEqual(['Difesa', 'Coverage', 'Ruoli', 'Statistiche', 'Velocità', 'Meta']);
+    expect(rating.areas.map(a => a.label)).toEqual(['Difesa', 'Coverage', 'Ruoli', 'Offesa', 'Velocità', 'Meta']);
   });
 
   it('team completo: non provvisorio', () => {
@@ -86,6 +92,6 @@ describe('rateTeam', () => {
 
   it('senza statistiche Smogon la forza resta calcolabile (statistiche base)', () => {
     const noData = rateTeam([tusk, gholdengo], { stats: null, sets: null })!;
-    expect(value(noData, 'strength')).toBe(full('strength', teamPower([tusk, gholdengo]).value!));
+    expect(value(noData, 'strength')).toBe(offenseArea([tusk, gholdengo]));
   });
 });
