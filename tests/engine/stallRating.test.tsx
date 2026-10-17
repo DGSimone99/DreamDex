@@ -1,6 +1,6 @@
 import { DEFAULT_RULES } from '../../src/engine/formatRules';
 import { describe, expect, it } from 'vitest';
-import { AREA_FULL, AREA_WEIGHTS, COVERAGE_DEPTH, META_WEIGHT, rateTeam, ROLE_COMPRESSION, SPEED_WEIGHT, STALL_AREA_WEIGHTS } from '../../src/engine/rating';
+import { AREA_FULL, AREA_WEIGHTS, COVERAGE_DEPTH, META_WEIGHT, OFFENSE_FULL, rateTeam, ROLE_COMPRESSION, SPEED_WEIGHT, STALL_AREA_WEIGHTS } from '../../src/engine/rating';
 import { meetsNeed, needCoverage, NEEDS, teamNeeds } from '../../src/engine/needs';
 
 const full = (key: keyof typeof AREA_FULL, percent: number) => Math.round(Math.min(100, percent / AREA_FULL[key]));
@@ -144,6 +144,7 @@ describe('voto dello stall', () => {
     const rating = rateTeam(stall, fixtureData)!;
     const bulk = Math.round(stall.map(s => memberPower(s)!.bulk).reduce((a, b) => a + b, 0) / stall.length);
     expect(rating.areas.find(a => a.key === 'strength')!.value).toBe(full('strength', bulk));
+    expect(rating.areas.find(a => a.key === 'strength')!.label).toBe('Statistiche');
   });
 
   it('pesi da stall: copertura dimezzata, il resto alla difesa', () => {
@@ -154,11 +155,13 @@ describe('voto dello stall', () => {
     expect(STALL_AREA_WEIGHTS.coverage).toBeCloseTo(AREA_WEIGHTS.coverage / (1 - SPEED_WEIGHT) / 2);
   });
 
-  it('un team non stall usa pesi e forza di sempre', () => {
+  it('un team non stall usa i pesi di sempre e l\'Offesa al posto delle Statistiche', () => {
     const team = [tusk, gholdengo];
     const rating = rateTeam(team, fixtureData)!;
     expect(Math.abs(rating.base - weighted(rating.areas, AREA_WEIGHTS))).toBeLessThanOrEqual(1);
-    expect(rating.areas.find(a => a.key === 'strength')!.value).toBe(full('strength', teamPower(team).value!));
+    const offense = team.reduce((a, s) => a + memberPower(s)!.offense, 0) / team.length / 100;
+    expect(rating.areas.find(a => a.key === 'strength')!.value).toBe(Math.round(100 * Math.min(1, offense / OFFENSE_FULL)));
+    expect(rating.areas.find(a => a.key === 'strength')!.label).toBe('Offesa');
   });
 });
 

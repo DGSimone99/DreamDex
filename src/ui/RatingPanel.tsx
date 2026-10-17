@@ -47,8 +47,9 @@ export function RatingPanel({ rating, ruleIssues = [], metaMonth }: { rating: Te
           const text = `${area.label} ${area.value ?? 'n/d'}`;
           const section = AREA_SECTIONS[area.key];
           // Statistiche e Meta: il dettaglio sta nel tooltip
+          // Offesa: quanto colpisce ogni membro; nello stall (Statistiche) la forza complessiva
           const tip = area.key === 'strength' && rating.power.length
-            ? rating.power.map(m => `${m.species} ${m.power}`).join('\n')
+            ? rating.power.map(m => `${m.species} ${rating.archetype ? m.power : m.offense}`).join('\n')
             : area.key === 'meta' && rating.meta ? t('rating.metaTip', { threats: rating.meta.threats, usage: rating.meta.usage })
             : area.key === 'speed' ? t(rating.meta ? 'rating.speedTipMeta' : 'rating.speedTipFree')
             : undefined;

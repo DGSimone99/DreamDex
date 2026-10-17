@@ -2,6 +2,7 @@ import { analyzeTeam, threatScore, usesMeta, type TeamAnalysis } from './analysi
 import type { EngineData } from './data';
 import { battleName, battleSpecies, toID } from './dex';
 import { hitQuality, memberPower, teamPower, type MemberPower } from './power';
+import type { Archetype } from './archetype';
 import { attackStyle, detectRoles, isPassive, isStall, teamRoles } from './roles';
 import { rulesOf, type FormatRules } from './formatRules';
 import { meetsNeed, needCoverage, NEEDS } from './needs';
@@ -55,6 +56,19 @@ const TRICK_ROOM_WEIGHTS: Record<BaseArea, number> = { ...OTHER_AREAS, speed: 0 
  * e non deve servire la perfezione per arrivare in S (come l'area Meta, piena a META_FULL).
  */
 export const AREA_FULL: Record<BaseArea, number> = { defense: 0.95, coverage: 0.9, roles: 0.95, strength: 0.92, speed: 0.9 };
+
+/**
+ * Difesa = tipi coperti + robustezza media dei membri, con una quota di robustezza che cresce col tipo di team:
+ * un hyper offense vince attaccando, uno stall incassando.
+ */
+export const BULK_SHARE: Record<Archetype, number> = { hyperOffense: 0.2, bulkyOffense: 0.3, balance: 0.35, semiStall: 0.45, stall: 0.5 };
+/** Robustezza media (percentile) da cui la sua parte di Difesa è piena. */
+export const BULK_FULL = 0.9;
+/**
+ * Offesa media (percentile) da cui l'area Offesa è piena. L'area misura quanto colpiscono forte i membri:
+ * i team da torneo stanno a 72, gli altri team buoni a 64. Nello stall resta "Statistiche" (robustezza dei muri passivi).
+ */
+export const OFFENSE_FULL = 0.8;
 
 /**
  * Coverage in profondità: per ogni tipo, il colpo migliore del 1°, 2° e 3° membro che lo colpisce vale 70%, 20% e 10%.
@@ -308,7 +322,7 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
   // Nello stall un muro passivo non deve fare danni: conta la sua robustezza, e i suoi colpi valgono pieni
   const passive = archetype ? team.map((set, i) => isPassive(set, memberRoles[i])) : [];
 
-  const defense = sum(analysis.weakness.map(row => weights[row.type] * typeSafety(row.weak, row.resist)));
+  const typeDefense = sum(analysis.weakness.map(row => weights[row.type] * typeSafety(row.weak, row.resist)));
   // Ogni tipo vale secondo i colpi che lo prendono (un Close Combat di Alakazam non vale uno di Great Tusk)
   // e secondo quanti membri diversi lo colpiscono: se l'unico che lo colpisce è KO, il tipo resta scoperto
   const quality = (set: TeamSet, i: number, move: string) => (passive[i] ? 1 : hitQuality(set, move));
@@ -322,6 +336,11 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
   const jobs = sum(team.map(set => NEEDS.filter(need => meetsNeed(need, set, rules)).length)) / team.length;
   const roles = (1 - ROLE_COMPRESSION) * needCoverage(analysis.needs) + ROLE_COMPRESSION * Math.min(1, jobs / FULL_JOBS);
   const power = teamPower(team, passive, rules);
+  // Robustezza e offesa medie dei membri (confrontate col formato, come le Statistiche)
+  const members = team.map(set => memberPower(set, rules.strengthPool)).filter((m): m is MemberPower => m !== null);
+  const average = (pick: (m: MemberPower) => number) => (members.length ? sum(members.map(pick)) / members.length / 100 : null);
+  const bulk = average(m => m.bulk);
+  const offense = average(m => m.offense);
   const trickRoom = team.some(set => set.moves.some(move => toID(move) === 'trickroom'));
   const weightsFor = archetype ? STALL_AREA_WEIGHTS : trickRoom ? TRICK_ROOM_WEIGHTS : AREA_WEIGHTS;
   const strength = power.value === null ? null : power.value / 100;
@@ -330,9 +349,14 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
 
   // Ogni area è piena dal suo valore di riferimento in su
   const full = (key: BaseArea, value: number | null) => (value === null ? null : Math.min(1, value / AREA_FULL[key]));
+  // Difesa: tipi e robustezza, ognuno pieno dal suo riferimento; Offesa: quanto colpiscono forte (nello stall: Statistiche)
+  const bulkShare = BULK_SHARE[analysis.needs.archetype];
+  const defense = bulk === null ? full('defense', typeDefense)
+    : (1 - bulkShare) * full('defense', typeDefense)! + bulkShare * Math.min(1, bulk / BULK_FULL);
+  const attack = archetype ? full('strength', strength) : offense === null ? null : Math.min(1, offense / OFFENSE_FULL);
   const raw: Record<AreaKey, number | null> = {
-    defense: full('defense', defense), coverage: full('coverage', coverage), roles: full('roles', roles),
-    strength: full('strength', strength), speed: full('speed', speed), meta: null,
+    defense, coverage: full('coverage', coverage), roles: full('roles', roles),
+    strength: attack, speed: full('speed', speed), meta: null,
   };
   const available = BASE_AREAS.filter(key => raw[key] !== null && weightsFor[key] > 0);
   let score = sum(available.map(key => weightsFor[key] * raw[key]!)) / sum(available.map(key => weightsFor[key]));
@@ -352,7 +376,7 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
     .filter(key => (key === 'meta' ? !!meta : weightsFor[key] > 0))
     .map(key => ({
       key,
-      label: t(lang, `area.${key}`),
+      label: t(lang, key === 'strength' && archetype ? 'area.strengthStall' : `area.${key}`),
       value: raw[key] === null ? null : Math.round(100 * raw[key]!),
     }));
   const base = Math.round(100 * score);
