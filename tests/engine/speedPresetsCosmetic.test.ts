@@ -1,3 +1,4 @@
+import { DEFAULT_RULES } from '../../src/engine/formatRules';
 import { describe, expect, it } from 'vitest';
 import { coachTeam } from '../../src/engine/coach';
 import type { EngineData } from '../../src/engine/data';
@@ -16,21 +17,21 @@ describe('Controllo velocità: solo con mosse che la controllano', () => {
   const gardevoir = set('Gardevoir', ['Hyper Voice', 'Mystical Fire', 'Psyshock', 'Calm Mind'], 'Gardevoirite');
 
   it('essere veloci non è controllo velocità (Mega Gardevoir, Scarf)', () => {
-    expect(detectRoles(gardevoir)).not.toContain('speed');
-    expect(detectRoles(set('Landorus-Therian', ['Earthquake', 'U-turn'], 'Choice Scarf'))).not.toContain('speed');
+    expect(detectRoles(gardevoir, DEFAULT_RULES)).not.toContain('speed');
+    expect(detectRoles(set('Landorus-Therian', ['Earthquake', 'U-turn'], 'Choice Scarf'), DEFAULT_RULES)).not.toContain('speed');
   });
 
   it('paralisi, Sticky Web, Trick Room, Tailwind, Icy Wind sì', () => {
     for (const move of ['Thunder Wave', 'Glare', 'Nuzzle', 'Stun Spore', 'Sticky Web', 'Trick Room', 'Tailwind', 'Icy Wind', 'Electroweb']) {
-      expect(detectRoles(set('Clefable', ['Moonblast', move]))).toContain('speed');
+      expect(detectRoles(set('Clefable', ['Moonblast', move]), DEFAULT_RULES)).toContain('speed');
     }
   });
 
   it('per giudicare il team la velocità resta coperta anche da un membro veloce o con Scarf', () => {
-    expect(teamRoles(gardevoir)).toContain('speed');
-    expect(teamRoles(set('Great Tusk', ['Headlong Rush'], 'Choice Scarf'))).toContain('speed');
+    expect(teamRoles(gardevoir, DEFAULT_RULES)).toContain('speed');
+    expect(teamRoles(set('Great Tusk', ['Headlong Rush'], 'Choice Scarf'), DEFAULT_RULES)).toContain('speed');
     // Velocità coperta dai membri veloci; il controllo velocità (mosse) resta un bisogno a parte
-    const missing = teamNeeds([gardevoir, tusk]).missing.map(m => m.need);
+    const missing = teamNeeds([gardevoir, tusk], DEFAULT_RULES).missing.map(m => m.need);
     expect(missing).not.toContain('speed');
     expect(missing).toContain('speedControl');
   });

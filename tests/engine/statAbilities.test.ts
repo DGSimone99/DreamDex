@@ -1,3 +1,4 @@
+import { DEFAULT_RULES } from '../../src/engine/formatRules';
 import { describe, expect, it } from 'vitest';
 import { effectiveStats } from '../../src/engine/dex';
 import { memberPower } from '../../src/engine/power';
@@ -25,6 +26,6 @@ describe('abilità che cambiano le statistiche', () => {
     const plain = memberPower(set('Medicham', '', 'Pure Power', ['Close Combat', 'Zen Headbutt']))!;
     expect(pure.offense).toBeGreaterThan(90);
     expect(pure.power).toBeGreaterThan(plain.power);
-    expect(detectRoles(set('Azumarill', 'Choice Band', 'Huge Power', ['Liquidation', 'Aqua Jet']))).toContain('wallbreaker');
+    expect(detectRoles(set('Azumarill', 'Choice Band', 'Huge Power', ['Liquidation', 'Aqua Jet']), DEFAULT_RULES)).toContain('wallbreaker');
   });
 });

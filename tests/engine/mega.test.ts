@@ -1,3 +1,4 @@
+import { DEFAULT_RULES } from '../../src/engine/formatRules';
 import { describe, expect, it } from 'vitest';
 import { analyzeTeam, checksThreat } from '../../src/engine/analysis';
 import type { EngineData } from '../../src/engine/data';
@@ -53,8 +54,8 @@ describe('Mega Evoluzioni e forme Primal', () => {
   });
 
   it('statistiche base della forma Mega per i ruoli', () => {
-    expect(detectRoles(lopunny)).toContain('wallbreaker'); // Lopunny-Mega: Atk 136 (base: 76)
-    expect(detectRoles(set('Lopunny', 'Leftovers'))).not.toContain('wallbreaker');
+    expect(detectRoles(lopunny, DEFAULT_RULES)).toContain('wallbreaker'); // Lopunny-Mega: Atk 136 (base: 76)
+    expect(detectRoles(set('Lopunny', 'Leftovers'), DEFAULT_RULES)).not.toContain('wallbreaker');
   });
 
   it('le statistiche Smogon usano il nome della forma Mega', () => {

@@ -1,7 +1,8 @@
+import { DEFAULT_RULES } from '../../src/engine/formatRules';
 import { describe, expect, it } from 'vitest';
 import { AREA_WEIGHTS, META_WEIGHT, rateTeam, STALL_AREA_WEIGHTS } from '../../src/engine/rating';
 import { memberPower, teamPower } from '../../src/engine/power';
-import { isPassive } from '../../src/engine/roles';
+import { detectRoles, isPassive } from '../../src/engine/roles';
 import { metaTypeWeights } from '../../src/engine/stats';
 import { superEffectiveMove, TYPES } from '../../src/engine/types';
 
@@ -104,11 +105,11 @@ describe('membro passivo e riconoscimento dello stall', () => {
   ];
 
   it('passivo: al massimo 2 attacchi, non sweeper veloce con setup, muro o con recupero', () => {
-    expect(isPassive(sableyeStall[0])).toBe(true);
-    expect(isPassive(sableyeStall[3])).toBe(true);
-    expect(isPassive(setupBalance[1])).toBe(false);
-    expect(isPassive(setupBalance[5])).toBe(false);
-    expect(isPassive(set('Great Tusk', 'Leftovers', 'Protosynthesis', ['Headlong Rush', 'Ice Spinner', 'Close Combat', 'Rapid Spin'], 'Jolly', {}))).toBe(false);
+    expect(isPassive(sableyeStall[0], detectRoles(sableyeStall[0], DEFAULT_RULES))).toBe(true);
+    expect(isPassive(sableyeStall[3], detectRoles(sableyeStall[3], DEFAULT_RULES))).toBe(true);
+    expect(isPassive(setupBalance[1], detectRoles(setupBalance[1], DEFAULT_RULES))).toBe(false);
+    expect(isPassive(setupBalance[5], detectRoles(setupBalance[5], DEFAULT_RULES))).toBe(false);
+    expect(isPassive(set('Great Tusk', 'Leftovers', 'Protosynthesis', ['Headlong Rush', 'Ice Spinner', 'Close Combat', 'Rapid Spin'], 'Jolly', {}), detectRoles(set('Great Tusk', 'Leftovers', 'Protosynthesis', ['Headlong Rush', 'Ice Spinner', 'Close Combat', 'Rapid Spin'], 'Jolly', {}), DEFAULT_RULES))).toBe(false);
   });
 
   it('lo stall con Mega Sableye è riconosciuto', () => {

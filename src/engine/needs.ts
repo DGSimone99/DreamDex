@@ -1,5 +1,6 @@
 import { teamArchetype, type Archetype } from './archetype';
 import { attackStyle, detectRoles, roleLabel, teamRoles, type Role } from './roles';
+import type { FormatRules } from './formatRules';
 import type { TeamSet } from './sets';
 import { t, type Lang } from '../i18n';
 
@@ -35,8 +36,8 @@ export const NEEDS_BY_ARCHETYPE: Record<Archetype, Record<Need, number>> = {
 };
 
 /** Il membro soddisfa il bisogno: il controllo velocità vuole le mosse, la velocità basta che sia veloce. */
-export function meetsNeed(need: Need, set: TeamSet): boolean {
-  const roles = need === 'speedControl' ? detectRoles(set) : teamRoles(set);
+export function meetsNeed(need: Need, set: TeamSet, rules: FormatRules): boolean {
+  const roles = need === 'speedControl' ? detectRoles(set, rules) : teamRoles(set, rules);
   return NEED_ROLES[need].some(role => roles.includes(role));
 }
 
@@ -55,19 +56,21 @@ export interface TeamNeeds {
   missingRoles: Role[];
   /** Tipo di attaccante che manca del tutto (team con almeno 4 attaccanti tutti dello stesso tipo, non stall). */
   needStyle: 'physical' | 'special' | null;
+  /** Regole del formato con cui sono stati riconosciuti i ruoli (per giudicare allo stesso modo i candidati). */
+  rules: FormatRules;
 }
 
 
 /** Archetipo con cui giudicare i ruoli del team. */
-export function needsArchetype(team: TeamSet[]): Archetype {
-  return teamArchetype(team)?.archetype ?? 'balance';
+export function needsArchetype(team: TeamSet[], rules: FormatRules): Archetype {
+  return teamArchetype(team, rules)?.archetype ?? 'balance';
 }
 
-export function teamNeeds(team: TeamSet[]): TeamNeeds {
-  const archetype = needsArchetype(team);
+export function teamNeeds(team: TeamSet[], rules: FormatRules): TeamNeeds {
+  const archetype = needsArchetype(team, rules);
   const weights = NEEDS_BY_ARCHETYPE[archetype];
   const required = NEEDS.filter(need => weights[need] > 0);
-  const covered = required.filter(need => team.some(set => meetsNeed(need, set)));
+  const covered = required.filter(need => team.some(set => meetsNeed(need, set, rules)));
   const missing = required.filter(need => !covered.includes(need)).map(need => ({ need, weight: weights[need] }));
   const styles = team.map(attackStyle);
   const physical = styles.filter(s => s === 'physical' || s === 'mixed').length;
@@ -79,6 +82,7 @@ export function teamNeeds(team: TeamSet[]): TeamNeeds {
     missing,
     missingRoles: missing.flatMap(m => NEED_ROLES[m.need]),
     needStyle: lopsided ? (physical === 0 ? 'physical' : 'special') : null,
+    rules,
   };
 }
 

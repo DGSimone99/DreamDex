@@ -1,8 +1,9 @@
+import { DEFAULT_RULES } from '../../src/engine/formatRules';
 import { describe, expect, it } from 'vitest';
 import { coachTeam } from '../../src/engine/coach';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
 import { rateTeam } from '../../src/engine/rating';
-import { isPassive } from '../../src/engine/roles';
+import { detectRoles, isPassive } from '../../src/engine/roles';
 import { emptySet, mostCommonSet, type TeamSet } from '../../src/engine/sets';
 import { fixtureData, fixtureStats } from '../fixtures/data';
 
@@ -51,7 +52,7 @@ describe('sostituzioni in uno stall', () => {
 
   it('un muro passivo si sostituisce solo con un altro passivo, e il team resta stall', () => {
     for (const swap of coachTeam(stall, DEFAULT_FORMAT, fixtureData).swaps) {
-      expect(isPassive(swap.set)).toBe(true);
+      expect(isPassive(swap.set, detectRoles(swap.set, DEFAULT_RULES))).toBe(true);
       expect(rateTeam(swapped(stall, swap.index, swap.set), fixtureData)!.archetype).toBe('stall');
     }
   });

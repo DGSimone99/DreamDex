@@ -1,6 +1,7 @@
 import { battleSpecies, getMove, toID } from './dex';
 import { memberPower } from './power';
 import { detectRoles, isFast, isPassive, isStall, type Role } from './roles';
+import type { FormatRules } from './formatRules';
 import type { TeamSet } from './sets';
 import { benefits, enables, type Condition } from './synergy';
 
@@ -39,8 +40,8 @@ const fastOrSpeedSetup = (set: TeamSet) => isFast(set)
   || set.moves.some(m => { const move = getMove(m); return move?.category === 'Status' && move.target === 'self' && (move.boosts?.spe ?? 0) > 0; });
 
 /** Archetipo dal numero di muri passivi (e dal recupero e dalla robustezza per distinguere i team offensivi). */
-function archetypeOf(team: TeamSet[]): Archetype {
-  const roles = team.map(detectRoles);
+function archetypeOf(team: TeamSet[], rules: FormatRules): Archetype {
+  const roles = team.map(set => detectRoles(set, rules));
   if (isStall(team, roles)) return 'stall';
   const passive = team.filter((set, i) => isPassive(set, roles[i])).length;
   if (passive === 4 || passive === 5) return 'semiStall';
@@ -77,10 +78,10 @@ const FAST_ATTACKER_OFFENSE = 65;
 const BULKY_MEMBER = 60;
 
 /** Il Pokémon, col suo set, è adatto a un team dell'archetipo dato. */
-export function fitsArchetype(set: TeamSet, archetype: FitArchetype): boolean {
+export function fitsArchetype(set: TeamSet, archetype: FitArchetype, rules: FormatRules): boolean {
   const power = memberPower(set);
   if (!power) return false;
-  const roles = detectRoles(set);
+  const roles = detectRoles(set, rules);
   const stall = isPassive(set, roles) && power.offense < STALL_MAX_OFFENSE;
   if (archetype === 'stall') return stall;
   if (stall) return false;
@@ -110,9 +111,9 @@ const SUPPORT_ROLES: Role[] = ['hazards', 'removal', 'pivot', 'priority', 'speed
  * il wall prima solo per un muro da stall) e un ruolo di supporto. Il setup si salta per uno sweeper, che lo implica.
  * Chi porta il meteo lo mostra come supporto. Senza ruolo principale, due ruoli di supporto.
  */
-export function cardRoles(set: TeamSet): CardRole[] {
-  const roles = detectRoles(set);
-  const order = fitsArchetype(set, 'stall') ? [...WALL_ROLES, ...OFFENSIVE_ROLES] : [...OFFENSIVE_ROLES, ...WALL_ROLES];
+export function cardRoles(set: TeamSet, rules: FormatRules): CardRole[] {
+  const roles = detectRoles(set, rules);
+  const order = fitsArchetype(set, 'stall', rules) ? [...WALL_ROLES, ...OFFENSIVE_ROLES] : [...OFFENSIVE_ROLES, ...WALL_ROLES];
   const main = order.find(role => roles.includes(role));
   const weather: CardRole[] = weatherOf(set) ? ['weather'] : [];
   const support = SUPPORT_ROLES.filter(role => roles.includes(role));
@@ -122,7 +123,7 @@ export function cardRoles(set: TeamSet): CardRole[] {
 }
 
 /** Tipo di team con archetipo e stili, solo per un team completo. */
-export function teamArchetype(team: TeamSet[]): TeamArchetype | null {
+export function teamArchetype(team: TeamSet[], rules: FormatRules): TeamArchetype | null {
   if (team.length < 6 || team.some(set => !battleSpecies(set))) return null;
   const moveIds = new Set(team.flatMap(set => set.moves.map(toID)));
   const styles: TeamStyle[] = [
@@ -131,5 +132,5 @@ export function teamArchetype(team: TeamSet[]): TeamArchetype | null {
     ...(team.filter(set => hasMove(set, ATTACK_PIVOTS)).length >= VOLT_TURN_PIVOTS ? ['voltturn' as const] : []),
     ...(moveIds.has('reflect') && moveIds.has('lightscreen') ? ['screens' as const] : []),
   ];
-  return { archetype: archetypeOf(team), styles: styles.slice(0, MAX_STYLES) };
+  return { archetype: archetypeOf(team, rules), styles: styles.slice(0, MAX_STYLES) };
 }

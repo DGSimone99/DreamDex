@@ -1,3 +1,4 @@
+import { DEFAULT_RULES } from '../../src/engine/formatRules';
 import { describe, expect, it } from 'vitest';
 import { analyzeTeam } from '../../src/engine/analysis';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
@@ -11,15 +12,15 @@ const skarmory: TeamSet = { species: 'Skarmory', item: 'Rocky Helmet', ability: 
 
 describe('similarity', () => {
   it('identico = 1', () => {
-    expect(similarity(corviknight, corviknight)).toBeCloseTo(1);
+    expect(similarity(corviknight, corviknight, DEFAULT_RULES)).toBeCloseTo(1);
   });
 
   it('stessi tipi e ruolo simile battono un Pokémon diverso', () => {
-    expect(similarity(corviknight, skarmory)).toBeGreaterThan(similarity(corviknight, dragapult));
+    expect(similarity(corviknight, skarmory, DEFAULT_RULES)).toBeGreaterThan(similarity(corviknight, dragapult, DEFAULT_RULES));
   });
 
   it('Pokémon sconosciuto = 0', () => {
-    expect(similarity(corviknight, { ...skarmory, species: 'Fakemon-Xyz' })).toBe(0);
+    expect(similarity(corviknight, { ...skarmory, species: 'Fakemon-Xyz' }, DEFAULT_RULES)).toBe(0);
   });
 });
 
