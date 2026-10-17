@@ -43,7 +43,19 @@ export function teamFormeOf(speciesName: string, evs: Partial<Record<'atk' | 'sp
  * La specie in battaglia: Showdown esporta le Mega come specie base + pietra
  * (es. "Lopunny @ Lopunnite"), ma tipi, statistiche e dati Smogon sono della forma Mega.
  */
+// Dipende solo da specie e strumento: si calcola una volta per coppia (il voto la chiede migliaia di volte)
+const battleSpeciesCache = new Map<string, Species | null>();
 export function battleSpecies(set: { species: string; item: string }): Species | null {
+  const key = `${set.species}|${set.item}`;
+  let cached = battleSpeciesCache.get(key);
+  if (cached === undefined) {
+    cached = findBattleSpecies(set);
+    battleSpeciesCache.set(key, cached);
+  }
+  return cached;
+}
+
+function findBattleSpecies(set: { species: string; item: string }): Species | null {
   const species = getSpecies(set.species);
   if (!species || !set.item) return species;
   const item = dex.items.get(set.item);
@@ -101,10 +113,16 @@ export const battleName = (set: { species: string; item: string }): string =>
 export const isMega = (set: { species: string; item: string }): boolean =>
   !!battleSpecies(set)?.isMega;
 
+const moveCache = new Map<string, Move | null>();
 export function getMove(name: string): Move | null {
   if (!name) return null;
-  const move = dex.moves.get(name);
-  return move?.exists ? move : null;
+  let move = moveCache.get(name);
+  if (move === undefined) {
+    const found = dex.moves.get(name);
+    move = found?.exists ? found : null;
+    moveCache.set(name, move);
+  }
+  return move;
 }
 
 export function isSelectable(species: Species): boolean {

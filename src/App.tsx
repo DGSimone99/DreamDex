@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { analyzeTeam } from './engine/analysis';
 import { coachTeam, type SwapPreview } from './engine/coach';
 import { rateTeam } from './engine/rating';
@@ -99,7 +99,10 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
       : current?.index === next.index && current.replacement === next.replacement ? null : current));
   const analysis = useMemo(() => analyzeTeam(team, data), [team, data]);
   const rating = useMemo(() => rateTeam(team, data, lang), [team, data, lang]);
-  const coaching = useMemo(() => coachTeam(team, format, data, lang), [team, format, data, lang]);
+  // Il coach prova gli scambi per ogni membro (un decimo di secondo): si aggiorna subito dopo il team, senza bloccarlo
+  const coachInput = useMemo(() => ({ team, format, data, lang }), [team, format, data, lang]);
+  const coachSource = useDeferredValue(coachInput);
+  const coaching = useMemo(() => coachTeam(coachSource.team, coachSource.format, coachSource.data, coachSource.lang), [coachSource]);
 
   // Contatori delle schede: problemi del coach e minacce del meta senza check
   const problems = coaching.problems;

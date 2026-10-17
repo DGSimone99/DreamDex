@@ -1,6 +1,7 @@
 import { battleAbility, battleSpecies, effectiveStats, getMove, isDefined, toID } from './dex';
 import type { TeamSet } from './sets';
 import type { FormatRules } from './formatRules';
+import { memoBySet } from './memo';
 import { t, type Lang } from '../i18n';
 
 export type Role =
@@ -71,6 +72,9 @@ const SPEED_ABILITIES = new Set(['swiftswim', 'chlorophyll', 'sandrush', 'slushr
 const BREAKER_ITEMS = new Set(['choiceband', 'choicespecs', 'lifeorb']);
 
 export function detectRoles(set: TeamSet, rules: FormatRules): Role[] {
+  return rolesOf(set, rules);
+}
+const rolesOf = memoBySet((set: TeamSet, rules: FormatRules): Role[] => {
   const species = battleSpecies(set);
   if (!species) return [];
   const ids = set.moves.map(toID);
@@ -109,7 +113,7 @@ export function detectRoles(set: TeamSet, rules: FormatRules): Role[] {
   if (walls('spd')) roles.add('specialWall');
 
   return ROLE_ORDER.filter(role => roles.has(role));
-}
+});
 
 export type AttackStyle = 'physical' | 'special' | 'mixed' | 'none';
 
