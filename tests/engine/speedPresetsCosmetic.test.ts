@@ -7,7 +7,7 @@ import { EMPTY_FILTERS, searchCandidates } from '../../src/engine/filters';
 import { rateTeam } from '../../src/engine/rating';
 import { detectRoles, teamRoles } from '../../src/engine/roles';
 import { teamNeeds } from '../../src/engine/needs';
-import { defaultSet, emptySet, presetsFor, sameSet, type TeamSet } from '../../src/engine/sets';
+import { defaultSet, emptySet, presetsFor, presetsForSet, sameSet, type TeamSet } from '../../src/engine/sets';
 import { fixtureData, tusk } from '../fixtures/data';
 
 const set = (species: string, moves: string[], item = '', ability = ''): TeamSet => ({ ...emptySet(species), moves, item, ...(ability ? { ability } : {}) });
@@ -52,15 +52,15 @@ describe('preset di una Mega o di una Primal: quelli della specie base', () => {
     presets: { Gardevoir: [{ name: 'Specs', format: 'gen9nationaldex', set: plain }, { name: 'Mega', format: 'gen9nationaldex', set: stone }] },
   };
 
-  it('la Mega trova i preset della base, prima quelli con la sua pietra', () => {
+  it('la Mega trova i preset della base con la sua pietra', () => {
     const presets = presetsFor(data, 'Gardevoir-Mega');
-    expect(presets.map(p => p.name)).toEqual(['Mega', 'Specs']);
+    expect(presets.map(p => p.name)).toEqual(['Mega']);
   });
 
   it("il set di riferimento della Mega è il suo preset, così l'editor lo riconosce", () => {
     const mega = defaultSet(data, 'Gardevoir-Mega');
     expect(mega.item).toBe('Gardevoirite');
-    expect(presetsFor(data, mega.species).find(p => sameSet(p.set, mega))?.name).toBe('Mega');
+    expect(presetsForSet(data, mega).find(p => sameSet(p.set, mega))?.name).toBe('Mega');
   });
 
   it('senza preset con la pietra il set di riferimento resta quello di prima', () => {
@@ -68,8 +68,8 @@ describe('preset di una Mega o di una Primal: quelli della specie base', () => {
     expect(defaultSet(noStone, 'Gardevoir-Mega').item).toBe('Gardevoirite');
   });
 
-  it('la specie base non cambia', () => {
-    expect(presetsFor(data, 'Gardevoir').map(p => p.name)).toEqual(['Specs', 'Mega']);
+  it('la specie base ha solo i preset senza pietra', () => {
+    expect(presetsFor(data, 'Gardevoir').map(p => p.name)).toEqual(['Specs']);
   });
 });
 
