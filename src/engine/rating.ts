@@ -22,46 +22,18 @@ type BaseArea = Exclude<AreaKey, 'meta'>;
 const BASE_AREAS: BaseArea[] = ['coverage', 'defense', 'strength', 'bulk', 'roles', 'speed'];
 
 /**
- * Peso dell'area Velocità: è ciò che più distingue i team da torneo (i loro due più veloci superano
- * il 78% delle minacce più usate, gli altri team il 58%). Le altre aree si dividono il resto.
+ * Peso di ogni area secondo il tipo di team (somma 100): ognuno si giudica su quello con cui vince.
+ * Un hyper offense su Offesa e Velocità, uno stall su Robustezza, Coverage difensiva e Ruoli
+ * (hazard, rimozione, recupero); il balance tiene tutto quasi alla pari.
+ * Un team incompleto si giudica come balance. Con Trick Room la Velocità non conta.
  */
-export const SPEED_WEIGHT = 0.2;
-/** Proporzioni delle altre aree (Statistiche 30%). */
-const OTHER_AREAS = { defense: 0.284375, coverage: 0.21875, roles: 0.196875, strength: 0.3 };
-
-/** Pesi delle aree nel voto senza meta. Somma = 1. */
-export const AREA_WEIGHTS: Record<BaseArea, number> = {
-  defense: (1 - SPEED_WEIGHT) * OTHER_AREAS.defense,
-  coverage: (1 - SPEED_WEIGHT) * OTHER_AREAS.coverage,
-  roles: (1 - SPEED_WEIGHT) * OTHER_AREAS.roles,
-  strength: (1 - SPEED_WEIGHT) * OTHER_AREAS.strength,
-  speed: SPEED_WEIGHT,
-  // La Robustezza prende la sua parte dal peso della difesa, secondo il tipo di team (BULK_SHARE)
-  bulk: 0,
+export const ARCHETYPE_WEIGHTS: Record<Archetype, Record<BaseArea, number>> = {
+  hyperOffense: { coverage: 18, defense: 14, strength: 28, bulk: 6, roles: 14, speed: 20 },
+  bulkyOffense: { coverage: 18, defense: 16, strength: 24, bulk: 12, roles: 16, speed: 14 },
+  balance: { coverage: 16, defense: 18, strength: 18, bulk: 18, roles: 18, speed: 12 },
+  semiStall: { coverage: 14, defense: 20, strength: 12, bulk: 26, roles: 20, speed: 8 },
+  stall: { coverage: 12, defense: 22, strength: 6, bulk: 34, roles: 26, speed: 0 },
 };
-
-/**
- * Pesi per uno stall: la velocità non conta, la copertura conta la metà (attacca poco per scelta)
- * e il resto va alla difesa.
- */
-export const STALL_AREA_WEIGHTS: Record<BaseArea, number> = {
-  defense: OTHER_AREAS.defense + OTHER_AREAS.coverage / 2,
-  coverage: OTHER_AREAS.coverage / 2,
-  roles: OTHER_AREAS.roles,
-  strength: OTHER_AREAS.strength,
-  speed: 0,
-  bulk: 0,
-};
-/**
- * Quanto i pesi di un team non stall si spostano verso quelli dello stall, secondo il tipo di team:
- * un semi-stall o un balance non vincono con la velocità, e la difesa conta di più.
- */
-export const DEFENSIVE_BLEND: Record<Archetype, number> = { hyperOffense: 0, bulkyOffense: 0, balance: 0.3, semiStall: 0.6, stall: 0.6 };
-const blendWeights = (amount: number): Record<BaseArea, number> => Object.fromEntries((Object.keys(AREA_WEIGHTS) as BaseArea[])
-  .map(key => [key, (1 - amount) * AREA_WEIGHTS[key] + amount * STALL_AREA_WEIGHTS[key]])) as Record<BaseArea, number>;
-
-/** Pesi per un team con Trick Room, lento per scelta: la velocità non conta, il resto come sempre. */
-const TRICK_ROOM_WEIGHTS: Record<BaseArea, number> = { ...OTHER_AREAS, speed: 0, bulk: 0 };
 
 /**
  * Quasi tutte le aree sono 1:1: la media o la quota calcolata è il valore (Offesa 90 = media dei membri 90).
@@ -82,11 +54,6 @@ export function areaValue(value: number, full: number): number {
   return Math.min(1, AREA_KNEE + (1 - AREA_KNEE) * (x - AREA_KNEE) / (perfect - AREA_KNEE));
 }
 
-/**
- * Difesa = tipi coperti + robustezza media dei membri, con una quota di robustezza che cresce col tipo di team:
- * un hyper offense vince attaccando, uno stall incassando.
- */
-export const BULK_SHARE: Record<Archetype, number> = { hyperOffense: 0.2, bulkyOffense: 0.3, balance: 0.35, semiStall: 0.45, stall: 0.5 };
 
 /**
  * Coverage in profondità: per ogni tipo, il colpo migliore del 1°, 2° e 3° membro che lo colpisce vale 70%, 20% e 10%.
@@ -162,6 +129,10 @@ export interface TeamRating {
   areas: RatingArea[];
   /** Archetipo riconosciuto che cambia il calcolo dei ruoli (per ora solo lo stall). */
   archetype: 'stall' | null;
+  /** Tipo di team con cui si sono scelti i pesi delle aree (balance per un team incompleto). */
+  teamType: Archetype;
+  /** Il team usa Trick Room: la Velocità non conta. */
+  trickRoom: boolean;
   /** Dettaglio dell'area Meta, o null se il voto è senza meta. */
   meta: MetaScore | null;
   /** Peso di ogni area nel voto (somma 1); il Meta non pesa, è una penalità. */
@@ -403,26 +374,15 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
   const bulk = average(m => m.bulk);
   const offense = average(m => m.offense);
   const trickRoom = team.some(set => set.moves.some(move => toID(move) === 'trickroom'));
-  // Con meno di sei membri il tipo di team è solo presunto (balance): niente spostamento verso la difesa
-  const blend = archetype || trickRoom || team.length < 6 ? 0 : DEFENSIVE_BLEND[analysis.needs.archetype];
-  const weightsFor = archetype ? STALL_AREA_WEIGHTS : trickRoom ? TRICK_ROOM_WEIGHTS : blendWeights(blend);
-  const strength = power.value === null ? null : power.value / 100;
+  // I pesi dal tipo di team (un team incompleto si giudica come balance); con Trick Room la Velocità non conta
+  const table = ARCHETYPE_WEIGHTS[analysis.needs.archetype];
+  const effective: Record<BaseArea, number> = trickRoom ? { ...table, speed: 0 } : table;
   // Velocità: col meta contro le minacce più usate, senza contro tutti i Pokémon
   // Velocità: contro il riferimento del formato, uguale col meta e senza (il meta conta solo nell'area Meta)
   const speed = teamSpeed(team, data);
 
-  // Coverage difensiva (tipi) e Robustezza si dividono il peso della difesa: la Robustezza conta di più in uno stall
-  const bulkShare = bulk === null ? 0 : BULK_SHARE[analysis.needs.archetype];
-  const effective: Record<BaseArea, number> = { ...weightsFor, defense: weightsFor.defense * (1 - bulkShare), bulk: weightsFor.defense * bulkShare };
-  // Offesa: quanto colpiscono forte i membri (nello stall: Statistiche, la robustezza dei muri passivi)
-  // Un semi-stall o un balance ha muri passivi per scelta: con la stessa quota dei pesi, l'Offesa si avvicina
-  // alle Statistiche dello stall (quanto incassano i muri, quanto colpiscono gli altri)
-  const walls = blend > 0 ? teamPower(team, team.map((set, i) => isPassive(set, memberRoles[i])), rules).value : null;
-  // Offesa, Robustezza e Statistiche 1:1: la media dei membri è il valore dell'area (89, 90, 88, 96, 100, 75 → 90)
-  const offenseArea = offense === null ? null : Math.min(1, offense);
-  const attack = archetype ? (strength === null ? null : Math.min(1, strength))
-    : offenseArea === null ? null
-    : walls === null ? offenseArea : (1 - blend) * offenseArea + blend * Math.min(1, walls / 100);
+  // Offesa e Robustezza 1:1: la media di tutti i membri è il valore dell'area (89, 90, 88, 96, 100, 75 → 90)
+  const attack = offense === null ? null : Math.min(1, offense);
   const raw: Record<AreaKey, number | null> = {
     // Coverage offensiva 1:1: un membro su ogni tipo vale 70, due 90, tre 100
     coverage: Math.min(1, coverage), defense: areaValue(typeDefense, DEFENSE_FULL), strength: attack, bulk: bulk === null ? null : Math.min(1, bulk),
@@ -448,7 +408,7 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
     .filter(key => (key === 'meta' ? !!meta : (areaWeights[key] ?? 0) > 0))
     .map(key => ({
       key,
-      label: t(lang, key === 'strength' && archetype ? 'area.strengthStall' : `area.${key}`),
+      label: t(lang, `area.${key}`),
       value: raw[key] === null ? null : Math.round(100 * raw[key]!),
     }));
   const base = Math.round(100 * score);
@@ -466,6 +426,7 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
   const coverageByMember = team.map(set => ({ species: battleName(set), types: TYPES.filter(type => superEffectiveMoves(set, type, field).length > 0).length }));
   return {
     base, penalty, bonus, power: power.members, overall, ...gradeFor(overall, lang), provisional: team.length < 6, areas, archetype, meta,
+    teamType: analysis.needs.archetype, trickRoom,
     weights: areaWeights, coverageByMember,
   };
 }

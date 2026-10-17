@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { teamPower } from '../../src/engine/power';
-import { AREA_KNEE, AREA_WEIGHTS, BULK_SHARE, COVERAGE_DEPTH, DEFENSE_FULL, DEFENSIVE_BLEND, SPEED_WEIGHT, areaValue, gradeFor, rateTeam, typeSafety } from '../../src/engine/rating';
+import { AREA_KNEE, ARCHETYPE_WEIGHTS, COVERAGE_DEPTH, DEFENSE_FULL, areaValue, gradeFor, rateTeam, typeSafety } from '../../src/engine/rating';
 import { memberPower } from '../../src/engine/power';
 
 // Offesa 1:1: la media dei percentili d'attacco dei membri
@@ -29,13 +29,15 @@ describe('gradeFor', () => {
 });
 
 describe('pesi delle aree', () => {
-  it('5 aree senza meta: Velocità al 20%, le altre nelle proporzioni di prima (Statistiche 30% del resto), somma 1', () => {
-    expect(AREA_WEIGHTS.speed).toBe(SPEED_WEIGHT);
-    expect(AREA_WEIGHTS.strength).toBeCloseTo(0.3 * (1 - SPEED_WEIGHT));
-    // Difesa, Coverage e Ruoli restano nelle proporzioni di prima (32,5 : 25 : 22,5)
-    expect(AREA_WEIGHTS.defense / AREA_WEIGHTS.coverage).toBeCloseTo(1.3);
-    expect(AREA_WEIGHTS.coverage / AREA_WEIGHTS.roles).toBeCloseTo(0.25 / 0.225);
-    expect(Object.values(AREA_WEIGHTS).reduce((a, b) => a + b, 0)).toBeCloseTo(1);
+  it('una tabella per tipo di team, ogni riga somma 100: ognuno si giudica su quello con cui vince', () => {
+    for (const row of Object.values(ARCHETYPE_WEIGHTS)) expect(Object.values(row).reduce((a, b) => a + b, 0)).toBe(100);
+    const { hyperOffense: ho, balance, stall } = ARCHETYPE_WEIGHTS;
+    // L'hyper offense vince con Offesa e Velocità, lo stall con Robustezza e Ruoli; il balance sta nel mezzo
+    expect(ho.strength).toBeGreaterThan(stall.strength);
+    expect(ho.speed).toBeGreaterThan(balance.speed);
+    expect(stall.speed).toBe(0);
+    expect(stall.bulk).toBeGreaterThan(balance.bulk);
+    expect(balance.bulk).toBeGreaterThan(ho.bulk);
   });
 });
 
@@ -66,8 +68,9 @@ describe('rateTeam', () => {
     expect(value(rating, 'defense')).toBe(defenseShown(100 * defense));
     const bulk = [tusk, gholdengo].reduce((a, s) => a + memberPower(s)!.bulk, 0) / 2 / 100;
     expect(value(rating, 'bulk')).toBe(Math.round(100 * Math.min(1, bulk)));
-    // Le due si dividono il peso della difesa: per un balance (team incompleto) il 35% va alla Robustezza
-    expect(rating.weights.bulk! / (rating.weights.bulk! + rating.weights.defense!)).toBeCloseTo(BULK_SHARE.balance);
+    // Un team incompleto si giudica come balance
+    expect(rating.weights.bulk!).toBeCloseTo(ARCHETYPE_WEIGHTS.balance.bulk / 100);
+    expect(rating.weights.defense!).toBeCloseTo(ARCHETYPE_WEIGHTS.balance.defense / 100);
     // Coverage in profondità: per tipo, il colpo migliore di ogni membro, 70% al primo e 20% al secondo
     const w = UNIFORM_TYPE_WEIGHTS;
     const coverage = TYPES.reduce((acc, type) => {
@@ -130,13 +133,6 @@ describe('cima delle aree', () => {
 
 
 describe('pesi secondo il tipo di team', () => {
-  it('offense invariato; balance e semi-stall si spostano verso i pesi dello stall', () => {
-    expect(DEFENSIVE_BLEND.hyperOffense).toBe(0);
-    expect(DEFENSIVE_BLEND.bulkyOffense).toBe(0);
-    expect(DEFENSIVE_BLEND.balance).toBeGreaterThan(0);
-    expect(DEFENSIVE_BLEND.semiStall).toBeGreaterThan(DEFENSIVE_BLEND.balance);
-  });
-
   it('un team incompleto non si sposta: il suo tipo è solo presunto', () => {
     const rating = rateTeam([tusk, gholdengo], fixtureData)!;
     expect(rating.weights.speed!).toBeGreaterThan(0);
