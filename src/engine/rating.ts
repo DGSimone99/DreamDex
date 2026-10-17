@@ -3,6 +3,7 @@ import type { EngineData } from './data';
 import { battleName, battleSpecies, toID } from './dex';
 import { hitQuality, memberPower, teamPower, type MemberPower } from './power';
 import { attackStyle, detectRoles, isPassive, isStall, teamRoles } from './roles';
+import { rulesOf, type FormatRules } from './formatRules';
 import { needCoverage } from './needs';
 import { strengthComponent } from './scoring';
 import { usageOf } from './stats';
@@ -148,8 +149,8 @@ export const WEAK_POWER = 30;
 const UTILITY_ROLES = ['hazards', 'removal', 'speed'] as const;
 
 /** Il membro porta un'utilità chiave: hazard, rimozione, controllo velocità, meteo, campo o Trick Room. */
-function bringsUtility(set: TeamSet): boolean {
-  const roles = detectRoles(set);
+function bringsUtility(set: TeamSet, rules: FormatRules): boolean {
+  const roles = detectRoles(set, rules);
   return UTILITY_ROLES.some(role => roles.includes(role)) || enables(set).length > 0;
 }
 /** Attaccanti minimi perché un team tutto fisico o tutto speciale sia una scelta e non un caso. */
@@ -159,19 +160,20 @@ const ONE_STYLE_ATTACKERS = 4;
  * Membri deboli senza utilità chiave (−3, −7, −12…; non dipende dal meta: Pelipper che porta la pioggia è esente)
  * e team senza attaccanti fisici o speciali (−3; mai per uno stall, che attacca poco per scelta).
  */
-export function memberIssues(team: TeamSet[], lang: Lang = 'it'): Redundancy[] {
+export function memberIssues(team: TeamSet[], lang: Lang, rules: FormatRules): Redundancy[] {
   const items: Redundancy[] = [];
+  const roles = team.map(set => detectRoles(set, rules));
   // La penalità cresce col numero di membri deboli: −3, −7, −12… (il k-esimo pesa 2 + k)
   let weak = 0;
-  for (const set of team) {
+  for (const [i, set] of team.entries()) {
     const power = memberPower(set);
     // Un muro passivo si giudica dalla sua robustezza (Mega Sableye), gli altri dalla forza complessiva
-    if (power && (isPassive(set) ? power.bulk : power.power) < WEAK_POWER && !bringsUtility(set)) {
+    if (power && (isPassive(set, roles[i]) ? power.bulk : power.power) < WEAK_POWER && !bringsUtility(set, rules)) {
       weak += 1;
       items.push({ text: t(lang, 'rating.redundancy.weakMember', { member: battleName(set) }), points: 2 + weak });
     }
   }
-  if (!isStall(team)) {
+  if (!isStall(team, roles)) {
     const styles = team.map(attackStyle);
     const physical = styles.filter(s => s === 'physical' || s === 'mixed').length;
     const special = styles.filter(s => s === 'special' || s === 'mixed').length;
@@ -181,6 +183,14 @@ export function memberIssues(team: TeamSet[], lang: Lang = 'it'): Redundancy[] {
     }
   }
   return items;
+}
+
+/** Regole del formato: in Ubers un team completo senza hazard perde punti (Stealth Rock è fondamentale). */
+export function formatIssues(team: TeamSet[], rules: FormatRules, lang: Lang = 'it'): Redundancy[] {
+  const hazards = team.some(set => detectRoles(set, rules).includes('hazards'));
+  return rules.noHazardsPenalty > 0 && team.length === 6 && !hazards
+    ? [{ text: t(lang, 'rating.redundancy.noHazards'), points: rules.noHazardsPenalty }]
+    : [];
 }
 
 export function redundancies(team: TeamSet[], analysis: TeamAnalysis, lang: Lang = 'it'): Redundancies {
@@ -200,7 +210,7 @@ export function redundancies(team: TeamSet[], analysis: TeamAnalysis, lang: Lang
   ];
   const items = [
     ...weaknesses, ...roleAndTypeRedundancies(team, lang), ...dependencies, ...weatherClashes(team, lang),
-    ...memberIssues(team, lang),
+    ...memberIssues(team, lang, analysis.needs.rules), ...formatIssues(team, analysis.needs.rules, lang),
   ];
   return { total: Math.min(MAX_PENALTY, sum(items.map(i => i.points))), items };
 }
@@ -241,7 +251,8 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
   const analysis = analyzeTeam(team, data);
   const weights = analysis.typeWeights;
 
-  const memberRoles = team.map(teamRoles);
+  const rules = rulesOf(data);
+  const memberRoles = team.map(set => teamRoles(set, rules));
   // Stall riconosciuto "senza esagerare": a metà tra la valutazione normale e quella da stall
   const archetype = isStall(team, memberRoles) ? 'stall' as const : null;
   // Nello stall un muro passivo non deve fare danni: conta la sua robustezza, e i suoi colpi valgono pieni

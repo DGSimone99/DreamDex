@@ -4,6 +4,7 @@ import type { EngineData } from './data';
 import { battleName, battleSpecies, dex, getSpecies, isCosmeticForme, isDefined, isMega, isTeambuildable, natDexTier, toID, withinGen } from './dex';
 import { isBannedIn, meetsTeamRules } from './formats';
 import type { Format } from './format';
+import { formatRules } from './formatRules';
 import { detectRoles, type Role } from './roles';
 import { scoreSets, uniqueFormes, type Suggestion } from './scoring';
 import { defaultSet, type TeamSet } from './sets';
@@ -99,6 +100,7 @@ function matchesTier(speciesName: string, tier: TierFilter, format: Format): boo
 
 export function matchesFilters(candidate: { species: string; set: TeamSet }, f: CandidateFilters, data: EngineData, format: Format): boolean {
   const { set } = candidate;
+  const rules = formatRules(format.formatId);
   const query = toID(f.query);
   if (query && !toID(candidate.species).includes(query)) return false;
   if (!matchesTier(candidate.species, f.tier, format)) return false;
@@ -107,12 +109,12 @@ export function matchesFilters(candidate: { species: string; set: TeamSet }, f: 
     if (!f.types.every(t => types.includes(t))) return false;
   }
   if (f.roles.length) {
-    const roles = detectRoles(set);
+    const roles = detectRoles(set, rules);
     if (!f.roles.every(r => roles.includes(r))) return false;
   }
   if (f.provides && !enables(set).some(e => e.condition === f.provides)) return false;
   if (f.benefitsFrom && !benefits(set).some(b => b.condition === f.benefitsFrom)) return false;
-  if (f.fitsArchetype && !fitsArchetype(set, f.fitsArchetype)) return false;
+  if (f.fitsArchetype && !fitsArchetype(set, f.fitsArchetype, rules)) return false;
   if (!f.resists.every(type => defensiveMultiplier(type, set) < 1)) return false;
   if (!f.hits.every(type => superEffectiveMove(set, type) !== null)) return false;
   if (!included(f.mega, isMega(set))) return false;

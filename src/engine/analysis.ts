@@ -1,5 +1,6 @@
 import type { EngineData } from './data';
 import { battleName, getSpecies, toID } from './dex';
+import { rulesOf } from './formatRules';
 import { teamNeeds, type TeamNeeds } from './needs';
 import type { TeamSet } from './sets';
 import { checkScore, metaTypeWeights, topThreats, usageOf } from './stats';
@@ -48,7 +49,7 @@ export function analyzeTeam(team: TeamSet[], data: EngineData): TeamAnalysis {
   return {
     weakness: weaknessTable(team),
     coverage: coverageTable(team),
-    needs: teamNeeds(team),
+    needs: teamNeeds(team, rulesOf(data)),
     threats: (meta ? topThreats(data.stats, THREAT_COUNT, names) : []).map(name => ({
       name,
       usage: usageOf(data.stats, name),

@@ -1,8 +1,9 @@
+import { DEFAULT_RULES } from '../../src/engine/formatRules';
 import { describe, expect, it } from 'vitest';
 import { teamArchetype } from '../../src/engine/archetype';
 import type { EngineData } from '../../src/engine/data';
 import { rateTeam } from '../../src/engine/rating';
-import { isStall } from '../../src/engine/roles';
+import { detectRoles, isStall } from '../../src/engine/roles';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
 import type { SpeciesStats } from '../../src/engine/stats';
 
@@ -19,14 +20,14 @@ const kingambit = set('Kingambit', 'Black Glasses', 'Supreme Overlord', ['Swords
 
 describe('stall e semi-stall', () => {
   it('stall: tutti e 6 i membri passivi', () => {
-    expect(isStall(walls)).toBe(true);
-    expect(teamArchetype(walls)?.archetype).toBe('stall');
+    expect(isStall(walls, (walls).map(s => detectRoles(s, DEFAULT_RULES)))).toBe(true);
+    expect(teamArchetype(walls, DEFAULT_RULES)?.archetype).toBe('stall');
   });
 
   it('5 muri e una minaccia offensiva: semi-stall, non stall', () => {
     const team = [...walls.slice(0, 5), kingambit];
-    expect(isStall(team)).toBe(false);
-    expect(teamArchetype(team)?.archetype).toBe('semiStall');
+    expect(isStall(team, (team).map(s => detectRoles(s, DEFAULT_RULES)))).toBe(false);
+    expect(teamArchetype(team, DEFAULT_RULES)?.archetype).toBe('semiStall');
   });
 });
 

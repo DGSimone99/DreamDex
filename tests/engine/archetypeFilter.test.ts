@@ -1,3 +1,4 @@
+import { DEFAULT_RULES } from '../../src/engine/formatRules';
 import { describe, expect, it } from 'vitest';
 import { fitsArchetype } from '../../src/engine/archetype';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
@@ -19,30 +20,30 @@ const corviknight = set('Corviknight', 'Leftovers', 'Pressure', ['Body Press', '
 
 describe('adatto a un archetipo', () => {
   it('stall: muri passivi, anche senza statistiche da muro (Mega Sableye)', () => {
-    for (const s of [toxapex, blissey, sableye, corviknight]) expect(fitsArchetype(s, 'stall')).toBe(true);
-    expect(fitsArchetype(koko, 'stall')).toBe(false);
+    for (const s of [toxapex, blissey, sableye, corviknight]) expect(fitsArchetype(s, 'stall', DEFAULT_RULES)).toBe(true);
+    expect(fitsArchetype(koko, 'stall', DEFAULT_RULES)).toBe(false);
   });
 
   it('un attaccante con pochi attacchi e Roost non è da stall (Kyurem): è Bulky Offense', () => {
-    expect(fitsArchetype(kyurem, 'stall')).toBe(false);
-    expect(fitsArchetype(kyurem, 'bulkyOffense')).toBe(true);
+    expect(fitsArchetype(kyurem, 'stall', DEFAULT_RULES)).toBe(false);
+    expect(fitsArchetype(kyurem, 'bulkyOffense', DEFAULT_RULES)).toBe(true);
   });
 
   it('hyper offense: attaccanti veloci, sweeper con setup, lead con hazard e Focus Sash', () => {
-    for (const s of [koko, volcarona, glimmora]) expect(fitsArchetype(s, 'hyperOffense')).toBe(true);
-    expect(fitsArchetype(toxapex, 'hyperOffense')).toBe(false);
+    for (const s of [koko, volcarona, glimmora]) expect(fitsArchetype(s, 'hyperOffense', DEFAULT_RULES)).toBe(true);
+    expect(fitsArchetype(toxapex, 'hyperOffense', DEFAULT_RULES)).toBe(false);
   });
 
   it('bulky offense: offesa e robustezza buone', () => {
-    expect(fitsArchetype(greatTusk, 'bulkyOffense')).toBe(true);
-    expect(fitsArchetype(koko, 'bulkyOffense')).toBe(false);
-    expect(fitsArchetype(blissey, 'bulkyOffense')).toBe(false);
+    expect(fitsArchetype(greatTusk, 'bulkyOffense', DEFAULT_RULES)).toBe(true);
+    expect(fitsArchetype(koko, 'bulkyOffense', DEFAULT_RULES)).toBe(false);
+    expect(fitsArchetype(blissey, 'bulkyOffense', DEFAULT_RULES)).toBe(false);
   });
 
   it('un muro da stall non è mai anche offensivo', () => {
     for (const s of [toxapex, blissey, sableye, corviknight]) {
-      expect(fitsArchetype(s, 'hyperOffense')).toBe(false);
-      expect(fitsArchetype(s, 'bulkyOffense')).toBe(false);
+      expect(fitsArchetype(s, 'hyperOffense', DEFAULT_RULES)).toBe(false);
+      expect(fitsArchetype(s, 'bulkyOffense', DEFAULT_RULES)).toBe(false);
     }
   });
 });
@@ -55,7 +56,7 @@ describe('filtro "Adatto a"', () => {
   it('i risultati sono tutti adatti all\'archetipo scelto', () => {
     const results = searchCandidates([tusk], DEFAULT_FORMAT, fixtureData, { ...EMPTY_FILTERS, fitsArchetype: 'stall' }, 500);
     expect(results.length).toBeGreaterThan(0);
-    for (const r of results) expect(fitsArchetype(r.set, 'stall')).toBe(true);
+    for (const r of results) expect(fitsArchetype(r.set, 'stall', DEFAULT_RULES)).toBe(true);
     expect(results.map(r => r.species)).toContain('Toxapex');
   });
 });

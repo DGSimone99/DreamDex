@@ -1,6 +1,7 @@
+import { DEFAULT_RULES } from '../../src/engine/formatRules';
 import { describe, expect, it } from 'vitest';
 import { teamArchetype } from '../../src/engine/archetype';
-import { isPassive } from '../../src/engine/roles';
+import { detectRoles, isPassive } from '../../src/engine/roles';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
 
 const set = (species: string, item: string, ability: string, moves: string[]): TeamSet => ({ ...emptySet(species), item, ability, moves });
@@ -43,24 +44,24 @@ const bulkyOffense = [
 
 describe('archetipo del team', () => {
   it('stall, hyper offense, balance e bulky offense dei team campione', () => {
-    expect(teamArchetype(stall)?.archetype).toBe('stall');
-    expect(teamArchetype(hyperOffense)?.archetype).toBe('hyperOffense');
-    expect(teamArchetype(balance)?.archetype).toBe('balance');
-    expect(teamArchetype(bulkyOffense)?.archetype).toBe('bulkyOffense');
+    expect(teamArchetype(stall, DEFAULT_RULES)?.archetype).toBe('stall');
+    expect(teamArchetype(hyperOffense, DEFAULT_RULES)?.archetype).toBe('hyperOffense');
+    expect(teamArchetype(balance, DEFAULT_RULES)?.archetype).toBe('balance');
+    expect(teamArchetype(bulkyOffense, DEFAULT_RULES)?.archetype).toBe('bulkyOffense');
   });
 
   it('4 membri passivi: semi-stall', () => {
     const team = [...stall.slice(0, 4), hyperOffense[1], hyperOffense[4]];
-    expect(teamArchetype(team)?.archetype).toBe('semiStall');
+    expect(teamArchetype(team, DEFAULT_RULES)?.archetype).toBe('semiStall');
   });
 
   it('attaccanti fragili non sono "bulky": hyper offense', () => {
     const weak = ['Raticate', 'Furret', 'Linoone', 'Bibarel', 'Watchog', 'Stoutland'].map(s => set(s, 'Leftovers', '', ['Body Slam', 'Crunch', 'Quick Attack', 'Swords Dance']));
-    expect(teamArchetype(weak)?.archetype).toBe('hyperOffense');
+    expect(teamArchetype(weak, DEFAULT_RULES)?.archetype).toBe('hyperOffense');
   });
 
   it('solo con il team completo', () => {
-    expect(teamArchetype(stall.slice(0, 5))).toBeNull();
+    expect(teamArchetype(stall.slice(0, 5), DEFAULT_RULES)).toBeNull();
   });
 });
 
@@ -69,21 +70,21 @@ describe('stili del team', () => {
   const swiftSwim = set('Barraskewda', 'Choice Band', 'Swift Swim', ['Liquidation', 'Close Combat', 'Aqua Jet', 'Flip Turn']);
 
   it('meteo: chi lo porta e almeno un compagno che lo sfrutta', () => {
-    expect(teamArchetype([pelipper, swiftSwim, ...bulkyOffense.slice(0, 4)])?.styles).toContain('rain');
+    expect(teamArchetype([pelipper, swiftSwim, ...bulkyOffense.slice(0, 4)], DEFAULT_RULES)?.styles).toContain('rain');
   });
 
   it('un meteo che serve solo a chi lo porta non è uno stile (sabbia di Tyranitar)', () => {
-    expect(teamArchetype(balance)?.styles).not.toContain('sand');
+    expect(teamArchetype(balance, DEFAULT_RULES)?.styles).not.toContain('sand');
   });
 
   it('Webs, Screens e Volt-turn', () => {
     const webs = [set('Ribombee', 'Focus Sash', 'Shield Dust', ['Sticky Web', 'Moonblast', 'Stun Spore', 'U-turn']), ...hyperOffense.slice(1)];
-    expect(teamArchetype(webs)?.styles).toContain('webs');
+    expect(teamArchetype(webs, DEFAULT_RULES)?.styles).toContain('webs');
     const screens = [set('Grimmsnarl', 'Light Clay', 'Prankster', ['Reflect', 'Light Screen', 'Spirit Break', 'Parting Shot']), ...hyperOffense.slice(1)];
-    expect(teamArchetype(screens)?.styles).toContain('screens');
+    expect(teamArchetype(screens, DEFAULT_RULES)?.styles).toContain('screens');
     const pivots = hyperOffense.map(s => ({ ...s, moves: [...s.moves.slice(0, 3), 'U-turn'] }));
-    expect(teamArchetype(pivots)?.styles).toContain('voltturn');
-    expect(teamArchetype(bulkyOffense)?.styles).not.toContain('voltturn');
+    expect(teamArchetype(pivots, DEFAULT_RULES)?.styles).toContain('voltturn');
+    expect(teamArchetype(bulkyOffense, DEFAULT_RULES)?.styles).not.toContain('voltturn');
   });
 
   it('al massimo due stili', () => {
@@ -91,7 +92,7 @@ describe('stili del team', () => {
       set('Ribombee', 'Focus Sash', 'Shield Dust', ['Sticky Web', 'Moonblast', 'U-turn', 'Stun Spore']),
       set('Grimmsnarl', 'Light Clay', 'Prankster', ['Reflect', 'Light Screen', 'Spirit Break', 'U-turn']),
       ...hyperOffense.slice(1, 3).map(s => ({ ...s, moves: [...s.moves.slice(0, 3), 'U-turn'] }))];
-    expect(teamArchetype(many)!.styles.length).toBeLessThanOrEqual(2);
+    expect(teamArchetype(many, DEFAULT_RULES)!.styles.length).toBeLessThanOrEqual(2);
   });
 });
 
@@ -107,12 +108,12 @@ describe('archetipi di Ubers', () => {
   ];
 
   it('un wallbreaker con setup offensivo non è un muro passivo (Necrozma con Dragon Dance)', () => {
-    expect(isPassive(deoSpeed[3])).toBe(false);
+    expect(isPassive(deoSpeed[3], detectRoles(deoSpeed[3], DEFAULT_RULES))).toBe(false);
     // Dondozo con Curse resta un muro: Curse alza l'Attacco, ma Dondozo non ha statistiche da wallbreaker
-    expect(isPassive(set('Dondozo', 'Leftovers', 'Unaware', ['Curse', 'Body Press', 'Liquidation', 'Rest']))).toBe(true);
+    expect(isPassive(set('Dondozo', 'Leftovers', 'Unaware', ['Curse', 'Body Press', 'Liquidation', 'Rest']), detectRoles(set('Dondozo', 'Leftovers', 'Unaware', ['Curse', 'Body Press', 'Liquidation', 'Rest']), DEFAULT_RULES))).toBe(true);
   });
 
   it('senza muri passivi e con almeno 5 membri veloci o con setup di velocità è Hyper Offense anche se robusto', () => {
-    expect(teamArchetype(deoSpeed)?.archetype).toBe('hyperOffense');
+    expect(teamArchetype(deoSpeed, DEFAULT_RULES)?.archetype).toBe('hyperOffense');
   });
 });

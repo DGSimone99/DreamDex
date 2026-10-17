@@ -133,7 +133,7 @@ function coverageComponent(set: TeamSet, analysis: TeamAnalysis) {
 function rolesComponent(set: TeamSet, analysis: TeamAnalysis) {
   const { missing, needStyle } = analysis.needs;
   // Bisogni che mancano al team (pesati come nel voto, secondo l'archetipo) e che il candidato copre
-  const met = missing.filter(m => meetsNeed(m.need, set));
+  const met = missing.filter(m => meetsNeed(m.need, set, analysis.needs.rules));
   const filled = [...new Set(met.flatMap(m => NEED_ROLES[m.need]))];
   const style = needStyle && attackStyle(set) === needStyle ? needStyle : null;
   const total = sum(missing.map(m => m.weight)) + (needStyle ? 0.5 : 0);

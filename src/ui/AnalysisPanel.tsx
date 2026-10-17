@@ -57,8 +57,8 @@ export function AnalysisPanel({ team, analysis, rating, coaching, preview, onRep
   const { needs } = analysis;
   const ownersOf = (need: Need) => {
     // Velocità: chi controlla la velocità o, senza mosse per farlo, i membri veloci
-    return team.filter(set => meetsNeed(need, set)).map(set =>
-      need === 'speed' && !detectRoles(set).includes('speed') && isFast(set) ? tr('analysis.fastMember', { name: battleName(set) }) : battleName(set));
+    return team.filter(set => meetsNeed(need, set, needs.rules)).map(set =>
+      need === 'speed' && !detectRoles(set, needs.rules).includes('speed') && isFast(set) ? tr('analysis.fastMember', { name: battleName(set) }) : battleName(set));
   };
   const needGroups = [
     { title: tr('analysis.essential'), weight: ESSENTIAL },

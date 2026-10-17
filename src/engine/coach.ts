@@ -1,6 +1,7 @@
 import { analyzeTeam, type TeamAnalysis } from './analysis';
 import { teamArchetype, type TeamArchetype } from './archetype';
 import type { EngineData } from './data';
+import { rulesOf } from './formatRules';
 import { battleName, battleSpecies, getSpecies, isDefined, isMega, isSelectable, toID, withinGen } from './dex';
 import { formatLabel, isBannedIn, meetsTeamRules } from './formats';
 import type { Format } from './format';
@@ -148,7 +149,7 @@ function findProblems(team: TeamSet[], format: Format, analysis: TeamAnalysis, c
       fixesFor(candidates, s => missing.filter(need => NEED_ROLES[need].some(role => s.facts.roles.filled.includes(role))).length));
   }
 
-  for (const item of memberIssues(team, lang)) add('roles', false, item.text, []);
+  for (const item of memberIssues(team, lang, analysis.needs.rules)) add('roles', false, item.text, []);
   for (const item of roleAndTypeRedundancies(team, lang)) add('redundancy', false, item.text, []);
   for (const item of weatherClashes(team, lang)) add('conditions', false, item.text, []);
 
@@ -188,8 +189,11 @@ function breaksRules(set: TeamSet, format: Format): boolean {
 function findSwaps(team: TeamSet[], format: Format, data: EngineData): CoachSwap[] {
   const current = rateTeam(team, data);
   if (!current) return [];
-  const roles = team.map(detectRoles);
+  const rules = rulesOf(data);
+  const roles = team.map(set => detectRoles(set, rules));
   const stall = isStall(team, roles);
+  // In Ubers un consiglio non cambia il tipo di team (un HO resta HO), salvo per un team da C o D da ricostruire
+  const archetype = rules.keepArchetype && !['C', 'D'].includes(current.grade) ? teamArchetype(team, rules)?.archetype : undefined;
   const options = team
     .map((member, index) => {
       if (member.favorite) return null;
@@ -204,10 +208,11 @@ function findSwaps(team: TeamSet[], format: Format, data: EngineData): CoachSwap
       const rated = scored
         .filter(s =>
           s.set !== member && toID(battleName(s.set)) !== own && (illegal || s.score - self.score >= SWAP_MARGIN)
-          && (needed.length === 0 || providesAll(s.set, needed)) && (!keepPassive || isPassive(s.set)))
+          && (needed.length === 0 || providesAll(s.set, needed)) && (!keepPassive || isPassive(s.set, detectRoles(s.set, rules))))
         .slice(0, SWAP_CANDIDATES)
         .map(s => ({ s, rating: rateTeam(team.map((m, i) => (i === index ? s.set : m)), data)! }))
         .filter(x => !stall || x.rating.archetype === 'stall')
+        .filter(x => !archetype || teamArchetype(team.map((m, i) => (i === index ? x.s.set : m)), rules)?.archetype === archetype)
         .map(x => ({ s: x.s, gain: x.rating.overall - current.overall, level: classifySwap(x.rating.overall - current.overall, illegal) }))
         .filter((x): x is { s: Suggestion; gain: number; level: SwapLevel } => x.level !== null)
         .sort((a, b) => b.gain - a.gain || b.s.score - a.s.score);
@@ -235,7 +240,7 @@ function findSwaps(team: TeamSet[], format: Format, data: EngineData): CoachSwap
       replacement: pick.s.species,
       set: pick.s.set,
       score: pick.s.score,
-      similar: similarity(option.member, pick.s.set) >= SIMILAR_THRESHOLD,
+      similar: similarity(option.member, pick.s.set, rules) >= SIMILAR_THRESHOLD,
       level: pick.level,
       ratingGain: pick.gain,
       diff: diffContribution(option.member, pick.s.set, analyzeTeam(option.rest, data)),
@@ -308,12 +313,14 @@ export function coachTeam(team: TeamSet[], format: Format, data: EngineData, lan
   if (team.length < 2) {
     return { verdict: t(lang, 'coach.addTwo'), teamType: null, strengths: [], problems: [], swaps: [], threatFixes: {} };
   }
+  // Le regole del formato vengono dai dati: allineati al formato scelto
+  if (data.formatId !== format.formatId) data = { ...data, formatId: format.formatId };
   const analysis = analyzeTeam(team, data);
   const candidates = data.stats ? scoreCandidates(team, format, data) : [];
   const problems = findProblems(team, format, analysis, candidates, lang);
   return {
     verdict: verdictFor(team, problems, rateTeam(team, data, lang)?.grade ?? 'D', lang),
-    teamType: teamArchetype(team),
+    teamType: teamArchetype(team, analysis.needs.rules),
     strengths: findStrengths(team, analysis, lang),
     problems,
     swaps: data.stats ? findSwaps(team, format, data) : [],
