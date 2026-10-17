@@ -11,6 +11,7 @@ import { takeSharedTeam } from './share';
 import type { TeamSet } from './engine/sets';
 import { AnalysisPanel } from './ui/AnalysisPanel';
 import { GradeBadge } from './ui/RatingPanel';
+import { MemberSheet } from './ui/MemberSheet';
 import { SavedTeams } from './ui/SavedTeams';
 import { ShowdownPanel } from './ui/ShowdownPanel';
 import { SuggestionsPanel } from './ui/SuggestionsPanel';
@@ -133,6 +134,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
           onAllowMultipleMegas={() => setFormat(f => ({ ...f, allowMultipleMegas: true }))} />
         <GradeBadge rating={rating} />
       </div>
+      {team.length > 0 && <MemberSheet team={team} data={data} />}
       <main className="columns">
         <div className="left">
           <AnalysisPanel team={team} analysis={analysis} data={data} rating={rating} coaching={coaching}
