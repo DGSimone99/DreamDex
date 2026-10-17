@@ -46,18 +46,25 @@ export function RatingPanel({ rating, ruleIssues = [], metaMonth }: { rating: Te
         {rating.areas.map(area => {
           const text = `${area.label} ${area.value ?? 'n/d'}`;
           const section = AREA_SECTIONS[area.key];
-          // Statistiche e Meta: il dettaglio sta nel tooltip
-          // Offesa: quanto colpisce ogni membro; nello stall (Statistiche) la forza complessiva
+          // Il dettaglio per membro sta nel tooltip. Offesa: quanto colpisce ogni membro (nello stall, Statistiche: la forza);
+          // Coverage offensiva: quanti tipi colpisce; Robustezza: quanto incassa
           const tip = area.key === 'strength' && rating.power.length
             ? rating.power.map(m => `${m.species} ${rating.archetype ? m.power : m.offense}`).join('\n')
             : area.key === 'meta' && rating.meta ? t('rating.metaTip', { threats: rating.meta.threats, usage: rating.meta.usage })
             : area.key === 'speed' ? t(rating.meta ? 'rating.speedTipMeta' : 'rating.speedTipFree')
+            : area.key === 'coverage' && rating.coverageByMember.length
+              ? [t('rating.coverageTip'), ...[...rating.coverageByMember].sort((a, b) => b.types - a.types).map(m => `${m.species} ${m.types}`)].join('\n')
+            : area.key === 'bulk' && rating.power.length
+              ? [t('rating.bulkTip'), ...[...rating.power].sort((a, b) => b.bulk - a.bulk).map(m => `${m.species} ${m.bulk}`)].join('\n')
             : undefined;
           return (
             <div key={area.key}>
               <dt>
                 {section ? (
-                  <button type="button" className="area-link" title={t('rating.goTo', { section: t(section.title) })} onClick={() => goToSection(section.id)}>
+                  // Con un dettaglio, il tooltip lo mostra insieme a dove porta il clic
+                  <button type="button" className={tip ? 'area-link tip' : 'area-link'} onClick={() => goToSection(section.id)}
+                    title={tip ? undefined : t('rating.goTo', { section: t(section.title) })}
+                    data-tip={tip ? `${tip}\n${t('rating.goTo', { section: t(section.title) })}` : undefined}>
                     {text}
                   </button>
                 ) : tip ? (
