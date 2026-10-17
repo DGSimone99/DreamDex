@@ -14,10 +14,10 @@ describe('Valutazione team', () => {
     expect(rating).not.toHaveTextContent('provvisoria');
     // Il dettaglio per membro (quanto colpisce) sta nel tooltip di "Offesa"
     expect(rating).not.toHaveTextContent('Offesa: Great Tusk');
-    expect(within(rating).getByText(/^Offesa \d+$/)).toHaveAttribute('data-tip', expect.stringMatching(/^Great Tusk \d+\nGholdengo \d+$/));
+    expect(within(rating).getByText(/^Offesa \d+$/)).toHaveAttribute('data-tip', expect.stringMatching(/^(Great Tusk|Gholdengo) \d+\n(Great Tusk|Gholdengo) \d+$/));
     // Coverage difensiva (tipi) e Robustezza (quanto incassano i membri) sono due barre
     expect(rating).toHaveTextContent(/Coverage difensiva \d+/);
-    expect(within(rating).getByText(/^Robustezza \d+$/)).toHaveAttribute('data-tip', expect.stringMatching(/^Quanto incassa ogni membro\n(Great Tusk|Gholdengo) \d+\n(Great Tusk|Gholdengo) \d+$/));
+    expect(within(rating).getByText(/^Robustezza \d+$/)).toHaveAttribute('data-tip', expect.stringMatching(/^(Great Tusk|Gholdengo) \d+\n(Great Tusk|Gholdengo) \d+$/));
     expect(rating).toHaveTextContent(/Velocità \d+/);
     expect(rating).not.toHaveTextContent('Sinergia');
   });
@@ -33,12 +33,11 @@ describe('Valutazione team', () => {
     await user.click(coverage.querySelector('summary')!);
     expect(coverage).not.toHaveAttribute('open');
     const offensive = within(rating).getByRole('button', { name: /^Coverage offensiva \d+$/ });
-    // Il tooltip mostra quanti tipi colpisce ogni membro e dove porta il clic
-    expect(offensive).toHaveAttribute('data-tip', expect.stringMatching(/^Tipi colpiti super efficace \(su ogni tipo: 1 membro vale 70, 2 vale 90, 3 vale 100\)\n.+\nVai a Coverage offensiva$/s));
+    // Il tooltip mostra solo i dati (quanti tipi colpisce ogni membro) e dove porta il clic; le regole sono nel "?"
+    expect(offensive).toHaveAttribute('data-tip', expect.stringMatching(/^Tipi colpiti super efficace da ogni membro\n.+\nVai a Coverage offensiva$/s));
     await user.click(offensive);
     expect(coverage).toHaveAttribute('open');
-    expect(within(rating).getByRole('button', { name: /^Coverage difensiva \d+$/ }))
-      .toHaveAttribute('data-tip', 'Saldo su ogni tipo: immunità +2, ×¼ +1,5, ×½ +1, ×2 −1, ×4 −2. Un tipo è al sicuro da +2 in su\nVai a Debolezze difensive');
+    expect(within(rating).getByRole('button', { name: /^Coverage difensiva \d+$/ })).toHaveAttribute('title', 'Vai a Debolezze difensive');
     expect(within(rating).queryByRole('button', { name: /^Offesa/ })).toBeNull();
   });
 
@@ -102,5 +101,27 @@ describe('Valutazione team', () => {
     expect(meta).toHaveTextContent('Great Tusk 30,0%');
     expect(meta).toHaveTextContent('Gholdengo 25,0%');
     expect(meta).toHaveTextContent('Magikarp non presente nelle statistiche');
+  });
+
+  it('il "?" accanto al titolo apre come funziona il voto, senza chiudere il pannello', async () => {
+    const user = userEvent.setup();
+    render(<App initialLang="it" data={fixtureData} />);
+    for (const name of ['Great Tusk', 'Gholdengo']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
+    const panel = screen.getByRole('group', { name: 'Valutazione team' });
+    const help = within(panel).getByRole('button', { name: 'Come funziona il voto' });
+    await user.click(help);
+    expect(panel).toHaveAttribute('open');
+    const dialog = screen.getByRole('dialog', { name: 'Come funziona il voto' });
+    // A sinistra gli argomenti: come funziona, le aree, bonus e penalità
+    const topics = within(dialog).getAllByRole('tab').map(tab => tab.textContent);
+    expect(topics).toEqual(['Come funziona', 'Coverage offensiva', 'Coverage difensiva', 'Offesa', 'Robustezza', 'Ruoli', 'Velocità', 'Meta', 'Bonus e penalità']);
+    // Un team incompleto si giudica come Balance: la sua riga è evidenziata
+    expect(within(dialog).getByText('Il tuo team è giudicato come Balance')).toBeInTheDocument();
+    expect(within(dialog).getByRole('row', { current: true })).toHaveTextContent(/^Balance/);
+    await user.click(within(dialog).getByRole('tab', { name: 'Meta' }));
+    expect(within(dialog).getByRole('tabpanel')).toHaveTextContent('Sopra il 65% non cambia niente');
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(help).toHaveFocus();
   });
 });

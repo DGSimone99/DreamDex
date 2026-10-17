@@ -1,6 +1,7 @@
 import type { AreaKey, TeamRating } from '../engine/rating';
 import { Typed } from './TypeText';
 import { AlertMark } from './AlertMark';
+import { RatingHelp } from './RatingHelp';
 import type { MessageKey } from '../i18n';
 import { useT } from '../i18n/react';
 
@@ -26,7 +27,10 @@ export function RatingPanel({ rating, ruleIssues = [], metaMonth }: { rating: Te
   const t = useT();
   return (
     <details open aria-label={t('rating.title')} className="block rating">
-      <summary><span>{t('rating.title')}</span><span>{rating.grade} · {rating.overall}/100</span></summary>
+      <summary>
+        <span className="rating-title">{t('rating.title')}<RatingHelp teamType={rating.teamType} trickRoom={rating.trickRoom} /></span>
+        <span>{rating.grade} · {rating.overall}/100</span>
+      </summary>
       <p className={`grade grade-${rating.grade}`}>
         <strong>{rating.grade}</strong>
         {/* Il triangolo delle regole sta subito sopra il punteggio */}
@@ -46,17 +50,14 @@ export function RatingPanel({ rating, ruleIssues = [], metaMonth }: { rating: Te
         {rating.areas.map(area => {
           const text = `${area.label} ${area.value ?? 'n/d'}`;
           const section = AREA_SECTIONS[area.key];
-          // Il dettaglio per membro sta nel tooltip. Offesa: quanto colpisce ogni membro (nello stall, Statistiche: la forza);
-          // Coverage offensiva: quanti tipi colpisce; Robustezza: quanto incassa
+          // Nel tooltip solo i dati per membro; come si calcola ogni area lo spiega il "?" accanto al titolo
           const tip = area.key === 'strength' && rating.power.length
-            ? rating.power.map(m => `${m.species} ${rating.archetype ? m.power : m.offense}`).join('\n')
+            ? [...rating.power].sort((a, b) => b.offense - a.offense).map(m => `${m.species} ${m.offense}`).join('\n')
             : area.key === 'meta' && rating.meta ? t('rating.metaTip', { threats: rating.meta.threats, usage: rating.meta.usage })
-            : area.key === 'speed' ? t('rating.speedTip')
             : area.key === 'coverage' && rating.coverageByMember.length
               ? [t('rating.coverageTip'), ...[...rating.coverageByMember].sort((a, b) => b.types - a.types).map(m => `${m.species} ${m.types}`)].join('\n')
-            : area.key === 'defense' ? t('rating.defenseTip')
             : area.key === 'bulk' && rating.power.length
-              ? [t('rating.bulkTip'), ...[...rating.power].sort((a, b) => b.bulk - a.bulk).map(m => `${m.species} ${m.bulk}`)].join('\n')
+              ? [...rating.power].sort((a, b) => b.bulk - a.bulk).map(m => `${m.species} ${m.bulk}`).join('\n')
             : undefined;
           return (
             <div key={area.key}>
