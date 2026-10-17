@@ -1,17 +1,16 @@
 import { DEFAULT_RULES } from '../../src/engine/formatRules';
 import { describe, expect, it } from 'vitest';
-import { AREA_FULL, AREA_WEIGHTS, areaValue, COVERAGE_DEPTH, META_WEIGHT, OFFENSE_FULL, rateTeam, ROLE_COMPRESSION, SPEED_WEIGHT, STALL_AREA_WEIGHTS } from '../../src/engine/rating';
+import { AREA_WEIGHTS, COVERAGE_DEPTH, rateTeam, ROLE_COMPRESSION, SPEED_WEIGHT, STALL_AREA_WEIGHTS } from '../../src/engine/rating';
 import { meetsNeed, needCoverage, NEEDS, teamNeeds } from '../../src/engine/needs';
 
-const full = (key: keyof typeof AREA_FULL, percent: number) => Math.round(Math.min(100, percent / AREA_FULL[key]));
 import { memberPower, teamPower } from '../../src/engine/power';
 import { detectRoles, isPassive } from '../../src/engine/roles';
-import { metaTypeWeights } from '../../src/engine/stats';
+import { UNIFORM_TYPE_WEIGHTS } from '../../src/engine/analysis';
 import { superEffectiveMove, TYPES } from '../../src/engine/types';
 
 /** Copertura con ogni colpo super efficace a valore pieno, in profondità: 70/20/10 al 1°, 2° e 3° membro che colpisce il tipo. */
 const fullCoverage = (team: TeamSet[]) => {
-  const w = metaTypeWeights(fixtureData.stats);
+  const w = UNIFORM_TYPE_WEIGHTS;
   return 100 * TYPES.reduce((acc, type) => {
     const hitters = team.filter(s => superEffectiveMove(s, type)).length;
     return acc + w[type] * Math.min(1, COVERAGE_DEPTH.slice(0, hitters).reduce((a, b) => a + b, 0));
@@ -37,11 +36,12 @@ describe('team stall', () => {
   it('riconosciuto: ruoli giudicati come stall (niente sweeper né velocità richiesti)', () => {
     const rating = rateTeam(stall, fixtureData)!;
     expect(rating.archetype).toBe('stall');
-    // da stall: Hazard, Rimozione e i due Wall (1 + 1 + 1 + 1) su 4,8; mancano Pivot e Controllo velocità (utili, 0,4)
-    expect(needCoverage(teamNeeds(stall, DEFAULT_RULES))).toBeCloseTo(4 / 4.8);
+    // da stall: Hazard, Rimozione e i due Wall (1 + 1 + 1 + 1); mancano Pivot e Controllo velocità (utili, 0,4)
+    const needs = teamNeeds(stall, DEFAULT_RULES);
+    expect(needs.missing.map(m => m.need)).toEqual(['pivot', 'speedControl']);
     const jobs = stall.reduce((acc, s) => acc + NEEDS.filter(need => meetsNeed(need, s, DEFAULT_RULES)).length, 0) / stall.length;
-    const roles = (1 - ROLE_COMPRESSION) * (4 / 4.8) + ROLE_COMPRESSION * Math.min(1, jobs / 3);
-    expect(rating.areas.find(a => a.key === 'roles')!.value).toBe(full('roles', 100 * roles));
+    const roles = (1 - ROLE_COMPRESSION) * needCoverage(needs) + ROLE_COMPRESSION * Math.min(1, jobs / 3);
+    expect(rating.areas.find(a => a.key === 'roles')!.value).toBe(Math.round(100 * Math.min(1, roles)));
     // Nello stall la velocità non conta
     expect(rating.areas.map(a => a.key)).not.toContain('speed');
   });
@@ -133,20 +133,17 @@ describe('membro passivo e riconoscimento dello stall', () => {
 });
 
 describe('voto dello stall', () => {
-  // Le quattro aree coi loro pesi, poi l'area Meta per un quinto
-  // Le aree coi pesi effettivi del voto (la difesa divisa tra Coverage difensiva e Robustezza), poi l'area Meta
-  const weighted = (rating: NonNullable<ReturnType<typeof rateTeam>>) => {
-    const base = rating.areas.filter(a => a.key !== 'meta').reduce((acc, a) => acc + rating.weights[a.key]! * a.value!, 0);
-    const meta = rating.areas.find(a => a.key === 'meta');
-    return Math.round(meta ? (1 - META_WEIGHT) * base + META_WEIGHT * meta.value! : base);
-  };
+  // Le aree coi pesi effettivi del voto (la difesa divisa tra Coverage difensiva e Robustezza); il Meta non pesa
+  const weighted = (rating: NonNullable<ReturnType<typeof rateTeam>>) =>
+    Math.round(rating.areas.filter(a => a.key !== 'meta').reduce((acc, a) => acc + rating.weights[a.key]! * a.value!, 0));
   /** Quota di difesa che va alla Robustezza. */
   const bulkShare = (rating: NonNullable<ReturnType<typeof rateTeam>>) => rating.weights.bulk! / (rating.weights.bulk! + rating.weights.defense!);
 
   it('forza dei passivi dalla sola robustezza', () => {
     const rating = rateTeam(stall, fixtureData)!;
     const bulk = Math.round(stall.map(s => memberPower(s)!.bulk).reduce((a, b) => a + b, 0) / stall.length);
-    expect(rating.areas.find(a => a.key === 'strength')!.value).toBe(full('strength', bulk));
+    // Statistiche 1:1: la media è il valore dell'area
+    expect(rating.areas.find(a => a.key === 'strength')!.value).toBe(Math.min(100, bulk));
     expect(rating.areas.find(a => a.key === 'strength')!.label).toBe('Statistiche');
   });
 
@@ -165,7 +162,7 @@ describe('voto dello stall', () => {
     const rating = rateTeam(team, fixtureData)!;
     expect(Math.abs(rating.base - weighted(rating))).toBeLessThanOrEqual(1);
     const offense = team.reduce((a, s) => a + memberPower(s)!.offense, 0) / team.length / 100;
-    expect(rating.areas.find(a => a.key === 'strength')!.value).toBe(Math.round(100 * areaValue(offense, OFFENSE_FULL)));
+    expect(rating.areas.find(a => a.key === 'strength')!.value).toBe(Math.round(100 * Math.min(1, offense)));
     expect(rating.areas.find(a => a.key === 'strength')!.label).toBe('Offesa');
   });
 });

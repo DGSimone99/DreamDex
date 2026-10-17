@@ -2,8 +2,8 @@ import { DEFAULT_RULES } from '../../src/engine/formatRules';
 import { describe, expect, it } from 'vitest';
 import { coachTeam } from '../../src/engine/coach';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
-import { meetsNeed, needCoverage, NEEDS, NEEDS_BY_ARCHETYPE, needLabel, teamNeeds } from '../../src/engine/needs';
-import { AREA_FULL, rateTeam, ROLE_COMPRESSION } from '../../src/engine/rating';
+import { meetsNeed, needCoverage, NEEDS, NEEDS_BY_ARCHETYPE, needLabel, teamNeeds, NOT_REQUIRED, USEFUL } from '../../src/engine/needs';
+import { rateTeam, ROLE_COMPRESSION } from '../../src/engine/rating';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
 import { fixtureData } from '../fixtures/data';
 
@@ -44,12 +44,17 @@ describe('ruoli richiesti in base all\'archetipo', () => {
     expect(needs.missing.map(m => m.need)).not.toContain('offense');
   });
 
-  it('copertura pesata: essenziali 1, utili 0,4, non richiesti 0', () => {
-    // Stall: mancano Pivot e Controllo velocità (utili, sempre richiesto) → 4 su 4,8
-    expect(needCoverage(teamNeeds(stall, DEFAULT_RULES))).toBeCloseTo(4 / 4.8);
-    // Hyper offense: mancano Pivot e Controllo velocità (utili) → 3,8 su 4,6
-    expect(teamNeeds(hyperOffense, DEFAULT_RULES).missing.map(m => m.need)).toEqual(['pivot', 'speedControl']);
-    expect(needCoverage(teamNeeds(hyperOffense, DEFAULT_RULES))).toBeCloseTo(3.8 / 4.6);
+  it('copertura pesata: essenziali 1, utili 0,4, non richiesti 0,15 (contano poco, ma il 100 vuole tutti i ruoli)', () => {
+    // Stall: mancano Pivot e Controllo velocità (utili) → 4 su 4,8, più Velocità, Minaccia e Priorità non richieste
+    const stallNeeds = teamNeeds(stall, DEFAULT_RULES);
+    expect(needCoverage(stallNeeds)).toBeCloseTo((4 + NOT_REQUIRED * stallNeeds.extras.length) / (4.8 + 3 * NOT_REQUIRED));
+    // Hyper offense: mancano Pivot e Controllo velocità (utili) → 3,8 su 4,6, più i due Wall non richiesti
+    const hoNeeds = teamNeeds(hyperOffense, DEFAULT_RULES);
+    expect(hoNeeds.missing.map(m => m.need)).toEqual(['pivot', 'speedControl']);
+    expect(needCoverage(hoNeeds)).toBeCloseTo((3.8 + NOT_REQUIRED * hoNeeds.extras.length) / (4.6 + 2 * NOT_REQUIRED));
+    // Un ruolo non richiesto in più alza la copertura, uno in meno non la azzera
+    expect(NOT_REQUIRED).toBeGreaterThan(0);
+    expect(NOT_REQUIRED).toBeLessThan(USEFUL);
   });
 
   it('la minaccia offensiva è coperta da uno sweeper o da un wallbreaker', () => {
@@ -81,11 +86,11 @@ describe('voto e coach seguono i ruoli dell\'archetipo', () => {
     expect(texts).toMatch(/Ruoli mancanti:.*Hazard/);
   });
 
-  it("l'area Ruoli del voto: copertura dei ruoli dell'archetipo e compiti per membro, piena a AREA_FULL", () => {
+  it("l'area Ruoli del voto: copertura dei ruoli dell'archetipo e compiti per membro, 1:1", () => {
     const rating = rateTeam(hyperOffense, fixtureData)!;
     const jobs = hyperOffense.reduce((acc, s) => acc + NEEDS.filter(need => meetsNeed(need, s, DEFAULT_RULES)).length, 0) / hyperOffense.length;
     const roles = (1 - ROLE_COMPRESSION) * needCoverage(teamNeeds(hyperOffense, DEFAULT_RULES)) + ROLE_COMPRESSION * Math.min(1, jobs / 3);
-    expect(rating.areas.find(a => a.key === 'roles')!.value).toBe(Math.round(100 * Math.min(1, roles / AREA_FULL.roles)));
+    expect(rating.areas.find(a => a.key === 'roles')!.value).toBe(Math.round(100 * Math.min(1, roles)));
   });
 });
 

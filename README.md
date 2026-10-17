@@ -19,7 +19,7 @@ Inserisci uno o più Pokémon e DreamDex suggerisce, in ordine, quelli che compl
 
 - **Team:** card con sprite (idle animato quando apri il set), editor con preset Smogon, scelte "Più usati" in cima ai menu, spread EV pronti, Velocità finale e posto nel meta; Mega e Ultraesplosione seguono lo strumento.
 - **Suggerimenti:** classifica con punteggi (difesa, coverage, ruoli, statistiche), filtri, modalità sostituzione e Annulla.
-- **Analisi:** voto S–D con penalità e bonus (meteo del team: +1 se giova a qualcuno, −1 per ogni membro che indebolisce; stall riconosciuto, avviso se il team viola le regole del formato), coaching, debolezze, coverage, minacce, uso nel meta.
+- **Analisi:** voto S–D con penalità e bonus (meteo del team: +1 se giova a qualcuno, −1 per ogni membro che indebolisce; col meta, penalità se il team gestisce meno del 65% delle minacce; stall riconosciuto, avviso se il team viola le regole del formato), coaching, debolezze, coverage, minacce, uso nel meta.
 - **Import/Export:** testo Showdown, team salvati e link condivisibile (`#team=...`, senza server).
 
 ## Struttura

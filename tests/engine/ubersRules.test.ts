@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { teamArchetype } from '../../src/engine/archetype';
-import { coachTeam } from '../../src/engine/coach';
+import { archetypeLock, coachTeam } from '../../src/engine/coach';
 import type { EngineData } from '../../src/engine/data';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
 import { DEFAULT_RULES, formatRules, UBERS_RULES } from '../../src/engine/formatRules';
@@ -56,20 +56,25 @@ describe('regole di Ubers', () => {
   });
 
   it('in Ubers il coach non propone sostituzioni che cambiano il tipo di team (team da B in su)', () => {
-    const format = { ...DEFAULT_FORMAT, formatId: 'ubers' as const };
-    const team = ['Great Tusk', 'Gholdengo', 'Rotom-Wash', 'Kingambit', 'Toxapex', 'Corviknight'].map(n => mostCommonSet(fixtureStats, n)!);
-    expect(['S', 'A', 'B']).toContain(rateTeam(team, ubers)!.grade);
+    const format = { ...DEFAULT_FORMAT, formatId: 'ubers' as const, meta: false };
+    // Senza meta: le minacce dei dati di prova sono di OU e abbasserebbero il voto con la penalità del meta
+    const data = { ...ubers, ignoreMeta: true };
+    const team = ['Great Tusk', 'Gholdengo', 'Kingambit', 'Dragapult', 'Corviknight', 'Garchomp'].map(n => mostCommonSet(fixtureStats, n)!);
+    const grade = rateTeam(team, data)!.grade;
+    expect(['S', 'A', 'B']).toContain(grade);
     const before = teamArchetype(team, UBERS_RULES)?.archetype;
-    const swaps = coachTeam(team, format, ubers).swaps;
-    expect(swaps.length).toBeGreaterThan(0);
+    // Da B in su il tipo di team è bloccato: ogni scambio proposto lo mantiene
+    expect(archetypeLock(team, UBERS_RULES, grade)).toBe(before);
+    const swaps = coachTeam(team, format, data).swaps;
     for (const swap of swaps) expect(teamArchetype(team.map((s, i) => (i === swap.index ? swap.set : s)), UBERS_RULES)?.archetype).toBe(before);
   });
 
-  it('un team da C o D si può ancora ricostruire: lì cambiare tipo di team è il consiglio giusto', () => {
-    const format = { ...DEFAULT_FORMAT, formatId: 'ubers' as const };
-    expect(['C', 'D']).toContain(rateTeam(ho, ubers)!.grade);
-    const before = teamArchetype(ho, UBERS_RULES)?.archetype;
-    const changes = coachTeam(ho, format, ubers).swaps.filter(swap => teamArchetype(ho.map((s, i) => (i === swap.index ? swap.set : s)), UBERS_RULES)?.archetype !== before);
-    expect(changes.length).toBeGreaterThan(0);
+  it('un team da C o D si può ancora ricostruire: lì i consigli possono cambiare tipo di team', () => {
+    const grade = rateTeam(ho, ubers)!.grade;
+    expect(['C', 'D']).toContain(grade);
+    expect(archetypeLock(ho, UBERS_RULES, grade)).toBeUndefined();
+    // Da B in su il tipo di team resta quello; fuori da Ubers non si blocca mai
+    expect(archetypeLock(ho, UBERS_RULES, 'B')).toBe(teamArchetype(ho, UBERS_RULES)?.archetype);
+    expect(archetypeLock(ho, DEFAULT_RULES, 'B')).toBeUndefined();
   });
 });

@@ -1,7 +1,7 @@
 import { analyzeTeam, type TeamAnalysis } from './analysis';
-import { teamArchetype, type TeamArchetype } from './archetype';
+import { teamArchetype, type Archetype, type TeamArchetype } from './archetype';
 import type { EngineData } from './data';
-import { rulesOf } from './formatRules';
+import { rulesOf, type FormatRules } from './formatRules';
 import { battleName, battleSpecies, getSpecies, isDefined, isMega, isSelectable, toID, withinGen } from './dex';
 import { bannedParts, formatLabel, isLegalIn, pokedexOf } from './formats';
 import type { Format } from './format';
@@ -204,8 +204,7 @@ function findSwaps(team: TeamSet[], format: Format, data: EngineData): CoachSwap
   const rules = rulesOf(data);
   const roles = team.map(set => detectRoles(set, rules));
   const stall = isStall(team, roles);
-  // In Ubers un consiglio non cambia il tipo di team (un HO resta HO), salvo per un team da C o D da ricostruire
-  const archetype = rules.keepArchetype && !['C', 'D'].includes(current.grade) ? teamArchetype(team, rules)?.archetype : undefined;
+  const archetype = archetypeLock(team, rules, current.grade);
   const options = team
     .map((member, index) => {
       if (member.favorite) return null;
@@ -259,6 +258,14 @@ function findSwaps(team: TeamSet[], format: Format, data: EngineData): CoachSwap
     });
   }
   return swaps;
+}
+
+/**
+ * Il tipo di team che i consigli devono mantenere, o undefined se possono cambiarlo.
+ * In Ubers un consiglio non cambia il tipo di team (un HO resta HO), salvo per un team da C o D da ricostruire.
+ */
+export function archetypeLock(team: TeamSet[], rules: FormatRules, grade: string): Archetype | undefined {
+  return rules.keepArchetype && !['C', 'D'].includes(grade) ? teamArchetype(team, rules)?.archetype : undefined;
 }
 
 /** Giudizio breve sul team, coerente col voto; un problema di regole lo porta sempre a "da rivedere". */

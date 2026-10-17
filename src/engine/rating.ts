@@ -1,4 +1,4 @@
-import { analyzeTeam, threatScore, usesMeta, type TeamAnalysis } from './analysis';
+import { analyzeTeam, threatScore, UNIFORM_TYPE_WEIGHTS, usesMeta, type TeamAnalysis } from './analysis';
 import type { EngineData } from './data';
 import { battleName, battleSpecies, toID } from './dex';
 import { hitQuality, memberPower, teamPower, type MemberPower } from './power';
@@ -64,15 +64,15 @@ const blendWeights = (amount: number): Record<BaseArea, number> => Object.fromEn
 const TRICK_ROOM_WEIGHTS: Record<BaseArea, number> = { ...OTHER_AREAS, speed: 0, bulk: 0 };
 
 /**
- * Valore da cui un'area è piena: un team da torneo non resiste a tutto né ha sei Pokémon fortissimi,
- * e non deve servire la perfezione per arrivare in S (come l'area Meta, piena a META_FULL).
+ * Quasi tutte le aree sono 1:1: la media o la quota calcolata è il valore (Offesa 90 = media dei membri 90).
+ * La Coverage difensiva ha un riferimento: è piena all'80% del saldo perfetto (ogni tipo resistito due volte).
+ * Il Meta non entra nel voto: è una penalità (metaPenalty) e una barra informativa.
  */
-export const AREA_FULL: Record<BaseArea, number> = { defense: 0.8, coverage: 0.9, roles: 0.95, strength: 0.92, speed: 0.9, bulk: 0.9 };
+export const DEFENSE_FULL = 0.8;
 
 /**
- * Oltre il 95% del valore di riferimento l'area sale più piano: arrivare al riferimento vale circa 97,
- * il 100 solo con la perfezione (per la coverage offensiva: tre membri diversi su ogni tipo).
- * Sotto il ginocchio il valore resta quello di prima, così i voti dei team normali non cambiano.
+ * Per le aree con un riferimento: oltre il 95% del riferimento l'area sale più piano,
+ * il 100 arriva solo con la perfezione. Sotto il ginocchio il valore è lineare.
  */
 export const AREA_KNEE = 0.95;
 export function areaValue(value: number, full: number): number {
@@ -87,13 +87,6 @@ export function areaValue(value: number, full: number): number {
  * un hyper offense vince attaccando, uno stall incassando.
  */
 export const BULK_SHARE: Record<Archetype, number> = { hyperOffense: 0.2, bulkyOffense: 0.3, balance: 0.35, semiStall: 0.45, stall: 0.5 };
-/** Robustezza media (percentile) da cui l'area Robustezza è piena. */
-export const BULK_FULL = AREA_FULL.bulk;
-/**
- * Offesa media (percentile) da cui l'area Offesa è piena. L'area misura quanto colpiscono forte i membri:
- * i team da torneo stanno a 72, gli altri team buoni a 64. Nello stall resta "Statistiche" (robustezza dei muri passivi).
- */
-export const OFFENSE_FULL = 0.8;
 
 /**
  * Coverage in profondità: per ogni tipo, il colpo migliore del 1°, 2° e 3° membro che lo colpisce vale 70%, 20% e 10%.
@@ -105,14 +98,20 @@ export const COVERAGE_DEPTH = [0.7, 0.2, 0.1];
 export const ROLE_COMPRESSION = 0.3;
 const FULL_JOBS = 3;
 
-/** Peso dell'area Meta nel voto col meta; il resto è il voto senza meta. */
-export const META_WEIGHT = 0.3;
 /** Nelle minacce gestite: quota delle 3 più usate (il resto: tutte, pesate per uso). */
 export const TOP_THREATS = 0.5;
-/** Nell'area Meta: quota delle minacce gestite (il resto è l'uso dei membri nel formato). */
-export const META_THREATS = 2 / 3;
-/** Punteggio meta che vale l'area piena: i team Smogon stanno intorno a questo valore. */
-export const META_FULL = 0.78;
+
+/**
+ * Il meta è solo una penalità: un team adatto al meta non guadagna niente (il voto sono le sue aree),
+ * uno che gestisce meno del 65% delle minacce perde 1 punto ogni 4% sotto la soglia, fino a 12.
+ * Conta solo quante minacce gestisce: l'uso dei suoi Pokémon (circolare) resta un'informazione.
+ */
+export const META_FLOOR = 65;
+export const META_STEP = 4;
+export const META_MAX_PENALTY = 12;
+export function metaPenalty(threats: number): number {
+  return Math.min(META_MAX_PENALTY, Math.max(0, Math.ceil((META_FLOOR - threats) / META_STEP)));
+}
 
 /**
  * Soglie tarate sui dati reali (2026-09, 1630+): team ben costruiti 88–90,
@@ -165,9 +164,8 @@ export interface TeamRating {
   archetype: 'stall' | null;
   /** Dettaglio dell'area Meta, o null se il voto è senza meta. */
   meta: MetaScore | null;
-  /** Peso di ogni area nel voto senza meta (somma 1) e peso dell'area Meta nel voto col meta (0 senza). */
+  /** Peso di ogni area nel voto (somma 1); il Meta non pesa, è una penalità. */
   weights: Partial<Record<AreaKey, number>>;
-  metaWeight: number;
   /** Tipi colpiti super efficace da ogni membro (col meteo e il campo del team), per il tooltip della Coverage offensiva. */
   coverageByMember: { species: string; types: number }[];
 }
@@ -270,7 +268,7 @@ export function formatIssues(team: TeamSet[], rules: FormatRules, lang: Lang = '
 }
 
 export function redundancies(team: TeamSet[], analysis: TeamAnalysis, lang: Lang = 'it'): Redundancies {
-  const common = 1 / TYPES.length;
+  // Ogni membro debole scoperto oltre il primo costa 2 punti, su qualsiasi tipo (il meta conta solo nell'area Meta)
   const weaknesses = analysis.weakness
     .filter(row => row.weak - row.resist >= 2)
     .map(row => ({
@@ -278,7 +276,7 @@ export function redundancies(team: TeamSet[], analysis: TeamAnalysis, lang: Lang
         n: row.weak, type: typeName(row.type, lang),
         resistText: row.resist === 0 ? t(lang, 'rating.redundancy.noneResist') : t(lang, 'rating.redundancy.someResist', { n: row.resist }),
       }),
-      points: (row.weak - row.resist - 1) * (analysis.typeWeights[row.type] >= common ? 2 : 1),
+      points: (row.weak - row.resist - 1) * 2,
     }));
   const dependencies = [
     ...unmetBeneficiaries(team).map(i => ({ text: t(lang, 'rating.redundancy.unmet', { member: i.member, via: viaName(i.via, lang), condition: conditionLabel(i.condition, lang) }), points: 3 })),
@@ -374,7 +372,8 @@ export function gradeFor(score: number, lang: Lang = 'it'): { grade: string; lab
 export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): TeamRating | null {
   if (team.length === 0) return null;
   const analysis = analyzeTeam(team, data);
-  const weights = analysis.typeWeights;
+  // Le aree non dipendono dal meta del mese: i 18 tipi pesano uguale (il meta conta solo nell'area Meta)
+  const weights = UNIFORM_TYPE_WEIGHTS;
 
   const rules = rulesOf(data);
   const memberRoles = team.map(set => teamRoles(set, rules));
@@ -409,10 +408,9 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
   const weightsFor = archetype ? STALL_AREA_WEIGHTS : trickRoom ? TRICK_ROOM_WEIGHTS : blendWeights(blend);
   const strength = power.value === null ? null : power.value / 100;
   // Velocità: col meta contro le minacce più usate, senza contro tutti i Pokémon
-  const speed = teamSpeed(team, data, usesMeta(data) ? analysis.threats.map(x => x.name) : null);
+  // Velocità: contro il riferimento del formato, uguale col meta e senza (il meta conta solo nell'area Meta)
+  const speed = teamSpeed(team, data);
 
-  // Ogni area sale fino al suo valore di riferimento, poi più piano fino alla perfezione
-  const full = (key: BaseArea, value: number | null) => (value === null ? null : areaValue(value, AREA_FULL[key]));
   // Coverage difensiva (tipi) e Robustezza si dividono il peso della difesa: la Robustezza conta di più in uno stall
   const bulkShare = bulk === null ? 0 : BULK_SHARE[analysis.needs.archetype];
   const effective: Record<BaseArea, number> = { ...weightsFor, defense: weightsFor.defense * (1 - bulkShare), bulk: weightsFor.defense * bulkShare };
@@ -420,14 +418,15 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
   // Un semi-stall o un balance ha muri passivi per scelta: con la stessa quota dei pesi, l'Offesa si avvicina
   // alle Statistiche dello stall (quanto incassano i muri, quanto colpiscono gli altri)
   const walls = blend > 0 ? teamPower(team, team.map((set, i) => isPassive(set, memberRoles[i])), rules).value : null;
-  const offenseArea = offense === null ? null : areaValue(offense, OFFENSE_FULL);
-  const attack = archetype ? full('strength', strength)
+  // Offesa, Robustezza e Statistiche 1:1: la media dei membri è il valore dell'area (89, 90, 88, 96, 100, 75 → 90)
+  const offenseArea = offense === null ? null : Math.min(1, offense);
+  const attack = archetype ? (strength === null ? null : Math.min(1, strength))
     : offenseArea === null ? null
-    : walls === null ? offenseArea : (1 - blend) * offenseArea + blend * areaValue(walls / 100, AREA_FULL.strength);
+    : walls === null ? offenseArea : (1 - blend) * offenseArea + blend * Math.min(1, walls / 100);
   const raw: Record<AreaKey, number | null> = {
     // Coverage offensiva 1:1: un membro su ogni tipo vale 70, due 90, tre 100
-    coverage: Math.min(1, coverage), defense: full('defense', typeDefense), strength: attack, bulk: full('bulk', bulk),
-    roles: full('roles', roles), speed: full('speed', speed), meta: null,
+    coverage: Math.min(1, coverage), defense: areaValue(typeDefense, DEFENSE_FULL), strength: attack, bulk: bulk === null ? null : Math.min(1, bulk),
+    roles: Math.min(1, roles), speed: Math.min(1, speed), meta: null,
   };
   const available = BASE_AREAS.filter(key => raw[key] !== null && effective[key] > 0);
   const totalWeight = sum(available.map(key => effective[key]));
@@ -441,8 +440,8 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
     const threats = (1 - TOP_THREATS) * ((threatScore(analysis) ?? 50) / 100) + TOP_THREATS * topHandled;
     const usage = sum(team.map(set => strengthComponent(usageOf(data.stats, battleName(set))))) / team.length;
     meta = { threats: Math.round(100 * threats), usage: Math.round(100 * usage) };
-    raw.meta = areaValue(META_THREATS * threats + (1 - META_THREATS) * usage, META_FULL);
-    score = (1 - META_WEIGHT) * score + META_WEIGHT * raw.meta;
+    // La barra Meta mostra le minacce gestite; il voto resta quello delle aree
+    raw.meta = threats;
   }
   const areas = (Object.keys(raw) as AreaKey[])
     // Senza meta l'area Meta non c'è; con uno stall o Trick Room la Velocità non conta e non si mostra
@@ -453,7 +452,13 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
       value: raw[key] === null ? null : Math.round(100 * raw[key]!),
     }));
   const base = Math.round(100 * score);
-  const penalty = redundancies(team, analysis, lang);
+  const redundant = redundancies(team, analysis, lang);
+  // Penalità del meta, fuori dal tetto delle altre: un team scarso contro il meta lo paga per intero.
+  // Solo a team completo: mentre lo costruisci gestisce per forza poche minacce
+  const unready = meta && team.length === 6 ? metaPenalty(meta.threats) : 0;
+  const penalty = unready
+    ? { total: redundant.total + unready, items: [...redundant.items, { text: t(lang, 'rating.redundancy.metaUnready', { pct: meta!.threats }), points: unready }] }
+    : redundant;
   const weather = weatherBonus(team, lang);
   const tera = teraBonus(team, analysis, rules.teraBonusCap, lang);
   const bonus = { total: Math.min(MAX_BONUS, weather.total + sum(tera.map(i => i.points))), items: [...weather.items, ...tera] };
@@ -461,7 +466,7 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
   const coverageByMember = team.map(set => ({ species: battleName(set), types: TYPES.filter(type => superEffectiveMoves(set, type, field).length > 0).length }));
   return {
     base, penalty, bonus, power: power.members, overall, ...gradeFor(overall, lang), provisional: team.length < 6, areas, archetype, meta,
-    weights: areaWeights, metaWeight: meta ? META_WEIGHT : 0, coverageByMember,
+    weights: areaWeights, coverageByMember,
   };
 }
 

@@ -10,18 +10,18 @@ const withMoves = (species: string, moves: string[]): TeamSet => ({ ...emptySet(
 const items = (team: TeamSet[]) => redundancies(team, analyzeTeam(team, fixtureData)).items;
 
 describe('ridondanze', () => {
-  it('debolezze accumulate: ogni debole scoperto oltre il primo', () => {
+  it('debolezze accumulate: 2 punti per ogni debole scoperto oltre il primo, anche su un tipo raro nel meta', () => {
     const team = ['Great Tusk', 'Garchomp', 'Dragapult'].map(n => mostCommonSet(fixtureStats, n)!);
-    // Ice è raro nella fixture (peso 0): 1 punto per debole in più invece di 2
-    expect(items(team)).toContainEqual({ text: '3 membri deboli a Ice, nessuno resiste', points: 2 });
+    // Ice è raro nella fixture, ma il voto non dipende dal meta del mese
+    expect(items(team)).toContainEqual({ text: '3 membri deboli a Ice, nessuno resiste', points: 4 });
   });
 
-  it('debolezze su tipi frequenti pesano doppio', () => {
+  it('un solo debole non costa niente; tre deboli scoperti costano 4', () => {
     const team = [withMoves('Great Tusk', []), withMoves('Garchomp', []), withMoves('Toxapex', [])];
     // Ground: Toxapex debole, Tusk e Garchomp neutri → 1 solo debole, nessuna penalità
     expect(items(team).some(i => i.text.includes('Ground'))).toBe(false);
     const water = [withMoves('Great Tusk', []), withMoves('Landorus-Therian', []), withMoves('Hippowdon', [])];
-    // Water: 3 deboli, Water è frequente nella fixture → 2 punti per debole in più
+    // Water: 3 deboli scoperti → 2 punti per debole in più
     expect(items(water)).toContainEqual({ text: '3 membri deboli a Water, nessuno resiste', points: 4 });
   });
 
