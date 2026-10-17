@@ -1,16 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { teamPower } from '../../src/engine/power';
-import { AREA_FULL, AREA_WEIGHTS, BULK_FULL, BULK_SHARE, COVERAGE_DEPTH, META_WEIGHT, OFFENSE_FULL, SPEED_WEIGHT, gradeFor, rateTeam, typeSafety } from '../../src/engine/rating';
+import { AREA_FULL, AREA_KNEE, AREA_WEIGHTS, BULK_FULL, BULK_SHARE, COVERAGE_DEPTH, META_WEIGHT, OFFENSE_FULL, SPEED_WEIGHT, areaValue, gradeFor, rateTeam, typeSafety } from '../../src/engine/rating';
 import { memberPower } from '../../src/engine/power';
 
 /** Offesa media dei membri, piena a OFFENSE_FULL. */
-const offenseArea = (team: TeamSet[]) => Math.round(100 * Math.min(1, team.reduce((a, s) => a + memberPower(s)!.offense, 0) / team.length / 100 / OFFENSE_FULL));
+const offenseArea = (team: TeamSet[]) => Math.round(100 * areaValue(team.reduce((a, s) => a + memberPower(s)!.offense, 0) / team.length / 100, OFFENSE_FULL));
 import { hitQuality } from '../../src/engine/power';
 import { metaTypeWeights } from '../../src/engine/stats';
 import { superEffectiveMoves, TYPES } from '../../src/engine/types';
 
 /** Valore mostrato di un'area: piena dal suo riferimento in su (AREA_FULL). */
-const full = (key: keyof typeof AREA_FULL, percent: number) => Math.round(Math.min(100, percent / AREA_FULL[key]));
+const full = (key: keyof typeof AREA_FULL, percent: number) => Math.round(100 * areaValue(percent / 100, AREA_FULL[key]));
 import { mostCommonSet, type TeamSet } from '../../src/engine/sets';
 import { fixtureData, fixtureStats, gholdengo, tusk } from '../fixtures/data';
 
@@ -56,7 +56,7 @@ describe('rateTeam', () => {
     // Coverage difensiva: tipi (73% della perfezione, piena a 95%); Robustezza: media dei membri, piena a 90%
     expect(value(rating, 'defense')).toBe(full('defense', 73.2));
     const bulk = [tusk, gholdengo].reduce((a, s) => a + memberPower(s)!.bulk, 0) / 2 / 100;
-    expect(value(rating, 'bulk')).toBe(Math.round(100 * Math.min(1, bulk / BULK_FULL)));
+    expect(value(rating, 'bulk')).toBe(Math.round(100 * areaValue(bulk, BULK_FULL)));
     // Le due si dividono il peso della difesa: per un balance (team incompleto) il 35% va alla Robustezza
     expect(rating.weights.bulk! / (rating.weights.bulk! + rating.weights.defense!)).toBeCloseTo(BULK_SHARE.balance);
     // Coverage in profondità: per tipo, il colpo migliore di ogni membro, 70% al primo e 20% al secondo
@@ -100,3 +100,20 @@ describe('rateTeam', () => {
     expect(value(noData, 'strength')).toBe(offenseArea([tusk, gholdengo]));
   });
 });
+
+describe('cima delle aree', () => {
+  it('fino al ginocchio come prima; il riferimento vale meno di 100; il 100 solo con la perfezione', () => {
+    expect(areaValue(0.5, 0.9)).toBeCloseTo(0.5 / 0.9);
+    expect(areaValue(AREA_KNEE * 0.9, 0.9)).toBeCloseTo(AREA_KNEE);
+    expect(areaValue(0.9, 0.9)).toBeGreaterThan(AREA_KNEE);
+    expect(areaValue(0.9, 0.9)).toBeLessThan(1);
+    expect(areaValue(1, 0.9)).toBe(1);
+  });
+
+  it('coverage offensiva: un colpo per tipo non basta più per il 100, ne servono tre da membri diversi', () => {
+    // Su un tipo: 70% + 20% è il riferimento di prima (90%), solo il terzo membro porta al 100
+    expect(Math.round(100 * areaValue(0.9, AREA_FULL.coverage))).toBeLessThan(100);
+    expect(Math.round(100 * areaValue(1, AREA_FULL.coverage))).toBe(100);
+  });
+});
+

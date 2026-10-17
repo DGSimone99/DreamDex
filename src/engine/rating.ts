@@ -62,6 +62,19 @@ const TRICK_ROOM_WEIGHTS: Record<BaseArea, number> = { ...OTHER_AREAS, speed: 0,
 export const AREA_FULL: Record<BaseArea, number> = { defense: 0.95, coverage: 0.9, roles: 0.95, strength: 0.92, speed: 0.9, bulk: 0.9 };
 
 /**
+ * Oltre il 95% del valore di riferimento l'area sale più piano: arrivare al riferimento vale circa 97,
+ * il 100 solo con la perfezione (per la coverage offensiva: tre membri diversi su ogni tipo).
+ * Sotto il ginocchio il valore resta quello di prima, così i voti dei team normali non cambiano.
+ */
+export const AREA_KNEE = 0.95;
+export function areaValue(value: number, full: number): number {
+  const x = value / full;
+  if (x <= AREA_KNEE) return Math.max(0, x);
+  const perfect = 1 / full;
+  return Math.min(1, AREA_KNEE + (1 - AREA_KNEE) * (x - AREA_KNEE) / (perfect - AREA_KNEE));
+}
+
+/**
  * Difesa = tipi coperti + robustezza media dei membri, con una quota di robustezza che cresce col tipo di team:
  * un hyper offense vince attaccando, uno stall incassando.
  */
@@ -376,13 +389,13 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
   // Velocità: col meta contro le minacce più usate, senza contro tutti i Pokémon
   const speed = teamSpeed(team, data, usesMeta(data) ? analysis.threats.map(x => x.name) : null);
 
-  // Ogni area è piena dal suo valore di riferimento in su
-  const full = (key: BaseArea, value: number | null) => (value === null ? null : Math.min(1, value / AREA_FULL[key]));
+  // Ogni area sale fino al suo valore di riferimento, poi più piano fino alla perfezione
+  const full = (key: BaseArea, value: number | null) => (value === null ? null : areaValue(value, AREA_FULL[key]));
   // Coverage difensiva (tipi) e Robustezza si dividono il peso della difesa: la Robustezza conta di più in uno stall
   const bulkShare = bulk === null ? 0 : BULK_SHARE[analysis.needs.archetype];
   const effective: Record<BaseArea, number> = { ...weightsFor, defense: weightsFor.defense * (1 - bulkShare), bulk: weightsFor.defense * bulkShare };
   // Offesa: quanto colpiscono forte i membri (nello stall: Statistiche, la robustezza dei muri passivi)
-  const attack = archetype ? full('strength', strength) : offense === null ? null : Math.min(1, offense / OFFENSE_FULL);
+  const attack = archetype ? full('strength', strength) : offense === null ? null : areaValue(offense, OFFENSE_FULL);
   const raw: Record<AreaKey, number | null> = {
     coverage: full('coverage', coverage), defense: full('defense', typeDefense), strength: attack, bulk: full('bulk', bulk),
     roles: full('roles', roles), speed: full('speed', speed), meta: null,
@@ -399,7 +412,7 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
     const threats = (1 - TOP_THREATS) * ((threatScore(analysis) ?? 50) / 100) + TOP_THREATS * topHandled;
     const usage = sum(team.map(set => strengthComponent(usageOf(data.stats, battleName(set))))) / team.length;
     meta = { threats: Math.round(100 * threats), usage: Math.round(100 * usage) };
-    raw.meta = Math.min(1, (META_THREATS * threats + (1 - META_THREATS) * usage) / META_FULL);
+    raw.meta = areaValue(META_THREATS * threats + (1 - META_THREATS) * usage, META_FULL);
     score = (1 - META_WEIGHT) * score + META_WEIGHT * raw.meta;
   }
   const areas = (Object.keys(raw) as AreaKey[])
