@@ -136,7 +136,7 @@ export const it: Record<keyof typeof en, string> = {
   'rating.redundancy.noHazards': "Nessun hazard: senza Stealth Rock o Spikes gli avversari cambiano senza perdere niente",
   'rating.redundancy.oneStyle': "Nessun attaccante {style}",
   'rating.bonus.tera': "Tera {tera} di {member} copre la debolezza a {type}",
-  'rating.bonus.mitigates': "{condition} di {setter} smorza la debolezza a {type} di {member}",
+  'rating.bonus.helps': "{condition} di {setter} aiuta il team: {list}",
   'import.unreadable': "Blocco {n} non leggibile: \"{line}\"",
   'import.tooMany': "Più di 6 Pokémon: ignorato {name}",
   'import.unknown': "Pokémon sconosciuto: {name}",

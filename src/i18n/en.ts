@@ -134,7 +134,7 @@ export const en = {
   'rating.redundancy.noHazards': "No hazards: without Stealth Rock or Spikes, opponents switch in for free",
   'rating.redundancy.oneStyle': "No {style} attacker",
   'rating.bonus.tera': "Tera {tera} on {member} covers the weakness to {type}",
-  'rating.bonus.mitigates': "{condition} from {setter} softens {member}'s weakness to {type}",
+  'rating.bonus.helps': "{condition} from {setter} helps the team: {list}",
   'import.unreadable': "Block {n} can't be read: \"{line}\"",
   'import.tooMany': "More than 6 Pokémon: ignored {name}",
   'import.unknown': "Unknown Pokémon: {name}",
