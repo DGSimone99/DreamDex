@@ -1,7 +1,7 @@
 import type { EngineData } from '../engine/data';
 import type { TierOverrides } from '../engine/dex';
-import { DEFAULT_FORMAT } from '../engine/format';
-import { dataSource } from '../engine/formats';
+import { DEFAULT_FORMAT, type FormatId } from '../engine/format';
+import { dataSource, type FormatBans } from '../engine/formats';
 import type { PresetsData, SetsData } from '../engine/sets';
 import type { FallbackStats, SpeciesStats, StatsData, StatsMeta } from '../engine/stats';
 import type { GameNames } from '../i18n/game';
@@ -50,6 +50,17 @@ export async function loadTiers(loaders: Loaders = files): Promise<TierOverrides
   if (!loader) return null;
   try {
     return (await loader()) as TierOverrides;
+  } catch {
+    return null;
+  }
+}
+
+/** Ban per formato di Showdown (`data/_rules/bans.json`), o null se non scaricati. */
+export async function loadBans(loaders: Loaders = files): Promise<Partial<Record<FormatId, FormatBans>> | null> {
+  const loader = loaders['/data/_rules/bans.json'];
+  if (!loader) return null;
+  try {
+    return (await loader()) as Partial<Record<FormatId, FormatBans>>;
   } catch {
     return null;
   }

@@ -1,4 +1,5 @@
 import type { EngineData } from '../engine/data';
+import { bannedTexts } from '../engine/coach';
 import { battleAbility, battleName, battleSpecies, getSpecies, isMega, isSelectable, withinGen } from '../engine/dex';
 import { formatLabel, isLegalIn, pokedexOf, teraAllowed } from '../engine/formats';
 import type { Format } from '../engine/format';
@@ -43,6 +44,8 @@ function slotProblems(set: TeamSet, format: Format, lang: Lang): string[] {
   return [
     !isSelectable(species) || !isLegalIn(forme, format) ? t(lang, 'team.notLegal', { format: formatLabel(format, lang) }) : null,
     !withinGen(species, format) ? t(lang, 'team.beyondGen', { gen: format.genLimit }) : null,
+    // Mosse, abilità e strumenti vietati dal formato
+    ...bannedTexts(set, format, lang),
   ].filter((p): p is string => !!p);
 }
 

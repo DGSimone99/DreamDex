@@ -3,7 +3,7 @@ import { teamArchetype, type TeamArchetype } from './archetype';
 import type { EngineData } from './data';
 import { rulesOf } from './formatRules';
 import { battleName, battleSpecies, getSpecies, isDefined, isMega, isSelectable, toID, withinGen } from './dex';
-import { formatLabel, isLegalIn, pokedexOf } from './formats';
+import { bannedParts, formatLabel, isLegalIn, pokedexOf } from './formats';
 import type { Format } from './format';
 import { diffContribution, similarity, type Contribution, type Diff } from './replace';
 import { t, type Lang } from '../i18n';
@@ -134,6 +134,8 @@ function findProblems(team: TeamSet[], format: Format, analysis: TeamAnalysis, c
       add('rules', true, `${battleName(set)}: ${t(lang, 'team.illegalMoves', { list: illegal.moves.map(m => gameName('move', m, lang)).join(', ') })}`, []);
     }
     if (illegal.ability) add('rules', true, `${battleName(set)}: ${t(lang, 'team.illegalAbility', { name: gameName('ability', illegal.ability, lang) })}`, []);
+    // Mosse, abilità e strumenti vietati dal formato (Shed Tail, Moody, King's Rock…)
+    for (const text of bannedTexts(set, format, lang)) add('rules', true, `${battleName(set)}: ${text}`, []);
   }
 
   const megas = team.filter(isMega);
@@ -170,6 +172,17 @@ function findProblems(team: TeamSet[], format: Format, analysis: TeamAnalysis, c
   }
 
   return [...serious, ...minor];
+}
+
+/** Mosse, abilità e strumento del set vietati dal formato, come testi. */
+export function bannedTexts(set: TeamSet, format: Format, lang: Lang = 'it'): string[] {
+  const banned = bannedParts(set, format);
+  const where = formatLabel(format, lang);
+  return [
+    banned.moves.length ? t(lang, 'team.bannedMoves', { list: banned.moves.map(m => gameName('move', m, lang)).join(', '), format: where }) : null,
+    banned.ability ? t(lang, 'team.bannedAbility', { name: gameName('ability', banned.ability, lang), format: where }) : null,
+    banned.item ? t(lang, 'team.bannedItem', { name: gameName('item', banned.item, lang), format: where }) : null,
+  ].filter((x): x is string => !!x);
 }
 
 /** Il membro non può stare nel formato (specie vietata o fuori dalla generazione). */
