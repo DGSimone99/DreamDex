@@ -1,30 +1,44 @@
 import { teamArchetype, type Archetype } from './archetype';
-import { attackStyle, roleLabel, teamRoles, type Role } from './roles';
+import { attackStyle, detectRoles, roleLabel, teamRoles, type Role } from './roles';
 import type { TeamSet } from './sets';
 import { t, type Lang } from '../i18n';
 
-/** Ciò di cui un team ha bisogno; "offense" è una minaccia offensiva qualunque (sweeper o wallbreaker). */
-export type Need = 'hazards' | 'removal' | 'pivot' | 'speed' | 'offense' | 'priority' | 'physicalWall' | 'specialWall';
-export const NEEDS: Need[] = ['hazards', 'removal', 'pivot', 'speed', 'offense', 'priority', 'physicalWall', 'specialWall'];
+/**
+ * Ciò di cui un team ha bisogno; "offense" è una minaccia offensiva qualunque (sweeper o wallbreaker),
+ * "speed" la velocità (membri veloci o controllo velocità), "speedControl" solo le mosse che la controllano.
+ */
+export type Need = 'hazards' | 'removal' | 'pivot' | 'speed' | 'speedControl' | 'offense' | 'priority' | 'physicalWall' | 'specialWall';
+export const NEEDS: Need[] = ['hazards', 'removal', 'pivot', 'speed', 'speedControl', 'offense', 'priority', 'physicalWall', 'specialWall'];
 
 /** Ruoli che soddisfano un bisogno. */
 export const NEED_ROLES: Record<Need, Role[]> = {
-  hazards: ['hazards'], removal: ['removal'], pivot: ['pivot'], speed: ['speed'],
+  hazards: ['hazards'], removal: ['removal'], pivot: ['pivot'], speed: ['speed'], speedControl: ['speed'],
   offense: ['physicalSweeper', 'specialSweeper', 'wallbreaker'], priority: ['priority'],
   physicalWall: ['physicalWall'], specialWall: ['specialWall'],
 };
 
+/** Pesi dei bisogni: essenziale, utile, non richiesto. */
+export const ESSENTIAL = 1;
+export const USEFUL = 0.75;
+const E = ESSENTIAL, U = USEFUL;
+
 /**
- * Peso dei bisogni per archetipo: 1 essenziale, 0,5 utile, 0 non richiesto.
- * Uno stall non ha bisogno di minacce offensive né di velocità; un hyper offense non ha bisogno di wall.
+ * Peso dei bisogni per archetipo. Uno stall non ha bisogno di minacce offensive né di velocità;
+ * un hyper offense non ha bisogno di wall.
  */
 export const NEEDS_BY_ARCHETYPE: Record<Archetype, Record<Need, number>> = {
-  hyperOffense: { hazards: 1, removal: 0.5, pivot: 0.5, speed: 1, offense: 1, priority: 0.5, physicalWall: 0, specialWall: 0 },
-  bulkyOffense: { hazards: 1, removal: 1, pivot: 1, speed: 1, offense: 1, priority: 0.5, physicalWall: 0.5, specialWall: 0.5 },
-  balance: { hazards: 1, removal: 1, pivot: 1, speed: 0.5, offense: 1, priority: 0.5, physicalWall: 1, specialWall: 1 },
-  semiStall: { hazards: 1, removal: 1, pivot: 0.5, speed: 0.5, offense: 1, priority: 0, physicalWall: 1, specialWall: 1 },
-  stall: { hazards: 1, removal: 1, pivot: 0.5, speed: 0, offense: 0, priority: 0, physicalWall: 1, specialWall: 1 },
+  hyperOffense: { hazards: E, removal: U, pivot: U, speed: E, speedControl: U, offense: E, priority: U, physicalWall: 0, specialWall: 0 },
+  bulkyOffense: { hazards: E, removal: E, pivot: E, speed: E, speedControl: U, offense: E, priority: U, physicalWall: U, specialWall: U },
+  balance: { hazards: E, removal: E, pivot: E, speed: U, speedControl: U, offense: E, priority: U, physicalWall: E, specialWall: E },
+  semiStall: { hazards: E, removal: E, pivot: U, speed: U, speedControl: U, offense: E, priority: 0, physicalWall: E, specialWall: E },
+  stall: { hazards: E, removal: E, pivot: U, speed: 0, speedControl: 0, offense: 0, priority: 0, physicalWall: E, specialWall: E },
 };
+
+/** Il membro soddisfa il bisogno: il controllo velocità vuole le mosse, la velocità basta che sia veloce. */
+export function meetsNeed(need: Need, set: TeamSet): boolean {
+  const roles = need === 'speedControl' ? detectRoles(set) : teamRoles(set);
+  return NEED_ROLES[need].some(role => roles.includes(role));
+}
 
 /** Attaccanti minimi perché un team tutto fisico o tutto speciale sia una scelta e non un caso. */
 const ONE_STYLE_ATTACKERS = 4;
@@ -43,7 +57,6 @@ export interface TeamNeeds {
   needStyle: 'physical' | 'special' | null;
 }
 
-export const needCovered = (need: Need, present: Set<Role>): boolean => NEED_ROLES[need].some(role => present.has(role));
 
 /** Archetipo con cui giudicare i ruoli del team. */
 export function needsArchetype(team: TeamSet[]): Archetype {
@@ -53,16 +66,16 @@ export function needsArchetype(team: TeamSet[]): Archetype {
 export function teamNeeds(team: TeamSet[]): TeamNeeds {
   const archetype = needsArchetype(team);
   const weights = NEEDS_BY_ARCHETYPE[archetype];
-  const present = new Set(team.flatMap(teamRoles));
   const required = NEEDS.filter(need => weights[need] > 0);
-  const missing = required.filter(need => !needCovered(need, present)).map(need => ({ need, weight: weights[need] }));
+  const covered = required.filter(need => team.some(set => meetsNeed(need, set)));
+  const missing = required.filter(need => !covered.includes(need)).map(need => ({ need, weight: weights[need] }));
   const styles = team.map(attackStyle);
   const physical = styles.filter(s => s === 'physical' || s === 'mixed').length;
   const special = styles.filter(s => s === 'special' || s === 'mixed').length;
   const lopsided = archetype !== 'stall' && physical + special >= ONE_STYLE_ATTACKERS && (physical === 0 || special === 0);
   return {
     archetype, weights,
-    covered: required.filter(need => needCovered(need, present)),
+    covered,
     missing,
     missingRoles: missing.flatMap(m => NEED_ROLES[m.need]),
     needStyle: lopsided ? (physical === 0 ? 'physical' : 'special') : null,
@@ -76,9 +89,10 @@ export function needCoverage(needs: TeamNeeds): number {
   return total > 0 ? (total - missing) / total : 1;
 }
 
-/** Nome del bisogno: i ruoli col loro nome, più "Minaccia offensiva" e "Velocità" (controllo o membri veloci). */
+/** Nome del bisogno: i ruoli col loro nome, più "Minaccia offensiva" e "Velocità" (membri veloci o controllo velocità). */
 export function needLabel(need: Need, lang: Lang = 'it'): string {
   if (need === 'offense') return t(lang, 'need.offense');
   if (need === 'speed') return t(lang, 'need.speed');
+  if (need === 'speedControl') return roleLabel('speed', lang);
   return roleLabel(need, lang);
 }
