@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { analyzeTeam } from '../../src/engine/analysis';
 import { coachTeam } from '../../src/engine/coach';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
-import { MAX_BONUS, MAX_PENALTY, rateTeam, redundancies } from '../../src/engine/rating';
+import { MAX_PENALTY, rateTeam, redundancies } from '../../src/engine/rating';
 import { emptySet, mostCommonSet, type TeamSet } from '../../src/engine/sets';
 import { fixtureData, fixtureStats, gholdengo, tusk } from '../fixtures/data';
 
@@ -77,13 +77,13 @@ describe('penalità e bonus del meteo', () => {
     expect(texts(team)).toContainEqual({ text: 'Meteo in conflitto: Ninetales (Drought), Pelipper (Drizzle)', points: 3 });
   });
 
-  it('mosse indebolite dal meteo del team: −2 se STAB, −1 se coverage', () => {
+  it('mosse indebolite dal meteo del team: −1 per ogni membro, STAB o coverage', () => {
     const team = [
       { ...withMoves('Ninetales', ['Flamethrower']), ability: 'Drought' },
       withMoves('Kingdra', ['Hydro Pump']),
       withMoves('Kyurem', ['Surf']),
     ];
-    expect(texts(team)).toContainEqual({ text: 'Il sole di Ninetales indebolisce le mosse Water di Kingdra', points: 2 });
+    expect(texts(team)).toContainEqual({ text: 'Il sole di Ninetales indebolisce le mosse Water di Kingdra', points: 1 });
     expect(texts(team)).toContainEqual({ text: 'Il sole di Ninetales indebolisce le mosse Water di Kyurem', points: 1 });
   });
 
@@ -97,12 +97,16 @@ describe('penalità e bonus del meteo', () => {
     expect(problems).toContain('La pioggia di Pelipper indebolisce le mosse Fire di Ninetales');
   });
 
-  it('bonus: +2 per ogni membro riportato a neutro, massimo +6', () => {
+  it('bonus: +1 una volta sola se il meteo giova a qualcuno, comunque e a quanti', () => {
     const team = [{ ...withMoves('Ninetales', ['Flamethrower']), ability: 'Drought' }, withMoves('Great Tusk', ['Headlong Rush'])];
     const rating = rateTeam(team, fixtureData)!;
-    expect(rating.bonus).toEqual({ total: 4, items: [{ text: 'Il sole di Ninetales smorza la debolezza a Water di Ninetales, Great Tusk', points: 4 }] });
+    expect(rating.bonus).toEqual({ total: 1, items: [{ text: 'Il sole di Ninetales aiuta il team: Ninetales, Great Tusk', points: 1 }] });
     expect(rating.overall).toBe(Math.min(100, Math.max(0, rating.base - rating.penalty.total + rating.bonus.total)));
-    expect(MAX_BONUS).toBe(6);
+    // Anche un'abilità abilitata (Clorofilla) conta, ma il punto resta uno
+    const withLeafeon = [...team, { ...withMoves('Leafeon', ['Leaf Blade']), ability: 'Chlorophyll' }];
+    const bonus = rateTeam(withLeafeon, fixtureData)!.bonus;
+    expect(bonus.total).toBe(1);
+    expect(bonus.items[0].text).toContain('Leafeon');
   });
 
   it('senza meteo nessun bonus', () => {

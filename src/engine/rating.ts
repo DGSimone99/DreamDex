@@ -13,7 +13,7 @@ import type { TeamSet } from './sets';
 import { t, type Lang } from '../i18n';
 import { gameName, typeName } from '../i18n/game';
 import { effectiveness, superEffectiveMoves, teamField, TYPES } from './types';
-import { conditionConflicts, conditionLabel, enables, viaName, unmetBeneficiaries, unusedEnablers, weakenedMoves, weatherMitigations } from './synergy';
+import { benefits, conditionConflicts, conditionLabel, enables, viaName, unmetBeneficiaries, unusedEnablers, weakenedMoves, weatherMitigations, type Condition } from './synergy';
 
 export type AreaKey = 'coverage' | 'defense' | 'strength' | 'bulk' | 'roles' | 'speed' | 'meta';
 /** Le aree del voto senza meta. */
@@ -59,7 +59,20 @@ const TRICK_ROOM_WEIGHTS: Record<BaseArea, number> = { ...OTHER_AREAS, speed: 0,
  * Valore da cui un'area è piena: un team da torneo non resiste a tutto né ha sei Pokémon fortissimi,
  * e non deve servire la perfezione per arrivare in S (come l'area Meta, piena a META_FULL).
  */
-export const AREA_FULL: Record<BaseArea, number> = { defense: 0.95, coverage: 0.9, roles: 0.95, strength: 0.92, speed: 0.9, bulk: 0.9 };
+export const AREA_FULL: Record<BaseArea, number> = { defense: 0.8, coverage: 0.9, roles: 0.95, strength: 0.92, speed: 0.9, bulk: 0.9 };
+
+/**
+ * Oltre il 95% del valore di riferimento l'area sale più piano: arrivare al riferimento vale circa 97,
+ * il 100 solo con la perfezione (per la coverage offensiva: tre membri diversi su ogni tipo).
+ * Sotto il ginocchio il valore resta quello di prima, così i voti dei team normali non cambiano.
+ */
+export const AREA_KNEE = 0.95;
+export function areaValue(value: number, full: number): number {
+  const x = value / full;
+  if (x <= AREA_KNEE) return Math.max(0, x);
+  const perfect = 1 / full;
+  return Math.min(1, AREA_KNEE + (1 - AREA_KNEE) * (x - AREA_KNEE) / (perfect - AREA_KNEE));
+}
 
 /**
  * Difesa = tipi coperti + robustezza media dei membri, con una quota di robustezza che cresce col tipo di team:
@@ -186,14 +199,14 @@ export function roleAndTypeRedundancies(team: TeamSet[], lang: Lang = 'it'): Red
   return items;
 }
 
-/** Meteo/campi in conflitto (−3) e mosse indebolite dal meteo del team (−2 STAB, −1 coverage). */
+/** Meteo/campi in conflitto (−3) e −1 per ogni membro con mosse indebolite dal meteo del team. */
 export function weatherClashes(team: TeamSet[], lang: Lang = 'it'): Redundancy[] {
   const cap = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
   return [
     ...conditionConflicts(team, lang).map(c => ({ text: t(lang, 'rating.redundancy.conflict', { kind: t(lang, `conflict.${c.kind}`), list: c.setters.join(', ') }), points: 3 })),
     ...weakenedMoves(team).map(w => ({
       text: t(lang, 'rating.redundancy.weakens', { condition: cap(conditionLabel(w.condition, lang)), setter: w.setter, type: typeName(w.type, lang), member: w.member }),
-      points: w.stab ? 2 : 1,
+      points: WEATHER_HURT,
     })),
   ];
 }
@@ -270,30 +283,61 @@ export function redundancies(team: TeamSet[], analysis: TeamAnalysis, lang: Lang
   return { total: Math.min(MAX_PENALTY, sum(items.map(i => i.points))), items };
 }
 
+/** Punti di un membro contro un tipo: immunità +2, ×¼ +1,5, ×½ +1, neutro 0, ×2 −1, ×4 −2. */
+export function resistPoints(multiplier: number): number {
+  if (multiplier === 0) return 2;
+  if (multiplier <= 0.25) return 1.5;
+  if (multiplier < 1) return 1;
+  if (multiplier >= 4) return -2;
+  return multiplier > 1 ? -1 : 0;
+}
+
+/** Saldo che separa un tipo scoperto (0) da uno sicuro (1); a saldo 0 il tipo vale 0,5. */
+export const BALANCE_SPAN = 2;
+
 /**
- * Quanto il team è al sicuro da un tipo: 1 se qualcuno resiste e i deboli non superano chi resiste,
- * 0.5 se nessuno è debole né resiste, 0.25 con un debole scoperto, 0 con due o più.
+ * Quanto il team è al sicuro da un tipo, dal saldo fra resistenze e debolezze dei membri:
+ * un'immunità o due resistenze lo rendono sicuro, un ×4 o due ×2 scoperti lo lasciano scoperto.
  */
-export function typeSafety(weak: number, resist: number): number {
-  if (weak > resist) return weak - resist === 1 ? 0.25 : 0;
-  return resist > 0 ? 1 : 0.5;
+export function typeSafety(multipliers: number[]): number {
+  const net = sum(multipliers.map(resistPoints));
+  return Math.min(1, Math.max(0, 0.5 + net / (2 * BALANCE_SPAN)));
 }
 
 const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
 
-/** +2 per ogni membro che il meteo/campo del team riporta da debole a neutro, fino a MAX_BONUS. */
+/** Il meteo/campo del team vale +1 se giova ad almeno un membro, comunque e a quanti; −1 per ogni membro che danneggia. */
+export const WEATHER_HELP = 1;
+export const WEATHER_HURT = 1;
+
+/**
+ * +1 una volta sola se il meteo o il campo che il team porta giova a qualcuno: smorza una debolezza
+ * o abilita un'abilità o una mossa di un membro. Il meteo non è sempre attivo: non conta quanti ne godono.
+ */
 export function weatherBonus(team: TeamSet[], lang: Lang = 'it'): Redundancies {
-  const items = weatherMitigations(team)
-    .map(m => ({ m, neutral: m.members.filter(x => x.to <= 1) }))
-    .filter(x => x.neutral.length > 0)
-    .map(({ m, neutral }) => ({
-      text: t(lang, 'rating.bonus.mitigates', {
-        condition: capitalize(conditionLabel(m.condition, lang)), setter: m.source.split(' (')[0],
-        type: typeName(m.type, lang), member: neutral.map(x => x.species).join(', '),
-      }),
-      points: 2 * neutral.length,
-    }));
-  return { total: Math.min(MAX_BONUS, sum(items.map(i => i.points))), items };
+  const helped = new Map<string, { setter: string; members: Set<string> }>();
+  const add = (condition: string, setter: string, member: string) => {
+    const entry = helped.get(condition) ?? { setter, members: new Set<string>() };
+    entry.members.add(member);
+    helped.set(condition, entry);
+  };
+  for (const m of weatherMitigations(team)) {
+    for (const x of m.members.filter(x => x.to <= 1)) add(m.condition, m.source.split(' (')[0], x.species);
+  }
+  for (const setter of team) {
+    for (const e of enables(setter)) {
+      for (const member of team) {
+        if (benefits(member).some(b => b.condition === e.condition && b.via !== e.via)) add(e.condition, battleName(setter), battleName(member));
+      }
+    }
+  }
+  const items = [...helped].map(([condition, { setter, members }]) => ({
+    text: t(lang, 'rating.bonus.helps', { condition: capitalize(conditionLabel(condition as Condition, lang)), setter, list: [...members].join(', ') }),
+    points: 0,
+  }));
+  // Un solo punto per tutto il team: si mostra sulla prima voce
+  if (items.length) items[0].points = WEATHER_HELP;
+  return { total: items.length ? WEATHER_HELP : 0, items };
 }
 
 /**
@@ -331,7 +375,7 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
   // Nello stall un muro passivo non deve fare danni: conta la sua robustezza, e i suoi colpi valgono pieni
   const passive = archetype ? team.map((set, i) => isPassive(set, memberRoles[i])) : [];
 
-  const typeDefense = sum(analysis.weakness.map(row => weights[row.type] * typeSafety(row.weak, row.resist)));
+  const typeDefense = sum(analysis.weakness.map(row => weights[row.type] * typeSafety(row.multipliers)));
   // Ogni tipo vale secondo i colpi che lo prendono (un Close Combat di Alakazam non vale uno di Great Tusk)
   // e secondo quanti membri diversi lo colpiscono: se l'unico che lo colpisce è KO, il tipo resta scoperto
   const quality = (set: TeamSet, i: number, move: string) => (passive[i] ? 1 : hitQuality(set, move));
@@ -357,15 +401,16 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
   // Velocità: col meta contro le minacce più usate, senza contro tutti i Pokémon
   const speed = teamSpeed(team, data, usesMeta(data) ? analysis.threats.map(x => x.name) : null);
 
-  // Ogni area è piena dal suo valore di riferimento in su
-  const full = (key: BaseArea, value: number | null) => (value === null ? null : Math.min(1, value / AREA_FULL[key]));
+  // Ogni area sale fino al suo valore di riferimento, poi più piano fino alla perfezione
+  const full = (key: BaseArea, value: number | null) => (value === null ? null : areaValue(value, AREA_FULL[key]));
   // Coverage difensiva (tipi) e Robustezza si dividono il peso della difesa: la Robustezza conta di più in uno stall
   const bulkShare = bulk === null ? 0 : BULK_SHARE[analysis.needs.archetype];
   const effective: Record<BaseArea, number> = { ...weightsFor, defense: weightsFor.defense * (1 - bulkShare), bulk: weightsFor.defense * bulkShare };
   // Offesa: quanto colpiscono forte i membri (nello stall: Statistiche, la robustezza dei muri passivi)
-  const attack = archetype ? full('strength', strength) : offense === null ? null : Math.min(1, offense / OFFENSE_FULL);
+  const attack = archetype ? full('strength', strength) : offense === null ? null : areaValue(offense, OFFENSE_FULL);
   const raw: Record<AreaKey, number | null> = {
-    coverage: full('coverage', coverage), defense: full('defense', typeDefense), strength: attack, bulk: full('bulk', bulk),
+    // Coverage offensiva 1:1: un membro su ogni tipo vale 70, due 90, tre 100
+    coverage: Math.min(1, coverage), defense: full('defense', typeDefense), strength: attack, bulk: full('bulk', bulk),
     roles: full('roles', roles), speed: full('speed', speed), meta: null,
   };
   const available = BASE_AREAS.filter(key => raw[key] !== null && effective[key] > 0);
@@ -380,7 +425,7 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
     const threats = (1 - TOP_THREATS) * ((threatScore(analysis) ?? 50) / 100) + TOP_THREATS * topHandled;
     const usage = sum(team.map(set => strengthComponent(usageOf(data.stats, battleName(set))))) / team.length;
     meta = { threats: Math.round(100 * threats), usage: Math.round(100 * usage) };
-    raw.meta = Math.min(1, (META_THREATS * threats + (1 - META_THREATS) * usage) / META_FULL);
+    raw.meta = areaValue(META_THREATS * threats + (1 - META_THREATS) * usage, META_FULL);
     score = (1 - META_WEIGHT) * score + META_WEIGHT * raw.meta;
   }
   const areas = (Object.keys(raw) as AreaKey[])

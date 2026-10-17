@@ -1,0 +1,69 @@
+import { describe, expect, it } from 'vitest';
+import { DEFAULT_FORMAT } from '../../src/engine/format';
+import { rateTeam } from '../../src/engine/rating';
+import { suggest } from '../../src/engine/scoring';
+import { emptySet } from '../../src/engine/sets';
+import { bestSwaps, rankByTeamGain, withCandidate } from '../../src/engine/teamGain';
+import { improveReplacements } from '../../src/engine/replace';
+import { fixtureData } from '../fixtures/data';
+
+describe('voto del team col candidato', () => {
+  const team = [{ ...emptySet('Great Tusk'), ability: 'Protosynthesis', moves: ['Headlong Rush', 'Rapid Spin'] }];
+
+  it('aggiunge in fondo o sostituisce il membro', () => {
+    const set = emptySet('Gholdengo');
+    expect(withCandidate(team, set, null).map(s => s.species)).toEqual(['Great Tusk', 'Gholdengo']);
+    expect(withCandidate(team, set, 0).map(s => s.species)).toEqual(['Gholdengo']);
+  });
+
+  it('ordina per voto del team, con quanto sale rispetto a ora', () => {
+    const items = suggest(team, DEFAULT_FORMAT, fixtureData, 20);
+    const ranked = rankByTeamGain(items, team, null, fixtureData, 'it');
+    const before = rateTeam(team, fixtureData)!.overall;
+    expect(ranked.map(r => r.teamGain!.overall)).toEqual([...ranked.map(r => r.teamGain!.overall)].sort((a, b) => b - a));
+    for (const r of ranked) {
+      expect(r.teamGain!.overall).toBe(rateTeam([...team, r.set], fixtureData)!.overall);
+      expect(r.teamGain!.gain).toBe(r.teamGain!.overall - before);
+    }
+  });
+
+  it('primo Pokémon o unico membro sostituito: nessun voto, ordine invariato', () => {
+    const items = suggest([], DEFAULT_FORMAT, fixtureData, 5);
+    expect(rankByTeamGain(items, [], null, fixtureData, 'it')).toEqual(items);
+    expect(rankByTeamGain(items, team, 0, fixtureData, 'it')).toEqual(items);
+  });
+
+  it('senza ordinare (Sostituto simile) mantiene l\'ordine ma porta il voto', () => {
+    const items = suggest(team, DEFAULT_FORMAT, fixtureData, 20);
+    const kept = rankByTeamGain(items, team, null, fixtureData, 'it', false);
+    expect(kept.map(r => r.species)).toEqual(items.map(r => r.species));
+    expect(kept.every(r => r.teamGain)).toBe(true);
+  });
+});
+
+describe('raccomandazioni libere', () => {
+  const team = ['Great Tusk', 'Gholdengo', 'Kingambit'].map(name => ({ ...emptySet(name), moves: [] as string[] }));
+  const candidates = (index: number) => improveReplacements(team, index, DEFAULT_FORMAT, fixtureData, 15);
+
+  it('ogni candidato una volta, col membro che conviene di più sostituire; gli altri in alternativa', () => {
+    const swaps = bestSwaps(team, fixtureData, 'it', candidates);
+    expect(new Set(swaps.map(s => s.species)).size).toBe(swaps.length);
+    const before = rateTeam(team, fixtureData)!.overall;
+    for (const swap of swaps) {
+      const after = rateTeam(withCandidate(team, swap.set, swap.replaces), fixtureData)!.overall;
+      expect(swap.teamGain.gain).toBe(after - before);
+      expect(swap.alternatives.every(alt => alt.gain <= swap.teamGain.gain && alt.index !== swap.replaces)).toBe(true);
+    }
+    expect(swaps.map(s => s.teamGain.overall)).toEqual([...swaps.map(s => s.teamGain.overall)].sort((a, b) => b - a));
+  });
+
+  it('i preferiti non escono mai', () => {
+    const starred = team.map((set, i) => (i === 0 ? { ...set, favorite: true } : set));
+    expect(bestSwaps(starred, fixtureData, 'it', candidates).every(s => s.replaces !== 0)).toBe(true);
+  });
+
+  it('niente doppioni di specie già nel team', () => {
+    const names = team.map(s => s.species);
+    expect(bestSwaps(team, fixtureData, 'it', candidates).every(s => !names.includes(s.species))).toBe(true);
+  });
+});

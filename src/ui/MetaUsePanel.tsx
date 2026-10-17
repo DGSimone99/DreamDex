@@ -7,13 +7,14 @@ import { formatPercent } from '../i18n';
 import { useLang, useT } from '../i18n/react';
 
 /** Uso nel meta dei membri: solo informativo, non entra nella valutazione. */
-export function MetaUsePanel({ team, data }: { team: TeamSet[]; data: EngineData }) {
+/** `open`: aperto all'inizio (nella scheda Meta). */
+export function MetaUsePanel({ team, data, open = false }: { team: TeamSet[]; data: EngineData; open?: boolean }) {
   const t = useT();
   const lang = useLang();
   const usages = team.map(set => statsEntry(data.stats, battleName(set))?.usage ?? 0);
   const average = usages.reduce((a, b) => a + b, 0) / (usages.length || 1);
   return (
-    <details aria-label={t('meta.title')} className="block meta-use">
+    <details aria-label={t('meta.title')} className="block meta-use" open={open}>
       <summary><span>{t('meta.title')}</span><span>{data.stats ? t('meta.average', { pct: formatPercent(lang, average) }) : t('meta.noData')}</span></summary>
       {!data.stats ? (
         <p className="note">{t('meta.missingStats')}</p>

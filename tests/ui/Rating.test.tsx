@@ -27,14 +27,18 @@ describe('Valutazione team', () => {
     render(<App initialLang="it" data={fixtureData} />);
     for (const name of ['Great Tusk', 'Gholdengo']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
     const rating = screen.getByRole('group', { name: 'Valutazione team' });
-    const coverage = screen.getByText('Coverage offensiva').closest('details')!;
+    const coverage = screen.getByText('Coverage offensiva', { selector: 'summary span' }).closest('details')!;
+    // Nella scheda Analisi parte aperta: si chiude per vedere che il link la riapre
+    expect(coverage).toHaveAttribute('open');
+    await user.click(coverage.querySelector('summary')!);
     expect(coverage).not.toHaveAttribute('open');
     const offensive = within(rating).getByRole('button', { name: /^Coverage offensiva \d+$/ });
     // Il tooltip mostra quanti tipi colpisce ogni membro e dove porta il clic
-    expect(offensive).toHaveAttribute('data-tip', expect.stringMatching(/^Tipi colpiti super efficace\n.+\nVai a Coverage offensiva$/s));
+    expect(offensive).toHaveAttribute('data-tip', expect.stringMatching(/^Tipi colpiti super efficace \(su ogni tipo: 1 membro vale 70, 2 vale 90, 3 vale 100\)\n.+\nVai a Coverage offensiva$/s));
     await user.click(offensive);
     expect(coverage).toHaveAttribute('open');
-    expect(within(rating).getByRole('button', { name: /^Coverage difensiva \d+$/ })).toHaveAttribute('title', 'Vai a Debolezze difensive');
+    expect(within(rating).getByRole('button', { name: /^Coverage difensiva \d+$/ }))
+      .toHaveAttribute('data-tip', 'Saldo su ogni tipo: immunità +2, ×¼ +1,5, ×½ +1, ×2 −1, ×4 −2. Un tipo è al sicuro da +2 in su\nVai a Debolezze difensive');
     expect(within(rating).queryByRole('button', { name: /^Offesa/ })).toBeNull();
   });
 
@@ -55,7 +59,7 @@ describe('Valutazione team', () => {
     await user.click(screen.getByLabelText('Testo Showdown'));
     await user.paste('Ninetales\nAbility: Drought\n- Flamethrower\n\nGreat Tusk\n- Headlong Rush');
     await user.click(screen.getByRole('button', { name: 'Importa' }));
-    expect(screen.getByRole('group', { name: 'Valutazione team' })).toHaveTextContent('Bonus +4');
+    expect(screen.getByRole('group', { name: 'Valutazione team' })).toHaveTextContent('Bonus +1');
     expect(screen.getByText((_, el) => el?.textContent === 'Col sole (Ninetales, Drought): Water ×2 → ×1 per Ninetales, Great Tusk · il meteo non è sempre attivo')).toBeInTheDocument();
   });
 
