@@ -27,30 +27,20 @@ export const formatOptions = (lang: Lang = 'it'): { id: FormatId; label: string 
 
 export const formatLabel = (format: Format, lang: Lang = 'it'): string => t(lang, `format.${format.formatId}`);
 
-/** Nome della fonte dati in uso (per i messaggi): il Monotype su OU ha statistiche proprie. */
-export const dataLabel = (format: Format, lang: Lang = 'it'): string =>
-  dataSource(format) === 'gen9nationaldexmonotype' ? t(lang, 'format.monotypeData') : formatLabel(format, lang);
-
-/** Cartella dei dati Smogon da usare: il Monotype ha un meta proprio solo sopra OU. */
+/** Cartella dei dati Smogon da usare. */
 export function dataSource(format: Format): string {
-  if (format.monotype && format.formatId === 'ou') return 'gen9nationaldexmonotype';
   return FORMATS[format.formatId].source;
 }
 
-/** Tera ammesso nel formato: vietato in OU, UU e Monotype (il Monotype gioca col meta OU). */
+/** Tera ammesso nel formato: vietato in OU e UU. */
 export function teraAllowed(format: Format): boolean {
-  return FORMATS[format.formatId].tera && dataSource(format) !== 'gen9nationaldexmonotype';
+  return FORMATS[format.formatId].tera;
 }
 
 export function isBannedIn(species: Species, format: Format): boolean {
   return !format.ignoreBans && FORMATS[format.formatId].banned.has(natDexTier(species));
 }
 
-/** Regole del team indipendenti dai ban: per ora il tipo del Monotype. */
-export function meetsTeamRules(species: Species, format: Format): boolean {
-  return !format.monotype || (species.types as readonly string[]).includes(format.monotype);
-}
-
 export function isLegalIn(species: Species, format: Format): boolean {
-  return isSelectable(species) && !isBannedIn(species, format) && meetsTeamRules(species, format);
+  return isSelectable(species) && !isBannedIn(species, format);
 }

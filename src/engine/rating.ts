@@ -185,7 +185,7 @@ export function memberIssues(team: TeamSet[], lang: Lang, rules: FormatRules): R
   return items;
 }
 
-/** Regole del formato: in Ubers un team completo senza hazard perde punti (Stealth Rock è fondamentale). */
+/** Regole del formato: in Ubers e UU un team completo senza hazard perde punti. */
 export function formatIssues(team: TeamSet[], rules: FormatRules, lang: Lang = 'it'): Redundancy[] {
   const hazards = team.some(set => detectRoles(set, rules).includes('hazards'));
   return rules.noHazardsPenalty > 0 && team.length === 6 && !hazards
@@ -265,7 +265,7 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
     * Math.max(0, ...team.flatMap((set, i) => superEffectiveMoves(set, type).map(move => quality(set, i, move))))));
   // Ruoli richiesti in base all'archetipo del team (uno stall non ha bisogno di sweeper, un hyper offense di wall)
   const roles = needCoverage(analysis.needs);
-  const power = teamPower(team, passive);
+  const power = teamPower(team, passive, rules);
   const weightsFor = archetype ? STALL_AREA_WEIGHTS : AREA_WEIGHTS;
   const strength = power.value === null ? null : power.value / 100;
 
