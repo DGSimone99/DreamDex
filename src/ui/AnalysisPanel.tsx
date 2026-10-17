@@ -36,8 +36,12 @@ function mitigationNote(m: WeatherMitigation, lang: Lang): string {
   return t(lang, 'analysis.mitigation', { condition: t(lang, `analysis.mitigation.${m.condition as 'sun' | 'rain' | 'grassyterrain' | 'mistyterrain'}`), source, changes });
 }
 
-export function AnalysisPanel({ team, analysis, rating, coaching, preview, onReplace, onSwap, data }: {
+export function AnalysisPanel({ team, analysis, rating, coaching, preview, onReplace, onSwap, data, withMeta = true, expanded = false }: {
   onSwap?: (index: number, set: TeamSet) => void;
+  /** Uso nel meta e minacce in fondo; senza, li mostra la scheda Meta (MetaPanel). */
+  withMeta?: boolean;
+  /** Debolezze, coverage e ruoli aperti all'inizio (nella scheda Analisi c'è spazio). */
+  expanded?: boolean;
   preview?: SwapPreview | null;
   team: TeamSet[];
   analysis: TeamAnalysis;
@@ -52,7 +56,6 @@ export function AnalysisPanel({ team, analysis, rating, coaching, preview, onRep
   const seriousWeak = severities.filter(s => s === 'serious').length;
   const minorWeak = severities.filter(s => s === 'minor').length;
   const uncovered = analysis.coverage.filter(row => row.hitters.length === 0);
-  const open = analysis.threats.filter(t => t.handledBy.length === 0);
   // Ruoli richiesti in base al tipo di team (come nel voto): essenziali, utili e non richiesti
   const { needs } = analysis;
   const ownersOf = (need: Need) => {
@@ -71,106 +74,122 @@ export function AnalysisPanel({ team, analysis, rating, coaching, preview, onRep
   const archetypeName = tr(`archetype.${needs.archetype}`);
   // Prima i tipi scoperti: sono quelli su cui intervenire
   const coverageRows = [...uncovered, ...analysis.coverage.filter(row => row.hitters.length > 0)];
-  const score = threatScore(analysis);
-  const threatSummary = score === null
-    ? tr('analysis.threatsNoData')
-    : open.length === 0 ? tr('analysis.threatsAll') : tr('analysis.threatsOpen', { n: open.length });
 
   return (
     <section aria-label={tr('analysis.region')} className="analysis">
       <h2>{tr('analysis.region')}</h2>
-      {rating && <RatingPanel rating={rating} ruleIssues={coaching?.problems.filter(p => p.category === 'rules').map(p => p.text)}
-        metaMonth={data?.stats?.meta?.month} />}
-      {coaching && onReplace && <CoachPanel coaching={coaching} preview={preview} onReplace={onReplace} onSwap={onSwap} />}
+      <div className="analysis-cols">
+        <div className="analysis-main">
+          {rating && <RatingPanel rating={rating} ruleIssues={coaching?.problems.filter(p => p.category === 'rules').map(p => p.text)}
+            metaMonth={data?.stats?.meta?.month} />}
+          {coaching && onReplace && <CoachPanel coaching={coaching} preview={preview} onReplace={onReplace} onSwap={onSwap} />}
+        </div>
+        <div className="analysis-detail">
+          <details className="block" id="analysis-defense" open={expanded}>
+            <summary>
+              <span>{tr('analysis.weakness')}</span>
+              <span className="summary-info">
+                {seriousWeak + minorWeak === 0 && (team.length ? tr('analysis.noShortfall') : '—')}
+                <IssueCounts serious={seriousWeak} minor={minorWeak} labels={WEAKNESS_LABELS} />
+              </span>
+            </summary>
+            <table>
+              <thead>
+                <tr>
+                  <th>{tr('analysis.type')}</th>
+                  {team.map((set, i) => <th key={i}>{battleName(set)}</th>)}
+                  <th>{tr('analysis.weakCol')}</th>
+                  <th>{tr('analysis.resistCol')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {analysis.weakness.map((row, r) => (
+                  <tr key={row.type} className={severities[r] ?? (row.resist > row.weak ? 'good' : '')}>
+                    <th scope="row">
+                      <TypeChip type={row.type} />
+                      {/* Il colore della riga dice la gravità; a parole per gli screen reader */}
+                      {severities[r] && <span className="visually-hidden">{` ${tr(severities[r] === 'serious' ? 'analysis.shortfallSerious' : 'analysis.shortfall')}`}</span>}
+                    </th>
+                    {row.multipliers.map((m, i) => <td key={i}>{formatMultiplier(m)}</td>)}
+                    <td>{row.weak}</td>
+                    <td>{row.resist}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {weatherMitigations(team).map(m => <p key={m.condition} className="note"><Typed text={mitigationNote(m, lang)} /></p>)}
+          </details>
 
-      <details className="block" id="analysis-defense">
-        <summary>
-          <span>{tr('analysis.weakness')}</span>
-          <span className="summary-info">
-            {seriousWeak + minorWeak === 0 && (team.length ? tr('analysis.noShortfall') : '—')}
-            <IssueCounts serious={seriousWeak} minor={minorWeak} labels={WEAKNESS_LABELS} />
-          </span>
-        </summary>
-        <table>
-          <thead>
-            <tr>
-              <th>{tr('analysis.type')}</th>
-              {team.map((set, i) => <th key={i}>{battleName(set)}</th>)}
-              <th>{tr('analysis.weakCol')}</th>
-              <th>{tr('analysis.resistCol')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {analysis.weakness.map((row, r) => (
-              <tr key={row.type} className={severities[r] ?? (row.resist > row.weak ? 'good' : '')}>
-                <th scope="row">
+          <details className="block" id="analysis-coverage" open={expanded}>
+            <summary><span>{tr('analysis.coverage')}</span><span>{tr('analysis.coverageSummary', { n: 18 - uncovered.length })}</span></summary>
+            <ul className="type-rows">
+              {coverageRows.map(row => (
+                <li key={row.type} className={row.hitters.length ? '' : 'bad'}>
                   <TypeChip type={row.type} />
-                  {/* Il colore della riga dice la gravità; a parole per gli screen reader */}
-                  {severities[r] && <span className="visually-hidden">{` ${tr(severities[r] === 'serious' ? 'analysis.shortfallSerious' : 'analysis.shortfall')}`}</span>}
-                </th>
-                {row.multipliers.map((m, i) => <td key={i}>{formatMultiplier(m)}</td>)}
-                <td>{row.weak}</td>
-                <td>{row.resist}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {weatherMitigations(team).map(m => <p key={m.condition} className="note"><Typed text={mitigationNote(m, lang)} /></p>)}
-      </details>
-
-      <details className="block" id="analysis-coverage">
-        <summary><span>{tr('analysis.coverage')}</span><span>{tr('analysis.coverageSummary', { n: 18 - uncovered.length })}</span></summary>
-        <ul className="type-rows">
-          {coverageRows.map(row => (
-            <li key={row.type} className={row.hitters.length ? '' : 'bad'}>
-              <TypeChip type={row.type} />
-              {row.hitters.length
-                ? <span>{row.hitters.map((h, i) => <span key={i} className="hitter">{h.member} <small><MoveName move={h.move} /></small></span>)}</span>
-                : <span className="missing">{tr('analysis.noSuperEffective')}</span>}
-            </li>
-          ))}
-        </ul>
-      </details>
-
-      <details className="block" id="analysis-roles">
-        <summary>
-          <span>{tr('analysis.roles')}</span>
-          <span>{tr('analysis.rolesSummary', { archetype: archetypeName, n: essentialRows.filter(r => r.owners.length > 0).length, total: essentialRows.length })}</span>
-        </summary>
-        <p className="note" title={tr(`archetype.${needs.archetype}.note`)}>
-          {team.length < 6 ? tr('analysis.judgedIncomplete', { archetype: archetypeName }) : tr('analysis.judgedAs', { archetype: archetypeName })}
-        </p>
-        {needGroups.map(group => (
-          <div key={group.title} className="role-group">
-            <h4>{group.title}</h4>
-            <ul className="role-rows">
-              {group.rows.map(({ need, owners }) => {
-                // Manca un essenziale: rosso. Utile mancante o non richiesto: grigio, senza croce
-                const state = owners.length ? (group.weight > 0 ? '' : 'soft') : group.weight === ESSENTIAL ? 'bad' : 'soft';
-                return (
-                  <li key={need} className={state}>
-                    {owners.length ? <Icon name="check" /> : group.weight === ESSENTIAL ? <Icon name="close" /> : <span aria-hidden="true" />}
-                    <span className="role">{needLabel(need, lang)}</span>
-                    <span className="owners">
-                      {owners.length
-                        ? owners.map(name => <span key={name} className="owner">{name}</span>)
-                        : group.weight === ESSENTIAL ? tr('analysis.missing') : group.weight > 0 ? '—' : tr('analysis.notRequiredValue')}
-                    </span>
-                  </li>
-                );
-              })}
+                  {row.hitters.length
+                    ? <span>{row.hitters.map((h, i) => <span key={i} className="hitter">{h.member} <small><MoveName move={h.move} /></small></span>)}</span>
+                    : <span className="missing">{tr('analysis.noSuperEffective')}</span>}
+                </li>
+              ))}
             </ul>
-          </div>
-        ))}
-        {analysis.needs.needStyle && (
-          <p>{tr('analysis.unbalanced', { style: tr(`analysis.style.${analysis.needs.needStyle}`) })}</p>
-        )}
-      </details>
+          </details>
 
+          <details className="block" id="analysis-roles" open={expanded}>
+            <summary>
+              <span>{tr('analysis.roles')}</span>
+              <span>{tr('analysis.rolesSummary', { archetype: archetypeName, n: essentialRows.filter(r => r.owners.length > 0).length, total: essentialRows.length })}</span>
+            </summary>
+            <p className="note" title={tr(`archetype.${needs.archetype}.note`)}>
+              {team.length < 6 ? tr('analysis.judgedIncomplete', { archetype: archetypeName }) : tr('analysis.judgedAs', { archetype: archetypeName })}
+            </p>
+            {needGroups.map(group => (
+              <div key={group.title} className="role-group">
+                <h4>{group.title}</h4>
+                <ul className="role-rows">
+                  {group.rows.map(({ need, owners }) => {
+                    // Manca un essenziale: rosso. Utile mancante o non richiesto: grigio, senza croce
+                    const state = owners.length ? (group.weight > 0 ? '' : 'soft') : group.weight === ESSENTIAL ? 'bad' : 'soft';
+                    return (
+                      <li key={need} className={state}>
+                        {owners.length ? <Icon name="check" /> : group.weight === ESSENTIAL ? <Icon name="close" /> : <span aria-hidden="true" />}
+                        <span className="role">{needLabel(need, lang)}</span>
+                        <span className="owners">
+                          {owners.length
+                            ? owners.map(name => <span key={name} className="owner">{name}</span>)
+                            : group.weight === ESSENTIAL ? tr('analysis.missing') : group.weight > 0 ? '—' : tr('analysis.notRequiredValue')}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ))}
+            {analysis.needs.needStyle && (
+              <p>{tr('analysis.unbalanced', { style: tr(`analysis.style.${analysis.needs.needStyle}`) })}</p>
+            )}
+          </details>
+        </div>
+      </div>
+      {withMeta && <MetaPanelBody team={team} analysis={analysis} data={data} coaching={coaching} />}
+    </section>
+  );
+}
+
+/** Uso nel meta dei membri e minacce del meta; senza meta, niente. */
+function MetaPanelBody({ team, analysis, data, coaching, expanded = false }: { team: TeamSet[]; analysis: TeamAnalysis; data?: EngineData; coaching?: Coaching; expanded?: boolean }) {
+  const tr = useT();
+  const lang = useLang();
+  const open = analysis.threats.filter(t => t.handledBy.length === 0);
+  const score = threatScore(analysis);
+  const threatSummary = score === null
+    ? tr('analysis.threatsNoData')
+    : open.length === 0 ? tr('analysis.threatsAll') : tr('analysis.threatsOpen', { n: open.length });
+  return (
+    <>
       {/* Senza meta niente uso nel formato né minacce */}
-      {data && !data.ignoreMeta && team.length > 0 && <MetaUsePanel team={team} data={data} />}
+      {data && !data.ignoreMeta && team.length > 0 && <MetaUsePanel team={team} data={data} open={expanded} />}
 
-      {!data?.ignoreMeta && <details className="block">
+      {!data?.ignoreMeta && <details className="block" open={expanded}>
         <summary><span>{tr('analysis.threats')}</span><span>{threatSummary}</span></summary>
         {score !== null && (
           <p className="note">
@@ -199,6 +218,16 @@ export function AnalysisPanel({ team, analysis, rating, coaching, preview, onRep
           })}
         </ul>
       </details>}
+    </>
+  );
+}
+
+/** Scheda Meta: uso nel meta a sinistra, minacce a destra. */
+export function MetaPanel(props: { team: TeamSet[]; analysis: TeamAnalysis; data?: EngineData; coaching?: Coaching }) {
+  const tr = useT();
+  return (
+    <section aria-label={tr('tabs.meta')} className="meta-panel">
+      <MetaPanelBody {...props} expanded />
     </section>
   );
 }

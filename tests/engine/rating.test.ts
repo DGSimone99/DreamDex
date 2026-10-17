@@ -1,16 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { teamPower } from '../../src/engine/power';
-import { AREA_FULL, AREA_WEIGHTS, BULK_FULL, BULK_SHARE, COVERAGE_DEPTH, META_WEIGHT, OFFENSE_FULL, SPEED_WEIGHT, gradeFor, rateTeam, typeSafety } from '../../src/engine/rating';
+import { AREA_FULL, AREA_KNEE, AREA_WEIGHTS, BULK_FULL, BULK_SHARE, COVERAGE_DEPTH, META_WEIGHT, OFFENSE_FULL, SPEED_WEIGHT, areaValue, gradeFor, rateTeam, typeSafety } from '../../src/engine/rating';
 import { memberPower } from '../../src/engine/power';
 
 /** Offesa media dei membri, piena a OFFENSE_FULL. */
-const offenseArea = (team: TeamSet[]) => Math.round(100 * Math.min(1, team.reduce((a, s) => a + memberPower(s)!.offense, 0) / team.length / 100 / OFFENSE_FULL));
+const offenseArea = (team: TeamSet[]) => Math.round(100 * areaValue(team.reduce((a, s) => a + memberPower(s)!.offense, 0) / team.length / 100, OFFENSE_FULL));
 import { hitQuality } from '../../src/engine/power';
 import { metaTypeWeights } from '../../src/engine/stats';
-import { superEffectiveMoves, TYPES } from '../../src/engine/types';
+import { superEffectiveMoves, TYPES, weaknessTable } from '../../src/engine/types';
 
 /** Valore mostrato di un'area: piena dal suo riferimento in su (AREA_FULL). */
-const full = (key: keyof typeof AREA_FULL, percent: number) => Math.round(Math.min(100, percent / AREA_FULL[key]));
+const full = (key: keyof typeof AREA_FULL, percent: number) => Math.round(100 * areaValue(percent / 100, AREA_FULL[key]));
 import { mostCommonSet, type TeamSet } from '../../src/engine/sets';
 import { fixtureData, fixtureStats, gholdengo, tusk } from '../fixtures/data';
 
@@ -41,11 +41,18 @@ describe('pesi delle aree', () => {
 
 describe('typeSafety', () => {
   it('premia le resistenze, punisce le debolezze scoperte', () => {
-    expect(typeSafety(1, 1)).toBe(1);
-    expect(typeSafety(0, 2)).toBe(1);
-    expect(typeSafety(0, 0)).toBe(0.5);
-    expect(typeSafety(1, 0)).toBe(0.25);
-    expect(typeSafety(3, 1)).toBe(0);
+    // Saldo: immunità +2, ×¼ +1,5, ×½ +1, ×2 −1, ×4 −2; sicuro a +2, scoperto a −2
+    expect(typeSafety([0, 1, 1])).toBe(1);
+    expect(typeSafety([0.5, 0.5])).toBe(1);
+    expect(typeSafety([0.5, 1])).toBe(0.75);
+    expect(typeSafety([1, 1])).toBe(0.5);
+    expect(typeSafety([2, 0.5])).toBe(0.5);
+    expect(typeSafety([2, 1])).toBe(0.25);
+    expect(typeSafety([4, 0.5])).toBe(0.25);
+    expect(typeSafety([4, 1])).toBe(0);
+    // Un ×4 pesa come due ×2, un'immunità come due resistenze
+    expect(typeSafety([4])).toBe(typeSafety([2, 2]));
+    expect(typeSafety([0])).toBe(typeSafety([0.5, 0.5]));
   });
 });
 
@@ -53,10 +60,12 @@ describe('rateTeam', () => {
   const rating = rateTeam([tusk, gholdengo], fixtureData)!;
 
   it('aree calcolate sulla fixture', () => {
-    // Coverage difensiva: tipi (73% della perfezione, piena a 95%); Robustezza: media dei membri, piena a 90%
-    expect(value(rating, 'defense')).toBe(full('defense', 73.2));
+    // Coverage difensiva: saldo resistenze/debolezze per tipo, pesato per il meta (piena a 80%); Robustezza: media dei membri
+    const weights = metaTypeWeights(fixtureData.stats);
+    const defense = weaknessTable([tusk, gholdengo]).reduce((acc, row) => acc + weights[row.type] * typeSafety(row.multipliers), 0);
+    expect(value(rating, 'defense')).toBe(full('defense', 100 * defense));
     const bulk = [tusk, gholdengo].reduce((a, s) => a + memberPower(s)!.bulk, 0) / 2 / 100;
-    expect(value(rating, 'bulk')).toBe(Math.round(100 * Math.min(1, bulk / BULK_FULL)));
+    expect(value(rating, 'bulk')).toBe(Math.round(100 * areaValue(bulk, BULK_FULL)));
     // Le due si dividono il peso della difesa: per un balance (team incompleto) il 35% va alla Robustezza
     expect(rating.weights.bulk! / (rating.weights.bulk! + rating.weights.defense!)).toBeCloseTo(BULK_SHARE.balance);
     // Coverage in profondità: per tipo, il colpo migliore di ogni membro, 70% al primo e 20% al secondo
@@ -65,9 +74,8 @@ describe('rateTeam', () => {
       const best = [tusk, gholdengo].map(s => Math.max(0, ...superEffectiveMoves(s, type).map(m => hitQuality(s, m)))).sort((a, b) => b - a);
       return acc + w[type] * Math.min(1, COVERAGE_DEPTH.reduce((a, share, i) => a + share * (best[i] ?? 0), 0));
     }, 0);
-    expect(value(rating, 'coverage')).toBe(full('coverage', 100 * coverage));
-    // Un solo colpo per tipo non basta più per la copertura piena
-    expect(value(rating, 'coverage')).toBeLessThan(full('coverage', 81));
+    // 1:1: la percentuale è il voto dell'area
+    expect(value(rating, 'coverage')).toBe(Math.round(100 * coverage));
     // Offesa: quanto colpiscono forte i membri (statistiche base), indipendente dall'uso nel meta
     expect(value(rating, 'strength')).toBe(offenseArea([tusk, gholdengo]));
   });
@@ -100,3 +108,25 @@ describe('rateTeam', () => {
     expect(value(noData, 'strength')).toBe(offenseArea([tusk, gholdengo]));
   });
 });
+
+describe('cima delle aree', () => {
+  it('fino al ginocchio come prima; il riferimento vale meno di 100; il 100 solo con la perfezione', () => {
+    expect(areaValue(0.5, 0.9)).toBeCloseTo(0.5 / 0.9);
+    expect(areaValue(AREA_KNEE * 0.9, 0.9)).toBeCloseTo(AREA_KNEE);
+    expect(areaValue(0.9, 0.9)).toBeGreaterThan(AREA_KNEE);
+    expect(areaValue(0.9, 0.9)).toBeLessThan(1);
+    expect(areaValue(1, 0.9)).toBe(1);
+  });
+
+  it('coverage offensiva 1:1: un membro su ogni tipo vale 70, due 90, tre 100', () => {
+    const team = (n: number) => Array.from({ length: n }, () => tusk);
+    // Con lo stesso membro ripetuto ogni tipo che colpisce è preso 1, 2 o 3 volte: il valore scala come le quote
+    const one = value(rateTeam(team(1), fixtureData)!, 'coverage')!;
+    const two = value(rateTeam(team(2), fixtureData)!, 'coverage')!;
+    const three = value(rateTeam(team(3), fixtureData)!, 'coverage')!;
+    expect(two / one).toBeCloseTo(0.9 / 0.7, 1);
+    expect(three / one).toBeCloseTo(1 / 0.7, 1);
+    expect(COVERAGE_DEPTH).toEqual([0.7, 0.2, 0.1]);
+  });
+});
+

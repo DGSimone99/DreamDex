@@ -54,6 +54,7 @@ export function RatingPanel({ rating, ruleIssues = [], metaMonth }: { rating: Te
             : area.key === 'speed' ? t(rating.meta ? 'rating.speedTipMeta' : 'rating.speedTipFree')
             : area.key === 'coverage' && rating.coverageByMember.length
               ? [t('rating.coverageTip'), ...[...rating.coverageByMember].sort((a, b) => b.types - a.types).map(m => `${m.species} ${m.types}`)].join('\n')
+            : area.key === 'defense' ? t('rating.defenseTip')
             : area.key === 'bulk' && rating.power.length
               ? [t('rating.bulkTip'), ...[...rating.power].sort((a, b) => b.bulk - a.bulk).map(m => `${m.species} ${m.bulk}`)].join('\n')
             : undefined;

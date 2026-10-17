@@ -1,6 +1,6 @@
 import { DEFAULT_RULES } from '../../src/engine/formatRules';
 import { describe, expect, it } from 'vitest';
-import { AREA_FULL, AREA_WEIGHTS, COVERAGE_DEPTH, META_WEIGHT, OFFENSE_FULL, rateTeam, ROLE_COMPRESSION, SPEED_WEIGHT, STALL_AREA_WEIGHTS } from '../../src/engine/rating';
+import { AREA_FULL, AREA_WEIGHTS, areaValue, COVERAGE_DEPTH, META_WEIGHT, OFFENSE_FULL, rateTeam, ROLE_COMPRESSION, SPEED_WEIGHT, STALL_AREA_WEIGHTS } from '../../src/engine/rating';
 import { meetsNeed, needCoverage, NEEDS, teamNeeds } from '../../src/engine/needs';
 
 const full = (key: keyof typeof AREA_FULL, percent: number) => Math.round(Math.min(100, percent / AREA_FULL[key]));
@@ -165,7 +165,7 @@ describe('voto dello stall', () => {
     const rating = rateTeam(team, fixtureData)!;
     expect(Math.abs(rating.base - weighted(rating))).toBeLessThanOrEqual(1);
     const offense = team.reduce((a, s) => a + memberPower(s)!.offense, 0) / team.length / 100;
-    expect(rating.areas.find(a => a.key === 'strength')!.value).toBe(Math.round(100 * Math.min(1, offense / OFFENSE_FULL)));
+    expect(rating.areas.find(a => a.key === 'strength')!.value).toBe(Math.round(100 * areaValue(offense, OFFENSE_FULL)));
     expect(rating.areas.find(a => a.key === 'strength')!.label).toBe('Offesa');
   });
 });
@@ -175,6 +175,6 @@ describe('copertura di uno stall', () => {
     const rating = rateTeam(stall, fixtureData)!;
     expect(rating.archetype).toBe('stall');
     // Toxapex (Scald) e Clodsire (Poison Jab) attaccano poco, ma nello stall i loro colpi contano interi
-    expect(Math.abs(rating.areas.find(a => a.key === 'coverage')!.value! - full('coverage', fullCoverage(stall)))).toBeLessThanOrEqual(1);
+    expect(Math.abs(rating.areas.find(a => a.key === 'coverage')!.value! - Math.round(fullCoverage(stall)))).toBeLessThanOrEqual(1);
   });
 });
