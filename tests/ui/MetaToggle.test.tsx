@@ -20,19 +20,19 @@ const memoryStorage = (): Storage => {
 afterEach(() => window.history.replaceState(null, '', '/'));
 
 describe('voto col meta e senza', () => {
-  it('col meta: quinta area Meta, un quinto del voto, da minacce (2/3) e uso dei membri (1/3)', () => {
+  it('col meta: area Meta, il 30% del voto, da minacce (2/3) e uso dei membri (1/3)', () => {
     const rating = rateTeam([tusk, gholdengo], fixtureData)!;
     const meta = rating.areas.find(a => a.key === 'meta')!;
     expect(rating.meta).not.toBeNull();
     const expected = Math.min(1, (META_THREATS * rating.meta!.threats + (1 - META_THREATS) * rating.meta!.usage) / 100 / META_FULL);
     expect(Math.abs(meta.value! - 100 * expected)).toBeLessThanOrEqual(1);
-    expect(META_WEIGHT).toBe(0.2);
+    expect(META_WEIGHT).toBe(0.3);
   });
 
   it('senza meta: niente area Meta, tipi tutti uguali, nessuna minaccia', () => {
     const rating = rateTeam([tusk, gholdengo], noMeta)!;
     expect(rating.meta).toBeNull();
-    expect(rating.areas.map(a => a.key)).toEqual(['defense', 'coverage', 'roles', 'strength']);
+    expect(rating.areas.map(a => a.key)).toEqual(['defense', 'coverage', 'roles', 'strength', 'speed']);
     const analysis = analyzeTeam([tusk, gholdengo], noMeta);
     expect(analysis.typeWeights).toEqual(UNIFORM_TYPE_WEIGHTS);
     expect(analysis.threats).toEqual([]);

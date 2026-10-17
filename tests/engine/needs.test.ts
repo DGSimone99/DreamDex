@@ -2,8 +2,8 @@ import { DEFAULT_RULES } from '../../src/engine/formatRules';
 import { describe, expect, it } from 'vitest';
 import { coachTeam } from '../../src/engine/coach';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
-import { needCoverage, NEEDS_BY_ARCHETYPE, needLabel, teamNeeds } from '../../src/engine/needs';
-import { rateTeam } from '../../src/engine/rating';
+import { meetsNeed, needCoverage, NEEDS, NEEDS_BY_ARCHETYPE, needLabel, teamNeeds } from '../../src/engine/needs';
+import { AREA_FULL, rateTeam, ROLE_COMPRESSION } from '../../src/engine/rating';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
 import { fixtureData } from '../fixtures/data';
 
@@ -44,12 +44,12 @@ describe('ruoli richiesti in base all\'archetipo', () => {
     expect(needs.missing.map(m => m.need)).not.toContain('offense');
   });
 
-  it('copertura pesata: essenziali 1, utili 0,75, non richiesti 0', () => {
-    // Stall: manca solo il Pivot (utile) → 4 su 4,75
-    expect(needCoverage(teamNeeds(stall, DEFAULT_RULES))).toBeCloseTo(4 / 4.75);
-    // Hyper offense: mancano Pivot e Controllo velocità (utili) → 4,5 su 6
+  it('copertura pesata: essenziali 1, utili 0,4, non richiesti 0', () => {
+    // Stall: mancano Pivot e Controllo velocità (utili, sempre richiesto) → 4 su 4,8
+    expect(needCoverage(teamNeeds(stall, DEFAULT_RULES))).toBeCloseTo(4 / 4.8);
+    // Hyper offense: mancano Pivot e Controllo velocità (utili) → 3,8 su 4,6
     expect(teamNeeds(hyperOffense, DEFAULT_RULES).missing.map(m => m.need)).toEqual(['pivot', 'speedControl']);
-    expect(needCoverage(teamNeeds(hyperOffense, DEFAULT_RULES))).toBeCloseTo(4.5 / 6);
+    expect(needCoverage(teamNeeds(hyperOffense, DEFAULT_RULES))).toBeCloseTo(3.8 / 4.6);
   });
 
   it('la minaccia offensiva è coperta da uno sweeper o da un wallbreaker', () => {
@@ -81,9 +81,11 @@ describe('voto e coach seguono i ruoli dell\'archetipo', () => {
     expect(texts).toMatch(/Ruoli mancanti:.*Hazard/);
   });
 
-  it("l'area Ruoli del voto è la copertura dei ruoli dell'archetipo", () => {
+  it("l'area Ruoli del voto: copertura dei ruoli dell'archetipo e compiti per membro, piena a AREA_FULL", () => {
     const rating = rateTeam(hyperOffense, fixtureData)!;
-    expect(rating.areas.find(a => a.key === 'roles')!.value).toBe(Math.round(100 * needCoverage(teamNeeds(hyperOffense, DEFAULT_RULES))));
+    const jobs = hyperOffense.reduce((acc, s) => acc + NEEDS.filter(need => meetsNeed(need, s, DEFAULT_RULES)).length, 0) / hyperOffense.length;
+    const roles = (1 - ROLE_COMPRESSION) * needCoverage(teamNeeds(hyperOffense, DEFAULT_RULES)) + ROLE_COMPRESSION * Math.min(1, jobs / 3);
+    expect(rating.areas.find(a => a.key === 'roles')!.value).toBe(Math.round(100 * Math.min(1, roles / AREA_FULL.roles)));
   });
 });
 

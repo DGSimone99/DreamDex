@@ -50,6 +50,7 @@ export function RatingPanel({ rating, ruleIssues = [], metaMonth }: { rating: Te
           const tip = area.key === 'strength' && rating.power.length
             ? rating.power.map(m => `${m.species} ${m.power}`).join('\n')
             : area.key === 'meta' && rating.meta ? t('rating.metaTip', { threats: rating.meta.threats, usage: rating.meta.usage })
+            : area.key === 'speed' ? t(rating.meta ? 'rating.speedTipMeta' : 'rating.speedTipFree')
             : undefined;
           return (
             <div key={area.key}>
