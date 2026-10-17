@@ -14,7 +14,7 @@ import { copyText } from './clipboard';
 import { Icon } from './icons';
 import { ItemIcon } from './ItemIcon';
 import { PokemonIcon, PokemonName } from './PokemonName';
-import { battleName } from '../engine/dex';
+import { battleAbility, battleName } from '../engine/dex';
 import { ProsCons } from './ProsCons';
 import { Sprite, TypeChip } from './Sprite';
 import { StatsBadge } from './StatsBadge';
@@ -89,7 +89,7 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, rating,
           <section className="detail-sec wide">
             <h4>{tr('detail.changes')}</h4>
             <p className="swap-head replaces">
-              <PokemonName name={team[replaceIndex].species} muted />
+              <PokemonName name={battleName(team[replaceIndex])} muted />
               <Icon name="arrow" />
               <span className="visually-hidden">{tr('coach.with')}</span>
               <PokemonName name={item.species} />
@@ -147,7 +147,8 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, rating,
             <dt>{tr('editor.item')}</dt>
             <dd>{set.item ? <><ItemIcon item={set.item} /> {gameName('item', set.item, lang)}</> : '—'}</dd>
             <dt>{tr('editor.ability')}</dt>
-            <dd>{set.ability ? gameName('ability', set.ability, lang) : '—'}</dd>
+            {/* L'abilità in battaglia: con una Megapietra quella della Mega (Mega Venusaur: Grassospesso, non Clorofilla) */}
+            <dd>{battleAbility(set) ? gameName('ability', battleAbility(set), lang) : '—'}</dd>
             <dt>{tr('editor.nature')}</dt>
             <dd>{set.nature ? natureName(set.nature, lang) : '—'}</dd>
             <dt>{tr('editor.evs')}</dt>

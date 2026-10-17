@@ -139,3 +139,21 @@ describe('SuggestionsPanel', () => {
     expect(within(suggestions()).getByText('Servono i dati Smogon per i suggerimenti. Puoi comunque cercare un Pokémon per nome.')).toBeInTheDocument();
   });
 });
+
+describe('dettaglio: abilità in battaglia', () => {
+  it('con la Megapietra mostra l\u2019abilità della Mega; "Stats" solo nel dettaglio', async () => {
+    const { SuggestionDetail } = await import('../../src/ui/SuggestionDetail');
+    const { renderIt } = await import('../helpers/italian');
+    const set = { species: 'Venusaur', item: 'Venusaurite', ability: 'Chlorophyll', moves: ['Giga Drain'], nature: 'Bold', evs: { hp: 252 } };
+    const item = { species: 'Venusaur-Mega', set, score: 50, components: { defense: 0, coverage: 0, roles: 0 }, facts: {}, reasons: [], tags: [], penalty: 0 } as never;
+    renderIt(<SuggestionDetail item={item} rank={2} team={[]} replaceIndex={null} data={fixtureData} rating={null} usage={null} banMark={null} actionLabel="Aggiungi al team" onAction={() => {}} />);
+    expect(screen.getByText('Thick Fat')).toBeInTheDocument();
+    expect(screen.queryByText('Chlorophyll')).toBeNull();
+  });
+
+  it('le righe della lista non hanno il badge Stats', async () => {
+    await setup('Great Tusk');
+    expect(list().querySelector('.stats-badge')).toBeNull();
+    expect(screen.getByRole('complementary', { name: /^Dettaglio di / }).querySelector('.stats-badge')).not.toBeNull();
+  });
+});

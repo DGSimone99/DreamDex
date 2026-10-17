@@ -21,7 +21,6 @@ import { conditionLabel, neededConditions, providesAll, viaName } from '../engin
 import { Sprite, TypeChip } from './Sprite';
 import { Icon } from './icons';
 import { SuggestionDetail } from './SuggestionDetail';
-import { StatsBadge } from './StatsBadge';
 import { AlertMark } from './AlertMark';
 import { Typed } from './TypeText';
 import { t } from '../i18n';
@@ -133,7 +132,6 @@ function SuggestionRow({ rank, item, usage, out, quickLabel, actionLabel, replac
             <strong><span className="visually-hidden">{rank}. </span>{item.species}</strong>
           </button>
           <BanMark species={item.species} format={format} />
-          <StatsBadge species={item.species} item={item.set.item} />
         </span>
         <span className="types">{types.map(type => <TypeChip key={type} type={type} />)}</span>
         <small><Typed text={summaryText} /></small>
