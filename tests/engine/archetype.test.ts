@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { teamArchetype } from '../../src/engine/archetype';
+import { isPassive } from '../../src/engine/roles';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
 
 const set = (species: string, item: string, ability: string, moves: string[]): TeamSet => ({ ...emptySet(species), item, ability, moves });
@@ -91,5 +92,27 @@ describe('stili del team', () => {
       set('Grimmsnarl', 'Light Clay', 'Prankster', ['Reflect', 'Light Screen', 'Spirit Break', 'U-turn']),
       ...hyperOffense.slice(1, 3).map(s => ({ ...s, moves: [...s.moves.slice(0, 3), 'U-turn'] }))];
     expect(teamArchetype(many)!.styles.length).toBeLessThanOrEqual(2);
+  });
+});
+
+describe('archetipi di Ubers', () => {
+  // "Deo-Speed Hyper Offense" dai team campione Smogon di National Dex Ubers: robusti, ma quasi tutti veloci o con Dragon Dance
+  const deoSpeed = [
+    set('Deoxys-Speed', 'Focus Sash', 'Pressure', ['Stealth Rock', 'Spikes', 'Taunt', 'Psycho Boost']),
+    set('Arceus', 'Silk Scarf', 'Multitype', ['Swords Dance', 'Extreme Speed', 'Shadow Claw', 'Recover']),
+    set('Groudon', 'Red Orb', 'Drought', ['Swords Dance', 'Precipice Blades', 'Stone Edge', 'Rock Polish']),
+    set('Necrozma-Dusk-Mane', 'Weakness Policy', 'Prism Armor', ['Dragon Dance', 'Sunsteel Strike', 'Earthquake', 'Morning Sun']),
+    set('Yveltal', 'Life Orb', 'Dark Aura', ['Sucker Punch', 'Knock Off', 'Oblivion Wing', 'Sky Attack']),
+    set('Zacian', 'Rusted Sword', 'Intrepid Sword', ['Swords Dance', 'Behemoth Blade', 'Close Combat', 'Play Rough']),
+  ];
+
+  it('un wallbreaker con setup offensivo non è un muro passivo (Necrozma con Dragon Dance)', () => {
+    expect(isPassive(deoSpeed[3])).toBe(false);
+    // Dondozo con Curse resta un muro: Curse alza l'Attacco, ma Dondozo non ha statistiche da wallbreaker
+    expect(isPassive(set('Dondozo', 'Leftovers', 'Unaware', ['Curse', 'Body Press', 'Liquidation', 'Rest']))).toBe(true);
+  });
+
+  it('senza muri passivi e con almeno 5 membri veloci o con setup di velocità è Hyper Offense anche se robusto', () => {
+    expect(teamArchetype(deoSpeed)?.archetype).toBe('hyperOffense');
   });
 });

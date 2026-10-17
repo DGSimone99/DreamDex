@@ -36,14 +36,18 @@ const SWEEPERS: Role[] = ['physicalSweeper', 'specialSweeper'];
 const isFastSetupSweeper = (set: TeamSet, roles: Role[]) =>
   roles.includes('setup') && roles.some(r => SWEEPERS.includes(r)) && (battleSpecies(set)?.baseStats.spe ?? 0) >= 100;
 
+/** Setup offensivo su statistiche da wallbreaker (Necrozma-Dusk-Mane con Dragon Dance, Groudon-Primal con Swords Dance): attacca, non fa da muro. */
+const isSetupBreaker = (roles: Role[]) => roles.includes('setup') && roles.includes('wallbreaker');
+
 /**
- * Membro "passivo" da stall: al massimo 2 mosse d'attacco, non uno sweeper veloce con setup, e un muro o con un recupero affidabile.
+ * Membro "passivo" da stall: al massimo 2 mosse d'attacco, non uno sweeper veloce con setup né un wallbreaker con setup,
+ * e un muro o con un recupero affidabile.
  * Si guarda il set, non solo le statistiche: un leggendario con quattro attacchi non è un muro da stall,
  * mentre Mega Sableye o Quagsire lo sono anche senza statistiche da muro.
  */
 export function isPassive(set: TeamSet, roles: Role[] = detectRoles(set)): boolean {
   const attacks = set.moves.filter(m => (getMove(m)?.category ?? 'Status') !== 'Status').length;
-  if (attacks > 2 || isFastSetupSweeper(set, roles)) return false;
+  if (attacks > 2 || isFastSetupSweeper(set, roles) || isSetupBreaker(roles)) return false;
   const heals = set.moves.some(m => RECOVERY_MOVES.has(toID(m))) || RECOVERY_ABILITIES.has(toID(set.ability));
   return heals || roles.some(r => WALLS.includes(r));
 }
