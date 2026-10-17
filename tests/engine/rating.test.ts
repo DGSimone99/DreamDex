@@ -7,7 +7,7 @@ import { memberPower } from '../../src/engine/power';
 const offenseArea = (team: TeamSet[]) => Math.round(100 * areaValue(team.reduce((a, s) => a + memberPower(s)!.offense, 0) / team.length / 100, OFFENSE_FULL));
 import { hitQuality } from '../../src/engine/power';
 import { metaTypeWeights } from '../../src/engine/stats';
-import { superEffectiveMoves, TYPES } from '../../src/engine/types';
+import { superEffectiveMoves, TYPES, weaknessTable } from '../../src/engine/types';
 
 /** Valore mostrato di un'area: piena dal suo riferimento in su (AREA_FULL). */
 const full = (key: keyof typeof AREA_FULL, percent: number) => Math.round(100 * areaValue(percent / 100, AREA_FULL[key]));
@@ -41,11 +41,18 @@ describe('pesi delle aree', () => {
 
 describe('typeSafety', () => {
   it('premia le resistenze, punisce le debolezze scoperte', () => {
-    expect(typeSafety(1, 1)).toBe(1);
-    expect(typeSafety(0, 2)).toBe(1);
-    expect(typeSafety(0, 0)).toBe(0.5);
-    expect(typeSafety(1, 0)).toBe(0.25);
-    expect(typeSafety(3, 1)).toBe(0);
+    // Saldo: immunità +2, ×¼ +1,5, ×½ +1, ×2 −1, ×4 −2; sicuro a +2, scoperto a −2
+    expect(typeSafety([0, 1, 1])).toBe(1);
+    expect(typeSafety([0.5, 0.5])).toBe(1);
+    expect(typeSafety([0.5, 1])).toBe(0.75);
+    expect(typeSafety([1, 1])).toBe(0.5);
+    expect(typeSafety([2, 0.5])).toBe(0.5);
+    expect(typeSafety([2, 1])).toBe(0.25);
+    expect(typeSafety([4, 0.5])).toBe(0.25);
+    expect(typeSafety([4, 1])).toBe(0);
+    // Un ×4 pesa come due ×2, un'immunità come due resistenze
+    expect(typeSafety([4])).toBe(typeSafety([2, 2]));
+    expect(typeSafety([0])).toBe(typeSafety([0.5, 0.5]));
   });
 });
 
@@ -53,8 +60,10 @@ describe('rateTeam', () => {
   const rating = rateTeam([tusk, gholdengo], fixtureData)!;
 
   it('aree calcolate sulla fixture', () => {
-    // Coverage difensiva: tipi (73% della perfezione, piena a 95%); Robustezza: media dei membri, piena a 90%
-    expect(value(rating, 'defense')).toBe(full('defense', 73.2));
+    // Coverage difensiva: saldo resistenze/debolezze per tipo, pesato per il meta (piena a 80%); Robustezza: media dei membri
+    const weights = metaTypeWeights(fixtureData.stats);
+    const defense = weaknessTable([tusk, gholdengo]).reduce((acc, row) => acc + weights[row.type] * typeSafety(row.multipliers), 0);
+    expect(value(rating, 'defense')).toBe(full('defense', 100 * defense));
     const bulk = [tusk, gholdengo].reduce((a, s) => a + memberPower(s)!.bulk, 0) / 2 / 100;
     expect(value(rating, 'bulk')).toBe(Math.round(100 * areaValue(bulk, BULK_FULL)));
     // Le due si dividono il peso della difesa: per un balance (team incompleto) il 35% va alla Robustezza

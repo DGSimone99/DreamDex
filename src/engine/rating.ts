@@ -59,7 +59,7 @@ const TRICK_ROOM_WEIGHTS: Record<BaseArea, number> = { ...OTHER_AREAS, speed: 0,
  * Valore da cui un'area è piena: un team da torneo non resiste a tutto né ha sei Pokémon fortissimi,
  * e non deve servire la perfezione per arrivare in S (come l'area Meta, piena a META_FULL).
  */
-export const AREA_FULL: Record<BaseArea, number> = { defense: 0.95, coverage: 0.9, roles: 0.95, strength: 0.92, speed: 0.9, bulk: 0.9 };
+export const AREA_FULL: Record<BaseArea, number> = { defense: 0.8, coverage: 0.9, roles: 0.95, strength: 0.92, speed: 0.9, bulk: 0.9 };
 
 /**
  * Oltre il 95% del valore di riferimento l'area sale più piano: arrivare al riferimento vale circa 97,
@@ -283,13 +283,25 @@ export function redundancies(team: TeamSet[], analysis: TeamAnalysis, lang: Lang
   return { total: Math.min(MAX_PENALTY, sum(items.map(i => i.points))), items };
 }
 
+/** Punti di un membro contro un tipo: immunità +2, ×¼ +1,5, ×½ +1, neutro 0, ×2 −1, ×4 −2. */
+export function resistPoints(multiplier: number): number {
+  if (multiplier === 0) return 2;
+  if (multiplier <= 0.25) return 1.5;
+  if (multiplier < 1) return 1;
+  if (multiplier >= 4) return -2;
+  return multiplier > 1 ? -1 : 0;
+}
+
+/** Saldo che separa un tipo scoperto (0) da uno sicuro (1); a saldo 0 il tipo vale 0,5. */
+export const BALANCE_SPAN = 2;
+
 /**
- * Quanto il team è al sicuro da un tipo: 1 se qualcuno resiste e i deboli non superano chi resiste,
- * 0.5 se nessuno è debole né resiste, 0.25 con un debole scoperto, 0 con due o più.
+ * Quanto il team è al sicuro da un tipo, dal saldo fra resistenze e debolezze dei membri:
+ * un'immunità o due resistenze lo rendono sicuro, un ×4 o due ×2 scoperti lo lasciano scoperto.
  */
-export function typeSafety(weak: number, resist: number): number {
-  if (weak > resist) return weak - resist === 1 ? 0.25 : 0;
-  return resist > 0 ? 1 : 0.5;
+export function typeSafety(multipliers: number[]): number {
+  const net = sum(multipliers.map(resistPoints));
+  return Math.min(1, Math.max(0, 0.5 + net / (2 * BALANCE_SPAN)));
 }
 
 const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
@@ -363,7 +375,7 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
   // Nello stall un muro passivo non deve fare danni: conta la sua robustezza, e i suoi colpi valgono pieni
   const passive = archetype ? team.map((set, i) => isPassive(set, memberRoles[i])) : [];
 
-  const typeDefense = sum(analysis.weakness.map(row => weights[row.type] * typeSafety(row.weak, row.resist)));
+  const typeDefense = sum(analysis.weakness.map(row => weights[row.type] * typeSafety(row.multipliers)));
   // Ogni tipo vale secondo i colpi che lo prendono (un Close Combat di Alakazam non vale uno di Great Tusk)
   // e secondo quanti membri diversi lo colpiscono: se l'unico che lo colpisce è KO, il tipo resta scoperto
   const quality = (set: TeamSet, i: number, move: string) => (passive[i] ? 1 : hitQuality(set, move));

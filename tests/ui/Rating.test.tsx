@@ -37,7 +37,8 @@ describe('Valutazione team', () => {
     expect(offensive).toHaveAttribute('data-tip', expect.stringMatching(/^Tipi colpiti super efficace \(su ogni tipo: 1 membro vale 70, 2 vale 90, 3 vale 100\)\n.+\nVai a Coverage offensiva$/s));
     await user.click(offensive);
     expect(coverage).toHaveAttribute('open');
-    expect(within(rating).getByRole('button', { name: /^Coverage difensiva \d+$/ })).toHaveAttribute('title', 'Vai a Debolezze difensive');
+    expect(within(rating).getByRole('button', { name: /^Coverage difensiva \d+$/ }))
+      .toHaveAttribute('data-tip', 'Saldo su ogni tipo: immunità +2, ×¼ +1,5, ×½ +1, ×2 −1, ×4 −2. Un tipo è al sicuro da +2 in su\nVai a Debolezze difensive');
     expect(within(rating).queryByRole('button', { name: /^Offesa/ })).toBeNull();
   });
 
