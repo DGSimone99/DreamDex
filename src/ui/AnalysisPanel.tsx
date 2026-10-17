@@ -3,7 +3,7 @@ import type { Coaching } from '../engine/coach';
 import type { EngineData } from '../engine/data';
 import type { TeamRating } from '../engine/rating';
 import { detectRoles, isFast } from '../engine/roles';
-import { NEEDS, NEED_ROLES, needLabel, type Need } from '../engine/needs';
+import { ESSENTIAL, meetsNeed, NEEDS, needLabel, USEFUL, type Need } from '../engine/needs';
 import { battleName } from '../engine/dex';
 import { weatherMitigations, type WeatherMitigation } from '../engine/synergy';
 import { formatPercent, t, type Lang } from '../i18n';
@@ -56,20 +56,18 @@ export function AnalysisPanel({ team, analysis, rating, coaching, preview, onRep
   // Ruoli richiesti in base al tipo di team (come nel voto): essenziali, utili e non richiesti
   const { needs } = analysis;
   const ownersOf = (need: Need) => {
-    const owners = team.filter(set => NEED_ROLES[need].some(role => detectRoles(set).includes(role))).map(battleName);
-    // Senza mosse di controllo velocità, la velocità è coperta dai membri veloci
-    return need === 'speed' && owners.length === 0
-      ? team.filter(isFast).map(set => tr('analysis.fastMember', { name: battleName(set) }))
-      : owners;
+    // Velocità: chi controlla la velocità o, senza mosse per farlo, i membri veloci
+    return team.filter(set => meetsNeed(need, set)).map(set =>
+      need === 'speed' && !detectRoles(set).includes('speed') && isFast(set) ? tr('analysis.fastMember', { name: battleName(set) }) : battleName(set));
   };
   const needGroups = [
-    { title: tr('analysis.essential'), weight: 1 },
-    { title: tr('analysis.useful'), weight: 0.5 },
+    { title: tr('analysis.essential'), weight: ESSENTIAL },
+    { title: tr('analysis.useful'), weight: USEFUL },
     { title: tr('analysis.notRequired'), weight: 0 },
   ]
     .map(group => ({ ...group, rows: NEEDS.filter(need => needs.weights[need] === group.weight).map(need => ({ need, owners: ownersOf(need) })) }))
     .filter(group => group.rows.length > 0);
-  const essentialRows = needGroups.find(group => group.weight === 1)?.rows ?? [];
+  const essentialRows = needGroups.find(group => group.weight === ESSENTIAL)?.rows ?? [];
   const archetypeName = tr(`archetype.${needs.archetype}`);
   // Prima i tipi scoperti: sono quelli su cui intervenire
   const coverageRows = [...uncovered, ...analysis.coverage.filter(row => row.hitters.length > 0)];
@@ -81,7 +79,8 @@ export function AnalysisPanel({ team, analysis, rating, coaching, preview, onRep
   return (
     <section aria-label={tr('analysis.region')} className="analysis">
       <h2>{tr('analysis.region')}</h2>
-      {rating && <RatingPanel rating={rating} ruleIssues={coaching?.problems.filter(p => p.category === 'rules').map(p => p.text)} />}
+      {rating && <RatingPanel rating={rating} ruleIssues={coaching?.problems.filter(p => p.category === 'rules').map(p => p.text)}
+        metaMonth={data?.stats?.meta?.month} />}
       {coaching && onReplace && <CoachPanel coaching={coaching} preview={preview} onReplace={onReplace} onSwap={onSwap} />}
 
       <details className="block" id="analysis-defense">
@@ -147,15 +146,15 @@ export function AnalysisPanel({ team, analysis, rating, coaching, preview, onRep
             <ul className="role-rows">
               {group.rows.map(({ need, owners }) => {
                 // Manca un essenziale: rosso. Utile mancante o non richiesto: grigio, senza croce
-                const state = owners.length ? (group.weight > 0 ? '' : 'soft') : group.weight === 1 ? 'bad' : 'soft';
+                const state = owners.length ? (group.weight > 0 ? '' : 'soft') : group.weight === ESSENTIAL ? 'bad' : 'soft';
                 return (
                   <li key={need} className={state}>
-                    {owners.length ? <Icon name="check" /> : group.weight === 1 ? <Icon name="close" /> : <span aria-hidden="true" />}
+                    {owners.length ? <Icon name="check" /> : group.weight === ESSENTIAL ? <Icon name="close" /> : <span aria-hidden="true" />}
                     <span className="role">{needLabel(need, lang)}</span>
                     <span className="owners">
                       {owners.length
                         ? owners.map(name => <span key={name} className="owner">{name}</span>)
-                        : group.weight === 1 ? tr('analysis.missing') : group.weight > 0 ? '—' : tr('analysis.notRequiredValue')}
+                        : group.weight === ESSENTIAL ? tr('analysis.missing') : group.weight > 0 ? '—' : tr('analysis.notRequiredValue')}
                     </span>
                   </li>
                 );
@@ -168,9 +167,10 @@ export function AnalysisPanel({ team, analysis, rating, coaching, preview, onRep
         )}
       </details>
 
-      {data && team.length > 0 && <MetaUsePanel team={team} data={data} />}
+      {/* Senza meta niente uso nel formato né minacce */}
+      {data && !data.ignoreMeta && team.length > 0 && <MetaUsePanel team={team} data={data} />}
 
-      <details className="block">
+      {!data?.ignoreMeta && <details className="block">
         <summary><span>{tr('analysis.threats')}</span><span>{threatSummary}</span></summary>
         {score !== null && (
           <p className="note">
@@ -198,7 +198,7 @@ export function AnalysisPanel({ team, analysis, rating, coaching, preview, onRep
             );
           })}
         </ul>
-      </details>
+      </details>}
     </section>
   );
 }

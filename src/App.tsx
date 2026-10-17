@@ -64,7 +64,9 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
     requested.current.add(source);
     loadSource(source).then(result => setCache(c => ({ ...c, [source]: result })));
   }, [source, cache, loadSource]);
-  const data = cache[source] ?? NO_DATA;
+  const loaded = cache[source] ?? NO_DATA;
+  // Senza meta (single player): voto, analisi, coach e suggerimenti ignorano l'uso nel formato
+  const data = useMemo(() => (format.meta ? loaded : { ...loaded, ignoreMeta: true }), [loaded, format.meta]);
   const [initialTeam] = useState<TeamSet[]>(() => shared?.team ?? session?.team ?? []);
   const [team, setTeam] = useState<TeamSet[]>(initialTeam);
   useEffect(() => {
@@ -116,7 +118,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
     <div className="app">
       <TopBar format={format} onFormatChange={setFormat} meta={data.stats?.meta ?? null} lang={lang} onLangChange={changeLang}>
         <ShowdownPanel team={team} format={format} tera={teraAllowed(format)} onImport={changeTeam} />
-        <SavedTeams team={team} format={format} onLoad={(loaded, savedFormat) => { changeTeam(loaded); if (savedFormat) setFormat(savedFormat); }} />
+        <SavedTeams team={team} format={format} onLoad={(saved, savedFormat) => { changeTeam(saved); if (savedFormat) setFormat({ ...savedFormat, meta: format.meta }); }} />
       </TopBar>
       {loading && <p className="banner info">{t(lang, 'app.loading')}</p>}
       {!loading && !data.stats && (
@@ -149,7 +151,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
       </main>
       {undo && undo.after === team && (
         <UndoToast action={undo} onClose={() => setUndo(null)}
-          onUndo={() => { changeTeam(undo.before); if (undo.format) setFormat(undo.format); setUndo(null); }} />
+          onUndo={() => { changeTeam(undo.before); if (undo.format) setFormat({ ...undo.format, meta: format.meta }); setUndo(null); }} />
       )}
     </div>
     </LangProvider>

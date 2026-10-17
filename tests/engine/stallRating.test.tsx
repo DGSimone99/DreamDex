@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AREA_WEIGHTS, rateTeam, STALL_AREA_WEIGHTS } from '../../src/engine/rating';
+import { AREA_WEIGHTS, META_WEIGHT, rateTeam, STALL_AREA_WEIGHTS } from '../../src/engine/rating';
 import { memberPower, teamPower } from '../../src/engine/power';
 import { isPassive } from '../../src/engine/roles';
 import { metaTypeWeights } from '../../src/engine/stats';
@@ -30,8 +30,8 @@ describe('team stall', () => {
   it('riconosciuto: ruoli giudicati come stall (niente sweeper né velocità richiesti)', () => {
     const rating = rateTeam(stall, fixtureData)!;
     expect(rating.archetype).toBe('stall');
-    // da stall: Hazard, Rimozione e i due Wall (1 + 1 + 1 + 1) su 4,5; manca solo il Pivot (utile, 0,5) → 89
-    expect(rating.areas.find(a => a.key === 'roles')!.value).toBe(89);
+    // da stall: Hazard, Rimozione e i due Wall (1 + 1 + 1 + 1) su 4,75; manca solo il Pivot (utile, 0,75) → 84
+    expect(rating.areas.find(a => a.key === 'roles')!.value).toBe(84);
   });
 
   it('un team normale non è stall e non cambia', () => {
@@ -121,8 +121,12 @@ describe('membro passivo e riconoscimento dello stall', () => {
 });
 
 describe('voto dello stall', () => {
-  const weighted = (areas: { key: string; value: number | null }[], w: Record<string, number>) =>
-    Math.round(areas.reduce((acc, a) => acc + w[a.key] * a.value!, 0));
+  // Le quattro aree coi loro pesi, poi l'area Meta per un quinto
+  const weighted = (areas: { key: string; value: number | null }[], w: Record<string, number>) => {
+    const base = areas.filter(a => a.key !== 'meta').reduce((acc, a) => acc + w[a.key] * a.value!, 0);
+    const meta = areas.find(a => a.key === 'meta');
+    return Math.round(meta ? (1 - META_WEIGHT) * base + META_WEIGHT * meta.value! : base);
+  };
 
   it('forza dei passivi dalla sola robustezza', () => {
     const rating = rateTeam(stall, fixtureData)!;

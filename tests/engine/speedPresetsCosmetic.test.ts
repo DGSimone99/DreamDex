@@ -29,7 +29,10 @@ describe('Controllo velocità: solo con mosse che la controllano', () => {
   it('per giudicare il team la velocità resta coperta anche da un membro veloce o con Scarf', () => {
     expect(teamRoles(gardevoir)).toContain('speed');
     expect(teamRoles(set('Great Tusk', ['Headlong Rush'], 'Choice Scarf'))).toContain('speed');
-    expect(teamNeeds([gardevoir, tusk]).missingRoles).not.toContain('speed');
+    // Velocità coperta dai membri veloci; il controllo velocità (mosse) resta un bisogno a parte
+    const missing = teamNeeds([gardevoir, tusk]).missing.map(m => m.need);
+    expect(missing).not.toContain('speed');
+    expect(missing).toContain('speedControl');
   });
 
   it('il coaching non chiede controllo velocità a un team con membri veloci', () => {

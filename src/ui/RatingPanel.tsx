@@ -21,7 +21,8 @@ function goToSection(id: string) {
 }
 
 /** `ruleIssues`: problemi di regole del team (vietati, Mega, mosse non legali…): triangolo rosso accanto al voto. */
-export function RatingPanel({ rating, ruleIssues = [] }: { rating: TeamRating; ruleIssues?: string[] }) {
+/** `metaMonth`: mese delle statistiche, per dire con quale meta è stato calcolato il voto. */
+export function RatingPanel({ rating, ruleIssues = [], metaMonth }: { rating: TeamRating; ruleIssues?: string[]; metaMonth?: string }) {
   const t = useT();
   return (
     <details open aria-label={t('rating.title')} className="block rating">
@@ -39,14 +40,16 @@ export function RatingPanel({ rating, ruleIssues = [] }: { rating: TeamRating; r
           <span>{rating.overall}/100 · {rating.label}</span>
         </span>
       </p>
+      {metaMonth && <p className="rating-note">{rating.meta ? t('rating.metaOn', { month: metaMonth }) : t('rating.metaOff')}</p>}
       {rating.archetype === 'stall' && <p className="rating-note">{t('rating.stall')}</p>}
       <dl className="bars">
         {rating.areas.map(area => {
           const text = `${area.label} ${area.value ?? 'n/d'}`;
           const section = AREA_SECTIONS[area.key];
-          // Statistiche: il dettaglio per membro sta nel tooltip
-          const members = area.key === 'strength' && rating.power.length
+          // Statistiche e Meta: il dettaglio sta nel tooltip
+          const tip = area.key === 'strength' && rating.power.length
             ? rating.power.map(m => `${m.species} ${m.power}`).join('\n')
+            : area.key === 'meta' && rating.meta ? t('rating.metaTip', { threats: rating.meta.threats, usage: rating.meta.usage })
             : undefined;
           return (
             <div key={area.key}>
@@ -55,8 +58,8 @@ export function RatingPanel({ rating, ruleIssues = [] }: { rating: TeamRating; r
                   <button type="button" className="area-link" title={t('rating.goTo', { section: t(section.title) })} onClick={() => goToSection(section.id)}>
                     {text}
                   </button>
-                ) : members ? (
-                  <span className="tip" tabIndex={0} data-tip={members} aria-description={members.replaceAll('\n', ' · ')}>{text}</span>
+                ) : tip ? (
+                  <span className="tip" tabIndex={0} data-tip={tip} aria-description={tip.replaceAll('\n', ' · ')}>{text}</span>
                 ) : text}
               </dt>
               <dd><meter min={0} max={100} value={area.value ?? 0} /></dd>

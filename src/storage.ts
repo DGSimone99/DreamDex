@@ -69,6 +69,7 @@ export function sanitizeFormat(raw: unknown): Format {
     allowMultipleMegas: f.allowMultipleMegas === true,
     ignoreBans: f.ignoreBans === true,
     monotype: (TYPES as readonly string[]).includes(f.monotype as string) ? f.monotype! : null,
+    meta: f.meta !== false,
   };
 }
 

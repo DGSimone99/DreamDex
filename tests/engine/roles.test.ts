@@ -48,7 +48,7 @@ describe('roles', () => {
 
   it('bisogni del team', () => {
     // Team incompleto: si giudica come balance; Great Tusk e Gholdengo coprono rimozione, minaccia offensiva e wall fisico
-    expect(teamNeeds([tusk, gholdengo]).missing.map(m => m.need)).toEqual(['hazards', 'pivot', 'speed', 'priority', 'specialWall']);
+    expect(teamNeeds([tusk, gholdengo]).missing.map(m => m.need)).toEqual(['hazards', 'pivot', 'speed', 'speedControl', 'priority', 'specialWall']);
     expect(teamNeeds([tusk, gholdengo]).needStyle).toBeNull();
     // Squilibrio solo con almeno 4 attaccanti tutti dello stesso tipo (come nel voto)
     expect(teamNeeds([tusk, kingambit]).needStyle).toBeNull();
