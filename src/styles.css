@@ -713,6 +713,10 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .set { background: var(--field); padding: 10px 12px; border-radius: 4px; white-space: pre-wrap; font-size: 13px; line-height: 1.5; }
 
+/* Nessun risultato: al posto della lista, con l'uscita a portata */
+.list-empty { display: grid; justify-items: center; gap: 10px; padding: 40px 16px; background: var(--panel); border: 1px dashed var(--line); border-radius: 6px; text-align: center; color: var(--muted); }
+.list-empty > .icon { width: 28px; height: 28px; color: var(--faint); }
+.list-empty p { margin: 0; font-size: 15px; }
 .pager { display: flex; justify-content: center; gap: 4px; margin-top: 10px; }
 .pager button { justify-content: center; min-width: 34px; height: 34px; padding: 0 8px; font-variant-numeric: tabular-nums; }
 .pager button[aria-current='page'] { background: var(--blue-soft); border-color: var(--blue); font-weight: 700; }

@@ -160,7 +160,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
           count: problems.length ? { text: t(lang, problems.length === 1 ? 'tabs.problemsOne' : 'tabs.problemsMany', { n: problems.length }),
             level: problems.some(p => p.severity === 'serious') ? 'serious' : 'minor' } : null },
         { id: 'meta', label: t(lang, 'tabs.meta'), disabled: !metaOn, note: metaOn ? undefined : t(lang, 'tabs.metaOff'),
-          count: metaOn && openThreats ? { text: t(lang, openThreats === 1 ? 'tabs.threatsOne' : 'tabs.threatsMany', { n: openThreats }), level: 'warn' } : null },
+          count: metaOn && team.length > 0 && openThreats ? { text: t(lang, openThreats === 1 ? 'tabs.threatsOne' : 'tabs.threatsMany', { n: openThreats }), level: 'warn' } : null },
         { id: 'compare', label: t(lang, 'tabs.compare'), disabled: true, note: t(lang, 'tabs.soon') },
       ]} />
       <main className="tab-body">

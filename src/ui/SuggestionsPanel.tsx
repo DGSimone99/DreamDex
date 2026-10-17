@@ -113,8 +113,9 @@ function SuggestionRow({ rank, item, usage, out, quickLabel, actionLabel, replac
   const lang = useLang();
   const diff = 'diff' in item ? item.diff : null;
   const changes = diff ? describeDiff(diff, lang) : null;
+  // Senza differenze da dire, il primo motivo (o "nessuna differenza" se non ce ne sono)
   const diffText = changes
-    ? [...changes.pros.map(p => `+${p}`), ...changes.cons.map(c => `−${c}`)].join(' · ') || tr('suggest.noDifference')
+    ? [...changes.pros.map(p => `+${p}`), ...changes.cons.map(c => `−${c}`)].join(' · ') || (item.reasons[0] ? null : tr('suggest.noDifference'))
     : null;
   // La riga sotto il nome; le etichette uguali a questa riga non si ripetono
   const summaryText = diffText ?? item.reasons[0]?.text ?? '';
@@ -385,7 +386,13 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   } else if (!data.stats && !filtering) {
     body = <p>{tr('suggest.needData')}</p>;
   } else if (filtering && items.length === 0) {
-    body = <p className="note">{tr('suggest.noMatch')}</p>;
+    body = (
+      <div className="list-empty">
+        <Icon name="search" />
+        <p>{tr('suggest.noMatch')}</p>
+        {filters.query && <button type="button" onClick={() => setFilters({ ...filters, query: '' })}>{tr('suggest.clear')}</button>}
+      </div>
+    );
   } else {
     notes = (
       <>
