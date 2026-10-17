@@ -1,6 +1,6 @@
 import type { EngineData } from '../engine/data';
 import { battleAbility, battleName, battleSpecies, getSpecies, isMega, isSelectable, withinGen } from '../engine/dex';
-import { formatLabel, isBannedIn, meetsTeamRules, teraAllowed } from '../engine/formats';
+import { formatLabel, isBannedIn, teraAllowed } from '../engine/formats';
 import type { Format } from '../engine/format';
 import { formatRules } from '../engine/formatRules';
 import { detectRoles, roleLabel, roleShortLabel } from '../engine/roles';
@@ -20,7 +20,7 @@ import { Sprite, TypeChip, typeColor } from './Sprite';
 import { Icon } from './icons';
 import { illegalParts } from '../engine/learnsets';
 import { t, type Lang } from '../i18n';
-import { gameName, typeName } from '../i18n/game';
+import { gameName } from '../i18n/game';
 import { useLang, useT } from '../i18n/react';
 
 interface Props {
@@ -42,7 +42,6 @@ function slotProblems(set: TeamSet, format: Format, lang: Lang): string[] {
   const forme = battleSpecies(set) ?? species;
   return [
     !isSelectable(species) || isBannedIn(forme, format) ? t(lang, 'team.notLegal', { format: formatLabel(format, lang) }) : null,
-    !meetsTeamRules(forme, format) ? t(lang, 'team.notType', { type: typeName(format.monotype ?? '', lang) }) : null,
     !withinGen(species, format) ? t(lang, 'team.beyondGen', { gen: format.genLimit }) : null,
   ].filter((p): p is string => !!p);
 }

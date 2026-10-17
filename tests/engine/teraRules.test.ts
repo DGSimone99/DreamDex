@@ -4,12 +4,11 @@ import { teraAllowed } from '../../src/engine/formats';
 import { emptySet, exportShowdown } from '../../src/engine/sets';
 
 describe('Tera per formato', () => {
-  it('ammesso in Ubers e Tutti; vietato in OU, UU e Monotype', () => {
+  it('ammesso in Ubers e Tutti; vietato in OU e UU', () => {
     expect(teraAllowed({ ...DEFAULT_FORMAT, formatId: 'ubers' })).toBe(true);
     expect(teraAllowed({ ...DEFAULT_FORMAT, formatId: 'all' })).toBe(true);
     expect(teraAllowed({ ...DEFAULT_FORMAT, formatId: 'ou' })).toBe(false);
     expect(teraAllowed({ ...DEFAULT_FORMAT, formatId: 'uu' })).toBe(false);
-    expect(teraAllowed({ ...DEFAULT_FORMAT, formatId: 'ou', monotype: 'Fire' })).toBe(false);
   });
 
   it('export senza Tera dove è vietato; di default resta (salvataggi)', () => {

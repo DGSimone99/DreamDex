@@ -4,7 +4,7 @@ import { coachTeam, type SwapPreview } from './engine/coach';
 import { rateTeam } from './engine/rating';
 import type { EngineData } from './engine/data';
 import { DEFAULT_FORMAT, type Format } from './engine/format';
-import { dataLabel, dataSource, teraAllowed } from './engine/formats';
+import { dataSource, formatLabel, teraAllowed } from './engine/formats';
 import { battleName } from './engine/dex';
 import { UndoToast, type UndoAction } from './ui/UndoToast';
 import { takeSharedTeam } from './share';
@@ -125,7 +125,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
       {loading && <p className="banner info">{t(lang, 'app.loading')}</p>}
       {!loading && !data.stats && (
         <p className="banner" role="alert">
-          {t(lang, 'app.noData', { format: dataLabel(format, lang) })} <code>npm run fetch-data</code> {t(lang, 'app.noDataAfter')}
+          {t(lang, 'app.noData', { format: formatLabel(format, lang) })} <code>npm run fetch-data</code> {t(lang, 'app.noDataAfter')}
         </p>
       )}
       <div className="band">

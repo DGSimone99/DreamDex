@@ -1,6 +1,6 @@
 # DreamDex
 
-Team builder avanzato per Smogon **National Dex** (singolo 6v6): OU, Ubers, UU, Monotype e "Tutti i Pokémon".
+Team builder avanzato per Smogon **National Dex** (singolo 6v6): OU, Ubers, UU e "Tutti i Pokémon".
 Inserisci uno o più Pokémon e DreamDex suggerisce, in ordine, quelli che completano meglio il team, considerando meta, tipi, coverage e ruoli, con una motivazione per ciascuno. Interfaccia in inglese o italiano (interruttore EN | IT).
 
 ## Avvio
