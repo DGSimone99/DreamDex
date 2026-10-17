@@ -97,7 +97,7 @@ describe('ricerca e filtri nei suggerimenti', () => {
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'dragapu');
     await waitFor(() => expect(cardNames()).toEqual(['Dragapult']));
     expect(within(suggestions()).getByText('Uber · bannato in National Dex OU')).toBeInTheDocument();
-    await user.selectOptions(screen.getByLabelText('Tier'), 'legal');
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Tier' }), 'legal');
     expect(await within(suggestions()).findByText('Nessun Pokémon corrisponde ai filtri')).toBeInTheDocument();
   });
 
