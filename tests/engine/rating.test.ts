@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { teamPower } from '../../src/engine/power';
-import { AREA_FULL, AREA_KNEE, AREA_WEIGHTS, BULK_FULL, BULK_SHARE, COVERAGE_DEPTH, META_WEIGHT, OFFENSE_FULL, SPEED_WEIGHT, areaValue, gradeFor, rateTeam, typeSafety } from '../../src/engine/rating';
+import { AREA_FULL, AREA_KNEE, DEFENSIVE_BLEND, AREA_WEIGHTS, BULK_FULL, BULK_SHARE, COVERAGE_DEPTH, META_WEIGHT, OFFENSE_FULL, SPEED_WEIGHT, areaValue, gradeFor, rateTeam, typeSafety } from '../../src/engine/rating';
 import { memberPower } from '../../src/engine/power';
 
 /** Offesa media dei membri, piena a OFFENSE_FULL. */
@@ -130,3 +130,18 @@ describe('cima delle aree', () => {
   });
 });
 
+
+describe('pesi secondo il tipo di team', () => {
+  it('offense invariato; balance e semi-stall si spostano verso i pesi dello stall', () => {
+    expect(DEFENSIVE_BLEND.hyperOffense).toBe(0);
+    expect(DEFENSIVE_BLEND.bulkyOffense).toBe(0);
+    expect(DEFENSIVE_BLEND.balance).toBeGreaterThan(0);
+    expect(DEFENSIVE_BLEND.semiStall).toBeGreaterThan(DEFENSIVE_BLEND.balance);
+  });
+
+  it('un team incompleto non si sposta: il suo tipo è solo presunto', () => {
+    const rating = rateTeam([tusk, gholdengo], fixtureData)!;
+    expect(rating.weights.speed! / (1 - rating.metaWeight || 1)).toBeGreaterThan(0);
+    expect(value(rating, 'strength')).toBe(offenseArea([tusk, gholdengo]));
+  });
+});

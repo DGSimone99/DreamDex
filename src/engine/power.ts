@@ -43,8 +43,19 @@ function referencePool(formatId: FormatId | null = null) {
 
 /** Percentile 0–100: quota del riferimento sotto il valore (i pari contano a metà). */
 function percentile(sorted: number[], value: number): number {
-  const below = sorted.filter(v => v < value).length;
-  const equal = sorted.filter(v => v === value).length;
+  // Il riferimento è ordinato: due ricerche binarie al posto di due passate sull'intera lista
+  const firstAtLeast = (strict: boolean) => {
+    let lo = 0;
+    let hi = sorted.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (strict ? sorted[mid] <= value : sorted[mid] < value) lo = mid + 1;
+      else hi = mid;
+    }
+    return lo;
+  };
+  const below = firstAtLeast(false);
+  const equal = firstAtLeast(true) - below;
   return Math.round((100 * (below + equal / 2)) / sorted.length);
 }
 
