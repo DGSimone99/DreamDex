@@ -129,6 +129,10 @@ export interface TeamRating {
   areas: RatingArea[];
   /** Archetipo riconosciuto che cambia il calcolo dei ruoli (per ora solo lo stall). */
   archetype: 'stall' | null;
+  /** Tipo di team con cui si sono scelti i pesi delle aree (balance per un team incompleto). */
+  teamType: Archetype;
+  /** Il team usa Trick Room: la Velocità non conta. */
+  trickRoom: boolean;
   /** Dettaglio dell'area Meta, o null se il voto è senza meta. */
   meta: MetaScore | null;
   /** Peso di ogni area nel voto (somma 1); il Meta non pesa, è una penalità. */
@@ -422,6 +426,7 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
   const coverageByMember = team.map(set => ({ species: battleName(set), types: TYPES.filter(type => superEffectiveMoves(set, type, field).length > 0).length }));
   return {
     base, penalty, bonus, power: power.members, overall, ...gradeFor(overall, lang), provisional: team.length < 6, areas, archetype, meta,
+    teamType: analysis.needs.archetype, trickRoom,
     weights: areaWeights, coverageByMember,
   };
 }

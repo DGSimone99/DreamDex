@@ -296,6 +296,9 @@ The top bar is the only navigation: logo, format, gen limit, usage threshold, Av
 ### Team Card (signature)
 A slanted Navy Raised parallelogram, 214px tall: Custom Skillset lock top-left, favourite and remove top-right, centred 96px pixelated sprite with round alert marks at its lower right, then the Stats badge on its own row, name, item (with its 18px item icon), ability, type chips and roles. Every row keeps the same 14px gap from the slanted left edge (measured, so it stays exact when a long name makes the card taller); the sprite stays centred within the slant. Holding a Mega Stone (or Ultranecrozium Z) the card shows the battle forme's name and ability. A 5px bottom stripe in the type colour, split half and half for dual types. Hover lightens the fill. Selected: the card lifts 4px with the Lift shadow, the sprite scales 1.12 and plays its animated idle (Showdown gen5ani, static under reduced motion or when missing), and the stripe turns Trophy Gold; the set drawer opens beneath with a 3px gold top rule.
 
+### Rating Help
+A small "?" in a circle (Slate Faint, Signal Blue on hover) beside "Team rating" opens "How the grade works": a modal on Ink Ground with the Float shadow, rendered in the page body so it inherits nothing from the panel. Topics on the left (How it works, each area, Bonuses and penalties) as a vertical tab list on Navy Panel, the selected one on Signal Blue Soft; the explanation on the right. "How it works" shows the weight table per kind of team with the current team's row on Signal Blue Soft. Esc, the × or a click outside closes it and focus returns to the "?". Tooltips on the rating bars carry only per-member data; the rules live here.
+
 ### Issue Marks
 - **Red triangle:** a legality problem. **Yellow triangle:** needs checking (second Mega, illegal moves or ability). Both can sit on the same sprite.
 - **Blue unlock:** Custom Skillset; informational, placed in the card's top-left corner, not a problem.
