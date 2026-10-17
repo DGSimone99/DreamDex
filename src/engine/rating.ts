@@ -52,6 +52,14 @@ export const STALL_AREA_WEIGHTS: Record<BaseArea, number> = {
   speed: 0,
   bulk: 0,
 };
+/**
+ * Quanto i pesi di un team non stall si spostano verso quelli dello stall, secondo il tipo di team:
+ * un semi-stall o un balance non vincono con la velocità, e la difesa conta di più.
+ */
+export const DEFENSIVE_BLEND: Record<Archetype, number> = { hyperOffense: 0, bulkyOffense: 0, balance: 0.3, semiStall: 0.6, stall: 0.6 };
+const blendWeights = (amount: number): Record<BaseArea, number> => Object.fromEntries((Object.keys(AREA_WEIGHTS) as BaseArea[])
+  .map(key => [key, (1 - amount) * AREA_WEIGHTS[key] + amount * STALL_AREA_WEIGHTS[key]])) as Record<BaseArea, number>;
+
 /** Pesi per un team con Trick Room, lento per scelta: la velocità non conta, il resto come sempre. */
 const TRICK_ROOM_WEIGHTS: Record<BaseArea, number> = { ...OTHER_AREAS, speed: 0, bulk: 0 };
 
@@ -396,7 +404,9 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
   const bulk = average(m => m.bulk);
   const offense = average(m => m.offense);
   const trickRoom = team.some(set => set.moves.some(move => toID(move) === 'trickroom'));
-  const weightsFor = archetype ? STALL_AREA_WEIGHTS : trickRoom ? TRICK_ROOM_WEIGHTS : AREA_WEIGHTS;
+  // Con meno di sei membri il tipo di team è solo presunto (balance): niente spostamento verso la difesa
+  const blend = archetype || trickRoom || team.length < 6 ? 0 : DEFENSIVE_BLEND[analysis.needs.archetype];
+  const weightsFor = archetype ? STALL_AREA_WEIGHTS : trickRoom ? TRICK_ROOM_WEIGHTS : blendWeights(blend);
   const strength = power.value === null ? null : power.value / 100;
   // Velocità: col meta contro le minacce più usate, senza contro tutti i Pokémon
   const speed = teamSpeed(team, data, usesMeta(data) ? analysis.threats.map(x => x.name) : null);
@@ -407,7 +417,13 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
   const bulkShare = bulk === null ? 0 : BULK_SHARE[analysis.needs.archetype];
   const effective: Record<BaseArea, number> = { ...weightsFor, defense: weightsFor.defense * (1 - bulkShare), bulk: weightsFor.defense * bulkShare };
   // Offesa: quanto colpiscono forte i membri (nello stall: Statistiche, la robustezza dei muri passivi)
-  const attack = archetype ? full('strength', strength) : offense === null ? null : areaValue(offense, OFFENSE_FULL);
+  // Un semi-stall o un balance ha muri passivi per scelta: con la stessa quota dei pesi, l'Offesa si avvicina
+  // alle Statistiche dello stall (quanto incassano i muri, quanto colpiscono gli altri)
+  const walls = blend > 0 ? teamPower(team, team.map((set, i) => isPassive(set, memberRoles[i])), rules).value : null;
+  const offenseArea = offense === null ? null : areaValue(offense, OFFENSE_FULL);
+  const attack = archetype ? full('strength', strength)
+    : offenseArea === null ? null
+    : walls === null ? offenseArea : (1 - blend) * offenseArea + blend * areaValue(walls / 100, AREA_FULL.strength);
   const raw: Record<AreaKey, number | null> = {
     // Coverage offensiva 1:1: un membro su ogni tipo vale 70, due 90, tre 100
     coverage: Math.min(1, coverage), defense: full('defense', typeDefense), strength: attack, bulk: full('bulk', bulk),
