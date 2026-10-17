@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { EngineData } from '../engine/data';
 import type { Format } from '../engine/format';
+import { formatRules } from '../engine/formatRules';
 import { improveReplacements, similarity, similarReplacements, type Replacement } from '../engine/replace';
 import { describeDiff, ratingGainOf, SIMILAR_THRESHOLD, type SwapPreview } from '../engine/coach';
 import { suggest, type Suggestion } from '../engine/scoring';
@@ -316,7 +317,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
                 replacement: item.species,
                 set: item.set,
                 score: item.score,
-                similar: similarity(team[replaceIndex], item.set) >= SIMILAR_THRESHOLD,
+                similar: similarity(team[replaceIndex], item.set, formatRules(format.formatId)) >= SIMILAR_THRESHOLD,
                 ratingGain: ratingGainOf(team, replaceIndex, item.set, data),
                 diff: item.diff,
               }, open) : undefined}

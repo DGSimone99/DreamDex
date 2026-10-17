@@ -1,3 +1,4 @@
+import type { FormatId } from './format';
 import type { PresetsData, SetsData } from './sets';
 import type { FallbackStats, StatsData } from './stats';
 
@@ -14,4 +15,6 @@ export interface EngineData {
   fallbackStats?: FallbackStats | null;
   /** Valutazione senza meta: tipi tutti uguali, niente minacce né uso dei membri (giochi in single player). */
   ignoreMeta?: boolean;
+  /** Formato scelto, per le regole che cambiano col formato (vedi formatRules). */
+  formatId?: FormatId;
 }

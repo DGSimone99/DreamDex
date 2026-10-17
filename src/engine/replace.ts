@@ -2,6 +2,7 @@ import { analyzeTeam, type TeamAnalysis } from './analysis';
 import type { EngineData } from './data';
 import { battleSpecies } from './dex';
 import type { Format } from './format';
+import { formatRules, type FormatRules } from './formatRules';
 import { detectRoles, type Role } from './roles';
 import type { Lang } from '../i18n';
 import { scoreCandidates, scoreSets, type Suggestion } from './scoring';
@@ -40,7 +41,7 @@ function cosine(a: number[], b: number[]): number {
   return dot / (norm(a) * norm(b) || 1);
 }
 
-export function similarity(a: TeamSet, b: TeamSet): number {
+export function similarity(a: TeamSet, b: TeamSet, rules: FormatRules): number {
   const sa = battleSpecies(a);
   const sb = battleSpecies(b);
   if (!sa || !sb) return 0;
@@ -49,7 +50,7 @@ export function similarity(a: TeamSet, b: TeamSet): number {
   const speed = speedGap <= 10 ? 1 : speedGap <= 25 ? 0.5 : 0;
   return (
     0.35 * jaccard(sa.types, sb.types) +
-    0.35 * jaccard(detectRoles(a), detectRoles(b)) +
+    0.35 * jaccard(detectRoles(a, rules), detectRoles(b, rules)) +
     0.2 * cosine(vector(sa), vector(sb)) +
     0.1 * speed
   );
@@ -57,7 +58,7 @@ export function similarity(a: TeamSet, b: TeamSet): number {
 
 function contribution(set: TeamSet, analysis: TeamAnalysis): Contribution {
   return {
-    roles: detectRoles(set).filter(role => analysis.needs.missingRoles.includes(role)),
+    roles: detectRoles(set, analysis.needs.rules).filter(role => analysis.needs.missingRoles.includes(role)),
     covers: analysis.coverage
       .filter(row => row.hitters.length === 0 && superEffectiveMove(set, row.type) !== null)
       .map(row => row.type),
@@ -100,7 +101,7 @@ export function similarReplacements(team: TeamSet[], index: number, format: Form
   const { original, analysis, scored } = candidatesFor(team, index, format, data, pool, lang);
   const rank = (r: Replacement) => 0.8 * (r.similarity ?? 0) + 0.2 * (r.score / 100);
   return scored
-    .map(s => ({ ...s, similarity: similarity(original, s.set), diff: diffContribution(original, s.set, analysis) }))
+    .map(s => ({ ...s, similarity: similarity(original, s.set, formatRules(format.formatId)), diff: diffContribution(original, s.set, analysis) }))
     .sort((a, b) => rank(b) - rank(a))
     .slice(0, limit);
 }

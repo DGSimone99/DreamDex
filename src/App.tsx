@@ -66,7 +66,9 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   }, [source, cache, loadSource]);
   const loaded = cache[source] ?? NO_DATA;
   // Senza meta (single player): voto, analisi, coach e suggerimenti ignorano l'uso nel formato
-  const data = useMemo(() => (format.meta ? loaded : { ...loaded, ignoreMeta: true }), [loaded, format.meta]);
+  // Il formato scelto entra nei dati: alcune regole del voto cambiano col formato (Ubers)
+  const data = useMemo(() => ({ ...loaded, formatId: format.formatId, ...(format.meta ? {} : { ignoreMeta: true }) }),
+    [loaded, format.formatId, format.meta]);
   const [initialTeam] = useState<TeamSet[]>(() => shared?.team ?? session?.team ?? []);
   const [team, setTeam] = useState<TeamSet[]>(initialTeam);
   useEffect(() => {

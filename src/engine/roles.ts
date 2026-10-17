@@ -1,5 +1,6 @@
 import { battleAbility, battleSpecies, effectiveStats, getMove, isDefined, toID } from './dex';
 import type { TeamSet } from './sets';
+import type { FormatRules } from './formatRules';
 import { t, type Lang } from '../i18n';
 
 export type Role =
@@ -45,7 +46,7 @@ const isSetupBreaker = (roles: Role[]) => roles.includes('setup') && roles.inclu
  * Si guarda il set, non solo le statistiche: un leggendario con quattro attacchi non è un muro da stall,
  * mentre Mega Sableye o Quagsire lo sono anche senza statistiche da muro.
  */
-export function isPassive(set: TeamSet, roles: Role[] = detectRoles(set)): boolean {
+export function isPassive(set: TeamSet, roles: Role[]): boolean {
   const attacks = set.moves.filter(m => (getMove(m)?.category ?? 'Status') !== 'Status').length;
   if (attacks > 2 || isFastSetupSweeper(set, roles) || isSetupBreaker(roles)) return false;
   const heals = set.moves.some(m => RECOVERY_MOVES.has(toID(m))) || RECOVERY_ABILITIES.has(toID(set.ability));
@@ -56,7 +57,7 @@ export function isPassive(set: TeamSet, roles: Role[] = detectRoles(set)): boole
 export const STALL_PASSIVE = 6;
 
 /** Stall: tutti e 6 i membri passivi. */
-export function isStall(team: TeamSet[], roles: Role[][] = team.map(detectRoles)): boolean {
+export function isStall(team: TeamSet[], roles: Role[][]): boolean {
   return team.filter((set, i) => isPassive(set, roles[i])).length >= STALL_PASSIVE;
 }
 
@@ -69,7 +70,7 @@ const SPEED_MOVES = new Set(['thunderwave', 'glare', 'nuzzle', 'stunspore', 'sti
 const SPEED_ABILITIES = new Set(['swiftswim', 'chlorophyll', 'sandrush', 'slushrush', 'surgesurfer', 'unburden', 'speedboost']);
 const BREAKER_ITEMS = new Set(['choiceband', 'choicespecs', 'lifeorb']);
 
-export function detectRoles(set: TeamSet): Role[] {
+export function detectRoles(set: TeamSet, rules: FormatRules): Role[] {
   const species = battleSpecies(set);
   if (!species) return [];
   const ids = set.moves.map(toID);
@@ -98,8 +99,12 @@ export function detectRoles(set: TeamSet): Role[] {
   const style = attackStyle(set);
   if (style === 'physical' && stats.atk >= 100 && outspeeds('atk')) roles.add('physicalSweeper');
   if (style === 'special' && stats.spa >= 100 && outspeeds('spa')) roles.add('specialSweeper');
-  if (stats.def >= 100 && stats.hp + stats.def >= 190) roles.add('physicalWall');
-  if (stats.spd >= 100 && stats.hp + stats.spd >= 190) roles.add('specialWall');
+  // Muro: difese alte; con un set offensivo, in Ubers, servono difese alte anche per il formato (Zacian-Crowned no)
+  const defensiveSet = moves.filter(m => m.category !== 'Status').length <= 2 && !roles.has('setup');
+  const walls = (stat: 'def' | 'spd') => stats[stat] >= 100 && stats.hp + stats[stat] >= 190
+    && (defensiveSet || stats.hp * stats[stat] >= rules.offensiveWallBulk);
+  if (walls('def')) roles.add('physicalWall');
+  if (walls('spd')) roles.add('specialWall');
 
   return ROLE_ORDER.filter(role => roles.has(role));
 }
@@ -126,8 +131,8 @@ export function isFast(set: TeamSet): boolean {
  * Ruoli con cui si giudica il team (voto, bisogni, candidati): quelli del set, più la velocità per un membro veloce.
  * In singolo un team con membri veloci ha già la sua velocità, anche senza mosse di controllo velocità.
  */
-export function teamRoles(set: TeamSet): Role[] {
-  const roles = detectRoles(set);
+export function teamRoles(set: TeamSet, rules: FormatRules): Role[] {
+  const roles = detectRoles(set, rules);
   return isFast(set) && !roles.includes('speed') ? ROLE_ORDER.filter(role => role === 'speed' || roles.includes(role)) : roles;
 }
 
