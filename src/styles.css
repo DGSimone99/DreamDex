@@ -255,6 +255,9 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 /* Bordo sottile: il triangolo dice il problema, la selezione resta la cosa più visibile */
 .slot.invalid > summary::before { outline: 1px solid color-mix(in srgb, var(--bad) 70%, transparent); outline-offset: -1px; }
 .slot.warn > summary::before { outline: 1px solid color-mix(in srgb, var(--warn) 70%, transparent); outline-offset: -1px; }
+/* Focus da tastiera sulla card: l'anello segue l'inclinazione (sta sul fondo inclinato, non sul box dritto) */
+.slot > summary:focus-visible { outline: none; }
+.slot > summary:focus-visible::before { outline: 2px solid var(--gold); outline-offset: 3px; }
 .slot.empty { align-items: center; justify-content: center; color: var(--faint); font-weight: 500; }
 .slot.empty::before { background: transparent; border: 2px dashed var(--line); border-image: none; }
 .sprite.missing { display: block; width: 96px; height: 96px; }
