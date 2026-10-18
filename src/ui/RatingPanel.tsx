@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react';
+import { useEditing } from './editing';
 import type { AreaKey, TeamRating } from '../engine/rating';
 import { Typed } from './TypeText';
 import { AlertMark } from './AlertMark';
@@ -99,8 +101,13 @@ export function RatingPanel({ rating, ruleIssues = [], metaMonth }: { rating: Te
 }
 
 /** Voto grande accanto alla fila del team (riassunto visivo; i dettagli sono nella valutazione). */
-export function GradeBadge({ rating, since = null }: { rating: TeamRating | null; since?: number | null }) {
+export function GradeBadge({ rating }: { rating: TeamRating | null }) {
   const t = useT();
+  // Voto quando si è aperto il membro nell'editor: il badge mostra di quanto è cambiato
+  const editing = useEditing();
+  const [since, setSince] = useState<number | null>(null);
+  const overall = rating?.overall ?? null;
+  useEffect(() => { setSince(editing === null ? null : overall); }, [editing]);
   const delta = rating && since !== null ? rating.overall - since : 0;
   return (
     <div className={`grade-badge${rating ? ` grade-${rating.grade}` : ' none'}`} aria-hidden="true">

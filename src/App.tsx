@@ -99,8 +99,6 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
       : current?.index === next.index && current.replacement === next.replacement ? null : current));
   const analysis = useMemo(() => analyzeTeam(team, data), [team, data]);
   const rating = useMemo(() => rateTeam(team, data, lang), [team, data, lang]);
-  // Voto quando si è aperto il membro nell'editor: il badge mostra di quanto è cambiato
-  const [editBase, setEditBase] = useState<number | null>(null);
   // Il coach prova gli scambi per ogni membro (un decimo di secondo): si aggiorna subito dopo il team, senza bloccarlo
   const coachInput = useMemo(() => ({ team, format, data, lang }), [team, format, data, lang]);
   const coachSource = useDeferredValue(coachInput);
@@ -135,6 +133,14 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
     const after = changeTeam(team.map((s, i) => (i === index ? set : s)));
     if (team[index]) remember({ kind: 'replace', from: battleName(team[index]), to: battleName(set) }, after);
   };
+  // Set incollato: stesso Pokémon con un altro set, o un Pokémon diverso al suo posto
+  const pasteAt = (index: number, set: TeamSet) => {
+    const before = team[index];
+    const after = changeTeam(team.map((s, i) => (i === index ? set : s)));
+    if (before) remember(before.species === set.species
+      ? { kind: 'paste', from: battleName(before) }
+      : { kind: 'replace', from: battleName(before), to: battleName(set) }, after);
+  };
   const removeAt = (index: number) => {
     const after = changeTeam(team.filter((_, i) => i !== index));
     remember({ kind: 'remove', from: battleName(team[index]) }, after);
@@ -154,10 +160,9 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
         </p>
       )}
       <div className="band">
-        <TeamPanel team={team} format={format} data={data} onChange={changeTeam} onAdd={addSet} onReplace={startReplace} onRemove={removeAt}
-          onAllowMultipleMegas={() => setFormat(f => ({ ...f, allowMultipleMegas: true }))}
-          onOpenChange={index => setEditBase(index === null || !rating ? null : rating.overall)} />
-        <GradeBadge rating={rating} since={editBase} />
+        <TeamPanel team={team} format={format} data={data} onChange={changeTeam} onAdd={addSet} onReplace={startReplace} onRemove={removeAt} onPaste={pasteAt}
+          onAllowMultipleMegas={() => setFormat(f => ({ ...f, allowMultipleMegas: true }))} />
+        <GradeBadge rating={rating} />
       </div>
       <Tabs active={shownTab} onChange={setTab} tabs={[
         { id: 'pokemon', label: t(lang, 'tabs.pokemon'),

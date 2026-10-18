@@ -207,7 +207,12 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
   return (
     <div className="set-editor">
       <div className="editor-head">
-        {title}
+        {(title || actions) && (
+          <div className="editor-top">
+            {title}
+            {actions && <div className="editor-actions">{actions}</div>}
+          </div>
+        )}
         <div className="field preset-field">
           <span className="field-head">{t('editor.presets')}</span>
           <Combobox
@@ -232,7 +237,6 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
           />{' '}
           {t('editor.customLabel')}
         </label>
-        {actions && <div className="editor-actions">{actions}</div>}
       </div>
       <fieldset className="evs">
         <legend>{t('editor.evs')}</legend>

@@ -301,17 +301,42 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
   animation: drawer 0.3s var(--ease);
 }
 @keyframes drawer { from { opacity: 0; transform: translateY(-8px); } }
-.set-editor { display: grid; grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr); gap: 14px 18px; align-items: start; }
-.set-editor .editor-side { display: grid; gap: 14px; }
+.set-editor { display: grid; grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr); gap: 12px 18px; align-items: start; }
+.set-editor .editor-side { display: grid; gap: 10px; }
 .set-editor label, .set-editor .field { display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
 .set-editor label input, .set-editor label select, .set-editor .field input { font-size: 14px; color: var(--text); text-transform: none; letter-spacing: 0; font-weight: 400; width: 100%; }
 .set-editor .editor-head { grid-column: 1 / -1; display: flex; align-items: center; gap: 18px; }
 /* Nome e tipi del membro aperto: la card sopra mostra solo lo sprite */
 .editor-title { display: flex; align-items: center; gap: 10px; min-width: 0; margin-right: 6px; }
-.editor-title strong { font: 700 26px/1 var(--display); text-transform: uppercase; letter-spacing: 0.02em; white-space: nowrap; }
+.editor-title strong { font: 700 24px/1 var(--display); text-transform: uppercase; letter-spacing: 0.02em; white-space: nowrap; }
 .editor-title strong::before { content: attr(data-name); }
 .editor-title .types { display: flex; flex-wrap: nowrap; gap: 4px; }
+.set-editor .editor-head { flex-wrap: wrap; row-gap: 8px; }
+.editor-top { flex: 1 0 100%; display: flex; align-items: center; gap: 18px; min-width: 0; }
 .editor-actions { display: flex; gap: 8px; margin-left: auto; }
+/* Incolla set: riquadro sotto i pulsanti, sopra l'editor */
+.drawer { position: relative; }
+.paste-panel {
+  position: absolute;
+  z-index: 30;
+  top: 60px;
+  right: 20px;
+  width: min(440px, calc(100% - 40px));
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--ground);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.5);
+  animation: tip 0.18s var(--ease);
+}
+.paste-panel textarea { width: 100%; font: 13px/1.45 var(--ui); resize: vertical; }
+.paste-hint { margin: 0; font-size: 12px; color: var(--muted); }
+.paste-error { margin: 0; font-size: 13px; color: var(--bad); }
+.paste-actions { display: flex; gap: 8px; justify-content: flex-end; }
+.paste-actions .apply { background: var(--blue-soft); border-color: var(--blue); color: var(--text); }
+.paste-actions .apply:hover:not(:disabled) { background: #2a3b85; }
 .editor-actions button { height: 36px; white-space: nowrap; }
 .set-editor .custom-toggle { white-space: nowrap; flex-shrink: 0; }
 .set-editor .preset-field { flex-direction: row; align-items: center; gap: 12px; }
@@ -322,9 +347,9 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 .combobox input:disabled { opacity: 0.55; cursor: not-allowed; }
 .set-editor .custom-toggle { flex-direction: row; align-items: center; height: 36px; gap: 8px; width: fit-content; text-transform: none; letter-spacing: 0; font-size: 14px; color: var(--text); cursor: help; }
 .set-editor .custom-toggle input { width: 16px; }
-.set-editor fieldset { margin: 0; padding: 10px 14px 14px; border: 1px solid var(--line); border-radius: 4px; background: var(--panel); }
+.set-editor fieldset { margin: 0; padding: 6px 14px 12px; border: 1px solid var(--line); border-radius: 4px; background: var(--panel); }
 .set-editor legend { font: 700 14px var(--display); text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); padding: 0 6px; }
-.editor-group { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 14px; }
+.editor-group { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 14px; }
 .set-editor .field-note { font-size: 11px; font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--faint); }
 .set-editor .evs { position: relative; display: grid; gap: 10px; align-self: stretch; }
 /* "Spread più usati" sulla riga del titolo EV: non ruba una riga al blocco */

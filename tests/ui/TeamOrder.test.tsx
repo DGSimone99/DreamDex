@@ -39,4 +39,19 @@ describe('ordine del team e editor', () => {
     expect(evs).toHaveTextContent('510');
     expect(evs).toHaveTextContent('0 liberi');
   });
+
+  it('Incolla set cambia il membro intero e si può annullare', async () => {
+    const user = userEvent.setup();
+    const team = await importTeam(user, 'Garchomp\n- Earthquake\n\nCorviknight\n- Roost');
+    await user.click(within(team).getByText('Garchomp', { selector: '.name' }));
+    const open = () => team.querySelector('.slot[open]') as HTMLElement;
+    await user.click(within(open()).getByRole('button', { name: 'Incolla set' }));
+    await user.click(within(open()).getByLabelText('Set da incollare (testo Showdown)'));
+    await user.paste('Great Tusk @ Booster Energy\nJolly Nature\n- Rapid Spin');
+    await user.click(within(open()).getByRole('button', { name: 'Applica' }));
+    expect(names(team)).toEqual(['Great Tusk', 'Corviknight']);
+    expect(team.querySelector('.slot[open] .name')).toHaveTextContent('Great Tusk');
+    await user.click(screen.getByRole('button', { name: /Annulla/ }));
+    expect(names(team)).toEqual(['Garchomp', 'Corviknight']);
+  });
 });

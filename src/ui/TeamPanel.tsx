@@ -7,10 +7,11 @@ import { formatRules } from '../engine/formatRules';
 import { detectRoles, roleLabel, roleShortLabel } from '../engine/roles';
 import { cardRoles, weatherOf } from '../engine/archetype';
 import { conditionLabel, viaName } from '../engine/synergy';
-import { exportShowdown, presetsForSet, type Preset, type TeamSet } from '../engine/sets';
-import { useEffect, useRef, useState } from 'react';
+import { exportShowdown, importShowdown, presetsForSet, type Preset, type TeamSet } from '../engine/sets';
+import { memo, useEffect, useMemo, useRef, useState, type ComponentProps } from 'react';
 import { flushSync } from 'react-dom';
 import { copyText } from './clipboard';
+import { setEditing } from './editing';
 import { useSlant } from './slant';
 import { SetEditor } from './SetEditor';
 import { describe } from './describe';
@@ -38,6 +39,8 @@ interface Props {
   onAllowMultipleMegas: () => void;
   /** Membro aperto nell'editor (null se nessuno). */
   onOpenChange?: (index: number | null) => void;
+  /** Set incollato al posto del membro (può essere un altro Pokémon); se manca, si aggiorna solo il team. */
+  onPaste?: (index: number, set: TeamSet) => void;
 }
 
 /** Tutti i problemi di legalità del membro (possono essere più d'uno). */
@@ -61,7 +64,17 @@ function animated(update: () => void) {
   doc.startViewTransition(() => flushSync(update));
 }
 
-function TeamSlot({ index, set, presets, common, speed, format, warning: megaWarning, open, dragging, dropTarget, onToggle, onStep, onMove, onDrag, onIgnoreWarning, onChange, onRemove, onReplace }: {
+/**
+ * Editor dei membri chiusi: resta nella pagina ma non si ridisegna finché il set non cambia,
+ * così aprire e chiudere una card non ricalcola gli altri cinque editor.
+ */
+const IdleSetEditor = memo(
+  (props: ComponentProps<typeof SetEditor> & { idle: boolean; idleKey: string }) => <SetEditor {...props} />,
+  (a, b) => a.idle && b.idle && a.idleKey === b.idleKey && a.set === b.set && a.presets === b.presets && a.common === b.common
+    && a.speed === b.speed && a.genLimit === b.genLimit && a.pokedex === b.pokedex && a.teraBannedIn === b.teraBannedIn,
+);
+
+function TeamSlot({ index, set, data, format, warning: megaWarning, open, dragging, dropTarget, onToggle, onStep, onMove, onDrag, onPaste, onIgnoreWarning, onChange, onRemove, onReplace }: {
   index: number;
   dragging: boolean;
   dropTarget: boolean;
@@ -69,9 +82,8 @@ function TeamSlot({ index, set, presets, common, speed, format, warning: megaWar
   onMove: (delta: number) => void;
   /** Trascinamento: inizio, passaggio sopra, rilascio, fine. */
   onDrag: (phase: 'start' | 'over' | 'drop' | 'end') => void;
-  presets: Preset[];
-  common: CommonChoices;
-  speed: SpeedTier | null;
+  onPaste: (set: TeamSet) => void;
+  data: EngineData;
   set: TeamSet;
   open: boolean;
   onToggle: (open: boolean) => void;
@@ -88,11 +100,34 @@ function TeamSlot({ index, set, presets, common, speed, format, warning: megaWar
   const tr = useT();
   const card = useRef<HTMLElement>(null);
   useSlant(card);
+  // Calcoli del membro (il confronto di Velocità prova 40 rivali): solo quando cambia il set
+  const presets = useMemo<Preset[]>(() => presetsForSet(data, set), [data, set]);
+  const common = useMemo<CommonChoices>(() => commonChoices(data, set), [data, set]);
+  const speed = useMemo<SpeedTier | null>(() => speedTier(set, data), [data, set]);
+  // Gestori sempre aggiornati anche dentro l'editor memorizzato
+  const live = useRef({ onChange, onReplace, onPaste, onIgnoreWarning });
+  live.current = { onChange, onReplace, onPaste, onIgnoreWarning };
+  const stable = useMemo(() => ({
+    onChange: (next: TeamSet) => live.current.onChange(next),
+    onReplace: () => live.current.onReplace(),
+    onPaste: (next: TeamSet) => live.current.onPaste(next),
+    onIgnoreWarning: () => live.current.onIgnoreWarning(),
+  }), []);
   const species = battleSpecies(set);
   // Con la megapietra il membro è la Mega: nome e abilità della forma in battaglia (il set resta quello di Showdown)
   const name = battleName(set);
   const ability = battleAbility(set);
   const [copied, setCopied] = useState(false);
+  // Incolla set: testo Showdown di un solo membro, applicato per intero
+  const [paste, setPaste] = useState<{ text: string; error: string | null } | null>(null);
+  const applyPaste = () => {
+    if (!paste) return;
+    const result = importShowdown(paste.text, lang);
+    const next = result.sets[0];
+    if (!next) { setPaste({ ...paste, error: result.errors[0] ?? tr('team.pasteEmpty') }); return; }
+    setPaste(null);
+    stable.onPaste({ ...next, favorite: set.favorite });
+  };
   const problems = slotProblems(set, format, lang);
   // Ruolo principale e un supporto, affiancati con il nome breve (il completo nel tooltip); il meteo solo qui
   const rules = formatRules(format.formatId);
@@ -186,8 +221,9 @@ function TeamSlot({ index, set, presets, common, speed, format, warning: megaWar
         {roles.length > 0 && <small className="roles" title={rolesTitle}>{roles.join(' · ')}</small>}
       </summary>
       <div className="drawer">
-      <SetEditor set={set} presets={presets} common={common} genLimit={format.genLimit} pokedex={pokedexOf(format)}
-        teraBannedIn={teraAllowed(format) ? undefined : formatLabel(format, lang)} speed={speed} onChange={onChange}
+      <IdleSetEditor idle={!open} idleKey={`${lang}:${megaWarning ?? ''}`}
+        set={set} presets={presets} common={common} genLimit={format.genLimit} pokedex={pokedexOf(format)}
+        teraBannedIn={teraAllowed(format) ? undefined : formatLabel(format, lang)} speed={speed} onChange={stable.onChange}
         title={open && (
           // Solo visivo: nome e tipi li annuncia già la card (il nome via CSS, così non è un secondo testo uguale)
           <div className="editor-title" aria-hidden="true">
@@ -196,22 +232,39 @@ function TeamSlot({ index, set, presets, common, speed, format, warning: megaWar
           </div>
         )}
         actions={<>
-          {megaWarning && <button type="button" onClick={onIgnoreWarning}>{tr('team.keepMega')}</button>}
+          {megaWarning && <button type="button" onClick={stable.onIgnoreWarning}>{tr('team.keepMega')}</button>}
+          <button type="button" aria-label={tr('team.pasteSet')} title={tr('team.pasteSet')} aria-expanded={!!paste}
+            onClick={() => setPaste(p => (p ? null : { text: '', error: null }))}>
+            <Icon name="paste" /> <span className="btn-label">{tr('team.pasteSet')}</span>
+          </button>
           <button type="button" aria-label={tr('team.copySet')} title={tr('team.copySet')} onClick={async () => {
             if (await copyText(exportShowdown([set], { tera: teraAllowed(format) }))) { setCopied(true); setTimeout(() => setCopied(false), 1500); }
           }}><Icon name={copied ? 'check' : 'copy'} /> <span className="btn-label">{tr(copied ? 'team.copied' : 'team.copySet')}</span></button>
-          <button type="button" aria-label={tr('team.replace', { species: name })} title={tr('team.replaceButton')} onClick={onReplace}><Icon name="swap" /> <span className="btn-label">{tr('team.replaceButton')}</span></button>
+          <button type="button" aria-label={tr('team.replace', { species: name })} title={tr('team.replaceButton')} onClick={stable.onReplace}><Icon name="swap" /> <span className="btn-label">{tr('team.replaceButton')}</span></button>
         </>} />
+      {paste && (
+        <div className="paste-panel" onKeyDown={e => { if (e.key === 'Escape') { e.stopPropagation(); setPaste(null); } }}>
+          <textarea aria-label={tr('team.pasteText')} rows={7} autoFocus value={paste.text} placeholder={tr('team.pastePlaceholder')}
+            onChange={e => setPaste({ text: e.target.value, error: null })} />
+          <p className="paste-hint">{tr('team.pasteHint')}</p>
+          {paste.error && <p className="paste-error" role="alert">{paste.error}</p>}
+          <div className="paste-actions">
+            <button type="button" className="apply" disabled={!paste.text.trim()} onClick={applyPaste}>{tr('team.pasteApply')}</button>
+            <button type="button" onClick={() => setPaste(null)}>{tr('team.pasteCancel')}</button>
+          </div>
+        </div>
+      )}
       </div>
     </details>
   );
 }
 
-export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRemove, onAllowMultipleMegas, onOpenChange }: Props) {
+export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRemove, onAllowMultipleMegas, onOpenChange, onPaste }: Props) {
   const lang = useLang();
   // Un solo membro aperto alla volta: il suo editor scende sotto la fila del team
   const [openIndex, setOpenIndex] = useState<number | null>(null);
-  useEffect(() => { onOpenChange?.(openIndex); }, [openIndex]);
+  useEffect(() => { setEditing(openIndex); onOpenChange?.(openIndex); }, [openIndex]);
+  useEffect(() => () => setEditing(null), []);
   const slotsRef = useRef<HTMLDivElement>(null);
   const focusCard = (i: number) => requestAnimationFrame(() => slotsRef.current?.querySelectorAll<HTMLElement>('.slot > summary')[i]?.focus());
   const step = (from: number, delta: number) => {
@@ -247,15 +300,14 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
             dragging={drag?.from === i}
             dropTarget={drag !== null && drag.over === i && drag.from !== i}
             onMove={delta => move(i, i + delta)}
+            onPaste={next => (onPaste ? onPaste(i, next) : onChange(team.map((s, j) => (j === i ? next : s))))}
             onDrag={phase => {
               if (phase === 'start') setDrag({ from: i, over: null });
               else if (phase === 'over') setDrag(d => (d && d.over !== i ? { ...d, over: i } : d));
               else if (phase === 'drop') { if (drag) move(drag.from, i); setDrag(null); }
               else setDrag(null);
             }}
-            presets={presetsForSet(data, set)}
-            common={commonChoices(data, set)}
-            speed={speedTier(set, data)}
+            data={data}
             format={format}
             warning={warningFor(set, i)}
             open={openIndex === i}
