@@ -1,4 +1,4 @@
-import { useId, useMemo } from 'react';
+import { useEffect, useId, useMemo, useRef } from 'react';
 import { battleSpecies, dex, getMove, getSpecies, itemNames, moveNames, natureNames } from '../engine/dex';
 import { legalAbilities, legalMoves } from '../engine/learnsets';
 import { formatName, sameSet, STAT_IDS, type Preset, type StatID, type TeamSet } from '../engine/sets';
@@ -201,6 +201,14 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
   const shownAbility = megaAbility ?? set.ability;
   const abilityDesc = describe.ability(shownAbility, lang);
   const uid = useId();
+  // Tendina degli spread: sopra l'editor (non ne cambia l'altezza); si chiude scegliendo, con Esc o cliccando fuori
+  const spreadMenu = useRef<HTMLDetailsElement>(null);
+  const closeSpreads = () => { if (spreadMenu.current) spreadMenu.current.open = false; };
+  useEffect(() => {
+    const away = (e: PointerEvent) => { if (!spreadMenu.current?.contains(e.target as Node)) closeSpreads(); };
+    document.addEventListener('pointerdown', away);
+    return () => document.removeEventListener('pointerdown', away);
+  }, []);
   const lines = statLines(set);
   const used = evTotal(set.evs);
 
@@ -242,7 +250,8 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
         <legend>{t('editor.evs')}</legend>
         {!!common?.spreads.length && (
           // Chiuso di norma
-          <details className="spread-panel">
+          <details className="spread-panel" ref={spreadMenu}
+            onKeyDown={e => { if (e.key === 'Escape' && spreadMenu.current?.open) { e.stopPropagation(); closeSpreads(); spreadMenu.current.querySelector('summary')?.focus(); } }}>
           <summary>{t('editor.spreads')}</summary>
           <div className="spread-presets" role="group" aria-label={t('editor.spreads')}>
             {common.spreads.map(spread => (
@@ -250,8 +259,9 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
                 key={spreadKey(spread)}
                 type="button"
                 aria-pressed={spreadKey(spread) === spreadKey(set)}
-                onClick={() => update({ nature: spread.nature, evs: { ...spread.evs } })}
+                onClick={() => { update({ nature: spread.nature, evs: { ...spread.evs } }); closeSpreads(); }}
               >
+                <Icon name="check" />
                 <strong>{natureName(spread.nature, lang)}</strong>
                 <span className="spread-evs">{spreadText(spread, lang)}</span>
                 <span className="common-share">{shareLabel(spread)}</span>
