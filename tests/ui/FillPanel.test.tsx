@@ -6,12 +6,12 @@ import type { Proposal } from '../../src/engine/fillProposals';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
 import { FillPanel } from '../../src/ui/FillPanel';
 import { LangProvider } from '../../src/i18n/react';
-import { fixtureData } from '../fixtures/data';
+import { fillData } from '../fixtures/fillData';
 import { renderIt } from '../helpers/italian';
 
 const WAIT = { timeout: 5000 };
 const panel = (team: TeamSet[] = [], onApply = vi.fn(), onClose = vi.fn()) =>
-  renderIt(<FillPanel team={team} format={DEFAULT_FORMAT} data={fixtureData} onApply={onApply} onClose={onClose} />);
+  renderIt(<FillPanel team={team} format={DEFAULT_FORMAT} data={fillData} onApply={onApply} onClose={onClose} />);
 const addButtons = () => screen.findAllByRole('button', { name: /^Aggiungi la proposta \d$/ }, WAIT);
 const shownNames = () => [...document.querySelectorAll('.fill-proposal .fill-mon-name')].map(n => n.textContent);
 const idle = () => expect(screen.queryByText('Calcolo delle proposte…')).toBeNull();
@@ -40,7 +40,9 @@ describe('pannello Completa team', () => {
     await user.click(screen.getByRole('radio', { name: 'Stall' }));
     await user.click(screen.getByRole('radio', { name: 'Hyper Offense' }));
     await vi.waitFor(idle, WAIT);
-    for (const row of document.querySelectorAll('.fill-proposal')) expect(row).toHaveTextContent('Hyper Offense');
+    const rows = document.querySelectorAll('.fill-proposal');
+    expect(rows.length).toBeGreaterThan(0);
+    for (const row of rows) expect(row).toHaveTextContent('Hyper Offense');
   });
 
   it('Altre proposte non ripete Pokémon già mostrati', async () => {
@@ -67,26 +69,45 @@ describe('pannello Completa team', () => {
     const { rerender } = panel([], onApply);
     await addButtons();
     const team = [{ ...emptySet('Garchomp'), moves: ['Earthquake'] }];
-    rerender(<LangProvider lang="it"><FillPanel team={team} format={DEFAULT_FORMAT} data={fixtureData} onApply={onApply} onClose={() => undefined} /></LangProvider>);
+    rerender(<LangProvider lang="it"><FillPanel team={team} format={DEFAULT_FORMAT} data={fillData} onApply={onApply} onClose={() => undefined} /></LangProvider>);
     await vi.waitFor(idle, WAIT);
     await user.click((await addButtons())[0]);
     expect((onApply.mock.calls[0][0] as Proposal).team[0]).toBe(team[0]);
   });
 
-  it('Esc chiude', async () => {
+  it('Esc chiude, anche subito dopo l’apertura', async () => {
     const onClose = vi.fn();
     const user = userEvent.setup();
     panel([], vi.fn(), onClose);
-    await user.click(screen.getByRole('radio', { name: 'Il migliore' }));
     await user.keyboard('{Escape}');
     expect(onClose).toHaveBeenCalled();
   });
 
-  it('scelta senza risultati: messaggio, nessuna proposta', async () => {
-    // Nel fixture nessuno porta la pioggia
+  it('con la neve (nessuno la porta) i tipi si oscurano e non si scelgono', async () => {
     const user = userEvent.setup();
     panel();
-    await user.click(within(screen.getByRole('radiogroup', { name: 'Stile' })).getByRole('radio', { name: 'Pioggia' }));
+    await user.click(within(screen.getByRole('radiogroup', { name: 'Stile' })).getByRole('radio', { name: 'Neve' }));
+    // Si verificano tutti e sei i tipi: con la suite intera in parallelo può volerci un po'
+    const SLOW = { timeout: 25000 };
+    await vi.waitFor(() => expect(screen.getByRole('radio', { name: 'Stall' })).toBeDisabled(), SLOW);
+    await vi.waitFor(() => expect(screen.getByRole('radio', { name: 'Hyper Offense' })).toBeDisabled(), SLOW);
+    // Il tipo scelto resta cliccabile, e dice che non ci sono completamenti
+    expect(screen.getByRole('radio', { name: 'Il migliore' })).toBeEnabled();
+    expect(await screen.findByText('Nessun completamento con questo tipo e questo stile', undefined, WAIT)).toBeInTheDocument();
+  }, 40000);
+
+  it('le proposte non si riordinano mentre arrivano: prima in coda, a giro finito per voto', async () => {
+    panel();
+    await vi.waitFor(idle, WAIT);
+    const grades = [...document.querySelectorAll('.fill-proposal .fill-grade')].map(g => Number(g.textContent!.replace(/\D/g, '')));
+    expect(grades).toEqual([...grades].sort((a, b) => b - a));
+  });
+
+  it('scelta senza risultati: messaggio, nessuna proposta', async () => {
+    // Nel meta di prova nessuno porta la neve
+    const user = userEvent.setup();
+    panel();
+    await user.click(within(screen.getByRole('radiogroup', { name: 'Stile' })).getByRole('radio', { name: 'Neve' }));
     expect(await screen.findByText('Nessun completamento con questo tipo e questo stile', undefined, WAIT)).toBeInTheDocument();
     expect(document.querySelectorAll('.fill-proposal')).toHaveLength(0);
   });

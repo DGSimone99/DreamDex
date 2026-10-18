@@ -342,7 +342,12 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
   };
   // Completa team: pannello con tipi di team e proposte
   const [filling, setFilling] = useState(false);
-  const closeFill = useCallback(() => setFilling(false), []);
+  const fillToggle = useRef<HTMLButtonElement>(null);
+  // Chiudendo il pannello il focus torna al pulsante
+  const closeFill = useCallback(() => { setFilling(false); fillToggle.current?.focus(); }, []);
+  const canFill = team.length < 6 && !!data.stats;
+  // Team pieno o senza statistiche: il pannello si chiude (e non si riapre da solo dopo)
+  useEffect(() => { if (!canFill) setFilling(false); }, [canFill]);
   // Svuota team finisce all'angolo in alto a destra dell'ultima card: inclinata, sporge di altezza × pendenza
   const headRef = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
@@ -370,10 +375,10 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
             <Icon name="spark" /> {t(lang, busy ? 'team.bestPresetsBusy' : 'team.bestPresets')}
           </button>
         )}
-        {team.length < 6 && data.stats && (
+        {canFill && (
           // Anche a team vuoto: propone team interi del tipo scelto; il pannello si apre sotto il pulsante
           <span className="fill-anchor">
-            <button type="button" className="team-action" data-fill-toggle aria-expanded={filling}
+            <button type="button" className="team-action" data-fill-toggle aria-expanded={filling} aria-haspopup="dialog" ref={fillToggle}
               title={t(lang, 'team.fillTitle')} onClick={() => setFilling(open => !open)}>
               <Icon name="plus" /> {t(lang, 'team.fill')}
             </button>

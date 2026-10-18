@@ -433,9 +433,9 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
   z-index: 45;
   top: calc(100% + 6px);
   left: 0;
-  width: min(760px, calc(100vw - 56px));
+  width: min(960px, calc(100vw - 56px));
   display: grid;
-  grid-template-columns: 210px minmax(0, 1fr);
+  grid-template-columns: 200px minmax(0, 1fr);
   gap: 14px;
   padding: 12px;
   background: var(--ground);
@@ -452,6 +452,8 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 .fill-option small { font-size: 12px; color: var(--muted); }
 .fill-option:hover { background: var(--raised); }
 .fill-option[aria-checked='true'] { background: var(--blue-soft); border-color: var(--blue); }
+/* Tipo senza proposte con questo stile: oscurato, non si sceglie */
+.fill-option.empty, .fill-option.empty:hover { opacity: 0.38; background: none; cursor: not-allowed; }
 .fill-main { display: grid; gap: 10px; align-content: start; min-width: 0; }
 .fill-styles { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .fill-styles-label { font: 700 12px var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin-right: 4px; }
@@ -459,9 +461,11 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 .fill-styles .fill-option strong { font: 600 13px/1.2 var(--ui); text-transform: none; letter-spacing: 0; }
 .fill-proposals { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
 .fill-proposal { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 14px; padding: 6px 8px; border: 1px solid var(--line-soft); border-radius: 3px; background: var(--panel); }
-.fill-mons { display: flex; flex-wrap: wrap; gap: 2px 10px; min-width: 0; }
-.fill-mon { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; cursor: help; }
-.fill-mon .sprite { image-rendering: pixelated; margin: -6px 0 -6px -6px; }
+/* I 6 Pokémon in fila, il nome sotto lo sprite */
+.fill-mons { display: grid; grid-template-columns: repeat(6, 78px); gap: 4px; min-width: 0; }
+.fill-mon { display: grid; justify-items: center; gap: 2px; min-width: 0; cursor: help; }
+.fill-mon .sprite { image-rendering: pixelated; margin: -4px 0 -6px; }
+.fill-mon-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; color: var(--muted); }
 .fill-result { display: grid; justify-items: end; gap: 2px; text-align: right; }
 .fill-grade { font-variant-numeric: tabular-nums; color: var(--muted); }
 .fill-grade strong { font: 700 20px/1 var(--display); color: var(--text); }
@@ -469,7 +473,7 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 .fill-delta.up { color: var(--good); }
 .fill-delta.down { color: var(--bad); }
 .fill-kind { font-size: 11px; color: var(--faint); white-space: nowrap; }
-.fill-status { margin: 0; font-size: 13px; color: var(--muted); }
+.fill-status { margin: 0; min-height: 1.2em; font-size: 13px; color: var(--muted); }
 .fill-actions { display: flex; justify-content: flex-end; }
 /* Tendina degli spread: sopra il blocco statistiche, come i menu dell'editor */
 .spread-panel { position: relative; }

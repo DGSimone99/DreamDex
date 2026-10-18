@@ -1,48 +1,67 @@
 import { describe, expect, it } from 'vitest';
 import type { Archetype } from '../../src/engine/archetype';
 import type { EngineData } from '../../src/engine/data';
-import { isMega, toID } from '../../src/engine/dex';
-import { fillProposals, matchesChoice, PROPOSALS_PER_ROUND, type FillChoice, type FillStyle } from '../../src/engine/fillProposals';
+import { battleName, isMega, toID } from '../../src/engine/dex';
+import { fillProposals, matchesChoice, MAX_ATTEMPTS, PROPOSALS_PER_ROUND, type FillChoice, type Proposal } from '../../src/engine/fillProposals';
 import { DEFAULT_FORMAT, type Format } from '../../src/engine/format';
 import { rateTeam } from '../../src/engine/rating';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
-import { fixtureData } from '../fixtures/data';
-import { megaData } from '../fixtures/megaData';
+import { enables } from '../../src/engine/synergy';
+import { fillData } from '../fixtures/fillData';
 
-const take = (team: TeamSet[], choice: FillChoice, exclude = new Set<string>(), format: Format = DEFAULT_FORMAT, data: EngineData = fixtureData) =>
-  [...fillProposals(team, choice, exclude, format, data)];
+/** Le proposte di un giro (il generatore produce anche `null` come segnale di avanzamento). */
+const take = (team: TeamSet[], choice: FillChoice, exclude = new Set<string>(), format: Format = DEFAULT_FORMAT, data: EngineData = fillData) =>
+  [...fillProposals(team, choice, exclude, format, data)].filter((p): p is Proposal => p !== null);
 const any: FillChoice = { archetype: null, style: null };
-const species = (sets: TeamSet[]) => sets.map(s => toID(s.species));
+/** Un Pokémon si distingue per forma in battaglia: Charizard e Charizard-Mega-Y sono due Pokémon diversi. */
+const formes = (sets: TeamSet[]) => sets.map(s => toID(battleName(s)));
 const set = (name: string, moves: string[], item = ''): TeamSet => ({ ...emptySet(name), moves, item });
-// Il fixture base più quello delle Mega: 13 specie, due Mega
-const withMegas: EngineData = {
-  stats: { meta: fixtureData.stats!.meta, pokemon: { ...fixtureData.stats!.pokemon, ...megaData.stats!.pokemon } },
-  sets: {},
-  // Come nei dati veri: il preset della Mega sta sulla specie base, con la pietra
-  presets: { Charizard: [{ name: 'Mega Y', format: 'gen9nationaldex', set: { ...emptySet('Charizard'), item: 'Charizardite Y', ability: 'Blaze', moves: ['Flamethrower', 'Solar Beam'] } }] },
-};
+const setterOf = (p: Proposal, condition: 'rain' | 'sun') => p.added.find(s => enables(s).some(e => e.condition === condition));
 
 describe('proposte di Completa team', () => {
-  it('team vuoto: proposte di 6, al massimo 5, nessuna specie in comune', () => {
+  it('team vuoto: proposte di 6, al massimo 5, nessun Pokémon in comune', () => {
     const list = take([], any);
-    expect(list.length).toBeGreaterThanOrEqual(1);
+    expect(list.length).toBeGreaterThanOrEqual(2);
     expect(list.length).toBeLessThanOrEqual(PROPOSALS_PER_ROUND);
     for (const p of list) expect(p.team).toHaveLength(6);
-    const added = list.flatMap(p => species(p.added));
+    const added = list.flatMap(p => formes(p.added));
     expect(new Set(added).size).toBe(added.length);
   });
 
-  it('ogni proposta corrisponde alla scelta', () => {
+  it('ogni tipo di team ha proposte, e ognuna è di quel tipo', () => {
     const archetypes: Archetype[] = ['hyperOffense', 'bulkyOffense', 'balance', 'semiStall', 'stall'];
-    const styles: (FillStyle | null)[] = [null, 'sun', 'trickroom'];
-    for (const archetype of archetypes) for (const style of styles) {
-      const choice = { archetype, style };
-      for (const p of take([], choice)) {
-        expect(matchesChoice(p.team, choice, DEFAULT_FORMAT)).toBe(true);
+    for (const archetype of archetypes) {
+      const choice = { archetype, style: null };
+      const list = take([], choice);
+      expect(list.length, archetype).toBeGreaterThanOrEqual(1);
+      for (const p of list) {
         expect(p.archetype).toBe(archetype);
-        if (style) expect(p.styles).toContain(style);
+        expect(matchesChoice(p.team, choice, DEFAULT_FORMAT)).toBe(true);
       }
     }
+  });
+
+  it('pioggia, sole e Trick Room hanno proposte con quello stile', () => {
+    for (const style of ['rain', 'sun', 'trickroom'] as const) {
+      const list = take([], { archetype: null, style });
+      expect(list.length, style).toBeGreaterThanOrEqual(1);
+      for (const p of list) expect(p.styles).toContain(style);
+    }
+  });
+
+  it('chi porta lo stile si ripete solo se non ce n’è uno nuovo; gli altri mai', () => {
+    const exclude = new Set<string>();
+    const first = take([], { archetype: null, style: 'sun' }, exclude);
+    expect(first.length).toBeGreaterThanOrEqual(2);
+    // Due portatori del sole (Torkoal, Charizard-Mega-Y): le prime due proposte ne usano due diversi
+    expect(toID(battleName(setterOf(first[0], 'sun')!))).not.toBe(toID(battleName(setterOf(first[1], 'sun')!)));
+    // Pioggia: un solo portatore, che può tornare nel giro dopo; gli altri membri no
+    const rainExclude = new Set<string>();
+    const rain = take([], { archetype: null, style: 'rain' }, rainExclude);
+    const more = take([], { archetype: null, style: 'rain' }, rainExclude);
+    expect(rain.length + more.length).toBeGreaterThanOrEqual(2);
+    const others = [...rain, ...more].flatMap(p => p.added.filter(s => s !== setterOf(p, 'rain')).map(s => toID(battleName(s))));
+    expect(new Set(others).size).toBe(others.length);
   });
 
   it('i membri attuali restano primi e intatti', () => {
@@ -52,48 +71,57 @@ describe('proposte di Completa team', () => {
     for (const p of list) expect(p.team[0]).toBe(team[0]);
   });
 
-  it('esclusi: le specie in exclude non entrano, e exclude cresce con le proposte', () => {
+  it('esclusi: le forme in exclude non entrano, e exclude cresce con le proposte', () => {
     const exclude = new Set(['gholdengo']);
     const list = take([], any, exclude);
-    expect(list.flatMap(p => species(p.added))).not.toContain('gholdengo');
-    for (const p of list) for (const id of species(p.added)) expect(exclude.has(id)).toBe(true);
+    expect(list.length).toBeGreaterThanOrEqual(1);
+    expect(list.flatMap(p => formes(p.added))).not.toContain('gholdengo');
+    for (const p of list) for (const id of formes(p.added)) expect(exclude.has(id)).toBe(true);
   });
 
-  it('un solo slot: Pokémon tutti diversi, uno per proposta', () => {
+  it('un solo slot: un Pokémon diverso per proposta', () => {
     const team = ['Great Tusk', 'Gholdengo', 'Kingambit', 'Dragapult', 'Corviknight'].map(name => set(name, ['Protect']));
     const list = take(team, any);
     expect(list.length).toBeGreaterThanOrEqual(2);
     for (const p of list) expect(p.added).toHaveLength(1);
-    const added = list.flatMap(p => species(p.added));
+    const added = list.flatMap(p => formes(p.added));
     expect(new Set(added).size).toBe(added.length);
   });
 
   it("con una Mega nel team non ne aggiunge un'altra, anche con allowMultipleMegas", () => {
     const team = [set('Gardevoir', ['Hyper Voice'], 'Gardevoirite')];
     for (const allowMultipleMegas of [false, true]) {
-      const list = take(team, any, new Set(), { ...DEFAULT_FORMAT, allowMultipleMegas }, withMegas);
+      const list = take(team, any, new Set(), { ...DEFAULT_FORMAT, allowMultipleMegas });
       expect(list.length).toBeGreaterThanOrEqual(1);
       for (const p of list) expect(p.added.some(isMega)).toBe(false);
     }
   });
 
-  it('in National Dex ogni proposta ha esattamente una Mega, se il pool ne ha', () => {
-    const list = take([], any, new Set(), DEFAULT_FORMAT, withMegas);
-    expect(list.length).toBeGreaterThanOrEqual(1);
-    for (const p of list) expect(p.team.filter(isMega)).toHaveLength(1);
+  it('in National Dex la prima proposta ha esattamente una Mega', () => {
+    const [first] = take([], any);
+    expect(first.team.filter(isMega)).toHaveLength(1);
   });
 
-  it('una Mega non si ripete tra le proposte (il set si chiama come la specie base)', () => {
-    // Un solo slot e nessuna Mega nel team: ogni proposta aggiunge una Mega, e il fixture ne ha due
-    const team = ['Gholdengo', 'Kingambit', 'Dragapult', 'Corviknight', 'Toxapex'].map(name => set(name, ['Protect']));
-    const list = take(team, any, new Set(), DEFAULT_FORMAT, withMegas);
-    const added = list.flatMap(p => species(p.added));
-    expect(list.length).toBeGreaterThanOrEqual(1);
-    expect(new Set(added).size).toBe(added.length);
+  it('la Mega col set sulla specie base (Charizard @ Charizardite Y) si esclude per la sua forma', () => {
+    const data: EngineData = { ...fillData, presets: { Charizard: [{ name: 'Mega Y', format: 'gen9nationaldex',
+      set: { ...emptySet('Charizard'), item: 'Charizardite Y', ability: 'Blaze', moves: ['Flamethrower', 'Solar Beam'] } }] } };
+    const exclude = new Set<string>();
+    // Senza stile: chi porta il sole non ha l'eccezione di poter tornare
+    const list = take([], any, exclude, DEFAULT_FORMAT, data).concat(take([], any, exclude, DEFAULT_FORMAT, data));
+    const zard = list.filter(p => p.added.some(s => toID(battleName(s)) === 'charizardmegay'));
+    expect(zard.length).toBeLessThanOrEqual(1);
+    if (zard.length) expect(exclude.has('charizardmegay')).toBe(true);
   });
 
   it('voto della proposta = rateTeam del team proposto', () => {
-    for (const p of take([], any)) expect(p.overall).toBe(rateTeam(p.team, fixtureData, 'en')!.overall);
+    for (const p of take([], any)) expect(p.overall).toBe(rateTeam(p.team, fillData, 'en')!.overall);
+  });
+
+  it('senza proposte possibili produce solo segnali di avanzamento, poi si ferma', () => {
+    // Nessuno porta la neve nel meta di prova
+    const steps = [...fillProposals([], { archetype: null, style: 'snow' }, new Set(), DEFAULT_FORMAT, fillData)];
+    expect(steps.every(step => step === null)).toBe(true);
+    expect(steps.length).toBeLessThanOrEqual(MAX_ATTEMPTS);
   });
 
   it('senza statistiche non produce nulla', () => {

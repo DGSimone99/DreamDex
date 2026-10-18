@@ -1,10 +1,11 @@
 import { fitsArchetype, teamArchetype, type Archetype, type FitArchetype, type TeamStyle } from './archetype';
 import type { EngineData } from './data';
-import { isMega, toID } from './dex';
+import { battleName, isMega, toID } from './dex';
 import type { Format } from './format';
 import { formatRules } from './formatRules';
 import { pokedexOf } from './formats';
 import { rateTeam } from './rating';
+import { detectRoles, isPassive } from './roles';
 import { suggest, type Suggestion } from './scoring';
 import type { TeamSet } from './sets';
 import { benefits, enables, type Condition } from './synergy';
@@ -53,22 +54,30 @@ const setsUp = (set: TeamSet, condition: Condition) => enables(set).some(e => e.
 const uses = (set: TeamSet, condition: Condition) => benefits(set).some(b => b.condition === condition && toID(b.via) !== 'weatherball');
 const FIT: Partial<Record<Archetype, FitArchetype>> = { stall: 'stall', semiStall: 'stall', hyperOffense: 'hyperOffense', bulkyOffense: 'bulkyOffense' };
 
+/** Muri passivi da raggiungere per tipo (come li conta teamArchetype): Stall 6, Semi-Stall 4–5, Balance 3, Offense nessuno. */
+const PASSIVE_QUOTA: Record<Archetype, number> = { stall: 6, semiStall: 4, balance: 3, hyperOffense: 0, bulkyOffense: 0 };
+/** Un Pokémon si distingue per forma in battaglia: Charizard, Charizard-Mega-X e Charizard-Mega-Y sono tre Pokémon. */
+const formeId = (set: TeamSet) => toID(battleName(set));
+
 /**
  * Completamenti del team del tipo (e dello stile) chiesti, uno alla volta, al massimo PROPOSALS_PER_ROUND.
- * Nessuna specie si ripete: `exclude` (id delle specie) parte con quelle già mostrate e cresce con ogni proposta.
- * Se il formato ammette le Mega, ogni proposta ha esattamente una Mega nel team (mai una seconda).
+ * Nessun Pokémon si ripete: `exclude` (forme) parte con quelle già mostrate e cresce con ogni proposta; fa eccezione
+ * chi porta lo stile, che torna solo quando non ce n'è uno nuovo. Se il formato ammette le Mega, ogni proposta ne ha
+ * una (mai una seconda). Dopo ogni tentativo a vuoto produce `null`: chi consuma il generatore può rendere il controllo.
  */
 export function* fillProposals(
   team: TeamSet[], choice: FillChoice, exclude: Set<string>, format: Format, data: EngineData,
-): Generator<Proposal, void, undefined> {
+): Generator<Proposal | null, void, undefined> {
   if (!data.stats || team.length >= 6) return;
   const rules = formatRules(format.formatId);
   const megasAllowed = pokedexOf(format) === 'natdex';
+  const passive = (set: TeamSet) => isPassive(set, detectRoles(set, rules));
   // Strade che non hanno portato a nulla: si saltano nei tentativi successivi del giro (non diventano esclusioni mostrate)
   const deadEnds = new Set<string>();
+  // Voto del team per forma e strumento (le Mega dello stesso Pokémon hanno voti diversi)
   const memo = new Map<string, number>();
   const overallOf = (sets: TeamSet[]) => {
-    const key = sets.map(s => toID(s.species)).join('|');
+    const key = sets.map(s => `${formeId(s)}@${toID(s.item)}`).join('|');
     let value = memo.get(key);
     if (value === undefined) {
       value = rateTeam(sets, data, 'en')?.overall ?? -Infinity;
@@ -79,40 +88,55 @@ export function* fillProposals(
 
   /** I candidati per il prossimo slot, già ristretti e ordinati per voto del team (a pari voto, per punteggio). */
   const candidates = (current: TeamSet[], taken: Set<string>, last: boolean): TeamSet[] => {
-    const pool: Suggestion[] = suggest(current, { ...format, allowMultipleMegas: true }, data, Infinity, 'en')
-      // Per specie del set: una Mega ha come specie la base con la pietra (Charizard @ Charizardite Y), come in exclude
-      .filter(s => { const id = toID(s.set.species); return !taken.has(id) && !exclude.has(id) && !deadEnds.has(id); });
+    const all: Suggestion[] = suggest(current, { ...format, allowMultipleMegas: true }, data, Infinity, 'en')
+      .filter(s => !taken.has(formeId(s.set)) && !deadEnds.has(formeId(s.set)));
+    const pool = all.filter(s => !exclude.has(formeId(s.set)));
     const narrow = (list: Suggestion[], keep: (set: TeamSet) => boolean) => {
       const kept = list.filter(s => keep(s.set));
       return kept.length ? kept : list;
     };
     // Mai una seconda Mega; all'ultimo slot, una Mega se non c'è ancora
     const hasMega = current.some(isMega);
-    let list = hasMega ? pool.filter(s => !isMega(s.set)) : pool;
-    if (!hasMega && megasAllowed && last) list = narrow(list, isMega);
+    const noSecondMega = (list: Suggestion[]) => (hasMega ? list.filter(s => !isMega(s.set)) : list);
+    let list = noSecondMega(pool);
     if (choice.style) {
       const style = choice.style;
-      if (!current.some(s => setsUp(s, style))) list = narrow(list, s => setsUp(s, style));
-      else if (current.filter(s => !setsUp(s, style) && uses(s, style)).length < (style === 'trickroom' ? 2 : 1)) {
+      if (!current.some(s => setsUp(s, style))) {
+        // Chi porta lo stile: prima uno nuovo, poi (con meno priorità) uno già mostrato
+        const fresh = list.filter(s => setsUp(s.set, style));
+        const again = noSecondMega(all).filter(s => setsUp(s.set, style));
+        list = fresh.length ? fresh : again.length ? again : list;
+      } else if (current.filter(s => !setsUp(s, style) && uses(s, style)).length < (style === 'trickroom' ? 2 : 1)) {
         list = narrow(list, s => uses(s, style));
       }
     }
-    const fit = choice.archetype ? FIT[choice.archetype] : undefined;
-    if (fit) list = narrow(list, s => fitsArchetype(s, fit, rules));
+    if (choice.archetype) {
+      // Muri fino alla quota del tipo, poi solo non-muri
+      const quota = PASSIVE_QUOTA[choice.archetype];
+      const walls = current.filter(passive).length;
+      list = narrow(list, walls < quota ? passive : s => !passive(s));
+      const fit = FIT[choice.archetype];
+      if (fit && quota === 0) list = narrow(list, s => fitsArchetype(s, fit, rules));
+    }
     let top = list.slice(0, last ? CANDIDATES : RATE_TOP).map(s => s.set);
-    if (last) top = top.filter(set => matchesChoice([...current, set], choice, format)).slice(0, RATE_TOP);
+    if (last) {
+      // Ultimo slot: solo chi completa il tipo e lo stile chiesti; tra questi una Mega, se non c'è ancora e ce n'è una che va bene
+      const fits = (set: TeamSet) => matchesChoice([...current, set], choice, format);
+      const megas = !hasMega && megasAllowed ? list.filter(s => isMega(s.set)).slice(0, CANDIDATES).map(s => s.set).filter(fits) : [];
+      top = megas.length ? megas.slice(0, RATE_TOP) : top.filter(fits).slice(0, RATE_TOP);
+    }
     const scored = top.map((set, i) => ({ set, i, overall: overallOf([...current, set]) }));
     return scored.sort((a, b) => b.overall - a.overall || a.i - b.i).map(s => s.set);
   };
 
   /** Riempie gli slot che mancano; al penultimo slot prova qualche alternativa se l'ultimo non quadra. */
-  const build = (current: TeamSet[], taken: Set<string>): TeamSet[] | null => {
+  const build = (current: TeamSet[], taken: Set<string>, first: TeamSet[]): TeamSet[] | null => {
     const left = 6 - current.length;
-    const options = candidates(current, taken, left === 1);
+    const options = current.length === team.length ? first : candidates(current, taken, left === 1);
     if (left === 1) return options.length ? [...current, options[0]] : null;
     const tries = left === 2 ? 1 + BACKTRACK_ALTERNATIVES : 1;
     for (const set of options.slice(0, tries)) {
-      const done = build([...current, set], new Set([...taken, toID(set.species)]));
+      const done = build([...current, set], new Set([...taken, formeId(set)]), first);
       if (done) return done;
     }
     return null;
@@ -121,17 +145,18 @@ export function* fillProposals(
   let produced = 0;
   let attempts = 0;
   while (produced < PROPOSALS_PER_ROUND && attempts < MAX_ATTEMPTS) {
-    const full = build(team, new Set());
+    const first = candidates(team, new Set(), team.length === 5);
+    if (!first.length) return;
+    const full = build(team, new Set(), first);
     if (!full) {
       // Cambia strada: il primo candidato di questo giro non porta a un team valido
-      const first = candidates(team, new Set(), team.length === 5)[0];
-      if (!first) return;
-      deadEnds.add(toID(first.species));
+      deadEnds.add(formeId(first[0]));
       attempts++;
+      yield null;
       continue;
     }
     const added = full.slice(team.length);
-    for (const set of added) exclude.add(toID(set.species));
+    for (const set of added) exclude.add(formeId(set));
     const rating = rateTeam(full, data, 'en');
     const found = teamArchetype(full, rules);
     if (!rating || !found) continue;
