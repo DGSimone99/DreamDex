@@ -448,6 +448,7 @@ export const it: Record<keyof typeof en, string> = {
   'rating.goTo': "Vai a {section}",
   'rating.bonus': "Bonus +{n}",
   'rating.penalty': "Penalità −{n}",
+  'rating.since': "da {from}: {delta}",
   'rating.noGrade': "Nessun voto",
   'rating.addPokemon': "Aggiungi un Pokémon",
   'suggest.title': "Suggerimenti",

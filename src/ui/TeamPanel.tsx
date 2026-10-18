@@ -8,7 +8,7 @@ import { detectRoles, roleLabel, roleShortLabel } from '../engine/roles';
 import { cardRoles, weatherOf } from '../engine/archetype';
 import { conditionLabel, viaName } from '../engine/synergy';
 import { presetsForSet, type Preset, type TeamSet } from '../engine/sets';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSlant } from './slant';
 import { SetEditor } from './SetEditor';
 import { describe } from './describe';
@@ -34,6 +34,8 @@ interface Props {
   /** Membro tolto con la ×: se manca, si aggiorna solo il team (senza Annulla). */
   onRemove?: (index: number) => void;
   onAllowMultipleMegas: () => void;
+  /** Membro aperto nell'editor (null se nessuno). */
+  onOpenChange?: (index: number | null) => void;
 }
 
 /** Tutti i problemi di legalità del membro (possono essere più d'uno). */
@@ -49,13 +51,15 @@ function slotProblems(set: TeamSet, format: Format, lang: Lang): string[] {
   ].filter((p): p is string => !!p);
 }
 
-function TeamSlot({ set, presets, common, speed, format, warning: megaWarning, open, onToggle, onIgnoreWarning, onChange, onRemove, onReplace }: {
+function TeamSlot({ set, presets, common, speed, format, warning: megaWarning, open, onToggle, onStep, onIgnoreWarning, onChange, onRemove, onReplace }: {
   presets: Preset[];
   common: CommonChoices;
   speed: SpeedTier | null;
   set: TeamSet;
   open: boolean;
   onToggle: (open: boolean) => void;
+  /** Frecce sulla card: apre il membro accanto. */
+  onStep: (delta: number) => void;
   format: Format;
   warning: string | null;
   onIgnoreWarning: () => void;
@@ -97,6 +101,13 @@ function TeamSlot({ set, presets, common, speed, format, warning: megaWarning, o
       open={open}
       style={{ '--t1': typeColor(species?.types[0] ?? ''), '--t2': typeColor(species?.types[1] ?? species?.types[0] ?? '') } as React.CSSProperties}
       onToggle={e => onToggle(e.currentTarget.open)}
+      onKeyDown={e => {
+        // Esc chiude l'editor e torna sulla card; le frecce sulla card passano al membro accanto
+        if (e.key === 'Escape' && open) { e.preventDefault(); onToggle(false); card.current?.focus(); }
+        else if (e.target === card.current && (e.key === 'ArrowRight' || e.key === 'ArrowLeft')) {
+          e.preventDefault(); onStep(e.key === 'ArrowRight' ? 1 : -1);
+        }
+      }}
     >
       <summary ref={card}>
         <span className="sprite-wrap">
@@ -155,17 +166,24 @@ function TeamSlot({ set, presets, common, speed, format, warning: megaWarning, o
   );
 }
 
-export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRemove, onAllowMultipleMegas }: Props) {
+export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRemove, onAllowMultipleMegas, onOpenChange }: Props) {
   const lang = useLang();
   // Un solo membro aperto alla volta: il suo editor scende sotto la fila del team
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  useEffect(() => { onOpenChange?.(openIndex); }, [openIndex]);
+  const slotsRef = useRef<HTMLDivElement>(null);
+  const step = (from: number, delta: number) => {
+    const to = (from + delta + team.length) % team.length;
+    setOpenIndex(current => (current === null ? null : to));
+    slotsRef.current?.querySelectorAll<HTMLElement>('.slot > summary')[to]?.focus();
+  };
   const firstMega = team.findIndex(isMega);
   const warningFor = (set: TeamSet, i: number) =>
     !format.allowMultipleMegas && firstMega !== -1 && i > firstMega && isMega(set) ? t(lang, 'team.secondMega') : null;
   return (
     <section aria-label={t(lang, 'team.region')} className="team">
       <h2>{t(lang, 'team.title', { n: team.length })}</h2>
-      <div className="slots">
+      <div className={`slots${openIndex !== null ? ' editing' : ''}`} ref={slotsRef}>
         {team.map((set, i) => (
           <TeamSlot
             key={`${i}-${set.species}`}
@@ -177,6 +195,7 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
             warning={warningFor(set, i)}
             open={openIndex === i}
             onToggle={open => setOpenIndex(current => (open ? i : current === i ? null : current))}
+            onStep={delta => step(i, delta)}
             onIgnoreWarning={onAllowMultipleMegas}
             onChange={next => onChange(team.map((s, j) => (j === i ? next : s)))}
             onRemove={() => { setOpenIndex(null); if (onRemove) onRemove(i); else onChange(team.filter((_, j) => j !== i)); }}

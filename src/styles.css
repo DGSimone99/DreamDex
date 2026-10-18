@@ -259,12 +259,21 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 .slot.empty::before { background: transparent; border: 2px dashed var(--line); border-image: none; }
 .sprite.missing { display: block; width: 96px; height: 96px; }
 
+/* Con un membro aperto le card si compattano: team ed editor stanno in una schermata (abilità, ruoli e Stats sono nell'editor) */
+.slots.editing .slot > summary, .slots.editing .slot.empty { min-height: 0; padding-bottom: 12px; }
+.slots.editing .slot > summary .sprite-wrap { zoom: 0.62; margin: -2px 0 0; }
+.slots.editing .slot-stats, .slots.editing .slot .ability, .slots.editing .slot .roles { display: none; }
+.slots.editing .slot .name { font-size: 18px; }
+.slots.editing .slot.empty .sprite.missing { display: none; }
+.slots.editing .slot.empty { min-height: 100%; }
+@keyframes compact { from { opacity: 0.4; } }
+.slots.editing .slot > summary > * { animation: compact 0.25s var(--ease); }
 /* Editor del membro aperto: scende sotto la fila */
 .slot::details-content { grid-row: 2; grid-column: 1 / -1; }
 .slot:not([open])::details-content { display: none; }
 .drawer {
   margin-top: 4px;
-  padding: 18px 20px;
+  padding: 14px 20px 16px;
   background: var(--raised);
   border-top: 3px solid var(--gold);
   animation: drawer 0.3s var(--ease);
@@ -274,8 +283,11 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 .set-editor .editor-side { display: grid; gap: 14px; }
 .set-editor label, .set-editor .field { display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
 .set-editor label input, .set-editor label select, .set-editor .field input { font-size: 14px; color: var(--text); text-transform: none; letter-spacing: 0; font-weight: 400; width: 100%; }
-.set-editor .editor-head { grid-column: 1 / -1; display: flex; align-items: flex-end; gap: 18px; padding-right: 150px; }
-.set-editor .preset-field { width: 320px; }
+.set-editor .editor-head { grid-column: 1 / -1; display: flex; align-items: center; gap: 18px; padding-right: 150px; }
+.set-editor .preset-field { flex-direction: row; align-items: center; gap: 12px; }
+.set-editor .preset-field .field-head { white-space: nowrap; }
+.set-editor .preset-field .combobox { flex: 1; }
+.set-editor .preset-field { width: 430px; }
 .preset-format { flex: none; font-size: 11px; font-weight: 600; text-transform: none; letter-spacing: 0; color: var(--faint); padding: 1px 6px; border: 1px solid var(--line); border-radius: 3px; }
 .combobox input:disabled { opacity: 0.55; cursor: not-allowed; }
 .set-editor .custom-toggle { flex-direction: row; align-items: center; height: 36px; gap: 8px; width: fit-content; text-transform: none; letter-spacing: 0; font-size: 14px; color: var(--text); cursor: help; }
@@ -284,7 +296,12 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 .set-editor legend { font: 700 14px var(--display); text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); padding: 0 6px; }
 .editor-group { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 14px; }
 .set-editor .field-note { font-size: 11px; font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--faint); }
-.set-editor .evs { display: grid; gap: 10px; align-self: stretch; }
+.set-editor .evs { position: relative; display: grid; gap: 10px; align-self: stretch; }
+/* "Spread più usati" sulla riga del titolo EV: non ruba una riga al blocco */
+.set-editor .evs .spread-panel > summary { position: absolute; top: -2px; right: 14px; }
+.set-editor .evs .spread-panel:not([open]) { display: contents; }
+.band:has(.slots.editing) { padding-top: 14px; }
+.band:has(.slots.editing) .team h2 { margin-bottom: 8px; }
 /* Blocco statistiche: base, cursore EV, EV, valore finale; la natura colora la riga */
 .stat-rows { display: grid; gap: 2px; }
 .stat-row { display: grid; grid-template-columns: 52px 92px minmax(0, 1fr) 58px 44px; align-items: center; gap: 12px; padding: 2px 6px; border-radius: 3px; }
@@ -365,6 +382,9 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 .spread-presets button[aria-pressed='true'] { background: var(--blue-soft); border-color: var(--blue); border-left-color: var(--gold); color: var(--text); }
 .field { position: relative; }
 .field-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 18px; }
+.set-editor .field-head { white-space: nowrap; min-width: 0; }
+.set-editor .field-head .field-note { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.set-editor .field-head .move-meta { gap: 6px; }
 .move-meta { display: inline-flex; align-items: center; gap: 10px; text-transform: none; letter-spacing: 0; font-weight: 600; color: var(--muted); font-size: 12px; }
 .move-stat { display: inline-flex; align-items: center; gap: 3px; min-width: 38px; font-variant-numeric: tabular-nums; }
 .move-stat .icon { width: 13px; height: 13px; }
@@ -402,8 +422,8 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 @keyframes tip { from { opacity: 0; transform: translateY(4px); } }
 .drawer { position: relative; }
 /* Sostituisci in alto a destra, accanto ai preset */
-.drawer .actions { position: absolute; top: 18px; right: 20px; margin: 0; justify-content: flex-end; }
-.drawer .actions button { height: 36px; margin-top: 21px; }
+.drawer .actions { position: absolute; top: 14px; right: 20px; margin: 0; justify-content: flex-end; }
+.drawer .actions button { height: 36px; }
 
 /* Voto */
 .grade-badge {
@@ -421,6 +441,9 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 .grade-badge.grade-C .letter { color: var(--warn); }
 .grade-badge.grade-D .letter { color: var(--bad); }
 .grade-badge.none .letter { color: var(--line); }
+.grade-delta { margin-top: 8px; padding: 2px 8px; border-radius: 3px; font: 600 13px var(--ui); font-variant-numeric: tabular-nums; color: var(--muted); background: var(--raised); }
+.grade-delta.up { color: var(--good); background: var(--good-bg); }
+.grade-delta.down { color: var(--bad); background: var(--bad-bg); }
 
 /* Colonne */
 /* Schede sotto il team: una sezione alla volta, a tutta larghezza */

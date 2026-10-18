@@ -99,13 +99,19 @@ export function RatingPanel({ rating, ruleIssues = [], metaMonth }: { rating: Te
 }
 
 /** Voto grande accanto alla fila del team (riassunto visivo; i dettagli sono nella valutazione). */
-export function GradeBadge({ rating }: { rating: TeamRating | null }) {
+export function GradeBadge({ rating, since = null }: { rating: TeamRating | null; since?: number | null }) {
   const t = useT();
+  const delta = rating && since !== null ? rating.overall - since : 0;
   return (
     <div className={`grade-badge${rating ? ` grade-${rating.grade}` : ' none'}`} aria-hidden="true">
       {rating && <span className="letter">{rating.grade}</span>}
       <span className="overall">{rating ? `${rating.overall} / 100` : t('rating.noGrade')}</span>
       <span className="label">{rating ? rating.label : t('rating.addPokemon')}</span>
+      {rating && since !== null && delta !== 0 && (
+        <span className={`grade-delta ${delta > 0 ? 'up' : 'down'}`}>
+          {t('rating.since', { from: since, delta: `${delta > 0 ? '+' : '−'}${Math.abs(delta)}` })}
+        </span>
+      )}
     </div>
   );
 }

@@ -99,6 +99,8 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
       : current?.index === next.index && current.replacement === next.replacement ? null : current));
   const analysis = useMemo(() => analyzeTeam(team, data), [team, data]);
   const rating = useMemo(() => rateTeam(team, data, lang), [team, data, lang]);
+  // Voto quando si è aperto il membro nell'editor: il badge mostra di quanto è cambiato
+  const [editBase, setEditBase] = useState<number | null>(null);
   // Il coach prova gli scambi per ogni membro (un decimo di secondo): si aggiorna subito dopo il team, senza bloccarlo
   const coachInput = useMemo(() => ({ team, format, data, lang }), [team, format, data, lang]);
   const coachSource = useDeferredValue(coachInput);
@@ -153,8 +155,9 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
       )}
       <div className="band">
         <TeamPanel team={team} format={format} data={data} onChange={changeTeam} onAdd={addSet} onReplace={startReplace} onRemove={removeAt}
-          onAllowMultipleMegas={() => setFormat(f => ({ ...f, allowMultipleMegas: true }))} />
-        <GradeBadge rating={rating} />
+          onAllowMultipleMegas={() => setFormat(f => ({ ...f, allowMultipleMegas: true }))}
+          onOpenChange={index => setEditBase(index === null || !rating ? null : rating.overall)} />
+        <GradeBadge rating={rating} since={editBase} />
       </div>
       <Tabs active={shownTab} onChange={setTab} tabs={[
         { id: 'pokemon', label: t(lang, 'tabs.pokemon'),

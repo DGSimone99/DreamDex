@@ -446,6 +446,7 @@ export const en = {
   'rating.goTo': "Go to {section}",
   'rating.bonus': "Bonus +{n}",
   'rating.penalty': "Penalty −{n}",
+  'rating.since': "from {from}: {delta}",
   'rating.noGrade': "No rating",
   'rating.addPokemon': "Add a Pokémon",
   'suggest.title': "Suggestions",
