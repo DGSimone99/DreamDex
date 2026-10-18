@@ -8,7 +8,7 @@ export interface UndoAction {
   /** Cambia a ogni nuova azione: riparte il tempo. */
   id: number;
   /** Membro rimosso o sostituito, o team caricato da un link. */
-  kind: 'remove' | 'replace' | 'paste' | 'load';
+  kind: 'remove' | 'replace' | 'paste' | 'presets' | 'clear' | 'load';
   from: string;
   to?: string;
 }
@@ -54,7 +54,9 @@ export function UndoToast({ action, onUndo, onClose }: { action: UndoAction; onU
       onBlur={e => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) resume(); }}
     >
       <p className="undo-text">
-        {action.kind === 'load' ? t('undo.loaded') : <>
+        {action.kind === 'load' ? t('undo.loaded')
+          : action.kind === 'clear' ? t('undo.cleared')
+          : action.kind === 'presets' ? t('undo.presets', { from: action.from, to: action.to ?? '' }) : <>
         <PokemonIcon name={action.from} />
         <strong>{action.from}</strong>{' '}
         {action.kind === 'remove' ? t('undo.removed') : action.kind === 'paste' ? t('undo.pasted') : (

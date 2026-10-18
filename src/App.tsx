@@ -141,6 +141,12 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
       ? { kind: 'paste', from: battleName(before) }
       : { kind: 'replace', from: battleName(before), to: battleName(set) }, after);
   };
+  // Preset migliori per tutto il team, o team svuotato: si annullano come le altre modifiche
+  const bulk = (kind: 'presets' | 'clear', next: TeamSet[]) => {
+    const after = changeTeam(next);
+    remember(kind === 'clear' ? { kind: 'clear', from: '' }
+      : { kind: 'presets', from: String(rating?.overall ?? ''), to: String(rateTeam(after, data, lang)?.overall ?? '') }, after);
+  };
   const removeAt = (index: number) => {
     const after = changeTeam(team.filter((_, i) => i !== index));
     remember({ kind: 'remove', from: battleName(team[index]) }, after);
@@ -160,7 +166,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
         </p>
       )}
       <div className="band">
-        <TeamPanel team={team} format={format} data={data} onChange={changeTeam} onAdd={addSet} onReplace={startReplace} onRemove={removeAt} onPaste={pasteAt}
+        <TeamPanel team={team} format={format} data={data} onChange={changeTeam} onAdd={addSet} onReplace={startReplace} onRemove={removeAt} onPaste={pasteAt} onBulk={bulk}
           onAllowMultipleMegas={() => setFormat(f => ({ ...f, allowMultipleMegas: true }))} />
         <GradeBadge rating={rating} />
       </div>

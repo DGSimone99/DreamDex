@@ -54,4 +54,14 @@ describe('ordine del team e editor', () => {
     await user.click(screen.getByRole('button', { name: /Annulla/ }));
     expect(names(team)).toEqual(['Garchomp', 'Corviknight']);
   });
+
+  it('Svuota team toglie tutti i membri e si può annullare', async () => {
+    const user = userEvent.setup();
+    const team = await importTeam(user, 'Garchomp\n- Earthquake\n\nCorviknight\n- Roost');
+    await user.click(within(team).getByRole('button', { name: 'Svuota team' }));
+    expect(names(team)).toEqual([]);
+    expect(screen.getByText('Team svuotato')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /Annulla/ }));
+    expect(names(team)).toEqual(['Garchomp', 'Corviknight']);
+  });
 });

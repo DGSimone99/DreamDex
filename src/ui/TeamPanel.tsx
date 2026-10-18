@@ -12,6 +12,7 @@ import { memo, useEffect, useMemo, useRef, useState, type ComponentProps } from 
 import { flushSync } from 'react-dom';
 import { copyText } from './clipboard';
 import { setEditing } from './editing';
+import { bestPreset, bestPresets } from '../engine/bestPreset';
 import { useSlant } from './slant';
 import { SetEditor } from './SetEditor';
 import { describe } from './describe';
@@ -41,6 +42,8 @@ interface Props {
   onOpenChange?: (index: number | null) => void;
   /** Set incollato al posto del membro (può essere un altro Pokémon); se manca, si aggiorna solo il team. */
   onPaste?: (index: number, set: TeamSet) => void;
+  /** Azioni sull'intero team, annullabili: preset migliori per tutti, svuota team. */
+  onBulk?: (kind: 'presets' | 'clear', team: TeamSet[]) => void;
 }
 
 /** Tutti i problemi di legalità del membro (possono essere più d'uno). */
@@ -94,7 +97,7 @@ const IdleSetEditor = memo(
     && a.speed === b.speed && a.genLimit === b.genLimit && a.pokedex === b.pokedex && a.teraBannedIn === b.teraBannedIn,
 );
 
-function TeamSlot({ index, set, data, format, warning: megaWarning, open, dragging, dropTarget, onToggle, onStep, onMove, onDrag, onPaste, onIgnoreWarning, onChange, onRemove, onReplace }: {
+function TeamSlot({ index, set, data, format, warning: megaWarning, open, dragging, dropTarget, onToggle, onStep, onMove, onDrag, onPaste, onBest, onIgnoreWarning, onChange, onRemove, onReplace }: {
   index: number;
   dragging: boolean;
   dropTarget: boolean;
@@ -103,6 +106,8 @@ function TeamSlot({ index, set, data, format, warning: megaWarning, open, draggi
   /** Trascinamento: inizio, passaggio sopra, rilascio, fine. */
   onDrag: (phase: 'start' | 'over' | 'drop' | 'end') => void;
   onPaste: (set: TeamSet) => void;
+  /** Preset con il voto del team più alto per questo membro (null se il membro non ne ha). */
+  onBest: () => TeamSet | null;
   data: EngineData;
   set: TeamSet;
   open: boolean;
@@ -125,14 +130,25 @@ function TeamSlot({ index, set, data, format, warning: megaWarning, open, draggi
   const common = useMemo<CommonChoices>(() => commonChoices(data, set), [data, set]);
   const speed = useMemo<SpeedTier | null>(() => speedTier(set, data), [data, set]);
   // Gestori sempre aggiornati anche dentro l'editor memorizzato
-  const live = useRef({ onChange, onReplace, onPaste, onIgnoreWarning });
-  live.current = { onChange, onReplace, onPaste, onIgnoreWarning };
+  const live = useRef({ onChange, onReplace, onPaste, onIgnoreWarning, onBest });
+  live.current = { onChange, onReplace, onPaste, onIgnoreWarning, onBest };
   const stable = useMemo(() => ({
     onChange: (next: TeamSet) => live.current.onChange(next),
     onReplace: () => live.current.onReplace(),
     onPaste: (next: TeamSet) => live.current.onPaste(next),
     onIgnoreWarning: () => live.current.onIgnoreWarning(),
+    onBest: () => live.current.onBest(),
   }), []);
+  // Esito del pulsante Preset migliore, per un attimo: applicato o era già quello
+  const [best, setBest] = useState<'applied' | 'same' | null>(null);
+  const applyBest = () => {
+    const next = stable.onBest();
+    if (!next) return;
+    const same = JSON.stringify(next) === JSON.stringify(set);
+    if (!same) stable.onChange(next);
+    setBest(same ? 'same' : 'applied');
+    setTimeout(() => setBest(null), 1600);
+  };
   const species = battleSpecies(set);
   // Con la megapietra il membro è la Mega: nome e abilità della forma in battaglia (il set resta quello di Showdown)
   const name = battleName(set);
@@ -244,6 +260,11 @@ function TeamSlot({ index, set, data, format, warning: megaWarning, open, draggi
       <IdleSetEditor idle={!open} idleKey={`${lang}:${megaWarning ?? ''}`}
         set={set} presets={presets} common={common} genLimit={format.genLimit} pokedex={pokedexOf(format)}
         teraBannedIn={teraAllowed(format) ? undefined : formatLabel(format, lang)} speed={speed} onChange={stable.onChange}
+        presetAction={
+          <button type="button" className="best-preset" title={tr('team.bestPresetTitle')} onClick={applyBest}>
+            <Icon name={best ? 'check' : 'spark'} /> {tr(best === 'same' ? 'team.bestPresetSame' : best === 'applied' ? 'team.bestPresetDone' : 'team.bestPreset')}
+          </button>
+        }
         title={open && (
           // Solo visivo: nome e tipi li annuncia già la card (il nome via CSS, così non è un secondo testo uguale)
           <div className="editor-title" aria-hidden="true">
@@ -279,7 +300,7 @@ function TeamSlot({ index, set, data, format, warning: megaWarning, open, draggi
   );
 }
 
-export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRemove, onAllowMultipleMegas, onOpenChange, onPaste }: Props) {
+export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRemove, onAllowMultipleMegas, onOpenChange, onPaste, onBulk }: Props) {
   const lang = useLang();
   // Un solo membro aperto alla volta: il suo editor scende sotto la fila del team
   const [openIndex, setOpenIndex] = useState<number | null>(null);
@@ -310,7 +331,21 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
     !format.allowMultipleMegas && firstMega !== -1 && i > firstMega && isMega(set) ? t(lang, 'team.secondMega') : null;
   return (
     <section aria-label={t(lang, 'team.region')} className="team">
-      <h2>{t(lang, 'team.title', { n: team.length })}</h2>
+      <div className="team-head">
+        <h2>{t(lang, 'team.title', { n: team.length })}</h2>
+        {team.length > 0 && (
+          <div className="team-actions">
+            <button type="button" title={t(lang, 'team.bestPresetsTitle')} onClick={() => {
+              const next = bestPresets(team, data);
+              if (onBulk) onBulk('presets', next); else onChange(next);
+            }}><Icon name="spark" /> {t(lang, 'team.bestPresets')}</button>
+            <button type="button" className="clear-team" onClick={() => {
+              setOpenIndex(null);
+              if (onBulk) onBulk('clear', []); else onChange([]);
+            }}><Icon name="close" /> {t(lang, 'team.clear')}</button>
+          </div>
+        )}
+      </div>
       <div className={`slots${openIndex !== null ? ' editing' : ''}`} ref={slotsRef}>
         {team.map((set, i) => (
           <TeamSlot
@@ -321,6 +356,7 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
             dropTarget={drag !== null && drag.over === i && drag.from !== i}
             onMove={delta => move(i, i + delta)}
             onPaste={next => (onPaste ? onPaste(i, next) : onChange(team.map((s, j) => (j === i ? next : s))))}
+            onBest={() => { const found = bestPreset(team, i, data); return found.index === null ? null : found.set; }}
             onDrag={phase => {
               if (phase === 'start') setDrag({ from: i, over: null });
               else if (phase === 'over') setDrag(d => (d && d.over !== i ? { ...d, over: i } : d));

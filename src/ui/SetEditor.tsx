@@ -1,3 +1,4 @@
+import { presetSet } from '../engine/bestPreset';
 import { useEffect, useId, useMemo, useRef } from 'react';
 import { battleSpecies, dex, getMove, getSpecies, itemNames, moveNames, natureNames } from '../engine/dex';
 import { legalAbilities, legalMoves } from '../engine/learnsets';
@@ -114,13 +115,15 @@ interface Props {
   title?: React.ReactNode;
   /** Pulsanti a destra nella riga in testa (Copia set, Sostituisci). */
   actions?: React.ReactNode;
+  /** Pulsante accanto al menu dei preset (Preset migliore). */
+  presetAction?: React.ReactNode;
   onChange: (set: TeamSet) => void;
 }
 
 /** Voce del menu dei preset per un set che non coincide con nessun preset. */
 const CUSTOM_PRESET = 'custom';
 
-export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', common, teraBannedIn, speed, title, actions, onChange }: Props) {
+export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', common, teraBannedIn, speed, title, actions, presetAction, onChange }: Props) {
   const t = useT();
   const lang = useLang();
   // Le più usate vanno in cima al menu, con la quota d'uso (o "Preset" se vengono dalle analisi)
@@ -192,7 +195,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
   const appliedIndex = presets.findIndex(p => sameSet(p.set, set));
   const applyPreset = (key: string) => {
     const preset = presets[Number(key)];
-    if (preset) onChange({ ...preset.set, species: set.species, favorite: set.favorite, customSkillset: set.customSkillset });
+    if (preset) onChange(presetSet(set, preset.set));
   };
   const itemDesc = describe.item(set.item, lang);
   // Con la megapietra l'abilità è quella della Mega: si mostra bloccata, quella del set torna togliendo la pietra
@@ -236,6 +239,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
             onChange={applyPreset}
           />
         </div>
+        {presets.length > 0 && presetAction}
         <label className="custom-toggle" title={t('editor.customTooltip')}>
           <input
             type="checkbox"
