@@ -80,7 +80,8 @@ export function* fillProposals(
   /** I candidati per il prossimo slot, già ristretti e ordinati per voto del team (a pari voto, per punteggio). */
   const candidates = (current: TeamSet[], taken: Set<string>, last: boolean): TeamSet[] => {
     const pool: Suggestion[] = suggest(current, { ...format, allowMultipleMegas: true }, data, Infinity, 'en')
-      .filter(s => !taken.has(toID(s.species)) && !exclude.has(toID(s.species)) && !deadEnds.has(toID(s.species)));
+      // Per specie del set: una Mega ha come specie la base con la pietra (Charizard @ Charizardite Y), come in exclude
+      .filter(s => { const id = toID(s.set.species); return !taken.has(id) && !exclude.has(id) && !deadEnds.has(id); });
     const narrow = (list: Suggestion[], keep: (set: TeamSet) => boolean) => {
       const kept = list.filter(s => keep(s.set));
       return kept.length ? kept : list;

@@ -18,6 +18,8 @@ const set = (name: string, moves: string[], item = ''): TeamSet => ({ ...emptySe
 const withMegas: EngineData = {
   stats: { meta: fixtureData.stats!.meta, pokemon: { ...fixtureData.stats!.pokemon, ...megaData.stats!.pokemon } },
   sets: {},
+  // Come nei dati veri: il preset della Mega sta sulla specie base, con la pietra
+  presets: { Charizard: [{ name: 'Mega Y', format: 'gen9nationaldex', set: { ...emptySet('Charizard'), item: 'Charizardite Y', ability: 'Blaze', moves: ['Flamethrower', 'Solar Beam'] } }] },
 };
 
 describe('proposte di Completa team', () => {
@@ -79,6 +81,15 @@ describe('proposte di Completa team', () => {
     const list = take([], any, new Set(), DEFAULT_FORMAT, withMegas);
     expect(list.length).toBeGreaterThanOrEqual(1);
     for (const p of list) expect(p.team.filter(isMega)).toHaveLength(1);
+  });
+
+  it('una Mega non si ripete tra le proposte (il set si chiama come la specie base)', () => {
+    // Un solo slot e nessuna Mega nel team: ogni proposta aggiunge una Mega, e il fixture ne ha due
+    const team = ['Gholdengo', 'Kingambit', 'Dragapult', 'Corviknight', 'Toxapex'].map(name => set(name, ['Protect']));
+    const list = take(team, any, new Set(), DEFAULT_FORMAT, withMegas);
+    const added = list.flatMap(p => species(p.added));
+    expect(list.length).toBeGreaterThanOrEqual(1);
+    expect(new Set(added).size).toBe(added.length);
   });
 
   it('voto della proposta = rateTeam del team proposto', () => {

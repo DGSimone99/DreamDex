@@ -460,8 +460,8 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 .fill-proposals { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
 .fill-proposal { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 14px; padding: 6px 8px; border: 1px solid var(--line-soft); border-radius: 3px; background: var(--panel); }
 .fill-mons { display: flex; flex-wrap: wrap; gap: 2px 10px; min-width: 0; }
-.fill-mon { display: inline-flex; align-items: center; gap: 2px; font-size: 13px; cursor: help; }
-.fill-mon .sprite { image-rendering: pixelated; margin: -6px -4px -6px -6px; }
+.fill-mon { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; cursor: help; }
+.fill-mon .sprite { image-rendering: pixelated; margin: -6px 0 -6px -6px; }
 .fill-result { display: grid; justify-items: end; gap: 2px; text-align: right; }
 .fill-grade { font-variant-numeric: tabular-nums; color: var(--muted); }
 .fill-grade strong { font: 700 20px/1 var(--display); color: var(--text); }
