@@ -7,8 +7,10 @@ import { formatRules } from '../engine/formatRules';
 import { detectRoles, roleLabel, roleShortLabel } from '../engine/roles';
 import { cardRoles, weatherOf } from '../engine/archetype';
 import { conditionLabel, viaName } from '../engine/synergy';
-import { presetsForSet, type Preset, type TeamSet } from '../engine/sets';
+import { exportShowdown, presetsForSet, type Preset, type TeamSet } from '../engine/sets';
 import { useEffect, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
+import { copyText } from './clipboard';
 import { useSlant } from './slant';
 import { SetEditor } from './SetEditor';
 import { describe } from './describe';
@@ -51,7 +53,22 @@ function slotProblems(set: TeamSet, format: Format, lang: Lang): string[] {
   ].filter((p): p is string => !!p);
 }
 
-function TeamSlot({ set, presets, common, speed, format, warning: megaWarning, open, onToggle, onStep, onIgnoreWarning, onChange, onRemove, onReplace }: {
+/** Cambio di layout animato (card compatte, editor) con le View Transitions, dove ci sono e il movimento è ammesso. */
+function animated(update: () => void) {
+  const doc = document as Document & { startViewTransition?: (cb: () => void) => unknown };
+  const still = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!doc.startViewTransition || still) return update();
+  doc.startViewTransition(() => flushSync(update));
+}
+
+function TeamSlot({ index, set, presets, common, speed, format, warning: megaWarning, open, dragging, dropTarget, onToggle, onStep, onMove, onDrag, onIgnoreWarning, onChange, onRemove, onReplace }: {
+  index: number;
+  dragging: boolean;
+  dropTarget: boolean;
+  /** Alt + frecce: sposta il membro di una posizione. */
+  onMove: (delta: number) => void;
+  /** Trascinamento: inizio, passaggio sopra, rilascio, fine. */
+  onDrag: (phase: 'start' | 'over' | 'drop' | 'end') => void;
   presets: Preset[];
   common: CommonChoices;
   speed: SpeedTier | null;
@@ -75,6 +92,7 @@ function TeamSlot({ set, presets, common, speed, format, warning: megaWarning, o
   // Con la megapietra il membro è la Mega: nome e abilità della forma in battaglia (il set resta quello di Showdown)
   const name = battleName(set);
   const ability = battleAbility(set);
+  const [copied, setCopied] = useState(false);
   const problems = slotProblems(set, format, lang);
   // Ruolo principale e un supporto, affiancati con il nome breve (il completo nel tooltip); il meteo solo qui
   const rules = formatRules(format.formatId);
@@ -97,19 +115,32 @@ function TeamSlot({ set, presets, common, speed, format, warning: megaWarning, o
   const warns: Alert[] = warnings.map(text => ({ level: 'warn', text }));
   return (
     <details
-      className={`slot filled${problems.length ? ' invalid' : warnings.length ? ' warn' : ''}`}
+      className={`slot filled${problems.length ? ' invalid' : warnings.length ? ' warn' : ''}${dragging ? ' dragging' : ''}${dropTarget ? ' drop-target' : ''}`}
       open={open}
-      style={{ '--t1': typeColor(species?.types[0] ?? ''), '--t2': typeColor(species?.types[1] ?? species?.types[0] ?? '') } as React.CSSProperties}
-      onToggle={e => onToggle(e.currentTarget.open)}
+      style={{ '--t1': typeColor(species?.types[0] ?? ''), '--t2': typeColor(species?.types[1] ?? species?.types[0] ?? ''), '--vt': `slot-${index}` } as React.CSSProperties}
+      // Solo se il details cambia da sé (es. ricerca nella pagina): le aperture normali sono già nello stato
+      onToggle={e => { if (e.currentTarget.open !== open) onToggle(e.currentTarget.open); }}
       onKeyDown={e => {
         // Esc chiude l'editor e torna sulla card; le frecce sulla card passano al membro accanto
         if (e.key === 'Escape' && open) { e.preventDefault(); onToggle(false); card.current?.focus(); }
         else if (e.target === card.current && (e.key === 'ArrowRight' || e.key === 'ArrowLeft')) {
-          e.preventDefault(); onStep(e.key === 'ArrowRight' ? 1 : -1);
+          e.preventDefault();
+          const delta = e.key === 'ArrowRight' ? 1 : -1;
+          if (e.altKey) onMove(delta); else onStep(delta);
         }
       }}
     >
-      <summary ref={card}>
+      <summary
+        ref={card}
+        draggable
+        title={tr('team.dragTitle')}
+        // Apertura e chiusura passano dall'animazione: il clic non apre da solo il details
+        onClick={e => { e.preventDefault(); onToggle(!open); }}
+        onDragStart={e => { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', String(index)); onDrag('start'); }}
+        onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; onDrag('over'); }}
+        onDrop={e => { e.preventDefault(); onDrag('drop'); }}
+        onDragEnd={() => onDrag('end')}
+      >
         <span className="sprite-wrap">
           <Sprite species={set.species} item={set.item} animated={open} />
           {(dangers.length > 0 || warns.length > 0) && (
@@ -156,11 +187,21 @@ function TeamSlot({ set, presets, common, speed, format, warning: megaWarning, o
       </summary>
       <div className="drawer">
       <SetEditor set={set} presets={presets} common={common} genLimit={format.genLimit} pokedex={pokedexOf(format)}
-        teraBannedIn={teraAllowed(format) ? undefined : formatLabel(format, lang)} speed={speed} onChange={onChange} />
-      <div className="actions">
-        <button type="button" aria-label={tr('team.replace', { species: name })} onClick={onReplace}><Icon name="swap" /> {tr('team.replaceButton')}</button>
-        {megaWarning && <button type="button" onClick={onIgnoreWarning}>{tr('team.keepMega')}</button>}
-      </div>
+        teraBannedIn={teraAllowed(format) ? undefined : formatLabel(format, lang)} speed={speed} onChange={onChange}
+        title={open && (
+          // Solo visivo: nome e tipi li annuncia già la card (il nome via CSS, così non è un secondo testo uguale)
+          <div className="editor-title" aria-hidden="true">
+            <strong data-name={name} />
+            <span className="types">{species?.types.map(type => <TypeChip key={type} type={type} />)}</span>
+          </div>
+        )}
+        actions={<>
+          {megaWarning && <button type="button" onClick={onIgnoreWarning}>{tr('team.keepMega')}</button>}
+          <button type="button" aria-label={tr('team.copySet')} title={tr('team.copySet')} onClick={async () => {
+            if (await copyText(exportShowdown([set], { tera: teraAllowed(format) }))) { setCopied(true); setTimeout(() => setCopied(false), 1500); }
+          }}><Icon name={copied ? 'check' : 'copy'} /> <span className="btn-label">{tr(copied ? 'team.copied' : 'team.copySet')}</span></button>
+          <button type="button" aria-label={tr('team.replace', { species: name })} title={tr('team.replaceButton')} onClick={onReplace}><Icon name="swap" /> <span className="btn-label">{tr('team.replaceButton')}</span></button>
+        </>} />
       </div>
     </details>
   );
@@ -172,11 +213,25 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   useEffect(() => { onOpenChange?.(openIndex); }, [openIndex]);
   const slotsRef = useRef<HTMLDivElement>(null);
+  const focusCard = (i: number) => requestAnimationFrame(() => slotsRef.current?.querySelectorAll<HTMLElement>('.slot > summary')[i]?.focus());
   const step = (from: number, delta: number) => {
     const to = (from + delta + team.length) % team.length;
-    setOpenIndex(current => (current === null ? null : to));
-    slotsRef.current?.querySelectorAll<HTMLElement>('.slot > summary')[to]?.focus();
+    if (openIndex !== null) animated(() => setOpenIndex(to));
+    focusCard(to);
   };
+  // Riordino: trascinando o con Alt + frecce; il membro aperto resta aperto nella nuova posizione
+  const [drag, setDrag] = useState<{ from: number; over: number | null } | null>(null);
+  const move = (from: number, to: number) => {
+    if (to < 0 || to >= team.length || to === from) return;
+    const next = [...team];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    const follow = (i: number | null) => (i === null ? null : i === from ? to : from < i && i <= to ? i - 1 : to <= i && i < from ? i + 1 : i);
+    animated(() => { onChange(next); setOpenIndex(follow); });
+    focusCard(to);
+  };
+  // Chiave stabile per specie (e occorrenza): riordinando, le card non si ricreano
+  const keys = team.map((set, i) => `${set.species}#${team.slice(0, i).filter(s => s.species === set.species).length}`);
   const firstMega = team.findIndex(isMega);
   const warningFor = (set: TeamSet, i: number) =>
     !format.allowMultipleMegas && firstMega !== -1 && i > firstMega && isMega(set) ? t(lang, 'team.secondMega') : null;
@@ -186,15 +241,25 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
       <div className={`slots${openIndex !== null ? ' editing' : ''}`} ref={slotsRef}>
         {team.map((set, i) => (
           <TeamSlot
-            key={`${i}-${set.species}`}
+            key={keys[i]}
+            index={i}
             set={set}
+            dragging={drag?.from === i}
+            dropTarget={drag !== null && drag.over === i && drag.from !== i}
+            onMove={delta => move(i, i + delta)}
+            onDrag={phase => {
+              if (phase === 'start') setDrag({ from: i, over: null });
+              else if (phase === 'over') setDrag(d => (d && d.over !== i ? { ...d, over: i } : d));
+              else if (phase === 'drop') { if (drag) move(drag.from, i); setDrag(null); }
+              else setDrag(null);
+            }}
             presets={presetsForSet(data, set)}
             common={commonChoices(data, set)}
             speed={speedTier(set, data)}
             format={format}
             warning={warningFor(set, i)}
             open={openIndex === i}
-            onToggle={open => setOpenIndex(current => (open ? i : current === i ? null : current))}
+            onToggle={open => animated(() => setOpenIndex(current => (open ? i : current === i ? null : current)))}
             onStep={delta => step(i, delta)}
             onIgnoreWarning={onAllowMultipleMegas}
             onChange={next => onChange(team.map((s, j) => (j === i ? next : s)))}

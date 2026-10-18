@@ -269,8 +269,27 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 .slots.editing .slot .name { font-size: 18px; }
 .slots.editing .slot.empty .sprite.missing { display: none; }
 .slots.editing .slot.empty { min-height: 100%; }
-@keyframes compact { from { opacity: 0.4; } }
-.slots.editing .slot > summary > * { animation: compact 0.25s var(--ease); }
+/* Card aperta: solo lo sprite, più grande (nome, tipi e set sono nell'editor) */
+.slot[open] > summary { justify-content: center; }
+.slot[open] > summary > :not(.sprite-wrap, .favorite, .remove, .slot-custom) { display: none; }
+.slots.editing .slot[open] > summary .sprite-wrap { zoom: 1.05; margin: 0; }
+/* Riordino trascinando */
+.slot.dragging > summary { opacity: 0.45; }
+.slot.drop-target > summary::before { outline: 2px dashed var(--blue); outline-offset: 3px; }
+/* Passaggio alle card compatte e ritorno: ogni card scivola nella nuova forma, il resto della pagina scorre senza dissolversi */
+.slot > summary { view-transition-name: var(--vt); view-transition-class: slot; }
+.drawer { view-transition-name: slot-drawer; }
+.tabs { view-transition-name: page-tabs; }
+.tab-body { view-transition-name: page-body; }
+::view-transition-group(*) { animation-duration: 0.32s; animation-timing-function: var(--ease); }
+::view-transition-old(root), ::view-transition-new(root) { animation: none; }
+::view-transition-old(*.slot), ::view-transition-new(*.slot) { height: 100%; object-fit: none; object-position: top center; }
+::view-transition-old(*.slot) { animation: fade-out 0.1s ease-out both; }
+::view-transition-new(*.slot) { animation: fade-in 0.22s var(--ease) both; }
+::view-transition-new(slot-drawer) { animation: drawer 0.32s var(--ease); }
+::view-transition-old(slot-drawer) { animation: fade-out 0.12s ease-out both; }
+@keyframes fade-out { to { opacity: 0; } }
+@keyframes fade-in { from { opacity: 0; } }
 /* Editor del membro aperto: scende sotto la fila */
 .slot::details-content { grid-row: 2; grid-column: 1 / -1; }
 .slot:not([open])::details-content { display: none; }
@@ -286,11 +305,19 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 .set-editor .editor-side { display: grid; gap: 14px; }
 .set-editor label, .set-editor .field { display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
 .set-editor label input, .set-editor label select, .set-editor .field input { font-size: 14px; color: var(--text); text-transform: none; letter-spacing: 0; font-weight: 400; width: 100%; }
-.set-editor .editor-head { grid-column: 1 / -1; display: flex; align-items: center; gap: 18px; padding-right: 150px; }
+.set-editor .editor-head { grid-column: 1 / -1; display: flex; align-items: center; gap: 18px; }
+/* Nome e tipi del membro aperto: la card sopra mostra solo lo sprite */
+.editor-title { display: flex; align-items: center; gap: 10px; min-width: 0; margin-right: 6px; }
+.editor-title strong { font: 700 26px/1 var(--display); text-transform: uppercase; letter-spacing: 0.02em; white-space: nowrap; }
+.editor-title strong::before { content: attr(data-name); }
+.editor-title .types { display: flex; flex-wrap: nowrap; gap: 4px; }
+.editor-actions { display: flex; gap: 8px; margin-left: auto; }
+.editor-actions button { height: 36px; white-space: nowrap; }
+.set-editor .custom-toggle { white-space: nowrap; flex-shrink: 0; }
 .set-editor .preset-field { flex-direction: row; align-items: center; gap: 12px; }
 .set-editor .preset-field .field-head { white-space: nowrap; }
 .set-editor .preset-field .combobox { flex: 1; }
-.set-editor .preset-field { width: 430px; }
+.set-editor .preset-field { width: 400px; flex-shrink: 1; min-width: 0; }
 .preset-format { flex: none; font-size: 11px; font-weight: 600; text-transform: none; letter-spacing: 0; color: var(--faint); padding: 1px 6px; border: 1px solid var(--line); border-radius: 3px; }
 .combobox input:disabled { opacity: 0.55; cursor: not-allowed; }
 .set-editor .custom-toggle { flex-direction: row; align-items: center; height: 36px; gap: 8px; width: fit-content; text-transform: none; letter-spacing: 0; font-size: 14px; color: var(--text); cursor: help; }
@@ -423,10 +450,7 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
   animation: tip 0.15s var(--ease) 0.25s both;
 }
 @keyframes tip { from { opacity: 0; transform: translateY(4px); } }
-.drawer { position: relative; }
-/* Sostituisci in alto a destra, accanto ai preset */
-.drawer .actions { position: absolute; top: 14px; right: 20px; margin: 0; justify-content: flex-end; }
-.drawer .actions button { height: 36px; }
+
 
 /* Voto */
 .grade-badge {
@@ -1279,3 +1303,9 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .member-sheet .typing .bad { color: var(--bad); }
 .member-sheet .tags { font-size: 12px; }
 .member-sheet .sheet-tag { display: inline-block; color: var(--text); border: 1px solid var(--line); border-radius: 4px; padding: 1px 6px; margin: 1px; white-space: nowrap; }
+/* Schermi stretti: l'etichetta dei preset resta solo come nome accessibile del menu */
+@media (max-width: 1400px) {
+  .set-editor .preset-field > .field-head { display: none; }
+  /* Copia set e Sostituisci solo con l'icona (il nome resta nel tooltip e per i lettori di schermo) */
+  .editor-actions .btn-label { display: none; }
+}

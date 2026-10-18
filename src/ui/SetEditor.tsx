@@ -91,6 +91,9 @@ const spreadText = (s: Pick<CommonSpread, 'evs'>, lang: Lang) =>
 /** Colore della statistica base, dal rosso (bassa) al verde-azzurro (altissima), come nei teambuilder. */
 const baseColor = (base: number) => `hsl(${Math.min(180, Math.max(0, (base - 30) * 1.2))} 80% 58%)`;
 
+/** Passo degli EV nei campi e nel cursore. */
+const EV_STEP = 2;
+
 const clampEv = (value: number) => Math.min(252, Math.max(0, Number.isFinite(value) ? value : 0));
 
 interface Props {
@@ -107,13 +110,17 @@ interface Props {
   teraBannedIn?: string;
   /** Velocità del membro tra i più usati del meta (null senza statistiche). */
   speed?: SpeedTier | null;
+  /** Nome e tipi del membro, a sinistra nella riga in testa. */
+  title?: React.ReactNode;
+  /** Pulsanti a destra nella riga in testa (Copia set, Sostituisci). */
+  actions?: React.ReactNode;
   onChange: (set: TeamSet) => void;
 }
 
 /** Voce del menu dei preset per un set che non coincide con nessun preset. */
 const CUSTOM_PRESET = 'custom';
 
-export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', common, teraBannedIn, speed, onChange }: Props) {
+export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', common, teraBannedIn, speed, title, actions, onChange }: Props) {
   const t = useT();
   const lang = useLang();
   // Le più usate vanno in cima al menu, con la quota d'uso (o "Preset" se vengono dalle analisi)
@@ -200,6 +207,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
   return (
     <div className="set-editor">
       <div className="editor-head">
+        {title}
         <div className="field preset-field">
           <span className="field-head">{t('editor.presets')}</span>
           <Combobox
@@ -224,6 +232,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
           />{' '}
           {t('editor.customLabel')}
         </label>
+        {actions && <div className="editor-actions">{actions}</div>}
       </div>
       <fieldset className="evs">
         <legend>{t('editor.evs')}</legend>
@@ -262,7 +271,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
                 className="ev-slider"
                 min={0}
                 max={252}
-                step={4}
+                step={EV_STEP}
                 value={line.ev}
                 aria-label={t('editor.evSlider', { stat: statShort(line.stat, lang) })}
                 style={{ '--fill': `${(line.ev / 252) * 100}%` } as React.CSSProperties}
@@ -274,7 +283,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
                 className="ev-input"
                 min={0}
                 max={252}
-                step={4}
+                step={EV_STEP}
                 value={line.ev}
                 onChange={e => update({ evs: { ...set.evs, [line.stat]: clampEv(Number(e.target.value)) } })}
               />
