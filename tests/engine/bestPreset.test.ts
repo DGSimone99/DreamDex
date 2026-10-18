@@ -39,24 +39,3 @@ describe('preset migliore', () => {
     expect(next[1]).toBe(team[1]);
   });
 });
-
-describe('Preset migliori con slot vuoti', () => {
-  it('riempie il team fino a 6 senza doppioni, col candidato che alza di più il voto', async () => {
-    const { fillTeam } = await import('../../src/engine/bestPreset');
-    const { DEFAULT_FORMAT } = await import('../../src/engine/format');
-    const { fixtureData } = await import('../fixtures/data');
-    const start = [set('Garchomp', ['Earthquake', 'Outrage', 'Stealth Rock', 'Swords Dance'], 'Rocky Helmet')];
-    const filled = fillTeam(start, DEFAULT_FORMAT, fixtureData);
-    expect(filled.length).toBeGreaterThan(1);
-    expect(filled.length).toBeLessThanOrEqual(6);
-    expect(filled[0]).toBe(start[0]);
-    expect(new Set(filled.map(s => s.species)).size).toBe(filled.length);
-  });
-
-  it('senza statistiche del meta non aggiunge nessuno', async () => {
-    const { fillTeam } = await import('../../src/engine/bestPreset');
-    const { DEFAULT_FORMAT } = await import('../../src/engine/format');
-    const start = [set('Garchomp', ['Earthquake'])];
-    expect(fillTeam(start, DEFAULT_FORMAT, { stats: null, sets: {} })).toEqual(start);
-  });
-});

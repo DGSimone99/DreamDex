@@ -1,9 +1,6 @@
 import type { EngineData } from './data';
 import { rateTeam } from './rating';
-import type { Format } from './format';
-import { suggest } from './scoring';
 import { presetsForSet, type TeamSet } from './sets';
-import { rankByTeamGain } from './teamGain';
 
 /** Il set del preset al posto del membro: specie, preferito e Custom Skillset restano quelli del membro. */
 export function presetSet(member: TeamSet, preset: TeamSet): TeamSet {
@@ -50,20 +47,3 @@ export function bestPresets(team: TeamSet[], data: EngineData): TeamSet[] {
   }
   return current;
 }
-
-/**
- * Riempie gli slot vuoti uno alla volta: tra i migliori candidati per punteggio (i suggerimenti) entra quello che dà
- * al team il voto più alto; a pari voto, quello col punteggio più alto. Serve il meta (senza statistiche non aggiunge niente).
- */
-export function fillTeam(team: TeamSet[], format: Format, data: EngineData, pool = FILL_POOL): TeamSet[] {
-  let current = team;
-  while (current.length < 6) {
-    const ranked = rankByTeamGain(suggest(current, format, data, pool, 'en'), current, null, data, 'en');
-    if (!ranked.length) break;
-    current = [...current, ranked[0].set];
-  }
-  return current;
-}
-
-/** Candidati valutati col voto per ogni slot da riempire. */
-export const FILL_POOL = 30;

@@ -172,7 +172,8 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
   background: var(--band);
   border-bottom: 1px solid var(--line-soft);
 }
-.team-head { display: flex; align-items: center; gap: 16px; margin-bottom: 14px; }
+.team-head { position: relative; z-index: 6; display: flex; align-items: center; gap: 16px; margin-bottom: 14px; }
+.fill-anchor { position: relative; }
 .team-head h2 { margin: 0; }
 .team-head .team-action { height: 30px; padding: 0 10px; font-size: 13px; }
 .team-head .clear-team { margin-left: auto; margin-right: calc(-1 * var(--card-rise, 0px)); }

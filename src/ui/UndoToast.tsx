@@ -13,6 +13,8 @@ export interface UndoAction {
   to?: string;
   /** Preset migliori: Pokémon aggiunti negli slot vuoti. */
   added?: number;
+  /** Completa team partito da un team vuoto. */
+  created?: boolean;
 }
 
 /** Quanto resta l'avviso, se non ci passi sopra. */
@@ -58,6 +60,7 @@ export function UndoToast({ action, onUndo, onClose }: { action: UndoAction; onU
       <p className="undo-text">
         {action.kind === 'load' ? t('undo.loaded')
           : action.kind === 'clear' ? t('undo.cleared')
+          : action.kind === 'presets' && action.created ? t('undo.created', { to: action.to ?? '' })
           : action.kind === 'presets' ? (action.added
             ? t(action.added === 1 ? 'undo.filledOne' : 'undo.filledMany', { n: action.added, from: action.from, to: action.to ?? '' })
             : t('undo.presets', { from: action.from, to: action.to ?? '' })) : <>

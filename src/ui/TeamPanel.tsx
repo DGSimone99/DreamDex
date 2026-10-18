@@ -8,11 +8,12 @@ import { detectRoles, roleLabel, roleShortLabel } from '../engine/roles';
 import { cardRoles, weatherOf } from '../engine/archetype';
 import { conditionLabel, viaName } from '../engine/synergy';
 import { exportShowdown, importShowdown, presetsForSet, type Preset, type TeamSet } from '../engine/sets';
-import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type ComponentProps } from 'react';
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ComponentProps } from 'react';
 import { flushSync } from 'react-dom';
 import { copyText } from './clipboard';
 import { setEditing } from './editing';
-import { bestPreset, bestPresets, fillTeam } from '../engine/bestPreset';
+import { bestPreset, bestPresets } from '../engine/bestPreset';
+import { FillPanel } from './FillPanel';
 import { SLANT, useSlant } from './slant';
 import { SetEditor } from './SetEditor';
 import { describe } from './describe';
@@ -329,16 +330,19 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
     animated(() => { onChange(next); setOpenIndex(follow); });
     focusCard(to);
   };
-  // Preset migliori e Completa team: qualche decimo di secondo, il pulsante dice che sta calcolando
-  const [busy, setBusy] = useState<'presets' | 'fill' | null>(null);
-  const runBulk = (kind: 'presets' | 'fill') => {
-    setBusy(kind);
+  // Preset migliori: qualche decimo di secondo, il pulsante dice che sta calcolando
+  const [busy, setBusy] = useState(false);
+  const runPresets = () => {
+    setBusy(true);
     setTimeout(() => {
-      const next = kind === 'presets' ? bestPresets(team, data) : fillTeam(team, format, data);
-      setBusy(null);
-      if (onBulk) onBulk(kind, next); else onChange(next);
+      const next = bestPresets(team, data);
+      setBusy(false);
+      if (onBulk) onBulk('presets', next); else onChange(next);
     }, 30);
   };
+  // Completa team: pannello con tipi di team e proposte
+  const [filling, setFilling] = useState(false);
+  const closeFill = useCallback(() => setFilling(false), []);
   // Svuota team finisce all'angolo in alto a destra dell'ultima card: inclinata, sporge di altezza × pendenza
   const headRef = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
@@ -360,17 +364,29 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
     <section aria-label={t(lang, 'team.region')} className="team">
       <div className="team-head" ref={headRef}>
         <h2>{t(lang, 'team.title', { n: team.length })}</h2>
-        {team.length > 0 && <>
-          <button type="button" className="team-action" disabled={busy !== null} aria-busy={busy === 'presets' || undefined}
-            title={t(lang, 'team.bestPresetsTitle')} onClick={() => runBulk('presets')}>
-            <Icon name="spark" /> {t(lang, busy === 'presets' ? 'team.bestPresetsBusy' : 'team.bestPresets')}
+        {team.length > 0 && (
+          <button type="button" className="team-action" disabled={busy} aria-busy={busy || undefined}
+            title={t(lang, 'team.bestPresetsTitle')} onClick={runPresets}>
+            <Icon name="spark" /> {t(lang, busy ? 'team.bestPresetsBusy' : 'team.bestPresets')}
           </button>
-          {team.length < 6 && data.stats && (
-            <button type="button" className="team-action" disabled={busy !== null} aria-busy={busy === 'fill' || undefined}
-              title={t(lang, 'team.fillTitle')} onClick={() => runBulk('fill')}>
-              <Icon name="plus" /> {t(lang, busy === 'fill' ? 'team.bestPresetsBusy' : 'team.fill')}
+        )}
+        {team.length < 6 && data.stats && (
+          // Anche a team vuoto: propone team interi del tipo scelto; il pannello si apre sotto il pulsante
+          <span className="fill-anchor">
+            <button type="button" className="team-action" data-fill-toggle aria-expanded={filling}
+              title={t(lang, 'team.fillTitle')} onClick={() => setFilling(open => !open)}>
+              <Icon name="plus" /> {t(lang, 'team.fill')}
             </button>
-          )}
+            {filling && (
+              <FillPanel team={team} format={format} data={data} onClose={closeFill} onApply={proposal => {
+                setFilling(false);
+                setOpenIndex(null);
+                if (onBulk) onBulk('fill', proposal.team); else onChange(proposal.team);
+              }} />
+            )}
+          </span>
+        )}
+        {team.length > 0 && <>
           {/* In fondo a destra, dove finisce l'ultima card */}
           <button type="button" className="team-action clear-team" onClick={() => {
             setOpenIndex(null);
