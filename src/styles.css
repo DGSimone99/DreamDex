@@ -257,7 +257,7 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 .slot .types .type-chip { position: relative; isolation: isolate; background: none; }
 .slot .types .type-chip::before { background: var(--chip); }
 /* La card col tooltip aperto passa sopra alle vicine */
-.slot > summary:has(.stats-badge:hover, .stats-badge:focus-visible) { z-index: 5; }
+.slot > summary:has(.stats-badge:hover, .stats-badge:focus-visible, .alert-mark:hover, .alert-mark:focus-visible) { z-index: 5; }
 .slot .remove:hover { color: var(--bad); }
 /* Bordo sottile: il triangolo dice il problema, la selezione resta la cosa più visibile */
 .slot.invalid > summary::before { outline: 1px solid color-mix(in srgb, var(--bad) 70%, transparent); outline-offset: -1px; }
@@ -365,7 +365,7 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 .band:has(.slots.editing) { padding-top: 14px; }
 .band:has(.slots.editing) .team-head { margin-bottom: 8px; }
 /* Blocco statistiche: base, cursore EV, EV, valore finale; la natura colora la riga */
-.stat-rows { display: grid; gap: 2px; }
+.stat-rows { display: grid; gap: 2px; margin-top: 8px; }
 .stat-row { display: grid; grid-template-columns: 52px 92px minmax(0, 1fr) 58px 44px; align-items: center; gap: 12px; padding: 2px 6px; border-radius: 3px; }
 .stat-row:hover { background: color-mix(in srgb, var(--raised) 60%, transparent); }
 .set-editor .stat-row .stat-name { flex-direction: row; align-items: baseline; gap: 0; font: 700 15px/1 var(--display); letter-spacing: 0.04em; color: var(--muted); }
@@ -1030,6 +1030,8 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 }
 /* Colonna destra: il menu si apre verso sinistra per non uscire dal pannello */
 .editor-group > .field:nth-child(odd) .combobox [role='listbox'] { left: auto; right: 0; }
+/* Mosse in fondo all'editor: il menu si apre verso l'alto e resta nella schermata */
+.editor-group.moves .combobox [role='listbox'] { top: auto; bottom: calc(100% + 4px); }
 .combobox [role='option'] { margin: 0; padding: 8px 10px; cursor: pointer; border-bottom: 1px solid var(--line-soft); transition: background 0.1s; }
 .combobox [role='option']:last-of-type { border-bottom: 0; }
 .combobox [role='option'].active { background: var(--raised); border-radius: 3px; border-bottom-color: transparent; }
