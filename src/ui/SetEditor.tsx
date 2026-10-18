@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useId, useMemo } from 'react';
 import { battleSpecies, dex, getMove, getSpecies, itemNames, moveNames, natureNames } from '../engine/dex';
 import { legalAbilities, legalMoves } from '../engine/learnsets';
 import { formatName, sameSet, STAT_IDS, type Preset, type StatID, type TeamSet } from '../engine/sets';
@@ -12,6 +12,7 @@ import { Combobox, type ComboOption } from './Combobox';
 import { describe } from './describe';
 import { SpeedLine } from './SpeedLine';
 import { speedStat, type SpeedTier } from '../engine/speed';
+import { EV_TOTAL, evTotal, statLines } from '../engine/statCalc';
 import { TypeChip } from './Sprite';
 import { ItemIcon } from './ItemIcon';
 import { Icon } from './icons';
@@ -86,6 +87,9 @@ const spreadText = (s: Pick<CommonSpread, 'evs'>, lang: Lang) =>
   STAT_IDS.filter(stat => (s.evs[stat] ?? 0) > 0)
     .sort((a, b) => (s.evs[b] ?? 0) - (s.evs[a] ?? 0))
     .map(stat => `${s.evs[stat]} ${statShort(stat, lang)}`).join(' / ') || '—';
+
+/** Colore della statistica base, dal rosso (bassa) al verde-azzurro (altissima), come nei teambuilder. */
+const baseColor = (base: number) => `hsl(${Math.min(180, Math.max(0, (base - 30) * 1.2))} 80% 58%)`;
 
 const clampEv = (value: number) => Math.min(252, Math.max(0, Number.isFinite(value) ? value : 0));
 
@@ -189,11 +193,15 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
   const megaAbility = forme && species && forme.name !== species.name ? forme.abilities[0] : null;
   const shownAbility = megaAbility ?? set.ability;
   const abilityDesc = describe.ability(shownAbility, lang);
+  const uid = useId();
+  const lines = statLines(set);
+  const used = evTotal(set.evs);
 
   return (
     <div className="set-editor">
       <div className="editor-head">
         <div className="field preset-field">
+          <span className="field-head">{t('editor.presets')}</span>
           <Combobox
             label={t('editor.presets')}
             value={presets.length === 0 ? '' : appliedIndex >= 0 ? String(appliedIndex) : CUSTOM_PRESET}
@@ -217,6 +225,72 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
           {t('editor.customLabel')}
         </label>
       </div>
+      <fieldset className="evs">
+        <legend>{t('editor.evs')}</legend>
+        {!!common?.spreads.length && (
+          // Chiuso di norma
+          <details className="spread-panel">
+          <summary>{t('editor.spreads')}</summary>
+          <div className="spread-presets" role="group" aria-label={t('editor.spreads')}>
+            {common.spreads.map(spread => (
+              <button
+                key={spreadKey(spread)}
+                type="button"
+                aria-pressed={spreadKey(spread) === spreadKey(set)}
+                onClick={() => update({ nature: spread.nature, evs: { ...spread.evs } })}
+              >
+                <strong>{natureName(spread.nature, lang)}</strong>
+                <span className="spread-evs">{spreadText(spread, lang)}</span>
+                <span className="common-share">{shareLabel(spread)}</span>
+              </button>
+            ))}
+          </div>
+          </details>
+        )}
+        <div className="stat-rows">
+          {lines.map(line => (
+            <div key={line.stat} className={`stat-row${line.nature ? ` nature-${line.nature}` : ''}`}>
+              <label className="stat-name" htmlFor={`ev-${uid}-${line.stat}`}>{statShort(line.stat, lang).toUpperCase()}</label>
+              <span className="stat-base" title={t('editor.base', { n: line.base })}>
+                <span className="stat-base-n">{line.base}</span>
+                <span className="stat-base-bar" aria-hidden="true">
+                  <span style={{ width: `${Math.min(100, line.base / 1.8)}%`, background: baseColor(line.base) }} />
+                </span>
+              </span>
+              <input
+                type="range"
+                className="ev-slider"
+                min={0}
+                max={252}
+                step={4}
+                value={line.ev}
+                aria-label={t('editor.evSlider', { stat: statShort(line.stat, lang) })}
+                style={{ '--fill': `${(line.ev / 252) * 100}%` } as React.CSSProperties}
+                onChange={e => update({ evs: { ...set.evs, [line.stat]: clampEv(Number(e.target.value)) } })}
+              />
+              <input
+                id={`ev-${uid}-${line.stat}`}
+                type="number"
+                className="ev-input"
+                min={0}
+                max={252}
+                step={4}
+                value={line.ev}
+                onChange={e => update({ evs: { ...set.evs, [line.stat]: clampEv(Number(e.target.value)) } })}
+              />
+              <strong className="stat-final" title={t('editor.final')}>{line.value}</strong>
+            </div>
+          ))}
+        </div>
+        <p className={`ev-total${used > EV_TOTAL ? ' over' : ''}`}>
+          <span>{t('editor.evTotal')}</span>
+          <span className="ev-meter" aria-hidden="true"><span style={{ width: `${Math.min(100, (used / EV_TOTAL) * 100)}%` }} /></span>
+          <strong>{used}</strong><span className="ev-of">/ {EV_TOTAL}</span>
+          <span className="ev-left">{used > EV_TOTAL ? t('editor.evOver', { n: used - EV_TOTAL }) : t('editor.evLeft', { n: EV_TOTAL - used })}</span>
+        </p>
+        {speed && <SpeedLine name={battleSpecies(set)?.name ?? set.species} tier={speed} scarf={speedStat(set).scarf} />}
+      </fieldset>
+      <div className="editor-side">
       <fieldset className="editor-group">
         <legend>{t('editor.set')}</legend>
         <div className="field" data-tip={itemDesc}>
@@ -226,7 +300,10 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
             onChange={item => update({ item })} />
         </div>
         <div className="field" data-tip={abilityDesc}>
-          <span className="field-head">{t('editor.ability')}</span>
+          <span className="field-head">
+            {t('editor.ability')}
+            {megaAbility && <small className="field-note">{t('editor.megaAbilityNote')}</small>}
+          </span>
           {megaAbility ? (
             <span title={t('editor.megaAbility')}>
               <Combobox label={t('editor.ability')} commonLabel={commonLabel} value={megaAbility} options={[abilityOption(megaAbility, lang)]} restricted disabled
@@ -276,43 +353,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
           </div>
         ))}
       </fieldset>
-      <fieldset className="evs">
-        <legend>{t('editor.evs')}</legend>
-        {!!common?.spreads.length && (
-          // Chiuso di norma
-          <details className="spread-panel">
-          <summary>{t('editor.spreads')}</summary>
-          <div className="spread-presets" role="group" aria-label={t('editor.spreads')}>
-            {common.spreads.map(spread => (
-              <button
-                key={spreadKey(spread)}
-                type="button"
-                aria-pressed={spreadKey(spread) === spreadKey(set)}
-                onClick={() => update({ nature: spread.nature, evs: { ...spread.evs } })}
-              >
-                <strong>{natureName(spread.nature, lang)}</strong>
-                <span className="spread-evs">{spreadText(spread, lang)}</span>
-                <span className="common-share">{shareLabel(spread)}</span>
-              </button>
-            ))}
-          </div>
-          </details>
-        )}
-        {STAT_IDS.map(stat => (
-          <label key={stat}>
-            {statShort(stat, lang).toUpperCase()}
-            <input
-              type="number"
-              min={0}
-              max={252}
-              step={4}
-              value={set.evs[stat] ?? 0}
-              onChange={e => update({ evs: { ...set.evs, [stat]: clampEv(Number(e.target.value)) } })}
-            />
-          </label>
-        ))}
-        {speed && <SpeedLine name={battleSpecies(set)?.name ?? set.species} tier={speed} scarf={speedStat(set).scarf} />}
-      </fieldset>
+      </div>
     </div>
   );
 }
