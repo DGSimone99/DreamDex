@@ -89,10 +89,16 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
     setReplaceIndexState(index);
     setPreview(null);
   };
+  /** Porta la barra delle schede in cima alla finestra, così il contenuto scelto si vede subito. */
+  const scrollToTabs = () => requestAnimationFrame(() => {
+    const still = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    document.querySelector('.tabs')?.scrollIntoView?.({ behavior: still ? 'auto' : 'smooth', block: 'start' });
+  });
+  const openTab = (next: TabId) => { setTab(next); scrollToTabs(); };
   /** Scegliere chi sostituire (dal coach o da una carta) porta alla scheda Pokémon, dove ci sono i candidati. */
   const startReplace = (index: number | null) => {
     setReplaceIndex(index);
-    if (index !== null) setTab('pokemon');
+    if (index !== null) openTab('pokemon');
   };
   const changePreview = (next: SwapPreview, open: boolean) =>
     setPreview(current => (open ? next
@@ -170,7 +176,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
           onAllowMultipleMegas={() => setFormat(f => ({ ...f, allowMultipleMegas: true }))} />
         <GradeBadge rating={rating} />
       </div>
-      <Tabs active={shownTab} onChange={setTab} tabs={[
+      <Tabs active={shownTab} onChange={openTab} tabs={[
         { id: 'pokemon', label: t(lang, 'tabs.pokemon'),
           count: replaceIndex !== null && team[replaceIndex] ? { text: t(lang, 'suggest.replaceTitle', { species: team[replaceIndex].species }), level: 'info' } : null },
         { id: 'analysis', label: t(lang, 'tabs.analysis'),

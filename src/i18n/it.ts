@@ -195,7 +195,7 @@ export const it: Record<keyof typeof en, string> = {
   'team.pastePlaceholder': "Garchomp @ Rocky Helmet\nAbility: Rough Skin\nEVs: 252 Atk / 4 SpD / 252 Spe\nJolly Nature\n- Earthquake",
   'team.pasteApply': "Applica",
   'team.pasteCancel': "Annulla",
-  'team.pasteHint': "Sostituisce tutto il set; con un altro Pokémon cambia anche il membro. Puoi annullare subito dopo.",
+  'team.pasteHint': "Sostituisce tutto il set; con un altro Pokémon cambia anche il membro.",
   'team.pasteEmpty': "Nessun set riconosciuto nel testo",
   'undo.cleared': "Team svuotato",
   'undo.presets': "Preset migliori applicati: {from} → {to}",

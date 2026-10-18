@@ -193,7 +193,7 @@ export const en = {
   'team.pastePlaceholder': "Garchomp @ Rocky Helmet\nAbility: Rough Skin\nEVs: 252 Atk / 4 SpD / 252 Spe\nJolly Nature\n- Earthquake",
   'team.pasteApply': "Apply",
   'team.pasteCancel': "Cancel",
-  'team.pasteHint': "Replaces the whole set; a different Pokémon replaces the member too. You can undo right after.",
+  'team.pasteHint': "Replaces the whole set; a different Pokémon replaces the member too.",
   'team.pasteEmpty': "No set recognised in the text",
   'undo.cleared': "Team cleared",
   'undo.presets': "Best presets applied: {from} → {to}",
