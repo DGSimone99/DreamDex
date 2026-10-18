@@ -134,7 +134,7 @@ export function Combobox({ label, value, options, onChange, restricted = false, 
           if (e.key === 'ArrowDown') { e.preventDefault(); move(1); }
           else if (e.key === 'ArrowUp') { e.preventDefault(); move(-1); }
           else if (e.key === 'Enter' && open && shown[active]) { e.preventDefault(); pick(shown[active]); }
-          else if (e.key === 'Escape') setOpen(false);
+          else if (e.key === 'Escape' && open) { e.stopPropagation(); setOpen(false); }
         }}
       />
       {open && (

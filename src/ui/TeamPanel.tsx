@@ -7,9 +7,13 @@ import { formatRules } from '../engine/formatRules';
 import { detectRoles, roleLabel, roleShortLabel } from '../engine/roles';
 import { cardRoles, weatherOf } from '../engine/archetype';
 import { conditionLabel, viaName } from '../engine/synergy';
-import { presetsForSet, type Preset, type TeamSet } from '../engine/sets';
-import { useRef, useState } from 'react';
-import { useSlant } from './slant';
+import { exportShowdown, importShowdown, presetsForSet, type Preset, type TeamSet } from '../engine/sets';
+import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type ComponentProps } from 'react';
+import { flushSync } from 'react-dom';
+import { copyText } from './clipboard';
+import { setEditing } from './editing';
+import { bestPreset, bestPresets, fillTeam } from '../engine/bestPreset';
+import { SLANT, useSlant } from './slant';
 import { SetEditor } from './SetEditor';
 import { describe } from './describe';
 import { commonChoices, type CommonChoices } from '../engine/common';
@@ -34,6 +38,12 @@ interface Props {
   /** Membro tolto con la ×: se manca, si aggiorna solo il team (senza Annulla). */
   onRemove?: (index: number) => void;
   onAllowMultipleMegas: () => void;
+  /** Membro aperto nell'editor (null se nessuno). */
+  onOpenChange?: (index: number | null) => void;
+  /** Set incollato al posto del membro (può essere un altro Pokémon); se manca, si aggiorna solo il team. */
+  onPaste?: (index: number, set: TeamSet) => void;
+  /** Azioni sull'intero team, annullabili: preset migliori per tutti, svuota team. */
+  onBulk?: (kind: 'presets' | 'fill' | 'clear', team: TeamSet[]) => void;
 }
 
 /** Tutti i problemi di legalità del membro (possono essere più d'uno). */
@@ -49,13 +59,61 @@ function slotProblems(set: TeamSet, format: Format, lang: Lang): string[] {
   ].filter((p): p is string => !!p);
 }
 
-function TeamSlot({ set, presets, common, speed, format, warning: megaWarning, open, onToggle, onIgnoreWarning, onChange, onRemove, onReplace }: {
-  presets: Preset[];
-  common: CommonChoices;
-  speed: SpeedTier | null;
+/**
+ * Disegno senza scheda grafica (accelerazione hardware spenta): Chrome ripiega su un renderer software
+ * (SwiftShader, llvmpipe) o non offre WebGL. Le View Transitions lì scattano, quindi si saltano.
+ */
+let software: boolean | undefined;
+function softwareRendering(): boolean {
+  if (software !== undefined) return software;
+  try {
+    const gl = document.createElement('canvas').getContext('webgl');
+    if (!gl) return (software = true);
+    const info = gl.getExtension('WEBGL_debug_renderer_info');
+    const renderer = String(info ? gl.getParameter(info.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER));
+    gl.getExtension('WEBGL_lose_context')?.loseContext();
+    software = /swiftshader|llvmpipe|software|basic render/i.test(renderer);
+  } catch {
+    software = true;
+  }
+  return software;
+}
+
+/** Cambio di layout animato (card compatte, editor) con le View Transitions, dove ci sono, la grafica regge e il movimento è ammesso. */
+function animated(update: () => void) {
+  const doc = document as Document & { startViewTransition?: (cb: () => void) => unknown };
+  const still = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!doc.startViewTransition || still || softwareRendering()) return update();
+  doc.startViewTransition(() => flushSync(update));
+}
+
+/**
+ * Editor dei membri chiusi: resta nella pagina ma non si ridisegna finché il set non cambia,
+ * così aprire e chiudere una card non ricalcola gli altri cinque editor.
+ */
+const IdleSetEditor = memo(
+  (props: ComponentProps<typeof SetEditor> & { idle: boolean; idleKey: string }) => <SetEditor {...props} />,
+  (a, b) => a.idle && b.idle && a.idleKey === b.idleKey && a.set === b.set && a.presets === b.presets && a.common === b.common
+    && a.speed === b.speed && a.genLimit === b.genLimit && a.pokedex === b.pokedex && a.teraBannedIn === b.teraBannedIn,
+);
+
+function TeamSlot({ index, set, data, format, warning: megaWarning, open, dragging, dropTarget, onToggle, onStep, onMove, onDrag, onPaste, onBest, onIgnoreWarning, onChange, onRemove, onReplace }: {
+  index: number;
+  dragging: boolean;
+  dropTarget: boolean;
+  /** Alt + frecce: sposta il membro di una posizione. */
+  onMove: (delta: number) => void;
+  /** Trascinamento: inizio, passaggio sopra, rilascio, fine. */
+  onDrag: (phase: 'start' | 'over' | 'drop' | 'end') => void;
+  onPaste: (set: TeamSet) => void;
+  /** Preset con il voto del team più alto per questo membro (null se il membro non ne ha). */
+  onBest: () => TeamSet | null;
+  data: EngineData;
   set: TeamSet;
   open: boolean;
   onToggle: (open: boolean) => void;
+  /** Frecce sulla card: apre il membro accanto. */
+  onStep: (delta: number) => void;
   format: Format;
   warning: string | null;
   onIgnoreWarning: () => void;
@@ -67,10 +125,45 @@ function TeamSlot({ set, presets, common, speed, format, warning: megaWarning, o
   const tr = useT();
   const card = useRef<HTMLElement>(null);
   useSlant(card);
+  // Calcoli del membro (il confronto di Velocità prova 40 rivali): solo quando cambia il set
+  const presets = useMemo<Preset[]>(() => presetsForSet(data, set), [data, set]);
+  const common = useMemo<CommonChoices>(() => commonChoices(data, set), [data, set]);
+  const speed = useMemo<SpeedTier | null>(() => speedTier(set, data), [data, set]);
+  // Gestori sempre aggiornati anche dentro l'editor memorizzato
+  const live = useRef({ onChange, onReplace, onPaste, onIgnoreWarning, onBest });
+  live.current = { onChange, onReplace, onPaste, onIgnoreWarning, onBest };
+  const stable = useMemo(() => ({
+    onChange: (next: TeamSet) => live.current.onChange(next),
+    onReplace: () => live.current.onReplace(),
+    onPaste: (next: TeamSet) => live.current.onPaste(next),
+    onIgnoreWarning: () => live.current.onIgnoreWarning(),
+    onBest: () => live.current.onBest(),
+  }), []);
+  // Esito del pulsante Preset migliore, per un attimo: applicato o era già quello
+  const [best, setBest] = useState<'applied' | 'same' | null>(null);
+  const applyBest = () => {
+    const next = stable.onBest();
+    if (!next) return;
+    const same = JSON.stringify(next) === JSON.stringify(set);
+    if (!same) stable.onChange(next);
+    setBest(same ? 'same' : 'applied');
+    setTimeout(() => setBest(null), 1600);
+  };
   const species = battleSpecies(set);
   // Con la megapietra il membro è la Mega: nome e abilità della forma in battaglia (il set resta quello di Showdown)
   const name = battleName(set);
   const ability = battleAbility(set);
+  const [copied, setCopied] = useState(false);
+  // Incolla set: testo Showdown di un solo membro, applicato per intero
+  const [paste, setPaste] = useState<{ text: string; error: string | null } | null>(null);
+  const applyPaste = () => {
+    if (!paste) return;
+    const result = importShowdown(paste.text, lang);
+    const next = result.sets[0];
+    if (!next) { setPaste({ ...paste, error: result.errors[0] ?? tr('team.pasteEmpty') }); return; }
+    setPaste(null);
+    stable.onPaste({ ...next, favorite: set.favorite });
+  };
   const problems = slotProblems(set, format, lang);
   // Ruolo principale e un supporto, affiancati con il nome breve (il completo nel tooltip); il meteo solo qui
   const rules = formatRules(format.formatId);
@@ -93,12 +186,37 @@ function TeamSlot({ set, presets, common, speed, format, warning: megaWarning, o
   const warns: Alert[] = warnings.map(text => ({ level: 'warn', text }));
   return (
     <details
-      className={`slot filled${problems.length ? ' invalid' : warnings.length ? ' warn' : ''}`}
+      className={`slot filled${problems.length ? ' invalid' : warnings.length ? ' warn' : ''}${dragging ? ' dragging' : ''}${dropTarget ? ' drop-target' : ''}`}
       open={open}
-      style={{ '--t1': typeColor(species?.types[0] ?? ''), '--t2': typeColor(species?.types[1] ?? species?.types[0] ?? '') } as React.CSSProperties}
-      onToggle={e => onToggle(e.currentTarget.open)}
+      style={{ '--t1': typeColor(species?.types[0] ?? ''), '--t2': typeColor(species?.types[1] ?? species?.types[0] ?? ''), '--vt': `slot-${index}` } as React.CSSProperties}
+      // Solo se il details cambia da sé (es. ricerca nella pagina): le aperture normali sono già nello stato
+      onToggle={e => { if (e.currentTarget.open !== open) onToggle(e.currentTarget.open); }}
+      onKeyDown={e => {
+        // Esc chiude l'editor e torna sulla card; le frecce sulla card passano al membro accanto
+        if (e.key === 'Escape' && open) { e.preventDefault(); onToggle(false); card.current?.focus(); }
+        else if (e.target === card.current && (e.key === 'ArrowRight' || e.key === 'ArrowLeft')) {
+          e.preventDefault();
+          const delta = e.key === 'ArrowRight' ? 1 : -1;
+          if (e.altKey) onMove(delta); else onStep(delta);
+        }
+      }}
     >
-      <summary ref={card}>
+      <summary
+        ref={card}
+        draggable
+        title={tr('team.dragTitle')}
+        // Apertura e chiusura passano dall'animazione: il clic non apre da solo il details
+        onClick={e => {
+          e.preventDefault();
+          // Stella, ×, Stats: i loro clic non aprono né chiudono l'editor
+          if ((e.target as HTMLElement).closest('button, a, [tabindex]:not(summary)') && e.target !== e.currentTarget) return;
+          onToggle(!open);
+        }}
+        onDragStart={e => { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', String(index)); onDrag('start'); }}
+        onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; onDrag('over'); }}
+        onDrop={e => { e.preventDefault(); onDrag('drop'); }}
+        onDragEnd={() => onDrag('end')}
+      >
         <span className="sprite-wrap">
           <Sprite species={set.species} item={set.item} animated={open} />
           {(dangers.length > 0 || warns.length > 0) && (
@@ -144,39 +262,145 @@ function TeamSlot({ set, presets, common, speed, format, warning: megaWarning, o
         {roles.length > 0 && <small className="roles" title={rolesTitle}>{roles.join(' · ')}</small>}
       </summary>
       <div className="drawer">
-      <SetEditor set={set} presets={presets} common={common} genLimit={format.genLimit} pokedex={pokedexOf(format)}
-        teraBannedIn={teraAllowed(format) ? undefined : formatLabel(format, lang)} speed={speed} onChange={onChange} />
-      <div className="actions">
-        <button type="button" aria-label={tr('team.replace', { species: name })} onClick={onReplace}><Icon name="swap" /> {tr('team.replaceButton')}</button>
-        {megaWarning && <button type="button" onClick={onIgnoreWarning}>{tr('team.keepMega')}</button>}
-      </div>
+      <IdleSetEditor idle={!open} idleKey={`${lang}:${megaWarning ?? ''}`}
+        set={set} presets={presets} common={common} genLimit={format.genLimit} pokedex={pokedexOf(format)}
+        teraBannedIn={teraAllowed(format) ? undefined : formatLabel(format, lang)} speed={speed} onChange={stable.onChange}
+        presetAction={
+          <button type="button" className="best-preset" title={tr('team.bestPresetTitle')} onClick={applyBest}>
+            <Icon name={best ? 'check' : 'spark'} /> {tr(best === 'same' ? 'team.bestPresetSame' : best === 'applied' ? 'team.bestPresetDone' : 'team.bestPreset')}
+          </button>
+        }
+        title={open && (
+          // Solo visivo: nome e tipi li annuncia già la card (il nome via CSS, così non è un secondo testo uguale)
+          <div className="editor-title" aria-hidden="true">
+            <strong data-name={name} />
+            <span className="types">{species?.types.map(type => <TypeChip key={type} type={type} />)}</span>
+          </div>
+        )}
+        actions={<>
+          {megaWarning && <button type="button" onClick={stable.onIgnoreWarning}>{tr('team.keepMega')}</button>}
+          <button type="button" aria-label={tr('team.pasteSet')} title={tr('team.pasteSet')} aria-expanded={!!paste}
+            onClick={() => setPaste(p => (p ? null : { text: '', error: null }))}>
+            <Icon name="paste" /> <span className="btn-label">{tr('team.pasteSet')}</span>
+          </button>
+          <button type="button" aria-label={tr('team.copySet')} title={tr('team.copySet')} onClick={async () => {
+            if (await copyText(exportShowdown([set], { tera: teraAllowed(format) }))) { setCopied(true); setTimeout(() => setCopied(false), 1500); }
+          }}><Icon name={copied ? 'check' : 'copy'} /> <span className="btn-label">{tr(copied ? 'team.copied' : 'team.copySet')}</span></button>
+          <button type="button" aria-label={tr('team.replace', { species: name })} title={tr('team.replaceButton')} onClick={stable.onReplace}><Icon name="swap" /> <span className="btn-label">{tr('team.replaceButton')}</span></button>
+        </>} />
+      {paste && (
+        <div className="paste-panel" onKeyDown={e => { if (e.key === 'Escape') { e.stopPropagation(); setPaste(null); } }}>
+          <textarea aria-label={tr('team.pasteText')} rows={7} autoFocus value={paste.text} placeholder={tr('team.pastePlaceholder')}
+            onChange={e => setPaste({ text: e.target.value, error: null })} />
+          <p className="paste-hint">{tr('team.pasteHint')}</p>
+          {paste.error && <p className="paste-error" role="alert">{paste.error}</p>}
+          <div className="paste-actions">
+            <button type="button" className="apply" disabled={!paste.text.trim()} onClick={applyPaste}>{tr('team.pasteApply')}</button>
+            <button type="button" onClick={() => setPaste(null)}>{tr('team.pasteCancel')}</button>
+          </div>
+        </div>
+      )}
       </div>
     </details>
   );
 }
 
-export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRemove, onAllowMultipleMegas }: Props) {
+export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRemove, onAllowMultipleMegas, onOpenChange, onPaste, onBulk }: Props) {
   const lang = useLang();
   // Un solo membro aperto alla volta: il suo editor scende sotto la fila del team
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  useEffect(() => { setEditing(openIndex); onOpenChange?.(openIndex); }, [openIndex]);
+  useEffect(() => () => setEditing(null), []);
+  const slotsRef = useRef<HTMLDivElement>(null);
+  const focusCard = (i: number) => requestAnimationFrame(() => slotsRef.current?.querySelectorAll<HTMLElement>('.slot > summary')[i]?.focus());
+  const step = (from: number, delta: number) => {
+    const to = (from + delta + team.length) % team.length;
+    if (openIndex !== null) animated(() => setOpenIndex(to));
+    focusCard(to);
+  };
+  // Riordino: trascinando o con Alt + frecce; il membro aperto resta aperto nella nuova posizione
+  const [drag, setDrag] = useState<{ from: number; over: number | null } | null>(null);
+  const move = (from: number, to: number) => {
+    if (to < 0 || to >= team.length || to === from) return;
+    const next = [...team];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    const follow = (i: number | null) => (i === null ? null : i === from ? to : from < i && i <= to ? i - 1 : to <= i && i < from ? i + 1 : i);
+    animated(() => { onChange(next); setOpenIndex(follow); });
+    focusCard(to);
+  };
+  // Preset migliori e Completa team: qualche decimo di secondo, il pulsante dice che sta calcolando
+  const [busy, setBusy] = useState<'presets' | 'fill' | null>(null);
+  const runBulk = (kind: 'presets' | 'fill') => {
+    setBusy(kind);
+    setTimeout(() => {
+      const next = kind === 'presets' ? bestPresets(team, data) : fillTeam(team, format, data);
+      setBusy(null);
+      if (onBulk) onBulk(kind, next); else onChange(next);
+    }, 30);
+  };
+  // Svuota team finisce all'angolo in alto a destra dell'ultima card: inclinata, sporge di altezza × pendenza
+  const headRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const card = slotsRef.current?.querySelector<HTMLElement>('.slot > summary, .slot.empty');
+    if (!card || !headRef.current) return;
+    const apply = () => headRef.current?.style.setProperty('--card-rise', `${(card.offsetHeight * SLANT).toFixed(1)}px`);
+    apply();
+    if (typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(apply);
+    observer.observe(card);
+    return () => observer.disconnect();
+  });
+  // Chiave stabile per specie (e occorrenza): riordinando, le card non si ricreano
+  const keys = team.map((set, i) => `${set.species}#${team.slice(0, i).filter(s => s.species === set.species).length}`);
   const firstMega = team.findIndex(isMega);
   const warningFor = (set: TeamSet, i: number) =>
     !format.allowMultipleMegas && firstMega !== -1 && i > firstMega && isMega(set) ? t(lang, 'team.secondMega') : null;
   return (
     <section aria-label={t(lang, 'team.region')} className="team">
-      <h2>{t(lang, 'team.title', { n: team.length })}</h2>
-      <div className="slots">
+      <div className="team-head" ref={headRef}>
+        <h2>{t(lang, 'team.title', { n: team.length })}</h2>
+        {team.length > 0 && <>
+          <button type="button" className="team-action" disabled={busy !== null} aria-busy={busy === 'presets' || undefined}
+            title={t(lang, 'team.bestPresetsTitle')} onClick={() => runBulk('presets')}>
+            <Icon name="spark" /> {t(lang, busy === 'presets' ? 'team.bestPresetsBusy' : 'team.bestPresets')}
+          </button>
+          {team.length < 6 && data.stats && (
+            <button type="button" className="team-action" disabled={busy !== null} aria-busy={busy === 'fill' || undefined}
+              title={t(lang, 'team.fillTitle')} onClick={() => runBulk('fill')}>
+              <Icon name="plus" /> {t(lang, busy === 'fill' ? 'team.bestPresetsBusy' : 'team.fill')}
+            </button>
+          )}
+          {/* In fondo a destra, dove finisce l'ultima card */}
+          <button type="button" className="team-action clear-team" onClick={() => {
+            setOpenIndex(null);
+            if (onBulk) onBulk('clear', []); else onChange([]);
+          }}><Icon name="close" /> {t(lang, 'team.clear')}</button>
+        </>}
+      </div>
+      <div className={`slots${openIndex !== null ? ' editing' : ''}`} ref={slotsRef}>
         {team.map((set, i) => (
           <TeamSlot
-            key={`${i}-${set.species}`}
+            key={keys[i]}
+            index={i}
             set={set}
-            presets={presetsForSet(data, set)}
-            common={commonChoices(data, set)}
-            speed={speedTier(set, data)}
+            dragging={drag?.from === i}
+            dropTarget={drag !== null && drag.over === i && drag.from !== i}
+            onMove={delta => move(i, i + delta)}
+            onPaste={next => (onPaste ? onPaste(i, next) : onChange(team.map((s, j) => (j === i ? next : s))))}
+            onBest={() => { const found = bestPreset(team, i, data); return found.index === null ? null : found.set; }}
+            onDrag={phase => {
+              if (phase === 'start') setDrag({ from: i, over: null });
+              else if (phase === 'over') setDrag(d => (d && d.over !== i ? { ...d, over: i } : d));
+              else if (phase === 'drop') { if (drag) move(drag.from, i); setDrag(null); }
+              else setDrag(null);
+            }}
+            data={data}
             format={format}
             warning={warningFor(set, i)}
             open={openIndex === i}
-            onToggle={open => setOpenIndex(current => (open ? i : current === i ? null : current))}
+            onToggle={open => animated(() => setOpenIndex(current => (open ? i : current === i ? null : current)))}
+            onStep={delta => step(i, delta)}
             onIgnoreWarning={onAllowMultipleMegas}
             onChange={next => onChange(team.map((s, j) => (j === i ? next : s)))}
             onRemove={() => { setOpenIndex(null); if (onRemove) onRemove(i); else onChange(team.filter((_, j) => j !== i)); }}

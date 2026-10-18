@@ -89,10 +89,16 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
     setReplaceIndexState(index);
     setPreview(null);
   };
+  /** Porta la barra delle schede in cima alla finestra, così il contenuto scelto si vede subito. */
+  const scrollToTabs = () => requestAnimationFrame(() => {
+    const still = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    document.querySelector('.tabs')?.scrollIntoView?.({ behavior: still ? 'auto' : 'smooth', block: 'start' });
+  });
+  const openTab = (next: TabId) => { setTab(next); scrollToTabs(); };
   /** Scegliere chi sostituire (dal coach o da una carta) porta alla scheda Pokémon, dove ci sono i candidati. */
   const startReplace = (index: number | null) => {
     setReplaceIndex(index);
-    if (index !== null) setTab('pokemon');
+    if (index !== null) openTab('pokemon');
   };
   const changePreview = (next: SwapPreview, open: boolean) =>
     setPreview(current => (open ? next
@@ -133,6 +139,20 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
     const after = changeTeam(team.map((s, i) => (i === index ? set : s)));
     if (team[index]) remember({ kind: 'replace', from: battleName(team[index]), to: battleName(set) }, after);
   };
+  // Set incollato: stesso Pokémon con un altro set, o un Pokémon diverso al suo posto
+  const pasteAt = (index: number, set: TeamSet) => {
+    const before = team[index];
+    const after = changeTeam(team.map((s, i) => (i === index ? set : s)));
+    if (before) remember(before.species === set.species
+      ? { kind: 'paste', from: battleName(before) }
+      : { kind: 'replace', from: battleName(before), to: battleName(set) }, after);
+  };
+  // Preset migliori per tutto il team, o team svuotato: si annullano come le altre modifiche
+  const bulk = (kind: 'presets' | 'fill' | 'clear', next: TeamSet[]) => {
+    const after = changeTeam(next);
+    remember(kind === 'clear' ? { kind: 'clear', from: '' }
+      : { kind: 'presets', from: String(rating?.overall ?? '—'), to: String(rateTeam(after, data, lang)?.overall ?? ''), added: after.length - team.length }, after);
+  };
   const removeAt = (index: number) => {
     const after = changeTeam(team.filter((_, i) => i !== index));
     remember({ kind: 'remove', from: battleName(team[index]) }, after);
@@ -152,11 +172,11 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
         </p>
       )}
       <div className="band">
-        <TeamPanel team={team} format={format} data={data} onChange={changeTeam} onAdd={addSet} onReplace={startReplace} onRemove={removeAt}
+        <TeamPanel team={team} format={format} data={data} onChange={changeTeam} onAdd={addSet} onReplace={startReplace} onRemove={removeAt} onPaste={pasteAt} onBulk={bulk}
           onAllowMultipleMegas={() => setFormat(f => ({ ...f, allowMultipleMegas: true }))} />
         <GradeBadge rating={rating} />
       </div>
-      <Tabs active={shownTab} onChange={setTab} tabs={[
+      <Tabs active={shownTab} onChange={openTab} tabs={[
         { id: 'pokemon', label: t(lang, 'tabs.pokemon'),
           count: replaceIndex !== null && team[replaceIndex] ? { text: t(lang, 'suggest.replaceTitle', { species: team[replaceIndex].species }), level: 'info' } : null },
         { id: 'analysis', label: t(lang, 'tabs.analysis'),
