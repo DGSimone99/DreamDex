@@ -12,7 +12,7 @@ import { memo, useEffect, useMemo, useRef, useState, type ComponentProps } from 
 import { flushSync } from 'react-dom';
 import { copyText } from './clipboard';
 import { setEditing } from './editing';
-import { bestPreset, bestPresets } from '../engine/bestPreset';
+import { bestPreset, bestPresets, fillTeam } from '../engine/bestPreset';
 import { useSlant } from './slant';
 import { SetEditor } from './SetEditor';
 import { describe } from './describe';
@@ -324,6 +324,16 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
     animated(() => { onChange(next); setOpenIndex(follow); });
     focusCard(to);
   };
+  // Preset migliori: prima riempie gli slot vuoti con chi alza di più il voto, poi sceglie i preset (qualche decimo di secondo)
+  const [optimizing, setOptimizing] = useState(false);
+  const optimize = () => {
+    setOptimizing(true);
+    setTimeout(() => {
+      const next = bestPresets(fillTeam(team, format, data), data);
+      setOptimizing(false);
+      if (onBulk) onBulk('presets', next); else onChange(next);
+    }, 30);
+  };
   // Chiave stabile per specie (e occorrenza): riordinando, le card non si ricreano
   const keys = team.map((set, i) => `${set.species}#${team.slice(0, i).filter(s => s.species === set.species).length}`);
   const firstMega = team.findIndex(isMega);
@@ -333,18 +343,17 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
     <section aria-label={t(lang, 'team.region')} className="team">
       <div className="team-head">
         <h2>{t(lang, 'team.title', { n: team.length })}</h2>
-        {team.length > 0 && (
-          <div className="team-actions">
-            <button type="button" title={t(lang, 'team.bestPresetsTitle')} onClick={() => {
-              const next = bestPresets(team, data);
-              if (onBulk) onBulk('presets', next); else onChange(next);
-            }}><Icon name="spark" /> {t(lang, 'team.bestPresets')}</button>
-            <button type="button" className="clear-team" onClick={() => {
-              setOpenIndex(null);
-              if (onBulk) onBulk('clear', []); else onChange([]);
-            }}><Icon name="close" /> {t(lang, 'team.clear')}</button>
-          </div>
-        )}
+        {team.length > 0 && <>
+          <button type="button" className="team-action" disabled={optimizing} aria-busy={optimizing || undefined}
+            title={t(lang, team.length < 6 ? 'team.bestPresetsFillTitle' : 'team.bestPresetsTitle')} onClick={optimize}>
+            <Icon name="spark" /> {t(lang, optimizing ? 'team.bestPresetsBusy' : 'team.bestPresets')}
+          </button>
+          {/* In fondo a destra, dove finisce l'ultima card */}
+          <button type="button" className="team-action clear-team" onClick={() => {
+            setOpenIndex(null);
+            if (onBulk) onBulk('clear', []); else onChange([]);
+          }}><Icon name="close" /> {t(lang, 'team.clear')}</button>
+        </>}
       </div>
       <div className={`slots${openIndex !== null ? ' editing' : ''}`} ref={slotsRef}>
         {team.map((set, i) => (

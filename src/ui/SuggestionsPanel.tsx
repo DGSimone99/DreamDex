@@ -286,7 +286,8 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
     : replacing ? onReplaceWith(replaceIndex, item.set) : onAdd(item.set));
   /** Chi uscirebbe col candidato, o null se si aggiunge. */
   const outOf = (item: Item) => (item.replaces !== undefined ? item.replaces : replacing ? replaceIndex : null);
-  const memberName = (index: number) => battleName(team[index]);
+  // Il nome dal team per cui la lista è stata calcolata: per un attimo può essere quello di prima (es. team appena svuotato)
+  const memberName = (index: number) => { const member = deferred.team[index] ?? team[index]; return member ? battleName(member) : ''; };
   const actionLabelOf = (item: Item) => (item.replaces !== undefined
     ? tr('suggest.swapAction', { member: memberName(item.replaces) })
     : tr(replacing ? 'suggest.replaceWith' : 'suggest.add'));
@@ -485,7 +486,8 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
             key={selected.species}
             item={selected}
             rank={selectedRank}
-            team={team}
+            // Il team per cui il suggerimento è stato calcolato (gli indici dei membri si riferiscono a quello)
+            team={deferred.team}
             replaceIndex={outOf(selected)}
             data={data}
             rating={rating}

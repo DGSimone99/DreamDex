@@ -64,4 +64,14 @@ describe('ordine del team e editor', () => {
     await user.click(screen.getByRole('button', { name: /Annulla/ }));
     expect(names(team)).toEqual(['Garchomp', 'Corviknight']);
   });
+
+  it('svuotare un team pieno non rompe i suggerimenti', async () => {
+    const user = userEvent.setup();
+    const six = ['Garchomp', 'Corviknight', 'Greninja', 'Heatran', 'Clefable', 'Kingambit'].map(name => `${name}\n- Protect`).join('\n\n');
+    const team = await importTeam(user, six);
+    expect(names(team)).toHaveLength(6);
+    await user.click(within(team).getByRole('button', { name: 'Svuota team' }));
+    expect(names(team)).toEqual([]);
+    expect(screen.getByRole('heading', { name: /Suggerimenti/i })).toBeInTheDocument();
+  });
 });

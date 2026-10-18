@@ -172,9 +172,9 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 }
 .team-head { display: flex; align-items: center; gap: 16px; margin-bottom: 14px; }
 .team-head h2 { margin: 0; }
-.team-actions { display: flex; gap: 8px; margin-left: auto; }
-.team-actions button { height: 30px; padding: 0 10px; font-size: 13px; }
-.team-actions .clear-team:hover { border-color: var(--bad); color: var(--bad); }
+.team-head .team-action { height: 30px; padding: 0 10px; font-size: 13px; }
+.team-head .clear-team { margin-left: auto; }
+.team-head .clear-team:hover { border-color: var(--bad); color: var(--bad); }
 .set-editor .best-preset { height: 36px; white-space: nowrap; flex-shrink: 0; }
 .slots { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px 16px; }
 .slot.filled { display: contents; }
