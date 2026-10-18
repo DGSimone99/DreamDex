@@ -8,12 +8,12 @@ import { detectRoles, roleLabel, roleShortLabel } from '../engine/roles';
 import { cardRoles, weatherOf } from '../engine/archetype';
 import { conditionLabel, viaName } from '../engine/synergy';
 import { exportShowdown, importShowdown, presetsForSet, type Preset, type TeamSet } from '../engine/sets';
-import { memo, useEffect, useMemo, useRef, useState, type ComponentProps } from 'react';
+import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type ComponentProps } from 'react';
 import { flushSync } from 'react-dom';
 import { copyText } from './clipboard';
 import { setEditing } from './editing';
 import { bestPreset, bestPresets, fillTeam } from '../engine/bestPreset';
-import { useSlant } from './slant';
+import { SLANT, useSlant } from './slant';
 import { SetEditor } from './SetEditor';
 import { describe } from './describe';
 import { commonChoices, type CommonChoices } from '../engine/common';
@@ -43,7 +43,7 @@ interface Props {
   /** Set incollato al posto del membro (può essere un altro Pokémon); se manca, si aggiorna solo il team. */
   onPaste?: (index: number, set: TeamSet) => void;
   /** Azioni sull'intero team, annullabili: preset migliori per tutti, svuota team. */
-  onBulk?: (kind: 'presets' | 'clear', team: TeamSet[]) => void;
+  onBulk?: (kind: 'presets' | 'fill' | 'clear', team: TeamSet[]) => void;
 }
 
 /** Tutti i problemi di legalità del membro (possono essere più d'uno). */
@@ -206,7 +206,12 @@ function TeamSlot({ index, set, data, format, warning: megaWarning, open, draggi
         draggable
         title={tr('team.dragTitle')}
         // Apertura e chiusura passano dall'animazione: il clic non apre da solo il details
-        onClick={e => { e.preventDefault(); onToggle(!open); }}
+        onClick={e => {
+          e.preventDefault();
+          // Stella, ×, Stats: i loro clic non aprono né chiudono l'editor
+          if ((e.target as HTMLElement).closest('button, a, [tabindex]:not(summary)') && e.target !== e.currentTarget) return;
+          onToggle(!open);
+        }}
         onDragStart={e => { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', String(index)); onDrag('start'); }}
         onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; onDrag('over'); }}
         onDrop={e => { e.preventDefault(); onDrag('drop'); }}
@@ -324,16 +329,28 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
     animated(() => { onChange(next); setOpenIndex(follow); });
     focusCard(to);
   };
-  // Preset migliori: prima riempie gli slot vuoti con chi alza di più il voto, poi sceglie i preset (qualche decimo di secondo)
-  const [optimizing, setOptimizing] = useState(false);
-  const optimize = () => {
-    setOptimizing(true);
+  // Preset migliori e Completa team: qualche decimo di secondo, il pulsante dice che sta calcolando
+  const [busy, setBusy] = useState<'presets' | 'fill' | null>(null);
+  const runBulk = (kind: 'presets' | 'fill') => {
+    setBusy(kind);
     setTimeout(() => {
-      const next = bestPresets(fillTeam(team, format, data), data);
-      setOptimizing(false);
-      if (onBulk) onBulk('presets', next); else onChange(next);
+      const next = kind === 'presets' ? bestPresets(team, data) : fillTeam(team, format, data);
+      setBusy(null);
+      if (onBulk) onBulk(kind, next); else onChange(next);
     }, 30);
   };
+  // Svuota team finisce all'angolo in alto a destra dell'ultima card: inclinata, sporge di altezza × pendenza
+  const headRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const card = slotsRef.current?.querySelector<HTMLElement>('.slot > summary, .slot.empty');
+    if (!card || !headRef.current) return;
+    const apply = () => headRef.current?.style.setProperty('--card-rise', `${(card.offsetHeight * SLANT).toFixed(1)}px`);
+    apply();
+    if (typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(apply);
+    observer.observe(card);
+    return () => observer.disconnect();
+  });
   // Chiave stabile per specie (e occorrenza): riordinando, le card non si ricreano
   const keys = team.map((set, i) => `${set.species}#${team.slice(0, i).filter(s => s.species === set.species).length}`);
   const firstMega = team.findIndex(isMega);
@@ -341,13 +358,19 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
     !format.allowMultipleMegas && firstMega !== -1 && i > firstMega && isMega(set) ? t(lang, 'team.secondMega') : null;
   return (
     <section aria-label={t(lang, 'team.region')} className="team">
-      <div className="team-head">
+      <div className="team-head" ref={headRef}>
         <h2>{t(lang, 'team.title', { n: team.length })}</h2>
         {team.length > 0 && <>
-          <button type="button" className="team-action" disabled={optimizing} aria-busy={optimizing || undefined}
-            title={t(lang, team.length < 6 ? 'team.bestPresetsFillTitle' : 'team.bestPresetsTitle')} onClick={optimize}>
-            <Icon name="spark" /> {t(lang, optimizing ? 'team.bestPresetsBusy' : 'team.bestPresets')}
+          <button type="button" className="team-action" disabled={busy !== null} aria-busy={busy === 'presets' || undefined}
+            title={t(lang, 'team.bestPresetsTitle')} onClick={() => runBulk('presets')}>
+            <Icon name="spark" /> {t(lang, busy === 'presets' ? 'team.bestPresetsBusy' : 'team.bestPresets')}
           </button>
+          {team.length < 6 && data.stats && (
+            <button type="button" className="team-action" disabled={busy !== null} aria-busy={busy === 'fill' || undefined}
+              title={t(lang, 'team.fillTitle')} onClick={() => runBulk('fill')}>
+              <Icon name="plus" /> {t(lang, busy === 'fill' ? 'team.bestPresetsBusy' : 'team.fill')}
+            </button>
+          )}
           {/* In fondo a destra, dove finisce l'ultima card */}
           <button type="button" className="team-action clear-team" onClick={() => {
             setOpenIndex(null);

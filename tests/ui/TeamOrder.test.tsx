@@ -65,6 +65,16 @@ describe('ordine del team e editor', () => {
     expect(names(team)).toEqual(['Garchomp', 'Corviknight']);
   });
 
+  it('stella e × non aprono l’editor (togliendo un membro non si apre quello dopo)', async () => {
+    const user = userEvent.setup();
+    const team = await importTeam(user, 'Garchomp\n- Earthquake\n\nCorviknight\n- Roost\n\nGreninja\n- Surf');
+    await user.click(within(team).getByRole('button', { name: /Corviknight/, pressed: false }));
+    expect(team.querySelector('.slot[open]')).toBeNull();
+    await user.click(within(team).getByRole('button', { name: 'Rimuovi Corviknight' }));
+    expect(names(team)).toEqual(['Garchomp', 'Greninja']);
+    expect(team.querySelector('.slot[open]')).toBeNull();
+  });
+
   it('svuotare un team pieno non rompe i suggerimenti', async () => {
     const user = userEvent.setup();
     const six = ['Garchomp', 'Corviknight', 'Greninja', 'Heatran', 'Clefable', 'Kingambit'].map(name => `${name}\n- Protect`).join('\n\n');

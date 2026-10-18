@@ -163,6 +163,8 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 
 /* Team preview */
 .band {
+  position: relative;
+  z-index: 2;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 210px;
   gap: 28px;
@@ -173,7 +175,7 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 .team-head { display: flex; align-items: center; gap: 16px; margin-bottom: 14px; }
 .team-head h2 { margin: 0; }
 .team-head .team-action { height: 30px; padding: 0 10px; font-size: 13px; }
-.team-head .clear-team { margin-left: auto; }
+.team-head .clear-team { margin-left: auto; margin-right: calc(-1 * var(--card-rise, 0px)); }
 .team-head .clear-team:hover { border-color: var(--bad); color: var(--bad); }
 .set-editor .best-preset { height: 36px; white-space: nowrap; flex-shrink: 0; }
 .slots { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px 16px; }
@@ -1331,6 +1333,7 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
   cursor: default;
 }
 .speed-pop { display: flex; animation: tip 0.15s var(--ease); }
+.speed-pop.up { top: auto; bottom: calc(100% + 8px); border-top: 1px solid var(--line); border-bottom: 2px solid var(--blue); }
 .speed-group { display: flex; flex-direction: column; gap: 3px; }
 .speed-group-title { font: 700 12px/1 var(--display); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 2px; }
 .speed-rival { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text); }

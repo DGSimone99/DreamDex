@@ -142,10 +142,10 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
       : { kind: 'replace', from: battleName(before), to: battleName(set) }, after);
   };
   // Preset migliori per tutto il team, o team svuotato: si annullano come le altre modifiche
-  const bulk = (kind: 'presets' | 'clear', next: TeamSet[]) => {
+  const bulk = (kind: 'presets' | 'fill' | 'clear', next: TeamSet[]) => {
     const after = changeTeam(next);
     remember(kind === 'clear' ? { kind: 'clear', from: '' }
-      : { kind: 'presets', from: String(rating?.overall ?? ''), to: String(rateTeam(after, data, lang)?.overall ?? ''), added: after.length - team.length }, after);
+      : { kind: 'presets', from: String(rating?.overall ?? '—'), to: String(rateTeam(after, data, lang)?.overall ?? ''), added: after.length - team.length }, after);
   };
   const removeAt = (index: number) => {
     const after = changeTeam(team.filter((_, i) => i !== index));
