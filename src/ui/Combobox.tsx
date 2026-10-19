@@ -20,6 +20,8 @@ export interface ComboOption {
   icon?: ReactNode;
   /** Scelta tra le più usate: va in cima, con questa etichetta (la quota d'uso, o "Preset"). */
   common?: string;
+  /** Voce visibile ma non selezionabile (es. una mossa già scelta in un altro slot). */
+  disabled?: boolean;
 }
 
 /** Oltre questo numero di voci la lista chiede di affinare la ricerca (tutte le mosse ci stanno). */
@@ -91,6 +93,7 @@ export function Combobox({ label, value, options, onChange, restricted = false, 
     setActive(index >= 0 && index < MAX_SHOWN ? index : 0);
   };
   const pick = (option: ComboOption) => {
+    if (option.disabled) return;
     onChange(option.value);
     setOpen(false);
     setQuery(null);
@@ -125,7 +128,8 @@ export function Combobox({ label, value, options, onChange, restricted = false, 
           // Testo uguale all'etichetta di una voce: si salva il valore della voce; altrimenti il testo libero
           const typed = toID(e.target.value);
           const exact = typed ? options.find(o => o.label !== undefined && toID(o.label) === typed) : undefined;
-          onChange(exact ? exact.value : e.target.value);
+          // Scrivere il nome di una voce bloccata non la sceglie
+          if (!exact?.disabled) onChange(exact ? exact.value : e.target.value);
           setQuery(e.target.value);
           setActive(0);
           setOpen(true);
@@ -149,6 +153,7 @@ export function Combobox({ label, value, options, onChange, restricted = false, 
               id={`${listId}-${i}`}
               role="option"
               aria-selected={option.value === value}
+              aria-disabled={option.disabled || undefined}
               aria-label={option.ariaLabel}
               className={[i === active ? 'active' : '', option.common ? 'common' : ''].filter(Boolean).join(' ') || undefined}
               title={option.description}

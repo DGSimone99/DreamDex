@@ -172,7 +172,7 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
   background: var(--band);
   border-bottom: 1px solid var(--line-soft);
 }
-.team-head { position: relative; z-index: 6; display: flex; align-items: center; gap: 16px; margin-bottom: 14px; }
+.team-head { position: relative; z-index: 6; display: flex; align-items: center; gap: 16px; margin-bottom: 22px; }
 .fill-anchor { position: relative; }
 .team-head h2 { margin: 0; }
 .team-head .team-action { height: 30px; padding: 0 10px; font-size: 13px; }
@@ -184,7 +184,8 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 .slot > summary, .slot.empty {
   position: relative;
   isolation: isolate;
-  min-height: 214px;
+  /* Stessa altezza piene e vuote: con il team vuoto la fila non cambia quando entra il primo Pokémon */
+  min-height: 261px;
   padding: 10px 14px 16px;
   display: flex;
   flex-direction: column;
@@ -369,7 +370,7 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 .set-editor .evs .spread-panel > summary { position: absolute; top: -2px; right: 14px; }
 .set-editor .evs .spread-panel { display: contents; }
 .band:has(.slots.editing) { padding-top: 14px; }
-.band:has(.slots.editing) .team-head { margin-bottom: 8px; }
+.band:has(.slots.editing) .team-head { margin-bottom: 14px; }
 /* Blocco statistiche: base, cursore EV, EV, valore finale; la natura colora la riga */
 .stat-rows { display: grid; gap: 2px; margin-top: 8px; }
 .stat-row { display: grid; grid-template-columns: 52px 92px minmax(0, 1fr) 58px 44px; align-items: center; gap: 12px; padding: 2px 6px; border-radius: 3px; }
@@ -1095,6 +1096,8 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .combobox [role='option'] { margin: 0; padding: 8px 10px; cursor: pointer; border-bottom: 1px solid var(--line-soft); transition: background 0.1s; }
 .combobox [role='option']:last-of-type { border-bottom: 0; }
 .combobox [role='option'].active { background: var(--raised); border-radius: 3px; border-bottom-color: transparent; }
+.combobox [role='option'][aria-disabled='true'] { opacity: 0.38; cursor: not-allowed; }
+.combobox [role='option'][aria-disabled='true'].active { background: none; }
 .combobox [role='option'][aria-selected='true'] { background: var(--blue-soft); border-radius: 3px; border-bottom-color: transparent; }
 /* Valore scelto mostrato con stile (chip del tipo, effetti della natura) */
 .combobox.has-display input { color: transparent; caret-color: transparent; }
