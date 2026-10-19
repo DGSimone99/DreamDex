@@ -117,6 +117,11 @@ export interface ConditionLink {
 
 const nameOf = (id: string) => getMove(id)?.name ?? id;
 
+/** Abilità e mosse (id) che portano o sfruttano la condizione. */
+export function conditionTools(condition: Condition): Rule {
+  return RULES[condition];
+}
+
 export function enables(set: TeamSet): ConditionLink[] {
   const ability = battleAbility(set);
   const moveIds = set.moves.map(toID);
@@ -369,6 +374,17 @@ export function neededConditions(team: TeamSet[], index: number): NeededConditio
 export function providesAll(set: TeamSet, needed: NeededCondition[]): boolean {
   const provided = new Set(enables(set).map(e => e.condition));
   return needed.every(n => provided.has(n.condition));
+}
+
+/**
+ * Il set va contro il meteo `weather`: ne porta un altro, o ha un'abilità che dipende da un altro meteo
+ * (Swift Swim in un team neve). Protosynthesis e Quark Drive no: funzionano con la Booster Energy.
+ */
+export function opposesWeather(set: TeamSet, weather: Condition): boolean {
+  if (!WEATHERS.includes(weather)) return false;
+  const ability = toID(battleAbility(set));
+  return enables(set).some(e => WEATHERS.includes(e.condition) && e.condition !== weather)
+    || benefits(set).some(b => WEATHERS.includes(b.condition) && b.condition !== weather && toID(b.via) === ability && !PARADOX.has(ability));
 }
 
 /** Setter del team il cui meteo (o campo) è diverso da quello che porterebbe il candidato. */
