@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Archetype } from '../../src/engine/archetype';
 import type { EngineData } from '../../src/engine/data';
 import { battleAbility, battleName, isMega, toID } from '../../src/engine/dex';
-import { fillProposals, matchesChoice, MAX_ATTEMPTS, PROPOSALS_PER_ROUND, type FillChoice, type Proposal } from '../../src/engine/fillProposals';
+import { fillProposals, matchesChoice, MAX_ATTEMPTS, MIN_OVERALL, PROPOSALS_PER_ROUND, type FillChoice, type Proposal } from '../../src/engine/fillProposals';
 import { DEFAULT_FORMAT, type Format } from '../../src/engine/format';
 import { rateTeam } from '../../src/engine/rating';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
@@ -10,8 +10,9 @@ import { benefits, enables } from '../../src/engine/synergy';
 import { fillData } from '../fixtures/fillData';
 
 /** Le proposte di un giro (il generatore produce anche `null` come segnale di avanzamento). */
-const take = (team: TeamSet[], choice: FillChoice, exclude = new Set<string>(), format: Format = DEFAULT_FORMAT, data: EngineData = fillData) =>
-  [...fillProposals(team, choice, exclude, format, data)].filter((p): p is Proposal => p !== null);
+// Il meta di prova è piccolo: le regole si verificano senza voto minimo, tranne nel test che lo riguarda
+const take = (team: TeamSet[], choice: FillChoice, exclude = new Set<string>(), format: Format = DEFAULT_FORMAT, data: EngineData = fillData, minOverall = 0) =>
+  [...fillProposals(team, choice, exclude, format, data, minOverall)].filter((p): p is Proposal => p !== null);
 const any: FillChoice = { archetype: null, style: null };
 /** Un Pokémon si distingue per forma in battaglia: Charizard e Charizard-Mega-Y sono due Pokémon diversi. */
 const formes = (sets: TeamSet[]) => sets.map(s => toID(battleName(s)));
@@ -48,6 +49,21 @@ describe('proposte di Completa team', () => {
       for (const p of list) expect(p.styles).toContain(style);
     }
   });
+
+  it('nessuna proposta sotto il voto minimo', () => {
+    for (const choice of [any, { archetype: null, style: 'rain' as const }, { archetype: 'balance' as const, style: null }]) {
+      for (const p of take([], choice, new Set(), DEFAULT_FORMAT, fillData, MIN_OVERALL)) expect(p.overall, JSON.stringify(choice)).toBeGreaterThanOrEqual(MIN_OVERALL);
+    }
+  }, 60000);
+
+  it('in "Altre proposte" i portatori già mostrati ruotano: non sempre lo stesso', () => {
+    // Pioggia: Pelipper è l'unico del meta, gli altri arrivano dal Pokédex; finiti i nuovi, i già mostrati si alternano
+    const exclude = new Set<string>();
+    take([], { archetype: null, style: 'sun' }, exclude);
+    const again = take([], { archetype: null, style: 'sun' }, exclude);
+    const setters = again.map(p => toID(battleName(setterOf(p, 'sun')!)));
+    if (setters.length >= 2) expect(new Set(setters).size).toBeGreaterThan(1);
+  }, 60000);
 
   it('chi porta lo stile si ripete solo se non ce n’è uno nuovo; gli altri mai', () => {
     const exclude = new Set<string>();
@@ -139,11 +155,11 @@ describe('proposte di Completa team', () => {
     }
   }, 30000);
 
-  it('con un meteo almeno 3 membri lo sfruttano, se ce ne sono abbastanza', () => {
+  it('con un meteo almeno 2 membri lo sfruttano, oltre a chi lo porta', () => {
     for (const style of ['rain', 'sun'] as const) {
       const [first] = take([], { archetype: null, style });
       const users = first.added.filter(s => !enables(s).some(e => e.condition === style) && benefits(s).some(b => b.condition === style && toID(b.via) !== 'weatherball'));
-      expect(users.length, style).toBeGreaterThanOrEqual(3);
+      expect(users.length, style).toBeGreaterThanOrEqual(2);
     }
   }, 30000);
 

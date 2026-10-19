@@ -1,6 +1,6 @@
 import { fitsArchetype, teamArchetype, type Archetype, type FitArchetype, type TeamStyle } from './archetype';
 import type { EngineData } from './data';
-import { battleAbility, battleName, isMega, toID } from './dex';
+import { battleAbility, battleName, battleSpecies, isMega, toID } from './dex';
 import type { Format } from './format';
 import { formatRules } from './formatRules';
 import { pokedexOf } from './formats';
@@ -33,6 +33,8 @@ export interface Proposal {
 }
 
 export const PROPOSALS_PER_ROUND = 5;
+/** Voto minimo di una proposta: sotto non si mostra, e il motore cerca un'altra strada. */
+export const MIN_OVERALL = 70;
 /** Candidati per slot, dopo le restrizioni di tipo, stile e Mega. */
 export const CANDIDATES = 25;
 /** Candidati per slot su cui si calcola il voto del team. */
@@ -40,11 +42,15 @@ export const RATE_TOP = 10;
 /** Alternative provate al penultimo slot quando l'ultimo non trova un team del tipo chiesto. */
 export const BACKTRACK_ALTERNATIVES = 3;
 /** Tentativi a vuoto, in tutto il giro, prima di arrendersi. */
-export const MAX_ATTEMPTS = 5;
+export const MAX_ATTEMPTS = 8;
 /** Pokémon fuori dal meta valutati per slot quando serve chi porta o sfrutta lo stile. */
 export const STYLE_POOL = 20;
 /** Membri che sfruttano il meteo, oltre a chi lo porta (se ce ne sono abbastanza). */
-export const WEATHER_USERS = 3;
+export const WEATHER_USERS = 2;
+/** Precedenza, in punti di voto, per chi sfrutta il meteo negli altri slot: vince con fino a 3 punti in meno, non oltre. */
+export const WEATHER_BONUS = 3;
+/** Quanti tra chi sfrutta il meteo si aggiungono ai candidati valutati in uno slot libero. */
+export const WEATHER_EXTRA = 3;
 
 /** Il team completo ha il tipo e lo stile chiesti (secondo teamArchetype). */
 export function matchesChoice(team: TeamSet[], choice: FillChoice, format: Format): boolean {
@@ -71,7 +77,7 @@ const formeId = (set: TeamSet) => toID(battleName(set));
  * una (mai una seconda). Dopo ogni tentativo a vuoto produce `null`: chi consuma il generatore può rendere il controllo.
  */
 export function* fillProposals(
-  team: TeamSet[], choice: FillChoice, exclude: Set<string>, format: Format, data: EngineData,
+  team: TeamSet[], choice: FillChoice, exclude: Set<string>, format: Format, data: EngineData, minOverall = MIN_OVERALL,
 ): Generator<Proposal | null, void, undefined> {
   if (!data.stats || team.length >= 6) return;
   const rules = formatRules(format.formatId);
@@ -79,6 +85,13 @@ export function* fillProposals(
   const passive = (set: TeamSet) => isPassive(set, detectRoles(set, rules));
   // Strade che non hanno portato a nulla: si saltano nei tentativi successivi del giro (non diventano esclusioni mostrate)
   const deadEnds = new Set<string>();
+  // Portatori dello stile già usati in questo giro: tornando, si alternano invece di ripetere sempre il primo
+  const setterUses = new Map<string, number>();
+  const byRotation = (source: Suggestion[]) => {
+    const uses = (s: Suggestion) => setterUses.get(formeId(s.set)) ?? 0;
+    const least = Math.min(...source.map(uses));
+    return source.filter(s => uses(s) === least);
+  };
   // Voto del team per forma e strumento (le Mega dello stesso Pokémon hanno voti diversi)
   const memo = new Map<string, number>();
   const overallOf = (sets: TeamSet[]) => {
@@ -123,7 +136,9 @@ export function* fillProposals(
       const needSetter = !current.some(s => setsUp(s, style));
       // Trick Room: dopo chi la porta, tutti lenti; meteo: almeno WEATHER_USERS che lo sfruttino
       const needUsers = !needSetter && (style === 'trickroom' || current.filter(s => !setsUp(s, style) && uses(s, style)).length < WEATHER_USERS);
-      if (needSetter || needUsers) {
+      // Slot libero di un team meteo: chi lo sfrutta (anche fuori dal meta) entra tra i candidati, senza restringere la lista
+      const freeWeatherSlot = !needSetter && !needUsers && style !== 'trickroom';
+      if (needSetter || needUsers || freeWeatherSlot) {
         // Oltre al meta, tutto il Pokédex: chi può portare o sfruttare lo stile, col set adattato
         const adapt = needSetter ? asSetter : asUser;
         // Prima di valutarli: solo chi serve a questo slot, non è nel meta e non è già preso, al massimo STYLE_POOL
@@ -133,7 +148,7 @@ export function* fillProposals(
           .filter(set => !inMeta.has(formeId(set)) && !taken.has(formeId(set)) && !deadEnds.has(formeId(set))
             && !opposesWeather(set, style) && adapt(set, style, format.genLimit) !== null);
         const wanted = [
-          ...usable.filter(set => !exclude.has(formeId(set))).slice(0, STYLE_POOL),
+          ...usable.filter(set => !exclude.has(formeId(set))).slice(0, freeWeatherSlot ? 2 * WEATHER_EXTRA : STYLE_POOL),
           ...(needSetter ? usable.filter(set => exclude.has(formeId(set))).slice(0, STYLE_POOL) : []),
         ];
         const extras = scoreSets(current, { ...format, allowMultipleMegas: true }, data, wanted, 'en');
@@ -153,23 +168,36 @@ export function* fillProposals(
         const byAbility = (source: Suggestion[]) => source.filter(s => links(s.set).some(e => e.condition === style && toID(e.via) === toID(battleAbility(s.set))));
         // Trick Room: chi la porta è lento anche lui, se si può
         const slow = (source: Suggestion[]) => source.filter(s => uses(s.set, 'trickroom'));
-        const order = needSetter && style === 'trickroom' ? [slow(fresh), slow(again), fresh, again]
-          : needSetter ? [byAbility(fresh), byAbility(again), fresh, again]
+        // I già mostrati si alternano dentro il loro gruppo (per abilità, lenti, con la mossa)
+        const order = needSetter && style === 'trickroom' ? [slow(fresh), byRotation(slow(again)), fresh, byRotation(again)]
+          : needSetter ? [byAbility(fresh), byRotation(byAbility(again)), fresh, byRotation(again)]
           : style === 'trickroom' ? [fresh] : [byAbility(fresh), fresh];
         // La prima opzione che ha anche qualcuno adatto al tipo chiesto (es. un muro lento per Stall + Trick Room)
-        list = order.find(option => option.length && byType(option, false).length) ?? order.find(option => option.length) ?? list;
+        if (freeWeatherSlot) {
+          const known = new Set(list.map(s => formeId(s.set)));
+          list = [...list, ...fresh.filter(s => !known.has(formeId(s.set)))];
+        } else {
+          list = order.find(option => option.length && byType(option, false).length) ?? order.find(option => option.length) ?? list;
+        }
       }
     }
     list = byType(list, true);
     let top = list.slice(0, last ? CANDIDATES : RATE_TOP).map(s => s.set);
+    // Negli slot liberi si valutano anche i migliori tra chi sfrutta il meteo, così la precedenza può contare
+    if (style && style !== 'trickroom') {
+      const shown = new Set(top.map(formeId));
+      top = [...top, ...list.filter(s => !shown.has(formeId(s.set)) && !setsUp(s.set, style) && uses(s.set, style)).slice(0, WEATHER_EXTRA).map(s => s.set)];
+    }
     if (last) {
       // Ultimo slot: solo chi completa il tipo e lo stile chiesti; tra questi una Mega, se non c'è ancora e ce n'è una che va bene
       const fits = (set: TeamSet) => matchesChoice([...current, set], choice, format);
       const megas = !hasMega && megasAllowed ? list.filter(s => isMega(s.set)).slice(0, CANDIDATES).map(s => s.set).filter(fits) : [];
       top = megas.length ? megas.slice(0, RATE_TOP) : top.filter(fits).slice(0, RATE_TOP);
     }
-    const scored = top.map((set, i) => ({ set, i, overall: overallOf([...current, set]) }));
-    return scored.sort((a, b) => b.overall - a.overall || a.i - b.i).map(s => s.set);
+    // Negli slot liberi chi sfrutta il meteo ha una piccola precedenza (vale WEATHER_BONUS punti di voto): coverage ed equilibrio restano prima
+    const bonus = (set: TeamSet) => (style && style !== 'trickroom' && !setsUp(set, style) && uses(set, style) ? WEATHER_BONUS : 0);
+    const scored = top.map((set, i) => ({ set, i, rank: overallOf([...current, set]) + bonus(set) }));
+    return scored.sort((a, b) => b.rank - a.rank || a.i - b.i).map(s => s.set);
   };
 
   /** Riempie gli slot che mancano; al penultimo slot prova qualche alternativa se l'ultimo non quadra. */
@@ -199,10 +227,19 @@ export function* fillProposals(
       continue;
     }
     const added = full.slice(team.length);
-    for (const set of added) exclude.add(formeId(set));
     const rating = rateTeam(full, data, 'en');
     const found = teamArchetype(full, rules);
-    if (!rating || !found) continue;
+    if (!rating || !found || rating.overall < minOverall) {
+      // Sotto il voto minimo non si mostra: si scarta il membro più debole (statistiche base, mai chi porta lo stile) e si riprova
+      const weakest = [...added].filter(s => !(choice.style && setsUp(s, choice.style)))
+        .sort((a, b) => (battleSpecies(a)?.bst ?? 0) - (battleSpecies(b)?.bst ?? 0))[0] ?? added[added.length - 1];
+      deadEnds.add(formeId(weakest));
+      attempts++;
+      yield null;
+      continue;
+    }
+    for (const set of added) exclude.add(formeId(set));
+    if (choice.style) for (const set of added) if (setsUp(set, choice.style)) setterUses.set(formeId(set), (setterUses.get(formeId(set)) ?? 0) + 1);
     produced++;
     yield { added, team: full, overall: rating.overall, grade: rating.grade, archetype: found.archetype, styles: found.styles };
   }
