@@ -335,7 +335,7 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
   const runPresets = () => {
     setBusy(true);
     setTimeout(() => {
-      const next = bestPresets(team, data);
+      const next = bestPresets(team, data, format.genLimit);
       setBusy(false);
       if (onBulk) onBulk('presets', next); else onChange(next);
     }, 30);
@@ -409,7 +409,7 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
             dropTarget={drag !== null && drag.over === i && drag.from !== i}
             onMove={delta => move(i, i + delta)}
             onPaste={next => (onPaste ? onPaste(i, next) : onChange(team.map((s, j) => (j === i ? next : s))))}
-            onBest={() => { const found = bestPreset(team, i, data); return found.index === null ? null : found.set; }}
+            onBest={() => { const found = bestPreset(team, i, data, format.genLimit); return found.index === null ? null : found.set; }}
             onDrag={phase => {
               if (phase === 'start') setDrag({ from: i, over: null });
               else if (phase === 'over') setDrag(d => (d && d.over !== i ? { ...d, over: i } : d));

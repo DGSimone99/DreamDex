@@ -39,3 +39,40 @@ describe('preset migliore', () => {
     expect(next[1]).toBe(team[1]);
   });
 });
+
+describe('preset ritoccato tra le mosse più usate', () => {
+  it('il ritocco usa solo mosse e abilità più usate, al massimo 2 modifiche, e non abbassa il voto', async () => {
+    const { tuneSet, MAX_TUNES } = await import('../../src/engine/bestPreset');
+    const { commonChoices } = await import('../../src/engine/common');
+    const { fillData } = await import('../fixtures/fillData');
+    // Preset di Garchomp senza Stealth Rock, in un team senza hazard: tra le più usate c'è Stealth Rock
+    const preset = { ...emptySet('Garchomp'), item: 'Rocky Helmet', ability: 'Rough Skin', moves: ['Swords Dance', 'Earthquake', 'Outrage', 'Fire Fang'] };
+    const team = [preset, ...['Dragapult', 'Weavile', 'Kingambit', 'Gholdengo', 'Iron Valiant'].map(name => set(name, ['Protect']))];
+    const tuned = tuneSet(team, 0, fillData, 9);
+    const common = commonChoices(fillData, preset);
+    const commonMoves = new Set(common.moves.map(c => c.name));
+    const added = tuned.moves.filter(m => !preset.moves.includes(m));
+    for (const move of added) expect(commonMoves.has(move), move).toBe(true);
+    const changes = added.length + (tuned.ability !== preset.ability ? 1 : 0);
+    expect(changes).toBeLessThanOrEqual(MAX_TUNES);
+    expect(tuned.moves).toContain('Stealth Rock');
+    const grade = (s: TeamSet) => rateTeam([s, ...team.slice(1)], fillData, 'en')!.overall;
+    expect(grade(tuned)).toBeGreaterThan(grade(preset));
+  });
+
+  it('senza statistiche il preset resta com’è', async () => {
+    const { tuneSet } = await import('../../src/engine/bestPreset');
+    const team = [set('Garchomp', ['Earthquake'])];
+    expect(tuneSet(team, 0, { stats: null, sets: {} }, 9)).toBe(team[0]);
+  });
+
+  it('con Custom Skillset le mosse più usate valgono anche se non imparabili', async () => {
+    const { tuneSet } = await import('../../src/engine/bestPreset');
+    const { fillData } = await import('../fixtures/fillData');
+    // Le mosse più usate di Garchomp prese da un Pokémon che non le impara: con Custom Skillset si possono usare
+    const member = { ...emptySet('Garchomp'), customSkillset: true, moves: ['Splash', 'Splash', 'Splash', 'Splash'] };
+    const team = [member, ...['Dragapult', 'Weavile', 'Kingambit'].map(name => set(name, ['Protect']))];
+    const tuned = tuneSet(team, 0, fillData, 9);
+    expect(tuned.moves.filter(m => m !== 'Splash').length).toBeGreaterThan(0);
+  });
+});
