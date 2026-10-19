@@ -151,7 +151,8 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   const bulk = (kind: 'presets' | 'fill' | 'clear', next: TeamSet[]) => {
     const after = changeTeam(next);
     remember(kind === 'clear' ? { kind: 'clear', from: '' }
-      : { kind: 'presets', from: String(rating?.overall ?? '—'), to: String(rateTeam(after, data, lang)?.overall ?? ''), added: after.length - team.length }, after);
+      : { kind: 'presets', from: String(rating?.overall ?? '—'), to: String(rateTeam(after, data, lang)?.overall ?? ''),
+        added: after.length - team.length, created: team.length === 0 }, after);
   };
   const removeAt = (index: number) => {
     const after = changeTeam(team.filter((_, i) => i !== index));

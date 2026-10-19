@@ -172,7 +172,8 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
   background: var(--band);
   border-bottom: 1px solid var(--line-soft);
 }
-.team-head { display: flex; align-items: center; gap: 16px; margin-bottom: 14px; }
+.team-head { position: relative; z-index: 6; display: flex; align-items: center; gap: 16px; margin-bottom: 22px; }
+.fill-anchor { position: relative; }
 .team-head h2 { margin: 0; }
 .team-head .team-action { height: 30px; padding: 0 10px; font-size: 13px; }
 .team-head .clear-team { margin-left: auto; margin-right: calc(-1 * var(--card-rise, 0px)); }
@@ -183,7 +184,8 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 .slot > summary, .slot.empty {
   position: relative;
   isolation: isolate;
-  min-height: 214px;
+  /* Stessa altezza piene e vuote: con il team vuoto la fila non cambia quando entra il primo Pokémon */
+  min-height: 261px;
   padding: 10px 14px 16px;
   display: flex;
   flex-direction: column;
@@ -368,7 +370,7 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 .set-editor .evs .spread-panel > summary { position: absolute; top: -2px; right: 14px; }
 .set-editor .evs .spread-panel { display: contents; }
 .band:has(.slots.editing) { padding-top: 14px; }
-.band:has(.slots.editing) .team-head { margin-bottom: 8px; }
+.band:has(.slots.editing) .team-head { margin-bottom: 14px; }
 /* Blocco statistiche: base, cursore EV, EV, valore finale; la natura colora la riga */
 .stat-rows { display: grid; gap: 2px; margin-top: 8px; }
 .stat-row { display: grid; grid-template-columns: 52px 92px minmax(0, 1fr) 58px 44px; align-items: center; gap: 12px; padding: 2px 6px; border-radius: 3px; }
@@ -426,6 +428,60 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 }
 .spread-panel[open] > summary::after { transform: translateY(1px) rotate(225deg); }
 .spread-panel > summary:hover { color: var(--text); }
+/* Completa team: pannello sotto il pulsante, il team resta visibile */
+.fill-panel {
+  position: absolute;
+  z-index: 45;
+  top: calc(100% + 6px);
+  left: 0;
+  width: min(960px, calc(100vw - 56px));
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr);
+  gap: 14px;
+  padding: 12px;
+  background: var(--ground);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+  text-transform: none;
+  letter-spacing: 0;
+  animation: tip 0.14s var(--ease);
+}
+.fill-types { display: grid; gap: 4px; align-content: start; }
+.fill-option { display: grid; gap: 2px; width: 100%; padding: 7px 10px; text-align: left; background: none; border: 1px solid transparent; border-radius: 3px; color: var(--text); }
+.fill-option strong { font: 700 15px/1.1 var(--display); letter-spacing: 0.02em; text-transform: uppercase; }
+.fill-option small { font-size: 12px; color: var(--muted); }
+.fill-option:hover { background: var(--raised); }
+.fill-option[aria-checked='true'] { background: var(--blue-soft); border-color: var(--blue); }
+/* Tipo senza proposte con questo stile: oscurato, non si sceglie */
+.fill-option.empty, .fill-option.empty:hover { opacity: 0.38; background: none; cursor: not-allowed; }
+.fill-main { display: grid; gap: 10px; align-content: start; min-width: 0; }
+.fill-styles { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.fill-styles-label { font: 700 12px var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin-right: 4px; }
+.fill-styles .fill-option { width: auto; padding: 4px 10px; }
+.fill-styles .fill-option strong { font: 600 13px/1.2 var(--ui); text-transform: none; letter-spacing: 0; }
+.fill-proposals { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
+/* Posti della lista senza proposta: stessa altezza di una proposta */
+.fill-skeleton, .fill-placeholder { min-height: 78px; border-radius: 3px; }
+.fill-skeleton { background: linear-gradient(90deg, var(--panel) 0%, var(--raised) 50%, var(--panel) 100%) 0 0 / 200% 100%; animation: skeleton 1.4s ease-in-out infinite; }
+.fill-placeholder { border: 1px dashed var(--line-soft); opacity: 0.5; }
+@keyframes skeleton { to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .fill-skeleton { animation: none; } }
+.fill-proposal { min-height: 78px; box-sizing: border-box; display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 14px; padding: 6px 8px; border: 1px solid var(--line-soft); border-radius: 3px; background: var(--panel); }
+/* I 6 Pokémon in fila, il nome sotto lo sprite */
+.fill-mons { display: grid; grid-template-columns: repeat(6, 78px); gap: 4px; min-width: 0; }
+.fill-mon { display: grid; justify-items: center; gap: 2px; min-width: 0; cursor: help; }
+.fill-mon .sprite { image-rendering: pixelated; margin: -4px 0 -6px; }
+.fill-mon-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; color: var(--muted); }
+.fill-result { display: grid; justify-items: end; gap: 2px; text-align: right; }
+.fill-grade { font-variant-numeric: tabular-nums; color: var(--muted); }
+.fill-grade strong { font: 700 20px/1 var(--display); color: var(--text); }
+.fill-delta { font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.fill-delta.up { color: var(--good); }
+.fill-delta.down { color: var(--bad); }
+.fill-kind { font-size: 11px; color: var(--faint); white-space: nowrap; }
+.fill-status { margin: 0; height: 18px; font-size: 13px; line-height: 18px; color: var(--muted); }
+.fill-actions { display: flex; justify-content: flex-end; }
 /* Tendina degli spread: sopra il blocco statistiche, come i menu dell'editor */
 .spread-panel { position: relative; }
 .spread-presets {
@@ -1040,6 +1096,8 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .combobox [role='option'] { margin: 0; padding: 8px 10px; cursor: pointer; border-bottom: 1px solid var(--line-soft); transition: background 0.1s; }
 .combobox [role='option']:last-of-type { border-bottom: 0; }
 .combobox [role='option'].active { background: var(--raised); border-radius: 3px; border-bottom-color: transparent; }
+.combobox [role='option'][aria-disabled='true'] { opacity: 0.38; cursor: not-allowed; }
+.combobox [role='option'][aria-disabled='true'].active { background: none; }
 .combobox [role='option'][aria-selected='true'] { background: var(--blue-soft); border-radius: 3px; border-bottom-color: transparent; }
 /* Valore scelto mostrato con stile (chip del tipo, effetti della natura) */
 .combobox.has-display input { color: transparent; caret-color: transparent; }

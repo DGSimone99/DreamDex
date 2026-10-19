@@ -1,6 +1,6 @@
 import { presetSet } from '../engine/bestPreset';
 import { useEffect, useId, useMemo, useRef } from 'react';
-import { battleSpecies, dex, getMove, getSpecies, itemNames, moveNames, natureNames } from '../engine/dex';
+import { battleSpecies, dex, getMove, getSpecies, itemNames, moveNames, natureNames, toID } from '../engine/dex';
 import { legalAbilities, legalMoves } from '../engine/learnsets';
 import { formatName, sameSet, STAT_IDS, type Preset, type StatID, type TeamSet } from '../engine/sets';
 import { TYPES } from '../engine/types';
@@ -180,6 +180,12 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
     ...TYPES.map(type => ({ value: type, label: typeName(type, lang), content: <TypeChip type={type} />, ariaLabel: typeName(type, lang) })),
   ], common?.teraTypes), [lang, t, commonKey]);
   const moves = [0, 1, 2, 3].map(i => set.moves[i] ?? '');
+  // Una mossa già scelta in un altro slot resta nel menu, grigia e non selezionabile
+  const movesKey = moves.join('|');
+  const moveOptionsFor = useMemo(() => moves.map((_, slot) => {
+    const others = new Set(moves.filter((move, i) => i !== slot && move).map(toID));
+    return others.size ? moveOptions.map(option => (others.has(toID(option.value)) ? { ...option, disabled: true } : option)) : moveOptions;
+  }), [moveOptions, movesKey]); // eslint-disable-line react-hooks/exhaustive-deps
   const update = (patch: Partial<TeamSet>) => onChange({ ...set, ...patch });
   // Preset: la chiave è la posizione. Se il set coincide con un preset è selezionato quello,
   // altrimenti (appena modifichi qualcosa) la voce "Custom"
@@ -368,7 +374,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
             <Combobox
               label={t('editor.move', { n: i + 1 })}
               value={move}
-              options={moveOptions}
+              options={moveOptionsFor[i]}
               commonLabel={commonLabel}
               description={describe.move(move, lang)}
               onChange={value => {

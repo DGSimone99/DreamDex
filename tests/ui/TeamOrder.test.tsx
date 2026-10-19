@@ -75,6 +75,27 @@ describe('ordine del team e editor', () => {
     expect(team.querySelector('.slot[open]')).toBeNull();
   });
 
+  it('a team vuoto c’è Completa team; una proposta crea il team e si annulla', async () => {
+    const user = userEvent.setup();
+    render(<App data={fixtureData} initialLang="it" />);
+    const team = screen.getByRole('region', { name: 'Team' });
+    await user.click(within(team).getByRole('button', { name: 'Completa team' }));
+    await user.click((await screen.findAllByRole('button', { name: 'Aggiungi la proposta 1' }, { timeout: 5000 }))[0]);
+    expect(names(team)).toHaveLength(6);
+    expect(screen.getByText(/^Team creato: \d+$/)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /Annulla/ }));
+    expect(names(team)).toEqual([]);
+  });
+
+  it('con un team incompleto la proposta aggiunge in fondo, i membri restano', async () => {
+    const user = userEvent.setup();
+    const team = await importTeam(user, 'Garchomp\n- Earthquake');
+    await user.click(within(team).getByRole('button', { name: 'Completa team' }));
+    await user.click((await screen.findAllByRole('button', { name: 'Aggiungi la proposta 1' }, { timeout: 5000 }))[0]);
+    expect(names(team)[0]).toBe('Garchomp');
+    expect(names(team)).toHaveLength(6);
+  });
+
   it('svuotare un team pieno non rompe i suggerimenti', async () => {
     const user = userEvent.setup();
     const six = ['Garchomp', 'Corviknight', 'Greninja', 'Heatran', 'Clefable', 'Kingambit'].map(name => `${name}\n- Protect`).join('\n\n');
