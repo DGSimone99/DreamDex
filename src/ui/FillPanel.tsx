@@ -187,6 +187,10 @@ export function FillPanel({ team, format, data, onApply, onClose }: Props) {
               </button>
             </li>
           ))}
+          {/* Sempre 5 posti: la lista non cambia altezza; scheletri mentre calcola, righe vuote dopo */}
+          {Array.from({ length: Math.max(0, PROPOSALS_PER_ROUND - proposals.length) }, (_, i) => (
+            <li key={`slot-${i}`} aria-hidden="true" className={busy ? 'fill-skeleton' : 'fill-placeholder'} />
+          ))}
         </ol>
         <p className="fill-status" role="status" aria-live="polite">{status}</p>
         <div className="fill-actions">

@@ -96,6 +96,20 @@ describe('pannello Completa team', () => {
     expect(await screen.findByText('Nessun completamento con questo tipo e questo stile', undefined, WAIT)).toBeInTheDocument();
   }, 40000);
 
+  it('la lista ha sempre 5 posti: scheletri durante il calcolo, righe vuote dopo', async () => {
+    const user = userEvent.setup();
+    panel();
+    const rows = () => document.querySelectorAll('.fill-proposals > li');
+    expect(rows()).toHaveLength(5);
+    expect(document.querySelectorAll('.fill-proposals > li.fill-skeleton').length).toBeGreaterThan(0);
+    await vi.waitFor(idle, WAIT);
+    expect(rows()).toHaveLength(5);
+    await user.click(within(screen.getByRole('radiogroup', { name: 'Stile' })).getByRole('radio', { name: 'Neve' }));
+    await vi.waitFor(idle, WAIT);
+    expect(rows()).toHaveLength(5);
+    expect(document.querySelectorAll('.fill-proposals > li.fill-skeleton')).toHaveLength(0);
+  }, 30000);
+
   it('le proposte non si riordinano mentre arrivano: prima in coda, a giro finito per voto', async () => {
     panel();
     await vi.waitFor(idle, WAIT);
