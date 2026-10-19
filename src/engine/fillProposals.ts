@@ -9,7 +9,7 @@ import { detectRoles, isPassive } from './roles';
 import { scoreSets, suggest, type Suggestion } from './scoring';
 import { asSetter, asUser, stylePool } from './styleSets';
 import type { TeamSet } from './sets';
-import { benefits, enables, type Condition } from './synergy';
+import { benefits, enables, opposesWeather, type Condition } from './synergy';
 
 /** Stili che si possono chiedere a Completa team: meteo e Trick Room (il "motore" del team). */
 export type FillStyle = 'rain' | 'sun' | 'sand' | 'snow' | 'trickroom';
@@ -40,9 +40,11 @@ export const RATE_TOP = 10;
 /** Alternative provate al penultimo slot quando l'ultimo non trova un team del tipo chiesto. */
 export const BACKTRACK_ALTERNATIVES = 3;
 /** Tentativi a vuoto, in tutto il giro, prima di arrendersi. */
-export const MAX_ATTEMPTS = 8;
+export const MAX_ATTEMPTS = 5;
 /** Pokémon fuori dal meta valutati per slot quando serve chi porta o sfrutta lo stile. */
-export const STYLE_POOL = 30;
+export const STYLE_POOL = 20;
+/** Membri che sfruttano il meteo, oltre a chi lo porta (se ce ne sono abbastanza). */
+export const WEATHER_USERS = 3;
 
 /** Il team completo ha il tipo e lo stile chiesti (secondo teamArchetype). */
 export function matchesChoice(team: TeamSet[], choice: FillChoice, format: Format): boolean {
@@ -80,7 +82,8 @@ export function* fillProposals(
   // Voto del team per forma e strumento (le Mega dello stesso Pokémon hanno voti diversi)
   const memo = new Map<string, number>();
   const overallOf = (sets: TeamSet[]) => {
-    const key = sets.map(s => `${formeId(s)}@${toID(s.item)}`).join('|');
+    // Lo stesso Pokémon può arrivare con set diversi (del meta o adattati allo stile)
+    const key = sets.map(s => `${formeId(s)}@${toID(s.item)}@${toID(s.ability)}@${s.moves.map(toID).join('.')}`).join('|');
     let value = memo.get(key);
     if (value === undefined) {
       value = rateTeam(sets, data, 'en')?.overall ?? -Infinity;
@@ -91,12 +94,25 @@ export function* fillProposals(
 
   /** I candidati per il prossimo slot, già ristretti e ordinati per voto del team (a pari voto, per punteggio). */
   const candidates = (current: TeamSet[], taken: Set<string>, last: boolean): TeamSet[] => {
+    // Con un meteo, fuori chi ne porta un altro o ne dipende (Swampert-Mega con Swift Swim in un team neve)
+    const style = choice.style;
     const all: Suggestion[] = suggest(current, { ...format, allowMultipleMegas: true }, data, Infinity, 'en')
-      .filter(s => !taken.has(formeId(s.set)) && !deadEnds.has(formeId(s.set)));
+      .filter(s => !taken.has(formeId(s.set)) && !deadEnds.has(formeId(s.set)) && !(style && opposesWeather(s.set, style)));
     const pool = all.filter(s => !exclude.has(formeId(s.set)));
     const narrow = (list: Suggestion[], keep: (set: TeamSet) => boolean) => {
       const kept = list.filter(s => keep(s.set));
       return kept.length ? kept : list;
+    };
+    /** Muri fino alla quota del tipo, poi solo non-muri (e per gli Offense chi è adatto); con `fallback`, se nessuno va, la lista com'è. */
+    const byType = (source: Suggestion[], fallback: boolean): Suggestion[] => {
+      if (!choice.archetype) return source;
+      const quota = PASSIVE_QUOTA[choice.archetype];
+      const walls = current.filter(passive).length;
+      const kept = source.filter(s => (walls < quota ? passive(s.set) : !passive(s.set)));
+      let result = kept.length || !fallback ? kept : source;
+      const fit = FIT[choice.archetype];
+      if (fit && quota === 0 && result.length) result = narrow(result, s => fitsArchetype(s, fit, rules));
+      return result;
     };
     // Mai una seconda Mega; all'ultimo slot, una Mega se non c'è ancora
     const hasMega = current.some(isMega);
@@ -105,15 +121,21 @@ export function* fillProposals(
     if (choice.style) {
       const style = choice.style;
       const needSetter = !current.some(s => setsUp(s, style));
-      // Trick Room: dopo chi la porta, tutti lenti; meteo: almeno uno che lo sfrutti
-      const needUsers = !needSetter && (style === 'trickroom' || current.filter(s => !setsUp(s, style) && uses(s, style)).length < 1);
+      // Trick Room: dopo chi la porta, tutti lenti; meteo: almeno WEATHER_USERS che lo sfruttino
+      const needUsers = !needSetter && (style === 'trickroom' || current.filter(s => !setsUp(s, style) && uses(s, style)).length < WEATHER_USERS);
       if (needSetter || needUsers) {
         // Oltre al meta, tutto il Pokédex: chi può portare o sfruttare lo stile, col set adattato
         const adapt = needSetter ? asSetter : asUser;
-        // Prima di valutarli: solo chi serve a questo slot e non è già preso, al massimo STYLE_POOL
-        const wanted = stylePool(current, style, format, data)
-          .filter(set => !taken.has(formeId(set)) && !deadEnds.has(formeId(set)) && (needSetter ? setsUp(set, style) : uses(set, style)))
-          .slice(0, STYLE_POOL);
+        // Prima di valutarli: solo chi serve a questo slot, non è nel meta e non è già preso, al massimo STYLE_POOL
+        // (per chi lo porta, a parte, anche quelli già mostrati, che possono tornare)
+        const inMeta = new Set(all.map(s => formeId(s.set)));
+        const usable = stylePool(current, style, format, data)
+          .filter(set => !inMeta.has(formeId(set)) && !taken.has(formeId(set)) && !deadEnds.has(formeId(set))
+            && !opposesWeather(set, style) && adapt(set, style, format.genLimit) !== null);
+        const wanted = [
+          ...usable.filter(set => !exclude.has(formeId(set))).slice(0, STYLE_POOL),
+          ...(needSetter ? usable.filter(set => exclude.has(formeId(set))).slice(0, STYLE_POOL) : []),
+        ];
         const extras = scoreSets(current, { ...format, allowMultipleMegas: true }, data, wanted, 'en');
         const adapted = (source: Suggestion[]) => {
           const seen = new Set<string>();
@@ -134,17 +156,11 @@ export function* fillProposals(
         const order = needSetter && style === 'trickroom' ? [slow(fresh), slow(again), fresh, again]
           : needSetter ? [byAbility(fresh), byAbility(again), fresh, again]
           : style === 'trickroom' ? [fresh] : [byAbility(fresh), fresh];
-        list = order.find(option => option.length) ?? list;
+        // La prima opzione che ha anche qualcuno adatto al tipo chiesto (es. un muro lento per Stall + Trick Room)
+        list = order.find(option => option.length && byType(option, false).length) ?? order.find(option => option.length) ?? list;
       }
     }
-    if (choice.archetype) {
-      // Muri fino alla quota del tipo, poi solo non-muri
-      const quota = PASSIVE_QUOTA[choice.archetype];
-      const walls = current.filter(passive).length;
-      list = narrow(list, walls < quota ? passive : s => !passive(s));
-      const fit = FIT[choice.archetype];
-      if (fit && quota === 0) list = narrow(list, s => fitsArchetype(s, fit, rules));
-    }
+    list = byType(list, true);
     let top = list.slice(0, last ? CANDIDATES : RATE_TOP).map(s => s.set);
     if (last) {
       // Ultimo slot: solo chi completa il tipo e lo stile chiesti; tra questi una Mega, se non c'è ancora e ce n'è una che va bene

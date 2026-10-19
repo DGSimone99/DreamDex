@@ -1,6 +1,6 @@
 import { commonChoices } from './common';
 import type { EngineData } from './data';
-import { battleSpecies, getSpecies } from './dex';
+import { battleSpecies, getSpecies, toID } from './dex';
 import { isLearnable, legalAbilities, legalMoves } from './learnsets';
 import { rateTeam } from './rating';
 import { presetsForSet, type TeamSet } from './sets';
@@ -37,8 +37,9 @@ export function tuneSet(team: TeamSet[], index: number, data: EngineData, genLim
       if (value > bestScore) { best = set; bestScore = value; }
     };
     const slots = Math.max(current.moves.length, Math.min(4, current.moves.filter(Boolean).length + 1));
+    const family = (move: string) => (toID(move).startsWith('hiddenpower') ? 'hiddenpower' : toID(move));
     for (const move of moves) {
-      if (current.moves.includes(move)) continue;
+      if (current.moves.some(m => family(m) === family(move))) continue;
       for (let slot = 0; slot < Math.min(4, slots); slot++) {
         const next = [...current.moves];
         next[slot] = move;

@@ -376,6 +376,17 @@ export function providesAll(set: TeamSet, needed: NeededCondition[]): boolean {
   return needed.every(n => provided.has(n.condition));
 }
 
+/**
+ * Il set va contro il meteo `weather`: ne porta un altro, o ha un'abilità che dipende da un altro meteo
+ * (Swift Swim in un team neve). Protosynthesis e Quark Drive no: funzionano con la Booster Energy.
+ */
+export function opposesWeather(set: TeamSet, weather: Condition): boolean {
+  if (!WEATHERS.includes(weather)) return false;
+  const ability = toID(battleAbility(set));
+  return enables(set).some(e => WEATHERS.includes(e.condition) && e.condition !== weather)
+    || benefits(set).some(b => WEATHERS.includes(b.condition) && b.condition !== weather && toID(b.via) === ability && !PARADOX.has(ability));
+}
+
 /** Setter del team il cui meteo (o campo) è diverso da quello che porterebbe il candidato. */
 export function clashesWith(candidate: TeamSet, team: TeamSet[], lang: Lang = 'it'): string[] {
   const groups = [WEATHERS, TERRAINS];

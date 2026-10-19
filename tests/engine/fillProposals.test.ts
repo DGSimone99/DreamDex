@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Archetype } from '../../src/engine/archetype';
 import type { EngineData } from '../../src/engine/data';
-import { battleName, isMega, toID } from '../../src/engine/dex';
+import { battleAbility, battleName, isMega, toID } from '../../src/engine/dex';
 import { fillProposals, matchesChoice, MAX_ATTEMPTS, PROPOSALS_PER_ROUND, type FillChoice, type Proposal } from '../../src/engine/fillProposals';
 import { DEFAULT_FORMAT, type Format } from '../../src/engine/format';
 import { rateTeam } from '../../src/engine/rating';
@@ -121,6 +121,30 @@ describe('proposte di Completa team', () => {
     const list = take([], { archetype: null, style: 'snow' });
     expect(list.length).toBeGreaterThanOrEqual(1);
     for (const p of list) expect(p.styles).toContain('snow');
+  }, 30000);
+
+  it('con un meteo, nessuno porta un altro meteo o dipende da un altro meteo', () => {
+    // Pioggia: niente Chlorophyll né Drought (Venusaur, Torkoal); sole: niente Swift Swim né Drizzle (Barraskewda, Pelipper)
+    const against = { rain: ['sun', 'sand', 'snow'], sun: ['rain', 'sand', 'snow'] } as const;
+    for (const style of ['rain', 'sun'] as const) {
+      const list = take([], { archetype: null, style });
+      expect(list.length, style).toBeGreaterThanOrEqual(1);
+      for (const p of list) for (const s of p.added) {
+        expect(enables(s).some(e => (against[style] as readonly string[]).includes(e.condition)), `${style}: ${s.species}`).toBe(false);
+        // Protosynthesis e Quark Drive funzionano con la Booster Energy: non dipendono dal meteo
+        const dependent = benefits(s).some(b => (against[style] as readonly string[]).includes(b.condition) && toID(b.via) === toID(battleAbility(s))
+          && !['protosynthesis', 'quarkdrive'].includes(toID(b.via)));
+        expect(dependent, `${style}: ${s.species}`).toBe(false);
+      }
+    }
+  }, 30000);
+
+  it('con un meteo almeno 3 membri lo sfruttano, se ce ne sono abbastanza', () => {
+    for (const style of ['rain', 'sun'] as const) {
+      const [first] = take([], { archetype: null, style });
+      const users = first.added.filter(s => !enables(s).some(e => e.condition === style) && benefits(s).some(b => b.condition === style && toID(b.via) !== 'weatherball'));
+      expect(users.length, style).toBeGreaterThanOrEqual(3);
+    }
   }, 30000);
 
   it('in Trick Room, dopo chi la porta, i membri sono lenti', () => {

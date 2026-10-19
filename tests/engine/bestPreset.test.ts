@@ -60,6 +60,26 @@ describe('preset ritoccato tra le mosse più usate', () => {
     expect(grade(tuned)).toBeGreaterThan(grade(preset));
   });
 
+  it('Preset migliori ritocca davvero: dal preset senza Stealth Rock al set che la usa', async () => {
+    const { bestPresets } = await import('../../src/engine/bestPreset');
+    const { fillData } = await import('../fixtures/fillData');
+    const preset = { ...emptySet('Garchomp'), item: 'Rocky Helmet', ability: 'Rough Skin', moves: ['Swords Dance', 'Earthquake', 'Outrage', 'Fire Fang'] };
+    const data = { ...fillData, presets: { Garchomp: [{ name: 'SD', format: 'gen9nationaldex', set: preset }] } };
+    const team = [set('Garchomp', ['Earthquake']), ...['Dragapult', 'Weavile', 'Kingambit', 'Gholdengo', 'Iron Valiant'].map(name => set(name, ['Protect']))];
+    expect(bestPresets(team, data, 9)[0].moves).toContain('Stealth Rock');
+  });
+
+  it('una sola Hidden Power nel set ritoccato', async () => {
+    const { tuneSet } = await import('../../src/engine/bestPreset');
+    const { fillData } = await import('../fixtures/fillData');
+    const stats = { ...fillData.stats!, pokemon: { ...fillData.stats!.pokemon,
+      Tangrowth: { usage: 0.1, count: 100, abilities: { regenerator: 1 }, items: { assaultvest: 1 }, teraTypes: {}, spreads: {}, teammates: {}, checks: {},
+        moves: { gigadrain: 1, hiddenpowerfire: 0.5, hiddenpowerice: 0.4, knockoff: 1, sludgebomb: 0.6 } } } };
+    const member = { ...emptySet('Tangrowth'), ability: 'Regenerator', moves: ['Giga Drain', 'Hidden Power Fire', 'Knock Off', 'Sludge Bomb'] };
+    const tuned = tuneSet([member], 0, { ...fillData, stats }, 7);
+    expect(tuned.moves.filter(m => m.startsWith('Hidden Power')).length).toBeLessThanOrEqual(1);
+  });
+
   it('senza statistiche il preset resta com’è', async () => {
     const { tuneSet } = await import('../../src/engine/bestPreset');
     const team = [set('Garchomp', ['Earthquake'])];
