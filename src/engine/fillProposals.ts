@@ -6,7 +6,8 @@ import { formatRules } from './formatRules';
 import { pokedexOf } from './formats';
 import { rateTeam } from './rating';
 import { detectRoles, isPassive } from './roles';
-import { suggest, type Suggestion } from './scoring';
+import { scoreSets, suggest, type Suggestion } from './scoring';
+import { asSetter, asUser, stylePool } from './styleSets';
 import type { TeamSet } from './sets';
 import { benefits, enables, type Condition } from './synergy';
 
@@ -40,6 +41,8 @@ export const RATE_TOP = 10;
 export const BACKTRACK_ALTERNATIVES = 3;
 /** Tentativi a vuoto, in tutto il giro, prima di arrendersi. */
 export const MAX_ATTEMPTS = 8;
+/** Pokémon fuori dal meta valutati per slot quando serve chi porta o sfrutta lo stile. */
+export const STYLE_POOL = 30;
 
 /** Il team completo ha il tipo e lo stile chiesti (secondo teamArchetype). */
 export function matchesChoice(team: TeamSet[], choice: FillChoice, format: Format): boolean {
@@ -101,13 +104,28 @@ export function* fillProposals(
     let list = noSecondMega(pool);
     if (choice.style) {
       const style = choice.style;
-      if (!current.some(s => setsUp(s, style))) {
-        // Chi porta lo stile: prima uno nuovo, poi (con meno priorità) uno già mostrato
-        const fresh = list.filter(s => setsUp(s.set, style));
-        const again = noSecondMega(all).filter(s => setsUp(s.set, style));
+      const needSetter = !current.some(s => setsUp(s, style));
+      // Trick Room: dopo chi la porta, tutti lenti; meteo: almeno uno che lo sfrutti
+      const needUsers = !needSetter && (style === 'trickroom' || current.filter(s => !setsUp(s, style) && uses(s, style)).length < 1);
+      if (needSetter || needUsers) {
+        // Oltre al meta, tutto il Pokédex: chi può portare o sfruttare lo stile, col set adattato
+        const adapt = needSetter ? asSetter : asUser;
+        // Prima di valutarli: solo chi serve a questo slot e non è già preso, al massimo STYLE_POOL
+        const wanted = stylePool(current, style, format, data)
+          .filter(set => !taken.has(formeId(set)) && !deadEnds.has(formeId(set)) && (needSetter ? setsUp(set, style) : uses(set, style)))
+          .slice(0, STYLE_POOL);
+        const extras = scoreSets(current, { ...format, allowMultipleMegas: true }, data, wanted, 'en');
+        const adapted = (source: Suggestion[]) => {
+          const seen = new Set<string>();
+          return source
+            .map(s => { const set = adapt(s.set, style, format.genLimit); return set ? { ...s, set } : null; })
+            .filter((s): s is Suggestion => !!s && !seen.has(formeId(s.set)) && !!seen.add(formeId(s.set)))
+            .sort((a, b) => b.score - a.score);
+        };
+        const fresh = noSecondMega(adapted([...pool, ...extras.filter(s => !exclude.has(formeId(s.set)))]));
+        // Chi porta lo stile può tornare (con meno priorità) quando non ce n'è uno nuovo; gli altri no
+        const again = needSetter ? noSecondMega(adapted([...all, ...extras])) : [];
         list = fresh.length ? fresh : again.length ? again : list;
-      } else if (current.filter(s => !setsUp(s, style) && uses(s, style)).length < (style === 'trickroom' ? 2 : 1)) {
-        list = narrow(list, s => uses(s, style));
       }
     }
     if (choice.archetype) {

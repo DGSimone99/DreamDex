@@ -6,7 +6,7 @@ import { fillProposals, matchesChoice, MAX_ATTEMPTS, PROPOSALS_PER_ROUND, type F
 import { DEFAULT_FORMAT, type Format } from '../../src/engine/format';
 import { rateTeam } from '../../src/engine/rating';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
-import { enables } from '../../src/engine/synergy';
+import { benefits, enables } from '../../src/engine/synergy';
 import { fillData } from '../fixtures/fillData';
 
 /** Le proposte di un giro (il generatore produce anche `null` come segnale di avanzamento). */
@@ -117,9 +117,25 @@ describe('proposte di Completa team', () => {
     for (const p of take([], any)) expect(p.overall).toBe(rateTeam(p.team, fillData, 'en')!.overall);
   });
 
+  it('la neve trova proposte anche se nel meta nessuno la sfrutta (Pokémon e set da tutto il Pokédex)', () => {
+    const list = take([], { archetype: null, style: 'snow' });
+    expect(list.length).toBeGreaterThanOrEqual(1);
+    for (const p of list) expect(p.styles).toContain('snow');
+  }, 30000);
+
+  it('in Trick Room, dopo chi la porta, i membri sono lenti', () => {
+    const list = take([], { archetype: null, style: 'trickroom' });
+    expect(list.length).toBeGreaterThanOrEqual(1);
+    for (const p of list) {
+      const others = p.added.filter(s => !enables(s).some(e => e.condition === 'trickroom'));
+      for (const s of others) expect(benefits(s).some(b => b.condition === 'trickroom'), s.species).toBe(true);
+    }
+  }, 30000);
+
   it('senza proposte possibili produce solo segnali di avanzamento, poi si ferma', () => {
-    // Nessuno porta la neve nel meta di prova
-    const steps = [...fillProposals([], { archetype: null, style: 'snow' }, new Set(), DEFAULT_FORMAT, fillData)];
+    // Stall con Trick Room e pioggia insieme non esiste: si chiede Stall + neve su un team già offensivo
+    const team = ['Dragapult', 'Weavile', 'Cinderace', 'Iron Valiant', 'Gholdengo'].map(name => set(name, ['Protect']));
+    const steps = [...fillProposals(team, { archetype: 'stall', style: 'snow' }, new Set(), DEFAULT_FORMAT, fillData)];
     expect(steps.every(step => step === null)).toBe(true);
     expect(steps.length).toBeLessThanOrEqual(MAX_ATTEMPTS);
   });

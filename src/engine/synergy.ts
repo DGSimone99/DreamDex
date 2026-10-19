@@ -117,6 +117,11 @@ export interface ConditionLink {
 
 const nameOf = (id: string) => getMove(id)?.name ?? id;
 
+/** Abilità e mosse (id) che portano o sfruttano la condizione. */
+export function conditionTools(condition: Condition): Rule {
+  return RULES[condition];
+}
+
 export function enables(set: TeamSet): ConditionLink[] {
   const ability = battleAbility(set);
   const moveIds = set.moves.map(toID);
