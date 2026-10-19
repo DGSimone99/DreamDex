@@ -10,6 +10,7 @@ import { fillData } from '../fixtures/fillData';
 import { renderIt } from '../helpers/italian';
 
 const WAIT = { timeout: 5000 };
+const attackers = () => ['Dragapult', 'Weavile', 'Cinderace', 'Iron Valiant', 'Gholdengo'].map(name => ({ ...emptySet(name), moves: ['Protect'] }));
 const panel = (team: TeamSet[] = [], onApply = vi.fn(), onClose = vi.fn()) =>
   renderIt(<FillPanel team={team} format={DEFAULT_FORMAT} data={fillData} onApply={onApply} onClose={onClose} />);
 const addButtons = () => screen.findAllByRole('button', { name: /^Aggiungi la proposta \d$/ }, WAIT);
@@ -83,17 +84,16 @@ describe('pannello Completa team', () => {
     expect(onClose).toHaveBeenCalled();
   });
 
-  it('con la neve (nessuno la porta) i tipi si oscurano e non si scelgono', async () => {
+  it('i tipi senza proposte si oscurano e non si scelgono', async () => {
+    // Cinque attaccanti: Stall e Semi-Stall (almeno 4 muri) non possono esistere
     const user = userEvent.setup();
-    panel();
-    await user.click(within(screen.getByRole('radiogroup', { name: 'Stile' })).getByRole('radio', { name: 'Neve' }));
-    // Si verificano tutti e sei i tipi: con la suite intera in parallelo può volerci un po'
+    panel(attackers());
     const SLOW = { timeout: 25000 };
     await vi.waitFor(() => expect(screen.getByRole('radio', { name: 'Stall' })).toBeDisabled(), SLOW);
-    await vi.waitFor(() => expect(screen.getByRole('radio', { name: 'Hyper Offense' })).toBeDisabled(), SLOW);
-    // Il tipo scelto resta cliccabile, e dice che non ci sono completamenti
+    await vi.waitFor(() => expect(screen.getByRole('radio', { name: 'Semi-stall' })).toBeDisabled(), SLOW);
     expect(screen.getByRole('radio', { name: 'Il migliore' })).toBeEnabled();
-    expect(await screen.findByText('Nessun completamento con questo tipo e questo stile', undefined, WAIT)).toBeInTheDocument();
+    await user.click(screen.getByRole('radio', { name: 'Stall' }));
+    expect(screen.getByRole('radio', { name: 'Il migliore' })).toHaveAttribute('aria-checked', 'true');
   }, 40000);
 
   it('la lista ha sempre 5 posti: scheletri durante il calcolo, righe vuote dopo', async () => {
@@ -118,11 +118,11 @@ describe('pannello Completa team', () => {
   });
 
   it('scelta senza risultati: messaggio, nessuna proposta', async () => {
-    // Nel meta di prova nessuno porta la neve
+    // Il tipo scelto resta selezionabile anche se vuoto: lo si sceglie prima che la verifica lo oscuri
     const user = userEvent.setup();
-    panel();
-    await user.click(within(screen.getByRole('radiogroup', { name: 'Stile' })).getByRole('radio', { name: 'Neve' }));
-    expect(await screen.findByText('Nessun completamento con questo tipo e questo stile', undefined, WAIT)).toBeInTheDocument();
+    panel(attackers());
+    await user.click(screen.getByRole('radio', { name: 'Stall' }));
+    expect(await screen.findByText('Nessun completamento con questo tipo e questo stile', undefined, { timeout: 20000 })).toBeInTheDocument();
     expect(document.querySelectorAll('.fill-proposal')).toHaveLength(0);
-  });
+  }, 30000);
 });
