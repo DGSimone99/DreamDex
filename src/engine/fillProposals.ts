@@ -1,6 +1,6 @@
 import { fitsArchetype, teamArchetype, type Archetype, type FitArchetype, type TeamStyle } from './archetype';
 import type { EngineData } from './data';
-import { battleName, isMega, toID } from './dex';
+import { battleAbility, battleName, isMega, toID } from './dex';
 import type { Format } from './format';
 import { formatRules } from './formatRules';
 import { pokedexOf } from './formats';
@@ -125,7 +125,16 @@ export function* fillProposals(
         const fresh = noSecondMega(adapted([...pool, ...extras.filter(s => !exclude.has(formeId(s.set)))]));
         // Chi porta lo stile può tornare (con meno priorità) quando non ce n'è uno nuovo; gli altri no
         const again = needSetter ? noSecondMega(adapted([...all, ...extras])) : [];
-        list = fresh.length ? fresh : again.length ? again : list;
+        // Per portarlo: prima per abilità (Snow Warning, Drizzle…), nuovo o già mostrato, poi con una mossa
+        // (e così per sfruttarlo: prima Slush Rush, Swift Swim…, poi una mossa; per Trick Room conta la lentezza)
+        const links = needSetter ? enables : benefits;
+        const byAbility = (source: Suggestion[]) => source.filter(s => links(s.set).some(e => e.condition === style && toID(e.via) === toID(battleAbility(s.set))));
+        // Trick Room: chi la porta è lento anche lui, se si può
+        const slow = (source: Suggestion[]) => source.filter(s => uses(s.set, 'trickroom'));
+        const order = needSetter && style === 'trickroom' ? [slow(fresh), slow(again), fresh, again]
+          : needSetter ? [byAbility(fresh), byAbility(again), fresh, again]
+          : style === 'trickroom' ? [fresh] : [byAbility(fresh), fresh];
+        list = order.find(option => option.length) ?? list;
       }
     }
     if (choice.archetype) {

@@ -479,7 +479,7 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 .fill-delta.up { color: var(--good); }
 .fill-delta.down { color: var(--bad); }
 .fill-kind { font-size: 11px; color: var(--faint); white-space: nowrap; }
-.fill-status { margin: 0; min-height: 1.2em; font-size: 13px; color: var(--muted); }
+.fill-status { margin: 0; height: 18px; font-size: 13px; line-height: 18px; color: var(--muted); }
 .fill-actions { display: flex; justify-content: flex-end; }
 /* Tendina degli spread: sopra il blocco statistiche, come i menu dell'editor */
 .spread-panel { position: relative; }
