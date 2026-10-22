@@ -287,6 +287,8 @@ export const it: Record<keyof typeof en, string> = {
   'editor.level': "Livello delle statistiche mostrate",
   'editor.levelN': "Lv. {n}",
   'editor.finalAt': "Valore finale al livello {n}",
+  'editor.levelShort': "Livello",
+  'editor.finalHead': "Finale",
   'editor.spreads': "Spread più usati",
   'editor.neutral': "neutra",
   'editor.category.Physical': "Fisica",

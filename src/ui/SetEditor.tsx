@@ -306,20 +306,23 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
           </div>
           </details>
         )}
+        {/* Livello a cui si vedono i valori finali: in alto a sinistra, di fronte a "Spread più usati" */}
+        <div className="level-toggle" role="group" aria-label={t('editor.level')}>
+          <span className="level-toggle-label" aria-hidden="true">{t('editor.levelShort')}</span>
+          {([50, 100] as const).map(n => (
+            <button key={n} type="button" aria-pressed={level === n} aria-label={t('editor.levelN', { n })}
+              onClick={() => setViewLevel(n)}>{n}</button>
+          ))}
+        </div>
         <div className="stat-rows">
-          {/* Intestazione delle colonne; sopra il valore finale il livello a cui è calcolato */}
+          {/* Intestazione delle colonne */}
           <div className="stat-row stat-head">
             <span />
             <span>{t('editor.baseHead')}</span>
             <span />
             <span className="stat-head-num">{t('editor.evs')}</span>
             <span className="stat-head-num">{t('editor.ivHead')}</span>
-            <span className="level-toggle" role="group" aria-label={t('editor.level')}>
-              {([50, 100] as const).map(n => (
-                <button key={n} type="button" aria-pressed={level === n} aria-label={t('editor.levelN', { n })}
-                  onClick={() => setViewLevel(n)}>{n}</button>
-              ))}
-            </span>
+            <span className="stat-head-final">{t('editor.finalHead')}</span>
           </div>
           {lines.map(line => (
             <div key={line.stat} className={`stat-row${line.nature ? ` nature-${line.nature}` : ''}`}>

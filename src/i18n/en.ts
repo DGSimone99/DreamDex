@@ -285,6 +285,8 @@ export const en = {
   'editor.level': "Level of the stats shown",
   'editor.levelN': "Lv. {n}",
   'editor.finalAt': "Final value at level {n}",
+  'editor.levelShort': "Level",
+  'editor.finalHead': "Final",
   'editor.spreads': "Most used spreads",
   'editor.neutral': "neutral",
   'editor.category.Physical': "Physical",
