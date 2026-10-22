@@ -8,22 +8,25 @@ export interface StatLine {
   stat: StatID;
   base: number;
   ev: number;
-  /** Valore finale al livello 100 (IV 31), natura compresa. */
+  /** Valore finale al livello scelto, con IV e natura. */
   value: number;
   nature: 'up' | 'down' | null;
 }
 
-/** Statistiche finali del set nella forma in battaglia (la Mega con la sua pietra). */
-export function statLines(set: Pick<TeamSet, 'species' | 'item' | 'nature' | 'evs'>): StatLine[] {
+/** IV della statistica: 31 se il set non dice altro. */
+export const ivOf = (set: Pick<TeamSet, 'ivs'>, stat: StatID) => set.ivs?.[stat] ?? 31;
+
+/** Statistiche finali del set nella forma in battaglia (la Mega con la sua pietra), al livello indicato. */
+export function statLines(set: Pick<TeamSet, 'species' | 'item' | 'nature' | 'evs' | 'ivs'>, level = 100): StatLine[] {
   const base = battleSpecies(set)?.baseStats;
   const nature = dex.natures.get(set.nature);
   return STAT_IDS.map(stat => {
     const b = base?.[stat] ?? 0;
     const ev = set.evs[stat] ?? 0;
-    const core = Math.floor((2 * b + 31 + Math.floor(ev / 4)) * 100 / 100);
+    const core = Math.floor((2 * b + ivOf(set, stat) + Math.floor(ev / 4)) * level / 100);
     const mood = nature.plus === stat && nature.minus !== stat ? 'up' : nature.minus === stat && nature.plus !== stat ? 'down' : null;
     const value = stat === 'hp'
-      ? (b === 1 ? 1 : core + 100 + 10)
+      ? (b === 1 ? 1 : core + level + 10)
       : Math.floor((core + 5) * (mood === 'up' ? 1.1 : mood === 'down' ? 0.9 : 1));
     return { stat, base: b, ev, value, nature: stat === 'hp' ? null : mood };
   });

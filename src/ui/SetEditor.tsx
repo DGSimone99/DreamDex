@@ -1,5 +1,5 @@
 import { presetSet } from '../engine/bestPreset';
-import { useEffect, useId, useMemo, useRef } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { battleSpecies, dex, getMove, getSpecies, itemNames, moveNames, natureNames, toID } from '../engine/dex';
 import { legalAbilities, legalMoves } from '../engine/learnsets';
 import { formatName, sameSet, STAT_IDS, type Preset, type StatID, type TeamSet } from '../engine/sets';
@@ -13,7 +13,8 @@ import { Combobox, type ComboOption } from './Combobox';
 import { describe } from './describe';
 import { SpeedLine } from './SpeedLine';
 import { speedStat, type SpeedTier } from '../engine/speed';
-import { EV_TOTAL, evTotal, statLines } from '../engine/statCalc';
+import { EV_TOTAL, evTotal, ivOf, statLines } from '../engine/statCalc';
+import { setViewLevel, useViewLevel } from './viewLevel';
 import { TypeChip } from './Sprite';
 import { ItemIcon } from './ItemIcon';
 import { Icon } from './icons';
@@ -32,6 +33,23 @@ function NatureEffect({ name }: { name: string }) {
 }
 
 const CATEGORY_ICONS = { Physical: 'physical', Special: 'special', Status: 'status' } as const;
+
+/** Casella IV (0–31): mentre scrivi tiene il testo (anche vuoto), lo applica subito; vuota torna a 31 uscendo. */
+function IvInput({ value, label, onChange }: { value: number; label: string; onChange: (raw: string) => void }) {
+  const [draft, setDraft] = useState<string | null>(null);
+  return (
+    <input
+      type="number"
+      className="iv-input"
+      min={0}
+      max={31}
+      value={draft ?? value}
+      aria-label={label}
+      onChange={e => { setDraft(e.target.value); if (e.target.value !== '') onChange(e.target.value); }}
+      onBlur={() => { if (draft === '') onChange(''); setDraft(null); }}
+    />
+  );
+}
 
 
 function MoveDetail({ name }: { name: string }) {
@@ -218,7 +236,15 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
     document.addEventListener('pointerdown', away);
     return () => document.removeEventListener('pointerdown', away);
   }, []);
-  const lines = statLines(set);
+  const level = useViewLevel();
+  const lines = statLines(set, level);
+  // IV: 31 se non indicato; nel set restano solo quelli diversi da 31
+  const changeIv = (stat: StatID, raw: string) => {
+    const value = Math.min(31, Math.max(0, Number.isFinite(Number(raw)) && raw !== '' ? Math.floor(Number(raw)) : 31));
+    const ivs = { ...set.ivs };
+    if (value === 31) delete ivs[stat]; else ivs[stat] = value;
+    update({ ivs: Object.keys(ivs).length ? ivs : undefined });
+  };
   const used = evTotal(set.evs);
 
   return (
@@ -280,7 +306,24 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
           </div>
           </details>
         )}
+        {/* Livello a cui si vedono i valori finali: in alto a sinistra, di fronte a "Spread più usati" */}
+        <div className="level-toggle" role="group" aria-label={t('editor.level')}>
+          <span className="level-toggle-label" aria-hidden="true">{t('editor.levelShort')}</span>
+          {([50, 100] as const).map(n => (
+            <button key={n} type="button" aria-pressed={level === n} aria-label={t('editor.levelN', { n })}
+              onClick={() => setViewLevel(n)}>{n}</button>
+          ))}
+        </div>
         <div className="stat-rows">
+          {/* Intestazione delle colonne */}
+          <div className="stat-row stat-head">
+            <span />
+            <span>{t('editor.baseHead')}</span>
+            <span />
+            <span className="stat-head-num">{t('editor.evs')}</span>
+            <span className="stat-head-num">{t('editor.ivHead')}</span>
+            <span className="stat-head-final">{t('editor.finalHead')}</span>
+          </div>
           {lines.map(line => (
             <div key={line.stat} className={`stat-row${line.nature ? ` nature-${line.nature}` : ''}`}>
               <label className="stat-name" htmlFor={`ev-${uid}-${line.stat}`}>{statShort(line.stat, lang).toUpperCase()}</label>
@@ -311,7 +354,9 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
                 value={line.ev}
                 onChange={e => update({ evs: { ...set.evs, [line.stat]: clampEv(Number(e.target.value)) } })}
               />
-              <strong className="stat-final" title={t('editor.final')}>{line.value}</strong>
+              <IvInput value={ivOf(set, line.stat)} label={t('editor.ivFor', { stat: statShort(line.stat, lang).toUpperCase() })}
+                onChange={raw => changeIv(line.stat, raw)} />
+              <strong className="stat-final" data-testid={`final-${line.stat}`} title={t('editor.finalAt', { n: level })}>{line.value}</strong>
             </div>
           ))}
         </div>
