@@ -5,7 +5,7 @@ import { parseSpread, type TeamSet } from './sets';
 import { DEFAULT_FORMAT, type FormatId } from './format';
 import { isLegalIn, tierIn } from './formats';
 
-/** Velocità finale al livello 100 (IV 31); `scarf` se la Sciarpa Scelta la moltiplica per 1,5. */
+/** Velocità finale al livello 100 (IV del set, 31 se non indicati); `scarf` se la Sciarpa Scelta la moltiplica per 1,5. */
 export interface Speed {
   value: number;
   scarf: boolean;
@@ -16,10 +16,10 @@ export const SPEED_POOL = 40;
 /** Quanti vicini mostrare sopra e sotto. */
 const NEIGHBOURS = 3;
 
-export function speedStat(set: Pick<TeamSet, 'species' | 'item' | 'nature' | 'evs'>): Speed {
+export function speedStat(set: Pick<TeamSet, 'species' | 'item' | 'nature' | 'evs' | 'ivs'>): Speed {
   const base = battleSpecies(set)?.baseStats.spe ?? 0;
   const ev = set.evs.spe ?? 0;
-  const raw = Math.floor((2 * base + 31 + Math.floor(ev / 4)) * 100 / 100) + 5;
+  const raw = Math.floor((2 * base + (set.ivs?.spe ?? 31) + Math.floor(ev / 4)) * 100 / 100) + 5;
   const nature = dex.natures.get(set.nature);
   const withNature = Math.floor(raw * (nature.plus === 'spe' ? 1.1 : nature.minus === 'spe' ? 0.9 : 1));
   const scarf = toID(set.item) === 'choicescarf';

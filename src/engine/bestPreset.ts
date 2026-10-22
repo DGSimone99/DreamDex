@@ -54,9 +54,10 @@ export function tuneSet(team: TeamSet[], index: number, data: EngineData, genLim
   return current;
 }
 
-/** Il set del preset al posto del membro: specie, preferito e Custom Skillset restano quelli del membro. */
+/** Il set del preset al posto del membro: specie, preferito, Custom Skillset e IV (i preset non li hanno) restano quelli del membro. */
 export function presetSet(member: TeamSet, preset: TeamSet): TeamSet {
-  return { ...preset, species: member.species, favorite: member.favorite, customSkillset: member.customSkillset };
+  return { ...preset, species: member.species, favorite: member.favorite, customSkillset: member.customSkillset,
+    ...(member.ivs ? { ivs: member.ivs } : {}) };
 }
 
 export interface BestPreset {

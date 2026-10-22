@@ -18,6 +18,8 @@ export interface TeamSet {
   moves: string[];
   nature: string;
   evs: Partial<Record<StatID, number>>;
+  /** IV diversi da 31 (quelli che mancano valgono 31). */
+  ivs?: Partial<Record<StatID, number>>;
   teraType?: string;
   /** Preferito: il coaching non ne suggerisce mai la sostituzione. */
   favorite?: boolean;
@@ -245,7 +247,7 @@ export function normalizeAnalysisPresets(raw: Record<string, Record<string, RawA
     [species, Object.entries(named).map(([name, set]) => ({ name, format, set: fromAnalysis(species, set) }))]));
 }
 
-/** Stesso set da giocare: strumento, abilità, natura, mosse (in qualsiasi ordine), EV e Tera. */
+/** Stesso set da giocare: strumento, abilità, natura, mosse (in qualsiasi ordine), EV e Tera (gli IV no: i preset non li hanno). */
 export function sameSet(a: TeamSet, b: TeamSet): boolean {
   const moves = (s: TeamSet) => s.moves.filter(Boolean).map(toID).sort().join();
   const evs = (s: TeamSet) => STAT_IDS.map(stat => s.evs[stat] ?? 0).join();
@@ -349,7 +351,7 @@ function toPkmn(set: TeamSet, tera = true): PkmnSet {
     nature: set.nature,
     gender: '',
     evs: table(stat => set.evs[stat] ?? 0),
-    ivs: table(() => 31),
+    ivs: table(stat => set.ivs?.[stat] ?? 31),
     level: 100,
     ...(tera && set.teraType ? { teraType: set.teraType } : {}),
   } as unknown as PkmnSet;
@@ -362,6 +364,12 @@ function fromPkmn(parsed: Partial<PkmnSet>): TeamSet {
     const value = (parsed.evs as Partial<Record<StatID, number>> | undefined)?.[stat];
     if (value && value > 0) evs[stat] = Math.min(252, value);
   }
+  // Solo gli IV diversi da 31
+  const ivs: Partial<Record<StatID, number>> = {};
+  for (const stat of STAT_IDS) {
+    const value = (parsed.ivs as Partial<Record<StatID, number>> | undefined)?.[stat];
+    if (typeof value === 'number' && value >= 0 && value < 31) ivs[stat] = value;
+  }
   const teraType = (parsed as { teraType?: string }).teraType;
   return {
     species: species?.name ?? String(parsed.species ?? ''),
@@ -370,6 +378,7 @@ function fromPkmn(parsed: Partial<PkmnSet>): TeamSet {
     moves: [...(parsed.moves ?? [])].map(String),
     nature: String(parsed.nature || 'Serious'),
     evs,
+    ...(Object.keys(ivs).length ? { ivs } : {}),
     ...(teraType ? { teraType } : {}),
   };
 }
