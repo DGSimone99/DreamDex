@@ -176,6 +176,18 @@ function threatHit(threat: TeamSet, member: TeamSet, data: EngineData): Hit | nu
   return { ...base, expected: base.expected + ONE_USE_SHARE * Math.max(0, boosted - base.expected) };
 }
 
+/** I colpi migliori di tutte le minacce del meta su un membro; per contenuto del set, formato e meta. */
+const threatCache = new Map<string, (Hit | null)[]>();
+function threatHitsOf(member: TeamSet, data: EngineData): (Hit | null)[] {
+  const key = `${setKey(member)}|${data.formatId ?? 'ou'}|${usesMeta(data)}|${!!data.stats}`;
+  let hits = threatCache.get(key);
+  if (hits) return hits;
+  if (threatCache.size >= RAW_LIMIT) threatCache.clear();
+  hits = metaThreats(data).map(({ set }) => threatHit(set, member, data));
+  threatCache.set(key, hits);
+  return hits;
+}
+
 const depthOf = (credits: number[]) => [...credits].sort((a, b) => b - a).reduce((acc, c, i) => acc + (COVERAGE_DEPTH[i] ?? 0) * c, 0);
 
 /** Difesa del team: robustezza (media pesata per posizione) e coverage difensiva di tipi e, col meta, del meta. */
@@ -198,9 +210,9 @@ export function teamDefense(team: TeamSet[], data: EngineData): TeamDefense {
   let coverageMeta: TeamDefense['coverageMeta'] = null;
   if (threats.length && known.length) {
     let total = 0;
-    const rows = threats.map(({ set: threat, weight }) => {
+    const rows = threats.map(({ set: threat, weight }, i) => {
       const heldBy = known.flatMap(member => {
-        const hit = threatHit(threat, member, data);
+        const hit = threatHitsOf(member, data)[i];
         const x = Math.min(1, hit?.expected ?? 0);
         if (x >= 1) return [];
         return [{ species: battleSpecies(member)?.name ?? member.species, move: hit?.move ?? '', pct: Math.floor(100 * x), partial: x >= HOLD_FULL }];

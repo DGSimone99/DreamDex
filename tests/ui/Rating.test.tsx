@@ -15,14 +15,14 @@ describe('Valutazione team', () => {
     // Il dettaglio per membro (quanto colpisce) sta nel tooltip di "Offesa"
     expect(rating).not.toHaveTextContent('Offesa: Great Tusk');
     expect(within(rating).getByText(/^Offesa \d+$/)).toHaveAttribute('data-tip', expect.stringMatching(/^(Great Tusk|Gholdengo) \d+\n(Great Tusk|Gholdengo) \d+$/));
-    // Coverage difensiva (tipi) e Robustezza (quanto incassano i membri) sono due barre
-    expect(rating).toHaveTextContent(/Coverage difensiva \d+/);
-    expect(within(rating).getByText(/^Robustezza \d+$/)).toHaveAttribute('data-tip', expect.stringMatching(/^(Great Tusk|Gholdengo) \d+\n(Great Tusk|Gholdengo) \d+$/));
+    // La Difesa unisce coverage difensiva e robustezza: nel tooltip la Difesa di ogni membro
+    expect(within(rating).getByText(/^Difesa \d+$/)).toHaveAttribute('data-tip', expect.stringMatching(/^(Great Tusk|Gholdengo) \d+\n(Great Tusk|Gholdengo) \d+(\nVai a .+)?$/));
+    expect(rating).not.toHaveTextContent(/Robustezza \d+/);
     expect(rating).toHaveTextContent(/Velocità \d+/);
     expect(rating).not.toHaveTextContent('Sinergia');
   });
 
-  it("Coverage difensiva e Ruoli portano alla loro scheda; la Coverage offensiva è dentro l'Offesa", async () => {
+  it("Difesa e Ruoli portano alla loro scheda; la Coverage offensiva è dentro l'Offesa", async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} />);
     for (const name of ['Great Tusk', 'Gholdengo']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
@@ -30,7 +30,7 @@ describe('Valutazione team', () => {
     // La scheda Coverage offensiva resta nell'Analisi, ma nel voto non è più una barra
     expect(screen.getByText('Coverage offensiva', { selector: 'summary span' })).toBeInTheDocument();
     expect(within(rating).queryByRole('button', { name: /^Coverage offensiva/ })).toBeNull();
-    expect(within(rating).getByRole('button', { name: /^Coverage difensiva \d+$/ })).toHaveAttribute('title', 'Vai a Debolezze difensive');
+    expect(within(rating).getByRole('button', { name: /^Difesa \d+$/ })).toBeInTheDocument();
     // L'Offesa invece apre il suo dettaglio (vedi AreaDetail.test)
     expect(within(rating).getByRole('button', { name: /^Offesa \d+$/ })).toHaveAttribute('aria-haspopup', 'dialog');
   });
@@ -108,12 +108,12 @@ describe('Valutazione team', () => {
     const dialog = screen.getByRole('dialog', { name: 'Come funziona il voto' });
     // A sinistra gli argomenti: come funziona, le aree, bonus e penalità
     const topics = within(dialog).getAllByRole('tab').map(tab => tab.textContent);
-    expect(topics).toEqual(['Come funziona', 'Coverage difensiva', 'Offesa', 'Robustezza', 'Ruoli', 'Velocità', 'Meta', 'Bonus e penalità']);
+    expect(topics).toEqual(['Come funziona', 'Difesa', 'Offesa', 'Ruoli', 'Velocità', 'Bonus e penalità']);
     // Un team incompleto si giudica come Balance: la sua riga è evidenziata
     expect(within(dialog).getByText('Il tuo team è giudicato come Balance')).toBeInTheDocument();
     expect(within(dialog).getByRole('row', { current: true })).toHaveTextContent(/^Balance/);
-    await user.click(within(dialog).getByRole('tab', { name: 'Meta' }));
-    expect(within(dialog).getByRole('tabpanel')).toHaveTextContent('Sopra il 65% non cambia niente');
+    await user.click(within(dialog).getByRole('tab', { name: 'Difesa' }));
+    expect(within(dialog).getByRole('tabpanel')).toHaveTextContent('Metà robustezza e metà coverage difensiva');
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(help).toHaveFocus();
