@@ -28,7 +28,7 @@ describe('defenderPanel', () => {
     for (const data of [{ ...fixtureData, ignoreMeta: true, formatId: 'ou' as const }, { stats: null, sets: null, formatId: 'ou' as const }]) {
       const panel = defenderPanel(data);
       expect(panel.length).toBe(PANEL_SIZE);
-      const pool = tierSpecies('ou').map(s => s.name);
+      const pool: string[] = tierSpecies('ou').map(s => s.name);
       expect(panel.every(set => pool.includes(set.species))).toBe(true);
       const bulks = panel.map(set => bulk(set.species));
       expect(bulks).toEqual([...bulks].sort((a, b) => b - a));
