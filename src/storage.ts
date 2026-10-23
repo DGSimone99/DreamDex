@@ -2,6 +2,7 @@ import { DEFAULT_FORMAT, type Format } from './engine/format';
 import { formatOptions } from './engine/formats';
 import type { TeamSet } from './engine/sets';
 import { isLang, type Lang } from './i18n';
+import { EMPTY_LISTS, sanitizeLists, type UserLists } from './engine/lists';
 
 export interface SavedTeam {
   name: string;
@@ -50,6 +51,27 @@ export function saveTeams(teams: SavedTeam[], storage: Storage | undefined = def
   }
 }
 
+
+const LISTS_KEY = 'dreamdex.lists';
+
+/** Liste personali (preferiti e bannati); dati assenti o rotti: liste vuote. */
+export function loadLists(storage: Storage | undefined = defaultStorage()): UserLists {
+  try {
+    return sanitizeLists(JSON.parse(storage?.getItem(LISTS_KEY) ?? 'null'));
+  } catch {
+    return EMPTY_LISTS;
+  }
+}
+
+export function saveLists(lists: UserLists, storage: Storage | undefined = defaultStorage()): boolean {
+  try {
+    if (!storage) return false;
+    storage.setItem(LISTS_KEY, JSON.stringify(lists));
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 export interface Session {
   team: TeamSet[];
