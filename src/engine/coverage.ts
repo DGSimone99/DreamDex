@@ -35,11 +35,15 @@ const targetsCache = new Map<string, CoverageTarget[]>();
  * Cosa deve colpire il team. Col meta: le combinazioni di tipi dei più usati, pesate per uso, ognuna col suo Pokémon
  * più usato e il suo set più comune (difese, abilità e strumento veri). Senza meta: i 18 tipi, stesso peso, bersaglio neutro.
  */
-export function coverageTargets(data: EngineData): CoverageTarget[] {
-  const key = `${data.formatId ?? 'ou'}|${usesMeta(data)}|${!!data.stats}`;
+/** Coverage di tipi (i 18 tipi, bersaglio neutro) o del meta (i Pokémon più usati). */
+export type CoverageKind = 'types' | 'meta';
+
+export function coverageTargets(data: EngineData, kind: CoverageKind = usesMeta(data) ? 'meta' : 'types'): CoverageTarget[] {
+  const meta = kind === 'meta' && usesMeta(data);
+  const key = `${data.formatId ?? 'ou'}|${meta}|${!!data.stats}`;
   let targets = targetsCache.get(key);
   if (targets) return targets;
-  if (usesMeta(data)) {
+  if (meta) {
     const byTypes = new Map<string, { set: TeamSet; usage: number }>();
     for (const name of topThreats(data.stats, TARGET_SCAN, [])) {
       const set = mostCommonSet(data.stats, name);
@@ -83,8 +87,8 @@ export interface CoverageRow {
 /** Colpo migliore del set contro ogni bersaglio: danno (in quota dei PS, al massimo 1) e mossa; per contenuto del set. */
 const hitsCache = new Map<string, { x: number; move: string }[]>();
 const HITS_LIMIT = 5000;
-function hitsOf(set: TeamSet, data: EngineData, targets: CoverageTarget[]): { x: number; move: string }[] {
-  const key = `${setKey(set)}|${data.formatId ?? 'ou'}|${usesMeta(data)}|${!!data.stats}`;
+function hitsOf(set: TeamSet, data: EngineData, targets: CoverageTarget[], kind: CoverageKind): { x: number; move: string }[] {
+  const key = `${setKey(set)}|${data.formatId ?? 'ou'}|${kind === 'meta' && usesMeta(data)}|${!!data.stats}`;
   let hits = hitsCache.get(key);
   if (hits) return hits;
   if (hitsCache.size >= HITS_LIMIT) hitsCache.clear();
@@ -97,9 +101,9 @@ function hitsOf(set: TeamSet, data: EngineData, targets: CoverageTarget[]): { x:
 const depthOf = (covering: number) => COVERAGE_DEPTH.slice(0, covering).reduce((a, b) => a + b, 0);
 
 /** Coverage del team: chi manda KO in due colpi ogni bersaglio, con la profondità; i buchi per nome. */
-export function teamCoverage(team: TeamSet[], data: EngineData): TeamCoverage {
-  const targets = coverageTargets(data);
-  const hits = team.map(set => hitsOf(set, data, targets));
+export function teamCoverage(team: TeamSet[], data: EngineData, kind: CoverageKind = usesMeta(data) ? 'meta' : 'types'): TeamCoverage {
+  const targets = coverageTargets(data, kind);
+  const hits = team.map(set => hitsOf(set, data, targets, kind));
   let value = 0;
   const holes: string[] = [];
   targets.forEach((target, i) => {

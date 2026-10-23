@@ -1,13 +1,13 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactElement } from 'react';
 import { createPortal } from 'react-dom';
 import type { TeamRating } from '../engine/rating';
-import type { WallCell } from '../engine/offense';
+import type { CoverageDetail, WallCell } from '../engine/offense';
 import { useT } from '../i18n/react';
 import { Icon } from './icons';
 import { Sprite, TypeChip } from './Sprite';
 
-type Tab = 'general' | 'power' | 'wallbreaking' | 'coverage';
-const TABS: Tab[] = ['general', 'power', 'wallbreaking', 'coverage'];
+type Tab = 'general' | 'power' | 'wallbreaking' | 'coverageTypes' | 'coverageMeta';
+type Sub = Exclude<Tab, 'general'>;
 /** Etichetta della soglia di un colpo (0,5 3HKO, 1 2HKO, 1,5 OHKO). */
 const STEP_LABEL: Record<number, string> = { 1.5: 'ohko', 1: 'two', 0.5: 'three', 0: 'none' };
 
@@ -35,6 +35,10 @@ export function AreaDetail({ rating, area, onClose }: { rating: TeamRating; area
   const offense = rating.offense;
   const value = rating.areas.find(a => a.key === area)?.value ?? null;
   const meta = !!rating.meta;
+  // La Coverage del meta c'è solo col meta: senza, una scheda in meno
+  const coverageMeta = offense.coverageMeta;
+  const subs: Sub[] = coverageMeta ? ['power', 'wallbreaking', 'coverageTypes', 'coverageMeta'] : ['power', 'wallbreaking', 'coverageTypes'];
+  const TABS: Tab[] = ['general', ...subs];
 
   // Focus sulla prima scheda solo all'apertura: un nuovo render dell'app non deve spostarlo
   useEffect(() => {
@@ -54,17 +58,20 @@ export function AreaDetail({ rating, area, onClose }: { rating: TeamRating; area
     tabs.current[next]?.focus();
   };
 
-  const values: Record<Tab, number | null> = { general: value, power: offense.power, wallbreaking: offense.wallbreaking, coverage: offense.coverage };
+  const values: Record<Tab, number | null> = {
+    general: value, power: offense.power, wallbreaking: offense.wallbreaking,
+    coverageTypes: offense.coverageTypes.value, coverageMeta: coverageMeta?.value ?? null,
+  };
   const tabLabel = (key: Tab) => (key === 'general' ? t('detail.tab.general') : t(`detail.${key}`));
   const setters = offense.setters.map(s => `${s.species} (${s.move})`).join(', ');
-  const holes = offense.holes.length ? t('detail.coverage.holes', { list: offense.holes.join(', ') }) : t('detail.coverage.noHoles');
+  const holesOf = (detail: CoverageDetail) => (detail.holes.length ? t('detail.coverage.holes', { list: detail.holes.join(', ') }) : t('detail.coverage.noHoles'));
 
   const general = (
     <>
       <h4>{t('detail.general.title')}</h4>
       <p>{t(meta ? 'detail.general.lead.meta' : 'detail.general.lead.tier', { walls: offense.defenders.length })}</p>
       <dl className="ad-subs">
-        {(['power', 'wallbreaking', 'coverage'] as const).map(sub => (
+        {subs.map(sub => (
           <div key={sub} className="ad-sub">
             <dt>{t(`detail.${sub}`)}</dt>
             <dd>
@@ -73,7 +80,8 @@ export function AreaDetail({ rating, area, onClose }: { rating: TeamRating; area
               <span>
                 {t(`detail.general.${sub}`)}
                 {sub === 'wallbreaking' && ` · ${setters ? t('detail.setters', { list: setters }) : t('detail.setup.none')}`}
-                {sub === 'coverage' && ` · ${holes}`}
+                {sub === 'coverageTypes' && ` · ${holesOf(offense.coverageTypes)}`}
+                {sub === 'coverageMeta' && coverageMeta && ` · ${holesOf(coverageMeta)}`}
               </span>
             </dd>
           </div>
@@ -111,7 +119,7 @@ export function AreaDetail({ rating, area, onClose }: { rating: TeamRating; area
     <>
       <h4>{t('detail.power')}</h4>
       <div className="ad-how">
-        <p>{t('detail.power.how1', { targets: meta ? t('detail.targets.meta', { n: offense.coverageRows.length }) : t('detail.targets.tier') })}</p>
+        <p>{t('detail.power.how1', { targets: coverageMeta ? t('detail.targets.meta', { n: coverageMeta.rows.length }) : t('detail.targets.tier') })}</p>
         <p>{t('detail.power.how2')}</p>
         <p>{offense.referenceAttackers.length ? t('detail.power.how3.meta', { list: offense.referenceAttackers.join(', ') }) : t('detail.power.how3.fixed')}</p>
       </div>
@@ -170,29 +178,31 @@ export function AreaDetail({ rating, area, onClose }: { rating: TeamRating; area
     </>
   );
 
-  const coverage = (
+  // Una scheda per ogni Coverage: di tipi (i 18 tipi contro un bersaglio neutro) e del meta (i Pokémon più usati)
+  const coverageTab = (kind: 'coverageTypes' | 'coverageMeta', detail: CoverageDetail) => (
     <>
-      <h4>{t('detail.coverage')}</h4>
+      <h4>{t(`detail.${kind}`)}</h4>
       <div className="ad-how">
-        <p>{t(meta ? 'detail.coverage.how1.meta' : 'detail.coverage.how1.tier', { n: offense.coverageRows.length })}</p>
+        <p>{t(kind === 'coverageMeta' ? 'detail.coverage.how1.meta' : 'detail.coverage.how1.tier', { n: detail.rows.length })}</p>
         <p>{t('detail.coverage.how2')}</p>
+        {coverageMeta && <p>{t('detail.coverage.split')}</p>}
       </div>
-      <p className="ad-holes">{holes}</p>
+      <p className="ad-holes">{holesOf(detail)}</p>
       <table className="ad-t">
         <thead>
           <tr>
             <th scope="col">{t('detail.types')}</th>
-            {meta && <th scope="col" className="left">{t('detail.member')}</th>}
+            {kind === 'coverageMeta' && <th scope="col" className="left">{t('detail.member')}</th>}
             <th scope="col">{t('detail.level')}</th>
             <th scope="col" className="left">{t('detail.coveredBy')}</th>
           </tr>
         </thead>
         <tbody>
           {/* Dal più usato: l'ordine dice anche quanto pesa ogni bersaglio */}
-          {[...offense.coverageRows].sort((a, b) => b.weight - a.weight).map(row => (
+          {[...detail.rows].sort((a, b) => b.weight - a.weight).map(row => (
             <tr key={row.label}>
               <th scope="row">{row.label.split('/').map(type => <TypeChip key={type} type={type} />)}</th>
-              {meta && <td className="left"><span className="ad-mon"><Sprite species={row.species} size={32} />{row.species}</span></td>}
+              {kind === 'coverageMeta' && <td className="left"><span className="ad-mon"><Sprite species={row.species} size={32} />{row.species}</span></td>}
               <td>{row.level}%</td>
               <td className="left ad-cover">
                 {row.coveredBy.length
@@ -208,7 +218,11 @@ export function AreaDetail({ rating, area, onClose }: { rating: TeamRating; area
     </>
   );
 
-  const panels: Record<Tab, ReactElement> = { general, power, wallbreaking, coverage };
+  const panels: Record<Tab, ReactElement | null> = {
+    general, power, wallbreaking,
+    coverageTypes: coverageTab('coverageTypes', offense.coverageTypes),
+    coverageMeta: coverageMeta && coverageTab('coverageMeta', coverageMeta),
+  };
 
   return createPortal(
     <div className="help-backdrop" onClick={onClose}>

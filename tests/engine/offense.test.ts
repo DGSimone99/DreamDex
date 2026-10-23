@@ -167,7 +167,7 @@ describe('la Coverage dentro l\'Offesa', () => {
   it('Offesa del team = 75% membri + 25% Coverage, con i buchi', () => {
     const team = teamOffense([chomp, blissey], fixtureData);
     expect(team.coverage).toBeGreaterThanOrEqual(0);
-    expect(Array.isArray(team.holes)).toBe(true);
+    expect(Array.isArray(team.coverageTypes.holes)).toBe(true);
     expect(team.value).toBe(Math.round(0.75 * team.memberValue + 0.25 * team.coverage));
     expect(team.members.map(m => m.covered)).toHaveLength(2);
   });
@@ -259,15 +259,30 @@ describe('dati delle schede del modale', () => {
 
   it('per ogni bersaglio della Coverage: tipi, Pokémon, peso e chi lo copre', () => {
     const team = teamOffense([chomp], noStats);
-    expect(team.coverageRows).toHaveLength(18);
-    const electric = team.coverageRows.find(r => r.label === 'Electric')!;
+    expect(team.coverageTypes.rows).toHaveLength(18);
+    const electric = team.coverageTypes.rows.find(r => r.label === 'Electric')!;
     expect(electric.coveredBy.map(c => c.species)).toEqual(['Garchomp']);
     // Con la mossa che lo copre e il danno, e quanto è coperto (un membro: 70%)
     expect(electric.coveredBy[0].move).toBe('Earthquake');
     expect(electric.coveredBy[0].pct).toBeGreaterThanOrEqual(50);
     expect(electric.level).toBe(70);
     // Questo Garchomp ha anche Stone Edge: il Volante, immune a Earthquake, lo copre con la Roccia
-    expect(team.coverageRows.find(r => r.label === 'Flying')!.coveredBy.map(c => c.move)).toEqual(['Stone Edge']);
+    expect(team.coverageTypes.rows.find(r => r.label === 'Flying')!.coveredBy.map(c => c.move)).toEqual(['Stone Edge']);
     expect(electric.weight).toBeCloseTo(1 / 18);
+  });
+});
+
+describe('Coverage di tipi e del meta', () => {
+  it('col meta: due sottostatistiche che si dividono a metà il peso della Coverage', () => {
+    const team = teamOffense([chomp, blissey], fixtureData);
+    expect(team.coverageTypes.rows).toHaveLength(18);
+    expect(team.coverageMeta).not.toBeNull();
+    expect(team.coverage).toBe(Math.round((team.coverageTypes.value + team.coverageMeta!.value) / 2));
+  });
+
+  it('senza meta: solo la Coverage di tipi, con tutto il peso', () => {
+    const team = teamOffense([chomp], noStats);
+    expect(team.coverageMeta).toBeNull();
+    expect(team.coverage).toBe(team.coverageTypes.value);
   });
 });

@@ -63,14 +63,23 @@ export interface WallCell {
   setupPct: number | null;
 }
 
+export interface CoverageDetail {
+  value: number;
+  /** Bersagli che nessuno colpisce super efficace al 33%. */
+  holes: string[];
+  /** Per ogni bersaglio: tipi, Pokémon, peso, quanto è coperto e chi lo copre (con quale mossa). */
+  rows: CoverageRow[];
+}
+
 export interface TeamOffense {
   /** 75% la media pesata dei membri, 25% la Coverage. */
   value: number;
   memberValue: number;
+  /** Coverage nel voto: col meta la media di quella di tipi e di quella del meta, senza meta quella di tipi. */
   coverage: number;
-  /** Bersagli che nessuno porta al 33%, e quanti bersagli ha la Coverage. */
-  holes: string[];
-  targets: number;
+  coverageTypes: CoverageDetail;
+  /** null senza meta. */
+  coverageMeta: CoverageDetail | null;
   power: number;
   /** Wallbreaking di squadra, senza e con il setup (chi ha una mossa di potenziamento la usa una volta). */
   wallbreaking: number;
@@ -83,8 +92,7 @@ export interface TeamOffense {
   walls: { species: string; cells: WallCell[] }[];
   /** I tre migliori attaccanti del meta: il 3° è il 100 di Potenza e Wallbreaking (vuoto senza statistiche). */
   referenceAttackers: string[];
-  /** Per ogni bersaglio della Coverage: tipi, Pokémon, peso e chi lo copre. */
-  coverageRows: CoverageRow[];
+
   /** I difensori contro cui si è misurata (per spiegare il voto): i primi `metaDefenders` dal meta, gli altri dal tier. */
   defenders: string[];
   metaDefenders: number;
@@ -292,11 +300,15 @@ export const TEAM_WALL_FULL = 1;
  * combinate come per un membro; poi 75% questo e 25% la Coverage.
  */
 export function teamOffense(team: TeamSet[], data: EngineData): TeamOffense {
-  const coverage = teamCoverage(team, data);
+  // Col meta due Coverage che si dividono a metà il peso: di tipi (stabile, classica) e del meta (quello che incontri)
+  const types = teamCoverage(team, data, 'types');
+  const metaCoverage = usesMeta(data) ? teamCoverage(team, data, 'meta') : null;
+  const coverageValue = metaCoverage ? Math.round((types.value + metaCoverage.value) / 2) : types.value;
+  const perMember = team.map((_, i) => (metaCoverage ? Math.round((types.perMember[i] + metaCoverage.perMember[i]) / 2) : types.perMember[i]));
   const ref = offenseReference(data);
   const raws = team.map(set => rawOf(set, team, data)).filter((r): r is Raw => r !== null);
   const members = team
-    .map((set, i) => { const m = memberOffense(set, team, data); return m && { ...m, covered: coverage.perMember[i] }; })
+    .map((set, i) => { const m = memberOffense(set, team, data); return m && { ...m, covered: perMember[i] }; })
     .filter((m): m is MemberOffense => m !== null);
   const defenders = defenderPanel(data);
   // Per ogni muro, i membri dal più forte: il team lo sfonda se qualcuno ci riesce, meglio se più di uno.
@@ -312,16 +324,15 @@ export function teamOffense(team: TeamSet[], data: EngineData): TeamOffense {
   const wallbreakingSetup = raws.length ? toScore(teamWall(true), TEAM_WALL_FULL) : 0;
   // Potenziale: metà del guadagno di Wallbreaking col setup entra nel voto
   const effective = wallbreaking + SETUP_SHARE * (wallbreakingSetup - wallbreaking);
-  const final = (wall: number) => members.length ? Math.round((1 - COVERAGE_SHARE) * attackValue(power, wall) + COVERAGE_SHARE * coverage.value) : 0;
+  const final = (wall: number) => members.length ? Math.round((1 - COVERAGE_SHARE) * attackValue(power, wall) + COVERAGE_SHARE * coverageValue) : 0;
   const value = final(effective);
   return {
     value,
     memberValue: members.length ? Math.round(attackValue(power, effective)) : 0,
-    coverage: coverage.value,
-    holes: coverage.holes,
-    coverageRows: coverage.rows,
+    coverage: coverageValue,
+    coverageTypes: { value: types.value, holes: types.holes, rows: types.rows },
+    coverageMeta: metaCoverage && { value: metaCoverage.value, holes: metaCoverage.holes, rows: metaCoverage.rows },
     referenceAttackers: ref.attackers.slice(0, REFERENCE_RANK),
-    targets: coverageTargets(data).length,
     power,
     wallbreaking,
     wallbreakingSetup,
