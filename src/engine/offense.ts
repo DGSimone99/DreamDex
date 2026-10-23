@@ -48,6 +48,8 @@ export interface TeamOffense {
   wallbreaking: number;
   setup: number | null;
   members: MemberOffense[];
+  /** I difensori contro cui si è misurata (per spiegare il voto). */
+  defenders: string[];
 }
 
 /** Valore del colpo migliore contro un difensore: 0, 0,5 (3HKO), 1 (2HKO) o 1,5 (OHKO sicuro; mai per le mosse OHKO, che possono mancare). */
@@ -209,5 +211,6 @@ export function teamOffense(team: TeamSet[], data: EngineData): TeamOffense {
     wallbreaking: rankWeighted(members.map(m => m.wallbreaking)),
     setup: setters.length ? rankWeighted(setters.map(m => m.setup!)) : null,
     members,
+    defenders: defenderPanel(data).map(set => set.species),
   };
 }

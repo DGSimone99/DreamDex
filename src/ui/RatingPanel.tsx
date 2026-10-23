@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useEditing } from './editing';
 import type { AreaKey, TeamRating } from '../engine/rating';
 import { Typed } from './TypeText';
 import { AlertMark } from './AlertMark';
 import { RatingHelp } from './RatingHelp';
+import { AreaDetail } from './AreaDetail';
 import type { MessageKey } from '../i18n';
 import { useT } from '../i18n/react';
 
@@ -27,6 +28,10 @@ function goToSection(id: string) {
 /** `metaMonth`: mese delle statistiche, per dire con quale meta è stato calcolato il voto. */
 export function RatingPanel({ rating, ruleIssues = [], metaMonth }: { rating: TeamRating; ruleIssues?: string[]; metaMonth?: string }) {
   const t = useT();
+  // Dettaglio dell'Offesa (sottostatistiche per membro); alla chiusura il focus torna alla barra
+  const [detail, setDetail] = useState(false);
+  const detailButton = useRef<HTMLButtonElement>(null);
+  const closeDetail = () => { setDetail(false); detailButton.current?.focus(); };
   return (
     <details open aria-label={t('rating.title')} className="block rating">
       <summary>
@@ -64,7 +69,13 @@ export function RatingPanel({ rating, ruleIssues = [], metaMonth }: { rating: Te
           return (
             <div key={area.key}>
               <dt>
-                {section ? (
+                {area.key === 'strength' ? (
+                  // L'Offesa apre il suo dettaglio: sottostatistiche e punteggio di ogni membro
+                  <button ref={detailButton} type="button" className={tip ? 'area-link tip' : 'area-link'} aria-haspopup="dialog"
+                    onClick={() => setDetail(true)} data-tip={tip} title={tip ? undefined : t('detail.open', { area: area.label })}>
+                    {text}
+                  </button>
+                ) : section ? (
                   // Con un dettaglio, il tooltip lo mostra insieme a dove porta il clic
                   <button type="button" className={tip ? 'area-link tip' : 'area-link'} onClick={() => goToSection(section.id)}
                     title={tip ? undefined : t('rating.goTo', { section: t(section.title) })}
@@ -88,6 +99,7 @@ export function RatingPanel({ rating, ruleIssues = [], metaMonth }: { rating: Te
           </ul>
         </div>
       )}
+      {detail && <AreaDetail rating={rating} area="strength" onClose={closeDetail} />}
       {rating.penalty.total > 0 && (
         <div className="penalty">
           <strong>{t('rating.penalty', { n: rating.penalty.total })}</strong>

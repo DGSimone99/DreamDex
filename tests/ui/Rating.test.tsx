@@ -38,7 +38,8 @@ describe('Valutazione team', () => {
     await user.click(offensive);
     expect(coverage).toHaveAttribute('open');
     expect(within(rating).getByRole('button', { name: /^Coverage difensiva \d+$/ })).toHaveAttribute('title', 'Vai a Debolezze difensive');
-    expect(within(rating).queryByRole('button', { name: /^Offesa/ })).toBeNull();
+    // L'Offesa invece apre il suo dettaglio (vedi AreaDetail.test)
+    expect(within(rating).getByRole('button', { name: /^Offesa \d+$/ })).toHaveAttribute('aria-haspopup', 'dialog');
   });
 
   it('mostra le ridondanze con il dettaglio', async () => {
