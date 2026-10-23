@@ -27,21 +27,19 @@ export interface CandidateFilters {
   /** Deve colpire super efficace tutti i tipi scelti. */
   hits: TypeName[];
   mega: 'all' | 'only' | 'none';
+  /** Leggendari e misteriosi insieme. */
   legendary: Inclusion;
-  mythical: Inclusion;
-  /** Solo Pokémon introdotti fino a questa generazione (null: tutte). */
-  maxGen: number | null;
   usage: 'all' | 'common' | 'niche';
   tier: TierFilter;
 }
 
 export type TierFilter = 'all' | 'legal' | 'uber' | 'ou' | 'uu' | 'ru' | 'nfe';
-/** Includere, escludere o mostrare solo una categoria (leggendari, mitici, Mega). */
+/** Includere, escludere o mostrare solo una categoria (leggendari e misteriosi, Mega). */
 export type Inclusion = 'all' | 'none' | 'only';
 
 export const EMPTY_FILTERS: CandidateFilters = {
   query: '', types: [], roles: [], provides: '', benefitsFrom: '', fitsArchetype: '', resists: [], hits: [],
-  mega: 'all', legendary: 'all', mythical: 'all', maxGen: null, usage: 'all', tier: 'all',
+  mega: 'all', legendary: 'all', usage: 'all', tier: 'all',
 };
 
 /** Soglie del filtro "Uso nel meta". */
@@ -55,8 +53,8 @@ export const NICHE_USAGE = 0.01;
 export function activeFilterCount(f: CandidateFilters): number {
   return [
     f.types.length > 0, f.roles.length > 0, f.provides !== '', f.benefitsFrom !== '', f.fitsArchetype !== '',
-    f.resists.length > 0, f.hits.length > 0, f.mega !== 'all', f.legendary !== 'all', f.mythical !== 'all',
-    f.maxGen !== null, f.usage !== 'all', f.tier !== 'all',
+    f.resists.length > 0, f.hits.length > 0, f.mega !== 'all', f.legendary !== 'all',
+    f.usage !== 'all', f.tier !== 'all',
   ].filter(Boolean).length;
 }
 
@@ -75,13 +73,6 @@ export function tierLabel(speciesName: string, format: Format): { label: string;
 }
 
 const included = (rule: Inclusion, is: boolean) => rule === 'all' || (rule === 'only') === is;
-
-/** Generazione di introduzione: le Mega e le forme da battaglia contano come la specie base. */
-function introducedIn(name: string): number {
-  const species = getSpecies(name);
-  if (!species) return 0;
-  return species.isMega || species.battleOnly ? getSpecies(species.baseSpecies)?.gen ?? species.gen : species.gen;
-}
 
 function matchesTier(speciesName: string, tier: TierFilter, format: Format): boolean {
   if (tier === 'all') return true;
@@ -118,12 +109,10 @@ export function matchesFilters(candidate: { species: string; set: TeamSet }, f: 
   if (!f.resists.every(type => defensiveMultiplier(type, set) < 1)) return false;
   if (!f.hits.every(type => superEffectiveMove(set, type) !== null)) return false;
   if (!included(f.mega, isMega(set))) return false;
-  if (f.legendary !== 'all' || f.mythical !== 'all') {
+  if (f.legendary !== 'all') {
     const tags = getSpecies(candidate.species)?.tags ?? [];
-    if (!included(f.legendary, tags.includes('Sub-Legendary') || tags.includes('Restricted Legendary'))) return false;
-    if (!included(f.mythical, tags.includes('Mythical'))) return false;
+    if (!included(f.legendary, tags.some(tag => ['Sub-Legendary', 'Restricted Legendary', 'Mythical'].includes(tag)))) return false;
   }
-  if (f.maxGen !== null && introducedIn(candidate.species) > f.maxGen) return false;
   if (f.usage !== 'all') {
     const usage = usageOf(data.stats, battleName(set));
     if (f.usage === 'common' && usage < COMMON_USAGE) return false;

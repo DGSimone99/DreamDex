@@ -24,6 +24,7 @@ import { ItemIcon } from './ItemIcon';
 import { AlertMark, type Alert } from './AlertMark';
 import { Sprite, TypeChip, typeColor } from './Sprite';
 import { Icon } from './icons';
+import { SmogonLink } from './SmogonLink';
 import { illegalParts } from '../engine/learnsets';
 import { t, type Lang } from '../i18n';
 import { gameName } from '../i18n/game';
@@ -45,6 +46,8 @@ interface Props {
   onPaste?: (index: number, set: TeamSet) => void;
   /** Azioni sull'intero team, annullabili: preset migliori per tutti, svuota team. */
   onBulk?: (kind: 'presets' | 'fill' | 'clear', team: TeamSet[]) => void;
+  /** Clic su uno slot vuoto: porta alla ricerca dei Pokémon. */
+  onAddClick?: () => void;
 }
 
 /** Tutti i problemi di legalità del membro (possono essere più d'uno). */
@@ -127,7 +130,8 @@ function TeamSlot({ index, set, data, format, warning: megaWarning, open, draggi
   const card = useRef<HTMLElement>(null);
   useSlant(card);
   // Calcoli del membro (il confronto di Velocità prova 40 rivali): solo quando cambia il set
-  const presets = useMemo<Preset[]>(() => presetsForSet(data, set), [data, set]);
+  // Preset resi legali fino al limite di generazione: menu e Preset migliore propongono lo stesso set
+  const presets = useMemo<Preset[]>(() => presetsForSet(data, set, format.genLimit), [data, set, format.genLimit]);
   const common = useMemo<CommonChoices>(() => commonChoices(data, set), [data, set]);
   const speed = useMemo<SpeedTier | null>(() => speedTier(set, data), [data, set]);
   // Gestori sempre aggiornati anche dentro l'editor memorizzato
@@ -227,6 +231,10 @@ function TeamSlot({ index, set, data, format, warning: megaWarning, open, draggi
             </span>
           )}
         </span>
+        {index === 0 && (
+          // Il primo slot è quello che va in campo per primo
+          <small className="slot-lead" title={tr('team.leadTitle')}>{tr('team.lead')}</small>
+        )}
         {set.customSkillset && (
           // Non è un problema: piccolo, nell'angolo in alto a sinistra
           <AlertMark icon="unlock" className="slot-custom"
@@ -287,6 +295,7 @@ function TeamSlot({ index, set, data, format, warning: megaWarning, open, draggi
           <button type="button" aria-label={tr('team.copySet')} title={tr('team.copySet')} onClick={async () => {
             if (await copyText(exportShowdown([set], { tera: teraAllowed(format) }))) { setCopied(true); setTimeout(() => setCopied(false), 1500); }
           }}><Icon name={copied ? 'check' : 'copy'} /> <span className="btn-label">{tr(copied ? 'team.copied' : 'team.copySet')}</span></button>
+          <SmogonLink species={name} format={format} presets={presets} />
           <button type="button" aria-label={tr('team.replace', { species: name })} title={tr('team.replaceButton')} onClick={stable.onReplace}><Icon name="swap" /> <span className="btn-label">{tr('team.replaceButton')}</span></button>
         </>} />
       {paste && (
@@ -306,7 +315,20 @@ function TeamSlot({ index, set, data, format, warning: megaWarning, open, draggi
   );
 }
 
-export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRemove, onAllowMultipleMegas, onOpenChange, onPaste, onBulk }: Props) {
+/** Slot libero: cerchio tratteggiato al posto dello sprite; il clic porta alla ricerca, col cursore già dentro. */
+function EmptySlot({ onClick }: { onClick: () => void }) {
+  const tr = useT();
+  const card = useRef<HTMLButtonElement>(null);
+  useSlant(card);
+  return (
+    <button type="button" className="slot empty" ref={card} title={tr('team.emptyAddTitle')} onClick={onClick}>
+      <span className="empty-ring" aria-hidden="true"><Icon name="plus" /></span>
+      <span className="empty-label">{tr('team.emptyAdd')}</span>
+    </button>
+  );
+}
+
+export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRemove, onAllowMultipleMegas, onOpenChange, onPaste, onBulk, onAddClick }: Props) {
   const lang = useLang();
   // Un solo membro aperto alla volta: il suo editor scende sotto la fila del team
   const [openIndex, setOpenIndex] = useState<number | null>(null);
@@ -429,10 +451,7 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
           />
         ))}
         {Array.from({ length: 6 - team.length }, (_, i) => (
-          <div className="slot empty" key={`empty-${i}`}>
-            <span className="sprite missing" aria-hidden="true" />
-            <span>{t(lang, 'team.empty')}</span>
-          </div>
+          <EmptySlot key={`empty-${i}`} onClick={() => { setOpenIndex(null); onAddClick?.(); }} />
         ))}
       </div>
     </section>

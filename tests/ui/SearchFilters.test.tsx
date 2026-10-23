@@ -41,7 +41,7 @@ describe('ricerca e filtri nei suggerimenti', () => {
     await user.selectOptions(screen.getByLabelText('Uso nel meta'), 'common');
     await waitFor(() => expect([...cardNames()].sort()).toEqual(['Rotom-Wash', 'Toxapex']));
     expect(within(suggestions()).getByText('Filtri (2 attivi)')).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Azzera filtri' }));
+    await user.click(screen.getAllByRole('button', { name: /Azzera filtri/ })[0]);
     expect(within(suggestions()).getByText('Filtri')).toBeInTheDocument();
     await waitFor(() => expect(cardNames().length).toBeGreaterThan(2));
   });
@@ -53,7 +53,7 @@ describe('ricerca e filtri nei suggerimenti', () => {
     await waitFor(() => expect(cardNames()).toContain('Toxapex'));
     expect(cardNames()).not.toContain('Iron Valiant');
     expect(within(suggestions()).getByText('Filtri (2 attivi)')).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Azzera filtri' }));
+    await user.click(screen.getAllByRole('button', { name: /Azzera filtri/ })[0]);
     expect(screen.getByLabelText('Adatto a')).toHaveValue('');
   });
 
@@ -80,16 +80,18 @@ describe('ricerca e filtri nei suggerimenti', () => {
     expect(within(suggestions()).getByText('Filtri (2 attivi)')).toBeInTheDocument();
   });
 
-  it('leggendari, mitici e generazione massima', async () => {
+  it('leggendari e misteriosi in un solo filtro, niente "Fino alla gen"', async () => {
+    await setup('Great Tusk');
+    expect(within(screen.getByRole('group', { name: 'Leggendari e Misteriosi' })).getByRole('button', { name: 'Tutti' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.queryByLabelText('Fino alla gen')).toBeNull();
+  });
+
+  it('azzera filtri anche a filtri chiusi, dalla riga del titolo', async () => {
     const user = await setup('Great Tusk');
-    await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'garch');
-    await waitFor(() => expect(cardNames()).toContain('Garchomp'));
-    await user.selectOptions(screen.getByLabelText('Fino alla gen'), '3');
-    expect(await within(suggestions()).findByText('Nessun Pokémon corrisponde ai filtri')).toBeInTheDocument();
-    await user.selectOptions(screen.getByLabelText('Fino alla gen'), '4');
-    await waitFor(() => expect(cardNames()).toContain('Garchomp'));
-    expect(within(screen.getByRole('group', { name: 'Leggendari' })).getByRole('button', { name: 'Tutti' })).toHaveAttribute('aria-pressed', 'true');
-    expect(within(screen.getByRole('group', { name: 'Mitici' })).getByRole('button', { name: 'No' })).toBeInTheDocument();
+    await user.selectOptions(screen.getByLabelText('Uso nel meta'), 'common');
+    const summary = within(suggestions()).getByText('Filtri (1 attivo)', { exact: false }).closest('summary')!;
+    await user.click(within(summary).getByRole('button', { name: /Azzera filtri/ }));
+    expect(screen.getByLabelText('Uso nel meta')).toHaveValue('all');
   });
 
   it('tier: gli Uber compaiono nella ricerca con il tag di ban', async () => {

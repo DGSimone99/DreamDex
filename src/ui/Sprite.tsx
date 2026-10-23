@@ -50,7 +50,7 @@ export function Sprite({ species, item = '', size = 96, animated = false }: { sp
   const name = battleSpecies({ species, item })?.name ?? species;
   const id = spriteId(name);
   const [failed, setFailed] = useState<string | null>(null);
-  const [ani, setAni] = useState<{ id: string; ready: boolean; failed: boolean } | null>(null);
+  const [ani, setAni] = useState<{ id: string; ready: boolean; failed: boolean; height?: number } | null>(null);
   if (!id || failed === id) return <span className="sprite missing" style={{ width: size, height: size }} aria-hidden="true" />;
   const state = ani?.id === id ? ani : { id, ready: false, failed: false };
   const showAni = animated && !state.failed && !reducedMotion();
@@ -70,7 +70,9 @@ export function Sprite({ species, item = '', size = 96, animated = false }: { sp
           className="sprite-ani"
           src={`https://play.pokemonshowdown.com/sprites/gen5ani/${id}.gif`}
           alt=""
-          onLoad={() => setAni({ id, ready: true, failed: false })}
+          // Altezza vera della GIF (ritagliata sul Pokémon, da ~40 a 143 px): il CSS la usa per farla stare nella card
+          style={state.height ? { '--ani-h': state.height } as CSSProperties : undefined}
+          onLoad={e => setAni({ id, ready: true, failed: false, height: e.currentTarget.naturalHeight || undefined })}
           onError={() => setAni({ id, ready: false, failed: true })}
         />
       )}

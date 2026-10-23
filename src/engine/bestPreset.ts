@@ -69,11 +69,11 @@ export interface BestPreset {
 }
 
 /** Il preset con il voto del team più alto per il membro `index`; a pari voto vince il primo in ordine. */
-/** Solo la scelta tra i preset (senza ritocco). */
-function pickPreset(team: TeamSet[], index: number, data: EngineData): BestPreset {
+/** Solo la scelta tra i preset (senza ritocco), resi legali fino a `genLimit`. */
+function pickPreset(team: TeamSet[], index: number, data: EngineData, genLimit: number): BestPreset {
   const member = team[index];
   let best: BestPreset = { index: null, set: member, overall: -Infinity };
-  presetsForSet(data, member).forEach((preset, i) => {
+  presetsForSet(data, member, genLimit).forEach((preset, i) => {
     const set = presetSet(member, preset.set);
     const overall = rateTeam(team.map((s, j) => (j === index ? set : s)), data, 'en')?.overall ?? -Infinity;
     if (overall > best.overall) best = { index: i, set, overall };
@@ -83,7 +83,7 @@ function pickPreset(team: TeamSet[], index: number, data: EngineData): BestPrese
 
 /** Il preset col voto del team più alto, poi ritoccato tra le mosse e le abilità più usate. */
 export function bestPreset(team: TeamSet[], index: number, data: EngineData, genLimit = 9): BestPreset {
-  const best = pickPreset(team, index, data);
+  const best = pickPreset(team, index, data, genLimit);
   if (best.index === null) return best;
   // Poi il ritocco tra le mosse e le abilità più usate
   const tuned = tuneSet(team.map((s, j) => (j === index ? best.set : s)), index, data, genLimit);
@@ -100,7 +100,7 @@ export function bestPresets(team: TeamSet[], data: EngineData, genLimit = 9): Te
   for (let round = 0; round < 2; round++) {
     let changed = false;
     current.forEach((_, i) => {
-      const best = pickPreset(current, i, data);
+      const best = pickPreset(current, i, data, genLimit);
       if (best.index !== null && best.set !== current[i]) {
         const before = JSON.stringify(current[i]);
         current = current.map((s, j) => (j === i ? best.set : s));
