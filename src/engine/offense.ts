@@ -27,7 +27,9 @@ export const REFERENCE_RANK = 3;
 /** Quanti Pokémon del meta, dal più usato, si scorrono per trovare gli attaccanti di riferimento. */
 const REFERENCE_SCAN = 40;
 /** Peso delle sottostatistiche nel valore del membro (senza setup: Potenza e Wallbreaking si dividono tutto). */
-export const OFFENSE_WEIGHTS = { power: 0.5, wallbreaking: 0.35, setup: 0.15 };
+export const OFFENSE_WEIGHTS = { power: 0.5, wallbreaking: 0.35 };
+/** Il setup costa un turno libero: nel voto entra metà di quanto alza il Wallbreaking di squadra (il Potenziale). */
+export const SETUP_SHARE = 0.5;
 /** Quota della Coverage nell'Offesa del team (il resto è la media pesata dei membri). */
 export const COVERAGE_SHARE = 0.25;
 /** Pesi per posizione nel team, dal membro più offensivo al meno: un membro debole conta poco perché è in fondo. */
@@ -37,8 +39,8 @@ export interface MemberOffense {
   species: string;
   power: number;
   wallbreaking: number;
-  /** null: il set non ha una mossa di potenziamento. */
-  setup: number | null;
+  /** La mossa di potenziamento del set (null se non ne ha): conta nel Potenziale del team. */
+  setupMove: string | null;
   value: number;
   /** Bersagli della Coverage che manda KO in due colpi (la Coverage vera è del team). */
   covered: number;
@@ -53,8 +55,12 @@ export interface TeamOffense {
   holes: string[];
   targets: number;
   power: number;
+  /** Wallbreaking di squadra, senza e con il setup (chi ha una mossa di potenziamento la usa una volta). */
   wallbreaking: number;
-  setup: number | null;
+  wallbreakingSetup: number;
+  /** Punti di Offesa finale che vengono dal setup (nel voto ne entra metà del guadagno di Wallbreaking). */
+  setupGain: number;
+  setters: { species: string; move: string }[];
   members: MemberOffense[];
   /** I difensori contro cui si è misurata (per spiegare il voto): i primi `metaDefenders` dal meta, gli altri dal tier. */
   defenders: string[];
@@ -84,9 +90,9 @@ const SPECIAL_BOOSTS: Record<string, { atk?: number; spa?: number; def?: number 
 };
 
 /** La mossa di potenziamento più forte del set: Attacco, Attacco Speciale, o Difesa con Body Press, dopo un uso. */
-function setupBoosts(set: TeamSet): HitOptions['boosts'] | null {
+function setupBoosts(set: TeamSet): { move: string; boosts: NonNullable<HitOptions['boosts']> } | null {
   const bodyPress = set.moves.some(m => toID(m) === 'bodypress');
-  let best: HitOptions['boosts'] | null = null;
+  let best: { move: string; boosts: NonNullable<HitOptions['boosts']> } | null = null;
   let bestSum = 0;
   const ghost = (battleSpecies(set)?.types as readonly string[] | undefined)?.includes('Ghost');
   for (const name of set.moves) {
@@ -98,7 +104,7 @@ function setupBoosts(set: TeamSet): HitOptions['boosts'] | null {
     if (!own || (move.id === 'curse' && ghost)) continue;
     const boosts = { atk: Math.max(0, own.atk ?? 0), spa: Math.max(0, own.spa ?? 0), def: bodyPress ? Math.max(0, own.def ?? 0) : 0 };
     const sum = boosts.atk + boosts.spa + boosts.def;
-    if (sum > bestSum) { best = boosts; bestSum = sum; }
+    if (sum > bestSum) { best = { move: move.name, boosts }; bestSum = sum; }
   }
   return best;
 }
@@ -107,7 +113,7 @@ function setupBoosts(set: TeamSet): HitOptions['boosts'] | null {
  * Misure grezze del set: danno medio contro i bersagli della Coverage (i Pokémon più usati, o i 18 tipi neutri),
  * e il valore del colpo migliore contro ogni muro del formato, anche dopo il setup.
  */
-interface Raw { species: string; expected: number; steps: number[]; setupSteps: number[] | null }
+interface Raw { species: string; expected: number; steps: number[]; setupSteps: number[] | null; setupMove: string | null }
 
 function measureSet(set: TeamSet, team: TeamSet[], data: EngineData): Raw | null {
   const species = battleSpecies(set);
@@ -143,10 +149,11 @@ function measureSet(set: TeamSet, team: TeamSet[], data: EngineData): Raw | null
   const steps = defenders.map(defender => against(defender).step);
   // Ha mosse d'attacco ma la libreria non sa calcolarne nessuna: Pokémon sconosciuto, non conta
   if (attacks && !known) return null;
-  const boosts = setupBoosts(set);
+  const setup = attacks ? setupBoosts(set) : null;
   return {
     species: species.name, expected, steps,
-    setupSteps: boosts && attacks ? defenders.map(defender => against(defender, boosts).step) : null,
+    setupSteps: setup ? defenders.map(defender => against(defender, setup.boosts).step) : null,
+    setupMove: setup?.move ?? null,
   };
 }
 
@@ -210,15 +217,13 @@ export function memberOffense(set: TeamSet, team: TeamSet[], data: EngineData): 
   const ref = offenseReference(data);
   const power = toScore(raw.expected, ref.power);
   const wallbreaking = toScore(mean(raw.steps), ref.step);
-  const setup = raw.setupSteps === null ? null : toScore(mean(raw.setupSteps), ref.step);
-  return { species: raw.species, power, wallbreaking, setup, value: blend(power, wallbreaking, setup), covered: 0 };
+  return { species: raw.species, power, wallbreaking, setupMove: raw.setupMove, value: Math.round(attackValue(power, wallbreaking)), covered: 0 };
 }
 
-/** Potenza 50%, Wallbreaking 35%, Setup 15%; senza setup le prime due si dividono tutto, e il setup può solo aggiungere. */
-function blend(power: number, wallbreaking: number, setup: number | null): number {
+/** Potenza e Wallbreaking nel valore d'attacco (pesi 50 e 35, rinormalizzati). */
+function attackValue(power: number, wallbreaking: number): number {
   const w = OFFENSE_WEIGHTS;
-  const base = Math.round((w.power * power + w.wallbreaking * wallbreaking) / (w.power + w.wallbreaking));
-  return setup === null ? base : Math.max(base, Math.round(w.power * power + w.wallbreaking * wallbreaking + w.setup * setup));
+  return (w.power * power + w.wallbreaking * wallbreaking) / (w.power + w.wallbreaking);
 }
 
 /** Media pesata per posizione: valori dal più alto al più basso, pesi 22/18/16/15/15/14% (rinormalizzati se sono meno di sei). */
@@ -237,8 +242,6 @@ export const WALL_DEPTH = [0.7, 0.2, 0.1];
  * È una scala naturale, senza riferimenti tarati: un solo breaker per muro vale 70, i OHKO alzano.
  */
 export const TEAM_WALL_FULL = 1;
-/** Setup di squadra: la win condition migliore, più questa quota della seconda. */
-export const SECOND_SETUP = 0.2;
 
 /**
  * Offesa del team dalle sottostatistiche di squadra: Potenza (media pesata per posizione dei membri),
@@ -253,26 +256,32 @@ export function teamOffense(team: TeamSet[], data: EngineData): TeamOffense {
     .map((set, i) => { const m = memberOffense(set, team, data); return m && { ...m, covered: coverage.perMember[i] }; })
     .filter((m): m is MemberOffense => m !== null);
   const defenders = defenderPanel(data);
-  // Per ogni muro, i membri dal più forte: il team lo sfonda se qualcuno ci riesce, meglio se più di uno
-  const wallStep = mean(defenders.map((_, d) => {
-    // Ogni membro conta al massimo come un 2HKO: un solo OHKO non basta per il 100, servono più risposte
-    const best = raws.map(r => Math.min(STEP_2HKO, r.steps[d])).sort((a, b) => b - a);
+  // Per ogni muro, i membri dal più forte: il team lo sfonda se qualcuno ci riesce, meglio se più di uno.
+  // Ogni membro conta al massimo come un 2HKO: un solo OHKO non basta per il 100, servono più risposte
+  const teamWall = (withSetup: boolean) => mean(defenders.map((_, d) => {
+    const best = raws
+      .map(r => Math.min(STEP_2HKO, withSetup && r.setupSteps ? Math.max(r.steps[d], r.setupSteps[d]) : r.steps[d]))
+      .sort((a, b) => b - a);
     return WALL_DEPTH.reduce((acc, share, i) => acc + share * (best[i] ?? 0), 0);
   }));
-  const setups = members.filter(m => m.setup !== null).map(m => m.setup!).sort((a, b) => b - a);
   const power = rankWeighted(members.map(m => m.power));
-  const wallbreaking = raws.length ? toScore(wallStep, TEAM_WALL_FULL) : 0;
-  const setup = setups.length ? Math.min(100, Math.round(setups[0] + SECOND_SETUP * (setups[1] ?? 0))) : null;
-  const memberValue = members.length ? blend(power, wallbreaking, setup) : 0;
+  const wallbreaking = raws.length ? toScore(teamWall(false), TEAM_WALL_FULL) : 0;
+  const wallbreakingSetup = raws.length ? toScore(teamWall(true), TEAM_WALL_FULL) : 0;
+  // Potenziale: metà del guadagno di Wallbreaking col setup entra nel voto
+  const effective = wallbreaking + SETUP_SHARE * (wallbreakingSetup - wallbreaking);
+  const final = (wall: number) => members.length ? Math.round((1 - COVERAGE_SHARE) * attackValue(power, wall) + COVERAGE_SHARE * coverage.value) : 0;
+  const value = final(effective);
   return {
-    value: members.length ? Math.round((1 - COVERAGE_SHARE) * memberValue + COVERAGE_SHARE * coverage.value) : 0,
-    memberValue,
+    value,
+    memberValue: members.length ? Math.round(attackValue(power, effective)) : 0,
     coverage: coverage.value,
     holes: coverage.holes,
     targets: coverageTargets(data).length,
     power,
     wallbreaking,
-    setup,
+    wallbreakingSetup,
+    setupGain: value - final(wallbreaking),
+    setters: members.filter(m => m.setupMove).map(m => ({ species: m.species, move: m.setupMove! })),
     members,
     defenders: defenders.map(set => set.species),
     metaDefenders: metaDefenderCount(data),

@@ -496,6 +496,7 @@ export const en = {
   'detail.coverage.noHoles': "No holes",
   'detail.setup.who': "only {list}",
   'detail.setup.none': "No member has a boosting move",
+  'detail.potential': "Potential +{gain} with setup: {list}",
   'detail.lead.meta': "The sets' real damage against {n} meta defenders: {list}.",
   'detail.lead.tier': "The sets' real damage against the tier's {n} bulkiest defenders: {list}.",
   'detail.lead.mixed': "The sets' real damage against {n} defenders ({meta} from the meta, the others the tier's bulkiest): {list}.",

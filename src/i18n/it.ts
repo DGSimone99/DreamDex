@@ -498,6 +498,7 @@ export const it: Record<keyof typeof en, string> = {
   'detail.coverage.noHoles': "Nessun buco",
   'detail.setup.who': "solo {list}",
   'detail.setup.none': "Nessun membro ha una mossa di potenziamento",
+  'detail.potential': "Potenziale +{gain} con il setup: {list}",
   'detail.lead.meta': "Il danno vero dei set contro {n} difensori del meta: {list}.",
   'detail.lead.tier': "Il danno vero dei set contro i {n} difensori più robusti del tier: {list}.",
   'detail.lead.mixed': "Il danno vero dei set contro {n} difensori ({meta} del meta, gli altri i più robusti del tier): {list}.",

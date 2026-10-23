@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { memberOffense, offenseReference, POWER_FULL, RANK_WEIGHTS, REFERENCE_RANK, stepValue, TEAM_WALL_FULL, teamOffense } from '../../src/engine/offense';
+import { memberOffense, offenseReference, POWER_FULL, RANK_WEIGHTS, REFERENCE_RANK, SETUP_SHARE, stepValue, TEAM_WALL_FULL, teamOffense } from '../../src/engine/offense';
 import { bestHit } from '../../src/engine/damage';
 import { defenderPanel } from '../../src/engine/defenders';
 import { coverageTargets } from '../../src/engine/coverage';
@@ -36,17 +36,19 @@ describe('memberOffense', () => {
     expect(withWeak.power).toBe(plain.power);
   });
 
-  it('Body Press con Iron Defense ha il Setup, senza no', () => {
+  it('Body Press con Iron Defense è un setup, senza no', () => {
     const corv = set('Corviknight', 'Leftovers', 'Pressure', ['Body Press', 'Iron Defense', 'Roost'], 'Impish', { hp: 252, def: 252 });
-    expect(memberOffense(corv, [corv], fixtureData)!.setup).toBeGreaterThan(0);
+    expect(memberOffense(corv, [corv], fixtureData)!.setupMove).toBe('Iron Defense');
     const noSetup = { ...corv, moves: ['Body Press', 'Roost', 'U-turn'] };
-    expect(memberOffense(noSetup, [noSetup], fixtureData)!.setup).toBeNull();
+    expect(memberOffense(noSetup, [noSetup], fixtureData)!.setupMove).toBeNull();
   });
 
-  it('Gliscor con Swords Dance: dopo il setup sfonda almeno quanto prima', () => {
+  it('Gliscor con Swords Dance: il setup alza l\'Offesa del team (il Potenziale)', () => {
     const gliscor = set('Gliscor', 'Toxic Orb', 'Poison Heal', ['Swords Dance', 'Earthquake', 'Facade', 'Protect'], 'Jolly', { hp: 244, atk: 12, spe: 252 });
-    const m = memberOffense(gliscor, [gliscor], fixtureData)!;
-    expect(m.setup!).toBeGreaterThanOrEqual(m.wallbreaking);
+    const team = teamOffense([gliscor], noStats);
+    expect(team.wallbreakingSetup).toBeGreaterThan(team.wallbreaking);
+    expect(team.setupGain).toBeGreaterThan(0);
+    expect(team.setters).toEqual([{ species: 'Gliscor', move: 'Swords Dance' }]);
   });
 
   it('la pioggia del team alza la Potenza di chi ne gode; chi la porta con l\'abilità la ha piena', () => {
@@ -71,10 +73,11 @@ describe('memberOffense', () => {
     expect(memberOffense(teraGambit, [teraGambit], noStats)!.power).toBe(memberOffense(gambit, [gambit], noStats)!.power);
   });
 
-  it('il Setup può solo aggiungere: mai sotto il valore senza setup', () => {
+  it('il valore del membro è Potenza e Wallbreaking (il setup conta solo nel Potenziale del team)', () => {
     const volc = set('Volcarona', 'Heavy-Duty Boots', 'Flame Body', ['Quiver Dance', 'Flamethrower', 'Bug Buzz', 'Roost'], 'Timid', { spa: 252, spe: 252 });
     const m = memberOffense(volc, [volc], fixtureData)!;
-    expect(m.value).toBeGreaterThanOrEqual(Math.round((0.5 * m.power + 0.35 * m.wallbreaking) / 0.85));
+    expect(m.value).toBe(Math.round((0.5 * m.power + 0.35 * m.wallbreaking) / 0.85));
+    expect('setup' in m).toBe(false);
   });
 
   it("il 100 di Wallbreaking e Potenza è il 3° miglior attaccante del meta, o l'ultimo se sono meno", () => {
@@ -103,7 +106,8 @@ describe('teamOffense', () => {
   it('un team senza mosse d\'attacco vale 0, senza NaN', () => {
     const wall = set('Toxapex', 'Black Sludge', 'Regenerator', ['Recover', 'Toxic', 'Haze', 'Toxic Spikes'], 'Bold', { hp: 252, def: 252 });
     const team = teamOffense([wall], fixtureData);
-    expect([team.value, team.power, team.wallbreaking, team.setup]).toEqual([0, 0, 0, null]);
+    expect([team.value, team.power, team.wallbreaking, team.setupGain]).toEqual([0, 0, 0, 0]);
+    expect(team.setters).toEqual([]);
   });
 
   it('un membro sconosciuto si salta', () => {
@@ -120,8 +124,8 @@ describe('correzioni della revisione', () => {
   it('Belly Drum e Curse sono setup', () => {
     const azu = set('Azumarill', 'Sitrus Berry', 'Huge Power', ['Belly Drum', 'Aqua Jet', 'Play Rough', 'Knock Off'], 'Adamant', { hp: 252, atk: 252 });
     const snorlax = set('Snorlax', 'Leftovers', 'Thick Fat', ['Curse', 'Body Slam', 'Rest', 'Sleep Talk'], 'Careful', { hp: 252, spd: 252 });
-    expect(memberOffense(azu, [azu], fixtureData)!.setup).not.toBeNull();
-    expect(memberOffense(snorlax, [snorlax], fixtureData)!.setup).not.toBeNull();
+    expect(memberOffense(azu, [azu], fixtureData)!.setupMove).toBe('Belly Drum');
+    expect(memberOffense(snorlax, [snorlax], fixtureData)!.setupMove).toBe('Curse');
   });
 
   it('il riferimento senza meta non resta quello di riserva se prima mancavano i dati', () => {
@@ -186,17 +190,19 @@ describe('Offesa di squadra', () => {
     expect(mixed.wallbreaking).toBeGreaterThanOrEqual(Math.max(...mixed.members.map(m => m.wallbreaking)) * 0.7);
   });
 
-  it('Setup di squadra: la win condition migliore più il 20% della seconda', () => {
-    const team = teamOffense([gliscor, corv], noStats);
-    const [best, second] = team.members.map(m => m.setup!).sort((a, b) => b - a);
-    expect(team.setup).toBe(Math.min(100, Math.round(best + 0.2 * second)));
+  it('Potenziale: nel voto entra metà del guadagno di Wallbreaking col setup; +X è quanto alza l\'Offesa finale', () => {
+    const team = teamOffense([gliscor, chomp], noStats);
+    const attack = (wall: number) => (0.5 * team.power + 0.35 * wall) / 0.85;
+    const effective = team.wallbreaking + SETUP_SHARE * (team.wallbreakingSetup - team.wallbreaking);
+    const value = Math.round(0.75 * attack(effective) + 0.25 * team.coverage);
+    expect(SETUP_SHARE).toBe(0.5);
+    expect(team.value).toBe(value);
+    expect(team.setupGain).toBe(value - Math.round(0.75 * attack(team.wallbreaking) + 0.25 * team.coverage));
   });
 
-  it('Offesa del team dalle sottostatistiche di squadra: 75% (Potenza, Wallbreaking, Setup) + 25% Coverage', () => {
-    const team = teamOffense([gliscor, chomp], noStats);
-    const base = Math.round((0.5 * team.power + 0.35 * team.wallbreaking) / 0.85);
-    const withSetup = team.setup === null ? base : Math.max(base, Math.round(0.5 * team.power + 0.35 * team.wallbreaking + 0.15 * team.setup));
-    expect(team.value).toBe(Math.round(0.75 * withSetup + 0.25 * team.coverage));
+  it('senza setup il Potenziale è zero', () => {
+    const team = teamOffense([chomp], noStats);
+    expect([team.wallbreakingSetup, team.setupGain]).toEqual([team.wallbreaking, 0]);
   });
 
   it('Potenza contro i bersagli della Coverage (senza meta: i 18 tipi neutri), il Wallbreaking contro i muri', () => {

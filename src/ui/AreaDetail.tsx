@@ -9,7 +9,7 @@ import { Sprite } from './Sprite';
 
 /** Quanti difensori si nominano nella riga di spiegazione (gli altri si contano). */
 const NAMED_DEFENDERS = 4;
-const SUBS = ['power', 'wallbreaking', 'coverage', 'setup'] as const;
+const SUBS = ['power', 'wallbreaking', 'coverage'] as const;
 
 /**
  * Dettaglio di un'area del voto: le sottostatistiche e il punteggio di ogni membro su ognuna.
@@ -33,11 +33,12 @@ export function AreaDetail({ rating, area, onClose }: { rating: TeamRating; area
   const named = offense.defenders.slice(0, NAMED_DEFENDERS).join(', ');
   const rest = offense.defenders.length - NAMED_DEFENDERS;
   const list = rest > 0 ? t('detail.more', { list: named, n: rest }) : named;
-  const setters = offense.members.filter(m => m.setup !== null).map(m => m.species);
   // Col meta il pannello si completa coi più robusti del tier se il meta non ha abbastanza muri: la riga lo dice
   const lead = offense.metaDefenders === 0 ? 'detail.lead.tier'
     : offense.metaDefenders < offense.defenders.length ? 'detail.lead.mixed' : 'detail.lead.meta';
-  const team = { power: offense.power, wallbreaking: offense.wallbreaking, coverage: offense.coverage, setup: offense.setup };
+  const team = { power: offense.power, wallbreaking: offense.wallbreaking, coverage: offense.coverage };
+  // Potenziale: quanti punti di Offesa finale vengono dal setup, e chi lo ha
+  const setters = offense.setters.map(s => `${s.species} (${s.move})`).join(', ');
   // Buchi della Coverage: tipi o combinazioni di tipi che nessuno porta al 33%, coi nomi dei tipi nella lingua scelta
   const holes = offense.holes.map(label => label.split('/').map(type => typeName(type, lang)).join('/'));
 
@@ -54,7 +55,7 @@ export function AreaDetail({ rating, area, onClose }: { rating: TeamRating; area
             {SUBS.map(sub => {
               const score = team[sub];
               const tip = t(`detail.${sub}.tip` as MessageKey);
-              const note = sub === 'setup' ? (setters.length ? t('detail.setup.who', { list: setters.join(', ') }) : t('detail.setup.none'))
+              const note = sub === 'wallbreaking' ? (setters ? t('detail.potential', { gain: offense.setupGain, list: setters }) : t('detail.setup.none'))
                 : sub === 'coverage' ? (holes.length ? t('detail.coverage.holes', { list: holes.join(', ') }) : t('detail.coverage.noHoles'))
                 : null;
               return (
@@ -85,7 +86,6 @@ export function AreaDetail({ rating, area, onClose }: { rating: TeamRating; area
                     <td>{m.power}</td>
                     <td>{m.wallbreaking}</td>
                     <td>{m.covered}%</td>
-                    <td className={m.setup === null ? 'none' : undefined}>{m.setup ?? '—'}</td>
                     <td className="total">{m.value}</td>
                   </tr>
                 ))}
