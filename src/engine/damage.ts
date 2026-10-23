@@ -18,6 +18,8 @@ export interface HitOptions {
   boosts?: Partial<Record<'atk' | 'spa' | 'def', number>>;
   /** Solo le mosse super efficaci sul bersaglio (la Coverage: il vantaggio di tipo, non il danno neutro). */
   superEffectiveOnly?: boolean;
+  /** Solo le mosse prioritarie (Grassy Glide col Grassy Terrain); Fake Out e First Impression valgono metà (solo al primo turno). */
+  priorityOnly?: boolean;
 }
 
 export interface Hit {
@@ -147,6 +149,8 @@ export function bestHit(attacker: TeamSet, defender: Target, options: HitOptions
   for (const name of attacker.moves) {
     const data = getMove(name);
     if (!data || data.category === 'Status') continue;
+    const grassyGlide = data.id === 'grassyglide' && (options.conditions ?? []).includes('grassyterrain');
+    if (options.priorityOnly && !(data.priority > 0 || grassyGlide)) continue;
     const accuracy = data.accuracy === true ? 1 : data.accuracy / 100;
     // Mosse OHKO (Sheer Cold, Fissure): la libreria non le calcola; KO se colpiscono, salvo immunità
     if (data.ohko) {
@@ -167,7 +171,8 @@ export function bestHit(attacker: TeamSet, defender: Target, options: HitOptions
       const { avg, low, high } = sums;
       // Mosse a due turni (Solar Blade, Meteor Beam…): un colpo ogni due turni, salvo sole/pioggia giusti o Power Herb
       const charge = data.flags.charge && !instantCharge(data.id, options.conditions ?? [], attacker.item) ? 0.5 : 1;
-      const hit = { move: data.name, expected: (avg / hp) * accuracy * charge, min: (low / hp) * charge, max: (high / hp) * charge };
+      const firstTurn = options.priorityOnly && FIRST_TURN.has(data.id) ? 0.5 : 1;
+      const hit = { move: data.name, expected: (avg / hp) * accuracy * charge * firstTurn, min: (low / hp) * charge, max: (high / hp) * charge };
       if (!best || hit.expected > best.expected) best = hit;
     } catch {
       // Una mossa che la libreria non sa calcolare non conta
@@ -181,6 +186,9 @@ export function bestHit(attacker: TeamSet, defender: Target, options: HitOptions
  * con statistiche, EV, natura, strumento e abilità veri dell'attaccante contro il set vero del difensore.
  * Misura solo quanto il difensore regge, indipendentemente dalle mosse che l'attaccante porta.
  */
+/** Mosse prioritarie che funzionano solo al primo turno in campo. */
+const FIRST_TURN = new Set(['fakeout', 'firstimpression']);
+
 /** Mosse multicolpo e Parental Bond: la libreria dà un elenco di tiri per ogni colpo, da sommare. */
 function rollSums(result: unknown): { avg: number; low: number; high: number } | null {
   const damage = result as number | number[] | number[][];

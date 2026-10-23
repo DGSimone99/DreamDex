@@ -1,10 +1,12 @@
 import type { EngineData } from './data';
 import { battleAbility, battleSpecies, dex, getMove, toID } from './dex';
 import { softScore } from './scale';
-import { setKey } from './damage';
+import { bestHit, setKey } from './damage';
+import { metaThreats } from './attackers';
+import { ownConditions } from './coverage';
 import { usesMeta } from './analysis';
 import type { TeamSet } from './sets';
-import { outspeedShare, speedPool, speedStat, type SpeedRival } from './speed';
+import { outspeedShare, speedPool, speedStat, tierSpecies, type SpeedRival } from './speed';
 import { teamField } from './types';
 
 /** Le condizioni che fanno superare più Pokémon: setup, meteo/campo, Unburden, Sticky Web, Tailwind, paralisi e rallentamenti. */
@@ -118,4 +120,57 @@ export function speedPart(list: MemberSpeed[]): number {
   const weights = sorted.map((_, i) => SPEED_RANK_WEIGHTS[Math.min(i, SPEED_RANK_WEIGHTS.length - 1)]);
   const total = weights.reduce((a, b) => a + b, 0);
   return softScore(sorted.reduce((acc, m, i) => acc + weights[i] * m.total, 0) / total);
+}
+
+export interface PriorityRow {
+  species: string;
+  speed: number;
+  weight: number;
+  /** Il colpo prioritario migliore del team su questa minaccia (danno atteso in quota dei PS). */
+  best: { species: string; move: string; pct: number; expected: number } | null;
+  credit: number;
+}
+
+/** Metà PS tolti con una mossa prioritaria valgono il credito pieno: basta a finire una minaccia indebolita. */
+const PRIORITY_FULL = 0.5;
+/** Senza meta: i più veloci del tier, con un set neutro. */
+const TIER_TARGETS = 20;
+
+/**
+ * Le minacce che il team non supera: più veloci del suo secondo membro più rapido (velocità pura; setup e meteo sono
+ * condizionali). Col meta i 40 più usati pesati per uso; a pari velocità metà peso.
+ */
+export function priorityTargets(list: MemberSpeed[], data: EngineData): { set: TeamSet; speed: number; weight: number }[] {
+  if (!list.length) return [];
+  const speeds = list.map(m => m.speed).sort((a, b) => b - a);
+  const second = speeds[1] ?? speeds[0];
+  const candidates = usesMeta(data)
+    ? metaThreats(data).map(({ set, weight }) => ({ set, speed: speedStat(set).value, weight }))
+    : tierSpecies(data.formatId ?? 'ou')
+      .map(s => ({ set: { species: s.name, item: '', ability: s.abilities[0], moves: [], nature: 'Hardy', evs: {} } as TeamSet, speed: Math.floor((2 * s.baseStats.spe + 31 + 63 + 5) * 1.1), weight: 1 }))
+      .sort((a, b) => b.speed - a.speed)
+      .slice(0, TIER_TARGETS);
+  return candidates
+    .filter(c => c.speed >= second)
+    .map(c => ({ ...c, weight: c.speed === second ? c.weight / 2 : c.weight }));
+}
+
+/** La parte Priorità: quanto il team colpisce per primo, con danno vero, le minacce che non supera. */
+export function priorityPart(team: TeamSet[], list: MemberSpeed[], speedPartValue: number, data: EngineData): { value: number; rows: PriorityRow[] } {
+  const targets = priorityTargets(list, data);
+  // Chi supera già tutto non ha bisogno di priorità
+  if (!targets.length) return { value: speedPartValue, rows: [] };
+  const known = team.filter(set => battleSpecies(set));
+  const rows: PriorityRow[] = targets.map(t => {
+    let best: PriorityRow['best'] = null;
+    for (const member of known) {
+      const hit = bestHit(member, t.set, { priorityOnly: true, conditions: ownConditions(member) });
+      if (hit && (!best || hit.expected > best.expected)) {
+        best = { species: battleSpecies(member)!.name, move: hit.move, pct: Math.floor(100 * Math.min(1, hit.expected)), expected: hit.expected };
+      }
+    }
+    return { species: t.set.species, speed: t.speed, weight: t.weight, best, credit: best ? Math.min(1, best.expected / PRIORITY_FULL) : 0 };
+  });
+  const total = rows.reduce((acc, r) => acc + r.weight, 0);
+  return { value: total ? softScore(rows.reduce((acc, r) => acc + r.weight * r.credit, 0) / total) : 0, rows };
 }

@@ -3,7 +3,8 @@ import type { EngineData } from '../../src/engine/data';
 import { softScore } from '../../src/engine/scale';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
 import { outspeedShare, speedPool, speedStat } from '../../src/engine/speed';
-import { CONDITION_QUOTA, memberSpeed, SPEED_RANK_WEIGHTS, speedPart } from '../../src/engine/speedArea';
+import { CONDITION_QUOTA, memberSpeed, priorityPart, priorityTargets, SPEED_RANK_WEIGHTS, speedPart } from '../../src/engine/speedArea';
+import { bestHit } from '../../src/engine/damage';
 
 const set = (species: string, item: string, ability: string, moves: string[], nature = 'Jolly', spe = 252): TeamSet =>
   ({ ...emptySet(species), item, ability, moves, nature, evs: { spe } });
@@ -84,5 +85,58 @@ describe('Velocità: ogni membro, coi guadagni delle condizioni', () => {
     // Con meno membri si normalizza sui pesi usati
     expect(speedPart(members.slice(0, 2))).toBe(softScore([...members.slice(0, 2)].sort((a, b) => b.speed - a.speed).reduce((a, m, i) => a + SPEED_RANK_WEIGHTS[i] * m.total, 0) / 45));
     expect(speedPart([])).toBe(0);
+  });
+});
+
+describe('Priorità: le minacce più veloci del team, colpite per prime', () => {
+  const gambit = set('Kingambit', 'Black Glasses', 'Supreme Overlord', ['Sucker Punch', 'Kowtow Cleave', 'Iron Head', 'Swords Dance'], 'Adamant', 0);
+  const slowpoke = set('Slowking', 'Leftovers', 'Regenerator', ['Scald', 'Slack Off'], 'Calm', 0);
+  const target = set('Dragapult', 'Choice Specs', 'Infiltrator', ['Draco Meteor'], 'Timid');
+
+  it('priorityOnly: solo le mosse prioritarie; Fake Out conta metà', () => {
+    expect(bestHit(gambit, target, { priorityOnly: true })!.move).toBe('Sucker Punch');
+    expect(bestHit(slowpoke, target, { priorityOnly: true })).toBeNull();
+    const faker = set('Incineroar', '', 'Blaze', ['Fake Out'], 'Adamant', 0);
+    const plain = bestHit(faker, target)!;
+    expect(bestHit(faker, target, { priorityOnly: true })!.expected).toBeCloseTo(plain.expected / 2);
+  });
+
+  it('bersagli: chi è più veloce del secondo membro più rapido (velocità pura); a pari velocità metà peso', () => {
+    const team = [gambit, slowpoke];
+    const ms = team.map(s => memberSpeed(s, team, noMeta)!);
+    const second = Math.min(...ms.map(m => m.speed));
+    const targets = priorityTargets(ms, noMeta);
+    expect(targets.length).toBeGreaterThan(0);
+    expect(targets.length).toBeLessThanOrEqual(20);
+    for (const t of targets) {
+      expect(t.speed).toBeGreaterThanOrEqual(second);
+      expect(t.weight).toBe(t.speed === second ? 0.5 : 1);
+    }
+  });
+
+  it('un membro solo: il secondo più veloce è lui', () => {
+    const ms = [memberSpeed(gambit, [gambit], noMeta)!];
+    expect(priorityTargets(ms, noMeta).every(t => t.speed >= ms[0].speed)).toBe(true);
+  });
+
+  it('credito pieno da metà PS in su; senza mosse prioritarie 0', () => {
+    const team = [gambit, slowpoke];
+    const ms = team.map(s => memberSpeed(s, team, noMeta)!);
+    const part = priorityPart(team, ms, 50, noMeta);
+    for (const row of part.rows) {
+      if (!row.best) { expect(row.credit).toBe(0); continue; }
+      expect(row.best.species).toBe('Kingambit');
+      expect(row.credit).toBeCloseTo(Math.min(1, row.best.expected / 0.5));
+    }
+    const total = part.rows.reduce((a, r) => a + r.weight, 0);
+    expect(part.value).toBe(softScore(part.rows.reduce((a, r) => a + r.weight * r.credit, 0) / total));
+    expect(priorityPart([slowpoke], [ms[1]], 50, noMeta).value).toBe(0);
+  });
+
+  it('nessun bersaglio (team più veloce di tutti): la Priorità vale quanto la Velocità', () => {
+    const fastest = set('Regieleki', 'Choice Scarf', 'Transistor', ['Extreme Speed'], 'Timid');
+    const ms = [memberSpeed(fastest, [fastest], noMeta)!];
+    expect(priorityTargets(ms, noMeta)).toEqual([]);
+    expect(priorityPart([fastest], ms, 71, noMeta)).toEqual({ value: 71, rows: [] });
   });
 });
