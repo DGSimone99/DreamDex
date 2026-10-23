@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import type { TeamRating } from '../engine/rating';
 import { stepBucket, type CoverageDetail, type WallCell } from '../engine/offense';
 import type { TeamDefense } from '../engine/defense';
+import type { MemberSpeed, SpeedCondition, TeamSpeed } from '../engine/speedArea';
 import { useT } from '../i18n/react';
 import { Icon } from './icons';
 import { Sprite, TypeChip } from './Sprite';
@@ -30,10 +31,12 @@ function WallValue({ cell }: { cell: WallCell }) {
  * Dettaglio di un'area (Offesa o Difesa): una scheda generale e una per sottostatistica, ognuna con come si calcola
  * e il valore di ogni membro. Stesso guscio del modale "Come funziona il voto", con le schede a sinistra.
  */
-export function AreaDetail({ rating, area, onClose }: { rating: TeamRating; area: 'strength' | 'defense'; onClose: () => void }) {
+export function AreaDetail({ rating, area, onClose }: { rating: TeamRating; area: 'strength' | 'defense' | 'speed'; onClose: () => void }) {
   const t = useT();
   const value = rating.areas.find(a => a.key === area)?.value ?? null;
-  const tabs = area === 'strength' ? offenseTabs(rating, t) : defenseTabs(rating.defense, !!rating.meta, t);
+  const tabs = area === 'strength' ? offenseTabs(rating, t)
+    : area === 'defense' ? defenseTabs(rating.defense, !!rating.meta, t)
+    : speedTabs(rating.speed, !!rating.meta, t);
   return <DetailShell title={t(`area.${area}`)} value={value} tabs={tabs} onClose={onClose} />;
 }
 
@@ -524,5 +527,150 @@ function defenseTabs(defense: TeamDefense, meta: boolean, t: T): DetailTab[] {
   return [
     { key: 'general', label: t('detail.tab.general'), value: defense.value, panel: general },
     ...subs.map(key => ({ key, label: label(key), value: values[key], panel: panels[key]! })),
+  ];
+}
+
+const CONDITIONS: SpeedCondition[] = ['setup', 'weather', 'unburden', 'web', 'tailwind', 'slow'];
+const points = (x: number) => Math.round(100 * x);
+
+/** Le schede della Velocità: Generale, Velocità (pura e condizioni) e Priorità. */
+function speedTabs(speed: TeamSpeed, meta: boolean, t: T): DetailTab[] {
+  const members = speed.members;
+  const gainOf = (m: MemberSpeed, c: SpeedCondition) => m.gains.find(g => g.condition === c);
+  const present = CONDITIONS.filter(c => members.some(m => gainOf(m, c)));
+  const gainTip = (m: MemberSpeed) => m.gains.map(g => `${t(`sdetail.cond.${g.condition}`)} (${g.source}): +${points(g.gain)}`).join('\n');
+  // Il totale coi guadagni delle condizioni; tra parentesi, in verde, quanto aggiungono
+  const totalCell = (m: MemberSpeed) => {
+    const gain = points(m.total) - points(m.raw);
+    return (
+      <>
+        {points(m.total)}%
+        {gain > 0 && <small className="ad-gain" title={gainTip(m)}> (+{gain})</small>}
+      </>
+    );
+  };
+  const tips = {
+    speed: t('sdetail.general.speed'),
+    priority: speed.targets.length ? t('sdetail.general.priority', { n: speed.targets.length }) : t('sdetail.general.priorityNone'),
+  };
+
+  const general = (
+    <>
+      <h4>{t('sdetail.title')}</h4>
+      <p>{t(meta ? 'sdetail.lead.meta' : 'sdetail.lead.tier')}</p>
+      <dl className="ad-subs">
+        {(['speed', 'priority'] as const).map(sub => (
+          <div key={sub} className="ad-sub">
+            <dt>{t(`sdetail.${sub}`)}</dt>
+            <dd>
+              <meter min={0} max={100} value={speed[sub]} aria-hidden="true" />
+              <strong>{speed[sub]}</strong>
+              <span>{tips[sub]}</span>
+            </dd>
+          </div>
+        ))}
+      </dl>
+      <div className="ad-scroll">
+        <table className="ad-t">
+          <thead>
+            <tr>
+              <th scope="col">{t('detail.member')}</th>
+              <th scope="col">{t('sdetail.speed')}</th>
+              <th scope="col">{t('sdetail.outsped')}</th>
+              <th scope="col">{t('sdetail.total')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {members.map((m, i) => (
+              <tr key={`${m.species}-${i}`}>
+                <th scope="row"><span className="ad-mon"><Sprite species={m.species} size={40} />{m.species}</span></th>
+                <td>{m.speed}</td>
+                <td>{points(m.raw)}%</td>
+                <td className="total">{totalCell(m)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+
+  const speedTab = (
+    <>
+      <h4>{t('sdetail.speed')}</h4>
+      <div className="ad-how">
+        <p>{t(meta ? 'sdetail.speed.how1.meta' : 'sdetail.speed.how1.tier')}</p>
+        <p>{t('sdetail.speed.how2')}</p>
+        <p>{t('sdetail.speed.how3')}</p>
+      </div>
+      <div className="ad-scroll">
+        <table className="ad-t">
+          <thead>
+            <tr>
+              <th scope="col">{t('detail.member')}</th>
+              <th scope="col">{t('sdetail.speed')}</th>
+              <th scope="col">{t('sdetail.raw')}</th>
+              {present.map(c => <th key={c} scope="col">{t(`sdetail.cond.${c}`)}</th>)}
+              <th scope="col">{t('sdetail.total')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {[...members].sort((a, b) => b.speed - a.speed).map((m, i) => (
+              <tr key={`${m.species}-${i}`}>
+                <th scope="row"><span className="ad-mon"><Sprite species={m.species} size={32} />{m.species}</span></th>
+                <td>{m.speed}</td>
+                <td>{points(m.raw)}%</td>
+                {present.map(c => {
+                  const g = gainOf(m, c);
+                  return <td key={c}>{g ? <span className="ad-gain-cell" title={g.source}>+{points(g.gain)}</span> : '—'}</td>;
+                })}
+                <td className="total">{points(m.total)}%</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+
+  const priorityTab = (
+    <>
+      <h4>{t('sdetail.priority')}</h4>
+      <div className="ad-how">
+        <p>{t(meta ? 'sdetail.priority.how1.meta' : 'sdetail.priority.how1.tier')}</p>
+        <p>{t('sdetail.priority.how2')}</p>
+      </div>
+      {speed.targets.length ? (
+        <div className="ad-scroll">
+          <table className="ad-t">
+            <thead>
+              <tr>
+                <th scope="col">{t('sdetail.threat')}</th>
+                <th scope="col">{t('sdetail.speed')}</th>
+                <th scope="col" className="left">{t('sdetail.bestHit')}</th>
+                <th scope="col">{t('sdetail.credit')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {/* Dal più usato: l'ordine dice anche quanto pesa ogni minaccia */}
+              {[...speed.targets].sort((a, b) => b.weight - a.weight).map(row => (
+                <tr key={row.species}>
+                  <th scope="row"><span className="ad-mon"><Sprite species={row.species} size={32} />{row.species}</span></th>
+                  <td>{row.speed}</td>
+                  <td className="left">{row.best ? `${row.best.species}: ${row.best.move} ${row.best.pct}%` : <span className="ad-k none">{t('detail.nobody')}</span>}</td>
+                  <td className="total">{points(row.credit)}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : <p className="ad-holes">{t('sdetail.priority.none')}</p>}
+    </>
+  );
+
+  return [
+    { key: 'general', label: t('detail.tab.general'), value: speed.value, panel: general },
+    { key: 'speed', label: t('sdetail.speed'), value: speed.speed, panel: speedTab },
+    { key: 'priority', label: t('sdetail.priority'), value: speed.priority, panel: priorityTab },
   ];
 }

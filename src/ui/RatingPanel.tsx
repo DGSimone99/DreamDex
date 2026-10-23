@@ -22,8 +22,8 @@ function goToSection(id: string) {
   section.querySelector('summary')?.focus({ preventScroll: true });
 }
 
-type DetailArea = 'strength' | 'defense';
-const isDetailArea = (key: string): key is DetailArea => key === 'strength' || key === 'defense';
+type DetailArea = 'strength' | 'defense' | 'speed';
+const isDetailArea = (key: string): key is DetailArea => key === 'strength' || key === 'defense' || key === 'speed';
 
 /** `ruleIssues`: problemi di regole del team (vietati, Mega, mosse non legali…): triangolo rosso accanto al voto. */
 /** `metaMonth`: mese delle statistiche, per dire con quale meta è stato calcolato il voto. */
