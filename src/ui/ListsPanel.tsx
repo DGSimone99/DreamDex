@@ -4,7 +4,7 @@ import { battleName, getSpecies, toID } from '../engine/dex';
 import { activeFilterCount, EMPTY_FILTERS, searchPool, type CandidateFilters } from '../engine/filters';
 import type { Format, FormatId } from '../engine/format';
 import { formatLabel, formatOptions } from '../engine/formats';
-import { clearList, copyLists, effectiveLists, pokedexSpecies, toggleIn, type ListKind, type ListScope, type UserLists } from '../engine/lists';
+import { clearList, copyLists, effectiveLists, isUserBanned, isUserFavorite, pokedexSpecies, toggleIn, type ListKind, type ListScope, type UserLists } from '../engine/lists';
 import { useLang, useT } from '../i18n/react';
 import { FilterBar } from './FilterBar';
 import { Icon } from './icons';
@@ -143,7 +143,7 @@ export const ListsPanel = memo(function ListsPanel({ lists, format, data, onChan
             onChange={e => setFilters({ ...filters, query: e.target.value })} onKeyDown={onKey} />
           {target && (
             <span className="search-hint">
-              <kbd>{tr('suggest.enter')}</kbd> ♥ <strong>{target}</strong> · <kbd>Shift</kbd>+<kbd>{tr('suggest.enter')}</kbd> ⊘
+              <strong>{target}</strong> <kbd>{tr('suggest.enter')}</kbd> ♥ <kbd>⇧ {tr('suggest.enter')}</kbd> ⊘
             </span>
           )}
         </span>
@@ -160,7 +160,9 @@ export const ListsPanel = memo(function ListsPanel({ lists, format, data, onChan
       <div className="lists-main">
         <ol className="dex-grid" aria-label={tr('lists.pokedex')}>
           {shown.map(name => (
-            <DexCell key={name} name={name} fav={effective.favorites.has(name)} ban={effective.bans.has(name)} target={name === target}
+            // Stesse regole dei suggerimenti: bannare la specie base vale anche per le sue Mega e forme
+            <DexCell key={name} name={name} fav={isUserFavorite({ species: name, item: '' }, effective)}
+              ban={isUserBanned({ species: name, item: '' }, effective)} target={name === target}
               onToggle={toggleRef} />
           ))}
         </ol>

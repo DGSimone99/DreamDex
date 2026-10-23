@@ -1498,6 +1498,7 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .lists-panel h2 { margin-bottom: 4px; }
 .lists-bar { display: flex; gap: 12px; align-items: center; margin: 12px 0; }
 .lists-bar .search-field { flex: 1; }
+.lists-bar .segmented button { white-space: nowrap; padding: 6px 12px; }
 .lists-main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: start; margin-top: 12px; }
 .dex-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 6px; max-height: calc(100vh - 140px); overflow-y: auto; }
 .dex-cell { position: relative; display: grid; justify-items: center; padding: 6px 4px 8px; background: var(--panel); border: 1px solid var(--line-soft); border-radius: 4px; }
@@ -1529,3 +1530,4 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .list-none { margin: 0; color: var(--muted); font-size: 13px; }
 .lists-copy select { font-size: 14px; }
 @media (max-width: 1100px) { .lists-main { grid-template-columns: 1fr; } .lists-side { position: static; } }
+.lists-bar .search-hint { max-width: 360px; }

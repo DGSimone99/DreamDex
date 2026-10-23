@@ -129,7 +129,7 @@ export function effectiveLists(lists: UserLists, formatId: FormatId): EffectiveL
 /** Tutti i Pokémon che si possono mettere in un team nel formato, in ordine di Pokédex (la forma base prima delle altre). */
 export function pokedexSpecies(format: Format): string[] {
   return dex.species.all()
-    .filter(s => isTeambuildable(s) && speciesInPokedex(s, format) && !isCosmeticForme(s) && withinGen(s, format))
+    .filter(s => isTeambuildable(s) && speciesInPokedex(s, format) && !isCosmeticForme(s) && withinGen(s, format) && !s.forme.includes('Totem'))
     .sort((a, b) => a.num - b.num || Number(!!a.forme) - Number(!!b.forme) || a.name.localeCompare(b.name))
     .map(s => s.name);
 }

@@ -85,3 +85,13 @@ describe('preferiti: a pari quasi merito passano avanti', () => {
     expect(applyFavorites(items, i => !!i.fav, i => i.v).map(i => i.id)).toEqual(['B', 'C', 'A']);
   });
 });
+
+describe('Pokédex della scheda Liste', () => {
+  it('in ordine, la forma base prima, niente forme Totem', async () => {
+    const { pokedexSpecies } = await import('../../src/engine/lists');
+    const names = pokedexSpecies(DEFAULT_FORMAT);
+    expect(names.slice(0, 2)).toEqual(['Bulbasaur', 'Ivysaur']);
+    expect(names.indexOf('Charizard')).toBeLessThan(names.indexOf('Charizard-Mega-X'));
+    expect(names.some(name => name.includes('Totem'))).toBe(false);
+  });
+});

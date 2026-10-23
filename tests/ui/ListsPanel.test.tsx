@@ -96,3 +96,14 @@ describe('scheda Liste', () => {
     expect(within(panel()).getByText(/Copiati 1, saltati 1/)).toBeInTheDocument();
   });
 });
+
+describe('scheda Liste: forme', () => {
+  it('bannare la specie base sbiadisce anche la sua Mega', () => {
+    const lists: UserLists = { ...EMPTY_LISTS, byFormat: { ou: { favorites: [], bans: ['Venusaur'] } } };
+    renderIt(<ListsPanel lists={lists} format={DEFAULT_FORMAT} data={fixtureData} onChange={vi.fn()} />);
+    const cell = (name: string) => [...document.querySelectorAll('.dex-cell')].find(li => li.querySelector('.dex-name')?.textContent === name)!;
+    expect(cell('Venusaur')).toHaveClass('ban');
+    expect(cell('Venusaur-Mega')).toHaveClass('ban');
+    expect(cell('Ivysaur')).not.toHaveClass('ban');
+  });
+});
