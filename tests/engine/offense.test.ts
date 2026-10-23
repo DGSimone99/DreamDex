@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { memberOffense, offenseReference, POWER_FULL, RANK_WEIGHTS, REFERENCE_RANK, stepValue, teamOffense } from '../../src/engine/offense';
 import { bestHit } from '../../src/engine/damage';
 import { defenderPanel } from '../../src/engine/defenders';
+import { coverageTargets } from '../../src/engine/coverage';
 import { mostCommonSet } from '../../src/engine/sets';
 import type { TeamSet } from '../../src/engine/sets';
 import { fixtureData, fixtureStats, tusk } from '../fixtures/data';
@@ -137,20 +138,22 @@ describe('correzioni della revisione', () => {
 
 describe('scala dei membri e del team', () => {
   it('contro ogni difensore il danno conta al massimo il 100%: un KO esagerato non gonfia la Potenza', () => {
-    // Ninetales al sole senza investimento: Weather Ball di Fuoco va oltre il 100% sugli Acciaio, poco sugli altri
-    const ninetales = set('Ninetales', 'Heat Rock', 'Drought', ['Weather Ball', 'Encore'], 'Bold', { hp: 252, def: 252 });
-    const hits = defenderPanel(noStats).map(d => bestHit(ninetales, d, { conditions: ['sun'] })?.expected ?? 0);
+    // Ninetales al sole: Weather Ball di Fuoco va oltre il 100% sui tipi deboli al Fuoco, poco sugli altri
+    // Investimento scelto perché il danno medio resti sotto il riferimento fisso (60%) sia con il tetto sia senza
+    const ninetales = set('Ninetales', 'Life Orb', 'Drought', ['Weather Ball', 'Encore'], 'Modest', { spa: 120, spe: 252 });
+    // La Potenza si misura contro i bersagli della Coverage (senza meta: i 18 tipi neutri, stesso peso)
+    const hits = coverageTargets(noStats).map(t => bestHit(ninetales, t.set, { conditions: ['sun'] })?.expected ?? 0);
     const score = (xs: number[]) => Math.round(100 * Math.min(1, xs.reduce((a, b) => a + b, 0) / xs.length / POWER_FULL));
     const capped = score(hits.map(x => Math.min(1, x)));
     expect(capped).toBeLessThan(score(hits));
     expect(memberOffense(ninetales, [ninetales], noStats)!.power).toBe(capped);
   });
 
-  it('il 100 del membro è il 3° miglior attaccante del meta; il team è la media pesata, senza moltiplicatori', () => {
+  it('il 100 del membro è il 3° miglior attaccante del meta; la Potenza del team è la media pesata, senza moltiplicatori', () => {
     expect(REFERENCE_RANK).toBe(3);
     const team = teamOffense([chomp, blissey], fixtureData);
-    const raw = (0.22 * Math.max(...team.members.map(m => m.value)) + 0.18 * Math.min(...team.members.map(m => m.value))) / 0.4;
-    expect(team.memberValue).toBe(Math.round(raw));
+    const raw = (0.22 * Math.max(...team.members.map(m => m.power)) + 0.18 * Math.min(...team.members.map(m => m.power))) / 0.4;
+    expect(team.power).toBe(Math.round(raw));
   });
 });
 
@@ -161,5 +164,44 @@ describe('la Coverage dentro l\'Offesa', () => {
     expect(Array.isArray(team.holes)).toBe(true);
     expect(team.value).toBe(Math.round(0.75 * team.memberValue + 0.25 * team.coverage));
     expect(team.members.map(m => m.covered)).toHaveLength(2);
+  });
+});
+
+describe('Offesa di squadra', () => {
+  const corv = set('Corviknight', 'Leftovers', 'Pressure', ['Body Press', 'Iron Defense', 'Roost'], 'Impish', { hp: 252, def: 252 });
+  const gliscor = set('Gliscor', 'Toxic Orb', 'Poison Heal', ['Swords Dance', 'Earthquake', 'Facade', 'Protect'], 'Jolly', { hp: 244, atk: 12, spe: 252 });
+
+  it('Wallbreaking di squadra: conta chi sfonda ogni muro, con la profondità; mai sotto il miglior membro', () => {
+    const one = teamOffense([chomp], noStats);
+    const two = teamOffense([chomp, { ...chomp }], noStats);
+    expect(two.wallbreaking).toBeGreaterThan(one.wallbreaking);
+    const mixed = teamOffense([chomp, corv], noStats);
+    expect(mixed.wallbreaking).toBeGreaterThanOrEqual(Math.max(...mixed.members.map(m => m.wallbreaking)) * 0.7);
+  });
+
+  it('Setup di squadra: la win condition migliore più il 20% della seconda', () => {
+    const team = teamOffense([gliscor, corv], noStats);
+    const [best, second] = team.members.map(m => m.setup!).sort((a, b) => b - a);
+    expect(team.setup).toBe(Math.min(100, Math.round(best + 0.2 * second)));
+  });
+
+  it('Offesa del team dalle sottostatistiche di squadra: 75% (Potenza, Wallbreaking, Setup) + 25% Coverage', () => {
+    const team = teamOffense([gliscor, chomp], noStats);
+    const base = Math.round((0.5 * team.power + 0.35 * team.wallbreaking) / 0.85);
+    const withSetup = team.setup === null ? base : Math.max(base, Math.round(0.5 * team.power + 0.35 * team.wallbreaking + 0.15 * team.setup));
+    expect(team.value).toBe(Math.round(0.75 * withSetup + 0.25 * team.coverage));
+  });
+
+  it('Potenza contro i bersagli della Coverage (senza meta: i 18 tipi neutri), il Wallbreaking contro i muri', () => {
+    const targets = coverageTargets(noStats);
+    const hits = targets.map(t => Math.min(1, bestHit(chomp, t.set)?.expected ?? 0));
+    const mean = hits.reduce((a, h, i) => a + h * targets[i].weight, 0);
+    expect(memberOffense(chomp, [chomp], noStats)!.power).toBe(Math.round(100 * Math.min(1, mean / POWER_FULL)));
+  });
+
+  it('la Coverage del membro è una percentuale pesata', () => {
+    const targets = coverageTargets(noStats);
+    const covered = targets.filter(t => Math.min(1, bestHit(chomp, t.set)?.expected ?? 0) >= 0.5).length;
+    expect(teamOffense([chomp], noStats).members[0].covered).toBe(Math.round(100 * covered / targets.length));
   });
 });

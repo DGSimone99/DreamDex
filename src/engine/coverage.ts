@@ -64,7 +64,7 @@ export interface TeamCoverage {
   value: number;
   /** Bersagli che nessuno porta al 33%. */
   holes: string[];
-  /** Quanti bersagli copre ogni membro (nell'ordine del team). */
+  /** Quota pesata (0–100) dei bersagli che ogni membro manda KO in due colpi (nell'ordine del team). */
   perMember: number[];
 }
 
@@ -95,6 +95,6 @@ export function teamCoverage(team: TeamSet[], data: EngineData): TeamCoverage {
   return {
     value: Math.round(100 * value),
     holes,
-    perMember: hits.map(h => h.filter(x => x >= COVER_HIT).length),
+    perMember: hits.map(h => Math.round(100 * targets.reduce((acc, target, i) => acc + (h[i] >= COVER_HIT ? target.weight : 0), 0))),
   };
 }

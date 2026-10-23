@@ -70,9 +70,8 @@ describe('regole di Ubers', () => {
   });
 
   it('un team da C o D si può ancora ricostruire: lì i consigli possono cambiare tipo di team', () => {
-    const grade = rateTeam(ho, ubers)!.grade;
-    expect(['C', 'D']).toContain(grade);
-    expect(archetypeLock(ho, UBERS_RULES, grade)).toBeUndefined();
+    // Il voto si passa direttamente: durante la revisione del voto le medie si spostano
+    for (const grade of ['C', 'D']) expect(archetypeLock(ho, UBERS_RULES, grade)).toBeUndefined();
     // Da B in su il tipo di team resta quello; fuori da Ubers non si blocca mai
     expect(archetypeLock(ho, UBERS_RULES, 'B')).toBe(teamArchetype(ho, UBERS_RULES)?.archetype);
     expect(archetypeLock(ho, DEFAULT_RULES, 'B')).toBeUndefined();

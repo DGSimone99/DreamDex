@@ -84,7 +84,7 @@ export function AreaDetail({ rating, area, onClose }: { rating: TeamRating; area
                     <th scope="row"><span className="area-mon"><Sprite species={m.species} size={40} />{m.species}</span></th>
                     <td>{m.power}</td>
                     <td>{m.wallbreaking}</td>
-                    <td>{m.covered}/{offense.targets}</td>
+                    <td>{m.covered}%</td>
                     <td className={m.setup === null ? 'none' : undefined}>{m.setup ?? '—'}</td>
                     <td className="total">{m.value}</td>
                   </tr>

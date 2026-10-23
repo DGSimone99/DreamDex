@@ -1,6 +1,6 @@
 import { usesMeta } from './analysis';
 import { coverageTargets, teamCoverage } from './coverage';
-import { bestHit, setKey, type FieldCondition, type Hit, type HitOptions } from './damage';
+import { bestHit, setKey, type FieldCondition, type Hit, type HitOptions, type Target } from './damage';
 import type { EngineData } from './data';
 import { defenderPanel, isDefensiveSet, metaDefenderCount } from './defenders';
 import { battleAbility, battleSpecies, dex, getMove, toID } from './dex';
@@ -103,8 +103,11 @@ function setupBoosts(set: TeamSet): HitOptions['boosts'] | null {
   return best;
 }
 
-/** Misure grezze del set contro i difensori: danno medio, valore medio dei colpi, lo stesso dopo il setup. */
-interface Raw { species: string; expected: number; step: number; setupStep: number | null }
+/**
+ * Misure grezze del set: danno medio contro i bersagli della Coverage (i Pokémon più usati, o i 18 tipi neutri),
+ * e il valore del colpo migliore contro ogni muro del formato, anche dopo il setup.
+ */
+interface Raw { species: string; expected: number; steps: number[]; setupSteps: number[] | null }
 
 function measureSet(set: TeamSet, team: TeamSet[], data: EngineData): Raw | null {
   const species = battleSpecies(set);
@@ -115,34 +118,36 @@ function measureSet(set: TeamSet, team: TeamSet[], data: EngineData): Raw | null
   const tera = teraAllowed({ ...DEFAULT_FORMAT, formatId: data.formatId ?? 'ou' }) && !!set.teraType ? [false, true] : [false];
   const zType = dex.items.get(set.item).zMoveType;
   const z = zType && set.moves.some(m => getMove(m)?.type === zType) ? [false, true] : [false];
-  const defenders = defenderPanel(data);
+  let known = false;
 
-  // Per ogni difensore: media sulle varianti; il meteo del team vale metà (mai sotto il danno senza)
-  const measure = (boosts?: HitOptions['boosts']) => {
-    let known = false;
-    const perDefender = defenders.map(defender => {
-      const expected: number[] = [];
-      const steps: number[] = [];
-      for (const useTera of tera) for (const useZ of z) {
-        const base = { tera: useTera, z: useZ, boosts };
-        const off = bestHit(set, defender, { ...base, conditions: own });
-        const on = all.length > own.length ? bestHit(set, defender, { ...base, conditions: all }) : off;
-        if (off || on) known = true;
-        const better = (on?.expected ?? 0) >= (off?.expected ?? 0) ? on : off;
-        // Un KO è un KO: oltre il 100% dei PS il danno non conta di più
-        expected.push((Math.min(1, off?.expected ?? 0) + Math.min(1, better?.expected ?? 0)) / 2);
-        steps.push((stepValue(off) + stepValue(better)) / 2);
-      }
-      return { expected: mean(expected), step: mean(steps) };
-    });
-    return { known, expected: mean(perDefender.map(d => d.expected)), step: mean(perDefender.map(d => d.step)) };
+  // Contro un bersaglio: media sulle varianti; il meteo del team vale metà (mai sotto il danno senza)
+  const against = (target: Target, boosts?: HitOptions['boosts']) => {
+    const expected: number[] = [];
+    const steps: number[] = [];
+    for (const useTera of tera) for (const useZ of z) {
+      const base = { tera: useTera, z: useZ, boosts };
+      const off = bestHit(set, target, { ...base, conditions: own });
+      const on = all.length > own.length ? bestHit(set, target, { ...base, conditions: all }) : off;
+      if (off || on) known = true;
+      const better = (on?.expected ?? 0) >= (off?.expected ?? 0) ? on : off;
+      // Un KO è un KO: oltre il 100% dei PS il danno non conta di più
+      expected.push((Math.min(1, off?.expected ?? 0) + Math.min(1, better?.expected ?? 0)) / 2);
+      steps.push((stepValue(off) + stepValue(better)) / 2);
+    }
+    return { expected: mean(expected), step: mean(steps) };
   };
 
-  const plain = measure();
+  const targets = coverageTargets(data);
+  const expected = targets.reduce((acc, target) => acc + target.weight * against(target.set).expected, 0);
+  const defenders = defenderPanel(data);
+  const steps = defenders.map(defender => against(defender).step);
   // Ha mosse d'attacco ma la libreria non sa calcolarne nessuna: Pokémon sconosciuto, non conta
-  if (attacks && !plain.known) return null;
+  if (attacks && !known) return null;
   const boosts = setupBoosts(set);
-  return { species: species.name, expected: plain.expected, step: plain.step, setupStep: boosts && attacks ? measure(boosts).step : null };
+  return {
+    species: species.name, expected, steps,
+    setupSteps: boosts && attacks ? defenders.map(defender => against(defender, boosts).step) : null,
+  };
 }
 
 /** Per contenuto del set, formato, meta e condizioni del team: le proposte rifanno set uguali con oggetti nuovi. */
@@ -184,7 +189,8 @@ export function offenseReference(data: EngineData): OffenseReference {
     .filter((set): set is TeamSet => !!set
       && set.moves.filter(m => (getMove(m)?.category ?? 'Status') !== 'Status').length >= 2 && !isDefensiveSet(set, rules))
     .map(set => rawOf(set, [set], data))
-    .filter((raw): raw is Raw => raw !== null);
+    .filter((raw): raw is Raw => raw !== null)
+    .map(raw => ({ species: raw.species, expected: raw.expected, step: mean(raw.steps) }));
   const nth = (values: number[]) => values.sort((a, b) => b - a)[Math.min(REFERENCE_RANK, values.length) - 1];
   const power = measured.length ? nth(measured.map(r => r.expected)) : 0;
   const step = measured.length ? nth(measured.map(r => r.step)) : 0;
@@ -203,13 +209,16 @@ export function memberOffense(set: TeamSet, team: TeamSet[], data: EngineData): 
   if (!raw) return null;
   const ref = offenseReference(data);
   const power = toScore(raw.expected, ref.power);
-  const wallbreaking = toScore(raw.step, ref.step);
-  const setup = raw.setupStep === null ? null : toScore(raw.setupStep, ref.step);
+  const wallbreaking = toScore(mean(raw.steps), ref.step);
+  const setup = raw.setupSteps === null ? null : toScore(mean(raw.setupSteps), ref.step);
+  return { species: raw.species, power, wallbreaking, setup, value: blend(power, wallbreaking, setup), covered: 0 };
+}
+
+/** Potenza 50%, Wallbreaking 35%, Setup 15%; senza setup le prime due si dividono tutto, e il setup può solo aggiungere. */
+function blend(power: number, wallbreaking: number, setup: number | null): number {
   const w = OFFENSE_WEIGHTS;
   const base = Math.round((w.power * power + w.wallbreaking * wallbreaking) / (w.power + w.wallbreaking));
-  // Il setup può solo aggiungere: un potenziamento che vale meno degli attacchi non abbassa il membro
-  const value = setup === null ? base : Math.max(base, Math.round(w.power * power + w.wallbreaking * wallbreaking + w.setup * setup));
-  return { species: raw.species, power, wallbreaking, setup, value, covered: 0 };
+  return setup === null ? base : Math.max(base, Math.round(w.power * power + w.wallbreaking * wallbreaking + w.setup * setup));
 }
 
 /** Media pesata per posizione: valori dal più alto al più basso, pesi 22/18/16/15/15/14% (rinormalizzati se sono meno di sei). */
@@ -221,25 +230,45 @@ function rankWeighted(values: number[]): number {
   return Math.round(sorted.reduce((acc, v, i) => acc + v * weights[i], 0) / total);
 }
 
-/** Offesa del team: 75% la media pesata per posizione dei membri, 25% la Coverage; il Setup solo fra chi ce l'ha. */
+/** Profondità del Wallbreaking di squadra: il 1°, 2° e 3° membro che sfonda un muro valgono 70, 20 e 10%. */
+export const WALL_DEPTH = [0.7, 0.2, 0.1];
+/** Setup di squadra: la win condition migliore, più questa quota della seconda. */
+export const SECOND_SETUP = 0.2;
+
+/**
+ * Offesa del team dalle sottostatistiche di squadra: Potenza (media pesata per posizione dei membri),
+ * Wallbreaking (chi sfonda ogni muro, con la profondità), Setup (la win condition migliore più un po' della seconda),
+ * combinate come per un membro; poi 75% questo e 25% la Coverage.
+ */
 export function teamOffense(team: TeamSet[], data: EngineData): TeamOffense {
   const coverage = teamCoverage(team, data);
+  const ref = offenseReference(data);
+  const raws = team.map(set => rawOf(set, team, data)).filter((r): r is Raw => r !== null);
   const members = team
     .map((set, i) => { const m = memberOffense(set, team, data); return m && { ...m, covered: coverage.perMember[i] }; })
     .filter((m): m is MemberOffense => m !== null);
-  const setters = members.filter(m => m.setup !== null);
-  const memberValue = rankWeighted(members.map(m => m.value));
+  const defenders = defenderPanel(data);
+  // Per ogni muro, i membri dal più forte: il team lo sfonda se qualcuno ci riesce, meglio se più di uno
+  const wallStep = mean(defenders.map((_, d) => {
+    const best = raws.map(r => r.steps[d]).sort((a, b) => b - a);
+    return WALL_DEPTH.reduce((acc, share, i) => acc + share * (best[i] ?? 0), 0);
+  }));
+  const setups = members.filter(m => m.setup !== null).map(m => m.setup!).sort((a, b) => b - a);
+  const power = rankWeighted(members.map(m => m.power));
+  const wallbreaking = raws.length ? toScore(wallStep, ref.step) : 0;
+  const setup = setups.length ? Math.min(100, Math.round(setups[0] + SECOND_SETUP * (setups[1] ?? 0))) : null;
+  const memberValue = members.length ? blend(power, wallbreaking, setup) : 0;
   return {
     value: members.length ? Math.round((1 - COVERAGE_SHARE) * memberValue + COVERAGE_SHARE * coverage.value) : 0,
     memberValue,
     coverage: coverage.value,
     holes: coverage.holes,
     targets: coverageTargets(data).length,
-    power: rankWeighted(members.map(m => m.power)),
-    wallbreaking: rankWeighted(members.map(m => m.wallbreaking)),
-    setup: setters.length ? rankWeighted(setters.map(m => m.setup!)) : null,
+    power,
+    wallbreaking,
+    setup,
     members,
-    defenders: defenderPanel(data).map(set => set.species),
+    defenders: defenders.map(set => set.species),
     metaDefenders: metaDefenderCount(data),
   };
 }
