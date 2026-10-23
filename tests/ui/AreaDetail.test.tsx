@@ -40,6 +40,16 @@ describe("dettaglio dell'Offesa a schede", () => {
     }
   });
 
+  it('Generale: quanti attaccanti fisici, speciali e misti (solo informazione)', async () => {
+    const { dialog } = await openOffense('it');
+    expect(within(dialog).getByRole('tabpanel')).toHaveTextContent('Attaccanti: 1 fisico · 1 speciale · 0 misti');
+  });
+
+  it('Generale in inglese: la riga degli attaccanti', async () => {
+    const { dialog } = await openOffense('en');
+    expect(within(dialog).getByRole('tabpanel')).toHaveTextContent('Attackers: 1 physical · 1 special · 0 mixed');
+  });
+
   it('Potenza: come si calcola e la Potenza di ogni membro col suo colpo migliore', async () => {
     const { user, dialog } = await openOffense('it');
     await user.click(within(dialog).getByRole('tab', { name: /^Potenza/ }));

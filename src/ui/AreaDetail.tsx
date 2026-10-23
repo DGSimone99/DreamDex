@@ -114,6 +114,12 @@ function offenseTabs(rating: TeamRating, t: T): DetailTab[] {
     <>
       <h4>{t('detail.general.title')}</h4>
       <p>{t(meta ? 'detail.general.lead.meta' : 'detail.general.lead.tier', { walls: offense.defenders.length })}</p>
+      {/* Solo informazione: quanti attaccanti per stile, non entra nel voto */}
+      <p className="ad-holes">{t('detail.attackers', {
+        physical: `${offense.attackers.physical} ${t(offense.attackers.physical === 1 ? 'detail.attackers.physical.one' : 'detail.attackers.physical.many')}`,
+        special: `${offense.attackers.special} ${t(offense.attackers.special === 1 ? 'detail.attackers.special.one' : 'detail.attackers.special.many')}`,
+        mixed: `${offense.attackers.mixed} ${t(offense.attackers.mixed === 1 ? 'detail.attackers.mixed.one' : 'detail.attackers.mixed.many')}`,
+      })}</p>
       <dl className="ad-subs">
         {subs.map(sub => (
           <div key={sub} className="ad-sub">
