@@ -127,7 +127,8 @@ function TeamSlot({ index, set, data, format, warning: megaWarning, open, draggi
   const card = useRef<HTMLElement>(null);
   useSlant(card);
   // Calcoli del membro (il confronto di Velocità prova 40 rivali): solo quando cambia il set
-  const presets = useMemo<Preset[]>(() => presetsForSet(data, set), [data, set]);
+  // Preset resi legali fino al limite di generazione: menu e Preset migliore propongono lo stesso set
+  const presets = useMemo<Preset[]>(() => presetsForSet(data, set, format.genLimit), [data, set, format.genLimit]);
   const common = useMemo<CommonChoices>(() => commonChoices(data, set), [data, set]);
   const speed = useMemo<SpeedTier | null>(() => speedTier(set, data), [data, set]);
   // Gestori sempre aggiornati anche dentro l'editor memorizzato

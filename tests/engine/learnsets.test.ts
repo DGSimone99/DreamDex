@@ -1,7 +1,8 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import type { EngineData } from '../../src/engine/data';
 import { illegalParts, initLearnsets, legalAbilities, legalMoves } from '../../src/engine/learnsets';
-import { defaultSet, emptySet, type TeamSet } from '../../src/engine/sets';
+import { defaultSet, emptySet, presetsForSet, type TeamSet } from '../../src/engine/sets';
+import { bestPreset, bestPresets } from '../../src/engine/bestPreset';
 import type { SpeciesStats } from '../../src/engine/stats';
 
 beforeAll(async () => { await initLearnsets(); });
@@ -112,5 +113,25 @@ describe('set delle analisi Smogon considerati legali', () => {
     } };
     expect(defaultSet(data, 'Diancie-Mega')).toEqual(preset);
     expect(defaultSet(data, 'Serperior')).toEqual(hp);
+  });
+});
+
+describe('preset fino al limite di generazione', () => {
+  const urshifu = set('Urshifu-Rapid-Strike', 'Unseen Fist', ['Surging Strikes', 'Close Combat', 'Ice Spinner', 'U-turn'], { item: 'Choice Band' });
+  const data: EngineData = { stats: null, sets: null, presets: {
+    'Urshifu-Rapid-Strike': [{ name: 'Band', format: 'gen9nationaldex', set: urshifu }],
+  } };
+
+  it('con Gen 8 il preset perde Ice Spinner, e così il Preset migliore', () => {
+    const member = set('Urshifu-Rapid-Strike', 'Unseen Fist', ['Close Combat']);
+    expect(presetsForSet(data, member, 8)[0].set.moves).not.toContain('Ice Spinner');
+    expect(presetsForSet(data, member, 9)[0].set.moves).toContain('Ice Spinner');
+    expect(bestPreset([member], 0, data, 8).set.moves).not.toContain('Ice Spinner');
+    expect(bestPresets([member], data, 8)[0].moves).not.toContain('Ice Spinner');
+  });
+
+  it('con Custom Skillset il preset resta com\'è', () => {
+    const member = set('Urshifu-Rapid-Strike', 'Unseen Fist', ['Close Combat'], { customSkillset: true });
+    expect(presetsForSet(data, member, 8)[0].set.moves).toContain('Ice Spinner');
   });
 });
