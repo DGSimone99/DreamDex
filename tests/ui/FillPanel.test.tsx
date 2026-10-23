@@ -5,6 +5,7 @@ import { DEFAULT_FORMAT } from '../../src/engine/format';
 import type { Proposal } from '../../src/engine/fillProposals';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
 import { FillPanel } from '../../src/ui/FillPanel';
+import { effectiveLists, EMPTY_LISTS } from '../../src/engine/lists';
 import { LangProvider } from '../../src/i18n/react';
 import { fillData } from '../fixtures/fillData';
 import { renderIt } from '../helpers/italian';
@@ -125,4 +126,17 @@ describe('pannello Completa team', () => {
     expect(await screen.findByText('Nessun completamento con questo tipo e questo stile', undefined, { timeout: 20000 })).toBeInTheDocument();
     expect(document.querySelectorAll('.fill-proposal')).toHaveLength(0);
   }, 30000);
+});
+
+describe('Completa team: bannati dell\'utente', () => {
+  it('dice quanti bannati restano fuori', async () => {
+    const userLists = effectiveLists({ ...EMPTY_LISTS, byFormat: { ou: { favorites: [], bans: ['Toxapex', 'Blissey'] } } }, 'ou');
+    renderIt(<FillPanel team={[]} format={DEFAULT_FORMAT} data={{ ...fillData, userLists }} onApply={vi.fn()} onClose={vi.fn()} />);
+    expect(await screen.findByText('2 bannati esclusi')).toBeInTheDocument();
+  });
+
+  it('senza bannati nessuna riga', () => {
+    panel();
+    expect(screen.queryByText(/bannat[oi] esclus/)).toBeNull();
+  });
 });

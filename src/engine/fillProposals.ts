@@ -1,5 +1,6 @@
 import { fitsArchetype, teamArchetype, type Archetype, type FitArchetype, type TeamStyle } from './archetype';
 import type { EngineData } from './data';
+import { applyFavorites, isUserFavorite } from './lists';
 import { battleAbility, battleName, battleSpecies, isMega, toID } from './dex';
 import type { Format } from './format';
 import { formatRules } from './formatRules';
@@ -197,7 +198,9 @@ export function* fillProposals(
     // Negli slot liberi chi sfrutta il meteo ha una piccola precedenza (vale WEATHER_BONUS punti di voto): coverage ed equilibrio restano prima
     const bonus = (set: TeamSet) => (style && style !== 'trickroom' && !setsUp(set, style) && uses(set, style) ? WEATHER_BONUS : 0);
     const scored = top.map((set, i) => ({ set, i, rank: overallOf([...current, set]) + bonus(set) }));
-    return scored.sort((a, b) => b.rank - a.rank || a.i - b.i).map(s => s.set);
+    // A voto quasi pari (FAVORITE_MARGIN) i preferiti dell'utente passano davanti
+    return applyFavorites(scored.sort((a, b) => b.rank - a.rank || a.i - b.i), s => isUserFavorite(s.set, data.userLists), s => s.rank)
+      .map(s => s.set);
   };
 
   /** Riempie gli slot che mancano; al penultimo slot prova qualche alternativa se l'ultimo non quadra. */

@@ -512,6 +512,8 @@ export const en = {
   'team.leadTitle': "First slot: the lead, the Pokémon you send out first",
   'team.emptyAdd': "Add a Pokémon",
   'team.emptyAddTitle': "Search for a Pokémon to add",
+  'lists.bannedExcludedOne': "{n} banned Pokémon excluded",
+  'lists.bannedExcluded': "{n} banned Pokémon excluded",
   'suggest.noMatch': "No Pokémon matches the filters",
   'suggest.emptyTeam': "Add a Pokémon to see how it fits the team — for now sorted by meta usage",
   'suggest.resultsOne': "1 result",

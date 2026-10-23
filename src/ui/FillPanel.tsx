@@ -6,6 +6,7 @@ import { FILL_STYLES, fillProposals, PROPOSALS_PER_ROUND, type FillChoice, type 
 import type { Format } from '../engine/format';
 import { rateTeam } from '../engine/rating';
 import type { TeamSet } from '../engine/sets';
+import { bannedInPool } from '../engine/scoring';
 import { gameName } from '../i18n/game';
 import { useLang, useT } from '../i18n/react';
 import { Sprite } from './Sprite';
@@ -59,6 +60,8 @@ export function FillPanel({ team, format, data, onApply, onClose }: Props) {
   const exclude = useRef(new Set<string>());
   const resetKey = useMemo(() => ({}), [team, format, data, choice]);
   const lastReset = useRef(resetKey);
+  // Chi è nella lista Ban dell'utente non entra nelle proposte: si dice quanti sono
+  const banned = useMemo(() => bannedInPool(team, format, data), [team, format, data]);
   const before = useMemo(() => (team.length ? rateTeam(team, data, lang)?.overall ?? null : null), [team, data, lang]);
   const root = useRef<HTMLDivElement>(null);
 
@@ -193,6 +196,7 @@ export function FillPanel({ team, format, data, onApply, onClose }: Props) {
           ))}
         </ol>
         <p className="fill-status" role="status" aria-live="polite">{status}</p>
+        {banned > 0 && <p className="banned-note">{t(banned === 1 ? 'lists.bannedExcludedOne' : 'lists.bannedExcluded', { n: banned })}</p>}
         <div className="fill-actions">
           <button type="button" disabled={busy || exhausted} onClick={() => setRound(r => r + 1)}>{t('fill.more')}</button>
         </div>

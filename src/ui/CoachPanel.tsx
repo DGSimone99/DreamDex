@@ -39,7 +39,7 @@ export function CoachPanel({ coaching, preview = null, onReplace, onSwap }: {
 }) {
   const tr = useT();
   const lang = useLang();
-  const { verdict, teamType, strengths, problems, swaps } = coaching;
+  const { verdict, teamType, strengths, problems, swaps, bannedCount = 0 } = coaching;
   return (
     <details className="block coach" open>
       <summary>
@@ -100,6 +100,8 @@ export function CoachPanel({ coaching, preview = null, onReplace, onSwap }: {
           })}
         </>
       )}
+      {/* Sostituzioni: chi è nella lista Ban dell'utente non viene proposto, ma si dice quanti sono */}
+      {bannedCount > 0 && <p className="banned-note">{tr(bannedCount === 1 ? 'lists.bannedExcludedOne' : 'lists.bannedExcluded', { n: bannedCount })}</p>}
       {SWAP_GROUPS.map(({ level, title: titleKey }) => {
         const title = tr(titleKey);
         const group = swaps.filter(swap => swap.level === level);

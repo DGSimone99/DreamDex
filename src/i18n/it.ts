@@ -514,6 +514,8 @@ export const it: Record<keyof typeof en, string> = {
   'team.leadTitle': "Primo slot: la lead, il Pokémon che mandi in campo per primo",
   'team.emptyAdd': "Aggiungi un Pokémon",
   'team.emptyAddTitle': "Cerca un Pokémon da aggiungere",
+  'lists.bannedExcludedOne': "{n} bannato escluso",
+  'lists.bannedExcluded': "{n} bannati esclusi",
   'suggest.noMatch': "Nessun Pokémon corrisponde ai filtri",
   'suggest.emptyTeam': "Aggiungi un Pokémon per vedere come si adatta al team — per ora ordinati per uso nel meta",
   'suggest.resultsOne': "1 risultato",
