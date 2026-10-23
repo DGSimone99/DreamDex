@@ -12,38 +12,74 @@ async function openOffense(lang: 'it' | 'en') {
   const rating = screen.getByRole('group', { name: lang === 'it' ? 'Valutazione team' : 'Team rating' });
   const bar = within(rating).getByRole('button', { name: lang === 'it' ? /^Offesa \d+$/ : /^Offense \d+$/ });
   await user.click(bar);
-  return { user, bar };
+  const dialog = screen.getByRole('dialog', { name: bar.textContent! });
+  return { user, bar, dialog };
 }
 
-describe('dettaglio dell\'Offesa', () => {
-  it('cliccando la barra si apre il dettaglio con le sottostatistiche e i membri', async () => {
-    const { bar } = await openOffense('it');
-    const dialog = screen.getByRole('dialog', { name: bar.textContent! });
-    expect(within(dialog).getAllByRole('term').map(term => term.textContent)).toEqual(['Potenza', 'Wallbreaking', 'Coverage']);
-    // I bersagli che nessuno scalfisce sono elencati (o si dice che non ce ne sono)
-    expect(dialog).toHaveTextContent(/Buchi: |Nessun buco/);
-    const table = within(dialog).getByRole('table');
+describe("dettaglio dell'Offesa a schede", () => {
+  it('quattro schede col loro valore; si parte da Generale con le sottostatistiche e i membri', async () => {
+    const { dialog } = await openOffense('it');
+    const tabs = within(dialog).getAllByRole('tab');
+    expect(tabs.map(tab => tab.textContent!.replace(/\d+$/, ''))).toEqual(['Generale', 'Potenza', 'Wallbreaking', 'Coverage']);
+    expect(tabs[0]).toHaveAttribute('aria-selected', 'true');
+    const panel = within(dialog).getByRole('tabpanel');
+    expect(within(panel).getAllByRole('term').map(term => term.textContent)).toEqual(['Potenza', 'Wallbreaking', 'Coverage']);
+    const table = within(panel).getByRole('table');
     expect(within(table).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Potenza', 'Wallbreaking', 'Coverage', 'Offesa']);
     const rows = within(table).getAllByRole('row').slice(1);
     expect(rows.map(r => within(r).getByRole('rowheader').textContent)).toEqual(['Great Tusk', 'Gholdengo']);
-    // La Coverage del membro è una percentuale
-    for (const row of rows) expect(within(row).getAllByRole('cell')[2]).toHaveTextContent(/^\d+%$/);
-    // Il setup non è più un numero: il Potenziale sta col Wallbreaking (o si dice che nessuno ha setup)
-    expect(dialog).toHaveTextContent(/Potenziale \+\d+ con il setup|Nessun membro ha una mossa di potenziamento/);
-    // La fixture ha pochi muri nel meta: il resto viene dal tier, e la riga lo dice
-    expect(dialog).toHaveTextContent(/del meta, gli altri i più robusti del tier/);
+    for (const row of rows) {
+      const cells = within(row).getAllByRole('cell');
+      expect(cells[2]).toHaveTextContent(/^\d+%$/);
+      // L'Offesa del membro, con tra parentesi i punti che vengono dal setup
+      expect(cells[3]).toHaveTextContent(/^\d+( \(\+\d+\))?$/);
+    }
   });
 
-  it('Esc chiude e il focus torna alla barra', async () => {
-    const { user, bar } = await openOffense('it');
+  it('Potenza: come si calcola e la Potenza di ogni membro col suo colpo migliore', async () => {
+    const { user, dialog } = await openOffense('it');
+    await user.click(within(dialog).getByRole('tab', { name: /^Potenza/ }));
+    const panel = within(dialog).getByRole('tabpanel');
+    expect(panel).toHaveTextContent(/3° miglior attaccante/);
+    expect(within(panel).getAllByRole('row').length).toBe(3);
+  });
+
+  it('Wallbreaking: muro per muro, il danno di ogni membro e quante risposte ha il team', async () => {
+    const { user, dialog } = await openOffense('it');
+    await user.click(within(dialog).getByRole('tab', { name: /^Wallbreaking/ }));
+    const panel = within(dialog).getByRole('tabpanel');
+    const rows = within(panel).getAllByRole('row').slice(1);
+    expect(rows).toHaveLength(12);
+    for (const row of rows) {
+      const cells = within(row).getAllByRole('cell');
+      // Due membri e la colonna delle risposte
+      expect(cells).toHaveLength(3);
+      expect(cells[0]).toHaveTextContent(/^\d+%( \(\d+%\))?$/);
+      expect(cells[2]).toHaveTextContent(/^[0-2]$/);
+    }
+  });
+
+  it('Coverage: i buchi e ogni bersaglio con chi lo copre', async () => {
+    const { user, dialog } = await openOffense('it');
+    await user.click(within(dialog).getByRole('tab', { name: /^Coverage/ }));
+    const panel = within(dialog).getByRole('tabpanel');
+    expect(panel).toHaveTextContent(/Buchi:|Nessun buco/);
+    expect(within(panel).getAllByRole('row').length).toBeGreaterThan(1);
+  });
+
+  it('frecce fra le schede; Esc chiude e il focus torna alla barra', async () => {
+    const { user, bar, dialog } = await openOffense('it');
+    within(dialog).getAllByRole('tab')[0].focus();
+    await user.keyboard('{ArrowDown}');
+    expect(within(dialog).getByRole('tab', { name: /^Potenza/ })).toHaveAttribute('aria-selected', 'true');
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(bar).toHaveFocus();
   });
 
   it('in inglese', async () => {
-    const { bar } = await openOffense('en');
-    const dialog = screen.getByRole('dialog', { name: bar.textContent! });
+    const { dialog } = await openOffense('en');
+    expect(within(dialog).getAllByRole('tab').map(tab => tab.textContent!.replace(/\d+$/, ''))).toEqual(['General', 'Power', 'Wallbreaking', 'Coverage']);
     expect(within(dialog).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Power', 'Wallbreaking', 'Coverage', 'Offense']);
   });
 });

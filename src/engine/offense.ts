@@ -78,6 +78,8 @@ export interface TeamOffense {
   members: MemberOffense[];
   /** Per ogni muro (ordine di `defenders`) e membro (ordine di `members`): soglia e danno, senza e con il setup. */
   walls: { species: string; cells: WallCell[] }[];
+  /** I tre migliori attaccanti del meta: il 3° è il 100 di Potenza e Wallbreaking (vuoto senza statistiche). */
+  referenceAttackers: string[];
   /** Per ogni bersaglio della Coverage: tipi, Pokémon, peso e chi lo copre. */
   coverageRows: { label: string; species: string; weight: number; coveredBy: string[] }[];
   /** I difensori contro cui si è misurata (per spiegare il voto): i primi `metaDefenders` dal meta, gli altri dal tier. */
@@ -313,6 +315,7 @@ export function teamOffense(team: TeamSet[], data: EngineData): TeamOffense {
     coverage: coverage.value,
     holes: coverage.holes,
     coverageRows: coverage.rows,
+    referenceAttackers: ref.attackers.slice(0, REFERENCE_RANK),
     targets: coverageTargets(data).length,
     power,
     wallbreaking,
@@ -323,9 +326,10 @@ export function teamOffense(team: TeamSet[], data: EngineData): TeamOffense {
     walls: defenders.map((defender, d) => ({
       species: defender.species,
       cells: raws.map(r => ({
-        step: r.steps[d], pct: Math.round(100 * r.hits[d]),
+        // Troncato, non arrotondato: 32,9% non deve sembrare il 33% della soglia del 3HKO
+        step: r.steps[d], pct: Math.floor(100 * r.hits[d]),
         setupStep: r.setupSteps ? Math.max(r.steps[d], r.setupSteps[d]) : null,
-        setupPct: r.setupHits ? Math.round(100 * Math.max(r.hits[d], r.setupHits[d])) : null,
+        setupPct: r.setupHits ? Math.floor(100 * Math.max(r.hits[d], r.setupHits[d])) : null,
       })),
     })),
     defenders: defenders.map(set => set.species),
