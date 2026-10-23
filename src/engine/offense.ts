@@ -129,6 +129,22 @@ const SPECIAL_BOOSTS: Record<string, { atk?: number; spa?: number; def?: number 
   bellydrum: { atk: 6 }, curse: { atk: 1, def: 1 }, tidyup: { atk: 1 },
 };
 
+const WEATHERS: FieldCondition[] = ['sun', 'rain', 'sand', 'snow'];
+
+/**
+ * Le combinazioni di campo che il team può dare al membro, oltre alle sue: un meteo e un terreno alla volta
+ * (due meteo non stanno insieme). Quelli che il membro porta con la sua abilità restano sempre.
+ */
+function fieldCombos(own: FieldCondition[], all: FieldCondition[]): FieldCondition[][] {
+  const isWeather = (c: FieldCondition) => WEATHERS.includes(c);
+  const options = (pick: (c: FieldCondition) => boolean) => {
+    const mine = own.filter(pick);
+    return mine.length ? [mine] : [[], ...all.filter(pick).map(c => [c])];
+  };
+  const combos = options(isWeather).flatMap(w => options(c => !isWeather(c)).map(t => [...w, ...t]));
+  return combos.filter(c => c.length > own.length);
+}
+
 /** La mossa di potenziamento più forte del set: Attacco, Attacco Speciale, o Difesa con Body Press, dopo un uso. */
 function setupBoosts(set: TeamSet): { move: string; boosts: NonNullable<HitOptions['boosts']> } | null {
   const bodyPress = set.moves.some(m => toID(m) === 'bodypress');
@@ -164,6 +180,7 @@ function measureSet(set: TeamSet, team: TeamSet[], data: EngineData): Raw | null
   if (!species) return null;
   const attacks = set.moves.some(m => (getMove(m)?.category ?? 'Status') !== 'Status');
   const { own, all } = conditionsOf(set, team);
+  const combos = fieldCombos(own, all);
   // Poteri da una volta a partita: si conta la media fra con e senza
   const tera = teraAllowed({ ...DEFAULT_FORMAT, formatId: data.formatId ?? 'ou' }) && !!set.teraType ? [false, true] : [false];
   const zType = dex.items.get(set.item).zMoveType;
@@ -178,7 +195,11 @@ function measureSet(set: TeamSet, team: TeamSet[], data: EngineData): Raw | null
     for (const useTera of tera) for (const useZ of z) {
       const base = { tera: useTera, z: useZ, boosts };
       const off = bestHit(set, target, { ...base, conditions: own });
-      const on = all.length > own.length ? bestHit(set, target, { ...base, conditions: all }) : off;
+      // Col meteo del team: ogni combinazione possibile (un meteo e un terreno alla volta), quella che conviene di più
+      const on = combos.reduce<Hit | null>((best, conditions) => {
+        const hit = bestHit(set, target, { ...base, conditions });
+        return (hit?.expected ?? 0) > (best?.expected ?? 0) ? hit : best;
+      }, off);
       if (off || on) known = true;
       move ??= off?.move ?? on?.move ?? null;
       const better = (on?.expected ?? 0) >= (off?.expected ?? 0) ? on : off;

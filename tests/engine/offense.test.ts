@@ -299,3 +299,14 @@ describe('correzioni della revisione finale (soglie e riferimento)', () => {
     expect(team.referenceAttackers).toEqual(ref.byPower.slice(0, 3));
   });
 });
+
+describe('team con due meteo', () => {
+  it('ogni membro usa il meteo del team che gli conviene: un Fuoco col sole anche se c\'è anche la pioggia', () => {
+    const fire = set('Arcanine', 'Leftovers', 'Intimidate', ['Flamethrower'], 'Bold', { hp: 252, def: 252 });
+    const pelipper = set('Pelipper', 'Damp Rock', 'Drizzle', ['Hurricane'], 'Modest', { hp: 248, spa: 252 });
+    const torkoal = set('Torkoal', 'Heat Rock', 'Drought', ['Lava Plume'], 'Bold', { hp: 252, def: 252 });
+    const sunOnly = memberOffense(fire, [fire, torkoal], noStats)!.power;
+    expect(sunOnly).toBeGreaterThan(memberOffense(fire, [fire], noStats)!.power);
+    expect(memberOffense(fire, [fire, pelipper, torkoal], noStats)!.power).toBe(sunOnly);
+  });
+});
