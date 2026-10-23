@@ -53,14 +53,18 @@ export function sustainParts(set: TeamSet, robustStep: number): SustainParts {
   const ability = toID(battleAbility(set));
   const item = toID(set.item);
   const best = set.moves.reduce<string | null>((acc, m) => ((RECOVERY_MOVES[toID(m)] ?? 0) > (acc ? RECOVERY_MOVES[toID(acc)] : 0) ? m : acc), null);
-  const sources = [best, RECOVERY_ABILITIES[ability] ? battleAbility(set) : null, RECOVERY_ITEMS[item] ? set.item : null]
+  // Poison Heal cura solo da avvelenato: lo garantisce Toxic Orb
+  const abilityHeal = ability === 'poisonheal' && item !== 'toxicorb' ? 0 : RECOVERY_ABILITIES[ability] ?? 0;
+  const sources = [best, abilityHeal ? battleAbility(set) : null, RECOVERY_ITEMS[item] ? set.item : null]
     .filter((x): x is string => !!x);
-  const gross = (best ? RECOVERY_MOVES[toID(best)] : 0) + (RECOVERY_ABILITIES[ability] ?? 0) + (RECOVERY_ITEMS[item] ?? 0);
+  const gross = (best ? RECOVERY_MOVES[toID(best)] : 0) + abilityHeal + (RECOVERY_ITEMS[item] ?? 0);
   const halved = gross > 0 && robustStep < RECOVERY_HOLD;
   const magicGuard = ability === 'magicguard';
   const types = battleSpecies(set)?.types ?? [];
   const rocks = item === 'heavydutyboots' || magicGuard ? 0 : STEALTH_ROCK * effectiveness('Rock', types as never);
-  const lifeOrb = item === 'lifeorb' && !magicGuard ? LIFE_ORB : 0;
+  // Sheer Force toglie il contraccolpo di Life Orb alle mosse con effetti secondari
+  const sheerForce = ability === 'sheerforce' && set.moves.some(m => { const move = getMove(m); return !!(move?.secondary || move?.secondaries?.length); });
+  const lifeOrb = item === 'lifeorb' && !magicGuard && !sheerForce ? LIFE_ORB : 0;
   return { sources, recovery: halved ? gross / 2 : gross, halved, rocks, lifeOrb };
 }
 

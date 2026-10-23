@@ -545,7 +545,7 @@ export const en = {
   'ddetail.side.physical': "Physical attackers",
   'ddetail.side.special': "Special attackers",
   'ddetail.legend': "Damage of the standard hit (average roll) · OHKO: one hit · 2HKO: at least 50% · 3HKO: at least 33% · 4HKO+: less than a third",
-  'ddetail.sus.how1': "How long each member stays in, per turn: the best recovery move (Recover and the like 50%, Rest 33%, Wish 25%), Regenerator 33%, Poison Heal 12.5%, Leftovers and Black Sludge 6%, minus Stealth Rock on entry (1/8 times Rock effectiveness; none with Heavy-Duty Boots or Magic Guard) and Life Orb (10%).",
+  'ddetail.sus.how1': "How long each member stays in, per turn: the best recovery move (Recover and the like 50%, Rest 33%, Wish 25%), Regenerator 33%, Poison Heal with Toxic Orb 12.5%, Leftovers and Black Sludge 6%, minus Stealth Rock on entry (1/8 times Rock effectiveness; none with Heavy-Duty Boots or Magic Guard) and Life Orb (10%; none with Magic Guard, or Sheer Force with moves that have secondary effects).",
   'ddetail.sus.how2': "Recovery counts half for members that don't take a 3HKO on average: Recover doesn't make a wall if it falls in two hits. A net 50% recovery per turn scores about 93.",
   'ddetail.recovery': "Recovery",
   'ddetail.halved': "halved",

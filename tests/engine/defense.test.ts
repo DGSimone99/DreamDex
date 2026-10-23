@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { holdStep, intimidateBoost, memberDefense, sustainability, teamDefense } from '../../src/engine/defense';
+import { holdStep, intimidateBoost, memberDefense, sustainability, sustainParts, teamDefense } from '../../src/engine/defense';
 import type { TeamSet } from '../../src/engine/sets';
 import { fixtureData } from '../fixtures/data';
 
@@ -22,6 +22,18 @@ describe('sustainability: recupero contro perdite per turno', () => {
     expect(sustainability({ ...zard, item: 'Heavy-Duty Boots' }, 1.5)).toBeCloseTo(0);
     const clef = set('Clefable', 'Life Orb', 'Magic Guard', ['Moonblast', 'Moonlight'], 'Modest', { hp: 252, spa: 252 });
     expect(sustainability(clef, 1.5)).toBeCloseTo(0.5);
+  });
+
+  it('Sheer Force toglie il costo di Life Orb solo se una mossa ha effetti secondari', () => {
+    const king = set('Nidoking', 'Life Orb', 'Sheer Force', ['Earth Power', 'Sludge Wave'], 'Timid', { spa: 252, spe: 252 });
+    expect(sustainParts(king, 1.5).lifeOrb).toBe(0);
+    expect(sustainParts({ ...king, moves: ['Earthquake', 'Stealth Rock'] }, 1.5).lifeOrb).toBeCloseTo(0.1);
+  });
+
+  it('Poison Heal cura solo con Toxic Orb (senza, il Pokémon non è avvelenato)', () => {
+    const gliscor = set('Gliscor', 'Toxic Orb', 'Poison Heal', ['Earthquake', 'Protect'], 'Impish', { hp: 252, def: 252 });
+    expect(sustainParts(gliscor, 1.5)).toMatchObject({ sources: ['Poison Heal'], recovery: 0.125 });
+    expect(sustainParts({ ...gliscor, item: 'Leftovers' }, 1.5)).toMatchObject({ sources: ['Leftovers'], recovery: 0.0625 });
   });
 
   it('Regenerator vale 0,33; il recupero si dimezza per chi non regge almeno un 3HKO', () => {

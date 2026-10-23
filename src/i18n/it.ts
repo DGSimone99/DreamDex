@@ -547,7 +547,7 @@ export const it: Record<keyof typeof en, string> = {
   'ddetail.side.physical': "Attaccanti fisici",
   'ddetail.side.special': "Attaccanti speciali",
   'ddetail.legend': "Danno del colpo standard (tiro medio) · OHKO: KO in un colpo · 2HKO: almeno 50% · 3HKO: almeno 33% · 4HKO+: meno di un terzo",
-  'ddetail.sus.how1': "Quanto resta in campo ogni membro, per turno: la mossa di recupero migliore (Recover e simili 50%, Rest 33%, Wish 25%), Regenerator 33%, Poison Heal 12,5%, Leftovers e Black Sludge 6%, meno Stealth Rock all'ingresso (1/8 per l'efficacia della Roccia; niente con Heavy-Duty Boots o Magic Guard) e Life Orb (10%).",
+  'ddetail.sus.how1': "Quanto resta in campo ogni membro, per turno: la mossa di recupero migliore (Recover e simili 50%, Rest 33%, Wish 25%), Regenerator 33%, Poison Heal con Toxic Orb 12,5%, Leftovers e Black Sludge 6%, meno Stealth Rock all'ingresso (1/8 per l'efficacia della Roccia; niente con Heavy-Duty Boots o Magic Guard) e Life Orb (10%; niente con Magic Guard o con Sheer Force e mosse con effetti secondari).",
   'ddetail.sus.how2': "Il recupero vale metà per chi non regge in media un 3HKO: con Recover non si è un muro se si va KO in due colpi. Un recupero netto del 50% per turno fa circa 93.",
   'ddetail.recovery': "Recupero",
   'ddetail.halved': "a metà",
