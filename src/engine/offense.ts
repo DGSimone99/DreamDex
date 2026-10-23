@@ -21,11 +21,13 @@ export const STEP_2HKO = 1;
 export const STEP_OHKO = 1.5;
 /** Riferimento di riserva: media dei valori che vale Wallbreaking 100. */
 export const STEP_FULL = 1.25;
+/** Il 100 di Potenza e Wallbreaking del membro: il 3° miglior attaccante fra i più usati del formato (un 100 raro). */
+export const REFERENCE_RANK = 3;
 /**
- * Il 100 di Potenza e Wallbreaking: il 18° miglior attaccante fra i più usati del formato.
- * Tarato sul bench: i team offensivi da torneo (hyper e bulky offense) fanno in media 85.
+ * Scala del team: la media pesata dei membri si moltiplica per questo valore (fino a 100).
+ * Tarata sul bench: i team hyper offense da torneo fanno in media circa 85.
  */
-export const REFERENCE_RANK = 18;
+export const TEAM_SCALE = 1.2;
 /** Quanti Pokémon del meta, dal più usato, si scorrono per trovare gli attaccanti di riferimento. */
 const REFERENCE_SCAN = 40;
 /** Peso delle sottostatistiche nel valore del membro (senza setup: Potenza e Wallbreaking si dividono tutto). */
@@ -121,7 +123,8 @@ function measureSet(set: TeamSet, team: TeamSet[], data: EngineData): Raw | null
         const on = all.length > own.length ? bestHit(set, defender, { ...base, conditions: all }) : off;
         if (off || on) known = true;
         const better = (on?.expected ?? 0) >= (off?.expected ?? 0) ? on : off;
-        expected.push(((off?.expected ?? 0) + (better?.expected ?? 0)) / 2);
+        // Un KO è un KO: oltre il 100% dei PS il danno non conta di più
+        expected.push((Math.min(1, off?.expected ?? 0) + Math.min(1, better?.expected ?? 0)) / 2);
         steps.push((stepValue(off) + stepValue(better)) / 2);
       }
       return { expected: mean(expected), step: mean(steps) };
@@ -160,8 +163,8 @@ export interface OffenseReference {
 const references = new Map<string, OffenseReference>();
 
 /**
- * Il 100 di Potenza e Wallbreaking: il 18° miglior attaccante fra i più usati del formato (set più comune,
- * stessi difensori). Così 100 vuol dire "ai livelli dei migliori del meta", non una soglia che nessuno raggiunge.
+ * Il 100 di Potenza e Wallbreaking: il 3° miglior attaccante fra i più usati del formato (set più comune,
+ * stessi difensori). Così 100 vuol dire "fra i migliori del meta", non una soglia che nessuno raggiunge.
  * Senza statistiche: i valori fissi di riserva.
  */
 export function offenseReference(data: EngineData): OffenseReference {
@@ -203,16 +206,19 @@ export function memberOffense(set: TeamSet, team: TeamSet[], data: EngineData): 
   return { species: raw.species, power, wallbreaking, setup, value };
 }
 
-/** Media pesata per posizione: valori dal più alto al più basso, pesi 22/18/16/15/15/14% (rinormalizzati se sono meno di sei). */
+/**
+ * Media pesata per posizione (valori dal più alto al più basso, pesi 22/18/16/15/15/14%, rinormalizzati
+ * se sono meno di sei), riportata sulla scala del team.
+ */
 function rankWeighted(values: number[]): number {
   if (!values.length) return 0;
   const sorted = [...values].sort((a, b) => b - a);
   const weights = sorted.map((_, i) => RANK_WEIGHTS[Math.min(i, RANK_WEIGHTS.length - 1)]);
   const total = weights.reduce((a, b) => a + b, 0);
-  return Math.round(sorted.reduce((acc, v, i) => acc + v * weights[i], 0) / total);
+  return Math.min(100, Math.round(TEAM_SCALE * sorted.reduce((acc, v, i) => acc + v * weights[i], 0) / total));
 }
 
-/** Offesa del team: media pesata per posizione dei membri; il Setup solo fra chi ce l'ha. */
+/** Offesa del team: media pesata per posizione dei membri, sulla scala del team; il Setup solo fra chi ce l'ha. */
 export function teamOffense(team: TeamSet[], data: EngineData): TeamOffense {
   const members = team.map(set => memberOffense(set, team, data)).filter((m): m is MemberOffense => m !== null);
   const setters = members.filter(m => m.setup !== null);

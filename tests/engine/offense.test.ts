@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { memberOffense, offenseReference, RANK_WEIGHTS, REFERENCE_RANK, stepValue, teamOffense } from '../../src/engine/offense';
+import { memberOffense, offenseReference, POWER_FULL, RANK_WEIGHTS, REFERENCE_RANK, stepValue, TEAM_SCALE, teamOffense } from '../../src/engine/offense';
+import { bestHit } from '../../src/engine/damage';
+import { defenderPanel } from '../../src/engine/defenders';
 import { mostCommonSet } from '../../src/engine/sets';
 import type { TeamSet } from '../../src/engine/sets';
 import { fixtureData, fixtureStats, tusk } from '../fixtures/data';
@@ -74,9 +76,8 @@ describe('memberOffense', () => {
     expect(m.value).toBeGreaterThanOrEqual(Math.round((0.5 * m.power + 0.35 * m.wallbreaking) / 0.85));
   });
 
-  it("il 100 di Wallbreaking e Potenza è il 18° miglior attaccante del meta, o l'ultimo se sono meno", () => {
+  it("il 100 di Wallbreaking e Potenza è il 3° miglior attaccante del meta, o l'ultimo se sono meno", () => {
     const ref = offenseReference(fixtureData);
-    expect(REFERENCE_RANK).toBe(18);
     const fifth = mostCommonSet(fixtureStats, ref.attackers[Math.min(REFERENCE_RANK, ref.attackers.length) - 1])!;
     const m = memberOffense(fifth, [fifth], fixtureData)!;
     expect(m.wallbreaking).toBeGreaterThanOrEqual(99);
@@ -95,10 +96,7 @@ describe('teamOffense', () => {
   it('media pesata per posizione: il più offensivo pesa di più (22/18/16/15/15/14), nessun peso per i supporti', () => {
     expect(RANK_WEIGHTS).toEqual([0.22, 0.18, 0.16, 0.15, 0.15, 0.14]);
     const team = teamOffense([blissey, chomp], fixtureData);
-    const [b, a] = team.members;
-    const [hi, lo] = a.value >= b.value ? [a, b] : [b, a];
-    expect(team.value).toBe(Math.round((0.22 * hi.value + 0.18 * lo.value) / 0.4));
-    expect('support' in b).toBe(false);
+    expect('support' in team.members[0]).toBe(false);
   });
 
   it('un team senza mosse d\'attacco vale 0, senza NaN', () => {
@@ -134,5 +132,25 @@ describe('correzioni della revisione', () => {
     const team = teamOffense([chomp], fixtureData);
     expect(team.metaDefenders).toBeLessThan(team.defenders.length);
     expect(teamOffense([chomp], noStats).metaDefenders).toBe(0);
+  });
+});
+
+describe('scala dei membri e del team', () => {
+  it('contro ogni difensore il danno conta al massimo il 100%: un KO esagerato non gonfia la Potenza', () => {
+    // Ninetales al sole senza investimento: Weather Ball di Fuoco va oltre il 100% sugli Acciaio, poco sugli altri
+    const ninetales = set('Ninetales', 'Heat Rock', 'Drought', ['Weather Ball', 'Encore'], 'Bold', { hp: 252, def: 252 });
+    const hits = defenderPanel(noStats).map(d => bestHit(ninetales, d, { conditions: ['sun'] })?.expected ?? 0);
+    const score = (xs: number[]) => Math.round(100 * Math.min(1, xs.reduce((a, b) => a + b, 0) / xs.length / POWER_FULL));
+    const capped = score(hits.map(x => Math.min(1, x)));
+    expect(capped).toBeLessThan(score(hits));
+    expect(memberOffense(ninetales, [ninetales], noStats)!.power).toBe(capped);
+  });
+
+  it('il 100 del membro è il 3° miglior attaccante del meta; il team si riporta sulla sua scala', () => {
+    expect(REFERENCE_RANK).toBe(3);
+    expect(TEAM_SCALE).toBeGreaterThan(1);
+    const team = teamOffense([chomp, blissey], fixtureData);
+    const raw = (0.22 * Math.max(...team.members.map(m => m.value)) + 0.18 * Math.min(...team.members.map(m => m.value))) / 0.4;
+    expect(team.value).toBe(Math.min(100, Math.round(raw * TEAM_SCALE)));
   });
 });
