@@ -11,7 +11,7 @@ import { TYPES } from './types';
 const TARGET_SCAN = 40;
 /** Un membro copre un bersaglio se lo manda KO in due colpi. */
 export const COVER_HIT = 0.5;
-/** Sotto questo danno nessuno lo scalfisce davvero: è un buco (non arriva al KO in tre colpi). */
+/** Sotto questo danno super efficace nessuno ha un vantaggio di tipo vero: è un buco (non arriva al KO in tre colpi). */
 export const HOLE_HIT = 1 / 3;
 /** Profondità: il 1°, 2° e 3° membro che copre un bersaglio valgono 70, 20 e 10%. */
 export const COVERAGE_DEPTH = [0.7, 0.2, 0.1];

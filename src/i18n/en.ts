@@ -515,7 +515,7 @@ export const en = {
   'detail.legend': "OHKO: guaranteed one-hit KO · 2HKO: at least 50% · 3HKO: at least 33% · in green brackets, the damage after setup when it crosses a threshold",
   'detail.coverage.how1.meta': "The {n} type combinations of the most used Pokémon, weighted by usage, each represented by its most used Pokémon. A member covers a target if it hits it super effectively and 2HKOs it: this is type advantage, neutral damage is what Power measures.",
   'detail.coverage.how1.tier': "The 18 types, equal weight, against an average Pokémon of that type. A member covers a type if it hits it super effectively and 2HKOs it: this is type advantage, neutral damage is what Power measures.",
-  'detail.coverage.how2': "A target covered by one member is worth 70%, by two 90%, by three 100%: if the only one hitting it is KOed, it stays uncovered. Every target covered three times scores about 93, and 100 is never reached. A hole is a target nobody even brings to 33%.",
+  'detail.coverage.how2': "A target covered by one member is worth 70%, by two 90%, by three 100%: if the only one hitting it is KOed, it stays uncovered. Every target covered three times scores about 93, and 100 is never reached. A hole is a target nobody hits super effectively even for 33%.",
   'detail.types': "Types",
   'detail.level': "Covered",
   'detail.coveredBy': "Covered by",

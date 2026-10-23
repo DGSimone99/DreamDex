@@ -517,7 +517,7 @@ export const it: Record<keyof typeof en, string> = {
   'detail.legend': "OHKO: KO in un colpo sicuro · 2HKO: almeno 50% · 3HKO: almeno 33% · tra parentesi, in verde, il danno dopo il setup quando cambia la soglia",
   'detail.coverage.how1.meta': "Le {n} combinazioni di tipi dei Pokémon più usati, pesate per uso, ognuna col suo Pokémon più usato. Un membro copre un bersaglio se lo colpisce super efficace e lo manda KO in due colpi: è il vantaggio di tipo, il danno neutro lo misura la Potenza.",
   'detail.coverage.how1.tier': "I 18 tipi, con lo stesso peso, contro un Pokémon medio di quel tipo. Un membro copre un tipo se lo colpisce super efficace e lo manda KO in due colpi: è il vantaggio di tipo, il danno neutro lo misura la Potenza.",
-  'detail.coverage.how2': "Un bersaglio coperto da un solo membro vale il 70%, da due il 90%, da tre il 100%: se l'unico che lo colpisce va KO, resta scoperto. Ogni bersaglio coperto tre volte fa circa 93, e il 100 non si raggiunge mai. Un buco è un bersaglio che nessuno porta nemmeno al 33%.",
+  'detail.coverage.how2': "Un bersaglio coperto da un solo membro vale il 70%, da due il 90%, da tre il 100%: se l'unico che lo colpisce va KO, resta scoperto. Ogni bersaglio coperto tre volte fa circa 93, e il 100 non si raggiunge mai. Un buco è un bersaglio che nessuno colpisce super efficace nemmeno al 33%.",
   'detail.types': "Tipi",
   'detail.level': "Copertura",
   'detail.coveredBy': "Coperto da",
