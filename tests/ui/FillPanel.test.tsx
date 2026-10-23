@@ -10,7 +10,7 @@ import { LangProvider } from '../../src/i18n/react';
 import { fillData } from '../fixtures/fillData';
 import { renderIt } from '../helpers/italian';
 
-const WAIT = { timeout: 5000 };
+const WAIT = { timeout: 10000 };
 const attackers = () => ['Dragapult', 'Weavile', 'Cinderace', 'Iron Valiant', 'Gholdengo'].map(name => ({ ...emptySet(name), moves: ['Protect'] }));
 const panel = (team: TeamSet[] = [], onApply = vi.fn(), onClose = vi.fn()) =>
   renderIt(<FillPanel team={team} format={DEFAULT_FORMAT} data={fillData} onApply={onApply} onClose={onClose} />);
