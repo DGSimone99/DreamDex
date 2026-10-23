@@ -1,7 +1,7 @@
 import { DEFAULT_RULES } from '../../src/engine/formatRules';
 import { teamOffense } from '../../src/engine/offense';
 import { describe, expect, it } from 'vitest';
-import { ARCHETYPE_WEIGHTS, COVERAGE_DEPTH, rateTeam, ROLE_COMPRESSION } from '../../src/engine/rating';
+import { ARCHETYPE_WEIGHTS, rateTeam, ROLE_COMPRESSION } from '../../src/engine/rating';
 import { meetsNeed, needCoverage, NEEDS, teamNeeds } from '../../src/engine/needs';
 
 import { memberPower, teamPower } from '../../src/engine/power';
@@ -9,14 +9,6 @@ import { detectRoles, isPassive } from '../../src/engine/roles';
 import { UNIFORM_TYPE_WEIGHTS } from '../../src/engine/analysis';
 import { superEffectiveMove, TYPES } from '../../src/engine/types';
 
-/** Copertura con ogni colpo super efficace a valore pieno, in profondità: 70/20/10 al 1°, 2° e 3° membro che colpisce il tipo. */
-const fullCoverage = (team: TeamSet[]) => {
-  const w = UNIFORM_TYPE_WEIGHTS;
-  return 100 * TYPES.reduce((acc, type) => {
-    const hitters = team.filter(s => superEffectiveMove(s, type)).length;
-    return acc + w[type] * Math.min(1, COVERAGE_DEPTH.slice(0, hitters).reduce((a, b) => a + b, 0));
-  }, 0);
-};
 import { emptySet, type TeamSet } from '../../src/engine/sets';
 import { fixtureData, gholdengo, tusk } from '../fixtures/data';
 
@@ -161,11 +153,3 @@ describe('voto dello stall', () => {
   });
 });
 
-describe('copertura di uno stall', () => {
-  it('i colpi dei muri passivi valgono pieni: copre un tipo chi può colpirlo, non chi fa più danni', () => {
-    const rating = rateTeam(stall, fixtureData)!;
-    expect(rating.archetype).toBe('stall');
-    // Toxapex (Scald) e Clodsire (Poison Jab) attaccano poco, ma nello stall i loro colpi contano interi
-    expect(Math.abs(rating.areas.find(a => a.key === 'coverage')!.value! - Math.round(fullCoverage(stall)))).toBeLessThanOrEqual(1);
-  });
-});

@@ -2,13 +2,14 @@ import { useEffect, useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import type { TeamRating } from '../engine/rating';
 import type { MessageKey } from '../i18n';
-import { useT } from '../i18n/react';
+import { useLang, useT } from '../i18n/react';
+import { typeName } from '../i18n/game';
 import { Icon } from './icons';
 import { Sprite } from './Sprite';
 
 /** Quanti difensori si nominano nella riga di spiegazione (gli altri si contano). */
 const NAMED_DEFENDERS = 4;
-const SUBS = ['power', 'wallbreaking', 'setup'] as const;
+const SUBS = ['power', 'wallbreaking', 'coverage', 'setup'] as const;
 
 /**
  * Dettaglio di un'area del voto: le sottostatistiche e il punteggio di ogni membro su ognuna.
@@ -16,6 +17,7 @@ const SUBS = ['power', 'wallbreaking', 'setup'] as const;
  */
 export function AreaDetail({ rating, area, onClose }: { rating: TeamRating; area: 'strength'; onClose: () => void }) {
   const t = useT();
+  const lang = useLang();
   const titleId = useId();
   const close = useRef<HTMLButtonElement>(null);
   const offense = rating.offense;
@@ -35,7 +37,9 @@ export function AreaDetail({ rating, area, onClose }: { rating: TeamRating; area
   // Col meta il pannello si completa coi più robusti del tier se il meta non ha abbastanza muri: la riga lo dice
   const lead = offense.metaDefenders === 0 ? 'detail.lead.tier'
     : offense.metaDefenders < offense.defenders.length ? 'detail.lead.mixed' : 'detail.lead.meta';
-  const team = { power: offense.power, wallbreaking: offense.wallbreaking, setup: offense.setup };
+  const team = { power: offense.power, wallbreaking: offense.wallbreaking, coverage: offense.coverage, setup: offense.setup };
+  // Buchi della Coverage: tipi o combinazioni di tipi che nessuno porta al 33%, coi nomi dei tipi nella lingua scelta
+  const holes = offense.holes.map(label => label.split('/').map(type => typeName(type, lang)).join('/'));
 
   return createPortal(
     <div className="help-backdrop" onClick={onClose}>
@@ -50,7 +54,9 @@ export function AreaDetail({ rating, area, onClose }: { rating: TeamRating; area
             {SUBS.map(sub => {
               const score = team[sub];
               const tip = t(`detail.${sub}.tip` as MessageKey);
-              const note = sub === 'setup' ? (setters.length ? t('detail.setup.who', { list: setters.join(', ') }) : t('detail.setup.none')) : null;
+              const note = sub === 'setup' ? (setters.length ? t('detail.setup.who', { list: setters.join(', ') }) : t('detail.setup.none'))
+                : sub === 'coverage' ? (holes.length ? t('detail.coverage.holes', { list: holes.join(', ') }) : t('detail.coverage.noHoles'))
+                : null;
               return (
                 <div key={sub} className="area-sub">
                   <dt>{t(`detail.${sub}` as MessageKey)}</dt>
@@ -78,6 +84,7 @@ export function AreaDetail({ rating, area, onClose }: { rating: TeamRating; area
                     <th scope="row"><span className="area-mon"><Sprite species={m.species} size={40} />{m.species}</span></th>
                     <td>{m.power}</td>
                     <td>{m.wallbreaking}</td>
+                    <td>{m.covered}/{offense.targets}</td>
                     <td className={m.setup === null ? 'none' : undefined}>{m.setup ?? '—'}</td>
                     <td className="total">{m.value}</td>
                   </tr>

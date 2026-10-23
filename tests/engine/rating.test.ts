@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { teamPower } from '../../src/engine/power';
-import { AREA_KNEE, ARCHETYPE_WEIGHTS, COVERAGE_DEPTH, DEFENSE_FULL, areaValue, gradeFor, rateTeam, typeSafety } from '../../src/engine/rating';
+import { AREA_KNEE, ARCHETYPE_WEIGHTS, DEFENSE_FULL, areaValue, gradeFor, rateTeam, typeSafety } from '../../src/engine/rating';
 import { memberPower } from '../../src/engine/power';
 import { teamOffense } from '../../src/engine/offense';
 import type { EngineData } from '../../src/engine/data';
@@ -40,6 +40,9 @@ describe('pesi delle aree', () => {
     expect(stall.speed).toBe(0);
     expect(stall.bulk).toBeGreaterThan(balance.bulk);
     expect(balance.bulk).toBeGreaterThan(ho.bulk);
+    // La Coverage offensiva è una sottostatistica dell'Offesa: il suo peso è passato all'Offesa
+    expect(Object.keys(balance)).toEqual(['defense', 'strength', 'bulk', 'roles', 'speed']);
+    expect([ho.strength, balance.strength, stall.strength]).toEqual([46, 34, 18]);
   });
 });
 
@@ -73,14 +76,8 @@ describe('rateTeam', () => {
     // Un team incompleto si giudica come balance
     expect(rating.weights.bulk!).toBeCloseTo(ARCHETYPE_WEIGHTS.balance.bulk / 100);
     expect(rating.weights.defense!).toBeCloseTo(ARCHETYPE_WEIGHTS.balance.defense / 100);
-    // Coverage in profondità: per tipo, il colpo migliore di ogni membro, 70% al primo e 20% al secondo
-    const w = UNIFORM_TYPE_WEIGHTS;
-    const coverage = TYPES.reduce((acc, type) => {
-      const best = [tusk, gholdengo].map(s => Math.max(0, ...superEffectiveMoves(s, type).map(m => hitQuality(s, m)))).sort((a, b) => b - a);
-      return acc + w[type] * Math.min(1, COVERAGE_DEPTH.reduce((a, share, i) => a + share * (best[i] ?? 0), 0));
-    }, 0);
-    // 1:1: la percentuale è il voto dell'area
-    expect(value(rating, 'coverage')).toBe(Math.round(100 * coverage));
+    // La Coverage offensiva non è più un'area: è dentro l'Offesa
+    expect(rating.areas.some(a => a.key === 'coverage')).toBe(false);
     // Offesa: il danno vero dei set contro i difensori del meta
     expect(value(rating, 'strength')).toBe(offenseArea([tusk, gholdengo]));
   });
@@ -94,7 +91,7 @@ describe('rateTeam', () => {
   });
 
   it('ordine e nomi delle aree', () => {
-    expect(rating.areas.map(a => a.label)).toEqual(['Coverage offensiva', 'Coverage difensiva', 'Offesa', 'Robustezza', 'Ruoli', 'Velocità', 'Meta']);
+    expect(rating.areas.map(a => a.label)).toEqual(['Coverage difensiva', 'Offesa', 'Robustezza', 'Ruoli', 'Velocità', 'Meta']);
   });
 
   it('team completo: non provvisorio', () => {
@@ -128,16 +125,6 @@ describe('cima delle aree', () => {
     expect(areaValue(1, 0.9)).toBe(1);
   });
 
-  it('coverage offensiva 1:1: un membro su ogni tipo vale 70, due 90, tre 100', () => {
-    const team = (n: number) => Array.from({ length: n }, () => tusk);
-    // Con lo stesso membro ripetuto ogni tipo che colpisce è preso 1, 2 o 3 volte: il valore scala come le quote
-    const one = value(rateTeam(team(1), fixtureData)!, 'coverage')!;
-    const two = value(rateTeam(team(2), fixtureData)!, 'coverage')!;
-    const three = value(rateTeam(team(3), fixtureData)!, 'coverage')!;
-    expect(two / one).toBeCloseTo(0.9 / 0.7, 1);
-    expect(three / one).toBeCloseTo(1 / 0.7, 1);
-    expect(COVERAGE_DEPTH).toEqual([0.7, 0.2, 0.1]);
-  });
 });
 
 

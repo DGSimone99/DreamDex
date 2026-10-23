@@ -11,7 +11,6 @@ import { useT } from '../i18n/react';
 /** Le aree con una scheda propria nell'analisi: cliccandole ci si arriva. */
 export const AREA_SECTIONS: Partial<Record<AreaKey, { id: string; title: MessageKey }>> = {
   defense: { id: 'analysis-defense', title: 'analysis.weakness' },
-  coverage: { id: 'analysis-coverage', title: 'analysis.coverage' },
   roles: { id: 'analysis-roles', title: 'analysis.roles' },
 };
 
@@ -61,8 +60,6 @@ export function RatingPanel({ rating, ruleIssues = [], metaMonth }: { rating: Te
           const tip = area.key === 'strength' && rating.offense.members.length
             ? [...rating.offense.members].sort((a, b) => b.value - a.value).map(m => `${m.species} ${m.value}`).join('\n')
             : area.key === 'meta' && rating.meta ? t('rating.metaTip', { threats: rating.meta.threats, usage: rating.meta.usage })
-            : area.key === 'coverage' && rating.coverageByMember.length
-              ? [t('rating.coverageTip'), ...[...rating.coverageByMember].sort((a, b) => b.types - a.types).map(m => `${m.species} ${m.types}`)].join('\n')
             : area.key === 'bulk' && rating.power.length
               ? [...rating.power].sort((a, b) => b.bulk - a.bulk).map(m => `${m.species} ${m.bulk}`).join('\n')
             : undefined;

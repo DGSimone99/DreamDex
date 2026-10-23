@@ -150,6 +150,16 @@ describe('scala dei membri e del team', () => {
     expect(REFERENCE_RANK).toBe(3);
     const team = teamOffense([chomp, blissey], fixtureData);
     const raw = (0.22 * Math.max(...team.members.map(m => m.value)) + 0.18 * Math.min(...team.members.map(m => m.value))) / 0.4;
-    expect(team.value).toBe(Math.round(raw));
+    expect(team.memberValue).toBe(Math.round(raw));
+  });
+});
+
+describe('la Coverage dentro l\'Offesa', () => {
+  it('Offesa del team = 75% membri + 25% Coverage, con i buchi', () => {
+    const team = teamOffense([chomp, blissey], fixtureData);
+    expect(team.coverage).toBeGreaterThanOrEqual(0);
+    expect(Array.isArray(team.holes)).toBe(true);
+    expect(team.value).toBe(Math.round(0.75 * team.memberValue + 0.25 * team.coverage));
+    expect(team.members.map(m => m.covered)).toHaveLength(2);
   });
 });

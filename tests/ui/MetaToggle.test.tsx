@@ -50,7 +50,7 @@ describe('voto col meta e senza', () => {
   it('senza meta: niente area Meta, tipi tutti uguali, nessuna minaccia', () => {
     const rating = rateTeam([tusk, gholdengo], noMeta)!;
     expect(rating.meta).toBeNull();
-    expect(rating.areas.map(a => a.key)).toEqual(['coverage', 'defense', 'strength', 'bulk', 'roles', 'speed']);
+    expect(rating.areas.map(a => a.key)).toEqual(['defense', 'strength', 'bulk', 'roles', 'speed']);
     const analysis = analyzeTeam([tusk, gholdengo], noMeta);
     expect(analysis.typeWeights).toEqual(UNIFORM_TYPE_WEIGHTS);
     expect(analysis.threats).toEqual([]);

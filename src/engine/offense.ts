@@ -1,4 +1,5 @@
 import { usesMeta } from './analysis';
+import { coverageTargets, teamCoverage } from './coverage';
 import { bestHit, setKey, type FieldCondition, type Hit, type HitOptions } from './damage';
 import type { EngineData } from './data';
 import { defenderPanel, isDefensiveSet, metaDefenderCount } from './defenders';
@@ -27,6 +28,8 @@ export const REFERENCE_RANK = 3;
 const REFERENCE_SCAN = 40;
 /** Peso delle sottostatistiche nel valore del membro (senza setup: Potenza e Wallbreaking si dividono tutto). */
 export const OFFENSE_WEIGHTS = { power: 0.5, wallbreaking: 0.35, setup: 0.15 };
+/** Quota della Coverage nell'Offesa del team (il resto è la media pesata dei membri). */
+export const COVERAGE_SHARE = 0.25;
 /** Pesi per posizione nel team, dal membro più offensivo al meno: un membro debole conta poco perché è in fondo. */
 export const RANK_WEIGHTS = [0.22, 0.18, 0.16, 0.15, 0.15, 0.14];
 
@@ -37,10 +40,18 @@ export interface MemberOffense {
   /** null: il set non ha una mossa di potenziamento. */
   setup: number | null;
   value: number;
+  /** Bersagli della Coverage che manda KO in due colpi (la Coverage vera è del team). */
+  covered: number;
 }
 
 export interface TeamOffense {
+  /** 75% la media pesata dei membri, 25% la Coverage. */
   value: number;
+  memberValue: number;
+  coverage: number;
+  /** Bersagli che nessuno porta al 33%, e quanti bersagli ha la Coverage. */
+  holes: string[];
+  targets: number;
   power: number;
   wallbreaking: number;
   setup: number | null;
@@ -198,7 +209,7 @@ export function memberOffense(set: TeamSet, team: TeamSet[], data: EngineData): 
   const base = Math.round((w.power * power + w.wallbreaking * wallbreaking) / (w.power + w.wallbreaking));
   // Il setup può solo aggiungere: un potenziamento che vale meno degli attacchi non abbassa il membro
   const value = setup === null ? base : Math.max(base, Math.round(w.power * power + w.wallbreaking * wallbreaking + w.setup * setup));
-  return { species: raw.species, power, wallbreaking, setup, value };
+  return { species: raw.species, power, wallbreaking, setup, value, covered: 0 };
 }
 
 /** Media pesata per posizione: valori dal più alto al più basso, pesi 22/18/16/15/15/14% (rinormalizzati se sono meno di sei). */
@@ -210,12 +221,20 @@ function rankWeighted(values: number[]): number {
   return Math.round(sorted.reduce((acc, v, i) => acc + v * weights[i], 0) / total);
 }
 
-/** Offesa del team: media pesata per posizione dei membri; il Setup solo fra chi ce l'ha. */
+/** Offesa del team: 75% la media pesata per posizione dei membri, 25% la Coverage; il Setup solo fra chi ce l'ha. */
 export function teamOffense(team: TeamSet[], data: EngineData): TeamOffense {
-  const members = team.map(set => memberOffense(set, team, data)).filter((m): m is MemberOffense => m !== null);
+  const coverage = teamCoverage(team, data);
+  const members = team
+    .map((set, i) => { const m = memberOffense(set, team, data); return m && { ...m, covered: coverage.perMember[i] }; })
+    .filter((m): m is MemberOffense => m !== null);
   const setters = members.filter(m => m.setup !== null);
+  const memberValue = rankWeighted(members.map(m => m.value));
   return {
-    value: rankWeighted(members.map(m => m.value)),
+    value: members.length ? Math.round((1 - COVERAGE_SHARE) * memberValue + COVERAGE_SHARE * coverage.value) : 0,
+    memberValue,
+    coverage: coverage.value,
+    holes: coverage.holes,
+    targets: coverageTargets(data).length,
     power: rankWeighted(members.map(m => m.power)),
     wallbreaking: rankWeighted(members.map(m => m.wallbreaking)),
     setup: setters.length ? rankWeighted(setters.map(m => m.setup!)) : null,
