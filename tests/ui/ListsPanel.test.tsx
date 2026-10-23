@@ -107,3 +107,20 @@ describe('scheda Liste: forme', () => {
     expect(cell('Ivysaur')).not.toHaveClass('ban');
   });
 });
+
+describe('scheda Liste: pulsanti della griglia', () => {
+  it('premuto solo se la voce è nella lista che si modifica; lo stato ereditato resta sulla cella', async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    const lists: UserLists = { universal: { favorites: ['Leafeon'], bans: [] }, byFormat: { ou: { favorites: [], bans: ['Charizard'] } } };
+    renderIt(<ListsPanel lists={lists} format={DEFAULT_FORMAT} data={fixtureData} onChange={onChange} />);
+    const cell = (name: string) => [...document.querySelectorAll('.dex-cell')].find(li => li.querySelector('.dex-name')?.textContent === name)! as HTMLElement;
+    expect(cell('Leafeon')).toHaveClass('fav');
+    expect(within(cell('Leafeon')).getByRole('button', { name: 'Leafeon nei Preferiti' })).toHaveAttribute('aria-pressed', 'false');
+    expect(cell('Charizard-Mega-X')).toHaveClass('ban');
+    expect(within(cell('Charizard-Mega-X')).getByRole('button', { name: 'Charizard-Mega-X nei Bannati' })).toHaveAttribute('aria-pressed', 'false');
+    expect(within(cell('Charizard')).getByRole('button', { name: 'Charizard nei Bannati' })).toHaveAttribute('aria-pressed', 'true');
+    await user.click(within(cell('Charizard')).getByRole('button', { name: 'Charizard nei Bannati' }));
+    expect(onChange.mock.calls[0][0].byFormat.ou.bans).toEqual([]);
+  });
+});

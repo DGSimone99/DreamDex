@@ -14,7 +14,7 @@ import { statsEntry } from '../engine/stats';
 import { formatPercent } from '../i18n';
 import { getSpecies } from '../engine/dex';
 import { applyFavorites, isUserBanned, isUserFavorite, type EffectiveLists } from '../engine/lists';
-import { bannedInPool } from '../engine/scoring';
+import { bannedNames } from '../engine/scoring';
 import { formatLabel } from '../engine/formats';
 import { EMPTY_FILTERS, isFiltering, searchCandidates, searchPool, tierLabel, type CandidateFilters } from '../engine/filters';
 import { defaultSet } from '../engine/sets';
@@ -269,13 +269,17 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
     const value = (item: Item) => item.teamGain?.overall ?? 100 * (statsEntry(deferred.data.stats, item.species)?.usage ?? 0);
     return applyFavorites(ranked, item => isUserFavorite(item.set, lists), value);
   }, [ranked, deferred, mode, view]);
-  // Quanti bannati restano fuori (non contano quelli ammessi): solo per aggiungere, sul team attuale
+  // Quanti bannati restano fuori (non contano quelli ammessi), contro il team per cui si cercano i candidati:
+  // aggiungendo il team intero, sostituendo un membro gli altri cinque, negli scambi liberi ognuno dei sei
   const hiddenCount = useMemo(() => {
-    if (revealed || !ranking.userLists?.bans.size || view !== 'add') return 0;
-    return filtering
-      ? searchPool(team, format, ranking, applied).filter(set => isUserBanned(set, ranking.userLists)).length
-      : bannedInPool(team, format, ranking);
-  }, [revealed, ranking, view, filtering, team, format, applied]);
+    if (revealed || !ranking.userLists?.bans.size) return 0;
+    const banned = (rest: TeamSet[]) => (filtering
+      ? searchPool(rest, format, ranking, applied).filter(set => isUserBanned(set, ranking.userLists)).map(set => battleName(set))
+      : bannedNames(rest, format, ranking));
+    if (view === 'add') return banned(team).length;
+    if (view === 'member') return banned(team.filter((_, i) => i !== replaceIndex)).length;
+    return new Set(team.flatMap((_, i) => banned(team.filter((_, j) => j !== i)))).size;
+  }, [revealed, ranking, view, filtering, team, format, applied, replaceIndex]);
 
   const query = filters.query.trim();
   // I risultati valgono solo se la lista è già aggiornata su quello che hai scritto

@@ -21,10 +21,14 @@ interface Props {
 const MARK: Record<ListKind, string> = { favorites: '♥', bans: '⊘' };
 
 /** Una cella del Pokédex: numero, sprite, nome, ♥ e ⊘. */
-const DexCell = memo(function DexCell({ name, fav, ban, target, onToggle }: {
+const DexCell = memo(function DexCell({ name, fav, ban, favHere, banHere, target, onToggle }: {
   name: string;
+  /** Preferito o bannato in questo formato, anche per eredità (lista universale, specie base): si vede sulla cella. */
   fav: boolean;
   ban: boolean;
+  /** Voce nella lista che si sta modificando: solo questa accende il pulsante, e il clic la toglie. */
+  favHere: boolean;
+  banHere: boolean;
   /** Il Pokémon che Invio aggiungerebbe. */
   target: boolean;
   onToggle: (kind: ListKind, species: string) => void;
@@ -36,9 +40,9 @@ const DexCell = memo(function DexCell({ name, fav, ban, target, onToggle }: {
       <Sprite species={name} size={56} />
       <span className="dex-name">{name}</span>
       <span className="dex-actions">
-        <button type="button" className="dex-fav" aria-pressed={fav} aria-label={tr('lists.toggleFavorite', { species: name })}
+        <button type="button" className="dex-fav" aria-pressed={favHere} aria-label={tr('lists.toggleFavorite', { species: name })}
           onClick={() => onToggle('favorites', name)}>♥</button>
-        <button type="button" className="dex-ban" aria-pressed={ban} aria-label={tr('lists.toggleBan', { species: name })}
+        <button type="button" className="dex-ban" aria-pressed={banHere} aria-label={tr('lists.toggleBan', { species: name })}
           onClick={() => onToggle('bans', name)}>⊘</button>
       </span>
     </li>
@@ -72,6 +76,7 @@ export const ListsPanel = memo(function ListsPanel({ lists, format, data, onChan
   const exact = getSpecies(filters.query.trim())?.name;
   const target = exact && shown.includes(exact) ? exact : query ? shown[0] : undefined;
 
+  const here = pairOfScope(lists, editing);
   const toggle = (kind: ListKind, species: string) => onChange(toggleIn(lists, editing, kind, species));
   // Le celle restano ferme finché non cambia il loro stato: il gestore passa da un riferimento stabile
   const live = useRef(toggle);
@@ -163,6 +168,7 @@ export const ListsPanel = memo(function ListsPanel({ lists, format, data, onChan
             // Stesse regole dei suggerimenti: bannare la specie base vale anche per le sue Mega e forme
             <DexCell key={name} name={name} fav={isUserFavorite({ species: name, item: '' }, effective)}
               ban={isUserBanned({ species: name, item: '' }, effective)} target={name === target}
+              favHere={here.favorites.includes(name)} banHere={here.bans.includes(name)}
               onToggle={toggleRef} />
           ))}
         </ol>

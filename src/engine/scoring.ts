@@ -184,11 +184,15 @@ function candidateEntries(team: TeamSet[], format: Format, data: EngineData, ext
   ];
 }
 
-/** Quanti candidati restano fuori perché bannati dall'utente (quelli ammessi, es. cercati per nome, non contano). */
-export function bannedInPool(team: TeamSet[], format: Format, data: EngineData, extraSets: TeamSet[] = []): number {
-  if (!data.userLists?.bans.size) return 0;
-  return candidateEntries(team, format, data, extraSets).filter(({ set }) => isUserBanned(set, data.userLists)).length;
+/** I candidati (forma in battaglia) che restano fuori perché bannati dall'utente; quelli ammessi (es. cercati per nome) no. */
+export function bannedNames(team: TeamSet[], format: Format, data: EngineData, extraSets: TeamSet[] = []): string[] {
+  if (!data.userLists?.bans.size) return [];
+  return candidateEntries(team, format, data, extraSets).filter(({ set }) => isUserBanned(set, data.userLists)).map(({ set }) => battleName(set));
 }
+
+/** Quanti candidati restano fuori perché bannati dall'utente. */
+export const bannedInPool = (team: TeamSet[], format: Format, data: EngineData, extraSets: TeamSet[] = []): number =>
+  bannedNames(team, format, data, extraSets).length;
 
 export function scoreCandidates(team: TeamSet[], format: Format, data: EngineData, extraSets: TeamSet[] = [], lang: Lang = 'it'): Suggestion[] {
   const analysis = analyzeTeam(team, data);

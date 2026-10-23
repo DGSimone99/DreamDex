@@ -96,3 +96,14 @@ describe('liste nella scheda Pokémon', () => {
     expect(values['dreamdex.lists'] ?? JSON.stringify(EMPTY_LISTS)).toBe(JSON.stringify(EMPTY_LISTS));
   });
 });
+
+describe('liste: nascosti anche negli scambi', () => {
+  it('"Migliora team" e "Sostituto" dicono quanti bannati mancano', async () => {
+    const { storage } = withLists(bans('Kingambit'));
+    const user = await setup(storage, 'Great Tusk', 'Gholdengo');
+    await user.click(within(suggestions()).getByRole('button', { name: 'Migliora team' }));
+    expect(await within(suggestions()).findByText(/1 Pokémon nascost[oi] dalla tua lista Ban/)).toBeInTheDocument();
+    await user.click(within(suggestions()).getByRole('button', { name: 'Sostituisci Gholdengo' }));
+    expect(await within(suggestions()).findByText(/1 Pokémon nascost[oi] dalla tua lista Ban/)).toBeInTheDocument();
+  });
+});
