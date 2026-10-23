@@ -3,7 +3,9 @@ import type { EngineData } from '../../src/engine/data';
 import { softScore } from '../../src/engine/scale';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
 import { outspeedShare, speedPool, speedStat } from '../../src/engine/speed';
-import { CONDITION_QUOTA, memberSpeed, priorityPart, priorityTargets, SPEED_RANK_WEIGHTS, speedPart } from '../../src/engine/speedArea';
+import { getSpecies } from '../../src/engine/dex';
+import { fixtureData } from '../fixtures/data';
+import { CONDITION_QUOTA, isWebImmune, memberSpeed, slowFactor, priorityPart, priorityTargets, SPEED_RANK_WEIGHTS, speedPart } from '../../src/engine/speedArea';
 import { bestHit } from '../../src/engine/damage';
 
 const set = (species: string, item: string, ability: string, moves: string[], nature = 'Jolly', spe = 252): TeamSet =>
@@ -55,12 +57,14 @@ describe('Velocità: ogni membro, coi guadagni delle condizioni', () => {
   });
 
   it('Tailwind e paralisi a un quarto', () => {
-    expect(CONDITION_QUOTA).toEqual({ setup: 0.5, weather: 0.5, unburden: 0.5, web: 0.5, tailwind: 0.25, slow: 0.25 });
+    expect(CONDITION_QUOTA).toEqual({ setup: 0.5, weather: 0.5, unburden: 0.5, web: 0.5, trickroom: 0.5, tailwind: 0.25, slow: 0.25 });
     // Stun Spore del compagno: paralisi, avversari a metà velocità
     const p = memberSpeed(pex, [pex, webber], noMeta)!;
     const slow = p.gains.find(g => g.condition === 'slow')!;
     expect(slow.source).toBe('Stun Spore');
-    expect(slow.gain).toBeCloseTo(0.25 * (share(p.speed, 'Toxapex', 0.5) - p.raw));
+    // Gli immuni (Elettro, Erba per le polveri) non rallentano
+    const slowed = outspeedShare(p.speed, pool.map(r => ({ ...r, value: Math.floor(r.value * slowFactor('stunspore', r.species)) })), 'Toxapex');
+    expect(slow.gain).toBeCloseTo(0.25 * (slowed - p.raw));
   });
 
   it('i guadagni si sommano ma un membro non supera 1', () => {
@@ -138,5 +142,64 @@ describe('Priorità: le minacce più veloci del team, colpite per prime', () => 
     const ms = [memberSpeed(fastest, [fastest], noMeta)!];
     expect(priorityTargets(ms, noMeta)).toEqual([]);
     expect(priorityPart([fastest], ms, 71, noMeta)).toEqual({ value: 71, rows: [] });
+  });
+});
+
+describe('Velocità: casi particolari', () => {
+  it('il meteo che porta il membro stesso vale anche se un compagno ne porta un altro', () => {
+    const torkoal = set('Torkoal', 'Heat Rock', 'Drought', ['Lava Plume'], 'Bold', 0);
+    const ownRain = { ...barra, item: 'Life Orb', moves: ['Rain Dance', 'Liquidation'] };
+    expect(memberSpeed(ownRain, [torkoal, ownRain], noMeta)!.gains.find(g => g.condition === 'weather')?.source).toBe('Swift Swim');
+  });
+
+  it('Unburden: anche Power Herb, Focus Sash, Weakness Policy e simili si consumano', () => {
+    for (const item of ['Power Herb', 'Focus Sash', 'Weakness Policy', 'Throat Spray', 'Eject Button', 'Red Card']) {
+      const hawlucha = set('Hawlucha', item, 'Unburden', ['Close Combat', 'Sky Attack'], 'Adamant');
+      expect(memberSpeed(hawlucha, [hawlucha], noMeta)!.gains.some(g => g.condition === 'unburden')).toBe(true);
+    }
+  });
+
+  it('si esclude solo la propria forma (le Mega contano come la base)', () => {
+    const pool = [{ species: 'Rotom-Heat', value: 100, scarf: false }, { species: 'Garchomp', value: 100, scarf: false }];
+    expect(outspeedShare(200, pool, 'Rotom-Wash')).toBe(1);
+    expect(outspeedShare(200, pool.slice(0, 1).concat({ species: 'Rotom-Wash', value: 300, scarf: false }), 'Rotom-Wash')).toBe(1);
+    expect(outspeedShare(50, pool, 'Garchomp-Mega')).toBe(0);
+  });
+
+  it('il gruppo non contiene Pokémon sconosciuti', () => {
+    expect(speedPool(fixtureData).every(r => !!getSpecies(r.species))).toBe(true);
+  });
+
+  it('Sticky Web: Air Balloon protegge come Levitate e i Volanti', () => {
+    expect(isWebImmune('Heatran', 'Flash Fire', 'Air Balloon')).toBe(true);
+    expect(isWebImmune('Corviknight', 'Pressure', 'Leftovers')).toBe(true);
+    expect(isWebImmune('Rotom-Wash', 'Levitate', 'Leftovers')).toBe(true);
+    expect(isWebImmune('Heatran', 'Flash Fire', 'Leftovers')).toBe(false);
+  });
+
+  it('paralisi e cali di velocità rispettano le immunità di tipo', () => {
+    expect(slowFactor('thunderwave', 'Garchomp')).toBe(1);
+    expect(slowFactor('thunderwave', 'Pikachu')).toBe(1);
+    expect(slowFactor('thunderwave', 'Toxapex')).toBe(0.5);
+    expect(slowFactor('stunspore', 'Venusaur')).toBe(1);
+    expect(slowFactor('bulldoze', 'Corviknight')).toBe(1);
+    expect(slowFactor('icywind', 'Toxapex')).toBeCloseTo(2 / 3);
+  });
+
+  it('Grassy Glide è prioritario anche col Grassy Terrain di un compagno', () => {
+    const rilla = set('Rillaboom', 'Choice Band', 'Overgrow', ['Grassy Glide', 'Wood Hammer'], 'Adamant', 0);
+    const bulu = set('Tapu Bulu', 'Leftovers', 'Grassy Surge', ['Horn Leech'], 'Adamant', 0);
+    const team = [rilla, bulu];
+    const ms = team.map(s => memberSpeed(s, team, noMeta)!);
+    expect(priorityPart(team, ms, 50, noMeta).rows.some(r => r.best?.move === 'Grassy Glide')).toBe(true);
+  });
+
+  it('tra le minacce della Priorità non ci sono le specie del team', () => {
+    const fastPult = set('Dragapult', 'Choice Specs', 'Infiltrator', ['Draco Meteor'], 'Timid');
+    const team = [fastPult, pex];
+    const ms = team.map(s => memberSpeed(s, team, fixtureData)!);
+    // Senza escluderlo, Dragapult del meta sarebbe una minaccia più veloce di Toxapex
+    expect(priorityTargets([ms[1]], fixtureData).some(t => t.set.species === 'Dragapult')).toBe(true);
+    expect(priorityTargets(ms, fixtureData, team).some(t => t.set.species === 'Dragapult')).toBe(false);
   });
 });

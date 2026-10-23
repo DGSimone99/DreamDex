@@ -63,38 +63,48 @@ export function speedPool(data: EngineData): SpeedRival[] {
   if (pool) return pool;
   pool = meta
     ? Object.entries(data.stats!.pokemon)
+      // Un nome che il Pokédex non conosce darebbe velocità 0: si salta
+      .filter(([name]) => !!getSpecies(name))
       .sort((a, b) => b[1].usage - a[1].usage)
       .slice(0, SPEED_POOL)
       .map(([name, entry]) => {
         const { nature, evs } = parseSpread(top(entry.spreads));
         const item = dex.items.get(top(entry.items) ?? '').name ?? '';
-        const webImmune = isFlying(name) || toID(top(entry.abilities) ?? '') === 'levitate' || toID(item) === 'heavydutyboots';
+        const webImmune = isWebImmune(name, top(entry.abilities) ?? '', item);
         return { species: name, ...speedStat({ species: name, item, nature, evs }), webImmune };
       })
     : tierSpecies(formatId).map(s => ({
       species: s.name, value: Math.floor((2 * s.baseStats.spe + 31 + 63 + 5) * 1.1), scarf: false,
-      webImmune: s.types.includes('Flying') || toID(s.abilities[0]) === 'levitate',
+      webImmune: isWebImmune(s.name, s.abilities[0], ''),
     }));
   pools.set(key, pool);
   return pool;
 }
 
-const isFlying = (name: string) => !!getSpecies(name)?.types.includes('Flying');
-const baseOf = (name: string) => getSpecies(name)?.baseSpecies ?? name;
+/** Sticky Web non rallenta i Volanti, chi ha Levitate, Heavy-Duty Boots o Air Balloon. */
+export function isWebImmune(species: string, ability: string, item: string): boolean {
+  return !!getSpecies(species)?.types.includes('Flying') || ['levitate'].includes(toID(ability)) || ['heavydutyboots', 'airballoon'].includes(toID(item));
+}
+
+/** La forma che conta come "sé stesso": la propria (Rotom-Wash non è Rotom-Heat), le Mega e le Primal come la base. */
+const selfOf = (name: string) => {
+  const species = getSpecies(name);
+  if (!species) return name;
+  return species.isMega || species.isPrimal ? species.baseSpecies : species.name;
+};
+export const sameSelf = (a: string, b: string) => selfOf(a) === selfOf(b);
 
 /** Quota del gruppo più lenta di `speed`; un pareggio vale metà. La specie stessa (`ownSpecies`) non si confronta con sé. */
 export function outspeedShare(speed: number, pool: SpeedRival[], ownSpecies?: string): number {
-  const own = ownSpecies ? baseOf(ownSpecies) : null;
-  const rivals = own ? pool.filter(r => baseOf(r.species) !== own) : pool;
+  const rivals = ownSpecies ? pool.filter(r => !sameSelf(r.species, ownSpecies)) : pool;
   if (!rivals.length) return 0;
   return rivals.reduce((acc, r) => acc + (r.value < speed ? 1 : r.value === speed ? 0.5 : 0), 0) / rivals.length;
 }
 
 /** Velocità del set rispetto al gruppo del formato (speedPool), coi vicini più veloci e più lenti. */
 export function speedTier(set: TeamSet, data: EngineData): SpeedTier | null {
-  const own = baseOf(set.species);
   const speed = speedStat(set).value;
-  const rivals = speedPool(data).filter(r => baseOf(r.species) !== own);
+  const rivals = speedPool(data).filter(r => !sameSelf(r.species, set.species));
   if (!rivals.length) return null;
   return {
     speed,

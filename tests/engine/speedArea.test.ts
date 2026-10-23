@@ -38,10 +38,18 @@ describe('area Velocità', () => {
     expect(on.members[2].raw).not.toBeCloseTo(off.members[2].raw, 5);
   });
 
-  it('un team con Trick Room è lento per scelta: la Velocità non conta e non si mostra', () => {
-    const tr = [set('Hatterene', 'Life Orb', 'Magic Bounce', ['Trick Room', 'Psychic', 'Dazzling Gleam', 'Mystical Fire'], 'Quiet'), toxapex];
-    expect(rateTeam(tr, noMeta)!.areas.map(a => a.key)).not.toContain('speed');
-    expect(rateTeam([dragapult, toxapex], noMeta)!.areas.map(a => a.key)).toContain('speed');
+  it('Trick Room è una condizione: la Velocità resta, e guadagna chi è adatto (i lenti), non chi è veloce', () => {
+    const hatt = set('Hatterene', 'Life Orb', 'Magic Bounce', ['Trick Room', 'Psychic', 'Dazzling Gleam', 'Mystical Fire'], 'Quiet');
+    const slowpex = { ...toxapex, evs: {}, nature: 'Relaxed' };
+    const tr = [hatt, slowpex, dragapult];
+    expect(rateTeam(tr, noMeta)!.areas.map(a => a.key)).toContain('speed');
+    const area = teamSpeedArea(tr, noMeta);
+    const room = (name: string) => area.members.find(m => m.species === name)!.gains.find(g => g.condition === 'trickroom');
+    expect(room('Toxapex')!.source).toBe('Trick Room');
+    expect(room('Toxapex')!.gain).toBeGreaterThan(0.3);
+    expect(room('Dragapult')).toBeUndefined();
+    // Senza Trick Room la condizione non c'è
+    expect(teamSpeedArea([slowpex, dragapult], noMeta).members.some(m => m.gains.some(g => g.condition === 'trickroom'))).toBe(false);
   });
 
   it('team vuoto o di sconosciuti: 0, niente NaN', () => {

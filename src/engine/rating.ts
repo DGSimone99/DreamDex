@@ -334,7 +334,8 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
   const trickRoom = team.some(set => set.moves.some(move => toID(move) === 'trickroom'));
   // I pesi dal tipo di team (un team incompleto si giudica come balance); con Trick Room la Velocità non conta
   const table = ARCHETYPE_WEIGHTS[analysis.needs.archetype];
-  const effective: Record<BaseArea, number> = trickRoom ? { ...table, speed: 0 } : table;
+  // Trick Room non azzera più la Velocità: è una sua condizione (speedArea.ts), che premia i membri lenti
+  const effective: Record<BaseArea, number> = table;
   // Velocità: ogni membro coi guadagni delle condizioni, più la priorità (speedArea.ts); col meta contro i più usati
   const speed = teamSpeedArea(team, data);
 

@@ -264,7 +264,7 @@ describe('dettaglio della Velocità a schede', () => {
     expect(panel).toHaveTextContent(/25\/20\/16\/14\/13\/12/);
     const headers = within(panel).getAllByRole('columnheader').map(h => h.textContent);
     expect(headers.slice(0, 3)).toEqual(['Pokémon', 'Velocità', 'Pura']);
-    for (const h of headers.slice(3, -1)) expect(['Setup', 'Meteo', 'Unburden', 'Sticky Web', 'Tailwind', 'Rallentare']).toContain(h);
+    for (const h of headers.slice(3, -1)) expect(['Setup', 'Meteo', 'Unburden', 'Sticky Web', 'Trick Room', 'Tailwind', 'Rallentare']).toContain(h);
     expect(headers[headers.length - 1]).toBe('Totale');
   });
 

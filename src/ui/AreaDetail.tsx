@@ -530,7 +530,7 @@ function defenseTabs(defense: TeamDefense, meta: boolean, t: T): DetailTab[] {
   ];
 }
 
-const CONDITIONS: SpeedCondition[] = ['setup', 'weather', 'unburden', 'web', 'tailwind', 'slow'];
+const CONDITIONS: SpeedCondition[] = ['setup', 'weather', 'unburden', 'web', 'trickroom', 'tailwind', 'slow'];
 const points = (x: number) => Math.round(100 * x);
 
 /** Le schede della Velocità: Generale, Velocità (pura e condizioni) e Priorità. */
