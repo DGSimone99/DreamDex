@@ -1,7 +1,7 @@
 import { usesMeta } from './analysis';
 import { bestHit, setKey, type FieldCondition, type Hit, type HitOptions } from './damage';
 import type { EngineData } from './data';
-import { defenderPanel, isDefensiveSet } from './defenders';
+import { defenderPanel, isDefensiveSet, metaDefenderCount } from './defenders';
 import { battleAbility, battleSpecies, dex, getMove, toID } from './dex';
 import { DEFAULT_FORMAT } from './format';
 import { teraAllowed } from './formats';
@@ -48,8 +48,9 @@ export interface TeamOffense {
   wallbreaking: number;
   setup: number | null;
   members: MemberOffense[];
-  /** I difensori contro cui si è misurata (per spiegare il voto). */
+  /** I difensori contro cui si è misurata (per spiegare il voto): i primi `metaDefenders` dal meta, gli altri dal tier. */
   defenders: string[];
+  metaDefenders: number;
 }
 
 /** Valore del colpo migliore contro un difensore: 0, 0,5 (3HKO), 1 (2HKO) o 1,5 (OHKO sicuro; mai per le mosse OHKO, che possono mancare). */
@@ -70,15 +71,24 @@ function conditionsOf(set: TeamSet, team: TeamSet[]) {
   return { own: [...new Set(own)], all };
 }
 
+const SPECIAL_BOOSTS: Record<string, { atk?: number; spa?: number; def?: number }> = {
+  bellydrum: { atk: 6 }, curse: { atk: 1, def: 1 }, tidyup: { atk: 1 },
+};
+
 /** La mossa di potenziamento più forte del set: Attacco, Attacco Speciale, o Difesa con Body Press, dopo un uso. */
 function setupBoosts(set: TeamSet): HitOptions['boosts'] | null {
   const bodyPress = set.moves.some(m => toID(m) === 'bodypress');
   let best: HitOptions['boosts'] | null = null;
   let bestSum = 0;
+  const ghost = (battleSpecies(set)?.types as readonly string[] | undefined)?.includes('Ghost');
   for (const name of set.moves) {
     const move = getMove(name);
-    if (!move || move.category !== 'Status' || move.target !== 'self' || !move.boosts) continue;
-    const boosts = { atk: Math.max(0, move.boosts.atk ?? 0), spa: Math.max(0, move.boosts.spa ?? 0), def: bodyPress ? Math.max(0, move.boosts.def ?? 0) : 0 };
+    if (!move || move.category !== 'Status') continue;
+    // Mosse che i dati non descrivono come potenziamento di sé: Belly Drum (+6), Curse (+1, non da Spettro), Tidy Up (+1)
+    const special = SPECIAL_BOOSTS[move.id];
+    const own = special ?? (move.target === 'self' ? move.boosts : undefined);
+    if (!own || (move.id === 'curse' && ghost)) continue;
+    const boosts = { atk: Math.max(0, own.atk ?? 0), spa: Math.max(0, own.spa ?? 0), def: bodyPress ? Math.max(0, own.def ?? 0) : 0 };
     const sum = boosts.atk + boosts.spa + boosts.def;
     if (sum > bestSum) { best = boosts; bestSum = sum; }
   }
@@ -155,7 +165,8 @@ const references = new Map<string, OffenseReference>();
  * Senza statistiche: i valori fissi di riserva.
  */
 export function offenseReference(data: EngineData): OffenseReference {
-  const key = `${data.formatId ?? 'ou'}|${usesMeta(data)}`;
+  // Anche senza meta il riferimento usa le statistiche, se ci sono: mentre si caricano non devono restare quelle di riserva
+  const key = `${data.formatId ?? 'ou'}|${usesMeta(data)}|${!!data.stats}`;
   let reference = references.get(key);
   if (reference) return reference;
   const rules = rulesOf(data);
@@ -212,5 +223,6 @@ export function teamOffense(team: TeamSet[], data: EngineData): TeamOffense {
     setup: setters.length ? rankWeighted(setters.map(m => m.setup!)) : null,
     members,
     defenders: defenderPanel(data).map(set => set.species),
+    metaDefenders: metaDefenderCount(data),
   };
 }

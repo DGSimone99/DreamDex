@@ -26,7 +26,8 @@ describe('dettaglio dell\'Offesa', () => {
     expect(rows.map(r => within(r).getByRole('rowheader').textContent)).toEqual(['Great Tusk', 'Gholdengo']);
     // Senza mossa di potenziamento il Setup è un trattino
     for (const row of rows) expect(within(row).getAllByRole('cell')[2]).toHaveTextContent(/^(\d+|—)$/);
-    expect(dialog).toHaveTextContent(/difensori del meta/);
+    // La fixture ha pochi muri nel meta: il resto viene dal tier, e la riga lo dice
+    expect(dialog).toHaveTextContent(/del meta, gli altri i più robusti del tier/);
   });
 
   it('Esc chiude e il focus torna alla barra', async () => {

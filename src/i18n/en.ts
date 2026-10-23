@@ -493,6 +493,7 @@ export const en = {
   'detail.setup.none': "No member has a boosting move",
   'detail.lead.meta': "The sets' real damage against {n} meta defenders: {list}.",
   'detail.lead.tier': "The sets' real damage against the tier's {n} bulkiest defenders: {list}.",
+  'detail.lead.mixed': "The sets' real damage against {n} defenders ({meta} from the meta, the others the tier's bulkiest): {list}.",
   'detail.more': "{list} and {n} more",
   'detail.open': "Open the {area} detail",
   'rating.rulesBroken': "One or more team members break the format's rules: the grade is a guide, not valid for a real match",

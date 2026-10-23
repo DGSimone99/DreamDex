@@ -36,6 +36,7 @@ export function isDefensiveSet(set: TeamSet, rules: FormatRules): boolean {
 }
 
 const panels = new Map<string, TeamSet[]>();
+const metaCounts = new Map<string, number>();
 
 /**
  * I difensori contro cui si misura l'Offesa. Col meta: i più usati il cui set più comune è difensivo
@@ -66,5 +67,12 @@ export function defenderPanel(data: EngineData): TeamSet[] {
     .map(standardWall);
   panel = [...fromMeta, ...fromTier];
   panels.set(key, panel);
+  metaCounts.set(key, fromMeta.length);
   return panel;
+}
+
+/** Quanti difensori del pannello vengono dal meta (i primi); gli altri sono i più robusti del tier. */
+export function metaDefenderCount(data: EngineData): number {
+  defenderPanel(data);
+  return metaCounts.get(`${data.formatId ?? 'ou'}|${usesMeta(data)}`) ?? 0;
 }

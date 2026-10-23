@@ -495,6 +495,7 @@ export const it: Record<keyof typeof en, string> = {
   'detail.setup.none': "Nessun membro ha una mossa di potenziamento",
   'detail.lead.meta': "Il danno vero dei set contro {n} difensori del meta: {list}.",
   'detail.lead.tier': "Il danno vero dei set contro i {n} difensori più robusti del tier: {list}.",
+  'detail.lead.mixed': "Il danno vero dei set contro {n} difensori ({meta} del meta, gli altri i più robusti del tier): {list}.",
   'detail.more': "{list} e altri {n}",
   'detail.open': "Apri il dettaglio di {area}",
   'rating.rulesBroken': "Uno o più membri del team non rispettano le regole del formato: il voto vale come indicazione, non per una partita",

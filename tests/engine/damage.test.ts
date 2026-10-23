@@ -86,3 +86,16 @@ describe('bestHit', () => {
     });
   });
 });
+
+describe('mosse multicolpo e Parental Bond', () => {
+  const toxapex = { species: 'Toxapex', item: 'Black Sludge', ability: 'Regenerator', moves: ['Recover'], nature: 'Bold', evs: { hp: 252, def: 252 } };
+  it('Icicle Spear con Skill Link somma i colpi', () => {
+    const cloyster = { species: 'Cloyster', item: 'Focus Sash', ability: 'Skill Link', moves: ['Icicle Spear'], nature: 'Jolly', evs: { atk: 252, spe: 252 } };
+    // 5 colpi da circa il 3% l'uno contro Toxapex difensivo; con 3 colpi sarebbe sotto il 10%
+    expect(bestHit(cloyster, toxapex)!.expected).toBeGreaterThan(0.14);
+  });
+  it('Mega Kangaskhan con Parental Bond fa più danno di Kangaskhan', () => {
+    const kanga = { species: 'Kangaskhan', item: 'Life Orb', ability: 'Scrappy', moves: ['Double-Edge'], nature: 'Adamant', evs: { atk: 252, spe: 252 } };
+    expect(bestHit({ ...kanga, item: 'Kangaskhanite' }, toxapex)!.expected).toBeGreaterThan(bestHit({ ...kanga, item: 'Leftovers' }, toxapex)!.expected);
+  });
+});

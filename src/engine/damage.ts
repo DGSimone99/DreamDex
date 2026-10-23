@@ -83,10 +83,11 @@ function toField(conditions: FieldCondition[] = []): Field {
   });
 }
 
-function toMove(name: string, useZ: boolean): CalcMove | null {
-  return cached(moves, `${name}|${useZ}`, () => {
+/** Abilità e strumento dell'attaccante decidono quanti colpi fa una mossa multicolpo (Skill Link 5, Loaded Dice 4). */
+function toMove(name: string, useZ: boolean, ability: string, item: string): CalcMove | null {
+  return cached(moves, `${name}|${useZ}|${ability}|${item}`, () => {
     try {
-      return new CalcMove(gen, name, { useZ });
+      return new CalcMove(gen, name, { useZ, ability: (ability || undefined) as CalcMove['ability'], item: (item || undefined) as CalcMove['item'] });
     } catch {
       return null;
     }
@@ -115,14 +116,17 @@ export function bestHit(attacker: TeamSet, defender: TeamSet, options: HitOption
       if (!best || hit.expected > best.expected) best = hit;
       continue;
     }
-    const move = toMove(data.name, !!zType && zType === data.type);
+    const move = toMove(data.name, !!zType && zType === data.type, battleAbility(attacker), attacker.item);
     if (!move) continue;
     try {
       const result = calculate(gen, own, target, move, field);
-      const rolls = (Array.isArray(result.damage) ? result.damage.flat() : [result.damage]) as number[];
-      if (!rolls.length) continue;
-      const avg = rolls.reduce((a, b) => a + b, 0) / rolls.length;
-      const hit = { move: data.name, expected: (avg / hp) * accuracy, min: Math.min(...rolls) / hp };
+      // Mosse multicolpo e Parental Bond: un elenco di tiri per ogni colpo, da sommare
+      const damage = result.damage as number | number[] | number[][];
+      const hits = (Array.isArray(damage) ? (Array.isArray(damage[0]) ? damage : [damage]) : [[damage]]) as number[][];
+      if (!hits.length || !hits[0].length) continue;
+      const avg = hits.reduce((acc, rolls) => acc + rolls.reduce((a, b) => a + b, 0) / rolls.length, 0);
+      const low = hits.reduce((acc, rolls) => acc + Math.min(...rolls), 0);
+      const hit = { move: data.name, expected: (avg / hp) * accuracy, min: low / hp };
       if (!best || hit.expected > best.expected) best = hit;
     } catch {
       // Una mossa che la libreria non sa calcolare non conta

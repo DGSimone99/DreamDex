@@ -32,6 +32,9 @@ export function AreaDetail({ rating, area, onClose }: { rating: TeamRating; area
   const rest = offense.defenders.length - NAMED_DEFENDERS;
   const list = rest > 0 ? t('detail.more', { list: named, n: rest }) : named;
   const setters = offense.members.filter(m => m.setup !== null).map(m => m.species);
+  // Col meta il pannello si completa coi più robusti del tier se il meta non ha abbastanza muri: la riga lo dice
+  const lead = offense.metaDefenders === 0 ? 'detail.lead.tier'
+    : offense.metaDefenders < offense.defenders.length ? 'detail.lead.mixed' : 'detail.lead.meta';
   const team = { power: offense.power, wallbreaking: offense.wallbreaking, setup: offense.setup };
 
   return createPortal(
@@ -42,7 +45,7 @@ export function AreaDetail({ rating, area, onClose }: { rating: TeamRating; area
           <button ref={close} type="button" className="help-close" aria-label={t('help.close')} onClick={onClose}><Icon name="close" /></button>
         </header>
         <div className="area-body">
-          <p className="area-lead">{t(rating.meta ? 'detail.lead.meta' : 'detail.lead.tier', { n: offense.defenders.length, list })}</p>
+          <p className="area-lead">{t(lead, { n: offense.defenders.length, meta: offense.metaDefenders, list })}</p>
           <dl className="area-subs">
             {SUBS.map(sub => {
               const score = team[sub];

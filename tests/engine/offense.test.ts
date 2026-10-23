@@ -116,3 +116,23 @@ describe('teamOffense', () => {
     expect(teamOffense([tusk], { stats: null, sets: null, formatId: 'ou' }).value).toBeGreaterThan(0);
   });
 });
+
+describe('correzioni della revisione', () => {
+  it('Belly Drum e Curse sono setup', () => {
+    const azu = set('Azumarill', 'Sitrus Berry', 'Huge Power', ['Belly Drum', 'Aqua Jet', 'Play Rough', 'Knock Off'], 'Adamant', { hp: 252, atk: 252 });
+    const snorlax = set('Snorlax', 'Leftovers', 'Thick Fat', ['Curse', 'Body Slam', 'Rest', 'Sleep Talk'], 'Careful', { hp: 252, spd: 252 });
+    expect(memberOffense(azu, [azu], fixtureData)!.setup).not.toBeNull();
+    expect(memberOffense(snorlax, [snorlax], fixtureData)!.setup).not.toBeNull();
+  });
+
+  it('il riferimento senza meta non resta quello di riserva se prima mancavano i dati', () => {
+    expect(offenseReference({ stats: null, sets: null, formatId: 'uu' }).power).toBe(0.6);
+    expect(offenseReference({ ...fixtureData, ignoreMeta: true, formatId: 'uu' }).power).not.toBe(0.6);
+  });
+
+  it('dice quanti difensori vengono dal meta', () => {
+    const team = teamOffense([chomp], fixtureData);
+    expect(team.metaDefenders).toBeLessThan(team.defenders.length);
+    expect(teamOffense([chomp], noStats).metaDefenders).toBe(0);
+  });
+});
