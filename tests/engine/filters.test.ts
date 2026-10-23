@@ -88,18 +88,12 @@ describe('filtri', () => {
     expect(search({ ...common, resists: ['Ground', 'Fire'] })).toEqual(['Rotom-Wash']);
   });
 
-  it('leggendari e mitici: tutti, esclusi o solo', () => {
+  it('leggendari e misteriosi insieme: tutti, esclusi o solo', () => {
     expect(search({ query: 'zapdos' })).toContain('Zapdos');
     expect(search({ query: 'zapdos', legendary: 'none' })).not.toContain('Zapdos');
     expect(search({ query: 'garchomp', legendary: 'only' })).toEqual([]);
-    expect(search({ query: 'mew', mythical: 'only' })).toContain('Mew');
-    expect(search({ query: 'mew', mythical: 'only' })).not.toContain('Mewtwo');
-    expect(search({ query: 'mew', mythical: 'none' })).not.toContain('Mew');
-  });
-
-  it('fino alla generazione: le Mega contano come la specie base', () => {
-    expect(search({ query: 'garch', maxGen: 3 })).toEqual([]);
-    expect(sorted(search({ query: 'garch', maxGen: 4 }))).toEqual(['Garchomp', 'Garchomp-Mega']);
+    expect(search({ query: 'mew', legendary: 'only' })).toContain('Mew');
+    expect(search({ query: 'mew', legendary: 'none' })).not.toContain('Mew');
   });
 
   it('colpisce super efficace', () => {

@@ -310,10 +310,15 @@ export function presetsFor(data: EngineData, speciesName: string): Preset[] {
   return allPresetsFor(data, speciesName).filter(p => !stones.has(toID(p.set.item)));
 }
 
-/** I preset per il set così com'è: con la pietra quelli della Mega, senza quelli della forma base. */
-export function presetsForSet(data: EngineData, set: TeamSet): Preset[] {
+/**
+ * I preset per il set così com'è: con la pietra quelli della Mega, senza quelli della forma base.
+ * Con `genLimit` (e senza Custom Skillset) resi legali fino a quella generazione, come il set di riferimento.
+ */
+export function presetsForSet(data: EngineData, set: TeamSet, genLimit?: number): Preset[] {
   const forme = battleSpecies(set);
-  return presetsFor(data, forme && isStoneForme(forme) ? forme.name : set.species);
+  const presets = presetsFor(data, forme && isStoneForme(forme) ? forme.name : set.species);
+  if (genLimit === undefined || set.customSkillset) return presets;
+  return presets.map(p => ({ ...p, set: makeLegal(p.set, data, genLimit) }));
 }
 
 /** Tutti i preset della specie, senza distinguere le forme. */

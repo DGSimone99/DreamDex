@@ -213,17 +213,21 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 /* Ogni riga della card è un livello a sé (translate): con l'avviso aperto lo sprite passa sopra nome e righe sotto */
 .slot > summary .sprite-wrap:has(.alert-mark:hover, .alert-mark:focus-visible) { z-index: 6; }
 .slot > summary .sprite { display: block; image-rendering: pixelated; transition: transform 0.35s var(--ease); }
-.slot[open] > summary .sprite { transform: scale(1.12) translateY(-2px); }
+/* Card aperta: lo sprite cresce finché sta nella card */
+.slot[open] > summary { --open-scale: 1.4; }
+.slot[open] > summary .sprite { transform-origin: 50% 92%; transform: scale(var(--open-scale)); }
 /* Moveset aperto: il Pokémon resta in idle animato (gen5ani, dimensioni naturali, centrato) */
 .slot > summary .sprite.covered { visibility: hidden; }
 .slot > summary .sprite-ani {
   position: absolute;
+  /* Appoggiato in basso e mai più alto di --fit (px dello sprite): le GIF alte (Blacephalon 143 px) si rimpiccioliscono per stare nella card */
   left: 50%;
-  top: 50%;
+  bottom: 4px;
   max-width: none;
   image-rendering: pixelated;
   pointer-events: none;
-  transform: translate(-50%, -50%) translateY(-2px) scale(calc(1.12 * var(--sprite-scale, 1)));
+  transform-origin: 50% 100%;
+  transform: translateX(-50%) scale(min(calc(var(--open-scale, 1.12) * var(--sprite-scale, 1)), calc(var(--fit, 999) / var(--ani-h, 96))));
 }
 .slot .name { font: 700 21px/1.05 var(--display); text-transform: uppercase; letter-spacing: 0.02em; }
 .slot .held { font-size: 13px; color: var(--muted); }
@@ -231,16 +235,17 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 .slot .types { display: flex; gap: 4px; flex-wrap: wrap; margin: 2px 0; }
 .slot .favorite, .slot .remove {
   position: absolute;
-  top: 8px;
-  right: 34px;
+  /* Area di clic di 30 px attorno all'icona: le due aree si toccano senza sovrapporsi */
+  top: 3px;
+  right: 35px;
   border: 0;
   background: none;
-  padding: 2px;
+  padding: 7px;
   color: var(--faint);
 }
 .slot .favorite[aria-pressed='true'] { color: var(--gold); background: none; }
 .slot .favorite:hover { color: var(--gold); }
-.slot .remove { right: 10px; }
+.slot .remove { right: 5px; }
 /* Righe della card lungo la diagonale: --dx lo calcola useSlant (sprite, stella e × restano fermi) */
 .slot > summary > * { translate: var(--dx, 0px) 0; }
 /* Badge Stats su una riga sua sopra il nome: spazio riservato, non va mai sopra lo sprite */
@@ -269,9 +274,21 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 /* Focus da tastiera sulla card: l'anello segue l'inclinazione (sta sul fondo inclinato, non sul box dritto) */
 .slot > summary:focus-visible { outline: none; }
 .slot > summary:focus-visible::before { outline: 2px solid var(--gold); outline-offset: 3px; }
-.slot.empty { align-items: center; justify-content: center; color: var(--faint); font-weight: 500; }
+.slot.empty { align-items: center; justify-content: center; gap: 10px; color: var(--faint); font-weight: 500; background: none; border: 0; border-radius: 0; cursor: pointer; }
 .slot.empty::before { background: transparent; border: 2px dashed var(--line); border-image: none; }
+/* Contenuto centrato sulla card inclinata: --dx (useSlant) lo sposta col bordo all'altezza di ogni riga */
+.slot.empty > * { translate: var(--dx, 0px) 0; }
+.empty-ring { display: grid; place-items: center; width: 64px; height: 64px; border: 2px dashed var(--line); border-radius: 50%; transition: border-color 0.15s, color 0.15s, transform 0.2s var(--ease); }
+.empty-ring .icon { width: 22px; height: 22px; }
+.empty-label { font-size: 14px; }
+.slot.empty:hover { border-color: transparent; color: var(--text); }
+.slot.empty:hover::before { border-color: var(--blue); background: color-mix(in srgb, var(--blue) 6%, transparent); }
+.slot.empty:hover .empty-ring { border-color: var(--blue); color: var(--blue); transform: scale(1.06); }
+.slot.empty:focus-visible { outline: none; }
+.slot.empty:focus-visible::before { outline: 2px solid var(--gold); outline-offset: 3px; }
 .sprite.missing { display: block; width: 96px; height: 96px; }
+/* Lead: il primo membro, in alto a sinistra (il lucchetto del Custom Skillset gli passa accanto) */
+.slot-lead { position: absolute; left: 14px; top: 10px; font: 700 12px/1 var(--display); text-transform: uppercase; letter-spacing: 0.08em; color: var(--blue); }
 
 /* Con un membro aperto le card si compattano: team ed editor stanno in una schermata (abilità, ruoli e Stats sono nell'editor) */
 .slots.editing .slot > summary, .slots.editing .slot.empty { min-height: 0; padding-bottom: 12px; }
@@ -281,12 +298,18 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 .slots.editing .slot[open] > summary .sprite-wrap .alert-pop { zoom: calc(1 / 1.05); }
 .slots.editing .slot-stats, .slots.editing .slot .ability, .slots.editing .slot .roles { display: none; }
 .slots.editing .slot .name { font-size: 18px; }
-.slots.editing .slot.empty .sprite.missing { display: none; }
+.slots.editing .slot.empty { gap: 6px; }
+.slots.editing .empty-ring { width: 40px; height: 40px; }
+.slots.editing .empty-ring .icon { width: 16px; height: 16px; }
+.slots.editing .empty-label { font-size: 13px; }
 .slots.editing .slot.empty { min-height: 100%; }
 /* Card aperta: solo lo sprite, più grande (nome, tipi e set sono nell'editor) */
 .slot[open] > summary { justify-content: center; }
-.slot[open] > summary > :not(.sprite-wrap, .favorite, .remove, .slot-custom) { display: none; }
+.slot[open] > summary > :not(.sprite-wrap, .favorite, .remove, .slot-custom, .slot-lead) { display: none; }
 .slots.editing .slot[open] > summary .sprite-wrap { zoom: 1.05; margin: 0; }
+.slots.editing .slot[open] > summary { --open-scale: 1.2; --fit: 122; }
+/* Più in basso, sul fondo della card: lo spazio sopra resta tutto al Pokémon */
+.slots.editing .slot[open] > summary .sprite-ani { bottom: -11px; }
 /* Riordino trascinando */
 .slot.dragging > summary { opacity: 0.45; }
 .slot.drop-target > summary::before { outline: 2px dashed var(--blue); outline-offset: 3px; }
@@ -861,6 +884,10 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 .search-hint strong { color: var(--gold); font-weight: 600; }
 kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 3px; background: var(--raised); color: var(--text); }
 .filters > summary { font-weight: 600; }
+.filters-reset { margin-left: 12px; padding: 2px 8px; font-size: 13px; font-weight: 500; color: var(--muted); vertical-align: middle; }
+.filters-reset .icon { width: 14px; height: 14px; }
+.filters-reset:hover { color: var(--text); }
+.filters[open] .filters-reset { display: none; }
 .filters h4, .filters .control-label { font: 600 12px/1 var(--ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--faint); margin: 0 0 8px; }
 .filters[open] > summary { margin-bottom: 14px; }
 
@@ -914,7 +941,11 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .targets button .mon-icon { margin: -4px -2px -4px -4px; }
 .targets button .icon { width: 12px; height: 12px; color: var(--gold); }
 .picker.has-detail { display: grid; grid-template-columns: minmax(0, 560px) minmax(0, 1fr); gap: 28px; align-items: start; }
-.picker-list { min-width: 0; }
+/* Scheletro: la lista tiene l'altezza di una pagina e il dettaglio vuoto resta al suo posto, così la pagina non salta */
+.picker-list { min-width: 0; min-height: 860px; }
+.detail-empty { display: grid; place-content: center; justify-items: center; gap: 10px; min-height: 320px; padding: 24px; background: transparent; border: 1px dashed var(--line); color: var(--faint); text-align: center; }
+.detail-empty .icon { width: 28px; height: 28px; }
+.detail-empty p { margin: 0; max-width: 32ch; font-size: 14px; }
 .list-count { margin: 0 0 6px; font-size: 13px; color: var(--muted); }
 .suggestions { list-style: none; padding: 0; margin: 0; background: var(--panel); border: 1px solid var(--line-soft); border-radius: 6px; overflow: hidden; }
 .suggestions > li + li { border-top: 1px solid var(--line-soft); }
@@ -998,7 +1029,10 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
   background: var(--band);
   border-bottom: 1px solid var(--line-soft);
 }
-.detail-hero > .sprite { image-rendering: pixelated; }
+.detail-sprite { position: relative; display: block; width: 88px; height: 88px; }
+.detail-sprite .sprite { image-rendering: pixelated; width: 100%; height: 100%; }
+.detail-sprite .sprite.covered { visibility: hidden; }
+.detail-sprite .sprite-ani { position: absolute; left: 50%; top: 50%; max-width: none; image-rendering: pixelated; pointer-events: none; transform: translate(-50%, -50%) scale(0.9167); }
 .detail-id { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
 .detail-id h3 { display: flex; align-items: center; gap: 10px; font-size: 26px; line-height: 1; letter-spacing: 0.02em; }
 .detail-id h3 > span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -1037,6 +1071,10 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .detail-moves { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
 .detail-moves li { padding: 4px 9px; background: var(--field); border: 1px solid var(--line-soft); border-radius: 4px; font-size: 13px; font-weight: 500; }
 .detail-actions { display: flex; gap: 8px; padding: 10px 18px; }
+.detail-actions .smogon-link { margin-left: auto; }
+.smogon-link { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 4px; background: var(--raised); color: inherit; font-weight: 500; text-decoration: none; white-space: nowrap; transition: border-color 0.15s; }
+.smogon-link:hover { border-color: var(--blue); }
+.editor-actions .smogon-link { height: 36px; }
 .detail-actions .go { background: var(--blue-soft); border-color: var(--blue); font-weight: 600; }
 
 .tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; }
@@ -1273,6 +1311,7 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 /* Custom Skillset: etichetta del membro, a sinistra sopra l'inizio del nome */
 .alert-mark.slot-custom { position: absolute; left: 14px; top: 8px; padding: 2px; }
 .alert-mark.slot-custom .icon { width: 16px; height: 16px; }
+.slot:first-child .alert-mark.slot-custom { left: 50px; top: 5px; }
 .alert-pop {
   position: absolute;
   z-index: 60;
@@ -1343,7 +1382,8 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
   .slot .roles { font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
   .picker.has-detail { grid-template-columns: minmax(0, 500px) minmax(0, 1fr); }
   .detail-hero { grid-template-columns: 72px minmax(0, 1fr) auto; }
-  .detail-hero > .sprite { width: 72px; height: 72px; }
+  .detail-sprite { width: 72px; height: 72px; }
+  .detail-sprite .sprite-ani { transform: translate(-50%, -50%) scale(0.75); }
   .detail-id h3 { font-size: 24px; }
   .detail-score strong { font-size: 40px; }
 }

@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { activeFilterCount, EMPTY_FILTERS, MAX_TYPES, type CandidateFilters, type Inclusion } from '../engine/filters';
 import { FIT_ARCHETYPES, type FitArchetype } from '../engine/archetype';
 import { DESIRABLE_ROLES, ESSENTIAL_ROLES, roleLabel, type Role } from '../engine/roles';
@@ -7,10 +7,10 @@ import { TYPES, type TypeName } from '../engine/types';
 import { inkFor, typeColor } from './Sprite';
 import { typeTextColor } from './TypeText';
 import { typeName } from '../i18n/game';
+import { Icon } from './icons';
 import { useLang, useT } from '../i18n/react';
 
 const ROLES: Role[] = [...ESSENTIAL_ROLES, 'setup', ...DESIRABLE_ROLES];
-const GENS = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 const toggle = <T,>(list: T[], value: T) => (list.includes(value) ? list.filter(v => v !== value) : [...list, value]);
 
 /** Griglia dei 18 tipi da accendere e spegnere, nei loro colori. */
@@ -77,10 +77,21 @@ export function FilterBar({ filters, onChange }: Props) {
   const lang = useLang();
   const count = activeFilterCount(filters);
   const set = (patch: Partial<CandidateFilters>) => onChange({ ...filters, ...patch });
+  // Aperti, l'azzeramento sta in fondo: nella riga del titolo solo a filtri chiusi
+  const [open, setOpen] = useState(false);
+  const reset = () => onChange({ ...EMPTY_FILTERS, query: filters.query });
 
   return (
-    <details className="block filters">
-      <summary>{count === 0 ? t('filters.title') : count === 1 ? t('filters.activeOne') : t('filters.activeMany', { n: count })}</summary>
+    <details className="block filters" onToggle={e => setOpen(e.currentTarget.open)}>
+      <summary>
+        {count === 0 ? t('filters.title') : count === 1 ? t('filters.activeOne') : t('filters.activeMany', { n: count })}
+        {/* Azzera anche a filtri chiusi, senza aprirli */}
+        {count > 0 && !open && (
+          <button type="button" className="filters-reset" onClick={e => { e.preventDefault(); reset(); }}>
+            <Icon name="close" /> {t('filters.reset')}
+          </button>
+        )}
+      </summary>
 
       <div className="type-filters">
         <TypeGrid label={t('filters.type')} selected={filters.types} max={MAX_TYPES} onChange={types => set({ types })} />
@@ -135,18 +146,10 @@ export function FilterBar({ filters, onChange }: Props) {
         </label>
         <Segmented label={t('filters.mega')} value={filters.mega} onChange={mega => set({ mega })} />
         <Segmented label={t('filters.legendary')} value={filters.legendary} onChange={legendary => set({ legendary })} />
-        <Segmented label={t('filters.mythical')} value={filters.mythical} onChange={mythical => set({ mythical })} />
-        <label className="control">
-          <span className="control-label">{t('filters.maxGen')}</span>
-          <select aria-label={t('filters.maxGen')} value={filters.maxGen ?? ''} onChange={e => set({ maxGen: e.target.value ? Number(e.target.value) : null })}>
-            <option value="">{t('filters.allGens')}</option>
-            {GENS.map(gen => <option key={gen} value={gen}>{t('filters.gen', { n: gen })}</option>)}
-          </select>
-        </label>
       </div>
 
       <div className="filter-footer">
-        <button type="button" disabled={count === 0} onClick={() => onChange({ ...EMPTY_FILTERS, query: filters.query })}>{t('filters.reset')}</button>
+        <button type="button" disabled={count === 0} onClick={reset}>{t('filters.reset')}</button>
       </div>
     </details>
   );

@@ -42,12 +42,12 @@ describe('nel team', () => {
     const { container } = render(<App data={fixtureData} initialLang="it" />);
     for (const name of ['Great Tusk', 'Gholdengo']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
     const team = screen.getByRole('region', { name: 'Team' });
-    expect(container.querySelectorAll('img.sprite-ani')).toHaveLength(0);
+    expect(container.querySelectorAll('.slot img.sprite-ani')).toHaveLength(0);
     await user.click(within(team).getByText('Gholdengo', { selector: '.name' }));
     const animated = container.querySelectorAll<HTMLImageElement>('.slot img.sprite-ani');
     expect(animated).toHaveLength(1);
     expect(animated[0].src).toBe(`${ANI}gholdengo.gif`);
     await user.click(within(team).getByText('Gholdengo', { selector: '.name' }));
-    expect(container.querySelectorAll('img.sprite-ani')).toHaveLength(0);
+    expect(container.querySelectorAll('.slot img.sprite-ani')).toHaveLength(0);
   });
 });

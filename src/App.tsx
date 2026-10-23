@@ -96,6 +96,13 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   });
   const openTab = (next: TabId) => { setTab(next); scrollToTabs(); };
   /** Scegliere chi sostituire (dal coach o da una carta) porta alla scheda Pokémon, dove ci sono i candidati. */
+  // Slot vuoto cliccato: scheda Pokémon in modalità Aggiungi, con il cursore nella ricerca
+  const [searchRequest, setSearchRequest] = useState(0);
+  const startAdd = () => {
+    setReplaceIndex(null);
+    setSearchRequest(n => n + 1);
+    openTab('pokemon');
+  };
   const startReplace = (index: number | null) => {
     setReplaceIndex(index);
     if (index !== null) openTab('pokemon');
@@ -173,7 +180,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
         </p>
       )}
       <div className="band">
-        <TeamPanel team={team} format={format} data={data} onChange={changeTeam} onAdd={addSet} onReplace={startReplace} onRemove={removeAt} onPaste={pasteAt} onBulk={bulk}
+        <TeamPanel team={team} format={format} data={data} onChange={changeTeam} onAdd={addSet} onReplace={startReplace} onRemove={removeAt} onPaste={pasteAt} onBulk={bulk} onAddClick={startAdd}
           onAllowMultipleMegas={() => setFormat(f => ({ ...f, allowMultipleMegas: true }))} />
         <GradeBadge rating={rating} />
       </div>
@@ -200,6 +207,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
             onCancelReplace={() => setReplaceIndex(null)}
             onPreview={changePreview}
             onTarget={setReplaceIndex}
+            focusSearch={searchRequest}
           />
         </TabPanel>
         <TabPanel id="analysis" active={shownTab}>

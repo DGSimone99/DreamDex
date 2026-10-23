@@ -7,7 +7,9 @@ import { withCandidate, type SwapOption, type TeamGain } from '../engine/teamGai
 import { formatPercent } from '../i18n';
 import type { Replacement } from '../engine/replace';
 import type { Suggestion } from '../engine/scoring';
-import { exportShowdown, STAT_IDS, type TeamSet } from '../engine/sets';
+import { exportShowdown, presetsFor, STAT_IDS, type TeamSet } from '../engine/sets';
+import { SmogonLink } from './SmogonLink';
+import type { Format } from '../engine/format';
 import { gameName, natureName, statShort, typeName } from '../i18n/game';
 import { useLang, useT } from '../i18n/react';
 import { copyText } from './clipboard';
@@ -24,13 +26,14 @@ import { MoveName, Typed } from './TypeText';
  * Il candidato selezionato nella lista: come cambia il voto del team (in tutto e area per area),
  * cosa cambia (in sostituzione), i motivi e il set.
  */
-export function SuggestionDetail({ item, rank, team, replaceIndex, data, rating, usage, banMark, actionLabel, onAction }: {
+export function SuggestionDetail({ item, rank, team, replaceIndex, data, format, rating, usage, banMark, actionLabel, onAction }: {
   item: (Suggestion | Replacement) & { teamGain?: TeamGain; alternatives?: SwapOption[] };
   rank: number;
   team: TeamSet[];
   /** Il membro che il candidato sostituirebbe, o null se si aggiunge. */
   replaceIndex: number | null;
   data: EngineData;
+  format: Format;
   /** Voto del team attuale. */
   rating: TeamRating | null;
   /** Uso nel meta, mostrato al posto del voto col primo Pokémon. */
@@ -55,7 +58,8 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, rating,
   return (
     <aside className={`detail${rank === 1 ? ' first' : ''}`} aria-label={tr('detail.region', { species: item.species })}>
       <header className="detail-hero">
-        <Sprite species={item.species} item={set.item} size={88} />
+        {/* Il candidato aperto si muove (idle animato), come il membro aperto nel team */}
+        <span className="detail-sprite"><Sprite species={item.species} item={set.item} size={88} animated /></span>
         <div className="detail-id">
           <h3>
             <span>{item.species}</span>
@@ -164,6 +168,7 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, rating,
       <div className="detail-actions">
         <button type="button" className={rank === 1 ? 'primary' : 'go'} onClick={onAction}>{actionLabel}</button>
         <button type="button" onClick={() => copyText(exportShowdown([set]))}>{tr('suggest.copySet')}</button>
+        <SmogonLink species={item.species} format={format} presets={presetsFor(data, item.species)} />
       </div>
     </aside>
   );

@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { App } from '../../src/App';
 import { fixtureData } from '../fixtures/data';
+import { DEFAULT_FORMAT } from '../../src/engine/format';
 
 const suggestions = () => screen.getByRole('region', { name: 'Suggerimenti' });
 const team = () => screen.getByRole('region', { name: 'Team' });
@@ -146,7 +147,7 @@ describe('dettaglio: abilità in battaglia', () => {
     const { renderIt } = await import('../helpers/italian');
     const set = { species: 'Venusaur', item: 'Venusaurite', ability: 'Chlorophyll', moves: ['Giga Drain'], nature: 'Bold', evs: { hp: 252 } };
     const item = { species: 'Venusaur-Mega', set, score: 50, components: { defense: 0, coverage: 0, roles: 0 }, facts: {}, reasons: [], tags: [], penalty: 0 } as never;
-    renderIt(<SuggestionDetail item={item} rank={2} team={[]} replaceIndex={null} data={fixtureData} rating={null} usage={null} banMark={null} actionLabel="Aggiungi al team" onAction={() => {}} />);
+    renderIt(<SuggestionDetail item={item} rank={2} team={[]} replaceIndex={null} data={fixtureData} format={DEFAULT_FORMAT} rating={null} usage={null} banMark={null} actionLabel="Aggiungi al team" onAction={() => {}} />);
     expect(screen.getByText('Thick Fat')).toBeInTheDocument();
     expect(screen.queryByText('Chlorophyll')).toBeNull();
   });
