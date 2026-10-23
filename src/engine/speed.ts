@@ -30,6 +30,8 @@ export function speedStat(set: Pick<TeamSet, 'species' | 'item' | 'nature' | 'ev
 
 export interface SpeedRival extends Speed {
   species: string;
+  /** Sticky Web non lo rallenta: Volante, Levitate o Heavy-Duty Boots (senza meta: solo dal tipo e dall'abilità). */
+  webImmune?: boolean;
 }
 
 export interface SpeedTier {
@@ -66,13 +68,19 @@ export function speedPool(data: EngineData): SpeedRival[] {
       .slice(0, SPEED_POOL)
       .map(([name, entry]) => {
         const { nature, evs } = parseSpread(top(entry.spreads));
-        return { species: name, ...speedStat({ species: name, item: dex.items.get(top(entry.items) ?? '').name ?? '', nature, evs }) };
+        const item = dex.items.get(top(entry.items) ?? '').name ?? '';
+        const webImmune = isFlying(name) || toID(top(entry.abilities) ?? '') === 'levitate' || toID(item) === 'heavydutyboots';
+        return { species: name, ...speedStat({ species: name, item, nature, evs }), webImmune };
       })
-    : tierSpecies(formatId).map(s => ({ species: s.name, value: Math.floor((2 * s.baseStats.spe + 31 + 63 + 5) * 1.1), scarf: false }));
+    : tierSpecies(formatId).map(s => ({
+      species: s.name, value: Math.floor((2 * s.baseStats.spe + 31 + 63 + 5) * 1.1), scarf: false,
+      webImmune: s.types.includes('Flying') || toID(s.abilities[0]) === 'levitate',
+    }));
   pools.set(key, pool);
   return pool;
 }
 
+const isFlying = (name: string) => !!getSpecies(name)?.types.includes('Flying');
 const baseOf = (name: string) => getSpecies(name)?.baseSpecies ?? name;
 
 /** Quota del gruppo più lenta di `speed`; un pareggio vale metà. La specie stessa (`ownSpecies`) non si confronta con sé. */
