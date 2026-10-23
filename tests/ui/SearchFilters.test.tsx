@@ -119,7 +119,8 @@ describe('ricerca e filtri nei suggerimenti', () => {
     await setup('Great Tusk', 'Gholdengo', 'Kingambit', 'Corviknight', 'Toxapex', 'Rotom-Wash');
     expect(screen.getByLabelText('Aggiungi Pokémon')).toBeInTheDocument();
     expect(within(suggestions()).getByRole('heading', { name: 'Migliora il team' })).toBeInTheDocument();
-  });
+    // Sei aggiunte, ognuna coi suggerimenti ricalcolati: con la Difesa ogni candidato nuovo costa qualche ms in più
+  }, 30000);
 });
 
 describe('ricerca: Invio aggiunge il primo risultato', () => {
