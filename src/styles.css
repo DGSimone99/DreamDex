@@ -1072,6 +1072,11 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .detail-moves li { padding: 4px 9px; background: var(--field); border: 1px solid var(--line-soft); border-radius: 4px; font-size: 13px; font-weight: 500; }
 .detail-actions { display: flex; gap: 8px; padding: 10px 18px; }
 .detail-actions .smogon-link { margin-left: auto; }
+/* Segni delle liste dell'utente sulle righe: ♥ preferito (blu), ⊘ bannato (rosso) */
+.list-mark { font-size: 14px; line-height: 1; }
+.list-mark.fav { color: var(--blue); }
+.list-mark.ban { color: var(--bad); }
+.hidden-note .link { padding: 0; border: 0; background: none; color: var(--blue); text-decoration: underline; font: inherit; }
 /* Bannati dall'utente esclusi da proposte e sostituzioni */
 .banned-note { margin: 6px 0 0; font-size: 13px; color: var(--muted); }
 .smogon-link { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 4px; background: var(--raised); color: inherit; font-weight: 500; text-decoration: none; white-space: nowrap; transition: border-color 0.15s; }

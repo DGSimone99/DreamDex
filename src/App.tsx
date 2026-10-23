@@ -18,7 +18,8 @@ import { SuggestionsPanel } from './ui/SuggestionsPanel';
 import { TeamPanel } from './ui/TeamPanel';
 import { TopBar } from './ui/TopBar';
 import { TabPanel, Tabs, type TabId } from './ui/Tabs';
-import { loadLang, loadSession, loadTab, saveLang, saveSession, saveTab } from './storage';
+import { loadLang, loadLists, loadSession, loadTab, saveLang, saveLists, saveSession, saveTab } from './storage';
+import { EMPTY_LISTS, effectiveLists, type UserLists } from './engine/lists';
 import { t, type Lang } from './i18n';
 import { LangProvider } from './i18n/react';
 import { hasItalianNames } from './i18n/game';
@@ -67,10 +68,16 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
     loadSource(source).then(result => setCache(c => ({ ...c, [source]: result })));
   }, [source, cache, loadSource]);
   const loaded = cache[source] ?? NO_DATA;
+  // Preferiti e bannati dell'utente: salvati nel browser, quelli del formato entrano nei dati (solo i suggerimenti li usano)
+  const [lists, setLists] = useState<UserLists>(() => (storage ? loadLists(storage) : EMPTY_LISTS));
+  useEffect(() => {
+    if (storage) saveLists(lists, storage);
+  }, [lists, storage]);
+  const userLists = useMemo(() => effectiveLists(lists, format.formatId), [lists, format.formatId]);
   // Senza meta (single player): voto, analisi, coach e suggerimenti ignorano l'uso nel formato
   // Il formato scelto entra nei dati: alcune regole del voto cambiano col formato (Ubers)
-  const data = useMemo(() => ({ ...loaded, formatId: format.formatId, ...(format.meta ? {} : { ignoreMeta: true }) }),
-    [loaded, format.formatId, format.meta]);
+  const data = useMemo(() => ({ ...loaded, formatId: format.formatId, userLists, ...(format.meta ? {} : { ignoreMeta: true }) }),
+    [loaded, format.formatId, format.meta, userLists]);
   const [initialTeam] = useState<TeamSet[]>(() => shared?.team ?? session?.team ?? []);
   const [team, setTeam] = useState<TeamSet[]>(initialTeam);
   useEffect(() => {
