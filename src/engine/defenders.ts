@@ -1,7 +1,7 @@
 import type { Species } from '@pkmn/dex';
 import { usesMeta } from './analysis';
 import type { EngineData } from './data';
-import { rulesOf } from './formatRules';
+import { rulesOf, type FormatRules } from './formatRules';
 import { detectRoles, isPassive, teamRoles } from './roles';
 import { mostCommonSet, type TeamSet } from './sets';
 import { tierSpecies } from './speed';
@@ -27,6 +27,14 @@ function standardWall(species: Species): TeamSet {
   };
 }
 
+/** Set difensivo: passivo o muro, con almeno 400 EV fra PS e difese. */
+export function isDefensiveSet(set: TeamSet, rules: FormatRules): boolean {
+  const roles = detectRoles(set, rules);
+  const investment = (set.evs.hp ?? 0) + (set.evs.def ?? 0) + (set.evs.spd ?? 0);
+  const wall = roles.includes('physicalWall') || roles.includes('specialWall');
+  return (isPassive(set, teamRoles(set, rules)) || wall) && investment >= WALL_INVESTMENT;
+}
+
 const panels = new Map<string, TeamSet[]>();
 
 /**
@@ -46,10 +54,7 @@ export function defenderPanel(data: EngineData): TeamSet[] {
     for (const name of topThreats(data.stats, META_SCAN, [])) {
       const set = mostCommonSet(data.stats, name);
       if (!set) continue;
-      const roles = detectRoles(set, rules);
-      const investment = (set.evs.hp ?? 0) + (set.evs.def ?? 0) + (set.evs.spd ?? 0);
-      const wall = roles.includes('physicalWall') || roles.includes('specialWall');
-      if ((isPassive(set, teamRoles(set, rules)) || wall) && investment >= WALL_INVESTMENT) fromMeta.push(set);
+      if (isDefensiveSet(set, rules)) fromMeta.push(set);
       if (fromMeta.length === PANEL_SIZE) break;
     }
   }

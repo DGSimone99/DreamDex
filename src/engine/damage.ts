@@ -1,5 +1,5 @@
 import { calculate, Field, Generations, Move as CalcMove, Pokemon } from '@smogon/calc';
-import { battleAbility, battleSpecies, dex, getMove } from './dex';
+import { battleAbility, battleSpecies, dex, getMove, toID } from './dex';
 import type { TeamSet } from './sets';
 import type { Condition } from './synergy';
 
@@ -25,6 +25,10 @@ export interface Hit {
   /** Danno minimo in quota dei PS, senza la precisione: ≥ 1 è un KO sicuro se colpisce. */
   min: number;
 }
+
+/** Band e Specs bloccano su una mossa: il loro ×1,5 conta come ×1,35 (un decimo in meno di danno). */
+export const CHOICE_LOCK = 0.9;
+const LOCKING = new Set(['choiceband', 'choicespecs']);
 
 const WEATHER: Partial<Record<FieldCondition, 'Sun' | 'Rain' | 'Sand' | 'Snow'>> = { sun: 'Sun', rain: 'Rain', sand: 'Sand', snow: 'Snow' };
 const TERRAIN: Partial<Record<FieldCondition, 'Electric' | 'Psychic' | 'Grassy' | 'Misty'>> = {
@@ -96,7 +100,8 @@ export function bestHit(attacker: TeamSet, defender: TeamSet, options: HitOption
   if (!own || !target) return null;
   const field = toField(options.conditions);
   const zType = options.z ? dex.items.get(attacker.item).zMoveType : undefined;
-  const hp = target.maxHP();
+  // Lo sconto di Band e Specs si applica come PS del difensore più alti di un nono: danno ×0,9 su tutte le misure
+  const hp = target.maxHP() / (LOCKING.has(toID(attacker.item)) ? CHOICE_LOCK : 1);
   let best: Hit | null = null;
   for (const name of attacker.moves) {
     const data = getMove(name);

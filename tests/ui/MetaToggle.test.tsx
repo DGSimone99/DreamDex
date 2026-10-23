@@ -20,16 +20,18 @@ const memoryStorage = (): Storage => {
 afterEach(() => window.history.replaceState(null, '', '/'));
 
 describe('voto col meta e senza', () => {
-  it('col meta: la barra Meta mostra le minacce gestite; il voto è quello delle aree, meno la penalità del meta', () => {
+  it("col meta: la barra Meta mostra le minacce gestite; il voto è quello delle aree (l'Offesa contro i difensori del meta), meno la penalità del meta", () => {
     const team = ['Great Tusk', 'Gholdengo', 'Kingambit', 'Dragapult', 'Corviknight', 'Toxapex'].map(n => mostCommonSet(fixtureStats, n)!);
     const on = rateTeam(team, fixtureData)!;
     const off = rateTeam(team, noMeta)!;
     expect(on.areas.find(a => a.key === 'meta')!.value).toBe(on.meta!.threats);
-    expect(on.base).toBe(off.base);
+    // Le aree sono le stesse col meta e senza, tranne l'Offesa (si misura contro i difensori del meta)
+    const areas = (r: typeof on) => r.areas.filter(a => a.key !== 'meta' && a.key !== 'strength').map(a => [a.key, a.value]);
+    expect(areas(on)).toEqual(areas(off));
     const points = metaPenalty(on.meta!.threats);
     const unready = on.penalty.items.find(i => i.text.startsWith('Poco preparato al meta'));
     expect(unready?.points ?? 0).toBe(points);
-    expect(on.overall).toBe(Math.max(0, Math.min(100, off.overall - points)));
+    expect(on.overall).toBe(Math.max(0, Math.min(100, on.base - on.penalty.total + on.bonus.total)));
   });
 
   it('un team incompleto non paga la penalità del meta: mentre lo costruisci gestisce per forza poche minacce', () => {

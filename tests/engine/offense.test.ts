@@ -1,18 +1,23 @@
 import { describe, expect, it } from 'vitest';
-import { memberOffense, stepValue, teamOffense } from '../../src/engine/offense';
+import { memberOffense, offenseReference, RANK_WEIGHTS, REFERENCE_RANK, stepValue, teamOffense } from '../../src/engine/offense';
+import { mostCommonSet } from '../../src/engine/sets';
 import type { TeamSet } from '../../src/engine/sets';
-import { fixtureData, tusk } from '../fixtures/data';
+import { fixtureData, fixtureStats, tusk } from '../fixtures/data';
 
 const set = (species: string, item: string, ability: string, moves: string[], nature: string, evs: TeamSet['evs'], extra: Partial<TeamSet> = {}): TeamSet =>
   ({ species, item, ability, moves, nature, evs, ...extra });
 
-const gen9 = { ...fixtureData, formatId: 'gen9ou' as const };
+// Senza statistiche il riferimento è fisso (60% dei PS): i confronti di Potenza non arrivano al tetto di 100
+const noStats = { stats: null, sets: null, formatId: 'ou' as const };
+const gen9 = { stats: null, sets: null, formatId: 'gen9ou' as const };
 const chomp = set('Garchomp', 'Life Orb', 'Rough Skin', ['Earthquake', 'Stone Edge'], 'Adamant', { atk: 252, spe: 252 });
 const blissey = set('Blissey', 'Heavy-Duty Boots', 'Natural Cure', ['Soft-Boiled', 'Toxic', 'Seismic Toss', 'Stealth Rock'], 'Bold', { hp: 252, def: 252 });
 
 describe('stepValue', () => {
-  it('0 sotto il 50%, 1 per un 2HKO, 1,5 per un OHKO sicuro; le mosse OHKO mai 1,5', () => {
-    expect(stepValue({ move: 'Earthquake', expected: 0.49, min: 0.4 })).toBe(0);
+  it('0 sotto il 33%, 0,5 per un 3HKO, 1 per un 2HKO, 1,5 per un OHKO sicuro; le mosse OHKO mai 1,5', () => {
+    expect(stepValue({ move: 'Earthquake', expected: 0.32, min: 0.3 })).toBe(0);
+    expect(stepValue({ move: 'Earthquake', expected: 0.34, min: 0.3 })).toBe(0.5);
+    expect(stepValue({ move: 'Earthquake', expected: 0.49, min: 0.4 })).toBe(0.5);
     expect(stepValue({ move: 'Earthquake', expected: 0.5, min: 0.45 })).toBe(1);
     expect(stepValue({ move: 'Earthquake', expected: 1.2, min: 0.99 })).toBe(1);
     expect(stepValue({ move: 'Earthquake', expected: 1.2, min: 1 })).toBe(1.5);
@@ -44,7 +49,7 @@ describe('memberOffense', () => {
   it('la pioggia del team alza la Potenza di chi ne gode; chi la porta con l\'abilità la ha piena', () => {
     const swim = set('Vaporeon', 'Leftovers', 'Water Absorb', ['Scald', 'Wish'], 'Bold', { hp: 252, def: 252 });
     const pelipper = set('Pelipper', 'Damp Rock', 'Drizzle', ['Hurricane', 'Hydro Pump', 'U-turn', 'Roost'], 'Modest', { hp: 248, spa: 252 });
-    expect(memberOffense(swim, [swim, pelipper], fixtureData)!.power).toBeGreaterThan(memberOffense(swim, [swim], fixtureData)!.power);
+    expect(memberOffense(swim, [swim, pelipper], noStats)!.power).toBeGreaterThan(memberOffense(swim, [swim], noStats)!.power);
     const politoed = set('Politoed', 'Damp Rock', 'Drizzle', ['Scald'], 'Calm', { hp: 252, spd: 252 });
     const keenEye = { ...pelipper, ability: 'Keen Eye' };
     expect(memberOffense(pelipper, [pelipper], fixtureData)!.power).toBeGreaterThanOrEqual(memberOffense(keenEye, [keenEye, politoed], fixtureData)!.power);
@@ -60,24 +65,40 @@ describe('memberOffense', () => {
     const gambit = set('Kingambit', 'Black Glasses', 'Supreme Overlord', ['Kowtow Cleave', 'Sucker Punch', 'Iron Head'], 'Adamant', { hp: 252, atk: 252 });
     const teraGambit = { ...gambit, teraType: 'Dark' };
     expect(memberOffense(teraGambit, [teraGambit], gen9)!.power).toBeGreaterThan(memberOffense(gambit, [gambit], gen9)!.power);
-    expect(memberOffense(teraGambit, [teraGambit], fixtureData)!.power).toBe(memberOffense(gambit, [gambit], fixtureData)!.power);
+    expect(memberOffense(teraGambit, [teraGambit], noStats)!.power).toBe(memberOffense(gambit, [gambit], noStats)!.power);
+  });
+
+  it('il Setup può solo aggiungere: mai sotto il valore senza setup', () => {
+    const volc = set('Volcarona', 'Heavy-Duty Boots', 'Flame Body', ['Quiver Dance', 'Flamethrower', 'Bug Buzz', 'Roost'], 'Timid', { spa: 252, spe: 252 });
+    const m = memberOffense(volc, [volc], fixtureData)!;
+    expect(m.value).toBeGreaterThanOrEqual(Math.round((0.5 * m.power + 0.35 * m.wallbreaking) / 0.85));
+  });
+
+  it("il 100 di Wallbreaking e Potenza è il 18° miglior attaccante del meta, o l'ultimo se sono meno", () => {
+    const ref = offenseReference(fixtureData);
+    expect(REFERENCE_RANK).toBe(18);
+    const fifth = mostCommonSet(fixtureStats, ref.attackers[Math.min(REFERENCE_RANK, ref.attackers.length) - 1])!;
+    const m = memberOffense(fifth, [fifth], fixtureData)!;
+    expect(m.wallbreaking).toBeGreaterThanOrEqual(99);
   });
 
   it('una specie sconosciuta non conta', () => {
     expect(memberOffense(set('Notamon', '', '', ['Tackle'], 'Hardy', {}), [tusk], fixtureData)).toBeNull();
   });
 
-  it('lo stesso set si calcola una volta', () => {
-    expect(memberOffense(chomp, [chomp], fixtureData)).toBe(memberOffense(chomp, [chomp], fixtureData));
+  it('lo stesso set dà lo stesso risultato', () => {
+    expect(memberOffense(chomp, [chomp], fixtureData)).toEqual(memberOffense({ ...chomp }, [chomp], fixtureData));
   });
 });
 
 describe('teamOffense', () => {
-  it('un supporto pesa la metà di un attaccante', () => {
-    const team = teamOffense([chomp, blissey], fixtureData);
-    const [a, b] = team.members;
-    expect(b.support).toBe(true);
-    expect(team.value).toBe(Math.round((a.value + 0.5 * b.value) / 1.5));
+  it('media pesata per posizione: il più offensivo pesa di più (22/18/16/15/15/14), nessun peso per i supporti', () => {
+    expect(RANK_WEIGHTS).toEqual([0.22, 0.18, 0.16, 0.15, 0.15, 0.14]);
+    const team = teamOffense([blissey, chomp], fixtureData);
+    const [b, a] = team.members;
+    const [hi, lo] = a.value >= b.value ? [a, b] : [b, a];
+    expect(team.value).toBe(Math.round((0.22 * hi.value + 0.18 * lo.value) / 0.4));
+    expect('support' in b).toBe(false);
   });
 
   it('un team senza mosse d\'attacco vale 0, senza NaN', () => {

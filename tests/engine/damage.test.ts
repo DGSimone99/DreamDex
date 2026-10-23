@@ -52,6 +52,16 @@ describe('bestHit', () => {
     expect(hit.min).toBeGreaterThanOrEqual(1);
   });
 
+  it('Choice Band e Specs valgono ×1,35 invece di ×1,5: il blocco su una mossa è un costo', () => {
+    const chomp = set('Garchomp', 'Leftovers', 'Rough Skin', ['Earthquake'], 'Adamant', { atk: 252 });
+    const target = set('Heatran', 'Leftovers', 'Flash Fire', ['Magma Storm'], 'Calm', { hp: 252, spd: 252 });
+    const plain = bestHit(chomp, target)!;
+    const band = bestHit({ ...chomp, item: 'Choice Band' }, target)!;
+    expect(band.expected / plain.expected).toBeGreaterThan(1.3);
+    expect(band.expected / plain.expected).toBeLessThan(1.4);
+    expect(band.min / plain.min).toBeLessThan(1.4);
+  });
+
   it('una specie sconosciuta non rompe il calcolo', () => {
     expect(bestHit(set('Notamon', '', '', ['Tackle'], 'Hardy', {}), toxapex)).toBeNull();
   });
