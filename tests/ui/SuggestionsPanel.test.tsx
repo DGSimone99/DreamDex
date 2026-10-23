@@ -34,7 +34,7 @@ describe('SuggestionsPanel', () => {
     const detail = screen.getByRole('complementary', { name: `Dettaglio di ${first}` });
     expect(detail.querySelector('.detail-score')).toHaveTextContent(/^(\+\d+|−\d+|±0)voto del team [SABCD] \d+ → [SABCD] \d+$/);
     const areas = [...detail.querySelectorAll('.detail-areas dt')].map(dt => dt.textContent);
-    expect(areas).toEqual(expect.arrayContaining(['Coverage difensiva', 'Offesa', 'Robustezza', 'Ruoli']));
+    expect(areas).toEqual(expect.arrayContaining(['Difesa', 'Offesa', 'Ruoli']));
     expect(within(detail).getByRole('list', { name: 'Mosse' }).children.length).toBeGreaterThan(0);
   });
 

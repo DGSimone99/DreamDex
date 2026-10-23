@@ -19,13 +19,13 @@ const blissey = set('Blissey', 'Heavy-Duty Boots', 'Natural Cure', ['Soft-Boiled
 
 describe('stepValue', () => {
   it('0 sotto il 33%, 0,5 per un 3HKO, 1 per un 2HKO, 1,5 per un OHKO sicuro; le mosse OHKO mai 1,5', () => {
-    expect(stepValue({ move: 'Earthquake', expected: 0.32, min: 0.3 })).toBe(0);
-    expect(stepValue({ move: 'Earthquake', expected: 0.34, min: 0.3 })).toBe(0.5);
-    expect(stepValue({ move: 'Earthquake', expected: 0.49, min: 0.4 })).toBe(0.5);
-    expect(stepValue({ move: 'Earthquake', expected: 0.5, min: 0.45 })).toBe(1);
-    expect(stepValue({ move: 'Earthquake', expected: 1.2, min: 0.99 })).toBe(1);
-    expect(stepValue({ move: 'Earthquake', expected: 1.2, min: 1 })).toBe(1.5);
-    expect(stepValue({ move: 'Sheer Cold', expected: 0.3, min: 1 })).toBe(0);
+    expect(stepValue({ move: 'Earthquake', expected: 0.32, min: 0.3, max: 0.3 })).toBe(0);
+    expect(stepValue({ move: 'Earthquake', expected: 0.34, min: 0.3, max: 0.3 })).toBe(0.5);
+    expect(stepValue({ move: 'Earthquake', expected: 0.49, min: 0.4, max: 0.4 })).toBe(0.5);
+    expect(stepValue({ move: 'Earthquake', expected: 0.5, min: 0.45, max: 0.45 })).toBe(1);
+    expect(stepValue({ move: 'Earthquake', expected: 1.2, min: 0.99, max: 0.99 })).toBe(1);
+    expect(stepValue({ move: 'Earthquake', expected: 1.2, min: 1, max: 1 })).toBe(1.5);
+    expect(stepValue({ move: 'Sheer Cold', expected: 0.3, min: 1, max: 1 })).toBe(0);
     expect(stepValue(null)).toBe(0);
   });
 });

@@ -137,10 +137,10 @@ describe('voto dello stall', () => {
     expect(rating.weights.strength!).toBeCloseTo(ARCHETYPE_WEIGHTS.stall.strength / 100);
   });
 
-  it('pesi da stall: la Robustezza pesa più di tutto, la Velocità non conta', () => {
+  it('pesi da stall: la Difesa pesa più di tutto, la Velocità non conta', () => {
     const rating = rateTeam(stall, fixtureData)!;
     expect(Math.abs(rating.base - weighted(rating))).toBeLessThanOrEqual(1);
-    expect(rating.weights.bulk!).toBeCloseTo(ARCHETYPE_WEIGHTS.stall.bulk / 100);
+    expect(rating.weights.defense!).toBeCloseTo(ARCHETYPE_WEIGHTS.stall.defense / 100);
     expect(rating.areas.map(a => a.key)).not.toContain('speed');
   });
 

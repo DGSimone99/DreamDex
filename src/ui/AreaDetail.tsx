@@ -2,12 +2,18 @@ import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactEleme
 import { createPortal } from 'react-dom';
 import type { TeamRating } from '../engine/rating';
 import { stepBucket, type CoverageDetail, type WallCell } from '../engine/offense';
+import type { TeamDefense } from '../engine/defense';
 import { useT } from '../i18n/react';
 import { Icon } from './icons';
 import { Sprite, TypeChip } from './Sprite';
 
 type Tab = 'general' | 'power' | 'wallbreaking' | 'coverageTypes' | 'coverageMeta';
 type Sub = Exclude<Tab, 'general'>;
+
+/** Una scheda del dettaglio: etichetta, valore e contenuto. */
+type T = ReturnType<typeof useT>;
+
+interface DetailTab { key: string; label: string; value: number | null; panel: ReactElement }
 
 /** Casella della tabella dei muri: il danno, e tra parentesi quello dopo il setup quando cambia la soglia. */
 function WallValue({ cell }: { cell: WallCell }) {
@@ -21,27 +27,27 @@ function WallValue({ cell }: { cell: WallCell }) {
 }
 
 /**
- * Dettaglio dell'Offesa: una scheda generale e una per sottostatistica, ognuna con come si calcola e il valore
- * di ogni membro. Stesso guscio del modale "Come funziona il voto", con le schede a sinistra.
+ * Dettaglio di un'area (Offesa o Difesa): una scheda generale e una per sottostatistica, ognuna con come si calcola
+ * e il valore di ogni membro. Stesso guscio del modale "Come funziona il voto", con le schede a sinistra.
  */
-export function AreaDetail({ rating, area, onClose }: { rating: TeamRating; area: 'strength'; onClose: () => void }) {
+export function AreaDetail({ rating, area, onClose }: { rating: TeamRating; area: 'strength' | 'defense'; onClose: () => void }) {
+  const t = useT();
+  const value = rating.areas.find(a => a.key === area)?.value ?? null;
+  const tabs = area === 'strength' ? offenseTabs(rating, t) : defenseTabs(rating.defense, !!rating.meta, t);
+  return <DetailShell title={t(`area.${area}`)} value={value} tabs={tabs} onClose={onClose} />;
+}
+
+function DetailShell({ title, value, tabs, onClose }: { title: string; value: number | null; tabs: DetailTab[]; onClose: () => void }) {
   const t = useT();
   const titleId = useId();
-  const [tab, setTab] = useState<Tab>('general');
-  const tabs = useRef<(HTMLButtonElement | null)[]>([]);
+  const [tab, setTab] = useState(0);
+  const buttons = useRef<(HTMLButtonElement | null)[]>([]);
   const close = useRef(onClose);
   close.current = onClose;
-  const offense = rating.offense;
-  const value = rating.areas.find(a => a.key === area)?.value ?? null;
-  const meta = !!rating.meta;
-  // La Coverage del meta c'è solo col meta: senza, una scheda in meno
-  const coverageMeta = offense.coverageMeta;
-  const subs: Sub[] = coverageMeta ? ['power', 'wallbreaking', 'coverageTypes', 'coverageMeta'] : ['power', 'wallbreaking', 'coverageTypes'];
-  const TABS: Tab[] = ['general', ...subs];
 
   // Focus sulla prima scheda solo all'apertura: un nuovo render dell'app non deve spostarlo
   useEffect(() => {
-    tabs.current[0]?.focus();
+    buttons.current[0]?.focus();
     const onKey = (e: globalThis.KeyboardEvent) => { if (e.key === 'Escape') close.current(); };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
@@ -52,10 +58,49 @@ export function AreaDetail({ rating, area, onClose }: { rating: TeamRating; area
     const step = e.key === 'ArrowDown' ? 1 : e.key === 'ArrowUp' ? -1 : 0;
     if (!step) return;
     e.preventDefault();
-    const next = (index + step + TABS.length) % TABS.length;
-    setTab(TABS[next]);
-    tabs.current[next]?.focus();
+    const next = (index + step + tabs.length) % tabs.length;
+    setTab(next);
+    buttons.current[next]?.focus();
   };
+  const current = tabs[Math.min(tab, tabs.length - 1)];
+
+  return createPortal(
+    <div className="help-backdrop" onClick={onClose}>
+      <div className="help-dialog ad-dialog" role="dialog" aria-modal="true" aria-labelledby={titleId} onClick={e => e.stopPropagation()}>
+        <header className="help-head ad-head">
+          <h3 id={titleId}>{title} <strong>{value ?? 'n/d'}</strong></h3>
+          <button type="button" className="help-close" aria-label={t('help.close')} onClick={onClose}><Icon name="close" /></button>
+        </header>
+        <div className="ad-body">
+          <nav className="ad-nav" role="tablist" aria-orientation="vertical" aria-label={title}>
+            {tabs.map((item, i) => (
+              <button key={item.key} ref={el => { buttons.current[i] = el; }} type="button" role="tab" id={`ad-tab-${item.key}`}
+                aria-selected={item === current} aria-controls="ad-panel" tabIndex={item === current ? 0 : -1}
+                onClick={() => setTab(i)} onKeyDown={e => onTabKey(e, i)}>
+                {item.label} <b>{item.value}</b>
+              </button>
+            ))}
+          </nav>
+          <section className="ad-panel" id="ad-panel" role="tabpanel" aria-labelledby={`ad-tab-${current.key}`}>
+            {current.panel}
+          </section>
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+/** Le schede dell'Offesa: Generale, Potenza, Wallbreaking, Coverage di tipi e del meta. */
+function offenseTabs(rating: TeamRating, t: T): DetailTab[] {
+  const area = 'strength';
+  const offense = rating.offense;
+  const value = rating.areas.find(a => a.key === area)?.value ?? null;
+  const meta = !!rating.meta;
+  // La Coverage del meta c'è solo col meta: senza, una scheda in meno
+  const coverageMeta = offense.coverageMeta;
+  const subs: Sub[] = coverageMeta ? ['power', 'wallbreaking', 'coverageTypes', 'coverageMeta'] : ['power', 'wallbreaking', 'coverageTypes'];
+  const TABS: Tab[] = ['general', ...subs];
 
   const values: Record<Tab, number | null> = {
     general: value, power: offense.power, wallbreaking: offense.wallbreaking,
@@ -232,30 +277,246 @@ export function AreaDetail({ rating, area, onClose }: { rating: TeamRating; area
     coverageTypes: coverageTab('coverageTypes', offense.coverageTypes),
     coverageMeta: coverageMeta && coverageTab('coverageMeta', coverageMeta),
   };
+  return TABS.map(key => ({ key, label: tabLabel(key), value: values[key], panel: panels[key]! }));
+}
 
-  return createPortal(
-    <div className="help-backdrop" onClick={onClose}>
-      <div className="help-dialog ad-dialog" role="dialog" aria-modal="true" aria-labelledby={titleId} onClick={e => e.stopPropagation()}>
-        <header className="help-head ad-head">
-          <h3 id={titleId}>{t(`area.${area}`)} <strong>{value ?? 'n/d'}</strong></h3>
-          <button type="button" className="help-close" aria-label={t('help.close')} onClick={onClose}><Icon name="close" /></button>
-        </header>
-        <div className="ad-body">
-          <nav className="ad-nav" role="tablist" aria-orientation="vertical" aria-label={t(`area.${area}`)}>
-            {TABS.map((key, i) => (
-              <button key={key} ref={el => { tabs.current[i] = el; }} type="button" role="tab" id={`ad-tab-${key}`}
-                aria-selected={key === tab} aria-controls="ad-panel" tabIndex={key === tab ? 0 : -1}
-                onClick={() => setTab(key)} onKeyDown={e => onTabKey(e, i)}>
-                {tabLabel(key)} <b>{values[key]}</b>
-              </button>
+/** Soglia di un colpo standard ricevuto, dal valore del colpo (holdStep: OHKO 0 … 4HKO o più 1,5). */
+const HOLD_TAGS: Record<number, { cls: string; tag: string }> = {
+  0: { cls: 'd-ohko', tag: 'OHKO' }, 0.5: { cls: 'd-two', tag: '2HKO' }, 1: { cls: 'd-three', tag: '3HKO' }, 1.5: { cls: 'd-four', tag: '4HKO+' },
+};
+const pct = (x: number) => `${Math.round(100 * x)}%`;
+
+/** Le schede della Difesa: Generale, Robustezza, Sostenibilità, Coverage di tipi e del meta. */
+function defenseTabs(defense: TeamDefense, meta: boolean, t: T): DetailTab[] {
+  const coverageMeta = defense.coverageMeta;
+  const members = defense.members;
+  const physical = defense.matrix.filter(row => row.physical);
+  const special = defense.matrix.filter(row => !row.physical);
+  type Key = 'robustness' | 'sustain' | 'coverageTypes' | 'coverageMeta';
+  const subs: Key[] = coverageMeta ? ['robustness', 'sustain', 'coverageTypes', 'coverageMeta'] : ['robustness', 'sustain', 'coverageTypes'];
+  const values: Record<Key, number | null> = {
+    robustness: defense.robustness, sustain: defense.sustain, coverageTypes: defense.coverageTypes.value, coverageMeta: coverageMeta?.value ?? null,
+  };
+  const label = (key: Key) => (key === 'robustness' || key === 'sustain' ? t(`ddetail.${key}`) : t(`detail.${key}`));
+  const weakLine = defense.coverageTypes.weak.length
+    ? t('ddetail.types.weak', { list: defense.coverageTypes.weak.join(', ') }) : t('ddetail.types.noWeak');
+  const unansweredLine = coverageMeta && (coverageMeta.unanswered.length
+    ? t('ddetail.meta.unanswered', { list: coverageMeta.unanswered.join(', ') }) : t('ddetail.meta.allAnswered'));
+  const sprites = (names: string[]) => (names.length
+    ? names.map((name, i) => (
+      <span key={`${name}-${i}`} title={name}><Sprite species={name} size={28} /><span className="visually-hidden">{name}</span></span>
+    ))
+    : <span className="ad-k none">—</span>);
+  const tips: Record<Key, string> = {
+    robustness: t('ddetail.general.robustness', { physical: defense.physical, special: defense.special }),
+    sustain: t('ddetail.general.sustain'),
+    coverageTypes: `${t('ddetail.general.coverageTypes')} · ${weakLine}`,
+    coverageMeta: `${t('ddetail.general.coverageMeta')}${unansweredLine ? ` · ${unansweredLine}` : ''}`,
+  };
+
+  const general = (
+    <>
+      <h4>{t('ddetail.title')}</h4>
+      <p>{t(meta ? 'ddetail.lead.meta' : 'ddetail.lead.tier', { n: coverageMeta?.rows.length ?? 0 })}</p>
+      <dl className="ad-subs">
+        {subs.map(sub => (
+          <div key={sub} className="ad-sub">
+            <dt>{label(sub)}</dt>
+            <dd>
+              <meter min={0} max={100} value={values[sub] ?? 0} aria-hidden="true" />
+              <strong>{values[sub]}</strong>
+              <span>{tips[sub]}</span>
+            </dd>
+          </div>
+        ))}
+      </dl>
+            <div className="ad-scroll">
+  <table className="ad-t">
+          <thead>
+            <tr>
+              <th scope="col">{t('detail.member')}</th>
+              <th scope="col">{t('ddetail.physical')}</th>
+              <th scope="col">{t('ddetail.special')}</th>
+              <th scope="col">{t('ddetail.sustain')}</th>
+              <th scope="col">{t('area.defense')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {members.map((m, i) => (
+              <tr key={`${m.species}-${i}`}>
+                <th scope="row"><span className="ad-mon"><Sprite species={m.species} size={40} />{m.species}</span></th>
+                <td>{m.physical}</td>
+                <td>{m.special}</td>
+                <td>{m.sustain}</td>
+                <td className="total">{m.value}</td>
+              </tr>
             ))}
-          </nav>
-          <section className="ad-panel" id="ad-panel" role="tabpanel" aria-labelledby={`ad-tab-${tab}`}>
-            {panels[tab]}
-          </section>
-        </div>
+          </tbody>
+        </table>
       </div>
-    </div>,
-    document.body,
+    </>
   );
+
+  const side = (rows: TeamDefense['matrix'], title: string) => (
+    <tbody>
+      <tr className="ad-group"><th scope="rowgroup" colSpan={members.length + 1}>{title}</th></tr>
+      {rows.map(row => (
+        <tr key={`${row.species}-${row.physical}`}>
+          <th scope="row"><span className="ad-mon"><Sprite species={row.species} size={32} />{row.species}</span></th>
+          {row.cells.map((cell, i) => {
+            const hold = HOLD_TAGS[cell.step];
+            // La soglia anche in testo: il colore da solo non arriva ai lettori di schermo
+            return <td key={i}><span className={`ad-k ${hold.cls}`} title={hold.tag}>{cell.pct}%<span className="visually-hidden"> {hold.tag}</span></span></td>;
+          })}
+        </tr>
+      ))}
+    </tbody>
+  );
+  const robustness = (
+    <>
+      <h4>{t('ddetail.robustness')}</h4>
+      <div className="ad-how">
+        <p>{t('ddetail.rob.how1', { n: physical.length })}</p>
+        <p>{t('ddetail.rob.how2')}</p>
+        <p>{t('ddetail.rob.how3', { physical: defense.physical, special: defense.special })}</p>
+      </div>
+      <div className="ad-scroll">
+        <table className="ad-t ad-matrix">
+          <thead>
+            <tr>
+              <th scope="col">{t('ddetail.attacker')}</th>
+              {members.map((m, i) => (
+                <th key={`${m.species}-${i}`} scope="col" aria-label={m.species} title={m.species}><Sprite species={m.species} size={32} /></th>
+              ))}
+            </tr>
+          </thead>
+          {side(physical, t('ddetail.side.physical'))}
+          {side(special, t('ddetail.side.special'))}
+        </table>
+      </div>
+      <p className="ad-legend">{t('ddetail.legend')}</p>
+    </>
+  );
+
+  const sustain = (
+    <>
+      <h4>{t('ddetail.sustain')}</h4>
+      <div className="ad-how">
+        <p>{t('ddetail.sus.how1')}</p>
+        <p>{t('ddetail.sus.how2')}</p>
+      </div>
+            <div className="ad-scroll">
+  <table className="ad-t">
+          <thead>
+            <tr>
+              <th scope="col">{t('detail.member')}</th>
+              <th scope="col" className="left">{t('ddetail.recovery')}</th>
+              <th scope="col">Stealth Rock</th>
+              <th scope="col">Life Orb</th>
+              <th scope="col">{t('ddetail.sustain')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {members.map((m, i) => {
+              const p = m.sustainParts;
+              return (
+                <tr key={`${m.species}-${i}`}>
+                  <th scope="row"><span className="ad-mon"><Sprite species={m.species} size={32} />{m.species}</span></th>
+                  <td className="left">
+                    {p.recovery > 0 ? `+${pct(p.recovery)}` : '—'}
+                    {p.sources.length > 0 && <small className="ad-src"> {p.sources.join(' + ')}</small>}
+                    {p.halved && <small className="ad-halved" title={t('ddetail.halvedTip')}> {t('ddetail.halved')}</small>}
+                  </td>
+                  <td>{p.rocks > 0 ? `−${pct(p.rocks)}` : '—'}</td>
+                  <td>{p.lifeOrb > 0 ? `−${pct(p.lifeOrb)}` : '—'}</td>
+                  <td className="total">{m.sustain}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+
+  const coverageTypes = (
+    <>
+      <h4>{t('detail.coverageTypes')}</h4>
+      <div className="ad-how">
+        <p>{t('ddetail.types.how1')}</p>
+        {coverageMeta && <p>{t('ddetail.coverage.split')}</p>}
+      </div>
+      <p className="ad-holes">{weakLine}</p>
+      <table className="ad-t">
+        <thead>
+          <tr>
+            <th scope="col">{t('detail.types')}</th>
+            <th scope="col">{t('ddetail.safety')}</th>
+            <th scope="col" className="left gap">{t('ddetail.weak')}</th>
+            <th scope="col" className="left">{t('ddetail.resist')}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {defense.coverageTypes.rows.map(row => (
+            <tr key={row.type} className={row.weak.length > row.resist.length ? 'ad-weak' : undefined}>
+              <th scope="row"><TypeChip type={row.type} /></th>
+              <td>{row.safety}</td>
+              <td className="left gap ad-cover">{sprites(row.weak)}</td>
+              <td className="left ad-cover">{sprites(row.resist)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </>
+  );
+
+  const metaTab = coverageMeta && (
+    <>
+      <h4>{t('detail.coverageMeta')}</h4>
+      <div className="ad-how">
+        <p>{t('ddetail.meta.how1', { n: coverageMeta.rows.length })}</p>
+        <p>{t('ddetail.meta.how2')}</p>
+        <p>{t('ddetail.coverage.split')}</p>
+      </div>
+      <p className="ad-holes">{unansweredLine}</p>
+      <table className="ad-t">
+        <thead>
+          <tr>
+            <th scope="col">{t('ddetail.threat')}</th>
+            <th scope="col">{t('ddetail.held')}</th>
+            <th scope="col" className="left">{t('ddetail.heldBy')}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {/* Dal più usato: l'ordine dice anche quanto pesa ogni minaccia */}
+          {[...coverageMeta.rows].sort((a, b) => b.weight - a.weight).map(row => (
+            <tr key={row.species}>
+              <th scope="row"><span className="ad-mon"><Sprite species={row.species} size={32} />{row.species}</span></th>
+              <td>{row.level}%</td>
+              <td className="left ad-cover">
+                {row.heldBy.length
+                  ? row.heldBy.map((h, i) => {
+                    const text = `${h.species}: ${h.move} ${h.pct}%${h.partial ? ` (${t('ddetail.partial')})` : ''}`;
+                    return (
+                      <span key={`${h.species}-${i}`} className={h.partial ? 'partial' : undefined} title={text}>
+                        <Sprite species={h.species} size={28} />
+                        {/* Lo sprite da solo non dice niente a un lettore di schermo */}
+                        <span className="visually-hidden">{text}</span>
+                      </span>
+                    );
+                  })
+                  : <span className="ad-k none">{t('detail.nobody')}</span>}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </>
+  );
+
+  const panels: Record<Key, ReactElement | null> = { robustness, sustain, coverageTypes, coverageMeta: metaTab };
+  return [
+    { key: 'general', label: t('detail.tab.general'), value: defense.value, panel: general },
+    ...subs.map(key => ({ key, label: label(key), value: values[key], panel: panels[key]! })),
+  ];
 }

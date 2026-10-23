@@ -1,17 +1,17 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
 import { createPortal } from 'react-dom';
 import type { Archetype } from '../engine/archetype';
-import { ARCHETYPE_WEIGHTS, META_FLOOR, META_MAX_PENALTY, META_STEP, type AreaKey } from '../engine/rating';
+import { ARCHETYPE_WEIGHTS, type AreaKey } from '../engine/rating';
 import type { MessageKey } from '../i18n';
 import { useT } from '../i18n/react';
 import { Icon } from './icons';
 
 type Topic = 'general' | AreaKey | 'bonus';
-const TOPICS: Topic[] = ['general', 'defense', 'strength', 'bulk', 'roles', 'speed', 'meta', 'bonus'];
+const TOPICS: Topic[] = ['general', 'defense', 'strength', 'roles', 'speed', 'bonus'];
 /** Paragrafi di ogni argomento (chiavi help.<argomento>.<n>). */
-const PARAGRAPHS: Partial<Record<Topic, number>> = { general: 3, defense: 2, strength: 3, bulk: 2, roles: 3, speed: 2, meta: 3, bonus: 3 };
+const PARAGRAPHS: Partial<Record<Topic, number>> = { general: 3, defense: 2, strength: 3, roles: 3, speed: 2, bonus: 3 };
 const ARCHETYPES: Archetype[] = ['hyperOffense', 'bulkyOffense', 'balance', 'semiStall', 'stall'];
-const WEIGHT_AREAS = ['defense', 'strength', 'bulk', 'roles', 'speed'] as const;
+const WEIGHT_AREAS = ['defense', 'strength', 'roles', 'speed'] as const;
 /** Punti del saldo difensivo, per la tabella della Coverage difensiva. */
 const DEFENSE_POINTS: [string, string][] = [['help.defense.immune', '+2'], ['×¼', '+1,5'], ['×½', '+1'], ['help.defense.neutral', '0'], ['×2', '−1'], ['×4', '−2']];
 
@@ -80,7 +80,7 @@ export function RatingHelp({ teamType, trickRoom }: { teamType: Archetype; trick
               <section className="help-panel" id="help-panel" role="tabpanel" aria-labelledby={`help-tab-${topic}`}>
                 <h4>{t(topicLabel(topic))}</h4>
                 {Array.from({ length: PARAGRAPHS[topic] ?? 0 }, (_, i) => (
-                  <p key={i}>{t(`help.${topic}.${i + 1}` as MessageKey, { floor: META_FLOOR, step: META_STEP, max: META_MAX_PENALTY })}</p>
+                  <p key={i}>{t(`help.${topic}.${i + 1}` as MessageKey)}</p>
                 ))}
                 {topic === 'general' && (
                   <>

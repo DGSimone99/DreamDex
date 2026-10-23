@@ -121,7 +121,7 @@ function hitsOf(set: TeamSet, data: EngineData, targets: CoverageTarget[], kind:
 const creditOf = (x: number) => (x >= COVER_HIT ? 1 : x >= HOLE_HIT ? 0.5 : 0);
 /** Profondità: i crediti dei membri dal più alto, al 70, 20 e 10%. */
 /** Meteo e terreni che il set porta con la sua abilità: per lui sono sempre attivi. */
-function ownConditions(set: TeamSet): FieldCondition[] {
+export function ownConditions(set: TeamSet): FieldCondition[] {
   const ability = toID(battleAbility(set));
   return enables(set).filter(l => toID(l.via) === ability && l.condition !== 'trickroom').map(l => l.condition as FieldCondition);
 }

@@ -20,7 +20,7 @@ describe('coaching e valutazione in inglese', () => {
   it('voto e aree in inglese', () => {
     const rating = rateTeam([tusk, gholdengo], fixtureData, 'en')!;
     expect(['Excellent', 'Great', 'Good', 'Fair', 'Weak']).toContain(rating.label);
-    expect(rating.areas.map(a => a.label)).toEqual(['Defensive coverage', 'Offense', 'Bulk', 'Roles', 'Speed', 'Meta']);
+    expect(rating.areas.map(a => a.label)).toEqual(['Defense', 'Offense', 'Roles', 'Speed']);
   });
 
   it('errori di import in inglese', () => {
