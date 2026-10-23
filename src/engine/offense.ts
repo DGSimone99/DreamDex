@@ -255,7 +255,8 @@ export function teamOffense(team: TeamSet[], data: EngineData): TeamOffense {
   const defenders = defenderPanel(data);
   // Per ogni muro, i membri dal più forte: il team lo sfonda se qualcuno ci riesce, meglio se più di uno
   const wallStep = mean(defenders.map((_, d) => {
-    const best = raws.map(r => r.steps[d]).sort((a, b) => b - a);
+    // Ogni membro conta al massimo come un 2HKO: un solo OHKO non basta per il 100, servono più risposte
+    const best = raws.map(r => Math.min(STEP_2HKO, r.steps[d])).sort((a, b) => b - a);
     return WALL_DEPTH.reduce((acc, share, i) => acc + share * (best[i] ?? 0), 0);
   }));
   const setups = members.filter(m => m.setup !== null).map(m => m.setup!).sort((a, b) => b - a);
