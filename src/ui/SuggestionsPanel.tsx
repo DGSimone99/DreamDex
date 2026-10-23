@@ -56,6 +56,8 @@ interface Props {
   rating?: TeamRating | null;
   /** Sceglie il membro da sostituire (null: nessuno). */
   onTarget?: (index: number | null) => void;
+  /** Cambia a ogni clic su uno slot vuoto: si torna ad Aggiungi con il cursore nella ricerca. */
+  focusSearch?: number;
 }
 
 /** Solo se il Pokémon è bannato nel formato: triangolo rosso con il tier nel tooltip. */
@@ -177,7 +179,7 @@ function useDebounced<T>(value: T, delay: number): T {
 
 export const SEARCH_DELAY = 200;
 
-export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onReplaceWith, onCancelReplace, onPreview, rating = null, onTarget }: Props) {
+export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onReplaceWith, onCancelReplace, onPreview, rating = null, onTarget, focusSearch }: Props) {
   const tr = useT();
   const lang = useLang();
   const [mode, setMode] = useState<ReplaceMode>('improve');
@@ -189,6 +191,13 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   const replacing = replaceIndex !== null && replaceIndex < team.length;
   // Aggiungere o migliorare il team con scambi liberi; a team completo si migliora
   const [scope, setScope] = useState<'add' | 'all'>('add');
+  const searchRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (!focusSearch) return;
+    setScope('add');
+    // Dopo il cambio di scheda: lo scorrimento lo fa già la barra delle schede
+    requestAnimationFrame(() => searchRef.current?.focus({ preventScroll: true }));
+  }, [focusSearch]);
   const view: View = replacing ? 'member' : team.length >= 2 && (scope === 'all' || team.length >= 6) ? 'all' : 'add';
   /** Il team contro cui si valutano i candidati è vuoto: niente adattamento da mostrare. */
   const emptyTeam = (replacing ? team.length - 1 : team.length) === 0;
@@ -282,8 +291,13 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
     ?? pageItems[0];
   const selectedRank = selected ? items.indexOf(selected) + 1 : 0;
   const usageOf = (species: string) => statsEntry(data.stats, species)?.usage ?? null;
-  const act = (item: Item) => (item.replaces !== undefined ? onReplaceWith(item.replaces, item.set)
-    : replacing ? onReplaceWith(replaceIndex, item.set) : onAdd(item.set));
+  const act = (item: Item) => {
+    if (item.replaces !== undefined) onReplaceWith(item.replaces, item.set);
+    else if (replacing) onReplaceWith(replaceIndex, item.set);
+    else onAdd(item.set);
+    // Il nome cercato ha fatto il suo lavoro: la ricerca riparte vuota (i filtri restano)
+    setFilters(f => ({ ...f, query: '' }));
+  };
   /** Chi uscirebbe col candidato, o null se si aggiunge. */
   const outOf = (item: Item) => (item.replaces !== undefined ? item.replaces : replacing ? replaceIndex : null);
   // Il nome dal team per cui la lista è stata calcolata: per un attimo può essere quello di prima (es. team appena svuotato)
@@ -347,6 +361,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
         <span className={`search-field${target ? ' has-hint' : ''}`}>
           <Icon name="search" />
           <input
+            ref={searchRef}
             aria-label={tr('suggest.search')}
             aria-describedby={target ? 'search-hint' : undefined}
             placeholder={tr('suggest.searchPlaceholder')}
@@ -479,8 +494,15 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
       </div>
       {search}
       {notes}
-      <div className={`picker${selected && !full ? ' has-detail' : ''}`}>
+      <div className={`picker${!full ? ' has-detail' : ''}`}>
         <div className="picker-list">{body}</div>
+        {/* Senza candidati resta lo scheletro del dettaglio: la pagina non si accorcia e non salta in alto */}
+        {!selected && !full && (
+          <aside className="detail detail-empty" aria-hidden="true">
+            <Icon name="search" />
+            <p>{tr('suggest.detailEmpty')}</p>
+          </aside>
+        )}
         {selected && !full && (
           <SuggestionDetail
             key={selected.species}
@@ -490,6 +512,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
             team={deferred.team}
             replaceIndex={outOf(selected)}
             data={data}
+            format={format}
             rating={rating}
             usage={emptyTeam ? usageOf(selected.species) : null}
             banMark={<BanMark species={selected.species} format={format} />}

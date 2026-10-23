@@ -6,8 +6,8 @@ export const SLANT = Math.tan((8 * Math.PI) / 180);
 /** Distanza delle righe dal bordo inclinato. */
 const GAP = 14;
 
-/** Elementi che si spostano con il bordo senza allinearsi a sinistra: sprite (centrato), stella e ×. */
-const SHIFTED = '.sprite-wrap, .favorite, .remove';
+/** Elementi che si spostano con il bordo senza allinearsi a sinistra: sprite (centrato), stella, × e il contenuto degli slot vuoti. */
+const SHIFTED = '.sprite-wrap, .favorite, .remove, .empty-ring, .empty-label';
 
 type Box = { cardHeight: number; top: number; height: number };
 

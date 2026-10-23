@@ -128,3 +128,23 @@ export function bannedParts(set: { moves: string[]; ability: string; item: strin
 export function isLegalIn(species: Species, format: Format): boolean {
   return isSelectable(species) && speciesInPokedex(species, format) && !isBannedIn(species, format);
 }
+
+/** Il formato nell'indirizzo del Pokédex di Smogon (/dex/sv/pokemon/<nome>/<formato>/); null senza un formato Smogon. */
+const SMOGON_FORMATS: Record<FormatId, string | null> = {
+  ou: 'national-dex', ubers: 'national-dex-ubers', uu: 'national-dex-uu', all: null,
+  gen9ou: 'ou', gen9ubers: 'uber', gen9uu: 'uu', gen9ag: 'ag',
+};
+
+/**
+ * Pagina del Pokémon sul Pokédex di Smogon: l'analisi del formato se `analysed` (ci sono suoi preset Smogon
+ * per quel formato), altrimenti la pagina generale. I formati dell'app sono tutti di Scarlatto/Violetto (sv).
+ */
+export function smogonUrl(speciesName: string, format: Format, analysed: boolean): string {
+  const slug = speciesName.toLowerCase().replace(/['’.:%]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const tier = analysed ? SMOGON_FORMATS[format.formatId] : null;
+  return `https://www.smogon.com/dex/sv/pokemon/${slug}/${tier ? `${tier}/` : ''}`;
+}
+
+/** Il Pokémon ha un'analisi Smogon nel formato: un preset che viene proprio dalla fonte del formato. */
+export const hasSmogonAnalysis = (presets: { format: string }[], format: Format): boolean =>
+  !!SMOGON_FORMATS[format.formatId] && presets.some(p => p.format === FORMATS[format.formatId].source);

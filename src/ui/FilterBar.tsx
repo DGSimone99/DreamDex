@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { activeFilterCount, EMPTY_FILTERS, MAX_TYPES, type CandidateFilters, type Inclusion } from '../engine/filters';
 import { FIT_ARCHETYPES, type FitArchetype } from '../engine/archetype';
 import { DESIRABLE_ROLES, ESSENTIAL_ROLES, roleLabel, type Role } from '../engine/roles';
@@ -7,6 +7,7 @@ import { TYPES, type TypeName } from '../engine/types';
 import { inkFor, typeColor } from './Sprite';
 import { typeTextColor } from './TypeText';
 import { typeName } from '../i18n/game';
+import { Icon } from './icons';
 import { useLang, useT } from '../i18n/react';
 
 const ROLES: Role[] = [...ESSENTIAL_ROLES, 'setup', ...DESIRABLE_ROLES];
@@ -76,10 +77,21 @@ export function FilterBar({ filters, onChange }: Props) {
   const lang = useLang();
   const count = activeFilterCount(filters);
   const set = (patch: Partial<CandidateFilters>) => onChange({ ...filters, ...patch });
+  // Aperti, l'azzeramento sta in fondo: nella riga del titolo solo a filtri chiusi
+  const [open, setOpen] = useState(false);
+  const reset = () => onChange({ ...EMPTY_FILTERS, query: filters.query });
 
   return (
-    <details className="block filters">
-      <summary>{count === 0 ? t('filters.title') : count === 1 ? t('filters.activeOne') : t('filters.activeMany', { n: count })}</summary>
+    <details className="block filters" onToggle={e => setOpen(e.currentTarget.open)}>
+      <summary>
+        {count === 0 ? t('filters.title') : count === 1 ? t('filters.activeOne') : t('filters.activeMany', { n: count })}
+        {/* Azzera anche a filtri chiusi, senza aprirli */}
+        {count > 0 && !open && (
+          <button type="button" className="filters-reset" onClick={e => { e.preventDefault(); reset(); }}>
+            <Icon name="close" /> {t('filters.reset')}
+          </button>
+        )}
+      </summary>
 
       <div className="type-filters">
         <TypeGrid label={t('filters.type')} selected={filters.types} max={MAX_TYPES} onChange={types => set({ types })} />
@@ -137,7 +149,7 @@ export function FilterBar({ filters, onChange }: Props) {
       </div>
 
       <div className="filter-footer">
-        <button type="button" disabled={count === 0} onClick={() => onChange({ ...EMPTY_FILTERS, query: filters.query })}>{t('filters.reset')}</button>
+        <button type="button" disabled={count === 0} onClick={reset}>{t('filters.reset')}</button>
       </div>
     </details>
   );

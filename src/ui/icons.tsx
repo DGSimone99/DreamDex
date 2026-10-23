@@ -14,6 +14,7 @@ const paths = {
   check: 'M5 12.5l4.5 4.5L19 7.5',
   unlock: 'M6 11h12v9H6zM9 11V8a3 3 0 0 1 5.8-1.1M12 14.5v2',
   warning: 'M12 3.5 22 20H2zM12 10v4.5M12 17.2v.3',
+  external: 'M14 4h6v6M20 4l-9 9M18 14v6H4V6h6',
   search: 'M10.5 4a6.5 6.5 0 1 0 0 13 6.5 6.5 0 1 0 0-13zM15.5 15.5 20 20',
   help: 'M12 3a9 9 0 1 0 0 18 9 9 0 1 0 0-18zM9.6 9.4a2.5 2.5 0 1 1 3.4 2.3c-.6.3-1 .9-1 1.6v.5M12 16.6v.4',
   // Categorie delle mosse (come su Showdown) e precisione
