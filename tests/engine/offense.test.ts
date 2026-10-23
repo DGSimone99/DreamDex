@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { memberOffense, offenseReference, POWER_FULL, RANK_WEIGHTS, REFERENCE_RANK, stepValue, TEAM_SCALE, teamOffense } from '../../src/engine/offense';
+import { memberOffense, offenseReference, POWER_FULL, RANK_WEIGHTS, REFERENCE_RANK, stepValue, teamOffense } from '../../src/engine/offense';
 import { bestHit } from '../../src/engine/damage';
 import { defenderPanel } from '../../src/engine/defenders';
 import { mostCommonSet } from '../../src/engine/sets';
@@ -146,11 +146,10 @@ describe('scala dei membri e del team', () => {
     expect(memberOffense(ninetales, [ninetales], noStats)!.power).toBe(capped);
   });
 
-  it('il 100 del membro è il 3° miglior attaccante del meta; il team si riporta sulla sua scala', () => {
+  it('il 100 del membro è il 3° miglior attaccante del meta; il team è la media pesata, senza moltiplicatori', () => {
     expect(REFERENCE_RANK).toBe(3);
-    expect(TEAM_SCALE).toBeGreaterThan(1);
     const team = teamOffense([chomp, blissey], fixtureData);
     const raw = (0.22 * Math.max(...team.members.map(m => m.value)) + 0.18 * Math.min(...team.members.map(m => m.value))) / 0.4;
-    expect(team.value).toBe(Math.min(100, Math.round(raw * TEAM_SCALE)));
+    expect(team.value).toBe(Math.round(raw));
   });
 });
