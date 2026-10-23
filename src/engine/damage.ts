@@ -26,6 +26,8 @@ export interface Hit {
   expected: number;
   /** Danno minimo in quota dei PS, senza la precisione: ≥ 1 è un KO sicuro se colpisce. */
   min: number;
+  /** Danno massimo in quota dei PS, senza la precisione: ≥ 1 è un KO possibile (la Difesa conta il caso peggiore). */
+  max: number;
 }
 
 /** Band e Specs bloccano su una mossa: il loro ×1,5 conta come ×1,35 (un decimo in meno di danno). */
@@ -150,7 +152,7 @@ export function bestHit(attacker: TeamSet, defender: Target, options: HitOptions
     if (data.ohko) {
       if (options.superEffectiveOnly && !superEffective(data.type, data.id, types)) continue;
       const immune = !dex.getImmunity(data.type, types) || (data.ohko === 'Ice' && types.includes('Ice'));
-      const hit = { move: data.name, expected: immune ? 0 : accuracy, min: immune ? 0 : 1 };
+      const hit = { move: data.name, expected: immune ? 0 : accuracy, min: immune ? 0 : 1, max: immune ? 0 : 1 };
       if (!best || hit.expected > best.expected) best = hit;
       continue;
     }
@@ -166,13 +168,37 @@ export function bestHit(attacker: TeamSet, defender: Target, options: HitOptions
       if (!hits.length || !hits[0].length) continue;
       const avg = hits.reduce((acc, rolls) => acc + rolls.reduce((a, b) => a + b, 0) / rolls.length, 0);
       const low = hits.reduce((acc, rolls) => acc + Math.min(...rolls), 0);
+      const high = hits.reduce((acc, rolls) => acc + Math.max(...rolls), 0);
       // Mosse a due turni (Solar Blade, Meteor Beam…): un colpo ogni due turni, salvo sole/pioggia giusti o Power Herb
       const charge = data.flags.charge && !instantCharge(data.id, options.conditions ?? [], attacker.item) ? 0.5 : 1;
-      const hit = { move: data.name, expected: (avg / hp) * accuracy * charge, min: (low / hp) * charge };
+      const hit = { move: data.name, expected: (avg / hp) * accuracy * charge, min: (low / hp) * charge, max: (high / hp) * charge };
       if (!best || hit.expected > best.expected) best = hit;
     } catch {
       // Una mossa che la libreria non sa calcolare non conta
     }
   }
   return best;
+}
+
+/**
+ * Colpo standard per la Difesa: potenza 100, senza tipo (niente debolezze, resistenze, immunità né STAB),
+ * con statistiche, EV, natura, strumento e abilità veri dell'attaccante contro il set vero del difensore.
+ * Misura solo quanto il difensore regge, indipendentemente dalle mosse che l'attaccante porta.
+ */
+export function standardHit(attacker: TeamSet, defender: Target, category: 'Physical' | 'Special', options: HitOptions = {}): Hit | null {
+  const own = toPokemon(attacker, options);
+  const target = toPokemon(defender, {}, 'defender');
+  if (!own || !target) return null;
+  const move = cached(moves, `standard|${category}`, () => new CalcMove(gen, 'Tackle', { overrides: { type: '???', basePower: 100, category } }));
+  if (!move) return null;
+  const hp = target.maxHP() / (LOCKING.has(toID(attacker.item)) ? CHOICE_LOCK : 1);
+  try {
+    const result = calculate(gen, own, target, move, toField(options.conditions));
+    const rolls = (Array.isArray(result.damage) ? result.damage.flat() : [result.damage]) as number[];
+    if (!rolls.length) return null;
+    const avg = rolls.reduce((a, b) => a + b, 0) / rolls.length;
+    return { move: category, expected: avg / hp, min: Math.min(...rolls) / hp, max: Math.max(...rolls) / hp };
+  } catch {
+    return null;
+  }
 }
