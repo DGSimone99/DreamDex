@@ -162,13 +162,9 @@ export function bestHit(attacker: TeamSet, defender: Target, options: HitOptions
       const result = calculate(gen, own, target, move, field);
       // La Coverage vuole il vantaggio di tipo: si guarda il tipo con cui la mossa colpisce davvero (Pixilate, Ivy Cudgel, Tera Blast…)
       if (options.superEffectiveOnly && !superEffective(result.move.type, data.id, types)) continue;
-      // Mosse multicolpo e Parental Bond: un elenco di tiri per ogni colpo, da sommare
-      const damage = result.damage as number | number[] | number[][];
-      const hits = (Array.isArray(damage) ? (Array.isArray(damage[0]) ? damage : [damage]) : [[damage]]) as number[][];
-      if (!hits.length || !hits[0].length) continue;
-      const avg = hits.reduce((acc, rolls) => acc + rolls.reduce((a, b) => a + b, 0) / rolls.length, 0);
-      const low = hits.reduce((acc, rolls) => acc + Math.min(...rolls), 0);
-      const high = hits.reduce((acc, rolls) => acc + Math.max(...rolls), 0);
+      const sums = rollSums(result.damage);
+      if (!sums) continue;
+      const { avg, low, high } = sums;
       // Mosse a due turni (Solar Blade, Meteor Beam…): un colpo ogni due turni, salvo sole/pioggia giusti o Power Herb
       const charge = data.flags.charge && !instantCharge(data.id, options.conditions ?? [], attacker.item) ? 0.5 : 1;
       const hit = { move: data.name, expected: (avg / hp) * accuracy * charge, min: (low / hp) * charge, max: (high / hp) * charge };
@@ -185,10 +181,24 @@ export function bestHit(attacker: TeamSet, defender: Target, options: HitOptions
  * con statistiche, EV, natura, strumento e abilità veri dell'attaccante contro il set vero del difensore.
  * Misura solo quanto il difensore regge, indipendentemente dalle mosse che l'attaccante porta.
  */
+/** Mosse multicolpo e Parental Bond: la libreria dà un elenco di tiri per ogni colpo, da sommare. */
+function rollSums(result: unknown): { avg: number; low: number; high: number } | null {
+  const damage = result as number | number[] | number[][];
+  const hits = (Array.isArray(damage) ? (Array.isArray(damage[0]) ? damage : [damage]) : [[damage]]) as number[][];
+  if (!hits.length || !hits[0].length) return null;
+  return {
+    avg: hits.reduce((acc, rolls) => acc + rolls.reduce((a, b) => a + b, 0) / rolls.length, 0),
+    low: hits.reduce((acc, rolls) => acc + Math.min(...rolls), 0),
+    high: hits.reduce((acc, rolls) => acc + Math.max(...rolls), 0),
+  };
+}
+
 export function standardHit(attacker: TeamSet, defender: Target, category: 'Physical' | 'Special', options: HitOptions = {}): Hit | null {
   const own = toPokemon(attacker, options);
   const target = toPokemon(defender, {}, 'defender');
   if (!own || !target) return null;
+  // Wonder Guard ferma un colpo senza tipo, ma i colpi veri lo prendono super efficace: vale un OHKO
+  if (toID(battleAbility(defender as TeamSet)) === 'wonderguard') return { move: category, expected: 1, min: 1, max: 1 };
   // Il colpo fisico è di contatto (come quasi tutte le mosse fisiche: Fluffy, Tough Claws), lo speciale no
   const move = cached(moves, `standard|${category}`, () => new CalcMove(gen, 'Tackle', {
     overrides: { type: '???', basePower: 100, category, flags: { contact: category === 'Physical' ? 1 : 0 } },
@@ -197,10 +207,9 @@ export function standardHit(attacker: TeamSet, defender: Target, category: 'Phys
   const hp = target.maxHP() / (LOCKING.has(toID(attacker.item)) ? CHOICE_LOCK : 1);
   try {
     const result = calculate(gen, own, target, move, toField(options.conditions));
-    const rolls = (Array.isArray(result.damage) ? result.damage.flat() : [result.damage]) as number[];
-    if (!rolls.length) return null;
-    const avg = rolls.reduce((a, b) => a + b, 0) / rolls.length;
-    return { move: category, expected: avg / hp, min: Math.min(...rolls) / hp, max: Math.max(...rolls) / hp };
+    const sums = rollSums(result.damage);
+    if (!sums) return null;
+    return { move: category, expected: sums.avg / hp, min: sums.low / hp, max: sums.high / hp };
   } catch {
     return null;
   }

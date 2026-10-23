@@ -33,6 +33,19 @@ describe('standardHit: colpo standard senza tipo, potenza 100', () => {
     expect(standardHit(chomp, dachs, 'Physical')!.max).toBeLessThan(standardHit(chomp, baked, 'Physical')!.max * 0.6);
   });
 
+  it('Wonder Guard non salva Shedinja: vale un OHKO (i colpi veri lo prendono super efficace)', () => {
+    const shedinja = { species: 'Shedinja', item: 'Focus Sash', ability: 'Wonder Guard', moves: [], nature: 'Adamant', evs: {} };
+    expect(standardHit(chomp, shedinja, 'Physical')!.max).toBeGreaterThanOrEqual(1);
+  });
+
+  it('Parental Bond: i tiri dei due colpi si sommano', () => {
+    const kanga = { species: 'Kangaskhan-Mega', item: 'Kangaskhanite', ability: 'Parental Bond', moves: [], nature: 'Adamant', evs: { atk: 252 } };
+    const single = { ...kanga, ability: 'Scrappy' };
+    const tank = set('Ting-Lu', 'Leftovers', 'Vessel of Ruin', [], 'Impish', { hp: 252, def: 252 });
+    const ratio = standardHit(kanga, tank, 'Physical')!.max / standardHit(single, tank, 'Physical')!.max;
+    expect(ratio).toBeGreaterThan(1.2);
+  });
+
   it('ignora i tipi: Gengar (Spettro) non è immune al colpo standard fisico', () => {
     const gengar = set('Gengar', 'Leftovers', 'Cursed Body', [], 'Bold', { hp: 252, def: 252 });
     expect(standardHit(chomp, gengar, 'Physical')!.expected).toBeGreaterThan(0);
