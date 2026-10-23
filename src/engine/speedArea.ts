@@ -174,3 +174,26 @@ export function priorityPart(team: TeamSet[], list: MemberSpeed[], speedPartValu
   const total = rows.reduce((acc, r) => acc + r.weight, 0);
   return { value: total ? softScore(rows.reduce((acc, r) => acc + r.weight * r.credit, 0) / total) : 0, rows };
 }
+
+/** Velocità (coi guadagni delle condizioni) e Priorità nell'area: 80 e 20. */
+export const SPEED_SHARES = { speed: 0.8, priority: 0.2 };
+
+export interface TeamSpeed {
+  value: number;
+  speed: number;
+  priority: number;
+  members: MemberSpeed[];
+  targets: PriorityRow[];
+}
+
+/** Velocità del team: quanti Pokémon supera ogni membro (con setup, meteo, Web…) e quanto colpisce per primo chi non supera. */
+export function teamSpeedArea(team: TeamSet[], data: EngineData): TeamSpeed {
+  const list = team.map(set => memberSpeed(set, team, data)).filter((m): m is MemberSpeed => m !== null);
+  if (!list.length) return { value: 0, speed: 0, priority: 0, members: [], targets: [] };
+  const speed = speedPart(list);
+  const priority = priorityPart(team, list, speed, data);
+  return {
+    value: Math.round(SPEED_SHARES.speed * speed + SPEED_SHARES.priority * priority.value),
+    speed, priority: priority.value, members: list, targets: priority.rows,
+  };
+}

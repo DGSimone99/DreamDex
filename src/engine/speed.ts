@@ -1,7 +1,6 @@
 import type { Species } from '@pkmn/dex';
 import type { EngineData } from './data';
 import { battleSpecies, dex, getSpecies, isSelectable, toID } from './dex';
-import { memberPower } from './power';
 import { parseSpread, type TeamSet } from './sets';
 import { DEFAULT_FORMAT, type FormatId } from './format';
 import { usesMeta } from './analysis';
@@ -152,25 +151,4 @@ export function referenceSpeeds(formatId: FormatId = 'ou'): number[] {
     maxSpeeds.set(key, speeds);
   }
   return speeds;
-}
-
-
-/** Offesa (percentile) da cui un membro conta per la velocità del team: un Pokémon veloce che non fa danni non serve. */
-export const SPEED_ATTACKER = 60;
-
-/**
- * Velocità del team (0–1), dai suoi due attaccanti più veloci: vince chi si muove per primo e fa danno.
- * Quota del riferimento del formato che ognuno dei due supera (non dipende dal meta del mese).
- * Con meno di due attaccanti, il posto mancante vale zero.
- */
-export function teamSpeed(team: TeamSet[], data: EngineData, threats: string[] | null = null): number {
-  const fastest = team
-    .filter(set => (memberPower(set)?.offense ?? 0) >= SPEED_ATTACKER)
-    .map(set => speedStat(set).value)
-    .sort((a, b) => b - a)
-    .slice(0, 2);
-  const share = threats?.length
-    ? (speed: number) => { const rivals = threats.map(name => metaSpeed(data, name)); return rivals.filter(r => r < speed).length / rivals.length; }
-    : (speed: number) => { const pool = referenceSpeeds(data.formatId ?? 'ou'); return pool.filter(v => v < speed).length / pool.length; };
-  return fastest.reduce((acc, speed) => acc + share(speed), 0) / 2;
 }

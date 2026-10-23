@@ -11,7 +11,7 @@ import type { Archetype } from './archetype';
 import { attackStyle, detectRoles, isPassive, isStall, teamRoles } from './roles';
 import { rulesOf, type FormatRules } from './formatRules';
 import { meetsNeed, needCoverage, NEEDS } from './needs';
-import { teamSpeed } from './speed';
+import { teamSpeedArea, type TeamSpeed } from './speedArea';
 import { strengthComponent } from './scoring';
 import { usageOf } from './stats';
 import type { TeamSet } from './sets';
@@ -128,6 +128,8 @@ export interface TeamRating {
   offense: TeamOffense;
   /** Difesa: robustezza, sostenibilità e coverage difensiva di tipi e del meta, con le sottostatistiche per membro. */
   defense: TeamDefense;
+  /** Velocità: velocità pura e guadagni per membro, e la priorità contro chi il team non supera. */
+  speed: TeamSpeed;
 }
 
 
@@ -333,15 +335,14 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
   // I pesi dal tipo di team (un team incompleto si giudica come balance); con Trick Room la Velocità non conta
   const table = ARCHETYPE_WEIGHTS[analysis.needs.archetype];
   const effective: Record<BaseArea, number> = trickRoom ? { ...table, speed: 0 } : table;
-  // Velocità: col meta contro le minacce più usate, senza contro tutti i Pokémon
-  // Velocità: contro il riferimento del formato, uguale col meta e senza (il meta conta solo nell'area Meta)
-  const speed = teamSpeed(team, data);
+  // Velocità: ogni membro coi guadagni delle condizioni, più la priorità (speedArea.ts); col meta contro i più usati
+  const speed = teamSpeedArea(team, data);
 
   // Offesa e Difesa dal danno vero (offense.ts, defense.ts)
   const attack = offense.members.length ? offense.value / 100 : null;
   const raw: Record<BaseArea, number | null> = {
     defense: defense.members.length ? defense.value / 100 : null, strength: attack,
-    roles: Math.min(1, roles), speed: Math.min(1, speed),
+    roles: Math.min(1, roles), speed: speed.members.length ? speed.value / 100 : null,
   };
   const available = BASE_AREAS.filter(key => raw[key] !== null && effective[key] > 0);
   const totalWeight = sum(available.map(key => effective[key]));
@@ -376,7 +377,7 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
   return {
     base, penalty, bonus, power: power.members, overall, ...gradeFor(overall, lang), provisional: team.length < 6, areas, archetype, meta,
     teamType: analysis.needs.archetype, trickRoom,
-    weights: areaWeights, offense, defense,
+    weights: areaWeights, offense, defense, speed,
   };
 }
 
