@@ -9,6 +9,7 @@ import { teraAllowed } from './formats';
 import { rulesOf } from './formatRules';
 import { mostCommonSet, type TeamSet } from './sets';
 import { topThreats } from './stats';
+import { softScore } from './scale';
 import { enables } from './synergy';
 
 /** Riferimento di riserva (senza statistiche del formato): danno medio che vale Potenza 100. */
@@ -97,7 +98,8 @@ export function stepValue(hit: Hit | null): number {
 }
 
 const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
-const toScore = (x: number, full: number) => Math.round(100 * Math.min(1, x / full));
+/** Dal rapporto col riferimento al punteggio: lineare fino a 80, poi sempre più piano (il 100 non si raggiunge). */
+const toScore = (x: number, full: number) => softScore(x / full);
 
 /** Condizioni di campo (meteo, terreni) che il team porta; quelle che il set porta con la sua abilità sono sempre attive per lui. */
 function conditionsOf(set: TeamSet, team: TeamSet[]) {

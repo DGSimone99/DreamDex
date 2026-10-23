@@ -1,3 +1,4 @@
+import { softScore } from '../../src/engine/scale';
 import { describe, expect, it } from 'vitest';
 import { memberOffense, offenseReference, POWER_FULL, RANK_WEIGHTS, REFERENCE_RANK, SETUP_SHARE, stepValue, TEAM_WALL_FULL, teamOffense } from '../../src/engine/offense';
 import { bestHit } from '../../src/engine/damage';
@@ -84,7 +85,8 @@ describe('memberOffense', () => {
     const ref = offenseReference(fixtureData);
     const fifth = mostCommonSet(fixtureStats, ref.attackers[Math.min(REFERENCE_RANK, ref.attackers.length) - 1])!;
     const m = memberOffense(fifth, [fifth], fixtureData)!;
-    expect(m.wallbreaking).toBeGreaterThanOrEqual(99);
+    // Il riferimento vale circa 93: la scala rallenta sopra 80 e non arriva mai a 100
+    expect(Math.abs(m.wallbreaking - 93)).toBeLessThanOrEqual(1);
   });
 
   it('una specie sconosciuta non conta', () => {
@@ -147,7 +149,7 @@ describe('scala dei membri e del team', () => {
     const ninetales = set('Ninetales', 'Life Orb', 'Drought', ['Weather Ball', 'Encore'], 'Modest', { spa: 120, spe: 252 });
     // La Potenza si misura contro i bersagli della Coverage (senza meta: i 18 tipi neutri, stesso peso)
     const hits = coverageTargets(noStats).map(t => bestHit(ninetales, t.set, { conditions: ['sun'] })?.expected ?? 0);
-    const score = (xs: number[]) => Math.round(100 * Math.min(1, xs.reduce((a, b) => a + b, 0) / xs.length / POWER_FULL));
+    const score = (xs: number[]) => softScore(xs.reduce((a, b) => a + b, 0) / xs.length / POWER_FULL);
     const capped = score(hits.map(x => Math.min(1, x)));
     expect(capped).toBeLessThan(score(hits));
     expect(memberOffense(ninetales, [ninetales], noStats)!.power).toBe(capped);
@@ -209,7 +211,7 @@ describe('Offesa di squadra', () => {
     const targets = coverageTargets(noStats);
     const hits = targets.map(t => Math.min(1, bestHit(chomp, t.set)?.expected ?? 0));
     const mean = hits.reduce((a, h, i) => a + h * targets[i].weight, 0);
-    expect(memberOffense(chomp, [chomp], noStats)!.power).toBe(Math.round(100 * Math.min(1, mean / POWER_FULL)));
+    expect(memberOffense(chomp, [chomp], noStats)!.power).toBe(softScore(mean / POWER_FULL));
   });
 
   it('la Coverage del membro è una percentuale pesata', () => {

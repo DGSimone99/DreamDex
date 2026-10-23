@@ -731,7 +731,8 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 .ad-nav [role='tab'][aria-selected='true'] b { color: var(--text); }
 .ad-panel { padding: 16px 22px 22px; overflow-y: auto; }
 .ad-panel h4 { margin: 0 0 8px; font: 700 18px/1.1 var(--display); text-transform: uppercase; letter-spacing: 0.03em; }
-.ad-panel p { margin: 0 0 10px; font-size: 14px; line-height: 1.55; color: var(--muted); max-width: 64ch; }
+/* Le spiegazioni occupano tutta la larghezza del pannello: il modale è largo apposta */
+.ad-panel p { margin: 0 0 10px; font-size: 14px; line-height: 1.55; color: var(--muted); }
 .ad-how { margin: 0 0 16px; padding: 0 0 6px; border-bottom: 1px solid var(--line-soft); }
 .ad-holes { color: var(--text) !important; }
 .ad-subs { display: grid; gap: 12px; margin: 0 0 18px; }

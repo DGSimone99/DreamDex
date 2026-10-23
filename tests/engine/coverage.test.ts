@@ -48,6 +48,11 @@ describe('teamCoverage', () => {
     expect(coverage.perMember).toHaveLength(1);
   });
 
+  it('anche coprendo tutto tre volte la Coverage non arriva a 100', () => {
+    const all = set('Mew', 'Life Orb', 'Synchronize', ['Psystrike', 'Fusion Bolt', 'Fusion Flare', 'Precipice Blades'], 'Modest', { spa: 252, atk: 252 });
+    expect(teamCoverage([all, { ...all }, { ...all }, { ...all }], noMeta).value).toBeLessThan(100);
+  });
+
   it('profondità: due membri che coprono gli stessi tipi valgono più di uno', () => {
     expect(teamCoverage([chomp, { ...chomp }], noMeta).value).toBeGreaterThan(teamCoverage([chomp], noMeta).value);
   });

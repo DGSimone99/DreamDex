@@ -154,7 +154,6 @@ export function AreaDetail({ rating, area, onClose }: { rating: TeamRating; area
               {offense.members.map((m, i) => (
                 <th key={`${m.species}-${i}`} scope="col" aria-label={m.species} title={m.species}><Sprite species={m.species} size={32} /></th>
               ))}
-              <th scope="col">{t('detail.answers')}</th>
             </tr>
           </thead>
           <tbody>
@@ -162,7 +161,6 @@ export function AreaDetail({ rating, area, onClose }: { rating: TeamRating; area
               <tr key={wall.species}>
                 <th scope="row"><span className="ad-mon"><Sprite species={wall.species} size={32} />{wall.species}</span></th>
                 {wall.cells.map((cell, i) => <td key={i}><WallValue cell={cell} /></td>)}
-                <td className="total">{wall.cells.filter(c => c.step >= 1).length}</td>
               </tr>
             ))}
           </tbody>

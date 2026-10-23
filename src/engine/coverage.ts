@@ -4,6 +4,7 @@ import type { EngineData } from './data';
 import { battleSpecies } from './dex';
 import { mostCommonSet, type TeamSet } from './sets';
 import { topThreats, usageOf } from './stats';
+import { softScore } from './scale';
 import { TYPES } from './types';
 
 /** Quanti Pokémon del meta, dal più usato, danno le combinazioni di tipi da coprire. */
@@ -95,7 +96,8 @@ export function teamCoverage(team: TeamSet[], data: EngineData): TeamCoverage {
     if (Math.max(0, ...hits.map(h => h[i])) < HOLE_HIT) holes.push(target.label);
   });
   return {
-    value: Math.round(100 * value),
+    // Lineare fino a 80, poi sempre più piano: anche ogni bersaglio coperto tre volte resta sotto 100
+    value: softScore(value),
     holes,
     perMember: hits.map(h => Math.round(100 * targets.reduce((acc, target, i) => acc + (h[i] >= COVER_HIT ? target.weight : 0), 0))),
     rows: targets.map((target, i) => ({

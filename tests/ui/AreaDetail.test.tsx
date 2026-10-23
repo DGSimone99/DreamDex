@@ -42,10 +42,12 @@ describe("dettaglio dell'Offesa a schede", () => {
     await user.click(within(dialog).getByRole('tab', { name: /^Potenza/ }));
     const panel = within(dialog).getByRole('tabpanel');
     expect(panel).toHaveTextContent(/3° miglior attaccante/);
+    // La scala: lineare fino a 80, poi sempre più piano, e il 100 non si raggiunge
+    expect(panel).toHaveTextContent(/100 non si raggiunge/);
     expect(within(panel).getAllByRole('row').length).toBe(3);
   });
 
-  it('Wallbreaking: muro per muro, il danno di ogni membro e quante risposte ha il team', async () => {
+  it('Wallbreaking: muro per muro, il danno di ogni membro (senza colonna delle risposte)', async () => {
     const { user, dialog } = await openOffense('it');
     await user.click(within(dialog).getByRole('tab', { name: /^Wallbreaking/ }));
     const panel = within(dialog).getByRole('tabpanel');
@@ -53,10 +55,9 @@ describe("dettaglio dell'Offesa a schede", () => {
     expect(rows).toHaveLength(12);
     for (const row of rows) {
       const cells = within(row).getAllByRole('cell');
-      // Due membri e la colonna delle risposte
-      expect(cells).toHaveLength(3);
-      expect(cells[0]).toHaveTextContent(/^\d+%( \(\d+%\))?$/);
-      expect(cells[2]).toHaveTextContent(/^[0-2]$/);
+      // Solo i due membri: chi sfonda il muro si vede già dalle caselle
+      expect(cells).toHaveLength(2);
+      for (const cell of cells) expect(cell).toHaveTextContent(/^\d+%( \(\d+%\))?$/);
     }
   });
 
