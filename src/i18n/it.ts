@@ -501,6 +501,7 @@ export const it: Record<keyof typeof en, string> = {
   'detail.general.wallbreaking': "Quanti muri il team sfonda, e con quante risposte",
   'detail.general.coverage': "Bersagli del formato mandati KO in due colpi",
   'detail.setters': "Setup: {list}",
+  'detail.withSetup': "Con il setup ({move}): quanto sale il Wallbreaking nel voto",
   'detail.bestMove': "Colpo migliore",
   'detail.targets.meta': "{n} Pokémon più usati del meta (uno per combinazione di tipi), con i loro set più comuni",
   'detail.targets.tier': "18 tipi, contro un Pokémon medio di ciascun tipo",

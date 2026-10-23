@@ -30,9 +30,10 @@ describe("dettaglio dell'Offesa a schede", () => {
     expect(rows.map(r => within(r).getByRole('rowheader').textContent)).toEqual(['Great Tusk', 'Gholdengo']);
     for (const row of rows) {
       const cells = within(row).getAllByRole('cell');
+      // Il Wallbreaking, con tra parentesi quanto lo alza il setup nel voto (tooltip "Con il setup")
+      expect(cells[1]).toHaveTextContent(/^\d+( \(\+\d+\))?$/);
       expect(cells[2]).toHaveTextContent(/^\d+%$/);
-      // L'Offesa del membro, con tra parentesi i punti che vengono dal setup
-      expect(cells[3]).toHaveTextContent(/^\d+( \(\+\d+\))?$/);
+      expect(cells[3]).toHaveTextContent(/^\d+$/);
     }
   });
 

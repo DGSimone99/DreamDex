@@ -45,6 +45,8 @@ export interface MemberOffense {
   bestMove: string | null;
   /** Punti di Offesa del membro che vengono dal setup (già dentro `value`: metà del guadagno di Wallbreaking). */
   setupGain: number;
+  /** Quanto il setup alza il Wallbreaking del membro nel voto (metà del guadagno dopo un uso). */
+  wallbreakingGain: number;
   value: number;
   /** Bersagli della Coverage che manda KO in due colpi (la Coverage vera è del team). */
   covered: number;
@@ -254,8 +256,9 @@ export function memberOffense(set: TeamSet, team: TeamSet[], data: EngineData): 
   const base = Math.round(attackValue(power, wallbreaking));
   // Potenziale: col setup usato una volta il Wallbreaking sale; nel valore ne entra metà
   const withSetup = raw.setupSteps ? toScore(mean(raw.steps.map((x, d) => Math.max(x, raw.setupSteps![d]))), ref.step) : wallbreaking;
-  const value = Math.round(attackValue(power, wallbreaking + SETUP_SHARE * (withSetup - wallbreaking)));
-  return { species: raw.species, power, wallbreaking, setupMove: raw.setupMove, bestMove: raw.bestMove, setupGain: value - base, value, covered: 0 };
+  const wallbreakingGain = Math.round(SETUP_SHARE * (withSetup - wallbreaking));
+  const value = Math.round(attackValue(power, wallbreaking + wallbreakingGain));
+  return { species: raw.species, power, wallbreaking, setupMove: raw.setupMove, bestMove: raw.bestMove, setupGain: value - base, wallbreakingGain, value, covered: 0 };
 }
 
 /** Potenza e Wallbreaking nel valore d'attacco (pesi 50 e 35, rinormalizzati). */

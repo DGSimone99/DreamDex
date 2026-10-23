@@ -227,6 +227,9 @@ describe('Potenziale del membro e tabella dei muri', () => {
     expect(m.setupMove).toBe('Quiver Dance');
     expect(m.setupGain).toBeGreaterThan(0);
     expect(m.value - m.setupGain).toBe(Math.round((0.5 * m.power + 0.35 * m.wallbreaking) / 0.85));
+    // Nella colonna Wallbreaking: quanto il setup alza il Wallbreaking nel voto (metà del guadagno)
+    expect(m.wallbreakingGain).toBeGreaterThan(0);
+    expect(m.value).toBe(Math.round((0.5 * m.power + 0.35 * (m.wallbreaking + m.wallbreakingGain)) / 0.85));
     const plain = memberOffense(chomp, [chomp], noStats)!;
     expect(plain.setupGain).toBe(0);
   });

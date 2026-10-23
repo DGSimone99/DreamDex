@@ -94,9 +94,12 @@ export function AreaDetail({ rating, area, onClose }: { rating: TeamRating; area
             <tr key={`${m.species}-${i}`}>
               <th scope="row"><span className="ad-mon"><Sprite species={m.species} size={40} />{m.species}</span></th>
               <td>{m.power}</td>
-              <td>{m.wallbreaking}</td>
+              <td>
+                {m.wallbreaking}
+                {m.wallbreakingGain > 0 && <small className="ad-gain" title={t('detail.withSetup', { move: m.setupMove ?? '' })}> (+{m.wallbreakingGain})</small>}
+              </td>
               <td>{m.covered}%</td>
-              <td className="total">{m.value}{m.setupGain > 0 && <small> (+{m.setupGain})</small>}</td>
+              <td className="total">{m.value}</td>
             </tr>
           ))}
         </tbody>

@@ -499,6 +499,7 @@ export const en = {
   'detail.general.wallbreaking': "How many walls the team breaks, and with how many answers",
   'detail.general.coverage': "The format's targets 2HKOed",
   'detail.setters': "Setup: {list}",
+  'detail.withSetup': "With setup ({move}): how much Wallbreaking rises in the grade",
   'detail.bestMove': "Best hit",
   'detail.targets.meta': "{n} most used Pokémon of the meta (one per type combination), with their most common sets",
   'detail.targets.tier': "18 types, against an average Pokémon of each type",
