@@ -35,9 +35,12 @@ const TERRAIN: Partial<Record<FieldCondition, 'Electric' | 'Psychic' | 'Grassy' 
   electricterrain: 'Electric', psychicterrain: 'Psychic', grassyterrain: 'Grassy', mistyterrain: 'Misty',
 };
 
+/** Un bersaglio può avere i tipi sovrascritti (il bersaglio neutro della Coverage senza meta: Mew di un solo tipo). */
+export type Target = TeamSet & { types?: string[] };
+
 /** Chiave del set per il contenuto: le proposte creano set sempre nuovi, uguali a quelli già calcolati. */
-export const setKey = (set: TeamSet): string =>
-  JSON.stringify([set.species, set.item, set.ability, set.moves, set.nature, set.evs, set.ivs ?? null, set.teraType ?? null]);
+export const setKey = (set: Target): string =>
+  JSON.stringify([set.species, set.item, set.ability, set.moves, set.nature, set.evs, set.ivs ?? null, set.teraType ?? null, set.types ?? null]);
 
 /** Cache limitate: oltre il limite si svuotano (i Pokémon e le mosse della libreria si riusano, il calcolo li copia). */
 const LIMIT = 20000;
@@ -53,11 +56,11 @@ const moves = new Map<string, CalcMove | null>();
 const fields = new Map<string, Field>();
 
 /** Il Pokémon della libreria dal set: forma in battaglia (la Mega), abilità, strumento, natura, EV e IV. */
-function toPokemon(set: TeamSet, options: HitOptions = {}): Pokemon | null {
+function toPokemon(set: Target, options: HitOptions = {}): Pokemon | null {
   return cached(pokemon, `${setKey(set)}|${JSON.stringify(options.boosts ?? null)}|${!!options.tera}`, () => buildPokemon(set, options));
 }
 
-function buildPokemon(set: TeamSet, options: HitOptions): Pokemon | null {
+function buildPokemon(set: Target, options: HitOptions): Pokemon | null {
   const species = battleSpecies(set);
   if (!species) return null;
   try {
@@ -69,6 +72,7 @@ function buildPokemon(set: TeamSet, options: HitOptions): Pokemon | null {
       ivs: set.ivs,
       boosts: options.boosts,
       teraType: options.tera && set.teraType ? set.teraType as Pokemon['teraType'] : undefined,
+      overrides: set.types ? { types: set.types as [Pokemon['types'][0]] } : undefined,
     });
   } catch {
     return null;
@@ -95,7 +99,7 @@ function toMove(name: string, useZ: boolean, ability: string, item: string): Cal
 }
 
 /** Il colpo migliore del set contro il difensore (mai terastallizzato); null senza mosse d'attacco o se la libreria non conosce i Pokémon. */
-export function bestHit(attacker: TeamSet, defender: TeamSet, options: HitOptions = {}): Hit | null {
+export function bestHit(attacker: TeamSet, defender: Target, options: HitOptions = {}): Hit | null {
   const own = toPokemon(attacker, options);
   const target = toPokemon(defender);
   if (!own || !target) return null;
