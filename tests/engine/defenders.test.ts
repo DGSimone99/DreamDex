@@ -18,7 +18,7 @@ describe('defenderPanel', () => {
   it('col meta: al massimo 12, prima i difensivi più usati del meta', () => {
     const panel = defenderPanel(fixtureData);
     expect(panel.length).toBe(PANEL_SIZE);
-    const fromMeta = panel.filter(set => usageOf(fixtureStats, set.species) > 0);
+    const fromMeta = panel.filter(set => set.moves.length > 0); // i set standard del tier non hanno mosse
     expect(fromMeta.every(defensive)).toBe(true);
     const usages = fromMeta.map(set => usageOf(fixtureStats, set.species));
     expect(usages).toEqual([...usages].sort((a, b) => b - a));
@@ -40,6 +40,24 @@ describe('defenderPanel', () => {
         expect(set.item).toBe('Leftovers');
         expect(set.ability).toBe(s.abilities[0]);
       }
+    }
+  });
+
+  it('col meta ogni difensore investe almeno 400 EV fra PS e difese: un attaccante con statistiche alte non è un difensore', () => {
+    const panel = defenderPanel(fixtureData).filter(set => set.moves.length > 0);
+    for (const set of panel) {
+      const rules = formatRules('ou');
+      const investment = (set.evs.hp ?? 0) + (set.evs.def ?? 0) + (set.evs.spd ?? 0);
+      expect(investment).toBeGreaterThanOrEqual(400);
+    }
+  });
+
+  it('senza meta: niente forme solo da battaglia, e solo Pokémon più difensivi che offensivi', () => {
+    const panel = defenderPanel({ stats: null, sets: null, formatId: 'ou' });
+    for (const set of panel) {
+      const s = getSpecies(set.species)!;
+      expect(s.battleOnly).toBeFalsy();
+      expect(Math.max(s.baseStats.def, s.baseStats.spd)).toBeGreaterThanOrEqual(Math.max(s.baseStats.atk, s.baseStats.spa));
     }
   });
 

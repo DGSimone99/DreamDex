@@ -72,7 +72,20 @@ const grades = (rs: TeamRating[]) => ['S', 'A', 'B', 'C', 'D'].map(g => `${g}${r
 const areas = (r: TeamRating) => r.areas.map(a => `${a.key} ${a.value ?? '–'}`).join(' · ');
 const reference = teams.find(t => t.cat === 'riferimento');
 
+/** Tempo medio di un voto: a freddo (prima volta per ogni team) e a cache calda. Il voto non deve bloccare la pagina. */
+function timing() {
+  const time = () => {
+    const start = performance.now();
+    for (const t of unique) rateTeam(t.team, DATA[t.fmt]);
+    return (performance.now() - start) / unique.length;
+  };
+  const cold = time();
+  const warm = time();
+  console.log(`\ntempo per voto: a freddo ${cold.toFixed(1)} ms, a cache calda ${warm.toFixed(1)} ms (${unique.length} team)`);
+}
+
 function summary() {
+  timing();
   for (const withMeta of [true, false]) {
     const rate = (t: BenchTeam) => rateTeam(t.team, withMeta ? DATA[t.fmt] : { ...DATA[t.fmt], ignoreMeta: true })!;
     console.log(`\n[${withMeta ? 'col meta' : 'senza meta'}]`);

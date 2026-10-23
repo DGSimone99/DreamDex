@@ -13,6 +13,10 @@ export const PANEL_SIZE = 12;
 const META_SCAN = 60;
 
 const bulkIndex = (s: Species) => s.baseStats.hp * (s.baseStats.def + s.baseStats.spd);
+/** EV in PS e difese da cui un set conta come difensore: Kingambit o Urshifu con statistiche da muro ma set offensivo no. */
+const WALL_INVESTMENT = 400;
+/** Senza meta: Pokémon più difensivi che offensivi, mai forme solo da battaglia (le Mega senza pietra). */
+const naturalWall = (s: Species) => !s.battleOnly && Math.max(s.baseStats.def, s.baseStats.spd) >= Math.max(s.baseStats.atk, s.baseStats.spa);
 
 /** Set difensivo standard: 252 PS e 252 nella difesa più alta, natura che la alza, Leftovers, prima abilità. */
 function standardWall(species: Species): TeamSet {
@@ -27,8 +31,8 @@ const panels = new Map<string, TeamSet[]>();
 
 /**
  * I difensori contro cui si misura l'Offesa. Col meta: i più usati il cui set più comune è difensivo
- * (passivo o muro), col loro spread, strumento e abilità più comuni. Senza meta (o senza statistiche):
- * i più robusti del tier, con un set difensivo standard. Se il meta non ne ha abbastanza si completa col tier.
+ * (passivo o muro, con almeno 400 EV fra PS e difese), col loro spread, strumento e abilità più comuni.
+ * Senza meta (o senza statistiche): i più robusti del tier fra quelli più difensivi che offensivi, con un set difensivo standard. Se il meta non ne ha abbastanza si completa col tier.
  */
 export function defenderPanel(data: EngineData): TeamSet[] {
   const formatId = data.formatId ?? 'ou';
@@ -43,13 +47,15 @@ export function defenderPanel(data: EngineData): TeamSet[] {
       const set = mostCommonSet(data.stats, name);
       if (!set) continue;
       const roles = detectRoles(set, rules);
-      if (isPassive(set, teamRoles(set, rules)) || roles.includes('physicalWall') || roles.includes('specialWall')) fromMeta.push(set);
+      const investment = (set.evs.hp ?? 0) + (set.evs.def ?? 0) + (set.evs.spd ?? 0);
+      const wall = roles.includes('physicalWall') || roles.includes('specialWall');
+      if ((isPassive(set, teamRoles(set, rules)) || wall) && investment >= WALL_INVESTMENT) fromMeta.push(set);
       if (fromMeta.length === PANEL_SIZE) break;
     }
   }
   const taken = new Set(fromMeta.map(set => set.species));
   const fromTier = [...tierSpecies(formatId)]
-    .filter(s => !taken.has(s.name))
+    .filter(s => !taken.has(s.name) && naturalWall(s))
     .sort((a, b) => bulkIndex(b) - bulkIndex(a))
     .slice(0, PANEL_SIZE - fromMeta.length)
     .map(standardWall);
