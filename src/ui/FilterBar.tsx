@@ -10,7 +10,6 @@ import { typeName } from '../i18n/game';
 import { useLang, useT } from '../i18n/react';
 
 const ROLES: Role[] = [...ESSENTIAL_ROLES, 'setup', ...DESIRABLE_ROLES];
-const GENS = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 const toggle = <T,>(list: T[], value: T) => (list.includes(value) ? list.filter(v => v !== value) : [...list, value]);
 
 /** Griglia dei 18 tipi da accendere e spegnere, nei loro colori. */
@@ -135,14 +134,6 @@ export function FilterBar({ filters, onChange }: Props) {
         </label>
         <Segmented label={t('filters.mega')} value={filters.mega} onChange={mega => set({ mega })} />
         <Segmented label={t('filters.legendary')} value={filters.legendary} onChange={legendary => set({ legendary })} />
-        <Segmented label={t('filters.mythical')} value={filters.mythical} onChange={mythical => set({ mythical })} />
-        <label className="control">
-          <span className="control-label">{t('filters.maxGen')}</span>
-          <select aria-label={t('filters.maxGen')} value={filters.maxGen ?? ''} onChange={e => set({ maxGen: e.target.value ? Number(e.target.value) : null })}>
-            <option value="">{t('filters.allGens')}</option>
-            {GENS.map(gen => <option key={gen} value={gen}>{t('filters.gen', { n: gen })}</option>)}
-          </select>
-        </label>
       </div>
 
       <div className="filter-footer">
