@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { teamPower } from '../../src/engine/power';
-import { AREA_KNEE, ARCHETYPE_WEIGHTS, COVERAGE_DEPTH, DEFENSE_FULL, areaValue, gradeFor, rateTeam, typeSafety } from '../../src/engine/rating';
+import { AREA_KNEE, ARCHETYPE_WEIGHTS, DEFENSE_FULL, areaValue, gradeFor, rateTeam, typeSafety } from '../../src/engine/rating';
 import { memberPower } from '../../src/engine/power';
+import { teamOffense } from '../../src/engine/offense';
+import type { EngineData } from '../../src/engine/data';
 
-// Offesa 1:1: la media dei percentili d'attacco dei membri
-const offenseArea = (team: TeamSet[]) => Math.round(Math.min(100, team.reduce((a, s) => a + memberPower(s)!.offense, 0) / team.length));
+// Offesa: il danno vero dei set contro i difensori del formato (offense.ts)
+const offenseArea = (team: TeamSet[], data: EngineData = fixtureData) => teamOffense(team, data).value;
 import { hitQuality } from '../../src/engine/power';
 import { UNIFORM_TYPE_WEIGHTS } from '../../src/engine/analysis';
 import { superEffectiveMoves, TYPES, weaknessTable } from '../../src/engine/types';
@@ -38,6 +40,9 @@ describe('pesi delle aree', () => {
     expect(stall.speed).toBe(0);
     expect(stall.bulk).toBeGreaterThan(balance.bulk);
     expect(balance.bulk).toBeGreaterThan(ho.bulk);
+    // La Coverage offensiva è una sottostatistica dell'Offesa: il suo peso è passato all'Offesa
+    expect(Object.keys(balance)).toEqual(['defense', 'strength', 'bulk', 'roles', 'speed']);
+    expect([ho.strength, balance.strength, stall.strength]).toEqual([46, 34, 18]);
   });
 });
 
@@ -71,15 +76,9 @@ describe('rateTeam', () => {
     // Un team incompleto si giudica come balance
     expect(rating.weights.bulk!).toBeCloseTo(ARCHETYPE_WEIGHTS.balance.bulk / 100);
     expect(rating.weights.defense!).toBeCloseTo(ARCHETYPE_WEIGHTS.balance.defense / 100);
-    // Coverage in profondità: per tipo, il colpo migliore di ogni membro, 70% al primo e 20% al secondo
-    const w = UNIFORM_TYPE_WEIGHTS;
-    const coverage = TYPES.reduce((acc, type) => {
-      const best = [tusk, gholdengo].map(s => Math.max(0, ...superEffectiveMoves(s, type).map(m => hitQuality(s, m)))).sort((a, b) => b - a);
-      return acc + w[type] * Math.min(1, COVERAGE_DEPTH.reduce((a, share, i) => a + share * (best[i] ?? 0), 0));
-    }, 0);
-    // 1:1: la percentuale è il voto dell'area
-    expect(value(rating, 'coverage')).toBe(Math.round(100 * coverage));
-    // Offesa: quanto colpiscono forte i membri (statistiche base), indipendente dall'uso nel meta
+    // La Coverage offensiva non è più un'area: è dentro l'Offesa
+    expect(rating.areas.some(a => a.key === 'coverage')).toBe(false);
+    // Offesa: il danno vero dei set contro i difensori del meta
     expect(value(rating, 'strength')).toBe(offenseArea([tusk, gholdengo]));
   });
 
@@ -92,7 +91,7 @@ describe('rateTeam', () => {
   });
 
   it('ordine e nomi delle aree', () => {
-    expect(rating.areas.map(a => a.label)).toEqual(['Coverage offensiva', 'Coverage difensiva', 'Offesa', 'Robustezza', 'Ruoli', 'Velocità', 'Meta']);
+    expect(rating.areas.map(a => a.label)).toEqual(['Coverage difensiva', 'Offesa', 'Robustezza', 'Ruoli', 'Velocità', 'Meta']);
   });
 
   it('team completo: non provvisorio', () => {
@@ -104,9 +103,16 @@ describe('rateTeam', () => {
     expect(rateTeam([], fixtureData)).toBeNull();
   });
 
-  it('senza statistiche Smogon la forza resta calcolabile (statistiche base)', () => {
+  it("senza statistiche Smogon l'Offesa resta calcolabile (difensori del tier)", () => {
     const noData = rateTeam([tusk, gholdengo], { stats: null, sets: null })!;
-    expect(value(noData, 'strength')).toBe(offenseArea([tusk, gholdengo]));
+    expect(value(noData, 'strength')).toBe(offenseArea([tusk, gholdengo], { stats: null, sets: null }));
+    expect(noData.offense.members.map(m => m.species)).toEqual(['Great Tusk', 'Gholdengo']);
+  });
+
+  it("la Velocità non entra nell'Offesa", () => {
+    const slow = { ...tusk, evs: { ...tusk.evs, spe: 0, hp: 252 }, nature: 'Adamant' };
+    const fast = { ...tusk, evs: { ...tusk.evs, spe: 252, hp: 0 }, nature: 'Adamant' };
+    expect(value(rateTeam([slow, gholdengo], fixtureData)!, 'strength')).toBe(value(rateTeam([fast, gholdengo], fixtureData)!, 'strength'));
   });
 });
 
@@ -119,16 +125,6 @@ describe('cima delle aree', () => {
     expect(areaValue(1, 0.9)).toBe(1);
   });
 
-  it('coverage offensiva 1:1: un membro su ogni tipo vale 70, due 90, tre 100', () => {
-    const team = (n: number) => Array.from({ length: n }, () => tusk);
-    // Con lo stesso membro ripetuto ogni tipo che colpisce è preso 1, 2 o 3 volte: il valore scala come le quote
-    const one = value(rateTeam(team(1), fixtureData)!, 'coverage')!;
-    const two = value(rateTeam(team(2), fixtureData)!, 'coverage')!;
-    const three = value(rateTeam(team(3), fixtureData)!, 'coverage')!;
-    expect(two / one).toBeCloseTo(0.9 / 0.7, 1);
-    expect(three / one).toBeCloseTo(1 / 0.7, 1);
-    expect(COVERAGE_DEPTH).toEqual([0.7, 0.2, 0.1]);
-  });
 });
 
 
@@ -141,11 +137,11 @@ describe('pesi secondo il tipo di team', () => {
 });
 
 describe('il meta conta solo nella sua area', () => {
-  it('le aree sono le stesse col meta e senza; col meta si aggiunge solo il Meta', () => {
+  it("le aree sono le stesse col meta e senza (tranne l'Offesa, che usa i difensori del meta); col meta si aggiunge il Meta", () => {
     const team = ['Great Tusk', 'Gholdengo', 'Kingambit', 'Corviknight', 'Toxapex', 'Rotom-Wash'].map(n => mostCommonSet(fixtureStats, n)!);
     const on = rateTeam(team, fixtureData)!;
     const off = rateTeam(team, { ...fixtureData, ignoreMeta: true })!;
-    const areas = (r: typeof on) => r.areas.filter(a => a.key !== 'meta').map(a => [a.key, a.value]);
+    const areas = (r: typeof on) => r.areas.filter(a => a.key !== 'meta' && a.key !== 'strength').map(a => [a.key, a.value]);
     expect(areas(on)).toEqual(areas(off));
     expect(on.areas.some(a => a.key === 'meta')).toBe(true);
     expect(off.areas.some(a => a.key === 'meta')).toBe(false);

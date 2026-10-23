@@ -22,23 +22,17 @@ describe('Valutazione team', () => {
     expect(rating).not.toHaveTextContent('Sinergia');
   });
 
-  it('Coverage offensiva, Coverage difensiva e Ruoli portano alla loro scheda aprendola', async () => {
+  it("Coverage difensiva e Ruoli portano alla loro scheda; la Coverage offensiva è dentro l'Offesa", async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} />);
     for (const name of ['Great Tusk', 'Gholdengo']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
     const rating = screen.getByRole('group', { name: 'Valutazione team' });
-    const coverage = screen.getByText('Coverage offensiva', { selector: 'summary span' }).closest('details')!;
-    // Nella scheda Analisi parte aperta: si chiude per vedere che il link la riapre
-    expect(coverage).toHaveAttribute('open');
-    await user.click(coverage.querySelector('summary')!);
-    expect(coverage).not.toHaveAttribute('open');
-    const offensive = within(rating).getByRole('button', { name: /^Coverage offensiva \d+$/ });
-    // Il tooltip mostra solo i dati (quanti tipi colpisce ogni membro) e dove porta il clic; le regole sono nel "?"
-    expect(offensive).toHaveAttribute('data-tip', expect.stringMatching(/^Tipi colpiti super efficace da ogni membro\n.+\nVai a Coverage offensiva$/s));
-    await user.click(offensive);
-    expect(coverage).toHaveAttribute('open');
+    // La scheda Coverage offensiva resta nell'Analisi, ma nel voto non è più una barra
+    expect(screen.getByText('Coverage offensiva', { selector: 'summary span' })).toBeInTheDocument();
+    expect(within(rating).queryByRole('button', { name: /^Coverage offensiva/ })).toBeNull();
     expect(within(rating).getByRole('button', { name: /^Coverage difensiva \d+$/ })).toHaveAttribute('title', 'Vai a Debolezze difensive');
-    expect(within(rating).queryByRole('button', { name: /^Offesa/ })).toBeNull();
+    // L'Offesa invece apre il suo dettaglio (vedi AreaDetail.test)
+    expect(within(rating).getByRole('button', { name: /^Offesa \d+$/ })).toHaveAttribute('aria-haspopup', 'dialog');
   });
 
   it('mostra le ridondanze con il dettaglio', async () => {
@@ -114,7 +108,7 @@ describe('Valutazione team', () => {
     const dialog = screen.getByRole('dialog', { name: 'Come funziona il voto' });
     // A sinistra gli argomenti: come funziona, le aree, bonus e penalità
     const topics = within(dialog).getAllByRole('tab').map(tab => tab.textContent);
-    expect(topics).toEqual(['Come funziona', 'Coverage offensiva', 'Coverage difensiva', 'Offesa', 'Robustezza', 'Ruoli', 'Velocità', 'Meta', 'Bonus e penalità']);
+    expect(topics).toEqual(['Come funziona', 'Coverage difensiva', 'Offesa', 'Robustezza', 'Ruoli', 'Velocità', 'Meta', 'Bonus e penalità']);
     // Un team incompleto si giudica come Balance: la sua riga è evidenziata
     expect(within(dialog).getByText('Il tuo team è giudicato come Balance')).toBeInTheDocument();
     expect(within(dialog).getByRole('row', { current: true })).toHaveTextContent(/^Balance/);
