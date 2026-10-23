@@ -196,7 +196,7 @@ export interface TeamDefense {
   coverageTypes: { value: number; weak: string[]; rows: { type: string; safety: number; weak: string[]; resist: string[] }[] };
   coverageMeta: { value: number; unanswered: string[]; rows: ThreatRow[] } | null;
   members: MemberDefense[];
-  /** Per ogni attaccante dei due gruppi: danno del colpo standard su ogni membro (ordine di `members`). */
+  /** Per ogni attaccante dei due gruppi: danno del colpo standard su ogni membro (tiro più alto, come la soglia; ordine di `members`). */
   matrix: { species: string; physical: boolean; cells: { pct: number; step: number }[] }[];
 }
 
@@ -276,7 +276,7 @@ export function teamDefense(team: TeamSet[], data: EngineData): TeamDefense {
   const raws = known.map(set => rawOf(set, data)!);
   const row = (attacker: TeamSet, i: number, physicalSide: boolean) => ({
     species: attacker.species, physical: physicalSide,
-    cells: raws.map(r => { const hit = (physicalSide ? r.physical : r.special)[i]; return { pct: Math.floor(100 * Math.min(1, hit?.expected ?? 0)), step: holdStep(hit) }; }),
+    cells: raws.map(r => { const hit = (physicalSide ? r.physical : r.special)[i]; return { pct: Math.floor(100 * Math.min(1, hit?.max ?? 0)), step: holdStep(hit) }; }),
   });
   return {
     value: known.length ? Math.round(DEFENSE_SHARES.robustness * robustness + DEFENSE_SHARES.coverage * coverage) : 0,

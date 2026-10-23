@@ -358,18 +358,19 @@ function defenseTabs(defense: TeamDefense, meta: boolean, t: T): DetailTab[] {
   );
 
   const side = (rows: TeamDefense['matrix'], title: string) => (
-    <>
+    <tbody>
       <tr className="ad-group"><th scope="rowgroup" colSpan={members.length + 1}>{title}</th></tr>
       {rows.map(row => (
         <tr key={`${row.species}-${row.physical}`}>
           <th scope="row"><span className="ad-mon"><Sprite species={row.species} size={32} />{row.species}</span></th>
           {row.cells.map((cell, i) => {
             const hold = HOLD_TAGS[cell.step];
-            return <td key={i}><span className={`ad-k ${hold.cls}`} title={hold.tag}>{cell.pct}%</span></td>;
+            // La soglia anche in testo: il colore da solo non arriva ai lettori di schermo
+            return <td key={i}><span className={`ad-k ${hold.cls}`} title={hold.tag}>{cell.pct}%<span className="visually-hidden"> {hold.tag}</span></span></td>;
           })}
         </tr>
       ))}
-    </>
+    </tbody>
   );
   const robustness = (
     <>
@@ -389,10 +390,8 @@ function defenseTabs(defense: TeamDefense, meta: boolean, t: T): DetailTab[] {
               ))}
             </tr>
           </thead>
-          <tbody>
-            {side(physical, t('ddetail.side.physical'))}
-            {side(special, t('ddetail.side.special'))}
-          </tbody>
+          {side(physical, t('ddetail.side.physical'))}
+          {side(special, t('ddetail.side.special'))}
         </table>
       </div>
       <p className="ad-legend">{t('ddetail.legend')}</p>
