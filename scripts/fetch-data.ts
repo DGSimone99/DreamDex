@@ -1,15 +1,13 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { Statistics } from 'smogon';
 import type { EngineData } from '../src/engine/data';
 import { buildFallbackSets, mergePresets, normalizeAnalysisPresets, normalizeAnalysisSets, type PresetsData, type SetsData } from '../src/engine/sets';
 import { buildFallbackStats, reduceChaos, reducePkmnStats, type ChaosFile, type PkmnStatsFile, type StatsMeta } from '../src/engine/stats';
-import { listMonths, pickCutoff } from './smogon-index';
 import { FALLBACK_SETS, FALLBACK_STATS, SOURCES } from './sources';
 import { fetchItalianNames } from './pokeapi';
 import { FORMATS_DATA_URL, parseTiers } from './showdown-tiers';
 import { buildBans, FORMATS_URL, parseFormats, parseRulesets, RULESETS_URL } from './showdown-bans';
-
-const STATS_BASE = 'https://www.smogon.com/stats/';
 
 async function get(url: string): Promise<Response> {
   const response = await fetch(url);
@@ -17,13 +15,25 @@ async function get(url: string): Promise<Response> {
   return response;
 }
 
+/** Il mese dato e i due precedenti ("2026-09" → 2026-09, 2026-08, 2026-07). */
+function recentMonths(latest: string): string[] {
+  const [year, month] = latest.split('-').map(Number);
+  return [0, 1, 2].map(back => {
+    const date = new Date(Date.UTC(year, month - 1 - back, 1));
+    return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`;
+  });
+}
+
+/** Statistiche "chaos" del formato: la soglia la sceglie la libreria (1695 per Gen 9 OU, 1630 per gli altri). */
 async function fetchStats(source: string, months: string[]): Promise<{ meta: StatsMeta; chaos: ChaosFile }> {
-  for (const month of months.slice(0, 3)) {
-    const cutoff = pickCutoff(await (await get(`${STATS_BASE}${month}/chaos/`)).text(), source);
-    if (cutoff === null) continue;
-    console.log(`[${source}] Scarico ${month}/chaos/${source}-${cutoff}.json…`);
-    const chaos = (await (await get(`${STATS_BASE}${month}/chaos/${source}-${cutoff}.json`)).json()) as ChaosFile;
-    return { meta: { month, cutoff, battles: chaos.info['number of battles'] }, chaos };
+  for (const month of months) {
+    const url = Statistics.url(month, source);
+    const response = await fetch(url);
+    if (response.status === 404) continue;
+    if (!response.ok) throw new Error(`HTTP ${response.status} per ${url}`);
+    console.log(`[${source}] Scarico ${url.slice(Statistics.URL.length)}…`);
+    const chaos = Statistics.process(await response.text()) as unknown as ChaosFile;
+    return { meta: { month, cutoff: chaos.info.cutoff, battles: chaos.info['number of battles'] }, chaos };
   }
   throw new Error(`Nessuna statistica per ${source} negli ultimi 3 mesi`);
 }
@@ -58,7 +68,7 @@ async function fetchSource(source: string, months: string[]): Promise<EngineData
 }
 
 async function main() {
-  const months = listMonths(await (await get(STATS_BASE)).text());
+  const months = recentMonths(Statistics.latest(await (await get(Statistics.URL)).text()));
   // `npm run fetch-data -- gen9ou`: scarica solo le fonti indicate, senza ricostruire i dati di riserva
   const only = process.argv.slice(2);
   if (only.length) {
