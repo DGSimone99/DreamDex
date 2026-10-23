@@ -70,6 +70,24 @@ export function attackerPanels(data: EngineData): { physical: TeamSet[]; special
   return result;
 }
 
+/**
+ * Peso di ogni attaccante nella Robustezza, nell'ordine dei pannelli (somma 1 per lato): col meta per uso, e chi
+ * completa il gruppo dal tier pesa quanto il meno usato del meta; senza meta tutti uguali.
+ */
+export function panelWeights(data: EngineData): { physical: number[]; special: number[] } {
+  const panels = attackerPanels(data);
+  const meta = usesMeta(data);
+  const side = (list: TeamSet[]) => {
+    const usage = list.map(set => (meta && set.moves.length ? usageOf(data.stats, set.species) : 0));
+    const known = usage.filter(u => u > 0);
+    const floor = known.length ? Math.min(...known) : 1;
+    const raw = usage.map(u => (u > 0 ? u : floor));
+    const total = raw.reduce((a, b) => a + b, 0);
+    return raw.map(w => w / total);
+  };
+  return { physical: side(panels.physical), special: side(panels.special) };
+}
+
 const threatsCache = new Map<string, { set: TeamSet; weight: number }[]>();
 
 /** Le minacce del meta per la Coverage difensiva: i 40 più usati con almeno una mossa d'attacco, pesati per uso. */

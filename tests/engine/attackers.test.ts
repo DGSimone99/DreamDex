@@ -1,10 +1,29 @@
 import { describe, expect, it } from 'vitest';
-import { attackerPanels, metaThreats, PANEL_ATTACKERS } from '../../src/engine/attackers';
+import { attackerPanels, metaThreats, PANEL_ATTACKERS, panelWeights } from '../../src/engine/attackers';
 import { getMove } from '../../src/engine/dex';
 import { attackStyle } from '../../src/engine/roles';
 import { fixtureData } from '../fixtures/data';
 
 const noStats = { stats: null, sets: null, formatId: 'ou' as const };
+
+describe('panelWeights: peso di ogni attaccante nella Robustezza', () => {
+  it("col meta: per uso, il più usato pesa di più; chi completa il gruppo pesa quanto il meno usato", () => {
+    const { physical, special } = panelWeights(fixtureData);
+    const panels = attackerPanels(fixtureData);
+    for (const [weights, sets] of [[physical, panels.physical], [special, panels.special]] as const) {
+      expect(weights).toHaveLength(sets.length);
+      expect(weights.reduce((a, b) => a + b, 0)).toBeCloseTo(1);
+      const meta = weights.filter((_, i) => sets[i].moves.length > 0);
+      expect(meta[0]).toBeGreaterThanOrEqual(meta[meta.length - 1]);
+      for (const [i, w] of weights.entries()) if (!sets[i].moves.length) expect(w).toBeCloseTo(Math.min(...meta));
+    }
+  });
+
+  it('senza statistiche: tutti uguali', () => {
+    const { physical, special } = panelWeights(noStats);
+    for (const w of [...physical, ...special]) expect(w).toBeCloseTo(0.1);
+  });
+});
 
 describe('attackerPanels: attaccanti fisici e speciali del formato', () => {
   it('col meta: due gruppi, ognuno con attaccanti del suo stile (i misti in entrambi)', () => {

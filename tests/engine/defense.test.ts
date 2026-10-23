@@ -108,12 +108,20 @@ describe('teamDefense', () => {
   const skarm = set('Skarmory', 'Rocky Helmet', 'Sturdy', ['Roost', 'Body Press', 'Spikes'], 'Impish', { hp: 252, def: 252 });
   const sweeper = set('Dragapult', 'Choice Specs', 'Infiltrator', ['Draco Meteor', 'Shadow Ball'], 'Timid', { spa: 252, spe: 252 });
 
-  it('robustezza del team: media pesata per posizione, poi 40/40/20', () => {
+  it('robustezza del team: media pesata per posizione della robustezza dei membri, poi 80/20 con la Sostenibilità', () => {
     const team = teamDefense([blissey, skarm], noStats);
     const rw = (vals: number[]) => { const s = [...vals].sort((a, b) => b - a); return Math.round((0.30 * s[0] + 0.22 * s[1]) / 0.52); };
     expect(team.physical).toBe(rw(team.members.map(m => m.physical)));
     expect(team.special).toBe(rw(team.members.map(m => m.special)));
-    expect(team.robustness).toBe(Math.round(0.4 * team.physical + 0.4 * team.special + 0.2 * team.sustain));
+    // La robustezza di ogni membro (media di Fisica e Speciale) pesata per posizione, poi 80% e 20% Sostenibilità
+    const robust = rw(team.members.map(m => (m.physical + m.special) / 2));
+    expect(team.robustness).toBe(Math.round(0.8 * robust + 0.2 * team.sustain));
+    // Un muro fisico e uno speciale non valgono come due muri completi: Skarmory (99/50) e Chansey senza Eviolite (5/99)
+    const chansey = set('Chansey', 'Heavy-Duty Boots', 'Natural Cure', ['Seismic Toss', 'Soft-Boiled'], 'Calm', { hp: 252, spd: 252 });
+    const split = teamDefense([skarm, chansey], noStats);
+    const means = rw(split.members.map(m => (m.physical + m.special) / 2));
+    expect(Math.abs(split.robustness - Math.round(0.8 * means + 0.2 * split.sustain))).toBeLessThanOrEqual(1);
+    expect(split.robustness).toBeLessThan(Math.round(0.4 * split.physical + 0.4 * split.special + 0.2 * split.sustain) - 1);
   });
 
   it('senza meta: Coverage solo di tipi; Difesa = 50% robustezza + 50% coverage, mai 100', () => {

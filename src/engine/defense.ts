@@ -1,20 +1,17 @@
 import { usesMeta } from './analysis';
-import { attackerPanels } from './attackers';
-import { ownConditions } from './coverage';
-import { metaThreats } from './attackers';
+import { attackerPanels, metaThreats, panelWeights } from './attackers';
+import { COVERAGE_DEPTH, ownConditions } from './coverage';
 import { bestHit, setKey, standardHit, type FieldCondition, type Hit } from './damage';
-import { COVERAGE_DEPTH } from './coverage';
 import { ONE_USE_SHARE, rankWeighted } from './offense';
-import { DEFENSE_FULL, typeSafety } from './rating';
+import { DEFENSE_FULL, typeSafety } from './typeSafety';
 import { DEFAULT_FORMAT } from './format';
 import { teraAllowed } from './formats';
-import { weaknessTable } from './types';
+import { effectiveness, weaknessTable } from './types';
 import type { EngineData } from './data';
 import { battleAbility, battleSpecies, dex, getMove, toID } from './dex';
 import { mostCommonSet, type TeamSet } from './sets';
 import { softScore } from './scale';
 import { topThreats } from './stats';
-import { effectiveness } from './types';
 
 /** Valore di un colpo standard ricevuto (dal tiro più alto): OHKO 0, 2HKO 0,5, 3HKO 1, 4HKO o più 1,5. */
 export function holdStep(hit: Hit | null): number {
@@ -120,10 +117,13 @@ function measure(set: TeamSet, data: EngineData): Raw | null {
   const physical = panels.physical.map(a => against(a, 'Physical'));
   const special = panels.special.map(a => against(a, 'Special'));
   if (![...physical, ...special].some(Boolean)) return null;
+  // Media pesata per uso: reggere il più usato conta di più
+  const weights = panelWeights(data);
+  const weighted = (hits: (Hit | null)[], w: number[]) => hits.reduce((acc, hit, i) => acc + w[i] * holdStep(hit), 0);
   return {
     species: species.name,
     physical, special,
-    physicalStep: mean(physical.map(holdStep)), specialStep: mean(special.map(holdStep)),
+    physicalStep: weighted(physical, weights.physical), specialStep: weighted(special, weights.special),
   };
 }
 
@@ -235,8 +235,12 @@ export function teamDefense(team: TeamSet[], data: EngineData): TeamDefense {
   const physical = rankWeighted(members.map(m => m.physical));
   const special = rankWeighted(members.map(m => m.special));
   const sustain = rankWeighted(members.map(m => m.sustain));
+  // La robustezza di ogni membro (Fisica e Speciale insieme) pesata per posizione: un muro fisico e uno speciale
+  // non valgono come due muri completi
   const w = ROBUSTNESS_WEIGHTS;
-  const robustness = Math.round(w.physical * physical + w.special * special + w.sustain * sustain);
+  const sides = w.physical + w.special;
+  const robust = rankWeighted(members.map(m => (w.physical * m.physical + w.special * m.special) / sides));
+  const robustness = Math.round(sides * robust + w.sustain * sustain);
 
   // Coverage di tipi: il saldo di resistenze e debolezze sui 18 tipi, con la stessa scala dell'Offesa
   const table = weaknessTable(known);

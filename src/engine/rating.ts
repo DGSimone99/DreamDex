@@ -4,6 +4,9 @@ import { battleName, battleSpecies, toID } from './dex';
 import { hitQuality, memberPower, teamPower, type MemberPower } from './power';
 import { teamOffense, type TeamOffense } from './offense';
 import { teamDefense, type TeamDefense } from './defense';
+import { BALANCE_SPAN, DEFENSE_FULL, resistPoints, typeSafety } from './typeSafety';
+
+export { BALANCE_SPAN, DEFENSE_FULL, resistPoints, typeSafety };
 import type { Archetype } from './archetype';
 import { attackStyle, detectRoles, isPassive, isStall, teamRoles } from './roles';
 import { rulesOf, type FormatRules } from './formatRules';
@@ -42,12 +45,6 @@ export const ARCHETYPE_WEIGHTS: Record<Archetype, Record<BaseArea, number>> = {
   stall: { defense: 56, strength: 18, roles: 26, speed: 0 },
 };
 
-/**
- * Quasi tutte le aree sono 1:1: la media o la quota calcolata è il valore (Offesa 90 = media dei membri 90).
- * La Coverage difensiva ha un riferimento: è piena all'80% del saldo perfetto (ogni tipo resistito due volte).
- * Il Meta non entra nel voto: è una penalità (metaPenalty) e una barra informativa.
- */
-export const DEFENSE_FULL = 0.8;
 
 /**
  * Per le aree con un riferimento: oltre il 95% del riferimento l'area sale più piano,
@@ -264,26 +261,6 @@ export function redundancies(team: TeamSet[], analysis: TeamAnalysis, lang: Lang
   return { total: Math.min(MAX_PENALTY, sum(items.map(i => i.points))), items };
 }
 
-/** Punti di un membro contro un tipo: immunità +2, ×¼ +1,5, ×½ +1, neutro 0, ×2 −1, ×4 −2. */
-export function resistPoints(multiplier: number): number {
-  if (multiplier === 0) return 2;
-  if (multiplier <= 0.25) return 1.5;
-  if (multiplier < 1) return 1;
-  if (multiplier >= 4) return -2;
-  return multiplier > 1 ? -1 : 0;
-}
-
-/** Saldo che separa un tipo scoperto (0) da uno sicuro (1); a saldo 0 il tipo vale 0,5. */
-export const BALANCE_SPAN = 2;
-
-/**
- * Quanto il team è al sicuro da un tipo, dal saldo fra resistenze e debolezze dei membri:
- * un'immunità o due resistenze lo rendono sicuro, un ×4 o due ×2 scoperti lo lasciano scoperto.
- */
-export function typeSafety(multipliers: number[]): number {
-  const net = sum(multipliers.map(resistPoints));
-  return Math.min(1, Math.max(0, 0.5 + net / (2 * BALANCE_SPAN)));
-}
 
 const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
 
