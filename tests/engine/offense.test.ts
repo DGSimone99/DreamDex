@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { memberOffense, offenseReference, POWER_FULL, RANK_WEIGHTS, REFERENCE_RANK, stepValue, teamOffense } from '../../src/engine/offense';
+import { memberOffense, offenseReference, POWER_FULL, RANK_WEIGHTS, REFERENCE_RANK, stepValue, STEP_FULL, TEAM_WALL_FULL, teamOffense } from '../../src/engine/offense';
 import { bestHit } from '../../src/engine/damage';
 import { defenderPanel } from '../../src/engine/defenders';
 import { coverageTargets } from '../../src/engine/coverage';
@@ -175,6 +175,12 @@ describe('Offesa di squadra', () => {
     const one = teamOffense([chomp], noStats);
     const two = teamOffense([chomp, { ...chomp }], noStats);
     expect(two.wallbreaking).toBeGreaterThan(one.wallbreaking);
+    // Scala naturale: 100 vuol dire ogni muro mandato KO in due colpi da tre membri (la profondità piena)
+    expect(TEAM_WALL_FULL).toBe(1);
+    // Tre membri uguali: ogni muro vale il valore del colpo del membro, quindi il team fa 100 × il valore medio
+    // (il membro senza statistiche si misura sul riferimento fisso 1,25: il suo valore medio è Wallbreaking × 1,25 / 100)
+    const member = one.members[0].wallbreaking * STEP_FULL / 100;
+    expect(Math.abs(teamOffense([chomp, { ...chomp }, { ...chomp }], noStats).wallbreaking - Math.min(100, 100 * member))).toBeLessThanOrEqual(2);
     const mixed = teamOffense([chomp, corv], noStats);
     expect(mixed.wallbreaking).toBeGreaterThanOrEqual(Math.max(...mixed.members.map(m => m.wallbreaking)) * 0.7);
   });

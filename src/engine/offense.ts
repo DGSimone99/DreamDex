@@ -232,6 +232,11 @@ function rankWeighted(values: number[]): number {
 
 /** Profondità del Wallbreaking di squadra: il 1°, 2° e 3° membro che sfonda un muro valgono 70, 20 e 10%. */
 export const WALL_DEPTH = [0.7, 0.2, 0.1];
+/**
+ * Il 100 del Wallbreaking di squadra: ogni muro mandato KO in due colpi da tre membri (la profondità piena, 0,7 + 0,2 + 0,1).
+ * È una scala naturale, senza riferimenti tarati: un solo breaker per muro vale 70, i OHKO alzano.
+ */
+export const TEAM_WALL_FULL = 1;
 /** Setup di squadra: la win condition migliore, più questa quota della seconda. */
 export const SECOND_SETUP = 0.2;
 
@@ -255,7 +260,7 @@ export function teamOffense(team: TeamSet[], data: EngineData): TeamOffense {
   }));
   const setups = members.filter(m => m.setup !== null).map(m => m.setup!).sort((a, b) => b - a);
   const power = rankWeighted(members.map(m => m.power));
-  const wallbreaking = raws.length ? toScore(wallStep, ref.step) : 0;
+  const wallbreaking = raws.length ? toScore(wallStep, TEAM_WALL_FULL) : 0;
   const setup = setups.length ? Math.min(100, Math.round(setups[0] + SECOND_SETUP * (setups[1] ?? 0))) : null;
   const memberValue = members.length ? blend(power, wallbreaking, setup) : 0;
   return {
