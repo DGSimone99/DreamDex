@@ -1,6 +1,6 @@
 import { softScore } from '../../src/engine/scale';
 import { describe, expect, it } from 'vitest';
-import { memberOffense, offenseReference, stepBucket, POWER_FULL, RANK_WEIGHTS, REFERENCE_RANK, SETUP_SHARE, stepValue, TEAM_WALL_FULL, teamOffense } from '../../src/engine/offense';
+import { memberOffense, offenseReference, stepBucket, POWER_FULL, RANK_WEIGHTS, REFERENCE_RANK, SETUP_SHARE, ONE_USE_SHARE, stepValue, TEAM_WALL_FULL, teamOffense } from '../../src/engine/offense';
 import { bestHit } from '../../src/engine/damage';
 import { defenderPanel } from '../../src/engine/defenders';
 import { coverageTargets } from '../../src/engine/coverage';
@@ -70,8 +70,9 @@ describe('memberOffense', () => {
   it('il Tera conta solo dove il formato lo permette', () => {
     const gambit = set('Kingambit', 'Black Glasses', 'Supreme Overlord', ['Kowtow Cleave', 'Sucker Punch', 'Iron Head'], 'Adamant', { hp: 252, atk: 252 });
     const teraGambit = { ...gambit, teraType: 'Dark' };
-    expect(memberOffense(teraGambit, [teraGambit], gen9)!.power).toBeGreaterThan(memberOffense(gambit, [gambit], gen9)!.power);
-    expect(memberOffense(teraGambit, [teraGambit], noStats)!.power).toBe(memberOffense(gambit, [gambit], noStats)!.power);
+    // Il Tera entra nel valore (un quarto del guadagno), non nella Potenza base
+    expect(memberOffense(teraGambit, [teraGambit], gen9)!.value).toBeGreaterThan(memberOffense(gambit, [gambit], gen9)!.value);
+    expect(memberOffense(teraGambit, [teraGambit], noStats)!.value).toBe(memberOffense(gambit, [gambit], noStats)!.value);
   });
 
   it('il valore del membro è Potenza e Wallbreaking, più il Potenziale del setup (nessun numero Setup)', () => {
@@ -99,8 +100,9 @@ describe('memberOffense', () => {
 });
 
 describe('teamOffense', () => {
-  it('media pesata per posizione: il più offensivo pesa di più (22/18/16/15/15/14), nessun peso per i supporti', () => {
-    expect(RANK_WEIGHTS).toEqual([0.22, 0.18, 0.16, 0.15, 0.15, 0.14]);
+  it('media pesata per posizione: il più offensivo pesa di più (30/22/17/13/10/8), nessun peso per i supporti', () => {
+    // Più ripidi: le minacce principali contano di più, i supporti meno
+    expect(RANK_WEIGHTS).toEqual([0.30, 0.22, 0.17, 0.13, 0.10, 0.08]);
     const team = teamOffense([blissey, chomp], fixtureData);
     expect('support' in team.members[0]).toBe(false);
   });
@@ -158,7 +160,7 @@ describe('scala dei membri e del team', () => {
   it('il 100 del membro è il 3° miglior attaccante del meta; la Potenza del team è la media pesata, senza moltiplicatori', () => {
     expect(REFERENCE_RANK).toBe(3);
     const team = teamOffense([chomp, blissey], fixtureData);
-    const raw = (0.22 * Math.max(...team.members.map(m => m.power)) + 0.18 * Math.min(...team.members.map(m => m.power))) / 0.4;
+    const raw = (0.30 * Math.max(...team.members.map(m => m.power)) + 0.22 * Math.min(...team.members.map(m => m.power))) / 0.52;
     expect(team.power).toBe(Math.round(raw));
   });
 });
@@ -308,5 +310,26 @@ describe('team con due meteo', () => {
     const sunOnly = memberOffense(fire, [fire, torkoal], noStats)!.power;
     expect(sunOnly).toBeGreaterThan(memberOffense(fire, [fire], noStats)!.power);
     expect(memberOffense(fire, [fire, pelipper, torkoal], noStats)!.power).toBe(sunOnly);
+  });
+});
+
+describe('Tera e mosse Z: una volta a partita', () => {
+  it('il valore base è senza Tera; nel voto entra un quarto del guadagno, mostrato a parte', () => {
+    const gambit = set('Kingambit', 'Black Glasses', 'Supreme Overlord', ['Kowtow Cleave', 'Sucker Punch', 'Iron Head'], 'Adamant', { hp: 252, atk: 252 });
+    const tera = memberOffense({ ...gambit, teraType: 'Dark' }, [gambit], gen9)!;
+    const plain = memberOffense(gambit, [gambit], gen9)!;
+    expect(tera.power).toBe(plain.power);
+    expect(tera.oneUse).toEqual({ kind: 'tera', name: 'Dark' });
+    expect(tera.oneUseGain).toBeGreaterThan(0);
+    expect(tera.value - tera.oneUseGain).toBe(plain.value);
+    expect(ONE_USE_SHARE).toBe(0.25);
+  });
+
+  it('la mossa Z conta allo stesso modo (National Dex)', () => {
+    const kyurem = set('Kyurem', 'Groundium Z', 'Pressure', ['Earth Power', 'Ice Beam'], 'Timid', { spa: 252, spe: 252 });
+    const m = memberOffense(kyurem, [kyurem], noStats)!;
+    expect(m.oneUse).toEqual({ kind: 'z', name: 'Groundium Z' });
+    expect(m.oneUseGain).toBeGreaterThanOrEqual(0);
+    expect(memberOffense(chomp, [chomp], noStats)!.oneUse).toBeNull();
   });
 });

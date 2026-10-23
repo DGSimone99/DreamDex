@@ -33,7 +33,10 @@ describe("dettaglio dell'Offesa a schede", () => {
       // Il Wallbreaking, con tra parentesi quanto lo alza il setup nel voto (tooltip "Con il setup")
       expect(cells[1]).toHaveTextContent(/^\d+( \(\+\d+\))?$/);
       expect(cells[2]).toHaveTextContent(/^\d+%$/);
-      expect(cells[3]).toHaveTextContent(/^\d+$/);
+      // L'Offesa del membro, con tra parentesi quanto aggiunge Tera o mossa Z (tooltip "Con Tera…")
+      expect(cells[3]).toHaveTextContent(/^\d+( \(\+\d+\))?$/);
+      const once = cells[3].querySelector('.ad-once');
+      if (once) expect(once.getAttribute('title')).toMatch(/^Con (Tera|la mossa Z)/);
     }
   });
 

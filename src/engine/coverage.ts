@@ -16,6 +16,8 @@ const TARGET_SCAN = 40;
 export const COVER_HIT = 0.5;
 /** Sotto questo danno super efficace nessuno ha un vantaggio di tipo vero: è un buco (non arriva al KO in tre colpi). */
 export const HOLE_HIT = 1 / 3;
+/** Tera e mosse Z (una volta a partita) contano un quarto anche nella Coverage, come nel resto dell'Offesa. */
+const ONE_USE_COVER = 0.25;
 /** Profondità: il 1°, 2° e 3° membro che copre un bersaglio valgono 70, 20 e 10%. */
 export const COVERAGE_DEPTH = [0.7, 0.2, 0.1];
 
@@ -99,13 +101,17 @@ function hitsOf(set: TeamSet, data: EngineData, targets: CoverageTarget[], kind:
   // Copre chi ha il vantaggio di tipo: il colpo migliore fra quelli super efficaci (il danno neutro lo misura la Potenza).
   // Come nel resto dell'Offesa: il meteo che il membro porta con la sua abilità è sempre attivo, Tera e mosse Z contano a metà
   const conditions = ownConditions(set);
-  const tera = teraAllowed({ ...DEFAULT_FORMAT, formatId: data.formatId ?? 'ou' }) && !!set.teraType ? [false, true] : [false];
+  const teraOk = teraAllowed({ ...DEFAULT_FORMAT, formatId: data.formatId ?? 'ou' }) && !!set.teraType;
   const zType = dex.items.get(set.item).zMoveType;
-  const z = zType && set.moves.some(m => getMove(m)?.type === zType) ? [false, true] : [false];
+  const zOk = !!zType && set.moves.some(m => getMove(m)?.type === zType);
   hits = targets.map(target => {
-    const variants = tera.flatMap(useTera => z.map(useZ => bestHit(set, target.set, { superEffectiveOnly: true, conditions, tera: useTera, z: useZ })));
-    const x = variants.reduce((acc, hit) => acc + Math.min(1, hit?.expected ?? 0), 0) / variants.length;
-    return { x, move: variants.find(Boolean)?.move ?? '' };
+    const base = bestHit(set, target.set, { superEffectiveOnly: true, conditions });
+    const once = [teraOk && bestHit(set, target.set, { superEffectiveOnly: true, conditions, tera: true }), zOk && bestHit(set, target.set, { superEffectiveOnly: true, conditions, z: true })]
+      .filter((hit): hit is NonNullable<typeof base> => !!hit);
+    const x = Math.min(1, base?.expected ?? 0);
+    const boosted = Math.max(x, ...once.map(hit => Math.min(1, hit.expected)));
+    // Tera e mossa Z una volta a partita: un quarto di quello che aggiungono
+    return { x: x + ONE_USE_COVER * (boosted - x), move: base?.move ?? once[0]?.move ?? '' };
   });
   hitsCache.set(key, hits);
   return hits;

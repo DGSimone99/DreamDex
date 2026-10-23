@@ -106,7 +106,12 @@ export function AreaDetail({ rating, area, onClose }: { rating: TeamRating; area
                 {m.wallbreakingGain > 0 && <small className="ad-gain" title={t('detail.withSetup', { move: m.setupMove ?? '' })}> (+{m.wallbreakingGain})</small>}
               </td>
               <td>{m.covered}%</td>
-              <td className="total">{m.value}</td>
+              <td className="total">
+                {m.value}
+                {m.oneUseGain > 0 && m.oneUse && (
+                  <small className="ad-once" title={m.oneUse.kind === 'tera' ? t('detail.withTera', { type: m.oneUse.name }) : t('detail.withZ', { item: m.oneUse.name })}> (+{m.oneUseGain})</small>
+                )}
+              </td>
             </tr>
           ))}
         </tbody>

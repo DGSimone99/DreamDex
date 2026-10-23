@@ -749,6 +749,7 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 .ad-t th[scope='row'] { text-align: left; padding-left: 0; font-weight: 600; color: var(--text); }
 .ad-t .left { text-align: left; }
 .ad-t td.total { font: 700 20px/1 var(--display); color: var(--text); white-space: nowrap; }
+.ad-t .ad-once { display: inline; margin-left: 4px; font: 600 13px/1 var(--ui); color: var(--blue); cursor: help; }
 .ad-t .ad-gain { display: inline; margin-left: 4px; font: 600 13px/1 var(--ui); color: var(--good); cursor: help; }
 .ad-t td meter { display: block; width: 110px; }
 .ad-mon { display: flex; align-items: center; gap: 8px; }
