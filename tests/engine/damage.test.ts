@@ -110,3 +110,27 @@ describe('mosse a due turni', () => {
     expect(plain.expected).toBeLessThan(sun.expected * 0.6);
   });
 });
+
+describe('correzioni della revisione finale', () => {
+  const steel = { species: 'Heatran', item: 'Leftovers', ability: 'Flash Fire', moves: [], nature: 'Calm', evs: { hp: 252, spd: 252 } };
+  it('Aegislash e le forme estetiche si calcolano (attacca in Blade, difende in Shield)', () => {
+    const aegis = { species: 'Aegislash', item: 'Leftovers', ability: 'Stance Change', moves: ['Shadow Ball'], nature: 'Modest', evs: { spa: 252 } };
+    expect(bestHit(aegis, steel)).not.toBeNull();
+    const garchomp = { species: 'Garchomp', item: '', ability: 'Rough Skin', moves: ['Earthquake'], nature: 'Adamant', evs: { atk: 252 } };
+    expect(bestHit(garchomp, { ...aegis, moves: [] })).not.toBeNull();
+    expect(bestHit(garchomp, { ...steel, species: 'Gastrodon-East', ability: 'Storm Drain' })).not.toBeNull();
+  });
+
+  it('il superefficace usa il tipo vero della mossa: Pixilate, Ivy Cudgel, Freeze-Dry, Tera Blast', () => {
+    const dragon = { species: 'Dragonite', item: 'Heavy-Duty Boots', ability: 'Multiscale', moves: [], nature: 'Adamant', evs: { hp: 252 } };
+    const sylveon = { species: 'Sylveon', item: 'Choice Specs', ability: 'Pixilate', moves: ['Hyper Voice'], nature: 'Modest', evs: { spa: 252 } };
+    expect(bestHit(sylveon, dragon, { superEffectiveOnly: true })).not.toBeNull();
+    const ogerpon = { species: 'Ogerpon-Wellspring', item: 'Wellspring Mask', ability: 'Water Absorb', moves: ['Ivy Cudgel'], nature: 'Jolly', evs: { atk: 252 } };
+    expect(bestHit(ogerpon, steel, { superEffectiveOnly: true })).not.toBeNull();
+    const lapras = { species: 'Lapras', item: 'Leftovers', ability: 'Water Absorb', moves: ['Freeze-Dry'], nature: 'Modest', evs: { spa: 252 } };
+    const swampert = { species: 'Swampert', item: 'Leftovers', ability: 'Torrent', moves: [], nature: 'Relaxed', evs: { hp: 252, def: 252 } };
+    expect(bestHit(lapras, swampert, { superEffectiveOnly: true })).not.toBeNull();
+    // Un colpo neutro resta escluso
+    expect(bestHit({ ...sylveon, ability: 'Cute Charm' }, dragon, { superEffectiveOnly: true })).toBeNull();
+  });
+});

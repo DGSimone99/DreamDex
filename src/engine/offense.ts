@@ -105,6 +105,14 @@ export function stepValue(hit: Hit | null): number {
   return hit.expected >= TWO_HIT ? STEP_2HKO : hit.expected >= THREE_HIT ? STEP_3HKO : 0;
 }
 
+/**
+ * Soglia di una casella della tabella dei muri. Il valore può essere una media (Tera, Z e meteo contano a metà):
+ * da 1,25 è un OHKO, da 0,75 un 2HKO, da 0,25 un 3HKO.
+ */
+export function stepBucket(step: number): 'ohko' | 'two' | 'three' | 'none' {
+  return step >= 1.25 ? 'ohko' : step >= 0.75 ? 'two' : step >= 0.25 ? 'three' : 'none';
+}
+
 const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
 /** Dal rapporto col riferimento al punteggio: lineare fino a 80, poi sempre più piano (il 100 non si raggiunge). */
 const toScore = (x: number, full: number) => softScore(x / full);
@@ -220,8 +228,9 @@ export interface OffenseReference {
   /** Danno medio e valore medio dei colpi che valgono 100. */
   power: number;
   step: number;
-  /** Gli attaccanti più usati del formato, dal miglior Wallbreaking (vuoto senza statistiche). */
+  /** Gli attaccanti più usati del formato, dal miglior Wallbreaking e dal danno medio più alto (vuoti senza statistiche). */
   attackers: string[];
+  byPower: string[];
 }
 
 const references = new Map<string, OffenseReference>();
@@ -251,6 +260,7 @@ export function offenseReference(data: EngineData): OffenseReference {
     power: power > 0 ? power : POWER_FULL,
     step: step > 0 ? step : STEP_FULL,
     attackers: [...measured].sort((a, b) => b.step - a.step).map(r => r.species),
+    byPower: [...measured].sort((a, b) => b.expected - a.expected).map(r => r.species),
   };
   references.set(key, reference);
   return reference;
@@ -332,7 +342,8 @@ export function teamOffense(team: TeamSet[], data: EngineData): TeamOffense {
     coverage: coverageValue,
     coverageTypes: { value: types.value, holes: types.holes, rows: types.rows },
     coverageMeta: metaCoverage && { value: metaCoverage.value, holes: metaCoverage.holes, rows: metaCoverage.rows },
-    referenceAttackers: ref.attackers.slice(0, REFERENCE_RANK),
+    // Il riferimento della Potenza: i primi per danno medio, il 3° vale circa 93
+    referenceAttackers: ref.byPower.slice(0, REFERENCE_RANK),
     power,
     wallbreaking,
     wallbreakingSetup,

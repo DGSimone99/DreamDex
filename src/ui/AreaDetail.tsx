@@ -1,21 +1,20 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactElement } from 'react';
 import { createPortal } from 'react-dom';
 import type { TeamRating } from '../engine/rating';
-import type { CoverageDetail, WallCell } from '../engine/offense';
+import { stepBucket, type CoverageDetail, type WallCell } from '../engine/offense';
 import { useT } from '../i18n/react';
 import { Icon } from './icons';
 import { Sprite, TypeChip } from './Sprite';
 
 type Tab = 'general' | 'power' | 'wallbreaking' | 'coverageTypes' | 'coverageMeta';
 type Sub = Exclude<Tab, 'general'>;
-/** Etichetta della soglia di un colpo (0,5 3HKO, 1 2HKO, 1,5 OHKO). */
-const STEP_LABEL: Record<number, string> = { 1.5: 'ohko', 1: 'two', 0.5: 'three', 0: 'none' };
 
 /** Casella della tabella dei muri: il danno, e tra parentesi quello dopo il setup quando cambia la soglia. */
 function WallValue({ cell }: { cell: WallCell }) {
-  const upgraded = cell.setupStep !== null && cell.setupStep > cell.step;
+  const bucket = stepBucket(cell.step);
+  const upgraded = cell.setupStep !== null && stepBucket(cell.setupStep) !== bucket;
   return (
-    <span className={`ad-k ${STEP_LABEL[cell.step] ?? 'none'}${upgraded ? ' setup' : ''}`}>
+    <span className={`ad-k ${bucket}${upgraded ? ' setup' : ''}`}>
       {cell.pct}%{upgraded ? ` (${cell.setupPct}%)` : ''}
     </span>
   );
@@ -208,7 +207,11 @@ export function AreaDetail({ rating, area, onClose }: { rating: TeamRating; area
                 {row.coveredBy.length
                   ? row.coveredBy.map((c, i) => (
                     <span key={`${c.species}-${i}`} className={c.partial ? 'partial' : undefined}
-                      title={`${c.species}: ${c.move} ${c.pct}%${c.partial ? ` (${t('detail.partial')})` : ''}`}><Sprite species={c.species} size={28} /></span>
+                      title={`${c.species}: ${c.move} ${c.pct}%${c.partial ? ` (${t('detail.partial')})` : ''}`}>
+                      <Sprite species={c.species} size={28} />
+                      {/* Lo sprite da solo non dice niente a un lettore di schermo */}
+                      <span className="visually-hidden">{`${c.species}: ${c.move} ${c.pct}%${c.partial ? ` (${t('detail.partial')})` : ''}`}</span>
+                    </span>
                   ))
                   : <span className="ad-k none">{t('detail.nobody')}</span>}
               </td>
@@ -238,7 +241,7 @@ export function AreaDetail({ rating, area, onClose }: { rating: TeamRating; area
               <button key={key} ref={el => { tabs.current[i] = el; }} type="button" role="tab" id={`ad-tab-${key}`}
                 aria-selected={key === tab} aria-controls="ad-panel" tabIndex={key === tab ? 0 : -1}
                 onClick={() => setTab(key)} onKeyDown={e => onTabKey(e, i)}>
-                {tabLabel(key)}<b>{values[key]}</b>
+                {tabLabel(key)} <b>{values[key]}</b>
               </button>
             ))}
           </nav>

@@ -37,6 +37,13 @@ const TERRAIN: Partial<Record<FieldCondition, 'Electric' | 'Psychic' | 'Grassy' 
   electricterrain: 'Electric', psychicterrain: 'Psychic', grassyterrain: 'Grassy', mistyterrain: 'Misty',
 };
 
+/** Il colpo è super efficace sui tipi del bersaglio; Freeze-Dry lo è sempre sull'Acqua. */
+function superEffective(type: string, moveId: string, types: string[]): boolean {
+  if (!dex.getImmunity(type, types)) return false;
+  const water = moveId === 'freezedry' && types.includes('Water');
+  return water || dex.getEffectiveness(type, types) > 0;
+}
+
 /** La mossa a due turni parte subito: Solar Beam/Blade al sole, Electro Shot con la pioggia, o con la Power Herb. */
 function instantCharge(id: string, conditions: FieldCondition[], item: string): boolean {
   if (toID(item) === 'powerherb') return true;
@@ -65,15 +72,32 @@ const moves = new Map<string, CalcMove | null>();
 const fields = new Map<string, Field>();
 
 /** Il Pokémon della libreria dal set: forma in battaglia (la Mega), abilità, strumento, natura, EV e IV. */
-function toPokemon(set: Target, options: HitOptions = {}): Pokemon | null {
-  return cached(pokemon, `${setKey(set)}|${JSON.stringify(options.boosts ?? null)}|${!!options.tera}`, () => buildPokemon(set, options));
+function toPokemon(set: Target, options: HitOptions = {}, role: 'attacker' | 'defender' = 'attacker'): Pokemon | null {
+  return cached(pokemon, `${setKey(set)}|${JSON.stringify(options.boosts ?? null)}|${!!options.tera}|${role}`, () => buildPokemon(set, options, role));
 }
 
-function buildPokemon(set: Target, options: HitOptions): Pokemon | null {
+/**
+ * Nomi che la libreria conosce: Aegislash attacca in forma Blade e difende in Shield;
+ * le forme solo estetiche (Gastrodon-East, Vivillon-Polar…) sono la specie base.
+ */
+function calcNames(name: string, baseSpecies: string, role: 'attacker' | 'defender'): string[] {
+  if (baseSpecies === 'Aegislash') return [role === 'attacker' ? 'Aegislash-Blade' : 'Aegislash-Shield'];
+  return name === baseSpecies ? [name] : [name, baseSpecies];
+}
+
+function buildPokemon(set: Target, options: HitOptions, role: 'attacker' | 'defender'): Pokemon | null {
   const species = battleSpecies(set);
   if (!species) return null;
+  for (const name of calcNames(species.name, species.baseSpecies, role)) {
+    const built = tryPokemon(name, set, options);
+    if (built) return built;
+  }
+  return null;
+}
+
+function tryPokemon(name: string, set: Target, options: HitOptions): Pokemon | null {
   try {
-    return new Pokemon(gen, species.name, {
+    return new Pokemon(gen, name, {
       ability: battleAbility(set) || undefined,
       item: set.item || undefined,
       nature: set.nature || undefined,
@@ -110,7 +134,7 @@ function toMove(name: string, useZ: boolean, ability: string, item: string): Cal
 /** Il colpo migliore del set contro il difensore (mai terastallizzato); null senza mosse d'attacco o se la libreria non conosce i Pokémon. */
 export function bestHit(attacker: TeamSet, defender: Target, options: HitOptions = {}): Hit | null {
   const own = toPokemon(attacker, options);
-  const target = toPokemon(defender);
+  const target = toPokemon(defender, {}, 'defender');
   if (!own || !target) return null;
   const field = toField(options.conditions);
   const zType = options.z ? dex.items.get(attacker.item).zMoveType : undefined;
@@ -121,10 +145,10 @@ export function bestHit(attacker: TeamSet, defender: Target, options: HitOptions
   for (const name of attacker.moves) {
     const data = getMove(name);
     if (!data || data.category === 'Status') continue;
-    if (options.superEffectiveOnly && !(dex.getImmunity(data.type, types) && dex.getEffectiveness(data.type, types) > 0)) continue;
     const accuracy = data.accuracy === true ? 1 : data.accuracy / 100;
     // Mosse OHKO (Sheer Cold, Fissure): la libreria non le calcola; KO se colpiscono, salvo immunità
     if (data.ohko) {
+      if (options.superEffectiveOnly && !superEffective(data.type, data.id, types)) continue;
       const immune = !dex.getImmunity(data.type, types) || (data.ohko === 'Ice' && types.includes('Ice'));
       const hit = { move: data.name, expected: immune ? 0 : accuracy, min: immune ? 0 : 1 };
       if (!best || hit.expected > best.expected) best = hit;
@@ -134,6 +158,8 @@ export function bestHit(attacker: TeamSet, defender: Target, options: HitOptions
     if (!move) continue;
     try {
       const result = calculate(gen, own, target, move, field);
+      // La Coverage vuole il vantaggio di tipo: si guarda il tipo con cui la mossa colpisce davvero (Pixilate, Ivy Cudgel, Tera Blast…)
+      if (options.superEffectiveOnly && !superEffective(result.move.type, data.id, types)) continue;
       // Mosse multicolpo e Parental Bond: un elenco di tiri per ogni colpo, da sommare
       const damage = result.damage as number | number[] | number[][];
       const hits = (Array.isArray(damage) ? (Array.isArray(damage[0]) ? damage : [damage]) : [[damage]]) as number[][];

@@ -1,7 +1,10 @@
 import { usesMeta } from './analysis';
-import { bestHit, setKey, type Target } from './damage';
+import { bestHit, setKey, type FieldCondition, type Target } from './damage';
 import type { EngineData } from './data';
-import { battleSpecies } from './dex';
+import { battleAbility, battleSpecies, dex, getMove, toID } from './dex';
+import { DEFAULT_FORMAT } from './format';
+import { teraAllowed } from './formats';
+import { enables } from './synergy';
 import { mostCommonSet, type TeamSet } from './sets';
 import { topThreats, usageOf } from './stats';
 import { softScore } from './scale';
@@ -93,8 +96,17 @@ function hitsOf(set: TeamSet, data: EngineData, targets: CoverageTarget[], kind:
   let hits = hitsCache.get(key);
   if (hits) return hits;
   if (hitsCache.size >= HITS_LIMIT) hitsCache.clear();
-  // Copre chi ha il vantaggio di tipo: il colpo migliore fra quelli super efficaci (il danno neutro lo misura la Potenza)
-  hits = targets.map(target => { const hit = bestHit(set, target.set, { superEffectiveOnly: true }); return { x: Math.min(1, hit?.expected ?? 0), move: hit?.move ?? '' }; });
+  // Copre chi ha il vantaggio di tipo: il colpo migliore fra quelli super efficaci (il danno neutro lo misura la Potenza).
+  // Come nel resto dell'Offesa: il meteo che il membro porta con la sua abilità è sempre attivo, Tera e mosse Z contano a metà
+  const conditions = ownConditions(set);
+  const tera = teraAllowed({ ...DEFAULT_FORMAT, formatId: data.formatId ?? 'ou' }) && !!set.teraType ? [false, true] : [false];
+  const zType = dex.items.get(set.item).zMoveType;
+  const z = zType && set.moves.some(m => getMove(m)?.type === zType) ? [false, true] : [false];
+  hits = targets.map(target => {
+    const variants = tera.flatMap(useTera => z.map(useZ => bestHit(set, target.set, { superEffectiveOnly: true, conditions, tera: useTera, z: useZ })));
+    const x = variants.reduce((acc, hit) => acc + Math.min(1, hit?.expected ?? 0), 0) / variants.length;
+    return { x, move: variants.find(Boolean)?.move ?? '' };
+  });
   hitsCache.set(key, hits);
   return hits;
 }
@@ -102,6 +114,12 @@ function hitsOf(set: TeamSet, data: EngineData, targets: CoverageTarget[], kind:
 /** Quanto copre un colpo superefficace: pieno da 2HKO, a metà da 3HKO, niente sotto. */
 const creditOf = (x: number) => (x >= COVER_HIT ? 1 : x >= HOLE_HIT ? 0.5 : 0);
 /** Profondità: i crediti dei membri dal più alto, al 70, 20 e 10%. */
+/** Meteo e terreni che il set porta con la sua abilità: per lui sono sempre attivi. */
+function ownConditions(set: TeamSet): FieldCondition[] {
+  const ability = toID(battleAbility(set));
+  return enables(set).filter(l => toID(l.via) === ability && l.condition !== 'trickroom').map(l => l.condition as FieldCondition);
+}
+
 const depthOf = (credits: number[]) => [...credits].sort((a, b) => b - a).reduce((acc, c, i) => acc + (COVERAGE_DEPTH[i] ?? 0) * c, 0);
 
 /** Coverage del team: chi manda KO in due colpi ogni bersaglio, con la profondità; i buchi per nome. */

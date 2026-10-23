@@ -73,6 +73,15 @@ describe('teamCoverage', () => {
     expect(two.level).toBe(45);
   });
 
+  it('il meteo che il membro porta con la sua abilità vale anche nella Coverage (Drought e Solar Beam)', () => {
+    const torkoal = set('Torkoal', 'Heat Rock', 'Drought', ['Solar Beam', 'Lava Plume'], 'Modest', { hp: 252, spa: 252 });
+    const water = coverageTargets(noMeta).find(t => t.label === 'Water')!.set;
+    const sun = bestHit(torkoal, water, { conditions: ['sun'], superEffectiveOnly: true })!;
+    const row = teamOffenseRows([torkoal]).find(r => r.label === 'Water')!;
+    expect(row.coveredBy[0].move).toBe('Solar Beam');
+    expect(row.coveredBy[0].pct).toBe(Math.floor(100 * Math.min(1, sun.expected)));
+  });
+
   it('anche coprendo tutto tre volte la Coverage non arriva a 100', () => {
     const all = set('Mew', 'Life Orb', 'Synchronize', ['Psystrike', 'Fusion Bolt', 'Fusion Flare', 'Precipice Blades'], 'Modest', { spa: 252, atk: 252 });
     expect(teamCoverage([all, { ...all }, { ...all }, { ...all }], noMeta).value).toBeLessThan(100);

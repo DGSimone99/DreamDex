@@ -1,6 +1,6 @@
 import { softScore } from '../../src/engine/scale';
 import { describe, expect, it } from 'vitest';
-import { memberOffense, offenseReference, POWER_FULL, RANK_WEIGHTS, REFERENCE_RANK, SETUP_SHARE, stepValue, TEAM_WALL_FULL, teamOffense } from '../../src/engine/offense';
+import { memberOffense, offenseReference, stepBucket, POWER_FULL, RANK_WEIGHTS, REFERENCE_RANK, SETUP_SHARE, stepValue, TEAM_WALL_FULL, teamOffense } from '../../src/engine/offense';
 import { bestHit } from '../../src/engine/damage';
 import { defenderPanel } from '../../src/engine/defenders';
 import { coverageTargets } from '../../src/engine/coverage';
@@ -284,5 +284,18 @@ describe('Coverage di tipi e del meta', () => {
     const team = teamOffense([chomp], noStats);
     expect(team.coverageMeta).toBeNull();
     expect(team.coverage).toBe(team.coverageTypes.value);
+  });
+});
+
+describe('correzioni della revisione finale (soglie e riferimento)', () => {
+  it('la soglia di una casella si legge anche dai valori medi (Tera, Z e meteo contano a metà)', () => {
+    expect([1.5, 1.25, 1, 0.875, 0.75, 0.625, 0.5, 0.25, 0.1, 0].map(stepBucket))
+      .toEqual(['ohko', 'ohko', 'two', 'two', 'two', 'three', 'three', 'three', 'none', 'none']);
+  });
+
+  it('il riferimento della Potenza nomina gli attaccanti col danno medio più alto', () => {
+    const team = teamOffense([chomp], fixtureData);
+    const ref = offenseReference(fixtureData);
+    expect(team.referenceAttackers).toEqual(ref.byPower.slice(0, 3));
   });
 });
