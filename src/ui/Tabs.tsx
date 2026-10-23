@@ -1,7 +1,7 @@
 import { useRef, type KeyboardEvent, type ReactNode } from 'react';
 import { useT } from '../i18n/react';
 
-export type TabId = 'pokemon' | 'analysis' | 'meta';
+export type TabId = 'pokemon' | 'analysis' | 'meta' | 'lists';
 
 export interface TabInfo {
   id: TabId | 'compare';

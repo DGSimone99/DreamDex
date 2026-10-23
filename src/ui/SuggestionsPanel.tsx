@@ -13,6 +13,8 @@ import { PokemonIcon } from './PokemonName';
 import { statsEntry } from '../engine/stats';
 import { formatPercent } from '../i18n';
 import { getSpecies } from '../engine/dex';
+import { applyFavorites, isUserBanned, isUserFavorite, type EffectiveLists } from '../engine/lists';
+import { bannedNames } from '../engine/scoring';
 import { formatLabel } from '../engine/formats';
 import { EMPTY_FILTERS, isFiltering, searchCandidates, searchPool, tierLabel, type CandidateFilters } from '../engine/filters';
 import { defaultSet } from '../engine/sets';
@@ -93,7 +95,21 @@ function ResultCell({ item, usage }: { item: Item; usage: number | null }) {
 /** +7, −3, ±0. */
 export const signed = (n: number) => (n > 0 ? `+${n}` : n < 0 ? `−${-n}` : '±0');
 
-function SuggestionRow({ rank, item, usage, out, quickLabel, actionLabel, replacing, picked, selected, onSelect, onAction, format }: {
+/** ♥ nei Preferiti dell'utente, ⊘ nella sua lista Ban (mostrato perché cercato per nome o con "mostra"). */
+function ListMarks({ set, lists }: { set: TeamSet; lists?: EffectiveLists }) {
+  const tr = useT();
+  const banned = isUserBanned(set, lists && { ...lists, allow: undefined });
+  const favorite = !banned && isUserFavorite(set, lists);
+  if (!banned && !favorite) return null;
+  return (
+    <span className={`list-mark ${banned ? 'ban' : 'fav'}`} role="img" aria-label={tr(banned ? 'lists.bannedMark' : 'lists.favoriteMark')}
+      title={tr(banned ? 'lists.bannedMark' : 'lists.favoriteMark')}>{banned ? '⊘' : '♥'}</span>
+  );
+}
+
+function SuggestionRow({ rank, item, usage, out, quickLabel, actionLabel, replacing, picked, selected, onSelect, onAction, format, lists }: {
+  /** Liste dell'utente, per i segni ♥ e ⊘. */
+  lists?: EffectiveLists;
   /** Riga scelta dalla ricerca (Invio la aggiunge). */
   picked?: boolean;
   /** Riga mostrata nel dettaglio. */
@@ -135,6 +151,7 @@ function SuggestionRow({ rank, item, usage, out, quickLabel, actionLabel, replac
             <strong><span className="visually-hidden">{rank}. </span>{item.species}</strong>
           </button>
           <BanMark species={item.species} format={format} />
+          <ListMarks set={item.set} lists={lists} />
         </span>
         <span className="types">{types.map(type => <TypeChip key={type} type={type} />)}</span>
         <small><Typed text={summaryText} /></small>
@@ -202,12 +219,23 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   /** Il team contro cui si valutano i candidati è vuoto: niente adattamento da mostrare. */
   const emptyTeam = (replacing ? team.length - 1 : team.length) === 0;
 
+  // Bannati dall'utente: fuori dalla lista, tranne quello cercato col nome esatto e, con "mostra", tutti
+  const [revealed, setRevealed] = useState(false);
+  useEffect(() => setRevealed(false), [team, format.formatId]);
+  const exactQuery = getSpecies(applied.query.trim())?.name ?? null;
+  const ranking = useMemo(() => {
+    const lists = data.userLists;
+    if (!lists?.bans.size) return data;
+    const allow = new Set<string>([...(exactQuery ? [exactQuery] : []), ...(revealed ? lists.bans : [])]);
+    return { ...data, userLists: { ...lists, allow } };
+  }, [data, exactQuery, revealed]);
+
   // Il voto del team per ogni candidato richiede un attimo: la lista si ricalcola senza bloccare il resto
   // (il team si aggiorna subito, la lista resta attenuata finché non è pronta)
-  const source = useMemo(() => ({ team, replaceIndex, format, data, scope }), [team, replaceIndex, format, data, scope]);
+  const source = useMemo(() => ({ team, replaceIndex, format, data: ranking, scope }), [team, replaceIndex, format, ranking, scope]);
   const deferred = useDeferredValue(source);
   const stale = deferred !== source;
-  const items: Item[] = useMemo(() => {
+  const ranked: Item[] = useMemo(() => {
     const { team, format, data } = deferred;
     const replaceIndex = deferred.replaceIndex !== null && deferred.replaceIndex < team.length ? deferred.replaceIndex : null;
     // Prima i candidati migliori per punteggio, poi ordinati per il voto che darebbero al team
@@ -233,6 +261,25 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
     if (filtering) return rank(searchCandidates(team, format, data, applied, POOL, lang));
     return data.stats ? rank(suggest(team, format, data, POOL, lang)) : [];
   }, [deferred, mode, applied, filtering, lang]);
+  // Preferiti dell'utente: a voto quasi pari passano davanti (non in "Sostituto simile", dove conta la somiglianza)
+  const items: Item[] = useMemo(() => {
+    const lists = deferred.data.userLists;
+    const similarOrder = mode === 'similar' && (view !== 'add');
+    if (!lists?.favorites.size || similarOrder) return ranked;
+    const value = (item: Item) => item.teamGain?.overall ?? 100 * (statsEntry(deferred.data.stats, item.species)?.usage ?? 0);
+    return applyFavorites(ranked, item => isUserFavorite(item.set, lists), value);
+  }, [ranked, deferred, mode, view]);
+  // Quanti bannati restano fuori (non contano quelli ammessi), contro il team per cui si cercano i candidati:
+  // aggiungendo il team intero, sostituendo un membro gli altri cinque, negli scambi liberi ognuno dei sei
+  const hiddenCount = useMemo(() => {
+    if (revealed || !ranking.userLists?.bans.size) return 0;
+    const banned = (rest: TeamSet[]) => (filtering
+      ? searchPool(rest, format, ranking, applied).filter(set => isUserBanned(set, ranking.userLists)).map(set => battleName(set))
+      : bannedNames(rest, format, ranking));
+    if (view === 'add') return banned(team).length;
+    if (view === 'member') return banned(team.filter((_, i) => i !== replaceIndex)).length;
+    return new Set(team.flatMap((_, i) => banned(team.filter((_, j) => j !== i)))).size;
+  }, [revealed, ranking, view, filtering, team, format, applied, replaceIndex]);
 
   const query = filters.query.trim();
   // I risultati valgono solo se la lista è già aggiornata su quello che hai scritto
@@ -418,6 +465,12 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
           <p className="note">{tr('suggest.emptyTeam')}</p>
         )}
         {filtering && <p className="list-count">{countText}</p>}
+        {hiddenCount > 0 && (
+          <p className="note hidden-note">
+            {tr(hiddenCount === 1 ? 'lists.hiddenOne' : 'lists.hidden', { n: hiddenCount })}{' '}
+            <button type="button" className="link" onClick={() => setRevealed(true)}>{tr('lists.show')}</button>
+          </p>
+        )}
       </>
     );
     body = (
@@ -438,6 +491,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
               replacing={view !== 'add'}
               onAction={() => act(item)}
               format={format}
+              lists={data.userLists}
             />
           ))}
         </ol>

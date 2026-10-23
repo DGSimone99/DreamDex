@@ -2,6 +2,7 @@ import { t, type Lang } from '../i18n';
 import { typeName } from '../i18n/game';
 import { analyzeTeam, checksThreat, type TeamAnalysis } from './analysis';
 import type { EngineData } from './data';
+import { isUserBanned } from './lists';
 import { battleName, getSpecies, isCosmeticForme, isDefined, isMega, toID, withinGen } from './dex';
 import { isLegalIn } from './formats';
 import { explain, type Components, type Facts, type Reason } from './explain';
@@ -167,11 +168,11 @@ const NO_FACTS = (usage: number): Facts => ({
   strength: { usage },
 });
 
-export function scoreCandidates(team: TeamSet[], format: Format, data: EngineData, extraSets: TeamSet[] = [], lang: Lang = 'it'): Suggestion[] {
-  const analysis = analyzeTeam(team, data);
+/** Tutti i candidati da valutare, bannati dall'utente compresi. */
+function candidateEntries(team: TeamSet[], format: Format, data: EngineData, extraSets: TeamSet[]): { species: string; set: TeamSet }[] {
   const megaTaken = !format.allowMultipleMegas && team.some(isMega);
   const extraIds = new Set(extraSets.map(set => toID(battleName(set))));
-  const entries = [
+  return [
     ...uniqueFormes(candidatePool(team, format, data)
       .filter(species => !extraIds.has(toID(species)))
       .map(species => ({ species, set: defaultSet(data, species, format.genLimit) })))
@@ -181,6 +182,22 @@ export function scoreCandidates(team: TeamSet[], format: Format, data: EngineDat
     // Col nome della forma in battaglia: Gardevoir con la Gardevoirite è "Gardevoir-Mega"
     ...extraSets.map(set => ({ species: battleName(set), set })),
   ];
+}
+
+/** I candidati (forma in battaglia) che restano fuori perché bannati dall'utente; quelli ammessi (es. cercati per nome) no. */
+export function bannedNames(team: TeamSet[], format: Format, data: EngineData, extraSets: TeamSet[] = []): string[] {
+  if (!data.userLists?.bans.size) return [];
+  return candidateEntries(team, format, data, extraSets).filter(({ set }) => isUserBanned(set, data.userLists)).map(({ set }) => battleName(set));
+}
+
+/** Quanti candidati restano fuori perché bannati dall'utente. */
+export const bannedInPool = (team: TeamSet[], format: Format, data: EngineData, extraSets: TeamSet[] = []): number =>
+  bannedNames(team, format, data, extraSets).length;
+
+export function scoreCandidates(team: TeamSet[], format: Format, data: EngineData, extraSets: TeamSet[] = [], lang: Lang = 'it'): Suggestion[] {
+  const analysis = analyzeTeam(team, data);
+  // Ogni fonte di suggerimenti passa da qui: i bannati dall'utente non arrivano mai alla valutazione
+  const entries = candidateEntries(team, format, data, extraSets).filter(({ set }) => !isUserBanned(set, data.userLists));
   const partial = entries.map(({ species, set }) => {
     const usage = usageOf(data.stats, battleName(set));
     if (team.length === 0) return { species, set, usage, empty: true as const };
