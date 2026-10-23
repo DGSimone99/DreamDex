@@ -67,22 +67,33 @@ export interface TeamCoverage {
   holes: string[];
   /** Quota pesata (0–100) dei bersagli che ogni membro manda KO in due colpi (nell'ordine del team). */
   perMember: number[];
-  /** Per ogni bersaglio: tipi, il Pokémon che lo rappresenta, il peso e chi lo manda KO in due colpi. */
-  rows: { label: string; species: string; weight: number; coveredBy: string[] }[];
+  /** Per ogni bersaglio: tipi, il Pokémon che lo rappresenta, il peso, quanto è coperto e chi lo copre (con quale mossa). */
+  rows: CoverageRow[];
 }
 
-/** Danno (in quota dei PS, al massimo 1) del colpo migliore del set contro ogni bersaglio; per contenuto del set. */
-const hitsCache = new Map<string, number[]>();
+export interface CoverageRow {
+  label: string;
+  species: string;
+  weight: number;
+  /** Quanto è coperto: 0, 70, 90 o 100% (1°, 2° e 3° membro che lo manda KO in due colpi). */
+  level: number;
+  coveredBy: { species: string; move: string; pct: number }[];
+}
+
+/** Colpo migliore del set contro ogni bersaglio: danno (in quota dei PS, al massimo 1) e mossa; per contenuto del set. */
+const hitsCache = new Map<string, { x: number; move: string }[]>();
 const HITS_LIMIT = 5000;
-function hitsOf(set: TeamSet, data: EngineData, targets: CoverageTarget[]): number[] {
+function hitsOf(set: TeamSet, data: EngineData, targets: CoverageTarget[]): { x: number; move: string }[] {
   const key = `${setKey(set)}|${data.formatId ?? 'ou'}|${usesMeta(data)}|${!!data.stats}`;
   let hits = hitsCache.get(key);
   if (hits) return hits;
   if (hitsCache.size >= HITS_LIMIT) hitsCache.clear();
-  hits = targets.map(target => Math.min(1, bestHit(set, target.set)?.expected ?? 0));
+  hits = targets.map(target => { const hit = bestHit(set, target.set); return { x: Math.min(1, hit?.expected ?? 0), move: hit?.move ?? '' }; });
   hitsCache.set(key, hits);
   return hits;
 }
+
+const depthOf = (covering: number) => COVERAGE_DEPTH.slice(0, covering).reduce((a, b) => a + b, 0);
 
 /** Coverage del team: chi manda KO in due colpi ogni bersaglio, con la profondità; i buchi per nome. */
 export function teamCoverage(team: TeamSet[], data: EngineData): TeamCoverage {
@@ -91,18 +102,19 @@ export function teamCoverage(team: TeamSet[], data: EngineData): TeamCoverage {
   let value = 0;
   const holes: string[] = [];
   targets.forEach((target, i) => {
-    const covering = hits.filter(h => h[i] >= COVER_HIT).length;
-    value += target.weight * COVERAGE_DEPTH.slice(0, covering).reduce((a, b) => a + b, 0);
-    if (Math.max(0, ...hits.map(h => h[i])) < HOLE_HIT) holes.push(target.label);
+    value += target.weight * depthOf(hits.filter(h => h[i].x >= COVER_HIT).length);
+    if (Math.max(0, ...hits.map(h => h[i].x)) < HOLE_HIT) holes.push(target.label);
   });
   return {
     // Lineare fino a 80, poi sempre più piano: anche ogni bersaglio coperto tre volte resta sotto 100
     value: softScore(value),
     holes,
-    perMember: hits.map(h => Math.round(100 * targets.reduce((acc, target, i) => acc + (h[i] >= COVER_HIT ? target.weight : 0), 0))),
-    rows: targets.map((target, i) => ({
-      label: target.label, species: target.set.species, weight: target.weight,
-      coveredBy: team.filter((_, m) => hits[m][i] >= COVER_HIT).map(set => battleSpecies(set)?.name ?? set.species),
-    })),
+    perMember: hits.map(h => Math.round(100 * targets.reduce((acc, target, i) => acc + (h[i].x >= COVER_HIT ? target.weight : 0), 0))),
+    rows: targets.map((target, i) => {
+      const coveredBy = team.flatMap((set, m) => (hits[m][i].x >= COVER_HIT
+        ? [{ species: battleSpecies(set)?.name ?? set.species, move: hits[m][i].move, pct: Math.floor(100 * hits[m][i].x) }]
+        : []));
+      return { label: target.label, species: target.set.species, weight: target.weight, level: Math.round(100 * depthOf(coveredBy.length)), coveredBy };
+    }),
   };
 }

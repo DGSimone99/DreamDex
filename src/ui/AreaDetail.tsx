@@ -183,19 +183,22 @@ export function AreaDetail({ rating, area, onClose }: { rating: TeamRating; area
           <tr>
             <th scope="col">{t('detail.types')}</th>
             {meta && <th scope="col" className="left">{t('detail.member')}</th>}
-            <th scope="col">{t('detail.weight')}</th>
+            <th scope="col">{t('detail.level')}</th>
             <th scope="col" className="left">{t('detail.coveredBy')}</th>
           </tr>
         </thead>
         <tbody>
+          {/* Dal più usato: l'ordine dice anche quanto pesa ogni bersaglio */}
           {[...offense.coverageRows].sort((a, b) => b.weight - a.weight).map(row => (
             <tr key={row.label}>
               <th scope="row">{row.label.split('/').map(type => <TypeChip key={type} type={type} />)}</th>
               {meta && <td className="left"><span className="ad-mon"><Sprite species={row.species} size={32} />{row.species}</span></td>}
-              <td>{Math.round(1000 * row.weight) / 10}%</td>
+              <td>{row.level}%</td>
               <td className="left ad-cover">
                 {row.coveredBy.length
-                  ? row.coveredBy.map((name, i) => <span key={`${name}-${i}`} title={name}><Sprite species={name} size={28} /></span>)
+                  ? row.coveredBy.map((c, i) => (
+                    <span key={`${c.species}-${i}`} title={`${c.species}: ${c.move} ${c.pct}%`}><Sprite species={c.species} size={28} /></span>
+                  ))
                   : <span className="ad-k none">{t('detail.nobody')}</span>}
               </td>
             </tr>

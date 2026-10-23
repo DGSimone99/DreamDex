@@ -35,6 +35,13 @@ const TERRAIN: Partial<Record<FieldCondition, 'Electric' | 'Psychic' | 'Grassy' 
   electricterrain: 'Electric', psychicterrain: 'Psychic', grassyterrain: 'Grassy', mistyterrain: 'Misty',
 };
 
+/** La mossa a due turni parte subito: Solar Beam/Blade al sole, Electro Shot con la pioggia, o con la Power Herb. */
+function instantCharge(id: string, conditions: FieldCondition[], item: string): boolean {
+  if (toID(item) === 'powerherb') return true;
+  if ((id === 'solarbeam' || id === 'solarblade') && conditions.includes('sun')) return true;
+  return id === 'electroshot' && conditions.includes('rain');
+}
+
 /** Un bersaglio può avere i tipi sovrascritti (il bersaglio neutro della Coverage senza meta: Mew di un solo tipo). */
 export type Target = TeamSet & { types?: string[] };
 
@@ -130,7 +137,9 @@ export function bestHit(attacker: TeamSet, defender: Target, options: HitOptions
       if (!hits.length || !hits[0].length) continue;
       const avg = hits.reduce((acc, rolls) => acc + rolls.reduce((a, b) => a + b, 0) / rolls.length, 0);
       const low = hits.reduce((acc, rolls) => acc + Math.min(...rolls), 0);
-      const hit = { move: data.name, expected: (avg / hp) * accuracy, min: low / hp };
+      // Mosse a due turni (Solar Blade, Meteor Beam…): un colpo ogni due turni, salvo sole/pioggia giusti o Power Herb
+      const charge = data.flags.charge && !instantCharge(data.id, options.conditions ?? [], attacker.item) ? 0.5 : 1;
+      const hit = { move: data.name, expected: (avg / hp) * accuracy * charge, min: (low / hp) * charge };
       if (!best || hit.expected > best.expected) best = hit;
     } catch {
       // Una mossa che la libreria non sa calcolare non conta

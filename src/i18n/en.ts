@@ -517,7 +517,7 @@ export const en = {
   'detail.coverage.how1.tier': "The 18 types, equal weight, against an average Pokémon of that type. A member covers a type if it 2HKOs it.",
   'detail.coverage.how2': "A target covered by one member is worth 70%, by two 90%, by three 100%: if the only one hitting it is KOed, it stays uncovered. Every target covered three times scores about 93, and 100 is never reached. A hole is a target nobody even brings to 33%.",
   'detail.types': "Types",
-  'detail.weight': "Weight",
+  'detail.level': "Covered",
   'detail.coveredBy': "Covered by",
   'detail.nobody': "nobody",
   'rating.rulesBroken': "One or more team members break the format's rules: the grade is a guide, not valid for a real match",

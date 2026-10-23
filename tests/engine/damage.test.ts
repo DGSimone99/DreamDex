@@ -99,3 +99,14 @@ describe('mosse multicolpo e Parental Bond', () => {
     expect(bestHit({ ...kanga, item: 'Kangaskhanite' }, toxapex)!.expected).toBeGreaterThan(bestHit({ ...kanga, item: 'Leftovers' }, toxapex)!.expected);
   });
 });
+
+describe('mosse a due turni', () => {
+  const leafeon = { species: 'Leafeon', item: 'Life Orb', ability: 'Chlorophyll', moves: ['Solar Blade'], nature: 'Adamant', evs: { atk: 252, spe: 252 } };
+  const target = { species: 'Terapagos', item: 'Leftovers', ability: 'Tera Shift', moves: [], nature: 'Calm', evs: { hp: 252, spd: 252 } };
+  it('senza sole Solar Blade carica un turno: vale metà danno', () => {
+    const plain = bestHit(leafeon, target)!;
+    const sun = bestHit(leafeon, target, { conditions: ['sun'] })!;
+    // Al sole è immediata (e non dimezzata); senza sole conta metà
+    expect(plain.expected).toBeLessThan(sun.expected * 0.6);
+  });
+});

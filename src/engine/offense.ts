@@ -1,5 +1,5 @@
 import { usesMeta } from './analysis';
-import { coverageTargets, teamCoverage } from './coverage';
+import { coverageTargets, teamCoverage, type CoverageRow } from './coverage';
 import { bestHit, setKey, type FieldCondition, type Hit, type HitOptions, type Target } from './damage';
 import type { EngineData } from './data';
 import { defenderPanel, isDefensiveSet, metaDefenderCount } from './defenders';
@@ -84,7 +84,7 @@ export interface TeamOffense {
   /** I tre migliori attaccanti del meta: il 3° è il 100 di Potenza e Wallbreaking (vuoto senza statistiche). */
   referenceAttackers: string[];
   /** Per ogni bersaglio della Coverage: tipi, Pokémon, peso e chi lo copre. */
-  coverageRows: { label: string; species: string; weight: number; coveredBy: string[] }[];
+  coverageRows: CoverageRow[];
   /** I difensori contro cui si è misurata (per spiegare il voto): i primi `metaDefenders` dal meta, gli altri dal tier. */
   defenders: string[];
   metaDefenders: number;

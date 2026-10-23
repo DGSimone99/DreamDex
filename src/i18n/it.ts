@@ -519,7 +519,7 @@ export const it: Record<keyof typeof en, string> = {
   'detail.coverage.how1.tier': "I 18 tipi, con lo stesso peso, contro un Pokémon medio di quel tipo. Un membro copre un tipo se lo manda KO in due colpi.",
   'detail.coverage.how2': "Un bersaglio coperto da un solo membro vale il 70%, da due il 90%, da tre il 100%: se l'unico che lo colpisce va KO, resta scoperto. Ogni bersaglio coperto tre volte fa circa 93, e il 100 non si raggiunge mai. Un buco è un bersaglio che nessuno porta nemmeno al 33%.",
   'detail.types': "Tipi",
-  'detail.weight': "Peso",
+  'detail.level': "Copertura",
   'detail.coveredBy': "Coperto da",
   'detail.nobody': "nessuno",
   'rating.rulesBroken': "Uno o più membri del team non rispettano le regole del formato: il voto vale come indicazione, non per una partita",

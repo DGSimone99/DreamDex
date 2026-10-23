@@ -261,9 +261,13 @@ describe('dati delle schede del modale', () => {
     const team = teamOffense([chomp], noStats);
     expect(team.coverageRows).toHaveLength(18);
     const electric = team.coverageRows.find(r => r.label === 'Electric')!;
-    expect(electric.coveredBy).toEqual(['Garchomp']);
+    expect(electric.coveredBy.map(c => c.species)).toEqual(['Garchomp']);
+    // Con la mossa che lo copre e il danno, e quanto è coperto (un membro: 70%)
+    expect(electric.coveredBy[0].move).toBe('Earthquake');
+    expect(electric.coveredBy[0].pct).toBeGreaterThanOrEqual(50);
+    expect(electric.level).toBe(70);
     // Questo Garchomp ha anche Stone Edge: il Volante, immune a Earthquake, lo copre con la Roccia
-    expect(team.coverageRows.find(r => r.label === 'Flying')!.coveredBy).toEqual(['Garchomp']);
+    expect(team.coverageRows.find(r => r.label === 'Flying')!.coveredBy.map(c => c.move)).toEqual(['Stone Edge']);
     expect(electric.weight).toBeCloseTo(1 / 18);
   });
 });
