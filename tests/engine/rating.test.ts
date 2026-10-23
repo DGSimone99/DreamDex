@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { teamPower } from '../../src/engine/power';
 import { AREA_KNEE, ARCHETYPE_WEIGHTS, COVERAGE_DEPTH, DEFENSE_FULL, areaValue, gradeFor, rateTeam, typeSafety } from '../../src/engine/rating';
 import { memberPower } from '../../src/engine/power';
+import { teamOffense } from '../../src/engine/offense';
+import type { EngineData } from '../../src/engine/data';
 
-// Offesa 1:1: la media dei percentili d'attacco dei membri
-const offenseArea = (team: TeamSet[]) => Math.round(Math.min(100, team.reduce((a, s) => a + memberPower(s)!.offense, 0) / team.length));
+// Offesa: il danno vero dei set contro i difensori del formato (offense.ts)
+const offenseArea = (team: TeamSet[], data: EngineData = fixtureData) => teamOffense(team, data).value;
 import { hitQuality } from '../../src/engine/power';
 import { UNIFORM_TYPE_WEIGHTS } from '../../src/engine/analysis';
 import { superEffectiveMoves, TYPES, weaknessTable } from '../../src/engine/types';
@@ -79,7 +81,7 @@ describe('rateTeam', () => {
     }, 0);
     // 1:1: la percentuale è il voto dell'area
     expect(value(rating, 'coverage')).toBe(Math.round(100 * coverage));
-    // Offesa: quanto colpiscono forte i membri (statistiche base), indipendente dall'uso nel meta
+    // Offesa: il danno vero dei set contro i difensori del meta
     expect(value(rating, 'strength')).toBe(offenseArea([tusk, gholdengo]));
   });
 
@@ -104,9 +106,16 @@ describe('rateTeam', () => {
     expect(rateTeam([], fixtureData)).toBeNull();
   });
 
-  it('senza statistiche Smogon la forza resta calcolabile (statistiche base)', () => {
+  it("senza statistiche Smogon l'Offesa resta calcolabile (difensori del tier)", () => {
     const noData = rateTeam([tusk, gholdengo], { stats: null, sets: null })!;
-    expect(value(noData, 'strength')).toBe(offenseArea([tusk, gholdengo]));
+    expect(value(noData, 'strength')).toBe(offenseArea([tusk, gholdengo], { stats: null, sets: null }));
+    expect(noData.offense.members.map(m => m.species)).toEqual(['Great Tusk', 'Gholdengo']);
+  });
+
+  it("la Velocità non entra nell'Offesa", () => {
+    const slow = { ...tusk, evs: { ...tusk.evs, spe: 0, hp: 252 }, nature: 'Adamant' };
+    const fast = { ...tusk, evs: { ...tusk.evs, spe: 252, hp: 0 }, nature: 'Adamant' };
+    expect(value(rateTeam([slow, gholdengo], fixtureData)!, 'strength')).toBe(value(rateTeam([fast, gholdengo], fixtureData)!, 'strength'));
   });
 });
 
@@ -141,11 +150,11 @@ describe('pesi secondo il tipo di team', () => {
 });
 
 describe('il meta conta solo nella sua area', () => {
-  it('le aree sono le stesse col meta e senza; col meta si aggiunge solo il Meta', () => {
+  it("le aree sono le stesse col meta e senza (tranne l'Offesa, che usa i difensori del meta); col meta si aggiunge il Meta", () => {
     const team = ['Great Tusk', 'Gholdengo', 'Kingambit', 'Corviknight', 'Toxapex', 'Rotom-Wash'].map(n => mostCommonSet(fixtureStats, n)!);
     const on = rateTeam(team, fixtureData)!;
     const off = rateTeam(team, { ...fixtureData, ignoreMeta: true })!;
-    const areas = (r: typeof on) => r.areas.filter(a => a.key !== 'meta').map(a => [a.key, a.value]);
+    const areas = (r: typeof on) => r.areas.filter(a => a.key !== 'meta' && a.key !== 'strength').map(a => [a.key, a.value]);
     expect(areas(on)).toEqual(areas(off));
     expect(on.areas.some(a => a.key === 'meta')).toBe(true);
     expect(off.areas.some(a => a.key === 'meta')).toBe(false);

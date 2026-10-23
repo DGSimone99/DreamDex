@@ -1,12 +1,11 @@
 import { usesMeta } from './analysis';
-import { bestHit, type FieldCondition, type Hit, type HitOptions } from './damage';
+import { bestHit, setKey, type FieldCondition, type Hit, type HitOptions } from './damage';
 import type { EngineData } from './data';
 import { defenderPanel } from './defenders';
 import { battleAbility, battleSpecies, dex, getMove, toID } from './dex';
 import { DEFAULT_FORMAT } from './format';
 import { teraAllowed } from './formats';
 import { rulesOf } from './formatRules';
-import { memoBySet } from './memo';
 import { isPassive, teamRoles } from './roles';
 import type { TeamSet } from './sets';
 import { enables } from './synergy';
@@ -78,7 +77,7 @@ function setupBoosts(set: TeamSet): HitOptions['boosts'] | null {
 
 interface Context { data: EngineData; team: TeamSet[] }
 
-const computeMember = memoBySet((set: TeamSet, { data, team }: Context): MemberOffense | null => {
+function computeMember(set: TeamSet, { data, team }: Context): MemberOffense | null {
   const species = battleSpecies(set);
   if (!species) return null;
   const rules = rulesOf(data);
@@ -122,12 +121,21 @@ const computeMember = memoBySet((set: TeamSet, { data, team }: Context): MemberO
   const value = setup === null
     ? Math.round((w.power * power + w.wallbreaking * wallbreaking) / (w.power + w.wallbreaking))
     : Math.round(w.power * power + w.wallbreaking * wallbreaking + w.setup * setup);
-  return { species: species.name, power, wallbreaking, setup, value, support };
-}, ({ data, team }: Context) => `${data.formatId ?? 'ou'}|${usesMeta(data)}|${team.flatMap(m => enables(m).map(l => l.condition)).sort().join(',')}`);
+  return Object.freeze({ species: species.name, power, wallbreaking, setup, value, support });
+}
+
+/** Per contenuto del set, formato, meta e condizioni del team: le proposte rifanno set uguali con oggetti nuovi. */
+const members = new Map<string, MemberOffense | null>();
+const MEMBER_LIMIT = 5000;
 
 /** Offesa di un membro: il danno vero del set contro i difensori del formato (null se la libreria non conosce il Pokémon). */
 export function memberOffense(set: TeamSet, team: TeamSet[], data: EngineData): MemberOffense | null {
-  return computeMember(set, { data, team });
+  const key = `${setKey(set)}|${data.formatId ?? 'ou'}|${usesMeta(data)}|${conditionsOf(set, team).all.join(',')}`;
+  if (members.has(key)) return members.get(key)!;
+  if (members.size >= MEMBER_LIMIT) members.clear();
+  const value = computeMember(set, { data, team });
+  members.set(key, value);
+  return value;
 }
 
 /** Offesa del team: media dei membri, con i supporti a metà peso; il Setup solo fra chi ce l'ha. */

@@ -31,8 +31,29 @@ const TERRAIN: Partial<Record<FieldCondition, 'Electric' | 'Psychic' | 'Grassy' 
   electricterrain: 'Electric', psychicterrain: 'Psychic', grassyterrain: 'Grassy', mistyterrain: 'Misty',
 };
 
+/** Chiave del set per il contenuto: le proposte creano set sempre nuovi, uguali a quelli già calcolati. */
+export const setKey = (set: TeamSet): string =>
+  JSON.stringify([set.species, set.item, set.ability, set.moves, set.nature, set.evs, set.ivs ?? null, set.teraType ?? null]);
+
+/** Cache limitate: oltre il limite si svuotano (i Pokémon e le mosse della libreria si riusano, il calcolo li copia). */
+const LIMIT = 20000;
+function cached<V>(cache: Map<string, V>, key: string, make: () => V): V {
+  if (cache.has(key)) return cache.get(key)!;
+  if (cache.size >= LIMIT) cache.clear();
+  const value = make();
+  cache.set(key, value);
+  return value;
+}
+const pokemon = new Map<string, Pokemon | null>();
+const moves = new Map<string, CalcMove | null>();
+const fields = new Map<string, Field>();
+
 /** Il Pokémon della libreria dal set: forma in battaglia (la Mega), abilità, strumento, natura, EV e IV. */
 function toPokemon(set: TeamSet, options: HitOptions = {}): Pokemon | null {
+  return cached(pokemon, `${setKey(set)}|${JSON.stringify(options.boosts ?? null)}|${!!options.tera}`, () => buildPokemon(set, options));
+}
+
+function buildPokemon(set: TeamSet, options: HitOptions): Pokemon | null {
   const species = battleSpecies(set);
   if (!species) return null;
   try {
@@ -51,9 +72,21 @@ function toPokemon(set: TeamSet, options: HitOptions = {}): Pokemon | null {
 }
 
 function toField(conditions: FieldCondition[] = []): Field {
-  const weather = conditions.map(c => WEATHER[c]).find(Boolean);
-  const terrain = conditions.map(c => TERRAIN[c]).find(Boolean);
-  return new Field({ weather, terrain });
+  return cached(fields, conditions.join(','), () => {
+    const weather = conditions.map(c => WEATHER[c]).find(Boolean);
+    const terrain = conditions.map(c => TERRAIN[c]).find(Boolean);
+    return new Field({ weather, terrain });
+  });
+}
+
+function toMove(name: string, useZ: boolean): CalcMove | null {
+  return cached(moves, `${name}|${useZ}`, () => {
+    try {
+      return new CalcMove(gen, name, { useZ });
+    } catch {
+      return null;
+    }
+  });
 }
 
 /** Il colpo migliore del set contro il difensore (mai terastallizzato); null senza mosse d'attacco o se la libreria non conosce i Pokémon. */
@@ -77,8 +110,9 @@ export function bestHit(attacker: TeamSet, defender: TeamSet, options: HitOption
       if (!best || hit.expected > best.expected) best = hit;
       continue;
     }
+    const move = toMove(data.name, !!zType && zType === data.type);
+    if (!move) continue;
     try {
-      const move = new CalcMove(gen, data.name, { useZ: !!zType && zType === data.type });
       const result = calculate(gen, own, target, move, field);
       const rolls = (Array.isArray(result.damage) ? result.damage.flat() : [result.damage]) as number[];
       if (!rolls.length) continue;

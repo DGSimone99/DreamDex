@@ -53,8 +53,8 @@ export function RatingPanel({ rating, ruleIssues = [], metaMonth }: { rating: Te
           const text = `${area.label} ${area.value ?? 'n/d'}`;
           const section = AREA_SECTIONS[area.key];
           // Nel tooltip solo i dati per membro; come si calcola ogni area lo spiega il "?" accanto al titolo
-          const tip = area.key === 'strength' && rating.power.length
-            ? [...rating.power].sort((a, b) => b.offense - a.offense).map(m => `${m.species} ${m.offense}`).join('\n')
+          const tip = area.key === 'strength' && rating.offense.members.length
+            ? [...rating.offense.members].sort((a, b) => b.value - a.value).map(m => `${m.species} ${m.value}`).join('\n')
             : area.key === 'meta' && rating.meta ? t('rating.metaTip', { threats: rating.meta.threats, usage: rating.meta.usage })
             : area.key === 'coverage' && rating.coverageByMember.length
               ? [t('rating.coverageTip'), ...[...rating.coverageByMember].sort((a, b) => b.types - a.types).map(m => `${m.species} ${m.types}`)].join('\n')

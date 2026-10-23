@@ -1,4 +1,5 @@
 import { DEFAULT_RULES } from '../../src/engine/formatRules';
+import { teamOffense } from '../../src/engine/offense';
 import { describe, expect, it } from 'vitest';
 import { ARCHETYPE_WEIGHTS, COVERAGE_DEPTH, rateTeam, ROLE_COMPRESSION } from '../../src/engine/rating';
 import { meetsNeed, needCoverage, NEEDS, teamNeeds } from '../../src/engine/needs';
@@ -138,9 +139,8 @@ describe('voto dello stall', () => {
     Math.round(rating.areas.filter(a => a.key !== 'meta').reduce((acc, a) => acc + rating.weights[a.key]! * a.value!, 0));
   it('anche nello stall l\'Offesa è la media dei membri, ma pesa poco', () => {
     const rating = rateTeam(stall, fixtureData)!;
-    const offense = stall.map(s => memberPower(s, DEFAULT_RULES.strengthPool)!.offense).reduce((a, b) => a + b, 0) / stall.length;
-    // Fino a mezzo punto di scarto: 14,5 può diventare 14 per la virgola mobile
-    expect(Math.abs(rating.areas.find(a => a.key === 'strength')!.value! - Math.min(100, offense))).toBeLessThanOrEqual(0.5);
+    // L'Offesa è quella del danno vero (offense.ts), anche per uno stall
+    expect(rating.areas.find(a => a.key === 'strength')!.value).toBe(teamOffense(stall, fixtureData).value);
     expect(rating.areas.find(a => a.key === 'strength')!.label).toBe('Offesa');
     expect(rating.weights.strength!).toBeCloseTo(ARCHETYPE_WEIGHTS.stall.strength / 100);
   });
@@ -156,8 +156,7 @@ describe('voto dello stall', () => {
     const team = [tusk, gholdengo];
     const rating = rateTeam(team, fixtureData)!;
     expect(Math.abs(rating.base - weighted(rating))).toBeLessThanOrEqual(1);
-    const offense = team.reduce((a, s) => a + memberPower(s)!.offense, 0) / team.length / 100;
-    expect(rating.areas.find(a => a.key === 'strength')!.value).toBe(Math.round(100 * Math.min(1, offense)));
+    expect(rating.areas.find(a => a.key === 'strength')!.value).toBe(teamOffense(team, fixtureData).value);
     expect(rating.areas.find(a => a.key === 'strength')!.label).toBe('Offesa');
   });
 });
