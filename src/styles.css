@@ -1493,3 +1493,39 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 }
 /* Portate in cima (clic su una scheda o su Sostituisci): restano sotto la barra in alto, che è fissa */
 .tabs { scroll-margin-top: 76px; }
+
+/* Scheda Liste: Pokédex a sinistra, Preferiti e Bannati a destra (metà ciascuno) */
+.lists-panel h2 { margin-bottom: 4px; }
+.lists-bar { display: flex; gap: 12px; align-items: center; margin: 12px 0; }
+.lists-bar .search-field { flex: 1; }
+.lists-main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: start; margin-top: 12px; }
+.dex-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 6px; max-height: calc(100vh - 140px); overflow-y: auto; }
+.dex-cell { position: relative; display: grid; justify-items: center; padding: 6px 4px 8px; background: var(--panel); border: 1px solid var(--line-soft); border-radius: 4px; }
+.dex-cell .sprite { image-rendering: pixelated; }
+.dex-no { position: absolute; left: 6px; top: 4px; font-size: 11px; color: var(--faint); font-variant-numeric: tabular-nums; }
+.dex-name { font-size: 12px; text-align: center; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dex-actions { display: flex; gap: 4px; margin-top: 4px; opacity: 0; transition: opacity 0.15s; }
+.dex-cell:hover .dex-actions, .dex-cell:focus-within .dex-actions, .dex-cell.target .dex-actions, .dex-cell.fav .dex-actions, .dex-cell.ban .dex-actions { opacity: 1; }
+.dex-actions button { padding: 1px 8px; font-size: 13px; color: var(--muted); background: var(--field); }
+.dex-actions .dex-fav[aria-pressed='true'] { color: var(--blue); border-color: var(--blue); background: var(--blue-soft); }
+.dex-actions .dex-ban[aria-pressed='true'] { color: var(--bad); border-color: var(--bad); background: var(--bad-bg); }
+.dex-cell.fav { border-color: var(--blue); }
+.dex-cell.ban > :not(.dex-actions) { opacity: 0.4; }
+.dex-cell.target { outline: 2px solid var(--gold); outline-offset: 1px; }
+.lists-side { display: grid; gap: 14px; position: sticky; top: 76px; }
+.user-list { background: var(--panel); border: 1px solid var(--line-soft); border-radius: 6px; padding: 12px 14px; }
+.user-list h3 { display: flex; justify-content: space-between; align-items: center; margin: 0 0 10px; font-size: 15px; text-transform: uppercase; letter-spacing: 0.04em; }
+.user-list.favorites h3 > span { color: var(--blue); }
+.user-list.bans h3 > span { color: var(--bad); }
+.user-list h3 .count { color: var(--muted); font-weight: 500; }
+.user-list .list-clear { font-size: 12px; padding: 2px 8px; }
+.user-list ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 6px; }
+.user-list li { display: flex; align-items: center; gap: 6px; padding: 2px 6px 2px 2px; background: var(--field); border: 1px solid var(--line-soft); border-radius: 4px; }
+.user-list li .sprite { image-rendering: pixelated; }
+.user-list .list-name { font-weight: 500; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.user-list .scope-tag { font-size: 11px; color: var(--muted); border: 1px solid var(--line); border-radius: 3px; padding: 0 5px; white-space: nowrap; }
+.user-list .list-remove { margin-left: auto; padding: 4px; border: 0; background: none; color: var(--faint); }
+.user-list .list-remove:hover { color: var(--bad); }
+.list-none { margin: 0; color: var(--muted); font-size: 13px; }
+.lists-copy select { font-size: 14px; }
+@media (max-width: 1100px) { .lists-main { grid-template-columns: 1fr; } .lists-side { position: static; } }

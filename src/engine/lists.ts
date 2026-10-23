@@ -1,4 +1,4 @@
-import { battleSpecies, getSpecies } from './dex';
+import { battleSpecies, dex, getSpecies, isCosmeticForme, isTeambuildable, withinGen } from './dex';
 import { formatOptions, isBannedIn, speciesInPokedex } from './formats';
 import type { Format, FormatId } from './format';
 
@@ -124,6 +124,14 @@ export function effectiveLists(lists: UserLists, formatId: FormatId): EffectiveL
     }
   }
   return effective;
+}
+
+/** Tutti i Pokémon che si possono mettere in un team nel formato, in ordine di Pokédex (la forma base prima delle altre). */
+export function pokedexSpecies(format: Format): string[] {
+  return dex.species.all()
+    .filter(s => isTeambuildable(s) && speciesInPokedex(s, format) && !isCosmeticForme(s) && withinGen(s, format))
+    .sort((a, b) => a.num - b.num || Number(!!a.forme) - Number(!!b.forme) || a.name.localeCompare(b.name))
+    .map(s => s.name);
 }
 
 /** Il set è nella lista: la forma in battaglia (Charizard-Mega-X) o la specie e la sua specie base (anche per le forme). */

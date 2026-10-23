@@ -1,4 +1,4 @@
-import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { analyzeTeam } from './engine/analysis';
 import { coachTeam, type SwapPreview } from './engine/coach';
 import { rateTeam } from './engine/rating';
@@ -15,6 +15,7 @@ import { MemberSheet } from './ui/MemberSheet';
 import { SavedTeams } from './ui/SavedTeams';
 import { ShowdownPanel } from './ui/ShowdownPanel';
 import { SuggestionsPanel } from './ui/SuggestionsPanel';
+import { ListsPanel } from './ui/ListsPanel';
 import { TeamPanel } from './ui/TeamPanel';
 import { TopBar } from './ui/TopBar';
 import { TabPanel, Tabs, type TabId } from './ui/Tabs';
@@ -74,10 +75,23 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
     if (storage) saveLists(lists, storage);
   }, [lists, storage]);
   const userLists = useMemo(() => effectiveLists(lists, format.formatId), [lists, format.formatId]);
+  // Lista svuotata: si può annullare per qualche secondo (finché le liste restano quelle)
+  const [listUndo, setListUndo] = useState<{ id: number; from: string; before: UserLists; after: UserLists } | null>(null);
+  // Stabile: la scheda Liste (oltre mille Pokémon) non si ridisegna quando cambia solo il team
+  const listsRef = useRef(lists);
+  listsRef.current = lists;
+  const changeLists = useCallback((next: UserLists, undo?: { kind: 'clearList'; from: string }) => {
+    setListUndo(undo ? { id: Date.now(), from: undo.from, before: listsRef.current, after: next } : null);
+    setLists(next);
+  }, []);
+  // La scheda Liste si monta la prima volta che la si apre, poi resta
+  const [listsOpened, setListsOpened] = useState(false);
   // Senza meta (single player): voto, analisi, coach e suggerimenti ignorano l'uso nel formato
   // Il formato scelto entra nei dati: alcune regole del voto cambiano col formato (Ubers)
-  const data = useMemo(() => ({ ...loaded, formatId: format.formatId, userLists, ...(format.meta ? {} : { ignoreMeta: true }) }),
-    [loaded, format.formatId, format.meta, userLists]);
+  // Il voto e l'analisi non dipendono dalle liste: cambiandole non si ricalcolano (solo i suggerimenti le usano)
+  const rated = useMemo(() => ({ ...loaded, formatId: format.formatId, ...(format.meta ? {} : { ignoreMeta: true }) }),
+    [loaded, format.formatId, format.meta]);
+  const data = useMemo(() => ({ ...rated, userLists }), [rated, userLists]);
   const [initialTeam] = useState<TeamSet[]>(() => shared?.team ?? session?.team ?? []);
   const [team, setTeam] = useState<TeamSet[]>(initialTeam);
   useEffect(() => {
@@ -117,8 +131,8 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   const changePreview = (next: SwapPreview, open: boolean) =>
     setPreview(current => (open ? next
       : current?.index === next.index && current.replacement === next.replacement ? null : current));
-  const analysis = useMemo(() => analyzeTeam(team, data), [team, data]);
-  const rating = useMemo(() => rateTeam(team, data, lang), [team, data, lang]);
+  const analysis = useMemo(() => analyzeTeam(team, rated), [team, rated]);
+  const rating = useMemo(() => rateTeam(team, rated, lang), [team, rated, lang]);
   // Il coach prova gli scambi per ogni membro (un decimo di secondo): si aggiorna subito dopo il team, senza bloccarlo
   const coachInput = useMemo(() => ({ team, format, data, lang }), [team, format, data, lang]);
   const coachSource = useDeferredValue(coachInput);
@@ -130,6 +144,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   const openThreats = analysis.threats.filter(threat => threat.handledBy.length === 0).length;
   // Senza meta la scheda Meta è spenta: si resta sull'Analisi
   const shownTab: TabId = tab === 'meta' && !metaOn ? 'analysis' : tab;
+  if (shownTab === 'lists' && !listsOpened) setListsOpened(true);
 
   const changeTeam = (next: TeamSet[]) => {
     const value = next.slice(0, 6);
@@ -199,6 +214,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
             level: problems.some(p => p.severity === 'serious') ? 'serious' : 'minor' } : null },
         { id: 'meta', label: t(lang, 'tabs.meta'), disabled: !metaOn, note: metaOn ? undefined : t(lang, 'tabs.metaOff'),
           count: metaOn && team.length > 0 && openThreats ? { text: t(lang, openThreats === 1 ? 'tabs.threatsOne' : 'tabs.threatsMany', { n: openThreats }), level: 'warn' } : null },
+        { id: 'lists', label: t(lang, 'tabs.lists') },
         { id: 'compare', label: t(lang, 'tabs.compare'), disabled: true, note: t(lang, 'tabs.soon') },
       ]} />
       <main className="tab-body">
@@ -220,12 +236,19 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
         <TabPanel id="analysis" active={shownTab}>
           <AnalysisPanel team={team} analysis={analysis} data={data} rating={rating} coaching={coaching} withMeta={false} expanded
             preview={preview?.index === replaceIndex ? preview : null} onReplace={startReplace} onSwap={replaceAt} />
-          {team.length > 0 && <MemberSheet team={team} data={data} />}
+          {team.length > 0 && <MemberSheet team={team} data={rated} />}
         </TabPanel>
         <TabPanel id="meta" active={shownTab}>
           <MetaPanel team={team} analysis={analysis} data={data} coaching={coaching} />
         </TabPanel>
+        <TabPanel id="lists" active={shownTab}>
+          {listsOpened && <ListsPanel lists={lists} format={format} data={data} onChange={changeLists} />}
+        </TabPanel>
       </main>
+      {listUndo && listUndo.after === lists && (
+        <UndoToast action={{ id: listUndo.id, kind: 'clearList', from: listUndo.from }} onClose={() => setListUndo(null)}
+          onUndo={() => { setLists(listUndo.before); setListUndo(null); }} />
+      )}
       {undo && undo.after === team && (
         <UndoToast action={undo} onClose={() => setUndo(null)}
           onUndo={() => { changeTeam(undo.before); if (undo.format) setFormat({ ...undo.format, meta: format.meta }); setUndo(null); }} />

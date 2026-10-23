@@ -145,7 +145,7 @@ export function saveLang(lang: Lang, storage: Storage | undefined = defaultStora
 }
 
 const TAB_KEY = 'dreamdex.tab';
-const TABS = ['pokemon', 'analysis', 'meta'] as const;
+const TABS = ['pokemon', 'analysis', 'meta', 'lists'] as const;
 export type SavedTab = typeof TABS[number];
 
 /** Ultima scheda aperta (Pokémon, Analisi, Meta), o null. */
