@@ -5,8 +5,7 @@ import { battleAbility, battleName, battleSpecies, dex, effectiveStats, getMove,
 import { rulesOf } from './formatRules';
 import { attackStyle, detectRoles } from './roles';
 import type { TeamSet } from './sets';
-import { metaSpeed, speedStat } from './speed';
-import { topThreats } from './stats';
+import { outspeedShare, speedPool, speedStat } from './speed';
 import { enables } from './synergy';
 import { defensiveMultiplier, superEffectiveMoves, teamField, TYPES, type TypeName } from './types';
 
@@ -140,7 +139,7 @@ function plausibleRoles(set: TeamSet, c: Components, setupMove: boolean, wallSta
   return roles.length ? roles : ['support'];
 }
 
-function rowFor(set: TeamSet, data: EngineData, threats: string[] | null, field: ReturnType<typeof teamField>): MemberSheetRow {
+function rowFor(set: TeamSet, data: EngineData, field: ReturnType<typeof teamField>): MemberSheetRow {
   const ref = referencePools();
   const stats = effectiveStats(set);
   const species = battleSpecies(set);
@@ -165,8 +164,8 @@ function rowFor(set: TeamSet, data: EngineData, threats: string[] | null, field:
   // Velocità: reale, con Scarf; un setup di velocità vale +50%
   const speedValue = speedStat(set).value;
   const effectiveSpeed = speedValue * (ids.some(id => SPEED_SETUP.has(id)) ? 1.5 : 1);
-  const rivals = threats?.map(name => metaSpeed(data, name)) ?? [];
-  const speedShare = rivals.length ? rivals.filter(r => r < speedValue).length / rivals.length : share(ref.speed, speedValue);
+  // Quota superata: la stessa dell'editor e del voto (speedPool)
+  const speedShare = outspeedShare(speedValue, speedPool(data), set.species);
 
   // Robustezza: PS e difese reali, Eviolite, Assault Vest, abilità difensive; la Focus Sash tiene in campo un lead
   const def = statAt100(stats.def, evs.def ?? 0, natureMult(set.nature, 'def'));
@@ -214,7 +213,7 @@ function rowFor(set: TeamSet, data: EngineData, threats: string[] | null, field:
 
   return {
     species: battleName(set), item: set.item, role: best.role, grade: Math.round(100 * best.score),
-    speed: { value: speedValue, share: speedShare, vsMeta: rivals.length > 0 },
+    speed: { value: speedValue, share: speedShare, vsMeta: usesMeta(data) },
     attack: { value: Math.round(attackValue), kind: style === 'none' ? null : style, boostItem, boostAbility, share: c.attack },
     coverage,
     bulk: { hp, def, spd, share: bulkShare },
@@ -229,7 +228,6 @@ function rowFor(set: TeamSet, data: EngineData, threats: string[] | null, field:
 
 /** La scheda di tutti i membri, col meteo e il campo del team e (col meta) contro le minacce più usate. */
 export function memberSheet(team: TeamSet[], data: EngineData): MemberSheetRow[] {
-  const threats = usesMeta(data) ? topThreats(data.stats, 20, team.map(battleName)) : null;
   const field = teamField(team);
-  return team.filter(set => battleSpecies(set)).map(set => rowFor(set, data, threats, field));
+  return team.filter(set => battleSpecies(set)).map(set => rowFor(set, data, field));
 }

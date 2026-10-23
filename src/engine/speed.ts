@@ -4,6 +4,7 @@ import { battleSpecies, dex, getSpecies, isSelectable, toID } from './dex';
 import { memberPower } from './power';
 import { parseSpread, type TeamSet } from './sets';
 import { DEFAULT_FORMAT, type FormatId } from './format';
+import { usesMeta } from './analysis';
 import { isLegalIn, tierIn } from './formats';
 
 /** Velocità finale al livello 100 (IV del set, 31 se non indicati); `scarf` se la Sciarpa Scelta la moltiplica per 1,5. */
@@ -33,6 +34,8 @@ export interface SpeedRival extends Speed {
 
 export interface SpeedTier {
   speed: number;
+  /** Confronto coi più usati del meta (true) o col tier alla velocità massima (false). */
+  vsMeta: boolean;
   /** Pokémon del meta confrontati (la specie stessa esclusa). */
   total: number;
   /** Quota di quei Pokémon più lenti del set. */
@@ -45,24 +48,52 @@ export interface SpeedTier {
 
 const top = (shares: Record<string, number>) => Object.entries(shares).sort((a, b) => b[1] - a[1])[0]?.[0];
 
-/** Velocità del set rispetto ai più usati del formato, ognuno col suo spread e strumento più comuni. */
+/**
+ * Il gruppo con cui si confronta la velocità, lo stesso per editor, scheda dei membri e voto. Col meta attivo:
+ * i più usati del mese col loro spread e strumento più comuni (Sciarpa compresa). Senza meta o senza statistiche:
+ * i Pokémon del tier del formato alla velocità massima (252 EV, natura che la alza), senza strumento.
+ */
+const pools = new Map<string, SpeedRival[]>();
+export function speedPool(data: EngineData): SpeedRival[] {
+  const formatId = data.formatId ?? 'ou';
+  const meta = usesMeta(data);
+  const key = `${formatId}|${meta}|${!!data.stats}`;
+  let pool = pools.get(key);
+  if (pool) return pool;
+  pool = meta
+    ? Object.entries(data.stats!.pokemon)
+      .sort((a, b) => b[1].usage - a[1].usage)
+      .slice(0, SPEED_POOL)
+      .map(([name, entry]) => {
+        const { nature, evs } = parseSpread(top(entry.spreads));
+        return { species: name, ...speedStat({ species: name, item: dex.items.get(top(entry.items) ?? '').name ?? '', nature, evs }) };
+      })
+    : tierSpecies(formatId).map(s => ({ species: s.name, value: Math.floor((2 * s.baseStats.spe + 31 + 63 + 5) * 1.1), scarf: false }));
+  pools.set(key, pool);
+  return pool;
+}
+
+const baseOf = (name: string) => getSpecies(name)?.baseSpecies ?? name;
+
+/** Quota del gruppo più lenta di `speed`; un pareggio vale metà. La specie stessa (`ownSpecies`) non si confronta con sé. */
+export function outspeedShare(speed: number, pool: SpeedRival[], ownSpecies?: string): number {
+  const own = ownSpecies ? baseOf(ownSpecies) : null;
+  const rivals = own ? pool.filter(r => baseOf(r.species) !== own) : pool;
+  if (!rivals.length) return 0;
+  return rivals.reduce((acc, r) => acc + (r.value < speed ? 1 : r.value === speed ? 0.5 : 0), 0) / rivals.length;
+}
+
+/** Velocità del set rispetto al gruppo del formato (speedPool), coi vicini più veloci e più lenti. */
 export function speedTier(set: TeamSet, data: EngineData): SpeedTier | null {
-  if (!data.stats) return null;
-  const own = getSpecies(set.species)?.baseSpecies;
+  const own = baseOf(set.species);
   const speed = speedStat(set).value;
-  const rivals: SpeedRival[] = Object.entries(data.stats.pokemon)
-    .sort((a, b) => b[1].usage - a[1].usage)
-    .filter(([name]) => getSpecies(name)?.baseSpecies !== own)
-    .slice(0, SPEED_POOL)
-    .map(([name, entry]) => {
-      const { nature, evs } = parseSpread(top(entry.spreads));
-      return { species: name, ...speedStat({ species: name, item: dex.items.get(top(entry.items) ?? '').name ?? '', nature, evs }) };
-    });
+  const rivals = speedPool(data).filter(r => baseOf(r.species) !== own);
   if (!rivals.length) return null;
   return {
     speed,
+    vsMeta: usesMeta(data),
     total: rivals.length,
-    outspeeds: rivals.filter(r => r.value < speed).length / rivals.length,
+    outspeeds: outspeedShare(speed, rivals),
     faster: rivals.filter(r => r.value > speed).sort((a, b) => a.value - b.value).slice(0, NEIGHBOURS),
     slower: rivals.filter(r => r.value < speed).sort((a, b) => b.value - a.value).slice(0, NEIGHBOURS),
     ties: rivals.filter(r => r.value === speed),

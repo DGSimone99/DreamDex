@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { speedStat, speedTier } from '../../src/engine/speed';
+import { outspeedShare, referenceSpeeds, speedPool, speedStat, speedTier } from '../../src/engine/speed';
+import { fixtureData } from '../fixtures/data';
 import { emptySet } from '../../src/engine/sets';
 import type { SpeciesStats, StatsData } from '../../src/engine/stats';
 
@@ -45,7 +46,33 @@ describe('posto nel meta', () => {
     expect(tier.slower.map(f => [f.species, f.value])).toEqual([['Great Tusk', 300], ['Gholdengo', 293], ['Kingambit', 136]]);
   });
 
-  it('senza statistiche nessun confronto', () => {
-    expect(speedTier(garchomp('Jolly', 252), { stats: null, sets: null })).toBeNull();
+  it('senza statistiche: il tier del formato alla velocità massima', () => {
+    const tier = speedTier(garchomp('Jolly', 252), { stats: null, sets: null })!;
+    expect(tier.total).toBeGreaterThan(0);
+    expect(tier.vsMeta).toBe(false);
+    expect(speedTier(garchomp('Jolly', 252), fixtureData)!.vsMeta).toBe(true);
+  });
+});
+
+describe('quota superata, la stessa ovunque', () => {
+  it('un pareggio vale metà', () => {
+    const pool = [{ species: 'A', value: 100, scarf: false }, { species: 'B', value: 200, scarf: false }, { species: 'C', value: 300, scarf: false }];
+    expect(outspeedShare(200, pool)).toBeCloseTo(0.5);
+    // La specie stessa non si confronta con sé
+    expect(outspeedShare(250, pool, 'C')).toBe(1);
+  });
+
+  it('col meta spento: il tier alla velocità massima, senza strumento', () => {
+    const pool = speedPool({ ...fixtureData, ignoreMeta: true });
+    expect(pool.every(r => !r.scarf)).toBe(true);
+    expect(pool.map(r => r.value).sort((a, b) => a - b)).toEqual(referenceSpeeds('ou'));
+  });
+
+  it("col meta: i più usati col loro spread e strumento; l'editor usa la stessa quota", () => {
+    const pool = speedPool(fixtureData);
+    expect(pool.length).toBeGreaterThan(0);
+    expect(pool.length).toBeLessThanOrEqual(40);
+    const set = garchomp('Jolly', 252);
+    expect(speedTier(set, fixtureData)!.outspeeds).toBeCloseTo(outspeedShare(333, pool, 'Garchomp'));
   });
 });
