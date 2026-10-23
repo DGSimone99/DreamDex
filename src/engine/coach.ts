@@ -11,7 +11,7 @@ import { gameName, typeName } from '../i18n/game';
 import { illegalParts } from './learnsets';
 import { detectRoles, isPassive, isStall, roleLabel } from './roles';
 import { needLabel, NEED_ROLES } from './needs';
-import { scoreCandidates, type Suggestion } from './scoring';
+import { bannedInPool, scoreCandidates, type Suggestion } from './scoring';
 import { memberIssues, rateTeam, roleAndTypeRedundancies, weatherClashes } from './rating';
 import { benefits, conditionLabel, viaName, enables, neededConditions, providesAll, teamSynergies, unmetBeneficiaries, unusedEnablers } from './synergy';
 import type { TeamSet } from './sets';
@@ -70,6 +70,8 @@ export interface Coaching {
   swaps: CoachSwap[];
   /** Per ogni minaccia del meta senza check nel team: i candidati che la gestiscono. */
   threatFixes: Record<string, string[]>;
+  /** Candidati esclusi perché bannati dall'utente (assente: nessuno). */
+  bannedCount?: number;
 }
 
 const list = (items: string[]) => items.join(', ');
@@ -343,6 +345,7 @@ export function coachTeam(team: TeamSet[], format: Format, data: EngineData, lan
     strengths: findStrengths(team, analysis, lang),
     problems,
     swaps: data.stats ? findSwaps(team, format, data) : [],
+    bannedCount: data.stats ? bannedInPool(team, format, data) : 0,
     threatFixes: Object.fromEntries(analysis.threats
       .filter(t => t.handledBy.length === 0)
       .map(t => [t.name, fixesFor(candidates, s => Number(s.facts.threats.checked.includes(t.name)))])),

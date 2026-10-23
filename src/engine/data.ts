@@ -1,6 +1,7 @@
 import type { FormatId } from './format';
 import type { PresetsData, SetsData } from './sets';
 import type { FallbackStats, StatsData } from './stats';
+import type { EffectiveLists } from './lists';
 
 export interface EngineData {
   stats: StatsData | null;
@@ -17,4 +18,6 @@ export interface EngineData {
   ignoreMeta?: boolean;
   /** Formato scelto, per le regole che cambiano col formato (vedi formatRules). */
   formatId?: FormatId;
+  /** Preferiti e bannati dell'utente nel formato: i bannati non diventano mai candidati (il voto non cambia). */
+  userLists?: EffectiveLists;
 }

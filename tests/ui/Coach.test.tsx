@@ -46,3 +46,13 @@ describe('CoachPanel', () => {
     expect(screen.getByRole('heading', { name: 'Sostituisci Magikarp' })).toBeInTheDocument();
   });
 });
+
+describe('CoachPanel: bannati dell\'utente', () => {
+  it('dice quanti bannati restano fuori dalle sostituzioni', async () => {
+    const { CoachPanel } = await import('../../src/ui/CoachPanel');
+    const { renderIt } = await import('../helpers/italian');
+    const coaching = { verdict: 'x', teamType: null, strengths: [], problems: [], swaps: [], threatFixes: {}, bannedCount: 1 };
+    renderIt(<CoachPanel coaching={coaching} onReplace={() => {}} />);
+    expect(screen.getByText('1 bannato escluso')).toBeInTheDocument();
+  });
+});

@@ -6,6 +6,7 @@ import { fillProposals, matchesChoice, MAX_ATTEMPTS, MIN_OVERALL, PROPOSALS_PER_
 import { DEFAULT_FORMAT, type Format } from '../../src/engine/format';
 import { rateTeam } from '../../src/engine/rating';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
+import { effectiveLists, EMPTY_LISTS } from '../../src/engine/lists';
 import { benefits, enables } from '../../src/engine/synergy';
 import { fillData } from '../fixtures/fillData';
 
@@ -182,5 +183,21 @@ describe('proposte di Completa team', () => {
 
   it('senza statistiche non produce nulla', () => {
     expect(take([], any, new Set(), DEFAULT_FORMAT, { stats: null, sets: {} })).toEqual([]);
+  });
+});
+
+describe('Completa team: preferiti dell\'utente', () => {
+  const lists = (favorites: string[]) => effectiveLists({ ...EMPTY_LISTS, universal: { favorites, bans: [] } }, 'ou');
+  const firstPicks = (data: EngineData) => formes(take([], any, new Set(), DEFAULT_FORMAT, data)[0].added);
+
+  it('nessun preferito: proposte come prima', () => {
+    expect(firstPicks({ ...fillData, userLists: lists([]) })).toEqual(firstPicks(fillData));
+  });
+
+  it('a voto quasi pari un preferito passa davanti', () => {
+    const before = new Set(firstPicks(fillData));
+    const others = Object.keys(fillData.stats!.pokemon).filter(name => !before.has(toID(name)));
+    const after = firstPicks({ ...fillData, userLists: lists(others) });
+    expect(after.some(id => !before.has(id))).toBe(true);
   });
 });

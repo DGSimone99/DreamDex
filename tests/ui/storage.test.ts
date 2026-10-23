@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { loadSavedTeams, saveTeams } from '../../src/storage';
+import { loadLists, loadSavedTeams, saveLists, saveTeams } from '../../src/storage';
+import { EMPTY_LISTS } from '../../src/engine/lists';
 
 const throwing = {
   getItem: () => { throw new Error('bloccato'); },
@@ -38,5 +39,14 @@ describe('storage', () => {
 
   it('storage assente', () => {
     expect(loadSavedTeams(undefined)).toEqual([]);
+  });
+
+  it('liste: round-trip e JSON rotto', () => {
+    const storage = memory(null);
+    const lists = { universal: { favorites: ['Garchomp'], bans: [] }, byFormat: { ou: { favorites: [], bans: ['Toxapex'] } } };
+    expect(saveLists(lists, storage)).toBe(true);
+    expect(loadLists(storage)).toEqual(lists);
+    expect(loadLists(memory('{non json'))).toEqual(EMPTY_LISTS);
+    expect(loadLists(throwing)).toEqual(EMPTY_LISTS);
   });
 });
