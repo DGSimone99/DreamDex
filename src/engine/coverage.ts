@@ -66,6 +66,8 @@ export interface TeamCoverage {
   holes: string[];
   /** Quota pesata (0–100) dei bersagli che ogni membro manda KO in due colpi (nell'ordine del team). */
   perMember: number[];
+  /** Per ogni bersaglio: tipi, il Pokémon che lo rappresenta, il peso e chi lo manda KO in due colpi. */
+  rows: { label: string; species: string; weight: number; coveredBy: string[] }[];
 }
 
 /** Danno (in quota dei PS, al massimo 1) del colpo migliore del set contro ogni bersaglio; per contenuto del set. */
@@ -96,5 +98,9 @@ export function teamCoverage(team: TeamSet[], data: EngineData): TeamCoverage {
     value: Math.round(100 * value),
     holes,
     perMember: hits.map(h => Math.round(100 * targets.reduce((acc, target, i) => acc + (h[i] >= COVER_HIT ? target.weight : 0), 0))),
+    rows: targets.map((target, i) => ({
+      label: target.label, species: target.set.species, weight: target.weight,
+      coveredBy: team.filter((_, m) => hits[m][i] >= COVER_HIT).map(set => battleSpecies(set)?.name ?? set.species),
+    })),
   };
 }

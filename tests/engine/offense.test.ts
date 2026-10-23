@@ -73,10 +73,10 @@ describe('memberOffense', () => {
     expect(memberOffense(teraGambit, [teraGambit], noStats)!.power).toBe(memberOffense(gambit, [gambit], noStats)!.power);
   });
 
-  it('il valore del membro è Potenza e Wallbreaking (il setup conta solo nel Potenziale del team)', () => {
+  it('il valore del membro è Potenza e Wallbreaking, più il Potenziale del setup (nessun numero Setup)', () => {
     const volc = set('Volcarona', 'Heavy-Duty Boots', 'Flame Body', ['Quiver Dance', 'Flamethrower', 'Bug Buzz', 'Roost'], 'Timid', { spa: 252, spe: 252 });
     const m = memberOffense(volc, [volc], fixtureData)!;
-    expect(m.value).toBe(Math.round((0.5 * m.power + 0.35 * m.wallbreaking) / 0.85));
+    expect(m.value - m.setupGain).toBe(Math.round((0.5 * m.power + 0.35 * m.wallbreaking) / 0.85));
     expect('setup' in m).toBe(false);
   });
 
@@ -216,5 +216,49 @@ describe('Offesa di squadra', () => {
     const targets = coverageTargets(noStats);
     const covered = targets.filter(t => Math.min(1, bestHit(chomp, t.set)?.expected ?? 0) >= 0.5).length;
     expect(teamOffense([chomp], noStats).members[0].covered).toBe(Math.round(100 * covered / targets.length));
+  });
+});
+
+describe('Potenziale del membro e tabella dei muri', () => {
+  const volc = set('Volcarona', 'Heavy-Duty Boots', 'Flame Body', ['Quiver Dance', 'Flamethrower', 'Bug Buzz', 'Roost'], 'Timid', { spa: 252, spe: 252 });
+
+  it('il setup alza l\'Offesa del membro di metà del suo guadagno; setupGain è la differenza finale', () => {
+    const m = memberOffense(volc, [volc], noStats)!;
+    expect(m.setupMove).toBe('Quiver Dance');
+    expect(m.setupGain).toBeGreaterThan(0);
+    expect(m.value - m.setupGain).toBe(Math.round((0.5 * m.power + 0.35 * m.wallbreaking) / 0.85));
+    const plain = memberOffense(chomp, [chomp], noStats)!;
+    expect(plain.setupGain).toBe(0);
+  });
+
+  it('per ogni muro e membro: soglia e danno, senza e con il setup', () => {
+    const team = teamOffense([volc, chomp], noStats);
+    expect(team.walls).toHaveLength(team.defenders.length);
+    for (const wall of team.walls) {
+      expect(wall.cells).toHaveLength(2);
+      const [v, c] = wall.cells;
+      expect(v.setupPct).not.toBeNull();
+      expect(v.setupPct!).toBeGreaterThanOrEqual(v.pct);
+      expect(c.setupPct).toBeNull();
+      expect([0, 0.5, 1, 1.5]).toContain(c.step);
+    }
+  });
+});
+
+describe('dati delle schede del modale', () => {
+  it('il colpo migliore di ogni membro è una delle sue mosse d\'attacco', () => {
+    const team = teamOffense([chomp, blissey], noStats);
+    expect(team.members[0].bestMove).toBe('Earthquake');
+    expect(['Seismic Toss']).toContain(team.members[1].bestMove);
+  });
+
+  it('per ogni bersaglio della Coverage: tipi, Pokémon, peso e chi lo copre', () => {
+    const team = teamOffense([chomp], noStats);
+    expect(team.coverageRows).toHaveLength(18);
+    const electric = team.coverageRows.find(r => r.label === 'Electric')!;
+    expect(electric.coveredBy).toEqual(['Garchomp']);
+    // Questo Garchomp ha anche Stone Edge: il Volante, immune a Earthquake, lo copre con la Roccia
+    expect(team.coverageRows.find(r => r.label === 'Flying')!.coveredBy).toEqual(['Garchomp']);
+    expect(electric.weight).toBeCloseTo(1 / 18);
   });
 });
