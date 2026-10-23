@@ -88,7 +88,8 @@ function hitsOf(set: TeamSet, data: EngineData, targets: CoverageTarget[]): { x:
   let hits = hitsCache.get(key);
   if (hits) return hits;
   if (hitsCache.size >= HITS_LIMIT) hitsCache.clear();
-  hits = targets.map(target => { const hit = bestHit(set, target.set); return { x: Math.min(1, hit?.expected ?? 0), move: hit?.move ?? '' }; });
+  // Copre chi ha il vantaggio di tipo: il colpo migliore fra quelli super efficaci (il danno neutro lo misura la Potenza)
+  hits = targets.map(target => { const hit = bestHit(set, target.set, { superEffectiveOnly: true }); return { x: Math.min(1, hit?.expected ?? 0), move: hit?.move ?? '' }; });
   hitsCache.set(key, hits);
   return hits;
 }

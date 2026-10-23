@@ -16,6 +16,8 @@ export interface HitOptions {
   /** L'attaccante usa la mossa Z del suo cristallo (se è del tipo della mossa). */
   z?: boolean;
   boosts?: Partial<Record<'atk' | 'spa' | 'def', number>>;
+  /** Solo le mosse super efficaci sul bersaglio (la Coverage: il vantaggio di tipo, non il danno neutro). */
+  superEffectiveOnly?: boolean;
 }
 
 export interface Hit {
@@ -114,14 +116,15 @@ export function bestHit(attacker: TeamSet, defender: Target, options: HitOptions
   const zType = options.z ? dex.items.get(attacker.item).zMoveType : undefined;
   // Lo sconto di Band e Specs si applica come PS del difensore più alti di un nono: danno ×0,9 su tutte le misure
   const hp = target.maxHP() / (LOCKING.has(toID(attacker.item)) ? CHOICE_LOCK : 1);
+  const types = target.types as string[];
   let best: Hit | null = null;
   for (const name of attacker.moves) {
     const data = getMove(name);
     if (!data || data.category === 'Status') continue;
+    if (options.superEffectiveOnly && !(dex.getImmunity(data.type, types) && dex.getEffectiveness(data.type, types) > 0)) continue;
     const accuracy = data.accuracy === true ? 1 : data.accuracy / 100;
     // Mosse OHKO (Sheer Cold, Fissure): la libreria non le calcola; KO se colpiscono, salvo immunità
     if (data.ohko) {
-      const types = target.types as string[];
       const immune = !dex.getImmunity(data.type, types) || (data.ohko === 'Ice' && types.includes('Ice'));
       const hit = { move: data.name, expected: immune ? 0 : accuracy, min: immune ? 0 : 1 };
       if (!best || hit.expected > best.expected) best = hit;

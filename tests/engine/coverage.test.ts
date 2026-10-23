@@ -8,6 +8,7 @@ import { fixtureData, fixtureStats } from '../fixtures/data';
 const set = (species: string, item: string, ability: string, moves: string[], nature: string, evs: TeamSet['evs']): TeamSet =>
   ({ species, item, ability, moves, nature, evs });
 const noMeta = { ...fixtureData, ignoreMeta: true, formatId: 'ou' as const };
+const teamOffenseRows = (team: TeamSet[]) => teamCoverage(team, noMeta).rows;
 const chomp = set('Garchomp', 'Life Orb', 'Rough Skin', ['Earthquake'], 'Adamant', { atk: 252, spe: 252 });
 
 describe('coverageTargets', () => {
@@ -46,6 +47,16 @@ describe('teamCoverage', () => {
     expect(coverage.value).toBeGreaterThan(0);
     expect(coverage.value).toBeLessThan(100);
     expect(coverage.perMember).toHaveLength(1);
+  });
+
+  it('copre solo un colpo super efficace: un colpo neutro forte non basta', () => {
+    // Headlong Rush con Choice Band: sul Normale è neutro ma oltre il 50%, sull'Elettro super efficace
+    const tusk = set('Great Tusk', 'Choice Band', 'Protosynthesis', ['Headlong Rush'], 'Adamant', { atk: 252, spe: 252 });
+    const normal = coverageTargets(noMeta).find(t => t.label === 'Normal')!.set;
+    expect(bestHit(tusk, normal)!.expected).toBeGreaterThanOrEqual(0.5);
+    const rows = teamOffenseRows([tusk]);
+    expect(rows.find(r => r.label === 'Normal')!.coveredBy).toEqual([]);
+    expect(rows.find(r => r.label === 'Electric')!.coveredBy.map(c => c.move)).toEqual(['Headlong Rush']);
   });
 
   it('anche coprendo tutto tre volte la Coverage non arriva a 100', () => {

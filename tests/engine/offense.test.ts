@@ -216,7 +216,7 @@ describe('Offesa di squadra', () => {
 
   it('la Coverage del membro è una percentuale pesata', () => {
     const targets = coverageTargets(noStats);
-    const covered = targets.filter(t => Math.min(1, bestHit(chomp, t.set)?.expected ?? 0) >= 0.5).length;
+    const covered = targets.filter(t => Math.min(1, bestHit(chomp, t.set, { superEffectiveOnly: true })?.expected ?? 0) >= 0.5).length;
     expect(teamOffense([chomp], noStats).members[0].covered).toBe(Math.round(100 * covered / targets.length));
   });
 });
