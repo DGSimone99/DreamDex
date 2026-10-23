@@ -1,16 +1,16 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useEditing } from './editing';
 import type { AreaKey, TeamRating } from '../engine/rating';
 import { Typed } from './TypeText';
 import { AlertMark } from './AlertMark';
 import { RatingHelp } from './RatingHelp';
+import { AreaDetail } from './AreaDetail';
 import type { MessageKey } from '../i18n';
 import { useT } from '../i18n/react';
 
 /** Le aree con una scheda propria nell'analisi: cliccandole ci si arriva. */
 export const AREA_SECTIONS: Partial<Record<AreaKey, { id: string; title: MessageKey }>> = {
   defense: { id: 'analysis-defense', title: 'analysis.weakness' },
-  coverage: { id: 'analysis-coverage', title: 'analysis.coverage' },
   roles: { id: 'analysis-roles', title: 'analysis.roles' },
 };
 
@@ -27,6 +27,10 @@ function goToSection(id: string) {
 /** `metaMonth`: mese delle statistiche, per dire con quale meta è stato calcolato il voto. */
 export function RatingPanel({ rating, ruleIssues = [], metaMonth }: { rating: TeamRating; ruleIssues?: string[]; metaMonth?: string }) {
   const t = useT();
+  // Dettaglio dell'Offesa (sottostatistiche per membro); alla chiusura il focus torna alla barra
+  const [detail, setDetail] = useState(false);
+  const detailButton = useRef<HTMLButtonElement>(null);
+  const closeDetail = () => { setDetail(false); detailButton.current?.focus(); };
   return (
     <details open aria-label={t('rating.title')} className="block rating">
       <summary>
@@ -53,18 +57,22 @@ export function RatingPanel({ rating, ruleIssues = [], metaMonth }: { rating: Te
           const text = `${area.label} ${area.value ?? 'n/d'}`;
           const section = AREA_SECTIONS[area.key];
           // Nel tooltip solo i dati per membro; come si calcola ogni area lo spiega il "?" accanto al titolo
-          const tip = area.key === 'strength' && rating.power.length
-            ? [...rating.power].sort((a, b) => b.offense - a.offense).map(m => `${m.species} ${m.offense}`).join('\n')
+          const tip = area.key === 'strength' && rating.offense.members.length
+            ? [...rating.offense.members].sort((a, b) => b.value - a.value).map(m => `${m.species} ${m.value}`).join('\n')
             : area.key === 'meta' && rating.meta ? t('rating.metaTip', { threats: rating.meta.threats, usage: rating.meta.usage })
-            : area.key === 'coverage' && rating.coverageByMember.length
-              ? [t('rating.coverageTip'), ...[...rating.coverageByMember].sort((a, b) => b.types - a.types).map(m => `${m.species} ${m.types}`)].join('\n')
             : area.key === 'bulk' && rating.power.length
               ? [...rating.power].sort((a, b) => b.bulk - a.bulk).map(m => `${m.species} ${m.bulk}`).join('\n')
             : undefined;
           return (
             <div key={area.key}>
               <dt>
-                {section ? (
+                {area.key === 'strength' ? (
+                  // L'Offesa apre il suo dettaglio: sottostatistiche e punteggio di ogni membro
+                  <button ref={detailButton} type="button" className={tip ? 'area-link tip' : 'area-link'} aria-haspopup="dialog"
+                    onClick={() => setDetail(true)} data-tip={tip} title={tip ? undefined : t('detail.open', { area: area.label })}>
+                    {text}
+                  </button>
+                ) : section ? (
                   // Con un dettaglio, il tooltip lo mostra insieme a dove porta il clic
                   <button type="button" className={tip ? 'area-link tip' : 'area-link'} onClick={() => goToSection(section.id)}
                     title={tip ? undefined : t('rating.goTo', { section: t(section.title) })}
@@ -88,6 +96,7 @@ export function RatingPanel({ rating, ruleIssues = [], metaMonth }: { rating: Te
           </ul>
         </div>
       )}
+      {detail && <AreaDetail rating={rating} area="strength" onClose={closeDetail} />}
       {rating.penalty.total > 0 && (
         <div className="penalty">
           <strong>{t('rating.penalty', { n: rating.penalty.total })}</strong>

@@ -718,6 +718,65 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 .help-panel p { margin: 0 0 10px; font-size: 14px; line-height: 1.55; color: var(--muted); max-width: 62ch; }
 .help-panel .help-yours { color: var(--text); font-weight: 600; }
 .help-table-wrap { overflow-x: auto; }
+/* Dettaglio dell'Offesa: schede a sinistra (Generale e una per sottostatistica), come il modale d'aiuto, più alto */
+.ad-dialog { width: min(1080px, 100%); height: min(860px, calc(100vh - 48px)); max-height: none; }
+.ad-head h3 { display: flex; align-items: baseline; gap: 12px; font-size: 20px; }
+.ad-head h3 strong { font: 700 30px/1 var(--display); color: var(--text); font-variant-numeric: tabular-nums; }
+.ad-body { display: grid; grid-template-columns: 180px minmax(0, 1fr); min-height: 0; flex: 1; }
+.ad-nav { display: flex; flex-direction: column; gap: 2px; padding: 10px; border-right: 1px solid var(--line-soft); background: var(--panel); }
+.ad-nav [role='tab'] { display: flex; justify-content: space-between; align-items: baseline; padding: 8px 10px; border: 0; border-radius: 4px; background: none; color: var(--muted); font-size: 14px; text-align: left; }
+.ad-nav [role='tab'] b { font: 700 18px/1 var(--display); color: var(--faint); font-variant-numeric: tabular-nums; }
+.ad-nav [role='tab']:hover { color: var(--text); background: color-mix(in srgb, var(--raised) 55%, transparent); }
+.ad-nav [role='tab'][aria-selected='true'] { color: var(--text); background: var(--blue-soft); font-weight: 600; }
+.ad-nav [role='tab'][aria-selected='true'] b { color: var(--text); }
+.ad-panel { padding: 16px 22px 22px; overflow-y: auto; }
+.ad-panel h4 { margin: 0 0 8px; font: 700 18px/1.1 var(--display); text-transform: uppercase; letter-spacing: 0.03em; }
+/* Le spiegazioni occupano tutta la larghezza del pannello: il modale è largo apposta */
+.ad-panel p { margin: 0 0 10px; font-size: 14px; line-height: 1.55; color: var(--muted); }
+.ad-how { margin: 0 0 16px; padding: 0 0 6px; border-bottom: 1px solid var(--line-soft); }
+.ad-holes { color: var(--text) !important; }
+.ad-subs { display: grid; gap: 12px; margin: 0 0 18px; }
+.ad-sub { display: grid; grid-template-columns: minmax(0, 1fr) 44px; grid-template-areas: 'name value' 'bar value' 'tip tip'; gap: 5px 14px; }
+.ad-sub dt { grid-area: name; font-size: 14px; font-weight: 600; color: var(--text); }
+.ad-sub dd { display: contents; }
+.ad-sub meter { grid-area: bar; display: block; width: 100%; }
+.ad-sub strong { grid-area: value; align-self: center; text-align: right; font: 700 22px/1 var(--display); font-variant-numeric: tabular-nums; }
+.ad-sub span { grid-area: tip; font-size: 13px; color: var(--muted); }
+.ad-t { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
+.ad-t thead th { padding: 10px 6px 6px; font-size: 11px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: 0.05em; text-align: right; white-space: nowrap; }
+.ad-t thead th:first-child { text-align: left; padding-left: 0; }
+.ad-t td, .ad-t th[scope='row'] { padding: 3px 6px; border-bottom: 1px solid var(--line-soft); text-align: right; white-space: nowrap; color: var(--muted); }
+.ad-t th[scope='row'] { text-align: left; padding-left: 0; font-weight: 600; color: var(--text); }
+.ad-t .left { text-align: left; }
+.ad-t td.total { font: 700 20px/1 var(--display); color: var(--text); white-space: nowrap; }
+.ad-t .ad-once { display: inline; margin-left: 4px; font: 600 13px/1 var(--ui); color: var(--blue); cursor: help; }
+.ad-t .ad-gain { display: inline; margin-left: 4px; font: 600 13px/1 var(--ui); color: var(--good); cursor: help; }
+.ad-t td meter { display: block; width: 110px; }
+.ad-mon { display: flex; align-items: center; gap: 8px; }
+.ad-mon .sprite, .ad-cover .sprite, .ad-matrix thead .sprite { flex: none; }
+.ad-scroll { overflow-x: auto; }
+.ad-matrix thead th { text-align: center; padding: 6px 2px; }
+.ad-matrix td { text-align: center; padding: 3px 2px; }
+.ad-k { display: inline-block; min-width: 46px; padding: 2px 4px; border-radius: 3px; font-size: 11px; font-weight: 700; letter-spacing: 0.02em; white-space: nowrap; }
+.ad-k.ohko { background: var(--blue); color: var(--field); }
+.ad-k.two { background: var(--blue-soft); color: var(--text); }
+.ad-k.three { color: var(--muted); box-shadow: inset 0 0 0 1px var(--line); }
+.ad-k.none { color: var(--faint); font-weight: 600; }
+/* Il setup cambia la soglia: tra parentesi il danno dopo il potenziamento, nel verde della palette */
+.ad-k.setup { box-shadow: inset 0 0 0 1px var(--good); color: var(--good); }
+.ad-k.setup.two, .ad-k.setup.ohko { color: var(--text); }
+.ad-legend { margin: 8px 0 0 !important; font-size: 12px !important; color: var(--faint) !important; }
+.ad-cover .sprite { margin-right: -6px; }
+.ad-cover > span { display: inline-block; }
+/* Copre a metà (superefficace ma solo da 3HKO): sprite più tenue */
+.ad-cover > span.partial { opacity: 0.45; }
+@media (max-width: 560px) {
+  .ad-body { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr); }
+  .ad-nav { flex-direction: row; overflow-x: auto; border-right: 0; border-bottom: 1px solid var(--line-soft); }
+  .ad-nav [role='tab'] { gap: 8px; white-space: nowrap; }
+  .ad-panel { padding: 12px 14px 16px; }
+}
+
 .help-weights { border-collapse: collapse; width: 100%; font-size: 13px; font-variant-numeric: tabular-nums; }
 .help-weights th, .help-weights td { padding: 5px 6px; border-bottom: 1px solid var(--line-soft); text-align: right; white-space: nowrap; }
 .help-weights thead th { font-size: 11px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: 0.04em; white-space: normal; vertical-align: bottom; }

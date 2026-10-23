@@ -71,7 +71,8 @@ describe('liste nella scheda Pokémon', () => {
     await waitFor(() => expect(rowOverall().length).toBeGreaterThan(2));
     const names = rowNames();
     const overall = rowOverall();
-    const at = overall.findIndex((v, i) => i > 0 && overall[i - 1] - v <= 2 && overall[i - 1] !== v);
+    // Un candidato a non più di 2 punti da quello sopra (anche a pari punti): da preferito gli passa davanti
+    const at = overall.findIndex((v, i) => i > 0 && overall[i - 1] - v <= 2);
     expect(at).toBeGreaterThan(0);
     const favorite = names[at];
     document.body.innerHTML = '';

@@ -1,3 +1,4 @@
+import type { Species } from '@pkmn/dex';
 import type { EngineData } from './data';
 import { battleSpecies, dex, getSpecies, isSelectable, toID } from './dex';
 import { memberPower } from './power';
@@ -87,14 +88,26 @@ const SPEED_TIERS: Partial<Record<FormatId, string[]>> = {
  * del suo tier (in OU gli OU, in Ubers anche gli OU). Il tier cambia di rado: non dipende dal meta del mese.
  */
 const maxSpeeds = new Map<string, number[]>();
+
+/** I completamente evoluti che giocano nel formato (il suo tier; in Ubers anche gli OU): il riferimento senza meta. */
+const tierPools = new Map<FormatId, Species[]>();
+export function tierSpecies(formatId: FormatId = 'ou'): Species[] {
+  let pool = tierPools.get(formatId);
+  if (!pool) {
+    const format = { ...DEFAULT_FORMAT, formatId };
+    const tiers = SPEED_TIERS[formatId] ?? ['OU'];
+    pool = dex.species.all()
+      .filter(s => s.exists && !s.nfe && isSelectable(s) && isLegalIn(s, format) && tiers.includes(tierIn(s, format)));
+    tierPools.set(formatId, pool);
+  }
+  return pool;
+}
+
 export function referenceSpeeds(formatId: FormatId = 'ou'): number[] {
   const key = formatId;
   let speeds = maxSpeeds.get(key);
   if (!speeds) {
-    const format = { ...DEFAULT_FORMAT, formatId };
-    const tiers = SPEED_TIERS[formatId] ?? ['OU'];
-    speeds = dex.species.all()
-      .filter(s => s.exists && !s.nfe && isSelectable(s) && isLegalIn(s, format) && tiers.includes(tierIn(s, format)))
+    speeds = tierSpecies(formatId)
       .map(s => Math.floor((2 * s.baseStats.spe + 31 + 63 + 5) * 1.1))
       .sort((a, b) => a - b);
     maxSpeeds.set(key, speeds);
