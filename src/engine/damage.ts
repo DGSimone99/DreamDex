@@ -189,7 +189,10 @@ export function standardHit(attacker: TeamSet, defender: Target, category: 'Phys
   const own = toPokemon(attacker, options);
   const target = toPokemon(defender, {}, 'defender');
   if (!own || !target) return null;
-  const move = cached(moves, `standard|${category}`, () => new CalcMove(gen, 'Tackle', { overrides: { type: '???', basePower: 100, category } }));
+  // Il colpo fisico è di contatto (come quasi tutte le mosse fisiche: Fluffy, Tough Claws), lo speciale no
+  const move = cached(moves, `standard|${category}`, () => new CalcMove(gen, 'Tackle', {
+    overrides: { type: '???', basePower: 100, category, flags: { contact: category === 'Physical' ? 1 : 0 } },
+  }));
   if (!move) return null;
   const hp = target.maxHP() / (LOCKING.has(toID(attacker.item)) ? CHOICE_LOCK : 1);
   try {

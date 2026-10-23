@@ -89,6 +89,18 @@ interface Raw { species: string; physical: (Hit | null)[]; special: (Hit | null)
 const raws = new Map<string, Raw | null>();
 const RAW_LIMIT = 5000;
 
+/** Abilità che ignorano Intimidate (Mirror Armor lo rimanda indietro); Defiant e Guard Dog invece alzano l'Attacco. */
+const INTIMIDATE_IMMUNE = new Set(['clearbody', 'hypercutter', 'innerfocus', 'oblivious', 'owntempo', 'scrappy', 'fullmetalbody', 'whitesmoke', 'mirrorarmor']);
+const INTIMIDATE_RAISES = new Set(['defiant', 'guarddog']);
+
+/** Il cambio d'Attacco dell'attaccante fisico quando il membro ha Intimidate; `undefined` se non ne ha. */
+export function intimidateBoost(member: TeamSet, attacker: TeamSet): { atk: number } | undefined {
+  if (toID(battleAbility(member)) !== 'intimidate') return undefined;
+  const theirs = toID(battleAbility(attacker));
+  if (INTIMIDATE_IMMUNE.has(theirs)) return undefined;
+  return { atk: INTIMIDATE_RAISES.has(theirs) ? 1 : -1 };
+}
+
 function measure(set: TeamSet, data: EngineData): Raw | null {
   const species = battleSpecies(set);
   if (!species) return null;
@@ -98,7 +110,8 @@ function measure(set: TeamSet, data: EngineData): Raw | null {
   const against = (attacker: TeamSet, category: 'Physical' | 'Special') => {
     const theirs = ownConditions(attacker);
     const conditions: FieldCondition[] = theirs.length ? theirs : mine;
-    return standardHit(attacker, set, category, { conditions });
+    const boosts = category === 'Physical' ? intimidateBoost(set, attacker) : undefined;
+    return standardHit(attacker, set, category, { conditions, boosts });
   };
   const physical = panels.physical.map(a => against(a, 'Physical'));
   const special = panels.special.map(a => against(a, 'Special'));

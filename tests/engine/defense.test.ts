@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { holdStep, memberDefense, sustainability, teamDefense } from '../../src/engine/defense';
+import { holdStep, intimidateBoost, memberDefense, sustainability, teamDefense } from '../../src/engine/defense';
 import type { TeamSet } from '../../src/engine/sets';
 import { fixtureData } from '../fixtures/data';
 
@@ -65,6 +65,25 @@ describe('memberDefense', () => {
     const z = memberDefense(zard, [zard], noStats)!;
     expect(z.sustainParts).toMatchObject({ sources: [], recovery: 0, lifeOrb: 0.1 });
     expect(z.sustainParts.rocks).toBeCloseTo(0.5);
+  });
+
+  it('Intimidate: −1 Atk agli attaccanti fisici, alza solo la Robustezza fisica', () => {
+    const roar = set('Incineroar', 'Heavy-Duty Boots', 'Intimidate', ['Knock Off', 'Parting Shot'], 'Careful', { hp: 252, spd: 252 });
+    const blaze = { ...roar, ability: 'Blaze' };
+    const a = memberDefense(roar, [roar], noStats)!;
+    const b = memberDefense(blaze, [blaze], noStats)!;
+    expect(a.physical).toBeGreaterThan(b.physical);
+    expect(a.special).toBe(b.special);
+  });
+
+  it("Intimidate non vale contro chi lo blocca e alza l'Attacco a Defiant e Guard Dog", () => {
+    const attacker = (ability: string) => set('Kingambit', '', ability, [], 'Adamant', { atk: 252 });
+    const roar = set('Incineroar', '', 'Intimidate', [], 'Careful', {});
+    expect(intimidateBoost(roar, attacker('Supreme Overlord'))).toEqual({ atk: -1 });
+    expect(intimidateBoost(roar, attacker('Clear Body'))).toBeUndefined();
+    expect(intimidateBoost(roar, attacker('Defiant'))).toEqual({ atk: 1 });
+    expect(intimidateBoost(roar, attacker('Guard Dog'))).toEqual({ atk: 1 });
+    expect(intimidateBoost({ ...roar, ability: 'Blaze' }, attacker('Supreme Overlord'))).toBeUndefined();
   });
 
   it('una specie sconosciuta non conta', () => {

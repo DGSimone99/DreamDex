@@ -25,6 +25,14 @@ describe('standardHit: colpo standard senza tipo, potenza 100', () => {
     expect(standardHit(chomp, nite, 'Physical')!.expected).toBeLessThan(standardHit(chomp, { ...nite, ability: 'Inner Focus' }, 'Physical')!.expected);
   });
 
+  it('il colpo fisico è di contatto, lo speciale no: Fluffy dimezza solo il fisico', () => {
+    const dachs = { species: 'Dachsbun', item: 'Leftovers', ability: 'Fluffy', moves: [], nature: 'Bold', evs: { hp: 252, def: 252 } };
+    const baked = { ...dachs, ability: 'Well-Baked Body' };
+    const kyogre = { species: 'Kyogre', item: '', ability: 'Drizzle', moves: [], nature: 'Modest', evs: { spa: 252 } };
+    expect(standardHit(kyogre, dachs, 'Special')!.max).toBeCloseTo(standardHit(kyogre, baked, 'Special')!.max);
+    expect(standardHit(chomp, dachs, 'Physical')!.max).toBeLessThan(standardHit(chomp, baked, 'Physical')!.max * 0.6);
+  });
+
   it('ignora i tipi: Gengar (Spettro) non è immune al colpo standard fisico', () => {
     const gengar = set('Gengar', 'Leftovers', 'Cursed Body', [], 'Bold', { hp: 252, def: 252 });
     expect(standardHit(chomp, gengar, 'Physical')!.expected).toBeGreaterThan(0);
