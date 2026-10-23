@@ -1,0 +1,59 @@
+import type { Species } from '@pkmn/dex';
+import { usesMeta } from './analysis';
+import type { EngineData } from './data';
+import { rulesOf } from './formatRules';
+import { detectRoles, isPassive, teamRoles } from './roles';
+import { mostCommonSet, type TeamSet } from './sets';
+import { tierSpecies } from './speed';
+import { topThreats } from './stats';
+
+/** Quanti difensori del formato si usano per misurare l'Offesa. */
+export const PANEL_SIZE = 12;
+/** Quanti Pokémon del meta, dal più usato, si scorrono per trovare i difensivi. */
+const META_SCAN = 60;
+
+const bulkIndex = (s: Species) => s.baseStats.hp * (s.baseStats.def + s.baseStats.spd);
+
+/** Set difensivo standard: 252 PS e 252 nella difesa più alta, natura che la alza, Leftovers, prima abilità. */
+function standardWall(species: Species): TeamSet {
+  const side = species.baseStats.def >= species.baseStats.spd ? 'def' : 'spd';
+  return {
+    species: species.name, item: 'Leftovers', ability: species.abilities[0], moves: [],
+    nature: side === 'def' ? 'Bold' : 'Calm', evs: { hp: 252, [side]: 252 },
+  };
+}
+
+const panels = new Map<string, TeamSet[]>();
+
+/**
+ * I difensori contro cui si misura l'Offesa. Col meta: i più usati il cui set più comune è difensivo
+ * (passivo o muro), col loro spread, strumento e abilità più comuni. Senza meta (o senza statistiche):
+ * i più robusti del tier, con un set difensivo standard. Se il meta non ne ha abbastanza si completa col tier.
+ */
+export function defenderPanel(data: EngineData): TeamSet[] {
+  const formatId = data.formatId ?? 'ou';
+  const meta = usesMeta(data);
+  const key = `${formatId}|${meta}`;
+  let panel = panels.get(key);
+  if (panel) return panel;
+  const rules = rulesOf(data);
+  const fromMeta: TeamSet[] = [];
+  if (meta) {
+    for (const name of topThreats(data.stats, META_SCAN, [])) {
+      const set = mostCommonSet(data.stats, name);
+      if (!set) continue;
+      const roles = detectRoles(set, rules);
+      if (isPassive(set, teamRoles(set, rules)) || roles.includes('physicalWall') || roles.includes('specialWall')) fromMeta.push(set);
+      if (fromMeta.length === PANEL_SIZE) break;
+    }
+  }
+  const taken = new Set(fromMeta.map(set => set.species));
+  const fromTier = [...tierSpecies(formatId)]
+    .filter(s => !taken.has(s.name))
+    .sort((a, b) => bulkIndex(b) - bulkIndex(a))
+    .slice(0, PANEL_SIZE - fromMeta.length)
+    .map(standardWall);
+  panel = [...fromMeta, ...fromTier];
+  panels.set(key, panel);
+  return panel;
+}
