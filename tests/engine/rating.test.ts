@@ -3,6 +3,7 @@ import { teamPower } from '../../src/engine/power';
 import { AREA_KNEE, ARCHETYPE_WEIGHTS, DEFENSE_FULL, areaValue, gradeFor, rateTeam, typeSafety } from '../../src/engine/rating';
 import { memberPower } from '../../src/engine/power';
 import { teamOffense } from '../../src/engine/offense';
+import { teamDefense } from '../../src/engine/defense';
 import type { EngineData } from '../../src/engine/data';
 
 // Offesa: il danno vero dei set contro i difensori del formato (offense.ts)
@@ -34,14 +35,16 @@ describe('pesi delle aree', () => {
   it('una tabella per tipo di team, ogni riga somma 100: ognuno si giudica su quello con cui vince', () => {
     for (const row of Object.values(ARCHETYPE_WEIGHTS)) expect(Object.values(row).reduce((a, b) => a + b, 0)).toBe(100);
     const { hyperOffense: ho, balance, stall } = ARCHETYPE_WEIGHTS;
-    // L'hyper offense vince con Offesa e Velocità, lo stall con Robustezza e Ruoli; il balance sta nel mezzo
+    // L'hyper offense vince con Offesa e Velocità, lo stall con Difesa e Ruoli; il balance sta nel mezzo
     expect(ho.strength).toBeGreaterThan(stall.strength);
     expect(ho.speed).toBeGreaterThan(balance.speed);
     expect(stall.speed).toBe(0);
-    expect(stall.bulk).toBeGreaterThan(balance.bulk);
-    expect(balance.bulk).toBeGreaterThan(ho.bulk);
+    expect(stall.defense).toBeGreaterThan(balance.defense);
+    expect(balance.defense).toBeGreaterThan(ho.defense);
     // La Coverage offensiva è una sottostatistica dell'Offesa: il suo peso è passato all'Offesa
-    expect(Object.keys(balance)).toEqual(['defense', 'strength', 'bulk', 'roles', 'speed']);
+    // La Difesa ha preso il peso di Coverage difensiva e Robustezza (e il Meta è dentro di lei)
+    expect(Object.keys(balance)).toEqual(['defense', 'strength', 'roles', 'speed']);
+    expect([ho.defense, ARCHETYPE_WEIGHTS.bulkyOffense.defense, balance.defense, ARCHETYPE_WEIGHTS.semiStall.defense, stall.defense]).toEqual([20, 28, 36, 46, 56]);
     expect([ho.strength, balance.strength, stall.strength]).toEqual([46, 34, 18]);
   });
 });
@@ -69,12 +72,10 @@ describe('rateTeam', () => {
   it('aree calcolate sulla fixture', () => {
     // Coverage difensiva: saldo resistenze/debolezze per tipo, pesato per il meta (piena a 80%); Robustezza: media dei membri
     const weights = UNIFORM_TYPE_WEIGHTS;
-    const defense = weaknessTable([tusk, gholdengo]).reduce((acc, row) => acc + weights[row.type] * typeSafety(row.multipliers), 0);
-    expect(value(rating, 'defense')).toBe(defenseShown(100 * defense));
-    const bulk = [tusk, gholdengo].reduce((a, s) => a + memberPower(s)!.bulk, 0) / 2 / 100;
-    expect(value(rating, 'bulk')).toBe(Math.round(100 * Math.min(1, bulk)));
+    // Difesa: robustezza e coverage difensiva di tipi e del meta (defense.ts)
+    expect(value(rating, 'defense')).toBe(teamDefense([tusk, gholdengo], fixtureData).value);
+    expect(rating.defense.members.map(m => m.species)).toEqual(['Great Tusk', 'Gholdengo']);
     // Un team incompleto si giudica come balance
-    expect(rating.weights.bulk!).toBeCloseTo(ARCHETYPE_WEIGHTS.balance.bulk / 100);
     expect(rating.weights.defense!).toBeCloseTo(ARCHETYPE_WEIGHTS.balance.defense / 100);
     // La Coverage offensiva non è più un'area: è dentro l'Offesa
     expect(rating.areas.some(a => a.key === 'coverage')).toBe(false);
@@ -91,7 +92,8 @@ describe('rateTeam', () => {
   });
 
   it('ordine e nomi delle aree', () => {
-    expect(rating.areas.map(a => a.label)).toEqual(['Coverage difensiva', 'Offesa', 'Robustezza', 'Ruoli', 'Velocità', 'Meta']);
+    // Il Meta non è più un'area: le minacce sono nella Coverage meta della Difesa
+    expect(rating.areas.map(a => a.label)).toEqual(['Difesa', 'Offesa', 'Ruoli', 'Velocità']);
   });
 
   it('team completo: non provvisorio', () => {
@@ -141,9 +143,10 @@ describe('il meta conta solo nella sua area', () => {
     const team = ['Great Tusk', 'Gholdengo', 'Kingambit', 'Corviknight', 'Toxapex', 'Rotom-Wash'].map(n => mostCommonSet(fixtureStats, n)!);
     const on = rateTeam(team, fixtureData)!;
     const off = rateTeam(team, { ...fixtureData, ignoreMeta: true })!;
-    const areas = (r: typeof on) => r.areas.filter(a => a.key !== 'meta' && a.key !== 'strength').map(a => [a.key, a.value]);
+    // Offesa e Difesa si misurano contro il meta, se attivo; le altre aree no
+    const areas = (r: typeof on) => r.areas.filter(a => !['meta', 'strength', 'defense'].includes(a.key)).map(a => [a.key, a.value]);
     expect(areas(on)).toEqual(areas(off));
-    expect(on.areas.some(a => a.key === 'meta')).toBe(true);
-    expect(off.areas.some(a => a.key === 'meta')).toBe(false);
+    expect(on.areas.some(a => a.key === 'meta')).toBe(false);
+    expect(on.meta).not.toBeNull();
   });
 });
