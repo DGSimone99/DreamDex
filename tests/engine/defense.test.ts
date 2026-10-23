@@ -54,6 +54,19 @@ describe('memberDefense', () => {
     expect(m.value).toBeLessThan(100);
   });
 
+  it('dettaglio della Sostenibilità: recupero (con la fonte migliore), Stealth Rock e Life Orb', () => {
+    const skarm = set('Skarmory', 'Leftovers', 'Sturdy', ['Roost', 'Body Press'], 'Impish', { hp: 252, def: 252 });
+    const m = memberDefense(skarm, [skarm], noStats)!;
+    expect(m.sustainParts.sources).toEqual(['Roost', 'Leftovers']);
+    expect(m.sustainParts.rocks).toBeCloseTo(0.125);
+    expect(m.sustainParts.lifeOrb).toBe(0);
+    expect(m.sustainParts.recovery).toBeCloseTo(m.sustainParts.halved ? (0.5 + 0.0625) / 2 : 0.5 + 0.0625);
+    const zard = set('Charizard', 'Life Orb', 'Blaze', ['Flamethrower'], 'Timid', { spa: 252, spe: 252 });
+    const z = memberDefense(zard, [zard], noStats)!;
+    expect(z.sustainParts).toMatchObject({ sources: [], recovery: 0, lifeOrb: 0.1 });
+    expect(z.sustainParts.rocks).toBeCloseTo(0.5);
+  });
+
   it('una specie sconosciuta non conta', () => {
     expect(memberDefense(set('Notamon', '', '', [], 'Hardy', {}), [], noStats)).toBeNull();
   });
@@ -92,6 +105,21 @@ describe('teamDefense', () => {
 
   it('un team di sweeper fragili ha meno Difesa di uno di muri', () => {
     expect(teamDefense([sweeper, { ...sweeper }], noStats).value).toBeLessThan(teamDefense([blissey, skarm], noStats).value);
+  });
+
+  it('righe dei 18 tipi per il dettaglio: sicurezza 0–100 e chi è debole o resiste', () => {
+    const team = teamDefense([blissey, skarm], noStats);
+    expect(team.coverageTypes.rows).toHaveLength(18);
+    const fighting = team.coverageTypes.rows.find(r => r.type === 'Fighting')!;
+    expect(fighting.weak).toEqual(['Blissey']);
+    expect(fighting.resist).toEqual([]);
+    const ground = team.coverageTypes.rows.find(r => r.type === 'Ground')!;
+    expect(ground.resist).toEqual(['Skarmory']);
+    for (const row of team.coverageTypes.rows) {
+      expect(row.safety).toBeGreaterThanOrEqual(0);
+      expect(row.safety).toBeLessThanOrEqual(100);
+      expect(team.coverageTypes.weak.includes(row.type)).toBe(row.weak.length > row.resist.length);
+    }
   });
 
   it('i deboli di tipo: più membri deboli che resistenti', () => {

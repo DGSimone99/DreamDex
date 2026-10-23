@@ -16,13 +16,13 @@ describe('Valutazione team', () => {
     expect(rating).not.toHaveTextContent('Offesa: Great Tusk');
     expect(within(rating).getByText(/^Offesa \d+$/)).toHaveAttribute('data-tip', expect.stringMatching(/^(Great Tusk|Gholdengo) \d+\n(Great Tusk|Gholdengo) \d+$/));
     // La Difesa unisce coverage difensiva e robustezza: nel tooltip la Difesa di ogni membro
-    expect(within(rating).getByText(/^Difesa \d+$/)).toHaveAttribute('data-tip', expect.stringMatching(/^(Great Tusk|Gholdengo) \d+\n(Great Tusk|Gholdengo) \d+(\nVai a .+)?$/));
+    expect(within(rating).getByText(/^Difesa \d+$/)).toHaveAttribute('data-tip', expect.stringMatching(/^(Great Tusk|Gholdengo) \d+\n(Great Tusk|Gholdengo) \d+$/));
     expect(rating).not.toHaveTextContent(/Robustezza \d+/);
     expect(rating).toHaveTextContent(/Velocità \d+/);
     expect(rating).not.toHaveTextContent('Sinergia');
   });
 
-  it("Difesa e Ruoli portano alla loro scheda; la Coverage offensiva è dentro l'Offesa", async () => {
+  it("Ruoli porta alla sua scheda; Offesa e Difesa aprono il loro dettaglio; la Coverage offensiva è dentro l'Offesa", async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} />);
     for (const name of ['Great Tusk', 'Gholdengo']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
@@ -30,9 +30,10 @@ describe('Valutazione team', () => {
     // La scheda Coverage offensiva resta nell'Analisi, ma nel voto non è più una barra
     expect(screen.getByText('Coverage offensiva', { selector: 'summary span' })).toBeInTheDocument();
     expect(within(rating).queryByRole('button', { name: /^Coverage offensiva/ })).toBeNull();
-    expect(within(rating).getByRole('button', { name: /^Difesa \d+$/ })).toBeInTheDocument();
-    // L'Offesa invece apre il suo dettaglio (vedi AreaDetail.test)
+    // Offesa e Difesa aprono il loro dettaglio (vedi AreaDetail.test)
+    expect(within(rating).getByRole('button', { name: /^Difesa \d+$/ })).toHaveAttribute('aria-haspopup', 'dialog');
     expect(within(rating).getByRole('button', { name: /^Offesa \d+$/ })).toHaveAttribute('aria-haspopup', 'dialog');
+    expect(within(rating).getByRole('button', { name: /^Ruoli \d+$/ })).toHaveAttribute('title', expect.stringMatching(/^Vai a /));
   });
 
   it('mostra le ridondanze con il dettaglio', async () => {

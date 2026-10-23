@@ -107,3 +107,93 @@ describe("dettaglio dell'Offesa a schede", () => {
     expect(within(dialog).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Power', 'Wallbreaking', 'Coverage', 'Offense']);
   });
 });
+
+async function openDefense(lang: 'it' | 'en') {
+  const user = userEvent.setup();
+  render(<App initialLang={lang} data={fixtureData} />);
+  const add = screen.getByLabelText(lang === 'it' ? 'Aggiungi Pokémon' : 'Add Pokémon');
+  for (const name of ['Great Tusk', 'Gholdengo']) await user.type(add, `${name}{Enter}`);
+  const rating = screen.getByRole('group', { name: lang === 'it' ? 'Valutazione team' : 'Team rating' });
+  const bar = within(rating).getByRole('button', { name: lang === 'it' ? /^Difesa \d+$/ : /^Defense \d+$/ });
+  await user.click(bar);
+  const dialog = screen.getByRole('dialog', { name: bar.textContent! });
+  return { user, bar, dialog };
+}
+
+describe('dettaglio della Difesa a schede', () => {
+  it('cinque schede col loro valore; Generale con le sottostatistiche e Fisica, Speciale, Sostenibilità di ogni membro', async () => {
+    const { dialog } = await openDefense('it');
+    const tabs = within(dialog).getAllByRole('tab');
+    expect(tabs.map(tab => tab.textContent!.replace(/\s*\d+$/, ''))).toEqual(['Generale', 'Robustezza', 'Sostenibilità', 'Coverage tipi', 'Coverage meta']);
+    for (const tab of tabs) expect(tab.textContent).toMatch(/\d+$/);
+    const panel = within(dialog).getByRole('tabpanel');
+    expect(within(panel).getAllByRole('term').map(term => term.textContent)).toEqual(['Robustezza', 'Sostenibilità', 'Coverage tipi', 'Coverage meta']);
+    const table = within(panel).getByRole('table');
+    expect(within(table).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Fisica', 'Speciale', 'Sostenibilità', 'Difesa']);
+    const rows = within(table).getAllByRole('row').slice(1);
+    expect(rows.map(r => within(r).getByRole('rowheader').textContent)).toEqual(['Great Tusk', 'Gholdengo']);
+    for (const row of rows) for (const cell of within(row).getAllByRole('cell')) expect(cell).toHaveTextContent(/^\d+$/);
+  });
+
+  it('Robustezza: attaccanti fisici e speciali per membro, con il danno del colpo standard e la soglia', async () => {
+    const { user, dialog } = await openDefense('it');
+    await user.click(within(dialog).getByRole('tab', { name: /^Robustezza/ }));
+    const panel = within(dialog).getByRole('tabpanel');
+    expect(panel).toHaveTextContent(/potenza 100/);
+    expect(panel).toHaveTextContent('Attaccanti fisici');
+    expect(panel).toHaveTextContent('Attaccanti speciali');
+    const attackers = within(panel).getAllByRole('row').filter(r => within(r).queryAllByRole('cell').length === 2);
+    expect(attackers).toHaveLength(20);
+    for (const row of attackers) for (const cell of within(row).getAllByRole('cell')) expect(cell).toHaveTextContent(/^\d+%$/);
+    // Ogni casella dice la soglia: OHKO, 2HKO, 3HKO o 4HKO e oltre
+    expect(panel.querySelectorAll('td .ad-k[title]').length).toBe(40);
+    expect([...panel.querySelectorAll('td .ad-k[title]')].every(k => /^(OHKO|2HKO|3HKO|4HKO\+)$/.test(k.getAttribute('title')!))).toBe(true);
+    expect(panel).toHaveTextContent(/4HKO\+/);
+  });
+
+  it('Sostenibilità: recupero, Stealth Rock e Life Orb per membro', async () => {
+    const { user, dialog } = await openDefense('it');
+    await user.click(within(dialog).getByRole('tab', { name: /^Sostenibilità/ }));
+    const panel = within(dialog).getByRole('tabpanel');
+    expect(within(panel).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Recupero', 'Stealth Rock', 'Life Orb', 'Sostenibilità']);
+    const rows = within(panel).getAllByRole('row').slice(1);
+    expect(rows).toHaveLength(2);
+    for (const row of rows) {
+      const cells = within(row).getAllByRole('cell');
+      expect(cells[0]).toHaveTextContent(/^(\+\d+%.*|—)$/);
+      expect(cells[1]).toHaveTextContent(/^(−\d+%|—)$/);
+      expect(cells[3]).toHaveTextContent(/^\d+$/);
+    }
+  });
+
+  it('Coverage tipi: i 18 tipi con sicurezza, deboli e resistenti', async () => {
+    const { user, dialog } = await openDefense('it');
+    await user.click(within(dialog).getByRole('tab', { name: /^Coverage tipi/ }));
+    const panel = within(dialog).getByRole('tabpanel');
+    expect(within(panel).getAllByRole('row')).toHaveLength(19);
+    expect(within(panel).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Tipi', 'Sicurezza', 'Deboli', 'Resistono']);
+    expect(panel).toHaveTextContent(/Più deboli che resistenti:|Nessun tipo scoperto/);
+  });
+
+  it('Coverage meta: ogni minaccia con quanto è retta e chi la regge; quelle senza risposta', async () => {
+    const { user, dialog } = await openDefense('it');
+    await user.click(within(dialog).getByRole('tab', { name: /^Coverage meta/ }));
+    const panel = within(dialog).getByRole('tabpanel');
+    expect(panel).toHaveTextContent(/Senza risposta:|Ogni minaccia ha una risposta/);
+    expect(within(panel).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Minaccia', 'Retta', 'Chi la regge']);
+    const rows = within(panel).getAllByRole('row').slice(1);
+    expect(rows.length).toBeGreaterThan(0);
+    for (const row of rows) expect(within(row).getAllByRole('cell')[0]).toHaveTextContent(/^\d+%$/);
+    const holder = panel.querySelector('.ad-cover [title]');
+    if (holder) {
+      expect(holder.getAttribute('title')).toMatch(/^.+: .+ \d+%( \(.+\))?$/);
+      expect(holder.querySelector('.visually-hidden')?.textContent).toBe(holder.getAttribute('title'));
+    }
+  });
+
+  it('in inglese', async () => {
+    const { dialog } = await openDefense('en');
+    expect(within(dialog).getAllByRole('tab').map(tab => tab.textContent!.replace(/\s*\d+$/, ''))).toEqual(['General', 'Robustness', 'Sustainability', 'Type coverage', 'Meta coverage']);
+    expect(within(dialog).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Physical', 'Special', 'Sustainability', 'Defense']);
+  });
+});

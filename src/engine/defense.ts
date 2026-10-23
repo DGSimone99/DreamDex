@@ -38,18 +38,36 @@ const RECOVERY_HOLD = 1;
 /** Recupero netto per turno che vale 100 di Sostenibilità. */
 export const SUSTAIN_FULL = 0.5;
 
-/** Recupero meno perdite per turno (in quota dei PS); `robustStep` è il valore medio dei colpi standard ricevuti. */
-export function sustainability(set: TeamSet, robustStep: number): number {
-  const ids = set.moves.map(toID);
+/** Le voci della Sostenibilità, per turno in quota dei PS: il recupero (già dimezzato se serve) e le perdite. */
+export interface SustainParts {
+  /** Mossa, abilità e strumento che curano (la mossa migliore sola). */
+  sources: string[];
+  recovery: number;
+  /** Il recupero vale metà: il membro non regge in media un 3HKO. */
+  halved: boolean;
+  rocks: number;
+  lifeOrb: number;
+}
+
+export function sustainParts(set: TeamSet, robustStep: number): SustainParts {
   const ability = toID(battleAbility(set));
   const item = toID(set.item);
-  const moves = Math.max(0, ...ids.map(id => RECOVERY_MOVES[id] ?? 0));
-  const recovery = moves + (RECOVERY_ABILITIES[ability] ?? 0) + (RECOVERY_ITEMS[item] ?? 0);
+  const best = set.moves.reduce<string | null>((acc, m) => ((RECOVERY_MOVES[toID(m)] ?? 0) > (acc ? RECOVERY_MOVES[toID(acc)] : 0) ? m : acc), null);
+  const sources = [best, RECOVERY_ABILITIES[ability] ? battleAbility(set) : null, RECOVERY_ITEMS[item] ? set.item : null]
+    .filter((x): x is string => !!x);
+  const gross = (best ? RECOVERY_MOVES[toID(best)] : 0) + (RECOVERY_ABILITIES[ability] ?? 0) + (RECOVERY_ITEMS[item] ?? 0);
+  const halved = gross > 0 && robustStep < RECOVERY_HOLD;
   const magicGuard = ability === 'magicguard';
   const types = battleSpecies(set)?.types ?? [];
   const rocks = item === 'heavydutyboots' || magicGuard ? 0 : STEALTH_ROCK * effectiveness('Rock', types as never);
   const lifeOrb = item === 'lifeorb' && !magicGuard ? LIFE_ORB : 0;
-  return recovery * (robustStep >= RECOVERY_HOLD ? 1 : 0.5) - rocks - lifeOrb;
+  return { sources, recovery: halved ? gross / 2 : gross, halved, rocks, lifeOrb };
+}
+
+/** Recupero meno perdite per turno (in quota dei PS); `robustStep` è il valore medio dei colpi standard ricevuti. */
+export function sustainability(set: TeamSet, robustStep: number): number {
+  const parts = sustainParts(set, robustStep);
+  return parts.recovery - parts.rocks - parts.lifeOrb;
 }
 
 export interface MemberDefense {
@@ -57,6 +75,7 @@ export interface MemberDefense {
   physical: number;
   special: number;
   sustain: number;
+  sustainParts: SustainParts;
   value: number;
 }
 
@@ -130,9 +149,10 @@ export function memberDefense(set: TeamSet, _team: TeamSet[], data: EngineData):
   const ref = defenseReference(data);
   const physical = softScore(raw.physicalStep / ref.physical);
   const special = softScore(raw.specialStep / ref.special);
-  const sustain = softScore(Math.max(0, sustainability(set, (raw.physicalStep + raw.specialStep) / 2)) / SUSTAIN_FULL);
+  const parts = sustainParts(set, (raw.physicalStep + raw.specialStep) / 2);
+  const sustain = softScore(Math.max(0, parts.recovery - parts.rocks - parts.lifeOrb) / SUSTAIN_FULL);
   const w = ROBUSTNESS_WEIGHTS;
-  return { species: raw.species, physical, special, sustain, value: Math.round(w.physical * physical + w.special * special + w.sustain * sustain) };
+  return { species: raw.species, physical, special, sustain, sustainParts: parts, value: Math.round(w.physical * physical + w.special * special + w.sustain * sustain) };
 }
 
 /** Robustezza e coverage nella Difesa: 50 e 50 (la coverage non va mai oltre il 50%). */
@@ -155,7 +175,8 @@ export interface TeamDefense {
   sustain: number;
   robustness: number;
   coverage: number;
-  coverageTypes: { value: number; weak: string[] };
+  /** `rows`: per ogni tipo la sicurezza 0–100 e chi è debole o resiste (immuni compresi). */
+  coverageTypes: { value: number; weak: string[]; rows: { type: string; safety: number; weak: string[]; resist: string[] }[] };
   coverageMeta: { value: number; unanswered: string[]; rows: ThreatRow[] } | null;
   members: MemberDefense[];
   /** Per ogni attaccante dei due gruppi: danno del colpo standard su ogni membro (ordine di `members`). */
@@ -204,6 +225,11 @@ export function teamDefense(team: TeamSet[], data: EngineData): TeamDefense {
   const table = weaknessTable(known);
   const typeValue = known.length ? softScore(mean(table.map(row => typeSafety(row.multipliers))) / DEFENSE_FULL) : 0;
   const weak = table.filter(row => row.weak > row.resist).map(row => row.type);
+  const names = members.map(m => m.species);
+  const typeRows = table.map(row => ({
+    type: row.type, safety: Math.round(100 * typeSafety(row.multipliers)),
+    weak: names.filter((_, i) => row.multipliers[i] > 1), resist: names.filter((_, i) => row.multipliers[i] < 1),
+  }));
 
   // Coverage meta: per ogni minaccia, chi regge il suo colpo migliore vero
   const threats = metaThreats(data);
@@ -234,7 +260,7 @@ export function teamDefense(team: TeamSet[], data: EngineData): TeamDefense {
   return {
     value: known.length ? Math.round(DEFENSE_SHARES.robustness * robustness + DEFENSE_SHARES.coverage * coverage) : 0,
     physical, special, sustain, robustness, coverage,
-    coverageTypes: { value: typeValue, weak },
+    coverageTypes: { value: typeValue, weak, rows: typeRows },
     coverageMeta,
     members,
     matrix: [...panels.physical.map((a, i) => row(a, i, true)), ...panels.special.map((a, i) => row(a, i, false))],
