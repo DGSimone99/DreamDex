@@ -88,6 +88,14 @@ function summary() {
       console.log(`  ${cat.padEnd(9)} ${String(rs.length).padStart(3)} team  media ${averages[cat].toFixed(1).padStart(4)}  ${grades(rs)}`);
     }
     console.log(`  distacco torneo − medio ${(averages.torneo - averages.medio).toFixed(1)}, buono − medio ${(averages.buono - averages.medio).toFixed(1)}`);
+    // Per formato: i team da torneo di NatDex OU sono la maggioranza e non devono coprire gli altri
+    for (const fmt of Object.keys(SOURCES)) {
+      const cells = ['torneo', 'datato', 'buono', 'generato', 'medio', 'brutto'].flatMap(cat => {
+        const rs = unique.filter(t => t.fmt === fmt && t.cat === cat).map(rate);
+        return rs.length ? [`${cat} ${mean(rs.map(r => r.overall)).toFixed(1)} (${rs.length})`] : [];
+      });
+      if (cells.length) console.log(`    ${fmt.padEnd(7)} ${cells.join(' · ')}`);
+    }
     // Ogni base del banco per archetipi in tre livelli: il voto deve rispettarne l'ordine
     const groups = [...new Set(teams.filter(t => t.group).map(t => t.group!))];
     const ordered = groups.filter(group => {
