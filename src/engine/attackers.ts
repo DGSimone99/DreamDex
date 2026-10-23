@@ -18,10 +18,14 @@ const THREATS = 40;
 
 const damaging = (set: TeamSet) => set.moves.filter(m => (getMove(m)?.category ?? 'Status') !== 'Status').length;
 
-/** Set offensivo standard senza meta: 252 nella statistica d'attacco e in Velocità, natura che la alza, Life Orb. */
+/**
+ * Set offensivo standard senza meta: 252 nella statistica d'attacco e in Velocità, natura che la alza, senza strumento.
+ * Con Life Orb il pannello era molto più duro di quello del meta (dove molti portano Leftovers, Boots o Rocky Helmet)
+ * e la Robustezza senza meta scendeva di 20 punti.
+ */
 function standardAttacker(species: Species, side: 'atk' | 'spa'): TeamSet {
   return {
-    species: species.name, item: 'Life Orb', ability: species.abilities[0], moves: [],
+    species: species.name, item: '', ability: species.abilities[0], moves: [],
     nature: side === 'atk' ? 'Adamant' : 'Modest', evs: { [side]: 252, spe: 252 },
   };
 }

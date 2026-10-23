@@ -18,11 +18,11 @@ describe('attackerPanels: attaccanti fisici e speciali del formato', () => {
     for (const set of special.filter(s => s.moves.length)) expect(['special', 'mixed']).toContain(attackStyle(set));
   });
 
-  it('senza statistiche: i 10 più forti del tier per lato, con un set offensivo standard', () => {
+  it('senza statistiche: i 10 più forti del tier per lato, con un set offensivo standard senza strumento', () => {
     const { physical, special } = attackerPanels(noStats);
     expect([physical.length, special.length]).toEqual([10, 10]);
-    expect(physical.every(s => s.evs.atk === 252 && s.item === 'Life Orb')).toBe(true);
-    expect(special.every(s => s.evs.spa === 252 && s.item === 'Life Orb')).toBe(true);
+    expect(physical.every(s => s.evs.atk === 252 && s.item === '')).toBe(true);
+    expect(special.every(s => s.evs.spa === 252 && s.item === '')).toBe(true);
   });
 
   it('si calcola una volta per formato e meta', () => {
