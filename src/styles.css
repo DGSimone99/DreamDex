@@ -213,21 +213,21 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 /* Ogni riga della card è un livello a sé (translate): con l'avviso aperto lo sprite passa sopra nome e righe sotto */
 .slot > summary .sprite-wrap:has(.alert-mark:hover, .alert-mark:focus-visible) { z-index: 6; }
 .slot > summary .sprite { display: block; image-rendering: pixelated; transition: transform 0.35s var(--ease); }
-/* Card aperta: lo sprite cresce e può uscire dalla card (voluto) */
+/* Card aperta: lo sprite cresce finché sta nella card */
 .slot[open] > summary { --open-scale: 1.4; }
 .slot[open] > summary .sprite { transform-origin: 50% 92%; transform: scale(var(--open-scale)); }
 /* Moveset aperto: il Pokémon resta in idle animato (gen5ani, dimensioni naturali, centrato) */
 .slot > summary .sprite.covered { visibility: hidden; }
 .slot > summary .sprite-ani {
   position: absolute;
-  /* Appoggiato in basso: le GIF sono ritagliate sul Pokémon e quelle alte (Blacephalon 143 px) crescono verso l'alto, fuori dalla card */
+  /* Appoggiato in basso e mai più alto di --fit (px dello sprite): le GIF alte (Blacephalon 143 px) si rimpiccioliscono per stare nella card */
   left: 50%;
   bottom: 4px;
   max-width: none;
   image-rendering: pixelated;
   pointer-events: none;
   transform-origin: 50% 100%;
-  transform: translateX(-50%) scale(calc(var(--open-scale, 1.12) * var(--sprite-scale, 1)));
+  transform: translateX(-50%) scale(min(calc(var(--open-scale, 1.12) * var(--sprite-scale, 1)), calc(var(--fit, 999) / var(--ani-h, 96))));
 }
 .slot .name { font: 700 21px/1.05 var(--display); text-transform: uppercase; letter-spacing: 0.02em; }
 .slot .held { font-size: 13px; color: var(--muted); }
@@ -307,7 +307,9 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 .slot[open] > summary { justify-content: center; }
 .slot[open] > summary > :not(.sprite-wrap, .favorite, .remove, .slot-custom, .slot-lead) { display: none; }
 .slots.editing .slot[open] > summary .sprite-wrap { zoom: 1.05; margin: 0; }
-.slots.editing .slot[open] > summary { --open-scale: 1.3; }
+.slots.editing .slot[open] > summary { --open-scale: 1.2; --fit: 122; }
+/* Più in basso, sul fondo della card: lo spazio sopra resta tutto al Pokémon */
+.slots.editing .slot[open] > summary .sprite-ani { bottom: -11px; }
 /* Riordino trascinando */
 .slot.dragging > summary { opacity: 0.45; }
 .slot.drop-target > summary::before { outline: 2px dashed var(--blue); outline-offset: 3px; }
