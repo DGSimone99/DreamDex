@@ -81,7 +81,8 @@ export interface CoverageRow {
   weight: number;
   /** Quanto è coperto: 0, 70, 90 o 100% (1°, 2° e 3° membro che lo manda KO in due colpi). */
   level: number;
-  coveredBy: { species: string; move: string; pct: number }[];
+  /** `partial`: superefficace ma solo da 3HKO (fra il 33% e il 50%): copre a metà. */
+  coveredBy: { species: string; move: string; pct: number; partial: boolean }[];
 }
 
 /** Colpo migliore del set contro ogni bersaglio: danno (in quota dei PS, al massimo 1) e mossa; per contenuto del set. */
@@ -98,7 +99,10 @@ function hitsOf(set: TeamSet, data: EngineData, targets: CoverageTarget[], kind:
   return hits;
 }
 
-const depthOf = (covering: number) => COVERAGE_DEPTH.slice(0, covering).reduce((a, b) => a + b, 0);
+/** Quanto copre un colpo superefficace: pieno da 2HKO, a metà da 3HKO, niente sotto. */
+const creditOf = (x: number) => (x >= COVER_HIT ? 1 : x >= HOLE_HIT ? 0.5 : 0);
+/** Profondità: i crediti dei membri dal più alto, al 70, 20 e 10%. */
+const depthOf = (credits: number[]) => [...credits].sort((a, b) => b - a).reduce((acc, c, i) => acc + (COVERAGE_DEPTH[i] ?? 0) * c, 0);
 
 /** Coverage del team: chi manda KO in due colpi ogni bersaglio, con la profondità; i buchi per nome. */
 export function teamCoverage(team: TeamSet[], data: EngineData, kind: CoverageKind = usesMeta(data) ? 'meta' : 'types'): TeamCoverage {
@@ -107,19 +111,19 @@ export function teamCoverage(team: TeamSet[], data: EngineData, kind: CoverageKi
   let value = 0;
   const holes: string[] = [];
   targets.forEach((target, i) => {
-    value += target.weight * depthOf(hits.filter(h => h[i].x >= COVER_HIT).length);
+    value += target.weight * depthOf(hits.map(h => creditOf(h[i].x)));
     if (Math.max(0, ...hits.map(h => h[i].x)) < HOLE_HIT) holes.push(target.label);
   });
   return {
     // Lineare fino a 80, poi sempre più piano: anche ogni bersaglio coperto tre volte resta sotto 100
     value: softScore(value),
     holes,
-    perMember: hits.map(h => Math.round(100 * targets.reduce((acc, target, i) => acc + (h[i].x >= COVER_HIT ? target.weight : 0), 0))),
+    perMember: hits.map(h => Math.round(100 * targets.reduce((acc, target, i) => acc + creditOf(h[i].x) * target.weight, 0))),
     rows: targets.map((target, i) => {
-      const coveredBy = team.flatMap((set, m) => (hits[m][i].x >= COVER_HIT
-        ? [{ species: battleSpecies(set)?.name ?? set.species, move: hits[m][i].move, pct: Math.floor(100 * hits[m][i].x) }]
+      const coveredBy = team.flatMap((set, m) => (creditOf(hits[m][i].x) > 0
+        ? [{ species: battleSpecies(set)?.name ?? set.species, move: hits[m][i].move, pct: Math.floor(100 * hits[m][i].x), partial: hits[m][i].x < COVER_HIT }]
         : []));
-      return { label: target.label, species: target.set.species, weight: target.weight, level: Math.round(100 * depthOf(coveredBy.length)), coveredBy };
+      return { label: target.label, species: target.set.species, weight: target.weight, level: Math.round(100 * depthOf(hits.map(h => creditOf(h[i].x)))), coveredBy };
     }),
   };
 }

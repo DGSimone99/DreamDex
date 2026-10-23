@@ -767,6 +767,8 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 .ad-legend { margin: 8px 0 0 !important; font-size: 12px !important; color: var(--faint) !important; }
 .ad-cover .sprite { margin-right: -6px; }
 .ad-cover > span { display: inline-block; }
+/* Copre a metà (superefficace ma solo da 3HKO): sprite più tenue */
+.ad-cover > span.partial { opacity: 0.45; }
 @media (max-width: 560px) {
   .ad-body { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr); }
   .ad-nav { flex-direction: row; overflow-x: auto; border-right: 0; border-bottom: 1px solid var(--line-soft); }

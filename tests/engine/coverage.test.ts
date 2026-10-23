@@ -59,6 +59,20 @@ describe('teamCoverage', () => {
     expect(rows.find(r => r.label === 'Electric')!.coveredBy.map(c => c.move)).toEqual(['Headlong Rush']);
   });
 
+  it('un superefficace da 3HKO (fra il 33% e il 50%) copre a metà', () => {
+    // Urshifu-RS con Choice Scarf: Ice Spinner (80, non STAB) fa circa il 42% al Volante medio
+    const urshifu = set('Urshifu-Rapid-Strike', 'Choice Scarf', 'Unseen Fist', ['Surging Strikes', 'Close Combat', 'U-turn', 'Ice Spinner'], 'Jolly', { atk: 252, spe: 252 });
+    const flying = teamOffenseRows([urshifu]).find(r => r.label === 'Flying')!;
+    expect(flying.coveredBy).toEqual([expect.objectContaining({ move: 'Ice Spinner', partial: true })]);
+    // Metà del 70% del primo membro
+    expect(flying.level).toBe(35);
+    expect(flying.coveredBy[0].pct).toBeGreaterThanOrEqual(33);
+    expect(flying.coveredBy[0].pct).toBeLessThan(50);
+    // Due membri da 3HKO: 35 + 10
+    const two = teamCoverage([urshifu, { ...urshifu }], noMeta).rows.find(r => r.label === 'Flying')!;
+    expect(two.level).toBe(45);
+  });
+
   it('anche coprendo tutto tre volte la Coverage non arriva a 100', () => {
     const all = set('Mew', 'Life Orb', 'Synchronize', ['Psystrike', 'Fusion Bolt', 'Fusion Flare', 'Precipice Blades'], 'Modest', { spa: 252, atk: 252 });
     expect(teamCoverage([all, { ...all }, { ...all }, { ...all }], noMeta).value).toBeLessThan(100);

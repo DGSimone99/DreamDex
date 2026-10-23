@@ -74,14 +74,15 @@ describe("dettaglio dell'Offesa a schede", () => {
     await user.click(within(dialog).getByRole('tab', { name: /^Coverage meta/ }));
     const panel = within(dialog).getByRole('tabpanel');
     expect(panel).toHaveTextContent(/Buchi:|Nessun buco/);
-    // Al posto del peso, quanto è coperto ogni bersaglio (0, 70, 90 o 100%)
+    // Al posto del peso, quanto è coperto ogni bersaglio
     expect(within(panel).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Tipi', 'Pokémon', 'Copertura', 'Coperto da']);
     const rows = within(panel).getAllByRole('row').slice(1);
     expect(rows.length).toBeGreaterThan(0);
-    for (const row of rows) expect(within(row).getAllByRole('cell')[1]).toHaveTextContent(/^(0|70|90|100)%$/);
+    // 70/90/100 per chi manda KO in due colpi; un superefficace da 3HKO copre a metà (35, 45…)
+    for (const row of rows) expect(within(row).getAllByRole('cell')[1]).toHaveTextContent(/^\d+%$/);
     // Passando sul Pokémon che copre: la mossa e il danno
     const cover = panel.querySelector('.ad-cover [title]');
-    if (cover) expect(cover.getAttribute('title')).toMatch(/^.+: .+ \d+%$/);
+    if (cover) expect(cover.getAttribute('title')).toMatch(/^.+: .+ \d+%( \(.+\))?$/);
   });
 
   it('frecce fra le schede; Esc chiude e il focus torna alla barra', async () => {

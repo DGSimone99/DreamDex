@@ -207,7 +207,8 @@ export function AreaDetail({ rating, area, onClose }: { rating: TeamRating; area
               <td className="left ad-cover">
                 {row.coveredBy.length
                   ? row.coveredBy.map((c, i) => (
-                    <span key={`${c.species}-${i}`} title={`${c.species}: ${c.move} ${c.pct}%`}><Sprite species={c.species} size={28} /></span>
+                    <span key={`${c.species}-${i}`} className={c.partial ? 'partial' : undefined}
+                      title={`${c.species}: ${c.move} ${c.pct}%${c.partial ? ` (${t('detail.partial')})` : ''}`}><Sprite species={c.species} size={28} /></span>
                   ))
                   : <span className="ad-k none">{t('detail.nobody')}</span>}
               </td>
