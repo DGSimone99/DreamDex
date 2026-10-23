@@ -5,7 +5,7 @@ import { App } from '../../src/App';
 import { analyzeTeam, UNIFORM_TYPE_WEIGHTS } from '../../src/engine/analysis';
 import { coachTeam } from '../../src/engine/coach';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
-import { META_FLOOR, META_MAX_PENALTY, metaPenalty, rateTeam } from '../../src/engine/rating';
+import { rateTeam } from '../../src/engine/rating';
 import { emptySet, mostCommonSet } from '../../src/engine/sets';
 import { encodeShare } from '../../src/share';
 import { loadSession, sanitizeFormat } from '../../src/storage';

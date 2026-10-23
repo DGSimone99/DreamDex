@@ -32,8 +32,8 @@ const BASE_AREAS: BaseArea[] = ['defense', 'strength', 'roles', 'speed'];
 
 /**
  * Peso di ogni area secondo il tipo di team (somma 100): ognuno si giudica su quello con cui vince.
- * Un hyper offense su Offesa e Velocità, uno stall su Robustezza, Coverage difensiva e Ruoli
- * (hazard, rimozione, recupero); il balance tiene tutto quasi alla pari.
+ * Un hyper offense su Offesa e Velocità, uno stall su Difesa e Ruoli (hazard, rimozione, recupero);
+ * il balance tiene tutto quasi alla pari.
  * Un team incompleto si giudica come balance. Con Trick Room la Velocità non conta.
  */
 export const ARCHETYPE_WEIGHTS: Record<Archetype, Record<BaseArea, number>> = {
@@ -66,18 +66,6 @@ const FULL_JOBS = 3;
 
 /** Nelle minacce gestite: quota delle 3 più usate (il resto: tutte, pesate per uso). */
 export const TOP_THREATS = 0.5;
-
-/**
- * Il meta è solo una penalità: un team adatto al meta non guadagna niente (il voto sono le sue aree),
- * uno che gestisce meno del 65% delle minacce perde 1 punto ogni 4% sotto la soglia, fino a 12.
- * Conta solo quante minacce gestisce: l'uso dei suoi Pokémon (circolare) resta un'informazione.
- */
-export const META_FLOOR = 65;
-export const META_STEP = 4;
-export const META_MAX_PENALTY = 12;
-export function metaPenalty(threats: number): number {
-  return Math.min(META_MAX_PENALTY, Math.max(0, Math.ceil((META_FLOOR - threats) / META_STEP)));
-}
 
 /**
  * Soglie tarate sui dati reali (2026-09, 1630+): team ben costruiti 88–90,

@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
 import { createPortal } from 'react-dom';
 import type { Archetype } from '../engine/archetype';
-import { ARCHETYPE_WEIGHTS, META_FLOOR, META_MAX_PENALTY, META_STEP, type AreaKey } from '../engine/rating';
+import { ARCHETYPE_WEIGHTS, type AreaKey } from '../engine/rating';
 import type { MessageKey } from '../i18n';
 import { useT } from '../i18n/react';
 import { Icon } from './icons';
@@ -80,7 +80,7 @@ export function RatingHelp({ teamType, trickRoom }: { teamType: Archetype; trick
               <section className="help-panel" id="help-panel" role="tabpanel" aria-labelledby={`help-tab-${topic}`}>
                 <h4>{t(topicLabel(topic))}</h4>
                 {Array.from({ length: PARAGRAPHS[topic] ?? 0 }, (_, i) => (
-                  <p key={i}>{t(`help.${topic}.${i + 1}` as MessageKey, { floor: META_FLOOR, step: META_STEP, max: META_MAX_PENALTY })}</p>
+                  <p key={i}>{t(`help.${topic}.${i + 1}` as MessageKey)}</p>
                 ))}
                 {topic === 'general' && (
                   <>
