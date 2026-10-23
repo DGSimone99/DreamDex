@@ -336,7 +336,7 @@ function attackValue(power: number, wallbreaking: number): number {
 }
 
 /** Media pesata per posizione: valori dal più alto al più basso, pesi 22/18/16/15/15/14% (rinormalizzati se sono meno di sei). */
-function rankWeighted(values: number[]): number {
+export function rankWeighted(values: number[]): number {
   if (!values.length) return 0;
   const sorted = [...values].sort((a, b) => b - a);
   const weights = sorted.map((_, i) => RANK_WEIGHTS[Math.min(i, RANK_WEIGHTS.length - 1)]);

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { holdStep, memberDefense, sustainability } from '../../src/engine/defense';
+import { holdStep, memberDefense, sustainability, teamDefense } from '../../src/engine/defense';
 import type { TeamSet } from '../../src/engine/sets';
 import { fixtureData } from '../fixtures/data';
 
@@ -56,5 +56,51 @@ describe('memberDefense', () => {
 
   it('una specie sconosciuta non conta', () => {
     expect(memberDefense(set('Notamon', '', '', [], 'Hardy', {}), [], noStats)).toBeNull();
+  });
+});
+
+describe('teamDefense', () => {
+  const blissey = set('Blissey', 'Heavy-Duty Boots', 'Natural Cure', ['Soft-Boiled', 'Seismic Toss'], 'Bold', { hp: 252, def: 252 });
+  const skarm = set('Skarmory', 'Rocky Helmet', 'Sturdy', ['Roost', 'Body Press', 'Spikes'], 'Impish', { hp: 252, def: 252 });
+  const sweeper = set('Dragapult', 'Choice Specs', 'Infiltrator', ['Draco Meteor', 'Shadow Ball'], 'Timid', { spa: 252, spe: 252 });
+
+  it('robustezza del team: media pesata per posizione, poi 40/40/20', () => {
+    const team = teamDefense([blissey, skarm], noStats);
+    const rw = (vals: number[]) => { const s = [...vals].sort((a, b) => b - a); return Math.round((0.30 * s[0] + 0.22 * s[1]) / 0.52); };
+    expect(team.physical).toBe(rw(team.members.map(m => m.physical)));
+    expect(team.special).toBe(rw(team.members.map(m => m.special)));
+    expect(team.robustness).toBe(Math.round(0.4 * team.physical + 0.4 * team.special + 0.2 * team.sustain));
+  });
+
+  it('senza meta: Coverage solo di tipi; Difesa = 50% robustezza + 50% coverage, mai 100', () => {
+    const team = teamDefense([blissey, skarm], noStats);
+    expect(team.coverageMeta).toBeNull();
+    expect(team.coverage).toBe(team.coverageTypes.value);
+    expect(team.value).toBe(Math.round(0.5 * team.robustness + 0.5 * team.coverage));
+    expect(team.value).toBeLessThan(100);
+  });
+
+  it('col meta: Coverage meta con chi regge ogni minaccia (meno del 50% pieno, 2HKO a metà)', () => {
+    const team = teamDefense([blissey, skarm], fixtureData);
+    expect(team.coverageMeta).not.toBeNull();
+    expect(team.coverage).toBe(Math.round((team.coverageTypes.value + team.coverageMeta!.value) / 2));
+    for (const row of team.coverageMeta!.rows) {
+      for (const h of row.heldBy) expect(h.partial ? h.pct >= 50 && h.pct < 100 : h.pct < 50).toBe(true);
+      if (!row.heldBy.some(h => !h.partial)) expect(team.coverageMeta!.unanswered).toContain(row.species);
+    }
+  });
+
+  it('un team di sweeper fragili ha meno Difesa di uno di muri', () => {
+    expect(teamDefense([sweeper, { ...sweeper }], noStats).value).toBeLessThan(teamDefense([blissey, skarm], noStats).value);
+  });
+
+  it('i deboli di tipo: più membri deboli che resistenti', () => {
+    const team = teamDefense([sweeper, { ...sweeper }], noStats);
+    expect(team.coverageTypes.weak).toEqual(expect.arrayContaining(['Dragon', 'Ghost', 'Ice', 'Fairy', 'Dark']));
+  });
+
+  it('un membro sconosciuto si salta', () => {
+    const notamon = set('Notamon', '', '', [], 'Hardy', {});
+    expect(teamDefense([blissey, notamon], noStats).value).toBe(teamDefense([blissey], noStats).value);
   });
 });

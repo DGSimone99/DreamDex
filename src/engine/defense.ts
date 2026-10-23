@@ -1,9 +1,16 @@
 import { usesMeta } from './analysis';
 import { attackerPanels } from './attackers';
 import { ownConditions } from './coverage';
-import { setKey, standardHit, type FieldCondition, type Hit } from './damage';
+import { metaThreats } from './attackers';
+import { bestHit, setKey, standardHit, type FieldCondition, type Hit } from './damage';
+import { COVERAGE_DEPTH } from './coverage';
+import { ONE_USE_SHARE, rankWeighted } from './offense';
+import { DEFENSE_FULL, typeSafety } from './rating';
+import { DEFAULT_FORMAT } from './format';
+import { teraAllowed } from './formats';
+import { weaknessTable } from './types';
 import type { EngineData } from './data';
-import { battleAbility, battleSpecies, toID } from './dex';
+import { battleAbility, battleSpecies, dex, getMove, toID } from './dex';
 import { mostCommonSet, type TeamSet } from './sets';
 import { softScore } from './scale';
 import { topThreats } from './stats';
@@ -59,7 +66,7 @@ export const ROBUSTNESS_WEIGHTS = { physical: 0.4, special: 0.4, sustain: 0.2 };
 const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
 
 /** Colpi standard ricevuti dai due gruppi di attaccanti; per contenuto del set, formato e meta. */
-interface Raw { species: string; physical: Hit[]; special: Hit[]; physicalStep: number; specialStep: number }
+interface Raw { species: string; physical: (Hit | null)[]; special: (Hit | null)[]; physicalStep: number; specialStep: number }
 const raws = new Map<string, Raw | null>();
 const RAW_LIMIT = 5000;
 
@@ -79,7 +86,7 @@ function measure(set: TeamSet, data: EngineData): Raw | null {
   if (![...physical, ...special].some(Boolean)) return null;
   return {
     species: species.name,
-    physical: physical.filter((h): h is Hit => !!h), special: special.filter((h): h is Hit => !!h),
+    physical, special,
     physicalStep: mean(physical.map(holdStep)), specialStep: mean(special.map(holdStep)),
   };
 }
@@ -126,4 +133,98 @@ export function memberDefense(set: TeamSet, _team: TeamSet[], data: EngineData):
   const sustain = softScore(Math.max(0, sustainability(set, (raw.physicalStep + raw.specialStep) / 2)) / SUSTAIN_FULL);
   const w = ROBUSTNESS_WEIGHTS;
   return { species: raw.species, physical, special, sustain, value: Math.round(w.physical * physical + w.special * special + w.sustain * sustain) };
+}
+
+/** Robustezza e coverage nella Difesa: 50 e 50 (la coverage non va mai oltre il 50%). */
+export const DEFENSE_SHARES = { robustness: 0.5, coverage: 0.5 };
+/** Una minaccia è retta se toglie meno di metà PS; a metà se manda KO in due colpi. */
+const HOLD_FULL = 0.5;
+
+export interface ThreatRow {
+  species: string;
+  weight: number;
+  /** Quanto è retta: 0–100, coi crediti dei membri al 70, 20 e 10%. */
+  level: number;
+  heldBy: { species: string; move: string; pct: number; partial: boolean }[];
+}
+
+export interface TeamDefense {
+  value: number;
+  physical: number;
+  special: number;
+  sustain: number;
+  robustness: number;
+  coverage: number;
+  coverageTypes: { value: number; weak: string[] };
+  coverageMeta: { value: number; unanswered: string[]; rows: ThreatRow[] } | null;
+  members: MemberDefense[];
+  /** Per ogni attaccante dei due gruppi: danno del colpo standard su ogni membro (ordine di `members`). */
+  matrix: { species: string; physical: boolean; cells: { pct: number; step: number }[] }[];
+}
+
+/** Danno del colpo migliore vero di una minaccia su un membro; Tera e mossa Z della minaccia a un quarto. */
+function threatHit(threat: TeamSet, member: TeamSet, data: EngineData): Hit | null {
+  const conditions = ownConditions(threat);
+  const base = bestHit(threat, member, { conditions });
+  const teraOk = teraAllowed({ ...DEFAULT_FORMAT, formatId: data.formatId ?? 'ou' }) && !!threat.teraType;
+  const zType = dex.items.get(threat.item).zMoveType;
+  const zOk = !!zType && threat.moves.some(m => getMove(m)?.type === zType);
+  const once = [teraOk && bestHit(threat, member, { conditions, tera: true }), zOk && bestHit(threat, member, { conditions, z: true })]
+    .filter((h): h is Hit => !!h);
+  if (!base || !once.length) return base;
+  const boosted = Math.max(...once.map(h => h.expected));
+  return { ...base, expected: base.expected + ONE_USE_SHARE * Math.max(0, boosted - base.expected) };
+}
+
+const depthOf = (credits: number[]) => [...credits].sort((a, b) => b - a).reduce((acc, c, i) => acc + (COVERAGE_DEPTH[i] ?? 0) * c, 0);
+
+/** Difesa del team: robustezza (media pesata per posizione) e coverage difensiva di tipi e, col meta, del meta. */
+export function teamDefense(team: TeamSet[], data: EngineData): TeamDefense {
+  const known = team.filter(set => rawOf(set, data) !== null);
+  const members = known.map(set => memberDefense(set, team, data)!);
+  const physical = rankWeighted(members.map(m => m.physical));
+  const special = rankWeighted(members.map(m => m.special));
+  const sustain = rankWeighted(members.map(m => m.sustain));
+  const w = ROBUSTNESS_WEIGHTS;
+  const robustness = Math.round(w.physical * physical + w.special * special + w.sustain * sustain);
+
+  // Coverage di tipi: il saldo di resistenze e debolezze sui 18 tipi, con la stessa scala dell'Offesa
+  const table = weaknessTable(known);
+  const typeValue = known.length ? softScore(mean(table.map(row => typeSafety(row.multipliers))) / DEFENSE_FULL) : 0;
+  const weak = table.filter(row => row.weak > row.resist).map(row => row.type);
+
+  // Coverage meta: per ogni minaccia, chi regge il suo colpo migliore vero
+  const threats = metaThreats(data);
+  let coverageMeta: TeamDefense['coverageMeta'] = null;
+  if (threats.length && known.length) {
+    let total = 0;
+    const rows = threats.map(({ set: threat, weight }) => {
+      const heldBy = known.flatMap(member => {
+        const hit = threatHit(threat, member, data);
+        const x = Math.min(1, hit?.expected ?? 0);
+        if (x >= 1) return [];
+        return [{ species: battleSpecies(member)?.name ?? member.species, move: hit?.move ?? '', pct: Math.floor(100 * x), partial: x >= HOLD_FULL }];
+      });
+      const level = depthOf(heldBy.map(h => (h.partial ? 0.5 : 1)));
+      total += weight * level;
+      return { species: threat.species, weight, level: Math.round(100 * level), heldBy };
+    });
+    coverageMeta = { value: softScore(total), unanswered: rows.filter(r => !r.heldBy.some(h => !h.partial)).map(r => r.species), rows };
+  }
+  const coverage = coverageMeta ? Math.round((typeValue + coverageMeta.value) / 2) : typeValue;
+
+  const panels = attackerPanels(data);
+  const raws = known.map(set => rawOf(set, data)!);
+  const row = (attacker: TeamSet, i: number, physicalSide: boolean) => ({
+    species: attacker.species, physical: physicalSide,
+    cells: raws.map(r => { const hit = (physicalSide ? r.physical : r.special)[i]; return { pct: Math.floor(100 * Math.min(1, hit?.expected ?? 0)), step: holdStep(hit) }; }),
+  });
+  return {
+    value: known.length ? Math.round(DEFENSE_SHARES.robustness * robustness + DEFENSE_SHARES.coverage * coverage) : 0,
+    physical, special, sustain, robustness, coverage,
+    coverageTypes: { value: typeValue, weak },
+    coverageMeta,
+    members,
+    matrix: [...panels.physical.map((a, i) => row(a, i, true)), ...panels.special.map((a, i) => row(a, i, false))],
+  };
 }
