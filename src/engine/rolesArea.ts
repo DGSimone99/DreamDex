@@ -4,7 +4,7 @@ import { keyRoles, keyValue, needLabel, teamNeeds, type TeamNeeds } from './need
 import { LEVEL_KEYS, type Level, type LevelKey } from './roleLevels';
 import type { Redundancy } from './rating';
 import { softScore } from './scale';
-import { subRoleReasons, type SubRoleValues } from './subRoles';
+import { subRoleReasons, type SubRoleReason, type SubRoleValues } from './subRoles';
 import type { TeamSet } from './sets';
 import { t, type Lang } from '../i18n';
 
@@ -38,7 +38,8 @@ export interface TeamRoles {
   rows: RoleRow[];
   /** Mancanze essenziali come penalità (solo team di 6). */
   failures: Redundancy[];
-  members: { species: string; values: SubRoleValues }[];
+  /** Valori e motivi di ogni membro (per le schede delle famiglie). */
+  members: { species: string; values: SubRoleValues; reasons: SubRoleReason[] }[];
 }
 
 /** Punteggio puro dai valori di team: base degli importanti (1 senza importanti), extra dei minori, valore 0–99. */
@@ -85,6 +86,6 @@ export function teamRolesArea(team: TeamSet[], data: EngineData, lang: Lang, giv
   return {
     ...score, rows,
     failures: essentialFailures(team, needs, lang),
-    members: team.map((set, i) => ({ species: battleName(set), values: needs.members[i] ?? {} })),
+    members: team.map((set, i) => ({ species: battleName(set), values: needs.members[i] ?? {}, reasons: reasons[i] })),
   };
 }

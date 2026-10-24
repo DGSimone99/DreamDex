@@ -12,6 +12,23 @@ const set = (species: string, moves: string[], item = '', ability = '', evs: Tea
 const rival = (species: string, types: string[], ability = ''): StatusRival => ({ species, types, ability, item: '', weight: 1 });
 const noMeta = { ...fixtureData, ignoreMeta: true };
 
+describe('motivi dei sotto-ruoli (per il dettaglio dei Ruoli)', () => {
+  it("le fonti nominano la mossa o l'abilità; i muri portano indice e soglia", () => {
+    const corv = set('Corviknight', ['Body Press', 'Iron Defense', 'Roost', 'Defog'], 'Leftovers', 'Pressure', { hp: 252, def: 252 }, 'Impish');
+    const reasons = subRoleReasons(corv, [corv], fixtureData);
+    expect(reasons.find(r => r.role === 'recovery')).toMatchObject({ source: 'Roost', value: 1 });
+    expect(reasons.find(r => r.role === 'removal')).toMatchObject({ source: 'Defog' });
+    const wall = reasons.find(r => r.role === 'physicalWall')!;
+    expect(wall.source).toBe('wall');
+    expect(wall.index!).toBeGreaterThanOrEqual(wall.threshold!);
+    const slowbro = set('Slowbro', ['Scald', 'Rest', 'Toxic Spikes', 'Trick'], 'Choice Specs', 'Regenerator');
+    const r2 = subRoleReasons(slowbro, [slowbro], fixtureData);
+    expect(r2.find(r => r.role === 'recovery')!.source).toBe('Regenerator');
+    expect(r2.find(r => r.role === 'hazards')!.source).toBe('Toxic Spikes');
+    expect(r2.find(r => r.role === 'itemRemoval')!.source).toBe('Trick + Choice');
+  });
+});
+
 describe('sotto-ruoli misurati', () => {
   it('Kingambit: wallbreaker e sweeper fisico, non muro', () => {
     const s = set('Kingambit', ['Swords Dance', 'Kowtow Cleave', 'Sucker Punch', 'Iron Head'], 'Black Glasses', 'Defiant', { hp: 4, atk: 252, spe: 252 }, 'Adamant');
@@ -44,7 +61,7 @@ describe('sotto-ruoli misurati', () => {
     const { values, reasons } = measureWith(s, [s], fixtureData, pool, speedPool(fixtureData));
     expect(values.taunt).toBeCloseTo(0.25, 10);
     expect(values.encore).toBeCloseTo(0.25, 10);
-    expect(reasons.find(r => r.role === 'taunt')).toMatchObject({ source: 'Taunt', share: 0.25 });
+    expect(reasons.find(r => r.role === 'taunt')).toMatchObject({ source: 'Taunt', share: 0.25, prankster: true });
     const allDark = measureWith(s, [s], fixtureData, [rival('A', ['Dark'])], []).values;
     expect(allDark.taunt).toBeUndefined();
   });

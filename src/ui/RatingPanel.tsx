@@ -1,35 +1,22 @@
 import { useEffect, useRef, useState } from 'react';
 import { useEditing } from './editing';
-import type { AreaKey, TeamRating } from '../engine/rating';
+import type { TeamRating } from '../engine/rating';
+import { roleShortLabel } from '../engine/roles';
+import { rolesList } from '../engine/subRoles';
 import { Typed } from './TypeText';
 import { AlertMark } from './AlertMark';
 import { RatingHelp } from './RatingHelp';
-import { AreaDetail } from './AreaDetail';
-import type { MessageKey } from '../i18n';
-import { useT } from '../i18n/react';
+import { AreaDetail, type DetailArea } from './AreaDetail';
+import { useLang, useT } from '../i18n/react';
 
-/** Le aree con una scheda propria nell'analisi: cliccandole ci si arriva. */
-export const AREA_SECTIONS: Partial<Record<AreaKey, { id: string; title: MessageKey }>> = {
-  roles: { id: 'analysis-roles', title: 'analysis.roles' },
-};
-
-/** Apre la scheda (se chiusa) e ci scorre sopra. */
-function goToSection(id: string) {
-  const section = document.getElementById(id) as HTMLDetailsElement | null;
-  if (!section) return;
-  section.open = true;
-  section.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
-  section.querySelector('summary')?.focus({ preventScroll: true });
-}
-
-type DetailArea = 'strength' | 'defense' | 'speed';
-const isDetailArea = (key: string): key is DetailArea => key === 'strength' || key === 'defense' || key === 'speed';
+const isDetailArea = (key: string): key is DetailArea => key === 'strength' || key === 'defense' || key === 'speed' || key === 'roles';
 
 /** `ruleIssues`: problemi di regole del team (vietati, Mega, mosse non legali…): triangolo rosso accanto al voto. */
 /** `metaMonth`: mese delle statistiche, per dire con quale meta è stato calcolato il voto. */
 export function RatingPanel({ rating, ruleIssues = [], metaMonth }: { rating: TeamRating; ruleIssues?: string[]; metaMonth?: string }) {
   const t = useT();
-  // Dettaglio dell'Offesa o della Difesa (sottostatistiche per membro); alla chiusura il focus torna alla barra
+  const lang = useLang();
+  // Dettaglio dell'area (sottostatistiche per membro); alla chiusura il focus torna alla barra
   const [detail, setDetail] = useState<DetailArea | null>(null);
   const detailButtons = useRef<Partial<Record<DetailArea, HTMLButtonElement | null>>>({});
   const closeDetail = () => { const area = detail; setDetail(null); if (area) detailButtons.current[area]?.focus(); };
@@ -57,7 +44,6 @@ export function RatingPanel({ rating, ruleIssues = [], metaMonth }: { rating: Te
       <dl className="bars">
         {rating.areas.map(area => {
           const text = `${area.label} ${area.value ?? 'n/d'}`;
-          const section = AREA_SECTIONS[area.key];
           // Nel tooltip solo i dati per membro; come si calcola ogni area lo spiega il "?" accanto al titolo
           const tip = area.key === 'strength' && rating.offense.members.length
             ? [...rating.offense.members].sort((a, b) => b.value - a.value).map(m => `${m.species} ${m.value}`).join('\n')
@@ -70,16 +56,9 @@ export function RatingPanel({ rating, ruleIssues = [], metaMonth }: { rating: Te
             <div key={area.key}>
               <dt>
                 {isDetailArea(area.key) ? (
-                  // Offesa e Difesa aprono il loro dettaglio: sottostatistiche e punteggio di ogni membro
+                  // Offesa, Difesa, Velocità e Ruoli aprono il loro dettaglio: sottostatistiche e punteggio di ogni membro
                   <button ref={el => { detailButtons.current[area.key as DetailArea] = el; }} type="button" className={tip ? 'area-link tip' : 'area-link'}
                     aria-haspopup="dialog" onClick={() => setDetail(area.key as DetailArea)} data-tip={tip} title={tip ? undefined : t('detail.open', { area: area.label })}>
-                    {text}
-                  </button>
-                ) : section ? (
-                  // Con un dettaglio, il tooltip lo mostra insieme a dove porta il clic
-                  <button type="button" className={tip ? 'area-link tip' : 'area-link'} onClick={() => goToSection(section.id)}
-                    title={tip ? undefined : t('rating.goTo', { section: t(section.title) })}
-                    data-tip={tip ? `${tip}\n${t('rating.goTo', { section: t(section.title) })}` : undefined}>
                     {text}
                   </button>
                 ) : tip ? (

@@ -41,9 +41,13 @@ describe('TeamPanel', () => {
     window.history.replaceState(null, '', `/#team=${encodeShare([pelipper], DEFAULT_FORMAT)}`);
     render(<App initialLang="it" data={fixtureData} />);
     const roles = teamRegion().querySelector('.slot .roles')!;
-    // Il principale (Recupero, famiglia Difesa) viene prima del meteo; il Pivot resta nel tooltip
-    expect(roles.textContent).toBe('Recupero · Meteo');
-    expect(roles.getAttribute('title')).toMatch(/^Recupero · Porta la pioggia \(.+\) · Pivot$/);
+    // Ruoli misurati come nel voto: il principale non è mai il Recupero, poi il meteo; il resto nel tooltip
+    const [main, second] = roles.textContent!.split(' · ');
+    expect(main).not.toBe('Recupero');
+    expect(second).toBe('Meteo');
+    const all = roles.getAttribute('title')!.split(' · ');
+    expect(all[1]).toMatch(/^Porta la pioggia \(.+\)$/);
+    expect(all).toEqual(expect.arrayContaining(['Pivot', 'Recupero']));
   });
 
   it('il tooltip dei ruoli elenca tutti i ruoli, non solo i due mostrati', () => {

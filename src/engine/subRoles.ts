@@ -231,7 +231,34 @@ function affects(src: StatusSource, rival: StatusRival, corrosion: boolean): boo
   return true;
 }
 
-export interface SubRoleReason { role: SubRole; value: number; source: string; share?: number }
+/**
+ * Perché il membro ha il sotto-ruolo: la fonte (mossa, abilità, 'wall' per i muri), la quota del gruppo per Taunt,
+ * Encore e stati, e per i muri l'indice reale con la soglia del formato.
+ */
+export interface SubRoleReason { role: SubRole; value: number; source: string; share?: number; index?: number; threshold?: number; prankster?: boolean }
+
+const moveName = (id: string) => getMove(id)?.name ?? id;
+
+/** La fonte di un sotto-ruolo del solo set: la mossa (o l'abilità) che vale di più. */
+function setSource(role: SubRole, ids: string[], ability: string, item: string): string {
+  const best = (table: Record<string, number>) => ids.reduce<string | null>((a, id) => ((table[id] ?? 0) > (a ? table[a] ?? 0 : 0) ? id : a), null);
+  const first = (list: Set<string>) => ids.find(id => list.has(id));
+  let id: string | null | undefined = null;
+  if (role === 'recovery') {
+    id = best(RECOVERY);
+    // Regenerator vale 1: vince su Rest, Pain Split e Leech Seed
+    if (ability === 'regenerator' && !(id && RECOVERY[id] === 1)) return 'Regenerator';
+  }
+  if (role === 'hazards') id = best(HAZARDS);
+  if (role === 'removal') id = first(REMOVAL);
+  if (role === 'pivot') id = first(PIVOT);
+  if (role === 'phazer') { id = first(PHAZER); if (!id && ability === 'unaware') return 'Unaware'; }
+  if (role === 'itemRemoval') {
+    if (ids.includes('knockoff')) id = 'knockoff';
+    else { id = ids.find(m => m === 'trick' || m === 'switcheroo'); if (id && item.startsWith('choice')) return `${moveName(id)} + Choice`; }
+  }
+  return id ? moveName(id) : 'set';
+}
 
 const isPriorityAttack = (set: TeamSet) => set.moves.map(getMove).filter(isDefined).some(m => m.category !== 'Status' && m.priority > 0);
 
@@ -252,15 +279,26 @@ export function measureWith(set: TeamSet, team: TeamSet[], data: EngineData, poo
   const ability = toID(battleAbility(set));
 
   // Difesa e campo come nel rilevatore del set; Aurora Veil conta con la neve del team
-  const keep: SubRole[] = ['physicalWall', 'specialWall', 'recovery', 'hazards', 'removal', 'pivot', 'phazer', 'itemRemoval'];
-  for (const role of keep) if (base[role]) put(role, base[role]!, 'set');
+  const keep: SubRole[] = ['recovery', 'hazards', 'removal', 'pivot', 'phazer', 'itemRemoval'];
+  for (const role of keep) if (base[role]) put(role, base[role]!, setSource(role, ids, ability, toID(set.item)));
+  // I muri con l'indice reale e la soglia, per il motivo nella scheda
+  const rules = rulesOf(data);
+  const wall = wallIndex(set);
+  if (base.physicalWall) put('physicalWall', base.physicalWall, 'wall');
+  if (base.specialWall) put('specialWall', base.specialWall, 'wall');
+  for (const r of reasons) {
+    if (r.role === 'physicalWall') { r.index = wall.physical; r.threshold = rules.wallIndex.physical; }
+    if (r.role === 'specialWall') { r.index = wall.special; r.threshold = rules.wallIndex.special; }
+  }
   const clay = toID(set.item) === 'lightclay' ? 1 : 0.75;
   const snow = teamField(team).weather === 'snow';
   const reflect = ids.includes('reflect');
   const lightScreen = ids.includes('lightscreen');
   const veil = ids.includes('auroraveil');
-  if ((reflect && lightScreen) || (veil && snow)) put('screens', clay, 'screens');
-  else if (reflect || lightScreen || veil) put('screens', 0.6 * clay, 'screens');
+  // La fonte degli schermi: le mosse del set (Light Clay a parte, già nel valore)
+  const screenMoves = [reflect && 'Reflect', lightScreen && 'Light Screen', veil && 'Aurora Veil'].filter(Boolean).join(' + ');
+  if ((reflect && lightScreen) || (veil && snow)) put('screens', clay, screenMoves);
+  else if (reflect || lightScreen || veil) put('screens', 0.6 * clay, screenMoves);
 
   // Attacco dai numeri dell'Offesa e della Velocità
   const offense = memberOffense(set, team, data);
@@ -284,6 +322,7 @@ export function measureWith(set: TeamSet, team: TeamSet[], data: EngineData, poo
     : outspeedShare(speedStat(set).value, speeds, set.species);
   if (ids.includes('taunt')) put('taunt', open, 'Taunt', open);
   if (ids.includes('encore')) put('encore', open, 'Encore', open);
+  if (ability === 'prankster') for (const r of reasons) if (r.role === 'taunt' || r.role === 'encore') r.prankster = true;
 
   // Stati: valore x quota del gruppo che li può subire
   const corrosion = ability === 'corrosion';

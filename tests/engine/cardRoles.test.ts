@@ -26,9 +26,16 @@ describe('ruoli sulla carta: prima il ruolo principale, poi un supporto', () => 
     expect(cardRoles(kartana, DEFAULT_RULES)[0]).not.toBe('physicalWall');
   });
 
-  it('senza attacco né muro: il Recupero (famiglia Difesa) è il principale, poi il campo', () => {
+  it('senza attacco né muro: il principale viene da Campo e Disturbo; il Recupero è solo secondario', () => {
     const clefable = set('Clefable', 'Leftovers', 'Magic Guard', ['Moonblast', 'Soft-Boiled', 'Stealth Rock', 'Thunder Wave']);
-    expect(cardRoles(clefable, DEFAULT_RULES)).toEqual(['recovery', 'hazards']);
+    expect(cardRoles(clefable, DEFAULT_RULES)).toEqual(['hazards', 'recovery']);
+  });
+
+  it('con i valori misurati del team la carta usa quelli (come il voto)', () => {
+    const clefable = set('Clefable', 'Leftovers', 'Magic Guard', ['Moonblast', 'Soft-Boiled', 'Stealth Rock', 'Thunder Wave']);
+    expect(cardRoles(clefable, DEFAULT_RULES, { specialWall: 1, recovery: 1, hazards: 1 })).toEqual(['specialWall', 'hazards']);
+    // Un Taunt sotto 0,5 (meta per lo più più veloce) non compare
+    expect(cardRoles(clefable, DEFAULT_RULES, { taunt: 0.3, recovery: 1 })).toEqual(['recovery']);
   });
 
   it("il setup resta un'etichetta della carta per chi non è sweeper", () => {
@@ -38,9 +45,10 @@ describe('ruoli sulla carta: prima il ruolo principale, poi un supporto', () => 
 });
 
 describe('meteo sulla carta', () => {
-  it('chi porta il meteo lo mostra dopo il ruolo principale, prima di campo e disturbo', () => {
+  it('chi porta il meteo lo mostra dopo il ruolo principale, prima degli altri supporti', () => {
     const pelipper = set('Pelipper', 'Damp Rock', 'Drizzle', ['Hurricane', 'Scald', 'U-turn', 'Roost']);
-    expect(cardRoles(pelipper, DEFAULT_RULES)).toEqual(['recovery', 'weather']);
+    // Il Recupero non è il ruolo principale: il Pivot lo è, poi il meteo
+    expect(cardRoles(pelipper, DEFAULT_RULES)).toEqual(['pivot', 'weather']);
     const ttar = set('Tyranitar', 'Smooth Rock', 'Sand Stream', ['Stealth Rock', 'Stone Edge', 'Knock Off', 'Earthquake']);
     expect(cardRoles(ttar, DEFAULT_RULES)).toEqual(['physicalBreaker', 'weather']);
     expect(weatherOf(ttar)).toEqual({ condition: 'sand', via: 'Sand Stream' });

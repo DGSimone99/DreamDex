@@ -45,12 +45,17 @@ describe('AnalysisPanel', () => {
     expect(screen.getByText(/^Minori/)).toBeInTheDocument();
   });
 
-  it('ruoli importanti mancanti: in grigio, senza croce rossa', () => {
+  it('ruoli importanti mancanti: avviso tenue, distinto dai minori mancanti e senza croce rossa', () => {
     renderPanel();
     // Pivot è importante nel balance (prima era essenziale)
-    expect(row('Pivot')).toHaveClass('soft');
+    expect(row('Pivot')).toHaveClass('warn');
     expect(row('Pivot')).not.toHaveClass('bad');
-    expect(row('Pivot')).toHaveTextContent('—');
+    expect(row('Pivot')).not.toHaveClass('soft');
+    expect(row('Pivot')).toHaveTextContent('Da coprire');
+    // Un minore mancante resta grigio con il trattino
+    const minor = [...document.querySelectorAll('.role-group')].find(g => /^Minori/.test(g.querySelector('h4')!.textContent!))!;
+    const missingMinor = [...minor.querySelectorAll('li')].find(li => !li.querySelector('.owner'));
+    if (missingMinor) { expect(missingMinor).toHaveClass('soft'); expect(missingMinor).toHaveTextContent('—'); }
   });
 
   it('per uno stall i ruoli offensivi non sono richiesti', () => {

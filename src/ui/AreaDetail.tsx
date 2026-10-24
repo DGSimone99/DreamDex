@@ -4,6 +4,10 @@ import type { TeamRating } from '../engine/rating';
 import { stepBucket, type CoverageDetail, type WallCell } from '../engine/offense';
 import type { TeamDefense } from '../engine/defense';
 import { CONTROL_CONDITIONS, type MemberSpeed, type SpeedCondition, type TeamSpeed } from '../engine/speedArea';
+import { ESSENTIAL_POINTS, type TeamRoles } from '../engine/rolesArea';
+import { MISSING_BELOW } from '../engine/needs';
+import type { Level, LevelKey } from '../engine/roleLevels';
+import { FAMILIES, type Family, type SubRole, type SubRoleReason } from '../engine/subRoles';
 import { useT } from '../i18n/react';
 import { Icon } from './icons';
 import { Sprite, TypeChip } from './Sprite';
@@ -31,11 +35,14 @@ function WallValue({ cell }: { cell: WallCell }) {
  * Dettaglio di un'area (Offesa o Difesa): una scheda generale e una per sottostatistica, ognuna con come si calcola
  * e il valore di ogni membro. Stesso guscio del modale "Come funziona il voto", con le schede a sinistra.
  */
-export function AreaDetail({ rating, area, onClose }: { rating: TeamRating; area: 'strength' | 'defense' | 'speed'; onClose: () => void }) {
+export type DetailArea = 'strength' | 'defense' | 'speed' | 'roles';
+
+export function AreaDetail({ rating, area, onClose }: { rating: TeamRating; area: DetailArea; onClose: () => void }) {
   const t = useT();
   const value = rating.areas.find(a => a.key === area)?.value ?? null;
   const tabs = area === 'strength' ? offenseTabs(rating, t)
     : area === 'defense' ? defenseTabs(rating.defense, !!rating.meta, t)
+    : area === 'roles' ? rolesTabs(rating, value, t)
     : speedTabs(rating.speed, !!rating.meta, t);
   return <DetailShell title={t(`area.${area}`)} value={value} tabs={tabs} onClose={onClose} />;
 }
@@ -357,7 +364,11 @@ function defenseTabs(defense: TeamDefense, meta: boolean, t: T): DetailTab[] {
                 <td>{m.physical}</td>
                 <td>{m.special}</td>
                 <td>{m.sustain}</td>
-                <td className="total">{m.value}</td>
+                <td className="total">
+                  {m.value}
+                  {/* Quanto aggiunge il setup difensivo (metà del guadagno entra nel voto) */}
+                  {m.setupGain > 0 && m.setupMove && <small className="ad-gain" title={t('ddetail.withSetup', { move: m.setupMove })}> (+{m.setupGain})</small>}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -686,5 +697,181 @@ function speedTabs(speed: TeamSpeed, meta: boolean, t: T): DetailTab[] {
     { key: 'general', label: t('detail.tab.general'), value: speed.value, panel: general },
     { key: 'speed', label: t('sdetail.speed'), value: speed.speed, panel: speedTab },
     { key: 'control', label: t('sdetail.control'), value: `+${speed.control}`, panel: controlTab },
+  ];
+}
+
+const ROLE_LEVELS_SHOWN = ['essential', 'important', 'minor'] as const;
+const FAMILY_TABS: Family[] = ['attack', 'defense', 'field', 'disruption'];
+const thousands = (n: number) => `${Math.round(n / 1000)}k`;
+
+/** Il motivo di un sotto-ruolo in parole: quota del gruppo per Taunt, Encore e stati, indice per i muri, colpo per l'Attacco. */
+function reasonText(r: SubRoleReason, pool: string, t: T): string {
+  const pct = Math.round(100 * (r.share ?? 0));
+  if (r.role === 'taunt' || r.role === 'encore') return t(r.prankster ? 'rdetail.reason.prankster' : 'rdetail.reason.outspeed', { move: r.source, pct, pool });
+  if ((r.role === 'dot' || r.role === 'debuff') && r.share !== undefined) return t('rdetail.reason.status', { move: r.source, pct, pool });
+  if ((r.role === 'physicalWall' || r.role === 'specialWall') && r.index !== undefined) {
+    return t(r.role === 'physicalWall' ? 'rdetail.reason.wall.physical' : 'rdetail.reason.wall.special', { index: thousands(r.index), threshold: thousands(r.threshold ?? 0) });
+  }
+  if (FAMILIES.attack.includes(r.role)) return t('rdetail.reason.attack', { move: r.source });
+  // 'set': fonte generica del solo set, senza una mossa da nominare
+  return r.source === 'set' || r.source === 'wall' ? '—' : r.source;
+}
+
+/** Le schede dei Ruoli: Generale (livelli, base, extra, mancanze) e una per famiglia coi sotto-ruoli di ogni membro. */
+function rolesTabs(rating: TeamRating, value: number | null, t: T): DetailTab[] {
+  const roles: TeamRoles = rating.roles;
+  const pool = t(rating.meta ? 'rdetail.pool.meta' : 'rdetail.pool.tier');
+  const archetype = t(`archetype.${rating.teamType}`);
+  const full = roles.members.length === 6;
+  const levelOf = (key: LevelKey): Level => roles.rows.find(r => r.key === key)?.level ?? 'ignored';
+  const keyLabel = (key: LevelKey) => (key === 'attacker' ? t('need.attacker') : t(`role.${key}`));
+  const malus = roles.failures.reduce((a, f) => a + f.points, 0);
+  const base = points(roles.base);
+  const extra = points(roles.extra);
+  const hasImportant = roles.rows.some(r => r.level === 'important');
+  const essentialTip = !full ? t('rdetail.general.essentialIncomplete')
+    : malus ? t('rdetail.general.essentialMissing') : t('rdetail.general.essentialOk');
+  // Fonte e valore di chi porta la voce: le fonti generiche (set, muro: l'indice è nella scheda Difesa) non si mostrano,
+  // il valore solo se non pieno
+  const byNote = (source: string, v: number) => [source !== 'set' && source !== 'wall' && source, v < 1 && points(v)].filter(Boolean).join(' · ');
+
+  const general = (
+    <>
+      <h4>{t('rdetail.title')}</h4>
+      <p>{t('rdetail.lead', { archetype })}</p>
+      <dl className="ad-subs">
+        <div className="ad-sub">
+          <dt>{t('rdetail.important')}</dt>
+          <dd>
+            <meter min={0} max={100} value={base} aria-hidden="true" />
+            <strong>{base}</strong>
+            <span>{t(hasImportant ? 'rdetail.general.important' : 'rdetail.general.importantNone')}</span>
+          </dd>
+        </div>
+        {/* Minori ed essenziali non sono 0–100: un plus e un malus in punti, senza barra */}
+        <div className="ad-sub">
+          <dt>{t('rdetail.minor')}</dt>
+          <dd>
+            <strong className="ad-plus">+{extra}</strong>
+            <span>{t('rdetail.general.minor')}</span>
+          </dd>
+        </div>
+        <div className="ad-sub">
+          <dt>{t('rdetail.essential')}</dt>
+          <dd>
+            <strong className={malus ? 'ad-minus' : 'ad-zero'}>{malus ? `−${malus}` : '0'}</strong>
+            <span>{essentialTip}</span>
+          </dd>
+        </div>
+      </dl>
+      {roles.failures.length > 0 && (
+        <ul className="ad-failures">
+          {roles.failures.map(f => <li key={f.text}>{f.text} (−{f.points})</li>)}
+        </ul>
+      )}
+      <div className="ad-scroll">
+        <table className="ad-t ad-roles">
+          <thead>
+            <tr>
+              <th scope="col">{t('rdetail.role')}</th>
+              <th scope="col">{t('rdetail.value')}</th>
+              <th scope="col" className="left gap">{t('rdetail.by')}</th>
+            </tr>
+          </thead>
+          {ROLE_LEVELS_SHOWN.map(level => {
+            const rows = roles.rows.filter(r => r.level === level);
+            if (!rows.length) return null;
+            return (
+              <tbody key={level}>
+                <tr className="ad-group"><th scope="rowgroup" colSpan={3}>{t(`rdetail.group.${level}`)}</th></tr>
+                {rows.map(row => {
+                  // Essenziale che manca in un team di 6: al posto del valore il suo malus
+                  const missing = full && level === 'essential' && row.value < MISSING_BELOW;
+                  return (
+                    <tr key={row.key}>
+                      <th scope="row">{keyLabel(row.key)}</th>
+                      <td className="total">
+                        {missing ? <span className="ad-minus" title={t('rdetail.missingTip', { n: ESSENTIAL_POINTS })}>−{ESSENTIAL_POINTS}</span> : points(row.value)}
+                      </td>
+                      <td className="left gap ad-by">
+                        {row.by.length
+                          ? row.by.map((b, i) => {
+                            const note = byNote(b.source, b.value);
+                            return (
+                              <span key={`${b.species}-${i}`} className="ad-mon">
+                                <Sprite species={b.species} size={28} />{b.species}
+                                {note && <small className="ad-src"> ({note})</small>}
+                              </span>
+                            );
+                          })
+                          : <span className="ad-k none">{t('rdetail.nobody')}</span>}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            );
+          })}
+        </table>
+      </div>
+    </>
+  );
+
+  const familyTab = (family: Family): DetailTab => {
+    const subs: SubRole[] = FAMILIES[family];
+    const holdersOf = (role: SubRole) => roles.members
+      .map(m => ({ species: m.species, value: m.values[role] ?? 0, reason: m.reasons.find(r => r.role === role) }))
+      .filter(h => h.value > 0)
+      .sort((a, b) => b.value - a.value);
+    const covered = subs.filter(role => holdersOf(role).length > 0).length;
+    const panel = (
+      <>
+        <h4>{t(`family.${family}`)}</h4>
+        <div className="ad-how">
+          <p>{t(`rdetail.how.${family}`, { pool })}</p>
+          <p>{t('rdetail.how.levels', { archetype })}</p>
+        </div>
+        <div className="ad-scroll">
+          <table className="ad-t ad-roles">
+            <thead>
+              <tr>
+                <th scope="col">{t('detail.member')}</th>
+                <th scope="col" className="left gap">{t('rdetail.reason')}</th>
+                <th scope="col">{t('rdetail.value')}</th>
+              </tr>
+            </thead>
+            {subs.map(role => {
+              const level = levelOf(role);
+              const holders = holdersOf(role);
+              return (
+                <tbody key={role} className={level === 'ignored' ? 'ad-ignored' : undefined}>
+                  <tr className="ad-group">
+                    <th scope="rowgroup" colSpan={3}>
+                      {t(`role.${role}`)}
+                      <span className={`ad-level ${level}`}> {t(`rdetail.level.${level}`)} · {t('rdetail.teamValue', { n: points(holders[0]?.value ?? 0) })}</span>
+                    </th>
+                  </tr>
+                  {holders.length ? holders.map((h, i) => (
+                    <tr key={`${h.species}-${i}`}>
+                      <th scope="row"><span className="ad-mon"><Sprite species={h.species} size={32} />{h.species}</span></th>
+                      <td className="left gap ad-reason">{h.reason ? reasonText(h.reason, pool, t) : '—'}</td>
+                      <td className="total">{points(h.value)}</td>
+                    </tr>
+                  )) : (
+                    <tr><td colSpan={3} className="left"><span className="ad-k none">{t('rdetail.nobody')}</span></td></tr>
+                  )}
+                </tbody>
+              );
+            })}
+          </table>
+        </div>
+      </>
+    );
+    return { key: family, label: t(`family.${family}`), value: `${covered}/${subs.length}`, panel };
+  };
+
+  return [
+    { key: 'general', label: t('detail.tab.general'), value, panel: general },
+    ...FAMILY_TABS.map(familyTab),
   ];
 }

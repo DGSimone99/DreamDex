@@ -145,9 +145,10 @@ export function AnalysisPanel({ team, analysis, rating, coaching, preview, onRep
                 <h4>{group.title}</h4>
                 <ul className="role-rows">
                   {group.rows.map(({ need, owners }) => {
-                    // Manca un essenziale: rosso. Importante o minore mancante, o voce ignorata: grigio, senza croce
+                    // Manca un essenziale: rosso. Un importante mancante: avviso tenue (pesa nel voto). Minore mancante o voce ignorata: grigio
                     const essential = group.level === 'essential';
-                    const state = owners.length ? (group.level !== 'ignored' ? '' : 'soft') : essential ? 'bad' : 'soft';
+                    const important = group.level === 'important';
+                    const state = owners.length ? (group.level !== 'ignored' ? '' : 'soft') : essential ? 'bad' : important ? 'warn' : 'soft';
                     return (
                       <li key={need} className={state}>
                         {owners.length ? <Icon name="check" /> : essential ? <Icon name="close" /> : <span aria-hidden="true" />}
@@ -155,7 +156,7 @@ export function AnalysisPanel({ team, analysis, rating, coaching, preview, onRep
                         <span className="owners">
                           {owners.length
                             ? owners.map(name => <span key={name} className="owner">{name}</span>)
-                            : essential ? tr('analysis.missing') : group.level !== 'ignored' ? '—' : tr('analysis.notRequiredValue')}
+                            : essential ? tr('analysis.missing') : important ? tr('analysis.notCovered') : group.level !== 'ignored' ? '—' : tr('analysis.notRequiredValue')}
                         </span>
                       </li>
                     );

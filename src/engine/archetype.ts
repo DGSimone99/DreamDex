@@ -1,7 +1,7 @@
 import { battleSpecies, getMove, toID } from './dex';
 import { memberPower } from './power';
 import { detectRoles, hasSetup, isFast, isPassive, isStall, legacyRoles } from './roles';
-import { FAMILIES, type SubRole } from './subRoles';
+import { FAMILIES, rolesList, type SubRole, type SubRoleValues } from './subRoles';
 import type { FormatRules } from './formatRules';
 import type { TeamSet } from './sets';
 import { benefits, enables, type Condition } from './synergy';
@@ -104,20 +104,24 @@ export function weatherOf(set: TeamSet): { condition: Condition; via: string } |
 }
 
 /**
- * Ruoli da mostrare sulla carta del team (al massimo 2): il ruolo principale, il primo della famiglia Attacco o Difesa
- * (la Difesa prima solo per un muro da stall), poi il meteo, poi Campo e Disturbo, infine il setup.
- * Il setup si salta per uno sweeper, che lo implica.
+ * Ruoli da mostrare sulla carta del team (al massimo 2). Il principale: il primo di Attacco o dei muri (i muri prima solo
+ * per un muro da stall), altrimenti il primo di Campo e Disturbo; poi il meteo, gli altri supporti, il Recupero (mai
+ * principale se c'è altro: lo hanno quasi tutti) e il setup, che si salta per uno sweeper, che lo implica.
+ * `measured`: i sotto-ruoli misurati del membro nel team (gli stessi del voto); senza, quelli del solo set.
  */
-export function cardRoles(set: TeamSet, rules: FormatRules): CardRole[] {
-  const roles = detectRoles(set, rules);
+export function cardRoles(set: TeamSet, rules: FormatRules, measured?: SubRoleValues): CardRole[] {
+  const roles = measured ? rolesList(measured) : detectRoles(set, rules);
   // Liste costruite qui e non al caricamento: subRoles.ts e questo modulo si importano a vicenda
-  const order = fitsArchetype(set, 'stall', rules) ? [...FAMILIES.defense, ...FAMILIES.attack] : [...FAMILIES.attack, ...FAMILIES.defense];
-  const main = order.find(role => roles.includes(role));
+  const walls: SubRole[] = ['physicalWall', 'specialWall'];
+  const order = fitsArchetype(set, 'stall', rules) ? [...walls, ...FAMILIES.attack] : [...FAMILIES.attack, ...walls];
+  const support = [...FAMILIES.field, ...FAMILIES.disruption].filter(role => roles.includes(role));
+  const main = order.find(role => roles.includes(role)) ?? support[0] ?? (roles.includes('recovery') ? 'recovery' : undefined);
   const sweeper = main === 'physicalSweeper' || main === 'specialSweeper';
   const weather: CardRole[] = weatherOf(set) ? ['weather'] : [];
   const setup: CardRole[] = hasSetup(set) && !sweeper ? ['setup'] : [];
-  const support = [...FAMILIES.field, ...FAMILIES.disruption].filter(role => roles.includes(role));
-  return [...(main ? [main] : []), ...weather, ...support, ...setup].slice(0, 2);
+  const supportMember = !order.includes(main as SubRole);
+  const recovery: CardRole[] = supportMember && roles.includes('recovery') ? ['recovery'] : [];
+  return [...(main ? [main] : []), ...weather, ...support, ...setup, ...recovery].filter((role, i, all) => all.indexOf(role) === i).slice(0, 2);
 }
 
 /** Tipo di team con archetipo e stili, solo per un team completo. */
