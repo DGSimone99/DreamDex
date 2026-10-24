@@ -560,7 +560,7 @@ export const en = {
   'sdetail.speed.how1.meta': "For each member, the share of the meta's 40 most used it outspeeds at its real speed (EVs, nature, Scarf); a tie counts half, its own species doesn't count.",
   'sdetail.speed.how1.tier': "For each member, the share of tier Pokémon it outspeeds, taken at full speed (252 EVs and a boosting nature); a tie counts half.",
   'sdetail.speed.how2': "Setup (+1 ×1.5, Shell Smash and Agility ×2), the team's weather or terrain for Swift Swim and the like, and Unburden add half of the extra Pokémon outsped. A priority move also hits faster foes first: each counts by how much the move hurts it (half HP is full), and the gain enters at half like setup. Fake Out and First Impression count half (first turn only), Sucker Punch three quarters (it fails if the foe doesn't attack).",
-  'sdetail.speed.how3': "The team weighs members from the fastest: 25/20/16/14/13/12%. Outspeeding everyone scores about 93: up to 80 the value grows in proportion, then ever more slowly, and 100 is never reached.",
+  'sdetail.speed.how3': "The team weighs members from the fastest: 25/20/16/14/13/12%. Outspeeding 90% of the Pokémon on average scores about 93 (anyone outspeeds the slowest of the meta): up to 80 the value grows in proportion, then ever more slowly, and 100 is never reached.",
   'ddetail.robustness': "Robustness",
   'ddetail.sustain': "Sustainability",
   'ddetail.physical': "Physical",

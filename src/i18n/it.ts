@@ -562,7 +562,7 @@ export const it: Record<keyof typeof en, string> = {
   'sdetail.speed.how1.meta': "Per ogni membro, la quota dei 40 più usati del meta che supera alla sua velocità reale (EV, natura, Sciarpa); un pareggio vale metà, la sua specie non conta.",
   'sdetail.speed.how1.tier': "Per ogni membro, la quota dei Pokémon del tier che supera, presi alla velocità massima (252 EV e natura che la alza); un pareggio vale metà.",
   'sdetail.speed.how2': "Setup (+1 ×1,5, Shell Smash e Agility ×2), meteo o campo del team per Swift Swim e simili e Unburden aggiungono metà dei Pokémon superati in più. Una mossa prioritaria fa colpire per primo anche chi è più veloce: ognuno conta per quanto la mossa gli fa male (metà PS vale pieno), e il guadagno entra a metà come il setup. Fake Out e First Impression valgono metà (solo al primo turno), Sucker Punch tre quarti (fallisce se l'avversario non attacca).",
-  'sdetail.speed.how3': "Il team pesa i membri dal più veloce: 25/20/16/14/13/12%. Superare tutti fa circa 93: fino a 80 il valore cresce in proporzione, poi sempre più piano, e il 100 non si raggiunge.",
+  'sdetail.speed.how3': "Il team pesa i membri dal più veloce: 25/20/16/14/13/12%. Superare in media il 90% dei Pokémon fa circa 93 (i più lenti del meta li supera chiunque): fino a 80 il valore cresce in proporzione, poi sempre più piano, e il 100 non si raggiunge.",
   'ddetail.robustness': "Robustezza",
   'ddetail.sustain': "Sostenibilità",
   'ddetail.physical': "Fisica",

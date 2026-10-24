@@ -17,6 +17,12 @@ export type SpeedCondition = 'setup' | 'weather' | 'unburden' | 'priority' | 'we
 /** Le condizioni che porta il team (il Controllo velocità); le altre sono del membro stesso (la sua Velocità). */
 export const CONTROL_CONDITIONS: SpeedCondition[] = ['web', 'trickroom', 'tailwind', 'slow'];
 
+/**
+ * La quota media di Pokémon superati che vale "piena" (circa 93): i più lenti del meta li supera chiunque e non
+ * contano, quindi non serve superare proprio tutti.
+ */
+export const SPEED_FULL = 0.9;
+
 /** Peso di ogni membro per posizione di velocità, dal più veloce: i due più rapidi fanno quasi tutto, ma la velocità serve a tutti. */
 export const SPEED_RANK_WEIGHTS = [25, 20, 16, 14, 13, 12];
 
@@ -207,7 +213,7 @@ function measure(set: TeamSet, data: EngineData, team: TeamConditions): MemberSp
 
 /** La parte Velocità del team: i membri pesati dal più veloce (25/20/16/14/13/12), poi la scala morbida (100 non si raggiunge). */
 export function speedPart(list: MemberSpeed[]): number {
-  return softScore(weightedMean(list, m => m.total));
+  return softScore(weightedMean(list, m => m.total) / SPEED_FULL);
 }
 
 /** Media dei membri pesata per posizione di velocità (25/20/16/14/13/12; a pari velocità le posizioni si dividono il peso). */
@@ -257,8 +263,8 @@ export interface ControlSource {
 export function teamSpeedArea(team: TeamSet[], data: EngineData): TeamSpeed {
   const list = team.map(set => memberSpeed(set, team, data)).filter((m): m is MemberSpeed => m !== null);
   if (!list.length) return { value: 0, speed: 0, control: 0, sources: [], members: [] };
-  const value = softScore(weightedMean(list, m => m.total));
-  const speed = softScore(weightedMean(list, m => m.own));
+  const value = softScore(weightedMean(list, m => m.total) / SPEED_FULL);
+  const speed = softScore(weightedMean(list, m => m.own) / SPEED_FULL);
   // Ogni mossa di controllo da sola: quanti compagni ne guadagnano e quanti punti aggiunge alla Velocità
   const moves = new Map<string, { condition: SpeedCondition; move: string; by: string[] }>();
   for (const m of list) for (const g of m.controlOptions) moves.set(`${g.condition}|${g.source}`, { condition: g.condition, move: g.source, by: g.by ?? [] });
@@ -267,7 +273,7 @@ export function teamSpeedArea(team: TeamSet[], data: EngineData): TeamSpeed {
     return {
       ...src,
       helped: list.filter(m => gainOf(m) > 0).length,
-      plus: softScore(weightedMean(list, m => Math.min(1, m.own + gainOf(m)))) - speed,
+      plus: softScore(weightedMean(list, m => Math.min(1, m.own + gainOf(m))) / SPEED_FULL) - speed,
     };
   }).sort((a, b) => b.plus - a.plus);
   return { value, speed, control: value - speed, sources, members: list };

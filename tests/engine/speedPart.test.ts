@@ -5,7 +5,7 @@ import { emptySet, type TeamSet } from '../../src/engine/sets';
 import { outspeedShare, speedPool, speedStat } from '../../src/engine/speed';
 import { getSpecies } from '../../src/engine/dex';
 import { fixtureData } from '../fixtures/data';
-import { CONDITION_QUOTA, CONTROL_CONDITIONS, isWebImmune, memberSpeed, slowFactor, SPEED_RANK_WEIGHTS, speedPart } from '../../src/engine/speedArea';
+import { CONDITION_QUOTA, CONTROL_CONDITIONS, isWebImmune, memberSpeed, slowFactor, SPEED_FULL, SPEED_RANK_WEIGHTS, speedPart } from '../../src/engine/speedArea';
 import { bestHit } from '../../src/engine/damage';
 
 const set = (species: string, item: string, ability: string, moves: string[], nature = 'Jolly', spe = 252): TeamSet =>
@@ -84,10 +84,12 @@ describe('Velocità: ogni membro, coi guadagni delle condizioni', () => {
     const members = team.map(s => memberSpeed(s, team, noMeta)!);
     const sorted = [...members].sort((a, b) => b.speed - a.speed);
     const mean = sorted.reduce((a, m, i) => a + SPEED_RANK_WEIGHTS[i] * m.total, 0) / 100;
-    expect(speedPart(members)).toBe(softScore(mean));
+    // Piena (circa 93) quando il team supera in media il 90% del gruppo: i più lenti del meta li supera chiunque
+    expect(SPEED_FULL).toBe(0.9);
+    expect(speedPart(members)).toBe(softScore(mean / SPEED_FULL));
     expect(speedPart(members)).toBeLessThan(100);
     // Con meno membri si normalizza sui pesi usati
-    expect(speedPart(members.slice(0, 2))).toBe(softScore([...members.slice(0, 2)].sort((a, b) => b.speed - a.speed).reduce((a, m, i) => a + SPEED_RANK_WEIGHTS[i] * m.total, 0) / 45));
+    expect(speedPart(members.slice(0, 2))).toBe(softScore([...members.slice(0, 2)].sort((a, b) => b.speed - a.speed).reduce((a, m, i) => a + SPEED_RANK_WEIGHTS[i] * m.total, 0) / 45 / SPEED_FULL));
     expect(speedPart([])).toBe(0);
   });
 });
@@ -186,7 +188,7 @@ describe("Velocità: l'ordine dei membri non conta", () => {
     const c = { species: 'C', speed: 100, raw: 0.1, gains: [], own: 0.1, total: 0.1, controlOptions: [] };
     expect(speedPart([a, b, c])).toBe(speedPart([b, a, c]));
     // Le due posizioni in parità valgono (25 + 20) / 2 ciascuna
-    expect(speedPart([a, b, c])).toBe(softScore((22.5 * 0.9 + 22.5 * 0.5 + 16 * 0.1) / 61));
+    expect(speedPart([a, b, c])).toBe(softScore((22.5 * 0.9 + 22.5 * 0.5 + 16 * 0.1) / 61 / SPEED_FULL));
   });
 
   it('con più mosse che rallentano conta la migliore, in qualunque ordine', () => {
