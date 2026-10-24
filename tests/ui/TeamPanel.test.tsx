@@ -51,14 +51,15 @@ describe('TeamPanel', () => {
   });
 
   it('il tooltip dei ruoli elenca tutti i ruoli, non solo i due mostrati', () => {
-    const latias = { ...emptySet('Latias'), item: 'Latiasite', ability: 'Levitate', moves: ['Calm Mind', 'Mystical Fire', 'Mist Ball', 'Thunder Wave'] };
+    // Calibrazione (Task 9): Latias-Mega veloce con Calm Mind è uno sweeper (una sola etichetta); Defog dà la seconda
+    const latias = { ...emptySet('Latias'), item: 'Latiasite', ability: 'Levitate', moves: ['Calm Mind', 'Mystical Fire', 'Mist Ball', 'Defog'] };
     window.history.replaceState(null, '', `/#team=${encodeShare([latias], DEFAULT_FORMAT)}`);
     render(<App initialLang="it" data={fixtureData} />);
     const roles = teamRegion().querySelector('.slot .roles')!;
     expect(roles.textContent!.split(' · ')).toHaveLength(2);
     const all = roles.getAttribute('title')!.split(' · ');
     expect(all.length).toBeGreaterThan(2);
-    expect(all.slice(0, 2)).toEqual(['Wallbreaker speciale', 'Setup']);
+    expect(all.slice(0, 2)).toEqual(['Sweeper speciale', 'Rimozione hazard']);
     expect(all).toEqual(expect.arrayContaining(['Muro speciale']));
     expect(new Set(all).size).toBe(all.length);
   });
