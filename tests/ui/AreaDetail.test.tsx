@@ -238,10 +238,12 @@ describe('dettaglio della Velocità a schede', () => {
   it('tre schede col loro valore; Generale con Velocità e Controllo velocità e i membri', async () => {
     const { dialog } = await openSpeed('it');
     const tabs = within(dialog).getAllByRole('tab');
-    expect(tabs.map(tab => tab.textContent!.replace(/\s*\d+$/, ''))).toEqual(['Generale', 'Velocità', 'Controllo velocità']);
+    expect(tabs.map(tab => tab.textContent!.replace(/\s*\+?\d+$/, ''))).toEqual(['Generale', 'Velocità', 'Controllo velocità']);
     for (const tab of tabs) expect(tab.textContent).toMatch(/\d+$/);
     const panel = within(dialog).getByRole('tabpanel');
     expect(within(panel).getAllByRole('term').map(term => term.textContent)).toEqual(['Velocità', 'Controllo velocità']);
+    // Il controllo è un plus in punti sopra la Velocità
+    expect(within(panel).getAllByRole('definition')[1]).toHaveTextContent(/^\+\d+/);
     const table = within(panel).getByRole('table');
     expect(within(table).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Velocità', 'Superati', 'Totale']);
     const rows = within(table).getAllByRole('row').slice(1);
@@ -268,15 +270,33 @@ describe('dettaglio della Velocità a schede', () => {
     expect(headers[headers.length - 1]).toBe('Totale');
   });
 
-  it('Controllo velocità: le condizioni del team, o una riga se non ce ne sono', async () => {
+  it('Controllo velocità senza mosse di controllo: una riga, e un plus di 0', async () => {
     const { user, dialog } = await openSpeed('it');
+    expect(within(dialog).getAllByRole('tab')[2]).toHaveTextContent(/^Controllo velocità \+0$/);
     await user.click(within(dialog).getByRole('tab', { name: /^Controllo velocità/ }));
-    const panel = within(dialog).getByRole('tabpanel');
-    const table = within(panel).queryByRole('table');
-    if (!table) { expect(panel).toHaveTextContent('nessun controllo della velocità'); return; }
-    const headers = within(table).getAllByRole('columnheader').map(h => h.textContent);
-    expect(headers.slice(0, 3)).toEqual(['Pokémon', 'Velocità', 'Da solo']);
-    for (const h of headers.slice(3, -1)) expect(['Sticky Web', 'Trick Room', 'Tailwind', 'Rallentare']).toContain(h);
+    expect(within(dialog).getByRole('tabpanel')).toHaveTextContent('nessun controllo della velocità');
+  });
+
+  it('Controllo velocità: chi porta la mossa, quanti compagni aiuta e quanti punti aggiunge', async () => {
+    const user = userEvent.setup();
+    render(<App initialLang="it" data={fixtureData} />);
+    await user.click(screen.getByLabelText('Testo Showdown'));
+    await user.paste('Clefable @ Leftovers\nAbility: Magic Guard\nEVs: 252 HP / 252 Def\nBold Nature\n- Thunder Wave\n- Moonblast\n\nGarchomp @ Rocky Helmet\nAbility: Rough Skin\nEVs: 252 Atk / 252 Spe\nJolly Nature\n- Earthquake');
+    await user.click(screen.getByRole('button', { name: 'Importa' }));
+    const rating = screen.getByRole('group', { name: 'Valutazione team' });
+    await user.click(within(rating).getByRole('button', { name: /^Velocità \d+$/ }));
+    const dialog = screen.getByRole('dialog');
+    const controlTab = within(dialog).getByRole('tab', { name: /^Controllo velocità/ });
+    expect(controlTab).toHaveTextContent(/^Controllo velocità \+\d+$/);
+    await user.click(controlTab);
+    const table = within(within(dialog).getByRole('tabpanel')).getByRole('table');
+    expect(within(table).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Mossa', 'Aiuta', 'Punti']);
+    const row = within(table).getAllByRole('row')[1];
+    expect(within(row).getByRole('rowheader')).toHaveTextContent('Clefable');
+    const cells = within(row).getAllByRole('cell');
+    expect(cells[0]).toHaveTextContent('Thunder Wave');
+    expect(cells[1]).toHaveTextContent(/^\d compagn[oi]$/);
+    expect(cells[2]).toHaveTextContent(/^\+\d+$/);
   });
 
   it('Esc chiude e il focus torna alla barra', async () => {
@@ -288,7 +308,7 @@ describe('dettaglio della Velocità a schede', () => {
 
   it('in inglese', async () => {
     const { dialog } = await openSpeed('en');
-    expect(within(dialog).getAllByRole('tab').map(tab => tab.textContent!.replace(/\s*\d+$/, ''))).toEqual(['General', 'Speed', 'Speed control']);
+    expect(within(dialog).getAllByRole('tab').map(tab => tab.textContent!.replace(/\s*\+?\d+$/, ''))).toEqual(['General', 'Speed', 'Speed control']);
     expect(within(dialog).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Speed', 'Outsped', 'Total']);
   });
 });

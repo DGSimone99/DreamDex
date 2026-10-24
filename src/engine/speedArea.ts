@@ -32,6 +32,8 @@ export interface SpeedGain {
   source: string;
   /** Pokémon superati in più, già moltiplicati per la quota (0–1). */
   gain: number;
+  /** Per il controllo del team: i compagni che portano la mossa (chi guadagna può non averla). */
+  by?: string[];
 }
 
 export interface MemberSpeed {
@@ -44,6 +46,8 @@ export interface MemberSpeed {
   own: number;
   /** Con anche il controllo del team (Web, Trick Room, Tailwind, paralisi), al massimo 1. */
   total: number;
+  /** L'effetto di ogni mossa di controllo da sola (anche le paralisi che non contano perché ce n'è una migliore). */
+  controlOptions: SpeedGain[];
 }
 
 const SETUP_PLUS_ONE = new Set(['dragondance', 'quiverdance', 'shiftgear', 'victorydance', 'tidyup', 'trailblaze', 'flamecharge', 'rapidspin', 'aquastep', 'esperwing']);
@@ -96,6 +100,9 @@ const teamMove = (team: TeamSet[], ids: Set<string>) => {
   for (const member of team) { const found = moveName(member, ids); if (found) return getMove(found)?.name ?? found; }
   return null;
 };
+/** I membri che hanno la mossa (per nome di battaglia). */
+const holders = (team: TeamSet[], move: string) =>
+  team.filter(member => member.moves.some(m => toID(m) === toID(move))).map(member => battleSpecies(member)?.name ?? member.species);
 
 const members = new Map<string, MemberSpeed | null>();
 const MEMBER_LIMIT = 5000;
@@ -111,10 +118,11 @@ export function memberSpeed(set: TeamSet, team: TeamSet[], data: EngineData): Me
   const tailwind = teamMove(team, new Set(['tailwind']));
   // Tutte le mosse che rallentano del team (immunità diverse): conta poi la migliore
   const slowing = [...new Set(team.flatMap(member => member.moves.map(m => getMove(m)).filter(m => !!m && (PARALYSIS.has(m.id) || SPEED_DROP.has(m.id))).map(m => m!.name)))].sort();
-  const key = `${setKey(set)}|${weathers}|${terrains}|${web}|${trickRoom}|${tailwind}|${slowing}|${data.formatId ?? 'ou'}|${usesMeta(data)}|${!!data.stats}`;
+  const bringers = [web, trickRoom, tailwind, ...slowing].filter((m): m is string => !!m).map(m => `${m}:${holders(team, m)}`).join(',');
+  const key = `${setKey(set)}|${weathers}|${terrains}|${bringers}|${data.formatId ?? 'ou'}|${usesMeta(data)}|${!!data.stats}`;
   if (members.has(key)) return members.get(key)!;
   if (members.size >= MEMBER_LIMIT) members.clear();
-  const value = measure(set, data, { weathers, terrains, web, trickRoom, tailwind, slowing });
+  const value = measure(set, data, { weathers, terrains, web, trickRoom, tailwind, slowing, holders: (move: string) => holders(team, move) });
   members.set(key, value);
   return value;
 }
@@ -126,6 +134,7 @@ interface TeamConditions {
   trickRoom: string | null;
   tailwind: string | null;
   slowing: string[];
+  holders: (move: string) => string[];
 }
 
 function measure(set: TeamSet, data: EngineData, team: TeamConditions): MemberSpeed | null {
@@ -137,9 +146,14 @@ function measure(set: TeamSet, data: EngineData, team: TeamConditions): MemberSp
     outspeedShare(own, pool.map(r => ({ ...r, value: Math.floor(r.value * opponent(r)) })), set.species);
   const raw = shareWith(speed);
   const gains: SpeedGain[] = [];
+  const controlOptions: SpeedGain[] = [];
+  const gainOf = (condition: SpeedCondition, share: number) => CONDITION_QUOTA[condition] * Math.max(0, share - raw);
   const add = (condition: SpeedCondition, source: string, share: number) => {
-    const gain = CONDITION_QUOTA[condition] * Math.max(0, share - raw);
-    if (gain > 0) gains.push({ condition, source, gain });
+    const gain = gainOf(condition, share);
+    if (gain <= 0) return;
+    const entry = CONTROL_CONDITIONS.includes(condition) ? { condition, source, gain, by: team.holders(source) } : { condition, source, gain };
+    gains.push(entry);
+    if (entry.by) controlOptions.push(entry);
   };
 
   const ability = toID(battleAbility(set));
@@ -159,10 +173,15 @@ function measure(set: TeamSet, data: EngineData, team: TeamConditions): MemberSp
   if (team.trickRoom) add('trickroom', team.trickRoom, 1 - raw);
   if (team.tailwind) add('tailwind', team.tailwind, shareWith(speed * 2));
   // Rallentare: conta la mossa migliore che il team ha, con le immunità di tipo
-  const slowed = team.slowing
+  const options = team.slowing
     .map(move => ({ move, share: shareWith(speed, r => slowFactor(move, r.species)) }))
-    .sort((a, b) => b.share - a.share)[0];
-  if (slowed) add('slow', slowed.move, slowed.share);
+    .sort((a, b) => b.share - a.share);
+  if (options[0]) add('slow', options[0].move, options[0].share);
+  // Le altre non si sommano, ma la tabella del controllo mostra anche il loro effetto da sole
+  for (const option of options.slice(1)) {
+    const gain = gainOf('slow', option.share);
+    if (gain > 0) controlOptions.push({ condition: 'slow', source: option.move, gain, by: team.holders(option.move) });
+  }
 
   // Priorità come il setup: colpisce per primo anche chi è più veloce, pesato da quanto fa male (metà PS vale pieno)
   const conditions = team.terrains.includes('grassy') ? ['grassyterrain' as const] : [];
@@ -183,7 +202,7 @@ function measure(set: TeamSet, data: EngineData, team: TeamConditions): MemberSp
   const sum = (list: SpeedGain[]) => list.reduce((acc, g) => acc + g.gain, 0);
   const own = Math.min(1, raw + sum(gains.filter(g => !CONTROL_CONDITIONS.includes(g.condition))));
   const total = Math.min(1, raw + sum(gains));
-  return { species: species.name, speed, raw, gains, own, total };
+  return { species: species.name, speed, raw, gains, own, total, controlOptions };
 }
 
 /** La parte Velocità del team: i membri pesati dal più veloce (25/20/16/14/13/12), poi la scala morbida (100 non si raggiunge). */
@@ -219,20 +238,37 @@ export interface TeamSpeed {
   value: number;
   /** Velocità: ogni membro da solo (pura, setup, meteo, Unburden, priorità). */
   speed: number;
-  /** Controllo velocità: quanta della velocità che manca recupera il team (Web, Trick Room, Tailwind, paralisi); 0 senza. */
+  /** Controllo velocità: i punti che Web, Trick Room, Tailwind e paralisi aggiungono alla Velocità (l'area meno la Velocità). */
   control: number;
+  /** Chi porta il controllo: la mossa, quanti compagni aiuta e quanti punti aggiunge da sola. */
+  sources: ControlSource[];
   members: MemberSpeed[];
+}
+
+export interface ControlSource {
+  condition: SpeedCondition;
+  move: string;
+  by: string[];
+  helped: number;
+  plus: number;
 }
 
 /** Velocità del team: quanti Pokémon supera ogni membro da solo, e quanti in più grazie al controllo del team. */
 export function teamSpeedArea(team: TeamSet[], data: EngineData): TeamSpeed {
   const list = team.map(set => memberSpeed(set, team, data)).filter((m): m is MemberSpeed => m !== null);
-  if (!list.length) return { value: 0, speed: 0, control: 0, members: [] };
-  const own = weightedMean(list, m => m.own);
-  const all = weightedMean(list, m => m.total);
-  return {
-    value: softScore(all), speed: softScore(own),
-    control: all > own && own < 1 ? softScore((all - own) / (1 - own)) : 0,
-    members: list,
-  };
+  if (!list.length) return { value: 0, speed: 0, control: 0, sources: [], members: [] };
+  const value = softScore(weightedMean(list, m => m.total));
+  const speed = softScore(weightedMean(list, m => m.own));
+  // Ogni mossa di controllo da sola: quanti compagni ne guadagnano e quanti punti aggiunge alla Velocità
+  const moves = new Map<string, { condition: SpeedCondition; move: string; by: string[] }>();
+  for (const m of list) for (const g of m.controlOptions) moves.set(`${g.condition}|${g.source}`, { condition: g.condition, move: g.source, by: g.by ?? [] });
+  const sources = [...moves.values()].map(src => {
+    const gainOf = (m: MemberSpeed) => m.controlOptions.find(g => g.condition === src.condition && g.source === src.move)?.gain ?? 0;
+    return {
+      ...src,
+      helped: list.filter(m => gainOf(m) > 0).length,
+      plus: softScore(weightedMean(list, m => Math.min(1, m.own + gainOf(m)))) - speed,
+    };
+  }).sort((a, b) => b.plus - a.plus);
+  return { value, speed, control: value - speed, sources, members: list };
 }

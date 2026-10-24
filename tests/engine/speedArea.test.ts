@@ -14,23 +14,39 @@ const valiant = set('Iron Valiant', 'Booster Energy', 'Quark Drive', ['Moonblast
 const toxapex = set('Toxapex', 'Black Sludge', 'Regenerator', ['Scald', 'Recover', 'Toxic', 'Haze'], 'Bold');
 
 describe('area Velocità', () => {
-  it("l'area: ogni membro con tutti i guadagni, pesato 25/20/16/14/13/12; Velocità senza il controllo, Controllo quanto recupera", () => {
+  it("l'area è la Velocità più il plus del controllo; il controllo è in punti e non toglie mai", () => {
     const web = set('Ribombee', 'Focus Sash', 'Shield Dust', ['Sticky Web', 'Moonblast'], 'Timid');
     const team = [dragapult, valiant, toxapex, web];
     const area = teamSpeedArea(team, noMeta);
     expect(area.value).toBe(speedPart(area.members));
     expect(area.speed).toBe(speedPart(area.members.map(m => ({ ...m, total: m.own }))));
-    expect(area.value).toBeGreaterThanOrEqual(area.speed);
+    expect(area.control).toBe(area.value - area.speed);
+    expect(area.control).toBeGreaterThan(0);
     expect(area.value).toBeLessThan(100);
-    // Controllo: la quota della velocità mancante che recupera, sulla stessa scala
-    const weighted = (pick: (m: typeof area.members[number]) => number) => {
-      const sorted = [...area.members].sort((a, b) => b.speed - a.speed);
-      const w = [25, 20, 16, 14].slice(0, sorted.length);
-      return sorted.reduce((acc, m, i) => acc + w[i] * pick(m), 0) / w.reduce((a, b) => a + b, 0);
-    };
-    const own = weighted(m => m.own), all = weighted(m => m.total);
-    expect(area.control).toBe(softScore((all - own) / (1 - own)));
-    expect(teamSpeedArea([dragapult, valiant, toxapex], noMeta).control).toBe(0);
+    const none = teamSpeedArea([dragapult, valiant, toxapex], noMeta);
+    expect(none.control).toBe(0);
+    expect(none.sources).toEqual([]);
+  });
+
+  it('chi porta il controllo: la mossa, quanti compagni aiuta e quanti punti aggiunge', () => {
+    const clef = set('Clefable', 'Leftovers', 'Magic Guard', ['Thunder Wave', 'Moonblast'], 'Bold');
+    const chomp = set('Garchomp', 'Rocky Helmet', 'Rough Skin', ['Earthquake'], 'Jolly');
+    const team = [clef, chomp, toxapex];
+    const area = teamSpeedArea(team, noMeta);
+    const wave = area.sources.find(src => src.move === 'Thunder Wave')!;
+    expect(wave.by).toEqual(['Clefable']);
+    expect(wave.condition).toBe('slow');
+    expect(wave.helped).toBe(area.members.filter(m => m.gains.some(g => g.source === 'Thunder Wave' && g.by?.includes('Clefable'))).length);
+    expect(wave.plus).toBe(speedPart(area.members.map(m => ({ ...m, total: Math.min(1, m.own + (m.gains.find(g => g.condition === 'slow')?.gain ?? 0)) }))) - area.speed);
+    // Con due mosse che rallentano conta la migliore, ma la tabella le mostra tutte, ognuna con il suo effetto da sola
+    // Glare rallenta sempre almeno quanto Thunder Wave (i Terra non ne sono immuni): Thunder Wave non vince mai
+    const glare = set('Dudunsparce', 'Leftovers', 'Serene Grace', ['Glare', 'Boomburst'], 'Calm');
+    const both = teamSpeedArea([clef, chomp, glare], noMeta);
+    expect(both.sources.map(src => src.move).sort()).toEqual(['Glare', 'Thunder Wave']);
+    expect(both.sources.find(src => src.move === 'Thunder Wave')!.by).toEqual(['Clefable']);
+    expect(both.sources.find(src => src.move === 'Thunder Wave')!.plus).toBeGreaterThan(0);
+    // Il guadagno di Garchomp dice da chi viene: non è lui ad avere Thunder Wave
+    expect(area.members.find(m => m.species === 'Garchomp')!.gains.find(g => g.condition === 'slow')!.by).toEqual(['Clefable']);
   });
 
   it("nel voto: il valore dell'area è quello di teamSpeedArea", () => {

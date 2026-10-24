@@ -14,7 +14,7 @@ type Sub = Exclude<Tab, 'general'>;
 /** Una scheda del dettaglio: etichetta, valore e contenuto. */
 type T = ReturnType<typeof useT>;
 
-interface DetailTab { key: string; label: string; value: number | null; panel: ReactElement }
+interface DetailTab { key: string; label: string; value: number | string | null; panel: ReactElement }
 
 /** Casella della tabella dei muri: il danno, e tra parentesi quello dopo il setup quando cambia la soglia. */
 function WallValue({ cell }: { cell: WallCell }) {
@@ -592,16 +592,22 @@ function speedTabs(speed: TeamSpeed, meta: boolean, t: T): DetailTab[] {
       <h4>{t('sdetail.title')}</h4>
       <p>{t(meta ? 'sdetail.lead.meta' : 'sdetail.lead.tier')}</p>
       <dl className="ad-subs">
-        {(['speed', 'control'] as const).map(sub => (
-          <div key={sub} className="ad-sub">
-            <dt>{t(`sdetail.${sub}`)}</dt>
-            <dd>
-              <meter min={0} max={100} value={speed[sub]} aria-hidden="true" />
-              <strong>{speed[sub]}</strong>
-              <span>{tips[sub]}</span>
-            </dd>
-          </div>
-        ))}
+        <div className="ad-sub">
+          <dt>{t('sdetail.speed')}</dt>
+          <dd>
+            <meter min={0} max={100} value={speed.speed} aria-hidden="true" />
+            <strong>{speed.speed}</strong>
+            <span>{tips.speed}</span>
+          </dd>
+        </div>
+        {/* Il controllo è un plus in punti sopra la Velocità: niente barra 0–100 */}
+        <div className="ad-sub">
+          <dt>{t('sdetail.control')}</dt>
+          <dd>
+            <strong className="ad-plus">+{speed.control}</strong>
+            <span>{tips.control}</span>
+          </dd>
+        </div>
       </dl>
       <div className="ad-scroll">
         <table className="ad-t">
@@ -647,15 +653,38 @@ function speedTabs(speed: TeamSpeed, meta: boolean, t: T): DetailTab[] {
         <p>{t('sdetail.control.how1')}</p>
         <p>{t('sdetail.control.how2')}</p>
       </div>
-      {controlPresent.length
-        ? conditionTable(controlPresent, m => m.own, m => m.total, t('sdetail.alone'))
-        : <p className="ad-holes">{t('sdetail.control.none')}</p>}
+      {speed.sources.length ? (
+        <div className="ad-scroll">
+          <table className="ad-t">
+            <thead>
+              <tr>
+                <th scope="col">{t('detail.member')}</th>
+                <th scope="col" className="left">{t('sdetail.move')}</th>
+                <th scope="col">{t('sdetail.helps')}</th>
+                <th scope="col">{t('sdetail.points')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {speed.sources.map(src => (
+                <tr key={`${src.condition}-${src.move}`}>
+                  <th scope="row">
+                    <span className="ad-mon">{src.by.map(name => <Sprite key={name} species={name} size={32} />)}{src.by.join(', ')}</span>
+                  </th>
+                  <td className="left">{src.move}</td>
+                  <td>{t(src.helped === 1 ? 'sdetail.mates.one' : 'sdetail.mates.many', { n: src.helped })}</td>
+                  <td className="total">+{src.plus}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : <p className="ad-holes">{t('sdetail.control.none')}</p>}
     </>
   );
 
   return [
     { key: 'general', label: t('detail.tab.general'), value: speed.value, panel: general },
     { key: 'speed', label: t('sdetail.speed'), value: speed.speed, panel: speedTab },
-    { key: 'control', label: t('sdetail.control'), value: speed.control, panel: controlTab },
+    { key: 'control', label: t('sdetail.control'), value: `+${speed.control}`, panel: controlTab },
   ];
 }

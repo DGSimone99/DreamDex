@@ -174,9 +174,9 @@ describe('Velocità: casi particolari', () => {
 
 describe("Velocità: l'ordine dei membri non conta", () => {
   it('a pari velocità le posizioni si dividono il peso', () => {
-    const a = { species: 'A', speed: 300, raw: 0.5, gains: [], own: 0.9, total: 0.9 };
-    const b = { species: 'B', speed: 300, raw: 0.5, gains: [], own: 0.5, total: 0.5 };
-    const c = { species: 'C', speed: 100, raw: 0.1, gains: [], own: 0.1, total: 0.1 };
+    const a = { species: 'A', speed: 300, raw: 0.5, gains: [], own: 0.9, total: 0.9, controlOptions: [] };
+    const b = { species: 'B', speed: 300, raw: 0.5, gains: [], own: 0.5, total: 0.5, controlOptions: [] };
+    const c = { species: 'C', speed: 100, raw: 0.1, gains: [], own: 0.1, total: 0.1, controlOptions: [] };
     expect(speedPart([a, b, c])).toBe(speedPart([b, a, c]));
     // Le due posizioni in parità valgono (25 + 20) / 2 ciascuna
     expect(speedPart([a, b, c])).toBe(softScore((22.5 * 0.9 + 22.5 * 0.5 + 16 * 0.1) / 61));
