@@ -4,7 +4,7 @@ import { keyRoles, keyValue, needLabel, teamNeeds, type TeamNeeds } from './need
 import { LEVEL_KEYS, type Level, type LevelKey } from './roleLevels';
 import type { Redundancy } from './rating';
 import { softScore } from './scale';
-import { subRoleReasons, type SubRoleReason, type SubRoleValues } from './subRoles';
+import { secondaryRoles, subRoleReasons, type PrimaryFamily, type SubRoleReason, type SubRoleValues } from './subRoles';
 import type { TeamSet } from './sets';
 import { t, type Lang } from '../i18n';
 
@@ -23,8 +23,11 @@ export interface RoleRow {
   level: Level;
   /** Valore del team per la voce: il migliore dei membri. */
   value: number;
-  /** Chi la porta, dal valore più alto, con la fonte (mossa, abilità o motivo misurato). */
-  by: { species: string; value: number; source: string }[];
+  /**
+   * Chi la porta, dal valore più alto (col credito del secondario), con la fonte (mossa, abilità o motivo misurato);
+   * `secondary`: il sotto-ruolo è della famiglia non principale del membro.
+   */
+  by: { species: string; value: number; source: string; secondary?: boolean }[];
 }
 
 export interface TeamRoles {
@@ -38,8 +41,11 @@ export interface TeamRoles {
   rows: RoleRow[];
   /** Mancanze essenziali come penalità (solo team di 6). */
   failures: Redundancy[];
-  /** Valori e motivi di ogni membro (per le schede delle famiglie). */
-  members: { species: string; values: SubRoleValues; reasons: SubRoleReason[] }[];
+  /**
+   * Valori grezzi e motivi di ogni membro (per le schede delle famiglie), la famiglia principale e i valori col
+   * credito del secondario (senza: uguali ai grezzi).
+   */
+  members: { species: string; values: SubRoleValues; reasons: SubRoleReason[]; primary: PrimaryFamily | null; credited?: SubRoleValues }[];
 }
 
 /** Punteggio puro dai valori di team: base degli importanti (1 senza importanti), extra dei minori, valore 0–99. */
@@ -73,13 +79,15 @@ export function teamRolesArea(team: TeamSet[], data: EngineData, lang: Lang, giv
   const reasons = team.map(set => subRoleReasons(set, team, data));
   const rows: RoleRow[] = LEVEL_KEYS.filter(key => needs.levels[key] !== 'ignored').map(key => {
     const by = team.map((set, i) => {
-      const value = keyValue(needs.members[i] ?? {}, key);
+      const values = needs.credited[i] ?? {};
+      const value = keyValue(values, key);
       // La fonte del sotto-ruolo migliore dietro la voce (per "attacker": il miglior sotto-ruolo d'Attacco)
-      const role = keyRoles(key).reduce((best, r) => ((needs.members[i]?.[r] ?? 0) > (needs.members[i]?.[best] ?? 0) ? r : best));
+      const role = keyRoles(key).reduce((best, r) => ((values[r] ?? 0) > (values[best] ?? 0) ? r : best));
       // Setup del campo: Sticky Web (non è un sotto-ruolo) fa da fonte solo se supera hazard e schermi
-      const web = key === 'fieldSetup' && (needs.members[i]?.web ?? 0) > (needs.members[i]?.[role] ?? 0);
+      const web = key === 'fieldSetup' && (values.web ?? 0) > (values[role] ?? 0);
       const source = web ? 'Sticky Web' : reasons[i].find(r => r.role === role)?.source ?? '';
-      return { species: battleName(set), value, source };
+      const secondary = !web && secondaryRoles(needs.primary[i] ?? null).includes(role);
+      return secondary ? { species: battleName(set), value, source, secondary } : { species: battleName(set), value, source };
     }).filter(b => b.value > 0).sort((a, b) => b.value - a.value);
     return { key, level: needs.levels[key], value: needs.values[key], by };
   });
@@ -88,6 +96,9 @@ export function teamRolesArea(team: TeamSet[], data: EngineData, lang: Lang, giv
   return {
     ...score, rows,
     failures: essentialFailures(team, needs, lang),
-    members: team.map((set, i) => ({ species: battleName(set), values: needs.members[i] ?? {}, reasons: reasons[i] })),
+    members: team.map((set, i) => ({
+      species: battleName(set), values: needs.members[i] ?? {}, reasons: reasons[i],
+      primary: needs.primary[i] ?? null, credited: needs.credited[i] ?? needs.members[i] ?? {},
+    })),
   };
 }

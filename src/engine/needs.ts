@@ -3,7 +3,7 @@ import { attackStyle, roleLabel } from './roles';
 import { rulesOf, type FormatRules } from './formatRules';
 import type { EngineData } from './data';
 import type { TeamSet } from './sets';
-import { FAMILIES, measuredSubRoles, type SubRole, type SubRoleValues } from './subRoles';
+import { creditedValues, FAMILIES, measuredSubRoles, primaryFamily, type PrimaryFamily, type SubRole, type SubRoleValues } from './subRoles';
 import { LEVEL_KEYS, levelOf, type Level, type LevelKey } from './roleLevels';
 import { t, type Lang } from '../i18n';
 
@@ -38,8 +38,12 @@ export interface TeamNeeds {
   importantMissing: LevelKey[];
   /** I sotto-ruoli che coprirebbero le voci mancanti (per il punteggio dei candidati). */
   missingRoles: SubRole[];
-  /** Valori misurati di ogni membro, nell'ordine del team. */
+  /** Valori misurati di ogni membro, nell'ordine del team (grezzi, per la scheda). */
   members: SubRoleValues[];
+  /** Famiglia principale di ogni membro fra Attacco e muri (null se non ha nessuna delle due). */
+  primary: (PrimaryFamily | null)[];
+  /** Valori di ogni membro col credito del secondario per l'archetipo: da questi vengono i valori di team. */
+  credited: SubRoleValues[];
   /** Tipo di attaccante che manca del tutto (team con almeno 4 attaccanti tutti dello stesso tipo, non stall). */
   needStyle: 'physical' | 'special' | null;
   /** Regole del formato con cui sono stati riconosciuti i ruoli (per giudicare allo stesso modo i candidati). */
@@ -64,7 +68,10 @@ export function teamNeeds(team: TeamSet[], data: EngineData, members?: SubRoleVa
   const archetype = needsArchetype(team, rules);
   const measured = members ?? team.map(set => measuredSubRoles(set, team, data));
   const levels = Object.fromEntries(LEVEL_KEYS.map(k => [k, levelOf(archetype, k)])) as Record<LevelKey, Level>;
-  const values = Object.fromEntries(LEVEL_KEYS.map(k => [k, Math.max(0, ...measured.map(m => keyValue(m, k)))])) as Record<LevelKey, number>;
+  // Il secondario conta secondo l'archetipo (stall 0, semi-stall metà, altrimenti pieno); i grezzi restano in `members`
+  const primary = team.map((set, i) => primaryFamily(set, measured[i] ?? {}));
+  const credited = team.map((_, i) => creditedValues(measured[i] ?? {}, primary[i], archetype));
+  const values = Object.fromEntries(LEVEL_KEYS.map(k => [k, Math.max(0, ...credited.map(m => keyValue(m, k)))])) as Record<LevelKey, number>;
   const missing = (level: Level) => LEVEL_KEYS.filter(k => levels[k] === level && values[k] < MISSING_BELOW);
   const essentialMissing = missing('essential');
   const importantMissing = missing('important');
@@ -75,7 +82,7 @@ export function teamNeeds(team: TeamSet[], data: EngineData, members?: SubRoleVa
   return {
     archetype, levels, values, essentialMissing, importantMissing,
     missingRoles: [...new Set([...essentialMissing, ...importantMissing].flatMap(keyRoles))],
-    members: measured,
+    members: measured, primary, credited,
     needStyle: lopsided ? (physical === 0 ? 'physical' : 'special') : null,
     rules,
   };

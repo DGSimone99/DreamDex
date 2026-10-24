@@ -7,7 +7,7 @@ import { CONTROL_CONDITIONS, type MemberSpeed, type SpeedCondition, type TeamSpe
 import { ESSENTIAL_POINTS, type TeamRoles } from '../engine/rolesArea';
 import { MISSING_BELOW } from '../engine/needs';
 import type { Level, LevelKey } from '../engine/roleLevels';
-import { FAMILIES, type Family, type SubRole, type SubRoleReason } from '../engine/subRoles';
+import { FAMILIES, secondaryRoles, type Family, type SubRole, type SubRoleReason } from '../engine/subRoles';
 import { useT } from '../i18n/react';
 import { Icon } from './icons';
 import { Sprite, TypeChip } from './Sprite';
@@ -733,7 +733,9 @@ function rolesTabs(rating: TeamRating, value: number | null, t: T): DetailTab[] 
     : malus ? t('rdetail.general.essentialMissing') : t('rdetail.general.essentialOk');
   // Fonte e valore di chi porta la voce: le fonti generiche (set, muro: l'indice è nella scheda Difesa) non si mostrano,
   // il valore solo se non pieno
-  const byNote = (source: string, v: number) => [source !== 'set' && source !== 'wall' && source, v < 1 && points(v)].filter(Boolean).join(' · ');
+  // il valore solo se non pieno; il secondario (famiglia non principale) col suo segno
+  const byNote = (source: string, v: number, secondary?: boolean) =>
+    [secondary && t('rdetail.secondary'), source !== 'set' && source !== 'wall' && source, v < 1 && points(v)].filter(Boolean).join(' · ');
 
   const general = (
     <>
@@ -796,7 +798,7 @@ function rolesTabs(rating: TeamRating, value: number | null, t: T): DetailTab[] 
                       <td className="left gap ad-by">
                         {row.by.length
                           ? row.by.map((b, i) => {
-                            const note = byNote(b.source, b.value);
+                            const note = byNote(b.source, b.value, b.secondary);
                             return (
                               <span key={`${b.species}-${i}`} className="ad-mon">
                                 <Sprite species={b.species} size={28} />{b.species}
@@ -819,9 +821,14 @@ function rolesTabs(rating: TeamRating, value: number | null, t: T): DetailTab[] 
 
   const familyTab = (family: Family): DetailTab => {
     const subs: SubRole[] = FAMILIES[family];
+    // Valore col credito del secondario (come i valori di team), e il segno per chi lo porta da secondario
     const holdersOf = (role: SubRole) => roles.members
-      .map(m => ({ species: m.species, value: m.values[role] ?? 0, reason: m.reasons.find(r => r.role === role) }))
-      .filter(h => h.value > 0)
+      .map(m => ({
+        species: m.species, value: (m.credited ?? m.values)[role] ?? 0, reason: m.reasons.find(r => r.role === role),
+        secondary: !!m.values[role] && secondaryRoles(m.primary).includes(role),
+      }))
+      // Anche un secondario che nell'archetipo vale 0 (stall) resta in tabella, col segno
+      .filter(h => h.value > 0 || h.secondary)
       .sort((a, b) => b.value - a.value);
     // Coperto con la stessa soglia di carte, Analisi e bisogni (MISSING_BELOW); la tabella mostra anche i valori parziali
     const covered = subs.filter(role => (holdersOf(role)[0]?.value ?? 0) >= MISSING_BELOW).length;
@@ -854,7 +861,10 @@ function rolesTabs(rating: TeamRating, value: number | null, t: T): DetailTab[] 
                   </tr>
                   {holders.length ? holders.map((h, i) => (
                     <tr key={`${h.species}-${i}`}>
-                      <th scope="row"><span className="ad-mon"><Sprite species={h.species} size={32} />{h.species}</span></th>
+                      <th scope="row">
+                        <span className="ad-mon"><Sprite species={h.species} size={32} />{h.species}</span>
+                        {h.secondary && <small className="ad-src"> ({t('rdetail.secondary')})</small>}
+                      </th>
                       <td className="left gap ad-reason">{h.reason ? reasonText(h.reason, pool, t) : '—'}</td>
                       <td className="total">{points(h.value)}</td>
                     </tr>

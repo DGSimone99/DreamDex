@@ -1,4 +1,4 @@
-import type { SubRole } from '../../src/engine/subRoles';
+import type { PrimaryFamily, SubRole } from '../../src/engine/subRoles';
 
 /**
  * Tabella di riferimento dei sotto-ruoli (Task 8): per i 40 Pokémon più usati di ogni formato del banco,
@@ -10,6 +10,7 @@ import type { SubRole } from '../../src/engine/subRoles';
  * - `not`: sotto-ruoli che devono restare < 0.5 perché l'etichetta sarebbe fuorviante.
  * - `present`: devono essere > 0 (quote che dipendono dal meta: Taunt/Encore, stati con immunità).
  * - `values`: valore atteso ±0.1, solo dove è fissato dai vincoli (Rest 0.5, Toxic Spikes 0.75, schermi…).
+ * - `primary`: famiglia principale attesa fra Attacco e muri (primaryFamily); l'altra è secondaria.
  * - `judgement`: riga opinabile, con la nota del perché.
  */
 export interface RoleExpectation {
@@ -21,6 +22,7 @@ export interface RoleExpectation {
   not?: SubRole[];
   present?: SubRole[];
   values?: Partial<Record<SubRole, number>>;
+  primary?: PrimaryFamily;
   judgement?: string;
 }
 
@@ -44,15 +46,15 @@ const ou: RoleExpectation[] = [
   { species: 'Landorus-Therian', set: 'Rocky Helmet, Jolly 252 Atk/Spe · EQ, U-turn, Stealth Rock, Defog',
     has: ['hazards', 'removal', 'pivot'], not: WALLS, judgement: 'offensive utility: no Attack verdict, the set has no boost and no Choice item' },
   { species: 'Gholdengo', set: 'Air Balloon, Timid · Shadow Ball, Recover, Make It Rain, Nasty Plot',
-    has: ['specialBreaker', 'specialSweeper', 'recovery'], not: WALLS, judgement: 'Nasty Plot win condition; sweeper although base 84 Speed is middling' },
+    has: ['specialBreaker', 'specialSweeper', 'recovery'], not: WALLS, primary: 'attack', judgement: 'Nasty Plot win condition; sweeper although base 84 Speed is middling' },
   { species: 'Great Tusk', set: 'Boots, Jolly 252 Atk/Spe · Rapid Spin, Headlong Rush, Ice Spinner, Close Combat',
-    has: ['physicalBreaker', 'removal', 'physicalWall'], not: ['specialWall'], judgement: 'wall from natural bulk only (spec accepts it for Great Tusk)' },
+    has: ['physicalBreaker', 'removal', 'physicalWall'], not: ['specialWall'], primary: 'attack' },
   { species: 'Ogerpon-Wellspring', set: 'Wellspring Mask, Jolly · Ivy Cudgel, Swords Dance, Power Whip, Horn Leech',
     has: ['physicalSweeper', 'physicalBreaker'], not: WALLS },
   { species: 'Kingambit', set: 'Black Glasses, Adamant · Sucker Punch, Knock Off, Swords Dance, Iron Head',
     has: ['physicalBreaker', 'physicalSweeper', 'itemRemoval'], not: WALLS },
   { species: 'Zamazenta', set: 'Leftovers, Jolly · Crunch, Close Combat, Stone Edge, Body Press',
-    hasAny: PHYS, not: WALLS, judgement: 'attacker, sweeper or breaker is a toss-up' },
+    hasAny: PHYS, not: WALLS, primary: 'attack', judgement: 'attacker, sweeper or breaker is a toss-up' },
   { species: 'Zapdos', set: 'Boots, Bold 248/188 Def · Roost, Volt Switch, Hurricane, Heat Wave',
     has: ['physicalWall', 'recovery', 'pivot'], not: ['specialSweeper', 'specialBreaker'] },
   { species: 'Garchomp', set: 'Rocky Helmet, Jolly · EQ, Stealth Rock, Swords Dance, Scale Shot',
@@ -64,7 +66,7 @@ const ou: RoleExpectation[] = [
   { species: 'Raging Bolt', set: 'Choice Specs, Modest · Thunderclap, Draco Meteor, Volt Switch, Thunderbolt',
     has: ['specialBreaker', 'pivot'], not: WALLS },
   { species: 'Corviknight', set: 'Rocky Helmet, Impish 224/252 Def · Roost, Defog, U-turn, Brave Bird',
-    has: ['physicalWall', 'recovery', 'removal', 'pivot'], not: PHYS },
+    has: ['physicalWall', 'recovery', 'removal', 'pivot'], not: PHYS, primary: 'wall' },
   { species: 'Ferrothorn', set: 'Leftovers, Impish 252/80 Def/176 SpD · Leech Seed, Stealth Rock, Power Whip, Knock Off',
     has: ['physicalWall', 'specialWall', 'hazards', 'itemRemoval'], values: { recovery: 0.25 }, present: ['dot'], not: ['physicalSweeper', 'specialSweeper'] },
   { species: 'Iron Treads', set: 'Leftovers, Jolly · Rapid Spin, EQ, Stealth Rock, Ice Spinner',
@@ -292,15 +294,15 @@ const uu: RoleExpectation[] = [
 // Gen 9 OU (i casi della specifica, audit 2026-10-24)
 const gen9ou: RoleExpectation[] = [
   { species: 'Great Tusk', set: 'Rocky Helmet, Jolly · Rapid Spin, Headlong Rush, Ice Spinner, Stealth Rock',
-    has: ['physicalWall', 'physicalBreaker', 'hazards', 'removal'], not: ['specialWall'], judgement: 'wall from natural bulk (spec)' },
+    has: ['physicalWall', 'physicalBreaker', 'hazards', 'removal'], not: ['specialWall'], primary: 'attack' },
   { species: 'Kingambit', set: 'Leftovers, Adamant · Sucker Punch, Swords Dance, Iron Head, Kowtow Cleave',
     has: ['physicalBreaker', 'physicalSweeper'], not: WALLS },
   { species: 'Gholdengo', set: 'Air Balloon, Timid · Shadow Ball, Make It Rain, Recover, Nasty Plot',
-    has: ['specialBreaker', 'specialSweeper', 'recovery'], not: WALLS, judgement: 'Nasty Plot sweeper at middling Speed' },
+    has: ['specialBreaker', 'specialSweeper', 'recovery'], not: WALLS, primary: 'attack', judgement: 'Nasty Plot sweeper at middling Speed' },
   { species: 'Ogerpon-Wellspring', set: 'Wellspring Mask, Jolly · Ivy Cudgel, Swords Dance, Power Whip, Play Rough',
     has: ['physicalSweeper', 'physicalBreaker'], not: WALLS },
   { species: 'Zamazenta', set: 'Leftovers, Jolly · Crunch, Body Press, Close Combat, Heavy Slam',
-    hasAny: PHYS, not: WALLS },
+    hasAny: PHYS, not: WALLS, primary: 'attack' },
   { species: 'Dragonite', set: 'Boots, Adamant · Dragon Dance, Extreme Speed, EQ, Roost',
     has: ['physicalSweeper', 'recovery'], not: WALLS },
   { species: 'Iron Valiant', set: 'Booster, Timid · Moonblast, Knock Off, Close Combat, Encore',
@@ -328,7 +330,7 @@ const gen9ou: RoleExpectation[] = [
   { species: 'Dragapult', set: 'Choice Specs, Timid · U-turn, Draco Meteor, Will-O-Wisp, Dragon Darts',
     has: ['specialBreaker', 'specialSweeper', 'pivot'], present: ['dot'], not: WALLS },
   { species: 'Corviknight', set: 'Rocky Helmet, Impish 248/252 Def · Roost, Brave Bird, Defog, U-turn',
-    has: ['physicalWall', 'recovery', 'removal', 'pivot'], not: PHYS },
+    has: ['physicalWall', 'recovery', 'removal', 'pivot'], not: PHYS, primary: 'wall' },
   { species: 'Rillaboom', set: 'Life Orb, Adamant · Grassy Glide, Knock Off, U-turn, Wood Hammer',
     has: ['physicalBreaker', 'pivot', 'itemRemoval'], not: WALLS },
   { species: 'Darkrai', set: 'Boots, Timid · Dark Pulse, Ice Beam, Sludge Bomb, Focus Blast',

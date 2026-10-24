@@ -38,6 +38,13 @@ describe('ruoli sulla carta: prima il ruolo principale, poi un supporto', () => 
     expect(cardRoles(clefable, DEFAULT_RULES, { taunt: 0.3, recovery: 1 })).toEqual(['recovery']);
   });
 
+  it('la famiglia principale va prima: Great Tusk offensivo attacca, Corviknight difensivo fa il muro', () => {
+    const tusk = { ...set('Great Tusk', 'Heavy-Duty Boots', 'Protosynthesis', ['Headlong Rush', 'Close Combat', 'Ice Spinner', 'Rapid Spin']), nature: 'Jolly', evs: { atk: 252, spe: 252 } };
+    expect(cardRoles(tusk, DEFAULT_RULES, { physicalWall: 1, physicalBreaker: 1, removal: 1 })[0]).toBe('physicalBreaker');
+    const corv = { ...set('Corviknight', 'Leftovers', 'Pressure', ['Body Press', 'Iron Defense', 'Roost', 'Defog']), nature: 'Impish', evs: { hp: 252, def: 252 } };
+    expect(cardRoles(corv, DEFAULT_RULES, { physicalWall: 1, physicalBreaker: 1, recovery: 1, removal: 1 })[0]).toBe('physicalWall');
+  });
+
   it("il setup resta un'etichetta della carta per chi non è sweeper", () => {
     const corviknight = set('Corviknight', 'Leftovers', 'Pressure', ['Body Press', 'Iron Defense', 'Roost', 'Brave Bird']);
     expect(cardRoles({ ...corviknight, evs: { hp: 252, def: 252 }, nature: 'Impish' }, DEFAULT_RULES)).toEqual(['physicalWall', 'setup']);

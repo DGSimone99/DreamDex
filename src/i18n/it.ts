@@ -650,6 +650,7 @@ export const it: Record<keyof typeof en, string> = {
   'rdetail.level.ignored': "Non conta",
   'rdetail.teamValue': "squadra {n}",
   'rdetail.nobody': "Nessuno",
+  'rdetail.secondary': "secondario",
   'rdetail.missingTip': "Manca: malus di {n} punti",
   'rdetail.how.attack': "Dai numeri misurati: sweeper chi attacca forte (Offesa del membro) e si muove per primo (Velocità, setup che la alza, o setup con priorità); wallbreaker chi sfonda i muri del formato (Wallbreaking, setup compreso). Fisico o speciale dal colpo migliore.",
   'rdetail.how.defense': "Muri dall'indice PS×Dif e PS×DifSp sulle statistiche reali del set (EV, natura, Assault Vest, Eviolite, Fur Coat…), contro la soglia del formato. Recupero dalla mossa migliore: Recover, Roost, Wish, Regenerator… 1; Rest e Pain Split 0,5; Leech Seed 0,25.",

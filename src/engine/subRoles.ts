@@ -11,6 +11,7 @@ import { memberSpeed } from './speedArea';
 import { outspeedShare, speedPool, speedStat, type SpeedRival } from './speed';
 import { teamField } from './types';
 import { memoBySet } from './memo';
+import type { Archetype } from './archetype';
 
 export type Family = 'attack' | 'defense' | 'field' | 'disruption';
 export type SubRole = 'physicalSweeper' | 'specialSweeper' | 'physicalBreaker' | 'specialBreaker'
@@ -429,4 +430,69 @@ export function measuredSubRoles(set: TeamSet, team: TeamSet[], data: EngineData
 /** Perché il membro ha ogni sotto-ruolo (per la scheda). */
 export function subRoleReasons(set: TeamSet, team: TeamSet[], data: EngineData): SubRoleReason[] {
   return measured(set, team, data).reasons;
+}
+
+/** Famiglia principale del membro fra Attacco e muri: l'altra è secondaria. */
+export type PrimaryFamily = 'attack' | 'wall';
+
+const WALL_ROLES: SubRole[] = ['physicalWall', 'specialWall'];
+const familyRoles = (f: PrimaryFamily): SubRole[] => (f === 'attack' ? FAMILIES.attack : WALL_ROLES);
+const familyBest = (v: SubRoleValues, f: PrimaryFamily) => Math.max(0, ...familyRoles(f).map(r => v[r] ?? 0));
+/** EV in attacco (≥ 100 in Att o AttSp, o natura che la alza) e difensivi (PS + Dif + DifSp) da cui il set decide. */
+const ATTACK_EVS = 100;
+const ATTACK_MOVES = 3;
+const DEFENSE_EVS = 252;
+
+/**
+ * Il verdetto del solo set, dagli EV: attacco con EV offensivi e almeno 3 attacchi, muro con EV difensivi e recupero
+ * o un'utilità (Campo o Disturbo ≥ 0,5). Null se il set non ha EV o non decide.
+ */
+export function setPrimary(set: TeamSet, values: SubRoleValues): PrimaryFamily | null {
+  const lines = statLines(set);
+  if (!lines.some(l => l.ev > 0)) return null;
+  const line = (id: string) => lines.find(l => l.stat === id);
+  const invested = (id: 'atk' | 'spa') => { const l = line(id); return !!l && (l.ev >= ATTACK_EVS || l.nature === 'up'); };
+  const attacks = set.moves.map(getMove).filter(isDefined).filter(m => m.category !== 'Status').length;
+  if ((invested('atk') || invested('spa')) && attacks >= ATTACK_MOVES) return 'attack';
+  const bulk = (['hp', 'def', 'spd'] as const).reduce((a, id) => a + (line(id)?.ev ?? 0), 0);
+  const utility = [...FAMILIES.field, ...FAMILIES.disruption].some(r => (values[r] ?? 0) >= 0.5);
+  if (bulk >= DEFENSE_EVS && ((values.recovery ?? 0) >= 0.5 || utility)) return 'wall';
+  return null;
+}
+
+/**
+ * Famiglia principale (specifica, "Primary and secondary roles"): il verdetto degli EV, altrimenti la famiglia col
+ * valore migliore (pari: attacco). Null senza sotto-ruoli d'Attacco né muri. Se il verdetto indica una famiglia che
+ * il membro non ha, vale l'altra: non c'è nulla da rendere secondario.
+ */
+export function primaryFamily(set: TeamSet, values: SubRoleValues): PrimaryFamily | null {
+  const attack = familyBest(values, 'attack');
+  const wall = familyBest(values, 'wall');
+  if (!(attack > 0) && !(wall > 0)) return null;
+  if (!(wall > 0)) return 'attack';
+  if (!(attack > 0)) return 'wall';
+  return setPrimary(set, values) ?? (wall > attack ? 'wall' : 'attack');
+}
+
+/** Quanto conta un sotto-ruolo secondario nel valore di team, per archetipo (approvato dall'utente). */
+export const SECONDARY_CREDIT: Record<Archetype, number> = { hyperOffense: 1, bulkyOffense: 1, balance: 1, semiStall: 0.5, stall: 0 };
+
+/** Ruoli secondari del membro: i sotto-ruoli d'Attacco o dei muri della famiglia non principale. */
+export const secondaryRoles = (primary: PrimaryFamily | null): SubRole[] =>
+  (primary ? familyRoles(primary === 'attack' ? 'wall' : 'attack') : []);
+
+/**
+ * Valori col credito del secondario: la famiglia non principale x il credito dell'archetipo; Campo, Disturbo e
+ * Recupero non cambiano. Restituisce un oggetto nuovo (i valori in cache sono congelati), lo stesso se nulla cambia.
+ */
+export function creditedValues(values: SubRoleValues, primary: PrimaryFamily | null, archetype: Archetype): SubRoleValues {
+  const credit = SECONDARY_CREDIT[archetype];
+  const secondary = secondaryRoles(primary).filter(r => values[r]);
+  if (credit === 1 || !secondary.length) return values;
+  const out: SubRoleValues = { ...values };
+  for (const r of secondary) {
+    const x = (values[r] ?? 0) * credit;
+    if (x > 0) out[r] = x; else delete out[r];
+  }
+  return out;
 }

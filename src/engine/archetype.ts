@@ -1,7 +1,7 @@
 import { battleSpecies, getMove, toID } from './dex';
 import { memberPower } from './power';
 import { detectRoles, hasSetup, isFast, isPassive, isStall, legacyRoles } from './roles';
-import { FAMILIES, rolesList, type SubRole, type SubRoleValues } from './subRoles';
+import { FAMILIES, primaryFamily, rolesList, setPrimary, setSubRoles, type SubRole, type SubRoleValues } from './subRoles';
 import type { FormatRules } from './formatRules';
 import type { TeamSet } from './sets';
 import { benefits, enables, type Condition } from './synergy';
@@ -104,8 +104,8 @@ export function weatherOf(set: TeamSet): { condition: Condition; via: string } |
 }
 
 /**
- * Ruoli da mostrare sulla carta del team (al massimo 2). Il principale: il primo di Attacco o dei muri (i muri prima solo
- * per un muro da stall), altrimenti il primo di Campo e Disturbo; poi il meteo, gli altri supporti, il Recupero (mai
+ * Ruoli da mostrare sulla carta del team (al massimo 2). Il principale: il primo della famiglia principale (Attacco o
+ * muri, primaryFamily; senza verdetto degli EV i muri prima solo per un muro da stall), altrimenti il primo di Campo e Disturbo; poi il meteo, gli altri supporti, il Recupero (mai
  * principale se c'è altro: lo hanno quasi tutti) e il setup, che si salta per uno sweeper, che lo implica.
  * `measured`: i sotto-ruoli misurati del membro nel team (gli stessi del voto); senza, quelli del solo set.
  */
@@ -113,7 +113,10 @@ export function cardRoles(set: TeamSet, rules: FormatRules, measured?: SubRoleVa
   const roles = measured ? rolesList(measured) : detectRoles(set, rules);
   // Liste costruite qui e non al caricamento: subRoles.ts e questo modulo si importano a vicenda
   const walls: SubRole[] = ['physicalWall', 'specialWall'];
-  const order = fitsArchetype(set, 'stall', rules) ? [...walls, ...FAMILIES.attack] : [...FAMILIES.attack, ...walls];
+  // Famiglia principale: il verdetto degli EV; senza, il muro da stall, poi il valore migliore (come i bisogni)
+  const values = measured ?? setSubRoles(set, rules);
+  const primary = setPrimary(set, values) ?? (fitsArchetype(set, 'stall', rules) ? 'wall' : primaryFamily(set, values));
+  const order = primary === 'wall' ? [...walls, ...FAMILIES.attack] : [...FAMILIES.attack, ...walls];
   const support = [...FAMILIES.field, ...FAMILIES.disruption].filter(role => roles.includes(role));
   const main = order.find(role => roles.includes(role)) ?? support[0] ?? (roles.includes('recovery') ? 'recovery' : undefined);
   const sweeper = main === 'physicalSweeper' || main === 'specialSweeper';

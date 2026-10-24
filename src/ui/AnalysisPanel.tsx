@@ -58,8 +58,8 @@ export function AnalysisPanel({ team, analysis, rating, coaching, preview, onRep
   const uncovered = analysis.coverage.filter(row => row.hitters.length === 0);
   // Voci dei ruoli per livello, secondo il tipo di team (come nel voto): essenziali, importanti, minori e ignorate
   const { needs } = analysis;
-  // Chi copre una voce: i membri col valore misurato almeno MISSING_BELOW (stessa soglia dei bisogni)
-  const ownersOf = (need: Need) => team.filter((_, i) => keyValue(needs.members[i] ?? {}, need) >= MISSING_BELOW).map(set => battleName(set));
+  // Chi copre una voce: i membri col valore misurato (col credito del secondario) almeno MISSING_BELOW, come i bisogni
+  const ownersOf = (need: Need) => team.filter((_, i) => keyValue(needs.credited[i] ?? needs.members[i] ?? {}, need) >= MISSING_BELOW).map(set => battleName(set));
   const needGroups = ([
     { title: tr('analysis.essential'), level: 'essential' },
     { title: tr('analysis.important'), level: 'important' },

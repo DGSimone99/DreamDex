@@ -97,12 +97,12 @@ describe('Generale dei Ruoli', () => {
       ],
       failures: [{ text: 'Nessun attaccante nel team', points: 2 }],
       members: [
-        { species: 'Gliscor', values: { hazards: 1 }, reasons: [{ role: 'hazards', value: 1, source: 'Stealth Rock' }] },
-        { species: 'Zapdos', values: { taunt: 1 }, reasons: [{ role: 'taunt', value: 1, source: 'Taunt', share: 1 }] },
+        { species: 'Gliscor', values: { hazards: 1 }, primary: null, reasons: [{ role: 'hazards', value: 1, source: 'Stealth Rock' }] },
+        { species: 'Zapdos', values: { taunt: 1 }, primary: null, reasons: [{ role: 'taunt', value: 1, source: 'Taunt', share: 1 }] },
         // Schermo singolo senza Light Clay (0,45): compare nella scheda ma non conta come coperto
-        { species: 'Clefable', values: { screens: 0.45 }, reasons: [{ role: 'screens', value: 0.45, source: 'Reflect' }] },
+        { species: 'Clefable', values: { screens: 0.45 }, primary: null, reasons: [{ role: 'screens', value: 0.45, source: 'Reflect' }] },
         // Team di 6: solo allora le essenziali mancanti danno malus
-        ...['Toxapex', 'Corviknight', 'Dondozo'].map(species => ({ species, values: {}, reasons: [] })),
+        ...['Toxapex', 'Corviknight', 'Dondozo'].map(species => ({ species, values: {}, primary: null, reasons: [] })),
       ],
     };
     const rating = { ...base, roles, areas: base.areas.map(a => (a.key === 'roles' ? { ...a, value: 64 } : a)) };
@@ -140,5 +140,37 @@ describe('setup difensivo nel dettaglio della Difesa', () => {
     const gain = row.querySelector('.ad-gain')!;
     expect(gain).toHaveTextContent(/^\(\+\d+\)$/);
     expect(gain).toHaveAttribute('title', 'Con il setup: Iron Defense');
+  });
+});
+
+describe('ruolo secondario nel dettaglio dei Ruoli', () => {
+  const rolesWithSecondary = (): TeamRoles => ({
+    value: 60, base: 0.5, extra: 0,
+    rows: [
+      { key: 'physicalWall', level: 'essential', value: 0.5, by: [{ species: 'Great Tusk', value: 0.5, source: 'wall', secondary: true }] },
+    ],
+    failures: [],
+    members: [
+      {
+        species: 'Great Tusk', primary: 'attack',
+        values: { physicalBreaker: 1, physicalWall: 1 }, credited: { physicalBreaker: 1, physicalWall: 0.5 },
+        reasons: [{ role: 'physicalWall', value: 1, source: 'wall', index: 111000, threshold: 100000 }],
+      },
+    ],
+  });
+
+  it('chi ha un muro secondario lo mostra "(secondario)" col valore accreditato', async () => {
+    const base = rateTeam([{ ...emptySet('Great Tusk'), moves: ['Headlong Rush'] }], fixtureData, 'it')!;
+    const rating = { ...base, roles: rolesWithSecondary() };
+    const user = userEvent.setup();
+    renderIt(<AreaDetail rating={rating} area="roles" onClose={() => {}} />);
+    // Generale: chi porta la voce con la nota del secondario
+    const general = within(screen.getByRole('tabpanel')).getByRole('row', { name: /^Muro fisico/ });
+    expect(general).toHaveTextContent('Great Tusk (secondario · 50)');
+    // Scheda Difesa: il valore accreditato (50, non 100) e il segno
+    await user.click(screen.getByRole('tab', { name: /^Difesa/ }));
+    const row = within(screen.getByRole('tabpanel')).getAllByRole('row').find(r => /Great Tusk/.test(r.textContent!))!;
+    expect(row).toHaveTextContent('(secondario)');
+    expect(within(row).getAllByRole('cell').at(-1)).toHaveTextContent(/^50$/);
   });
 });

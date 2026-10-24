@@ -5,7 +5,8 @@ import type { EngineData } from '../../src/engine/data';
 import { initTiers } from '../../src/engine/dex';
 import type { FormatId } from '../../src/engine/format';
 import { mostCommonSet } from '../../src/engine/sets';
-import { measuredSubRoles, type SubRole, type SubRoleValues } from '../../src/engine/subRoles';
+import { measuredSubRoles, primaryFamily, type SubRole, type SubRoleValues } from '../../src/engine/subRoles';
+import type { TeamSet } from '../../src/engine/sets';
 import { REFERENCE_DIRS, ROLES_REFERENCE, type ReferenceFormat, type RoleExpectation } from '../fixtures/rolesReference';
 
 /**
@@ -17,8 +18,8 @@ import { REFERENCE_DIRS, ROLES_REFERENCE, type ReferenceFormat, type RoleExpecta
  */
 const STRICT = process.env.ROLES_REFERENCE_STRICT === '1';
 const WRITE_REPORT = process.env.ROLES_REFERENCE_REPORT === '1';
-/** Controlli riusciti con tutti i dati dopo la calibrazione (1139 su 1146). */
-const KNOWN_OK = 1139;
+/** Controlli riusciti con tutti i dati dopo la calibrazione (1139 su 1146), più gli 8 controlli `primary` (Task 11). */
+const KNOWN_OK = 1147;
 /** Discrepanze note e accettate (formato, specie, sotto-ruolo, tipo di controllo). */
 const KNOWN_MISMATCHES = new Set([
   'ubers Groudon-Primal physicalBreaker has',
@@ -49,13 +50,13 @@ const load = (format: ReferenceFormat): EngineData => {
   } as EngineData;
 };
 
-type Kind = 'has' | 'hasAny' | 'not' | 'present' | 'value';
+type Kind = 'has' | 'hasAny' | 'not' | 'present' | 'value' | 'primary';
 interface Check { format: ReferenceFormat; species: string; role: string; kind: Kind; ok: boolean; expected: string; actual: string; judgement?: string }
 
 const fmt = (x: number | undefined) => (x ?? 0).toFixed(2);
 
 /** Ogni attesa della riga diventa un controllo (riuscito o no). */
-function checkRow(format: ReferenceFormat, row: RoleExpectation, v: SubRoleValues): Check[] {
+function checkRow(format: ReferenceFormat, row: RoleExpectation, v: SubRoleValues, set: TeamSet): Check[] {
   const out: Check[] = [];
   const base = { format, species: row.species, judgement: row.judgement };
   const val = (r: SubRole) => v[r] ?? 0;
@@ -64,6 +65,10 @@ function checkRow(format: ReferenceFormat, row: RoleExpectation, v: SubRoleValue
   for (const r of row.present ?? []) out.push({ ...base, role: r, kind: 'present', ok: val(r) > 0, expected: '> 0', actual: fmt(val(r)) });
   for (const [r, x] of Object.entries(row.values ?? {}) as [SubRole, number][]) {
     out.push({ ...base, role: r, kind: 'value', ok: Math.abs(val(r) - x) <= TOLERANCE + 1e-9, expected: `${x} ±${TOLERANCE}`, actual: fmt(val(r)) });
+  }
+  if (row.primary) {
+    const primary = primaryFamily(set, v);
+    out.push({ ...base, role: 'family', kind: 'primary', ok: primary === row.primary, expected: row.primary, actual: primary ?? 'none' });
   }
   if (row.hasAny?.length) {
     const best = row.hasAny.reduce((a, r) => Math.max(a, val(r)), 0);
@@ -138,7 +143,7 @@ describe('tabella di riferimento dei sotto-ruoli', () => {
         const values = measuredSubRoles(set, [set], data);
         // I valori restano sempre in 0-1
         for (const x of Object.values(values)) expect(x).toBeGreaterThanOrEqual(0), expect(x).toBeLessThanOrEqual(1);
-        checks.push(...checkRow(f, row, values));
+        checks.push(...checkRow(f, row, values, set));
       }
     }
     if (WRITE_REPORT) {

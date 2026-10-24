@@ -648,6 +648,7 @@ export const en = {
   'rdetail.level.ignored': "Doesn't count",
   'rdetail.teamValue': "team {n}",
   'rdetail.nobody': "Nobody",
+  'rdetail.secondary': "secondary",
   'rdetail.missingTip': "Missing: {n}-point penalty",
   'rdetail.how.attack': "From the measured numbers: a sweeper hits hard (the member's Offense) and moves first (Speed, a setup that raises it, or setup with priority); a wallbreaker breaks the format's walls (Wallbreaking, setup included). Physical or special from the best hit.",
   'rdetail.how.defense': "Walls from the HP×Def and HP×SpD index on the set's real stats (EVs, nature, Assault Vest, Eviolite, Fur Coat…), against the format's threshold. Recovery from the best move: Recover, Roost, Wish, Regenerator… 1; Rest and Pain Split 0.5; Leech Seed 0.25.",
