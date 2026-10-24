@@ -11,10 +11,24 @@ import { REFERENCE_DIRS, ROLES_REFERENCE, type ReferenceFormat, type RoleExpecta
 /**
  * Tabella di riferimento dei sotto-ruoli (Task 8): confronta measuredSubRoles col giudizio competitivo
  * della tabella in tests/fixtures/rolesReference.ts sui set più comuni dei dati scaricati.
- * Le discrepanze sono attese finché non c'è la calibrazione (Task 9): di default il test controlla solo la struttura
- * e scrive il rapporto; con ROLES_REFERENCE_STRICT=1 fallisce a ogni discrepanza.
+ * Di default il test fa da pavimento: nessuna discrepanza oltre l'elenco noto (KNOWN_MISMATCHES, dopo la calibrazione
+ * del 2026-10-24) e almeno KNOWN_OK controlli riusciti. Con ROLES_REFERENCE_STRICT=1 fallisce a ogni discrepanza;
+ * con ROLES_REFERENCE_REPORT=1 scrive il rapporto delle discrepanze.
  */
 const STRICT = process.env.ROLES_REFERENCE_STRICT === '1';
+const WRITE_REPORT = process.env.ROLES_REFERENCE_REPORT === '1';
+/** Controlli riusciti con tutti i dati dopo la calibrazione (1139 su 1146). */
+const KNOWN_OK = 1139;
+/** Discrepanze note e accettate (formato, specie, sotto-ruolo, tipo di controllo). */
+const KNOWN_MISMATCHES = new Set([
+  'ubers Groudon-Primal physicalBreaker has',
+  'ubers Arceus physicalBreaker has',
+  'ubers Dondozo physicalBreaker has',
+  'gen9ou Gholdengo specialSweeper has',
+  'gen9ou Cresselia specialSweeper or specialBreaker hasAny',
+  'gen9uu Skarmory physicalBreaker has',
+  'gen9uu Rotom-Wash physicalWall has',
+]);
 const REPORT = join('.superpowers', 'sdd', '2026-10-24-rating-roles', 'reference-mismatches.md');
 const TOLERANCE = 0.1;
 
@@ -114,7 +128,7 @@ describe('tabella di riferimento dei sotto-ruoli', () => {
     });
   }
 
-  it.skipIf(!available.length)('hit rate e rapporto delle discrepanze (strict con ROLES_REFERENCE_STRICT=1)', () => {
+  it.skipIf(!available.length)('hit rate: nessuna discrepanza oltre quelle note (strict con ROLES_REFERENCE_STRICT=1, rapporto con ROLES_REFERENCE_REPORT=1)', () => {
     const checks: Check[] = [];
     for (const f of available) {
       const data = DATA[f]!;
@@ -127,14 +141,19 @@ describe('tabella di riferimento dei sotto-ruoli', () => {
         checks.push(...checkRow(f, row, values));
       }
     }
-    const text = report(checks, formats.filter(f => !available.includes(f)));
-    try {
-      mkdirSync(dirname(REPORT), { recursive: true });
-      writeFileSync(REPORT, text);
-    } catch { /* il rapporto è solo per lo sviluppo */ }
+    if (WRITE_REPORT) {
+      try {
+        mkdirSync(dirname(REPORT), { recursive: true });
+        writeFileSync(REPORT, report(checks, formats.filter(f => !available.includes(f))));
+      } catch { /* il rapporto è solo per lo sviluppo */ }
+    }
     const ok = checks.filter(c => c.ok).length;
-    console.log(`Tabella di riferimento: ${ok}/${checks.length} (${pct(ok, checks.length)}), rapporto in ${REPORT}`);
+    console.log(`Tabella di riferimento: ${ok}/${checks.length} (${pct(ok, checks.length)})${WRITE_REPORT ? `, rapporto in ${REPORT}` : ''}`);
     expect(checks.length).toBeGreaterThan(0);
-    if (STRICT) expect(checks.filter(c => !c.ok).map(c => `${c.format} ${c.species} ${c.role} ${c.kind} ${c.expected} got ${c.actual}`)).toEqual([]);
+    const describeMiss = (c: Check) => `${c.format} ${c.species} ${c.role} ${c.kind} ${c.expected} got ${c.actual}`;
+    if (STRICT) expect(checks.filter(c => !c.ok).map(describeMiss)).toEqual([]);
+    // Pavimento: nessuna discrepanza nuova; con tutti i formati disponibili, almeno i controlli riusciti di oggi
+    expect(checks.filter(c => !c.ok && !KNOWN_MISMATCHES.has(`${c.format} ${c.species} ${c.role} ${c.kind}`)).map(describeMiss)).toEqual([]);
+    if (available.length === formats.length) expect(ok).toBeGreaterThanOrEqual(KNOWN_OK);
   }, 600000);
 });
