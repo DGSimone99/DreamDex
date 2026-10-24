@@ -1,8 +1,15 @@
-import { battleAbility, battleSpecies, getMove, isDefined, toID } from './dex';
-import type { FormatRules } from './formatRules';
-import type { TeamSet } from './sets';
+import { battleAbility, battleSpecies, getMove, getSpecies, isDefined, toID } from './dex';
+import { rulesOf, type FormatRules } from './formatRules';
+import { mostCommonSet, type TeamSet } from './sets';
 import { statLines } from './statCalc';
 import { attackStyle } from './roles';
+import type { EngineData } from './data';
+import { usesMeta } from './analysis';
+import { setKey } from './damage';
+import { memberOffense } from './offense';
+import { memberSpeed } from './speedArea';
+import { outspeedShare, speedPool, speedStat, type SpeedRival } from './speed';
+import { teamField } from './types';
 
 export type Family = 'attack' | 'defense' | 'field' | 'disruption';
 export type SubRole = 'physicalSweeper' | 'specialSweeper' | 'physicalBreaker' | 'specialBreaker'
@@ -158,4 +165,152 @@ export function setSubRoles(set: TeamSet, rules: FormatRules): SubRoleValues {
   if (ids.includes('trick') || ids.includes('switcheroo')) put('itemRemoval', item.startsWith('choice') ? 1 : 0.5);
 
   return v;
+}
+
+/** Soglie del rilevatore misurato (Offesa, Wallbreaking e quota di Velocità del membro). */
+export const SWEEPER_OFFENSE = 50;
+export const SWEEPER_SPEED = 0.6;
+export const BREAKER_WALLBREAKING = 55;
+
+/** Un rivale del gruppo con cui si misurano gli stati: tipi, abilità e strumento del suo set più comune. */
+export interface StatusRival { species: string; types: string[]; ability: string; item: string; weight: number }
+
+const statusPools = new Map<string, StatusRival[]>();
+
+/** Stesse specie di speedPool; col meta set più comune e uso come peso, senza meta prima abilità e peso uguale. */
+export function statusPool(data: EngineData): StatusRival[] {
+  const key = `${data.formatId ?? 'ou'}|${usesMeta(data)}|${!!data.stats}`;
+  let pool = statusPools.get(key);
+  if (pool) return pool;
+  const meta = usesMeta(data);
+  pool = speedPool(data).flatMap(r => {
+    const species = getSpecies(r.species);
+    if (!species) return [];
+    const common = meta ? mostCommonSet(data.stats, r.species) : null;
+    const usage = meta ? data.stats!.pokemon[r.species]?.usage ?? 0 : 1;
+    return [{
+      species: r.species, types: [...species.types],
+      ability: common?.ability || species.abilities[0] || '', item: common?.item ?? '', weight: usage > 0 ? usage : 0,
+    }];
+  });
+  statusPools.set(key, pool);
+  return pool;
+}
+
+const SLEEP_ABILITIES = ['insomnia', 'vitalspirit', 'sweetveil', 'comatose', 'purifyingsalt'];
+/** Abilità che bloccano lo stato, per tipo di stato (oltre ai tipi e ai blocchi sulle mosse di stato). */
+const BLOCKING_ABILITIES: Record<StatusSource['status'], string[]> = {
+  tox: ['immunity', 'pastelveil', 'comatose', 'purifyingsalt'], psn: ['immunity', 'pastelveil', 'comatose', 'purifyingsalt'],
+  brn: ['waterveil', 'waterbubble', 'thermalexchange', 'comatose', 'purifyingsalt'],
+  par: ['limber', 'comatose', 'purifyingsalt'], slp: SLEEP_ABILITIES, yawn: SLEEP_ABILITIES,
+  trap: [], salt: [], seed: [],
+};
+const IMMUNE_TYPE: Partial<Record<StatusSource['status'], string>> = { brn: 'Fire', par: 'Electric', seed: 'Grass' };
+
+/** Il rivale può subire lo stato di questa fonte? `corrosion`: chi avvelena ignora Acciaio e Veleno. */
+function affects(src: StatusSource, rival: StatusRival, corrosion: boolean): boolean {
+  const move = getMove(src.move);
+  const ability = toID(rival.ability);
+  const types = rival.types;
+  const isStatusMove = move?.category === 'Status';
+  if (BLOCKING_ABILITIES[src.status].includes(ability)) return false;
+  if (isStatusMove && (ability === 'magicbounce' || ability === 'goodasgold')) return false;
+  if (!isStatusMove && ability === 'shielddust' && src.status !== 'salt') return false;
+  if (src.status === 'tox' || src.status === 'psn') {
+    if (!corrosion && (types.includes('Steel') || types.includes('Poison'))) return false;
+  } else {
+    const t = IMMUNE_TYPE[src.status];
+    if (t && types.includes(t)) return false;
+  }
+  if (src.status === 'par' && toID(src.move) === 'thunderwave' && types.includes('Ground')) return false;
+  // Le polveri non toccano l'Erba, chi ha Overcoat o gli Occhialini Protettivi
+  if (move?.flags?.powder && (types.includes('Grass') || ability === 'overcoat' || toID(rival.item) === 'safetygoggles')) return false;
+  return true;
+}
+
+export interface SubRoleReason { role: SubRole; value: number; source: string; share?: number }
+
+const isPriorityAttack = (set: TeamSet) => set.moves.map(getMove).filter(isDefined).some(m => m.category !== 'Status' && m.priority > 0);
+
+/** Calcolo con i gruppi dati (i test li passano a mano); restituisce valori e motivi per la scheda. */
+export function measureWith(set: TeamSet, team: TeamSet[], data: EngineData, pool: StatusRival[], speeds: SpeedRival[]): { values: SubRoleValues; reasons: SubRoleReason[] } {
+  const values: SubRoleValues = {};
+  const reasons: SubRoleReason[] = [];
+  if (!battleSpecies(set)) return { values, reasons };
+  const base = setSubRoles(set, rulesOf(data));
+  const put = (role: SubRole, value: number, source: string, share?: number) => {
+    if (!(value > 0) || value <= (values[role] ?? 0)) return;
+    values[role] = value;
+    const reason: SubRoleReason = share === undefined ? { role, value, source } : { role, value, source, share };
+    const i = reasons.findIndex(r => r.role === role);
+    if (i >= 0) reasons[i] = reason; else reasons.push(reason);
+  };
+  const ids: string[] = set.moves.map(getMove).filter(isDefined).map(m => m.id);
+  const ability = toID(battleAbility(set));
+
+  // Difesa e campo come nel rilevatore del set; Aurora Veil conta con la neve del team
+  const keep: SubRole[] = ['physicalWall', 'specialWall', 'recovery', 'hazards', 'removal', 'pivot', 'phazer', 'itemRemoval'];
+  for (const role of keep) if (base[role]) put(role, base[role]!, 'set');
+  const clay = toID(set.item) === 'lightclay' ? 1 : 0.75;
+  const snow = teamField(team).weather === 'snow';
+  const reflect = ids.includes('reflect');
+  const lightScreen = ids.includes('lightscreen');
+  const veil = ids.includes('auroraveil');
+  if ((reflect && lightScreen) || (veil && snow)) put('screens', clay, 'screens');
+  else if (reflect || lightScreen || veil) put('screens', 0.6 * clay, 'screens');
+
+  // Attacco dai numeri dell'Offesa e della Velocità
+  const offense = memberOffense(set, team, data);
+  const category = offense?.bestMove ? getMove(offense.bestMove)?.category : undefined;
+  if (offense && (category === 'Physical' || category === 'Special')) {
+    const side = category === 'Physical' ? 'physical' : 'special';
+    if (offense.wallbreaking + offense.wallbreakingGain >= BREAKER_WALLBREAKING) put(`${side}Breaker`, 1, offense.bestMove!);
+    if (offense.value >= SWEEPER_OFFENSE) {
+      const speed = memberSpeed(set, team, data);
+      const fast = !!speed && speed.total >= SWEEPER_SPEED;
+      const setupSpeed = !!speed?.gains.some(g => g.condition === 'setup');
+      if (fast || setupSpeed || (offense.setupMove && isPriorityAttack(set))) put(`${side}Sweeper`, 1, offense.bestMove!);
+    }
+  }
+
+  // Taunt ed Encore: quota del gruppo superata; Prankster: 1 meno la quota Dark
+  const total = pool.reduce((a, r) => a + r.weight, 0);
+  const share = (pred: (r: StatusRival) => boolean) => (total > 0 ? pool.filter(pred).reduce((a, r) => a + r.weight, 0) / total : 0);
+  const open = ability === 'prankster'
+    ? 1 - share(r => r.types.includes('Dark'))
+    : outspeedShare(speedStat(set).value, speeds, set.species);
+  if (ids.includes('taunt')) put('taunt', open, 'Taunt', open);
+  if (ids.includes('encore')) put('encore', open, 'Encore', open);
+
+  // Stati: valore x quota del gruppo che li può subire
+  const corrosion = ability === 'corrosion';
+  for (const src of statusSources(set)) {
+    const s = share(r => affects(src, r, corrosion));
+    put('dot', Math.min(1, src.dot * s), src.move, s);
+    put('debuff', Math.min(1, src.debuff * s), src.move, s);
+  }
+  return { values, reasons };
+}
+
+const CACHE_LIMIT = 500;
+const cache = new Map<string, { values: SubRoleValues; reasons: SubRoleReason[] }>();
+
+function measured(set: TeamSet, team: TeamSet[], data: EngineData) {
+  const key = `${setKey(set)}|${team.map(setKey).join(',')}|${data.formatId ?? 'ou'}|${usesMeta(data)}|${!!data.stats}`;
+  let hit = cache.get(key);
+  if (hit) return hit;
+  if (cache.size >= CACHE_LIMIT) cache.clear();
+  hit = measureWith(set, team, data, statusPool(data), speedPool(data));
+  cache.set(key, hit);
+  return hit;
+}
+
+/** Sotto-ruoli del membro con i numeri veri: Offesa, Velocità e gruppo del meta (o del tier). */
+export function measuredSubRoles(set: TeamSet, team: TeamSet[], data: EngineData): SubRoleValues {
+  return measured(set, team, data).values;
+}
+
+/** Perché il membro ha ogni sotto-ruolo (per la scheda). */
+export function subRoleReasons(set: TeamSet, team: TeamSet[], data: EngineData): SubRoleReason[] {
+  return measured(set, team, data).reasons;
 }
