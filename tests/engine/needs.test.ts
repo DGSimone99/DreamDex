@@ -4,7 +4,7 @@ import { DEFAULT_FORMAT } from '../../src/engine/format';
 import { needLabel, teamNeeds } from '../../src/engine/needs';
 import { levelOf, LEVEL_KEYS, ROLE_LEVELS, setRolesCountMeasured } from '../../src/engine/roleLevels';
 import { rateTeam } from '../../src/engine/rating';
-import { rolesScore } from '../../src/engine/rolesArea';
+import { rolesScore, teamRolesArea } from '../../src/engine/rolesArea';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
 import { FAMILIES, rolesList, type SubRole } from '../../src/engine/subRoles';
 import { fixtureData } from '../fixtures/data';
@@ -52,6 +52,20 @@ describe('tabella dei livelli per archetipo', () => {
     expect(needs.archetype).toBe('hyperOffense');
     expect(needs.levels.hazards).toBe('important');
     expect(needs.levels.screens).toBe('minor');
+  });
+
+  it('HO senza hazard: Ruoli bassi per scelta (importante), ma nessuna mancanza essenziale per gli hazard', () => {
+    const noHazards = [set('Glimmora', 'Focus Sash', 'Toxic Debris', ['Mortal Spin', 'Power Gem', 'Sludge Wave', 'Earth Power']), ...hyperOffense.slice(1)];
+    const needs = teamNeeds(noHazards, fixtureData);
+    expect(needs.archetype).toBe('hyperOffense');
+    expect(needs.values.hazards).toBe(0);
+    expect(needs.importantMissing).toContain('hazards');
+    expect(needs.essentialMissing).not.toContain('hazards');
+    const area = teamRolesArea(noHazards, fixtureData, 'it', needs);
+    // Unica voce importante a 0: base 0, restano solo le minori (calibrazione 2026-10-24)
+    expect(area.base).toBe(0);
+    expect(area.failures.some(f => /hazard/i.test(f.text))).toBe(false);
+    expect(area.value).toBeLessThan(teamRolesArea(hyperOffense, fixtureData, 'it').value);
   });
 
   it('interruttore spento: i muri minori diventano ignorati, Recovery essenziale in stall', () => {

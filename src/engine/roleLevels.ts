@@ -30,6 +30,9 @@ const E = 'essential' as const, I = 'important' as const, M = 'minor' as const, 
 /**
  * Colonne della tabella della specifica: HO, BO, Balance, Semi-stall, Stall.
  * Calibrazione (Task 9): pivot minore in HO (i team HO da torneo spesso hanno lead con hazard e sweeper, senza pivot).
+ * Per scelta (calibrazione 2026-10-24) gli hazard sono l'unica voce importante dell'HO: un HO senza hazard ha base 0
+ * e Ruoli bassi (restano le minori), ma nessuna penalità essenziale. Pavimento e media con le minori sono stati
+ * provati e scartati: abbassavano il distacco torneo − medio sotto 6,5.
  */
 const ROWS: [LevelKey, Level, Level, Level, Level, Level][] = [
   ['attacker', E, E, E, E, X],
