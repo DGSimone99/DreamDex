@@ -1,6 +1,9 @@
 import { useMemo } from 'react';
 import type { EngineData } from '../engine/data';
 import { memberSheet, type MemberSheetRow } from '../engine/memberSheet';
+import { battleName } from '../engine/dex';
+import { roleLabel, roleShortLabel } from '../engine/roles';
+import { measuredSubRoles, rolesList, type SubRole } from '../engine/subRoles';
 import type { TeamSet } from '../engine/sets';
 import { formatPercent } from '../i18n';
 import { gameName, typeName } from '../i18n/game';
@@ -20,6 +23,8 @@ export function MemberSheet({ team, data }: { team: TeamSet[]; data: EngineData 
   const t = useT();
   const lang = useLang();
   const rows = useMemo(() => memberSheet(team, data), [team, data]);
+  // Sotto-ruoli misurati di ogni membro, per nome in battaglia: gli stessi del voto e delle carte (stessa cache)
+  const subRoles = useMemo(() => new Map<string, SubRole[]>(team.map(set => [battleName(set), rolesList(measuredSubRoles(set, team, data))])), [team, data]);
   if (!rows.length) return null;
   const types = (list: string[]) => list.map(type => typeName(type, lang)).join(', ');
   const pct = (x: number) => formatPercent(lang, x, 0);
@@ -34,6 +39,7 @@ export function MemberSheet({ team, data }: { team: TeamSet[]; data: EngineData 
             <tr>
               <th>{t('sheet.pokemon')}</th>
               <th title={t('sheet.gradeTip')}>{t('sheet.grade')}</th>
+              <th>{t('sheet.roles')}</th>
               <th>{t('sheet.speed')}</th>
               <th>{t('sheet.attack')}</th>
               <th>{t('sheet.coverage')}</th>
@@ -53,6 +59,11 @@ export function MemberSheet({ team, data }: { team: TeamSet[]; data: EngineData 
                 </td>
                 <td className="grade-cell" title={t('sheet.gradeTip')}>
                   <strong>{row.grade}</strong><small>{t(`sheet.role.${row.role}`)}</small>
+                </td>
+                <td className="tags">
+                  {subRoles.get(row.species)?.length
+                    ? subRoles.get(row.species)!.map(role => <span key={role} className="sheet-tag" title={roleLabel(role, lang)}>{roleShortLabel(role, lang)}</span>)
+                    : <span className="muted">—</span>}
                 </td>
                 <td title={row.speed.vsMeta ? t('sheet.speedTipMeta', { pct: pct(row.speed.share) }) : t('sheet.speedTipFree', { pct: pct(row.speed.share) })}>
                   <strong>{row.speed.value}</strong>

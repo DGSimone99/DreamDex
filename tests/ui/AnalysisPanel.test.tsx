@@ -34,20 +34,31 @@ describe('AnalysisPanel', () => {
 
   it('ruoli: giudicati col tipo di team; nel riassunto gli essenziali coperti, nel dettaglio chi li copre', () => {
     renderPanel();
-    // Team incompleto: giudicato come Balance (essenziali: hazard, rimozione, pivot, minaccia offensiva, due wall)
-    expect(screen.getByText('Balance · 3/6 essenziali')).toBeInTheDocument();
+    // Team incompleto: giudicato come Balance (essenziali: minaccia offensiva e i due muri)
+    expect(screen.getByText('Balance · 2/3 essenziali')).toBeInTheDocument();
     expect(screen.getByText(/Team incompleto/)).toBeInTheDocument();
-    expect(row('Pivot')).toHaveTextContent('Mancante');
-    expect(row('Pivot')).toHaveClass('bad');
+    expect(row('Muro speciale')).toHaveTextContent('Mancante');
+    expect(row('Muro speciale')).toHaveClass('bad');
     expect(row('Rimozione hazard')).toHaveTextContent('Great Tusk');
     expect(row('Minaccia offensiva')).toHaveTextContent('Great Tusk');
+    expect(screen.getByText('Importanti')).toBeInTheDocument();
+    expect(screen.getByText(/^Minori/)).toBeInTheDocument();
   });
 
-  it('ruoli utili mancanti: in grigio, senza croce rossa', () => {
+  it('ruoli importanti mancanti: avviso tenue, distinto dai minori mancanti e senza croce rossa', () => {
     renderPanel();
-    expect(row('Priorità')).toHaveClass('soft');
-    expect(row('Priorità')).not.toHaveClass('bad');
-    expect(row('Priorità')).toHaveTextContent('—');
+    // Pivot è importante nel balance (prima era essenziale)
+    expect(row('Pivot')).toHaveClass('warn');
+    expect(row('Pivot')).not.toHaveClass('bad');
+    expect(row('Pivot')).not.toHaveClass('soft');
+    expect(row('Pivot')).toHaveTextContent('Da coprire');
+    // Un minore mancante resta grigio con il trattino
+    const minor = [...document.querySelectorAll('.role-group')].find(g => /^Minori/.test(g.querySelector('h4')!.textContent!))!;
+    const missingMinor = [...minor.querySelectorAll('li')].find(li => !li.querySelector('.owner'));
+    // Precondizione: il team di prova ha almeno un minore mancante
+    expect(missingMinor).toBeDefined();
+    expect(missingMinor).toHaveClass('soft');
+    expect(missingMinor).toHaveTextContent('—');
   });
 
   it('per uno stall i ruoli offensivi non sono richiesti', () => {
@@ -60,15 +71,20 @@ describe('AnalysisPanel', () => {
       { ...tusk, species: 'Clodsire', item: 'Leftovers', ability: 'Unaware', moves: ['Amnesia', 'Poison Jab', 'Recover', 'Spikes'] },
     ];
     renderIt(<AnalysisPanel team={stall} analysis={analyzeTeam(stall, fixtureData)} />);
-    expect(screen.getByText('Stall · 4/4 essenziali')).toBeInTheDocument();
-    expect(row('Minaccia offensiva')).toHaveTextContent('Non richiesto');
+    // Essenziali dello stall: i due muri e il Recupero (interruttore spento); gli attaccanti sono ignorati
+    expect(screen.getByText('Stall · 3/3 essenziali')).toBeInTheDocument();
+    // Fra i non richiesti, in grigio: qui un membro (con gli EV d'attacco di Great Tusk) è misurato come attaccante,
+    // quindi la riga mostra chi lo copre invece di "Non richiesto"
+    expect(row('Minaccia offensiva').closest('.role-group')!.querySelector('h4')).toHaveTextContent('Non richiesti');
     expect(row('Minaccia offensiva')).toHaveClass('soft');
   });
 
-  it('velocità coperta da membri veloci: indicati come "(veloce)"', () => {
+  it("velocità, controllo velocità e priorità non sono ruoli: niente righe (li misura l'area Velocità)", () => {
     const fast = [...team, { ...tusk, species: 'Dragapult', item: 'Choice Specs', ability: 'Infiltrator', moves: ['Shadow Ball', 'Draco Meteor'] }];
     renderIt(<AnalysisPanel team={fast} analysis={analyzeTeam(fast, fixtureData)} />);
-    expect(row('Velocità')).toHaveTextContent('Dragapult (veloce)');
+    expect(row('Velocità')).toBeUndefined();
+    expect(row('Controllo velocità')).toBeUndefined();
+    expect(row('Priorità')).toBeUndefined();
   });
 
   it('dettaglio minacce', () => {

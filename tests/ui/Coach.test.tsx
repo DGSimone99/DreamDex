@@ -19,7 +19,8 @@ describe('CoachPanel', () => {
     const summary = within(analysis()).getByText('Coaching').closest('summary')!;
     expect(summary).toHaveTextContent('Team incompleto');
     // Solo il triangolo blu dei minori: gli zeri non compaiono
-    expect(summary.querySelector('.issue.minor')).toHaveTextContent('6 problemi minori');
+    // 7: la riga dei ruoli importanti mancanti si aggiunge a quella degli essenziali
+    expect(summary.querySelector('.issue.minor')).toHaveTextContent('7 problemi minori');
     expect(summary.querySelector('.issue.serious')).toBeNull();
     expect(within(analysis()).getAllByRole('listitem').some(li => li.textContent === 'Gestisce bene Poison, Bug, Rock')).toBe(true);
     // Le minacce stanno nella scheda Meta

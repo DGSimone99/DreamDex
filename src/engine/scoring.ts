@@ -8,7 +8,9 @@ import { isLegalIn } from './formats';
 import { explain, type Components, type Facts, type Reason } from './explain';
 import type { Format } from './format';
 import { attackStyle } from './roles';
-import { meetsNeed, NEED_ROLES } from './needs';
+import { keyValue, LEVEL_WEIGHT, MISSING_BELOW } from './needs';
+import { LEVEL_KEYS } from './roleLevels';
+import { creditedValues, primaryFamily, setSubRoles } from './subRoles';
 import { defaultSet, type TeamSet } from './sets';
 import { teammatePct, usageOf } from './stats';
 import { clashesWith, conditionLabel, mechanicalLinks, weakenedMoves } from './synergy';
@@ -133,15 +135,34 @@ function coverageComponent(set: TeamSet, analysis: TeamAnalysis, team: TeamSet[]
   };
 }
 
-function rolesComponent(set: TeamSet, analysis: TeamAnalysis) {
-  const { missing, needStyle } = analysis.needs;
-  // Bisogni che mancano al team (pesati come nel voto, secondo l'archetipo) e che il candidato copre
-  const met = missing.filter(m => meetsNeed(m.need, set, analysis.needs.rules));
-  const filled = [...new Set(met.flatMap(m => NEED_ROLES[m.need]))];
+/**
+ * Quanto il candidato alza i valori del team sulle voci dell'archetipo (pesi: essenziale 1, importante 0,4, minore 0,15),
+ * rispetto al margine che resta alle voci essenziali e importanti (come prima sui bisogni mancanti); le minori aggiungono poco.
+ * I valori del candidato vengono dal rilevatore del solo set (senza calcolo dei danni).
+ */
+export function rolesComponent(set: TeamSet, analysis: TeamAnalysis) {
+  const { levels, values, missingRoles, needStyle, rules, archetype } = analysis.needs;
+  // Il candidato col credito del secondario, come i membri del team (un attaccante non è un muro nello stall)
+  const raw = setSubRoles(set, rules);
+  const candidate = creditedValues(raw, primaryFamily(set, raw), archetype);
+  let required = 0;
+  let minorRoom = 0;
+  let gained = 0;
+  for (const key of LEVEL_KEYS) {
+    const weight = LEVEL_WEIGHT[levels[key]];
+    if (!weight) continue;
+    const room = Math.max(0, 1 - values[key]);
+    if (levels[key] === 'minor') minorRoom += weight * room;
+    else required += weight * room;
+    gained += weight * Math.min(room, Math.max(0, keyValue(candidate, key) - values[key]));
+  }
   const style = needStyle && attackStyle(set) === needStyle ? needStyle : null;
-  const total = sum(missing.map(m => m.weight)) + (needStyle ? 0.5 : 0);
-  const gained = sum(met.map(m => m.weight)) + (style ? 0.5 : 0);
-  return { value: total > 0 ? gained / total : 0, facts: { filled, style } };
+  // Senza voci essenziali o importanti scoperte il margine è quello delle minori
+  const total = (required > 0 ? required : minorRoom) + (needStyle ? 0.5 : 0);
+  const got = gained + (style ? 0.5 : 0);
+  // Sotto-ruoli mancanti che il candidato porta (per le motivazioni e il coach)
+  const filled = missingRoles.filter(role => (candidate[role] ?? 0) >= MISSING_BELOW);
+  return { value: total > 0 ? Math.min(1, got / total) : 0, facts: { filled, style } };
 }
 
 function synergyRaw(set: TeamSet, team: TeamSet[], data: EngineData) {

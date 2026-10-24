@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { holdStep, intimidateBoost, memberDefense, sustainability, sustainParts, teamDefense } from '../../src/engine/defense';
+import { defensiveSetup, defenseReference, holdStep, intimidateBoost, memberDefense, sustainability, sustainParts, teamDefense } from '../../src/engine/defense';
 import type { TeamSet } from '../../src/engine/sets';
+import { softScore } from '../../src/engine/scale';
+import { attackerPanels, panelWeights } from '../../src/engine/attackers';
+import { standardHit } from '../../src/engine/damage';
 import { fixtureData } from '../fixtures/data';
 
 const set = (species: string, item: string, ability: string, moves: string[], nature: string, evs: TeamSet['evs']): TeamSet =>
@@ -169,5 +172,62 @@ describe('teamDefense', () => {
   it('un membro sconosciuto si salta', () => {
     const notamon = set('Notamon', '', '', [], 'Hardy', {});
     expect(teamDefense([blissey, notamon], noStats).value).toBe(teamDefense([blissey], noStats).value);
+  });
+});
+
+describe('setup difensivo', () => {
+  const corv = set('Corviknight', 'Leftovers', 'Pressure', ['Iron Defense', 'Roost', 'Brave Bird'], 'Hardy', {});
+  const plainCorv = { ...corv, moves: ['Roost', 'Brave Bird'] };
+  const clef = set('Clefable', 'Leftovers', 'Magic Guard', ['Calm Mind', 'Moonblast', 'Soft-Boiled'], 'Hardy', {});
+
+  it('Iron Defense alza la robustezza fisica di metà del guadagno', () => {
+    const withSetup = memberDefense(corv, [corv], noStats)!;
+    const plain = memberDefense(plainCorv, [plainCorv], noStats)!;
+    expect(withSetup.setupMove).toBe('Iron Defense');
+    expect(withSetup.physical).toBeGreaterThan(plain.physical);
+    expect(withSetup.special).toBe(plain.special);
+    expect(withSetup.setupGain).toBe(withSetup.value - plain.value);
+    expect(withSetup.setupGain).toBeGreaterThan(0);
+  });
+
+  it('metà del guadagno: fisica = semplice + round(0,5 × (con Difesa +2 − semplice))', () => {
+    const panels = attackerPanels(noStats);
+    const w = panelWeights(noStats).physical;
+    const ref = defenseReference(noStats).physical;
+    const score = (boost: number) => {
+      const step = panels.physical.reduce((acc, a, i) => acc + w[i] * holdStep(standardHit(a, plainCorv, 'Physical', { targetBoosts: boost ? { def: boost } : undefined })), 0);
+      return softScore(step / ref);
+    };
+    const plain = memberDefense(plainCorv, [plainCorv], noStats)!.physical;
+    expect(plain).toBe(score(0));
+    // Corviknight senza Intimidate: il colpo a Difesa +2 è quello del setup
+    expect(memberDefense(corv, [corv], noStats)!.physical).toBe(Math.round(plain + 0.5 * (score(2) - plain)));
+  });
+
+  it('Calm Mind alza la speciale', () => {
+    const withSetup = memberDefense(clef, [clef], noStats)!;
+    const plain = memberDefense({ ...clef, moves: ['Moonblast', 'Soft-Boiled'] }, [clef], noStats)!;
+    expect(withSetup.setupMove).toBe('Calm Mind');
+    expect(withSetup.special).toBeGreaterThan(plain.special);
+    expect(withSetup.physical).toBe(plain.physical);
+  });
+
+  it('contro un attaccante Unaware il setup non conta', () => {
+    const quag = set('Quagsire', 'Leftovers', 'Unaware', ['Earthquake'], 'Careful', { hp: 252 });
+    const plain = standardHit(quag, plainCorv, 'Physical');
+    const boosted = standardHit(quag, plainCorv, 'Physical', { targetBoosts: { def: 2 } });
+    expect(boosted).toEqual(plain);
+    const other = standardHit({ ...quag, ability: 'Water Absorb' }, plainCorv, 'Physical', { targetBoosts: { def: 2 } })!;
+    expect(other.max).toBeLessThan(plain!.max);
+  });
+
+  it('senza mosse di setup: setupGain 0; Curse solo se non Spettro', () => {
+    const m = memberDefense(plainCorv, [plainCorv], noStats)!;
+    expect(m).toMatchObject({ setupMove: null, setupGain: 0 });
+    expect(defensiveSetup(set('Gengar', '', '', ['Curse', 'Shadow Ball'], 'Timid', {}))).toBeNull();
+    expect(defensiveSetup(set('Snorlax', '', '', ['Curse', 'Rest'], 'Careful', {}))?.boosts).toEqual({ def: 1, spd: 0 });
+    // La più forte per Dif. + Dif. Speciale
+    expect(defensiveSetup(set('Clefable', '', '', ['Calm Mind', 'Cosmic Power', 'Iron Defense'], 'Calm', {}))?.move).toBe('Cosmic Power');
+    expect(defensiveSetup(set('Notamon', '', '', ['Iron Defense'], 'Hardy', {}))?.move).toBe('Iron Defense');
   });
 });

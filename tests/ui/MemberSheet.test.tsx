@@ -16,5 +16,10 @@ describe('scheda dei membri', () => {
     expect(rows.map(r => within(r).getAllByRole('cell')[0].textContent)).toEqual([expect.stringContaining('Great Tusk'), expect.stringContaining('Gholdengo')]);
     // Voto e ruolo nella seconda colonna
     expect(within(rows[0]).getAllByRole('cell')[1]).toHaveTextContent(/^\d+(Sweeper|Wallbreaker|Muro|Pivot|Supporto)$/);
+    // I sotto-ruoli misurati (gli stessi del voto e delle carte), coi nomi brevi e quelli completi nel tooltip
+    expect(within(sheet).getAllByRole('columnheader')[2]).toHaveTextContent('Ruoli');
+    const tags = [...within(rows[0]).getAllByRole('cell')[2].querySelectorAll('.sheet-tag')];
+    expect(tags.length).toBeGreaterThan(0);
+    for (const tag of tags) expect(tag.getAttribute('title')).toBeTruthy();
   });
 });

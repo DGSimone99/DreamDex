@@ -76,10 +76,10 @@ describe('regole di UU', () => {
     expect(formatRules('ou')).toBe(DEFAULT_RULES);
   });
 
-  it('un team completo senza hazard perde punti in UU, non in OU', () => {
+  it('un team completo senza hazard non ha un malus del formato in UU: gli hazard li chiedono i Ruoli', () => {
     const penalty = (data: EngineData) => rateTeam(team, data)!.penalty.items.find(i => i.text.startsWith('Nessun hazard'));
-    expect(penalty(uuData)?.points).toBe(UU_RULES.noHazardsPenalty);
-    expect(penalty(fixtureData)).toBeUndefined();
+    expect(penalty(uuData)).toBeUndefined();
+    expect(rateTeam(team, uuData)!.roles.rows.find(r => r.key === 'hazards')).toMatchObject({ level: 'important', value: 0 });
   });
 
   it('le statistiche si confrontano coi Pokémon legali in UU: un Pokémon di UU vale di più che contro tutti', () => {

@@ -128,3 +128,40 @@ describe('voto con ridondanze', () => {
       .toContainEqual({ severity: 'minor', category: 'redundancy', text: '2 setter di Stealth Rock', fixes: [] });
   });
 });
+
+describe('mancanze essenziali dei Ruoli tra le penalità', () => {
+  const s = (species: string, item: string, ability: string, moves: string[], nature = 'Jolly', evs: TeamSet['evs'] = { atk: 252, spe: 252, hp: 4 }): TeamSet =>
+    ({ ...emptySet(species), item, ability, moves, nature, evs });
+  const bulky = { hp: 252, def: 252, spd: 4 };
+  // Balance tutto fisico senza muro speciale
+  const physical: TeamSet[] = [
+    s('Great Tusk', 'Leftovers', 'Protosynthesis', ['Headlong Rush', 'Close Combat', 'Rapid Spin', 'Knock Off']),
+    s('Kingambit', 'Leftovers', 'Supreme Overlord', ['Kowtow Cleave', 'Sucker Punch', 'Iron Head', 'Swords Dance'], 'Adamant'),
+    s('Garchomp', 'Rocky Helmet', 'Rough Skin', ['Earthquake', 'Stealth Rock', 'Dragon Tail', 'Fire Fang']),
+    s('Dragapult', 'Choice Band', 'Clear Body', ['Dragon Darts', 'U-turn', 'Phantom Force', 'Sucker Punch']),
+    s('Corviknight', 'Leftovers', 'Pressure', ['Brave Bird', 'Roost', 'U-turn', 'Bulk Up'], 'Impish', bulky),
+    s('Skarmory', 'Rocky Helmet', 'Sturdy', ['Brave Bird', 'Roost', 'Whirlwind', 'Spikes'], 'Impish', bulky),
+  ];
+
+  it('team di 6 senza muro speciale in balance: −2 con testo', () => {
+    const rating = rateTeam(physical, fixtureData)!;
+    expect(rating.teamType).toBe('balance');
+    expect(rating.penalty.items).toContainEqual({ text: 'Balance senza muro speciale', points: 2 });
+    expect(rating.roles.failures).toContainEqual({ text: 'Balance senza muro speciale', points: 2 });
+    expect(rateTeam(physical, fixtureData, 'en')!.penalty.items).toContainEqual({ text: 'Balance with no special wall', points: 2 });
+  });
+
+  it('tutti fisici: −3, una volta sola', () => {
+    const texts = rateTeam(physical, fixtureData)!.penalty.items.filter(i => i.text === 'Nessun attaccante speciale');
+    expect(texts).toEqual([{ text: 'Nessun attaccante speciale', points: 3 }]);
+    // Il coach lo segnala ancora tra i ruoli
+    expect(coachTeam(physical, DEFAULT_FORMAT, fixtureData).problems)
+      .toContainEqual(expect.objectContaining({ category: 'roles', text: 'Nessun attaccante speciale' }));
+  });
+
+  it('Ubers senza hazard: nessun malus del formato', () => {
+    const noHazards = physical.map(set => ({ ...set, moves: set.moves.map(m => (['Stealth Rock', 'Spikes'].includes(m) ? 'Protect' : m)) }));
+    const texts = rateTeam(noHazards, { ...fixtureData, formatId: 'ubers' })!.penalty.items.map(i => i.text);
+    expect(texts.join(' | ')).not.toMatch(/Nessun hazard/);
+  });
+});

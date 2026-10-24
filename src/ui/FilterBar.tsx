@@ -1,7 +1,7 @@
 import { useState, type CSSProperties } from 'react';
-import { activeFilterCount, EMPTY_FILTERS, MAX_TYPES, type CandidateFilters, type Inclusion } from '../engine/filters';
+import { activeFilterCount, EMPTY_FILTERS, MAX_TYPES, type CandidateFilters, type FilterRole, type Inclusion } from '../engine/filters';
 import { FIT_ARCHETYPES, type FitArchetype } from '../engine/archetype';
-import { DESIRABLE_ROLES, ESSENTIAL_ROLES, roleLabel, type Role } from '../engine/roles';
+import { FAMILIES } from '../engine/subRoles';
 import { CONDITIONS, conditionName, type Condition } from '../engine/synergy';
 import { TYPES, type TypeName } from '../engine/types';
 import { inkFor, typeColor } from './Sprite';
@@ -10,7 +10,8 @@ import { typeName } from '../i18n/game';
 import { Icon } from './icons';
 import { useLang, useT } from '../i18n/react';
 
-const ROLES: Role[] = [...ESSENTIAL_ROLES, 'setup', ...DESIRABLE_ROLES];
+/** I 17 sotto-ruoli nell'ordine delle famiglie, poi i tre filtri sulle mosse (ricerca, non voto). */
+const ROLES: FilterRole[] = [...Object.values(FAMILIES).flat(), 'priority', 'speedControl', 'setup'];
 const toggle = <T,>(list: T[], value: T) => (list.includes(value) ? list.filter(v => v !== value) : [...list, value]);
 
 /** Griglia dei 18 tipi da accendere e spegnere, nei loro colori. */
@@ -104,7 +105,7 @@ export function FilterBar({ filters, onChange }: Props) {
         <div role="group" aria-label={t('filters.role')} className="chips">
           {ROLES.map(role => (
             <button key={role} type="button" aria-pressed={filters.roles.includes(role)} onClick={() => set({ roles: toggle(filters.roles, role) })}>
-              {roleLabel(role, lang)}
+              {t(`role.${role}`)}
             </button>
           ))}
         </div>

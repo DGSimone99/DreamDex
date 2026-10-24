@@ -6,7 +6,7 @@ import { getSpecies, isCosmeticForme } from '../../src/engine/dex';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
 import { EMPTY_FILTERS, searchCandidates } from '../../src/engine/filters';
 import { rateTeam } from '../../src/engine/rating';
-import { detectRoles, teamRoles } from '../../src/engine/roles';
+import { detectRoles, hasSpeedControl } from '../../src/engine/roles';
 import { teamNeeds } from '../../src/engine/needs';
 import { defaultSet, emptySet, presetsFor, presetsForSet, sameSet, type TeamSet } from '../../src/engine/sets';
 import { fixtureData, tusk } from '../fixtures/data';
@@ -17,23 +17,24 @@ describe('Controllo velocità: solo con mosse che la controllano', () => {
   const gardevoir = set('Gardevoir', ['Hyper Voice', 'Mystical Fire', 'Psyshock', 'Calm Mind'], 'Gardevoirite');
 
   it('essere veloci non è controllo velocità (Mega Gardevoir, Scarf)', () => {
-    expect(detectRoles(gardevoir, DEFAULT_RULES)).not.toContain('speed');
-    expect(detectRoles(set('Landorus-Therian', ['Earthquake', 'U-turn'], 'Choice Scarf'), DEFAULT_RULES)).not.toContain('speed');
+    expect(hasSpeedControl(gardevoir)).toBe(false);
+    expect(hasSpeedControl(set('Landorus-Therian', ['Earthquake', 'U-turn'], 'Choice Scarf'))).toBe(false);
+    // Né lo è più fra i ruoli: è un filtro sulle mosse
+    expect(detectRoles(set('Clefable', ['Moonblast', 'Thunder Wave']), DEFAULT_RULES) as string[]).not.toContain('speed');
   });
 
   it('paralisi, Sticky Web, Trick Room, Tailwind, Icy Wind sì', () => {
     for (const move of ['Thunder Wave', 'Glare', 'Nuzzle', 'Stun Spore', 'Sticky Web', 'Trick Room', 'Tailwind', 'Icy Wind', 'Electroweb']) {
-      expect(detectRoles(set('Clefable', ['Moonblast', move]), DEFAULT_RULES)).toContain('speed');
+      expect(hasSpeedControl(set('Clefable', ['Moonblast', move]))).toBe(true);
     }
   });
 
-  it('per giudicare il team la velocità resta coperta anche da un membro veloce o con Scarf', () => {
-    expect(teamRoles(gardevoir, DEFAULT_RULES)).toContain('speed');
-    expect(teamRoles(set('Great Tusk', ['Headlong Rush'], 'Choice Scarf'), DEFAULT_RULES)).toContain('speed');
-    // Velocità coperta dai membri veloci; il controllo velocità (mosse) resta un bisogno a parte
-    const missing = teamNeeds([gardevoir, tusk], DEFAULT_RULES).missing.map(m => m.need);
+  it("velocità e controllo velocità non sono bisogni del team: li misura l'area Velocità", () => {
+    const needs = teamNeeds([gardevoir, tusk], fixtureData);
+    const missing = [...needs.essentialMissing, ...needs.importantMissing] as string[];
     expect(missing).not.toContain('speed');
-    expect(missing).toContain('speedControl');
+    expect(missing).not.toContain('speedControl');
+    expect(Object.keys(needs.levels)).not.toContain('speedControl');
   });
 
   it('il coaching non chiede controllo velocità a un team con membri veloci', () => {
@@ -41,9 +42,9 @@ describe('Controllo velocità: solo con mosse che la controllano', () => {
     expect(texts).not.toMatch(/Controllo velocità/);
   });
 
-  it('il voto conta la velocità di un membro veloce come prima', () => {
-    const withFast = rateTeam([gardevoir, tusk], fixtureData)!.areas.find(a => a.key === 'roles')!.value!;
-    const slow = rateTeam([set('Toxapex', ['Scald', 'Recover']), tusk], fixtureData)!.areas.find(a => a.key === 'roles')!.value!;
+  it("il voto conta la velocità di un membro veloce, nell'area Velocità (non più nei Ruoli)", () => {
+    const withFast = rateTeam([gardevoir, tusk], fixtureData)!.areas.find(a => a.key === 'speed')!.value!;
+    const slow = rateTeam([set('Toxapex', ['Scald', 'Recover']), tusk], fixtureData)!.areas.find(a => a.key === 'speed')!.value!;
     expect(withFast).toBeGreaterThan(slow);
   });
 });

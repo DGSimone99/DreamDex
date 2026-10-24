@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { teamPower } from '../../src/engine/power';
-import { AREA_KNEE, ARCHETYPE_WEIGHTS, DEFENSE_FULL, areaValue, gradeFor, rateTeam, typeSafety } from '../../src/engine/rating';
+import { teamNeeds } from '../../src/engine/needs';
+import { AREA_KNEE, ARCHETYPE_WEIGHTS, DEFENSE_FULL, areaValue, gradeFor, memberIssues, rateTeam, typeSafety } from '../../src/engine/rating';
 import { memberPower } from '../../src/engine/power';
 import { teamOffense } from '../../src/engine/offense';
 import { teamDefense } from '../../src/engine/defense';
@@ -139,14 +140,36 @@ describe('pesi secondo il tipo di team', () => {
 });
 
 describe('il meta conta solo nella sua area', () => {
-  it("i Ruoli sono gli stessi col meta e senza; Offesa, Difesa e Velocità si misurano contro il meta", () => {
+  it("Offesa, Difesa, Velocità e Ruoli si misurano contro il meta; niente area Meta", () => {
     const team = ['Great Tusk', 'Gholdengo', 'Kingambit', 'Corviknight', 'Toxapex', 'Rotom-Wash'].map(n => mostCommonSet(fixtureStats, n)!);
     const on = rateTeam(team, fixtureData)!;
     const off = rateTeam(team, { ...fixtureData, ignoreMeta: true })!;
-    // Offesa e Difesa si misurano contro il meta, se attivo; le altre aree no
-    const areas = (r: typeof on) => r.areas.filter(a => !['meta', 'strength', 'defense', 'speed'].includes(a.key)).map(a => [a.key, a.value]);
+    // I Ruoli usano i sotto-ruoli misurati (Offesa, Velocità e gruppo del meta o del tier): possono cambiare di poco
+    const areas = (r: typeof on) => r.areas.filter(a => !['meta', 'strength', 'defense', 'speed', 'roles'].includes(a.key)).map(a => [a.key, a.value]);
     expect(areas(on)).toEqual(areas(off));
+    const roles = (r: typeof on) => r.areas.find(a => a.key === 'roles')!.value!;
+    expect(Math.abs(roles(on) - roles(off))).toBeLessThanOrEqual(5);
     expect(on.areas.some(a => a.key === 'meta')).toBe(false);
     expect(on.meta).not.toBeNull();
+  });
+});
+
+describe('area Ruoli nel voto', () => {
+  it('il valore dell\'area è quello di teamRolesArea', async () => {
+    const { teamRolesArea } = await import('../../src/engine/rolesArea');
+    const team = [tusk, gholdengo];
+    const rating = rateTeam(team, fixtureData)!;
+    expect(rating.roles.value).toBe(teamRolesArea(team, fixtureData, 'it').value);
+    expect(value(rating, 'roles')).toBe(rating.roles.value);
+  });
+});
+
+describe('membro debole e controllo velocità', () => {
+  it('un membro debole con solo Sticky Web o Thunder Wave è esente (utilità chiave)', () => {
+    const weak = (moves: string[]): TeamSet => ({ species: 'Delibird', ability: 'Hustle', item: '', moves, nature: 'Serious', evs: {} });
+    const issues = (moves: string[]) => memberIssues([weak(moves)], 'it', teamNeeds([weak(moves)], fixtureData));
+    expect(issues(['Sticky Web', 'Present'])).toEqual([]);
+    expect(issues(['Thunder Wave', 'Present'])).toEqual([]);
+    expect(issues(['Present', 'Drill Peck'])).toHaveLength(1);
   });
 });
