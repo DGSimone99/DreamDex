@@ -39,6 +39,7 @@ const E = 'essential' as const, I = 'important' as const, M = 'minor' as const, 
  * minori sono stati provati e scartati: abbassavano il distacco torneo − medio sotto 6,5.
  * Calibrazione 2026-10-25: il setup del campo è importante anche nel Bulky Offense (team con Sticky Web), dove gli
  * hazard da soli diventano minori; nella base hazard e setup del campo pesano il doppio (IMPORTANT_WEIGHT, rolesArea.ts).
+ * Il Debuff è minore anche in semi-stall e stall: paralisi o sonno aiutano, ma uno stall non ne ha bisogno (utente).
  */
 const ROWS: [LevelKey, Level, Level, Level, Level, Level][] = [
   ['attacker', E, E, E, E, X],
@@ -55,7 +56,7 @@ const ROWS: [LevelKey, Level, Level, Level, Level, Level][] = [
   ['pivot', M, I, I, M, M],
   ['screens', M, M, M, M, M],
   ['dot', X, M, M, I, I],
-  ['debuff', X, M, M, I, I],
+  ['debuff', X, M, M, M, M],
   ['phazer', X, M, I, I, I],
   ['taunt', M, M, M, M, M],
   ['encore', M, M, M, M, M],

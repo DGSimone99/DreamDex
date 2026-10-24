@@ -8,7 +8,7 @@ import { BALANCE_SPAN, DEFENSE_FULL, resistPoints, typeSafety } from './typeSafe
 
 export { BALANCE_SPAN, DEFENSE_FULL, resistPoints, typeSafety };
 import type { Archetype } from './archetype';
-import { isPassive, isStall } from './roles';
+import { hasSpeedControl, isPassive, isStall } from './roles';
 import { rulesOf } from './formatRules';
 import type { TeamNeeds } from './needs';
 import { FAMILIES, type SubRoleValues } from './subRoles';
@@ -189,9 +189,12 @@ export const WEAK_POWER = 30;
 export const UTILITY_MIN = 0.5;
 const UTILITY_ROLES = [...FAMILIES.field, ...FAMILIES.disruption];
 
-/** Il membro porta un'utilità chiave: un sotto-ruolo di Campo o Disturbo (Delibird con Spikes), o meteo, campo, Trick Room. */
+/**
+ * Il membro porta un'utilità chiave: un sotto-ruolo di Campo o Disturbo (Delibird con Spikes), il controllo velocità
+ * (Sticky Web, Thunder Wave, Tailwind…: lo misura la Velocità, ma giustifica un membro debole), o meteo, campo, Trick Room.
+ */
 function bringsUtility(set: TeamSet, values: SubRoleValues): boolean {
-  return UTILITY_ROLES.some(role => (values[role] ?? 0) >= UTILITY_MIN) || enables(set).length > 0;
+  return UTILITY_ROLES.some(role => (values[role] ?? 0) >= UTILITY_MIN) || hasSpeedControl(set) || enables(set).length > 0;
 }
 
 /**

@@ -32,11 +32,12 @@ describe('team stall', () => {
     const rating = rateTeam(stall, fixtureData)!;
     expect(rating.archetype).toBe('stall');
     // da stall: i due muri essenziali ci sono, gli attaccanti non sono richiesti; fra gli importanti mancano
-    // Danno nel tempo e Debuff (il gruppo del fixture è pieno di Acciaio e Veleno, immuni a Toxic)
+    // il Danno nel tempo (il gruppo del fixture è pieno di Acciaio e Veleno, immuni a Toxic); il Debuff è minore
     const needs = teamNeeds(stall, fixtureData);
     expect(needs.essentialMissing).toEqual([]);
     expect(needs.levels.attacker).toBe('ignored');
-    expect(needs.importantMissing).toEqual(['dot', 'debuff']);
+    expect(needs.importantMissing).toEqual(['dot']);
+    expect(needs.levels.debuff).toBe('minor');
     // Area Ruoli: base degli importanti da stall, extra dei minori (rolesArea.ts)
     const keys = (level: string) => LEVEL_KEYS.filter(k => needs.levels[k] === level);
     const of = (level: string) => keys(level).map(k => needs.values[k]);

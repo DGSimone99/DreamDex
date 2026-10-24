@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { teamPower } from '../../src/engine/power';
-import { AREA_KNEE, ARCHETYPE_WEIGHTS, DEFENSE_FULL, areaValue, gradeFor, rateTeam, typeSafety } from '../../src/engine/rating';
+import { teamNeeds } from '../../src/engine/needs';
+import { AREA_KNEE, ARCHETYPE_WEIGHTS, DEFENSE_FULL, areaValue, gradeFor, memberIssues, rateTeam, typeSafety } from '../../src/engine/rating';
 import { memberPower } from '../../src/engine/power';
 import { teamOffense } from '../../src/engine/offense';
 import { teamDefense } from '../../src/engine/defense';
@@ -160,5 +161,15 @@ describe('area Ruoli nel voto', () => {
     const rating = rateTeam(team, fixtureData)!;
     expect(rating.roles.value).toBe(teamRolesArea(team, fixtureData, 'it').value);
     expect(value(rating, 'roles')).toBe(rating.roles.value);
+  });
+});
+
+describe('membro debole e controllo velocità', () => {
+  it('un membro debole con solo Sticky Web o Thunder Wave è esente (utilità chiave)', () => {
+    const weak = (moves: string[]): TeamSet => ({ species: 'Delibird', ability: 'Hustle', item: '', moves, nature: 'Serious', evs: {} });
+    const issues = (moves: string[]) => memberIssues([weak(moves)], 'it', teamNeeds([weak(moves)], fixtureData));
+    expect(issues(['Sticky Web', 'Present'])).toEqual([]);
+    expect(issues(['Thunder Wave', 'Present'])).toEqual([]);
+    expect(issues(['Present', 'Drill Peck'])).toHaveLength(1);
   });
 });
