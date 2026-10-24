@@ -83,7 +83,7 @@ const PIVOT_MOVES = new Set(['uturn', 'voltswitch', 'flipturn', 'partingshot', '
 /** Mosse che controllano la velocità: paralisi, Sticky Web, Trick Room, Tailwind e mosse che rallentano. */
 const SPEED_MOVES = new Set(['thunderwave', 'glare', 'nuzzle', 'stunspore', 'stickyweb', 'trickroom', 'tailwind', 'icywind', 'electroweb']);
 /** Abilità che raddoppiano la velocità (col meteo o il campo giusto, o da sé). */
-const SPEED_ABILITIES = new Set(['swiftswim', 'chlorophyll', 'sandrush', 'slushrush', 'surgesurfer', 'unburden', 'speedboost']);
+export const SPEED_ABILITIES = new Set(['swiftswim', 'chlorophyll', 'sandrush', 'slushrush', 'surgesurfer', 'unburden', 'speedboost']);
 const BREAKER_ITEMS = new Set(['choiceband', 'choicespecs', 'lifeorb']);
 
 /** Sotto-ruoli del set (valore almeno 0,5), nell'ordine delle famiglie. */

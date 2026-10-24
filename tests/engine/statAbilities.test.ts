@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { effectiveStats } from '../../src/engine/dex';
+import { DEFAULT_RULES } from '../../src/engine/formatRules';
+import { detectRoles } from '../../src/engine/roles';
 import { memberPower } from '../../src/engine/power';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
 
@@ -24,6 +26,9 @@ describe('abilità che cambiano le statistiche', () => {
     const plain = memberPower(set('Medicham', '', 'Pure Power', ['Close Combat', 'Zen Headbutt']))!;
     expect(pure.offense).toBeGreaterThan(90);
     expect(pure.power).toBeGreaterThan(plain.power);
-    // I ruoli del solo set (carte, filtri) guardano la statistica reale senza abilità: Huge Power entra nel rilevatore misurato (Offesa)
+    // Huge Power raddoppia l'Attacco reale anche per i ruoli del set: 218 → 436 (soglia 300)
+    const azumarill = (ability: string): TeamSet => ({ ...set('Azumarill', 'Choice Band', ability, ['Liquidation', 'Aqua Jet']), evs: { atk: 252 }, nature: 'Adamant' });
+    expect(detectRoles(azumarill('Huge Power'), DEFAULT_RULES)).toContain('physicalBreaker');
+    expect(detectRoles(azumarill('Thick Fat'), DEFAULT_RULES)).not.toContain('physicalBreaker');
   });
 });

@@ -53,9 +53,9 @@ describe('meteo sulla carta', () => {
   });
 });
 
-describe('forma in battaglia', () => {
-  it('Mega Swampert si giudica con le statistiche della Mega: attaccante fisico', () => {
+describe("abilità in battaglia per la velocità", () => {
+  it('Mega Swampert (Swift Swim in battaglia) è sweeper anche se il set ha Torrent', () => {
     const swampert = set('Swampert', 'Swampertite', 'Torrent', ['Waterfall', 'Earthquake', 'Ice Punch', 'Superpower']);
-    expect(cardRoles(swampert, DEFAULT_RULES)[0]).toBe('physicalBreaker');
+    expect(cardRoles(swampert, DEFAULT_RULES)[0]).toBe('physicalSweeper');
   });
 });

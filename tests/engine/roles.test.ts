@@ -90,4 +90,10 @@ describe('sweeper e wallbreaker', () => {
     expect(detectRoles(lilligant(['Quiver Dance', 'Petal Dance', 'Giga Drain', 'Sleep Powder']), DEFAULT_RULES)).toContain('specialSweeper');
     expect(detectRoles(lilligant(['Petal Dance', 'Giga Drain', 'Sleep Powder', 'Synthesis']), DEFAULT_RULES)).not.toContain('specialSweeper');
   });
+
+  it("un'abilità che raddoppia la velocità basta (Excadrill con Sand Rush)", () => {
+    const excadrill: TeamSet = { ...set('Excadrill', ['Earthquake', 'Iron Head', 'Rapid Spin', 'Swords Dance']), ability: 'Sand Rush' };
+    expect(detectRoles(excadrill, DEFAULT_RULES)).toContain('physicalSweeper');
+    expect(detectRoles({ ...excadrill, ability: 'Mold Breaker' }, DEFAULT_RULES)).not.toContain('physicalSweeper');
+  });
 });

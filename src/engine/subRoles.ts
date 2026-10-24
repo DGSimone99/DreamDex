@@ -1,8 +1,8 @@
-import { battleAbility, battleSpecies, getMove, getSpecies, isDefined, toID } from './dex';
+import { battleAbility, battleSpecies, getMove, getSpecies, isDefined, STAT_ABILITIES, toID } from './dex';
 import { rulesOf, type FormatRules } from './formatRules';
 import { mostCommonSet, type TeamSet } from './sets';
 import { statLines } from './statCalc';
-import { attackStyle } from './roles';
+import { attackStyle, SPEED_ABILITIES } from './roles';
 import type { EngineData } from './data';
 import { usesMeta } from './analysis';
 import { setKey } from './damage';
@@ -123,12 +123,15 @@ export function setSubRoles(set: TeamSet, rules: FormatRules): SubRoleValues {
   const style = attackStyle(set);
   const selfBoost = (s: 'atk' | 'spa' | 'spe') => moves.some(m => m.category === 'Status' && m.target === 'self' && (m.boosts?.[s] ?? 0) > 0);
   const priority = moves.some(m => m.category !== 'Status' && m.priority > 0);
-  const fast = stat('spe') >= STAT_MIN || item === 'choicescarf';
-  if (style === 'physical' && stat('atk') >= STAT_MIN) {
+  // Abilità che moltiplicano Att/AttSp (Huge Power, Pure Power…) e che raddoppiano la Velocità (Swift Swim, Sand Rush…), come la regola di prima
+  const boost = STAT_ABILITIES[ability] ?? {};
+  const attackStat = (id: 'atk' | 'spa') => stat(id) * (boost[id] ?? 1);
+  const fast = stat('spe') >= STAT_MIN || item === 'choicescarf' || SPEED_ABILITIES.has(ability);
+  if (style === 'physical' && attackStat('atk') >= STAT_MIN) {
     put('physicalBreaker', 1);
     if (fast || selfBoost('spe') || (selfBoost('atk') && priority)) put('physicalSweeper', 1);
   }
-  if (style === 'special' && stat('spa') >= STAT_MIN) {
+  if (style === 'special' && attackStat('spa') >= STAT_MIN) {
     put('specialBreaker', 1);
     if (fast || selfBoost('spe') || (selfBoost('spa') && priority)) put('specialSweeper', 1);
   }
