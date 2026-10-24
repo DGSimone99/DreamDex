@@ -5,7 +5,7 @@ import { emptySet, type TeamSet } from '../../src/engine/sets';
 import { outspeedShare, speedPool, speedStat } from '../../src/engine/speed';
 import { getSpecies } from '../../src/engine/dex';
 import { fixtureData } from '../fixtures/data';
-import { CONDITION_QUOTA, isWebImmune, memberSpeed, slowFactor, priorityPart, priorityTargets, SPEED_RANK_WEIGHTS, speedPart } from '../../src/engine/speedArea';
+import { CONDITION_QUOTA, CONTROL_CONDITIONS, isWebImmune, memberSpeed, slowFactor, SPEED_RANK_WEIGHTS, speedPart } from '../../src/engine/speedArea';
 import { bestHit } from '../../src/engine/damage';
 
 const set = (species: string, item: string, ability: string, moves: string[], nature = 'Jolly', spe = 252): TeamSet =>
@@ -57,7 +57,7 @@ describe('Velocità: ogni membro, coi guadagni delle condizioni', () => {
   });
 
   it('Tailwind e paralisi a un quarto', () => {
-    expect(CONDITION_QUOTA).toEqual({ setup: 0.5, weather: 0.5, unburden: 0.5, web: 0.5, trickroom: 0.5, tailwind: 0.25, slow: 0.25 });
+    expect(CONDITION_QUOTA).toEqual({ setup: 0.5, weather: 0.5, unburden: 0.5, priority: 0.5, web: 0.5, trickroom: 0.5, tailwind: 0.25, slow: 0.25 });
     // Stun Spore del compagno: paralisi, avversari a metà velocità
     const p = memberSpeed(pex, [pex, webber], noMeta)!;
     const slow = p.gains.find(g => g.condition === 'slow')!;
@@ -92,7 +92,7 @@ describe('Velocità: ogni membro, coi guadagni delle condizioni', () => {
   });
 });
 
-describe('Priorità: le minacce più veloci del team, colpite per prime', () => {
+describe('Priorità come il setup: chi colpisce per primo anche i più veloci', () => {
   const gambit = set('Kingambit', 'Black Glasses', 'Supreme Overlord', ['Sucker Punch', 'Kowtow Cleave', 'Iron Head', 'Swords Dance'], 'Adamant', 0);
   const slowpoke = set('Slowking', 'Leftovers', 'Regenerator', ['Scald', 'Slack Off'], 'Calm', 0);
   const target = set('Dragapult', 'Choice Specs', 'Infiltrator', ['Draco Meteor'], 'Timid');
@@ -105,43 +105,27 @@ describe('Priorità: le minacce più veloci del team, colpite per prime', () => 
     expect(bestHit(faker, target, { priorityOnly: true })!.expected).toBeCloseTo(plain.expected / 2);
   });
 
-  it('bersagli: chi è più veloce del secondo membro più rapido (velocità pura); a pari velocità metà peso', () => {
-    const team = [gambit, slowpoke];
-    const ms = team.map(s => memberSpeed(s, team, noMeta)!);
-    const second = Math.min(...ms.map(m => m.speed));
-    const targets = priorityTargets(ms, noMeta);
-    expect(targets.length).toBeGreaterThan(0);
-    expect(targets.length).toBeLessThanOrEqual(20);
-    for (const t of targets) {
-      expect(t.speed).toBeGreaterThanOrEqual(second);
-      expect(t.weight).toBe(t.speed === second ? 0.5 : 1);
-    }
+  it('il guadagno: metà dei più veloci colpiti per primi, ognuno pesato dal danno (metà PS vale pieno)', () => {
+    const m = memberSpeed(gambit, [gambit], noMeta)!;
+    const prio = m.gains.find(g => g.condition === 'priority')!;
+    expect(prio.source).toBe('Sucker Punch');
+    expect(CONDITION_QUOTA.priority).toBe(0.5);
+    const rivals = pool.filter(r => r.species !== 'Kingambit');
+    const neutral = (species: string) => ({ species, item: '', ability: getSpecies(species)!.abilities[0], moves: [], nature: 'Hardy', evs: {} });
+    const credit = (species: string) => Math.min(1, (bestHit(gambit, neutral(species), { priorityOnly: true })?.expected ?? 0) / 0.5);
+    const hand = rivals.reduce((acc, r) => acc + (r.value > m.speed ? credit(r.species) : r.value === m.speed ? credit(r.species) / 2 : 0), 0) / rivals.length;
+    expect(prio.gain).toBeCloseTo(0.5 * hand);
   });
 
-  it('un membro solo: il secondo più veloce è lui', () => {
-    const ms = [memberSpeed(gambit, [gambit], noMeta)!];
-    expect(priorityTargets(ms, noMeta).every(t => t.speed >= ms[0].speed)).toBe(true);
+  it('senza mosse prioritarie nessun guadagno', () => {
+    expect(memberSpeed(slowpoke, [slowpoke], noMeta)!.gains.some(g => g.condition === 'priority')).toBe(false);
   });
 
-  it('credito pieno da metà PS in su; senza mosse prioritarie 0', () => {
-    const team = [gambit, slowpoke];
-    const ms = team.map(s => memberSpeed(s, team, noMeta)!);
-    const part = priorityPart(team, ms, 50, noMeta);
-    for (const row of part.rows) {
-      if (!row.best) { expect(row.credit).toBe(0); continue; }
-      expect(row.best.species).toBe('Kingambit');
-      expect(row.credit).toBeCloseTo(Math.min(1, row.best.expected / 0.5));
-    }
-    const total = part.rows.reduce((a, r) => a + r.weight, 0);
-    expect(part.value).toBe(softScore(part.rows.reduce((a, r) => a + r.weight * r.credit, 0) / total));
-    expect(priorityPart([slowpoke], [ms[1]], 50, noMeta).value).toBe(0);
-  });
-
-  it('nessun bersaglio (team più veloce di tutti): la Priorità vale quanto la Velocità', () => {
-    const fastest = set('Regieleki', 'Choice Scarf', 'Transistor', ['Extreme Speed'], 'Timid');
-    const ms = [memberSpeed(fastest, [fastest], noMeta)!];
-    expect(priorityTargets(ms, noMeta)).toEqual([]);
-    expect(priorityPart([fastest], ms, 71, noMeta)).toEqual({ value: 71, rows: [] });
+  it('Grassy Glide è prioritario anche col Grassy Terrain di un compagno', () => {
+    const rilla = set('Rillaboom', 'Choice Band', 'Overgrow', ['Grassy Glide', 'Wood Hammer'], 'Adamant', 0);
+    const bulu = set('Tapu Bulu', 'Leftovers', 'Grassy Surge', ['Horn Leech'], 'Adamant', 0);
+    expect(memberSpeed(rilla, [rilla], noMeta)!.gains.some(g => g.condition === 'priority')).toBe(false);
+    expect(memberSpeed(rilla, [rilla, bulu], noMeta)!.gains.find(g => g.condition === 'priority')?.source).toBe('Grassy Glide');
   });
 });
 
@@ -186,29 +170,13 @@ describe('Velocità: casi particolari', () => {
     expect(slowFactor('icywind', 'Toxapex')).toBeCloseTo(2 / 3);
   });
 
-  it('Grassy Glide è prioritario anche col Grassy Terrain di un compagno', () => {
-    const rilla = set('Rillaboom', 'Choice Band', 'Overgrow', ['Grassy Glide', 'Wood Hammer'], 'Adamant', 0);
-    const bulu = set('Tapu Bulu', 'Leftovers', 'Grassy Surge', ['Horn Leech'], 'Adamant', 0);
-    const team = [rilla, bulu];
-    const ms = team.map(s => memberSpeed(s, team, noMeta)!);
-    expect(priorityPart(team, ms, 50, noMeta).rows.some(r => r.best?.move === 'Grassy Glide')).toBe(true);
-  });
-
-  it('tra le minacce della Priorità non ci sono le specie del team', () => {
-    const fastPult = set('Dragapult', 'Choice Specs', 'Infiltrator', ['Draco Meteor'], 'Timid');
-    const team = [fastPult, pex];
-    const ms = team.map(s => memberSpeed(s, team, fixtureData)!);
-    // Senza escluderlo, Dragapult del meta sarebbe una minaccia più veloce di Toxapex
-    expect(priorityTargets([ms[1]], fixtureData).some(t => t.set.species === 'Dragapult')).toBe(true);
-    expect(priorityTargets(ms, fixtureData, team).some(t => t.set.species === 'Dragapult')).toBe(false);
-  });
 });
 
 describe("Velocità: l'ordine dei membri non conta", () => {
   it('a pari velocità le posizioni si dividono il peso', () => {
-    const a = { species: 'A', speed: 300, raw: 0.5, gains: [], total: 0.9 };
-    const b = { species: 'B', speed: 300, raw: 0.5, gains: [], total: 0.5 };
-    const c = { species: 'C', speed: 100, raw: 0.1, gains: [], total: 0.1 };
+    const a = { species: 'A', speed: 300, raw: 0.5, gains: [], own: 0.9, total: 0.9 };
+    const b = { species: 'B', speed: 300, raw: 0.5, gains: [], own: 0.5, total: 0.5 };
+    const c = { species: 'C', speed: 100, raw: 0.1, gains: [], own: 0.1, total: 0.1 };
     expect(speedPart([a, b, c])).toBe(speedPart([b, a, c]));
     // Le due posizioni in parità valgono (25 + 20) / 2 ciascuna
     expect(speedPart([a, b, c])).toBe(softScore((22.5 * 0.9 + 22.5 * 0.5 + 16 * 0.1) / 61));
@@ -220,5 +188,15 @@ describe("Velocità: l'ordine dei membri non conta", () => {
     const one = memberSpeed(pex, [pex, spore, wave], noMeta)!.gains.find(g => g.condition === 'slow')!;
     const two = memberSpeed(pex, [pex, wave, spore], noMeta)!.gains.find(g => g.condition === 'slow')!;
     expect(one).toEqual(two);
+  });
+});
+
+describe('Velocità e Controllo velocità', () => {
+  it('le condizioni del team sono il controllo, quelle del membro la sua velocità', () => {
+    expect(CONTROL_CONDITIONS).toEqual(['web', 'trickroom', 'tailwind', 'slow']);
+    const m = memberSpeed(pex, [pex, webber], noMeta)!;
+    const own = m.gains.filter(g => !CONTROL_CONDITIONS.includes(g.condition)).reduce((a, g) => a + g.gain, 0);
+    expect(m.own).toBeCloseTo(Math.min(1, m.raw + own));
+    expect(m.total).toBeGreaterThanOrEqual(m.own);
   });
 });

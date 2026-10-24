@@ -2,18 +2,20 @@ import type { EngineData } from './data';
 import { battleAbility, battleSpecies, dex, getMove, toID } from './dex';
 import { softScore } from './scale';
 import { bestHit, setKey } from './damage';
-import { metaThreats } from './attackers';
 import { ownConditions } from './coverage';
 import { usesMeta } from './analysis';
-import type { TeamSet } from './sets';
-import { isWebImmune, outspeedShare, sameSelf, speedPool, speedStat, tierSpecies, type SpeedRival } from './speed';
+import { mostCommonSet, type TeamSet } from './sets';
+import { isWebImmune, outspeedShare, sameSelf, speedPool, speedStat, type SpeedRival } from './speed';
 import { ownField } from './types';
 import { getSpecies } from './dex';
 
 export { isWebImmune };
 
 /** Le condizioni che fanno superare più Pokémon: setup, meteo/campo, Unburden, Sticky Web, Trick Room, Tailwind, paralisi e rallentamenti. */
-export type SpeedCondition = 'setup' | 'weather' | 'unburden' | 'web' | 'trickroom' | 'tailwind' | 'slow';
+export type SpeedCondition = 'setup' | 'weather' | 'unburden' | 'priority' | 'web' | 'trickroom' | 'tailwind' | 'slow';
+
+/** Le condizioni che porta il team (il Controllo velocità); le altre sono del membro stesso (la sua Velocità). */
+export const CONTROL_CONDITIONS: SpeedCondition[] = ['web', 'trickroom', 'tailwind', 'slow'];
 
 /** Peso di ogni membro per posizione di velocità, dal più veloce: i due più rapidi fanno quasi tutto, ma la velocità serve a tutti. */
 export const SPEED_RANK_WEIGHTS = [25, 20, 16, 14, 13, 12];
@@ -22,7 +24,7 @@ export const SPEED_RANK_WEIGHTS = [25, 20, 16, 14, 13, 12];
  * Quota del guadagno che entra nel voto: metà per ciò che dura o regge il team (setup, meteo, Web, Trick Room),
  * un quarto per Tailwind e un bersaglio rallentato.
  */
-export const CONDITION_QUOTA: Record<SpeedCondition, number> = { setup: 0.5, weather: 0.5, unburden: 0.5, web: 0.5, trickroom: 0.5, tailwind: 0.25, slow: 0.25 };
+export const CONDITION_QUOTA: Record<SpeedCondition, number> = { setup: 0.5, weather: 0.5, unburden: 0.5, priority: 0.5, web: 0.5, trickroom: 0.5, tailwind: 0.25, slow: 0.25 };
 
 export interface SpeedGain {
   condition: SpeedCondition;
@@ -38,7 +40,9 @@ export interface MemberSpeed {
   /** Quota del gruppo superata senza condizioni (pareggio a metà). */
   raw: number;
   gains: SpeedGain[];
-  /** Velocità pura più i guadagni, al massimo 1. */
+  /** Velocità pura più i guadagni del membro stesso (setup, meteo, Unburden, priorità), al massimo 1. */
+  own: number;
+  /** Con anche il controllo del team (Web, Trick Room, Tailwind, paralisi), al massimo 1. */
   total: number;
 }
 
@@ -160,12 +164,35 @@ function measure(set: TeamSet, data: EngineData, team: TeamConditions): MemberSp
     .sort((a, b) => b.share - a.share)[0];
   if (slowed) add('slow', slowed.move, slowed.share);
 
-  const total = Math.min(1, raw + gains.reduce((acc, g) => acc + g.gain, 0));
-  return { species: species.name, speed, raw, gains, total };
+  // Priorità come il setup: colpisce per primo anche chi è più veloce, pesato da quanto fa male (metà PS vale pieno)
+  const conditions = team.terrains.includes('grassy') ? ['grassyterrain' as const] : [];
+  const faster = pool.filter(r => r.value >= speed && !sameSelf(r.species, set.species));
+  const rivalsCount = pool.filter(r => !sameSelf(r.species, set.species)).length;
+  let priorityMove: string | null = null;
+  let firstHits = 0;
+  if (rivalsCount && set.moves.some(m => { const d = getMove(m); return !!d && (d.priority > 0 || d.id === 'grassyglide'); })) {
+    for (const r of faster) {
+      const hit = bestHit(set, rivalSet(r.species, data), { priorityOnly: true, conditions: [...ownConditions(set), ...conditions] });
+      if (!hit) continue;
+      priorityMove ??= hit.move;
+      firstHits += (r.value === speed ? 0.5 : 1) * Math.min(1, hit.expected / PRIORITY_FULL);
+    }
+  }
+  if (priorityMove && firstHits > 0) gains.push({ condition: 'priority', source: priorityMove, gain: CONDITION_QUOTA.priority * firstHits / rivalsCount });
+
+  const sum = (list: SpeedGain[]) => list.reduce((acc, g) => acc + g.gain, 0);
+  const own = Math.min(1, raw + sum(gains.filter(g => !CONTROL_CONDITIONS.includes(g.condition))));
+  const total = Math.min(1, raw + sum(gains));
+  return { species: species.name, speed, raw, gains, own, total };
 }
 
 /** La parte Velocità del team: i membri pesati dal più veloce (25/20/16/14/13/12), poi la scala morbida (100 non si raggiunge). */
 export function speedPart(list: MemberSpeed[]): number {
+  return softScore(weightedMean(list, m => m.total));
+}
+
+/** Media dei membri pesata per posizione di velocità (25/20/16/14/13/12; a pari velocità le posizioni si dividono il peso). */
+function weightedMean(list: MemberSpeed[], pick: (m: MemberSpeed) => number): number {
   if (!list.length) return 0;
   const sorted = [...list].sort((a, b) => b.speed - a.speed);
   const rankWeight = (i: number) => SPEED_RANK_WEIGHTS[Math.min(i, SPEED_RANK_WEIGHTS.length - 1)];
@@ -175,87 +202,37 @@ export function speedPart(list: MemberSpeed[]): number {
     return tied.reduce((a, b) => a + b, 0) / tied.length;
   });
   const total = weights.reduce((a, b) => a + b, 0);
-  return softScore(sorted.reduce((acc, m, i) => acc + weights[i] * m.total, 0) / total);
+  return sorted.reduce((acc, m, i) => acc + weights[i] * pick(m), 0) / total;
 }
 
-export interface PriorityRow {
-  species: string;
-  speed: number;
-  weight: number;
-  /** Il colpo prioritario migliore del team su questa minaccia (danno atteso in quota dei PS). */
-  best: { species: string; move: string; pct: number; expected: number } | null;
-  credit: number;
-}
-
-/** Metà PS tolti con una mossa prioritaria valgono il credito pieno: basta a finire una minaccia indebolita. */
+/** Metà PS tolti con una mossa prioritaria valgono il colpo pieno: basta a finire un avversario indebolito. */
 const PRIORITY_FULL = 0.5;
-/** Senza meta: i più veloci del tier, con un set neutro. */
-const TIER_TARGETS = 20;
 
-/**
- * Le minacce che il team non supera: più veloci del suo secondo membro più rapido (velocità pura; setup e meteo sono
- * condizionali). Col meta i 40 più usati pesati per uso; a pari velocità metà peso.
- */
-export function priorityTargets(list: MemberSpeed[], data: EngineData, team: TeamSet[] = []): { set: TeamSet; speed: number; weight: number }[] {
-  if (!list.length) return [];
-  const speeds = list.map(m => m.speed).sort((a, b) => b - a);
-  const second = speeds[1] ?? speeds[0];
-  const candidates = usesMeta(data)
-    ? metaThreats(data).map(({ set, weight }) => ({ set, speed: speedStat(set).value, weight }))
-    : tierSpecies(data.formatId ?? 'ou')
-      .map(s => ({ set: { species: s.name, item: '', ability: s.abilities[0], moves: [], nature: 'Hardy', evs: {} } as TeamSet, speed: Math.floor((2 * s.baseStats.spe + 31 + 63 + 5) * 1.1), weight: 1 }))
-      .sort((a, b) => b.speed - a.speed)
-      .slice(0, TIER_TARGETS);
-  // Le specie del team non sono minacce per il team stesso
-  return candidates
-    .filter(c => !team.some(member => sameSelf(member.species, c.set.species)))
-    .filter(c => c.speed >= second)
-    .map(c => ({ ...c, weight: c.speed === second ? c.weight / 2 : c.weight }));
+/** Il set di un avversario del gruppo: col meta il più comune, senza un set neutro. */
+function rivalSet(species: string, data: EngineData): TeamSet {
+  const common = usesMeta(data) ? mostCommonSet(data.stats, species) : null;
+  return common ?? { species, item: '', ability: getSpecies(species)?.abilities[0] ?? '', moves: [], nature: 'Hardy', evs: {} };
 }
-
-/** La parte Priorità: quanto il team colpisce per primo, con danno vero, le minacce che non supera. */
-export function priorityPart(team: TeamSet[], list: MemberSpeed[], speedPartValue: number, data: EngineData): { value: number; rows: PriorityRow[] } {
-  const targets = priorityTargets(list, data, team);
-  // Grassy Glide è prioritario anche col Grassy Terrain di un compagno
-  const grassy = team.some(member => ownField(member).terrain === 'grassy');
-  // Chi supera già tutto non ha bisogno di priorità
-  if (!targets.length) return { value: speedPartValue, rows: [] };
-  const known = team.filter(set => battleSpecies(set));
-  const rows: PriorityRow[] = targets.map(t => {
-    let best: PriorityRow['best'] = null;
-    for (const member of known) {
-      const own = ownConditions(member);
-      const conditions = grassy && !own.includes('grassyterrain') ? [...own, 'grassyterrain' as const] : own;
-      const hit = bestHit(member, t.set, { priorityOnly: true, conditions });
-      if (hit && (!best || hit.expected > best.expected)) {
-        best = { species: battleSpecies(member)!.name, move: hit.move, pct: Math.floor(100 * Math.min(1, hit.expected)), expected: hit.expected };
-      }
-    }
-    return { species: t.set.species, speed: t.speed, weight: t.weight, best, credit: best ? Math.min(1, best.expected / PRIORITY_FULL) : 0 };
-  });
-  const total = rows.reduce((acc, r) => acc + r.weight, 0);
-  return { value: total ? softScore(rows.reduce((acc, r) => acc + r.weight * r.credit, 0) / total) : 0, rows };
-}
-
-/** Velocità (coi guadagni delle condizioni) e Priorità nell'area: 80 e 20. */
-export const SPEED_SHARES = { speed: 0.8, priority: 0.2 };
 
 export interface TeamSpeed {
+  /** L'area: ogni membro con tutti i guadagni, pesato dal più veloce. */
   value: number;
+  /** Velocità: ogni membro da solo (pura, setup, meteo, Unburden, priorità). */
   speed: number;
-  priority: number;
+  /** Controllo velocità: quanta della velocità che manca recupera il team (Web, Trick Room, Tailwind, paralisi); 0 senza. */
+  control: number;
   members: MemberSpeed[];
-  targets: PriorityRow[];
 }
 
-/** Velocità del team: quanti Pokémon supera ogni membro (con setup, meteo, Web…) e quanto colpisce per primo chi non supera. */
+/** Velocità del team: quanti Pokémon supera ogni membro da solo, e quanti in più grazie al controllo del team. */
 export function teamSpeedArea(team: TeamSet[], data: EngineData): TeamSpeed {
   const list = team.map(set => memberSpeed(set, team, data)).filter((m): m is MemberSpeed => m !== null);
-  if (!list.length) return { value: 0, speed: 0, priority: 0, members: [], targets: [] };
-  const speed = speedPart(list);
-  const priority = priorityPart(team, list, speed, data);
+  if (!list.length) return { value: 0, speed: 0, control: 0, members: [] };
+  const own = weightedMean(list, m => m.own);
+  const all = weightedMean(list, m => m.total);
   return {
-    value: Math.round(SPEED_SHARES.speed * speed + SPEED_SHARES.priority * priority.value),
-    speed, priority: priority.value, members: list, targets: priority.rows,
+    value: softScore(all), speed: softScore(own),
+    control: all > own && own < 1 ? softScore((all - own) / (1 - own)) : 0,
+    members: list,
   };
 }

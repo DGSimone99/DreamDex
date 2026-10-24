@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import type { EngineData } from '../../src/engine/data';
 import { rateTeam } from '../../src/engine/rating';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
-import { SPEED_SHARES, teamSpeedArea } from '../../src/engine/speedArea';
+import { speedPart, teamSpeedArea } from '../../src/engine/speedArea';
+import { softScore } from '../../src/engine/scale';
 import { fixtureData } from '../fixtures/data';
 
 const set = (species: string, item: string, ability: string, moves: string[], nature = 'Jolly'): TeamSet =>
@@ -13,12 +14,23 @@ const valiant = set('Iron Valiant', 'Booster Energy', 'Quark Drive', ['Moonblast
 const toxapex = set('Toxapex', 'Black Sludge', 'Regenerator', ['Scald', 'Recover', 'Toxic', 'Haze'], 'Bold');
 
 describe('area Velocità', () => {
-  it('80% velocità (coi guadagni) e 20% priorità; il 100 non si raggiunge', () => {
-    expect(SPEED_SHARES).toEqual({ speed: 0.8, priority: 0.2 });
-    const area = teamSpeedArea([dragapult, valiant, toxapex], noMeta);
-    expect(area.value).toBe(Math.round(0.8 * area.speed + 0.2 * area.priority));
+  it("l'area: ogni membro con tutti i guadagni, pesato 25/20/16/14/13/12; Velocità senza il controllo, Controllo quanto recupera", () => {
+    const web = set('Ribombee', 'Focus Sash', 'Shield Dust', ['Sticky Web', 'Moonblast'], 'Timid');
+    const team = [dragapult, valiant, toxapex, web];
+    const area = teamSpeedArea(team, noMeta);
+    expect(area.value).toBe(speedPart(area.members));
+    expect(area.speed).toBe(speedPart(area.members.map(m => ({ ...m, total: m.own }))));
+    expect(area.value).toBeGreaterThanOrEqual(area.speed);
     expect(area.value).toBeLessThan(100);
-    expect(area.members.map(m => m.species)).toEqual(['Dragapult', 'Iron Valiant', 'Toxapex']);
+    // Controllo: la quota della velocità mancante che recupera, sulla stessa scala
+    const weighted = (pick: (m: typeof area.members[number]) => number) => {
+      const sorted = [...area.members].sort((a, b) => b.speed - a.speed);
+      const w = [25, 20, 16, 14].slice(0, sorted.length);
+      return sorted.reduce((acc, m, i) => acc + w[i] * pick(m), 0) / w.reduce((a, b) => a + b, 0);
+    };
+    const own = weighted(m => m.own), all = weighted(m => m.total);
+    expect(area.control).toBe(softScore((all - own) / (1 - own)));
+    expect(teamSpeedArea([dragapult, valiant, toxapex], noMeta).control).toBe(0);
   });
 
   it("nel voto: il valore dell'area è quello di teamSpeedArea", () => {

@@ -128,7 +128,7 @@ export interface TeamRating {
   offense: TeamOffense;
   /** Difesa: robustezza, sostenibilità e coverage difensiva di tipi e del meta, con le sottostatistiche per membro. */
   defense: TeamDefense;
-  /** Velocità: velocità pura e guadagni per membro, e la priorità contro chi il team non supera. */
+  /** Velocità: ogni membro coi guadagni (setup, meteo, priorità) e il controllo velocità del team. */
   speed: TeamSpeed;
 }
 
@@ -336,7 +336,7 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
   const table = ARCHETYPE_WEIGHTS[analysis.needs.archetype];
   // Trick Room non azzera più la Velocità: è una sua condizione (speedArea.ts), che premia i membri lenti
   const effective: Record<BaseArea, number> = table;
-  // Velocità: ogni membro coi guadagni delle condizioni, più la priorità (speedArea.ts); col meta contro i più usati
+  // Velocità: ogni membro coi guadagni suoi e del controllo del team (speedArea.ts); col meta contro i più usati
   const speed = teamSpeedArea(team, data);
 
   // Offesa e Difesa dal danno vero (offense.ts, defense.ts)
