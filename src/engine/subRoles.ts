@@ -178,10 +178,10 @@ export function setSubRoles(set: TeamSet, rules: FormatRules): SubRoleValues {
   return v;
 }
 
-/** Soglie del rilevatore misurato (Offesa, Wallbreaking e quota di Velocità del membro). */
+/** Soglie del rilevatore misurato (Offesa, Wallbreaking e quota di Velocità del membro). Breaker 52 (era 55): conta anche chi rompe col setup. */
 export const SWEEPER_OFFENSE = 50;
 export const SWEEPER_SPEED = 0.6;
-export const BREAKER_WALLBREAKING = 55;
+export const BREAKER_WALLBREAKING = 52;
 
 /** Un rivale del gruppo con cui si misurano gli stati: tipi, abilità e strumento del suo set più comune. */
 export interface StatusRival { species: string; types: string[]; ability: string; item: string; weight: number }
