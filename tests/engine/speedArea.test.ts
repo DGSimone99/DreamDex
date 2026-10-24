@@ -118,3 +118,29 @@ describe('malus: Trick Room in un team veloce', () => {
     expect(rateTeam([fast('Regieleki'), fast('Dragapult')], fixtureData)!.penalty.items.some(i => i.text.startsWith('Trick Room'))).toBe(false);
   });
 });
+
+describe('controllo e malus: casi limite', () => {
+  const fast = (species: string) => set(species, 'Life Orb', '', ['Thunderbolt'], 'Timid');
+
+  it('una mossa di controllo che non aiuta nessuno compare comunque, con +0', () => {
+    const roomPult = set('Dragapult', 'Choice Specs', 'Infiltrator', ['Trick Room', 'Shadow Ball'], 'Timid');
+    const area = teamSpeedArea([roomPult, fast('Iron Valiant')], fixtureData);
+    const room = area.sources.find(src => src.move === 'Trick Room')!;
+    expect(room).toMatchObject({ by: ['Dragapult'], helped: 0, plus: 0 });
+  });
+
+  it('un solo membro veloce: il testo è al singolare', () => {
+    const hatt = set('Hatterene', 'Focus Sash', 'Magic Bounce', ['Trick Room', 'Psychic'], 'Quiet');
+    const rating = rateTeam([hatt, fast('Regieleki'), toxapex], fixtureData)!;
+    const item = rating.penalty.items.find(i => i.text.startsWith('Trick Room'))!;
+    expect(item.text).toBe('Trick Room di Hatterene rallenta 1 membro veloce (Regieleki)');
+    expect(item.points).toBe(1);
+  });
+
+  it('il malus resta dentro il tetto delle penalità', () => {
+    const hatt = set('Hatterene', 'Focus Sash', 'Magic Bounce', ['Trick Room', 'Psychic'], 'Quiet');
+    const team = [hatt, fast('Regieleki'), fast('Dragapult'), fast('Iron Bundle'), fast('Electrode-Hisui'), fast('Meowscarada')];
+    expect(rateTeam(team, fixtureData)!.penalty.total).toBeLessThanOrEqual(15);
+  });
+});
+

@@ -34,7 +34,7 @@ const BASE_AREAS: BaseArea[] = ['defense', 'strength', 'roles', 'speed'];
  * Peso di ogni area secondo il tipo di team (somma 100): ognuno si giudica su quello con cui vince.
  * Un hyper offense su Offesa e Velocità, uno stall su Difesa e Ruoli (hazard, rimozione, recupero);
  * il balance tiene tutto quasi alla pari.
- * Un team incompleto si giudica come balance. Con Trick Room la Velocità non conta.
+ * Un team incompleto si giudica come balance. Trick Room è una condizione della Velocità (speedArea.ts).
  */
 export const ARCHETYPE_WEIGHTS: Record<Archetype, Record<BaseArea, number>> = {
   // L'Offesa ha preso il peso della vecchia Coverage offensiva, la Difesa quello di Coverage difensiva e Robustezza
@@ -118,7 +118,7 @@ export interface TeamRating {
   archetype: 'stall' | null;
   /** Tipo di team con cui si sono scelti i pesi delle aree (balance per un team incompleto). */
   teamType: Archetype;
-  /** Il team usa Trick Room: la Velocità non conta. */
+  /** Il team usa Trick Room (premia i membri lenti nella Velocità; in un team veloce è un malus). */
   trickRoom: boolean;
   /** Dettaglio dell'area Meta, o null se il voto è senza meta. */
   meta: MetaScore | null;
@@ -336,7 +336,7 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
   const offense = teamOffense(team, data);
   const defense = teamDefense(team, data);
   const trickRoom = team.some(set => set.moves.some(move => toID(move) === 'trickroom'));
-  // I pesi dal tipo di team (un team incompleto si giudica come balance); con Trick Room la Velocità non conta
+  // I pesi dal tipo di team (un team incompleto si giudica come balance)
   const table = ARCHETYPE_WEIGHTS[analysis.needs.archetype];
   // Trick Room non azzera più la Velocità: è una sua condizione (speedArea.ts), che premia i membri lenti
   const effective: Record<BaseArea, number> = table;
@@ -364,7 +364,7 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
     // Informazione per l'Analisi: nel voto le minacce stanno nella Coverage meta della Difesa
   }
   const areas = (Object.keys(raw) as (keyof typeof raw)[])
-    // Con uno stall o Trick Room la Velocità non conta e non si mostra
+    // Con uno stall la Velocità non conta e non si mostra
     .filter(key => (areaWeights[key] ?? 0) > 0)
     .map(key => ({
       key,
@@ -378,7 +378,7 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
   const roomSetter = team.find(set => set.moves.some(move => toID(move) === 'trickroom'));
   const fastMembers = roomSetter ? speed.members.filter(m => m.raw >= TRICK_ROOM_FAST) : [];
   const roomItems = fastMembers.length
-    ? [{ text: t(lang, 'rating.redundancy.trickRoomFast', { setter: battleName(roomSetter!), n: fastMembers.length, list: fastMembers.map(m => m.species).join(', ') }), points: Math.min(TRICK_ROOM_MAX, fastMembers.length) }]
+    ? [{ text: t(lang, fastMembers.length === 1 ? 'rating.redundancy.trickRoomFastOne' : 'rating.redundancy.trickRoomFast', { setter: battleName(roomSetter!), n: fastMembers.length, list: fastMembers.map(m => m.species).join(', ') }), points: Math.min(TRICK_ROOM_MAX, fastMembers.length) }]
     : [];
   const penalty = roomItems.length
     ? { total: Math.min(MAX_PENALTY, redundant.total + roomItems[0].points), items: [...redundant.items, ...roomItems] }

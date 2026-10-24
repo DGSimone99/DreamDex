@@ -230,6 +230,14 @@ function weightedMean(list: MemberSpeed[], pick: (m: MemberSpeed) => number): nu
   return sorted.reduce((acc, m, i) => acc + weights[i] * pick(m), 0) / total;
 }
 
+/** La condizione di controllo che dà una mossa (null se non ne dà). */
+function controlConditionOf(id: string): SpeedCondition | null {
+  if (id === 'stickyweb') return 'web';
+  if (id === 'trickroom') return 'trickroom';
+  if (id === 'tailwind') return 'tailwind';
+  return PARALYSIS.has(id) || SPEED_DROP.has(id) ? 'slow' : null;
+}
+
 /** Metà PS tolti con una mossa prioritaria valgono il colpo pieno: basta a finire un avversario indebolito. */
 const PRIORITY_FULL = 0.5;
 
@@ -265,9 +273,20 @@ export function teamSpeedArea(team: TeamSet[], data: EngineData): TeamSpeed {
   if (!list.length) return { value: 0, speed: 0, control: 0, sources: [], members: [] };
   const value = softScore(weightedMean(list, m => m.total) / SPEED_FULL);
   const speed = softScore(weightedMean(list, m => m.own) / SPEED_FULL);
-  // Ogni mossa di controllo da sola: quanti compagni ne guadagnano e quanti punti aggiunge alla Velocità
+  // Ogni mossa di controllo che il team porta, anche se non aiuta nessuno (Trick Room in un team veloce):
+  // quanti compagni ne guadagnano e quanti punti aggiunge da sola alla Velocità
   const moves = new Map<string, { condition: SpeedCondition; move: string; by: string[] }>();
-  for (const m of list) for (const g of m.controlOptions) moves.set(`${g.condition}|${g.source}`, { condition: g.condition, move: g.source, by: g.by ?? [] });
+  for (const member of team) {
+    for (const name of member.moves) {
+      const move = getMove(name);
+      const condition = move && controlConditionOf(move.id);
+      if (!move || !condition) continue;
+      const key = `${condition}|${move.name}`;
+      const holder = battleSpecies(member)?.name ?? member.species;
+      const entry = moves.get(key);
+      if (entry) { if (!entry.by.includes(holder)) entry.by.push(holder); } else moves.set(key, { condition, move: move.name, by: [holder] });
+    }
+  }
   const sources = [...moves.values()].map(src => {
     const gainOf = (m: MemberSpeed) => m.controlOptions.find(g => g.condition === src.condition && g.source === src.move)?.gain ?? 0;
     return {
