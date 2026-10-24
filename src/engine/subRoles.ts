@@ -71,6 +71,12 @@ const VOLATILE_STATUS: Record<string, StatusSource['status']> = {
   yawn: 'yawn', leechseed: 'seed', saltcure: 'salt', partiallytrapped: 'trap',
 };
 
+/**
+ * Mosse con uno stato a caso fra tre (gestore personalizzato, senza `secondary.status`): ogni stato prende un terzo
+ * della probabilità. Il congelamento di Tri Attack non è nella tabella.
+ */
+const RANDOM_STATUS: Record<string, StatusSource['status'][]> = { direclaw: ['psn', 'par', 'slp'], triattack: ['brn', 'par'] };
+
 /** Fonti di stato del set, già x probabilità x precisione (solo il sonno), prima delle immunità. */
 export function statusSources(set: TeamSet): StatusSource[] {
   const serene = toID(battleAbility(set)) === 'serenegrace';
@@ -87,7 +93,9 @@ export function statusSources(set: TeamSet): StatusSource[] {
     const secondaries = m.secondaries ?? (m.secondary ? [m.secondary] : []);
     for (const sec of secondaries) {
       const status = (sec.status as StatusSource['status'] | undefined) ?? VOLATILE_STATUS[sec.volatileStatus ?? ''];
-      add(m.name, status, Math.min(1, ((sec.chance ?? 100) / 100) * (serene ? 2 : 1)), accuracy);
+      const chance = Math.min(1, ((sec.chance ?? 100) / 100) * (serene ? 2 : 1));
+      if (status) add(m.name, status, chance, accuracy);
+      else for (const random of RANDOM_STATUS[m.id] ?? []) add(m.name, random, chance / 3, accuracy);
     }
   }
   return out;

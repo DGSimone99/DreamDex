@@ -68,6 +68,15 @@ describe('subRoles', () => {
     expect(statusSources(set('Toxapex', ['Toxic', 'Will-O-Wisp'])).map(s => s.status)).toEqual(['tox', 'brn']);
   });
 
+  it('Dire Claw e Tri Attack: stato casuale, un terzo della probabilità per ogni stato', () => {
+    const claw = statusSources(set('Sneasler', ['Dire Claw']));
+    expect(claw.map(s => s.status)).toEqual(['psn', 'par', 'slp']);
+    expect(roles(set('Sneasler', ['Dire Claw'])).dot).toBeCloseTo(0.5 * 0.5 / 3);
+    expect(roles(set('Sneasler', ['Dire Claw'])).debuff).toBeCloseTo(0.5 / 3);
+    expect(statusSources(set('Porygon2', ['Tri Attack'])).map(s => s.status)).toEqual(['brn', 'par']);
+    expect(roles(set('Togekiss', ['Tri Attack'], '', 'Serene Grace')).dot).toBeCloseTo(0.5 * 0.4 / 3);
+  });
+
   it('Knock Off 1, Trick con Choice 1, senza 0.5', () => {
     expect(roles(set('Landorus-Therian', ['Knock Off'])).itemRemoval).toBe(1);
     expect(roles(set('Gholdengo', ['Trick'], 'Choice Scarf')).itemRemoval).toBe(1);
