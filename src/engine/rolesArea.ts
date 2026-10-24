@@ -15,6 +15,12 @@ export const MINOR_CAP = 0.12;
 export const ROLES_FULL = 1;
 /** Malus di ogni voce essenziale mancante (solo team di 6). */
 export const ESSENTIAL_POINTS = 2;
+/**
+ * Peso delle voci importanti nella base: gli hazard (e il Setup del campo che li contiene) contano il doppio,
+ * perché fanno danno a ogni cambio per tutta la partita (calibrazione 2026-10-25: distacco torneo − medio 6,7 → 8,1).
+ */
+export const IMPORTANT_WEIGHT: Partial<Record<LevelKey, number>> = { hazards: 2, fieldSetup: 2 };
+export const importantWeight = (key: LevelKey): number => IMPORTANT_WEIGHT[key] ?? 1;
 /** Lo squilibrio degli attaccanti tiene il suo malus di sempre (testo "Nessun attaccante fisico/speciale"). */
 export const ONE_STYLE_POINTS = 3;
 
@@ -48,10 +54,15 @@ export interface TeamRoles {
   members: { species: string; values: SubRoleValues; reasons: SubRoleReason[]; primary: PrimaryFamily | null; credited?: SubRoleValues }[];
 }
 
-/** Punteggio puro dai valori di team: base degli importanti (1 senza importanti), extra dei minori, valore 0–99. */
-export function rolesScore(importantValues: number[], minorValues: number[]): { base: number; extra: number; value: number } {
+/**
+ * Punteggio puro dai valori di team: base = media pesata degli importanti (1 senza importanti; pesi uguali se mancano),
+ * extra dei minori, valore 0–99.
+ */
+export function rolesScore(importantValues: number[], minorValues: number[], importantWeights?: number[]): { base: number; extra: number; value: number } {
   const clamp = (v: number) => Math.min(1, Math.max(0, v));
-  const base = importantValues.length ? importantValues.reduce((a, v) => a + clamp(v), 0) / importantValues.length : 1;
+  const weights = importantValues.map((_, i) => importantWeights?.[i] ?? 1);
+  const total = weights.reduce((a, w) => a + w, 0);
+  const base = total > 0 ? importantValues.reduce((a, v, i) => a + weights[i] * clamp(v), 0) / total : 1;
   const extra = Math.min(MINOR_CAP, MINOR_STEP * minorValues.reduce((a, v) => a + clamp(v), 0));
   return { base, extra, value: softScore((base + extra) / ROLES_FULL) };
 }
@@ -92,7 +103,8 @@ export function teamRolesArea(team: TeamSet[], data: EngineData, lang: Lang, giv
     return { key, level: needs.levels[key], value: needs.values[key], by };
   });
   const of = (level: Level) => rows.filter(r => r.level === level).map(r => r.value);
-  const score = rolesScore(of('important'), of('minor'));
+  const important = rows.filter(r => r.level === 'important');
+  const score = rolesScore(important.map(r => r.value), of('minor'), important.map(r => importantWeight(r.key)));
   return {
     ...score, rows,
     failures: essentialFailures(team, needs, lang),

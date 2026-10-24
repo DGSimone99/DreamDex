@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { ARCHETYPE_WEIGHTS, rateTeam } from '../../src/engine/rating';
 import { teamNeeds } from '../../src/engine/needs';
 import { LEVEL_KEYS } from '../../src/engine/roleLevels';
-import { rolesScore } from '../../src/engine/rolesArea';
+import { importantWeight, rolesScore } from '../../src/engine/rolesArea';
 
 import { memberPower, teamPower } from '../../src/engine/power';
 import { isPassive } from '../../src/engine/roles';
@@ -38,8 +38,10 @@ describe('team stall', () => {
     expect(needs.levels.attacker).toBe('ignored');
     expect(needs.importantMissing).toEqual(['dot', 'debuff']);
     // Area Ruoli: base degli importanti da stall, extra dei minori (rolesArea.ts)
-    const of = (level: string) => LEVEL_KEYS.filter(k => needs.levels[k] === level).map(k => needs.values[k]);
-    expect(rating.areas.find(a => a.key === 'roles')!.value).toBe(rolesScore(of('important'), of('minor')).value);
+    const keys = (level: string) => LEVEL_KEYS.filter(k => needs.levels[k] === level);
+    const of = (level: string) => keys(level).map(k => needs.values[k]);
+    const score = rolesScore(of('important'), of('minor'), keys('important').map(importantWeight));
+    expect(rating.areas.find(a => a.key === 'roles')!.value).toBe(score.value);
     // Nello stall la velocità non conta
     expect(rating.areas.map(a => a.key)).not.toContain('speed');
   });

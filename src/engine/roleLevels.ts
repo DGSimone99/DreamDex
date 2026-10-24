@@ -37,6 +37,8 @@ const E = 'essential' as const, I = 'important' as const, M = 'minor' as const, 
  * Sticky Web a metà, gruppo "fieldSetup"; i singoli hazard e schermi restano minori): un HO senza nulla di tutto
  * questo ha base 0 e Ruoli bassi (restano le minori), ma nessuna penalità essenziale. Pavimento e media con le
  * minori sono stati provati e scartati: abbassavano il distacco torneo − medio sotto 6,5.
+ * Calibrazione 2026-10-25: il setup del campo è importante anche nel Bulky Offense (team con Sticky Web), dove gli
+ * hazard da soli diventano minori; nella base hazard e setup del campo pesano il doppio (IMPORTANT_WEIGHT, rolesArea.ts).
  */
 const ROWS: [LevelKey, Level, Level, Level, Level, Level][] = [
   ['attacker', E, E, E, E, X],
@@ -47,8 +49,8 @@ const ROWS: [LevelKey, Level, Level, Level, Level, Level][] = [
   ['physicalWall', M, M, E, E, E],
   ['specialWall', M, M, E, E, E],
   ['recovery', X, M, I, I, I],
-  ['fieldSetup', I, X, X, X, X],
-  ['hazards', M, I, I, I, I],
+  ['fieldSetup', I, I, X, X, X],
+  ['hazards', M, M, I, I, I],
   ['removal', M, I, I, I, I],
   ['pivot', M, I, I, M, M],
   ['screens', M, M, M, M, M],

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { rateTeam } from '../../src/engine/rating';
 import { teamNeeds } from '../../src/engine/needs';
 import { LEVEL_KEYS } from '../../src/engine/roleLevels';
-import { MINOR_CAP, MINOR_STEP, rolesScore, teamRolesArea } from '../../src/engine/rolesArea';
+import { importantWeight, MINOR_CAP, MINOR_STEP, rolesScore, teamRolesArea } from '../../src/engine/rolesArea';
 import { softScore } from '../../src/engine/scale';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
 import { fixtureData } from '../fixtures/data';
@@ -90,5 +90,17 @@ describe('area Ruoli: base degli importanti, extra dei minori', () => {
   it('stall: Ruoli non sotto il valore di master', () => {
     // Su master (a72aceb) l'area Ruoli di questo stall valeva 72
     expect(teamRolesArea(stall, fixtureData, 'it').value).toBeGreaterThanOrEqual(72);
+  });
+});
+
+describe('peso degli importanti', () => {
+  it('hazard e setup del campo pesano il doppio nella base', () => {
+    expect(importantWeight('hazards')).toBe(2);
+    expect(importantWeight('fieldSetup')).toBe(2);
+    expect(importantWeight('removal')).toBe(1);
+    // Hazard mancanti (peso 2) e rimozione presente (peso 1): base 1/3, non 1/2
+    expect(rolesScore([0, 1], [], [2, 1]).base).toBeCloseTo(1 / 3);
+    // Senza pesi: media semplice
+    expect(rolesScore([0, 1], []).base).toBeCloseTo(0.5);
   });
 });
