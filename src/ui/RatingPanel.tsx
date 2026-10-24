@@ -22,8 +22,8 @@ function goToSection(id: string) {
   section.querySelector('summary')?.focus({ preventScroll: true });
 }
 
-type DetailArea = 'strength' | 'defense';
-const isDetailArea = (key: string): key is DetailArea => key === 'strength' || key === 'defense';
+type DetailArea = 'strength' | 'defense' | 'speed';
+const isDetailArea = (key: string): key is DetailArea => key === 'strength' || key === 'defense' || key === 'speed';
 
 /** `ruleIssues`: problemi di regole del team (vietati, Mega, mosse non legali…): triangolo rosso accanto al voto. */
 /** `metaMonth`: mese delle statistiche, per dire con quale meta è stato calcolato il voto. */
@@ -63,6 +63,8 @@ export function RatingPanel({ rating, ruleIssues = [], metaMonth }: { rating: Te
             ? [...rating.offense.members].sort((a, b) => b.value - a.value).map(m => `${m.species} ${m.value}`).join('\n')
             : area.key === 'defense' && rating.defense.members.length
               ? [...rating.defense.members].sort((a, b) => b.value - a.value).map(m => `${m.species} ${m.value}`).join('\n')
+            : area.key === 'speed' && rating.speed.members.length
+              ? [...rating.speed.members].sort((a, b) => b.total - a.total).map(m => `${m.species} ${Math.round(100 * m.total)}`).join('\n')
             : undefined;
           return (
             <div key={area.key}>

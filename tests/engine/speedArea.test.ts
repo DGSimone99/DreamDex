@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import type { EngineData } from '../../src/engine/data';
 import { rateTeam } from '../../src/engine/rating';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
-import { teamSpeed } from '../../src/engine/speed';
+import { speedPart, teamSpeedArea } from '../../src/engine/speedArea';
+import { softScore } from '../../src/engine/scale';
 import { fixtureData } from '../fixtures/data';
 
 const set = (species: string, item: string, ability: string, moves: string[], nature = 'Jolly'): TeamSet =>
@@ -13,21 +14,75 @@ const valiant = set('Iron Valiant', 'Booster Energy', 'Quark Drive', ['Moonblast
 const toxapex = set('Toxapex', 'Black Sludge', 'Regenerator', ['Scald', 'Recover', 'Toxic', 'Haze'], 'Bold');
 
 describe('area Velocità', () => {
-  it('dai due attaccanti più veloci: senza meta contro tutti i Pokémon, col meta contro le minacce più usate', () => {
-    expect(teamSpeed([dragapult, valiant], noMeta, null)).toBeGreaterThan(0.9);
-    expect(teamSpeed([dragapult, valiant], fixtureData, ['Great Tusk', 'Gholdengo', 'Kingambit'])).toBe(1);
+  it("l'area è la Velocità più il plus del controllo; il controllo è in punti e non toglie mai", () => {
+    const web = set('Ribombee', 'Focus Sash', 'Shield Dust', ['Sticky Web', 'Moonblast'], 'Timid');
+    const team = [dragapult, valiant, toxapex, web];
+    const area = teamSpeedArea(team, noMeta);
+    expect(area.value).toBe(speedPart(area.members));
+    expect(area.speed).toBe(speedPart(area.members.map(m => ({ ...m, total: m.own }))));
+    expect(area.control).toBe(area.value - area.speed);
+    expect(area.control).toBeGreaterThan(0);
+    expect(area.value).toBeLessThan(100);
+    const none = teamSpeedArea([dragapult, valiant, toxapex], noMeta);
+    expect(none.control).toBe(0);
+    expect(none.sources).toEqual([]);
   });
 
-  it('un Pokémon veloce che non fa danni non conta (Toxapex non attacca): il posto mancante vale zero', () => {
-    const alone = teamSpeed([dragapult], noMeta, null);
-    expect(teamSpeed([dragapult, toxapex], noMeta, null)).toBe(alone);
-    expect(alone).toBeLessThan(0.5 + 1e-9);
+  it('chi porta il controllo: la mossa, quanti compagni aiuta e quanti punti aggiunge', () => {
+    const clef = set('Clefable', 'Leftovers', 'Magic Guard', ['Thunder Wave', 'Moonblast'], 'Bold');
+    const chomp = set('Garchomp', 'Rocky Helmet', 'Rough Skin', ['Earthquake'], 'Jolly');
+    const team = [clef, chomp, toxapex];
+    const area = teamSpeedArea(team, noMeta);
+    const wave = area.sources.find(src => src.move === 'Thunder Wave')!;
+    expect(wave.by).toEqual(['Clefable']);
+    expect(wave.condition).toBe('slow');
+    expect(wave.helped).toBe(area.members.filter(m => m.gains.some(g => g.source === 'Thunder Wave' && g.by?.includes('Clefable'))).length);
+    expect(wave.plus).toBe(speedPart(area.members.map(m => ({ ...m, total: Math.min(1, m.own + (m.gains.find(g => g.condition === 'slow')?.gain ?? 0)) }))) - area.speed);
+    // Con due mosse che rallentano conta la migliore, ma la tabella le mostra tutte, ognuna con il suo effetto da sola
+    // Glare rallenta sempre almeno quanto Thunder Wave (i Terra non ne sono immuni): Thunder Wave non vince mai
+    const glare = set('Dudunsparce', 'Leftovers', 'Serene Grace', ['Glare', 'Boomburst'], 'Calm');
+    const both = teamSpeedArea([clef, chomp, glare], noMeta);
+    expect(both.sources.map(src => src.move).sort()).toEqual(['Glare', 'Thunder Wave']);
+    expect(both.sources.find(src => src.move === 'Thunder Wave')!.by).toEqual(['Clefable']);
+    expect(both.sources.find(src => src.move === 'Thunder Wave')!.plus).toBeGreaterThan(0);
+    // Il guadagno di Garchomp dice da chi viene: non è lui ad avere Thunder Wave
+    expect(area.members.find(m => m.species === 'Garchomp')!.gains.find(g => g.condition === 'slow')!.by).toEqual(['Clefable']);
   });
 
-  it('un team con Trick Room è lento per scelta: la Velocità non conta e non si mostra', () => {
-    const tr = [set('Hatterene', 'Life Orb', 'Magic Bounce', ['Trick Room', 'Psychic', 'Dazzling Gleam', 'Mystical Fire'], 'Quiet'), toxapex];
-    expect(rateTeam(tr, noMeta)!.areas.map(a => a.key)).not.toContain('speed');
-    expect(rateTeam([dragapult, toxapex], noMeta)!.areas.map(a => a.key)).toContain('speed');
+  it("nel voto: il valore dell'area è quello di teamSpeedArea", () => {
+    const rating = rateTeam([dragapult, valiant, toxapex], fixtureData)!;
+    expect(rating.areas.find(a => a.key === 'speed')!.value).toBe(teamSpeedArea([dragapult, valiant, toxapex], fixtureData).value);
+    expect(rating.speed.members).toHaveLength(3);
+  });
+
+  it('anche chi non attacca conta (Toxapex lento abbassa la Velocità del team)', () => {
+    expect(teamSpeedArea([dragapult, valiant, toxapex], noMeta).speed).toBeLessThan(teamSpeedArea([dragapult, valiant], noMeta).speed);
+  });
+
+  it('col meta e senza: due gruppi di confronto diversi', () => {
+    const team = [dragapult, valiant, toxapex];
+    const on = teamSpeedArea(team, fixtureData);
+    const off = teamSpeedArea(team, { ...fixtureData, ignoreMeta: true });
+    expect(on.members[2].raw).not.toBeCloseTo(off.members[2].raw, 5);
+  });
+
+  it('Trick Room è una condizione: la Velocità resta, e guadagna chi è adatto (i lenti), non chi è veloce', () => {
+    const hatt = set('Hatterene', 'Life Orb', 'Magic Bounce', ['Trick Room', 'Psychic', 'Dazzling Gleam', 'Mystical Fire'], 'Quiet');
+    const slowpex = { ...toxapex, evs: {}, nature: 'Relaxed' };
+    const tr = [hatt, slowpex, dragapult];
+    expect(rateTeam(tr, noMeta)!.areas.map(a => a.key)).toContain('speed');
+    const area = teamSpeedArea(tr, noMeta);
+    const room = (name: string) => area.members.find(m => m.species === name)!.gains.find(g => g.condition === 'trickroom');
+    expect(room('Toxapex')!.source).toBe('Trick Room');
+    expect(room('Toxapex')!.gain).toBeGreaterThan(0.3);
+    expect(room('Dragapult')).toBeUndefined();
+    // Senza Trick Room la condizione non c'è
+    expect(teamSpeedArea([slowpex, dragapult], noMeta).members.some(m => m.gains.some(g => g.condition === 'trickroom'))).toBe(false);
+  });
+
+  it('team vuoto o di sconosciuti: 0, niente NaN', () => {
+    expect(teamSpeedArea([], noMeta).value).toBe(0);
+    expect(teamSpeedArea([set('Fakemon', '', '', [])], noMeta).value).toBe(0);
   });
 });
 
@@ -42,3 +97,50 @@ describe('riferimento della velocità', () => {
     expect([...ou].sort((a, b) => a - b)).toEqual(ou);
   });
 });
+
+describe('malus: Trick Room in un team veloce', () => {
+  const fast = (species: string) => set(species, 'Life Orb', '', ['Thunderbolt'], 'Timid');
+  const hatt = set('Hatterene', 'Focus Sash', 'Magic Bounce', ['Trick Room', 'Psychic'], 'Quiet');
+
+  it('−1 per ogni membro veloce (supera almeno metà del meta), al massimo −3', () => {
+    const team = [hatt, fast('Regieleki'), fast('Dragapult'), fast('Iron Bundle'), fast('Electrode-Hisui'), fast('Meowscarada')];
+    const rating = rateTeam(team, fixtureData)!;
+    const item = rating.penalty.items.find(i => i.text.startsWith('Trick Room di Hatterene rallenta'))!;
+    expect(item.points).toBe(3);
+    const two = rateTeam([hatt, fast('Regieleki'), fast('Dragapult'), toxapex], fixtureData)!;
+    expect(two.penalty.items.find(i => i.text.startsWith('Trick Room'))!.points).toBe(2);
+  });
+
+  it('un vero team Trick Room (tutti lenti) non perde niente; senza Trick Room nemmeno', () => {
+    const slow = (species: string) => set(species, 'Leftovers', '', ['Body Slam'], 'Brave');
+    const team = [hatt, { ...toxapex, nature: 'Relaxed', evs: {} }, slow('Ursaluna'), slow('Torkoal')].map(s => ({ ...s, evs: {} }));
+    expect(rateTeam(team, fixtureData)!.penalty.items.some(i => i.text.startsWith('Trick Room'))).toBe(false);
+    expect(rateTeam([fast('Regieleki'), fast('Dragapult')], fixtureData)!.penalty.items.some(i => i.text.startsWith('Trick Room'))).toBe(false);
+  });
+});
+
+describe('controllo e malus: casi limite', () => {
+  const fast = (species: string) => set(species, 'Life Orb', '', ['Thunderbolt'], 'Timid');
+
+  it('una mossa di controllo che non aiuta nessuno compare comunque, con +0', () => {
+    const roomPult = set('Dragapult', 'Choice Specs', 'Infiltrator', ['Trick Room', 'Shadow Ball'], 'Timid');
+    const area = teamSpeedArea([roomPult, fast('Iron Valiant')], fixtureData);
+    const room = area.sources.find(src => src.move === 'Trick Room')!;
+    expect(room).toMatchObject({ by: ['Dragapult'], helped: 0, plus: 0 });
+  });
+
+  it('un solo membro veloce: il testo è al singolare', () => {
+    const hatt = set('Hatterene', 'Focus Sash', 'Magic Bounce', ['Trick Room', 'Psychic'], 'Quiet');
+    const rating = rateTeam([hatt, fast('Regieleki'), toxapex], fixtureData)!;
+    const item = rating.penalty.items.find(i => i.text.startsWith('Trick Room'))!;
+    expect(item.text).toBe('Trick Room di Hatterene rallenta 1 membro veloce (Regieleki)');
+    expect(item.points).toBe(1);
+  });
+
+  it('il malus resta dentro il tetto delle penalità', () => {
+    const hatt = set('Hatterene', 'Focus Sash', 'Magic Bounce', ['Trick Room', 'Psychic'], 'Quiet');
+    const team = [hatt, fast('Regieleki'), fast('Dragapult'), fast('Iron Bundle'), fast('Electrode-Hisui'), fast('Meowscarada')];
+    expect(rateTeam(team, fixtureData)!.penalty.total).toBeLessThanOrEqual(15);
+  });
+});
+

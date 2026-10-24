@@ -7,6 +7,7 @@ import { battleAbility, battleSpecies, dex, getMove, toID } from './dex';
 import { DEFAULT_FORMAT } from './format';
 import { teraAllowed } from './formats';
 import { rulesOf } from './formatRules';
+import { attackStyle } from './roles';
 import { mostCommonSet, type TeamSet } from './sets';
 import { topThreats } from './stats';
 import { softScore } from './scale';
@@ -80,6 +81,8 @@ export interface CoverageDetail {
 }
 
 export interface TeamOffense {
+  /** Quanti attaccanti fisici, speciali e misti (solo informazione, non entra nel voto). */
+  attackers: { physical: number; special: number; mixed: number };
   /** 75% la media pesata dei membri, 25% la Coverage. */
   value: number;
   memberValue: number;
@@ -386,7 +389,9 @@ export function teamOffense(team: TeamSet[], data: EngineData): TeamOffense {
   const effective = wallbreaking + SETUP_SHARE * (wallbreakingSetup - wallbreaking) + ONE_USE_SHARE * (wallbreakingOneUse - wallbreaking);
   const final = (wall: number) => members.length ? Math.round((1 - COVERAGE_SHARE) * attackValue(power, wall) + COVERAGE_SHARE * coverageValue) : 0;
   const value = final(effective);
+  const styles = team.filter(set => battleSpecies(set)).map(attackStyle);
   return {
+    attackers: { physical: styles.filter(s => s === 'physical').length, special: styles.filter(s => s === 'special').length, mixed: styles.filter(s => s === 'mixed').length },
     value,
     memberValue: members.length ? Math.round(attackValue(power, effective)) : 0,
     coverage: coverageValue,

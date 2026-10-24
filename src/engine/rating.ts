@@ -11,7 +11,7 @@ import type { Archetype } from './archetype';
 import { attackStyle, detectRoles, isPassive, isStall, teamRoles } from './roles';
 import { rulesOf, type FormatRules } from './formatRules';
 import { meetsNeed, needCoverage, NEEDS } from './needs';
-import { teamSpeed } from './speed';
+import { teamSpeedArea, type TeamSpeed } from './speedArea';
 import { strengthComponent } from './scoring';
 import { usageOf } from './stats';
 import type { TeamSet } from './sets';
@@ -34,7 +34,7 @@ const BASE_AREAS: BaseArea[] = ['defense', 'strength', 'roles', 'speed'];
  * Peso di ogni area secondo il tipo di team (somma 100): ognuno si giudica su quello con cui vince.
  * Un hyper offense su Offesa e Velocità, uno stall su Difesa e Ruoli (hazard, rimozione, recupero);
  * il balance tiene tutto quasi alla pari.
- * Un team incompleto si giudica come balance. Con Trick Room la Velocità non conta.
+ * Un team incompleto si giudica come balance. Trick Room è una condizione della Velocità (speedArea.ts).
  */
 export const ARCHETYPE_WEIGHTS: Record<Archetype, Record<BaseArea, number>> = {
   // L'Offesa ha preso il peso della vecchia Coverage offensiva, la Difesa quello di Coverage difensiva e Robustezza
@@ -118,7 +118,7 @@ export interface TeamRating {
   archetype: 'stall' | null;
   /** Tipo di team con cui si sono scelti i pesi delle aree (balance per un team incompleto). */
   teamType: Archetype;
-  /** Il team usa Trick Room: la Velocità non conta. */
+  /** Il team usa Trick Room (premia i membri lenti nella Velocità; in un team veloce è un malus). */
   trickRoom: boolean;
   /** Dettaglio dell'area Meta, o null se il voto è senza meta. */
   meta: MetaScore | null;
@@ -128,6 +128,8 @@ export interface TeamRating {
   offense: TeamOffense;
   /** Difesa: robustezza, sostenibilità e coverage difensiva di tipi e del meta, con le sottostatistiche per membro. */
   defense: TeamDefense;
+  /** Velocità: ogni membro coi guadagni (setup, meteo, priorità) e il controllo velocità del team. */
+  speed: TeamSpeed;
 }
 
 
@@ -176,6 +178,10 @@ export function weatherClashes(team: TeamSet[], lang: Lang = 'it'): Redundancy[]
     })),
   ];
 }
+
+/** Trick Room rallenta un membro che supera da solo almeno questa quota del meta; il malus si ferma a −3. */
+export const TRICK_ROOM_FAST = 0.5;
+export const TRICK_ROOM_MAX = 3;
 
 /** Forza sotto cui un membro senza utilità chiave è considerato debole. */
 export const WEAK_POWER = 30;
@@ -330,18 +336,18 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
   const offense = teamOffense(team, data);
   const defense = teamDefense(team, data);
   const trickRoom = team.some(set => set.moves.some(move => toID(move) === 'trickroom'));
-  // I pesi dal tipo di team (un team incompleto si giudica come balance); con Trick Room la Velocità non conta
+  // I pesi dal tipo di team (un team incompleto si giudica come balance)
   const table = ARCHETYPE_WEIGHTS[analysis.needs.archetype];
-  const effective: Record<BaseArea, number> = trickRoom ? { ...table, speed: 0 } : table;
-  // Velocità: col meta contro le minacce più usate, senza contro tutti i Pokémon
-  // Velocità: contro il riferimento del formato, uguale col meta e senza (il meta conta solo nell'area Meta)
-  const speed = teamSpeed(team, data);
+  // Trick Room non azzera più la Velocità: è una sua condizione (speedArea.ts), che premia i membri lenti
+  const effective: Record<BaseArea, number> = table;
+  // Velocità: ogni membro coi guadagni suoi e del controllo del team (speedArea.ts); col meta contro i più usati
+  const speed = teamSpeedArea(team, data);
 
   // Offesa e Difesa dal danno vero (offense.ts, defense.ts)
   const attack = offense.members.length ? offense.value / 100 : null;
   const raw: Record<BaseArea, number | null> = {
     defense: defense.members.length ? defense.value / 100 : null, strength: attack,
-    roles: Math.min(1, roles), speed: Math.min(1, speed),
+    roles: Math.min(1, roles), speed: speed.members.length ? speed.value / 100 : null,
   };
   const available = BASE_AREAS.filter(key => raw[key] !== null && effective[key] > 0);
   const totalWeight = sum(available.map(key => effective[key]));
@@ -358,7 +364,7 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
     // Informazione per l'Analisi: nel voto le minacce stanno nella Coverage meta della Difesa
   }
   const areas = (Object.keys(raw) as (keyof typeof raw)[])
-    // Con uno stall o Trick Room la Velocità non conta e non si mostra
+    // Con uno stall la Velocità non conta e non si mostra
     .filter(key => (areaWeights[key] ?? 0) > 0)
     .map(key => ({
       key,
@@ -367,8 +373,16 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
     }));
   const base = Math.round(100 * score);
   const redundant = redundancies(team, analysis, lang);
-  // Niente più penalità del meta: le minacce scoperte abbassano la Coverage meta della Difesa
-  const penalty = redundant;
+  // Niente più penalità del meta: le minacce scoperte abbassano la Coverage meta della Difesa.
+  // Trick Room in un team veloce: −1 per ogni membro che supera da solo almeno metà del meta (sotto Trick Room perde), fino a −3
+  const roomSetter = team.find(set => set.moves.some(move => toID(move) === 'trickroom'));
+  const fastMembers = roomSetter ? speed.members.filter(m => m.raw >= TRICK_ROOM_FAST) : [];
+  const roomItems = fastMembers.length
+    ? [{ text: t(lang, fastMembers.length === 1 ? 'rating.redundancy.trickRoomFastOne' : 'rating.redundancy.trickRoomFast', { setter: battleName(roomSetter!), n: fastMembers.length, list: fastMembers.map(m => m.species).join(', ') }), points: Math.min(TRICK_ROOM_MAX, fastMembers.length) }]
+    : [];
+  const penalty = roomItems.length
+    ? { total: Math.min(MAX_PENALTY, redundant.total + roomItems[0].points), items: [...redundant.items, ...roomItems] }
+    : redundant;
   const weather = weatherBonus(team, lang);
   const tera = teraBonus(team, analysis, rules.teraBonusCap, lang);
   const bonus = { total: Math.min(MAX_BONUS, weather.total + sum(tera.map(i => i.points))), items: [...weather.items, ...tera] };
@@ -376,7 +390,7 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
   return {
     base, penalty, bonus, power: power.members, overall, ...gradeFor(overall, lang), provisional: team.length < 6, areas, archetype, meta,
     teamType: analysis.needs.archetype, trickRoom,
-    weights: areaWeights, offense, defense,
+    weights: areaWeights, offense, defense, speed,
   };
 }
 

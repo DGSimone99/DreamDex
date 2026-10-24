@@ -28,8 +28,8 @@ describe('voto col meta e senza', () => {
     expect(on.penalty.items.some(i => i.text.startsWith('Poco preparato al meta'))).toBe(false);
     expect(on.defense.coverageMeta).not.toBeNull();
     expect(off.defense.coverageMeta).toBeNull();
-    // Ruoli e Velocità non cambiano col meta; Offesa e Difesa sì
-    const areas = (r: typeof on) => r.areas.filter(a => !['strength', 'defense'].includes(a.key)).map(a => [a.key, a.value]);
+    // I Ruoli non cambiano col meta; Offesa, Difesa e Velocità sì
+    const areas = (r: typeof on) => r.areas.filter(a => !['strength', 'defense', 'speed'].includes(a.key)).map(a => [a.key, a.value]);
     expect(areas(on)).toEqual(areas(off));
     expect(on.overall).toBe(Math.max(0, Math.min(100, on.base - on.penalty.total + on.bonus.total)));
   });
@@ -64,7 +64,7 @@ describe('interruttore nella barra in alto', () => {
     expect(screen.getByText('Minacce del meta')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Senza meta' }));
     expect(screen.getByRole('button', { name: 'Senza meta' })).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByText(/^Senza meta: Offesa e Difesa/)).toBeInTheDocument();
+    expect(screen.getByText(/^Senza meta: Offesa, Difesa e Velocità/)).toBeInTheDocument();
     expect(screen.queryByText('Minacce del meta')).toBeNull();
     expect(loadSession(storage)?.format.meta).toBe(false);
   });

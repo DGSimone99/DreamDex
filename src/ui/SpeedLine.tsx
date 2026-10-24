@@ -41,7 +41,7 @@ export function SpeedLine({ name, tier, scarf }: { name: string; tier: SpeedTier
       <span aria-hidden="true">·</span>
       <span className="speed-rank" tabIndex={0} aria-describedby={shown ? id : undefined} ref={anchor}
         onMouseEnter={show} onMouseLeave={() => setShown(false)} onFocus={show} onBlur={() => setShown(false)}>
-        {t('editor.speedRank', { pct: formatPercent(lang, tier.outspeeds, 0), n: tier.total })}
+        {t(tier.vsMeta ? 'editor.speedRank' : 'editor.speedRankTier', { pct: formatPercent(lang, tier.outspeeds, 0), n: tier.total })}
         {shown && <span id={id} role="tooltip" className={`speed-pop${up ? ' up' : ''}`}>
           {group(t('editor.speedFaster'), [...tier.faster].reverse())}
           {group(t('editor.speedTies'), tier.ties)}

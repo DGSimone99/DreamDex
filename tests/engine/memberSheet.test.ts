@@ -2,6 +2,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import type { EngineData } from '../../src/engine/data';
 import { initLearnsets } from '../../src/engine/learnsets';
 import { memberSheet } from '../../src/engine/memberSheet';
+import { speedTier } from '../../src/engine/speed';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
 import { fixtureData } from '../fixtures/data';
 
@@ -48,6 +49,12 @@ describe('scheda dei membri', () => {
     expect(n.coverage).toContain('Grass');
     expect(n.support).toEqual(expect.arrayContaining(['status', 'disruption', 'sacrifice', 'weather']));
     expect(row([greninja], 'Greninja').support).toContain('priority');
+  });
+
+  it("la quota superata è quella dell'editor, col meta e senza", () => {
+    for (const data of [fixtureData, noMeta, { ...fixtureData, ignoreMeta: true }]) {
+      expect(row([greninja], 'Greninja', data).speed.share).toBeCloseTo(speedTier(greninja, data)!.outspeeds);
+    }
   });
 
   it('col meta la velocità si confronta con le minacce più usate', () => {

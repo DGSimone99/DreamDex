@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import type { TeamRating } from '../engine/rating';
 import { stepBucket, type CoverageDetail, type WallCell } from '../engine/offense';
 import type { TeamDefense } from '../engine/defense';
+import { CONTROL_CONDITIONS, type MemberSpeed, type SpeedCondition, type TeamSpeed } from '../engine/speedArea';
 import { useT } from '../i18n/react';
 import { Icon } from './icons';
 import { Sprite, TypeChip } from './Sprite';
@@ -13,7 +14,7 @@ type Sub = Exclude<Tab, 'general'>;
 /** Una scheda del dettaglio: etichetta, valore e contenuto. */
 type T = ReturnType<typeof useT>;
 
-interface DetailTab { key: string; label: string; value: number | null; panel: ReactElement }
+interface DetailTab { key: string; label: string; value: number | string | null; panel: ReactElement }
 
 /** Casella della tabella dei muri: il danno, e tra parentesi quello dopo il setup quando cambia la soglia. */
 function WallValue({ cell }: { cell: WallCell }) {
@@ -30,10 +31,12 @@ function WallValue({ cell }: { cell: WallCell }) {
  * Dettaglio di un'area (Offesa o Difesa): una scheda generale e una per sottostatistica, ognuna con come si calcola
  * e il valore di ogni membro. Stesso guscio del modale "Come funziona il voto", con le schede a sinistra.
  */
-export function AreaDetail({ rating, area, onClose }: { rating: TeamRating; area: 'strength' | 'defense'; onClose: () => void }) {
+export function AreaDetail({ rating, area, onClose }: { rating: TeamRating; area: 'strength' | 'defense' | 'speed'; onClose: () => void }) {
   const t = useT();
   const value = rating.areas.find(a => a.key === area)?.value ?? null;
-  const tabs = area === 'strength' ? offenseTabs(rating, t) : defenseTabs(rating.defense, !!rating.meta, t);
+  const tabs = area === 'strength' ? offenseTabs(rating, t)
+    : area === 'defense' ? defenseTabs(rating.defense, !!rating.meta, t)
+    : speedTabs(rating.speed, !!rating.meta, t);
   return <DetailShell title={t(`area.${area}`)} value={value} tabs={tabs} onClose={onClose} />;
 }
 
@@ -114,6 +117,12 @@ function offenseTabs(rating: TeamRating, t: T): DetailTab[] {
     <>
       <h4>{t('detail.general.title')}</h4>
       <p>{t(meta ? 'detail.general.lead.meta' : 'detail.general.lead.tier', { walls: offense.defenders.length })}</p>
+      {/* Solo informazione: quanti attaccanti per stile, non entra nel voto */}
+      <p className="ad-holes">{t('detail.attackers', {
+        physical: `${offense.attackers.physical} ${t(offense.attackers.physical === 1 ? 'detail.attackers.physical.one' : 'detail.attackers.physical.many')}`,
+        special: `${offense.attackers.special} ${t(offense.attackers.special === 1 ? 'detail.attackers.special.one' : 'detail.attackers.special.many')}`,
+        mixed: `${offense.attackers.mixed} ${t(offense.attackers.mixed === 1 ? 'detail.attackers.mixed.one' : 'detail.attackers.mixed.many')}`,
+      })}</p>
       <dl className="ad-subs">
         {subs.map(sub => (
           <div key={sub} className="ad-sub">
@@ -518,5 +527,164 @@ function defenseTabs(defense: TeamDefense, meta: boolean, t: T): DetailTab[] {
   return [
     { key: 'general', label: t('detail.tab.general'), value: defense.value, panel: general },
     ...subs.map(key => ({ key, label: label(key), value: values[key], panel: panels[key]! })),
+  ];
+}
+
+const OWN_CONDITIONS: SpeedCondition[] = ['setup', 'weather', 'unburden', 'priority'];
+const points = (x: number) => Math.round(100 * x);
+
+/** Le schede della Velocità: Generale, Velocità (ogni membro da solo) e Controllo velocità (quello che porta il team). */
+function speedTabs(speed: TeamSpeed, meta: boolean, t: T): DetailTab[] {
+  const members = speed.members;
+  const gainOf = (m: MemberSpeed, c: SpeedCondition) => m.gains.find(g => g.condition === c);
+  const presentOf = (list: SpeedCondition[]) => list.filter(c => members.some(m => gainOf(m, c)));
+  const ownPresent = presentOf(OWN_CONDITIONS);
+  const controlPresent = presentOf(CONTROL_CONDITIONS);
+  const gainTip = (m: MemberSpeed) => m.gains.map(g => `${t(`sdetail.cond.${g.condition}`)} (${g.source}): +${points(g.gain)}`).join('\n');
+  // Il totale coi guadagni; tra parentesi, in verde, quanto aggiungono le condizioni
+  const totalCell = (m: MemberSpeed) => {
+    const gain = points(m.total) - points(m.raw);
+    return (
+      <>
+        {points(m.total)}%
+        {gain > 0 && <small className="ad-gain" title={gainTip(m)}> (+{gain})</small>}
+      </>
+    );
+  };
+  const tips = {
+    speed: t('sdetail.general.speed'),
+    control: controlPresent.length
+      ? t('sdetail.general.control', { list: controlPresent.map(c => t(`sdetail.cond.${c}`)).join(', ') })
+      : t('sdetail.general.controlNone'),
+  };
+  const conditionTable = (list: SpeedCondition[], base: (m: MemberSpeed) => number, end: (m: MemberSpeed) => number, baseLabel: string) => (
+    <div className="ad-scroll">
+      <table className="ad-t">
+        <thead>
+          <tr>
+            <th scope="col">{t('detail.member')}</th>
+            <th scope="col">{t('sdetail.speed')}</th>
+            <th scope="col">{baseLabel}</th>
+            {list.map(c => <th key={c} scope="col">{t(`sdetail.cond.${c}`)}</th>)}
+            <th scope="col">{t('sdetail.total')}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {[...members].sort((a, b) => b.speed - a.speed).map((m, i) => (
+            <tr key={`${m.species}-${i}`}>
+              <th scope="row"><span className="ad-mon"><Sprite species={m.species} size={32} />{m.species}</span></th>
+              <td>{m.speed}</td>
+              <td>{points(base(m))}%</td>
+              {list.map(c => {
+                const g = gainOf(m, c);
+                return <td key={c}>{g ? <span className="ad-gain-cell" title={g.source}>+{points(g.gain)}</span> : '—'}</td>;
+              })}
+              <td className="total">{points(end(m))}%</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+
+  const general = (
+    <>
+      <h4>{t('sdetail.title')}</h4>
+      <p>{t(meta ? 'sdetail.lead.meta' : 'sdetail.lead.tier')}</p>
+      <dl className="ad-subs">
+        <div className="ad-sub">
+          <dt>{t('sdetail.speed')}</dt>
+          <dd>
+            <meter min={0} max={100} value={speed.speed} aria-hidden="true" />
+            <strong>{speed.speed}</strong>
+            <span>{tips.speed}</span>
+          </dd>
+        </div>
+        {/* Il controllo è un plus in punti sopra la Velocità: niente barra 0–100 */}
+        <div className="ad-sub">
+          <dt>{t('sdetail.control')}</dt>
+          <dd>
+            <strong className="ad-plus">+{speed.control}</strong>
+            <span>{tips.control}</span>
+          </dd>
+        </div>
+      </dl>
+      <div className="ad-scroll">
+        <table className="ad-t">
+          <thead>
+            <tr>
+              <th scope="col">{t('detail.member')}</th>
+              <th scope="col">{t('sdetail.speed')}</th>
+              <th scope="col">{t('sdetail.outsped')}</th>
+              <th scope="col">{t('sdetail.total')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {members.map((m, i) => (
+              <tr key={`${m.species}-${i}`}>
+                <th scope="row"><span className="ad-mon"><Sprite species={m.species} size={40} />{m.species}</span></th>
+                <td>{m.speed}</td>
+                <td>{points(m.raw)}%</td>
+                <td className="total">{totalCell(m)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+
+  const speedTab = (
+    <>
+      <h4>{t('sdetail.speed')}</h4>
+      <div className="ad-how">
+        <p>{t(meta ? 'sdetail.speed.how1.meta' : 'sdetail.speed.how1.tier')}</p>
+        <p>{t('sdetail.speed.how2')}</p>
+        <p>{t('sdetail.speed.how3')}</p>
+      </div>
+      {conditionTable(ownPresent, m => m.raw, m => m.own, t('sdetail.raw'))}
+    </>
+  );
+
+  const controlTab = (
+    <>
+      <h4>{t('sdetail.control')}</h4>
+      <div className="ad-how">
+        <p>{t('sdetail.control.how1')}</p>
+        <p>{t('sdetail.control.how2')}</p>
+      </div>
+      {speed.sources.length ? (
+        <div className="ad-scroll">
+          <table className="ad-t">
+            <thead>
+              <tr>
+                <th scope="col">{t('detail.member')}</th>
+                <th scope="col" className="left">{t('sdetail.move')}</th>
+                <th scope="col">{t('sdetail.helps')}</th>
+                <th scope="col">{t('sdetail.points')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {speed.sources.map(src => (
+                <tr key={`${src.condition}-${src.move}`}>
+                  <th scope="row">
+                    <span className="ad-mon">{src.by.map(name => <Sprite key={name} species={name} size={32} />)}{src.by.join(', ')}</span>
+                  </th>
+                  <td className="left">{src.move}</td>
+                  <td>{t(src.helped === 1 ? 'sdetail.mates.one' : 'sdetail.mates.many', { n: src.helped })}</td>
+                  <td className="total">+{src.plus}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : <p className="ad-holes">{t('sdetail.control.none')}</p>}
+    </>
+  );
+
+  return [
+    { key: 'general', label: t('detail.tab.general'), value: speed.value, panel: general },
+    { key: 'speed', label: t('sdetail.speed'), value: speed.speed, panel: speedTab },
+    { key: 'control', label: t('sdetail.control'), value: `+${speed.control}`, panel: controlTab },
   ];
 }
