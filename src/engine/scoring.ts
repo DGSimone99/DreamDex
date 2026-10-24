@@ -10,7 +10,7 @@ import type { Format } from './format';
 import { attackStyle } from './roles';
 import { keyValue, LEVEL_WEIGHT, MISSING_BELOW } from './needs';
 import { LEVEL_KEYS } from './roleLevels';
-import { setSubRoles } from './subRoles';
+import { creditedValues, primaryFamily, setSubRoles } from './subRoles';
 import { defaultSet, type TeamSet } from './sets';
 import { teammatePct, usageOf } from './stats';
 import { clashesWith, conditionLabel, mechanicalLinks, weakenedMoves } from './synergy';
@@ -141,8 +141,10 @@ function coverageComponent(set: TeamSet, analysis: TeamAnalysis, team: TeamSet[]
  * I valori del candidato vengono dal rilevatore del solo set (senza calcolo dei danni).
  */
 export function rolesComponent(set: TeamSet, analysis: TeamAnalysis) {
-  const { levels, values, missingRoles, needStyle, rules } = analysis.needs;
-  const candidate = setSubRoles(set, rules);
+  const { levels, values, missingRoles, needStyle, rules, archetype } = analysis.needs;
+  // Il candidato col credito del secondario, come i membri del team (un attaccante non è un muro nello stall)
+  const raw = setSubRoles(set, rules);
+  const candidate = creditedValues(raw, primaryFamily(set, raw), archetype);
   let required = 0;
   let minorRoom = 0;
   let gained = 0;

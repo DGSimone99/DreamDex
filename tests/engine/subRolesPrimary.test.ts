@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { cardRoles } from '../../src/engine/archetype';
+import { DEFAULT_RULES } from '../../src/engine/formatRules';
 import { teamNeeds } from '../../src/engine/needs';
 import { teamRolesArea } from '../../src/engine/rolesArea';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
@@ -57,6 +59,25 @@ describe('ruolo principale e secondario', () => {
     expect(primaryFamily(defensiveCorv, v)).toBe('wall');
     // Un attacco secondario di un muro, in stall, non conta
     expect(creditedValues({ physicalWall: 1, physicalBreaker: 1, recovery: 1 }, 'wall', 'stall')).toEqual({ physicalWall: 1, recovery: 1 });
+  });
+
+  it('con entrambe le famiglie decide il verdetto degli EV, uguale su scheda e bisogni', () => {
+    const both = { physicalWall: 1, physicalBreaker: 1, recovery: 1, removal: 1 };
+    expect(primaryFamily(defensiveCorv, both)).toBe('wall');
+    expect(primaryFamily(offensiveTusk, both)).toBe('attack');
+    expect(cardRoles(defensiveCorv, DEFAULT_RULES, both)[0]).toBe('physicalWall');
+    expect(cardRoles(offensiveTusk, DEFAULT_RULES, both)[0]).toBe('physicalBreaker');
+  });
+
+  it('un muro da stall senza EV: scheda e bisogni scelgono lo stesso principale (il valore migliore)', () => {
+    const tingLu = set('Ting-Lu', 'Leftovers', 'Vessel of Ruin', ['Earthquake', 'Ruination', 'Stealth Rock', 'Whirlwind']);
+    const values = { physicalWall: 0.6, physicalBreaker: 1, hazards: 1 };
+    const primary = primaryFamily(tingLu, values);
+    expect(primary).toBe('attack');
+    // La scheda parte dal principale degli stessi valori, senza il vecchio passaggio da muro da stall
+    expect(cardRoles(tingLu, DEFAULT_RULES, values)[0]).toBe('physicalBreaker');
+    const needs = teamNeeds([tingLu], fixtureData, [values]);
+    expect(needs.members[0]).toEqual(values);
   });
 
   it('senza attacco né muro: nessun principale; senza EV decide il valore (pari: attacco)', () => {
