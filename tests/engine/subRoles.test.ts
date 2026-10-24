@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_RULES, formatRules, UBERS_RULES } from '../../src/engine/formatRules';
 import type { TeamSet } from '../../src/engine/sets';
-import { attackSide, rolesList, setSubRoles, statusSources, wallIndex } from '../../src/engine/subRoles';
+import { attackSide, rolesList, uninvestedWall, setSubRoles, statusSources, wallIndex } from '../../src/engine/subRoles';
 
 const set = (species: string, moves: string[], item = '', ability = '', evs: TeamSet['evs'] = {}, nature = 'Serious'): TeamSet =>
   ({ species, ability, item, moves, nature, evs });
@@ -88,6 +88,19 @@ describe('subRoles', () => {
     expect(attackSide(dm, 'Earthquake')).toBe('physical');
     expect(attackSide(dm, 'Flamethrower')).toBe('special');
     expect(attackSide(dm, 'Swords Dance')).toBeNull();
+  });
+
+  it('muro senza investimento in attacco: niente etichetta d’Attacco (Body Press, setup e set senza EV a parte)', () => {
+    const wall = { physicalWall: 1 };
+    const hippo = set('Hippowdon', ['Earthquake', 'Slack Off'], 'Rocky Helmet', '', { hp: 252, def: 252 }, 'Impish');
+    expect(uninvestedWall(hippo, 'physical', 'Earthquake', null, wall)).toBe(true);
+    // Non è un muro, ha EV in Attacco o natura che lo alza, setup che lo alza, Body Press, nessun EV dichiarato
+    expect(uninvestedWall(hippo, 'physical', 'Earthquake', null, {})).toBe(false);
+    expect(uninvestedWall({ ...hippo, evs: { hp: 252, atk: 252 } }, 'physical', 'Earthquake', null, wall)).toBe(false);
+    expect(uninvestedWall({ ...hippo, nature: 'Adamant' }, 'physical', 'Earthquake', null, wall)).toBe(false);
+    expect(uninvestedWall(hippo, 'physical', 'Earthquake', 'Curse', wall)).toBe(false);
+    expect(uninvestedWall(hippo, 'physical', 'Body Press', 'Iron Defense', wall)).toBe(false);
+    expect(uninvestedWall({ ...hippo, evs: {} }, 'physical', 'Earthquake', null, wall)).toBe(false);
   });
 
   it('Knock Off 1, Trick con Choice 1, senza 0.5', () => {

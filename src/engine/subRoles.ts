@@ -180,7 +180,8 @@ export function setSubRoles(set: TeamSet, rules: FormatRules): SubRoleValues {
 
 /**
  * Soglie del rilevatore misurato (Offesa, Wallbreaking e quota di Velocità del membro). Breaker 52 (era 55): conta anche chi rompe col setup; sweeper 40 di Offesa (era 50): basta la velocità o il setup a renderlo tale;
- * veloce = supera metà del gruppo (0.5, era 0.6). */
+ * veloce = supera metà del gruppo (0.5, era 0.6). Un muro senza investimento in attacco non è un attaccante (uninvestedWall).
+ */
 export const SWEEPER_OFFENSE = 40;
 export const SWEEPER_SPEED = 0.5;
 export const BREAKER_WALLBREAKING = 52;
@@ -285,6 +286,27 @@ export function attackSide(set: TeamSet, move: string): 'physical' | 'special' |
   return m.category === 'Physical' ? 'physical' : 'special';
 }
 
+/** Mosse che non usano l'attacco del Pokémon: Body Press usa la Difesa, Foul Play l'attacco del bersaglio. */
+const NOT_OWN_ATTACK = new Set(['bodypress', 'foulplay']);
+
+/**
+ * Un muro che non investe nella statistica d'attacco (niente EV, natura o setup che la alzi) non è un attaccante:
+ * i suoi danni vengono dal bulk o dalla debolezza dei bersagli, non da un set offensivo. Senza EV dichiarati non vale.
+ */
+export function uninvestedWall(set: TeamSet, side: 'physical' | 'special', bestMove: string, setupMove: string | null, values: SubRoleValues): boolean {
+  if (!values.physicalWall && !values.specialWall) return false;
+  if (NOT_OWN_ATTACK.has(toID(bestMove))) return false;
+  const lines = statLines(set);
+  if (!lines.some(l => l.ev > 0)) return false;
+  const stat = side === 'physical' ? 'atk' : 'spa';
+  const line = lines.find(l => l.stat === stat);
+  if (line && (line.ev >= 100 || line.nature === 'up')) return false;
+  // Curse (non Spettro) alza l'Attacco con un gestore suo, senza `boosts` nei dati
+  const boosts = toID(setupMove ?? '') === 'curse' ? { atk: 1 } : getMove(setupMove ?? '')?.boosts;
+  if (setupMove && ((boosts as Partial<Record<string, number>> | undefined)?.[stat] ?? 0) > 0) return false;
+  return true;
+}
+
 const isPriorityAttack = (set: TeamSet) => set.moves.map(getMove).filter(isDefined).some(m => m.category !== 'Status' && m.priority > 0);
 
 /** Calcolo con i gruppi dati (i test li passano a mano); restituisce valori e motivi per la scheda. */
@@ -328,7 +350,7 @@ export function measureWith(set: TeamSet, team: TeamSet[], data: EngineData, poo
   // Attacco dai numeri dell'Offesa e della Velocità
   const offense = memberOffense(set, team, data);
   const side = offense?.bestMove ? attackSide(set, offense.bestMove) : null;
-  if (offense && side) {
+  if (offense && side && !uninvestedWall(set, side, offense.bestMove!, offense.setupMove, values)) {
     if (offense.wallbreaking + offense.wallbreakingGain >= BREAKER_WALLBREAKING) put(`${side}Breaker`, 1, offense.bestMove!);
     if (offense.value >= SWEEPER_OFFENSE) {
       const speed = memberSpeed(set, team, data);
