@@ -44,7 +44,7 @@ describe('Valutazione team', () => {
     await user.click(screen.getByRole('button', { name: 'Importa' }));
     const rating = screen.getByRole('group', { name: 'Valutazione team' });
     expect(rating).toHaveTextContent(/Penalità −\d+/);
-    expect(rating).toHaveTextContent('2 setter di Stealth Rock (−2)');
+    expect(rating).toHaveTextContent('2 setter di Stealth Rock (−1)');
   });
 
   it('mostra il bonus del meteo e la nota sotto la tabella delle debolezze', async () => {

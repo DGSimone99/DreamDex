@@ -10,24 +10,14 @@ const withMoves = (species: string, moves: string[]): TeamSet => ({ ...emptySet(
 const items = (team: TeamSet[]) => redundancies(team, analyzeTeam(team, fixtureData)).items;
 
 describe('ridondanze', () => {
-  it('debolezze accumulate: 2 punti per ogni debole scoperto oltre il primo, anche su un tipo raro nel meta', () => {
+  it('le debolezze condivise non sono una penalità (le misura la Difesa)', () => {
     const team = ['Great Tusk', 'Garchomp', 'Dragapult'].map(n => mostCommonSet(fixtureStats, n)!);
-    // Ice è raro nella fixture, ma il voto non dipende dal meta del mese
-    expect(items(team)).toContainEqual({ text: '3 membri deboli a Ice, nessuno resiste', points: 4 });
-  });
-
-  it('un solo debole non costa niente; tre deboli scoperti costano 4', () => {
-    const team = [withMoves('Great Tusk', []), withMoves('Garchomp', []), withMoves('Toxapex', [])];
-    // Ground: Toxapex debole, Tusk e Garchomp neutri → 1 solo debole, nessuna penalità
-    expect(items(team).some(i => i.text.includes('Ground'))).toBe(false);
-    const water = [withMoves('Great Tusk', []), withMoves('Landorus-Therian', []), withMoves('Hippowdon', [])];
-    // Water: 3 deboli scoperti → 2 punti per debole in più
-    expect(items(water)).toContainEqual({ text: '3 membri deboli a Water, nessuno resiste', points: 4 });
+    expect(items(team).some(i => /deboli a/.test(i.text))).toBe(false);
   });
 
   it('stesso hazard da più membri', () => {
     const team = [withMoves('Great Tusk', ['Stealth Rock']), withMoves('Garchomp', ['Stealth Rock']), withMoves('Kingambit', ['Stone Axe'])];
-    expect(items(team)).toContainEqual({ text: '3 setter di Stealth Rock', points: 4 });
+    expect(items(team)).toContainEqual({ text: '3 setter di Stealth Rock', points: 2 });
   });
 
   it('più rimozioni hazard', () => {
@@ -37,7 +27,9 @@ describe('ridondanze', () => {
 
   it('tre o più membri dello stesso tipo', () => {
     const team = ['Gholdengo', 'Kingambit', 'Corviknight'].map(n => withMoves(n, []));
-    expect(items(team)).toContainEqual({ text: '3 membri di tipo Steel', points: 1 });
+    expect(items(team).some(i => /di tipo Steel/.test(i.text))).toBe(false);
+    expect(coachTeam(team, DEFAULT_FORMAT, fixtureData).problems)
+      .toContainEqual(expect.objectContaining({ category: 'redundancy', text: '3 membri di tipo Steel' }));
   });
 
   it('team senza ridondanze', () => {
@@ -45,7 +37,12 @@ describe('ridondanze', () => {
   });
 
   it('penalità massima', () => {
-    const team = Array(6).fill(0).map(() => withMoves('Great Tusk', ['Stealth Rock', 'Rapid Spin']));
+    // 5 Tusks con Stealth Rock + Spin (4 + 4), un conflitto di meteo (3) e due mosse STAB indebolite (2 + 2)
+    const team = [
+      ...Array(5).fill(0).map(() => withMoves('Great Tusk', ['Stealth Rock', 'Rapid Spin'])),
+      { ...withMoves('Ninetales', ['Flamethrower']), ability: 'Drought' },
+      { ...withMoves('Pelipper', ['Surf']), ability: 'Drizzle' },
+    ];
     expect(redundancies(team, analyzeTeam(team, fixtureData)).total).toBe(MAX_PENALTY);
   });
 });
@@ -54,9 +51,12 @@ describe('penalità e bonus del meteo', () => {
   const garchomp = withMoves('Garchomp', ['Earthquake']);
   const texts = (team: TeamSet[]) => rateTeam(team, fixtureData)!.penalty.items;
 
-  it('membro senza la condizione che gli serve: −3', () => {
-    expect(texts([{ ...withMoves('Leafeon', ['Leaf Blade']), ability: 'Chlorophyll' }, garchomp]))
-      .toContainEqual({ text: 'Leafeon ha Chlorophyll ma il team non porta il sole', points: 3 });
+  it('membro senza la condizione che gli serve: nessuna penalità, solo il coach', () => {
+    const team = [{ ...withMoves('Leafeon', ['Leaf Blade']), ability: 'Chlorophyll' }, garchomp];
+    expect(texts(team).map(i => i.text).join(' | ')).not.toMatch(/Chlorophyll/);
+    // Il coach lo segnala ancora tra le condizioni
+    expect(coachTeam(team, DEFAULT_FORMAT, fixtureData).problems)
+      .toContainEqual(expect.objectContaining({ category: 'conditions', text: expect.stringMatching(/Leafeon.*Chlorophyll/) }));
   });
 
   it('abilitatore che potenzia almeno sé stesso: nessuna penalità', () => {
@@ -77,13 +77,13 @@ describe('penalità e bonus del meteo', () => {
     expect(texts(team)).toContainEqual({ text: 'Meteo in conflitto: Ninetales (Drought), Pelipper (Drizzle)', points: 3 });
   });
 
-  it('mosse indebolite dal meteo del team: −1 per ogni membro, STAB o coverage', () => {
+  it('mosse indebolite dal meteo del team: −1 coverage, −2 STAB', () => {
     const team = [
       { ...withMoves('Ninetales', ['Flamethrower']), ability: 'Drought' },
       withMoves('Kingdra', ['Hydro Pump']),
       withMoves('Kyurem', ['Surf']),
     ];
-    expect(texts(team)).toContainEqual({ text: 'Il sole di Ninetales indebolisce le mosse Water di Kingdra', points: 1 });
+    expect(texts(team)).toContainEqual({ text: 'Il sole di Ninetales indebolisce le mosse Water di Kingdra', points: 2 });
     expect(texts(team)).toContainEqual({ text: 'Il sole di Ninetales indebolisce le mosse Water di Kyurem', points: 1 });
   });
 

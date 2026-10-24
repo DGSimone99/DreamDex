@@ -20,7 +20,7 @@ import type { TeamSet } from './sets';
 import { t, type Lang } from '../i18n';
 import { gameName, typeName } from '../i18n/game';
 import { effectiveness, superEffectiveMoves, teamField, TYPES } from './types';
-import { benefits, conditionConflicts, conditionLabel, enables, viaName, unmetBeneficiaries, unusedEnablers, weakenedMoves, weatherMitigations, type Condition } from './synergy';
+import { benefits, conditionConflicts, conditionLabel, enables, viaName, unusedEnablers, weakenedMoves, weatherMitigations, type Condition } from './synergy';
 
 export type AreaKey = 'coverage' | 'defense' | 'strength' | 'bulk' | 'roles' | 'speed' | 'meta';
 /** Le aree del voto senza meta. */
@@ -148,8 +148,14 @@ const HAZARDS: Record<string, string> = {
 };
 const REMOVAL = new Set(['defog', 'rapidspin', 'mortalspin', 'tidyup', 'courtchange']);
 
-/** Ruoli e tipi ripetuti senza bisogno: stesso hazard, più rimozioni, 3+ membri dello stesso tipo. */
-export function roleAndTypeRedundancies(team: TeamSet[], lang: Lang = 'it'): Redundancy[] {
+/** Un setter in più dello stesso hazard costa 1 punto. */
+export const HAZARD_DUPLICATE = 1;
+
+/**
+ * Ruoli ripetuti senza bisogno: stesso hazard, più rimozioni. Con `sameType` anche i 3+ membri dello stesso tipo:
+ * nel voto non è una penalità (lo misura la Difesa), ma il coach lo consiglia ancora.
+ */
+export function roleAndTypeRedundancies(team: TeamSet[], lang: Lang = 'it', opts: { sameType?: boolean } = {}): Redundancy[] {
   const items: Redundancy[] = [];
   const setters = new Map<string, number>();
   for (const set of team) {
@@ -157,24 +163,27 @@ export function roleAndTypeRedundancies(team: TeamSet[], lang: Lang = 'it'): Red
       setters.set(hazard, (setters.get(hazard) ?? 0) + 1);
     }
   }
-  for (const [hazard, n] of setters) if (n > 1) items.push({ text: t(lang, 'rating.redundancy.setters', { n, hazard: gameName('move', hazard, lang) }), points: 2 * (n - 1) });
+  for (const [hazard, n] of setters) if (n > 1) items.push({ text: t(lang, 'rating.redundancy.setters', { n, hazard: gameName('move', hazard, lang) }), points: HAZARD_DUPLICATE * (n - 1) });
   const removers = team.filter(set => set.moves.some(m => REMOVAL.has(toID(m)))).length;
   if (removers > 1) items.push({ text: t(lang, 'rating.redundancy.removers', { n: removers }), points: removers - 1 });
-  for (const type of TYPES) {
+  for (const type of opts.sameType ? TYPES : []) {
     const n = team.filter(set => (battleSpecies(set)?.types as readonly string[] | undefined)?.includes(type)).length;
     if (n >= 3) items.push({ text: t(lang, 'rating.redundancy.sameType', { n, type: typeName(type, lang) }), points: n - 2 });
   }
   return items;
 }
 
-/** Meteo/campi in conflitto (−3) e −1 per ogni membro con mosse indebolite dal meteo del team. */
+/** Una mossa STAB indebolita dal meteo del team costa di più di una di coverage. */
+export const WEATHER_HURT_STAB = 2;
+
+/** Meteo/campi in conflitto (−3) e per ogni membro con mosse indebolite dal meteo del team −2 (STAB) o −1 (coverage). */
 export function weatherClashes(team: TeamSet[], lang: Lang = 'it'): Redundancy[] {
   const cap = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
   return [
     ...conditionConflicts(team, lang).map(c => ({ text: t(lang, 'rating.redundancy.conflict', { kind: t(lang, `conflict.${c.kind}`), list: c.setters.join(', ') }), points: 3 })),
     ...weakenedMoves(team).map(w => ({
       text: t(lang, 'rating.redundancy.weakens', { condition: cap(conditionLabel(w.condition, lang)), setter: w.setter, type: typeName(w.type, lang), member: w.member }),
-      points: WEATHER_HURT,
+      points: w.stab ? WEATHER_HURT_STAB : WEATHER_HURT,
     })),
   ];
 }
@@ -197,43 +206,37 @@ function bringsUtility(set: TeamSet, values: SubRoleValues): boolean {
   return UTILITY_ROLES.some(role => (values[role] ?? 0) >= UTILITY_MIN) || hasSpeedControl(set) || enables(set).length > 0;
 }
 
+/** Ogni membro debole senza utilità chiave costa 2 punti, fino a un massimo di 6. */
+export const WEAK_MEMBER_POINTS = 2;
+export const WEAK_MEMBER_MAX = 6;
+
 /**
- * Membri deboli senza utilità chiave (−3, −7, −12…; non dipende dal meta: Pelipper che porta la pioggia è esente).
+ * Membri deboli senza utilità chiave (−2 ciascuno, al massimo −6; non dipende dal meta: Pelipper che porta la pioggia è esente).
  * Lo squilibrio degli attaccanti è una mancanza essenziale dei Ruoli (rolesArea.ts).
  */
 export function memberIssues(team: TeamSet[], lang: Lang, needs: TeamNeeds): Redundancy[] {
   const { rules } = needs;
   const items: Redundancy[] = [];
-  // La penalità cresce col numero di membri deboli: −3, −7, −12… (il k-esimo pesa 2 + k)
-  let weak = 0;
+  let total = 0;
   for (const [i, set] of team.entries()) {
     const power = memberPower(set);
     // Un muro passivo si giudica dalla sua robustezza (Mega Sableye), gli altri dalla forza complessiva
     if (power && (isPassive(set, rules) ? power.bulk : power.power) < WEAK_POWER && !bringsUtility(set, needs.members[i] ?? {})) {
-      weak += 1;
-      items.push({ text: t(lang, 'rating.redundancy.weakMember', { member: battleName(set) }), points: 2 + weak });
+      // Oltre il tetto i membri restano elencati ma senza punti
+      const points = Math.min(WEAK_MEMBER_POINTS, WEAK_MEMBER_MAX - total);
+      total += points;
+      items.push({ text: t(lang, 'rating.redundancy.weakMember', { member: battleName(set) }), points });
     }
   }
   return items;
 }
 
 export function redundancies(team: TeamSet[], analysis: TeamAnalysis, lang: Lang = 'it'): Redundancies {
-  // Ogni membro debole scoperto oltre il primo costa 2 punti, su qualsiasi tipo (il meta conta solo nell'area Meta)
-  const weaknesses = analysis.weakness
-    .filter(row => row.weak - row.resist >= 2)
-    .map(row => ({
-      text: t(lang, 'rating.redundancy.sharedWeak', {
-        n: row.weak, type: typeName(row.type, lang),
-        resistText: row.resist === 0 ? t(lang, 'rating.redundancy.noneResist') : t(lang, 'rating.redundancy.someResist', { n: row.resist }),
-      }),
-      points: (row.weak - row.resist - 1) * 2,
-    }));
   const dependencies = [
-    ...unmetBeneficiaries(team).map(i => ({ text: t(lang, 'rating.redundancy.unmet', { member: i.member, via: viaName(i.via, lang), condition: conditionLabel(i.condition, lang) }), points: 3 })),
     ...unusedEnablers(team).map(i => ({ text: t(lang, 'rating.redundancy.unused', { via: viaName(i.via, lang), member: i.member }), points: 2 })),
   ];
   const items = [
-    ...weaknesses, ...roleAndTypeRedundancies(team, lang), ...dependencies, ...weatherClashes(team, lang),
+    ...roleAndTypeRedundancies(team, lang), ...dependencies, ...weatherClashes(team, lang),
     ...memberIssues(team, lang, analysis.needs),
   ];
   return { total: Math.min(MAX_PENALTY, sum(items.map(i => i.points))), items };
