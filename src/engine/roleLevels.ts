@@ -27,7 +27,10 @@ export function setRolesCountMeasured(v: boolean): void {
 }
 
 const E = 'essential' as const, I = 'important' as const, M = 'minor' as const, X = 'ignored' as const;
-/** Colonne della tabella della specifica: HO, BO, Balance, Semi-stall, Stall. */
+/**
+ * Colonne della tabella della specifica: HO, BO, Balance, Semi-stall, Stall.
+ * Calibrazione (Task 9): pivot minore in HO (i team HO da torneo spesso hanno lead con hazard e sweeper, senza pivot).
+ */
 const ROWS: [LevelKey, Level, Level, Level, Level, Level][] = [
   ['attacker', E, E, E, E, X],
   ['physicalSweeper', M, M, M, M, X],
@@ -39,7 +42,7 @@ const ROWS: [LevelKey, Level, Level, Level, Level, Level][] = [
   ['recovery', X, M, I, I, I],
   ['hazards', I, I, I, I, I],
   ['removal', M, I, I, I, I],
-  ['pivot', I, I, I, M, M],
+  ['pivot', M, I, I, M, M],
   ['screens', M, M, M, M, M],
   ['dot', X, M, M, I, I],
   ['debuff', X, M, M, I, I],

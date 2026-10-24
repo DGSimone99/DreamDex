@@ -45,7 +45,8 @@ describe('tabella dei livelli per archetipo', () => {
   it('HO: hazard importante, schermi minori', () => {
     expect(levelOf('hyperOffense', 'hazards')).toBe('important');
     expect(levelOf('hyperOffense', 'screens')).toBe('minor');
-    expect(levelOf('hyperOffense', 'pivot')).toBe('important');
+    // Calibrazione: il pivot in HO è minore (i team HO da torneo spesso non ne hanno)
+    expect(levelOf('hyperOffense', 'pivot')).toBe('minor');
     // Nel team HO i livelli sono quelli della colonna HO
     const needs = teamNeeds(hyperOffense, fixtureData);
     expect(needs.archetype).toBe('hyperOffense');
