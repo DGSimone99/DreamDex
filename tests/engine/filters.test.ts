@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
-import { activeFilterCount, EMPTY_FILTERS, isFiltering, searchCandidates, tierLabel, type CandidateFilters } from '../../src/engine/filters';
-import { mostCommonSet } from '../../src/engine/sets';
+import { activeFilterCount, EMPTY_FILTERS, hasFilterRole, isFiltering, searchCandidates, tierLabel, type CandidateFilters } from '../../src/engine/filters';
+import { formatRules } from '../../src/engine/formatRules';
+import { emptySet, mostCommonSet } from '../../src/engine/sets';
 import { fixtureData, tusk } from '../fixtures/data';
 import { megaData } from '../fixtures/megaData';
 
@@ -76,8 +77,25 @@ describe('filtri', () => {
     expect(sorted(search({ ...common, roles: ['pivot'] }))).toEqual(['Corviknight', 'Dragapult', 'Rotom-Wash']);
   });
 
+  it('filtro priorità resta, sulle mosse', () => {
+    const rules = formatRules('ou');
+    const kingambit = (moves: string[]) => ({ ...emptySet('Kingambit'), moves });
+    expect(hasFilterRole(kingambit(['Kowtow Cleave', 'Sucker Punch']), 'priority', rules)).toBe(true);
+    expect(hasFilterRole(kingambit(['Kowtow Cleave', 'Iron Head']), 'priority', rules)).toBe(false);
+    // Controllo velocità e setup: anche loro sulle mosse
+    expect(hasFilterRole({ ...emptySet('Clefable'), moves: ['Moonblast', 'Thunder Wave'] }, 'speedControl', rules)).toBe(true);
+    expect(hasFilterRole({ ...emptySet('Gholdengo'), moves: ['Make It Rain'], item: 'Choice Scarf' }, 'speedControl', rules)).toBe(false);
+    expect(hasFilterRole({ ...emptySet('Volcarona'), moves: ['Quiver Dance', 'Fiery Dance'] }, 'setup', rules)).toBe(true);
+    expect(hasFilterRole({ ...emptySet('Volcarona'), moves: ['Fiery Dance', 'Roost'] }, 'setup', rules)).toBe(false);
+    // Nella ricerca: tutti i trovati hanno una mossa con priorità
+    const found = searchCandidates([tusk], DEFAULT_FORMAT, fixtureData, { ...EMPTY_FILTERS, ...common, roles: ['priority'] }, 500);
+    expect(found.length).toBeGreaterThan(0);
+    expect(found.every(s => hasFilterRole(s.set, 'priority', rules))).toBe(true);
+  });
+
   it('più ruoli: devono esserci tutti', () => {
-    expect(search({ ...common, roles: ['pivot', 'physicalWall'] })).toEqual(['Corviknight']);
+    // Rotom-Wash (252 PS, Bold) supera i 100k di PS x Dif reali: con l'indice di muro è un muro fisico
+    expect(sorted(search({ ...common, roles: ['pivot', 'physicalWall'] }))).toEqual(['Corviknight', 'Rotom-Wash']);
   });
 
   it('resiste a', () => {

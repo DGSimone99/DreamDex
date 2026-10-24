@@ -6,7 +6,7 @@ import type { Format } from './format';
 import { formatRules } from './formatRules';
 import { pokedexOf } from './formats';
 import { rateTeam } from './rating';
-import { detectRoles, isPassive } from './roles';
+import { isPassive } from './roles';
 import { scoreSets, suggest, type Suggestion } from './scoring';
 import { asSetter, asUser, stylePool } from './styleSets';
 import type { TeamSet } from './sets';
@@ -83,7 +83,7 @@ export function* fillProposals(
   if (!data.stats || team.length >= 6) return;
   const rules = formatRules(format.formatId);
   const megasAllowed = pokedexOf(format) === 'natdex';
-  const passive = (set: TeamSet) => isPassive(set, detectRoles(set, rules));
+  const passive = (set: TeamSet) => isPassive(set, rules);
   // Strade che non hanno portato a nulla: si saltano nei tentativi successivi del giro (non diventano esclusioni mostrate)
   const deadEnds = new Set<string>();
   // Portatori dello stile già usati in questo giro: tornando, si alternano invece di ripetere sempre il primo

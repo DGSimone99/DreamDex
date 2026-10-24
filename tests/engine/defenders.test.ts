@@ -2,15 +2,15 @@ import { describe, expect, it } from 'vitest';
 import { defenderPanel, PANEL_SIZE } from '../../src/engine/defenders';
 import { getSpecies } from '../../src/engine/dex';
 import { formatRules } from '../../src/engine/formatRules';
-import { detectRoles, isPassive, teamRoles } from '../../src/engine/roles';
+import { isPassive, legacyWall } from '../../src/engine/roles';
 import { referenceSpeeds, tierSpecies } from '../../src/engine/speed';
 import { usageOf } from '../../src/engine/stats';
 import { fixtureData, fixtureStats } from '../fixtures/data';
 
+// Come isDefensiveSet: passivo o muro legacy (l'investimento lo garantisce già il filtro del pannello)
 const defensive = (set: Parameters<typeof isPassive>[0]) => {
   const rules = formatRules('ou');
-  const roles = detectRoles(set, rules);
-  return isPassive(set, teamRoles(set, rules)) || roles.includes('physicalWall') || roles.includes('specialWall');
+  return isPassive(set, rules) || legacyWall(set, rules);
 };
 const bulk = (name: string) => { const s = getSpecies(name)!.baseStats; return s.hp * (s.def + s.spd); };
 

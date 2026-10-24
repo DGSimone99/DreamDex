@@ -22,7 +22,7 @@ describe('Valutazione team', () => {
     expect(rating).not.toHaveTextContent('Sinergia');
   });
 
-  it("Ruoli porta alla sua scheda; Offesa e Difesa aprono il loro dettaglio; la Coverage offensiva è dentro l'Offesa", async () => {
+  it("Offesa, Difesa e Ruoli aprono il loro dettaglio; la Coverage offensiva è dentro l'Offesa", async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} />);
     for (const name of ['Great Tusk', 'Gholdengo']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
@@ -33,7 +33,7 @@ describe('Valutazione team', () => {
     // Offesa e Difesa aprono il loro dettaglio (vedi AreaDetail.test)
     expect(within(rating).getByRole('button', { name: /^Difesa \d+$/ })).toHaveAttribute('aria-haspopup', 'dialog');
     expect(within(rating).getByRole('button', { name: /^Offesa \d+$/ })).toHaveAttribute('aria-haspopup', 'dialog');
-    expect(within(rating).getByRole('button', { name: /^Ruoli \d+$/ })).toHaveAttribute('title', expect.stringMatching(/^Vai a /));
+    expect(within(rating).getByRole('button', { name: /^Ruoli \d+$/ })).toHaveAttribute('aria-haspopup', 'dialog');
   });
 
   it('mostra le ridondanze con il dettaglio', async () => {
@@ -115,6 +115,14 @@ describe('Valutazione team', () => {
     expect(within(dialog).getByRole('row', { current: true })).toHaveTextContent(/^Balance/);
     await user.click(within(dialog).getByRole('tab', { name: 'Difesa' }));
     expect(within(dialog).getByRole('tabpanel')).toHaveTextContent('Metà robustezza e metà coverage difensiva');
+    // Ruoli: i livelli (essenziale solo malus, importante ±, minore solo extra), le quattro famiglie e il Disturbo
+    await user.click(within(dialog).getByRole('tab', { name: 'Ruoli' }));
+    const roles = within(dialog).getByRole('tabpanel');
+    expect(roles).toHaveTextContent('Essenziale: solo malus');
+    expect(roles).toHaveTextContent('Minore: solo un extra');
+    expect(roles).toHaveTextContent(/Attacco.*Difesa.*Campo.*Disturbo/);
+    expect(roles).toHaveTextContent('Taunt ed Encore valgono la quota del meta');
+    expect(roles).not.toHaveTextContent(/interruttore|misurati anche/i);
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(help).toHaveFocus();

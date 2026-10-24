@@ -9,8 +9,9 @@ import { diffContribution, similarity, type Contribution, type Diff } from './re
 import { t, type Lang } from '../i18n';
 import { gameName, typeName } from '../i18n/game';
 import { illegalParts } from './learnsets';
-import { detectRoles, isPassive, isStall, roleLabel } from './roles';
-import { needLabel, NEED_ROLES } from './needs';
+import { isPassive, isStall, roleLabel } from './roles';
+import { keyRoles, needLabel } from './needs';
+import { LEVEL_KEYS } from './roleLevels';
 import { bannedInPool, scoreCandidates, type Suggestion } from './scoring';
 import { memberIssues, rateTeam, roleAndTypeRedundancies, weatherClashes } from './rating';
 import { benefits, conditionLabel, viaName, enables, neededConditions, providesAll, teamSynergies, unmetBeneficiaries, unusedEnablers } from './synergy';
@@ -90,7 +91,8 @@ function findStrengths(team: TeamSet[], analysis: TeamAnalysis, lang: Lang): str
   const solid = analysis.weakness.filter(r => r.resist >= 2 && r.weak === 0).map(r => r.type);
   if (solid.length) strengths.push(t(lang, 'coach.strength.handles', { types: list(solid.map(type => typeName(type, lang))) }));
   // Ruoli essenziali per l'archetipo del team, coperti
-  const roles = analysis.needs.covered.filter(need => analysis.needs.weights[need] === 1).map(need => needLabel(need, lang));
+  const { levels, essentialMissing } = analysis.needs;
+  const roles = LEVEL_KEYS.filter(key => levels[key] === 'essential' && !essentialMissing.includes(key)).map(need => needLabel(need, lang));
   if (roles.length) strengths.push(t(lang, 'coach.strength.roles', { roles: list(roles) }));
   const synergies = teamSynergies(team, lang);
   if (synergies.length) strengths.push(t(lang, 'coach.strength.synergies', { list: synergies.join('; ') }));
@@ -145,14 +147,23 @@ function findProblems(team: TeamSet[], format: Format, analysis: TeamAnalysis, c
     add('rules', true, t(lang, 'coach.problem.megas', { list: list(megas.map(battleName)) }), []);
   }
 
-  // Si chiedono solo i ruoli essenziali per l'archetipo del team (uno stall non ha bisogno di sweeper né di velocità)
-  const missing = analysis.needs.missing.filter(m => m.weight === 1).map(m => m.need);
+  // Si chiedono solo le voci essenziali per l'archetipo del team (uno stall non ha bisogno di attaccanti)
+  const missing = analysis.needs.essentialMissing;
   if (missing.length) {
     add('roles', false, t(lang, 'coach.problem.missingRoles', { roles: list(missing.map(need => needLabel(need, lang))) }),
-      fixesFor(candidates, s => missing.filter(need => NEED_ROLES[need].some(role => s.facts.roles.filled.includes(role))).length));
+      fixesFor(candidates, s => missing.filter(need => keyRoles(need).some(role => s.facts.roles.filled.includes(role))).length));
+  }
+  // Le voci importanti mancanti: una riga a parte, dopo quella degli essenziali (abbassano il voto, non sono un requisito)
+  const important = analysis.needs.importantMissing;
+  if (important.length) {
+    add('roles', false, t(lang, 'coach.problem.missingImportantRoles', { roles: list(important.map(need => needLabel(need, lang))) }),
+      fixesFor(candidates, s => important.filter(need => keyRoles(need).some(role => s.facts.roles.filled.includes(role))).length));
   }
 
-  for (const item of memberIssues(team, lang, analysis.needs.rules)) add('roles', false, item.text, []);
+  for (const item of memberIssues(team, lang, analysis.needs)) add('roles', false, item.text, []);
+  // Squilibrio degli attaccanti (nel voto è una mancanza essenziale dei Ruoli, solo a team finito)
+  const style = analysis.needs.needStyle;
+  if (style) add('roles', false, t(lang, 'rating.redundancy.oneStyle', { style: t(lang, `analysis.style.${style}`) }), []);
   for (const item of roleAndTypeRedundancies(team, lang)) add('redundancy', false, item.text, []);
   for (const item of weatherClashes(team, lang)) add('conditions', false, item.text, []);
 
@@ -204,8 +215,7 @@ function findSwaps(team: TeamSet[], format: Format, data: EngineData): CoachSwap
   const current = rateTeam(team, data);
   if (!current) return [];
   const rules = rulesOf(data);
-  const roles = team.map(set => detectRoles(set, rules));
-  const stall = isStall(team, roles);
+  const stall = isStall(team, rules);
   const archetype = archetypeLock(team, rules, current.grade);
   const options = team
     .map((member, index) => {
@@ -217,11 +227,11 @@ function findSwaps(team: TeamSet[], format: Format, data: EngineData): CoachSwap
       const own = toID(battleName(member));
       const needed = neededConditions(team, index);
       const illegal = breaksRules(member, format);
-      const keepPassive = stall && isPassive(member, roles[index]);
+      const keepPassive = stall && isPassive(member, rules);
       const rated = scored
         .filter(s =>
           s.set !== member && toID(battleName(s.set)) !== own && (illegal || s.score - self.score >= SWAP_MARGIN)
-          && (needed.length === 0 || providesAll(s.set, needed)) && (!keepPassive || isPassive(s.set, detectRoles(s.set, rules))))
+          && (needed.length === 0 || providesAll(s.set, needed)) && (!keepPassive || isPassive(s.set, rules)))
         .slice(0, SWAP_CANDIDATES)
         .map(s => ({ s, rating: rateTeam(team.map((m, i) => (i === index ? s.set : m)), data)! }))
         .filter(x => !stall || x.rating.archetype === 'stall')

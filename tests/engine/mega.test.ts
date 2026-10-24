@@ -54,8 +54,8 @@ describe('Mega Evoluzioni e forme Primal', () => {
   });
 
   it('statistiche base della forma Mega per i ruoli', () => {
-    expect(detectRoles(lopunny, DEFAULT_RULES)).toContain('wallbreaker'); // Lopunny-Mega: Atk 136 (base: 76)
-    expect(detectRoles(set('Lopunny', 'Leftovers'), DEFAULT_RULES)).not.toContain('wallbreaker');
+    expect(detectRoles(lopunny, DEFAULT_RULES)).toContain('physicalBreaker'); // Lopunny-Mega: Atk 136 (base: 76) → 308 reale
+    expect(detectRoles(set('Lopunny', 'Leftovers'), DEFAULT_RULES)).not.toContain('physicalBreaker');
   });
 
   it('le statistiche Smogon usano il nome della forma Mega', () => {

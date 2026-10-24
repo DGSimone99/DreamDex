@@ -8,7 +8,7 @@ import { analyzeTeam } from '../../src/engine/analysis';
 import { illegalParts, initLearnsets } from '../../src/engine/learnsets';
 import { teraBonus } from '../../src/engine/rating';
 import { DEFAULT_RULES } from '../../src/engine/formatRules';
-import { detectRoles, isPassive } from '../../src/engine/roles';
+import { hasSetup, isPassive } from '../../src/engine/roles';
 import { defaultSet, emptySet, type TeamSet } from '../../src/engine/sets';
 import { fixtureData } from '../fixtures/data';
 
@@ -80,8 +80,9 @@ describe('Iron Defense con Body Press', () => {
   it('è un setup: Zamazenta veloce è uno sweeper, non un muro passivo; Corviknight lento resta un muro', () => {
     const zamazenta = set('Zamazenta', 'Leftovers', 'Dauntless Shield', ['Iron Defense', 'Body Press', 'Crunch', 'Roar']);
     const corviknight = set('Corviknight', 'Leftovers', 'Pressure', ['Iron Defense', 'Body Press', 'Roost', 'Defog']);
-    expect(detectRoles(zamazenta, DEFAULT_RULES)).toContain('setup');
-    expect(isPassive(zamazenta, detectRoles(zamazenta, DEFAULT_RULES))).toBe(false);
-    expect(isPassive(corviknight, detectRoles(corviknight, DEFAULT_RULES))).toBe(true);
+    // Il setup non è più un ruolo: si riconosce sulle mosse (filtro ed etichetta della carta)
+    expect(hasSetup(zamazenta)).toBe(true);
+    expect(isPassive(zamazenta, DEFAULT_RULES)).toBe(false);
+    expect(isPassive(corviknight, DEFAULT_RULES)).toBe(true);
   });
 });

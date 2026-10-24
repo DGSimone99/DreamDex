@@ -6,6 +6,7 @@ import type { Format } from '../engine/format';
 import { formatRules } from '../engine/formatRules';
 import { detectRoles, roleLabel, roleShortLabel } from '../engine/roles';
 import { cardRoles, weatherOf } from '../engine/archetype';
+import { measuredSubRoles, rolesList, type SubRoleValues } from '../engine/subRoles';
 import { conditionLabel, viaName } from '../engine/synergy';
 import { exportShowdown, importShowdown, presetsForSet, type Preset, type TeamSet } from '../engine/sets';
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ComponentProps } from 'react';
@@ -101,8 +102,10 @@ const IdleSetEditor = memo(
     && a.speed === b.speed && a.genLimit === b.genLimit && a.pokedex === b.pokedex && a.teraBannedIn === b.teraBannedIn,
 );
 
-function TeamSlot({ index, set, data, format, warning: megaWarning, open, dragging, dropTarget, onToggle, onStep, onMove, onDrag, onPaste, onBest, onIgnoreWarning, onChange, onRemove, onReplace }: {
+function TeamSlot({ index, set, subRoles, data, format, warning: megaWarning, open, dragging, dropTarget, onToggle, onStep, onMove, onDrag, onPaste, onBest, onIgnoreWarning, onChange, onRemove, onReplace }: {
   index: number;
+  /** Sotto-ruoli misurati del membro nel team (gli stessi del voto, già in cache): la carta li mostra. */
+  subRoles?: SubRoleValues;
   dragging: boolean;
   dropTarget: boolean;
   /** Alt + frecce: sposta il membro di una posizione. */
@@ -172,11 +175,11 @@ function TeamSlot({ index, set, data, format, warning: megaWarning, open, draggi
   const problems = slotProblems(set, format, lang);
   // Ruolo principale e un supporto, affiancati con il nome breve (il completo nel tooltip); il meteo solo qui
   const rules = formatRules(format.formatId);
-  const shownRoles = cardRoles(set, rules);
+  const shownRoles = cardRoles(set, rules, subRoles);
   const weather = weatherOf(set);
   const roles = shownRoles.map(role => (role === 'weather' ? tr('card.weather') : roleShortLabel(role, lang)));
   // Nel tooltip tutti i ruoli per esteso: prima i due mostrati, poi gli altri
-  const allRoles = [...shownRoles, ...detectRoles(set, rules).filter(role => !shownRoles.includes(role))];
+  const allRoles = [...shownRoles, ...(subRoles ? rolesList(subRoles) : detectRoles(set, rules)).filter(role => !shownRoles.includes(role))];
   const rolesTitle = allRoles.map(role => (role === 'weather' && weather
     ? tr('card.weatherTitle', { condition: conditionLabel(weather.condition, lang), via: viaName(weather.via, lang) })
     : role === 'weather' ? tr('card.weather') : roleLabel(role, lang))).join(' · ');
@@ -330,6 +333,8 @@ function EmptySlot({ onClick }: { onClick: () => void }) {
 
 export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRemove, onAllowMultipleMegas, onOpenChange, onPaste, onBulk, onAddClick }: Props) {
   const lang = useLang();
+  // Sotto-ruoli misurati di ogni membro: la carta dice quello che dice il voto (stessa cache dell'area Ruoli)
+  const subRoles = useMemo(() => team.map(set => measuredSubRoles(set, team, data)), [team, data]);
   // Un solo membro aperto alla volta: il suo editor scende sotto la fila del team
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   useEffect(() => { setEditing(openIndex); onOpenChange?.(openIndex); }, [openIndex]);
@@ -427,6 +432,7 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
             key={keys[i]}
             index={i}
             set={set}
+            subRoles={subRoles[i]}
             dragging={drag?.from === i}
             dropTarget={drag !== null && drag.over === i && drag.from !== i}
             onMove={delta => move(i, i + delta)}

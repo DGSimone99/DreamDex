@@ -2,7 +2,7 @@ import { usesMeta } from './analysis';
 import { attackerPanels, metaThreats, panelWeights } from './attackers';
 import { COVERAGE_DEPTH, ownConditions } from './coverage';
 import { bestHit, setKey, standardHit, type FieldCondition, type Hit } from './damage';
-import { ONE_USE_SHARE, rankWeighted } from './offense';
+import { ONE_USE_SHARE, rankWeighted, SETUP_SHARE } from './offense';
 import { DEFENSE_FULL, typeSafety } from './typeSafety';
 import { DEFAULT_FORMAT } from './format';
 import { teraAllowed } from './formats';
@@ -71,8 +71,34 @@ export function sustainability(set: TeamSet, robustStep: number): number {
   return parts.recovery - parts.rocks - parts.lifeOrb;
 }
 
+/** Mosse di potenziamento difensivo e gli aumenti che i dati non descrivono (Stockpile, Curse). */
+const DEFENSIVE_SETUP = new Set(['irondefense', 'acidarmor', 'barrier', 'cottonguard', 'cosmicpower', 'stockpile', 'defendorder', 'bulkup', 'coil', 'curse',
+  'calmmind', 'amnesia', 'quiverdance', 'geomancy', 'shelter', 'victorydance', 'noretreat'].map(toID));
+const DEFENSIVE_EXTRA: Record<string, { def?: number; spd?: number }> = { stockpile: { def: 1, spd: 1 }, curse: { def: 1 } };
+
+/** La mossa di potenziamento difensivo più forte del set (per Dif. + Dif. Speciale), dopo un uso. */
+export function defensiveSetup(set: TeamSet): { move: string; boosts: { def: number; spd: number } } | null {
+  const ghost = (battleSpecies(set)?.types as readonly string[] | undefined)?.includes('Ghost');
+  let best: { move: string; boosts: { def: number; spd: number } } | null = null;
+  let bestSum = 0;
+  for (const name of set.moves) {
+    const move = getMove(name);
+    if (!move || move.category !== 'Status' || !DEFENSIVE_SETUP.has(move.id)) continue;
+    if (move.id === 'curse' && ghost) continue;
+    const own = DEFENSIVE_EXTRA[move.id] ?? (move.target === 'self' ? move.boosts : undefined);
+    if (!own) continue;
+    const boosts = { def: Math.max(0, own.def ?? 0), spd: Math.max(0, own.spd ?? 0) };
+    const sum = boosts.def + boosts.spd;
+    if (sum > bestSum) { best = { move: move.name, boosts }; bestSum = sum; }
+  }
+  return best;
+}
+
 export interface MemberDefense {
   species: string;
+  /** Mossa di setup difensivo e punti di Robustezza (valore) che porta: metà del guadagno, già dentro fisica, speciale e valore. */
+  setupMove: string | null;
+  setupGain: number;
   physical: number;
   special: number;
   sustain: number;
@@ -86,7 +112,11 @@ export const ROBUSTNESS_WEIGHTS = { physical: 0.4, special: 0.4, sustain: 0.2 };
 const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
 
 /** Colpi standard ricevuti dai due gruppi di attaccanti; per contenuto del set, formato e meta. */
-interface Raw { species: string; physical: (Hit | null)[]; special: (Hit | null)[]; physicalStep: number; specialStep: number }
+interface Raw {
+  species: string; physical: (Hit | null)[]; special: (Hit | null)[]; physicalStep: number; specialStep: number;
+  /** Passi medi dopo un uso del setup difensivo (uguali ai normali senza setup). */
+  setupMove: string | null; physicalSetupStep: number; specialSetupStep: number;
+}
 const raws = new Map<string, Raw | null>();
 const RAW_LIMIT = 5000;
 
@@ -108,11 +138,12 @@ function measure(set: TeamSet, data: EngineData): Raw | null {
   const panels = attackerPanels(data);
   const mine = ownConditions(set);
   // Il meteo dell'abilità dell'attaccante vale sempre; quello del membro protegge lui (sabbia sulla Difesa Speciale della Roccia)
-  const against = (attacker: TeamSet, category: 'Physical' | 'Special') => {
+  const setup = defensiveSetup(set);
+  const against = (attacker: TeamSet, category: 'Physical' | 'Special', boosted = false) => {
     const theirs = ownConditions(attacker);
     const conditions: FieldCondition[] = theirs.length ? theirs : mine;
     const boosts = category === 'Physical' ? intimidateBoost(set, attacker) : undefined;
-    return standardHit(attacker, set, category, { conditions, boosts });
+    return standardHit(attacker, set, category, { conditions, boosts, targetBoosts: boosted ? setup?.boosts : undefined });
   };
   const physical = panels.physical.map(a => against(a, 'Physical'));
   const special = panels.special.map(a => against(a, 'Special'));
@@ -120,10 +151,15 @@ function measure(set: TeamSet, data: EngineData): Raw | null {
   // Media pesata per uso: reggere il più usato conta di più
   const weights = panelWeights(data);
   const weighted = (hits: (Hit | null)[], w: number[]) => hits.reduce((acc, hit, i) => acc + w[i] * holdStep(hit), 0);
+  const physicalStep = weighted(physical, weights.physical);
+  const specialStep = weighted(special, weights.special);
+  // Dopo un uso del setup: gli attaccanti Unaware lo ignorano (lo decide standardHit)
+  const boostedP = setup ? weighted(panels.physical.map(a => against(a, 'Physical', true)), weights.physical) : physicalStep;
+  const boostedS = setup ? weighted(panels.special.map(a => against(a, 'Special', true)), weights.special) : specialStep;
   return {
     species: species.name,
-    physical, special,
-    physicalStep: weighted(physical, weights.physical), specialStep: weighted(special, weights.special),
+    physical, special, physicalStep, specialStep,
+    setupMove: setup?.move ?? null, physicalSetupStep: boostedP, specialSetupStep: boostedS,
   };
 }
 
@@ -164,12 +200,17 @@ export function memberDefense(set: TeamSet, _team: TeamSet[], data: EngineData):
   const raw = rawOf(set, data);
   if (!raw) return null;
   const ref = defenseReference(data);
-  const physical = softScore(raw.physicalStep / ref.physical);
-  const special = softScore(raw.specialStep / ref.special);
+  const plainP = softScore(raw.physicalStep / ref.physical);
+  const plainS = softScore(raw.specialStep / ref.special);
+  // Metà del guadagno del setup entra nella Robustezza (come SETUP_SHARE nell'Offesa)
+  const physical = Math.round(plainP + SETUP_SHARE * (softScore(raw.physicalSetupStep / ref.physical) - plainP));
+  const special = Math.round(plainS + SETUP_SHARE * (softScore(raw.specialSetupStep / ref.special) - plainS));
   const parts = sustainParts(set, (raw.physicalStep + raw.specialStep) / 2);
   const sustain = softScore(Math.max(0, parts.recovery - parts.rocks - parts.lifeOrb) / SUSTAIN_FULL);
   const w = ROBUSTNESS_WEIGHTS;
-  return { species: raw.species, physical, special, sustain, sustainParts: parts, value: Math.round(w.physical * physical + w.special * special + w.sustain * sustain) };
+  const plainValue = Math.round(w.physical * plainP + w.special * plainS + w.sustain * sustain);
+  const value = Math.round(w.physical * physical + w.special * special + w.sustain * sustain);
+  return { species: raw.species, setupMove: raw.setupMove, setupGain: value - plainValue, physical, special, sustain, sustainParts: parts, value };
 }
 
 /** Robustezza e coverage nella Difesa: 50 e 50 (la coverage non va mai oltre il 50%). */
