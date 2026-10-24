@@ -55,7 +55,10 @@ describe('AnalysisPanel', () => {
     // Un minore mancante resta grigio con il trattino
     const minor = [...document.querySelectorAll('.role-group')].find(g => /^Minori/.test(g.querySelector('h4')!.textContent!))!;
     const missingMinor = [...minor.querySelectorAll('li')].find(li => !li.querySelector('.owner'));
-    if (missingMinor) { expect(missingMinor).toHaveClass('soft'); expect(missingMinor).toHaveTextContent('—'); }
+    // Precondizione: il team di prova ha almeno un minore mancante
+    expect(missingMinor).toBeDefined();
+    expect(missingMinor).toHaveClass('soft');
+    expect(missingMinor).toHaveTextContent('—');
   });
 
   it('per uno stall i ruoli offensivi non sono richiesti', () => {

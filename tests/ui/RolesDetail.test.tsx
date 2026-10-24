@@ -98,8 +98,10 @@ describe('Generale dei Ruoli', () => {
       members: [
         { species: 'Gliscor', values: { hazards: 1 }, reasons: [{ role: 'hazards', value: 1, source: 'Stealth Rock' }] },
         { species: 'Zapdos', values: { taunt: 1 }, reasons: [{ role: 'taunt', value: 1, source: 'Taunt', share: 1 }] },
+        // Schermo singolo senza Light Clay (0,45): compare nella scheda ma non conta come coperto
+        { species: 'Clefable', values: { screens: 0.45 }, reasons: [{ role: 'screens', value: 0.45, source: 'Reflect' }] },
         // Team di 6: solo allora le essenziali mancanti danno malus
-        ...['Clefable', 'Toxapex', 'Corviknight', 'Dondozo'].map(species => ({ species, values: {}, reasons: [] })),
+        ...['Toxapex', 'Corviknight', 'Dondozo'].map(species => ({ species, values: {}, reasons: [] })),
       ],
     };
     const rating = { ...base, roles, areas: base.areas.map(a => (a.key === 'roles' ? { ...a, value: 64 } : a)) };
@@ -119,6 +121,10 @@ describe('Generale dei Ruoli', () => {
     expect(within(row('Minaccia offensiva')).getAllByRole('cell')[0]).toHaveTextContent('−2');
     expect(panel).toHaveTextContent('Nessun attaccante nel team (−2)');
     expect([...table.querySelectorAll('.ad-group th')].map(th => th.textContent)).toEqual(['Essenziali', 'Importanti', 'Minori']);
+    // Le schede delle famiglie contano le voci coperte con la soglia dei bisogni (0,5): gli schermi a 0,45 no
+    const tab = (name: string) => screen.getByRole('tab', { name: new RegExp(`^${name}`) });
+    expect(tab('Campo')).toHaveTextContent(/1\/4$/);
+    expect(tab('Disturbo')).toHaveTextContent(/1\/6$/);
   });
 });
 

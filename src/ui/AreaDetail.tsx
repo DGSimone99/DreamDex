@@ -823,7 +823,8 @@ function rolesTabs(rating: TeamRating, value: number | null, t: T): DetailTab[] 
       .map(m => ({ species: m.species, value: m.values[role] ?? 0, reason: m.reasons.find(r => r.role === role) }))
       .filter(h => h.value > 0)
       .sort((a, b) => b.value - a.value);
-    const covered = subs.filter(role => holdersOf(role).length > 0).length;
+    // Coperto con la stessa soglia di carte, Analisi e bisogni (MISSING_BELOW); la tabella mostra anche i valori parziali
+    const covered = subs.filter(role => (holdersOf(role)[0]?.value ?? 0) >= MISSING_BELOW).length;
     const panel = (
       <>
         <h4>{t(`family.${family}`)}</h4>
