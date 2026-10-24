@@ -190,25 +190,39 @@ function measure(set: TeamSet, data: EngineData, team: TeamConditions): MemberSp
   }
 
   // Priorità come il setup: colpisce per primo anche chi è più veloce, pesato da quanto fa male (metà PS vale pieno)
-  const conditions = team.terrains.includes('grassy') ? ['grassyterrain' as const] : [];
+  // Il campo del colpo: quello del membro, se no quello del team (la pioggia di Pelipper potenzia Aqua Jet).
+  // Grassy Glide è prioritaria solo col Grassy Terrain, quindi lì vince il campo erboso
+  const own = ownConditions(set);
+  const ownWeather = own.some(c => WEATHER_CONDITIONS.has(c));
+  const teamWeather = ownWeather ? [] : team.weathers.slice(0, 1).map(w => WEATHER_TO_CONDITION[w]).filter(Boolean);
+  const grassy = own.includes('grassyterrain') || team.terrains.includes('grassy');
+  const ownTerrain = own.filter(c => !WEATHER_CONDITIONS.has(c));
+  const terrain = grassy ? ['grassyterrain' as const] : ownTerrain.length ? [] : team.terrains.slice(0, 1).map(tr => TERRAIN_TO_CONDITION[tr]).filter(Boolean);
+  const conditions = [...own.filter(c => WEATHER_CONDITIONS.has(c) || !grassy), ...teamWeather, ...terrain] as typeof own;
   const faster = pool.filter(r => r.value >= speed && !sameSelf(r.species, set.species));
   const rivalsCount = pool.filter(r => !sameSelf(r.species, set.species)).length;
-  let priorityMove: string | null = null;
-  let firstHits = 0;
-  if (rivalsCount && set.moves.some(m => { const d = getMove(m); return !!d && (d.priority > 0 || d.id === 'grassyglide'); })) {
+  // Senza mosse che qui sono prioritarie (Grassy Glide senza campo erboso) niente calcoli
+  const hasPriority = set.moves.some(m => { const d = getMove(m); return !!d && d.category !== 'Status' && (d.priority > 0 || (d.id === 'grassyglide' && grassy)); });
+  const byMove = new Map<string, number>();
+  if (rivalsCount && hasPriority) {
     for (const r of faster) {
-      const hit = bestHit(set, rivalSet(r.species, data), { priorityOnly: true, conditions: [...ownConditions(set), ...conditions] });
+      const hit = bestHit(set, rivalSet(r.species, data), { priorityOnly: true, conditions });
       if (!hit) continue;
-      priorityMove ??= hit.move;
-      firstHits += (r.value === speed ? 0.5 : 1) * Math.min(1, hit.expected / PRIORITY_FULL);
+      byMove.set(hit.move, (byMove.get(hit.move) ?? 0) + (r.value === speed ? 0.5 : 1) * Math.min(1, hit.expected / PRIORITY_FULL));
     }
   }
+  const firstHits = [...byMove.values()].reduce((a, b) => a + b, 0);
+  // Il nome: la mossa che porta più guadagno
+  const priorityMove = [...byMove.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
   if (priorityMove && firstHits > 0) gains.push({ condition: 'priority', source: priorityMove, gain: CONDITION_QUOTA.priority * firstHits / rivalsCount });
 
   const sum = (list: SpeedGain[]) => list.reduce((acc, g) => acc + g.gain, 0);
-  const own = Math.min(1, raw + sum(gains.filter(g => !CONTROL_CONDITIONS.includes(g.condition))));
-  const total = Math.min(1, raw + sum(gains));
-  return { species: species.name, speed, raw, gains, own, total, controlOptions };
+  const ownTotal = Math.min(1, raw + sum(gains.filter(g => !CONTROL_CONDITIONS.includes(g.condition))));
+  // Trick Room e gli altri controlli (Web, Tailwind, paralisi) vanno in direzioni opposte: conta il migliore dei due
+  const room = sum(gains.filter(g => g.condition === 'trickroom'));
+  const speedUps = sum(gains.filter(g => CONTROL_CONDITIONS.includes(g.condition) && g.condition !== 'trickroom'));
+  const total = Math.min(1, ownTotal + Math.max(room, speedUps));
+  return { species: species.name, speed, raw, gains, own: ownTotal, total, controlOptions };
 }
 
 /** La parte Velocità del team: i membri pesati dal più veloce (25/20/16/14/13/12), poi la scala morbida (100 non si raggiunge). */
@@ -230,6 +244,12 @@ function weightedMean(list: MemberSpeed[], pick: (m: MemberSpeed) => number): nu
   return sorted.reduce((acc, m, i) => acc + weights[i] * pick(m), 0) / total;
 }
 
+const WEATHER_CONDITIONS = new Set(['sun', 'rain', 'sand', 'snow']);
+const WEATHER_TO_CONDITION: Record<string, 'sun' | 'rain' | 'sand' | 'snow'> = { sun: 'sun', rain: 'rain', sand: 'sand', snow: 'snow' };
+const TERRAIN_TO_CONDITION: Record<string, 'electricterrain' | 'grassyterrain' | 'mistyterrain' | 'psychicterrain'> = {
+  electric: 'electricterrain', grassy: 'grassyterrain', misty: 'mistyterrain', psychic: 'psychicterrain',
+};
+
 /** La condizione di controllo che dà una mossa (null se non ne dà). */
 function controlConditionOf(id: string): SpeedCondition | null {
   if (id === 'stickyweb') return 'web';
@@ -242,9 +262,16 @@ function controlConditionOf(id: string): SpeedCondition | null {
 const PRIORITY_FULL = 0.5;
 
 /** Il set di un avversario del gruppo: col meta il più comune, senza un set neutro. */
-function rivalSet(species: string, data: EngineData): TeamSet {
+export function rivalSet(species: string, data: EngineData): TeamSet {
   const common = usesMeta(data) ? mostCommonSet(data.stats, species) : null;
-  return common ?? { species, item: '', ability: getSpecies(species)?.abilities[0] ?? '', moves: [], nature: 'Hardy', evs: {} };
+  if (common) return common;
+  // Senza meta: lo stesso set offensivo che il gruppo assume per la velocità (252 Velocità, natura che la alza)
+  const s = getSpecies(species);
+  const physical = (s?.baseStats.atk ?? 0) >= (s?.baseStats.spa ?? 0);
+  return {
+    species, item: '', ability: s?.abilities[0] ?? '', moves: [], nature: physical ? 'Jolly' : 'Timid',
+    evs: { [physical ? 'atk' : 'spa']: 252, spe: 252, hp: 4 },
+  };
 }
 
 export interface TeamSpeed {

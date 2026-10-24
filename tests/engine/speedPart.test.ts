@@ -5,7 +5,7 @@ import { emptySet, type TeamSet } from '../../src/engine/sets';
 import { outspeedShare, speedPool, speedStat } from '../../src/engine/speed';
 import { getSpecies } from '../../src/engine/dex';
 import { fixtureData } from '../fixtures/data';
-import { CONDITION_QUOTA, CONTROL_CONDITIONS, isWebImmune, memberSpeed, slowFactor, SPEED_FULL, SPEED_RANK_WEIGHTS, speedPart } from '../../src/engine/speedArea';
+import { CONDITION_QUOTA, CONTROL_CONDITIONS, isWebImmune, memberSpeed, rivalSet, slowFactor, SPEED_FULL, SPEED_RANK_WEIGHTS, speedPart } from '../../src/engine/speedArea';
 import { bestHit } from '../../src/engine/damage';
 
 const set = (species: string, item: string, ability: string, moves: string[], nature = 'Jolly', spe = 252): TeamSet =>
@@ -209,3 +209,38 @@ describe('Velocità e Controllo velocità', () => {
     expect(m.total).toBeGreaterThanOrEqual(m.own);
   });
 });
+
+describe('priorità e condizioni: casi rifiniti', () => {
+  it('senza meta gli avversari hanno lo stesso set della velocità che si assume: 252 in Velocità con natura che la alza', () => {
+    const r = rivalSet('Dragapult', noMeta);
+    expect(r.evs.spe).toBe(252);
+    expect(['Jolly', 'Timid']).toContain(r.nature);
+  });
+
+  it('il meteo del team potenzia le mosse prioritarie (la pioggia di Pelipper e Aqua Jet)', () => {
+    const azu = set('Azumarill', 'Choice Band', 'Huge Power', ['Aqua Jet', 'Play Rough'], 'Adamant', 0);
+    const dry = memberSpeed(azu, [azu], noMeta)!.gains.find(g => g.condition === 'priority')!.gain;
+    const wet = memberSpeed(azu, [azu, pelipper], noMeta)!.gains.find(g => g.condition === 'priority')!.gain;
+    expect(wet).toBeGreaterThan(dry);
+  });
+
+  it('il nome della priorità è la mossa che porta più guadagno, non la prima trovata', () => {
+    const luc = set('Lucario', 'Life Orb', 'Inner Focus', ['Vacuum Wave', 'Extreme Speed', 'Bullet Punch'], 'Adamant');
+    const m = memberSpeed(luc, [luc], noMeta)!;
+    const g = m.gains.find(x => x.condition === 'priority')!;
+    const only = (move: string) => memberSpeed({ ...luc, moves: [move] }, [], noMeta)!.gains.find(x => x.condition === 'priority')?.gain ?? 0;
+    const best = ['Vacuum Wave', 'Extreme Speed', 'Bullet Punch'].sort((a, b) => only(b) - only(a))[0];
+    expect(g.source).toBe(best);
+  });
+
+  it('con Trick Room gli altri controlli non si sommano: conta il migliore fra Trick Room e il resto', () => {
+    const slowpoke = set('Slowbro', 'Leftovers', 'Regenerator', ['Scald', 'Slack Off'], 'Relaxed', 0);
+    const hatt = set('Hatterene', 'Focus Sash', 'Magic Bounce', ['Trick Room', 'Psychic'], 'Quiet', 0);
+    const wind = set('Whimsicott', 'Focus Sash', 'Prankster', ['Tailwind', 'Moonblast'], 'Timid');
+    const m = memberSpeed(slowpoke, [slowpoke, hatt, wind], noMeta)!;
+    const room = m.gains.find(g => g.condition === 'trickroom')!.gain;
+    const others = m.gains.filter(g => CONTROL_CONDITIONS.includes(g.condition) && g.condition !== 'trickroom').reduce((a, g) => a + g.gain, 0);
+    expect(m.total).toBeCloseTo(Math.min(1, m.own + Math.max(room, others)));
+  });
+});
+

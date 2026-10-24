@@ -295,7 +295,8 @@ describe('dettaglio della Velocità a schede', () => {
     expect(within(row).getByRole('rowheader')).toHaveTextContent('Clefable');
     const cells = within(row).getAllByRole('cell');
     expect(cells[0]).toHaveTextContent('Thunder Wave');
-    expect(cells[1]).toHaveTextContent(/^\d compagn[oi]$/);
+    // I membri aiutati, chi porta la mossa compreso
+    expect(cells[1]).toHaveTextContent(/^\d membr[oi]$/);
     expect(cells[2]).toHaveTextContent(/^\+\d+$/);
   });
 
