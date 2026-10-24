@@ -19,12 +19,14 @@ export interface FormatRules {
   strengthPool: FormatId | null;
   /** Punti massimi del bonus Tera (Gen 9): +1 per ogni debolezza del team che un Tera dichiarato fa resistere; 0 = niente. */
   teraBonusCap: number;
+  /** Soglie dell'indice di muro (PS x Dif / PS x DifSp sulle statistiche reali): sotto non è un muro fisico/speciale. */
+  wallIndex: { physical: number; special: number };
 }
 
-export const DEFAULT_RULES: FormatRules = { offensiveWallBulk: 0, noHazardsPenalty: 0, keepArchetype: false, strengthPool: null, teraBonusCap: 0 };
+export const DEFAULT_RULES: FormatRules = { offensiveWallBulk: 0, noHazardsPenalty: 0, keepArchetype: false, strengthPool: null, teraBonusCap: 0, wallIndex: { physical: 100000, special: 95000 } };
 
 /** Ubers: Zacian-Crowned con Swords Dance non è un muro, Stealth Rock è fondamentale, un HO resta HO. */
-export const UBERS_RULES: FormatRules = { ...DEFAULT_RULES, offensiveWallBulk: 11000, noHazardsPenalty: 4, keepArchetype: true };
+export const UBERS_RULES: FormatRules = { ...DEFAULT_RULES, offensiveWallBulk: 11000, noHazardsPenalty: 4, keepArchetype: true, wallIndex: { physical: 120000, special: 115000 } };
 
 /** UU: statistiche confrontate coi Pokémon legali in UU, e gli hazard contano come in Ubers. */
 export const UU_RULES: FormatRules = { ...DEFAULT_RULES, noHazardsPenalty: 4, strengthPool: 'uu' };
