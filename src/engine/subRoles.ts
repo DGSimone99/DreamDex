@@ -28,8 +28,13 @@ export const FAMILIES: Record<Family, SubRole[]> = {
 /** Sotto-ruoli misurati: famiglia Attacco, muri e Recupero. */
 export const MEASURED: SubRole[] = [...FAMILIES.attack, 'physicalWall', 'specialWall', 'recovery'];
 
-/** Valori 0-1 per sotto-ruolo; solo le voci > 0. */
-export type SubRoleValues = Partial<Record<SubRole, number>>;
+/**
+ * Valori 0-1 per sotto-ruolo; solo le voci > 0. `web` è interno (0,5 se il set ha Sticky Web): non è un sotto-ruolo,
+ * conta solo nel gruppo "setup del campo" (keyValue).
+ */
+export type SubRoleValues = Partial<Record<SubRole, number>> & { web?: number };
+/** Sticky Web vale metà di un hazard nel setup del campo. */
+export const WEB_VALUE = 0.5;
 
 export interface StatusSource {
   move: string;
@@ -166,6 +171,7 @@ function computeSetSubRoles(set: TeamSet, rules: FormatRules): SubRoleValues {
 
   // Campo
   ids.forEach(id => put('hazards', HAZARDS[id] ?? 0));
+  if (ids.includes('stickyweb')) v.web = WEB_VALUE;
   if (ids.some(id => REMOVAL.has(id))) put('removal', 1);
   if (ids.some(id => PIVOT.has(id))) put('pivot', 1);
   const clay = item === 'lightclay' ? 1 : 0.75;
@@ -337,6 +343,8 @@ export function measureWith(set: TeamSet, team: TeamSet[], data: EngineData, poo
   };
   const ids: string[] = set.moves.map(getMove).filter(isDefined).map(m => m.id);
   const ability = toID(battleAbility(set));
+  // Sticky Web: valore interno del setup del campo (prima che la cache congeli i valori)
+  if (ids.includes('stickyweb')) values.web = WEB_VALUE;
 
   // Difesa e campo come nel rilevatore del set; Aurora Veil conta con la neve del team
   const keep: SubRole[] = ['recovery', 'hazards', 'removal', 'pivot', 'phazer', 'itemRemoval'];

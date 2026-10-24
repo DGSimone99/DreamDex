@@ -724,7 +724,7 @@ function rolesTabs(rating: TeamRating, value: number | null, t: T): DetailTab[] 
   const archetype = t(`archetype.${rating.teamType}`);
   const full = roles.members.length === 6;
   const levelOf = (key: LevelKey): Level => roles.rows.find(r => r.key === key)?.level ?? 'ignored';
-  const keyLabel = (key: LevelKey) => (key === 'attacker' ? t('need.attacker') : t(`role.${key}`));
+  const keyLabel = (key: LevelKey) => (key === 'attacker' || key === 'fieldSetup' ? t(`need.${key}`) : t(`role.${key}`));
   const malus = roles.failures.reduce((a, f) => a + f.points, 0);
   const base = points(roles.base);
   const extra = points(roles.extra);

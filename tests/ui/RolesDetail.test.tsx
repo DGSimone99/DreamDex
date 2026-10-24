@@ -87,9 +87,10 @@ describe('Generale dei Ruoli', () => {
   it('voci importanti con valore e chi le porta, extra delle minori, mancanze essenziali coi punti', () => {
     const base = rateTeam([{ ...emptySet('Gliscor'), moves: ['Stealth Rock'] }], fixtureData, 'it')!;
     const roles: TeamRoles = {
-      value: 64, base: 0.5, extra: 0.03,
+      value: 64, base: 2 / 3, extra: 0.03,
       rows: [
         { key: 'attacker', level: 'essential', value: 0, by: [] },
+        { key: 'fieldSetup', level: 'important', value: 1, by: [{ species: 'Gliscor', value: 1, source: 'Stealth Rock' }] },
         { key: 'hazards', level: 'important', value: 1, by: [{ species: 'Gliscor', value: 1, source: 'Stealth Rock' }] },
         { key: 'removal', level: 'important', value: 0, by: [] },
         { key: 'taunt', level: 'minor', value: 1, by: [{ species: 'Zapdos', value: 1, source: 'Taunt' }] },
@@ -108,13 +109,15 @@ describe('Generale dei Ruoli', () => {
     renderIt(<AreaDetail rating={rating} area="roles" onClose={() => {}} />);
     const panel = screen.getByRole('tabpanel');
     expect(within(panel).getAllByRole('term').map(term => term.textContent)).toEqual(['Voci importanti', 'Voci minori', 'Voci essenziali']);
-    // Base 50, extra +3, malus −2
-    expect(within(panel).getAllByRole('definition').map(d => d.querySelector('strong')!.textContent)).toEqual(['50', '+3', '−2']);
+    // Base 67 (media di setup del campo, hazard e rimozione), extra +3, malus −2
+    expect(within(panel).getAllByRole('definition').map(d => d.querySelector('strong')!.textContent)).toEqual(['67', '+3', '−2']);
     const table = within(panel).getByRole('table');
     expect(within(table).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Voce', 'Valore', 'Chi la porta']);
     const row = (name: string) => within(table).getByRole('row', { name: new RegExp(`^${name}`) });
     expect(within(row('Hazard')).getAllByRole('cell')[0]).toHaveTextContent('100');
     expect(row('Hazard')).toHaveTextContent('Gliscor (Stealth Rock)');
+    // Il gruppo del campo ha la sua riga, con la mossa di chi lo porta
+    expect(row('Setup del campo')).toHaveTextContent('Gliscor (Stealth Rock)');
     expect(within(row('Rimozione hazard')).getAllByRole('cell')[0]).toHaveTextContent('0');
     expect(row('Taunt')).toHaveTextContent('Zapdos (Taunt)');
     // L'essenziale mancante: il suo malus al posto del valore, e il motivo nella voce

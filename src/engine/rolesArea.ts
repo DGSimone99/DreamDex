@@ -76,7 +76,9 @@ export function teamRolesArea(team: TeamSet[], data: EngineData, lang: Lang, giv
       const value = keyValue(needs.members[i] ?? {}, key);
       // La fonte del sotto-ruolo migliore dietro la voce (per "attacker": il miglior sotto-ruolo d'Attacco)
       const role = keyRoles(key).reduce((best, r) => ((needs.members[i]?.[r] ?? 0) > (needs.members[i]?.[best] ?? 0) ? r : best));
-      const source = reasons[i].find(r => r.role === role)?.source ?? '';
+      // Setup del campo: Sticky Web (non è un sotto-ruolo) fa da fonte solo se supera hazard e schermi
+      const web = key === 'fieldSetup' && (needs.members[i]?.web ?? 0) > (needs.members[i]?.[role] ?? 0);
+      const source = web ? 'Sticky Web' : reasons[i].find(r => r.role === role)?.source ?? '';
       return { species: battleName(set), value, source };
     }).filter(b => b.value > 0).sort((a, b) => b.value - a.value);
     return { key, level: needs.levels[key], value: needs.values[key], by };

@@ -51,11 +51,13 @@ export function needsArchetype(team: TeamSet[], rules: FormatRules): Archetype {
   return teamArchetype(team, rules)?.archetype ?? 'balance';
 }
 
-/** I sotto-ruoli dietro una voce: "attacker" sono tutti quelli d'Attacco. */
-export const keyRoles = (key: LevelKey): SubRole[] => (key === 'attacker' ? FAMILIES.attack : [key]);
+/** I sotto-ruoli dietro una voce: "attacker" sono tutti quelli d'Attacco, "fieldSetup" hazard e schermi. */
+export const keyRoles = (key: LevelKey): SubRole[] =>
+  (key === 'attacker' ? FAMILIES.attack : key === 'fieldSetup' ? ['hazards', 'screens'] : [key]);
 
-/** Valore di una voce per un membro (o un candidato). */
-export const keyValue = (v: SubRoleValues, key: LevelKey): number => Math.max(0, ...keyRoles(key).map(r => v[r] ?? 0));
+/** Valore di una voce per un membro (o un candidato); il setup del campo conta anche Sticky Web (`web`, a metà). */
+export const keyValue = (v: SubRoleValues, key: LevelKey): number =>
+  Math.max(0, ...keyRoles(key).map(r => v[r] ?? 0), key === 'fieldSetup' ? v.web ?? 0 : 0);
 
 export function teamNeeds(team: TeamSet[], data: EngineData, members?: SubRoleValues[]): TeamNeeds {
   const rules = rulesOf(data);
@@ -79,7 +81,7 @@ export function teamNeeds(team: TeamSet[], data: EngineData, members?: SubRoleVa
   };
 }
 
-/** Nome del bisogno: i sotto-ruoli col loro nome, più "Minaccia offensiva" per il gruppo degli attaccanti. */
+/** Nome del bisogno: i sotto-ruoli col loro nome, più "Minaccia offensiva" e "Setup del campo" per i gruppi. */
 export function needLabel(need: Need, lang: Lang = 'it'): string {
-  return need === 'attacker' ? t(lang, 'need.attacker') : roleLabel(need, lang);
+  return need === 'attacker' || need === 'fieldSetup' ? t(lang, `need.${need}`) : roleLabel(need, lang);
 }

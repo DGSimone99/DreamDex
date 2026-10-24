@@ -39,33 +39,66 @@ describe('tabella dei livelli per archetipo', () => {
     expect(levelOf('balance', 'physicalWall')).toBe('essential');
     expect(levelOf('hyperOffense', 'recovery')).toBe('ignored');
     expect(levelOf('semiStall', 'pivot')).toBe('minor');
-    for (const a of Object.keys(ROLE_LEVELS) as (keyof typeof ROLE_LEVELS)[]) expect(levelOf(a, 'hazards')).toBe('important');
+    // Fuori dall'HO gli hazard sono importanti; nell'HO lo è il gruppo "setup del campo"
+    for (const a of ['bulkyOffense', 'balance', 'semiStall', 'stall'] as const) expect(levelOf(a, 'hazards')).toBe('important');
+    for (const a of Object.keys(ROLE_LEVELS) as (keyof typeof ROLE_LEVELS)[]) expect(levelOf(a, 'fieldSetup')).toBe(a === 'hyperOffense' ? 'important' : 'ignored');
   });
 
-  it('HO: hazard importante, schermi minori', () => {
-    expect(levelOf('hyperOffense', 'hazards')).toBe('important');
+  it('HO: setup del campo importante, hazard minori', () => {
+    expect(levelOf('hyperOffense', 'fieldSetup')).toBe('important');
+    expect(levelOf('hyperOffense', 'hazards')).toBe('minor');
     expect(levelOf('hyperOffense', 'screens')).toBe('minor');
     // Calibrazione: il pivot in HO è minore (i team HO da torneo spesso non ne hanno)
     expect(levelOf('hyperOffense', 'pivot')).toBe('minor');
-    // Nel team HO i livelli sono quelli della colonna HO
     const needs = teamNeeds(hyperOffense, fixtureData);
     expect(needs.archetype).toBe('hyperOffense');
-    expect(needs.levels.hazards).toBe('important');
-    expect(needs.levels.screens).toBe('minor');
+    expect(needs.levels.fieldSetup).toBe('important');
+    expect(needs.levels.hazards).toBe('minor');
+    expect(needs.values.fieldSetup).toBe(1);
   });
 
-  it('HO senza hazard: Ruoli bassi per scelta (importante), ma nessuna mancanza essenziale per gli hazard', () => {
-    const noHazards = [set('Glimmora', 'Focus Sash', 'Toxic Debris', ['Mortal Spin', 'Power Gem', 'Sludge Wave', 'Earth Power']), ...hyperOffense.slice(1)];
-    const needs = teamNeeds(noHazards, fixtureData);
+  it('HO con Sticky Web e senza hazard: setup del campo 0.5, non manca', () => {
+    const web = [set('Galvantula', 'Focus Sash', 'Compound Eyes', ['Sticky Web', 'Bug Buzz', 'Thunder', 'Giga Drain']), ...hyperOffense.slice(1)];
+    const needs = teamNeeds(web, fixtureData);
     expect(needs.archetype).toBe('hyperOffense');
     expect(needs.values.hazards).toBe(0);
-    expect(needs.importantMissing).toContain('hazards');
-    expect(needs.essentialMissing).not.toContain('hazards');
-    const area = teamRolesArea(noHazards, fixtureData, 'it', needs);
-    // Unica voce importante a 0: base 0, restano solo le minori (calibrazione 2026-10-24)
+    expect(needs.values.fieldSetup).toBe(0.5);
+    expect(needs.importantMissing).not.toContain('fieldSetup');
+  });
+
+  it('HO con Aurora Veil e neve: setup del campo 1', () => {
+    const veil = [set('Ninetales-Alola', 'Light Clay', 'Snow Warning', ['Aurora Veil', 'Blizzard', 'Moonblast', 'Encore']), ...hyperOffense.slice(1)];
+    const needs = teamNeeds(veil, fixtureData);
+    expect(needs.values.hazards).toBe(0);
+    expect(needs.values.screens).toBe(1);
+    expect(needs.values.fieldSetup).toBe(1);
+  });
+
+  it('HO senza hazard, schermi né Sticky Web: setup del campo manca (importante), nessun malus essenziale', () => {
+    const none = [set('Glimmora', 'Focus Sash', 'Toxic Debris', ['Mortal Spin', 'Power Gem', 'Sludge Wave', 'Earth Power']), ...hyperOffense.slice(1)];
+    const needs = teamNeeds(none, fixtureData);
+    expect(needs.archetype).toBe('hyperOffense');
+    expect(needs.values.fieldSetup).toBe(0);
+    expect(needs.importantMissing).toContain('fieldSetup');
+    expect(needs.essentialMissing).not.toContain('fieldSetup');
+    expect(needs.missingRoles).toEqual(expect.arrayContaining(['hazards', 'screens']));
+    const area = teamRolesArea(none, fixtureData, 'it', needs);
+    // Unica voce importante a 0: base 0, restano solo le minori
     expect(area.base).toBe(0);
-    expect(area.failures.some(f => /hazard/i.test(f.text))).toBe(false);
+    expect(area.failures.some(f => /hazard|setup/i.test(f.text))).toBe(false);
     expect(area.value).toBeLessThan(teamRolesArea(hyperOffense, fixtureData, 'it').value);
+    // Il gruppo ha un'etichetta propria, nelle due lingue
+    expect(needLabel('fieldSetup', 'it')).toBe('Setup del campo');
+    expect(needLabel('fieldSetup', 'en')).toBe('Field setup');
+  });
+
+  it('"Chi la porta" del setup del campo nomina la mossa: Stealth Rock, schermi, Sticky Web', () => {
+    const by = (team: TeamSet[]) => teamRolesArea(team, fixtureData, 'it').rows.find(r => r.key === 'fieldSetup')!.by;
+    expect(by(hyperOffense)[0]).toMatchObject({ species: 'Glimmora', source: 'Stealth Rock' });
+    const web = [set('Galvantula', 'Focus Sash', 'Compound Eyes', ['Sticky Web', 'Bug Buzz', 'Thunder', 'Giga Drain']), ...hyperOffense.slice(1)];
+    expect(by(web)[0]).toMatchObject({ species: 'Galvantula', value: 0.5, source: 'Sticky Web' });
+    const veil = [set('Ninetales-Alola', 'Light Clay', 'Snow Warning', ['Aurora Veil', 'Blizzard', 'Moonblast', 'Encore']), ...hyperOffense.slice(1)];
+    expect(by(veil)[0]).toMatchObject({ species: 'Ninetales-Alola', source: 'Aurora Veil' });
   });
 
   it('interruttore spento: i muri minori diventano ignorati, Recovery essenziale in stall', () => {
@@ -86,7 +119,9 @@ describe('tabella dei livelli per archetipo', () => {
   });
 
   it("le voci: il gruppo degli attaccanti e poi i sotto-ruoli nell'ordine delle famiglie", () => {
-    expect(LEVEL_KEYS).toEqual(['attacker', ...Object.values(FAMILIES).flat()]);
+    const [attack, defense, field, disruption] = [FAMILIES.attack, FAMILIES.defense, FAMILIES.field, FAMILIES.disruption];
+    // "Setup del campo" è un gruppo davanti agli hazard
+    expect(LEVEL_KEYS).toEqual(['attacker', ...attack, ...defense, 'fieldSetup', ...field, ...disruption]);
   });
 
   it('priorità e controllo velocità non sono più voci dei Ruoli', () => {

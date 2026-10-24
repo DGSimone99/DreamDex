@@ -3,8 +3,11 @@ import type { SubRole } from './subRoles';
 
 /** Livello di un sotto-ruolo per l'archetipo: essenziale (solo malus), importante (±), minore (solo +), ignorato. */
 export type Level = 'essential' | 'important' | 'minor' | 'ignored';
-/** Una voce della tabella: un sotto-ruolo, o "attacker" = un sotto-ruolo d'Attacco qualunque (gruppo). */
-export type LevelKey = SubRole | 'attacker';
+/**
+ * Una voce della tabella: un sotto-ruolo, o un gruppo: "attacker" = un sotto-ruolo d'Attacco qualunque,
+ * "fieldSetup" = hazard, schermi o Sticky Web (il setup del campo dell'HO).
+ */
+export type LevelKey = SubRole | 'attacker' | 'fieldSetup';
 
 /**
  * Tutte le voci della tabella, nell'ordine della specifica: prima il gruppo degli attaccanti, poi le famiglie (FAMILIES).
@@ -12,7 +15,7 @@ export type LevelKey = SubRole | 'attacker';
  */
 export const LEVEL_KEYS: LevelKey[] = [
   'attacker', 'physicalSweeper', 'specialSweeper', 'physicalBreaker', 'specialBreaker',
-  'physicalWall', 'specialWall', 'recovery', 'hazards', 'removal', 'pivot', 'screens',
+  'physicalWall', 'specialWall', 'recovery', 'fieldSetup', 'hazards', 'removal', 'pivot', 'screens',
   'dot', 'debuff', 'phazer', 'taunt', 'encore', 'itemRemoval',
 ];
 
@@ -30,9 +33,10 @@ const E = 'essential' as const, I = 'important' as const, M = 'minor' as const, 
 /**
  * Colonne della tabella della specifica: HO, BO, Balance, Semi-stall, Stall.
  * Calibrazione (Task 9): pivot minore in HO (i team HO da torneo spesso hanno lead con hazard e sweeper, senza pivot).
- * Per scelta (calibrazione 2026-10-24) gli hazard sono l'unica voce importante dell'HO: un HO senza hazard ha base 0
- * e Ruoli bassi (restano le minori), ma nessuna penalità essenziale. Pavimento e media con le minori sono stati
- * provati e scartati: abbassavano il distacco torneo − medio sotto 6,5.
+ * Per scelta (calibrazione 2026-10-24) l'unica voce importante dell'HO è il setup del campo (hazard, schermi o
+ * Sticky Web a metà, gruppo "fieldSetup"; i singoli hazard e schermi restano minori): un HO senza nulla di tutto
+ * questo ha base 0 e Ruoli bassi (restano le minori), ma nessuna penalità essenziale. Pavimento e media con le
+ * minori sono stati provati e scartati: abbassavano il distacco torneo − medio sotto 6,5.
  */
 const ROWS: [LevelKey, Level, Level, Level, Level, Level][] = [
   ['attacker', E, E, E, E, X],
@@ -43,7 +47,8 @@ const ROWS: [LevelKey, Level, Level, Level, Level, Level][] = [
   ['physicalWall', M, M, E, E, E],
   ['specialWall', M, M, E, E, E],
   ['recovery', X, M, I, I, I],
-  ['hazards', I, I, I, I, I],
+  ['fieldSetup', I, X, X, X, X],
+  ['hazards', M, I, I, I, I],
   ['removal', M, I, I, I, I],
   ['pivot', M, I, I, M, M],
   ['screens', M, M, M, M, M],

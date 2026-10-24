@@ -31,6 +31,7 @@ export const it: Record<keyof typeof en, string> = {
   'family.field': "Campo",
   'family.disruption': "Disturbo",
   'need.attacker': "Minaccia offensiva",
+  'need.fieldSetup': "Setup del campo",
   'card.weather': "Meteo",
   'card.weatherTitle': "Porta {condition} ({via})",
   'roleShort.physicalSweeper': "Sweeper fis.",

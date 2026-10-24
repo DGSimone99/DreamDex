@@ -29,6 +29,7 @@ export const en = {
   'family.field': "Field",
   'family.disruption': "Disruption",
   'need.attacker': "Offensive threat",
+  'need.fieldSetup': "Field setup",
   'card.weather': "Weather",
   'card.weatherTitle': "Sets {condition} ({via})",
   'roleShort.physicalSweeper': "Phys. sweeper",
