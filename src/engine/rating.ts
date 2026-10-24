@@ -179,6 +179,10 @@ export function weatherClashes(team: TeamSet[], lang: Lang = 'it'): Redundancy[]
   ];
 }
 
+/** Trick Room rallenta un membro che supera da solo almeno questa quota del meta; il malus si ferma a −3. */
+export const TRICK_ROOM_FAST = 0.5;
+export const TRICK_ROOM_MAX = 3;
+
 /** Forza sotto cui un membro senza utilità chiave è considerato debole. */
 export const WEAK_POWER = 30;
 /** Ruoli che danno al team un'utilità chiave anche a un Pokémon debole (Delibird con Spikes). */
@@ -369,8 +373,16 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
     }));
   const base = Math.round(100 * score);
   const redundant = redundancies(team, analysis, lang);
-  // Niente più penalità del meta: le minacce scoperte abbassano la Coverage meta della Difesa
-  const penalty = redundant;
+  // Niente più penalità del meta: le minacce scoperte abbassano la Coverage meta della Difesa.
+  // Trick Room in un team veloce: −1 per ogni membro che supera da solo almeno metà del meta (sotto Trick Room perde), fino a −3
+  const roomSetter = team.find(set => set.moves.some(move => toID(move) === 'trickroom'));
+  const fastMembers = roomSetter ? speed.members.filter(m => m.raw >= TRICK_ROOM_FAST) : [];
+  const roomItems = fastMembers.length
+    ? [{ text: t(lang, 'rating.redundancy.trickRoomFast', { setter: battleName(roomSetter!), n: fastMembers.length, list: fastMembers.map(m => m.species).join(', ') }), points: Math.min(TRICK_ROOM_MAX, fastMembers.length) }]
+    : [];
+  const penalty = roomItems.length
+    ? { total: Math.min(MAX_PENALTY, redundant.total + roomItems[0].points), items: [...redundant.items, ...roomItems] }
+    : redundant;
   const weather = weatherBonus(team, lang);
   const tera = teraBonus(team, analysis, rules.teraBonusCap, lang);
   const bonus = { total: Math.min(MAX_BONUS, weather.total + sum(tera.map(i => i.points))), items: [...weather.items, ...tera] };

@@ -105,6 +105,13 @@ describe('Priorità come il setup: chi colpisce per primo anche i più veloci', 
     expect(bestHit(faker, target, { priorityOnly: true })!.expected).toBeCloseTo(plain.expected / 2);
   });
 
+  it("Sucker Punch vale tre quarti: fallisce se l'avversario non attacca", () => {
+    const plain = bestHit(gambit, target, { superEffectiveOnly: false })!;
+    const sucker = bestHit({ ...gambit, moves: ['Sucker Punch'] }, target)!;
+    expect(bestHit({ ...gambit, moves: ['Sucker Punch'] }, target, { priorityOnly: true })!.expected).toBeCloseTo(sucker.expected * 0.75);
+    expect(plain).toBeTruthy();
+  });
+
   it('il guadagno: metà dei più veloci colpiti per primi, ognuno pesato dal danno (metà PS vale pieno)', () => {
     const m = memberSpeed(gambit, [gambit], noMeta)!;
     const prio = m.gains.find(g => g.condition === 'priority')!;

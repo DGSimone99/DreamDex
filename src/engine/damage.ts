@@ -171,7 +171,7 @@ export function bestHit(attacker: TeamSet, defender: Target, options: HitOptions
       const { avg, low, high } = sums;
       // Mosse a due turni (Solar Blade, Meteor Beam…): un colpo ogni due turni, salvo sole/pioggia giusti o Power Herb
       const charge = data.flags.charge && !instantCharge(data.id, options.conditions ?? [], attacker.item) ? 0.5 : 1;
-      const firstTurn = options.priorityOnly && FIRST_TURN.has(data.id) ? 0.5 : 1;
+      const firstTurn = !options.priorityOnly ? 1 : FIRST_TURN.has(data.id) ? 0.5 : IF_ATTACKED.has(data.id) ? 0.75 : 1;
       const hit = { move: data.name, expected: (avg / hp) * accuracy * charge * firstTurn, min: (low / hp) * charge, max: (high / hp) * charge };
       if (!best || hit.expected > best.expected) best = hit;
     } catch {
@@ -186,8 +186,10 @@ export function bestHit(attacker: TeamSet, defender: Target, options: HitOptions
  * con statistiche, EV, natura, strumento e abilità veri dell'attaccante contro il set vero del difensore.
  * Misura solo quanto il difensore regge, indipendentemente dalle mosse che l'attaccante porta.
  */
-/** Mosse prioritarie che funzionano solo al primo turno in campo. */
+/** Mosse prioritarie che funzionano solo al primo turno in campo: metà. */
 const FIRST_TURN = new Set(['fakeout', 'firstimpression']);
+/** Mosse prioritarie che falliscono se l'avversario non attacca (setup, mosse di stato): tre quarti. */
+const IF_ATTACKED = new Set(['suckerpunch', 'thunderclap']);
 
 /** Mosse multicolpo e Parental Bond: la libreria dà un elenco di tiri per ogni colpo, da sommare. */
 function rollSums(result: unknown): { avg: number; low: number; high: number } | null {

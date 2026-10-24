@@ -97,3 +97,24 @@ describe('riferimento della velocità', () => {
     expect([...ou].sort((a, b) => a - b)).toEqual(ou);
   });
 });
+
+describe('malus: Trick Room in un team veloce', () => {
+  const fast = (species: string) => set(species, 'Life Orb', '', ['Thunderbolt'], 'Timid');
+  const hatt = set('Hatterene', 'Focus Sash', 'Magic Bounce', ['Trick Room', 'Psychic'], 'Quiet');
+
+  it('−1 per ogni membro veloce (supera almeno metà del meta), al massimo −3', () => {
+    const team = [hatt, fast('Regieleki'), fast('Dragapult'), fast('Iron Bundle'), fast('Electrode-Hisui'), fast('Meowscarada')];
+    const rating = rateTeam(team, fixtureData)!;
+    const item = rating.penalty.items.find(i => i.text.startsWith('Trick Room di Hatterene rallenta'))!;
+    expect(item.points).toBe(3);
+    const two = rateTeam([hatt, fast('Regieleki'), fast('Dragapult'), toxapex], fixtureData)!;
+    expect(two.penalty.items.find(i => i.text.startsWith('Trick Room'))!.points).toBe(2);
+  });
+
+  it('un vero team Trick Room (tutti lenti) non perde niente; senza Trick Room nemmeno', () => {
+    const slow = (species: string) => set(species, 'Leftovers', '', ['Body Slam'], 'Brave');
+    const team = [hatt, { ...toxapex, nature: 'Relaxed', evs: {} }, slow('Ursaluna'), slow('Torkoal')].map(s => ({ ...s, evs: {} }));
+    expect(rateTeam(team, fixtureData)!.penalty.items.some(i => i.text.startsWith('Trick Room'))).toBe(false);
+    expect(rateTeam([fast('Regieleki'), fast('Dragapult')], fixtureData)!.penalty.items.some(i => i.text.startsWith('Trick Room'))).toBe(false);
+  });
+});
