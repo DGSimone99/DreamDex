@@ -1,6 +1,6 @@
 import { battleAbility, battleSpecies, effectiveStats, getMove, isDefined, toID } from './dex';
 import type { TeamSet } from './sets';
-import { DEFAULT_RULES, type FormatRules } from './formatRules';
+import type { FormatRules } from './formatRules';
 import { rolesList, setSubRoles, type Family, type SubRole } from './subRoles';
 import { memoBySet } from './memo';
 import { t, type Lang } from '../i18n';
@@ -47,21 +47,14 @@ const isFastSetupSweeper = (set: TeamSet, roles: LegacyRole[]) =>
 const isSetupBreaker = (roles: LegacyRole[]) => roles.includes('setup') && roles.includes('wallbreaker');
 
 /**
- * Regole con cui giudicare i ruoli legacy. Per compatibilità si accetta anche una lista di ruoli (la vecchia firma):
- * viene ignorata e si usano le regole di sempre (National Dex OU). Il codice dell'app passa sempre le regole.
- */
-export type LegacyRulesArg = FormatRules | readonly string[];
-const legacyRules = (arg?: LegacyRulesArg): FormatRules => (!arg || Array.isArray(arg) ? DEFAULT_RULES : arg as FormatRules);
-
-/**
  * Membro "passivo" da stall: al massimo 2 mosse d'attacco, non uno sweeper veloce con setup né un wallbreaker con setup,
  * e un muro o con un recupero affidabile.
  * Si guarda il set, non solo le statistiche: un leggendario con quattro attacchi non è un muro da stall,
  * mentre Mega Sableye o Quagsire lo sono anche senza statistiche da muro.
  * Usa i ruoli legacy: gli archetipi non cambiano coi sotto-ruoli.
  */
-export function isPassive(set: TeamSet, rules?: LegacyRulesArg): boolean {
-  const roles = legacyRoles(set, legacyRules(rules));
+export function isPassive(set: TeamSet, rules: FormatRules): boolean {
+  const roles = legacyRoles(set, rules);
   const attacks = set.moves.filter(m => (getMove(m)?.category ?? 'Status') !== 'Status').length;
   if (attacks > 2 || isFastSetupSweeper(set, roles) || isSetupBreaker(roles)) return false;
   const heals = set.moves.some(m => RECOVERY_MOVES.has(toID(m))) || RECOVERY_ABILITIES.has(toID(set.ability));
@@ -71,10 +64,9 @@ export function isPassive(set: TeamSet, rules?: LegacyRulesArg): boolean {
 /** Membri passivi di uno stall: tutti e 6. Con una o due minacce offensive il team è un semi-stall. */
 export const STALL_PASSIVE = 6;
 
-/** Stall: tutti e 6 i membri passivi. Il secondo argomento sono le regole (una lista per membro, vecchia firma, usa quelle di sempre). */
-export function isStall(team: TeamSet[], rules?: FormatRules | readonly (readonly string[])[]): boolean {
-  const r = rules && !Array.isArray(rules) ? rules as FormatRules : DEFAULT_RULES;
-  return team.filter(set => isPassive(set, r)).length >= STALL_PASSIVE;
+/** Stall: tutti e 6 i membri passivi. */
+export function isStall(team: TeamSet[], rules: FormatRules): boolean {
+  return team.filter(set => isPassive(set, rules)).length >= STALL_PASSIVE;
 }
 
 const HAZARD_MOVES = new Set(['stealthrock', 'spikes', 'toxicspikes', 'stickyweb', 'stoneaxe', 'ceaselessedge']);
@@ -169,9 +161,3 @@ export function hasSetup(set: TeamSet): boolean {
   return moves.some(m => m.category === 'Status' && m.target === 'self'
     && ((m.boosts?.atk ?? 0) > 0 || (m.boosts?.spa ?? 0) > 0 || (m.boosts?.spe ?? 0) > 0 || (bodyPress && (m.boosts?.def ?? 0) > 0)));
 }
-
-/**
- * @deprecated Resta solo per compatibilità con i test dei difensori (invariati): oggi equivale a detectRoles.
- * La velocità non è più un ruolo: per i membri veloci si usa isFast.
- */
-export const teamRoles = (set: TeamSet, rules: FormatRules): Role[] => detectRoles(set, rules);

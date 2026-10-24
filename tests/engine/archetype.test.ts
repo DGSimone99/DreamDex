@@ -1,7 +1,7 @@
 import { DEFAULT_RULES } from '../../src/engine/formatRules';
 import { describe, expect, it } from 'vitest';
 import { teamArchetype } from '../../src/engine/archetype';
-import { detectRoles, isPassive } from '../../src/engine/roles';
+import { isPassive } from '../../src/engine/roles';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
 
 const set = (species: string, item: string, ability: string, moves: string[]): TeamSet => ({ ...emptySet(species), item, ability, moves });
@@ -108,9 +108,9 @@ describe('archetipi di Ubers', () => {
   ];
 
   it('un wallbreaker con setup offensivo non è un muro passivo (Necrozma con Dragon Dance)', () => {
-    expect(isPassive(deoSpeed[3], detectRoles(deoSpeed[3], DEFAULT_RULES))).toBe(false);
+    expect(isPassive(deoSpeed[3], DEFAULT_RULES)).toBe(false);
     // Dondozo con Curse resta un muro: Curse alza l'Attacco, ma Dondozo non ha statistiche da wallbreaker
-    expect(isPassive(set('Dondozo', 'Leftovers', 'Unaware', ['Curse', 'Body Press', 'Liquidation', 'Rest']), detectRoles(set('Dondozo', 'Leftovers', 'Unaware', ['Curse', 'Body Press', 'Liquidation', 'Rest']), DEFAULT_RULES))).toBe(true);
+    expect(isPassive(set('Dondozo', 'Leftovers', 'Unaware', ['Curse', 'Body Press', 'Liquidation', 'Rest']), DEFAULT_RULES)).toBe(true);
   });
 
   it('senza muri passivi e con almeno 5 membri veloci o con setup di velocità è Hyper Offense anche se robusto', () => {
