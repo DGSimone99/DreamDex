@@ -2,7 +2,8 @@ import { DEFAULT_RULES } from '../../src/engine/formatRules';
 import { teamOffense } from '../../src/engine/offense';
 import { describe, expect, it } from 'vitest';
 import { ARCHETYPE_WEIGHTS, rateTeam, ROLE_COMPRESSION } from '../../src/engine/rating';
-import { meetsNeed, needCoverage, NEEDS, teamNeeds } from '../../src/engine/needs';
+import { needCoverage, teamNeeds } from '../../src/engine/needs';
+import { FAMILIES, rolesList } from '../../src/engine/subRoles';
 
 import { memberPower, teamPower } from '../../src/engine/power';
 import { detectRoles, isPassive } from '../../src/engine/roles';
@@ -29,10 +30,15 @@ describe('team stall', () => {
   it('riconosciuto: ruoli giudicati come stall (niente sweeper né velocità richiesti)', () => {
     const rating = rateTeam(stall, fixtureData)!;
     expect(rating.archetype).toBe('stall');
-    // da stall: Hazard, Rimozione e i due Wall (1 + 1 + 1 + 1); mancano Pivot e Controllo velocità (utili, 0,4)
-    const needs = teamNeeds(stall, DEFAULT_RULES);
-    expect(needs.missing.map(m => m.need)).toEqual(['pivot', 'speedControl']);
-    const jobs = stall.reduce((acc, s) => acc + NEEDS.filter(need => meetsNeed(need, s, DEFAULT_RULES)).length, 0) / stall.length;
+    // da stall: i due muri essenziali ci sono, gli attaccanti non sono richiesti; fra gli importanti mancano
+    // Danno nel tempo e Debuff (il gruppo del fixture è pieno di Acciaio e Veleno, immuni a Toxic)
+    const needs = teamNeeds(stall, fixtureData);
+    expect(needs.essentialMissing).toEqual([]);
+    expect(needs.levels.attacker).toBe('ignored');
+    expect(needs.importantMissing).toEqual(['dot', 'debuff']);
+    // Ponte provvisorio: compiti per membro dai sotto-ruoli, l'Attacco contato una volta
+    const attack = (r: string) => (FAMILIES.attack as string[]).includes(r);
+    const jobs = needs.members.reduce((acc, m) => acc + rolesList(m).filter(r => !attack(r)).length + (rolesList(m).some(attack) ? 1 : 0), 0) / stall.length;
     const roles = (1 - ROLE_COMPRESSION) * needCoverage(needs) + ROLE_COMPRESSION * Math.min(1, jobs / 3);
     expect(rating.areas.find(a => a.key === 'roles')!.value).toBe(Math.round(100 * Math.min(1, roles)));
     // Nello stall la velocità non conta
@@ -79,12 +85,15 @@ describe('coaching di uno stall', () => {
     expect(texts).not.toMatch(/Pivot|Priorità|Controllo velocità/);
   });
 
-  it('chiede invece i ruoli da stall che mancano', async () => {
+  it('la rimozione mancante resta un bisogno (importante): la chiedono i candidati, non i "Ruoli mancanti" (solo essenziali)', async () => {
     const { coachTeam } = await import('../../src/engine/coach');
     const { DEFAULT_FORMAT } = await import('../../src/engine/format');
     const noRemoval = stall.map(s => (s.species === 'Corviknight' ? { ...s, moves: ['Body Press', 'Iron Defense', 'Roost', 'Brave Bird'] } : s));
+    const needs = teamNeeds(noRemoval, fixtureData);
+    expect(needs.importantMissing).toContain('removal');
+    expect(needs.missingRoles).toContain('removal');
     const texts = coachTeam(noRemoval, DEFAULT_FORMAT, fixtureData, 'it').problems.map(p => p.text);
-    expect(texts).toContainEqual(expect.stringMatching(/Ruoli mancanti: Rimozione hazard$/));
+    expect(texts).not.toContainEqual(expect.stringMatching(/Ruoli mancanti/));
   });
 });
 

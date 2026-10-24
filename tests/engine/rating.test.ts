@@ -139,13 +139,15 @@ describe('pesi secondo il tipo di team', () => {
 });
 
 describe('il meta conta solo nella sua area', () => {
-  it("i Ruoli sono gli stessi col meta e senza; Offesa, Difesa e Velocità si misurano contro il meta", () => {
+  it("Offesa, Difesa, Velocità e Ruoli si misurano contro il meta; niente area Meta", () => {
     const team = ['Great Tusk', 'Gholdengo', 'Kingambit', 'Corviknight', 'Toxapex', 'Rotom-Wash'].map(n => mostCommonSet(fixtureStats, n)!);
     const on = rateTeam(team, fixtureData)!;
     const off = rateTeam(team, { ...fixtureData, ignoreMeta: true })!;
-    // Offesa e Difesa si misurano contro il meta, se attivo; le altre aree no
-    const areas = (r: typeof on) => r.areas.filter(a => !['meta', 'strength', 'defense', 'speed'].includes(a.key)).map(a => [a.key, a.value]);
+    // I Ruoli usano i sotto-ruoli misurati (Offesa, Velocità e gruppo del meta o del tier): possono cambiare di poco
+    const areas = (r: typeof on) => r.areas.filter(a => !['meta', 'strength', 'defense', 'speed', 'roles'].includes(a.key)).map(a => [a.key, a.value]);
     expect(areas(on)).toEqual(areas(off));
+    const roles = (r: typeof on) => r.areas.find(a => a.key === 'roles')!.value!;
+    expect(Math.abs(roles(on) - roles(off))).toBeLessThanOrEqual(5);
     expect(on.areas.some(a => a.key === 'meta')).toBe(false);
     expect(on.meta).not.toBeNull();
   });

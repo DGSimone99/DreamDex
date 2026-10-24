@@ -28,9 +28,9 @@ describe('voto col meta e senza', () => {
     expect(on.penalty.items.some(i => i.text.startsWith('Poco preparato al meta'))).toBe(false);
     expect(on.defense.coverageMeta).not.toBeNull();
     expect(off.defense.coverageMeta).toBeNull();
-    // I Ruoli non cambiano col meta; Offesa, Difesa e Velocità sì
-    const areas = (r: typeof on) => r.areas.filter(a => !['strength', 'defense', 'speed'].includes(a.key)).map(a => [a.key, a.value]);
-    expect(areas(on)).toEqual(areas(off));
+    // Anche i Ruoli si misurano contro il meta (sotto-ruoli da Offesa, Velocità e gruppo del meta), ma cambiano di poco
+    const roles = (r: typeof on) => r.areas.find(a => a.key === 'roles')!.value!;
+    expect(Math.abs(roles(on) - roles(off))).toBeLessThanOrEqual(5);
     expect(on.overall).toBe(Math.max(0, Math.min(100, on.base - on.penalty.total + on.bonus.total)));
   });
 

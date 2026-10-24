@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
-import { candidatePool, scoreCandidates, suggest, type Suggestion } from '../../src/engine/scoring';
+import { candidatePool, rolesComponent, scoreCandidates, suggest, type Suggestion } from '../../src/engine/scoring';
+import { analyzeTeam } from '../../src/engine/analysis';
+import { teamNeeds } from '../../src/engine/needs';
 import type { ComponentKey } from '../../src/engine/weights';
 import { emptySet } from '../../src/engine/sets';
 import { fixtureData, gholdengo, tusk } from '../fixtures/data';
@@ -73,7 +75,8 @@ describe('scoreCandidates', () => {
   });
 
   it('ruoli mancanti', () => {
-    expect(byName(results, 'Toxapex').facts.roles.filled).toEqual(['hazards', 'specialWall']);
+    // Nell'ordine dei bisogni: prima gli essenziali (muro speciale), poi gli importanti (hazard)
+    expect(byName(results, 'Toxapex').facts.roles.filled).toEqual(['specialWall', 'hazards']);
   });
 
   it('sinergia normalizzata: Kingambit è il compagno più frequente', () => {
@@ -94,6 +97,24 @@ describe('scoreCandidates', () => {
   it('testo della motivazione difensiva', () => {
     const texts = byName(results, 'Rotom-Wash').reasons.map(r => r.text);
     expect(texts).toContain('Immune a Ground e resiste a Fire, Water: debolezze del team');
+  });
+});
+
+describe('ruoli del candidato pesati per livello', () => {
+  it('un candidato che porta un essenziale mancante vale più di uno che porta un minore', () => {
+    // Team incompleto (balance) senza muro fisico: il muro è essenziale, Encore minore
+    const team = [gholdengo];
+    const needs = teamNeeds(team, fixtureData, [{ specialBreaker: 1, specialWall: 1, recovery: 1, hazards: 1, removal: 1, pivot: 1, phazer: 1, itemRemoval: 1 }]);
+    expect(needs.essentialMissing).toEqual(['physicalWall']);
+    const analysis = { ...analyzeTeam(team, fixtureData), needs };
+    const wall = { ...emptySet('Corviknight'), item: 'Leftovers', ability: 'Pressure', moves: ['Body Press', 'Iron Defense'], nature: 'Impish', evs: { hp: 252, def: 252 } };
+    const encore = { ...emptySet('Whimsicott'), moves: ['Encore'] };
+    const a = rolesComponent(wall, analysis);
+    const b = rolesComponent(encore, analysis);
+    expect(a.facts.filled).toEqual(['physicalWall']);
+    expect(b.facts.filled).toEqual([]);
+    expect(b.value).toBeGreaterThan(0);
+    expect(a.value).toBeGreaterThan(b.value);
   });
 });
 

@@ -10,7 +10,8 @@ export { BALANCE_SPAN, DEFENSE_FULL, resistPoints, typeSafety };
 import type { Archetype } from './archetype';
 import { attackStyle, detectRoles, hasSpeedControl, isPassive, isStall } from './roles';
 import { rulesOf, type FormatRules } from './formatRules';
-import { meetsNeed, needCoverage, NEEDS } from './needs';
+import { needCoverage } from './needs';
+import { FAMILIES, rolesList, type SubRole, type SubRoleValues } from './subRoles';
 import { teamSpeedArea, type TeamSpeed } from './speedArea';
 import { strengthComponent } from './scoring';
 import { usageOf } from './stats';
@@ -314,6 +315,13 @@ export function gradeFor(score: number, lang: Lang = 'it'): { grade: string; lab
   return { grade, label: t(lang, `grade.${grade}`) };
 }
 
+/** Compiti del membro per la compressione dei ruoli: i sotto-ruoli che ha, con l'Attacco contato una volta. */
+function memberJobs(values: SubRoleValues): number {
+  const roles = rolesList(values);
+  const attack = (r: SubRole) => FAMILIES.attack.includes(r);
+  return roles.filter(r => !attack(r)).length + (roles.some(attack) ? 1 : 0);
+}
+
 export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): TeamRating | null {
   if (team.length === 0) return null;
   const analysis = analyzeTeam(team, data);
@@ -326,9 +334,9 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
   // Nello stall un muro passivo non deve fare danni: conta la sua robustezza, e i suoi colpi valgono pieni
   const passive = archetype ? team.map(set => isPassive(set, rules)) : [];
 
-  // Ruoli richiesti in base all'archetipo del team (uno stall non ha bisogno di sweeper, un hyper offense di wall),
-  // più quanti compiti copre ogni membro: nei team da torneo ognuno fa 2-3 cose
-  const jobs = sum(team.map(set => NEEDS.filter(need => meetsNeed(need, set, rules)).length)) / team.length;
+  // Ponte provvisorio (fino al nuovo calcolo dei Ruoli): copertura delle voci dell'archetipo pesata per livello
+  // sui valori del team, più quanti compiti copre ogni membro (gli attaccanti contano come un compito solo)
+  const jobs = sum(analysis.needs.members.map(memberJobs)) / team.length;
   const roles = (1 - ROLE_COMPRESSION) * needCoverage(analysis.needs) + ROLE_COMPRESSION * Math.min(1, jobs / FULL_JOBS);
   const power = teamPower(team, passive, rules);
   const offense = teamOffense(team, data);

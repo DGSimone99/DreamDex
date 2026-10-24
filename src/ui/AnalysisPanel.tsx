@@ -2,7 +2,8 @@ import { threatScore, type TeamAnalysis } from '../engine/analysis';
 import type { Coaching } from '../engine/coach';
 import type { EngineData } from '../engine/data';
 import type { TeamRating } from '../engine/rating';
-import { ESSENTIAL, meetsNeed, NEEDS, needLabel, USEFUL, type Need } from '../engine/needs';
+import { keyValue, MISSING_BELOW, needLabel, type Need } from '../engine/needs';
+import { LEVEL_KEYS, type Level } from '../engine/roleLevels';
 import { battleName } from '../engine/dex';
 import { weatherMitigations, type WeatherMitigation } from '../engine/synergy';
 import { formatPercent, t, type Lang } from '../i18n';
@@ -55,17 +56,19 @@ export function AnalysisPanel({ team, analysis, rating, coaching, preview, onRep
   const seriousWeak = severities.filter(s => s === 'serious').length;
   const minorWeak = severities.filter(s => s === 'minor').length;
   const uncovered = analysis.coverage.filter(row => row.hitters.length === 0);
-  // Ruoli richiesti in base al tipo di team (come nel voto): essenziali, utili e non richiesti
+  // Voci dei ruoli per livello, secondo il tipo di team (come nel voto): essenziali, importanti, minori e ignorate
   const { needs } = analysis;
-  const ownersOf = (need: Need) => team.filter(set => meetsNeed(need, set, needs.rules)).map(set => battleName(set));
-  const needGroups = [
-    { title: tr('analysis.essential'), weight: ESSENTIAL },
-    { title: tr('analysis.useful'), weight: USEFUL },
-    { title: tr('analysis.notRequired'), weight: 0 },
-  ]
-    .map(group => ({ ...group, rows: NEEDS.filter(need => need !== 'speed' && needs.weights[need] === group.weight).map(need => ({ need, owners: ownersOf(need) })) }))
+  // Chi copre una voce: i membri col valore misurato almeno MISSING_BELOW (stessa soglia dei bisogni)
+  const ownersOf = (need: Need) => team.filter((_, i) => keyValue(needs.members[i] ?? {}, need) >= MISSING_BELOW).map(set => battleName(set));
+  const needGroups = ([
+    { title: tr('analysis.essential'), level: 'essential' },
+    { title: tr('analysis.important'), level: 'important' },
+    { title: tr('analysis.minor'), level: 'minor' },
+    { title: tr('analysis.notRequired'), level: 'ignored' },
+  ] as { title: string; level: Level }[])
+    .map(group => ({ ...group, rows: LEVEL_KEYS.filter(need => needs.levels[need] === group.level).map(need => ({ need, owners: ownersOf(need) })) }))
     .filter(group => group.rows.length > 0);
-  const essentialRows = needGroups.find(group => group.weight === ESSENTIAL)?.rows ?? [];
+  const essentialRows = needGroups.find(group => group.level === 'essential')?.rows ?? [];
   const archetypeName = tr(`archetype.${needs.archetype}`);
   // Prima i tipi scoperti: sono quelli su cui intervenire
   const coverageRows = [...uncovered, ...analysis.coverage.filter(row => row.hitters.length > 0)];
@@ -142,16 +145,17 @@ export function AnalysisPanel({ team, analysis, rating, coaching, preview, onRep
                 <h4>{group.title}</h4>
                 <ul className="role-rows">
                   {group.rows.map(({ need, owners }) => {
-                    // Manca un essenziale: rosso. Utile mancante o non richiesto: grigio, senza croce
-                    const state = owners.length ? (group.weight > 0 ? '' : 'soft') : group.weight === ESSENTIAL ? 'bad' : 'soft';
+                    // Manca un essenziale: rosso. Importante o minore mancante, o voce ignorata: grigio, senza croce
+                    const essential = group.level === 'essential';
+                    const state = owners.length ? (group.level !== 'ignored' ? '' : 'soft') : essential ? 'bad' : 'soft';
                     return (
                       <li key={need} className={state}>
-                        {owners.length ? <Icon name="check" /> : group.weight === ESSENTIAL ? <Icon name="close" /> : <span aria-hidden="true" />}
+                        {owners.length ? <Icon name="check" /> : essential ? <Icon name="close" /> : <span aria-hidden="true" />}
                         <span className="role">{needLabel(need, lang)}</span>
                         <span className="owners">
                           {owners.length
                             ? owners.map(name => <span key={name} className="owner">{name}</span>)
-                            : group.weight === ESSENTIAL ? tr('analysis.missing') : group.weight > 0 ? '—' : tr('analysis.notRequiredValue')}
+                            : essential ? tr('analysis.missing') : group.level !== 'ignored' ? '—' : tr('analysis.notRequiredValue')}
                         </span>
                       </li>
                     );
