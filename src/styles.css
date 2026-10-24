@@ -751,6 +751,10 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 .ad-t td.total { font: 700 20px/1 var(--display); color: var(--text); white-space: nowrap; }
 .ad-t .ad-once { display: inline; margin-left: 4px; font: 600 13px/1 var(--ui); color: var(--blue); cursor: help; }
 .ad-t .ad-gain { display: inline; margin-left: 4px; font: 600 13px/1 var(--ui); color: var(--good); cursor: help; }
+/* Velocità: il guadagno di ogni condizione nella sua colonna, nel verde del setup */
+.ad-t .ad-gain-cell { color: var(--good); font-weight: 600; cursor: help; }
+/* Il controllo velocità è un plus sopra la Velocità: il numero in verde, senza barra */
+.ad-sub strong.ad-plus { grid-row: 1 / span 2; color: var(--good); }
 .ad-t td meter { display: block; width: 110px; }
 .ad-mon { display: flex; align-items: center; gap: 8px; }
 .ad-mon .sprite, .ad-cover .sprite, .ad-matrix thead .sprite { flex: none; }
