@@ -178,9 +178,11 @@ export function setSubRoles(set: TeamSet, rules: FormatRules): SubRoleValues {
   return v;
 }
 
-/** Soglie del rilevatore misurato (Offesa, Wallbreaking e quota di Velocità del membro). Breaker 52 (era 55): conta anche chi rompe col setup; sweeper 40 di Offesa (era 50): basta la velocità o il setup a renderlo tale. */
+/**
+ * Soglie del rilevatore misurato (Offesa, Wallbreaking e quota di Velocità del membro). Breaker 52 (era 55): conta anche chi rompe col setup; sweeper 40 di Offesa (era 50): basta la velocità o il setup a renderlo tale;
+ * veloce = supera metà del gruppo (0.5, era 0.6). */
 export const SWEEPER_OFFENSE = 40;
-export const SWEEPER_SPEED = 0.6;
+export const SWEEPER_SPEED = 0.5;
 export const BREAKER_WALLBREAKING = 52;
 
 /** Un rivale del gruppo con cui si misurano gli stati: tipi, abilità e strumento del suo set più comune. */
