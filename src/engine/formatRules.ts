@@ -36,9 +36,12 @@ export const GEN9_RULES: FormatRules = { ...DEFAULT_RULES, teraBonusCap: 3 };
 export const GEN9_UBERS_RULES: FormatRules = { ...UBERS_RULES, teraBonusCap: GEN9_RULES.teraBonusCap };
 export const GEN9_UU_RULES: FormatRules = { ...UU_RULES, strengthPool: 'gen9uu', teraBonusCap: GEN9_RULES.teraBonusCap };
 
+/** Gen 9 AG: le soglie di muro di Ubers (Arceus e Kingambit hanno bulk naturale da muro senza esserlo); il resto come Gen 9. */
+export const GEN9_AG_RULES: FormatRules = { ...GEN9_RULES, wallIndex: UBERS_RULES.wallIndex };
+
 const RULES: Partial<Record<FormatId, FormatRules>> = {
   ubers: UBERS_RULES, uu: UU_RULES,
-  gen9ou: GEN9_RULES, gen9ubers: GEN9_UBERS_RULES, gen9uu: GEN9_UU_RULES, gen9ag: GEN9_RULES,
+  gen9ou: GEN9_RULES, gen9ubers: GEN9_UBERS_RULES, gen9uu: GEN9_UU_RULES, gen9ag: GEN9_AG_RULES,
 };
 
 export function formatRules(formatId: FormatId | undefined): FormatRules {

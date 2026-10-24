@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_RULES, UBERS_RULES } from '../../src/engine/formatRules';
+import { DEFAULT_RULES, formatRules, UBERS_RULES } from '../../src/engine/formatRules';
 import type { TeamSet } from '../../src/engine/sets';
 import { rolesList, setSubRoles, statusSources, wallIndex } from '../../src/engine/subRoles';
 
@@ -38,6 +38,9 @@ describe('subRoles', () => {
   it('soglie Ubers più alte', () => {
     expect(UBERS_RULES.wallIndex).toEqual({ physical: 120000, special: 115000 });
     expect(DEFAULT_RULES.wallIndex).toEqual({ physical: 100000, special: 95000 });
+    // Gen 9 AG: soglie di Ubers, il resto delle regole di Gen 9
+    expect(formatRules('gen9ag').wallIndex).toEqual(UBERS_RULES.wallIndex);
+    expect(formatRules('gen9ag').teraBonusCap).toBe(formatRules('gen9ou').teraBonusCap);
   });
 
   it('Toxic Spikes 0.75, Sticky Web non è hazard', () => {
