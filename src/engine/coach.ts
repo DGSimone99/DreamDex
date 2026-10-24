@@ -153,6 +153,12 @@ function findProblems(team: TeamSet[], format: Format, analysis: TeamAnalysis, c
     add('roles', false, t(lang, 'coach.problem.missingRoles', { roles: list(missing.map(need => needLabel(need, lang))) }),
       fixesFor(candidates, s => missing.filter(need => keyRoles(need).some(role => s.facts.roles.filled.includes(role))).length));
   }
+  // Le voci importanti mancanti: una riga a parte, dopo quella degli essenziali (abbassano il voto, non sono un requisito)
+  const important = analysis.needs.importantMissing;
+  if (important.length) {
+    add('roles', false, t(lang, 'coach.problem.missingImportantRoles', { roles: list(important.map(need => needLabel(need, lang))) }),
+      fixesFor(candidates, s => important.filter(need => keyRoles(need).some(role => s.facts.roles.filled.includes(role))).length));
+  }
 
   for (const item of memberIssues(team, lang, analysis.needs.rules)) add('roles', false, item.text, []);
   for (const item of roleAndTypeRedundancies(team, lang)) add('redundancy', false, item.text, []);

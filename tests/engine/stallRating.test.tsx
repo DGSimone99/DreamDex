@@ -85,7 +85,7 @@ describe('coaching di uno stall', () => {
     expect(texts).not.toMatch(/Pivot|Priorità|Controllo velocità/);
   });
 
-  it('la rimozione mancante resta un bisogno (importante): la chiedono i candidati, non i "Ruoli mancanti" (solo essenziali)', async () => {
+  it('la rimozione mancante resta un bisogno (importante): nella riga dei ruoli importanti, non in "Ruoli mancanti" (solo essenziali)', async () => {
     const { coachTeam } = await import('../../src/engine/coach');
     const { DEFAULT_FORMAT } = await import('../../src/engine/format');
     const noRemoval = stall.map(s => (s.species === 'Corviknight' ? { ...s, moves: ['Body Press', 'Iron Defense', 'Roost', 'Brave Bird'] } : s));
@@ -94,6 +94,7 @@ describe('coaching di uno stall', () => {
     expect(needs.missingRoles).toContain('removal');
     const texts = coachTeam(noRemoval, DEFAULT_FORMAT, fixtureData, 'it').problems.map(p => p.text);
     expect(texts).not.toContainEqual(expect.stringMatching(/Ruoli mancanti/));
+    expect(texts).toContainEqual(expect.stringMatching(/^Ruoli importanti mancanti: .*Rimozione hazard/));
   });
 });
 

@@ -135,6 +135,7 @@ export const en = {
   'coach.problem.gen': "{species} is beyond Gen {gen}",
   'coach.problem.megas': "More than one Mega ({list}): National Dex allows only one",
   'coach.problem.missingRoles': "Missing roles: {roles}",
+  'coach.problem.missingImportantRoles': "Missing important roles: {roles}",
   'coach.problem.unused': "{via} from {member} is unused: nobody benefits",
   'coach.problem.unmet': "{member} has {via} but the team doesn't bring {condition}",
   'coach.problem.noCoverage': "No super effective move against {types}",

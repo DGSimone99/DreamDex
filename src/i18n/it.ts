@@ -137,6 +137,7 @@ export const it: Record<keyof typeof en, string> = {
   'coach.problem.gen': "{species} è oltre la Gen {gen}",
   'coach.problem.megas': "Più Mega nel team ({list}): in National Dex ne è ammessa una sola",
   'coach.problem.missingRoles': "Ruoli mancanti: {roles}",
+  'coach.problem.missingImportantRoles': "Ruoli importanti mancanti: {roles}",
   'coach.problem.unused': "{via} di {member} non sfruttato: nessuno ne beneficia",
   'coach.problem.unmet': "{member} ha {via} ma il team non porta {condition}",
   'coach.problem.noCoverage': "Nessuna mossa super efficace contro {types}",
