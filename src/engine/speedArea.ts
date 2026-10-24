@@ -105,12 +105,12 @@ export function memberSpeed(set: TeamSet, team: TeamSet[], data: EngineData): Me
   const web = teamMove(team, new Set(['stickyweb']));
   const trickRoom = teamMove(team, new Set(['trickroom']));
   const tailwind = teamMove(team, new Set(['tailwind']));
-  const paralysis = teamMove(team, PARALYSIS);
-  const drop = teamMove(team, SPEED_DROP);
-  const key = `${setKey(set)}|${weathers}|${terrains}|${web}|${trickRoom}|${tailwind}|${paralysis}|${drop}|${data.formatId ?? 'ou'}|${usesMeta(data)}|${!!data.stats}`;
+  // Tutte le mosse che rallentano del team (immunità diverse): conta poi la migliore
+  const slowing = [...new Set(team.flatMap(member => member.moves.map(m => getMove(m)).filter(m => !!m && (PARALYSIS.has(m.id) || SPEED_DROP.has(m.id))).map(m => m!.name)))].sort();
+  const key = `${setKey(set)}|${weathers}|${terrains}|${web}|${trickRoom}|${tailwind}|${slowing}|${data.formatId ?? 'ou'}|${usesMeta(data)}|${!!data.stats}`;
   if (members.has(key)) return members.get(key)!;
   if (members.size >= MEMBER_LIMIT) members.clear();
-  const value = measure(set, data, { weathers, terrains, web, trickRoom, tailwind, paralysis, drop });
+  const value = measure(set, data, { weathers, terrains, web, trickRoom, tailwind, slowing });
   members.set(key, value);
   return value;
 }
@@ -121,8 +121,7 @@ interface TeamConditions {
   web: string | null;
   trickRoom: string | null;
   tailwind: string | null;
-  paralysis: string | null;
-  drop: string | null;
+  slowing: string[];
 }
 
 function measure(set: TeamSet, data: EngineData, team: TeamConditions): MemberSpeed | null {
@@ -156,8 +155,7 @@ function measure(set: TeamSet, data: EngineData, team: TeamConditions): MemberSp
   if (team.trickRoom) add('trickroom', team.trickRoom, 1 - raw);
   if (team.tailwind) add('tailwind', team.tailwind, shareWith(speed * 2));
   // Rallentare: conta la mossa migliore che il team ha, con le immunità di tipo
-  const slowed = [team.paralysis, team.drop]
-    .filter((move): move is string => !!move)
+  const slowed = team.slowing
     .map(move => ({ move, share: shareWith(speed, r => slowFactor(move, r.species)) }))
     .sort((a, b) => b.share - a.share)[0];
   if (slowed) add('slow', slowed.move, slowed.share);
@@ -170,7 +168,12 @@ function measure(set: TeamSet, data: EngineData, team: TeamConditions): MemberSp
 export function speedPart(list: MemberSpeed[]): number {
   if (!list.length) return 0;
   const sorted = [...list].sort((a, b) => b.speed - a.speed);
-  const weights = sorted.map((_, i) => SPEED_RANK_WEIGHTS[Math.min(i, SPEED_RANK_WEIGHTS.length - 1)]);
+  const rankWeight = (i: number) => SPEED_RANK_WEIGHTS[Math.min(i, SPEED_RANK_WEIGHTS.length - 1)];
+  // A pari velocità le posizioni si dividono il peso: il risultato non dipende dall'ordine dei membri
+  const weights = sorted.map(m => {
+    const tied = sorted.map((o, i) => (o.speed === m.speed ? rankWeight(i) : null)).filter((w): w is number => w !== null);
+    return tied.reduce((a, b) => a + b, 0) / tied.length;
+  });
   const total = weights.reduce((a, b) => a + b, 0);
   return softScore(sorted.reduce((acc, m, i) => acc + weights[i] * m.total, 0) / total);
 }

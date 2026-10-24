@@ -203,3 +203,22 @@ describe('Velocità: casi particolari', () => {
     expect(priorityTargets(ms, fixtureData, team).some(t => t.set.species === 'Dragapult')).toBe(false);
   });
 });
+
+describe("Velocità: l'ordine dei membri non conta", () => {
+  it('a pari velocità le posizioni si dividono il peso', () => {
+    const a = { species: 'A', speed: 300, raw: 0.5, gains: [], total: 0.9 };
+    const b = { species: 'B', speed: 300, raw: 0.5, gains: [], total: 0.5 };
+    const c = { species: 'C', speed: 100, raw: 0.1, gains: [], total: 0.1 };
+    expect(speedPart([a, b, c])).toBe(speedPart([b, a, c]));
+    // Le due posizioni in parità valgono (25 + 20) / 2 ciascuna
+    expect(speedPart([a, b, c])).toBe(softScore((22.5 * 0.9 + 22.5 * 0.5 + 16 * 0.1) / 61));
+  });
+
+  it('con più mosse che rallentano conta la migliore, in qualunque ordine', () => {
+    const wave = set('Clefable', 'Leftovers', 'Magic Guard', ['Thunder Wave', 'Moonblast'], 'Bold', 0);
+    const spore = set('Amoonguss', 'Black Sludge', 'Regenerator', ['Stun Spore', 'Giga Drain'], 'Bold', 0);
+    const one = memberSpeed(pex, [pex, spore, wave], noMeta)!.gains.find(g => g.condition === 'slow')!;
+    const two = memberSpeed(pex, [pex, wave, spore], noMeta)!.gains.find(g => g.condition === 'slow')!;
+    expect(one).toEqual(two);
+  });
+});
