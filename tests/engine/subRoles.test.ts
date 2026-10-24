@@ -128,6 +128,34 @@ describe('subRoles', () => {
     expect(roles(slow).physicalSweeper).toBeUndefined();
   });
 
+  it('attaccanti misti: decide lo strumento Choice, altrimenti ogni lato con la statistica alta', () => {
+    // Specs Dragapult: due attacchi fisici e due speciali, ma lo Specs dice speciale
+    const pult = set('Dragapult', ['Dragon Darts', 'U-turn', 'Draco Meteor', 'Shadow Ball'], 'Choice Specs', 'Infiltrator', { spa: 252, spe: 252 }, 'Timid');
+    const v = roles(pult);
+    expect(v).toMatchObject({ specialBreaker: 1, specialSweeper: 1, pivot: 1 });
+    expect(v.physicalBreaker).toBeUndefined();
+    expect(v.physicalSweeper).toBeUndefined();
+    // Band: fisico anche con la statistica speciale alta
+    const band = set('Dragapult', ['Dragon Darts', 'U-turn', 'Draco Meteor', 'Shadow Ball'], 'Choice Band', 'Infiltrator', { atk: 252, spa: 252, spe: 4 }, 'Hasty');
+    expect(roles(band).physicalBreaker).toBe(1);
+    expect(roles(band).specialBreaker).toBeUndefined();
+    // Loaded Dice Kyurem: senza Choice conta il lato con l'Attacco investito (AttSp senza EV sotto 300)
+    const kyurem = set('Kyurem', ['Freeze-Dry', 'Earth Power', 'Icicle Spear', 'Scale Shot'], 'Loaded Dice', 'Pressure', { atk: 252, spa: 4, spe: 252 }, 'Naive');
+    const k = roles(kyurem);
+    expect(k).toMatchObject({ physicalBreaker: 1, physicalSweeper: 1 });
+    expect(k.specialBreaker).toBeUndefined();
+    // Misto con entrambe le statistiche alte: entrambi i lati
+    const both = set('Kyurem', ['Freeze-Dry', 'Earth Power', 'Icicle Spear', 'Scale Shot'], 'Life Orb', 'Pressure', { atk: 128, spa: 128, spe: 252 }, 'Hasty');
+    expect(roles(both)).toMatchObject({ physicalBreaker: 1, specialBreaker: 1 });
+  });
+
+  it('il rilevatore del set è in cache per set e congelato', () => {
+    const s = set('Garchomp', ['Earthquake', 'Outrage', 'Swords Dance'], '', '', { atk: 252, spe: 252 }, 'Jolly');
+    const a = setSubRoles(s, DEFAULT_RULES);
+    expect(setSubRoles(s, DEFAULT_RULES)).toBe(a);
+    expect(Object.isFrozen(a)).toBe(true);
+  });
+
   it('RF1: specie o mosse sconosciute: niente errori, valori vuoti', () => {
     expect(setSubRoles(set('Notamon', ['Toxic', 'Stealth Rock']), DEFAULT_RULES)).toEqual({});
     expect(() => setSubRoles(set('Great Tusk', ['', 'Notamove']), DEFAULT_RULES)).not.toThrow();

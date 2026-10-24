@@ -10,6 +10,7 @@ import { memberOffense } from './offense';
 import { memberSpeed } from './speedArea';
 import { outspeedShare, speedPool, speedStat, type SpeedRival } from './speed';
 import { teamField } from './types';
+import { memoBySet } from './memo';
 
 export type Family = 'attack' | 'defense' | 'field' | 'disruption';
 export type SubRole = 'physicalSweeper' | 'specialSweeper' | 'physicalBreaker' | 'specialBreaker'
@@ -114,8 +115,13 @@ const SNOW = new Set(['snowscape', 'chillyreception']);
 /** Soglia di statistica reale (Att/AttSp o Vel) per contare come attaccante o veloce. */
 const STAT_MIN = 300;
 
-/** Sotto-ruoli del solo set (senza meta): gli attaccanti sono un'approssimazione, i muri usano l'indice reale. */
-export function setSubRoles(set: TeamSet, rules: FormatRules): SubRoleValues {
+/**
+ * Sotto-ruoli del solo set (senza meta): gli attaccanti sono un'approssimazione, i muri usano l'indice reale.
+ * In cache per set (il voto dei candidati lo chiama per ogni team provato); il risultato è congelato.
+ */
+export const setSubRoles = memoBySet((set: TeamSet, rules: FormatRules): SubRoleValues => computeSetSubRoles(set, rules));
+
+function computeSetSubRoles(set: TeamSet, rules: FormatRules): SubRoleValues {
   const species = battleSpecies(set);
   if (!species) return {};
   const moves = set.moves.map(getMove).filter(isDefined);
@@ -135,11 +141,18 @@ export function setSubRoles(set: TeamSet, rules: FormatRules): SubRoleValues {
   const boost = STAT_ABILITIES[ability] ?? {};
   const attackStat = (id: 'atk' | 'spa') => stat(id) * (boost[id] ?? 1);
   const fast = stat('spe') >= STAT_MIN || item === 'choicescarf' || SPEED_ABILITIES.has(ability);
-  if (style === 'physical' && attackStat('atk') >= STAT_MIN) {
+  // Attaccante misto: decide lo strumento Choice (Band fisico, Specs speciale, senza soglia: lo strumento dice già
+  // da che lato attacca, Specs Dragapult Timid ha 299 di AttSp), altrimenti conta ogni lato con la statistica alta
+  const choiceSide = item === 'choiceband' ? 'physical' : item === 'choicespecs' ? 'special' : null;
+  const attacks = (side: 'physical' | 'special', id: 'atk' | 'spa') => {
+    if (style === 'mixed' && choiceSide) return choiceSide === side;
+    return (style === side || style === 'mixed') && attackStat(id) >= STAT_MIN;
+  };
+  if (attacks('physical', 'atk')) {
     put('physicalBreaker', 1);
     if (fast || selfBoost('spe') || (selfBoost('atk') && priority)) put('physicalSweeper', 1);
   }
-  if (style === 'special' && attackStat('spa') >= STAT_MIN) {
+  if (attacks('special', 'spa')) {
     put('specialBreaker', 1);
     if (fast || selfBoost('spe') || (selfBoost('spa') && priority)) put('specialSweeper', 1);
   }
@@ -343,9 +356,11 @@ export function measureWith(set: TeamSet, team: TeamSet[], data: EngineData, poo
   const lightScreen = ids.includes('lightscreen');
   const veil = ids.includes('auroraveil');
   // La fonte degli schermi: le mosse del set (Light Clay a parte, già nel valore)
-  const screenMoves = [reflect && 'Reflect', lightScreen && 'Light Screen', veil && 'Aurora Veil'].filter(Boolean).join(' + ');
-  if ((reflect && lightScreen) || (veil && snow)) put('screens', clay, screenMoves);
-  else if (reflect || lightScreen || veil) put('screens', 0.6 * clay, screenMoves);
+  const screenMoves = [reflect && 'Reflect', lightScreen && 'Light Screen', veil && snow && 'Aurora Veil'].filter(Boolean).join(' + ');
+  // Senza la neve del team Aurora Veil fallisce: conta solo Reflect o Light Screen (il rilevatore del set la tiene a 0,6)
+  const veilWorks = veil && snow;
+  if ((reflect && lightScreen) || veilWorks) put('screens', clay, screenMoves);
+  else if (reflect || lightScreen) put('screens', 0.6 * clay, screenMoves);
 
   // Attacco dai numeri dell'Offesa e della Velocità
   const offense = memberOffense(set, team, data);
@@ -389,6 +404,11 @@ function measured(set: TeamSet, team: TeamSet[], data: EngineData) {
   if (hit) return hit;
   if (cache.size >= CACHE_LIMIT) cache.clear();
   hit = measureWith(set, team, data, statusPool(data), speedPool(data));
+  // Voci congelate: chi le modificasse sporcherebbe la cache condivisa
+  hit.reasons.forEach(r => Object.freeze(r));
+  Object.freeze(hit.values);
+  Object.freeze(hit.reasons);
+  Object.freeze(hit);
   cache.set(key, hit);
   return hit;
 }

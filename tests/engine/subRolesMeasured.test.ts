@@ -3,8 +3,9 @@ import type { TeamSet } from '../../src/engine/sets';
 import { speedPool, speedStat } from '../../src/engine/speed';
 import { outspeedShare } from '../../src/engine/speed';
 import {
-  measuredSubRoles, measureWith, statusPool, subRoleReasons, MEASURED, type StatusRival,
+  measuredSubRoles, measureWith, setSubRoles, statusPool, subRoleReasons, MEASURED, type StatusRival,
 } from '../../src/engine/subRoles';
+import { rulesOf } from '../../src/engine/formatRules';
 import { fixtureData } from '../fixtures/data';
 
 const set = (species: string, moves: string[], item = '', ability = '', evs: TeamSet['evs'] = {}, nature = 'Serious'): TeamSet =>
@@ -78,9 +79,27 @@ describe('sotto-ruoli misurati', () => {
     const veil = set('Alolan Ninetales', ['Aurora Veil', 'Blizzard'], 'Light Clay', 'Snow Warning');
     const bare = set('Cresselia', ['Aurora Veil'], 'Light Clay');
     const snowy = set('Abomasnow', ['Blizzard'], '', 'Snow Warning');
-    expect(measuredSubRoles(bare, [bare], fixtureData).screens).toBeCloseTo(0.6, 10);
+    // Senza neve nel team la mossa fallisce: niente schermi (il rilevatore del set la tiene a 0,6)
+    expect(measuredSubRoles(bare, [bare], fixtureData).screens).toBeUndefined();
+    expect(subRoleReasons(bare, [bare], fixtureData).find(r => r.role === 'screens')).toBeUndefined();
+    expect(setSubRoles(bare, rulesOf(fixtureData)).screens).toBeCloseTo(0.6, 10);
     expect(measuredSubRoles(bare, [bare, snowy], fixtureData).screens).toBe(1);
     expect(measuredSubRoles(veil, [veil], fixtureData).screens).toBe(1);
+    // Con Reflect accanto, senza neve conta solo Reflect (0,6 con Light Clay)
+    const reflectVeil = set('Cresselia', ['Aurora Veil', 'Reflect'], 'Light Clay');
+    expect(measuredSubRoles(reflectVeil, [reflectVeil], fixtureData).screens).toBeCloseTo(0.6, 10);
+    expect(subRoleReasons(reflectVeil, [reflectVeil], fixtureData).find(r => r.role === 'screens')!.source).toBe('Reflect');
+  });
+
+  it('voci della cache congelate: valori, motivi e liste non si modificano', () => {
+    const s = set('Corviknight', ['Body Press', 'Iron Defense', 'Roost', 'Defog'], 'Leftovers', 'Pressure', { hp: 252, def: 252 }, 'Impish');
+    const values = measuredSubRoles(s, [s], fixtureData);
+    const reasons = subRoleReasons(s, [s], fixtureData);
+    expect(Object.isFrozen(values)).toBe(true);
+    expect(Object.isFrozen(reasons)).toBe(true);
+    expect(reasons.length).toBeGreaterThan(0);
+    expect(reasons.every(r => Object.isFrozen(r))).toBe(true);
+    expect(() => { (values as Record<string, number>).recovery = 0; }).toThrow();
   });
 
   it('RF2 meta spento: pool del tier, valori tra 0 e 1', () => {
