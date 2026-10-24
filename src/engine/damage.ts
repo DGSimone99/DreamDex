@@ -15,7 +15,9 @@ export interface HitOptions {
   tera?: boolean;
   /** L'attaccante usa la mossa Z del suo cristallo (se è del tipo della mossa). */
   z?: boolean;
-  boosts?: Partial<Record<'atk' | 'spa' | 'def', number>>;
+  boosts?: Partial<Record<'atk' | 'spa' | 'def' | 'spd', number>>;
+  /** Aumenti di Difesa e Dif. Speciale del bersaglio (setup difensivo); un attaccante Unaware li ignora. */
+  targetBoosts?: Partial<Record<'def' | 'spd', number>>;
   /** Solo le mosse super efficaci sul bersaglio (la Coverage: il vantaggio di tipo, non il danno neutro). */
   superEffectiveOnly?: boolean;
   /** Solo le mosse prioritarie (Grassy Glide col Grassy Terrain); Fake Out e First Impression valgono metà (solo al primo turno). */
@@ -205,7 +207,9 @@ function rollSums(result: unknown): { avg: number; low: number; high: number } |
 
 export function standardHit(attacker: TeamSet, defender: Target, category: 'Physical' | 'Special', options: HitOptions = {}): Hit | null {
   const own = toPokemon(attacker, options);
-  const target = toPokemon(defender, {}, 'defender');
+  // Unaware ignora gli aumenti del bersaglio; la chiave della cache li contiene
+  const targetBoosts = toID(battleAbility(attacker)) === 'unaware' ? undefined : options.targetBoosts;
+  const target = toPokemon(defender, { boosts: targetBoosts }, 'defender');
   if (!own || !target) return null;
   // Wonder Guard ferma un colpo senza tipo, ma i colpi veri lo prendono super efficace: vale un OHKO
   if (toID(battleAbility(defender as TeamSet)) === 'wonderguard') return { move: category, expected: 1, min: 1, max: 1 };
