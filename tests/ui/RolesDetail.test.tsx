@@ -60,6 +60,16 @@ describe('dettaglio dei Ruoli a schede', () => {
     expect(groups.some(g => g.startsWith('Encore'))).toBe(true);
   });
 
+  it('il tooltip della barra elenca ogni membro coi suoi sotto-ruoli brevi', async () => {
+    const { rating } = await importRolesTeam();
+    const tip = within(rating).getByRole('button', { name: /^Ruoli \d+$/ }).getAttribute('data-tip')!;
+    const lines = tip.split('\n');
+    expect(lines).toHaveLength(3);
+    // Gliscor con Stealth Rock: l'hazard col nome breve
+    expect(lines.find(l => l.startsWith('Gliscor '))).toMatch(/Hazard/);
+    expect(lines.find(l => l.startsWith('Corviknight '))).toMatch(/Rimozione/);
+  });
+
   it('Esc chiude e il focus torna alla barra', async () => {
     const { user, bar } = await openRoles();
     await user.keyboard('{Escape}');

@@ -670,7 +670,6 @@ export const it: Record<keyof typeof en, string> = {
   'rating.coverageTip': "Tipi colpiti super efficace da ogni membro",
   'rating.metaOn': "Col meta del formato (statistiche {month}): Offesa, Difesa e Velocità contro i Pokémon più usati.",
   'rating.metaOff': "Senza meta: Offesa, Difesa e Velocità contro i tipi e i Pokémon del tier.",
-  'rating.goTo': "Vai a {section}",
   'rating.bonus': "Bonus +{n}",
   'rating.penalty': "Penalità −{n}",
   'rating.since': "{delta}",

@@ -51,6 +51,9 @@ export function RatingPanel({ rating, ruleIssues = [], metaMonth }: { rating: Te
               ? [...rating.defense.members].sort((a, b) => b.value - a.value).map(m => `${m.species} ${m.value}`).join('\n')
             : area.key === 'speed' && rating.speed.members.length
               ? [...rating.speed.members].sort((a, b) => b.total - a.total).map(m => `${m.species} ${Math.round(100 * m.total)}`).join('\n')
+            : area.key === 'roles' && rating.roles.members.length
+              // Ruoli: i sotto-ruoli di ogni membro (valore almeno 0,5), coi nomi brevi
+              ? rating.roles.members.map(m => `${m.species} ${rolesList(m.values).map(r => roleShortLabel(r, lang)).join(' · ') || '—'}`).join('\n')
             : undefined;
           return (
             <div key={area.key}>
