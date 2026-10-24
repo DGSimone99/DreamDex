@@ -29,10 +29,12 @@ const hyperOffense = [
   set('Lopunny', 'Lopunnite', 'Limber', ['Fake Out', 'Return', 'High Jump Kick', 'Ice Punch']),
 ];
 
-afterEach(() => setRolesCountMeasured(true));
+afterEach(() => setRolesCountMeasured(false));
 
 describe('tabella dei livelli per archetipo', () => {
   it('la bozza della specifica: attaccanti essenziali tranne nello stall, muri minori nell\'HO, hazard sempre importanti', () => {
+    // La tabella com'è scritta, con l'interruttore acceso (spento di default: vedi "interruttore del doppio conteggio")
+    setRolesCountMeasured(true);
     expect(levelOf('stall', 'attacker')).toBe('ignored');
     for (const a of ['hyperOffense', 'bulkyOffense', 'balance', 'semiStall'] as const) expect(levelOf(a, 'attacker')).toBe('essential');
     expect(levelOf('hyperOffense', 'physicalWall')).toBe('minor');
@@ -208,5 +210,13 @@ describe('voto e coach seguono i livelli dell\'archetipo', () => {
     const texts = coachTeam(team, DEFAULT_FORMAT, fixtureData).problems.map(p => p.text).join(' | ');
     expect(texts).toMatch(/Ruoli mancanti/);
     expect(texts).not.toMatch(/Priorità|Velocità|Controllo velocità/);
+  });
+});
+
+describe('interruttore del doppio conteggio', () => {
+  it('spento di default: Attacco e muri minori non danno punti nei Ruoli', () => {
+    expect(levelOf('hyperOffense', 'physicalWall')).toBe('ignored');
+    expect(levelOf('stall', 'recovery')).toBe('essential');
+    expect(levelOf('balance', 'recovery')).toBe('ignored');
   });
 });

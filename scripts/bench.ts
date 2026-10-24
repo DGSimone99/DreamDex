@@ -4,7 +4,7 @@
  *   npm run bench            medie e voti per categoria, col meta e senza; ordine buono > medio > scarso; archetipi
  *   npm run bench -- --climb  la "salita": da alcuni team si applica sempre lo scambio libero migliore finché il voto sale
  *   npm run bench -- --replays partite vere di alto livello (scripts/bench/replays.json): quante ne vince il team col voto più alto
- *   ROLES_MEASURED=0 npm run bench   con l'interruttore dei Ruoli spento (Attacco, muri e Recupero non contano nei Ruoli)
+ *   ROLES_MEASURED=1 npm run bench   con l'interruttore dei Ruoli acceso (Attacco, muri e Recupero contano anche nei Ruoli)
  *
  * Serve a verificare ogni modifica al voto: i team da torneo devono stare in alto, i brutti in basso,
  * e la salita non deve arrivare a 100 né portare ogni team allo stesso archetipo.
@@ -51,9 +51,9 @@ const load = (formatId: FormatId): EngineData => {
   } as EngineData;
 };
 
-if (process.env.ROLES_MEASURED === '0') {
-  setRolesCountMeasured(false);
-  console.log('Ruoli: interruttore spento (ROLES_MEASURED=0)');
+if (process.env.ROLES_MEASURED === '1') {
+  setRolesCountMeasured(true);
+  console.log('Ruoli: interruttore acceso (ROLES_MEASURED=1)');
 }
 
 if (!existsSync(join('data', SOURCES.ou!, 'stats.json'))) {

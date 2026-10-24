@@ -22,8 +22,10 @@ export const LEVEL_KEYS: LevelKey[] = [
 /**
  * Interruttore: i sotto-ruoli misurati anche da altre aree (Attacco, muri, Recupero) contano anche nei Ruoli.
  * Spento, le loro voci minori diventano ignorate e il Recupero è essenziale in semi-stall e stall, ignorato altrove.
+ * Spento per scelta (utente, 2026-10-25): un effetto, un posto; distacco torneo − medio 7,7 → 8,4, replay nel rumore.
+ * Non va cambiato a runtime nell'interfaccia (le cache non dipendono da lui): solo test e bench.
  */
-export let ROLES_COUNT_MEASURED = true;
+export let ROLES_COUNT_MEASURED = false;
 /** Per test e bench. */
 export function setRolesCountMeasured(v: boolean): void {
   ROLES_COUNT_MEASURED = v;

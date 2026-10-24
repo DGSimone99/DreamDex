@@ -71,8 +71,8 @@ describe('AnalysisPanel', () => {
       { ...tusk, species: 'Clodsire', item: 'Leftovers', ability: 'Unaware', moves: ['Amnesia', 'Poison Jab', 'Recover', 'Spikes'] },
     ];
     renderIt(<AnalysisPanel team={stall} analysis={analyzeTeam(stall, fixtureData)} />);
-    // Essenziali dello stall: i due muri (gli attaccanti sono ignorati)
-    expect(screen.getByText('Stall · 2/2 essenziali')).toBeInTheDocument();
+    // Essenziali dello stall: i due muri e il Recupero (interruttore spento); gli attaccanti sono ignorati
+    expect(screen.getByText('Stall · 3/3 essenziali')).toBeInTheDocument();
     // Fra i non richiesti, in grigio: qui un membro (con gli EV d'attacco di Great Tusk) è misurato come attaccante,
     // quindi la riga mostra chi lo copre invece di "Non richiesto"
     expect(row('Minaccia offensiva').closest('.role-group')!.querySelector('h4')).toHaveTextContent('Non richiesti');
