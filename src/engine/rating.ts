@@ -20,7 +20,7 @@ import type { TeamSet } from './sets';
 import { t, type Lang } from '../i18n';
 import { gameName, typeName } from '../i18n/game';
 import { effectiveness, superEffectiveMoves, teamField, TYPES } from './types';
-import { benefits, conditionConflicts, conditionLabel, enables, viaName, unusedEnablers, weakenedMoves, weatherMitigations, type Condition } from './synergy';
+import { conditionConflicts, conditionLabel, enables, viaName, unusedEnablers, weakenedMoves, weatherMitigations, type Condition } from './synergy';
 
 export type AreaKey = 'coverage' | 'defense' | 'strength' | 'bulk' | 'roles' | 'speed' | 'meta';
 /** Le aree del voto senza meta. */
@@ -245,35 +245,26 @@ export function redundancies(team: TeamSet[], analysis: TeamAnalysis, lang: Lang
 
 const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
 
-/** Il meteo/campo del team vale +1 se giova ad almeno un membro, comunque e a quanti; −1 per ogni membro che danneggia. */
+/** Il meteo/campo del team vale +1 se smorza una debolezza ad almeno un compagno, comunque e a quanti. */
 export const WEATHER_HELP = 1;
 export const WEATHER_HURT = 1;
 
 /**
- * +1 una volta sola se il meteo o il campo che il team porta giova a qualcuno: smorza una debolezza
- * o abilita un'abilità o una mossa di un membro. Il meteo non è sempre attivo: non conta quanti ne godono.
+ * +1 una volta sola se il meteo o il campo che il team porta smorza una debolezza di un compagno
+ * (da 2× a neutro o da 4× a 1×, mai da 4× a 2×). Il setter non conta e abilitare un'abilità o una
+ * mossa non dà bonus: il meteo non è sempre attivo, quindi non conta quanti ne godono.
  */
 export function weatherBonus(team: TeamSet[], lang: Lang = 'it'): Redundancies {
-  const helped = new Map<string, { setter: string; members: Set<string> }>();
-  const add = (condition: string, setter: string, member: string) => {
-    const entry = helped.get(condition) ?? { setter, members: new Set<string>() };
-    entry.members.add(member);
-    helped.set(condition, entry);
-  };
+  const items: Redundancy[] = [];
   for (const m of weatherMitigations(team)) {
-    for (const x of m.members.filter(x => x.to <= 1)) add(m.condition, m.source.split(' (')[0], x.species);
+    const setter = m.source.split(' (')[0];
+    const members = m.members.filter(x => x.to <= 1 && x.species !== setter).map(x => x.species);
+    if (!members.length) continue;
+    items.push({
+      text: t(lang, 'rating.bonus.helps', { condition: capitalize(conditionLabel(m.condition as Condition, lang)), setter, list: members.join(', ') }),
+      points: 0,
+    });
   }
-  for (const setter of team) {
-    for (const e of enables(setter)) {
-      for (const member of team) {
-        if (benefits(member).some(b => b.condition === e.condition && b.via !== e.via)) add(e.condition, battleName(setter), battleName(member));
-      }
-    }
-  }
-  const items = [...helped].map(([condition, { setter, members }]) => ({
-    text: t(lang, 'rating.bonus.helps', { condition: capitalize(conditionLabel(condition as Condition, lang)), setter, list: [...members].join(', ') }),
-    points: 0,
-  }));
   // Un solo punto per tutto il team: si mostra sulla prima voce
   if (items.length) items[0].points = WEATHER_HELP;
   return { total: items.length ? WEATHER_HELP : 0, items };

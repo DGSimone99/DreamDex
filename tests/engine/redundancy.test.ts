@@ -97,16 +97,36 @@ describe('penalità e bonus del meteo', () => {
     expect(problems).toContain('La pioggia di Pelipper indebolisce le mosse Fire di Ninetales');
   });
 
-  it('bonus: +1 una volta sola se il meteo giova a qualcuno, comunque e a quanti', () => {
-    const team = [{ ...withMoves('Ninetales', ['Flamethrower']), ability: 'Drought' }, withMoves('Great Tusk', ['Headlong Rush'])];
+  const ninetales = { ...withMoves('Ninetales', ['Flamethrower']), ability: 'Drought' };
+  const bonusOf = (team: TeamSet[]) => rateTeam(team, fixtureData)!.bonus;
+
+  it('bonus: il setter da solo non conta', () => {
+    expect(bonusOf([ninetales, withMoves('Kingambit', ['Sucker Punch'])])).toEqual({ total: 0, items: [] });
+  });
+
+  it('bonus: +1 una volta sola se il meteo smorza una debolezza di un compagno', () => {
+    const team = [ninetales, withMoves('Great Tusk', ['Headlong Rush'])];
     const rating = rateTeam(team, fixtureData)!;
-    expect(rating.bonus).toEqual({ total: 1, items: [{ text: 'Il sole di Ninetales aiuta il team: Ninetales, Great Tusk', points: 1 }] });
+    expect(rating.bonus.total).toBe(1);
+    expect(rating.bonus.items).toEqual([expect.objectContaining({ text: 'Il sole di Ninetales aiuta il team: Great Tusk', points: 1 })]);
     expect(rating.overall).toBe(Math.min(100, Math.max(0, rating.base - rating.penalty.total + rating.bonus.total)));
-    // Anche un'abilità abilitata (Clorofilla) conta, ma il punto resta uno
-    const withLeafeon = [...team, { ...withMoves('Leafeon', ['Leaf Blade']), ability: 'Chlorophyll' }];
-    const bonus = rateTeam(withLeafeon, fixtureData)!.bonus;
+  });
+
+  it('bonus: abilitare Clorofilla non conta più', () => {
+    const team = [ninetales, withMoves('Great Tusk', ['Headlong Rush']), { ...withMoves('Leafeon', ['Leaf Blade']), ability: 'Chlorophyll' }];
+    const bonus = bonusOf(team);
     expect(bonus.total).toBe(1);
-    expect(bonus.items[0].text).toContain('Leafeon');
+    expect(bonus.items.map(i => i.text).join(' | ')).not.toContain('Leafeon');
+  });
+
+  it('bonus: il meteo primordiale da solo con un compagno debole non dà bonus', () => {
+    const groudon = { ...withMoves('Groudon-Primal', ['Precipice Blades']), ability: 'Desolate Land' };
+    expect(bonusOf([groudon, withMoves('Great Tusk', ['Headlong Rush'])]).total).toBe(0);
+  });
+
+  it('bonus: da 4× a 2× non conta', () => {
+    const items = bonusOf([ninetales, withMoves('Rhyperior', ['Earthquake'])]).items;
+    expect(items.map(i => i.text).join(' | ')).not.toContain('Rhyperior');
   });
 
   it('senza meteo nessun bonus', () => {
