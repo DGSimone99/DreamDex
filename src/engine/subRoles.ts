@@ -268,6 +268,21 @@ function setSource(role: SubRole, ids: string[], ability: string, item: string):
   return id ? moveName(id) : 'set';
 }
 
+/** Mosse che usano la statistica d'attacco più alta (fisica o speciale) del Pokémon. */
+const HIGHER_STAT_MOVES = new Set(['photongeyser', 'lightthatburnsthesky', 'shellsidearm']);
+
+/** Lato dell'attacco: la categoria della mossa, o la statistica più alta per Photon Geyser e simili; null per le mosse di stato. */
+export function attackSide(set: TeamSet, move: string): 'physical' | 'special' | null {
+  const m = getMove(move);
+  if (!m || m.category === 'Status') return null;
+  if (HIGHER_STAT_MOVES.has(m.id)) {
+    const lines = statLines(set);
+    const stat = (id: string) => lines.find(l => l.stat === id)?.value ?? 0;
+    return stat('atk') > stat('spa') ? 'physical' : 'special';
+  }
+  return m.category === 'Physical' ? 'physical' : 'special';
+}
+
 const isPriorityAttack = (set: TeamSet) => set.moves.map(getMove).filter(isDefined).some(m => m.category !== 'Status' && m.priority > 0);
 
 /** Calcolo con i gruppi dati (i test li passano a mano); restituisce valori e motivi per la scheda. */
@@ -310,9 +325,8 @@ export function measureWith(set: TeamSet, team: TeamSet[], data: EngineData, poo
 
   // Attacco dai numeri dell'Offesa e della Velocità
   const offense = memberOffense(set, team, data);
-  const category = offense?.bestMove ? getMove(offense.bestMove)?.category : undefined;
-  if (offense && (category === 'Physical' || category === 'Special')) {
-    const side = category === 'Physical' ? 'physical' : 'special';
+  const side = offense?.bestMove ? attackSide(set, offense.bestMove) : null;
+  if (offense && side) {
     if (offense.wallbreaking + offense.wallbreakingGain >= BREAKER_WALLBREAKING) put(`${side}Breaker`, 1, offense.bestMove!);
     if (offense.value >= SWEEPER_OFFENSE) {
       const speed = memberSpeed(set, team, data);

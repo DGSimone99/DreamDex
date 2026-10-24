@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_RULES, formatRules, UBERS_RULES } from '../../src/engine/formatRules';
 import type { TeamSet } from '../../src/engine/sets';
-import { rolesList, setSubRoles, statusSources, wallIndex } from '../../src/engine/subRoles';
+import { attackSide, rolesList, setSubRoles, statusSources, wallIndex } from '../../src/engine/subRoles';
 
 const set = (species: string, moves: string[], item = '', ability = '', evs: TeamSet['evs'] = {}, nature = 'Serious'): TeamSet =>
   ({ species, ability, item, moves, nature, evs });
@@ -78,6 +78,16 @@ describe('subRoles', () => {
     expect(roles(set('Sneasler', ['Dire Claw'])).debuff).toBeCloseTo(0.5 / 3);
     expect(statusSources(set('Porygon2', ['Tri Attack'])).map(s => s.status)).toEqual(['brn', 'par']);
     expect(roles(set('Togekiss', ['Tri Attack'], '', 'Serene Grace')).dot).toBeCloseTo(0.5 * 0.4 / 3);
+  });
+
+  it("Photon Geyser e simili: il lato dell'attacco segue la statistica più alta", () => {
+    const dm = set('Necrozma-Dusk-Mane', ['Photon Geyser'], '', '', { atk: 252 }, 'Adamant');
+    expect(attackSide(dm, 'Photon Geyser')).toBe('physical');
+    const dw = set('Necrozma-Dawn-Wings', ['Photon Geyser'], '', '', { spa: 252 }, 'Modest');
+    expect(attackSide(dw, 'Photon Geyser')).toBe('special');
+    expect(attackSide(dm, 'Earthquake')).toBe('physical');
+    expect(attackSide(dm, 'Flamethrower')).toBe('special');
+    expect(attackSide(dm, 'Swords Dance')).toBeNull();
   });
 
   it('Knock Off 1, Trick con Choice 1, senza 0.5', () => {
