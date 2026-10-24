@@ -8,10 +8,11 @@ import { BALANCE_SPAN, DEFENSE_FULL, resistPoints, typeSafety } from './typeSafe
 
 export { BALANCE_SPAN, DEFENSE_FULL, resistPoints, typeSafety };
 import type { Archetype } from './archetype';
-import { attackStyle, detectRoles, hasSpeedControl, isPassive, isStall } from './roles';
-import { rulesOf, type FormatRules } from './formatRules';
-import { needCoverage } from './needs';
-import { FAMILIES, rolesList, type SubRole, type SubRoleValues } from './subRoles';
+import { isPassive, isStall } from './roles';
+import { rulesOf } from './formatRules';
+import type { TeamNeeds } from './needs';
+import { FAMILIES, type SubRoleValues } from './subRoles';
+import { teamRolesArea, type TeamRoles } from './rolesArea';
 import { teamSpeedArea, type TeamSpeed } from './speedArea';
 import { strengthComponent } from './scoring';
 import { usageOf } from './stats';
@@ -60,10 +61,6 @@ export function areaValue(value: number, full: number): number {
 }
 
 
-
-/** Nei Ruoli: quota data da quanti compiti copre in media ogni membro ("role compression"), piena a 3. */
-export const ROLE_COMPRESSION = 0.3;
-const FULL_JOBS = 3;
 
 /** Nelle minacce gestite: quota delle 3 più usate (il resto: tutte, pesate per uso). */
 export const TOP_THREATS = 0.5;
@@ -131,6 +128,8 @@ export interface TeamRating {
   defense: TeamDefense;
   /** Velocità: ogni membro coi guadagni (setup, meteo, priorità) e il controllo velocità del team. */
   speed: TeamSpeed;
+  /** Ruoli: voci importanti e minori dell'archetipo coi valori del team, e le mancanze essenziali (penalità). */
+  roles: TeamRoles;
 }
 
 
@@ -186,51 +185,33 @@ export const TRICK_ROOM_MAX = 3;
 
 /** Forza sotto cui un membro senza utilità chiave è considerato debole. */
 export const WEAK_POWER = 30;
-/** Ruoli che danno al team un'utilità chiave anche a un Pokémon debole (Delibird con Spikes); il controllo velocità si guarda sulle mosse. */
-const UTILITY_ROLES = ['hazards', 'removal'] as const;
+/** Valore minimo di un sotto-ruolo di Campo o Disturbo perché un Pokémon debole porti un'utilità chiave. */
+export const UTILITY_MIN = 0.5;
+const UTILITY_ROLES = [...FAMILIES.field, ...FAMILIES.disruption];
 
-/** Il membro porta un'utilità chiave: hazard, rimozione, controllo velocità, meteo, campo o Trick Room. */
-function bringsUtility(set: TeamSet, rules: FormatRules): boolean {
-  const roles = detectRoles(set, rules);
-  return UTILITY_ROLES.some(role => roles.includes(role)) || hasSpeedControl(set) || enables(set).length > 0;
+/** Il membro porta un'utilità chiave: un sotto-ruolo di Campo o Disturbo (Delibird con Spikes), o meteo, campo, Trick Room. */
+function bringsUtility(set: TeamSet, values: SubRoleValues): boolean {
+  return UTILITY_ROLES.some(role => (values[role] ?? 0) >= UTILITY_MIN) || enables(set).length > 0;
 }
-/** Attaccanti minimi perché un team tutto fisico o tutto speciale sia una scelta e non un caso. */
-const ONE_STYLE_ATTACKERS = 4;
 
 /**
- * Membri deboli senza utilità chiave (−3, −7, −12…; non dipende dal meta: Pelipper che porta la pioggia è esente)
- * e team senza attaccanti fisici o speciali (−3; mai per uno stall, che attacca poco per scelta).
+ * Membri deboli senza utilità chiave (−3, −7, −12…; non dipende dal meta: Pelipper che porta la pioggia è esente).
+ * Lo squilibrio degli attaccanti è una mancanza essenziale dei Ruoli (rolesArea.ts).
  */
-export function memberIssues(team: TeamSet[], lang: Lang, rules: FormatRules): Redundancy[] {
+export function memberIssues(team: TeamSet[], lang: Lang, needs: TeamNeeds): Redundancy[] {
+  const { rules } = needs;
   const items: Redundancy[] = [];
   // La penalità cresce col numero di membri deboli: −3, −7, −12… (il k-esimo pesa 2 + k)
   let weak = 0;
   for (const [i, set] of team.entries()) {
     const power = memberPower(set);
     // Un muro passivo si giudica dalla sua robustezza (Mega Sableye), gli altri dalla forza complessiva
-    if (power && (isPassive(set, rules) ? power.bulk : power.power) < WEAK_POWER && !bringsUtility(set, rules)) {
+    if (power && (isPassive(set, rules) ? power.bulk : power.power) < WEAK_POWER && !bringsUtility(set, needs.members[i] ?? {})) {
       weak += 1;
       items.push({ text: t(lang, 'rating.redundancy.weakMember', { member: battleName(set) }), points: 2 + weak });
     }
   }
-  if (!isStall(team, rules)) {
-    const styles = team.map(attackStyle);
-    const physical = styles.filter(s => s === 'physical' || s === 'mixed').length;
-    const special = styles.filter(s => s === 'special' || s === 'mixed').length;
-    if (physical + special >= ONE_STYLE_ATTACKERS && (physical === 0 || special === 0)) {
-      const missing = physical === 0 ? 'physical' : 'special';
-      items.push({ text: t(lang, 'rating.redundancy.oneStyle', { style: t(lang, `analysis.style.${missing}`) }), points: 3 });
-    }
-  }
   return items;
-}
-
-/** Regole del formato: in Ubers e UU un team completo senza hazard perde punti. */
-export function formatIssues(team: TeamSet[], rules: FormatRules, lang: Lang = 'it'): Redundancy[] {
-  const hazards = team.some(set => detectRoles(set, rules).includes('hazards'));
-  return rules.noHazardsPenalty > 0 && team.length === 6 && !hazards
-    ? [{ text: t(lang, 'rating.redundancy.noHazards'), points: rules.noHazardsPenalty }]
-    : [];
 }
 
 export function redundancies(team: TeamSet[], analysis: TeamAnalysis, lang: Lang = 'it'): Redundancies {
@@ -250,7 +231,7 @@ export function redundancies(team: TeamSet[], analysis: TeamAnalysis, lang: Lang
   ];
   const items = [
     ...weaknesses, ...roleAndTypeRedundancies(team, lang), ...dependencies, ...weatherClashes(team, lang),
-    ...memberIssues(team, lang, analysis.needs.rules), ...formatIssues(team, analysis.needs.rules, lang),
+    ...memberIssues(team, lang, analysis.needs),
   ];
   return { total: Math.min(MAX_PENALTY, sum(items.map(i => i.points))), items };
 }
@@ -315,13 +296,6 @@ export function gradeFor(score: number, lang: Lang = 'it'): { grade: string; lab
   return { grade, label: t(lang, `grade.${grade}`) };
 }
 
-/** Compiti del membro per la compressione dei ruoli: i sotto-ruoli che ha, con l'Attacco contato una volta. */
-function memberJobs(values: SubRoleValues): number {
-  const roles = rolesList(values);
-  const attack = (r: SubRole) => FAMILIES.attack.includes(r);
-  return roles.filter(r => !attack(r)).length + (roles.some(attack) ? 1 : 0);
-}
-
 export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): TeamRating | null {
   if (team.length === 0) return null;
   const analysis = analyzeTeam(team, data);
@@ -334,10 +308,8 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
   // Nello stall un muro passivo non deve fare danni: conta la sua robustezza, e i suoi colpi valgono pieni
   const passive = archetype ? team.map(set => isPassive(set, rules)) : [];
 
-  // Ponte provvisorio (fino al nuovo calcolo dei Ruoli): copertura delle voci dell'archetipo pesata per livello
-  // sui valori del team, più quanti compiti copre ogni membro (gli attaccanti contano come un compito solo)
-  const jobs = sum(analysis.needs.members.map(memberJobs)) / team.length;
-  const roles = (1 - ROLE_COMPRESSION) * needCoverage(analysis.needs) + ROLE_COMPRESSION * Math.min(1, jobs / FULL_JOBS);
+  // Ruoli: base delle voci importanti ed extra delle minori sui valori del team (rolesArea.ts)
+  const roles = teamRolesArea(team, data, lang, analysis.needs);
   const power = teamPower(team, passive, rules);
   const offense = teamOffense(team, data);
   const defense = teamDefense(team, data);
@@ -353,7 +325,7 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
   const attack = offense.members.length ? offense.value / 100 : null;
   const raw: Record<BaseArea, number | null> = {
     defense: defense.members.length ? defense.value / 100 : null, strength: attack,
-    roles: Math.min(1, roles), speed: speed.members.length ? speed.value / 100 : null,
+    roles: roles.members.length ? roles.value / 100 : null, speed: speed.members.length ? speed.value / 100 : null,
   };
   const available = BASE_AREAS.filter(key => raw[key] !== null && effective[key] > 0);
   const totalWeight = sum(available.map(key => effective[key]));
@@ -386,8 +358,10 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
   const roomItems = fastMembers.length
     ? [{ text: t(lang, fastMembers.length === 1 ? 'rating.redundancy.trickRoomFastOne' : 'rating.redundancy.trickRoomFast', { setter: battleName(roomSetter!), n: fastMembers.length, list: fastMembers.map(m => m.species).join(', ') }), points: Math.min(TRICK_ROOM_MAX, fastMembers.length) }]
     : [];
-  const penalty = roomItems.length
-    ? { total: Math.min(MAX_PENALTY, redundant.total + roomItems[0].points), items: [...redundant.items, ...roomItems] }
+  // Le mancanze essenziali dei Ruoli (solo team di 6) si sommano alle altre penalità, entro il massimo
+  const extraItems = [...roles.failures, ...roomItems];
+  const penalty = extraItems.length
+    ? { total: Math.min(MAX_PENALTY, redundant.total + sum(extraItems.map(i => i.points))), items: [...redundant.items, ...extraItems] }
     : redundant;
   const weather = weatherBonus(team, lang);
   const tera = teraBonus(team, analysis, rules.teraBonusCap, lang);
@@ -396,7 +370,7 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
   return {
     base, penalty, bonus, power: power.members, overall, ...gradeFor(overall, lang), provisional: team.length < 6, areas, archetype, meta,
     teamType: analysis.needs.archetype, trickRoom,
-    weights: areaWeights, offense, defense, speed,
+    weights: areaWeights, offense, defense, speed, roles,
   };
 }
 

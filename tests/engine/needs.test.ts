@@ -1,9 +1,10 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { coachTeam } from '../../src/engine/coach';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
-import { needCoverage, needLabel, teamNeeds, NOT_REQUIRED, USEFUL } from '../../src/engine/needs';
+import { needLabel, teamNeeds } from '../../src/engine/needs';
 import { levelOf, LEVEL_KEYS, ROLE_LEVELS, setRolesCountMeasured } from '../../src/engine/roleLevels';
-import { rateTeam, ROLE_COMPRESSION } from '../../src/engine/rating';
+import { rateTeam } from '../../src/engine/rating';
+import { rolesScore } from '../../src/engine/rolesArea';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
 import { FAMILIES, rolesList, type SubRole } from '../../src/engine/subRoles';
 import { fixtureData } from '../fixtures/data';
@@ -114,14 +115,6 @@ describe('bisogni del team dai sotto-ruoli', () => {
     expect(teamNeeds(hyperOffense.slice(0, 3), fixtureData).archetype).toBe('balance');
   });
 
-  it('copertura provvisoria: essenziali 1, importanti 0,4, minori 0,15 sui valori del team', () => {
-    const needs = teamNeeds(hyperOffense, fixtureData);
-    const weight = { essential: 1, important: USEFUL, minor: NOT_REQUIRED, ignored: 0 };
-    const keys = LEVEL_KEYS.filter(k => needs.levels[k] !== 'ignored');
-    const expected = keys.reduce((a, k) => a + weight[needs.levels[k]] * needs.values[k], 0) / keys.reduce((a, k) => a + weight[needs.levels[k]], 0);
-    expect(needCoverage(needs)).toBeCloseTo(expected);
-  });
-
   it('etichette: il gruppo degli attaccanti e i sotto-ruoli', () => {
     expect(needLabel('attacker', 'it')).toBe('Minaccia offensiva');
     expect(needLabel('hazards', 'it')).toBe('Hazard');
@@ -148,14 +141,11 @@ describe('voto e coach seguono i livelli dell\'archetipo', () => {
     expect(texts).toMatch(/Ruoli mancanti:.*Minaccia offensiva/);
   });
 
-  it("l'area Ruoli del voto (ponte provvisorio): copertura dei livelli e compiti per membro", () => {
+  it("l'area Ruoli del voto: base delle voci importanti ed extra delle minori dell'archetipo", () => {
     const rating = rateTeam(hyperOffense, fixtureData)!;
     const needs = teamNeeds(hyperOffense, fixtureData);
-    const attack = new Set<SubRole>(FAMILIES.attack);
-    const jobsOf = (roles: SubRole[]) => roles.filter(r => !attack.has(r)).length + (roles.some(r => attack.has(r)) ? 1 : 0);
-    const jobs = needs.members.reduce((a, m) => a + jobsOf(rolesList(m)), 0) / hyperOffense.length;
-    const roles = (1 - ROLE_COMPRESSION) * needCoverage(needs) + ROLE_COMPRESSION * Math.min(1, jobs / 3);
-    expect(rating.areas.find(a => a.key === 'roles')!.value).toBe(Math.round(100 * Math.min(1, roles)));
+    const of = (level: string) => LEVEL_KEYS.filter(k => needs.levels[k] === level).map(k => needs.values[k]);
+    expect(rating.areas.find(a => a.key === 'roles')!.value).toBe(rolesScore(of('important'), of('minor')).value);
   });
 
   it('il coaching non chiede la priorità né la velocità', () => {

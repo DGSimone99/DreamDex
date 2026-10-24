@@ -160,7 +160,10 @@ function findProblems(team: TeamSet[], format: Format, analysis: TeamAnalysis, c
       fixesFor(candidates, s => important.filter(need => keyRoles(need).some(role => s.facts.roles.filled.includes(role))).length));
   }
 
-  for (const item of memberIssues(team, lang, analysis.needs.rules)) add('roles', false, item.text, []);
+  for (const item of memberIssues(team, lang, analysis.needs)) add('roles', false, item.text, []);
+  // Squilibrio degli attaccanti (nel voto è una mancanza essenziale dei Ruoli, solo a team finito)
+  const style = analysis.needs.needStyle;
+  if (style) add('roles', false, t(lang, 'rating.redundancy.oneStyle', { style: t(lang, `analysis.style.${style}`) }), []);
   for (const item of roleAndTypeRedundancies(team, lang)) add('redundancy', false, item.text, []);
   for (const item of weatherClashes(team, lang)) add('conditions', false, item.text, []);
 

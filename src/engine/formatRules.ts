@@ -8,8 +8,6 @@ export interface FormatRules {
    * 0 = bastano le soglie normali. Un set difensivo usa sempre le soglie normali (Ferrothorn resta un muro).
    */
   offensiveWallBulk: number;
-  /** Penalità per un team senza hazard. */
-  noHazardsPenalty: number;
   /** Il coach non propone sostituzioni che cambiano il tipo di team (salvo team da C o D). */
   keepArchetype: boolean;
   /**
@@ -23,13 +21,13 @@ export interface FormatRules {
   wallIndex: { physical: number; special: number };
 }
 
-export const DEFAULT_RULES: FormatRules = { offensiveWallBulk: 0, noHazardsPenalty: 0, keepArchetype: false, strengthPool: null, teraBonusCap: 0, wallIndex: { physical: 100000, special: 95000 } };
+export const DEFAULT_RULES: FormatRules = { offensiveWallBulk: 0,keepArchetype: false, strengthPool: null, teraBonusCap: 0, wallIndex: { physical: 100000, special: 95000 } };
 
-/** Ubers: Zacian-Crowned con Swords Dance non è un muro, Stealth Rock è fondamentale, un HO resta HO. */
-export const UBERS_RULES: FormatRules = { ...DEFAULT_RULES, offensiveWallBulk: 11000, noHazardsPenalty: 4, keepArchetype: true, wallIndex: { physical: 120000, special: 115000 } };
+/** Ubers: Zacian-Crowned con Swords Dance non è un muro, un HO resta HO (gli hazard li chiedono i Ruoli, come altrove). */
+export const UBERS_RULES: FormatRules = { ...DEFAULT_RULES, offensiveWallBulk: 11000, keepArchetype: true, wallIndex: { physical: 120000, special: 115000 } };
 
-/** UU: statistiche confrontate coi Pokémon legali in UU, e gli hazard contano come in Ubers. */
-export const UU_RULES: FormatRules = { ...DEFAULT_RULES, noHazardsPenalty: 4, strengthPool: 'uu' };
+/** UU: statistiche confrontate coi Pokémon legali in UU. */
+export const UU_RULES: FormatRules = { ...DEFAULT_RULES, strengthPool: 'uu' };
 
 /** Gen 9: il Tera è una via d'uscita da una debolezza (una volta per partita): piccolo bonus, come il meteo. */
 export const GEN9_RULES: FormatRules = { ...DEFAULT_RULES, teraBonusCap: 3 };

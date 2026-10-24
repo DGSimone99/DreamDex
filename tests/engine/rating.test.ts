@@ -152,3 +152,13 @@ describe('il meta conta solo nella sua area', () => {
     expect(on.meta).not.toBeNull();
   });
 });
+
+describe('area Ruoli nel voto', () => {
+  it('il valore dell\'area è quello di teamRolesArea', async () => {
+    const { teamRolesArea } = await import('../../src/engine/rolesArea');
+    const team = [tusk, gholdengo];
+    const rating = rateTeam(team, fixtureData)!;
+    expect(rating.roles.value).toBe(teamRolesArea(team, fixtureData, 'it').value);
+    expect(value(rating, 'roles')).toBe(rating.roles.value);
+  });
+});

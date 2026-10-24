@@ -13,7 +13,7 @@ import { t, type Lang } from '../i18n';
  */
 export type Need = LevelKey;
 
-/** Pesi dei livelli (per i candidati e per la copertura provvisoria del voto): essenziale, importante, minore. */
+/** Pesi dei livelli per i candidati: essenziale, importante, minore. */
 export const ESSENTIAL = 1;
 export const USEFUL = 0.4;
 /** Un ruolo minore conta poco: averlo aggiunge, non averlo toglie appena. */
@@ -77,21 +77,6 @@ export function teamNeeds(team: TeamSet[], data: EngineData, members?: SubRoleVa
     needStyle: lopsided ? (physical === 0 ? 'physical' : 'special') : null,
     rules,
   };
-}
-
-/**
- * Copertura (0–1) delle voci dell'archetipo, pesata per livello sui valori del team.
- * Provvisoria: l'area Ruoli del voto la usa finché non arriva il nuovo calcolo (base importanti + extra minori).
- */
-export function needCoverage(needs: TeamNeeds): number {
-  let total = 0;
-  let got = 0;
-  for (const k of LEVEL_KEYS) {
-    const w = LEVEL_WEIGHT[needs.levels[k]];
-    total += w;
-    got += w * Math.min(1, needs.values[k]);
-  }
-  return total > 0 ? got / total : 1;
 }
 
 /** Nome del bisogno: i sotto-ruoli col loro nome, più "Minaccia offensiva" per il gruppo degli attaccanti. */

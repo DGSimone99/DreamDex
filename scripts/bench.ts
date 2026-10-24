@@ -4,6 +4,7 @@
  *   npm run bench            medie e voti per categoria, col meta e senza; ordine buono > medio > scarso; archetipi
  *   npm run bench -- --climb  la "salita": da alcuni team si applica sempre lo scambio libero migliore finché il voto sale
  *   npm run bench -- --replays partite vere di alto livello (scripts/bench/replays.json): quante ne vince il team col voto più alto
+ *   ROLES_MEASURED=0 npm run bench   con l'interruttore dei Ruoli spento (Attacco, muri e Recupero non contano nei Ruoli)
  *
  * Serve a verificare ogni modifica al voto: i team da torneo devono stare in alto, i brutti in basso,
  * e la salita non deve arrivare a 100 né portare ogni team allo stesso archetipo.
@@ -16,6 +17,7 @@ import { initTiers } from '../src/engine/dex';
 import { DEFAULT_FORMAT, type FormatId } from '../src/engine/format';
 import { formatRules } from '../src/engine/formatRules';
 import { rateTeam, type TeamRating } from '../src/engine/rating';
+import { setRolesCountMeasured } from '../src/engine/roleLevels';
 import { improveReplacements } from '../src/engine/replace';
 import { defaultSet, type TeamSet } from '../src/engine/sets';
 import { bestSwaps, withCandidate } from '../src/engine/teamGain';
@@ -48,6 +50,11 @@ const load = (formatId: FormatId): EngineData => {
     fallback: read('_fallback', 'sets'), fallbackPresets: read('_fallback', 'presets'), fallbackStats: read('_fallback', 'stats'),
   } as EngineData;
 };
+
+if (process.env.ROLES_MEASURED === '0') {
+  setRolesCountMeasured(false);
+  console.log('Ruoli: interruttore spento (ROLES_MEASURED=0)');
+}
 
 if (!existsSync(join('data', SOURCES.ou!, 'stats.json'))) {
   console.error('Mancano i dati: lancia prima npm run fetch-data');
@@ -100,6 +107,13 @@ function summary() {
       averages[cat] = mean(rs.map(r => r.overall));
       console.log(`  ${cat.padEnd(9)} ${String(rs.length).padStart(3)} team  media ${averages[cat].toFixed(1).padStart(4)}  ${grades(rs)}`);
     }
+    // Area Ruoli dei team da torneo per tipo di team riconosciuto
+    const byType = new Map<string, number[]>();
+    for (const r of unique.filter(t => t.cat === 'torneo').map(rate)) {
+      const v = r.areas.find(a => a.key === 'roles')?.value;
+      if (v != null) byType.set(r.teamType, [...(byType.get(r.teamType) ?? []), v]);
+    }
+    console.log(`  Ruoli dei team da torneo: ${[...byType].map(([type, vs]) => `${type} ${mean(vs).toFixed(1)} (${vs.length})`).join(' · ')}`);
     console.log(`  distacco torneo − medio ${(averages.torneo - averages.medio).toFixed(1)}, buono − medio ${(averages.buono - averages.medio).toFixed(1)}`);
     // Per formato: i team da torneo di NatDex OU sono la maggioranza e non devono coprire gli altri
     for (const fmt of Object.keys(SOURCES)) {

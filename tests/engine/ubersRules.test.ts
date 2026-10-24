@@ -52,13 +52,12 @@ describe('regole di Ubers', () => {
   const ubers: EngineData = { ...fixtureData, formatId: 'ubers' };
   const noHazards = ho.map(s => ({ ...s, moves: s.moves.map(m => (['Stealth Rock', 'Spikes'].includes(m) ? 'Protect' : m)) }));
 
-  it('in Ubers un team completo senza hazard perde punti; in OU no', () => {
+  it('in Ubers un team senza hazard non ha più un malus del formato: lo paga solo nei Ruoli (hazard importanti)', () => {
     const penalty = (team: TeamSet[], data: EngineData = ubers) => rateTeam(team, data)!.penalty.items.find(i => i.text.startsWith('Nessun hazard'));
-    expect(penalty(noHazards)?.points).toBe(UBERS_RULES.noHazardsPenalty);
+    expect(penalty(noHazards)).toBeUndefined();
     expect(penalty(ho)).toBeUndefined();
-    expect(penalty(noHazards, fixtureData)).toBeUndefined();
-    // Un team incompleto non viene penalizzato: gli hazard possono ancora arrivare
-    expect(penalty(noHazards.slice(0, 5))).toBeUndefined();
+    const roles = (team: TeamSet[]) => rateTeam(team, ubers)!.roles.value;
+    expect(roles(noHazards)).toBeLessThan(roles(ho));
   });
 
   it('in Ubers il coach non propone sostituzioni che cambiano il tipo di team (team da B in su)', () => {

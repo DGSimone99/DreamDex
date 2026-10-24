@@ -1,9 +1,10 @@
 import { DEFAULT_RULES } from '../../src/engine/formatRules';
 import { teamOffense } from '../../src/engine/offense';
 import { describe, expect, it } from 'vitest';
-import { ARCHETYPE_WEIGHTS, rateTeam, ROLE_COMPRESSION } from '../../src/engine/rating';
-import { needCoverage, teamNeeds } from '../../src/engine/needs';
-import { FAMILIES, rolesList } from '../../src/engine/subRoles';
+import { ARCHETYPE_WEIGHTS, rateTeam } from '../../src/engine/rating';
+import { teamNeeds } from '../../src/engine/needs';
+import { LEVEL_KEYS } from '../../src/engine/roleLevels';
+import { rolesScore } from '../../src/engine/rolesArea';
 
 import { memberPower, teamPower } from '../../src/engine/power';
 import { detectRoles, isPassive } from '../../src/engine/roles';
@@ -36,11 +37,9 @@ describe('team stall', () => {
     expect(needs.essentialMissing).toEqual([]);
     expect(needs.levels.attacker).toBe('ignored');
     expect(needs.importantMissing).toEqual(['dot', 'debuff']);
-    // Ponte provvisorio: compiti per membro dai sotto-ruoli, l'Attacco contato una volta
-    const attack = (r: string) => (FAMILIES.attack as string[]).includes(r);
-    const jobs = needs.members.reduce((acc, m) => acc + rolesList(m).filter(r => !attack(r)).length + (rolesList(m).some(attack) ? 1 : 0), 0) / stall.length;
-    const roles = (1 - ROLE_COMPRESSION) * needCoverage(needs) + ROLE_COMPRESSION * Math.min(1, jobs / 3);
-    expect(rating.areas.find(a => a.key === 'roles')!.value).toBe(Math.round(100 * Math.min(1, roles)));
+    // Area Ruoli: base degli importanti da stall, extra dei minori (rolesArea.ts)
+    const of = (level: string) => LEVEL_KEYS.filter(k => needs.levels[k] === level).map(k => needs.values[k]);
+    expect(rating.areas.find(a => a.key === 'roles')!.value).toBe(rolesScore(of('important'), of('minor')).value);
     // Nello stall la velocità non conta
     expect(rating.areas.map(a => a.key)).not.toContain('speed');
   });
