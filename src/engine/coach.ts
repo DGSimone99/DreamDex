@@ -9,7 +9,7 @@ import { diffContribution, similarity, type Contribution, type Diff } from './re
 import { t, type Lang } from '../i18n';
 import { gameName, typeName } from '../i18n/game';
 import { illegalParts } from './learnsets';
-import { detectRoles, isPassive, isStall, roleLabel } from './roles';
+import { isPassive, isStall, roleLabel } from './roles';
 import { needLabel, NEED_ROLES } from './needs';
 import { bannedInPool, scoreCandidates, type Suggestion } from './scoring';
 import { memberIssues, rateTeam, roleAndTypeRedundancies, weatherClashes } from './rating';
@@ -204,8 +204,7 @@ function findSwaps(team: TeamSet[], format: Format, data: EngineData): CoachSwap
   const current = rateTeam(team, data);
   if (!current) return [];
   const rules = rulesOf(data);
-  const roles = team.map(set => detectRoles(set, rules));
-  const stall = isStall(team, roles);
+  const stall = isStall(team, rules);
   const archetype = archetypeLock(team, rules, current.grade);
   const options = team
     .map((member, index) => {
@@ -217,11 +216,11 @@ function findSwaps(team: TeamSet[], format: Format, data: EngineData): CoachSwap
       const own = toID(battleName(member));
       const needed = neededConditions(team, index);
       const illegal = breaksRules(member, format);
-      const keepPassive = stall && isPassive(member, roles[index]);
+      const keepPassive = stall && isPassive(member, rules);
       const rated = scored
         .filter(s =>
           s.set !== member && toID(battleName(s.set)) !== own && (illegal || s.score - self.score >= SWAP_MARGIN)
-          && (needed.length === 0 || providesAll(s.set, needed)) && (!keepPassive || isPassive(s.set, detectRoles(s.set, rules))))
+          && (needed.length === 0 || providesAll(s.set, needed)) && (!keepPassive || isPassive(s.set, rules)))
         .slice(0, SWAP_CANDIDATES)
         .map(s => ({ s, rating: rateTeam(team.map((m, i) => (i === index ? s.set : m)), data)! }))
         .filter(x => !stall || x.rating.archetype === 'stall')

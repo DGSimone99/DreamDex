@@ -4,20 +4,32 @@ import type { EngineData } from './data';
 import { battleName, battleSpecies, dex, getSpecies, isCosmeticForme, isDefined, isMega, isTeambuildable, toID, withinGen } from './dex';
 import { isBannedIn, speciesInPokedex, tierIn } from './formats';
 import type { Format } from './format';
-import { formatRules } from './formatRules';
-import { detectRoles, type Role } from './roles';
+import { formatRules, type FormatRules } from './formatRules';
+import { detectRoles, hasPriority, hasSetup, hasSpeedControl } from './roles';
+import type { SubRole } from './subRoles';
 import { scoreSets, uniqueFormes, type Suggestion } from './scoring';
 import { defaultSet, type TeamSet } from './sets';
 import { usageOf } from './stats';
 import { benefits, enables, type Condition } from './synergy';
 import { defensiveMultiplier, superEffectiveMove, type TypeName } from './types';
 
+/** Ruoli cercabili: i 17 sotto-ruoli più tre filtri sulle mosse (priorità, controllo velocità, setup), che non entrano nel voto. */
+export type FilterRole = SubRole | 'priority' | 'speedControl' | 'setup';
+
+/** Il set ha il ruolo cercato: i tre filtri extra guardano le mosse, gli altri i sotto-ruoli del set. */
+export function hasFilterRole(set: TeamSet, role: FilterRole, rules: FormatRules): boolean {
+  if (role === 'priority') return hasPriority(set);
+  if (role === 'speedControl') return hasSpeedControl(set);
+  if (role === 'setup') return hasSetup(set);
+  return detectRoles(set, rules).includes(role);
+}
+
 export interface CandidateFilters {
   query: string;
   /** Il Pokémon deve avere tutti i tipi scelti (al massimo 2). */
   types: TypeName[];
   /** Il Pokémon deve avere tutti i ruoli scelti. */
-  roles: Role[];
+  roles: FilterRole[];
   provides: Condition | '';
   benefitsFrom: Condition | '';
   /** Adatto a un team di questo archetipo (stall, hyper offense, bulky offense). */
@@ -99,10 +111,7 @@ export function matchesFilters(candidate: { species: string; set: TeamSet }, f: 
     const types = (battleSpecies(set)?.types ?? []) as readonly string[];
     if (!f.types.every(t => types.includes(t))) return false;
   }
-  if (f.roles.length) {
-    const roles = detectRoles(set, rules);
-    if (!f.roles.every(r => roles.includes(r))) return false;
-  }
+  if (f.roles.length && !f.roles.every(r => hasFilterRole(set, r, rules))) return false;
   if (f.provides && !enables(set).some(e => e.condition === f.provides)) return false;
   if (f.benefitsFrom && !benefits(set).some(b => b.condition === f.benefitsFrom)) return false;
   if (f.fitsArchetype && !fitsArchetype(set, f.fitsArchetype, rules)) return false;

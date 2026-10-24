@@ -6,8 +6,8 @@ import { getSpecies, isCosmeticForme } from '../../src/engine/dex';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
 import { EMPTY_FILTERS, searchCandidates } from '../../src/engine/filters';
 import { rateTeam } from '../../src/engine/rating';
-import { detectRoles, teamRoles } from '../../src/engine/roles';
-import { teamNeeds } from '../../src/engine/needs';
+import { detectRoles, hasSpeedControl } from '../../src/engine/roles';
+import { meetsNeed, teamNeeds } from '../../src/engine/needs';
 import { defaultSet, emptySet, presetsFor, presetsForSet, sameSet, type TeamSet } from '../../src/engine/sets';
 import { fixtureData, tusk } from '../fixtures/data';
 
@@ -17,19 +17,21 @@ describe('Controllo velocità: solo con mosse che la controllano', () => {
   const gardevoir = set('Gardevoir', ['Hyper Voice', 'Mystical Fire', 'Psyshock', 'Calm Mind'], 'Gardevoirite');
 
   it('essere veloci non è controllo velocità (Mega Gardevoir, Scarf)', () => {
-    expect(detectRoles(gardevoir, DEFAULT_RULES)).not.toContain('speed');
-    expect(detectRoles(set('Landorus-Therian', ['Earthquake', 'U-turn'], 'Choice Scarf'), DEFAULT_RULES)).not.toContain('speed');
+    expect(hasSpeedControl(gardevoir)).toBe(false);
+    expect(hasSpeedControl(set('Landorus-Therian', ['Earthquake', 'U-turn'], 'Choice Scarf'))).toBe(false);
+    // Né lo è più fra i ruoli: è un filtro sulle mosse
+    expect(detectRoles(set('Clefable', ['Moonblast', 'Thunder Wave']), DEFAULT_RULES) as string[]).not.toContain('speed');
   });
 
   it('paralisi, Sticky Web, Trick Room, Tailwind, Icy Wind sì', () => {
     for (const move of ['Thunder Wave', 'Glare', 'Nuzzle', 'Stun Spore', 'Sticky Web', 'Trick Room', 'Tailwind', 'Icy Wind', 'Electroweb']) {
-      expect(detectRoles(set('Clefable', ['Moonblast', move]), DEFAULT_RULES)).toContain('speed');
+      expect(hasSpeedControl(set('Clefable', ['Moonblast', move]))).toBe(true);
     }
   });
 
   it('per giudicare il team la velocità resta coperta anche da un membro veloce o con Scarf', () => {
-    expect(teamRoles(gardevoir, DEFAULT_RULES)).toContain('speed');
-    expect(teamRoles(set('Great Tusk', ['Headlong Rush'], 'Choice Scarf'), DEFAULT_RULES)).toContain('speed');
+    expect(meetsNeed('speed', gardevoir, DEFAULT_RULES)).toBe(true);
+    expect(meetsNeed('speed', set('Great Tusk', ['Headlong Rush'], 'Choice Scarf'), DEFAULT_RULES)).toBe(true);
     // Velocità coperta dai membri veloci; il controllo velocità (mosse) resta un bisogno a parte
     const missing = teamNeeds([gardevoir, tusk], DEFAULT_RULES).missing.map(m => m.need);
     expect(missing).not.toContain('speed');

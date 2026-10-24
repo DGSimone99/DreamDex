@@ -8,7 +8,7 @@ import { BALANCE_SPAN, DEFENSE_FULL, resistPoints, typeSafety } from './typeSafe
 
 export { BALANCE_SPAN, DEFENSE_FULL, resistPoints, typeSafety };
 import type { Archetype } from './archetype';
-import { attackStyle, detectRoles, isPassive, isStall, teamRoles } from './roles';
+import { attackStyle, detectRoles, hasSpeedControl, isPassive, isStall } from './roles';
 import { rulesOf, type FormatRules } from './formatRules';
 import { meetsNeed, needCoverage, NEEDS } from './needs';
 import { teamSpeedArea, type TeamSpeed } from './speedArea';
@@ -185,13 +185,13 @@ export const TRICK_ROOM_MAX = 3;
 
 /** Forza sotto cui un membro senza utilità chiave è considerato debole. */
 export const WEAK_POWER = 30;
-/** Ruoli che danno al team un'utilità chiave anche a un Pokémon debole (Delibird con Spikes). */
-const UTILITY_ROLES = ['hazards', 'removal', 'speed'] as const;
+/** Ruoli che danno al team un'utilità chiave anche a un Pokémon debole (Delibird con Spikes); il controllo velocità si guarda sulle mosse. */
+const UTILITY_ROLES = ['hazards', 'removal'] as const;
 
 /** Il membro porta un'utilità chiave: hazard, rimozione, controllo velocità, meteo, campo o Trick Room. */
 function bringsUtility(set: TeamSet, rules: FormatRules): boolean {
   const roles = detectRoles(set, rules);
-  return UTILITY_ROLES.some(role => roles.includes(role)) || enables(set).length > 0;
+  return UTILITY_ROLES.some(role => roles.includes(role)) || hasSpeedControl(set) || enables(set).length > 0;
 }
 /** Attaccanti minimi perché un team tutto fisico o tutto speciale sia una scelta e non un caso. */
 const ONE_STYLE_ATTACKERS = 4;
@@ -202,18 +202,17 @@ const ONE_STYLE_ATTACKERS = 4;
  */
 export function memberIssues(team: TeamSet[], lang: Lang, rules: FormatRules): Redundancy[] {
   const items: Redundancy[] = [];
-  const roles = team.map(set => detectRoles(set, rules));
   // La penalità cresce col numero di membri deboli: −3, −7, −12… (il k-esimo pesa 2 + k)
   let weak = 0;
   for (const [i, set] of team.entries()) {
     const power = memberPower(set);
     // Un muro passivo si giudica dalla sua robustezza (Mega Sableye), gli altri dalla forza complessiva
-    if (power && (isPassive(set, roles[i]) ? power.bulk : power.power) < WEAK_POWER && !bringsUtility(set, rules)) {
+    if (power && (isPassive(set, rules) ? power.bulk : power.power) < WEAK_POWER && !bringsUtility(set, rules)) {
       weak += 1;
       items.push({ text: t(lang, 'rating.redundancy.weakMember', { member: battleName(set) }), points: 2 + weak });
     }
   }
-  if (!isStall(team, roles)) {
+  if (!isStall(team, rules)) {
     const styles = team.map(attackStyle);
     const physical = styles.filter(s => s === 'physical' || s === 'mixed').length;
     const special = styles.filter(s => s === 'special' || s === 'mixed').length;
@@ -322,11 +321,10 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
   const weights = UNIFORM_TYPE_WEIGHTS;
 
   const rules = rulesOf(data);
-  const memberRoles = team.map(set => teamRoles(set, rules));
   // Stall riconosciuto "senza esagerare": a metà tra la valutazione normale e quella da stall
-  const archetype = isStall(team, memberRoles) ? 'stall' as const : null;
+  const archetype = isStall(team, rules) ? 'stall' as const : null;
   // Nello stall un muro passivo non deve fare danni: conta la sua robustezza, e i suoi colpi valgono pieni
-  const passive = archetype ? team.map((set, i) => isPassive(set, memberRoles[i])) : [];
+  const passive = archetype ? team.map(set => isPassive(set, rules)) : [];
 
   // Ruoli richiesti in base all'archetipo del team (uno stall non ha bisogno di sweeper, un hyper offense di wall),
   // più quanti compiti copre ogni membro: nei team da torneo ognuno fa 2-3 cose

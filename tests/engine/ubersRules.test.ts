@@ -5,7 +5,7 @@ import type { EngineData } from '../../src/engine/data';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
 import { DEFAULT_RULES, formatRules, UBERS_RULES } from '../../src/engine/formatRules';
 import { rateTeam } from '../../src/engine/rating';
-import { detectRoles } from '../../src/engine/roles';
+import { detectRoles, legacyWall } from '../../src/engine/roles';
 import { emptySet, mostCommonSet, type TeamSet } from '../../src/engine/sets';
 import { fixtureData, fixtureStats } from '../fixtures/data';
 
@@ -23,15 +23,21 @@ describe('regole di Ubers', () => {
     expect(formatRules(undefined)).toBe(DEFAULT_RULES);
   });
 
-  it('con un set offensivo un muro deve essere robusto anche per Ubers: Zacian-Crowned no', () => {
-    // 92 PS × 115 difese = 10580 < 11000; in OU resta un doppio muro come prima
-    expect(walls(zacian)).toEqual([]);
-    expect(walls(zacian, DEFAULT_RULES)).toEqual(['physicalWall', 'specialWall']);
+  it('muro legacy (difensori): con un set offensivo deve essere robusto anche per Ubers, Zacian-Crowned no', () => {
+    // 92 PS × 115 difese = 10580 < 11000; in OU resta un muro come prima
+    expect(legacyWall(zacian, UBERS_RULES)).toBe(false);
+    expect(legacyWall(zacian, DEFAULT_RULES)).toBe(true);
   });
 
-  it('un set difensivo usa le soglie di sempre: Ferrothorn e Giratina-Origin restano muri', () => {
-    expect(walls(ferrothorn)).toEqual(['physicalWall', 'specialWall']);
-    expect(walls(giratina)).toEqual(['physicalWall', 'specialWall']);
+  it('muro legacy: un set difensivo usa le soglie di sempre, Ferrothorn e Giratina-Origin restano muri', () => {
+    expect(legacyWall(ferrothorn, UBERS_RULES)).toBe(true);
+    expect(legacyWall(giratina, UBERS_RULES)).toBe(true);
+  });
+
+  it('indice di muro: Ubers ha soglie più alte (Giratina-Origin senza EV, 104k: muro in OU, non in Ubers)', () => {
+    expect(walls(giratina, DEFAULT_RULES)).toEqual(['physicalWall', 'specialWall']);
+    expect(walls(giratina)).toEqual([]);
+    expect(walls(zacian, DEFAULT_RULES)).toEqual([]);
   });
 
   // HO di Ubers con un lead che piazza gli hazard

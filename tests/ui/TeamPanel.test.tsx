@@ -31,9 +31,9 @@ describe('TeamPanel', () => {
     await addPokemon(user, 'Great Tusk');
     const roles = teamRegion().querySelector('.slot .roles')!;
     const [main, support] = roles.textContent!.split(' · ');
-    expect(main).toMatch(/^(Sweeper fis\.|Wallbreaker|Wall fis\.)$/);
+    expect(main).toMatch(/^(Sweeper fis\.|Breaker fis\.|Muro fis\.)$/);
     expect(support).toBeTruthy();
-    expect(roles.getAttribute('title')).toMatch(/^(Sweeper fisico|Wallbreaker|Wall fisico) · /);
+    expect(roles.getAttribute('title')).toMatch(/^(Sweeper fisico|Wallbreaker fisico|Muro fisico) · /);
   });
 
   it('chi porta il meteo mostra "Meteo" sulla carta, con il meteo nel tooltip', () => {
@@ -41,8 +41,9 @@ describe('TeamPanel', () => {
     window.history.replaceState(null, '', `/#team=${encodeShare([pelipper], DEFAULT_FORMAT)}`);
     render(<App initialLang="it" data={fixtureData} />);
     const roles = teamRegion().querySelector('.slot .roles')!;
-    expect(roles.textContent).toBe('Meteo · Pivot');
-    expect(roles.getAttribute('title')).toMatch(/^Porta la pioggia \(.+\) · Pivot$/);
+    // Il principale (Recupero, famiglia Difesa) viene prima del meteo; il Pivot resta nel tooltip
+    expect(roles.textContent).toBe('Recupero · Meteo');
+    expect(roles.getAttribute('title')).toMatch(/^Recupero · Porta la pioggia \(.+\) · Pivot$/);
   });
 
   it('il tooltip dei ruoli elenca tutti i ruoli, non solo i due mostrati', () => {
@@ -53,8 +54,8 @@ describe('TeamPanel', () => {
     expect(roles.textContent!.split(' · ')).toHaveLength(2);
     const all = roles.getAttribute('title')!.split(' · ');
     expect(all.length).toBeGreaterThan(2);
-    expect(all.slice(0, 2)).toEqual(['Sweeper speciale', 'Controllo velocità']);
-    expect(all).toEqual(expect.arrayContaining(['Setup', 'Wallbreaker']));
+    expect(all.slice(0, 2)).toEqual(['Wallbreaker speciale', 'Setup']);
+    expect(all).toEqual(expect.arrayContaining(['Muro speciale']));
     expect(new Set(all).size).toBe(all.length);
   });
 

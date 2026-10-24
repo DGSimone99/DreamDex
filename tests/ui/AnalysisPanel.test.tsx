@@ -65,10 +65,11 @@ describe('AnalysisPanel', () => {
     expect(row('Minaccia offensiva')).toHaveClass('soft');
   });
 
-  it('velocità coperta da membri veloci: indicati come "(veloce)"', () => {
+  it('la velocità non è un ruolo: niente riga "Velocità" (resta il Controllo velocità, sulle mosse)', () => {
     const fast = [...team, { ...tusk, species: 'Dragapult', item: 'Choice Specs', ability: 'Infiltrator', moves: ['Shadow Ball', 'Draco Meteor'] }];
     renderIt(<AnalysisPanel team={fast} analysis={analyzeTeam(fast, fixtureData)} />);
-    expect(row('Velocità')).toHaveTextContent('Dragapult (veloce)');
+    expect(row('Velocità')).toBeUndefined();
+    expect(row('Controllo velocità')).toBeDefined();
   });
 
   it('dettaglio minacce', () => {

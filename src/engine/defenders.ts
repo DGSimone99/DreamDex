@@ -2,7 +2,7 @@ import type { Species } from '@pkmn/dex';
 import { usesMeta } from './analysis';
 import type { EngineData } from './data';
 import { rulesOf, type FormatRules } from './formatRules';
-import { detectRoles, isPassive, teamRoles } from './roles';
+import { isPassive, legacyWall } from './roles';
 import { mostCommonSet, type TeamSet } from './sets';
 import { tierSpecies } from './speed';
 import { topThreats } from './stats';
@@ -27,12 +27,10 @@ function standardWall(species: Species): TeamSet {
   };
 }
 
-/** Set difensivo: passivo o muro, con almeno 400 EV fra PS e difese. */
+/** Set difensivo: passivo o muro (regola legacy: il pannello e i numeri dell'Offesa non cambiano), con almeno 400 EV fra PS e difese. */
 export function isDefensiveSet(set: TeamSet, rules: FormatRules): boolean {
-  const roles = detectRoles(set, rules);
   const investment = (set.evs.hp ?? 0) + (set.evs.def ?? 0) + (set.evs.spd ?? 0);
-  const wall = roles.includes('physicalWall') || roles.includes('specialWall');
-  return (isPassive(set, teamRoles(set, rules)) || wall) && investment >= WALL_INVESTMENT;
+  return (isPassive(set, rules) || legacyWall(set, rules)) && investment >= WALL_INVESTMENT;
 }
 
 const panels = new Map<string, TeamSet[]>();

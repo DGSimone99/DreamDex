@@ -1,5 +1,5 @@
 import { teamArchetype, type Archetype } from './archetype';
-import { attackStyle, detectRoles, roleLabel, teamRoles, type Role } from './roles';
+import { attackStyle, detectRoles, hasPriority, hasSpeedControl, isFast, roleLabel, type Role } from './roles';
 import type { FormatRules } from './formatRules';
 import type { TeamSet } from './sets';
 import { t, type Lang } from '../i18n';
@@ -11,10 +11,13 @@ import { t, type Lang } from '../i18n';
 export type Need = 'hazards' | 'removal' | 'pivot' | 'speed' | 'speedControl' | 'offense' | 'priority' | 'physicalWall' | 'specialWall';
 export const NEEDS: Need[] = ['hazards', 'removal', 'pivot', 'speed', 'speedControl', 'offense', 'priority', 'physicalWall', 'specialWall'];
 
-/** Ruoli che soddisfano un bisogno. */
+/**
+ * Sotto-ruoli che soddisfano un bisogno. Priorità, velocità e controllo velocità non sono più ruoli:
+ * si guardano le mosse e la velocità del membro (vedi meetsNeed). Provvisorio: i bisogni si riscrivono col nuovo voto dei Ruoli.
+ */
 export const NEED_ROLES: Record<Need, Role[]> = {
-  hazards: ['hazards'], removal: ['removal'], pivot: ['pivot'], speed: ['speed'], speedControl: ['speed'],
-  offense: ['physicalSweeper', 'specialSweeper', 'wallbreaker'], priority: ['priority'],
+  hazards: ['hazards'], removal: ['removal'], pivot: ['pivot'], speed: [], speedControl: [],
+  offense: ['physicalSweeper', 'specialSweeper', 'physicalBreaker', 'specialBreaker'], priority: [],
   physicalWall: ['physicalWall'], specialWall: ['specialWall'],
 };
 
@@ -39,7 +42,10 @@ export const NEEDS_BY_ARCHETYPE: Record<Archetype, Record<Need, number>> = {
 
 /** Il membro soddisfa il bisogno: il controllo velocità vuole le mosse, la velocità basta che sia veloce. */
 export function meetsNeed(need: Need, set: TeamSet, rules: FormatRules): boolean {
-  const roles = need === 'speedControl' ? detectRoles(set, rules) : teamRoles(set, rules);
+  if (need === 'priority') return hasPriority(set);
+  if (need === 'speedControl') return hasSpeedControl(set);
+  if (need === 'speed') return hasSpeedControl(set) || isFast(set);
+  const roles = detectRoles(set, rules);
   return NEED_ROLES[need].some(role => roles.includes(role));
 }
 
@@ -104,6 +110,7 @@ export function needCoverage(needs: TeamNeeds): number {
 export function needLabel(need: Need, lang: Lang = 'it'): string {
   if (need === 'offense') return t(lang, 'need.offense');
   if (need === 'speed') return t(lang, 'need.speed');
-  if (need === 'speedControl') return roleLabel('speed', lang);
+  if (need === 'speedControl') return t(lang, 'role.speedControl');
+  if (need === 'priority') return t(lang, 'role.priority');
   return roleLabel(need, lang);
 }

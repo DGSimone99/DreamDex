@@ -26,18 +26,23 @@ describe('ruoli sulla carta: prima il ruolo principale, poi un supporto', () => 
     expect(cardRoles(kartana, DEFAULT_RULES)[0]).not.toBe('physicalWall');
   });
 
-  it('senza ruolo principale: due ruoli di supporto', () => {
+  it('senza attacco né muro: il Recupero (famiglia Difesa) è il principale, poi il campo', () => {
     const clefable = set('Clefable', 'Leftovers', 'Magic Guard', ['Moonblast', 'Soft-Boiled', 'Stealth Rock', 'Thunder Wave']);
-    expect(cardRoles(clefable, DEFAULT_RULES)).toEqual(['hazards', 'speed']);
+    expect(cardRoles(clefable, DEFAULT_RULES)).toEqual(['recovery', 'hazards']);
+  });
+
+  it("il setup resta un'etichetta della carta per chi non è sweeper", () => {
+    const corviknight = set('Corviknight', 'Leftovers', 'Pressure', ['Body Press', 'Iron Defense', 'Roost', 'Brave Bird']);
+    expect(cardRoles({ ...corviknight, evs: { hp: 252, def: 252 }, nature: 'Impish' }, DEFAULT_RULES)).toEqual(['physicalWall', 'setup']);
   });
 });
 
 describe('meteo sulla carta', () => {
-  it('chi porta il meteo lo mostra come supporto, dopo il ruolo principale', () => {
+  it('chi porta il meteo lo mostra dopo il ruolo principale, prima di campo e disturbo', () => {
     const pelipper = set('Pelipper', 'Damp Rock', 'Drizzle', ['Hurricane', 'Scald', 'U-turn', 'Roost']);
-    expect(cardRoles(pelipper, DEFAULT_RULES)).toEqual(['weather', 'pivot']);
+    expect(cardRoles(pelipper, DEFAULT_RULES)).toEqual(['recovery', 'weather']);
     const ttar = set('Tyranitar', 'Smooth Rock', 'Sand Stream', ['Stealth Rock', 'Stone Edge', 'Knock Off', 'Earthquake']);
-    expect(cardRoles(ttar, DEFAULT_RULES)).toEqual(['wallbreaker', 'weather']);
+    expect(cardRoles(ttar, DEFAULT_RULES)).toEqual(['physicalBreaker', 'weather']);
     expect(weatherOf(ttar)).toEqual({ condition: 'sand', via: 'Sand Stream' });
   });
 
@@ -48,9 +53,9 @@ describe('meteo sulla carta', () => {
   });
 });
 
-describe("abilità in battaglia per la velocità", () => {
-  it('Mega Swampert (Swift Swim in battaglia) è sweeper anche se il set ha Torrent', () => {
+describe('forma in battaglia', () => {
+  it('Mega Swampert si giudica con le statistiche della Mega: attaccante fisico', () => {
     const swampert = set('Swampert', 'Swampertite', 'Torrent', ['Waterfall', 'Earthquake', 'Ice Punch', 'Superpower']);
-    expect(cardRoles(swampert, DEFAULT_RULES)[0]).toBe('physicalSweeper');
+    expect(cardRoles(swampert, DEFAULT_RULES)[0]).toBe('physicalBreaker');
   });
 });

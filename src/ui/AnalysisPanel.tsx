@@ -2,7 +2,6 @@ import { threatScore, type TeamAnalysis } from '../engine/analysis';
 import type { Coaching } from '../engine/coach';
 import type { EngineData } from '../engine/data';
 import type { TeamRating } from '../engine/rating';
-import { detectRoles, isFast } from '../engine/roles';
 import { ESSENTIAL, meetsNeed, NEEDS, needLabel, USEFUL, type Need } from '../engine/needs';
 import { battleName } from '../engine/dex';
 import { weatherMitigations, type WeatherMitigation } from '../engine/synergy';
@@ -58,17 +57,13 @@ export function AnalysisPanel({ team, analysis, rating, coaching, preview, onRep
   const uncovered = analysis.coverage.filter(row => row.hitters.length === 0);
   // Ruoli richiesti in base al tipo di team (come nel voto): essenziali, utili e non richiesti
   const { needs } = analysis;
-  const ownersOf = (need: Need) => {
-    // Velocità: chi controlla la velocità o, senza mosse per farlo, i membri veloci
-    return team.filter(set => meetsNeed(need, set, needs.rules)).map(set =>
-      need === 'speed' && !detectRoles(set, needs.rules).includes('speed') && isFast(set) ? tr('analysis.fastMember', { name: battleName(set) }) : battleName(set));
-  };
+  const ownersOf = (need: Need) => team.filter(set => meetsNeed(need, set, needs.rules)).map(set => battleName(set));
   const needGroups = [
     { title: tr('analysis.essential'), weight: ESSENTIAL },
     { title: tr('analysis.useful'), weight: USEFUL },
     { title: tr('analysis.notRequired'), weight: 0 },
   ]
-    .map(group => ({ ...group, rows: NEEDS.filter(need => needs.weights[need] === group.weight).map(need => ({ need, owners: ownersOf(need) })) }))
+    .map(group => ({ ...group, rows: NEEDS.filter(need => need !== 'speed' && needs.weights[need] === group.weight).map(need => ({ need, owners: ownersOf(need) })) }))
     .filter(group => group.rows.length > 0);
   const essentialRows = needGroups.find(group => group.weight === ESSENTIAL)?.rows ?? [];
   const archetypeName = tr(`archetype.${needs.archetype}`);

@@ -1,53 +1,67 @@
 import { battleAbility, battleSpecies, effectiveStats, getMove, isDefined, toID } from './dex';
 import type { TeamSet } from './sets';
-import type { FormatRules } from './formatRules';
+import { DEFAULT_RULES, type FormatRules } from './formatRules';
+import { rolesList, setSubRoles, type Family, type SubRole } from './subRoles';
 import { memoBySet } from './memo';
 import { t, type Lang } from '../i18n';
 
-export type Role =
+/** I ruoli del motore sono i 17 sotto-ruoli (vedi subRoles.ts). */
+export type Role = SubRole;
+
+/**
+ * Ruoli "legacy" (gli 11 di prima): restano solo per riconoscere gli archetipi (passivi, stall, adatti a un archetipo)
+ * e i difensori del formato, che non devono cambiare. Non vanno mostrati né usati per il voto.
+ */
+export type LegacyRole =
   | 'hazards' | 'removal' | 'pivot' | 'priority' | 'speed'
   | 'setup' | 'wallbreaker' | 'physicalSweeper' | 'specialSweeper' | 'physicalWall' | 'specialWall';
 
-export const ROLE_ORDER: Role[] = [
+const LEGACY_ORDER: LegacyRole[] = [
   'hazards', 'removal', 'pivot', 'priority', 'speed', 'setup', 'wallbreaker',
   'physicalSweeper', 'specialSweeper', 'physicalWall', 'specialWall',
 ];
 
-/** Nome del ruolo nella lingua data. */
-export const roleLabel = (role: Role, lang: Lang = 'it'): string => t(lang, `role.${role}`);
+/** Nome del ruolo nella lingua data (anche il setup, che compare sulle carte ma non è un ruolo del voto). */
+export const roleLabel = (role: Role | 'setup', lang: Lang = 'it'): string => t(lang, `role.${role}`);
 
 /** Nome breve del ruolo, per le carte del team (il nome completo va nel tooltip). */
-export const roleShortLabel = (role: Role, lang: Lang = 'it'): string => t(lang, `roleShort.${role}`);
+export const roleShortLabel = (role: Role | 'setup', lang: Lang = 'it'): string => t(lang, `roleShort.${role}`);
 
-/** Ordine dei ruoli nei filtri (i ruoli richiesti dal voto dipendono dall'archetipo: vedi needs.ts). */
-export const ESSENTIAL_ROLES: Role[] = ['hazards', 'removal', 'pivot', 'speed'];
-export const DESIRABLE_ROLES: Role[] = ['wallbreaker', 'priority', 'physicalSweeper', 'specialSweeper', 'physicalWall', 'specialWall'];
+/** Nome della famiglia (Attacco, Difesa, Campo, Disturbo). */
+export const familyLabel = (family: Family, lang: Lang = 'it'): string => t(lang, `family.${family}`);
 
-/** Ruoli di cui uno stall ha bisogno: niente priorità, velocità o sweeper, per scelta. */
-export const STALL_ROLES: Role[] = ['hazards', 'removal', 'physicalWall', 'specialWall'];
-const WALLS: Role[] = ['physicalWall', 'specialWall'];
+const WALLS: LegacyRole[] = ['physicalWall', 'specialWall'];
 
 const RECOVERY_MOVES = new Set([
   'recover', 'roost', 'softboiled', 'slackoff', 'wish', 'rest', 'moonlight', 'synthesis', 'morningsun',
   'strengthsap', 'shoreup', 'milkdrink', 'leechseed', 'painsplit',
 ]);
 const RECOVERY_ABILITIES = new Set(['poisonheal', 'regenerator']);
-const SWEEPERS: Role[] = ['physicalSweeper', 'specialSweeper'];
+const SWEEPERS: LegacyRole[] = ['physicalSweeper', 'specialSweeper'];
 
 /** Sweeper veloce con mossa di setup (Volcarona con Quiver Dance, Garchomp con Swords Dance): vince attaccando. */
-const isFastSetupSweeper = (set: TeamSet, roles: Role[]) =>
+const isFastSetupSweeper = (set: TeamSet, roles: LegacyRole[]) =>
   roles.includes('setup') && roles.some(r => SWEEPERS.includes(r)) && (battleSpecies(set)?.baseStats.spe ?? 0) >= 100;
 
 /** Setup offensivo su statistiche da wallbreaker (Necrozma-Dusk-Mane con Dragon Dance, Groudon-Primal con Swords Dance): attacca, non fa da muro. */
-const isSetupBreaker = (roles: Role[]) => roles.includes('setup') && roles.includes('wallbreaker');
+const isSetupBreaker = (roles: LegacyRole[]) => roles.includes('setup') && roles.includes('wallbreaker');
+
+/**
+ * Regole con cui giudicare i ruoli legacy. Per compatibilità si accetta anche una lista di ruoli (la vecchia firma):
+ * viene ignorata e si usano le regole di sempre (National Dex OU). Il codice dell'app passa sempre le regole.
+ */
+export type LegacyRulesArg = FormatRules | readonly string[];
+const legacyRules = (arg?: LegacyRulesArg): FormatRules => (!arg || Array.isArray(arg) ? DEFAULT_RULES : arg as FormatRules);
 
 /**
  * Membro "passivo" da stall: al massimo 2 mosse d'attacco, non uno sweeper veloce con setup né un wallbreaker con setup,
  * e un muro o con un recupero affidabile.
  * Si guarda il set, non solo le statistiche: un leggendario con quattro attacchi non è un muro da stall,
  * mentre Mega Sableye o Quagsire lo sono anche senza statistiche da muro.
+ * Usa i ruoli legacy: gli archetipi non cambiano coi sotto-ruoli.
  */
-export function isPassive(set: TeamSet, roles: Role[]): boolean {
+export function isPassive(set: TeamSet, rules?: LegacyRulesArg): boolean {
+  const roles = legacyRoles(set, legacyRules(rules));
   const attacks = set.moves.filter(m => (getMove(m)?.category ?? 'Status') !== 'Status').length;
   if (attacks > 2 || isFastSetupSweeper(set, roles) || isSetupBreaker(roles)) return false;
   const heals = set.moves.some(m => RECOVERY_MOVES.has(toID(m))) || RECOVERY_ABILITIES.has(toID(set.ability));
@@ -57,9 +71,10 @@ export function isPassive(set: TeamSet, roles: Role[]): boolean {
 /** Membri passivi di uno stall: tutti e 6. Con una o due minacce offensive il team è un semi-stall. */
 export const STALL_PASSIVE = 6;
 
-/** Stall: tutti e 6 i membri passivi. */
-export function isStall(team: TeamSet[], roles: Role[][]): boolean {
-  return team.filter((set, i) => isPassive(set, roles[i])).length >= STALL_PASSIVE;
+/** Stall: tutti e 6 i membri passivi. Il secondo argomento sono le regole (una lista per membro, vecchia firma, usa quelle di sempre). */
+export function isStall(team: TeamSet[], rules?: FormatRules | readonly (readonly string[])[]): boolean {
+  const r = rules && !Array.isArray(rules) ? rules as FormatRules : DEFAULT_RULES;
+  return team.filter(set => isPassive(set, r)).length >= STALL_PASSIVE;
 }
 
 const HAZARD_MOVES = new Set(['stealthrock', 'spikes', 'toxicspikes', 'stickyweb', 'stoneaxe', 'ceaselessedge']);
@@ -71,23 +86,27 @@ const SPEED_MOVES = new Set(['thunderwave', 'glare', 'nuzzle', 'stunspore', 'sti
 const SPEED_ABILITIES = new Set(['swiftswim', 'chlorophyll', 'sandrush', 'slushrush', 'surgesurfer', 'unburden', 'speedboost']);
 const BREAKER_ITEMS = new Set(['choiceband', 'choicespecs', 'lifeorb']);
 
-export function detectRoles(set: TeamSet, rules: FormatRules): Role[] {
-  return rolesOf(set, rules);
-}
-const rolesOf = memoBySet((set: TeamSet, rules: FormatRules): Role[] => {
+/** Sotto-ruoli del set (valore almeno 0,5), nell'ordine delle famiglie. */
+export const detectRoles = memoBySet((set: TeamSet, rules: FormatRules): Role[] => rolesList(setSubRoles(set, rules)));
+
+/** Il muro legacy (statistiche di base): lo usano i difensori del formato, da cui dipendono i numeri dell'Offesa. */
+export const legacyWall = (set: TeamSet, rules: FormatRules): boolean => legacyRoles(set, rules).some(r => WALLS.includes(r));
+
+/** Ruoli legacy del set (solo per archetipi e difensori, vedi LegacyRole). */
+export const legacyRoles = memoBySet((set: TeamSet, rules: FormatRules): LegacyRole[] => {
   const species = battleSpecies(set);
   if (!species) return [];
   const ids = set.moves.map(toID);
   const moves = set.moves.map(getMove).filter(isDefined);
   const stats = effectiveStats(set);
   const item = toID(set.item);
-  const roles = new Set<Role>();
+  const roles = new Set<LegacyRole>();
 
   if (ids.some(id => HAZARD_MOVES.has(id))) roles.add('hazards');
   if (ids.some(id => REMOVAL_MOVES.has(id))) roles.add('removal');
   if (ids.some(id => PIVOT_MOVES.has(id))) roles.add('pivot');
   if (moves.some(m => m.category !== 'Status' && m.priority > 0)) roles.add('priority');
-  // Controllo velocità solo con mosse che la controllano: essere veloci è un'altra cosa (vedi teamRoles)
+  // Controllo velocità solo con mosse che la controllano: essere veloci è un'altra cosa (vedi isFast)
   if (ids.some(id => SPEED_MOVES.has(id))) roles.add('speed');
   // Setup: mosse che alzano attacco, attacco speciale o velocità; anche la Difesa con Body Press, che colpisce con la Difesa
   const bodyPress = ids.includes('bodypress');
@@ -112,7 +131,7 @@ const rolesOf = memoBySet((set: TeamSet, rules: FormatRules): Role[] => {
   if (walls('def')) roles.add('physicalWall');
   if (walls('spd')) roles.add('specialWall');
 
-  return ROLE_ORDER.filter(role => roles.has(role));
+  return LEGACY_ORDER.filter(role => roles.has(role));
 });
 
 export type AttackStyle = 'physical' | 'special' | 'mixed' | 'none';
@@ -133,12 +152,26 @@ export function isFast(set: TeamSet): boolean {
   return !!species && (species.baseStats.spe >= 100 || toID(set.item) === 'choicescarf' || SPEED_ABILITIES.has(toID(battleAbility(set))));
 }
 
-/**
- * Ruoli con cui si giudica il team (voto, bisogni, candidati): quelli del set, più la velocità per un membro veloce.
- * In singolo un team con membri veloci ha già la sua velocità, anche senza mosse di controllo velocità.
- */
-export function teamRoles(set: TeamSet, rules: FormatRules): Role[] {
-  const roles = detectRoles(set, rules);
-  return isFast(set) && !roles.includes('speed') ? ROLE_ORDER.filter(role => role === 'speed' || roles.includes(role)) : roles;
+/** Mossa d'attacco con priorità (filtro di ricerca, non un ruolo). */
+export function hasPriority(set: TeamSet): boolean {
+  return set.moves.map(getMove).filter(isDefined).some(m => m.category !== 'Status' && m.priority > 0);
 }
 
+/** Mossa che controlla la velocità: paralisi, Sticky Web, Trick Room, Tailwind, mosse che rallentano (filtro, non un ruolo). */
+export function hasSpeedControl(set: TeamSet): boolean {
+  return set.moves.some(m => SPEED_MOVES.has(toID(m)));
+}
+
+/** Setup: una mossa di stato che alza attacco, attacco speciale o velocità (la Difesa con Body Press). Filtro ed etichetta, non un ruolo. */
+export function hasSetup(set: TeamSet): boolean {
+  const moves = set.moves.map(getMove).filter(isDefined);
+  const bodyPress = moves.some(m => m.id === 'bodypress');
+  return moves.some(m => m.category === 'Status' && m.target === 'self'
+    && ((m.boosts?.atk ?? 0) > 0 || (m.boosts?.spa ?? 0) > 0 || (m.boosts?.spe ?? 0) > 0 || (bodyPress && (m.boosts?.def ?? 0) > 0)));
+}
+
+/**
+ * @deprecated Resta solo per compatibilità con i test dei difensori (invariati): oggi equivale a detectRoles.
+ * La velocità non è più un ruolo: per i membri veloci si usa isFast.
+ */
+export const teamRoles = (set: TeamSet, rules: FormatRules): Role[] => detectRoles(set, rules);
