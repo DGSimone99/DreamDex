@@ -21,7 +21,7 @@ export interface FormatRules {
   wallIndex: { physical: number; special: number };
 }
 
-export const DEFAULT_RULES: FormatRules = { offensiveWallBulk: 0,keepArchetype: false, strengthPool: null, teraBonusCap: 0, wallIndex: { physical: 100000, special: 95000 } };
+export const DEFAULT_RULES: FormatRules = { offensiveWallBulk: 0, keepArchetype: false, strengthPool: null, teraBonusCap: 0, wallIndex: { physical: 100000, special: 95000 } };
 
 /** Ubers: Zacian-Crowned con Swords Dance non è un muro, un HO resta HO (gli hazard li chiedono i Ruoli, come altrove). */
 export const UBERS_RULES: FormatRules = { ...DEFAULT_RULES, offensiveWallBulk: 11000, keepArchetype: true, wallIndex: { physical: 120000, special: 115000 } };
