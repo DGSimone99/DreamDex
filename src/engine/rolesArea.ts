@@ -78,8 +78,9 @@ function essentialFailures(team: TeamSet[], needs: TeamNeeds, lang: Lang): Redun
       ? t(lang, 'rating.failure.noAttacker')
       : t(lang, 'rating.failure.missing', { archetype, role: lowerFirst(needLabel(key, lang)) }),
     points: ESSENTIAL_POINTS,
+    catalog: 'essentialRole' as const,
   }));
-  if (needs.needStyle) items.push({ text: t(lang, 'rating.redundancy.oneStyle', { style: t(lang, `analysis.style.${needs.needStyle}`) }), points: ONE_STYLE_POINTS });
+  if (needs.needStyle) items.push({ text: t(lang, 'rating.redundancy.oneStyle', { style: t(lang, `analysis.style.${needs.needStyle}`) }), points: ONE_STYLE_POINTS, catalog: 'oneStyle' });
   return items;
 }
 

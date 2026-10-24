@@ -26,7 +26,7 @@ describe('membri deboli senza utilità (indipendente dal meta)', () => {
 
   it('debole e senza utilità: −2, anche senza statistiche Smogon', () => {
     expect(penalties([raticate, tusk], { stats: null, sets: null }))
-      .toContainEqual({ text: 'Raticate è debole e non porta utilità al team', points: 2 });
+      .toContainEqual(expect.objectContaining({ text: 'Raticate è debole e non porta utilità al team', points: 2 }));
   });
 
   it("debole ma con un'utilità chiave (meteo, hazard): nessuna penalità", () => {
@@ -54,7 +54,7 @@ describe('team tutto fisico o tutto speciale', () => {
   const walls = [withMoves('Blissey', ['Soft-Boiled', 'Toxic']), withMoves('Toxapex', ['Recover', 'Haze'])];
 
   it('almeno 4 attaccanti e nessuno fisico: −3', () => {
-    expect(penalties([...special, ...walls])).toContainEqual({ text: 'Nessun attaccante fisico', points: 3 });
+    expect(penalties([...special, ...walls])).toContainEqual(expect.objectContaining({ text: 'Nessun attaccante fisico', points: 3 }));
   });
 
   it('con 3 attaccanti non si segnala', () => {

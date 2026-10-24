@@ -17,12 +17,12 @@ describe('ridondanze', () => {
 
   it('stesso hazard da più membri', () => {
     const team = [withMoves('Great Tusk', ['Stealth Rock']), withMoves('Garchomp', ['Stealth Rock']), withMoves('Kingambit', ['Stone Axe'])];
-    expect(items(team)).toContainEqual({ text: '3 setter di Stealth Rock', points: 2 });
+    expect(items(team)).toContainEqual(expect.objectContaining({ text: '3 setter di Stealth Rock', points: 2 }));
   });
 
   it('più rimozioni hazard', () => {
     const team = [withMoves('Great Tusk', ['Rapid Spin']), withMoves('Corviknight', ['Defog'])];
-    expect(items(team)).toContainEqual({ text: '2 rimozioni hazard', points: 1 });
+    expect(items(team)).toContainEqual(expect.objectContaining({ text: '2 rimozioni hazard', points: 1 }));
   });
 
   it('tre o più membri dello stesso tipo', () => {
@@ -69,12 +69,12 @@ describe('penalità e bonus del meteo', () => {
 
   it('abilitatore che non serve a nessuno: −2', () => {
     expect(texts([{ ...withMoves('Pelipper', ['U-turn', 'Roost']), ability: 'Drizzle' }, garchomp]))
-      .toContainEqual({ text: 'Drizzle di Pelipper non sfruttato', points: 2 });
+      .toContainEqual(expect.objectContaining({ text: 'Drizzle di Pelipper non sfruttato', points: 2 }));
   });
 
   it('meteo in conflitto: −3', () => {
     const team = [{ ...withMoves('Ninetales', ['Flamethrower']), ability: 'Drought' }, { ...withMoves('Pelipper', ['Hurricane']), ability: 'Drizzle' }];
-    expect(texts(team)).toContainEqual({ text: 'Meteo in conflitto: Ninetales (Drought), Pelipper (Drizzle)', points: 3 });
+    expect(texts(team)).toContainEqual(expect.objectContaining({ text: 'Meteo in conflitto: Ninetales (Drought), Pelipper (Drizzle)', points: 3 }));
   });
 
   it('mosse indebolite dal meteo del team: −1 coverage, −2 STAB', () => {
@@ -83,8 +83,8 @@ describe('penalità e bonus del meteo', () => {
       withMoves('Kingdra', ['Hydro Pump']),
       withMoves('Kyurem', ['Surf']),
     ];
-    expect(texts(team)).toContainEqual({ text: 'Il sole di Ninetales indebolisce le mosse Water di Kingdra', points: 2 });
-    expect(texts(team)).toContainEqual({ text: 'Il sole di Ninetales indebolisce le mosse Water di Kyurem', points: 1 });
+    expect(texts(team)).toContainEqual(expect.objectContaining({ text: 'Il sole di Ninetales indebolisce le mosse Water di Kingdra', points: 2 }));
+    expect(texts(team)).toContainEqual(expect.objectContaining({ text: 'Il sole di Ninetales indebolisce le mosse Water di Kyurem', points: 1 }));
   });
 
   it('il coaching segnala conflitti e mosse indebolite', () => {
@@ -166,14 +166,14 @@ describe('mancanze essenziali dei Ruoli tra le penalità', () => {
   it('team di 6 senza muro speciale in balance: −2 con testo', () => {
     const rating = rateTeam(physical, fixtureData)!;
     expect(rating.teamType).toBe('balance');
-    expect(rating.penalty.items).toContainEqual({ text: 'Balance senza muro speciale', points: 2 });
-    expect(rating.roles.failures).toContainEqual({ text: 'Balance senza muro speciale', points: 2 });
-    expect(rateTeam(physical, fixtureData, 'en')!.penalty.items).toContainEqual({ text: 'Balance with no special wall', points: 2 });
+    expect(rating.penalty.items).toContainEqual(expect.objectContaining({ text: 'Balance senza muro speciale', points: 2 }));
+    expect(rating.roles.failures).toContainEqual(expect.objectContaining({ text: 'Balance senza muro speciale', points: 2 }));
+    expect(rateTeam(physical, fixtureData, 'en')!.penalty.items).toContainEqual(expect.objectContaining({ text: 'Balance with no special wall', points: 2 }));
   });
 
   it('tutti fisici: −3, una volta sola', () => {
     const texts = rateTeam(physical, fixtureData)!.penalty.items.filter(i => i.text === 'Nessun attaccante speciale');
-    expect(texts).toEqual([{ text: 'Nessun attaccante speciale', points: 3 }]);
+    expect(texts).toEqual([expect.objectContaining({ text: 'Nessun attaccante speciale', points: 3 })]);
     // Il coach lo segnala ancora tra i ruoli
     expect(coachTeam(physical, DEFAULT_FORMAT, fixtureData).problems)
       .toContainEqual(expect.objectContaining({ category: 'roles', text: 'Nessun attaccante speciale' }));

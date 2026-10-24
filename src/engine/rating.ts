@@ -12,7 +12,7 @@ import { hasSpeedControl, isPassive, isStall } from './roles';
 import { rulesOf } from './formatRules';
 import type { TeamNeeds } from './needs';
 import { FAMILIES, type SubRoleValues } from './subRoles';
-import { teamRolesArea, type TeamRoles } from './rolesArea';
+import { ESSENTIAL_POINTS, ONE_STYLE_POINTS, teamRolesArea, type TeamRoles } from './rolesArea';
 import { teamSpeedArea, type TeamSpeed } from './speedArea';
 import { strengthComponent } from './scoring';
 import { usageOf } from './stats';
@@ -84,9 +84,15 @@ export interface RatingArea {
   value: number | null;
 }
 
+/** Chiave della voce del catalogo bonus/malus a cui appartiene una voce del voto. */
+export type CatalogKey = 'hazardDuplicate' | 'removers' | 'weatherClash' | 'weakenedMove' | 'unusedEnabler'
+  | 'weakMember' | 'essentialRole' | 'oneStyle' | 'trickRoomFast' | 'weatherHelp' | 'tera';
+
 export interface Redundancy {
   text: string;
   points: number;
+  /** Assente nelle voci solo-coach (stesso tipo): non fanno parte del voto. */
+  catalog?: CatalogKey;
 }
 
 export interface Redundancies {
@@ -163,9 +169,9 @@ export function roleAndTypeRedundancies(team: TeamSet[], lang: Lang = 'it', opts
       setters.set(hazard, (setters.get(hazard) ?? 0) + 1);
     }
   }
-  for (const [hazard, n] of setters) if (n > 1) items.push({ text: t(lang, 'rating.redundancy.setters', { n, hazard: gameName('move', hazard, lang) }), points: HAZARD_DUPLICATE * (n - 1) });
+  for (const [hazard, n] of setters) if (n > 1) items.push({ text: t(lang, 'rating.redundancy.setters', { n, hazard: gameName('move', hazard, lang) }), points: HAZARD_DUPLICATE * (n - 1), catalog: 'hazardDuplicate' });
   const removers = team.filter(set => set.moves.some(m => REMOVAL.has(toID(m)))).length;
-  if (removers > 1) items.push({ text: t(lang, 'rating.redundancy.removers', { n: removers }), points: removers - 1 });
+  if (removers > 1) items.push({ text: t(lang, 'rating.redundancy.removers', { n: removers }), points: removers - 1, catalog: 'removers' });
   for (const type of opts.sameType ? TYPES : []) {
     const n = team.filter(set => (battleSpecies(set)?.types as readonly string[] | undefined)?.includes(type)).length;
     if (n >= 3) items.push({ text: t(lang, 'rating.redundancy.sameType', { n, type: typeName(type, lang) }), points: n - 2 });
@@ -180,10 +186,11 @@ export const WEATHER_HURT_STAB = 2;
 export function weatherClashes(team: TeamSet[], lang: Lang = 'it'): Redundancy[] {
   const cap = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
   return [
-    ...conditionConflicts(team, lang).map(c => ({ text: t(lang, 'rating.redundancy.conflict', { kind: t(lang, `conflict.${c.kind}`), list: c.setters.join(', ') }), points: 3 })),
+    ...conditionConflicts(team, lang).map(c => ({ text: t(lang, 'rating.redundancy.conflict', { kind: t(lang, `conflict.${c.kind}`), list: c.setters.join(', ') }), points: 3, catalog: 'weatherClash' as const })),
     ...weakenedMoves(team).map(w => ({
       text: t(lang, 'rating.redundancy.weakens', { condition: cap(conditionLabel(w.condition, lang)), setter: w.setter, type: typeName(w.type, lang), member: w.member }),
       points: w.stab ? WEATHER_HURT_STAB : WEATHER_HURT,
+      catalog: 'weakenedMove' as const,
     })),
   ];
 }
@@ -225,7 +232,7 @@ export function memberIssues(team: TeamSet[], lang: Lang, needs: TeamNeeds): Red
       // Oltre il tetto i membri restano elencati ma senza punti
       const points = Math.min(WEAK_MEMBER_POINTS, WEAK_MEMBER_MAX - total);
       total += points;
-      items.push({ text: t(lang, 'rating.redundancy.weakMember', { member: battleName(set) }), points });
+      items.push({ text: t(lang, 'rating.redundancy.weakMember', { member: battleName(set) }), points, catalog: 'weakMember' });
     }
   }
   return items;
@@ -233,7 +240,7 @@ export function memberIssues(team: TeamSet[], lang: Lang, needs: TeamNeeds): Red
 
 export function redundancies(team: TeamSet[], analysis: TeamAnalysis, lang: Lang = 'it'): Redundancies {
   const dependencies = [
-    ...unusedEnablers(team).map(i => ({ text: t(lang, 'rating.redundancy.unused', { via: viaName(i.via, lang), member: i.member }), points: 2 })),
+    ...unusedEnablers(team).map(i => ({ text: t(lang, 'rating.redundancy.unused', { via: viaName(i.via, lang), member: i.member }), points: 2, catalog: 'unusedEnabler' as const })),
   ];
   const items = [
     ...roleAndTypeRedundancies(team, lang), ...dependencies, ...weatherClashes(team, lang),
@@ -263,6 +270,7 @@ export function weatherBonus(team: TeamSet[], lang: Lang = 'it'): Redundancies {
     items.push({
       text: t(lang, 'rating.bonus.helps', { condition: capitalize(conditionLabel(m.condition as Condition, lang)), setter, list: members.join(', ') }),
       points: 0,
+      catalog: 'weatherHelp',
     });
   }
   // Un solo punto per tutto il team: si mostra sulla prima voce
@@ -282,7 +290,7 @@ export function teraBonus(team: TeamSet[], analysis: TeamAnalysis, cap: number, 
     const member = team.find(set => (TYPES as readonly string[]).includes(set.teraType ?? '')
       && effectiveness(row.type, [set.teraType!]) < 1);
     if (!member) continue;
-    items.push({ text: t(lang, 'rating.bonus.tera', { tera: typeName(member.teraType!, lang), member: battleName(member), type: typeName(row.type, lang) }), points: 1 });
+    items.push({ text: t(lang, 'rating.bonus.tera', { tera: typeName(member.teraType!, lang), member: battleName(member), type: typeName(row.type, lang) }), points: 1, catalog: 'tera' });
     if (items.length === cap) break;
   }
   return items;
@@ -353,7 +361,7 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
   const roomSetter = team.find(set => set.moves.some(move => toID(move) === 'trickroom'));
   const fastMembers = roomSetter ? speed.members.filter(m => m.raw >= TRICK_ROOM_FAST) : [];
   const roomItems = fastMembers.length
-    ? [{ text: t(lang, fastMembers.length === 1 ? 'rating.redundancy.trickRoomFastOne' : 'rating.redundancy.trickRoomFast', { setter: battleName(roomSetter!), n: fastMembers.length, list: fastMembers.map(m => m.species).join(', ') }), points: Math.min(TRICK_ROOM_MAX, fastMembers.length) }]
+    ? [{ text: t(lang, fastMembers.length === 1 ? 'rating.redundancy.trickRoomFastOne' : 'rating.redundancy.trickRoomFast', { setter: battleName(roomSetter!), n: fastMembers.length, list: fastMembers.map(m => m.species).join(', ') }), points: Math.min(TRICK_ROOM_MAX, fastMembers.length), catalog: 'trickRoomFast' as const }]
     : [];
   // Le mancanze essenziali dei Ruoli (solo team di 6) si sommano alle altre penalità, entro il massimo
   const extraItems = [...roles.failures, ...roomItems];
@@ -371,3 +379,34 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
   };
 }
 
+
+export interface CatalogEntry {
+  key: CatalogKey;
+  kind: 'malus' | 'bonus';
+  name: string;
+  when: string;
+  points: string;
+  /** Falso se la regola non vale nel formato (il Tera fuori dalla Gen 9). */
+  applies: boolean;
+}
+
+const CATALOG_ORDER: { key: CatalogKey; kind: 'malus' | 'bonus' }[] = [
+  ...(['hazardDuplicate', 'removers', 'weatherClash', 'weakenedMove', 'unusedEnabler', 'weakMember', 'essentialRole', 'oneStyle', 'trickRoomFast'] as const)
+    .map(key => ({ key, kind: 'malus' as const })),
+  ...(['weatherHelp', 'tera'] as const).map(key => ({ key, kind: 'bonus' as const })),
+];
+
+/** Tutti i bonus e malus possibili, con il testo per il modale; i punti nei testi vengono dalle costanti. */
+export function bonusMalusCatalog(lang: Lang, teraCap: number): CatalogEntry[] {
+  const values = {
+    hazard: HAZARD_DUPLICATE, hurt: WEATHER_HURT, hurtStab: WEATHER_HURT_STAB, member: WEAK_MEMBER_POINTS, memberMax: WEAK_MEMBER_MAX,
+    essential: ESSENTIAL_POINTS, style: ONE_STYLE_POINTS, room: TRICK_ROOM_MAX, help: WEATHER_HELP, cap: teraCap,
+  };
+  return CATALOG_ORDER.map(({ key, kind }) => ({
+    key, kind,
+    name: t(lang, `catalog.${key}.name`, values),
+    when: t(lang, `catalog.${key}.when`, values),
+    points: t(lang, `catalog.${key}.points`, values),
+    applies: key !== 'tera' || teraCap > 0,
+  }));
+}
