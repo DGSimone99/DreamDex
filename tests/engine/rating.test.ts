@@ -181,15 +181,4 @@ describe('membro debole e controllo velocità', () => {
     expect(issues.reduce((a, b) => a + b.points, 0)).toBe(6);
     expect(issues.every(i => i.points <= 2)).toBe(true);
   });
-
-  // Task 8: fallback del bench (vedi spec)
-  it.skip('quattro deboli a Terra scoperti: almeno 5 punti sotto la versione coperta', () => {
-    const build = (names: string[]) => names.map(n => mostCommonSet(fixtureStats, n) ?? { ...emptySet(n), moves: ['Tackle', 'Protect', 'Rest', 'Toxic'] });
-    const base = ['Heatran', 'Toxapex', 'Gholdengo', 'Kingambit', 'Great Tusk', 'Dragapult'];
-    const uncovered = rateTeam(build(base), fixtureData)!;
-    const covered = rateTeam(build(base.map(n => (n === 'Kingambit' ? 'Corviknight' : n))), fixtureData)!;
-    expect(covered.overall - uncovered.overall).toBeGreaterThanOrEqual(5);
-    expect(uncovered.penalty.items.some(i => /deboli a Ground/.test(i.text))).toBe(false);
-    expect(covered.penalty.items.some(i => /deboli a Ground/.test(i.text))).toBe(false);
-  });
 });

@@ -56,7 +56,7 @@ describe('Valutazione team', () => {
     await user.click(screen.getByLabelText('Testo Showdown'));
     await user.paste('Ninetales\nAbility: Drought\n- Flamethrower\n\nGreat Tusk\n- Headlong Rush');
     await user.click(screen.getByRole('button', { name: 'Importa' }));
-    expect(screen.getByRole('group', { name: 'Valutazione team' })).toHaveTextContent('Bonus/Malus +1 (−0 / +1)');
+    expect(screen.getByRole('group', { name: 'Valutazione team' })).toHaveTextContent('Bonus/Malus −1 (−2 / +1)');
     expect(screen.getByText((_, el) => el?.textContent === 'Col sole (Ninetales, Drought): Water ×2 → ×1 per Ninetales, Great Tusk · il meteo non è sempre attivo')).toBeInTheDocument();
   });
 
@@ -305,10 +305,10 @@ describe('Catalogo Bonus/Malus', () => {
     expect(screen.getByRole('meter')).not.toHaveAttribute('aria-label');
   });
 
-  it('Malus: i 9 malus con nome, quando e punti; gli attivi evidenziati col punteggio attuale', async () => {
+  it('Malus: gli 11 malus con nome, quando e punti; gli attivi evidenziati col punteggio attuale', async () => {
     const { dialog } = await openCatalog();
     const rows = within(within(dialog).getByRole('tabpanel')).getAllByRole('row').slice(1);
-    expect(rows).toHaveLength(9);
+    expect(rows).toHaveLength(11);
     const hazard = rows.find(r => within(r).queryByText('Hazard ripetuto'))!;
     expect(hazard).toHaveClass('active');
     expect(hazard).toHaveAttribute('aria-current', 'true');

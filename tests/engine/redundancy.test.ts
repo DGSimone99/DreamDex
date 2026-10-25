@@ -10,9 +10,19 @@ const withMoves = (species: string, moves: string[]): TeamSet => ({ ...emptySet(
 const items = (team: TeamSet[]) => redundancies(team, analyzeTeam(team, fixtureData)).items;
 
 describe('ridondanze', () => {
-  it('le debolezze condivise non sono una penalità (le misura la Difesa)', () => {
+  it('debolezze accumulate: 2 punti per ogni debole scoperto oltre il primo, anche su un tipo raro nel meta', () => {
     const team = ['Great Tusk', 'Garchomp', 'Dragapult'].map(n => mostCommonSet(fixtureStats, n)!);
-    expect(items(team).some(i => /deboli a/.test(i.text))).toBe(false);
+    // Ice è raro nella fixture, ma il voto non dipende dal meta del mese
+    expect(items(team)).toContainEqual(expect.objectContaining({ text: '3 membri deboli a Ice, nessuno resiste', points: 4, catalog: 'sharedWeak' }));
+  });
+
+  it('un solo debole non costa niente; tre deboli scoperti costano 4', () => {
+    const team = [withMoves('Great Tusk', []), withMoves('Garchomp', []), withMoves('Toxapex', [])];
+    // Ground: Toxapex debole, Tusk e Garchomp neutri → 1 solo debole, nessuna penalità
+    expect(items(team).some(i => i.text.includes('Ground'))).toBe(false);
+    const water = [withMoves('Great Tusk', []), withMoves('Landorus-Therian', []), withMoves('Hippowdon', [])];
+    // Water: 3 deboli scoperti → 2 punti per debole in più
+    expect(items(water)).toContainEqual(expect.objectContaining({ text: '3 membri deboli a Water, nessuno resiste', points: 4 }));
   });
 
   it('stesso hazard da più membri', () => {
@@ -51,9 +61,9 @@ describe('penalità e bonus del meteo', () => {
   const garchomp = withMoves('Garchomp', ['Earthquake']);
   const texts = (team: TeamSet[]) => rateTeam(team, fixtureData)!.penalty.items;
 
-  it('membro senza la condizione che gli serve: nessuna penalità, solo il coach', () => {
+  it('membro senza la condizione che gli serve: −3, e il coach lo segnala', () => {
     const team = [{ ...withMoves('Leafeon', ['Leaf Blade']), ability: 'Chlorophyll' }, garchomp];
-    expect(texts(team).map(i => i.text).join(' | ')).not.toMatch(/Chlorophyll/);
+    expect(texts(team)).toContainEqual(expect.objectContaining({ text: 'Leafeon ha Chlorophyll ma il team non porta il sole', points: 3, catalog: 'unmetCondition' }));
     // Il coach lo segnala ancora tra le condizioni
     expect(coachTeam(team, DEFAULT_FORMAT, fixtureData).problems)
       .toContainEqual(expect.objectContaining({ category: 'conditions', text: expect.stringMatching(/Leafeon.*Chlorophyll/) }));

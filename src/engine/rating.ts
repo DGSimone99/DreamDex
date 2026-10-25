@@ -20,7 +20,7 @@ import type { TeamSet } from './sets';
 import { t, type Lang } from '../i18n';
 import { gameName, typeName } from '../i18n/game';
 import { effectiveness, superEffectiveMoves, teamField, TYPES } from './types';
-import { conditionConflicts, conditionLabel, enables, viaName, unusedEnablers, weakenedMoves, weatherMitigations, type Condition } from './synergy';
+import { conditionConflicts, conditionLabel, enables, viaName, unmetBeneficiaries, unusedEnablers, weakenedMoves, weatherMitigations, type Condition } from './synergy';
 
 export type AreaKey = 'coverage' | 'defense' | 'strength' | 'bulk' | 'roles' | 'speed' | 'meta';
 /** Le aree del voto senza meta. */
@@ -87,7 +87,7 @@ export interface RatingArea {
 }
 
 /** Chiave della voce del catalogo bonus/malus a cui appartiene una voce del voto. */
-export type CatalogKey = 'hazardDuplicate' | 'removers' | 'weatherClash' | 'weakenedMove' | 'unusedEnabler'
+export type CatalogKey = 'sharedWeak' | 'hazardDuplicate' | 'removers' | 'weatherClash' | 'weakenedMove' | 'unmetCondition' | 'unusedEnabler'
   | 'weakMember' | 'essentialRole' | 'oneStyle' | 'trickRoomFast' | 'weatherHelp' | 'tera';
 
 export interface Redundancy {
@@ -242,12 +242,32 @@ export function memberIssues(team: TeamSet[], lang: Lang, needs: TeamNeeds): Red
   return items;
 }
 
+/**
+ * Debolezze condivise: 2 punti per ogni membro debole scoperto oltre il primo (deboli meno resistenti), su qualsiasi tipo.
+ * Tolte e poi rimesse dall'utente il 2026-10-25 dopo il bench: portano il distacco tra team da torneo e medi.
+ */
+export const SHARED_WEAK_POINTS = 2;
+/** Un membro che ha bisogno di una condizione (meteo, campo, Trick Room) che il team non porta: −3. */
+export const UNMET_POINTS = 3;
+
 export function redundancies(team: TeamSet[], analysis: TeamAnalysis, lang: Lang = 'it'): Redundancies {
+  // Il meta conta solo nell'area Meta: le debolezze si contano su tutti i tipi
+  const weaknesses = analysis.weakness
+    .filter(row => row.weak - row.resist >= 2)
+    .map(row => ({
+      text: t(lang, 'rating.redundancy.sharedWeak', {
+        n: row.weak, type: typeName(row.type, lang),
+        resistText: row.resist === 0 ? t(lang, 'rating.redundancy.noneResist') : t(lang, 'rating.redundancy.someResist', { n: row.resist }),
+      }),
+      points: (row.weak - row.resist - 1) * SHARED_WEAK_POINTS,
+      catalog: 'sharedWeak' as const,
+    }));
   const dependencies = [
+    ...unmetBeneficiaries(team).map(i => ({ text: t(lang, 'rating.redundancy.unmet', { member: i.member, via: viaName(i.via, lang), condition: conditionLabel(i.condition, lang) }), points: UNMET_POINTS, catalog: 'unmetCondition' as const })),
     ...unusedEnablers(team).map(i => ({ text: t(lang, 'rating.redundancy.unused', { via: viaName(i.via, lang), member: i.member }), points: 2, catalog: 'unusedEnabler' as const })),
   ];
   const items = [
-    ...roleAndTypeRedundancies(team, lang), ...dependencies, ...weatherClashes(team, lang),
+    ...weaknesses, ...roleAndTypeRedundancies(team, lang), ...dependencies, ...weatherClashes(team, lang),
     ...memberIssues(team, lang, analysis.needs),
   ];
   return { total: Math.min(MAX_PENALTY, sum(items.map(i => i.points))), items };
@@ -396,7 +416,7 @@ export interface CatalogEntry {
 }
 
 const CATALOG_ORDER: { key: CatalogKey; kind: 'malus' | 'bonus' }[] = [
-  ...(['hazardDuplicate', 'removers', 'weatherClash', 'weakenedMove', 'unusedEnabler', 'weakMember', 'essentialRole', 'oneStyle', 'trickRoomFast'] as const)
+  ...(['sharedWeak', 'hazardDuplicate', 'removers', 'weatherClash', 'weakenedMove', 'unmetCondition', 'unusedEnabler', 'weakMember', 'essentialRole', 'oneStyle', 'trickRoomFast'] as const)
     .map(key => ({ key, kind: 'malus' as const })),
   ...(['weatherHelp', 'tera'] as const).map(key => ({ key, kind: 'bonus' as const })),
 ];
@@ -404,7 +424,7 @@ const CATALOG_ORDER: { key: CatalogKey; kind: 'malus' | 'bonus' }[] = [
 /** Tutti i bonus e malus possibili, con il testo per il modale; i punti nei testi vengono dalle costanti. */
 export function bonusMalusCatalog(lang: Lang, teraCap: number): CatalogEntry[] {
   const values = {
-    hazard: HAZARD_DUPLICATE, hurt: WEATHER_HURT, hurtStab: WEATHER_HURT_STAB, member: WEAK_MEMBER_POINTS, memberMax: WEAK_MEMBER_MAX,
+    shared: SHARED_WEAK_POINTS, unmet: UNMET_POINTS, hazard: HAZARD_DUPLICATE, hurt: WEATHER_HURT, hurtStab: WEATHER_HURT_STAB, member: WEAK_MEMBER_POINTS, memberMax: WEAK_MEMBER_MAX,
     essential: ESSENTIAL_POINTS, style: ONE_STYLE_POINTS, room: TRICK_ROOM_MAX, help: WEATHER_HELP, cap: teraCap,
   };
   return CATALOG_ORDER.map(({ key, kind }) => ({
