@@ -1,6 +1,7 @@
 import { analyzeTeam, type TeamAnalysis } from './analysis';
+import type { Archetype } from './archetype';
 import type { EngineData } from './data';
-import { battleSpecies } from './dex';
+import { battleName, battleSpecies } from './dex';
 import type { Format } from './format';
 import { formatRules, type FormatRules } from './formatRules';
 import { detectRoles, type Role } from './roles';
@@ -87,24 +88,26 @@ export function diffContribution(original: TeamSet, candidate: TeamSet, analysis
 }
 
 /** `pool`: se indicato, si valutano solo questi set (ricerca e filtri) invece dei candidati delle statistiche. */
-function candidatesFor(team: TeamSet[], index: number, format: Format, data: EngineData, pool: TeamSet[] | undefined, lang: Lang) {
+function candidatesFor(team: TeamSet[], index: number, format: Format, data: EngineData, pool: TeamSet[] | undefined, lang: Lang, archetype?: Archetype) {
   const original = team[index];
   const rest = team.filter((_, i) => i !== index);
   const scored = (pool ? scoreSets(rest, format, data, pool, lang) : scoreCandidates(rest, format, data, [], lang))
-    .filter(s => s.species !== original.species);
+    // Lo stesso Pokémon del membro non è un sostituto: si confronta la forma in battaglia (Gardevoir con la Gardevoirite è Gardevoir-Mega)
+    .filter(s => battleName(s.set) !== battleName(original));
   // Se l'originale porta un meteo/campo di cui altri membri hanno bisogno, il sostituto deve portarlo anch'esso
   const needed = neededConditions(team, index);
   const keepers = needed.length ? scored.filter(s => providesAll(s.set, needed)) : scored;
-  return { original, rest, analysis: analyzeTeam(rest, data), scored: keepers.length ? keepers : scored };
+  // Col tipo di team scelto, i ruoli che mancano (e quindi guadagni e perdite) sono quelli di quel tipo
+  return { original, rest, analysis: analyzeTeam(rest, data, archetype), scored: keepers.length ? keepers : scored };
 }
 
-export function improveReplacements(team: TeamSet[], index: number, format: Format, data: EngineData, limit = 20, pool?: TeamSet[], lang: Lang = 'it'): Replacement[] {
-  const { original, rest, analysis, scored } = candidatesFor(team, index, format, data, pool, lang);
+export function improveReplacements(team: TeamSet[], index: number, format: Format, data: EngineData, limit = 20, pool?: TeamSet[], lang: Lang = 'it', archetype?: Archetype): Replacement[] {
+  const { original, rest, analysis, scored } = candidatesFor(team, index, format, data, pool, lang, archetype);
   return scored.slice(0, limit).map(s => ({ ...s, diff: diffContribution(original, s.set, analysis, rest) }));
 }
 
-export function similarReplacements(team: TeamSet[], index: number, format: Format, data: EngineData, limit = 20, pool?: TeamSet[], lang: Lang = 'it'): Replacement[] {
-  const { original, rest, analysis, scored } = candidatesFor(team, index, format, data, pool, lang);
+export function similarReplacements(team: TeamSet[], index: number, format: Format, data: EngineData, limit = 20, pool?: TeamSet[], lang: Lang = 'it', archetype?: Archetype): Replacement[] {
+  const { original, rest, analysis, scored } = candidatesFor(team, index, format, data, pool, lang, archetype);
   const rank = (r: Replacement) => 0.8 * (r.similarity ?? 0) + 0.2 * (r.score / 100);
   return scored
     .map(s => ({ ...s, similarity: similarity(original, s.set, formatRules(format.formatId)), diff: diffContribution(original, s.set, analysis, rest) }))
