@@ -1,4 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import { analyzeTeam } from '../../src/engine/analysis';
+import { describeDiff } from '../../src/engine/coach';
+import { diffContribution } from '../../src/engine/replace';
+import { typeName } from '../../src/i18n/game';
 import { teamNeeds } from '../../src/engine/needs';
 import { levelOf } from '../../src/engine/roleLevels';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
@@ -57,5 +61,26 @@ describe('swapGuard', () => {
     const after = [set('Zamazenta', 'Leftovers', 'Dauntless Shield', ['Body Press', 'Iron Defense', 'Crunch', 'Roar'], 'Impish', bulky), before[1], before[2]];
     expect(lostResistances(before, after)).toContain('Electric');
     expect(lostResistances(before, before)).toEqual([]);
+  });
+});
+
+describe('cosa perdi: resistenze uniche', () => {
+  const clodsire = set('Clodsire', 'Leftovers', 'Unaware', ['Spikes', 'Recover', 'Earthquake', 'Toxic'], 'Careful', bulky);
+  const zamazenta = set('Zamazenta', 'Leftovers', 'Dauntless Shield', ['Body Press', 'Iron Defense', 'Crunch', 'Roar'], 'Impish', bulky);
+  const rest = [
+    set('Toxapex', 'Black Sludge', 'Regenerator', ['Surf', 'Recover', 'Haze', 'Toxic'], 'Calm', bulky),
+    set('Corviknight', 'Leftovers', 'Pressure', ['Brave Bird', 'Roost', 'U-turn', 'Defog'], 'Impish', bulky),
+  ];
+
+  it('il diff segna i tipi a cui nessuno resiste più, e non li ripete fra le resistenze perse', () => {
+    const diff = diffContribution(clodsire, zamazenta, analyzeTeam(rest, fixtureData), rest);
+    expect(diff.lostResists).toContain('Electric');
+    expect(diff.losses.resists).not.toContain('Electric');
+  });
+
+  it('describeDiff: una riga "nessuno resiste più" in italiano e in inglese', () => {
+    const diff = diffContribution(clodsire, zamazenta, analyzeTeam(rest, fixtureData), rest);
+    expect(describeDiff(diff, 'it').cons).toContain(`Nessuno resiste più a ${typeName('Electric', 'it')}`);
+    expect(describeDiff(diff, 'en').cons).toContain('Nobody resists Electric anymore');
   });
 });

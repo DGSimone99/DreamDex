@@ -266,7 +266,7 @@ function findSwaps(team: TeamSet[], format: Format, data: EngineData): CoachSwap
       similar: similarity(option.member, pick.s.set, rules) >= SIMILAR_THRESHOLD,
       level: pick.level,
       ratingGain: pick.gain,
-      diff: diffContribution(option.member, pick.s.set, analyzeTeam(option.rest, data)),
+      diff: diffContribution(option.member, pick.s.set, analyzeTeam(option.rest, data), option.rest),
     });
   }
   return swaps;
@@ -333,7 +333,10 @@ export function ratingGainOf(team: TeamSet[], index: number, set: TeamSet, data:
 /** Cosa porta il sostituto e cosa perde il team, raggruppato per tipo. */
 export const describeDiff = (diff: Diff, lang: Lang = 'it') => ({
   pros: groupChanges(diff.gains, true, lang),
-  cons: groupChanges(diff.losses, false, lang),
+  cons: [
+    ...groupChanges(diff.losses, false, lang),
+    ...diff.lostResists.map(type => t(lang, 'diff.nobodyResists', { type: typeName(type, lang) })),
+  ],
 });
 
 export function describeSwap(swap: CoachSwap, lang: Lang = 'it'): SwapSummary {

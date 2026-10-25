@@ -114,6 +114,7 @@ export const it: Record<keyof typeof en, string> = {
   'diff.notStrong': "Non più forte contro {types}",
   'diff.resists': "Resistente a {types}",
   'diff.notResists': "Non più resistente a {types}",
+  'diff.nobodyResists': "Nessuno resiste più a {type}",
   'problemCategory.rules': "Regole",
   'problemCategory.defense': "Difese",
   'problemCategory.coverage': "Coverage",

@@ -9,7 +9,7 @@ afterEach(() => initGameNames(null));
 describe('testi del motore', () => {
   it('vantaggi e svantaggi in entrambe le lingue, tipi tradotti', () => {
     initGameNames({ moves: {}, abilities: {}, items: {}, natures: {}, types: { fire: 'Fuoco', ground: 'Terra' } });
-    const diff = { gains: { roles: ['pivot' as const], covers: [], resists: ['Ground' as const] }, losses: { ...none, covers: ['Fire' as const] } };
+    const diff = { gains: { roles: ['pivot' as const], covers: [], resists: ['Ground' as const] }, losses: { ...none, covers: ['Fire' as const] }, lostResists: [] };
     expect(describeDiff(diff, 'en')).toEqual({ pros: ['Pivot', 'Resists Ground'], cons: ['No longer strong against Fire'] });
     expect(describeDiff(diff, 'it')).toEqual({ pros: ['Pivot', 'Resistente a Terra'], cons: ['Non più forte contro Fuoco'] });
   });

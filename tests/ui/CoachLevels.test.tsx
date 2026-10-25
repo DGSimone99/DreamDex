@@ -8,7 +8,7 @@ import { emptySet } from '../../src/engine/sets';
 import { fixtureData } from '../fixtures/data';
 import { renderIt } from '../helpers/italian';
 
-const base = { index: 0, fit: 40, score: 60, similar: false, ratingGain: 8, diff: { gains: { roles: [], covers: [], resists: [] }, losses: { roles: [], covers: [], resists: [] } } };
+const base = { index: 0, fit: 40, score: 60, similar: false, ratingGain: 8, diff: { gains: { roles: [], covers: [], resists: [] }, losses: { roles: [], covers: [], resists: [] }, lostResists: [] } };
 const coaching: Coaching = {
   verdict: 'Team solido',
   teamType: { archetype: 'balance', styles: ['rain'] },
@@ -54,7 +54,7 @@ describe('sostituzioni gialle e verdi', () => {
 describe('sostituto selezionato in "Altri sostituti"', () => {
   it('aggiorna la raccomandazione dello stesso membro con i suoi pro e contro', () => {
     const preview = { index: 0, replacement: 'Skarmory', set: emptySet('Skarmory'), score: 35, similar: false, ratingGain: -5,
-      diff: { gains: { roles: [], covers: [], resists: ['Ground' as const] }, losses: { roles: [], covers: ['Fire' as const], resists: [] } } };
+      diff: { gains: { roles: [], covers: [], resists: ['Ground' as const] }, losses: { roles: [], covers: ['Fire' as const], resists: [] }, lostResists: [] } };
     renderIt(<CoachPanel coaching={coaching} preview={preview} onReplace={vi.fn()} />);
     const recommended = screen.getByRole('group', { name: 'Valuta di sostituire' });
     expect(within(recommended).getByText('Skarmory')).toBeInTheDocument();

@@ -8,6 +8,7 @@ import type { Lang } from '../i18n';
 import { scoreCandidates, scoreSets, type Suggestion } from './scoring';
 import type { TeamSet } from './sets';
 import { neededConditions, providesAll } from './synergy';
+import { lostResistances } from './swapGuard';
 import { defensiveMultiplier, superEffectiveMove, type TypeName } from './types';
 
 /** Cosa un membro porta al team: ruoli mancanti, tipi scoperti che colpisce, debolezze che resiste. */
@@ -20,6 +21,8 @@ export interface Contribution {
 export interface Diff {
   gains: Contribution;
   losses: Contribution;
+  /** Tipi a cui nessuno nel team resiste più dopo il cambio (fra le perdite non si ripetono). */
+  lostResists: TypeName[];
 }
 
 export interface Replacement extends Suggestion {
@@ -68,7 +71,8 @@ function contribution(set: TeamSet, analysis: TeamAnalysis): Contribution {
   };
 }
 
-export function diffContribution(original: TeamSet, candidate: TeamSet, analysis: TeamAnalysis): Diff {
+/** `rest`: gli altri membri del team, per le resistenze che dopo il cambio nessuno ha più. */
+export function diffContribution(original: TeamSet, candidate: TeamSet, analysis: TeamAnalysis, rest: TeamSet[]): Diff {
   const before = contribution(original, analysis);
   const after = contribution(candidate, analysis);
   const minus = <T,>(x: T[], y: T[]) => x.filter(value => !y.includes(value));
@@ -77,7 +81,9 @@ export function diffContribution(original: TeamSet, candidate: TeamSet, analysis
     covers: minus(from.covers, to.covers),
     resists: minus(from.resists, to.resists),
   });
-  return { gains: minusAll(after, before), losses: minusAll(before, after) };
+  const lostResists = lostResistances([...rest, original], [...rest, candidate]);
+  const losses = minusAll(before, after);
+  return { gains: minusAll(after, before), losses: { ...losses, resists: minus(losses.resists, lostResists) }, lostResists };
 }
 
 /** `pool`: se indicato, si valutano solo questi set (ricerca e filtri) invece dei candidati delle statistiche. */
@@ -89,19 +95,19 @@ function candidatesFor(team: TeamSet[], index: number, format: Format, data: Eng
   // Se l'originale porta un meteo/campo di cui altri membri hanno bisogno, il sostituto deve portarlo anch'esso
   const needed = neededConditions(team, index);
   const keepers = needed.length ? scored.filter(s => providesAll(s.set, needed)) : scored;
-  return { original, analysis: analyzeTeam(rest, data), scored: keepers.length ? keepers : scored };
+  return { original, rest, analysis: analyzeTeam(rest, data), scored: keepers.length ? keepers : scored };
 }
 
 export function improveReplacements(team: TeamSet[], index: number, format: Format, data: EngineData, limit = 20, pool?: TeamSet[], lang: Lang = 'it'): Replacement[] {
-  const { original, analysis, scored } = candidatesFor(team, index, format, data, pool, lang);
-  return scored.slice(0, limit).map(s => ({ ...s, diff: diffContribution(original, s.set, analysis) }));
+  const { original, rest, analysis, scored } = candidatesFor(team, index, format, data, pool, lang);
+  return scored.slice(0, limit).map(s => ({ ...s, diff: diffContribution(original, s.set, analysis, rest) }));
 }
 
 export function similarReplacements(team: TeamSet[], index: number, format: Format, data: EngineData, limit = 20, pool?: TeamSet[], lang: Lang = 'it'): Replacement[] {
-  const { original, analysis, scored } = candidatesFor(team, index, format, data, pool, lang);
+  const { original, rest, analysis, scored } = candidatesFor(team, index, format, data, pool, lang);
   const rank = (r: Replacement) => 0.8 * (r.similarity ?? 0) + 0.2 * (r.score / 100);
   return scored
-    .map(s => ({ ...s, similarity: similarity(original, s.set, formatRules(format.formatId)), diff: diffContribution(original, s.set, analysis) }))
+    .map(s => ({ ...s, similarity: similarity(original, s.set, formatRules(format.formatId)), diff: diffContribution(original, s.set, analysis, rest) }))
     .sort((a, b) => rank(b) - rank(a))
     .slice(0, limit);
 }
