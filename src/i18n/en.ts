@@ -837,6 +837,7 @@ export const en = {
   'suggest.target': "Who to replace",
   'suggest.targetLabel': "Replace",
   'suggest.teamType': "Team type",
+  'suggest.teamTypeShort': "Team",
   'suggest.anyType': "Any",
   'suggest.anyTypeNote': "Ranks only by how much the grade rises",
   'suggest.typeEmpty': "None of the best swaps keeps the team {type}: try Any or another type.",

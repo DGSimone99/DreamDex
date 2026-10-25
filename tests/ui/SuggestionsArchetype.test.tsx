@@ -132,6 +132,11 @@ describe('tipo di team in Aggiungi', () => {
     expect(names()).not.toContain('Dragapult');
   });
 
+  it('la tendina ha la sua etichetta visibile', async () => {
+    render(<App initialLang="it" data={fixtureData} />);
+    expect(types().closest('label')).toHaveTextContent(/^Team/);
+  });
+
   it('niente più Sostituto simile', async () => {
     await importTeam(STALL);
     expect(within(suggestions()).queryByRole('button', { name: 'Sostituto simile' })).toBeNull();

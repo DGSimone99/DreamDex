@@ -839,6 +839,7 @@ export const it: Record<keyof typeof en, string> = {
   'suggest.target': "Chi sostituire",
   'suggest.targetLabel': "Sostituisci",
   'suggest.teamType': "Tipo di team",
+  'suggest.teamTypeShort': "Team",
   'suggest.anyType': "Qualunque",
   'suggest.anyTypeNote': "Ordina solo per quanto sale il voto",
   'suggest.typeEmpty': "Nessuno dei cambi migliori mantiene il team {type}: prova Qualunque o un altro tipo.",
