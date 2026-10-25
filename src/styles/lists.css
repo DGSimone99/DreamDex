@@ -63,3 +63,30 @@
   .dex-grid { max-height: none; height: 100%; }
   .lists-side { position: static; top: auto; min-height: 0; overflow: auto; align-content: start; padding-bottom: 12px; }
 }
+/* Schermi bassi o stretti (portatili 1366×768, 1280×720): tutto resta in una schermata, card e strumenti più compatti */
+@media (min-width: 1100px) and ((max-width: 1279px) or (max-height: 799px)) {
+  .app { grid-template-columns: 190px minmax(0, 1fr); }
+  .rail { gap: 10px; padding-top: 12px; }
+  .rail h1 { font-size: 22px; }
+  .tabs.vertical [role='tab'] { padding: 7px 14px; font-size: 15px; }
+  .band { padding: 10px 16px 12px; gap: 12px; grid-template-columns: minmax(0, 1fr) 168px; }
+  .team-head { margin-bottom: 8px; }
+  .slots { gap: 8px; }
+  .slot > summary, .slot.empty { min-height: 0; height: 176px; padding: 6px 10px 10px; gap: 2px; }
+  .slot > summary .sprite { width: 64px; height: 64px; }
+  .slot > summary { --sprite-scale: 0.6667; }
+  .slot .slot-stats { margin: 0; }
+  .slot .roles { display: none; }
+  .slot .name { font-size: 15px; }
+  .slot .held, .slot .ability { font-size: 12px; }
+  .slot .type-chip { width: 52px; font-size: 10px; }
+  .empty-ring { width: 44px; height: 44px; }
+  .grade-badge .letter { font-size: 64px; }
+  .grade-badge .overall { font-size: 18px; }
+  .grade-areas { gap: 2px; margin-top: 2px; }
+  .tab-body { padding: 10px 16px 0; }
+  .toolbar > .segmented button { padding: 6px 10px; font-size: 13px; }
+  .toolbar .filters > summary { height: 34px; }
+  .picker.has-detail { grid-template-columns: minmax(0, 500px) minmax(0, 1fr); gap: 12px; }
+  .suggestion { padding: 6px 10px; }
+}
