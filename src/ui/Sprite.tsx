@@ -46,7 +46,7 @@ const reducedMotion = () =>
  * Con `animated` sopra lo statico va l'idle animato di Showdown (gen5ani): lo statico resta visibile
  * finché l'animato non è caricato, e resta da solo se l'animazione non esiste o il sistema riduce le animazioni.
  */
-export function Sprite({ species, item = '', size = 96, animated = false }: { species: string; item?: string; size?: number; animated?: boolean }) {
+export function Sprite({ species, item = '', size = 96, animated = false, shiny = false }: { species: string; item?: string; size?: number; animated?: boolean; shiny?: boolean }) {
   const name = battleSpecies({ species, item })?.name ?? species;
   const id = spriteId(name);
   const [failed, setFailed] = useState<string | null>(null);
@@ -58,7 +58,7 @@ export function Sprite({ species, item = '', size = 96, animated = false }: { sp
     <>
       <img
         className={`sprite${showAni && state.ready ? ' covered' : ''}`}
-        src={`https://play.pokemonshowdown.com/sprites/gen5/${id}.png`}
+        src={`https://play.pokemonshowdown.com/sprites/gen5${shiny ? '-shiny' : ''}/${id}.png`}
         alt=""
         width={size}
         height={size}
@@ -68,7 +68,7 @@ export function Sprite({ species, item = '', size = 96, animated = false }: { sp
       {showAni && (
         <img
           className="sprite-ani"
-          src={`https://play.pokemonshowdown.com/sprites/gen5ani/${id}.gif`}
+          src={`https://play.pokemonshowdown.com/sprites/gen5ani${shiny ? '-shiny' : ''}/${id}.gif`}
           alt=""
           // Altezza vera della GIF (ritagliata sul Pokémon, da ~40 a 143 px): il CSS la usa per farla stare nella card
           style={state.height ? { '--ani-h': state.height } as CSSProperties : undefined}

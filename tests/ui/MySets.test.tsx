@@ -89,9 +89,4 @@ describe('azioni del membro', () => {
     expect(link.closest('.preset-group')).not.toBeNull();
   });
 
-  it('Sostituisci sta accanto al nome del membro', async () => {
-    const { slot } = await openEditor();
-    expect(within(slot).getByRole('button', { name: 'Sostituisci Great Tusk' }).closest('.editor-top')).not.toBeNull();
-    expect(within(slot).getByRole('button', { name: 'Sostituisci Great Tusk' }).closest('.editor-actions')).toBeNull();
-  });
 });

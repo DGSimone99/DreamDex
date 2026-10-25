@@ -164,8 +164,24 @@ function TeamSlot({ index, set, subRoles, data, format, warning: megaWarning, op
   const name = battleName(set);
   const ability = battleAbility(set);
   const [copied, setCopied] = useState(false);
+  // Soprannome: si scrive cliccando il nome nell'editor; vuoto = il nome della specie
+  const [naming, setNaming] = useState(false);
+  const commitName = (value: string) => {
+    setNaming(false);
+    const next = value.trim();
+    if (next !== (set.name ?? '')) stable.onChange({ ...set, name: next || undefined });
+  };
   // Incolla set: testo Showdown di un solo membro, applicato per intero
   const [paste, setPaste] = useState<{ text: string; error: string | null } | null>(null);
+  // Importa / Esporta: il riquadro si apre sotto il pulsante e si chiude cliccando fuori
+  const ioRef = useRef<HTMLSpanElement>(null);
+  const ioOpen = !!paste;
+  useEffect(() => {
+    if (!ioOpen) return;
+    const away = (e: PointerEvent) => { if (!ioRef.current?.contains(e.target as Node)) setPaste(null); };
+    document.addEventListener('pointerdown', away);
+    return () => document.removeEventListener('pointerdown', away);
+  }, [ioOpen]);
   const applyPaste = () => {
     if (!paste) return;
     const result = importShowdown(paste.text, lang);
@@ -238,7 +254,7 @@ function TeamSlot({ index, set, subRoles, data, format, warning: megaWarning, op
           )}
         </span>
         <span className="sprite-wrap">
-          <Sprite species={set.species} item={set.item} animated={open} />
+          <Sprite species={set.species} item={set.item} animated={open} shiny={!!set.shiny} />
           {(dangers.length > 0 || warns.length > 0) && (
             <span className="sprite-alerts">
               <AlertMark alerts={warns} className="on-sprite" />
@@ -280,7 +296,8 @@ function TeamSlot({ index, set, subRoles, data, format, warning: megaWarning, op
             <ItemIcon item={set.item} size={20} />
             <span className="visually-hidden">{set.item ? gameName('item', set.item, lang) : tr('team.noItem')}</span>
           </small>
-          <strong className="name">{name}</strong>
+          {/* Il soprannome, se c'è (la specie nel tooltip) */}
+        <strong className="name" title={set.name ? name : undefined}>{set.name || name}</strong>
         </span>
         <small className="ability" title={describe.ability(ability, lang)}>{ability ? gameName('ability', ability, lang) : '—'}</small>
         <span className="types">{species?.types.map(type => <TypeChip key={type} type={type} />) ?? <TypeChip type="?" />}</span>
@@ -297,10 +314,27 @@ function TeamSlot({ index, set, subRoles, data, format, warning: megaWarning, op
           </button>
         }
         title={open && (
-          // Solo visivo: nome e tipi li annuncia già la card (il nome via CSS, così non è un secondo testo uguale)
-          <div className="editor-title" aria-hidden="true">
-            <strong data-name={name} />
-            <span className="types">{species?.types.map(type => <TypeChip key={type} type={type} />)}</span>
+          <div className="editor-title">
+            {naming ? (
+              <input className="nickname-input" autoFocus aria-label={tr('team.nickname', { species: name })} maxLength={18}
+                placeholder={name} defaultValue={set.name ?? ''}
+                onBlur={e => commitName(e.currentTarget.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') { e.preventDefault(); commitName(e.currentTarget.value); }
+                  else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); setNaming(false); }
+                }} />
+            ) : (
+              // Il nome arriva via CSS (data-name): non è un secondo testo uguale a quello della carta
+              <button type="button" className="nickname" aria-label={tr('team.nickname', { species: name })} title={tr('team.nicknameTitle')}
+                onClick={() => setNaming(true)}>
+                <strong data-name={set.name || name} />
+              </button>
+            )}
+            <span className="types" aria-hidden="true">{species?.types.map(type => <TypeChip key={type} type={type} />)}</span>
+            <button type="button" className="shiny-toggle" aria-pressed={!!set.shiny} aria-label={tr('team.shiny')} title={tr('team.shiny')}
+              onClick={() => stable.onChange({ ...set, shiny: set.shiny ? undefined : true })}>
+              <Icon name="spark" filled={!!set.shiny} />
+            </button>
           </div>
         )}
         memberAction={
@@ -310,31 +344,33 @@ function TeamSlot({ index, set, subRoles, data, format, warning: megaWarning, op
         }
         smogonAction={<SmogonLink species={name} format={format} presets={presets} iconOnly />}
         ioAction={
-          <button type="button" className="member-io" aria-expanded={!!paste} title={tr('team.memberIO')}
-            onClick={() => setPaste(p => (p ? null : { text: exportShowdown([set], { tera: teraAllowed(format) }), error: null }))}>
-            <Icon name="paste" /> {tr('team.memberIO')}
-          </button>
+          <span className="io-anchor" ref={ioRef}>
+            <button type="button" className="member-io" aria-expanded={!!paste} title={tr('team.memberIO')}
+              onClick={() => setPaste(p => (p ? null : { text: exportShowdown([set], { tera: teraAllowed(format) }), error: null }))}>
+              <Icon name="paste" /> {tr('team.memberIO')}
+            </button>
+  {paste && (
+    <div className="paste-panel" onKeyDown={e => { if (e.key === 'Escape') { e.stopPropagation(); setPaste(null); } }}>
+      <textarea aria-label={tr('team.pasteText')} rows={7} autoFocus value={paste.text} placeholder={tr('team.pastePlaceholder')}
+        onChange={e => setPaste({ text: e.target.value, error: null })} />
+      <p className="paste-hint">{tr('team.pasteHint')}</p>
+      {paste.error && <p className="paste-error" role="alert">{paste.error}</p>}
+      <div className="paste-actions">
+        <button type="button" className="apply" disabled={!paste.text.trim()} onClick={applyPaste}>{tr('team.pasteApply')}</button>
+        <button type="button" onClick={async () => {
+          if (await copyText(exportShowdown([set], { tera: teraAllowed(format) }))) { setCopied(true); setTimeout(() => setCopied(false), 1500); }
+        }}><Icon name={copied ? 'check' : 'copy'} /> {tr(copied ? 'team.copied' : 'team.copySet')}</button>
+        <button type="button" onClick={() => setPaste(null)}>{tr('team.pasteCancel')}</button>
+      </div>
+    </div>
+  )}
+          </span>
         }
         actions={<>
           {megaWarning && <button type="button" onClick={stable.onIgnoreWarning}>{tr('team.keepMega')}</button>}
           <button type="button" className="editor-close" aria-label={tr('team.closeEditor')} title={tr('team.closeEditor')}
             onClick={() => { onToggle(false); card.current?.focus(); }}><Icon name="close" /></button>
         </>} />
-      {paste && (
-        <div className="paste-panel" onKeyDown={e => { if (e.key === 'Escape') { e.stopPropagation(); setPaste(null); } }}>
-          <textarea aria-label={tr('team.pasteText')} rows={7} autoFocus value={paste.text} placeholder={tr('team.pastePlaceholder')}
-            onChange={e => setPaste({ text: e.target.value, error: null })} />
-          <p className="paste-hint">{tr('team.pasteHint')}</p>
-          {paste.error && <p className="paste-error" role="alert">{paste.error}</p>}
-          <div className="paste-actions">
-            <button type="button" className="apply" disabled={!paste.text.trim()} onClick={applyPaste}>{tr('team.pasteApply')}</button>
-            <button type="button" onClick={async () => {
-              if (await copyText(exportShowdown([set], { tera: teraAllowed(format) }))) { setCopied(true); setTimeout(() => setCopied(false), 1500); }
-            }}><Icon name={copied ? 'check' : 'copy'} /> {tr(copied ? 'team.copied' : 'team.copySet')}</button>
-            <button type="button" onClick={() => setPaste(null)}>{tr('team.pasteCancel')}</button>
-          </div>
-        </div>
-      )}
       </div>
     </details>
   );
