@@ -84,6 +84,7 @@ const STATES: Record<string, State> = {
   'stats-pop': { run: async p => focus(p, '.stats-badge') },
   alert: { run: async p => focus(p, '.alert-mark') },
   undo: { run: async p => clickText(p, 'button.remove', /Rimuovi/) },
+  collapsed: { hash: hash(LONG), run: async p => clickText(p, 'button.band-toggle', /./) },
   empty: { hash: '' },
   'en-compact': { lang: 'en' },
   'long-names': { hash: hash(LONG) },

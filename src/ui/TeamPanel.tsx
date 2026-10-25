@@ -313,7 +313,8 @@ function TeamSlot({ index, set, subRoles, data, format, warning: megaWarning, op
             <span className="visually-hidden">{set.item ? gameName('item', set.item, lang) : tr('team.noItem')}</span>
           </small>
           {/* Il soprannome, se c'è (la specie nel tooltip) */}
-        <strong className="name" title={set.name ? name : undefined}>{set.name || name}</strong>
+        {/* Il nome intero nel tooltip: nella barra compressa si taglia con i puntini */}
+        <strong className="name" title={set.name ? `${set.name} (${name})` : name}>{set.name || name}</strong>
         </span>
         <small className="ability" title={describe.ability(ability, lang)}>{ability ? gameName('ability', ability, lang) : '—'}</small>
         <span className="types">{species?.types.map(type => <TypeChip key={type} type={type} />) ?? <TypeChip type="?" />}</span>

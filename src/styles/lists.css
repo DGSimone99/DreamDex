@@ -89,7 +89,8 @@
   .slot .roles { display: none; }
   .slot .name { font-size: 15px; }
   .slot .held, .slot .ability { font-size: 12px; }
-  .slot .type-chip { width: 52px; }
+  /* Tipi lunghi (Coleottero, Folletto): il chip si allarga invece di schiacciare il testo */
+  .slot .type-chip { width: auto; min-width: 52px; padding-inline: 6px; }
   .empty-ring { width: 44px; height: 44px; }
   .grade-badge .letter { font-size: 64px; }
   .grade-badge .overall { font-size: 18px; }
@@ -131,7 +132,7 @@
 .band.collapsed .slot > summary { height: 48px; padding: 0 10px 0 6px; flex-direction: row; align-items: center; justify-content: flex-start; gap: 6px; }
 /* Pillola: icona del box, nome e icona dello strumento; il membro aperto nell'editor ha il contorno ciano */
 .band.collapsed .slot > summary > .name-line { display: flex; flex-direction: row-reverse; justify-content: flex-end; align-items: center; flex: 1; min-width: 0; margin: 0; }
-.band.collapsed .slot .name-line .name { flex: 1; font-size: 13px; line-height: 15px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+.band.collapsed .slot .name-line .name { flex: 1; min-width: 0; font-size: 13px; line-height: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* Nella barra il problema lo dice il puntino: niente bordo colorato attorno alla pillola */
 .band.collapsed .slot.invalid > summary, .band.collapsed .slot.warn > summary { outline: none; }
 .band.collapsed .slot[open] > summary { outline: 2px solid var(--accent); outline-offset: -2px; }
@@ -279,23 +280,6 @@
 .editor-roles ul { flex-wrap: nowrap; overflow: hidden; }
 .editor-roles li { white-space: nowrap; }
 .editor-foot .member-replace { flex: none; height: 36px; white-space: nowrap; }
-/* Schermi bassi: l'editor resta senza barra di scorrimento (preset più stretti su una riga, righe delle statistiche compatte) */
-@media (min-width: 1100px) and ((max-width: 1279px) or (max-height: 799px)) {
-  .drawer { padding-top: 22px; padding-bottom: 10px; }
-  .set-editor { gap: 8px 14px; }
-  .set-editor .editor-head { gap: 10px; }
-  .set-editor .editor-head .btn-label { display: none; }
-  .set-editor .editor-head .best-preset, .set-editor .editor-head .member-io { width: 38px; padding: 0; justify-content: center; }
-  .set-editor .preset-field { width: 250px; }
-  .set-editor .my-sets-field { width: 210px; }
-  .stat-row { padding-top: 0; padding-bottom: 0; }
-  .set-editor .ev-input, .set-editor .iv-input { height: 25px; }
-  .set-editor .evs { gap: 4px; }
-  .set-editor fieldset { padding-bottom: 8px; }
-  .set-editor .editor-group { gap: 6px 12px; }
-  .set-editor .evs .speed-line { padding-top: 4px; }
-  .editor-roles li { padding: 2px 8px; font-size: 12px; }
-}
 /* Riquadro Ruoli basso: una riga di etichette compatte */
 .set-editor fieldset.editor-roles { padding: 2px 12px 8px; }
 .editor-roles ul { margin-top: 2px; }
@@ -307,19 +291,25 @@
   .set-editor .ev-input, .set-editor .iv-input { height: 26px; }
   .set-editor .evs { gap: 6px; }
 }
-@media (min-width: 1100px) and ((max-width: 1279px) or (max-height: 799px)) {
-  .set-editor .editor-head { row-gap: 6px; }
-  .set-editor .evs .stats-toolbar { margin: 4px 0 0; }
-  .set-editor .ev-input, .set-editor .iv-input { height: 24px; }
-  .set-editor .stat-rows { gap: 1px; }
-  .set-editor fieldset.editor-roles { padding: 0 10px 6px; }
-}
+/* Schermi bassi (1366×768, 1280×720): l'editor resta senza barra di scorrimento (preset più stretti su una riga, righe delle statistiche compatte) */
 @media (min-width: 1100px) and ((max-width: 1279px) or (max-height: 799px)) {
   .drawer { padding-top: 18px; padding-bottom: 6px; }
+  .set-editor { gap: 6px 14px; }
+  .set-editor .editor-head { gap: 10px; row-gap: 6px; }
+  .set-editor .editor-head .btn-label { display: none; }
+  .set-editor .editor-head .best-preset, .set-editor .editor-head .member-io { width: 38px; padding: 0; justify-content: center; }
+  .set-editor .preset-field { width: 250px; }
+  .set-editor .my-sets-field { width: 210px; }
+  .stat-row { padding-top: 0; padding-bottom: 0; }
+  .set-editor .ev-input, .set-editor .iv-input { height: 24px; }
+  .set-editor .evs { gap: 4px; }
+  .set-editor .evs .stats-toolbar { margin: 4px 0 0; }
+  .set-editor .stat-rows { gap: 1px; }
+  .set-editor fieldset { padding-bottom: 8px; }
+  .set-editor fieldset.editor-roles { padding: 0 10px 6px; }
+  .set-editor .editor-group { gap: 6px 12px; }
+  .set-editor .evs .speed-line { padding-top: 4px; }
   .editor-title .species-tag { bottom: calc(100% + 3px); }
-}
-@media (min-width: 1100px) and ((max-width: 1279px) or (max-height: 799px)) {
-  .set-editor { row-gap: 6px; }
 }
 /* Importa / Esporta allineato al bordo destro del suo pulsante (non esce dallo schermo); Copia set attaccato */
 .io-anchor .paste-panel { left: auto; right: 0; width: min(440px, 80vw); }

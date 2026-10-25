@@ -43,7 +43,7 @@ describe('testata dell\'editor', () => {
     expect(slot().querySelector('.editor-title .species-tag')).toHaveTextContent('Great Tusk');
     // Sulla carta il soprannome, con la specie nel tooltip
     expect(slot().querySelector('summary .name')).toHaveTextContent('Tusky');
-    expect(slot().querySelector('summary .name')).toHaveAttribute('title', 'Great Tusk');
+    expect(slot().querySelector('summary .name')).toHaveAttribute('title', 'Tusky (Great Tusk)');
     await user.click(within(slot()).getByRole('button', { name: 'Importa / Esporta set' }));
     expect((within(slot()).getByLabelText('Set da incollare (testo Showdown)') as HTMLTextAreaElement).value).toMatch(/^Tusky \(Great Tusk\)/);
   });
