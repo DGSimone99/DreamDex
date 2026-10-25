@@ -157,4 +157,65 @@ describe('dettaglio: abilità in battaglia', () => {
     expect(list().querySelector('.stats-badge')).toBeNull();
     expect(screen.getByRole('complementary', { name: /^Dettaglio di / }).querySelector('.stats-badge')).not.toBeNull();
   });
+
+  it('stall: la Velocità nel dettaglio è grigia, con la nota e senza variazione', async () => {
+    const user = userEvent.setup();
+    render(<App initialLang="it" data={fixtureData} />);
+    await user.click(screen.getByLabelText('Testo Showdown'));
+    await user.paste([
+      `Dondozo @ Leftovers
+Ability: Unaware
+EVs: 252 HP / 252 Def / 4 SpD
+Impish Nature
+- Body Press
+- Liquidation
+- Rest
+- Sleep Talk`,
+      `Blissey @ Leftovers
+Ability: Natural Cure
+EVs: 4 HP / 252 Def / 252 SpD
+Bold Nature
+- Protect
+- Seismic Toss
+- Toxic
+- Wish`,
+      `Clodsire @ Leftovers
+Ability: Unaware
+EVs: 252 HP / 4 Def / 252 SpD
+Careful Nature
+- Amnesia
+- Poison Jab
+- Recover
+- Spikes`,
+      `Corviknight @ Leftovers
+Ability: Pressure
+EVs: 252 HP / 168 Def / 88 SpD
+Impish Nature
+- Body Press
+- Defog
+- Iron Defense
+- Roost`,
+      `Gliscor @ Toxic Orb
+Ability: Poison Heal
+EVs: 244 HP / 248 Def / 16 Spe
+Impish Nature
+- Earthquake
+- Protect
+- Stealth Rock
+- Toxic`,
+      `Toxapex @ Rocky Helmet
+Ability: Regenerator
+EVs: 252 HP / 252 Def / 4 SpD
+Bold Nature
+- Knock Off
+- Recover
+- Scald
+- Toxic Spikes`,
+    ].join('\n\n'));
+    await user.click(screen.getByRole('button', { name: 'Importa' }));
+    const speed = screen.getByRole('complementary', { name: /^Dettaglio di / }).querySelector('.detail-areas .inactive')!;
+    expect(speed).toHaveTextContent(/^Velocità/);
+    expect(speed.querySelector('dt')).toHaveAttribute('aria-description', 'Non conta nello Stall');
+    expect(speed.querySelector('.change')).toHaveTextContent(/^$/);
+  });
 });

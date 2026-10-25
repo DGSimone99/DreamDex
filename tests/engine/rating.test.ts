@@ -15,7 +15,7 @@ import { superEffectiveMoves, TYPES, weaknessTable } from '../../src/engine/type
 
 /** Coverage difensiva mostrata: riferimento all'80%, poi la cima più lenta. */
 const defenseShown = (percent: number) => Math.round(100 * areaValue(percent / 100, DEFENSE_FULL));
-import { mostCommonSet, type TeamSet } from '../../src/engine/sets';
+import { emptySet, mostCommonSet, type TeamSet } from '../../src/engine/sets';
 import { fixtureData, fixtureStats, gholdengo, tusk } from '../fixtures/data';
 
 const value = (rating: ReturnType<typeof rateTeam>, key: string) => rating!.areas.find(a => a.key === key)!.value;
@@ -171,5 +171,14 @@ describe('membro debole e controllo velocità', () => {
     expect(issues(['Sticky Web', 'Present'])).toEqual([]);
     expect(issues(['Thunder Wave', 'Present'])).toEqual([]);
     expect(issues(['Present', 'Drill Peck'])).toHaveLength(1);
+  });
+
+  it('membri deboli: −2 ciascuno, al massimo −6', () => {
+    const weak: TeamSet = { species: 'Delibird', ability: 'Hustle', item: '', moves: ['Present', 'Drill Peck'], nature: 'Serious', evs: {} };
+    const team = [weak, weak, weak, weak];
+    const issues = memberIssues(team, 'it', teamNeeds(team, fixtureData));
+    expect(issues).toHaveLength(4);
+    expect(issues.reduce((a, b) => a + b.points, 0)).toBe(6);
+    expect(issues.every(i => i.points <= 2)).toBe(true);
   });
 });

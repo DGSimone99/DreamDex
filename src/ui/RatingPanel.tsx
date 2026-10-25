@@ -1,15 +1,15 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { useEditing } from './editing';
-import type { TeamRating } from '../engine/rating';
+import { MAX_PENALTY, type TeamRating } from '../engine/rating';
 import { roleShortLabel } from '../engine/roles';
 import { rolesList } from '../engine/subRoles';
 import { Typed } from './TypeText';
 import { AlertMark } from './AlertMark';
 import { RatingHelp } from './RatingHelp';
-import { AreaDetail, type DetailArea } from './AreaDetail';
+import { AreaDetail, signed, type DetailArea } from './AreaDetail';
 import { useLang, useT } from '../i18n/react';
 
-const isDetailArea = (key: string): key is DetailArea => key === 'strength' || key === 'defense' || key === 'speed' || key === 'roles';
+const isDetailArea = (key: string): key is DetailArea => key === 'strength' || key === 'defense' || key === 'speed' || key === 'roles' || key === 'bonusMalus';
 
 /** `ruleIssues`: problemi di regole del team (vietati, Mega, mosse non legali…): triangolo rosso accanto al voto. */
 /** `metaMonth`: mese delle statistiche, per dire con quale meta è stato calcolato il voto. */
@@ -18,8 +18,15 @@ export function RatingPanel({ rating, ruleIssues = [], metaMonth }: { rating: Te
   const lang = useLang();
   // Dettaglio dell'area (sottostatistiche per membro); alla chiusura il focus torna alla barra
   const [detail, setDetail] = useState<DetailArea | null>(null);
+  const netLabelId = useId();
   const detailButtons = useRef<Partial<Record<DetailArea, HTMLButtonElement | null>>>({});
   const closeDetail = () => { const area = detail; setDetail(null); if (area) detailButtons.current[area]?.focus(); };
+  // Bonus meno malus (il malus è già limitato a MAX_PENALTY): il segno usa il meno tipografico
+  const net = rating.bonus.total - rating.penalty.total;
+  // Un totale a 0 si scrive "0" senza segno; con entrambi a 0 resta solo il netto
+  const netText = rating.penalty.total === 0 && rating.bonus.total === 0
+    ? `${t('area.bonusMalus')} 0`
+    : t('rating.net', { net: signed(net), penalty: signed(-rating.penalty.total), bonus: signed(rating.bonus.total) });
   return (
     <details open aria-label={t('rating.title')} className="block rating">
       <summary>
@@ -55,13 +62,17 @@ export function RatingPanel({ rating, ruleIssues = [], metaMonth }: { rating: Te
               // Ruoli: i sotto-ruoli di ogni membro (valore almeno 0,5), coi nomi brevi
               ? rating.roles.members.map(m => `${m.species} ${rolesList(m.values).map(r => roleShortLabel(r, lang)).join(' · ') || '—'}`).join('\n')
             : undefined;
+          // Area senza peso (la Velocità nello stall): visibile ma grigia, con la nota nel tooltip
+          const note = area.inactive ? t('rating.notCounted') : undefined;
+          const fullTip = tip && note ? `${tip}
+${note}` : tip ?? note;
           return (
-            <div key={area.key}>
+            <div key={area.key} className={area.inactive ? 'inactive' : undefined}>
               <dt>
                 {isDetailArea(area.key) ? (
                   // Offesa, Difesa, Velocità e Ruoli aprono il loro dettaglio: sottostatistiche e punteggio di ogni membro
-                  <button ref={el => { detailButtons.current[area.key as DetailArea] = el; }} type="button" className={tip ? 'area-link tip' : 'area-link'}
-                    aria-haspopup="dialog" onClick={() => setDetail(area.key as DetailArea)} data-tip={tip} title={tip ? undefined : t('detail.open', { area: area.label })}>
+                  <button ref={el => { detailButtons.current[area.key as DetailArea] = el; }} type="button" className={fullTip ? 'area-link tip' : 'area-link'}
+                    aria-haspopup="dialog" onClick={() => setDetail(area.key as DetailArea)} data-tip={fullTip} aria-description={area.inactive ? note : undefined} title={fullTip ? undefined : t('detail.open', { area: area.label })}>
                     {text}
                   </button>
                 ) : tip ? (
@@ -72,24 +83,30 @@ export function RatingPanel({ rating, ruleIssues = [], metaMonth }: { rating: Te
             </div>
           );
         })}
-      </dl>
-      {rating.bonus.total > 0 && (
-        <div className="bonus">
-          <strong>{t('rating.bonus', { n: rating.bonus.total })}</strong>
-          <ul>
-            {rating.bonus.items.map(item => <li key={item.text}><Typed text={item.text} /> (+{item.points})</li>)}
-          </ul>
+        {/* Bonus/Malus: barra a tutta larghezza sotto le aree, centrata sullo zero (rosso a sinistra, blu a destra) */}
+        <div className="net-row">
+          <dt>
+            {/* Il catalogo di tutti i bonus e malus; il focus torna qui alla chiusura */}
+            <button ref={el => { detailButtons.current.bonusMalus = el; }} id={netLabelId} type="button" className="area-link"
+              aria-haspopup="dialog" onClick={() => setDetail('bonusMalus')} title={t('catalogue.open')}>
+              {netText}
+            </button>
+          </dt>
+          <dd>
+            <div className="net-bar" role="meter" aria-labelledby={netLabelId} aria-valuemin={-MAX_PENALTY} aria-valuemax={MAX_PENALTY} aria-valuenow={net}>
+              <span className="net-tick" />
+              {net !== 0 && <span className={`net-fill ${net < 0 ? 'neg' : 'pos'}`} style={{ width: `${Math.min(Math.abs(net), MAX_PENALTY) / MAX_PENALTY * 50}%` }} />}
+            </div>
+          </dd>
         </div>
+      </dl>
+      {(rating.penalty.items.length > 0 || rating.bonus.items.length > 0) && (
+        <ul className="net-list">
+          {rating.penalty.items.map(item => <li key={`m${item.text}`} className="neg"><Typed text={item.text} />{item.points > 0 && ` (−${item.points})`}</li>)}
+          {rating.bonus.items.map(item => <li key={`b${item.text}`} className="pos"><Typed text={item.text} />{item.points > 0 && ` (+${item.points})`}</li>)}
+        </ul>
       )}
       {detail && <AreaDetail rating={rating} area={detail} onClose={closeDetail} />}
-      {rating.penalty.total > 0 && (
-        <div className="penalty">
-          <strong>{t('rating.penalty', { n: rating.penalty.total })}</strong>
-          <ul>
-            {rating.penalty.items.map(item => <li key={item.text}><Typed text={item.text} /> (−{item.points})</li>)}
-          </ul>
-        </div>
-      )}
     </details>
   );
 }

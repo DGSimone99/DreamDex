@@ -145,6 +145,12 @@ describe('dettaglio della Difesa a schede', () => {
     for (const row of rows) for (const cell of within(row).getAllByRole('cell')) expect(cell).toHaveTextContent(/^\d+$/);
   });
 
+  it('Coverage tipi: spiega i punti per tipo (immunità +2 ... ×4 −2)', async () => {
+    const { user, dialog } = await openDefense('it');
+    await user.click(within(dialog).getByRole('tab', { name: /^Coverage tipi/ }));
+    expect(within(dialog).getByRole('tabpanel')).toHaveTextContent('immunità +2, ×¼ +1,5, ×½ +1, neutro 0, debolezza ×2 −1, ×4 −2');
+  });
+
   it('Robustezza: attaccanti fisici e speciali per membro, con il danno del colpo standard e la soglia', async () => {
     const { user, dialog } = await openDefense('it');
     await user.click(within(dialog).getByRole('tab', { name: /^Robustezza/ }));

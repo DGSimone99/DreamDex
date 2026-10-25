@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactElement } from 'react';
 import { createPortal } from 'react-dom';
-import type { TeamRating } from '../engine/rating';
+import { MAX_BONUS, MAX_PENALTY, bonusMalusCatalog, type CatalogEntry, type TeamRating } from '../engine/rating';
 import { stepBucket, type CoverageDetail, type WallCell } from '../engine/offense';
 import type { TeamDefense } from '../engine/defense';
 import { CONTROL_CONDITIONS, type MemberSpeed, type SpeedCondition, type TeamSpeed } from '../engine/speedArea';
@@ -8,7 +8,7 @@ import { ESSENTIAL_POINTS, type TeamRoles } from '../engine/rolesArea';
 import { MISSING_BELOW } from '../engine/needs';
 import type { Level, LevelKey } from '../engine/roleLevels';
 import { FAMILIES, secondaryRoles, type Family, type SubRole, type SubRoleReason } from '../engine/subRoles';
-import { useT } from '../i18n/react';
+import { useLang, useT } from '../i18n/react';
 import { Icon } from './icons';
 import { Sprite, TypeChip } from './Sprite';
 
@@ -35,10 +35,14 @@ function WallValue({ cell }: { cell: WallCell }) {
  * Dettaglio di un'area (Offesa o Difesa): una scheda generale e una per sottostatistica, ognuna con come si calcola
  * e il valore di ogni membro. Stesso guscio del modale "Come funziona il voto", con le schede a sinistra.
  */
-export type DetailArea = 'strength' | 'defense' | 'speed' | 'roles';
+export type DetailArea = 'strength' | 'defense' | 'speed' | 'roles' | 'bonusMalus';
+
+/** Punti col segno tipografico (meno vero, non il trattino). */
+export const signed = (n: number) => (n < 0 ? `−${-n}` : n > 0 ? `+${n}` : '0');
 
 export function AreaDetail({ rating, area, onClose }: { rating: TeamRating; area: DetailArea; onClose: () => void }) {
   const t = useT();
+  if (area === 'bonusMalus') return <CatalogueDetail rating={rating} onClose={onClose} />;
   const value = rating.areas.find(a => a.key === area)?.value ?? null;
   const tabs = area === 'strength' ? offenseTabs(rating, t)
     : area === 'defense' ? defenseTabs(rating.defense, !!rating.meta, t)
@@ -47,7 +51,7 @@ export function AreaDetail({ rating, area, onClose }: { rating: TeamRating; area
   return <DetailShell title={t(`area.${area}`)} value={value} tabs={tabs} onClose={onClose} />;
 }
 
-function DetailShell({ title, value, tabs, onClose }: { title: string; value: number | null; tabs: DetailTab[]; onClose: () => void }) {
+function DetailShell({ title, value, tabs, onClose }: { title: string; value: number | string | null; tabs: DetailTab[]; onClose: () => void }) {
   const t = useT();
   const titleId = useId();
   const [tab, setTab] = useState(0);
@@ -99,6 +103,63 @@ function DetailShell({ title, value, tabs, onClose }: { title: string; value: nu
     </div>,
     document.body,
   );
+}
+
+/** Catalogo di bonus e malus: due schede, ogni voce con quando scatta e quanto vale; quelle attive ora sono evidenziate. */
+function CatalogueDetail({ rating, onClose }: { rating: TeamRating; onClose: () => void }) {
+  const t = useT();
+  const lang = useLang();
+  const catalog = bonusMalusCatalog(lang, rating.teraCap);
+  const net = rating.bonus.total - rating.penalty.total;
+  const panelOf = (kind: CatalogEntry['kind']) => {
+    const items = kind === 'malus' ? rating.penalty.items : rating.bonus.items;
+    // Punti attuali di una voce del catalogo: somma delle voci del voto con la sua chiave
+    const nowOf = (entry: CatalogEntry) => items.filter(i => i.catalog === entry.key).reduce((n, i) => n + i.points, 0);
+    const cap = kind === 'malus' ? MAX_PENALTY : MAX_BONUS;
+    const capText = signed(kind === 'malus' ? -cap : cap);
+    // Somma grezza delle voci attive: se supera il tetto, il totale mostrato è limitato
+    const raw = items.reduce((n, i) => n + i.points, 0);
+    return (
+      <>
+        <h4>{t(`catalogue.${kind}`)}{raw > cap && <small className="ad-limited"> {t('catalogue.limited', { cap: capText })}</small>}</h4>
+        <div className="ad-scroll">
+          <table className="ad-t ad-catalog">
+            <thead>
+              <tr>
+                <th scope="col" className="left">{t('catalogue.col.name')}</th>
+                <th scope="col" className="left">{t('catalogue.col.when')}</th>
+                <th scope="col" className="left">{t('catalogue.col.points')}</th>
+                <th scope="col">{t('catalogue.col.now')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {catalog.filter(e => e.kind === kind).map(entry => {
+                const now = entry.applies ? nowOf(entry) : 0;
+                const active = now > 0;
+                return (
+                  <tr key={entry.key} className={active ? 'active' : entry.applies ? undefined : 'na'} aria-current={active ? 'true' : undefined}>
+                    <th scope="row" className="left">
+                      {entry.name}
+                      {!entry.applies && <small className="ad-src" title={t('catalogue.naTip')}> {t('catalogue.na')}</small>}
+                    </th>
+                    <td className="left">{entry.when}</td>
+                    <td className="left">{entry.points}</td>
+                    <td className="total">{active ? (kind === 'malus' ? `−${now}` : `+${now}`) : '—'}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        <p className="ad-cap">{t(kind === 'malus' ? 'catalogue.capMalus' : 'catalogue.capBonus', { max: capText })}</p>
+      </>
+    );
+  };
+  const tabs: DetailTab[] = [
+    { key: 'malus', label: t('catalogue.malus'), value: signed(-rating.penalty.total), panel: panelOf('malus') },
+    { key: 'bonus', label: t('catalogue.bonus'), value: signed(rating.bonus.total), panel: panelOf('bonus') },
+  ];
+  return <DetailShell title={t('area.bonusMalus')} value={signed(net)} tabs={tabs} onClose={onClose} />;
 }
 
 /** Le schede dell'Offesa: Generale, Potenza, Wallbreaking, Coverage di tipi e del meta. */
