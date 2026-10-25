@@ -25,26 +25,36 @@ describe('TeamPanel', () => {
     expect(within(teamRegion()).getByLabelText('Strumento')).toHaveValue('Booster Energy');
   });
 
-  it('la carta mostra il ruolo principale e un supporto affiancati, brevi, con i nomi completi nel tooltip', async () => {
+  it('la carta mostra solo il ruolo principale, breve, con tutti i ruoli per esteso nel tooltip', async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} />);
     await addPokemon(user, 'Great Tusk');
     const roles = teamRegion().querySelector('.slot .roles')!;
-    const [main, support] = roles.textContent!.split(' · ');
-    expect(main).toMatch(/^(Sweeper fis\.|Breaker fis\.|Muro fis\.)$/);
-    expect(support).toBeTruthy();
+    expect(roles.textContent).toMatch(/^(Sweeper fis\.|Breaker fis\.|Muro fis\.)$/);
     expect(roles.getAttribute('title')).toMatch(/^(Sweeper fisico|Wallbreaker fisico|Muro fisico) · /);
   });
 
-  it('chi porta il meteo mostra "Meteo" sulla carta, con il meteo nel tooltip', () => {
+  it('la carta non ha il badge Stats e mostra lo strumento come icona prima del nome (nome nel tooltip)', async () => {
+    const user = userEvent.setup();
+    render(<App initialLang="it" data={fixtureData} />);
+    await addPokemon(user, 'Great Tusk');
+    const card = teamRegion().querySelector('.slot > summary')!;
+    expect(card.querySelector('.stats-badge')).toBeNull();
+    const held = card.querySelector('.name-line .held')!;
+    expect(held.querySelector('.item-icon')).not.toBeNull();
+    expect(held.getAttribute('title')).toMatch(/^Booster Energy/);
+    expect(held).toHaveTextContent('Booster Energy');
+    expect(held.compareDocumentPosition(card.querySelector('.name')!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('chi porta il meteo: sulla carta il ruolo principale, il meteo nel tooltip dei ruoli', () => {
     const pelipper = { ...emptySet('Pelipper'), item: 'Damp Rock', ability: 'Drizzle', moves: ['Hurricane', 'Scald', 'U-turn', 'Roost'] };
     window.history.replaceState(null, '', `/#team=${encodeShare([pelipper], DEFAULT_FORMAT)}`);
     render(<App initialLang="it" data={fixtureData} />);
     const roles = teamRegion().querySelector('.slot .roles')!;
-    // Ruoli misurati come nel voto: il principale non è mai il Recupero, poi il meteo; il resto nel tooltip
-    const [main, second] = roles.textContent!.split(' · ');
-    expect(main).not.toBe('Recupero');
-    expect(second).toBe('Meteo');
+    // Ruoli misurati come nel voto: il principale non è mai il Recupero; il meteo e il resto nel tooltip
+    expect(roles.textContent).not.toContain(' · ');
+    expect(roles.textContent).not.toBe('Recupero');
     const all = roles.getAttribute('title')!.split(' · ');
     expect(all[1]).toMatch(/^Porta la pioggia \(.+\)$/);
     expect(all).toEqual(expect.arrayContaining(['Pivot', 'Recupero']));
@@ -56,7 +66,7 @@ describe('TeamPanel', () => {
     window.history.replaceState(null, '', `/#team=${encodeShare([latias], DEFAULT_FORMAT)}`);
     render(<App initialLang="it" data={fixtureData} />);
     const roles = teamRegion().querySelector('.slot .roles')!;
-    expect(roles.textContent!.split(' · ')).toHaveLength(2);
+    expect(roles.textContent!.split(' · ')).toHaveLength(1);
     const all = roles.getAttribute('title')!.split(' · ');
     expect(all.length).toBeGreaterThan(2);
     expect(all.slice(0, 2)).toEqual(['Sweeper speciale', 'Rimozione hazard']);

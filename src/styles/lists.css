@@ -83,11 +83,9 @@
   .band { padding: 10px 16px 12px; gap: 12px; grid-template-columns: minmax(0, 1fr) 168px; }
   .team-head { margin-bottom: 8px; }
   .slots { gap: 8px; }
-  .slot > summary, .slot.empty { min-height: 0; height: 206px; padding: 6px 10px 10px; gap: 2px; }
-  .slot .held > span { -webkit-line-clamp: 1; }
+  .slot > summary, .slot.empty { min-height: 0; height: 172px; padding: 6px 10px 10px; gap: 2px; }
   .slot > summary .sprite { width: 64px; height: 64px; }
   .slot > summary { --sprite-scale: 0.6667; }
-  .slot .slot-stats { margin: 0; }
   .slot .roles { display: none; }
   .slot .name { font-size: 15px; }
   .slot .held, .slot .ability { font-size: 12px; }
