@@ -111,6 +111,8 @@ export interface MetaScore {
 export interface TeamRating {
   /** Voto pesato delle aree, prima della penalità. */
   base: number;
+  /** Tetto del bonus Tera nel formato (0 fuori dalla Gen 9): serve al catalogo bonus/malus. */
+  teraCap: number;
   penalty: Redundancies;
   bonus: Redundancies;
   /** Forza dei singoli membri dalle statistiche base. */
@@ -376,7 +378,7 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
   const bonus = { total: Math.min(MAX_BONUS, weather.total + sum(tera.map(i => i.points))), items: [...weather.items, ...tera] };
   const overall = Math.min(100, Math.max(0, base - penalty.total + bonus.total));
   return {
-    base, penalty, bonus, power: power.members, overall, ...gradeFor(overall, lang), provisional: team.length < 6, areas, archetype, meta,
+    base, teraCap: rules.teraBonusCap, penalty, bonus, power: power.members, overall, ...gradeFor(overall, lang), provisional: team.length < 6, areas, archetype, meta,
     teamType: analysis.needs.archetype, trickRoom,
     weights: areaWeights, offense, defense, speed, roles,
   };

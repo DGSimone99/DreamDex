@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { useEditing } from './editing';
 import { MAX_PENALTY, type TeamRating } from '../engine/rating';
 import { roleShortLabel } from '../engine/roles';
@@ -6,10 +6,10 @@ import { rolesList } from '../engine/subRoles';
 import { Typed } from './TypeText';
 import { AlertMark } from './AlertMark';
 import { RatingHelp } from './RatingHelp';
-import { AreaDetail, type DetailArea } from './AreaDetail';
+import { AreaDetail, signed, type DetailArea } from './AreaDetail';
 import { useLang, useT } from '../i18n/react';
 
-const isDetailArea = (key: string): key is DetailArea => key === 'strength' || key === 'defense' || key === 'speed' || key === 'roles';
+const isDetailArea = (key: string): key is DetailArea => key === 'strength' || key === 'defense' || key === 'speed' || key === 'roles' || key === 'bonusMalus';
 
 /** `ruleIssues`: problemi di regole del team (vietati, Mega, mosse non legali…): triangolo rosso accanto al voto. */
 /** `metaMonth`: mese delle statistiche, per dire con quale meta è stato calcolato il voto. */
@@ -18,11 +18,12 @@ export function RatingPanel({ rating, ruleIssues = [], metaMonth }: { rating: Te
   const lang = useLang();
   // Dettaglio dell'area (sottostatistiche per membro); alla chiusura il focus torna alla barra
   const [detail, setDetail] = useState<DetailArea | null>(null);
+  const netLabelId = useId();
   const detailButtons = useRef<Partial<Record<DetailArea, HTMLButtonElement | null>>>({});
   const closeDetail = () => { const area = detail; setDetail(null); if (area) detailButtons.current[area]?.focus(); };
   // Bonus meno malus (il malus è già limitato a MAX_PENALTY): il segno usa il meno tipografico
   const net = rating.bonus.total - rating.penalty.total;
-  const netText = t('rating.net', { net: net < 0 ? `−${-net}` : net > 0 ? `+${net}` : '0', penalty: `−${rating.penalty.total}`, bonus: `+${rating.bonus.total}` });
+  const netText = t('rating.net', { net: signed(net), penalty: `−${rating.penalty.total}`, bonus: `+${rating.bonus.total}` });
   return (
     <details open aria-label={t('rating.title')} className="block rating">
       <summary>
@@ -81,9 +82,15 @@ ${note}` : tip ?? note;
         })}
         {/* Bonus/Malus: barra a tutta larghezza sotto le aree, centrata sullo zero (rosso a sinistra, blu a destra) */}
         <div className="net-row">
-          <dt>{netText}</dt>
+          <dt>
+            {/* Il catalogo di tutti i bonus e malus; il focus torna qui alla chiusura */}
+            <button ref={el => { detailButtons.current.bonusMalus = el; }} id={netLabelId} type="button" className="area-link"
+              aria-haspopup="dialog" onClick={() => setDetail('bonusMalus')} title={t('catalogue.open')}>
+              {netText}
+            </button>
+          </dt>
           <dd>
-            <div className="net-bar" role="meter" aria-label={netText} aria-valuemin={-MAX_PENALTY} aria-valuemax={MAX_PENALTY} aria-valuenow={net}>
+            <div className="net-bar" role="meter" aria-labelledby={netLabelId} aria-valuemin={-MAX_PENALTY} aria-valuemax={MAX_PENALTY} aria-valuenow={net}>
               <span className="net-tick" />
               {net !== 0 && <span className={`net-fill ${net < 0 ? 'neg' : 'pos'}`} style={{ width: `${Math.min(Math.abs(net), MAX_PENALTY) / MAX_PENALTY * 50}%` }} />}
             </div>

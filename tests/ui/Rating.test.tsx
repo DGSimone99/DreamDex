@@ -257,3 +257,75 @@ describe('Barra Bonus/Malus', () => {
     expect(screen.queryByRole('listitem')).toBeNull();
   });
 });
+
+/** Valutazione con le voci del catalogo, per il modale Bonus/Malus. */
+const catalogRating = (teraCap: number) => ({
+  ...fakeRating([], []),
+  teraCap,
+  penalty: { total: 8, items: [
+    { text: 'Due setter di Stealth Rock', points: 1, catalog: 'hazardDuplicate' },
+    { text: 'Due setter di Spikes', points: 2, catalog: 'hazardDuplicate' },
+    { text: 'Troppi rimuovitori', points: 5, catalog: 'removers' },
+  ] },
+  bonus: { total: 2, items: [{ text: 'Sole aiuta', points: 2, catalog: 'weatherHelp' }] },
+}) as unknown as TeamRating;
+
+async function openCatalog(teraCap = 0) {
+  const user = userEvent.setup();
+  render(<LangProvider lang="it"><RatingPanel rating={catalogRating(teraCap)} /></LangProvider>);
+  const button = screen.getByRole('button', { name: /^Bonus\/Malus/ });
+  expect(button).toHaveAttribute('aria-haspopup', 'dialog');
+  await user.click(button);
+  return { user, button, dialog: screen.getByRole('dialog', { name: 'Bonus/Malus −6' }) };
+}
+
+describe('Catalogo Bonus/Malus', () => {
+  it('il titolo ha il netto; due schede Malus e Bonus; il meter prende il nome dall\'etichetta', async () => {
+    const { dialog } = await openCatalog();
+    expect(within(dialog).getAllByRole('tab').map(tab => tab.textContent)).toEqual(['Malus −8', 'Bonus +2']);
+    expect(screen.getByRole('meter')).toHaveAttribute('aria-labelledby');
+    expect(screen.getByRole('meter')).not.toHaveAttribute('aria-label');
+  });
+
+  it('Malus: i 9 malus con nome, quando e punti; gli attivi evidenziati col punteggio attuale', async () => {
+    const { dialog } = await openCatalog();
+    const rows = within(within(dialog).getByRole('tabpanel')).getAllByRole('row').slice(1);
+    expect(rows).toHaveLength(9);
+    const hazard = rows.find(r => within(r).queryByText('Hazard ripetuto'))!;
+    expect(hazard).toHaveClass('active');
+    expect(hazard).toHaveAttribute('aria-current', 'true');
+    expect(within(hazard).getAllByRole('cell').at(-1)).toHaveTextContent('−3');
+    const removers = rows.find(r => r.className.includes('active') && r !== hazard)!;
+    expect(removers).toHaveTextContent('−5');
+    // Un team di 3: il ruolo essenziale mancante non è attivo
+    const essential = rows.find(r => r.textContent!.includes('essenzial'))!;
+    expect(essential).not.toHaveClass('active');
+    expect(essential).not.toHaveAttribute('aria-current');
+    expect(rows.filter(r => r.classList.contains('active'))).toHaveLength(2);
+  });
+
+  it('Bonus: Tera non applicabile fuori dalla Gen 9, mai attivo', async () => {
+    const { user, dialog } = await openCatalog(0);
+    await user.click(within(dialog).getByRole('tab', { name: /^Bonus/ }));
+    const rows = within(within(dialog).getByRole('tabpanel')).getAllByRole('row').slice(1);
+    expect(rows).toHaveLength(2);
+    expect(rows[0]).toHaveClass('active');
+    expect(rows[0]).toHaveTextContent('+2');
+    expect(rows[1]).toHaveClass('na');
+    expect(rows[1]).toHaveTextContent('Solo Gen 9');
+    expect(rows[1]).not.toHaveAttribute('aria-current');
+  });
+
+  it('Bonus con Tera applicabile: nessuna nota', async () => {
+    const { user, dialog } = await openCatalog(3);
+    await user.click(within(dialog).getByRole('tab', { name: /^Bonus/ }));
+    expect(within(dialog).getByRole('tabpanel')).not.toHaveTextContent('Solo Gen 9');
+  });
+
+  it('Escape chiude e il focus torna al bottone dell\'etichetta', async () => {
+    const { user, button } = await openCatalog();
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(button).toHaveFocus();
+  });
+});

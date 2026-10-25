@@ -1632,3 +1632,8 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .lists-copy select { font-size: 14px; }
 @media (max-width: 1100px) { .lists-main { grid-template-columns: 1fr; } .lists-side { position: static; } }
 .lists-bar .search-hint { max-width: 360px; }
+/* Catalogo Bonus/Malus: la voce attiva ora è evidenziata, quella non applicabile al formato è attenuata */
+.ad-t.ad-catalog td.left, .ad-t.ad-catalog th.left { white-space: normal; }
+.ad-t.ad-catalog tr.active { background: var(--line-soft); }
+.ad-t.ad-catalog tr.active th, .ad-t.ad-catalog tr.active td.total { color: var(--text); font-weight: 700; }
+.ad-t.ad-catalog tr.na { opacity: 0.55; }
