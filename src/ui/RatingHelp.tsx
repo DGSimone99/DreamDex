@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
 import { createPortal } from 'react-dom';
 import type { Archetype } from '../engine/archetype';
-import { ARCHETYPE_WEIGHTS, GRADES } from '../engine/rating';
+import { ARCHETYPE_WEIGHTS, GRADES, TRICK_ROOM_MAX } from '../engine/rating';
 import { LEVEL_KEYS, levelOf, type Level, type LevelKey } from '../engine/roleLevels';
 import type { MessageKey } from '../i18n';
 import { useT } from '../i18n/react';
@@ -128,6 +128,7 @@ function TypeTopic({ type, current, trickRoom }: { type: Archetype; current: boo
       <p className="help-note">{t(`archetype.${type}.note`)}</p>
       <p>{t(`help.type.${type}`)}</p>
       {type === 'balance' && <p>{t('help.type.balance.incomplete')}</p>}
+      <p>{t('help.type.trickRoom', { max: TRICK_ROOM_MAX })}</p>
       {current && <p className="help-yours">{t('help.general.yours', { type: t(`archetype.${type}`) })}{trickRoom ? ` · ${t('help.general.trickRoom')}` : ''}</p>}
       <h5>{t('help.type.weights')}</h5>
       <dl className="help-weights-row">
