@@ -51,7 +51,9 @@
 /* Icone degli strumenti (24px, dal foglio di Showdown) */
 .item-icon { display: inline-block; flex: none; vertical-align: middle; background-repeat: no-repeat; image-rendering: pixelated; }
 .slot .held { display: flex; align-items: center; gap: 5px; max-width: 100%; min-width: 0; }
-.slot .held > span, .slot .ability { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.slot .ability { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.slot .held { align-items: flex-start; }
+.slot .held > span { max-width: 100%; line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .slot .ability { font-size: 13px; color: var(--muted); margin-top: -2px; }
 .combobox.has-leading input { padding-left: 32px; }
 .combobox-leading { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); display: flex; pointer-events: none; }
