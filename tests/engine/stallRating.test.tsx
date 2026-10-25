@@ -32,7 +32,7 @@ describe('team stall', () => {
     const rating = rateTeam(stall, fixtureData)!;
     expect(rating.archetype).toBe('stall');
     // da stall: i due muri essenziali ci sono, gli attaccanti non sono richiesti; fra gli importanti mancano
-    // il Danno nel tempo (il gruppo del fixture è pieno di Acciaio e Veleno, immuni a Toxic); il Debuff è minore
+    // il Danno nel Tempo (il gruppo del fixture è pieno di Acciaio e Veleno, immuni a Toxic); il Debuff è minore
     const needs = teamNeeds(stall, fixtureData);
     expect(needs.essentialMissing).toEqual([]);
     expect(needs.levels.attacker).toBe('ignored');
@@ -89,7 +89,7 @@ describe('coaching di uno stall', () => {
     const { coachTeam } = await import('../../src/engine/coach');
     const { DEFAULT_FORMAT } = await import('../../src/engine/format');
     const texts = coachTeam(stall, DEFAULT_FORMAT, fixtureData, 'it').problems.map(p => p.text).join(' | ');
-    expect(texts).not.toMatch(/Pivot|Priorità|Controllo velocità/);
+    expect(texts).not.toMatch(/Pivot|Priorità|Controllo Velocità/);
   });
 
   it('la rimozione mancante resta un bisogno (importante): nella riga dei ruoli importanti, non in "Ruoli mancanti" (solo essenziali)', async () => {
@@ -101,7 +101,7 @@ describe('coaching di uno stall', () => {
     expect(needs.missingRoles).toContain('removal');
     const texts = coachTeam(noRemoval, DEFAULT_FORMAT, fixtureData, 'it').problems.map(p => p.text);
     expect(texts).not.toContainEqual(expect.stringMatching(/Ruoli mancanti/));
-    expect(texts).toContainEqual(expect.stringMatching(/^Ruoli importanti mancanti: .*Rimozione hazard/));
+    expect(texts).toContainEqual(expect.stringMatching(/^Ruoli importanti mancanti: .*Rimozione Hazard/));
   });
 });
 

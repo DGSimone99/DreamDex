@@ -7,9 +7,9 @@ import { roleLabel } from '../../src/engine/roles';
 
 describe('etichette del motore', () => {
   it('ruoli', () => {
-    expect(roleLabel('removal', 'en')).toBe('Hazard removal');
-    expect(roleLabel('removal', 'it')).toBe('Rimozione hazard');
-    expect(roleLabel('removal')).toBe('Rimozione hazard');
+    expect(roleLabel('removal', 'en')).toBe('Hazard Removal');
+    expect(roleLabel('removal', 'it')).toBe('Rimozione Hazard');
+    expect(roleLabel('removal')).toBe('Rimozione Hazard');
   });
 
   it('meteo e campi in frase e nei menu', () => {

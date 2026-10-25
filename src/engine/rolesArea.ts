@@ -67,8 +67,6 @@ export function rolesScore(importantValues: number[], minorValues: number[], imp
   return { base, extra, value: softScore((base + extra) / ROLES_FULL) };
 }
 
-const lowerFirst = (text: string) => text.charAt(0).toLowerCase() + text.slice(1);
-
 /** Mancanze essenziali di un team di 6: −2 per voce, più lo squilibrio degli attaccanti (−3). */
 function essentialFailures(team: TeamSet[], needs: TeamNeeds, lang: Lang): Redundancy[] {
   if (team.length !== 6) return [];
@@ -76,7 +74,7 @@ function essentialFailures(team: TeamSet[], needs: TeamNeeds, lang: Lang): Redun
   const items: Redundancy[] = needs.essentialMissing.map(key => ({
     text: key === 'attacker'
       ? t(lang, 'rating.failure.noAttacker')
-      : t(lang, 'rating.failure.missing', { archetype, role: lowerFirst(needLabel(key, lang)) }),
+      : t(lang, 'rating.failure.missing', { archetype, role: needLabel(key, lang) }),
     points: ESSENTIAL_POINTS,
     catalog: 'essentialRole' as const,
   }));

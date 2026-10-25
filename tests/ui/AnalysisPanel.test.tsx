@@ -37,10 +37,10 @@ describe('AnalysisPanel', () => {
     // Team incompleto: giudicato come Balance (essenziali: minaccia offensiva e i due muri)
     expect(screen.getByText('Balance · 2/3 essenziali')).toBeInTheDocument();
     expect(screen.getByText(/Team incompleto/)).toBeInTheDocument();
-    expect(row('Muro speciale')).toHaveTextContent('Mancante');
-    expect(row('Muro speciale')).toHaveClass('bad');
-    expect(row('Rimozione hazard')).toHaveTextContent('Great Tusk');
-    expect(row('Minaccia offensiva')).toHaveTextContent('Great Tusk');
+    expect(row('Muro Speciale')).toHaveTextContent('Mancante');
+    expect(row('Muro Speciale')).toHaveClass('bad');
+    expect(row('Rimozione Hazard')).toHaveTextContent('Great Tusk');
+    expect(row('Minaccia Offensiva')).toHaveTextContent('Great Tusk');
     expect(screen.getByText('Importanti')).toBeInTheDocument();
     expect(screen.getByText(/^Minori/)).toBeInTheDocument();
   });
@@ -75,15 +75,15 @@ describe('AnalysisPanel', () => {
     expect(screen.getByText('Stall · 3/3 essenziali')).toBeInTheDocument();
     // Fra i non richiesti, in grigio: qui un membro (con gli EV d'attacco di Great Tusk) è misurato come attaccante,
     // quindi la riga mostra chi lo copre invece di "Non richiesto"
-    expect(row('Minaccia offensiva').closest('.role-group')!.querySelector('h4')).toHaveTextContent('Non richiesti');
-    expect(row('Minaccia offensiva')).toHaveClass('soft');
+    expect(row('Minaccia Offensiva').closest('.role-group')!.querySelector('h4')).toHaveTextContent('Non richiesti');
+    expect(row('Minaccia Offensiva')).toHaveClass('soft');
   });
 
   it("velocità, controllo velocità e priorità non sono ruoli: niente righe (li misura l'area Velocità)", () => {
     const fast = [...team, { ...tusk, species: 'Dragapult', item: 'Choice Specs', ability: 'Infiltrator', moves: ['Shadow Ball', 'Draco Meteor'] }];
     renderIt(<AnalysisPanel team={fast} analysis={analyzeTeam(fast, fixtureData)} />);
     expect(row('Velocità')).toBeUndefined();
-    expect(row('Controllo velocità')).toBeUndefined();
+    expect(row('Controllo Velocità')).toBeUndefined();
     expect(row('Priorità')).toBeUndefined();
   });
 

@@ -82,7 +82,7 @@ describe('filtri', () => {
     const kingambit = (moves: string[]) => ({ ...emptySet('Kingambit'), moves });
     expect(hasFilterRole(kingambit(['Kowtow Cleave', 'Sucker Punch']), 'priority', rules)).toBe(true);
     expect(hasFilterRole(kingambit(['Kowtow Cleave', 'Iron Head']), 'priority', rules)).toBe(false);
-    // Controllo velocità e setup: anche loro sulle mosse
+    // Controllo Velocità e setup: anche loro sulle mosse
     expect(hasFilterRole({ ...emptySet('Clefable'), moves: ['Moonblast', 'Thunder Wave'] }, 'speedControl', rules)).toBe(true);
     expect(hasFilterRole({ ...emptySet('Gholdengo'), moves: ['Make It Rain'], item: 'Choice Scarf' }, 'speedControl', rules)).toBe(false);
     expect(hasFilterRole({ ...emptySet('Volcarona'), moves: ['Quiver Dance', 'Fiery Dance'] }, 'setup', rules)).toBe(true);

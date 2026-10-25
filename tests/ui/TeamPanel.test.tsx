@@ -25,13 +25,13 @@ describe('TeamPanel', () => {
     expect(within(teamRegion()).getByLabelText('Strumento')).toHaveValue('Booster Energy');
   });
 
-  it('la carta mostra solo il ruolo principale, breve, con tutti i ruoli per esteso nel tooltip', async () => {
+  it('la carta mostra solo il ruolo principale per esteso, con tutti i ruoli nel tooltip', async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} />);
     await addPokemon(user, 'Great Tusk');
     const roles = teamRegion().querySelector('.slot .roles')!;
-    expect(roles.textContent).toMatch(/^(Sweeper fis\.|Breaker fis\.|Muro fis\.)$/);
-    expect(roles.getAttribute('title')).toMatch(/^(Sweeper fisico|Wallbreaker fisico|Muro fisico) · /);
+    expect(roles.textContent).toMatch(/^(Sweeper Fisico|Wallbreaker Fisico|Muro Fisico)$/);
+    expect(roles.getAttribute('title')).toMatch(/^(Sweeper Fisico|Wallbreaker Fisico|Muro Fisico) · /);
   });
 
   it('la carta non ha il badge Stats e mostra lo strumento come icona prima del nome (nome nel tooltip)', async () => {
@@ -69,8 +69,8 @@ describe('TeamPanel', () => {
     expect(roles.textContent!.split(' · ')).toHaveLength(1);
     const all = roles.getAttribute('title')!.split(' · ');
     expect(all.length).toBeGreaterThan(2);
-    expect(all.slice(0, 2)).toEqual(['Sweeper speciale', 'Rimozione hazard']);
-    expect(all).toEqual(expect.arrayContaining(['Muro speciale']));
+    expect(all.slice(0, 2)).toEqual(['Sweeper Speciale', 'Rimozione Hazard']);
+    expect(all).toEqual(expect.arrayContaining(['Muro Speciale']));
     expect(new Set(all).size).toBe(all.length);
   });
 

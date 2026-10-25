@@ -122,7 +122,7 @@ describe('Valutazione team', () => {
     expect(balance).toHaveTextContent('Il tuo team è giudicato come Balance');
     expect(balance).toHaveTextContent('Un team incompleto si giudica come Balance');
     // I livelli vengono dalla tabella del codice, non dai testi
-    expect(balance).toHaveTextContent(/Essenziali.*Muro fisico/);
+    expect(balance).toHaveTextContent(/Essenziali.*Muro Fisico/);
     // Stall: Velocità allo 0% e nota grigia; Recupero essenziale
     await user.click(within(dialog).getByRole('tab', { name: 'Stall' }));
     const stall = within(dialog).getByRole('tabpanel');
