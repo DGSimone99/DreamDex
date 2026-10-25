@@ -1,11 +1,11 @@
 import { useMemo } from 'react';
 import type { EngineData } from '../engine/data';
-import { describeDiff } from '../engine/coach';
+import { rankedChanges } from '../engine/coach';
 import { getSpecies } from '../engine/dex';
 import { rateTeam, type TeamRating } from '../engine/rating';
 import type { Archetype } from '../engine/archetype';
 import { needLabel } from '../engine/needs';
-import { withCandidate, type SwapOption, type TeamGain } from '../engine/teamGain';
+import { withCandidate, type ScoredArea, type SwapOption, type TeamGain } from '../engine/teamGain';
 import { formatPercent } from '../i18n';
 import type { Replacement } from '../engine/replace';
 import type { Suggestion } from '../engine/scoring';
@@ -19,14 +19,18 @@ import { Icon } from './icons';
 import { ItemIcon } from './ItemIcon';
 import { PokemonIcon, PokemonName } from './PokemonName';
 import { battleAbility, battleName } from '../engine/dex';
-import { ProsCons } from './ProsCons';
 import { Sprite, TypeChip } from './Sprite';
 import { StatsBadge } from './StatsBadge';
 import { MoveName, Typed } from './TypeText';
 
+/** Voci di Porta e Toglie al massimo: la scheda deve stare in una schermata. */
+const MAX_POINTS = 3;
+/** L'area del voto di cui parla una ragione, per non ripetere i guadagni del cambio. */
+const REASON_AREA: Partial<Record<string, string>> = { defense: 'defense', coverage: 'strength', roles: 'roles' };
+
 /**
- * Il candidato selezionato nella lista: come cambia il voto del team (in tutto e area per area),
- * cosa cambia (in sostituzione), i motivi e il set.
+ * Il candidato selezionato nella lista, dall'alto per importanza: chi è e quanto sale il voto, cosa porta e cosa toglie,
+ * l'effetto sul team area per area (una riga), il set consigliato, le azioni.
  */
 export function SuggestionDetail({ item, rank, team, replaceIndex, data, format, rating, archetype, usage, banMark, actionLabel, onAction }: {
   item: (Suggestion | Replacement) & { teamGain?: TeamGain; alternatives?: SwapOption[] };
@@ -55,11 +59,24 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
   const forcedBefore = useMemo(() => (archetype ? rateTeam(team, data, lang, opts) : rating), [archetype, team, data, lang, opts, rating]);
   // Senza altri membri non c'è un voto da confrontare
   const before = item.teamGain ? forcedBefore : null;
-  const changes = 'diff' in item && item.diff ? describeDiff(item.diff, lang) : null;
+  const changes = 'diff' in item && item.diff ? rankedChanges(item.diff, item.teamGain?.areaPoints, lang) : null;
   const types = getSpecies(item.species)?.types ?? [];
   const evs = STAT_IDS.filter(stat => (set.evs[stat] ?? 0) > 0).map(stat => `${set.evs[stat]} ${statShort(stat, lang)}`).join(' / ');
   const delta = (value: number) => (value > 0 ? `+${value}` : value < 0 ? `−${-value}` : '');
   const result = item.teamGain;
+
+  // Porta: i guadagni del cambio (dal più pesante), poi le ragioni; l'uso nel meta non dice perché sceglierlo
+  // Una ragione che ripete un guadagno della stessa area ("Resiste a Volante" e "Resistente a Volante") si salta
+  const covered = new Set(changes?.pros.map(p => p.area));
+  const reasons = item.reasons
+    .filter(reason => reason.component !== 'strength' && !covered.has(REASON_AREA[reason.component] as ScoredArea))
+    .map(reason => reason.text);
+  const brings = [...new Set([...(changes?.pros.map(p => p.text) ?? []), ...reasons])].slice(0, MAX_POINTS);
+  // Toglie: le perdite del cambio, gli avvisi (meteo in conflitto, mosse indebolite) e le voci perse col tipo di team
+  const penalty = result?.penalty && result.lost?.length
+    ? [tr('suggest.penaltyNote', { roles: result.lost.map(r => needLabel(r.key, lang)).join(', '), n: result.penalty })]
+    : [];
+  const loses = [...(changes?.cons.map(c => c.text) ?? []), ...(item.facts.clashes ?? []).map(text => text.replace(/^⚠\s*/, '')), ...penalty].slice(0, MAX_POINTS);
 
   return (
     <aside className={`detail${rank === 1 ? ' first' : ''}`} aria-label={tr('detail.region', { species: item.species })}>
@@ -73,12 +90,13 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
             <StatsBadge species={item.species} item={set.item} compare={replacing ? team[replaceIndex] : undefined} />
           </h3>
           <span className="types">{types.map(type => <TypeChip key={type} type={type} />)}</span>
-          {item.tags.length > 0 && (
-            <span className="tags">
-              {item.tags.map(tag => (tag.startsWith('⚠')
-                ? <span key={tag} className="tag warn"><Icon name="warning" />{tag.replace(/^⚠\s*/, '')}</span>
-                : <span key={tag} className="tag">{tag}</span>))}
-            </span>
+          {replacing && (
+            <p className="swap-head replaces">
+              <PokemonName name={battleName(team[replaceIndex])} muted />
+              <Icon name="arrow" />
+              <span className="visually-hidden">{tr('coach.with')}</span>
+              <PokemonName name={item.species} />
+            </p>
           )}
         </div>
         {result && before ? (
@@ -95,30 +113,46 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
       </header>
 
       <div className="detail-body">
-        {changes && replacing && (
-          <section className="detail-sec wide">
-            <h4>{tr('detail.changes')}</h4>
-            <p className="swap-head replaces">
-              <PokemonName name={battleName(team[replaceIndex])} muted />
-              <Icon name="arrow" />
-              <span className="visually-hidden">{tr('coach.with')}</span>
-              <PokemonName name={item.species} />
-            </p>
-            {'similarity' in item && item.similarity !== undefined && (
-              <p className="note">{tr('suggest.similarity', { pct: Math.round(item.similarity * 100) })}</p>
-            )}
-            <ProsCons pros={changes.pros} cons={changes.cons} />
-            {/* Con un tipo di team scelto: le voci perse che fanno scendere il cambio in classifica */}
-            {!!result?.penalty && result.lost && result.lost.length > 0 && (
-              <p className="note penalty-note">
-                {tr('suggest.penaltyNote', { roles: result.lost.map(r => needLabel(r.key, lang)).join(', '), n: result.penalty })}
-              </p>
-            )}
+        <section className={`detail-sec brings${replacing ? '' : ' wide'}`}>
+          <h4>{tr('detail.brings')}</h4>
+          <ul className="detail-points gain">
+            {brings.length ? brings.map(text => <li key={text}><Typed text={text} /></li>) : <li className="none">{tr('suggest.noDifference')}</li>}
+          </ul>
+        </section>
+        {replacing && (
+          <section className="detail-sec loses">
+            <h4>{tr('detail.loses')}</h4>
+            <ul className="detail-points loss">
+              {loses.length ? loses.map(text => <li key={text}><Typed text={text} /></li>) : <li className="none">{tr('detail.losesNothing')}</li>}
+            </ul>
+          </section>
+        )}
+
+        {after && (
+          <section className="detail-sec wide effect">
+            <h4>{tr(before ? 'detail.team' : 'detail.teamAlone')}</h4>
+            {/* Una riga: per area la variazione (o il valore, senza un voto prima); un'area che non conta resta in grigio */}
+            <dl className="detail-areas">
+              {after.areas.map(area => {
+                const prev = before?.areas.find(a => a.key === area.key);
+                const was = prev?.value;
+                const change = area.value !== null && was != null && !area.inactive && !prev?.inactive ? area.value - was : 0;
+                const note = area.inactive ? tr('rating.notCounted') : undefined;
+                return (
+                  <div key={area.key} className={area.inactive ? 'inactive' : undefined} title={note}>
+                    <dt aria-description={note}>{area.label}</dt>
+                    {before
+                      ? <dd className={`change${change < 0 ? ' worse' : change === 0 ? ' same' : ''}`}>{delta(change)}</dd>
+                      : <><dd className="value">{area.value ?? '–'}</dd><dd className="change" /></>}
+                  </div>
+                );
+              })}
+            </dl>
             {/* Raccomandazioni libere: quanto renderebbe al posto degli altri membri */}
             {item.alternatives && item.alternatives.length > 0 && (
               <p className="detail-alts">
                 <span>{tr('detail.alternatives')}</span>
-                {item.alternatives.slice(0, 4).map(alt => (
+                {item.alternatives.slice(0, 3).map(alt => (
                   <span key={alt.index} className="alt">
                     <PokemonIcon name={battleName(team[alt.index])} />
                     {battleName(team[alt.index])}
@@ -130,50 +164,16 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
           </section>
         )}
 
-        {after && (
-          <section className="detail-sec">
-            <h4>{tr(before ? 'detail.team' : 'detail.teamAlone')}</h4>
-            <dl className="detail-areas">
-              {after.areas.map(area => {
-                const prev = before?.areas.find(a => a.key === area.key);
-                const was = prev?.value;
-                // Un'area che non conta nel voto non ha variazione; se prima contava e ora no (o viceversa) non si confronta
-                const change = area.value !== null && was != null && !area.inactive && !prev?.inactive ? area.value - was : 0;
-                const note = area.inactive ? tr('rating.notCounted') : undefined;
-                return (
-                  <div key={area.key} className={area.inactive ? 'inactive' : undefined} title={note}>
-                    <dt aria-description={note}>{area.label}</dt>
-                    <dd><meter min={0} max={100} value={area.value ?? 0} /></dd>
-                    <dd className="value">{area.value ?? '–'}</dd>
-                    <dd className={`change${change < 0 ? ' worse' : ''}`}>{delta(change)}</dd>
-                  </div>
-                );
-              })}
-            </dl>
-          </section>
-        )}
-
-        <section className="detail-sec">
-          <h4>{tr('detail.why')}</h4>
-          <ul className="detail-reasons">
-            {item.reasons.map(reason => <li key={reason.text}><Typed text={reason.text} /></li>)}
-          </ul>
-        </section>
-
         <section className="detail-sec wide set-sec">
           <h4>{tr('detail.set')}</h4>
-          <dl className="detail-set">
-            <dt>{tr('editor.item')}</dt>
-            <dd>{set.item ? <><ItemIcon item={set.item} /> {gameName('item', set.item, lang)}</> : '—'}</dd>
-            <dt>{tr('editor.ability')}</dt>
+          <p className="detail-set">
+            {set.item && <span><ItemIcon item={set.item} /> {gameName('item', set.item, lang)}</span>}
             {/* L'abilità in battaglia: con una Megapietra quella della Mega (Mega Venusaur: Grassospesso, non Clorofilla) */}
-            <dd>{battleAbility(set) ? gameName('ability', battleAbility(set), lang) : '—'}</dd>
-            <dt>{tr('editor.nature')}</dt>
-            <dd>{set.nature ? natureName(set.nature, lang) : '—'}</dd>
-            <dt>{tr('editor.evs')}</dt>
-            <dd>{evs || '—'}</dd>
-            {set.teraType && <><dt>{tr('editor.tera')}</dt><dd>{typeName(set.teraType, lang)}</dd></>}
-          </dl>
+            {battleAbility(set) && <span>{gameName('ability', battleAbility(set), lang)}</span>}
+            {set.nature && <span>{natureName(set.nature, lang)}</span>}
+            {evs && <span className="evs">{evs}</span>}
+            {set.teraType && <span>{tr('editor.tera')} {typeName(set.teraType, lang)}</span>}
+          </p>
           <ul className="detail-moves" aria-label={tr('editor.moves')}>
             {set.moves.map(move => <li key={move}><MoveName move={move} /></li>)}
           </ul>

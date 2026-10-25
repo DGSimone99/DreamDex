@@ -251,3 +251,25 @@ describe('riga della lista', () => {
     expect(list().querySelector('li .who small')!.textContent).toMatch(/\S/);
   });
 });
+
+describe('scheda del candidato', () => {
+  const FULL = ['Great Tusk', 'Gholdengo', 'Kingambit', 'Dragapult', 'Corviknight', 'Toxapex'];
+  const detail = () => screen.getByRole('complementary', { name: /^Dettaglio di / });
+  const section = (name: string) => within(detail()).getByRole('heading', { name }).closest('section')!;
+
+  it('Migliora: prima cosa porta e cosa toglie, niente più Perché', async () => {
+    await setup(...FULL);
+    expect(within(detail()).getByRole('heading', { name: 'Porta' })).toBeInTheDocument();
+    expect(within(detail()).getByRole('heading', { name: 'Toglie' })).toBeInTheDocument();
+    expect(within(detail()).queryByRole('heading', { name: 'Perché' })).toBeNull();
+    expect(section('Porta').textContent).not.toMatch(/Uso nel meta/);
+    expect(section('Effetto sul team').querySelector('.detail-areas')).toHaveTextContent(/Difesa/);
+  }, 30000);
+
+  it('Aggiungi: solo Porta, senza uso nel meta', async () => {
+    await setup('Great Tusk');
+    expect(within(detail()).getByRole('heading', { name: 'Porta' })).toBeInTheDocument();
+    expect(within(detail()).queryByRole('heading', { name: 'Toglie' })).toBeNull();
+    expect(section('Porta').textContent).not.toMatch(/Uso nel meta/);
+  });
+});

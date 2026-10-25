@@ -349,6 +349,8 @@ export const describeDiff = (diff: Diff, lang: Lang = 'it') => ({
 export interface WeightedChange {
   text: string;
   points: number;
+  /** L'area del voto che la voce muove. */
+  area: ScoredArea;
 }
 
 /**
@@ -369,7 +371,7 @@ export function rankedChanges(diff: Diff, areaPoints: Partial<Record<ScoredArea,
       .map(item => {
         const total = areaPoints?.[item.area] ?? 0;
         const share = (gain ? Math.max(0, total) : Math.min(0, total)) / count(item.area);
-        return { text: item.text, points: Math.round(share * 10) / 10 + 0 };
+        return { text: item.text, points: Math.round(share * 10) / 10 + 0, area: item.area };
       })
       .map((item, i) => ({ item, i }))
       .sort((a, b) => Math.abs(b.item.points) - Math.abs(a.item.points) || a.i - b.i)
