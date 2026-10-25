@@ -80,7 +80,7 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .targets button .icon { width: 12px; height: 12px; color: var(--accent); }
 .picker.has-detail { display: grid; grid-template-columns: minmax(0, 560px) minmax(0, 1fr); gap: 28px; align-items: start; }
 /* Scheletro: la lista tiene l'altezza di una pagina e il dettaglio vuoto resta al suo posto, così la pagina non salta */
-.picker-list { min-width: 0; min-height: 860px; }
+.picker-list { min-width: 0; }
 .detail-empty { display: grid; place-content: center; justify-items: center; gap: 10px; min-height: 320px; padding: 24px; background: transparent; border: 1px dashed var(--line); color: var(--faint); text-align: center; }
 .detail-empty .icon { width: 28px; height: 28px; }
 .detail-empty p { margin: 0; max-width: 32ch; font-size: 14px; }
@@ -136,7 +136,6 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .suggestion .quick { display: grid; place-items: center; width: 34px; height: 34px; padding: 0; border-radius: 4px; color: var(--muted); }
 .suggestion .quick:hover { color: var(--text); background: var(--accent-soft); }
 .suggestion.first .quick { background: var(--accent-2); border-color: var(--accent-2); color: var(--on-accent-2); }
-.suggestion.first .quick:hover { background: #ffc933; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .set { background: var(--field); padding: 10px 12px; border-radius: 4px; white-space: pre-wrap; font-size: 13px; line-height: 1.5; }
 
@@ -237,6 +236,87 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .errors { color: var(--bad); }
 .favorite { cursor: pointer; }
+
+
+/* Sezione Pokémon come Box: una riga di strumenti, poi lista dei candidati e scheda di riepilogo che scorrono dentro */
+.suggestions-panel { display: flex; flex-direction: column; gap: 10px; }
+.toolbar { position: relative; display: flex; align-items: center; gap: 10px; }
+.toolbar > .segmented { flex: none; }
+.toolbar > .segmented button { gap: 6px; padding: 8px 14px; font-size: 14px; white-space: nowrap; }
+.toolbar > .segmented .icon { width: 14px; height: 14px; }
+.toolbar .search { flex: 1; min-width: 0; margin: 0; }
+.toolbar .filters { flex: none; margin: 0; padding: 0; background: none; border: 0; border-radius: 0; }
+.toolbar .filters > summary { height: 38px; padding: 0 12px; gap: 10px; border: 1px solid var(--line); border-radius: 4px; background: var(--raised); white-space: nowrap; }
+.toolbar .filters > summary:hover, .toolbar .filters[open] > summary { border-color: var(--accent); }
+.toolbar .filters[open] > summary { margin-bottom: 0; }
+.toolbar .filters-reset { margin-left: 0; }
+/* I filtri si aprono sopra la lista, senza spingerla in basso */
+.toolbar .filters::details-content { position: absolute; }
+.toolbar .filters[open]::details-content {
+  position: absolute;
+  z-index: 20;
+  left: 0;
+  right: 0;
+  top: calc(100% + 8px);
+  max-height: calc(var(--ws-h, 70vh) - 90px);
+  overflow: auto;
+  padding: 14px 16px;
+  background: var(--ground);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+}
+.subbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; }
+.picker { margin: 0; }
+.box-head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  margin: 0 0 6px;
+  padding: 4px 26px 4px 12px;
+  align-self: flex-start;
+  font: 700 14px/1.2 var(--display);
+  font-style: italic;
+  color: var(--on-accent);
+  background: var(--stripes), var(--accent);
+  clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%);
+}
+.suggestions { border-radius: 0; }
+.suggestion .pick strong { font: 700 16px/1.1 var(--display); font-style: italic; text-transform: none; letter-spacing: 0.01em; }
+.suggestion .rank, .suggestion .result strong { font-style: italic; }
+.suggestion.first .quick:hover { background: var(--accent-2-ink); }
+.detail { border-radius: 0; }
+.detail-hero { background: var(--stripes), var(--band); }
+.detail-id h3 { font-style: italic; }
+.detail-score strong { font-style: italic; }
+.detail-sec h4 {
+  display: inline-block;
+  padding: 3px 20px 3px 9px;
+  font: 700 12px/1.2 var(--display);
+  font-style: italic;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: var(--on-accent);
+  background: var(--accent);
+  clip-path: polygon(0 0, 100% 0, calc(100% - 9px) 100%, 0 100%);
+}
+.detail-reasons li::before { background: var(--accent-2); }
+.detail.first .detail-actions .go {
+  background: var(--accent-2);
+  border-color: var(--accent-2);
+  color: var(--on-accent-2);
+  padding-right: 22px;
+  clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
+}
+@media (min-width: 1100px) {
+  #panel-pokemon.active { overflow: hidden; }
+  .suggestions-panel { height: 100%; min-height: 0; padding-bottom: 12px; }
+  .picker { flex: 1; min-height: 0; }
+  .picker.has-detail { grid-template-columns: minmax(0, 540px) minmax(0, 1fr); gap: 16px; align-items: stretch; height: 100%; }
+  .picker-list { display: flex; flex-direction: column; min-height: 0; overflow: auto; overscroll-behavior: contain; }
+  .pager { position: sticky; bottom: 0; margin-top: auto; padding: 8px 0 2px; background: var(--ground); }
+  .detail { position: static; top: auto; max-height: none; min-height: 0; overflow: auto; overscroll-behavior: contain; }
+}
 
 @media (max-width: 1100px) {
   .band { grid-template-columns: 1fr; }

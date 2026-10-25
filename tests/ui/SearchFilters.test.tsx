@@ -92,6 +92,7 @@ describe('ricerca e filtri nei suggerimenti', () => {
     const summary = within(suggestions()).getByText('Filtri (1 attivo)', { exact: false }).closest('summary')!;
     await user.click(within(summary).getByRole('button', { name: /Azzera filtri/ }));
     expect(screen.getByLabelText('Uso nel meta')).toHaveValue('all');
+    expect(summary.closest('details')).not.toHaveAttribute('open');
   });
 
   it('tier: gli Uber compaiono nella ricerca con il tag di ban', async () => {

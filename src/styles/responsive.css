@@ -5,7 +5,6 @@
   .slot > summary .sprite { width: 80px; height: 80px; }
   .slot > summary { --sprite-scale: 0.8333; }
   .slot .roles { font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
-  .picker.has-detail { grid-template-columns: minmax(0, 500px) minmax(0, 1fr); }
   .detail-hero { grid-template-columns: 72px minmax(0, 1fr) auto; }
   .detail-sprite { width: 72px; height: 72px; }
   .detail-sprite .sprite-ani { transform: translate(-50%, -50%) scale(0.75); }
