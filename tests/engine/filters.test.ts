@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
-import { activeFilterCount, EMPTY_FILTERS, hasFilterRole, isFiltering, searchCandidates, tierLabel, type CandidateFilters } from '../../src/engine/filters';
+import { activeFilterCount, EMPTY_FILTERS, hasFilterRole, isFiltering, normalizeTypes, searchCandidates, tierLabel, type CandidateFilters } from '../../src/engine/filters';
+import { getSpecies } from '../../src/engine/dex';
 import { formatRules } from '../../src/engine/formatRules';
 import { emptySet, mostCommonSet } from '../../src/engine/sets';
 import { fixtureData, tusk } from '../fixtures/data';
@@ -65,6 +66,25 @@ describe('filtri', () => {
 
   it('tipo', () => {
     expect(sorted(search({ ...common, types: ['Water'] }))).toEqual(['Rotom-Wash', 'Toxapex']);
+  });
+
+  it('mono: solo Pokémon con un tipo', () => {
+    const found = search({ types: ['Water'], mono: true });
+    expect(found).toContain('Vaporeon');
+    expect(found).not.toContain('Toxapex');
+    expect(found.every(name => getSpecies(name)?.types.length === 1)).toBe(true);
+  });
+
+  it('stesso tipo due volte = monotipo', () => {
+    expect(normalizeTypes(['Fire', 'Fire'])).toEqual({ types: ['Fire'], mono: true });
+    expect(normalizeTypes(['Fire', 'Water'])).toEqual({ types: ['Fire', 'Water'], mono: false });
+  });
+
+  it('Solo preferiti', () => {
+    const userLists = { favorites: new Set(['Gholdengo']), bans: new Set<string>(), overridden: new Map(), universal: new Set<string>() };
+    const filters = { ...EMPTY_FILTERS, favoritesOnly: true };
+    expect(search({ favoritesOnly: true }, { ...fixtureData, userLists })).toEqual(['Gholdengo']);
+    expect(activeFilterCount(filters)).toBe(1);
   });
 
   it('due tipi: devono esserci entrambi', () => {

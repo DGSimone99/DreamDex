@@ -9,6 +9,7 @@ import { detectRoles, hasPriority, hasSetup, hasSpeedControl } from './roles';
 import type { SubRole } from './subRoles';
 import { scoreSets, uniqueFormes, type Suggestion } from './scoring';
 import { defaultSet, type TeamSet } from './sets';
+import { isUserFavorite } from './lists';
 import { usageOf } from './stats';
 import { benefits, enables, type Condition } from './synergy';
 import { defensiveMultiplier, superEffectiveMove, type TypeName } from './types';
@@ -28,6 +29,8 @@ export interface CandidateFilters {
   query: string;
   /** Il Pokémon deve avere tutti i tipi scelti (al massimo 2). */
   types: TypeName[];
+  /** Solo Pokémon con un tipo (con `types[0]`: solo monotipo di quel tipo). */
+  mono: boolean;
   /** Il Pokémon deve avere tutti i ruoli scelti. */
   roles: FilterRole[];
   provides: Condition | '';
@@ -43,6 +46,8 @@ export interface CandidateFilters {
   legendary: Inclusion;
   usage: 'all' | 'common' | 'niche';
   tier: TierFilter;
+  /** Solo i preferiti delle Liste. */
+  favoritesOnly: boolean;
 }
 
 export type TierFilter = 'all' | 'legal' | 'uber' | 'ou' | 'uu' | 'ru' | 'nfe';
@@ -50,8 +55,8 @@ export type TierFilter = 'all' | 'legal' | 'uber' | 'ou' | 'uu' | 'ru' | 'nfe';
 export type Inclusion = 'all' | 'none' | 'only';
 
 export const EMPTY_FILTERS: CandidateFilters = {
-  query: '', types: [], roles: [], provides: '', benefitsFrom: '', fitsArchetype: '', resists: [], hits: [],
-  mega: 'all', legendary: 'all', usage: 'all', tier: 'all',
+  query: '', types: [], mono: false, roles: [], provides: '', benefitsFrom: '', fitsArchetype: '', resists: [], hits: [],
+  mega: 'all', legendary: 'all', usage: 'all', tier: 'all', favoritesOnly: false,
 };
 
 /** Soglie del filtro "Uso nel meta". */
@@ -66,8 +71,13 @@ export function activeFilterCount(f: CandidateFilters): number {
   return [
     f.types.length > 0, f.roles.length > 0, f.provides !== '', f.benefitsFrom !== '', f.fitsArchetype !== '',
     f.resists.length > 0, f.hits.length > 0, f.mega !== 'all', f.legendary !== 'all',
-    f.usage !== 'all', f.tier !== 'all',
+    f.usage !== 'all', f.tier !== 'all', f.favoritesOnly,
   ].filter(Boolean).length;
+}
+
+/** Tipo 1 e Tipo 2 uguali vogliono dire "solo monotipo" di quel tipo. */
+export function normalizeTypes(types: TypeName[]): { types: TypeName[]; mono: boolean } {
+  return types.length === 2 && types[0] === types[1] ? { types: [types[0]], mono: true } : { types, mono: false };
 }
 
 export function isFiltering(f: CandidateFilters): boolean {
@@ -111,6 +121,8 @@ export function matchesFilters(candidate: { species: string; set: TeamSet }, f: 
     const types = (battleSpecies(set)?.types ?? []) as readonly string[];
     if (!f.types.every(t => types.includes(t))) return false;
   }
+  if (f.mono && (battleSpecies(set)?.types.length ?? 0) !== 1) return false;
+  if (f.favoritesOnly && !isUserFavorite(set, data.userLists)) return false;
   if (f.roles.length && !f.roles.every(r => hasFilterRole(set, r, rules))) return false;
   if (f.provides && !enables(set).some(e => e.condition === f.provides)) return false;
   if (f.benefitsFrom && !benefits(set).some(b => b.condition === f.benefitsFrom)) return false;
