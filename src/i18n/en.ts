@@ -379,6 +379,7 @@ export const en = {
   'combobox.preset': "Alt",
   'combobox.more': "{n} more: type to narrow down",
   'stats.title': "Base stats",
+  'stats.vs': "vs {species}",
   'stats.total': "Total",
   'analysis.region': "Analysis",
   'analysis.weakness': "Defensive weaknesses",
