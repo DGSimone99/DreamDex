@@ -22,4 +22,11 @@ describe('scheda dei membri', () => {
     expect(tags.length).toBeGreaterThan(0);
     for (const tag of tags) expect(tag.getAttribute('title')).toBeTruthy();
   });
+
+  it("sta in fondo alla colonna destra dell'Analisi", async () => {
+    const user = userEvent.setup();
+    const { container } = render(<App initialLang="it" data={fixtureData} />);
+    for (const name of ['Great Tusk', 'Gholdengo']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
+    expect(container.querySelector('.analysis-detail')).toContainElement(screen.getByRole('group', { name: 'Scheda dei membri' }));
+  });
 });

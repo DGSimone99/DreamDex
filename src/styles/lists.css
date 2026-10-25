@@ -35,3 +35,31 @@
 .lists-copy select { font-size: 14px; }
 @media (max-width: 1100px) { .lists-main { grid-template-columns: 1fr; } .lists-side { position: static; } }
 .lists-bar .search-hint { max-width: 360px; }
+
+/* Blocchi come pannelli del riepilogo: il titolo è una linguetta inclinata, riassunto e freccia a destra */
+.block { border-radius: 0; }
+.block > summary > span:first-child {
+  flex: none;
+  max-width: 60%;
+  padding: 3px 22px 3px 10px;
+  font: 700 14px/1.25 var(--display);
+  font-style: italic;
+  letter-spacing: 0.01em;
+  color: var(--on-accent);
+  background: var(--accent);
+  clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
+}
+.block > summary > span + span { flex: 1; }
+/* Analisi e Meta: due colonne che scorrono ognuna per conto suo; Liste: il Pokédex scorre, le liste a destra pure */
+@media (min-width: 1100px) {
+  #panel-analysis.active, #panel-meta.active, #panel-lists.active { overflow: hidden; }
+  .tab-panel > .analysis, .tab-panel > .meta-panel { height: 100%; }
+  .analysis { display: flex; flex-direction: column; }
+  .analysis-cols { flex: 1; min-height: 0; align-items: stretch; }
+  .meta-panel { align-items: stretch; }
+  .analysis-main, .analysis-detail, .meta-panel > * { min-height: 0; overflow: auto; overscroll-behavior: contain; padding-right: 4px; padding-bottom: 12px; }
+  .lists-panel { height: 100%; display: flex; flex-direction: column; }
+  .lists-main { flex: 1; min-height: 0; align-items: stretch; }
+  .dex-grid { max-height: none; height: 100%; }
+  .lists-side { position: static; top: auto; min-height: 0; overflow: auto; align-content: start; padding-bottom: 12px; }
+}
