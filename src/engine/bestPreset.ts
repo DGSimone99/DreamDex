@@ -9,6 +9,40 @@ import { presetsForSet, type TeamSet } from './sets';
 export const MAX_TUNES = 2;
 /** Mosse più usate provate in ogni slot (le prime per quota). */
 const TUNE_MOVES = 8;
+/** Quota d'uso oltre la quale una mossa è quasi obbligatoria (Surging Strikes su Urshifu-Rapid-Strike): resta sempre nel set. */
+export const CORE_MOVE_SHARE = 0.95;
+
+const family = (move: string) => (toID(move).startsWith('hiddenpower') ? 'hiddenpower' : toID(move));
+
+/** Le mosse quasi obbligatorie del Pokémon (quota d'uso almeno CORE_MOVE_SHARE), solo se legali (tranne con Custom Skillset). */
+function coreMoves(set: TeamSet, data: EngineData, genLimit: number): string[] {
+  if (!data.stats) return [];
+  const legal = set.customSkillset ? null : legalMoves(set.species, genLimit);
+  return commonChoices(data, set).moves
+    .filter(c => (c.share ?? 0) >= CORE_MOVE_SHARE && (!legal || isLearnable(legal, c.name)))
+    .map(c => c.name);
+}
+
+/** Il set con le mosse quasi obbligatorie che gli mancano, ognuna al posto della mossa meno usata (o in uno slot vuoto). */
+export function withCoreMoves(set: TeamSet, data: EngineData, genLimit = 9): TeamSet {
+  const core = coreMoves(set, data, genLimit);
+  const missing = core.filter(move => !set.moves.some(m => family(m) === family(move)));
+  if (!missing.length) return set;
+  const share = new Map(commonChoices(data, set).moves.map(c => [family(c.name), c.share ?? 0]));
+  const moves = [...set.moves];
+  for (const move of missing) {
+    const empty = moves.findIndex(m => !m);
+    if (empty >= 0 || moves.length < 4) {
+      if (empty >= 0) moves[empty] = move; else moves.push(move);
+      continue;
+    }
+    // La mossa meno usata fra quelle non obbligatorie lascia il posto
+    const free = moves.map((m, i) => ({ i, share: share.get(family(m)) ?? 0, core: core.some(c => family(c) === family(m)) })).filter(x => !x.core);
+    if (!free.length) break;
+    moves[free.reduce((a, b) => (b.share < a.share ? b : a)).i] = move;
+  }
+  return { ...set, moves };
+}
 
 /**
  * Il set di team[index] ritoccato: fino a MAX_TUNES sostituzioni di una mossa con una delle più usate del Pokémon,
@@ -28,6 +62,8 @@ export function tuneSet(team: TeamSet[], index: number, data: EngineData, genLim
   const allowed = custom ? null : legalAbilities(current.species, genLimit);
   const abilities = locked ? [] : common.abilities.map(c => c.name).filter(name => !allowed || allowed.includes(name));
   const grade = (set: TeamSet) => rateTeam(team.map((s, j) => (j === index ? set : s)), data, 'en')?.overall ?? -Infinity;
+  // Le mosse quasi obbligatorie non si toccano, anche se il voto preferirebbe altro (Surging Strikes col sole del team)
+  const core = coreMoves(current, data, genLimit).map(family);
   let score = grade(current);
   for (let step = 0; step < MAX_TUNES; step++) {
     let best: TeamSet | null = null;
@@ -37,10 +73,10 @@ export function tuneSet(team: TeamSet[], index: number, data: EngineData, genLim
       if (value > bestScore) { best = set; bestScore = value; }
     };
     const slots = Math.max(current.moves.length, Math.min(4, current.moves.filter(Boolean).length + 1));
-    const family = (move: string) => (toID(move).startsWith('hiddenpower') ? 'hiddenpower' : toID(move));
     for (const move of moves) {
       if (current.moves.some(m => family(m) === family(move))) continue;
       for (let slot = 0; slot < Math.min(4, slots); slot++) {
+        if (current.moves[slot] && core.includes(family(current.moves[slot]))) continue;
         const next = [...current.moves];
         next[slot] = move;
         consider({ ...current, moves: next });
@@ -83,8 +119,12 @@ function pickPreset(team: TeamSet[], index: number, data: EngineData, genLimit: 
 
 /** Il preset col voto del team più alto, poi ritoccato tra le mosse e le abilità più usate. */
 export function bestPreset(team: TeamSet[], index: number, data: EngineData, genLimit = 9): BestPreset {
-  const best = pickPreset(team, index, data, genLimit);
-  if (best.index === null) return best;
+  const picked = pickPreset(team, index, data, genLimit);
+  if (picked.index === null) return picked;
+  // Il preset scelto con le mosse quasi obbligatorie che gli mancano
+  const complete = withCoreMoves(picked.set, data, genLimit);
+  const best = complete === picked.set ? picked
+    : { ...picked, set: complete, overall: rateTeam(team.map((s, j) => (j === index ? complete : s)), data, 'en')?.overall ?? picked.overall };
   // Poi il ritocco tra le mosse e le abilità più usate
   const tuned = tuneSet(team.map((s, j) => (j === index ? best.set : s)), index, data, genLimit);
   if (tuned === best.set) return best;
