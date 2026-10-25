@@ -56,7 +56,7 @@
 .paste-error { margin: 0; font-size: 13px; color: var(--bad); }
 .paste-actions { display: flex; gap: 8px; justify-content: flex-end; }
 .paste-actions .apply { background: var(--accent-soft); border-color: var(--accent); color: var(--text); }
-.paste-actions .apply:hover:not(:disabled) { background: #2a3b85; }
+.paste-actions .apply:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 30%, var(--raised)); }
 .editor-actions button { height: 36px; white-space: nowrap; }
 .set-editor .custom-toggle { white-space: nowrap; flex-shrink: 0; }
 .set-editor .preset-field { flex-direction: row; align-items: center; gap: 12px; }

@@ -28,7 +28,7 @@
 .help-button { display: inline-grid; place-items: center; width: 22px; height: 22px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--faint); }
 .help-button .icon { width: 20px; height: 20px; }
 .help-button:hover { color: var(--accent); }
-.help-backdrop { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; padding: 24px; background: rgba(4, 7, 18, 0.66); }
+.help-backdrop { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; padding: 24px; background: rgba(6, 7, 12, 0.7); }
 .help-dialog {
   display: flex;
   flex-direction: column;
@@ -40,7 +40,7 @@
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
   overflow: hidden;
 }
-.help-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--line-soft); }
+.help-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px; border-bottom: 2px solid var(--accent-2); background: var(--stripes), var(--band); }
 .help-head h3 { font-size: 20px; }
 .help-close { display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border: 0; background: none; color: var(--faint); }
 .help-close:hover { color: var(--text); }

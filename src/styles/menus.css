@@ -86,13 +86,13 @@
 .combobox .group-head.common-head { color: var(--accent); padding-top: 6px; }
 .combobox .group-head:not(.common-head) { margin-top: 4px; border-top: 1px solid var(--line); padding-top: 10px; }
 .combobox [role='option'].common {
-  background: linear-gradient(90deg, rgba(255, 184, 0, 0.13), rgba(255, 184, 0, 0.02) 70%);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 13%, transparent), color-mix(in srgb, var(--accent) 2%, transparent) 70%);
   box-shadow: inset 2px 0 0 var(--accent);
-  border-bottom-color: rgba(255, 184, 0, 0.12);
+  border-bottom-color: color-mix(in srgb, var(--accent) 12%, transparent);
   border-radius: 0 3px 3px 0;
 }
-.combobox [role='option'].common.active { background: linear-gradient(90deg, rgba(255, 184, 0, 0.22), var(--raised) 70%); }
-.combobox [role='option'].common[aria-selected='true'] { background: linear-gradient(90deg, rgba(255, 184, 0, 0.22), var(--accent-soft) 70%); }
+.combobox [role='option'].common.active { background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 22%, transparent), var(--raised) 70%); }
+.combobox [role='option'].common[aria-selected='true'] { background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 22%, transparent), var(--accent-soft) 70%); }
 .combobox .common-share {
   margin-left: auto;
   flex: none;
