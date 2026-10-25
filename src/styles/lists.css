@@ -296,8 +296,6 @@
   .drawer { padding-top: 18px; padding-bottom: 6px; }
   .set-editor { gap: 6px 14px; }
   .set-editor .editor-head { gap: 10px; row-gap: 6px; }
-  .set-editor .editor-head .btn-label { display: none; }
-  .set-editor .editor-head .best-preset, .set-editor .editor-head .member-io { width: 38px; padding: 0; justify-content: center; }
   .set-editor .preset-field { width: 250px; }
   .set-editor .my-sets-field { width: 210px; }
   .stat-row { padding-top: 0; padding-bottom: 0; }
@@ -364,3 +362,19 @@
 .grade-area.band-B .meter > span { background: var(--accent); }
 .grade-area.band-C .meter > span { background: var(--warn); }
 .grade-area.band-D .meter > span { background: var(--bad); }
+/* Schermi grandi (2K/4K al 100%): tutto in proporzione, come su un 1920/2048 (altrimenti l'interfaccia resta piccola e vuota) */
+@media (min-width: 2200px) and (min-height: 1100px) {
+  html { zoom: 1.25; }
+  .app { height: calc(100dvh / 1.25); min-height: 0; }
+}
+@media (min-width: 3000px) and (min-height: 1500px) {
+  html { zoom: 1.6; }
+  .app { height: calc(100dvh / 1.6); min-height: 0; }
+}
+/* Il nome del preset Smogon su una riga sola (i puntini, il nome intero nel menu) */
+.preset-field .combobox-display > span:first-child { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Solo quando manca davvero larghezza (non per uno schermo basso): pulsanti della testata a sola icona */
+@media (min-width: 1100px) and (max-width: 1279px) {
+  .set-editor .editor-head .btn-label { display: none; }
+  .set-editor .editor-head .best-preset, .set-editor .editor-head .member-io { width: 38px; padding: 0; justify-content: center; }
+}
