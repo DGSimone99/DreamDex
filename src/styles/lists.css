@@ -200,7 +200,7 @@
 .joined { display: flex; align-items: stretch; min-width: 0; }
 .joined > .combobox, .joined > .my-sets-input { flex: 1; min-width: 0; }
 .joined > .combobox input, .joined > .my-sets-input input { border-top-right-radius: 0; border-bottom-right-radius: 0; }
-.joined > a, .joined > button { width: 38px; height: 36px; padding: 0; display: grid; place-items: center; margin-left: -1px; border-radius: 0 4px 4px 0; flex: none; }
+.joined > a, .joined > button { width: 38px; height: auto; min-height: 36px; padding: 0; display: grid; place-items: center; margin-left: -1px; border-radius: 0 4px 4px 0; flex: none; }
 .smogon-link.icon-only { justify-content: center; }
 .my-sets-input { position: relative; display: flex; }
 .my-sets-input input { width: 100%; height: 36px; padding-right: 34px; }
@@ -250,7 +250,7 @@
 .editor-title .species-tag {
   position: absolute;
   left: 0;
-  bottom: calc(100% + 7px);
+  bottom: calc(100% + 3px);
   padding: 1px 16px 1px 7px;
   font: 700 11px/1.3 var(--display);
   font-style: italic;
@@ -307,7 +307,7 @@
   .set-editor fieldset.editor-roles { padding: 0 10px 6px; }
   .set-editor .editor-group { gap: 6px 12px; }
   .set-editor .evs .speed-line { padding-top: 4px; }
-  .editor-title .species-tag { bottom: calc(100% + 3px); }
+  .editor-title .species-tag { bottom: calc(100% + 2px); }
 }
 /* Importa / Esporta allineato al bordo destro del suo pulsante (non esce dallo schermo); Copia set attaccato */
 .io-anchor .paste-panel { left: auto; right: 0; width: min(440px, 80vw); }
@@ -378,3 +378,7 @@
   .set-editor .editor-head .btn-label { display: none; }
   .set-editor .editor-head .best-preset, .set-editor .editor-head .member-io { width: 38px; padding: 0; justify-content: center; }
 }
+/* Il tooltip di un avviso sulla carta passa sopra la freccia che comprime il team */
+.band:has(.slot .alert-mark:hover, .slot .alert-mark:focus-visible) .band-toggle { z-index: 1; }
+/* Statistiche e Set un paio di px più giù: le loro etichette non toccano la testata */
+.set-editor > fieldset.evs, .set-editor > .editor-side { margin-top: 3px; }
