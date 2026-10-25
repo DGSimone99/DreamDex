@@ -276,7 +276,7 @@ function TeamSlot({ index, set, subRoles, data, format, warning: megaWarning, op
         {/* Lo strumento è la sua icona prima del nome: nome e descrizione nel tooltip (e per i lettori di schermo) */}
         <span className="name-line">
           <small className="held" title={set.item ? `${gameName('item', set.item, lang)} — ${describe.item(set.item, lang)}` : tr('team.noItem')}>
-            <ItemIcon item={set.item} size={22} />
+            <ItemIcon item={set.item} size={20} />
             <span className="visually-hidden">{set.item ? gameName('item', set.item, lang) : tr('team.noItem')}</span>
           </small>
           <strong className="name">{name}</strong>
