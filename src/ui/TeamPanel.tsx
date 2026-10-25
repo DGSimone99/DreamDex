@@ -315,6 +315,8 @@ function TeamSlot({ index, set, subRoles, data, format, warning: megaWarning, op
         }
         title={open && (
           <div className="editor-title">
+            {/* Con un soprannome, la specie resta sopra come piccola etichetta (come Statistiche, Set e Mosse) */}
+            {set.name && !naming && <span className="species-tag">{name}</span>}
             {naming ? (
               <input className="nickname-input" autoFocus aria-label={tr('team.nickname', { species: name })} maxLength={18}
                 placeholder={name} defaultValue={set.name ?? ''}
