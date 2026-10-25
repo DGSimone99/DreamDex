@@ -68,7 +68,7 @@ describe('editor del set', () => {
     // Cambio un campo: il preset non è più quello, poi riapplico il set salvato
     await user.clear(within(slot).getByLabelText('Mossa 1'));
     await user.type(within(slot).getByLabelText('Mossa 1'), 'Earthquake{Enter}');
-    await user.click(within(slot).getByLabelText('I miei set'));
+    await user.click(within(slot).getByRole('button', { name: 'Mostra i miei set' }));
     await user.click(within(screen.getByRole('listbox', { name: 'I miei set: opzioni' })).getByRole('option', { name: /Set 1/ }));
     expect(within(slot).getByLabelText('Mossa 1')).toHaveValue(tusk.moves[0]);
     for (let i = 0; i < 4; i++) {
@@ -77,7 +77,10 @@ describe('editor del set', () => {
       await user.click(within(slot).getByRole('button', { name: 'Salva set' }));
     }
     expect(loadMySets()['Great Tusk']).toHaveLength(5);
+    // Pieno: un set nuovo (senza nome già usato) non si può salvare
+    await user.clear(within(slot).getByLabelText('Mossa 1'));
+    await user.type(within(slot).getByLabelText('Mossa 1'), 'Rapid Spin{Enter}');
     expect(within(slot).getByRole('button', { name: 'Salva set' })).toBeDisabled();
-  });
+  }, 30000);
 
 });

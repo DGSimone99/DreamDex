@@ -21,6 +21,10 @@ const paths = {
   physical: 'M12 2.5l2.3 5.2 5.4-1.6-2.6 5 4.4 3.3-5.6.6.3 5.6L12 17.3l-4.2 3.3.3-5.6-5.6-.6 4.4-3.3-2.6-5 5.4 1.6z',
   special: 'M12 3a9 9 0 1 0 0 18 9 9 0 1 0 0-18zm0 4.5a4.5 4.5 0 1 0 0 9 4.5 4.5 0 1 0 0-9z',
   status: 'M12 3a9 9 0 1 0 0 18 9 9 0 1 0 0-18zM12 3c-2.5 2.5-2.5 6.5 0 9s2.5 6.5 0 9',
+  // Salvare, sovrascrivere, rinominare un set
+  save: 'M5 4h11l3 3v13H5zM8 4v5h7V4M8 20v-6h8v6',
+  overwrite: 'M5 4h11l3 3v13H5zM9 14.5a3 3 0 1 0 1-2.2M9 10.5v2.5h2.5',
+  edit: 'M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4',
   // Liste dell'utente: preferito e bannato
   heart: 'M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z',
   ban: 'M12 3a9 9 0 1 0 0 18 9 9 0 1 0 0-18zM5.6 5.6l12.8 12.8',

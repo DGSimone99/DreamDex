@@ -18,8 +18,7 @@ import { setViewLevel, useViewLevel } from './viewLevel';
 import { TypeChip } from './Sprite';
 import { ItemIcon } from './ItemIcon';
 import { Icon } from './icons';
-import { deleteMySet, mySetIndex, saveMySet, useMySets } from './mySets';
-import { MY_SETS_MAX } from '../storage';
+import { MySetsField } from './MySetsField';
 import { typeTextColor } from './TypeText';
 
 function NatureEffect({ name }: { name: string }) {
@@ -137,12 +136,16 @@ interface Props {
   actions?: React.ReactNode;
   /** Pulsante accanto al menu dei preset (Preset migliore). */
   presetAction?: React.ReactNode;
+  /** Accanto al nome (Sostituisci), attaccato ai preset Smogon (link), accanto a I miei set (Importa / Esporta). */
+  memberAction?: React.ReactNode;
+  smogonAction?: React.ReactNode;
+  ioAction?: React.ReactNode;
   /** Tutti i ruoli del membro, il principale per primo: il riquadro in fondo all'editor. */
   roles?: string[];
   onChange: (set: TeamSet) => void;
 }
 
-export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', common, teraBannedIn, speed, title, actions, presetAction, roles, onChange }: Props) {
+export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', common, teraBannedIn, speed, title, actions, presetAction, memberAction, smogonAction, ioAction, roles, onChange }: Props) {
   const t = useT();
   const lang = useLang();
   // Le più usate vanno in cima al menu, con la quota d'uso (o "Preset" se vengono dalle analisi)
@@ -213,15 +216,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
     detail: <span className="preset-format">{formatName(preset.format)}</span>,
     description: preset.set.moves.map(move => gameName('move', move, lang)).join(' · '),
   }));
-  // I miei set: salvati dall'utente per questa specie (al massimo MY_SETS_MAX), separati dai preset Smogon
-  const mine = useMySets(set.species);
-  const mineIndex = mySetIndex(mine, set);
-  const mineOptions: ComboOption[] = mine.map((saved, i) => ({
-    value: String(i),
-    label: saved.name,
-    description: saved.set.moves.map(move => gameName('move', move, lang)).join(' · '),
-  }));
-  const mineFull = mine.length >= MY_SETS_MAX;
+
   const appliedIndex = presets.findIndex(p => sameSet(p.set, set));
   const applyPreset = (key: string) => {
     const preset = presets[Number(key)];
@@ -259,6 +254,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
         {(title || actions) && (
           <div className="editor-top">
             {title}
+            {memberAction}
             {/* Set e Danni: il calcolo dei danni arriverà qui, per ora la linguetta è spenta */}
             <div className="editor-tabs" role="tablist" aria-label={t('editor.tabs')}>
               <button type="button" role="tab" aria-selected="true" tabIndex={0}>{t('editor.tabSet')}</button>
@@ -269,8 +265,9 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
             {actions && <div className="editor-actions">{actions}</div>}
           </div>
         )}
-        <div className="field preset-field">
+        <div className="field preset-field preset-group">
           <span className="field-head">{t('editor.presets')}</span>
+          <div className="joined">
           <Combobox
             label={t('editor.presets')}
             value={appliedIndex >= 0 ? String(appliedIndex) : ''}
@@ -283,31 +280,12 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
               : undefined}
             onChange={applyPreset}
           />
+          {smogonAction}
+          </div>
         </div>
         {presets.length > 0 && presetAction}
-        <div className="field my-sets-field">
-          <span className="field-head">{t('editor.mySets')}</span>
-          <Combobox
-            label={t('editor.mySets')}
-            value={mineIndex >= 0 ? String(mineIndex) : ''}
-            options={mineOptions}
-            restricted
-            disabled={mine.length === 0}
-            placeholder={mine.length ? `${t('editor.mySets')}…` : t('editor.mySetsEmpty')}
-            onChange={key => { const saved = mine[Number(key)]; if (saved) onChange(presetSet(set, saved.set)); }}
-          />
-        </div>
-        <button type="button" className="save-set" disabled={mineFull || mineIndex >= 0}
-          title={mineFull ? t('editor.saveSetFull') : t('editor.saveSet')}
-          onClick={() => saveMySet(set.species, set, n => t('editor.mySetName', { n }))}>
-          <Icon name="plus" /> {t('editor.saveSet')}
-        </button>
-        {mineIndex >= 0 && (
-          <button type="button" className="delete-set" aria-label={t('editor.deleteSet')} title={t('editor.deleteSet')}
-            onClick={() => deleteMySet(set.species, mineIndex)}>
-            <Icon name="close" />
-          </button>
-        )}
+        <MySetsField set={set} onApply={saved => onChange(presetSet(set, saved))} />
+        {ioAction}
         <label className="custom-toggle" title={t('editor.customTooltip')}>
           <input
             type="checkbox"

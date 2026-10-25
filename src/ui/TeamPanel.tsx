@@ -303,17 +303,20 @@ function TeamSlot({ index, set, subRoles, data, format, warning: megaWarning, op
             <span className="types">{species?.types.map(type => <TypeChip key={type} type={type} />)}</span>
           </div>
         )}
+        memberAction={
+          <button type="button" className="member-replace" aria-label={tr('team.replace', { species: name })} title={tr('team.replaceButton')} onClick={stable.onReplace}>
+            <Icon name="swap" /> <span className="btn-label">{tr('team.replaceButton')}</span>
+          </button>
+        }
+        smogonAction={<SmogonLink species={name} format={format} presets={presets} iconOnly />}
+        ioAction={
+          <button type="button" className="member-io" aria-expanded={!!paste} title={tr('team.memberIO')}
+            onClick={() => setPaste(p => (p ? null : { text: exportShowdown([set], { tera: teraAllowed(format) }), error: null }))}>
+            <Icon name="paste" /> {tr('team.memberIO')}
+          </button>
+        }
         actions={<>
           {megaWarning && <button type="button" onClick={stable.onIgnoreWarning}>{tr('team.keepMega')}</button>}
-          <button type="button" aria-label={tr('team.pasteSet')} title={tr('team.pasteSet')} aria-expanded={!!paste}
-            onClick={() => setPaste(p => (p ? null : { text: '', error: null }))}>
-            <Icon name="paste" /> <span className="btn-label">{tr('team.pasteSet')}</span>
-          </button>
-          <button type="button" aria-label={tr('team.copySet')} title={tr('team.copySet')} onClick={async () => {
-            if (await copyText(exportShowdown([set], { tera: teraAllowed(format) }))) { setCopied(true); setTimeout(() => setCopied(false), 1500); }
-          }}><Icon name={copied ? 'check' : 'copy'} /> <span className="btn-label">{tr(copied ? 'team.copied' : 'team.copySet')}</span></button>
-          <SmogonLink species={name} format={format} presets={presets} />
-          <button type="button" aria-label={tr('team.replace', { species: name })} title={tr('team.replaceButton')} onClick={stable.onReplace}><Icon name="swap" /> <span className="btn-label">{tr('team.replaceButton')}</span></button>
           <button type="button" className="editor-close" aria-label={tr('team.closeEditor')} title={tr('team.closeEditor')}
             onClick={() => { onToggle(false); card.current?.focus(); }}><Icon name="close" /></button>
         </>} />
@@ -325,6 +328,9 @@ function TeamSlot({ index, set, subRoles, data, format, warning: megaWarning, op
           {paste.error && <p className="paste-error" role="alert">{paste.error}</p>}
           <div className="paste-actions">
             <button type="button" className="apply" disabled={!paste.text.trim()} onClick={applyPaste}>{tr('team.pasteApply')}</button>
+            <button type="button" onClick={async () => {
+              if (await copyText(exportShowdown([set], { tera: teraAllowed(format) }))) { setCopied(true); setTimeout(() => setCopied(false), 1500); }
+            }}><Icon name={copied ? 'check' : 'copy'} /> {tr(copied ? 'team.copied' : 'team.copySet')}</button>
             <button type="button" onClick={() => setPaste(null)}>{tr('team.pasteCancel')}</button>
           </div>
         </div>
