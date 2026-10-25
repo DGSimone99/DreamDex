@@ -383,3 +383,14 @@
 .band:has(.slot .alert-mark:hover, .slot .alert-mark:focus-visible) .band-toggle { z-index: 1; }
 /* Statistiche e Set un paio di px più giù: le loro etichette non toccano la testata */
 .set-editor > fieldset.evs, .set-editor > .editor-side { margin-top: 3px; }
+/* Preset Smogon alto quanto il suo pulsante (e quanto I miei set) */
+.joined > .combobox input { height: 36px; }
+/* Schermi grandi e alti (1920×1080 in su): carte più alte e sprite animato della carta aperta più grande */
+@media (min-width: 1600px) and (min-height: 1000px) {
+  .slot > summary, .slot.empty { height: 256px; }
+  .slot[open] > summary { --open-scale: 1.85; --fit: 214; }
+  /* Anche gli sprite delle carte chiuse un po' più grandi: le carte più alte non restano vuote */
+  .slot > summary .sprite { width: 112px; height: 112px; }
+  .slot > summary { --sprite-scale: 1.1667; }
+  .slot[open] > summary .sprite { transform: scale(calc(var(--open-scale) / var(--sprite-scale))); }
+}
