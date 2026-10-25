@@ -83,6 +83,11 @@ const STATES: Record<string, State> = {
   } },
   'stats-pop': { run: async p => focus(p, '.stats-badge') },
   alert: { run: async p => focus(p, '.alert-mark') },
+  'editor-alert': { run: async p => {
+    if (!await clickText(p, '.slot.filled > summary', /Dragapult/)) return 'no card';
+    await wait(600);
+    return focus(p, '.slot[open] .alert-mark');
+  } },
   undo: { run: async p => clickText(p, 'button.remove', /Rimuovi/) },
   collapsed: { hash: hash(LONG), run: async p => clickText(p, 'button.band-toggle', /./) },
   empty: { hash: '' },
