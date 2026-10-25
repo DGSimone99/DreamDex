@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { analyzeTeam } from '../../src/engine/analysis';
 import { describeDiff } from '../../src/engine/coach';
 import { diffContribution } from '../../src/engine/replace';
-import { typeName } from '../../src/i18n/game';
+import { initGameNames } from '../../src/i18n/game';
 import { teamNeeds } from '../../src/engine/needs';
 import { levelOf } from '../../src/engine/roleLevels';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
@@ -78,9 +78,27 @@ describe('cosa perdi: resistenze uniche', () => {
     expect(diff.losses.resists).not.toContain('Electric');
   });
 
-  it('describeDiff: una riga "nessuno resiste più" in italiano e in inglese', () => {
-    const diff = diffContribution(clodsire, zamazenta, analyzeTeam(rest, fixtureData), rest);
-    expect(describeDiff(diff, 'it').cons).toContain(`Nessuno resiste più a ${typeName('Electric', 'it')}`);
-    expect(describeDiff(diff, 'en').cons).toContain('Nobody resists Electric anymore');
+  it('describeDiff: una sola riga "nessuno resiste più" per tutti i tipi, in italiano e in inglese', () => {
+    const diff = { ...diffContribution(clodsire, zamazenta, analyzeTeam(rest, fixtureData), rest), lostResists: ['Electric' as const, 'Rock' as const] };
+    expect(describeDiff(diff, 'en').cons).toContain('Nobody resists Electric, Rock anymore');
+    initGameNames({ moves: {}, abilities: {}, items: {}, natures: {}, types: { electric: 'Elettro', rock: 'Roccia' } });
+    try {
+      expect(describeDiff(diff, 'it').cons.filter(c => c.startsWith('Nessuno resiste'))).toEqual(['Nessuno resiste più ad Elettro, Roccia']);
+    } finally {
+      initGameNames(null);
+    }
+  });
+
+  it('in italiano "ad" davanti a vocale: ad Acqua, ad Acciaio, ma a Fuoco', () => {
+    initGameNames({ moves: {}, abilities: {}, items: {}, natures: {}, types: { water: 'Acqua', steel: 'Acciaio', fire: 'Fuoco' } });
+    try {
+      const diff = { gains: { roles: [], covers: [], resists: ['Water' as const] }, losses: { roles: [], covers: [], resists: ['Steel' as const] }, lostResists: ['Fire' as const] };
+      const text = describeDiff(diff, 'it');
+      expect(text.pros).toContain('Resistente ad Acqua');
+      expect(text.cons).toContain('Non più resistente ad Acciaio');
+      expect(text.cons).toContain('Nessuno resiste più a Fuoco');
+    } finally {
+      initGameNames(null);
+    }
   });
 });

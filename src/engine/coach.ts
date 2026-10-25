@@ -288,12 +288,17 @@ export function verdictFor(team: TeamSet[], problems: CoachProblem[], grade: str
 }
 
 /** Voci del diff raggruppate per tipo: ruoli, "Forte contro X, Y", "Resistente a X, Y". */
+/** I tipi in elenco; in italiano con la preposizione davanti ("a Fuoco", "ad Acqua"), in inglese senza. */
+function typeList(list: string[], lang: Lang): { types: string } {
+  const types = list.map(type => typeName(type, lang)).join(', ');
+  return { types: lang === 'it' ? `${/^[aeiouàèéìòù]/i.test(types) ? 'ad' : 'a'} ${types}` : types };
+}
+
 function groupChanges(change: Contribution, gain: boolean, lang: Lang): string[] {
-  const types = (list: string[]) => list.map(type => typeName(type, lang)).join(', ');
   return [
     ...change.roles.map(role => roleLabel(role, lang)),
-    change.covers.length ? t(lang, gain ? 'diff.strong' : 'diff.notStrong', { types: types(change.covers) }) : '',
-    change.resists.length ? t(lang, gain ? 'diff.resists' : 'diff.notResists', { types: types(change.resists) }) : '',
+    change.covers.length ? t(lang, gain ? 'diff.strong' : 'diff.notStrong', { types: change.covers.map(type => typeName(type, lang)).join(', ') }) : '',
+    change.resists.length ? t(lang, gain ? 'diff.resists' : 'diff.notResists', typeList(change.resists, lang)) : '',
   ].filter(Boolean);
 }
 
@@ -335,7 +340,7 @@ export const describeDiff = (diff: Diff, lang: Lang = 'it') => ({
   pros: groupChanges(diff.gains, true, lang),
   cons: [
     ...groupChanges(diff.losses, false, lang),
-    ...diff.lostResists.map(type => t(lang, 'diff.nobodyResists', { type: typeName(type, lang) })),
+    ...(diff.lostResists.length ? [t(lang, 'diff.nobodyResists', typeList(diff.lostResists, lang))] : []),
   ],
 });
 

@@ -3,7 +3,9 @@ import { teamArchetype } from '../../src/engine/archetype';
 import { DEFAULT_RULES } from '../../src/engine/formatRules';
 import { rateTeam } from '../../src/engine/rating';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
-import { bestSwaps, rankByTeamGain, withCandidate } from '../../src/engine/teamGain';
+import { bestSwaps, rankByTeamGain, rankKey, withCandidate } from '../../src/engine/teamGain';
+import { improveReplacements } from '../../src/engine/replace';
+import { DEFAULT_FORMAT } from '../../src/engine/format';
 import { fixtureData } from '../fixtures/data';
 
 const set = (species: string, item: string, ability: string, moves: string[], nature: string, evs: TeamSet['evs']): TeamSet =>
@@ -78,6 +80,31 @@ describe('scambi con l\'archetipo scelto', () => {
     for (const s of swaps) expect(teamArchetype(withCandidate(stall, s.set, s.replaces), DEFAULT_RULES)?.archetype).toBe('stall');
   });
 
+  it('team già stall con Stall scelto: entra solo un muro (niente Kyurem al posto di Blissey), i muri restano', () => {
+    // Lo stall degli screenshot: Blissey → Kyurem lo lasciava riconosciuto come stall
+    const tloh: TeamSet[] = [
+      set('Dondozo', 'Leftovers', 'Unaware', ['Body Press', 'Liquidation', 'Rest', 'Sleep Talk'], 'Impish', bulky),
+      set('Blissey', 'Leftovers', 'Natural Cure', ['Protect', 'Seismic Toss', 'Toxic', 'Wish'], 'Bold', { hp: 4, def: 252, spd: 252 }),
+      set('Clodsire', 'Leftovers', 'Unaware', ['Amnesia', 'Poison Jab', 'Recover', 'Spikes'], 'Careful', spdef),
+      set('Corviknight', 'Leftovers', 'Pressure', ['Body Press', 'Defog', 'Iron Defense', 'Roost'], 'Impish', { hp: 252, def: 168, spd: 88 }),
+      set('Gliscor', 'Toxic Orb', 'Poison Heal', ['Earthquake', 'Protect', 'Stealth Rock', 'Toxic'], 'Impish', { hp: 244, def: 248, spe: 16 }),
+      set('Toxapex', 'Rocky Helmet', 'Regenerator', ['Knock Off', 'Recover', 'Scald', 'Toxic Spikes'], 'Bold', bulky),
+    ];
+    const kyurem = set('Kyurem', 'Heavy-Duty Boots', 'Pressure', ['Freeze-Dry', 'Earth Power', 'Substitute', 'Roost'], 'Timid', { hp: 56, spa: 200, spe: 252 });
+    // Senza la regola il cambio passerebbe: il team resta stall
+    expect(teamArchetype(withCandidate(tloh, kyurem, 1), DEFAULT_RULES)?.archetype).toBe('stall');
+    const tlohPool = () => [{ species: 'Kyurem', set: kyurem, score: 50 }, ...pool().filter(c => c.species !== 'Kyurem')];
+    const swaps = bestSwaps(tloh, fixtureData, 'it', tlohPool, { archetype: 'stall' });
+    expect(swaps.map(s => s.species)).not.toContain('Kyurem');
+    expect(swaps.map(s => s.species)).not.toContain('Iron Valiant');
+    expect(swaps.some(s => ['Skarmory', 'Garganacl', 'Ting-Lu'].includes(s.species))).toBe(true);
+  });
+
+  it('team non stall con Stall scelto: nessun vincolo sul singolo membro', () => {
+    const species = bestSwaps(balance, fixtureData, 'it', pool, { archetype: 'stall' }).map(s => s.species);
+    expect(species).toEqual(expect.arrayContaining(bestSwaps(balance, fixtureData, 'it', pool).map(s => s.species)));
+  });
+
   it('i preferiti non si sostituiscono mai, anche con un archetipo', () => {
     const team = stall.map((m, i) => (i === 0 ? { ...m, favorite: true } : m));
     expect(bestSwaps(team, fixtureData, 'it', pool, { archetype: 'stall' }).some(s => s.replaces === 0)).toBe(false);
@@ -96,5 +123,23 @@ describe('scambi con l\'archetipo scelto', () => {
     const sims = pool().map(c => ({ ...c, similarity: 1 }));
     const swaps = bestSwaps(balance, fixtureData, 'it', () => sims, { similar: true, threshold: 0, archetype: 'balance' });
     expect(swaps.every(s => (s.teamGain.penalty ?? 0) === 0)).toBe(true);
+  });
+});
+
+describe('rifiniture del tipo scelto', () => {
+  it('la chiave d\'ordine (anche per i preferiti) è il voto meno la penalità', () => {
+    expect(rankKey({ grade: 'B', overall: 80, gain: 3, penalty: 2 })).toBe(78);
+    expect(rankKey({ grade: 'B', overall: 80, gain: 3 })).toBe(80);
+    expect(rankKey(undefined)).toBe(-1);
+  });
+
+  it('i ruoli guadagnati nel dettaglio seguono il tipo scelto', () => {
+    const team = [stall[3], stall[5], stall[2]];
+    const valiant = candidates.find(c => c.species === 'Iron Valiant')!;
+    const roles = (archetype?: 'stall' | 'hyperOffense') =>
+      improveReplacements(team, 2, DEFAULT_FORMAT, fixtureData, 5, [valiant], 'it', archetype)[0].diff.gains.roles;
+    // In un HO gli attaccanti sono una voce che manca; in uno stall non contano
+    expect(roles('hyperOffense').length).toBeGreaterThan(0);
+    expect(roles('stall')).toEqual([]);
   });
 });

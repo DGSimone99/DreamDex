@@ -1,5 +1,6 @@
 import type { Lang } from '../i18n';
-import { teamArchetype, type Archetype } from './archetype';
+import { fitsArchetype, teamArchetype, type Archetype } from './archetype';
+import { isPassive } from './roles';
 import type { EngineData } from './data';
 import { battleSpecies } from './dex';
 import { rulesOf } from './formatRules';
@@ -31,9 +32,21 @@ function swapEvaluator(team: TeamSet[], data: EngineData, lang: Lang, archetype:
   const before = rateTeam(team, data, lang, opts);
   const rules = rulesOf(data);
   const guard = !!archetype && team.length === 6 && teamArchetype(team, rules)?.archetype === archetype;
-  const evaluate = (after: TeamSet[]): { rating: TeamRating; gain: TeamGain } | 'excluded' | null => {
+  /**
+   * Nel team già del tipo scelto anche chi entra deve essere adatto a quel tipo: nello stall un muro,
+   * nel semi-stall un muro al posto di un muro, negli offense un attaccante adatto; il balance non chiede niente.
+   */
+  const fits = (candidate: TeamSet, original: TeamSet | null): boolean => {
+    if (!guard) return true;
+    if (archetype === 'stall') return fitsArchetype(candidate, 'stall', rules);
+    if (archetype === 'semiStall') return !original || !isPassive(original, rules) || isPassive(candidate, rules);
+    if (archetype === 'hyperOffense' || archetype === 'bulkyOffense') return fitsArchetype(candidate, archetype, rules);
+    return true;
+  };
+  const evaluate = (after: TeamSet[], candidate?: TeamSet, original?: TeamSet | null): { rating: TeamRating; gain: TeamGain } | 'excluded' | null => {
     if (!before) return null;
     if (guard && teamArchetype(after, rules)?.archetype !== archetype) return 'excluded';
+    if (candidate && !fits(candidate, original ?? null)) return 'excluded';
     const rating = rateTeam(after, data, lang, opts);
     if (!rating) return null;
     const lost = archetype ? lostRoles(before.needs, rating.needs) : undefined;
@@ -55,7 +68,7 @@ export interface SwapReport {
 }
 
 /** Chiave dell'ordine: il voto dopo il cambio, meno la penalità per le voci perse. */
-const rankKey = (gain: TeamGain | undefined) => (gain ? gain.overall - (gain.penalty ?? 0) : -1);
+export const rankKey = (gain: TeamGain | undefined) => (gain ? gain.overall - (gain.penalty ?? 0) : -1);
 
 /** Il team col candidato: aggiunto in fondo, o al posto del membro `replaceIndex`. */
 export function withCandidate(team: TeamSet[], set: TeamSet, replaceIndex: number | null): TeamSet[] {
@@ -75,7 +88,7 @@ export function rankByTeamGain<T extends { set: TeamSet; score: number }>(
   const { before, evaluate } = swapEvaluator(team, data, lang, archetype, sort);
   if (!before) return items;
   const rated: (T & { teamGain?: TeamGain })[] = items.flatMap(item => {
-    const result = evaluate(withCandidate(team, item.set, replaceIndex));
+    const result = evaluate(withCandidate(team, item.set, replaceIndex), item.set, replaceIndex === null ? null : team[replaceIndex]);
     // Escluso dall'archetipo scelto: non si propone; senza voto (dati mancanti) resta com'è
     if (result === 'excluded') {
       if (report) report.excluded += 1;
@@ -121,7 +134,7 @@ export function bestSwaps<T extends { species: string; set: TeamSet; score: numb
       .filter(c => !similar || (c.similarity ?? 0) >= threshold)
       .slice(0, SWAPS_PER_MEMBER);
     for (const candidate of candidates) {
-      const result = evaluate(withCandidate(team, candidate.set, index));
+      const result = evaluate(withCandidate(team, candidate.set, index), candidate.set, member);
       if (result === 'excluded' && report) report.excluded += 1;
       if (!result || result === 'excluded') continue;
       const option = { index, gain: result.gain.gain };

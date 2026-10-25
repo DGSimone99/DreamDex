@@ -8,7 +8,7 @@ import { describeDiff, ratingGainOf, SIMILAR_THRESHOLD, type SwapPreview } from 
 import { suggest, type Suggestion } from '../engine/scoring';
 import type { TeamSet } from '../engine/sets';
 import type { TeamRating } from '../engine/rating';
-import { bestSwaps, rankByTeamGain, SWAPS_PER_MEMBER, type SwapOption, type SwapReport, type TeamGain } from '../engine/teamGain';
+import { bestSwaps, rankByTeamGain, rankKey, SWAPS_PER_MEMBER, type SwapOption, type SwapReport, type TeamGain } from '../engine/teamGain';
 import { battleName } from '../engine/dex';
 import { PokemonIcon } from './PokemonName';
 import { statsEntry } from '../engine/stats';
@@ -257,8 +257,8 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
       if (!pool && !data.stats) return [];
       const similar = mode === 'similar';
       return bestSwaps(team, data, lang, index => (similar
-        ? similarReplacements(team, index, format, data, 3 * SWAPS_PER_MEMBER, pool, lang)
-        : improveReplacements(team, index, format, data, SWAPS_PER_MEMBER, pool, lang)), { similar, threshold: SIMILAR_THRESHOLD, archetype, report }).slice(0, MAX);
+        ? similarReplacements(team, index, format, data, 3 * SWAPS_PER_MEMBER, pool, lang, archetype)
+        : improveReplacements(team, index, format, data, SWAPS_PER_MEMBER, pool, lang, archetype)), { similar, threshold: SIMILAR_THRESHOLD, archetype, report }).slice(0, MAX);
     }
     if (replaceIndex !== null) {
       // Con ricerca o filtri i sostituti vengono da tutto il Pokédex, non solo dalle statistiche
@@ -266,8 +266,8 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
       if (!pool && !data.stats) return [];
       // Sostituto simile: l'ordine resta per somiglianza, il voto si mostra soltanto
       return mode === 'improve'
-        ? rank(improveReplacements(team, replaceIndex, format, data, POOL, pool, lang))
-        : rank(similarReplacements(team, replaceIndex, format, data, MAX, pool, lang), false);
+        ? rank(improveReplacements(team, replaceIndex, format, data, POOL, pool, lang, archetype))
+        : rank(similarReplacements(team, replaceIndex, format, data, MAX, pool, lang, archetype), false);
     }
     if (filtering) return rank(searchCandidates(team, format, data, applied, POOL, lang));
     return data.stats ? rank(suggest(team, format, data, POOL, lang)) : [];
@@ -277,7 +277,8 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
     const lists = deferred.data.userLists;
     const similarOrder = mode === 'similar' && (view !== 'add');
     if (!lists?.favorites.size || similarOrder) return ranked;
-    const value = (item: Item) => item.teamGain?.overall ?? 100 * (statsEntry(deferred.data.stats, item.species)?.usage ?? 0);
+    // Col tipo scelto la penalità per le voci perse vale anche qui: un preferito penalizzato non risale
+    const value = (item: Item) => (item.teamGain ? rankKey(item.teamGain) : 100 * (statsEntry(deferred.data.stats, item.species)?.usage ?? 0));
     return applyFavorites(ranked, item => isUserFavorite(item.set, lists), value);
   }, [ranked, deferred, mode, view]);
   // Quanti bannati restano fuori (non contano quelli ammessi), contro il team per cui si cercano i candidati:

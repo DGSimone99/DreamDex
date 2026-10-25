@@ -112,7 +112,7 @@ export const en = {
   'diff.notStrong': "No longer strong against {types}",
   'diff.resists': "Resists {types}",
   'diff.notResists': "No longer resists {types}",
-  'diff.nobodyResists': "Nobody resists {type} anymore",
+  'diff.nobodyResists': "Nobody resists {types} anymore",
   'problemCategory.rules': "Rules",
   'problemCategory.defense': "Defenses",
   'problemCategory.coverage': "Coverage",
