@@ -138,6 +138,8 @@ interface Props {
   presetAction?: React.ReactNode;
   /** Accanto al nome (Sostituisci), attaccato ai preset Smogon (link), accanto a I miei set (Importa / Esporta). */
   memberAction?: React.ReactNode;
+  /** Sotto la testata: i problemi del membro detti per esteso, con la via d'uscita. */
+  notice?: React.ReactNode;
   smogonAction?: React.ReactNode;
   ioAction?: React.ReactNode;
   /** Tutti i ruoli del membro, il principale per primo: il riquadro in fondo all'editor. */
@@ -145,7 +147,7 @@ interface Props {
   onChange: (set: TeamSet) => void;
 }
 
-export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', common, teraBannedIn, speed, title, actions, presetAction, memberAction, smogonAction, ioAction, roles, onChange }: Props) {
+export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', common, teraBannedIn, speed, title, actions, presetAction, memberAction, notice, smogonAction, ioAction, roles, onChange }: Props) {
   const t = useT();
   const lang = useLang();
   // Le più usate vanno in cima al menu, con la quota d'uso (o "Preset" se vengono dalle analisi)
@@ -295,6 +297,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
           />
         </label>
       </div>
+      {notice}
       <fieldset className="evs">
         <legend>{t('editor.stats')}</legend>
         {/* Livello a sinistra (due mezze pillole unite), "Spread più usati" a destra, sulla stessa riga */}

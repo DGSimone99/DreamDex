@@ -125,6 +125,18 @@ export function bannedParts(set: { moves: string[]; ability: string; item: strin
   };
 }
 
+/** Perché un Pokémon non è legale nel formato (null se lo è): per spiegarlo invece di dire solo "non legale". */
+export type IllegalReason = { kind: 'notSelectable' } | { kind: 'notInPokedex' } | { kind: 'tier'; tier: string } | { kind: 'banned' };
+export function illegalReason(species: Species, format: Format): IllegalReason | null {
+  if (!isSelectable(species)) return { kind: 'notSelectable' };
+  if (!speciesInPokedex(species, format)) return { kind: 'notInPokedex' };
+  if (format.ignoreBans) return null;
+  const tier = tierIn(species, format);
+  if (FORMATS[format.formatId].banned.has(tier)) return { kind: 'tier', tier };
+  if (bans?.[format.formatId]?.species.some(name => toID(name) === species.id)) return { kind: 'banned' };
+  return null;
+}
+
 export function isLegalIn(species: Species, format: Format): boolean {
   return isSelectable(species) && speciesInPokedex(species, format) && !isBannedIn(species, format);
 }

@@ -1,7 +1,7 @@
 import type { EngineData } from '../engine/data';
 import { bannedTexts } from '../engine/coach';
 import { battleAbility, battleName, battleSpecies, getSpecies, isMega, isSelectable, withinGen } from '../engine/dex';
-import { formatLabel, isLegalIn, pokedexOf, teraAllowed } from '../engine/formats';
+import { formatLabel, illegalReason, pokedexOf, teraAllowed } from '../engine/formats';
 import type { Format } from '../engine/format';
 import { formatRules } from '../engine/formatRules';
 import { detectRoles, roleLabel } from '../engine/roles';
@@ -59,8 +59,14 @@ function slotProblems(set: TeamSet, format: Format, lang: Lang): string[] {
   const species = getSpecies(set.species);
   if (!species) return [t(lang, 'team.unknown')];
   const forme = battleSpecies(set) ?? species;
+  // La regola, non solo "non legale": il tier vietato, il ban per nome o il Pokédex del formato
+  const reason = !isSelectable(species) ? { kind: 'notSelectable' as const } : illegalReason(forme, format);
+  const where = formatLabel(format, lang);
   return [
-    !isSelectable(species) || !isLegalIn(forme, format) ? t(lang, 'team.notLegal', { format: formatLabel(format, lang) }) : null,
+    reason?.kind === 'tier' ? t(lang, 'team.notLegalTier', { species: forme.name, tier: reason.tier, format: where })
+      : reason?.kind === 'banned' ? t(lang, 'team.notLegalBanned', { species: forme.name, format: where })
+      : reason?.kind === 'notInPokedex' ? t(lang, 'team.notInPokedex', { species: forme.name, format: where })
+      : reason ? t(lang, 'team.notLegal', { format: where }) : null,
     !withinGen(species, format) ? t(lang, 'team.beyondGen', { gen: format.genLimit }) : null,
     // Mosse, abilità e strumenti vietati dal formato
     ...bannedTexts(set, format, lang),
@@ -172,13 +178,14 @@ function TeamSlot({ index, set, subRoles, data, format, warning: megaWarning, op
     if (next !== (set.name ?? '')) stable.onChange({ ...set, name: next || undefined });
   };
   // Incolla set: testo Showdown di un solo membro, applicato per intero
-  const [paste, setPaste] = useState<{ text: string; error: string | null } | null>(null);
+  const [paste, setPaste] = useState<{ text: string; original: string; error: string | null } | null>(null);
   // Importa / Esporta: il riquadro si apre sotto il pulsante e si chiude cliccando fuori
   const ioRef = useRef<HTMLSpanElement>(null);
   const ioOpen = !!paste;
   useEffect(() => {
     if (!ioOpen) return;
-    const away = (e: PointerEvent) => { if (!ioRef.current?.contains(e.target as Node)) setPaste(null); };
+    // Un testo già modificato non si butta con un clic fuori: si chiude solo con Annulla o Esc
+    const away = (e: PointerEvent) => { if (!ioRef.current?.contains(e.target as Node)) setPaste(p => (p && p.text !== p.original ? p : null)); };
     document.addEventListener('pointerdown', away);
     return () => document.removeEventListener('pointerdown', away);
   }, [ioOpen]);
@@ -345,24 +352,37 @@ function TeamSlot({ index, set, subRoles, data, format, warning: megaWarning, op
             <Icon name="swap" /> <span className="btn-label">{tr('team.replaceButton')}</span>
           </button>
         }
+        notice={open && problems.length > 0 && (
+          // I problemi di legalità detti per esteso, con la via d'uscita
+          <div className="member-problems" role="note">
+            <Icon name="warning" />
+            <span>{problems.join(' · ')}</span>
+            <button type="button" onClick={stable.onReplace}>{tr('team.findReplacement')}</button>
+          </div>
+        )}
         smogonAction={<SmogonLink species={name} format={format} presets={presets} iconOnly />}
         ioAction={
           <span className="io-anchor" ref={ioRef}>
             <button type="button" className="member-io" aria-expanded={!!paste} title={tr('team.memberIO')} aria-label={tr('team.memberIO')}
-              onClick={() => setPaste(p => (p ? null : { text: exportShowdown([set], { tera: teraAllowed(format) }), error: null }))}>
+              onClick={() => setPaste(p => {
+                if (p) return null;
+                const text = exportShowdown([set], { tera: teraAllowed(format) });
+                return { text, original: text, error: null };
+              })}>
               <Icon name="paste" /> <span className="btn-label">{tr('team.memberIO')}</span>
             </button>
+            <button type="button" className="member-copy" aria-label={tr(copied ? 'team.copied' : 'team.copySet')} title={tr('team.copySet')}
+              onClick={async () => {
+                if (await copyText(exportShowdown([set], { tera: teraAllowed(format) }))) { setCopied(true); setTimeout(() => setCopied(false), 1500); }
+              }}><Icon name={copied ? 'check' : 'copy'} /></button>
   {paste && (
     <div className="paste-panel" onKeyDown={e => { if (e.key === 'Escape') { e.stopPropagation(); setPaste(null); } }}>
       <textarea aria-label={tr('team.pasteText')} rows={7} autoFocus value={paste.text} placeholder={tr('team.pastePlaceholder')}
-        onChange={e => setPaste({ text: e.target.value, error: null })} />
+        onChange={e => setPaste({ text: e.target.value, original: paste.original, error: null })} />
       <p className="paste-hint">{tr('team.pasteHint')}</p>
       {paste.error && <p className="paste-error" role="alert">{paste.error}</p>}
       <div className="paste-actions">
         <button type="button" className="apply" disabled={!paste.text.trim()} onClick={applyPaste}>{tr('team.pasteApply')}</button>
-        <button type="button" onClick={async () => {
-          if (await copyText(exportShowdown([set], { tera: teraAllowed(format) }))) { setCopied(true); setTimeout(() => setCopied(false), 1500); }
-        }}><Icon name={copied ? 'check' : 'copy'} /> {tr(copied ? 'team.copied' : 'team.copySet')}</button>
         <button type="button" onClick={() => setPaste(null)}>{tr('team.pasteCancel')}</button>
       </div>
     </div>
