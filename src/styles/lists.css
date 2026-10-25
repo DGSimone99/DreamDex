@@ -154,8 +154,8 @@
 .band.collapsed .grade-badge .overall { font-size: 18px; }
 /* Editor del set: chiusura, linguette Set/Danni, I miei set, riga livello/spread, ruoli in fondo, colonne allineate in basso */
 .set-editor { align-items: stretch; }
-.set-editor .editor-side { grid-template-rows: auto 1fr; }
-.set-editor .editor-group.moves { align-content: start; }
+/* Set in alto, Mosse in basso: il fondo delle Mosse coincide con quello delle Statistiche, senza spazio vuoto dentro */
+.set-editor .editor-side { grid-template-rows: auto auto; align-content: space-between; }
 .editor-actions .editor-close { width: 36px; padding: 0; justify-content: center; }
 .editor-actions .editor-close:hover { border-color: var(--bad); color: var(--bad); }
 .editor-tabs { display: flex; gap: 4px; margin-left: 6px; }
@@ -170,13 +170,15 @@
 .set-editor .delete-set { width: 36px; padding: 0; justify-content: center; }
 .set-editor .delete-set:hover { border-color: var(--bad); color: var(--bad); }
 /* Livello (due mezze pillole unite) a sinistra e Spread più usati a destra, staccati da titolo e righe */
-.set-editor .evs .stats-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 8px 0 10px; }
-.set-editor .evs .level-toggle { position: static; display: inline-flex; align-items: center; gap: 8px; }
+.set-editor .evs .stats-toolbar { display: flex; align-items: center; gap: 12px; margin: 8px 0 2px; }
+.set-editor .evs .stats-toolbar .spread-panel { display: block; margin-left: auto; }
+.set-editor .evs .level-toggle { position: static; display: inline-flex; align-items: center; gap: 0; }
+.set-editor .evs .level-toggle-label { margin-right: 8px; }
 .set-editor .evs .spread-panel > summary { position: static; }
 .level-toggle button { height: 26px; min-width: 44px; margin: 0; }
 .level-toggle button:first-of-type { border-radius: 13px 0 0 13px; }
 .level-toggle button:last-of-type { border-radius: 0 13px 13px 0; margin-left: -1px; }
-.set-editor .evs .spread-panel .spread-presets { top: 52px; }
+.set-editor .evs .stats-toolbar .spread-panel .spread-presets { top: calc(100% + 6px); right: 0; }
 .editor-roles { grid-column: 1 / -1; }
 .editor-roles ul { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
 .editor-roles li { padding: 3px 10px; border: 1px solid var(--line); background: var(--raised); font-size: 13px; color: var(--text); }
