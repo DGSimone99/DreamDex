@@ -18,7 +18,6 @@
 .member-sheet .sheet-tag { display: inline-block; color: var(--text); border: 1px solid var(--line); border-radius: 4px; padding: 1px 6px; margin: 1px; white-space: nowrap; }
 /* Schermi stretti: l'etichetta dei preset resta solo come nome accessibile del menu */
 @media (max-width: 1400px) {
-  .set-editor .preset-field > .field-head { display: none; }
   /* Copia set e Sostituisci solo con l'icona (il nome resta nel tooltip e per i lettori di schermo) */
   .editor-actions .btn-label { display: none; }
 }

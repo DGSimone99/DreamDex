@@ -190,3 +190,51 @@
 /* Team compresso: il membro aperto saltella, come nel box dei giochi */
 @keyframes box-hop { 0%, 100% { transform: translateY(0); } 40% { transform: translateY(-5px); } 60% { transform: translateY(0); } }
 .band.collapsed .slot[open] .mini-icon .mon-icon { animation: box-hop 0.7s ease-in-out infinite; }
+/* Testata dell'editor: nome, tipi e Sostituisci; poi preset Smogon (col link attaccato), I miei set (col salvataggio attaccato), Importa / Esporta */
+.set-editor .editor-top .member-replace { height: 32px; white-space: nowrap; }
+.set-editor .editor-head { align-items: flex-end; row-gap: 10px; }
+.set-editor .preset-field, .set-editor .my-sets-field { flex-direction: column; align-items: stretch; gap: 4px; }
+.set-editor .preset-field { width: 340px; }
+.set-editor .my-sets-field { position: relative; width: 280px; }
+.set-editor .preset-field .field-head, .set-editor .my-sets-field .field-head { white-space: nowrap; }
+.joined { display: flex; align-items: stretch; min-width: 0; }
+.joined > .combobox, .joined > .my-sets-input { flex: 1; min-width: 0; }
+.joined > .combobox input, .joined > .my-sets-input input { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.joined > a, .joined > button { width: 38px; height: 36px; padding: 0; display: grid; place-items: center; margin-left: -1px; border-radius: 0 4px 4px 0; flex: none; }
+.smogon-link.icon-only { justify-content: center; }
+.my-sets-input { position: relative; display: flex; }
+.my-sets-input input { width: 100%; height: 36px; padding-right: 34px; }
+.my-sets-toggle { position: absolute; right: 2px; top: 2px; width: 30px; height: 32px; padding: 0; border: 0; background: none; color: var(--faint); display: grid; place-items: center; }
+.my-sets-toggle .icon { transform: rotate(90deg); transition: transform 0.15s; }
+.my-sets-toggle[aria-expanded='true'] .icon { transform: rotate(-90deg); }
+.my-sets-toggle:hover:not(:disabled) { color: var(--text); }
+.save-set.overwrite { border-color: var(--accent-2); color: var(--accent-2-ink); }
+.my-sets-list {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  background: var(--ground);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+}
+.my-sets-list li { display: grid; grid-template-columns: minmax(0, 1fr) 30px 30px; align-items: center; gap: 2px; border-bottom: 1px solid var(--line-soft); }
+.my-sets-list li:last-child { border-bottom: 0; }
+.my-sets-list li.current .my-set-option strong { color: var(--accent-ink); }
+.my-set-option { display: grid; gap: 1px; min-width: 0; padding: 6px 8px; cursor: pointer; border-radius: 3px; }
+.my-set-option:hover, .my-set-option:focus-visible { background: var(--raised); }
+.my-set-option strong { font-weight: 600; }
+.my-set-option small { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.my-sets-list li > input { margin: 4px; height: 30px; }
+.my-set-rename, .my-set-delete { width: 30px; height: 30px; padding: 0; border: 0; background: none; color: var(--faint); display: grid; place-items: center; }
+.my-set-rename:hover { color: var(--accent); }
+.my-set-delete:hover { color: var(--bad); }
+.set-editor .member-io { height: 36px; white-space: nowrap; }
+/* Apertura della carta: lo sprite cresce fino alla misura grande, come quando torna piccolo */
+@keyframes open-grow { from { transform: scale(0.72); opacity: 0.6; } }
+.band:not(.collapsed) .slot[open] > summary .sprite-wrap { animation: open-grow 0.35s var(--ease); }
