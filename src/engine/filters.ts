@@ -1,5 +1,4 @@
 import type { Lang } from '../i18n';
-import { fitsArchetype, type FitArchetype } from './archetype';
 import type { EngineData } from './data';
 import { battleName, battleSpecies, dex, getSpecies, isCosmeticForme, isDefined, isMega, isTeambuildable, toID, withinGen } from './dex';
 import { isBannedIn, speciesInPokedex, tierIn } from './formats';
@@ -35,8 +34,6 @@ export interface CandidateFilters {
   roles: FilterRole[];
   provides: Condition | '';
   benefitsFrom: Condition | '';
-  /** Adatto a un team di questo archetipo (stall, hyper offense, bulky offense). */
-  fitsArchetype: FitArchetype | '';
   /** Deve resistere a tutti i tipi scelti. */
   resists: TypeName[];
   /** Deve colpire super efficace tutti i tipi scelti. */
@@ -55,7 +52,7 @@ export type TierFilter = 'all' | 'legal' | 'uber' | 'ou' | 'uu' | 'ru' | 'nfe';
 export type Inclusion = 'all' | 'none' | 'only';
 
 export const EMPTY_FILTERS: CandidateFilters = {
-  query: '', types: [], mono: false, roles: [], provides: '', benefitsFrom: '', fitsArchetype: '', resists: [], hits: [],
+  query: '', types: [], mono: false, roles: [], provides: '', benefitsFrom: '', resists: [], hits: [],
   mega: 'all', legendary: 'all', usage: 'all', tier: 'all', favoritesOnly: false,
 };
 
@@ -69,7 +66,7 @@ export const NICHE_USAGE = 0.01;
 /** Quanti filtri sono attivi (la ricerca per nome non conta). */
 export function activeFilterCount(f: CandidateFilters): number {
   return [
-    f.types.length > 0, f.roles.length > 0, f.provides !== '', f.benefitsFrom !== '', f.fitsArchetype !== '',
+    f.types.length > 0, f.roles.length > 0, f.provides !== '', f.benefitsFrom !== '',
     f.resists.length > 0, f.hits.length > 0, f.mega !== 'all', f.legendary !== 'all',
     f.usage !== 'all', f.tier !== 'all', f.favoritesOnly,
   ].filter(Boolean).length;
@@ -126,7 +123,6 @@ export function matchesFilters(candidate: { species: string; set: TeamSet }, f: 
   if (f.roles.length && !f.roles.every(r => hasFilterRole(set, r, rules))) return false;
   if (f.provides && !enables(set).some(e => e.condition === f.provides)) return false;
   if (f.benefitsFrom && !benefits(set).some(b => b.condition === f.benefitsFrom)) return false;
-  if (f.fitsArchetype && !fitsArchetype(set, f.fitsArchetype, rules)) return false;
   if (!f.resists.every(type => defensiveMultiplier(type, set) < 1)) return false;
   if (!f.hits.every(type => superEffectiveMove(set, type) !== null)) return false;
   if (!included(f.mega, isMega(set))) return false;

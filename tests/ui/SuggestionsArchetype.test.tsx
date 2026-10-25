@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { App } from '../../src/App';
@@ -13,8 +13,8 @@ import { SuggestionsPanel } from '../../src/ui/SuggestionsPanel';
 import { fixtureData } from '../fixtures/data';
 
 const suggestions = () => screen.getByRole('region', { name: 'Suggerimenti' });
-const types = () => screen.getByRole('group', { name: 'Tipo di team' });
-const pressed = () => within(types()).getAllByRole('button').filter(b => b.getAttribute('aria-pressed') === 'true').map(b => b.textContent);
+const types = () => screen.getByRole<HTMLSelectElement>('combobox', { name: 'Tipo di team' });
+const pressed = () => [...types().selectedOptions].map(o => o.textContent);
 const list = () => suggestions().querySelector<HTMLElement>('.suggestions')!;
 
 const STALL = [
@@ -36,17 +36,17 @@ async function importTeam(sets: string[]) {
 }
 
 describe('selettore del tipo di team nei suggerimenti', () => {
-  it('team completo: Nessuno più i 5 tipi, preselezionato quello riconosciuto', async () => {
+  it('team completo: Qualunque più i 5 tipi, preselezionato quello riconosciuto', async () => {
     await importTeam(STALL);
-    expect(within(types()).getAllByRole('button').map(b => b.textContent))
-      .toEqual(['Nessuno', 'Hyper Offense', 'Bulky Offense', 'Balance', 'Semi-stall', 'Stall']);
+    expect([...types().options].map(o => o.textContent))
+      .toEqual(['Qualunque', 'Hyper Offense', 'Bulky Offense', 'Balance', 'Semi-stall', 'Stall']);
     expect(pressed()).toEqual(['Stall']);
   });
 
-  it('team incompleto: Nessuno', async () => {
+  it('team incompleto: Qualunque', async () => {
     const user = await importTeam(STALL.slice(0, 2));
     await user.click(within(suggestions()).getByRole('button', { name: 'Migliora team' }));
-    expect(pressed()).toEqual(['Nessuno']);
+    expect(pressed()).toEqual(['Qualunque']);
   });
 
   it('il default segue il tipo riconosciuto', async () => {
@@ -58,26 +58,26 @@ describe('selettore del tipo di team nei suggerimenti', () => {
   it('una scelta a mano resta quando il team cambia', async () => {
     const user = await importTeam(STALL.slice(0, 5));
     await user.click(within(suggestions()).getByRole('button', { name: 'Migliora team' }));
-    expect(pressed()).toEqual(['Nessuno']);
-    await user.click(within(types()).getByRole('button', { name: 'Balance' }));
+    expect(pressed()).toEqual(['Qualunque']);
+    await user.selectOptions(types(), 'Balance');
     await user.click(within(suggestions()).getByRole('button', { name: 'Aggiungi' }));
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Toxapex{Enter}');
     expect(pressed()).toEqual(['Balance']);
   });
 
-  it('team già stall con Stall scelto: se nessun cambio lo mantiene, un messaggio propone Nessuno', async () => {
+  it('team già stall con Stall scelto: se nessun cambio lo mantiene, un messaggio propone Qualunque', async () => {
     const user = await importTeam(STALL);
     // Solo Kyurem fra i candidati: ogni cambio fa uscire il team dallo stall
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Kyurem');
     expect(await within(suggestions()).findByText(/Nessuno dei cambi migliori mantiene il team Stall/)).toBeInTheDocument();
-    await user.click(within(types()).getByRole('button', { name: 'Nessuno' }));
+    await user.selectOptions(types(), 'Qualunque');
     expect(within(suggestions()).queryByText(/Nessuno dei cambi migliori mantiene il team Stall/)).toBeNull();
   });
 
   it('il dettaglio mostra lo stesso guadagno della lista, anche con un tipo diverso da quello riconosciuto', async () => {
     const user = await importTeam(STALL);
     // Balance non è il tipo riconosciuto: il voto forzato differisce da quello normale
-    await user.click(within(types()).getByRole('button', { name: 'Balance' }));
+    await user.selectOptions(types(), 'Balance');
     const row = list().querySelector('li')!;
     const name = row.querySelector('.name-line strong')!.textContent!.replace(/^\d+\. /, '');
     await user.click(within(list()).getAllByRole('button', { name: new RegExp(`${name}$`) }).find(b => b.hasAttribute('aria-pressed'))!);
@@ -106,7 +106,7 @@ describe('selettore del tipo di team nei suggerimenti', () => {
           onCancelReplace={() => {}} onPreview={p => previews.push(p)} onTarget={() => {}} />
       </LangProvider>,
     );
-    await user.click(within(types()).getByRole('button', { name: 'Balance' }));
+    await user.selectOptions(types(), 'Balance');
     const row = list().querySelector('li')!;
     const name = row.querySelector('.name-line strong')!.textContent!.replace(/^\d+\. /, '');
     const label = within(row).getByLabelText(/^Voto del team: /).getAttribute('aria-label')!;
@@ -114,6 +114,27 @@ describe('selettore del tipo di team nei suggerimenti', () => {
     const listGain = raw === '±0' ? 0 : Number(raw.replace('−', '-').replace('+', ''));
     await user.click(within(list()).getAllByRole('button', { name: new RegExp(`${name}$`) }).find(b => b.hasAttribute('aria-pressed'))!);
     expect(previews.at(-1)!.ratingGain).toBe(listGain);
+  });
+});
+
+describe('tipo di team in Aggiungi', () => {
+  it("la tendina c'è anche in Aggiungi e Stall propone solo Pokémon da stall", async () => {
+    const user = userEvent.setup();
+    render(<App initialLang="it" data={fixtureData} />);
+    for (const name of ['Great Tusk', 'Kingambit']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
+    expect(within(suggestions()).getByRole('button', { name: 'Aggiungi' })).toHaveAttribute('aria-pressed', 'true');
+    const names = () => [...list().querySelectorAll('.name-line strong')].map(el => el.textContent!.replace(/^\d+\. /, ''));
+    await waitFor(() => expect(names().length).toBeGreaterThan(0));
+    const before = names();
+    await user.selectOptions(types(), 'Stall');
+    await waitFor(() => expect(names()).not.toEqual(before));
+    expect(names().length).toBeGreaterThan(0);
+    expect(names()).not.toContain('Dragapult');
+  });
+
+  it('niente più Sostituto simile', async () => {
+    await importTeam(STALL);
+    expect(within(suggestions()).queryByRole('button', { name: 'Sostituto simile' })).toBeNull();
   });
 });
 

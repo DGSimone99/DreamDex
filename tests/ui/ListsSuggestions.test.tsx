@@ -65,7 +65,7 @@ describe('liste nella scheda Pokémon', () => {
     expect(within(suggestions()).queryByText(/nascost[oi] dalla tua lista Ban/)).toBeNull();
   });
 
-  it('un preferito quasi alla pari passa davanti e ha il cuore; in "Sostituto simile" l\'ordine non cambia', async () => {
+  it('un preferito quasi alla pari passa davanti e ha il cuore', async () => {
     const plain = memory();
     await setup(plain.storage, 'Great Tusk', 'Gholdengo');
     await waitFor(() => expect(rowOverall().length).toBeGreaterThan(2));
@@ -78,16 +78,9 @@ describe('liste nella scheda Pokémon', () => {
     document.body.innerHTML = '';
 
     const { storage } = withLists(favorites(favorite));
-    const user = await setup(storage, 'Great Tusk', 'Gholdengo');
+    await setup(storage, 'Great Tusk', 'Gholdengo');
     await waitFor(() => expect(rowNames().indexOf(favorite)).toBeLessThan(at));
     expect(within(suggestions()).getAllByLabelText('Nei tuoi Preferiti').length).toBeGreaterThan(0);
-    await user.click(within(suggestions()).getByRole('button', { name: 'Sostituto simile' }));
-    const similarFav = rowNames();
-    document.body.innerHTML = '';
-    const again = memory();
-    const user2 = await setup(again.storage, 'Great Tusk', 'Gholdengo');
-    await user2.click(within(suggestions()).getByRole('button', { name: 'Sostituto simile' }));
-    await waitFor(() => expect(rowNames()).toEqual(similarFav));
   });
 
   it('la stella delle card del team non tocca le liste', async () => {

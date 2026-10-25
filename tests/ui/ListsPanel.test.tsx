@@ -43,6 +43,16 @@ async function open(storage: Storage) {
 }
 
 describe('scheda Liste', () => {
+  it('filtri: solo quelli che non riguardano il meta', async () => {
+    await open(memory().storage);
+    const filters = panel().querySelector<HTMLElement>('details.filters')!;
+    expect(within(filters).queryByLabelText('Uso nel meta')).toBeNull();
+    expect(within(filters).queryByLabelText('Adatto a')).toBeNull();
+    expect(within(filters).queryByRole('checkbox', { name: 'Solo preferiti' })).toBeNull();
+    expect(within(filters).getByLabelText('Tier')).toBeInTheDocument();
+    expect(within(filters).getByLabelText('Tipo 1')).toBeInTheDocument();
+  });
+
   it('il Pokédex in ordine: si parte da Bulbasaur', async () => {
     await open(memory().storage);
     const cells = within(panel()).getAllByRole('listitem').filter(li => li.closest('.dex-grid'));
