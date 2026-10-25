@@ -1,0 +1,109 @@
+/* Scheda Liste: Pokédex a sinistra, Preferiti e Bannati a destra (metà ciascuno) */
+.lists-panel h2 {
+  align-self: flex-start;
+  margin-bottom: 4px;
+  padding: 4px 26px 4px 12px;
+  font: 700 15px/1.2 var(--display);
+  font-style: italic;
+  color: var(--on-accent-2);
+  background: var(--stripes), var(--accent-2);
+  clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%);
+}
+.lists-bar { display: flex; gap: 12px; align-items: center; margin: 12px 0; }
+.lists-bar .search-field { flex: 1; }
+.lists-bar .segmented button { white-space: nowrap; padding: 6px 12px; }
+.lists-main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: start; margin-top: 12px; }
+.dex-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 6px; max-height: calc(100vh - 140px); overflow-y: auto; }
+.dex-cell { position: relative; display: grid; justify-items: center; padding: 6px 4px 8px; background: var(--panel); border: 1px solid var(--line-soft); border-radius: 4px; }
+.dex-cell .sprite { image-rendering: pixelated; }
+.dex-no { position: absolute; left: 6px; top: 4px; font-size: 11px; color: var(--faint); font-variant-numeric: tabular-nums; }
+.dex-name { font-size: 12px; text-align: center; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dex-actions { display: flex; gap: 4px; margin-top: 4px; opacity: 0; transition: opacity 0.15s; }
+.dex-cell:hover .dex-actions, .dex-cell:focus-within .dex-actions, .dex-cell.target .dex-actions, .dex-cell.fav .dex-actions, .dex-cell.ban .dex-actions { opacity: 1; }
+.dex-actions button { padding: 1px 8px; font-size: 13px; color: var(--muted); background: var(--field); }
+.dex-actions .dex-fav[aria-pressed='true'] { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+.dex-actions .dex-ban[aria-pressed='true'] { color: var(--bad); border-color: var(--bad); background: var(--bad-bg); }
+.dex-cell.fav { border-color: var(--accent); }
+.dex-cell.ban > :not(.dex-actions) { opacity: 0.4; }
+.dex-cell.target { outline: 2px solid var(--accent); outline-offset: 1px; }
+.lists-side { display: grid; gap: 14px; position: sticky; top: 76px; }
+.user-list { background: var(--panel); border: 1px solid var(--line-soft); border-radius: 6px; padding: 12px 14px; }
+.user-list h3 { display: flex; justify-content: space-between; align-items: center; margin: 0 0 10px; font-size: 15px; font-style: italic; letter-spacing: 0.04em; }
+.user-list.favorites h3 > span { color: var(--accent); }
+.user-list.bans h3 > span { color: var(--bad); }
+.user-list h3 .count { color: var(--muted); font-weight: 500; }
+.user-list .list-clear { font-size: 12px; padding: 2px 8px; }
+.user-list ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 6px; }
+.user-list li { display: flex; align-items: center; gap: 6px; padding: 2px 6px 2px 2px; background: var(--field); border: 1px solid var(--line-soft); border-radius: 4px; }
+.user-list li .sprite { image-rendering: pixelated; }
+.user-list .list-name { font-weight: 500; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.user-list .scope-tag { font-size: 11px; color: var(--muted); border: 1px solid var(--line); border-radius: 3px; padding: 0 5px; white-space: nowrap; }
+.user-list .list-remove { margin-left: auto; padding: 4px; border: 0; background: none; color: var(--faint); }
+.user-list .list-remove:hover { color: var(--bad); }
+.list-none { margin: 0; color: var(--muted); font-size: 13px; }
+.lists-copy select { font-size: 14px; }
+@media (max-width: 1100px) { .lists-main { grid-template-columns: 1fr; } .lists-side { position: static; } }
+.lists-bar .search-hint { max-width: 360px; }
+
+/* Blocchi come pannelli del riepilogo: il titolo è una linguetta inclinata, riassunto e freccia a destra */
+.block { border-radius: 0; }
+.block > summary > span:first-child {
+  flex: none;
+  max-width: 60%;
+  padding: 3px 22px 3px 10px;
+  font: 700 14px/1.25 var(--display);
+  font-style: italic;
+  letter-spacing: 0.01em;
+  color: var(--on-accent-2);
+  background: var(--accent-2);
+  clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
+}
+.block > summary > span + span { flex: 1; }
+/* Analisi e Meta: due colonne che scorrono ognuna per conto suo; Liste: il Pokédex scorre, le liste a destra pure */
+@media (min-width: 1100px) {
+  #panel-analysis.active, #panel-meta.active, #panel-lists.active { overflow: hidden; }
+  /* Le aree che scorrono contengono anche i loro elementi assoluti (testi nascosti, tooltip): niente sporge fuori dalla colonna */
+  .tab-panel.active, .picker-list, .detail, .analysis-main, .analysis-detail, .meta-panel > *, .dex-grid, .lists-side { position: relative; }
+  .tab-panel > .analysis, .tab-panel > .meta-panel { height: 100%; }
+  .analysis { display: flex; flex-direction: column; }
+  .analysis-cols { flex: 1; min-height: 0; align-items: stretch; }
+  .meta-panel { align-items: stretch; }
+  .analysis-main, .analysis-detail, .meta-panel > * { min-height: 0; overflow: auto; overscroll-behavior: contain; padding-right: 4px; padding-bottom: 12px; }
+  .lists-panel { height: 100%; display: flex; flex-direction: column; }
+  .lists-main { flex: 1; min-height: 0; align-items: stretch; }
+  .dex-grid { max-height: none; height: 100%; }
+  .lists-side { position: static; top: auto; min-height: 0; overflow: auto; align-content: start; padding-bottom: 12px; }
+}
+/* Schermi bassi o stretti (portatili 1366×768, 1280×720): tutto resta in una schermata, card e strumenti più compatti */
+@media (min-width: 1100px) and ((max-width: 1279px) or (max-height: 799px)) {
+  .app { grid-template-columns: 190px minmax(0, 1fr); }
+  .rail { gap: 10px; padding-top: 12px; }
+  .rail h1 { font-size: 22px; }
+  .tabs.vertical [role='tab'] { padding: 7px 14px; font-size: 15px; }
+  .band { padding: 10px 16px 12px; gap: 12px; grid-template-columns: minmax(0, 1fr) 168px; }
+  .team-head { margin-bottom: 8px; }
+  .slots { gap: 8px; }
+  .slot > summary, .slot.empty { min-height: 0; height: 206px; padding: 6px 10px 10px; gap: 2px; }
+  .slot .held > span { -webkit-line-clamp: 1; }
+  .slot > summary .sprite { width: 64px; height: 64px; }
+  .slot > summary { --sprite-scale: 0.6667; }
+  .slot .slot-stats { margin: 0; }
+  .slot .roles { display: none; }
+  .slot .name { font-size: 15px; }
+  .slot .held, .slot .ability { font-size: 12px; }
+  .slot .type-chip { width: 52px; }
+  .empty-ring { width: 44px; height: 44px; }
+  .grade-badge .letter { font-size: 64px; }
+  .grade-badge .overall { font-size: 18px; }
+  .grade-areas { gap: 2px; margin-top: 2px; }
+  .tab-body { padding: 10px 16px 0; }
+  .toolbar > .segmented button { padding: 6px 10px; font-size: 13px; }
+  .toolbar .filters > summary { height: 34px; }
+  .picker.has-detail { grid-template-columns: minmax(0, 500px) minmax(0, 1fr); gap: 12px; }
+  .detail:not(.detail-empty) { grid-template-columns: 184px minmax(0, 1fr); }
+  .detail-hero .detail-id h3 { font-size: 20px; }
+  .detail-hero .detail-sprite { width: 96px; height: 96px; }
+  .detail-hero .detail-sprite .sprite-ani { transform: translate(-50%, -50%); }
+  .detail-hero .detail-score strong { font-size: 36px; }
+  .suggestion { padding: 6px 10px; }
+}

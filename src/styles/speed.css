@@ -1,0 +1,31 @@
+/* Velocità finale e posto nel meta, sotto gli EV; i vicini nel tooltip */
+.speed-line { grid-column: 1 / -1; margin: 2px 0 0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; font-size: 13px; font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--muted); }
+.speed-line strong { font: 700 16px/1 var(--display); color: var(--text); font-variant-numeric: tabular-nums; }
+.speed-scarf { font-size: 11px; color: var(--faint); }
+.speed-rank { position: relative; color: var(--text); border-bottom: 1px dotted var(--faint); cursor: help; }
+.speed-rank:focus-visible { outline: none; border-bottom-color: var(--accent); }
+.speed-pop {
+  position: absolute;
+  z-index: 60;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 260px;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  background: var(--ground);
+  border: 1px solid var(--line);
+  border-top: 2px solid var(--accent);
+  border-radius: 4px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+  cursor: default;
+}
+.speed-pop { display: flex; animation: tip 0.15s var(--ease); }
+.speed-pop.up { top: auto; bottom: calc(100% + 8px); border-top: 1px solid var(--line); border-bottom: 2px solid var(--accent); }
+.speed-group { display: flex; flex-direction: column; gap: 3px; }
+.speed-group-title { font: 700 12px/1 var(--display); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 2px; }
+.speed-rival { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text); }
+.speed-rival .mon-icon { margin: -8px -4px -6px -6px; }
+.speed-rival-value { margin-left: auto; font-weight: 700; font-variant-numeric: tabular-nums; }
+.speed-self { margin: 0 -8px; padding: 3px 8px; background: var(--accent-soft); border-radius: 3px; font-weight: 700; }
+.speed-note { font-size: 11px; color: var(--faint); }

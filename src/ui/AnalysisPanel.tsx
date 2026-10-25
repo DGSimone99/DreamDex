@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { threatScore, type TeamAnalysis } from '../engine/analysis';
 import type { Coaching } from '../engine/coach';
 import type { EngineData } from '../engine/data';
@@ -36,7 +37,9 @@ function mitigationNote(m: WeatherMitigation, lang: Lang): string {
   return t(lang, 'analysis.mitigation', { condition: t(lang, `analysis.mitigation.${m.condition as 'sun' | 'rain' | 'grassyterrain' | 'mistyterrain'}`), source, changes });
 }
 
-export function AnalysisPanel({ team, analysis, rating, coaching, preview, onReplace, onSwap, data, withMeta = true, expanded = false }: {
+export function AnalysisPanel({ team, analysis, rating, coaching, preview, onReplace, onSwap, data, withMeta = true, expanded = false, footer }: {
+  /** In fondo alla colonna destra (la scheda dei membri). */
+  footer?: ReactNode;
   onSwap?: (index: number, set: TeamSet) => void;
   /** Uso nel meta e minacce in fondo; senza, li mostra la scheda Meta (MetaPanel). */
   withMeta?: boolean;
@@ -168,6 +171,7 @@ export function AnalysisPanel({ team, analysis, rating, coaching, preview, onRep
               <p>{tr('analysis.unbalanced', { style: tr(`analysis.style.${analysis.needs.needStyle}`) })}</p>
             )}
           </details>
+          {footer}
         </div>
       </div>
       {withMeta && <MetaPanelBody team={team} analysis={analysis} data={data} coaching={coaching} />}

@@ -8,11 +8,11 @@
     "build": "tsc --noEmit && vite build",
     "test": "vitest run",
     "fetch-data": "tsx scripts/fetch-data.ts",
-    "bench": "tsx scripts/bench.ts"
+    "bench": "tsx scripts/bench.ts",
+    "screens": "tsx scripts/screens.ts"
   },
   "dependencies": {
-    "@fontsource/barlow": "^5.3.0",
-    "@fontsource/barlow-condensed": "^5.3.0",
+    "@fontsource/kanit": "^5.3.0",
     "@pkmn/dex": "^0.10.11",
     "@pkmn/img": "^0.3.4",
     "@pkmn/sets": "^5.2.0",
@@ -29,6 +29,7 @@
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
     "jsdom": "^29.1.1",
+    "puppeteer-core": "^25.16.0",
     "smogon": "^5.1.0",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
