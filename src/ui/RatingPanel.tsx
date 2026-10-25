@@ -121,7 +121,12 @@ export function GradeBadge({ rating }: { rating: TeamRating | null }) {
   useEffect(() => { setSince(editing === null ? null : overall); }, [editing]);
   const delta = rating && since !== null ? rating.overall - since : 0;
   return (
-    <div className={`grade-badge${rating ? ` grade-${rating.grade}` : ' none'}`} aria-hidden="true">
+    <div className={`grade-badge${rating ? ` grade-${rating.grade}` : ' none'}`}>
+      {/* Per i lettori di schermo una frase sola; il disegno qui sotto è solo visivo */}
+      <span className="visually-hidden">
+        {rating ? t('rating.badgeSr', { grade: rating.grade, overall: rating.overall, label: rating.label }) : `${t('rating.badgeHead')}: ${t('rating.noGrade')}`}
+      </span>
+      <span className="grade-visual" aria-hidden="true">
       <span className="grade-head">{t('rating.badgeHead')}</span>
       {rating && <span className="letter">{rating.grade}</span>}
       <span className="overall">{rating ? `${rating.overall} / 100` : t('rating.noGrade')}</span>
@@ -143,6 +148,7 @@ export function GradeBadge({ rating }: { rating: TeamRating | null }) {
           ))}
         </span>
       )}
+      </span>
     </div>
   );
 }

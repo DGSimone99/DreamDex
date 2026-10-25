@@ -69,7 +69,7 @@ describe('editor del set', () => {
     await user.clear(within(slot).getByLabelText('Mossa 1'));
     await user.type(within(slot).getByLabelText('Mossa 1'), 'Earthquake{Enter}');
     await user.click(within(slot).getByRole('button', { name: 'Mostra i miei set' }));
-    await user.click(within(screen.getByRole('listbox', { name: 'I miei set: opzioni' })).getByRole('option', { name: /Set 1/ }));
+    await user.click(within(screen.getByRole('list', { name: 'I miei set: opzioni' })).getByRole('button', { name: /^Set 1/ }));
     expect(within(slot).getByLabelText('Mossa 1')).toHaveValue(tusk.moves[0]);
     for (let i = 0; i < 4; i++) {
       await user.clear(within(slot).getByLabelText('Mossa 1'));

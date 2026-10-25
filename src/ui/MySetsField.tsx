@@ -80,7 +80,8 @@ export function MySetsField({ set, onApply }: { set: TeamSet; onApply: (saved: T
         </button>
       </div>
       {open && mine.length > 0 && (
-        <ul className="my-sets-list" id={listId} role="listbox" aria-label={t('combobox.options', { label: t('editor.mySets') })}>
+        // Un elenco semplice (non listbox): ogni riga ha tre pulsanti veri, applica, rinomina, elimina
+        <ul className="my-sets-list" id={listId} aria-label={t('combobox.options', { label: t('editor.mySets') })}>
           {mine.map((saved, i) => (
             <li key={`${saved.name}-${i}`} className={i === current ? 'current' : undefined}>
               {renaming === i ? (
@@ -91,12 +92,11 @@ export function MySetsField({ set, onApply }: { set: TeamSet; onApply: (saved: T
                     else if (e.key === 'Escape') { e.stopPropagation(); setRenaming(null); }
                   }} />
               ) : (
-                <span role="option" aria-selected={i === current} tabIndex={0} className="my-set-option"
-                  onClick={() => { onApply(saved.set); setOpen(false); }}
-                  onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onApply(saved.set); setOpen(false); } }}>
+                <button type="button" aria-current={i === current || undefined} className="my-set-option"
+                  onClick={() => { onApply(saved.set); setOpen(false); }}>
                   <strong>{saved.name}</strong>
                   <small>{saved.set.moves.filter(Boolean).map(move => gameName('move', move, lang)).join(' · ')}</small>
-                </span>
+                </button>
               )}
               <button type="button" className="my-set-rename" aria-label={t('editor.renameSet', { name: saved.name })}
                 onClick={() => { setRenaming(i); setDraft(saved.name); }}><Icon name="edit" /></button>
