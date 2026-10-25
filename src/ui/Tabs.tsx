@@ -13,14 +13,18 @@ export interface TabInfo {
   note?: string;
 }
 
-/** Barra delle schede sotto il team: frecce sinistra/destra per spostarsi, come le schede native. */
-export function Tabs({ tabs, active, onChange }: { tabs: TabInfo[]; active: TabId; onChange: (tab: TabId) => void }) {
+/** Sezioni dell'app: frecce per spostarsi come le schede native (in verticale anche su e giù). */
+export function Tabs({ tabs, active, onChange, orientation = 'horizontal' }: {
+  tabs: TabInfo[]; active: TabId; onChange: (tab: TabId) => void; orientation?: 'horizontal' | 'vertical';
+}) {
   const t = useT();
   const refs = useRef<(HTMLButtonElement | null)[]>([]);
   const enabled = tabs.map((tab, i) => (tab.disabled ? -1 : i)).filter(i => i >= 0);
   const onKey = (e: KeyboardEvent, index: number) => {
     const at = enabled.indexOf(index);
-    const step = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+    const next = e.key === 'ArrowRight' || (orientation === 'vertical' && e.key === 'ArrowDown');
+    const previous = e.key === 'ArrowLeft' || (orientation === 'vertical' && e.key === 'ArrowUp');
+    const step = next ? 1 : previous ? -1 : 0;
     const target = step ? enabled[(at + step + enabled.length) % enabled.length]
       : e.key === 'Home' ? enabled[0] : e.key === 'End' ? enabled[enabled.length - 1] : undefined;
     if (target === undefined) return;
@@ -29,7 +33,7 @@ export function Tabs({ tabs, active, onChange }: { tabs: TabInfo[]; active: TabI
     onChange(tabs[target].id as TabId);
   };
   return (
-    <div className="tabs" role="tablist" aria-label={t('tabs.label')}>
+    <div className={`tabs ${orientation}`} role="tablist" aria-label={t('tabs.label')} aria-orientation={orientation}>
       {tabs.map((tab, i) => {
         const selected = tab.id === active;
         return (

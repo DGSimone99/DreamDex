@@ -153,7 +153,6 @@
 /* Passaggio alle card compatte e ritorno: ogni card scivola nella nuova forma, il resto della pagina scorre senza dissolversi */
 .slot > summary { view-transition-name: var(--vt); view-transition-class: slot; }
 .drawer { view-transition-name: slot-drawer; }
-.tabs { view-transition-name: page-tabs; }
 .tab-body { view-transition-name: page-body; }
 ::view-transition-group(*) { animation-duration: 0.32s; animation-timing-function: var(--ease); }
 ::view-transition-old(root), ::view-transition-new(root) { animation: none; }

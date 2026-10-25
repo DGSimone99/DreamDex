@@ -17,7 +17,7 @@ import { ShowdownPanel } from './ui/ShowdownPanel';
 import { SuggestionsPanel } from './ui/SuggestionsPanel';
 import { ListsPanel } from './ui/ListsPanel';
 import { TeamPanel } from './ui/TeamPanel';
-import { TopBar } from './ui/TopBar';
+import { Rail } from './ui/Rail';
 import { TabPanel, Tabs, type TabId } from './ui/Tabs';
 import { loadLang, loadLists, loadSession, loadTab, saveLang, saveLists, saveSession, saveTab } from './storage';
 import { EMPTY_LISTS, effectiveLists, type UserLists } from './engine/lists';
@@ -116,12 +116,8 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
     setReplaceIndexState(index);
     setPreview(null);
   };
-  /** Porta la barra delle schede in cima alla finestra, così il contenuto scelto si vede subito. */
-  const scrollToTabs = () => requestAnimationFrame(() => {
-    const still = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
-    document.querySelector('.tabs')?.scrollIntoView?.({ behavior: still ? 'auto' : 'smooth', block: 'start' });
-  });
-  const openTab = (next: TabId) => { setTab(next); scrollToTabs(); };
+  // La pagina non scorre: aprire una sezione basta a mostrarla
+  const openTab = (next: TabId) => setTab(next);
   /** Scegliere chi sostituire (dal coach o da una carta) porta alla scheda Pokémon, dove ci sono i candidati. */
   // Slot vuoto cliccato: scheda Pokémon in modalità Aggiungi, con il cursore nella ricerca
   const [searchRequest, setSearchRequest] = useState(0);
@@ -197,10 +193,23 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   return (
     <LangProvider lang={lang}>
     <div className="app">
-      <TopBar format={format} onFormatChange={setFormat} meta={data.stats?.meta ?? null} lang={lang} onLangChange={changeLang}>
-        <ShowdownPanel team={team} format={format} tera={teraAllowed(format)} onImport={changeTeam} />
-        <SavedTeams team={team} format={format} onLoad={(saved, savedFormat) => { changeTeam(saved); if (savedFormat) setFormat({ ...savedFormat, meta: format.meta }); }} />
-      </TopBar>
+      <Rail format={format} onFormatChange={setFormat} meta={data.stats?.meta ?? null} lang={lang} onLangChange={changeLang}
+        actions={<>
+          <ShowdownPanel team={team} format={format} tera={teraAllowed(format)} onImport={changeTeam} />
+          <SavedTeams team={team} format={format} onLoad={(saved, savedFormat) => { changeTeam(saved); if (savedFormat) setFormat({ ...savedFormat, meta: format.meta }); }} />
+        </>}
+        tabs={<Tabs orientation="vertical" active={shownTab} onChange={openTab} tabs={[
+        { id: 'pokemon', label: t(lang, 'tabs.pokemon'),
+          count: replaceIndex !== null && team[replaceIndex] ? { text: t(lang, 'suggest.replaceTitle', { species: team[replaceIndex].species }), level: 'info' } : null },
+        { id: 'analysis', label: t(lang, 'tabs.analysis'),
+          count: problems.length ? { text: t(lang, problems.length === 1 ? 'tabs.problemsOne' : 'tabs.problemsMany', { n: problems.length }),
+            level: problems.some(p => p.severity === 'serious') ? 'serious' : 'minor' } : null },
+        { id: 'meta', label: t(lang, 'tabs.meta'), disabled: !metaOn, note: metaOn ? undefined : t(lang, 'tabs.metaOff'),
+          count: metaOn && team.length > 0 && openThreats ? { text: t(lang, openThreats === 1 ? 'tabs.threatsOne' : 'tabs.threatsMany', { n: openThreats }), level: 'warn' } : null },
+        { id: 'lists', label: t(lang, 'tabs.lists') },
+        { id: 'compare', label: t(lang, 'tabs.compare'), disabled: true, note: t(lang, 'tabs.soon') },
+      ]} />} />
+      <div className="main">
       {loading && <p className="banner info">{t(lang, 'app.loading')}</p>}
       {!loading && !data.stats && (
         <p className="banner" role="alert">
@@ -212,17 +221,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
           onAllowMultipleMegas={() => setFormat(f => ({ ...f, allowMultipleMegas: true }))} />
         <GradeBadge rating={rating} />
       </div>
-      <Tabs active={shownTab} onChange={openTab} tabs={[
-        { id: 'pokemon', label: t(lang, 'tabs.pokemon'),
-          count: replaceIndex !== null && team[replaceIndex] ? { text: t(lang, 'suggest.replaceTitle', { species: team[replaceIndex].species }), level: 'info' } : null },
-        { id: 'analysis', label: t(lang, 'tabs.analysis'),
-          count: problems.length ? { text: t(lang, problems.length === 1 ? 'tabs.problemsOne' : 'tabs.problemsMany', { n: problems.length }),
-            level: problems.some(p => p.severity === 'serious') ? 'serious' : 'minor' } : null },
-        { id: 'meta', label: t(lang, 'tabs.meta'), disabled: !metaOn, note: metaOn ? undefined : t(lang, 'tabs.metaOff'),
-          count: metaOn && team.length > 0 && openThreats ? { text: t(lang, openThreats === 1 ? 'tabs.threatsOne' : 'tabs.threatsMany', { n: openThreats }), level: 'warn' } : null },
-        { id: 'lists', label: t(lang, 'tabs.lists') },
-        { id: 'compare', label: t(lang, 'tabs.compare'), disabled: true, note: t(lang, 'tabs.soon') },
-      ]} />
+      <div className="workspace">
       <main className="tab-body">
         <TabPanel id="pokemon" active={shownTab}>
           <SuggestionsPanel
@@ -251,6 +250,8 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
           {listsOpened && <ListsPanel lists={lists} format={format} data={data} onChange={changeLists} />}
         </TabPanel>
       </main>
+      </div>
+      </div>
       {listUndo && listUndo.after === lists && (
         <UndoToast action={{ id: listUndo.id, kind: 'clearList', from: listUndo.from }} onClose={() => setListUndo(null)}
           onUndo={() => { setLists(listUndo.before); setListUndo(null); }} />

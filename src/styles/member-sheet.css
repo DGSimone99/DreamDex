@@ -23,4 +23,3 @@
   .editor-actions .btn-label { display: none; }
 }
 /* Portate in cima (clic su una scheda o su Sostituisci): restano sotto la barra in alto, che è fissa */
-.tabs { scroll-margin-top: 76px; }

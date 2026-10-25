@@ -21,7 +21,30 @@
 .tab-count.serious { background: var(--bad-bg); color: var(--bad); }
 .tab-count.minor, .tab-count.info { background: var(--accent-soft); color: var(--text); }
 .tab-count.warn { background: var(--warn-bg); color: var(--warn); }
-.tab-body { padding: 22px 28px 0; }
+/* Sezioni nella barra laterale: una per riga, quella aperta è una linguetta inclinata nel colore 2 */
+.tabs.vertical { flex-direction: column; gap: 2px; padding: 0; margin: 0; border: 0; }
+.tabs.vertical [role='tab'] {
+  justify-content: space-between;
+  width: 100%;
+  padding: 9px 16px;
+  margin: 0;
+  border: 0;
+  font: 600 17px/1.1 var(--display);
+  font-style: italic;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  color: var(--muted);
+}
+.tabs.vertical [role='tab']:hover { color: var(--text); background: var(--raised); }
+.tabs.vertical [role='tab'][aria-selected='true'] {
+  color: var(--on-accent-2);
+  background: var(--stripes), var(--accent-2);
+  clip-path: polygon(0 0, 100% 0, calc(100% - 14px) 100%, 0 100%);
+}
+.tabs.vertical [role='tab'][aria-selected='true'] .tab-count { background: var(--on-accent-2); color: var(--accent-2-ink); }
+.tabs.vertical [role='tab'][aria-disabled='true'] { background: none; }
+.tabs.vertical .tab-count { font-style: normal; margin-right: 10px; }
+.tab-body { padding: 16px 22px 0; }
 .tab-panel:not(.active) { display: none; }
 /* Il titolo della sezione lo dice già la scheda */
 .tab-panel .analysis > h2 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
