@@ -1,343 +1,399 @@
 ---
 name: DreamDex
-description: Team builder for Smogon National Dex, styled as a World Championship team preview on a night-navy broadcast set.
+description: Team builder for Smogon National Dex, styled as the PC Box and summary screens of Pokémon Sword and Shield, with the team as six Pokémon Masters EX cards.
 colors:
-  ink-ground: "#070b1c"
-  navy-band: "#0c1330"
-  navy-panel: "#0f1735"
-  navy-raised: "#17214a"
-  ink-field: "#0a1129"
-  navy-line: "#26326a"
-  navy-line-soft: "#1b2552"
-  broadcast-white: "#eef1ff"
-  slate-muted: "#a3add6"
-  slate-faint: "#7f8bbd"
-  signal-blue: "#6f8dff"
-  signal-blue-soft: "#1f2d6b"
-  trophy-gold: "#ffb800"
-  trophy-gold-hover: "#ffc933"
-  trophy-gold-ink: "#1d1500"
-  trophy-gold-soft: "#33280a"
-  alarm-red: "#ff8a8a"
-  alarm-red-bg: "#3a1426"
-  caution-yellow: "#ffc857"
-  caution-yellow-bg: "#362a0d"
-  pitch-green: "#63e3a8"
-  pitch-green-bg: "#0f3229"
+  ground: "#101219"
+  band: "#14172a"
+  panel: "#1a1d2a"
+  raised: "#272b3d"
+  field: "#0c0e15"
+  line: "#363b52"
+  line-soft: "#262a3b"
+  text: "#f2f4ff"
+  muted: "#aeb3cc"
+  faint: "#9095b0"
+  accent: "#00d1ff"
+  accent-ink: "#00d1ff"
+  accent-soft: "#0b3a4d"
+  accent-wash: "#0a2a38"
+  on-accent: "#001b24"
+  accent-2: "#ff2d8a"
+  accent-2-ink: "#ff5ca3"
+  accent-2-soft: "#4a1430"
+  accent-2-wash: "#3a1030"
+  on-accent-2: "#22000f"
+  sv-accent: "#ff7a1a"
+  sv-accent-ink: "#ff8f3d"
+  sv-accent-soft: "#4a2410"
+  sv-accent-wash: "#33190a"
+  sv-on-accent: "#1f0b00"
+  sv-accent-2: "#a35cff"
+  sv-accent-2-ink: "#c09aff"
+  sv-accent-2-soft: "#2f1d52"
+  sv-accent-2-wash: "#241640"
+  sv-on-accent-2: "#12002a"
+  bad: "#ff8a8a"
+  bad-bg: "#3a1426"
+  warn: "#ffc857"
+  warn-bg: "#362a0d"
+  good: "#63e3a8"
+  good-bg: "#0f3229"
 typography:
   grade:
-    fontFamily: "Barlow Condensed, Arial Narrow, sans-serif"
-    fontSize: "132px"
+    fontFamily: "Kanit, system-ui, sans-serif"
+    fontSize: "92px"
+    fontWeight: 800
+    lineHeight: 0.9
+  score:
+    fontFamily: "Kanit, system-ui, sans-serif"
+    fontSize: "44px"
     fontWeight: 700
     lineHeight: 0.9
-  scoreboard:
-    fontFamily: "Barlow Condensed, Arial Narrow, sans-serif"
-    fontSize: "30px"
-    fontWeight: 700
+    fontFeature: "tnum"
+  display:
+    fontFamily: "Kanit, system-ui, sans-serif"
+    fontSize: "26px"
+    fontWeight: 800
     lineHeight: 1
+    letterSpacing: "0.01em"
   headline:
-    fontFamily: "Barlow Condensed, Arial Narrow, sans-serif"
+    fontFamily: "Kanit, system-ui, sans-serif"
     fontSize: "22px"
     fontWeight: 700
     lineHeight: 1.1
-    letterSpacing: "0.03em"
+    letterSpacing: "0.01em"
   title:
-    fontFamily: "Barlow Condensed, Arial Narrow, sans-serif"
-    fontSize: "21px"
-    fontWeight: 700
+    fontFamily: "Kanit, system-ui, sans-serif"
+    fontSize: "17px"
+    fontWeight: 800
     lineHeight: 1.05
-    letterSpacing: "0.02em"
+    letterSpacing: "0.01em"
+  rail-section:
+    fontFamily: "Kanit, system-ui, sans-serif"
+    fontSize: "17px"
+    fontWeight: 600
+    lineHeight: 1.1
+    letterSpacing: "0.01em"
+  section-head:
+    fontFamily: "Kanit, system-ui, sans-serif"
+    fontSize: "14px"
+    fontWeight: 700
+    lineHeight: 1.2
+  button-primary:
+    fontFamily: "Kanit, system-ui, sans-serif"
+    fontSize: "15px"
+    fontWeight: 700
+    lineHeight: 1.2
+    letterSpacing: "0.04em"
   body:
-    fontFamily: "Barlow, system-ui, sans-serif"
+    fontFamily: "Kanit, system-ui, sans-serif"
     fontSize: "15px"
     fontWeight: 400
     lineHeight: 1.45
     fontFeature: "tnum"
   body-small:
-    fontFamily: "Barlow, system-ui, sans-serif"
+    fontFamily: "Kanit, system-ui, sans-serif"
     fontSize: "13px"
     fontWeight: 400
     lineHeight: 1.4
   label:
-    fontFamily: "Barlow, system-ui, sans-serif"
-    fontSize: "12px"
+    fontFamily: "Kanit, system-ui, sans-serif"
+    fontSize: "11px"
     fontWeight: 600
     lineHeight: 1
-    letterSpacing: "0.06em"
+    letterSpacing: "0.08em"
   chip:
-    fontFamily: "Barlow, system-ui, sans-serif"
+    fontFamily: "Kanit, system-ui, sans-serif"
     fontSize: "11px"
     fontWeight: 600
     lineHeight: 1.5
     letterSpacing: "0.04em"
 rounded:
-  hairline: "2px"
+  square: "0px"
+  chip: "2px"
   tag: "3px"
   control: "4px"
-  panel: "6px"
+  floating: "6px"
+  count: "10px"
   pill: "14px"
 spacing:
   xs: "4px"
   sm: "8px"
   md: "12px"
   lg: "16px"
-  xl: "28px"
+  gutter: "22px"
 components:
   button:
-    backgroundColor: "{colors.navy-raised}"
-    textColor: "{colors.broadcast-white}"
+    backgroundColor: "{colors.raised}"
+    textColor: "{colors.text}"
     rounded: "{rounded.control}"
     padding: "6px 10px"
   button-pressed:
-    backgroundColor: "{colors.signal-blue-soft}"
-    textColor: "{colors.broadcast-white}"
-  button-swap:
-    backgroundColor: "{colors.signal-blue-soft}"
-    textColor: "{colors.broadcast-white}"
+    backgroundColor: "{colors.accent-soft}"
+    textColor: "{colors.text}"
+  button-primary:
+    backgroundColor: "{colors.accent-2}"
+    textColor: "{colors.on-accent-2}"
+    typography: "{typography.button-primary}"
     rounded: "{rounded.control}"
-    width: "30px"
-  button-swap-hover:
-    backgroundColor: "{colors.signal-blue}"
-    textColor: "{colors.ink-ground}"
+  button-primary-hover:
+    backgroundColor: "{colors.accent-2-ink}"
   quick-add-top:
-    backgroundColor: "{colors.trophy-gold}"
-    textColor: "{colors.trophy-gold-ink}"
+    backgroundColor: "{colors.accent-2}"
+    textColor: "{colors.on-accent-2}"
     rounded: "{rounded.control}"
     size: "34px"
-  quick-add-top-hover:
-    backgroundColor: "{colors.trophy-gold-hover}"
   quick-add:
-    backgroundColor: "{colors.navy-raised}"
-    textColor: "{colors.slate-muted}"
+    backgroundColor: "{colors.raised}"
+    textColor: "{colors.muted}"
     rounded: "{rounded.control}"
     size: "34px"
   input:
-    backgroundColor: "{colors.ink-field}"
-    textColor: "{colors.broadcast-white}"
+    backgroundColor: "{colors.field}"
+    textColor: "{colors.text}"
     rounded: "{rounded.control}"
     padding: "6px 10px"
+  section-head:
+    backgroundColor: "{colors.accent-2}"
+    textColor: "{colors.on-accent-2}"
+    typography: "{typography.section-head}"
+    rounded: "{rounded.square}"
+    padding: "4px 24px 4px 12px"
+  rail-tab:
+    textColor: "{colors.muted}"
+    typography: "{typography.rail-section}"
+    padding: "9px 16px"
+  rail-tab-active:
+    backgroundColor: "{colors.accent-2}"
+    textColor: "{colors.on-accent-2}"
   block:
-    backgroundColor: "{colors.navy-panel}"
-    rounded: "{rounded.panel}"
+    backgroundColor: "{colors.panel}"
+    rounded: "{rounded.square}"
     padding: "12px 16px"
   team-card:
-    backgroundColor: "{colors.navy-raised}"
-    padding: "10px 14px 16px"
-    height: "214px"
+    backgroundColor: "{colors.panel}"
+    rounded: "{rounded.square}"
+    padding: "8px 12px 14px"
+    height: "268px"
+  grade-card:
+    backgroundColor: "{colors.panel}"
+    textColor: "{colors.accent}"
+    typography: "{typography.grade}"
+    width: "196px"
+  box-row:
+    backgroundColor: "{colors.panel}"
+    rounded: "{rounded.square}"
+    padding: "8px 12px 8px 14px"
+  box-row-first:
+    backgroundColor: "{colors.accent-2-wash}"
+    textColor: "{colors.accent-2}"
   type-chip:
     typography: "{typography.chip}"
-    rounded: "{rounded.hairline}"
+    rounded: "{rounded.chip}"
     width: "66px"
   tag:
-    backgroundColor: "{colors.pitch-green-bg}"
-    textColor: "{colors.pitch-green}"
+    backgroundColor: "{colors.good-bg}"
+    textColor: "{colors.good}"
     rounded: "{rounded.tag}"
     padding: "1px 7px"
   tag-warn:
-    backgroundColor: "{colors.caution-yellow-bg}"
-    textColor: "{colors.caution-yellow}"
+    backgroundColor: "{colors.warn-bg}"
+    textColor: "{colors.warn}"
   tag-banned:
-    backgroundColor: "{colors.alarm-red-bg}"
-    textColor: "{colors.alarm-red}"
-  filter-chip:
-    textColor: "{colors.broadcast-white}"
-    rounded: "{rounded.pill}"
-    padding: "4px 11px"
-  filter-chip-on:
-    backgroundColor: "{colors.signal-blue-soft}"
-  tooltip:
-    backgroundColor: "{colors.ink-ground}"
-    textColor: "{colors.broadcast-white}"
+    backgroundColor: "{colors.bad-bg}"
+    textColor: "{colors.bad}"
+  floating:
+    backgroundColor: "{colors.ground}"
+    textColor: "{colors.text}"
     rounded: "{rounded.control}"
-    padding: "10px 12px"
 ---
 
 # Design System: DreamDex
 
 ## Overview
 
-**Creative North Star: "The World Final Team Preview"**
+**Creative North Star: "The Trainer's PC Box"**
 
-DreamDex reads like the team preview shown before a World Championship final: six sprites in a row on slanted broadcast panels, each with its type stripe, and the grade standing beside them in gold like a scoreboard. Everything sits on a night-navy broadcast set: deep ink ground, navy panels in tonal steps, condensed uppercase type for names and big numbers, tabular figures everywhere.
+DreamDex looks like a modern Pokémon game interface, not a dashboard. The working surface is the PC Box and the summary screens of Sword and Shield: a deep blue-black ground, square panels in two tonal steps, two bright "version colours" and slanted tab heads with a fine diagonal stripe. The team sits on top as six Pokémon Masters EX style cards, each washed in its first type's colour, beside a big grade card. The world is a game menu that still reads like a tool: numbers, names and reasons come first, and the costume never gets in the way of reading them.
 
-The layout is dense on purpose, because a player builds teams on a desktop next to Showdown and wants the team, its grade and the best next additions readable in one look. Depth comes from tonal navy steps and thin rules, not from cards with shadows. The one shape motif is the slanted team card; everything else is quiet rectangles with small radii, so the slant stays special.
+The app is one screen. A left rail carries the logo, the format, the sections and the global actions; the team band is always on screen; every section scrolls inside its own areas, the page never does. Density is medium: one tool row, then a ranked Box list beside a summary screen, with generous 22px gutters and 10-16px gaps.
 
-Colour carries meaning, not decoration. Gold belongs to the grade and the number-one suggestion. Blue is the working accent: hover, pressed, focus on fields, bars, swaps and minor issues. Red, yellow and green are status only. Classic Pokémon type colours are the one source of hue in content. The interface is in English by default or Italian from the switch; Pokémon names stay official English, while move, ability, item, type and nature names follow the chosen language.
+Kanit carries the whole voice: italic 600-800 for headings, Pokémon names, big numbers and rail sections, upright 400-600 for text and data, tabular figures everywhere. The previous navy-and-gold "World Final Team Preview" broadcast look and the generic grey dashboard are both rejected.
 
 **Key Characteristics:**
-- Six slanted team cards (skew -8deg) with a type-colour bottom stripe, split in half for dual types.
-- Huge gold grade letter at the right of the team band.
-- Barlow Condensed uppercase for headings, names and scoreboard numbers; Barlow for UI text; tabular figures throughout.
-- Flat navy tonal layering; shadows only on things that float (popovers, tooltips, menus, the lifted selected card).
-- Below the team, tabs show one section at a time (Pokémon, Analisi, Meta, Confronto later), each at full width.
-- Suggestions as a compact ruled ranked list beside a detail panel for the selected candidate; the #1 row is the only gold row.
-- Collapsible analysis blocks: title left, summary and chevron right.
-- Desktop first; mobile is not designed yet.
+- Deep blue-black ground (#101219) with square panels; depth is tonal, shadows only for floating things.
+- Two version colours per game: cyan works and informs, magenta marks the best next action and every head.
+- Slanted, striped parallelogram heads; everything else stays square.
+- Masters EX team cards: type-colour gradient, diagonal light streak, big sprite, italic name, type stripe.
+- One screen, inner scrolling, team always visible; desktop first.
 
 ## Colors
 
-A night-navy broadcast palette: four navy steps over an ink ground, one gold reserved for winners, one signal blue for work, and status colours that only ever mean status.
+A dark, cool ground with two saturated version colours that swap per game, plus status and type colours that never swap.
 
 ### Primary
-- **Trophy Gold** (`trophy-gold`): the grade letter (S, A, B), the grade number in the Valutazione block, the #1 suggestion row (rank, score, faint gold wash and its + button), and the "DEX" half of the logo. It also marks selection state, never action: the focus ring, text selection, caret, checkbox accent, the favourite star, the selected option in menus, the lifted selected team card's underline, the open set drawer's top rule and the top rule of the Stats tooltip. **Trophy Gold Ink** is the text on gold fills; **Trophy Gold Soft** is the start of the #1 row's wash.
+- **Box Cyan** (accent, #00d1ff in Sword and Shield): the working colour. Hover and focus borders, the 2px focus ring, pressed toggles and segments (on Accent Soft #0b3a4d), selected Box rows (1px inset ring), meters and EV sliders, the grade letter, info marks, the "Più usati" markers and usage shares in the editor menus, the lead label, the selected card's bottom stripe and the editor's 3px top rule, the undo timer. Accent Ink is the text form; Accent Wash (#0a2a38) tints the chosen setting.
 
 ### Secondary
-- **Signal Blue** (`signal-blue`): the working accent. Button and summary hover borders, field focus, meter fills (score bars and rating bars), minor-issue triangles and table rows, the Custom Skillset unlock mark, the picked-row outline from keyboard search, and the swap button's hover fill. **Signal Blue Soft** fills pressed toggles, active filter chips, the active segmented option, the swap button at rest, the "picked" tag and info banners.
+- **Version Magenta** (accent-2, #ff2d8a in Sword and Shield): the best next action and every head. The #1 Box row (wash gradient, rank and result in magenta, magenta + button), main buttons ("AGGIUNGI AL TEAM", uppercase), the active rail section, and every section and panel head ("Team (5/6)", "Voto", "Suggerimenti", "Contributo al team", "Perché", "Set consigliato", editor fieldsets "EV", "Set", "Mosse", block titles in Analisi and Meta, the dialog head rule). Text on it is On Accent 2 (#22000f); Accent 2 Ink (#ff5ca3) is its hover and its text form.
 
 ### Tertiary (status only)
-- **Alarm Red** (`alarm-red`) on **Alarm Red Bg**: legality problems, serious issues and their counts, banned tags, missing coverage, weak-to counts, removal hover, grade D, error banners.
-- **Caution Yellow** (`caution-yellow`) on **Caution Yellow Bg**: things to check (second Mega, illegal moves or ability under Custom Skillset), warning tags, rating penalties, grade C.
-- **Pitch Green** (`pitch-green`) on **Pitch Green Bg**: strengths, checklist ticks, resist counts, score gains, positive tags, rating bonuses.
+- **Alarm Red** (#ff8a8a on #3a1426): legality or serious problems, banned tags, falling grade, nature-lowered stat, EV overflow, remove and destructive hovers.
+- **Caution Yellow** (#ffc857 on #362a0d): "check this" (warn marks, warn tags, grade C).
+- **Pitch Green** (#63e3a8 on #0f3229): strengths and gains (rising grade, nature-raised stat, setup gains, default tags).
 
 ### Neutral
-- **Ink Ground** (`ink-ground`): page background, sticky top bar, and the background of every floating surface (tooltips, menus, Stats pop) so they read as cut-outs above the navy.
-- **Navy Band** (`navy-band`): the full-width team preview band.
-- **Navy Panel** (`navy-panel`): analysis blocks, the suggestions board, fieldsets inside the editor. Type-word contrast is computed against this colour.
-- **Navy Raised** (`navy-raised`): team cards, buttons, popovers, the open set drawer, count badges.
-- **Ink Field** (`ink-field`): inputs, selects, code and the Showdown set text.
-- **Navy Line** / **Navy Line Soft**: control borders and dashed empty slots / every divider, block border and meter track.
-- **Broadcast White** (`broadcast-white`): primary text and all Pokémon names. **Slate Muted**: secondary text, block summaries, form labels. **Slate Faint**: tertiary text, placeholders, chevrons, idle icons, board column heads.
+- **Ground** (#101219): page, floating surfaces (menus, tooltips, dialogs, paste panel).
+- **Band** (#14172a): the team band; with the stripe texture, the summary plate and dialog heads.
+- **Panel** (#1a1d2a): rail, blocks, Box list, summary screen, editor, grade card, team card base.
+- **Raised** (#272b3d): buttons, hovered rows, active options, the selected Box row.
+- **Field** (#0c0e15): inputs, code, set text, meter tracks.
+- **Line** (#363b52) and **Line Soft** (#262a3b): control borders and panel/row dividers.
+- **Text** (#f2f4ff), **Muted** (#aeb3cc), **Faint** (#9095b0): primary, secondary and tertiary text; Faint is still at least 4.6:1 on Raised.
 
 ### Type colours
-The 18 classic type colours (Normal #A8A878 … Fairy #EE99AC, defined in the Sprite module) are content, not theme. They appear as solid chips with dark or white ink chosen by luminance, as the team card's bottom stripe, as the type dot before Pokémon names, as tinted filter buttons, and as type words in running text, where each colour is lightened toward white until it reaches a contrast of at least 6:1 on Navy Panel.
+The 18 classic type colours (Normal #A8A878, Fire #F08030, Water #6890F0, and the rest, defined in `src/ui/Sprite.tsx`) fill type chips with a computed dark or white ink, colour card gradients and bottom stripes, type dots and type filter buttons, and are lightened toward white for type and move names in text.
+
+### Per-game palettes
+The two version colours follow the game. `:root` is Sword and Shield (cyan #00d1ff, magenta #ff2d8a); `:root[data-palette='sv']` is Scarlet and Violet (orange #ff7a1a, violet #a35cff), each with its own ink, soft, wash and on-colour steps (the `sv-*` tokens). Only the accent tokens change: ground, panels, lines, text, status and type colours are identical in both. "Segue il gioco" (the default) picks Scarlet and Violet for the Gen 9 Pokédex and Sword and Shield otherwise; the Settings dialog can pin one. Every pair is contrast-checked in `tokens.css` (on-accent text at least 5.2:1, ink at least 4.8:1 on Raised).
 
 ### Named Rules
-**The Trophy Rule.** Gold is the grade and the #1 suggestion (row and its + button). No other call to action is gold; gold elsewhere only marks focus or selection, plus one approved exception: the "Most used" markers in the set editor (a gold left rule, faint gold wash and the usage share on the most used items, abilities, natures, moves, Tera types and ready EV spreads).
+**The Two Version Colours Rule.** Cyan (accent) is work, info, selection, meters, the grade letter and focus. Magenta (accent-2) is the best next action (the #1 candidate, its + button, main buttons) and every section and panel head. Nothing else takes magenta; a second "main" button on the same surface is an ordinary button.
 
-**The Status Means Status Rule.** Red, yellow and green never decorate. Red is a legality or serious problem, yellow is "check this", green is a strength or a gain.
+**The Only Accents Change Rule.** A palette swaps the accent tokens and nothing else. Never hard-code an accent hex in a component (the Settings swatches are the one exception, because they show the palettes themselves).
+
+**The Status Means Status Rule.** Red, yellow and green never decorate. Red is a legality or serious problem, yellow is "check this", green is a strength or a gain. They are never tied to the palette.
 
 **The Classic Types Rule.** Type colours keep their classic hues. Lighten them for text legibility; never re-hue them to fit the palette.
 
 ## Typography
 
-**Display Font:** Barlow Condensed (with Arial Narrow, sans-serif), weights 600 and 700, self-hosted.
-**Body Font:** Barlow (with system-ui, sans-serif), weights 400, 500 and 600, self-hosted.
+**Display Font:** Kanit italic 600-800 (with system-ui, sans-serif), self-hosted through `@fontsource/kanit`
+**Body Font:** Kanit upright 400-600
 
-**Character:** Barlow Condensed in uppercase is the broadcast caption voice: team names, section heads and the scoreboard numbers. Barlow is the calm reading voice for labels, reasons and data. Tabular figures are on for the whole body so scores and percentages line up.
+**Character:** One rounded, slightly technical sans in two postures: italic for anything that should feel like the game (names, heads, numbers, sections), upright for reading. Tabular figures are on from the body down.
 
 ### Hierarchy
-- **Grade** (700, 132px, line-height 0.9): the team's grade letter in the band. One per screen.
-- **Scoreboard** (700, 30px, line-height 1): rank and score in the suggestion board (26px at ≤1440px), the logo (30px, 0.06em), the grade number in the rating block (44px).
-- **Headline** (700, 22px, 1.1, uppercase, 0.03em): section heads (Team, Analisi, Suggerimenti).
-- **Title** (700, 21px, 1.05, uppercase, 0.02em): Pokémon names on team cards; 19px in the board, 17px in swap rows, 16px in Meta Use rows.
-- **Body** (400, 15px, 1.45): default UI text; 14px for list rows, pros and cons, select values; 13px for notes, held items, abilities, secondary lines.
-- **Label** (600, 12px, uppercase, 0.05 to 0.06em): form labels in the top bar and set editor, analysis sub-heads with counts, filter group heads, board column heads.
-- **Chip** (600, 11px, uppercase, 0.04em): type chips (10px in cards at ≤1440px); 10px in the type filter grid.
+- **Grade** (800 italic, 92px, 0.9; 64px in compact mode): the grade letter only, in cyan (yellow for C, red for D).
+- **Score** (700 italic, 44px, 0.9): the grade change on the summary plate; 24px for the result in Box rows, 22px for "76 / 100".
+- **Display** (800 italic, 26px, 1): the logo and the open member's name in the editor.
+- **Headline** (700 italic, 22px, 1.1): page-level h2 and the summary plate name (24px).
+- **Title** (800 italic, 17px, 1.05): Pokémon names on team cards (two lines at most); 700 italic 16-17px for Box row names, swaps and member rows; 600 italic 17px for rail sections.
+- **Section head** (700 italic, 14-15px, 1.2; 12-13px for in-panel heads): text inside the slanted heads, On Accent 2.
+- **Body** (400, 15px, 1.45, tabular): default text; 13-14px for notes, explanations and options.
+- **Label** (600, 11-12px, 0.05-0.08em, uppercase): field labels ("POKÉDEX", "TIER", "STRUMENTO", "PALETTE"), stat column heads, group rows. Never used as a decorative kicker above a heading.
+- **Chip** (600, 11px, 0.04em, uppercase): type chips; tags are 600 12px in sentence case.
 
 ### Named Rules
+**The 11px Floor Rule.** No text is smaller than 11px.
+
 **The Official Names Rule.** UI copy follows the EN | IT switch (English by default). Pokémon names always stay official English. Move, ability, item, type and nature names, and move/ability/item descriptions, use the official Italian text from PokeAPI in Italian (English where a translation is missing) and Showdown's English data in English. Team data, saves and Showdown import/export are always English.
 
-**The Names In Text Rule.** A Pokémon name inside prose is bold Broadcast White preceded by a 9px type dot (split vertically for dual types). Type names inside prose take their lightened type colour, weight 600. Move names take their type's text colour.
+**The Names In Text Rule.** A Pokémon name inside prose is bold Text (#f2f4ff) preceded by a 9px type dot (split vertically for dual types). Type names inside prose take their lightened type colour, weight 600. Move names take their type's text colour.
 
 ## Layout
 
-Desktop first, single screen, one 28px page gutter.
+Desktop first, one screen at 1440×900 and above 1100px wide.
 
-- **Top bar:** sticky, Ink Ground, controls aligned to the baseline of their small uppercase labels; an EN | IT segmented switch on the right, before the stats month.
-- **Team band:** full width, Navy Band, a grid of the six-card row and a 210px grade column (28px gap). Cards sit in a 6-column grid with 14px by 16px gaps. Opening a card drops the set editor full width under the row (a drawer in the second grid row), one card open at a time.
-- **Tabs:** a tab bar under the team band (Barlow Condensed 20px uppercase, 3px Trophy Gold underline on the active tab, status-coloured count pills: problems red or blue, open threats yellow, replacing blue). Inactive panels stay mounted and are hidden with CSS, so search, filters and page survive a tab switch. Choosing a member to replace switches to the Pokémon tab. The Meta tab is disabled when the rating is without meta.
-- **Analisi tab:** two columns at 5fr / 6fr (rating and coaching left; weaknesses, coverage and roles right, open by default), the member sheet full width below.
-- **Meta tab:** Meta Use left and Meta threats right at 5fr / 6fr, both open.
-- **Pokémon modes:** a segmented control always on top (Aggiungi, disabled with a full team; Migliora team; Sostituto simile). Outside Aggiungi a row of round chips picks who to replace: Tutti (free recommendations: each candidate once, with the member worth replacing most, chosen by team grade; favourites never leave) or one member, each chip with its chibi icon (favourites carry a small gold star). A full team opens on Migliora team · Tutti. In free recommendations each row shows who leaves (a small swap arrow over the member's chibi icon, between name and result), and the detail lists the other members it could replace with their grade change.
-- **Pokémon tab:** title, modes, search and filters at full width; below them the list and the detail start on the same line. A 560px list (rank 26, sprite 48, name flexible, result 52, action 34; 10px gap), ranked by the team grade each candidate would give (by meta usage for the first Pokémon; by similarity in "similar replacement"), with numbered pages of 10 (up to 50 candidates) below. The result cell shows the grade change in Scoreboard type (+7, red when it drops, gold on #1) over the resulting grade (A 88), or the meta usage for the first Pokémon. A sticky detail panel fills the rest: hero (88px sprite, 26px name, types, tags, the grade change with "team grade B 73 → A 88"), "What changes" when replacing, "Effect on the team" (team grade before → after and every rating area with its change), "Why", the suggested set and the add/replace action.
-- **Rhythm:** spacing steps of 4, 8, 12, 16 and 28px; blocks stack with 10px between them.
+- **Shell:** a two-column grid, a 214px left rail and the main column, exactly the viewport height (100dvh) with overflow hidden. The page never scrolls; each section's long content scrolls inside its own area (Box list, summary screen, Analisi and Meta columns, Pokédex grid, editor).
+- **Left rail** (Panel, 1px Line Soft right border, 16px side padding, 14px gaps), top to bottom: the "DreamDex" logo ("Dex" in cyan); the Pokédex and Tier fields under uppercase labels; the Rules popover ("Regole: col meta · fino a gen 9", opening to the right of the rail); the sections as a vertical tab list (Pokémon, Analisi, Meta, Liste, Confronto disabled) with status count pills (red for serious problems, cyan-soft for minor, yellow for open threats); then Import / Export, "Team salvati (n)" and "Impostazioni"; at the foot the EN | IT segmented switch and the stats month in Muted 12px.
+- **Team band** (Band, 14px 22px padding): always on screen. A head row with the "Team (n/6)" slanted head and its actions ("Preset migliori", "Completa team", "Svuota team" at the right), then six cards in a 6-column grid with 10px gaps beside the 196px grade card (18px gap).
+- **Section body** (16px 22px padding): one tool row (modes as a segmented control, search, Filtri), then the content. In Pokémon, the 540px Box list beside the summary screen (16px gap), the pager sticky at the list's bottom. Analisi and Meta are two independently scrolling columns at 5fr / 6fr; Liste is the Pokédex grid beside favourites and bans.
+- **Editor:** opening a card replaces the section body with the set editor (the section body is hidden, the team stays put); one card is open at a time. Inside, a head row (name, types, "Incolla set", "Copia set", "Apri su Smogon", "Sostituisci"), the preset row, then EV on the left and Set and Mosse on the right.
+- **Rhythm:** 4, 8, 12, 16 and 22px steps; blocks stack with 10px between them.
 
-**Breakpoints.** At ≤1440px the team cards compact (56px type chips, 80px sprites, roles truncated) and the list narrows to 500px and the detail hero shrinks (72px sprite). At ≤1100px the band, the tab columns and list/detail stack and the team row becomes three across; this is a fallback, not a designed layout. Mobile is not designed yet.
+**Compact mode** (1100px wide and up, below 1280px wide or below 800px tall, e.g. 1366×768 and 1280×720): the same one-screen layout, tighter. Rail 190px, 15px rail sections, band padding 10px 16px with a 168px grade column, cards 206px tall with 64px sprites (animated sprites scaled to match), roles hidden, item on one line, 15px names and 52px chips, a 64px grade letter, 10px 16px section padding, a 500px Box list, a 184px summary plate with 96px sprite and 36px score.
+
+**Fallback below 1100px:** not designed. The shell stacks, the page scrolls, the team row becomes three across and every two-column area becomes one column. Mobile is not designed.
 
 ## Elevation & Depth
 
-Flat by default. Depth is tonal: Ink Ground, then Navy Band, then Navy Panel, then Navy Raised, separated by 1px Navy Line Soft rules. Shadows exist only on things that float above the layout.
+Flat and tonal. Depth goes Field, Ground, Band, Panel, Raised, separated by 1px Line Soft rules. A shadow means the thing is above the page.
 
 ### Shadow Vocabulary
-- **Float** (`box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55)`): menus, the Stats pop, alert tooltips, popovers (0.5 alpha).
+- **Float** (`box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55)`): menus, select pickers, Filtri panel, Stats pop, alert tooltips, dialogs, undo toast, fill and speed popovers; rail and toolbar popovers use 0.5 alpha.
+- **Paste** (`box-shadow: 0 14px 34px rgba(0, 0, 0, 0.5)`): the "Incolla set" panel.
 - **Tip** (`box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5)`): description tooltips on items, abilities and moves.
-- **Lift** (`box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4)`): the selected team card, which also rises 4px.
-- **Badge** (`box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5)`): the round alert marks sitting on a sprite.
+- **Lift** (`box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4)`): the open team card, which also rises 4px.
+- **Badge** (`box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5)`): round alert marks sitting on a sprite.
 
 ### Named Rules
-**The Only Floaters Cast Shadows Rule.** Panels, blocks and board rows never carry a shadow. A shadow means the thing is above the page: a menu, a tooltip, or the one selected card.
+**The Only Floaters Cast Shadows Rule.** Panels, blocks, rows and team cards at rest never carry a shadow. A shadow means a menu, a tooltip, a dialog, the toast, or the one open card.
 
 ## Shapes
 
-Small, square-ish corners: 2px for chips and meters, 3px for tags and badges, 4px for controls and tooltips, 6px for blocks and the board, 14px only for filter pills. Alert marks on sprites are circles. The single expressive shape is the slant: team cards are parallelograms (skewX -8deg around their bottom edge, so the first and last cards' bottom corners line up with the set drawer below) drawn by a pseudo-element so their content stays upright. Empty slots repeat the slant with a 2px dashed Navy Line outline. Chevrons are drawn as two-sided 2px borders rotated 45deg, pointing down closed and up open.
+Square by default: panels, blocks, the Box list, the summary screen, team cards and empty slots have no radius. Controls (buttons, inputs, selects, popovers' summaries, floating menus) use 4px; dialogs and rail popovers 6px; tags and badges 3px; type chips and meters 2px; count pills 10px; filter and target pills 14px. Empty slots are a 2px dashed Line outline with a dashed 56px ring around the plus. Chevrons are two-sided 2px borders rotated 45deg, down when closed, up when open.
 
-**The One Slant Rule.** Only team cards are slanted, together with the small shapes inside them that sit on the slanted edge (the Stats badge and the type chips, drawn as parallelograms with the same -8deg). Do not skew blocks, buttons or board rows.
+The one expressive shape is the slanted head: a parallelogram cut by `clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%)` (9-10px for small heads, 14px for the rail tab), filled with magenta under the stripe texture (`repeating-linear-gradient(-60deg, #ffffff0d 0 4px, transparent 4px 10px)`).
+
+### Named Rules
+**The Slanted Head Rule.** Only heads slant: section and panel heads, the active rail section and main action buttons are parallelograms with the stripe texture. Panels, rows, inputs and team cards are never slanted; the Masters EX diagonal lives inside the card as a light streak, not in its outline.
 
 ## Components
 
 ### Buttons
-- **Shape:** gently squared (4px), 1px Navy Line border, Navy Raised fill, weight 500, inline icon with 6px gap.
-- **Hover / Focus:** border turns Signal Blue; keyboard focus is a 2px Trophy Gold outline offset 2px.
-- **Pressed toggles:** Signal Blue Soft fill with Signal Blue border.
-- **Swap (⇄) in recommendations:** 30px square, Signal Blue Soft fill and Signal Blue border, filling Signal Blue with Ink Ground icon on hover. Not gold.
-- **Quick add (+) on the board:** 34px square; Slate Muted icon at rest, Signal Blue Soft on hover. On the #1 row only it is solid Trophy Gold.
-- **Icon buttons on cards** (favourite, remove): borderless, Slate Faint; star turns gold when on, × turns red on hover.
+- **Shape:** 4px corners, 1px Line border, Raised fill, 500 weight, 6px 10px.
+- **Hover / Focus:** the border turns cyan; focus is a 2px cyan outline at 2px offset. Pressed toggles sit on Accent Soft with a cyan border. Disabled at 40% opacity.
+- **Primary:** magenta fill, On Accent 2 text, Kanit 700 15px uppercase at 0.04em; hover goes to Accent 2 Ink. On the summary plate it is slanted ("AGGIUNGI AL TEAM").
+- **Danger:** an ordinary button whose border and text turn red on hover ("Svuota team", remove).
+- **Segmented:** a Field strip with 1px Line dividers; the pressed segment is Accent Soft with 600 weight (modes, EN | IT, level 50/100, rating mode).
 
-### Chips
-- **Type chip:** solid classic colour, ink chosen by luminance, uppercase 11px, 2px radius, fixed 66px width so chips align in columns (56px in cards at ≤1440px).
-- **Tags:** 3px radius, 12px weight 600. Green on green-bg for positives, yellow with a warning icon for checks, red for banned, outlined muted for tier.
-- **Type filter grid:** buttons tinted 12% of the type colour with a 45% border and lightened text; selected fills solid with a ground-coloured gap ring.
-- **Filter pills:** transparent, 14px radius; on = Signal Blue Soft with Signal Blue border.
+### Chips and Tags
+- **Type chip:** fixed 66px (56px on cards, 52px compact), classic type colour, uppercase 11px, 2px corners; long names shrink their letter-spacing instead of widening the chip.
+- **Tags:** 3px corners, 12px 600; green by default, yellow for warnings, red for banned, outlined Line for tier.
+- **Count pills:** 10px radius, Raised by default, status-coloured in the rail.
 
 ### Cards / Containers
-- **Analysis block:** Navy Panel, 1px Navy Line Soft border, 6px radius, 12px by 16px padding, collapsible. Summary row: title left (weight 600), summary text in Slate Muted 14px right-aligned beside the chevron, issue triangles with counts where relevant. Valutazione and Coaching start open; Meta Use and the deeper analysis blocks start collapsed.
-- **Suggestion list:** one Navy Panel list with 6px radius, rows ruled by Navy Line Soft. Row hover tints toward Navy Raised; the selected row is Navy Raised with a 1px Signal Blue inset outline (Trophy Gold on the #1 row). The #1 row carries a Trophy Gold Soft wash fading to the panel by 70%, gold rank and gold grade change. While the list is recomputed after a team change it dims to 55%.
-- **Candidate detail:** Navy Panel, Navy Band hero, sections ruled by Navy Line Soft with Label-style heads; the main action is gold only for the #1 candidate, Signal Blue Soft otherwise.
+- **Blocks:** square Panel with 1px Line Soft border, 12px 16px padding. A collapsible block's title is a small slanted magenta head on the left, its summary right-aligned beside the chevron.
+- **Grade card:** Panel under a magenta "Voto" head; the big italic cyan letter, "76 / 100" with the verbal label, then four area meters (Difesa, Offesa, Ruoli, Velocità) with 5px cyan bars and tabular values; an inactive area is Faint with its meter at 50%.
+- **Floating surfaces:** Ground fill, 1px Line border, 4px corners (6px for dialogs), Float shadow. Tooltips and the Stats pop carry a 2px top border (cyan, or the mark's status colour); dialogs ("Impostazioni", rating help, area details) open over a 70% dark backdrop with a striped Band head over a 2px magenta rule, close on Esc, the × or a click outside, and return focus. Menus open with a short 0.12-0.18s fade-in.
+- **Undo toast:** a Panel card fixed bottom centre with the Float shadow, the removed member's icon and name, an "Annulla" button and a 3px cyan timer bar that shrinks over 5 seconds and pauses on hover or focus.
 
 ### Inputs / Fields
-- **Style:** Ink Field fill, 1px Navy Line border, 4px radius; labels above in the Label style.
-- **Focus:** border and 2px outline in Signal Blue.
-- **Comboboxes and selects:** custom chevron; menus open on Ink Ground with the Float shadow, rows ruled by Navy Line Soft, active row Navy Raised. Chosen values can render styled (type chip, nature effects, item icon at left).
-- **Disabled:** 0.4 to 0.55 opacity, not-allowed cursor.
+- **Style:** Field fill, 1px Line border, 4px corners, 6px 10px; placeholders Faint; checkboxes 16px in cyan.
+- **Focus:** the border turns cyan, with a 2px cyan outline on keyboard focus.
+- **Menus:** the editor combobox and native selects (through `appearance: base-select`) share one Ground listbox with Line Soft row dividers, the active option on Raised and the chosen one on Accent Soft. "Più usati" options lead the list with a 2px cyan left rule, a faint cyan wash and the usage share at the right.
 
 ### Navigation
-The top bar is the only navigation: logo, format, gen limit, usage threshold, Avanzate and Import / Export popovers, saved teams, and the stats month at the right. Popovers open below on Navy Raised with the Float shadow.
+The left rail's vertical tab list: Kanit 600 italic 17px in Muted, Raised on hover. The active section is a slanted magenta tab with the stripe texture and On Accent 2 text; its count pill inverts (On Accent 2 fill, Accent 2 Ink text). Disabled sections are Faint at 55%. Inactive panels stay mounted and hidden with CSS, so search, filters and page survive a switch.
 
 ### Team Card (signature)
-A slanted Navy Raised parallelogram, 214px tall: Custom Skillset lock top-left, favourite and remove top-right, centred 96px pixelated sprite with round alert marks at its lower right, then the Stats badge on its own row, name, item (with its 18px item icon), ability, type chips and roles (at most two short sub-role labels, measured like the rating: an attack or wall role first, else a Field/Disruption one, then weather; Recovery never leads and appears only on support members; all labels in the tooltip; the member sheet lists them all as tags). Every row keeps the same 14px gap from the slanted left edge (measured, so it stays exact when a long name makes the card taller); the sprite stays centred within the slant. Holding a Mega Stone (or Ultranecrozium Z) the card shows the battle forme's name and ability. A 5px bottom stripe in the type colour, split half and half for dual types. Hover lightens the fill. Selected: the card lifts 4px with the Lift shadow, the sprite scales 1.12 and plays its animated idle (Showdown gen5ani, static under reduced motion or when missing), and the stripe turns Trophy Gold; the set drawer opens beneath with a 3px gold top rule.
+A square Masters EX card, 268px tall (206px compact), full and empty alike. Fill: a 160deg gradient from the first type colour (42% into Panel) fading to Panel at half height, with a thin 115deg white light streak across it and a 3px bottom stripe in the type colours (half and half for dual types). Content: "Lead" in cyan italic on the first card, favourite and remove top-right (32px hit areas), the Custom Skillset lock top-left, a centred 96px pixelated sprite with round alert marks at its lower right, the Stats badge on its own row, the italic name (two lines at most), item with its icon (two lines), ability, type chips and roles. Hover adds a 1px Line inset ring; a problem card gets a 1px red or yellow outline. Open: the card lifts 4px with the Lift shadow, the sprite scales 1.12 and plays its animated idle, the bottom stripe turns cyan, and the editor replaces the section body under a 3px cyan rule. Cards can be dragged to reorder (dashed cyan drop outline) and slide into compact shape through view transitions. An empty slot is a dashed outline with a dashed ring and "Aggiungi un Pokémon", turning cyan on hover.
 
-### Rating Help
-A small "?" in a circle (Slate Faint, Signal Blue on hover) beside "Team rating" opens "How the grade works": a modal on Ink Ground with the Float shadow, rendered in the page body so it inherits nothing from the panel. Topics on the left (How it works, each area, Bonuses and penalties) as a vertical tab list on Navy Panel, the selected one on Signal Blue Soft; the explanation on the right. "How it works" shows the weight table per kind of team with the current team's row on Signal Blue Soft. Esc, the × or a click outside closes it and focus returns to the "?". Tooltips on the rating bars carry only per-member data; the rules live here.
+### Box List
+The ranked candidates under a slanted "Suggerimenti" head: a square Panel list with Line Soft dividers, each row rank (24px italic Faint), 48px sprite, italic name with type chips and a one-line reason, the result (grade change in 24px italic over the resulting grade) and a 34px + button. Hover tints Raised; the selected row is Raised with a 1px cyan inset ring. The #1 row is the only magenta one: a magenta wash fading into the panel, magenta rank and result, a magenta + button, and a magenta ring when selected. Numbered pages of 10 sit sticky at the bottom.
 
-Clicking the Offense bar opens the area detail ("Offesa 73"): the help-dialog shell (Ink Ground, Float shadow, rendered in the page body, Esc / × / click outside closes it, focus returns to the bar), 800px wide and taller (up to 860px). Under the title the area value sits in the scoreboard face. On the left a vertical tab list on Navy Panel, like the help dialog, with each tab's value at the right in Barlow Condensed (General, Power, Wallbreaking, Coverage; the selected one on Signal Blue Soft); arrows move between tabs. General: the sub-stats as a stacked list (name, full-width meter, value in Barlow Condensed 22px, one-line explanation in Slate Muted 13px) and the member table (40px sprite + name, sub-stats in Slate Muted tabular numbers, the member's Offense in Barlow Condensed 20px with the setup gain "(+6)" in Pitch Green). Each other tab opens with "how it is computed" in two or three Slate Muted paragraphs above a hairline, then its own table: Power lists members by power with a meter and their best hit; Wallbreaking is a wall-by-member matrix whose cells are small 3px-radius tags with the damage in % (OHKO on Signal Blue, 2HKO on Signal Blue Soft, 3HKO outlined in Navy Line, below 33% plain Slate Faint), outlined in Pitch Green with the post-setup damage in brackets when setup crosses a threshold (no answers column: the cells already show who breaks each wall); Coverage lists the targets by weight with type chips, the representative Pokémon, the weight and the sprites of the members covering it ("nobody" in Slate Faint). No cards, no colored accents beyond these tags: the numbers carry the hierarchy. At phone width the tab list becomes a horizontal strip above the panel.
+### Summary Screen
+The selected candidate, like the game's summary page. A 210px left plate on the striped Band texture holds a 144px sprite, the 24px italic name, the Stats badge, type chips and tags, the grade change in 44px italic (magenta for #1) with "voto del team B 76 → B 81", then the actions stacked: the main action (slanted magenta for #1), "Copia set", "Apri su Smogon". On the right, sections under small slanted heads: "Contributo al team" (each area with its meter, value and change), "Perché" (reasons with small cyan square bullets), "Set consigliato" (item, ability, nature, EVs and a two-column move grid). It scrolls inside its own area.
 
-The Defense bar ("Difesa 85") opens the same shell with its own tabs: General, Robustness, Sustainability, Type coverage, Meta coverage (the last only with meta). General has the same stacked sub-stats and a member table (Physical, Special, Sustainability, the member's Defense in Barlow Condensed 20px). Robustness is an attacker-by-member matrix split by uppercase Slate Faint group rows ("Physical attackers", "Special attackers"); the tags read the other way round from Offense, because here holding is good: 4HKO+ on Signal Blue, 3HKO on Signal Blue Soft, 2HKO outlined in Navy Line, OHKO outlined with the text in Alarm red. Sustainability lists recovery ("+56%" with its sources in Slate Faint 12px and "halved" in Amber when the member doesn't take a 3HKO), Stealth Rock and Life Orb as "−6%", "—" when absent. Type coverage lists the 18 types with their safety and the sprites of weak and resisting members; a type with more weak than resistant members gets a faint Alarm-red row tint. Meta coverage lists threats by usage with how much they are taken and the holders' sprites (fainter for a 2HKO, name, move and damage in the tooltip and in visually hidden text).
-
-The Speed bar ("Velocità 54") opens the same shell with three tabs: General, Speed, Speed control. General has the two sub-stats and a member table (speed stat, raw % outspeeded, total in Barlow Condensed 20px with the gain "(+21)" in Pitch Green; its tooltip names each condition and its source). Speed lists members from the fastest with one column per own condition present (Setup, Weather, Unburden, Priority), the gain "+21" in Pitch Green, "—" when absent, and the member's total on its own. Speed control is a plus, not a 0–100 value: in the General sub-stats it shows as "+13" in Pitch Green with no meter, and in the tab list as "+13". Its tab lists the Pokémon that bring a control move (sprite and name, the move, "4 teammates" helped, and the points that move alone adds, "+8", in Barlow Condensed); paralysis and speed drops don't add up, so the rows can exceed the total. With no control a single line says so. The Offense General tab also carries an information line under its lead: "Attackers: 2 physical · 1 special · 0 mixed".
-
-The Roles bar ("Ruoli 81") opens the same shell with five tabs: General, Attack, Defense, Field, Disruption; each family tab shows in the tab list how many of its sub-roles the team covers ("3/4"). General leads with the kind of team it is judged as, then three stacked sub-stats: Important entries (meter and the base in Barlow Condensed 22px), Minor entries as a plus in Pitch Green ("+12", no meter, like Speed control) and Essential entries as a malus in Alarm red ("−2", Slate Faint "0" when none), with the essential failures listed underneath in Alarm red 13px. Below, one table (Entry, Value, Brought by) split by uppercase Slate Faint group rows (Essential, Important, Minor): the team value in Barlow Condensed 20px, or the malus "−2" in Alarm red for an essential missing in a team of 6, and the members who bring the entry as 28px sprite + name with the source and a partial value in Slate Faint brackets ("Gliscor (Toxic · 68)"); "Nobody" as a Slate Faint tag. Each family tab opens with how its sub-roles are measured, then a table (Pokémon, Reason, Value) with one group row per sub-role carrying its level and team value in Slate Faint ("Important · team 68", Important a step brighter in Slate Muted); entries that don't count for this kind of team stay listed at 55% opacity. The reason is plain text: "Taunt, faster than 64% of the meta", "Toxic: 68% of the meta not immune", "HP×Def 136k (threshold 100k)", "Best hit: Wave Crash", or the move. The Defense General member table shows the defensive setup gain beside the member's Defense ("84 (+3)" in Pitch Green, tooltip "With setup: Iron Defense"), exactly like Offense's setup gain. In the Analysis Roles section a missing Important entry reads "Not covered" in muted Caution yellow, between the red of a missing Essential and the grey of a missing Minor.
-
-The Bonus/Malus bar sits full width under the area grid: an 8px Slate Line track centred on 0 with a 2px Slate Muted tick at the middle, a fill growing left in Alarm red for a net malus and right in Signal Blue for a net bonus, on a ±15 scale (a full malus reaches the edge, never beyond). Its label ("Bonus/Malus −6 (−8 / +2)", a zero total written "0" without sign, both at zero just "Bonus/Malus 0") is a link; under the bar a list of the active entries carries a red "−" or blue "+" marker and the points in brackets (none for an entry worth 0). A click opens the catalogue in the same shell: two tabs, Malus and Bonus, each a table (Item, When, Points, Now) with the entries active now on Slate Line and in bold, the Tera row at 55% opacity with a "Gen 9 only" mark where it does not apply, and a line under the table with the cap ("Maximum total −15"); when the raw sum passes the cap a Slate Faint "(capped at −15)" sits next to the title. An area with no weight (Speed in a stall) stays in the grid greyed: its label in Slate Faint and only the meter at 50% opacity, with the reason in the tooltip.
-
-In Improve the team and Similar replacement a Type row sits under the Replace row, built like it (Slate Muted uppercase label, pill buttons, the pressed one on Signal Blue Soft): None and the five team types, the recognised type pressed by default for a team of six, None otherwise; the title of each pill is the type's one-line note. A swap that ranks lower because it loses an Essential or Important role says so in the detail, under the pros and cons, as a Slate Muted note ("Loses Hazard: −2 in the ranking"); when the chosen type excludes every swap a note under the toolbar suggests None or another type.
+### Settings Dialog
+"Impostazioni" in the rail opens a 440px dialog. Its only group, "PALETTE", lists three choices as rows (Panel, 1px Line border): "Segue il gioco", "Spada e Scudo", "Scarlatto e Violetto", each with two 16px swatches of its version colours (split diagonally for "Segue il gioco"); the checked row has a cyan border and Accent Wash fill. "Salvate in questo browser" sits under it.
 
 ### Issue Marks
-- **Red triangle:** a legality problem. **Yellow triangle:** needs checking (second Mega, illegal moves or ability). Both can sit on the same sprite.
-- **Blue unlock:** Custom Skillset; informational, placed in the card's top-left corner, not a problem.
-- **Rules warning on the grade:** when members break the format's rules (banned, gen limit, too many Megas, illegal moves or ability), a red triangle sits right above the score in the Valutazione block, starting where the score starts, like an apostrophe to the grade letter; its tooltip lists the reasons.
-- Every mark is focusable and opens a tooltip listing each reason.
-- **Summaries:** red and blue triangles with counts (serious and minor); zero counts are hidden. Problem cards get a thin 1px outline in their colour so the selection stays the most visible state.
-
-### Pokémon Names in Text
-Bold Broadcast White with a 9px type dot. Chibi menu icons (40×30) replace the dot only in swap recommendations. Names on cards and board rows stay white, with no dot.
+- **Red triangle:** a legality problem. **Yellow triangle:** needs checking. **Cyan mark:** information (the Custom Skillset unlock, in the card's top-left corner).
+- On sprites the marks are round badges on Ground with a status-coloured border and the Badge shadow.
+- Every mark is focusable and opens a tooltip listing each reason with a status-coloured dot.
 
 ## Do's and Don'ts
 
 ### Do:
-- **Do** keep Trophy Gold to the grade and the #1 suggestion row and its + button; use it otherwise only as a focus or selection mark.
-- **Do** use Signal Blue for every working state: hover borders, pressed toggles, meters, swap actions, minor issues.
-- **Do** keep type chips fixed-width (66px; 56px in cards at ≤1440px) so they align in columns.
-- **Do** colour type words in prose with the lightened type colour (contrast at least 6:1 on Navy Panel) and set Pokémon names bold white with a type dot.
-- **Do** put collapsible block titles left and their summary right beside the chevron, hiding zero counts.
-- **Do** use Barlow Condensed uppercase for names, section heads and scoreboard numbers, with tabular figures.
-- **Do** reserve shadows for floating surfaces and the selected card.
-- **Do** put every UI string in both dictionaries (`src/i18n/en.ts`, `it.ts`); keep Pokémon names in official English and show game names through `gameName`/`typeName`.
+- **Do** use cyan for every working state: hover and focus, pressed toggles, selection, meters, the grade letter, info.
+- **Do** reserve magenta for the best next action (the #1 row and its + button, main buttons) and for every section and panel head.
+- **Do** draw heads as slanted parallelograms with the stripe texture, and keep panels, rows, inputs and team cards square.
+- **Do** read accents only through the tokens, so a palette swap repaints everything.
+- **Do** keep the app one screen above 1100px wide, with long content scrolling inside its own area and the team band always visible.
+- **Do** keep type chips fixed-width so they align in columns.
+- **Do** set Pokémon names in Kanit italic on cards, rows and plates, and bold with a type dot in prose.
+- **Do** put every UI string in both dictionaries (`src/i18n/en.ts`, `it.ts`); keep Pokémon names in official English.
 
 ### Don't:
-- **Don't** make any other button or call to action gold, including swap recommendations.
+- **Don't** make any button other than the main action and the #1 + magenta.
+- **Don't** slant panels, rows, inputs or the team cards' outline.
+- **Don't** change ground, panel, status or type colours with the palette.
 - **Don't** re-hue the classic type colours or use them as decoration outside type meaning.
 - **Don't** use red, yellow or green for anything but status.
-- **Don't** slant anything but the team cards.
-- **Don't** add shadows to blocks, board rows or panels.
-- **Don't** show chibi icons outside swap recommendations, or colour Pokémon names on cards.
-- **Don't** delete or block the player's input to signal a problem; mark it with a triangle and explain it in the tooltip.
+- **Don't** add shadows to blocks, rows, panels or cards at rest.
+- **Don't** set text below 11px.
+- **Don't** make the page scroll at 1440×900, or design a mobile layout by accident: below 1100px is a stacking fallback.
+
+The previous navy-and-gold "World Final Team Preview" look survives only as the git tag `grafica-classica`, until the owner deletes it.
