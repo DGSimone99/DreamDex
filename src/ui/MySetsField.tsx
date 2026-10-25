@@ -41,15 +41,18 @@ export function MySetsField({ set, onApply }: { set: TeamSet; onApply: (saved: T
     setUndo({ id: Date.now(), kind, from, before: mySetsOf(species) });
 
   const save = () => {
-    if (existing >= 0) {
+    if (overwrite) {
       remember('mySetOverwrite', mine[existing].name);
       overwriteMySet(species, existing, set);
     } else {
       saveMySet(species, set, n => t('editor.mySetName', { n }), name);
     }
   };
-  const canSave = existing >= 0 || (!full && current < 0);
-  const saveLabel = existing >= 0 ? t('editor.overwriteSet', { name: mine[existing].name }) : t('editor.saveSet');
+  // Già salvato così com'è: niente da salvare (spunta); un nome già usato con un set diverso: sovrascrivi
+  const saved = current >= 0 && (existing === current || !name.trim());
+  const overwrite = existing >= 0 && existing !== current;
+  const canSave = !saved && (overwrite || !full);
+  const saveLabel = saved ? t('editor.setSaved') : overwrite ? t('editor.overwriteSet', { name: mine[existing].name }) : t('editor.saveSet');
 
   return (
     <div className="field my-sets-field" ref={root}>
@@ -69,9 +72,9 @@ export function MySetsField({ set, onApply }: { set: TeamSet; onApply: (saved: T
             <Icon name="next" />
           </button>
         </span>
-        <button type="button" className={`save-set${existing >= 0 ? ' overwrite' : ''}`} aria-label={saveLabel} disabled={!canSave}
-          title={!canSave && full ? t('editor.saveSetFull') : saveLabel} onClick={save}>
-          <Icon name={existing >= 0 ? 'overwrite' : 'save'} />
+        <button type="button" className={`save-set${overwrite ? ' overwrite' : ''}${saved ? ' saved' : ''}`} aria-label={saveLabel} disabled={!canSave}
+          title={!canSave && full && !saved ? t('editor.saveSetFull') : saveLabel} onClick={save}>
+          <Icon name={saved ? 'check' : overwrite ? 'overwrite' : 'save'} />
         </button>
       </div>
       {open && mine.length > 0 && (

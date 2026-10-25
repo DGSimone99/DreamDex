@@ -223,6 +223,8 @@
   border-radius: 4px;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
 }
+.my-sets-list { text-transform: none; letter-spacing: 0; font-size: 14px; font-weight: 400; color: var(--text); }
+.save-set.saved:disabled { opacity: 1; color: var(--good); }
 .my-sets-list li { display: grid; grid-template-columns: minmax(0, 1fr) 30px 30px; align-items: center; gap: 2px; border-bottom: 1px solid var(--line-soft); }
 .my-sets-list li:last-child { border-bottom: 0; }
 .my-sets-list li.current .my-set-option strong { color: var(--accent-ink); }

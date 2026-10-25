@@ -360,6 +360,7 @@ export const it: Record<keyof typeof en, string> = {
   'editor.renameInput': "Nuovo nome per {name}",
   'editor.deleteNamed': "Elimina {name}",
   'team.memberIO': "Importa / Esporta set",
+  'editor.setSaved': "Set salvato",
   'editor.evs': "EV",
   'editor.speed': "Velocità",
   'editor.speedRank': "più veloce del {pct} dei {n} più usati",
