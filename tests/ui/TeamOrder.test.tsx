@@ -45,7 +45,7 @@ describe('ordine del team e editor', () => {
     const team = await importTeam(user, 'Garchomp\n- Earthquake\n\nCorviknight\n- Roost');
     await user.click(within(team).getByText('Garchomp', { selector: '.name' }));
     const open = () => team.querySelector('.slot[open]') as HTMLElement;
-    await user.click(within(open()).getByRole('button', { name: 'Importa / Esporta set' }));
+    await user.click(within(open()).getByRole('button', { name: 'Importa set' }));
     // Il campo parte col set attuale (da copiare): si sostituisce con quello da incollare
     await user.clear(within(open()).getByLabelText('Set da incollare (testo Showdown)'));
     await user.paste('Great Tusk @ Booster Energy\nJolly Nature\n- Rapid Spin');

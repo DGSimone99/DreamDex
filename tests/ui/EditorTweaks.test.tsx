@@ -48,13 +48,15 @@ describe('editor del set', () => {
     expect(items).toEqual(all);
   });
 
-  it('niente linguetta Danni finché il calcolo non esiste; preset e I miei set in due gruppi; Custom Skillset nel riquadro Set', async () => {
+  it('niente linguetta Danni finché il calcolo non esiste; preset e I miei set in due gruppi; Custom Skillset fuori dai riquadri (cambia Set e Mosse)', async () => {
     const user = userEvent.setup();
     const { container } = renderTeam();
     const slot = await openFirst(user, container);
     expect(within(slot).queryByRole('tab', { name: /Danni/ })).toBeNull();
     expect(slot.querySelectorAll('.editor-head .head-group')).toHaveLength(2);
-    expect(within(slot).getByRole('group', { name: 'Set' })).toContainElement(within(slot).getByRole('checkbox', { name: /Custom Skillset/ }));
+    const custom = within(slot).getByRole('checkbox', { name: /Custom Skillset/ });
+    expect(slot.querySelector('.editor-head')).toContainElement(custom);
+    expect(within(slot).getByRole('group', { name: 'Set' })).not.toContainElement(custom);
   });
 
   it('I miei set: salva il set attuale, lo riapplica, al massimo 5 per specie', async () => {

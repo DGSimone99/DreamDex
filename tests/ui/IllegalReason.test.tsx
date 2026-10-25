@@ -16,11 +16,11 @@ describe('membro non legale', () => {
     window.history.replaceState(null, '', `/#team=${encodeShare([tusk, kyogre], DEFAULT_FORMAT)}`);
     const { container } = render(<App initialLang="it" data={fixtureData} />);
     const card = container.querySelectorAll<HTMLElement>('.slot > summary')[1];
-    expect(card.querySelector('.alert-mark.danger')).toHaveTextContent('Tier Uber: non ammesso in National Dex OU');
+    expect(card.querySelector('.alert-mark.danger')).toHaveTextContent('Tier troppo alto per National Dex OU');
     await user.click(card);
     const slot = container.querySelector<HTMLElement>('.slot[open]')!;
     const note = slot.querySelector('.member-problems')!;
-    expect(note).toHaveTextContent('Tier Uber: non ammesso in National Dex OU');
+    expect(note).toHaveTextContent('Tier troppo alto per National Dex OU');
     await user.click(within(note as HTMLElement).getByRole('button', { name: 'Cerca un sostituto' }));
     expect(screen.getByRole('tab', { name: /^Pokémon/ })).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByRole('button', { name: /Kyogre/, pressed: true })).toBeInTheDocument();

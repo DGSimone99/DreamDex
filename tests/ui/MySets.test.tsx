@@ -76,7 +76,7 @@ describe('I miei set', () => {
 describe('azioni del membro', () => {
   it('un solo pulsante Importa / Esporta set: il testo del set è già pronto da copiare, Applica importa', async () => {
     const { user, slot } = await openEditor();
-    await user.click(within(slot).getByRole('button', { name: 'Importa / Esporta set' }));
+    await user.click(within(slot).getByRole('button', { name: 'Importa set' }));
     const text = within(slot).getByLabelText('Set da incollare (testo Showdown)');
     expect((text as HTMLTextAreaElement).value).toMatch(/^Great Tusk @ /);
     expect(within(slot).getByRole('button', { name: 'Copia set' })).toBeInTheDocument();

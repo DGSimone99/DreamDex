@@ -387,7 +387,7 @@ function TeamSlot({ index, set, subRoles, data, format, warning: megaWarning, op
               }}><Icon name={copied ? 'check' : 'copy'} /></button>
   {paste && (
     <div className="paste-panel" onKeyDown={e => { if (e.key === 'Escape') { e.stopPropagation(); setPaste(null); } }}>
-      <textarea aria-label={tr('team.pasteText')} rows={7} autoFocus value={paste.text} placeholder={tr('team.pastePlaceholder')}
+      <textarea aria-label={tr('team.pasteText')} rows={12} autoFocus value={paste.text} placeholder={tr('team.pastePlaceholder')}
         onChange={e => setPaste({ text: e.target.value, original: paste.original, error: null })} />
       <p className="paste-hint">{tr('team.pasteHint')}</p>
       {paste.error && <p className="paste-error" role="alert">{paste.error}</p>}

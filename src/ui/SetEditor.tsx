@@ -284,6 +284,16 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
         <MySetsField set={set} onApply={saved => onChange(presetSet(set, saved))} />
         {ioAction}
         </div>
+        {/* Fuori dai riquadri: cambia le scelte sia del Set sia delle Mosse */}
+        <label className="custom-toggle" title={t('editor.customTooltip')}>
+          {t('editor.customLabel')}
+          <input
+            type="checkbox"
+            aria-label={t('editor.custom', { species: set.species })}
+            checked={custom}
+            onChange={e => update({ customSkillset: e.target.checked || undefined })}
+          />
+        </label>
       </div>
       {notice}
       <fieldset className="evs">
@@ -377,15 +387,6 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
       <div className="editor-side">
       <fieldset className="editor-group">
         <legend>{t('editor.set')}</legend>
-        <label className="custom-toggle" title={t('editor.customTooltip')}>
-          {t('editor.customLabel')}
-          <input
-            type="checkbox"
-            aria-label={t('editor.custom', { species: set.species })}
-            checked={custom}
-            onChange={e => update({ customSkillset: e.target.checked || undefined })}
-          />
-        </label>
         <div className="field" data-tip={itemDesc}>
           <span className="field-head">{t('editor.item')}</span>
           <Combobox label={t('editor.item')} commonLabel={commonLabel} value={set.item} options={itemOptions} description={itemDesc}
