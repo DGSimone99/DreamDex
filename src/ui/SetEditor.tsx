@@ -448,14 +448,18 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
       </fieldset>
       </div>
       {(!!roles?.length || memberAction) && (
-        <fieldset className="editor-roles">
-          <legend>{t('editor.roles')}</legend>
-          <ul>
-            {roles?.map((role, i) => <li key={role} className={i === 0 ? 'main' : undefined}>{role}</li>)}
-          </ul>
-          {/* In basso a destra, dove finisce il lavoro sul set */}
+        // Ruoli e, fuori dal riquadro in basso a destra, l'azione sul membro (Sostituisci)
+        <div className="editor-foot">
+          {!!roles?.length && (
+            <fieldset className="editor-roles">
+              <legend>{t('editor.roles')}</legend>
+              <ul>
+                {roles.map((role, i) => <li key={role} className={i === 0 ? 'main' : undefined}>{role}</li>)}
+              </ul>
+            </fieldset>
+          )}
           {memberAction}
-        </fieldset>
+        </div>
       )}
     </div>
   );

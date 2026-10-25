@@ -57,9 +57,11 @@ describe('testata dell\'editor', () => {
     expect(slot().querySelector('summary .sprite')!.getAttribute('src')).toContain('gen5-shiny/');
   });
 
-  it('Sostituisci sta in basso a destra, nella riga dei ruoli', async () => {
+  it('Sostituisci sta in basso a destra, accanto al riquadro dei ruoli ma fuori', async () => {
     const { slot } = await openEditor();
-    expect(within(slot()).getByRole('button', { name: 'Sostituisci Great Tusk' }).closest('.editor-roles')).not.toBeNull();
+    const replace = within(slot()).getByRole('button', { name: 'Sostituisci Great Tusk' });
+    expect(replace.closest('.editor-foot')).not.toBeNull();
+    expect(replace.closest('.editor-roles')).toBeNull();
   });
 
   it('Importa / Esporta si apre sotto il suo pulsante e si chiude cliccando fuori', async () => {

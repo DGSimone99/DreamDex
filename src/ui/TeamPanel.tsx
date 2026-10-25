@@ -309,8 +309,9 @@ function TeamSlot({ index, set, subRoles, data, format, warning: megaWarning, op
         set={set} presets={presets} common={common} genLimit={format.genLimit} pokedex={pokedexOf(format)} roles={roleLabels}
         teraBannedIn={teraAllowed(format) ? undefined : formatLabel(format, lang)} speed={speed} onChange={stable.onChange}
         presetAction={
-          <button type="button" className="best-preset" title={tr('team.bestPresetTitle')} onClick={applyBest}>
-            <Icon name={best ? 'check' : 'spark'} /> {tr(best === 'same' ? 'team.bestPresetSame' : best === 'applied' ? 'team.bestPresetDone' : 'team.bestPreset')}
+          <button type="button" className="best-preset" title={tr('team.bestPresetTitle')} onClick={applyBest}
+            aria-label={tr(best === 'same' ? 'team.bestPresetSame' : best === 'applied' ? 'team.bestPresetDone' : 'team.bestPreset')}>
+            <Icon name={best ? 'check' : 'spark'} /> <span className="btn-label">{tr(best === 'same' ? 'team.bestPresetSame' : best === 'applied' ? 'team.bestPresetDone' : 'team.bestPreset')}</span>
           </button>
         }
         title={open && (
@@ -347,9 +348,9 @@ function TeamSlot({ index, set, subRoles, data, format, warning: megaWarning, op
         smogonAction={<SmogonLink species={name} format={format} presets={presets} iconOnly />}
         ioAction={
           <span className="io-anchor" ref={ioRef}>
-            <button type="button" className="member-io" aria-expanded={!!paste} title={tr('team.memberIO')}
+            <button type="button" className="member-io" aria-expanded={!!paste} title={tr('team.memberIO')} aria-label={tr('team.memberIO')}
               onClick={() => setPaste(p => (p ? null : { text: exportShowdown([set], { tera: teraAllowed(format) }), error: null }))}>
-              <Icon name="paste" /> {tr('team.memberIO')}
+              <Icon name="paste" /> <span className="btn-label">{tr('team.memberIO')}</span>
             </button>
   {paste && (
     <div className="paste-panel" onKeyDown={e => { if (e.key === 'Escape') { e.stopPropagation(); setPaste(null); } }}>
