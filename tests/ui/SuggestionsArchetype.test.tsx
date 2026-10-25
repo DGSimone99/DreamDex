@@ -5,10 +5,11 @@ import { App } from '../../src/App';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
 import { rateTeam } from '../../src/engine/rating';
 import { improveReplacements } from '../../src/engine/replace';
-import { emptySet, type TeamSet } from '../../src/engine/sets';
+import { emptySet, importShowdown, type TeamSet } from '../../src/engine/sets';
 import { rankByTeamGain } from '../../src/engine/teamGain';
 import { LangProvider } from '../../src/i18n/react';
 import { SuggestionDetail } from '../../src/ui/SuggestionDetail';
+import { SuggestionsPanel } from '../../src/ui/SuggestionsPanel';
 import { fixtureData } from '../fixtures/data';
 
 const suggestions = () => screen.getByRole('region', { name: 'Suggerimenti' });
@@ -68,18 +69,51 @@ describe('selettore del tipo di team nei suggerimenti', () => {
     const user = await importTeam(STALL);
     // Solo Kyurem fra i candidati: ogni cambio fa uscire il team dallo stall
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Kyurem');
-    expect(await within(suggestions()).findByText(/Nessun cambio mantiene il team Stall/)).toBeInTheDocument();
+    expect(await within(suggestions()).findByText(/Nessuno dei cambi migliori mantiene il team Stall/)).toBeInTheDocument();
     await user.click(within(types()).getByRole('button', { name: 'Nessuno' }));
-    expect(within(suggestions()).queryByText(/Nessun cambio mantiene il team Stall/)).toBeNull();
+    expect(within(suggestions()).queryByText(/Nessuno dei cambi migliori mantiene il team Stall/)).toBeNull();
   });
 
-  it('il dettaglio mostra lo stesso guadagno della lista', async () => {
-    await importTeam(STALL);
-    const first = list().querySelector('li')!;
-    const label = within(first).getByLabelText(/^Voto del team: /).getAttribute('aria-label')!;
-    const listOverall = /: [SABCD] (\d+) /.exec(label)![1];
-    const detail = screen.getByRole('complementary', { name: /^Dettaglio di / });
-    expect(detail.querySelector('.detail-score')!.textContent).toMatch(new RegExp(`→ [SABCD] ${listOverall}$`));
+  it('il dettaglio mostra lo stesso guadagno della lista, anche con un tipo diverso da quello riconosciuto', async () => {
+    const user = await importTeam(STALL);
+    // Balance non è il tipo riconosciuto: il voto forzato differisce da quello normale
+    await user.click(within(types()).getByRole('button', { name: 'Balance' }));
+    const row = list().querySelector('li')!;
+    const name = row.querySelector('.name-line strong')!.textContent!.replace(/^\d+\. /, '');
+    await user.click(within(list()).getAllByRole('button', { name: new RegExp(`${name}$`) }).find(b => b.hasAttribute('aria-pressed'))!);
+    const label = within(row).getByLabelText(/^Voto del team: /).getAttribute('aria-label')!;
+    const [, after, raw] = /: [SABCD] (\d+) \(([^)]+)\)$/.exec(label)!;
+    const gain = raw === '±0' ? 0 : Number(raw.replace('−', '-').replace('+', ''));
+    const detail = screen.getByRole('complementary', { name: `Dettaglio di ${name}` });
+    // Prima e dopo come nella lista: il "prima" usa anche lui il tipo scelto
+    expect(detail.querySelector('.detail-score')!.textContent).toMatch(new RegExp(`[SABCD] ${Number(after) - gain} → [SABCD] ${after}$`));
+  });
+
+  it('nessun messaggio del tipo se la lista è vuota per altri motivi (ricerca senza risultati)', async () => {
+    const user = await importTeam(STALL);
+    await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Zzzzz');
+    expect(await within(suggestions()).findByText('Nessun Pokémon corrisponde ai filtri')).toBeInTheDocument();
+    expect(within(suggestions()).queryByText(/mantiene il team Stall/)).toBeNull();
+  });
+
+  it("sostituzione di un membro: l'anteprima del coach usa lo stesso guadagno della lista", async () => {
+    const previews: { ratingGain: number }[] = [];
+    const team = importShowdown(STALL.join('\n\n')).sets;
+    const user = userEvent.setup();
+    render(
+      <LangProvider lang="it">
+        <SuggestionsPanel team={team} format={DEFAULT_FORMAT} data={fixtureData} replaceIndex={1} onAdd={() => {}} onReplaceWith={() => {}}
+          onCancelReplace={() => {}} onPreview={p => previews.push(p)} onTarget={() => {}} />
+      </LangProvider>,
+    );
+    await user.click(within(types()).getByRole('button', { name: 'Balance' }));
+    const row = list().querySelector('li')!;
+    const name = row.querySelector('.name-line strong')!.textContent!.replace(/^\d+\. /, '');
+    const label = within(row).getByLabelText(/^Voto del team: /).getAttribute('aria-label')!;
+    const raw = /\(([^)]+)\)$/.exec(label)![1];
+    const listGain = raw === '±0' ? 0 : Number(raw.replace('−', '-').replace('+', ''));
+    await user.click(within(list()).getAllByRole('button', { name: new RegExp(`${name}$`) }).find(b => b.hasAttribute('aria-pressed'))!);
+    expect(previews.at(-1)!.ratingGain).toBe(listGain);
   });
 });
 

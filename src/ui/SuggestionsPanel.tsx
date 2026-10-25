@@ -8,7 +8,7 @@ import { describeDiff, ratingGainOf, SIMILAR_THRESHOLD, type SwapPreview } from 
 import { suggest, type Suggestion } from '../engine/scoring';
 import type { TeamSet } from '../engine/sets';
 import type { TeamRating } from '../engine/rating';
-import { bestSwaps, rankByTeamGain, SWAPS_PER_MEMBER, type SwapOption, type TeamGain } from '../engine/teamGain';
+import { bestSwaps, rankByTeamGain, SWAPS_PER_MEMBER, type SwapOption, type SwapReport, type TeamGain } from '../engine/teamGain';
 import { battleName } from '../engine/dex';
 import { PokemonIcon } from './PokemonName';
 import { statsEntry } from '../engine/stats';
@@ -244,11 +244,13 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   const source = useMemo(() => ({ team, replaceIndex, format, data: ranking, scope, archetype }), [team, replaceIndex, format, ranking, scope, archetype]);
   const deferred = useDeferredValue(source);
   const stale = deferred !== source;
+  // Quanti cambi ha escluso il tipo di team scelto nell'ultimo calcolo della lista
+  const report = useMemo<SwapReport>(() => ({ excluded: 0 }), [deferred, mode, applied, filtering, lang]);
   const ranked: Item[] = useMemo(() => {
     const { team, format, data, archetype } = deferred;
     const replaceIndex = deferred.replaceIndex !== null && deferred.replaceIndex < team.length ? deferred.replaceIndex : null;
     // Prima i candidati migliori per punteggio, poi ordinati per il voto che darebbero al team
-    const rank = (list: (Suggestion | Replacement)[], sort = true) => rankByTeamGain(list, team, replaceIndex, data, lang, sort, archetype).slice(0, MAX);
+    const rank = (list: (Suggestion | Replacement)[], sort = true) => rankByTeamGain(list, team, replaceIndex, data, lang, sort, archetype, report).slice(0, MAX);
     if (replaceIndex === null && team.length >= 2 && (deferred.scope === 'all' || team.length >= 6)) {
       // Raccomandazioni libere: per ogni candidato, il membro che conviene di più sostituire
       const pool = filtering ? searchPool(team, format, data, applied) : undefined;
@@ -256,7 +258,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
       const similar = mode === 'similar';
       return bestSwaps(team, data, lang, index => (similar
         ? similarReplacements(team, index, format, data, 3 * SWAPS_PER_MEMBER, pool, lang)
-        : improveReplacements(team, index, format, data, SWAPS_PER_MEMBER, pool, lang)), { similar, threshold: SIMILAR_THRESHOLD, archetype }).slice(0, MAX);
+        : improveReplacements(team, index, format, data, SWAPS_PER_MEMBER, pool, lang)), { similar, threshold: SIMILAR_THRESHOLD, archetype, report }).slice(0, MAX);
     }
     if (replaceIndex !== null) {
       // Con ricerca o filtri i sostituti vengono da tutto il Pokédex, non solo dalle statistiche
@@ -269,7 +271,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
     }
     if (filtering) return rank(searchCandidates(team, format, data, applied, POOL, lang));
     return data.stats ? rank(suggest(team, format, data, POOL, lang)) : [];
-  }, [deferred, mode, applied, filtering, lang]);
+  }, [deferred, mode, applied, filtering, lang, report]);
   // Preferiti dell'utente: a voto quasi pari passano davanti (non in "Sostituto simile", dove conta la somiglianza)
   const items: Item[] = useMemo(() => {
     const lists = deferred.data.userLists;
@@ -384,7 +386,8 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
         set: item.set,
         score: item.score,
         similar: similarity(team[replaceIndex], item.set, formatRules(format.formatId)) >= SIMILAR_THRESHOLD,
-        ratingGain: ratingGainOf(team, replaceIndex, item.set, data),
+        // Lo stesso guadagno della lista (col tipo di team scelto, se c'è)
+        ratingGain: item.teamGain?.gain ?? ratingGainOf(team, replaceIndex, item.set, data),
         diff: item.diff,
       }, true);
     }
@@ -450,8 +453,8 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   // Il numero di risultati, sopra la lista quando si cerca o si filtra
   const countText = `${items.length === 1 ? tr('suggest.resultsOne') : tr('suggest.resultsMany', { n: items.length })}${items.length === MAX ? tr('suggest.best') : ''}`;
 
-  // Il team è già del tipo scelto e nessun cambio lo mantiene: si propone Nessuno o un altro tipo
-  const typeEmpty = !!deferred.archetype && deferred.archetype === recognised && items.length === 0 && !stale
+  // La lista è vuota perché il tipo scelto ha escluso tutti i cambi: si propone Nessuno o un altro tipo
+  const typeEmpty = !!deferred.archetype && report.excluded > 0 && items.length === 0 && !stale
     ? <p className="note type-empty">{tr('suggest.typeEmpty', { type: tr(`archetype.${deferred.archetype}`) })}</p>
     : null;
   // Note sopra (a tutta larghezza); sotto, lista e dettaglio partono alla stessa altezza

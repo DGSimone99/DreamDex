@@ -795,7 +795,7 @@ export const it: Record<keyof typeof en, string> = {
   'suggest.teamTypeLabel': "Tipo",
   'suggest.anyType': "Nessuno",
   'suggest.anyTypeNote': "Ordina solo per quanto sale il voto",
-  'suggest.typeEmpty': "Nessun cambio mantiene il team {type}: prova Nessuno o un altro tipo.",
+  'suggest.typeEmpty': "Nessuno dei cambi migliori mantiene il team {type}: prova Nessuno o un altro tipo.",
   'suggest.penaltyNote': "Perde {roles}: −{n} in classifica",
   'suggest.targetAll': "Tutti",
   'suggest.targetMember': "Sostituisci {member}",

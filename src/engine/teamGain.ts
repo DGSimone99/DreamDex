@@ -49,6 +49,11 @@ function swapEvaluator(team: TeamSet[], data: EngineData, lang: Lang, archetype:
   return { before, evaluate };
 }
 
+/** Conta i cambi esclusi dal tipo di team scelto (per dire all'utente perché la lista è vuota). */
+export interface SwapReport {
+  excluded: number;
+}
+
 /** Chiave dell'ordine: il voto dopo il cambio, meno la penalità per le voci perse. */
 const rankKey = (gain: TeamGain | undefined) => (gain ? gain.overall - (gain.penalty ?? 0) : -1);
 
@@ -63,7 +68,7 @@ export function withCandidate(team: TeamSet[], set: TeamSet, replaceIndex: numbe
  * `sort`: dal voto più alto (a parità, dal punteggio più alto); senza, si mantiene l'ordine (Sostituto simile).
  */
 export function rankByTeamGain<T extends { set: TeamSet; score: number }>(
-  items: T[], team: TeamSet[], replaceIndex: number | null, data: EngineData, lang: Lang, sort = true, archetype?: Archetype,
+  items: T[], team: TeamSet[], replaceIndex: number | null, data: EngineData, lang: Lang, sort = true, archetype?: Archetype, report?: SwapReport,
 ): (T & { teamGain?: TeamGain })[] {
   const others = replaceIndex === null ? team.length : team.length - 1;
   if (others === 0) return items;
@@ -72,7 +77,10 @@ export function rankByTeamGain<T extends { set: TeamSet; score: number }>(
   const rated: (T & { teamGain?: TeamGain })[] = items.flatMap(item => {
     const result = evaluate(withCandidate(team, item.set, replaceIndex));
     // Escluso dall'archetipo scelto: non si propone; senza voto (dati mancanti) resta com'è
-    if (result === 'excluded') return [];
+    if (result === 'excluded') {
+      if (report) report.excluded += 1;
+      return [];
+    }
     return result ? [{ ...item, teamGain: result.gain }] : [item];
   });
   if (!sort) return rated;
@@ -98,7 +106,7 @@ export const SWAPS_PER_MEMBER = 15;
  */
 export function bestSwaps<T extends { species: string; set: TeamSet; score: number; similarity?: number }>(
   team: TeamSet[], data: EngineData, lang: Lang, candidatesFor: (index: number) => T[],
-  { similar = false, threshold = 0, archetype }: { similar?: boolean; threshold?: number; archetype?: Archetype } = {},
+  { similar = false, threshold = 0, archetype, report }: { similar?: boolean; threshold?: number; archetype?: Archetype; report?: SwapReport } = {},
 ): (T & { teamGain: TeamGain; replaces: number; alternatives: SwapOption[] })[] {
   const { before, evaluate } = swapEvaluator(team, data, lang, archetype, !similar);
   if (!before || team.length < 2) return [];
@@ -114,6 +122,7 @@ export function bestSwaps<T extends { species: string; set: TeamSet; score: numb
       .slice(0, SWAPS_PER_MEMBER);
     for (const candidate of candidates) {
       const result = evaluate(withCandidate(team, candidate.set, index));
+      if (result === 'excluded' && report) report.excluded += 1;
       if (!result || result === 'excluded') continue;
       const option = { index, gain: result.gain.gain };
       const current = best.get(candidate.species);

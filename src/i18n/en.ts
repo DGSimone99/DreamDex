@@ -793,7 +793,7 @@ export const en = {
   'suggest.teamTypeLabel': "Type",
   'suggest.anyType': "None",
   'suggest.anyTypeNote': "Ranks only by how much the grade rises",
-  'suggest.typeEmpty': "No swap keeps the team {type}: try None or another type.",
+  'suggest.typeEmpty': "None of the best swaps keeps the team {type}: try None or another type.",
   'suggest.penaltyNote': "Loses {roles}: −{n} in the ranking",
   'suggest.targetAll': "Anyone",
   'suggest.targetMember': "Replace {member}",
