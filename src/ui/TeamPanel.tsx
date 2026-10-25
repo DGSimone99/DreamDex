@@ -335,7 +335,7 @@ function TeamSlot({ index, set, subRoles, data, format, warning: megaWarning, op
             <span className="types" aria-hidden="true">{species?.types.map(type => <TypeChip key={type} type={type} />)}</span>
             <button type="button" className="shiny-toggle" aria-pressed={!!set.shiny} aria-label={tr('team.shiny')} title={tr('team.shiny')}
               onClick={() => stable.onChange({ ...set, shiny: set.shiny ? undefined : true })}>
-              <Icon name="spark" filled={!!set.shiny} />
+              <Icon name="shiny" filled={!!set.shiny} />
             </button>
           </div>
         )}

@@ -261,7 +261,7 @@
 }
 .nickname-input { width: 200px; height: 32px; font: 800 18px/1 var(--display); font-style: italic; }
 .shiny-toggle { width: 32px; height: 32px; padding: 0; display: grid; place-items: center; color: var(--faint); }
-.shiny-toggle[aria-pressed='true'] { color: var(--warn); border-color: var(--warn); }
+.shiny-toggle[aria-pressed='true'] { color: var(--warn); border-color: var(--warn); background: var(--warn-bg); }
 /* Importa / Esporta: il riquadro si apre sotto il suo pulsante */
 .io-anchor { position: relative; display: inline-flex; }
 .io-anchor .paste-panel { top: calc(100% + 6px); right: auto; left: 0; width: 440px; }
