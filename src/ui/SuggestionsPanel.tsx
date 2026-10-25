@@ -20,7 +20,7 @@ import { getSpecies } from '../engine/dex';
 import { applyFavorites, isUserBanned, isUserFavorite, type EffectiveLists } from '../engine/lists';
 import { bannedNames } from '../engine/scoring';
 import { formatLabel } from '../engine/formats';
-import { EMPTY_FILTERS, isFiltering, searchCandidates, searchPool, tierLabel, type CandidateFilters } from '../engine/filters';
+import { activeFilterCount, EMPTY_FILTERS, isFiltering, searchCandidates, searchPool, tierLabel, type CandidateFilters } from '../engine/filters';
 import { defaultSet } from '../engine/sets';
 import { FilterBar } from './FilterBar';
 import { conditionLabel, neededConditions, providesAll, viaName } from '../engine/synergy';
@@ -445,11 +445,13 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
         </span>
       </div>
       {/* Tipo di team: un'impostazione, non un filtro (niente chip, Azzera non lo tocca) */}
-      <select className="team-type" aria-label={tr('suggest.teamType')} title={typeChoice ? tr(`archetype.${typeChoice}.note`) : tr('suggest.anyTypeNote')}
-        value={typeChoice ?? ''} onChange={e => setPickedType((e.target.value || null) as Archetype | null)}>
-        <option value="">{tr('suggest.anyType')}</option>
-        {TEAM_TYPES.map(type => <option key={type} value={type}>{tr(`archetype.${type}`)}</option>)}
-      </select>
+      <label className="team-type" title={typeChoice ? tr(`archetype.${typeChoice}.note`) : tr('suggest.anyTypeNote')}>
+        <span aria-hidden="true">{tr('suggest.teamTypeShort')}</span>
+        <select aria-label={tr('suggest.teamType')} value={typeChoice ?? ''} onChange={e => setPickedType((e.target.value || null) as Archetype | null)}>
+          <option value="">{tr('suggest.anyType')}</option>
+          {TEAM_TYPES.map(type => <option key={type} value={type}>{tr(`archetype.${type}`)}</option>)}
+        </select>
+      </label>
       <FilterBar filters={filters} onChange={setFilters} />
     </>
   );
@@ -486,7 +488,8 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
         {emptyTeam && (
           <p className="note">{tr('suggest.emptyTeam')}</p>
         )}
-        {filtering && <p className="list-count">{countText}</p>}
+        {/* Con filtri attivi il numero sta sulla riga dei chip; con la sola ricerca qui */}
+        {filtering && activeFilterCount(filters) === 0 && <p className="list-count">{countText}</p>}
         {hiddenCount > 0 && (
           <p className="note hidden-note">
             {tr(hiddenCount === 1 ? 'lists.hiddenOne' : 'lists.hidden', { n: hiddenCount })}{' '}
@@ -549,7 +552,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
         </div>
         {search}
       </div>
-      {!full && <ActiveFilters filters={filters} onChange={setFilters} />}
+      {!full && <ActiveFilters filters={filters} onChange={setFilters} count={filtering && items.length > 0 ? countText : undefined} />}
       {view !== 'add' && (
         <div className="subbar">
           {/* Chi sostituire: tutti (il motore sceglie per ogni candidato) o un membro preciso */}

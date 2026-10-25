@@ -104,6 +104,13 @@ describe('ricerca e filtri nei suggerimenti', () => {
     expect(within(suggestions()).queryByRole('button', { name: /^Rimuovi filtro/ })).toBeNull();
   });
 
+  it('con filtri attivi il numero di risultati sta sulla riga dei chip', async () => {
+    const user = await setup('Great Tusk');
+    await user.selectOptions(screen.getByLabelText('Uso nel meta'), 'common');
+    await waitFor(() => expect(suggestions().querySelector('.active-filters .list-count')).toHaveTextContent(/\d+ risultat[oi]/));
+    expect(suggestions().querySelectorAll('.list-count')).toHaveLength(1);
+  });
+
   it('chip e Azzera con lista vuota', async () => {
     const user = await setup('Great Tusk');
     await user.selectOptions(screen.getByRole('combobox', { name: 'Tier' }), 'legal');
