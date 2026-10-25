@@ -50,7 +50,7 @@ describe('avviso seconda Mega', () => {
     const slot = within(team()).getByText('Mewtwo-Mega-Y', { selector: '.name' }).closest('details')!;
     const danger = slot.querySelector('.sprite-alerts .alert-mark.danger') as HTMLElement;
     const warn = slot.querySelector('.sprite-alerts .alert-mark.warn') as HTMLElement;
-    expect(within(danger).getByRole('tooltip')).toHaveTextContent(/Tier .+: non ammesso in National Dex OU/);
+    expect(within(danger).getByRole('tooltip')).toHaveTextContent(/Tier troppo alto per National Dex OU/);
     expect(within(warn).getByRole('tooltip')).toHaveTextContent(WARNING);
   });
 });

@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { useEditing } from './editing';
-import { MAX_PENALTY, type TeamRating } from '../engine/rating';
+import { GRADES, MAX_PENALTY, type TeamRating } from '../engine/rating';
 import { roleShortLabel } from '../engine/roles';
 import { rolesList } from '../engine/subRoles';
 import { Typed } from './TypeText';
@@ -140,7 +140,8 @@ export function GradeBadge({ rating }: { rating: TeamRating | null }) {
       {rating && (
         <span className="grade-areas">
           {rating.areas.map(area => (
-            <span key={area.key} className={`grade-area${area.inactive ? ' inactive' : ''}`}>
+            // Ogni barra nel colore della lettera che varrebbe da sola: si vede subito l'area debole
+            <span key={area.key} className={`grade-area band-${GRADES.find(g => (area.value ?? 0) >= g.min)!.grade}${area.inactive ? ' inactive' : ''}`}>
               <span>{area.label}</span>
               <span className="meter"><span style={{ width: `${area.value ?? 0}%` }} /></span>
               <b>{area.value ?? '—'}</b>
