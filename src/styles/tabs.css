@@ -15,11 +15,11 @@
   color: var(--muted);
 }
 .tabs [role='tab']:hover { color: var(--text); border-bottom-color: var(--line); }
-.tabs [role='tab'][aria-selected='true'] { color: var(--text); border-bottom-color: var(--gold); }
+.tabs [role='tab'][aria-selected='true'] { color: var(--text); border-bottom-color: var(--accent); }
 .tabs [role='tab'][aria-disabled='true'] { color: var(--faint); opacity: 0.55; cursor: not-allowed; border-bottom-color: transparent; }
 .tab-count { font: 600 12px/1 var(--ui); letter-spacing: 0; text-transform: none; padding: 3px 8px; border-radius: 10px; background: var(--raised); color: var(--muted); }
 .tab-count.serious { background: var(--bad-bg); color: var(--bad); }
-.tab-count.minor, .tab-count.info { background: var(--blue-soft); color: var(--text); }
+.tab-count.minor, .tab-count.info { background: var(--accent-soft); color: var(--text); }
 .tab-count.warn { background: var(--warn-bg); color: var(--warn); }
 .tab-body { padding: 22px 28px 0; }
 .tab-panel:not(.active) { display: none; }

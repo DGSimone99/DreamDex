@@ -5,12 +5,12 @@
 .rating .net-bar { position: relative; height: 8px; border-radius: 2px; background: var(--line-soft); }
 .rating .net-tick { position: absolute; left: 50%; top: -2px; bottom: -2px; width: 2px; margin-left: -1px; background: var(--muted); }
 .rating .net-fill { position: absolute; top: 0; bottom: 0; }
-.rating .net-fill.pos { left: 50%; background: var(--blue); border-radius: 0 2px 2px 0; }
+.rating .net-fill.pos { left: 50%; background: var(--accent); border-radius: 0 2px 2px 0; }
 .rating .net-fill.neg { right: 50%; background: var(--bad); border-radius: 2px 0 0 2px; }
 .rating .net-list { list-style: none; padding: 0; margin: 4px 0 8px; }
 .rating .net-list li { position: relative; padding-left: 18px; color: var(--text); }
 .rating .net-list li::before { position: absolute; left: 0; width: 10px; text-align: center; font-weight: 700; }
-.rating .net-list li.pos::before { content: '+'; color: var(--blue); }
+.rating .net-list li.pos::before { content: '+'; color: var(--accent); }
 .rating .net-list li.neg::before { content: '−'; color: var(--bad); }
 
 .coach h3 { font-size: 15px; margin: 12px 0 4px; color: var(--muted); }
@@ -32,7 +32,7 @@
 .coach .team-type strong { font: 700 18px/1 var(--display); letter-spacing: 0.03em; text-transform: uppercase; color: var(--text); cursor: help; }
 .coach .team-style { font-size: 12px; font-weight: 600; padding: 1px 7px; border-radius: 3px; border: 1px solid var(--line); color: var(--muted); cursor: help; }
 .swap-head .gain-unit { margin-left: 3px; font: 600 12px/1 var(--ui); color: var(--faint); }
-.swap-head .picked-tag { padding: 1px 6px; border-radius: 3px; background: var(--blue-soft); color: var(--text); font-weight: 600; }
+.swap-head .picked-tag { padding: 1px 6px; border-radius: 3px; background: var(--accent-soft); color: var(--text); font-weight: 600; }
 .pros-cons { grid-column: 1; display: grid; gap: 2px; font-size: 14px; }
 .pros-cons li { display: flex; gap: 6px; }
 .pros-cons li > span:first-child { flex: none; width: 10px; font-weight: 700; text-align: center; }
@@ -41,15 +41,15 @@
 .pros-cons .con > span:first-child { color: var(--bad); }
 .swaps .swap-actions { grid-column: 2; grid-row: 1; display: flex; gap: 6px; }
 .swaps .swap-actions button { font-size: 13px; padding: 4px 10px; }
-.swaps .swap-actions button.swap-now { width: 30px; justify-content: center; padding: 4px 0; background: var(--blue-soft); border-color: var(--blue); color: var(--text); }
-.swaps .swap-actions button.swap-now:hover { background: var(--blue); color: var(--ground); }
+.swaps .swap-actions button.swap-now { width: 30px; justify-content: center; padding: 4px 0; background: var(--accent-soft); border-color: var(--accent); color: var(--text); }
+.swaps .swap-actions button.swap-now:hover { background: var(--accent); color: var(--ground); }
 
 .analysis table { border-collapse: collapse; width: 100%; font-size: 13px; }
 .analysis th, .analysis td { padding: 4px 3px; text-align: center; border-bottom: 1px solid var(--line-soft); }
 .analysis thead th { font-weight: 600; color: var(--muted); font-size: 11px; max-width: 72px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .analysis tbody th { text-align: left; font-weight: 600; }
 .analysis tr.serious { background: var(--bad-bg); }
-.analysis tr.minor { background: color-mix(in srgb, var(--blue) 18%, transparent); }
+.analysis tr.minor { background: color-mix(in srgb, var(--accent) 18%, transparent); }
 
 /* Avvisi: triangolo rosso per i gravi, blu per i minori */
 .summary-info { display: inline-flex; align-items: center; justify-content: flex-end; gap: 10px; }
@@ -58,7 +58,7 @@
 .issue { display: inline-flex; align-items: center; gap: 3px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .issue .icon { width: 15px; height: 15px; }
 .issue.serious { color: var(--bad); }
-.issue.minor { color: var(--blue); }
+.issue.minor { color: var(--accent); }
 .analysis tr.good td, .analysis tr.good th { color: var(--good); }
 
 /* Elenchi dell'analisi: righe allineate, niente pallini */

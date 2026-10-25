@@ -6,11 +6,11 @@ body {
   background: var(--ground);
   color: var(--text);
   font-variant-numeric: tabular-nums;
-  caret-color: var(--gold);
+  caret-color: var(--accent);
   scrollbar-color: var(--line) var(--ground);
 }
-::selection { background: var(--gold); color: var(--gold-ink); }
-h1, h2, h3 { font-family: var(--display); font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; margin: 0; }
+::selection { background: var(--accent); color: var(--on-accent); }
+h1, h2, h3 { font-family: var(--display); font-weight: 700; font-style: italic; letter-spacing: 0.01em; margin: 0; }
 h2 { font-size: 22px; line-height: 1.1; margin-bottom: 12px; }
 h3 { font-size: 16px; }
 small { display: block; color: var(--muted); font-size: 13px; }

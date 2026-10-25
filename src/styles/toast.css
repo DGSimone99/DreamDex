@@ -31,7 +31,7 @@
   bottom: 0;
   height: 3px;
   width: 100%;
-  background: var(--blue);
+  background: var(--accent);
   transform-origin: left;
   animation: undo-timer linear forwards;
 }

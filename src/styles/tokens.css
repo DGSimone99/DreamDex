@@ -1,29 +1,56 @@
-/* DreamDex: team preview da finale mondiale, tema scuro */
+/* DreamDex: Box e riepilogo di Spada e Scudo, tema scuro. I due colori di versione cambiano con la palette */
 :root {
   color-scheme: dark;
-  --ground: #070b1c;
-  --band: #0c1330;
-  --panel: #0f1735;
-  --raised: #17214a;
-  --field: #0a1129;
-  --line: #26326a;
-  --line-soft: #1b2552;
-  --text: #eef1ff;
-  --muted: #a3add6;
-  --faint: #7f8bbd;
-  --blue: #6f8dff;
-  --blue-soft: #1f2d6b;
-  --gold: #ffb800;
-  --gold-ink: #1d1500;
-  --gold-soft: #33280a;
+  --ground: #101219;
+  --band: #14172a;
+  --panel: #1a1d2a;
+  --raised: #272b3d;
+  --field: #0c0e15;
+  --line: #363b52;
+  --line-soft: #262a3b;
+  --text: #f2f4ff;
+  --muted: #aeb3cc;
+  --faint: #9095b0;
+  /* Accento (ciano): lavoro, informazioni, selezione, barre, lettera del voto, focus */
+  --accent: #00d1ff;
+  --accent-ink: #00d1ff;
+  --accent-soft: #0b3a4d;
+  --accent-wash: #0a2a38;
+  --on-accent: #001b24;
+  /* Accento 2 (magenta): l'azione migliore (#1, pulsanti principali) e le testate delle sezioni */
+  --accent-2: #ff2d8a;
+  --accent-2-ink: #ff5ca3;
+  --accent-2-soft: #4a1430;
+  --accent-2-wash: #3a1030;
+  --on-accent-2: #22000f;
+  /* Stato: mai legati alla palette */
   --bad: #ff8a8a;
   --bad-bg: #3a1426;
   --warn: #ffc857;
   --warn-bg: #362a0d;
   --good: #63e3a8;
   --good-bg: #0f3229;
-  --display: 'Barlow Condensed', 'Arial Narrow', sans-serif;
-  --ui: 'Barlow', system-ui, sans-serif;
+  --display: 'Kanit', system-ui, sans-serif;
+  --ui: 'Kanit', system-ui, sans-serif;
+  --stripes: repeating-linear-gradient(-60deg, #ffffff0d 0 4px, transparent 4px 10px);
   --skew: -8deg;
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+/*
+ * Contrasto (WCAG), su --panel / --raised / --ground:
+ *   swsh  --on-accent su accento 9.78 · --on-accent-2 su accento 2 5.58 · --accent-ink 9.23/7.71/10.30 · --accent-2-ink 5.83/4.88/6.51
+ *   sv    --on-accent su accento 7.28 · --on-accent-2 su accento 2 5.22 · --accent-ink 7.38/6.17/8.24 · --accent-2-ink 7.43/6.21/8.29
+ *   --faint 5.5/4.6/6.1 · --muted 8.08/6.75/9.01
+ */
+:root[data-palette='sv'] {
+  --accent: #ff7a1a;
+  --accent-ink: #ff8f3d;
+  --accent-soft: #4a2410;
+  --accent-wash: #33190a;
+  --on-accent: #1f0b00;
+  --accent-2: #a35cff;
+  --accent-2-ink: #c09aff;
+  --accent-2-soft: #2f1d52;
+  --accent-2-wash: #241640;
+  --on-accent-2: #12002a;
 }

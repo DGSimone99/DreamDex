@@ -10,7 +10,7 @@
 .member-sheet .who small { display: block; color: var(--muted); font-size: 12px; }
 .member-sheet .grade-cell > strong { font-size: 20px; }
 .member-sheet .sheet-meter { display: block; height: 4px; border-radius: 2px; background: var(--line); margin-top: 4px; min-width: 70px; }
-.member-sheet .sheet-meter > span { display: block; height: 100%; border-radius: 2px; background: var(--blue); }
+.member-sheet .sheet-meter > span { display: block; height: 100%; border-radius: 2px; background: var(--accent); }
 .member-sheet .typing { font-size: 12px; }
 .member-sheet .typing .good { color: var(--good); }
 .member-sheet .typing .bad { color: var(--bad); }

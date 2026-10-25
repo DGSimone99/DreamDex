@@ -8,7 +8,7 @@
   text-align: center;
   padding-top: 52px;
 }
-.grade-badge .letter { font: 700 132px/0.9 var(--display); color: var(--gold); }
+.grade-badge .letter { font: 700 132px/0.9 var(--display); color: var(--accent); }
 .grade-badge .overall { font: 700 24px var(--display); margin-top: 6px; }
 .grade-badge .label { color: var(--muted); font-size: 14px; }
 .grade-badge.grade-C .letter { color: var(--warn); }

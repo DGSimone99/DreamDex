@@ -45,7 +45,7 @@
 .slot > summary:hover::before { background: #1f2b5e; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3); }
 .slot > summary { transition: transform 0.3s var(--ease); }
 .slot[open] > summary { transform: translateY(-4px); }
-.slot[open] > summary::before { background: #1f2c62; border-image: linear-gradient(var(--gold), var(--gold)) 1; box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4); }
+.slot[open] > summary::before { background: #1f2c62; border-image: linear-gradient(var(--accent), var(--accent)) 1; box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4); }
 .slot > summary .sprite-wrap { position: relative; align-self: center; }
 /* Ogni riga della card è un livello a sé (translate): con l'avviso aperto lo sprite passa sopra nome e righe sotto */
 .slot > summary .sprite-wrap:has(.alert-mark:hover, .alert-mark:focus-visible) { z-index: 6; }
@@ -80,8 +80,8 @@
   padding: 7px;
   color: var(--faint);
 }
-.slot .favorite[aria-pressed='true'] { color: var(--gold); background: none; }
-.slot .favorite:hover { color: var(--gold); }
+.slot .favorite[aria-pressed='true'] { color: var(--accent); background: none; }
+.slot .favorite:hover { color: var(--accent); }
 .slot .remove { right: 5px; }
 /* Righe della card lungo la diagonale: --dx lo calcola useSlant (sprite, stella e × restano fermi) */
 .slot > summary > * { translate: var(--dx, 0px) 0; }
@@ -98,7 +98,7 @@
   border-radius: 2px;
 }
 .slot .stats-badge::before { border: 1px solid var(--line); }
-.slot .stats-badge:hover::before, .slot .stats-badge:focus-visible::before { border-color: var(--blue); }
+.slot .stats-badge:hover::before, .slot .stats-badge:focus-visible::before { border-color: var(--accent); }
 .slot .stats-badge:hover, .slot .stats-badge:focus-visible { border-color: transparent; }
 .slot .types .type-chip { position: relative; isolation: isolate; background: none; }
 .slot .types .type-chip::before { background: var(--chip); }
@@ -110,7 +110,7 @@
 .slot.warn > summary::before { outline: 1px solid color-mix(in srgb, var(--warn) 70%, transparent); outline-offset: -1px; }
 /* Focus da tastiera sulla card: l'anello segue l'inclinazione (sta sul fondo inclinato, non sul box dritto) */
 .slot > summary:focus-visible { outline: none; }
-.slot > summary:focus-visible::before { outline: 2px solid var(--gold); outline-offset: 3px; }
+.slot > summary:focus-visible::before { outline: 2px solid var(--accent); outline-offset: 3px; }
 .slot.empty { align-items: center; justify-content: center; gap: 10px; color: var(--faint); font-weight: 500; background: none; border: 0; border-radius: 0; cursor: pointer; }
 .slot.empty::before { background: transparent; border: 2px dashed var(--line); border-image: none; }
 /* Contenuto centrato sulla card inclinata: --dx (useSlant) lo sposta col bordo all'altezza di ogni riga */
@@ -119,13 +119,13 @@
 .empty-ring .icon { width: 22px; height: 22px; }
 .empty-label { font-size: 14px; }
 .slot.empty:hover { border-color: transparent; color: var(--text); }
-.slot.empty:hover::before { border-color: var(--blue); background: color-mix(in srgb, var(--blue) 6%, transparent); }
-.slot.empty:hover .empty-ring { border-color: var(--blue); color: var(--blue); transform: scale(1.06); }
+.slot.empty:hover::before { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 6%, transparent); }
+.slot.empty:hover .empty-ring { border-color: var(--accent); color: var(--accent); transform: scale(1.06); }
 .slot.empty:focus-visible { outline: none; }
-.slot.empty:focus-visible::before { outline: 2px solid var(--gold); outline-offset: 3px; }
+.slot.empty:focus-visible::before { outline: 2px solid var(--accent); outline-offset: 3px; }
 .sprite.missing { display: block; width: 96px; height: 96px; }
 /* Lead: il primo membro, in alto a sinistra (il lucchetto del Custom Skillset gli passa accanto) */
-.slot-lead { position: absolute; left: 14px; top: 10px; font: 700 12px/1 var(--display); text-transform: uppercase; letter-spacing: 0.08em; color: var(--blue); }
+.slot-lead { position: absolute; left: 14px; top: 10px; font: 700 12px/1 var(--display); text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); }
 
 /* Con un membro aperto le card si compattano: team ed editor stanno in una schermata (abilità, ruoli e Stats sono nell'editor) */
 .slots.editing .slot > summary, .slots.editing .slot.empty { min-height: 0; padding-bottom: 12px; }
@@ -149,7 +149,7 @@
 .slots.editing .slot[open] > summary .sprite-ani { bottom: -11px; }
 /* Riordino trascinando */
 .slot.dragging > summary { opacity: 0.45; }
-.slot.drop-target > summary::before { outline: 2px dashed var(--blue); outline-offset: 3px; }
+.slot.drop-target > summary::before { outline: 2px dashed var(--accent); outline-offset: 3px; }
 /* Passaggio alle card compatte e ritorno: ogni card scivola nella nuova forma, il resto della pagina scorre senza dissolversi */
 .slot > summary { view-transition-name: var(--vt); view-transition-class: slot; }
 .drawer { view-transition-name: slot-drawer; }

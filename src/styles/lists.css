@@ -12,15 +12,15 @@
 .dex-actions { display: flex; gap: 4px; margin-top: 4px; opacity: 0; transition: opacity 0.15s; }
 .dex-cell:hover .dex-actions, .dex-cell:focus-within .dex-actions, .dex-cell.target .dex-actions, .dex-cell.fav .dex-actions, .dex-cell.ban .dex-actions { opacity: 1; }
 .dex-actions button { padding: 1px 8px; font-size: 13px; color: var(--muted); background: var(--field); }
-.dex-actions .dex-fav[aria-pressed='true'] { color: var(--blue); border-color: var(--blue); background: var(--blue-soft); }
+.dex-actions .dex-fav[aria-pressed='true'] { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
 .dex-actions .dex-ban[aria-pressed='true'] { color: var(--bad); border-color: var(--bad); background: var(--bad-bg); }
-.dex-cell.fav { border-color: var(--blue); }
+.dex-cell.fav { border-color: var(--accent); }
 .dex-cell.ban > :not(.dex-actions) { opacity: 0.4; }
-.dex-cell.target { outline: 2px solid var(--gold); outline-offset: 1px; }
+.dex-cell.target { outline: 2px solid var(--accent); outline-offset: 1px; }
 .lists-side { display: grid; gap: 14px; position: sticky; top: 76px; }
 .user-list { background: var(--panel); border: 1px solid var(--line-soft); border-radius: 6px; padding: 12px 14px; }
 .user-list h3 { display: flex; justify-content: space-between; align-items: center; margin: 0 0 10px; font-size: 15px; text-transform: uppercase; letter-spacing: 0.04em; }
-.user-list.favorites h3 > span { color: var(--blue); }
+.user-list.favorites h3 > span { color: var(--accent); }
 .user-list.bans h3 > span { color: var(--bad); }
 .user-list h3 .count { color: var(--muted); font-weight: 500; }
 .user-list .list-clear { font-size: 12px; padding: 2px 8px; }

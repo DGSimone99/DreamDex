@@ -3,7 +3,7 @@
 .alert-mark .icon { width: 17px; height: 17px; }
 .alert-mark.danger { color: var(--bad); }
 .alert-mark.warn { color: var(--warn); }
-.alert-mark.info { color: var(--blue); }
+.alert-mark.info { color: var(--accent); }
 .alert-mark:focus-visible { outline: 2px solid currentColor; outline-offset: 1px; }
 .sprite-alerts { position: absolute; right: -6px; bottom: 2px; display: flex; gap: 4px; }
 .alert-mark.on-sprite {
@@ -45,7 +45,7 @@
 .alert-line::before { content: ''; position: absolute; left: 0; top: 0.5em; width: 6px; height: 6px; border-radius: 50%; background: var(--c); }
 .alert-line.danger { --c: var(--bad); }
 .alert-line.warn { --c: var(--warn); }
-.alert-line.info { --c: var(--blue); }
+.alert-line.info { --c: var(--accent); }
 .slot > summary:has(.alert-mark:hover, .alert-mark:focus-visible) { z-index: 5; }
 
 /* Icone degli strumenti (24px, dal foglio di Showdown) */

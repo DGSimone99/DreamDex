@@ -3,7 +3,7 @@
 .search-field { position: relative; flex: 1; display: flex; align-items: center; }
 .search-field > .icon { position: absolute; left: 12px; color: var(--faint); pointer-events: none; }
 .search-field input { flex: 1; padding: 9px 36px; font-size: 15px; }
-.search-field:focus-within > .icon { color: var(--gold); }
+.search-field:focus-within > .icon { color: var(--accent); }
 .search-field .clear { position: absolute; right: 6px; border: 0; background: none; padding: 4px; color: var(--faint); }
 .search-field .clear:hover { color: var(--text); }
 .search-field.has-hint input { padding-right: 250px; }
@@ -19,7 +19,7 @@
   pointer-events: none;
   animation: tip 0.15s var(--ease);
 }
-.search-hint strong { color: var(--gold); font-weight: 600; }
+.search-hint strong { color: var(--accent); font-weight: 600; }
 kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 3px; background: var(--raised); color: var(--text); }
 .filters > summary { font-weight: 600; }
 .filters-reset { margin-left: 12px; padding: 2px 8px; font-size: 13px; font-weight: 500; color: var(--muted); vertical-align: middle; }
@@ -50,7 +50,7 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .filter-section { padding: 14px 0; border-bottom: 1px solid var(--line-soft); }
 .filters .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .filters .chips button { font-size: 13px; padding: 4px 11px; border-radius: 14px; background: transparent; }
-.filters .chips button[aria-pressed='true'] { background: var(--blue-soft); border-color: var(--blue); color: var(--text); }
+.filters .chips button[aria-pressed='true'] { background: var(--accent-soft); border-color: var(--accent); color: var(--text); }
 
 /* Tendine e scelte tutti / no / solo */
 .filter-controls { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px 14px; padding: 14px 0; }
@@ -60,7 +60,7 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .segmented button { flex: 1; justify-content: center; border: 0; border-radius: 0; background: transparent; padding: 6px 4px; font-size: 13px; color: var(--muted); }
 .segmented button + button { border-left: 1px solid var(--line); }
 .segmented button:hover { color: var(--text); }
-.segmented button[aria-pressed='true'] { background: var(--blue-soft); color: var(--text); font-weight: 600; }
+.segmented button[aria-pressed='true'] { background: var(--accent-soft); color: var(--text); font-weight: 600; }
 .filter-footer { display: flex; justify-content: flex-end; padding-top: 12px; border-top: 1px solid var(--line-soft); }
 
 /* Suggerimenti: lista compatta a sinistra, il candidato selezionato a destra */
@@ -75,9 +75,9 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .targets button { gap: 4px; padding: 3px 11px 3px 6px; border-radius: 14px; background: transparent; font-size: 13px; color: var(--muted); }
 .targets button:first-of-type { padding-left: 11px; }
 .targets button:hover { color: var(--text); }
-.targets button[aria-pressed='true'] { background: var(--blue-soft); border-color: var(--blue); color: var(--text); font-weight: 600; }
+.targets button[aria-pressed='true'] { background: var(--accent-soft); border-color: var(--accent); color: var(--text); font-weight: 600; }
 .targets button .mon-icon { margin: -4px -2px -4px -4px; }
-.targets button .icon { width: 12px; height: 12px; color: var(--gold); }
+.targets button .icon { width: 12px; height: 12px; color: var(--accent); }
 .picker.has-detail { display: grid; grid-template-columns: minmax(0, 560px) minmax(0, 1fr); gap: 28px; align-items: start; }
 /* Scheletro: la lista tiene l'altezza di una pagina e il dettaglio vuoto resta al suo posto, così la pagina non salta */
 .picker-list { min-width: 0; min-height: 860px; }
@@ -100,13 +100,13 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
   transition: background 0.15s;
 }
 .suggestion:hover { background: color-mix(in srgb, var(--raised) 55%, transparent); }
-.suggestion.first { background: linear-gradient(90deg, var(--gold-soft), var(--panel) 70%); }
-.suggestion.selected { background: var(--raised); box-shadow: inset 0 0 0 1px var(--blue); }
-.suggestion.first.selected { background: linear-gradient(90deg, var(--gold-soft), var(--raised) 70%); box-shadow: inset 0 0 0 1px var(--gold); }
+.suggestion.first { background: linear-gradient(90deg, var(--accent-2-wash), var(--panel) 70%); }
+.suggestion.selected { background: var(--raised); box-shadow: inset 0 0 0 1px var(--accent); }
+.suggestion.first.selected { background: linear-gradient(90deg, var(--accent-2-wash), var(--raised) 70%); box-shadow: inset 0 0 0 1px var(--accent-2); }
 /* Riga scelta dalla ricerca con le frecce: Invio la aggiunge */
-.suggestion.picked { box-shadow: inset 0 0 0 1px var(--blue); }
+.suggestion.picked { box-shadow: inset 0 0 0 1px var(--accent); }
 .suggestion .rank { font: 700 24px/1 var(--display); color: var(--faint); text-align: center; }
-.suggestion.first .rank, .suggestion.first .result strong { color: var(--gold); }
+.suggestion.first .rank, .suggestion.first .result strong { color: var(--accent-2); }
 .suggestion .sprite { image-rendering: pixelated; }
 .suggestion .who { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .suggestion .name-line { display: flex; align-items: center; gap: 6px; min-width: 0; }
@@ -134,8 +134,8 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .detail-alts strong.worse { color: var(--bad); }
 .detail-alts strong.same { color: var(--muted); }
 .suggestion .quick { display: grid; place-items: center; width: 34px; height: 34px; padding: 0; border-radius: 4px; color: var(--muted); }
-.suggestion .quick:hover { color: var(--text); background: var(--blue-soft); }
-.suggestion.first .quick { background: var(--gold); border-color: var(--gold); color: var(--gold-ink); }
+.suggestion .quick:hover { color: var(--text); background: var(--accent-soft); }
+.suggestion.first .quick { background: var(--accent-2); border-color: var(--accent-2); color: var(--on-accent-2); }
 .suggestion.first .quick:hover { background: #ffc933; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .set { background: var(--field); padding: 10px 12px; border-radius: 4px; white-space: pre-wrap; font-size: 13px; line-height: 1.5; }
@@ -146,7 +146,7 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .list-empty p { margin: 0; font-size: 15px; }
 .pager { display: flex; justify-content: center; gap: 4px; margin-top: 10px; }
 .pager button { justify-content: center; min-width: 34px; height: 34px; padding: 0 8px; font-variant-numeric: tabular-nums; }
-.pager button[aria-current='page'] { background: var(--blue-soft); border-color: var(--blue); font-weight: 700; }
+.pager button[aria-current='page'] { background: var(--accent-soft); border-color: var(--accent); font-weight: 700; }
 
 /* Dettaglio del candidato: resta in vista mentre si scorre la lista */
 .detail {
@@ -179,7 +179,7 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .detail-score { text-align: right; }
 .detail-score strong { display: block; font: 700 46px/0.9 var(--display); font-variant-numeric: tabular-nums; }
 .detail-score span { font-size: 12px; color: var(--muted); }
-.detail.first .detail-score strong { color: var(--gold); }
+.detail.first .detail-score strong { color: var(--accent-2); }
 .detail-score strong.worse { color: var(--bad); }
 .detail-score strong.same { color: var(--muted); }
 .detail-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
@@ -202,7 +202,7 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .detail-areas .inactive dd { opacity: 0.5; }
 .detail-reasons { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 13px; }
 .detail-reasons li { position: relative; padding-left: 14px; }
-.detail-reasons li::before { content: ''; position: absolute; left: 0; top: 0.6em; width: 5px; height: 5px; border-radius: 1px; background: var(--blue); }
+.detail-reasons li::before { content: ''; position: absolute; left: 0; top: 0.6em; width: 5px; height: 5px; border-radius: 1px; background: var(--accent); }
 .detail-sec.set-sec { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0 22px; align-items: start; }
 .set-sec h4 { grid-column: 1 / -1; }
 .detail-set { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 16px; margin: 0; font-size: 13px; }
@@ -214,15 +214,15 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .detail-actions .smogon-link { margin-left: auto; }
 /* Segni delle liste dell'utente sulle righe: ♥ preferito (blu), ⊘ bannato (rosso) */
 .list-mark { font-size: 14px; line-height: 1; }
-.list-mark.fav { color: var(--blue); }
+.list-mark.fav { color: var(--accent); }
 .list-mark.ban { color: var(--bad); }
-.hidden-note .link { padding: 0; border: 0; background: none; color: var(--blue); text-decoration: underline; font: inherit; }
+.hidden-note .link { padding: 0; border: 0; background: none; color: var(--accent); text-decoration: underline; font: inherit; }
 /* Bannati dall'utente esclusi da proposte e sostituzioni */
 .banned-note { margin: 6px 0 0; font-size: 13px; color: var(--muted); }
 .smogon-link { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 4px; background: var(--raised); color: inherit; font-weight: 500; text-decoration: none; white-space: nowrap; transition: border-color 0.15s; }
-.smogon-link:hover { border-color: var(--blue); }
+.smogon-link:hover { border-color: var(--accent); }
 .editor-actions .smogon-link { height: 36px; }
-.detail-actions .go { background: var(--blue-soft); border-color: var(--blue); font-weight: 600; }
+.detail-actions .go { background: var(--accent-soft); border-color: var(--accent); font-weight: 600; }
 
 .tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; }
 .tag { font-size: 12px; font-weight: 600; padding: 1px 7px; border-radius: 3px; background: var(--good-bg); color: var(--good); }

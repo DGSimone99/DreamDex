@@ -22,7 +22,7 @@
 .fill-option strong { font: 700 15px/1.1 var(--display); letter-spacing: 0.02em; text-transform: uppercase; }
 .fill-option small { font-size: 12px; color: var(--muted); }
 .fill-option:hover { background: var(--raised); }
-.fill-option[aria-checked='true'] { background: var(--blue-soft); border-color: var(--blue); }
+.fill-option[aria-checked='true'] { background: var(--accent-soft); border-color: var(--accent); }
 /* Tipo senza proposte con questo stile: oscurato, non si sceglie */
 .fill-option.empty, .fill-option.empty:hover { opacity: 0.38; background: none; cursor: not-allowed; }
 .fill-main { display: grid; gap: 10px; align-content: start; min-width: 0; }
@@ -92,10 +92,10 @@
 }
 .spread-presets button:last-child { border-bottom: 0; }
 .spread-presets button:hover { background: var(--raised); color: var(--text); border-radius: 3px; }
-.spread-presets button .icon { width: 14px; height: 14px; color: var(--blue); visibility: hidden; }
+.spread-presets button .icon { width: 14px; height: 14px; color: var(--accent); visibility: hidden; }
 .spread-presets button strong { font-weight: 600; color: var(--text); }
-.spread-presets button .common-share { font: 600 13px/1 var(--display); font-variant-numeric: tabular-nums; color: var(--gold); text-align: right; }
-.spread-presets button[aria-pressed='true'] { background: var(--blue-soft); color: var(--text); border-radius: 3px; border-bottom-color: transparent; }
+.spread-presets button .common-share { font: 600 13px/1 var(--display); font-variant-numeric: tabular-nums; color: var(--accent); text-align: right; }
+.spread-presets button[aria-pressed='true'] { background: var(--accent-soft); color: var(--text); border-radius: 3px; border-bottom-color: transparent; }
 .spread-presets button[aria-pressed='true'] .icon { visibility: visible; }
 .field { position: relative; }
 .field-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 18px; }

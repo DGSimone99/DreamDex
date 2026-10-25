@@ -7,7 +7,7 @@
 .ad-nav [role='tab'] { display: flex; justify-content: space-between; align-items: baseline; padding: 8px 10px; border: 0; border-radius: 4px; background: none; color: var(--muted); font-size: 14px; text-align: left; }
 .ad-nav [role='tab'] b { font: 700 18px/1 var(--display); color: var(--faint); font-variant-numeric: tabular-nums; }
 .ad-nav [role='tab']:hover { color: var(--text); background: color-mix(in srgb, var(--raised) 55%, transparent); }
-.ad-nav [role='tab'][aria-selected='true'] { color: var(--text); background: var(--blue-soft); font-weight: 600; }
+.ad-nav [role='tab'][aria-selected='true'] { color: var(--text); background: var(--accent-soft); font-weight: 600; }
 .ad-nav [role='tab'][aria-selected='true'] b { color: var(--text); }
 .ad-panel { padding: 16px 22px 22px; overflow-y: auto; }
 .ad-panel h4 { margin: 0 0 8px; font: 700 18px/1.1 var(--display); text-transform: uppercase; letter-spacing: 0.03em; }
@@ -29,7 +29,7 @@
 .ad-t th[scope='row'] { text-align: left; padding-left: 0; font-weight: 600; color: var(--text); }
 .ad-t .left { text-align: left; }
 .ad-t td.total { font: 700 20px/1 var(--display); color: var(--text); white-space: nowrap; }
-.ad-t .ad-once { display: inline; margin-left: 4px; font: 600 13px/1 var(--ui); color: var(--blue); cursor: help; }
+.ad-t .ad-once { display: inline; margin-left: 4px; font: 600 13px/1 var(--ui); color: var(--accent); cursor: help; }
 .ad-t .ad-gain { display: inline; margin-left: 4px; font: 600 13px/1 var(--ui); color: var(--good); cursor: help; }
 /* Velocità: il guadagno di ogni condizione nella sua colonna, nel verde del setup */
 .ad-t .ad-gain-cell { color: var(--good); font-weight: 600; cursor: help; }
@@ -42,16 +42,16 @@
 .ad-matrix thead th { text-align: center; padding: 6px 2px; }
 .ad-matrix td { text-align: center; padding: 3px 2px; }
 .ad-k { display: inline-block; min-width: 46px; padding: 2px 4px; border-radius: 3px; font-size: 11px; font-weight: 700; letter-spacing: 0.02em; white-space: nowrap; }
-.ad-k.ohko { background: var(--blue); color: var(--field); }
-.ad-k.two { background: var(--blue-soft); color: var(--text); }
+.ad-k.ohko { background: var(--accent); color: var(--field); }
+.ad-k.two { background: var(--accent-soft); color: var(--text); }
 .ad-k.three { color: var(--muted); box-shadow: inset 0 0 0 1px var(--line); }
 .ad-k.none { color: var(--faint); font-weight: 600; }
 /* Il setup cambia la soglia: tra parentesi il danno dopo il potenziamento, nel verde della palette */
 .ad-k.setup { box-shadow: inset 0 0 0 1px var(--good); color: var(--good); }
 .ad-k.setup.two, .ad-k.setup.ohko { color: var(--text); }
 /* Difesa: colpo standard ricevuto, pieno chi regge di più (4HKO+), rosso chi va KO in un colpo */
-.ad-k.d-four { background: var(--blue); color: var(--field); }
-.ad-k.d-three { background: var(--blue-soft); color: var(--text); }
+.ad-k.d-four { background: var(--accent); color: var(--field); }
+.ad-k.d-three { background: var(--accent-soft); color: var(--text); }
 .ad-k.d-two { color: var(--muted); box-shadow: inset 0 0 0 1px var(--line); }
 .ad-k.d-ohko { color: var(--bad); box-shadow: inset 0 0 0 1px var(--bad-bg); }
 .ad-t .ad-group th { padding: 12px 0 4px; font-size: 11px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: 0.05em; text-align: left; border-bottom: 1px solid var(--line); }
@@ -90,7 +90,7 @@
 .help-weights th, .help-weights td { padding: 5px 6px; border-bottom: 1px solid var(--line-soft); text-align: right; white-space: nowrap; }
 .help-weights thead th { font-size: 11px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: 0.04em; white-space: normal; vertical-align: bottom; }
 .help-weights th[scope='row'], .help-weights thead th:first-child { text-align: left; color: var(--muted); font-weight: 600; }
-.help-weights tr.current { background: var(--blue-soft); }
+.help-weights tr.current { background: var(--accent-soft); }
 .help-weights tr.current th, .help-weights tr.current td { color: var(--text); }
 .help-points { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
 .help-points li { display: flex; align-items: baseline; gap: 8px; padding: 5px 10px; background: var(--panel); border: 1px solid var(--line-soft); border-radius: 4px; font-size: 14px; color: var(--muted); }
@@ -104,18 +104,18 @@
 .help-weights-row .inactive dt { color: var(--faint); }
 .help-weights-row .inactive dd:not(.help-inactive-note) { opacity: 0.5; }
 .help-weights-row .help-inactive-note { font-size: 12px; font-weight: 400; color: var(--muted); }
-.help-nav [role='tab'][aria-current='true']::after { content: ''; width: 6px; height: 6px; margin-left: 8px; border-radius: 50%; background: var(--blue); flex: none; }
+.help-nav [role='tab'][aria-current='true']::after { content: ''; width: 6px; height: 6px; margin-left: 8px; border-radius: 50%; background: var(--accent); flex: none; }
 .rating .grade .grade-alert { position: absolute; left: -1.5px; bottom: 100%; margin-bottom: 1px; padding: 0; } /* -1.5px: margine interno del disegno */
 .rating .grade .grade-alert .icon { width: 18px; height: 18px; }
 .rating .grade .grade-alert .alert-pop { font: 400 13px/1.45 var(--ui); color: var(--text); text-transform: none; letter-spacing: 0; }
 .rating .rating-note { margin: -4px 0 10px; font-size: 13px; color: var(--muted); }
-.rating .grade > strong { font: 700 44px/1 var(--display); color: var(--gold); }
+.rating .grade > strong { font: 700 44px/1 var(--display); color: var(--accent); }
 .rating .grade-C > strong { color: var(--warn); }
 .rating .grade-D > strong { color: var(--bad); }
 .rating .bars { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 20px; margin: 0 0 8px; }
 .rating .bars dt { font-size: 13px; color: var(--muted); margin-bottom: 4px; }
 .rating .area-link { padding: 0; border: 0; background: none; font: inherit; color: inherit; cursor: pointer; border-bottom: 1px dotted var(--faint); border-radius: 0; }
-.rating .area-link:hover { color: var(--text); border-bottom-color: var(--blue); }
+.rating .area-link:hover { color: var(--text); border-bottom-color: var(--accent); }
 /* Le schede raggiunte dai link non finiscono sotto la barra in alto */
 .analysis details.block { scroll-margin-top: 80px; }
 .rating .bars dd { margin: 0; }

@@ -24,6 +24,7 @@ import { EMPTY_LISTS, effectiveLists, type UserLists } from './engine/lists';
 import { t, type Lang } from './i18n';
 import { LangProvider } from './i18n/react';
 import { hasItalianNames } from './i18n/game';
+import { paletteFor, type PaletteSetting } from './ui/theme';
 
 const NO_DATA: EngineData = { stats: null, sets: null };
 
@@ -57,6 +58,11 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   // Un link con un team (#team=...) vince sulla sessione salvata; quella resta recuperabile con Annulla
   const [shared] = useState(takeSharedTeam);
   const [format, setFormat] = useState<Format>(shared?.format ?? session?.format ?? DEFAULT_FORMAT);
+  // Colori di versione: seguono il gioco del formato (o la palette fissata nelle impostazioni)
+  const palette: PaletteSetting = 'auto';
+  useEffect(() => {
+    document.documentElement.dataset.palette = paletteFor(palette, format.formatId);
+  }, [palette, format.formatId]);
   // Dati per fonte: ogni formato carica la sua la prima volta, poi resta in memoria.
   // Un caricamento finito tardi si salva sotto la sua fonte, quindi non tocca il formato attuale.
   const [cache, setCache] = useState<Record<string, EngineData>>({ [dataSource(DEFAULT_FORMAT)]: initialData });
