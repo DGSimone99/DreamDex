@@ -35,9 +35,12 @@ describe('testata dell\'editor', () => {
   it('cliccando il nome si scrive un soprannome; resta nel set e nell\'esportazione', async () => {
     const { user, slot } = await openEditor();
     await user.click(within(slot()).getByRole('button', { name: 'Soprannome di Great Tusk' }));
+    expect(slot().querySelector('.editor-title .species-tag')).toBeNull();
     const input = within(slot()).getByLabelText('Soprannome di Great Tusk');
     await user.type(input, 'Tusky{Enter}');
     expect(within(slot()).getByRole('button', { name: 'Soprannome di Great Tusk' }).querySelector('[data-name]')).toHaveAttribute('data-name', 'Tusky');
+    // Nell'editor, sopra il soprannome, la specie come piccola etichetta (solo se c'è un soprannome)
+    expect(slot().querySelector('.editor-title .species-tag')).toHaveTextContent('Great Tusk');
     // Sulla carta il soprannome, con la specie nel tooltip
     expect(slot().querySelector('summary .name')).toHaveTextContent('Tusky');
     expect(slot().querySelector('summary .name')).toHaveAttribute('title', 'Great Tusk');

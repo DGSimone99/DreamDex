@@ -240,24 +240,25 @@
 /* Apertura della carta: lo sprite cresce fino alla misura grande, come quando torna piccolo */
 @keyframes open-grow { from { transform: scale(0.72); opacity: 0.6; } }
 .band:not(.collapsed) .slot[open] > summary .sprite-wrap { animation: open-grow 0.35s var(--ease); }
-/* Nome nell'editor: un'etichetta come Statistiche, Set e Mosse, appoggiata sulla linea in cima; cliccandola si scrive il soprannome */
-.drawer { border-top: 0; padding-top: 10px; }
-.set-editor .editor-top { position: relative; isolation: isolate; }
-.set-editor .editor-top::before { content: ''; position: absolute; z-index: -1; left: -22px; right: -22px; top: 50%; height: 3px; margin-top: -1px; background: var(--accent); }
-.editor-title { gap: 8px; }
-.editor-title .nickname {
-  height: auto;
-  padding: 4px 26px 4px 12px;
-  border: 0;
-  border-radius: 0;
+/* Nome nell'editor: grande in corsivo, cliccabile per il soprannome; con un soprannome la specie sta sopra come piccola etichetta */
+.drawer { padding-top: 18px; }
+.editor-title { position: relative; gap: 8px; }
+.editor-title .nickname { height: auto; padding: 0; border: 0; background: none; color: var(--text); cursor: text; }
+.editor-title .nickname strong { font: 800 26px/1 var(--display); font-style: italic; letter-spacing: 0.01em; }
+.editor-title .nickname strong::before { content: attr(data-name); }
+.editor-title .nickname:hover strong, .editor-title .nickname:focus-visible strong { text-decoration: underline dotted var(--faint); text-underline-offset: 4px; }
+.editor-title .species-tag {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 2px);
+  padding: 1px 16px 1px 7px;
+  font: 700 11px/1.3 var(--display);
+  font-style: italic;
+  white-space: nowrap;
   color: var(--on-accent-2);
   background: var(--stripes), var(--accent-2);
-  clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%);
-  cursor: text;
+  clip-path: polygon(0 0, 100% 0, calc(100% - 7px) 100%, 0 100%);
 }
-.editor-title .nickname strong { font: 800 22px/1 var(--display); font-style: italic; letter-spacing: 0.01em; }
-.editor-title .nickname strong::before { content: attr(data-name); }
-.editor-title .nickname:hover { filter: brightness(1.08); }
 .nickname-input { width: 200px; height: 32px; font: 800 18px/1 var(--display); font-style: italic; }
 .shiny-toggle { width: 32px; height: 32px; padding: 0; display: grid; place-items: center; color: var(--faint); }
 .shiny-toggle[aria-pressed='true'] { color: var(--warn); border-color: var(--warn); }
