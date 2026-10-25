@@ -30,7 +30,7 @@
 .tabs.vertical [role='tab'][aria-selected='true'] .tab-count { background: var(--on-accent-2); color: var(--accent-2-ink); }
 .tabs.vertical [role='tab'][aria-disabled='true'] { background: none; }
 .tabs.vertical .tab-count { font-style: normal; margin-right: 10px; }
-.tab-body { padding: 16px 22px 0; }
+.tab-body { padding: 26px 22px 0; }
 .tab-panel:not(.active) { display: none; }
 /* Il titolo della sezione lo dice già la scheda */
 .tab-panel .analysis > h2 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
