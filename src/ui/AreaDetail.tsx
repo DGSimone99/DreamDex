@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactElement } from 'react';
 import { createPortal } from 'react-dom';
-import { bonusMalusCatalog, type CatalogEntry, type TeamRating } from '../engine/rating';
+import { MAX_BONUS, MAX_PENALTY, bonusMalusCatalog, type CatalogEntry, type TeamRating } from '../engine/rating';
 import { stepBucket, type CoverageDetail, type WallCell } from '../engine/offense';
 import type { TeamDefense } from '../engine/defense';
 import { CONTROL_CONDITIONS, type MemberSpeed, type SpeedCondition, type TeamSpeed } from '../engine/speedArea';
@@ -115,9 +115,13 @@ function CatalogueDetail({ rating, onClose }: { rating: TeamRating; onClose: () 
     const items = kind === 'malus' ? rating.penalty.items : rating.bonus.items;
     // Punti attuali di una voce del catalogo: somma delle voci del voto con la sua chiave
     const nowOf = (entry: CatalogEntry) => items.filter(i => i.catalog === entry.key).reduce((n, i) => n + i.points, 0);
+    const cap = kind === 'malus' ? MAX_PENALTY : MAX_BONUS;
+    const capText = signed(kind === 'malus' ? -cap : cap);
+    // Somma grezza delle voci attive: se supera il tetto, il totale mostrato è limitato
+    const raw = items.reduce((n, i) => n + i.points, 0);
     return (
       <>
-        <h4>{t(`catalogue.${kind}`)}</h4>
+        <h4>{t(`catalogue.${kind}`)}{raw > cap && <small className="ad-limited"> {t('catalogue.limited', { cap: capText })}</small>}</h4>
         <div className="ad-scroll">
           <table className="ad-t ad-catalog">
             <thead>
@@ -147,6 +151,7 @@ function CatalogueDetail({ rating, onClose }: { rating: TeamRating; onClose: () 
             </tbody>
           </table>
         </div>
+        <p className="ad-cap">{t(kind === 'malus' ? 'catalogue.capMalus' : 'catalogue.capBonus', { max: capText })}</p>
       </>
     );
   };

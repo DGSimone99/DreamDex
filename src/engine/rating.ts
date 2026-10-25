@@ -160,6 +160,12 @@ const REMOVAL = new Set(['defog', 'rapidspin', 'mortalspin', 'tidyup', 'courtcha
 
 /** Un setter in più dello stesso hazard costa 1 punto. */
 export const HAZARD_DUPLICATE = 1;
+/** Ogni rimuovitore di hazard oltre il primo costa 1 punto. */
+export const REMOVER_EXTRA_POINTS = 1;
+/** Meteo o campi in conflitto costano 3 punti. */
+export const WEATHER_CLASH_POINTS = 3;
+/** Un attivatore (meteo, campo, Trick Room) che nessun compagno usa costa 2 punti. */
+export const UNUSED_ENABLER_POINTS = 2;
 
 /**
  * Ruoli ripetuti senza bisogno: stesso hazard, più rimozioni. Con `sameType` anche i 3+ membri dello stesso tipo:
@@ -175,7 +181,7 @@ export function roleAndTypeRedundancies(team: TeamSet[], lang: Lang = 'it', opts
   }
   for (const [hazard, n] of setters) if (n > 1) items.push({ text: t(lang, 'rating.redundancy.setters', { n, hazard: gameName('move', hazard, lang) }), points: HAZARD_DUPLICATE * (n - 1), catalog: 'hazardDuplicate' });
   const removers = team.filter(set => set.moves.some(m => REMOVAL.has(toID(m)))).length;
-  if (removers > 1) items.push({ text: t(lang, 'rating.redundancy.removers', { n: removers }), points: removers - 1, catalog: 'removers' });
+  if (removers > 1) items.push({ text: t(lang, 'rating.redundancy.removers', { n: removers }), points: (removers - 1) * REMOVER_EXTRA_POINTS, catalog: 'removers' });
   for (const type of opts.sameType ? TYPES : []) {
     const n = team.filter(set => (battleSpecies(set)?.types as readonly string[] | undefined)?.includes(type)).length;
     if (n >= 3) items.push({ text: t(lang, 'rating.redundancy.sameType', { n, type: typeName(type, lang) }), points: n - 2 });
@@ -190,7 +196,7 @@ export const WEATHER_HURT_STAB = 2;
 export function weatherClashes(team: TeamSet[], lang: Lang = 'it'): Redundancy[] {
   const cap = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
   return [
-    ...conditionConflicts(team, lang).map(c => ({ text: t(lang, 'rating.redundancy.conflict', { kind: t(lang, `conflict.${c.kind}`), list: c.setters.join(', ') }), points: 3, catalog: 'weatherClash' as const })),
+    ...conditionConflicts(team, lang).map(c => ({ text: t(lang, 'rating.redundancy.conflict', { kind: t(lang, `conflict.${c.kind}`), list: c.setters.join(', ') }), points: WEATHER_CLASH_POINTS, catalog: 'weatherClash' as const })),
     ...weakenedMoves(team).map(w => ({
       text: t(lang, 'rating.redundancy.weakens', { condition: cap(conditionLabel(w.condition, lang)), setter: w.setter, type: typeName(w.type, lang), member: w.member }),
       points: w.stab ? WEATHER_HURT_STAB : WEATHER_HURT,
@@ -201,6 +207,8 @@ export function weatherClashes(team: TeamSet[], lang: Lang = 'it'): Redundancy[]
 
 /** Trick Room rallenta un membro che supera da solo almeno questa quota del meta; il malus si ferma a −3. */
 export const TRICK_ROOM_FAST = 0.5;
+/** Ogni membro veloce sotto Trick Room costa 1 punto. */
+export const TRICK_ROOM_FAST_POINTS = 1;
 export const TRICK_ROOM_MAX = 3;
 
 /** Forza sotto cui un membro senza utilità chiave è considerato debole. */
@@ -264,7 +272,7 @@ export function redundancies(team: TeamSet[], analysis: TeamAnalysis, lang: Lang
     }));
   const dependencies = [
     ...unmetBeneficiaries(team).map(i => ({ text: t(lang, 'rating.redundancy.unmet', { member: i.member, via: viaName(i.via, lang), condition: conditionLabel(i.condition, lang) }), points: UNMET_POINTS, catalog: 'unmetCondition' as const })),
-    ...unusedEnablers(team).map(i => ({ text: t(lang, 'rating.redundancy.unused', { via: viaName(i.via, lang), member: i.member }), points: 2, catalog: 'unusedEnabler' as const })),
+    ...unusedEnablers(team).map(i => ({ text: t(lang, 'rating.redundancy.unused', { via: viaName(i.via, lang), member: i.member }), points: UNUSED_ENABLER_POINTS, catalog: 'unusedEnabler' as const })),
   ];
   const items = [
     ...weaknesses, ...roleAndTypeRedundancies(team, lang), ...dependencies, ...weatherClashes(team, lang),
@@ -386,7 +394,7 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
   const roomSetter = team.find(set => set.moves.some(move => toID(move) === 'trickroom'));
   const fastMembers = roomSetter ? speed.members.filter(m => m.raw >= TRICK_ROOM_FAST) : [];
   const roomItems = fastMembers.length
-    ? [{ text: t(lang, fastMembers.length === 1 ? 'rating.redundancy.trickRoomFastOne' : 'rating.redundancy.trickRoomFast', { setter: battleName(roomSetter!), n: fastMembers.length, list: fastMembers.map(m => m.species).join(', ') }), points: Math.min(TRICK_ROOM_MAX, fastMembers.length), catalog: 'trickRoomFast' as const }]
+    ? [{ text: t(lang, fastMembers.length === 1 ? 'rating.redundancy.trickRoomFastOne' : 'rating.redundancy.trickRoomFast', { setter: battleName(roomSetter!), n: fastMembers.length, list: fastMembers.map(m => m.species).join(', ') }), points: Math.min(TRICK_ROOM_MAX, fastMembers.length * TRICK_ROOM_FAST_POINTS), catalog: 'trickRoomFast' as const }]
     : [];
   // Le mancanze essenziali dei Ruoli (solo team di 6) si sommano alle altre penalità, entro il massimo
   const extraItems = [...roles.failures, ...roomItems];
@@ -425,7 +433,8 @@ const CATALOG_ORDER: { key: CatalogKey; kind: 'malus' | 'bonus' }[] = [
 export function bonusMalusCatalog(lang: Lang, teraCap: number): CatalogEntry[] {
   const values = {
     shared: SHARED_WEAK_POINTS, unmet: UNMET_POINTS, hazard: HAZARD_DUPLICATE, hurt: WEATHER_HURT, hurtStab: WEATHER_HURT_STAB, member: WEAK_MEMBER_POINTS, memberMax: WEAK_MEMBER_MAX,
-    essential: ESSENTIAL_POINTS, style: ONE_STYLE_POINTS, room: TRICK_ROOM_MAX, help: WEATHER_HELP, cap: teraCap,
+    essential: ESSENTIAL_POINTS, style: ONE_STYLE_POINTS, room: TRICK_ROOM_MAX, roomEach: TRICK_ROOM_FAST_POINTS, remover: REMOVER_EXTRA_POINTS, clash: WEATHER_CLASH_POINTS, unused: UNUSED_ENABLER_POINTS,
+    help: WEATHER_HELP, cap: teraCap,
   };
   return CATALOG_ORDER.map(({ key, kind }) => ({
     key, kind,

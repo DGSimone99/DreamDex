@@ -23,7 +23,10 @@ export function RatingPanel({ rating, ruleIssues = [], metaMonth }: { rating: Te
   const closeDetail = () => { const area = detail; setDetail(null); if (area) detailButtons.current[area]?.focus(); };
   // Bonus meno malus (il malus è già limitato a MAX_PENALTY): il segno usa il meno tipografico
   const net = rating.bonus.total - rating.penalty.total;
-  const netText = t('rating.net', { net: signed(net), penalty: `−${rating.penalty.total}`, bonus: `+${rating.bonus.total}` });
+  // Un totale a 0 si scrive "0" senza segno; con entrambi a 0 resta solo il netto
+  const netText = rating.penalty.total === 0 && rating.bonus.total === 0
+    ? `${t('area.bonusMalus')} 0`
+    : t('rating.net', { net: signed(net), penalty: signed(-rating.penalty.total), bonus: signed(rating.bonus.total) });
   return (
     <details open aria-label={t('rating.title')} className="block rating">
       <summary>
@@ -99,8 +102,8 @@ ${note}` : tip ?? note;
       </dl>
       {(rating.penalty.items.length > 0 || rating.bonus.items.length > 0) && (
         <ul className="net-list">
-          {rating.penalty.items.map(item => <li key={`m${item.text}`} className="neg"><Typed text={item.text} /> (−{item.points})</li>)}
-          {rating.bonus.items.map(item => <li key={`b${item.text}`} className="pos"><Typed text={item.text} /> (+{item.points})</li>)}
+          {rating.penalty.items.map(item => <li key={`m${item.text}`} className="neg"><Typed text={item.text} />{item.points > 0 && ` (−${item.points})`}</li>)}
+          {rating.bonus.items.map(item => <li key={`b${item.text}`} className="pos"><Typed text={item.text} />{item.points > 0 && ` (+${item.points})`}</li>)}
         </ul>
       )}
       {detail && <AreaDetail rating={rating} area={detail} onClose={closeDetail} />}

@@ -242,7 +242,7 @@ describe('Barra Bonus/Malus', () => {
 
   it('solo bonus: riempimento blu a destra', () => {
     const bar = renderBar(fakeRating([], [['Sole', 1]]));
-    expect(bar).toHaveAccessibleName('Bonus/Malus +1 (−0 / +1)');
+    expect(bar).toHaveAccessibleName('Bonus/Malus +1 (0 / +1)');
     const fill = fillOf(bar)!;
     expect(fill).toHaveClass('pos');
     expect(parseFloat(fill.style.width)).toBeCloseTo(3.33, 1);
@@ -268,9 +268,15 @@ describe('Barra Bonus/Malus', () => {
     expect(items).toEqual(['Malus A (−2)', 'Bonus B (+1)']);
   });
 
+  it('una voce da 0 punti non stampa i punti; un totale a 0 si scrive senza segno', () => {
+    const bar = renderBar(fakeRating([['Debole oltre il tetto', 0], ['Altro', 7]], []));
+    expect(bar).toHaveAccessibleName('Bonus/Malus −7 (−7 / 0)');
+    expect(screen.getAllByRole('listitem').map(li => li.textContent)).toEqual(['Debole oltre il tetto', 'Altro (−7)']);
+  });
+
   it('totali entrambi 0: nessuna lista, solo la tacca', () => {
     const bar = renderBar(fakeRating([], []));
-    expect(bar).toHaveAccessibleName('Bonus/Malus 0 (−0 / +0)');
+    expect(bar).toHaveAccessibleName('Bonus/Malus 0');
     expect(fillOf(bar)).toBeNull();
     expect(screen.queryByRole('listitem')).toBeNull();
   });
@@ -320,6 +326,24 @@ describe('Catalogo Bonus/Malus', () => {
     expect(essential).not.toHaveClass('active');
     expect(essential).not.toHaveAttribute('aria-current');
     expect(rows.filter(r => r.classList.contains('active'))).toHaveLength(2);
+  });
+
+  it('ogni scheda dice il tetto; il suggerimento "limitato" compare solo se la somma lo supera', async () => {
+    const { user, dialog } = await openCatalog();
+    const panel = () => within(dialog).getByRole('tabpanel');
+    expect(panel()).toHaveTextContent('Totale massimo −15');
+    expect(panel()).not.toHaveTextContent('limitato');
+    await user.click(within(dialog).getByRole('tab', { name: /^Bonus/ }));
+    expect(panel()).toHaveTextContent('Totale massimo +6');
+    expect(panel()).not.toHaveTextContent('limitato');
+  });
+
+  it('somma delle voci oltre il tetto: "(limitato a −15)" accanto al titolo', async () => {
+    const user = userEvent.setup();
+    const r = { ...catalogRating(0), penalty: { total: 15, items: [{ text: 'A', points: 10, catalog: 'removers' }, { text: 'B', points: 8, catalog: 'hazardDuplicate' }] } } as unknown as TeamRating;
+    render(<LangProvider lang="it"><RatingPanel rating={r} /></LangProvider>);
+    await user.click(screen.getByRole('button', { name: /^Bonus\/Malus/ }));
+    expect(within(screen.getByRole('tabpanel')).getByRole('heading', { name: /Malus/ })).toHaveTextContent('(limitato a −15)');
   });
 
   it('Bonus: Tera non applicabile fuori dalla Gen 9, mai attivo', async () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { bonusMalusCatalog, rateTeam } from '../../src/engine/rating';
+import { REMOVER_EXTRA_POINTS, TRICK_ROOM_FAST_POINTS, UNUSED_ENABLER_POINTS, WEATHER_CLASH_POINTS, bonusMalusCatalog, rateTeam } from '../../src/engine/rating';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
 import { fixtureData } from '../fixtures/data';
 
@@ -51,6 +51,10 @@ describe('catalogo bonus e malus', () => {
     expect(weak).toContain('6');
     expect(c.find(e => e.key === 'sharedWeak')!.points).toContain('2');
     expect(c.find(e => e.key === 'unmetCondition')!.points).toContain('3');
+    expect(c.find(e => e.key === 'removers')!.points).toBe(`−${REMOVER_EXTRA_POINTS} per ogni rimozione in più`);
+    expect(c.find(e => e.key === 'weatherClash')!.points).toBe(`−${WEATHER_CLASH_POINTS}`);
+    expect(c.find(e => e.key === 'unusedEnabler')!.points).toBe(`−${UNUSED_ENABLER_POINTS}`);
+    expect(c.find(e => e.key === 'trickRoomFast')!.points).toContain(`−${TRICK_ROOM_FAST_POINTS} per membro`);
   });
 
   it('catalogo EN: stesse chiavi, testi non vuoti', () => {
