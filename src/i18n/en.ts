@@ -358,6 +358,7 @@ export const en = {
   'editor.renameInput': "New name for {name}",
   'editor.deleteNamed': "Delete {name}",
   'team.memberIO': "Import / Export set",
+  'editor.setSaved': "Set saved",
   'editor.evs': "EVs",
   'editor.speed': "Speed",
   'editor.speedRank': "faster than {pct} of the {n} most used",
