@@ -1,7 +1,8 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import type { EngineData } from '../engine/data';
 import type { Format } from '../engine/format';
-import { formatRules } from '../engine/formatRules';
+import { formatRules, rulesOf } from '../engine/formatRules';
+import { teamArchetype, type Archetype } from '../engine/archetype';
 import { improveReplacements, similarity, similarReplacements, type Replacement } from '../engine/replace';
 import { describeDiff, ratingGainOf, SIMILAR_THRESHOLD, type SwapPreview } from '../engine/coach';
 import { suggest, type Suggestion } from '../engine/scoring';
@@ -196,6 +197,9 @@ function useDebounced<T>(value: T, delay: number): T {
 
 export const SEARCH_DELAY = 200;
 
+/** I tipi di team che si possono scegliere per giudicare i cambi, dopo Nessuno. */
+const TEAM_TYPES: Archetype[] = ['hyperOffense', 'bulkyOffense', 'balance', 'semiStall', 'stall'];
+
 export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onReplaceWith, onCancelReplace, onPreview, rating = null, onTarget, focusSearch }: Props) {
   const tr = useT();
   const lang = useLang();
@@ -216,6 +220,11 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
     requestAnimationFrame(() => searchRef.current?.focus({ preventScroll: true }));
   }, [focusSearch]);
   const view: View = replacing ? 'member' : team.length >= 2 && (scope === 'all' || team.length >= 6) ? 'all' : 'add';
+  // Tipo di team per giudicare i cambi: quello riconosciuto (team di 6) finché non lo scegli a mano; null = Nessuno
+  const recognised = useMemo(() => (team.length === 6 ? teamArchetype(team, rulesOf(data))?.archetype ?? null : null), [team, data]);
+  const [pickedType, setPickedType] = useState<Archetype | null | undefined>(undefined);
+  const typeChoice = pickedType === undefined ? recognised : pickedType;
+  const archetype = view !== 'add' && typeChoice ? typeChoice : undefined;
   /** Il team contro cui si valutano i candidati è vuoto: niente adattamento da mostrare. */
   const emptyTeam = (replacing ? team.length - 1 : team.length) === 0;
 
@@ -232,14 +241,14 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
 
   // Il voto del team per ogni candidato richiede un attimo: la lista si ricalcola senza bloccare il resto
   // (il team si aggiorna subito, la lista resta attenuata finché non è pronta)
-  const source = useMemo(() => ({ team, replaceIndex, format, data: ranking, scope }), [team, replaceIndex, format, ranking, scope]);
+  const source = useMemo(() => ({ team, replaceIndex, format, data: ranking, scope, archetype }), [team, replaceIndex, format, ranking, scope, archetype]);
   const deferred = useDeferredValue(source);
   const stale = deferred !== source;
   const ranked: Item[] = useMemo(() => {
-    const { team, format, data } = deferred;
+    const { team, format, data, archetype } = deferred;
     const replaceIndex = deferred.replaceIndex !== null && deferred.replaceIndex < team.length ? deferred.replaceIndex : null;
     // Prima i candidati migliori per punteggio, poi ordinati per il voto che darebbero al team
-    const rank = (list: (Suggestion | Replacement)[], sort = true) => rankByTeamGain(list, team, replaceIndex, data, lang, sort).slice(0, MAX);
+    const rank = (list: (Suggestion | Replacement)[], sort = true) => rankByTeamGain(list, team, replaceIndex, data, lang, sort, archetype).slice(0, MAX);
     if (replaceIndex === null && team.length >= 2 && (deferred.scope === 'all' || team.length >= 6)) {
       // Raccomandazioni libere: per ogni candidato, il membro che conviene di più sostituire
       const pool = filtering ? searchPool(team, format, data, applied) : undefined;
@@ -247,7 +256,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
       const similar = mode === 'similar';
       return bestSwaps(team, data, lang, index => (similar
         ? similarReplacements(team, index, format, data, 3 * SWAPS_PER_MEMBER, pool, lang)
-        : improveReplacements(team, index, format, data, SWAPS_PER_MEMBER, pool, lang)), { similar, threshold: SIMILAR_THRESHOLD }).slice(0, MAX);
+        : improveReplacements(team, index, format, data, SWAPS_PER_MEMBER, pool, lang)), { similar, threshold: SIMILAR_THRESHOLD, archetype }).slice(0, MAX);
     }
     if (replaceIndex !== null) {
       // Con ricerca o filtri i sostituti vengono da tutto il Pokédex, non solo dalle statistiche
@@ -441,6 +450,10 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   // Il numero di risultati, sopra la lista quando si cerca o si filtra
   const countText = `${items.length === 1 ? tr('suggest.resultsOne') : tr('suggest.resultsMany', { n: items.length })}${items.length === MAX ? tr('suggest.best') : ''}`;
 
+  // Il team è già del tipo scelto e nessun cambio lo mantiene: si propone Nessuno o un altro tipo
+  const typeEmpty = !!deferred.archetype && deferred.archetype === recognised && items.length === 0 && !stale
+    ? <p className="note type-empty">{tr('suggest.typeEmpty', { type: tr(`archetype.${deferred.archetype}`) })}</p>
+    : null;
   // Note sopra (a tutta larghezza); sotto, lista e dettaglio partono alla stessa altezza
   let notes = null;
   let body;
@@ -453,6 +466,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
       <div className="list-empty">
         <Icon name="search" />
         <p>{tr('suggest.noMatch')}</p>
+        {typeEmpty}
         {filters.query && <button type="button" onClick={() => setFilters({ ...filters, query: '' })}>{tr('suggest.clear')}</button>}
       </div>
     );
@@ -461,6 +475,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
       <>
         {filtering && <p className="visually-hidden" aria-live="polite">{tr('suggest.resultsAria', { text: countText })}</p>}
         {setterNote && <p className="note">{setterNote}</p>}
+        {typeEmpty}
         {emptyTeam && (
           <p className="note">{tr('suggest.emptyTeam')}</p>
         )}
@@ -545,6 +560,18 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
             ))}
           </div>
         )}
+        {view !== 'add' && (
+          // Tipo di team con cui giudicare i cambi (Nessuno = solo il voto più alto)
+          <div className="targets team-types" role="group" aria-label={tr('suggest.teamType')}>
+            <span className="targets-label" aria-hidden="true">{tr('suggest.teamTypeLabel')}</span>
+            {([null, ...TEAM_TYPES] as (Archetype | null)[]).map(type => (
+              <button key={type ?? 'none'} type="button" aria-pressed={typeChoice === type} onClick={() => setPickedType(type)}
+                title={type ? tr(`archetype.${type}.note`) : tr('suggest.anyTypeNote')}>
+                {type ? tr(`archetype.${type}`) : tr('suggest.anyType')}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
       {search}
       {notes}
@@ -568,6 +595,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
             data={data}
             format={format}
             rating={rating}
+            archetype={deferred.archetype}
             usage={emptyTeam ? usageOf(selected.species) : null}
             banMark={<BanMark species={selected.species} format={format} />}
             actionLabel={actionLabelOf(selected)}

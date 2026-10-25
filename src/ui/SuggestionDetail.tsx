@@ -3,6 +3,8 @@ import type { EngineData } from '../engine/data';
 import { describeDiff } from '../engine/coach';
 import { getSpecies } from '../engine/dex';
 import { rateTeam, type TeamRating } from '../engine/rating';
+import type { Archetype } from '../engine/archetype';
+import { needLabel } from '../engine/needs';
 import { withCandidate, type SwapOption, type TeamGain } from '../engine/teamGain';
 import { formatPercent } from '../i18n';
 import type { Replacement } from '../engine/replace';
@@ -26,7 +28,7 @@ import { MoveName, Typed } from './TypeText';
  * Il candidato selezionato nella lista: come cambia il voto del team (in tutto e area per area),
  * cosa cambia (in sostituzione), i motivi e il set.
  */
-export function SuggestionDetail({ item, rank, team, replaceIndex, data, format, rating, usage, banMark, actionLabel, onAction }: {
+export function SuggestionDetail({ item, rank, team, replaceIndex, data, format, rating, archetype, usage, banMark, actionLabel, onAction }: {
   item: (Suggestion | Replacement) & { teamGain?: TeamGain; alternatives?: SwapOption[] };
   rank: number;
   team: TeamSet[];
@@ -36,6 +38,8 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
   format: Format;
   /** Voto del team attuale. */
   rating: TeamRating | null;
+  /** Tipo di team scelto per giudicare i cambi: prima e dopo si votano come quel tipo, come nella lista. */
+  archetype?: Archetype;
   /** Uso nel meta, mostrato al posto del voto col primo Pokémon. */
   usage: number | null;
   banMark: React.ReactNode;
@@ -46,9 +50,11 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
   const lang = useLang();
   const set = item.set;
   const replacing = replaceIndex !== null;
-  const after = useMemo(() => rateTeam(withCandidate(team, set, replaceIndex), data, lang), [team, replaceIndex, set, data, lang]);
+  const opts = useMemo(() => (archetype ? { archetype } : {}), [archetype]);
+  const after = useMemo(() => rateTeam(withCandidate(team, set, replaceIndex), data, lang, opts), [team, replaceIndex, set, data, lang, opts]);
+  const forcedBefore = useMemo(() => (archetype ? rateTeam(team, data, lang, opts) : rating), [archetype, team, data, lang, opts, rating]);
   // Senza altri membri non c'è un voto da confrontare
-  const before = item.teamGain ? rating : null;
+  const before = item.teamGain ? forcedBefore : null;
   const changes = 'diff' in item && item.diff ? describeDiff(item.diff, lang) : null;
   const types = getSpecies(item.species)?.types ?? [];
   const evs = STAT_IDS.filter(stat => (set.evs[stat] ?? 0) > 0).map(stat => `${set.evs[stat]} ${statShort(stat, lang)}`).join(' / ');
@@ -102,6 +108,12 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
               <p className="note">{tr('suggest.similarity', { pct: Math.round(item.similarity * 100) })}</p>
             )}
             <ProsCons pros={changes.pros} cons={changes.cons} />
+            {/* Con un tipo di team scelto: le voci perse che fanno scendere il cambio in classifica */}
+            {!!result?.penalty && result.lost && result.lost.length > 0 && (
+              <p className="note penalty-note">
+                {tr('suggest.penaltyNote', { roles: result.lost.map(r => needLabel(r.key, lang)).join(', '), n: result.penalty })}
+              </p>
+            )}
             {/* Raccomandazioni libere: quanto renderebbe al posto degli altri membri */}
             {item.alternatives && item.alternatives.length > 0 && (
               <p className="detail-alts">
