@@ -1,22 +1,8 @@
 /* Colonne */
-/* Schede sotto il team: una sezione alla volta, a tutta larghezza */
-.tabs { display: flex; gap: 4px; padding: 0 28px; margin-top: 14px; border-bottom: 1px solid var(--line-soft); }
-.tabs [role='tab'] {
-  gap: 8px;
-  padding: 10px 16px 11px;
-  margin-bottom: -1px;
-  border: 0;
-  border-bottom: 3px solid transparent;
-  border-radius: 0;
-  background: none;
-  font: 700 20px/1 var(--display);
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-.tabs [role='tab']:hover { color: var(--text); border-bottom-color: var(--line); }
-.tabs [role='tab'][aria-selected='true'] { color: var(--text); border-bottom-color: var(--accent); }
-.tabs [role='tab'][aria-disabled='true'] { color: var(--faint); opacity: 0.55; cursor: not-allowed; border-bottom-color: transparent; }
+/* Sezioni dell'app (nella barra laterale): base comune, la forma è in .tabs.vertical */
+.tabs { display: flex; }
+.tabs [role='tab'] { gap: 8px; border: 0; border-radius: 0; background: none; color: var(--muted); }
+.tabs [role='tab'][aria-disabled='true'] { color: var(--faint); opacity: 0.55; cursor: not-allowed; }
 .tab-count { font: 600 12px/1 var(--ui); letter-spacing: 0; text-transform: none; padding: 3px 8px; border-radius: 10px; background: var(--raised); color: var(--muted); }
 .tab-count.serious { background: var(--bad-bg); color: var(--bad); }
 .tab-count.minor, .tab-count.info { background: var(--accent-soft); color: var(--text); }
