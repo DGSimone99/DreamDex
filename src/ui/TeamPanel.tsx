@@ -4,7 +4,7 @@ import { battleAbility, battleName, battleSpecies, getSpecies, isMega, isSelecta
 import { formatLabel, isLegalIn, pokedexOf, teraAllowed } from '../engine/formats';
 import type { Format } from '../engine/format';
 import { formatRules } from '../engine/formatRules';
-import { detectRoles, roleLabel, roleShortLabel } from '../engine/roles';
+import { detectRoles, roleLabel } from '../engine/roles';
 import { cardRoles, weatherOf } from '../engine/archetype';
 import { measuredSubRoles, rolesList, type SubRoleValues } from '../engine/subRoles';
 import { conditionLabel, viaName } from '../engine/synergy';
@@ -179,7 +179,7 @@ function TeamSlot({ index, set, subRoles, data, format, warning: megaWarning, op
   const rules = formatRules(format.formatId);
   const shownRoles = cardRoles(set, rules, subRoles);
   const weather = weatherOf(set);
-  const roles = shownRoles.map(role => (role === 'weather' ? tr('card.weather') : roleShortLabel(role, lang)));
+  const roles = shownRoles.map(role => (role === 'weather' ? tr('card.weather') : roleLabel(role, lang)));
   // Nel tooltip tutti i ruoli per esteso: prima i due mostrati, poi gli altri
   const allRoles = [...shownRoles, ...(subRoles ? rolesList(subRoles) : detectRoles(set, rules)).filter(role => !shownRoles.includes(role))];
   const roleLabels = allRoles.map(role => (role === 'weather' && weather

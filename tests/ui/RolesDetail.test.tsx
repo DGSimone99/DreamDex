@@ -117,11 +117,11 @@ describe('Generale dei Ruoli', () => {
     expect(within(row('Hazard')).getAllByRole('cell')[0]).toHaveTextContent('100');
     expect(row('Hazard')).toHaveTextContent('Gliscor (Stealth Rock)');
     // Il gruppo del campo ha la sua riga, con la mossa di chi lo porta
-    expect(row('Setup del campo')).toHaveTextContent('Gliscor (Stealth Rock)');
-    expect(within(row('Rimozione hazard')).getAllByRole('cell')[0]).toHaveTextContent('0');
+    expect(row('Setup del Campo')).toHaveTextContent('Gliscor (Stealth Rock)');
+    expect(within(row('Rimozione Hazard')).getAllByRole('cell')[0]).toHaveTextContent('0');
     expect(row('Taunt')).toHaveTextContent('Zapdos (Taunt)');
     // L'essenziale mancante: il suo malus al posto del valore, e il motivo nella voce
-    expect(within(row('Minaccia offensiva')).getAllByRole('cell')[0]).toHaveTextContent('−2');
+    expect(within(row('Minaccia Offensiva')).getAllByRole('cell')[0]).toHaveTextContent('−2');
     expect(panel).toHaveTextContent('Nessun attaccante nel team (−2)');
     expect([...table.querySelectorAll('.ad-group th')].map(th => th.textContent)).toEqual(['Essenziali', 'Importanti', 'Minori']);
     // Le schede delle famiglie contano le voci coperte con la soglia dei bisogni (0,5): gli schermi a 0,45 no
@@ -165,7 +165,7 @@ describe('ruolo secondario nel dettaglio dei Ruoli', () => {
     const user = userEvent.setup();
     renderIt(<AreaDetail rating={rating} area="roles" onClose={() => {}} />);
     // Generale: chi porta la voce con la nota del secondario
-    const general = within(screen.getByRole('tabpanel')).getByRole('row', { name: /^Muro fisico/ });
+    const general = within(screen.getByRole('tabpanel')).getByRole('row', { name: /^Muro Fisico/ });
     expect(general).toHaveTextContent('Great Tusk (secondario · 50)');
     // Scheda Difesa: il valore accreditato (50, non 100) e il segno
     await user.click(screen.getByRole('tab', { name: /^Difesa/ }));

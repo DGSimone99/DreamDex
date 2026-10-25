@@ -176,9 +176,9 @@ describe('mancanze essenziali dei Ruoli tra le penalità', () => {
   it('team di 6 senza muro speciale in balance: −2 con testo', () => {
     const rating = rateTeam(physical, fixtureData)!;
     expect(rating.teamType).toBe('balance');
-    expect(rating.penalty.items).toContainEqual(expect.objectContaining({ text: 'Balance senza muro speciale', points: 2 }));
-    expect(rating.roles.failures).toContainEqual(expect.objectContaining({ text: 'Balance senza muro speciale', points: 2 }));
-    expect(rateTeam(physical, fixtureData, 'en')!.penalty.items).toContainEqual(expect.objectContaining({ text: 'Balance with no special wall', points: 2 }));
+    expect(rating.penalty.items).toContainEqual(expect.objectContaining({ text: 'Balance senza Muro Speciale', points: 2 }));
+    expect(rating.roles.failures).toContainEqual(expect.objectContaining({ text: 'Balance senza Muro Speciale', points: 2 }));
+    expect(rateTeam(physical, fixtureData, 'en')!.penalty.items).toContainEqual(expect.objectContaining({ text: 'Balance with no Special Wall', points: 2 }));
   });
 
   it('tutti fisici: −3, una volta sola', () => {

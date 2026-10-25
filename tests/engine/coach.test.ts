@@ -20,7 +20,7 @@ describe('coachTeam', () => {
     expect(coaching.strengths).toEqual([
       'Gestisce bene Poison, Bug, Rock',
       // Solo le voci essenziali dell'archetipo (balance: attaccanti e muri); la rimozione ora è importante
-      'Ruoli coperti: Minaccia offensiva, Muro fisico',
+      'Ruoli coperti: Minaccia Offensiva, Muro Fisico',
       'Colpisce super efficace 15/18 tipi',
     ]);
   });
@@ -40,8 +40,8 @@ describe('coachTeam', () => {
       'Debole a Ground: 1 Debole – 0 Resistono',
       'Debole a Ghost: 1 Debole – 0 Resistono',
       // Le voci essenziali mancanti, poi in una riga a parte le importanti (hazard e pivot ora sono importanti)
-      'Ruoli mancanti: Muro speciale',
-      'Ruoli importanti mancanti: Hazard, Pivot, Hazer/Phazer, Rimozione strumenti',
+      'Ruoli mancanti: Muro Speciale',
+      'Ruoli importanti mancanti: Hazard, Pivot, Hazer/Phazer, Rimozione Strumenti',
       'Nessuna mossa super efficace contro Water, Fighting',
     ]);
     const fire = coaching.problems.find(p => p.text.startsWith('Debole a Fire'))!;

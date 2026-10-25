@@ -13,7 +13,7 @@ import { fixtureData, tusk } from '../fixtures/data';
 
 const set = (species: string, moves: string[], item = '', ability = ''): TeamSet => ({ ...emptySet(species), moves, item, ...(ability ? { ability } : {}) });
 
-describe('Controllo velocità: solo con mosse che la controllano', () => {
+describe('Controllo Velocità: solo con mosse che la controllano', () => {
   const gardevoir = set('Gardevoir', ['Hyper Voice', 'Mystical Fire', 'Psyshock', 'Calm Mind'], 'Gardevoirite');
 
   it('essere veloci non è controllo velocità (Mega Gardevoir, Scarf)', () => {
@@ -39,7 +39,7 @@ describe('Controllo velocità: solo con mosse che la controllano', () => {
 
   it('il coaching non chiede controllo velocità a un team con membri veloci', () => {
     const texts = coachTeam([gardevoir, tusk], DEFAULT_FORMAT, fixtureData).problems.map(p => p.text).join(' | ');
-    expect(texts).not.toMatch(/Controllo velocità/);
+    expect(texts).not.toMatch(/Controllo Velocità/);
   });
 
   it("il voto conta la velocità di un membro veloce, nell'area Velocità (non più nei Ruoli)", () => {

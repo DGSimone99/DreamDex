@@ -200,7 +200,7 @@ describe("Velocità: l'ordine dei membri non conta", () => {
   });
 });
 
-describe('Velocità e Controllo velocità', () => {
+describe('Velocità e Controllo Velocità', () => {
   it('le condizioni del team sono il controllo, quelle del membro la sua velocità', () => {
     expect(CONTROL_CONDITIONS).toEqual(['web', 'trickroom', 'tailwind', 'slow']);
     const m = memberSpeed(pex, [pex, webber], noMeta)!;

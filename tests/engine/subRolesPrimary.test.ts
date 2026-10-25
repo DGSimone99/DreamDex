@@ -107,7 +107,7 @@ describe('ruolo principale e secondario', () => {
     expect(needs.values.physicalWall).toBe(0);
     expect(needs.essentialMissing).toContain('physicalWall');
     const area = teamRolesArea(team, fixtureData, 'it', needs);
-    expect(area.failures.map(f => `${f.text} (−${f.points})`)).toContain('Stall senza muro fisico (−2)');
+    expect(area.failures.map(f => `${f.text} (−${f.points})`)).toContain('Stall senza Muro Fisico (−2)');
     expect(area.members[0].primary).toBe('attack');
   });
 

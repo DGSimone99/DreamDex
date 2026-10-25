@@ -93,8 +93,8 @@ describe('tabella dei livelli per archetipo', () => {
     expect(area.failures.some(f => /hazard|setup/i.test(f.text))).toBe(false);
     expect(area.value).toBeLessThan(teamRolesArea(hyperOffense, fixtureData, 'it').value);
     // Il gruppo ha un'etichetta propria, nelle due lingue
-    expect(needLabel('fieldSetup', 'it')).toBe('Setup del campo');
-    expect(needLabel('fieldSetup', 'en')).toBe('Field setup');
+    expect(needLabel('fieldSetup', 'it')).toBe('Setup del Campo');
+    expect(needLabel('fieldSetup', 'en')).toBe('Field Setup');
   });
 
   it('"Chi la porta" del setup del campo nomina la mossa: Stealth Rock, schermi, Sticky Web', () => {
@@ -125,7 +125,7 @@ describe('tabella dei livelli per archetipo', () => {
 
   it("le voci: il gruppo degli attaccanti e poi i sotto-ruoli nell'ordine delle famiglie", () => {
     const [attack, defense, field, disruption] = [FAMILIES.attack, FAMILIES.defense, FAMILIES.field, FAMILIES.disruption];
-    // "Setup del campo" è un gruppo davanti agli hazard
+    // "Setup del Campo" è un gruppo davanti agli hazard
     expect(LEVEL_KEYS).toEqual(['attacker', ...attack, ...defense, 'fieldSetup', ...field, ...disruption]);
   });
 
@@ -171,9 +171,9 @@ describe('bisogni del team dai sotto-ruoli', () => {
   });
 
   it('etichette: il gruppo degli attaccanti e i sotto-ruoli', () => {
-    expect(needLabel('attacker', 'it')).toBe('Minaccia offensiva');
+    expect(needLabel('attacker', 'it')).toBe('Minaccia Offensiva');
     expect(needLabel('hazards', 'it')).toBe('Hazard');
-    expect(needLabel('physicalWall', 'en')).toBe('Physical wall');
+    expect(needLabel('physicalWall', 'en')).toBe('Physical Wall');
   });
 
   it('squilibrio: almeno 4 attaccanti tutti dello stesso tipo, non nello stall', () => {
@@ -193,7 +193,7 @@ describe('voto e coach seguono i livelli dell\'archetipo', () => {
     // Incompleto (balance): attaccanti e muri sono essenziali
     const team = [stall[3], stall[2]];
     const texts = coachTeam(team, DEFAULT_FORMAT, fixtureData).problems.map(p => p.text).join(' | ');
-    expect(texts).toMatch(/Ruoli mancanti:.*Minaccia offensiva/);
+    expect(texts).toMatch(/Ruoli mancanti:.*Minaccia Offensiva/);
   });
 
   it("l'area Ruoli del voto: base delle voci importanti ed extra delle minori dell'archetipo", () => {
@@ -209,7 +209,7 @@ describe('voto e coach seguono i livelli dell\'archetipo', () => {
     const team = [set('Toxapex', 'Black Sludge', 'Regenerator', ['Scald', 'Recover', 'Toxic Spikes']), set('Corviknight', 'Leftovers', 'Pressure', ['Brave Bird', 'Defog', 'U-turn', 'Roost'])];
     const texts = coachTeam(team, DEFAULT_FORMAT, fixtureData).problems.map(p => p.text).join(' | ');
     expect(texts).toMatch(/Ruoli mancanti/);
-    expect(texts).not.toMatch(/Priorità|Velocità|Controllo velocità/);
+    expect(texts).not.toMatch(/Priorità|Velocità|Controllo Velocità/);
   });
 });
 

@@ -36,7 +36,7 @@ describe('testo con tipi e Pokémon', () => {
   });
 
   it('parole comuni non diventano Pokémon', () => {
-    expect(parts('Ruoli coperti: Hazard, Pivot, Priorità, Controllo velocità').mons).toEqual([]);
+    expect(parts('Ruoli coperti: Hazard, Pivot, Priorità, Controllo Velocità').mons).toEqual([]);
   });
 
   it('il testo di ogni tipo ha contrasto almeno 6:1 sul pannello attuale (#1a1d2a)', () => {

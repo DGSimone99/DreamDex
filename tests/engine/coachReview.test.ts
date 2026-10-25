@@ -76,7 +76,7 @@ describe('vantaggi e svantaggi', () => {
       diff: { gains: { roles: ['removal' as const], covers: ['Normal' as const, 'Grass' as const, 'Ice' as const], resists: [] }, losses: { roles: ['hazards' as const], covers: [], resists: ['Dark' as const] }, lostResists: [] } };
     expect(describeSwap(swap)).toEqual({
       gain: 6,
-      pros: ['Rimozione hazard', 'Forte contro Normal, Grass, Ice'],
+      pros: ['Rimozione Hazard', 'Forte contro Normal, Grass, Ice'],
       cons: ['Hazard', 'Non più resistente a Dark'],
     });
   });
