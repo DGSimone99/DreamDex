@@ -140,6 +140,8 @@ export interface TeamRating {
   speed: TeamSpeed;
   /** Ruoli: voci importanti e minori dell'archetipo coi valori del team, e le mancanze essenziali (penalità). */
   roles: TeamRoles;
+  /** Bisogni del team (tipo, livelli e valori dei Ruoli) con cui si è calcolato il voto. */
+  needs: TeamNeeds;
 }
 
 
@@ -413,7 +415,7 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it', o
   const overall = Math.min(100, Math.max(0, base - penalty.total + bonus.total));
   return {
     base, teraCap: rules.teraBonusCap, penalty, bonus, power: power.members, overall, ...gradeFor(overall, lang), provisional: team.length < 6, areas, archetype, meta,
-    teamType: analysis.needs.archetype, trickRoom,
+    teamType: analysis.needs.archetype, trickRoom, needs: analysis.needs,
     weights: areaWeights, offense, defense, speed, roles,
   };
 }
