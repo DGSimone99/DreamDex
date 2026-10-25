@@ -70,7 +70,7 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
           <h3>
             <span>{item.species}</span>
             {banMark}
-            <StatsBadge species={item.species} item={set.item} />
+            <StatsBadge species={item.species} item={set.item} compare={replacing ? team[replaceIndex] : undefined} />
           </h3>
           <span className="types">{types.map(type => <TypeChip key={type} type={type} />)}</span>
           {item.tags.length > 0 && (

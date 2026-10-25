@@ -18,7 +18,7 @@ describe('anteprima del sostituto nel coaching', () => {
     const row = rows.find(r => name(r) && name(r) !== proposed)!;
     const other = name(row)!;
     await user.click(row.querySelector('.pick')!);
-    expect(within(screen.getByRole('complementary', { name: `Dettaglio di ${other}` })).getByText(/Magikarp/)).toBeInTheDocument();
+    expect(within(screen.getByRole('complementary', { name: `Dettaglio di ${other}` })).getByText(/Magikarp/, { ignore: '.stats-vs, script, style' })).toBeInTheDocument();
 
     expect(within(card()).getByText(other)).toBeInTheDocument();
     expect(within(card()).getByText('Selezionato')).toBeInTheDocument();

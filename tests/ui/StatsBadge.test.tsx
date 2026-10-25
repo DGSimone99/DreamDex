@@ -19,4 +19,14 @@ describe('badge Stats', () => {
     expect(tip).toHaveTextContent('Garchomp-Mega');
     expect(tip).toHaveTextContent('Totale700');
   });
+
+  it('in una sostituzione confronta ogni statistica con il membro che esce', () => {
+    renderIt(<StatsBadge species="Garchomp" compare={{ species: 'Gholdengo' }} />);
+    const tip = screen.getByRole('tooltip');
+    expect(tip).toHaveTextContent('rispetto a Gholdengo');
+    const rows = [...tip.querySelectorAll('.stats-row')].map(row => row.querySelector('.stats-diff')?.textContent);
+    // PS 108−87, Att 130−60, Dif 95−95, AttSp 80−133, DifSp 85−91, Vel 102−84
+    expect(rows).toEqual(['+21', '+70', '±0', '−53', '−6', '+18']);
+    expect(tip.querySelector('.stats-total .stats-diff')).toHaveTextContent('+50');
+  });
 });

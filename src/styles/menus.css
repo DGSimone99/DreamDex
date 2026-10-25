@@ -186,3 +186,10 @@
 .stats-row.top { --c: #3fd6c2; }
 .stats-total { display: flex; justify-content: space-between; margin-top: 4px; padding-top: 6px; border-top: 1px solid var(--line-soft); font-size: 12px; color: var(--muted); }
 .stats-total span:last-child { font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
+/* Confronto in una sostituzione: quanto guadagna o perde ogni statistica rispetto al membro che esce */
+.stats-vs { display: block; margin-bottom: 4px; font-size: 11px; color: var(--muted); }
+.stats-pop:has(.stats-vs) { min-width: 230px; }
+.stats-pop:has(.stats-vs) .stats-row { grid-template-columns: 30px 30px minmax(0, 1fr) 36px; }
+.stats-diff { text-align: right; font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--muted); }
+.stats-diff.up { color: var(--good); }
+.stats-diff.down { color: var(--bad); }

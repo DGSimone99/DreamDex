@@ -381,6 +381,7 @@ export const it: Record<keyof typeof en, string> = {
   'combobox.preset': "Alt",
   'combobox.more': "Altri {n}: scrivi per restringere",
   'stats.title': "Statistiche base",
+  'stats.vs': "rispetto a {species}",
   'stats.total': "Totale",
   'analysis.region': "Analisi",
   'analysis.weakness': "Debolezze difensive",
