@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { teamArchetype } from '../../src/engine/archetype';
+import { fitsTeamType, teamArchetype } from '../../src/engine/archetype';
 import { DEFAULT_RULES } from '../../src/engine/formatRules';
 import { rateTeam } from '../../src/engine/rating';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
@@ -141,5 +141,42 @@ describe('rifiniture del tipo scelto', () => {
     // In un HO gli attaccanti sono una voce che manca; in uno stall non contano
     expect(roles('hyperOffense').length).toBeGreaterThan(0);
     expect(roles('stall')).toEqual([]);
+  });
+});
+
+describe('il tipo di team guida Aggiungi e Migliora', () => {
+  const three = balance.slice(0, 3);
+  it('Aggiungi + Stall: solo candidati da stall', () => {
+    const report = { excluded: 0 };
+    const list = rankByTeamGain(pool(), three, null, fixtureData, 'it', true, 'stall', report);
+    expect(list.length).toBeGreaterThan(0);
+    expect(list.every(item => fitsTeamType(item.set, 'stall', DEFAULT_RULES))).toBe(true);
+    expect(report.excluded).toBeGreaterThan(0);
+  });
+
+  it('Aggiungi + Balance non esclude nessuno', () => {
+    expect(rankByTeamGain(pool(), three, null, fixtureData, 'it', true, 'balance')).toHaveLength(candidates.length);
+  });
+
+  it('Aggiungi + Stall con pochi muri disponibili', () => {
+    const attackers = pool().filter(c => !fitsTeamType(c.set, 'stall', DEFAULT_RULES));
+    const report = { excluded: 0 };
+    expect(rankByTeamGain(attackers, three, null, fixtureData, 'it', true, 'stall', report)).toEqual([]);
+    expect(report.excluded).toBe(attackers.length);
+  });
+
+  it('Migliora: i cambi che portano al tipo scelto vengono prima', () => {
+    const swaps = bestSwaps(stall, fixtureData, 'it', pool, { archetype: 'semiStall' });
+    const reaching = swaps.filter(s => s.teamGain.reaches);
+    expect(reaching.length).toBeGreaterThan(0);
+    const firstOther = swaps.findIndex(s => !s.teamGain.reaches);
+    if (firstOther >= 0) expect(swaps.slice(firstOther).some(s => s.teamGain.reaches)).toBe(false);
+    for (const s of reaching) expect(teamArchetype(withCandidate(stall, s.set, s.replaces), DEFAULT_RULES)?.archetype).toBe('semiStall');
+  });
+
+  it('Migliora: team già del tipo, i cambi che lo fanno uscire restano esclusi', () => {
+    for (const s of bestSwaps(stall, fixtureData, 'it', pool, { archetype: 'stall' })) {
+      expect(teamArchetype(withCandidate(stall, s.set, s.replaces), DEFAULT_RULES)?.archetype).toBe('stall');
+    }
   });
 });

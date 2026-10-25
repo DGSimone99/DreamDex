@@ -1,5 +1,5 @@
 import type { Lang } from '../i18n';
-import { fitsArchetype, teamArchetype, type Archetype } from './archetype';
+import { fitsArchetype, fitsTeamType, teamArchetype, type Archetype } from './archetype';
 import { isPassive } from './roles';
 import type { EngineData } from './data';
 import { battleSpecies } from './dex';
@@ -20,6 +20,8 @@ export interface TeamGain {
   penalty?: number;
   /** Tipi a cui nessuno resiste più dopo il cambio. */
   lostResists?: TypeName[];
+  /** Con un tipo scelto e un team di 6 non ancora di quel tipo: il cambio lo porta a quel tipo. */
+  reaches?: boolean;
 }
 
 /**
@@ -37,6 +39,8 @@ function swapEvaluator(team: TeamSet[], data: EngineData, lang: Lang, archetype:
    * nel semi-stall un muro al posto di un muro, negli offense un attaccante adatto; il balance non chiede niente.
    */
   const fits = (candidate: TeamSet, original: TeamSet | null): boolean => {
+    // Aggiungendo a un team incompleto si cercano Pokémon che aiutano a costruire il tipo scelto
+    if (archetype && !original && team.length < 6) return fitsTeamType(candidate, archetype, rules);
     if (!guard) return true;
     if (archetype === 'stall') return fitsArchetype(candidate, 'stall', rules);
     if (archetype === 'semiStall') return !original || !isPassive(original, rules) || isPassive(candidate, rules);
@@ -56,6 +60,7 @@ function swapEvaluator(team: TeamSet[], data: EngineData, lang: Lang, archetype:
         grade: rating.grade, overall: rating.overall, gain: rating.overall - before.overall,
         ...(lost ? { lost, penalty: penalize ? rolePenalty(lost) : 0 } : {}),
         lostResists: lostResistances(team, after),
+        ...(archetype && !guard && after.length === 6 ? { reaches: teamArchetype(after, rules)?.archetype === archetype } : {}),
       },
     };
   };
@@ -69,6 +74,10 @@ export interface SwapReport {
 
 /** Chiave dell'ordine: il voto dopo il cambio, meno la penalità per le voci perse. */
 export const rankKey = (gain: TeamGain | undefined) => (gain ? gain.overall - (gain.penalty ?? 0) : -1);
+
+/** Ordine fra due cambi: prima chi porta il team al tipo scelto, poi la chiave d'ordine più alta. */
+export const compareGains = (a: TeamGain | undefined, b: TeamGain | undefined): number =>
+  Number(!!b?.reaches) - Number(!!a?.reaches) || rankKey(b) - rankKey(a);
 
 /** Il team col candidato: aggiunto in fondo, o al posto del membro `replaceIndex`. */
 export function withCandidate(team: TeamSet[], set: TeamSet, replaceIndex: number | null): TeamSet[] {
@@ -97,7 +106,7 @@ export function rankByTeamGain<T extends { set: TeamSet; score: number }>(
     return result ? [{ ...item, teamGain: result.gain }] : [item];
   });
   if (!sort) return rated;
-  return rated.sort((a, b) => rankKey(b.teamGain) - rankKey(a.teamGain) || b.score - a.score);
+  return rated.sort((a, b) => compareGains(a.teamGain, b.teamGain) || b.score - a.score);
 }
 
 /** Un altro membro che il candidato potrebbe sostituire, e quanto cambierebbe il voto. */
@@ -140,7 +149,7 @@ export function bestSwaps<T extends { species: string; set: TeamSet; score: numb
       const option = { index, gain: result.gain.gain };
       const current = best.get(candidate.species);
       // Fra gli slot possibili vince quello con la chiave d'ordine più alta (voto meno penalità)
-      if (!current || rankKey(result.gain) > rankKey(current.teamGain)) {
+      if (!current || compareGains(result.gain, current.teamGain) < 0) {
         const alternatives = current ? [{ index: current.replaces, gain: current.teamGain.gain }, ...current.alternatives] : [];
         best.set(candidate.species, { ...candidate, teamGain: result.gain, replaces: index, alternatives });
       } else {
@@ -151,5 +160,5 @@ export function bestSwaps<T extends { species: string; set: TeamSet; score: numb
   return [...best.values()]
     .filter(swap => !similar || swap.teamGain.gain > 0)
     .map(swap => ({ ...swap, alternatives: [...swap.alternatives].sort((a, b) => b.gain - a.gain) }))
-    .sort((a, b) => rankKey(b.teamGain) - rankKey(a.teamGain) || b.score - a.score);
+    .sort((a, b) => compareGains(a.teamGain, b.teamGain) || b.score - a.score);
 }
