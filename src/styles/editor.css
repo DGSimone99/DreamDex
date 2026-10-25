@@ -35,7 +35,7 @@
 .editor-top { flex: 1 0 100%; display: flex; align-items: center; gap: 18px; min-width: 0; }
 .editor-actions { display: flex; gap: 8px; margin-left: auto; }
 /* Incolla set: riquadro sotto i pulsanti, sopra l'editor */
-@media (max-width: 1099px) { .drawer { position: relative; } }
+@media (max-width: 1099px) { .drawer { position: relative; grid-column: 1 / -1; grid-row: 3; } }
 .paste-panel {
   position: absolute;
   z-index: 30;

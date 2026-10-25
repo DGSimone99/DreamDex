@@ -27,10 +27,12 @@
 .rail-label { margin: 0; font: 600 11px/1 var(--ui); letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); }
 .rail-field select { width: 100%; font-weight: 500; }
 .rail .popover > summary { width: 100%; justify-content: space-between; font-size: 13px; }
-.rail .popover[open] > :not(summary) { left: calc(100% + 10px); top: 0; }
+@media (min-width: 1100px) {
+  .rail .popover[open] > :not(summary) { left: calc(100% + 10px); top: 0; }
+  .rail-actions .popover[open] > :not(summary) { top: auto; bottom: 0; }
+}
 .rail-sections { flex: 1; min-height: 0; overflow-y: auto; }
 .rail-actions { display: flex; flex-direction: column; gap: 6px; padding: 0 16px; }
-.rail-actions .popover[open] > :not(summary) { top: auto; bottom: 0; }
 .rail-actions .popover > summary, .rail-settings { width: 100%; justify-content: flex-start; }
 .rail-foot { display: flex; flex-direction: column; gap: 8px; padding: 0 16px; }
 .rail-foot .lang-switch { align-self: flex-start; }

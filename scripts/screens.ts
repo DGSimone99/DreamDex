@@ -107,10 +107,17 @@ for (const [w, h] of sizes) {
     const result = state.run ? await state.run(page) : true;
     if (result !== true) { console.log(`skip ${name} @${w}x${h}: ${result === false ? 'element not found' : result}`); await page.close(); continue; }
     await wait(800);
-    const scroll = await page.evaluate(() => document.scrollingElement!.scrollHeight - window.innerHeight);
+    // pageScroll: quanto scorre la pagina; clipped: quanto della colonna principale resta tagliato (overflow nascosto)
+    const { scroll, clipped } = await page.evaluate(() => {
+      const main = document.querySelector('.main');
+      return {
+        scroll: document.scrollingElement!.scrollHeight - window.innerHeight,
+        clipped: main ? main.scrollHeight - main.clientHeight : 0,
+      };
+    });
     const file = join(out, `${w}x${h}-${name}.png`);
     await page.screenshot({ path: file });
-    console.log(`${file} pageScroll=${scroll}`);
+    console.log(`${file} pageScroll=${scroll} clipped=${clipped}`);
     await page.close();
   }
 }

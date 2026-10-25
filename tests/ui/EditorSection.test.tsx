@@ -67,4 +67,16 @@ describe("L'editor del set prende il posto della sezione", () => {
     expect(cards(container)[1].parentElement).toHaveAttribute('open');
     expect(cards(container)[0].parentElement).not.toHaveAttribute('open');
   });
+
+  it("se il team si accorcia sotto il membro aperto (import), l'editor si chiude e la sezione torna", async () => {
+    const user = userEvent.setup();
+    const { container } = renderTeam();
+    await user.click(cards(container)[2]);
+    expect(workspace(container)).toHaveClass('editing');
+    await user.click(screen.getByText('Import / Export'));
+    await user.type(screen.getByLabelText('Testo Showdown'), 'Great Tusk{Enter}Ability: Protosynthesis{Enter}- Earthquake');
+    await user.click(screen.getByRole('button', { name: 'Importa' }));
+    expect(cards(container)).toHaveLength(1);
+    expect(workspace(container)).not.toHaveClass('editing');
+  });
 });

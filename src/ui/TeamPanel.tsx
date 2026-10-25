@@ -338,6 +338,8 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   useEffect(() => { setEditing(openIndex); onOpenChange?.(openIndex); }, [openIndex]);
   useEffect(() => () => setEditing(null), []);
+  // Il team si accorcia da fuori (import, Annulla, team salvato): un membro aperto che non c'è più si chiude
+  useEffect(() => { if (openIndex !== null && openIndex >= team.length) setOpenIndex(null); }, [team.length, openIndex]);
   const lastClose = useRef(closeSignal);
   useEffect(() => {
     if (closeSignal === lastClose.current) return;
