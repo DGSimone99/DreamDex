@@ -75,6 +75,8 @@ export function MySetsField({ set, onApply }: { set: TeamSet; onApply: (saved: T
         <button type="button" className={`save-set${overwrite ? ' overwrite' : ''}${saved ? ' saved' : ''}`} aria-label={saveLabel} disabled={!canSave}
           title={!canSave && full && !saved ? t('editor.saveSetFull') : saveLabel} onClick={save}>
           <Icon name={saved ? 'check' : overwrite ? 'overwrite' : 'save'} />
+          {/* Sovrascrivere è un momento da controllare: lo dice anche a parole */}
+          {overwrite && <span className="overwrite-label">{t('editor.overwrite')}</span>}
         </button>
       </div>
       {open && mine.length > 0 && (

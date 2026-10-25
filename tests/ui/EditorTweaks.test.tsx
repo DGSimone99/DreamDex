@@ -48,13 +48,13 @@ describe('editor del set', () => {
     expect(items).toEqual(all);
   });
 
-  it('linguette Set e Danni: Danni è in arrivo', async () => {
+  it('niente linguetta Danni finché il calcolo non esiste; preset e I miei set in due gruppi; Custom Skillset nel riquadro Set', async () => {
     const user = userEvent.setup();
     const { container } = renderTeam();
     const slot = await openFirst(user, container);
-    const tabs = within(slot).getByRole('tablist', { name: 'Editor' });
-    expect(within(tabs).getByRole('tab', { name: 'Set' })).toHaveAttribute('aria-selected', 'true');
-    expect(within(tabs).getByRole('tab', { name: /Danni/ })).toHaveAttribute('aria-disabled', 'true');
+    expect(within(slot).queryByRole('tab', { name: /Danni/ })).toBeNull();
+    expect(slot.querySelectorAll('.editor-head .head-group')).toHaveLength(2);
+    expect(within(slot).getByRole('group', { name: 'Set' })).toContainElement(within(slot).getByRole('checkbox', { name: /Custom Skillset/ }));
   });
 
   it('I miei set: salva il set attuale, lo riapplica, al massimo 5 per specie', async () => {
