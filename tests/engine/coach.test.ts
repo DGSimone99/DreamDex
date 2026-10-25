@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { coachTeam, describeSwap } from '../../src/engine/coach';
+import { coachTeam, describeSwap, rankedChanges } from '../../src/engine/coach';
+import { topReason } from '../../src/engine/explain';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
 import { emptySet, mostCommonSet, type TeamSet } from '../../src/engine/sets';
 import { fixtureData, fixtureStats, gholdengo, tusk } from '../fixtures/data';
@@ -114,5 +115,32 @@ describe('coachTeam', () => {
     expect(noData.problems.every(p => p.fixes.length === 0)).toBe(true);
     expect(noData.problems.some(p => p.text.includes('check'))).toBe(false);
     expect(noData.strengths.some(s => s.startsWith('Ferma'))).toBe(false);
+  });
+});
+
+describe('pro e contro pesati', () => {
+  const diff = {
+    gains: { roles: ['pivot' as const], covers: [], resists: ['Fairy' as const] },
+    losses: { roles: ['hazards' as const], covers: ['Steel' as const], resists: [] },
+    lostResists: [],
+  };
+  it("il bonus principale è quello dell'area che sale di più", () => {
+    const { pros } = rankedChanges(diff, { roles: 1, defense: 5 }, 'it');
+    expect(pros[0].text).toMatch(/Folletto|Fairy/);
+    expect(pros[0].points).toBe(5);
+    expect(pros[1].points).toBe(1);
+  });
+  it("il malus principale è quello dell'area che scende di più", () => {
+    const { cons } = rankedChanges(diff, { roles: -1, strength: -4 }, 'it');
+    expect(cons[0].points).toBe(-4);
+    expect(cons[1].points).toBe(-1);
+  });
+  it('un pro in un\'area che scende vale 0', () => {
+    const { pros } = rankedChanges(diff, { roles: -2, defense: 3 }, 'it');
+    expect(pros.find(p => !/Folletto|Fairy/.test(p.text))?.points).toBe(0);
+  });
+  it('topReason prende il peso più alto', () => {
+    expect(topReason([{ component: 'defense', weight: 1, text: 'a' }, { component: 'offense', weight: 3, text: 'b' }] as never)?.text).toBe('b');
+    expect(topReason([])).toBeUndefined();
   });
 });

@@ -67,3 +67,20 @@ describe('raccomandazioni libere', () => {
     expect(bestSwaps(team, fixtureData, 'it', candidates).every(s => !names.includes(s.species))).toBe(true);
   });
 });
+
+describe('punti per area', () => {
+  const team = [
+    { ...emptySet('Great Tusk'), ability: 'Protosynthesis', moves: ['Headlong Rush', 'Rapid Spin', 'Close Combat', 'Ice Spinner'] },
+    { ...emptySet('Gholdengo'), ability: 'Good as Gold', moves: ['Make It Rain', 'Shadow Ball', 'Nasty Plot', 'Recover'] },
+  ];
+  // Le aree spiegano il voto base; penalità e bonus (ridondanze, meteo, Tera) restano fuori
+  it('areaPoints somma circa al cambio del voto base', () => {
+    const ranked = rankByTeamGain(suggest(team, DEFAULT_FORMAT, fixtureData, 10), team, null, fixtureData, 'it');
+    const before = rateTeam(team, fixtureData)!.base;
+    expect(ranked.length).toBeGreaterThan(0);
+    for (const r of ranked) {
+      const points = Object.values(r.teamGain!.areaPoints ?? {}).reduce((a, b) => a + b, 0);
+      expect(Math.abs(points - (rateTeam([...team, r.set], fixtureData)!.base - before))).toBeLessThanOrEqual(1);
+    }
+  });
+});
