@@ -110,22 +110,35 @@ describe('Valutazione team', () => {
     await user.click(help);
     expect(panel).toHaveAttribute('open');
     const dialog = screen.getByRole('dialog', { name: 'Come funziona il voto' });
-    // A sinistra gli argomenti: come funziona, le aree, bonus e penalità
+    // A sinistra gli argomenti: come funziona e un tab per tipo di team
     const topics = within(dialog).getAllByRole('tab').map(tab => tab.textContent);
-    expect(topics).toEqual(['Come funziona', 'Difesa', 'Offesa', 'Ruoli', 'Velocità', 'Bonus e penalità']);
-    // Un team incompleto si giudica come Balance: la sua riga è evidenziata
-    expect(within(dialog).getByText('Il tuo team è giudicato come Balance')).toBeInTheDocument();
-    expect(within(dialog).getByRole('row', { current: true })).toHaveTextContent(/^Balance/);
-    await user.click(within(dialog).getByRole('tab', { name: 'Difesa' }));
-    expect(within(dialog).getByRole('tabpanel')).toHaveTextContent('Metà robustezza e metà coverage difensiva');
-    // Ruoli: i livelli (essenziale solo malus, importante ±, minore solo extra), le quattro famiglie e il Disturbo
-    await user.click(within(dialog).getByRole('tab', { name: 'Ruoli' }));
-    const roles = within(dialog).getByRole('tabpanel');
-    expect(roles).toHaveTextContent('Essenziale: solo malus');
-    expect(roles).toHaveTextContent('Minore: solo un extra');
-    expect(roles).toHaveTextContent(/Attacco.*Difesa.*Campo.*Disturbo/);
-    expect(roles).toHaveTextContent('Taunt ed Encore valgono la quota del meta');
-    expect(roles).not.toHaveTextContent(/interruttore|misurati anche/i);
+    expect(topics).toEqual(['Come funziona', 'Hyper Offense', 'Bulky Offense', 'Balance', 'Semi-stall', 'Stall']);
+    // Un team incompleto si giudica come Balance: il suo tab è aperto per primo e segnato come il tipo attuale
+    const balanceTab = within(dialog).getByRole('tab', { name: 'Balance' });
+    expect(balanceTab).toHaveAttribute('aria-selected', 'true');
+    expect(balanceTab).toHaveAttribute('aria-current', 'true');
+    expect(within(dialog).getAllByRole('tab').filter(tab => tab.getAttribute('aria-current') === 'true')).toHaveLength(1);
+    const balance = within(dialog).getByRole('tabpanel');
+    expect(balance).toHaveTextContent('Il tuo team è giudicato come Balance');
+    expect(balance).toHaveTextContent('Un team incompleto si giudica come Balance');
+    // I livelli vengono dalla tabella del codice, non dai testi
+    expect(balance).toHaveTextContent(/Essenziali.*Muro fisico/);
+    // Stall: Velocità allo 0% e nota grigia; Recupero essenziale
+    await user.click(within(dialog).getByRole('tab', { name: 'Stall' }));
+    const stall = within(dialog).getByRole('tabpanel');
+    expect(stall).toHaveTextContent('Velocità0%');
+    expect(stall).toHaveTextContent('Non conta nello Stall');
+    expect(stall).toHaveTextContent(/Essenziali.*Recupero.*Importanti/);
+    expect(stall).not.toHaveTextContent('Il tuo team è giudicato come');
+    // Come funziona: Bonus/Malus, lettere dalle soglie, nessun testo delle vecchie aree
+    await user.click(within(dialog).getByRole('tab', { name: 'Come funziona' }));
+    const general = within(dialog).getByRole('tabpanel');
+    expect(general).toHaveTextContent('Bonus/Malus');
+    expect(general).toHaveTextContent('S da 90, A da 82, B da 70, C da 60');
+    for (const tab of within(dialog).getAllByRole('tab')) {
+      await user.click(tab);
+      expect(within(dialog).getByRole('tabpanel')).not.toHaveTextContent('Debolezze condivise');
+    }
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(help).toHaveFocus();

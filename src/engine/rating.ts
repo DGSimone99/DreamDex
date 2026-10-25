@@ -69,7 +69,7 @@ export const TOP_THREATS = 0.5;
  * Soglie tarate sui dati reali (2026-09, 1630+): team ben costruiti 88–90,
  * team casuali di Pokémon del meta mediana 74, team con membri inutili sotto 60.
  */
-const GRADES: { min: number; grade: 'S' | 'A' | 'B' | 'C' | 'D' }[] = [
+export const GRADES: { min: number; grade: 'S' | 'A' | 'B' | 'C' | 'D' }[] = [
   { min: 90, grade: 'S' },
   { min: 82, grade: 'A' },
   { min: 70, grade: 'B' },
