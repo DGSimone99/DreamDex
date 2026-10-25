@@ -22,4 +22,12 @@ describe('App: struttura', () => {
     await user.selectOptions(screen.getByLabelText('Generazione massima'), '4');
     expect(screen.getByLabelText('Generazione massima')).toHaveValue('4');
   });
+
+  it('la palette segue il gioco del formato', async () => {
+    const user = userEvent.setup();
+    render(<App initialLang="it" data={fixtureData} />);
+    expect(document.documentElement.dataset.palette).toBe('swsh');
+    await user.selectOptions(screen.getByLabelText('Pokédex'), 'gen9');
+    expect(document.documentElement.dataset.palette).toBe('sv');
+  });
 });

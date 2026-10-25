@@ -1,0 +1,188 @@
+/* Menu a tendina dell'editor (strumenti, abilità, mosse) */
+.combobox { position: relative; }
+.combobox input { width: 100%; padding-right: 26px; }
+.combobox input[readonly] { cursor: pointer; }
+.combobox::after {
+  content: '';
+  position: absolute;
+  right: 11px;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  border-right: 2px solid var(--faint);
+  border-bottom: 2px solid var(--faint);
+  transform: translateY(-70%) rotate(45deg);
+  pointer-events: none;
+  transition: transform 0.2s;
+}
+.combobox.open::after { transform: translateY(-30%) rotate(225deg); }
+.combobox [role='listbox'] {
+  position: absolute;
+  z-index: 50;
+  top: calc(100% + 4px);
+  left: 0;
+  width: max(100%, 380px);
+  max-height: 340px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  background: var(--ground);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+  text-transform: none;
+  letter-spacing: 0;
+  animation: tip 0.12s var(--ease);
+}
+/* Colonna destra: il menu si apre verso sinistra per non uscire dal pannello */
+.editor-group > .field:nth-child(odd) .combobox [role='listbox'] { left: auto; right: 0; }
+/* Mosse in fondo all'editor: il menu si apre verso l'alto e resta nella schermata */
+.editor-group.moves .combobox [role='listbox'] { top: auto; bottom: calc(100% + 4px); }
+.combobox [role='option'] { margin: 0; padding: 8px 10px; cursor: pointer; border-bottom: 1px solid var(--line-soft); transition: background 0.1s; }
+.combobox [role='option']:last-of-type { border-bottom: 0; }
+.combobox [role='option'].active { background: var(--raised); border-radius: 3px; border-bottom-color: transparent; }
+.combobox [role='option'][aria-disabled='true'] { opacity: 0.38; cursor: not-allowed; }
+.combobox [role='option'][aria-disabled='true'].active { background: none; }
+.combobox [role='option'][aria-selected='true'] { background: var(--accent-soft); border-radius: 3px; border-bottom-color: transparent; }
+/* Valore scelto mostrato con stile (chip del tipo, effetti della natura) */
+.combobox.has-display input { color: transparent; caret-color: transparent; }
+.combobox-display {
+  position: absolute;
+  inset: 1px 28px 1px 11px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--text);
+  text-transform: none;
+  letter-spacing: 0;
+}
+.combobox .option-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.combobox .option-head strong { font-size: 14px; font-weight: 600; color: var(--text); }
+.combobox [role='option'] small {
+  margin-top: 2px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--faint);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.combobox [role='option'].active small { color: var(--muted); }
+.combobox .empty { margin: 0; padding: 8px; font-size: 13px; font-weight: 400; color: var(--faint); }
+/* Più usati: in cima alla tendina, filo e alone dorato, quota d'uso a destra */
+.combobox .group-head {
+  margin: 0;
+  padding: 8px 10px 4px;
+  font: 600 11px/1 var(--display);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+.combobox .group-head.common-head { color: var(--accent); padding-top: 6px; }
+.combobox .group-head:not(.common-head) { margin-top: 4px; border-top: 1px solid var(--line); padding-top: 10px; }
+.combobox [role='option'].common {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 13%, transparent), color-mix(in srgb, var(--accent) 2%, transparent) 70%);
+  box-shadow: inset 2px 0 0 var(--accent);
+  border-bottom-color: color-mix(in srgb, var(--accent) 12%, transparent);
+  border-radius: 0 3px 3px 0;
+}
+.combobox [role='option'].common.active { background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 22%, transparent), var(--raised) 70%); }
+.combobox [role='option'].common[aria-selected='true'] { background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 22%, transparent), var(--accent-soft) 70%); }
+.combobox .common-share {
+  margin-left: auto;
+  flex: none;
+  min-width: 34px;
+  text-align: right;
+  font: 600 13px/1 var(--display);
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+}
+.combobox .option-detail + .common-share { margin-left: 0; }
+.field:has(.combobox.open)::after { display: none; }
+.type-name, .move-name { font-weight: 600; }
+
+/* Tendine native (formato, filtri…) con lo stesso aspetto del menu dell'editor, dove il browser lo permette */
+@supports (appearance: base-select) {
+  select, ::picker(select) { appearance: base-select; }
+  select { display: flex; align-items: center; justify-content: space-between; gap: 8px; cursor: pointer; }
+  select::picker-icon {
+    content: '';
+    width: 6px;
+    height: 6px;
+    margin-right: 2px;
+    border-right: 2px solid var(--faint);
+    border-bottom: 2px solid var(--faint);
+    transform: translateY(-2px) rotate(45deg);
+    transition: transform 0.2s;
+  }
+  select:open::picker-icon { transform: translateY(2px) rotate(225deg); }
+  ::picker(select) {
+    margin-top: 4px;
+    padding: 4px;
+    background: var(--ground);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+    max-height: 340px;
+  }
+  select option { padding: 8px 10px; font-size: 14px; color: var(--text); border-bottom: 1px solid var(--line-soft); cursor: pointer; }
+  select option:last-child { border-bottom: 0; }
+  select option:hover, select option:focus-visible { background: var(--raised); border-radius: 3px; outline: none; }
+  select option:checked { font-weight: 600; background: var(--accent-soft); border-radius: 3px; }
+  select option::checkmark { display: none; }
+}
+
+/* Badge "Stats" con il tooltip delle statistiche base */
+.stats-badge {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  padding: 0 6px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  font: 600 11px/1.5 var(--ui);
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: var(--muted);
+  cursor: help;
+}
+.stats-badge:hover, .stats-badge:focus-visible { color: var(--text); border-color: var(--accent); outline: none; }
+.stats-pop {
+  position: absolute;
+  z-index: 60;
+  top: calc(100% + 8px);
+  left: -6px;
+  width: 220px;
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  padding: 12px 14px;
+  background: var(--ground);
+  border: 1px solid var(--line);
+  border-top: 2px solid var(--accent);
+  border-radius: 4px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+  color: var(--text);
+  cursor: default;
+}
+.stats-badge:hover .stats-pop, .stats-badge:focus-visible .stats-pop { display: flex; animation: tip 0.15s var(--ease); }
+.stats-title { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 3px; font: 700 13px/1 var(--display); text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+.stats-title small { display: inline; font: 500 11px var(--ui); text-transform: none; letter-spacing: 0; color: var(--faint); }
+.stats-row { display: grid; grid-template-columns: 30px 30px minmax(0, 1fr); align-items: center; gap: 8px; font-size: 12px; }
+.stats-name { color: var(--muted); font-weight: 600; }
+.stats-value { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+.stats-bar { height: 7px; border-radius: 2px; background: var(--line-soft); overflow: hidden; }
+.stats-bar > span { display: block; height: 100%; border-radius: 2px; background: var(--c); }
+.stats-row.low { --c: #ff6b6b; }
+.stats-row.mid { --c: #ffa24c; }
+.stats-row.ok { --c: #ffd34d; }
+.stats-row.good { --c: #8be26b; }
+.stats-row.top { --c: #3fd6c2; }
+.stats-total { display: flex; justify-content: space-between; margin-top: 4px; padding-top: 6px; border-top: 1px solid var(--line-soft); font-size: 12px; color: var(--muted); }
+.stats-total span:last-child { font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }

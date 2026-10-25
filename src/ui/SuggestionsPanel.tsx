@@ -104,7 +104,7 @@ function ListMarks({ set, lists }: { set: TeamSet; lists?: EffectiveLists }) {
   if (!banned && !favorite) return null;
   return (
     <span className={`list-mark ${banned ? 'ban' : 'fav'}`} role="img" aria-label={tr(banned ? 'lists.bannedMark' : 'lists.favoriteMark')}
-      title={tr(banned ? 'lists.bannedMark' : 'lists.favoriteMark')}>{banned ? '⊘' : '♥'}</span>
+      title={tr(banned ? 'lists.bannedMark' : 'lists.favoriteMark')}><Icon name={banned ? 'ban' : 'heart'} /></span>
   );
 }
 
@@ -536,8 +536,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
 
   return (
     <section aria-label={tr('suggest.title')} className="suggestions-panel">
-      <h2>{title}</h2>
-      <div className="modes">
+      <div className="toolbar">
         <div className="segmented" role="group" aria-label={tr('suggest.mode')}>
           <button type="button" aria-pressed={view === 'add'} disabled={team.length >= 6} onClick={() => chooseMode('add')}>
             <Icon name="plus" />{tr('suggest.addMode')}
@@ -547,8 +546,11 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
           <button type="button" aria-pressed={view !== 'add' && mode === 'similar'} disabled={team.length < 2 && !replacing}
             onClick={() => chooseMode('similar')}>{tr('suggest.similar')}</button>
         </div>
-        {view !== 'add' && (
-          // Chi sostituire: tutti (il motore sceglie per ogni candidato) o un membro preciso
+        {search}
+      </div>
+      {view !== 'add' && (
+        <div className="subbar">
+          {/* Chi sostituire: tutti (il motore sceglie per ogni candidato) o un membro preciso */}
           <div className="targets" role="group" aria-label={tr('suggest.target')}>
             <span className="targets-label" aria-hidden="true">{tr('suggest.targetLabel')}</span>
             <button type="button" aria-pressed={view === 'all'} onClick={() => { setScope('all'); onCancelReplace(); }}>{tr('suggest.targetAll')}</button>
@@ -563,9 +565,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
               </button>
             ))}
           </div>
-        )}
-        {view !== 'add' && (
-          // Tipo di team con cui giudicare i cambi (Nessuno = solo il voto più alto)
+          {/* Tipo di team con cui giudicare i cambi (Nessuno = solo il voto più alto) */}
           <div className="targets team-types" role="group" aria-label={tr('suggest.teamType')}>
             <span className="targets-label" aria-hidden="true">{tr('suggest.teamTypeLabel')}</span>
             {([null, ...TEAM_TYPES] as (Archetype | null)[]).map(type => (
@@ -575,12 +575,11 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
               </button>
             ))}
           </div>
-        )}
-      </div>
-      {search}
+        </div>
+      )}
       {notes}
       <div className={`picker${!full ? ' has-detail' : ''}`}>
-        <div className="picker-list">{body}</div>
+        <div className="picker-list"><h2 className="box-head">{title}</h2>{body}</div>
         {/* Senza candidati resta lo scheletro del dettaglio: la pagina non si accorcia e non salta in alto */}
         {!selected && !full && (
           <aside className="detail detail-empty" aria-hidden="true">

@@ -1,6 +1,7 @@
 import { render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { Typed } from '../../src/ui/TypeText';
+import { Typed, typeTextColor } from '../../src/ui/TypeText';
+import { TYPES } from '../../src/engine/types';
 
 const parts = (text: string) => {
   const { container } = render(<p><Typed text={text} /></p>);
@@ -36,5 +37,18 @@ describe('testo con tipi e Pokémon', () => {
 
   it('parole comuni non diventano Pokémon', () => {
     expect(parts('Ruoli coperti: Hazard, Pivot, Priorità, Controllo velocità').mons).toEqual([]);
+  });
+
+  it('il testo di ogni tipo ha contrasto almeno 6:1 sul pannello attuale (#1a1d2a)', () => {
+    const lum = (rgb: number[]) => {
+      const [r, g, b] = rgb.map(c => c / 255).map(c => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
+      return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    };
+    const panel = lum([0x1a, 0x1d, 0x2a]);
+    for (const type of TYPES) {
+      const color = typeTextColor(type)!;
+      const rgb = color === '#ffffff' ? [255, 255, 255] : color.match(/\d+/g)!.map(Number);
+      expect((lum(rgb) + 0.05) / (panel + 0.05), type).toBeGreaterThanOrEqual(6);
+    }
   });
 });

@@ -3,6 +3,7 @@ import { formatOptions } from './engine/formats';
 import type { TeamSet } from './engine/sets';
 import { isLang, type Lang } from './i18n';
 import { EMPTY_LISTS, sanitizeLists, type UserLists } from './engine/lists';
+import { PALETTES, type PaletteSetting } from './ui/theme';
 
 export interface SavedTeam {
   name: string;
@@ -163,5 +164,27 @@ export function saveTab(tab: SavedTab, storage: Storage | undefined = defaultSto
     storage?.setItem(TAB_KEY, tab);
   } catch {
     // Archivio non disponibile: la scheda vale solo per questa sessione
+  }
+}
+
+const PALETTE_KEY = 'dreamdex.palette';
+const PALETTE_SETTINGS: readonly PaletteSetting[] = ['auto', ...PALETTES];
+
+/** Palette scelta nelle impostazioni (segue il gioco o fissa), o null. */
+export function loadPalette(storage: Storage | undefined = defaultStorage()): PaletteSetting | null {
+  try {
+    const raw = storage?.getItem(PALETTE_KEY);
+    const parsed: unknown = raw ? JSON.parse(raw) : null;
+    return PALETTE_SETTINGS.includes(parsed as PaletteSetting) ? parsed as PaletteSetting : null;
+  } catch {
+    return null;
+  }
+}
+
+export function savePalette(setting: PaletteSetting, storage: Storage | undefined = defaultStorage()): void {
+  try {
+    storage?.setItem(PALETTE_KEY, JSON.stringify(setting));
+  } catch {
+    // Archivio non disponibile: la scelta vale solo per questa sessione
   }
 }

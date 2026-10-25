@@ -122,12 +122,25 @@ export function GradeBadge({ rating }: { rating: TeamRating | null }) {
   const delta = rating && since !== null ? rating.overall - since : 0;
   return (
     <div className={`grade-badge${rating ? ` grade-${rating.grade}` : ' none'}`} aria-hidden="true">
+      <span className="grade-head">{t('rating.badgeHead')}</span>
       {rating && <span className="letter">{rating.grade}</span>}
       <span className="overall">{rating ? `${rating.overall} / 100` : t('rating.noGrade')}</span>
       <span className="label">{rating ? rating.label : t('rating.addPokemon')}</span>
       {rating && since !== null && delta !== 0 && (
         <span className={`grade-delta ${delta > 0 ? 'up' : 'down'}`}>
           {t('rating.since', { from: since, delta: `${delta > 0 ? '+' : '−'}${Math.abs(delta)}` })}
+        </span>
+      )}
+      {/* Le quattro aree in breve: il dettaglio (e i link ai modali) resta nella Valutazione dell'Analisi */}
+      {rating && (
+        <span className="grade-areas">
+          {rating.areas.map(area => (
+            <span key={area.key} className={`grade-area${area.inactive ? ' inactive' : ''}`}>
+              <span>{area.label}</span>
+              <span className="meter"><span style={{ width: `${area.value ?? 0}%` }} /></span>
+              <b>{area.value ?? '—'}</b>
+            </span>
+          ))}
         </span>
       )}
     </div>

@@ -1,4 +1,4 @@
-import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { analyzeTeam } from './engine/analysis';
 import { coachTeam, type SwapPreview } from './engine/coach';
 import { rateTeam } from './engine/rating';
@@ -17,13 +17,15 @@ import { ShowdownPanel } from './ui/ShowdownPanel';
 import { SuggestionsPanel } from './ui/SuggestionsPanel';
 import { ListsPanel } from './ui/ListsPanel';
 import { TeamPanel } from './ui/TeamPanel';
-import { TopBar } from './ui/TopBar';
+import { Rail } from './ui/Rail';
 import { TabPanel, Tabs, type TabId } from './ui/Tabs';
-import { loadLang, loadLists, loadSession, loadTab, saveLang, saveLists, saveSession, saveTab } from './storage';
+import { loadLang, loadLists, loadPalette, loadSession, loadTab, saveLang, saveLists, savePalette, saveSession, saveTab } from './storage';
+import { SettingsDialog } from './ui/SettingsDialog';
 import { EMPTY_LISTS, effectiveLists, type UserLists } from './engine/lists';
 import { t, type Lang } from './i18n';
 import { LangProvider } from './i18n/react';
 import { hasItalianNames } from './i18n/game';
+import { paletteFor, type PaletteSetting } from './ui/theme';
 
 const NO_DATA: EngineData = { stats: null, sets: null };
 
@@ -57,6 +59,20 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   // Un link con un team (#team=...) vince sulla sessione salvata; quella resta recuperabile con Annulla
   const [shared] = useState(takeSharedTeam);
   const [format, setFormat] = useState<Format>(shared?.format ?? session?.format ?? DEFAULT_FORMAT);
+  // Colori di versione: seguono il gioco del formato (o la palette fissata nelle impostazioni)
+  const [palette, setPalette] = useState<PaletteSetting>(() => (storage ? loadPalette(storage) : null) ?? 'auto');
+  const changePalette = (next: PaletteSetting) => {
+    setPalette(next);
+    if (storage) savePalette(next, storage);
+  };
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const closeSettings = useCallback(() => {
+    setSettingsOpen(false);
+    document.querySelector<HTMLElement>('.rail-settings')?.focus();
+  }, []);
+  useEffect(() => {
+    document.documentElement.dataset.palette = paletteFor(palette, format.formatId);
+  }, [palette, format.formatId]);
   // Dati per fonte: ogni formato carica la sua la prima volta, poi resta in memoria.
   // Un caricamento finito tardi si salva sotto la sua fonte, quindi non tocca il formato attuale.
   const [cache, setCache] = useState<Record<string, EngineData>>({ [dataSource(DEFAULT_FORMAT)]: initialData });
@@ -110,12 +126,23 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
     setReplaceIndexState(index);
     setPreview(null);
   };
-  /** Porta la barra delle schede in cima alla finestra, così il contenuto scelto si vede subito. */
-  const scrollToTabs = () => requestAnimationFrame(() => {
-    const still = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
-    document.querySelector('.tabs')?.scrollIntoView?.({ behavior: still ? 'auto' : 'smooth', block: 'start' });
-  });
-  const openTab = (next: TabId) => { setTab(next); scrollToTabs(); };
+  // Il membro aperto nell'editor: l'editor prende il posto della sezione finché resta aperto
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [closeSignal, setCloseSignal] = useState(0);
+  // La pagina non scorre: aprire una sezione basta a mostrarla (e chiude l'editor)
+  const openTab = (next: TabId) => { setTab(next); setCloseSignal(n => n + 1); };
+  // L'editor copre l'area della sezione: gli serve la sua altezza
+  const mainRef = useRef<HTMLDivElement>(null);
+  const workspaceRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const area = workspaceRef.current;
+    if (!area || typeof ResizeObserver === 'undefined') return;
+    const apply = () => mainRef.current?.style.setProperty('--ws-h', `${area.clientHeight}px`);
+    apply();
+    const observer = new ResizeObserver(apply);
+    observer.observe(area);
+    return () => observer.disconnect();
+  }, []);
   /** Scegliere chi sostituire (dal coach o da una carta) porta alla scheda Pokémon, dove ci sono i candidati. */
   // Slot vuoto cliccato: scheda Pokémon in modalità Aggiungi, con il cursore nella ricerca
   const [searchRequest, setSearchRequest] = useState(0);
@@ -191,22 +218,13 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   return (
     <LangProvider lang={lang}>
     <div className="app">
-      <TopBar format={format} onFormatChange={setFormat} meta={data.stats?.meta ?? null} lang={lang} onLangChange={changeLang}>
-        <ShowdownPanel team={team} format={format} tera={teraAllowed(format)} onImport={changeTeam} />
-        <SavedTeams team={team} format={format} onLoad={(saved, savedFormat) => { changeTeam(saved); if (savedFormat) setFormat({ ...savedFormat, meta: format.meta }); }} />
-      </TopBar>
-      {loading && <p className="banner info">{t(lang, 'app.loading')}</p>}
-      {!loading && !data.stats && (
-        <p className="banner" role="alert">
-          {t(lang, 'app.noData', { format: formatLabel(format, lang) })} <code>npm run fetch-data</code> {t(lang, 'app.noDataAfter')}
-        </p>
-      )}
-      <div className="band">
-        <TeamPanel team={team} format={format} data={data} onChange={changeTeam} onAdd={addSet} onReplace={startReplace} onRemove={removeAt} onPaste={pasteAt} onBulk={bulk} onAddClick={startAdd}
-          onAllowMultipleMegas={() => setFormat(f => ({ ...f, allowMultipleMegas: true }))} />
-        <GradeBadge rating={rating} />
-      </div>
-      <Tabs active={shownTab} onChange={openTab} tabs={[
+      <Rail format={format} onFormatChange={setFormat} meta={data.stats?.meta ?? null} lang={lang} onLangChange={changeLang}
+        onSettings={() => setSettingsOpen(true)}
+        actions={<>
+          <ShowdownPanel team={team} format={format} tera={teraAllowed(format)} onImport={changeTeam} />
+          <SavedTeams team={team} format={format} onLoad={(saved, savedFormat) => { changeTeam(saved); if (savedFormat) setFormat({ ...savedFormat, meta: format.meta }); }} />
+        </>}
+        tabs={<Tabs orientation="vertical" active={shownTab} onChange={openTab} tabs={[
         { id: 'pokemon', label: t(lang, 'tabs.pokemon'),
           count: replaceIndex !== null && team[replaceIndex] ? { text: t(lang, 'suggest.replaceTitle', { species: team[replaceIndex].species }), level: 'info' } : null },
         { id: 'analysis', label: t(lang, 'tabs.analysis'),
@@ -216,7 +234,21 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
           count: metaOn && team.length > 0 && openThreats ? { text: t(lang, openThreats === 1 ? 'tabs.threatsOne' : 'tabs.threatsMany', { n: openThreats }), level: 'warn' } : null },
         { id: 'lists', label: t(lang, 'tabs.lists') },
         { id: 'compare', label: t(lang, 'tabs.compare'), disabled: true, note: t(lang, 'tabs.soon') },
-      ]} />
+      ]} />} />
+      <div className="main" ref={mainRef}>
+      {loading && <p className="banner info">{t(lang, 'app.loading')}</p>}
+      {!loading && !data.stats && (
+        <p className="banner" role="alert">
+          {t(lang, 'app.noData', { format: formatLabel(format, lang) })} <code>npm run fetch-data</code> {t(lang, 'app.noDataAfter')}
+        </p>
+      )}
+      <div className="band">
+        <TeamPanel team={team} format={format} data={data} onChange={changeTeam} onAdd={addSet} onReplace={startReplace} onRemove={removeAt} onPaste={pasteAt} onBulk={bulk} onAddClick={startAdd}
+          onOpenChange={setEditingIndex} closeSignal={closeSignal}
+          onAllowMultipleMegas={() => setFormat(f => ({ ...f, allowMultipleMegas: true }))} />
+        <GradeBadge rating={rating} />
+      </div>
+      <div className={`workspace${editingIndex !== null ? ' editing' : ''}`} ref={workspaceRef}>
       <main className="tab-body">
         <TabPanel id="pokemon" active={shownTab}>
           <SuggestionsPanel
@@ -235,8 +267,8 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
         </TabPanel>
         <TabPanel id="analysis" active={shownTab}>
           <AnalysisPanel team={team} analysis={analysis} data={data} rating={rating} coaching={coaching} withMeta={false} expanded
-            preview={preview?.index === replaceIndex ? preview : null} onReplace={startReplace} onSwap={replaceAt} />
-          {team.length > 0 && <MemberSheet team={team} data={rated} />}
+            preview={preview?.index === replaceIndex ? preview : null} onReplace={startReplace} onSwap={replaceAt}
+            footer={team.length > 0 && <MemberSheet team={team} data={rated} />} />
         </TabPanel>
         <TabPanel id="meta" active={shownTab}>
           <MetaPanel team={team} analysis={analysis} data={data} coaching={coaching} />
@@ -245,6 +277,9 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
           {listsOpened && <ListsPanel lists={lists} format={format} data={data} onChange={changeLists} />}
         </TabPanel>
       </main>
+      </div>
+      </div>
+      {settingsOpen && <SettingsDialog palette={palette} onPaletteChange={changePalette} onClose={closeSettings} />}
       {listUndo && listUndo.after === lists && (
         <UndoToast action={{ id: listUndo.id, kind: 'clearList', from: listUndo.from }} onClose={() => setListUndo(null)}
           onUndo={() => { setLists(listUndo.before); setListUndo(null); }} />

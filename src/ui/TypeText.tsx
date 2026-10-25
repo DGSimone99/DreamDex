@@ -7,7 +7,8 @@ import type { Lang } from '../i18n';
 import { gameName, gameNamesVersion, namesWithTypes, typeName, typeNames } from '../i18n/game';
 import { useLang } from '../i18n/react';
 
-const PANEL = '#0f1735';
+// Il fondo dei pannelli (--panel in tokens.css): il testo dei tipi ci si legge con contrasto ≥ 6
+const PANEL = '#1a1d2a';
 
 function luminance(rgb: number[]): number {
   const [r, g, b] = rgb.map(c => c / 255).map(c => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
