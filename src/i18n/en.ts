@@ -700,6 +700,7 @@ export const en = {
   'sheet.roles': "Roles",
   'rating.rulesBroken': "One or more team members break the format's rules: the grade is a guide, not valid for a real match",
   'rating.stall': "Rated as stall: Bulk, Defensive coverage and Roles count the most",
+  'rating.notCounted': "Doesn't count in Stall",
   'rating.coverageTip': "Types each member hits super effectively",
   'rating.metaOn': "With the format's meta (stats {month}): Offense, Defense and Speed against the most used Pokémon.",
   'rating.metaOff': "No meta: Offense, Defense and Speed against the types and the tier's Pokémon.",

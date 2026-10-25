@@ -829,6 +829,9 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 /* Le schede raggiunte dai link non finiscono sotto la barra in alto */
 .analysis details.block { scroll-margin-top: 80px; }
 .rating .bars dd { margin: 0; }
+/* Area senza peso nel voto (Velocità nello stall): etichetta e barra attenuate */
+.rating .bars .inactive { opacity: 0.5; }
+.rating .bars .inactive dt { color: var(--faint); }
 .rating .bonus { color: var(--good); }
 .rating .penalty { color: var(--warn); }
 .rating .bonus ul, .rating .penalty ul { list-style: none; padding: 0; margin: 4px 0 8px; }

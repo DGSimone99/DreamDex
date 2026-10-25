@@ -55,13 +55,17 @@ export function RatingPanel({ rating, ruleIssues = [], metaMonth }: { rating: Te
               // Ruoli: i sotto-ruoli di ogni membro (valore almeno 0,5), coi nomi brevi
               ? rating.roles.members.map(m => `${m.species} ${rolesList(m.values).map(r => roleShortLabel(r, lang)).join(' · ') || '—'}`).join('\n')
             : undefined;
+          // Area senza peso (la Velocità nello stall): visibile ma grigia, con la nota nel tooltip
+          const note = area.inactive ? t('rating.notCounted') : undefined;
+          const fullTip = tip && note ? `${tip}
+${note}` : tip ?? note;
           return (
-            <div key={area.key}>
+            <div key={area.key} className={area.inactive ? 'inactive' : undefined}>
               <dt>
                 {isDetailArea(area.key) ? (
                   // Offesa, Difesa, Velocità e Ruoli aprono il loro dettaglio: sottostatistiche e punteggio di ogni membro
-                  <button ref={el => { detailButtons.current[area.key as DetailArea] = el; }} type="button" className={tip ? 'area-link tip' : 'area-link'}
-                    aria-haspopup="dialog" onClick={() => setDetail(area.key as DetailArea)} data-tip={tip} title={tip ? undefined : t('detail.open', { area: area.label })}>
+                  <button ref={el => { detailButtons.current[area.key as DetailArea] = el; }} type="button" className={fullTip ? 'area-link tip' : 'area-link'}
+                    aria-haspopup="dialog" onClick={() => setDetail(area.key as DetailArea)} data-tip={fullTip} title={fullTip ? undefined : t('detail.open', { area: area.label })}>
                     {text}
                   </button>
                 ) : tip ? (

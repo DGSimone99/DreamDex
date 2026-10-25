@@ -44,7 +44,12 @@ describe('team stall', () => {
     const score = rolesScore(of('important'), of('minor'), keys('important').map(importantWeight));
     expect(rating.areas.find(a => a.key === 'roles')!.value).toBe(score.value);
     // Nello stall la velocità non conta
-    expect(rating.areas.map(a => a.key)).not.toContain('speed');
+    // La Velocità resta visibile ma inattiva: ha un valore, non un peso
+    const speed = rating.areas.find(a => a.key === 'speed')!;
+    expect(speed.inactive).toBe(true);
+    expect(typeof speed.value).toBe('number');
+    expect(rating.weights.speed).toBeUndefined();
+    expect(rating.areas.filter(a => a.key !== 'speed').every(a => !a.inactive)).toBe(true);
   });
 
   it('un team normale non è stall e non cambia', () => {
@@ -140,7 +145,7 @@ describe('membro passivo e riconoscimento dello stall', () => {
 describe('voto dello stall', () => {
   // Le aree coi pesi effettivi del voto (la difesa divisa tra Coverage difensiva e Robustezza); il Meta non pesa
   const weighted = (rating: NonNullable<ReturnType<typeof rateTeam>>) =>
-    Math.round(rating.areas.filter(a => a.key !== 'meta').reduce((acc, a) => acc + rating.weights[a.key]! * a.value!, 0));
+    Math.round(rating.areas.filter(a => a.key !== 'meta' && !a.inactive).reduce((acc, a) => acc + rating.weights[a.key]! * a.value!, 0));
   it('anche nello stall l\'Offesa è la media dei membri, ma pesa poco', () => {
     const rating = rateTeam(stall, fixtureData)!;
     // L'Offesa è quella del danno vero (offense.ts), anche per uno stall
@@ -153,7 +158,10 @@ describe('voto dello stall', () => {
     const rating = rateTeam(stall, fixtureData)!;
     expect(Math.abs(rating.base - weighted(rating))).toBeLessThanOrEqual(1);
     expect(rating.weights.defense!).toBeCloseTo(ARCHETYPE_WEIGHTS.stall.defense / 100);
-    expect(rating.areas.map(a => a.key)).not.toContain('speed');
+    expect(rating.areas.find(a => a.key === 'speed')).toMatchObject({ inactive: true });
+    expect(rating.weights.speed).toBeUndefined();
+    // Il voto non cambia: la base usa solo le aree attive
+    expect(rating.overall).toBe(Math.min(100, Math.max(0, rating.base - rating.penalty.total + rating.bonus.total)));
   });
 
   it('un team incompleto usa i pesi del balance e l\'Offesa media dei membri', () => {

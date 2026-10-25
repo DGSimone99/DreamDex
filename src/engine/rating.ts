@@ -82,6 +82,8 @@ export interface RatingArea {
   label: string;
   /** 0–100, o null se mancano i dati per calcolarla. */
   value: number | null;
+  /** Ha un valore ma peso 0 nel voto (oggi solo la Velocità nello stall): si mostra in grigio. */
+  inactive?: boolean;
 }
 
 /** Chiave della voce del catalogo bonus/malus a cui appartiene una voce del voto. */
@@ -347,12 +349,13 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
     // Informazione per l'Analisi: nel voto le minacce stanno nella Coverage meta della Difesa
   }
   const areas = (Object.keys(raw) as (keyof typeof raw)[])
-    // Con uno stall la Velocità non conta e non si mostra
-    .filter(key => (areaWeights[key] ?? 0) > 0)
+    // Con uno stall la Velocità non conta nel voto ma resta visibile (inattiva); senza dati l'area non c'è
+    .filter(key => raw[key] !== null)
     .map(key => ({
       key,
       label: t(lang, `area.${key}`),
-      value: raw[key] === null ? null : Math.round(100 * raw[key]!),
+      value: Math.round(100 * raw[key]!),
+      ...(!((areaWeights[key] ?? 0) > 0) && { inactive: true }),
     }));
   const base = Math.round(100 * score);
   const redundant = redundancies(team, analysis, lang);
