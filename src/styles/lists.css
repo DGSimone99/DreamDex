@@ -98,11 +98,21 @@
   .tab-body { padding: 22px 16px 0; }
   .toolbar > .segmented button { padding: 6px 10px; font-size: 13px; }
   .toolbar .filters > summary { height: 34px; }
-  .picker.has-detail { grid-template-columns: minmax(0, 500px) minmax(0, 1fr); gap: 12px; }
-  .detail:not(.detail-empty) { grid-template-columns: 184px minmax(0, 1fr); }
+  .picker.has-detail { gap: 12px; }
   .detail-hero .detail-id h3 { font-size: 20px; }
-  .detail-hero .detail-sprite { width: 96px; height: 96px; }
-  .detail-hero .detail-sprite .sprite-ani { transform: translate(-50%, -50%); }
+  .detail-hero { padding-top: 6px; padding-bottom: 6px; }
+  /* Chi esce lo dicono già la riga della lista e il pulsante principale */
+  .detail-hero .swap-head { display: none; }
+  .detail-hero .detail-sprite { width: 56px; height: 56px; }
+  .detail-hero .detail-sprite .sprite-ani { transform: translate(-50%, -50%) scale(0.5833); }
+  .detail:not(.detail-empty) .detail-sec { padding-top: 7px; padding-bottom: 8px; }
+  /* Set su due righe: voci, poi le quattro mosse affiancate */
+  .detail .detail-sec.set-sec { grid-template-columns: minmax(0, 1fr); }
+  .detail .detail-sec.set-sec .detail-set { margin-bottom: 4px; }
+  .detail:not(.detail-empty) > .detail-actions { padding-top: 6px; padding-bottom: 6px; }
+  .detail .detail-points { gap: 0; }
+  .detail .detail-moves { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .detail .detail-moves li { padding: 3px 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .detail-hero .detail-score strong { font-size: 36px; }
   .suggestion { padding: 6px 10px; }
 }
@@ -398,8 +408,8 @@
    (fin dove l'altezza della carta lo permette) sia nel dettaglio del Pokémon */
 @media (min-width: 1600px) {
   .slot[open] > summary { --open-scale: 1.85; --fit: 196; }
-  .detail-hero .detail-sprite { width: 176px; height: 176px; }
-  .detail-hero .detail-sprite .sprite-ani { transform: translate(-50%, -50%) scale(1.85); }
+  .detail-hero .detail-sprite { width: 96px; height: 96px; }
+  .detail-hero .detail-sprite .sprite-ani { transform: translate(-50%, -50%); }
 }
 @media (min-width: 1600px) and (min-height: 1000px) {
   .slot[open] > summary { --fit: 214; }

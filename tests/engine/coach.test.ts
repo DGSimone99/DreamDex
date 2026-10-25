@@ -128,6 +128,8 @@ describe('pro e contro pesati', () => {
     const { pros } = rankedChanges(diff, { roles: 1, defense: 5 }, 'it');
     expect(pros[0].text).toMatch(/Folletto|Fairy/);
     expect(pros[0].points).toBe(5);
+    expect(pros[0].area).toBe('defense');
+    expect(pros[1].area).toBe('roles');
     expect(pros[1].points).toBe(1);
   });
   it("il malus principale è quello dell'area che scende di più", () => {
