@@ -43,6 +43,8 @@ interface Props {
   onAllowMultipleMegas: () => void;
   /** Membro aperto nell'editor (null se nessuno). */
   onOpenChange?: (index: number | null) => void;
+  /** Ogni cambio chiude l'editor aperto (es. si sceglie una sezione nella barra laterale). */
+  closeSignal?: number;
   /** Set incollato al posto del membro (può essere un altro Pokémon); se manca, si aggiorna solo il team. */
   onPaste?: (index: number, set: TeamSet) => void;
   /** Azioni sull'intero team, annullabili: preset migliori per tutti, svuota team. */
@@ -331,7 +333,7 @@ function EmptySlot({ onClick }: { onClick: () => void }) {
   );
 }
 
-export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRemove, onAllowMultipleMegas, onOpenChange, onPaste, onBulk, onAddClick }: Props) {
+export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRemove, onAllowMultipleMegas, onOpenChange, closeSignal, onPaste, onBulk, onAddClick }: Props) {
   const lang = useLang();
   // Sotto-ruoli misurati di ogni membro: la carta dice quello che dice il voto (stessa cache dell'area Ruoli)
   const subRoles = useMemo(() => team.map(set => measuredSubRoles(set, team, data)), [team, data]);
@@ -339,6 +341,12 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   useEffect(() => { setEditing(openIndex); onOpenChange?.(openIndex); }, [openIndex]);
   useEffect(() => () => setEditing(null), []);
+  const lastClose = useRef(closeSignal);
+  useEffect(() => {
+    if (closeSignal === lastClose.current) return;
+    lastClose.current = closeSignal;
+    setOpenIndex(null);
+  }, [closeSignal]);
   const slotsRef = useRef<HTMLDivElement>(null);
   const focusCard = (i: number) => requestAnimationFrame(() => slotsRef.current?.querySelectorAll<HTMLElement>('.slot > summary')[i]?.focus());
   const step = (from: number, delta: number) => {

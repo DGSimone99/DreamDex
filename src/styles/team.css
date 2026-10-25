@@ -127,26 +127,6 @@
 /* Lead: il primo membro, in alto a sinistra (il lucchetto del Custom Skillset gli passa accanto) */
 .slot-lead { position: absolute; left: 14px; top: 10px; font: 700 12px/1 var(--display); text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); }
 
-/* Con un membro aperto le card si compattano: team ed editor stanno in una schermata (abilità, ruoli e Stats sono nell'editor) */
-.slots.editing .slot > summary, .slots.editing .slot.empty { min-height: 0; padding-bottom: 12px; }
-.slots.editing .slot > summary .sprite-wrap { zoom: 0.62; margin: -2px 0 0; }
-/* Il tooltip degli avvisi resta a grandezza normale anche sullo sprite rimpicciolito */
-.slots.editing .slot > summary .sprite-wrap .alert-pop { zoom: calc(1 / 0.62); }
-.slots.editing .slot[open] > summary .sprite-wrap .alert-pop { zoom: calc(1 / 1.05); }
-.slots.editing .slot-stats, .slots.editing .slot .ability, .slots.editing .slot .roles { display: none; }
-.slots.editing .slot .name { font-size: 18px; }
-.slots.editing .slot.empty { gap: 6px; }
-.slots.editing .empty-ring { width: 40px; height: 40px; }
-.slots.editing .empty-ring .icon { width: 16px; height: 16px; }
-.slots.editing .empty-label { font-size: 13px; }
-.slots.editing .slot.empty { min-height: 100%; }
-/* Card aperta: solo lo sprite, più grande (nome, tipi e set sono nell'editor) */
-.slot[open] > summary { justify-content: center; }
-.slot[open] > summary > :not(.sprite-wrap, .favorite, .remove, .slot-custom, .slot-lead) { display: none; }
-.slots.editing .slot[open] > summary .sprite-wrap { zoom: 1.05; margin: 0; }
-.slots.editing .slot[open] > summary { --open-scale: 1.2; --fit: 122; }
-/* Più in basso, sul fondo della card: lo spazio sopra resta tutto al Pokémon */
-.slots.editing .slot[open] > summary .sprite-ani { bottom: -11px; }
 /* Riordino trascinando */
 .slot.dragging > summary { opacity: 0.45; }
 .slot.drop-target > summary::before { outline: 2px dashed var(--accent); outline-offset: 3px; }

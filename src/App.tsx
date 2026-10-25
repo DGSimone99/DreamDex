@@ -1,4 +1,4 @@
-import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { analyzeTeam } from './engine/analysis';
 import { coachTeam, type SwapPreview } from './engine/coach';
 import { rateTeam } from './engine/rating';
@@ -116,8 +116,23 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
     setReplaceIndexState(index);
     setPreview(null);
   };
-  // La pagina non scorre: aprire una sezione basta a mostrarla
-  const openTab = (next: TabId) => setTab(next);
+  // Il membro aperto nell'editor: l'editor prende il posto della sezione finché resta aperto
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [closeSignal, setCloseSignal] = useState(0);
+  // La pagina non scorre: aprire una sezione basta a mostrarla (e chiude l'editor)
+  const openTab = (next: TabId) => { setTab(next); setCloseSignal(n => n + 1); };
+  // L'editor copre l'area della sezione: gli serve la sua altezza
+  const mainRef = useRef<HTMLDivElement>(null);
+  const workspaceRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const area = workspaceRef.current;
+    if (!area || typeof ResizeObserver === 'undefined') return;
+    const apply = () => mainRef.current?.style.setProperty('--ws-h', `${area.clientHeight}px`);
+    apply();
+    const observer = new ResizeObserver(apply);
+    observer.observe(area);
+    return () => observer.disconnect();
+  }, []);
   /** Scegliere chi sostituire (dal coach o da una carta) porta alla scheda Pokémon, dove ci sono i candidati. */
   // Slot vuoto cliccato: scheda Pokémon in modalità Aggiungi, con il cursore nella ricerca
   const [searchRequest, setSearchRequest] = useState(0);
@@ -209,7 +224,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
         { id: 'lists', label: t(lang, 'tabs.lists') },
         { id: 'compare', label: t(lang, 'tabs.compare'), disabled: true, note: t(lang, 'tabs.soon') },
       ]} />} />
-      <div className="main">
+      <div className="main" ref={mainRef}>
       {loading && <p className="banner info">{t(lang, 'app.loading')}</p>}
       {!loading && !data.stats && (
         <p className="banner" role="alert">
@@ -218,10 +233,11 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
       )}
       <div className="band">
         <TeamPanel team={team} format={format} data={data} onChange={changeTeam} onAdd={addSet} onReplace={startReplace} onRemove={removeAt} onPaste={pasteAt} onBulk={bulk} onAddClick={startAdd}
+          onOpenChange={setEditingIndex} closeSignal={closeSignal}
           onAllowMultipleMegas={() => setFormat(f => ({ ...f, allowMultipleMegas: true }))} />
         <GradeBadge rating={rating} />
       </div>
-      <div className="workspace">
+      <div className={`workspace${editingIndex !== null ? ' editing' : ''}`} ref={workspaceRef}>
       <main className="tab-body">
         <TabPanel id="pokemon" active={shownTab}>
           <SuggestionsPanel
