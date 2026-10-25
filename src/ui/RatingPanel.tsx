@@ -65,7 +65,7 @@ ${note}` : tip ?? note;
                 {isDetailArea(area.key) ? (
                   // Offesa, Difesa, Velocità e Ruoli aprono il loro dettaglio: sottostatistiche e punteggio di ogni membro
                   <button ref={el => { detailButtons.current[area.key as DetailArea] = el; }} type="button" className={fullTip ? 'area-link tip' : 'area-link'}
-                    aria-haspopup="dialog" onClick={() => setDetail(area.key as DetailArea)} data-tip={fullTip} title={fullTip ? undefined : t('detail.open', { area: area.label })}>
+                    aria-haspopup="dialog" onClick={() => setDetail(area.key as DetailArea)} data-tip={fullTip} aria-description={area.inactive ? note : undefined} title={fullTip ? undefined : t('detail.open', { area: area.label })}>
                     {text}
                   </button>
                 ) : tip ? (

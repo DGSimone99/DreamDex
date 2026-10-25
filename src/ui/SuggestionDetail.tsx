@@ -123,11 +123,14 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
             <h4>{tr(before ? 'detail.team' : 'detail.teamAlone')}</h4>
             <dl className="detail-areas">
               {after.areas.map(area => {
-                const was = before?.areas.find(a => a.key === area.key)?.value;
-                const change = area.value !== null && was != null ? area.value - was : 0;
+                const prev = before?.areas.find(a => a.key === area.key);
+                const was = prev?.value;
+                // Un'area che non conta nel voto non ha variazione; se prima contava e ora no (o viceversa) non si confronta
+                const change = area.value !== null && was != null && !area.inactive && !prev?.inactive ? area.value - was : 0;
+                const note = area.inactive ? tr('rating.notCounted') : undefined;
                 return (
-                  <div key={area.key}>
-                    <dt>{area.label}</dt>
+                  <div key={area.key} className={area.inactive ? 'inactive' : undefined} title={note}>
+                    <dt aria-description={note}>{area.label}</dt>
                     <dd><meter min={0} max={100} value={area.value ?? 0} /></dd>
                     <dd className="value">{area.value ?? '–'}</dd>
                     <dd className={`change${change < 0 ? ' worse' : ''}`}>{delta(change)}</dd>

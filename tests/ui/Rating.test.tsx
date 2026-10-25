@@ -187,6 +187,7 @@ Bold Nature
     const speed = within(rating).getByRole('button', { name: /^Velocità \d+$/ });
     expect(speed.closest('div')).toHaveClass('inactive');
     expect(speed).toHaveAttribute('data-tip', expect.stringContaining('Non conta nello Stall'));
+    expect(speed).toHaveAttribute('aria-description', 'Non conta nello Stall');
     // Le altre aree non sono grigie
     expect(within(rating).getByRole('button', { name: /^Difesa \d+$/ }).closest('div')).not.toHaveClass('inactive');
     await user.click(speed);

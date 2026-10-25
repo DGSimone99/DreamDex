@@ -1153,6 +1153,8 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .detail-areas .value { font: 700 15px/1 var(--display); text-align: right; font-variant-numeric: tabular-nums; }
 .detail-areas .change { font-size: 12px; font-weight: 600; color: var(--good); text-align: right; font-variant-numeric: tabular-nums; }
 .detail-areas .change.worse { color: var(--bad); }
+.detail-areas .inactive { opacity: 0.5; }
+.detail-areas .inactive dt { color: var(--faint); }
 .detail-reasons { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 13px; }
 .detail-reasons li { position: relative; padding-left: 14px; }
 .detail-reasons li::before { content: ''; position: absolute; left: 0; top: 0.6em; width: 5px; height: 5px; border-radius: 1px; background: var(--blue); }
