@@ -50,7 +50,7 @@ describe('I miei set', () => {
     const { user, slot } = await openEditor();
     await user.click(within(slot).getByRole('button', { name: 'Salva set' }));
     await user.click(within(slot).getByRole('button', { name: 'Mostra i miei set' }));
-    const list = () => screen.getByRole('listbox', { name: 'I miei set: opzioni' });
+    const list = () => screen.getByRole('list', { name: 'I miei set: opzioni' });
     await user.click(within(list()).getByRole('button', { name: 'Rinomina Set 1' }));
     const rename = within(list()).getByLabelText('Nuovo nome per Set 1');
     await user.clear(rename);
@@ -68,7 +68,7 @@ describe('I miei set', () => {
     await user.click(within(slot).getByRole('button', { name: 'Salva set' }));
     await setMove(user, slot, 'Stone Edge');
     await user.click(within(slot).getByRole('button', { name: 'Mostra i miei set' }));
-    await user.click(within(screen.getByRole('listbox', { name: 'I miei set: opzioni' })).getByRole('option', { name: /Set 1/ }));
+    await user.click(within(screen.getByRole('list', { name: 'I miei set: opzioni' })).getByRole('button', { name: /^Set 1/ }));
     expect(within(slot).getByLabelText('Mossa 1')).toHaveValue(tusk.moves[0]);
   });
 });

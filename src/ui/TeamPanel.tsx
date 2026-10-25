@@ -27,7 +27,7 @@ import { Icon } from './icons';
 import { SmogonLink } from './SmogonLink';
 import { illegalParts } from '../engine/learnsets';
 import { t, type Lang } from '../i18n';
-import { gameName } from '../i18n/game';
+import { gameName, typeName } from '../i18n/game';
 import { useLang, useT } from '../i18n/react';
 
 interface Props {
@@ -237,6 +237,15 @@ function TeamSlot({ index, set, subRoles, data, format, warning: megaWarning, op
     >
       <summary
         ref={card}
+        // Un nome breve per la carta: senza, il lettore leggerebbe tutto (anche i pulsanti dentro)
+        aria-label={[
+          set.name ? `${set.name} (${name})` : name,
+          index === 0 ? tr('team.lead') : null,
+          species?.types.map(type => typeName(type, lang)).join('/'),
+          set.item ? gameName('item', set.item, lang) : tr('team.noItem'),
+          problems.length ? tr(problems.length === 1 ? 'team.cardProblem' : 'team.cardProblems', { n: problems.length }) : null,
+          warnings.length ? tr(warnings.length === 1 ? 'team.cardWarning' : 'team.cardWarnings', { n: warnings.length }) : null,
+        ].filter(Boolean).join(', ')}
         draggable
         title={tr('team.dragTitle')}
         // Apertura e chiusura passano dall'animazione: il clic non apre da solo il details
@@ -528,7 +537,15 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
             onStep={delta => step(i, delta)}
             onIgnoreWarning={onAllowMultipleMegas}
             onChange={next => onChange(team.map((s, j) => (j === i ? next : s)))}
-            onRemove={() => { setOpenIndex(null); if (onRemove) onRemove(i); else onChange(team.filter((_, j) => j !== i)); }}
+            onRemove={() => {
+              setOpenIndex(null);
+              if (onRemove) onRemove(i); else onChange(team.filter((_, j) => j !== i));
+              // Il focus non si perde: va alla carta che prende il posto (o all'ultima, o al primo slot vuoto)
+              requestAnimationFrame(() => {
+                const cards = slotsRef.current?.querySelectorAll<HTMLElement>('.slot > summary');
+                (cards?.[Math.min(i, cards.length - 1)] ?? slotsRef.current?.querySelector<HTMLElement>('.slot.empty'))?.focus();
+              });
+            }}
             onReplace={() => onReplace(i)}
           />
         ))}
