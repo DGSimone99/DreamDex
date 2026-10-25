@@ -25,6 +25,10 @@ export interface TeamSet {
   favorite?: boolean;
   /** Custom Skillset: qualunque mossa e abilità (hackrom), solo per questo membro del team. */
   customSkillset?: boolean;
+  /** Soprannome (come su Showdown: "Nick (Specie)"); senza, il nome della specie. */
+  name?: string;
+  /** Shiny: cambia solo lo sprite (ed è esportato come "Shiny: Yes"). */
+  shiny?: boolean;
 }
 
 export type SetsData = Record<string, TeamSet>;
@@ -348,8 +352,9 @@ function toPkmn(set: TeamSet, tera = true): PkmnSet {
   const table = (fill: (stat: StatID) => number) =>
     Object.fromEntries(STAT_IDS.map(stat => [stat, fill(stat)]));
   return {
-    name: '',
+    name: set.name ?? '',
     species: set.species,
+    ...(set.shiny ? { shiny: true } : {}),
     item: set.item,
     ability: set.ability,
     moves: set.moves.filter(Boolean),
@@ -376,6 +381,8 @@ function fromPkmn(parsed: Partial<PkmnSet>): TeamSet {
     if (typeof value === 'number' && value >= 0 && value < 31) ivs[stat] = value;
   }
   const teraType = (parsed as { teraType?: string }).teraType;
+  const name = String(parsed.name ?? '').trim();
+  const speciesName = species?.name ?? String(parsed.species ?? '');
   return {
     species: species?.name ?? String(parsed.species ?? ''),
     item: String(parsed.item ?? ''),
@@ -385,6 +392,8 @@ function fromPkmn(parsed: Partial<PkmnSet>): TeamSet {
     evs,
     ...(Object.keys(ivs).length ? { ivs } : {}),
     ...(teraType ? { teraType } : {}),
+    ...(name && name !== speciesName ? { name } : {}),
+    ...(parsed.shiny ? { shiny: true } : {}),
   };
 }
 

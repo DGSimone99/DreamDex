@@ -254,7 +254,6 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
         {(title || actions) && (
           <div className="editor-top">
             {title}
-            {memberAction}
             {/* Set e Danni: il calcolo dei danni arriverà qui, per ora la linguetta è spenta */}
             <div className="editor-tabs" role="tablist" aria-label={t('editor.tabs')}>
               <button type="button" role="tab" aria-selected="true" tabIndex={0}>{t('editor.tabSet')}</button>
@@ -287,13 +286,13 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
         <MySetsField set={set} onApply={saved => onChange(presetSet(set, saved))} />
         {ioAction}
         <label className="custom-toggle" title={t('editor.customTooltip')}>
+          {t('editor.customLabel')}
           <input
             type="checkbox"
             aria-label={t('editor.custom', { species: set.species })}
             checked={custom}
             onChange={e => update({ customSkillset: e.target.checked || undefined })}
-          />{' '}
-          {t('editor.customLabel')}
+          />
         </label>
       </div>
       <fieldset className="evs">
@@ -448,12 +447,14 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
         ))}
       </fieldset>
       </div>
-      {!!roles?.length && (
+      {(!!roles?.length || memberAction) && (
         <fieldset className="editor-roles">
           <legend>{t('editor.roles')}</legend>
           <ul>
-            {roles.map((role, i) => <li key={role} className={i === 0 ? 'main' : undefined}>{role}</li>)}
+            {roles?.map((role, i) => <li key={role} className={i === 0 ? 'main' : undefined}>{role}</li>)}
           </ul>
+          {/* In basso a destra, dove finisce il lavoro sul set */}
+          {memberAction}
         </fieldset>
       )}
     </div>
