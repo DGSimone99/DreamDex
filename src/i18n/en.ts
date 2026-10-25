@@ -721,6 +721,7 @@ export const en = {
   'catalogue.capBonus': "Maximum total {max}",
   'catalogue.limited': "(capped at {cap})",
   'rating.net': "Bonus/Malus {net} ({penalty} / {bonus})",
+  'rating.badgeHead': "Grade",
   'rating.since': "{delta}",
   'rating.noGrade': "No rating",
   'rating.addPokemon': "Add a Pokémon",

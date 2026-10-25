@@ -723,6 +723,7 @@ export const it: Record<keyof typeof en, string> = {
   'catalogue.capBonus': "Totale massimo {max}",
   'catalogue.limited': "(limitato a {cap})",
   'rating.net': "Bonus/Malus {net} ({penalty} / {bonus})",
+  'rating.badgeHead': "Voto",
   'rating.since': "{delta}",
   'rating.noGrade': "Nessun voto",
   'rating.addPokemon': "Aggiungi un Pokémon",

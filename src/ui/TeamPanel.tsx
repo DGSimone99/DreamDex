@@ -15,7 +15,6 @@ import { copyText } from './clipboard';
 import { setEditing } from './editing';
 import { bestPreset, bestPresets } from '../engine/bestPreset';
 import { FillPanel } from './FillPanel';
-import { SLANT, useSlant } from './slant';
 import { SetEditor } from './SetEditor';
 import { describe } from './describe';
 import { commonChoices, type CommonChoices } from '../engine/common';
@@ -133,7 +132,6 @@ function TeamSlot({ index, set, subRoles, data, format, warning: megaWarning, op
   const lang = useLang();
   const tr = useT();
   const card = useRef<HTMLElement>(null);
-  useSlant(card);
   // Calcoli del membro (il confronto di Velocità prova 40 rivali): solo quando cambia il set
   // Preset resi legali fino al limite di generazione: menu e Preset migliore propongono lo stesso set
   const presets = useMemo<Preset[]>(() => presetsForSet(data, set, format.genLimit), [data, set, format.genLimit]);
@@ -324,7 +322,6 @@ function TeamSlot({ index, set, subRoles, data, format, warning: megaWarning, op
 function EmptySlot({ onClick }: { onClick: () => void }) {
   const tr = useT();
   const card = useRef<HTMLButtonElement>(null);
-  useSlant(card);
   return (
     <button type="button" className="slot empty" ref={card} title={tr('team.emptyAddTitle')} onClick={onClick}>
       <span className="empty-ring" aria-hidden="true"><Icon name="plus" /></span>
@@ -383,18 +380,6 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
   const canFill = team.length < 6 && !!data.stats;
   // Team pieno o senza statistiche: il pannello si chiude (e non si riapre da solo dopo)
   useEffect(() => { if (!canFill) setFilling(false); }, [canFill]);
-  // Svuota team finisce all'angolo in alto a destra dell'ultima card: inclinata, sporge di altezza × pendenza
-  const headRef = useRef<HTMLDivElement>(null);
-  useLayoutEffect(() => {
-    const card = slotsRef.current?.querySelector<HTMLElement>('.slot > summary, .slot.empty');
-    if (!card || !headRef.current) return;
-    const apply = () => headRef.current?.style.setProperty('--card-rise', `${(card.offsetHeight * SLANT).toFixed(1)}px`);
-    apply();
-    if (typeof ResizeObserver === 'undefined') return;
-    const observer = new ResizeObserver(apply);
-    observer.observe(card);
-    return () => observer.disconnect();
-  });
   // Chiave stabile per specie (e occorrenza): riordinando, le card non si ricreano
   const keys = team.map((set, i) => `${set.species}#${team.slice(0, i).filter(s => s.species === set.species).length}`);
   const firstMega = team.findIndex(isMega);
@@ -402,7 +387,7 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
     !format.allowMultipleMegas && firstMega !== -1 && i > firstMega && isMega(set) ? t(lang, 'team.secondMega') : null;
   return (
     <section aria-label={t(lang, 'team.region')} className="team">
-      <div className="team-head" ref={headRef}>
+      <div className="team-head">
         <h2>{t(lang, 'team.title', { n: team.length })}</h2>
         {team.length > 0 && (
           <button type="button" className="team-action" disabled={busy} aria-busy={busy || undefined}

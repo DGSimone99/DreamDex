@@ -1,16 +1,33 @@
 /* Voto */
 .grade-badge {
-  align-self: start;
+  align-self: stretch;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding-top: 52px;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 0 14px 12px;
+  background: var(--panel);
 }
-.grade-badge .letter { font: 700 132px/0.9 var(--display); color: var(--accent); }
-.grade-badge .overall { font: 700 24px var(--display); margin-top: 6px; }
-.grade-badge .label { color: var(--muted); font-size: 14px; }
+.grade-head {
+  align-self: stretch;
+  margin: 0 -14px 4px;
+  padding: 4px 24px 4px 12px;
+  font: 700 14px/1.2 var(--display);
+  font-style: italic;
+  color: var(--on-accent-2);
+  background: var(--stripes), var(--accent-2);
+  clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%);
+}
+.grade-badge .letter { font: 800 92px/0.9 var(--display); font-style: italic; color: var(--accent); }
+.grade-badge .overall { font: 700 22px/1 var(--display); }
+.grade-badge .label { color: var(--muted); font-size: 13px; }
+.grade-areas { align-self: stretch; display: grid; gap: 4px; margin-top: 6px; }
+.grade-area { display: grid; grid-template-columns: 58px 1fr 24px; gap: 6px; align-items: center; font-size: 12px; color: var(--muted); }
+.grade-area b { color: var(--text); text-align: right; font-variant-numeric: tabular-nums; }
+.grade-area .meter { height: 5px; background: var(--raised); }
+.grade-area .meter > span { display: block; height: 100%; background: var(--accent); }
+.grade-area.inactive { color: var(--faint); }
+.grade-area.inactive .meter { opacity: 0.5; }
 .grade-badge.grade-C .letter { color: var(--warn); }
 .grade-badge.grade-D .letter { color: var(--bad); }
 .grade-badge.none .letter { color: var(--line); }

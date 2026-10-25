@@ -1,63 +1,79 @@
-/* Team preview */
+/* Team: sei carte in stile Masters EX (sfumatura del tipo, riflesso diagonale, sprite grande), sempre in vista */
 .band {
   position: relative;
   z-index: 2;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 210px;
-  gap: 28px;
-  padding: 22px 28px 26px;
+  grid-template-columns: minmax(0, 1fr) 196px;
+  gap: 18px;
+  padding: 14px 22px 16px;
   background: var(--band);
   border-bottom: 1px solid var(--line-soft);
 }
-.team-head { position: relative; z-index: 6; display: flex; align-items: center; gap: 16px; margin-bottom: 22px; }
+.team-head { position: relative; z-index: 6; display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
 .fill-anchor { position: relative; }
-.team-head h2 { margin: 0; }
+.team-head h2 {
+  margin: 0;
+  padding: 4px 24px 4px 12px;
+  font: 700 15px/1.2 var(--display);
+  font-style: italic;
+  color: var(--on-accent);
+  background: var(--stripes), var(--accent);
+  clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%);
+}
 .team-head .team-action { height: 30px; padding: 0 10px; font-size: 13px; }
-.team-head .clear-team { margin-left: auto; margin-right: calc(-1 * var(--card-rise, 0px)); }
+.team-head .clear-team { margin-left: auto; }
 .team-head .clear-team:hover { border-color: var(--bad); color: var(--bad); }
 .set-editor .best-preset { height: 36px; white-space: nowrap; flex-shrink: 0; }
-.slots { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px 16px; }
+.slots { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; }
 .slot.filled { display: contents; }
 .slot > summary, .slot.empty {
   position: relative;
   isolation: isolate;
   /* Stessa altezza piene e vuote: con il team vuoto la fila non cambia quando entra il primo Pokémon */
-  min-height: 261px;
-  padding: 10px 14px 16px;
+  min-height: 232px;
+  padding: 8px 12px 14px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 3px;
 }
-.slot > summary::before, .slot.empty::before {
+.slot > summary {
+  background: linear-gradient(160deg, color-mix(in srgb, var(--t1) 42%, var(--panel)) 0%, var(--panel) 50%);
+  transition: transform 0.3s var(--ease), box-shadow 0.2s;
+}
+/* Riflesso diagonale, come nelle schede di Masters EX */
+.slot > summary::before {
   content: '';
   position: absolute;
   inset: 0;
   z-index: -1;
-  transform: skewX(var(--skew));
-  /* Inclinata attorno al lato in basso: gli angoli in basso coincidono con i bordi della riga (e del box del set) */
-  transform-origin: bottom;
-  background: var(--raised);
-  border-bottom: 5px solid transparent;
-  border-image: linear-gradient(90deg, var(--t1) 50%, var(--t2) 50%) 1;
-  transition: background 0.2s, box-shadow 0.2s;
+  background: linear-gradient(115deg, transparent 38%, #ffffff14 39%, transparent 54%);
+  pointer-events: none;
 }
-.slot > summary:hover::before { background: #1f2b5e; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3); }
-.slot > summary { transition: transform 0.3s var(--ease); }
-.slot[open] > summary { transform: translateY(-4px); }
-.slot[open] > summary::before { background: #1f2c62; border-image: linear-gradient(var(--accent), var(--accent)) 1; box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4); }
+/* Striscia dei tipi in fondo: metà e metà per i doppi tipi */
+.slot > summary::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--t1) 50%, var(--t2) 50%);
+}
+.slot > summary:hover { box-shadow: inset 0 0 0 1px var(--line); }
+.slot[open] > summary { transform: translateY(-4px); box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4); }
+.slot[open] > summary::after { background: var(--accent); }
 .slot > summary .sprite-wrap { position: relative; align-self: center; }
-/* Ogni riga della card è un livello a sé (translate): con l'avviso aperto lo sprite passa sopra nome e righe sotto */
+/* Con l'avviso aperto lo sprite passa sopra nome e righe sotto */
 .slot > summary .sprite-wrap:has(.alert-mark:hover, .alert-mark:focus-visible) { z-index: 6; }
 .slot > summary .sprite { display: block; image-rendering: pixelated; transition: transform 0.35s var(--ease); }
-/* Card aperta: lo sprite cresce finché sta nella card */
-.slot[open] > summary { --open-scale: 1.4; }
+/* Card aperta: lo sprite cresce un poco e gioca l'animazione */
+.slot[open] > summary { --open-scale: 1.12; }
 .slot[open] > summary .sprite { transform-origin: 50% 92%; transform: scale(var(--open-scale)); }
-/* Moveset aperto: il Pokémon resta in idle animato (gen5ani, dimensioni naturali, centrato) */
 .slot > summary .sprite.covered { visibility: hidden; }
 .slot > summary .sprite-ani {
   position: absolute;
-  /* Appoggiato in basso e mai più alto di --fit (px dello sprite): le GIF alte (Blacephalon 143 px) si rimpiccioliscono per stare nella card */
+  /* Appoggiato in basso e mai più alto di --fit (px dello sprite): le GIF alte si rimpiccioliscono per stare nella card */
   left: 50%;
   bottom: 4px;
   max-width: none;
@@ -66,70 +82,51 @@
   transform-origin: 50% 100%;
   transform: translateX(-50%) scale(min(calc(var(--open-scale, 1.12) * var(--sprite-scale, 1)), calc(var(--fit, 999) / var(--ani-h, 96))));
 }
-.slot .name { font: 700 21px/1.05 var(--display); text-transform: uppercase; letter-spacing: 0.02em; }
+.slot .name { font: 800 17px/1.05 var(--display); font-style: italic; letter-spacing: 0.01em; max-width: 100%; overflow-wrap: anywhere; }
 .slot .held { font-size: 13px; color: var(--muted); }
 .slot .roles { font-size: 12px; color: var(--muted); }
 .slot .types { display: flex; gap: 4px; flex-wrap: wrap; margin: 2px 0; }
 .slot .favorite, .slot .remove {
   position: absolute;
-  /* Area di clic di 30 px attorno all'icona: le due aree si toccano senza sovrapporsi */
-  top: 3px;
-  right: 35px;
+  /* Area di clic di 32 px attorno all'icona: le due aree si toccano senza sovrapporsi */
+  top: 2px;
+  right: 36px;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
   border: 0;
   background: none;
-  padding: 7px;
+  padding: 0;
   color: var(--faint);
 }
 .slot .favorite[aria-pressed='true'] { color: var(--accent); background: none; }
 .slot .favorite:hover { color: var(--accent); }
-.slot .remove { right: 5px; }
-/* Righe della card lungo la diagonale: --dx lo calcola useSlant (sprite, stella e × restano fermi) */
-.slot > summary > * { translate: var(--dx, 0px) 0; }
+.slot .remove { right: 4px; }
+.slot .remove:hover { color: var(--bad); }
 /* Badge Stats su una riga sua sopra il nome: spazio riservato, non va mai sopra lo sprite */
 .slot .slot-stats { position: relative; z-index: 2; display: flex; margin: 2px 0 3px; }
-.slot .stats-badge { font-size: 10px; border-color: transparent; isolation: isolate; }
-/* Stats e chip dei tipi come piccole card: parallelogrammi con la stessa pendenza, testo dritto */
-.slot .stats-badge::before, .slot .types .type-chip::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  transform: skewX(var(--skew));
-  border-radius: 2px;
-}
-.slot .stats-badge::before { border: 1px solid var(--line); }
-.slot .stats-badge:hover::before, .slot .stats-badge:focus-visible::before { border-color: var(--accent); }
-.slot .stats-badge:hover, .slot .stats-badge:focus-visible { border-color: transparent; }
-.slot .types .type-chip { position: relative; isolation: isolate; background: none; }
-.slot .types .type-chip::before { background: var(--chip); }
+.slot .stats-badge { font-size: 11px; }
 /* La card col tooltip aperto passa sopra alle vicine */
 .slot > summary:has(.stats-badge:hover, .stats-badge:focus-visible, .alert-mark:hover, .alert-mark:focus-visible) { z-index: 5; }
-.slot .remove:hover { color: var(--bad); }
 /* Bordo sottile: il triangolo dice il problema, la selezione resta la cosa più visibile */
-.slot.invalid > summary::before { outline: 1px solid color-mix(in srgb, var(--bad) 70%, transparent); outline-offset: -1px; }
-.slot.warn > summary::before { outline: 1px solid color-mix(in srgb, var(--warn) 70%, transparent); outline-offset: -1px; }
-/* Focus da tastiera sulla card: l'anello segue l'inclinazione (sta sul fondo inclinato, non sul box dritto) */
-.slot > summary:focus-visible { outline: none; }
-.slot > summary:focus-visible::before { outline: 2px solid var(--accent); outline-offset: 3px; }
-.slot.empty { align-items: center; justify-content: center; gap: 10px; color: var(--faint); font-weight: 500; background: none; border: 0; border-radius: 0; cursor: pointer; }
-.slot.empty::before { background: transparent; border: 2px dashed var(--line); border-image: none; }
-/* Contenuto centrato sulla card inclinata: --dx (useSlant) lo sposta col bordo all'altezza di ogni riga */
-.slot.empty > * { translate: var(--dx, 0px) 0; }
-.empty-ring { display: grid; place-items: center; width: 64px; height: 64px; border: 2px dashed var(--line); border-radius: 50%; transition: border-color 0.15s, color 0.15s, transform 0.2s var(--ease); }
+.slot.invalid > summary { outline: 1px solid color-mix(in srgb, var(--bad) 70%, transparent); outline-offset: -1px; }
+.slot.warn > summary { outline: 1px solid color-mix(in srgb, var(--warn) 70%, transparent); outline-offset: -1px; }
+.slot > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.slot.empty { align-items: center; justify-content: center; gap: 10px; color: var(--faint); font-weight: 500; background: none; border: 2px dashed var(--line); border-radius: 0; cursor: pointer; }
+.empty-ring { display: grid; place-items: center; width: 56px; height: 56px; border: 2px dashed var(--line); border-radius: 50%; transition: border-color 0.15s, color 0.15s, transform 0.2s var(--ease); }
 .empty-ring .icon { width: 22px; height: 22px; }
-.empty-label { font-size: 14px; }
-.slot.empty:hover { border-color: transparent; color: var(--text); }
-.slot.empty:hover::before { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 6%, transparent); }
+.empty-label { font-size: 14px; text-align: center; }
+.slot.empty:hover { border-color: var(--accent); color: var(--text); background: color-mix(in srgb, var(--accent) 6%, transparent); }
 .slot.empty:hover .empty-ring { border-color: var(--accent); color: var(--accent); transform: scale(1.06); }
-.slot.empty:focus-visible { outline: none; }
-.slot.empty:focus-visible::before { outline: 2px solid var(--accent); outline-offset: 3px; }
+.slot.empty:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .sprite.missing { display: block; width: 96px; height: 96px; }
 /* Lead: il primo membro, in alto a sinistra (il lucchetto del Custom Skillset gli passa accanto) */
-.slot-lead { position: absolute; left: 14px; top: 10px; font: 700 12px/1 var(--display); text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); }
+.slot-lead { position: absolute; left: 12px; top: 10px; font: 700 12px/1 var(--display); font-style: italic; letter-spacing: 0.06em; color: var(--accent-ink); }
 
 /* Riordino trascinando */
 .slot.dragging > summary { opacity: 0.45; }
-.slot.drop-target > summary::before { outline: 2px dashed var(--accent); outline-offset: 3px; }
+.slot.drop-target > summary { outline: 2px dashed var(--accent); outline-offset: 3px; }
 /* Passaggio alle card compatte e ritorno: ogni card scivola nella nuova forma, il resto della pagina scorre senza dissolversi */
 .slot > summary { view-transition-name: var(--vt); view-transition-class: slot; }
 .drawer { view-transition-name: slot-drawer; }

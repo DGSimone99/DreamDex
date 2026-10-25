@@ -33,7 +33,6 @@
   --display: 'Kanit', system-ui, sans-serif;
   --ui: 'Kanit', system-ui, sans-serif;
   --stripes: repeating-linear-gradient(-60deg, #ffffff0d 0 4px, transparent 4px 10px);
-  --skew: -8deg;
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
 }
 /*
