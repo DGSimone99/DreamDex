@@ -140,6 +140,8 @@ export interface TeamRating {
   speed: TeamSpeed;
   /** Ruoli: voci importanti e minori dell'archetipo coi valori del team, e le mancanze essenziali (penalità). */
   roles: TeamRoles;
+  /** Bisogni del team (tipo, livelli e valori dei Ruoli) con cui si è calcolato il voto. */
+  needs: TeamNeeds;
 }
 
 
@@ -333,15 +335,21 @@ export function gradeFor(score: number, lang: Lang = 'it'): { grade: string; lab
   return { grade, label: t(lang, `grade.${grade}`) };
 }
 
-export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): TeamRating | null {
+/** Opzioni del voto: `archetype` giudica il team come quel tipo (pesi, livelli dei ruoli, modalità stall), anche se è riconosciuto come un altro. */
+export interface RateOptions {
+  archetype?: Archetype;
+}
+
+export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it', opts: RateOptions = {}): TeamRating | null {
   if (team.length === 0) return null;
-  const analysis = analyzeTeam(team, data);
+  const analysis = analyzeTeam(team, data, opts.archetype);
   // I 18 tipi pesano uguale (il meta del mese non cambia le coverage); l'Offesa invece si misura contro i difensori del meta, se attivo
   const weights = UNIFORM_TYPE_WEIGHTS;
 
   const rules = rulesOf(data);
   // Stall riconosciuto "senza esagerare": a metà tra la valutazione normale e quella da stall
-  const archetype = isStall(team, rules) ? 'stall' as const : null;
+  const stallMode = opts.archetype ? opts.archetype === 'stall' : isStall(team, rules);
+  const archetype = stallMode ? 'stall' as const : null;
   // Nello stall un muro passivo non deve fare danni: conta la sua robustezza, e i suoi colpi valgono pieni
   const passive = archetype ? team.map(set => isPassive(set, rules)) : [];
 
@@ -407,7 +415,7 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
   const overall = Math.min(100, Math.max(0, base - penalty.total + bonus.total));
   return {
     base, teraCap: rules.teraBonusCap, penalty, bonus, power: power.members, overall, ...gradeFor(overall, lang), provisional: team.length < 6, areas, archetype, meta,
-    teamType: analysis.needs.archetype, trickRoom,
+    teamType: analysis.needs.archetype, trickRoom, needs: analysis.needs,
     weights: areaWeights, offense, defense, speed, roles,
   };
 }

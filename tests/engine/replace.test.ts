@@ -26,10 +26,12 @@ describe('similarity', () => {
 
 describe('diffContribution', () => {
   it('Great Tusk → Corviknight accanto a Gholdengo', () => {
-    const diff = diffContribution(tusk, corviknight, analyzeTeam([gholdengo], fixtureData));
+    const diff = diffContribution(tusk, corviknight, analyzeTeam([gholdengo], fixtureData), [gholdengo]);
     expect(diff.gains).toEqual({ roles: ['pivot'], covers: ['Fighting', 'Bug'], resists: ['Ground'] });
     expect(diff.losses.covers).toContain('Fire');
-    expect(diff.losses.resists).toContain('Dark');
+    // Dopo il cambio nessuno resiste più a Buio: sta fra le resistenze uniche perse, non si ripete
+    expect(diff.lostResists).toContain('Dark');
+    expect(diff.losses.resists).not.toContain('Dark');
     expect(diff.losses.roles).not.toContain('removal');
   });
 });
