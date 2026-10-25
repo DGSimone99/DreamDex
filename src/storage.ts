@@ -188,3 +188,24 @@ export function savePalette(setting: PaletteSetting, storage: Storage | undefine
     // Archivio non disponibile: la scelta vale solo per questa sessione
   }
 }
+
+const COLLAPSED_KEY = 'dreamdex.teamCollapsed';
+
+/** Team compresso in una barra sottile (scelta dell'utente), o null se mai scelto. */
+export function loadTeamCollapsed(storage: Storage | undefined = defaultStorage()): boolean | null {
+  try {
+    const raw = storage?.getItem(COLLAPSED_KEY);
+    const parsed: unknown = raw ? JSON.parse(raw) : null;
+    return typeof parsed === 'boolean' ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+export function saveTeamCollapsed(collapsed: boolean, storage: Storage | undefined = defaultStorage()): void {
+  try {
+    storage?.setItem(COLLAPSED_KEY, JSON.stringify(collapsed));
+  } catch {
+    // Archivio non disponibile: la scelta vale solo per questa sessione
+  }
+}

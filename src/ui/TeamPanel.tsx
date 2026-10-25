@@ -16,6 +16,7 @@ import { setEditing } from './editing';
 import { bestPreset, bestPresets } from '../engine/bestPreset';
 import { FillPanel } from './FillPanel';
 import { SetEditor } from './SetEditor';
+import { PokemonIcon } from './PokemonName';
 import { describe } from './describe';
 import { commonChoices, type CommonChoices } from '../engine/common';
 import { speedTier, type SpeedTier } from '../engine/speed';
@@ -43,6 +44,8 @@ interface Props {
   onOpenChange?: (index: number | null) => void;
   /** Ogni cambio chiude l'editor aperto (es. si sceglie una sezione nella barra laterale). */
   closeSignal?: number;
+  /** Team compresso: ogni carta diventa la sola icona del box (con il puntino degli avvisi). */
+  collapsed?: boolean;
   /** Set incollato al posto del membro (può essere un altro Pokémon); se manca, si aggiorna solo il team. */
   onPaste?: (index: number, set: TeamSet) => void;
   /** Azioni sull'intero team, annullabili: preset migliori per tutti, svuota team. */
@@ -224,6 +227,15 @@ function TeamSlot({ index, set, subRoles, data, format, warning: megaWarning, op
         onDrop={e => { e.preventDefault(); onDrag('drop'); }}
         onDragEnd={() => onDrag('end')}
       >
+        {/* Team compresso: solo l'icona del box, con un puntino se c'è un problema o un avviso */}
+        <span className="mini-icon">
+          <PokemonIcon name={name} />
+          {(dangers.length > 0 || warns.length > 0) && (
+            <span className={`mini-alert ${dangers.length ? 'danger' : 'warn'}`} title={[...dangers, ...warns].map(a => a.text).join(' · ')}>
+              <span className="visually-hidden">{tr(dangers.length ? 'alert.danger' : 'alert.warn')}</span>
+            </span>
+          )}
+        </span>
         <span className="sprite-wrap">
           <Sprite species={set.species} item={set.item} animated={open} />
           {(dangers.length > 0 || warns.length > 0) && (
@@ -331,7 +343,7 @@ function EmptySlot({ onClick }: { onClick: () => void }) {
   );
 }
 
-export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRemove, onAllowMultipleMegas, onOpenChange, closeSignal, onPaste, onBulk, onAddClick }: Props) {
+export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRemove, onAllowMultipleMegas, onOpenChange, closeSignal, collapsed = false, onPaste, onBulk, onAddClick }: Props) {
   const lang = useLang();
   // Sotto-ruoli misurati di ogni membro: la carta dice quello che dice il voto (stessa cache dell'area Ruoli)
   const subRoles = useMemo(() => team.map(set => measuredSubRoles(set, team, data)), [team, data]);
@@ -389,7 +401,7 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
   const warningFor = (set: TeamSet, i: number) =>
     !format.allowMultipleMegas && firstMega !== -1 && i > firstMega && isMega(set) ? t(lang, 'team.secondMega') : null;
   return (
-    <section aria-label={t(lang, 'team.region')} className="team">
+    <section aria-label={t(lang, 'team.region')} className={`team${collapsed ? ' collapsed' : ''}`}>
       <div className="team-head">
         <h2>{t(lang, 'team.title', { n: team.length })}</h2>
         {team.length > 0 && (

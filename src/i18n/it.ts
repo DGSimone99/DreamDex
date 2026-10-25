@@ -748,6 +748,8 @@ export const it: Record<keyof typeof en, string> = {
   'detail.smogon': "Apri su Smogon",
   'detail.smogonTitle': "Analisi Smogon per {format} (si apre in una nuova scheda)",
   'detail.smogonGeneral': "Pagina Smogon del Pokémon (nessuna analisi per {format}; si apre in una nuova scheda)",
+  'team.collapse': "Comprimi team",
+  'team.expand': "Espandi team",
   'team.lead': "Lead",
   'team.leadTitle': "Primo slot: la lead, il Pokémon che mandi in campo per primo",
   'team.emptyAdd': "Aggiungi un Pokémon",

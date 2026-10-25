@@ -746,6 +746,8 @@ export const en = {
   'detail.smogon': "Open on Smogon",
   'detail.smogonTitle': "Smogon analysis for {format} (opens in a new tab)",
   'detail.smogonGeneral': "Smogon page for this Pokémon (no analysis for {format}; opens in a new tab)",
+  'team.collapse': "Collapse team",
+  'team.expand': "Expand team",
   'team.lead': "Lead",
   'team.leadTitle': "First slot: the lead, the Pokémon you send out first",
   'team.emptyAdd': "Add a Pokémon",
