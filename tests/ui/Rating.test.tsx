@@ -2,6 +2,9 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { App } from '../../src/App';
+import { RatingPanel } from '../../src/ui/RatingPanel';
+import { LangProvider } from '../../src/i18n/react';
+import type { TeamRating } from '../../src/engine/rating';
 import { fixtureData } from '../fixtures/data';
 
 describe('Valutazione team', () => {
@@ -43,7 +46,7 @@ describe('Valutazione team', () => {
     await user.paste('Great Tusk\n- Stealth Rock\n\nGarchomp\n- Stealth Rock');
     await user.click(screen.getByRole('button', { name: 'Importa' }));
     const rating = screen.getByRole('group', { name: 'Valutazione team' });
-    expect(rating).toHaveTextContent(/Penalità −\d+/);
+    expect(rating).toHaveTextContent(/Bonus\/Malus −\d+/);
     expect(rating).toHaveTextContent('2 setter di Stealth Rock (−1)');
   });
 
@@ -53,15 +56,15 @@ describe('Valutazione team', () => {
     await user.click(screen.getByLabelText('Testo Showdown'));
     await user.paste('Ninetales\nAbility: Drought\n- Flamethrower\n\nGreat Tusk\n- Headlong Rush');
     await user.click(screen.getByRole('button', { name: 'Importa' }));
-    expect(screen.getByRole('group', { name: 'Valutazione team' })).toHaveTextContent('Bonus +1');
+    expect(screen.getByRole('group', { name: 'Valutazione team' })).toHaveTextContent('Bonus/Malus +1 (−0 / +1)');
     expect(screen.getByText((_, el) => el?.textContent === 'Col sole (Ninetales, Drought): Water ×2 → ×1 per Ninetales, Great Tusk · il meteo non è sempre attivo')).toBeInTheDocument();
   });
 
-  it('nessuna riga ridondanze se non ce ne sono', async () => {
+  it('nessuna lista di bonus e malus se non ce ne sono', async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} />);
     for (const name of ['Great Tusk', 'Gholdengo']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
-    expect(screen.getByRole('group', { name: 'Valutazione team' })).not.toHaveTextContent('Penalità');
+    expect(screen.getByRole('group', { name: 'Valutazione team' })).not.toHaveTextContent(/\(−\d+\)|\(\+\d+\)/);
   });
 
   it('nessuna valutazione con il team vuoto', () => {
@@ -192,5 +195,65 @@ Bold Nature
     expect(within(rating).getByRole('button', { name: /^Difesa \d+$/ }).closest('div')).not.toHaveClass('inactive');
     await user.click(speed);
     expect(screen.getByRole('dialog')).toBeInTheDocument();
+  });
+});
+
+/** Valutazione minima, solo con ciò che serve alla barra Bonus/Malus. */
+const fakeRating = (penalty: [string, number][], bonus: [string, number][], penaltyTotal?: number): TeamRating => ({
+  teamType: 'balance', trickRoom: false, grade: 'B', overall: 70, label: 'Buono', archetype: 'balance', meta: false, areas: [],
+  penalty: { total: penaltyTotal ?? penalty.reduce((n, [, p]) => n + p, 0), items: penalty.map(([text, points]) => ({ text, points })) },
+  bonus: { total: bonus.reduce((n, [, p]) => n + p, 0), items: bonus.map(([text, points]) => ({ text, points })) },
+}) as unknown as TeamRating;
+const renderBar = (r: TeamRating) => {
+  render(<LangProvider lang="it"><RatingPanel rating={r} /></LangProvider>);
+  return screen.getByRole('meter', { name: /^Bonus\/Malus/ });
+};
+const fillOf = (bar: HTMLElement) => bar.querySelector('.net-fill') as HTMLElement | null;
+
+describe('Barra Bonus/Malus', () => {
+  it('malus netto: testo, riempimento rosso a sinistra del centro, valori ARIA', () => {
+    const bar = renderBar(fakeRating([['Troppi setter', 8]], [['Sole', 2]]));
+    expect(bar).toHaveAccessibleName('Bonus/Malus −6 (−8 / +2)');
+    expect(bar).toHaveAttribute('aria-valuemin', '-15');
+    expect(bar).toHaveAttribute('aria-valuemax', '15');
+    expect(bar).toHaveAttribute('aria-valuenow', '-6');
+    const fill = fillOf(bar)!;
+    expect(fill).toHaveClass('neg');
+    expect(fill.style.width).toBe('20%');
+  });
+
+  it('solo bonus: riempimento blu a destra', () => {
+    const bar = renderBar(fakeRating([], [['Sole', 1]]));
+    expect(bar).toHaveAccessibleName('Bonus/Malus +1 (−0 / +1)');
+    const fill = fillOf(bar)!;
+    expect(fill).toHaveClass('pos');
+    expect(parseFloat(fill.style.width)).toBeCloseTo(3.33, 1);
+  });
+
+  it('netto 0 con voci: solo la tacca, la lista le mostra entrambe', () => {
+    const bar = renderBar(fakeRating([['Un malus', 1]], [['Un bonus', 1]]));
+    expect(bar).toHaveAccessibleName('Bonus/Malus 0 (−1 / +1)');
+    expect(bar).toHaveAttribute('aria-valuenow', '0');
+    expect(fillOf(bar)).toBeNull();
+    expect(screen.getAllByRole('listitem').map(li => li.textContent)).toEqual(['Un malus (−1)', 'Un bonus (+1)']);
+  });
+
+  it('malus 15: riempimento esattamente al 50%, mai oltre', () => {
+    const bar = renderBar(fakeRating([['Tanti', 20]], [], 15));
+    expect(fillOf(bar)!.style.width).toBe('50%');
+    expect(bar).toHaveAttribute('aria-valuenow', '-15');
+  });
+
+  it('lista: prima i malus (−n), poi i bonus (+n)', () => {
+    renderBar(fakeRating([['Malus A', 2]], [['Bonus B', 1]]));
+    const items = screen.getAllByRole('listitem').map(li => li.textContent);
+    expect(items).toEqual(['Malus A (−2)', 'Bonus B (+1)']);
+  });
+
+  it('totali entrambi 0: nessuna lista, solo la tacca', () => {
+    const bar = renderBar(fakeRating([], []));
+    expect(bar).toHaveAccessibleName('Bonus/Malus 0 (−0 / +0)');
+    expect(fillOf(bar)).toBeNull();
+    expect(screen.queryByRole('listitem')).toBeNull();
   });
 });

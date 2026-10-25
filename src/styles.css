@@ -832,11 +832,17 @@ meter::-moz-meter-bar { background: var(--blue); border-radius: 2px; }
 /* Area senza peso nel voto (Velocità nello stall): etichetta e barra attenuate */
 .rating .bars .inactive { opacity: 0.5; }
 .rating .bars .inactive dt { color: var(--faint); }
-.rating .bonus { color: var(--good); }
-.rating .penalty { color: var(--warn); }
-.rating .bonus ul, .rating .penalty ul { list-style: none; padding: 0; margin: 4px 0 8px; }
-.rating .bonus li, .rating .penalty li { position: relative; padding-left: 18px; color: var(--text); }
-.rating .bonus li::before, .rating .penalty li::before { position: absolute; left: 0; width: 10px; text-align: center; font-weight: 700; }
+.rating .bars .net-row { grid-column: 1 / -1; }
+.rating .net-bar { position: relative; height: 8px; border-radius: 2px; background: var(--line-soft); }
+.rating .net-tick { position: absolute; left: 50%; top: -2px; bottom: -2px; width: 2px; margin-left: -1px; background: var(--muted); }
+.rating .net-fill { position: absolute; top: 0; bottom: 0; }
+.rating .net-fill.pos { left: 50%; background: var(--blue); border-radius: 0 2px 2px 0; }
+.rating .net-fill.neg { right: 50%; background: var(--bad); border-radius: 2px 0 0 2px; }
+.rating .net-list { list-style: none; padding: 0; margin: 4px 0 8px; }
+.rating .net-list li { position: relative; padding-left: 18px; color: var(--text); }
+.rating .net-list li::before { position: absolute; left: 0; width: 10px; text-align: center; font-weight: 700; }
+.rating .net-list li.pos::before { content: '+'; color: var(--blue); }
+.rating .net-list li.neg::before { content: '−'; color: var(--bad); }
 .rating .bonus li::before { content: '+'; color: var(--good); }
 .rating .penalty li::before { content: '−'; color: var(--warn); }
 

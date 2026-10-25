@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useEditing } from './editing';
-import type { TeamRating } from '../engine/rating';
+import { MAX_PENALTY, type TeamRating } from '../engine/rating';
 import { roleShortLabel } from '../engine/roles';
 import { rolesList } from '../engine/subRoles';
 import { Typed } from './TypeText';
@@ -20,6 +20,9 @@ export function RatingPanel({ rating, ruleIssues = [], metaMonth }: { rating: Te
   const [detail, setDetail] = useState<DetailArea | null>(null);
   const detailButtons = useRef<Partial<Record<DetailArea, HTMLButtonElement | null>>>({});
   const closeDetail = () => { const area = detail; setDetail(null); if (area) detailButtons.current[area]?.focus(); };
+  // Bonus meno malus (il malus è già limitato a MAX_PENALTY): il segno usa il meno tipografico
+  const net = rating.bonus.total - rating.penalty.total;
+  const netText = t('rating.net', { net: net < 0 ? `−${-net}` : net > 0 ? `+${net}` : '0', penalty: `−${rating.penalty.total}`, bonus: `+${rating.bonus.total}` });
   return (
     <details open aria-label={t('rating.title')} className="block rating">
       <summary>
@@ -76,24 +79,24 @@ ${note}` : tip ?? note;
             </div>
           );
         })}
-      </dl>
-      {rating.bonus.total > 0 && (
-        <div className="bonus">
-          <strong>{t('rating.bonus', { n: rating.bonus.total })}</strong>
-          <ul>
-            {rating.bonus.items.map(item => <li key={item.text}><Typed text={item.text} /> (+{item.points})</li>)}
-          </ul>
+        {/* Bonus/Malus: barra a tutta larghezza sotto le aree, centrata sullo zero (rosso a sinistra, blu a destra) */}
+        <div className="net-row">
+          <dt>{netText}</dt>
+          <dd>
+            <div className="net-bar" role="meter" aria-label={netText} aria-valuemin={-MAX_PENALTY} aria-valuemax={MAX_PENALTY} aria-valuenow={net}>
+              <span className="net-tick" />
+              {net !== 0 && <span className={`net-fill ${net < 0 ? 'neg' : 'pos'}`} style={{ width: `${Math.min(Math.abs(net), MAX_PENALTY) / MAX_PENALTY * 50}%` }} />}
+            </div>
+          </dd>
         </div>
+      </dl>
+      {(rating.penalty.items.length > 0 || rating.bonus.items.length > 0) && (
+        <ul className="net-list">
+          {rating.penalty.items.map(item => <li key={`m${item.text}`} className="neg"><Typed text={item.text} /> (−{item.points})</li>)}
+          {rating.bonus.items.map(item => <li key={`b${item.text}`} className="pos"><Typed text={item.text} /> (+{item.points})</li>)}
+        </ul>
       )}
       {detail && <AreaDetail rating={rating} area={detail} onClose={closeDetail} />}
-      {rating.penalty.total > 0 && (
-        <div className="penalty">
-          <strong>{t('rating.penalty', { n: rating.penalty.total })}</strong>
-          <ul>
-            {rating.penalty.items.map(item => <li key={item.text}><Typed text={item.text} /> (−{item.points})</li>)}
-          </ul>
-        </div>
-      )}
     </details>
   );
 }
