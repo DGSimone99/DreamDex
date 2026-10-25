@@ -83,6 +83,11 @@ const STATES: Record<string, State> = {
   } },
   'stats-pop': { run: async p => focus(p, '.stats-badge') },
   alert: { run: async p => focus(p, '.alert-mark') },
+  'grade-delta': { run: async p => {
+    if (!await clickText(p, '.slot.filled > summary', /Dragapult/)) return 'no card';
+    await wait(600);
+    return clickText(p, '.slot[open] button.best-preset', /./);
+  } },
   'editor-alert': { run: async p => {
     if (!await clickText(p, '.slot.filled > summary', /Dragapult/)) return 'no card';
     await wait(600);

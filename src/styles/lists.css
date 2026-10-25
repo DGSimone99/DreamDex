@@ -388,9 +388,24 @@
 /* Schermi grandi e alti (1920×1080 in su): carte più alte e sprite animato della carta aperta più grande */
 @media (min-width: 1600px) and (min-height: 1000px) {
   .slot > summary, .slot.empty { height: 256px; }
-  .slot[open] > summary { --open-scale: 1.85; --fit: 214; }
+  .slot[open] > summary { --fit: 214; }
   /* Anche gli sprite delle carte chiuse un po' più grandi: le carte più alte non restano vuote */
   .slot > summary .sprite { width: 112px; height: 112px; }
   .slot > summary { --sprite-scale: 1.1667; }
   .slot[open] > summary .sprite { transform: scale(calc(var(--open-scale) / var(--sprite-scale))); }
 }
+/* Schermi larghi (anche un 2K con il ridimensionamento di Windows): lo sprite animato più grande, sia nella carta aperta
+   (fin dove l'altezza della carta lo permette) sia nel dettaglio del Pokémon */
+@media (min-width: 1600px) {
+  .slot[open] > summary { --open-scale: 1.85; --fit: 196; }
+  .detail-hero .detail-sprite { width: 176px; height: 176px; }
+  .detail-hero .detail-sprite .sprite-ani { transform: translate(-50%, -50%) scale(1.85); }
+}
+@media (min-width: 1600px) and (min-height: 1000px) {
+  .slot[open] > summary { --fit: 214; }
+}
+/* La variazione del voto (+1/−1) è una piccola pillola nella fascia "Voto": non occupa una riga, non sposta niente */
+.grade-badge { position: relative; }
+.grade-badge .grade-delta { position: absolute; top: 3px; right: 22px; margin: 0; padding: 0 6px; font-size: 12px; line-height: 18px; background: var(--panel); }
+.grade-badge .grade-delta.up { background: color-mix(in srgb, var(--good) 22%, var(--panel)); }
+.grade-badge .grade-delta.down { background: color-mix(in srgb, var(--bad) 22%, var(--panel)); }
