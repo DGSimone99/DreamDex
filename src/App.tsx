@@ -18,8 +18,9 @@ import { SuggestionsPanel } from './ui/SuggestionsPanel';
 import { ListsPanel } from './ui/ListsPanel';
 import { TeamPanel } from './ui/TeamPanel';
 import { Rail } from './ui/Rail';
+import { Icon } from './ui/icons';
 import { TabPanel, Tabs, type TabId } from './ui/Tabs';
-import { loadLang, loadLists, loadPalette, loadSession, loadTab, saveLang, saveLists, savePalette, saveSession, saveTab } from './storage';
+import { loadLang, loadLists, loadPalette, loadSession, loadTab, loadTeamCollapsed, saveLang, saveLists, savePalette, saveSession, saveTab, saveTeamCollapsed } from './storage';
 import { SettingsDialog } from './ui/SettingsDialog';
 import { EMPTY_LISTS, effectiveLists, type UserLists } from './engine/lists';
 import { t, type Lang } from './i18n';
@@ -66,6 +67,12 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
     if (storage) savePalette(next, storage);
   };
   const [settingsOpen, setSettingsOpen] = useState(false);
+  // Team compresso in una barra sottile: più spazio alla sezione sotto (la scelta resta salvata)
+  const [collapsed, setCollapsed] = useState(() => (storage ? loadTeamCollapsed(storage) : null) ?? false);
+  const toggleCollapsed = () => setCollapsed(c => {
+    if (storage) saveTeamCollapsed(!c, storage);
+    return !c;
+  });
   const closeSettings = useCallback(() => {
     setSettingsOpen(false);
     document.querySelector<HTMLElement>('.rail-settings')?.focus();
@@ -242,11 +249,15 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
           {t(lang, 'app.noData', { format: formatLabel(format, lang) })} <code>npm run fetch-data</code> {t(lang, 'app.noDataAfter')}
         </p>
       )}
-      <div className="band">
+      <div className={`band${collapsed ? ' collapsed' : ''}`}>
         <TeamPanel team={team} format={format} data={data} onChange={changeTeam} onAdd={addSet} onReplace={startReplace} onRemove={removeAt} onPaste={pasteAt} onBulk={bulk} onAddClick={startAdd}
-          onOpenChange={setEditingIndex} closeSignal={closeSignal}
+          onOpenChange={setEditingIndex} closeSignal={closeSignal} collapsed={collapsed}
           onAllowMultipleMegas={() => setFormat(f => ({ ...f, allowMultipleMegas: true }))} />
         <GradeBadge rating={rating} />
+        <button type="button" className="band-toggle" aria-expanded={!collapsed} onClick={toggleCollapsed}
+          aria-label={t(lang, collapsed ? 'team.expand' : 'team.collapse')} title={t(lang, collapsed ? 'team.expand' : 'team.collapse')}>
+          <Icon name={collapsed ? 'next' : 'prev'} />
+        </button>
       </div>
       <div className={`workspace${editingIndex !== null ? ' editing' : ''}`} ref={workspaceRef}>
       <main className="tab-body">

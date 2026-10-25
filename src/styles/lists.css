@@ -105,3 +105,44 @@
   .detail-hero .detail-score strong { font-size: 36px; }
   .suggestion { padding: 6px 10px; }
 }
+/* Team compresso: una barra sottile con le icone del box, il voto piccolo e la freccia per riaprirla */
+.mini-icon { display: none; }
+.band-toggle {
+  position: absolute;
+  z-index: 6;
+  left: 50%;
+  bottom: -14px;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  transform: translateX(-50%);
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--raised);
+  color: var(--muted);
+}
+.band-toggle:hover { border-color: var(--accent); color: var(--text); }
+.band-toggle .icon { transform: rotate(90deg); }
+.band.collapsed { grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px; padding-top: 8px; padding-bottom: 10px; }
+.band.collapsed .team-head { display: none; }
+.band.collapsed .slots { grid-template-columns: repeat(6, 76px); gap: 6px; }
+.band.collapsed .slot > summary { height: 52px; padding: 0; flex-direction: row; align-items: center; justify-content: center; }
+.band.collapsed .slot > summary > :not(.mini-icon, .remove) { display: none; }
+.band.collapsed .slot[open] > summary { transform: translateY(-2px); }
+.band.collapsed .mini-icon { position: relative; display: block; zoom: 1.4; }
+.band.collapsed .mini-icon .mon-icon { display: block; }
+.mini-alert { position: absolute; left: -4px; top: 0; width: 8px; height: 8px; border-radius: 50%; box-shadow: 0 0 0 2px var(--panel); }
+.mini-alert.danger { background: var(--bad); }
+.mini-alert.warn { background: var(--warn); }
+.band.collapsed .slot .remove { top: -6px; right: -6px; width: 26px; height: 26px; border-radius: 50%; background: var(--raised); opacity: 0; transition: opacity 0.15s; }
+.band.collapsed .slot > summary:hover .remove, .band.collapsed .slot > summary:focus-within .remove { opacity: 1; }
+.band.collapsed .slot.empty { height: 52px; padding: 0; border-width: 1px; gap: 0; }
+.band.collapsed .slot.empty .empty-label { display: none; }
+.band.collapsed .empty-ring { width: 28px; height: 28px; border-width: 1px; }
+.band.collapsed .empty-ring .icon { width: 14px; height: 14px; }
+.band.collapsed .grade-badge { display: flex; align-items: baseline; gap: 8px; padding: 0 4px; background: none; }
+.band.collapsed .grade-badge > :not(.letter, .overall) { display: none; }
+.band.collapsed .grade-badge .letter { font-size: 40px; }
+.band.collapsed .grade-badge .overall { font-size: 18px; }
