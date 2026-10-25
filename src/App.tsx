@@ -19,7 +19,8 @@ import { ListsPanel } from './ui/ListsPanel';
 import { TeamPanel } from './ui/TeamPanel';
 import { Rail } from './ui/Rail';
 import { TabPanel, Tabs, type TabId } from './ui/Tabs';
-import { loadLang, loadLists, loadSession, loadTab, saveLang, saveLists, saveSession, saveTab } from './storage';
+import { loadLang, loadLists, loadPalette, loadSession, loadTab, saveLang, saveLists, savePalette, saveSession, saveTab } from './storage';
+import { SettingsDialog } from './ui/SettingsDialog';
 import { EMPTY_LISTS, effectiveLists, type UserLists } from './engine/lists';
 import { t, type Lang } from './i18n';
 import { LangProvider } from './i18n/react';
@@ -59,7 +60,16 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   const [shared] = useState(takeSharedTeam);
   const [format, setFormat] = useState<Format>(shared?.format ?? session?.format ?? DEFAULT_FORMAT);
   // Colori di versione: seguono il gioco del formato (o la palette fissata nelle impostazioni)
-  const palette: PaletteSetting = 'auto';
+  const [palette, setPalette] = useState<PaletteSetting>(() => (storage ? loadPalette(storage) : null) ?? 'auto');
+  const changePalette = (next: PaletteSetting) => {
+    setPalette(next);
+    if (storage) savePalette(next, storage);
+  };
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const closeSettings = useCallback(() => {
+    setSettingsOpen(false);
+    document.querySelector<HTMLElement>('.rail-settings')?.focus();
+  }, []);
   useEffect(() => {
     document.documentElement.dataset.palette = paletteFor(palette, format.formatId);
   }, [palette, format.formatId]);
@@ -209,6 +219,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
     <LangProvider lang={lang}>
     <div className="app">
       <Rail format={format} onFormatChange={setFormat} meta={data.stats?.meta ?? null} lang={lang} onLangChange={changeLang}
+        onSettings={() => setSettingsOpen(true)}
         actions={<>
           <ShowdownPanel team={team} format={format} tera={teraAllowed(format)} onImport={changeTeam} />
           <SavedTeams team={team} format={format} onLoad={(saved, savedFormat) => { changeTeam(saved); if (savedFormat) setFormat({ ...savedFormat, meta: format.meta }); }} />
@@ -268,6 +279,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
       </main>
       </div>
       </div>
+      {settingsOpen && <SettingsDialog palette={palette} onPaletteChange={changePalette} onClose={closeSettings} />}
       {listUndo && listUndo.after === lists && (
         <UndoToast action={{ id: listUndo.id, kind: 'clearList', from: listUndo.from }} onClose={() => setListUndo(null)}
           onUndo={() => { setLists(listUndo.before); setListUndo(null); }} />
