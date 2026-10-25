@@ -71,12 +71,12 @@
 .set-editor legend { font: 700 13px/1.2 var(--display); font-style: italic; letter-spacing: 0.01em; color: var(--on-accent-2); background: var(--stripes), var(--accent-2); padding: 3px 20px 3px 9px; clip-path: polygon(0 0, 100% 0, calc(100% - 9px) 100%, 0 100%); }
 .editor-group { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 14px; }
 .set-editor .field-note { font-size: 11px; font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--faint); }
-.set-editor .evs { position: relative; display: grid; gap: 10px; align-self: stretch; }
+.set-editor .evs { position: relative; display: grid; gap: 10px; align-self: stretch; align-content: start; }
 /* "Spread più usati" sulla riga del titolo EV: non ruba una riga al blocco */
 .set-editor .evs .spread-panel > summary { position: absolute; top: 6px; right: 14px; }
 .set-editor .evs .spread-panel { display: contents; }
 /* Blocco statistiche: base, cursore EV, EV, valore finale; la natura colora la riga */
-.stat-rows { display: grid; gap: 2px; margin-top: 18px; }
+.stat-rows { display: grid; gap: 2px; margin-top: 4px; }
 .stat-row { display: grid; grid-template-columns: 52px 92px minmax(0, 1fr) 58px 44px 44px; align-items: center; gap: 10px; padding: 2px 6px; border-radius: 3px; }
 /* Intestazione delle colonne e selettore del livello sopra i valori finali */
 .stat-row.stat-head { padding-top: 0; padding-bottom: 0; font: 700 11px/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--faint); }

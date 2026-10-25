@@ -93,7 +93,7 @@ describe('preset Smogon nell\'editor', () => {
     expect(screen.getByLabelText('Preset Smogon')).toBeDisabled();
   });
 
-  it('sesta voce Custom: selezionata appena il set non coincide più con un preset', async () => {
+  it('senza voce Custom: il campo resta vuoto appena il set non coincide più con un preset', async () => {
     const user = userEvent.setup();
     const sun = { ...set, item: 'Heat Rock', ability: 'Drought', nature: 'Timid', moves: ['Solar Beam', 'Fire Blast'], evs: { spa: 252, spe: 252, hp: 4 } };
     const presets = [{ name: 'Sun Sweeper', format: 'gen9nationaldex', set: sun }];
@@ -108,13 +108,15 @@ describe('preset Smogon nell\'editor', () => {
 
     await user.click(screen.getByLabelText('Preset Smogon'));
     const options = within(screen.getByRole('listbox', { name: 'Preset Smogon: opzioni' })).getAllByRole('option');
-    expect(options).toHaveLength(2);
-    expect(options[1]).toHaveTextContent('Custom');
+    // Solo i preset Smogon: niente voce Custom
+    expect(options).toHaveLength(1);
     await user.keyboard('{Escape}');
 
     await user.clear(screen.getByLabelText('Mossa 2'));
     await user.type(screen.getByLabelText('Mossa 2'), 'Flamethrower');
-    expect(field()).toHaveTextContent('Custom');
+    // Il set non è più un preset: il campo resta vuoto
+    expect(field()).not.toHaveTextContent('Sun Sweeper');
+    expect(field()).not.toHaveTextContent('Custom');
 
     await user.clear(screen.getByLabelText('Mossa 2'));
     await user.type(screen.getByLabelText('Mossa 2'), 'Solar Beam');

@@ -182,9 +182,10 @@ function TeamSlot({ index, set, subRoles, data, format, warning: megaWarning, op
   const roles = shownRoles.map(role => (role === 'weather' ? tr('card.weather') : roleShortLabel(role, lang)));
   // Nel tooltip tutti i ruoli per esteso: prima i due mostrati, poi gli altri
   const allRoles = [...shownRoles, ...(subRoles ? rolesList(subRoles) : detectRoles(set, rules)).filter(role => !shownRoles.includes(role))];
-  const rolesTitle = allRoles.map(role => (role === 'weather' && weather
+  const roleLabels = allRoles.map(role => (role === 'weather' && weather
     ? tr('card.weatherTitle', { condition: conditionLabel(weather.condition, lang), via: viaName(weather.via, lang) })
-    : role === 'weather' ? tr('card.weather') : roleLabel(role, lang))).join(' · ');
+    : role === 'weather' ? tr('card.weather') : roleLabel(role, lang)));
+  const rolesTitle = roleLabels.join(' · ');
   const illegal = illegalParts(set, format.genLimit, pokedexOf(format));
   const warnings = [
     megaWarning,
@@ -288,7 +289,7 @@ function TeamSlot({ index, set, subRoles, data, format, warning: megaWarning, op
       </summary>
       <div className="drawer">
       <IdleSetEditor idle={!open} idleKey={`${lang}:${megaWarning ?? ''}`}
-        set={set} presets={presets} common={common} genLimit={format.genLimit} pokedex={pokedexOf(format)}
+        set={set} presets={presets} common={common} genLimit={format.genLimit} pokedex={pokedexOf(format)} roles={roleLabels}
         teraBannedIn={teraAllowed(format) ? undefined : formatLabel(format, lang)} speed={speed} onChange={stable.onChange}
         presetAction={
           <button type="button" className="best-preset" title={tr('team.bestPresetTitle')} onClick={applyBest}>
@@ -313,6 +314,8 @@ function TeamSlot({ index, set, subRoles, data, format, warning: megaWarning, op
           }}><Icon name={copied ? 'check' : 'copy'} /> <span className="btn-label">{tr(copied ? 'team.copied' : 'team.copySet')}</span></button>
           <SmogonLink species={name} format={format} presets={presets} />
           <button type="button" aria-label={tr('team.replace', { species: name })} title={tr('team.replaceButton')} onClick={stable.onReplace}><Icon name="swap" /> <span className="btn-label">{tr('team.replaceButton')}</span></button>
+          <button type="button" className="editor-close" aria-label={tr('team.closeEditor')} title={tr('team.closeEditor')}
+            onClick={() => { onToggle(false); card.current?.focus(); }}><Icon name="close" /></button>
         </>} />
       {paste && (
         <div className="paste-panel" onKeyDown={e => { if (e.key === 'Escape') { e.stopPropagation(); setPaste(null); } }}>

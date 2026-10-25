@@ -13,7 +13,7 @@ function Editor({ initial }: { initial: TeamSet }) {
   return <SetEditor set={set} genLimit={9} onChange={setSet} />;
 }
 const chomp: TeamSet = { ...emptySet('Garchomp'), nature: 'Jolly', evs: { atk: 252, spe: 252, hp: 4 } };
-const finalOf = (stat: string) => within(screen.getByRole('group', { name: 'EV' })).getByTestId(`final-${stat}`).textContent;
+const finalOf = (stat: string) => within(screen.getByRole('group', { name: 'Statistiche' })).getByTestId(`final-${stat}`).textContent;
 
 describe('IV e livello nel blocco statistiche', () => {
   it('l’IV cambia il valore finale e resta nel set', async () => {
