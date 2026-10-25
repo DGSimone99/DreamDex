@@ -1,0 +1,37 @@
+/* Colonne */
+/* Schede sotto il team: una sezione alla volta, a tutta larghezza */
+.tabs { display: flex; gap: 4px; padding: 0 28px; margin-top: 14px; border-bottom: 1px solid var(--line-soft); }
+.tabs [role='tab'] {
+  gap: 8px;
+  padding: 10px 16px 11px;
+  margin-bottom: -1px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+  background: none;
+  font: 700 20px/1 var(--display);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.tabs [role='tab']:hover { color: var(--text); border-bottom-color: var(--line); }
+.tabs [role='tab'][aria-selected='true'] { color: var(--text); border-bottom-color: var(--gold); }
+.tabs [role='tab'][aria-disabled='true'] { color: var(--faint); opacity: 0.55; cursor: not-allowed; border-bottom-color: transparent; }
+.tab-count { font: 600 12px/1 var(--ui); letter-spacing: 0; text-transform: none; padding: 3px 8px; border-radius: 10px; background: var(--raised); color: var(--muted); }
+.tab-count.serious { background: var(--bad-bg); color: var(--bad); }
+.tab-count.minor, .tab-count.info { background: var(--blue-soft); color: var(--text); }
+.tab-count.warn { background: var(--warn-bg); color: var(--warn); }
+.tab-body { padding: 22px 28px 0; }
+.tab-panel:not(.active) { display: none; }
+/* Il titolo della sezione lo dice già la scheda */
+.tab-panel .analysis > h2 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.analysis-cols, .meta-panel { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 28px; align-items: start; }
+.analysis-main, .analysis-detail { min-width: 0; }
+
+.block {
+  background: var(--panel);
+  border: 1px solid var(--line-soft);
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-bottom: 10px;
+}

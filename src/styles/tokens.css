@@ -1,0 +1,29 @@
+/* DreamDex: team preview da finale mondiale, tema scuro */
+:root {
+  color-scheme: dark;
+  --ground: #070b1c;
+  --band: #0c1330;
+  --panel: #0f1735;
+  --raised: #17214a;
+  --field: #0a1129;
+  --line: #26326a;
+  --line-soft: #1b2552;
+  --text: #eef1ff;
+  --muted: #a3add6;
+  --faint: #7f8bbd;
+  --blue: #6f8dff;
+  --blue-soft: #1f2d6b;
+  --gold: #ffb800;
+  --gold-ink: #1d1500;
+  --gold-soft: #33280a;
+  --bad: #ff8a8a;
+  --bad-bg: #3a1426;
+  --warn: #ffc857;
+  --warn-bg: #362a0d;
+  --good: #63e3a8;
+  --good-bg: #0f3229;
+  --display: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+  --ui: 'Barlow', system-ui, sans-serif;
+  --skew: -8deg;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}

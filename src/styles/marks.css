@@ -1,0 +1,75 @@
+/* Triangolo di pericolo con tooltip: rosso non legale, giallo da controllare */
+.alert-mark { position: relative; display: inline-flex; align-items: center; flex: none; cursor: help; border-radius: 3px; }
+.alert-mark .icon { width: 17px; height: 17px; }
+.alert-mark.danger { color: var(--bad); }
+.alert-mark.warn { color: var(--warn); }
+.alert-mark.info { color: var(--blue); }
+.alert-mark:focus-visible { outline: 2px solid currentColor; outline-offset: 1px; }
+.sprite-alerts { position: absolute; right: -6px; bottom: 2px; display: flex; gap: 4px; }
+.alert-mark.on-sprite {
+  padding: 3px;
+  background: var(--ground);
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+.alert-mark.on-sprite .icon { width: 15px; height: 15px; }
+/* Custom Skillset: etichetta del membro, a sinistra sopra l'inizio del nome */
+.alert-mark.slot-custom { position: absolute; left: 14px; top: 8px; padding: 2px; }
+.alert-mark.slot-custom .icon { width: 16px; height: 16px; }
+.slot:first-child .alert-mark.slot-custom { left: 50px; top: 5px; }
+.alert-pop {
+  position: absolute;
+  z-index: 60;
+  top: calc(100% + 8px);
+  left: -8px;
+  width: max-content;
+  max-width: 260px;
+  display: none;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  background: var(--ground);
+  border: 1px solid var(--line);
+  border-top: 2px solid currentColor;
+  border-radius: 4px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+  font: 500 13px/1.4 var(--ui);
+  text-transform: none;
+  letter-spacing: 0;
+  white-space: normal;
+  cursor: default;
+}
+.alert-mark:hover .alert-pop, .alert-mark:focus-visible .alert-pop { display: flex; animation: tip 0.15s var(--ease); }
+.alert-line { position: relative; color: var(--text); padding-left: 14px; }
+.alert-line::before { content: ''; position: absolute; left: 0; top: 0.5em; width: 6px; height: 6px; border-radius: 50%; background: var(--c); }
+.alert-line.danger { --c: var(--bad); }
+.alert-line.warn { --c: var(--warn); }
+.alert-line.info { --c: var(--blue); }
+.slot > summary:has(.alert-mark:hover, .alert-mark:focus-visible) { z-index: 5; }
+
+/* Icone degli strumenti (24px, dal foglio di Showdown) */
+.item-icon { display: inline-block; flex: none; vertical-align: middle; background-repeat: no-repeat; image-rendering: pixelated; }
+.slot .held { display: flex; align-items: center; gap: 5px; max-width: 100%; min-width: 0; }
+.slot .held > span, .slot .ability { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.slot .ability { font-size: 13px; color: var(--muted); margin-top: -2px; }
+.combobox.has-leading input { padding-left: 32px; }
+.combobox-leading { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); display: flex; pointer-events: none; }
+.combobox .option-head { gap: 8px; }
+.combobox .option-head { justify-content: flex-start; }
+.combobox .option-head .option-detail, .combobox .option-head > .move-meta { margin-left: auto; }
+
+/* Nomi dei Pokémon nei testi: grassetto con il pallino del tipo (diviso a metà per i doppi tipi) */
+.mon-ref, .mon-name { display: inline; }
+.mon-ref .type-dot, .mon-name .type-dot { display: inline-block; margin-right: 4px; vertical-align: 0; }
+.mon-name .mon-icon { vertical-align: middle; }
+.mon-ref strong, .mon-name strong { font-weight: 700; color: var(--text); }
+.mon-name.muted strong { color: var(--muted); }
+/* Mini sprite solo nelle raccomandazioni: 40×30 con margini vuoti, rientra nella riga */
+.mon-icon { display: inline-block; flex: none; margin: -10px -2px -8px -4px; image-rendering: pixelated; }
+.type-dot { flex: none; width: 9px; height: 9px; border-radius: 50%; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35); }
+.mon-ref, .mon-name { white-space: nowrap; }
+
+/* Etichette dei suggerimenti: una riga, il resto con … */
+.suggestion .tags .tag { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.suggestion .tags .tag.warn > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }

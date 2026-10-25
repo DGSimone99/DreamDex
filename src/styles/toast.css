@@ -1,0 +1,39 @@
+/* Avviso con Annulla: in basso al centro, 5 secondi (barra che si accorcia, ferma finché ci sei sopra) */
+.undo-toast {
+  position: fixed;
+  z-index: 80;
+  left: 50%;
+  bottom: 24px;
+  translate: -50% 0;
+  min-width: 300px;
+  max-width: calc(100vw - 32px);
+  padding: 18px 44px 20px;
+  overflow: hidden;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+  animation: tip 0.2s var(--ease);
+}
+.undo-text { margin: 0; display: flex; align-items: center; flex-wrap: wrap; gap: 4px 6px; font-size: 14px; color: var(--muted); }
+.undo-text strong { color: var(--text); font-weight: 700; }
+.undo-text .mon-icon { margin: -8px -4px -6px -6px; }
+.undo-text .icon { width: 16px; height: 16px; color: var(--faint); }
+.undo-text { justify-content: center; }
+.undo-actions { margin-top: 12px; display: flex; justify-content: center; }
+.undo-button { display: inline-flex; align-items: center; gap: 6px; padding: 5px 16px; }
+.undo-button .icon { width: 16px; height: 16px; }
+.undo-toast .undo-close { position: absolute; top: 10px; right: 10px; padding: 2px; border: 0; background: none; color: var(--faint); }
+.undo-toast .undo-close:hover { color: var(--text); }
+.undo-timer {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  width: 100%;
+  background: var(--blue);
+  transform-origin: left;
+  animation: undo-timer linear forwards;
+}
+.undo-toast:hover .undo-timer, .undo-toast:focus-within .undo-timer { animation-play-state: paused; }
+@keyframes undo-timer { to { transform: scaleX(0); } }

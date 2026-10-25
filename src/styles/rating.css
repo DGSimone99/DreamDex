@@ -1,0 +1,19 @@
+/* Voto */
+.grade-badge {
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding-top: 52px;
+}
+.grade-badge .letter { font: 700 132px/0.9 var(--display); color: var(--gold); }
+.grade-badge .overall { font: 700 24px var(--display); margin-top: 6px; }
+.grade-badge .label { color: var(--muted); font-size: 14px; }
+.grade-badge.grade-C .letter { color: var(--warn); }
+.grade-badge.grade-D .letter { color: var(--bad); }
+.grade-badge.none .letter { color: var(--line); }
+.grade-delta { margin-top: 8px; padding: 2px 8px; border-radius: 3px; font: 600 13px var(--ui); font-variant-numeric: tabular-nums; color: var(--muted); background: var(--raised); }
+.grade-delta.up { color: var(--good); background: var(--good-bg); }
+.grade-delta.down { color: var(--bad); background: var(--bad-bg); }
