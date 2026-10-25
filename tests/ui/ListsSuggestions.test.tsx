@@ -22,7 +22,7 @@ const favorites = (...names: string[]): UserLists => ({ ...EMPTY_LISTS, universa
 
 const suggestions = () => screen.getByRole('region', { name: 'Suggerimenti' });
 const rowNames = () => [...suggestions().querySelectorAll('.suggestions .name-line strong')].map(el => el.textContent!.replace(/^\d+\. /, ''));
-const rowOverall = () => [...suggestions().querySelectorAll('.suggestions .result small')].map(el => Number(el.textContent!.split(' ').pop()));
+const rowOverall = () => [...suggestions().querySelectorAll('.suggestions .result[aria-label]')].map(el => Number(/ (\d+) \(/.exec(el.getAttribute('aria-label')!)![1]));
 
 async function setup(storage: Storage, ...names: string[]) {
   const user = userEvent.setup();

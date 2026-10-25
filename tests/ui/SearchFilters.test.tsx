@@ -127,7 +127,7 @@ describe('ricerca e filtri nei suggerimenti', () => {
   it('niente badge del tier: solo il triangolo rosso per chi è bannato', async () => {
     const user = await setup('Great Tusk');
     expect(suggestions().querySelector('.tag.tier')).toBeNull();
-    expect(suggestions().querySelector('.alert-mark')).toBeNull();
+    expect(suggestions().querySelector('.alert-mark.danger')).toBeNull();
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'dragapu');
     await waitFor(() => expect(cardNames()).toEqual(['Dragapult']));
     const mark = suggestions().querySelector('.alert-mark.danger')!;
