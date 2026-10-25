@@ -1,3 +1,4 @@
+import type { Archetype } from './archetype';
 import type { EngineData } from './data';
 import { battleName, getSpecies, toID } from './dex';
 import { teamNeeds, type TeamNeeds } from './needs';
@@ -42,13 +43,14 @@ export const UNIFORM_TYPE_WEIGHTS = Object.fromEntries(TYPES.map(type => [type, 
 /** Il voto usa il meta: ci sono le statistiche e la modalità senza meta non è scelta. */
 export const usesMeta = (data: EngineData): boolean => !!data.stats && !data.ignoreMeta;
 
-export function analyzeTeam(team: TeamSet[], data: EngineData): TeamAnalysis {
+/** `forced`: giudica il team come quel tipo (vedi `teamNeeds`). */
+export function analyzeTeam(team: TeamSet[], data: EngineData, forced?: Archetype): TeamAnalysis {
   const names = team.map(battleName);
   const meta = usesMeta(data);
   return {
     weakness: weaknessTable(team),
     coverage: coverageTable(team),
-    needs: teamNeeds(team, data),
+    needs: teamNeeds(team, data, undefined, forced),
     threats: (meta ? topThreats(data.stats, THREAT_COUNT, names) : []).map(name => ({
       name,
       usage: usageOf(data.stats, name),

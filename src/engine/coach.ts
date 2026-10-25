@@ -266,7 +266,7 @@ function findSwaps(team: TeamSet[], format: Format, data: EngineData): CoachSwap
       similar: similarity(option.member, pick.s.set, rules) >= SIMILAR_THRESHOLD,
       level: pick.level,
       ratingGain: pick.gain,
-      diff: diffContribution(option.member, pick.s.set, analyzeTeam(option.rest, data)),
+      diff: diffContribution(option.member, pick.s.set, analyzeTeam(option.rest, data), option.rest),
     });
   }
   return swaps;
@@ -288,12 +288,17 @@ export function verdictFor(team: TeamSet[], problems: CoachProblem[], grade: str
 }
 
 /** Voci del diff raggruppate per tipo: ruoli, "Forte contro X, Y", "Resistente a X, Y". */
+/** I tipi in elenco; in italiano con la preposizione davanti ("a Fuoco", "ad Acqua"), in inglese senza. */
+function typeList(list: string[], lang: Lang): { types: string } {
+  const types = list.map(type => typeName(type, lang)).join(', ');
+  return { types: lang === 'it' ? `${/^[aeiouàèéìòù]/i.test(types) ? 'ad' : 'a'} ${types}` : types };
+}
+
 function groupChanges(change: Contribution, gain: boolean, lang: Lang): string[] {
-  const types = (list: string[]) => list.map(type => typeName(type, lang)).join(', ');
   return [
     ...change.roles.map(role => roleLabel(role, lang)),
-    change.covers.length ? t(lang, gain ? 'diff.strong' : 'diff.notStrong', { types: types(change.covers) }) : '',
-    change.resists.length ? t(lang, gain ? 'diff.resists' : 'diff.notResists', { types: types(change.resists) }) : '',
+    change.covers.length ? t(lang, gain ? 'diff.strong' : 'diff.notStrong', { types: change.covers.map(type => typeName(type, lang)).join(', ') }) : '',
+    change.resists.length ? t(lang, gain ? 'diff.resists' : 'diff.notResists', typeList(change.resists, lang)) : '',
   ].filter(Boolean);
 }
 
@@ -333,7 +338,10 @@ export function ratingGainOf(team: TeamSet[], index: number, set: TeamSet, data:
 /** Cosa porta il sostituto e cosa perde il team, raggruppato per tipo. */
 export const describeDiff = (diff: Diff, lang: Lang = 'it') => ({
   pros: groupChanges(diff.gains, true, lang),
-  cons: groupChanges(diff.losses, false, lang),
+  cons: [
+    ...groupChanges(diff.losses, false, lang),
+    ...(diff.lostResists.length ? [t(lang, 'diff.nobodyResists', typeList(diff.lostResists, lang))] : []),
+  ],
 });
 
 export function describeSwap(swap: CoachSwap, lang: Lang = 'it'): SwapSummary {
