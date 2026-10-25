@@ -22,6 +22,24 @@ export interface TeamGain {
   lostResists?: TypeName[];
   /** Con un tipo scelto e un team di 6 non ancora di quel tipo: il cambio lo porta a quel tipo. */
   reaches?: boolean;
+  /** Punti di voto per area: variazione dell'area per il suo peso nel voto (servono a pesare pro e contro). */
+  areaPoints?: Partial<Record<ScoredArea, number>>;
+}
+
+export type ScoredArea = 'defense' | 'strength' | 'roles' | 'speed';
+const SCORED_AREAS: ScoredArea[] = ['defense', 'strength', 'roles', 'speed'];
+
+/** Variazione di ogni area per il suo peso nel voto (i pesi sommano a 1), arrotondata a un decimale. */
+function areaPointsOf(before: TeamRating, after: TeamRating): Partial<Record<ScoredArea, number>> {
+  const value = (rating: TeamRating, key: ScoredArea) => rating.areas.find(a => a.key === key)?.value ?? null;
+  const points: Partial<Record<ScoredArea, number>> = {};
+  for (const key of SCORED_AREAS) {
+    const was = value(before, key);
+    const now = value(after, key);
+    if (was === null || now === null) continue;
+    points[key] = Math.round((now - was) * (after.weights[key] ?? 0) * 10) / 10;
+  }
+  return points;
 }
 
 /**
@@ -60,6 +78,7 @@ function swapEvaluator(team: TeamSet[], data: EngineData, lang: Lang, archetype:
         grade: rating.grade, overall: rating.overall, gain: rating.overall - before.overall,
         ...(lost ? { lost, penalty: penalize ? rolePenalty(lost) : 0 } : {}),
         lostResists: lostResistances(team, after),
+        areaPoints: areaPointsOf(before, rating),
         ...(archetype && !guard && after.length === 6 ? { reaches: teamArchetype(after, rules)?.archetype === archetype } : {}),
       },
     };

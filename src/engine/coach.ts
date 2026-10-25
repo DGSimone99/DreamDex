@@ -16,6 +16,7 @@ import { bannedInPool, scoreCandidates, type Suggestion } from './scoring';
 import { memberIssues, rateTeam, roleAndTypeRedundancies, weatherClashes } from './rating';
 import { benefits, conditionLabel, viaName, enables, neededConditions, providesAll, teamSynergies, unmetBeneficiaries, unusedEnablers } from './synergy';
 import type { TeamSet } from './sets';
+import type { ScoredArea } from './teamGain';
 import { defensiveMultiplier } from './types';
 
 export const SWAP_MARGIN = 10;
@@ -343,6 +344,42 @@ export const describeDiff = (diff: Diff, lang: Lang = 'it') => ({
     ...(diff.lostResists.length ? [t(lang, 'diff.nobodyResists', typeList(diff.lostResists, lang))] : []),
   ],
 });
+
+/** Un pro o un contro con i punti di voto che vale (negativi per i contro). */
+export interface WeightedChange {
+  text: string;
+  points: number;
+}
+
+/**
+ * Pro e contro di un cambio, ognuno coi punti della sua area (ruoli → Ruoli, "Forte contro" → Offesa, resistenze → Difesa)
+ * divisi fra le voci di quell'area dallo stesso lato; un pro in un'area che scende vale 0 (e un contro in una che sale).
+ * Ordinati dal più pesante; a parità resta l'ordine di describeDiff.
+ */
+export function rankedChanges(diff: Diff, areaPoints: Partial<Record<ScoredArea, number>> | undefined, lang: Lang = 'it'): { pros: WeightedChange[]; cons: WeightedChange[] } {
+  const side = (change: Contribution, gain: boolean, extra: { text: string; area: ScoredArea }[] = []) => {
+    const items = [
+      ...change.roles.map(role => ({ text: roleLabel(role, lang), area: 'roles' as const })),
+      ...(change.covers.length ? [{ text: groupChanges({ roles: [], covers: change.covers, resists: [] }, gain, lang)[0], area: 'strength' as const }] : []),
+      ...(change.resists.length ? [{ text: groupChanges({ roles: [], covers: [], resists: change.resists }, gain, lang)[0], area: 'defense' as const }] : []),
+      ...extra,
+    ];
+    const count = (area: ScoredArea) => items.filter(i => i.area === area).length;
+    return items
+      .map(item => {
+        const total = areaPoints?.[item.area] ?? 0;
+        const share = (gain ? Math.max(0, total) : Math.min(0, total)) / count(item.area);
+        return { text: item.text, points: Math.round(share * 10) / 10 + 0 };
+      })
+      .map((item, i) => ({ item, i }))
+      .sort((a, b) => Math.abs(b.item.points) - Math.abs(a.item.points) || a.i - b.i)
+      .map(({ item }) => item);
+  };
+  return {
+    pros: side(diff.gains, true),
+    cons: side(diff.losses, false, diff.lostResists.length ? [{ text: t(lang, 'diff.nobodyResists', typeList(diff.lostResists, lang)), area: 'defense' }] : []),
+  };
+}
 
 export function describeSwap(swap: CoachSwap, lang: Lang = 'it'): SwapSummary {
   return { gain: swap.ratingGain, ...describeDiff(swap.diff, lang) };
