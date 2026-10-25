@@ -19,7 +19,6 @@ import { SetEditor } from './SetEditor';
 import { describe } from './describe';
 import { commonChoices, type CommonChoices } from '../engine/common';
 import { speedTier, type SpeedTier } from '../engine/speed';
-import { StatsBadge } from './StatsBadge';
 import { ItemIcon } from './ItemIcon';
 import { AlertMark, type Alert } from './AlertMark';
 import { Sprite, TypeChip, typeColor } from './Sprite';
@@ -243,7 +242,6 @@ function TeamSlot({ index, set, subRoles, data, format, warning: megaWarning, op
           <AlertMark icon="unlock" className="slot-custom"
             alerts={[{ level: 'info', text: tr('team.customMark') }]} />
         )}
-        <span className="slot-stats"><StatsBadge species={set.species} item={set.item} /></span>
         <button
           type="button"
           className="favorite"
@@ -263,15 +261,18 @@ function TeamSlot({ index, set, subRoles, data, format, warning: megaWarning, op
         >
           <Icon name="close" />
         </button>
-        <strong className="name">{name}</strong>
-        {/* Strumento (con icona) e abilità su due righe: le card restano allineate */}
-        <small className="held" title={describe.item(set.item, lang)}>
-          <ItemIcon item={set.item} />
-          <span>{set.item ? gameName('item', set.item, lang) : tr('team.noItem')}</span>
-        </small>
+        {/* Lo strumento è la sua icona prima del nome: nome e descrizione nel tooltip (e per i lettori di schermo) */}
+        <span className="name-line">
+          <small className="held" title={set.item ? `${gameName('item', set.item, lang)} — ${describe.item(set.item, lang)}` : tr('team.noItem')}>
+            <ItemIcon item={set.item} size={22} />
+            <span className="visually-hidden">{set.item ? gameName('item', set.item, lang) : tr('team.noItem')}</span>
+          </small>
+          <strong className="name">{name}</strong>
+        </span>
         <small className="ability" title={describe.ability(ability, lang)}>{ability ? gameName('ability', ability, lang) : '—'}</small>
         <span className="types">{species?.types.map(type => <TypeChip key={type} type={type} />) ?? <TypeChip type="?" />}</span>
-        {roles.length > 0 && <small className="roles" title={rolesTitle}>{roles.join(' · ')}</small>}
+        {/* Solo il ruolo principale; tutti i ruoli (e il meteo) nel tooltip */}
+        {roles.length > 0 && <small className="roles" title={rolesTitle}>{roles[0]}</small>}
       </summary>
       <div className="drawer">
       <IdleSetEditor idle={!open} idleKey={`${lang}:${megaWarning ?? ''}`}

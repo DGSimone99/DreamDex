@@ -30,7 +30,7 @@
   position: relative;
   isolation: isolate;
   /* Stessa altezza piene e vuote: con il team vuoto la fila non cambia quando entra il primo Pokémon */
-  height: 268px;
+  height: 222px;
   padding: 8px 12px 14px;
   display: flex;
   flex-direction: column;
@@ -84,8 +84,10 @@
   transform-origin: 50% 100%;
   transform: translateX(-50%) scale(min(calc(var(--open-scale, 1.12) * var(--sprite-scale, 1)), calc(var(--fit, 999) / var(--ani-h, 96))));
 }
-.slot .name { font: 800 17px/1.05 var(--display); font-style: italic; letter-spacing: 0.01em; max-width: 100%; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.slot .held { font-size: 13px; color: var(--muted); }
+.slot .name { font: 800 16px/1.05 var(--display); font-style: italic; letter-spacing: 0.01em; max-width: 100%; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.slot .name-line { display: flex; align-items: flex-start; gap: 5px; max-width: 100%; margin-top: 4px; }
+.slot .name-line .held { flex: none; display: flex; margin-top: -2px; }
+.slot .name-line .name { min-width: 0; }
 .slot .roles { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 .slot .types { display: flex; gap: 4px; flex-wrap: nowrap; margin: 2px 0; }
 /* Due chip affiancati anche nelle card strette */
@@ -110,10 +112,8 @@
 .slot .remove { right: 4px; }
 .slot .remove:hover { color: var(--bad); }
 /* Badge Stats su una riga sua sopra il nome: spazio riservato, non va mai sopra lo sprite */
-.slot .slot-stats { position: relative; z-index: 2; display: flex; margin: 2px 0 3px; }
-.slot .stats-badge { font-size: 11px; }
 /* La card col tooltip aperto passa sopra alle vicine */
-.slot > summary:has(.stats-badge:hover, .stats-badge:focus-visible, .alert-mark:hover, .alert-mark:focus-visible) { z-index: 5; }
+.slot > summary:has(.alert-mark:hover, .alert-mark:focus-visible) { z-index: 5; }
 /* Bordo sottile: il triangolo dice il problema, la selezione resta la cosa più visibile */
 .slot.invalid > summary { outline: 1px solid color-mix(in srgb, var(--bad) 70%, transparent); outline-offset: -1px; }
 .slot.warn > summary { outline: 1px solid color-mix(in srgb, var(--warn) 70%, transparent); outline-offset: -1px; }
