@@ -126,7 +126,8 @@ describe('SuggestionsPanel', () => {
     const user = await setup('Great Tusk', 'Gholdengo');
     await user.click(screen.getByRole('button', { name: 'Sostituisci Great Tusk' }));
     expect(within(suggestions()).getByRole('button', { name: 'Migliora team' })).toHaveAttribute('aria-pressed', 'true');
-    expect(within(suggestions()).getAllByText(/\+Pivot/).length).toBeGreaterThan(0);
+    // Ogni riga dice il guadagno principale (e la perdita principale) del cambio
+    expect([...list().querySelectorAll('.who small')].some(el => /^[+−]/.test(el.textContent!))).toBe(true);
     expect(within(suggestions()).queryByRole('button', { name: 'Sostituto simile' })).toBeNull();
 
     await user.click(within(suggestions()).getAllByRole('button', { name: 'Sostituisci con questo' })[0]);
@@ -217,5 +218,36 @@ Bold Nature
     expect(speed).toHaveTextContent(/^Velocità/);
     expect(speed.querySelector('dt')).toHaveAttribute('aria-description', 'Non conta nello Stall');
     expect(speed.querySelector('.change')).toHaveTextContent(/^$/);
+  });
+});
+
+describe('riga della lista', () => {
+  const FULL = ['Great Tusk', 'Gholdengo', 'Kingambit', 'Dragapult', 'Corviknight', 'Toxapex'];
+
+  it('Migliora: chi esce col nome, un bonus e al massimo un malus, niente voto sotto il +N', async () => {
+    await setup(...FULL);
+    const first = list().querySelector<HTMLElement>('li')!;
+    const out = first.querySelector<HTMLElement>('.out')!;
+    expect(FULL.some(name => out.textContent!.includes(name))).toBe(true);
+    const summary = first.querySelector('.who small')!.textContent!;
+    expect(summary.match(/(^|· )\+/g)?.length ?? 0).toBeLessThanOrEqual(1);
+    expect(summary.match(/(^|· )−/g)?.length ?? 0).toBeLessThanOrEqual(1);
+    expect(first.querySelector('.result small')).toBeNull();
+    expect(first.querySelector('.tags')).toBeNull();
+  }, 30000);
+
+  it('doppio clic sulla riga fa lo scambio', async () => {
+    const user = await setup(...FULL);
+    const first = list().querySelector<HTMLElement>('li')!;
+    const name = rowNames()[0];
+    await user.dblClick(first.querySelector<HTMLElement>('.rank')!);
+    expect(within(team()).getByText(name)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Annulla' })).toBeInTheDocument();
+  }, 30000);
+
+  it('Aggiungi: niente "chi esce"', async () => {
+    await setup('Great Tusk');
+    expect(list().querySelector('.out')).toBeNull();
+    expect(list().querySelector('li .who small')!.textContent).toMatch(/\S/);
   });
 });

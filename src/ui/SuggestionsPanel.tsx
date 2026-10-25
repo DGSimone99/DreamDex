@@ -4,7 +4,9 @@ import type { Format } from '../engine/format';
 import { formatRules, rulesOf } from '../engine/formatRules';
 import { teamArchetype, type Archetype } from '../engine/archetype';
 import { improveReplacements, similarity, type Replacement } from '../engine/replace';
-import { describeDiff, ratingGainOf, SIMILAR_THRESHOLD, type SwapPreview } from '../engine/coach';
+import { rankedChanges, ratingGainOf, SIMILAR_THRESHOLD, type SwapPreview } from '../engine/coach';
+import { topReason } from '../engine/explain';
+import { OFTEN_TOGETHER } from '../engine/scoring';
 import { ActiveFilters } from './ActiveFilters';
 import { suggest, type Suggestion } from '../engine/scoring';
 import type { TeamSet } from '../engine/sets';
@@ -88,7 +90,6 @@ function ResultCell({ item, usage }: { item: Item; usage: number | null }) {
   return (
     <span className="result" aria-label={tr('suggest.teamGrade', { grade: result.grade, n: result.overall, gain })}>
       <strong className={result.gain < 0 ? 'worse' : result.gain === 0 ? 'same' : undefined}>{gain}</strong>
-      <small>{result.grade} {result.overall}</small>
     </span>
   );
 }
@@ -131,19 +132,25 @@ function SuggestionRow({ rank, item, usage, out, quickLabel, actionLabel, replac
   const tr = useT();
   const lang = useLang();
   const diff = 'diff' in item ? item.diff : null;
-  const changes = diff ? describeDiff(diff, lang) : null;
-  // Senza differenze da dire, il primo motivo (o "nessuna differenza" se non ce ne sono)
-  const diffText = changes
-    ? [...changes.pros.map(p => `+${p}`), ...changes.cons.map(c => `−${c}`)].join(' · ') || (item.reasons[0] ? null : tr('suggest.noDifference'))
-    : null;
-  // La riga sotto il nome; le etichette uguali a questa riga non si ripetono
-  const summaryText = diffText ?? item.reasons[0]?.text ?? '';
+  // Una riga sola: il bonus che vale più punti e il malus che ne toglie di più (aggiungendo, la ragione che pesa di più)
+  const changes = diff ? rankedChanges(diff, item.teamGain?.areaPoints, lang) : null;
+  const bonus = changes?.pros[0] ? `+${changes.pros[0].text}` : null;
+  const malus = changes?.cons[0] ? `−${changes.cons[0].text}` : null;
+  const summaryText = changes
+    ? (item.reasons[0] ? topReason(item.reasons)!.text : tr('suggest.noDifference'))
+    : (usage !== null ? item.reasons[0]?.text : topReason(item.reasons)?.text) ?? '';
   const types = getSpecies(item.species)?.types ?? [];
-  const tags = item.tags.filter(tag => tag !== summaryText);
+  // Avvisi e "spesso usati insieme" come segni con tooltip, non più etichette lunghe che vanno a capo
+  const warnings = item.facts.clashes.map(text => ({ level: 'warn' as const, text: text.replace(/^⚠\s*/, '') }));
+  const synergy = item.facts.synergy;
+  const together = synergy && synergy.pct >= OFTEN_TOGETHER
+    ? [{ level: 'info' as const, text: tr('tag.oftenTogether', { member: synergy.member, pct: Math.round(synergy.pct * 100) }) }]
+    : [];
   const className = ['suggestion', rank === 1 && 'first', selected && 'selected', picked && 'picked', out && 'swap'].filter(Boolean).join(' ');
   return (
     // Tutta la riga apre il dettaglio col mouse; da tastiera lo fa il nome
-    <li className={className} onClick={onSelect}>
+    // Doppio clic: aggiunge o fa lo scambio (il pulsante a destra resta la via visibile e da tastiera)
+    <li className={className} onClick={onSelect} onDoubleClick={onAction}>
       <span className="rank" aria-hidden="true">{rank}</span>
       <Sprite species={item.species} item={item.set.item} size={48} />
       <span className="who">
@@ -153,21 +160,21 @@ function SuggestionRow({ rank, item, usage, out, quickLabel, actionLabel, replac
           </button>
           <BanMark species={item.species} format={format} />
           <ListMarks set={item.set} lists={lists} />
+          <AlertMark alerts={warnings} />
+          <AlertMark alerts={together} icon="spark" />
         </span>
         <span className="types">{types.map(type => <TypeChip key={type} type={type} />)}</span>
-        <small><Typed text={summaryText} /></small>
-        {tags.length > 0 && (
-          <span className="tags">
-            {tags.map(tag => (tag.startsWith('⚠')
-              ? <span key={tag} className="tag warn"><Icon name="warning" /><span>{tag.replace(/^⚠\s*/, '')}</span></span>
-              : <span key={tag} className="tag">{tag}</span>))}
-          </span>
-        )}
+        <small>
+          {bonus || malus
+            ? <>{bonus && <span className="gain"><Typed text={bonus} /></span>}{bonus && malus && ' · '}{malus && <span className="loss"><Typed text={malus} /></span>}</>
+            : <Typed text={summaryText} />}
+        </small>
       </span>
       {out && (
         <span className="out" title={tr('suggest.outFor', { member: out })}>
           <Icon name="swap" />
           <PokemonIcon name={out} />
+          <span className="out-name" aria-hidden="true">{out}</span>
           <span className="visually-hidden">{tr('suggest.outFor', { member: out })}</span>
         </span>
       )}
