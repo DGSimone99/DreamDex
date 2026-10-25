@@ -35,7 +35,8 @@ describe('tooltip della card', () => {
     await user.paste('Garchomp @ Rocky Helmet\nAbility: Rough Skin\n- Earthquake');
     await user.click(screen.getByRole('button', { name: 'Importa' }));
     const slot = screen.getByRole('region', { name: 'Team' }).querySelector('.slot')!;
-    expect(slot.querySelector('.held')).toHaveAttribute('title', 'Danneggia chi attacca con un contatto.');
+    // Lo strumento sulla carta è solo l'icona: nome e descrizione nel tooltip
+    expect(slot.querySelector('.held')!.getAttribute('title')).toMatch(/^\S.* — Danneggia chi attacca con un contatto\.$/);
     expect(slot.querySelector('.ability')).toHaveAttribute('title', 'Ferisce chi attacca con un contatto.');
   });
 });
