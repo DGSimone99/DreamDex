@@ -95,6 +95,17 @@ const STATES: Record<string, State> = {
   } },
   undo: { run: async p => clickText(p, 'button.remove', /Rimuovi/) },
   collapsed: { hash: hash(LONG), run: async p => clickText(p, 'button.band-toggle', /./) },
+  improve: { hash: hash(LONG), run: async p => { await tab(p, 'pokemon'); return true; } },
+  'filters-chips': { run: async p => {
+    await tab(p, 'pokemon');
+    return p.evaluate(() => {
+      const select = document.querySelector<HTMLSelectElement>('select[aria-label="Uso nel meta"]');
+      if (!select) return false;
+      select.value = 'common';
+      select.dispatchEvent(new Event('change', { bubbles: true }));
+      return true;
+    });
+  } },
   empty: { hash: '' },
   'en-compact': { lang: 'en' },
   'long-names': { hash: hash(LONG) },
