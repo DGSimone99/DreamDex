@@ -32,11 +32,11 @@ describe('catalogo bonus e malus', () => {
     expect(rateTeam(teams.bonus, fixtureData)!.bonus.items.map(i => i.catalog)).toEqual(['weatherHelp']);
   });
 
-  it('catalogo IT: 11 voci, 9 malus prima, Tera attivo solo con un limite', () => {
+  it('catalogo IT: 12 voci, 10 malus prima, Tera attivo solo con un limite', () => {
     const none = bonusMalusCatalog('it', 0);
-    expect(none).toHaveLength(11);
-    expect(none.slice(0, 9).every(e => e.kind === 'malus')).toBe(true);
-    expect(none.slice(9).every(e => e.kind === 'bonus')).toBe(true);
+    expect(none).toHaveLength(12);
+    expect(none.slice(0, 10).every(e => e.kind === 'malus')).toBe(true);
+    expect(none.slice(10).every(e => e.kind === 'bonus')).toBe(true);
     expect(none.find(e => e.key === 'tera')!.applies).toBe(false);
     expect(bonusMalusCatalog('it', 3).find(e => e.key === 'tera')!.applies).toBe(true);
   });
@@ -47,6 +47,20 @@ describe('catalogo bonus e malus', () => {
     const weak = c.find(e => e.key === 'weakMember')!.points;
     expect(weak).toContain('2');
     expect(weak).toContain('6');
+    const shared = c.find(e => e.key === 'sharedWeak')!;
+    expect(shared.points).toContain('1');
+    expect(shared.when).toContain('3');
+  });
+
+  it('debolezza condivisa: −1 per ogni membro scoperto oltre il terzo, con la sua chiave', () => {
+    const fourWeak = ['Heatran', 'Toxapex', 'Gholdengo', 'Kingambit'].map(n => withMoves(n, ['Protect']));
+    const shared = (team: TeamSet[]) => rateTeam(team, fixtureData)!.penalty.items.filter(i => i.catalog === 'sharedWeak');
+    // Quattro deboli a Terra, nessuno resiste: un punto
+    expect(shared(fourWeak).map(i => i.points)).toEqual([1]);
+    // Tre deboli: gratis (lo misura la Difesa)
+    expect(shared(fourWeak.slice(0, 3))).toEqual([]);
+    // Un immune li riporta a tre scoperti
+    expect(shared([...fourWeak, withMoves('Corviknight', ['Protect'])])).toEqual([]);
   });
 
   it('catalogo EN: stesse chiavi, testi non vuoti', () => {

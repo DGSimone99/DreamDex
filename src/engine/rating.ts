@@ -87,7 +87,7 @@ export interface RatingArea {
 }
 
 /** Chiave della voce del catalogo bonus/malus a cui appartiene una voce del voto. */
-export type CatalogKey = 'hazardDuplicate' | 'removers' | 'weatherClash' | 'weakenedMove' | 'unusedEnabler'
+export type CatalogKey = 'sharedWeak' | 'hazardDuplicate' | 'removers' | 'weatherClash' | 'weakenedMove' | 'unusedEnabler'
   | 'weakMember' | 'essentialRole' | 'oneStyle' | 'trickRoomFast' | 'weatherHelp' | 'tera';
 
 export interface Redundancy {
@@ -242,12 +242,30 @@ export function memberIssues(team: TeamSet[], lang: Lang, needs: TeamNeeds): Red
   return items;
 }
 
+/** Debolezza condivisa: i primi tre membri deboli scoperti a un tipo sono gratis (li misura la Difesa), ogni altro costa 1 punto. */
+export const SHARED_WEAK_FREE = 3;
+export const SHARED_WEAK_POINTS = 1;
+
+/** Tipi a cui il team ha più di tre membri deboli scoperti (deboli meno resistenti): −1 per ogni membro oltre il terzo. */
+export function sharedWeaknesses(analysis: TeamAnalysis, lang: Lang = 'it'): Redundancy[] {
+  return analysis.weakness
+    .filter(row => row.weak - row.resist > SHARED_WEAK_FREE)
+    .map(row => ({
+      text: t(lang, 'rating.redundancy.sharedWeak', {
+        n: row.weak, type: typeName(row.type, lang),
+        resistText: row.resist === 0 ? t(lang, 'rating.redundancy.noneResist') : t(lang, 'rating.redundancy.someResist', { n: row.resist }),
+      }),
+      points: SHARED_WEAK_POINTS * (row.weak - row.resist - SHARED_WEAK_FREE),
+      catalog: 'sharedWeak' as const,
+    }));
+}
+
 export function redundancies(team: TeamSet[], analysis: TeamAnalysis, lang: Lang = 'it'): Redundancies {
   const dependencies = [
     ...unusedEnablers(team).map(i => ({ text: t(lang, 'rating.redundancy.unused', { via: viaName(i.via, lang), member: i.member }), points: 2, catalog: 'unusedEnabler' as const })),
   ];
   const items = [
-    ...roleAndTypeRedundancies(team, lang), ...dependencies, ...weatherClashes(team, lang),
+    ...sharedWeaknesses(analysis, lang), ...roleAndTypeRedundancies(team, lang), ...dependencies, ...weatherClashes(team, lang),
     ...memberIssues(team, lang, analysis.needs),
   ];
   return { total: Math.min(MAX_PENALTY, sum(items.map(i => i.points))), items };
@@ -396,7 +414,7 @@ export interface CatalogEntry {
 }
 
 const CATALOG_ORDER: { key: CatalogKey; kind: 'malus' | 'bonus' }[] = [
-  ...(['hazardDuplicate', 'removers', 'weatherClash', 'weakenedMove', 'unusedEnabler', 'weakMember', 'essentialRole', 'oneStyle', 'trickRoomFast'] as const)
+  ...(['sharedWeak', 'hazardDuplicate', 'removers', 'weatherClash', 'weakenedMove', 'unusedEnabler', 'weakMember', 'essentialRole', 'oneStyle', 'trickRoomFast'] as const)
     .map(key => ({ key, kind: 'malus' as const })),
   ...(['weatherHelp', 'tera'] as const).map(key => ({ key, kind: 'bonus' as const })),
 ];
@@ -404,7 +422,7 @@ const CATALOG_ORDER: { key: CatalogKey; kind: 'malus' | 'bonus' }[] = [
 /** Tutti i bonus e malus possibili, con il testo per il modale; i punti nei testi vengono dalle costanti. */
 export function bonusMalusCatalog(lang: Lang, teraCap: number): CatalogEntry[] {
   const values = {
-    hazard: HAZARD_DUPLICATE, hurt: WEATHER_HURT, hurtStab: WEATHER_HURT_STAB, member: WEAK_MEMBER_POINTS, memberMax: WEAK_MEMBER_MAX,
+    shared: SHARED_WEAK_POINTS, free: SHARED_WEAK_FREE, hazard: HAZARD_DUPLICATE, hurt: WEATHER_HURT, hurtStab: WEATHER_HURT_STAB, member: WEAK_MEMBER_POINTS, memberMax: WEAK_MEMBER_MAX,
     essential: ESSENTIAL_POINTS, style: ONE_STYLE_POINTS, room: TRICK_ROOM_MAX, help: WEATHER_HELP, cap: teraCap,
   };
   return CATALOG_ORDER.map(({ key, kind }) => ({

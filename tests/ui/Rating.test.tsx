@@ -305,10 +305,10 @@ describe('Catalogo Bonus/Malus', () => {
     expect(screen.getByRole('meter')).not.toHaveAttribute('aria-label');
   });
 
-  it('Malus: i 9 malus con nome, quando e punti; gli attivi evidenziati col punteggio attuale', async () => {
+  it('Malus: i 10 malus con nome, quando e punti; gli attivi evidenziati col punteggio attuale', async () => {
     const { dialog } = await openCatalog();
     const rows = within(within(dialog).getByRole('tabpanel')).getAllByRole('row').slice(1);
-    expect(rows).toHaveLength(9);
+    expect(rows).toHaveLength(10);
     const hazard = rows.find(r => within(r).queryByText('Hazard ripetuto'))!;
     expect(hazard).toHaveClass('active');
     expect(hazard).toHaveAttribute('aria-current', 'true');
