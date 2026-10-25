@@ -256,16 +256,10 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
         {(title || actions) && (
           <div className="editor-top">
             {title}
-            {/* Set e Danni: il calcolo dei danni arriverà qui, per ora la linguetta è spenta */}
-            <div className="editor-tabs" role="tablist" aria-label={t('editor.tabs')}>
-              <button type="button" role="tab" aria-selected="true" tabIndex={0}>{t('editor.tabSet')}</button>
-              <button type="button" role="tab" aria-selected="false" aria-disabled="true" tabIndex={-1} title={t('editor.soon')}>
-                {t('editor.tabDamage')} <small>{t('editor.soon')}</small>
-              </button>
-            </div>
             {actions && <div className="editor-actions">{actions}</div>}
           </div>
         )}
+        <div className="head-group">
         <div className="field preset-field preset-group">
           <span className="field-head">{t('editor.presets')}</span>
           <div className="joined">
@@ -285,17 +279,11 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
           </div>
         </div>
         {presets.length > 0 && presetAction}
+        </div>
+        <div className="head-group">
         <MySetsField set={set} onApply={saved => onChange(presetSet(set, saved))} />
         {ioAction}
-        <label className="custom-toggle" title={t('editor.customTooltip')}>
-          {t('editor.customLabel')}
-          <input
-            type="checkbox"
-            aria-label={t('editor.custom', { species: set.species })}
-            checked={custom}
-            onChange={e => update({ customSkillset: e.target.checked || undefined })}
-          />
-        </label>
+        </div>
       </div>
       {notice}
       <fieldset className="evs">
@@ -389,6 +377,15 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
       <div className="editor-side">
       <fieldset className="editor-group">
         <legend>{t('editor.set')}</legend>
+        <label className="custom-toggle" title={t('editor.customTooltip')}>
+          {t('editor.customLabel')}
+          <input
+            type="checkbox"
+            aria-label={t('editor.custom', { species: set.species })}
+            checked={custom}
+            onChange={e => update({ customSkillset: e.target.checked || undefined })}
+          />
+        </label>
         <div className="field" data-tip={itemDesc}>
           <span className="field-head">{t('editor.item')}</span>
           <Combobox label={t('editor.item')} commonLabel={commonLabel} value={set.item} options={itemOptions} description={itemDesc}

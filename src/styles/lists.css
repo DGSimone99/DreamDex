@@ -330,3 +330,25 @@
 .member-problems .icon { flex: none; }
 .member-problems span { flex: 1; min-width: 0; color: var(--text); }
 .member-problems button { flex: none; height: 30px; white-space: nowrap; }
+/* Testata dell'editor in due gruppi: Preset (Smogon + Preset migliore) e I miei set (nome, salva, Importa/Esporta, Copia) */
+.editor-head .head-group { display: flex; align-items: flex-end; gap: 8px; min-width: 0; }
+.editor-head .head-group + .head-group { margin-left: 12px; padding-left: 20px; border-left: 1px solid var(--line-soft); }
+/* Custom Skillset nel riquadro Set, in alto a destra: cambia mosse e abilità proposte */
+.set-editor .editor-group { position: relative; }
+.set-editor .editor-group > .custom-toggle { position: absolute; top: -9px; right: 12px; height: auto; margin: 0; padding: 0 6px; background: var(--panel); font-size: 12px; }
+/* Ruoli: tag piatti di sola lettura (non sembrano pulsanti); il principale in grassetto */
+.editor-roles li { border: 0; background: var(--raised); color: var(--muted); }
+.editor-roles li.main { border: 0; background: var(--raised); color: var(--text); font-weight: 700; }
+/* Testate dentro l'editor più quiete: il magenta resta alle sezioni e all'azione migliore */
+.set-editor legend, .editor-title .species-tag { color: var(--text); background: var(--stripes), var(--raised); }
+.set-editor .best-preset { background: var(--accent-2); border-color: var(--accent-2); color: var(--on-accent-2); font-weight: 600; }
+.set-editor .best-preset:hover { background: var(--accent-2-ink); border-color: var(--accent-2-ink); }
+/* Colori in regola: shiny e chiudi nel ciano del lavoro; sovrascrivere è "da controllare" */
+.shiny-toggle[aria-pressed='true'] { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+.editor-actions .editor-close:hover { border-color: var(--accent); color: var(--accent); }
+.save-set.overwrite { width: auto; padding: 0 10px; gap: 6px; display: inline-flex; align-items: center; border-color: var(--warn); color: var(--warn); background: var(--warn-bg); }
+.overwrite-label { font-size: 13px; font-weight: 600; }
+/* Voto vuoto: il messaggio a tutta larghezza, non spezzato in colonna */
+.grade-badge.none { display: flex; flex-direction: column; align-items: stretch; }
+.grade-badge.none .overall { font-size: 18px; }
+.grade-badge.none .label { text-wrap: balance; }
