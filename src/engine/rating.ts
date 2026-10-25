@@ -12,7 +12,7 @@ import { hasSpeedControl, isPassive, isStall } from './roles';
 import { rulesOf } from './formatRules';
 import type { TeamNeeds } from './needs';
 import { FAMILIES, type SubRoleValues } from './subRoles';
-import { teamRolesArea, type TeamRoles } from './rolesArea';
+import { ESSENTIAL_POINTS, ONE_STYLE_POINTS, teamRolesArea, type TeamRoles } from './rolesArea';
 import { teamSpeedArea, type TeamSpeed } from './speedArea';
 import { strengthComponent } from './scoring';
 import { usageOf } from './stats';
@@ -20,7 +20,7 @@ import type { TeamSet } from './sets';
 import { t, type Lang } from '../i18n';
 import { gameName, typeName } from '../i18n/game';
 import { effectiveness, superEffectiveMoves, teamField, TYPES } from './types';
-import { benefits, conditionConflicts, conditionLabel, enables, viaName, unmetBeneficiaries, unusedEnablers, weakenedMoves, weatherMitigations, type Condition } from './synergy';
+import { conditionConflicts, conditionLabel, enables, viaName, unmetBeneficiaries, unusedEnablers, weakenedMoves, weatherMitigations, type Condition } from './synergy';
 
 export type AreaKey = 'coverage' | 'defense' | 'strength' | 'bulk' | 'roles' | 'speed' | 'meta';
 /** Le aree del voto senza meta. */
@@ -69,7 +69,7 @@ export const TOP_THREATS = 0.5;
  * Soglie tarate sui dati reali (2026-09, 1630+): team ben costruiti 88–90,
  * team casuali di Pokémon del meta mediana 74, team con membri inutili sotto 60.
  */
-const GRADES: { min: number; grade: 'S' | 'A' | 'B' | 'C' | 'D' }[] = [
+export const GRADES: { min: number; grade: 'S' | 'A' | 'B' | 'C' | 'D' }[] = [
   { min: 90, grade: 'S' },
   { min: 82, grade: 'A' },
   { min: 70, grade: 'B' },
@@ -82,11 +82,19 @@ export interface RatingArea {
   label: string;
   /** 0–100, o null se mancano i dati per calcolarla. */
   value: number | null;
+  /** Ha un valore ma peso 0 nel voto (oggi solo la Velocità nello stall): si mostra in grigio. */
+  inactive?: boolean;
 }
+
+/** Chiave della voce del catalogo bonus/malus a cui appartiene una voce del voto. */
+export type CatalogKey = 'sharedWeak' | 'hazardDuplicate' | 'removers' | 'weatherClash' | 'weakenedMove' | 'unmetCondition' | 'unusedEnabler'
+  | 'weakMember' | 'essentialRole' | 'oneStyle' | 'trickRoomFast' | 'weatherHelp' | 'tera';
 
 export interface Redundancy {
   text: string;
   points: number;
+  /** Assente nelle voci solo-coach (stesso tipo): non fanno parte del voto. */
+  catalog?: CatalogKey;
 }
 
 export interface Redundancies {
@@ -103,6 +111,8 @@ export interface MetaScore {
 export interface TeamRating {
   /** Voto pesato delle aree, prima della penalità. */
   base: number;
+  /** Tetto del bonus Tera nel formato (0 fuori dalla Gen 9): serve al catalogo bonus/malus. */
+  teraCap: number;
   penalty: Redundancies;
   bonus: Redundancies;
   /** Forza dei singoli membri dalle statistiche base. */
@@ -148,8 +158,20 @@ const HAZARDS: Record<string, string> = {
 };
 const REMOVAL = new Set(['defog', 'rapidspin', 'mortalspin', 'tidyup', 'courtchange']);
 
-/** Ruoli e tipi ripetuti senza bisogno: stesso hazard, più rimozioni, 3+ membri dello stesso tipo. */
-export function roleAndTypeRedundancies(team: TeamSet[], lang: Lang = 'it'): Redundancy[] {
+/** Un setter in più dello stesso hazard costa 1 punto. */
+export const HAZARD_DUPLICATE = 1;
+/** Ogni rimuovitore di hazard oltre il primo costa 1 punto. */
+export const REMOVER_EXTRA_POINTS = 1;
+/** Meteo o campi in conflitto costano 3 punti. */
+export const WEATHER_CLASH_POINTS = 3;
+/** Un attivatore (meteo, campo, Trick Room) che nessun compagno usa costa 2 punti. */
+export const UNUSED_ENABLER_POINTS = 2;
+
+/**
+ * Ruoli ripetuti senza bisogno: stesso hazard, più rimozioni. Con `sameType` anche i 3+ membri dello stesso tipo:
+ * nel voto non è una penalità (lo misura la Difesa), ma il coach lo consiglia ancora.
+ */
+export function roleAndTypeRedundancies(team: TeamSet[], lang: Lang = 'it', opts: { sameType?: boolean } = {}): Redundancy[] {
   const items: Redundancy[] = [];
   const setters = new Map<string, number>();
   for (const set of team) {
@@ -157,30 +179,36 @@ export function roleAndTypeRedundancies(team: TeamSet[], lang: Lang = 'it'): Red
       setters.set(hazard, (setters.get(hazard) ?? 0) + 1);
     }
   }
-  for (const [hazard, n] of setters) if (n > 1) items.push({ text: t(lang, 'rating.redundancy.setters', { n, hazard: gameName('move', hazard, lang) }), points: 2 * (n - 1) });
+  for (const [hazard, n] of setters) if (n > 1) items.push({ text: t(lang, 'rating.redundancy.setters', { n, hazard: gameName('move', hazard, lang) }), points: HAZARD_DUPLICATE * (n - 1), catalog: 'hazardDuplicate' });
   const removers = team.filter(set => set.moves.some(m => REMOVAL.has(toID(m)))).length;
-  if (removers > 1) items.push({ text: t(lang, 'rating.redundancy.removers', { n: removers }), points: removers - 1 });
-  for (const type of TYPES) {
+  if (removers > 1) items.push({ text: t(lang, 'rating.redundancy.removers', { n: removers }), points: (removers - 1) * REMOVER_EXTRA_POINTS, catalog: 'removers' });
+  for (const type of opts.sameType ? TYPES : []) {
     const n = team.filter(set => (battleSpecies(set)?.types as readonly string[] | undefined)?.includes(type)).length;
     if (n >= 3) items.push({ text: t(lang, 'rating.redundancy.sameType', { n, type: typeName(type, lang) }), points: n - 2 });
   }
   return items;
 }
 
-/** Meteo/campi in conflitto (−3) e −1 per ogni membro con mosse indebolite dal meteo del team. */
+/** Una mossa STAB indebolita dal meteo del team costa di più di una di coverage. */
+export const WEATHER_HURT_STAB = 2;
+
+/** Meteo/campi in conflitto (−3) e per ogni membro con mosse indebolite dal meteo del team −2 (STAB) o −1 (coverage). */
 export function weatherClashes(team: TeamSet[], lang: Lang = 'it'): Redundancy[] {
   const cap = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
   return [
-    ...conditionConflicts(team, lang).map(c => ({ text: t(lang, 'rating.redundancy.conflict', { kind: t(lang, `conflict.${c.kind}`), list: c.setters.join(', ') }), points: 3 })),
+    ...conditionConflicts(team, lang).map(c => ({ text: t(lang, 'rating.redundancy.conflict', { kind: t(lang, `conflict.${c.kind}`), list: c.setters.join(', ') }), points: WEATHER_CLASH_POINTS, catalog: 'weatherClash' as const })),
     ...weakenedMoves(team).map(w => ({
       text: t(lang, 'rating.redundancy.weakens', { condition: cap(conditionLabel(w.condition, lang)), setter: w.setter, type: typeName(w.type, lang), member: w.member }),
-      points: WEATHER_HURT,
+      points: w.stab ? WEATHER_HURT_STAB : WEATHER_HURT,
+      catalog: 'weakenedMove' as const,
     })),
   ];
 }
 
 /** Trick Room rallenta un membro che supera da solo almeno questa quota del meta; il malus si ferma a −3. */
 export const TRICK_ROOM_FAST = 0.5;
+/** Ogni membro veloce sotto Trick Room costa 1 punto. */
+export const TRICK_ROOM_FAST_POINTS = 1;
 export const TRICK_ROOM_MAX = 3;
 
 /** Forza sotto cui un membro senza utilità chiave è considerato debole. */
@@ -197,28 +225,41 @@ function bringsUtility(set: TeamSet, values: SubRoleValues): boolean {
   return UTILITY_ROLES.some(role => (values[role] ?? 0) >= UTILITY_MIN) || hasSpeedControl(set) || enables(set).length > 0;
 }
 
+/** Ogni membro debole senza utilità chiave costa 2 punti, fino a un massimo di 6. */
+export const WEAK_MEMBER_POINTS = 2;
+export const WEAK_MEMBER_MAX = 6;
+
 /**
- * Membri deboli senza utilità chiave (−3, −7, −12…; non dipende dal meta: Pelipper che porta la pioggia è esente).
+ * Membri deboli senza utilità chiave (−2 ciascuno, al massimo −6; non dipende dal meta: Pelipper che porta la pioggia è esente).
  * Lo squilibrio degli attaccanti è una mancanza essenziale dei Ruoli (rolesArea.ts).
  */
 export function memberIssues(team: TeamSet[], lang: Lang, needs: TeamNeeds): Redundancy[] {
   const { rules } = needs;
   const items: Redundancy[] = [];
-  // La penalità cresce col numero di membri deboli: −3, −7, −12… (il k-esimo pesa 2 + k)
-  let weak = 0;
+  let total = 0;
   for (const [i, set] of team.entries()) {
     const power = memberPower(set);
     // Un muro passivo si giudica dalla sua robustezza (Mega Sableye), gli altri dalla forza complessiva
     if (power && (isPassive(set, rules) ? power.bulk : power.power) < WEAK_POWER && !bringsUtility(set, needs.members[i] ?? {})) {
-      weak += 1;
-      items.push({ text: t(lang, 'rating.redundancy.weakMember', { member: battleName(set) }), points: 2 + weak });
+      // Oltre il tetto i membri restano elencati ma senza punti
+      const points = Math.min(WEAK_MEMBER_POINTS, WEAK_MEMBER_MAX - total);
+      total += points;
+      items.push({ text: t(lang, 'rating.redundancy.weakMember', { member: battleName(set) }), points, catalog: 'weakMember' });
     }
   }
   return items;
 }
 
+/**
+ * Debolezze condivise: 2 punti per ogni membro debole scoperto oltre il primo (deboli meno resistenti), su qualsiasi tipo.
+ * Tolte e poi rimesse dall'utente il 2026-10-25 dopo il bench: portano il distacco tra team da torneo e medi.
+ */
+export const SHARED_WEAK_POINTS = 2;
+/** Un membro che ha bisogno di una condizione (meteo, campo, Trick Room) che il team non porta: −3. */
+export const UNMET_POINTS = 3;
+
 export function redundancies(team: TeamSet[], analysis: TeamAnalysis, lang: Lang = 'it'): Redundancies {
-  // Ogni membro debole scoperto oltre il primo costa 2 punti, su qualsiasi tipo (il meta conta solo nell'area Meta)
+  // Il meta conta solo nell'area Meta: le debolezze si contano su tutti i tipi
   const weaknesses = analysis.weakness
     .filter(row => row.weak - row.resist >= 2)
     .map(row => ({
@@ -226,11 +267,12 @@ export function redundancies(team: TeamSet[], analysis: TeamAnalysis, lang: Lang
         n: row.weak, type: typeName(row.type, lang),
         resistText: row.resist === 0 ? t(lang, 'rating.redundancy.noneResist') : t(lang, 'rating.redundancy.someResist', { n: row.resist }),
       }),
-      points: (row.weak - row.resist - 1) * 2,
+      points: (row.weak - row.resist - 1) * SHARED_WEAK_POINTS,
+      catalog: 'sharedWeak' as const,
     }));
   const dependencies = [
-    ...unmetBeneficiaries(team).map(i => ({ text: t(lang, 'rating.redundancy.unmet', { member: i.member, via: viaName(i.via, lang), condition: conditionLabel(i.condition, lang) }), points: 3 })),
-    ...unusedEnablers(team).map(i => ({ text: t(lang, 'rating.redundancy.unused', { via: viaName(i.via, lang), member: i.member }), points: 2 })),
+    ...unmetBeneficiaries(team).map(i => ({ text: t(lang, 'rating.redundancy.unmet', { member: i.member, via: viaName(i.via, lang), condition: conditionLabel(i.condition, lang) }), points: UNMET_POINTS, catalog: 'unmetCondition' as const })),
+    ...unusedEnablers(team).map(i => ({ text: t(lang, 'rating.redundancy.unused', { via: viaName(i.via, lang), member: i.member }), points: UNUSED_ENABLER_POINTS, catalog: 'unusedEnabler' as const })),
   ];
   const items = [
     ...weaknesses, ...roleAndTypeRedundancies(team, lang), ...dependencies, ...weatherClashes(team, lang),
@@ -242,35 +284,27 @@ export function redundancies(team: TeamSet[], analysis: TeamAnalysis, lang: Lang
 
 const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
 
-/** Il meteo/campo del team vale +1 se giova ad almeno un membro, comunque e a quanti; −1 per ogni membro che danneggia. */
+/** Il meteo/campo del team vale +1 se smorza una debolezza ad almeno un compagno, comunque e a quanti. */
 export const WEATHER_HELP = 1;
 export const WEATHER_HURT = 1;
 
 /**
- * +1 una volta sola se il meteo o il campo che il team porta giova a qualcuno: smorza una debolezza
- * o abilita un'abilità o una mossa di un membro. Il meteo non è sempre attivo: non conta quanti ne godono.
+ * +1 una volta sola se il meteo o il campo che il team porta smorza una debolezza di un compagno
+ * (da 2× a neutro o da 4× a 1×, mai da 4× a 2×). Il setter non conta e abilitare un'abilità o una
+ * mossa non dà bonus: il meteo non è sempre attivo, quindi non conta quanti ne godono.
  */
 export function weatherBonus(team: TeamSet[], lang: Lang = 'it'): Redundancies {
-  const helped = new Map<string, { setter: string; members: Set<string> }>();
-  const add = (condition: string, setter: string, member: string) => {
-    const entry = helped.get(condition) ?? { setter, members: new Set<string>() };
-    entry.members.add(member);
-    helped.set(condition, entry);
-  };
+  const items: Redundancy[] = [];
   for (const m of weatherMitigations(team)) {
-    for (const x of m.members.filter(x => x.to <= 1)) add(m.condition, m.source.split(' (')[0], x.species);
+    const setter = m.source.split(' (')[0];
+    const members = m.members.filter(x => x.to <= 1 && x.species !== setter).map(x => x.species);
+    if (!members.length) continue;
+    items.push({
+      text: t(lang, 'rating.bonus.helps', { condition: capitalize(conditionLabel(m.condition as Condition, lang)), setter, list: members.join(', ') }),
+      points: 0,
+      catalog: 'weatherHelp',
+    });
   }
-  for (const setter of team) {
-    for (const e of enables(setter)) {
-      for (const member of team) {
-        if (benefits(member).some(b => b.condition === e.condition && b.via !== e.via)) add(e.condition, battleName(setter), battleName(member));
-      }
-    }
-  }
-  const items = [...helped].map(([condition, { setter, members }]) => ({
-    text: t(lang, 'rating.bonus.helps', { condition: capitalize(conditionLabel(condition as Condition, lang)), setter, list: [...members].join(', ') }),
-    points: 0,
-  }));
   // Un solo punto per tutto il team: si mostra sulla prima voce
   if (items.length) items[0].points = WEATHER_HELP;
   return { total: items.length ? WEATHER_HELP : 0, items };
@@ -288,7 +322,7 @@ export function teraBonus(team: TeamSet[], analysis: TeamAnalysis, cap: number, 
     const member = team.find(set => (TYPES as readonly string[]).includes(set.teraType ?? '')
       && effectiveness(row.type, [set.teraType!]) < 1);
     if (!member) continue;
-    items.push({ text: t(lang, 'rating.bonus.tera', { tera: typeName(member.teraType!, lang), member: battleName(member), type: typeName(row.type, lang) }), points: 1 });
+    items.push({ text: t(lang, 'rating.bonus.tera', { tera: typeName(member.teraType!, lang), member: battleName(member), type: typeName(row.type, lang) }), points: 1, catalog: 'tera' });
     if (items.length === cap) break;
   }
   return items;
@@ -345,12 +379,13 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
     // Informazione per l'Analisi: nel voto le minacce stanno nella Coverage meta della Difesa
   }
   const areas = (Object.keys(raw) as (keyof typeof raw)[])
-    // Con uno stall la Velocità non conta e non si mostra
-    .filter(key => (areaWeights[key] ?? 0) > 0)
+    // Con uno stall la Velocità non conta nel voto ma resta visibile (inattiva); senza dati l'area non c'è
+    .filter(key => raw[key] !== null)
     .map(key => ({
       key,
       label: t(lang, `area.${key}`),
-      value: raw[key] === null ? null : Math.round(100 * raw[key]!),
+      value: Math.round(100 * raw[key]!),
+      ...(!((areaWeights[key] ?? 0) > 0) && { inactive: true }),
     }));
   const base = Math.round(100 * score);
   const redundant = redundancies(team, analysis, lang);
@@ -359,7 +394,7 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
   const roomSetter = team.find(set => set.moves.some(move => toID(move) === 'trickroom'));
   const fastMembers = roomSetter ? speed.members.filter(m => m.raw >= TRICK_ROOM_FAST) : [];
   const roomItems = fastMembers.length
-    ? [{ text: t(lang, fastMembers.length === 1 ? 'rating.redundancy.trickRoomFastOne' : 'rating.redundancy.trickRoomFast', { setter: battleName(roomSetter!), n: fastMembers.length, list: fastMembers.map(m => m.species).join(', ') }), points: Math.min(TRICK_ROOM_MAX, fastMembers.length) }]
+    ? [{ text: t(lang, fastMembers.length === 1 ? 'rating.redundancy.trickRoomFastOne' : 'rating.redundancy.trickRoomFast', { setter: battleName(roomSetter!), n: fastMembers.length, list: fastMembers.map(m => m.species).join(', ') }), points: Math.min(TRICK_ROOM_MAX, fastMembers.length * TRICK_ROOM_FAST_POINTS), catalog: 'trickRoomFast' as const }]
     : [];
   // Le mancanze essenziali dei Ruoli (solo team di 6) si sommano alle altre penalità, entro il massimo
   const extraItems = [...roles.failures, ...roomItems];
@@ -371,9 +406,41 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it'): 
   const bonus = { total: Math.min(MAX_BONUS, weather.total + sum(tera.map(i => i.points))), items: [...weather.items, ...tera] };
   const overall = Math.min(100, Math.max(0, base - penalty.total + bonus.total));
   return {
-    base, penalty, bonus, power: power.members, overall, ...gradeFor(overall, lang), provisional: team.length < 6, areas, archetype, meta,
+    base, teraCap: rules.teraBonusCap, penalty, bonus, power: power.members, overall, ...gradeFor(overall, lang), provisional: team.length < 6, areas, archetype, meta,
     teamType: analysis.needs.archetype, trickRoom,
     weights: areaWeights, offense, defense, speed, roles,
   };
 }
 
+
+export interface CatalogEntry {
+  key: CatalogKey;
+  kind: 'malus' | 'bonus';
+  name: string;
+  when: string;
+  points: string;
+  /** Falso se la regola non vale nel formato (il Tera fuori dalla Gen 9). */
+  applies: boolean;
+}
+
+const CATALOG_ORDER: { key: CatalogKey; kind: 'malus' | 'bonus' }[] = [
+  ...(['sharedWeak', 'hazardDuplicate', 'removers', 'weatherClash', 'weakenedMove', 'unmetCondition', 'unusedEnabler', 'weakMember', 'essentialRole', 'oneStyle', 'trickRoomFast'] as const)
+    .map(key => ({ key, kind: 'malus' as const })),
+  ...(['weatherHelp', 'tera'] as const).map(key => ({ key, kind: 'bonus' as const })),
+];
+
+/** Tutti i bonus e malus possibili, con il testo per il modale; i punti nei testi vengono dalle costanti. */
+export function bonusMalusCatalog(lang: Lang, teraCap: number): CatalogEntry[] {
+  const values = {
+    shared: SHARED_WEAK_POINTS, unmet: UNMET_POINTS, hazard: HAZARD_DUPLICATE, hurt: WEATHER_HURT, hurtStab: WEATHER_HURT_STAB, member: WEAK_MEMBER_POINTS, memberMax: WEAK_MEMBER_MAX,
+    essential: ESSENTIAL_POINTS, style: ONE_STYLE_POINTS, room: TRICK_ROOM_MAX, roomEach: TRICK_ROOM_FAST_POINTS, remover: REMOVER_EXTRA_POINTS, clash: WEATHER_CLASH_POINTS, unused: UNUSED_ENABLER_POINTS,
+    help: WEATHER_HELP, cap: teraCap,
+  };
+  return CATALOG_ORDER.map(({ key, kind }) => ({
+    key, kind,
+    name: t(lang, `catalog.${key}.name`, values),
+    when: t(lang, `catalog.${key}.when`, values),
+    points: t(lang, `catalog.${key}.points`, values),
+    applies: key !== 'tera' || teraCap > 0,
+  }));
+}

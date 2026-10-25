@@ -164,7 +164,7 @@ function findProblems(team: TeamSet[], format: Format, analysis: TeamAnalysis, c
   // Squilibrio degli attaccanti (nel voto è una mancanza essenziale dei Ruoli, solo a team finito)
   const style = analysis.needs.needStyle;
   if (style) add('roles', false, t(lang, 'rating.redundancy.oneStyle', { style: t(lang, `analysis.style.${style}`) }), []);
-  for (const item of roleAndTypeRedundancies(team, lang)) add('redundancy', false, item.text, []);
+  for (const item of roleAndTypeRedundancies(team, lang, { sameType: true })) add('redundancy', false, item.text, []);
   for (const item of weatherClashes(team, lang)) add('conditions', false, item.text, []);
 
   for (const issue of unusedEnablers(team)) {
