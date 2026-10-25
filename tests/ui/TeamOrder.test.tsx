@@ -104,6 +104,6 @@ describe('ordine del team e editor', () => {
     expect(names(team)).toHaveLength(6);
     await user.click(within(team).getByRole('button', { name: 'Svuota team' }));
     expect(names(team)).toEqual([]);
-    expect(screen.getByRole('heading', { name: /Suggerimenti/i })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Suggerimenti' })).toBeInTheDocument();
   });
 });

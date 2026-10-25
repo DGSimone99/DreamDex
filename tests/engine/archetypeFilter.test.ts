@@ -48,19 +48,6 @@ describe('adatto a un archetipo', () => {
   });
 });
 
-describe('filtro "Adatto a"', () => {
-  it('conta come filtro attivo', () => {
-    expect(activeFilterCount({ ...EMPTY_FILTERS, fitsArchetype: 'stall' })).toBe(1);
-  });
-
-  it('i risultati sono tutti adatti all\'archetipo scelto', () => {
-    const results = searchCandidates([tusk], DEFAULT_FORMAT, fixtureData, { ...EMPTY_FILTERS, fitsArchetype: 'stall' }, 500);
-    expect(results.length).toBeGreaterThan(0);
-    for (const r of results) expect(fitsArchetype(r.set, 'stall', DEFAULT_RULES)).toBe(true);
-    expect(results.map(r => r.species)).toContain('Toxapex');
-  });
-});
-
 describe('adatto a ogni tipo di team', () => {
   const all = [toxapex, blissey, sableye, kyurem, koko, glimmora, volcarona, greatTusk, corviknight];
   it('semi-stall: solo muri passivi', () => {

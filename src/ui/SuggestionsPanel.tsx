@@ -3,8 +3,9 @@ import type { EngineData } from '../engine/data';
 import type { Format } from '../engine/format';
 import { formatRules, rulesOf } from '../engine/formatRules';
 import { teamArchetype, type Archetype } from '../engine/archetype';
-import { improveReplacements, similarity, similarReplacements, type Replacement } from '../engine/replace';
+import { improveReplacements, similarity, type Replacement } from '../engine/replace';
 import { describeDiff, ratingGainOf, SIMILAR_THRESHOLD, type SwapPreview } from '../engine/coach';
+import { ActiveFilters } from './ActiveFilters';
 import { suggest, type Suggestion } from '../engine/scoring';
 import type { TeamSet } from '../engine/sets';
 import type { TeamRating } from '../engine/rating';
@@ -43,7 +44,6 @@ type Item = (Suggestion | Replacement) & { teamGain?: TeamGain; replaces?: numbe
 /** Cosa mostra la lista: aggiunte, scambi liberi con tutto il team, o sostituti di un membro. */
 type View = 'add' | 'all' | 'member';
 
-type ReplaceMode = 'improve' | 'similar';
 
 interface Props {
   team: TeamSet[];
@@ -203,7 +203,6 @@ const TEAM_TYPES: Archetype[] = ['hyperOffense', 'bulkyOffense', 'balance', 'sem
 export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onReplaceWith, onCancelReplace, onPreview, rating = null, onTarget, focusSearch }: Props) {
   const tr = useT();
   const lang = useLang();
-  const [mode, setMode] = useState<ReplaceMode>('improve');
   const [page, setPage] = useState(0);
   const [filters, setFilters] = useState<CandidateFilters>(EMPTY_FILTERS);
   // La lista si ricalcola sui filtri "stabili"; l'input mostra subito quello che scrivi
@@ -224,7 +223,8 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   const recognised = useMemo(() => (team.length === 6 ? teamArchetype(team, rulesOf(data))?.archetype ?? null : null), [team, data]);
   const [pickedType, setPickedType] = useState<Archetype | null | undefined>(undefined);
   const typeChoice = pickedType === undefined ? recognised : pickedType;
-  const archetype = view !== 'add' && typeChoice ? typeChoice : undefined;
+  // Vale in tutte le modalità: aggiungendo cerca chi aiuta a costruire quel tipo, migliorando chi lo raggiunge o lo mantiene
+  const archetype = typeChoice ?? undefined;
   /** Il team contro cui si valutano i candidati è vuoto: niente adattamento da mostrare. */
   const emptyTeam = (replacing ? team.length - 1 : team.length) === 0;
 
@@ -245,7 +245,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   const deferred = useDeferredValue(source);
   const stale = deferred !== source;
   // Quanti cambi ha escluso il tipo di team scelto nell'ultimo calcolo della lista
-  const report = useMemo<SwapReport>(() => ({ excluded: 0 }), [deferred, mode, applied, filtering, lang]);
+  const report = useMemo<SwapReport>(() => ({ excluded: 0 }), [deferred, applied, filtering, lang]);
   const ranked: Item[] = useMemo(() => {
     const { team, format, data, archetype } = deferred;
     const replaceIndex = deferred.replaceIndex !== null && deferred.replaceIndex < team.length ? deferred.replaceIndex : null;
@@ -255,32 +255,25 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
       // Raccomandazioni libere: per ogni candidato, il membro che conviene di più sostituire
       const pool = filtering ? searchPool(team, format, data, applied) : undefined;
       if (!pool && !data.stats) return [];
-      const similar = mode === 'similar';
-      return bestSwaps(team, data, lang, index => (similar
-        ? similarReplacements(team, index, format, data, 3 * SWAPS_PER_MEMBER, pool, lang, archetype)
-        : improveReplacements(team, index, format, data, SWAPS_PER_MEMBER, pool, lang, archetype)), { similar, threshold: SIMILAR_THRESHOLD, archetype, report }).slice(0, MAX);
+      return bestSwaps(team, data, lang, index => improveReplacements(team, index, format, data, SWAPS_PER_MEMBER, pool, lang, archetype), { archetype, report }).slice(0, MAX);
     }
     if (replaceIndex !== null) {
       // Con ricerca o filtri i sostituti vengono da tutto il Pokédex, non solo dalle statistiche
       const pool = filtering ? searchPool(team.filter((_, i) => i !== replaceIndex), format, data, applied) : undefined;
       if (!pool && !data.stats) return [];
-      // Sostituto simile: l'ordine resta per somiglianza, il voto si mostra soltanto
-      return mode === 'improve'
-        ? rank(improveReplacements(team, replaceIndex, format, data, POOL, pool, lang, archetype))
-        : rank(similarReplacements(team, replaceIndex, format, data, MAX, pool, lang, archetype), false);
+      return rank(improveReplacements(team, replaceIndex, format, data, POOL, pool, lang, archetype));
     }
     if (filtering) return rank(searchCandidates(team, format, data, applied, POOL, lang));
     return data.stats ? rank(suggest(team, format, data, POOL, lang)) : [];
-  }, [deferred, mode, applied, filtering, lang, report]);
-  // Preferiti dell'utente: a voto quasi pari passano davanti (non in "Sostituto simile", dove conta la somiglianza)
+  }, [deferred, applied, filtering, lang, report]);
+  // Preferiti dell'utente: a voto quasi pari passano davanti
   const items: Item[] = useMemo(() => {
     const lists = deferred.data.userLists;
-    const similarOrder = mode === 'similar' && (view !== 'add');
-    if (!lists?.favorites.size || similarOrder) return ranked;
+    if (!lists?.favorites.size) return ranked;
     // Col tipo scelto la penalità per le voci perse vale anche qui: un preferito penalizzato non risale
     const value = (item: Item) => (item.teamGain ? rankKey(item.teamGain) : 100 * (statsEntry(deferred.data.stats, item.species)?.usage ?? 0));
     return applyFavorites(ranked, item => isUserFavorite(item.set, lists), value);
-  }, [ranked, deferred, mode, view]);
+  }, [ranked, deferred]);
   // Quanti bannati restano fuori (non contano quelli ammessi), contro il team per cui si cercano i candidati:
   // aggiungendo il team intero, sostituendo un membro gli altri cinque, negli scambi liberi ognuno dei sei
   const hiddenCount = useMemo(() => {
@@ -367,14 +360,13 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   const quickLabelOf = (item: Item) => (item.replaces !== undefined
     ? tr('suggest.swapQuick', { species: item.species, member: memberName(item.replaces) })
     : replacing ? tr('suggest.replaceQuick', { species: item.species }) : tr('suggest.addQuick', { species: item.species }));
-  /** Modalità: aggiungere, migliorare (tutto il team o un membro), sostituto simile. */
-  const chooseMode = (next: 'add' | ReplaceMode) => {
+  /** Modalità: aggiungere o migliorare (tutto il team o un membro). */
+  const chooseMode = (next: 'add' | 'improve') => {
     if (next === 'add') {
       setScope('add');
       onCancelReplace();
       return;
     }
-    setMode(next);
     if (view === 'add') setScope('all');
   };
   /** Apre il candidato nel dettaglio; in sostituzione il coaching mostra il sostituto scelto. */
@@ -393,9 +385,6 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
       }, true);
     }
   };
-
-  const title = replacing ? tr('suggest.replaceTitle', { species: team[replaceIndex].species })
-    : view === 'all' ? tr('suggest.improveTitle') : tr('suggest.title');
 
   // Sostituendo un setter di cui altri membri hanno bisogno, si mostrano solo setter della stessa condizione
   let setterNote: string | null = null;
@@ -447,6 +436,12 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
           )}
         </span>
       </div>
+      {/* Tipo di team: un'impostazione, non un filtro (niente chip, Azzera non lo tocca) */}
+      <select className="team-type" aria-label={tr('suggest.teamType')} title={typeChoice ? tr(`archetype.${typeChoice}.note`) : tr('suggest.anyTypeNote')}
+        value={typeChoice ?? ''} onChange={e => setPickedType((e.target.value || null) as Archetype | null)}>
+        <option value="">{tr('suggest.anyType')}</option>
+        {TEAM_TYPES.map(type => <option key={type} value={type}>{tr(`archetype.${type}`)}</option>)}
+      </select>
       <FilterBar filters={filters} onChange={setFilters} />
     </>
   );
@@ -541,13 +536,12 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
           <button type="button" aria-pressed={view === 'add'} disabled={team.length >= 6} onClick={() => chooseMode('add')}>
             <Icon name="plus" />{tr('suggest.addMode')}
           </button>
-          <button type="button" aria-pressed={view !== 'add' && mode === 'improve'} disabled={team.length < 2 && !replacing}
+          <button type="button" aria-pressed={view !== 'add'} disabled={team.length < 2 && !replacing}
             onClick={() => chooseMode('improve')}>{tr('suggest.improve')}</button>
-          <button type="button" aria-pressed={view !== 'add' && mode === 'similar'} disabled={team.length < 2 && !replacing}
-            onClick={() => chooseMode('similar')}>{tr('suggest.similar')}</button>
         </div>
         {search}
       </div>
+      {!full && <ActiveFilters filters={filters} onChange={setFilters} />}
       {view !== 'add' && (
         <div className="subbar">
           {/* Chi sostituire: tutti (il motore sceglie per ogni candidato) o un membro preciso */}
@@ -565,21 +559,11 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
               </button>
             ))}
           </div>
-          {/* Tipo di team con cui giudicare i cambi (Nessuno = solo il voto più alto) */}
-          <div className="targets team-types" role="group" aria-label={tr('suggest.teamType')}>
-            <span className="targets-label" aria-hidden="true">{tr('suggest.teamTypeLabel')}</span>
-            {([null, ...TEAM_TYPES] as (Archetype | null)[]).map(type => (
-              <button key={type ?? 'none'} type="button" aria-pressed={typeChoice === type} onClick={() => setPickedType(type)}
-                title={type ? tr(`archetype.${type}.note`) : tr('suggest.anyTypeNote')}>
-                {type ? tr(`archetype.${type}`) : tr('suggest.anyType')}
-              </button>
-            ))}
-          </div>
         </div>
       )}
       {notes}
       <div className={`picker${!full ? ' has-detail' : ''}`}>
-        <div className="picker-list"><h2 className="box-head">{title}</h2>{body}</div>
+        <div className="picker-list">{body}</div>
         {/* Senza candidati resta lo scheletro del dettaglio: la pagina non si accorcia e non salta in alto */}
         {!selected && !full && (
           <aside className="detail detail-empty" aria-hidden="true">

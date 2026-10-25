@@ -44,7 +44,7 @@ describe('CoachPanel', () => {
   it('"Altri sostituti" apre la sostituzione del membro', async () => {
     const user = await setup('Great Tusk', 'Gholdengo', 'Magikarp');
     await user.click(within(analysis()).getByRole('button', { name: 'Altri sostituti per Magikarp' }));
-    expect(screen.getByRole('heading', { name: 'Sostituisci Magikarp' })).toBeInTheDocument();
+    expect(within(screen.getByRole('group', { name: 'Chi sostituire' })).getByRole('button', { name: 'Sostituisci Magikarp' })).toHaveAttribute('aria-pressed', 'true');
   });
 });
 

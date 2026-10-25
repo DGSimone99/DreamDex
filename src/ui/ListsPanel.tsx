@@ -161,7 +161,7 @@ export const ListsPanel = memo(function ListsPanel({ lists, format, data, onChan
           ))}
         </div>
       </div>
-      <FilterBar filters={filters} onChange={setFilters} />
+      <FilterBar filters={filters} onChange={setFilters} context="lists" />
       <div className="lists-main">
         <ol className="dex-grid" aria-label={tr('lists.pokedex')}>
           {shown.map(name => (

@@ -85,7 +85,9 @@ describe('SuggestionsPanel', () => {
 
   it('team completo: raccomandazioni libere, ognuna dice chi esce', async () => {
     const user = await setup('Great Tusk', 'Gholdengo', 'Kingambit', 'Dragapult', 'Corviknight', 'Toxapex');
-    expect(within(suggestions()).getByRole('heading', { name: 'Migliora il team' })).toBeInTheDocument();
+    // Niente titolo sopra la lista: la modalità scelta lo dice già
+    expect(within(suggestions()).queryByRole('heading', { name: 'Migliora il team' })).toBeNull();
+    expect(within(suggestions()).getByRole('button', { name: 'Migliora team' })).toHaveAttribute('aria-pressed', 'true');
     expect(within(suggestions()).getByRole('button', { name: 'Aggiungi' })).toBeDisabled();
     expect(within(screen.getByRole('group', { name: 'Chi sostituire' })).getByRole('button', { name: 'Tutti' })).toHaveAttribute('aria-pressed', 'true');
     // Dal voto più alto; ogni riga dice chi esce, e il pulsante rapido fa lo scambio
@@ -104,35 +106,33 @@ describe('SuggestionsPanel', () => {
     const user = await setup('Great Tusk', 'Gholdengo', 'Kingambit', 'Dragapult', 'Corviknight', 'Toxapex');
     const targets = () => screen.getByRole('group', { name: 'Chi sostituire' });
     await user.click(within(targets()).getByRole('button', { name: 'Sostituisci Toxapex' }));
-    expect(within(suggestions()).getByRole('heading', { name: 'Sostituisci Toxapex' })).toBeInTheDocument();
+    expect(within(targets()).getByRole('button', { name: 'Sostituisci Toxapex' })).toHaveAttribute('aria-pressed', 'true');
     expect(within(list()).queryAllByText(/^Al posto di /)).toHaveLength(0);
     await user.click(within(targets()).getByRole('button', { name: 'Tutti' }));
-    expect(within(suggestions()).getByRole('heading', { name: 'Migliora il team' })).toBeInTheDocument();
+    expect(within(targets()).getByRole('button', { name: 'Tutti' })).toHaveAttribute('aria-pressed', 'true');
   });
 
   it('team incompleto: da Aggiungi a Migliora team e ritorno', async () => {
     const user = await setup('Great Tusk', 'Gholdengo');
-    expect(within(suggestions()).getByRole('heading', { name: 'Suggerimenti' })).toBeInTheDocument();
-    await user.click(within(suggestions()).getByRole('button', { name: 'Migliora team' }));
-    expect(within(suggestions()).getByRole('heading', { name: 'Migliora il team' })).toBeInTheDocument();
-    await user.click(within(suggestions()).getByRole('button', { name: 'Aggiungi' }));
-    expect(within(suggestions()).getByRole('heading', { name: 'Suggerimenti' })).toBeInTheDocument();
+    const mode = (name: string) => within(suggestions()).getByRole('button', { name });
+    expect(mode('Aggiungi')).toHaveAttribute('aria-pressed', 'true');
+    await user.click(mode('Migliora team'));
+    expect(mode('Migliora team')).toHaveAttribute('aria-pressed', 'true');
+    await user.click(mode('Aggiungi'));
+    expect(mode('Aggiungi')).toHaveAttribute('aria-pressed', 'true');
   });
 
   it('sostituzione: modalità, diff e sostituzione del membro', async () => {
     const user = await setup('Great Tusk', 'Gholdengo');
     await user.click(screen.getByRole('button', { name: 'Sostituisci Great Tusk' }));
-    expect(within(suggestions()).getByRole('heading', { name: 'Sostituisci Great Tusk' })).toBeInTheDocument();
+    expect(within(suggestions()).getByRole('button', { name: 'Migliora team' })).toHaveAttribute('aria-pressed', 'true');
     expect(within(suggestions()).getAllByText(/\+Pivot/).length).toBeGreaterThan(0);
-
-    await user.click(within(suggestions()).getByRole('button', { name: 'Sostituto simile' }));
-    expect(within(suggestions()).getByRole('button', { name: 'Sostituto simile' })).toHaveAttribute('aria-pressed', 'true');
-    expect(within(suggestions()).getAllByText(/^Somiglianza: \d+%$/).length).toBeGreaterThan(0);
+    expect(within(suggestions()).queryByRole('button', { name: 'Sostituto simile' })).toBeNull();
 
     await user.click(within(suggestions()).getAllByRole('button', { name: 'Sostituisci con questo' })[0]);
     expect(within(team()).queryByText('Great Tusk')).toBeNull();
     expect(within(team()).getByRole('heading', { name: 'Team (2/6)' })).toBeInTheDocument();
-    expect(within(suggestions()).getByRole('heading', { name: 'Suggerimenti' })).toBeInTheDocument();
+    expect(within(suggestions()).getByRole('button', { name: 'Aggiungi' })).toHaveAttribute('aria-pressed', 'true');
   });
 
   it('senza dati: messaggio', () => {

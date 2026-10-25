@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { App } from '../../src/App';
 import { fixtureData } from '../fixtures/data';
+import { getSpecies } from '../../src/engine/dex';
 
 const suggestions = () => screen.getByRole('region', { name: 'Suggerimenti' });
 const team = () => screen.getByRole('region', { name: 'Team' });
@@ -37,7 +38,7 @@ describe('ricerca e filtri nei suggerimenti', () => {
 
   it('filtro per tipo, contatore dei filtri attivi e azzeramento', async () => {
     const user = await setup('Great Tusk');
-    await user.click(within(screen.getByRole('group', { name: 'Tipo' })).getByRole('button', { name: 'Water' }));
+    await user.selectOptions(screen.getByLabelText('Tipo 1'), 'Water');
     await user.selectOptions(screen.getByLabelText('Uso nel meta'), 'common');
     await waitFor(() => expect([...cardNames()].sort()).toEqual(['Rotom-Wash', 'Toxapex']));
     expect(within(suggestions()).getByText('Filtri (2 attivi)')).toBeInTheDocument();
@@ -46,27 +47,35 @@ describe('ricerca e filtri nei suggerimenti', () => {
     await waitFor(() => expect(cardNames().length).toBeGreaterThan(2));
   });
 
-  it('"Adatto a": solo Pokémon adatti all\'archetipo scelto, e si azzera con gli altri filtri', async () => {
+  it('Solo preferiti: conta come filtro; senza preferiti non trova niente', async () => {
     const user = await setup('Great Tusk');
-    await user.selectOptions(screen.getByLabelText('Uso nel meta'), 'common');
-    await user.selectOptions(screen.getByLabelText('Adatto a'), 'stall');
-    await waitFor(() => expect(cardNames()).toContain('Toxapex'));
-    expect(cardNames()).not.toContain('Iron Valiant');
-    expect(within(suggestions()).getByText('Filtri (2 attivi)')).toBeInTheDocument();
-    await user.click(screen.getAllByRole('button', { name: /Azzera filtri/ })[0]);
-    expect(screen.getByLabelText('Adatto a')).toHaveValue('');
+    await user.click(screen.getByRole('checkbox', { name: 'Solo preferiti' }));
+    expect(within(suggestions()).getByText('Filtri (1 attivo)')).toBeInTheDocument();
+    expect(await within(suggestions()).findByText('Nessun Pokémon corrisponde ai filtri')).toBeInTheDocument();
   });
 
-  it('al massimo due tipi: gli altri si disattivano', async () => {
+  it('Mono si sceglie solo dopo il Tipo 1', async () => {
     const user = await setup('Great Tusk');
-    const types = within(screen.getByRole('group', { name: 'Tipo' }));
-    await user.click(types.getByRole('button', { name: 'Water' }));
-    await user.click(types.getByRole('button', { name: 'Poison' }));
-    await waitFor(() => expect(cardNames()).toContain('Toxapex'));
-    expect(types.getByRole('button', { name: 'Fire' })).toBeDisabled();
-    expect(types.getByRole('button', { name: 'Water' })).toBeEnabled();
-    await user.click(types.getByRole('button', { name: 'Poison' }));
-    expect(types.getByRole('button', { name: 'Fire' })).toBeEnabled();
+    expect(screen.getByRole('option', { name: 'Solo monotipo' })).toBeDisabled();
+    await user.selectOptions(screen.getByLabelText('Tipo 1'), 'Water');
+    expect(screen.getByRole('option', { name: 'Solo monotipo' })).toBeEnabled();
+  });
+
+  it('Tipo 1 + Mono: solo monotipo', async () => {
+    const user = await setup('Great Tusk');
+    await user.selectOptions(screen.getByLabelText('Tipo 1'), 'Water');
+    await user.selectOptions(screen.getByLabelText('Tipo 2'), 'mono');
+    await waitFor(() => expect(cardNames().length).toBeGreaterThan(0));
+    await waitFor(() => expect(cardNames().every(name => getSpecies(name)?.types.length === 1)).toBe(true));
+    expect(cardNames()).not.toContain('Toxapex');
+  });
+
+  it('stesso tipo nelle due tendine: solo monotipo di quel tipo', async () => {
+    const user = await setup('Great Tusk');
+    await user.selectOptions(screen.getByLabelText('Tipo 1'), 'Fire');
+    await user.selectOptions(screen.getByLabelText('Tipo 2'), 'Fire');
+    await waitFor(() => expect(cardNames().length).toBeGreaterThan(0));
+    await waitFor(() => expect(cardNames().every(name => getSpecies(name)?.types.join() === 'Fire')).toBe(true));
   });
 
   it('resiste a: più tipi, devono essere tutti resistiti', async () => {
@@ -86,13 +95,22 @@ describe('ricerca e filtri nei suggerimenti', () => {
     expect(screen.queryByLabelText('Fino alla gen')).toBeNull();
   });
 
-  it('azzera filtri anche a filtri chiusi, dalla riga del titolo', async () => {
+  it('filtri attivi come chip: la × ne toglie uno, anche a pannello chiuso', async () => {
     const user = await setup('Great Tusk');
     await user.selectOptions(screen.getByLabelText('Uso nel meta'), 'common');
-    const summary = within(suggestions()).getByText('Filtri (1 attivo)', { exact: false }).closest('summary')!;
-    await user.click(within(summary).getByRole('button', { name: /Azzera filtri/ }));
+    expect(suggestions().querySelector('details.filters')).not.toHaveAttribute('open');
+    await user.click(within(suggestions()).getByRole('button', { name: /^Rimuovi filtro Uso nel meta/ }));
     expect(screen.getByLabelText('Uso nel meta')).toHaveValue('all');
-    expect(summary.closest('details')).not.toHaveAttribute('open');
+    expect(within(suggestions()).queryByRole('button', { name: /^Rimuovi filtro/ })).toBeNull();
+  });
+
+  it('chip e Azzera con lista vuota', async () => {
+    const user = await setup('Great Tusk');
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Tier' }), 'legal');
+    await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'dragapu');
+    expect(await within(suggestions()).findByText('Nessun Pokémon corrisponde ai filtri')).toBeInTheDocument();
+    await user.click(within(suggestions().querySelector<HTMLElement>('.active-filters')!).getByRole('button', { name: 'Azzera filtri' }));
+    await waitFor(() => expect(cardNames()).toEqual(['Dragapult']));
   });
 
   it('tier: gli Uber compaiono nella ricerca con il tag di ban', async () => {
@@ -119,7 +137,7 @@ describe('ricerca e filtri nei suggerimenti', () => {
   it('team completo: la ricerca resta, per cercare tra gli scambi', async () => {
     await setup('Great Tusk', 'Gholdengo', 'Kingambit', 'Corviknight', 'Toxapex', 'Rotom-Wash');
     expect(screen.getByLabelText('Aggiungi Pokémon')).toBeInTheDocument();
-    expect(within(suggestions()).getByRole('heading', { name: 'Migliora il team' })).toBeInTheDocument();
+    expect(within(suggestions()).queryByRole('heading', { name: 'Migliora il team' })).toBeNull();
     // Sei aggiunte, ognuna coi suggerimenti ricalcolati: con la Difesa ogni candidato nuovo costa qualche ms in più
   }, 30000);
 });
