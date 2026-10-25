@@ -96,7 +96,7 @@ describe('pannello Avanzate', () => {
     render(<App initialLang="it" data={fixtureData} loadSource={async () => fixtureData} />);
     await add(user, 'Great Tusk');
     await user.selectOptions(screen.getByLabelText('Tier del formato'), 'uu');
-    expect(await within(team()).findByText('Non legale in National Dex UU')).toBeInTheDocument();
+    expect(await within(team()).findByText(/^Tier .+: non ammesso in National Dex UU$/)).toBeInTheDocument();
     expect(within(team()).getByText('Great Tusk')).toBeInTheDocument();
   });
 

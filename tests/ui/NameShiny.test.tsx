@@ -72,6 +72,22 @@ describe('testata dell\'editor', () => {
     expect(within(slot()).queryByLabelText('Set da incollare (testo Showdown)')).toBeNull();
   });
 
+  it('Importa / Esporta: se il testo è stato modificato, un clic fuori non lo butta', async () => {
+    const { user, slot } = await openEditor();
+    await user.click(within(slot()).getByRole('button', { name: 'Importa / Esporta set' }));
+    const text = within(slot()).getByLabelText('Set da incollare (testo Showdown)');
+    await user.clear(text);
+    await user.type(text, 'Garchomp');
+    fireEvent.pointerDown(document.body);
+    expect(within(slot()).getByLabelText('Set da incollare (testo Showdown)')).toHaveValue('Garchomp');
+  });
+
+  it('Copia set è a un clic, accanto a Importa / Esporta, senza aprire il riquadro', async () => {
+    const { slot } = await openEditor();
+    expect(within(slot()).getByRole('button', { name: 'Copia set' }).closest('.io-anchor')).not.toBeNull();
+    expect(within(slot()).queryByLabelText('Set da incollare (testo Showdown)')).toBeNull();
+  });
+
   it('Custom Skillset: la casella viene dopo il testo', async () => {
     const { slot } = await openEditor();
     const label = slot().querySelector('.custom-toggle')!;
