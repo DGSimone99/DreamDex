@@ -1,6 +1,6 @@
 import { DEFAULT_RULES } from '../../src/engine/formatRules';
 import { describe, expect, it } from 'vitest';
-import { fitsArchetype } from '../../src/engine/archetype';
+import { fitsArchetype, fitsTeamType } from '../../src/engine/archetype';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
 import { activeFilterCount, EMPTY_FILTERS, searchCandidates } from '../../src/engine/filters';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
@@ -58,5 +58,21 @@ describe('filtro "Adatto a"', () => {
     expect(results.length).toBeGreaterThan(0);
     for (const r of results) expect(fitsArchetype(r.set, 'stall', DEFAULT_RULES)).toBe(true);
     expect(results.map(r => r.species)).toContain('Toxapex');
+  });
+});
+
+describe('adatto a ogni tipo di team', () => {
+  const all = [toxapex, blissey, sableye, kyurem, koko, glimmora, volcarona, greatTusk, corviknight];
+  it('semi-stall: solo muri passivi', () => {
+    expect(fitsTeamType(toxapex, 'semiStall', DEFAULT_RULES)).toBe(true);
+    expect(fitsTeamType(volcarona, 'semiStall', DEFAULT_RULES)).toBe(false);
+  });
+  it('balance accetta tutti', () => {
+    expect(all.every(s => fitsTeamType(s, 'balance', DEFAULT_RULES))).toBe(true);
+  });
+  it('gli altri tre coincidono con fitsArchetype', () => {
+    for (const type of ['stall', 'hyperOffense', 'bulkyOffense'] as const) {
+      expect(all.map(s => fitsTeamType(s, type, DEFAULT_RULES))).toEqual(all.map(s => fitsArchetype(s, type, DEFAULT_RULES)));
+    }
   });
 });

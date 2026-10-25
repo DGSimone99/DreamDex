@@ -93,6 +93,13 @@ export function fitsArchetype(set: TeamSet, archetype: FitArchetype, rules: Form
   return (sweeper && (fast || roles.includes('setup'))) || (power.offense >= FAST_ATTACKER_OFFENSE && fast) || lead;
 }
 
+/** Il Pokémon aiuta a costruire un team del tipo dato: semi-stall vuole muri passivi, il balance accetta tutti. */
+export function fitsTeamType(set: TeamSet, archetype: Archetype, rules: FormatRules): boolean {
+  if (archetype === 'balance') return true;
+  if (archetype === 'semiStall') return isPassive(set, rules);
+  return fitsArchetype(set, archetype, rules);
+}
+
 /** Ruoli della carta del team: i sotto-ruoli del motore, più il meteo e il setup, che compaiono solo lì. */
 export type CardRole = SubRole | 'weather' | 'setup';
 const WEATHERS: Condition[] = ['rain', 'sun', 'sand', 'snow'];
