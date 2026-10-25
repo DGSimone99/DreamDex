@@ -104,7 +104,7 @@ function ListMarks({ set, lists }: { set: TeamSet; lists?: EffectiveLists }) {
   if (!banned && !favorite) return null;
   return (
     <span className={`list-mark ${banned ? 'ban' : 'fav'}`} role="img" aria-label={tr(banned ? 'lists.bannedMark' : 'lists.favoriteMark')}
-      title={tr(banned ? 'lists.bannedMark' : 'lists.favoriteMark')}>{banned ? '⊘' : '♥'}</span>
+      title={tr(banned ? 'lists.bannedMark' : 'lists.favoriteMark')}><Icon name={banned ? 'ban' : 'heart'} /></span>
   );
 }
 

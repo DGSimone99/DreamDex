@@ -19,7 +19,7 @@
 }
 .fill-types { display: grid; gap: 4px; align-content: start; }
 .fill-option { display: grid; gap: 2px; width: 100%; padding: 7px 10px; text-align: left; background: none; border: 1px solid transparent; border-radius: 3px; color: var(--text); }
-.fill-option strong { font: 700 15px/1.1 var(--display); letter-spacing: 0.02em; text-transform: uppercase; }
+.fill-option strong { font: 700 15px/1.1 var(--display); font-style: italic; letter-spacing: 0.01em; }
 .fill-option small { font-size: 12px; color: var(--muted); }
 .fill-option:hover { background: var(--raised); }
 .fill-option[aria-checked='true'] { background: var(--accent-soft); border-color: var(--accent); }

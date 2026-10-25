@@ -1,13 +1,1 @@
-/* Schermi più stretti (≈1280px): card e classifica restano leggibili */
-@media (max-width: 1440px) {
-  .slot .type-chip { width: 56px; font-size: 10px; }
-  .slot .type-chip.long { font-size: 8px; letter-spacing: -0.02em; }
-  .slot > summary .sprite { width: 80px; height: 80px; }
-  .slot > summary { --sprite-scale: 0.8333; }
-  .slot .roles { font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
-  .detail-hero { grid-template-columns: 72px minmax(0, 1fr) auto; }
-  .detail-sprite { width: 72px; height: 72px; }
-  .detail-sprite .sprite-ani { transform: translate(-50%, -50%) scale(0.75); }
-  .detail-id h3 { font-size: 24px; }
-  .detail-score strong { font-size: 40px; }
-}
+/* Schermi bassi e stretti: vedi la versione compatta in fondo a lists.css */

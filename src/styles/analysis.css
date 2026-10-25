@@ -22,14 +22,14 @@
 .swaps .swap + .swap { border-top: 1px solid var(--line-soft); }
 .swap-head { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin: 0; color: var(--muted); }
 .swap-head .icon { color: var(--faint); }
-.swap-head strong { font: 700 17px/1.1 var(--display); text-transform: uppercase; letter-spacing: 0.02em; color: var(--text); }
+.swap-head strong { font: 700 17px/1.1 var(--display); font-style: italic; letter-spacing: 0.01em; color: var(--text); }
 .swap-head .gain { font: 700 15px/1 var(--display); color: var(--good); font-variant-numeric: tabular-nums; }
 .swap-head small { font-size: 12px; color: var(--faint); }
 .swap-head .gain.worse { color: var(--bad); }
 .swap-head .gain.same { color: var(--muted); }
 .coach .team-type { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; margin: 2px 0 10px; }
 .coach .team-type-label { font: 700 13px/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
-.coach .team-type strong { font: 700 18px/1 var(--display); letter-spacing: 0.03em; text-transform: uppercase; color: var(--text); cursor: help; }
+.coach .team-type strong { font: 700 18px/1 var(--display); font-style: italic; letter-spacing: 0.01em; color: var(--text); cursor: help; }
 .coach .team-style { font-size: 12px; font-weight: 600; padding: 1px 7px; border-radius: 3px; border: 1px solid var(--line); color: var(--muted); cursor: help; }
 .swap-head .gain-unit { margin-left: 3px; font: 600 12px/1 var(--ui); color: var(--faint); }
 .swap-head .picked-tag { padding: 1px 6px; border-radius: 3px; background: var(--accent-soft); color: var(--text); font-weight: 600; }
@@ -115,7 +115,7 @@
 
 .mon-rows li { display: grid; grid-template-columns: 40px minmax(0, 1fr) minmax(0, 1.3fr); gap: 10px; align-items: center; margin: 0; padding: 2px 0; border-bottom: 1px solid var(--line-soft); font-size: 14px; }
 .mon-rows .sprite { image-rendering: pixelated; }
-.mon-rows .who strong { font: 700 16px/1.1 var(--display); text-transform: uppercase; letter-spacing: 0.02em; }
+.mon-rows .who strong { font: 700 16px/1.1 var(--display); font-style: italic; letter-spacing: 0.01em; }
 .mon-rows .usage { color: var(--muted); font-size: 13px; }
 .mon-rows .status { display: flex; gap: 8px; align-items: baseline; color: var(--muted); }
 .mon-rows .status .icon { color: var(--good); position: relative; top: 2px; }

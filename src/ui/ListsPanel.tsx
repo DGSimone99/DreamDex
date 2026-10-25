@@ -18,7 +18,7 @@ interface Props {
   onChange: (next: UserLists, undo?: { kind: 'clearList'; from: string }) => void;
 }
 
-const MARK: Record<ListKind, string> = { favorites: '♥', bans: '⊘' };
+const MARK: Record<ListKind, 'heart' | 'ban'> = { favorites: 'heart', bans: 'ban' };
 
 /** Una cella del Pokédex: numero, sprite, nome, ♥ e ⊘. */
 const DexCell = memo(function DexCell({ name, fav, ban, favHere, banHere, target, onToggle }: {
@@ -41,9 +41,9 @@ const DexCell = memo(function DexCell({ name, fav, ban, favHere, banHere, target
       <span className="dex-name">{name}</span>
       <span className="dex-actions">
         <button type="button" className="dex-fav" aria-pressed={favHere} aria-label={tr('lists.toggleFavorite', { species: name })}
-          onClick={() => onToggle('favorites', name)}>♥</button>
+          onClick={() => onToggle('favorites', name)}><Icon name="heart" /></button>
         <button type="button" className="dex-ban" aria-pressed={banHere} aria-label={tr('lists.toggleBan', { species: name })}
-          onClick={() => onToggle('bans', name)}>⊘</button>
+          onClick={() => onToggle('bans', name)}><Icon name="ban" /></button>
       </span>
     </li>
   );
@@ -107,7 +107,7 @@ export const ListsPanel = memo(function ListsPanel({ lists, format, data, onChan
     return (
       <section className={`user-list ${kind}`}>
         <h3>
-          <span>{MARK[kind]} {label} <span className="count">{names.length}</span></span>
+          <span><Icon name={MARK[kind]} /> {label} <span className="count">{names.length}</span></span>
           <button type="button" className="list-clear" disabled={!pairOfScope(lists, editing)[kind].length}
             aria-label={tr('lists.clear', { list: label })}
             onClick={() => onChange(clearList(lists, editing, kind), { kind: 'clearList', from: label })}>
@@ -148,7 +148,7 @@ export const ListsPanel = memo(function ListsPanel({ lists, format, data, onChan
             onChange={e => setFilters({ ...filters, query: e.target.value })} onKeyDown={onKey} />
           {target && (
             <span className="search-hint">
-              <strong>{target}</strong> <kbd>{tr('suggest.enter')}</kbd> ♥ <kbd>⇧ {tr('suggest.enter')}</kbd> ⊘
+              <strong>{target}</strong> <kbd>{tr('suggest.enter')}</kbd> <Icon name="heart" /> <kbd>⇧ {tr('suggest.enter')}</kbd> <Icon name="ban" />
             </span>
           )}
         </span>

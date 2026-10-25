@@ -65,7 +65,7 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
     <aside className={`detail${rank === 1 ? ' first' : ''}`} aria-label={tr('detail.region', { species: item.species })}>
       <header className="detail-hero">
         {/* Il candidato aperto si muove (idle animato), come il membro aperto nel team */}
-        <span className="detail-sprite"><Sprite species={item.species} item={set.item} size={88} animated /></span>
+        <span className="detail-sprite"><Sprite species={item.species} item={set.item} size={144} animated /></span>
         <div className="detail-id">
           <h3>
             <span>{item.species}</span>
