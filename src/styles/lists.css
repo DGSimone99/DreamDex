@@ -152,3 +152,39 @@
 .band.collapsed .grade-badge > :not(.letter, .overall) { display: none; }
 .band.collapsed .grade-badge .letter { font-size: 40px; }
 .band.collapsed .grade-badge .overall { font-size: 18px; }
+/* Editor del set: chiusura, linguette Set/Danni, I miei set, riga livello/spread, ruoli in fondo, colonne allineate in basso */
+.set-editor { align-items: stretch; }
+.set-editor .editor-side { grid-template-rows: auto 1fr; }
+.set-editor .editor-group.moves { align-content: start; }
+.editor-actions .editor-close { width: 36px; padding: 0; justify-content: center; }
+.editor-actions .editor-close:hover { border-color: var(--bad); color: var(--bad); }
+.editor-tabs { display: flex; gap: 4px; margin-left: 6px; }
+.editor-tabs [role='tab'] { height: 30px; padding: 0 14px; border: 1px solid var(--line); background: var(--panel); font: 700 14px/1 var(--display); font-style: italic; color: var(--muted); }
+.editor-tabs [role='tab'][aria-selected='true'] { border-color: var(--accent-2); color: var(--on-accent-2); background: var(--stripes), var(--accent-2); clip-path: polygon(0 0, 100% 0, calc(100% - 9px) 100%, 0 100%); padding-right: 20px; }
+.editor-tabs [role='tab'][aria-disabled='true'] { opacity: 0.6; cursor: not-allowed; }
+.editor-tabs [role='tab'] small { display: inline; margin-left: 4px; font: 500 11px var(--ui); font-style: normal; color: var(--faint); }
+.set-editor .my-sets-field { flex-direction: row; align-items: center; gap: 12px; width: 300px; min-width: 0; flex-shrink: 1; }
+.set-editor .my-sets-field .field-head { white-space: nowrap; }
+.set-editor .my-sets-field .combobox { flex: 1; }
+.set-editor .save-set, .set-editor .delete-set { height: 36px; white-space: nowrap; flex-shrink: 0; }
+.set-editor .delete-set { width: 36px; padding: 0; justify-content: center; }
+.set-editor .delete-set:hover { border-color: var(--bad); color: var(--bad); }
+/* Livello (due mezze pillole unite) a sinistra e Spread più usati a destra, staccati da titolo e righe */
+.set-editor .evs .stats-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 8px 0 10px; }
+.set-editor .evs .level-toggle { position: static; display: inline-flex; align-items: center; gap: 8px; }
+.set-editor .evs .spread-panel > summary { position: static; }
+.level-toggle button { height: 26px; min-width: 44px; margin: 0; }
+.level-toggle button:first-of-type { border-radius: 13px 0 0 13px; }
+.level-toggle button:last-of-type { border-radius: 0 13px 13px 0; margin-left: -1px; }
+.set-editor .evs .spread-panel .spread-presets { top: 52px; }
+.editor-roles { grid-column: 1 / -1; }
+.editor-roles ul { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.editor-roles li { padding: 3px 10px; border: 1px solid var(--line); background: var(--raised); font-size: 13px; color: var(--text); }
+.editor-roles li.main { border-color: var(--accent); background: var(--accent-wash); font-weight: 600; }
+/* Carta aperta: solo lo sprite animato, grande quanto la carta (nome e set sono nell'editor) */
+.slot[open] > summary { justify-content: center; --open-scale: 1.5; --fit: 180; }
+.slot[open] > summary > :not(.sprite-wrap, .favorite, .remove, .slot-custom, .slot-lead, .mini-icon) { display: none; }
+.band:not(.collapsed) .slot[open] > summary .sprite-wrap { flex: 1; display: grid; place-items: end center; width: 100%; }
+/* Team compresso: il membro aperto saltella, come nel box dei giochi */
+@keyframes box-hop { 0%, 100% { transform: translateY(0); } 40% { transform: translateY(-5px); } 60% { transform: translateY(0); } }
+.band.collapsed .slot[open] .mini-icon .mon-icon { animation: box-hop 0.7s ease-in-out infinite; }

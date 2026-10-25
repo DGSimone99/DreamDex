@@ -98,7 +98,7 @@ describe('spread pronti sopra gli EV', () => {
     expect(impish).toHaveTextContent('Alt');
     await user.click(impish);
     expect(screen.getByLabelText('Natura')).toHaveValue('Impish');
-    const evs = screen.getByRole('group', { name: 'EV' });
+    const evs = screen.getByRole('group', { name: 'Statistiche' });
     expect(within(evs).getByLabelText('PS')).toHaveValue(252);
     expect(within(evs).getByLabelText('DIF')).toHaveValue(164);
     expect(within(evs).getByLabelText('ATT')).toHaveValue(0);

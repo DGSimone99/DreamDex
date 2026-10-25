@@ -18,6 +18,8 @@ import { setViewLevel, useViewLevel } from './viewLevel';
 import { TypeChip } from './Sprite';
 import { ItemIcon } from './ItemIcon';
 import { Icon } from './icons';
+import { deleteMySet, mySetIndex, saveMySet, useMySets } from './mySets';
+import { MY_SETS_MAX } from '../storage';
 import { typeTextColor } from './TypeText';
 
 function NatureEffect({ name }: { name: string }) {
@@ -135,13 +137,12 @@ interface Props {
   actions?: React.ReactNode;
   /** Pulsante accanto al menu dei preset (Preset migliore). */
   presetAction?: React.ReactNode;
+  /** Tutti i ruoli del membro, il principale per primo: il riquadro in fondo all'editor. */
+  roles?: string[];
   onChange: (set: TeamSet) => void;
 }
 
-/** Voce del menu dei preset per un set che non coincide con nessun preset. */
-const CUSTOM_PRESET = 'custom';
-
-export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', common, teraBannedIn, speed, title, actions, presetAction, onChange }: Props) {
+export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', common, teraBannedIn, speed, title, actions, presetAction, roles, onChange }: Props) {
   const t = useT();
   const lang = useLang();
   // Le più usate vanno in cima al menu, con la quota d'uso (o "Preset" se vengono dalle analisi)
@@ -205,17 +206,22 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
     return others.size ? moveOptions.map(option => (others.has(toID(option.value)) ? { ...option, disabled: true } : option)) : moveOptions;
   }), [moveOptions, movesKey]); // eslint-disable-line react-hooks/exhaustive-deps
   const update = (patch: Partial<TeamSet>) => onChange({ ...set, ...patch });
-  // Preset: la chiave è la posizione. Se il set coincide con un preset è selezionato quello,
-  // altrimenti (appena modifichi qualcosa) la voce "Custom"
-  const presetOptions: ComboOption[] = [
-    ...presets.map((preset, i) => ({
-      value: String(i),
-      label: preset.name,
-      detail: <span className="preset-format">{formatName(preset.format)}</span>,
-      description: preset.set.moves.map(move => gameName('move', move, lang)).join(' · '),
-    })),
-    { value: CUSTOM_PRESET, label: t('editor.customPreset'), detail: <span className="preset-format">{t('editor.customPresetTag')}</span>, description: t('editor.customPresetDesc') },
-  ];
+  // Preset: la chiave è la posizione. Se il set coincide con un preset è selezionato quello, altrimenti il campo resta vuoto
+  const presetOptions: ComboOption[] = presets.map((preset, i) => ({
+    value: String(i),
+    label: preset.name,
+    detail: <span className="preset-format">{formatName(preset.format)}</span>,
+    description: preset.set.moves.map(move => gameName('move', move, lang)).join(' · '),
+  }));
+  // I miei set: salvati dall'utente per questa specie (al massimo MY_SETS_MAX), separati dai preset Smogon
+  const mine = useMySets(set.species);
+  const mineIndex = mySetIndex(mine, set);
+  const mineOptions: ComboOption[] = mine.map((saved, i) => ({
+    value: String(i),
+    label: saved.name,
+    description: saved.set.moves.map(move => gameName('move', move, lang)).join(' · '),
+  }));
+  const mineFull = mine.length >= MY_SETS_MAX;
   const appliedIndex = presets.findIndex(p => sameSet(p.set, set));
   const applyPreset = (key: string) => {
     const preset = presets[Number(key)];
@@ -253,6 +259,13 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
         {(title || actions) && (
           <div className="editor-top">
             {title}
+            {/* Set e Danni: il calcolo dei danni arriverà qui, per ora la linguetta è spenta */}
+            <div className="editor-tabs" role="tablist" aria-label={t('editor.tabs')}>
+              <button type="button" role="tab" aria-selected="true" tabIndex={0}>{t('editor.tabSet')}</button>
+              <button type="button" role="tab" aria-selected="false" aria-disabled="true" tabIndex={-1} title={t('editor.soon')}>
+                {t('editor.tabDamage')} <small>{t('editor.soon')}</small>
+              </button>
+            </div>
             {actions && <div className="editor-actions">{actions}</div>}
           </div>
         )}
@@ -260,18 +273,41 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
           <span className="field-head">{t('editor.presets')}</span>
           <Combobox
             label={t('editor.presets')}
-            value={presets.length === 0 ? '' : appliedIndex >= 0 ? String(appliedIndex) : CUSTOM_PRESET}
+            value={appliedIndex >= 0 ? String(appliedIndex) : ''}
             options={presetOptions}
             restricted
             disabled={presets.length === 0}
             placeholder={presets.length ? t('editor.presetsPlaceholder') : t('editor.noPresets')}
-            display={presets.length === 0 ? undefined : appliedIndex >= 0
+            display={appliedIndex >= 0
               ? <><span>{presets[appliedIndex].name}</span><span className="preset-format">{formatName(presets[appliedIndex].format)}</span></>
-              : <><span>{t('editor.customPreset')}</span><span className="preset-format">{t('editor.customPresetTag')}</span></>}
+              : undefined}
             onChange={applyPreset}
           />
         </div>
         {presets.length > 0 && presetAction}
+        <div className="field my-sets-field">
+          <span className="field-head">{t('editor.mySets')}</span>
+          <Combobox
+            label={t('editor.mySets')}
+            value={mineIndex >= 0 ? String(mineIndex) : ''}
+            options={mineOptions}
+            restricted
+            disabled={mine.length === 0}
+            placeholder={mine.length ? `${t('editor.mySets')}…` : t('editor.mySetsEmpty')}
+            onChange={key => { const saved = mine[Number(key)]; if (saved) onChange(presetSet(set, saved.set)); }}
+          />
+        </div>
+        <button type="button" className="save-set" disabled={mineFull || mineIndex >= 0}
+          title={mineFull ? t('editor.saveSetFull') : t('editor.saveSet')}
+          onClick={() => saveMySet(set.species, set, n => t('editor.mySetName', { n }))}>
+          <Icon name="plus" /> {t('editor.saveSet')}
+        </button>
+        {mineIndex >= 0 && (
+          <button type="button" className="delete-set" aria-label={t('editor.deleteSet')} title={t('editor.deleteSet')}
+            onClick={() => deleteMySet(set.species, mineIndex)}>
+            <Icon name="close" />
+          </button>
+        )}
         <label className="custom-toggle" title={t('editor.customTooltip')}>
           <input
             type="checkbox"
@@ -283,7 +319,16 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
         </label>
       </div>
       <fieldset className="evs">
-        <legend>{t('editor.evs')}</legend>
+        <legend>{t('editor.stats')}</legend>
+        {/* Livello a sinistra (due mezze pillole unite), "Spread più usati" a destra, sulla stessa riga */}
+        <div className="stats-toolbar">
+        <div className="level-toggle" role="group" aria-label={t('editor.level')}>
+          <span className="level-toggle-label" aria-hidden="true">{t('editor.levelShort')}</span>
+          {([50, 100] as const).map(n => (
+            <button key={n} type="button" aria-pressed={level === n} aria-label={t('editor.levelN', { n })}
+              onClick={() => setViewLevel(n)}>{n}</button>
+          ))}
+        </div>
         {!!common?.spreads.length && (
           // Chiuso di norma
           <details className="spread-panel" ref={spreadMenu}
@@ -306,13 +351,6 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
           </div>
           </details>
         )}
-        {/* Livello a cui si vedono i valori finali: in alto a sinistra, di fronte a "Spread più usati" */}
-        <div className="level-toggle" role="group" aria-label={t('editor.level')}>
-          <span className="level-toggle-label" aria-hidden="true">{t('editor.levelShort')}</span>
-          {([50, 100] as const).map(n => (
-            <button key={n} type="button" aria-pressed={level === n} aria-label={t('editor.levelN', { n })}
-              onClick={() => setViewLevel(n)}>{n}</button>
-          ))}
         </div>
         <div className="stat-rows">
           {/* Intestazione delle colonne */}
@@ -432,6 +470,14 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
         ))}
       </fieldset>
       </div>
+      {!!roles?.length && (
+        <fieldset className="editor-roles">
+          <legend>{t('editor.roles')}</legend>
+          <ul>
+            {roles.map((role, i) => <li key={role} className={i === 0 ? 'main' : undefined}>{role}</li>)}
+          </ul>
+        </fieldset>
+      )}
     </div>
   );
 }

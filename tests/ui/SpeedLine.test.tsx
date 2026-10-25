@@ -20,7 +20,7 @@ describe('Velocità nell\u2019editor', () => {
     await user.hover(within(line).getByText(/più veloce del/));
     expect(within(line).getByRole('tooltip')).toHaveTextContent(/Più lenti/);
     await user.unhover(within(line).getByText(/più veloce del/));
-    const evs = within(team).getByRole('group', { name: 'EV' });
+    const evs = within(team).getByRole('group', { name: 'Statistiche' });
     await user.clear(within(evs).getByLabelText('VEL'));
     expect(line).toHaveTextContent('Velocità 264'); // Jolly, 0 EV
   });

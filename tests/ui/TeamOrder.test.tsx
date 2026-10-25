@@ -31,7 +31,7 @@ describe('ordine del team e editor', () => {
     const user = userEvent.setup();
     const team = await importTeam(user, 'Garchomp @ Rocky Helmet\nEVs: 252 Atk / 252 Spe\nJolly Nature\n- Earthquake');
     await user.click(within(team).getByText('Garchomp', { selector: '.name' }));
-    const evs = within(team).getByRole('group', { name: 'EV' });
+    const evs = within(team).getByRole('group', { name: 'Statistiche' });
     const hp = within(evs).getByLabelText('PS');
     expect(hp).toHaveAttribute('step', '2');
     await user.clear(hp);

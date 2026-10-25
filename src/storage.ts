@@ -209,3 +209,35 @@ export function saveTeamCollapsed(collapsed: boolean, storage: Storage | undefin
     // Archivio non disponibile: la scelta vale solo per questa sessione
   }
 }
+
+const MY_SETS_KEY = 'dreamdex.mySets';
+/** Set salvati dall'utente, per specie (al massimo MY_SETS_MAX ciascuna). */
+export interface MySet { name: string; set: TeamSet }
+export type MySets = Record<string, MySet[]>;
+export const MY_SETS_MAX = 5;
+
+export function loadMySets(storage: Storage | undefined = defaultStorage()): MySets {
+  try {
+    const parsed: unknown = JSON.parse(storage?.getItem(MY_SETS_KEY) ?? '{}');
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
+    const out: MySets = {};
+    for (const [species, list] of Object.entries(parsed as Record<string, unknown>)) {
+      if (!Array.isArray(list)) continue;
+      const valid = list.filter((x): x is MySet => !!x && typeof x === 'object' && typeof (x as MySet).name === 'string' && isTeamSet((x as MySet).set));
+      if (valid.length) out[species] = valid.slice(0, MY_SETS_MAX);
+    }
+    return out;
+  } catch {
+    return {};
+  }
+}
+
+export function saveMySets(sets: MySets, storage: Storage | undefined = defaultStorage()): boolean {
+  try {
+    if (!storage) return false;
+    storage.setItem(MY_SETS_KEY, JSON.stringify(sets));
+    return true;
+  } catch {
+    return false;
+  }
+}
