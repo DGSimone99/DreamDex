@@ -63,9 +63,10 @@ export const keyRoles = (key: LevelKey): SubRole[] =>
 export const keyValue = (v: SubRoleValues, key: LevelKey): number =>
   Math.max(0, ...keyRoles(key).map(r => v[r] ?? 0), key === 'fieldSetup' ? v.web ?? 0 : 0);
 
-export function teamNeeds(team: TeamSet[], data: EngineData, members?: SubRoleValues[]): TeamNeeds {
+/** `forced`: livelli e credito dei ruoli secondo quel tipo di team invece di quello riconosciuto. */
+export function teamNeeds(team: TeamSet[], data: EngineData, members?: SubRoleValues[], forced?: Archetype): TeamNeeds {
   const rules = rulesOf(data);
-  const archetype = needsArchetype(team, rules);
+  const archetype = forced ?? needsArchetype(team, rules);
   const measured = members ?? team.map(set => measuredSubRoles(set, team, data));
   const levels = Object.fromEntries(LEVEL_KEYS.map(k => [k, levelOf(archetype, k)])) as Record<LevelKey, Level>;
   // Il secondario conta secondo l'archetipo (stall 0, semi-stall metà, altrimenti pieno); i grezzi restano in `members`
