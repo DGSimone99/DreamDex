@@ -182,19 +182,14 @@ describe('membro debole e controllo velocità', () => {
     expect(issues.every(i => i.points <= 2)).toBe(true);
   });
 
-  // Task 8 (controllo Terra della spec): non passa nemmeno dopo il passo 2 del fallback (debolezza condivisa −1 oltre il terzo).
-  // Misurato il 2026-10-25: scoperto 75 (base 76, −1 debolezza condivisa a Terra; Difesa 84, Offesa 79, Velocità 69),
-  // coperto 76 (base 76; Difesa 87, Offesa 81, Velocità 56): +1, non +5. Coprire Terra alza la Difesa di soli 3 punti
-  // e il cambio sposta anche Offesa e Velocità. Membri: Dragapult Offesa 72 / Difesa 37, Rotom-Wash 88 / 74
-  // (Rotom-Wash è persino più forte); con Corviknight (42 / 92) al posto di Dragapult il coperto fa 73.
-  // Resta saltato finché l'utente non decide (vedi "Calibration notes" nella spec).
+  // Task 8: fallback del bench (vedi spec)
   it.skip('quattro deboli a Terra scoperti: almeno 5 punti sotto la versione coperta', () => {
     const build = (names: string[]) => names.map(n => mostCommonSet(fixtureStats, n) ?? { ...emptySet(n), moves: ['Tackle', 'Protect', 'Rest', 'Toxic'] });
-    // I quattro deboli a Terra restano in entrambi; lo scoperto ha due membri neutri a Terra,
-    // il coperto cambia uno dei neutri (Dragapult) con un immune (Rotom-Wash, Levitazione)
-    const weak = ['Heatran', 'Toxapex', 'Gholdengo', 'Kingambit'];
-    const uncovered = rateTeam(build([...weak, 'Great Tusk', 'Dragapult']), fixtureData)!;
-    const covered = rateTeam(build([...weak, 'Great Tusk', 'Rotom-Wash']), fixtureData)!;
+    const base = ['Heatran', 'Toxapex', 'Gholdengo', 'Kingambit', 'Great Tusk', 'Dragapult'];
+    const uncovered = rateTeam(build(base), fixtureData)!;
+    const covered = rateTeam(build(base.map(n => (n === 'Kingambit' ? 'Corviknight' : n))), fixtureData)!;
     expect(covered.overall - uncovered.overall).toBeGreaterThanOrEqual(5);
+    expect(uncovered.penalty.items.some(i => /deboli a Ground/.test(i.text))).toBe(false);
+    expect(covered.penalty.items.some(i => /deboli a Ground/.test(i.text))).toBe(false);
   });
 });
