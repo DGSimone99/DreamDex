@@ -1,11 +1,10 @@
 import { Icon } from './icons';
 import { useLang, useT } from '../i18n/react';
-import { t, type MessageKey } from '../i18n';
-import { PokemonList, PokemonName } from './PokemonName';
+import { t } from '../i18n';
+import { PokemonList } from './PokemonName';
 import { IssueCounts, PROBLEM_LABELS } from './IssueCounts';
 import type { TeamSet } from '../engine/sets';
-import { ProsCons } from './ProsCons';
-import { describeSwap, previewSwap, PROBLEM_CATEGORIES, type Coaching, type SwapLevel, type SwapPreview } from '../engine/coach';
+import { PROBLEM_CATEGORIES, type Coaching, type SwapPreview } from '../engine/coach';
 import { Typed } from './TypeText';
 
 // "3 Deboli" in rosso e "0 Resistono" in verde (parole del dizionario della lingua attiva), il resto con i tipi colorati
@@ -23,11 +22,6 @@ function ProblemText({ text }: { text: string }) {
     </>
   );
 }
-
-const SWAP_GROUPS: { level: SwapLevel; title: MessageKey }[] = [
-  { level: 'recommended', title: 'coach.swaps.recommended' },
-  { level: 'optional', title: 'coach.swaps.optional' },
-];
 
 type SwapProps = {
   /** Mette subito nel team il sostituto mostrato nella card. */
@@ -117,69 +111,7 @@ export function CoachProblems({ coaching, heading = true }: { coaching: Coaching
   );
 }
 
-/** La parte "come sistemarlo": i cambi consigliati e facoltativi, coi pro e contro e le azioni. */
-export function CoachSolutions({ coaching, preview = null, onReplace, onSwap }: SwapProps) {
-  const tr = useT();
-  const lang = useLang();
-  const { swaps } = coaching;
-  // Il primo cambio consigliato è l'azione principale: pulsante magenta con testo; gli altri restano icone
-  const lead = swaps.find(s => s.level === SWAP_GROUPS[0].level) ?? swaps[0];
-  return (
-    <>
-      {SWAP_GROUPS.map(({ level, title: titleKey }) => {
-        const title = tr(titleKey);
-        const group = swaps.filter(swap => swap.level === level);
-        if (group.length === 0) return null;
-        return (
-          <div key={level} role="group" aria-label={title} className={`swaps ${level}`}>
-            <h3>{title}</h3>
-            <ul>
-              {group.map(proposed => {
-                const swap = previewSwap(proposed, preview);
-                const picked = swap !== proposed;
-                const { gain, pros, cons } = describeSwap(swap, lang);
-                return (
-                  <li key={swap.index} className={`swap${picked ? ' picked' : ''}`} title={tr('coach.fitTitle', { member: swap.member, fit: swap.fit, replacement: swap.replacement, score: swap.score })}>
-                    <p className="swap-head">
-                      <PokemonName name={swap.member} muted icon />
-                      <Icon name="arrow" />
-                      <span className="visually-hidden">{tr('coach.with')}</span>
-                      <PokemonName name={swap.replacement} icon />
-                      {/* Punti di voto del team: il criterio con cui il coaching sceglie le sostituzioni */}
-                      {gain > 0
-                        ? <span className="gain" aria-label={tr('coach.betterBy', { n: gain })}>+{gain}<span className="gain-unit" aria-hidden="true">{tr('coach.ratingUnit')}</span></span>
-                        : gain === 0
-                          ? <span className="gain same" aria-label={tr('coach.sameRating')}>±0<span className="gain-unit" aria-hidden="true">{tr('coach.ratingUnit')}</span></span>
-                          : <span className="gain worse" aria-label={tr('coach.worseBy', { n: -gain })}>−{-gain}<span className="gain-unit" aria-hidden="true">{tr('coach.ratingUnit')}</span></span>}
-                      {swap.similar && <small>{tr('coach.similarRole')}</small>}
-                      {picked && <small className="picked-tag">{tr('coach.selected')}</small>}
-                    </p>
-                    <ProsCons pros={pros} cons={cons} />
-                    <div className="swap-actions">
-                      {onSwap && (
-                        <button type="button" className={`swap-now${proposed === lead ? ' primary' : ''}`} aria-label={tr('coach.swapNow', { member: swap.member, replacement: swap.replacement })}
-                          title={tr('coach.swapNow', { member: swap.member, replacement: swap.replacement })}
-                          onClick={() => onSwap(swap.index, swap.set)}>
-                          <Icon name="swap" />
-                          {proposed === lead && <span>{tr('coach.swapShort')}</span>}
-                        </button>
-                      )}
-                      <button type="button" aria-label={tr('coach.otherReplacements', { member: swap.member })} onClick={() => onReplace(swap.index)}>
-                        {tr('coach.otherReplacementsButton')}
-                      </button>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        );
-      })}
-    </>
-  );
-}
-
-/** Il coaching intero in un blocco (giudizio, problemi e cambi): lo usano i test e chi lo mostra da solo. */
+/** Il coaching intero in un blocco (giudizio e problemi): lo usano i test e chi lo mostra da solo. */
 export function CoachPanel(props: SwapProps) {
   const tr = useT();
   const { verdict, problems } = props.coaching;
@@ -194,7 +126,7 @@ export function CoachPanel(props: SwapProps) {
         </span>
       </summary>
       <CoachProblems coaching={props.coaching} />
-      <CoachSolutions {...props} />
+      {/* I cambi proposti tornano col Coaching nuovo (candidati sotto i problemi) */}
     </details>
   );
 }

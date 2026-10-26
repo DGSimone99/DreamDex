@@ -42,18 +42,13 @@ describe('CoachPanel', () => {
     expect(within(analysis()).getByText('Aggiungi almeno 2 Pokémon per ricevere il coaching')).toBeInTheDocument();
   });
 
-  it('"Altri sostituti" apre la sostituzione del membro', async () => {
-    const user = await setup('Great Tusk', 'Gholdengo', 'Magikarp');
-    await user.click(within(analysis()).getByRole('button', { name: 'Altri sostituti per Magikarp' }));
-    expect(within(screen.getByRole('group', { name: 'Chi sostituire' })).getByRole('button', { name: 'Sostituisci Magikarp' })).toHaveAttribute('aria-pressed', 'true');
-  });
 });
 
 describe('CoachPanel: bannati dell\'utente', () => {
   it('dice quanti bannati restano fuori dalle sostituzioni', async () => {
     const { CoachPanel } = await import('../../src/ui/CoachPanel');
     const { renderIt } = await import('../helpers/italian');
-    const coaching = { verdict: 'x', teamType: null, strengths: [], problems: [], swaps: [], threatFixes: {}, bannedCount: 1 };
+    const coaching = { verdict: 'x', teamType: null, strengths: [], problems: [], fixes: [], first: null, threatFixes: {}, bannedCount: 1 };
     renderIt(<CoachPanel coaching={coaching} onReplace={() => {}} />);
     expect(screen.getByText('1 bannato escluso')).toBeInTheDocument();
   });

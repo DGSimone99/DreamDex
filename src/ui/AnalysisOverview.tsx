@@ -7,7 +7,7 @@ import { useT } from '../i18n/react';
 import { signed } from './AreaDetail';
 import type { AnalysisView } from './analysisView';
 import { AreaView } from './AreaView';
-import { CoachProblems, CoachSolutions, TeamTypeLine } from './CoachPanel';
+import { CoachProblems, TeamTypeLine } from './CoachPanel';
 import { AlertMark } from './AlertMark';
 import { Typed } from './TypeText';
 import { IssueCounts, PROBLEM_LABELS } from './IssueCounts';
@@ -58,8 +58,8 @@ function BonusMalus({ rating }: { rating: TeamRating }) {
   );
 }
 
-/** La Panoramica: cosa fare. Problemi e soluzioni affiancati (la riga Membri è messa da parte). */
-export function AnalysisOverview({ team, analysis, rating, coaching, data, preview, onReplace, onSwap, onView, onAdd }: {
+/** La Panoramica: cosa fare. Il Coaching a tutta larghezza (la riga Membri è messa da parte). */
+export function AnalysisOverview({ team, analysis, rating, coaching, data, onView, onAdd }: {
   onAdd?: () => void;
   team: TeamSet[];
   analysis: TeamAnalysis;
@@ -79,8 +79,6 @@ export function AnalysisOverview({ team, analysis, rating, coaching, data, previ
     ...(rating && metaMonth ? [rating.meta ? t('rating.metaOn', { month: metaMonth }) : t('rating.metaOff')] : []),
     ...(rating?.archetype === 'stall' ? [t('rating.stall')] : []),
   ];
-  // Senza cambi da proporre la colonna Soluzioni non c'è: i Problemi prendono tutta la larghezza
-  const solutions = !!coaching && coaching.swaps.length > 0;
   if (team.length === 0) {
     return (
       <div className="overview-empty">
@@ -97,13 +95,13 @@ export function AnalysisOverview({ team, analysis, rating, coaching, data, previ
         {notes.length > 0 && <AlertMark alerts={notes.map(text => ({ level: 'info' as const, text }))} />}
         {coaching?.teamType && <TeamTypeLine teamType={coaching.teamType} />}
       </div>
-      <div className={`overview-cols${solutions ? '' : ' single'}`}>
+      {/* La colonna Soluzioni è tolta: i candidati tornano sotto i problemi del Coaching */}
+      <div className="overview-cols single">
         <section className="overview-col" aria-label={t('analysis.problems')}>
           <h3 className="overview-head">
             <span className="box-head">{t('analysis.problems')}</span>
             {coaching && (
               <span className="summary-info">
-                {!solutions && <span className="no-solutions">{t('analysis.noSolutions')}</span>}
                 <IssueCounts serious={coaching.problems.filter(p => p.severity === 'serious').length}
                   minor={coaching.problems.filter(p => p.severity === 'minor').length} labels={PROBLEM_LABELS} />
               </span>
@@ -116,12 +114,6 @@ export function AnalysisOverview({ team, analysis, rating, coaching, data, previ
             {rating && <BonusMalus rating={rating} />}
           </div>
         </section>
-        {solutions && coaching && (
-          <section className="overview-col" aria-label={t('analysis.solutions')}>
-            <h3 className="overview-head"><span className="box-head">{t('analysis.solutions')}</span></h3>
-            <CoachSolutions coaching={coaching} preview={preview} onReplace={onReplace} onSwap={onSwap} />
-          </section>
-        )}
       </div>
     </div>
   );

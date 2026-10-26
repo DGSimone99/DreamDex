@@ -70,8 +70,8 @@ describe('regole di Ubers', () => {
     const before = teamArchetype(team, UBERS_RULES)?.archetype;
     // Da B in su il tipo di team è bloccato: ogni scambio proposto lo mantiene
     expect(archetypeLock(team, UBERS_RULES, grade)).toBe(before);
-    const swaps = coachTeam(team, format, data).swaps;
-    for (const swap of swaps) expect(teamArchetype(team.map((s, i) => (i === swap.index ? swap.set : s)), UBERS_RULES)?.archetype).toBe(before);
+    const fixes = coachTeam(team, format, data).fixes;
+    for (const fix of fixes) expect(teamArchetype(team.map((s, i) => (i === fix.index ? fix.set : s)), UBERS_RULES)?.archetype).toBe(before);
   });
 
   it('un team da C o D si può ancora ricostruire: lì i consigli possono cambiare tipo di team', () => {

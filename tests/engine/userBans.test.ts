@@ -46,11 +46,11 @@ describe('bannati dall\'utente: mai suggeriti', () => {
 
   it('coach: nessuno scambio verso un bannato', () => {
     const weak = [tusk, gholdengo, { ...emptySet('Magikarp'), moves: ['Splash'] }];
-    const before = coachTeam(weak, DEFAULT_FORMAT, fixtureData, 'it').swaps.map(s => s.replacement);
+    const before = coachTeam(weak, DEFAULT_FORMAT, fixtureData, 'it').fixes.map(f => f.species);
     expect(before.length).toBeGreaterThan(0);
     for (const species of before) {
-      const after = coachTeam(weak, DEFAULT_FORMAT, { ...fixtureData, userLists: banning(species) }, 'it').swaps;
-      expect(after.map(s => s.replacement)).not.toContain(species);
+      const after = coachTeam(weak, DEFAULT_FORMAT, { ...fixtureData, userLists: banning(species) }, 'it').fixes;
+      expect(after.map(f => f.species)).not.toContain(species);
     }
   });
 

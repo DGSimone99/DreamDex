@@ -67,9 +67,9 @@ describe('sostituire un weather setter', () => {
   it('il coaching non propone di sostituire il setter con chi non porta la condizione', () => {
     const team = [ninetales, leafeon, set('Garchomp', 'Rough Skin', ['Earthquake'])];
     for (const data of [withSetter, noSetter]) {
-      for (const swap of coachTeam(team, format, data).swaps.filter(s => s.member === 'Ninetales')) {
-        expect(enables({ ...emptySet(swap.replacement), ability: 'Drought' }).length).toBeGreaterThan(0);
-        expect(swap.replacement).toBe('Torkoal');
+      for (const fix of coachTeam(team, format, data).fixes.filter(f => f.member === 'Ninetales')) {
+        expect(enables({ ...emptySet(fix.species), ability: 'Drought' }).length).toBeGreaterThan(0);
+        expect(fix.species).toBe('Torkoal');
       }
     }
   });
