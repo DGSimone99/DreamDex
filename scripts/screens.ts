@@ -119,6 +119,24 @@ const STATES: Record<string, State> = {
     await p.keyboard.press('Shift');
     return focus(p, '.summary-tile[aria-label^="Velocità"]');
   } },
+  'analysis-six': { hash: hash(SIX), run: async p => { await tab(p, 'analysis'); return true; } },
+  'analysis-empty': { hash: '', run: async p => { await tab(p, 'analysis'); return true; } },
+  'analysis-en': { hash: hash(SIX), lang: 'en', run: async p => { await tab(p, 'analysis'); return true; } },
+  'coaching-meta-off': { hash: hashWith(TEAM, { meta: false }), run: async p => {
+    await tab(p, 'analysis');
+    await wait(300);
+    return clickText(p, '#analysis-view-coaching', /./);
+  } },
+  'coaching-empty': { hash: '', run: async p => {
+    await tab(p, 'analysis');
+    await wait(300);
+    return clickText(p, '#analysis-view-coaching', /./);
+  } },
+  'coaching-en': { hash: hash(SIX), lang: 'en', run: async p => {
+    await tab(p, 'analysis');
+    await wait(300);
+    return clickText(p, '#analysis-view-coaching', /./);
+  } },
   meta: { run: async p => { await tab(p, 'meta'); return true; } },
   lists: { run: async p => { await tab(p, 'lists'); return true; } },
   fill: { run: async p => clickText(p, 'button', /^\s*Completa team/) },
