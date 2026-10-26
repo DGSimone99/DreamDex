@@ -52,7 +52,7 @@ export function AnalysisOverview({ team, analysis, rating, coaching, data, onVie
         {notes.length > 0 && <AlertMark alerts={notes.map(text => ({ level: 'info' as const, text }))} />}
         {coaching?.teamType && <TeamTypeLine teamType={coaching.teamType} />}
       </div>
-      {tiles && <OverviewSummary tiles={tiles} problems={problems ?? []} onView={onView} onMeta={onMeta} />}
+      {tiles && <OverviewSummary tiles={tiles} problems={problems ?? []} onView={onView} onMeta={onMeta} strip={team.length >= 2} />}
     </div>
   );
 }

@@ -14,7 +14,12 @@ export function speedPhrases(points: SpeedPoint[], median: number | null, t: Tra
 }
 
 /** La linea della tessera Velocità: un punto per membro secondo la quota di meta che supera; a metà la media del meta. */
-export function TeamSpeedLine({ points, median }: { points: SpeedPoint[]; median: number | null }) {
+export function TeamSpeedLine({ points, median, focused = false }: {
+  points: SpeedPoint[];
+  median: number | null;
+  /** Tessera a fuoco da tastiera: tutte le frasi insieme, visibili. */
+  focused?: boolean;
+}) {
   const t = useT();
   const lang = useLang();
   // Il punto (indice) o la tacca sotto il mouse
@@ -32,6 +37,11 @@ export function TeamSpeedLine({ points, median }: { points: SpeedPoint[]; median
             onMouseEnter={() => setHover(i)} onMouseLeave={() => setHover(null)} />
         ))}
       </span>
+      {focused && !tip && (
+        <span role="tooltip" className="tsl-tip all">
+          {speedPhrases(points, median, t, lang).map(text => <span key={text}>{text}</span>)}
+        </span>
+      )}
       {tip && <span role="tooltip" className={`tsl-tip${tip.left > 70 ? ' end' : tip.left < 30 ? ' start' : ''}`} style={{ left: `${tip.left}%` }}>{tip.text}</span>}
     </span>
   );
