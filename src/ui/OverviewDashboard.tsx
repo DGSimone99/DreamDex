@@ -37,7 +37,10 @@ export function OverviewDashboard({ data, problems, members, onView, onMeta, den
   useLayoutEffect(() => {
     const box = ref.current;
     if (forced || !box || typeof ResizeObserver === 'undefined') return;
-    const apply = () => setMeasured(densityFor(box.clientHeight));
+    const apply = () => {
+      // Scheda nascosta (display: none) misura 0: resta l'ultima densità buona
+      if (box.clientHeight > 0) setMeasured(densityFor(box.clientHeight));
+    };
     apply();
     const observer = new ResizeObserver(apply);
     observer.observe(box);

@@ -1,6 +1,6 @@
-import { screen, within } from '@testing-library/react';
+import { act, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { CoachProblem } from '../../src/engine/coach';
 import type { DashboardData } from '../../src/engine/overviewDashboard';
 import { TYPES } from '../../src/engine/types';
@@ -217,5 +217,113 @@ describe('Cruscotto della Panoramica', () => {
   it('senza statistiche: "Statistiche non disponibili"', () => {
     mount({ data: { ...sample(), threats: { pods: [], total: 0, available: false, metaOff: false } } });
     expect(screen.getByRole('region', { name: 'Minacce non gestite' })).toHaveTextContent('Statistiche non disponibili');
+  });
+});
+
+/** ResizeObserver finto: si tengono le callback per lanciarle a mano. */
+function stubObservers() {
+  const callbacks: (() => void)[] = [];
+  vi.stubGlobal('ResizeObserver', class {
+    constructor(cb: () => void) { callbacks.push(cb); }
+    observe() {}
+    disconnect() {}
+  });
+  return () => act(() => { for (const cb of [...callbacks]) cb(); });
+}
+
+/** Altezza di ogni elemento (clientHeight) presa da una variabile. */
+function stubHeight() {
+  const size = { height: 0 };
+  vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockImplementation(() => size.height);
+  vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(() => (size.height ? 500 : 0));
+  return size;
+}
+
+const rect = (top: number, height: number) =>
+  ({ top, bottom: top + height, height, left: 0, right: 0, width: 0, x: 0, y: top, toJSON() {} }) as DOMRect;
+
+/** Layout finto: per sezione l'altezza del contenitore .dash-fit e quella di ogni voce [data-fit], una sotto l'altra. */
+function stubLayout(sizes: Record<string, { box: number; item: number }>, visible = () => true) {
+  vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (this: Element) {
+    // Scheda nascosta (display: none): tutto a zero
+    if (!visible()) return rect(0, 0);
+    const box = this.closest('.dash-fit');
+    const card = box?.closest('.dash-card');
+    const size = card && Object.entries(sizes).find(([name]) => card.classList.contains(name))?.[1];
+    if (!box || !size) return rect(0, 0);
+    if (this === box) return rect(0, size.box);
+    const index = [...box.querySelectorAll('[data-fit]')].indexOf(this);
+    return index < 0 ? rect(0, 0) : rect(0, (index + 1) * size.item);
+  });
+}
+
+describe('Cruscotto: misure', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  it("densità dall'altezza; una misura a 0 (scheda nascosta) non la cambia", () => {
+    const fire = stubObservers();
+    const size = stubHeight();
+    size.height = 700;
+    renderIt(<OverviewDashboard data={sample()} problems={[]} members={6} onView={vi.fn()} onMeta={vi.fn()} />);
+    const dash = document.querySelector('.dash')!;
+    expect(dash).toHaveAttribute('data-density', 'roomy');
+    size.height = 0;
+    fire();
+    expect(dash).toHaveAttribute('data-density', 'roomy');
+    size.height = 300;
+    fire();
+    expect(dash).toHaveAttribute('data-density', 'tight');
+  });
+
+  it('una misura a 0×0 non rimette tutte le voci: resta l\'ultimo "+N"', () => {
+    const fire = stubObservers();
+    const size = stubHeight();
+    size.height = 400;
+    stubLayout({ 'dash-roles': { box: 60, item: 30 } }, () => size.height > 0);
+    mount({ density: 'tight' });
+    const roles = screen.getByRole('region', { name: 'Ruoli' });
+    expect(within(roles).getByText('+3')).toBeInTheDocument();
+    size.height = 0;
+    fire();
+    expect(within(roles).getByText('+3')).toBeInTheDocument();
+  });
+
+  it('Ruoli: le chip che non stanno vanno nel "+N"', () => {
+    stubLayout({ 'dash-roles': { box: 60, item: 30 } });
+    mount({ density: 'tight' });
+    const roles = screen.getByRole('region', { name: 'Ruoli' });
+    // Ne stanno 2, una lascia posto al "+N": 1 chip e "+3"
+    expect(roles.querySelectorAll('.dash-chip:not(.more)')).toHaveLength(1);
+    expect(within(roles).getByText('+3')).toHaveClass('more');
+  });
+
+  it('Minacce: quelle che non stanno nel "+X", che apre la scheda Meta', async () => {
+    const user = userEvent.setup();
+    stubLayout({ 'dash-threats': { box: 150, item: 50 } });
+    const pods = ['Great Tusk', 'Kyurem', 'Heatran', 'Gholdengo', 'Dragonite'].map((species, i) => ({ species, usage: 0.3 - i / 20 }));
+    const { onMeta } = mount({ data: sample({ threats: { pods, total: 20, available: true, metaOff: false } }) });
+    const threats = screen.getByRole('region', { name: 'Minacce non gestite' });
+    expect(threats.querySelectorAll('.dash-pod:not(.more)')).toHaveLength(2);
+    const more = within(threats).getByRole('button', { name: /3/ });
+    expect(more).toHaveTextContent('+3');
+    await user.click(more);
+    expect(onMeta).toHaveBeenCalledTimes(1);
+  });
+
+  it('Cosa fare: mai meno di 2 problemi, e "Tutti i 12 nel Coaching" resta', () => {
+    stubLayout({ 'dash-todo': { box: 30, item: 40 } });
+    mount({ density: 'tight', problems: Array.from({ length: 12 }, (_, i) => problem(i)) });
+    const todo = screen.getByRole('region', { name: 'Cosa fare' });
+    expect(todo.querySelectorAll('.dash-problems li')).toHaveLength(2);
+    expect(within(todo).getByRole('button', { name: /^Tutti i 12 nel Coaching/ })).toBeVisible();
+  });
+
+  it('Cosa fare: quanti ne stanno, se sono più di 2', () => {
+    stubLayout({ 'dash-todo': { box: 130, item: 40 } });
+    mount({ problems: Array.from({ length: 12 }, (_, i) => problem(i)) });
+    expect(screen.getByRole('region', { name: 'Cosa fare' }).querySelectorAll('.dash-problems li')).toHaveLength(3);
   });
 });

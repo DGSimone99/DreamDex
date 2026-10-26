@@ -40,7 +40,7 @@ export function SpeedSection({ speed, density, onView }: { speed: DashboardData[
   );
   // Chi supera e da chi è superato: dal normale in su, tante righe quante ne stanno sotto le barre
   const near = density === 'tight' ? [] : lanes.filter(l => l.outspeeds.length || l.outspedBy.length);
-  const { ref: nearRef, shown: nearShown } = useFit<HTMLUListElement>(`${density}|${near.map(l => l.species).join()}`, near.length);
+  const { ref: nearRef, shown: nearShown } = useFit<HTMLUListElement>(`${density}|${lang}|${near.map(l => l.species).join()}`, near.length);
   const area = t('area.speed');
   return (
     <DashCard className="dash-speed" title={area}

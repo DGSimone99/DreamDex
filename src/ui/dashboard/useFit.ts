@@ -35,6 +35,11 @@ export function useFit<T extends HTMLElement>(key: string, count: number, { rese
     if (!box || typeof ResizeObserver === 'undefined') return;
     let last = '';
     const observer = new ResizeObserver(() => {
+      // Scheda nascosta (0×0): si tiene l'ultima misura e si rimisura quando ricompare
+      if (!box.clientWidth && !box.clientHeight) {
+        last = '';
+        return;
+      }
       const size = `${box.clientWidth}x${box.clientHeight}`;
       if (size === last) return;
       last = size;

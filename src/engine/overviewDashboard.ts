@@ -1,4 +1,4 @@
-import type { TeamAnalysis } from './analysis';
+import { usesMeta, type TeamAnalysis } from './analysis';
 import { weaknessSeverity, type CoachProblem } from './coach';
 import type { EngineData } from './data';
 import { battleName } from './dex';
@@ -9,7 +9,6 @@ import { LEVEL_KEYS, type LevelKey } from './roleLevels';
 import type { TeamSet } from './sets';
 import { poolMedian, speedTier } from './speed';
 import type { SpeedCondition } from './speedArea';
-import { usesMeta } from './analysis';
 import { t, type Lang } from '../i18n';
 
 export type CellState = 'ok' | 'minor' | 'bad';
