@@ -39,6 +39,10 @@ const FORMAT = { formatId: 'ou', genLimit: 9, minUsage: 0.01, allowMultipleMegas
 const hash = (team: unknown[]) => '#team=' + Buffer.from(JSON.stringify({ team, format: FORMAT })).toString('base64')
   .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
+/** Come hash, con qualche impostazione del formato cambiata (es. meta spento). */
+const hashWith = (team: unknown[], format: Partial<typeof FORMAT>) => '#team=' + Buffer.from(JSON.stringify({ team, format: { ...FORMAT, ...format } })).toString('base64')
+  .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+
 /** Clic sul primo elemento visibile del selettore il cui testo o aria-label corrisponde. */
 async function clickText(page: Page, selector: string, text: RegExp): Promise<boolean> {
   return page.evaluate((sel, src, flags) => {
@@ -69,6 +73,8 @@ const STATES: Record<string, State> = {
   'analysis-defense': { run: async p => clickText(p, '.band button.grade-area', /^Difesa/) },
   'analysis-offense': { run: async p => clickText(p, '.band button.grade-area', /^Offesa/) },
   'analysis-roles': { run: async p => clickText(p, '.band button.grade-area', /^Ruoli/) },
+  'analysis-overview-three': { hash: hash(TEAM.slice(0, 3)), run: async p => { await tab(p, 'analysis'); return true; } },
+  'analysis-meta-off': { hash: hashWith(TEAM, { meta: false }), run: async p => { await tab(p, 'analysis'); return true; } },
   'analysis-one': { hash: hash(TEAM.slice(0, 2)), run: async p => { await tab(p, 'analysis'); return true; } },
   'analysis-member': { run: async p => {
     await tab(p, 'analysis');

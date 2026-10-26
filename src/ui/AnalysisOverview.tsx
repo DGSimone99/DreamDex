@@ -1,65 +1,18 @@
+import { useMemo } from 'react';
 import type { TeamAnalysis } from '../engine/analysis';
-import { weaknessSeverity, type Coaching, type SwapPreview } from '../engine/coach';
+import type { Coaching, SwapPreview } from '../engine/coach';
 import type { EngineData } from '../engine/data';
+import { summarizeTeam } from '../engine/overviewSummary';
 import type { TeamRating } from '../engine/rating';
 import type { TeamSet } from '../engine/sets';
 import { useT } from '../i18n/react';
-import { signed } from './AreaDetail';
 import type { AnalysisView } from './analysisView';
-import { AreaView } from './AreaView';
-import { CoachProblems, TeamTypeLine } from './CoachPanel';
+import { TeamTypeLine } from './CoachPanel';
 import { AlertMark } from './AlertMark';
-import { Typed } from './TypeText';
-import { IssueCounts, PROBLEM_LABELS } from './IssueCounts';
+import { OverviewSummary } from './OverviewSummary';
 
-/** I numeri chiave in una riga: ognuno porta alla scheda della sua area; sotto, come è stato calcolato il voto. */
-function OverviewStats({ analysis, onView }: { analysis: TeamAnalysis; onView: (view: AnalysisView) => void }) {
-  const t = useT();
-  const uncovered = analysis.weakness.map(weaknessSeverity).filter(Boolean).length;
-  const hits = analysis.coverage.filter(row => row.hitters.length > 0).length;
-  const essentialMissing = analysis.needs.essentialMissing.length;
-  const stats: { label: string; value: string; caption: string; view: AnalysisView; bad: boolean }[] = [
-    { label: t('analysis.stat.uncovered', { n: uncovered }), value: String(uncovered), caption: t(uncovered === 1 ? 'analysis.stat.uncoveredShortOne' : 'analysis.stat.uncoveredShort'), view: 'defense', bad: uncovered > 0 },
-    { label: t('analysis.stat.coverage', { n: hits }), value: `${hits}/18`, caption: t('analysis.stat.coverageShort'), view: 'strength', bad: hits < 18 },
-    { label: t('analysis.stat.essential', { n: essentialMissing }), value: String(essentialMissing), caption: t(essentialMissing === 1 ? 'analysis.stat.essentialShortOne' : 'analysis.stat.essentialShort'), view: 'roles', bad: essentialMissing > 0 },
-  ];
-  return (
-    <div role="group" aria-label={t('analysis.keyNumbers')} className="overview-stats">
-      {stats.map(stat => (
-        // Numero e cosa conta, compatti; portano alla scheda dell'area
-        <button key={stat.view} type="button" className={`stat-tile ${stat.bad ? 'bad' : 'ok'}`} aria-label={stat.label} onClick={() => onView(stat.view)}>
-          <b>{stat.value}</b><span>{stat.caption}</span>
-        </button>
-      ))}
-    </div>
-  );
-}
-
-/** Bonus e malus attivi coi punti e il netto; sotto, apribile, il catalogo completo. */
-function BonusMalus({ rating }: { rating: TeamRating }) {
-  const t = useT();
-  const net = rating.bonus.total - rating.penalty.total;
-  const title = t('coach.bonusMalus', { net: signed(net) });
-  const items = [
-    ...rating.penalty.items.map(item => ({ key: `m${item.text}`, text: item.text, points: -item.points })),
-    ...rating.bonus.items.map(item => ({ key: `b${item.text}`, text: item.text, points: item.points })),
-  ];
-  return (
-    <div className="bonus-malus" role="group" aria-label={title}>
-      <h3>{title}</h3>
-      {items.length > 0
-        ? <ul>{items.map(item => <li key={item.key} className={item.points < 0 ? 'loss' : 'gain'}><Typed text={item.text} />{item.points !== 0 && ` (${signed(item.points)})`}</li>)}</ul>
-        : <p className="note">{t('coach.noBonusMalus')}</p>}
-      <details>
-        <summary>{t('coach.catalogue')}</summary>
-        <AreaView rating={rating} area="bonusMalus" problems={[]} />
-      </details>
-    </div>
-  );
-}
-
-/** La Panoramica: cosa fare. Il Coaching a tutta larghezza (la riga Membri è messa da parte). */
-export function AnalysisOverview({ team, analysis, rating, coaching, data, onView, onAdd }: {
+/** La Panoramica: giudizio e tipo di team in cima, poi il riassunto in sei tessere (i problemi stanno nel Coaching). */
+export function AnalysisOverview({ team, analysis, rating, coaching, data, onView, onMeta, onAdd }: {
   onAdd?: () => void;
   team: TeamSet[];
   analysis: TeamAnalysis;
@@ -70,6 +23,8 @@ export function AnalysisOverview({ team, analysis, rating, coaching, data, onVie
   onReplace: (index: number) => void;
   onSwap?: (index: number, set: TeamSet) => void;
   onView: (view: AnalysisView) => void;
+  /** La tessera Meta apre la scheda principale Meta. */
+  onMeta?: () => void;
   /** Messo da parte con la riga Membri: torna quando la riga trova posto. */
   onMember?: (index: number) => void;
 }) {
@@ -79,6 +34,8 @@ export function AnalysisOverview({ team, analysis, rating, coaching, data, onVie
     ...(rating && metaMonth ? [rating.meta ? t('rating.metaOn', { month: metaMonth }) : t('rating.metaOff')] : []),
     ...(rating?.archetype === 'stall' ? [t('rating.stall')] : []),
   ];
+  const problems = coaching?.problems;
+  const tiles = useMemo(() => (rating ? summarizeTeam(analysis, rating, problems ?? [], data) : null), [analysis, rating, problems, data]);
   if (team.length === 0) {
     return (
       <div className="overview-empty">
@@ -89,32 +46,13 @@ export function AnalysisOverview({ team, analysis, rating, coaching, data, onVie
   }
   return (
     <div className="overview">
-      {/* Una riga: giudizio, tipo di team, come è calcolato il voto (nel segno), e i numeri chiave a destra */}
+      {/* Una riga: giudizio, come è calcolato il voto (nel segno) e tipo di team */}
       <div className="overview-headline">
         {coaching && <strong>{coaching.verdict}</strong>}
         {notes.length > 0 && <AlertMark alerts={notes.map(text => ({ level: 'info' as const, text }))} />}
         {coaching?.teamType && <TeamTypeLine teamType={coaching.teamType} />}
       </div>
-      {/* La colonna Soluzioni è tolta: i candidati tornano sotto i problemi del Coaching */}
-      <div className="overview-cols single">
-        <section className="overview-col" aria-label={t('analysis.problems')}>
-          <h3 className="overview-head">
-            <span className="box-head">{t('analysis.problems')}</span>
-            {coaching && (
-              <span className="summary-info">
-                <IssueCounts serious={coaching.problems.filter(p => p.severity === 'serious').length}
-                  minor={coaching.problems.filter(p => p.severity === 'minor').length} labels={PROBLEM_LABELS} />
-              </span>
-            )}
-          </h3>
-          {/* I numeri chiave come riga di utilità in cima al Coaching; sotto, a tutta larghezza, il contenuto su due colonne */}
-          <OverviewStats analysis={analysis} onView={onView} />
-          <div className="coach-body">
-            {coaching && <CoachProblems coaching={coaching} heading={false} />}
-            {rating && <BonusMalus rating={rating} />}
-          </div>
-        </section>
-      </div>
+      {tiles && <OverviewSummary tiles={tiles} problems={problems ?? []} onView={onView} onMeta={onMeta} />}
     </div>
   );
 }
