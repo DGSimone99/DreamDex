@@ -50,7 +50,7 @@ function TodoRow({ group }: { group: TodoGroup }) {
     <li data-fit className={`${group.severity} dash-group`} title={group.details.join('\n')}>
       <span className="dash-sev" aria-hidden="true">{severity}</span>
       <span className="dash-problem" aria-hidden="true">
-        <span className="dash-todo-title">{group.title}</span>
+        <span className="dash-todo-title">{group.title}:</span>
         {group.count > 1 && <span className="dash-count">{group.count}</span>}
         {' '}
         {group.items.map((item, i) => (
