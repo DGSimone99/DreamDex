@@ -77,6 +77,19 @@ describe('Cruscotto della Panoramica', () => {
     expect(screen.queryByText('Chi')).toBeNull();
   });
 
+  it('Copertura: in testata l\'icona ufficiale di ogni tipo, decorativa, col nome nel tooltip', () => {
+    mount();
+    const headers = within(screen.getByRole('table', { name: 'Copertura' })).getAllByRole('columnheader');
+    headers.forEach((th, i) => {
+      const img = th.querySelector('img');
+      expect(img).not.toBeNull();
+      expect(img!.getAttribute('src')).toMatch(new RegExp(`${TYPES[i].toLowerCase()}\\.png`));
+      expect(img).toHaveAttribute('alt', '');
+    });
+    expect(headers[TYPES.indexOf('Ground')].getAttribute('title')).toMatch(/^(Terra|Ground)$/);
+    expect(headers[TYPES.indexOf('Ground')]).toHaveAccessibleName(/^(Terra|Ground)$/);
+  });
+
   it('i link aprono le schede', async () => {
     const user = userEvent.setup();
     const { onView, onMeta } = mount();
