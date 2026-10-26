@@ -248,14 +248,26 @@ button.member-card:hover { border-color: var(--accent); }
 .dash-chip.bad { font-weight: 600; color: var(--text); background: color-mix(in srgb, var(--bad) 28%, var(--panel)); border-color: color-mix(in srgb, var(--bad) 70%, transparent); }
 .dash-chip.bad .icon { color: var(--text); }
 .dash-chip.soft, .dash-chip.more { border-style: dashed; color: var(--faint); }
-.dash-owners { display: inline-flex; align-items: center; margin-left: 4px; }
-.dash-owners .mon-icon { margin: -9px -10px -9px -8px; }
-.dash-owners small { margin-left: 8px; font-size: 11px; color: var(--muted); }
+/* Minori: più tenui degli essenziali e degli importanti */
+.dash-chip.minor.ok { color: var(--faint); border-color: var(--line-soft); }
+.dash-owners { display: inline-flex; align-items: center; gap: 2px; }
+/* Le mini icone hanno margine trasparente: si stringono senza sovrapporsi */
+.dash-owners .mon-icon { margin: -8px -5px -8px -5px; }
+.dash-owners small { margin-left: 4px; font-size: 11px; color: var(--muted); }
 .dash-level { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 8px; align-items: start; margin-bottom: 8px; }
 .dash-level-name { padding-top: 4px; font: 600 11px/1.2 var(--ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+/* Ampio: una riga per ruolo (livello, chip, chi lo copre); le righe si allungano fino a riempire, mai oltre i 46px */
+.dash-rows { display: flex; flex-direction: column; }
+.dash-role { flex: 1 0 0; min-height: 28px; max-height: 46px; display: grid; grid-template-columns: 76px auto minmax(0, 1fr); gap: 8px; align-items: center; border-bottom: 1px solid var(--line-soft); }
+.dash-role .dash-level-name { padding-top: 0; }
+.dash-role .dash-chip { justify-self: start; }
+.dash-role .dash-owners { justify-self: start; }
 
 /* Velocità: barre dal più veloce, sopra la media in accento; la linea tratteggiata con la targhetta ambra; sprite sotto */
-.dash-ladder { flex: 1; min-height: 70px; display: flex; flex-direction: column; }
+/* Le barre prendono 3/5 dello spazio, fino a un tetto; il resto va alle righe "supera / superato da" */
+.dash-ladder { flex: 3 1 0; min-height: 70px; display: flex; flex-direction: column; }
+.dash.normal .dash-ladder.capped { max-height: 220px; }
+.dash.roomy .dash-ladder.capped { max-height: 320px; }
 .dash-bars { position: relative; flex: 1; min-height: 40px; display: flex; align-items: flex-end; gap: 6px; border-bottom: 1px solid var(--line); }
 .dash-lane { flex: 1; height: 100%; display: flex; align-items: flex-end; justify-content: center; cursor: help; }
 .dash-bar { position: relative; width: 70%; max-width: 40px; min-height: 2px; background: var(--line); border-radius: 3px 3px 0 0; }
@@ -267,8 +279,8 @@ button.member-card:hover { border-color: var(--accent); }
 /* Gli sprite di gen 5 hanno molto margine: si ingrandiscono e si ritagliano nella loro casella */
 .dash-lane-sprite { flex: 1; display: flex; justify-content: center; height: var(--sprite); overflow: hidden; }
 .dash-lane-sprite .sprite { flex: none; width: calc(var(--sprite) * 1.5); height: calc(var(--sprite) * 1.5); margin-top: calc(var(--sprite) * -0.32); image-rendering: pixelated; }
-.dash-near { margin: 6px 0 0; padding: 0; list-style: none; display: grid; gap: 3px; font-size: 11px; color: var(--muted); }
-.dash-near li { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.3; }
+.dash-near { flex: 2 1 0; min-height: 0; overflow: hidden; margin: 6px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 3px; font-size: 11px; color: var(--muted); }
+.dash-near li { flex: none; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.3; }
 .dash-near b { font-weight: 600; color: var(--text); }
 .dash-ctrl { margin: 6px 0 0; font-size: 12px; color: var(--muted); }
 .dash-ctrl b { font-weight: 500; }

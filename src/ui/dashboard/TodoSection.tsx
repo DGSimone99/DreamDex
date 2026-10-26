@@ -5,7 +5,7 @@ import type { AnalysisView } from '../analysisView';
 import { Icon, type IconName } from '../icons';
 import type { Density } from '../OverviewDashboard';
 import { Typed } from '../TypeText';
-import { DashCard } from './DashCard';
+import { DashCard, DashLink } from './DashCard';
 import { useFit } from './useFit';
 
 /** L'area di ogni problema come icona (il nome nel tooltip e per i lettori di schermo). */
@@ -65,5 +65,12 @@ export function TodoSection({ problems, members, density, onView }: { problems: 
       </>
     );
   }
-  return <DashCard className="dash-todo" title={t('dash.todo')} meta={counts || undefined}>{body}</DashCard>;
+  // La freccia al Coaching c'è sempre, anche senza problemi o con meno di 2 membri
+  const coaching = t('analysis.view.coaching');
+  return (
+    <DashCard className="dash-todo" title={t('dash.todo')} meta={counts || undefined}
+      links={<DashLink area={coaching} onClick={() => onView('coaching')} />}>
+      {body}
+    </DashCard>
+  );
 }

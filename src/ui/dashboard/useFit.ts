@@ -15,11 +15,11 @@ export function useFit<T extends HTMLElement>(key: string, count: number, { rese
 
   useLayoutEffect(() => {
     if (fit !== null || !box) return;
-    const limit = box.clientHeight;
+    // Tutto da getBoundingClientRect: con lo zoom di html (schermi 2K/4K) clientHeight è in un'altra scala
+    const { top, height: limit } = box.getBoundingClientRect();
     let n = count;
     // Senza altezza (scheda nascosta, test) stanno tutte: si rimisura quando compare
     if (limit) {
-      const top = box.getBoundingClientRect().top;
       n = 0;
       for (const item of box.querySelectorAll<HTMLElement>('[data-fit]')) {
         if (item.getBoundingClientRect().bottom - top > limit + 0.5) break;

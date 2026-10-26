@@ -406,7 +406,7 @@ export const en = {
   'help.view.button': "How {view} works",
   'analysis.view.coaching': "Coaching",
   'analysis.seriousCount': "{n} serious problems",
-  'help.view.overview': "The Overview summarizes the team: one tile per area with its main figure and what is missing. Each tile opens its tab; the problems live in Coaching.",
+  'help.view.overview': "The Overview sums up the team at a glance: on the left how it is built (type coverage, roles, speed), on the right what to do (the main problems and the unhandled meta threats). Each section opens its tab; collapsing the team shows more detail.",
   'help.view.coaching': "Coaching lists the team's problems from the most serious and, under each, who solves it and the extra grade it gives. Clicking a name opens the Pokémon tab on that change.",
   'help.view.bonusMalus': "Bonuses and maluses add to the grade: here are the active ones and the full catalogue.",
   'help.view.defense': "Defense measures how well the team takes hits: Robustness (physical and special, with Sustain), Sustain (recovery per turn minus Stealth Rock and Life Orb), Type coverage (resistances and weaknesses across the 18 types) and, with the meta, Meta coverage (answers to the most used Pokémon).\nOn the left the sub-stats with their values; on the right the detail of the chosen one, member by member.",

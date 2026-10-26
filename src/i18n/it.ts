@@ -408,7 +408,7 @@ export const it: Record<keyof typeof en, string> = {
   'help.view.button': "Come funziona {view}",
   'analysis.view.coaching': "Coaching",
   'analysis.seriousCount': "{n} problemi gravi",
-  'help.view.overview': "La Panoramica riassume il team: un riquadro per area col dato principale e cosa manca. Ogni riquadro apre la sua scheda; i problemi stanno nel Coaching.",
+  'help.view.overview': "La Panoramica riassume il team in un colpo d'occhio: a sinistra com'è fatto (copertura dei tipi, ruoli, velocità), a destra cosa fare (i problemi principali e le minacce del meta non gestite). Ogni sezione apre la sua scheda; riducendo il team compaiono più dettagli.",
   'help.view.coaching': "Il Coaching elenca i problemi del team dal più grave e, sotto ognuno, chi lo risolve col voto in più. Cliccando un nome si apre la scheda Pokémon su quel cambio.",
   'help.view.bonusMalus': "Bonus e malus si sommano al voto: qui ci sono quelli attivi e il catalogo completo.",
   'help.view.defense': "La Difesa misura quanto il team regge i colpi: Robustezza (fisica e speciale, con la Sostenibilità), Sostenibilità (recupero per turno meno Stealth Rock e Life Orb), Coverage tipi (resistenze e debolezze sui 18 tipi) e, col meta, Coverage meta (risposte ai Pokémon più usati).\nA sinistra le sottostatistiche col loro valore; a destra il dettaglio di quella scelta, membro per membro.",

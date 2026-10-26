@@ -11,9 +11,9 @@ import { TodoSection } from './dashboard/TodoSection';
 export type Density = 'tight' | 'normal' | 'roomy';
 
 /**
- * Soglie sull'altezza del cruscotto (px), misurate sull'app (6 membri):
- * 1366×768 team aperto ≈ 374 (stretto) · 1440×900 aperto ≈ 477 · 1366×768 ridotto ≈ 579 (normale) ·
- * 1440×900 ridotto ≈ 707 · 1920×1080 aperto ≈ 627 (ampio).
+ * Soglie sull'altezza del cruscotto (px CSS), rimisurate con la card del voto a cinque righe (6 membri):
+ * 1366×768 aperto 368 (stretto) · 1440×900 aperto 471 · 1366×768 ridotto 573 (normale) ·
+ * 1920×1080 aperto 621 · 2560×1440 aperto 694 (zoom 1.25) · 1440×900 ridotto 701 · 1920×1080 ridotto 881 (ampio).
  */
 export const TIGHT_BELOW = 440;
 export const ROOMY_FROM = 600;
