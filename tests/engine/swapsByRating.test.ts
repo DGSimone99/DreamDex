@@ -6,6 +6,7 @@ import { rateTeam } from '../../src/engine/rating';
 import { isPassive } from '../../src/engine/roles';
 import { emptySet, mostCommonSet, type TeamSet } from '../../src/engine/sets';
 import { fixtureData, fixtureStats } from '../fixtures/data';
+import { adviceOf } from '../helpers/coach';
 
 const set = (species: string, item: string, ability: string, moves: string[]): TeamSet =>
   ({ ...emptySet(species), item, ability, moves });
@@ -18,7 +19,7 @@ describe('sostituzioni giudicate col voto', () => {
   it('ogni sostituzione alza davvero il voto, di quanto dice', () => {
     for (const team of [balance, weak]) {
       const before = rateTeam(team, fixtureData)!.overall;
-      const swaps = coachTeam(team, DEFAULT_FORMAT, fixtureData).fixes.filter(f => f.kind === 'swap');
+      const swaps = adviceOf(team, DEFAULT_FORMAT, fixtureData).fixes.filter(f => f.kind === 'swap');
       if (team === weak) expect(swaps.length).toBeGreaterThan(0);
       for (const fix of swaps) {
         const after = rateTeam(swapped(team, fix.index!, fix.set), fixtureData)!.overall;
@@ -32,7 +33,7 @@ describe('sostituzioni giudicate col voto', () => {
     const team = [...balance.slice(0, 5), set('Mewtwo', 'Mewtwonite Y', 'Pressure', ['Psystrike', 'Fire Blast', 'Ice Beam', 'Recover'])];
     const coaching = coachTeam(team, DEFAULT_FORMAT, fixtureData);
     const rules = coaching.problems.find(p => p.category === 'rules')!.key;
-    expect(coaching.fixes.some(f => f.index === 5 && f.solves.includes(rules))).toBe(true);
+    expect(adviceOf(team, DEFAULT_FORMAT, fixtureData).fixes.some(f => f.index === 5 && f.solves.includes(rules))).toBe(true);
   });
 });
 
@@ -47,7 +48,7 @@ describe('sostituzioni in uno stall', () => {
   ];
 
   it('un muro passivo si sostituisce solo con un altro passivo, e il team resta stall', () => {
-    for (const fix of coachTeam(stall, DEFAULT_FORMAT, fixtureData).fixes) {
+    for (const fix of adviceOf(stall, DEFAULT_FORMAT, fixtureData).fixes) {
       expect(isPassive(fix.set, DEFAULT_RULES)).toBe(true);
       expect(rateTeam(swapped(stall, fix.index!, fix.set), fixtureData)!.archetype).toBe('stall');
     }

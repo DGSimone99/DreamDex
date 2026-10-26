@@ -8,6 +8,7 @@ import { rateTeam } from '../../src/engine/rating';
 import { detectRoles, legacyWall } from '../../src/engine/roles';
 import { emptySet, mostCommonSet, type TeamSet } from '../../src/engine/sets';
 import { fixtureData, fixtureStats } from '../fixtures/data';
+import { adviceOf } from '../helpers/coach';
 
 const set = (species: string, item: string, ability: string, moves: string[]): TeamSet => ({ ...emptySet(species), item, ability, moves });
 const walls = (s: TeamSet, rules = UBERS_RULES) => detectRoles(s, rules).filter(r => r === 'physicalWall' || r === 'specialWall');
@@ -70,7 +71,7 @@ describe('regole di Ubers', () => {
     const before = teamArchetype(team, UBERS_RULES)?.archetype;
     // Da B in su il tipo di team è bloccato: ogni scambio proposto lo mantiene
     expect(archetypeLock(team, UBERS_RULES, grade)).toBe(before);
-    const fixes = coachTeam(team, format, data).fixes;
+    const fixes = adviceOf(team, format, data).fixes;
     for (const fix of fixes) expect(teamArchetype(team.map((s, i) => (i === fix.index ? fix.set : s)), UBERS_RULES)?.archetype).toBe(before);
   });
 

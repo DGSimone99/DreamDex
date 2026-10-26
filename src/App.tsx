@@ -1,6 +1,6 @@
 import { useCallback, useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { analyzeTeam } from './engine/analysis';
-import { coachTeam } from './engine/coach';
+import { coachAdvice, coachTeam } from './engine/coach';
 import type { CoachFix } from './engine/coachFixes';
 import { rateTeam } from './engine/rating';
 import type { EngineData } from './engine/data';
@@ -164,8 +164,12 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   // Candidato scelto nel Coaching: la scheda Pokémon va su di lui (sostituendo quel membro, o in Aggiungi)
   const [candidateFocus, setCandidateFocus] = useState<CandidateFocus | undefined>(undefined);
   const openFix = (fix: CoachFix) => {
-    if (fix.kind === 'swap') startReplace(fix.index);
-    else {
+    if (fix.kind === 'swap') {
+      // I consigli possono essere di un team appena cambiato: il membro si cerca per nome; se non c'è più, niente
+      const index = team.findIndex(set => battleName(set) === fix.member);
+      if (index < 0) return;
+      startReplace(index);
+    } else {
       setReplaceIndex(null);
       openTab('pokemon');
     }
@@ -191,6 +195,14 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   // Senza meta la scheda Meta è spenta: si resta sull'Analisi
   const shownTab: TabId = tab === 'meta' && !metaOn ? 'analysis' : tab;
   if (shownTab === 'lists' && !listsOpened) setListsOpened(true);
+  // I consigli (candidati e prima mossa) sono lenti: solo con la scheda Coaching aperta, e dopo che la scheda si è disegnata
+  const coachingOpen = shownTab === 'analysis' && analysisView === 'coaching';
+  const adviceInput = useMemo(() => (coachingOpen ? { source: coachSource, problems: coaching.problems } : null), [coachingOpen, coachSource, coaching]);
+  const adviceSource = useDeferredValue(adviceInput);
+  const computedAdvice = useMemo(() => adviceSource && coachAdvice(adviceSource.source.team, adviceSource.source.format, adviceSource.source.data, adviceSource.problems, adviceSource.source.lang),
+    [adviceSource]);
+  // Consigli di un team precedente: non si mostrano, si dice che si stanno calcolando
+  const advice = adviceSource === adviceInput ? computedAdvice : null;
 
   const changeTeam = (next: TeamSet[]) => {
     const value = next.slice(0, 6);
@@ -290,7 +302,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
           />
         </TabPanel>
         <TabPanel id="analysis" active={shownTab}>
-          <AnalysisPanel team={team} analysis={analysis} data={data} rating={rating} coaching={coaching} view={analysisView} onView={view => { setAnalysisView(view); setAnalysisMemberName(null); }}
+          <AnalysisPanel team={team} analysis={analysis} data={data} rating={rating} coaching={coaching} advice={advice} view={analysisView} onView={view => { setAnalysisView(view); setAnalysisMemberName(null); }}
             onFix={openFix} member={analysisMember} onMember={i => setAnalysisMemberName(i === null ? null : battleName(team[i]))} onAdd={startAdd}
             onMeta={() => openTab('meta')} />
         </TabPanel>

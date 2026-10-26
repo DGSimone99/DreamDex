@@ -13,8 +13,6 @@ const coaching: Coaching = {
   threatFixes: {},
   strengths: [],
   problems: [],
-  fixes: [],
-  first: null,
 };
 
 describe('interruttore "Più Mega ammesse"', () => {

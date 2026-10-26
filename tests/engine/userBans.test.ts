@@ -11,6 +11,7 @@ import { bannedInPool, scoreSets, suggest } from '../../src/engine/scoring';
 import { defaultSet, emptySet, type TeamSet } from '../../src/engine/sets';
 import { fixtureData, gholdengo, tusk } from '../fixtures/data';
 import { fillData } from '../fixtures/fillData';
+import { adviceOf } from '../helpers/coach';
 
 /** Liste effettive con un solo Pokémon bannato nel formato. */
 const banning = (species: string, allow?: string[]): EffectiveLists => ({
@@ -46,10 +47,10 @@ describe('bannati dall\'utente: mai suggeriti', () => {
 
   it('coach: nessuno scambio verso un bannato', () => {
     const weak = [tusk, gholdengo, { ...emptySet('Magikarp'), moves: ['Splash'] }];
-    const before = coachTeam(weak, DEFAULT_FORMAT, fixtureData, 'it').fixes.map(f => f.species);
+    const before = adviceOf(weak, DEFAULT_FORMAT, fixtureData, 'it').fixes.map(f => f.species);
     expect(before.length).toBeGreaterThan(0);
     for (const species of before) {
-      const after = coachTeam(weak, DEFAULT_FORMAT, { ...fixtureData, userLists: banning(species) }, 'it').fixes;
+      const after = adviceOf(weak, DEFAULT_FORMAT, { ...fixtureData, userLists: banning(species) }, 'it').fixes;
       expect(after.map(f => f.species)).not.toContain(species);
     }
   });

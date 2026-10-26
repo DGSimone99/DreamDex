@@ -35,6 +35,16 @@ export interface CoachProblem {
   fixes: string[];
   /** Identifica il problema fra team diversi (niente conteggi): serve a vedere se uno scambio lo risolve */
   key: string;
+  /** Quanto è grande (tipi scoperti, ruoli mancanti, pressione…): più basso con la stessa chiave = ridotto. */
+  size?: number;
+}
+
+/** I consigli del Coaching: a parte perché lenti, si calcolano solo con la scheda Coaching aperta. */
+export interface CoachAdvice {
+  /** Cambi dalla classifica di Migliora team che alzano il voto, coi problemi che risolvono o riducono. */
+  fixes: CoachFix[];
+  /** "Prima di tutto": il cambio che risolve di più (null se nessuno risolve qualcosa). */
+  first: CoachFix | null;
 }
 
 export interface Coaching {
@@ -43,10 +53,6 @@ export interface Coaching {
   teamType: TeamArchetype | null;
   strengths: string[];
   problems: CoachProblem[];
-  /** Cambi dalla classifica di Migliora team che alzano il voto, coi problemi che risolvono. */
-  fixes: CoachFix[];
-  /** "Prima di tutto": il cambio che risolve di più (null se nessuno risolve qualcosa). */
-  first: CoachFix | null;
   /** Per ogni minaccia del meta senza check nel team: i candidati che la gestiscono. */
   threatFixes: Record<string, string[]>;
   /** Candidati esclusi perché bannati dall'utente (assente: nessuno). */
@@ -89,8 +95,8 @@ export function findProblems(team: TeamSet[], format: Format, analysis: TeamAnal
   const serious: CoachProblem[] = [];
   const minor: CoachProblem[] = [];
   // Chiave predefinita dal testo, senza numeri: un cambio che sposta solo un conteggio non "risolve" il problema
-  const add = (category: ProblemCategory, isSerious: boolean, text: string, fixes: string[], key = `${category}:${text.replace(/\d+/g, '#')}`) =>
-    (isSerious ? serious : minor).push({ severity: isSerious ? 'serious' : 'minor', category, text, fixes, key });
+  const add = (category: ProblemCategory, isSerious: boolean, text: string, fixes: string[], key = `${category}:${text.replace(/\d+/g, '#')}`, size?: number) =>
+    (isSerious ? serious : minor).push({ severity: isSerious ? 'serious' : 'minor', category, text, fixes, key, ...(size === undefined ? {} : { size }) });
 
   for (const row of analysis.weakness) {
     const severity = weaknessSeverity(row);
@@ -102,7 +108,7 @@ export function findProblems(team: TeamSet[], format: Format, analysis: TeamAnal
       resistWord: t(lang, row.resist === 1 ? 'coach.word.resistOne' : 'coach.word.resistMany'),
     });
     const fixes = fixesFor(candidates, s => Number(defensiveMultiplier(row.type, s.set) < 1));
-    add('defense', isSerious, text, fixes, `defense:${row.type}`);
+    add('defense', isSerious, text, fixes, `defense:${row.type}`, row.pressure);
   }
 
   for (const set of team) {
@@ -130,20 +136,21 @@ export function findProblems(team: TeamSet[], format: Format, analysis: TeamAnal
   const missing = analysis.needs.essentialMissing;
   if (missing.length) {
     add('roles', false, t(lang, 'coach.problem.missingRoles', { roles: list(missing.map(need => needLabel(need, lang))) }),
-      fixesFor(candidates, s => missing.filter(need => keyRoles(need).some(role => s.facts.roles.filled.includes(role))).length), 'roles:essential');
+      fixesFor(candidates, s => missing.filter(need => keyRoles(need).some(role => s.facts.roles.filled.includes(role))).length), 'roles:essential', missing.length);
   }
   // Le voci importanti mancanti: una riga a parte, dopo quella degli essenziali (abbassano il voto, non sono un requisito)
   const important = analysis.needs.importantMissing;
   if (important.length) {
     add('roles', false, t(lang, 'coach.problem.missingImportantRoles', { roles: list(important.map(need => needLabel(need, lang))) }),
-      fixesFor(candidates, s => important.filter(need => keyRoles(need).some(role => s.facts.roles.filled.includes(role))).length), 'roles:important');
+      fixesFor(candidates, s => important.filter(need => keyRoles(need).some(role => s.facts.roles.filled.includes(role))).length), 'roles:important', important.length);
   }
 
   for (const item of memberIssues(team, lang, analysis.needs)) add('roles', false, item.text, [], `roles:member:${item.text}`);
   // Squilibrio degli attaccanti (nel voto è una mancanza essenziale dei Ruoli, solo a team finito)
   const style = analysis.needs.needStyle;
   if (style) add('roles', false, t(lang, 'rating.redundancy.oneStyle', { style: t(lang, `analysis.style.${style}`) }), [], 'roles:style');
-  for (const item of roleAndTypeRedundancies(team, lang, { sameType: true })) add('redundancy', false, item.text, []);
+  // I punti crescono col conteggio: meno doppioni, problema ridotto
+  for (const item of roleAndTypeRedundancies(team, lang, { sameType: true })) add('redundancy', false, item.text, [], undefined, item.points);
   // Conflitti e mosse indebolite si riconoscono dalla condizione, non da chi la porta
   for (const item of weatherClashes(team, lang)) add('conditions', false, item.text, [], item.key && `conditions:${item.key}`);
 
@@ -163,7 +170,7 @@ export function findProblems(team: TeamSet[], format: Format, analysis: TeamAnal
     .map(r => r.type);
   if (gaps.length) {
     add('coverage', false, t(lang, 'coach.problem.noCoverage', { types: list(gaps.map(type => typeName(type, lang))) }),
-      fixesFor(candidates, s => s.facts.coverage.types.filter(t => gaps.includes(t)).length), 'coverage');
+      fixesFor(candidates, s => s.facts.coverage.types.filter(t => gaps.includes(t)).length), 'coverage', gaps.length);
   }
 
   // Minacce del meta senza check (la lista è vuota senza meta)
@@ -273,24 +280,29 @@ export function rankedChanges(diff: Diff, areaPoints: Partial<Record<ScoredArea,
 
 export function coachTeam(team: TeamSet[], format: Format, data: EngineData, lang: Lang = 'it'): Coaching {
   if (team.length < 2) {
-    return { verdict: t(lang, 'coach.addTwo'), teamType: null, strengths: [], problems: [], fixes: [], first: null, threatFixes: {} };
+    return { verdict: t(lang, 'coach.addTwo'), teamType: null, strengths: [], problems: [], threatFixes: {} };
   }
   // Le regole del formato vengono dai dati: allineati al formato scelto
   if (data.formatId !== format.formatId) data = { ...data, formatId: format.formatId };
   const analysis = analyzeTeam(team, data);
   const candidates = data.stats ? scoreCandidates(team, format, data) : [];
   const problems = findProblems(team, format, analysis, candidates, lang);
-  const fixes = coachFixes(team, format, data, problems, lang);
   return {
     verdict: verdictFor(team, problems.filter(p => p.category !== 'meta'), rateTeam(team, data, lang)?.grade ?? 'D', lang),
     teamType: teamArchetype(team, analysis.needs.rules),
     strengths: findStrengths(team, analysis, lang),
     problems,
-    fixes,
-    first: firstMove(fixes, problems),
     bannedCount: data.stats ? bannedInPool(team, format, data) : 0,
     threatFixes: Object.fromEntries(analysis.threats
       .filter(t => t.handledBy.length === 0)
       .map(t => [t.name, fixesFor(candidates, s => Number(s.facts.threats.checked.includes(t.name)))])),
   };
+}
+
+/** I cambi della classifica di Migliora team per i problemi di coachTeam, e la prima mossa. */
+export function coachAdvice(team: TeamSet[], format: Format, data: EngineData, problems: CoachProblem[], lang: Lang = 'it'): CoachAdvice {
+  if (team.length < 2) return { fixes: [], first: null };
+  if (data.formatId !== format.formatId) data = { ...data, formatId: format.formatId };
+  const fixes = coachFixes(team, format, data, problems, lang);
+  return { fixes, first: firstMove(fixes, problems) };
 }
