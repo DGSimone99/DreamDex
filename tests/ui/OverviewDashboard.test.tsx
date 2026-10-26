@@ -54,12 +54,12 @@ const problem = (i: number, severity: CoachProblem['severity'] = 'minor'): Coach
 const weak = (type: string, severity: CoachProblem['severity'] = 'minor'): CoachProblem =>
   ({ severity, category: 'defense', text: `Debole a ${type}: 3 Deboli – 1 Resistono`, fixes: [], key: `defense:${type}` });
 
-/** La colonna di un livello dei Ruoli (la lista col suo titoletto). */
-function roleColumn(roles: HTMLElement, title: string) {
+/** La fascia di un livello dei Ruoli (la lista col suo titoletto). */
+function roleBand(roles: HTMLElement, title: string) {
   return within(roles).getAllByRole('list').find(list => document.getElementById(list.getAttribute('aria-labelledby') ?? '')?.textContent === title)!;
 }
 
-/** Quattro essenziali, due importanti, un minore: per il "+N" per colonna. */
+/** Quattro essenziali, due importanti, un minore: per il "+N" per fascia. */
 const manyRoles: DashboardData['roles'] = {
   chips: [
     ...(['hazards', 'removal', 'pivot', 'recovery'] as const).map(need => ({ need, level: 'essential' as const, covered: true, owners: ['Great Tusk'] })),
@@ -136,15 +136,20 @@ describe('Cruscotto della Panoramica', () => {
     expect(speed).toHaveTextContent(/nessun Trick Room o Tailwind/);
     const roles = screen.getByRole('region', { name: 'Ruoli' });
     // Rimozione: tre membri, si vedono due icone e "+1"
-    const removal = within(roleColumn(roles, 'Essenziali')).getAllByRole('listitem')[1];
+    const removal = within(roleBand(roles, 'Essenziali')).getAllByRole('listitem')[1];
     expect(removal.querySelectorAll('.dash-owners .mon-icon')).toHaveLength(2);
     expect(within(removal).getByText('+1')).toBeInTheDocument();
   });
 
-  it('Ruoli: tre colonne Essenziali | Importanti | Minori, ognuna coi suoi ruoli', () => {
+  it('Ruoli: tre fasce una sotto l\'altra, Essenziali, Importanti, Minori, con l\'etichetta a sinistra', () => {
     for (const density of ['tight', 'normal', 'roomy'] as const) {
       const { unmount } = mount({ density });
       const roles = screen.getByRole('region', { name: 'Ruoli' });
+      // Ogni fascia: l'etichetta del livello, poi i ruoli in fila
+      const bands = [...roles.querySelectorAll('.dash-role-band')];
+      expect(bands.map(band => band.firstElementChild?.textContent)).toEqual(['Essenziali', 'Importanti', 'Minori']);
+      expect(bands.map(band => band.lastElementChild?.tagName)).toEqual(['UL', 'UL', 'UL']);
+      expect(roles.querySelector('.dash-role-col')).toBeNull();
       const lists = within(roles).getAllByRole('list');
       expect(lists.map(list => document.getElementById(list.getAttribute('aria-labelledby') ?? '')?.textContent))
         .toEqual(['Essenziali', 'Importanti', 'Minori']);
@@ -156,7 +161,7 @@ describe('Cruscotto della Panoramica', () => {
     }
   });
 
-  it('Ruoli: in ogni colonna prima i mancanti, così il "+N" non nasconde mai un problema', () => {
+  it('Ruoli: in ogni fascia prima i mancanti, così il "+N" non nasconde mai un problema', () => {
     stubLayout({ 'dash-roles': { box: 75, item: 30 } });
     const chips = [
       { need: 'hazards', level: 'essential', covered: true, owners: ['Great Tusk'] },
@@ -164,7 +169,7 @@ describe('Cruscotto della Panoramica', () => {
       { need: 'removal', level: 'essential', covered: false, owners: [] },
     ] as const;
     mount({ density: 'tight', data: sample({ roles: { chips: chips.map(c => ({ ...c, owners: [...c.owners] })), value: '2/3' } }) });
-    const rows = within(roleColumn(screen.getByRole('region', { name: 'Ruoli' }), 'Essenziali')).getAllByRole('listitem');
+    const rows = within(roleBand(screen.getByRole('region', { name: 'Ruoli' }), 'Essenziali')).getAllByRole('listitem');
     expect(rows).toHaveLength(2);
     expect(rows[0]).toHaveClass('bad');
     expect(rows[1]).toHaveTextContent('+2');
@@ -175,10 +180,10 @@ describe('Cruscotto della Panoramica', () => {
     for (const density of ['tight', 'roomy'] as const) {
       const { unmount } = mount({ density });
       const roles = screen.getByRole('region', { name: 'Ruoli' });
-      const [hazards, removal] = within(roleColumn(roles, 'Essenziali')).getAllByRole('listitem');
+      const [hazards, removal] = within(roleBand(roles, 'Essenziali')).getAllByRole('listitem');
       expect(hazards.querySelector('.visually-hidden')).toHaveTextContent(/^, coperto da Great Tusk$/);
       expect(removal.querySelector('.visually-hidden')).toHaveTextContent(/^, coperto da Great Tusk, Corviknight, Toxapex$/);
-      expect(within(roleColumn(roles, 'Importanti')).getByRole('listitem')).toHaveTextContent(/, mancante$/);
+      expect(within(roleBand(roles, 'Importanti')).getByRole('listitem')).toHaveTextContent(/, mancante$/);
       unmount();
     }
   });
@@ -385,20 +390,37 @@ describe('Cruscotto: misure', () => {
     expect(within(roles).getByText('+3')).toBeInTheDocument();
   });
 
-  it('Ruoli: in ogni colonna i ruoli che non stanno vanno nel "+N" in fondo alla colonna', () => {
+  it('Ruoli: in ogni fascia i ruoli che non stanno vanno nel "+N" a fine fascia', () => {
     stubLayout({ 'dash-roles': { box: 75, item: 30 } });
     mount({ density: 'tight', data: sample({ roles: manyRoles }) });
     const roles = screen.getByRole('region', { name: 'Ruoli' });
     // Essenziali: ne stanno 2 su 4, uno lascia posto al "+N": 1 ruolo e "+3" in fondo
-    const essential = within(roleColumn(roles, 'Essenziali')).getAllByRole('listitem');
+    const essential = within(roleBand(roles, 'Essenziali')).getAllByRole('listitem');
     expect(essential).toHaveLength(2);
     expect(essential[1]).toHaveTextContent('+3');
     expect(essential[1]).toHaveClass('more');
     expect(essential[1]).toHaveAttribute('title', 'Altri 3 ruoli');
     // Importanti (2) e Minori (1) stanno interi
-    expect(within(roleColumn(roles, 'Importanti')).getAllByRole('listitem')).toHaveLength(2);
-    expect(within(roleColumn(roles, 'Minori')).getAllByRole('listitem')).toHaveLength(1);
+    expect(within(roleBand(roles, 'Importanti')).getAllByRole('listitem')).toHaveLength(2);
+    expect(within(roleBand(roles, 'Minori')).getAllByRole('listitem')).toHaveLength(1);
     expect(roles.querySelectorAll('.more')).toHaveLength(1);
+  });
+
+  it('Ruoli: il "+N" è di ogni fascia, prima i mancanti anche fra gli importanti', () => {
+    stubLayout({ 'dash-roles': { box: 75, item: 30 } });
+    const chips: DashboardData['roles']['chips'] = [
+      ...manyRoles.chips.filter(c => c.level === 'essential'),
+      ...(['screens', 'phazer'] as const).map(need => ({ need, level: 'important' as const, covered: true, owners: ['Toxapex'] })),
+      { need: 'taunt', level: 'important', covered: false, owners: [] },
+    ];
+    mount({ density: 'tight', data: sample({ roles: { chips, value: '5/7' } }) });
+    const roles = screen.getByRole('region', { name: 'Ruoli' });
+    const important = within(roleBand(roles, 'Importanti')).getAllByRole('listitem');
+    expect(important).toHaveLength(2);
+    expect(important[0]).toHaveClass('bad');
+    expect(important[1]).toHaveTextContent('+2');
+    expect(within(roleBand(roles, 'Essenziali')).getAllByRole('listitem')[1]).toHaveTextContent('+3');
+    expect(roles.querySelectorAll('.more')).toHaveLength(2);
   });
 
   it('Minacce: quelle che non stanno nel "+X", che apre la scheda Meta', async () => {
