@@ -212,9 +212,8 @@ async function openCatalog(teraCap = 0) {
 }
 
 describe('Catalogo Bonus/Malus', () => {
-  it('il titolo ha il netto; due schede Malus e Bonus', async () => {
+  it('due schede Malus e Bonus col loro netto (il titolo col totale sta fuori, nel Coaching)', async () => {
     const { dialog } = await openCatalog();
-    expect(within(dialog).getByRole('heading', { name: /Bonus\/Malus/ })).toHaveTextContent('Bonus/Malus −6');
     expect(within(dialog).getAllByRole('tab').map(tab => tab.textContent)).toEqual(['Malus −8', 'Bonus +2']);
   });
 

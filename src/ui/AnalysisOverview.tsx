@@ -8,7 +8,6 @@ import { signed } from './AreaDetail';
 import type { AnalysisView } from './analysisView';
 import { AreaView } from './AreaView';
 import { CoachProblems, CoachSolutions, TeamTypeLine } from './CoachPanel';
-import { MemberCards } from './MemberSheet';
 import { AlertMark } from './AlertMark';
 import { Typed } from './TypeText';
 import { IssueCounts, PROBLEM_LABELS } from './IssueCounts';
@@ -59,8 +58,8 @@ function BonusMalus({ rating }: { rating: TeamRating }) {
   );
 }
 
-/** La Panoramica: cosa fare. Numeri chiave, poi problemi e soluzioni affiancati, in fondo i membri. */
-export function AnalysisOverview({ team, analysis, rating, coaching, data, preview, onReplace, onSwap, onView, onMember, onAdd }: {
+/** La Panoramica: cosa fare. Problemi e soluzioni affiancati (la riga Membri è messa da parte). */
+export function AnalysisOverview({ team, analysis, rating, coaching, data, preview, onReplace, onSwap, onView, onAdd }: {
   onAdd?: () => void;
   team: TeamSet[];
   analysis: TeamAnalysis;
@@ -71,7 +70,8 @@ export function AnalysisOverview({ team, analysis, rating, coaching, data, previ
   onReplace: (index: number) => void;
   onSwap?: (index: number, set: TeamSet) => void;
   onView: (view: AnalysisView) => void;
-  onMember: (index: number) => void;
+  /** Messo da parte con la riga Membri: torna quando la riga trova posto. */
+  onMember?: (index: number) => void;
 }) {
   const t = useT();
   const metaMonth = data.stats?.meta?.month;
@@ -123,7 +123,6 @@ export function AnalysisOverview({ team, analysis, rating, coaching, data, previ
           </section>
         )}
       </div>
-      <MemberCards team={team} data={data} onOpen={onMember} onAdd={onAdd} />
     </div>
   );
 }

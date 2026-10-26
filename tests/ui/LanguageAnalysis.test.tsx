@@ -13,7 +13,7 @@ describe('analisi in inglese', () => {
     await user.paste('Great Tusk\n\nGholdengo');
     await user.click(screen.getByRole('button', { name: 'Import' }));
     const analysis = screen.getByRole('region', { name: 'Analysis' });
-    for (const title of ['Overview', 'Coaching', 'Solutions', 'Members', 'Defense', 'Offense', 'Roles', 'Speed']) {
+    for (const title of ['Overview', 'Coaching', 'Solutions', 'Defense', 'Offense', 'Roles', 'Speed']) {
       expect(within(analysis).getAllByText(title).length).toBeGreaterThan(0);
     }
     // Uso nel meta e minacce stanno nella scheda Meta
