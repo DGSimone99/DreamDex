@@ -217,18 +217,6 @@ function groupChanges(change: Contribution, gain: boolean, lang: Lang): string[]
   ].filter(Boolean);
 }
 
-/** Un sostituto scelto a mano tra i "Altri sostituti": prende il posto di quello proposto dal coaching. */
-export interface SwapPreview {
-  index: number;
-  replacement: string;
-  set: TeamSet;
-  score: number;
-  similar: boolean;
-  /** Punti di voto che il team guadagna (o perde) con questo sostituto. */
-  ratingGain: number;
-  diff: Diff;
-}
-
 /** Punti di voto che il team guadagna mettendo `set` al posto del membro `index` (negativi se ne perde). */
 export function ratingGainOf(team: TeamSet[], index: number, set: TeamSet, data: EngineData): number {
   const before = rateTeam(team, data);

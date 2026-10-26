@@ -20,9 +20,8 @@ describe('analisi in inglese', () => {
     const meta = screen.getByRole('region', { name: 'Meta' });
     for (const title of ['Meta usage', 'Meta threats']) expect(within(meta).getAllByText(title).length).toBeGreaterThan(0);
     expect(within(analysis).getByText('Incomplete team')).toBeInTheDocument();
-    // Punti di forza e problemi stanno nel Coaching
+    // I problemi stanno nel Coaching, divisi in gravi e minori
     await user.click(within(analysis).getByRole('tab', { name: 'Coaching' }));
-    expect(within(analysis).getByText('Strengths')).toBeInTheDocument();
-    expect(within(analysis).getByRole('group', { name: 'Problems: Defenses' })).toHaveTextContent(/Weak to /);
+    expect(within(analysis).getByRole('list', { name: 'Minor' })).toHaveTextContent(/Weak to /);
   });
 });

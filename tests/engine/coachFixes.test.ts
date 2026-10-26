@@ -167,3 +167,31 @@ describe('conflitto di meteo: chiave senza i setter', () => {
     for (const fix of fixes) expect(fix.solves).not.toContain(key);
   });
 });
+
+describe('classifiche condivise con Migliora team', () => {
+  it('una seconda chiamata sullo stesso team riusa le classifiche', async () => {
+    const { rankingMisses } = await import('../../src/engine/coachFixes');
+    const team = [...three];
+    coachTeam(team, format, fixtureData);
+    const after = rankingMisses();
+    coachTeam(team, format, fixtureData);
+    expect(rankingMisses()).toBe(after);
+    // Un team nuovo invece si calcola
+    coachTeam([...three], format, fixtureData);
+    expect(rankingMisses()).toBeGreaterThan(after);
+  });
+
+  it('stesso risultato con e senza cache, e il conteggio degli esclusi si ripete', async () => {
+    const { rankedReplacements } = await import('../../src/engine/coachFixes');
+    const archetype = 'stall' as const;
+    const direct = { excluded: 0 };
+    const expected = rankByTeamGain(improveReplacements(six, 4, format, data, 100, undefined, 'it', archetype), six, 4, data, 'it', true, archetype, direct);
+    const first = { excluded: 0 };
+    const second = { excluded: 0 };
+    expect(rankedReplacements(six, 4, format, data, 100, 'it', archetype, first).map(c => [c.species, c.teamGain?.gain]))
+      .toEqual(expected.map(c => [c.species, c.teamGain?.gain]));
+    rankedReplacements(six, 4, format, data, 100, 'it', archetype, second);
+    expect(first.excluded).toBe(direct.excluded);
+    expect(second.excluded).toBe(direct.excluded);
+  });
+});

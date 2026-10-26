@@ -130,8 +130,8 @@ describe('Panoramica di Analisi', () => {
   it('regole per prime tra i problemi del Coaching', async () => {
     const user = await setup(['Great Tusk', 'Dragapult']);
     await user.click(within(views()).getByRole('tab', { name: 'Coaching' }));
-    const groups = panel().querySelectorAll('.problem-group');
-    expect(groups[0]).toHaveAttribute('aria-label', expect.stringMatching(/Regole/));
+    const serious = within(within(panel()).getByRole('list', { name: 'Gravi' })).getAllByRole('listitem');
+    expect(serious[0].querySelector('.coach-area')).toHaveTextContent('Regole');
   });
 
   it('bonus e malus: netto e voci principali nella tessera', async () => {

@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { TeamAnalysis } from '../engine/analysis';
-import type { Coaching, SwapPreview } from '../engine/coach';
+import type { Coaching } from '../engine/coach';
 import type { EngineData } from '../engine/data';
 import { summarizeTeam } from '../engine/overviewSummary';
 import type { TeamRating } from '../engine/rating';
@@ -19,9 +19,6 @@ export function AnalysisOverview({ team, analysis, rating, coaching, data, onVie
   rating: TeamRating | null;
   coaching?: Coaching;
   data: EngineData;
-  preview?: SwapPreview | null;
-  onReplace: (index: number) => void;
-  onSwap?: (index: number, set: TeamSet) => void;
   onView: (view: AnalysisView) => void;
   /** La tessera Meta apre la scheda principale Meta. */
   onMeta?: () => void;

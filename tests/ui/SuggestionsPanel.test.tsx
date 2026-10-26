@@ -275,6 +275,25 @@ describe('riga della lista', () => {
     expect(added).toHaveLength(2);
   });
 
+  it("focus su un candidato all'11° posto: pagina 2, lui nel dettaglio", async () => {
+    const { SuggestionsPanel } = await import('../../src/ui/SuggestionsPanel');
+    const { renderIt } = await import('../helpers/italian');
+    const { tusk } = await import('../fixtures/data');
+    const user = userEvent.setup();
+    const props = { team: [tusk], format: DEFAULT_FORMAT, data: fixtureData, replaceIndex: null, onAdd: () => {}, onReplaceWith: () => {}, onCancelReplace: () => {} };
+    const { rerender } = renderIt(<SuggestionsPanel {...props} />);
+    await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'a');
+    const pager = await screen.findByRole('navigation', { name: 'Pagine dei suggerimenti' });
+    await user.click(within(pager).getByRole('button', { name: 'Pagina 2' }));
+    const eleventh = rowNames()[0];
+    await user.click(within(pager).getByRole('button', { name: 'Pagina 1' }));
+    expect(rowNames()).not.toContain(eleventh);
+    rerender(<SuggestionsPanel {...props} focus={{ species: eleventh, mode: 'add', nonce: 1 }} />);
+    expect(await screen.findByRole('complementary', { name: `Dettaglio di ${eleventh}` })).toBeInTheDocument();
+    expect(within(pager).getByRole('button', { name: 'Pagina 2' })).toHaveAttribute('aria-current', 'page');
+    expect(rowNames()).toContain(eleventh);
+  });
+
   it('Aggiungi: niente "chi esce"', async () => {
     await setup('Great Tusk');
     expect(list().querySelector('.out')).toBeNull();

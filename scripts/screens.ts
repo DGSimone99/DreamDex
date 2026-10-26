@@ -27,6 +27,7 @@ const TEAM = [
   member('Dragapult', 'Choice Specs', 'Infiltrator', ['Draco Meteor', 'Shadow Ball', 'Flamethrower', 'U-turn'], 'Timid', { spa: 252, spe: 252, hp: 4 }),
   member('Corviknight', 'Leftovers', 'Pressure', ['Brave Bird', 'Defog', 'Roost', 'U-turn'], 'Impish', { hp: 248, def: 168, spd: 92 }),
 ];
+const SIX = [...TEAM, member('Gholdengo', 'Air Balloon', 'Good as Gold', ['Make It Rain', 'Shadow Ball', 'Recover', 'Nasty Plot'], 'Timid', { spa: 252, spe: 252, def: 4 })];
 const LONG = [
   member('Landorus-Therian', 'Rocky Helmet', 'Intimidate', ['Earthquake', 'U-turn', 'Stealth Rock', 'Stone Edge'], 'Impish', { hp: 252, def: 216, spe: 40 }),
   member('Ogerpon-Wellspring', 'Wellspring Mask', 'Water Absorb', ['Ivy Cudgel', 'Horn Leech', 'Knock Off', 'U-turn'], 'Jolly', { atk: 252, spe: 252, hp: 4 }),
@@ -86,6 +87,37 @@ const STATES: Record<string, State> = {
     if (!await clickText(p, '.band button.grade-area', /^Difesa/)) return 'no row';
     await wait(300);
     return clickText(p, '.analysis-help button', /./);
+  } },
+  'coaching-six': { hash: hash(SIX), run: async p => {
+    await tab(p, 'analysis');
+    await wait(300);
+    return clickText(p, '#analysis-view-coaching', /./);
+  } },
+  'coaching-three': { hash: hash(TEAM.slice(0, 3)), run: async p => {
+    await tab(p, 'analysis');
+    await wait(300);
+    return clickText(p, '#analysis-view-coaching', /./);
+  } },
+  // Clic su un candidato del Coaching: scheda Pokémon su quel membro, il candidato aperto nel dettaglio
+  'coaching-click': { hash: hash(SIX), run: async p => {
+    await tab(p, 'analysis');
+    await wait(300);
+    if (!await clickText(p, '#analysis-view-coaching', /./)) return 'no coaching tab';
+    await wait(1500);
+    if (!await clickText(p, 'button.coach-fix', /./)) return false;
+    // La lista per membro si calcola dopo il clic: si aspetta che non sia più attenuata
+    const start = Date.now();
+    await wait(100);
+    await p.waitForSelector('.suggestions:not(.stale)', { timeout: 20000 });
+    console.log(`coaching-click: lista pronta in ${Date.now() - start} ms`);
+    return true;
+  } },
+  // Velocità a fuoco da tastiera: il riquadro con tutte le frasi non deve uscire o venire tagliato
+  'overview-speed-focus': { hash: hash(SIX), run: async p => {
+    await tab(p, 'analysis');
+    await wait(300);
+    await p.keyboard.press('Shift');
+    return focus(p, '.summary-tile[aria-label^="Velocità"]');
   } },
   meta: { run: async p => { await tab(p, 'meta'); return true; } },
   lists: { run: async p => { await tab(p, 'lists'); return true; } },

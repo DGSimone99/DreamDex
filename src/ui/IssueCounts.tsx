@@ -29,9 +29,6 @@ export function IssueCounts({ serious, minor, labels }: {
   );
 }
 
-export const PROBLEM_LABELS: { serious: [MessageKey, MessageKey]; minor: [MessageKey, MessageKey] } = {
-  serious: ['issues.seriousOne', 'issues.seriousMany'], minor: ['issues.minorOne', 'issues.minorMany'],
-};
 export const WEAKNESS_LABELS: { serious: [MessageKey, MessageKey]; minor: [MessageKey, MessageKey] } = {
   serious: ['issues.shortfallSeriousOne', 'issues.shortfallSeriousMany'], minor: ['issues.shortfallOne', 'issues.shortfallMany'],
 };
