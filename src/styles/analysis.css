@@ -289,7 +289,10 @@ button.member-card:hover { border-color: var(--accent); }
 .summary-tile.mid { border-top-color: var(--warn); }
 .summary-tile.bad { border-top-color: var(--bad); }
 .summary-tile:hover { border-color: var(--accent); background: color-mix(in srgb, var(--accent-wash) 40%, var(--raised)); }
-.summary-tile.good:hover { border-top-color: var(--good); }
+.summary-tile:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--accent); background: color-mix(in srgb, var(--accent-wash) 40%, var(--raised)); }
+.summary-tile.good:hover, .summary-tile.good:focus-visible { border-top-color: var(--good); }
+.summary-tile.mid:focus-visible { border-top-color: var(--warn); }
+.summary-tile.bad:focus-visible { border-top-color: var(--bad); }
 .summary-tile.mid:hover { border-top-color: var(--warn); }
 .summary-tile.bad:hover { border-top-color: var(--bad); }
 .summary-tile.off, .summary-tile.off:disabled { opacity: 1; cursor: default; border-top-color: var(--line); background: var(--panel); }
@@ -334,3 +337,5 @@ button.member-card:hover { border-color: var(--accent); }
 }
 .tsl-tip.start { transform: translateX(-12px); }
 .tsl-tip.end { transform: translateX(calc(-100% + 12px)); }
+/* A fuoco da tastiera: tutte le frasi in un riquadro sopra la linea */
+.tsl-tip.all { left: 50%; display: flex; flex-direction: column; gap: 2px; }

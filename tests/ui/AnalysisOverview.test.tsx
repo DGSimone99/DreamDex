@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { App } from '../../src/App';
@@ -81,6 +81,29 @@ describe('Panoramica di Analisi', () => {
     await user.hover(tile.querySelector<HTMLElement>('.tsl-mid')!);
     expect(within(tile).getByRole('tooltip')).toHaveTextContent(/^Media del meta: \d+$/);
     expect(tile).toHaveAccessibleDescription(/supera il \d+% del meta/);
+  });
+
+  it('Velocità a fuoco da tastiera: le frasi si vedono', async () => {
+    const user = await setup();
+    const tile = within(panel()).getByRole('button', { name: /^Velocità: / });
+    expect(within(tile).queryByRole('tooltip')).toBeNull();
+    // Dalla tessera prima (Ruoli) un Tab porta alla Velocità
+    act(() => within(panel()).getByRole('button', { name: /^Ruoli: / }).focus());
+    await user.tab();
+    expect(tile).toHaveFocus();
+    const tip = within(tile).getByRole('tooltip');
+    expect(tip).toHaveTextContent(/supera il \d+% del meta/);
+    expect(tip).toHaveTextContent(/Media del meta: \d+/);
+    await user.tab();
+    expect(within(tile).queryByRole('tooltip')).toBeNull();
+  });
+
+  it('un membro solo: niente striscia, il giudizio chiede di aggiungerne', async () => {
+    await setup(['Great Tusk']);
+    expect(panel().querySelector('.overview-headline')).toHaveTextContent(/Aggiungi almeno 2 Pokémon/);
+    expect(panel().querySelector('.summary-strip')).toBeNull();
+    expect(within(panel()).queryByText('Nessun problema da sistemare')).toBeNull();
+    expect(within(panel()).getAllByRole('button').filter(b => b.classList.contains('summary-tile'))).toHaveLength(6);
   });
 
   it('meta spento: la tessera Meta non è disponibile', async () => {

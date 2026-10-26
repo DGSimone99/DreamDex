@@ -1,4 +1,4 @@
-import { useId, type ReactNode } from 'react';
+import { useId, useState, type ReactNode } from 'react';
 import type { CoachProblem } from '../engine/coach';
 import { needLabel } from '../engine/needs';
 import type { Missing, SummaryTile, TileKey } from '../engine/overviewSummary';
@@ -50,13 +50,17 @@ function SummaryStrip({ problems, onView }: { problems: CoachProblem[]; onView: 
 }
 
 /** La Panoramica in sei tessere: ognuna apre la scheda della sua area (Meta apre la scheda principale Meta). */
-export function OverviewSummary({ tiles, problems, onView, onMeta }: {
+export function OverviewSummary({ tiles, problems, onView, onMeta, strip = true }: {
   tiles: SummaryTile[];
   problems: CoachProblem[];
   onView: (v: AnalysisView) => void;
   onMeta?: () => void;
+  /** Senza coaching (meno di 2 membri) niente striscia: "nessun problema" contraddirebbe il giudizio. */
+  strip?: boolean;
 }) {
   const t = useT();
+  // Tessera Velocità a fuoco: le frasi dei tooltip si vedono tutte
+  const [speedFocus, setSpeedFocus] = useState(false);
   const lang = useLang();
   const speedId = useId();
   const speedTile = tiles.find(tile => tile.key === 'speed');
@@ -67,7 +71,7 @@ export function OverviewSummary({ tiles, problems, onView, onMeta }: {
     if (tile.key === 'speed' && tile.speed) {
       return (
         <>
-          <TeamSpeedLine points={tile.speed.points} median={tile.speed.median} />
+          <TeamSpeedLine points={tile.speed.points} median={tile.speed.median} focused={speedFocus} />
           {tile.speed.control.length > 0 && (
             <span className="summary-note">
               {t('summary.control')}{' '}
@@ -92,7 +96,7 @@ export function OverviewSummary({ tiles, problems, onView, onMeta }: {
 
   return (
     <section className="summary" aria-label={t('summary.region')}>
-      <SummaryStrip problems={problems} onView={onView} />
+      {strip && <SummaryStrip problems={problems} onView={onView} />}
       <div className="summary-tiles">
         {tiles.map(tile => {
           const area = t(AREA[tile.key]);
@@ -102,6 +106,8 @@ export function OverviewSummary({ tiles, problems, onView, onMeta }: {
             <button key={tile.key} type="button" className={`summary-tile ${tile.unavailable ? 'off' : tile.status}`} aria-label={label}
               aria-describedby={tile.key === 'speed' && phrases.length ? speedId : undefined}
               disabled={tile.unavailable || (tile.key === 'meta' && !onMeta)}
+              onFocus={tile.key === 'speed' ? () => setSpeedFocus(true) : undefined}
+              onBlur={tile.key === 'speed' ? () => setSpeedFocus(false) : undefined}
               onClick={() => (tile.key === 'meta' ? onMeta?.() : onView(tile.key))}>
               <span className="summary-head"><span>{area}</span><Icon name="next" /></span>
               {tile.unavailable
