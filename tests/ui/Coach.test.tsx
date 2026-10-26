@@ -16,7 +16,7 @@ const meta = () => screen.getByRole('region', { name: 'Meta' });
 describe('CoachPanel', () => {
   it('mostra verdetto, punti di forza e problemi', async () => {
     await setup('Great Tusk', 'Gholdengo');
-    const summary = within(analysis()).getByText('Coaching').closest('summary')!;
+    const summary = within(analysis()).getByRole('heading', { name: /^Problemi/ });
     expect(summary).toHaveTextContent('Team incompleto');
     // Solo il triangolo blu dei minori: gli zeri non compaiono
     // 7: la riga dei ruoli importanti mancanti si aggiunge a quella degli essenziali

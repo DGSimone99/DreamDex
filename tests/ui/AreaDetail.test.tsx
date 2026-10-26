@@ -196,8 +196,10 @@ describe('dettaglio della Difesa a schede', () => {
     const { user, dialog } = await openDefense('it');
     await user.click(within(dialog).getByRole('tab', { name: /^Coverage tipi/ }));
     const panel = within(dialog).getByRole('tabpanel');
-    expect(within(panel).getAllByRole('row')).toHaveLength(19);
-    expect(within(panel).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Tipi', 'Sicurezza', 'Deboli', 'Resistono']);
+    // In cima la tabella completa delle debolezze (vedi AreaTables.test); qui quella della sicurezza per tipo
+    const safety = within(panel).getAllByRole('table').at(-1)!;
+    expect(within(safety).getAllByRole('row')).toHaveLength(19);
+    expect(within(safety).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Tipi', 'Sicurezza', 'Deboli', 'Resistono']);
     expect(panel).toHaveTextContent(/Più deboli che resistenti:|Nessun tipo scoperto/);
   });
 

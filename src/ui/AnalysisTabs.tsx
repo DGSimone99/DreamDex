@@ -59,7 +59,14 @@ export function AnalysisTabs({ view, onView, panelId }: { view: AnalysisView; on
   const [helpLeft, setHelpLeft] = useState(0);
   useLayoutEffect(() => {
     const tab = buttons.current[ANALYSIS_VIEWS.indexOf(view)];
-    if (tab) setHelpLeft(tab.offsetLeft + tab.offsetWidth + 6);
+    if (!tab) return;
+    const place = () => setHelpLeft(tab.offsetLeft + tab.offsetWidth + 6);
+    place();
+    // La scheda Analisi può essere nascosta al primo disegno (misure a 0): si riposiziona quando prende le sue dimensioni
+    if (typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(place);
+    observer.observe(tab);
+    return () => observer.disconnect();
   }, [view, t]);
   const go = (index: number) => {
     const next = ANALYSIS_VIEWS[(index + ANALYSIS_VIEWS.length) % ANALYSIS_VIEWS.length];

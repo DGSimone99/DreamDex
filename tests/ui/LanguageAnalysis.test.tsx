@@ -5,7 +5,7 @@ import { App } from '../../src/App';
 import { fixtureData } from '../fixtures/data';
 
 describe('analisi in inglese', () => {
-  it('blocchi, coaching e valutazione', async () => {
+  it('schede, Panoramica e coaching', async () => {
     const user = userEvent.setup();
     render(<App data={fixtureData} initialLang="en" />);
     await user.click(screen.getByText('Import / Export'));
@@ -13,7 +13,7 @@ describe('analisi in inglese', () => {
     await user.paste('Great Tusk\n\nGholdengo');
     await user.click(screen.getByRole('button', { name: 'Import' }));
     const analysis = screen.getByRole('region', { name: 'Analysis' });
-    for (const title of ['Coaching', 'Defensive weaknesses', 'Offensive coverage', 'Roles']) {
+    for (const title of ['Overview', 'Problems', 'Solutions', 'Members', 'Defense', 'Offense', 'Roles', 'Speed']) {
       expect(within(analysis).getAllByText(title).length).toBeGreaterThan(0);
     }
     // Uso nel meta e minacce stanno nella scheda Meta

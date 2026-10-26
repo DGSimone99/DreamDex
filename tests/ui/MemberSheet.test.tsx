@@ -4,29 +4,33 @@ import { describe, expect, it } from 'vitest';
 import { App } from '../../src/App';
 import { fixtureData } from '../fixtures/data';
 
-describe('scheda dei membri', () => {
-  it('compare col team, chiusa di default, con una riga per membro', async () => {
+const panel = () => document.getElementById('panel-analysis')!;
+
+describe('membri nella Panoramica', () => {
+  it('una scheda per membro e posti liberi; nessuna scheda col team vuoto', async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} />);
-    expect(screen.queryByRole('group', { name: 'Scheda dei membri' })).toBeNull();
+    expect(within(panel()).queryByRole('region', { name: 'Membri' })).toBeNull();
     for (const name of ['Great Tusk', 'Gholdengo']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
-    const sheet = screen.getByRole('group', { name: 'Scheda dei membri' });
-    expect(sheet).not.toHaveAttribute('open');
-    const rows = within(sheet).getAllByRole('row').slice(1);
-    expect(rows.map(r => within(r).getAllByRole('cell')[0].textContent)).toEqual([expect.stringContaining('Great Tusk'), expect.stringContaining('Gholdengo')]);
-    // Voto e ruolo nella seconda colonna
-    expect(within(rows[0]).getAllByRole('cell')[1]).toHaveTextContent(/^\d+(Sweeper|Wallbreaker|Muro|Pivot|Supporto)$/);
-    // I sotto-ruoli misurati (gli stessi del voto e delle carte), coi nomi brevi e quelli completi nel tooltip
-    expect(within(sheet).getAllByRole('columnheader')[2]).toHaveTextContent('Ruoli');
-    const tags = [...within(rows[0]).getAllByRole('cell')[2].querySelectorAll('.sheet-tag')];
-    expect(tags.length).toBeGreaterThan(0);
-    for (const tag of tags) expect(tag.getAttribute('title')).toBeTruthy();
+    const members = within(panel()).getByRole('region', { name: 'Membri' });
+    const cards = within(members).getAllByRole('button');
+    expect(cards.map(c => c.getAttribute('aria-label'))).toEqual([
+      expect.stringMatching(/^Great Tusk · (Sweeper|Wallbreaker|Muro|Pivot|Supporto) · voto \d+$/),
+      expect.stringMatching(/^Gholdengo · /),
+    ]);
+    expect(within(members).getAllByText('Posto libero')).toHaveLength(4);
   });
 
-  it("sta in fondo alla colonna destra dell'Analisi", async () => {
+  it('il profilo: voto nel ruolo, sotto-ruoli col nome completo, statistiche reali', async () => {
     const user = userEvent.setup();
-    const { container } = render(<App initialLang="it" data={fixtureData} />);
+    render(<App initialLang="it" data={fixtureData} />);
     for (const name of ['Great Tusk', 'Gholdengo']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
-    expect(container.querySelector('.analysis-detail')).toContainElement(screen.getByRole('group', { name: 'Scheda dei membri' }));
+    await user.click(within(within(panel()).getByRole('region', { name: 'Membri' })).getByRole('button', { name: /^Great Tusk/ }));
+    const profile = within(panel()).getByRole('region', { name: 'Great Tusk' });
+    expect(within(profile).getByRole('heading', { name: 'Great Tusk' })).toBeInTheDocument();
+    expect(profile.querySelectorAll('.sheet-tag').length).toBeGreaterThan(0);
+    for (const term of ['Ruoli', 'Velocità', 'Attacco', 'Coverage', 'Robustezza', 'Tipi', 'Supporto']) {
+      expect(within(profile).getByText(term, { selector: 'dt' })).toBeInTheDocument();
+    }
   });
 });
