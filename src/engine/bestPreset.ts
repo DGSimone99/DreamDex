@@ -8,14 +8,14 @@ import { presetsForSet, type TeamSet } from './sets';
 /** Modifiche al massimo per membro: il set resta riconoscibile. */
 export const MAX_TUNES = 2;
 /** Mosse più usate provate in ogni slot (le prime per quota). */
-const TUNE_MOVES = 8;
+export const TUNE_MOVES = 8;
 /** Quota d'uso oltre la quale una mossa è quasi obbligatoria (Surging Strikes su Urshifu-Rapid-Strike): resta sempre nel set. */
 export const CORE_MOVE_SHARE = 0.95;
 
-const family = (move: string) => (toID(move).startsWith('hiddenpower') ? 'hiddenpower' : toID(move));
+export const family = (move: string) => (toID(move).startsWith('hiddenpower') ? 'hiddenpower' : toID(move));
 
 /** Le mosse quasi obbligatorie del Pokémon (quota d'uso almeno CORE_MOVE_SHARE), solo se legali (tranne con Custom Skillset). */
-function coreMoves(set: TeamSet, data: EngineData, genLimit: number): string[] {
+export function coreMoves(set: TeamSet, data: EngineData, genLimit: number): string[] {
   if (!data.stats) return [];
   const legal = set.customSkillset ? null : legalMoves(set.species, genLimit);
   return commonChoices(data, set).moves

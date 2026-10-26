@@ -77,19 +77,13 @@ const strongest = <T extends { teamGain?: { gain: number } }>(items: T[], limit:
   items.filter(c => (c.teamGain?.gain ?? 0) > 0).sort((a, b) => b.teamGain!.gain - a.teamGain!.gain).slice(0, limit);
 
 /**
- * I cambi che alzano il voto, presi dalla classifica di Migliora team: per membro (stesso set e stesso +N della
- * vista per membro) e, con 2–5 membri, le aggiunte. Per ognuno i problemi che spariscono o si riducono nel team col cambio.
+ * Come cambiano i problemi del team con un cambio: risolto = la chiave sparisce; ridotto = resta ma più piccola,
+ * o da grave diventa minore. Calcola i problemi di partenza una volta e li confronta con ogni team "dopo".
  */
-export function coachFixes(team: TeamSet[], format: Format, data: EngineData, problems: CoachProblem[], lang: Lang): CoachFix[] {
-  if (!data.stats || team.length < 2) return [];
-  // Tipo di team Qualunque, come l'impostazione predefinita del pannello: il voto vero del team
-  const archetype: Archetype | undefined = undefined;
-  const base = (set: TeamSet) => battleSpecies(set)?.baseSpecies ?? set.species;
-  const forme = (set: TeamSet) => battleSpecies(set)?.name ?? set.species;
+export function problemChanges(team: TeamSet[], format: Format, data: EngineData, problems: CoachProblem[], lang: Lang) {
   const now = new Map<string, CoachProblem>();
   for (const p of problems) if (!now.has(p.key)) now.set(p.key, p);
-  // Risolto: la chiave sparisce; ridotto: resta ma più piccola, o da grave diventa minore
-  const changes = (after: TeamSet[]) => {
+  return (after: TeamSet[]) => {
     const left = new Map<string, CoachProblem>();
     for (const p of findProblems(after, format, analyzeTeam(after, data), [], lang)) if (!left.has(p.key)) left.set(p.key, p);
     const solves: string[] = [];
@@ -101,6 +95,19 @@ export function coachFixes(team: TeamSet[], format: Format, data: EngineData, pr
     }
     return { solves, reduces };
   };
+}
+
+/**
+ * I cambi che alzano il voto, presi dalla classifica di Migliora team: per membro (stesso set e stesso +N della
+ * vista per membro) e, con 2–5 membri, le aggiunte. Per ognuno i problemi che spariscono o si riducono nel team col cambio.
+ */
+export function coachFixes(team: TeamSet[], format: Format, data: EngineData, problems: CoachProblem[], lang: Lang): CoachFix[] {
+  if (!data.stats || team.length < 2) return [];
+  // Tipo di team Qualunque, come l'impostazione predefinita del pannello: il voto vero del team
+  const archetype: Archetype | undefined = undefined;
+  const base = (set: TeamSet) => battleSpecies(set)?.baseSpecies ?? set.species;
+  const forme = (set: TeamSet) => battleSpecies(set)?.name ?? set.species;
+  const changes = problemChanges(team, format, data, problems, lang);
 
   const fixes: CoachFix[] = [];
   team.forEach((member, index) => {
