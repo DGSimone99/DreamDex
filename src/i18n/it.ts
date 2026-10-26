@@ -486,6 +486,7 @@ export const it: Record<keyof typeof en, string> = {
   'dash.metaTab': "scheda Meta",
   'dash.levelMinor': "Minori",
   'dash.roleMissing': "mancante",
+  'dash.roleCoveredBy': "coperto da {names}",
   'dash.moreRoles': "Altri {n} ruoli",
   'analysis.noSuperEffective': "Nessuna mossa super efficace",
   'analysis.rolesSummary': "{archetype} · {n}/{total} essenziali",

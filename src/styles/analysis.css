@@ -244,27 +244,37 @@ button.member-card:hover { border-color: var(--accent); }
 .dash .dash-cell.minor { background: var(--warn-bg); color: var(--warn); border-color: color-mix(in srgb, var(--warn) 60%, transparent); }
 .dash .dash-cell.bad { background: color-mix(in srgb, var(--bad) 28%, var(--panel)); color: var(--text); border-color: color-mix(in srgb, var(--bad) 80%, transparent); }
 
-/* Ruoli: coperto solo contorno, mancante rosso pieno; i minori mancanti tratteggiati (non sono problemi) */
-.dash-chips { display: flex; flex-wrap: wrap; align-content: flex-start; gap: 5px; }
-.dash-chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 9px 2px 7px; font-size: 12px; line-height: 1.4; white-space: nowrap; color: var(--muted); border: 1px solid var(--line); border-radius: 14px; }
-.dash-chip .icon { width: 12px; height: 12px; stroke-width: 2.5; color: var(--faint); }
-.dash-chip.bad { font-weight: 600; color: var(--text); background: color-mix(in srgb, var(--bad) 28%, var(--panel)); border-color: color-mix(in srgb, var(--bad) 70%, transparent); }
-.dash-chip.bad .icon { color: var(--text); }
-.dash-chip.soft, .dash-chip.more { border-style: dashed; color: var(--faint); }
-/* Minori: più tenui degli essenziali e degli importanti */
-.dash-chip.minor.ok { color: var(--faint); border-color: var(--line-soft); }
-.dash-owners { display: inline-flex; align-items: center; gap: 2px; }
+/* Ruoli: tre colonne (Essenziali | Importanti | Minori) che riempiono la card; solo i mancanti hanno colore pieno */
+.dash-role-cols { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 14px; }
+/* Ogni colonna è un contenitore: le icone dei membri vanno accanto al nome solo se la colonna è abbastanza larga */
+.dash-role-col { display: flex; flex-direction: column; min-width: 0; min-height: 0; container: role-col / inline-size; }
+.dash-level-name { font: 600 11px/1.2 var(--ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.dash-role-col > .dash-level-name { flex: none; padding-bottom: 5px; border-bottom: 1px solid var(--line); }
+/* Tante righe quante nella colonna più lunga, ognuna 1fr: allineate tra le colonne e distribuite su tutta l'altezza */
+.dash-role-list { display: grid; grid-template-rows: repeat(var(--slots), minmax(auto, 1fr)); align-content: start; margin: 0; padding: 0; list-style: none; }
+.dash-role { min-width: 0; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: 1px; padding: 3px 0; border-bottom: 1px solid var(--line-soft); }
+.dash-role-tag { max-width: 100%; display: inline-flex; align-items: center; gap: 5px; padding: 2px 6px; font-size: 12px; line-height: 1.2; color: var(--text); border: 1px solid transparent; border-radius: 4px; }
+.dash-role-tag .icon { flex: none; width: 12px; height: 12px; stroke-width: 2.5; color: var(--faint); }
+.dash-role-name { min-width: 0; }
+.dash-role.bad .dash-role-tag { font-weight: 600; background: color-mix(in srgb, var(--bad) 28%, var(--panel)); border-color: color-mix(in srgb, var(--bad) 70%, transparent); }
+.dash-role.bad .dash-role-tag .icon { color: var(--text); }
+/* Minori: più tenui; mancanti tratteggiati (non sono problemi) */
+.dash-role.minor .dash-role-tag { color: var(--muted); }
+.dash-role.soft .dash-role-tag { color: var(--faint); border-style: dashed; border-color: var(--line); }
+.dash-role.more { padding-left: 6px; font-size: 12px; font-weight: 600; color: var(--faint); border-bottom: 0; }
+/* Chi copre il ruolo: sotto il nome nelle colonne strette, accanto in quelle larghe */
+.dash-owners { flex: none; display: inline-flex; align-items: center; gap: 2px; min-height: 20px; margin-left: 21px; }
 /* Le mini icone hanno margine trasparente: si stringono senza sovrapporsi */
 .dash-owners .mon-icon { margin: -8px -5px -8px -5px; }
 .dash-owners small { margin-left: 4px; font-size: 11px; color: var(--muted); }
-.dash-level { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 8px; align-items: start; margin-bottom: 8px; }
-.dash-level-name { padding-top: 4px; font: 600 11px/1.2 var(--ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
-/* Ampio: una riga per ruolo (livello, chip, chi lo copre); le righe si allungano fino a riempire, mai oltre i 46px */
-.dash-rows { display: flex; flex-direction: column; }
-.dash-role { flex: 1 0 0; min-height: 28px; max-height: 46px; display: grid; grid-template-columns: 76px auto minmax(0, 1fr); gap: 8px; align-items: center; border-bottom: 1px solid var(--line-soft); }
-.dash-role .dash-level-name { padding-top: 0; }
-.dash-role .dash-chip { justify-self: start; }
-.dash-role .dash-owners { justify-self: start; }
+@container role-col (min-width: 190px) {
+  .dash-role { flex-direction: row; align-items: center; justify-content: space-between; gap: 6px; }
+  .dash-owners { margin-left: 0; }
+}
+/* Stretto: righe più fitte; ampio: più ariose */
+.dash.tight .dash-role { padding: 1px 0; }
+.dash.tight .dash-role-tag { padding-block: 1px; }
+.dash.roomy .dash-role-tag { font-size: 13px; }
 
 /* Velocità: barre dal più veloce, sopra la media in accento; la linea tratteggiata con la targhetta ambra; sprite sotto */
 /* Le barre prendono 3/5 dello spazio, fino a un tetto; il resto va alle righe "supera / superato da" */

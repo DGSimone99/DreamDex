@@ -484,6 +484,7 @@ export const en = {
   'dash.metaTab': "Meta tab",
   'dash.levelMinor': "Minor",
   'dash.roleMissing': "missing",
+  'dash.roleCoveredBy': "covered by {names}",
   'dash.moreRoles': "{n} more roles",
   'analysis.noSuperEffective': "No super effective move",
   'analysis.rolesSummary': "{archetype} · {n}/{total} essential",
