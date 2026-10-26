@@ -376,10 +376,6 @@ button.member-card:hover { border-color: var(--accent); }
 
 /* Coaching (C1): in cima "Prima di tutto", poi i problemi gravi e minori con sotto chi li risolve; scorre dentro */
 .coaching { display: flex; flex-direction: column; gap: 6px; height: 100%; min-height: 0; padding-bottom: 12px; overflow: auto; overscroll-behavior: contain; }
-.coach-first { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin: 0 0 4px; padding: 8px 8px 8px 14px; background: var(--accent-2-wash); border: 1px solid var(--accent-2-soft); }
-.coach-first-label { font: 600 11px/1 var(--ui); text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent-2-ink); }
-.coach-first-move { font-size: 15px; color: var(--text); }
-.coach-first-solves { font-size: 13px; color: var(--muted); }
 .coach-open { flex: none; margin-left: auto; padding: 4px 8px; border-color: transparent; background: none; color: var(--accent-ink); font-weight: 600; white-space: nowrap; }
 .coach-open:hover { border-color: transparent; background: var(--accent-wash); }
 /* Il voto in più: piccola etichetta verde accanto al nome */

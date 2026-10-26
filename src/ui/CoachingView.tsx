@@ -85,7 +85,7 @@ function ProblemFixes({ problem, fixes, onFix }: { problem: CoachProblem; fixes:
 }
 
 /**
- * La scheda Coaching: in cima il cambio che risolve di più ("Prima di tutto"), poi i problemi gravi e minori;
+ * La scheda Coaching: i problemi gravi e minori;
  * sotto ognuno i candidati di Migliora team che lo risolvono o lo riducono, col voto in più. Ogni candidato apre la scheda Pokémon.
  * `advice` null: i consigli si stanno calcolando (i problemi si vedono già).
  */
@@ -98,7 +98,6 @@ export function CoachingView({ coaching, advice, members, onFix }: {
   // Sotto i 2 membri il coach non cerca problemi: l'invito ad aggiungere, non "nessun problema"
   if (members < 2) return <div className="coaching"><p className="coach-note coach-top">{tr('coach.addTwo')}</p></div>;
   const fixes = advice?.fixes ?? [];
-  const first = advice?.first ?? null;
   // In ogni gruppo l'ordine delle categorie: regole per prime
   const ordered = [...problems].sort((a, b) => PROBLEM_CATEGORIES.indexOf(a.category) - PROBLEM_CATEGORIES.indexOf(b.category));
   const groups = [
@@ -107,23 +106,6 @@ export function CoachingView({ coaching, advice, members, onFix }: {
   ];
   return (
     <div className="coaching">
-      {first && (
-        <section className="coach-first" aria-label={tr('coach.first')}>
-          <span className="coach-first-label" aria-hidden="true">{tr('coach.first')}</span>
-          <span className="coach-first-move">
-            {first.kind === 'add'
-              ? <Template text={tr('coach.firstAdd')} parts={{ species: <PokemonName name={first.species} /> }} />
-              : <Template text={tr('coach.firstSwap')} parts={{ member: <PokemonName name={first.member ?? ''} />, species: <PokemonName name={first.species} /> }} />}
-            <span className="coach-gain">{gainText(first)}</span>
-          </span>
-          <span className="coach-first-solves">
-            {first.solves.length === 1 ? tr('coach.solvesOne') : tr('coach.solvesMany', { n: first.solves.length })}
-          </span>
-          <button type="button" className="coach-open" onClick={() => onFix(first)}>
-            {tr(first.kind === 'add' ? 'coach.openAdd' : 'coach.openSwap')} <Icon name="arrow" />
-          </button>
-        </section>
-      )}
       {!advice && problems.length > 0 && <p className="coach-note coach-top" role="status">{tr('coach.computing')}</p>}
       {problems.length === 0 && <p className="coach-empty"><Icon name="check" />{tr('coach.noProblems')}</p>}
       {groups.filter(group => group.items.length > 0).map(group => (

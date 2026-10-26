@@ -110,19 +110,6 @@ describe('scheda Coaching', () => {
 });
 
 describe('CoachingView', () => {
-  it('"Prima di tutto": il cambio, il voto in più, quanti problemi risolve e il pulsante', async () => {
-    const coaching = coachTeam(six, DEFAULT_FORMAT, data);
-    const advice = adviceOf(six, DEFAULT_FORMAT, data);
-    const onFix = vi.fn();
-    renderIt(<CoachingView coaching={coaching} advice={advice} members={6} onFix={onFix} />);
-    const first = screen.getByRole('region', { name: 'Prima di tutto' });
-    const { member, species, gain, solves } = advice.first!;
-    expect(first).toHaveTextContent(`Al posto di ${member} metti ${species}+${gain}`);
-    expect(first).toHaveTextContent(`risolve ${solves.length} problemi`);
-    await userEvent.click(within(first).getByRole('button', { name: /^Apri in Migliora team/ }));
-    expect(onFix).toHaveBeenCalledWith(advice.first);
-  });
-
   it('candidati sotto il problema raggruppati per membro, anche per chi lo riduce soltanto', () => {
     const coaching = coachTeam(three, DEFAULT_FORMAT, data);
     renderIt(<CoachingView coaching={coaching} advice={adviceOf(three, DEFAULT_FORMAT, data)} members={3} onFix={() => {}} />);
@@ -143,7 +130,7 @@ describe('CoachingView', () => {
   it('nessun candidato lo risolve né lo riduce: chi lo gestisce, come testo', () => {
     const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], threatFixes: {},
       problems: [{ severity: 'minor', category: 'roles', text: 'Ruoli importanti mancanti: Pivot', fixes: ['Corviknight', 'Rotom-Wash'], key: 'roles:important' }] };
-    renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], first: null }} members={3} onFix={() => {}} />);
+    renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], moves: [], steps: [] }} members={3} onFix={() => {}} />);
     const roles = screen.getByRole('listitem');
     expect(roles).toHaveTextContent('Nessun cambio fra i consigliati lo risolve: lo gestiscono Corviknight o Rotom-Wash');
     expect(within(roles).queryByRole('button')).toBeNull();
@@ -156,7 +143,6 @@ describe('CoachingView', () => {
     expect(screen.getByRole('list', { name: 'Gravi' })).toBeInTheDocument();
     expect(screen.queryByRole('button')).toBeNull();
     expect(screen.queryByText(/Nessun cambio/)).toBeNull();
-    expect(screen.queryByRole('region', { name: 'Prima di tutto' })).toBeNull();
   });
 
   it('con un membro solo: invito ad aggiungere, non "nessun problema"', () => {
@@ -176,13 +162,13 @@ describe('CoachingView', () => {
 
   it('nessun problema: un messaggio positivo', () => {
     const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], problems: [], threatFixes: {} };
-    renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], first: null }} members={6} onFix={() => {}} />);
+    renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], moves: [], steps: [] }} members={6} onFix={() => {}} />);
     expect(screen.getByText('Nessun problema: il team è a posto.')).toBeInTheDocument();
   });
 
   it('dice quanti bannati restano fuori dai candidati', () => {
     const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], problems: [], threatFixes: {}, bannedCount: 1 };
-    renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], first: null }} members={6} onFix={() => {}} />);
+    renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], moves: [], steps: [] }} members={6} onFix={() => {}} />);
     expect(screen.getByText('1 bannato escluso')).toBeInTheDocument();
   });
 });

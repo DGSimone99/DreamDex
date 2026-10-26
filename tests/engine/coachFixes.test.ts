@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { analyzeTeam } from '../../src/engine/analysis';
-import { coachAdvice, coachTeam, findProblems, MIN_COVERAGE_WEIGHT, type CoachProblem } from '../../src/engine/coach';
-import { coachFixes, firstMove, fixesForProblem, type CoachFix } from '../../src/engine/coachFixes';
+import { coachAdvice, coachTeam, findProblems, MIN_COVERAGE_WEIGHT } from '../../src/engine/coach';
+import { coachFixes, fixesForProblem, type CoachFix } from '../../src/engine/coachFixes';
+import { buildSteps } from '../../src/engine/coachSteps';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
 import { improveReplacements } from '../../src/engine/replace';
 import { emptySet, mostCommonSet, type TeamSet } from '../../src/engine/sets';
@@ -68,7 +69,8 @@ describe('candidati del Coaching dalla classifica di Migliora team', () => {
     const noStats = { ...data, stats: null };
     expect(coachFixes(six, format, noStats, problemsOf(six), 'it')).toEqual([]);
     expect(adviceOf(six, format, noStats).fixes).toEqual([]);
-    expect(adviceOf(six, format, noStats).first).toBeNull();
+    expect(adviceOf(six, format, noStats).steps).toEqual([]);
+    expect(adviceOf(six, format, noStats).moves).toEqual([]);
   });
 
   it('meta spento con le statistiche: candidati sì, problemi del meta no', () => {
@@ -154,26 +156,14 @@ describe('candidati del Coaching dalla classifica di Migliora team', () => {
   });
 });
 
-describe('Prima di tutto', () => {
-  const problem = (key: string, severity: CoachProblem['severity']): CoachProblem => ({ severity, category: 'defense', text: key, fixes: [], key });
-  const problems = [problem('A', 'serious'), problem('B', 'minor'), problem('C', 'minor')];
-  const fix = (species: string, gain: number, solves: string[]): CoachFix =>
-    ({ kind: 'swap', species, set: emptySet(species), index: 0, member: 'X', gain, solves, reduces: [] });
-
-  it('prima i gravi risolti, poi i minori, poi il voto', () => {
-    expect(firstMove([fix('BC', 20, ['B', 'C']), fix('A', 1, ['A'])], problems)?.species).toBe('A');
-    expect(firstMove([fix('B', 20, ['B']), fix('BC', 1, ['B', 'C'])], problems)?.species).toBe('BC');
-    expect(firstMove([fix('B1', 2, ['B']), fix('B2', 6, ['B'])], problems)?.species).toBe('B2');
-    expect(firstMove([fix('none', 30, [])], problems)).toBeNull();
-    expect(firstMove([], problems)).toBeNull();
-  });
-
-  it('coachAdvice porta i candidati e la prima mossa per i problemi di coachTeam', () => {
+describe('coachAdvice', () => {
+  it('porta i candidati, i cambi di mossa e le tappe per i problemi di coachTeam', () => {
     const coaching = coachTeam(three, format, fixtureData);
     const advice = coachAdvice(three, format, fixtureData, coaching.problems, 'it');
     expect(advice.fixes).toEqual(fixesOf(three));
-    expect(advice.first).toEqual(firstMove(advice.fixes, coaching.problems));
-    expect(coachAdvice([three[0]], format, fixtureData, [], 'it')).toEqual({ fixes: [], first: null });
+    expect(advice.steps).toEqual(buildSteps(coaching.problems, advice.fixes, advice.moves));
+    expect(advice.steps.length).toBeGreaterThan(0);
+    expect(coachAdvice([three[0]], format, fixtureData, [], 'it')).toEqual({ fixes: [], moves: [], steps: [] });
   });
 });
 

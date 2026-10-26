@@ -128,22 +128,6 @@ export function coachFixes(team: TeamSet[], format: Format, data: EngineData, pr
   return fixes.sort((a, b) => b.gain - a.gain);
 }
 
-/** "Prima di tutto": più problemi gravi risolti, poi più minori, poi voto in più; null se nessuno risolve qualcosa. */
-export function firstMove(fixes: CoachFix[], problems: CoachProblem[]): CoachFix | null {
-  const serious = new Set(problems.filter(p => p.severity === 'serious').map(p => p.key));
-  const count = (fix: CoachFix) => {
-    const grave = fix.solves.filter(key => serious.has(key)).length;
-    return { grave, minor: fix.solves.length - grave };
-  };
-  let best: { fix: CoachFix; grave: number; minor: number } | null = null;
-  for (const fix of fixes) {
-    if (!fix.solves.length) continue;
-    const c = { fix, ...count(fix) };
-    if (!best || c.grave > best.grave || (c.grave === best.grave && (c.minor > best.minor || (c.minor === best.minor && fix.gain > best.fix.gain)))) best = c;
-  }
-  return best?.fix ?? null;
-}
-
 /** I cambi che risolvono o riducono un problema: prima chi lo risolve, poi dal voto più alto, ogni specie una volta. */
 export function fixesForProblem(fixes: CoachFix[], key: string, limit = 3): CoachFix[] {
   const seen = new Set<string>();
