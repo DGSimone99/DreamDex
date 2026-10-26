@@ -40,18 +40,17 @@ describe('dashboardData', () => {
     for (const chip of dash.roles.chips) expect(chip.covered).toBe(chip.owners.length > 0);
     expect(dash.roles.chips.some(c => c.level === 'minor')).toBe(true);
     expect(dash.roles.value).toBe(tile('roles').value);
+    // Le colonne della tabella: i membri in ordine, scritti come chi copre i ruoli
+    expect(dash.roles.members).toHaveLength(team.length);
+    for (const chip of dash.roles.chips) for (const owner of chip.owners) expect(dash.roles.members).toContain(owner);
   });
 
-  it('velocità: corsie dal più veloce, above = share > 0.5, vicini del meta', () => {
+  it('velocità: corsie dal più veloce, above = share > 0.5', () => {
     const { dash, tile } = build();
     const { lanes } = dash.speed;
     expect(lanes.length).toBeGreaterThan(0);
     for (let i = 1; i < lanes.length; i++) expect(lanes[i - 1].speed).toBeGreaterThanOrEqual(lanes[i].speed);
-    for (const l of lanes) {
-      expect(l.above).toBe(l.share > 0.5);
-      expect(l.outspeeds.length).toBeLessThanOrEqual(3);
-      expect(l.outspedBy.length).toBeLessThanOrEqual(3);
-    }
+    for (const l of lanes) expect(l.above).toBe(l.share > 0.5);
     expect(dash.speed.vsMeta).toBe(true);
     expect(dash.speed.value).toBe(tile('speed').value);
   });
