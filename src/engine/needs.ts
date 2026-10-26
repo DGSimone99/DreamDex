@@ -1,4 +1,5 @@
 import { teamArchetype, type Archetype } from './archetype';
+import { battleName } from './dex';
 import { attackStyle, roleLabel } from './roles';
 import { rulesOf, type FormatRules } from './formatRules';
 import type { EngineData } from './data';
@@ -62,6 +63,10 @@ export const keyRoles = (key: LevelKey): SubRole[] =>
 /** Valore di una voce per un membro (o un candidato); il setup del campo conta anche Sticky Web (`web`, a metà). */
 export const keyValue = (v: SubRoleValues, key: LevelKey): number =>
   Math.max(0, ...keyRoles(key).map(r => v[r] ?? 0), key === 'fieldSetup' ? v.web ?? 0 : 0);
+
+/** Chi copre una voce: i membri col valore misurato (col credito del secondario) almeno MISSING_BELOW, come i bisogni. */
+export const ownersOf = (team: TeamSet[], needs: Pick<TeamNeeds, 'credited' | 'members'>, need: Need): string[] =>
+  team.filter((_, i) => keyValue(needs.credited[i] ?? needs.members[i] ?? {}, need) >= MISSING_BELOW).map(set => battleName(set));
 
 /** `forced`: livelli e credito dei ruoli secondo quel tipo di team invece di quello riconosciuto. */
 export function teamNeeds(team: TeamSet[], data: EngineData, members?: SubRoleValues[], forced?: Archetype): TeamNeeds {

@@ -1,7 +1,7 @@
 import type { TeamAnalysis } from '../engine/analysis';
 import { weaknessSeverity } from '../engine/coach';
 import { battleName } from '../engine/dex';
-import { keyValue, MISSING_BELOW, needLabel, type Need } from '../engine/needs';
+import { needLabel, ownersOf } from '../engine/needs';
 import { LEVEL_KEYS, type Level } from '../engine/roleLevels';
 import type { TeamSet } from '../engine/sets';
 import { weatherMitigations, type WeatherMitigation } from '../engine/synergy';
@@ -101,11 +101,9 @@ export function NeedsTable({ team, analysis, levels = ['essential', 'important',
   const tr = useT();
   const lang = useLang();
   const { needs } = analysis;
-  // Chi copre una voce: i membri col valore misurato (col credito del secondario) almeno MISSING_BELOW, come i bisogni
-  const ownersOf = (need: Need) => team.filter((_, i) => keyValue(needs.credited[i] ?? needs.members[i] ?? {}, need) >= MISSING_BELOW).map(set => battleName(set));
   const titles: Record<Level, string> = { essential: tr('analysis.essential'), important: tr('analysis.important'), minor: tr('analysis.minor'), ignored: tr('analysis.notRequired') };
   const groups = levels
-    .map(level => ({ level, title: titles[level], rows: LEVEL_KEYS.filter(need => needs.levels[need] === level).map(need => ({ need, owners: ownersOf(need) })) }))
+    .map(level => ({ level, title: titles[level], rows: LEVEL_KEYS.filter(need => needs.levels[need] === level).map(need => ({ need, owners: ownersOf(team, needs, need) })) }))
     .filter(group => group.rows.length > 0);
   const essentialRows = groups.find(group => group.level === 'essential')?.rows ?? [];
   const archetype = tr(`archetype.${needs.archetype}`);
