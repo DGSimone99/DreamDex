@@ -202,6 +202,6 @@ describe('effetti su suggerimenti e coaching', () => {
   it('coaching: Chlorophyll senza sole, con rimedi', () => {
     const team = [venusaur, mostCommonSet(data.stats, 'Garchomp')!];
     expect(coachTeam(team, DEFAULT_FORMAT, data).problems)
-      .toContainEqual({ severity: 'minor', category: 'conditions', text: 'Venusaur ha Chlorophyll ma il team non porta il sole', fixes: ['Torkoal'] });
+      .toContainEqual({ severity: 'minor', category: 'conditions', text: 'Venusaur ha Chlorophyll ma il team non porta il sole', fixes: ['Torkoal'], key: 'conditions:Venusaur ha Chlorophyll ma il team non porta il sole' });
   });
 });

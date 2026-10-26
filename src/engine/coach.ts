@@ -38,7 +38,7 @@ export const classifySwap = (ratingGain: number, illegal = false): SwapLevel | n
   illegal || ratingGain >= RECOMMEND_RATING_GAIN ? 'recommended' : ratingGain >= MIN_RATING_GAIN ? 'optional' : null;
 
 /** Categorie dei problemi, nell'ordine in cui si mostrano. */
-export const PROBLEM_CATEGORIES = ['rules', 'defense', 'coverage', 'roles', 'conditions', 'redundancy'] as const;
+export const PROBLEM_CATEGORIES = ['rules', 'defense', 'coverage', 'roles', 'conditions', 'redundancy', 'meta'] as const;
 export type ProblemCategory = typeof PROBLEM_CATEGORIES[number];
 
 export interface CoachProblem {
@@ -46,6 +46,8 @@ export interface CoachProblem {
   category: ProblemCategory;
   text: string;
   fixes: string[];
+  /** Identifica il problema fra team diversi (niente conteggi): serve a vedere se uno scambio lo risolve */
+  key: string;
 }
 
 export interface CoachSwap {
@@ -108,11 +110,11 @@ export function weaknessSeverity(row: TeamAnalysis['weakness'][number]): 'seriou
   return row.pressure > 0 ? 'minor' : null;
 }
 
-function findProblems(team: TeamSet[], format: Format, analysis: TeamAnalysis, candidates: Suggestion[], lang: Lang): CoachProblem[] {
+export function findProblems(team: TeamSet[], format: Format, analysis: TeamAnalysis, candidates: Suggestion[], lang: Lang): CoachProblem[] {
   const serious: CoachProblem[] = [];
   const minor: CoachProblem[] = [];
-  const add = (category: ProblemCategory, isSerious: boolean, text: string, fixes: string[]) =>
-    (isSerious ? serious : minor).push({ severity: isSerious ? 'serious' : 'minor', category, text, fixes });
+  const add = (category: ProblemCategory, isSerious: boolean, text: string, fixes: string[], key = `${category}:${text}`) =>
+    (isSerious ? serious : minor).push({ severity: isSerious ? 'serious' : 'minor', category, text, fixes, key });
 
   for (const row of analysis.weakness) {
     const severity = weaknessSeverity(row);
@@ -124,7 +126,7 @@ function findProblems(team: TeamSet[], format: Format, analysis: TeamAnalysis, c
       resistWord: t(lang, row.resist === 1 ? 'coach.word.resistOne' : 'coach.word.resistMany'),
     });
     const fixes = fixesFor(candidates, s => Number(defensiveMultiplier(row.type, s.set) < 1));
-    add('defense', isSerious, text, fixes);
+    add('defense', isSerious, text, fixes, `defense:${row.type}`);
   }
 
   for (const set of team) {
@@ -152,19 +154,19 @@ function findProblems(team: TeamSet[], format: Format, analysis: TeamAnalysis, c
   const missing = analysis.needs.essentialMissing;
   if (missing.length) {
     add('roles', false, t(lang, 'coach.problem.missingRoles', { roles: list(missing.map(need => needLabel(need, lang))) }),
-      fixesFor(candidates, s => missing.filter(need => keyRoles(need).some(role => s.facts.roles.filled.includes(role))).length));
+      fixesFor(candidates, s => missing.filter(need => keyRoles(need).some(role => s.facts.roles.filled.includes(role))).length), 'roles:essential');
   }
   // Le voci importanti mancanti: una riga a parte, dopo quella degli essenziali (abbassano il voto, non sono un requisito)
   const important = analysis.needs.importantMissing;
   if (important.length) {
     add('roles', false, t(lang, 'coach.problem.missingImportantRoles', { roles: list(important.map(need => needLabel(need, lang))) }),
-      fixesFor(candidates, s => important.filter(need => keyRoles(need).some(role => s.facts.roles.filled.includes(role))).length));
+      fixesFor(candidates, s => important.filter(need => keyRoles(need).some(role => s.facts.roles.filled.includes(role))).length), 'roles:important');
   }
 
-  for (const item of memberIssues(team, lang, analysis.needs)) add('roles', false, item.text, []);
+  for (const item of memberIssues(team, lang, analysis.needs)) add('roles', false, item.text, [], `roles:member:${item.text}`);
   // Squilibrio degli attaccanti (nel voto è una mancanza essenziale dei Ruoli, solo a team finito)
   const style = analysis.needs.needStyle;
-  if (style) add('roles', false, t(lang, 'rating.redundancy.oneStyle', { style: t(lang, `analysis.style.${style}`) }), []);
+  if (style) add('roles', false, t(lang, 'rating.redundancy.oneStyle', { style: t(lang, `analysis.style.${style}`) }), [], 'roles:style');
   for (const item of roleAndTypeRedundancies(team, lang, { sameType: true })) add('redundancy', false, item.text, []);
   for (const item of weatherClashes(team, lang)) add('conditions', false, item.text, []);
 
@@ -182,7 +184,14 @@ function findProblems(team: TeamSet[], format: Format, analysis: TeamAnalysis, c
     .map(r => r.type);
   if (gaps.length) {
     add('coverage', false, t(lang, 'coach.problem.noCoverage', { types: list(gaps.map(type => typeName(type, lang))) }),
-      fixesFor(candidates, s => s.facts.coverage.types.filter(t => gaps.includes(t)).length));
+      fixesFor(candidates, s => s.facts.coverage.types.filter(t => gaps.includes(t)).length), 'coverage');
+  }
+
+  // Minacce del meta senza check (la lista è vuota senza meta)
+  for (const threat of analysis.threats) {
+    if (threat.handledBy.length) continue;
+    add('meta', false, t(lang, 'coach.problem.threat', { species: threat.name }),
+      fixesFor(candidates, s => Number(s.facts.threats.checked.includes(threat.name))), `meta:${threat.name}`);
   }
 
   return [...serious, ...minor];
@@ -397,7 +406,7 @@ export function coachTeam(team: TeamSet[], format: Format, data: EngineData, lan
   const candidates = data.stats ? scoreCandidates(team, format, data) : [];
   const problems = findProblems(team, format, analysis, candidates, lang);
   return {
-    verdict: verdictFor(team, problems, rateTeam(team, data, lang)?.grade ?? 'D', lang),
+    verdict: verdictFor(team, problems.filter(p => p.category !== 'meta'), rateTeam(team, data, lang)?.grade ?? 'D', lang),
     teamType: teamArchetype(team, analysis.needs.rules),
     strengths: findStrengths(team, analysis, lang),
     problems,
