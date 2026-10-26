@@ -2,7 +2,7 @@ import { useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'rea
 import type { CoachProblem } from '../engine/coach';
 import type { TeamRating } from '../engine/rating';
 import { useLang, useT } from '../i18n/react';
-import { areaTabs, areaValue, type AreaKey } from './AreaDetail';
+import { areaTabs, type AreaKey } from './AreaDetail';
 import { Typed } from './TypeText';
 
 /** La scheda da cui si parte: la coverage dei tipi in Difesa e Offesa (la più consultata), altrimenti la prima. */
@@ -43,10 +43,8 @@ export function AreaView({ rating, area, problems, extra }: {
   return (
     <section className="area-view" aria-label={title}>
       <div className="area-side">
-        <h3 className="area-title">
-          {title} <strong>{areaValue(rating, area) ?? 'n/d'}</strong>
-          {rating.areas.find(a => a.key === area)?.inactive && <small className="area-inactive">{t('rating.notCounted')}</small>}
-        </h3>
+        {/* Nome e voto dell'area stanno già nella scheda aperta: qui solo la nota quando l'area non conta */}
+        {rating.areas.find(a => a.key === area)?.inactive && <p className="area-inactive" role="note">{t('rating.notCounted')}</p>}
         <div className="area-subs ad-nav" role="tablist" aria-orientation="vertical" aria-label={title}>
           {tabs.map((tab, i) => (
             <button key={tab.key} ref={el => { buttons.current[i] = el; }} type="button" role="tab" id={`${id}-${tab.key}`}
