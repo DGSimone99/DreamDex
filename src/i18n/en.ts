@@ -488,7 +488,6 @@ export const en = {
   'dash.others': "more",
   'dash.metaTab': "Meta tab",
   'dash.levelMinor': "Minor",
-  'dash.roleNobody': "nobody",
   'dash.roleMissing': "missing",
   'dash.roleCoveredBy': "covered by {names}",
   'dash.moreRoles': "{n} more roles",

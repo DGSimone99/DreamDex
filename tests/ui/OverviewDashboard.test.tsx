@@ -146,10 +146,17 @@ describe('Cruscotto della Panoramica', () => {
     expect(colon).toHaveTextContent(/^:$/);
     expect(removal.querySelector('.dash-role-name .visually-hidden')!.compareDocumentPosition(colon!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(within(removal).queryByText('+1')).toBeNull();
-    // Mancante: "nessuno"
+    // Mancante: solo ✕ e nome (niente "nessuno" né due punti), per i lettori di schermo "mancante"
     const pivot = within(roleBand(roles, 'Importanti')).getByRole('listitem');
-    expect(pivot.querySelector('.dash-role-who')).toHaveTextContent(/^nessuno$/);
+    expect(pivot.querySelector('.dash-role-who')).toBeNull();
+    expect(pivot.querySelector('.dash-role-name [aria-hidden="true"]')).toBeNull();
+    expect(pivot).toHaveTextContent(/^Pivot, mancante$/);
     expect(pivot).toHaveClass('bad');
+    // Minore scoperto: stesso schema, nello stile tenue
+    const screens = within(roleBand(roles, 'Minori')).getByRole('listitem');
+    expect(screens).toHaveClass('soft', 'minor', 'line');
+    expect(screens).toHaveTextContent(/^Schermi, mancante$/);
+    expect(screens.querySelector('.dash-role-who')).toBeNull();
   });
 
   it('Ruoli: tre fasce una sotto l\'altra, Essenziali, Importanti, Minori, con l\'etichetta a sinistra', () => {

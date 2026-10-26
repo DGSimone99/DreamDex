@@ -11,7 +11,7 @@ import { useFit } from './useFit';
 /**
  * Un ruolo: ✓ tenue se coperto, ✕ rosso pieno se manca (essenziali e importanti), tratteggiato se è un minore.
  * Stretto e normale: un chip col solo segno e nome, su una riga (chi lo copre è nel tooltip). Ampio: una riga per ruolo
- * coi nomi di chi lo copre scritti, senza icone ("✓ Hazard: Garchomp, Great Tusk", "✕ Rimozione Strumenti: nessuno").
+ * coi nomi di chi lo copre scritti, senza icone ("✓ Hazard: Garchomp, Great Tusk"); un ruolo scoperto è solo "✕ Rimozione Strumenti".
  * Si legge intero: "Hazard, coperto da Garchomp" / "Rimozione Strumenti, mancante".
  */
 function RoleRow({ chip, density }: { chip: RoleChip; density: Density }) {
@@ -26,13 +26,9 @@ function RoleRow({ chip, density }: { chip: RoleChip; density: Density }) {
       <span className="dash-role-tag">
         <Icon name={chip.covered ? 'check' : 'close'} />
         {/* I due punti solo a vista: il nome accessibile resta "Rimozione Strumenti, mancante" */}
-        <span className="dash-role-name">{label}<span className="visually-hidden">, {detail}</span>{line && <span aria-hidden="true">:</span>}</span>
+        <span className="dash-role-name">{label}<span className="visually-hidden">, {detail}</span>{line && chip.covered && <span aria-hidden="true">:</span>}</span>
       </span>
-      {line ? (
-        <span className="dash-role-who" aria-hidden="true">
-          {chip.covered ? chip.owners.join(', ') : t('dash.roleNobody')}
-        </span>
-      ) : null}
+      {line && chip.covered && <span className="dash-role-who" aria-hidden="true">{chip.owners.join(', ')}</span>}
     </li>
   );
 }
