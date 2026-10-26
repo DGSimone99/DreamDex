@@ -7,6 +7,7 @@ import { emptySet, mostCommonSet, type TeamSet } from '../../src/engine/sets';
 import { rateTeam } from '../../src/engine/rating';
 import { fixtureData, fixtureStats, gholdengo, tusk } from '../fixtures/data';
 import { megaData } from '../fixtures/megaData';
+import { adviceOf } from '../helpers/coach';
 
 const junk = (species: string): TeamSet => ({ ...emptySet(species), moves: ['Splash'] });
 
@@ -59,10 +60,10 @@ describe('coachTeam', () => {
 
   it('i preferiti non ricevono mai suggerimenti di sostituzione', () => {
     const team = [tusk, gholdengo, { ...junk('Magikarp'), favorite: true }];
-    expect(coachTeam([tusk, gholdengo, junk('Magikarp')], DEFAULT_FORMAT, fixtureData).fixes.some(f => f.index === 2)).toBe(true);
-    expect(coachTeam(team, DEFAULT_FORMAT, fixtureData).fixes.some(f => f.index === 2)).toBe(false);
+    expect(adviceOf([tusk, gholdengo, junk('Magikarp')], DEFAULT_FORMAT, fixtureData).fixes.some(f => f.index === 2)).toBe(true);
+    expect(adviceOf(team, DEFAULT_FORMAT, fixtureData).fixes.some(f => f.index === 2)).toBe(false);
     const allFavorite = [tusk, gholdengo, junk('Magikarp')].map(s => ({ ...s, favorite: true }));
-    expect(coachTeam(allFavorite, DEFAULT_FORMAT, fixtureData).fixes.filter(f => f.kind === 'swap')).toEqual([]);
+    expect(adviceOf(allFavorite, DEFAULT_FORMAT, fixtureData).fixes.filter(f => f.kind === 'swap')).toEqual([]);
   });
 
   it('testo di un cambio', () => {
@@ -98,14 +99,15 @@ describe('coachTeam', () => {
 
   it('0–1 membri: solo invito ad aggiungere', () => {
     expect(coachTeam([tusk], DEFAULT_FORMAT, fixtureData)).toEqual({
-      verdict: 'Aggiungi almeno 2 Pokémon per ricevere il coaching', teamType: null, strengths: [], problems: [], fixes: [], first: null, threatFixes: {},
+      verdict: 'Aggiungi almeno 2 Pokémon per ricevere il coaching', teamType: null, strengths: [], problems: [], threatFixes: {},
     });
   });
 
   it('senza statistiche: niente minacce, rimedi né sostituzioni', () => {
     const noData = coachTeam([tusk, gholdengo, emptySet('Fakemon-Xyz')], DEFAULT_FORMAT, { stats: null, sets: null });
-    expect(noData.fixes).toEqual([]);
-    expect(noData.first).toBeNull();
+    const advice = adviceOf([tusk, gholdengo, emptySet('Fakemon-Xyz')], DEFAULT_FORMAT, { stats: null, sets: null });
+    expect(advice.fixes).toEqual([]);
+    expect(advice.first).toBeNull();
     expect(noData.problems.every(p => p.fixes.length === 0)).toBe(true);
     expect(noData.problems.some(p => p.text.includes('check'))).toBe(false);
     expect(noData.strengths.some(s => s.startsWith('Ferma'))).toBe(false);

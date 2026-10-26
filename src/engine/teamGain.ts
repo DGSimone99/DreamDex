@@ -102,6 +102,30 @@ function swapEvaluator(team: TeamSet[], data: EngineData, lang: Lang, archetype:
   return { before, evaluate };
 }
 
+const ids = new WeakMap<object, number>();
+let lastId = 0;
+/** Un numero per ogni oggetto (per identità): serve alle chiavi delle cache. */
+export const idOf = (value: object | null | undefined) => {
+  if (!value) return 0;
+  let id = ids.get(value);
+  if (id === undefined) ids.set(value, (id = ++lastId));
+  return id;
+};
+/** Chiave dei dati per le cache: cambiano identità a ogni copia ({ ...data, formatId }), quindi contano le parti. */
+export const dataKey = (data: EngineData) => [data.stats, data.sets, data.fallback, data.presets, data.fallbackPresets, data.fallbackStats, data.userLists]
+  .map(idOf).join(',') + `|${data.formatId ?? ''}|${!!data.ignoreMeta}`;
+
+/**
+ * Voti dei singoli candidati già calcolati: il Coaching valuta i primi 15 sostituti di un membro, la vista per membro
+ * i primi 100; così la seconda valuta solo quelli in più. Chiave: team (per identità), membro, dati, lingua, tipo di
+ * team, ordine e il set del candidato. Oltre il limite si svuota.
+ */
+const evaluations = new Map<string, TeamGain | 'excluded' | null>();
+const EVALUATION_LIMIT = 5000;
+let evaluationMisses = 0;
+/** Quante valutazioni si sono calcolate davvero (per i test della cache). */
+export const teamGainMisses = () => evaluationMisses;
+
 /** Conta i cambi esclusi dal tipo di team scelto (per dire all'utente perché la lista è vuota). */
 export interface SwapReport {
   excluded: number;
@@ -138,14 +162,25 @@ export function rankByTeamGain<T extends { set: TeamSet; score: number }>(
   }
   const { before, evaluate } = swapEvaluator(team, data, lang, archetype, sort);
   if (!before) return items;
+  const prefix = `${idOf(team)}|${replaceIndex}|${dataKey(data)}|${lang}|${archetype ?? ''}|${sort}|`;
+  const gainOf = (set: TeamSet) => {
+    const key = prefix + JSON.stringify(set);
+    if (evaluations.has(key)) return evaluations.get(key)!;
+    evaluationMisses += 1;
+    const result = evaluate(withCandidate(team, set, replaceIndex), set, replaceIndex === null ? null : team[replaceIndex]);
+    const value = result && result !== 'excluded' ? result.gain : result;
+    if (evaluations.size >= EVALUATION_LIMIT) evaluations.clear();
+    evaluations.set(key, value);
+    return value;
+  };
   const rated: (T & { teamGain?: TeamGain })[] = items.flatMap(item => {
-    const result = evaluate(withCandidate(team, item.set, replaceIndex), item.set, replaceIndex === null ? null : team[replaceIndex]);
+    const gain = gainOf(item.set);
     // Escluso dall'archetipo scelto: non si propone; senza voto (dati mancanti) resta com'è
-    if (result === 'excluded') {
+    if (gain === 'excluded') {
       if (report) report.excluded += 1;
       return [];
     }
-    return result ? [{ ...item, teamGain: result.gain }] : [item];
+    return gain ? [{ ...item, teamGain: gain }] : [item];
   });
   if (!sort) return rated;
   return rated.sort((a, b) => compareGains(a.teamGain, b.teamGain) || b.score - a.score);

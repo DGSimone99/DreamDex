@@ -9,7 +9,7 @@ import { rulesOf } from './formatRules';
 import { improveReplacements, type Replacement } from './replace';
 import { suggest, type Suggestion } from './scoring';
 import type { TeamSet } from './sets';
-import { rankByTeamGain, SWAPS_PER_MEMBER, withCandidate, type SwapReport, type TeamGain } from './teamGain';
+import { dataKey, idOf, rankByTeamGain, SWAPS_PER_MEMBER, withCandidate, type SwapReport, type TeamGain } from './teamGain';
 
 /** Un cambio proposto dal Coaching: sostituzione di un membro o aggiunta a un team incompleto. */
 export interface CoachFix {
@@ -23,6 +23,8 @@ export interface CoachFix {
   gain: number;
   /** Chiavi dei problemi che il cambio risolve del tutto. */
   solves: string[];
+  /** Chiavi dei problemi che restano ma più piccoli (meno tipi scoperti, da grave a minore…). */
+  reduces: string[];
 }
 
 /**
@@ -32,17 +34,6 @@ export interface CoachFix {
  */
 const rankings = new Map<string, { items: unknown[]; excluded: number }>();
 const RANKING_LIMIT = 50;
-const ids = new WeakMap<object, number>();
-let lastId = 0;
-const idOf = (value: object | null | undefined) => {
-  if (!value) return 0;
-  let id = ids.get(value);
-  if (id === undefined) ids.set(value, (id = ++lastId));
-  return id;
-};
-// I dati cambiano identità a ogni copia ({ ...data, formatId }): contano le parti
-const dataKey = (data: EngineData) => [data.stats, data.sets, data.fallback, data.presets, data.fallbackPresets, data.fallbackStats, data.userLists]
-  .map(idOf).join(',') + `|${data.formatId ?? ''}|${!!data.ignoreMeta}`;
 let misses = 0;
 /** Quante classifiche si sono calcolate davvero (per i test della cache). */
 export const rankingMisses = () => misses;
@@ -88,7 +79,7 @@ const strongest = <T extends { teamGain?: { gain: number } }>(items: T[], limit:
 
 /**
  * I cambi che alzano il voto, presi dalla classifica di Migliora team: per membro (stesso set e stesso +N della
- * vista per membro) e, con 2–5 membri, le aggiunte. Per ognuno i problemi che spariscono nel team col cambio.
+ * vista per membro) e, con 2–5 membri, le aggiunte. Per ognuno i problemi che spariscono o si riducono nel team col cambio.
  */
 export function coachFixes(team: TeamSet[], format: Format, data: EngineData, problems: CoachProblem[], lang: Lang): CoachFix[] {
   if (!data.stats || team.length < 2) return [];
@@ -96,10 +87,20 @@ export function coachFixes(team: TeamSet[], format: Format, data: EngineData, pr
   const archetype = team.length === 6 ? teamArchetype(team, rulesOf(data))?.archetype : undefined;
   const base = (set: TeamSet) => battleSpecies(set)?.baseSpecies ?? set.species;
   const forme = (set: TeamSet) => battleSpecies(set)?.name ?? set.species;
-  const now = [...new Set(problems.map(p => p.key))];
-  const solvedBy = (after: TeamSet[]) => {
-    const left = new Set(findProblems(after, format, analyzeTeam(after, data), [], lang).map(p => p.key));
-    return now.filter(key => !left.has(key));
+  const now = new Map<string, CoachProblem>();
+  for (const p of problems) if (!now.has(p.key)) now.set(p.key, p);
+  // Risolto: la chiave sparisce; ridotto: resta ma più piccola, o da grave diventa minore
+  const changes = (after: TeamSet[]) => {
+    const left = new Map<string, CoachProblem>();
+    for (const p of findProblems(after, format, analyzeTeam(after, data), [], lang)) if (!left.has(p.key)) left.set(p.key, p);
+    const solves: string[] = [];
+    const reduces: string[] = [];
+    for (const [key, was] of now) {
+      const is = left.get(key);
+      if (!is) solves.push(key);
+      else if ((was.severity === 'serious' && is.severity === 'minor') || (was.size !== undefined && is.size !== undefined && is.size < was.size)) reduces.push(key);
+    }
+    return { solves, reduces };
   };
 
   const fixes: CoachFix[] = [];
@@ -110,12 +111,12 @@ export function coachFixes(team: TeamSet[], format: Format, data: EngineData, pr
     const ranked = rankedReplacements(team, index, format, data, SWAPS_PER_MEMBER, lang, archetype)
       .filter(c => !others.has(base(c.set)) && forme(c.set) !== forme(member));
     for (const c of strongest(ranked, FIXES_PER_MEMBER)) {
-      fixes.push({ kind: 'swap', species: c.species, set: c.set, index, member: battleName(member), gain: c.teamGain!.gain, solves: solvedBy(withCandidate(team, c.set, index)) });
+      fixes.push({ kind: 'swap', species: c.species, set: c.set, index, member: battleName(member), gain: c.teamGain!.gain, ...changes(withCandidate(team, c.set, index)) });
     }
   });
   if (team.length < 6) {
     for (const c of strongest(rankedAdditions(team, format, data, ADD_POOL, lang), MAX_ADDS)) {
-      fixes.push({ kind: 'add', species: c.species, set: c.set, index: null, member: null, gain: c.teamGain!.gain, solves: solvedBy(withCandidate(team, c.set, null)) });
+      fixes.push({ kind: 'add', species: c.species, set: c.set, index: null, member: null, gain: c.teamGain!.gain, ...changes(withCandidate(team, c.set, null)) });
     }
   }
   return fixes.sort((a, b) => b.gain - a.gain);
@@ -137,12 +138,13 @@ export function firstMove(fixes: CoachFix[], problems: CoachProblem[]): CoachFix
   return best?.fix ?? null;
 }
 
-/** I cambi che risolvono un problema, dal voto più alto, ogni specie una volta. */
+/** I cambi che risolvono o riducono un problema: prima chi lo risolve, poi dal voto più alto, ogni specie una volta. */
 export function fixesForProblem(fixes: CoachFix[], key: string, limit = 3): CoachFix[] {
   const seen = new Set<string>();
+  const solves = (fix: CoachFix) => Number(fix.solves.includes(key));
   return fixes
-    .filter(fix => fix.solves.includes(key))
-    .sort((a, b) => b.gain - a.gain)
+    .filter(fix => fix.solves.includes(key) || fix.reduces.includes(key))
+    .sort((a, b) => solves(b) - solves(a) || b.gain - a.gain)
     .filter(fix => !seen.has(fix.species) && !!seen.add(fix.species))
     .slice(0, limit);
 }

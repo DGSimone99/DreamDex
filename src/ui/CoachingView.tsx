@@ -1,5 +1,5 @@
 import { Fragment, useId, type ReactNode } from 'react';
-import { PROBLEM_CATEGORIES, type Coaching, type CoachProblem, type ProblemCategory } from '../engine/coach';
+import { PROBLEM_CATEGORIES, type CoachAdvice, type Coaching, type CoachProblem, type ProblemCategory } from '../engine/coach';
 import { fixesForProblem, type CoachFix } from '../engine/coachFixes';
 import { t, type MessageKey } from '../i18n';
 import { useLang, useT } from '../i18n/react';
@@ -48,12 +48,12 @@ function FixButton({ fix, onFix }: { fix: CoachFix; onFix: (fix: CoachFix) => vo
   );
 }
 
-/** Sotto il problema: chi lo risolve, raggruppato per membro sostituito (le aggiunte insieme). */
+/** Sotto il problema: chi lo risolve o lo riduce, raggruppato per membro sostituito (le aggiunte insieme). */
 function ProblemFixes({ problem, fixes, onFix }: { problem: CoachProblem; fixes: CoachFix[]; onFix: (fix: CoachFix) => void }) {
   const tr = useT();
   const list = fixesForProblem(fixes, problem.key);
   if (list.length === 0) {
-    // Nessun cambio alza il voto: restano i nomi di oggi, come testo
+    // Nessun cambio consigliato lo risolve né lo riduce: restano i nomi di oggi, come testo
     if (problem.fixes.length === 0) return null;
     return (
       <p className="coach-fixes">
@@ -86,12 +86,19 @@ function ProblemFixes({ problem, fixes, onFix }: { problem: CoachProblem; fixes:
 
 /**
  * La scheda Coaching: in cima il cambio che risolve di più ("Prima di tutto"), poi i problemi gravi e minori;
- * sotto ognuno i candidati di Migliora team che lo risolvono, col voto in più. Ogni candidato apre la scheda Pokémon.
+ * sotto ognuno i candidati di Migliora team che lo risolvono o lo riducono, col voto in più. Ogni candidato apre la scheda Pokémon.
+ * `advice` null: i consigli si stanno calcolando (i problemi si vedono già).
  */
-export function CoachingView({ coaching, onFix }: { coaching: Coaching; onFix: (fix: CoachFix) => void }) {
+export function CoachingView({ coaching, advice, members, onFix }: {
+  coaching: Coaching; advice: CoachAdvice | null; members: number; onFix: (fix: CoachFix) => void;
+}) {
   const tr = useT();
   const id = useId();
-  const { problems, fixes, first, bannedCount = 0 } = coaching;
+  const { problems, bannedCount = 0 } = coaching;
+  // Sotto i 2 membri il coach non cerca problemi: l'invito ad aggiungere, non "nessun problema"
+  if (members < 2) return <div className="coaching"><p className="coach-note coach-top">{tr('coach.addTwo')}</p></div>;
+  const fixes = advice?.fixes ?? [];
+  const first = advice?.first ?? null;
   // In ogni gruppo l'ordine delle categorie: regole per prime
   const ordered = [...problems].sort((a, b) => PROBLEM_CATEGORIES.indexOf(a.category) - PROBLEM_CATEGORIES.indexOf(b.category));
   const groups = [
@@ -117,6 +124,7 @@ export function CoachingView({ coaching, onFix }: { coaching: Coaching; onFix: (
           </button>
         </section>
       )}
+      {!advice && problems.length > 0 && <p className="coach-note coach-top" role="status">{tr('coach.computing')}</p>}
       {problems.length === 0 && <p className="coach-empty"><Icon name="check" />{tr('coach.noProblems')}</p>}
       {groups.filter(group => group.items.length > 0).map(group => (
         <Fragment key={group.key}>
@@ -128,7 +136,7 @@ export function CoachingView({ coaching, onFix }: { coaching: Coaching; onFix: (
                   <span className="coach-problem-text"><ProblemText text={problem.text} /></span>
                   <span className="coach-area">{tr(CATEGORY[problem.category])}</span>
                 </div>
-                <ProblemFixes problem={problem} fixes={fixes} onFix={onFix} />
+                {advice && <ProblemFixes problem={problem} fixes={fixes} onFix={onFix} />}
               </li>
             ))}
           </ul>

@@ -311,3 +311,4 @@ button.member-card:hover { border-color: var(--accent); }
 .coach-empty { display: flex; align-items: center; gap: 8px; margin: 0; padding: 8px 12px; color: var(--good); background: color-mix(in srgb, var(--good-bg) 55%, var(--panel)); border: 1px solid color-mix(in srgb, var(--good) 25%, var(--line-soft)); }
 .coach-empty .icon { width: 14px; height: 14px; }
 .coach-note { margin: 6px 0 0; font-size: 12px; color: var(--faint); }
+.coach-note.coach-top { margin: 0 0 4px; }

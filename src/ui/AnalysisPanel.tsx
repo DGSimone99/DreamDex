@@ -1,5 +1,5 @@
 import { threatScore, type TeamAnalysis } from '../engine/analysis';
-import type { Coaching, CoachProblem, ProblemCategory } from '../engine/coach';
+import type { CoachAdvice, Coaching, CoachProblem, ProblemCategory } from '../engine/coach';
 import type { CoachFix } from '../engine/coachFixes';
 import type { EngineData } from '../engine/data';
 import type { TeamRating } from '../engine/rating';
@@ -27,7 +27,7 @@ export const problemsOf = (problems: CoachProblem[] | undefined, area: AreaKey) 
  * La scheda Analisi: le schede interne (Panoramica e le aree del voto) e il loro contenuto. La Panoramica dice cosa fare;
  * al posto della Panoramica può esserci il profilo di un membro; le aree mostrano sulla pagina sottostatistiche e tabelle complete.
  */
-export function AnalysisPanel({ team, analysis, rating, coaching, data, view, onView, member = null, onMember, onAdd, onMeta, onFix }: {
+export function AnalysisPanel({ team, analysis, rating, coaching, advice = null, data, view, onView, member = null, onMember, onAdd, onMeta, onFix }: {
   /** Un candidato del Coaching: apre la scheda Pokémon su di lui. */
   onFix?: (fix: CoachFix) => void;
   /** La tessera Meta della Panoramica: apre la scheda principale Meta. */
@@ -39,6 +39,8 @@ export function AnalysisPanel({ team, analysis, rating, coaching, data, view, on
   rating: TeamRating | null;
   data: EngineData;
   coaching?: Coaching;
+  /** I consigli del Coaching (null: si stanno calcolando). */
+  advice?: CoachAdvice | null;
   /** Panoramica, Coaching o un'area del voto. */
   view: AnalysisView;
   onView: (view: AnalysisView) => void;
@@ -63,7 +65,7 @@ export function AnalysisPanel({ team, analysis, rating, coaching, data, view, on
     );
   } else if (showCoaching && coaching) {
     // Il Coaching vince sul profilo di un membro, come le aree
-    body = <CoachingView coaching={coaching} onFix={fix => onFix?.(fix)} />;
+    body = <CoachingView coaching={coaching} advice={advice} members={team.length} onFix={fix => onFix?.(fix)} />;
   } else if (open !== null) {
     body = <MemberProfile team={team} data={data} index={open} onIndex={onMember} onBack={() => onMember(null)} />;
   } else {

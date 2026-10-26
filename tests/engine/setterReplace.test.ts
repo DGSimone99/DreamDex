@@ -6,6 +6,7 @@ import { improveReplacements, similarReplacements } from '../../src/engine/repla
 import { emptySet, type TeamSet } from '../../src/engine/sets';
 import type { SpeciesStats } from '../../src/engine/stats';
 import { enables, neededConditions } from '../../src/engine/synergy';
+import { adviceOf } from '../helpers/coach';
 
 const entry = (usage: number, ability: string, moves: string[]): SpeciesStats => ({
   usage, count: 100, abilities: { [ability]: 1 }, items: {}, teraTypes: {}, spreads: {},
@@ -67,7 +68,7 @@ describe('sostituire un weather setter', () => {
   it('il coaching non propone di sostituire il setter con chi non porta la condizione', () => {
     const team = [ninetales, leafeon, set('Garchomp', 'Rough Skin', ['Earthquake'])];
     for (const data of [withSetter, noSetter]) {
-      for (const fix of coachTeam(team, format, data).fixes.filter(f => f.member === 'Ninetales')) {
+      for (const fix of adviceOf(team, format, data).fixes.filter(f => f.member === 'Ninetales')) {
         expect(enables({ ...emptySet(fix.species), ability: 'Drought' }).length).toBeGreaterThan(0);
         expect(fix.species).toBe('Torkoal');
       }

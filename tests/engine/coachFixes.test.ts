@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { analyzeTeam } from '../../src/engine/analysis';
 import { teamArchetype } from '../../src/engine/archetype';
-import { coachTeam, findProblems, type CoachProblem } from '../../src/engine/coach';
+import { coachAdvice, coachTeam, findProblems, MIN_COVERAGE_WEIGHT, type CoachProblem } from '../../src/engine/coach';
 import { coachFixes, firstMove, fixesForProblem, type CoachFix } from '../../src/engine/coachFixes';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
 import { rulesOf } from '../../src/engine/formatRules';
@@ -9,6 +9,7 @@ import { improveReplacements } from '../../src/engine/replace';
 import { emptySet, mostCommonSet, type TeamSet } from '../../src/engine/sets';
 import { rankByTeamGain, withCandidate } from '../../src/engine/teamGain';
 import { fixtureData, fixtureStats } from '../fixtures/data';
+import { adviceOf } from '../helpers/coach';
 
 const format = DEFAULT_FORMAT;
 const data = { ...fixtureData, formatId: format.formatId };
@@ -65,37 +66,92 @@ describe('candidati del Coaching dalla classifica di Migliora team', () => {
     expect(fixesOf(team).some(f => f.index === 4)).toBe(false);
   });
 
-  it('meta spento o senza statistiche: nessun candidato', () => {
+  it('senza statistiche: nessun candidato', () => {
     const noStats = { ...data, stats: null };
     expect(coachFixes(six, format, noStats, problemsOf(six), 'it')).toEqual([]);
-    expect(coachTeam(six, format, noStats).fixes).toEqual([]);
-    expect(coachTeam(six, format, noStats).first).toBeNull();
+    expect(adviceOf(six, format, noStats).fixes).toEqual([]);
+    expect(adviceOf(six, format, noStats).first).toBeNull();
   });
 
-  it('per problema: al massimo 3, dal voto più alto, una specie una volta', () => {
+  it('meta spento con le statistiche: candidati sì, problemi del meta no', () => {
+    const noMeta = { ...data, ignoreMeta: true };
+    const off = { ...format, meta: false };
+    expect(coachTeam(six, off, noMeta).problems.some(p => p.key.startsWith('meta:'))).toBe(false);
+    const { fixes } = adviceOf(six, off, noMeta);
+    expect(fixes.length).toBeGreaterThan(0);
+    expect(fixes.flatMap(f => [...f.solves, ...f.reduces]).some(key => key.startsWith('meta:'))).toBe(false);
+  });
+
+  it('riduce = il problema resta ma più piccolo, o da grave diventa minore', () => {
+    for (const [team, fixes] of [[six, fixesSix], [three, fixesThree]] as const) {
+      const now = new Map(problemsOf(team).map(p => [p.key, p]));
+      for (const fix of fixes) {
+        const after = new Map(problemsOf(withCandidate(team, fix.set, fix.index)).map(p => [p.key, p]));
+        for (const key of fix.reduces) {
+          expect(fix.solves).not.toContain(key);
+          const was = now.get(key)!;
+          const is = after.get(key)!;
+          expect(is).toBeTruthy();
+          expect((was.severity === 'serious' && is.severity === 'minor') || is.size! < was.size!).toBe(true);
+        }
+      }
+    }
+  });
+
+  it('copertura: il problema raggruppato ha candidati che coprono uno dei tipi', () => {
+    const gaps = (team: TeamSet[]) => {
+      const analysis = analyzeTeam(team, data);
+      return analysis.coverage.filter(r => r.hitters.length === 0 && analysis.typeWeights[r.type] >= MIN_COVERAGE_WEIGHT).map(r => r.type);
+    };
+    expect(problemsOf(three).some(p => p.key === 'coverage')).toBe(true);
+    const list = fixesForProblem(fixesThree, 'coverage');
+    expect(list.length).toBeGreaterThan(0);
+    for (const fix of list) {
+      const left = gaps(withCandidate(three, fix.set, fix.index));
+      expect(gaps(three).some(type => !left.includes(type))).toBe(true);
+    }
+  });
+
+  it('debolezza da grave a minore: il candidato è sotto il problema ma non fra quelli che lo risolvono', () => {
+    const key = 'defense:Ground';
+    expect(problemsOf(three).find(p => p.key === key)?.severity).toBe('serious');
+    const fix = fixesForProblem(fixesThree, key).find(f => !f.solves.includes(key))!;
+    expect(fix).toBeTruthy();
+    expect(fix.reduces).toContain(key);
+    expect(problemsOf(withCandidate(three, fix.set, fix.index)).find(p => p.key === key)?.severity).toBe('minor');
+  });
+
+  it('per problema: al massimo 3, prima chi lo risolve, dal voto più alto, una specie una volta', () => {
     // Team incompleto: aggiunte e sostituzioni insieme
-    const keys = [...new Set(fixesThree.flatMap(f => f.solves))];
+    const keys = [...new Set(fixesThree.flatMap(f => [...f.solves, ...f.reduces]))];
     expect(keys.length).toBeGreaterThan(0);
     for (const key of keys) {
       const list = fixesForProblem(fixesThree, key);
       expect(list.length).toBeGreaterThan(0);
       expect(list.length).toBeLessThanOrEqual(3);
-      expect(list.every(f => f.solves.includes(key))).toBe(true);
-      expect(list.map(f => f.gain)).toEqual([...list.map(f => f.gain)].sort((a, b) => b - a));
+      expect(list.every(f => f.solves.includes(key) || f.reduces.includes(key))).toBe(true);
+      const solved = list.map(f => f.solves.includes(key));
+      expect(solved).toEqual([...solved].sort((a, b) => Number(b) - Number(a)));
+      for (const group of [list.filter(f => f.solves.includes(key)), list.filter(f => !f.solves.includes(key))]) {
+        expect(group.map(f => f.gain)).toEqual([...group.map(f => f.gain)].sort((a, b) => b - a));
+      }
       expect(new Set(list.map(f => f.species)).size).toBe(list.length);
     }
     // A mano: la stessa specie come aggiunta e come sostituzione compare una volta, quella col voto più alto
-    const fix = (species: string, gain: number, kind: CoachFix['kind'] = 'swap'): CoachFix =>
-      ({ kind, species, set: emptySet(species), index: kind === 'add' ? null : 0, member: kind === 'add' ? null : 'X', gain, solves: ['k'] });
+    const fix = (species: string, gain: number, kind: CoachFix['kind'] = 'swap', reduces = false): CoachFix =>
+      ({ kind, species, set: emptySet(species), index: kind === 'add' ? null : 0, member: kind === 'add' ? null : 'X', gain,
+        solves: reduces ? [] : ['k'], reduces: reduces ? ['k'] : [] });
     const list = fixesForProblem([fix('A', 3), fix('A', 5, 'add'), fix('B', 4), fix('C', 2), fix('D', 1)], 'k');
     expect(list.map(f => [f.species, f.gain])).toEqual([['A', 5], ['B', 4], ['C', 2]]);
     expect(fixesForProblem([fix('A', 3)], 'altro')).toEqual([]);
+    // Chi lo riduce viene dopo chi lo risolve, anche con più voto
+    expect(fixesForProblem([fix('R', 20, 'swap', true), fix('S', 1)], 'k').map(f => f.species)).toEqual(['S', 'R']);
   });
 
   it('tempo ragionevole', () => {
-    coachTeam(six, format, fixtureData);
+    adviceOf(six, format, fixtureData);
     const start = performance.now();
-    coachTeam(six, format, fixtureData);
+    adviceOf(six, format, fixtureData);
     expect(performance.now() - start).toBeLessThan(3000);
   });
 });
@@ -104,7 +160,7 @@ describe('Prima di tutto', () => {
   const problem = (key: string, severity: CoachProblem['severity']): CoachProblem => ({ severity, category: 'defense', text: key, fixes: [], key });
   const problems = [problem('A', 'serious'), problem('B', 'minor'), problem('C', 'minor')];
   const fix = (species: string, gain: number, solves: string[]): CoachFix =>
-    ({ kind: 'swap', species, set: emptySet(species), index: 0, member: 'X', gain, solves });
+    ({ kind: 'swap', species, set: emptySet(species), index: 0, member: 'X', gain, solves, reduces: [] });
 
   it('prima i gravi risolti, poi i minori, poi il voto', () => {
     expect(firstMove([fix('BC', 20, ['B', 'C']), fix('A', 1, ['A'])], problems)?.species).toBe('A');
@@ -114,10 +170,12 @@ describe('Prima di tutto', () => {
     expect(firstMove([], problems)).toBeNull();
   });
 
-  it('coachTeam porta i candidati e la prima mossa', () => {
+  it('coachAdvice porta i candidati e la prima mossa per i problemi di coachTeam', () => {
     const coaching = coachTeam(three, format, fixtureData);
-    expect(coaching.fixes).toEqual(fixesOf(three));
-    expect(coaching.first).toEqual(firstMove(coaching.fixes, coaching.problems));
+    const advice = coachAdvice(three, format, fixtureData, coaching.problems, 'it');
+    expect(advice.fixes).toEqual(fixesOf(three));
+    expect(advice.first).toEqual(firstMove(advice.fixes, coaching.problems));
+    expect(coachAdvice([three[0]], format, fixtureData, [], 'it')).toEqual({ fixes: [], first: null });
   });
 });
 
@@ -172,13 +230,30 @@ describe('classifiche condivise con Migliora team', () => {
   it('una seconda chiamata sullo stesso team riusa le classifiche', async () => {
     const { rankingMisses } = await import('../../src/engine/coachFixes');
     const team = [...three];
-    coachTeam(team, format, fixtureData);
+    adviceOf(team, format, fixtureData);
     const after = rankingMisses();
-    coachTeam(team, format, fixtureData);
+    adviceOf(team, format, fixtureData);
     expect(rankingMisses()).toBe(after);
     // Un team nuovo invece si calcola
-    coachTeam([...three], format, fixtureData);
+    adviceOf([...three], format, fixtureData);
     expect(rankingMisses()).toBeGreaterThan(after);
+  });
+
+  it('la vista per membro dopo il Coaching riusa i voti dei candidati già valutati, con lo stesso risultato', async () => {
+    const { rankedReplacements } = await import('../../src/engine/coachFixes');
+    const { teamGainMisses } = await import('../../src/engine/teamGain');
+    const team = [...six];
+    const archetype = teamArchetype(team, rulesOf(data))?.archetype;
+    adviceOf(team, format, data);
+    const before = teamGainMisses();
+    // Le statistiche di prova hanno pochi Pokémon: i 15 del Coaching sono già tutti i candidati
+    const ranked = rankedReplacements(team, 4, format, data, 100, 'it', archetype);
+    expect(teamGainMisses()).toBe(before);
+    // Stesso ordine e stesso +N di un calcolo da zero (un altro team, quindi niente memoria)
+    const fresh = [...six];
+    const expected = rankByTeamGain(improveReplacements(fresh, 4, format, data, 100, undefined, 'it', archetype), fresh, 4, data, 'it', true, archetype);
+    expect(teamGainMisses()).toBeGreaterThan(before);
+    expect(ranked.map(c => [c.species, c.teamGain?.gain, c.teamGain?.penalty])).toEqual(expected.map(c => [c.species, c.teamGain?.gain, c.teamGain?.penalty]));
   });
 
   it('stesso risultato con e senza cache, e il conteggio degli esclusi si ripete', async () => {
