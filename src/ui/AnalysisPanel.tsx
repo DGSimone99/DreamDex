@@ -12,6 +12,10 @@ import { anyGameName, typeName } from '../i18n/game';
 import { useLang, useT } from '../i18n/react';
 import type { TeamSet } from '../engine/sets';
 import { CoachPanel } from './CoachPanel';
+import { AreaView } from './AreaView';
+import type { AnalysisView } from './analysisView';
+import type { AreaKey } from './AreaDetail';
+import type { CoachProblem, ProblemCategory } from '../engine/coach';
 import { PokemonList } from './PokemonName';
 import { IssueCounts, WEAKNESS_LABELS } from './IssueCounts';
 import { Icon } from './icons';
@@ -37,7 +41,13 @@ function mitigationNote(m: WeatherMitigation, lang: Lang): string {
   return t(lang, 'analysis.mitigation', { condition: t(lang, `analysis.mitigation.${m.condition as 'sun' | 'rain' | 'grassyterrain' | 'mistyterrain'}`), source, changes });
 }
 
-export function AnalysisPanel({ team, analysis, rating, coaching, preview, onReplace, onSwap, data, withMeta = true, expanded = false, footer }: {
+/** I problemi del coaching che riguardano ogni area (regole e condizioni restano solo nella Panoramica). */
+const AREA_PROBLEMS: Record<AreaKey, ProblemCategory[]> = { defense: ['defense'], strength: ['coverage'], roles: ['roles'], speed: [], bonusMalus: ['redundancy'] };
+export const problemsOf = (problems: CoachProblem[] | undefined, area: AreaKey) => (problems ?? []).filter(p => AREA_PROBLEMS[area].includes(p.category));
+
+export function AnalysisPanel({ team, analysis, rating, coaching, preview, onReplace, onSwap, data, withMeta = true, expanded = false, footer, view = 'overview' }: {
+  /** Panoramica o un'area del voto. */
+  view?: AnalysisView;
   /** In fondo alla colonna destra (la scheda dei membri). */
   footer?: ReactNode;
   onSwap?: (index: number, set: TeamSet) => void;
@@ -75,6 +85,15 @@ export function AnalysisPanel({ team, analysis, rating, coaching, preview, onRep
   const archetypeName = tr(`archetype.${needs.archetype}`);
   // Prima i tipi scoperti: sono quelli su cui intervenire
   const coverageRows = [...uncovered, ...analysis.coverage.filter(row => row.hitters.length > 0)];
+
+  if (view !== 'overview' && rating) {
+    return (
+      <section aria-label={tr('analysis.region')} className="analysis">
+        <h2>{tr('analysis.region')}</h2>
+        <AreaView key={view} rating={rating} area={view} problems={problemsOf(coaching?.problems, view)} />
+      </section>
+    );
+  }
 
   return (
     <section aria-label={tr('analysis.region')} className="analysis">
