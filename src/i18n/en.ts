@@ -461,8 +461,6 @@ export const en = {
   'dash.todo.illegal': "Not legal",
   'dash.todo.roles': "Missing roles",
   'dash.todo.count': "{n} problems",
-  'dash.todo.serious': "Serious",
-  'dash.todo.minor': "Minor",
   'dash.threats': "Unhandled threats",
   'dash.holds': "Holds",
   'dash.hits': "Hits",

@@ -313,6 +313,8 @@ button.member-card:hover { border-color: var(--accent); }
 .dash-sep { color: var(--faint); }
 /* Gravi in rosso e in grassetto; i tipi tengono il loro colore, con una sottolineatura rossa */
 .dash-todo-item.serious { font-weight: 700; color: var(--bad); }
+/* Specie e membri gravi in rosso: batte il colore del testo di .mon-ref strong (marks.css) */
+.dash-todo-item.serious .mon-ref strong { color: var(--bad); }
 /* Ampio: sotto un gruppo i testi interi dei suoi problemi, piccoli e tenui */
 .dash-sub { grid-column: 2 / -1; margin: -3px 0 0; padding: 0; list-style: none; font-size: 12px; line-height: 1.35; color: var(--muted); }
 .dash-sub li { padding: 1px 0; }

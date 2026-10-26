@@ -25,7 +25,8 @@ function RoleRow({ chip, density }: { chip: RoleChip; density: Density }) {
     <li data-fit className={`dash-role ${state}${chip.level === 'minor' ? ' minor' : ''}${line ? ' line' : ''}`} title={`${label}: ${chip.covered ? chip.owners.join(', ') : detail}`}>
       <span className="dash-role-tag">
         <Icon name={chip.covered ? 'check' : 'close'} />
-        <span className="dash-role-name">{label}{line && ':'}<span className="visually-hidden">, {detail}</span></span>
+        {/* I due punti solo a vista: il nome accessibile resta "Rimozione Strumenti, mancante" */}
+        <span className="dash-role-name">{label}<span className="visually-hidden">, {detail}</span>{line && <span aria-hidden="true">:</span>}</span>
       </span>
       {line ? (
         <span className="dash-role-who" aria-hidden="true">
@@ -49,7 +50,11 @@ function RoleBand({ title, chips, density }: { title: string; chips: RoleChip[];
       <span id={id} className="dash-level-name">{title}</span>
       <ul ref={ref} className="dash-fit dash-role-list" aria-labelledby={id}>
         {chips.slice(0, shown).map(chip => <RoleRow key={chip.need} chip={chip} density={density} />)}
-        {hidden > 0 && <li data-fit-more className="dash-role more" title={t('dash.moreRoles', { n: hidden })}>+{hidden}</li>}
+        {hidden > 0 && (
+          <li data-fit-more className="dash-role more" title={t('dash.moreRoles', { n: hidden })}>
+            <span aria-hidden="true">+{hidden}</span><span className="visually-hidden">{t('dash.moreRoles', { n: hidden })}</span>
+          </li>
+        )}
       </ul>
     </div>
   );
