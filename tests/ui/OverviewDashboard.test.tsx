@@ -6,7 +6,7 @@ import type { DashboardData } from '../../src/engine/overviewDashboard';
 import { TYPES } from '../../src/engine/types';
 import { en } from '../../src/i18n/en';
 import { it as itText } from '../../src/i18n/it';
-import { densityFor, OverviewDashboard, ROOMY_FROM, TIGHT_BELOW, type Density } from '../../src/ui/OverviewDashboard';
+import { densityFor, OverviewDashboard, TIGHT_BELOW, type Density } from '../../src/ui/OverviewDashboard';
 import { renderIt } from '../helpers/italian';
 
 /** Dati costruiti: Terra scoperta in difesa, Normale in offesa, un ruolo mancante, due corsie, tre minacce. */
@@ -121,11 +121,11 @@ describe('Cruscotto della Panoramica', () => {
     expect(onMeta).toHaveBeenCalled();
   });
 
-  it('densityFor: sotto TIGHT_BELOW stretto, da ROOMY_FROM ampio', () => {
+  it('densityFor (team aperto): sotto TIGHT_BELOW stretto, poi normale a ogni altezza, mai ampio', () => {
     expect(densityFor(TIGHT_BELOW - 1)).toBe('tight');
     expect(densityFor(TIGHT_BELOW)).toBe('normal');
-    expect(densityFor(ROOMY_FROM - 1)).toBe('normal');
-    expect(densityFor(ROOMY_FROM)).toBe('roomy');
+    expect(densityFor(700)).toBe('normal');
+    expect(densityFor(2000)).toBe('normal');
   });
 
   it('ampio: Velocità con "supera" e "superato da", Ruoli una riga per ruolo coi nomi di chi lo copre', () => {
@@ -421,19 +421,31 @@ describe('Cruscotto: misure', () => {
     vi.unstubAllGlobals();
   });
 
-  it("densità dall'altezza; una misura a 0 (scheda nascosta) non la cambia", () => {
+  it("team aperto: densità dall'altezza, anche alto resta normale; una misura a 0 (scheda nascosta) non la cambia", () => {
     const fire = stubObservers();
     const size = stubHeight();
     size.height = 700;
     renderIt(<OverviewDashboard data={sample()} problems={[]} members={6} onView={vi.fn()} onMeta={vi.fn()} />);
     const dash = document.querySelector('.dash')!;
-    expect(dash).toHaveAttribute('data-density', 'roomy');
-    size.height = 0;
-    fire();
-    expect(dash).toHaveAttribute('data-density', 'roomy');
+    expect(dash).toHaveAttribute('data-density', 'normal');
     size.height = 300;
     fire();
     expect(dash).toHaveAttribute('data-density', 'tight');
+    size.height = 0;
+    fire();
+    expect(dash).toHaveAttribute('data-density', 'tight');
+  });
+
+  it('team ridotto: sempre ampio, a ogni altezza', () => {
+    const fire = stubObservers();
+    const size = stubHeight();
+    size.height = 300;
+    renderIt(<OverviewDashboard data={sample()} problems={[]} members={6} onView={vi.fn()} onMeta={vi.fn()} teamCollapsed />);
+    const dash = document.querySelector('.dash')!;
+    expect(dash).toHaveAttribute('data-density', 'roomy');
+    size.height = 1500;
+    fire();
+    expect(dash).toHaveAttribute('data-density', 'roomy');
   });
 
   it('una misura a 0×0 non rimette tutte le voci: resta l\'ultimo "+N"', () => {

@@ -27,7 +27,9 @@ export const problemsOf = (problems: CoachProblem[] | undefined, area: AreaKey) 
  * La scheda Analisi: le schede interne (Panoramica e le aree del voto) e il loro contenuto. La Panoramica dice cosa fare;
  * al posto della Panoramica può esserci il profilo di un membro; le aree mostrano sulla pagina sottostatistiche e tabelle complete.
  */
-export function AnalysisPanel({ team, analysis, rating, coaching, advice = null, data, view, onView, member = null, onMember, onAdd, onMeta, onFix }: {
+export function AnalysisPanel({ team, analysis, rating, coaching, advice = null, data, view, onView, member = null, onMember, onAdd, onMeta, onFix, teamCollapsed = false }: {
+  /** Team ridotto: la Panoramica usa la densità ampia. */
+  teamCollapsed?: boolean;
   /** Un candidato del Coaching: apre la scheda Pokémon su di lui. */
   onFix?: (fix: CoachFix) => void;
   /** La tessera Meta della Panoramica: apre la scheda principale Meta. */
@@ -70,7 +72,7 @@ export function AnalysisPanel({ team, analysis, rating, coaching, advice = null,
     body = <MemberProfile team={team} data={data} index={open} onIndex={onMember} onBack={() => onMember(null)} />;
   } else {
     body = <AnalysisOverview team={team} analysis={analysis} rating={rating} coaching={coaching} data={data}
-      onView={onView} onMeta={onMeta} onMember={onMember} onAdd={onAdd} />;
+      onView={onView} onMeta={onMeta} onMember={onMember} onAdd={onAdd} teamCollapsed={teamCollapsed} />;
   }
   return (
     <section aria-label={tr('analysis.region')} className="analysis">

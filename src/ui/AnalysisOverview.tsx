@@ -14,7 +14,9 @@ import { OverviewDashboard } from './OverviewDashboard';
 const noop = () => {};
 
 /** La Panoramica: giudizio e tipo di team in cima, poi il cruscotto a due colonne che riempie lo spazio. */
-export function AnalysisOverview({ team, analysis, rating, coaching, data, onView, onMeta, onAdd }: {
+export function AnalysisOverview({ team, analysis, rating, coaching, data, onView, onMeta, onAdd, teamCollapsed = false }: {
+  /** Team ridotto: il cruscotto usa la densità ampia. */
+  teamCollapsed?: boolean;
   onAdd?: () => void;
   team: TeamSet[];
   analysis: TeamAnalysis;
@@ -52,7 +54,7 @@ export function AnalysisOverview({ team, analysis, rating, coaching, data, onVie
         {notes.length > 0 && <AlertMark alerts={notes.map(text => ({ level: 'info' as const, text }))} />}
         {coaching?.teamType && <TeamTypeLine teamType={coaching.teamType} />}
       </div>
-      {dash && <OverviewDashboard data={dash} problems={problems ?? []} members={team.length} onView={onView} onMeta={onMeta ?? noop} />}
+      {dash && <OverviewDashboard data={dash} problems={problems ?? []} members={team.length} onView={onView} onMeta={onMeta ?? noop} teamCollapsed={teamCollapsed} />}
     </div>
   );
 }

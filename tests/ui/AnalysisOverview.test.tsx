@@ -34,6 +34,16 @@ describe('Panoramica di Analisi', () => {
     expect(within(panel()).getByRole('table', { name: 'Copertura' })).toBeInTheDocument();
   });
 
+  it('il cruscotto è ampio solo col team ridotto', async () => {
+    const user = await setup();
+    const dash = () => panel().querySelector('.dash')!;
+    expect(dash()).not.toHaveAttribute('data-density', 'roomy');
+    await user.click(screen.getByRole('button', { name: 'Comprimi team' }));
+    expect(dash()).toHaveAttribute('data-density', 'roomy');
+    await user.click(screen.getByRole('button', { name: 'Espandi team' }));
+    expect(dash()).not.toHaveAttribute('data-density', 'roomy');
+  });
+
   it('un link apre la sua linguetta', async () => {
     const user = await setup();
     await user.click(within(panel()).getByRole('button', { name: /^Offesa/ }));
