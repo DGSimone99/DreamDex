@@ -251,7 +251,7 @@ button.member-card:hover { border-color: var(--accent); }
 .dash-role-band:first-child { border-top: 0; }
 .dash-level-name { align-self: center; font: 600 11px/1.2 var(--ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
 /* "safe": se i ruoli non stanno si parte dall'alto, così la misura di useFit taglia solo in fondo */
-.dash-role-list { display: flex; flex-wrap: wrap; align-content: safe center; align-items: center; gap: 4px 12px; margin: 0; padding: 4px 0; list-style: none; }
+.dash-role-list { display: flex; flex-wrap: wrap; align-content: safe center; align-items: center; gap: 4px 8px; margin: 0; padding: 4px 0; list-style: none; }
 .dash-role { flex: none; max-width: 100%; display: inline-flex; align-items: center; gap: 4px; }
 .dash-role-tag { display: inline-flex; align-items: center; gap: 5px; padding: 2px 7px; font-size: 12px; line-height: 1.2; white-space: nowrap; color: var(--text); border: 1px solid var(--line-soft); border-radius: 4px; }
 .dash-role-tag .icon { flex: none; width: 12px; height: 12px; stroke-width: 2.5; color: var(--faint); }
@@ -262,15 +262,21 @@ button.member-card:hover { border-color: var(--accent); }
 .dash-role.soft .dash-role-tag { color: var(--faint); border-style: dashed; border-color: var(--line); }
 .dash-role.more { padding: 0 4px; font-size: 12px; font-weight: 600; color: var(--faint); }
 /* Chi copre il ruolo: accanto al nome */
-.dash-owners { flex: none; display: inline-flex; align-items: center; gap: 2px; min-height: 20px; }
-/* Le mini icone hanno margine trasparente: si stringono senza sovrapporsi */
-.dash-owners .mon-icon { margin: -8px -5px -8px -5px; }
+.dash-owners { flex: none; display: inline-flex; align-items: center; gap: 0; min-height: 20px; }
+/* Le mini icone hanno molto margine trasparente: si stringono a 22px l'una */
+.dash-owners .mon-icon { margin: -8px -9px; }
+/* Ampio: un ruolo per riga coi nomi di chi lo copre scritti ("✓ Hazard: Garchomp, Great Tusk"), niente chip */
+.dash-role.line { flex: 1 1 100%; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: baseline; column-gap: 6px; }
+.dash-role.line .dash-role-tag { flex: none; padding: 0; border: 0; background: none; font-size: 13px; }
+.dash-role.line.bad .dash-role-tag, .dash-role.line.bad .dash-role-tag .icon { color: var(--bad); }
+.dash-role-who { min-width: 0; font-size: 12px; line-height: 1.35; color: var(--muted); }
+.dash-role.line.bad .dash-role-who, .dash-role.line.soft .dash-role-who { color: var(--faint); }
 .dash-owners small { margin-left: 4px; font-size: 11px; color: var(--muted); }
 /* Stretto: etichette e chip più fitti; ampio: più ariosi */
 .dash.tight .dash-role-band { grid-template-columns: 80px minmax(0, 1fr); }
 .dash.tight .dash-role-list { gap: 3px 8px; padding: 3px 0; }
 .dash.tight .dash-role-tag { padding-block: 1px; }
-.dash.roomy .dash-role-tag { font-size: 13px; }
+.dash.roomy .dash-role-list { gap: 2px 12px; }
 
 /* Velocità: barre dal più veloce, sopra la media in accento; la linea tratteggiata con la targhetta ambra; sprite sotto */
 /* Le barre prendono 3/5 dello spazio, fino a un tetto; il resto va alle righe "supera / superato da" */
@@ -297,7 +303,7 @@ button.member-card:hover { border-color: var(--accent); }
 
 /* Cosa fare: targhetta obliqua di gravità, il testo (due righe al più), l'area come icona */
 .dash-problems { margin: 0; padding: 0; list-style: none; }
-.dash-problems li { display: grid; grid-template-columns: 70px minmax(0, 1fr) 18px; gap: 8px; align-items: center; padding: 6px 0; font-size: 13px; line-height: 1.35; border-bottom: 1px solid var(--line-soft); }
+.dash-problems > li { display: grid; grid-template-columns: 70px minmax(0, 1fr) 18px; gap: 8px; align-items: center; padding: 6px 0; font-size: 13px; line-height: 1.35; border-bottom: 1px solid var(--line-soft); }
 .dash-sev { justify-self: start; padding: 2px 10px 2px 6px; font: 700 11px/1.2 var(--ui); text-transform: uppercase; letter-spacing: 0.05em; clip-path: polygon(0 0, 100% 0, calc(100% - 6px) 100%, 0 100%); }
 .dash-problems li.serious .dash-sev { color: var(--bad-bg); background: var(--bad); }
 .dash-problems li.minor .dash-sev { color: var(--warn); background: var(--warn-bg); }
@@ -312,6 +318,9 @@ button.member-card:hover { border-color: var(--accent); }
 .dash-sep { color: var(--faint); }
 /* Gravi in rosso e in grassetto; i tipi tengono il loro colore, con una sottolineatura rossa */
 .dash-todo-item.serious { font-weight: 700; color: var(--bad); }
+/* Ampio: sotto un gruppo i testi interi dei suoi problemi, piccoli e tenui */
+.dash-sub { grid-column: 2 / -1; margin: -3px 0 0; padding: 0; list-style: none; font-size: 12px; line-height: 1.35; color: var(--muted); }
+.dash-sub li { padding: 1px 0; }
 .dash-todo-item.serious .type-name { text-decoration: underline 2px color-mix(in srgb, var(--bad) 80%, transparent); text-underline-offset: 3px; }
 .dash-more { flex: none; align-self: flex-start; margin-top: 6px; }
 

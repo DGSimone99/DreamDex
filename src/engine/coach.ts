@@ -37,6 +37,11 @@ export interface CoachProblem {
   key: string;
   /** Quanto è grande (tipi scoperti, ruoli mancanti, pressione…): più basso con la stessa chiave = ridotto. */
   size?: number;
+  /**
+   * Di chi o di cosa parla, come dati non tradotti: il tipo per defense:, la specie per meta:,
+   * il membro (nome in battaglia) per i problemi di regole di un membro, le voci per roles:essential / roles:important.
+   */
+  subjects?: string[];
 }
 
 /** I consigli del Coaching: a parte perché lenti, si calcolano solo con la scheda Coaching aperta. */
@@ -95,8 +100,8 @@ export function findProblems(team: TeamSet[], format: Format, analysis: TeamAnal
   const serious: CoachProblem[] = [];
   const minor: CoachProblem[] = [];
   // Chiave predefinita dal testo, senza numeri: un cambio che sposta solo un conteggio non "risolve" il problema
-  const add = (category: ProblemCategory, isSerious: boolean, text: string, fixes: string[], key = `${category}:${text.replace(/\d+/g, '#')}`, size?: number) =>
-    (isSerious ? serious : minor).push({ severity: isSerious ? 'serious' : 'minor', category, text, fixes, key, ...(size === undefined ? {} : { size }) });
+  const add = (category: ProblemCategory, isSerious: boolean, text: string, fixes: string[], key = `${category}:${text.replace(/\d+/g, '#')}`, size?: number, subjects?: string[]) =>
+    (isSerious ? serious : minor).push({ severity: isSerious ? 'serious' : 'minor', category, text, fixes, key, ...(size === undefined ? {} : { size }), ...(subjects ? { subjects } : {}) });
 
   for (const row of analysis.weakness) {
     const severity = weaknessSeverity(row);
@@ -108,23 +113,25 @@ export function findProblems(team: TeamSet[], format: Format, analysis: TeamAnal
       resistWord: t(lang, row.resist === 1 ? 'coach.word.resistOne' : 'coach.word.resistMany'),
     });
     const fixes = fixesFor(candidates, s => Number(defensiveMultiplier(row.type, s.set) < 1));
-    add('defense', isSerious, text, fixes, `defense:${row.type}`, row.pressure);
+    add('defense', isSerious, text, fixes, `defense:${row.type}`, row.pressure, [row.type]);
   }
 
   for (const set of team) {
     const species = getSpecies(set.species);
     if (!species) continue;
     const forme = battleSpecies(set) ?? species;
-    if (!isSelectable(species) || !isLegalIn(forme, format)) add('rules', true, t(lang, 'coach.problem.illegal', { species: battleName(set), format: formatLabel(format, lang) }), []);
-    else if (!withinGen(species, format)) add('rules', true, t(lang, 'coach.problem.gen', { species: battleName(set), gen: format.genLimit }), []);
+    // Problema di regole di questo membro (la chiave resta quella dal testo)
+    const rule = (text: string) => add('rules', true, text, [], undefined, undefined, [battleName(set)]);
+    if (!isSelectable(species) || !isLegalIn(forme, format)) rule(t(lang, 'coach.problem.illegal', { species: battleName(set), format: formatLabel(format, lang) }));
+    else if (!withinGen(species, format)) rule(t(lang, 'coach.problem.gen', { species: battleName(set), gen: format.genLimit }));
     // Mosse e abilità che il Pokémon non può avere (senza Custom Skillset)
     const illegal = illegalParts(set, format.genLimit, pokedexOf(format));
     if (illegal.moves.length) {
-      add('rules', true, `${battleName(set)}: ${t(lang, 'team.illegalMoves', { list: illegal.moves.map(m => gameName('move', m, lang)).join(', ') })}`, []);
+      rule(`${battleName(set)}: ${t(lang, 'team.illegalMoves', { list: illegal.moves.map(m => gameName('move', m, lang)).join(', ') })}`);
     }
-    if (illegal.ability) add('rules', true, `${battleName(set)}: ${t(lang, 'team.illegalAbility', { name: gameName('ability', illegal.ability, lang) })}`, []);
+    if (illegal.ability) rule(`${battleName(set)}: ${t(lang, 'team.illegalAbility', { name: gameName('ability', illegal.ability, lang) })}`);
     // Mosse, abilità e strumenti vietati dal formato (Shed Tail, Moody, King's Rock…)
-    for (const text of bannedTexts(set, format, lang)) add('rules', true, `${battleName(set)}: ${text}`, []);
+    for (const text of bannedTexts(set, format, lang)) rule(`${battleName(set)}: ${text}`);
   }
 
   const megas = team.filter(isMega);
@@ -136,13 +143,13 @@ export function findProblems(team: TeamSet[], format: Format, analysis: TeamAnal
   const missing = analysis.needs.essentialMissing;
   if (missing.length) {
     add('roles', false, t(lang, 'coach.problem.missingRoles', { roles: list(missing.map(need => needLabel(need, lang))) }),
-      fixesFor(candidates, s => missing.filter(need => keyRoles(need).some(role => s.facts.roles.filled.includes(role))).length), 'roles:essential', missing.length);
+      fixesFor(candidates, s => missing.filter(need => keyRoles(need).some(role => s.facts.roles.filled.includes(role))).length), 'roles:essential', missing.length, [...missing]);
   }
   // Le voci importanti mancanti: una riga a parte, dopo quella degli essenziali (abbassano il voto, non sono un requisito)
   const important = analysis.needs.importantMissing;
   if (important.length) {
     add('roles', false, t(lang, 'coach.problem.missingImportantRoles', { roles: list(important.map(need => needLabel(need, lang))) }),
-      fixesFor(candidates, s => important.filter(need => keyRoles(need).some(role => s.facts.roles.filled.includes(role))).length), 'roles:important', important.length);
+      fixesFor(candidates, s => important.filter(need => keyRoles(need).some(role => s.facts.roles.filled.includes(role))).length), 'roles:important', important.length, [...important]);
   }
 
   for (const item of memberIssues(team, lang, analysis.needs)) add('roles', false, item.text, [], `roles:member:${item.text}`);
@@ -177,7 +184,7 @@ export function findProblems(team: TeamSet[], format: Format, analysis: TeamAnal
   for (const threat of analysis.threats) {
     if (threat.handledBy.length) continue;
     add('meta', false, t(lang, 'coach.problem.threat', { species: threat.name }),
-      fixesFor(candidates, s => Number(s.facts.threats.checked.includes(threat.name))), `meta:${threat.name}`);
+      fixesFor(candidates, s => Number(s.facts.threats.checked.includes(threat.name))), `meta:${threat.name}`, undefined, [threat.name]);
   }
 
   return [...serious, ...minor];
