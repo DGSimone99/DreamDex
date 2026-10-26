@@ -13,13 +13,6 @@
 .rating .net-list li.pos::before { content: '+'; color: var(--accent); }
 .rating .net-list li.neg::before { content: '−'; color: var(--bad); }
 
-.coach h3 { font-size: 15px; margin: 12px 0 4px; color: var(--muted); }
-.coach li small { margin-top: 1px; }
-.swaps { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line-soft); }
-.swaps h3 { margin-top: 0; color: var(--muted); }
-.swaps ul { list-style: none; padding: 0; margin: 0; }
-.swaps .swap { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; align-items: start; padding: 8px 0; }
-.swaps .swap + .swap { border-top: 1px solid var(--line-soft); }
 .swap-head { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin: 0; color: var(--muted); }
 .swap-head .icon { color: var(--faint); }
 .swap-head strong { font: 700 17px/1.1 var(--display); font-style: italic; letter-spacing: 0.01em; color: var(--text); }
@@ -31,18 +24,6 @@
 .team-type-label { font: 700 13px/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
 .team-type strong { font: 700 18px/1 var(--display); font-style: italic; letter-spacing: 0.01em; color: var(--text); cursor: help; }
 .team-style { font-size: 12px; font-weight: 600; padding: 1px 7px; border-radius: 3px; border: 1px solid var(--line); color: var(--muted); cursor: help; }
-.swap-head .gain-unit { margin-left: 3px; font: 600 12px/1 var(--ui); color: var(--faint); }
-.swap-head .picked-tag { padding: 1px 6px; border-radius: 3px; background: var(--accent-soft); color: var(--text); font-weight: 600; }
-.pros-cons { grid-column: 1; display: grid; gap: 2px; font-size: 14px; }
-.pros-cons li { display: flex; gap: 6px; }
-.pros-cons li > span:first-child { flex: none; width: 10px; font-weight: 700; text-align: center; }
-.pros-cons .pro > span:first-child { color: var(--good); }
-.pros-cons .con { color: var(--muted); }
-.pros-cons .con > span:first-child { color: var(--bad); }
-.swaps .swap-actions { grid-column: 2; grid-row: 1; display: flex; gap: 6px; }
-.swaps .swap-actions button { font-size: 13px; padding: 4px 10px; }
-.swaps .swap-actions button.swap-now { width: 30px; justify-content: center; padding: 4px 0; background: var(--accent-soft); border-color: var(--accent); color: var(--text); }
-.swaps .swap-actions button.swap-now:hover { background: var(--accent); color: var(--ground); }
 
 .analysis table { border-collapse: collapse; width: 100%; font-size: 13px; }
 .analysis th, .analysis td { padding: 4px 3px; text-align: center; border-bottom: 1px solid var(--line-soft); }
@@ -66,34 +47,12 @@
 /* Elenchi dell'analisi: righe allineate, niente pallini */
 .analysis h4 { font: 600 12px/1 var(--ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--faint); margin: 14px 0 6px; display: flex; align-items: center; gap: 6px; }
 .analysis h4 .count { font: 700 12px/1 var(--display); color: var(--muted); background: var(--raised); padding: 2px 6px; border-radius: 2px; }
-.checklist, .problem-group ul, .role-rows, .type-rows, .mon-rows { list-style: none; padding: 0; margin: 0; }
-.checklist li { display: flex; gap: 8px; align-items: baseline; margin: 5px 0; }
-.checklist .icon { color: var(--good); position: relative; top: 2px; }
+.role-rows, .type-rows, .mon-rows { list-style: none; padding: 0; margin: 0; }
 
-.problem-group + .problem-group { border-top: 1px solid var(--line-soft); }
-.problem-group > summary { display: flex; align-items: center; gap: 8px; padding: 10px 0 6px; }
-.problem-group > summary h4 { margin: 0; }
-.problem-group > summary::after {
-  content: '';
-  margin-left: auto;
-  width: 6px;
-  height: 6px;
-  border-right: 2px solid var(--faint);
-  border-bottom: 2px solid var(--faint);
-  transform: rotate(45deg) translateY(-2px);
-  transition: transform 0.2s;
-}
-.problem-group[open] > summary::after { transform: rotate(225deg) translateY(-2px); }
-.problem-group > summary:hover h4 { color: var(--muted); }
-.problem-group:not([open]) > summary { padding-bottom: 10px; }
-.problem-group ul { padding-bottom: 6px; }
-.problem-group li { display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: 10px; align-items: baseline; margin: 0; padding: 5px 0; }
-.problem-group li > .issue .icon { position: relative; top: 2px; }
 .count-weak { color: var(--bad); font-weight: 600; }
 .count-resist { color: var(--good); font-weight: 600; }
-.problem-group li.bad > span:last-child { color: var(--text); }
-.problem-group small, .mon-rows small { color: var(--faint); margin-top: 2px; }
-.problem-group small b, .mon-rows small b { color: var(--muted); font-weight: 600; }
+.mon-rows small { color: var(--faint); margin-top: 2px; }
+.mon-rows small b { color: var(--muted); font-weight: 600; }
 
 .role-group + .role-group { margin-top: 18px; }
 .role-group h4 { margin: 0 0 4px; }
@@ -154,20 +113,9 @@
 
 /* Panoramica: giudizio e tipo di team, poi il riassunto (striscia e sei tessere); scorre se serve */
 .overview { display: flex; flex-direction: column; gap: 12px; height: 100%; min-height: 0; overflow: auto; overscroll-behavior: contain; }
-.overview-note { margin: 0; font-size: 12px; color: var(--faint); }
-.overview-head {
-  display: flex; align-items: center; justify-content: space-between; gap: 10px;
-  margin: -10px -14px 10px; padding: 5px 24px 5px 12px;
-  font: 700 14px/1.2 var(--display); font-style: italic; color: var(--on-accent-2);
-  background: var(--stripes), var(--accent-2);
-  clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%);
-  position: sticky; top: -10px; z-index: 1;
-}
-.overview-head .summary-info { display: flex; align-items: center; gap: 8px; font-style: normal; font-weight: 600; font-size: 12px; }
 .overview-empty { margin: 24px 0; color: var(--muted); }
 
 /* Membri: sei schede compatte; il profilo di uno alla volta al posto della Panoramica */
-.member-cards .overview-head { margin: 0 0 8px; position: static; }
 .member-cards ul { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
 .member-card { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 6px; width: 100%; padding: 6px 8px; border: 1px solid var(--line-soft); border-radius: 0; background: var(--panel); text-align: left; }
 button.member-card:hover { border-color: var(--accent); }
@@ -199,20 +147,9 @@ button.member-card:hover { border-color: var(--accent); }
 .member-stats .sheet-tag { padding: 1px 7px; border-radius: 3px; background: var(--raised); color: var(--text); font-size: 12px; }
 
 /* Panoramica: in testa giudizio e tipo di team */
-.overview-headline { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 16px; }
-.overview-headline > strong { font: 800 22px/1.1 var(--display); font-style: italic; }
-.overview-headline .team-type { margin: 0; }
-/* Teste delle colonne: fascia a righe con la testa inclinata piccola, come "Candidati" nella scheda Pokémon */
-.overview-head { margin: -10px -14px 10px; padding: 7px 14px; clip-path: none; background: var(--stripes), var(--band); border-bottom: 1px solid var(--line-soft); color: var(--text); }
-.overview-head .summary-info { padding: 2px 8px; border-radius: 10px; background: var(--ground); font-size: 12px; color: var(--text); }
-.member-cards .overview-head { margin: 0 0 8px; padding: 6px 0; background: none; border: 0; }
 .overview-empty { display: grid; justify-items: start; gap: 12px; }
 .member-card.empty { width: 100%; cursor: pointer; }
 .member-card.empty:hover { border-color: var(--accent); color: var(--accent-ink); }
-/* Il cambio consigliato: l'azione principale con testo */
-.swaps .swap-actions button.swap-now.primary { gap: 6px; padding: 4px 12px; width: auto; background: var(--accent-2); border-color: var(--accent-2); color: var(--on-accent-2); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
-.swaps .swap-actions button.swap-now.primary:hover { color: var(--on-accent-2); background: var(--accent-2-ink); }
-.overview-head .box-head { position: static; margin: 0; }
 .analysis-tabs [role='tab'][aria-disabled='true'] { opacity: 0.45; cursor: not-allowed; }
 
 /* Schede interne a larghezza uguale su tutta la riga; quella aperta come le teste (magenta a righe, inclinata) */
@@ -264,7 +201,6 @@ button.member-card:hover { border-color: var(--accent); }
 }
 .analysis-help { z-index: 2; }
 
-.overview-headline { align-items: center; }
 
 
 /* Riassunto della Panoramica: striscia dei problemi, poi sei tessere 3×2 (tutta la tessera porta alla sua scheda) */
@@ -339,3 +275,34 @@ button.member-card:hover { border-color: var(--accent); }
 .tsl-tip.end { transform: translateX(calc(-100% + 12px)); }
 /* A fuoco da tastiera: tutte le frasi in un riquadro sopra la linea */
 .tsl-tip.all { left: 50%; display: flex; flex-direction: column; gap: 2px; }
+
+/* Coaching (C1): in cima "Prima di tutto", poi i problemi gravi e minori con sotto chi li risolve; scorre dentro */
+.coaching { display: flex; flex-direction: column; gap: 6px; height: 100%; min-height: 0; padding-bottom: 12px; overflow: auto; overscroll-behavior: contain; }
+.coach-first { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin: 0 0 4px; padding: 8px 8px 8px 14px; background: var(--accent-2-wash); border: 1px solid var(--accent-2-soft); }
+.coach-first-label { font: 600 11px/1 var(--ui); text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent-2-ink); }
+.coach-first-move { font-size: 15px; color: var(--text); }
+.coach-first-solves { font-size: 13px; color: var(--muted); }
+.coach-open { flex: none; margin-left: auto; padding: 4px 8px; border-color: transparent; background: none; color: var(--accent-ink); font-weight: 600; white-space: nowrap; }
+.coach-open:hover { border-color: transparent; background: var(--accent-wash); }
+/* Il voto in più: piccola etichetta verde accanto al nome */
+.coach-gain { display: inline-block; margin-left: 4px; padding: 0 5px; border-radius: 2px; font: 700 12px/18px var(--display); font-variant-numeric: tabular-nums; color: var(--good); background: var(--good-bg); }
+.coach-group { display: flex; align-items: center; gap: 10px; margin: 8px 0 0; font: 600 12px/1.2 var(--ui); text-transform: uppercase; letter-spacing: 0.08em; }
+.coach-group.serious { color: var(--bad); }
+.coach-group.minor { color: var(--warn); }
+.coach-group::after { content: ''; flex: 1; height: 1px; background: var(--line-soft); }
+.coach-problems { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.coach-problem { padding: 8px 12px; background: var(--panel); border: 1px solid var(--line-soft); }
+.coach-problem.serious { background: color-mix(in srgb, var(--bad-bg) 45%, var(--panel)); border-color: color-mix(in srgb, var(--bad) 25%, var(--line-soft)); }
+.coach-problem-line { display: flex; align-items: baseline; gap: 12px; font-size: 14px; color: var(--text); }
+.coach-problem-text { flex: 1; min-width: 0; }
+.coach-area { flex: none; font: 600 11px/1 var(--ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--faint); }
+.coach-fixes { margin: 4px 0 0; font-size: 13px; line-height: 1.7; color: var(--muted); }
+.coach-fixes .mon-name strong { color: var(--text); }
+/* Candidato: si apre nella scheda Pokémon; testo cyan come i collegamenti, niente bordo a riposo */
+.coach-fix { display: inline-flex; align-items: center; gap: 0; padding: 0 4px; border-color: transparent; background: none; color: var(--accent-ink); font: inherit; font-weight: 600; }
+.coach-fix strong { font-style: italic; }
+.coach-fix .type-dot { margin-right: 4px; }
+.coach-fix:hover { border-color: transparent; background: var(--accent-wash); }
+.coach-empty { display: flex; align-items: center; gap: 8px; margin: 0; padding: 8px 12px; color: var(--good); background: color-mix(in srgb, var(--good-bg) 55%, var(--panel)); border: 1px solid color-mix(in srgb, var(--good) 25%, var(--line-soft)); }
+.coach-empty .icon { width: 14px; height: 14px; }
+.coach-note { margin: 6px 0 0; font-size: 12px; color: var(--faint); }

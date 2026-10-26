@@ -5,11 +5,10 @@ import { App } from '../../src/App';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
 import { rateTeam } from '../../src/engine/rating';
 import { improveReplacements } from '../../src/engine/replace';
-import { emptySet, importShowdown, type TeamSet } from '../../src/engine/sets';
+import { emptySet, type TeamSet } from '../../src/engine/sets';
 import { rankByTeamGain } from '../../src/engine/teamGain';
 import { LangProvider } from '../../src/i18n/react';
 import { SuggestionDetail } from '../../src/ui/SuggestionDetail';
-import { SuggestionsPanel } from '../../src/ui/SuggestionsPanel';
 import { fixtureData } from '../fixtures/data';
 
 const suggestions = () => screen.getByRole('region', { name: 'Suggerimenti' });
@@ -94,26 +93,6 @@ describe('selettore del tipo di team nei suggerimenti', () => {
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Zzzzz');
     expect(await within(suggestions()).findByText('Nessun Pokémon corrisponde ai filtri')).toBeInTheDocument();
     expect(within(suggestions()).queryByText(/mantiene il team Stall/)).toBeNull();
-  });
-
-  it("sostituzione di un membro: l'anteprima del coach usa lo stesso guadagno della lista", async () => {
-    const previews: { ratingGain: number }[] = [];
-    const team = importShowdown(STALL.join('\n\n')).sets;
-    const user = userEvent.setup();
-    render(
-      <LangProvider lang="it">
-        <SuggestionsPanel team={team} format={DEFAULT_FORMAT} data={fixtureData} replaceIndex={1} onAdd={() => {}} onReplaceWith={() => {}}
-          onCancelReplace={() => {}} onPreview={p => previews.push(p)} onTarget={() => {}} />
-      </LangProvider>,
-    );
-    await user.selectOptions(types(), 'Balance');
-    const row = list().querySelector('li')!;
-    const name = row.querySelector('.name-line strong')!.textContent!.replace(/^\d+\. /, '');
-    const label = within(row).getByLabelText(/^Voto del team: /).getAttribute('aria-label')!;
-    const raw = /\(([^)]+)\)$/.exec(label)![1];
-    const listGain = raw === '±0' ? 0 : Number(raw.replace('−', '-').replace('+', ''));
-    await user.click(within(list()).getAllByRole('button', { name: new RegExp(`${name}$`) }).find(b => b.hasAttribute('aria-pressed'))!);
-    expect(previews.at(-1)!.ratingGain).toBe(listGain);
   });
 });
 

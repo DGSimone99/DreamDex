@@ -1,5 +1,6 @@
 import { threatScore, type TeamAnalysis } from '../engine/analysis';
-import type { Coaching, CoachProblem, ProblemCategory, SwapPreview } from '../engine/coach';
+import type { Coaching, CoachProblem, ProblemCategory } from '../engine/coach';
+import type { CoachFix } from '../engine/coachFixes';
 import type { EngineData } from '../engine/data';
 import type { TeamRating } from '../engine/rating';
 import type { TeamSet } from '../engine/sets';
@@ -11,7 +12,7 @@ import { DefenseTable, NeedsTable, OffenseTable } from './AnalysisTables';
 import type { AnalysisView } from './analysisView';
 import type { AreaKey } from './AreaDetail';
 import { AreaView } from './AreaView';
-import { CoachProblems } from './CoachPanel';
+import { CoachingView } from './CoachingView';
 import { Icon } from './icons';
 import { MemberProfile } from './MemberSheet';
 import { MetaUsePanel } from './MetaUsePanel';
@@ -26,7 +27,9 @@ export const problemsOf = (problems: CoachProblem[] | undefined, area: AreaKey) 
  * La scheda Analisi: le schede interne (Panoramica e le aree del voto) e il loro contenuto. La Panoramica dice cosa fare;
  * al posto della Panoramica può esserci il profilo di un membro; le aree mostrano sulla pagina sottostatistiche e tabelle complete.
  */
-export function AnalysisPanel({ team, analysis, rating, coaching, preview, onReplace, onSwap, data, view, onView, member = null, onMember, onAdd, onMeta }: {
+export function AnalysisPanel({ team, analysis, rating, coaching, data, view, onView, member = null, onMember, onAdd, onMeta, onFix }: {
+  /** Un candidato del Coaching: apre la scheda Pokémon su di lui. */
+  onFix?: (fix: CoachFix) => void;
   /** La tessera Meta della Panoramica: apre la scheda principale Meta. */
   onMeta?: () => void;
   /** Aggiungere un Pokémon (posti liberi, Panoramica vuota): porta alla scheda Pokémon. */
@@ -36,9 +39,6 @@ export function AnalysisPanel({ team, analysis, rating, coaching, preview, onRep
   rating: TeamRating | null;
   data: EngineData;
   coaching?: Coaching;
-  preview?: SwapPreview | null;
-  onReplace: (index: number) => void;
-  onSwap?: (index: number, set: TeamSet) => void;
   /** Panoramica, Coaching o un'area del voto. */
   view: AnalysisView;
   onView: (view: AnalysisView) => void;
@@ -61,14 +61,14 @@ export function AnalysisPanel({ team, analysis, rating, coaching, preview, onRep
           : area === 'roles' ? { tabKey: 'general', panel: <NeedsTable team={team} analysis={analysis} /> }
           : undefined} />
     );
-  } else if (showCoaching && coaching && open === null) {
-    // Provvisorio: l'elenco dei problemi, finché il Coaching non ha la sua vista
-    body = <CoachProblems coaching={coaching} heading={false} />;
+  } else if (showCoaching && coaching) {
+    // Il Coaching vince sul profilo di un membro, come le aree
+    body = <CoachingView coaching={coaching} onFix={fix => onFix?.(fix)} />;
   } else if (open !== null) {
     body = <MemberProfile team={team} data={data} index={open} onIndex={onMember} onBack={() => onMember(null)} />;
   } else {
-    body = <AnalysisOverview team={team} analysis={analysis} rating={rating} coaching={coaching} data={data} preview={preview}
-      onReplace={onReplace} onSwap={onSwap} onView={onView} onMeta={onMeta} onMember={onMember} onAdd={onAdd} />;
+    body = <AnalysisOverview team={team} analysis={analysis} rating={rating} coaching={coaching} data={data}
+      onView={onView} onMeta={onMeta} onMember={onMember} onAdd={onAdd} />;
   }
   return (
     <section aria-label={tr('analysis.region')} className="analysis">

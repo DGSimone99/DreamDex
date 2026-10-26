@@ -1,6 +1,7 @@
 import { useCallback, useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { analyzeTeam } from './engine/analysis';
-import { coachTeam, type SwapPreview } from './engine/coach';
+import { coachTeam } from './engine/coach';
+import type { CoachFix } from './engine/coachFixes';
 import { rateTeam } from './engine/rating';
 import type { EngineData } from './engine/data';
 import { DEFAULT_FORMAT, type Format } from './engine/format';
@@ -14,7 +15,7 @@ import { GradeBadge } from './ui/RatingPanel';
 import type { AnalysisView } from './ui/analysisView';
 import { SavedTeams } from './ui/SavedTeams';
 import { ShowdownPanel } from './ui/ShowdownPanel';
-import { SuggestionsPanel } from './ui/SuggestionsPanel';
+import { SuggestionsPanel, type CandidateFocus } from './ui/SuggestionsPanel';
 import { ListsPanel } from './ui/ListsPanel';
 import { TeamPanel } from './ui/TeamPanel';
 import { Rail } from './ui/Rail';
@@ -130,13 +131,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
     setTabState(next);
     if (storage) saveTab(next, storage);
   };
-  const [replaceIndex, setReplaceIndexState] = useState<number | null>(null);
-  // Sostituto aperto in "Altri sostituti": vale solo per il membro che si sta sostituendo
-  const [preview, setPreview] = useState<SwapPreview | null>(null);
-  const setReplaceIndex = (index: number | null) => {
-    setReplaceIndexState(index);
-    setPreview(null);
-  };
+  const [replaceIndex, setReplaceIndex] = useState<number | null>(null);
   // Il membro aperto nell'editor: l'editor prende il posto della sezione finché resta aperto
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [closeSignal, setCloseSignal] = useState(0);
@@ -166,9 +161,16 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
     setReplaceIndex(index);
     if (index !== null) openTab('pokemon');
   };
-  const changePreview = (next: SwapPreview, open: boolean) =>
-    setPreview(current => (open ? next
-      : current?.index === next.index && current.replacement === next.replacement ? null : current));
+  // Candidato scelto nel Coaching: la scheda Pokémon va su di lui (sostituendo quel membro, o in Aggiungi)
+  const [candidateFocus, setCandidateFocus] = useState<CandidateFocus | undefined>(undefined);
+  const openFix = (fix: CoachFix) => {
+    if (fix.kind === 'swap') startReplace(fix.index);
+    else {
+      setReplaceIndex(null);
+      openTab('pokemon');
+    }
+    setCandidateFocus(current => ({ species: fix.species, mode: fix.kind === 'add' ? 'add' : 'member', nonce: (current?.nonce ?? 0) + 1 }));
+  };
   const analysis = useMemo(() => analyzeTeam(team, rated), [team, rated]);
   const rating = useMemo(() => rateTeam(team, rated, lang), [team, rated, lang]);
   // Il coach prova gli scambi per ogni membro (un decimo di secondo): si aggiorna subito dopo il team, senza bloccarlo
@@ -282,15 +284,14 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
             onAdd={addSet}
             onReplaceWith={replaceAt}
             onCancelReplace={() => setReplaceIndex(null)}
-            onPreview={changePreview}
+            focus={candidateFocus}
             onTarget={setReplaceIndex}
             focusSearch={searchRequest}
           />
         </TabPanel>
         <TabPanel id="analysis" active={shownTab}>
           <AnalysisPanel team={team} analysis={analysis} data={data} rating={rating} coaching={coaching} view={analysisView} onView={view => { setAnalysisView(view); setAnalysisMemberName(null); }}
-            preview={preview?.index === replaceIndex ? preview : null} onReplace={startReplace} onSwap={replaceAt}
-            member={analysisMember} onMember={i => setAnalysisMemberName(i === null ? null : battleName(team[i]))} onAdd={startAdd}
+            onFix={openFix} member={analysisMember} onMember={i => setAnalysisMemberName(i === null ? null : battleName(team[i]))} onAdd={startAdd}
             onMeta={() => openTab('meta')} />
         </TabPanel>
         <TabPanel id="meta" active={shownTab}>

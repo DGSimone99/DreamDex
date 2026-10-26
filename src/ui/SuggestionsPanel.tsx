@@ -3,13 +3,14 @@ import type { EngineData } from '../engine/data';
 import type { Format } from '../engine/format';
 import { formatRules, rulesOf } from '../engine/formatRules';
 import { teamArchetype, type Archetype } from '../engine/archetype';
-import { improveReplacements, similarity, type Replacement } from '../engine/replace';
-import { rankedChanges, ratingGainOf, SIMILAR_THRESHOLD, type SwapPreview } from '../engine/coach';
+import { improveReplacements, type Replacement } from '../engine/replace';
+import { rankedChanges } from '../engine/coach';
+import { rankedAdditions, rankedReplacements } from '../engine/coachFixes';
 import { topReason } from '../engine/explain';
 import { detectRoles } from '../engine/roles';
 import { OFTEN_TOGETHER } from '../engine/scoring';
 import { ActiveFilters } from './ActiveFilters';
-import { suggest, type Suggestion } from '../engine/scoring';
+import type { Suggestion } from '../engine/scoring';
 import type { TeamSet } from '../engine/sets';
 import type { TeamRating } from '../engine/rating';
 import { bestSwaps, rankByTeamGain, rankKey, SWAPS_PER_MEMBER, type SwapOption, type SwapReport, type TeamGain } from '../engine/teamGain';
@@ -56,14 +57,21 @@ interface Props {
   onAdd: (set: TeamSet) => void;
   onReplaceWith: (index: number, set: TeamSet) => void;
   onCancelReplace: () => void;
-  /** Sostituto aperto (o chiuso) nella lista: il coaching mostra i suoi pro e contro. */
-  onPreview?: (preview: SwapPreview, open: boolean) => void;
   /** Voto del team attuale, per mostrare come cambia col candidato. */
   rating?: TeamRating | null;
   /** Sceglie il membro da sostituire (null: nessuno). */
   onTarget?: (index: number | null) => void;
   /** Cambia a ogni clic su uno slot vuoto: si torna ad Aggiungi con il cursore nella ricerca. */
   focusSearch?: number;
+  /** Candidato da mostrare (dal Coaching): a ogni `nonce` nuovo si va alla sua pagina e lo si apre nel dettaglio. */
+  focus?: CandidateFocus;
+}
+
+/** Un candidato scelto nel Coaching: in modalità Aggiungi o fra i sostituti del membro. */
+export interface CandidateFocus {
+  species: string;
+  mode: 'add' | 'member';
+  nonce: number;
 }
 
 /** Solo se il Pokémon è bannato nel formato: triangolo rosso con il tier nel tooltip. */
@@ -210,7 +218,7 @@ export const SEARCH_DELAY = 200;
 /** I tipi di team che si possono scegliere per giudicare i cambi, dopo Nessuno. */
 const TEAM_TYPES: Archetype[] = ['hyperOffense', 'bulkyOffense', 'balance', 'semiStall', 'stall'];
 
-export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onReplaceWith, onCancelReplace, onPreview, rating = null, onTarget, focusSearch }: Props) {
+export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onReplaceWith, onCancelReplace, rating = null, onTarget, focusSearch, focus }: Props) {
   const tr = useT();
   const lang = useLang();
   const [page, setPage] = useState(0);
@@ -246,6 +254,8 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
     const lists = data.userLists;
     if (!lists?.bans.size) return data;
     const allow = new Set<string>([...(exactQuery ? [exactQuery] : []), ...(revealed ? lists.bans : [])]);
+    // Nessuno ammesso: gli stessi dati del Coaching (le classifiche già calcolate si riusano)
+    if (!allow.size) return data;
     return { ...data, userLists: { ...lists, allow } };
   }, [data, exactQuery, revealed]);
 
@@ -271,10 +281,12 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
       // Con ricerca o filtri i sostituti vengono da tutto il Pokédex, non solo dalle statistiche
       const pool = filtering ? searchPool(team.filter((_, i) => i !== replaceIndex), format, data, applied) : undefined;
       if (!pool && !data.stats) return [];
-      return rank(improveReplacements(team, replaceIndex, format, data, POOL, pool, lang, archetype));
+      // Senza filtri: la classifica condivisa col Coaching
+      return pool ? rank(improveReplacements(team, replaceIndex, format, data, POOL, pool, lang, archetype))
+        : rankedReplacements(team, replaceIndex, format, data, POOL, lang, archetype, report).slice(0, MAX);
     }
     if (filtering) return rank(searchCandidates(team, format, data, applied, POOL, lang));
-    return data.stats ? rank(suggest(team, format, data, POOL, lang)) : [];
+    return data.stats ? rankedAdditions(team, format, data, POOL, lang, archetype, report).slice(0, MAX) : [];
   }, [deferred, applied, filtering, lang, report]);
   // Preferiti dell'utente: a voto quasi pari passano davanti
   const items: Item[] = useMemo(() => {
@@ -310,6 +322,24 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
     setPage(0);
     setSelectedName(name => (name && items.some(item => item.species === name) ? name : null));
   }, [items]);
+  // Candidato dal Coaching: dopo l'effetto qui sopra, appena la lista aggiornata lo contiene (o non lo contiene più)
+  const [focusing, setFocusing] = useState<string | null>(null);
+  useEffect(() => {
+    if (!focus) return;
+    if (focus.mode === 'add') setScope('add');
+    setFocusing(focus.species);
+  }, [focus?.nonce]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!focusing || stale) return;
+    const index = items.findIndex(item => item.species === focusing);
+    // Non c'è (filtri attivi): resta la lista com'è
+    if (index >= 0) {
+      setPage(Math.floor(index / PAGE));
+      setCursor(null);
+      setSelectedName(focusing);
+    }
+    setFocusing(null);
+  }, [focusing, items, stale]);
   const pages = Math.ceil(items.length / PAGE);
   const pageItems = items.slice(page * PAGE, (page + 1) * PAGE);
   const chosen = fresh && cursor !== null ? items[cursor] : undefined;
@@ -379,22 +409,8 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
     }
     if (view === 'add') setScope('all');
   };
-  /** Apre il candidato nel dettaglio; in sostituzione il coaching mostra il sostituto scelto. */
-  const select = (item: Item) => {
-    setSelectedName(item.species);
-    if (replacing && 'diff' in item && onPreview) {
-      onPreview({
-        index: replaceIndex,
-        replacement: item.species,
-        set: item.set,
-        score: item.score,
-        similar: similarity(team[replaceIndex], item.set, formatRules(format.formatId)) >= SIMILAR_THRESHOLD,
-        // Lo stesso guadagno della lista (col tipo di team scelto, se c'è)
-        ratingGain: item.teamGain?.gain ?? ratingGainOf(team, replaceIndex, item.set, data),
-        diff: item.diff,
-      }, true);
-    }
-  };
+  /** Apre il candidato nel dettaglio. */
+  const select = (item: Item) => setSelectedName(item.species);
 
   // Sostituendo un setter di cui altri membri hanno bisogno, si mostrano solo setter della stessa condizione
   let setterNote: string | null = null;

@@ -1,9 +1,9 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { App } from '../../src/App';
 import type { Coaching } from '../../src/engine/coach';
-import { CoachPanel } from '../../src/ui/CoachPanel';
+import { TeamTypeLine } from '../../src/ui/CoachPanel';
 import { fixtureData } from '../fixtures/data';
 import { renderIt } from '../helpers/italian';
 
@@ -42,15 +42,17 @@ describe('interruttore "Più Mega ammesse"', () => {
 });
 
 describe('tipo di team', () => {
-  it('archetipo e stili in cima al coaching, con la descrizione come tooltip', () => {
-    renderIt(<CoachPanel coaching={coaching} onReplace={vi.fn()} />);
+  it('archetipo e stili in cima alla Panoramica, con la descrizione come tooltip', () => {
+    renderIt(<TeamTypeLine teamType={coaching.teamType!} />);
     expect(screen.getByText('Tipo di team')).toBeInTheDocument();
     expect(screen.getByText('Balance')).toHaveAttribute('title', 'Muri e attaccanti in equilibrio');
     expect(screen.getByText('Pioggia')).toHaveAttribute('title', 'Un membro porta la pioggia e almeno un compagno la sfrutta');
   });
 
-  it('senza team completo non compare', () => {
-    renderIt(<CoachPanel coaching={{ ...coaching, teamType: null }} onReplace={vi.fn()} />);
-    expect(screen.queryByText('Tipo di team')).toBeNull();
+  it('senza team completo non compare', async () => {
+    const user = userEvent.setup();
+    render(<App initialLang="it" data={fixtureData} />);
+    for (const name of ['Great Tusk', 'Gholdengo']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
+    expect(within(screen.getByRole('region', { name: 'Analisi' })).queryByText('Tipo di team')).toBeNull();
   });
 });

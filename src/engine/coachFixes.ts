@@ -1,15 +1,15 @@
 import type { Lang } from '../i18n';
 import { analyzeTeam } from './analysis';
-import { teamArchetype } from './archetype';
+import { teamArchetype, type Archetype } from './archetype';
 import { findProblems, type CoachProblem } from './coach';
 import type { EngineData } from './data';
 import { battleName, battleSpecies } from './dex';
 import type { Format } from './format';
 import { rulesOf } from './formatRules';
-import { improveReplacements } from './replace';
-import { suggest } from './scoring';
+import { improveReplacements, type Replacement } from './replace';
+import { suggest, type Suggestion } from './scoring';
 import type { TeamSet } from './sets';
-import { rankByTeamGain, SWAPS_PER_MEMBER, withCandidate } from './teamGain';
+import { rankByTeamGain, SWAPS_PER_MEMBER, withCandidate, type SwapReport, type TeamGain } from './teamGain';
 
 /** Un cambio proposto dal Coaching: sostituzione di un membro o aggiunta a un team incompleto. */
 export interface CoachFix {
@@ -23,6 +23,56 @@ export interface CoachFix {
   gain: number;
   /** Chiavi dei problemi che il cambio risolve del tutto. */
   solves: string[];
+}
+
+/**
+ * Classifiche di Migliora team già calcolate: le usano il Coaching e la scheda Pokémon (vista per membro e Aggiungi,
+ * senza filtri), così un team si valuta una volta sola. Chiave: team e dati (per identità), formato, lingua, tipo di team,
+ * membro (o aggiunta) e quanti candidati. Oltre il limite si svuota.
+ */
+const rankings = new Map<string, { items: unknown[]; excluded: number }>();
+const RANKING_LIMIT = 50;
+const ids = new WeakMap<object, number>();
+let lastId = 0;
+const idOf = (value: object | null | undefined) => {
+  if (!value) return 0;
+  let id = ids.get(value);
+  if (id === undefined) ids.set(value, (id = ++lastId));
+  return id;
+};
+// I dati cambiano identità a ogni copia ({ ...data, formatId }): contano le parti
+const dataKey = (data: EngineData) => [data.stats, data.sets, data.fallback, data.presets, data.fallbackPresets, data.fallbackStats, data.userLists]
+  .map(idOf).join(',') + `|${data.formatId ?? ''}|${!!data.ignoreMeta}`;
+let misses = 0;
+/** Quante classifiche si sono calcolate davvero (per i test della cache). */
+export const rankingMisses = () => misses;
+
+function cachedRanking<T>(key: string, make: (report: SwapReport) => T[], report?: SwapReport): T[] {
+  let entry = rankings.get(key);
+  if (!entry) {
+    misses += 1;
+    const own: SwapReport = { excluded: 0 };
+    entry = { items: make(own), excluded: own.excluded };
+    if (rankings.size >= RANKING_LIMIT) rankings.clear();
+    rankings.set(key, entry);
+  }
+  if (report) report.excluded += entry.excluded;
+  return entry.items as T[];
+}
+
+const rankingKey = (kind: string, team: TeamSet[], format: Format, data: EngineData, lang: Lang, archetype: Archetype | undefined, pool: number) =>
+  `${kind}|${idOf(team)}|${dataKey(data)}|${JSON.stringify(format)}|${lang}|${archetype ?? ''}|${pool}`;
+
+/** I sostituti del membro `index` col voto che darebbero al team, dal più alto (come la vista per membro di Migliora team). */
+export function rankedReplacements(team: TeamSet[], index: number, format: Format, data: EngineData, pool: number, lang: Lang, archetype?: Archetype, report?: SwapReport) {
+  return cachedRanking<Replacement & { teamGain?: TeamGain }>(rankingKey(`swap${index}`, team, format, data, lang, archetype, pool),
+    own => rankByTeamGain(improveReplacements(team, index, format, data, pool, undefined, lang, archetype), team, index, data, lang, true, archetype, own), report);
+}
+
+/** Le aggiunte col voto che darebbero al team, dal più alto (come la modalità Aggiungi). */
+export function rankedAdditions(team: TeamSet[], format: Format, data: EngineData, pool: number, lang: Lang, archetype?: Archetype, report?: SwapReport) {
+  return cachedRanking<Suggestion & { teamGain?: TeamGain }>(rankingKey('add', team, format, data, lang, archetype, pool),
+    own => rankByTeamGain(suggest(team, format, data, pool, lang), team, null, data, lang, true, archetype, own), report);
 }
 
 /** Candidati per le aggiunte, come la modalità Aggiungi della scheda Pokémon. */
@@ -57,14 +107,14 @@ export function coachFixes(team: TeamSet[], format: Format, data: EngineData, pr
     // I preferiti non si propongono come membri da sostituire; niente doppioni (stesse regole di bestSwaps)
     if (member.favorite) return;
     const others = new Set(team.filter((_, i) => i !== index).map(base));
-    const pool = improveReplacements(team, index, format, data, SWAPS_PER_MEMBER, undefined, lang, archetype)
+    const ranked = rankedReplacements(team, index, format, data, SWAPS_PER_MEMBER, lang, archetype)
       .filter(c => !others.has(base(c.set)) && forme(c.set) !== forme(member));
-    for (const c of strongest(rankByTeamGain(pool, team, index, data, lang, true, archetype), FIXES_PER_MEMBER)) {
+    for (const c of strongest(ranked, FIXES_PER_MEMBER)) {
       fixes.push({ kind: 'swap', species: c.species, set: c.set, index, member: battleName(member), gain: c.teamGain!.gain, solves: solvedBy(withCandidate(team, c.set, index)) });
     }
   });
   if (team.length < 6) {
-    for (const c of strongest(rankByTeamGain(suggest(team, format, data, ADD_POOL, lang), team, null, data, lang, true, undefined), MAX_ADDS)) {
+    for (const c of strongest(rankedAdditions(team, format, data, ADD_POOL, lang), MAX_ADDS)) {
       fixes.push({ kind: 'add', species: c.species, set: c.set, index: null, member: null, gain: c.teamGain!.gain, solves: solvedBy(withCandidate(team, c.set, null)) });
     }
   }
