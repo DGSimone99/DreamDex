@@ -1,4 +1,4 @@
-import { useId, type CSSProperties } from 'react';
+import { useId } from 'react';
 import { needLabel } from '../../engine/needs';
 import type { DashboardData, RoleChip } from '../../engine/overviewDashboard';
 import { useLang, useT } from '../../i18n/react';
@@ -24,7 +24,8 @@ function Owners({ owners }: { owners: string[] }) {
 }
 
 /**
- * Un ruolo: ✓ tenue se coperto, ✕ rosso pieno se manca (essenziali e importanti), tratteggiato se è un minore.
+ * Un ruolo, come chip col nome su una riga: ✓ tenue se coperto, ✕ rosso pieno se manca (essenziali e importanti),
+ * tratteggiato se è un minore; accanto le mini icone di chi lo copre.
  * Si legge intero: "Hazard, coperto da Garchomp" / "Rimozione Strumenti, mancante".
  */
 function RoleRow({ chip, owners }: { chip: RoleChip; owners: boolean }) {
@@ -44,8 +45,8 @@ function RoleRow({ chip, owners }: { chip: RoleChip; owners: boolean }) {
   );
 }
 
-/** Una colonna (un livello): titoletto, poi i ruoli dall'alto; quelli che non stanno finiscono nel "+N" in fondo. */
-function RoleColumn({ title, chips, density }: { title: string; chips: RoleChip[]; density: Density }) {
+/** Una fascia (un livello): l'etichetta a sinistra, i ruoli in fila che vanno a capo; quelli che non stanno nel "+N" a fine fascia. */
+function RoleBand({ title, chips, density }: { title: string; chips: RoleChip[]; density: Density }) {
   const t = useT();
   const lang = useLang();
   const id = useId();
@@ -53,7 +54,7 @@ function RoleColumn({ title, chips, density }: { title: string; chips: RoleChip[
   const { ref, shown } = useFit<HTMLUListElement>(`${density}|${lang}|${chips.map(c => `${c.need}${c.covered}${c.owners.length}`).join()}`, chips.length, { reserve: 1 });
   const hidden = chips.length - shown;
   return (
-    <div className="dash-role-col">
+    <div className="dash-role-band">
       <span id={id} className="dash-level-name">{title}</span>
       <ul ref={ref} className="dash-fit dash-role-list" aria-labelledby={id}>
         {chips.slice(0, shown).map(chip => <RoleRow key={chip.need} chip={chip} owners={density !== 'tight'} />)}
@@ -66,21 +67,19 @@ function RoleColumn({ title, chips, density }: { title: string; chips: RoleChip[
 const LEVELS = ['essential', 'important', 'minor'] as const;
 
 /**
- * Ruoli in tre colonne affiancate (Essenziali | Importanti | Minori) che riempiono la card.
- * Stretto: solo segno e nome. Normale e ampio: anche le icone di chi copre il ruolo, se ci stanno (CSS).
+ * Ruoli in tre fasce una sotto l'altra (Essenziali, Importanti, Minori) che si dividono l'altezza della card.
+ * Stretto: solo segno e nome. Normale e ampio: anche le icone di chi copre il ruolo.
  */
 export function RolesSection({ roles, density, onView }: { roles: DashboardData['roles']; density: Density; onView: (v: AnalysisView) => void }) {
   const t = useT();
   const titles = { essential: t('analysis.essential'), important: t('analysis.important'), minor: t('dash.levelMinor') };
-  // In ogni colonna prima i mancanti: se non stanno tutti, nel "+N" finiscono i coperti, mai un problema
-  const columns = LEVELS.map(level => roles.chips.filter(c => c.level === level).sort((a, b) => Number(a.covered) - Number(b.covered)));
-  // Stesso numero di righe in ogni colonna: le righe si allineano tra le colonne e si dividono l'altezza
-  const slots = Math.max(1, ...columns.map(c => c.length));
+  // In ogni fascia prima i mancanti: se non stanno tutti, nel "+N" finiscono i coperti, mai un problema
+  const bands = LEVELS.map(level => roles.chips.filter(c => c.level === level).sort((a, b) => Number(a.covered) - Number(b.covered)));
   return (
     <DashCard className="dash-roles" title={t('area.roles')} meta={<b>{roles.value}</b>}
       links={<DashLink area={t('area.roles')} onClick={() => onView('roles')} />}>
-      <div className="dash-role-cols" style={{ '--slots': slots } as CSSProperties}>
-        {LEVELS.map((level, i) => <RoleColumn key={level} title={titles[level]} chips={columns[i]} density={density} />)}
+      <div className="dash-role-bands">
+        {LEVELS.map((level, i) => <RoleBand key={level} title={titles[level]} chips={bands[i]} density={density} />)}
       </div>
     </DashCard>
   );
