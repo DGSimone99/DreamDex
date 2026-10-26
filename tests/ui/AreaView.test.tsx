@@ -40,7 +40,7 @@ describe('vista di un\'area sulla pagina', () => {
   });
 
   it("i problemi dell'area stanno sotto le sottostatistiche", () => {
-    renderIt(<AreaView rating={withMeta()} area="defense" problems={[{ severity: 'minor', category: 'defense', text: 'Debole a Fuoco', fixes: [] }]} />);
+    renderIt(<AreaView rating={withMeta()} area="defense" problems={[{ severity: 'minor', category: 'defense', text: 'Debole a Fuoco', fixes: [], key: 'defense:Fire' }]} />);
     const nav = screen.getByRole('tablist').parentElement!;
     expect(within(nav).getByText('Debole a Fuoco')).toBeInTheDocument();
   });

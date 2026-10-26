@@ -155,7 +155,7 @@ describe('voto con ridondanze', () => {
   it('il coaching segnala i ruoli doppi e i tipi ripetuti', () => {
     const team = [withMoves('Great Tusk', ['Stealth Rock']), withMoves('Garchomp', ['Stealth Rock'])];
     expect(coachTeam(team, DEFAULT_FORMAT, fixtureData).problems)
-      .toContainEqual({ severity: 'minor', category: 'redundancy', text: '2 setter di Stealth Rock', fixes: [] });
+      .toContainEqual({ severity: 'minor', category: 'redundancy', text: '2 setter di Stealth Rock', fixes: [], key: 'redundancy:2 setter di Stealth Rock' });
   });
 });
 

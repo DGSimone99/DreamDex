@@ -20,8 +20,8 @@ describe('CoachPanel', () => {
     // Il giudizio sta in testa alla Panoramica; accanto a "Problemi" i conteggi
     expect(analysis().querySelector('.overview-headline')).toHaveTextContent('Team incompleto');
     // Solo il triangolo blu dei minori: gli zeri non compaiono
-    // 7: la riga dei ruoli importanti mancanti si aggiunge a quella degli essenziali
-    expect(summary.querySelector('.issue.minor')).toHaveTextContent('7 problemi minori');
+    // 7 + 4 minacce del meta senza check (la riga dei ruoli importanti si aggiunge a quella degli essenziali)
+    expect(summary.querySelector('.issue.minor')).toHaveTextContent('11 problemi minori');
     expect(summary.querySelector('.issue.serious')).toBeNull();
     expect(within(analysis()).getAllByRole('listitem').some(li => li.textContent === 'Gestisce bene Poison, Bug, Rock')).toBe(true);
     // Le minacce stanno nella scheda Meta

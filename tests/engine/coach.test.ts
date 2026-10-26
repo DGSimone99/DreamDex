@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { coachTeam, describeSwap, rankedChanges } from '../../src/engine/coach';
+import { analyzeTeam } from '../../src/engine/analysis';
+import { coachTeam, describeSwap, rankedChanges, verdictFor } from '../../src/engine/coach';
 import { topReason } from '../../src/engine/explain';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
 import { emptySet, mostCommonSet, type TeamSet } from '../../src/engine/sets';
+import { rateTeam } from '../../src/engine/rating';
 import { fixtureData, fixtureStats, gholdengo, tusk } from '../fixtures/data';
 import { megaData } from '../fixtures/megaData';
 
@@ -14,7 +16,7 @@ describe('coachTeam', () => {
   it('verdetto con conteggi', () => {
     expect(coaching.verdict).toBe('Team incompleto');
     expect(coaching.problems.filter(p => p.severity === 'serious')).toHaveLength(0);
-    expect(coaching.problems).toHaveLength(7);
+    expect(coaching.problems.filter(p => p.category !== 'meta')).toHaveLength(7);
   });
 
   it('punti di forza', () => {
@@ -27,14 +29,14 @@ describe('coachTeam', () => {
   });
 
   it('i check contro i Pokémon più usati non sono tra i problemi, ma hanno i loro rimedi', () => {
-    expect(coaching.problems.some(p => p.text.includes('check') || p.text.includes('Minacce'))).toBe(false);
+    expect(coaching.problems.filter(p => p.category !== 'meta').some(p => p.text.includes('check') || p.text.includes('Minacce'))).toBe(false);
     expect(coaching.threatFixes.Dragapult).toContain('Kingambit');
     expect(coaching.threatFixes.Corviknight).toContain('Rotom-Wash');
     expect(coaching.threatFixes.Kingambit).toBeUndefined();
   });
 
   it('problemi minori: debolezze, minacce, ruoli, coverage', () => {
-    const minor = coaching.problems.filter(p => p.severity === 'minor').map(p => p.text);
+    const minor = coaching.problems.filter(p => p.severity === 'minor' && p.category !== 'meta').map(p => p.text);
     expect(minor).toEqual([
       'Debole a Fire: 1 Debole – 0 Resistono',
       'Debole a Water: 1 Debole – 0 Resistono',
@@ -81,7 +83,7 @@ describe('coachTeam', () => {
   it('un membro non legale nel formato è un problema serio (Regole)', () => {
     const team = [tusk, gholdengo, { ...emptySet('Mewtwo'), item: 'Mewtwonite Y' }];
     const problems = coachTeam(team, DEFAULT_FORMAT, fixtureData).problems;
-    expect(problems).toContainEqual({ severity: 'serious', category: 'rules', text: 'Mewtwo-Mega-Y non è legale in National Dex OU', fixes: [] });
+    expect(problems).toContainEqual({ severity: 'serious', category: 'rules', text: 'Mewtwo-Mega-Y non è legale in National Dex OU', fixes: [], key: 'rules:Mewtwo-Mega-Y non è legale in National Dex OU' });
     expect(problems.filter(p => p.category === 'rules')).toHaveLength(1);
   });
 
@@ -92,7 +94,7 @@ describe('coachTeam', () => {
     ];
     const text = 'Più Mega nel team (Lopunny-Mega, Charizard-Mega-Y): in National Dex ne è ammessa una sola';
     const strict = coachTeam(megas, DEFAULT_FORMAT, megaData).problems;
-    expect(strict).toContainEqual({ severity: 'serious', category: 'rules', text, fixes: [] });
+    expect(strict).toContainEqual({ severity: 'serious', category: 'rules', text, fixes: [], key: `rules:${text}` });
     const relaxed = coachTeam(megas, { ...DEFAULT_FORMAT, allowMultipleMegas: true }, megaData).problems;
     expect(relaxed.map(p => p.text)).not.toContain(text);
   });
@@ -144,5 +146,40 @@ describe('pro e contro pesati', () => {
   it('topReason prende il peso più alto', () => {
     expect(topReason([{ component: 'defense', weight: 1, text: 'a' }, { component: 'offense', weight: 3, text: 'b' }] as never)?.text).toBe('b');
     expect(topReason([])).toBeUndefined();
+  });
+});
+
+describe('chiavi dei problemi e minacce del meta', () => {
+  const team = [tusk, gholdengo];
+
+  it('ogni problema ha una chiave stabile', () => {
+    const { problems } = coachTeam(team, DEFAULT_FORMAT, fixtureData);
+    expect(problems.find(p => p.category === 'defense')!.key).toMatch(/^defense:[A-Z][a-z]+$/);
+    const keys = problems.map(p => p.key);
+    expect(new Set(keys).size).toBe(keys.length);
+    const weak = coachTeam([emptySet('Snorlax'), emptySet('Tyranitar')], DEFAULT_FORMAT, fixtureData).problems;
+    expect(weak.map(p => p.key)).toContain('defense:Fighting');
+  });
+
+  it('col meta, una minaccia senza check è un problema minore', () => {
+    const coaching = coachTeam(team, DEFAULT_FORMAT, fixtureData);
+    const open = analyzeTeam(team, fixtureData).threats.filter(t => !t.handledBy.length);
+    expect(open.length).toBeGreaterThan(0);
+    for (const threat of open) {
+      const problem = coaching.problems.find(p => p.key === `meta:${threat.name}`)!;
+      expect(problem).toMatchObject({ category: 'meta', severity: 'minor' });
+      expect(problem.fixes).toEqual(coaching.threatFixes[threat.name]);
+    }
+  });
+
+  it('senza meta, nessun problema minaccia', () => {
+    const { problems } = coachTeam(team, DEFAULT_FORMAT, { ...fixtureData, ignoreMeta: true });
+    expect(problems.some(p => p.category === 'meta')).toBe(false);
+  });
+
+  it('il giudizio non cambia per le minacce', () => {
+    const coaching = coachTeam(team, DEFAULT_FORMAT, fixtureData);
+    const grade = rateTeam(team, fixtureData, 'it')?.grade ?? 'D';
+    expect(coaching.verdict).toBe(verdictFor(team, coaching.problems.filter(p => p.category !== 'meta'), grade, 'it'));
   });
 });

@@ -7,8 +7,8 @@ import { fixtureData, fixtureStats } from '../fixtures/data';
 
 const row = (weak: number, resist: number) =>
   ({ type: 'Fairy', multipliers: [], weak, resist, pressure: Math.max(0, weak - resist) }) as never;
-const rules: CoachProblem = { severity: 'serious', category: 'rules', text: 'x', fixes: [] };
-const defense: CoachProblem = { severity: 'serious', category: 'defense', text: 'x', fixes: [] };
+const rules: CoachProblem = { severity: 'serious', category: 'rules', text: 'x', fixes: [], key: 'rules:x' };
+const defense: CoachProblem = { severity: 'serious', category: 'defense', text: 'x', fixes: [], key: 'defense:Fairy' };
 const six = Array.from({ length: 6 }, () => emptySet('Great Tusk'));
 
 describe('gravità di una debolezza: come il voto', () => {
