@@ -18,7 +18,10 @@ async function setup(names = ['Great Tusk', 'Gholdengo']) {
 describe('schede interne di Analisi', () => {
   it('schede interne con Panoramica di default', async () => {
     await setup();
-    expect(within(views()).getAllByRole('tab').map(tab => tab.textContent)).toEqual(['Panoramica', 'Difesa', 'Offesa', 'Ruoli', 'Velocità']);
+    expect(within(views()).getAllByRole('tab').map(tab => tab.querySelector('span')!.textContent)).toEqual(['Panoramica', 'Difesa', 'Offesa', 'Ruoli', 'Velocità']);
+    // Il voto di ogni area nella sua scheda, non nella Panoramica
+    expect(within(views()).getByRole('tab', { name: 'Difesa' }).querySelector('.tab-score')).toHaveTextContent(/^\d+$/);
+    expect(within(views()).getByRole('tab', { name: 'Panoramica' }).querySelector('.tab-score')).toBeNull();
     expect(within(views()).getByRole('tab', { name: 'Panoramica' })).toHaveAttribute('aria-selected', 'true');
   });
 
