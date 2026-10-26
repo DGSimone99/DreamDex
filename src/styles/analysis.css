@@ -242,7 +242,7 @@ button.member-card:hover { border-color: var(--accent); }
 
 /* Schede interne a larghezza uguale su tutta la riga; quella aperta come le teste (magenta a righe, inclinata) */
 .analysis-tabs { border-bottom: 0; }
-.analysis-tabs [role='tablist'] { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; width: 100%; }
+.analysis-tabs [role='tablist'] { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; width: 100%; }
 .analysis-tabs [role='tab'] { display: flex; align-items: baseline; justify-content: center; gap: 8px; width: 100%; padding: 8px 14px; border: 1px solid var(--line-soft); background: var(--panel); }
 .analysis-tabs [role='tab'][aria-selected='true'] {
   color: var(--on-accent-2); border-color: var(--accent-2);
@@ -252,6 +252,9 @@ button.member-card:hover { border-color: var(--accent); }
 }
 .analysis-tabs .tab-score { font: 700 17px/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums; color: var(--accent); }
 .analysis-tabs [role='tab'][aria-selected='true'] .tab-score { color: var(--on-accent-2); }
+/* Badge dei problemi gravi: rosso sulla scheda chiusa, scuro su quella aperta */
+.analysis-tabs .tab-badge { align-self: center; min-width: 18px; padding: 1px 5px; border-radius: 9px; background: var(--bad); color: var(--on-accent-2); font: 700 12px/1.3 var(--display); text-align: center; font-variant-numeric: tabular-nums; }
+.analysis-tabs [role='tab'][aria-selected='true'] .tab-badge { background: var(--on-accent-2); color: var(--accent-2); }
 /* Il "?" piccolo, dentro la scheda aperta */
 .analysis-help .help-button { width: 18px; height: 18px; min-width: 0; padding: 0; color: var(--on-accent-2); border-color: color-mix(in srgb, var(--on-accent-2) 45%, transparent); background: transparent; }
 .analysis-help .help-button .icon { width: 12px; height: 12px; }
