@@ -177,9 +177,11 @@ describe('Panoramica: rifinitura', () => {
     const help = within(panel().querySelector<HTMLElement>('.team-type')!).getByRole('button', { name: 'Come si decide il tipo di team' });
     await user.click(help);
     const dialog = screen.getByRole('dialog', { name: 'Come si decide il tipo di team' });
-    expect(within(dialog).getByRole('heading', { name: 'Muro passivo' })).toBeInTheDocument();
+    expect(within(dialog).getByRole('heading', { name: 'Tipo di team' })).toBeInTheDocument();
     const rules = [...dialog.querySelectorAll('.help-rule')].map(r => r.querySelector('b')!.textContent);
-    expect(rules).toEqual(['Stall', 'Semi-stall', 'Balance', 'Hyper Offense', 'Bulky Offense', 'Meteo', 'Trick Room', 'Webs', 'Volt-turn', 'Screens']);
+    // Ogni tipo detto in muri e attaccanti
+    expect(dialog).toHaveTextContent(/Stall6 muri/);
+    expect(rules).toEqual(['Stall', 'Semi-stall', 'Balance', 'Bulky Offense', 'Hyper Offense', 'Muro', 'Meteo', 'Trick Room', 'Webs', 'Volt-turn', 'Screens']);
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(help).toHaveFocus();
