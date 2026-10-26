@@ -406,6 +406,7 @@ export const en = {
   'stats.title': "Base stats",
   'stats.vs': "vs {species}",
   'stats.total': "Total",
+  'analysis.areaProblems': "Problems in {area}",
   'analysis.region': "Analysis",
   'analysis.weakness': "Defensive weaknesses",
   'analysis.noShortfall': "No shortfalls",
