@@ -8,6 +8,7 @@ import type { TeamRating } from './rating';
 import { LEVEL_KEYS, type LevelKey } from './roleLevels';
 import type { TeamSet } from './sets';
 import { poolMedian, speedTier } from './speed';
+import type { SpeedCondition } from './speedArea';
 import { usesMeta } from './analysis';
 import { t, type Lang } from '../i18n';
 
@@ -19,8 +20,9 @@ export interface ThreatPod { species: string; usage: number }
 export interface DashboardData {
   coverage: { cells: TypeCell[]; defense: string; offense: string };
   roles: { chips: RoleChip[]; value: string };
-  speed: { lanes: SpeedLane[]; median: number | null; vsMeta: boolean; control: { move: string; by: string[] }[]; value: string };
-  threats: { pods: ThreatPod[]; total: number; available: boolean };
+  speed: { lanes: SpeedLane[]; median: number | null; vsMeta: boolean; control: { condition: SpeedCondition; move: string; by: string[] }[]; value: string };
+  /** metaOff: meta spento dall'utente (altrimenti, se non disponibile, mancano le statistiche). */
+  threats: { pods: ThreatPod[]; total: number; available: boolean; metaOff: boolean };
 }
 
 /** Quanti vicini del meta si mostrano per corsia. */
@@ -70,13 +72,14 @@ export function dashboardData(team: TeamSet[], analysis: TeamAnalysis, rating: T
     roles: { chips, value: tile('roles').value },
     speed: {
       lanes, median: poolMedian(data), vsMeta: usesMeta(data),
-      control: rating.speed.sources.map(s => ({ move: s.move, by: s.by })),
+      control: rating.speed.sources.map(s => ({ condition: s.condition, move: s.move, by: s.by })),
       value: tile('speed').value,
     },
     threats: {
       pods: analysis.threats.filter(x => !x.handledBy.length).sort((a, b) => b.usage - a.usage).map(x => ({ species: x.name, usage: x.usage })),
       total: analysis.threats.length,
       available,
+      metaOff: !!data.ignoreMeta,
     },
   };
 }

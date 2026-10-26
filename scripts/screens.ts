@@ -112,12 +112,13 @@ const STATES: Record<string, State> = {
     console.log(`coaching-click: lista pronta in ${Date.now() - start} ms`);
     return true;
   } },
-  // Velocità a fuoco da tastiera: il riquadro con tutte le frasi non deve uscire o venire tagliato
-  'overview-speed-focus': { hash: hash(SIX), run: async p => {
+  // Cruscotto della Panoramica col team ridotto: più spazio, più informazione
+  'analysis-collapsed': { hash: hash(SIX), run: async p => {
     await tab(p, 'analysis');
     await wait(300);
-    await p.keyboard.press('Shift');
-    return focus(p, '.summary-tile[aria-label^="Velocità"]');
+    if (!await clickText(p, 'button.band-toggle', /./)) return 'no toggle';
+    await wait(800);
+    return true;
   } },
   'analysis-six': { hash: hash(SIX), run: async p => { await tab(p, 'analysis'); return true; } },
   'analysis-empty': { hash: '', run: async p => { await tab(p, 'analysis'); return true; } },

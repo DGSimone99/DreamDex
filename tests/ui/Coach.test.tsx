@@ -99,7 +99,8 @@ describe('scheda Coaching', () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} />);
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Great Tusk{Enter}');
-    expect(within(analysis()).getByText('Aggiungi almeno 2 Pokémon per ricevere il coaching')).toBeInTheDocument();
+    // Nella Panoramica: come giudizio e nel "Cosa fare" del cruscotto
+    expect(within(analysis()).getAllByText('Aggiungi almeno 2 Pokémon per ricevere il coaching').length).toBeGreaterThan(0);
     // Anche nella scheda Coaching, non "nessun problema"
     await user.click(screen.getByRole('tab', { name: /^Analisi/ }));
     await user.click(within(analysis()).getByRole('tab', { name: /^Coaching/ }));
