@@ -1,6 +1,6 @@
 import type { CoachProblem, ProblemCategory } from '../../engine/coach';
 import type { MessageKey } from '../../i18n';
-import { useT } from '../../i18n/react';
+import { useLang, useT } from '../../i18n/react';
 import type { AnalysisView } from '../analysisView';
 import { Icon, type IconName } from '../icons';
 import type { Density } from '../OverviewDashboard';
@@ -25,8 +25,9 @@ const gli = (n: number): boolean => /^8/.test(String(n)) || n === 11;
 /** Cosa fare: i problemi del Coaching dal più grave, quanti ne stanno (almeno 2), e il link a tutti. */
 export function TodoSection({ problems, members, density, onView }: { problems: CoachProblem[]; members: number; density: Density; onView: (v: AnalysisView) => void }) {
   const t = useT();
+  const lang = useLang();
   const sorted = [...problems].sort((a, b) => (a.severity === b.severity ? 0 : a.severity === 'serious' ? -1 : 1));
-  const { ref, shown } = useFit<HTMLOListElement>(`${density}|${sorted.map(p => p.key).join()}`, sorted.length, { min: 2 });
+  const { ref, shown } = useFit<HTMLOListElement>(`${density}|${lang}|${sorted.map(p => p.key).join()}`, sorted.length, { min: 2 });
   const serious = sorted.filter(p => p.severity === 'serious').length;
   const minor = sorted.length - serious;
   const counts = members >= 2 && sorted.length > 0 && (

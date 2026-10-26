@@ -45,11 +45,12 @@ const LEVELS = ['essential', 'important', 'minor'] as const;
  */
 export function RolesSection({ roles, density, onView }: { roles: DashboardData['roles']; density: Density; onView: (v: AnalysisView) => void }) {
   const t = useT();
+  const lang = useLang();
   const titles = { essential: t('analysis.essential'), important: t('analysis.important'), minor: t('dash.levelMinor') };
-  const all = LEVELS.flatMap(level => roles.chips.filter(c => c.level === level));
   // Anche in stretto tutti i livelli: i minori (tenui) quando stanno, il resto nel "+N"
-  const chips = all;
-  const { ref, shown } = useFit<HTMLDivElement>(`${density}|${chips.map(c => `${c.need}${c.covered}`).join()}`, chips.length, { reserve: 1 });
+  const chips = LEVELS.flatMap(level => roles.chips.filter(c => c.level === level));
+  // La lingua cambia la larghezza delle etichette: si rimisura
+  const { ref, shown } = useFit<HTMLDivElement>(`${density}|${lang}|${chips.map(c => `${c.need}${c.covered}`).join()}`, chips.length, { reserve: 1 });
   const hidden = chips.length - shown;
   const more = hidden > 0 && <span className="dash-chip more" title={t('dash.moreRoles', { n: hidden })}>+{hidden}</span>;
   const visible = chips.slice(0, shown);
