@@ -15,14 +15,16 @@ const meta = () => screen.getByRole('region', { name: 'Meta' });
 
 describe('CoachPanel', () => {
   it('mostra verdetto, punti di forza e problemi', async () => {
-    await setup('Great Tusk', 'Gholdengo');
-    const summary = within(analysis()).getByRole('heading', { name: /^Coaching/ });
-    // Il giudizio sta in testa alla Panoramica; accanto a "Problemi" i conteggi
+    const user = await setup('Great Tusk', 'Gholdengo');
+    // Il giudizio sta in testa alla Panoramica; nella striscia del riassunto i conteggi
     expect(analysis().querySelector('.overview-headline')).toHaveTextContent('Team incompleto');
-    // Solo il triangolo blu dei minori: gli zeri non compaiono
+    // Solo i minori: gli zeri non compaiono
     // 7 + 4 minacce del meta senza check (la riga dei ruoli importanti si aggiunge a quella degli essenziali)
-    expect(summary.querySelector('.issue.minor')).toHaveTextContent('11 problemi minori');
-    expect(summary.querySelector('.issue.serious')).toBeNull();
+    const strip = analysis().querySelector<HTMLElement>('.summary-strip')!;
+    expect(strip).toHaveTextContent('11 minori');
+    expect(strip).not.toHaveTextContent(/grav/);
+    // Punti di forza e problemi stanno nel Coaching
+    await user.click(within(analysis()).getByRole('tab', { name: 'Coaching' }));
     expect(within(analysis()).getAllByRole('listitem').some(li => li.textContent === 'Gestisce bene Poison, Bug, Rock')).toBe(true);
     // Le minacce stanno nella scheda Meta
     const dragapult = within(meta()).getAllByRole('listitem').find(li => li.querySelector('.who strong')?.textContent === 'Dragapult')!;
@@ -31,7 +33,8 @@ describe('CoachPanel', () => {
   });
 
   it('problemi raggruppati per categoria', async () => {
-    await setup('Great Tusk', 'Gholdengo');
+    const user = await setup('Great Tusk', 'Gholdengo');
+    await user.click(within(analysis()).getByRole('tab', { name: 'Coaching' }));
     const groups = within(analysis()).getAllByRole('group', { name: /^Problemi: / });
     expect(groups.length).toBeGreaterThan(1);
     expect(within(analysis()).getByRole('group', { name: 'Problemi: Difese' })).toHaveTextContent(/Debole a /);

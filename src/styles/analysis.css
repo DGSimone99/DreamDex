@@ -152,16 +152,9 @@
 .area-extra { margin-bottom: 16px; }
 /* Ogni scheda tiene il posto per il "?": aprendone un'altra le schede non si spostano */
 
-/* Panoramica: numeri chiave in alto, problemi e soluzioni affiancati (scorrono dentro), membri in fondo */
-.overview { display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; gap: 12px; height: 100%; min-height: 0; }
-.overview-stats { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
-.overview-stats [role='group'] { display: flex; flex-wrap: wrap; gap: 8px; }
-.overview-stats button { padding: 6px 12px; border: 1px solid var(--line); border-radius: 4px; background: var(--panel); font-size: 14px; font-weight: 600; color: var(--text); }
-.overview-stats button:hover { border-color: var(--accent); }
-.overview-stats button.bad { border-color: color-mix(in srgb, var(--warn) 60%, var(--line)); }
+/* Panoramica: giudizio e tipo di team, poi il riassunto (striscia e sei tessere); scorre se serve */
+.overview { display: flex; flex-direction: column; gap: 12px; height: 100%; min-height: 0; overflow: auto; overscroll-behavior: contain; }
 .overview-note { margin: 0; font-size: 12px; color: var(--faint); }
-.overview-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; min-height: 0; }
-.overview-col { min-height: 0; overflow: auto; overscroll-behavior: contain; padding: 10px 14px 14px; background: var(--panel); border: 1px solid var(--line-soft); }
 .overview-head {
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
   margin: -10px -14px 10px; padding: 5px 24px 5px 12px;
@@ -172,13 +165,6 @@
 }
 .overview-head .summary-info { display: flex; align-items: center; gap: 8px; font-style: normal; font-weight: 600; font-size: 12px; }
 .overview-empty { margin: 24px 0; color: var(--muted); }
-.bonus-malus { margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--line-soft); }
-.bonus-malus h3 { margin: 0 0 6px; font: 700 15px/1.2 var(--display); font-style: italic; }
-.bonus-malus ul { margin: 0 0 8px; padding: 0; list-style: none; display: grid; gap: 3px; font-size: 13px; }
-.bonus-malus li.loss { color: var(--bad); }
-.bonus-malus li.gain { color: var(--good); }
-.bonus-malus details > summary { cursor: pointer; font-size: 13px; color: var(--accent-ink); }
-.bonus-malus details[open] .area-view { height: auto; grid-template-columns: 160px minmax(0, 1fr); margin-top: 8px; }
 
 /* Membri: sei schede compatte; il profilo di uno alla volta al posto della Panoramica */
 .member-cards .overview-head { margin: 0 0 8px; position: static; }
@@ -216,24 +202,13 @@ button.member-card:hover { border-color: var(--accent); }
 .overview-headline { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 16px; }
 .overview-headline > strong { font: 800 22px/1.1 var(--display); font-style: italic; }
 .overview-headline .team-type { margin: 0; }
-/* Numeri chiave come tessere: numero grande, cosa conta, freccia */
-.overview-stats .stat-tile { display: inline-grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: baseline; gap: 8px; padding: 6px 10px 6px 12px; border-left-width: 3px; font-weight: 500; }
-.overview-stats .stat-tile b { font: 700 22px/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums; }
-.overview-stats .stat-tile span { font-size: 13px; color: var(--muted); }
-.overview-stats .stat-tile .icon { width: 10px; height: 10px; color: var(--faint); }
-.overview-stats .stat-tile.bad { border-left-color: var(--warn); }
-.overview-stats .stat-tile.ok { border-left-color: var(--good); }
 /* Teste delle colonne: fascia a righe con la testa inclinata piccola, come "Candidati" nella scheda Pokémon */
 .overview-head { margin: -10px -14px 10px; padding: 7px 14px; clip-path: none; background: var(--stripes), var(--band); border-bottom: 1px solid var(--line-soft); color: var(--text); }
-.overview-col > .overview-head { justify-content: space-between; }
 .overview-head .summary-info { padding: 2px 8px; border-radius: 10px; background: var(--ground); font-size: 12px; color: var(--text); }
 .member-cards .overview-head { margin: 0 0 8px; padding: 6px 0; background: none; border: 0; }
 .overview-empty { display: grid; justify-items: start; gap: 12px; }
 .member-card.empty { width: 100%; cursor: pointer; }
 .member-card.empty:hover { border-color: var(--accent); color: var(--accent-ink); }
-/* Il catalogo dentro la colonna stretta: elenco sopra, tabella sotto */
-.bonus-malus details[open] .area-view { grid-template-columns: minmax(0, 1fr); }
-.bonus-malus .ad-scroll { overflow-x: auto; }
 /* Il cambio consigliato: l'azione principale con testo */
 .swaps .swap-actions button.swap-now.primary { gap: 6px; padding: 4px 12px; width: auto; background: var(--accent-2); border-color: var(--accent-2); color: var(--on-accent-2); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
 .swaps .swap-actions button.swap-now.primary:hover { color: var(--on-accent-2); background: var(--accent-2-ink); }
@@ -289,20 +264,73 @@ button.member-card:hover { border-color: var(--accent); }
 }
 .analysis-help { z-index: 2; }
 
-/* Panoramica compatta: una riga con giudizio, tipo di team e numeri chiave (a destra); senza soluzioni una colonna sola */
 .overview-headline { align-items: center; }
-.overview-headline .overview-stats { margin-left: auto; gap: 6px; }
-.overview-stats .stat-tile { display: inline-flex; align-items: baseline; gap: 6px; padding: 3px 10px; border-width: 1px 1px 1px 3px; }
-.overview-stats .stat-tile b { font-size: 16px; }
-.overview-stats .stat-tile span { font-size: 12px; }
-.overview-cols.single { grid-template-columns: minmax(0, 1fr); }
-.overview-head .no-solutions { font-weight: 500; color: var(--muted); }
-.overview { grid-template-rows: auto minmax(0, 1fr) auto; }
 
-/* Coaching: i numeri chiave come riga di utilità in cima; a tutta larghezza il contenuto scorre su due colonne */
-.overview-col .overview-stats { margin: 0 0 10px; }
-.overview-headline .overview-stats { margin-left: 0; }
-.overview-cols.single .coach-body { columns: 2; column-gap: 28px; }
-.overview-cols.single .coach-body > * { break-inside: avoid; }
-.overview-cols.single .coach-body .problem-group, .overview-cols.single .coach-body .bonus-malus { break-inside: avoid; }
-.overview-cols.single .coach-body .bonus-malus { margin-top: 0; }
+
+/* Riassunto della Panoramica: striscia dei problemi, poi sei tessere 3×2 (tutta la tessera porta alla sua scheda) */
+.summary { display: flex; flex-direction: column; gap: 10px; }
+.summary-strip { display: flex; align-items: center; gap: 12px; min-width: 0; margin: 0; padding: 6px 8px 6px 12px; font-size: 13px; background: color-mix(in srgb, var(--bad-bg) 55%, var(--panel)); border: 1px solid color-mix(in srgb, var(--bad) 30%, var(--line-soft)); border-radius: 4px; }
+.summary-strip.warn { background: color-mix(in srgb, var(--warn-bg) 55%, var(--panel)); border-color: color-mix(in srgb, var(--warn) 30%, var(--line-soft)); }
+.summary-strip.ok { gap: 8px; padding: 8px 12px; color: var(--good); background: color-mix(in srgb, var(--good-bg) 55%, var(--panel)); border-color: color-mix(in srgb, var(--good) 25%, var(--line-soft)); }
+.summary-counts { flex: none; display: flex; align-items: center; gap: 6px; color: var(--faint); }
+.summary-counts .sev { padding: 0 7px; border-radius: 2px; font: 600 11px/20px var(--ui); text-transform: uppercase; letter-spacing: 0.05em; }
+.summary-counts .sev.serious { color: var(--bad); background: var(--bad-bg); }
+.summary-counts .sev.minor { color: var(--warn); background: var(--warn-bg); }
+.summary-first { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
+.summary-go { flex: none; padding: 4px 8px; border-color: transparent; background: none; color: var(--accent-ink); font-weight: 600; white-space: nowrap; }
+.summary-go:hover { border-color: transparent; background: var(--accent-wash); }
+
+.summary-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.summary-tile {
+  display: flex; flex-direction: column; align-items: stretch; gap: 0; min-width: 0; min-height: 128px;
+  padding: 10px 14px 12px; text-align: left; background: var(--raised);
+  border: 1px solid var(--line-soft); border-top: 3px solid var(--good); border-radius: 0;
+}
+.summary-tile.mid { border-top-color: var(--warn); }
+.summary-tile.bad { border-top-color: var(--bad); }
+.summary-tile:hover { border-color: var(--accent); background: color-mix(in srgb, var(--accent-wash) 40%, var(--raised)); }
+.summary-tile.good:hover { border-top-color: var(--good); }
+.summary-tile.mid:hover { border-top-color: var(--warn); }
+.summary-tile.bad:hover { border-top-color: var(--bad); }
+.summary-tile.off, .summary-tile.off:disabled { opacity: 1; cursor: default; border-top-color: var(--line); background: var(--panel); }
+.summary-tile.off .summary-head .icon { visibility: hidden; }
+.summary-head { display: flex; align-items: center; justify-content: space-between; font: 600 12px/1.2 var(--ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.summary-head .icon { width: 14px; height: 14px; color: var(--accent-ink); }
+.summary-value { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0 8px; margin: 4px 0 8px; }
+.summary-value b { font: 700 26px/1.05 var(--display); font-style: italic; font-variant-numeric: tabular-nums; color: var(--text); }
+.summary-value small { font-size: 13px; color: var(--muted); }
+.summary-tile.off .summary-value small { font-size: 14px; color: var(--faint); }
+
+/* Cosa manca (F3): una parola per voce con la ✕ rossa; niente etichette */
+.summary-miss { display: flex; flex-wrap: wrap; gap: 2px 12px; font-size: 13px; line-height: 1.5; }
+.summary-miss .miss { display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; color: var(--text); }
+.summary-miss .miss .icon { width: 12px; height: 12px; color: var(--bad); stroke-width: 3; }
+.summary-miss .type-name { font-weight: 600; }
+.summary-ok { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; color: var(--good); }
+.summary-ok .icon, .summary-strip.ok .icon { width: 14px; height: 14px; }
+.summary-note { font-size: 13px; color: var(--muted); }
+.summary-items { display: flex; flex-direction: column; gap: 2px; font-size: 13px; color: var(--text); }
+.summary-items > span { display: grid; grid-template-columns: 2.4em minmax(0, 1fr); align-items: baseline; white-space: nowrap; }
+.summary-items > span > :last-child { overflow: hidden; text-overflow: ellipsis; }
+/* I punti in colonna, separati dal testo ("−1" non si legge attaccato a "2 setter…") */
+.summary-items b { font-variant-numeric: tabular-nums; text-align: right; padding-right: 8px; }
+.summary-items .gain b { color: var(--good); }
+.summary-items .loss b { color: var(--bad); }
+
+/* Velocità (A): un punto per membro sulla quota di meta superata; a destra della metà la parte veloce */
+.tsl { position: relative; display: block; margin: 6px 6px 10px; }
+.tsl-track { position: relative; display: block; height: 14px; border-bottom: 2px solid var(--line); }
+.tsl-fast { position: absolute; top: 0; bottom: -2px; left: 50%; right: 0; background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.tsl-mid { position: absolute; top: -2px; bottom: -6px; left: 50%; width: 12px; transform: translateX(-50%); cursor: help; }
+.tsl-mid::before { content: ''; position: absolute; top: 0; bottom: 0; left: 5px; width: 2px; background: var(--warn); }
+.tsl-dot { position: absolute; bottom: -7px; width: 12px; height: 12px; border-radius: 50%; background: var(--faint); border: 2px solid var(--raised); transform: translateX(-50%); cursor: help; }
+.tsl-dot.fast { background: var(--accent); }
+.tsl-dot:hover { box-shadow: 0 0 0 2px var(--text); }
+.tsl-tip {
+  position: absolute; z-index: 5; bottom: calc(100% + 10px); transform: translateX(-50%);
+  padding: 5px 9px; white-space: nowrap; font-size: 12px; color: var(--text); text-transform: none; letter-spacing: 0;
+  background: var(--ground); border: 1px solid var(--line); border-bottom: 2px solid var(--accent); border-radius: 4px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5); animation: tip 0.15s var(--ease); pointer-events: none;
+}
+.tsl-tip.start { transform: translateX(-12px); }
+.tsl-tip.end { transform: translateX(calc(-100% + 12px)); }
