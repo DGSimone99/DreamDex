@@ -859,6 +859,8 @@ export const en = {
   'detail.usage': "meta usage",
   'detail.alternatives': "Also instead of",
   'detail.team': "Effect on the team",
+  'detail.extras': "Problems & bonuses",
+  'detail.extrasNote': "Problems fixed or added, weather and Tera: the part of the grade the areas do not explain",
   'detail.brings': "Brings",
   'detail.loses': "Costs",
   'detail.losesNothing': "Nothing notable",

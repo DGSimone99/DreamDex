@@ -296,6 +296,17 @@ describe('scheda del candidato', () => {
     expect(section('Effetto sul team').querySelector('.detail-areas')).toHaveTextContent(/Difesa/);
   }, 30000);
 
+  it("team vuoto: la riga dice i ruoli, non ripete l'uso già a destra", async () => {
+    await setup();
+    expect(list().querySelector('li .who small')!.textContent).not.toMatch(/Uso nel meta/);
+  });
+
+  it('team vuoto: Porta dice cosa sa fare il Pokémon, non "nessuna differenza"', async () => {
+    await setup();
+    expect(section('Porta').textContent).not.toMatch(/Nessuna differenza/);
+    expect(section('Porta').querySelectorAll('li').length).toBeGreaterThan(0);
+  });
+
   it('Aggiungi: solo Porta, senza uso nel meta', async () => {
     await setup('Great Tusk');
     expect(within(detail()).getByRole('heading', { name: 'Porta' })).toBeInTheDocument();

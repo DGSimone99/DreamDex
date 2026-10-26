@@ -29,6 +29,22 @@ export interface TeamGain {
 export type ScoredArea = 'defense' | 'strength' | 'roles' | 'speed';
 const SCORED_AREAS: ScoredArea[] = ['defense', 'strength', 'roles', 'speed'];
 
+/** Quanto cambiano insieme penalità e bonus (problemi risolti o nuovi, meteo, Tera): la parte del voto che le aree non spiegano. */
+export const extrasDelta = (before: TeamRating, after: TeamRating): number =>
+  (after.bonus.total - after.penalty.total) - (before.bonus.total - before.penalty.total);
+
+/** Le aree che calano col cambio, dalla più grande; le aree che non contano o senza valore non si contano. */
+export function areaDrops(before: TeamRating, after: TeamRating): { key: string; label: string; change: number }[] {
+  return after.areas
+    .flatMap(area => {
+      const prev = before.areas.find(a => a.key === area.key);
+      if (area.value === null || prev?.value == null || area.inactive || prev.inactive) return [];
+      const change = area.value - prev.value;
+      return change < 0 ? [{ key: area.key, label: area.label, change }] : [];
+    })
+    .sort((a, b) => a.change - b.change);
+}
+
 /** Variazione di ogni area per il suo peso nel voto (i pesi sommano a 1), arrotondata a un decimale. */
 function areaPointsOf(before: TeamRating, after: TeamRating): Partial<Record<ScoredArea, number>> {
   const value = (rating: TeamRating, key: ScoredArea) => rating.areas.find(a => a.key === key)?.value ?? null;

@@ -211,7 +211,7 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .detail-reasons li { position: relative; padding-left: 14px; }
 .detail-reasons li::before { content: ''; position: absolute; left: 0; top: 0.6em; width: 5px; height: 5px; border-radius: 1px; background: var(--accent); }
 .detail-sec.set-sec { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0 22px; align-items: start; }
-.set-sec h4 { grid-column: 1 / -1; }
+.set-sec h4 { grid-column: 1 / -1; justify-self: start; }
 .detail-set { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 16px; margin: 0; font-size: 13px; }
 .detail-set dt { color: var(--muted); font-size: 12px; }
 .detail-set dd { margin: 0; display: flex; align-items: center; gap: 6px; font-weight: 500; }
@@ -264,7 +264,7 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
   position: absolute;
   z-index: 20;
   /* Sopra la scheda del candidato: la lista resta visibile e si aggiorna mentre scegli */
-  left: calc((100% - 16px) * 0.4 + 16px);
+  left: calc((100% - var(--picker-gap, 16px)) * 0.4 + var(--picker-gap, 16px));
   right: 0;
   top: calc(100% + 8px);
   max-height: calc(var(--ws-h, 70vh) - 90px);
@@ -422,7 +422,9 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .suggestion .sprite { width: 40px; height: 40px; }
 .suggestion .rank { font-size: 20px; }
 .suggestion .name-line .types { margin-left: 4px; gap: 3px; }
-.suggestion .name-line .types .type-chip { width: 52px; }
+.suggestion .name-line .types .type-chip { width: 56px; }
+/* I nomi lunghi (Folletto, Coleottero) si allargano invece di tagliarsi */
+.suggestion .name-line .types .type-chip.long { width: auto; min-width: 56px; padding: 1px 4px; }
 .suggestion .who small, .suggestion .who small:has(.gain, .loss) { display: flex; align-items: center; gap: 0 10px; color: var(--muted); }
 .suggestion .who small .gain, .suggestion .who small .loss, .suggestion .who small .plain { color: var(--muted); }
 .suggestion .who small b { margin-right: 2px; font-weight: 700; }
@@ -444,3 +446,5 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .suggestion .pick { flex: 0 1 auto; overflow: hidden; }
 .suggestion .pick strong { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .suggestion .name-line > :not(.pick) { flex: none; }
+/* Problemi e bonus: la pillola tratteggiata che spiega la parte del voto fuori dalle aree */
+.detail .effect .detail-areas .extras { border-style: dashed; }

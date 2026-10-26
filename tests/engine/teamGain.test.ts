@@ -3,7 +3,7 @@ import { DEFAULT_FORMAT } from '../../src/engine/format';
 import { rateTeam } from '../../src/engine/rating';
 import { suggest } from '../../src/engine/scoring';
 import { emptySet } from '../../src/engine/sets';
-import { bestSwaps, rankByTeamGain, withCandidate } from '../../src/engine/teamGain';
+import { areaDrops, bestSwaps, extrasDelta, rankByTeamGain, withCandidate } from '../../src/engine/teamGain';
 import { improveReplacements } from '../../src/engine/replace';
 import { fixtureData } from '../fixtures/data';
 
@@ -82,5 +82,23 @@ describe('punti per area', () => {
       const points = Object.values(r.teamGain!.areaPoints ?? {}).reduce((a, b) => a + b, 0);
       expect(Math.abs(points - (rateTeam([...team, r.set], fixtureData)!.base - before))).toBeLessThanOrEqual(1);
     }
+  });
+});
+
+describe('cosa spiega il cambio di voto oltre alle aree', () => {
+  const rating = (penalty: number, bonus: number, areas: [string, number | null, boolean?][]) => ({
+    penalty: { total: penalty, items: [] }, bonus: { total: bonus, items: [] },
+    areas: areas.map(([key, value, inactive]) => ({ key, label: key, value, ...(inactive ? { inactive } : {}) })),
+  }) as never;
+
+  it('problemi e bonus: quanto cambiano penalità e bonus insieme', () => {
+    expect(extrasDelta(rating(14, 0, []), rating(2, 1, []))).toBe(13);
+    expect(extrasDelta(rating(0, 0, []), rating(3, 0, []))).toBe(-3);
+  });
+
+  it('aree in calo, dalla più grande; le inattive e senza valore no', () => {
+    const before = rating(0, 0, [['defense', 70], ['strength', 80], ['roles', 60], ['speed', 50, true]]);
+    const after = rating(0, 0, [['defense', 73], ['strength', 79], ['roles', 55], ['speed', 40, true]]);
+    expect(areaDrops(before, after)).toEqual([{ key: 'roles', label: 'roles', change: -5 }, { key: 'strength', label: 'strength', change: -1 }]);
   });
 });
