@@ -39,13 +39,17 @@ function itemLabel(kind: TodoGroup['kind'], subject: string, lang: Lang): string
 }
 
 /** Nella densità ampia, sotto un gruppo i testi interi dei suoi problemi (non per minacce e ruoli: ripeterebbero i nomi). */
-const detailsOf = (group: TodoGroup): string[] => (group.kind === 'weak' || group.kind === 'illegal' ? group.details : []);
+const detailsOf = (group: TodoGroup): { key: string; text: string }[] =>
+  (group.kind === 'weak' || group.kind === 'illegal' ? group.details.map((text, i) => ({ key: group.keys[i], text })) : []);
+
+/** "grave" → "Grave", per l'inizio della frase dei lettori di schermo. */
+const capital = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
 
 /** "Tutti gli 8", "gli 11": in italiano "gli" davanti ai numeri che iniziano per vocale (otto, ottanta, undici). */
 const gli = (n: number): boolean => /^8/.test(String(n)) || n === 11;
 
 /** Una riga di Cosa fare: un gruppo ("Debole a Terra · Fuoco" col numerino) o un problema singolo col suo testo. */
-function TodoRow({ group, sub }: { group: TodoGroup; sub: string[] }) {
+function TodoRow({ group, sub }: { group: TodoGroup; sub: { key: string; text: string }[] }) {
   const t = useT();
   const lang = useLang();
   const area = AREA[group.category];
@@ -65,7 +69,7 @@ function TodoRow({ group, sub }: { group: TodoGroup; sub: string[] }) {
   const labels = group.items.map(item => ({ ...item, label: itemLabel(group.kind, item.subject, lang) }));
   // Per i lettori di schermo tutto in una frase: "Grave. Debole a: Terra, Fuoco, Spettro. 3 problemi"
   const sentence = [
-    `${t(group.severity === 'serious' ? 'dash.todo.serious' : 'dash.todo.minor')}.`,
+    `${capital(severity)}.`,
     `${title}: ${labels.map(i => i.label).join(', ')}.`,
     group.count > 1 ? t('dash.todo.count', { n: group.count }) : '',
   ].filter(Boolean).join(' ');
@@ -87,7 +91,7 @@ function TodoRow({ group, sub }: { group: TodoGroup; sub: string[] }) {
       {areaIcon}
       {sub.length > 0 && (
         <ul className="dash-sub">
-          {sub.map(text => <li key={text} data-fit-sub><Typed text={text} /></li>)}
+          {sub.map(line => <li key={line.key} data-fit-sub><Typed text={line.text} /></li>)}
         </ul>
       )}
     </li>
@@ -131,7 +135,7 @@ export function TodoSection({ problems, members, density, onView }: { problems: 
     body = (
       <>
         <ol ref={ref} className="dash-problems dash-fit">
-          {groups.slice(0, shown).map((group, i) => <TodoRow key={group.kind === 'single' ? group.details[0] : group.kind} group={group} sub={subs[i]} />)}
+          {groups.slice(0, shown).map((group, i) => <TodoRow key={group.kind === 'single' ? group.keys[0] : group.kind} group={group} sub={subs[i]} />)}
         </ol>
         <button type="button" className="dash-more" onClick={() => onView('coaching')}>
           {problems.length === 1 ? t('dash.oneInCoaching') : t(gli(problems.length) ? 'dash.allInCoachingGli' : 'dash.allInCoaching', { n: problems.length })}

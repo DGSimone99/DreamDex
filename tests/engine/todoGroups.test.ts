@@ -25,6 +25,8 @@ describe('groupProblems', () => {
       { subject: 'Ghost', serious: false },
     ]);
     expect(group.details).toEqual(['Ground', 'Fire', 'Ghost'].map(x => `Debole a ${x}: 3 Deboli – 1 Resistono`));
+    // Le chiavi dei problemi, nello stesso ordine dei testi
+    expect(group.keys).toEqual(['defense:Ground', 'defense:Fire', 'defense:Ghost']);
   });
 
   it('minacce del meta: le specie', () => {
@@ -45,7 +47,7 @@ describe('groupProblems', () => {
     expect(groups).toHaveLength(2);
     expect(groups[0]).toMatchObject({ kind: 'illegal', severity: 'serious', category: 'rules', count: 4 });
     expect(groups[0].items.map(i => i.subject)).toEqual(['Mewtwo-Mega-Y', 'Garchomp', 'Iron Valiant']);
-    expect(groups[1]).toEqual({ kind: 'single', severity: 'serious', category: 'rules', text: megas.text, items: [], count: 1, details: [megas.text] });
+    expect(groups[1]).toEqual({ kind: 'single', severity: 'serious', category: 'rules', text: megas.text, items: [], count: 1, details: [megas.text], keys: ['rules:megas'] });
   });
 
   it('ruoli mancanti: essenziali e importanti insieme; gravi solo se il problema lo è', () => {
@@ -69,7 +71,7 @@ describe('groupProblems', () => {
       p('roles', 'roles:member:x', 'Raticate è debole e non porta utilità al team'),
       p('roles', 'roles:style', 'Nessun attaccante fisico'),
     ];
-    expect(groupProblems(others)).toEqual(others.map(o => ({ kind: 'single', severity: 'minor', category: o.category, text: o.text, items: [], count: 1, details: [o.text] })));
+    expect(groupProblems(others)).toEqual(others.map(o => ({ kind: 'single', severity: 'minor', category: o.category, text: o.text, items: [], count: 1, details: [o.text], keys: [o.key] })));
   });
 
   it('gruppi gravi prima dei minori; a parità l\'ordine dei problemi', () => {
@@ -88,7 +90,7 @@ describe('groupProblems', () => {
   it('non legge i testi: con testi cambiati i gruppi e gli elementi restano gli stessi', () => {
     const problems = [weak('Ground', 'serious'), threat('Kingambit'), rule('Garchomp', 'Garchomp: x'), roles('essential', ['hazards', 'pivot'])];
     const scrambled = problems.map((x, i) => ({ ...x, text: `testo qualsiasi ${i}: a, b` }));
-    const strip = (groups: ReturnType<typeof groupProblems>) => groups.map(({ details: _d, text: _t, ...g }) => g);
+    const strip = (groups: ReturnType<typeof groupProblems>) => groups.map(({ details: _d, text: _t, keys: _k, ...g }) => g);
     expect(strip(groupProblems(scrambled))).toEqual(strip(groupProblems(problems)));
   });
 

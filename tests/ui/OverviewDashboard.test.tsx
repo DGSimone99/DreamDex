@@ -128,20 +128,23 @@ describe('Cruscotto della Panoramica', () => {
     expect(densityFor(ROOMY_FROM)).toBe('roomy');
   });
 
-  it('ampio: Velocità con "supera" e "superato da", Ruoli per livello coi membri', () => {
+  it('ampio: Velocità con "supera" e "superato da", Ruoli una riga per ruolo coi nomi di chi lo copre', () => {
     mount({ density: 'roomy' });
     const speed = screen.getByRole('region', { name: 'Velocità' });
     expect(within(speed).getByText(/supera Iron Valiant, Garchomp/)).toBeInTheDocument();
     expect(within(speed).getByText(/superato da Regieleki/)).toBeInTheDocument();
     expect(speed).toHaveTextContent(/nessun Trick Room o Tailwind/);
     const roles = screen.getByRole('region', { name: 'Ruoli' });
-    // Rimozione: tre membri, si vedono due icone e "+1"
+    // Rimozione: coperta da tre membri, tutti scritti
     const removal = within(roleBand(roles, 'Essenziali')).getAllByRole('listitem')[1];
     // Ampio: un ruolo per riga, coi nomi di tutti quelli che lo coprono scritti (niente icone)
     expect(removal).toHaveClass('line');
-    expect(removal.querySelector('.dash-owners')).toBeNull();
     expect(removal.querySelector('.dash-role-who')).toHaveTextContent(/^Great Tusk, Corviknight, Toxapex$/);
-    expect(removal.querySelector('.dash-role-tag')).toHaveTextContent(/^Rimozione Hazard:/);
+    expect(removal.querySelector('.dash-role-tag')).toHaveTextContent(/^Rimozione Hazard/);
+    // I due punti solo a vista: il testo per i lettori di schermo resta "Rimozione Hazard, coperto da …"
+    const colon = removal.querySelector('.dash-role-name [aria-hidden="true"]');
+    expect(colon).toHaveTextContent(/^:$/);
+    expect(removal.querySelector('.dash-role-name .visually-hidden')!.compareDocumentPosition(colon!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(within(removal).queryByText('+1')).toBeNull();
     // Mancante: "nessuno"
     const pivot = within(roleBand(roles, 'Importanti')).getByRole('listitem');
@@ -157,7 +160,6 @@ describe('Cruscotto della Panoramica', () => {
       const bands = [...roles.querySelectorAll('.dash-role-band')];
       expect(bands.map(band => band.firstElementChild?.textContent)).toEqual(['Essenziali', 'Importanti', 'Minori']);
       expect(bands.map(band => band.lastElementChild?.tagName)).toEqual(['UL', 'UL', 'UL']);
-      expect(roles.querySelector('.dash-role-col')).toBeNull();
       const lists = within(roles).getAllByRole('list');
       expect(lists.map(list => document.getElementById(list.getAttribute('aria-labelledby') ?? '')?.textContent))
         .toEqual(['Essenziali', 'Importanti', 'Minori']);
@@ -202,8 +204,10 @@ describe('Cruscotto della Panoramica', () => {
     expect(within(speed).queryByText(/supera /)).toBeNull();
     expect(speed.querySelector('.dash-ctrl')).toBeNull();
     expect(speed).toHaveAttribute('title', expect.stringMatching(/^Controllo:/));
-    // Ruoli: niente icone dei membri, solo il segno e il nome
-    expect(screen.getByRole('region', { name: 'Ruoli' }).querySelector('.dash-owners')).toBeNull();
+    // Ruoli: ogni chip ha solo il segno e il nome
+    for (const chip of screen.getByRole('region', { name: 'Ruoli' }).querySelectorAll('.dash-role:not(.more)')) {
+      expect([...chip.children].map(x => x.className)).toEqual(['dash-role-tag']);
+    }
   });
 
   it('normale e stretto: Ruoli come chip in fila, senza i nomi scritti', () => {
@@ -219,7 +223,7 @@ describe('Cruscotto della Panoramica', () => {
   it('normale: chip senza icone dei membri; chi copre il ruolo resta nel nome accessibile e nel tooltip', () => {
     mount();
     const roles = screen.getByRole('region', { name: 'Ruoli' });
-    expect(roles.querySelector('.dash-owners, .mon-icon')).toBeNull();
+    for (const chip of roles.querySelectorAll('.dash-role:not(.more)')) expect([...chip.children].map(x => x.className)).toEqual(['dash-role-tag']);
     const removal = within(roleBand(roles, 'Essenziali')).getAllByRole('listitem')[1];
     expect(removal).toHaveTextContent(/^Rimozione Hazard, coperto da Great Tusk, Corviknight, Toxapex$/);
     expect(removal).toHaveAttribute('title', 'Rimozione Hazard: Great Tusk, Corviknight, Toxapex');
@@ -448,6 +452,9 @@ describe('Cruscotto: misure', () => {
     expect(essential[1]).toHaveTextContent('+3');
     expect(essential[1]).toHaveClass('more');
     expect(essential[1]).toHaveAttribute('title', 'Altri 3 ruoli');
+    // Il significato del "+N" anche per i lettori di schermo
+    expect(essential[1].querySelector('.visually-hidden')).toHaveTextContent(/^Altri 3 ruoli$/);
+    expect(essential[1].querySelector('[aria-hidden="true"]')).toHaveTextContent(/^[+]3$/);
     // Importanti (2) e Minori (1) stanno interi
     expect(within(roleBand(roles, 'Importanti')).getAllByRole('listitem')).toHaveLength(2);
     expect(within(roleBand(roles, 'Minori')).getAllByRole('listitem')).toHaveLength(1);

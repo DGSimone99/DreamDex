@@ -463,8 +463,6 @@ export const it: Record<keyof typeof en, string> = {
   'dash.todo.illegal': "Non legali",
   'dash.todo.roles': "Ruoli mancanti",
   'dash.todo.count': "{n} problemi",
-  'dash.todo.serious': "Grave",
-  'dash.todo.minor': "Minore",
   'dash.threats': "Minacce non gestite",
   'dash.holds': "Regge",
   'dash.hits': "Colpisce",

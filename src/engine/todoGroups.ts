@@ -13,6 +13,8 @@ export interface TodoGroup {
   count: number;
   /** I testi interi dei problemi raccolti (tooltip e dettaglio nella densità ampia). */
   details: string[];
+  /** Le chiavi dei problemi raccolti, nello stesso ordine di details (per le chiavi React). */
+  keys: string[];
 }
 
 type GroupKind = Exclude<TodoGroup['kind'], 'single'>;
@@ -40,17 +42,18 @@ export function groupProblems(problems: CoachProblem[]): TodoGroup[] {
     const serious = problem.severity === 'serious';
     const kind = kindOf(problem);
     if (!kind) {
-      groups.push({ kind: 'single', severity: problem.severity, category: problem.category, text: problem.text, items: [], count: 1, details: [problem.text], at });
+      groups.push({ kind: 'single', severity: problem.severity, category: problem.category, text: problem.text, items: [], count: 1, details: [problem.text], keys: [problem.key], at });
       return;
     }
     let group = byKind.get(kind);
     if (!group) {
-      group = { kind, severity: problem.severity, items: [], category: problem.category, count: 0, details: [], at };
+      group = { kind, severity: problem.severity, items: [], category: problem.category, count: 0, details: [], keys: [], at };
       byKind.set(kind, group);
       groups.push(group);
     }
     group.count++;
     group.details.push(problem.text);
+    group.keys.push(problem.key);
     if (serious) group.severity = 'serious';
     for (const subject of problem.subjects ?? []) {
       // Un membro (o un ruolo) una volta sola: resta grave se uno dei suoi problemi lo è

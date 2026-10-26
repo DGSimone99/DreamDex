@@ -74,6 +74,8 @@ export function useShrink(box: HTMLElement | null, key: string, max: number) {
   if (state.key !== key) setState({ key, n: max });
   const n = state.key === key ? state.n : max;
 
+  // Senza dipendenze di proposito: si ricontrolla dopo ogni render (il contenuto cambia senza che cambi il contenitore);
+  // si ferma da sé quando niente esce o non resta niente da togliere
   useLayoutEffect(() => {
     if (!box || n <= 0) return;
     const { top, height: limit } = box.getBoundingClientRect();
