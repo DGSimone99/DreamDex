@@ -63,7 +63,7 @@ export function AnalysisTabs({ view, onView, panelId, areasDisabled = false, sco
     const tab = buttons.current[ANALYSIS_VIEWS.indexOf(view)];
     if (!tab) return;
     // Dentro la scheda aperta, a destra (prima del taglio inclinato)
-    const place = () => setHelpLeft(tab.offsetLeft + tab.offsetWidth - 40);
+    const place = () => setHelpLeft(tab.offsetLeft + tab.offsetWidth - 64);
     place();
     // La scheda Analisi può essere nascosta al primo disegno (misure a 0): si riposiziona quando prende le sue dimensioni
     if (typeof ResizeObserver === 'undefined') return;
