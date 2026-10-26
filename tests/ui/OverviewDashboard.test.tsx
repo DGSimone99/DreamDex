@@ -4,6 +4,8 @@ import { describe, expect, it, vi } from 'vitest';
 import type { CoachProblem } from '../../src/engine/coach';
 import type { DashboardData } from '../../src/engine/overviewDashboard';
 import { TYPES } from '../../src/engine/types';
+import { en } from '../../src/i18n/en';
+import { it as itText } from '../../src/i18n/it';
 import { densityFor, OverviewDashboard, ROOMY_FROM, TIGHT_BELOW, type Density } from '../../src/ui/OverviewDashboard';
 import { renderIt } from '../helpers/italian';
 
@@ -51,8 +53,8 @@ const problem = (i: number, severity: CoachProblem['severity'] = 'minor'): Coach
 function mount({ density = 'normal' as Density, data = sample(), problems = [problem(1, 'serious'), problem(2)], members = 6 } = {}) {
   const onView = vi.fn();
   const onMeta = vi.fn();
-  renderIt(<OverviewDashboard data={data} problems={problems} members={members} onView={onView} onMeta={onMeta} density={density} />);
-  return { onView, onMeta };
+  const { unmount } = renderIt(<OverviewDashboard data={data} problems={problems} members={members} onView={onView} onMeta={onMeta} density={density} />);
+  return { onView, onMeta, unmount };
 }
 
 describe('Cruscotto della Panoramica', () => {
@@ -116,6 +118,44 @@ describe('Cruscotto della Panoramica', () => {
     const roles = screen.getByRole('region', { name: 'Ruoli' });
     expect(within(roles).queryByText('Essenziali')).toBeNull();
     expect(roles.querySelectorAll('.dash-chip')).toHaveLength(3); // essenziali e importanti
+  });
+
+  it('normale: Ruoli per livello, minori compresi, senza icone dei membri', () => {
+    mount();
+    const roles = screen.getByRole('region', { name: 'Ruoli' });
+    expect(within(roles).getByText('Essenziali')).toBeInTheDocument();
+    expect(within(roles).getByText('Minori')).toBeInTheDocument();
+    expect(roles.querySelectorAll('.dash-chip')).toHaveLength(4);
+    expect(roles.querySelector('.dash-owners')).toBeNull();
+  });
+
+  it('normale: sotto le barre "supera" e "superato da", quante ne stanno', () => {
+    mount();
+    expect(within(screen.getByRole('region', { name: 'Velocità' })).getByText(/supera Iron Valiant, Garchomp/)).toBeInTheDocument();
+  });
+
+  it('ogni corsia della Velocità ha il nome del Pokémon per i lettori di schermo', () => {
+    mount({ density: 'tight' });
+    const lanes = screen.getByRole('region', { name: 'Velocità' }).querySelectorAll('.dash-lane');
+    expect(lanes[0]).toHaveTextContent(/Dragapult.*421/);
+    expect(lanes[1]).toHaveTextContent(/Toxapex.*167/);
+  });
+
+  it('Cosa fare: la freccia in testata apre il Coaching, anche senza problemi o con un membro', async () => {
+    const user = userEvent.setup();
+    for (const props of [{}, { problems: [] }, { members: 1, problems: [] }]) {
+      const { onView, unmount } = mount(props);
+      await user.click(within(screen.getByRole('region', { name: 'Cosa fare' })).getByRole('button', { name: 'Apri la scheda Coaching' }));
+      expect(onView).toHaveBeenCalledWith('coaching');
+      unmount();
+    }
+  });
+
+  it('il "?" della Panoramica descrive il cruscotto, non i riquadri', () => {
+    expect(itText['help.view.overview']).toMatch(/copertura dei tipi, ruoli, velocità.*cosa fare.*minacce/);
+    expect(itText['help.view.overview']).not.toMatch(/riquadr/);
+    expect(en['help.view.overview']).toMatch(/type coverage, roles, speed.*what to do.*threats/);
+    expect(en['help.view.overview']).not.toMatch(/tile/);
   });
 
   it('normale: il controllo con chi lo porta', () => {

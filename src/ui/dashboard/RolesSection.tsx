@@ -11,64 +11,79 @@ import { useFit } from './useFit';
 /** Membri mostrati accanto a un ruolo coperto (poi "+N"). */
 const OWNERS = 2;
 
-/** Un ruolo: coperto solo contorno, mancante rosso pieno (essenziali e importanti) o tratteggiato (minori). */
-function Chip({ chip, owners }: { chip: RoleChip; owners: boolean }) {
+/** Un ruolo: coperto solo contorno, mancante rosso pieno (essenziali e importanti) o tratteggiato (minori); i minori più tenui. */
+function Chip({ chip, fit = true }: { chip: RoleChip; fit?: boolean }) {
   const t = useT();
   const lang = useLang();
   const label = needLabel(chip.need, lang);
   const state = chip.covered ? 'ok' : chip.level === 'minor' ? 'soft' : 'bad';
   return (
-    <span data-fit className={`dash-chip ${state}`} title={chip.covered ? `${label}: ${chip.owners.join(', ')}` : `${label}: ${t('dash.roleMissing')}`}>
+    <span data-fit={fit || undefined} className={`dash-chip ${state}${chip.level === 'minor' ? ' minor' : ''}`} title={chip.covered ? `${label}: ${chip.owners.join(', ')}` : `${label}: ${t('dash.roleMissing')}`}>
       <Icon name={chip.covered ? 'check' : 'close'} />
       {label}
       {!chip.covered && <span className="visually-hidden">, {t('dash.roleMissing')}</span>}
-      {owners && chip.covered && (
-        <span className="dash-owners" aria-hidden="true">
-          {chip.owners.slice(0, OWNERS).map(name => <PokemonIcon key={name} name={name} />)}
-          {chip.owners.length > OWNERS && <small>+{chip.owners.length - OWNERS}</small>}
-        </span>
-      )}
     </span>
   );
 }
 
-/** Ruoli: chip dei ruoli contati; ampio: per livello, minori compresi, con le mini icone dei membri. */
+/** Le mini icone di chi copre il ruolo (al più due, poi "+N"), distanziate. */
+function Owners({ owners }: { owners: string[] }) {
+  if (!owners.length) return null;
+  return (
+    <span className="dash-owners" aria-hidden="true">
+      {owners.slice(0, OWNERS).map(name => <PokemonIcon key={name} name={name} />)}
+      {owners.length > OWNERS && <small>+{owners.length - OWNERS}</small>}
+    </span>
+  );
+}
+
+const LEVELS = ['essential', 'important', 'minor'] as const;
+
+/**
+ * Ruoli. Stretto: chip di essenziali e importanti. Normale: per livello, minori compresi.
+ * Ampio: una riga per ruolo con chi lo copre; le righe si allungano fino a riempire la sezione.
+ */
 export function RolesSection({ roles, density, onView }: { roles: DashboardData['roles']; density: Density; onView: (v: AnalysisView) => void }) {
   const t = useT();
-  const roomy = density === 'roomy';
-  const chips = roomy ? roles.chips : roles.chips.filter(c => c.level !== 'minor');
+  const titles = { essential: t('analysis.essential'), important: t('analysis.important'), minor: t('dash.levelMinor') };
+  const all = LEVELS.flatMap(level => roles.chips.filter(c => c.level === level));
+  const chips = density === 'tight' ? all.filter(c => c.level !== 'minor') : all;
   const { ref, shown } = useFit<HTMLDivElement>(`${density}|${chips.map(c => `${c.need}${c.covered}`).join()}`, chips.length, { reserve: 1 });
   const hidden = chips.length - shown;
   const more = hidden > 0 && <span className="dash-chip more" title={t('dash.moreRoles', { n: hidden })}>+{hidden}</span>;
-  const levels = [
-    { level: 'essential', title: t('analysis.essential') },
-    { level: 'important', title: t('analysis.important') },
-    { level: 'minor', title: t('dash.levelMinor') },
-  ] as const;
-  // Per livello, nell'ordine in cui si misurano: le prime `shown` restano
-  let start = 0;
-  const groups = levels.map(({ level, title }) => {
-    const group = chips.filter(c => c.level === level);
-    const first = start;
-    start += group.length;
-    return { level, title, visible: group.filter((_, i) => first + i < shown) };
-  }).filter(g => g.visible.length > 0);
+  const visible = chips.slice(0, shown);
+  let body;
+  if (density === 'tight') {
+    body = <div className="dash-chips">{visible.map(chip => <Chip key={chip.need} chip={chip} />)}{more}</div>;
+  } else if (density === 'normal') {
+    body = <>
+      {LEVELS.map(level => {
+        const group = visible.filter(c => c.level === level);
+        return group.length > 0 && (
+          <div key={level} className="dash-level">
+            <span className="dash-level-name">{titles[level]}</span>
+            <div className="dash-chips">{group.map(chip => <Chip key={chip.need} chip={chip} />)}</div>
+          </div>
+        );
+      })}
+      {more && <div className="dash-chips">{more}</div>}
+    </>;
+  } else {
+    body = <>
+      {visible.map((chip, i) => (
+        <div key={chip.need} data-fit className={`dash-role${i > 0 && visible[i - 1].level !== chip.level ? ' first' : ''}`}>
+          <span className="dash-level-name">{i === 0 || visible[i - 1].level !== chip.level ? titles[chip.level] : ''}</span>
+          <Chip chip={chip} fit={false} />
+          <Owners owners={chip.covered ? chip.owners : []} />
+        </div>
+      ))}
+      {more && <div className="dash-role"><span />{more}</div>}
+    </>;
+  }
   return (
     <DashCard className="dash-roles" title={t('area.roles')} meta={<b>{roles.value}</b>}
       links={<DashLink area={t('area.roles')} onClick={() => onView('roles')} />}>
-      <div ref={ref} className="dash-fit">
-        {roomy
-          ? <>
-            {groups.map(({ level, title, visible }) => (
-              <div key={level} className="dash-level">
-                <span className="dash-level-name">{title}</span>
-                <div className="dash-chips">{visible.map(chip => <Chip key={chip.need} chip={chip} owners />)}</div>
-              </div>
-            ))}
-            {more && <div className="dash-chips">{more}</div>}
-          </>
-          : <div className="dash-chips">{chips.slice(0, shown).map(chip => <Chip key={chip.need} chip={chip} owners={false} />)}{more}</div>}
-      </div>
+      <div ref={ref} className={`dash-fit${density === 'roomy' ? ' dash-rows' : ''}`}>{body}</div>
     </DashCard>
   );
 }
