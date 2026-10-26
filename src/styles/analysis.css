@@ -295,3 +295,11 @@ button.member-card:hover { border-color: var(--accent); }
 .overview-cols.single { grid-template-columns: minmax(0, 1fr); }
 .overview-head .no-solutions { font-weight: 500; color: var(--muted); }
 .overview { grid-template-rows: auto minmax(0, 1fr) auto; }
+
+/* Coaching: i numeri chiave come riga di utilità in cima; a tutta larghezza il contenuto scorre su due colonne */
+.overview-col .overview-stats { margin: 0 0 10px; }
+.overview-headline .overview-stats { margin-left: 0; }
+.overview-cols.single .coach-body { columns: 2; column-gap: 28px; }
+.overview-cols.single .coach-body > * { break-inside: avoid; }
+.overview-cols.single .coach-body .problem-group, .overview-cols.single .coach-body .bonus-malus { break-inside: avoid; }
+.overview-cols.single .coach-body .bonus-malus { margin-top: 0; }

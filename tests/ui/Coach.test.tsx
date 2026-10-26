@@ -16,7 +16,7 @@ const meta = () => screen.getByRole('region', { name: 'Meta' });
 describe('CoachPanel', () => {
   it('mostra verdetto, punti di forza e problemi', async () => {
     await setup('Great Tusk', 'Gholdengo');
-    const summary = within(analysis()).getByRole('heading', { name: /^Problemi/ });
+    const summary = within(analysis()).getByRole('heading', { name: /^Coaching/ });
     // Il giudizio sta in testa alla Panoramica; accanto a "Problemi" i conteggi
     expect(analysis().querySelector('.overview-headline')).toHaveTextContent('Team incompleto');
     // Solo il triangolo blu dei minori: gli zeri non compaiono

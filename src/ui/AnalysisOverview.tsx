@@ -96,7 +96,6 @@ export function AnalysisOverview({ team, analysis, rating, coaching, data, previ
         {coaching && <strong>{coaching.verdict}</strong>}
         {notes.length > 0 && <AlertMark alerts={notes.map(text => ({ level: 'info' as const, text }))} />}
         {coaching?.teamType && <TeamTypeLine teamType={coaching.teamType} />}
-        <OverviewStats analysis={analysis} onView={onView} />
       </div>
       <div className={`overview-cols${solutions ? '' : ' single'}`}>
         <section className="overview-col" aria-label={t('analysis.problems')}>
@@ -110,8 +109,12 @@ export function AnalysisOverview({ team, analysis, rating, coaching, data, previ
               </span>
             )}
           </h3>
-          {coaching && <CoachProblems coaching={coaching} heading={false} />}
-          {rating && <BonusMalus rating={rating} />}
+          {/* I numeri chiave come riga di utilità in cima al Coaching; sotto, a tutta larghezza, il contenuto su due colonne */}
+          <OverviewStats analysis={analysis} onView={onView} />
+          <div className="coach-body">
+            {coaching && <CoachProblems coaching={coaching} heading={false} />}
+            {rating && <BonusMalus rating={rating} />}
+          </div>
         </section>
         {solutions && coaching && (
           <section className="overview-col" aria-label={t('analysis.solutions')}>
