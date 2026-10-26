@@ -27,6 +27,7 @@ import { defaultSet } from '../engine/sets';
 import { FilterBar } from './FilterBar';
 import { conditionLabel, neededConditions, providesAll, viaName } from '../engine/synergy';
 import { Sprite, TypeChip } from './Sprite';
+import { TypeIcons } from './typeIcons';
 import { Icon } from './icons';
 import { SuggestionDetail } from './SuggestionDetail';
 import { AlertMark } from './AlertMark';
@@ -173,7 +174,11 @@ function SuggestionRow({ rank, item, usage, out, quickLabel, actionLabel, replac
           <ListMarks set={item.set} lists={lists} />
           <AlertMark alerts={warnings} />
           <AlertMark alerts={together} icon="spark" />
-          <span className="types">{types.map(type => <TypeChip key={type} type={type} />)}</span>
+          <span className="types">
+            {types.map(type => <TypeChip key={type} type={type} />)}
+            {/* Righe strette: al posto dei chip le icone dei tipi (il nome del candidato ha la precedenza) */}
+            <TypeIcons types={types} className="types-compact" />
+          </span>
         </span>
         {/* Bonus e malus principali; il colore solo sui segni */}
         <small>

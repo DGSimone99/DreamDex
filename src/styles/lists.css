@@ -100,8 +100,9 @@
   .toolbar .filters > summary { height: 34px; }
   .picker.has-detail { gap: 12px; }
   .suggestions-panel { --picker-gap: 12px; }
-  /* Nelle righe i tipi diventano pallini colorati: il nome del candidato ha la precedenza */
-  .suggestion .name-line .types .type-chip, .suggestion .name-line .types .type-chip.long { width: 10px; min-width: 0; height: 10px; padding: 0; border-radius: 50%; font-size: 0; }
+  /* Nelle righe al posto dei chip le icone dei tipi: il nome del candidato ha la precedenza */
+  .suggestion .name-line .types .type-chip { display: none; }
+  .suggestion .name-line .types .types-compact { display: inline-flex; }
   .detail-hero .detail-id h3 { font-size: 20px; }
   .detail-hero { padding-top: 6px; padding-bottom: 6px; }
   /* Chi esce lo dicono già la riga della lista e il pulsante principale */
