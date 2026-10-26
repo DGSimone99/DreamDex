@@ -43,7 +43,10 @@ export function AreaView({ rating, area, problems, extra }: {
   return (
     <section className="area-view" aria-label={title}>
       <div className="area-side">
-        <h3 className="area-title">{title} <strong>{areaValue(rating, area) ?? 'n/d'}</strong></h3>
+        <h3 className="area-title">
+          {title} <strong>{areaValue(rating, area) ?? 'n/d'}</strong>
+          {rating.areas.find(a => a.key === area)?.inactive && <small className="area-inactive">{t('rating.notCounted')}</small>}
+        </h3>
         <div className="area-subs ad-nav" role="tablist" aria-orientation="vertical" aria-label={title}>
           {tabs.map((tab, i) => (
             <button key={tab.key} ref={el => { buttons.current[i] = el; }} type="button" role="tab" id={`${id}-${tab.key}`}

@@ -28,16 +28,22 @@ function useSheet(team: TeamSet[], data: EngineData) {
  * Riga dei membri in fondo alla Panoramica: una scheda compatta per membro (sprite, nome, ruolo, voto nel ruolo)
  * e "posto libero" per gli slot vuoti; cliccando si apre il profilo di quel membro.
  */
-export function MemberCards({ team, data, onOpen }: { team: TeamSet[]; data: EngineData; onOpen: (index: number) => void }) {
+export function MemberCards({ team, data, onOpen, onAdd }: { team: TeamSet[]; data: EngineData; onOpen: (index: number) => void; onAdd?: () => void }) {
   const t = useT();
   const { rows } = useSheet(team, data);
   return (
     <section className="member-cards" aria-label={t('analysis.members')}>
-      <h3 className="overview-head">{t('analysis.members')}</h3>
+      <h3 className="overview-head"><span className="box-head">{t('analysis.members')}</span></h3>
       <ul>
         {Array.from({ length: 6 }, (_, i) => {
           const row = rows[i];
-          if (!row) return <li key={i} className="member-card empty">{t('analysis.freeSlot')}</li>;
+          if (!row) {
+            return (
+              <li key={i}>
+                <button type="button" className="member-card empty" onClick={onAdd} aria-label={t('analysis.freeSlotAdd')}>{t('analysis.freeSlot')}</button>
+              </li>
+            );
+          }
           return (
             <li key={row.species}>
               <button type="button" className="member-card" onClick={() => onOpen(i)}

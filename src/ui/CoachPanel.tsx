@@ -38,14 +38,30 @@ type SwapProps = {
   onReplace: (index: number) => void;
 };
 
+/** Tipo di team e stili (Hyper Offense, Volt-turn…), col perché nel tooltip. */
+export function TeamTypeLine({ teamType }: { teamType: NonNullable<Coaching['teamType']> }) {
+  const tr = useT();
+  return (
+    <p className="team-type">
+      <span className="team-type-label">{tr('coach.teamType')}</span>
+      <strong title={tr(`archetype.${teamType.archetype}.note`)}>{tr(`archetype.${teamType.archetype}`)}</strong>
+      {teamType.styles.map(style => (
+        <span key={style} className="team-style" title={tr(`teamStyle.${style}.note`)}>{tr(`teamStyle.${style}`)}</span>
+      ))}
+    </p>
+  );
+}
+
 /** La parte "cosa non va" del coaching: tipo di team, punti di forza, problemi per categoria (regole per prime), bannati esclusi. */
 /** `heading`: la testa "Problemi" (la Panoramica ha già la sua). */
 export function CoachProblems({ coaching, heading = true }: { coaching: Coaching; heading?: boolean }) {
+  // Senza la testa (Panoramica) anche il tipo di team sta sopra, nella riga del giudizio
+  const showType = heading;
   const tr = useT();
   const { teamType, strengths, problems, bannedCount = 0 } = coaching;
   return (
     <>
-      {teamType && (
+      {showType && teamType && (
         <p className="team-type">
           <span className="team-type-label">{tr('coach.teamType')}</span>
           <strong title={tr(`archetype.${teamType.archetype}.note`)}>{tr(`archetype.${teamType.archetype}`)}</strong>
@@ -106,6 +122,8 @@ export function CoachSolutions({ coaching, preview = null, onReplace, onSwap }: 
   const tr = useT();
   const lang = useLang();
   const { swaps } = coaching;
+  // Il primo cambio consigliato è l'azione principale: pulsante magenta con testo; gli altri restano icone
+  const lead = swaps.find(s => s.level === SWAP_GROUPS[0].level) ?? swaps[0];
   return (
     <>
       {SWAP_GROUPS.map(({ level, title: titleKey }) => {
@@ -139,10 +157,11 @@ export function CoachSolutions({ coaching, preview = null, onReplace, onSwap }: 
                     <ProsCons pros={pros} cons={cons} />
                     <div className="swap-actions">
                       {onSwap && (
-                        <button type="button" className="swap-now" aria-label={tr('coach.swapNow', { member: swap.member, replacement: swap.replacement })}
+                        <button type="button" className={`swap-now${proposed === lead ? ' primary' : ''}`} aria-label={tr('coach.swapNow', { member: swap.member, replacement: swap.replacement })}
                           title={tr('coach.swapNow', { member: swap.member, replacement: swap.replacement })}
                           onClick={() => onSwap(swap.index, swap.set)}>
                           <Icon name="swap" />
+                          {proposed === lead && <span>{tr('coach.swapShort')}</span>}
                         </button>
                       )}
                       <button type="button" aria-label={tr('coach.otherReplacements', { member: swap.member })} onClick={() => onReplace(swap.index)}>

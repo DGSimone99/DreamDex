@@ -74,6 +74,7 @@ const STATES: Record<string, State> = {
     await wait(300);
     return clickText(p, '.member-cards button.member-card', /./);
   } },
+  'rating-help': { run: async p => clickText(p, '.band .grade-tools button.help-button', /./) },
   'analysis-help': { run: async p => {
     if (!await clickText(p, '.band button.grade-area', /^Difesa/)) return 'no row';
     await wait(300);
@@ -81,9 +82,6 @@ const STATES: Record<string, State> = {
   } },
   meta: { run: async p => { await tab(p, 'meta'); return true; } },
   lists: { run: async p => { await tab(p, 'lists'); return true; } },
-  'area-offense': { run: async p => { await tab(p, 'analysis'); await wait(300); return clickText(p, 'button', /^Offesa/); } },
-  'rating-help': { run: async p => { await tab(p, 'analysis'); await wait(300); return clickText(p, 'button.help-button', /./); } },
-  bonus: { run: async p => { await tab(p, 'analysis'); await wait(300); return clickText(p, 'button, a', /Bonus\/Malus/); } },
   fill: { run: async p => clickText(p, 'button', /^\s*Completa team/) },
   saved: { run: async p => clickText(p, 'details.popover > summary', /Team salvati/) },
   import: { run: async p => clickText(p, 'details.popover > summary', /Import/) },

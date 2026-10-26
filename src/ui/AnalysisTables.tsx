@@ -62,7 +62,7 @@ export function DefenseTable({ team, analysis }: { team: TeamSet[]; analysis: Te
                 {/* Il colore della riga dice la gravità; a parole per gli screen reader */}
                 {severities[r] && <span className="visually-hidden">{` ${tr(severities[r] === 'serious' ? 'analysis.shortfallSerious' : 'analysis.shortfall')}`}</span>}
               </th>
-              {row.multipliers.map((m, i) => <td key={i}>{formatMultiplier(m)}</td>)}
+              {row.multipliers.map((m, i) => <td key={i} className={m > 1 ? 'weak' : m < 1 ? 'resist' : undefined}>{formatMultiplier(m)}</td>)}
               <td>{row.weak}</td>
               <td>{row.resist}</td>
             </tr>
