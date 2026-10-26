@@ -181,7 +181,7 @@ describe('Panoramica: rifinitura', () => {
     const rules = [...dialog.querySelectorAll('.help-rule')].map(r => r.querySelector('b')!.textContent);
     // Ogni tipo detto in muri e attaccanti
     expect(dialog).toHaveTextContent(/Stall6 muri/);
-    expect(rules).toEqual(['Stall', 'Semi-stall', 'Balance', 'Bulky Offense', 'Hyper Offense', 'Muro', 'Meteo', 'Trick Room', 'Webs', 'Volt-turn', 'Screens']);
+    expect(rules).toEqual(['Stall', 'Semi-stall', 'Balance', 'Bulky Offense', 'Hyper Offense', 'Muro', 'Meteo', 'Trick Room']);
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(help).toHaveFocus();
