@@ -67,3 +67,7 @@
 .band.collapsed .grade-badge .grade-areas, .band.collapsed .grade-badge .grade-tools { display: none; }
 .grade-badge button.grade-area.inactive { color: var(--faint); }
 .grade-badge button.grade-area.inactive b { color: var(--faint); }
+/* Bonus/Malus: etichetta su due colonne (niente barra), valore netto colorato dal segno */
+.grade-badge button.grade-area.grade-bm { grid-template-columns: 1fr 24px 10px; }
+.grade-badge button.grade-area.grade-bm.pos b { color: var(--good); }
+.grade-badge button.grade-area.grade-bm.neg b { color: var(--bad); }

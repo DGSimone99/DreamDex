@@ -22,9 +22,11 @@ describe('riquadro Voto: le righe portano alla scheda di Analisi', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
-  it('Bonus/Malus non sta nel riquadro Voto (è nel Coaching)', async () => {
-    await setup();
-    expect(within(band()).queryByRole('button', { name: /^Bonus\/Malus/ })).toBeNull();
+  it('Bonus/Malus è la quinta riga del riquadro Voto e porta alla sua scheda', async () => {
+    const user = await setup();
+    await user.click(within(band()).getByRole('button', { name: /^Apri Bonus\/Malus: [+−±]/ }));
+    expect(screen.getByRole('tab', { name: /^Analisi/ })).toHaveAttribute('aria-selected', 'true');
+    expect(within(document.getElementById('panel-analysis')!).getByRole('tab', { name: /^Bonus\/Malus/ })).toHaveAttribute('aria-selected', 'true');
   });
 
   it('Velocità inattiva nello stall: resta, grigia, e il nome lo dice', async () => {

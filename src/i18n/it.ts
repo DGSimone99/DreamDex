@@ -818,6 +818,7 @@ export const it: Record<keyof typeof en, string> = {
   'team.nickname': "Soprannome di {species}",
   'team.nicknameTitle': "Clicca per dare un soprannome (come su Showdown)",
   'team.shiny': "Shiny",
+  'rating.openBonusMalus': "Apri Bonus/Malus: {value}",
   'rating.openArea': "{area} {value}, apri il dettaglio",
   'rating.badgeSr': "Voto {grade}, {overall} su 100, {label}",
   'team.cardProblem': "1 problema",
