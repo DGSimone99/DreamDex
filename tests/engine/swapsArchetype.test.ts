@@ -53,15 +53,16 @@ describe('scambi con l\'archetipo scelto', () => {
     expect(bestSwaps(stall, fixtureData, 'it', pool).length).toBeGreaterThan(0);
   });
 
-  it('con un archetipo, l\'ordine è per voto meno penalità, e la penalità segue le voci perse', () => {
-    const swaps = bestSwaps(balance, fixtureData, 'it', pool, { archetype: 'balance' });
-    const key = (s: typeof swaps[number]) => s.teamGain.overall - (s.teamGain.penalty ?? 0);
-    for (let i = 1; i < swaps.length; i++) expect(key(swaps[i - 1])).toBeGreaterThanOrEqual(key(swaps[i]));
-    for (const s of swaps) expect(s.teamGain.penalty).toBe((s.teamGain.lost ?? []).reduce((n, r) => n + (r.level === 'essential' ? 3 : 2), 0));
-    // Chi sostituisce Garchomp (unico hazard setter) con un attaccante perde gli hazard
-    const valiant = bestSwaps(balance, fixtureData, 'it', () => pool().filter(c => c.species === 'Iron Valiant'), { archetype: 'balance' })
-      .find(s => s.replaces === 2) ?? null;
-    if (valiant) expect(valiant.teamGain.lost?.map(r => r.key)).toContain('hazards');
+  it('con un archetipo il +N è il voto vero del team, e l\'ordine è per voto', () => {
+    const before = rateTeam(stall, fixtureData, 'it')!.overall;
+    const swaps = bestSwaps(stall, fixtureData, 'it', pool, { archetype: 'stall' });
+    expect(swaps.length).toBeGreaterThan(0);
+    for (let i = 1; i < swaps.length; i++) expect(swaps[i - 1].teamGain.overall).toBeGreaterThanOrEqual(swaps[i].teamGain.overall);
+    for (const s of swaps) {
+      const real = rateTeam(withCandidate(stall, s.set, s.replaces), fixtureData, 'it')!.overall;
+      expect(s.teamGain.overall).toBe(real);
+      expect(s.teamGain.gain).toBe(real - before);
+    }
   });
 
   it('senza archetipo l\'ordine resta per voto', () => {
@@ -70,9 +71,11 @@ describe('scambi con l\'archetipo scelto', () => {
     expect(swaps.every(s => !s.teamGain.penalty)).toBe(true);
   });
 
-  it('team non di quel tipo: niente esclusi, si spinge verso il tipo scelto', () => {
-    const free = bestSwaps(balance, fixtureData, 'it', pool).length;
-    expect(bestSwaps(balance, fixtureData, 'it', pool, { archetype: 'stall' })).toHaveLength(free);
+  it('team non di quel tipo: compare solo chi lo rende di quel tipo', () => {
+    const swaps = bestSwaps(stall, fixtureData, 'it', pool, { archetype: 'semiStall' });
+    for (const s of swaps) expect(teamArchetype(withCandidate(stall, s.set, s.replaces), DEFAULT_RULES)?.archetype).toBe('semiStall');
+    expect(bestSwaps(balance, fixtureData, 'it', pool, { archetype: 'stall' }).every(s =>
+      teamArchetype(withCandidate(balance, s.set, s.replaces), DEFAULT_RULES)?.archetype === 'stall')).toBe(true);
   });
 
   it('team già di quel tipo: esclusi i cambi che lo fanno uscire', () => {
@@ -100,9 +103,10 @@ describe('scambi con l\'archetipo scelto', () => {
     expect(swaps.some(s => ['Skarmory', 'Garganacl', 'Ting-Lu'].includes(s.species))).toBe(true);
   });
 
-  it('team non stall con Stall scelto: nessun vincolo sul singolo membro', () => {
-    const species = bestSwaps(balance, fixtureData, 'it', pool, { archetype: 'stall' }).map(s => s.species);
-    expect(species).toEqual(expect.arrayContaining(bestSwaps(balance, fixtureData, 'it', pool).map(s => s.species)));
+  it('team non semi-stall con Semi-stall scelto: nessun vincolo sul singolo membro oltre a rendere il team semi-stall', () => {
+    const reach = (sw: { set: TeamSet; replaces: number }) => teamArchetype(withCandidate(stall, sw.set, sw.replaces), DEFAULT_RULES)?.archetype === 'semiStall';
+    const free = bestSwaps(stall, fixtureData, 'it', pool).filter(reach).map(s => s.species);
+    expect(bestSwaps(stall, fixtureData, 'it', pool, { archetype: 'semiStall' }).map(s => s.species)).toEqual(expect.arrayContaining(free));
   });
 
   it('i preferiti non si sostituiscono mai, anche con un archetipo', () => {
@@ -110,12 +114,13 @@ describe('scambi con l\'archetipo scelto', () => {
     expect(bestSwaps(team, fixtureData, 'it', pool, { archetype: 'stall' }).some(s => s.replaces === 0)).toBe(false);
   });
 
-  it('team incompleto: voto con l\'archetipo scelto, nessuna esclusione', () => {
+  it('team incompleto: voto vero, entra solo chi aiuta a costruire il tipo scelto', () => {
     const team = balance.slice(0, 5);
     const ranked = rankByTeamGain(pool(), team, 1, fixtureData, 'it', true, 'stall');
-    expect(ranked).toHaveLength(candidates.length);
+    expect(ranked.length).toBeGreaterThan(0);
     for (const item of ranked) {
-      expect(item.teamGain!.overall).toBe(rateTeam(withCandidate(team, item.set, 1), fixtureData, 'it', { archetype: 'stall' })!.overall);
+      expect(fitsTeamType(item.set, 'stall', DEFAULT_RULES)).toBe(true);
+      expect(item.teamGain!.overall).toBe(rateTeam(withCandidate(team, item.set, 1), fixtureData, 'it')!.overall);
     }
   });
 
@@ -173,13 +178,10 @@ describe('il tipo di team guida Aggiungi e Migliora', () => {
     expect(report.excluded).toBe(attackers.length);
   });
 
-  it('Migliora: i cambi che portano al tipo scelto vengono prima', () => {
+  it('Migliora: col tipo scelto compaiono solo i cambi che portano a quel tipo', () => {
     const swaps = bestSwaps(stall, fixtureData, 'it', pool, { archetype: 'semiStall' });
-    const reaching = swaps.filter(s => s.teamGain.reaches);
-    expect(reaching.length).toBeGreaterThan(0);
-    const firstOther = swaps.findIndex(s => !s.teamGain.reaches);
-    if (firstOther >= 0) expect(swaps.slice(firstOther).some(s => s.teamGain.reaches)).toBe(false);
-    for (const s of reaching) expect(teamArchetype(withCandidate(stall, s.set, s.replaces), DEFAULT_RULES)?.archetype).toBe('semiStall');
+    expect(swaps.length).toBeGreaterThan(0);
+    for (const s of swaps) expect(teamArchetype(withCandidate(stall, s.set, s.replaces), DEFAULT_RULES)?.archetype).toBe('semiStall');
   });
 
   it('Migliora: team già del tipo, i cambi che lo fanno uscire restano esclusi', () => {

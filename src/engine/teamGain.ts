@@ -6,7 +6,7 @@ import { battleSpecies } from './dex';
 import { rulesOf } from './formatRules';
 import { rateTeam, type TeamRating } from './rating';
 import type { TeamSet } from './sets';
-import { lostResistances, lostRoles, rolePenalty, type LostRole } from './swapGuard';
+import { lostResistances, type LostRole } from './swapGuard';
 import type { TypeName } from './types';
 
 /** Voto del team col candidato e quanto cambia rispetto a ora. */
@@ -59,43 +59,40 @@ function areaPointsOf(before: TeamRating, after: TeamRating): Partial<Record<Sco
 }
 
 /**
- * Il voto di un cambio, con l'archetipo scelto se c'è (pesi e livelli di quel tipo prima e dopo).
- * `'excluded'` se il team era già di quel tipo e il cambio lo fa uscire; `null` se non c'è un voto (dati mancanti).
- * La penalità per le voci perse vale solo dove conta l'ordine per voto (`penalize`).
+ * Il voto vero di un cambio. Col tipo scelto `'excluded'` se il team col cambio non è di quel tipo
+ * (a team incompleto: se il candidato non aiuta a costruirlo); `null` se non c'è un voto (dati mancanti).
  */
-function swapEvaluator(team: TeamSet[], data: EngineData, lang: Lang, archetype: Archetype | undefined, penalize: boolean) {
-  const opts = archetype ? { archetype } : {};
-  const before = rateTeam(team, data, lang, opts);
+function swapEvaluator(team: TeamSet[], data: EngineData, lang: Lang, archetype: Archetype | undefined) {
+  // Il voto è sempre quello vero del team (lo stesso della card del voto): il tipo scelto decide solo chi compare
+  const before = rateTeam(team, data, lang);
   const rules = rulesOf(data);
-  const guard = !!archetype && team.length === 6 && teamArchetype(team, rules)?.archetype === archetype;
+  const already = !!archetype && team.length === 6 && teamArchetype(team, rules)?.archetype === archetype;
   /**
-   * Nel team già del tipo scelto anche chi entra deve essere adatto a quel tipo: nello stall un muro,
-   * nel semi-stall un muro al posto di un muro, negli offense un attaccante adatto; il balance non chiede niente.
+   * Col tipo scelto compare solo chi rende il team di quel tipo; a team incompleto, chi aiuta a costruirlo.
+   * Nel team già di quel tipo anche chi entra deve esserne adatto: nello stall un muro, nel semi-stall un muro
+   * al posto di un muro, negli offense un attaccante adatto (Kyurem al posto di Blissey lascerebbe lo stall solo sulla carta).
    */
-  const fits = (candidate: TeamSet, original: TeamSet | null): boolean => {
-    // Aggiungendo a un team incompleto si cercano Pokémon che aiutano a costruire il tipo scelto
-    if (archetype && !original && team.length < 6) return fitsTeamType(candidate, archetype, rules);
-    if (!guard) return true;
+  const fits = (after: TeamSet[], candidate: TeamSet | undefined, original: TeamSet | null): boolean => {
+    if (!archetype) return true;
+    if (after.length < 6) return !candidate || fitsTeamType(candidate, archetype, rules);
+    if (teamArchetype(after, rules)?.archetype !== archetype) return false;
+    if (!already || !candidate) return true;
     if (archetype === 'stall') return fitsArchetype(candidate, 'stall', rules);
     if (archetype === 'semiStall') return !original || !isPassive(original, rules) || isPassive(candidate, rules);
     if (archetype === 'hyperOffense' || archetype === 'bulkyOffense') return fitsArchetype(candidate, archetype, rules);
     return true;
   };
-  const evaluate = (after: TeamSet[], candidate?: TeamSet, original?: TeamSet | null): { rating: TeamRating; gain: TeamGain } | 'excluded' | null => {
+  const evaluate = (after: TeamSet[], candidate?: TeamSet, original: TeamSet | null = null): { rating: TeamRating; gain: TeamGain } | 'excluded' | null => {
     if (!before) return null;
-    if (guard && teamArchetype(after, rules)?.archetype !== archetype) return 'excluded';
-    if (candidate && !fits(candidate, original ?? null)) return 'excluded';
-    const rating = rateTeam(after, data, lang, opts);
+    if (!fits(after, candidate, original)) return 'excluded';
+    const rating = rateTeam(after, data, lang);
     if (!rating) return null;
-    const lost = archetype ? lostRoles(before.needs, rating.needs) : undefined;
     return {
       rating,
       gain: {
         grade: rating.grade, overall: rating.overall, gain: rating.overall - before.overall,
-        ...(lost ? { lost, penalty: penalize ? rolePenalty(lost) : 0 } : {}),
         lostResists: lostResistances(team, after),
         areaPoints: areaPointsOf(before, rating),
-        ...(archetype && !guard && after.length === 6 ? { reaches: teamArchetype(after, rules)?.archetype === archetype } : {}),
       },
     };
   };
@@ -160,7 +157,7 @@ export function rankByTeamGain<T extends { set: TeamSet; score: number }>(
     if (report) report.excluded += items.length - kept.length;
     return kept;
   }
-  const { before, evaluate } = swapEvaluator(team, data, lang, archetype, sort);
+  const { before, evaluate } = swapEvaluator(team, data, lang, archetype);
   if (!before) return items;
   const prefix = `${idOf(team)}|${replaceIndex}|${dataKey(data)}|${lang}|${archetype ?? ''}|${sort}|`;
   const gainOf = (set: TeamSet) => {
@@ -207,7 +204,7 @@ export function bestSwaps<T extends { species: string; set: TeamSet; score: numb
   team: TeamSet[], data: EngineData, lang: Lang, candidatesFor: (index: number) => T[],
   { similar = false, threshold = 0, archetype, report }: { similar?: boolean; threshold?: number; archetype?: Archetype; report?: SwapReport } = {},
 ): (T & { teamGain: TeamGain; replaces: number; alternatives: SwapOption[] })[] {
-  const { before, evaluate } = swapEvaluator(team, data, lang, archetype, !similar);
+  const { before, evaluate } = swapEvaluator(team, data, lang, archetype);
   if (!before || team.length < 2) return [];
   const best = new Map<string, T & { teamGain: TeamGain; replaces: number; alternatives: SwapOption[] }>();
   const base = (set: TeamSet) => battleSpecies(set)?.baseSpecies ?? set.species;

@@ -69,15 +69,15 @@ describe('selettore del tipo di team nei suggerimenti', () => {
     await user.selectOptions(types(), 'Stall');
     // Solo Kyurem fra i candidati: ogni cambio fa uscire il team dallo stall
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Kyurem');
-    expect(await within(suggestions()).findByText(/Nessuno dei cambi migliori mantiene il team Stall/)).toBeInTheDocument();
+    expect(await within(suggestions()).findByText(/Nessuno dei cambi migliori rende il team Stall/)).toBeInTheDocument();
     await user.selectOptions(types(), 'Qualunque');
-    expect(within(suggestions()).queryByText(/Nessuno dei cambi migliori mantiene il team Stall/)).toBeNull();
+    expect(within(suggestions()).queryByText(/Nessuno dei cambi migliori rende il team Stall/)).toBeNull();
   });
 
-  it('il dettaglio mostra lo stesso guadagno della lista, anche con un tipo diverso da quello riconosciuto', async () => {
+  it('il dettaglio mostra lo stesso guadagno della lista, e il "prima" è il voto vero della card', async () => {
     const user = await importTeam(STALL);
-    // Balance non è il tipo riconosciuto: il voto forzato differisce da quello normale
-    await user.selectOptions(types(), 'Balance');
+    await user.selectOptions(types(), 'Stall');
+    const card = screen.getByRole('region', { name: 'Team' }).ownerDocument.querySelector('.grade-badge')!.textContent!;
     const row = list().querySelector('li')!;
     const name = row.querySelector('.name-line strong')!.textContent!.replace(/^\d+\. /, '');
     await user.click(within(list()).getAllByRole('button', { name: new RegExp(`${name}$`) }).find(b => b.hasAttribute('aria-pressed'))!);
@@ -85,15 +85,16 @@ describe('selettore del tipo di team nei suggerimenti', () => {
     const [, after, raw] = /: [SABCD] (\d+) \(([^)]+)\)$/.exec(label)!;
     const gain = raw === '±0' ? 0 : Number(raw.replace('−', '-').replace('+', ''));
     const detail = screen.getByRole('complementary', { name: `Dettaglio di ${name}` });
-    // Prima e dopo come nella lista: il "prima" usa anche lui il tipo scelto
+    // Prima e dopo come nella lista; il "prima" è il voto vero, lo stesso della card del voto
     expect(detail.querySelector('.detail-score')!.textContent).toMatch(new RegExp(`[SABCD] ${Number(after) - gain} → [SABCD] ${after}$`));
+    expect(card).toContain(String(Number(after) - gain));
   });
 
   it('nessun messaggio del tipo se la lista è vuota per altri motivi (ricerca senza risultati)', async () => {
     const user = await importTeam(STALL);
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Zzzzz');
     expect(await within(suggestions()).findByText('Nessun Pokémon corrisponde ai filtri')).toBeInTheDocument();
-    expect(within(suggestions()).queryByText(/mantiene il team Stall/)).toBeNull();
+    expect(within(suggestions()).queryByText(/rende il team Stall/)).toBeNull();
   });
 });
 
@@ -132,7 +133,7 @@ describe('tipo di team in Aggiungi', () => {
   });
 });
 
-describe('dettaglio: ruolo perso che fa scendere in classifica', () => {
+describe('dettaglio col tipo scelto', () => {
   const s = (species: string, item: string, ability: string, moves: string[], nature: string, evs: TeamSet['evs']): TeamSet =>
     ({ ...emptySet(species), item, ability, moves, nature, evs });
   const fast = { atk: 252, spe: 252, hp: 4 };
@@ -146,27 +147,17 @@ describe('dettaglio: ruolo perso che fa scendere in classifica', () => {
   ];
   const valiant = s('Iron Valiant', 'Booster Energy', 'Quark Drive', ['Close Combat', 'Knock Off', 'Spirit Break', 'Swords Dance'], 'Jolly', fast);
 
-  it('mostra la voce persa e i punti in classifica', () => {
-    const [item] = rankByTeamGain(improveReplacements(team, 2, DEFAULT_FORMAT, fixtureData, 5, [valiant], 'it'), team, 2, fixtureData, 'it', true, 'balance');
-    expect(item.teamGain?.penalty).toBeGreaterThan(0);
+  it('prima e dopo sono il voto vero del team, niente penalità in classifica', () => {
+    const [item] = rankByTeamGain(improveReplacements(team, 2, DEFAULT_FORMAT, fixtureData, 5, [valiant], 'it'), team, 2, fixtureData, 'it', true);
+    const before = rateTeam(team, fixtureData)!;
+    const after = rateTeam(team.map((m, i) => (i === 2 ? item.set : m)), fixtureData)!;
     render(
       <LangProvider lang="it">
         <SuggestionDetail item={item} rank={1} team={team} replaceIndex={2} data={fixtureData} format={DEFAULT_FORMAT}
-          rating={rateTeam(team, fixtureData)} archetype="balance" usage={null} banMark={null} actionLabel="Metti" onAction={() => {}} />
+          rating={before} archetype="balance" usage={null} banMark={null} actionLabel="Metti" onAction={() => {}} />
       </LangProvider>,
     );
-    expect(screen.getByText(/Perde Hazard: −2 in classifica/)).toBeInTheDocument();
-  });
-
-  it('la voce persa resta visibile anche con tre perdite', () => {
-    const [item] = rankByTeamGain(improveReplacements(team, 2, DEFAULT_FORMAT, fixtureData, 5, [valiant], 'it'), team, 2, fixtureData, 'it', true, 'balance');
-    const crowded = { ...item, diff: { ...item.diff, losses: { roles: ['pivot', 'removal', 'screens'], covers: [], resists: [] } } } as typeof item;
-    render(
-      <LangProvider lang="it">
-        <SuggestionDetail item={crowded} rank={1} team={team} replaceIndex={2} data={fixtureData} format={DEFAULT_FORMAT}
-          rating={rateTeam(team, fixtureData)} archetype="balance" usage={null} banMark={null} actionLabel="Metti" onAction={() => {}} />
-      </LangProvider>,
-    );
-    expect(screen.getByText(/Perde Hazard: −2 in classifica/)).toBeInTheDocument();
+    expect(document.querySelector('.detail-score')!.textContent).toMatch(new RegExp(`${before.overall} → [SABCD] ${after.overall}$`));
+    expect(screen.queryByText(/in classifica/)).toBeNull();
   });
 });
