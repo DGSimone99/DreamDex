@@ -12,7 +12,6 @@ import type { TeamSet } from './engine/sets';
 import { AnalysisPanel, MetaPanel } from './ui/AnalysisPanel';
 import { GradeBadge } from './ui/RatingPanel';
 import type { AnalysisView } from './ui/analysisView';
-import { MemberSheet } from './ui/MemberSheet';
 import { SavedTeams } from './ui/SavedTeams';
 import { ShowdownPanel } from './ui/ShowdownPanel';
 import { SuggestionsPanel } from './ui/SuggestionsPanel';
@@ -124,6 +123,8 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   // Scheda aperta sotto il team: col team vuoto si parte dai Pokémon, poi vale l'ultima scelta
   // Cosa mostra Analisi: la Panoramica o un'area del voto (il riquadro Voto apre le aree)
   const [analysisView, setAnalysisView] = useState<AnalysisView>('overview');
+  // Membro aperto nella Panoramica di Analisi (null: la Panoramica)
+  const [analysisMember, setAnalysisMember] = useState<number | null>(null);
   const [tab, setTabState] = useState<TabId>(() => (initialTeam.length && storage ? loadTab(storage) : null) ?? 'pokemon');
   const setTab = (next: TabId) => {
     setTabState(next);
@@ -281,9 +282,9 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
           />
         </TabPanel>
         <TabPanel id="analysis" active={shownTab}>
-          <AnalysisPanel team={team} analysis={analysis} data={data} rating={rating} coaching={coaching} withMeta={false} expanded view={analysisView} onView={setAnalysisView}
+          <AnalysisPanel team={team} analysis={analysis} data={data} rating={rating} coaching={coaching} view={analysisView} onView={view => { setAnalysisView(view); setAnalysisMember(null); }}
             preview={preview?.index === replaceIndex ? preview : null} onReplace={startReplace} onSwap={replaceAt}
-            footer={team.length > 0 && <MemberSheet team={team} data={rated} />} />
+            member={analysisMember} onMember={setAnalysisMember} />
         </TabPanel>
         <TabPanel id="meta" active={shownTab}>
           <MetaPanel team={team} analysis={analysis} data={data} coaching={coaching} />

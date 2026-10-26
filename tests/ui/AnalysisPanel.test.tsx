@@ -1,7 +1,9 @@
 import { render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { analyzeTeam } from '../../src/engine/analysis';
-import { AnalysisPanel } from '../../src/ui/AnalysisPanel';
+import { MetaPanel } from '../../src/ui/AnalysisPanel';
+import { DefenseTable, NeedsTable, OffenseTable } from '../../src/ui/AnalysisTables';
+import type { TeamSet } from '../../src/engine/sets';
 import { fixtureData, gholdengo, tusk } from '../fixtures/data';
 import { renderIt } from '../helpers/italian';
 
@@ -9,15 +11,28 @@ import { renderIt } from '../helpers/italian';
 const row = (name: string) => screen.getAllByRole('listitem')
   .find(li => li.querySelector('.role, .who strong')?.textContent === name)!;
 
-describe('AnalysisPanel', () => {
+/** Le tabelle delle schede d'area e le minacce del meta, insieme come nella vecchia Analisi. */
+const AllTables = ({ team }: { team: TeamSet[] }) => {
+  const analysis = analyzeTeam(team, fixtureData);
+  return (
+    <section aria-label="Analisi">
+      <DefenseTable team={team} analysis={analysis} />
+      <OffenseTable analysis={analysis} />
+      <NeedsTable team={team} analysis={analysis} />
+      <MetaPanel team={team} analysis={analysis} data={fixtureData} />
+    </section>
+  );
+};
+
+describe('tabelle dell\'Analisi', () => {
   const team = [tusk, gholdengo];
-  const renderPanel = () => renderIt(<AnalysisPanel team={team} analysis={analyzeTeam(team, fixtureData)} />);
+  const renderPanel = () => renderIt(<AllTables team={team} />);
 
   it('anteprime di una riga', () => {
     renderPanel();
     const panel = screen.getByRole('region', { name: 'Analisi' });
     // Debolezze: triangoli per gravi e minori, che insieme fanno 4
-    const weakSummary = within(panel).getByText('Debolezze difensive').closest('summary')!;
+    const weakSummary = within(panel).getByText('Debolezze difensive').closest('h4')!;
     const counts = [...weakSummary.querySelectorAll('.issue [aria-hidden="true"]')].map(el => Number(el.textContent));
     expect(counts.reduce((a, b) => a + b, 0)).toBe(4);
     expect(weakSummary).toHaveTextContent(/mancanz/);
@@ -53,7 +68,7 @@ describe('AnalysisPanel', () => {
     expect(row('Pivot')).not.toHaveClass('soft');
     expect(row('Pivot')).toHaveTextContent('Da coprire');
     // Un minore mancante resta grigio con il trattino
-    const minor = [...document.querySelectorAll('.role-group')].find(g => /^Minori/.test(g.querySelector('h4')!.textContent!))!;
+    const minor = [...document.querySelectorAll('.role-group')].find(g => /^Minori/.test(g.querySelector('h5')!.textContent!))!;
     const missingMinor = [...minor.querySelectorAll('li')].find(li => !li.querySelector('.owner'));
     // Precondizione: il team di prova ha almeno un minore mancante
     expect(missingMinor).toBeDefined();
@@ -70,18 +85,18 @@ describe('AnalysisPanel', () => {
       { ...tusk, species: 'Dondozo', item: 'Leftovers', ability: 'Unaware', moves: ['Body Press', 'Liquidation', 'Rest', 'Sleep Talk'] },
       { ...tusk, species: 'Clodsire', item: 'Leftovers', ability: 'Unaware', moves: ['Amnesia', 'Poison Jab', 'Recover', 'Spikes'] },
     ];
-    renderIt(<AnalysisPanel team={stall} analysis={analyzeTeam(stall, fixtureData)} />);
+    renderIt(<AllTables team={stall} />);
     // Essenziali dello stall: i due muri e il Recupero (interruttore spento); gli attaccanti sono ignorati
     expect(screen.getByText('Stall · 3/3 essenziali')).toBeInTheDocument();
     // Fra i non richiesti, in grigio: qui un membro (con gli EV d'attacco di Great Tusk) è misurato come attaccante,
     // quindi la riga mostra chi lo copre invece di "Non richiesto"
-    expect(row('Minaccia Offensiva').closest('.role-group')!.querySelector('h4')).toHaveTextContent('Non richiesti');
+    expect(row('Minaccia Offensiva').closest('.role-group')!.querySelector('h5')).toHaveTextContent('Non richiesti');
     expect(row('Minaccia Offensiva')).toHaveClass('soft');
   });
 
   it("velocità, controllo velocità e priorità non sono ruoli: niente righe (li misura l'area Velocità)", () => {
     const fast = [...team, { ...tusk, species: 'Dragapult', item: 'Choice Specs', ability: 'Infiltrator', moves: ['Shadow Ball', 'Draco Meteor'] }];
-    renderIt(<AnalysisPanel team={fast} analysis={analyzeTeam(fast, fixtureData)} />);
+    renderIt(<AllTables team={fast} />);
     expect(row('Velocità')).toBeUndefined();
     expect(row('Controllo Velocità')).toBeUndefined();
     expect(row('Priorità')).toBeUndefined();

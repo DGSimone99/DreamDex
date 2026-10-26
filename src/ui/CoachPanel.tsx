@@ -29,27 +29,22 @@ const SWAP_GROUPS: { level: SwapLevel; title: MessageKey }[] = [
   { level: 'optional', title: 'coach.swaps.optional' },
 ];
 
-export function CoachPanel({ coaching, preview = null, onReplace, onSwap }: {
+type SwapProps = {
   /** Mette subito nel team il sostituto mostrato nella card. */
   onSwap?: (index: number, set: TeamSet) => void;
   coaching: Coaching;
   /** Sostituto aperto in "Altri sostituti": aggiorna la raccomandazione dello stesso membro. */
   preview?: SwapPreview | null;
   onReplace: (index: number) => void;
-}) {
+};
+
+/** La parte "cosa non va" del coaching: tipo di team, punti di forza, problemi per categoria (regole per prime), bannati esclusi. */
+/** `heading`: la testa "Problemi" (la Panoramica ha già la sua). */
+export function CoachProblems({ coaching, heading = true }: { coaching: Coaching; heading?: boolean }) {
   const tr = useT();
-  const lang = useLang();
-  const { verdict, teamType, strengths, problems, swaps, bannedCount = 0 } = coaching;
+  const { teamType, strengths, problems, bannedCount = 0 } = coaching;
   return (
-    <details className="block coach" open>
-      <summary>
-        <span>{tr('coach.title')}</span>
-        <span className="summary-info">
-          {verdict}
-          <IssueCounts serious={problems.filter(p => p.severity === 'serious').length}
-            minor={problems.filter(p => p.severity === 'minor').length} labels={PROBLEM_LABELS} />
-        </span>
-      </summary>
+    <>
       {teamType && (
         <p className="team-type">
           <span className="team-type-label">{tr('coach.teamType')}</span>
@@ -69,7 +64,7 @@ export function CoachPanel({ coaching, preview = null, onReplace, onSwap }: {
       )}
       {problems.length > 0 && (
         <>
-          <h3>{tr('coach.problems')}</h3>
+          {heading && <h3>{tr('coach.problems')}</h3>}
           {PROBLEM_CATEGORIES.map(category => {
             const group = problems.filter(p => p.category === category);
             const label = tr(`problemCategory.${category}`);
@@ -102,6 +97,17 @@ export function CoachPanel({ coaching, preview = null, onReplace, onSwap }: {
       )}
       {/* Sostituzioni: chi è nella lista Ban dell'utente non viene proposto, ma si dice quanti sono */}
       {bannedCount > 0 && <p className="banned-note">{tr(bannedCount === 1 ? 'lists.bannedExcludedOne' : 'lists.bannedExcluded', { n: bannedCount })}</p>}
+    </>
+  );
+}
+
+/** La parte "come sistemarlo": i cambi consigliati e facoltativi, coi pro e contro e le azioni. */
+export function CoachSolutions({ coaching, preview = null, onReplace, onSwap }: SwapProps) {
+  const tr = useT();
+  const lang = useLang();
+  const { swaps } = coaching;
+  return (
+    <>
       {SWAP_GROUPS.map(({ level, title: titleKey }) => {
         const title = tr(titleKey);
         const group = swaps.filter(swap => swap.level === level);
@@ -150,6 +156,26 @@ export function CoachPanel({ coaching, preview = null, onReplace, onSwap }: {
           </div>
         );
       })}
+    </>
+  );
+}
+
+/** Il coaching intero in un blocco (giudizio, problemi e cambi): lo usano i test e chi lo mostra da solo. */
+export function CoachPanel(props: SwapProps) {
+  const tr = useT();
+  const { verdict, problems } = props.coaching;
+  return (
+    <details className="block coach" open>
+      <summary>
+        <span>{tr('coach.title')}</span>
+        <span className="summary-info">
+          {verdict}
+          <IssueCounts serious={problems.filter(p => p.severity === 'serious').length}
+            minor={problems.filter(p => p.severity === 'minor').length} labels={PROBLEM_LABELS} />
+        </span>
+      </summary>
+      <CoachProblems coaching={props.coaching} />
+      <CoachSolutions {...props} />
     </details>
   );
 }
