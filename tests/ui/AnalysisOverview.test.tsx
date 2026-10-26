@@ -81,7 +81,8 @@ describe('Panoramica di Analisi', () => {
     expect(within(panel()).getByText(/Valutato come stall/)).toBeInTheDocument();
   });
 
-  it('membro uno alla volta, con frecce e ritorno', async () => {
+  // Riga Membri messa da parte: il test torna quando trova posto
+  it.skip('membro uno alla volta, con frecce e ritorno', async () => {
     const user = await setup();
     const members = within(panel()).getByRole('region', { name: 'Membri' });
     await user.click(within(members).getByRole('button', { name: /^Great Tusk/ }));
@@ -92,13 +93,19 @@ describe('Panoramica di Analisi', () => {
     expect(within(panel()).getByRole('region', { name: 'Membri' })).toBeInTheDocument();
   });
 
-  it('membro rimosso: si torna alla Panoramica', async () => {
+  // Riga Membri messa da parte: il test torna quando trova posto
+  it.skip('membro rimosso: si torna alla Panoramica', async () => {
     const user = await setup();
     await user.click(within(within(panel()).getByRole('region', { name: 'Membri' })).getByRole('button', { name: /^Gholdengo/ }));
     expect(within(panel()).getByRole('region', { name: 'Gholdengo' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Rimuovi Gholdengo' }));
     expect(within(panel()).queryByRole('region', { name: 'Gholdengo' })).toBeNull();
     expect(within(panel()).getByRole('region', { name: 'Membri' })).toBeInTheDocument();
+  });
+
+  it('niente riga Membri nella Panoramica', async () => {
+    await setup();
+    expect(within(panel()).queryByRole('region', { name: 'Membri' })).toBeNull();
   });
 
   it('team vuoto: invito ad aggiungere Pokémon', async () => {
@@ -110,7 +117,8 @@ describe('Panoramica di Analisi', () => {
 });
 
 describe('Panoramica: rifinitura', () => {
-  it('un posto libero porta a scegliere un Pokémon', async () => {
+  // Riga Membri messa da parte: il test torna quando trova posto
+  it.skip('un posto libero porta a scegliere un Pokémon', async () => {
     const user = await setup();
     await user.click(within(within(panel()).getByRole('region', { name: 'Membri' })).getAllByRole('button', { name: 'Posto libero: aggiungi un Pokémon' })[0]);
     expect(screen.getByRole('tab', { name: /^Pokémon/ })).toHaveAttribute('aria-selected', 'true');
@@ -133,7 +141,8 @@ describe('Panoramica: rifinitura', () => {
 });
 
 describe('Panoramica: correzioni della revisione', () => {
-  it('membro aperto poi tolto: aggiungendo un altro Pokémon si torna alla Panoramica, non al suo profilo', async () => {
+  // Riga Membri messa da parte: il test torna quando trova posto
+  it.skip('membro aperto poi tolto: aggiungendo un altro Pokémon si torna alla Panoramica, non al suo profilo', async () => {
     const user = await setup();
     await user.click(within(within(panel()).getByRole('region', { name: 'Membri' })).getByRole('button', { name: /^Gholdengo/ }));
     await user.click(screen.getByRole('button', { name: 'Rimuovi Gholdengo' }));

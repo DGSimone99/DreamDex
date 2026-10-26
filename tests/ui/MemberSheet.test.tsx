@@ -6,7 +6,8 @@ import { fixtureData } from '../fixtures/data';
 
 const panel = () => document.getElementById('panel-analysis')!;
 
-describe('membri nella Panoramica', () => {
+// Riga Membri messa da parte: i test tornano quando trova posto
+describe.skip('membri nella Panoramica', () => {
   it('una scheda per membro e posti liberi; nessuna scheda col team vuoto', async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} />);
