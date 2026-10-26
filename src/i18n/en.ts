@@ -778,6 +778,7 @@ export const en = {
   'team.nickname': "Nickname for {species}",
   'team.nicknameTitle': "Click to give a nickname (as on Showdown)",
   'team.shiny': "Shiny",
+  'rating.openArea': "{area} {value}, open details",
   'rating.badgeSr': "Grade {grade}, {overall} out of 100, {label}",
   'team.cardProblem': "1 problem",
   'team.cardProblems': "{n} problems",

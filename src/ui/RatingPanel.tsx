@@ -6,7 +6,8 @@ import { rolesList } from '../engine/subRoles';
 import { Typed } from './TypeText';
 import { AlertMark } from './AlertMark';
 import { RatingHelp } from './RatingHelp';
-import { AreaDetail, signed, type DetailArea } from './AreaDetail';
+import { AreaDetail, signed, type AreaKey, type DetailArea } from './AreaDetail';
+import { Icon } from './icons';
 import { useLang, useT } from '../i18n/react';
 
 const isDetailArea = (key: string): key is DetailArea => key === 'strength' || key === 'defense' || key === 'speed' || key === 'roles' || key === 'bonusMalus';
@@ -112,7 +113,11 @@ ${note}` : tip ?? note;
 }
 
 /** Voto grande accanto alla fila del team (riassunto visivo; i dettagli sono nella valutazione). */
-export function GradeBadge({ rating }: { rating: TeamRating | null }) {
+/**
+ * `onOpen`: le righe delle aree e di Bonus/Malus portano alla scheda di quell'area in Analisi.
+ * `ruleIssues`: problemi di regole, triangolo rosso nella testa.
+ */
+export function GradeBadge({ rating, ruleIssues = [], onOpen }: { rating: TeamRating | null; ruleIssues?: string[]; onOpen?: (area: AreaKey) => void }) {
   const t = useT();
   // Voto quando si è aperto il membro nell'editor: il badge mostra di quanto è cambiato
   const editing = useEditing();
@@ -136,20 +141,40 @@ export function GradeBadge({ rating }: { rating: TeamRating | null }) {
           {t('rating.since', { from: since, delta: `${delta > 0 ? '+' : '−'}${Math.abs(delta)}` })}
         </span>
       )}
-      {/* Le quattro aree in breve: il dettaglio (e i link ai modali) resta nella Valutazione dell'Analisi */}
+      </span>
+      {/* Testa: l'aiuto sul voto e il triangolo delle regole, fuori dal disegno perché si usano */}
       {rating && (
-        <span className="grade-areas">
-          {rating.areas.map(area => (
-            // Ogni barra nel colore della lettera che varrebbe da sola: si vede subito l'area debole
-            <span key={area.key} className={`grade-area band-${GRADES.find(g => (area.value ?? 0) >= g.min)!.grade}${area.inactive ? ' inactive' : ''}`}>
-              <span>{area.label}</span>
-              <span className="meter"><span style={{ width: `${area.value ?? 0}%` }} /></span>
-              <b>{area.value ?? '—'}</b>
-            </span>
-          ))}
+        <span className="grade-tools">
+          <AlertMark alerts={ruleIssues.map(text => ({ level: 'danger' as const, text }))} />
+          <RatingHelp teamType={rating.teamType} trickRoom={rating.trickRoom} />
         </span>
       )}
-      </span>
+      {/* Le quattro aree e Bonus/Malus: ogni riga porta alla sua scheda in Analisi */}
+      {rating && (
+        <span className="grade-areas">
+          {rating.areas.map(area => {
+            const note = area.inactive ? ` · ${t('rating.notCounted')}` : '';
+            return (
+              // Ogni barra nel colore della lettera che varrebbe da sola: si vede subito l'area debole
+              <button key={area.key} type="button"
+                className={`grade-area band-${GRADES.find(g => (area.value ?? 0) >= g.min)!.grade}${area.inactive ? ' inactive' : ''}`}
+                aria-label={`${t('rating.openArea', { area: area.label, value: area.value ?? '—' })}${note}`}
+                onClick={() => isDetailArea(area.key) && onOpen?.(area.key)}>
+                <span>{area.label}</span>
+                <span className="meter"><span style={{ width: `${area.value ?? 0}%` }} /></span>
+                <b>{area.value ?? '—'}</b>
+                <Icon name="next" />
+              </button>
+            );
+          })}
+          <button type="button" className="grade-area grade-bm" onClick={() => onOpen?.('bonusMalus')}
+            aria-label={t('rating.openArea', { area: t('area.bonusMalus'), value: signed(rating.bonus.total - rating.penalty.total) })}>
+            <span>{t('area.bonusMalus')}</span>
+            <b className={rating.bonus.total - rating.penalty.total < 0 ? 'worse' : undefined}>{signed(rating.bonus.total - rating.penalty.total)}</b>
+            <Icon name="next" />
+          </button>
+        </span>
+      )}
     </div>
   );
 }
