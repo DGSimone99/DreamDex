@@ -14,6 +14,7 @@ import type { TeamSet } from '../engine/sets';
 import { CoachPanel } from './CoachPanel';
 import { AreaView } from './AreaView';
 import { AnalysisTabs } from './AnalysisTabs';
+import { DefenseTable, NeedsTable, OffenseTable } from './AnalysisTables';
 import type { AnalysisView } from './analysisView';
 import type { AreaKey } from './AreaDetail';
 import type { CoachProblem, ProblemCategory } from '../engine/coach';
@@ -97,7 +98,11 @@ export function AnalysisPanel({ team, analysis, rating, coaching, preview, onRep
         <h2>{tr('analysis.region')}</h2>
         {tabs}
         <div id="analysis-view" role="tabpanel" aria-labelledby={`analysis-view-${area}`} className="analysis-view">
-          <AreaView key={area} rating={rating} area={area} problems={problemsOf(coaching?.problems, area)} />
+          <AreaView key={area} rating={rating} area={area} problems={problemsOf(coaching?.problems, area)}
+            extra={area === 'defense' ? { tabKey: 'coverageTypes', panel: <DefenseTable team={team} analysis={analysis} /> }
+              : area === 'strength' ? { tabKey: 'coverageTypes', panel: <OffenseTable analysis={analysis} /> }
+              : area === 'roles' ? { tabKey: 'general', panel: <NeedsTable team={team} analysis={analysis} /> }
+              : undefined} />
         </div>
       </section>
     );
