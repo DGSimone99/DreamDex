@@ -64,7 +64,8 @@ export function AnalysisPanel({ team, analysis, rating, coaching, preview, onRep
   return (
     <section aria-label={tr('analysis.region')} className="analysis">
       <h2>{tr('analysis.region')}</h2>
-      <AnalysisTabs view={area ?? 'overview'} onView={onView} panelId="analysis-view" areasDisabled={!rating} />
+      <AnalysisTabs view={area ?? 'overview'} onView={onView} panelId="analysis-view" areasDisabled={!rating}
+        scores={Object.fromEntries((rating?.areas ?? []).map(a => [a.key, a.value]))} />
       <div id="analysis-view" role="tabpanel" aria-labelledby={`analysis-view-${area ?? 'overview'}`} className="analysis-view">{body}</div>
     </section>
   );
