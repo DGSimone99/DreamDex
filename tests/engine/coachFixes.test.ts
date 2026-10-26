@@ -141,3 +141,29 @@ describe('chiavi senza conteggi', () => {
     expect(keys(base).every(k => !/\d/.test(k))).toBe(true);
   });
 });
+
+describe('conflitto di meteo: chiave senza i setter', () => {
+  const set = (species: string, ability: string, moves: string[]): TeamSet => ({ ...emptySet(species), ability, moves });
+  const ninetales = set('Ninetales', 'Drought', ['Flamethrower']);
+  const pelipper = set('Pelipper', 'Drizzle', ['Hurricane']);
+  const torkoal = set('Torkoal', 'Drought', ['Lava Plume']);
+  const team = [ninetales, pelipper, junk('Magikarp')];
+  const sunData = {
+    formatId: format.formatId,
+    stats: {
+      meta: { month: '2026-09', cutoff: 1630, battles: 1 },
+      pokemon: { Torkoal: { usage: 0.04, count: 100, abilities: { drought: 1 }, items: {}, teraTypes: {}, spreads: {}, moves: { lavaplume: 1, stealthrock: 1 }, teammates: {}, checks: {} } },
+    },
+    sets: {},
+  };
+  const key = 'conditions:conflict:meteo';
+
+  it('un setter cambiato con un altro della stessa condizione: stessa chiave, non risolto', () => {
+    expect(problemsOf(team).map(p => p.key)).toContain(key);
+    const swapped = [torkoal, pelipper, junk('Magikarp')];
+    expect(problemsOf(swapped).find(p => p.key === key)!.text).not.toBe(problemsOf(team).find(p => p.key === key)!.text);
+    const fixes = coachFixes(team, { ...format, minUsage: 0 }, sunData, problemsOf(team), 'it').filter(f => f.member !== 'Pelipper');
+    expect(fixes.some(f => f.member === 'Ninetales' || f.member === 'Magikarp')).toBe(true);
+    for (const fix of fixes) expect(fix.solves).not.toContain(key);
+  });
+});
