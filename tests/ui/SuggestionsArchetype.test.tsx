@@ -35,11 +35,11 @@ async function importTeam(sets: string[]) {
 }
 
 describe('selettore del tipo di team nei suggerimenti', () => {
-  it('team completo: Qualunque più i 5 tipi, preselezionato quello riconosciuto', async () => {
+  it('team completo: Qualunque più i 5 tipi, preselezionato Qualunque', async () => {
     await importTeam(STALL);
     expect([...types().options].map(o => o.textContent))
       .toEqual(['Qualunque', 'Hyper Offense', 'Bulky Offense', 'Balance', 'Semi-stall', 'Stall']);
-    expect(pressed()).toEqual(['Stall']);
+    expect(pressed()).toEqual(['Qualunque']);
   });
 
   it('team incompleto: Qualunque', async () => {
@@ -48,10 +48,10 @@ describe('selettore del tipo di team nei suggerimenti', () => {
     expect(pressed()).toEqual(['Qualunque']);
   });
 
-  it('il default segue il tipo riconosciuto', async () => {
+  it('il default resta Qualunque anche quando il team diventa di un tipo riconosciuto', async () => {
     const user = await importTeam(STALL.slice(0, 5));
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Toxapex{Enter}');
-    expect(pressed()).toEqual(['Stall']);
+    expect(pressed()).toEqual(['Qualunque']);
   });
 
   it('una scelta a mano resta quando il team cambia', async () => {
@@ -66,6 +66,7 @@ describe('selettore del tipo di team nei suggerimenti', () => {
 
   it('team già stall con Stall scelto: se nessun cambio lo mantiene, un messaggio propone Qualunque', async () => {
     const user = await importTeam(STALL);
+    await user.selectOptions(types(), 'Stall');
     // Solo Kyurem fra i candidati: ogni cambio fa uscire il team dallo stall
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Kyurem');
     expect(await within(suggestions()).findByText(/Nessuno dei cambi migliori mantiene il team Stall/)).toBeInTheDocument();

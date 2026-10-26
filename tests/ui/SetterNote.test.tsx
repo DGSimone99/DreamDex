@@ -34,7 +34,7 @@ async function replaceNinetales(withTorkoal: boolean) {
 describe('nota sul weather setter in sostituzione', () => {
   it('mostra solo chi porta la stessa condizione', async () => {
     const panel = await replaceNinetales(true);
-    expect(within(panel).getByText('Mostro solo chi porta il sole: Leafeon ne ha bisogno')).toBeInTheDocument();
+    expect(within(panel).getByText('In cima chi porta il sole: Leafeon ne ha bisogno. Gli altri seguono per voto')).toBeInTheDocument();
   });
 
   it('avvisa se nessuno porta la condizione', async () => {

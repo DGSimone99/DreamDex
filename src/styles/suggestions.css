@@ -386,7 +386,7 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 }
 
 /* Tipo di team: tendina accanto a Filtri, alta come la barra */
-.toolbar .team-type { flex: none; position: relative; display: flex; align-items: center; height: 38px; border: 1px solid var(--line); border-radius: 4px; background: var(--field); }
+.toolbar .team-type { flex: none; position: relative; display: flex; align-items: center; height: 38px; margin: 0; gap: 0; border: 1px solid var(--line); border-radius: 4px; background: var(--field); }
 .toolbar .team-type:hover, .toolbar .team-type:focus-within { border-color: var(--accent); }
 .toolbar .team-type > span { padding-left: 12px; font: 600 11px/1 var(--ui); text-transform: uppercase; letter-spacing: 0.08em; color: var(--faint); }
 .toolbar .team-type select { height: 100%; max-width: 170px; padding: 0 30px 0 8px; border: 0; background-color: transparent; font-size: 14px; }

@@ -1,10 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { analyzeTeam } from '../../src/engine/analysis';
-import { teamArchetype } from '../../src/engine/archetype';
 import { coachAdvice, coachTeam, findProblems, MIN_COVERAGE_WEIGHT, type CoachProblem } from '../../src/engine/coach';
 import { coachFixes, firstMove, fixesForProblem, type CoachFix } from '../../src/engine/coachFixes';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
-import { rulesOf } from '../../src/engine/formatRules';
 import { improveReplacements } from '../../src/engine/replace';
 import { emptySet, mostCommonSet, type TeamSet } from '../../src/engine/sets';
 import { rankByTeamGain, withCandidate } from '../../src/engine/teamGain';
@@ -26,7 +24,7 @@ describe('candidati del Coaching dalla classifica di Migliora team', () => {
 
   it('stesso voto in più di Migliora team per membro', () => {
     for (const team of [six, three]) {
-      const archetype = team.length === 6 ? teamArchetype(team, rulesOf(data))?.archetype : undefined;
+      const archetype = undefined;
       const swaps = (team === six ? fixesSix : fixesThree).filter(f => f.kind === 'swap');
       expect(swaps.length).toBeGreaterThan(0);
       for (const fix of swaps) {
@@ -243,7 +241,7 @@ describe('classifiche condivise con Migliora team', () => {
     const { rankedReplacements } = await import('../../src/engine/coachFixes');
     const { teamGainMisses } = await import('../../src/engine/teamGain');
     const team = [...six];
-    const archetype = teamArchetype(team, rulesOf(data))?.archetype;
+    const archetype = undefined;
     adviceOf(team, format, data);
     const before = teamGainMisses();
     // Le statistiche di prova hanno pochi Pokémon: i 15 del Coaching sono già tutti i candidati

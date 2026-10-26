@@ -911,7 +911,7 @@ export const en = {
   'tabs.problemsMany': "{n} problems",
   'tabs.threatsOne': "1 open threat",
   'tabs.threatsMany': "{n} open threats",
-  'suggest.setterOnly': "Only showing who brings {conditions}: {who} needs it",
+  'suggest.setterOnly': "Who brings {conditions} comes first: {who} needs it. The rest follow by grade",
   'suggest.setterNone': "No other Pokémon brings {conditions}: if you replace {species}, {losses}",
   'suggest.loses': "{species} loses {via}",
   'suggest.and': "and",
