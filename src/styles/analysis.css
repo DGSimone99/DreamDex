@@ -245,10 +245,9 @@ button.member-card:hover { border-color: var(--accent); }
 .dash .dash-cell.bad { background: color-mix(in srgb, var(--bad) 28%, var(--panel)); color: var(--text); border-color: color-mix(in srgb, var(--bad) 80%, transparent); }
 
 /*
- * Ruoli: tre fasce una sotto l'altra (Essenziali, Importanti, Minori), compatte in alto come una tabellina; solo i
- * mancanti hanno colore pieno. La card si stira fino in fondo come la Velocità; dentro, le fasce stanno in alto, alte
- * quanto il contenuto e al massimo quanto la card: se non basta, si misura tutto insieme (useFit) e cedono prima i
- * minori, col "+N" di fascia. Niente altezze uguali per fascia: una fascia piena tagliava mentre le altre restavano vuote.
+ * Ruoli, stretto e normale: tre fasce una sotto l'altra (Essenziali, Importanti, Minori), compatte in alto come una
+ * tabellina; solo i mancanti hanno colore pieno. Le fasce stanno in alto, alte quanto il contenuto e al massimo quanto
+ * la card: se non basta, si misura tutto insieme (useFit) e cedono prima i minori, col "+N" di fascia.
  */
 .dash-role-bands, .dash-role-bands.dash-fit { flex: 0 1 auto; min-height: 0; display: flex; flex-direction: column; }
 /* Ogni fascia: l'etichetta in una colonna stretta, i ruoli in fila che vanno a capo */
@@ -265,39 +264,55 @@ button.member-card:hover { border-color: var(--accent); }
 .dash-role.minor .dash-role-tag { color: var(--muted); }
 .dash-role.soft .dash-role-tag { color: var(--faint); border-style: dashed; border-color: var(--line); }
 .dash-role.more { padding: 0 4px; font-size: 12px; font-weight: 600; color: var(--faint); }
-/* Ampio: un ruolo per riga coi nomi di chi lo copre scritti ("✓ Hazard: Garchomp, Great Tusk"), niente chip */
-.dash-role.line { flex: 1 1 100%; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: baseline; column-gap: 6px; }
-.dash-role.line .dash-role-tag { flex: none; padding: 0; border: 0; background: none; font-size: 13px; }
-.dash-role.line.bad .dash-role-tag, .dash-role.line.bad .dash-role-tag .icon { color: var(--bad); }
-.dash-role-who { min-width: 0; font-size: 12px; line-height: 1.35; color: var(--muted); }
-/* Minori scoperti: il nome più trasparente, la ✕ resta */
-.dash-role.line.soft .dash-role-name { color: color-mix(in srgb, var(--faint) 70%, var(--panel)); }
-/* Stretto: etichette e chip più fitti; ampio: più ariosi */
+/* Stretto: etichette e chip più fitti */
 .dash.tight .dash-role-band { grid-template-columns: 80px minmax(0, 1fr); }
 .dash.tight .dash-role-list { gap: 3px 8px; padding: 3px 0; }
 .dash.tight .dash-role-tag { padding-block: 1px; }
-.dash.roomy .dash-role-list { gap: 2px 12px; }
 
-/* Velocità: barre dal più veloce, sopra la media in accento; la linea tratteggiata con la targhetta ambra; sprite sotto */
-/* Le barre prendono 3/5 dello spazio, fino a un tetto; il resto va alle righe "supera / superato da" */
-.dash-ladder { flex: 3 1 0; min-height: 70px; display: flex; flex-direction: column; }
-.dash.normal .dash-ladder.capped { max-height: 220px; }
-.dash.roomy .dash-ladder.capped { max-height: 320px; }
-.dash-bars { position: relative; flex: 1; min-height: 40px; display: flex; align-items: flex-end; gap: 6px; border-bottom: 1px solid var(--line); }
+/*
+ * Ruoli, ampio: tabella ruoli × membri con tutti i livelli. In testa gli sprite dei membri, una riga per ruolo con un
+ * pallino sotto chi lo copre; le fasce sono intestazioni tra le righe. Un essenziale o importante mancante è una riga
+ * rossa, i minori sono tenui. La tabella si stira fino in fondo: con pochi ruoli le righe si alzano.
+ */
+.dash-role-body { display: flex; flex-direction: column; }
+.dash-role-grid { width: 100%; height: 100%; border-collapse: collapse; font-size: 13px; }
+.dash-role-grid thead th { padding: 0 0 2px; font-weight: 400; text-align: center; vertical-align: bottom; }
+/* Lo sprite si stringe con la sua colonna: le sei colonne stanno sempre tutte */
+.dash-role-grid thead .sprite { display: block; margin: 0 auto; width: 100%; max-width: 50px; height: auto; aspect-ratio: 1; image-rendering: pixelated; }
+.dash-role-sep th { height: 22px; padding: 4px 0 2px; text-align: left; vertical-align: bottom; font: 600 11px/1.2 var(--ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); border-bottom: 1px solid var(--line); }
+.dash-role-row th, .dash-role-row td { height: 24px; padding: 0; border-bottom: 1px solid var(--line-soft); }
+.dash-role-row th { width: 1%; padding-right: 8px; text-align: left; font-weight: 500; white-space: nowrap; color: var(--text); }
+.dash-role-row th > * { vertical-align: middle; }
+.dash-role-row th .icon { width: 12px; height: 12px; margin-right: 5px; stroke-width: 2.5; color: var(--good); }
+.dash-role-row td { text-align: center; }
+.dash-dot { display: inline-block; width: 12px; height: 12px; vertical-align: middle; border-radius: 50%; background: var(--accent); box-shadow: 0 0 6px color-mix(in srgb, var(--accent) 45%, transparent); }
+/* Mancante (essenziale o importante): riga rossa, nome in grassetto, nessun pallino */
+.dash-role-row.bad th, .dash-role-row.bad td { background: color-mix(in srgb, var(--bad) 14%, var(--panel)); }
+.dash-role-row.bad th, .dash-role-row.bad th .icon { font-weight: 600; color: var(--bad); }
+/* Minori: più tenui (coperti col pallino smorzato, mancanti col nome sbiadito); "is-minor" perché .analysis tr.minor colora la riga */
+.dash-role-row.is-minor th { font-weight: 400; color: var(--muted); }
+.dash-role-row.is-minor th .icon { color: var(--faint); }
+.dash-role-row.is-minor .dash-dot { width: 9px; height: 9px; box-shadow: none; background: color-mix(in srgb, var(--accent) 60%, var(--panel)); }
+.dash-role-row.soft th { color: var(--faint); }
+
+/*
+ * Velocità: barre dal più veloce, sopra la media in accento, sprite sotto; le barre prendono tutto lo spazio della card.
+ * La linea della media attraversa le barre, il suo valore sta in una colonnina a sinistra, fuori dalle barre:
+ * così non si scontra mai coi numeri in cima alle barre.
+ */
+.dash-ladder { --avg-gutter: 30px; flex: 1 1 0; min-height: 70px; display: flex; flex-direction: column; }
+.dash-bars { position: relative; flex: 1; min-height: 40px; display: flex; align-items: flex-end; gap: 6px; padding-left: var(--avg-gutter); border-bottom: 1px solid var(--line); }
 .dash-lane { flex: 1; height: 100%; display: flex; align-items: flex-end; justify-content: center; cursor: help; }
 .dash-bar { position: relative; width: 70%; max-width: 40px; min-height: 2px; background: var(--line); border-radius: 3px 3px 0 0; }
 .dash-bar.above { background: linear-gradient(180deg, var(--accent), color-mix(in srgb, var(--accent) 35%, var(--panel))); }
 .dash-bar small { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); padding-bottom: 1px; font-size: 11px; font-variant-numeric: tabular-nums; color: var(--muted); }
 .dash-avg { position: absolute; left: 0; right: 0; z-index: 1; border-top: 1.5px dashed var(--warn); pointer-events: none; }
-.dash-avg span { position: absolute; right: 0; bottom: 1px; padding: 1px 6px 1px 9px; font: 600 11px/1.2 var(--ui); white-space: nowrap; color: var(--warn-bg); background: var(--warn); clip-path: polygon(6px 0, 100% 0, 100% 100%, 0 100%); }
-.dash-sprites { display: flex; gap: 6px; }
+.dash-avg span { position: absolute; left: 0; top: 0; transform: translateY(-50%); padding: 0 3px 0 0; font: 600 11px/1.2 var(--ui); font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--warn); background: var(--panel); }
+.dash-sprites { display: flex; gap: 6px; padding-left: var(--avg-gutter); }
 /* Lo sprite intero (gen 5 ha margine trasparente: un po' più grande della casella nominale), mai ritagliato; parte dalla riga di base delle barre */
 .dash-lane-sprite { flex: 1; min-width: 0; display: flex; justify-content: center; align-items: flex-start; height: calc(var(--sprite) * 1.25); }
 /* Mai più largo della sua corsia: se la corsia è stretta si rimpicciolisce, intero */
 .dash-lane-sprite .sprite { flex: none; width: min(calc(var(--sprite) * 1.25), 100%); height: auto; aspect-ratio: 1; image-rendering: pixelated; }
-.dash-near { flex: 2 1 0; min-height: 0; overflow: hidden; margin: 6px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 3px; font-size: 11px; color: var(--muted); }
-.dash-near li { flex: none; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.3; }
-.dash-near b { font-weight: 600; color: var(--text); }
 .dash-ctrl { margin: 6px 0 0; font-size: 12px; color: var(--muted); }
 .dash-ctrl b { font-weight: 500; }
 
@@ -326,10 +341,20 @@ button.member-card:hover { border-color: var(--accent); }
 .dash-todo-item.serious .type-name { padding: 0 5px; background: color-mix(in srgb, var(--bad) 14%, transparent); border: 1px solid color-mix(in srgb, var(--bad) 70%, transparent); border-radius: 4px; }
 .dash-more { flex: none; align-self: flex-start; margin-top: 6px; }
 
+/*
+ * Lo stesso alone del piedistallo delle Minacce sotto gli altri sprite "in scena": le corsie della Velocità, la testata
+ * della tabella dei Ruoli e lo sprite grande dei dettagli (candidato, membro). Non nelle liste lunghe: sarebbe rumore.
+ * In percentuale della casella: segue lo sprite a ogni misura.
+ */
+.dash-lane-sprite .sprite, .dash-role-grid thead .sprite, .detail-sprite {
+  background: radial-gradient(ellipse 46% 14% at 50% 85%, color-mix(in srgb, var(--accent) 30%, transparent), transparent 70%), radial-gradient(ellipse 42% 11% at 50% 87%, color-mix(in srgb, var(--field) 60%, transparent), transparent 75%); }
+
 /* Minacce: sprite sul piedistallo ellittico, nome e uso; "+X" tratteggiato apre la scheda Meta */
-.dash-pods { --pod-h: 78px; flex: none; display: flex; flex-wrap: wrap; align-content: flex-start; gap: 6px 8px; max-height: calc(var(--rows) * var(--pod-h) + (var(--rows) - 1) * 6px); }
+/* padding-top: aria sopra la prima fila, così i Pokémon alti (Ferrothorn, Zapdos) non finiscono sotto l'intestazione */
+.dash-pods { --pod-h: 78px; flex: none; display: flex; flex-wrap: wrap; align-content: flex-start; gap: 6px 8px; padding-top: 10px; max-height: calc(var(--rows) * var(--pod-h) + (var(--rows) - 1) * 6px + 10px); }
 .dash-pod { width: 64px; height: var(--pod-h); display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 1px; padding: 0; color: var(--text); background: none; border: 0; border-radius: 0; }
-.dash-plinth { width: 56px; height: 46px; display: flex; justify-content: center; align-items: flex-end; overflow: hidden;
+/* Lo sprite può uscire sopra il piedistallo (overflow visibile): uno alto non si taglia */
+.dash-plinth { width: 56px; height: 46px; display: flex; justify-content: center; align-items: flex-end; overflow: visible;
   background: radial-gradient(ellipse 26px 7px at 50% 88%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 70%), radial-gradient(ellipse 24px 6px at 50% 90%, color-mix(in srgb, var(--field) 60%, transparent), transparent 75%); }
 .dash-plinth .sprite { flex: none; width: 64px; height: 64px; margin-bottom: -10px; image-rendering: pixelated; }
 .dash-pod b { max-width: 64px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 500 11px/1.25 var(--ui); }

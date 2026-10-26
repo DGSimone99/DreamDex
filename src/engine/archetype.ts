@@ -8,11 +8,12 @@ import { benefits, enables, type Condition } from './synergy';
 
 /** Archetipi di Smogon, dal più offensivo al più difensivo. */
 export type Archetype = 'hyperOffense' | 'bulkyOffense' | 'balance' | 'semiStall' | 'stall';
-export type TeamStyle = 'rain' | 'sun' | 'sand' | 'snow' | 'trickroom' | 'webs' | 'voltturn' | 'screens';
+/** Stili: meteo e Trick Room (Webs, Volt-turn e Screens tolti: non dicevano niente di più dei ruoli). */
+export type TeamStyle = 'rain' | 'sun' | 'sand' | 'snow' | 'trickroom';
 
 export interface TeamArchetype {
   archetype: Archetype;
-  /** Al massimo MAX_STYLES stili (meteo, Trick Room, Sticky Web, Volt-turn, Screens). */
+  /** Al massimo MAX_STYLES stili (meteo, Trick Room). */
   styles: TeamStyle[];
 }
 
@@ -23,19 +24,15 @@ const BULKY = 55;
 const FRAIL = 65;
 /** Membri veloci (o con un setup che alza la velocità) da cui un team senza muri passivi è Hyper Offense anche se robusto (Ubers). */
 const HO_FAST_MEMBERS = 5;
-/** Membri con un pivot offensivo perché il team sia Volt-turn. */
-const VOLT_TURN_PIVOTS = 4;
 
 const HEAL_MOVES = new Set([
   'recover', 'roost', 'softboiled', 'slackoff', 'wish', 'rest', 'moonlight', 'synthesis', 'morningsun',
   'strengthsap', 'shoreup', 'milkdrink',
 ]);
 const HEAL_ABILITIES = new Set(['regenerator', 'poisonheal']);
-const ATTACK_PIVOTS = new Set(['uturn', 'voltswitch', 'flipturn']);
 const CONDITION_STYLES: [Condition, TeamStyle][] = [['rain', 'rain'], ['sun', 'sun'], ['sand', 'sand'], ['snow', 'snow'], ['trickroom', 'trickroom']];
 
 const heals = (set: TeamSet) => set.moves.some(m => HEAL_MOVES.has(toID(m))) || HEAL_ABILITIES.has(toID(set.ability));
-const hasMove = (set: TeamSet, ids: Set<string>) => set.moves.some(m => ids.has(toID(m)));
 /** Veloce di suo (statistica, Scarf, abilità) o con una mossa che gli alza la velocità (Dragon Dance, Quiver Dance…). */
 const fastOrSpeedSetup = (set: TeamSet) => isFast(set)
   || set.moves.some(m => { const move = getMove(m); return move?.category === 'Status' && move.target === 'self' && (move.boosts?.spe ?? 0) > 0; });
@@ -137,12 +134,5 @@ export function cardRoles(set: TeamSet, rules: FormatRules, measured?: SubRoleVa
 /** Tipo di team con archetipo e stili, solo per un team completo. */
 export function teamArchetype(team: TeamSet[], rules: FormatRules): TeamArchetype | null {
   if (team.length < 6 || team.some(set => !battleSpecies(set))) return null;
-  const moveIds = new Set(team.flatMap(set => set.moves.map(toID)));
-  const styles: TeamStyle[] = [
-    ...conditionStyles(team),
-    ...(moveIds.has('stickyweb') ? ['webs' as const] : []),
-    ...(team.filter(set => hasMove(set, ATTACK_PIVOTS)).length >= VOLT_TURN_PIVOTS ? ['voltturn' as const] : []),
-    ...(moveIds.has('reflect') && moveIds.has('lightscreen') ? ['screens' as const] : []),
-  ];
-  return { archetype: archetypeOf(team, rules), styles: styles.slice(0, MAX_STYLES) };
+  return { archetype: archetypeOf(team, rules), styles: conditionStyles(team).slice(0, MAX_STYLES) };
 }

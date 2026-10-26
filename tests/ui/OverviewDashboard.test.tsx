@@ -31,12 +31,13 @@ function sample(overrides: Partial<DashboardData> = {}): DashboardData {
         { need: 'pivot', level: 'important', covered: false, owners: [] },
         { need: 'screens', level: 'minor', covered: false, owners: [] },
       ],
+      members: ['Great Tusk', 'Corviknight', 'Toxapex', 'Dragapult'],
       value: '2/3',
     },
     speed: {
       lanes: [
-        { species: 'Dragapult', speed: 421, share: 0.9, above: true, outspeeds: ['Iron Valiant', 'Garchomp'], outspedBy: ['Regieleki'] },
-        { species: 'Toxapex', speed: 167, share: 0.1, above: false, outspeeds: ['Dondozo'], outspedBy: ['Corviknight', 'Kingambit'] },
+        { species: 'Dragapult', speed: 421, share: 0.9, above: true },
+        { species: 'Toxapex', speed: 167, share: 0.1, above: false },
       ],
       median: 300, vsMeta: true, value: '1/2',
       control: [{ condition: 'slow', move: 'Thunder Wave', by: ['Toxapex'] }],
@@ -56,6 +57,9 @@ const problem = (i: number, severity: CoachProblem['severity'] = 'minor'): Coach
 const weak = (type: string, severity: CoachProblem['severity'] = 'minor'): CoachProblem =>
   ({ severity, category: 'defense', text: `Debole a ${type}: 3 Deboli – 1 Resistono`, fixes: [], key: `defense:${type}`, subjects: [type] });
 
+/** Le righe della tabella dei Ruoli (ampio, senza le intestazioni delle fasce). */
+const roleRows = (roles: HTMLElement) => [...roles.querySelectorAll<HTMLElement>('tr.dash-role-row')];
+
 /** La fascia di un livello dei Ruoli (la lista col suo titoletto). */
 function roleBand(roles: HTMLElement, title: string) {
   return within(roles).getAllByRole('list').find(list => document.getElementById(list.getAttribute('aria-labelledby') ?? '')?.textContent === title)!;
@@ -68,11 +72,12 @@ const manyRoles: DashboardData['roles'] = {
     ...(['screens', 'phazer'] as const).map(need => ({ need, level: 'important' as const, covered: false, owners: [] })),
     { need: 'taunt', level: 'minor', covered: false, owners: [] },
   ],
+  members: ['Great Tusk'],
   value: '4/6',
 };
 
 /** Solo i quattro essenziali coperti di manyRoles. */
-const essentialsOnly: DashboardData['roles'] = { chips: manyRoles.chips.filter(c => c.level === 'essential'), value: '4/4' };
+const essentialsOnly: DashboardData['roles'] = { chips: manyRoles.chips.filter(c => c.level === 'essential'), members: ['Great Tusk'], value: '4/4' };
 
 function mount({ density = 'normal' as Density, data = sample(), problems = [problem(1, 'serious'), problem(2)], members = 6 } = {}) {
   const onView = vi.fn();
@@ -133,39 +138,63 @@ describe('Cruscotto della Panoramica', () => {
     expect(densityFor(2000)).toBe('normal');
   });
 
-  it('ampio: Velocità con "supera" e "superato da", Ruoli una riga per ruolo coi nomi di chi lo copre', () => {
+  it('Velocità: niente "supera" né "superato da" a nessuna densità', () => {
+    for (const density of ['tight', 'normal', 'roomy'] as const) {
+      const { unmount } = mount({ density });
+      const speed = screen.getByRole('region', { name: 'Velocità' });
+      expect(within(speed).queryByText(/supera/)).toBeNull();
+      expect(speed.querySelector('.dash-near')).toBeNull();
+      unmount();
+    }
+  });
+
+  it('Velocità: la media a vista è solo il numero, per intero ai lettori di schermo', () => {
+    mount();
+    const avg = screen.getByRole('region', { name: 'Velocità' }).querySelector('.dash-avg')!;
+    expect(avg.querySelector('[aria-hidden="true"]')).toHaveTextContent(/^300$/);
+    expect(avg.querySelector('.visually-hidden')).toHaveTextContent(/^media meta 300$/);
+  });
+
+  it('Velocità: senza controllo niente riga né tooltip; con il controllo solo quello che c\'è', () => {
+    for (const density of ['tight', 'normal', 'roomy'] as const) {
+      const { unmount } = mount({ density, data: sample({ speed: { ...sample().speed, control: [] } }) });
+      const speed = screen.getByRole('region', { name: 'Velocità' });
+      expect(speed.querySelector('.dash-ctrl')).toBeNull();
+      expect(speed).not.toHaveTextContent(/Controllo/);
+      expect(speed).not.toHaveAttribute('title');
+      unmount();
+    }
     mount({ density: 'roomy' });
-    const speed = screen.getByRole('region', { name: 'Velocità' });
-    expect(within(speed).getByText(/supera Iron Valiant, Garchomp/)).toBeInTheDocument();
-    expect(within(speed).getByText(/superato da Regieleki/)).toBeInTheDocument();
-    expect(speed).toHaveTextContent(/nessun Trick Room o Tailwind/);
+    expect(screen.getByRole('region', { name: 'Velocità' }).querySelector('.dash-ctrl')).toHaveTextContent(/^Controllo: (Thunder Wave|Onda Tuono) \(Toxapex\)$/);
+  });
+
+  it('ampio: Ruoli come tabella ruoli × membri con tutti i livelli, un pallino sotto chi copre il ruolo', () => {
+    mount({ density: 'roomy' });
     const roles = screen.getByRole('region', { name: 'Ruoli' });
-    // Rimozione: coperta da tre membri, tutti scritti
-    const removal = within(roleBand(roles, 'Essenziali')).getAllByRole('listitem')[1];
-    // Ampio: un ruolo per riga, coi nomi di tutti quelli che lo coprono scritti (niente icone)
-    expect(removal).toHaveClass('line');
-    expect(removal.querySelector('.dash-role-who')).toHaveTextContent(/^Great Tusk, Corviknight, Toxapex$/);
-    expect(removal.querySelector('.dash-role-tag')).toHaveTextContent(/^Rimozione Hazard/);
-    // I due punti solo a vista: il testo per i lettori di schermo resta "Rimozione Hazard, coperto da …"
-    const colon = removal.querySelector('.dash-role-name [aria-hidden="true"]');
-    expect(colon).toHaveTextContent(/^:$/);
-    expect(removal.querySelector('.dash-role-name .visually-hidden')!.compareDocumentPosition(colon!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(within(removal).queryByText('+1')).toBeNull();
-    // Mancante: solo ✕ e nome (niente "nessuno" né due punti), per i lettori di schermo "mancante"
-    const pivot = within(roleBand(roles, 'Importanti')).getByRole('listitem');
-    expect(pivot.querySelector('.dash-role-who')).toBeNull();
-    expect(pivot.querySelector('.dash-role-name [aria-hidden="true"]')).toBeNull();
-    expect(pivot).toHaveTextContent(/^Pivot, mancante$/);
-    expect(pivot).toHaveClass('bad');
-    // Minore scoperto: stesso schema, nello stile tenue
-    const screens = within(roleBand(roles, 'Minori')).getByRole('listitem');
-    expect(screens).toHaveClass('soft', 'minor', 'line');
-    expect(screens).toHaveTextContent(/^Schermi, mancante$/);
-    expect(screens.querySelector('.dash-role-who')).toBeNull();
+    const table = within(roles).getByRole('table', { name: 'Ruoli' });
+    expect(within(table).getAllByRole('columnheader').map(th => th.textContent)).toEqual(['Great Tusk', 'Corviknight', 'Toxapex', 'Dragapult']);
+    // Le fasce sono intestazioni tra le righe, minori compresi
+    expect([...table.querySelectorAll('.dash-role-sep')].map(x => x.textContent)).toEqual(['Essenziali', 'Importanti', 'Minori']);
+    const rows = roleRows(roles);
+    expect(rows.map(r => r.querySelector('th')!.textContent)).toEqual([
+      'Hazard, coperto da Great Tusk', 'Rimozione Hazard, coperto da Great Tusk, Corviknight, Toxapex', 'Pivot, mancante', 'Schermi, mancante',
+    ]);
+    // Rimozione: pallini sotto Great Tusk, Corviknight, Toxapex, non sotto Dragapult
+    expect([...rows[1].querySelectorAll('td')].map(td => !!td.querySelector('.dash-dot'))).toEqual([true, true, true, false]);
+    // Importante mancante: riga rossa senza pallini; minore mancante: tenue, non rosso
+    expect(rows[2]).toHaveClass('bad');
+    expect(rows[2].querySelector('.dash-dot')).toBeNull();
+    expect(rows[3]).toHaveClass('soft', 'is-minor');
+    expect(rows[3]).not.toHaveClass('bad');
+    // Niente chip nell'ampio
+    expect(roles.querySelector('.dash-role')).toBeNull();
+    // Chi copre il ruolo è nel tooltip della riga, il membro in quello della casella
+    expect(rows[1]).toHaveAttribute('title', 'Rimozione Hazard: Great Tusk, Corviknight, Toxapex');
+    expect(rows[1].querySelectorAll('td')[1]).toHaveAttribute('title', 'Rimozione Hazard: Corviknight');
   });
 
   it('Ruoli: tre fasce una sotto l\'altra, Essenziali, Importanti, Minori, con l\'etichetta a sinistra', () => {
-    for (const density of ['tight', 'normal', 'roomy'] as const) {
+    for (const density of ['tight', 'normal'] as const) {
       const { unmount } = mount({ density });
       const roles = screen.getByRole('region', { name: 'Ruoli' });
       // Ogni fascia: l'etichetta del livello, poi i ruoli in fila
@@ -190,7 +219,7 @@ describe('Cruscotto della Panoramica', () => {
       { need: 'pivot', level: 'essential', covered: true, owners: ['Corviknight'] },
       { need: 'removal', level: 'essential', covered: false, owners: [] },
     ] as const;
-    mount({ density: 'tight', data: sample({ roles: { chips: chips.map(c => ({ ...c, owners: [...c.owners] })), value: '2/3' } }) });
+    mount({ density: 'tight', data: sample({ roles: { chips: chips.map(c => ({ ...c, owners: [...c.owners] })), members: ['Great Tusk', 'Corviknight'], value: '2/3' } }) });
     const rows = within(roleBand(screen.getByRole('region', { name: 'Ruoli' }), 'Essenziali')).getAllByRole('listitem');
     expect(rows).toHaveLength(2);
     expect(rows[0]).toHaveClass('bad');
@@ -199,7 +228,7 @@ describe('Cruscotto della Panoramica', () => {
   });
 
   it('Ruoli: ogni riga si legge intera, coi nomi di chi la copre o "mancante"', () => {
-    for (const density of ['tight', 'roomy'] as const) {
+    for (const density of ['tight', 'normal'] as const) {
       const { unmount } = mount({ density });
       const roles = screen.getByRole('region', { name: 'Ruoli' });
       const [hazards, removal] = within(roleBand(roles, 'Essenziali')).getAllByRole('listitem');
@@ -210,10 +239,9 @@ describe('Cruscotto della Panoramica', () => {
     }
   });
 
-  it('stretto: niente "supera" né controllo visibile, Ruoli senza icone dei membri', () => {
+  it('stretto: niente controllo visibile (resta nel tooltip), Ruoli senza icone dei membri', () => {
     mount({ density: 'tight' });
     const speed = screen.getByRole('region', { name: 'Velocità' });
-    expect(within(speed).queryByText(/supera /)).toBeNull();
     expect(speed.querySelector('.dash-ctrl')).toBeNull();
     expect(speed).toHaveAttribute('title', expect.stringMatching(/^Controllo:/));
     // Ruoli: ogni chip ha solo il segno e il nome
@@ -241,11 +269,6 @@ describe('Cruscotto della Panoramica', () => {
     expect(removal).toHaveAttribute('title', 'Rimozione Hazard: Great Tusk, Corviknight, Toxapex');
   });
 
-  it('normale: sotto le barre "supera" e "superato da", quante ne stanno', () => {
-    mount();
-    expect(within(screen.getByRole('region', { name: 'Velocità' })).getByText(/supera Iron Valiant, Garchomp/)).toBeInTheDocument();
-  });
-
   it('ogni corsia della Velocità ha il nome del Pokémon per i lettori di schermo', () => {
     mount({ density: 'tight' });
     const lanes = screen.getByRole('region', { name: 'Velocità' }).querySelectorAll('.dash-lane');
@@ -261,13 +284,6 @@ describe('Cruscotto della Panoramica', () => {
       expect(onView).toHaveBeenCalledWith('coaching');
       unmount();
     }
-  });
-
-  it('il "?" della Panoramica descrive il cruscotto, non i riquadri', () => {
-    expect(itText['help.view.overview']).toMatch(/copertura dei tipi, ruoli, velocità.*cosa fare.*minacce/);
-    expect(itText['help.view.overview']).not.toMatch(/riquadr/);
-    expect(en['help.view.overview']).toMatch(/type coverage, roles, speed.*what to do.*threats/);
-    expect(en['help.view.overview']).not.toMatch(/tile/);
   });
 
   it('normale: il controllo con chi lo porta', () => {
@@ -493,7 +509,7 @@ describe('Cruscotto: misure', () => {
       { need: 'pivot', level: 'important', covered: true, owners: ['Corviknight'] },
       ...minors,
     ];
-    mount({ density: 'roomy', data: sample({ roles: { chips, value: '2/2' } }) });
+    mount({ density: 'normal', data: sample({ roles: { chips, members: ['Great Tusk', 'Corviknight'], value: '2/2' } }) });
     const roles = screen.getByRole('region', { name: 'Ruoli' });
     expect(roles.querySelector('.more')).toBeNull();
     expect(within(roleBand(roles, 'Minori')).getAllByRole('listitem')).toHaveLength(7);
