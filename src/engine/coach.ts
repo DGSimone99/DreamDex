@@ -144,7 +144,8 @@ export function findProblems(team: TeamSet[], format: Format, analysis: TeamAnal
   const style = analysis.needs.needStyle;
   if (style) add('roles', false, t(lang, 'rating.redundancy.oneStyle', { style: t(lang, `analysis.style.${style}`) }), [], 'roles:style');
   for (const item of roleAndTypeRedundancies(team, lang, { sameType: true })) add('redundancy', false, item.text, []);
-  for (const item of weatherClashes(team, lang)) add('conditions', false, item.text, []);
+  // Conflitti e mosse indebolite si riconoscono dalla condizione, non da chi la porta
+  for (const item of weatherClashes(team, lang)) add('conditions', false, item.text, [], item.key && `conditions:${item.key}`);
 
   for (const issue of unusedEnablers(team)) {
     add('conditions', false, t(lang, 'coach.problem.unused', { via: viaName(issue.via, lang), member: issue.member }),

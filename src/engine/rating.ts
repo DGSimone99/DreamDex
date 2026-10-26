@@ -95,6 +95,8 @@ export interface Redundancy {
   points: number;
   /** Assente nelle voci solo-coach (stesso tipo): non fanno parte del voto. */
   catalog?: CatalogKey;
+  /** Identità della voce senza nomi né conteggi (chiave del problema nel coaching), dove il testo non basta. */
+  key?: string;
 }
 
 export interface Redundancies {
@@ -198,11 +200,12 @@ export const WEATHER_HURT_STAB = 2;
 export function weatherClashes(team: TeamSet[], lang: Lang = 'it'): Redundancy[] {
   const cap = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
   return [
-    ...conditionConflicts(team, lang).map(c => ({ text: t(lang, 'rating.redundancy.conflict', { kind: t(lang, `conflict.${c.kind}`), list: c.setters.join(', ') }), points: WEATHER_CLASH_POINTS, catalog: 'weatherClash' as const })),
+    ...conditionConflicts(team, lang).map(c => ({ text: t(lang, 'rating.redundancy.conflict', { kind: t(lang, `conflict.${c.kind}`), list: c.setters.join(', ') }), points: WEATHER_CLASH_POINTS, catalog: 'weatherClash' as const, key: `conflict:${c.kind}` })),
     ...weakenedMoves(team).map(w => ({
       text: t(lang, 'rating.redundancy.weakens', { condition: cap(conditionLabel(w.condition, lang)), setter: w.setter, type: typeName(w.type, lang), member: w.member }),
       points: w.stab ? WEATHER_HURT_STAB : WEATHER_HURT,
       catalog: 'weakenedMove' as const,
+      key: `weakens:${w.condition}:${w.member}:${w.type}`,
     })),
   ];
 }

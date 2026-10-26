@@ -27,6 +27,14 @@ export interface CoachFix {
 
 /** Candidati per le aggiunte, come la modalità Aggiungi della scheda Pokémon. */
 const ADD_POOL = 100;
+/** Si tengono (e si rianalizzano) solo i cambi più forti: per membro sostituito… */
+export const FIXES_PER_MEMBER = 5;
+/** …e fra le aggiunte. */
+export const MAX_ADDS = 15;
+
+/** I più forti per voto in più, solo quelli che alzano il voto. */
+const strongest = <T extends { teamGain?: { gain: number } }>(items: T[], limit: number) =>
+  items.filter(c => (c.teamGain?.gain ?? 0) > 0).sort((a, b) => b.teamGain!.gain - a.teamGain!.gain).slice(0, limit);
 
 /**
  * I cambi che alzano il voto, presi dalla classifica di Migliora team: per membro (stesso set e stesso +N della
@@ -51,15 +59,13 @@ export function coachFixes(team: TeamSet[], format: Format, data: EngineData, pr
     const others = new Set(team.filter((_, i) => i !== index).map(base));
     const pool = improveReplacements(team, index, format, data, SWAPS_PER_MEMBER, undefined, lang, archetype)
       .filter(c => !others.has(base(c.set)) && forme(c.set) !== forme(member));
-    for (const c of rankByTeamGain(pool, team, index, data, lang, true, archetype)) {
-      if (!c.teamGain || c.teamGain.gain <= 0) continue;
-      fixes.push({ kind: 'swap', species: c.species, set: c.set, index, member: battleName(member), gain: c.teamGain.gain, solves: solvedBy(withCandidate(team, c.set, index)) });
+    for (const c of strongest(rankByTeamGain(pool, team, index, data, lang, true, archetype), FIXES_PER_MEMBER)) {
+      fixes.push({ kind: 'swap', species: c.species, set: c.set, index, member: battleName(member), gain: c.teamGain!.gain, solves: solvedBy(withCandidate(team, c.set, index)) });
     }
   });
   if (team.length < 6) {
-    for (const c of rankByTeamGain(suggest(team, format, data, ADD_POOL, lang), team, null, data, lang, true, undefined)) {
-      if (!c.teamGain || c.teamGain.gain <= 0) continue;
-      fixes.push({ kind: 'add', species: c.species, set: c.set, index: null, member: null, gain: c.teamGain.gain, solves: solvedBy(withCandidate(team, c.set, null)) });
+    for (const c of strongest(rankByTeamGain(suggest(team, format, data, ADD_POOL, lang), team, null, data, lang, true, undefined), MAX_ADDS)) {
+      fixes.push({ kind: 'add', species: c.species, set: c.set, index: null, member: null, gain: c.teamGain!.gain, solves: solvedBy(withCandidate(team, c.set, null)) });
     }
   }
   return fixes.sort((a, b) => b.gain - a.gain);
