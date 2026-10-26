@@ -11,6 +11,7 @@ import { DefenseTable, NeedsTable, OffenseTable } from './AnalysisTables';
 import type { AnalysisView } from './analysisView';
 import type { AreaKey } from './AreaDetail';
 import { AreaView } from './AreaView';
+import { CoachProblems } from './CoachPanel';
 import { Icon } from './icons';
 import { MemberProfile } from './MemberSheet';
 import { MetaUsePanel } from './MetaUsePanel';
@@ -36,7 +37,7 @@ export function AnalysisPanel({ team, analysis, rating, coaching, preview, onRep
   preview?: SwapPreview | null;
   onReplace: (index: number) => void;
   onSwap?: (index: number, set: TeamSet) => void;
-  /** Panoramica o un'area del voto (Bonus/Malus non ha una scheda: sta nel Coaching). */
+  /** Panoramica, Coaching o un'area del voto. */
   view: AnalysisView;
   onView: (view: AnalysisView) => void;
   /** Membro aperto nella Panoramica (null: nessuno) e come cambiarlo. */
@@ -44,8 +45,11 @@ export function AnalysisPanel({ team, analysis, rating, coaching, preview, onRep
   onMember: (index: number | null) => void;
 }) {
   const tr = useT();
-  const area = view !== 'overview' && view !== 'bonusMalus' && rating ? view : null;
+  const area = view !== 'overview' && view !== 'coaching' && rating ? view : null;
+  const showCoaching = view === 'coaching' && !!rating;
+  const serious = (coaching?.problems ?? []).filter(p => p.severity === 'serious').length;
   const open = member !== null && member < team.length ? member : null;
+  const tabView: AnalysisView = area ?? (showCoaching ? 'coaching' : 'overview');
   let body;
   if (area && rating) {
     body = (
@@ -55,6 +59,9 @@ export function AnalysisPanel({ team, analysis, rating, coaching, preview, onRep
           : area === 'roles' ? { tabKey: 'general', panel: <NeedsTable team={team} analysis={analysis} /> }
           : undefined} />
     );
+  } else if (showCoaching && coaching && open === null) {
+    // Provvisorio: l'elenco dei problemi, finché il Coaching non ha la sua vista
+    body = <CoachProblems coaching={coaching} heading={false} />;
   } else if (open !== null) {
     body = <MemberProfile team={team} data={data} index={open} onIndex={onMember} onBack={() => onMember(null)} />;
   } else {
@@ -64,9 +71,9 @@ export function AnalysisPanel({ team, analysis, rating, coaching, preview, onRep
   return (
     <section aria-label={tr('analysis.region')} className="analysis">
       <h2>{tr('analysis.region')}</h2>
-      <AnalysisTabs view={area ?? 'overview'} onView={onView} panelId="analysis-view" areasDisabled={!rating}
+      <AnalysisTabs view={tabView} onView={onView} panelId="analysis-view" areasDisabled={!rating} badges={{ coaching: serious }}
         scores={Object.fromEntries((rating?.areas ?? []).map(a => [a.key, a.value]))} />
-      <div id="analysis-view" role="tabpanel" aria-labelledby={`analysis-view-${area ?? 'overview'}`} className="analysis-view">{body}</div>
+      <div id="analysis-view" role="tabpanel" aria-labelledby={`analysis-view-${tabView}`} className="analysis-view">{body}</div>
     </section>
   );
 }

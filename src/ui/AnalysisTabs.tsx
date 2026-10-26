@@ -4,10 +4,10 @@ import { useT } from '../i18n/react';
 import type { AnalysisView } from './analysisView';
 import { Icon } from './icons';
 
-/** Le schede interne di Analisi, nell'ordine: prima cosa fare, poi le aree del voto (Bonus/Malus sta nel Coaching). */
-export const ANALYSIS_VIEWS: AnalysisView[] = ['overview', 'defense', 'strength', 'roles', 'speed'];
+/** Le schede interne di Analisi, nell'ordine: Panoramica e Coaching, poi le aree del voto con Bonus/Malus in fondo. */
+export const ANALYSIS_VIEWS: AnalysisView[] = ['overview', 'coaching', 'defense', 'strength', 'roles', 'speed', 'bonusMalus'];
 
-const viewLabelKey = (view: AnalysisView) => (view === 'overview' ? 'analysis.view.overview' : `area.${view}`) as 'analysis.view.overview';
+const viewLabelKey = (view: AnalysisView) => (view === 'overview' || view === 'coaching' ? `analysis.view.${view}` : `area.${view}`) as 'analysis.view.overview';
 
 /** Il "?" accanto alla scheda aperta: cosa mostra quella scheda e come conta nel voto. */
 export function ViewHelp({ view }: { view: AnalysisView }) {
@@ -54,7 +54,8 @@ export function ViewHelp({ view }: { view: AnalysisView }) {
 /** Le schede interne: tablist orizzontale (frecce, Home/End), col "?" accanto a quella aperta. */
 /** `areasDisabled`: senza voto (team vuoto) le aree non hanno niente da mostrare: restano visibili ma spente. */
 /** `scores`: il voto di ogni area, scritto nella sua scheda (la Panoramica non ne ha). */
-export function AnalysisTabs({ view, onView, panelId, areasDisabled = false, scores = {} }: { view: AnalysisView; onView: (view: AnalysisView) => void; panelId: string; areasDisabled?: boolean; scores?: Partial<Record<AnalysisView, number | null>> }) {
+export function AnalysisTabs({ view, onView, panelId, areasDisabled = false, scores = {}, badges = {} }: { view: AnalysisView; onView: (view: AnalysisView) => void; panelId: string; areasDisabled?: boolean; scores?: Partial<Record<AnalysisView, number | null>>; badges?: Partial<Record<AnalysisView, number>> }) {
+
   const t = useT();
   const buttons = useRef<(HTMLButtonElement | null)[]>([]);
   // Il "?" sta fuori dal tablist (lì solo schede) ma si vede accanto alla scheda aperta
@@ -90,9 +91,12 @@ export function AnalysisTabs({ view, onView, panelId, areasDisabled = false, sco
           <button key={item} ref={el => { buttons.current[i] = el; }} type="button" role="tab" id={`analysis-view-${item}`}
             aria-selected={item === view} aria-controls={panelId} tabIndex={item === view ? 0 : -1}
             aria-disabled={areasDisabled && item !== 'overview' ? true : undefined}
+            title={badges[item] ? t('analysis.seriousCount', { n: badges[item]! }) : undefined}
             onClick={() => { if (!(areasDisabled && item !== 'overview')) onView(item); }} onKeyDown={e => onKey(e, i)}>
             <span>{t(viewLabelKey(item))}</span>
             {/* Il voto dell'area si vede ma non entra nel nome della scheda */}
+            {/* Problemi gravi: numero fuori dal nome della scheda */}
+            {!!badges[item] && <span className="tab-badge" aria-hidden="true">{badges[item]}</span>}
             {scores[item] != null && <span className="tab-score" aria-hidden="true">{scores[item]}</span>}
           </button>
         ))}

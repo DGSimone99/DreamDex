@@ -1,4 +1,4 @@
 import type { AreaKey } from './AreaDetail';
 
-/** Cosa mostra la scheda Analisi: la Panoramica o un'area del voto. */
-export type AnalysisView = 'overview' | AreaKey;
+/** Cosa mostra la scheda Analisi: la Panoramica, il Coaching o un'area del voto (Bonus/Malus compreso). */
+export type AnalysisView = 'overview' | 'coaching' | AreaKey;
