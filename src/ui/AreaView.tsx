@@ -44,12 +44,12 @@ export function AreaView({ rating, area, problems, extra }: {
     <section className="area-view" aria-label={title}>
       <div className="area-side">
         <h3 className="area-title">{title} <strong>{areaValue(rating, area) ?? 'n/d'}</strong></h3>
-        <div className="area-subs" role="tablist" aria-orientation="vertical" aria-label={title}>
+        <div className="area-subs ad-nav" role="tablist" aria-orientation="vertical" aria-label={title}>
           {tabs.map((tab, i) => (
             <button key={tab.key} ref={el => { buttons.current[i] = el; }} type="button" role="tab" id={`${id}-${tab.key}`}
               aria-selected={tab === current} aria-controls={`${id}-panel`} tabIndex={tab === current ? 0 : -1}
               onClick={() => setPicked(tab.key)} onKeyDown={e => onKey(e, i)}>
-              <span>{tab.label}</span>
+              <span>{tab.label}</span>{' '}
               {typeof tab.value === 'number' && <span className="sub-meter" aria-hidden="true"><span style={{ width: `${Math.max(0, Math.min(100, tab.value))}%` }} /></span>}
               <b>{tab.value ?? 'n/d'}</b>
             </button>
@@ -63,7 +63,7 @@ export function AreaView({ rating, area, problems, extra }: {
           </ul>
         )}
       </div>
-      <div className="area-panel" role="tabpanel" id={`${id}-panel`} aria-labelledby={`${id}-${current.key}`}>
+      <div className="area-panel ad-panel" role="tabpanel" id={`${id}-panel`} aria-labelledby={`${id}-${current.key}`}>
         {extra && extra.tabKey === current.key && <div className="area-extra">{extra.panel}</div>}
         {current.panel}
       </div>

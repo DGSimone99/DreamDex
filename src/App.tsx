@@ -281,7 +281,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
           />
         </TabPanel>
         <TabPanel id="analysis" active={shownTab}>
-          <AnalysisPanel team={team} analysis={analysis} data={data} rating={rating} coaching={coaching} withMeta={false} expanded view={analysisView}
+          <AnalysisPanel team={team} analysis={analysis} data={data} rating={rating} coaching={coaching} withMeta={false} expanded view={analysisView} onView={setAnalysisView}
             preview={preview?.index === replaceIndex ? preview : null} onReplace={startReplace} onSwap={replaceAt}
             footer={team.length > 0 && <MemberSheet team={team} data={rated} />} />
         </TabPanel>

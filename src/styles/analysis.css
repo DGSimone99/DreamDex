@@ -125,3 +125,29 @@
 .meta-use .mon-rows .status { align-items: center; }
 .meta-use .mon-rows meter { flex: 1; }
 .meta-use .mon-rows .usage { flex: none; width: 46px; text-align: right; color: var(--text); }
+
+/* Schede interne di Analisi: Panoramica e le aree del voto, col "?" accanto a quella aperta */
+.analysis-tabs { position: relative; display: flex; align-items: center; margin: 0 0 12px; border-bottom: 1px solid var(--line-soft); }
+.analysis-tabs [role='tablist'] { display: flex; gap: 2px; }
+.analysis-tabs [role='tab'] { padding: 8px 16px 9px; border: 0; border-bottom: 3px solid transparent; border-radius: 0; background: none; font: 600 15px/1 var(--display); font-style: italic; color: var(--muted); }
+.analysis-tabs [role='tab']:hover { color: var(--text); background: color-mix(in srgb, var(--raised) 55%, transparent); }
+.analysis-tabs [role='tab'][aria-selected='true'] { color: var(--text); border-bottom-color: var(--accent); }
+.analysis-help { position: absolute; top: 50%; transform: translateY(-50%); }
+.analysis-view { flex: 1; min-height: 0; }
+
+/* Un'area sulla pagina: sottostatistiche e problemi a sinistra, il dettaglio a destra; ognuna scorre dentro */
+.area-view { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 16px; height: 100%; min-height: 0; }
+.area-side { display: flex; flex-direction: column; gap: 10px; min-height: 0; overflow: auto; }
+.area-title { display: flex; align-items: baseline; gap: 10px; margin: 0; font: 700 20px/1 var(--display); font-style: italic; }
+.area-title strong { font-size: 28px; color: var(--accent); font-variant-numeric: tabular-nums; }
+.area-side .ad-nav { padding: 6px; border: 1px solid var(--line-soft); border-right: 1px solid var(--line-soft); }
+.area-side .ad-nav [role='tab'] { display: grid; grid-template-columns: minmax(0, 1fr) 48px auto; gap: 8px; align-items: center; }
+.sub-meter { height: 4px; background: var(--field); }
+.sub-meter > span { display: block; height: 100%; background: var(--accent); }
+.area-problems { margin: 0; padding: 8px 10px; list-style: none; display: grid; gap: 4px; font-size: 13px; border: 1px solid var(--line-soft); background: var(--panel); }
+.area-problems li { position: relative; padding-left: 14px; }
+.area-problems li::before { content: ''; position: absolute; left: 0; top: 0.55em; width: 7px; height: 7px; border-radius: 50%; background: var(--warn); }
+.area-problems li.serious::before { background: var(--bad); }
+.area-panel { min-height: 0; overflow: auto; overscroll-behavior: contain; background: var(--panel); border: 1px solid var(--line-soft); }
+.area-extra { margin-bottom: 16px; }
+.analysis-tabs [role='tab'][aria-selected='true'] { margin-right: 32px; }

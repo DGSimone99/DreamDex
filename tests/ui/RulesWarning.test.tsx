@@ -10,7 +10,7 @@ import { fixtureData } from '../fixtures/data';
 
 beforeAll(async () => { await initLearnsets(); });
 
-const rating = () => screen.getByRole('group', { name: 'Valutazione team' });
+const rating = () => document.querySelector<HTMLElement>('.band')!;
 
 async function importTeam(text: string) {
   const user = userEvent.setup();
@@ -21,9 +21,9 @@ async function importTeam(text: string) {
 }
 
 describe('voto con membri fuori regola', () => {
-  it('triangolo rosso accanto al voto, col motivo nel tooltip', async () => {
+  it('triangolo rosso nel riquadro Voto, col motivo nel tooltip', async () => {
     await importTeam('Great Tusk @ Leftovers\nAbility: Protosynthesis\n- Rapid Spin\n\nMewtwo @ Life Orb\nAbility: Pressure\n- Psystrike');
-    const mark = rating().querySelector('.grade .alert-mark.danger') as HTMLElement;
+    const mark = rating().querySelector('.grade-tools .alert-mark.danger') as HTMLElement;
     expect(mark).not.toBeNull();
     const tip = within(mark).getByRole('tooltip');
     expect(tip).toHaveTextContent('Uno o più membri del team non rispettano le regole del formato');
@@ -32,7 +32,7 @@ describe('voto con membri fuori regola', () => {
 
   it('team in regola: nessun triangolo', async () => {
     await importTeam('Great Tusk @ Leftovers\nAbility: Protosynthesis\n- Rapid Spin');
-    expect(rating().querySelector('.grade .alert-mark')).toBeNull();
+    expect(rating().querySelector('.grade-tools .alert-mark')).toBeNull();
   });
 });
 

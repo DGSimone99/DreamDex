@@ -2,7 +2,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { App } from '../../src/App';
-import { AreaDetail } from '../../src/ui/AreaDetail';
+import { AreaView } from '../../src/ui/AreaView';
 import { rateTeam } from '../../src/engine/rating';
 import { emptySet } from '../../src/engine/sets';
 import type { TeamRoles } from '../../src/engine/rolesArea';
@@ -21,20 +21,20 @@ async function importRolesTeam(lang: 'it' | 'en' = 'it') {
   await user.click(screen.getByLabelText(lang === 'it' ? 'Testo Showdown' : 'Showdown text'));
   await user.paste(ROLES_TEAM);
   await user.click(screen.getByRole('button', { name: lang === 'it' ? 'Importa' : 'Import' }));
-  return { user, rating: screen.getByRole('group', { name: lang === 'it' ? 'Valutazione team' : 'Team rating' }) };
+  return { user, rating: document.querySelector<HTMLElement>('.band')! };
 }
 
 async function openRoles(lang: 'it' | 'en' = 'it') {
   const { user, rating } = await importRolesTeam(lang);
-  const bar = within(rating).getByRole('button', { name: lang === 'it' ? /^Ruoli \d+$/ : /^Roles \d+$/ });
-  expect(bar).toHaveAttribute('aria-haspopup', 'dialog');
+  const bar = within(rating).getByRole('button', { name: lang === 'it' ? /^Ruoli \d+, apri il dettaglio/ : /^Roles \d+, open details/ });
   await user.click(bar);
-  const dialog = screen.getByRole('dialog', { name: bar.textContent! });
+  // La scheda Ruoli di Analisi, sulla pagina
+  const dialog = within(document.getElementById('panel-analysis')!).getAllByRole('region').find(r => r.classList.contains('area-view'))!;
   return { user, bar, dialog };
 }
 
 describe('dettaglio dei Ruoli a schede', () => {
-  it('la barra dei Ruoli apre il dettaglio: Generale e una scheda per famiglia', async () => {
+  it('la riga dei Ruoli porta alla scheda: Generale e una scheda per famiglia', async () => {
     const { dialog } = await openRoles();
     const tabs = within(dialog).getAllByRole('tab');
     expect(tabs.map(tab => tab.textContent!.replace(/\s*[\d/]+$/, ''))).toEqual(['Generale', 'Attacco', 'Difesa', 'Campo', 'Disturbo']);
@@ -58,23 +58,6 @@ describe('dettaglio dei Ruoli a schede', () => {
     // Ogni sotto-ruolo della famiglia ha la sua riga di gruppo, anche se nessuno lo porta
     const groups = [...table.querySelectorAll('.ad-group th')].map(th => th.textContent!);
     expect(groups.some(g => g.startsWith('Encore'))).toBe(true);
-  });
-
-  it('il tooltip della barra elenca ogni membro coi suoi sotto-ruoli brevi', async () => {
-    const { rating } = await importRolesTeam();
-    const tip = within(rating).getByRole('button', { name: /^Ruoli \d+$/ }).getAttribute('data-tip')!;
-    const lines = tip.split('\n');
-    expect(lines).toHaveLength(3);
-    // Gliscor con Stealth Rock: l'hazard col nome breve
-    expect(lines.find(l => l.startsWith('Gliscor '))).toMatch(/Hazard/);
-    expect(lines.find(l => l.startsWith('Corviknight '))).toMatch(/Rimozione/);
-  });
-
-  it('Esc chiude e il focus torna alla barra', async () => {
-    const { user, bar } = await openRoles();
-    await user.keyboard('{Escape}');
-    expect(screen.queryByRole('dialog')).toBeNull();
-    expect(bar).toHaveFocus();
   });
 
   it('in inglese', async () => {
@@ -106,7 +89,7 @@ describe('Generale dei Ruoli', () => {
       ],
     };
     const rating = { ...base, roles, areas: base.areas.map(a => (a.key === 'roles' ? { ...a, value: 64 } : a)) };
-    renderIt(<AreaDetail rating={rating} area="roles" onClose={() => {}} />);
+    renderIt(<AreaView rating={rating} area="roles" problems={[]} />);
     const panel = screen.getByRole('tabpanel');
     expect(within(panel).getAllByRole('term').map(term => term.textContent)).toEqual(['Voci importanti', 'Voci minori', 'Voci essenziali']);
     // Base 67 (media di setup del campo, hazard e rimozione), extra +3, malus −2
@@ -134,8 +117,9 @@ describe('Generale dei Ruoli', () => {
 describe('setup difensivo nel dettaglio della Difesa', () => {
   it('chi ha Iron Defense mostra tra parentesi quanto guadagna, col setup nel tooltip', async () => {
     const { user, rating } = await importRolesTeam();
-    await user.click(within(rating).getByRole('button', { name: /^Difesa \d+$/ }));
-    const dialog = screen.getByRole('dialog');
+    await user.click(within(rating).getByRole('button', { name: /^Difesa \d+, apri il dettaglio/ }));
+    const dialog = within(document.getElementById('panel-analysis')!).getAllByRole('region').find(r => r.classList.contains('area-view'))!;
+    await user.click(within(dialog).getByRole('tab', { name: /^Generale/ }));
     const row = within(dialog).getByRole('row', { name: /^Corviknight/ });
     const gain = row.querySelector('.ad-gain')!;
     expect(gain).toHaveTextContent(/^\(\+\d+\)$/);
@@ -163,7 +147,7 @@ describe('ruolo secondario nel dettaglio dei Ruoli', () => {
     const base = rateTeam([{ ...emptySet('Great Tusk'), moves: ['Headlong Rush'] }], fixtureData, 'it')!;
     const rating = { ...base, roles: rolesWithSecondary() };
     const user = userEvent.setup();
-    renderIt(<AreaDetail rating={rating} area="roles" onClose={() => {}} />);
+    renderIt(<AreaView rating={rating} area="roles" problems={[]} />);
     // Generale: chi porta la voce con la nota del secondario
     const general = within(screen.getByRole('tabpanel')).getByRole('row', { name: /^Muro Fisico/ });
     expect(general).toHaveTextContent('Great Tusk (secondario · 50)');

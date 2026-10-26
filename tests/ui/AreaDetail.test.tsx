@@ -4,16 +4,22 @@ import { describe, expect, it } from 'vitest';
 import { App } from '../../src/App';
 import { fixtureData } from '../fixtures/data';
 
-async function openOffense(lang: 'it' | 'en') {
+/** Apre un'area dal riquadro Voto: Analisi la mostra sulla pagina; si parte dalla scheda Generale come nella vecchia finestra. */
+async function openArea(lang: 'it' | 'en', area: RegExp, names = ['Great Tusk', 'Gholdengo']) {
   const user = userEvent.setup();
   render(<App initialLang={lang} data={fixtureData} />);
   const add = screen.getByLabelText(lang === 'it' ? 'Aggiungi Pokémon' : 'Add Pokémon');
-  for (const name of ['Great Tusk', 'Gholdengo']) await user.type(add, `${name}{Enter}`);
-  const rating = screen.getByRole('group', { name: lang === 'it' ? 'Valutazione team' : 'Team rating' });
-  const bar = within(rating).getByRole('button', { name: lang === 'it' ? /^Offesa \d+$/ : /^Offense \d+$/ });
+  for (const name of names) await user.type(add, `${name}{Enter}`);
+  const bar = within(document.querySelector<HTMLElement>('.band')!).getByRole('button', { name: area });
   await user.click(bar);
-  const dialog = screen.getByRole('dialog', { name: bar.textContent! });
+  const dialog = within(document.getElementById('panel-analysis')!).getAllByRole('region').find(r => r.classList.contains('area-view'))!;
+  const general = within(dialog).queryByRole('tab', { name: /^(Generale|General)/ });
+  if (general) await user.click(general);
   return { user, bar, dialog };
+}
+
+async function openOffense(lang: 'it' | 'en') {
+  return openArea(lang, lang === 'it' ? /^Offesa \d+, apri il dettaglio/ : /^Offense \d+, open details/);
 }
 
 describe("dettaglio dell'Offesa a schede", () => {
@@ -101,14 +107,12 @@ describe("dettaglio dell'Offesa a schede", () => {
     if (cover) expect(cover.getAttribute('title')).toMatch(/^.+: .+ \d+%( \(.+\))?$/);
   });
 
-  it('frecce fra le schede; Esc chiude e il focus torna alla barra', async () => {
-    const { user, bar, dialog } = await openOffense('it');
+  it('frecce fra le schede; nessuna finestra', async () => {
+    const { user, dialog } = await openOffense('it');
     within(dialog).getAllByRole('tab')[0].focus();
     await user.keyboard('{ArrowDown}');
     expect(within(dialog).getByRole('tab', { name: /^Potenza/ })).toHaveAttribute('aria-selected', 'true');
-    await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).toBeNull();
-    expect(bar).toHaveFocus();
   });
 
   it('in inglese', async () => {
@@ -119,15 +123,7 @@ describe("dettaglio dell'Offesa a schede", () => {
 });
 
 async function openDefense(lang: 'it' | 'en') {
-  const user = userEvent.setup();
-  render(<App initialLang={lang} data={fixtureData} />);
-  const add = screen.getByLabelText(lang === 'it' ? 'Aggiungi Pokémon' : 'Add Pokémon');
-  for (const name of ['Great Tusk', 'Gholdengo']) await user.type(add, `${name}{Enter}`);
-  const rating = screen.getByRole('group', { name: lang === 'it' ? 'Valutazione team' : 'Team rating' });
-  const bar = within(rating).getByRole('button', { name: lang === 'it' ? /^Difesa \d+$/ : /^Defense \d+$/ });
-  await user.click(bar);
-  const dialog = screen.getByRole('dialog', { name: bar.textContent! });
-  return { user, bar, dialog };
+  return openArea(lang, lang === 'it' ? /^Difesa \d+, apri il dettaglio/ : /^Defense \d+, open details/);
 }
 
 describe('dettaglio della Difesa a schede', () => {
@@ -229,15 +225,7 @@ describe('dettaglio della Difesa a schede', () => {
 });
 
 async function openSpeed(lang: 'it' | 'en') {
-  const user = userEvent.setup();
-  render(<App initialLang={lang} data={fixtureData} />);
-  const add = screen.getByLabelText(lang === 'it' ? 'Aggiungi Pokémon' : 'Add Pokémon');
-  for (const name of ['Great Tusk', 'Gholdengo']) await user.type(add, `${name}{Enter}`);
-  const rating = screen.getByRole('group', { name: lang === 'it' ? 'Valutazione team' : 'Team rating' });
-  const bar = within(rating).getByRole('button', { name: lang === 'it' ? /^Velocità \d+$/ : /^Speed \d+$/ });
-  await user.click(bar);
-  const dialog = screen.getByRole('dialog', { name: bar.textContent! });
-  return { user, bar, dialog };
+  return openArea(lang, lang === 'it' ? /^Velocità \d+, apri il dettaglio/ : /^Speed \d+, open details/);
 }
 
 describe('dettaglio della Velocità a schede', () => {
@@ -289,9 +277,8 @@ describe('dettaglio della Velocità a schede', () => {
     await user.click(screen.getByLabelText('Testo Showdown'));
     await user.paste('Clefable @ Leftovers\nAbility: Magic Guard\nEVs: 252 HP / 252 Def\nBold Nature\n- Thunder Wave\n- Moonblast\n\nGarchomp @ Rocky Helmet\nAbility: Rough Skin\nEVs: 252 Atk / 252 Spe\nJolly Nature\n- Earthquake');
     await user.click(screen.getByRole('button', { name: 'Importa' }));
-    const rating = screen.getByRole('group', { name: 'Valutazione team' });
-    await user.click(within(rating).getByRole('button', { name: /^Velocità \d+$/ }));
-    const dialog = screen.getByRole('dialog');
+    await user.click(within(document.querySelector<HTMLElement>('.band')!).getByRole('button', { name: /^Velocità \d+, apri il dettaglio/ }));
+    const dialog = within(document.getElementById('panel-analysis')!).getAllByRole('region').find(r => r.classList.contains('area-view'))!;
     const controlTab = within(dialog).getByRole('tab', { name: /^Controllo velocità/ });
     expect(controlTab).toHaveTextContent(/^Controllo velocità \+\d+$/);
     await user.click(controlTab);
@@ -304,13 +291,6 @@ describe('dettaglio della Velocità a schede', () => {
     // I membri aiutati, chi porta la mossa compreso
     expect(cells[1]).toHaveTextContent(/^\d membr[oi]$/);
     expect(cells[2]).toHaveTextContent(/^\+\d+$/);
-  });
-
-  it('Esc chiude e il focus torna alla barra', async () => {
-    const { user, bar } = await openSpeed('it');
-    await user.keyboard('{Escape}');
-    expect(screen.queryByRole('dialog')).toBeNull();
-    expect(bar).toHaveFocus();
   });
 
   it('in inglese', async () => {

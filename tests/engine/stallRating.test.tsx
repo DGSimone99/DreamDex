@@ -74,16 +74,6 @@ describe('stall con muri dalle statistiche offensive', () => {
   });
 });
 
-describe('pannello del voto', () => {
-  it('dice che il team è valutato come stall', async () => {
-    const { screen } = await import('@testing-library/react');
-    const { RatingPanel } = await import('../../src/ui/RatingPanel');
-    const { renderIt } = await import('../helpers/italian');
-    renderIt(<RatingPanel rating={rateTeam(stall, fixtureData)!} />);
-    expect(screen.getByText(/Valutato come stall/)).toBeInTheDocument();
-  });
-});
-
 describe('coaching di uno stall', () => {
   it('non chiede pivot, priorità o velocità', async () => {
     const { coachTeam } = await import('../../src/engine/coach');

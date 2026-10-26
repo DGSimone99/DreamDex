@@ -13,6 +13,7 @@ import { useLang, useT } from '../i18n/react';
 import type { TeamSet } from '../engine/sets';
 import { CoachPanel } from './CoachPanel';
 import { AreaView } from './AreaView';
+import { AnalysisTabs } from './AnalysisTabs';
 import type { AnalysisView } from './analysisView';
 import type { AreaKey } from './AreaDetail';
 import type { CoachProblem, ProblemCategory } from '../engine/coach';
@@ -21,7 +22,6 @@ import { IssueCounts, WEAKNESS_LABELS } from './IssueCounts';
 import { Icon } from './icons';
 import { weaknessSeverity, type SwapPreview } from '../engine/coach';
 import { MetaUsePanel } from './MetaUsePanel';
-import { RatingPanel } from './RatingPanel';
 import { Sprite, TypeChip } from './Sprite';
 import { MoveName, Typed } from './TypeText';
 
@@ -45,9 +45,11 @@ function mitigationNote(m: WeatherMitigation, lang: Lang): string {
 const AREA_PROBLEMS: Record<AreaKey, ProblemCategory[]> = { defense: ['defense'], strength: ['coverage'], roles: ['roles'], speed: [], bonusMalus: ['redundancy'] };
 export const problemsOf = (problems: CoachProblem[] | undefined, area: AreaKey) => (problems ?? []).filter(p => AREA_PROBLEMS[area].includes(p.category));
 
-export function AnalysisPanel({ team, analysis, rating, coaching, preview, onReplace, onSwap, data, withMeta = true, expanded = false, footer, view = 'overview' }: {
-  /** Panoramica o un'area del voto. */
+export function AnalysisPanel({ team, analysis, rating, coaching, preview, onReplace, onSwap, data, withMeta = true, expanded = false, footer, view = 'overview', onView }: {
+  /** Panoramica o un'area del voto (Bonus/Malus non ha una scheda: sta nel Coaching). */
   view?: AnalysisView;
+  /** Cambia scheda interna; senza, niente schede (pannello usato da solo). */
+  onView?: (view: AnalysisView) => void;
   /** In fondo alla colonna destra (la scheda dei membri). */
   footer?: ReactNode;
   onSwap?: (index: number, set: TeamSet) => void;
@@ -86,11 +88,17 @@ export function AnalysisPanel({ team, analysis, rating, coaching, preview, onRep
   // Prima i tipi scoperti: sono quelli su cui intervenire
   const coverageRows = [...uncovered, ...analysis.coverage.filter(row => row.hitters.length > 0)];
 
-  if (view !== 'overview' && rating) {
+  const area = view !== 'overview' && view !== 'bonusMalus' && rating ? view : null;
+  const tabs = onView && <AnalysisTabs view={area ?? 'overview'} onView={onView} panelId="analysis-view" />;
+
+  if (area && rating) {
     return (
       <section aria-label={tr('analysis.region')} className="analysis">
         <h2>{tr('analysis.region')}</h2>
-        <AreaView key={view} rating={rating} area={view} problems={problemsOf(coaching?.problems, view)} />
+        {tabs}
+        <div id="analysis-view" role="tabpanel" aria-labelledby={`analysis-view-${area}`} className="analysis-view">
+          <AreaView key={area} rating={rating} area={area} problems={problemsOf(coaching?.problems, area)} />
+        </div>
       </section>
     );
   }
@@ -98,10 +106,9 @@ export function AnalysisPanel({ team, analysis, rating, coaching, preview, onRep
   return (
     <section aria-label={tr('analysis.region')} className="analysis">
       <h2>{tr('analysis.region')}</h2>
-      <div className="analysis-cols">
+      {tabs}
+      <div className="analysis-cols" {...(tabs ? { id: 'analysis-view', role: 'tabpanel', 'aria-labelledby': 'analysis-view-overview' } : {})}>
         <div className="analysis-main">
-          {rating && <RatingPanel rating={rating} ruleIssues={coaching?.problems.filter(p => p.category === 'rules').map(p => p.text)}
-            metaMonth={data?.stats?.meta?.month} />}
           {coaching && onReplace && <CoachPanel coaching={coaching} preview={preview} onReplace={onReplace} onSwap={onSwap} />}
         </div>
         <div className="analysis-detail">
