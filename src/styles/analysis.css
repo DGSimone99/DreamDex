@@ -256,21 +256,29 @@ button.member-card:hover { border-color: var(--accent); }
 .analysis-help .help-button { width: 18px; height: 18px; min-width: 0; padding: 0; color: var(--on-accent-2); border-color: color-mix(in srgb, var(--on-accent-2) 45%, transparent); background: transparent; }
 .analysis-help .help-button .icon { width: 12px; height: 12px; }
 
-/* Selezione magenta (scheda interna aperta, sezione aperta nella barra): si ingrandisce un poco sopra le vicine,
-   con un piccolo rimbalzo. Solo transform: l'impaginazione non cambia. */
-@keyframes selected-pop {
-  0% { transform: scale(1); }
-  60% { transform: scale(1.07); }
-  100% { transform: scale(1.05); }
-}
-.analysis-tabs [role='tab'], .tabs.vertical [role='tab'] { position: relative; transition: transform 0.18s var(--ease); }
-.analysis-tabs [role='tab'][aria-selected='true'], .tabs.vertical [role='tab'][aria-selected='true'] {
+/* Selezione magenta: la forma si allunga. La scheda interna aperta copre col suo taglio inclinato lo spazio e l'inizio
+   della scheda vicina (niente vuoto); la sezione aperta della barra si srotola da sinistra. Le colonne non cambiano. */
+.analysis-tabs [role='tab'], .tabs.vertical [role='tab'] { position: relative; }
+.analysis-tabs [role='tab'][aria-selected='true'] {
   z-index: 1;
-  transform: scale(1.05);
-  animation: selected-pop 0.22s var(--ease) both;
+  width: calc(100% + 30px);
+  margin-right: -30px;
+  padding-right: 70px;
+  clip-path: polygon(0 0, 100% 0, calc(100% - 22px) 100%, 0 100%);
+  animation: tab-stretch 0.24s var(--ease) both;
 }
-/* Nella barra laterale cresce dal bordo sinistro, per non uscire dalla barra */
-.tabs.vertical [role='tab'][aria-selected='true'] { transform-origin: left center; }
+@keyframes tab-stretch {
+  from { clip-path: polygon(0 0, calc(100% - 22px) 0, calc(100% - 36px) 100%, 0 100%); }
+  to { clip-path: polygon(0 0, 100% 0, calc(100% - 22px) 100%, 0 100%); }
+}
+.tabs.vertical [role='tab'][aria-selected='true'] { animation: rail-stretch 0.26s var(--ease) both; }
+@keyframes rail-stretch {
+  from { clip-path: polygon(0 0, 55% 0, calc(55% - 14px) 100%, 0 100%); }
+  to { clip-path: polygon(0 0, 100% 0, calc(100% - 14px) 100%, 0 100%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .analysis-tabs [role='tab'][aria-selected='true'], .tabs.vertical [role='tab'][aria-selected='true'] { animation: none; }
+}
 .area-inactive { margin: 0; font-size: 12px; color: var(--faint); }
 @media (prefers-reduced-motion: reduce) {
   .analysis-tabs [role='tab'][aria-selected='true'], .tabs.vertical [role='tab'][aria-selected='true'] { animation: none; }
