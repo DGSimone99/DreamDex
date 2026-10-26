@@ -40,15 +40,6 @@ describe('Panoramica di Analisi', () => {
     expect(within(panel()).getByText(/Col meta del formato \(statistiche 2026-09\)/)).toBeInTheDocument();
   });
 
-  it('problemi a sinistra, soluzioni a destra', async () => {
-    await setup(['Great Tusk', 'Gholdengo', 'Kingambit', 'Dragapult', 'Corviknight', 'Toxapex']);
-    const problems = within(panel()).getByRole('region', { name: 'Coaching' });
-    const solutions = within(panel()).getByRole('region', { name: 'Soluzioni' });
-    expect(problems.compareDocumentPosition(solutions) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(within(solutions).queryAllByRole('button', { name: /^Altri sostituti per / }).length).toBeGreaterThan(0);
-    expect(within(problems).queryAllByRole('button', { name: /^Altri sostituti per / })).toHaveLength(0);
-  });
-
   it('regole per prime tra i problemi', async () => {
     await setup(['Great Tusk', 'Dragapult']);
     const problems = within(panel()).getByRole('region', { name: 'Coaching' });
@@ -124,14 +115,6 @@ describe('Panoramica: rifinitura', () => {
     expect(screen.getByRole('tab', { name: /^Pokémon/ })).toHaveAttribute('aria-selected', 'true');
   });
 
-  it('il cambio consigliato ha il pulsante principale con testo', async () => {
-    await setup(['Great Tusk', 'Gholdengo', 'Kingambit', 'Dragapult', 'Corviknight', 'Toxapex']);
-    const solutions = within(panel()).getByRole('region', { name: 'Soluzioni' });
-    const primary = solutions.querySelector<HTMLButtonElement>('button.swap-now.primary');
-    expect(primary).not.toBeNull();
-    expect(primary!.textContent).toMatch(/Sostituisci/);
-  });
-
   it('giudizio e tipo di team in cima, con lo stile del team leggibile', async () => {
     await setup(['Great Tusk', 'Gholdengo', 'Kingambit', 'Dragapult', 'Corviknight', 'Toxapex']);
     const headline = panel().querySelector<HTMLElement>('.overview-headline')!;
@@ -174,12 +157,6 @@ describe('Panoramica: correzioni della revisione', () => {
 });
 
 describe('Panoramica compatta', () => {
-  it('senza cambi consigliati niente colonna Soluzioni vuota: lo dice la testa dei Problemi', async () => {
-    await setup(['Great Tusk']);
-    expect(within(panel()).queryByRole('region', { name: 'Soluzioni' })).toBeNull();
-    expect(within(panel()).getByRole('region', { name: 'Coaching' })).toHaveTextContent('Nessun cambio consigliato');
-  });
-
   it('i numeri chiave stanno dentro il Coaching, non nella riga in testa', async () => {
     await setup();
     const headline = panel().querySelector<HTMLElement>('.overview-headline')!;

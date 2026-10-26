@@ -15,28 +15,24 @@ const balance = ['Great Tusk', 'Gholdengo', 'Kingambit', 'Toxapex', 'Corviknight
 const weak = ['Magikarp', 'Caterpie', 'Weedle', 'Metapod', 'Kakuna', 'Sunkern'].map(n => ({ ...emptySet(n), moves: ['Splash'] }));
 
 describe('sostituzioni giudicate col voto', () => {
-  it('ogni sostituzione alza davvero il voto: +5 o più, consigliata da +10', () => {
+  it('ogni sostituzione alza davvero il voto, di quanto dice', () => {
     for (const team of [balance, weak]) {
       const before = rateTeam(team, fixtureData)!.overall;
-      for (const swap of coachTeam(team, DEFAULT_FORMAT, fixtureData).swaps) {
-        const after = rateTeam(swapped(team, swap.index, swap.set), fixtureData)!.overall;
-        expect(after - before).toBe(swap.ratingGain);
-        expect(swap.ratingGain).toBeGreaterThanOrEqual(5);
-        expect(swap.level).toBe(swap.ratingGain >= 10 ? 'recommended' : 'optional');
+      const swaps = coachTeam(team, DEFAULT_FORMAT, fixtureData).fixes.filter(f => f.kind === 'swap');
+      if (team === weak) expect(swaps.length).toBeGreaterThan(0);
+      for (const fix of swaps) {
+        const after = rateTeam(swapped(team, fix.index!, fix.set), fixtureData)!.overall;
+        expect(after - before).toBe(fix.gain);
+        expect(fix.gain).toBeGreaterThan(0);
       }
     }
   });
 
-  it('le consigliate vengono prima, poi per punti guadagnati', () => {
-    const swaps = coachTeam(weak, DEFAULT_FORMAT, fixtureData).swaps;
-    expect(swaps).toHaveLength(2);
-    expect(swaps[0].ratingGain).toBeGreaterThanOrEqual(swaps[1].ratingGain);
-  });
-
-  it('un membro illegale ha sempre una sostituzione consigliata', () => {
+  it('un membro illegale ha un cambio che risolve il problema di regole', () => {
     const team = [...balance.slice(0, 5), set('Mewtwo', 'Mewtwonite Y', 'Pressure', ['Psystrike', 'Fire Blast', 'Ice Beam', 'Recover'])];
-    const swap = coachTeam(team, DEFAULT_FORMAT, fixtureData).swaps.find(s => s.index === 5);
-    expect(swap?.level).toBe('recommended');
+    const coaching = coachTeam(team, DEFAULT_FORMAT, fixtureData);
+    const rules = coaching.problems.find(p => p.category === 'rules')!.key;
+    expect(coaching.fixes.some(f => f.index === 5 && f.solves.includes(rules))).toBe(true);
   });
 });
 
@@ -51,9 +47,9 @@ describe('sostituzioni in uno stall', () => {
   ];
 
   it('un muro passivo si sostituisce solo con un altro passivo, e il team resta stall', () => {
-    for (const swap of coachTeam(stall, DEFAULT_FORMAT, fixtureData).swaps) {
-      expect(isPassive(swap.set, DEFAULT_RULES)).toBe(true);
-      expect(rateTeam(swapped(stall, swap.index, swap.set), fixtureData)!.archetype).toBe('stall');
+    for (const fix of coachTeam(stall, DEFAULT_FORMAT, fixtureData).fixes) {
+      expect(isPassive(fix.set, DEFAULT_RULES)).toBe(true);
+      expect(rateTeam(swapped(stall, fix.index!, fix.set), fixtureData)!.archetype).toBe('stall');
     }
   });
 });

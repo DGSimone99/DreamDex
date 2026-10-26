@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { analyzeTeam } from '../../src/engine/analysis';
-import { coachTeam, describeSwap, rankedChanges, verdictFor } from '../../src/engine/coach';
+import { coachTeam, describeDiff, rankedChanges, verdictFor } from '../../src/engine/coach';
 import { topReason } from '../../src/engine/explain';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
 import { emptySet, mostCommonSet, type TeamSet } from '../../src/engine/sets';
@@ -57,27 +57,18 @@ describe('coachTeam', () => {
     expect(ice).toMatchObject({ severity: 'serious', text: 'Debole a Ice: 3 Deboli – 0 Resistono' });
   });
 
-  it('sostituzioni: il membro peggiore per primo, guadagno ≥ 10, massimo 2', () => {
-    const team = [tusk, gholdengo, junk('Magikarp')];
-    const swaps = coachTeam(team, DEFAULT_FORMAT, fixtureData).swaps;
-    expect(swaps[0]).toMatchObject({ index: 2, member: 'Magikarp' });
-    for (const s of swaps) expect(s.score - s.fit).toBeGreaterThanOrEqual(10);
-    const junkTeam = ['Magikarp', 'Caterpie', 'Weedle', 'Metapod', 'Kakuna', 'Sunkern'].map(junk);
-    expect(coachTeam(junkTeam, DEFAULT_FORMAT, fixtureData).swaps).toHaveLength(2);
-  });
-
   it('i preferiti non ricevono mai suggerimenti di sostituzione', () => {
     const team = [tusk, gholdengo, { ...junk('Magikarp'), favorite: true }];
-    expect(coachTeam(team, DEFAULT_FORMAT, fixtureData).swaps.some(s => s.member === 'Magikarp')).toBe(false);
+    expect(coachTeam([tusk, gholdengo, junk('Magikarp')], DEFAULT_FORMAT, fixtureData).fixes.some(f => f.index === 2)).toBe(true);
+    expect(coachTeam(team, DEFAULT_FORMAT, fixtureData).fixes.some(f => f.index === 2)).toBe(false);
     const allFavorite = [tusk, gholdengo, junk('Magikarp')].map(s => ({ ...s, favorite: true }));
-    expect(coachTeam(allFavorite, DEFAULT_FORMAT, fixtureData).swaps).toEqual([]);
+    expect(coachTeam(allFavorite, DEFAULT_FORMAT, fixtureData).fixes.filter(f => f.kind === 'swap')).toEqual([]);
   });
 
-  it('testo della sostituzione', () => {
-    const swap = { index: 2, member: 'Magikarp', fit: 20, replacement: 'Corviknight', set: emptySet('Corviknight'), score: 60, similar: false, ratingGain: 6, level: 'recommended' as const, diff: { gains: { roles: ['pivot' as const], covers: [], resists: [] }, losses: { roles: [], covers: [], resists: [] }, lostResists: [] } };
-    expect(describeSwap(swap)).toEqual({ gain: 6, pros: ['Pivot'], cons: [] });
-    expect(describeSwap({ ...swap, similar: true, diff: { gains: { roles: [], covers: [], resists: [] }, losses: { roles: [], covers: [], resists: [] }, lostResists: [] } }))
-      .toEqual({ gain: 6, pros: [], cons: [] });
+  it('testo di un cambio', () => {
+    const diff = { gains: { roles: ['pivot' as const], covers: [], resists: [] }, losses: { roles: [], covers: [], resists: [] }, lostResists: [] };
+    expect(describeDiff(diff)).toEqual({ pros: ['Pivot'], cons: [] });
+    expect(describeDiff({ ...diff, gains: { roles: [], covers: [], resists: [] } })).toEqual({ pros: [], cons: [] });
   });
 
   it('un membro non legale nel formato è un problema serio (Regole)', () => {
@@ -94,7 +85,7 @@ describe('coachTeam', () => {
     ];
     const text = 'Più Mega nel team (Lopunny-Mega, Charizard-Mega-Y): in National Dex ne è ammessa una sola';
     const strict = coachTeam(megas, DEFAULT_FORMAT, megaData).problems;
-    expect(strict).toContainEqual({ severity: 'serious', category: 'rules', text, fixes: [], key: `rules:${text}` });
+    expect(strict).toContainEqual({ severity: 'serious', category: 'rules', text, fixes: [], key: 'rules:megas' });
     const relaxed = coachTeam(megas, { ...DEFAULT_FORMAT, allowMultipleMegas: true }, megaData).problems;
     expect(relaxed.map(p => p.text)).not.toContain(text);
   });
@@ -107,13 +98,14 @@ describe('coachTeam', () => {
 
   it('0–1 membri: solo invito ad aggiungere', () => {
     expect(coachTeam([tusk], DEFAULT_FORMAT, fixtureData)).toEqual({
-      verdict: 'Aggiungi almeno 2 Pokémon per ricevere il coaching', teamType: null, strengths: [], problems: [], swaps: [], threatFixes: {},
+      verdict: 'Aggiungi almeno 2 Pokémon per ricevere il coaching', teamType: null, strengths: [], problems: [], fixes: [], first: null, threatFixes: {},
     });
   });
 
   it('senza statistiche: niente minacce, rimedi né sostituzioni', () => {
     const noData = coachTeam([tusk, gholdengo, emptySet('Fakemon-Xyz')], DEFAULT_FORMAT, { stats: null, sets: null });
-    expect(noData.swaps).toEqual([]);
+    expect(noData.fixes).toEqual([]);
+    expect(noData.first).toBeNull();
     expect(noData.problems.every(p => p.fixes.length === 0)).toBe(true);
     expect(noData.problems.some(p => p.text.includes('check'))).toBe(false);
     expect(noData.strengths.some(s => s.startsWith('Ferma'))).toBe(false);

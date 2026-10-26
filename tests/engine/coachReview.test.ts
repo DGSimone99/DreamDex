@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { coachTeam, describeSwap } from '../../src/engine/coach';
+import { coachTeam, describeDiff } from '../../src/engine/coach';
 import type { EngineData } from '../../src/engine/data';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
 import { scoreCandidates } from '../../src/engine/scoring';
@@ -55,27 +55,15 @@ describe('debolezza seria anche con una resistenza: i rimedi ci sono', () => {
   });
 });
 
-describe('sostituzioni distinte', () => {
-  it('le due sostituzioni propongono Pokémon diversi', () => {
-    const junk = (s: string): TeamSet => ({ ...emptySet(s), moves: ['Splash'] });
-    const swaps = coachTeam(['Magikarp', 'Caterpie', 'Weedle', 'Metapod', 'Kakuna', 'Sunkern'].map(junk), DEFAULT_FORMAT, fixtureData).swaps;
-    expect(swaps).toHaveLength(2);
-    expect(swaps[0].replacement).not.toBe(swaps[1].replacement);
-  });
-});
-
 describe('vantaggi e svantaggi', () => {
   it('separa guadagni e perdite', () => {
-    const swap = { index: 0, member: 'Magikarp', fit: 20, replacement: 'Corviknight', set: emptySet('Corviknight'), score: 60, similar: false, ratingGain: 6, level: 'recommended' as const,
-      diff: { gains: { roles: ['pivot' as const], covers: [], resists: ['Ground' as const] }, losses: { roles: [], covers: ['Fire' as const], resists: [] }, lostResists: [] } };
-    expect(describeSwap(swap)).toEqual({ gain: 6, pros: ['Pivot', 'Resistente a Ground'], cons: ['Non più forte contro Fire'] });
+    const diff = { gains: { roles: ['pivot' as const], covers: [], resists: ['Ground' as const] }, losses: { roles: [], covers: ['Fire' as const], resists: [] }, lostResists: [] };
+    expect(describeDiff(diff)).toEqual({ pros: ['Pivot', 'Resistente a Ground'], cons: ['Non più forte contro Fire'] });
   });
 
   it('raggruppa copre/resiste e le perdite', () => {
-    const swap = { index: 0, member: 'Garchomp', fit: 38, replacement: 'Great Tusk', set: emptySet('Great Tusk'), score: 56, similar: false, ratingGain: 6, level: 'optional' as const,
-      diff: { gains: { roles: ['removal' as const], covers: ['Normal' as const, 'Grass' as const, 'Ice' as const], resists: [] }, losses: { roles: ['hazards' as const], covers: [], resists: ['Dark' as const] }, lostResists: [] } };
-    expect(describeSwap(swap)).toEqual({
-      gain: 6,
+    const diff = { gains: { roles: ['removal' as const], covers: ['Normal' as const, 'Grass' as const, 'Ice' as const], resists: [] }, losses: { roles: ['hazards' as const], covers: [], resists: ['Dark' as const] }, lostResists: [] };
+    expect(describeDiff(diff)).toEqual({
       pros: ['Rimozione Hazard', 'Forte contro Normal, Grass, Ice'],
       cons: ['Hazard', 'Non più resistente a Dark'],
     });
