@@ -262,7 +262,7 @@ describe('Cruscotto della Panoramica', () => {
     expect(rows).toHaveLength(2);
     const [group] = rows;
     expect(group).toHaveClass('serious');
-    expect(group.querySelector('.dash-todo-title')).toHaveTextContent('Debole a');
+    expect(group.querySelector('.dash-todo-title')).toHaveTextContent(/^Debole a:$/);
     expect(group.querySelector('.dash-count')).toHaveTextContent(/^3$/);
     expect([...group.querySelectorAll('.dash-todo-item')].map(x => x.textContent)).toEqual(['Ground', 'Fire', 'Ghost']);
     expect(group.querySelector('.dash-todo-item')).toHaveClass('serious');
