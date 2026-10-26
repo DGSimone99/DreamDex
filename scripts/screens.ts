@@ -130,6 +130,14 @@ const STATES: Record<string, State> = {
     await wait(800);
     return true;
   } },
+  // Il "?" del tipo di team aperto
+  'team-type-help': { hash: hash(SIX), run: async p => {
+    await tab(p, 'analysis');
+    await wait(300);
+    if (!await clickText(p, '.team-type .help-button', /./)) return 'no help';
+    await wait(300);
+    return true;
+  } },
   'analysis-six': { hash: hash(SIX), run: async p => { await tab(p, 'analysis'); return true; } },
   'analysis-empty': { hash: '', run: async p => { await tab(p, 'analysis'); return true; } },
   'analysis-en': { hash: hash(SIX), lang: 'en', run: async p => { await tab(p, 'analysis'); return true; } },

@@ -1,5 +1,6 @@
 import type { Coaching } from '../engine/coach';
 import { useT } from '../i18n/react';
+import { HelpButton } from './AnalysisTabs';
 
 /** Tipo di team e stili (Hyper Offense, Volt-turn…), col perché nel tooltip. */
 export function TeamTypeLine({ teamType }: { teamType: NonNullable<Coaching['teamType']> }) {
@@ -11,6 +12,8 @@ export function TeamTypeLine({ teamType }: { teamType: NonNullable<Coaching['tea
       {teamType.styles.map(style => (
         <span key={style} className="team-style" title={tr(`teamStyle.${style}.note`)}>{tr(`teamStyle.${style}`)}</span>
       ))}
+      {/* Come si decide il tipo: in fondo alla riga, dopo gli stili */}
+      <HelpButton title={tr('help.teamType.title')} text={tr('help.teamType')} />
     </p>
   );
 }

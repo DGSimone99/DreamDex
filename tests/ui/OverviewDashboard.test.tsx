@@ -286,13 +286,6 @@ describe('Cruscotto della Panoramica', () => {
     }
   });
 
-  it('il "?" della Panoramica descrive il cruscotto, non i riquadri', () => {
-    expect(itText['help.view.overview']).toMatch(/copertura dei tipi, ruoli, velocità.*cosa fare.*minacce/);
-    expect(itText['help.view.overview']).not.toMatch(/riquadr/);
-    expect(en['help.view.overview']).toMatch(/type coverage, roles, speed.*what to do.*threats/);
-    expect(en['help.view.overview']).not.toMatch(/tile/);
-  });
-
   it('normale: il controllo con chi lo porta', () => {
     mount();
     expect(screen.getByRole('region', { name: 'Velocità' }).querySelector('.dash-ctrl')).toHaveTextContent(/Controllo:.*\(Toxapex\)/);

@@ -9,14 +9,13 @@ export const ANALYSIS_VIEWS: AnalysisView[] = ['overview', 'coaching', 'defense'
 
 const viewLabelKey = (view: AnalysisView) => (view === 'overview' || view === 'coaching' ? `analysis.view.${view}` : `area.${view}`) as 'analysis.view.overview';
 
-/** Il "?" accanto alla scheda aperta: cosa mostra quella scheda e come conta nel voto. */
-export function ViewHelp({ view }: { view: AnalysisView }) {
+/** Un "?" che apre un riquadro di aiuto: un titolo e i paragrafi (uno per riga del testo). */
+export function HelpButton({ title, text }: { title: string; text: string }) {
   const t = useT();
   const [open, setOpen] = useState(false);
   const button = useRef<HTMLButtonElement>(null);
   const closeButton = useRef<HTMLButtonElement>(null);
   const titleId = useId();
-  const label = t(viewLabelKey(view));
   const close = () => { setOpen(false); button.current?.focus(); };
 
   useEffect(() => {
@@ -29,19 +28,23 @@ export function ViewHelp({ view }: { view: AnalysisView }) {
 
   return (
     <>
-      <button ref={button} type="button" className="help-button" aria-label={t('help.view.button', { view: label })} title={t('help.view.button', { view: label })}
-        onClick={() => setOpen(true)}>
+      <button ref={button} type="button" className="help-button" aria-label={title} title={title} onClick={() => setOpen(true)}>
         <Icon name="help" />
       </button>
       {open && createPortal(
         <div className="help-backdrop" onClick={close}>
           <div className="help-dialog view-help" role="dialog" aria-modal="true" aria-labelledby={titleId} onClick={e => e.stopPropagation()}>
             <header className="help-head">
-              <h3 id={titleId}>{t('help.view.button', { view: label })}</h3>
+              <h3 id={titleId}>{title}</h3>
               <button ref={closeButton} type="button" className="help-close" aria-label={t('help.close')} onClick={close}><Icon name="close" /></button>
             </header>
             <div className="help-panel">
-              {t(`help.view.${view}` as 'help.view.overview').split('\n').map(line => <p key={line}>{line}</p>)}
+              {text.split('\n').map(line => {
+                // Testo schematico: "## Titolo" è un'intestazione, "voce → regola" una riga a due colonne
+                if (line.startsWith('## ')) return <h5 key={line}>{line.slice(3)}</h5>;
+                const [term, rule] = line.split(' → ');
+                return rule === undefined ? <p key={line}>{line}</p> : <p key={line} className="help-rule"><b>{term}</b><span>{rule}</span></p>;
+              })}
             </div>
           </div>
         </div>,
@@ -49,6 +52,12 @@ export function ViewHelp({ view }: { view: AnalysisView }) {
       )}
     </>
   );
+}
+
+/** Il "?" accanto alla scheda aperta: cosa mostra quella scheda e come conta nel voto (non nella Panoramica). */
+export function ViewHelp({ view }: { view: Exclude<AnalysisView, 'overview'> }) {
+  const t = useT();
+  return <HelpButton title={t('help.view.button', { view: t(viewLabelKey(view)) })} text={t(`help.view.${view}` as 'help.view.coaching')} />;
 }
 
 /** Le schede interne: tablist orizzontale (frecce, Home/End), col "?" accanto a quella aperta. */
@@ -101,7 +110,8 @@ export function AnalysisTabs({ view, onView, panelId, areasDisabled = false, sco
           </button>
         ))}
       </div>
-      <span className="analysis-help" style={{ left: helpLeft }}><ViewHelp view={view} /></span>
+      {/* La Panoramica non ha "?": il suo aiuto è accanto al tipo di team */}
+      {view !== 'overview' && <span className="analysis-help" style={{ left: helpLeft }}><ViewHelp view={view} /></span>}
     </div>
   );
 }

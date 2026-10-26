@@ -169,6 +169,21 @@ describe('Panoramica: rifinitura', () => {
     expect(headline).toHaveTextContent(/Tipo di team/);
     expect(headline.querySelector('.team-type strong')).not.toBeNull();
   });
+
+  it('il "?" accanto al tipo di team spiega come si decide; la scheda Panoramica non ha "?"', async () => {
+    const user = userEvent.setup();
+    await setup(['Great Tusk', 'Gholdengo', 'Kingambit', 'Dragapult', 'Corviknight', 'Toxapex']);
+    expect(within(panel()).queryByRole('button', { name: /^Come funziona/ })).toBeNull();
+    const help = within(panel().querySelector<HTMLElement>('.team-type')!).getByRole('button', { name: 'Come si decide il tipo di team' });
+    await user.click(help);
+    const dialog = screen.getByRole('dialog', { name: 'Come si decide il tipo di team' });
+    expect(within(dialog).getByRole('heading', { name: 'Muro passivo' })).toBeInTheDocument();
+    const rules = [...dialog.querySelectorAll('.help-rule')].map(r => r.querySelector('b')!.textContent);
+    expect(rules).toEqual(['Stall', 'Semi-stall', 'Balance', 'Hyper Offense', 'Bulky Offense', 'Meteo', 'Trick Room', 'Webs', 'Volt-turn', 'Screens']);
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(help).toHaveFocus();
+  });
 });
 
 describe('Panoramica: correzioni della revisione', () => {

@@ -50,6 +50,9 @@
 .help-nav [role='tab']:hover { color: var(--text); background: color-mix(in srgb, var(--raised) 55%, transparent); }
 .help-nav [role='tab'][aria-selected='true'] { color: var(--text); background: var(--accent-soft); font-weight: 600; }
 .help-panel { padding: 16px 22px 20px; overflow-y: auto; }
+/* Aiuto schematico: "voce → regola" su due colonne */
+.help-panel .help-rule { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 10px; margin: 4px 0; }
+.help-panel .help-rule b { font-weight: 600; color: var(--text); }
 .help-panel h4 { margin: 0 0 10px; font: 700 18px/1.1 var(--display); font-style: italic; letter-spacing: 0.01em; }
 .help-panel p { margin: 0 0 10px; font-size: 14px; line-height: 1.55; color: var(--muted); max-width: 62ch; }
 .help-panel .help-yours { color: var(--text); font-weight: 600; }

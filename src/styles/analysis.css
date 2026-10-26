@@ -342,9 +342,11 @@ button.member-card:hover { border-color: var(--accent); }
 .dash-more { flex: none; align-self: flex-start; margin-top: 6px; }
 
 /* Minacce: sprite sul piedistallo ellittico, nome e uso; "+X" tratteggiato apre la scheda Meta */
-.dash-pods { --pod-h: 78px; flex: none; display: flex; flex-wrap: wrap; align-content: flex-start; gap: 6px 8px; max-height: calc(var(--rows) * var(--pod-h) + (var(--rows) - 1) * 6px); }
+/* padding-top: aria sopra la prima fila, così i Pokémon alti (Ferrothorn, Zapdos) non finiscono sotto l'intestazione */
+.dash-pods { --pod-h: 78px; flex: none; display: flex; flex-wrap: wrap; align-content: flex-start; gap: 6px 8px; padding-top: 10px; max-height: calc(var(--rows) * var(--pod-h) + (var(--rows) - 1) * 6px + 10px); }
 .dash-pod { width: 64px; height: var(--pod-h); display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 1px; padding: 0; color: var(--text); background: none; border: 0; border-radius: 0; }
-.dash-plinth { width: 56px; height: 46px; display: flex; justify-content: center; align-items: flex-end; overflow: hidden;
+/* Lo sprite può uscire sopra il piedistallo (overflow visibile): uno alto non si taglia */
+.dash-plinth { width: 56px; height: 46px; display: flex; justify-content: center; align-items: flex-end; overflow: visible;
   background: radial-gradient(ellipse 26px 7px at 50% 88%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 70%), radial-gradient(ellipse 24px 6px at 50% 90%, color-mix(in srgb, var(--field) 60%, transparent), transparent 75%); }
 .dash-plinth .sprite { flex: none; width: 64px; height: 64px; margin-bottom: -10px; image-rendering: pixelated; }
 .dash-pod b { max-width: 64px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 500 11px/1.25 var(--ui); }
