@@ -6,6 +6,7 @@ import { teamArchetype, type Archetype } from '../engine/archetype';
 import { improveReplacements, similarity, type Replacement } from '../engine/replace';
 import { rankedChanges, ratingGainOf, SIMILAR_THRESHOLD, type SwapPreview } from '../engine/coach';
 import { topReason } from '../engine/explain';
+import { detectRoles } from '../engine/roles';
 import { OFTEN_TOGETHER } from '../engine/scoring';
 import { ActiveFilters } from './ActiveFilters';
 import { suggest, type Suggestion } from '../engine/scoring';
@@ -139,7 +140,8 @@ function SuggestionRow({ rank, item, usage, out, quickLabel, actionLabel, replac
   const summaryText = changes
     ? (item.reasons[0] ? topReason(item.reasons)!.text : tr('suggest.noDifference'))
     // L'uso nel meta non è un motivo per sceglierlo: resta solo col team vuoto, dove è l'unico criterio
-    : (usage !== null ? item.reasons[0]?.text : topReason(item.reasons.filter(r => r.component !== 'strength'))?.text) ?? '';
+    // Col team vuoto l'uso sta già a destra: qui i ruoli principali del Pokémon
+    : (usage !== null ? detectRoles(item.set, formatRules(format.formatId)).slice(0, 3).map(role => tr(`role.${role}`)).join(', ') : topReason(item.reasons.filter(r => r.component !== 'strength'))?.text) ?? '';
   const types = getSpecies(item.species)?.types ?? [];
   // Avvisi e "spesso usati insieme" come segni con tooltip, non più etichette lunghe che vanno a capo
   const warnings = item.facts.clashes.map(text => ({ level: 'warn' as const, text: text.replace(/^⚠\s*/, '') }));

@@ -861,6 +861,8 @@ export const it: Record<keyof typeof en, string> = {
   'detail.usage': "uso nel meta",
   'detail.alternatives': "Anche al posto di",
   'detail.team': "Effetto sul team",
+  'detail.extras': "Problemi e bonus",
+  'detail.extrasNote': "Problemi risolti o nuovi, meteo e Tera: la parte del voto che le aree non spiegano",
   'detail.brings': "Porta",
   'detail.loses': "Toglie",
   'detail.losesNothing': "Niente di rilevante",
