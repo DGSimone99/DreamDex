@@ -13,12 +13,12 @@ describe('membri nella Panoramica', () => {
     expect(within(panel()).queryByRole('region', { name: 'Membri' })).toBeNull();
     for (const name of ['Great Tusk', 'Gholdengo']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
     const members = within(panel()).getByRole('region', { name: 'Membri' });
-    const cards = within(members).getAllByRole('button');
+    const cards = within(members).getAllByRole('button').filter(c => !c.getAttribute('aria-label')!.startsWith('Posto libero'));
     expect(cards.map(c => c.getAttribute('aria-label'))).toEqual([
       expect.stringMatching(/^Great Tusk · (Sweeper|Wallbreaker|Muro|Pivot|Supporto) · voto \d+$/),
       expect.stringMatching(/^Gholdengo · /),
     ]);
-    expect(within(members).getAllByText('Posto libero')).toHaveLength(4);
+    expect(within(members).getAllByRole('button', { name: 'Posto libero: aggiungi un Pokémon' })).toHaveLength(4);
   });
 
   it('il profilo: voto nel ruolo, sotto-ruoli col nome completo, statistiche reali', async () => {

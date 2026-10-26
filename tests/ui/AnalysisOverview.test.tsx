@@ -108,3 +108,26 @@ describe('Panoramica di Analisi', () => {
     expect(within(panel()).getByText(/Aggiungi un Pokémon per vedere/)).toBeInTheDocument();
   });
 });
+
+describe('Panoramica: rifinitura', () => {
+  it('un posto libero porta a scegliere un Pokémon', async () => {
+    const user = await setup();
+    await user.click(within(within(panel()).getByRole('region', { name: 'Membri' })).getAllByRole('button', { name: 'Posto libero: aggiungi un Pokémon' })[0]);
+    expect(screen.getByRole('tab', { name: /^Pokémon/ })).toHaveAttribute('aria-selected', 'true');
+  });
+
+  it('il cambio consigliato ha il pulsante principale con testo', async () => {
+    await setup(['Great Tusk', 'Gholdengo', 'Kingambit', 'Dragapult', 'Corviknight', 'Toxapex']);
+    const solutions = within(panel()).getByRole('region', { name: 'Soluzioni' });
+    const primary = solutions.querySelector<HTMLButtonElement>('button.swap-now.primary');
+    expect(primary).not.toBeNull();
+    expect(primary!.textContent).toMatch(/Sostituisci/);
+  });
+
+  it('giudizio e tipo di team in cima, con lo stile del team leggibile', async () => {
+    await setup(['Great Tusk', 'Gholdengo', 'Kingambit', 'Dragapult', 'Corviknight', 'Toxapex']);
+    const headline = panel().querySelector<HTMLElement>('.overview-headline')!;
+    expect(headline).toHaveTextContent(/Tipo di team/);
+    expect(headline.querySelector('.team-type strong')).not.toBeNull();
+  });
+});

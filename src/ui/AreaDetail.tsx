@@ -9,6 +9,7 @@ import type { Level, LevelKey } from '../engine/roleLevels';
 import { FAMILIES, secondaryRoles, type Family, type SubRole, type SubRoleReason } from '../engine/subRoles';
 import { useT } from '../i18n/react';
 import type { Lang } from '../i18n';
+import { typeName } from '../i18n/game';
 import { Sprite, TypeChip } from './Sprite';
 
 type Tab = 'general' | 'power' | 'wallbreaking' | 'coverageTypes' | 'coverageMeta';
@@ -45,8 +46,8 @@ export const signed = (n: number) => (n < 0 ? `−${-n}` : n > 0 ? `+${n}` : '0'
 export function areaTabs(rating: TeamRating, area: AreaKey, t: T, lang: Lang): DetailTab[] {
   if (area === 'bonusMalus') return catalogueTabs(rating, t, lang);
   const value = rating.areas.find(a => a.key === area)?.value ?? null;
-  return area === 'strength' ? offenseTabs(rating, t)
-    : area === 'defense' ? defenseTabs(rating.defense, !!rating.meta, t)
+  return area === 'strength' ? offenseTabs(rating, t, lang)
+    : area === 'defense' ? defenseTabs(rating.defense, !!rating.meta, t, lang)
     : area === 'roles' ? rolesTabs(rating, value, t)
     : speedTabs(rating.speed, !!rating.meta, t);
 }
@@ -109,7 +110,7 @@ function catalogueTabs(rating: TeamRating, t: T, lang: Lang): DetailTab[] {
 }
 
 /** Le schede dell'Offesa: Generale, Potenza, Wallbreaking, Coverage di tipi e del meta. */
-function offenseTabs(rating: TeamRating, t: T): DetailTab[] {
+function offenseTabs(rating: TeamRating, t: T, lang: Lang): DetailTab[] {
   const area = 'strength';
   const offense = rating.offense;
   const value = rating.areas.find(a => a.key === area)?.value ?? null;
@@ -125,7 +126,7 @@ function offenseTabs(rating: TeamRating, t: T): DetailTab[] {
   };
   const tabLabel = (key: Tab) => (key === 'general' ? t('detail.tab.general') : t(`detail.${key}`));
   const setters = offense.setters.map(s => `${s.species} (${s.move})`).join(', ');
-  const holesOf = (detail: CoverageDetail) => (detail.holes.length ? t('detail.coverage.holes', { list: detail.holes.join(', ') }) : t('detail.coverage.noHoles'));
+  const holesOf = (detail: CoverageDetail) => (detail.holes.length ? t('detail.coverage.holes', { list: detail.holes.map(h => typeName(h, lang)).join(', ') }) : t('detail.coverage.noHoles'));
 
   const general = (
     <>
@@ -310,7 +311,7 @@ const HOLD_TAGS: Record<number, { cls: string; tag: string }> = {
 const pct = (x: number) => `${Math.round(100 * x)}%`;
 
 /** Le schede della Difesa: Generale, Robustezza, Sostenibilità, Coverage di tipi e del meta. */
-function defenseTabs(defense: TeamDefense, meta: boolean, t: T): DetailTab[] {
+function defenseTabs(defense: TeamDefense, meta: boolean, t: T, lang: Lang): DetailTab[] {
   const coverageMeta = defense.coverageMeta;
   const members = defense.members;
   const physical = defense.matrix.filter(row => row.physical);
@@ -322,7 +323,7 @@ function defenseTabs(defense: TeamDefense, meta: boolean, t: T): DetailTab[] {
   };
   const label = (key: Key) => (key === 'robustness' || key === 'sustain' ? t(`ddetail.${key}`) : t(`detail.${key}`));
   const weakLine = defense.coverageTypes.weak.length
-    ? t('ddetail.types.weak', { list: defense.coverageTypes.weak.join(', ') }) : t('ddetail.types.noWeak');
+    ? t('ddetail.types.weak', { list: defense.coverageTypes.weak.map(type => typeName(type, lang)).join(', ') }) : t('ddetail.types.noWeak');
   const unansweredLine = coverageMeta && (coverageMeta.unanswered.length
     ? t('ddetail.meta.unanswered', { list: coverageMeta.unanswered.join(', ') }) : t('ddetail.meta.allAnswered'));
   const sprites = (names: string[]) => (names.length
