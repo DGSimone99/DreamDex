@@ -341,6 +341,14 @@ button.member-card:hover { border-color: var(--accent); }
 .dash-todo-item.serious .type-name { padding: 0 5px; background: color-mix(in srgb, var(--bad) 14%, transparent); border: 1px solid color-mix(in srgb, var(--bad) 70%, transparent); border-radius: 4px; }
 .dash-more { flex: none; align-self: flex-start; margin-top: 6px; }
 
+/*
+ * Lo stesso alone del piedistallo delle Minacce sotto gli altri sprite "in scena": le corsie della Velocità, la testata
+ * della tabella dei Ruoli e lo sprite grande dei dettagli (candidato, membro). Non nelle liste lunghe: sarebbe rumore.
+ * In percentuale della casella: segue lo sprite a ogni misura.
+ */
+.dash-lane-sprite .sprite, .dash-role-grid thead .sprite, .detail-sprite {
+  background: radial-gradient(ellipse 46% 14% at 50% 85%, color-mix(in srgb, var(--accent) 30%, transparent), transparent 70%), radial-gradient(ellipse 42% 11% at 50% 87%, color-mix(in srgb, var(--field) 60%, transparent), transparent 75%); }
+
 /* Minacce: sprite sul piedistallo ellittico, nome e uso; "+X" tratteggiato apre la scheda Meta */
 /* padding-top: aria sopra la prima fila, così i Pokémon alti (Ferrothorn, Zapdos) non finiscono sotto l'intestazione */
 .dash-pods { --pod-h: 78px; flex: none; display: flex; flex-wrap: wrap; align-content: flex-start; gap: 6px 8px; padding-top: 10px; max-height: calc(var(--rows) * var(--pod-h) + (var(--rows) - 1) * 6px + 10px); }

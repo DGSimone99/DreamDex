@@ -1,4 +1,4 @@
-import { useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useT } from '../i18n/react';
 import type { AnalysisView } from './analysisView';
@@ -9,8 +9,8 @@ export const ANALYSIS_VIEWS: AnalysisView[] = ['overview', 'coaching', 'defense'
 
 const viewLabelKey = (view: AnalysisView) => (view === 'overview' || view === 'coaching' ? `analysis.view.${view}` : `area.${view}`) as 'analysis.view.overview';
 
-/** Un "?" che apre un riquadro di aiuto: un titolo e i paragrafi (uno per riga del testo). */
-export function HelpButton({ title, text }: { title: string; text: string }) {
+/** Un "?" che apre un riquadro di aiuto: un titolo e il contenuto. `label`: il nome del pulsante, se diverso dal titolo. */
+export function HelpButton({ title, label = title, className, children }: { title: string; label?: string; className?: string; children: ReactNode }) {
   const t = useT();
   const [open, setOpen] = useState(false);
   const button = useRef<HTMLButtonElement>(null);
@@ -28,23 +28,18 @@ export function HelpButton({ title, text }: { title: string; text: string }) {
 
   return (
     <>
-      <button ref={button} type="button" className="help-button" aria-label={title} title={title} onClick={() => setOpen(true)}>
+      <button ref={button} type="button" className="help-button" aria-label={label} title={label} onClick={() => setOpen(true)}>
         <Icon name="help" />
       </button>
       {open && createPortal(
         <div className="help-backdrop" onClick={close}>
-          <div className="help-dialog view-help" role="dialog" aria-modal="true" aria-labelledby={titleId} onClick={e => e.stopPropagation()}>
+          <div className={`help-dialog view-help${className ? ` ${className}` : ''}`} role="dialog" aria-modal="true" aria-labelledby={titleId} onClick={e => e.stopPropagation()}>
             <header className="help-head">
               <h3 id={titleId}>{title}</h3>
               <button ref={closeButton} type="button" className="help-close" aria-label={t('help.close')} onClick={close}><Icon name="close" /></button>
             </header>
             <div className="help-panel">
-              {text.split('\n').map(line => {
-                // Testo schematico: "## Titolo" è un'intestazione, "voce → regola" una riga a due colonne
-                if (line.startsWith('## ')) return <h5 key={line}>{line.slice(3)}</h5>;
-                const [term, rule] = line.split(' → ');
-                return rule === undefined ? <p key={line}>{line}</p> : <p key={line} className="help-rule"><b>{term}</b><span>{rule}</span></p>;
-              })}
+              {children}
             </div>
           </div>
         </div>,
@@ -57,7 +52,11 @@ export function HelpButton({ title, text }: { title: string; text: string }) {
 /** Il "?" accanto alla scheda aperta: cosa mostra quella scheda e come conta nel voto (non nella Panoramica). */
 export function ViewHelp({ view }: { view: Exclude<AnalysisView, 'overview'> }) {
   const t = useT();
-  return <HelpButton title={t('help.view.button', { view: t(viewLabelKey(view)) })} text={t(`help.view.${view}` as 'help.view.coaching')} />;
+  return (
+    <HelpButton title={t('help.view.button', { view: t(viewLabelKey(view)) })}>
+      {t(`help.view.${view}` as 'help.view.coaching').split('\n').map(line => <p key={line}>{line}</p>)}
+    </HelpButton>
+  );
 }
 
 /** Le schede interne: tablist orizzontale (frecce, Home/End), col "?" accanto a quella aperta. */

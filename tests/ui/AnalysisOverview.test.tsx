@@ -170,18 +170,19 @@ describe('Panoramica: rifinitura', () => {
     expect(headline.querySelector('.team-type strong')).not.toBeNull();
   });
 
-  it('il "?" accanto al tipo di team spiega come si decide; la scheda Panoramica non ha "?"', async () => {
+  it('il "?" accanto al tipo di team apre la guida ai tipi; la scheda Panoramica non ha "?"', async () => {
     const user = userEvent.setup();
     await setup(['Great Tusk', 'Gholdengo', 'Kingambit', 'Dragapult', 'Corviknight', 'Toxapex']);
     expect(within(panel()).queryByRole('button', { name: /^Come funziona/ })).toBeNull();
-    const help = within(panel().querySelector<HTMLElement>('.team-type')!).getByRole('button', { name: 'Come si decide il tipo di team' });
+    const help = within(panel().querySelector<HTMLElement>('.team-type')!).getByRole('button', { name: 'Tipi di team: come si riconoscono' });
     await user.click(help);
-    const dialog = screen.getByRole('dialog', { name: 'Come si decide il tipo di team' });
-    expect(within(dialog).getByRole('heading', { name: 'Tipo di team' })).toBeInTheDocument();
-    const rules = [...dialog.querySelectorAll('.help-rule')].map(r => r.querySelector('b')!.textContent);
-    // Ogni tipo detto in muri e attaccanti
-    expect(dialog).toHaveTextContent(/Stall6 muri/);
-    expect(rules).toEqual(['Stall', 'Semi-stall', 'Balance', 'Bulky Offense', 'Hyper Offense', 'Muro', 'Meteo', 'Trick Room']);
+    const dialog = screen.getByRole('dialog', { name: 'Tipi di team' });
+    // Ogni tipo coi suoi sei posti, letti come frase corta
+    expect(within(dialog).getAllByRole('img').map(img => img.getAttribute('aria-label'))).toEqual([
+      '6 attaccanti', '4–6 attaccanti robusti, max 2 muri', 'Mix di attaccanti e muri', 'Quasi tutti muri, 1–2 attaccanti', '6 muri',
+    ]);
+    expect(dialog.querySelectorAll('.tt-pips')[0].querySelectorAll('.tt-pip.a')).toHaveLength(6);
+    expect(dialog).toHaveTextContent(/Meteo.*Chi lo porta.*1\+ che lo sfruttano.*Trick Room.*Chi la porta.*2\+ Pokémon lenti/);
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(help).toHaveFocus();
