@@ -231,15 +231,18 @@ button.member-card:hover { border-color: var(--accent); }
 .dash-note .icon { width: 14px; height: 14px; }
 
 /* Copertura: testata coi tipi, poi Regge e Colpisce; coperto appena visibile, solo i problemi hanno colore pieno */
-.dash-matrix { width: calc(100% + 6px); margin: -3px; border-collapse: separate; border-spacing: 3px; table-layout: fixed; }
+/* Ogni casella è una scatola sua: bordo sottile e 4px di stacco in entrambe le direzioni.
+   Con .dash davanti: le regole generiche delle tabelle dell'Analisi (collapse, padding, riga sotto) non devono vincere */
+.dash .dash-matrix { width: calc(100% + 8px); margin: -4px; border-collapse: separate; border-spacing: 4px; table-layout: fixed; }
+.dash .dash-matrix th, .dash .dash-matrix thead td { border-bottom: 0; }
 .dash-matrix thead td, .dash-matrix th[scope='row'] { width: 64px; }
 .dash-matrix thead th { padding: 0 0 2px; }
 .dash-matrix th[scope='row'] { padding: 0 4px 0 0; font: 600 11px/1 var(--ui); text-align: right; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
 .dash-type { display: block; width: 22px; height: 22px; margin: 0 auto; border-radius: 50%; }
-.dash-cell { height: 22px; padding: 0; text-align: center; border-radius: 3px; background: var(--raised); color: color-mix(in srgb, var(--faint) 40%, var(--raised)); cursor: help; }
+.dash .dash-cell { height: 22px; padding: 0; text-align: center; border: 1px solid var(--line); border-radius: 3px; background: var(--raised); color: color-mix(in srgb, var(--faint) 40%, var(--raised)); cursor: help; }
 .dash-cell .icon { width: 12px; height: 12px; vertical-align: middle; stroke-width: 2.5; }
-.dash-cell.minor { background: var(--warn-bg); color: var(--warn); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--warn) 45%, transparent); }
-.dash-cell.bad { background: color-mix(in srgb, var(--bad) 28%, var(--panel)); color: var(--text); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--bad) 70%, transparent); }
+.dash .dash-cell.minor { background: var(--warn-bg); color: var(--warn); border-color: color-mix(in srgb, var(--warn) 60%, transparent); }
+.dash .dash-cell.bad { background: color-mix(in srgb, var(--bad) 28%, var(--panel)); color: var(--text); border-color: color-mix(in srgb, var(--bad) 80%, transparent); }
 
 /* Ruoli: coperto solo contorno, mancante rosso pieno; i minori mancanti tratteggiati (non sono problemi) */
 .dash-chips { display: flex; flex-wrap: wrap; align-content: flex-start; gap: 5px; }
