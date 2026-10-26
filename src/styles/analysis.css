@@ -244,14 +244,18 @@ button.member-card:hover { border-color: var(--accent); }
 .dash .dash-cell.minor { background: var(--warn-bg); color: var(--warn); border-color: color-mix(in srgb, var(--warn) 60%, transparent); }
 .dash .dash-cell.bad { background: color-mix(in srgb, var(--bad) 28%, var(--panel)); color: var(--text); border-color: color-mix(in srgb, var(--bad) 80%, transparent); }
 
-/* Ruoli: tre fasce una sotto l'altra (Essenziali, Importanti, Minori) che si dividono l'altezza della card; solo i mancanti hanno colore pieno */
-.dash-role-bands { flex: 1; min-height: 0; display: flex; flex-direction: column; }
-/* Ogni fascia: l'etichetta in una colonna stretta, i ruoli in fila centrati in verticale */
-.dash-role-band { flex: 1 1 0; min-height: 0; display: grid; grid-template-columns: 88px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); gap: 10px; border-top: 1px solid var(--line-soft); }
+/*
+ * Ruoli: tre fasce una sotto l'altra (Essenziali, Importanti, Minori), compatte in alto come una tabellina; solo i
+ * mancanti hanno colore pieno. La card si stira fino in fondo come la Velocità; dentro, le fasce stanno in alto, alte
+ * quanto il contenuto e al massimo quanto la card: se non basta, si misura tutto insieme (useFit) e cedono prima i
+ * minori, col "+N" di fascia. Niente altezze uguali per fascia: una fascia piena tagliava mentre le altre restavano vuote.
+ */
+.dash-role-bands, .dash-role-bands.dash-fit { flex: 0 1 auto; min-height: 0; display: flex; flex-direction: column; }
+/* Ogni fascia: l'etichetta in una colonna stretta, i ruoli in fila che vanno a capo */
+.dash-role-band { flex: none; display: grid; grid-template-columns: 88px minmax(0, 1fr); gap: 10px; padding: 4px 0; border-top: 1px solid var(--line-soft); }
 .dash-role-band:first-child { border-top: 0; }
 .dash-level-name { align-self: center; font: 600 11px/1.2 var(--ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
-/* "safe": se i ruoli non stanno si parte dall'alto, così la misura di useFit taglia solo in fondo */
-.dash-role-list { display: flex; flex-wrap: wrap; align-content: safe center; align-items: center; gap: 4px 8px; margin: 0; padding: 4px 0; list-style: none; }
+.dash-role-list { display: flex; flex-wrap: wrap; align-content: flex-start; align-items: center; gap: 4px 8px; margin: 0; padding: 4px 0; list-style: none; }
 .dash-role { flex: none; max-width: 100%; display: inline-flex; align-items: center; gap: 4px; }
 .dash-role-tag { display: inline-flex; align-items: center; gap: 5px; padding: 2px 7px; font-size: 12px; line-height: 1.2; white-space: nowrap; color: var(--text); border: 1px solid var(--line-soft); border-radius: 4px; }
 .dash-role-tag .icon { flex: none; width: 12px; height: 12px; stroke-width: 2.5; color: var(--faint); }

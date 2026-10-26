@@ -34,17 +34,14 @@ function RoleRow({ chip, density }: { chip: RoleChip; density: Density }) {
 }
 
 /** Una fascia (un livello): l'etichetta a sinistra, i ruoli che vanno a capo; quelli che non stanno nel "+N" a fine fascia. */
-function RoleBand({ title, chips, density }: { title: string; chips: RoleChip[]; density: Density }) {
+function RoleBand({ title, chips, shown, density }: { title: string; chips: RoleChip[]; shown: number; density: Density }) {
   const t = useT();
-  const lang = useLang();
   const id = useId();
-  // La lingua cambia la larghezza delle etichette: si rimisura
-  const { ref, shown } = useFit<HTMLUListElement>(`${density}|${lang}|${chips.map(c => `${c.need}${c.covered}${c.owners.join('+')}`).join()}`, chips.length, { more: true });
   const hidden = chips.length - shown;
   return (
     <div className="dash-role-band">
       <span id={id} className="dash-level-name">{title}</span>
-      <ul ref={ref} className="dash-fit dash-role-list" aria-labelledby={id}>
+      <ul className="dash-role-list" aria-labelledby={id}>
         {chips.slice(0, shown).map(chip => <RoleRow key={chip.need} chip={chip} density={density} />)}
         {hidden > 0 && (
           <li data-fit-more className="dash-role more" title={t('dash.moreRoles', { n: hidden })}>
@@ -59,19 +56,35 @@ function RoleBand({ title, chips, density }: { title: string; chips: RoleChip[];
 const LEVELS = ['essential', 'important', 'minor'] as const;
 
 /**
- * Ruoli in tre fasce una sotto l'altra (Essenziali, Importanti, Minori) che si dividono l'altezza della card.
- * Stretto e normale: chip col solo segno e nome; ampio: una riga per ruolo coi nomi di chi lo copre.
+ * Ruoli in tre fasce una sotto l'altra (Essenziali, Importanti, Minori), compatte in alto: la card è alta quanto
+ * il contenuto dentro la card, che si stira fino in fondo. Stretto e normale: chip col solo segno e nome; ampio: una riga per ruolo
+ * coi nomi di chi lo copre.
+ * Quanti ruoli stanno si misura una volta per tutta la card, in ordine (essenziali, importanti, minori; in ogni fascia
+ * prima i mancanti): se manca spazio cedono prima i minori, mai un problema prima di un coperto, e ogni fascia
+ * tagliata chiude col suo "+N". Mai un "+N" in una fascia mentre un'altra ha spazio vuoto.
  */
 export function RolesSection({ roles, density, onView }: { roles: DashboardData['roles']; density: Density; onView: (v: AnalysisView) => void }) {
   const t = useT();
+  const lang = useLang();
   const titles = { essential: t('analysis.essential'), important: t('analysis.important'), minor: t('dash.levelMinor') };
-  // In ogni fascia prima i mancanti: se non stanno tutti, nel "+N" finiscono i coperti, mai un problema
   const bands = LEVELS.map(level => roles.chips.filter(c => c.level === level).sort((a, b) => Number(a.covered) - Number(b.covered)));
+  const total = roles.chips.length;
+  // La lingua cambia la larghezza delle etichette: si rimisura. Le fasce seguono il contenuto: si guarda anche la card
+  const { ref, shown } = useFit<HTMLDivElement>(
+    `${density}|${lang}|${bands.flat().map(c => `${c.need}${c.covered}${c.owners.join('+')}`).join()}`, total,
+    { more: true, outer: '.dash-roles' },
+  );
+  let left = shown;
+  const visible = bands.map(chips => {
+    const n = Math.min(chips.length, Math.max(0, left));
+    left -= n;
+    return n;
+  });
   return (
     <DashCard className="dash-roles" title={t('area.roles')} meta={<b>{roles.value}</b>}
       links={<DashLink area={t('area.roles')} onClick={() => onView('roles')} />}>
-      <div className="dash-role-bands">
-        {LEVELS.map((level, i) => <RoleBand key={level} title={titles[level]} chips={bands[i]} density={density} />)}
+      <div ref={ref} className="dash-role-bands dash-fit">
+        {LEVELS.map((level, i) => <RoleBand key={level} title={titles[level]} chips={bands[i]} shown={visible[i]} density={density} />)}
       </div>
     </DashCard>
   );
