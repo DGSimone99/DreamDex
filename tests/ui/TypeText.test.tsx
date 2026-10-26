@@ -26,13 +26,16 @@ describe('testo con tipi e Pokémon', () => {
     expect(parts('Mr. Mime e Porygon-Z').mons).toEqual(['Mr. Mime', 'Porygon-Z']);
   });
 
-  it('ogni Pokémon nominato ha il pallino del tipo, diviso a metà per i doppi tipi', () => {
+  it('ogni Pokémon nominato ha le icone del tipo, due per i doppi tipi', () => {
     const { container } = render(<p><Typed text="Sinergie: Kyogre-Primal (Primordial Sea) → Swampert-Mega (Swift Swim)" /></p>);
     const refs = [...container.querySelectorAll('.mon-ref')];
     expect(refs.map(r => r.textContent)).toEqual(['Kyogre-Primal', 'Swampert-Mega']);
     const dots = refs.map(r => r.querySelector('.type-dot') as HTMLElement);
     expect(dots[0].title).toBe('Water');
     expect(dots[1].title).toBe('Water / Ground');
+    // Icone ufficiali, decorative: una per Kyogre-Primal, due per Swampert-Mega
+    expect(dots.map(d => [...d.querySelectorAll('img')].map(img => img.getAttribute('src')!.match(/(\w+)\.png/)![1]))).toEqual([['water'], ['water', 'ground']]);
+    expect(dots[1]).toHaveAttribute('aria-hidden', 'true');
   });
 
   it('parole comuni non diventano Pokémon', () => {
