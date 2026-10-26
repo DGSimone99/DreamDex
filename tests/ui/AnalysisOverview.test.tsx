@@ -169,6 +169,24 @@ describe('Panoramica: rifinitura', () => {
     expect(headline).toHaveTextContent(/Tipo di team/);
     expect(headline.querySelector('.team-type strong')).not.toBeNull();
   });
+
+  it('il "?" accanto al tipo di team apre la guida ai tipi; la scheda Panoramica non ha "?"', async () => {
+    const user = userEvent.setup();
+    await setup(['Great Tusk', 'Gholdengo', 'Kingambit', 'Dragapult', 'Corviknight', 'Toxapex']);
+    expect(within(panel()).queryByRole('button', { name: /^Come funziona/ })).toBeNull();
+    const help = within(panel().querySelector<HTMLElement>('.team-type')!).getByRole('button', { name: 'Tipi di team: come si riconoscono' });
+    await user.click(help);
+    const dialog = screen.getByRole('dialog', { name: 'Tipi di team' });
+    // Ogni tipo coi suoi sei posti, letti come frase corta
+    expect(within(dialog).getAllByRole('img').map(img => img.getAttribute('aria-label'))).toEqual([
+      '6 attaccanti', '4–6 attaccanti robusti, max 2 muri', 'Mix di attaccanti e muri', 'Quasi tutti muri, 1–2 attaccanti', '6 muri',
+    ]);
+    expect(dialog.querySelectorAll('.tt-pips')[0].querySelectorAll('.tt-pip.a')).toHaveLength(6);
+    expect(dialog).toHaveTextContent(/Meteo.*Chi lo porta.*1\+ che lo sfruttano.*Trick Room.*Chi la porta.*2\+ Pokémon lenti/);
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(help).toHaveFocus();
+  });
 });
 
 describe('Panoramica: correzioni della revisione', () => {

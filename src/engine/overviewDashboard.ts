@@ -7,25 +7,23 @@ import { summarizeTeam } from './overviewSummary';
 import type { TeamRating } from './rating';
 import { LEVEL_KEYS, type LevelKey } from './roleLevels';
 import type { TeamSet } from './sets';
-import { poolMedian, speedTier } from './speed';
+import { poolMedian } from './speed';
 import type { SpeedCondition } from './speedArea';
 import { t, type Lang } from '../i18n';
 
 export type CellState = 'ok' | 'minor' | 'bad';
 export interface TypeCell { type: string; defense: CellState; offense: CellState; defenseNote: string; offenseNote: string }
 export interface RoleChip { need: LevelKey; level: 'essential' | 'important' | 'minor'; covered: boolean; owners: string[] }
-export interface SpeedLane { species: string; speed: number; share: number; above: boolean; outspeeds: string[]; outspedBy: string[] }
+export interface SpeedLane { species: string; speed: number; share: number; above: boolean }
 export interface ThreatPod { species: string; usage: number }
 export interface DashboardData {
   coverage: { cells: TypeCell[]; defense: string; offense: string };
-  roles: { chips: RoleChip[]; value: string };
+  /** members: i membri in ordine di team (le colonne della tabella dei ruoli), scritti come gli owners. */
+  roles: { chips: RoleChip[]; members: string[]; value: string };
   speed: { lanes: SpeedLane[]; median: number | null; vsMeta: boolean; control: { condition: SpeedCondition; move: string; by: string[] }[]; value: string };
   /** metaOff: meta spento dall'utente (altrimenti, se non disponibile, mancano le statistiche). */
   threats: { pods: ThreatPod[]; total: number; available: boolean; metaOff: boolean };
 }
-
-/** Quanti vicini del meta si mostrano per corsia. */
-const NEAR = 3;
 
 /** I dati del cruscotto dell'Analisi; gli stati vengono da summarizeTeam e dalla gravità delle debolezze. */
 export function dashboardData(team: TeamSet[], analysis: TeamAnalysis, rating: TeamRating, problems: CoachProblem[], data: EngineData, lang: Lang): DashboardData {
@@ -54,21 +52,15 @@ export function dashboardData(team: TeamSet[], analysis: TeamAnalysis, rating: T
     chips.push({ need, level, covered: owners.length > 0, owners });
   }
 
-  // Velocità: corsie dal più veloce, coi vicini del meta
-  const lanes: SpeedLane[] = rating.speed.members.map(m => {
-    const set = team.find(s => s.species === m.species || battleName(s) === m.species);
-    const tier = set ? speedTier(set, data) : null;
-    return {
-      species: m.species, speed: m.speed, share: m.raw, above: m.raw > 0.5,
-      outspeeds: (tier?.slower ?? []).slice(0, NEAR).map(r => r.species),
-      outspedBy: (tier?.faster ?? []).slice(0, NEAR).map(r => r.species),
-    };
-  }).sort((a, b) => b.speed - a.speed);
+  // Velocità: corsie dal più veloce
+  const lanes: SpeedLane[] = rating.speed.members
+    .map(m => ({ species: m.species, speed: m.speed, share: m.raw, above: m.raw > 0.5 }))
+    .sort((a, b) => b.speed - a.speed);
 
   const available = !tile('meta').unavailable;
   return {
     coverage: { cells, defense: tile('defense').value, offense: tile('strength').value },
-    roles: { chips, value: tile('roles').value },
+    roles: { chips, members: team.map(set => battleName(set)), value: tile('roles').value },
     speed: {
       lanes, median: poolMedian(data), vsMeta: usesMeta(data),
       control: rating.speed.sources.map(s => ({ condition: s.condition, move: s.move, by: s.by })),

@@ -77,14 +77,11 @@ describe('stili del team', () => {
     expect(teamArchetype(balance, DEFAULT_RULES)?.styles).not.toContain('sand');
   });
 
-  it('Webs, Screens e Volt-turn', () => {
+  it('solo meteo e Trick Room: Sticky Web, Screens e tanti pivot non sono stili', () => {
     const webs = [set('Ribombee', 'Focus Sash', 'Shield Dust', ['Sticky Web', 'Moonblast', 'Stun Spore', 'U-turn']), ...hyperOffense.slice(1)];
-    expect(teamArchetype(webs, DEFAULT_RULES)?.styles).toContain('webs');
     const screens = [set('Grimmsnarl', 'Light Clay', 'Prankster', ['Reflect', 'Light Screen', 'Spirit Break', 'Parting Shot']), ...hyperOffense.slice(1)];
-    expect(teamArchetype(screens, DEFAULT_RULES)?.styles).toContain('screens');
     const pivots = hyperOffense.map(s => ({ ...s, moves: [...s.moves.slice(0, 3), 'U-turn'] }));
-    expect(teamArchetype(pivots, DEFAULT_RULES)?.styles).toContain('voltturn');
-    expect(teamArchetype(bulkyOffense, DEFAULT_RULES)?.styles).not.toContain('voltturn');
+    for (const team of [webs, screens, pivots]) expect(teamArchetype(team, DEFAULT_RULES)?.styles).toEqual([]);
   });
 
   it('al massimo due stili', () => {

@@ -50,6 +50,34 @@
 .help-nav [role='tab']:hover { color: var(--text); background: color-mix(in srgb, var(--raised) 55%, transparent); }
 .help-nav [role='tab'][aria-selected='true'] { color: var(--text); background: var(--accent-soft); font-weight: 600; }
 .help-panel { padding: 16px 22px 20px; overflow-y: auto; }
+/*
+ * Guida ai tipi di team: ogni tipo col nome, i sei posti (spada = attaccante in accento, scudo = muro in magenta,
+ * tratteggiato = l'uno o l'altro) e una frase corta; gli stili come formula "chi lo porta + chi lo sfrutta".
+ */
+.help-dialog.tt-dialog { width: min(600px, 100%); }
+.tt-types { display: grid; grid-template-columns: max-content max-content minmax(0, 1fr); align-items: center; gap: 0 16px; margin: 0; padding: 0; list-style: none; }
+.tt-types li { display: contents; }
+.tt-types li > * { padding: 9px 0; border-bottom: 1px solid var(--line-soft); }
+.tt-types strong { font: 700 17px/1.1 var(--display); font-style: italic; letter-spacing: 0.01em; color: var(--text); }
+.tt-pips { display: inline-flex; gap: 4px; }
+.tt-pip { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 4px; }
+.tt-pip .icon { width: 13px; height: 13px; stroke-width: 2.5; }
+.tt-pip.a { color: var(--on-accent); background: var(--accent); }
+.tt-pip.w { color: var(--on-accent-2); background: var(--accent-2); }
+.tt-pip.x { border: 1.5px dashed var(--line); }
+.tt-caption { font-size: 13px; color: var(--muted); }
+.help-panel .tt-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 10px 0 0; font-size: 12px; color: var(--faint); }
+.tt-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.tt-legend .tt-pip { width: 16px; height: 16px; border-radius: 3px; }
+.tt-legend .tt-pip .icon { width: 10px; height: 10px; }
+.help-panel .tt-section { margin: 18px 0 6px; font: 600 11px/1.2 var(--ui); font-style: normal; text-transform: uppercase; letter-spacing: 0.06em; color: var(--faint); }
+.tt-styles { display: grid; grid-template-columns: max-content minmax(0, 1fr); align-items: center; gap: 8px 16px; margin: 0; padding: 0; list-style: none; }
+.tt-styles li { display: contents; }
+.tt-styles strong { display: inline-flex; align-items: center; gap: 7px; font: 700 15px/1.1 var(--display); font-style: italic; color: var(--text); }
+.tt-styles strong .icon { width: 15px; height: 15px; color: var(--accent); }
+.tt-formula { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; font-weight: 700; color: var(--faint); }
+.tt-formula span { padding: 2px 9px; font-size: 12px; font-weight: 500; color: var(--text); background: var(--raised); border: 1px solid var(--line-soft); border-radius: 4px; }
+.help-panel .tt-note { margin: 18px 0 0; font-size: 12px; color: var(--faint); }
 .help-panel h4 { margin: 0 0 10px; font: 700 18px/1.1 var(--display); font-style: italic; letter-spacing: 0.01em; }
 .help-panel p { margin: 0 0 10px; font-size: 14px; line-height: 1.55; color: var(--muted); max-width: 62ch; }
 .help-panel .help-yours { color: var(--text); font-weight: 600; }
