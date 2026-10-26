@@ -38,7 +38,7 @@ function itemLabel(kind: TodoGroup['kind'], subject: string, lang: Lang): string
   return subject;
 }
 
-/** Nella densità ampia, sotto un gruppo i testi interi dei suoi problemi (non per minacce e ruoli: ripeterebbero i nomi). */
+/** Nelle densità normale e ampia, sotto un gruppo i testi interi dei suoi problemi (non per minacce e ruoli: ripeterebbero i nomi). */
 const detailsOf = (group: TodoGroup): { key: string; text: string }[] =>
   (group.kind === 'weak' || group.kind === 'illegal' ? group.details.map((text, i) => ({ key: group.keys[i], text })) : []);
 
@@ -105,8 +105,8 @@ export function TodoSection({ problems, members, density, onView }: { problems: 
   const groups = groupProblems(problems);
   const key = `${density}|${lang}|${problems.map(p => `${p.severity}${p.key}`).join()}`;
   const { ref, box, shown, measured, round } = useFit<HTMLOListElement>(key, groups.length, { min: 2 });
-  // Ampio: se ci stanno tutti i gruppi, sotto ognuno i suoi dettagli finché c'è spazio (prima quelli dei gruppi in alto)
-  const roomy = density === 'roomy' && measured && shown === groups.length;
+  // Normale e ampio: se ci stanno tutti i gruppi, sotto ognuno i suoi dettagli finché c'è spazio (prima quelli in alto)
+  const roomy = density !== 'tight' && measured && shown === groups.length;
   const lines = roomy ? groups.flatMap(detailsOf).length : 0;
   const allowed = useShrink(box, `${key}|${round}|${roomy}`, lines);
   let left = allowed;
