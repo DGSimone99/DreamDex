@@ -1,12 +1,8 @@
-import { act, render, screen, within } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { App } from '../../src/App';
-import type { CoachProblem } from '../../src/engine/coach';
-import type { SummaryTile } from '../../src/engine/overviewSummary';
-import { OverviewSummary } from '../../src/ui/OverviewSummary';
 import { fixtureData } from '../fixtures/data';
-import { renderIt } from '../helpers/italian';
 
 const panel = () => document.getElementById('panel-analysis')!;
 const views = () => within(panel()).getByRole('tablist', { name: 'Sezioni dell\'Analisi' });
@@ -30,89 +26,57 @@ async function importTeam(text: string) {
 }
 
 describe('Panoramica di Analisi', () => {
-  it('sei tessere: ognuna è un pulsante col numero e la didascalia', async () => {
+  it('il cruscotto: cinque sezioni coi titoli', async () => {
     await setup();
-    const summary = within(panel()).getByRole('region', { name: 'Riassunto' });
-    const names = within(summary).getAllByRole('button').filter(b => b.classList.contains('summary-tile')).map(b => b.getAttribute('aria-label'));
-    expect(names).toHaveLength(6);
-    expect(names[0]).toMatch(/^Difesa: \d+\/18 tipi coperti$/);
-    expect(names[1]).toMatch(/^Offesa: \d+\/18 super efficace$/);
-    expect(names[2]).toMatch(/^Ruoli: \d+\/\d+ coperti$/);
-    expect(names[3]).toMatch(/^Velocità: \d\/2 più veloci della media del meta$/);
-    expect(names[4]).toMatch(/^Meta: \d+\/\d+ minacce gestite$/);
-    expect(names[5]).toMatch(/^Bonus\/Malus: \S+ netto$/);
+    for (const title of ['Copertura', 'Ruoli', 'Velocità', 'Cosa fare', 'Minacce non gestite']) {
+      expect(within(panel()).getByRole('heading', { name: title })).toBeInTheDocument();
+    }
+    expect(within(panel()).getByRole('table', { name: 'Copertura' })).toBeInTheDocument();
   });
 
-  it('una tessera apre la sua linguetta', async () => {
+  it('un link apre la sua linguetta', async () => {
     const user = await setup();
-    await user.click(within(panel()).getByRole('button', { name: /^Offesa: / }));
+    await user.click(within(panel()).getByRole('button', { name: /^Offesa/ }));
     expect(within(views()).getByRole('tab', { name: 'Offesa' })).toHaveAttribute('aria-selected', 'true');
   });
 
-  it('la tessera Meta apre la scheda Meta', async () => {
+  it('le minacce aprono la scheda Meta', async () => {
     const user = await setup();
-    await user.click(within(panel()).getByRole('button', { name: /^Meta: / }));
+    await user.click(within(panel()).getByRole('button', { name: 'Apri la scheda Meta' }));
     expect(screen.getByRole('tab', { name: /^Meta/ })).toHaveAttribute('aria-selected', 'true');
   });
 
-  it('la striscia porta al Coaching', async () => {
+  it('"Cosa fare" porta al Coaching', async () => {
     const user = await setup(['Great Tusk', 'Dragapult']);
-    expect(panel().querySelector('.summary-strip')).toHaveTextContent(/\d+ grav[ei]|\d+ minor[ei]/);
-    await user.click(within(panel()).getByRole('button', { name: /^Vai al Coaching/ }));
+    const todo = within(panel()).getByRole('region', { name: 'Cosa fare' });
+    expect(todo).toHaveTextContent(/\d+ grav[ei]|\d+ minor[ei]/);
+    await user.click(within(todo).getByRole('button', { name: /^Tutti (i|gli) \d+ nel Coaching/ }));
     expect(within(views()).getByRole('tab', { name: 'Coaching' })).toHaveAttribute('aria-selected', 'true');
   });
 
-  it('un tipo scoperto compare nella tessera Difesa', async () => {
-    await setup(['Great Tusk']);
-    const tile = within(panel()).getByRole('button', { name: /^Difesa: / });
-    expect(tile.querySelector('.summary-miss .type-name')).not.toBeNull();
-    expect(tile).toHaveTextContent(/Acqua|Water/); // nomi italiani dei tipi non caricati nei test
-  });
-
-  it('Velocità: un punto per membro, tooltip al passaggio e descrizione per la tastiera', async () => {
-    const user = await setup();
-    const tile = within(panel()).getByRole('button', { name: /^Velocità: / });
-    const dots = tile.querySelectorAll<HTMLElement>('.tsl-dot');
-    expect(dots).toHaveLength(2);
-    expect(within(tile).queryByRole('tooltip')).toBeNull();
-    await user.hover(dots[0]);
-    expect(within(tile).getByRole('tooltip')).toHaveTextContent(/^(Great Tusk|Gholdengo): Velocità \d+, supera il \d+% del meta$/);
-    await user.unhover(dots[0]);
-    await user.hover(tile.querySelector<HTMLElement>('.tsl-mid')!);
-    expect(within(tile).getByRole('tooltip')).toHaveTextContent(/^Media del meta: \d+$/);
-    expect(tile).toHaveAccessibleDescription(/supera il \d+% del meta/);
-  });
-
-  it('Velocità a fuoco da tastiera: le frasi si vedono', async () => {
-    const user = await setup();
-    const tile = within(panel()).getByRole('button', { name: /^Velocità: / });
-    expect(within(tile).queryByRole('tooltip')).toBeNull();
-    // Dalla tessera prima (Ruoli) un Tab porta alla Velocità
-    act(() => within(panel()).getByRole('button', { name: /^Ruoli: / }).focus());
-    await user.tab();
-    expect(tile).toHaveFocus();
-    const tip = within(tile).getByRole('tooltip');
-    expect(tip).toHaveTextContent(/supera il \d+% del meta/);
-    expect(tip).toHaveTextContent(/Media del meta: \d+/);
-    await user.tab();
-    expect(within(tile).queryByRole('tooltip')).toBeNull();
-  });
-
-  it('un membro solo: niente striscia, il giudizio chiede di aggiungerne', async () => {
+  it('un membro solo: niente "nessun problema", l\'invito ad aggiungerne', async () => {
     await setup(['Great Tusk']);
     expect(panel().querySelector('.overview-headline')).toHaveTextContent(/Aggiungi almeno 2 Pokémon/);
-    expect(panel().querySelector('.summary-strip')).toBeNull();
     expect(within(panel()).queryByText('Nessun problema da sistemare')).toBeNull();
-    expect(within(panel()).getAllByRole('button').filter(b => b.classList.contains('summary-tile'))).toHaveLength(6);
+    expect(within(panel()).getByRole('region', { name: 'Cosa fare' })).toHaveTextContent(/Aggiungi almeno 2 Pokémon/);
   });
 
-  it('meta spento: la tessera Meta non è disponibile', async () => {
+  it('meta spento: "Meta spento" e la media del tier', async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={{ ...fixtureData, ignoreMeta: true }} />);
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Great Tusk{Enter}');
     await user.click(screen.getByRole('tab', { name: /^Analisi/ }));
-    const tile = within(panel()).getByRole('button', { name: 'Meta: Statistiche non disponibili' });
-    expect(tile).toBeDisabled();
+    expect(within(panel()).getByRole('region', { name: 'Minacce non gestite' })).toHaveTextContent('Meta spento');
+    expect(within(panel()).getByRole('region', { name: 'Velocità' })).toHaveTextContent(/media del tier/);
+  });
+
+  it('niente più tessera Bonus/Malus né striscia "Vai al Coaching"', async () => {
+    await setup(['Great Tusk', 'Dragapult']);
+    // Le linguette dell'Analisi hanno "Bonus/Malus": si guarda solo la Panoramica
+    const overview = panel().querySelector<HTMLElement>('.overview')!;
+    expect(overview).not.toHaveTextContent(/Bonus\/Malus/);
+    expect(within(panel()).queryByRole('button', { name: /Vai al Coaching/ })).toBeNull();
+    expect(panel().querySelector('.summary-tile, .summary-strip')).toBeNull();
   });
 
   it('niente più numeri chiave, colonne Problemi/Soluzioni o blocco Bonus/Malus', async () => {
@@ -132,17 +96,6 @@ describe('Panoramica di Analisi', () => {
     await user.click(within(views()).getByRole('tab', { name: 'Coaching' }));
     const serious = within(within(panel()).getByRole('list', { name: 'Gravi' })).getAllByRole('listitem');
     expect(serious[0].querySelector('.coach-area')).toHaveTextContent('Regole');
-  });
-
-  it('bonus e malus: netto e voci principali nella tessera', async () => {
-    await importTeam('Great Tusk\n- Stealth Rock\n\nGarchomp\n- Stealth Rock');
-    const tile = within(panel()).getByRole('button', { name: /^Bonus\/Malus: −\d+ netto$/ });
-    expect(tile.querySelector('.summary-items .loss')).toHaveTextContent(/^−\d+ \S/);
-  });
-
-  it('il bonus del meteo compare con le altre voci', async () => {
-    await importTeam('Ninetales\nAbility: Drought\n- Flamethrower\n\nGreat Tusk\n- Headlong Rush');
-    expect(within(panel()).getByRole('button', { name: /^Bonus\/Malus: / })).toHaveTextContent(/\+1/);
   });
 
   it('team stall: la nota "valutato come stall"', async () => {
@@ -234,46 +187,4 @@ describe('Panoramica: correzioni della revisione', () => {
     expect(within(views()).getByRole('tab', { name: 'Panoramica' })).toHaveAttribute('aria-selected', 'true');
   });
 
-  it('le voci di bonus e malus mantengono nomi e tipi evidenziati', async () => {
-    await importTeam('Ninetales\nAbility: Drought\n- Flamethrower\n\nGreat Tusk\n- Headlong Rush');
-    const tile = within(panel()).getByRole('button', { name: /^Bonus\/Malus: / });
-    expect(tile.querySelector('.summary-items .mon-ref')).not.toBeNull();
-  });
-});
-
-describe('Riassunto: striscia e righe positive', () => {
-  const tile = (key: SummaryTile['key'], value: string, missing: SummaryTile['missing'] = []): SummaryTile => ({ key, status: 'good', value, missing });
-  const tiles: SummaryTile[] = [
-    tile('defense', '18/18'), tile('strength', '18/18'), tile('roles', '5/5'),
-    { ...tile('speed', '0/0'), speed: { points: [], median: null, control: [] } },
-    tile('meta', '9/9'), { ...tile('bonusMalus', '±0'), items: [] },
-  ];
-
-  it('senza problemi una riga verde; nulla manca: "Tutti coperti" e "Tutte gestite"', () => {
-    renderIt(<OverviewSummary tiles={tiles} problems={[]} onView={() => {}} />);
-    expect(screen.getByText('Nessun problema da sistemare')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /^Vai al Coaching/ })).toBeNull();
-    expect(screen.getByRole('button', { name: /^Difesa: / })).toHaveTextContent('Tutti coperti');
-    expect(screen.getByRole('button', { name: /^Meta: / })).toHaveTextContent('Tutte gestite');
-  });
-
-  it('con problemi: conteggi e testo del primo grave', () => {
-    const problems: CoachProblem[] = [
-      { severity: 'minor', category: 'coverage', text: 'Problema minore', fixes: [], key: 'a' },
-      { severity: 'serious', category: 'roles', text: 'Nessuno rimuove gli hazard', fixes: [], key: 'b' },
-    ];
-    renderIt(<OverviewSummary tiles={tiles} problems={problems} onView={() => {}} />);
-    const strip = document.querySelector<HTMLElement>('.summary-strip')!;
-    expect(strip).toHaveTextContent('1 grave');
-    expect(strip).toHaveTextContent('1 minore');
-    expect(strip).toHaveTextContent('Nessuno rimuove gli hazard');
-  });
-
-  it('ruoli mancanti e controllo della velocità', () => {
-    const custom = tiles.map(t => t.key === 'roles' ? tile('roles', '3/5', [{ kind: 'role', need: 'removal' }])
-      : t.key === 'speed' ? { ...t, speed: { points: [], median: 300, control: ['Trick Room'] } } : t);
-    renderIt(<OverviewSummary tiles={custom} problems={[]} onView={() => {}} />);
-    expect(screen.getByRole('button', { name: /^Ruoli: / })).toHaveTextContent(/Rimozione/);
-    expect(screen.getByRole('button', { name: /^Velocità: / })).toHaveTextContent(/Controllo:\s*Trick Room/);
-  });
 });

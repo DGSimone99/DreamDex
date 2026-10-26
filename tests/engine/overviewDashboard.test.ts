@@ -60,6 +60,7 @@ describe('dashboardData', () => {
     const { analysis, dash } = build();
     const unhandled = analysis.threats.filter(t => !t.handledBy.length);
     expect(dash.threats.available).toBe(true);
+    expect(dash.threats.metaOff).toBe(false);
     expect(dash.threats.total).toBe(analysis.threats.length);
     expect(dash.threats.pods.length).toBe(unhandled.length);
     for (let i = 1; i < dash.threats.pods.length; i++) expect(dash.threats.pods[i - 1].usage).toBeGreaterThanOrEqual(dash.threats.pods[i].usage);
@@ -68,6 +69,7 @@ describe('dashboardData', () => {
   it('meta spento: minacce non disponibili, velocità vsMeta false', () => {
     const { dash } = build({ ...fixtureData, ignoreMeta: true });
     expect(dash.threats.available).toBe(false);
+    expect(dash.threats.metaOff).toBe(true);
     expect(dash.threats.pods).toEqual([]);
     expect(dash.speed.vsMeta).toBe(false);
   });
