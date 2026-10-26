@@ -245,45 +245,55 @@ button.member-card:hover { border-color: var(--accent); }
 .dash .dash-cell.bad { background: color-mix(in srgb, var(--bad) 28%, var(--panel)); color: var(--text); border-color: color-mix(in srgb, var(--bad) 80%, transparent); }
 
 /*
- * Ruoli: tabella ruoli × membri. In testa gli sprite dei membri, una riga per ruolo essenziale e importante con un
- * pallino sotto chi lo copre; le fasce sono intestazioni tra le righe (niente colonna di etichette a sinistra).
- * Solo i mancanti hanno colore pieno. Le righe si alzano con la densità; i minori sono chip tenui in fondo.
+ * Ruoli, stretto e normale: tre fasce una sotto l'altra (Essenziali, Importanti, Minori), compatte in alto come una
+ * tabellina; solo i mancanti hanno colore pieno. Le fasce stanno in alto, alte quanto il contenuto e al massimo quanto
+ * la card: se non basta, si misura tutto insieme (useFit) e cedono prima i minori, col "+N" di fascia.
  */
-.dash-role-body { display: flex; flex-direction: column; gap: 6px; }
-.dash-role-grid { width: 100%; border-collapse: collapse; table-layout: auto; font-size: 12px; }
+.dash-role-bands, .dash-role-bands.dash-fit { flex: 0 1 auto; min-height: 0; display: flex; flex-direction: column; }
+/* Ogni fascia: l'etichetta in una colonna stretta, i ruoli in fila che vanno a capo */
+.dash-role-band { flex: none; display: grid; grid-template-columns: 88px minmax(0, 1fr); gap: 10px; padding: 4px 0; border-top: 1px solid var(--line-soft); }
+.dash-role-band:first-child { border-top: 0; }
+.dash-level-name { align-self: center; font: 600 11px/1.2 var(--ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.dash-role-list { display: flex; flex-wrap: wrap; align-content: flex-start; align-items: center; gap: 4px 8px; margin: 0; padding: 4px 0; list-style: none; }
+.dash-role { flex: none; max-width: 100%; display: inline-flex; align-items: center; gap: 4px; }
+.dash-role-tag { display: inline-flex; align-items: center; gap: 5px; padding: 2px 7px; font-size: 12px; line-height: 1.2; white-space: nowrap; color: var(--text); border: 1px solid var(--line-soft); border-radius: 4px; }
+.dash-role-tag .icon { flex: none; width: 12px; height: 12px; stroke-width: 2.5; color: var(--faint); }
+.dash-role.bad .dash-role-tag { font-weight: 600; background: color-mix(in srgb, var(--bad) 28%, var(--panel)); border-color: color-mix(in srgb, var(--bad) 70%, transparent); }
+.dash-role.bad .dash-role-tag .icon { color: var(--text); }
+/* Minori: più tenui; mancanti tratteggiati (non sono problemi) */
+.dash-role.minor .dash-role-tag { color: var(--muted); }
+.dash-role.soft .dash-role-tag { color: var(--faint); border-style: dashed; border-color: var(--line); }
+.dash-role.more { padding: 0 4px; font-size: 12px; font-weight: 600; color: var(--faint); }
+/* Stretto: etichette e chip più fitti */
+.dash.tight .dash-role-band { grid-template-columns: 80px minmax(0, 1fr); }
+.dash.tight .dash-role-list { gap: 3px 8px; padding: 3px 0; }
+.dash.tight .dash-role-tag { padding-block: 1px; }
+
+/*
+ * Ruoli, ampio: tabella ruoli × membri con tutti i livelli. In testa gli sprite dei membri, una riga per ruolo con un
+ * pallino sotto chi lo copre; le fasce sono intestazioni tra le righe. Un essenziale o importante mancante è una riga
+ * rossa, i minori sono tenui. La tabella si stira fino in fondo: con pochi ruoli le righe si alzano.
+ */
+.dash-role-body { display: flex; flex-direction: column; }
+.dash-role-grid { width: 100%; height: 100%; border-collapse: collapse; font-size: 13px; }
 .dash-role-grid thead th { padding: 0 0 2px; font-weight: 400; text-align: center; vertical-align: bottom; }
 /* Lo sprite si stringe con la sua colonna: le sei colonne stanno sempre tutte */
-.dash-role-grid thead .sprite { display: block; margin: 0 auto; width: 100%; max-width: calc(var(--role-sprite, 32px) * 1.15); height: auto; aspect-ratio: 1; image-rendering: pixelated; }
-.dash-role-sep th { padding: 6px 0 2px; text-align: left; font: 600 11px/1.2 var(--ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); border-bottom: 1px solid var(--line); }
-.dash-role-row th, .dash-role-row td { height: var(--role-row, 24px); padding: 0; border-bottom: 1px solid var(--line-soft); }
+.dash-role-grid thead .sprite { display: block; margin: 0 auto; width: 100%; max-width: 50px; height: auto; aspect-ratio: 1; image-rendering: pixelated; }
+.dash-role-sep th { height: 22px; padding: 4px 0 2px; text-align: left; vertical-align: bottom; font: 600 11px/1.2 var(--ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); border-bottom: 1px solid var(--line); }
+.dash-role-row th, .dash-role-row td { height: 24px; padding: 0; border-bottom: 1px solid var(--line-soft); }
 .dash-role-row th { width: 1%; padding-right: 8px; text-align: left; font-weight: 500; white-space: nowrap; color: var(--text); }
 .dash-role-row th > * { vertical-align: middle; }
 .dash-role-row th .icon { width: 12px; height: 12px; margin-right: 5px; stroke-width: 2.5; color: var(--good); }
 .dash-role-row td { text-align: center; }
-.dash-dot { display: inline-block; width: 11px; height: 11px; vertical-align: middle; border-radius: 50%; background: var(--accent); box-shadow: 0 0 6px color-mix(in srgb, var(--accent) 45%, transparent); }
-/* Mancante: riga rossa, nome in grassetto, nessun pallino */
+.dash-dot { display: inline-block; width: 12px; height: 12px; vertical-align: middle; border-radius: 50%; background: var(--accent); box-shadow: 0 0 6px color-mix(in srgb, var(--accent) 45%, transparent); }
+/* Mancante (essenziale o importante): riga rossa, nome in grassetto, nessun pallino */
 .dash-role-row.bad th, .dash-role-row.bad td { background: color-mix(in srgb, var(--bad) 14%, var(--panel)); }
 .dash-role-row.bad th, .dash-role-row.bad th .icon { font-weight: 600; color: var(--bad); }
-.dash.tight { --role-row: 15px; --role-sprite: 22px; }
-/* Stretto (portatili 1366×768): righe fitte, testo più piccolo, così le otto righe stanno tutte */
-.dash.tight .dash-role-grid { font-size: 11px; line-height: 1; }
-.dash.tight .dash-role-sep th { padding: 2px 0 1px; font-size: 10px; }
-.dash.tight .dash-role-row th .icon { width: 10px; height: 10px; }
-.dash.tight .dash-dot { width: 9px; height: 9px; }
-.dash.tight .dash-role-body { gap: 3px; }
-.dash.normal { --role-row: 24px; --role-sprite: 32px; }
-.dash.roomy { --role-row: 40px; --role-sprite: 44px; }
-.dash.roomy .dash-role-grid { font-size: 13px; }
-.dash.roomy .dash-dot { width: 13px; height: 13px; }
-/* Minori: etichetta e chip tenui in fila, quelli che non stanno nel "+N" */
-.dash-role-minors { display: flex; align-items: baseline; gap: 8px; }
-.dash-level-name { font: 600 11px/1.2 var(--ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
-.dash-role-list { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; margin: 0; padding: 0; list-style: none; }
-.dash-role { flex: none; max-width: 100%; display: inline-flex; align-items: center; gap: 4px; }
-.dash-role-tag { display: inline-flex; align-items: center; gap: 5px; padding: 1px 7px; font-size: 11px; line-height: 1.2; white-space: nowrap; color: var(--muted); border: 1px solid var(--line-soft); border-radius: 4px; }
-.dash-role-tag .icon { flex: none; width: 11px; height: 11px; stroke-width: 2.5; color: var(--faint); }
-.dash-role.soft .dash-role-tag { color: var(--faint); border-style: dashed; border-color: var(--line); }
-.dash-role.more { padding: 0 4px; font-size: 12px; font-weight: 600; color: var(--faint); }
+/* Minori: più tenui (coperti col pallino smorzato, mancanti col nome sbiadito); "is-minor" perché .analysis tr.minor colora la riga */
+.dash-role-row.is-minor th { font-weight: 400; color: var(--muted); }
+.dash-role-row.is-minor th .icon { color: var(--faint); }
+.dash-role-row.is-minor .dash-dot { width: 9px; height: 9px; box-shadow: none; background: color-mix(in srgb, var(--accent) 60%, var(--panel)); }
+.dash-role-row.soft th { color: var(--faint); }
 
 /*
  * Velocità: barre dal più veloce, sopra la media in accento, sprite sotto; le barre prendono tutto lo spazio della card.
