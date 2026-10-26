@@ -4,28 +4,13 @@ import type { DashboardData, RoleChip } from '../../engine/overviewDashboard';
 import { useLang, useT } from '../../i18n/react';
 import type { AnalysisView } from '../analysisView';
 import { Icon } from '../icons';
-import { PokemonIcon } from '../PokemonName';
 import type { Density } from '../OverviewDashboard';
 import { DashCard, DashLink } from './DashCard';
 import { useFit } from './useFit';
 
-/** Membri mostrati accanto a un ruolo coperto (poi "+N"). */
-const OWNERS = 2;
-
-/** Le mini icone di chi copre il ruolo (al più due, poi "+N"); decorative, i nomi sono nel testo nascosto. */
-function Owners({ owners }: { owners: string[] }) {
-  if (!owners.length) return null;
-  return (
-    <span className="dash-owners" aria-hidden="true">
-      {owners.slice(0, OWNERS).map(name => <PokemonIcon key={name} name={name} />)}
-      {owners.length > OWNERS && <small>+{owners.length - OWNERS}</small>}
-    </span>
-  );
-}
-
 /**
  * Un ruolo: ✓ tenue se coperto, ✕ rosso pieno se manca (essenziali e importanti), tratteggiato se è un minore.
- * Stretto e normale: un chip col nome su una riga (in normale con le mini icone accanto). Ampio: una riga per ruolo
+ * Stretto e normale: un chip col solo segno e nome, su una riga (chi lo copre è nel tooltip). Ampio: una riga per ruolo
  * coi nomi di chi lo copre scritti, senza icone ("✓ Hazard: Garchomp, Great Tusk", "✕ Rimozione Strumenti: nessuno").
  * Si legge intero: "Hazard, coperto da Garchomp" / "Rimozione Strumenti, mancante".
  */
@@ -46,7 +31,7 @@ function RoleRow({ chip, density }: { chip: RoleChip; density: Density }) {
         <span className="dash-role-who" aria-hidden="true">
           {chip.covered ? chip.owners.join(', ') : t('dash.roleNobody')}
         </span>
-      ) : density === 'normal' && chip.covered && <Owners owners={chip.owners} />}
+      ) : null}
     </li>
   );
 }
@@ -74,7 +59,7 @@ const LEVELS = ['essential', 'important', 'minor'] as const;
 
 /**
  * Ruoli in tre fasce una sotto l'altra (Essenziali, Importanti, Minori) che si dividono l'altezza della card.
- * Stretto: solo segno e nome. Normale e ampio: anche le icone di chi copre il ruolo.
+ * Stretto e normale: chip col solo segno e nome; ampio: una riga per ruolo coi nomi di chi lo copre.
  */
 export function RolesSection({ roles, density, onView }: { roles: DashboardData['roles']; density: Density; onView: (v: AnalysisView) => void }) {
   const t = useT();

@@ -38,8 +38,8 @@ function itemLabel(kind: TodoGroup['kind'], subject: string, lang: Lang): string
   return subject;
 }
 
-/** Nella densità ampia, sotto un gruppo i testi interi dei suoi problemi (non per le minacce: direbbero solo il nome). */
-const detailsOf = (group: TodoGroup): string[] => (group.kind === 'single' || group.kind === 'threats' ? [] : group.details);
+/** Nella densità ampia, sotto un gruppo i testi interi dei suoi problemi (non per minacce e ruoli: ripeterebbero i nomi). */
+const detailsOf = (group: TodoGroup): string[] => (group.kind === 'weak' || group.kind === 'illegal' ? group.details : []);
 
 /** "Tutti gli 8", "gli 11": in italiano "gli" davanti ai numeri che iniziano per vocale (otto, ottanta, undici). */
 const gli = (n: number): boolean => /^8/.test(String(n)) || n === 11;
