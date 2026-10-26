@@ -154,6 +154,14 @@ describe('il tipo di team guida Aggiungi e Migliora', () => {
     expect(report.excluded).toBeGreaterThan(0);
   });
 
+  it('Aggiungi col team vuoto: il tipo filtra comunque', () => {
+    const report = { excluded: 0 };
+    const list = rankByTeamGain(pool(), [], null, fixtureData, 'it', true, 'stall', report);
+    expect(list.length).toBeGreaterThan(0);
+    expect(list.every(item => fitsTeamType(item.set, 'stall', DEFAULT_RULES))).toBe(true);
+    expect(report.excluded).toBeGreaterThan(0);
+  });
+
   it('Aggiungi + Balance non esclude nessuno', () => {
     expect(rankByTeamGain(pool(), three, null, fixtureData, 'it', true, 'balance')).toHaveLength(candidates.length);
   });

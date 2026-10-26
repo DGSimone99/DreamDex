@@ -143,6 +143,23 @@ describe('SuggestionsPanel', () => {
 });
 
 describe('dettaglio: abilità in battaglia', () => {
+  it('gli avvisi (meteo in conflitto) non finiscono in Porta: aggiungendo compaiono in Toglie', async () => {
+    const { SuggestionDetail } = await import('../../src/ui/SuggestionDetail');
+    const { renderIt } = await import('../helpers/italian');
+    const set = { species: 'Pelipper', item: 'Damp Rock', ability: 'Drizzle', moves: ['Hurricane'], nature: 'Bold', evs: { hp: 252 } };
+    const clash = '⚠ La pioggia si scontra con il sole di Torkoal';
+    const item = {
+      species: 'Pelipper', set, score: 50, components: {}, tags: [], penalty: 5,
+      facts: { clashes: [clash] },
+      reasons: [{ component: 'roles', weight: 2, text: 'Porta Pivot' }, { component: 'synergy', weight: -1, text: clash }],
+    } as never;
+    renderIt(<SuggestionDetail item={item} rank={2} team={[]} replaceIndex={null} data={fixtureData} format={DEFAULT_FORMAT} rating={null} usage={null} banMark={null} actionLabel="Aggiungi al team" onAction={() => {}} />);
+    const porta = screen.getByRole('heading', { name: 'Porta' }).closest('section')!;
+    expect(porta.textContent).not.toMatch(/pioggia/);
+    const toglie = screen.getByRole('heading', { name: 'Toglie' }).closest('section')!;
+    expect(toglie.textContent).toMatch(/La pioggia si scontra/);
+  });
+
   it('con la Megapietra mostra l\u2019abilità della Mega; "Stats" solo nel dettaglio', async () => {
     const { SuggestionDetail } = await import('../../src/ui/SuggestionDetail');
     const { renderIt } = await import('../helpers/italian');
@@ -244,6 +261,19 @@ describe('riga della lista', () => {
     expect(within(team()).getByText(name)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Annulla' })).toBeInTheDocument();
   }, 30000);
+
+  it('doppio clic sul pulsante +: niente azione in più dalla riga', async () => {
+    const { SuggestionsPanel } = await import('../../src/ui/SuggestionsPanel');
+    const { renderIt } = await import('../helpers/italian');
+    const { emptySet } = await import('../../src/engine/sets');
+    const added: string[] = [];
+    const user = userEvent.setup();
+    renderIt(<SuggestionsPanel team={[{ ...emptySet('Great Tusk'), ability: 'Protosynthesis', moves: ['Headlong Rush'] }]} format={DEFAULT_FORMAT} data={fixtureData}
+      replaceIndex={null} onAdd={set => added.push(set.species)} onReplaceWith={() => {}} onCancelReplace={() => {}} />);
+    await user.dblClick(list().querySelector<HTMLElement>('li button.quick')!);
+    // Due clic sul pulsante (come prima); il doppio clic non deve aggiungerne un terzo dalla riga
+    expect(added).toHaveLength(2);
+  });
 
   it('Aggiungi: niente "chi esce"', async () => {
     await setup('Great Tusk');

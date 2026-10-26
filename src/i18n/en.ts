@@ -840,6 +840,7 @@ export const en = {
   'suggest.teamTypeShort': "Team",
   'suggest.anyType': "Any",
   'suggest.anyTypeNote': "Ranks only by how much the grade rises",
+  'suggest.typeEmptyAdd': "No candidate helps build a {type} team: try Any or another type.",
   'suggest.typeEmpty': "None of the best swaps keeps the team {type}: try Any or another type.",
   'suggest.penaltyNote': "Loses {roles}: −{n} in the ranking",
   'suggest.targetAll': "Anyone",
