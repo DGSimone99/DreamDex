@@ -838,6 +838,7 @@ export const en = {
   'suggest.targetLabel': "Replace",
   'suggest.teamType': "Team type",
   'suggest.teamTypeShort': "Team",
+  'suggest.listHead': "Candidates ({n})",
   'suggest.anyType': "Any",
   'suggest.anyTypeNote': "Ranks only by how much the grade rises",
   'suggest.typeEmptyAdd': "No candidate helps build a {type} team: try Any or another type.",

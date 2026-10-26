@@ -408,3 +408,39 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .detail .effect .detail-areas .inactive .change.same::before { content: none; }
 .detail:not(.detail-empty) .detail-sec { padding: 8px 18px 10px; }
 .detail:not(.detail-empty) .detail-sec h4 { margin-bottom: 7px; }
+
+/* Lista e scheda nella stessa cornice: un riquadro Panel con la fascia a righe in alto e la paginazione dentro, in fondo */
+@media (min-width: 1100px) {
+  .picker-list { background: var(--panel); border: 1px solid var(--line-soft); }
+  .picker-list > .suggestions { border: 0; }
+  .list-head { position: sticky; top: 0; z-index: 2; padding: 8px 14px; background: var(--stripes), var(--band); border-bottom: 1px solid var(--line-soft); }
+  .list-head .box-head { position: static; margin: 0; }
+  .picker-list .pager { padding: 8px 0; background: var(--panel); border-top: 1px solid var(--line-soft); }
+}
+/* Riga su due righe: nome e tipi, poi chi esce · bonus · malus in grigio, coi segni colorati */
+.suggestion, .suggestion.swap { grid-template-columns: 24px 40px minmax(0, 1fr) auto 30px; gap: 10px; padding: 7px 12px 7px 12px; }
+.suggestion .sprite { width: 40px; height: 40px; }
+.suggestion .rank { font-size: 20px; }
+.suggestion .name-line .types { margin-left: 4px; gap: 3px; }
+.suggestion .name-line .types .type-chip { width: 52px; }
+.suggestion .who small, .suggestion .who small:has(.gain, .loss) { display: flex; align-items: center; gap: 0 10px; color: var(--muted); }
+.suggestion .who small .gain, .suggestion .who small .loss, .suggestion .who small .plain { color: var(--muted); }
+.suggestion .who small b { margin-right: 2px; font-weight: 700; }
+.suggestion .who small .gain b { color: var(--good); }
+.suggestion .who small .loss b { color: var(--bad); }
+.suggestion .who small .out { flex: none; display: inline-flex; align-items: center; gap: 2px; max-width: 40%; color: var(--faint); }
+.suggestion .who small .out .out-name { max-width: none; font-size: 13px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.suggestion .who small .out .mon-icon { margin: -6px -4px -6px -6px; }
+.suggestion .who small .out::after { content: '·'; margin-left: 8px; color: var(--faint); }
+.suggestion .result strong { font-size: 22px; }
+.suggestion .quick { width: 30px; height: 30px; }
+.list-head .box-head { display: inline-block; }
+.suggestion .who small .out { max-width: none; }
+.suggestion .who small .plain { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.suggestion .name-line .types .type-chip { flex: none; }
+.suggestion.swap { grid-template-columns: 24px 40px minmax(0, 1fr) 32px auto 30px; }
+.suggestion > .out { display: grid; place-items: center; width: 32px; height: 32px; }
+.suggestion > .out .mon-icon { margin: 0; }
+.suggestion .pick { flex: 0 1 auto; overflow: hidden; }
+.suggestion .pick strong { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.suggestion .name-line > :not(.pick) { flex: none; }

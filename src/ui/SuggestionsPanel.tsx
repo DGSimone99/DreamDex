@@ -134,8 +134,8 @@ function SuggestionRow({ rank, item, usage, out, quickLabel, actionLabel, replac
   const diff = 'diff' in item ? item.diff : null;
   // Una riga sola: il bonus che vale più punti e il malus che ne toglie di più (aggiungendo, la ragione che pesa di più)
   const changes = diff ? rankedChanges(diff, item.teamGain?.areaPoints, lang) : null;
-  const bonus = changes?.pros[0] ? `+${changes.pros[0].text}` : null;
-  const malus = changes?.cons[0] ? `−${changes.cons[0].text}` : null;
+  const bonus = changes?.pros[0]?.text ?? null;
+  const malus = changes?.cons[0]?.text ?? null;
   const summaryText = changes
     ? (item.reasons[0] ? topReason(item.reasons)!.text : tr('suggest.noDifference'))
     // L'uso nel meta non è un motivo per sceglierlo: resta solo col team vuoto, dove è l'unico criterio
@@ -163,19 +163,19 @@ function SuggestionRow({ rank, item, usage, out, quickLabel, actionLabel, replac
           <ListMarks set={item.set} lists={lists} />
           <AlertMark alerts={warnings} />
           <AlertMark alerts={together} icon="spark" />
+          <span className="types">{types.map(type => <TypeChip key={type} type={type} />)}</span>
         </span>
-        <span className="types">{types.map(type => <TypeChip key={type} type={type} />)}</span>
+        {/* Bonus e malus principali; il colore solo sui segni */}
         <small>
           {bonus || malus
-            ? <>{bonus && <span className="gain"><Typed text={bonus} /></span>}{bonus && malus && ' · '}{malus && <span className="loss"><Typed text={malus} /></span>}</>
-            : <Typed text={summaryText} />}
+            ? <>{bonus && <span className="gain"><b aria-hidden="true">+</b><span className="visually-hidden">+</span><Typed text={bonus} /></span>}{malus && <span className="loss"><b aria-hidden="true">−</b><span className="visually-hidden">−</span><Typed text={malus} /></span>}</>
+            : <span className="plain"><Typed text={summaryText} /></span>}
         </small>
       </span>
+      {/* Chi esce: solo la sua icona accanto al voto (con 6 membri basta); il nome nel tooltip e per gli screen reader */}
       {out && (
         <span className="out" title={tr('suggest.outFor', { member: out })}>
-          <Icon name="swap" />
           <PokemonIcon name={out} />
-          <span className="out-name" aria-hidden="true">{out}</span>
           <span className="visually-hidden">{tr('suggest.outFor', { member: out })}</span>
         </span>
       )}
@@ -574,7 +574,10 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
       )}
       {notes}
       <div className={`picker${!full ? ' has-detail' : ''}`}>
-        <div className="picker-list">{body}</div>
+        <div className="picker-list">
+          {!full && items.length > 0 && <div className="list-head"><h2 className="box-head">{tr('suggest.listHead', { n: items.length })}</h2></div>}
+          {body}
+        </div>
         {/* Senza candidati resta lo scheletro del dettaglio: la pagina non si accorcia e non salta in alto */}
         {!selected && !full && (
           <aside className="detail detail-empty" aria-hidden="true">
