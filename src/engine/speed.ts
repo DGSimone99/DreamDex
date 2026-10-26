@@ -162,3 +162,9 @@ export function referenceSpeeds(formatId: FormatId = 'ou'): number[] {
   }
   return speeds;
 }
+
+/** Velocità del rivale a metà del gruppo (speedPool); null se il gruppo è vuoto. */
+export function poolMedian(data: EngineData): number | null {
+  const values = speedPool(data).map(r => r.value).sort((a, b) => a - b);
+  return values.length ? values[Math.floor(values.length / 2)] : null;
+}
