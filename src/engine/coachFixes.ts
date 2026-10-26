@@ -1,11 +1,10 @@
 import type { Lang } from '../i18n';
 import { analyzeTeam } from './analysis';
-import { teamArchetype, type Archetype } from './archetype';
+import type { Archetype } from './archetype';
 import { findProblems, type CoachProblem } from './coach';
 import type { EngineData } from './data';
 import { battleName, battleSpecies } from './dex';
 import type { Format } from './format';
-import { rulesOf } from './formatRules';
 import { improveReplacements, type Replacement } from './replace';
 import { suggest, type Suggestion } from './scoring';
 import type { TeamSet } from './sets';
@@ -83,8 +82,8 @@ const strongest = <T extends { teamGain?: { gain: number } }>(items: T[], limit:
  */
 export function coachFixes(team: TeamSet[], format: Format, data: EngineData, problems: CoachProblem[], lang: Lang): CoachFix[] {
   if (!data.stats || team.length < 2) return [];
-  // Tipo di team riconosciuto, come le impostazioni predefinite del pannello
-  const archetype = team.length === 6 ? teamArchetype(team, rulesOf(data))?.archetype : undefined;
+  // Tipo di team Qualunque, come l'impostazione predefinita del pannello: il voto vero del team
+  const archetype: Archetype | undefined = undefined;
   const base = (set: TeamSet) => battleSpecies(set)?.baseSpecies ?? set.species;
   const forme = (set: TeamSet) => battleSpecies(set)?.name ?? set.species;
   const now = new Map<string, CoachProblem>();

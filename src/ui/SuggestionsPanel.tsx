@@ -1,9 +1,9 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import type { EngineData } from '../engine/data';
 import type { Format } from '../engine/format';
-import { formatRules, rulesOf } from '../engine/formatRules';
-import { teamArchetype, type Archetype } from '../engine/archetype';
-import { improveReplacements, type Replacement } from '../engine/replace';
+import { formatRules } from '../engine/formatRules';
+import type { Archetype } from '../engine/archetype';
+import { improveReplacements, keepersFirst, type Replacement } from '../engine/replace';
 import { rankedChanges } from '../engine/coach';
 import { rankedAdditions, rankedReplacements } from '../engine/coachFixes';
 import { topReason } from '../engine/explain';
@@ -237,10 +237,9 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
     requestAnimationFrame(() => searchRef.current?.focus({ preventScroll: true }));
   }, [focusSearch]);
   const view: View = replacing ? 'member' : team.length >= 2 && (scope === 'all' || team.length >= 6) ? 'all' : 'add';
-  // Tipo di team per giudicare i cambi: quello riconosciuto (team di 6) finché non lo scegli a mano; null = Nessuno
-  const recognised = useMemo(() => (team.length === 6 ? teamArchetype(team, rulesOf(data))?.archetype ?? null : null), [team, data]);
-  const [pickedType, setPickedType] = useState<Archetype | null | undefined>(undefined);
-  const typeChoice = pickedType === undefined ? recognised : pickedType;
+  // Tipo di team per giudicare i cambi: Qualunque (il voto vero del team) finché non lo scegli a mano
+  const [pickedType, setPickedType] = useState<Archetype | null>(null);
+  const typeChoice = pickedType;
   // Vale in tutte le modalità: aggiungendo cerca chi aiuta a costruire quel tipo, migliorando chi lo raggiunge o lo mantiene
   const archetype = typeChoice ?? undefined;
   /** Il team contro cui si valutano i candidati è vuoto: niente adattamento da mostrare. */
@@ -281,9 +280,9 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
       // Con ricerca o filtri i sostituti vengono da tutto il Pokédex, non solo dalle statistiche
       const pool = filtering ? searchPool(team.filter((_, i) => i !== replaceIndex), format, data, applied) : undefined;
       if (!pool && !data.stats) return [];
-      // Senza filtri: la classifica condivisa col Coaching
-      return pool ? rank(improveReplacements(team, replaceIndex, format, data, POOL, pool, lang, archetype))
-        : rankedReplacements(team, replaceIndex, format, data, POOL, lang, archetype, report).slice(0, MAX);
+      // Senza filtri: la classifica condivisa col Coaching. Chi porta il meteo/campo necessario resta in cima
+      return keepersFirst(pool ? rank(improveReplacements(team, replaceIndex, format, data, POOL, pool, lang, archetype))
+        : rankedReplacements(team, replaceIndex, format, data, POOL, lang, archetype, report).slice(0, MAX));
     }
     if (filtering) return rank(searchCandidates(team, format, data, applied, POOL, lang));
     return data.stats ? rankedAdditions(team, format, data, POOL, lang, archetype, report).slice(0, MAX) : [];
@@ -329,7 +328,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
     if (focus.mode === 'add') setScope('add');
     // Impostazioni predefinite, come il Coaching: niente ricerca né filtri, tipo di team riconosciuto (stesso +N)
     setFilters(EMPTY_FILTERS);
-    setPickedType(undefined);
+    setPickedType(null);
     setFocusing(focus.species);
   }, [focus?.nonce]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
@@ -423,7 +422,8 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
     if (needed.length) {
       const labels = needed.map(n => conditionLabel(n.condition, lang)).join(` ${tr('suggest.and')} `);
       const who = [...new Set(needed.flatMap(n => n.beneficiaries.map(b => b.species)))].join(', ');
-      setterNote = items.length > 0 && items.every(item => providesAll(item.set, needed))
+      // Chi porta la condizione sta in cima, gli altri seguono per voto
+      setterNote = items.some(item => providesAll(item.set, needed))
         ? tr('suggest.setterOnly', { conditions: labels, who })
         : tr('suggest.setterNone', {
           conditions: labels,

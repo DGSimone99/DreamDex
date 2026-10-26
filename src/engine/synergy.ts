@@ -358,7 +358,10 @@ export interface NeededCondition {
  */
 export function neededConditions(team: TeamSet[], index: number): NeededCondition[] {
   const others = team.filter((_, i) => i !== index);
+  // Se un altro membro porta già la condizione (anche chi ne beneficia, come Charizard Mega Y con Drought), non dipende da questo
+  const kept = new Set(others.flatMap(member => enables(member).map(e => e.condition)));
   return enables(team[index])
+    .filter(e => !kept.has(e.condition))
     .map(e => ({
       condition: e.condition,
       beneficiaries: others.flatMap(member => {

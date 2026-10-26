@@ -913,7 +913,7 @@ export const it: Record<keyof typeof en, string> = {
   'tabs.problemsMany': "{n} problemi",
   'tabs.threatsOne': "1 minaccia scoperta",
   'tabs.threatsMany': "{n} minacce scoperte",
-  'suggest.setterOnly': "Mostro solo chi porta {conditions}: {who} ne ha bisogno",
+  'suggest.setterOnly': "In cima chi porta {conditions}: {who} ne ha bisogno. Gli altri seguono per voto",
   'suggest.setterNone': "Nessun altro Pokémon porta {conditions}: se sostituisci {species}, {losses}",
   'suggest.loses': "{species} perde {via}",
   'suggest.and': "e",

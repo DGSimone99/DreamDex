@@ -29,6 +29,14 @@ export interface Diff {
 export interface Replacement extends Suggestion {
   diff: Diff;
   similarity?: number;
+  /** Solo se il membro porta un meteo/campo di cui altri hanno bisogno: vero se anche il sostituto lo porta. */
+  keeps?: boolean;
+}
+
+/** Chi porta la condizione necessaria in cima, gli altri dopo; dentro ogni gruppo l'ordine resta quello dato (per voto). */
+export function keepersFirst<T extends object>(list: T[]): T[] {
+  const keeps = (item: T) => 'keeps' in item && item.keeps === true;
+  return [...list.filter(keeps), ...list.filter(item => !keeps(item))];
 }
 
 function jaccard(a: readonly string[], b: readonly string[]): number {
@@ -94,11 +102,13 @@ function candidatesFor(team: TeamSet[], index: number, format: Format, data: Eng
   const scored = (pool ? scoreSets(rest, format, data, pool, lang) : scoreCandidates(rest, format, data, [], lang))
     // Lo stesso Pokémon del membro non è un sostituto: si confronta la forma in battaglia (Gardevoir con la Gardevoirite è Gardevoir-Mega)
     .filter(s => battleName(s.set) !== battleName(original));
-  // Se l'originale porta un meteo/campo di cui altri membri hanno bisogno, il sostituto deve portarlo anch'esso
+  // Se l'originale è l'unico a portare un meteo/campo di cui altri hanno bisogno, chi lo porta va in cima (gli altri restano)
   const needed = neededConditions(team, index);
-  const keepers = needed.length ? scored.filter(s => providesAll(s.set, needed)) : scored;
+  const marked = needed.length
+    ? keepersFirst(scored.map(s => ({ ...s, keeps: providesAll(s.set, needed) })))
+    : scored;
   // Col tipo di team scelto, i ruoli che mancano (e quindi guadagni e perdite) sono quelli di quel tipo
-  return { original, rest, analysis: analyzeTeam(rest, data, archetype), scored: keepers.length ? keepers : scored };
+  return { original, rest, analysis: analyzeTeam(rest, data, archetype), scored: marked };
 }
 
 export function improveReplacements(team: TeamSet[], index: number, format: Format, data: EngineData, limit = 20, pool?: TeamSet[], lang: Lang = 'it', archetype?: Archetype): Replacement[] {
@@ -109,8 +119,8 @@ export function improveReplacements(team: TeamSet[], index: number, format: Form
 export function similarReplacements(team: TeamSet[], index: number, format: Format, data: EngineData, limit = 20, pool?: TeamSet[], lang: Lang = 'it', archetype?: Archetype): Replacement[] {
   const { original, rest, analysis, scored } = candidatesFor(team, index, format, data, pool, lang, archetype);
   const rank = (r: Replacement) => 0.8 * (r.similarity ?? 0) + 0.2 * (r.score / 100);
-  return scored
+  return keepersFirst(scored
     .map(s => ({ ...s, similarity: similarity(original, s.set, formatRules(format.formatId)), diff: diffContribution(original, s.set, analysis, rest) }))
-    .sort((a, b) => rank(b) - rank(a))
+    .sort((a, b) => rank(b) - rank(a)))
     .slice(0, limit);
 }
