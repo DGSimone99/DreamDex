@@ -170,15 +170,16 @@ function SuggestionRow({ rank, item, usage, out, quickLabel, actionLabel, replac
           <button type="button" className="pick" aria-pressed={selected} onClick={e => { e.stopPropagation(); onSelect(); }}>
             <strong><span className="visually-hidden">{rank}. </span>{item.species}</strong>
           </button>
-          <BanMark species={item.species} format={format} />
-          <ListMarks set={item.set} lists={lists} />
-          <AlertMark alerts={warnings} />
-          <AlertMark alerts={together} icon="spark" />
+          {/* Il tipo subito dopo il nome, poi i segni (ban, liste, avvisi, usato insieme) */}
           <span className="types">
             {types.map(type => <TypeChip key={type} type={type} />)}
             {/* Righe strette: al posto dei chip le icone dei tipi (il nome del candidato ha la precedenza) */}
             <TypeIcons types={types} className="types-compact" />
           </span>
+          <BanMark species={item.species} format={format} />
+          <ListMarks set={item.set} lists={lists} />
+          <AlertMark alerts={warnings} />
+          <AlertMark alerts={together} icon="spark" />
         </span>
         {/* Bonus e malus principali; il colore solo sui segni */}
         <small>

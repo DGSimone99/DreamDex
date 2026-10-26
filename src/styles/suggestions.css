@@ -422,7 +422,7 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .suggestion, .suggestion.swap { grid-template-columns: 24px 40px minmax(0, 1fr) auto 30px; gap: 10px; padding: 7px 12px 7px 12px; }
 .suggestion .sprite { width: 40px; height: 40px; }
 .suggestion .rank { font-size: 20px; }
-.suggestion .name-line .types { margin-left: 4px; gap: 3px; }
+.suggestion .name-line .types { display: inline-flex; margin: 0 2px; gap: 3px; }
 .suggestion .name-line .types .type-chip { width: 56px; }
 /* I nomi lunghi (Folletto, Coleottero) si allargano invece di tagliarsi */
 .suggestion .name-line .types .type-chip.long { width: auto; min-width: 56px; padding: 1px 4px; }
