@@ -47,8 +47,12 @@ function sample(overrides: Partial<DashboardData> = {}): DashboardData {
   };
 }
 
+/** Problemi che restano righe singole (Offesa e Ruoli senza gruppo). */
 const problem = (i: number, severity: CoachProblem['severity'] = 'minor'): CoachProblem =>
-  ({ severity, category: i % 2 ? 'defense' : 'roles', text: `Problema numero ${i}`, fixes: [], key: `k${i}` });
+  ({ severity, category: i % 2 ? 'coverage' : 'roles', text: `Problema numero ${i}`, fixes: [], key: `k${i}` });
+
+const weak = (type: string, severity: CoachProblem['severity'] = 'minor'): CoachProblem =>
+  ({ severity, category: 'defense', text: `Debole a ${type}: 3 Deboli – 1 Resistono`, fixes: [], key: `defense:${type}` });
 
 /** La colonna di un livello dei Ruoli (la lista col suo titoletto). */
 function roleColumn(roles: HTMLElement, title: string) {
@@ -247,8 +251,36 @@ describe('Cruscotto della Panoramica', () => {
     const todo = screen.getByRole('region', { name: 'Cosa fare' });
     const rows = within(todo).getAllByRole('listitem');
     expect(rows[0]).toHaveTextContent(/grave/i);
-    expect(within(rows[0]).getByRole('img', { name: 'Difesa' })).toBeInTheDocument();
+    expect(within(rows[0]).getByRole('img', { name: 'Offesa' })).toBeInTheDocument();
     expect(within(rows[1]).getByRole('img', { name: 'Ruoli' })).toBeInTheDocument();
+  });
+
+  it('Cosa fare: le debolezze in una riga "Debole a" coi tipi, gravi prima, e il numerino', () => {
+    mount({ problems: [problem(2), weak('Fire'), weak('Ground', 'serious'), weak('Ghost')] });
+    const todo = screen.getByRole('region', { name: 'Cosa fare' });
+    const rows = within(todo).getAllByRole('listitem');
+    expect(rows).toHaveLength(2);
+    const [group] = rows;
+    expect(group).toHaveClass('serious');
+    expect(group.querySelector('.dash-todo-title')).toHaveTextContent('Debole a');
+    expect(group.querySelector('.dash-count')).toHaveTextContent(/^3$/);
+    expect([...group.querySelectorAll('.dash-todo-item')].map(x => x.textContent)).toEqual(['Ground', 'Fire', 'Ghost']);
+    expect(group.querySelector('.dash-todo-item')).toHaveClass('serious');
+    // Niente "Deboli – Resiste" nel testo visibile: resta nel tooltip, una riga per tipo
+    const visible = group.querySelector('.dash-problem')!.textContent;
+    expect(visible).not.toMatch(/Deboli|–|Resist/);
+    expect(group.getAttribute('title')).toBe(['Ground', 'Fire', 'Ghost'].map(x => `Debole a ${x}: 3 Deboli – 1 Resistono`).join('\n'));
+    // Si legge intero
+    expect(group.querySelector('.visually-hidden')).toHaveTextContent('Grave. Debole a: Ground, Fire, Ghost. 3 problemi');
+    // L'intestazione conta i problemi singoli
+    expect(todo).toHaveTextContent(/1 grave\s*·\s*3 minori/);
+  });
+
+  it('Cosa fare: un gruppo con un elemento solo non ha il numerino', () => {
+    mount({ problems: [weak('Fire'), problem(2)] });
+    const [group] = within(screen.getByRole('region', { name: 'Cosa fare' })).getAllByRole('listitem');
+    expect(group.querySelector('.dash-count')).toBeNull();
+    expect(group.querySelector('.visually-hidden')).toHaveTextContent(/^Minore\. Debole a: Fire\.$/);
   });
 
   it('un membro: nessun "nessun problema", l\'invito ad aggiungere', () => {
