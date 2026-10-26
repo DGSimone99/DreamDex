@@ -153,7 +153,6 @@
 .area-panel { min-height: 0; overflow: auto; overscroll-behavior: contain; background: var(--panel); border: 1px solid var(--line-soft); }
 .area-extra { margin-bottom: 16px; }
 /* Ogni scheda tiene il posto per il "?": aprendone un'altra le schede non si spostano */
-.analysis-tabs [role='tab'] { margin-right: 28px; }
 
 /* Panoramica: numeri chiave in alto, problemi e soluzioni affiancati (scorrono dentro), membri in fondo */
 .overview { display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; gap: 12px; height: 100%; min-height: 0; }
@@ -243,3 +242,19 @@ button.member-card:hover { border-color: var(--accent); }
 .swaps .swap-actions button.swap-now.primary:hover { color: var(--on-accent-2); background: var(--accent-2-ink); }
 .overview-head .box-head { position: static; margin: 0; }
 .analysis-tabs [role='tab'][aria-disabled='true'] { opacity: 0.45; cursor: not-allowed; }
+
+/* Schede interne a larghezza uguale su tutta la riga; quella aperta come le teste (magenta a righe, inclinata) */
+.analysis-tabs { border-bottom: 0; }
+.analysis-tabs [role='tablist'] { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; width: 100%; }
+.analysis-tabs [role='tab'] { display: flex; align-items: baseline; justify-content: center; gap: 8px; width: 100%; padding: 8px 14px; border: 1px solid var(--line-soft); background: var(--panel); }
+.analysis-tabs [role='tab'][aria-selected='true'] {
+  color: var(--on-accent-2); border-color: var(--accent-2);
+  background: var(--stripes), var(--accent-2);
+  clip-path: polygon(0 0, 100% 0, calc(100% - 14px) 100%, 0 100%);
+  padding-right: 48px;
+}
+.analysis-tabs .tab-score { font: 700 17px/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums; color: var(--accent); }
+.analysis-tabs [role='tab'][aria-selected='true'] .tab-score { color: var(--on-accent-2); }
+/* Il "?" piccolo, dentro la scheda aperta */
+.analysis-help .help-button { width: 18px; height: 18px; min-width: 0; padding: 0; color: var(--on-accent-2); border-color: color-mix(in srgb, var(--on-accent-2) 45%, transparent); background: transparent; }
+.analysis-help .help-button .icon { width: 12px; height: 12px; }

@@ -53,7 +53,8 @@ export function ViewHelp({ view }: { view: AnalysisView }) {
 
 /** Le schede interne: tablist orizzontale (frecce, Home/End), col "?" accanto a quella aperta. */
 /** `areasDisabled`: senza voto (team vuoto) le aree non hanno niente da mostrare: restano visibili ma spente. */
-export function AnalysisTabs({ view, onView, panelId, areasDisabled = false }: { view: AnalysisView; onView: (view: AnalysisView) => void; panelId: string; areasDisabled?: boolean }) {
+/** `scores`: il voto di ogni area, scritto nella sua scheda (la Panoramica non ne ha). */
+export function AnalysisTabs({ view, onView, panelId, areasDisabled = false, scores = {} }: { view: AnalysisView; onView: (view: AnalysisView) => void; panelId: string; areasDisabled?: boolean; scores?: Partial<Record<AnalysisView, number | null>> }) {
   const t = useT();
   const buttons = useRef<(HTMLButtonElement | null)[]>([]);
   // Il "?" sta fuori dal tablist (lì solo schede) ma si vede accanto alla scheda aperta
@@ -61,7 +62,8 @@ export function AnalysisTabs({ view, onView, panelId, areasDisabled = false }: {
   useLayoutEffect(() => {
     const tab = buttons.current[ANALYSIS_VIEWS.indexOf(view)];
     if (!tab) return;
-    const place = () => setHelpLeft(tab.offsetLeft + tab.offsetWidth + 6);
+    // Dentro la scheda aperta, a destra (prima del taglio inclinato)
+    const place = () => setHelpLeft(tab.offsetLeft + tab.offsetWidth - 40);
     place();
     // La scheda Analisi può essere nascosta al primo disegno (misure a 0): si riposiziona quando prende le sue dimensioni
     if (typeof ResizeObserver === 'undefined') return;
@@ -89,7 +91,9 @@ export function AnalysisTabs({ view, onView, panelId, areasDisabled = false }: {
             aria-selected={item === view} aria-controls={panelId} tabIndex={item === view ? 0 : -1}
             aria-disabled={areasDisabled && item !== 'overview' ? true : undefined}
             onClick={() => { if (!(areasDisabled && item !== 'overview')) onView(item); }} onKeyDown={e => onKey(e, i)}>
-            {t(viewLabelKey(item))}
+            <span>{t(viewLabelKey(item))}</span>
+            {/* Il voto dell'area si vede ma non entra nel nome della scheda */}
+            {scores[item] != null && <span className="tab-score" aria-hidden="true">{scores[item]}</span>}
           </button>
         ))}
       </div>
