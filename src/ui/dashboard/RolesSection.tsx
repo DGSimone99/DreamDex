@@ -40,14 +40,15 @@ function Owners({ owners }: { owners: string[] }) {
 const LEVELS = ['essential', 'important', 'minor'] as const;
 
 /**
- * Ruoli. Stretto: chip di essenziali e importanti. Normale: per livello, minori compresi.
+ * Ruoli. Stretto: chip in fila, minori in coda finché stanno. Normale: per livello, minori compresi.
  * Ampio: una riga per ruolo con chi lo copre; le righe si allungano fino a riempire la sezione.
  */
 export function RolesSection({ roles, density, onView }: { roles: DashboardData['roles']; density: Density; onView: (v: AnalysisView) => void }) {
   const t = useT();
   const titles = { essential: t('analysis.essential'), important: t('analysis.important'), minor: t('dash.levelMinor') };
   const all = LEVELS.flatMap(level => roles.chips.filter(c => c.level === level));
-  const chips = density === 'tight' ? all.filter(c => c.level !== 'minor') : all;
+  // Anche in stretto tutti i livelli: i minori (tenui) quando stanno, il resto nel "+N"
+  const chips = all;
   const { ref, shown } = useFit<HTMLDivElement>(`${density}|${chips.map(c => `${c.need}${c.covered}`).join()}`, chips.length, { reserve: 1 });
   const hidden = chips.length - shown;
   const more = hidden > 0 && <span className="dash-chip more" title={t('dash.moreRoles', { n: hidden })}>+{hidden}</span>;

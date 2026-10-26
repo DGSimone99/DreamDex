@@ -276,9 +276,10 @@ button.member-card:hover { border-color: var(--accent); }
 .dash-avg { position: absolute; left: 0; right: 0; z-index: 1; border-top: 1.5px dashed var(--warn); pointer-events: none; }
 .dash-avg span { position: absolute; right: 0; bottom: 1px; padding: 1px 6px 1px 9px; font: 600 11px/1.2 var(--ui); white-space: nowrap; color: var(--warn-bg); background: var(--warn); clip-path: polygon(6px 0, 100% 0, 100% 100%, 0 100%); }
 .dash-sprites { display: flex; gap: 6px; }
-/* Gli sprite di gen 5 hanno molto margine: si ingrandiscono e si ritagliano nella loro casella */
-.dash-lane-sprite { flex: 1; display: flex; justify-content: center; height: var(--sprite); overflow: hidden; }
-.dash-lane-sprite .sprite { flex: none; width: calc(var(--sprite) * 1.5); height: calc(var(--sprite) * 1.5); margin-top: calc(var(--sprite) * -0.32); image-rendering: pixelated; }
+/* Lo sprite intero (gen 5 ha margine trasparente: un po' più grande della casella nominale), mai ritagliato; parte dalla riga di base delle barre */
+.dash-lane-sprite { flex: 1; min-width: 0; display: flex; justify-content: center; align-items: flex-start; height: calc(var(--sprite) * 1.25); }
+/* Mai più largo della sua corsia: se la corsia è stretta si rimpicciolisce, intero */
+.dash-lane-sprite .sprite { flex: none; width: min(calc(var(--sprite) * 1.25), 100%); height: auto; aspect-ratio: 1; image-rendering: pixelated; }
 .dash-near { flex: 2 1 0; min-height: 0; overflow: hidden; margin: 6px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 3px; font-size: 11px; color: var(--muted); }
 .dash-near li { flex: none; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.3; }
 .dash-near b { font-weight: 600; color: var(--text); }

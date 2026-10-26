@@ -109,7 +109,7 @@ describe('Cruscotto della Panoramica', () => {
     expect(within(roles).getByText('+1')).toBeInTheDocument();
   });
 
-  it('stretto: niente "supera", livelli, minori né controllo visibile', () => {
+  it('stretto: niente "supera", livelli né controllo visibile; minori in coda, tenui', () => {
     mount({ density: 'tight' });
     const speed = screen.getByRole('region', { name: 'Velocità' });
     expect(within(speed).queryByText(/supera /)).toBeNull();
@@ -117,7 +117,10 @@ describe('Cruscotto della Panoramica', () => {
     expect(speed).toHaveAttribute('title', expect.stringMatching(/^Controllo:/));
     const roles = screen.getByRole('region', { name: 'Ruoli' });
     expect(within(roles).queryByText('Essenziali')).toBeNull();
-    expect(roles.querySelectorAll('.dash-chip')).toHaveLength(3); // essenziali e importanti
+    // Senza layout stanno tutti: essenziali, importanti e in coda il minore (tenue)
+    const chips = roles.querySelectorAll('.dash-chip');
+    expect(chips).toHaveLength(4);
+    expect(chips[3]).toHaveClass('minor');
   });
 
   it('normale: Ruoli per livello, minori compresi, senza icone dei membri', () => {
