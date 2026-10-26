@@ -3,7 +3,7 @@ import { useEditing } from './editing';
 import { GRADES, type TeamRating } from '../engine/rating';
 import { AlertMark } from './AlertMark';
 import { RatingHelp } from './RatingHelp';
-import { type AreaKey, type DetailArea } from './AreaDetail';
+import { type AreaKey, type DetailArea, signed } from './AreaDetail';
 import { Icon } from './icons';
 import { useT } from '../i18n/react';
 
@@ -50,7 +50,7 @@ export function GradeBadge({ rating, ruleIssues = [], onOpen }: { rating: TeamRa
           <RatingHelp teamType={rating.teamType} trickRoom={rating.trickRoom} />
         </span>
       )}
-      {/* Le quattro aree: ogni riga porta alla sua scheda in Analisi (Bonus/Malus sta nel Coaching) */}
+      {/* Le quattro aree + Bonus/Malus: ogni riga porta alla sua scheda in Analisi */}
       {rating && (
         <span className="grade-areas">
           {rating.areas.map(area => {
@@ -69,6 +69,20 @@ export function GradeBadge({ rating, ruleIssues = [], onOpen }: { rating: TeamRa
               </button>
             );
           })}
+          {/* Quinta riga: netto di bonus e malus, senza barra */}
+          {(() => {
+            const net = rating.bonus.total - rating.penalty.total;
+            const value = net === 0 ? '±0' : signed(net);
+            return (
+              <button type="button" className={`grade-area grade-bm${net > 0 ? ' pos' : net < 0 ? ' neg' : ''}`}
+                aria-label={t('rating.openBonusMalus', { value })}
+                onClick={() => onOpen?.('bonusMalus')}>
+                <span>{t('area.bonusMalus')}</span>
+                <b>{value}</b>
+                <Icon name="next" />
+              </button>
+            );
+          })()}
         </span>
       )}
     </div>
