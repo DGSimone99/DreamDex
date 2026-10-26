@@ -77,6 +77,8 @@ const STATES: Record<string, State> = {
   'analysis-overview-three': { hash: hash(TEAM.slice(0, 3)), run: async p => { await tab(p, 'analysis'); return true; } },
   'analysis-meta-off': { hash: hashWith(TEAM, { meta: false }), run: async p => { await tab(p, 'analysis'); return true; } },
   'analysis-one': { hash: hash(TEAM.slice(0, 2)), run: async p => { await tab(p, 'analysis'); return true; } },
+  // Cruscotto con un membro solo: "Cosa fare" invita ad aggiungere, niente "nessun problema"
+  'analysis-single': { hash: hash(TEAM.slice(0, 1)), run: async p => { await tab(p, 'analysis'); return true; } },
   'analysis-member': { run: async p => {
     await tab(p, 'analysis');
     await wait(300);
@@ -199,16 +201,27 @@ for (const [w, h] of sizes) {
     if (result !== true) { console.log(`skip ${name} @${w}x${h}: ${result === false ? 'element not found' : result}`); await page.close(); continue; }
     await wait(800);
     // pageScroll: quanto scorre la pagina; clipped: quanto della colonna principale resta tagliato (overflow nascosto)
-    const { scroll, clipped } = await page.evaluate(() => {
+    // dash: altezza e densità del cruscotto, fondo delle due colonne, testo tagliato nelle sezioni
+    const { scroll, clipped, dash } = await page.evaluate(() => {
       const main = document.querySelector('.main');
+      const box = document.querySelector<HTMLElement>('.dash');
+      // Niente funzioni con nome qui dentro: tsx aggiunge __name, che nella pagina non esiste
+      const [left, right] = ['.dash-left', '.dash-right'].map(sel => {
+        const cards = box ? [...box.querySelectorAll<HTMLElement>(`${sel} > .dash-card, ${sel} > .dash-pair`)] : [];
+        return Math.round(Math.max(0, ...cards.map(c => c.getBoundingClientRect().bottom)) * 10) / 10;
+      });
+      // Contenuto che sborda dalla sua sezione (oltre 1px) senza finire in un "+N"
+      const over = box ? [...box.querySelectorAll<HTMLElement>('.dash-card')].filter(c => c.scrollHeight - c.clientHeight > 1)
+        .map(c => c.className.split(' ').find(n => n.startsWith('dash-') && n !== 'dash-card')) : [];
       return {
         scroll: document.scrollingElement!.scrollHeight - window.innerHeight,
         clipped: main ? main.scrollHeight - main.clientHeight : 0,
+        dash: box ? `dash=${box.clientHeight} density=${box.dataset.density} left=${left} right=${right} dashBottom=${Math.round(box.getBoundingClientRect().bottom)} overflow=[${over.join(',')}]` : '',
       };
     });
     const file = join(out, `${w}x${h}-${name}.png`);
     await page.screenshot({ path: file });
-    console.log(`${file} pageScroll=${scroll} clipped=${clipped}`);
+    console.log(`${file} pageScroll=${scroll} clipped=${clipped} ${dash}`);
     await page.close();
   }
 }
