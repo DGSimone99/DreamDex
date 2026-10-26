@@ -140,8 +140,6 @@
 /* Un'area sulla pagina: sottostatistiche e problemi a sinistra, il dettaglio a destra; ognuna scorre dentro */
 .area-view { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 16px; height: 100%; min-height: 0; }
 .area-side { display: flex; flex-direction: column; gap: 10px; min-height: 0; overflow: auto; }
-.area-title { display: flex; align-items: baseline; gap: 10px; margin: 0; font: 700 20px/1 var(--display); font-style: italic; }
-.area-title strong { font-size: 28px; color: var(--accent); font-variant-numeric: tabular-nums; }
 .area-side .ad-nav { padding: 6px; border: 1px solid var(--line-soft); border-right: 1px solid var(--line-soft); }
 .area-side .ad-nav [role='tab'] { display: grid; grid-template-columns: minmax(0, 1fr) 48px auto; gap: 8px; align-items: center; }
 .sub-meter { height: 4px; background: var(--field); }
@@ -236,7 +234,6 @@ button.member-card:hover { border-color: var(--accent); }
 /* Il catalogo dentro la colonna stretta: elenco sopra, tabella sotto */
 .bonus-malus details[open] .area-view { grid-template-columns: minmax(0, 1fr); }
 .bonus-malus .ad-scroll { overflow-x: auto; }
-.area-inactive { margin-left: 8px; font: 500 12px/1 var(--ui); font-style: normal; color: var(--faint); }
 /* Il cambio consigliato: l'azione principale con testo */
 .swaps .swap-actions button.swap-now.primary { gap: 6px; padding: 4px 12px; width: auto; background: var(--accent-2); border-color: var(--accent-2); color: var(--on-accent-2); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
 .swaps .swap-actions button.swap-now.primary:hover { color: var(--on-accent-2); background: var(--accent-2-ink); }
@@ -258,3 +255,25 @@ button.member-card:hover { border-color: var(--accent); }
 /* Il "?" piccolo, dentro la scheda aperta */
 .analysis-help .help-button { width: 18px; height: 18px; min-width: 0; padding: 0; color: var(--on-accent-2); border-color: color-mix(in srgb, var(--on-accent-2) 45%, transparent); background: transparent; }
 .analysis-help .help-button .icon { width: 12px; height: 12px; }
+
+/* Selezione magenta (scheda interna aperta, sezione aperta nella barra): si ingrandisce un poco sopra le vicine,
+   con un piccolo rimbalzo. Solo transform: l'impaginazione non cambia. */
+@keyframes selected-pop {
+  0% { transform: scale(1); }
+  60% { transform: scale(1.07); }
+  100% { transform: scale(1.05); }
+}
+.analysis-tabs [role='tab'], .tabs.vertical [role='tab'] { position: relative; transition: transform 0.18s var(--ease); }
+.analysis-tabs [role='tab'][aria-selected='true'], .tabs.vertical [role='tab'][aria-selected='true'] {
+  z-index: 1;
+  transform: scale(1.05);
+  animation: selected-pop 0.22s var(--ease) both;
+}
+/* Nella barra laterale cresce dal bordo sinistro, per non uscire dalla barra */
+.tabs.vertical [role='tab'][aria-selected='true'] { transform-origin: left center; }
+.area-inactive { margin: 0; font-size: 12px; color: var(--faint); }
+@media (prefers-reduced-motion: reduce) {
+  .analysis-tabs [role='tab'][aria-selected='true'], .tabs.vertical [role='tab'][aria-selected='true'] { animation: none; }
+  .analysis-tabs [role='tab'], .tabs.vertical [role='tab'] { transition: none; }
+}
+.analysis-help { z-index: 2; }

@@ -59,6 +59,7 @@ describe('vista di un\'area: casi particolari', () => {
   it('un\'area che non conta lo dice nel titolo (Velocità nello stall)', () => {
     const rating = { ...withMeta(), areas: withMeta().areas.map(a => (a.key === 'speed' ? { ...a, inactive: true } : a)) };
     renderIt(<AreaView rating={rating} area="speed" problems={[]} />);
-    expect(screen.getByRole('heading', { level: 3 })).toHaveTextContent(/Non conta nello Stall/);
+    expect(screen.getByRole('note')).toHaveTextContent(/Non conta nello Stall/);
+    expect(screen.queryByRole('heading', { level: 3 })).toBeNull();
   });
 });
