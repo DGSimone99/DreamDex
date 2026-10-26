@@ -419,7 +419,7 @@ export const en = {
   'analysis.stat.uncovered': "Uncovered types in defense: {n}",
   'analysis.stat.coverage': "Offensive coverage {n}/18",
   'analysis.stat.essential': "Missing essential roles: {n}",
-  'analysis.problems': "Problems",
+  'analysis.problems': "Coaching",
   'analysis.solutions': "Solutions",
   'analysis.noSolutions': "No recommended swap",
   'analysis.members': "Members",

@@ -421,7 +421,7 @@ export const it: Record<keyof typeof en, string> = {
   'analysis.stat.uncovered': "Tipi scoperti in difesa: {n}",
   'analysis.stat.coverage': "Coverage offensiva {n}/18",
   'analysis.stat.essential': "Ruoli essenziali mancanti: {n}",
-  'analysis.problems': "Problemi",
+  'analysis.problems': "Coaching",
   'analysis.solutions': "Soluzioni",
   'analysis.noSolutions': "Nessun cambio consigliato",
   'analysis.members': "Membri",

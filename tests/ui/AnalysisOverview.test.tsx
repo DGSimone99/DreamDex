@@ -42,7 +42,7 @@ describe('Panoramica di Analisi', () => {
 
   it('problemi a sinistra, soluzioni a destra', async () => {
     await setup(['Great Tusk', 'Gholdengo', 'Kingambit', 'Dragapult', 'Corviknight', 'Toxapex']);
-    const problems = within(panel()).getByRole('region', { name: 'Problemi' });
+    const problems = within(panel()).getByRole('region', { name: 'Coaching' });
     const solutions = within(panel()).getByRole('region', { name: 'Soluzioni' });
     expect(problems.compareDocumentPosition(solutions) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(within(solutions).queryAllByRole('button', { name: /^Altri sostituti per / }).length).toBeGreaterThan(0);
@@ -51,7 +51,7 @@ describe('Panoramica di Analisi', () => {
 
   it('regole per prime tra i problemi', async () => {
     await setup(['Great Tusk', 'Dragapult']);
-    const problems = within(panel()).getByRole('region', { name: 'Problemi' });
+    const problems = within(panel()).getByRole('region', { name: 'Coaching' });
     const groups = problems.querySelectorAll('.problem-group');
     expect(groups[0]).toHaveAttribute('aria-label', expect.stringMatching(/Regole/));
   });
@@ -168,12 +168,13 @@ describe('Panoramica compatta', () => {
   it('senza cambi consigliati niente colonna Soluzioni vuota: lo dice la testa dei Problemi', async () => {
     await setup(['Great Tusk']);
     expect(within(panel()).queryByRole('region', { name: 'Soluzioni' })).toBeNull();
-    expect(within(panel()).getByRole('region', { name: 'Problemi' })).toHaveTextContent('Nessun cambio consigliato');
+    expect(within(panel()).getByRole('region', { name: 'Coaching' })).toHaveTextContent('Nessun cambio consigliato');
   });
 
-  it('giudizio e numeri chiave nella stessa riga in testa', async () => {
+  it('i numeri chiave stanno dentro il Coaching, non nella riga in testa', async () => {
     await setup();
     const headline = panel().querySelector<HTMLElement>('.overview-headline')!;
-    expect(within(headline).getByRole('group', { name: 'Numeri chiave' })).toBeInTheDocument();
+    expect(within(headline).queryByRole('group', { name: 'Numeri chiave' })).toBeNull();
+    expect(within(within(panel()).getByRole('region', { name: 'Coaching' })).getByRole('group', { name: 'Numeri chiave' })).toBeInTheDocument();
   });
 });
