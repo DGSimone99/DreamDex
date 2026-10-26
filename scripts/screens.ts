@@ -69,6 +69,7 @@ const STATES: Record<string, State> = {
   'analysis-defense': { run: async p => clickText(p, '.band button.grade-area', /^Difesa/) },
   'analysis-offense': { run: async p => clickText(p, '.band button.grade-area', /^Offesa/) },
   'analysis-roles': { run: async p => clickText(p, '.band button.grade-area', /^Ruoli/) },
+  'analysis-one': { hash: hash(TEAM.slice(0, 2)), run: async p => { await tab(p, 'analysis'); return true; } },
   'analysis-member': { run: async p => {
     await tab(p, 'analysis');
     await wait(300);

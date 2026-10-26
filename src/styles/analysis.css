@@ -285,3 +285,13 @@ button.member-card:hover { border-color: var(--accent); }
   .analysis-tabs [role='tab'], .tabs.vertical [role='tab'] { transition: none; }
 }
 .analysis-help { z-index: 2; }
+
+/* Panoramica compatta: una riga con giudizio, tipo di team e numeri chiave (a destra); senza soluzioni una colonna sola */
+.overview-headline { align-items: center; }
+.overview-headline .overview-stats { margin-left: auto; gap: 6px; }
+.overview-stats .stat-tile { display: inline-flex; align-items: baseline; gap: 6px; padding: 3px 10px; border-width: 1px 1px 1px 3px; }
+.overview-stats .stat-tile b { font-size: 16px; }
+.overview-stats .stat-tile span { font-size: 12px; }
+.overview-cols.single { grid-template-columns: minmax(0, 1fr); }
+.overview-head .no-solutions { font-weight: 500; color: var(--muted); }
+.overview { grid-template-rows: auto minmax(0, 1fr) auto; }

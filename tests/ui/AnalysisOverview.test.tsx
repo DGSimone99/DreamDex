@@ -163,3 +163,17 @@ describe('Panoramica: correzioni della revisione', () => {
     expect(block.querySelector('ul .mon-ref')).not.toBeNull();
   });
 });
+
+describe('Panoramica compatta', () => {
+  it('senza cambi consigliati niente colonna Soluzioni vuota: lo dice la testa dei Problemi', async () => {
+    await setup(['Great Tusk']);
+    expect(within(panel()).queryByRole('region', { name: 'Soluzioni' })).toBeNull();
+    expect(within(panel()).getByRole('region', { name: 'Problemi' })).toHaveTextContent('Nessun cambio consigliato');
+  });
+
+  it('giudizio e numeri chiave nella stessa riga in testa', async () => {
+    await setup();
+    const headline = panel().querySelector<HTMLElement>('.overview-headline')!;
+    expect(within(headline).getByRole('group', { name: 'Numeri chiave' })).toBeInTheDocument();
+  });
+});
