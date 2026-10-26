@@ -4,7 +4,6 @@ import { rankedChanges } from '../engine/coach';
 import { getSpecies } from '../engine/dex';
 import { rateTeam, type TeamRating } from '../engine/rating';
 import type { Archetype } from '../engine/archetype';
-import { needLabel } from '../engine/needs';
 import { areaDrops, extrasDelta, withCandidate, type ScoredArea, type SwapOption, type TeamGain } from '../engine/teamGain';
 import { detectRoles } from '../engine/roles';
 import { rulesOf } from '../engine/formatRules';
@@ -56,11 +55,10 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
   const lang = useLang();
   const set = item.set;
   const replacing = replaceIndex !== null;
-  const opts = useMemo(() => (archetype ? { archetype } : {}), [archetype]);
-  const after = useMemo(() => rateTeam(withCandidate(team, set, replaceIndex), data, lang, opts), [team, replaceIndex, set, data, lang, opts]);
-  const forcedBefore = useMemo(() => (archetype ? rateTeam(team, data, lang, opts) : rating), [archetype, team, data, lang, opts, rating]);
+  // Il voto vero del team, come nella card del voto (il tipo scelto decide solo chi compare)
+  const after = useMemo(() => rateTeam(withCandidate(team, set, replaceIndex), data, lang), [team, replaceIndex, set, data, lang]);
   // Senza altri membri non c'è un voto da confrontare
-  const before = item.teamGain ? forcedBefore : null;
+  const before = item.teamGain ? rating : null;
   const changes = 'diff' in item && item.diff ? rankedChanges(item.diff, item.teamGain?.areaPoints, lang) : null;
   const types = getSpecies(item.species)?.types ?? [];
   const evs = STAT_IDS.filter(stat => (set.evs[stat] ?? 0) > 0).map(stat => `${set.evs[stat]} ${statShort(stat, lang)}`).join(' / ');
@@ -77,12 +75,8 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
   // Col team vuoto non c'è niente da confrontare: Porta dice cosa sa fare il Pokémon (i suoi ruoli)
   const roles = !item.teamGain && !changes ? detectRoles(set, rulesOf(data)).map(role => tr(`role.${role}`)) : [];
   const brings = [...new Set([...(changes?.pros.map(p => p.text) ?? []), ...reasons, ...roles])].slice(0, MAX_POINTS);
-  // Toglie: le perdite del cambio, gli avvisi (meteo in conflitto, mosse indebolite) e le voci perse col tipo di team
-  const penalty = result?.penalty && result.lost?.length
-    ? [tr('suggest.penaltyNote', { roles: result.lost.map(r => needLabel(r.key, lang)).join(', '), n: result.penalty })]
-    : [];
-  // La voce persa col tipo di team spiega l'ordine in classifica: viene prima, così il limite non la nasconde
-  const loses = [...penalty, ...(changes?.cons.map(c => c.text) ?? []), ...(item.facts.clashes ?? []).map(text => text.replace(/^⚠\s*/, ''))].slice(0, MAX_POINTS);
+  // Toglie: le perdite del cambio e gli avvisi (meteo in conflitto, mosse indebolite)
+  const loses = [...(changes?.cons.map(c => c.text) ?? []), ...(item.facts.clashes ?? []).map(text => text.replace(/^⚠\s*/, ''))].slice(0, MAX_POINTS);
   // Senza perdite da elencare ma con aree in calo, Toglie dice quali (mai "niente" accanto a pillole rosse)
   if (replacing && !loses.length && before && after) loses.push(...areaDrops(before, after).slice(0, 2).map(drop => `${drop.label} ${delta(drop.change)}`));
   // Problemi risolti o nuovi, meteo e Tera: la parte del voto che le aree non spiegano, con la sua pillola
