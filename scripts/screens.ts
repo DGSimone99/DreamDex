@@ -66,6 +66,13 @@ const STATES: Record<string, State> = {
   pokemon: { run: async p => { await tab(p, 'pokemon'); return true; } },
   editor: { run: async p => clickText(p, '.slot.filled > summary', /./) },
   analysis: { run: async p => { await tab(p, 'analysis'); return true; } },
+  'analysis-defense': { run: async p => clickText(p, '.band button.grade-area', /^Difesa/) },
+  'analysis-offense': { run: async p => clickText(p, '.band button.grade-area', /^Offesa/) },
+  'analysis-help': { run: async p => {
+    if (!await clickText(p, '.band button.grade-area', /^Difesa/)) return 'no row';
+    await wait(300);
+    return clickText(p, '.analysis-help button', /./);
+  } },
   meta: { run: async p => { await tab(p, 'meta'); return true; } },
   lists: { run: async p => { await tab(p, 'lists'); return true; } },
   'area-offense': { run: async p => { await tab(p, 'analysis'); await wait(300); return clickText(p, 'button', /^Offesa/); } },

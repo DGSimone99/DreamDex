@@ -1,5 +1,4 @@
-import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactElement } from 'react';
-import { createPortal } from 'react-dom';
+import type { ReactElement } from 'react';
 import { MAX_BONUS, MAX_PENALTY, bonusMalusCatalog, type CatalogEntry, type TeamRating } from '../engine/rating';
 import { stepBucket, type CoverageDetail, type WallCell } from '../engine/offense';
 import type { TeamDefense } from '../engine/defense';
@@ -8,9 +7,8 @@ import { ESSENTIAL_POINTS, type TeamRoles } from '../engine/rolesArea';
 import { MISSING_BELOW } from '../engine/needs';
 import type { Level, LevelKey } from '../engine/roleLevels';
 import { FAMILIES, secondaryRoles, type Family, type SubRole, type SubRoleReason } from '../engine/subRoles';
-import { useLang, useT } from '../i18n/react';
+import { useT } from '../i18n/react';
 import type { Lang } from '../i18n';
-import { Icon } from './icons';
 import { Sprite, TypeChip } from './Sprite';
 
 type Tab = 'general' | 'power' | 'wallbreaking' | 'coverageTypes' | 'coverageMeta';
@@ -56,66 +54,6 @@ export function areaTabs(rating: TeamRating, area: AreaKey, t: T, lang: Lang): D
 /** Il valore di un'area per la testa: il netto per Bonus/Malus, altrimenti il valore dell'area. */
 export const areaValue = (rating: TeamRating, area: AreaKey): number | string | null =>
   (area === 'bonusMalus' ? signed(rating.bonus.total - rating.penalty.total) : rating.areas.find(a => a.key === area)?.value ?? null);
-
-export function AreaDetail({ rating, area, onClose }: { rating: TeamRating; area: DetailArea; onClose: () => void }) {
-  const t = useT();
-  const lang = useLang();
-  return <DetailShell title={t(`area.${area}`)} value={areaValue(rating, area)} tabs={areaTabs(rating, area, t, lang)} onClose={onClose} />;
-}
-
-function DetailShell({ title, value, tabs, onClose }: { title: string; value: number | string | null; tabs: DetailTab[]; onClose: () => void }) {
-  const t = useT();
-  const titleId = useId();
-  const [tab, setTab] = useState(0);
-  const buttons = useRef<(HTMLButtonElement | null)[]>([]);
-  const close = useRef(onClose);
-  close.current = onClose;
-
-  // Focus sulla prima scheda solo all'apertura: un nuovo render dell'app non deve spostarlo
-  useEffect(() => {
-    buttons.current[0]?.focus();
-    const onKey = (e: globalThis.KeyboardEvent) => { if (e.key === 'Escape') close.current(); };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, []);
-
-  // Frecce su/giù fra le schede, come nel modale d'aiuto
-  const onTabKey = (e: KeyboardEvent, index: number) => {
-    const step = e.key === 'ArrowDown' ? 1 : e.key === 'ArrowUp' ? -1 : 0;
-    if (!step) return;
-    e.preventDefault();
-    const next = (index + step + tabs.length) % tabs.length;
-    setTab(next);
-    buttons.current[next]?.focus();
-  };
-  const current = tabs[Math.min(tab, tabs.length - 1)];
-
-  return createPortal(
-    <div className="help-backdrop" onClick={onClose}>
-      <div className="help-dialog ad-dialog" role="dialog" aria-modal="true" aria-labelledby={titleId} onClick={e => e.stopPropagation()}>
-        <header className="help-head ad-head">
-          <h3 id={titleId}>{title} <strong>{value ?? 'n/d'}</strong></h3>
-          <button type="button" className="help-close" aria-label={t('help.close')} onClick={onClose}><Icon name="close" /></button>
-        </header>
-        <div className="ad-body">
-          <nav className="ad-nav" role="tablist" aria-orientation="vertical" aria-label={title}>
-            {tabs.map((item, i) => (
-              <button key={item.key} ref={el => { buttons.current[i] = el; }} type="button" role="tab" id={`ad-tab-${item.key}`}
-                aria-selected={item === current} aria-controls="ad-panel" tabIndex={item === current ? 0 : -1}
-                onClick={() => setTab(i)} onKeyDown={e => onTabKey(e, i)}>
-                {item.label} <b>{item.value}</b>
-              </button>
-            ))}
-          </nav>
-          <section className="ad-panel" id="ad-panel" role="tabpanel" aria-labelledby={`ad-tab-${current.key}`}>
-            {current.panel}
-          </section>
-        </div>
-      </div>
-    </div>,
-    document.body,
-  );
-}
 
 /** Catalogo di bonus e malus: due schede, ogni voce con quando scatta e quanto vale; quelle attive ora sono evidenziate. */
 function catalogueTabs(rating: TeamRating, t: T, lang: Lang): DetailTab[] {

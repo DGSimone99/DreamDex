@@ -2,81 +2,57 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { App } from '../../src/App';
-import { RatingPanel } from '../../src/ui/RatingPanel';
+import { AreaView } from '../../src/ui/AreaView';
 import { LangProvider } from '../../src/i18n/react';
 import type { TeamRating } from '../../src/engine/rating';
 import { fixtureData } from '../fixtures/data';
 
-describe('Valutazione team', () => {
+const band = () => document.querySelector<HTMLElement>('.band')!;
+
+describe('Riquadro Voto', () => {
   it('voto, punteggio, etichetta e aree', async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} />);
     for (const name of ['Great Tusk', 'Gholdengo']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
-    const rating = screen.getByRole('group', { name: 'Valutazione team' });
-    expect(rating).toHaveTextContent(/[SABCD]\s*\d+\/100 · \w+/);
-    expect(rating).not.toHaveTextContent('provvisoria');
-    // Il dettaglio per membro (quanto colpisce) sta nel tooltip di "Offesa"
-    expect(rating).not.toHaveTextContent('Offesa: Great Tusk');
-    expect(within(rating).getByText(/^Offesa \d+$/)).toHaveAttribute('data-tip', expect.stringMatching(/^(Great Tusk|Gholdengo) \d+\n(Great Tusk|Gholdengo) \d+$/));
-    // La Difesa unisce coverage difensiva e robustezza: nel tooltip la Difesa di ogni membro
-    expect(within(rating).getByText(/^Difesa \d+$/)).toHaveAttribute('data-tip', expect.stringMatching(/^(Great Tusk|Gholdengo) \d+\n(Great Tusk|Gholdengo) \d+$/));
-    expect(rating).not.toHaveTextContent(/Robustezza \d+/);
-    expect(rating).toHaveTextContent(/Velocità \d+/);
-    expect(rating).not.toHaveTextContent('Sinergia');
+    expect(band()).toHaveTextContent(/Voto [SABCD], \d+ su 100, \w+/);
+    const areas = within(band()).getAllByRole('button', { name: /, apri il dettaglio/ }).map(b => b.getAttribute('aria-label')!.replace(/ \d+, apri il dettaglio.*/, ''));
+    expect(areas).toEqual(['Difesa', 'Offesa', 'Ruoli', 'Velocità']);
+    expect(band()).not.toHaveTextContent('Sinergia');
   });
 
-  it("Offesa, Difesa e Ruoli aprono il loro dettaglio; la Coverage offensiva è dentro l'Offesa", async () => {
+  it("Offesa, Difesa e Ruoli portano alla loro scheda; la Coverage offensiva non è una riga del voto", async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} />);
     for (const name of ['Great Tusk', 'Gholdengo']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
-    const rating = screen.getByRole('group', { name: 'Valutazione team' });
-    // La scheda Coverage offensiva resta nell'Analisi, ma nel voto non è più una barra
-    expect(screen.getByText('Coverage offensiva', { selector: 'summary span' })).toBeInTheDocument();
-    expect(within(rating).queryByRole('button', { name: /^Coverage offensiva/ })).toBeNull();
-    // Offesa e Difesa aprono il loro dettaglio (vedi AreaDetail.test)
-    expect(within(rating).getByRole('button', { name: /^Difesa \d+$/ })).toHaveAttribute('aria-haspopup', 'dialog');
-    expect(within(rating).getByRole('button', { name: /^Offesa \d+$/ })).toHaveAttribute('aria-haspopup', 'dialog');
-    expect(within(rating).getByRole('button', { name: /^Ruoli \d+$/ })).toHaveAttribute('aria-haspopup', 'dialog');
+    expect(within(band()).queryByRole('button', { name: /^Coverage offensiva/ })).toBeNull();
+    for (const area of ['Difesa', 'Offesa', 'Ruoli']) {
+      const button = within(band()).getByRole('button', { name: new RegExp(`^${area} \\d+, apri il dettaglio`) });
+      expect(button).not.toHaveAttribute('aria-haspopup');
+      await user.click(button);
+      expect(within(document.getElementById('panel-analysis')!).getByRole('region', { name: area })).toBeInTheDocument();
+    }
   });
 
-  it('mostra le ridondanze con il dettaglio', async () => {
-    const user = userEvent.setup();
-    render(<App initialLang="it" data={fixtureData} />);
-    await user.click(screen.getByLabelText('Testo Showdown'));
-    await user.paste('Great Tusk\n- Stealth Rock\n\nGarchomp\n- Stealth Rock');
-    await user.click(screen.getByRole('button', { name: 'Importa' }));
-    const rating = screen.getByRole('group', { name: 'Valutazione team' });
-    expect(rating).toHaveTextContent(/Bonus\/Malus −\d+/);
-    expect(rating).toHaveTextContent('2 setter di Stealth Rock (−1)');
-  });
-
-  it('mostra il bonus del meteo e la nota sotto la tabella delle debolezze', async () => {
+  it('mostra la nota del meteo sotto la tabella delle debolezze', async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} />);
     await user.click(screen.getByLabelText('Testo Showdown'));
     await user.paste('Ninetales\nAbility: Drought\n- Flamethrower\n\nGreat Tusk\n- Headlong Rush');
     await user.click(screen.getByRole('button', { name: 'Importa' }));
-    expect(screen.getByRole('group', { name: 'Valutazione team' })).toHaveTextContent('Bonus/Malus −1 (−2 / +1)');
     expect(screen.getByText((_, el) => el?.textContent === 'Col sole (Ninetales, Drought): Water ×2 → ×1 per Ninetales, Great Tusk · il meteo non è sempre attivo')).toBeInTheDocument();
-  });
-
-  it('nessuna lista di bonus e malus se non ce ne sono', async () => {
-    const user = userEvent.setup();
-    render(<App initialLang="it" data={fixtureData} />);
-    for (const name of ['Great Tusk', 'Gholdengo']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
-    expect(screen.getByRole('group', { name: 'Valutazione team' })).not.toHaveTextContent(/\(−\d+\)|\(\+\d+\)/);
   });
 
   it('nessuna valutazione con il team vuoto', () => {
     render(<App initialLang="it" data={fixtureData} />);
-    expect(screen.queryByRole('group', { name: 'Valutazione team' })).toBeNull();
+    expect(document.querySelector('.grade-badge.none')).not.toBeNull();
+    expect(within(band()).queryByRole('button', { name: /, apri il dettaglio/ })).toBeNull();
   });
 
   it('senza dati Smogon la forza resta calcolata, il Meta Use avvisa', async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={{ stats: null, sets: null }} />);
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Great Tusk{Enter}');
-    expect(screen.getByRole('group', { name: 'Valutazione team' })).not.toHaveTextContent('Statistiche n/d');
+    expect(band()).not.toHaveTextContent('Statistiche n/d');
     expect(screen.getByRole('group', { name: 'Meta Use' })).toHaveTextContent('Statistiche Smogon assenti');
   });
 
@@ -101,14 +77,12 @@ describe('Valutazione team', () => {
     expect(meta).toHaveTextContent('Magikarp non presente nelle statistiche');
   });
 
-  it('il "?" accanto al titolo apre come funziona il voto, senza chiudere il pannello', async () => {
+  it('il "?" nel riquadro Voto apre come funziona il voto', async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} />);
     for (const name of ['Great Tusk', 'Gholdengo']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
-    const panel = screen.getByRole('group', { name: 'Valutazione team' });
-    const help = within(panel).getByRole('button', { name: 'Come funziona il voto' });
+    const help = within(band()).getByRole('button', { name: 'Come funziona il voto' });
     await user.click(help);
-    expect(panel).toHaveAttribute('open');
     const dialog = screen.getByRole('dialog', { name: 'Come funziona il voto' });
     // A sinistra gli argomenti: come funziona e un tab per tipo di team
     const topics = within(dialog).getAllByRole('tab').map(tab => tab.textContent);
@@ -149,7 +123,7 @@ describe('Valutazione team', () => {
     expect(help).toHaveFocus();
   });
 
-  it('nello stall la Velocità resta visibile ma grigia, con la nota, e apre il suo dettaglio', async () => {
+  it('nello stall la Velocità resta visibile ma grigia, con la nota, e porta alla sua scheda', async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} />);
     await user.click(screen.getByLabelText('Testo Showdown'));
@@ -204,15 +178,13 @@ Bold Nature
 - Toxic Spikes`,
     ].join('\n\n'));
     await user.click(screen.getByRole('button', { name: 'Importa' }));
-    const rating = screen.getByRole('group', { name: 'Valutazione team' });
-    const speed = within(rating).getByRole('button', { name: /^Velocità \d+$/ });
-    expect(speed.closest('div')).toHaveClass('inactive');
-    expect(speed).toHaveAttribute('data-tip', expect.stringContaining('Non conta nello Stall'));
-    expect(speed).toHaveAttribute('aria-description', 'Non conta nello Stall');
+    const speed = within(band()).getByRole('button', { name: /^Velocità \d+, apri il dettaglio/ });
+    expect(speed).toHaveClass('inactive');
+    expect(speed).toHaveAccessibleName(/Non conta nello Stall/);
     // Le altre aree non sono grigie
-    expect(within(rating).getByRole('button', { name: /^Difesa \d+$/ }).closest('div')).not.toHaveClass('inactive');
+    expect(within(band()).getByRole('button', { name: /^Difesa \d+, apri il dettaglio/ })).not.toHaveClass('inactive');
     await user.click(speed);
-    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(within(document.getElementById('panel-analysis')!).getByRole('region', { name: 'Velocità' })).toBeInTheDocument();
   });
 });
 
@@ -222,66 +194,6 @@ const fakeRating = (penalty: [string, number][], bonus: [string, number][], pena
   penalty: { total: penaltyTotal ?? penalty.reduce((n, [, p]) => n + p, 0), items: penalty.map(([text, points]) => ({ text, points })) },
   bonus: { total: bonus.reduce((n, [, p]) => n + p, 0), items: bonus.map(([text, points]) => ({ text, points })) },
 }) as unknown as TeamRating;
-const renderBar = (r: TeamRating) => {
-  render(<LangProvider lang="it"><RatingPanel rating={r} /></LangProvider>);
-  return screen.getByRole('meter', { name: /^Bonus\/Malus/ });
-};
-const fillOf = (bar: HTMLElement) => bar.querySelector('.net-fill') as HTMLElement | null;
-
-describe('Barra Bonus/Malus', () => {
-  it('malus netto: testo, riempimento rosso a sinistra del centro, valori ARIA', () => {
-    const bar = renderBar(fakeRating([['Troppi setter', 8]], [['Sole', 2]]));
-    expect(bar).toHaveAccessibleName('Bonus/Malus −6 (−8 / +2)');
-    expect(bar).toHaveAttribute('aria-valuemin', '-15');
-    expect(bar).toHaveAttribute('aria-valuemax', '15');
-    expect(bar).toHaveAttribute('aria-valuenow', '-6');
-    const fill = fillOf(bar)!;
-    expect(fill).toHaveClass('neg');
-    expect(fill.style.width).toBe('20%');
-  });
-
-  it('solo bonus: riempimento blu a destra', () => {
-    const bar = renderBar(fakeRating([], [['Sole', 1]]));
-    expect(bar).toHaveAccessibleName('Bonus/Malus +1 (0 / +1)');
-    const fill = fillOf(bar)!;
-    expect(fill).toHaveClass('pos');
-    expect(parseFloat(fill.style.width)).toBeCloseTo(3.33, 1);
-  });
-
-  it('netto 0 con voci: solo la tacca, la lista le mostra entrambe', () => {
-    const bar = renderBar(fakeRating([['Un malus', 1]], [['Un bonus', 1]]));
-    expect(bar).toHaveAccessibleName('Bonus/Malus 0 (−1 / +1)');
-    expect(bar).toHaveAttribute('aria-valuenow', '0');
-    expect(fillOf(bar)).toBeNull();
-    expect(screen.getAllByRole('listitem').map(li => li.textContent)).toEqual(['Un malus (−1)', 'Un bonus (+1)']);
-  });
-
-  it('malus 15: riempimento esattamente al 50%, mai oltre', () => {
-    const bar = renderBar(fakeRating([['Tanti', 20]], [], 15));
-    expect(fillOf(bar)!.style.width).toBe('50%');
-    expect(bar).toHaveAttribute('aria-valuenow', '-15');
-  });
-
-  it('lista: prima i malus (−n), poi i bonus (+n)', () => {
-    renderBar(fakeRating([['Malus A', 2]], [['Bonus B', 1]]));
-    const items = screen.getAllByRole('listitem').map(li => li.textContent);
-    expect(items).toEqual(['Malus A (−2)', 'Bonus B (+1)']);
-  });
-
-  it('una voce da 0 punti non stampa i punti; un totale a 0 si scrive senza segno', () => {
-    const bar = renderBar(fakeRating([['Debole oltre il tetto', 0], ['Altro', 7]], []));
-    expect(bar).toHaveAccessibleName('Bonus/Malus −7 (−7 / 0)');
-    expect(screen.getAllByRole('listitem').map(li => li.textContent)).toEqual(['Debole oltre il tetto', 'Altro (−7)']);
-  });
-
-  it('totali entrambi 0: nessuna lista, solo la tacca', () => {
-    const bar = renderBar(fakeRating([], []));
-    expect(bar).toHaveAccessibleName('Bonus/Malus 0');
-    expect(fillOf(bar)).toBeNull();
-    expect(screen.queryByRole('listitem')).toBeNull();
-  });
-});
-
 /** Valutazione con le voci del catalogo, per il modale Bonus/Malus. */
 const catalogRating = (teraCap: number) => ({
   ...fakeRating([], []),
@@ -296,19 +208,15 @@ const catalogRating = (teraCap: number) => ({
 
 async function openCatalog(teraCap = 0) {
   const user = userEvent.setup();
-  render(<LangProvider lang="it"><RatingPanel rating={catalogRating(teraCap)} /></LangProvider>);
-  const button = screen.getByRole('button', { name: /^Bonus\/Malus/ });
-  expect(button).toHaveAttribute('aria-haspopup', 'dialog');
-  await user.click(button);
-  return { user, button, dialog: screen.getByRole('dialog', { name: 'Bonus/Malus −6' }) };
+  render(<LangProvider lang="it"><AreaView rating={catalogRating(teraCap)} area="bonusMalus" problems={[]} /></LangProvider>);
+  return { user, dialog: screen.getByRole('region', { name: 'Bonus/Malus' }) };
 }
 
 describe('Catalogo Bonus/Malus', () => {
-  it('il titolo ha il netto; due schede Malus e Bonus; il meter prende il nome dall\'etichetta', async () => {
+  it('il titolo ha il netto; due schede Malus e Bonus', async () => {
     const { dialog } = await openCatalog();
+    expect(within(dialog).getByRole('heading', { name: /Bonus\/Malus/ })).toHaveTextContent('Bonus/Malus −6');
     expect(within(dialog).getAllByRole('tab').map(tab => tab.textContent)).toEqual(['Malus −8', 'Bonus +2']);
-    expect(screen.getByRole('meter')).toHaveAttribute('aria-labelledby');
-    expect(screen.getByRole('meter')).not.toHaveAttribute('aria-label');
   });
 
   it('Malus: gli 11 malus con nome, quando e punti; gli attivi evidenziati col punteggio attuale', async () => {
@@ -341,8 +249,8 @@ describe('Catalogo Bonus/Malus', () => {
   it('somma delle voci oltre il tetto: "(limitato a −15)" accanto al titolo', async () => {
     const user = userEvent.setup();
     const r = { ...catalogRating(0), penalty: { total: 15, items: [{ text: 'A', points: 10, catalog: 'removers' }, { text: 'B', points: 8, catalog: 'hazardDuplicate' }] } } as unknown as TeamRating;
-    render(<LangProvider lang="it"><RatingPanel rating={r} /></LangProvider>);
-    await user.click(screen.getByRole('button', { name: /^Bonus\/Malus/ }));
+    render(<LangProvider lang="it"><AreaView rating={r} area="bonusMalus" problems={[]} /></LangProvider>);
+    void user;
     expect(within(screen.getByRole('tabpanel')).getByRole('heading', { name: /Malus/ })).toHaveTextContent('(limitato a −15)');
   });
 
@@ -364,10 +272,4 @@ describe('Catalogo Bonus/Malus', () => {
     expect(within(dialog).getByRole('tabpanel')).not.toHaveTextContent('Solo Gen 9');
   });
 
-  it('Escape chiude e il focus torna al bottone dell\'etichetta', async () => {
-    const { user, button } = await openCatalog();
-    await user.keyboard('{Escape}');
-    expect(screen.queryByRole('dialog')).toBeNull();
-    expect(button).toHaveFocus();
-  });
 });

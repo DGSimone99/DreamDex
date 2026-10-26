@@ -22,10 +22,9 @@ describe('riquadro Voto: le righe portano alla scheda di Analisi', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
-  it('Bonus/Malus ha la sua riga', async () => {
-    const user = await setup();
-    await user.click(within(band()).getByRole('button', { name: /^Bonus\/Malus .*, apri il dettaglio$/ }));
-    expect(within(document.getElementById('panel-analysis')!).getByRole('region', { name: 'Bonus/Malus' })).toBeInTheDocument();
+  it('Bonus/Malus non sta nel riquadro Voto (è nel Coaching)', async () => {
+    await setup();
+    expect(within(band()).queryByRole('button', { name: /^Bonus\/Malus/ })).toBeNull();
   });
 
   it('Velocità inattiva nello stall: resta, grigia, e il nome lo dice', async () => {

@@ -53,18 +53,16 @@ describe('voto col meta e senza', () => {
 });
 
 describe('interruttore nella barra in alto', () => {
-  it('col meta di default; passando a senza meta cambia la riga del voto e la scelta resta', async () => {
+  it('col meta di default; passando a senza meta spariscono le minacce e la scelta resta', async () => {
     const user = userEvent.setup();
     const storage = memoryStorage();
     storage.setItem('dreamdex.session', JSON.stringify({ team: [tusk, gholdengo], format: DEFAULT_FORMAT }));
     render(<App data={fixtureData} storage={storage} initialLang="it" />);
     const withMeta = screen.getByRole('button', { name: 'Col meta' });
     expect(withMeta).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByText(/Col meta del formato/)).toBeInTheDocument();
     expect(screen.getByText('Minacce del meta')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Senza meta' }));
     expect(screen.getByRole('button', { name: 'Senza meta' })).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByText(/^Senza meta: Offesa, Difesa e Velocità/)).toBeInTheDocument();
     expect(screen.queryByText('Minacce del meta')).toBeNull();
     expect(loadSession(storage)?.format.meta).toBe(false);
   });

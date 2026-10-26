@@ -61,9 +61,6 @@
 .grade-badge button.grade-area:hover { background: var(--raised); color: var(--text); }
 .grade-badge button.grade-area .icon { width: 10px; height: 10px; color: var(--faint); }
 .grade-badge button.grade-area:hover .icon { color: var(--accent); }
-/* Bonus/Malus: una riga piccola e tratteggiata sotto le aree, col netto in punti */
-.grade-badge button.grade-bm { grid-template-columns: 1fr auto 10px; margin-top: 2px; border: 1px dashed var(--line); }
-.grade-badge .grade-bm b.worse { color: var(--bad); }
 /* Aiuto e triangolo delle regole nella testa magenta, a destra */
 .grade-tools { position: absolute; top: 2px; right: 22px; display: flex; align-items: center; gap: 4px; }
 .grade-tools .help-button { width: 20px; height: 20px; color: var(--on-accent-2); border-color: color-mix(in srgb, var(--on-accent-2) 40%, transparent); background: transparent; }
