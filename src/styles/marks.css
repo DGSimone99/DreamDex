@@ -59,15 +59,19 @@
 .combobox .option-head { justify-content: flex-start; }
 .combobox .option-head .option-detail, .combobox .option-head > .move-meta { margin-left: auto; }
 
-/* Nomi dei Pokémon nei testi: grassetto con il pallino del tipo (diviso a metà per i doppi tipi) */
+/* Nomi dei Pokémon nei testi: grassetto con le icone del tipo davanti (due sovrapposte per i doppi tipi) */
 .mon-ref, .mon-name { display: inline; }
-.mon-ref .type-dot, .mon-name .type-dot { display: inline-block; margin-right: 4px; vertical-align: 0; }
+.mon-ref .type-dot, .mon-name .type-dot { margin-right: 4px; vertical-align: -3px; }
 .mon-name .mon-icon { vertical-align: middle; }
 .mon-ref strong, .mon-name strong { font-weight: 700; color: var(--text); }
 .mon-name.muted strong { color: var(--muted); }
 /* Mini sprite solo nelle raccomandazioni: 40×30 con margini vuoti, rientra nella riga */
 .mon-icon { display: inline-block; flex: none; margin: -10px -2px -8px -4px; image-rendering: pixelated; }
-.type-dot { flex: none; width: 9px; height: 9px; border-radius: 50%; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35); }
+/* Icone tonde dei tipi: la seconda scivola sotto la prima, staccata da un anello nel colore del pannello (isolation: lo z-index resta dentro, mai sopra la paginazione o i pannelli vicini) */
+.type-icons { display: inline-flex; flex: none; align-items: center; isolation: isolate; }
+.type-icons img { display: block; width: 14px; height: 14px; border-radius: 50%; }
+.type-icons img:first-child { position: relative; z-index: 1; box-shadow: 0 0 0 1.5px var(--panel); }
+.type-icons img + img { margin-left: -5px; }
 .mon-ref, .mon-name { white-space: nowrap; }
 
 /* Etichette dei suggerimenti: una riga, il resto con … */

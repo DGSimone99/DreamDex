@@ -1,24 +1,16 @@
 import { Icons } from '@pkmn/img';
 import { Fragment } from 'react';
 import { getSpecies } from '../engine/dex';
-import { typeColor } from './Sprite';
 import { typeName } from '../i18n/game';
 import { useLang } from '../i18n/react';
+import { TypeIcons } from './typeIcons';
 
-/** Pallino nel colore del tipo del Pokémon: diviso a metà per i doppi tipi. */
+/** Le icone dei tipi del Pokémon davanti al nome: una, o due sovrapposte per i doppi tipi. */
 export function TypeDot({ name }: { name: string }) {
   const lang = useLang();
   const types = getSpecies(name)?.types;
   if (!types) return null;
-  const [first, second = first] = types.map(typeColor);
-  return (
-    <span
-      className="type-dot"
-      aria-hidden="true"
-      title={types.map(type => typeName(type, lang)).join(' / ')}
-      style={{ background: `linear-gradient(90deg, ${first} 50%, ${second} 50%)` }}
-    />
-  );
+  return <TypeIcons types={types} className="type-dot" title={types.map(type => typeName(type, lang)).join(' / ')} />;
 }
 
 /** Mini sprite "chibi" del Pokémon (40×30, le icone dei menu di Showdown). */
@@ -28,7 +20,7 @@ export function PokemonIcon({ name }: { name: string }) {
   return <span className="mon-icon" aria-hidden="true" style={css as React.CSSProperties} />;
 }
 
-/** Nome del Pokémon in grassetto, con il pallino del tipo (o la mini icona) davanti. */
+/** Nome del Pokémon in grassetto, con le icone del tipo (o la mini icona) davanti. */
 export function PokemonName({ name, muted = false, icon = false }: { name: string; muted?: boolean; icon?: boolean }) {
   return (
     <span className={`mon-name${muted ? ' muted' : ''}`}>

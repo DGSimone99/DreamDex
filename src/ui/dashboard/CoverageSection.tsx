@@ -3,21 +3,16 @@ import { typeName } from '../../i18n/game';
 import { useLang, useT } from '../../i18n/react';
 import type { AnalysisView } from '../analysisView';
 import { Icon } from '../icons';
+import { typeIconUrl } from '../typeIcons';
 import { DashCard, DashLink } from './DashCard';
 
 /** Prima lettera minuscola: il dettaglio segue "Terra, colpisce:". */
 const lower = (text: string) => text.charAt(0).toLocaleLowerCase() + text.slice(1);
 
-// Icone ufficiali di Scarlatto/Violetto (PokeAPI sprites, types/generation-ix/scarlet-violet/small; grafica Nintendo),
-// incluse nel bundle da Vite: niente rete a runtime
-const TYPE_ICONS = Object.fromEntries(
-  Object.entries(import.meta.glob<string>('../../assets/types/*.png', { eager: true, import: 'default' }))
-    .map(([path, url]) => [path.slice(path.lastIndexOf('/') + 1, -4), url]),
-);
 
 /** Icona del tipo, decorativa: il nome è nel testo nascosto e nel tooltip della testata. */
 function TypeIcon({ type }: { type: string }) {
-  return <img className="dash-type" src={TYPE_ICONS[type.toLowerCase()]} alt="" width={22} height={22} draggable={false} />;
+  return <img className="dash-type" src={typeIconUrl(type)} alt="" width={22} height={22} draggable={false} />;
 }
 
 /** Una casella: coperto appena visibile, minore in giallo, scoperto in rosso con la ✕. */
