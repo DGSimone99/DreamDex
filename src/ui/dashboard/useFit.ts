@@ -8,8 +8,10 @@ const bottomIn = (item: Element, top: number) => item.getBoundingClientRect().bo
  * Prima si mostrano tutte e si misura. Se non stanno tutte e c'è un "+N" (`more`, l'elemento con `data-fit-more`),
  * si mostra il "+N" e si toglie una voce alla volta finché anche lui sta: se sta sulla stessa riga, non si perde niente.
  * Mai meno di `min`. Si rimisura quando cambia `key` (contenuto) o la misura del contenitore. Senza layout (test) stanno tutte.
+ * `outer`: un antenato (selettore) da guardare anche lui, per un contenitore alto quanto il suo contenuto: dopo un
+ * taglio non cresce da solo quando lo spazio intorno aumenta.
  */
-export function useFit<T extends HTMLElement>(key: string, count: number, { more = false, min = 0 } = {}) {
+export function useFit<T extends HTMLElement>(key: string, count: number, { more = false, min = 0, outer }: { more?: boolean; min?: number; outer?: string } = {}) {
   // Ref a funzione: il contenitore può comparire dopo (es. dal primo problema in poi)
   const [box, ref] = useState<T | null>(null);
   // fit null: da misurare (si mostrano tutte); check: si controlla che il "+N" stia; round cambia a ogni nuova misura
@@ -36,30 +38,35 @@ export function useFit<T extends HTMLElement>(key: string, count: number, { more
       setState(s => (s.round === round ? { ...s, fit: cut ? Math.max(min, n) : n, check: cut && more } : s));
       return;
     }
-    // Il "+N" è comparso: se non sta, una voce in meno
-    const plus = box.querySelector('[data-fit-more]');
-    const over = plus && bottomIn(plus, top) > limit + 0.5 && fit > min;
+    // Controllo: se una voce mostrata o il "+N" esce, una voce in meno
+    const over = fit > min && [...box.querySelectorAll('[data-fit], [data-fit-more]')].some(item => bottomIn(item, top) > limit + 0.5);
     setState(s => (s.round === round ? (over ? { ...s, fit: fit - 1 } : { ...s, check: false }) : s));
   }, [box, fit, check, round, count, more, min]);
 
-  // Il contenitore cambia misura (team ridotto, finestra, scheda che si apre): si rimisura
+  // Il contenitore cambia misura (team ridotto, finestra, scheda che si apre).
+  // Se cresce si rimisura da capo (mostrando tutto). Se solo si stringe si controllano le voci già mostrate:
+  // un contenitore alto quanto il suo contenuto si stringe proprio perché si è tagliato, e rimisurare da capo
+  // lo farebbe ricrescere e ritagliare all'infinito.
   useLayoutEffect(() => {
     if (!box || typeof ResizeObserver === 'undefined') return;
-    let last = '';
+    const watched = [box, ...(outer ? [box.closest(outer)].filter((x): x is Element => !!x) : [])];
+    let last: number[] | null = null;
     const observer = new ResizeObserver(() => {
+      const size = watched.flatMap(el => [el.clientWidth, el.clientHeight]);
       // Scheda nascosta (0×0): si tiene l'ultima misura e si rimisura quando ricompare
       if (!box.clientWidth && !box.clientHeight) {
-        last = '';
+        last = null;
         return;
       }
-      const size = `${box.clientWidth}x${box.clientHeight}`;
-      if (size === last) return;
+      const prev = last;
       last = size;
-      setState(s => ({ ...s, fit: null, check: false, round: s.round + 1 }));
+      if (prev && size.every((v, i) => v === prev[i])) return;
+      if (prev && size.every((v, i) => v <= prev[i])) setState(s => (s.fit === null ? s : { ...s, check: true }));
+      else setState(s => ({ ...s, fit: null, check: false, round: s.round + 1 }));
     });
-    observer.observe(box);
+    for (const el of watched) observer.observe(el);
     return () => observer.disconnect();
-  }, [box]);
+  }, [box, outer]);
 
   // measured: la misura è finita (si può aggiungere altro, come i dettagli, solo dopo)
   return { ref, box, shown: fit ?? count, measured: fit !== null && !check, round };

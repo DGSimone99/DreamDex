@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { act, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -68,6 +70,9 @@ const manyRoles: DashboardData['roles'] = {
   ],
   value: '4/6',
 };
+
+/** Solo i quattro essenziali coperti di manyRoles. */
+const essentialsOnly: DashboardData['roles'] = { chips: manyRoles.chips.filter(c => c.level === 'essential'), value: '4/4' };
 
 function mount({ density = 'normal' as Density, data = sample(), problems = [problem(1, 'serious'), problem(2)], members = 6 } = {}) {
   const onView = vi.fn();
@@ -296,7 +301,7 @@ describe('Cruscotto della Panoramica', () => {
   it('Cosa fare: le debolezze in una riga "Debole a" coi tipi, gravi prima, e il numerino', () => {
     mount({ problems: [problem(2), weak('Fire'), weak('Ground', 'serious'), weak('Ghost')] });
     const todo = screen.getByRole('region', { name: 'Cosa fare' });
-    const rows = within(todo).getAllByRole('listitem');
+    const rows = [...todo.querySelectorAll('.dash-problems > li')];
     expect(rows).toHaveLength(2);
     const [group] = rows;
     expect(group).toHaveClass('serious');
@@ -453,7 +458,7 @@ describe('Cruscotto: misure', () => {
     const size = stubHeight();
     size.height = 400;
     stubLayout({ 'dash-roles': { box: 75, item: 30 } }, () => size.height > 0);
-    mount({ density: 'tight', data: sample({ roles: manyRoles }) });
+    mount({ density: 'tight', data: sample({ roles: essentialsOnly }) });
     const roles = screen.getByRole('region', { name: 'Ruoli' });
     expect(within(roles).getByText('+3')).toBeInTheDocument();
     size.height = 0;
@@ -461,11 +466,11 @@ describe('Cruscotto: misure', () => {
     expect(within(roles).getByText('+3')).toBeInTheDocument();
   });
 
-  it('Ruoli: in ogni fascia i ruoli che non stanno vanno nel "+N" a fine fascia', () => {
+  it('Ruoli: i ruoli che non stanno vanno nel "+N" a fine fascia', () => {
     stubLayout({ 'dash-roles': { box: 75, item: 30 } });
-    mount({ density: 'tight', data: sample({ roles: manyRoles }) });
+    mount({ density: 'tight', data: sample({ roles: essentialsOnly }) });
     const roles = screen.getByRole('region', { name: 'Ruoli' });
-    // Essenziali: ne stanno 2 su 4, uno lascia posto al "+N": 1 ruolo e "+3" in fondo
+    // Ne stanno 2 su 4, ma il "+N" vuole il suo posto: 1 ruolo e "+3" in fondo
     const essential = within(roleBand(roles, 'Essenziali')).getAllByRole('listitem');
     expect(essential).toHaveLength(2);
     expect(essential[1]).toHaveTextContent('+3');
@@ -474,27 +479,67 @@ describe('Cruscotto: misure', () => {
     // Il significato del "+N" anche per i lettori di schermo
     expect(essential[1].querySelector('.visually-hidden')).toHaveTextContent(/^Altri 3 ruoli$/);
     expect(essential[1].querySelector('[aria-hidden="true"]')).toHaveTextContent(/^[+]3$/);
-    // Importanti (2) e Minori (1) stanno interi
-    expect(within(roleBand(roles, 'Importanti')).getAllByRole('listitem')).toHaveLength(2);
-    expect(within(roleBand(roles, 'Minori')).getAllByRole('listitem')).toHaveLength(1);
     expect(roles.querySelectorAll('.more')).toHaveLength(1);
   });
 
-  it('Ruoli: il "+N" è di ogni fascia, prima i mancanti anche fra gli importanti', () => {
-    stubLayout({ 'dash-roles': { box: 75, item: 30 } });
+  it('Ruoli (regressione 2K): si misura tutta la card, una fascia piena non taglia mentre le altre hanno spazio', () => {
+    // Una voce essenziale, una importante, sette minori: 9 righe in una card da 9 righe stanno tutte.
+    // Con le fasce alte un terzo ciascuna i minori finivano in un "+N" accanto a fasce vuote.
+    stubLayout({ 'dash-roles': { box: 270, item: 30 } });
+    const minors = (['screens', 'dot', 'debuff', 'phazer', 'taunt', 'encore', 'itemRemoval'] as const).map(need => ({ need, level: 'minor' as const, covered: false, owners: [] }));
     const chips: DashboardData['roles']['chips'] = [
-      ...manyRoles.chips.filter(c => c.level === 'essential'),
-      ...(['screens', 'phazer'] as const).map(need => ({ need, level: 'important' as const, covered: true, owners: ['Toxapex'] })),
-      { need: 'taunt', level: 'important', covered: false, owners: [] },
+      { need: 'hazards', level: 'essential', covered: true, owners: ['Great Tusk'] },
+      { need: 'pivot', level: 'important', covered: true, owners: ['Corviknight'] },
+      ...minors,
     ];
-    mount({ density: 'tight', data: sample({ roles: { chips, value: '5/7' } }) });
+    mount({ density: 'roomy', data: sample({ roles: { chips, value: '2/2' } }) });
     const roles = screen.getByRole('region', { name: 'Ruoli' });
-    const important = within(roleBand(roles, 'Importanti')).getAllByRole('listitem');
-    expect(important).toHaveLength(2);
-    expect(important[0]).toHaveClass('bad');
-    expect(important[1]).toHaveTextContent('+2');
-    expect(within(roleBand(roles, 'Essenziali')).getAllByRole('listitem')[1]).toHaveTextContent('+3');
-    expect(roles.querySelectorAll('.more')).toHaveLength(2);
+    expect(roles.querySelector('.more')).toBeNull();
+    expect(within(roleBand(roles, 'Minori')).getAllByRole('listitem')).toHaveLength(7);
+  });
+
+  it('Ruoli: se manca spazio cedono prima le ultime fasce, ognuna col suo "+N"', () => {
+    stubLayout({ 'dash-roles': { box: 180, item: 30 } });
+    mount({ density: 'tight', data: sample({ roles: manyRoles }) });
+    const roles = screen.getByRole('region', { name: 'Ruoli' });
+    // 6 posti: 4 essenziali, poi i "+N" di Importanti (2) e Minori (1)
+    expect(within(roleBand(roles, 'Essenziali')).getAllByRole('listitem')).toHaveLength(4);
+    expect(within(roleBand(roles, 'Importanti')).getByRole('listitem')).toHaveTextContent('+2');
+    expect(within(roleBand(roles, 'Minori')).getByRole('listitem')).toHaveTextContent('+1');
+  });
+
+  it('Ruoli: un contenitore che si stringe dopo il taglio non fa rimostrare tutto (niente rimbalzi)', () => {
+    const fire = stubObservers();
+    const size = stubHeight();
+    size.height = 400;
+    stubLayout({ 'dash-roles': { box: 75, item: 30 } });
+    mount({ density: 'tight', data: sample({ roles: essentialsOnly }) });
+    const roles = screen.getByRole('region', { name: 'Ruoli' });
+    expect(within(roles).getByText('+3')).toBeInTheDocument();
+    // Il ResizeObserver vero misura appena osserva
+    fire();
+    expect(within(roles).getByText('+3')).toBeInTheDocument();
+    // Fasce alte quanto il contenuto: dopo il taglio si stringono. Non si devono rimettere tutte le voci per rimisurare
+    const added: Node[] = [];
+    const watch = new MutationObserver(records => records.forEach(r => added.push(...r.addedNodes)));
+    watch.observe(roles, { childList: true, subtree: true });
+    size.height = 300;
+    fire();
+    watch.takeRecords().forEach(r => added.push(...r.addedNodes));
+    watch.disconnect();
+    expect(added.filter(n => n instanceof HTMLElement && n.matches('[data-fit]'))).toHaveLength(0);
+    expect(within(roles).getByText('+3')).toBeInTheDocument();
+    // Se cresce, si rimisura da capo
+    size.height = 500;
+    fire();
+    expect(within(roles).getByText('+3')).toBeInTheDocument();
+  });
+
+  it('Ruoli: le fasce non si stirano (CSS): compatte in alto, alte quanto il contenuto', () => {
+    const css = readFileSync(resolve(__dirname, '../../src/styles/analysis.css'), 'utf8');
+    const rule = (selector: string) => css.split(/\r?\n/).find(line => line.startsWith(selector + ' {')) ?? '';
+    expect(rule('.dash-role-band')).toMatch(/flex: none/);
+    expect(rule('.dash-role-bands, .dash-role-bands.dash-fit')).toMatch(/flex: 0 1 auto/);
   });
 
   it('Minacce: quelle che non stanno nel "+X", che apre la scheda Meta', async () => {
@@ -529,7 +574,7 @@ describe('Cruscotto: misure', () => {
 
   it('Ruoli: se il "+N" sta sulla stessa riga non si toglie nessun ruolo', () => {
     stubLayout({ 'dash-roles': { box: 75, item: 30, inline: true } });
-    mount({ density: 'tight', data: sample({ roles: manyRoles }) });
+    mount({ density: 'tight', data: sample({ roles: essentialsOnly }) });
     const essential = within(roleBand(screen.getByRole('region', { name: 'Ruoli' }), 'Essenziali')).getAllByRole('listitem');
     expect(essential).toHaveLength(3);
     expect(essential[2]).toHaveTextContent('+2');
