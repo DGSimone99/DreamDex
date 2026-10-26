@@ -151,7 +151,7 @@ function SuggestionRow({ rank, item, usage, out, quickLabel, actionLabel, replac
   return (
     // Tutta la riga apre il dettaglio col mouse; da tastiera lo fa il nome
     // Doppio clic: aggiunge o fa lo scambio (il pulsante a destra resta la via visibile e da tastiera)
-    <li className={className} onClick={onSelect} onDoubleClick={onAction}>
+    <li className={className} onClick={onSelect} onDoubleClick={e => { if (!(e.target as Element).closest('button')) onAction(); }}>
       <span className="rank" aria-hidden="true">{rank}</span>
       <Sprite species={item.species} item={item.set.item} size={48} />
       <span className="who">
@@ -461,7 +461,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
 
   // La lista è vuota perché il tipo scelto ha escluso tutti i cambi: si propone Nessuno o un altro tipo
   const typeEmpty = !!deferred.archetype && report.excluded > 0 && items.length === 0 && !stale
-    ? <p className="note type-empty">{tr('suggest.typeEmpty', { type: tr(`archetype.${deferred.archetype}`) })}</p>
+    ? <p className="note type-empty">{tr(view === 'add' ? 'suggest.typeEmptyAdd' : 'suggest.typeEmpty', { type: tr(`archetype.${deferred.archetype}`) })}</p>
     : null;
   // Note sopra (a tutta larghezza); sotto, lista e dettaglio partono alla stessa altezza
   let notes = null;

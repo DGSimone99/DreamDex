@@ -128,8 +128,12 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 /* Chi esce: icona dello scambio e del membro, sotto il nome */
 .suggestion .out { display: grid; grid-template-columns: auto auto; justify-content: center; align-items: center; column-gap: 2px; min-width: 0; color: var(--faint); }
 .suggestion .out .out-name { grid-column: 1 / -1; max-width: 88px; font-size: 11px; line-height: 1.2; color: var(--muted); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.suggestion .who small .gain { color: var(--good); }
-.suggestion .who small .loss { color: var(--bad); }
+.suggestion .who small:has(.gain, .loss) { display: flex; gap: 0 6px; }
+.suggestion .who small .gain, .suggestion .who small .loss { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.suggestion .who small .gain { flex: 0 1 auto; max-width: 62%; color: var(--good); }
+.suggestion .who small .gain:last-child { max-width: none; }
+.suggestion .who small .loss { flex: 1 1 0; color: var(--bad); }
+.suggestion { user-select: none; }
 .suggestion .out .icon { width: 13px; height: 13px; }
 .detail-alts { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin: 8px 0 0; font-size: 13px; color: var(--muted); }
 .detail-alts .alt { display: inline-flex; align-items: center; gap: 4px; color: var(--text); }

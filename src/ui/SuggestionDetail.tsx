@@ -69,14 +69,18 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
   // Una ragione che ripete un guadagno della stessa area ("Resiste a Volante" e "Resistente a Volante") si salta
   const covered = new Set(changes?.pros.map(p => p.area));
   const reasons = item.reasons
-    .filter(reason => reason.component !== 'strength' && !covered.has(REASON_AREA[reason.component] as ScoredArea))
+    // Gli avvisi (peso negativo: meteo in conflitto, mosse indebolite) vanno in Toglie, non qui
+    .filter(reason => reason.weight >= 0 && reason.component !== 'strength' && !covered.has(REASON_AREA[reason.component] as ScoredArea))
     .map(reason => reason.text);
   const brings = [...new Set([...(changes?.pros.map(p => p.text) ?? []), ...reasons])].slice(0, MAX_POINTS);
   // Toglie: le perdite del cambio, gli avvisi (meteo in conflitto, mosse indebolite) e le voci perse col tipo di team
   const penalty = result?.penalty && result.lost?.length
     ? [tr('suggest.penaltyNote', { roles: result.lost.map(r => needLabel(r.key, lang)).join(', '), n: result.penalty })]
     : [];
-  const loses = [...(changes?.cons.map(c => c.text) ?? []), ...(item.facts.clashes ?? []).map(text => text.replace(/^⚠\s*/, '')), ...penalty].slice(0, MAX_POINTS);
+  // La voce persa col tipo di team spiega l'ordine in classifica: viene prima, così il limite non la nasconde
+  const loses = [...penalty, ...(changes?.cons.map(c => c.text) ?? []), ...(item.facts.clashes ?? []).map(text => text.replace(/^⚠\s*/, ''))].slice(0, MAX_POINTS);
+  // Aggiungendo non si perde nessuno: Toglie compare solo se c'è un avviso
+  const showLoses = replacing || loses.length > 0;
 
   return (
     <aside className={`detail${rank === 1 ? ' first' : ''}`} aria-label={tr('detail.region', { species: item.species })}>
@@ -113,13 +117,13 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
       </header>
 
       <div className="detail-body">
-        <section className={`detail-sec brings${replacing ? '' : ' wide'}`}>
+        <section className={`detail-sec brings${showLoses ? '' : ' wide'}`}>
           <h4>{tr('detail.brings')}</h4>
           <ul className="detail-points gain">
             {brings.length ? brings.map(text => <li key={text}><Typed text={text} /></li>) : <li className="none">{tr('suggest.noDifference')}</li>}
           </ul>
         </section>
-        {replacing && (
+        {showLoses && (
           <section className="detail-sec loses">
             <h4>{tr('detail.loses')}</h4>
             <ul className="detail-points loss">

@@ -137,6 +137,15 @@ describe('tipo di team in Aggiungi', () => {
     expect(types().closest('label')).toHaveTextContent(/^Team/);
   });
 
+  it('Aggiungi: se il tipo esclude tutti, il messaggio parla di costruire il team', async () => {
+    const user = userEvent.setup();
+    render(<App initialLang="it" data={fixtureData} />);
+    await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Great Tusk{Enter}');
+    await user.selectOptions(types(), 'Stall');
+    await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Dragapult');
+    expect(await within(suggestions()).findByText(/Nessun candidato aiuta a costruire un team Stall/)).toBeInTheDocument();
+  });
+
   it('niente più Sostituto simile', async () => {
     await importTeam(STALL);
     expect(within(suggestions()).queryByRole('button', { name: 'Sostituto simile' })).toBeNull();
@@ -163,6 +172,18 @@ describe('dettaglio: ruolo perso che fa scendere in classifica', () => {
     render(
       <LangProvider lang="it">
         <SuggestionDetail item={item} rank={1} team={team} replaceIndex={2} data={fixtureData} format={DEFAULT_FORMAT}
+          rating={rateTeam(team, fixtureData)} archetype="balance" usage={null} banMark={null} actionLabel="Metti" onAction={() => {}} />
+      </LangProvider>,
+    );
+    expect(screen.getByText(/Perde Hazard: −2 in classifica/)).toBeInTheDocument();
+  });
+
+  it('la voce persa resta visibile anche con tre perdite', () => {
+    const [item] = rankByTeamGain(improveReplacements(team, 2, DEFAULT_FORMAT, fixtureData, 5, [valiant], 'it'), team, 2, fixtureData, 'it', true, 'balance');
+    const crowded = { ...item, diff: { ...item.diff, losses: { roles: ['pivot', 'removal', 'screens'], covers: [], resists: [] } } } as typeof item;
+    render(
+      <LangProvider lang="it">
+        <SuggestionDetail item={crowded} rank={1} team={team} replaceIndex={2} data={fixtureData} format={DEFAULT_FORMAT}
           rating={rateTeam(team, fixtureData)} archetype="balance" usage={null} banMark={null} actionLabel="Metti" onAction={() => {}} />
       </LangProvider>,
     );

@@ -112,7 +112,14 @@ export function rankByTeamGain<T extends { set: TeamSet; score: number }>(
   items: T[], team: TeamSet[], replaceIndex: number | null, data: EngineData, lang: Lang, sort = true, archetype?: Archetype, report?: SwapReport,
 ): (T & { teamGain?: TeamGain })[] {
   const others = replaceIndex === null ? team.length : team.length - 1;
-  if (others === 0) return items;
+  if (others === 0) {
+    // Primo Pokémon: niente voto da confrontare, ma il tipo scelto dice comunque chi aiuta a costruire il team
+    if (!archetype || replaceIndex !== null) return items;
+    const rules = rulesOf(data);
+    const kept = items.filter(item => fitsTeamType(item.set, archetype, rules));
+    if (report) report.excluded += items.length - kept.length;
+    return kept;
+  }
   const { before, evaluate } = swapEvaluator(team, data, lang, archetype, sort);
   if (!before) return items;
   const rated: (T & { teamGain?: TeamGain })[] = items.flatMap(item => {
