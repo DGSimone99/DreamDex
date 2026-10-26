@@ -30,8 +30,8 @@
   position: relative;
   isolation: isolate;
   /* Stessa altezza piene e vuote: con il team vuoto la fila non cambia quando entra il primo Pokémon */
-  height: 222px;
-  padding: 8px 12px 14px;
+  min-height: 222px;
+  padding: 8px 12px 20px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -148,3 +148,9 @@
 ::view-transition-old(slot-drawer) { animation: fade-out 0.12s ease-out both; }
 @keyframes fade-out { to { opacity: 0; } }
 @keyframes fade-in { from { opacity: 0; } }
+/* Le carte arrivano sempre alla base della carta del voto: se il voto si allunga (lingua, avvisi), si allungano anche loro */
+.band:not(.collapsed) > .team { display: flex; flex-direction: column; }
+.band:not(.collapsed) > .team > .slots { flex: 1; grid-auto-rows: minmax(0, 1fr); }
+/* Lo sprite prende tutto lo spazio libero della carta (fino a 176 px): nome, tipi e ruolo restano vicini al bordo in basso */
+.band:not(.collapsed) .slot > summary .sprite-wrap { flex: 1 1 0; min-height: 56px; width: 100%; display: flex; justify-content: center; align-items: flex-end; container-type: size; }
+.band:not(.collapsed) .slot > summary .sprite { width: min(100cqh, 100cqw, 176px); height: min(100cqh, 100cqw, 176px); }
