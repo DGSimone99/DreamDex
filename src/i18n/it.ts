@@ -408,6 +408,7 @@ export const it: Record<keyof typeof en, string> = {
   'stats.title': "Statistiche base",
   'stats.vs': "rispetto a {species}",
   'stats.total': "Totale",
+  'analysis.areaProblems': "Problemi in {area}",
   'analysis.region': "Analisi",
   'analysis.weakness': "Debolezze difensive",
   'analysis.noShortfall': "Nessuna mancanza",
