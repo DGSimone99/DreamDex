@@ -216,9 +216,13 @@ describe('Cruscotto della Panoramica', () => {
     }
   });
 
-  it('normale: Ruoli con le icone dei membri (se ci stanno lo decide il CSS)', () => {
+  it('normale: chip senza icone dei membri; chi copre il ruolo resta nel nome accessibile e nel tooltip', () => {
     mount();
-    expect(screen.getByRole('region', { name: 'Ruoli' }).querySelectorAll('.dash-owners')).toHaveLength(2);
+    const roles = screen.getByRole('region', { name: 'Ruoli' });
+    expect(roles.querySelector('.dash-owners, .mon-icon')).toBeNull();
+    const removal = within(roleBand(roles, 'Essenziali')).getAllByRole('listitem')[1];
+    expect(removal).toHaveTextContent(/^Rimozione Hazard, coperto da Great Tusk, Corviknight, Toxapex$/);
+    expect(removal).toHaveAttribute('title', 'Rimozione Hazard: Great Tusk, Corviknight, Toxapex');
   });
 
   it('normale: sotto le barre "supera" e "superato da", quante ne stanno', () => {
@@ -299,12 +303,16 @@ describe('Cruscotto della Panoramica', () => {
     expect(todo).toHaveTextContent(/1 grave\s*·\s*3 minori/);
   });
 
-  it('Cosa fare ampio: sotto i gruppi i testi interi dei problemi; normale e stretto no; le minacce no', () => {
+  it('Cosa fare ampio: sotto i gruppi i testi interi dei problemi; normale e stretto no; minacce e ruoli no', () => {
     const threat = (species: string): CoachProblem => ({ severity: 'minor', category: 'meta', text: `Nessun check per ${species} dal meta`, fixes: [], key: `meta:${species}`, subjects: [species] });
-    const problems = [weak('Fire'), weak('Ground', 'serious'), threat('Kyurem'), threat('Heatran'), problem(2)];
+    const roles: CoachProblem = { severity: 'minor', category: 'roles', text: 'Ruoli mancanti: Hazard', fixes: [], key: 'roles:essential', subjects: ['hazards'] };
+    const problems = [weak('Fire'), weak('Ground', 'serious'), threat('Kyurem'), threat('Heatran'), roles, problem(2)];
     const { unmount } = mount({ density: 'roomy', problems });
     const todo = screen.getByRole('region', { name: 'Cosa fare' });
-    const [weakRow, threatRow, single] = [...todo.querySelectorAll('.dash-problems > li')];
+    const [weakRow, threatRow, rolesRow, single] = [...todo.querySelectorAll('.dash-problems > li')];
+    // Ruoli mancanti: niente dettaglio, ripeterebbe i nomi
+    expect(rolesRow).toHaveTextContent(/Ruoli mancanti/);
+    expect(rolesRow.querySelector('.dash-sub')).toBeNull();
     expect([...weakRow.querySelectorAll('.dash-sub li')].map(li => li.textContent)).toEqual(['Debole a Ground: 3 Deboli – 1 Resistono', 'Debole a Fire: 3 Deboli – 1 Resistono']);
     expect(threatRow.querySelector('.dash-sub')).toBeNull();
     expect(single.querySelector('.dash-sub')).toBeNull();

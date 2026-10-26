@@ -261,17 +261,12 @@ button.member-card:hover { border-color: var(--accent); }
 .dash-role.minor .dash-role-tag { color: var(--muted); }
 .dash-role.soft .dash-role-tag { color: var(--faint); border-style: dashed; border-color: var(--line); }
 .dash-role.more { padding: 0 4px; font-size: 12px; font-weight: 600; color: var(--faint); }
-/* Chi copre il ruolo: accanto al nome */
-.dash-owners { flex: none; display: inline-flex; align-items: center; gap: 0; min-height: 20px; }
-/* Le mini icone hanno molto margine trasparente: si stringono a 22px l'una */
-.dash-owners .mon-icon { margin: -8px -9px; }
 /* Ampio: un ruolo per riga coi nomi di chi lo copre scritti ("✓ Hazard: Garchomp, Great Tusk"), niente chip */
 .dash-role.line { flex: 1 1 100%; display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: baseline; column-gap: 6px; }
 .dash-role.line .dash-role-tag { flex: none; padding: 0; border: 0; background: none; font-size: 13px; }
 .dash-role.line.bad .dash-role-tag, .dash-role.line.bad .dash-role-tag .icon { color: var(--bad); }
 .dash-role-who { min-width: 0; font-size: 12px; line-height: 1.35; color: var(--muted); }
 .dash-role.line.bad .dash-role-who, .dash-role.line.soft .dash-role-who { color: var(--faint); }
-.dash-owners small { margin-left: 4px; font-size: 11px; color: var(--muted); }
 /* Stretto: etichette e chip più fitti; ampio: più ariosi */
 .dash.tight .dash-role-band { grid-template-columns: 80px minmax(0, 1fr); }
 .dash.tight .dash-role-list { gap: 3px 8px; padding: 3px 0; }
