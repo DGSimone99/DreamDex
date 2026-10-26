@@ -50,6 +50,21 @@ function sample(overrides: Partial<DashboardData> = {}): DashboardData {
 const problem = (i: number, severity: CoachProblem['severity'] = 'minor'): CoachProblem =>
   ({ severity, category: i % 2 ? 'defense' : 'roles', text: `Problema numero ${i}`, fixes: [], key: `k${i}` });
 
+/** La colonna di un livello dei Ruoli (la lista col suo titoletto). */
+function roleColumn(roles: HTMLElement, title: string) {
+  return within(roles).getAllByRole('list').find(list => document.getElementById(list.getAttribute('aria-labelledby') ?? '')?.textContent === title)!;
+}
+
+/** Quattro essenziali, due importanti, un minore: per il "+N" per colonna. */
+const manyRoles: DashboardData['roles'] = {
+  chips: [
+    ...(['hazards', 'removal', 'pivot', 'recovery'] as const).map(need => ({ need, level: 'essential' as const, covered: true, owners: ['Great Tusk'] })),
+    ...(['screens', 'phazer'] as const).map(need => ({ need, level: 'important' as const, covered: false, owners: [] })),
+    { need: 'taunt', level: 'minor', covered: false, owners: [] },
+  ],
+  value: '4/6',
+};
+
 function mount({ density = 'normal' as Density, data = sample(), problems = [problem(1, 'serious'), problem(2)], members = 6 } = {}) {
   const onView = vi.fn();
   const onMeta = vi.fn();
@@ -116,33 +131,67 @@ describe('Cruscotto della Panoramica', () => {
     expect(within(speed).getByText(/superato da Regieleki/)).toBeInTheDocument();
     expect(speed).toHaveTextContent(/nessun Trick Room o Tailwind/);
     const roles = screen.getByRole('region', { name: 'Ruoli' });
-    expect(within(roles).getByText('Essenziali')).toBeInTheDocument();
-    expect(within(roles).getByText('Minori')).toBeInTheDocument();
     // Rimozione: tre membri, si vedono due icone e "+1"
-    expect(within(roles).getByText('+1')).toBeInTheDocument();
+    const removal = within(roleColumn(roles, 'Essenziali')).getAllByRole('listitem')[1];
+    expect(removal.querySelectorAll('.dash-owners .mon-icon')).toHaveLength(2);
+    expect(within(removal).getByText('+1')).toBeInTheDocument();
   });
 
-  it('stretto: niente "supera", livelli né controllo visibile; minori in coda, tenui', () => {
+  it('Ruoli: tre colonne Essenziali | Importanti | Minori, ognuna coi suoi ruoli', () => {
+    for (const density of ['tight', 'normal', 'roomy'] as const) {
+      const { unmount } = mount({ density });
+      const roles = screen.getByRole('region', { name: 'Ruoli' });
+      const lists = within(roles).getAllByRole('list');
+      expect(lists.map(list => document.getElementById(list.getAttribute('aria-labelledby') ?? '')?.textContent))
+        .toEqual(['Essenziali', 'Importanti', 'Minori']);
+      expect(lists.map(list => within(list).getAllByRole('listitem').length)).toEqual([2, 1, 1]);
+      // Mancante rosso pieno solo per essenziali e importanti; il minore resta tenue
+      expect(within(lists[1]).getByRole('listitem')).toHaveClass('bad');
+      expect(within(lists[2]).getByRole('listitem')).toHaveClass('minor', 'soft');
+      unmount();
+    }
+  });
+
+  it('Ruoli: in ogni colonna prima i mancanti, così il "+N" non nasconde mai un problema', () => {
+    stubLayout({ 'dash-roles': { box: 75, item: 30 } });
+    const chips = [
+      { need: 'hazards', level: 'essential', covered: true, owners: ['Great Tusk'] },
+      { need: 'pivot', level: 'essential', covered: true, owners: ['Corviknight'] },
+      { need: 'removal', level: 'essential', covered: false, owners: [] },
+    ] as const;
+    mount({ density: 'tight', data: sample({ roles: { chips: chips.map(c => ({ ...c, owners: [...c.owners] })), value: '2/3' } }) });
+    const rows = within(roleColumn(screen.getByRole('region', { name: 'Ruoli' }), 'Essenziali')).getAllByRole('listitem');
+    expect(rows).toHaveLength(2);
+    expect(rows[0]).toHaveClass('bad');
+    expect(rows[1]).toHaveTextContent('+2');
+    vi.restoreAllMocks();
+  });
+
+  it('Ruoli: ogni riga si legge intera, coi nomi di chi la copre o "mancante"', () => {
+    for (const density of ['tight', 'roomy'] as const) {
+      const { unmount } = mount({ density });
+      const roles = screen.getByRole('region', { name: 'Ruoli' });
+      const [hazards, removal] = within(roleColumn(roles, 'Essenziali')).getAllByRole('listitem');
+      expect(hazards.querySelector('.visually-hidden')).toHaveTextContent(/^, coperto da Great Tusk$/);
+      expect(removal.querySelector('.visually-hidden')).toHaveTextContent(/^, coperto da Great Tusk, Corviknight, Toxapex$/);
+      expect(within(roleColumn(roles, 'Importanti')).getByRole('listitem')).toHaveTextContent(/, mancante$/);
+      unmount();
+    }
+  });
+
+  it('stretto: niente "supera" né controllo visibile, Ruoli senza icone dei membri', () => {
     mount({ density: 'tight' });
     const speed = screen.getByRole('region', { name: 'Velocità' });
     expect(within(speed).queryByText(/supera /)).toBeNull();
     expect(speed.querySelector('.dash-ctrl')).toBeNull();
     expect(speed).toHaveAttribute('title', expect.stringMatching(/^Controllo:/));
-    const roles = screen.getByRole('region', { name: 'Ruoli' });
-    expect(within(roles).queryByText('Essenziali')).toBeNull();
-    // Senza layout stanno tutti: essenziali, importanti e in coda il minore (tenue)
-    const chips = roles.querySelectorAll('.dash-chip');
-    expect(chips).toHaveLength(4);
-    expect(chips[3]).toHaveClass('minor');
+    // Ruoli: niente icone dei membri, solo il segno e il nome
+    expect(screen.getByRole('region', { name: 'Ruoli' }).querySelector('.dash-owners')).toBeNull();
   });
 
-  it('normale: Ruoli per livello, minori compresi, senza icone dei membri', () => {
+  it('normale: Ruoli con le icone dei membri (se ci stanno lo decide il CSS)', () => {
     mount();
-    const roles = screen.getByRole('region', { name: 'Ruoli' });
-    expect(within(roles).getByText('Essenziali')).toBeInTheDocument();
-    expect(within(roles).getByText('Minori')).toBeInTheDocument();
-    expect(roles.querySelectorAll('.dash-chip')).toHaveLength(4);
-    expect(roles.querySelector('.dash-owners')).toBeNull();
+    expect(screen.getByRole('region', { name: 'Ruoli' }).querySelectorAll('.dash-owners')).toHaveLength(2);
   });
 
   it('normale: sotto le barre "supera" e "superato da", quante ne stanno', () => {
@@ -295,8 +344,8 @@ describe('Cruscotto: misure', () => {
     const fire = stubObservers();
     const size = stubHeight();
     size.height = 400;
-    stubLayout({ 'dash-roles': { box: 60, item: 30 } }, () => size.height > 0);
-    mount({ density: 'tight' });
+    stubLayout({ 'dash-roles': { box: 75, item: 30 } }, () => size.height > 0);
+    mount({ density: 'tight', data: sample({ roles: manyRoles }) });
     const roles = screen.getByRole('region', { name: 'Ruoli' });
     expect(within(roles).getByText('+3')).toBeInTheDocument();
     size.height = 0;
@@ -304,13 +353,20 @@ describe('Cruscotto: misure', () => {
     expect(within(roles).getByText('+3')).toBeInTheDocument();
   });
 
-  it('Ruoli: le chip che non stanno vanno nel "+N"', () => {
-    stubLayout({ 'dash-roles': { box: 60, item: 30 } });
-    mount({ density: 'tight' });
+  it('Ruoli: in ogni colonna i ruoli che non stanno vanno nel "+N" in fondo alla colonna', () => {
+    stubLayout({ 'dash-roles': { box: 75, item: 30 } });
+    mount({ density: 'tight', data: sample({ roles: manyRoles }) });
     const roles = screen.getByRole('region', { name: 'Ruoli' });
-    // Ne stanno 2, una lascia posto al "+N": 1 chip e "+3"
-    expect(roles.querySelectorAll('.dash-chip:not(.more)')).toHaveLength(1);
-    expect(within(roles).getByText('+3')).toHaveClass('more');
+    // Essenziali: ne stanno 2 su 4, uno lascia posto al "+N": 1 ruolo e "+3" in fondo
+    const essential = within(roleColumn(roles, 'Essenziali')).getAllByRole('listitem');
+    expect(essential).toHaveLength(2);
+    expect(essential[1]).toHaveTextContent('+3');
+    expect(essential[1]).toHaveClass('more');
+    expect(essential[1]).toHaveAttribute('title', 'Altri 3 ruoli');
+    // Importanti (2) e Minori (1) stanno interi
+    expect(within(roleColumn(roles, 'Importanti')).getAllByRole('listitem')).toHaveLength(2);
+    expect(within(roleColumn(roles, 'Minori')).getAllByRole('listitem')).toHaveLength(1);
+    expect(roles.querySelectorAll('.more')).toHaveLength(1);
   });
 
   it('Minacce: quelle che non stanno nel "+X", che apre la scheda Meta', async () => {
