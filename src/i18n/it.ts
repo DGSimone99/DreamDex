@@ -416,6 +416,7 @@ export const it: Record<keyof typeof en, string> = {
   'help.view.strength': "L'Offesa misura quanto il team fa danni: Potenza (danno medio contro i bersagli del formato), Wallbreaking (danno ai muri), Coverage tipi (quanti tipi colpisce superefficace) e, col meta, Coverage meta.\nA sinistra le sottostatistiche col loro valore; a destra il dettaglio di quella scelta, membro per membro.",
   'help.view.roles': "I Ruoli misurano se il team copre ciò che serve al suo tipo: le voci essenziali e importanti contano di più, le minori aggiungono poco. Una voce essenziale mancante in un team completo è un malus.\nQui c'è la tabella completa dei bisogni e il dettaglio per famiglia di ruoli.",
   'help.view.speed': "La Velocità misura quanto il team arriva per primo: ogni membro da solo (velocità, setup, meteo, priorità) e il controllo della velocità del team (Thunder Wave, Tailwind…). Nello Stall non conta nel voto.",
+  'analysis.rolesTable': "Ruoli del team",
   'analysis.areaProblems': "Problemi in {area}",
   'analysis.region': "Analisi",
   'analysis.weakness': "Debolezze difensive",

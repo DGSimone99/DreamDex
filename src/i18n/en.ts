@@ -414,6 +414,7 @@ export const en = {
   'help.view.strength': "Offense measures how much damage the team deals: Power (average damage against the format's targets), Wallbreaking (damage to walls), Type coverage (how many types it hits super effectively) and, with the meta, Meta coverage.\nOn the left the sub-stats with their values; on the right the detail of the chosen one, member by member.",
   'help.view.roles': "Roles measure whether the team covers what its type needs: essential and important entries weigh more, minor ones add little. A missing essential entry in a full team is a malus.\nHere are the full needs table and the detail by role family.",
   'help.view.speed': "Speed measures how often the team moves first: each member alone (speed, setup, weather, priority) and the team's speed control (Thunder Wave, Tailwind…). In Stall it does not count toward the grade.",
+  'analysis.rolesTable': "Team roles",
   'analysis.areaProblems': "Problems in {area}",
   'analysis.region': "Analysis",
   'analysis.weakness': "Defensive weaknesses",
