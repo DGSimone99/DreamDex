@@ -1,72 +1,64 @@
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import type { CoachProblem } from '../../src/engine/coach';
+import { describe, expect, it } from 'vitest';
+import { analyzeTeam } from '../../src/engine/analysis';
+import { findProblems, type CoachProblem } from '../../src/engine/coach';
+import { DEFAULT_FORMAT } from '../../src/engine/format';
+import { mostCommonSet } from '../../src/engine/sets';
 import { groupProblems } from '../../src/engine/todoGroups';
-import { t } from '../../src/i18n';
-import { initGameNames } from '../../src/i18n/game';
+import { fixtureData, fixtureStats } from '../fixtures/data';
 
-// I nomi italiani dei tipi usati qui
-beforeAll(() => initGameNames({ moves: {}, abilities: {}, items: {}, natures: {}, types: { fire: 'Fuoco', ground: 'Terra', ghost: 'Spettro' } }));
-afterAll(() => initGameNames(null));
+const p = (category: CoachProblem['category'], key: string, text: string, severity: CoachProblem['severity'] = 'minor', subjects?: string[]): CoachProblem =>
+  ({ severity, category, text, fixes: [], key, ...(subjects ? { subjects } : {}) });
 
-const p = (category: CoachProblem['category'], key: string, text: string, severity: CoachProblem['severity'] = 'minor'): CoachProblem =>
-  ({ severity, category, text, fixes: [], key });
-
-const weak = (type: string, severity: CoachProblem['severity'] = 'minor') => p('defense', `defense:${type}`, `Debole a ${type}: 3 Deboli – 1 Resistono`, severity);
-const threat = (species: string) => p('meta', `meta:${species}`, t('it', 'coach.problem.threat', { species }));
-const roles = (key: 'essential' | 'important', list: string, severity: CoachProblem['severity'] = 'minor') =>
-  p('roles', `roles:${key}`, t('it', key === 'essential' ? 'coach.problem.missingRoles' : 'coach.problem.missingImportantRoles', { roles: list }), severity);
+const weak = (type: string, severity: CoachProblem['severity'] = 'minor') => p('defense', `defense:${type}`, `Debole a ${type}: 3 Deboli – 1 Resistono`, severity, [type]);
+const threat = (species: string) => p('meta', `meta:${species}`, `Nessun check per ${species} dal meta`, 'minor', [species]);
+const roles = (key: 'essential' | 'important', needs: string[], severity: CoachProblem['severity'] = 'minor') =>
+  p('roles', `roles:${key}`, `Ruoli mancanti: ${needs.join(', ')}`, severity, needs);
+const rule = (member: string, text: string) => p('rules', `rules:${text}`, text, 'serious', [member]);
 
 describe('groupProblems', () => {
-  it('debolezze: un gruppo "Debole a" coi tipi tradotti, prima i gravi; il dettaglio resta fuori dagli elementi', () => {
-    const [group] = groupProblems([weak('Fire'), weak('Ground', 'serious'), weak('Ghost')], 'it');
-    expect(group).toMatchObject({ kind: 'weak', severity: 'serious', title: 'Debole a', category: 'defense', count: 3 });
+  it('debolezze: un gruppo coi tipi, prima i gravi; il testo intero resta nei dettagli', () => {
+    const [group] = groupProblems([weak('Fire'), weak('Ground', 'serious'), weak('Ghost')]);
+    expect(group).toMatchObject({ kind: 'weak', severity: 'serious', category: 'defense', count: 3 });
     expect(group.items).toEqual([
-      { label: 'Terra', serious: true },
-      { label: 'Fuoco', serious: false },
-      { label: 'Spettro', serious: false },
+      { subject: 'Ground', serious: true },
+      { subject: 'Fire', serious: false },
+      { subject: 'Ghost', serious: false },
     ]);
-    // Il dettaglio di ogni tipo resta nei testi interi, per il tooltip
-    expect(group.details).toEqual(['Debole a Ground: 3 Deboli – 1 Resistono', 'Debole a Fire: 3 Deboli – 1 Resistono', 'Debole a Ghost: 3 Deboli – 1 Resistono']);
-    expect(groupProblems([weak('Fire')], 'en')[0]).toMatchObject({ title: 'Weak to', items: [{ label: 'Fire', serious: false }] });
+    expect(group.details).toEqual(['Ground', 'Fire', 'Ghost'].map(x => `Debole a ${x}: 3 Deboli – 1 Resistono`));
   });
 
-  it('minacce del meta: "Senza check" con le specie', () => {
-    const [group] = groupProblems([threat('Kingambit'), threat('Great Tusk')], 'it');
-    expect(group).toMatchObject({ kind: 'threats', severity: 'minor', title: 'Senza check', category: 'meta', count: 2 });
-    expect(group.items.map(i => i.label)).toEqual(['Kingambit', 'Great Tusk']);
-    expect(groupProblems([threat('Kingambit')], 'en')[0].title).toBe('No check');
+  it('minacce del meta: le specie', () => {
+    const [group] = groupProblems([threat('Kingambit'), threat('Great Tusk')]);
+    expect(group).toMatchObject({ kind: 'threats', severity: 'minor', category: 'meta', count: 2 });
+    expect(group.items.map(i => i.subject)).toEqual(['Kingambit', 'Great Tusk']);
   });
 
-  it('regole: i problemi di legalità per membro in "Non legali", un membro una volta; i Mega restano una riga', () => {
-    const megas = p('rules', 'rules:megas', t('it', 'coach.problem.megas', { list: 'A, B' }), 'serious');
-    const problems = [
-      p('rules', 'rules:a', t('it', 'coach.problem.illegal', { species: 'Mewtwo-Mega-Y', format: 'National Dex OU' }), 'serious'),
-      p('rules', 'rules:b', `Garchomp: ${t('it', 'team.illegalMoves', { list: 'Volt Tackle' })}`, 'serious'),
-      p('rules', 'rules:c', `Garchomp: ${t('it', 'team.bannedItem', { name: "King's Rock", format: 'National Dex OU' })}`, 'serious'),
-      p('rules', 'rules:d', t('it', 'coach.problem.gen', { species: 'Iron Valiant', gen: 8 }), 'serious'),
+  it('regole: i problemi di un membro in "Non legali", un membro una volta; i Mega restano una riga', () => {
+    const megas = p('rules', 'rules:megas', 'Più Mega nel team (A, B)', 'serious', ['A', 'B']);
+    const groups = groupProblems([
+      rule('Mewtwo-Mega-Y', 'Mewtwo-Mega-Y non è legale'),
+      rule('Garchomp', 'Garchomp: Mosse non legali: Volt Tackle'),
+      rule('Garchomp', "Garchomp: Strumento vietato: King's Rock"),
+      rule('Iron Valiant', 'Iron Valiant è oltre la Gen 8'),
       megas,
-    ];
-    const groups = groupProblems(problems, 'it');
+    ]);
     expect(groups).toHaveLength(2);
-    expect(groups[0]).toMatchObject({ kind: 'illegal', severity: 'serious', title: 'Non legali', category: 'rules', count: 4 });
-    expect(groups[0].items.map(i => i.label)).toEqual(['Mewtwo-Mega-Y', 'Garchomp', 'Iron Valiant']);
+    expect(groups[0]).toMatchObject({ kind: 'illegal', severity: 'serious', category: 'rules', count: 4 });
+    expect(groups[0].items.map(i => i.subject)).toEqual(['Mewtwo-Mega-Y', 'Garchomp', 'Iron Valiant']);
     expect(groups[1]).toEqual({ kind: 'single', severity: 'serious', category: 'rules', text: megas.text, items: [], count: 1, details: [megas.text] });
-    const en = groupProblems([p('rules', 'rules:a', t('en', 'coach.problem.illegal', { species: 'Mewtwo-Mega-Y', format: 'National Dex OU' }), 'serious')], 'en');
-    expect(en[0]).toMatchObject({ title: 'Not legal', items: [{ label: 'Mewtwo-Mega-Y', serious: true }] });
   });
 
-  it('ruoli mancanti: essenziali e importanti in un gruppo; gravi solo se il problema lo è', () => {
-    const [group] = groupProblems([roles('essential', 'Hazard, Pivot'), roles('important', 'Rimozione Hazard')], 'it');
-    expect(group).toMatchObject({ kind: 'roles', severity: 'minor', title: 'Ruoli mancanti', category: 'roles', count: 2 });
+  it('ruoli mancanti: essenziali e importanti insieme; gravi solo se il problema lo è', () => {
+    const [group] = groupProblems([roles('essential', ['hazards', 'pivot']), roles('important', ['removal'])]);
+    expect(group).toMatchObject({ kind: 'roles', severity: 'minor', category: 'roles', count: 2 });
     expect(group.items).toEqual([
-      { label: 'Hazard', serious: false },
-      { label: 'Pivot', serious: false },
-      { label: 'Rimozione Hazard', serious: false },
+      { subject: 'hazards', serious: false },
+      { subject: 'pivot', serious: false },
+      { subject: 'removal', serious: false },
     ]);
-    const [serious] = groupProblems([roles('important', 'Pivot'), roles('essential', 'Hazard', 'serious')], 'it');
+    const [serious] = groupProblems([roles('important', ['pivot']), roles('essential', ['hazards'], 'serious')]);
     expect(serious.severity).toBe('serious');
-    expect(serious.items).toEqual([{ label: 'Hazard', serious: true }, { label: 'Pivot', serious: false }]);
-    expect(groupProblems([roles('essential', 'Hazard')], 'en')[0].title).toBe('Missing roles');
+    expect(serious.items).toEqual([{ subject: 'hazards', serious: true }, { subject: 'pivot', serious: false }]);
   });
 
   it('il resto resta una riga singola col suo testo', () => {
@@ -77,7 +69,7 @@ describe('groupProblems', () => {
       p('roles', 'roles:member:x', 'Raticate è debole e non porta utilità al team'),
       p('roles', 'roles:style', 'Nessun attaccante fisico'),
     ];
-    expect(groupProblems(others, 'it')).toEqual(others.map(o => ({ kind: 'single', severity: 'minor', category: o.category, text: o.text, items: [], count: 1, details: [o.text] })));
+    expect(groupProblems(others)).toEqual(others.map(o => ({ kind: 'single', severity: 'minor', category: o.category, text: o.text, items: [], count: 1, details: [o.text] })));
   });
 
   it('gruppi gravi prima dei minori; a parità l\'ordine dei problemi', () => {
@@ -85,11 +77,37 @@ describe('groupProblems', () => {
       threat('Kingambit'),
       p('coverage', 'coverage', 'Nessuno colpisce Acqua'),
       weak('Fire'),
-      roles('essential', 'Hazard'),
+      roles('essential', ['hazards']),
       weak('Ground', 'serious'),
       threat('Great Tusk'),
-    ], 'it');
+    ]);
     expect(groups.map(g => g.kind)).toEqual(['weak', 'threats', 'single', 'roles']);
     expect(groups.map(g => g.count)).toEqual([2, 2, 1, 1]);
+  });
+
+  it('non legge i testi: con testi cambiati i gruppi e gli elementi restano gli stessi', () => {
+    const problems = [weak('Ground', 'serious'), threat('Kingambit'), rule('Garchomp', 'Garchomp: x'), roles('essential', ['hazards', 'pivot'])];
+    const scrambled = problems.map((x, i) => ({ ...x, text: `testo qualsiasi ${i}: a, b` }));
+    const strip = (groups: ReturnType<typeof groupProblems>) => groups.map(({ details: _d, text: _t, ...g }) => g);
+    expect(strip(groupProblems(scrambled))).toEqual(strip(groupProblems(problems)));
+  });
+
+  it('findProblems dà i dati a ogni problema da raggruppare', () => {
+    const team = ['Great Tusk', 'Gholdengo', 'Kingambit', 'Corviknight', 'Toxapex', 'Rotom-Wash'].map(n => mostCommonSet(fixtureStats, n)!);
+    const analysis = analyzeTeam(team, fixtureData);
+    const problems = findProblems(team, DEFAULT_FORMAT, analysis, [], 'it');
+    for (const problem of problems) {
+      if (problem.category === 'defense') expect(problem.subjects).toEqual([problem.key.slice('defense:'.length)]);
+      if (problem.category === 'meta') expect(problem.subjects).toEqual([problem.key.slice('meta:'.length)]);
+    }
+    const essential = problems.find(x => x.key === 'roles:essential');
+    if (essential) expect(essential.subjects).toEqual(analysis.needs.essentialMissing);
+    const important = problems.find(x => x.key === 'roles:important');
+    if (important) expect(important.subjects).toEqual(analysis.needs.importantMissing);
+    // Un membro non legale: il suo nome in battaglia
+    const illegal = findProblems([...team.slice(0, 5), { ...team[5], moves: ['Volt Tackle'] }], DEFAULT_FORMAT, analyzeTeam(team, fixtureData), [], 'it')
+      .filter(x => x.category === 'rules');
+    expect(illegal.length).toBeGreaterThan(0);
+    for (const x of illegal) expect(x.subjects).toEqual(['Rotom-Wash']);
   });
 });

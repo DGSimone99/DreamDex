@@ -16,7 +16,7 @@ export function ThreatsSection({ threats, density, onMeta }: { threats: Dashboar
   const t = useT();
   const lang = useLang();
   const { pods } = threats;
-  const { ref, shown } = useFit<HTMLDivElement>(`${density}|${pods.map(p => p.species).join()}`, pods.length, { reserve: 1 });
+  const { ref, shown } = useFit<HTMLDivElement>(`${density}|${pods.map(p => p.species).join()}`, pods.length, { more: true });
   const hidden = pods.length - shown;
   const title = t('dash.threats');
   let body;
@@ -35,7 +35,7 @@ export function ThreatsSection({ threats, density, onMeta }: { threats: Dashboar
           </span>
         ))}
         {hidden > 0 && (
-          <button type="button" className="dash-pod more" onClick={onMeta} aria-label={t('dash.moreThreats', { n: hidden })}>
+          <button type="button" data-fit-more className="dash-pod more" onClick={onMeta} aria-label={t('dash.moreThreats', { n: hidden })}>
             <span className="dash-plinth">+{hidden}</span>
             <b>{t('dash.others')}</b>
             <small>{t('dash.metaTab')}</small>

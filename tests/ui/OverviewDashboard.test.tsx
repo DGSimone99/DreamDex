@@ -52,7 +52,7 @@ const problem = (i: number, severity: CoachProblem['severity'] = 'minor'): Coach
   ({ severity, category: i % 2 ? 'coverage' : 'roles', text: `Problema numero ${i}`, fixes: [], key: `k${i}` });
 
 const weak = (type: string, severity: CoachProblem['severity'] = 'minor'): CoachProblem =>
-  ({ severity, category: 'defense', text: `Debole a ${type}: 3 Deboli – 1 Resistono`, fixes: [], key: `defense:${type}` });
+  ({ severity, category: 'defense', text: `Debole a ${type}: 3 Deboli – 1 Resistono`, fixes: [], key: `defense:${type}`, subjects: [type] });
 
 /** La fascia di un livello dei Ruoli (la lista col suo titoletto). */
 function roleBand(roles: HTMLElement, title: string) {
@@ -137,8 +137,16 @@ describe('Cruscotto della Panoramica', () => {
     const roles = screen.getByRole('region', { name: 'Ruoli' });
     // Rimozione: tre membri, si vedono due icone e "+1"
     const removal = within(roleBand(roles, 'Essenziali')).getAllByRole('listitem')[1];
-    expect(removal.querySelectorAll('.dash-owners .mon-icon')).toHaveLength(2);
-    expect(within(removal).getByText('+1')).toBeInTheDocument();
+    // Ampio: un ruolo per riga, coi nomi di tutti quelli che lo coprono scritti (niente icone)
+    expect(removal).toHaveClass('line');
+    expect(removal.querySelector('.dash-owners')).toBeNull();
+    expect(removal.querySelector('.dash-role-who')).toHaveTextContent(/^Great Tusk, Corviknight, Toxapex$/);
+    expect(removal.querySelector('.dash-role-tag')).toHaveTextContent(/^Rimozione Hazard:/);
+    expect(within(removal).queryByText('+1')).toBeNull();
+    // Mancante: "nessuno"
+    const pivot = within(roleBand(roles, 'Importanti')).getByRole('listitem');
+    expect(pivot.querySelector('.dash-role-who')).toHaveTextContent(/^nessuno$/);
+    expect(pivot).toHaveClass('bad');
   });
 
   it('Ruoli: tre fasce una sotto l\'altra, Essenziali, Importanti, Minori, con l\'etichetta a sinistra', () => {
@@ -183,7 +191,7 @@ describe('Cruscotto della Panoramica', () => {
       const [hazards, removal] = within(roleBand(roles, 'Essenziali')).getAllByRole('listitem');
       expect(hazards.querySelector('.visually-hidden')).toHaveTextContent(/^, coperto da Great Tusk$/);
       expect(removal.querySelector('.visually-hidden')).toHaveTextContent(/^, coperto da Great Tusk, Corviknight, Toxapex$/);
-      expect(within(roleBand(roles, 'Importanti')).getByRole('listitem')).toHaveTextContent(/, mancante$/);
+      expect(within(roleBand(roles, 'Importanti')).getByRole('listitem').querySelector('.visually-hidden')).toHaveTextContent(/^, mancante$/);
       unmount();
     }
   });
@@ -196,6 +204,16 @@ describe('Cruscotto della Panoramica', () => {
     expect(speed).toHaveAttribute('title', expect.stringMatching(/^Controllo:/));
     // Ruoli: niente icone dei membri, solo il segno e il nome
     expect(screen.getByRole('region', { name: 'Ruoli' }).querySelector('.dash-owners')).toBeNull();
+  });
+
+  it('normale e stretto: Ruoli come chip in fila, senza i nomi scritti', () => {
+    for (const density of ['normal', 'tight'] as const) {
+      const { unmount } = mount({ density });
+      const roles = screen.getByRole('region', { name: 'Ruoli' });
+      expect(roles.querySelector('.dash-role.line')).toBeNull();
+      expect(roles.querySelector('.dash-role-who')).toBeNull();
+      unmount();
+    }
   });
 
   it('normale: Ruoli con le icone dei membri (se ci stanno lo decide il CSS)', () => {
@@ -281,6 +299,23 @@ describe('Cruscotto della Panoramica', () => {
     expect(todo).toHaveTextContent(/1 grave\s*·\s*3 minori/);
   });
 
+  it('Cosa fare ampio: sotto i gruppi i testi interi dei problemi; normale e stretto no; le minacce no', () => {
+    const threat = (species: string): CoachProblem => ({ severity: 'minor', category: 'meta', text: `Nessun check per ${species} dal meta`, fixes: [], key: `meta:${species}`, subjects: [species] });
+    const problems = [weak('Fire'), weak('Ground', 'serious'), threat('Kyurem'), threat('Heatran'), problem(2)];
+    const { unmount } = mount({ density: 'roomy', problems });
+    const todo = screen.getByRole('region', { name: 'Cosa fare' });
+    const [weakRow, threatRow, single] = [...todo.querySelectorAll('.dash-problems > li')];
+    expect([...weakRow.querySelectorAll('.dash-sub li')].map(li => li.textContent)).toEqual(['Debole a Ground: 3 Deboli – 1 Resistono', 'Debole a Fire: 3 Deboli – 1 Resistono']);
+    expect(threatRow.querySelector('.dash-sub')).toBeNull();
+    expect(single.querySelector('.dash-sub')).toBeNull();
+    unmount();
+    for (const density of ['normal', 'tight'] as const) {
+      const { unmount: off } = mount({ density, problems });
+      expect(screen.getByRole('region', { name: 'Cosa fare' }).querySelector('.dash-sub')).toBeNull();
+      off();
+    }
+  });
+
   it('Cosa fare: un gruppo con un elemento solo non ha il numerino', () => {
     mount({ problems: [weak('Fire'), problem(2)] });
     const [group] = within(screen.getByRole('region', { name: 'Cosa fare' })).getAllByRole('listitem');
@@ -341,8 +376,11 @@ function stubHeight() {
 const rect = (top: number, height: number) =>
   ({ top, bottom: top + height, height, left: 0, right: 0, width: 0, x: 0, y: top, toJSON() {} }) as DOMRect;
 
-/** Layout finto: per sezione l'altezza del contenitore .dash-fit e quella di ogni voce [data-fit], una sotto l'altra. */
-function stubLayout(sizes: Record<string, { box: number; item: number }>, visible = () => true) {
+/**
+ * Layout finto: per sezione l'altezza del contenitore .dash-fit e quella di ogni voce [data-fit], una sotto l'altra;
+ * il "+N" ([data-fit-more]) dopo l'ultima voce, o sulla sua stessa riga con `inline`.
+ */
+function stubLayout(sizes: Record<string, { box: number; item: number; inline?: boolean }>, visible = () => true) {
   vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (this: Element) {
     // Scheda nascosta (display: none): tutto a zero
     if (!visible()) return rect(0, 0);
@@ -351,7 +389,9 @@ function stubLayout(sizes: Record<string, { box: number; item: number }>, visibl
     const size = card && Object.entries(sizes).find(([name]) => card.classList.contains(name))?.[1];
     if (!box || !size) return rect(0, 0);
     if (this === box) return rect(0, size.box);
-    const index = [...box.querySelectorAll('[data-fit]')].indexOf(this);
+    const items = [...box.querySelectorAll('[data-fit], [data-fit-more], [data-fit-sub]')];
+    let index = items.indexOf(this);
+    if (index > 0 && size.inline && this.hasAttribute('data-fit-more')) index--;
     return index < 0 ? rect(0, 0) : rect(0, (index + 1) * size.item);
   });
 }
@@ -442,6 +482,23 @@ describe('Cruscotto: misure', () => {
     const todo = screen.getByRole('region', { name: 'Cosa fare' });
     expect(todo.querySelectorAll('.dash-problems li')).toHaveLength(2);
     expect(within(todo).getByRole('button', { name: /^Tutti i 12 nel Coaching/ })).toBeVisible();
+  });
+
+  it('Cosa fare ampio: i dettagli solo finché ci stanno, mai a spese di un gruppo', () => {
+    stubLayout({ 'dash-todo': { box: 130, item: 30 } });
+    mount({ density: 'roomy', problems: [weak('Fire'), weak('Ground', 'serious'), weak('Ghost'), problem(2)] });
+    const todo = screen.getByRole('region', { name: 'Cosa fare' });
+    expect(todo.querySelectorAll('.dash-problems > li')).toHaveLength(2);
+    // Gruppo (30) + 2 dettagli (90) + riga singola (120): il terzo dettaglio non ci sta
+    expect(todo.querySelectorAll('.dash-sub li')).toHaveLength(2);
+  });
+
+  it('Ruoli: se il "+N" sta sulla stessa riga non si toglie nessun ruolo', () => {
+    stubLayout({ 'dash-roles': { box: 75, item: 30, inline: true } });
+    mount({ density: 'tight', data: sample({ roles: manyRoles }) });
+    const essential = within(roleBand(screen.getByRole('region', { name: 'Ruoli' }), 'Essenziali')).getAllByRole('listitem');
+    expect(essential).toHaveLength(3);
+    expect(essential[2]).toHaveTextContent('+2');
   });
 
   it('Cosa fare: quanti ne stanno, se sono più di 2', () => {
