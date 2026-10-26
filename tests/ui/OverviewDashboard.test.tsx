@@ -319,7 +319,7 @@ describe('Cruscotto della Panoramica', () => {
     expect(todo).toHaveTextContent(/1 grave\s*·\s*3 minori/);
   });
 
-  it('Cosa fare ampio: sotto i gruppi i testi interi dei problemi; normale e stretto no; minacce e ruoli no', () => {
+  it('Cosa fare normale e ampio: sotto i gruppi i testi interi dei problemi; stretto no; minacce e ruoli no', () => {
     const threat = (species: string): CoachProblem => ({ severity: 'minor', category: 'meta', text: `Nessun check per ${species} dal meta`, fixes: [], key: `meta:${species}`, subjects: [species] });
     const roles: CoachProblem = { severity: 'minor', category: 'roles', text: 'Ruoli mancanti: Hazard', fixes: [], key: 'roles:essential', subjects: ['hazards'] };
     const problems = [weak('Fire'), weak('Ground', 'serious'), threat('Kyurem'), threat('Heatran'), roles, problem(2)];
@@ -333,11 +333,12 @@ describe('Cruscotto della Panoramica', () => {
     expect(threatRow.querySelector('.dash-sub')).toBeNull();
     expect(single.querySelector('.dash-sub')).toBeNull();
     unmount();
-    for (const density of ['normal', 'tight'] as const) {
-      const { unmount: off } = mount({ density, problems });
-      expect(screen.getByRole('region', { name: 'Cosa fare' }).querySelector('.dash-sub')).toBeNull();
-      off();
-    }
+    // Normale: gli stessi dettagli (se ci stanno); stretto: nessuno
+    const { unmount: offNormal } = mount({ density: 'normal', problems });
+    expect(screen.getByRole('region', { name: 'Cosa fare' }).querySelectorAll('.dash-sub li')).toHaveLength(2);
+    offNormal();
+    mount({ density: 'tight', problems });
+    expect(screen.getByRole('region', { name: 'Cosa fare' }).querySelector('.dash-sub')).toBeNull();
   });
 
   it('Cosa fare: un gruppo con un elemento solo non ha il numerino', () => {
