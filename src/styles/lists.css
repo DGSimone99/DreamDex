@@ -83,11 +83,11 @@
   .band { padding: 10px 16px 20px; gap: 12px; grid-template-columns: minmax(0, 1fr) 168px; }
   .team-head { margin-bottom: 8px; }
   .slots { gap: 8px; }
-  .slot > summary, .slot.empty { min-height: 0; height: 172px; padding: 6px 10px 10px; gap: 2px; }
-  .slot > summary .sprite { width: 64px; height: 64px; }
-  .slot > summary { --sprite-scale: 0.6667; }
-  .slot .roles { display: none; }
-  .slot .name { font-size: 15px; }
+  .slot > summary, .slot.empty { min-height: 0; height: 172px; padding: 6px 10px 6px; gap: 1px; }
+  .slot > summary .sprite { width: 56px; height: 56px; }
+  .slot > summary { --sprite-scale: 0.5833; }
+  .slot .roles { font-size: 11px; }
+  .slot .name { font-size: 15px; line-height: 1.1; }
   .slot .held, .slot .ability { font-size: 12px; }
   /* Tipi lunghi (Coleottero, Folletto): il chip si allarga invece di schiacciare il testo */
   .slot .type-chip { width: auto; min-width: 52px; padding-inline: 6px; }
