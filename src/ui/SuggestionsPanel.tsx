@@ -327,10 +327,14 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   useEffect(() => {
     if (!focus) return;
     if (focus.mode === 'add') setScope('add');
+    // Impostazioni predefinite, come il Coaching: niente ricerca né filtri, tipo di team riconosciuto (stesso +N)
+    setFilters(EMPTY_FILTERS);
+    setPickedType(undefined);
     setFocusing(focus.species);
   }, [focus?.nonce]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
-    if (!focusing || stale) return;
+    // Aspetta che la ricerca azzerata arrivi alla lista (dopo il ritardo) e che la lista sia aggiornata
+    if (!focusing || stale || filtering) return;
     const index = items.findIndex(item => item.species === focusing);
     // Non c'è (filtri attivi): resta la lista com'è
     if (index >= 0) {
@@ -339,7 +343,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
       setSelectedName(focusing);
     }
     setFocusing(null);
-  }, [focusing, items, stale]);
+  }, [focusing, items, stale, filtering]);
   const pages = Math.ceil(items.length / PAGE);
   const pageItems = items.slice(page * PAGE, (page + 1) * PAGE);
   const chosen = fresh && cursor !== null ? items[cursor] : undefined;

@@ -275,22 +275,29 @@ describe('riga della lista', () => {
     expect(added).toHaveLength(2);
   });
 
-  it("focus su un candidato all'11° posto: pagina 2, lui nel dettaglio", async () => {
+  it("focus su un candidato all'11° posto: pagina 2, lui nel dettaglio, ricerca azzerata", async () => {
     const { SuggestionsPanel } = await import('../../src/ui/SuggestionsPanel');
     const { renderIt } = await import('../helpers/italian');
-    const { tusk } = await import('../fixtures/data');
+    const { fixtureStats, tusk } = await import('../fixtures/data');
+    // Più di 10 candidati senza filtri: statistiche di prova allargate
+    const base = fixtureStats.pokemon['Corviknight'];
+    const extra = ['Skarmory', 'Heatran', 'Clefable', 'Garchomp', 'Ferrothorn', 'Tyranitar', 'Slowbro', 'Zapdos', 'Hippowdon', 'Blissey', 'Excadrill', 'Weavile'];
+    const pokemon = { ...fixtureStats.pokemon, ...Object.fromEntries(extra.map((n, i) => [n, { ...base, usage: 0.05 - i * 0.002, moves: {}, abilities: {}, items: {}, teammates: {}, checks: {} }])) };
+    const data = { stats: { ...fixtureStats, pokemon }, sets: {} };
     const user = userEvent.setup();
-    const props = { team: [tusk], format: DEFAULT_FORMAT, data: fixtureData, replaceIndex: null, onAdd: () => {}, onReplaceWith: () => {}, onCancelReplace: () => {} };
+    const props = { team: [tusk], format: DEFAULT_FORMAT, data, replaceIndex: null, onAdd: () => {}, onReplaceWith: () => {}, onCancelReplace: () => {} };
     const { rerender } = renderIt(<SuggestionsPanel {...props} />);
-    await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'a');
     const pager = await screen.findByRole('navigation', { name: 'Pagine dei suggerimenti' });
     await user.click(within(pager).getByRole('button', { name: 'Pagina 2' }));
     const eleventh = rowNames()[0];
     await user.click(within(pager).getByRole('button', { name: 'Pagina 1' }));
     expect(rowNames()).not.toContain(eleventh);
+    // Una ricerca rimasta nel campo non deve nascondere il candidato
+    await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Gho');
     rerender(<SuggestionsPanel {...props} focus={{ species: eleventh, mode: 'add', nonce: 1 }} />);
-    expect(await screen.findByRole('complementary', { name: `Dettaglio di ${eleventh}` })).toBeInTheDocument();
-    expect(within(pager).getByRole('button', { name: 'Pagina 2' })).toHaveAttribute('aria-current', 'page');
+    expect(await screen.findByRole('complementary', { name: `Dettaglio di ${eleventh}` }, { timeout: 3000 })).toBeInTheDocument();
+    expect(screen.getByLabelText('Aggiungi Pokémon')).toHaveValue('');
+    expect(within(screen.getByRole('navigation', { name: 'Pagine dei suggerimenti' })).getByRole('button', { name: 'Pagina 2' })).toHaveAttribute('aria-current', 'page');
     expect(rowNames()).toContain(eleventh);
   });
 
