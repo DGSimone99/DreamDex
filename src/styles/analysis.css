@@ -242,3 +242,4 @@ button.member-card:hover { border-color: var(--accent); }
 .swaps .swap-actions button.swap-now.primary { gap: 6px; padding: 4px 12px; width: auto; background: var(--accent-2); border-color: var(--accent-2); color: var(--on-accent-2); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
 .swaps .swap-actions button.swap-now.primary:hover { color: var(--on-accent-2); background: var(--accent-2-ink); }
 .overview-head .box-head { position: static; margin: 0; }
+.analysis-tabs [role='tab'][aria-disabled='true'] { opacity: 0.45; cursor: not-allowed; }

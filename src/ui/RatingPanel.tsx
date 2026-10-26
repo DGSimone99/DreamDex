@@ -60,6 +60,7 @@ export function GradeBadge({ rating, ruleIssues = [], onOpen }: { rating: TeamRa
               <button key={area.key} type="button"
                 className={`grade-area band-${GRADES.find(g => (area.value ?? 0) >= g.min)!.grade}${area.inactive ? ' inactive' : ''}`}
                 aria-label={`${t('rating.openArea', { area: area.label, value: area.value ?? '—' })}${note}`}
+                title={area.inactive ? t('rating.notCounted') : undefined}
                 onClick={() => isDetailArea(area.key) && onOpen?.(area.key)}>
                 <span>{area.label}</span>
                 <span className="meter"><span style={{ width: `${area.value ?? 0}%` }} /></span>

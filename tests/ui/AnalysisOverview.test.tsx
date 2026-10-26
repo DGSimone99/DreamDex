@@ -131,3 +131,35 @@ describe('Panoramica: rifinitura', () => {
     expect(headline.querySelector('.team-type strong')).not.toBeNull();
   });
 });
+
+describe('Panoramica: correzioni della revisione', () => {
+  it('membro aperto poi tolto: aggiungendo un altro Pokémon si torna alla Panoramica, non al suo profilo', async () => {
+    const user = await setup();
+    await user.click(within(within(panel()).getByRole('region', { name: 'Membri' })).getByRole('button', { name: /^Gholdengo/ }));
+    await user.click(screen.getByRole('button', { name: 'Rimuovi Gholdengo' }));
+    await user.click(screen.getByRole('tab', { name: /^Pokémon/ }));
+    await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Kingambit{Enter}');
+    await user.click(screen.getByRole('tab', { name: /^Analisi/ }));
+    expect(within(panel()).queryByRole('region', { name: 'Kingambit' })).toBeNull();
+    expect(within(panel()).getByRole('region', { name: 'Membri' })).toBeInTheDocument();
+  });
+
+  it('team vuoto: le schede d\'area non si aprono a vuoto e poi non saltano', async () => {
+    const user = userEvent.setup();
+    render(<App initialLang="it" data={fixtureData} />);
+    await user.click(screen.getByRole('tab', { name: /^Analisi/ }));
+    const defense = within(views()).getByRole('tab', { name: 'Difesa' });
+    expect(defense).toHaveAttribute('aria-disabled', 'true');
+    await user.click(defense);
+    await user.click(screen.getByRole('tab', { name: /^Pokémon/ }));
+    await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Great Tusk{Enter}');
+    await user.click(screen.getByRole('tab', { name: /^Analisi/ }));
+    expect(within(views()).getByRole('tab', { name: 'Panoramica' })).toHaveAttribute('aria-selected', 'true');
+  });
+
+  it('le voci di bonus e malus mantengono nomi e tipi evidenziati', async () => {
+    await importTeam('Ninetales\nAbility: Drought\n- Flamethrower\n\nGreat Tusk\n- Headlong Rush');
+    const block = within(panel()).getByRole('group', { name: /^Bonus\/Malus/ });
+    expect(block.querySelector('ul .mon-ref')).not.toBeNull();
+  });
+});

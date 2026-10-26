@@ -52,7 +52,8 @@ export function ViewHelp({ view }: { view: AnalysisView }) {
 }
 
 /** Le schede interne: tablist orizzontale (frecce, Home/End), col "?" accanto a quella aperta. */
-export function AnalysisTabs({ view, onView, panelId }: { view: AnalysisView; onView: (view: AnalysisView) => void; panelId: string }) {
+/** `areasDisabled`: senza voto (team vuoto) le aree non hanno niente da mostrare: restano visibili ma spente. */
+export function AnalysisTabs({ view, onView, panelId, areasDisabled = false }: { view: AnalysisView; onView: (view: AnalysisView) => void; panelId: string; areasDisabled?: boolean }) {
   const t = useT();
   const buttons = useRef<(HTMLButtonElement | null)[]>([]);
   // Il "?" sta fuori dal tablist (lì solo schede) ma si vede accanto alla scheda aperta
@@ -69,6 +70,7 @@ export function AnalysisTabs({ view, onView, panelId }: { view: AnalysisView; on
     return () => observer.disconnect();
   }, [view, t]);
   const go = (index: number) => {
+    if (areasDisabled) return;
     const next = ANALYSIS_VIEWS[(index + ANALYSIS_VIEWS.length) % ANALYSIS_VIEWS.length];
     onView(next);
     buttons.current[ANALYSIS_VIEWS.indexOf(next)]?.focus();
@@ -85,7 +87,8 @@ export function AnalysisTabs({ view, onView, panelId }: { view: AnalysisView; on
         {ANALYSIS_VIEWS.map((item, i) => (
           <button key={item} ref={el => { buttons.current[i] = el; }} type="button" role="tab" id={`analysis-view-${item}`}
             aria-selected={item === view} aria-controls={panelId} tabIndex={item === view ? 0 : -1}
-            onClick={() => onView(item)} onKeyDown={e => onKey(e, i)}>
+            aria-disabled={areasDisabled && item !== 'overview' ? true : undefined}
+            onClick={() => { if (!(areasDisabled && item !== 'overview')) onView(item); }} onKeyDown={e => onKey(e, i)}>
             {t(viewLabelKey(item))}
           </button>
         ))}

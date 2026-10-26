@@ -10,6 +10,7 @@ import { AreaView } from './AreaView';
 import { CoachProblems, CoachSolutions, TeamTypeLine } from './CoachPanel';
 import { MemberCards } from './MemberSheet';
 import { Icon } from './icons';
+import { Typed } from './TypeText';
 import { IssueCounts, PROBLEM_LABELS } from './IssueCounts';
 
 /** I numeri chiave in una riga: ognuno porta alla scheda della sua area; sotto, come è stato calcolato il voto. */
@@ -45,14 +46,14 @@ function BonusMalus({ rating }: { rating: TeamRating }) {
   const net = rating.bonus.total - rating.penalty.total;
   const title = t('coach.bonusMalus', { net: signed(net) });
   const items = [
-    ...rating.penalty.items.map(item => ({ text: item.text, points: -item.points })),
-    ...rating.bonus.items.map(item => ({ text: item.text, points: item.points })),
+    ...rating.penalty.items.map(item => ({ key: `m${item.text}`, text: item.text, points: -item.points })),
+    ...rating.bonus.items.map(item => ({ key: `b${item.text}`, text: item.text, points: item.points })),
   ];
   return (
     <div className="bonus-malus" role="group" aria-label={title}>
       <h3>{title}</h3>
       {items.length > 0
-        ? <ul>{items.map(item => <li key={item.text} className={item.points < 0 ? 'loss' : 'gain'}>{item.text}{item.points !== 0 && ` (${signed(item.points)})`}</li>)}</ul>
+        ? <ul>{items.map(item => <li key={item.key} className={item.points < 0 ? 'loss' : 'gain'}><Typed text={item.text} />{item.points !== 0 && ` (${signed(item.points)})`}</li>)}</ul>
         : <p className="note">{t('coach.noBonusMalus')}</p>}
       <details>
         <summary>{t('coach.catalogue')}</summary>

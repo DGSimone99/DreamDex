@@ -85,6 +85,8 @@ Bold Nature
     const speed = within(band()).getByRole('button', { name: /^Velocità \d+, apri il dettaglio/ });
     expect(speed).toHaveAccessibleName(/Non conta nello Stall/);
     expect(speed).toHaveClass('inactive');
+    // Si vede anche senza lettore di schermo: il tooltip lo dice
+    expect(speed).toHaveAttribute('title', expect.stringContaining('Non conta nello Stall'));
   });
 
   it('il ? del voto sta nel riquadro', async () => {

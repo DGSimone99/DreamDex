@@ -65,3 +65,5 @@
 .grade-tools { position: absolute; top: 2px; right: 22px; display: flex; align-items: center; gap: 4px; }
 .grade-tools .help-button { width: 20px; height: 20px; color: var(--on-accent-2); border-color: color-mix(in srgb, var(--on-accent-2) 40%, transparent); background: transparent; }
 .band.collapsed .grade-badge .grade-areas, .band.collapsed .grade-badge .grade-tools { display: none; }
+.grade-badge button.grade-area.inactive { color: var(--faint); }
+.grade-badge button.grade-area.inactive b { color: var(--faint); }

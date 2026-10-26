@@ -123,8 +123,8 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   // Scheda aperta sotto il team: col team vuoto si parte dai Pokémon, poi vale l'ultima scelta
   // Cosa mostra Analisi: la Panoramica o un'area del voto (il riquadro Voto apre le aree)
   const [analysisView, setAnalysisView] = useState<AnalysisView>('overview');
-  // Membro aperto nella Panoramica di Analisi (null: la Panoramica)
-  const [analysisMember, setAnalysisMember] = useState<number | null>(null);
+  // Membro aperto nella Panoramica di Analisi, per nome: se il team cambia resta lui o si torna alla Panoramica
+  const [analysisMemberName, setAnalysisMemberName] = useState<string | null>(null);
   const [tab, setTabState] = useState<TabId>(() => (initialTeam.length && storage ? loadTab(storage) : null) ?? 'pokemon');
   const setTab = (next: TabId) => {
     setTabState(next);
@@ -174,6 +174,12 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   // Il coach prova gli scambi per ogni membro (un decimo di secondo): si aggiorna subito dopo il team, senza bloccarlo
   const coachInput = useMemo(() => ({ team, format, data, lang }), [team, format, data, lang]);
   const coachSource = useDeferredValue(coachInput);
+  const analysisMemberIndex = analysisMemberName === null ? -1 : team.findIndex(set => battleName(set) === analysisMemberName);
+  const analysisMember = analysisMemberIndex >= 0 ? analysisMemberIndex : null;
+  // Il membro aperto è uscito dal team: si torna alla Panoramica (e non si riapre se torna dopo)
+  useEffect(() => { if (analysisMemberName !== null && analysisMemberIndex < 0) setAnalysisMemberName(null); }, [analysisMemberName, analysisMemberIndex]);
+  // Team vuoto: niente aree da mostrare, Analisi torna alla Panoramica
+  useEffect(() => { if (team.length === 0) setAnalysisView('overview'); }, [team.length]);
   const coaching = useMemo(() => coachTeam(coachSource.team, coachSource.format, coachSource.data, coachSource.lang), [coachSource]);
 
   // Contatori delle schede: problemi del coach e minacce del meta senza check
@@ -282,9 +288,9 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
           />
         </TabPanel>
         <TabPanel id="analysis" active={shownTab}>
-          <AnalysisPanel team={team} analysis={analysis} data={data} rating={rating} coaching={coaching} view={analysisView} onView={view => { setAnalysisView(view); setAnalysisMember(null); }}
+          <AnalysisPanel team={team} analysis={analysis} data={data} rating={rating} coaching={coaching} view={analysisView} onView={view => { setAnalysisView(view); setAnalysisMemberName(null); }}
             preview={preview?.index === replaceIndex ? preview : null} onReplace={startReplace} onSwap={replaceAt}
-            member={analysisMember} onMember={setAnalysisMember} onAdd={startAdd} />
+            member={analysisMember} onMember={i => setAnalysisMemberName(i === null ? null : battleName(team[i]))} onAdd={startAdd} />
         </TabPanel>
         <TabPanel id="meta" active={shownTab}>
           <MetaPanel team={team} analysis={analysis} data={data} coaching={coaching} />
