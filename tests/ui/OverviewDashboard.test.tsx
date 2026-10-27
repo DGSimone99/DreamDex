@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { act, cleanup, screen, within } from '@testing-library/react';
+import { act, cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { DashboardData } from '../../src/engine/overviewDashboard';
@@ -8,7 +8,8 @@ import type { TeamSummary } from '../../src/engine/teamSummary';
 import { TYPES } from '../../src/engine/types';
 import { en } from '../../src/i18n/en';
 import { it as itText } from '../../src/i18n/it';
-import { densityFor, OverviewDashboard, TIGHT_BELOW, type Density } from '../../src/ui/OverviewDashboard';
+import { LangProvider } from '../../src/i18n/react';
+import { densityFor, OverviewDashboard, RICH_FROM, TIGHT_BELOW, type Density } from '../../src/ui/OverviewDashboard';
 import { renderIt } from '../helpers/italian';
 
 /** Dati costruiti: Terra scoperta in difesa, Normale in offesa, un ruolo mancante, due corsie, tre minacce. */
@@ -21,6 +22,7 @@ function sample(overrides: Partial<DashboardData> = {}): DashboardData {
         offense: type === 'Normal' ? 'bad' : 'ok',
         defenseNote: type === 'Ground' ? '3 deboli, 1 resiste' : '1 debole, 2 resistono',
         offenseNote: type === 'Normal' ? 'Nessuno lo colpisce super efficace' : 'Colpito super efficace da 2',
+        resist: type === 'Ground' ? 1 : 2,
       })),
       defense: '17/18', offense: '17/18',
     },
@@ -57,8 +59,12 @@ function summaryOf(overrides: Partial<TeamSummary> = {}): TeamSummary {
     attackers: ['Garchomp', 'Zapdos'], walls: ['Toxapex'],
     field: [{ member: 'Garchomp', items: ['Stealth Rock'] }],
     hits: { covered: 18, total: 18 },
-    weak: [{ type: 'Ground', serious: true }, { type: 'Ice', serious: false }],
+    weak: [{ type: 'Ground', serious: true, resist: 0 }, { type: 'Ice', serious: false, resist: 1 }],
     missingRoles: [],
+    keyRoles: [{ need: 'hazards', covered: true }, { need: 'removal', covered: true }],
+    hitsMissing: [],
+    offenseOf: { Garchomp: 92, Zapdos: 86 },
+    defenseOf: { Toxapex: 88 },
     threats: [{ species: 'Great Tusk', usage: 0.23 }, { species: 'Kyurem', usage: 0.21 }, { species: 'Heatran', usage: 0.17 }],
     ...overrides,
   };
@@ -109,12 +115,23 @@ describe('Cruscotto della Panoramica', () => {
     mount();
     const table = screen.getByRole('table', { name: 'Copertura' });
     expect(within(table).getAllByRole('columnheader')).toHaveLength(18);
-    expect(within(table).getByRole('cell', { name: /^(Terra|Ground), regge: 3 deboli, 1 resiste$/ })).toHaveClass('bad');
-    expect(within(table).getByRole('cell', { name: /^(Erba|Grass), regge: 1 debole, 2 resistono$/ })).toHaveClass('minor');
-    expect(within(table).getByRole('cell', { name: /^(Normale|Normal), colpisce: nessuno lo colpisce super efficace$/ })).toHaveClass('bad');
-    expect(within(table).getByRole('rowheader', { name: 'Regge' })).toBeInTheDocument();
-    expect(within(table).getByRole('rowheader', { name: 'Colpisce' })).toBeInTheDocument();
+    expect(within(table).getByRole('cell', { name: /^(Terra|Ground), difesa: 3 deboli, 1 resiste$/ })).toHaveClass('bad');
+    expect(within(table).getByRole('cell', { name: /^(Erba|Grass), difesa: 1 debole, 2 resistono$/ })).toHaveClass('minor');
+    expect(within(table).getByRole('cell', { name: /^(Normale|Normal), offesa: nessuno lo colpisce super efficace$/ })).toHaveClass('bad');
+    expect(within(table).getByRole('rowheader', { name: 'Difesa' })).toBeInTheDocument();
+    expect(within(table).getByRole('rowheader', { name: 'Offesa' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Copertura' }).querySelector('.dash-meta')).toHaveTextContent('difesa 17/18 · offesa 17/18');
     expect(screen.queryByText('Chi')).toBeNull();
+  });
+
+  it('Copertura in inglese: righe Defense e Offense, anche in testata', () => {
+    render(<LangProvider lang="en"><OverviewDashboard data={sample()} summary={summaryOf()} members={6} onView={vi.fn()} density="normal" /></LangProvider>);
+    const table = screen.getByRole('table', { name: 'Coverage' });
+    expect(within(table).getByRole('rowheader', { name: 'Defense' })).toBeInTheDocument();
+    expect(within(table).getByRole('rowheader', { name: 'Offense' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Coverage' }).querySelector('.dash-meta')).toHaveTextContent('defense 17/18 · offense 17/18');
+    // La riga Colpisce del Riassunto resta "Hits"
+    expect(screen.getByRole('region', { name: 'Summary' }).querySelectorAll('.sum-k')[4]).toHaveTextContent('Hits');
   });
 
   it('Copertura: in testata l\'icona ufficiale di ogni tipo, decorativa, col nome nel tooltip', () => {
@@ -346,7 +363,7 @@ describe('Riassunto', () => {
     expect(field).toHaveTextContent('Pioggia');
   });
 
-  it('Colpisce: N/18 tipi e pill verde se tutti, altrimenti i tipi mancanti', () => {
+  it('Colpisce: N/18 tipi e pill verde se tutti, altrimenti "N mancanti" (1 mancante)', () => {
     mount();
     expect(sumRow('Colpisce')).toHaveTextContent(/18\s*\/18 tipi/);
     expect(sumRow('Colpisce')).toHaveTextContent('✓ tutti');
@@ -354,22 +371,30 @@ describe('Riassunto', () => {
     cleanup();
     mount({ summary: summaryOf({ hits: { covered: 16, total: 18 } }) });
     expect(sumRow('Colpisce')).toHaveTextContent(/16\s*\/18 tipi/);
-    expect(sumRow('Colpisce')).toHaveTextContent('2 tipi');
+    expect(sumRow('Colpisce')!.querySelector('.sum-pill')).toHaveTextContent(/^2 mancanti$/);
     expect(sumRow('Colpisce')!.querySelector('.sum-pill')).toHaveClass('bad');
+    cleanup();
+    mount({ summary: summaryOf({ hits: { covered: 17, total: 18 } }) });
+    expect(sumRow('Colpisce')!.querySelector('.sum-pill')).toHaveTextContent(/^1 mancante$/);
   });
 
   it('Debole a: 6 debolezze + 2 sono 6 icone e "+2"; le gravi hanno is-serious; nessuna debolezza è "✓ nessuna"', () => {
     const types = ['Ground', 'Ice', 'Fire', 'Water', 'Rock', 'Fairy', 'Dark', 'Bug'];
-    mount({ summary: summaryOf({ weak: types.map((type, i) => ({ type, serious: i < 2 })) }) });
+    mount({ summary: summaryOf({ weak: types.map((type, i) => ({ type, serious: i < 2, resist: 1 })) }) });
     const weak = sumRow('Debole a')!;
     expect(weak.querySelectorAll('.type-icons')).toHaveLength(6);
     expect(weak).toHaveTextContent('+2');
+    // Il "+N" letto per intero ai lettori di schermo
+    expect(weak.querySelector('.sum-more .visually-hidden')).toHaveTextContent(/^Altri 2 tipi$/);
     expect(weak.querySelectorAll('.is-serious')).toHaveLength(2);
     expect(weak.querySelectorAll('.sum-weak:not(.is-serious)')).toHaveLength(4);
     expect(weak).toHaveTextContent('8 tipi');
     cleanup();
     mount({ summary: summaryOf({ weak: [] }) });
     expect(sumRow('Debole a')).toHaveTextContent('✓ nessuna');
+    cleanup();
+    mount({ summary: summaryOf({ weak: [{ type: 'Ice', serious: false, resist: 1 }] }) });
+    expect(sumRow('Debole a')!.querySelector('.sum-pill')).toHaveTextContent(/^1 tipo$/);
   });
 
   it('Ruoli: "✓ importanti coperti" oppure "N mancanti"', () => {
@@ -380,6 +405,9 @@ describe('Riassunto', () => {
     expect(sumRow('Ruoli')).toHaveTextContent('2 mancanti');
     expect(sumRow('Ruoli')!.querySelector('.sum-names')).toHaveTextContent(/Hazard.*Pivot/i);
     expect(sumRow('Ruoli')!.querySelector('.sum-pill')).toHaveClass('bad');
+    cleanup();
+    mount({ summary: summaryOf({ missingRoles: ['pivot'] }) });
+    expect(sumRow('Ruoli')!.querySelector('.sum-pill')).toHaveTextContent(/^1 mancante$/);
   });
 
   it('Minacce: 6 minacce sono 4 sprite e "+2"; "N senza check"; nessuna è "✓ tutte gestite"', () => {
@@ -389,6 +417,7 @@ describe('Riassunto', () => {
     expect(row.querySelectorAll('.sprite')).toHaveLength(4);
     expect(row).toHaveTextContent('+2');
     expect(row).toHaveTextContent('6 senza check');
+    expect(row.querySelector('.sum-more .visually-hidden')).toHaveTextContent(/^Altre 2 minacce$/);
     cleanup();
     mount({ summary: summaryOf({ threats: [] }) });
     expect(sumRow('Minacce')).toHaveTextContent('✓ tutte gestite');
@@ -399,6 +428,54 @@ describe('Riassunto', () => {
     const { onView } = mount();
     for (const label of ['Attaccanti', 'Colpisce', 'Muri', 'Debole a', 'Campo', 'Ruoli', 'Minacce']) await user.click(sumRow(label)!);
     expect(onView.mock.calls.map(c => c[0])).toEqual(['strength', 'strength', 'defense', 'defense', 'roles', 'roles', 'coaching']);
+  });
+});
+
+describe('Riassunto ampio (team ridotto): righe più ricche', () => {
+  const chips = (row: HTMLElement) => [...row.querySelectorAll<HTMLElement>('.sum-chip')].map(c => c.textContent);
+
+  it('normale e stretto: righe compatte, niente schede coi nomi', () => {
+    mount({ density: 'normal' });
+    expect(screen.getByRole('region', { name: 'Riassunto' }).querySelectorAll('.sum-chip')).toHaveLength(0);
+  });
+
+  it('Attaccanti con nome e Offesa, Muri con nome e Difesa', () => {
+    mount({ density: 'roomy' });
+    expect(chips(sumRow('Attaccanti')!)).toEqual(['Garchomp92', 'Zapdos86']);
+    expect(sumRow('Attaccanti')!.querySelectorAll('.sprite')).toHaveLength(2);
+    expect(chips(sumRow('Muri')!)).toEqual(['Toxapex88']);
+  });
+
+  it('Campo: sprite, nome e quello che prepara', () => {
+    mount({ density: 'roomy', summary: summaryOf({ field: [{ member: 'Garchomp', items: ['Stealth Rock'], weather: 'Pioggia' }] }) });
+    const [chip] = sumRow('Campo')!.querySelectorAll<HTMLElement>('.sum-chip');
+    expect(chip).toHaveTextContent(/^Garchomp(Lanciarocce|Stealth Rock)Pioggia$/);
+    expect(chip.querySelector('.sprite')).not.toBeNull();
+  });
+
+  it('Colpisce: i tipi non colpiti per nome', () => {
+    mount({ density: 'roomy', summary: summaryOf({ hits: { covered: 16, total: 18 }, hitsMissing: ['Normal', 'Ghost'] }) });
+    expect(chips(sumRow('Colpisce')!).join('|')).toMatch(/^(Normale|Normal)\|(Spettro|Ghost)$/);
+  });
+
+  it('Debole a: icona e nome del tipo; le gravi senza resistenze segnate "nessuno resiste"', () => {
+    mount({ density: 'roomy' });
+    const row = sumRow('Debole a')!;
+    expect(chips(row).join('|')).toMatch(/^(Terra|Ground)nessuno resiste\|(Ghiaccio|Ice)$/);
+    expect(row.querySelectorAll('.sum-chip.bad')).toHaveLength(1);
+  });
+
+  it('Ruoli: i ruoli chiave coperti (✓) e mancanti (✕) per nome', () => {
+    mount({ density: 'roomy', summary: summaryOf({ keyRoles: [{ need: 'hazards', covered: true }, { need: 'pivot', covered: false }], missingRoles: ['pivot'] }) });
+    const row = sumRow('Ruoli')!;
+    expect(row.querySelectorAll('.sum-chip.ok')).toHaveLength(1);
+    expect(row.querySelectorAll('.sum-chip.bad')).toHaveLength(1);
+    expect(row.querySelector('.sum-chip.bad')).toHaveTextContent(/Pivot/);
+  });
+
+  it('Minacce: sprite, nome e uso', () => {
+    mount({ density: 'roomy' });
+    expect(chips(sumRow('Minacce')!)).toEqual(['Great Tusk23%', 'Kyurem21%', 'Heatran17%']);
   });
 });
 
@@ -444,6 +521,23 @@ function stubLayout(sizes: Record<string, { box: number; item: number; inline?: 
   });
 }
 
+/**
+ * Layout finto delle righe a misura del Riassunto (.sum-fit, alto 20px): le prime `fits(mostrate)` voci stanno nella riga,
+ * le altre vanno a capo; il "+N" sta nella riga, o va a capo con `moreWraps` quando le voci mostrate sono già `fits`.
+ */
+function stubSumFit(fits: (shown: number) => number, moreWraps = false) {
+  vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (this: Element) {
+    const box = this.closest('.sum-fit');
+    if (!box) return rect(0, 0);
+    if (this === box) return rect(0, 20);
+    const items = [...box.querySelectorAll('[data-fit]')];
+    const room = fits(items.length);
+    if (this.hasAttribute('data-fit-more')) return rect(0, moreWraps && items.length >= room ? 40 : 20);
+    const index = items.indexOf(this);
+    return index < 0 ? rect(0, 0) : rect(0, index < room ? 20 : 40);
+  });
+}
+
 describe('Cruscotto: misure', () => {
   afterEach(() => {
     vi.restoreAllMocks();
@@ -475,6 +569,26 @@ describe('Cruscotto: misure', () => {
     size.height = 1500;
     fire();
     expect(dash).toHaveAttribute('data-density', 'roomy');
+  });
+
+  it('Riassunto ricco solo col team ridotto e abbastanza alto (RICH_FROM), altrimenti compatto', () => {
+    const fire = stubObservers();
+    const size = stubHeight();
+    size.height = RICH_FROM;
+    renderIt(<OverviewDashboard data={sample()} summary={summaryOf()} members={6} onView={vi.fn()} teamCollapsed />);
+    const dash = document.querySelector('.dash')!;
+    expect(dash).toHaveClass('rich');
+    expect(dash.querySelectorAll('.sum-chip').length).toBeGreaterThan(0);
+    size.height = RICH_FROM - 1;
+    fire();
+    expect(dash).not.toHaveClass('rich');
+    expect(dash).toHaveAttribute('data-density', 'roomy');
+    expect(dash.querySelectorAll('.sum-chip')).toHaveLength(0);
+    cleanup();
+    // Team aperto: mai ricco, a ogni altezza
+    size.height = 2000;
+    renderIt(<OverviewDashboard data={sample()} summary={summaryOf()} members={6} onView={vi.fn()} />);
+    expect(document.querySelector('.dash')).not.toHaveClass('rich');
   });
 
   it('una misura a 0×0 non rimette tutte le voci: resta l\'ultimo "+N"', () => {
@@ -557,6 +671,35 @@ describe('Cruscotto: misure', () => {
     size.height = 500;
     fire();
     expect(within(roles).getByText('+3')).toBeInTheDocument();
+  });
+
+  it('Riassunto: gli sprite che non stanno in una riga vanno nel "+N" (Attaccanti, Muri), letto per intero', () => {
+    stubSumFit(() => 2);
+    const six = ['Garchomp', 'Zapdos', 'Kingambit', 'Dragapult', 'Gholdengo', 'Great Tusk'];
+    mount({ summary: summaryOf({ attackers: six, walls: ['Toxapex', 'Corviknight', 'Skarmory'] }) });
+    const attackers = sumRow('Attaccanti')!;
+    expect(attackers).toHaveTextContent(/6\s*top/);
+    expect(attackers.querySelectorAll('.sprite')).toHaveLength(2);
+    expect(attackers.querySelector('.sum-more')).toHaveTextContent('+4');
+    expect(attackers.querySelector('.sum-more .visually-hidden')).toHaveTextContent(/^Altri 4 Pokémon$/);
+    expect(sumRow('Muri')!.querySelectorAll('.sprite')).toHaveLength(2);
+    expect(sumRow('Muri')!.querySelector('.sum-more .visually-hidden')).toHaveTextContent(/^Un altro Pokémon$/);
+  });
+
+  it('Riassunto: con il tetto (6 debolezze) il "+N" che non sta toglie ancora un\'icona', () => {
+    // Le 6 icone stanno, ma il "+N" accanto alla sesta va a capo
+    stubSumFit(shown => (shown >= 6 ? 6 : 99), true);
+    const types = ['Ground', 'Ice', 'Fire', 'Water', 'Rock', 'Fairy', 'Dark', 'Bug'];
+    mount({ summary: summaryOf({ weak: types.map(type => ({ type, serious: false, resist: 1 })) }) });
+    const weak = sumRow('Debole a')!;
+    expect(weak.querySelectorAll('.type-icons')).toHaveLength(5);
+    expect(weak.querySelector('.sum-more')).toHaveTextContent('+3');
+  });
+
+  it('Campo: il "+N" al singolare per un solo piazzatore nascosto', () => {
+    stubSumFit(() => 1);
+    mount({ summary: summaryOf({ field: [{ member: 'Garchomp', items: ['Stealth Rock'] }, { member: 'Ting-Lu', items: ['Spikes'] }] }) });
+    expect(sumRow('Campo')!.querySelector('.sum-more .visually-hidden')).toHaveTextContent(/^Un altro che prepara il campo$/);
   });
 
   it('Ruoli: le fasce non si stirano (CSS): compatte in alto, alte quanto il contenuto', () => {

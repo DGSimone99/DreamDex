@@ -36,6 +36,15 @@ const LONG = [
   member('Scizor', 'Scizorite', 'Technician', ['Bullet Punch', 'U-turn', 'Swords Dance', 'Knock Off'], 'Adamant', { hp: 248, atk: 252, spd: 8 }),
   member('Garchomp', 'Garchompite', 'Rough Skin', ['Earthquake', 'Scale Shot', 'Swords Dance', 'Fire Fang'], 'Jolly', { atk: 252, spe: 252, hp: 4 }),
 ];
+// Sei attaccanti forti (Offesa del membro >= 85): la riga Attaccanti del Riassunto con più sprite di quanti ne stanno
+const ATTACK = [
+  LONG[2],
+  TEAM[0],
+  TEAM[3],
+  member('Iron Valiant', 'Choice Specs', 'Quark Drive', ['Moonblast', 'Focus Blast', 'Thunderbolt', 'Shadow Ball'], 'Timid', { def: 4, spa: 252, spe: 252 }),
+  LONG[5],
+  member('Victini', 'Choice Band', 'Victory Star', ['V-create', 'U-turn', 'Bolt Strike', 'Zen Headbutt'], 'Jolly', { atk: 252, spd: 4, spe: 252 }),
+];
 // Team con una mossa non legale (Flamethrower su Great Tusk): il Coaching propone anche un cambio di mossa
 const MOVE = [
   member('Great Tusk', 'Booster Energy', 'Protosynthesis', ['Headlong Rush', 'Ice Spinner', 'Flamethrower', 'Bulk Up'], 'Jolly', { atk: 252, spe: 252, hp: 4 }),
@@ -156,6 +165,14 @@ const STATES: Record<string, State> = {
     await wait(800);
     return true;
   } },
+  // Lo stesso in inglese (etichette più lunghe nel Riassunto)
+  'analysis-collapsed-en': { hash: hash(SIX), lang: 'en', run: async p => {
+    await tab(p, 'analysis');
+    await wait(300);
+    if (!await clickText(p, 'button.band-toggle', /./)) return 'no toggle';
+    await wait(800);
+    return true;
+  } },
   // Team offensivo (molti ruoli minori) col team ridotto: la tabella dei Ruoli con tutti i livelli
   'analysis-collapsed-offense': { hash: hash(LONG), run: async p => {
     await tab(p, 'analysis');
@@ -168,14 +185,14 @@ const STATES: Record<string, State> = {
   'team-type-help': { hash: hash(SIX), run: async p => {
     await tab(p, 'analysis');
     await wait(300);
-    if (!await clickText(p, '.team-type .help-button', /./)) return 'no help';
+    if (!await clickText(p, '.dash-summary .help-button', /./)) return 'no help';
     await wait(300);
     return true;
   } },
   // Il team dell'utente in inglese sulla Panoramica
   'analysis-user': { hash: hash(USER), lang: 'en', run: async p => { await tab(p, 'analysis'); return true; } },
-  // Riassunto con righe lunghe: molti attaccanti (LONG) e molti piazzatori di campo (FIELD)
-  'analysis-long': { hash: hash(LONG), run: async p => { await tab(p, 'analysis'); return true; } },
+  // Riassunto con righe lunghe: molti attaccanti (ATTACK, sei sopra la soglia) e molti piazzatori di campo (FIELD)
+  'analysis-long': { hash: hash(ATTACK), run: async p => { await tab(p, 'analysis'); return true; } },
   'analysis-field': { hash: hash(FIELD), lang: 'en', run: async p => { await tab(p, 'analysis'); return true; } },
   'analysis-six': { hash: hash(SIX), run: async p => { await tab(p, 'analysis'); return true; } },
   'analysis-empty': { hash: '', run: async p => { await tab(p, 'analysis'); return true; } },
@@ -313,10 +330,31 @@ for (const [w, h] of sizes) {
       // Righe del Riassunto e voci in EN tagliate in larghezza
       const sumClip = box ? [...box.querySelectorAll<HTMLElement>('.sum-v, .sum-k, .sum-names')].filter(e => e.scrollWidth - e.clientWidth > 1).map(e => e.className).length : 0;
       const sumRows = box ? [...box.querySelectorAll<HTMLElement>('.sum-rows > li')].map(li => Math.round(li.getBoundingClientRect().height)) : [];
+      // Righe del Riassunto sotto il fondo della sua card (nascoste) e voci a misura mostrate ma tagliate (fuori dalla riga)
+      const sumCard = box?.querySelector('.dash-summary');
+      const sumBottom = sumCard ? sumCard.getBoundingClientRect().bottom : 0;
+      const sumHidden = box ? [...box.querySelectorAll('.sum-rows > li')].filter(li => li.getBoundingClientRect().bottom - sumBottom > 1).length : 0;
+      const fitCut = box ? [...box.querySelectorAll<HTMLElement>('.sum-fit')].reduce((n, fit) => {
+        const r = fit.getBoundingClientRect();
+        return n + [...fit.querySelectorAll('[data-fit], [data-fit-more]')].filter(i => { const b = i.getBoundingClientRect(); return b.bottom - r.bottom > 0.5 || b.right - r.right > 0.5; }).length;
+      }, 0) : 0;
+      // Riempimento del Riassunto: per ogni riga, dall'alto della riga al fondo dell'ultimo contenuto visibile, sul totale delle righe
+      const sumList = box?.querySelector('.sum-rows');
+      const fill = sumList ? Math.round(100 * [...sumList.querySelectorAll(':scope > li')].reduce((n, li) => {
+        const top = li.getBoundingClientRect().top;
+        const v = li.querySelector('.sum-v')!.getBoundingClientRect();
+        const bottoms = [...li.querySelectorAll('.sum-ic, .sum-k, .sum-top, .sum-v > *')].map(e => e.getBoundingClientRect()).filter(b => b.height && b.bottom <= v.bottom + 0.5).map(b => b.bottom);
+        return n + Math.max(top, ...bottoms) - top;
+      }, 0) / sumList.getBoundingClientRect().height) : 0;
+      // Copertura: vuoto fra la testata e la tabella e fra la tabella e il fondo (padding escluso)
+      const cov = box?.querySelector<HTMLElement>('.dash-coverage');
+      const covHead = cov?.querySelector('.dash-head')?.getBoundingClientRect();
+      const covTable = cov?.querySelector('table')?.getBoundingClientRect();
+      const covBand = cov && covHead && covTable ? `${Math.round(covTable.top - covHead.bottom)}/${Math.round(cov.getBoundingClientRect().bottom - covTable.bottom)}` : '-';
       return {
         scroll: document.scrollingElement!.scrollHeight - window.innerHeight,
         clipped: main ? main.scrollHeight - main.clientHeight : 0,
-        dash: box ? `dash=${box.clientHeight} density=${box.dataset.density} cards=[${heights.join(',')}] cut=${cut} overflow=[${over.join(',')}] sumClip=${sumClip} rows=[${sumRows.join(',')}] hScroll=${document.scrollingElement!.scrollWidth - window.innerWidth}` : '',
+        dash: box ? `dash=${box.clientHeight}x${box.clientWidth} density=${box.dataset.density} cards=[${heights.join(',')}] cut=${cut} overflow=[${over.join(',')}] sumClip=${sumClip} rows=[${sumRows.join(',')}] sumHidden=${sumHidden} sumFill=${fill}% fitCut=${fitCut} covBand=${covBand} overviewScroll=${(document.querySelector('.overview')?.scrollHeight ?? 0) - (document.querySelector('.overview')?.clientHeight ?? 0)} hScroll=${document.scrollingElement!.scrollWidth - window.innerWidth}` : '',
       };
     });
     // Coaching: tappe che sbordano, righe "risolve anche" o nomi tagliati in larghezza, scorrimento orizzontale

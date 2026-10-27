@@ -34,8 +34,10 @@ export function useFit<T extends HTMLElement>(key: string, count: number, { more
         if (bottomIn(item, top) > limit + 0.5) break;
         n++;
       }
+      // Un "+N" già presente (tetto fisso, es. 6 debolezze) che non sta: si controlla anche se le voci stanno tutte
+      const moreOver = more && [...box.querySelectorAll('[data-fit-more]')].some(item => bottomIn(item, top) > limit + 0.5);
       const cut = n < count;
-      setState(s => (s.round === round ? { ...s, fit: cut ? Math.max(min, n) : n, check: cut && more } : s));
+      setState(s => (s.round === round ? { ...s, fit: cut ? Math.max(min, n) : n, check: (cut || moreOver) && more } : s));
       return;
     }
     // Controllo: se una voce mostrata o il "+N" esce, una voce in meno
