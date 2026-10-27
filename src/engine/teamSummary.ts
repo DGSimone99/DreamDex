@@ -11,7 +11,7 @@ import { measuredSubRoles } from './subRoles';
 import { conditionName } from './synergy';
 import type { Lang } from '../i18n';
 
-/** Offesa del membro (senza setup, Tera e Z) da cui è un attaccante "top". */
+/** Offesa del membro (il numero della tabella di Offesa) da cui è un attaccante "top". */
 export const TOP_ATTACKER = 85;
 /** Mosse di campo mostrate nel Riassunto (id). */
 export const FIELD_MOVES = ['stealthrock', 'spikes', 'toxicspikes', 'stickyweb', 'reflect', 'lightscreen', 'auroraveil', 'trickroom'];
@@ -25,9 +25,16 @@ export interface TeamSummary {
   walls: string[];
   field: FieldSetter[];
   hits: { covered: number; total: number };
-  /** Gravi prima. */
-  weak: { type: string; serious: boolean }[];
+  /** Tipi che nessuno colpisce super efficace (vista ampia). */
+  hitsMissing: string[];
+  /** Gravi prima; resist: quanti membri resistono (0 = nessuno). */
+  weak: { type: string; serious: boolean; resist: number }[];
   missingRoles: Need[];
+  /** Ruoli essenziali e importanti, coperti o no (vista ampia). */
+  keyRoles: { need: Need; covered: boolean }[];
+  /** Offesa e Difesa del membro per nome in battaglia, come nelle tabelle delle schede (vista ampia). */
+  offenseOf: Record<string, number>;
+  defenseOf: Record<string, number>;
   /** null: meta spento o senza statistiche. */
   threats: { species: string; usage: number }[] | null;
 }
@@ -38,10 +45,11 @@ export function teamSummary(team: TeamSet[], rating: TeamRating, coaching: Coach
   const attackers: string[] = [];
   const walls: string[] = [];
   const field: FieldSetter[] = [];
-  team.forEach((set, i) => {
+  team.forEach(set => {
     const name = battleName(set);
-    const m = rating.offense.members[i];
-    if (m && m.value - m.setupGain - m.oneUseGain >= TOP_ATTACKER) attackers.push(name);
+    // Per nome: i membri senza Offesa non sono nella lista, gli indici non corrispondono al team
+    const m = rating.offense.members.find(x => x.species === name);
+    if (m && m.value >= TOP_ATTACKER) attackers.push(name);
     const roles = cardRoles(set, rules, measuredSubRoles(set, team, data));
     if (roles.includes('physicalWall') || roles.includes('specialWall')) walls.push(name);
     // Mosse di campo e meteo del membro
@@ -52,7 +60,10 @@ export function teamSummary(team: TeamSet[], rating: TeamRating, coaching: Coach
 
   const weak = coaching.problems
     .filter(p => p.key.startsWith('defense:'))
-    .map(p => ({ type: p.key.slice('defense:'.length), serious: p.severity === 'serious' }))
+    .map(p => {
+      const type = p.key.slice('defense:'.length);
+      return { type, serious: p.severity === 'serious', resist: dash.coverage.cells.find(c => c.type === type)?.resist ?? 0 };
+    })
     .sort((a, b) => Number(b.serious) - Number(a.serious));
 
   return {
@@ -62,8 +73,12 @@ export function teamSummary(team: TeamSet[], rating: TeamRating, coaching: Coach
     walls,
     field,
     hits: { covered: dash.coverage.cells.filter(c => c.offense === 'ok').length, total: dash.coverage.cells.length },
+    hitsMissing: dash.coverage.cells.filter(c => c.offense !== 'ok').map(c => c.type),
     weak,
     missingRoles: dash.roles.chips.filter(c => c.level !== 'minor' && !c.covered).map(c => c.need),
+    keyRoles: dash.roles.chips.filter(c => c.level !== 'minor').map(c => ({ need: c.need, covered: c.covered })),
+    offenseOf: Object.fromEntries(rating.offense.members.map(m => [m.species, m.value])),
+    defenseOf: Object.fromEntries(rating.defense.members.map(m => [m.species, m.value])),
     threats: dash.threats.available && !dash.threats.metaOff ? dash.threats.pods : null,
   };
 }

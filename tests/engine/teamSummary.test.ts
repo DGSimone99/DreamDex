@@ -28,14 +28,24 @@ describe('teamSummary', () => {
     expect(FIELD_MOVES).toEqual(['stealthrock', 'spikes', 'toxicspikes', 'stickyweb', 'reflect', 'lightscreen', 'auroraveil', 'trickroom']);
   });
 
-  it('attaccanti: Offesa senza setup/Tera/Z >= 85, in ordine di team', () => {
+  it('attaccanti: Offesa del membro come in tabella (value, setup e Tera/Z compresi) >= 85, in ordine di team', () => {
     const { rating, coaching, dash, data } = build();
     const members = rating.offense.members.map((m, i) => ({ ...m, setupGain: 0, oneUseGain: 0, value: [90, 84.9, 85, 50, 100, 20][i] }));
-    members[4] = { ...members[4], setupGain: 10, oneUseGain: 5, value: 100 }; // 85 netti
-    members[5] = { ...members[5], setupGain: 10, value: 94.9 }; // 84.9 netti
+    members[4] = { ...members[4], setupGain: 30, oneUseGain: 5, value: 100 }; // 65 senza setup e Tera: conta il numero mostrato
+    members[1] = { ...members[1], value: 84.9 };
     const fake = { ...rating, offense: { ...rating.offense, members } };
     const s = teamSummary(base, fake, coaching, dash, data);
     expect(s.attackers).toEqual([battleName(base[0]), battleName(base[2]), battleName(base[4])]);
+  });
+
+  it('attaccanti: il membro si trova per nome, non per posizione (membri senza Offesa tolti dalla lista)', () => {
+    const { rating, coaching, dash, data } = build();
+    // Gholdengo (indice 1) senza Offesa: la lista dei membri ha un elemento in meno e gli indici scorrono
+    const members = rating.offense.members
+      .filter(m => m.species !== battleName(base[1]))
+      .map(m => ({ ...m, value: m.species === battleName(base[2]) ? 99 : 50 }));
+    const fake = { ...rating, offense: { ...rating.offense, members } };
+    expect(teamSummary(base, fake, coaching, dash, data).attackers).toEqual([battleName(base[2])]);
   });
 
   it('muri: physicalWall/specialWall nelle carte del team', () => {
@@ -78,6 +88,15 @@ describe('teamSummary', () => {
   it('ruoli mancanti: essenziali e importanti scoperti', () => {
     const { summary, dash } = build();
     expect(summary.missingRoles).toEqual(dash.roles.chips.filter(c => c.level !== 'minor' && !c.covered).map(c => c.need));
+  });
+
+  it('vista ampia: Offesa e Difesa di ogni membro per nome, i tipi non colpiti, i ruoli chiave coperti o no, chi resiste alle debolezze', () => {
+    const { summary, rating, dash } = build();
+    for (const m of rating.offense.members) expect(summary.offenseOf[m.species]).toBe(m.value);
+    for (const m of rating.defense.members) expect(summary.defenseOf[m.species]).toBe(m.value);
+    expect(summary.hitsMissing).toEqual(dash.coverage.cells.filter(c => c.offense !== 'ok').map(c => c.type));
+    expect(summary.keyRoles).toEqual(dash.roles.chips.filter(c => c.level !== 'minor').map(c => ({ need: c.need, covered: c.covered })));
+    for (const w of summary.weak) expect(w.resist).toBe(dash.coverage.cells.find(c => c.type === w.type)!.resist);
   });
 
   it('minacce: pods col meta, null a meta spento', () => {
