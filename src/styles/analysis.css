@@ -440,6 +440,7 @@ button.sum-row:hover { background: var(--accent-wash); }
 .coach-prob:has(.is-threat) { align-items: center; }
 .coach-prob-text.is-threat { display: flex; align-items: center; gap: 4px; overflow: hidden; white-space: nowrap; }
 .coach-prob-text.is-threat .mon-icon { margin: -10px -6px -9px -8px; }
+.coach-prob-text.is-threat .coach-usage { margin-left: auto; padding-left: 6px; color: var(--muted); font-variant-numeric: tabular-nums; font-size: 12px; }
 .coach-prob-text.is-threat strong { overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
 /*
  * Coperto da una tappa: solo il numero della tappa in fondo. Puntatore o fuoco su una proposta: i problemi che

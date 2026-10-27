@@ -5,7 +5,7 @@ import { needLabel, type Need } from '../engine/needs';
 import { columnOf, MAX_STEPS, stepNumbers, type CoachStep, type MapColumn } from '../engine/coachSteps';
 import type { MoveFix } from '../engine/moveFixes';
 import type { TeamRating } from '../engine/rating';
-import { t, type MessageKey } from '../i18n';
+import { formatPercent, t, type MessageKey } from '../i18n';
 import { gameName, typeName } from '../i18n/game';
 import { useLang, useT } from '../i18n/react';
 import { Icon } from './icons';
@@ -260,8 +260,9 @@ function Step({ step, index, problems, actions, onCard, onPreview }: {
  * Un problema nella mappa: gravità, icona del tipo o della minaccia, testo; se una tappa lo copre, il numero della
  * tappa in fondo. `preview`: la proposta sotto il puntatore (o col fuoco) lo risolve, quindi si vede barrato ed evidenziato.
  */
-function MapProblem({ problem, step, preview }: { problem: CoachProblem; step: number | null; preview: boolean }) {
+function MapProblem({ problem, step, preview, usage }: { problem: CoachProblem; step: number | null; preview: boolean; usage?: number }) {
   const tr = useT();
+  const lang = useLang();
   const subjects = problem.subjects ?? [];
   const threat = problem.category === 'meta' && subjects.length > 0 ? subjects[0] : null;
   const covered = step !== null ? tr('coach.map.coveredBy', { n: step }) : '';
@@ -273,6 +274,7 @@ function MapProblem({ problem, step, preview }: { problem: CoachProblem; step: n
       {threat ? (
         <span className="coach-prob-text is-threat" title={problem.text}>
           <PokemonIcon name={threat} /><strong aria-hidden="true">{threat}</strong><span className="visually-hidden">{problem.text}</span>
+          {usage !== undefined && <span className="coach-usage">{formatPercent(lang, usage, 0)}</span>}
         </span>
       ) : (
         <span className="coach-prob-text">
@@ -293,8 +295,10 @@ const COLUMNS: { key: MapColumn; area: 'defense' | 'strength' | 'roles' | null }
  * La scheda Coaching: in alto fino a 3 tappe (cosa farei per prima), sotto la mappa dei problemi per area.
  * `advice` null: i consigli si stanno calcolando (lo scheletro delle tappe; la mappa si vede già).
  */
-export function CoachingView({ coaching, advice, members, rating, metaOn, onFix, onMoveFix, onApplyFix, onApplyMove }: {
+export function CoachingView({ coaching, advice, members, rating, metaOn, threatUsage, onFix, onMoveFix, onApplyFix, onApplyMove }: {
   coaching: Coaching; advice: CoachAdvice | null; members: number; rating: TeamRating | null; metaOn: boolean;
+  /** Uso in % (0-1) delle minacce per specie, mostrato sulle righe "senza check" */
+  threatUsage?: Record<string, number>;
 } & StepActions) {
   const tr = useT();
   const id = useId();
@@ -353,7 +357,7 @@ export function CoachingView({ coaching, advice, members, rating, metaOn, onFix,
               const redundancy = items.filter(p => p.category === 'redundancy');
               const threats = items.filter(p => p.category === 'meta');
               const score = area ? rating?.areas.find(a => a.key === area)?.value ?? null : null;
-              const row = (p: CoachProblem) => <MapProblem key={`${p.key}|${p.text}`} problem={p} step={stepOf.get(p.key) ?? null} preview={preview?.has(p.key) ?? false} />;
+              const row = (p: CoachProblem) => <MapProblem key={`${p.key}|${p.text}`} problem={p} step={stepOf.get(p.key) ?? null} preview={preview?.has(p.key) ?? false} usage={p.category === 'meta' ? threatUsage?.[p.subjects?.[0] ?? ''] : undefined} />;
               return (
                 <div key={key} role="group" aria-labelledby={`${id}-${key}`} className="dash-card coach-col">
                   <header className="dash-head">

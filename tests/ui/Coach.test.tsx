@@ -319,6 +319,15 @@ describe('CoachingView', () => {
     expect(row.querySelector('.type-name, .type-dot')).toBeNull();
   });
 
+  it("mappa: la riga della minaccia mostra la % d'uso, senza dato resta com'è", () => {
+    const problem = (species: string): CoachProblem => ({ severity: 'minor', category: 'meta', text: `meta:${species}`, fixes: [], key: `meta:${species}`, subjects: [species] });
+    const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], threatFixes: {}, problems: [problem('Zapdos'), problem('Ogerpon-Wellspring')] };
+    renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [] }} members={3} rating={rating(three)} metaOn threatUsage={{ Zapdos: 0.142 }} {...noop} />);
+    const group = screen.getByRole('group', { name: 'Regole · Meta' });
+    expect(group.querySelector('li[data-key="meta:Zapdos"] .coach-usage')).toHaveTextContent('14%');
+    expect(group.querySelector('li[data-key="meta:Ogerpon-Wellspring"] .coach-usage')).toBeNull();
+  });
+
   it('la mappa: quattro gruppi col voto dell\'area, nessun voto per Regole · Meta', () => {
     const r = rating(six)!;
     view(six);

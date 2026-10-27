@@ -72,6 +72,7 @@ export function AnalysisPanel({ team, analysis, rating, coaching, advice = null,
   } else if (showCoaching && coaching) {
     // Il Coaching vince sul profilo di un membro, come le aree
     body = <CoachingView coaching={coaching} advice={advice} members={team.length} rating={rating} metaOn={!data.ignoreMeta && !!data.stats}
+      threatUsage={Object.fromEntries(analysis.threats.map(th => [th.name, th.usage]))}
       onFix={fix => onFix?.(fix)} onMoveFix={fix => onMoveFix?.(fix)}
       onApplyFix={fix => onApplyFix?.(fix)} onApplyMove={fix => onApplyMove?.(fix)} />;
   } else if (open !== null) {
