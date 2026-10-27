@@ -215,13 +215,16 @@ describe('SuggestionsPanel', () => {
         reason('defense', 5, 'Resiste ad Acqua: debolezze del team', 'Resiste ad Acqua'),
         { ...reason('synergy', 4.5, 'Usato con Great Tusk nel 30% dei team', 'Usato con Great Tusk nel 30% dei team'), usedWith: true },
         reason('synergy', 3, 'Abilita Venusaur: Siccità → Clorofilla', 'Abilita Venusaur'),
-        reason('roles', 4, 'Porta Pivot (mancanti nel team)', 'Porta Pivot'),
+        reason('roles', 4, 'Porta Pivot (mancanti nel team)', 'Pivot'),
         reason('coverage', 1, 'Colpisce super efficace Fuoco, scoperti dal team', 'Colpisce Fuoco'),
       ],
     } as never;
-    expect(reasonsOf(item, 1, null, DEFAULT_FORMAT, 'it')).toEqual({ pros: false, texts: ['Resiste ad Acqua'] });
+    expect(reasonsOf(item, 1, null, DEFAULT_FORMAT, 'it')).toEqual({ pros: true, texts: ['Resiste ad Acqua'] });
     // "Usato con" mai nelle caselle (lo dice il segno ciano), "Abilita" sì
-    expect(reasonsOf(item, 3, null, DEFAULT_FORMAT, 'it')).toEqual({ pros: false, texts: ['Resiste ad Acqua', 'Porta Pivot', 'Abilita Venusaur'] });
+    expect(reasonsOf(item, 3, null, DEFAULT_FORMAT, 'it')).toEqual({ pros: true, texts: ['Resiste ad Acqua', 'Pivot', 'Abilita Venusaur'] });
+    // Il "+" verde c'è in Aggiungi; col team vuoto la riga dei ruoli resta senza
+    const roles = reasonsOf({ ...(item as object), set: { species: 'Rotom-Wash', moves: ['Volt Switch'], ability: 'Levitate', item: 'Leftovers', nature: 'Bold', evs: {}, ivs: {} } } as never, 1, 0.2, DEFAULT_FORMAT, 'it');
+    expect(roles.pros).toBe(false);
   });
 
   it('il pulsante rapido resta nella riga (compare al passaggio o col focus)', async () => {

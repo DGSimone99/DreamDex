@@ -101,7 +101,7 @@ export const en = {
   'explain.style.physical': "physical attacker",
   'explain.style.special': "special attacker",
   'explain.roles': "Brings {list} (missing from the team)",
-  'explain.roles.short': "Brings {list}",
+  'explain.roles.short': "{list}",
   'explain.synergy': "Used with {member} in {pct}% of teams",
   'explain.usage': "Meta usage: {pct}",
   'tag.weatherConflict': "Weather conflict with {who}",

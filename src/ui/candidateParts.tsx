@@ -82,7 +82,8 @@ export function reasonsOf(item: Item, n: number, usage: number | null, format: F
   // per sceglierlo; "usato con" lo dice già il segno ciano; un avviso (peso negativo) solo se è l'unica ragione
   const ranked = item.reasons.filter(r => r.component !== 'strength' && !r.usedWith).sort((a, b) => b.weight - a.weight);
   const texts = ranked.filter((r, i) => i === 0 || r.weight > 0).slice(0, n).map(r => r.short);
-  return { pros: false, texts: texts.length ? texts : [''] };
+  // Col "+" verde se è un vero bonus; un avviso (peso negativo) o niente restano senza
+  return { pros: texts.length > 0 && ranked[0].weight > 0, texts: texts.length ? texts : [''] };
 }
 
 /** Solo se il Pokémon è bannato nel formato: triangolo rosso con il tier nel tooltip. */

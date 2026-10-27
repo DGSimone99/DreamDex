@@ -33,7 +33,7 @@ describe('testi del motore', () => {
     expect(texts).toContain('Used with Great Tusk in 30% of teams');
     expect(texts).toContain('Meta usage: 12.3%');
     const shorts = explain(facts, components, 'en').map(r => r.short);
-    expect(shorts).toEqual(expect.arrayContaining(['Immune to Ground', 'Checks Dragapult', 'Hits Fairy', 'Brings Pivot, special attacker']));
+    expect(shorts).toEqual(expect.arrayContaining(['Immune to Ground', 'Checks Dragapult', 'Hits Fairy', 'Pivot, special attacker']));
     // "Used with": niente forma breve (nelle caselle non compare), segnata per il dettaglio
     expect(explain(facts, components, 'en').filter(r => r.usedWith).map(r => r.text)).toEqual(['Used with Great Tusk in 30% of teams']);
   });
@@ -55,7 +55,7 @@ describe('testi del motore', () => {
     expect(byText['Immune a Terra e resiste ad Acqua: debolezze del team']).toBe('Immune a Terra e resiste ad Acqua');
     expect(byText['Abilita Venusaur: Siccità → Clorofilla']).toBe('Abilita Venusaur');
     expect(byText['Colpisce super efficace Fuoco, scoperti dal team']).toBe('Colpisce Fuoco');
-    expect(byText['Porta Pivot (mancanti nel team)']).toBe('Porta Pivot');
+    expect(byText['Porta Pivot (mancanti nel team)']).toBe('Pivot');
     expect(byText['Ferma Dragapult']).toBe('Ferma Dragapult');
   });
 });
