@@ -1,8 +1,7 @@
 import { act, renderHook } from '@testing-library/react';
 import { useRef } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { usePerPage } from '../../src/ui/usePerPage';
-import { PAGE } from '../../src/ui/SuggestionsPanel';
+import { PAGE, usePerPage } from '../../src/ui/usePerPage';
 import type { ListStyle } from '../../src/ui/theme';
 
 /** ResizeObserver finto: si tengono le callback per lanciarle a mano. */

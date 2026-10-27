@@ -155,9 +155,10 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .list-empty > .icon { width: 28px; height: 28px; color: var(--faint); }
 .list-empty p { margin: 0; font-size: 15px; }
 /* Fascia "Candidati (N)": a destra il suggerimento del doppio clic e la paginazione ‹ BOX 1/5 › coi trattini sotto */
-.list-head { display: flex; align-items: center; gap: 12px; }
+/* La fascia è alta come il pager anche senza pagine: l'altezza della lista (e il numero per pagina) non dipende da lui */
+.list-head { --pager-h: 36px; display: flex; align-items: center; gap: 12px; box-sizing: content-box; min-height: var(--pager-h); }
 .list-head .dbl-hint { margin-left: auto; font-size: 12px; color: var(--faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-.pager { flex: none; display: grid; grid-template-columns: auto auto auto; align-items: center; justify-items: center; gap: 2px 4px; }
+.pager { flex: none; display: grid; grid-template-columns: auto auto auto; grid-template-rows: 24px 10px; height: var(--pager-h); align-items: center; justify-items: center; gap: 2px 4px; }
 .pager .step { display: grid; place-items: center; width: 24px; height: 24px; padding: 0; border: 0; background: none; color: var(--muted); }
 .pager .step:hover:not(:disabled) { color: var(--text); }
 .pager .step:disabled { opacity: 0.35; }

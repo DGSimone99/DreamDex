@@ -183,6 +183,17 @@ describe('SuggestionsPanel', () => {
     expect(list().querySelector('.picked .rank')!.textContent).toBe('10');
   });
 
+  it('un cambio senza bonus: "nessuna differenza", mai un malus come motivo', async () => {
+    const { reasonsOf } = await import('../../src/ui/SuggestionsPanel');
+    const none = { roles: [], covers: [], resists: [] };
+    const item = {
+      species: 'Pelipper', set: { species: 'Pelipper', moves: [] }, score: 0, components: {}, tags: [], penalty: 0, facts: {},
+      diff: { gains: none, losses: none, lostResists: [] },
+      reasons: [{ component: 'synergy', weight: -1, text: 'La pioggia si scontra con il sole' }],
+    } as never;
+    expect(reasonsOf(item, 2, null, DEFAULT_FORMAT, 'it')).toEqual({ pros: false, texts: ['Nessuna differenza rilevante'] });
+  });
+
   it('il pulsante rapido resta nella riga (compare al passaggio o col focus)', async () => {
     await setup('Great Tusk');
     expect(list().querySelector('li button.quick')).not.toBeNull();

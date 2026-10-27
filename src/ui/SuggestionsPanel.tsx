@@ -129,15 +129,16 @@ function ListMarks({ set, lists }: { set: TeamSet; lists?: EffectiveLists }) {
 
 /**
  * I motivi sotto il nome, dal bonus che vale più punti voto in giù (al massimo `n`). Il malus resta nel dettaglio.
- * Col team vuoto i ruoli principali; senza bonus la ragione che pesa di più o "nessuna differenza".
+ * Col team vuoto i ruoli principali; senza bonus "nessuna differenza".
  */
-function reasonsOf(item: Item, n: number, usage: number | null, format: Format, lang: Lang): { pros: boolean; texts: string[] } {
+export function reasonsOf(item: Item, n: number, usage: number | null, format: Format, lang: Lang): { pros: boolean; texts: string[] } {
   const diff = 'diff' in item ? item.diff : null;
   const changes = diff ? rankedChanges(diff, item.teamGain?.areaPoints, lang) : null;
   const pros = changes?.pros.slice(0, n).map(p => p.text) ?? [];
   if (pros.length) return { pros: true, texts: pros };
+  // Con un cambio ma senza bonus: "nessuna differenza" (la ragione che pesa di più potrebbe essere un malus)
   const text = changes
-    ? (item.reasons[0] ? topReason(item.reasons)!.text : t(lang, 'suggest.noDifference'))
+    ? t(lang, 'suggest.noDifference')
     // L'uso nel meta non è un motivo per sceglierlo: resta solo col team vuoto, dove è l'unico criterio
     // Col team vuoto l'uso sta già a destra: qui i ruoli principali del Pokémon
     : (usage !== null ? detectRoles(item.set, formatRules(format.formatId)).slice(0, 3).map(role => t(lang, `role.${role}`)).join(', ') : topReason(item.reasons.filter(r => r.component !== 'strength'))?.text) ?? '';
