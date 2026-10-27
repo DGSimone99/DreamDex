@@ -14,8 +14,9 @@ import { CandidateMarks, OutMark, PickButton, Reasons, ResultCell, candidateHand
 export function CandidateCard(props: CandidateProps) {
   const { rank, item, reasons, sprite, usage, out, format, lists, selected, onSelect } = props;
   const lang = useLang();
-  // Carta sotto il mouse: solo lei gioca lo sprite animato, e lo sprite esce dalla carta ritagliata (sta sopra la
-  // cornice, così la testa sfonda il bordo alto); a riposo resta dentro, sotto targhetta e icone. Luce e ombra nel CSS
+  // Lo sprite animato solo sulla carta sotto il mouse e sulla selezionata (sempre). Sotto il mouse lo sprite esce dalla carta
+  // ritagliata (sta sopra la cornice, così la testa sfonda il bordo alto); a riposo resta dentro, sotto targhetta e icone.
+  // Luce e ombra nel CSS
   const [hover, setHover] = useState(false);
   const types = getSpecies(item.species)?.types ?? [];
   const typeNames = types.map(type => typeName(type, lang)).join(' / ');
@@ -25,7 +26,7 @@ export function CandidateCard(props: CandidateProps) {
     <li className={className} style={{ '--t1': typeColor(types[0] ?? '') } as CSSProperties} {...candidateHandlers(props)}
       onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
       <div className="card-face">
-        {!hover && <span className="card-sprite" aria-hidden="true">{sprite(false)}</span>}
+        {!hover && <span className="card-sprite" aria-hidden="true">{sprite(selected)}</span>}
         <ResultCell item={item} usage={usage} favorite={isFavoriteCandidate(item.set, lists)} className="tag" />
         <TypeIcons types={types} className="card-types" title={typeNames} />
         {/* Le icone sono decorative: i tipi agli screen reader come testo */}

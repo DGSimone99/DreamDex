@@ -656,7 +656,7 @@ describe('sprite Icona box', () => {
     }
   });
 
-  it('Carte: solo la carta sotto il mouse chiede lo sprite animato; con l’icona box mai la GIF', async () => {
+  it('Carte: solo la carta sotto il mouse e la selezionata chiedono lo sprite animato; con l’icona box mai la GIF', async () => {
     const { SuggestionsPanel } = await import('../../src/ui/SuggestionsPanel');
     const { renderIt } = await import('../helpers/italian');
     const { tusk } = await import('../fixtures/data');
@@ -666,12 +666,14 @@ describe('sprite Icona box', () => {
         onAdd={() => {}} onReplaceWith={() => {}} onCancelReplace={() => {}} listStyle="cards" listSprite={listSprite} />);
       const cards = [...list().querySelectorAll<HTMLElement>('.card')];
       expect(cards.length).toBeGreaterThan(1);
-      expect(list().querySelector('.sprite-ani')).toBeNull();
+      const animated = () => [...list().querySelectorAll('.card')].filter(card => card.querySelector('.sprite-ani'));
+      // A riposo solo la selezionata (la prima)
+      expect(cards[0].classList.contains('selected')).toBe(true);
+      expect(animated()).toEqual(listSprite === 'normal' ? [cards[0]] : []);
       fireEvent.mouseEnter(cards[1]);
-      const animated = [...list().querySelectorAll('.card')].filter(card => card.querySelector('.sprite-ani'));
-      expect(animated).toEqual(listSprite === 'normal' ? [cards[1]] : []);
+      expect(animated()).toEqual(listSprite === 'normal' ? [cards[0], cards[1]] : []);
       fireEvent.mouseLeave(cards[1]);
-      expect(list().querySelector('.sprite-ani')).toBeNull();
+      expect(animated()).toEqual(listSprite === 'normal' ? [cards[0]] : []);
       unmount();
     }
   });

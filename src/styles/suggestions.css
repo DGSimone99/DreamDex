@@ -487,12 +487,12 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
   from { transform: translateX(-50%); }
   to { transform: translateX(-50%) translateY(-10px) scale(1.15); }
 }
-/* Icona del box: sotto il mouse saltella come il membro aperto del team compresso (sul riquadro: l'icona ha già la sua scala) */
-.card:hover .card-sprite .box-icon { animation: box-hop 0.7s ease-in-out infinite; }
+/* Icona del box: sotto il mouse e sulla selezionata saltella come il membro aperto del team compresso (sul riquadro: l'icona ha già la sua scala) */
+.card:hover .card-sprite .box-icon, .card.selected .card-sprite .box-icon { animation: box-hop 0.7s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) {
   .card, .card-face::before, .card .who::after { transition: none; }
   .card-sprite.popped { animation: none; }
-  .card:hover .card-sprite .box-icon { animation: none; }
+  .card:hover .card-sprite .box-icon, .card.selected .card-sprite .box-icon { animation: none; }
 }
 /* Targhetta in alto a sinistra: +N (#1 su magenta), −N e ±0 nei loro colori, col team vuoto l'uso nel meta */
 .card .tag { --tag-bg: var(--ground); position: absolute; top: 0; left: 0; z-index: 1; display: flex; align-items: center; gap: 4px; margin: 0; padding: 5px 16px 5px 8px; border-radius: 0; background: var(--tag-bg); color: var(--text);
