@@ -202,6 +202,10 @@
 .slot[open] > summary { justify-content: center; --open-scale: 1.5; --fit: 180; }
 .slot[open] > summary > :not(.sprite-wrap, .favorite, .remove, .slot-custom, .slot-lead, .mini-icon) { display: none; }
 .band:not(.collapsed) .slot[open] > summary .sprite-wrap { flex: 1; display: grid; place-items: end center; width: 100%; }
+/* Statico e animato con la stessa scala, quanto lo spazio della carta: la GIF è il riquadro di 96px ritagliato sul Pokémon,
+   quindi alta --ani-h/96 dello statico. Senza GIF (es. Urshifu Pluricolpo) lo statico resta grande uguale, non di più */
+.band:not(.collapsed) .slot[open] > summary .sprite { width: min(100cqh, 100cqw); height: min(100cqh, 100cqw); transform: none; }
+.band:not(.collapsed) .slot[open] > summary .sprite-ani { width: auto; height: calc(var(--ani-h, 96) / 96 * min(100cqh, 100cqw)); transform: translateX(-50%); }
 /* Team compresso: il membro aperto saltella, come nel box dei giochi */
 @keyframes box-hop { 0%, 100% { transform: translateY(0); } 40% { transform: translateY(-5px); } 60% { transform: translateY(0); } }
 .band.collapsed .slot[open] .mini-icon .mon-icon { animation: box-hop 0.7s ease-in-out infinite; }
@@ -407,8 +411,6 @@
   .slot > summary .sprite { width: 136px; height: 136px; }
   .slot > summary { --sprite-scale: 1.4167; }
   .slot[open] > summary .sprite { transform: scale(calc(var(--open-scale) / var(--sprite-scale))); }
-  /* L'animato parte dalla GIF a 96px, non dallo sprite più grande: solo --open-scale, altrimenti l'ingrandimento conta due volte */
-  .slot[open] > summary .sprite-ani { transform: translateX(-50%) scale(min(var(--open-scale), calc(var(--fit) / var(--ani-h, 96)))); }
 }
 /* Schermi larghi (anche un 2K con il ridimensionamento di Windows): lo sprite animato più grande, sia nella carta aperta
    (fin dove l'altezza della carta lo permette) sia nel dettaglio del Pokémon */
