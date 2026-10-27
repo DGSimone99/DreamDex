@@ -439,4 +439,24 @@ describe('stile Carte', () => {
     expect(tag.textContent).toMatch(/^\d+(,\d+)?\s?%/);
     expect(tag.textContent).not.toMatch(/^[+−±]/);
   });
+
+  it('Carte: il #1 che peggiora o resta pari non è magenta (−N .worse, ±0 .same)', async () => {
+    const { CandidateCard } = await import('../../src/ui/CandidateCard');
+    const { renderIt } = await import('../helpers/italian');
+    const { tusk } = await import('../fixtures/data');
+    const card = (gain: number) => {
+      const item = { species: 'Great Tusk', set: tusk, score: 0, components: {}, tags: [], penalty: 0, reasons: [],
+        facts: { clashes: [] }, teamGain: { gain, grade: 'B', overall: 70 } } as never;
+      const { container, unmount } = renderIt(
+        <ol><CandidateCard rank={1} item={item} reasons={{ pros: false, texts: ['x'] }} sprite={null} usage={null} quickLabel="q" actionLabel="a"
+          replacing={false} selected={false} onSelect={() => {}} onAction={() => {}} format={DEFAULT_FORMAT} /></ol>);
+      const li = container.querySelector('li.card')!;
+      const result = { first: li.classList.contains('first'), strong: li.querySelector('.tag strong')!.className, text: li.querySelector('.tag')!.textContent };
+      unmount();
+      return result;
+    };
+    expect(card(-2)).toEqual({ first: false, strong: 'worse', text: '−2' });
+    expect(card(0)).toEqual({ first: false, strong: 'same', text: '±0' });
+    expect(card(5)).toEqual({ first: true, strong: '', text: '+5' });
+  });
 });

@@ -68,11 +68,13 @@ export function usePerPage(ref: RefObject<HTMLElement | null>, style: ListStyle,
     if (!measure) return { perPage: PAGE, reasons: 1 };
     // Partendo col team chiuso, l'altezza attuale finché il team non si apre
     const open = measure.open ?? measure.height;
+    // Col team aperto un motivo solo (lo spazio in più va allo sprite); più motivi solo col team nascosto
+    const fit = (reasons: number) => (teamCollapsed ? reasons : 1);
     if (style === 'menu') {
       const { perPage, rowHeight, reasons } = menuLayout(open, measure.height, measure.windowHeight);
-      return { perPage, rowHeight, reasons };
+      return { perPage, rowHeight, reasons: fit(reasons) };
     }
     const { perPage, columns, tileHeight, reasons } = cardsLayout(measure.width, open, measure.height);
-    return { perPage, columns, tileHeight, reasons };
-  }, [measure, style]);
+    return { perPage, columns, tileHeight, reasons: fit(reasons) };
+  }, [measure, style, teamCollapsed]);
 }

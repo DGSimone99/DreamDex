@@ -24,7 +24,7 @@ import { TypeIcons } from './typeIcons';
 import { Icon } from './icons';
 import { SuggestionDetail } from './SuggestionDetail';
 import { CandidateCard } from './CandidateCard';
-import { BanMark, CandidateMarks, OutMark, PickButton, QuickButton, Reasons, ResultCell, candidateHandlers, reasonsOf, stateClasses, type CandidateProps, type Item } from './candidateParts';
+import { BanMark, CandidateMarks, OutMark, PickButton, QuickButton, Reasons, ResultCell, candidateHandlers, isLead, reasonsOf, stateClasses, type CandidateProps, type Item } from './candidateParts';
 import type { ListSprite, ListStyle } from './theme';
 import { useLang, useT } from '../i18n/react';
 import { PAGE, usePerPage } from './usePerPage';
@@ -74,7 +74,7 @@ export interface CandidateFocus {
 function SuggestionRow(props: CandidateProps) {
   const { rank, item, reasons, sprite, usage, out, format, lists, selected, onSelect } = props;
   const types = getSpecies(item.species)?.types ?? [];
-  const className = ['suggestion', rank === 1 && 'first', stateClasses(props)].filter(Boolean).join(' ');
+  const className = ['suggestion', isLead(rank, item) && 'first', stateClasses(props)].filter(Boolean).join(' ');
   return (
     // Tutta la riga apre il dettaglio col mouse; da tastiera lo fa il nome
     <li className={className} {...candidateHandlers(props)}>

@@ -144,8 +144,8 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .suggestion .quick { display: grid; place-items: center; width: 34px; height: 34px; padding: 0; border-radius: 4px; color: var(--muted); }
 .suggestion .quick:hover { color: var(--text); background: var(--accent-soft); }
 /* Il pulsante rapido resta (via da tastiera), ma compare solo passando sulla casella o col focus */
-.suggestion .quick { opacity: 0; transition: opacity 0.15s var(--ease); }
-.suggestion:hover .quick, .suggestion:focus-within .quick { opacity: 1; }
+.suggestion .quick { opacity: 0; pointer-events: none; transition: opacity 0.15s var(--ease); }
+.suggestion:hover .quick, .suggestion:focus-within .quick { opacity: 1; pointer-events: auto; }
 .suggestion.first .quick { background: var(--accent-2); border-color: var(--accent-2); color: var(--on-accent-2); }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .set { background: var(--field); padding: 10px 12px; border-radius: 4px; white-space: pre-wrap; font-size: 13px; line-height: 1.5; }
@@ -522,8 +522,9 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .card .reason b { margin-right: 3px; font-weight: 700; color: var(--good); }
 /* Pulsante rapido: a riposo nascosto, passando sulla casella o col focus a sinistra sotto la targhetta */
 .card .quick { position: absolute; top: 30px; left: 6px; z-index: 2; display: grid; place-items: center; width: 28px; height: 28px; padding: 0; border-radius: 4px;
-  color: var(--muted); background: var(--panel); opacity: 0; transition: opacity 0.15s var(--ease); }
+  color: var(--muted); background: var(--panel); opacity: 0; pointer-events: none; transition: opacity 0.15s var(--ease); }
 .card .quick:hover { color: var(--text); background: var(--accent-soft); }
-.card:hover .quick, .card:focus-within .quick { opacity: 1; }
+/* Invisibile non si clicca: torna cliccabile solo quando si vede */
+.card:hover .quick, .card:focus-within .quick { opacity: 1; pointer-events: auto; }
 .card.first .quick { background: var(--accent-2); border-color: var(--accent-2); color: var(--on-accent-2); }
 .card.first .quick:hover { background: var(--accent-2-ink); }

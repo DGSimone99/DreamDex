@@ -62,6 +62,23 @@ describe('usePerPage', () => {
     }
   });
 
+  it('team aperto: un motivo solo anche con caselle alte; team nascosto: di più', () => {
+    for (const style of ['cards', 'menu'] as const) {
+      const fire = stubObservers();
+      // Caselle e righe alte (Carte 3 motivi, Menu 3 dal solo layout): col team aperto resta 1
+      const size = { width: 560, height: style === 'cards' ? 620 : 100 };
+      const { result, rerender } = setup(style, size);
+      fire();
+      expect(style === 'cards' ? result.current.tileHeight : result.current.rowHeight).toBeGreaterThanOrEqual(style === 'cards' ? 141 : 60);
+      expect(result.current.reasons).toBe(1);
+      size.height = 712;
+      rerender({ collapsed: true });
+      fire();
+      expect(result.current.reasons).toBeGreaterThan(1);
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('Carte: colonne e altezza della tessera; Menu: altezza della riga', () => {
     let fire = stubObservers();
     const cards = setup('cards', { width: 560, height: 532 });
