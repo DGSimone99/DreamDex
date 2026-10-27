@@ -70,11 +70,13 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
   const covered = new Set(changes?.pros.map(p => p.area));
   const reasons = item.reasons
     // Gli avvisi (peso negativo: meteo in conflitto, mosse indebolite) vanno in Toglie, non qui
-    .filter(reason => reason.weight >= 0 && reason.component !== 'strength' && !covered.has(REASON_AREA[reason.component] as ScoredArea))
-    .map(reason => reason.text);
+    .filter(reason => reason.weight >= 0 && reason.component !== 'strength' && !covered.has(REASON_AREA[reason.component] as ScoredArea));
   // Col team vuoto non c'è niente da confrontare: Porta dice cosa sa fare il Pokémon (i suoi ruoli)
   const roles = !item.teamGain && !changes ? detectRoles(set, rulesOf(data)).map(role => tr(`role.${role}`)) : [];
-  const brings = [...new Set([...(changes?.pros.map(p => p.text) ?? []), ...reasons, ...roles])].slice(0, MAX_POINTS);
+  const shown = [...new Set([...(changes?.pros.map(p => p.text) ?? []), ...reasons.map(reason => reason.text), ...roles])].slice(0, MAX_POINTS);
+  // Stessi punti di prima, ma "Usato con X" sempre per ultimo
+  const usedWith = new Set(reasons.filter(reason => reason.usedWith).map(reason => reason.text));
+  const brings = [...shown.filter(text => !usedWith.has(text)), ...shown.filter(text => usedWith.has(text))];
   // Toglie: le perdite del cambio e gli avvisi (meteo in conflitto, mosse indebolite)
   const loses = [...(changes?.cons.map(c => c.text) ?? []), ...(item.facts.clashes ?? []).map(text => text.replace(/^⚠\s*/, ''))].slice(0, MAX_POINTS);
   // Senza perdite da elencare ma con aree in calo, Toglie dice quali (mai "niente" accanto a pillole rosse)

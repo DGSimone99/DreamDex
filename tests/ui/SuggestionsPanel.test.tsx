@@ -213,13 +213,15 @@ describe('SuggestionsPanel', () => {
       reasons: [
         reason('strength', 9, 'Uso nel meta: 20%', 'Uso nel meta: 20%'),
         reason('defense', 5, 'Resiste ad Acqua: debolezze del team', 'Resiste ad Acqua'),
-        reason('synergy', 3, 'Usato con Great Tusk nel 30% dei team', 'Usato con Great Tusk (30%)'),
+        { ...reason('synergy', 4.5, 'Usato con Great Tusk nel 30% dei team', 'Usato con Great Tusk nel 30% dei team'), usedWith: true },
+        reason('synergy', 3, 'Abilita Venusaur: Siccità → Clorofilla', 'Abilita Venusaur'),
         reason('roles', 4, 'Porta Pivot (mancanti nel team)', 'Porta Pivot'),
         reason('coverage', 1, 'Colpisce super efficace Fuoco, scoperti dal team', 'Colpisce Fuoco'),
       ],
     } as never;
     expect(reasonsOf(item, 1, null, DEFAULT_FORMAT, 'it')).toEqual({ pros: false, texts: ['Resiste ad Acqua'] });
-    expect(reasonsOf(item, 3, null, DEFAULT_FORMAT, 'it')).toEqual({ pros: false, texts: ['Resiste ad Acqua', 'Porta Pivot', 'Usato con Great Tusk (30%)'] });
+    // "Usato con" mai nelle caselle (lo dice il segno ciano), "Abilita" sì
+    expect(reasonsOf(item, 3, null, DEFAULT_FORMAT, 'it')).toEqual({ pros: false, texts: ['Resiste ad Acqua', 'Porta Pivot', 'Abilita Venusaur'] });
   });
 
   it('il pulsante rapido resta nella riga (compare al passaggio o col focus)', async () => {
@@ -249,6 +251,23 @@ describe('dettaglio: abilità in battaglia', () => {
     expect(porta.textContent).not.toMatch(/pioggia/);
     const toglie = screen.getByRole('heading', { name: 'Toglie' }).closest('section')!;
     expect(toglie.textContent).toMatch(/La pioggia si scontra/);
+  });
+
+  it('Porta: "Usato con" sempre per ultimo', async () => {
+    const { SuggestionDetail } = await import('../../src/ui/SuggestionDetail');
+    const { renderIt } = await import('../helpers/italian');
+    const set = { species: 'Rotom-Wash', item: 'Leftovers', ability: 'Levitate', moves: ['Hydro Pump'], nature: 'Bold', evs: { hp: 252 } };
+    const item = {
+      species: 'Rotom-Wash', set, score: 50, components: {}, tags: [], penalty: 0, facts: { clashes: [] },
+      reasons: [
+        { component: 'synergy', weight: 9, text: 'Usato con Great Tusk nel 30% dei team', short: '', usedWith: true },
+        { component: 'defense', weight: 5, text: 'Resiste ad Acqua: debolezze del team', short: '' },
+        { component: 'roles', weight: 2, text: 'Porta Pivot (mancanti nel team)', short: '' },
+      ],
+    } as never;
+    renderIt(<SuggestionDetail item={item} rank={2} team={[]} replaceIndex={null} data={fixtureData} format={DEFAULT_FORMAT} rating={null} usage={null} banMark={null} actionLabel="Aggiungi al team" onAction={() => {}} />);
+    const points = [...screen.getByRole('heading', { name: 'Porta' }).closest('section')!.querySelectorAll('li')].map(li => li.textContent);
+    expect(points).toEqual(['Resiste ad Acqua: debolezze del team', 'Porta Pivot (mancanti nel team)', 'Usato con Great Tusk nel 30% dei team']);
   });
 
   it('con la Megapietra mostra l\u2019abilità della Mega; "Stats" solo nel dettaglio', async () => {

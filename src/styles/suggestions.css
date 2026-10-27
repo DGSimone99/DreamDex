@@ -104,16 +104,16 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .list-empty p { margin: 0; font-size: 15px; }
 /* Fascia "Candidati (N)" su una riga: accanto al titolo il suggerimento del doppio clic, a destra la paginazione ‹ trattini › */
 /* La fascia è alta come il pager anche senza pagine: l'altezza della lista (e il numero per pagina) non dipende da lui */
-.list-head { --pager-h: 26px; display: flex; align-items: center; gap: 12px; box-sizing: content-box; min-height: var(--pager-h); }
+.list-head { --pager-h: 26px; display: flex; align-items: center; gap: 8px; box-sizing: content-box; min-height: var(--pager-h); }
 .list-head .dbl-hint { flex: 0 1 auto; font-size: 12px; color: var(--faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-.pager { flex: none; margin-left: auto; display: flex; align-items: center; gap: 4px; height: var(--pager-h); }
-.pager .step { display: grid; place-items: center; width: 24px; height: 24px; padding: 0; border: 0; background: none; color: var(--muted); }
+.pager { flex: none; margin-left: auto; display: flex; align-items: center; gap: 2px; height: var(--pager-h); }
+.pager .step { display: grid; place-items: center; width: 20px; height: 24px; padding: 0; border: 0; background: none; color: var(--muted); }
 .pager .step:hover:not(:disabled) { color: var(--text); }
 .pager .step:disabled { opacity: 0.35; }
 .pager .step .icon { width: 14px; height: 14px; }
-.pager-dashes { display: flex; gap: 3px; }
+.pager-dashes { display: flex; gap: 2px; }
 /* Trattino sottile, ma con un'area cliccabile più alta */
-.pager .pager-dash { width: 14px; height: 16px; min-width: 0; padding: 6px 0; border: 0; border-radius: 0; background: var(--line); background-clip: content-box; }
+.pager .pager-dash { width: 12px; height: 16px; min-width: 0; padding: 6px 0; border: 0; border-radius: 0; background: var(--line); background-clip: content-box; }
 .pager .pager-dash:hover { background-color: var(--muted); }
 .pager .pager-dash[aria-current='page'] { background-color: var(--accent); }
 
@@ -428,14 +428,17 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .card .out { position: absolute; top: 70px; right: 7px; z-index: 2; width: 24px; height: 24px; border-radius: 50%; overflow: hidden; background: var(--ground); border: 1px solid var(--line); }
 .card .out .mon-icon { margin: -6px 0 0 -9px; }
 .card .who { position: relative; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.card .name-line { display: flex; align-items: center; gap: 4px; min-width: 0; }
+/* Il nome sta allo stesso punto in ogni casella, subito sotto lo sprite: il blocco è alto quanto i motivi che entrano
+   (--reasons), anche se la casella ne ha meno; lo spazio avanzato resta vuoto in fondo */
+.card .who { flex: none; height: calc(20px + 16px * var(--reasons, 1)); }
+.card .name-line { display: flex; align-items: center; gap: 4px; min-width: 0; height: 18px; }
 .card .name-line > :not(.pick) { flex: none; }
 .card .pick { flex: 0 1 auto; min-width: 0; overflow: hidden; padding: 0; border: 0; background: none; color: inherit; text-align: left; }
 .card .pick[aria-pressed='true'] { background: none; }
 .card .pick strong { display: block; font: 800 15px/1.15 var(--display); font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .card .name-line .list-mark { font-size: 12px; }
 .card .who small { display: flex; flex-direction: column; min-width: 0; }
-.card .reason { display: block; min-width: 0; font: 500 12px/1.3 var(--ui); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card .reason { display: block; min-width: 0; font: 500 12px/16px var(--ui); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .card .reason b { margin-right: 3px; font-weight: 700; color: var(--good); }
 /* Pulsante rapido: a riposo nascosto, passando sulla casella o col focus a sinistra sotto la targhetta */
 .card .quick { position: absolute; top: 30px; left: 6px; z-index: 2; display: grid; place-items: center; width: 28px; height: 28px; padding: 0; border-radius: 4px;

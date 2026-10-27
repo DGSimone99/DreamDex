@@ -41,6 +41,12 @@
   cursor: default;
 }
 .alert-mark:hover .alert-pop, .alert-mark:focus-visible .alert-pop { display: flex; animation: tip 0.15s var(--ease); }
+/* Tooltip flottante (caselle della lista): quello interno resta nascosto, si vede la copia nel body sopra a tutto */
+.alert-mark.floating:hover .alert-pop, .alert-mark.floating:focus-visible .alert-pop { display: none; }
+.alert-pop.alert-float { position: fixed; z-index: 1000; display: flex; animation: tip 0.15s var(--ease); pointer-events: none; }
+.alert-pop.alert-float.danger { color: var(--bad); }
+.alert-pop.alert-float.warn { color: var(--warn); }
+.alert-pop.alert-float.info { color: var(--accent); }
 .alert-line { position: relative; color: var(--text); padding-left: 14px; }
 .alert-line::before { content: ''; position: absolute; left: 0; top: 0.5em; width: 6px; height: 6px; border-radius: 50%; background: var(--c); }
 .alert-line.danger { --c: var(--bad); }

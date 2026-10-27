@@ -79,17 +79,17 @@ export function reasonsOf(item: Item, n: number, usage: number | null, format: F
   // Col team vuoto l'uso sta già a destra: qui i ruoli principali del Pokémon
   if (usage !== null) return { pros: false, texts: [detectRoles(item.set, formatRules(format.formatId)).slice(0, 3).map(role => t(lang, `role.${role}`)).join(', ')] };
   // Da aggiungere: le ragioni che pesano di più, in forma breve (una riga ciascuna). L'uso nel meta non è un motivo
-  // per sceglierlo; un avviso (peso negativo) solo se è l'unica ragione
-  const ranked = [...item.reasons.filter(r => r.component !== 'strength')].sort((a, b) => b.weight - a.weight);
+  // per sceglierlo; "usato con" lo dice già il segno ciano; un avviso (peso negativo) solo se è l'unica ragione
+  const ranked = item.reasons.filter(r => r.component !== 'strength' && !r.usedWith).sort((a, b) => b.weight - a.weight);
   const texts = ranked.filter((r, i) => i === 0 || r.weight > 0).slice(0, n).map(r => r.short);
   return { pros: false, texts: texts.length ? texts : [''] };
 }
 
 /** Solo se il Pokémon è bannato nel formato: triangolo rosso con il tier nel tooltip. */
-export function BanMark({ species, format }: { species: string; format: Format }) {
+export function BanMark({ species, format, floating = false }: { species: string; format: Format; floating?: boolean }) {
   const lang = useLang();
   const { label, banned } = tierLabel(species, format);
-  return banned ? <AlertMark alerts={[{ level: 'danger', text: t(lang, 'suggest.banned', { tier: label, format: formatLabel(format, lang) }) }]} /> : null;
+  return banned ? <AlertMark floating={floating} alerts={[{ level: 'danger', text: t(lang, 'suggest.banned', { tier: label, format: formatLabel(format, lang) }) }]} /> : null;
 }
 
 /** ♥ nei Preferiti dell'utente, ⊘ nella sua lista Ban (mostrato perché cercato per nome o con "mostra"). */
@@ -114,10 +114,11 @@ export function CandidateMarks({ item, format, lists }: { item: Item; format: Fo
     : [];
   return (
     <>
-      <BanMark species={item.species} format={format} />
+      {/* Tooltip flottanti: la casella nasconde ciò che sporge e la lista sta accanto alla scheda */}
+      <BanMark species={item.species} format={format} floating />
       <ListMarks set={item.set} lists={lists} />
-      <AlertMark alerts={warnings} />
-      <AlertMark alerts={together} icon="spark" />
+      <AlertMark alerts={warnings} floating />
+      <AlertMark alerts={together} icon="spark" floating />
     </>
   );
 }

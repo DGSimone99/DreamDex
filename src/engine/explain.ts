@@ -24,7 +24,8 @@ export interface Reason {
   weight: number;
   text: string;
   /** La forma breve, per le caselle della lista (una riga): "Resiste ad Acqua", "Abilita Venusaur". */
-  short: string;
+  short: string;  /** "Usato con X nel N% dei team": nelle caselle della lista lo dice già il segno ciano, nel dettaglio va in fondo. */
+  usedWith?: true;
 }
 
 const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
@@ -63,8 +64,8 @@ export function explain(facts: Facts, components: Components, lang: Lang = 'it')
   // Gli avvisi vanno in fondo: peso negativo
   for (const text of facts.clashes) reasons.push({ component: 'synergy', weight: -1, text, short: text });
   if (facts.synergy && facts.synergy.pct >= 0.05) {
-    const vars = { member: facts.synergy.member, pct: Math.round(facts.synergy.pct * 100) };
-    add('synergy', t(lang, 'explain.synergy', vars), t(lang, 'explain.synergy.short', vars));
+    const text = t(lang, 'explain.synergy', { member: facts.synergy.member, pct: Math.round(facts.synergy.pct * 100) });
+    reasons.push({ component: 'synergy', weight: WEIGHTS.synergy * components.synergy, text, short: text, usedWith: true });
   }
   if (facts.strength.usage > 0) add('strength', t(lang, 'explain.usage', { pct: formatPercent(lang, facts.strength.usage) }));
 

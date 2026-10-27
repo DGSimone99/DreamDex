@@ -103,7 +103,6 @@ export const en = {
   'explain.roles': "Brings {list} (missing from the team)",
   'explain.roles.short': "Brings {list}",
   'explain.synergy': "Used with {member} in {pct}% of teams",
-  'explain.synergy.short': "Used with {member} ({pct}%)",
   'explain.usage': "Meta usage: {pct}",
   'tag.weatherConflict': "Weather conflict with {who}",
   'tag.weakened': "{condition} from {setter} weakens its {type} moves",

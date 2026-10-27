@@ -105,7 +105,6 @@ export const it: Record<keyof typeof en, string> = {
   'explain.roles': "Porta {list} (mancanti nel team)",
   'explain.roles.short': "Porta {list}",
   'explain.synergy': "Usato con {member} nel {pct}% dei team",
-  'explain.synergy.short': "Usato con {member} ({pct}%)",
   'explain.usage': "Uso nel meta: {pct}",
   'tag.weatherConflict': "Meteo in conflitto con {who}",
   'tag.weakened': "{condition} di {setter} indebolisce le sue mosse {type}",

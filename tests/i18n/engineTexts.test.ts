@@ -33,7 +33,9 @@ describe('testi del motore', () => {
     expect(texts).toContain('Used with Great Tusk in 30% of teams');
     expect(texts).toContain('Meta usage: 12.3%');
     const shorts = explain(facts, components, 'en').map(r => r.short);
-    expect(shorts).toEqual(expect.arrayContaining(['Immune to Ground', 'Checks Dragapult', 'Hits Fairy', 'Brings Pivot, special attacker', 'Used with Great Tusk (30%)']));
+    expect(shorts).toEqual(expect.arrayContaining(['Immune to Ground', 'Checks Dragapult', 'Hits Fairy', 'Brings Pivot, special attacker']));
+    // "Used with": niente forma breve (nelle caselle non compare), segnata per il dettaglio
+    expect(explain(facts, components, 'en').filter(r => r.usedWith).map(r => r.text)).toEqual(['Used with Great Tusk in 30% of teams']);
   });
 
   it('forme brevi per le caselle della lista, in italiano ("ad" davanti alla A)', () => {
@@ -51,7 +53,6 @@ describe('testi del motore', () => {
     const reasons = explain(facts, components, 'it');
     const byText = Object.fromEntries(reasons.map(r => [r.text, r.short]));
     expect(byText['Immune a Terra e resiste ad Acqua: debolezze del team']).toBe('Immune a Terra e resiste ad Acqua');
-    expect(byText['Usato con Great Tusk nel 30% dei team']).toBe('Usato con Great Tusk (30%)');
     expect(byText['Abilita Venusaur: Siccità → Clorofilla']).toBe('Abilita Venusaur');
     expect(byText['Colpisce super efficace Fuoco, scoperti dal team']).toBe('Colpisce Fuoco');
     expect(byText['Porta Pivot (mancanti nel team)']).toBe('Porta Pivot');
