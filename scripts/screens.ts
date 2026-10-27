@@ -36,6 +36,13 @@ const LONG = [
   member('Scizor', 'Scizorite', 'Technician', ['Bullet Punch', 'U-turn', 'Swords Dance', 'Knock Off'], 'Adamant', { hp: 248, atk: 252, spd: 8 }),
   member('Garchomp', 'Garchompite', 'Rough Skin', ['Earthquake', 'Scale Shot', 'Swords Dance', 'Fire Fang'], 'Jolly', { atk: 252, spe: 252, hp: 4 }),
 ];
+// Team con una mossa non legale (Flamethrower su Great Tusk): il Coaching propone anche un cambio di mossa
+const MOVE = [
+  member('Great Tusk', 'Booster Energy', 'Protosynthesis', ['Headlong Rush', 'Ice Spinner', 'Flamethrower', 'Bulk Up'], 'Jolly', { atk: 252, spe: 252, hp: 4 }),
+  ...TEAM.slice(1, 3),
+  TEAM[4],
+  SIX[5],
+];
 const FORMAT = { formatId: 'ou', genLimit: 9, minUsage: 0.01, allowMultipleMegas: false, ignoreBans: false, meta: true };
 const hash = (team: unknown[]) => '#team=' + Buffer.from(JSON.stringify({ team, format: FORMAT })).toString('base64')
   .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
@@ -90,10 +97,16 @@ const STATES: Record<string, State> = {
     await wait(300);
     return clickText(p, '.analysis-help button', /./);
   } },
+  // Stampa l'altezza della riga delle tappe mentre i consigli si calcolano (scheletro) e dopo: devono coincidere
   'coaching-six': { hash: hash(SIX), run: async p => {
     await tab(p, 'analysis');
     await wait(300);
-    return clickText(p, '#analysis-view-coaching', /./);
+    if (!await clickText(p, '#analysis-view-coaching', /./)) return false;
+    const rowH = (sel: string) => p.evaluate(q => document.querySelector(q)?.getBoundingClientRect().height ?? -1, sel);
+    const skeleton = await rowH('.coach-steps[aria-busy]');
+    await p.waitForSelector('.coach-steps:not([aria-busy])', { timeout: 20000 });
+    console.log(`coaching-six: steps skeleton=${skeleton} real=${await rowH('.coach-steps:not([aria-busy])')}`);
+    return true;
   } },
   'coaching-three': { hash: hash(TEAM.slice(0, 3)), run: async p => {
     await tab(p, 'analysis');
@@ -105,7 +118,8 @@ const STATES: Record<string, State> = {
     await tab(p, 'analysis');
     await wait(300);
     if (!await clickText(p, '#analysis-view-coaching', /./)) return 'no coaching tab';
-    await wait(1500);
+    // I consigli arrivano dopo il calcolo: si aspetta la riga delle tappe
+    await p.waitForSelector('.coach-steps:not([aria-busy]) button.coach-fix', { timeout: 20000 });
     if (!await clickText(p, 'button.coach-fix', /./)) return false;
     // La lista per membro si calcola dopo il clic: si aspetta che non sia più attenuata
     const start = Date.now();
@@ -155,6 +169,26 @@ const STATES: Record<string, State> = {
     await tab(p, 'analysis');
     await wait(300);
     return clickText(p, '#analysis-view-coaching', /./);
+  } },
+  // Tappe con proposte di mossa (team con set poveri): stampa quante ce ne sono
+  'coaching-move-steps': { hash: hash(MOVE), run: async p => {
+    await tab(p, 'analysis');
+    await wait(300);
+    if (!await clickText(p, '#analysis-view-coaching', /./)) return 'no coaching tab';
+    await p.waitForSelector('.coach-steps:not([aria-busy])', { timeout: 20000 });
+    const n = await p.evaluate(() => document.querySelectorAll('.coach-steps .coach-prop.is-move').length);
+    console.log(`coaching-move-steps: ${n} proposte di mossa`);
+    return n > 0 || 'no move proposal';
+  } },
+  // Clic su una proposta di mossa: editor del membro con la mossa nuova in anteprima
+  'coaching-move': { hash: hash(MOVE), run: async p => {
+    await tab(p, 'analysis');
+    await wait(300);
+    if (!await clickText(p, '#analysis-view-coaching', /./)) return 'no coaching tab';
+    await p.waitForSelector('.coach-steps:not([aria-busy])', { timeout: 20000 });
+    if (!await clickText(p, '.coach-prop.is-move button.coach-fix', /./)) return 'no move proposal';
+    await wait(600);
+    return (await p.evaluate(() => !!document.querySelector('.move-proposal'))) || 'no preview in the editor';
   } },
   meta: { run: async p => { await tab(p, 'meta'); return true; } },
   lists: { run: async p => { await tab(p, 'lists'); return true; } },
@@ -235,9 +269,20 @@ for (const [w, h] of sizes) {
         dash: box ? `dash=${box.clientHeight} density=${box.dataset.density} left=${left} right=${right} dashBottom=${Math.round(box.getBoundingClientRect().bottom)} overflow=[${over.join(',')}]` : '',
       };
     });
+    // Coaching: tappe che sbordano, righe "risolve anche" o nomi tagliati in larghezza, scorrimento orizzontale
+    const coach = await page.evaluate(() => {
+      const box = document.querySelector<HTMLElement>('.coaching');
+      if (!box) return '';
+      const steps = [...box.querySelectorAll<HTMLElement>('.coach-step')];
+      const tall = steps.filter(s => s.scrollHeight - s.clientHeight > 1).length;
+      const wide = [...box.querySelectorAll<HTMLElement>('.coach-also, .coach-fix-main strong, .coach-fix-lead')].filter(e => e.scrollWidth - e.clientWidth > 1).length;
+      const row = box.querySelector('.coach-steps')?.getBoundingClientRect().height ?? 0;
+      const need = Math.max(0, ...steps.map(s => [...s.querySelectorAll('.coach-step-body > *')].reduce((b, c) => Math.max(b, c.getBoundingClientRect().bottom), 0) - s.getBoundingClientRect().top));
+      return `coach: stepsRow=${Math.round(row)} contentMax=${Math.round(need)} stepOverflow=${tall} clippedLines=${wide} hScroll=${box.scrollWidth - box.clientWidth} docHScroll=${document.scrollingElement!.scrollWidth - window.innerWidth}`;
+    });
     const file = join(out, `${w}x${h}-${name}.png`);
     await page.screenshot({ path: file });
-    console.log(`${file} pageScroll=${scroll} clipped=${clipped} ${dash}`);
+    console.log(`${file} pageScroll=${scroll} clipped=${clipped} ${dash} ${coach}`);
     await page.close();
   }
 }
