@@ -73,7 +73,3 @@
 .type-icons img:first-child { position: relative; z-index: 1; box-shadow: 0 0 0 1.5px var(--panel); }
 .type-icons img + img { margin-left: -5px; }
 .mon-ref, .mon-name { white-space: nowrap; }
-
-/* Etichette dei suggerimenti: una riga, il resto con … */
-.suggestion .tags .tag { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.suggestion .tags .tag.warn > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }

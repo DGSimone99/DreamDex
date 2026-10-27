@@ -100,9 +100,6 @@
   .toolbar .filters > summary { height: 34px; }
   .picker.has-detail { gap: 12px; }
   .suggestions-panel { --picker-gap: 12px; }
-  /* Nelle righe al posto dei chip le icone dei tipi: il nome del candidato ha la precedenza */
-  .suggestion .name-line .types .type-chip { display: none; }
-  .suggestion .name-line .types .types-compact { display: inline-flex; }
   .detail-hero .detail-id h3 { font-size: 20px; }
   .detail-hero { padding-top: 6px; padding-bottom: 6px; }
   /* Chi esce lo dicono già la riga della lista e il pulsante principale */
@@ -118,7 +115,6 @@
   .detail .detail-moves { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .detail .detail-moves li { padding: 3px 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .detail-hero .detail-score strong { font-size: 36px; }
-  .suggestion { padding: 6px 10px; }
 }
 /* Team compresso: una barra sottile con le icone del box, il voto piccolo e la freccia per riaprirla */
 .mini-icon { display: none; }

@@ -100,9 +100,17 @@ async function focus(page: Page, selector: string): Promise<boolean> {
 const wait = (ms: number) => new Promise(r => setTimeout(r, ms));
 const tab = (page: Page, id: string) => page.evaluate(i => { document.getElementById(`tab-${i}`)?.click(); }, id);
 
-interface State { hash?: string; lang?: 'it' | 'en'; run?: (page: Page) => Promise<boolean | string> }
+// storage: chiavi in più nel localStorage prima del caricamento (es. lo stile della lista)
+interface State { hash?: string; lang?: 'it' | 'en'; storage?: Record<string, string>; run?: (page: Page) => Promise<boolean | string> }
 const STATES: Record<string, State> = {
   pokemon: { run: async p => { await tab(p, 'pokemon'); return true; } },
+  // Lista candidati in stile Menu (pillole), team aperto e nascosto
+  'pokemon-menu': { storage: { 'dreamdex.listStyle': '"menu"' }, run: async p => { await tab(p, 'pokemon'); return true; } },
+  'pokemon-menu-collapsed': { storage: { 'dreamdex.listStyle': '"menu"' }, run: async p => {
+    await tab(p, 'pokemon');
+    await wait(300);
+    return clickText(p, 'button.band-toggle', /./);
+  } },
   editor: { run: async p => clickText(p, '.slot.filled > summary', /./) },
   analysis: { run: async p => { await tab(p, 'analysis'); return true; } },
   'analysis-defense': { run: async p => clickText(p, '.band button.grade-area', /^Difesa/) },
@@ -308,7 +316,11 @@ for (const [w, h] of sizes) {
     const page = await browser.newPage();
     await page.setViewport({ width: w, height: h });
     const lang = state.lang ?? 'it';
-    await page.evaluateOnNewDocument(l => { localStorage.clear(); localStorage.setItem('dreamdex.lang', JSON.stringify(l)); }, lang);
+    await page.evaluateOnNewDocument((l, extra) => {
+      localStorage.clear();
+      localStorage.setItem('dreamdex.lang', JSON.stringify(l));
+      for (const [key, value] of Object.entries(extra)) localStorage.setItem(key, value);
+    }, lang, state.storage ?? {});
     await page.goto(URL + (state.hash ?? hash(TEAM)), { waitUntil: 'networkidle0', timeout: 90000 });
     await wait(1500);
     const result = state.run ? await state.run(page) : true;
@@ -379,7 +391,9 @@ for (const [w, h] of sizes) {
       const items = [...ol.querySelectorAll<HTMLElement>(':scope > li')];
       const cut = items.filter(li => li.getBoundingClientRect().bottom - bottom > 0.5).length;
       const first = items[0]?.getBoundingClientRect();
-      return `list: ${ol.className} items=${items.length} cols=${ol.style.getPropertyValue('--cols') || '-'} tileH=${ol.style.getPropertyValue('--tile-h') || '-'} reasons=${ol.style.getPropertyValue('--reasons') || '-'} first=${first ? `${Math.round(first.width)}x${Math.round(first.height)}` : '-'} listScroll=${ol.scrollHeight - ol.clientHeight} cutTiles=${cut}`;
+      // Nome e motivi che escono dalla casella (in alto o in basso)
+      const whoOver = items.filter(li => { const b = li.getBoundingClientRect(); const w = li.querySelector('.who')?.getBoundingClientRect(); return !!w && (w.bottom - b.bottom > 0.5 || b.top - w.top > 0.5); }).length;
+      return `list: ${ol.className} items=${items.length} cols=${ol.style.getPropertyValue('--cols') || '-'} tileH=${ol.style.getPropertyValue('--tile-h') || '-'} reasons=${ol.style.getPropertyValue('--reasons') || '-'} rowH=${ol.style.getPropertyValue('--row-h') || '-'} first=${first ? `${Math.round(first.width)}x${Math.round(first.height)}` : '-'} listScroll=${ol.scrollHeight - ol.clientHeight} cutTiles=${cut} whoOver=${whoOver}`;
     });
     const file = join(out, `${w}x${h}-${name}.png`);
     await page.screenshot({ path: file });

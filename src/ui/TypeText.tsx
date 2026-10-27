@@ -1,4 +1,4 @@
-import { Fragment, type ReactNode } from 'react';
+import { Fragment, type CSSProperties, type ReactNode } from 'react';
 import { getMove, speciesNames } from '../engine/dex';
 import { TYPES, type TypeName } from '../engine/types';
 import { TYPE_COLORS } from './Sprite';
@@ -35,7 +35,8 @@ export const typeTextColor = (type: string): string | undefined => TEXT_COLORS[t
 /** Il nome di un tipo, nel suo colore. */
 export function TypeLabel({ type }: { type: string }) {
   const lang = useLang();
-  return <span className="type-name" style={{ color: typeTextColor(type) }}>{typeName(type, lang)}</span>;
+  // Sui fondi chiari (pillole del Menu) il CSS usa la variante scura del tipo, da tokens.css
+  return <span className="type-name" style={{ color: typeTextColor(type), '--type-ink': `var(--type-${type.toLowerCase()}-ink)` } as CSSProperties}>{typeName(type, lang)}</span>;
 }
 
 /** Il nome di una mossa, nel colore del suo tipo. */

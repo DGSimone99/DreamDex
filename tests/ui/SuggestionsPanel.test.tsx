@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
@@ -458,5 +460,50 @@ describe('stile Carte', () => {
     expect(card(-2)).toEqual({ first: false, strong: 'worse', text: '−2' });
     expect(card(0)).toEqual({ first: false, strong: 'same', text: '±0' });
     expect(card(5)).toEqual({ first: true, strong: '', text: '+5' });
+  });
+});
+
+describe('stile Menu', () => {
+  it('Menu: una colonna di pillole, la selezionata ha aria-pressed', async () => {
+    const { SuggestionsPanel } = await import('../../src/ui/SuggestionsPanel');
+    const { renderIt } = await import('../helpers/italian');
+    const { tusk } = await import('../fixtures/data');
+    const user = userEvent.setup();
+    renderIt(<SuggestionsPanel team={[tusk] as never} format={DEFAULT_FORMAT} data={fixtureData} replaceIndex={null}
+      onAdd={() => {}} onReplaceWith={() => {}} onCancelReplace={() => {}} listStyle="menu" />);
+    expect(list()).toHaveClass('menu');
+    expect(list()).not.toHaveClass('cards');
+    const rows = [...list().querySelectorAll<HTMLElement>(':scope > li')];
+    expect(rows.every(row => row.classList.contains('pill'))).toBe(true);
+    // Tipi come icone a destra, niente chip
+    expect(rows[0].querySelector('.type-icons')).not.toBeNull();
+    expect(rows[0].querySelector('.type-chip')).toBeNull();
+    await user.click(rows[1]);
+    expect(rows[1].querySelector('button.pick')).toHaveAttribute('aria-pressed', 'true');
+    expect(rows[1]).toHaveClass('selected');
+    expect(rows[0].querySelector('button.pick')).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('Menu: le varianti scure dei tipi si leggono sulla pillola chiara (contrasto ≥ 4.5)', async () => {
+    // jsdom non carica i fogli di stile: si legge tokens.css come testo
+    const css = readFileSync(resolve(__dirname, '../../src/styles/tokens.css'), 'utf8');
+    const token = (name: string) => css.match(new RegExp(`${name}:\\s*(#[0-9a-fA-F]{6})`))?.[1];
+    const luminance = (hex: string) => {
+      const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255)
+        .map(c => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
+      return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    };
+    const contrast = (a: string, b: string) => {
+      const [x, y] = [luminance(a), luminance(b)].sort((p, q) => q - p);
+      return (x + 0.05) / (y + 0.05);
+    };
+    const bg = token('--pill-bg');
+    expect(bg).toBe('#e7eaf3');
+    // I tre tipi più chiari: Elettro, Ghiaccio, Normale
+    for (const type of ['electric', 'ice', 'normal']) {
+      const ink = token(`--type-${type}-ink`);
+      expect(ink, type).toBeDefined();
+      expect(contrast(ink!, bg!), type).toBeGreaterThanOrEqual(4.5);
+    }
   });
 });

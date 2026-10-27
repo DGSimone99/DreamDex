@@ -19,12 +19,12 @@ import { activeFilterCount, EMPTY_FILTERS, isFiltering, searchCandidates, search
 import { defaultSet } from '../engine/sets';
 import { FilterBar } from './FilterBar';
 import { conditionLabel, neededConditions, providesAll, viaName } from '../engine/synergy';
-import { Sprite, TypeChip } from './Sprite';
-import { TypeIcons } from './typeIcons';
+import { Sprite } from './Sprite';
 import { Icon } from './icons';
 import { SuggestionDetail } from './SuggestionDetail';
 import { CandidateCard } from './CandidateCard';
-import { BanMark, CandidateMarks, OutMark, PickButton, QuickButton, Reasons, ResultCell, candidateHandlers, isLead, reasonsOf, stateClasses, type CandidateProps, type Item } from './candidateParts';
+import { CandidatePill } from './CandidatePill';
+import { BanMark, reasonsOf, type CandidateProps, type Item } from './candidateParts';
 import type { ListSprite, ListStyle } from './theme';
 import { useLang, useT } from '../i18n/react';
 import { PAGE, usePerPage } from './usePerPage';
@@ -68,36 +68,6 @@ export interface CandidateFocus {
   species: string;
   mode: 'add' | 'member';
   nonce: number;
-}
-
-/** Stile Menu (finché non c'è il suo componente): la riga di prima, coi pezzi comuni. */
-function SuggestionRow(props: CandidateProps) {
-  const { rank, item, reasons, sprite, usage, out, format, lists, selected, onSelect } = props;
-  const types = getSpecies(item.species)?.types ?? [];
-  const className = ['suggestion', isLead(rank, item) && 'first', stateClasses(props)].filter(Boolean).join(' ');
-  return (
-    // Tutta la riga apre il dettaglio col mouse; da tastiera lo fa il nome
-    <li className={className} {...candidateHandlers(props)}>
-      <span className="rank" aria-hidden="true">{rank}</span>
-      {sprite}
-      <span className="who">
-        <span className="name-line">
-          <PickButton rank={rank} species={item.species} selected={selected} onSelect={onSelect} />
-          {/* Il tipo subito dopo il nome, poi i segni (ban, liste, avvisi, usato insieme) */}
-          <span className="types">
-            {types.map(type => <TypeChip key={type} type={type} />)}
-            {/* Righe strette: al posto dei chip le icone dei tipi (il nome del candidato ha la precedenza) */}
-            <TypeIcons types={types} className="types-compact" />
-          </span>
-          <CandidateMarks item={item} format={format} lists={lists} />
-        </span>
-        <Reasons reasons={reasons} />
-      </span>
-      {out && <OutMark member={out} />}
-      <ResultCell item={item} usage={usage} />
-      <QuickButton {...props} />
-    </li>
-  );
 }
 
 /** Il valore si aggiorna solo dopo `delay` ms senza modifiche (per non ricalcolare a ogni lettera). */
@@ -432,14 +402,14 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
     body = (
       <>
         {/* Le misure per le caselle (Carte: colonne e altezza; Menu: altezza della riga) */}
-        <ol className={`suggestions${cards ? ' cards' : ''}${stale ? ' stale' : ''}`} ref={listRef} aria-busy={stale || undefined} style={listVars}>
+        <ol className={`suggestions ${cards ? 'cards' : 'menu'}${stale ? ' stale' : ''}`} ref={listRef} aria-busy={stale || undefined} style={listVars}>
           {pageItems.map((item, i) => {
             const usage = emptyTeam ? usageOf(item.species) : null;
             const candidate: CandidateProps = {
               rank: page * perPage + i + 1,
               item,
               reasons: reasonsOf(item, reasons, usage, format, lang),
-              sprite: <Sprite species={item.species} item={item.set.item} size={cards ? 96 : 48} />,
+              sprite: <Sprite species={item.species} item={item.set.item} size={96} />,
               usage,
               out: item.replaces !== undefined ? memberName(item.replaces) : undefined,
               picked: page * perPage + i === pickedIndex,
@@ -452,7 +422,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
               format,
               lists: data.userLists,
             };
-            return cards ? <CandidateCard key={item.species} {...candidate} /> : <SuggestionRow key={item.species} {...candidate} />;
+            return cards ? <CandidateCard key={item.species} {...candidate} /> : <CandidatePill key={item.species} {...candidate} />;
           })}
         </ol>
       </>
