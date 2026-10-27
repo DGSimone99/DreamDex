@@ -1,0 +1,69 @@
+import { cardRoles, weatherOf, type Archetype, type TeamStyle } from './archetype';
+import type { Coaching } from './coach';
+import type { EngineData } from './data';
+import { battleName, toID } from './dex';
+import { rulesOf } from './formatRules';
+import type { Need } from './needs';
+import type { DashboardData } from './overviewDashboard';
+import type { TeamRating } from './rating';
+import type { TeamSet } from './sets';
+import { measuredSubRoles } from './subRoles';
+import { conditionName } from './synergy';
+import type { Lang } from '../i18n';
+
+/** Offesa del membro (senza setup, Tera e Z) da cui è un attaccante "top". */
+export const TOP_ATTACKER = 85;
+/** Mosse di campo mostrate nel Riassunto (id). */
+export const FIELD_MOVES = ['stealthrock', 'spikes', 'toxicspikes', 'stickyweb', 'reflect', 'lightscreen', 'auroraveil', 'trickroom'];
+
+export interface FieldSetter { member: string; items: string[] }
+export interface TeamSummary {
+  archetype: Archetype | null;
+  styles: TeamStyle[];
+  attackers: string[];
+  walls: string[];
+  field: FieldSetter[];
+  hits: { covered: number; total: number };
+  /** Gravi prima. */
+  weak: { type: string; serious: boolean }[];
+  missingRoles: Need[];
+  /** null: meta spento o senza statistiche. */
+  threats: { species: string; usage: number }[] | null;
+}
+
+/** I dati del Riassunto della Panoramica: solo riuso di ciò che il motore già calcola. */
+export function teamSummary(team: TeamSet[], rating: TeamRating, coaching: Coaching, dash: DashboardData, data: EngineData, lang: Lang = 'it'): TeamSummary {
+  const rules = rulesOf(data);
+  const attackers: string[] = [];
+  const walls: string[] = [];
+  const field: FieldSetter[] = [];
+  team.forEach((set, i) => {
+    const name = battleName(set);
+    const m = rating.offense.members[i];
+    if (m && m.value - m.setupGain - m.oneUseGain >= TOP_ATTACKER) attackers.push(name);
+    const roles = cardRoles(set, rules, measuredSubRoles(set, team, data));
+    if (roles.includes('physicalWall') || roles.includes('specialWall')) walls.push(name);
+    // Mosse di campo e meteo del membro
+    const items = set.moves.filter(mv => FIELD_MOVES.includes(toID(mv)));
+    const weather = weatherOf(set);
+    if (weather) items.push(conditionName(weather.condition, lang));
+    if (items.length) field.push({ member: name, items });
+  });
+
+  const weak = coaching.problems
+    .filter(p => p.key.startsWith('defense:'))
+    .map(p => ({ type: p.key.slice('defense:'.length), serious: p.severity === 'serious' }))
+    .sort((a, b) => Number(b.serious) - Number(a.serious));
+
+  return {
+    archetype: coaching.teamType?.archetype ?? null,
+    styles: coaching.teamType?.styles ?? [],
+    attackers,
+    walls,
+    field,
+    hits: { covered: dash.coverage.cells.filter(c => c.offense === 'ok').length, total: dash.coverage.cells.length },
+    weak,
+    missingRoles: dash.roles.chips.filter(c => c.level !== 'minor' && !c.covered).map(c => c.need),
+    threats: dash.threats.available && !dash.threats.metaOff ? dash.threats.pods : null,
+  };
+}
