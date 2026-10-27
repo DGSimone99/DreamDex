@@ -388,10 +388,12 @@ button.member-card:hover { border-color: var(--accent); }
  * proposta una riga piccola + il nome grande, "risolve anche" su una riga): la riga è sempre alta --step-h, anche lo
  * scheletro, così all'arrivo dei consigli niente salta. Con una sola proposta la tappa resta della stessa altezza.
  */
-.coach-steps { --step-h: 196px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-rows: var(--step-h); gap: 10px; margin: 0 0 12px; padding: 0; list-style: none; }
+.coach-steps-region { --step-h: 196px; }
+.coach-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-rows: var(--step-h); gap: 10px; margin: 0 0 12px; padding: 0; list-style: none; }
 .coach-step { position: relative; display: grid; grid-template-columns: 30px minmax(0, 1fr); align-content: start; gap: 10px; min-width: 0; padding: 10px 12px 10px 10px; overflow: hidden;
   background: radial-gradient(90% 70% at 0 0, color-mix(in srgb, var(--accent-2) 13%, transparent), transparent 70%), color-mix(in srgb, var(--raised) 60%, var(--panel));
   border: 1px solid color-mix(in srgb, var(--accent-2) 30%, var(--line-soft)); }
+.coach-steps-none { display: flex; align-items: center; justify-content: center; height: var(--step-h); margin: 0 0 12px; padding: 0 16px; text-align: center; font-size: 13px; color: var(--muted); border: 1px dashed var(--line); }
 .coach-step.skeleton { border-style: dashed; border-color: var(--line); background: color-mix(in srgb, var(--raised) 25%, var(--panel)); }
 .coach-step-num { font: 800 46px/0.82 var(--display); font-style: italic; font-variant-numeric: tabular-nums; text-align: center; color: var(--accent-2-ink); }
 .coach-step-body { min-width: 0; display: grid; align-content: start; gap: 6px; }

@@ -429,4 +429,7 @@
 .move-proposal .icon { flex: none; color: var(--accent-2); }
 .move-proposal span { flex: 1; min-width: 0; }
 .move-proposal button { flex: none; height: 30px; white-space: nowrap; }
+/* Applica: l'azione principale, come negli altri pannelli (Incolla, Riempi) */
+.move-proposal .apply { background: var(--accent-soft); border-color: var(--accent); color: var(--text); }
+.move-proposal .apply:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 30%, var(--raised)); }
 .editor-group.moves .field.is-proposed { outline: 2px solid var(--accent-2); outline-offset: 3px; }

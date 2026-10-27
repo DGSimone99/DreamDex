@@ -2,7 +2,7 @@ import { Fragment, useId, type ReactNode } from 'react';
 import { PROBLEM_CATEGORIES, type CoachAdvice, type Coaching, type CoachProblem, type ProblemCategory } from '../engine/coach';
 import type { CoachFix } from '../engine/coachFixes';
 import { needLabel, type Need } from '../engine/needs';
-import { columnOf, MAX_STEPS, type CoachStep, type MapColumn } from '../engine/coachSteps';
+import { columnOf, MAX_STEPS, stepNumbers, type CoachStep, type MapColumn } from '../engine/coachSteps';
 import type { MoveFix } from '../engine/moveFixes';
 import type { TeamRating } from '../engine/rating';
 import { t, type MessageKey } from '../i18n';
@@ -41,6 +41,9 @@ function Template({ text, parts }: { text: string; parts: Record<string, ReactNo
   return <>{text.split(/\{(\w+)\}/).map((piece, i) => (i % 2 === 1 ? <Fragment key={i}>{parts[piece]}</Fragment> : piece))}</>;
 }
 
+/** Il voto in più di una proposta: "+3", a pari voto "±0" (mai "+0"). */
+export const gainText = (gain: number) => (gain > 0 ? `+${gain}` : gain < 0 ? `−${-gain}` : '±0');
+
 /** Il corpo di una proposta: sprite, una riga piccola (chi cambia) e il nome grande col voto in più. */
 function FixBody({ sprite, lead, name, gain, title }: { sprite: string; lead: ReactNode; name: string; gain: number; title?: string }) {
   return (
@@ -48,7 +51,7 @@ function FixBody({ sprite, lead, name, gain, title }: { sprite: string; lead: Re
       <span className="coach-fix-sprite"><Sprite species={sprite} size={56} /></span>
       <span className="coach-fix-text">
         <span className="coach-fix-lead" title={title}>{lead}</span>{' '}
-        <span className="coach-fix-main"><strong>{name}</strong> <span className="coach-gain">+{gain}</span></span>
+        <span className="coach-fix-main"><strong>{name}</strong> <span className="coach-gain">{gainText(gain)}</span></span>
       </span>
     </>
   );
@@ -57,7 +60,7 @@ function FixBody({ sprite, lead, name, gain, title }: { sprite: string; lead: Re
 /** Un cambio di Pokémon: "Al posto di X" / "Aggiungi", poi Y in grande col voto in più; apre la scheda Pokémon su di lui. */
 function SwapButton({ fix, onFix }: { fix: CoachFix; onFix: (fix: CoachFix) => void }) {
   const tr = useT();
-  const gain = `+${fix.gain}`;
+  const gain = gainText(fix.gain);
   const label = fix.kind === 'add'
     ? tr('coach.fixAddAria', { species: fix.species, gain })
     : tr('coach.fixSwapAria', { member: fix.member ?? '', species: fix.species, gain });
@@ -77,9 +80,9 @@ function MoveButton({ fix, onMoveFix }: { fix: MoveFix; onMoveFix: (fix: MoveFix
   const lang = useLang();
   const to = gameName('move', fix.to, lang);
   const from = fix.from ? tr('coach.steps.moveFrom', { from: gameName('move', fix.from, lang) }) : '';
-  const lead = <><Template text={tr('coach.steps.move')} parts={{ member: <b>{fix.member}</b> }} />{from && <span className="coach-fix-from"> · {from}</span>}</>;
+  const lead = <><Template text={tr('coach.steps.move')} parts={{ member: <b>{fix.member}</b> }} />{from && ` · ${from}`}</>;
   return (
-    <button type="button" className="coach-fix" aria-label={tr('coach.steps.moveAria', { move: to, member: fix.member, gain: `+${fix.gain}` })} onClick={() => onMoveFix(fix)}>
+    <button type="button" className="coach-fix" aria-label={tr('coach.steps.moveAria', { move: to, member: fix.member, gain: gainText(fix.gain) })} onClick={() => onMoveFix(fix)}>
       <FixBody sprite={fix.member} lead={lead} name={to} gain={fix.gain} title={`${tr('coach.steps.move', { member: fix.member })}${from ? ` · ${from}` : ''}`} />
     </button>
   );
@@ -94,8 +97,9 @@ const ALSO_NAMES = 1;
  * "Risolve anche": cosa risolve la proposta oltre al problema della tappa, in una riga corta: tipi come icone,
  * minacce come "check" + icona (il nome nudo accanto al candidato si leggerebbe come il candidato stesso),
  * ruoli, membri e aree come nomi; quello che non sta va nel "+N". Niente riga se non c'è altro.
+ * `self`: il candidato della proposta, che non si dice "check" di sé stesso.
  */
-function Also({ solves, skip, problems }: { solves: string[]; skip: string; problems: CoachProblem[] }) {
+function Also({ solves, skip, problems, self }: { solves: string[]; skip: string; problems: CoachProblem[]; self?: string }) {
   const tr = useT();
   const lang = useLang();
   const types: string[] = [];
@@ -107,6 +111,7 @@ function Also({ solves, skip, problems }: { solves: string[]; skip: string; prob
     const problem = problems.find(p => p.key === key);
     if (!problem) continue;
     const subjects = problem.subjects ?? [];
+    if (problem.category === 'meta' && self && subjects.includes(self)) continue;
     if (subjects.length === 0) add(names, tr(CATEGORY[problem.category]));
     else if (problem.category === 'defense' || problem.category === 'coverage') subjects.forEach(type => add(types, type));
     else if (problem.category === 'meta') subjects.forEach(species => add(threats, species));
@@ -159,7 +164,7 @@ function Step({ step, index, problems, onFix, onMoveFix }: {
         {swap && (
           <div className="coach-prop">
             <SwapButton fix={swap} onFix={onFix} />
-            <Also solves={swap.solves} skip={problem.key} problems={problems} />
+            <Also solves={swap.solves} skip={problem.key} problems={problems} self={swap.species} />
           </div>
         )}
         {move && (
@@ -182,6 +187,8 @@ function MapProblem({ problem, step }: { problem: CoachProblem; step: number | n
   const subjects = problem.subjects ?? [];
   const threat = problem.category === 'meta' && subjects.length > 0 ? subjects[0] : null;
   const covered = step !== null ? tr('coach.map.coveredBy', { n: step }) : '';
+  // Difesa e coverage: le icone dei tipi davanti, il testo senza colori (il tipo non si legge due volte)
+  const typed = (problem.category === 'defense' || problem.category === 'coverage') && subjects.length > 0;
   return (
     <li data-key={problem.key} className={`coach-prob ${problem.severity}${step !== null ? ' is-covered' : ''}`} title={covered || undefined}>
       <span className="coach-sev">{tr(problem.severity === 'serious' ? 'dash.serious' : 'dash.minor')}</span>
@@ -191,8 +198,8 @@ function MapProblem({ problem, step }: { problem: CoachProblem; step: number | n
         </span>
       ) : (
         <span className="coach-prob-text">
-          {problem.category === 'defense' && subjects.length > 0 && <TypeIcons types={subjects} />}
-          <ProblemText text={problem.text} plain={problem.category === 'defense' && subjects.length > 0} />
+          {typed && <TypeIcons types={subjects} />}
+          <ProblemText text={problem.text} plain={typed} />
         </span>
       )}
       {step !== null && <span className="coach-by"><span aria-hidden="true">{step}</span><span className="visually-hidden">{covered}</span></span>}
@@ -218,9 +225,8 @@ export function CoachingView({ coaching, advice, members, rating, metaOn, onFix,
   // Sotto i 2 membri il coach non cerca problemi: l'invito ad aggiungere, non "nessun problema"
   if (members < 2) return <div className="coaching"><p className="coach-note coach-top">{tr('coach.addTwo')}</p></div>;
   const steps = (advice?.steps ?? []).slice(0, MAX_STEPS);
-  // Problema → numero della prima tappa mostrata che lo copre (come coveredKeys)
-  const stepOf = new Map<string, number>();
-  steps.forEach((step, i) => [step.problem.key, ...step.alsoSolves].forEach(key => { if (!stepOf.has(key)) stepOf.set(key, i + 1); }));
+  // Problema → numero della prima tappa mostrata che lo copre
+  const stepOf = stepNumbers(steps);
   // Gravi prima, poi l'ordine delle categorie (regole per prime)
   const ordered = [...problems].sort((a, b) => Number(b.severity === 'serious') - Number(a.severity === 'serious')
     || PROBLEM_CATEGORIES.indexOf(a.category) - PROBLEM_CATEGORIES.indexOf(b.category));
@@ -230,10 +236,13 @@ export function CoachingView({ coaching, advice, members, rating, metaOn, onFix,
   return (
     <div className="coaching">
       {problems.length === 0 && <p className="coach-empty"><Icon name="check" />{tr('coach.noProblems')}</p>}
-      {problems.length > 0 && (!advice || steps.length > 0) && (
+      {problems.length > 0 && (
         <section aria-labelledby={`${id}-steps`} className="coach-steps-region">
           <h3 id={`${id}-steps`} className="coach-sec">{tr('coach.steps.title')}</h3>
-          {advice ? (
+          {advice && steps.length === 0 ? (
+            // Nessuna tappa: una riga alta come le tappe, così la mappa non salta
+            <p className="coach-steps-none">{tr('coach.steps.none')}</p>
+          ) : advice ? (
             <ol className="coach-steps">
               {steps.map((step, i) => <Step key={step.problem.key} step={step} index={i} problems={problems} onFix={onFix} onMoveFix={onMoveFix} />)}
             </ol>

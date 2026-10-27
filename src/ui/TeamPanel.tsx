@@ -23,6 +23,7 @@ import { speedTier, type SpeedTier } from '../engine/speed';
 import { ItemIcon } from './ItemIcon';
 import { AlertMark, type Alert } from './AlertMark';
 import { Sprite, TypeChip, typeColor } from './Sprite';
+import { gainText } from './CoachingView';
 import { Icon } from './icons';
 import { SmogonLink } from './SmogonLink';
 import { illegalParts } from '../engine/learnsets';
@@ -149,6 +150,9 @@ function TeamSlot({ index, set, subRoles, proposal, onProposalDone, data, format
   const lang = useLang();
   const tr = useT();
   const card = useRef<HTMLElement>(null);
+  // Una proposta del coach apre l'editor: il fuoco va su Applica (l'azione che si cerca)
+  const applyRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => { if (open && proposal) applyRef.current?.focus(); }, [open, proposal?.nonce]); // eslint-disable-line react-hooks/exhaustive-deps
   // Calcoli del membro (il confronto di Velocità prova 40 rivali): solo quando cambia il set
   // Preset resi legali fino al limite di generazione: menu e Preset migliore propongono lo stesso set
   const presets = useMemo<Preset[]>(() => presetsForSet(data, set, format.genLimit), [data, set, format.genLimit]);
@@ -376,9 +380,9 @@ function TeamSlot({ index, set, subRoles, proposal, onProposalDone, data, format
           <div className="move-proposal" role="note">
             <Icon name="spark" />
             <span>{proposal.from
-              ? tr('team.moveProposal', { to: gameName('move', proposal.to, lang), from: gameName('move', proposal.from, lang), n: proposal.gain })
-              : tr('team.moveProposalEmpty', { to: gameName('move', proposal.to, lang), n: proposal.gain })}</span>
-            <button type="button" className="apply" onClick={() => onProposalDone?.(true)}>{tr('team.moveProposalApply')}</button>
+              ? tr('team.moveProposal', { to: gameName('move', proposal.to, lang), from: gameName('move', proposal.from, lang), n: gainText(proposal.gain) })
+              : tr('team.moveProposalEmpty', { to: gameName('move', proposal.to, lang), n: gainText(proposal.gain) })}</span>
+            <button type="button" className="apply" ref={applyRef} onClick={() => onProposalDone?.(true)}>{tr('team.moveProposalApply')}</button>
             <button type="button" onClick={() => onProposalDone?.(false)}>{tr('team.moveProposalCancel')}</button>
           </div>
         )}{open && problems.length > 0 && (

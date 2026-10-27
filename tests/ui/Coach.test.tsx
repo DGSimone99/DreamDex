@@ -4,14 +4,14 @@ import { describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/App';
 import { analyzeTeam } from '../../src/engine/analysis';
 import { coachTeam, type Coaching, type CoachProblem } from '../../src/engine/coach';
-import { columnOf, coveredKeys, MAX_STEPS } from '../../src/engine/coachSteps';
+import { columnOf, MAX_STEPS, stepNumbers } from '../../src/engine/coachSteps';
 import type { MoveFix } from '../../src/engine/moveFixes';
 import { needLabel, type Need } from '../../src/engine/needs';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
 import { rateTeam } from '../../src/engine/rating';
 import { emptySet, exportShowdown, mostCommonSet, type TeamSet } from '../../src/engine/sets';
 import { AnalysisPanel } from '../../src/ui/AnalysisPanel';
-import { CoachingView } from '../../src/ui/CoachingView';
+import { CoachingView, gainText } from '../../src/ui/CoachingView';
 import { fixtureData, fixtureStats } from '../fixtures/data';
 import { adviceOf } from '../helpers/coach';
 import { renderIt } from '../helpers/italian';
@@ -201,7 +201,7 @@ describe('CoachingView', () => {
     const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], threatFixes: {}, problems };
     const swap = { ...adviceOf(three, DEFAULT_FORMAT, data).fixes[0], solves: problems.slice(1).map(p => p.key) };
     const step = { problem: problems[0], swap, move: null, alsoSolves: [] };
-    renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], moves: [], steps: [step] }} members={3} rating={rating(three)} metaOn {...noop} />);
+    renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [step] }} members={3} rating={rating(three)} metaOn {...noop} />);
     const also = stepsRegion().querySelector('.coach-also')!;
     expect(also.querySelectorAll('.type-icons img')).toHaveLength(3);
     expect(also).toHaveTextContent('Zamazenta');
@@ -211,12 +211,60 @@ describe('CoachingView', () => {
     expect(also).toHaveTextContent('Ridondanza');
   });
 
-  it('nessun nome di candidato compare due volte nelle tappe', () => {
+  it('nessun nome di candidato compare due volte nelle tappe, nessun membro riceve due mosse', () => {
     const { advice } = view(six);
     const text = stepsRegion().textContent!;
-    const names = advice!.steps.slice(0, MAX_STEPS).map(s => s.swap?.species).filter(Boolean) as string[];
+    const shown = advice!.steps.slice(0, MAX_STEPS);
+    const names = shown.map(s => s.swap?.species).filter(Boolean) as string[];
     expect(names.length).toBeGreaterThan(0);
     for (const name of names) expect(text.split(name).length - 1).toBe(1);
+    const members = shown.map(s => s.move?.member).filter(Boolean) as string[];
+    expect(new Set(members).size).toBe(members.length);
+    const buttons = within(stepsRegion()).queryAllByRole('button', { name: /^Dai / });
+    expect(buttons).toHaveLength(members.length);
+    for (const member of members) expect(buttons.filter(b => b.getAttribute('aria-label')!.includes(` a ${member}, `))).toHaveLength(1);
+  });
+
+  it('a pari voto "±0", mai "+0"', () => {
+    expect([gainText(3), gainText(0), gainText(-2)]).toEqual(['+3', '±0', '−2']);
+    const coaching = coachTeam(six, DEFAULT_FORMAT, data);
+    const move: MoveFix = { index: 0, member: 'Great Tusk', set: six[0], reduces: [], slot: 1, from: 'Rapid Spin', to: 'Knock Off', gain: 0, solves: [coaching.problems[0].key] };
+    renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [{ problem: coaching.problems[0], swap: null, move, alsoSolves: [] }] }}
+      members={6} rating={rating(six)} metaOn {...noop} />);
+    const button = within(stepsRegion()).getByRole('button', { name: 'Dai Knock Off a Great Tusk, ±0' });
+    expect(button).toHaveTextContent('±0');
+    expect(stepsRegion()).not.toHaveTextContent('+0');
+  });
+
+  it('nessuna tappa ma problemi: una riga che lo dice al posto delle tappe', () => {
+    const coaching = coachTeam(three, DEFAULT_FORMAT, data);
+    renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [] }} members={3} rating={rating(three)} metaOn {...noop} />);
+    expect(stepsRegion()).toHaveTextContent('Nessun cambio singolo risolve questi problemi');
+    expect(stepsRegion().querySelector('.coach-steps-none')).not.toBeNull();
+    expect(within(stepsRegion()).queryAllByRole('listitem')).toHaveLength(0);
+  });
+
+  it('"risolve anche" non dice che il candidato è un check di sé stesso', () => {
+    const problem = (category: CoachProblem['category'], key: string, subjects: string[]): CoachProblem =>
+      ({ severity: 'minor', category, text: key, fixes: [], key, subjects });
+    const problems = [problem('defense', 'defense:Fire', ['Fire']), problem('meta', 'meta:Ogerpon-Wellspring', ['Ogerpon-Wellspring']), problem('meta', 'meta:Zapdos', ['Zapdos'])];
+    const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], threatFixes: {}, problems };
+    const base = adviceOf(three, DEFAULT_FORMAT, data).fixes[0];
+    const swap = { ...base, species: 'Ogerpon-Wellspring', solves: problems.map(p => p.key) };
+    renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [{ problem: problems[0], swap, move: null, alsoSolves: [] }] }}
+      members={3} rating={rating(three)} metaOn {...noop} />);
+    const also = stepsRegion().querySelector('.coach-also')!;
+    expect(also).toHaveTextContent('Check per Zapdos');
+    expect(also).not.toHaveTextContent('Check per Ogerpon-Wellspring');
+  });
+
+  it('mappa: le righe di coverage hanno le icone dei tipi, i nomi senza colore', () => {
+    const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], threatFixes: {},
+      problems: [{ severity: 'minor', category: 'coverage', text: 'Nessuna mossa super efficace contro Water e Fire', fixes: [], key: 'coverage', subjects: ['Water', 'Fire'] }] };
+    renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [] }} members={3} rating={rating(three)} metaOn {...noop} />);
+    const row = screen.getByRole('group', { name: 'Offesa' }).querySelector('li[data-key="coverage"]')!;
+    expect(row.querySelectorAll('.type-icons img')).toHaveLength(2);
+    expect(row.querySelector('.type-name, .type-dot')).toBeNull();
   });
 
   it('la mappa: quattro gruppi col voto dell\'area, nessun voto per Regole · Meta', () => {
@@ -238,7 +286,7 @@ describe('CoachingView', () => {
   it('ogni problema compare una volta nella colonna di columnOf, gravi prima; i coperti sono is-covered', () => {
     const { coaching, advice } = view(six);
     const names = { defense: 'Difesa', offense: 'Offesa', roles: 'Ruoli', rules: 'Regole · Meta' };
-    const covered = coveredKeys(advice!.steps);
+    const numbers = stepNumbers(advice!.steps);
     const unique = [...new Map(coaching.problems.map(p => [`${p.key}|${p.text}`, p])).values()];
     let total = 0;
     for (const col of ['defense', 'offense', 'roles', 'rules'] as const) {
@@ -250,7 +298,8 @@ describe('CoachingView', () => {
       for (const row of rows) {
         const p = expected.find(e => e.key === row.dataset.key)!;
         expect(p).toBeTruthy();
-        expect(row.classList.contains('is-covered')).toBe(covered.has(p.key));
+        expect(row.classList.contains('is-covered')).toBe(numbers.has(p.key));
+        if (numbers.has(p.key)) expect(row.querySelector('.coach-by')).toHaveTextContent(String(numbers.get(p.key)));
       }
       const sev = rows.map(r => r.classList.contains('serious'));
       expect(sev).toEqual([...sev].sort((x, y) => Number(y) - Number(x)));
@@ -261,7 +310,7 @@ describe('CoachingView', () => {
   it('colonna senza problemi: "Nessun problema"', () => {
     const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], threatFixes: {},
       problems: [{ severity: 'minor', category: 'roles', text: 'Ruoli importanti mancanti: Pivot', fixes: [], key: 'roles:important' }] };
-    renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], moves: [], steps: [] }} members={3} rating={rating(three)} metaOn {...noop} />);
+    renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [] }} members={3} rating={rating(three)} metaOn {...noop} />);
     expect(within(screen.getByRole('group', { name: 'Difesa' })).getByText('Nessun problema')).toBeInTheDocument();
     expect(within(screen.getByRole('group', { name: 'Ruoli' })).queryByText('Nessun problema')).toBeNull();
   });
@@ -269,7 +318,7 @@ describe('CoachingView', () => {
   it('ridondanze: sotto un separatore nella colonna Ruoli', () => {
     const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], threatFixes: {},
       problems: [{ severity: 'minor', category: 'redundancy', text: '2 rimozioni hazard', fixes: [], key: 'redundancy:x' }] };
-    renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], moves: [], steps: [] }} members={3} rating={rating(three)} metaOn {...noop} />);
+    renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [] }} members={3} rating={rating(three)} metaOn {...noop} />);
     const roles = screen.getByRole('group', { name: 'Ruoli' });
     expect(roles).toHaveTextContent('Ridondanze');
     expect(roles).toHaveTextContent('2 rimozioni hazard');
@@ -310,13 +359,13 @@ describe('CoachingView', () => {
 
   it('nessun problema: un messaggio positivo', () => {
     const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], problems: [], threatFixes: {} };
-    renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], moves: [], steps: [] }} members={6} rating={rating(six)} metaOn {...noop} />);
+    renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [] }} members={6} rating={rating(six)} metaOn {...noop} />);
     expect(screen.getByText('Nessun problema: il team è a posto.')).toBeInTheDocument();
   });
 
   it('dice quanti bannati restano fuori dai candidati', () => {
     const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], problems: [], threatFixes: {}, bannedCount: 1 };
-    renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], moves: [], steps: [] }} members={6} rating={rating(six)} metaOn {...noop} />);
+    renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [] }} members={6} rating={rating(six)} metaOn {...noop} />);
     expect(screen.getByText('1 bannato escluso')).toBeInTheDocument();
   });
 });
@@ -332,17 +381,19 @@ describe('AnalysisPanel: Coaching e profilo di un membro', () => {
 });
 
 describe('proposta di mossa nell\'editor', () => {
-  const moveButton = () => within(analysis()).getAllByRole('button', { name: /^Dai .+ a .+, \+\d+$/ })[0];
+  const moveButton = () => within(analysis()).getAllByRole('button', { name: /^Dai .+ a .+, (?:\+\d+|±0)$/ })[0];
 
   it('clic: si apre l\'editor del membro con la proposta; Applica cambia la mossa, Annulla del toast la riporta', async () => {
     const user = await openCoaching(six);
-    const [, to, member, gain] = /^Dai (.+) a (.+), \+(\d+)$/.exec(moveButton().getAttribute('aria-label')!)!;
+    const [, to, member, gain] = /^Dai (.+) a (.+), (\+\d+|±0)$/.exec(moveButton().getAttribute('aria-label')!)!;
     await user.click(moveButton());
     const card = document.querySelector<HTMLDetailsElement>('details.slot[open]')!;
     expect(card).toBeTruthy();
+    // Il fuoco va su Applica
+    expect(document.activeElement).toBe(within(card).getByRole('button', { name: 'Applica' }));
     const note = within(card).getByText(/^Proposta del coach: /);
     expect(note).toHaveTextContent(`${to}`);
-    expect(note).toHaveTextContent(`+${gain}`);
+    expect(note).toHaveTextContent(gain);
     const field = card.querySelector('.field.is-proposed')!;
     expect(field).toBeTruthy();
     const slot = [...card.querySelectorAll('.editor-group.moves .field')].indexOf(field);
@@ -383,7 +434,7 @@ describe('proposta di mossa nell\'editor', () => {
   // i consigli si ricalcolano e il pulsante sparisce; la guardia in App.openMoveFix non ha un punto d'ingresso nei test.
   it('rimosso il membro, nessuna proposta resta aperta', async () => {
     const user = await openCoaching(six);
-    const member = /^Dai .+ a (.+), \+\d+$/.exec(moveButton().getAttribute('aria-label')!)![1];
+    const member = /^Dai .+ a (.+), (?:\+\d+|±0)$/.exec(moveButton().getAttribute('aria-label')!)![1];
     await user.click(screen.getByRole('button', { name: new RegExp(`^Rimuovi ${member}`) }));
     expect(document.querySelector('.move-proposal')).toBeNull();
     expect(screen.queryByRole('status')).toHaveTextContent('rimosso');

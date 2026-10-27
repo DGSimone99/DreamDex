@@ -78,7 +78,7 @@ const strongest = <T extends { teamGain?: { gain: number } }>(items: T[], limit:
 
 /**
  * Come cambiano i problemi del team con un cambio: risolto = la chiave sparisce; ridotto = resta ma più piccola,
- * o da grave diventa minore. Calcola i problemi di partenza una volta e li confronta con ogni team "dopo".
+ * o da grave diventa minore; nuovo = la chiave prima non c'era. Calcola i problemi di partenza una volta e li confronta con ogni team "dopo".
  */
 export function problemChanges(team: TeamSet[], format: Format, data: EngineData, problems: CoachProblem[], lang: Lang) {
   const now = new Map<string, CoachProblem>();
@@ -93,7 +93,8 @@ export function problemChanges(team: TeamSet[], format: Format, data: EngineData
       if (!is) solves.push(key);
       else if ((was.severity === 'serious' && is.severity === 'minor') || (was.size !== undefined && is.size !== undefined && is.size < was.size)) reduces.push(key);
     }
-    return { solves, reduces };
+    const introduces = [...left.keys()].filter(key => !now.has(key));
+    return { solves, reduces, introduces };
   };
 }
 
@@ -107,7 +108,8 @@ export function coachFixes(team: TeamSet[], format: Format, data: EngineData, pr
   const archetype: Archetype | undefined = undefined;
   const base = (set: TeamSet) => battleSpecies(set)?.baseSpecies ?? set.species;
   const forme = (set: TeamSet) => battleSpecies(set)?.name ?? set.species;
-  const changes = problemChanges(team, format, data, problems, lang);
+  const delta = problemChanges(team, format, data, problems, lang);
+  const changes = (after: TeamSet[]) => { const { solves, reduces } = delta(after); return { solves, reduces }; };
 
   const fixes: CoachFix[] = [];
   team.forEach((member, index) => {

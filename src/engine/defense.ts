@@ -255,10 +255,13 @@ function threatHit(threat: TeamSet, member: TeamSet, data: EngineData): Hit | nu
   return { ...base, expected: base.expected + ONE_USE_SHARE * Math.max(0, boosted - base.expected) };
 }
 
-/** I colpi migliori di tutte le minacce del meta su un membro; per contenuto del set, formato e meta. */
+/**
+ * I colpi migliori di tutte le minacce del meta su un membro; per contenuto del set, formato e meta. Le mosse del
+ * membro non contano (subisce il colpo): un set che cambia solo le mosse riusa i calcoli (cambi di mossa del Coaching).
+ */
 const threatCache = new Map<string, (Hit | null)[]>();
 function threatHitsOf(member: TeamSet, data: EngineData): (Hit | null)[] {
-  const key = `${setKey(member)}|${data.formatId ?? 'ou'}|${usesMeta(data)}|${!!data.stats}`;
+  const key = `${setKey({ ...member, moves: [] })}|${data.formatId ?? 'ou'}|${usesMeta(data)}|${!!data.stats}`;
   let hits = threatCache.get(key);
   if (hits) return hits;
   if (threatCache.size >= RAW_LIMIT) threatCache.clear();

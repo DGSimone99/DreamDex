@@ -18,7 +18,7 @@ import { benefits, conditionLabel, viaName, enables, teamSynergies, unmetBenefic
 import type { TeamSet } from './sets';
 import { coachFixes, type CoachFix } from './coachFixes';
 import { buildSteps, type CoachStep } from './coachSteps';
-import { moveFixes, type MoveFix } from './moveFixes';
+import { moveFixes } from './moveFixes';
 import type { ScoredArea } from './teamGain';
 import { defensiveMultiplier } from './types';
 
@@ -50,8 +50,6 @@ export interface CoachProblem {
 export interface CoachAdvice {
   /** Cambi dalla classifica di Migliora team che alzano il voto, coi problemi che risolvono o riducono. */
   fixes: CoachFix[];
-  /** Cambi di una mossa che alzano il voto, coi problemi che risolvono o riducono. */
-  moves: MoveFix[];
   /** Tutte le tappe, dalla più urgente: la UI ne mostra `MAX_STEPS`. */
   steps: CoachStep[];
 }
@@ -312,9 +310,9 @@ export function coachTeam(team: TeamSet[], format: Format, data: EngineData, lan
 
 /** I cambi della classifica di Migliora team per i problemi di coachTeam, e le tappe. */
 export function coachAdvice(team: TeamSet[], format: Format, data: EngineData, problems: CoachProblem[], lang: Lang = 'it'): CoachAdvice {
-  if (team.length < 2) return { fixes: [], moves: [], steps: [] };
+  if (team.length < 2) return { fixes: [], steps: [] };
   if (data.formatId !== format.formatId) data = { ...data, formatId: format.formatId };
   const fixes = coachFixes(team, format, data, problems, lang);
   const moves = data.stats ? moveFixes(team, format, data, problems, lang) : [];
-  return { fixes, moves, steps: buildSteps(problems, fixes, moves) };
+  return { fixes, steps: buildSteps(problems, fixes, moves) };
 }

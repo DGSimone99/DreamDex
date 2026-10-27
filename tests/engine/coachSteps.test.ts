@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { CoachProblem, ProblemCategory } from '../../src/engine/coach';
 import type { CoachFix } from '../../src/engine/coachFixes';
-import { buildSteps, columnOf, coveredKeys, MAX_STEPS } from '../../src/engine/coachSteps';
+import { buildSteps, columnOf, MAX_STEPS, stepNumbers } from '../../src/engine/coachSteps';
 import type { MoveFix } from '../../src/engine/moveFixes';
 import { emptySet } from '../../src/engine/sets';
 
@@ -49,13 +49,25 @@ describe('buildSteps', () => {
     expect(steps[0].move?.index).toBe(1);
   });
 
-  it('alsoSolves anche se lo swap non risolve il problema, solo la mossa', () => {
-    const problems = [problem('a', 'serious'), problem('b')];
-    const steps = buildSteps(problems, [swap('S', 4, ['a'])], [move(1, 3, ['b'])]);
-    // a ha solo lo swap; b ha solo la mossa e non è coperto da a
-    expect(steps.map(s => s.problem.key)).toEqual(['a', 'b']);
-    const covered = buildSteps([problem('a', 'serious'), problem('b')], [swap('S', 4, ['a'])], [move(1, 3, ['a', 'b'])]);
-    expect(covered[0].alsoSolves).toEqual(['b']);
+  it('un problema coperto solo dallo swap di una tappa precedente diventa tappa se una mossa lo risolve', () => {
+    // Come SIX: lo swap della prima tappa risolve molto, una mossa risolve uno di quei problemi
+    const problems = [problem('g', 'serious'), problem('r'), problem('h'), problem('c')];
+    const steps = buildSteps(problems, [swap('S', 6, ['g', 'r', 'h', 'c']), swap('T', 2, ['r'])], [move(1, 3, ['r', 'h'])]);
+    expect(steps.map(s => s.problem.key)).toEqual(['g', 'r']);
+    expect(steps[1].move?.index).toBe(1);
+    // lo swap solo se uno non ancora usato risolve quel problema
+    expect(steps[1].swap?.species).toBe('T');
+    expect(steps[1].alsoSolves).toEqual(['h']);
+    // senza swap libero: solo la mossa
+    const [, only] = buildSteps(problems, [swap('S', 6, ['g', 'r', 'h', 'c'])], [move(1, 3, ['r'])]);
+    expect(only.problem.key).toBe('r');
+    expect(only.swap).toBeNull();
+  });
+
+  it('coperto solo da swap e senza mossa che lo risolve: niente tappa; coperto da una mossa: resta coperto', () => {
+    const problems = [problem('g', 'serious'), problem('r')];
+    expect(buildSteps(problems, [swap('S', 6, ['g', 'r']), swap('T', 2, ['r'])], []).map(s => s.problem.key)).toEqual(['g']);
+    expect(buildSteps(problems, [swap('S', 6, ['g'])], [move(1, 3, ['g', 'r']), move(2, 2, ['r'])]).map(s => s.problem.key)).toEqual(['g']);
   });
 
   it('niente doppioni: specie e membri già usati', () => {
@@ -84,12 +96,13 @@ describe('buildSteps', () => {
   });
 });
 
-describe('coveredKeys', () => {
-  it('solo le prime MAX_STEPS tappe', () => {
+describe('stepNumbers', () => {
+  it('problema → numero della prima tappa che lo copre, solo le prime MAX_STEPS tappe', () => {
     expect(MAX_STEPS).toBe(3);
     const keys = ['a', 'b', 'c', 'd'];
-    const steps = buildSteps(keys.map(k => problem(k)), keys.map((k, i) => swap(`S${k}`, 10 - i, [k, ...(k === 'a' ? ['z'] : [])])), []);
-    expect(steps).toHaveLength(4);
-    expect([...coveredKeys(steps)].sort()).toEqual(['a', 'b', 'c', 'z']);
+    const steps = buildSteps(keys.map(k => problem(k)), keys.map((k, i) => swap(`S${k}`, 10 - i, [k, ...(k === 'a' ? ['z', 'c'] : [])])), []);
+    expect(steps.map(s => s.problem.key)).toEqual(['a', 'b', 'd']);
+    expect(Object.fromEntries(stepNumbers(steps))).toEqual({ a: 1, z: 1, c: 1, b: 2, d: 3 });
+    expect(stepNumbers([...steps, ...steps]).size).toBe(5);
   });
 });

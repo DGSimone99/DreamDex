@@ -103,9 +103,10 @@ const STATES: Record<string, State> = {
     await wait(300);
     if (!await clickText(p, '#analysis-view-coaching', /./)) return false;
     const rowH = (sel: string) => p.evaluate(q => document.querySelector(q)?.getBoundingClientRect().height ?? -1, sel);
+    const start = Date.now();
     const skeleton = await rowH('.coach-steps[aria-busy]');
-    await p.waitForSelector('.coach-steps:not([aria-busy])', { timeout: 20000 });
-    console.log(`coaching-six: steps skeleton=${skeleton} real=${await rowH('.coach-steps:not([aria-busy])')}`);
+    await p.waitForSelector('.coach-steps:not([aria-busy]), .coach-steps-none', { timeout: 20000 });
+    console.log(`coaching-six: tappe pronte in ${Date.now() - start} ms; steps skeleton=${skeleton} real=${await rowH('.coach-steps:not([aria-busy]), .coach-steps-none')}`);
     return true;
   } },
   'coaching-three': { hash: hash(TEAM.slice(0, 3)), run: async p => {

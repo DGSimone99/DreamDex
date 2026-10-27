@@ -4,6 +4,7 @@ import { coachAdvice, coachTeam, findProblems, MIN_COVERAGE_WEIGHT } from '../..
 import { coachFixes } from '../../src/engine/coachFixes';
 import { buildSteps } from '../../src/engine/coachSteps';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
+import { moveFixes } from '../../src/engine/moveFixes';
 import { improveReplacements } from '../../src/engine/replace';
 import { emptySet, mostCommonSet, type TeamSet } from '../../src/engine/sets';
 import { rankByTeamGain, withCandidate } from '../../src/engine/teamGain';
@@ -70,7 +71,7 @@ describe('candidati del Coaching dalla classifica di Migliora team', () => {
     expect(coachFixes(six, format, noStats, problemsOf(six), 'it')).toEqual([]);
     expect(adviceOf(six, format, noStats).fixes).toEqual([]);
     expect(adviceOf(six, format, noStats).steps).toEqual([]);
-    expect(adviceOf(six, format, noStats).moves).toEqual([]);
+    expect(adviceOf(six, format, noStats).steps.some(s => s.move)).toBe(false);
   });
 
   it('meta spento con le statistiche: candidati sì, problemi del meta no', () => {
@@ -134,9 +135,9 @@ describe('coachAdvice', () => {
     const coaching = coachTeam(three, format, fixtureData);
     const advice = coachAdvice(three, format, fixtureData, coaching.problems, 'it');
     expect(advice.fixes).toEqual(fixesOf(three));
-    expect(advice.steps).toEqual(buildSteps(coaching.problems, advice.fixes, advice.moves));
+    expect(advice.steps).toEqual(buildSteps(coaching.problems, advice.fixes, moveFixes(three, format, { ...fixtureData, formatId: format.formatId }, coaching.problems, 'it')));
     expect(advice.steps.length).toBeGreaterThan(0);
-    expect(coachAdvice([three[0]], format, fixtureData, [], 'it')).toEqual({ fixes: [], moves: [], steps: [] });
+    expect(coachAdvice([three[0]], format, fixtureData, [], 'it')).toEqual({ fixes: [], steps: [] });
   });
 });
 
