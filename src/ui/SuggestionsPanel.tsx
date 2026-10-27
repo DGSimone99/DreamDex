@@ -525,6 +525,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
             banMark={<BanMark species={selected.species} format={format} />}
             actionLabel={actionLabelOf(selected)}
             onAction={() => act(selected)}
+            listSprite={listSprite}
           />
         )}
       </div>

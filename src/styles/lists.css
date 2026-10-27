@@ -104,7 +104,7 @@
   .detail-hero { padding-top: 6px; padding-bottom: 6px; }
   /* Chi esce lo dicono già la riga della lista e il pulsante principale */
   .detail-hero .swap-head { display: none; }
-  .detail-hero .detail-sprite { width: 56px; height: 56px; }
+  .detail-hero .detail-sprite { --box-scale: 1.7; width: 56px; height: 56px; }
   .detail-hero .detail-sprite .sprite-ani { transform: translate(-50%, -50%) scale(0.5833); }
   .detail:not(.detail-empty) .detail-sec { padding-top: 7px; padding-bottom: 8px; }
   /* Set su due righe: voci, poi le quattro mosse affiancate */
@@ -412,7 +412,7 @@
    (fin dove l'altezza della carta lo permette) sia nel dettaglio del Pokémon */
 @media (min-width: 1600px) {
   .slot[open] > summary { --open-scale: 1.85; --fit: 196; }
-  .detail-hero .detail-sprite { width: 96px; height: 96px; }
+  .detail-hero .detail-sprite { --box-scale: 2.9; width: 96px; height: 96px; }
   .detail-hero .detail-sprite .sprite-ani { transform: translate(-50%, -50%); }
 }
 @media (min-width: 1600px) and (min-height: 1000px) {

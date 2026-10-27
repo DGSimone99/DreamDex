@@ -16,9 +16,10 @@ import type { Format } from '../engine/format';
 import { gameName, natureName, statShort, typeName } from '../i18n/game';
 import { useLang, useT } from '../i18n/react';
 import { copyText } from './clipboard';
+import type { ListSprite } from './theme';
 import { Icon } from './icons';
 import { ItemIcon } from './ItemIcon';
-import { bringsOf } from './candidateParts';
+import { BoxIcon, bringsOf } from './candidateParts';
 import { PokemonIcon, PokemonName } from './PokemonName';
 import { battleAbility, battleName } from '../engine/dex';
 import { Sprite, TypeChip } from './Sprite';
@@ -30,7 +31,7 @@ import { MoveName, Typed } from './TypeText';
  * Il candidato selezionato nella lista, dall'alto per importanza: chi è e quanto sale il voto, cosa porta e cosa toglie,
  * l'effetto sul team area per area (una riga), il set consigliato, le azioni.
  */
-export function SuggestionDetail({ item, rank, team, replaceIndex, data, format, rating, archetype, usage, banMark, actionLabel, onAction }: {
+export function SuggestionDetail({ item, rank, team, replaceIndex, data, format, rating, archetype, usage, banMark, actionLabel, onAction, listSprite = 'normal' }: {
   item: (Suggestion | Replacement) & { teamGain?: TeamGain; alternatives?: SwapOption[] };
   rank: number;
   team: TeamSet[];
@@ -47,6 +48,8 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
   banMark: React.ReactNode;
   actionLabel: string;
   onAction: () => void;
+  /** Lo sprite della lista: il dettaglio mostra l'altro (lista Normale → icona box, lista Icona box → sprite animato). */
+  listSprite?: ListSprite;
 }) {
   const tr = useT();
   const lang = useLang();
@@ -80,7 +83,9 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
     <aside className={`detail${rank === 1 ? ' first' : ''}`} aria-label={tr('detail.region', { species: item.species })}>
       <header className="detail-hero">
         {/* Il candidato aperto si muove (idle animato), come il membro aperto nel team */}
-        <span className="detail-sprite"><Sprite species={item.species} item={set.item} size={144} animated /></span>
+        <span className="detail-sprite">
+          {listSprite === 'box' ? <Sprite species={item.species} item={set.item} size={144} animated /> : <BoxIcon set={set} />}
+        </span>
         <div className="detail-id">
           <h3>
             <span>{item.species}</span>
