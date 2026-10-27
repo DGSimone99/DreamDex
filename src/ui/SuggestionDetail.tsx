@@ -3,9 +3,9 @@ import type { EngineData } from '../engine/data';
 import { rankedChanges } from '../engine/coach';
 import { getSpecies } from '../engine/dex';
 import { rateTeam, type TeamRating } from '../engine/rating';
-import type { Archetype } from '../engine/archetype';
-import { areaDrops, extrasDelta, withCandidate, type ScoredArea, type SwapOption, type TeamGain } from '../engine/teamGain';
-import { detectRoles } from '../engine/roles';
+import { cardRoles, type Archetype } from '../engine/archetype';
+import { detectRoles, roleLabel } from '../engine/roles';
+import { areaDrops, extrasDelta, withCandidate, type SwapOption, type TeamGain } from '../engine/teamGain';
 import { rulesOf } from '../engine/formatRules';
 import { formatPercent } from '../i18n';
 import type { Replacement } from '../engine/replace';
@@ -16,24 +16,22 @@ import type { Format } from '../engine/format';
 import { gameName, natureName, statShort, typeName } from '../i18n/game';
 import { useLang, useT } from '../i18n/react';
 import { copyText } from './clipboard';
+import type { ListSprite } from './theme';
 import { Icon } from './icons';
 import { ItemIcon } from './ItemIcon';
-import { PokemonIcon, PokemonName } from './PokemonName';
+import { BoxIcon, bringsOf } from './candidateParts';
+import { PokemonName } from './PokemonName';
 import { battleAbility, battleName } from '../engine/dex';
 import { Sprite, TypeChip } from './Sprite';
 import { StatsBadge } from './StatsBadge';
 import { MoveName, Typed } from './TypeText';
 
-/** Voci di Porta e Toglie al massimo: la scheda deve stare in una schermata. */
-const MAX_POINTS = 3;
-/** L'area del voto di cui parla una ragione, per non ripetere i guadagni del cambio. */
-const REASON_AREA: Partial<Record<string, string>> = { defense: 'defense', coverage: 'strength', roles: 'roles' };
 
 /**
  * Il candidato selezionato nella lista, dall'alto per importanza: chi è e quanto sale il voto, cosa porta e cosa toglie,
  * l'effetto sul team area per area (una riga), il set consigliato, le azioni.
  */
-export function SuggestionDetail({ item, rank, team, replaceIndex, data, format, rating, archetype, usage, banMark, actionLabel, onAction }: {
+export function SuggestionDetail({ item, rank, team, replaceIndex, data, format, rating, archetype, usage, banMark, actionLabel, onAction, listSprite = 'normal' }: {
   item: (Suggestion | Replacement) & { teamGain?: TeamGain; alternatives?: SwapOption[] };
   rank: number;
   team: TeamSet[];
@@ -50,6 +48,8 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
   banMark: React.ReactNode;
   actionLabel: string;
   onAction: () => void;
+  /** Lo sprite della lista: il dettaglio mostra l'altro (lista Normale → icona box, lista Icona box → sprite animato). */
+  listSprite?: ListSprite;
 }) {
   const tr = useT();
   const lang = useLang();
@@ -65,20 +65,15 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
   const delta = (value: number) => (value > 0 ? `+${value}` : value < 0 ? `−${-value}` : '');
   const result = item.teamGain;
 
-  // Porta: i guadagni del cambio (dal più pesante), poi le ragioni; l'uso nel meta non dice perché sceglierlo
-  // Una ragione che ripete un guadagno della stessa area ("Resiste a Volante" e "Resistente a Volante") si salta
-  const covered = new Set(changes?.pros.map(p => p.area));
-  const reasons = item.reasons
-    // Gli avvisi (peso negativo: meteo in conflitto, mosse indebolite) vanno in Toglie, non qui
-    .filter(reason => reason.weight >= 0 && reason.component !== 'strength' && !covered.has(REASON_AREA[reason.component] as ScoredArea))
-    .map(reason => reason.text);
-  // Col team vuoto non c'è niente da confrontare: Porta dice cosa sa fare il Pokémon (i suoi ruoli)
-  const roles = !item.teamGain && !changes ? detectRoles(set, rulesOf(data)).map(role => tr(`role.${role}`)) : [];
-  const brings = [...new Set([...(changes?.pros.map(p => p.text) ?? []), ...reasons, ...roles])].slice(0, MAX_POINTS);
+  // Porta: tutto, nello stesso ordine delle caselle della lista (che ne mostrano le prime voci)
+  const brings = bringsOf(item, lang, rulesOf(data)).map(bring => bring.text);
+  // Ruoli del set consigliato: per primo il principale (lo stesso delle carte del team, evidenziato), poi gli altri
+  const mainRole = cardRoles(set, rulesOf(data))[0];
+  const setRoles = [...(mainRole ? [mainRole] : []), ...detectRoles(set, rulesOf(data)).filter(role => role !== mainRole)];
   // Toglie: le perdite del cambio e gli avvisi (meteo in conflitto, mosse indebolite)
-  const loses = [...(changes?.cons.map(c => c.text) ?? []), ...(item.facts.clashes ?? []).map(text => text.replace(/^⚠\s*/, ''))].slice(0, MAX_POINTS);
+  const loses = [...(changes?.cons.map(c => c.text) ?? []), ...(item.facts.clashes ?? []).map(text => text.replace(/^⚠\s*/, ''))];
   // Senza perdite da elencare ma con aree in calo, Toglie dice quali (mai "niente" accanto a pillole rosse)
-  if (replacing && !loses.length && before && after) loses.push(...areaDrops(before, after).slice(0, 2).map(drop => `${drop.label} ${delta(drop.change)}`));
+  if (replacing && !loses.length && before && after) loses.push(...areaDrops(before, after).map(drop => `${drop.label} ${delta(drop.change)}`));
   // Problemi risolti o nuovi, meteo e Tera: la parte del voto che le aree non spiegano, con la sua pillola
   const extras = before && after ? extrasDelta(before, after) : 0;
   // Aggiungendo non si perde nessuno: Toglie compare solo se c'è un avviso
@@ -88,7 +83,9 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
     <aside className={`detail${rank === 1 ? ' first' : ''}`} aria-label={tr('detail.region', { species: item.species })}>
       <header className="detail-hero">
         {/* Il candidato aperto si muove (idle animato), come il membro aperto nel team */}
-        <span className="detail-sprite"><Sprite species={item.species} item={set.item} size={144} animated /></span>
+        <span className="detail-sprite">
+          {listSprite === 'box' ? <Sprite species={item.species} item={set.item} size={144} animated /> : <BoxIcon set={set} />}
+        </span>
         <div className="detail-id">
           <h3>
             <span>{item.species}</span>
@@ -136,8 +133,9 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
 
         {after && (
           <section className="detail-sec wide effect">
-            <h4>{tr(before ? 'detail.team' : 'detail.teamAlone')}</h4>
-            {/* Una riga: per area la variazione (o il valore, senza un voto prima); un'area che non conta resta in grigio */}
+            {/* Sotto Porta e Toglie, senza etichetta visibile (ne è il risultato; col primo Pokémon resta "Voto con lui da
+                solo"): una riga, per area la variazione (o il valore, senza un voto prima); un'area che non conta resta in grigio */}
+            <h4 className={before ? 'visually-hidden' : undefined}>{tr(before ? 'detail.team' : 'detail.teamAlone')}</h4>
             <dl className="detail-areas">
               {after.areas.map(area => {
                 const prev = before?.areas.find(a => a.key === area.key);
@@ -160,36 +158,43 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
                 </div>
               )}
             </dl>
-            {/* Raccomandazioni libere: quanto renderebbe al posto degli altri membri */}
-            {item.alternatives && item.alternatives.length > 0 && (
-              <p className="detail-alts">
-                <span>{tr('detail.alternatives')}</span>
-                {item.alternatives.slice(0, 3).map(alt => (
-                  <span key={alt.index} className="alt">
-                    <PokemonIcon name={battleName(team[alt.index])} />
-                    {battleName(team[alt.index])}
-                    <strong className={alt.gain < 0 ? 'worse' : alt.gain === 0 ? 'same' : undefined}>{delta(alt.gain) || '±0'}</strong>
-                  </span>
-                ))}
-              </p>
-            )}
           </section>
         )}
 
+
         <section className="detail-sec wide set-sec">
           <h4>{tr('detail.set')}</h4>
+          {/* Due righe: strumento e abilità, poi natura, EV e Tera */}
           <p className="detail-set">
-            {set.item && <span><ItemIcon item={set.item} /> {gameName('item', set.item, lang)}</span>}
-            {/* L'abilità in battaglia: con una Megapietra quella della Mega (Mega Venusaur: Grassospesso, non Clorofilla) */}
-            {battleAbility(set) && <span>{gameName('ability', battleAbility(set), lang)}</span>}
-            {set.nature && <span>{natureName(set.nature, lang)}</span>}
-            {evs && <span className="evs">{evs}</span>}
-            {set.teraType && <span>{tr('editor.tera')} {typeName(set.teraType, lang)}</span>}
+            <span className="set-line">
+              {set.item && <span><ItemIcon item={set.item} /> {gameName('item', set.item, lang)}</span>}
+              {/* L'abilità in battaglia: con una Megapietra quella della Mega (Mega Venusaur: Grassospesso, non Clorofilla) */}
+              {battleAbility(set) && <span>{gameName('ability', battleAbility(set), lang)}</span>}
+            </span>
+            <span className="set-line">
+              {set.nature && <span>{natureName(set.nature, lang)}</span>}
+              {evs && <span className="evs">{evs}</span>}
+              {set.teraType && <span>{tr('editor.tera')} {typeName(set.teraType, lang)}</span>}
+            </span>
           </p>
           <ul className="detail-moves" aria-label={tr('editor.moves')}>
             {set.moves.map(move => <li key={move}><MoveName move={move} /></li>)}
           </ul>
         </section>
+
+        {/* Ruoli del set consigliato: il principale per primo ed evidenziato */}
+        {setRoles.length > 0 && (
+          <section className="detail-sec wide roles-sec">
+            <h4>{tr('detail.rolesTitle')}</h4>
+            <ul className="detail-roles" aria-label={tr('detail.roles')}>
+              {setRoles.map(role => (
+                <li key={role} className={role === mainRole ? 'main' : undefined}>
+                  {role === 'weather' ? tr('card.weather') : roleLabel(role, lang)}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
       </div>
 
       <div className="detail-actions">

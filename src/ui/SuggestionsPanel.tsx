@@ -1,50 +1,39 @@
-import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
+import { useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import type { EngineData } from '../engine/data';
 import type { Format } from '../engine/format';
-import { formatRules } from '../engine/formatRules';
 import type { Archetype } from '../engine/archetype';
 import { improveReplacements, keepersFirst, type Replacement } from '../engine/replace';
-import { rankedChanges } from '../engine/coach';
 import { rankedAdditions, rankedReplacements } from '../engine/coachFixes';
-import { topReason } from '../engine/explain';
-import { detectRoles } from '../engine/roles';
-import { OFTEN_TOGETHER } from '../engine/scoring';
 import { ActiveFilters } from './ActiveFilters';
 import type { Suggestion } from '../engine/scoring';
 import type { TeamSet } from '../engine/sets';
 import type { TeamRating } from '../engine/rating';
-import { bestSwaps, rankByTeamGain, rankKey, SWAPS_PER_MEMBER, type SwapOption, type SwapReport, type TeamGain } from '../engine/teamGain';
+import { bestSwaps, rankByTeamGain, rankKey, SWAPS_PER_MEMBER, type SwapReport } from '../engine/teamGain';
 import { battleName } from '../engine/dex';
 import { PokemonIcon } from './PokemonName';
 import { statsEntry } from '../engine/stats';
-import { formatPercent } from '../i18n';
 import { getSpecies } from '../engine/dex';
-import { applyFavorites, isUserBanned, isUserFavorite, type EffectiveLists } from '../engine/lists';
+import { applyFavorites, isUserBanned, isUserFavorite } from '../engine/lists';
 import { bannedNames } from '../engine/scoring';
-import { formatLabel } from '../engine/formats';
-import { activeFilterCount, EMPTY_FILTERS, isFiltering, searchCandidates, searchPool, tierLabel, type CandidateFilters } from '../engine/filters';
+import { activeFilterCount, EMPTY_FILTERS, isFiltering, searchCandidates, searchPool, type CandidateFilters } from '../engine/filters';
 import { defaultSet } from '../engine/sets';
 import { FilterBar } from './FilterBar';
 import { conditionLabel, neededConditions, providesAll, viaName } from '../engine/synergy';
-import { Sprite, TypeChip } from './Sprite';
-import { TypeIcons } from './typeIcons';
+import { Sprite } from './Sprite';
 import { Icon } from './icons';
 import { SuggestionDetail } from './SuggestionDetail';
-import { AlertMark } from './AlertMark';
-import { Typed } from './TypeText';
-import { t } from '../i18n';
+import { CandidateCard } from './CandidateCard';
+import { CandidatePill } from './CandidatePill';
+import { BanMark, BoxIcon, reasonsOf, type CandidateProps, type Item } from './candidateParts';
+import type { ListSprite, ListStyle } from './theme';
 import { useLang, useT } from '../i18n/react';
+import { usePerPage } from './usePerPage';
+import { ListViewMenu } from './ListViewMenu';
+import { ModeSwitch } from './ModeSwitch';
 
-/** Candidati per pagina e in tutto; il voto del team si calcola sui primi POOL per punteggio. */
-export const PAGE = 10;
+/** Candidati in tutto; il voto del team si calcola sui primi POOL per punteggio. Per pagina: misurato (PAGE senza misura). */
 export const MAX = 50;
 const POOL = 100;
-
-/**
- * Candidato in lista, col voto che darebbe al team (assente col primo Pokémon).
- * Nelle raccomandazioni libere anche il membro che sostituirebbe e gli altri possibili.
- */
-type Item = (Suggestion | Replacement) & { teamGain?: TeamGain; replaces?: number; alternatives?: SwapOption[] };
 
 /** Cosa mostra la lista: aggiunte, scambi liberi con tutto il team, o sostituti di un membro. */
 type View = 'add' | 'all' | 'member';
@@ -66,6 +55,15 @@ interface Props {
   focusSearch?: number;
   /** Candidato da mostrare (dal Coaching): a ogni `nonce` nuovo si va alla sua pagina e lo si apre nel dettaglio. */
   focus?: CandidateFocus;
+  /** Stile della lista (impostazioni): carte o menu. */
+  listStyle?: ListStyle;
+  /** Sprite della lista (impostazioni): normale o icona box. */
+  listSprite?: ListSprite;
+  /** Cambiano stile e sprite dalla fascia "Candidati" (le stesse impostazioni del dialogo). */
+  onListStyleChange?: (style: ListStyle) => void;
+  onListSpriteChange?: (sprite: ListSprite) => void;
+  /** Team nascosto: la lista ha più spazio, il numero per pagina resta quello a team aperto. */
+  teamCollapsed?: boolean;
 }
 
 /** Un candidato scelto nel Coaching: in modalità Aggiungi o fra i sostituti del membro. */
@@ -73,140 +71,6 @@ export interface CandidateFocus {
   species: string;
   mode: 'add' | 'member';
   nonce: number;
-}
-
-/** Solo se il Pokémon è bannato nel formato: triangolo rosso con il tier nel tooltip. */
-function BanMark({ species, format }: { species: string; format: Format }) {
-  const lang = useLang();
-  const { label, banned } = tierLabel(species, format);
-  return banned ? <AlertMark alerts={[{ level: 'danger', text: t(lang, 'suggest.banned', { tier: label, format: formatLabel(format, lang) }) }]} /> : null;
-}
-
-/** Il voto del team col candidato (+7, B 80); col primo Pokémon, il suo uso nel meta. */
-function ResultCell({ item, usage }: { item: Item; usage: number | null }) {
-  const tr = useT();
-  const lang = useLang();
-  const result = item.teamGain;
-  if (!result) {
-    return usage === null
-      ? <span className="result" aria-hidden="true" />
-      : (
-        <span className="result" aria-label={tr('suggest.usageAria', { pct: formatPercent(lang, usage) })}>
-          <strong>{formatPercent(lang, usage)}</strong><small>{tr('suggest.usageShort')}</small>
-        </span>
-      );
-  }
-  const gain = signed(result.gain);
-  return (
-    <span className="result" aria-label={tr('suggest.teamGrade', { grade: result.grade, n: result.overall, gain })}>
-      <strong className={result.gain < 0 ? 'worse' : result.gain === 0 ? 'same' : undefined}>{gain}</strong>
-    </span>
-  );
-}
-
-/** +7, −3, ±0. */
-export const signed = (n: number) => (n > 0 ? `+${n}` : n < 0 ? `−${-n}` : '±0');
-
-/** ♥ nei Preferiti dell'utente, ⊘ nella sua lista Ban (mostrato perché cercato per nome o con "mostra"). */
-function ListMarks({ set, lists }: { set: TeamSet; lists?: EffectiveLists }) {
-  const tr = useT();
-  const banned = isUserBanned(set, lists && { ...lists, allow: undefined });
-  const favorite = !banned && isUserFavorite(set, lists);
-  if (!banned && !favorite) return null;
-  return (
-    <span className={`list-mark ${banned ? 'ban' : 'fav'}`} role="img" aria-label={tr(banned ? 'lists.bannedMark' : 'lists.favoriteMark')}
-      title={tr(banned ? 'lists.bannedMark' : 'lists.favoriteMark')}><Icon name={banned ? 'ban' : 'heart'} /></span>
-  );
-}
-
-function SuggestionRow({ rank, item, usage, out, quickLabel, actionLabel, replacing, picked, selected, onSelect, onAction, format, lists }: {
-  /** Liste dell'utente, per i segni ♥ e ⊘. */
-  lists?: EffectiveLists;
-  /** Riga scelta dalla ricerca (Invio la aggiunge). */
-  picked?: boolean;
-  /** Riga mostrata nel dettaglio. */
-  selected: boolean;
-  onSelect: () => void;
-  quickLabel: string;
-  actionLabel: string;
-  replacing: boolean;
-  format: Format;
-  rank: number;
-  item: Item;
-  /** Uso nel meta, mostrato al posto del voto col primo Pokémon. */
-  usage: number | null;
-  /** Il membro che uscirebbe (raccomandazioni libere). */
-  out?: string;
-  onAction: () => void;
-}) {
-  const tr = useT();
-  const lang = useLang();
-  const diff = 'diff' in item ? item.diff : null;
-  // Una riga sola: il bonus che vale più punti e il malus che ne toglie di più (aggiungendo, la ragione che pesa di più)
-  const changes = diff ? rankedChanges(diff, item.teamGain?.areaPoints, lang) : null;
-  const bonus = changes?.pros[0]?.text ?? null;
-  const malus = changes?.cons[0]?.text ?? null;
-  const summaryText = changes
-    ? (item.reasons[0] ? topReason(item.reasons)!.text : tr('suggest.noDifference'))
-    // L'uso nel meta non è un motivo per sceglierlo: resta solo col team vuoto, dove è l'unico criterio
-    // Col team vuoto l'uso sta già a destra: qui i ruoli principali del Pokémon
-    : (usage !== null ? detectRoles(item.set, formatRules(format.formatId)).slice(0, 3).map(role => tr(`role.${role}`)).join(', ') : topReason(item.reasons.filter(r => r.component !== 'strength'))?.text) ?? '';
-  const types = getSpecies(item.species)?.types ?? [];
-  // Avvisi e "spesso usati insieme" come segni con tooltip, non più etichette lunghe che vanno a capo
-  const warnings = item.facts.clashes.map(text => ({ level: 'warn' as const, text: text.replace(/^⚠\s*/, '') }));
-  const synergy = item.facts.synergy;
-  const together = synergy && synergy.pct >= OFTEN_TOGETHER
-    ? [{ level: 'info' as const, text: tr('tag.oftenTogether', { member: synergy.member, pct: Math.round(synergy.pct * 100) }) }]
-    : [];
-  const className = ['suggestion', rank === 1 && 'first', selected && 'selected', picked && 'picked', out && 'swap'].filter(Boolean).join(' ');
-  return (
-    // Tutta la riga apre il dettaglio col mouse; da tastiera lo fa il nome
-    // Doppio clic: aggiunge o fa lo scambio (il pulsante a destra resta la via visibile e da tastiera)
-    <li className={className} onClick={onSelect} onDoubleClick={e => { if (!(e.target as Element).closest('button')) onAction(); }}>
-      <span className="rank" aria-hidden="true">{rank}</span>
-      <Sprite species={item.species} item={item.set.item} size={48} />
-      <span className="who">
-        <span className="name-line">
-          <button type="button" className="pick" aria-pressed={selected} onClick={e => { e.stopPropagation(); onSelect(); }}>
-            <strong><span className="visually-hidden">{rank}. </span>{item.species}</strong>
-          </button>
-          {/* Il tipo subito dopo il nome, poi i segni (ban, liste, avvisi, usato insieme) */}
-          <span className="types">
-            {types.map(type => <TypeChip key={type} type={type} />)}
-            {/* Righe strette: al posto dei chip le icone dei tipi (il nome del candidato ha la precedenza) */}
-            <TypeIcons types={types} className="types-compact" />
-          </span>
-          <BanMark species={item.species} format={format} />
-          <ListMarks set={item.set} lists={lists} />
-          <AlertMark alerts={warnings} />
-          <AlertMark alerts={together} icon="spark" />
-        </span>
-        {/* Bonus e malus principali; il colore solo sui segni */}
-        <small>
-          {bonus || malus
-            ? <>{bonus && <span className="gain"><b aria-hidden="true">+</b><span className="visually-hidden">+</span><Typed text={bonus} /></span>}{malus && <span className="loss"><b aria-hidden="true">−</b><span className="visually-hidden">−</span><Typed text={malus} /></span>}</>
-            : <span className="plain"><Typed text={summaryText} /></span>}
-        </small>
-      </span>
-      {/* Chi esce: solo la sua icona accanto al voto (con 6 membri basta); il nome nel tooltip e per gli screen reader */}
-      {out && (
-        <span className="out" title={tr('suggest.outFor', { member: out })}>
-          <PokemonIcon name={out} />
-          <span className="visually-hidden">{tr('suggest.outFor', { member: out })}</span>
-        </span>
-      )}
-      <ResultCell item={item} usage={usage} />
-      <button
-        type="button"
-        className="quick"
-        aria-label={quickLabel}
-        title={actionLabel}
-        onClick={e => { e.stopPropagation(); onAction(); }}
-      >
-        <Icon name={replacing ? 'swap' : 'plus'} />
-      </button>
-    </li>
-  );
 }
 
 /** Il valore si aggiorna solo dopo `delay` ms senza modifiche (per non ricalcolare a ogni lettera). */
@@ -224,10 +88,13 @@ export const SEARCH_DELAY = 200;
 /** I tipi di team che si possono scegliere per giudicare i cambi, dopo Nessuno. */
 const TEAM_TYPES: Archetype[] = ['hyperOffense', 'bulkyOffense', 'balance', 'semiStall', 'stall'];
 
-export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onReplaceWith, onCancelReplace, rating = null, onTarget, focusSearch, focus }: Props) {
+export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onReplaceWith, onCancelReplace, rating = null, onTarget, focusSearch, focus, listStyle = 'cards', listSprite = 'normal', onListStyleChange, onListSpriteChange, teamCollapsed = false }: Props) {
   const tr = useT();
   const lang = useLang();
-  const [page, setPage] = useState(0);
+  const [pageState, setPage] = useState(0);
+  // Quanti per pagina: dallo spazio della lista, come se il team fosse aperto
+  const listRef = useRef<HTMLOListElement>(null);
+  const { perPage, columns, tileHeight, rowHeight, reasons } = usePerPage(listRef, listStyle, teamCollapsed);
   const [filters, setFilters] = useState<CandidateFilters>(EMPTY_FILTERS);
   // La lista si ricalcola sui filtri "stabili"; l'input mostra subito quello che scrivi
   const applied = useDebounced(filters, SEARCH_DELAY);
@@ -343,14 +210,27 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
     const index = items.findIndex(item => item.species === focusing);
     // Non c'è (filtri attivi): resta la lista com'è
     if (index >= 0) {
-      setPage(Math.floor(index / PAGE));
+      setPage(Math.floor(index / perPage));
       setCursor(null);
       setSelectedName(focusing);
     }
     setFocusing(null);
-  }, [focusing, items, stale, filtering]);
-  const pages = Math.ceil(items.length / PAGE);
-  const pageItems = items.slice(page * PAGE, (page + 1) * PAGE);
+  }, [focusing, items, stale, filtering, perPage]);
+  // Cambia il numero per pagina (prima misura, Carte↔Menu, finestra): si resta sulla pagina del candidato
+  // aperto, o della riga scelta con le frecce, o del primo che si vedeva
+  const shownPerPage = useRef(perPage);
+  useLayoutEffect(() => {
+    const before = shownPerPage.current;
+    if (before === perPage) return;
+    shownPerPage.current = perPage;
+    const open = selectedName ? items.findIndex(item => item.species === selectedName) : -1;
+    const anchor = open >= 0 ? open : cursor ?? Math.min(pageState * before, Math.max(0, items.length - 1));
+    setPage(Math.floor(anchor / perPage));
+  }, [perPage]); // eslint-disable-line react-hooks/exhaustive-deps
+  const pages = Math.ceil(items.length / perPage);
+  // Il numero per pagina può cambiare (finestra): la pagina resta fra quelle che ci sono
+  const page = Math.max(0, Math.min(pageState, pages - 1));
+  const pageItems = items.slice(page * perPage, (page + 1) * perPage);
   const chosen = fresh && cursor !== null ? items[cursor] : undefined;
   const fallback = fresh ? items[0] : undefined;
   const pickedIndex = !fresh ? -1
@@ -371,16 +251,15 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
     setFilters({ ...filters, query: '' });
   };
   const target = chosen?.species ?? exact?.name ?? fallback?.species;
-  const listRef = useRef<HTMLOListElement>(null);
-  /** Frecce: passa al risultato successivo o precedente, tenendolo in vista. */
+  /** Frecce: passa al risultato successivo o precedente, nell'ordine della lista; oltre la pagina, a quella accanto. */
   const moveCursor = (delta: number) => {
-    const first = page * PAGE;
-    const last = Math.min(items.length, first + PAGE) - 1;
-    if (!fresh || last < first) return;
-    const next = Math.min(last, Math.max(first, Math.max(pickedIndex, first) + delta));
+    if (!fresh || !items.length) return;
+    const first = page * perPage;
+    const from = pickedIndex >= first && pickedIndex < first + perPage ? pickedIndex : first;
+    const next = Math.min(items.length - 1, Math.max(0, from + delta));
     setCursor(next);
     setSelectedName(null);
-    listRef.current?.children[next - first]?.scrollIntoView?.({ block: 'nearest' });
+    setPage(Math.floor(next / perPage));
   };
   const goToPage = (next: number) => {
     setPage(next);
@@ -388,7 +267,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
     setSelectedName(null);
   };
   const selected = pageItems.find(item => item.species === selectedName)
-    ?? (pickedIndex >= page * PAGE && pickedIndex < (page + 1) * PAGE ? items[pickedIndex] : undefined)
+    ?? (pickedIndex >= page * perPage && pickedIndex < (page + 1) * perPage ? items[pickedIndex] : undefined)
     ?? pageItems[0];
   const selectedRank = selected ? items.indexOf(selected) + 1 : 0;
   const usageOf = (species: string) => statsEntry(data.stats, species)?.usage ?? null;
@@ -406,9 +285,6 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   const actionLabelOf = (item: Item) => (item.replaces !== undefined
     ? tr('suggest.swapAction', { member: memberName(item.replaces) })
     : tr(replacing ? 'suggest.replaceWith' : 'suggest.add'));
-  const quickLabelOf = (item: Item) => (item.replaces !== undefined
-    ? tr('suggest.swapQuick', { species: item.species, member: memberName(item.replaces) })
-    : replacing ? tr('suggest.replaceQuick', { species: item.species }) : tr('suggest.addQuick', { species: item.species }));
   /** Modalità: aggiungere o migliorare (tutto il team o un membro). */
   const chooseMode = (next: 'add' | 'improve') => {
     if (next === 'add') {
@@ -484,6 +360,14 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
     </>
   );
 
+  const cards = listStyle === 'cards';
+  const listVars = {
+    '--cols': columns,
+    '--tile-h': tileHeight !== undefined ? `${tileHeight}px` : undefined,
+    '--row-h': rowHeight !== undefined ? `${rowHeight}px` : undefined,
+    '--reasons': reasons,
+  } as CSSProperties;
+
   // Il numero di risultati, sopra la lista quando si cerca o si filtra
   const countText = `${items.length === 1 ? tr('suggest.resultsOne') : tr('suggest.resultsMany', { n: items.length })}${items.length === MAX ? tr('suggest.best') : ''}`;
 
@@ -528,82 +412,76 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
     );
     body = (
       <>
-        <ol className={`suggestions${stale ? ' stale' : ''}`} ref={listRef} aria-busy={stale || undefined}>
-          {pageItems.map((item, i) => (
-            <SuggestionRow
-              key={item.species}
-              picked={page * PAGE + i === pickedIndex}
-              selected={item === selected}
-              onSelect={() => select(item)}
-              rank={page * PAGE + i + 1}
-              item={item}
-              usage={emptyTeam ? usageOf(item.species) : null}
-              out={item.replaces !== undefined ? memberName(item.replaces) : undefined}
-              actionLabel={actionLabelOf(item)}
-              quickLabel={quickLabelOf(item)}
-              replacing={view !== 'add'}
-              onAction={() => act(item)}
-              format={format}
-              lists={data.userLists}
-            />
-          ))}
+        {/* Le misure per le caselle (Carte: colonne e altezza; Menu: altezza della riga) */}
+        <ol className={`suggestions ${cards ? 'cards' : 'menu'}${stale ? ' stale' : ''}`} ref={listRef} aria-busy={stale || undefined} style={listVars}>
+          {pageItems.map((item, i) => {
+            const usage = emptyTeam ? usageOf(item.species) : null;
+            const candidate: CandidateProps = {
+              rank: page * perPage + i + 1,
+              item,
+              reasons: reasonsOf(item, reasons, usage, format, lang),
+              // Icona del box: mai la GIF (sotto il mouse saltella col CSS)
+              sprite: animated => listSprite === 'box'
+                ? <BoxIcon set={item.set} big={teamCollapsed} />
+                : <Sprite species={item.species} item={item.set.item} size={96} animated={animated} />,
+              usage,
+              out: item.replaces !== undefined ? memberName(item.replaces) : undefined,
+              picked: page * perPage + i === pickedIndex,
+              selected: item === selected,
+              onSelect: () => select(item),
+              actionLabel: actionLabelOf(item),
+              onAction: () => act(item),
+              format,
+              lists: data.userLists,
+            };
+            return cards ? <CandidateCard key={item.species} {...candidate} /> : <CandidatePill key={item.species} {...candidate} />;
+          })}
         </ol>
-        {pages > 1 && (
-          <nav className="pager" aria-label={tr('suggest.pages')}>
-            <button type="button" className="step" aria-label={tr('suggest.prev')} disabled={page === 0} onClick={() => goToPage(page - 1)}>
-              <Icon name="prev" />
-            </button>
-            {Array.from({ length: pages }, (_, n) => (
-              <button key={n} type="button" aria-label={tr('suggest.page', { n: n + 1 })} aria-current={n === page ? 'page' : undefined}
-                onClick={() => goToPage(n)}>
-                {n + 1}
-              </button>
-            ))}
-            <button type="button" className="step" aria-label={tr('suggest.next')} disabled={page === pages - 1} onClick={() => goToPage(page + 1)}>
-              <Icon name="next" />
-            </button>
-          </nav>
-        )}
       </>
     );
   }
 
+  // Paginazione nella fascia "Candidati (N)", su una riga: ‹ un trattino per pagina ›
+  const pager = pages > 1 && (
+    <nav className="pager" aria-label={tr('suggest.pages')}>
+      <button type="button" className="step" aria-label={tr('suggest.prev')} disabled={page === 0} onClick={() => goToPage(page - 1)}>
+        <Icon name="prev" />
+      </button>
+      <span className="pager-dashes">
+        {Array.from({ length: pages }, (_, n) => (
+          <button key={n} type="button" className="pager-dash" aria-label={tr('suggest.page', { n: n + 1 })} aria-current={n === page ? 'page' : undefined}
+            onClick={() => goToPage(n)} />
+        ))}
+      </span>
+      <button type="button" className="step" aria-label={tr('suggest.next')} disabled={page === pages - 1} onClick={() => goToPage(page + 1)}>
+        <Icon name="next" />
+      </button>
+    </nav>
+  );
+
   return (
     <section aria-label={tr('suggest.title')} className="suggestions-panel">
       <div className="toolbar">
-        <div className="segmented" role="group" aria-label={tr('suggest.mode')}>
-          <button type="button" aria-pressed={view === 'add'} disabled={team.length >= 6} onClick={() => chooseMode('add')}>
-            <Icon name="plus" />{tr('suggest.addMode')}
-          </button>
-          <button type="button" aria-pressed={view !== 'add'} disabled={team.length < 2 && !replacing}
-            onClick={() => chooseMode('improve')}>{tr('suggest.improve')}</button>
-        </div>
+        <ModeSwitch team={team} view={view} replacing={replacing} replaceIndex={replaceIndex}
+          addDisabled={team.length >= 6} improveDisabled={team.length < 2 && !replacing}
+          onAdd={() => chooseMode('add')} onImprove={() => chooseMode('improve')}
+          onAll={() => { setScope('all'); onCancelReplace(); }} onTarget={index => onTarget?.(index)} />
         {search}
       </div>
       {!full && <ActiveFilters filters={filters} onChange={setFilters} count={filtering && items.length > 0 ? countText : undefined} />}
-      {view !== 'add' && (
-        <div className="subbar">
-          {/* Chi sostituire: tutti (il motore sceglie per ogni candidato) o un membro preciso */}
-          <div className="targets" role="group" aria-label={tr('suggest.target')}>
-            <span className="targets-label" aria-hidden="true">{tr('suggest.targetLabel')}</span>
-            <button type="button" aria-pressed={view === 'all'} onClick={() => { setScope('all'); onCancelReplace(); }}>{tr('suggest.targetAll')}</button>
-            {team.map((member, index) => (
-              <button key={index} type="button" aria-pressed={replacing && replaceIndex === index}
-                aria-label={tr('suggest.targetMember', { member: battleName(member) })}
-                title={member.favorite ? tr('suggest.targetFavorite') : undefined}
-                onClick={() => onTarget?.(index)}>
-                <PokemonIcon name={battleName(member)} />
-                <span>{battleName(member)}</span>
-                {member.favorite && <Icon name="star" />}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
       {notes}
       <div className={`picker${!full ? ' has-detail' : ''}`}>
         <div className="picker-list">
-          {!full && items.length > 0 && <div className="list-head"><h2 className="box-head">{tr('suggest.listHead', { n: items.length })}</h2></div>}
+          {!full && items.length > 0 && (
+            <div className="list-head">
+              <h2 className="box-head">{tr('suggest.listHead', { n: items.length })}</h2>
+              <span className="dbl-hint">{tr(view === 'add' ? 'suggest.dblHint.add' : 'suggest.dblHint.replace')}</span>
+              {pager}
+              {onListStyleChange && onListSpriteChange && (
+                <ListViewMenu listStyle={listStyle} listSprite={listSprite} onListStyleChange={onListStyleChange} onListSpriteChange={onListSpriteChange} />
+              )}
+            </div>
+          )}
           {body}
         </div>
         {/* Senza candidati resta lo scheletro del dettaglio: la pagina non si accorcia e non salta in alto */}
@@ -629,6 +507,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
             banMark={<BanMark species={selected.species} format={format} />}
             actionLabel={actionLabelOf(selected)}
             onAction={() => act(selected)}
+            listSprite={listSprite}
           />
         )}
       </div>

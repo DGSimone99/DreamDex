@@ -28,6 +28,8 @@ const TEAM = [
   member('Corviknight', 'Leftovers', 'Pressure', ['Brave Bird', 'Defog', 'Roost', 'U-turn'], 'Impish', { hp: 248, def: 168, spd: 92 }),
 ];
 const SIX = [...TEAM, member('Gholdengo', 'Air Balloon', 'Good as Gold', ['Make It Rain', 'Shadow Ball', 'Recover', 'Nasty Plot'], 'Timid', { spa: 252, spe: 252, def: 4 })];
+/** Preferiti per gli stati *-fav: Pokémon che di solito compaiono fra i primi candidati. */
+const FAVS = ['Corviknight', 'Dragapult', 'Gholdengo', 'Rotom-Wash', 'Landorus-Therian', 'Iron Valiant', 'Zamazenta', 'Slowking-Galar', 'Heatran', 'Garganacl'];
 const LONG = [
   member('Landorus-Therian', 'Rocky Helmet', 'Intimidate', ['Earthquake', 'U-turn', 'Stealth Rock', 'Stone Edge'], 'Impish', { hp: 252, def: 216, spe: 40 }),
   member('Ogerpon-Wellspring', 'Wellspring Mask', 'Water Absorb', ['Ivy Cudgel', 'Horn Leech', 'Knock Off', 'U-turn'], 'Jolly', { atk: 252, spe: 252, hp: 4 }),
@@ -100,9 +102,57 @@ async function focus(page: Page, selector: string): Promise<boolean> {
 const wait = (ms: number) => new Promise(r => setTimeout(r, ms));
 const tab = (page: Page, id: string) => page.evaluate(i => { document.getElementById(`tab-${i}`)?.click(); }, id);
 
-interface State { hash?: string; lang?: 'it' | 'en'; run?: (page: Page) => Promise<boolean | string> }
+/** Mouse sulla carta n della lista; dopo l'animazione stampa i bordi della carta inclinata rispetto all'interno della lista. */
+async function hoverCard(page: Page, n: number): Promise<boolean | string> {
+  await tab(page, 'pokemon');
+  await wait(1500);
+  const card = (await page.$$('.suggestions.cards > li.card'))[n];
+  if (!card) return 'no card';
+  await card.hover();
+  await wait(1500);
+  const m = await page.evaluate(i => {
+    const list = document.querySelector<HTMLElement>('.suggestions.cards')!;
+    const li = list.querySelectorAll<HTMLElement>(':scope > li.card')[i];
+    const l = list.getBoundingClientRect();
+    const c = li.getBoundingClientRect();
+    const inner = { top: l.top + list.clientTop, left: l.left + list.clientLeft, right: l.left + list.clientLeft + list.clientWidth, bottom: l.top + list.clientTop + list.clientHeight };
+    const cut = Math.max(0, inner.top - c.top, c.left - c.left + inner.left - c.left, c.right - inner.right, c.bottom - inner.bottom);
+    const gif = li.querySelector<HTMLImageElement>('.sprite-ani');
+    const stat = li.querySelector<HTMLImageElement>('.sprite');
+    return { cut: Math.round(cut * 10) / 10, top: Math.round(c.top - inner.top), left: Math.round(c.left - inner.left), right: Math.round(inner.right - c.right), bottom: Math.round(inner.bottom - c.bottom),
+      gif: gif ? `${Math.round(gif.getBoundingClientRect().height)}h (static ${stat ? Math.round(stat.getBoundingClientRect().height) : '-'})` : 'none', anis: list.querySelectorAll('.sprite-ani').length };
+  }, n);
+  console.log(`hover card ${n}: ${JSON.stringify(m)}`);
+  return true;
+}
+
+// storage: chiavi in più nel localStorage prima del caricamento (es. lo stile della lista)
+interface State { hash?: string; lang?: 'it' | 'en'; storage?: Record<string, string>; run?: (page: Page) => Promise<boolean | string> }
 const STATES: Record<string, State> = {
   pokemon: { run: async p => { await tab(p, 'pokemon'); return true; } },
+  // Carta sotto il mouse (la prima è selezionata: la seconda in alto, la prima in basso, l'ultima): stampa quanto esce dalla lista (cut = px tagliati)
+  'pokemon-hover': { run: async p => hoverCard(p, 1) },
+  'pokemon-hover-bl': { run: async p => hoverCard(p, 3) },
+  'pokemon-hover-last': { run: async p => hoverCard(p, 5) },
+  // Lista candidati in stile Menu (pillole), team aperto e nascosto
+  'pokemon-menu': { storage: { 'dreamdex.listStyle': '"menu"' }, run: async p => { await tab(p, 'pokemon'); return true; } },
+  'pokemon-menu-collapsed': { storage: { 'dreamdex.listStyle': '"menu"' }, run: async p => {
+    await tab(p, 'pokemon');
+    await wait(300);
+    return clickText(p, 'button.band-toggle', /./);
+  } },
+  // Icone del box al posto degli sprite normali (Carte e Menu)
+  'pokemon-box': { storage: { 'dreamdex.listSprite': '"box"' }, run: async p => { await tab(p, 'pokemon'); return true; } },
+  'pokemon-menu-box': { storage: { 'dreamdex.listStyle': '"menu"', 'dreamdex.listSprite': '"box"' }, run: async p => { await tab(p, 'pokemon'); return true; } },
+  // Team nascosto (tessere/righe più alte) e nomi lunghi, in ogni stile e sprite
+  'pokemon-collapsed': { run: async p => { await tab(p, 'pokemon'); await wait(300); return clickText(p, 'button.band-toggle', /./); } },
+  'pokemon-collapsed-box': { storage: { 'dreamdex.listSprite': '"box"' }, run: async p => { await tab(p, 'pokemon'); await wait(300); return clickText(p, 'button.band-toggle', /./); } },
+  'pokemon-menu-collapsed-box': { storage: { 'dreamdex.listStyle': '"menu"', 'dreamdex.listSprite': '"box"' }, run: async p => { await tab(p, 'pokemon'); await wait(300); return clickText(p, 'button.band-toggle', /./); } },
+  // Preferiti dell'utente nella lista: il ♥ sul +N (Carte e Menu)
+  'pokemon-fav': { storage: { 'dreamdex.lists': JSON.stringify({ universal: { favorites: FAVS, bans: [] }, byFormat: {} }) }, run: async p => { await tab(p, 'pokemon'); return true; } },
+  'pokemon-menu-fav': { storage: { 'dreamdex.listStyle': '"menu"', 'dreamdex.lists': JSON.stringify({ universal: { favorites: FAVS, bans: [] }, byFormat: {} }) }, run: async p => { await tab(p, 'pokemon'); return true; } },
+  'pokemon-long': { hash: hash(LONG), run: async p => { await tab(p, 'pokemon'); return true; } },
+  'pokemon-menu-long': { hash: hash(LONG), storage: { 'dreamdex.listStyle': '"menu"' }, run: async p => { await tab(p, 'pokemon'); return true; } },
   editor: { run: async p => clickText(p, '.slot.filled > summary', /./) },
   analysis: { run: async p => { await tab(p, 'analysis'); return true; } },
   'analysis-defense': { run: async p => clickText(p, '.band button.grade-area', /^Difesa/) },
@@ -281,6 +331,13 @@ const STATES: Record<string, State> = {
   undo: { run: async p => clickText(p, 'button.remove', /Rimuovi/) },
   collapsed: { hash: hash(LONG), run: async p => clickText(p, 'button.band-toggle', /./) },
   improve: { hash: hash(LONG), run: async p => { await tab(p, 'pokemon'); return true; } },
+  'improve-open': { hash: hash(LONG), run: async p => { await tab(p, 'pokemon'); return clickText(p, '.target-toggle', /./); } },
+  'improve-member': { hash: hash(LONG), run: async p => {
+    await tab(p, 'pokemon');
+    await clickText(p, '.target-toggle', /./);
+    await wait(200);
+    return clickText(p, '.target-pop .target-member', /Landorus/);
+  } },
   'filters-chips': { run: async p => {
     await tab(p, 'pokemon');
     return p.evaluate(() => {
@@ -308,7 +365,11 @@ for (const [w, h] of sizes) {
     const page = await browser.newPage();
     await page.setViewport({ width: w, height: h });
     const lang = state.lang ?? 'it';
-    await page.evaluateOnNewDocument(l => { localStorage.clear(); localStorage.setItem('dreamdex.lang', JSON.stringify(l)); }, lang);
+    await page.evaluateOnNewDocument((l, extra) => {
+      localStorage.clear();
+      localStorage.setItem('dreamdex.lang', JSON.stringify(l));
+      for (const [key, value] of Object.entries(extra)) localStorage.setItem(key, value);
+    }, lang, state.storage ?? {});
     await page.goto(URL + (state.hash ?? hash(TEAM)), { waitUntil: 'networkidle0', timeout: 90000 });
     await wait(1500);
     const result = state.run ? await state.run(page) : true;
@@ -371,9 +432,30 @@ for (const [w, h] of sizes) {
       const need = Math.max(0, ...steps.map(s => [...s.querySelectorAll('.coach-step-body > *')].reduce((b, c) => Math.max(b, c.getBoundingClientRect().bottom), 0) - s.getBoundingClientRect().top));
       return `coach: stepsRow=${Math.round(row)} contentMax=${Math.round(need)} stepOverflow=${tall} clippedLines=${wide} usage=${usage.length} usageCut=${usageCut} hScroll=${box.scrollWidth - box.clientWidth} docHScroll=${document.scrollingElement!.scrollWidth - window.innerWidth}`;
     });
+    // Lista candidati: scorrimento interno, caselle tagliate dal fondo, misure delle Carte
+    const list = await page.evaluate(() => {
+      const ol = document.querySelector<HTMLElement>('ol.suggestions');
+      if (!ol) return '';
+      const bottom = ol.getBoundingClientRect().bottom;
+      const items = [...ol.querySelectorAll<HTMLElement>(':scope > li')];
+      const cut = items.filter(li => li.getBoundingClientRect().bottom - bottom > 0.5).length;
+      const first = items[0]?.getBoundingClientRect();
+      // Nome e motivi che escono dalla casella (in alto o in basso)
+      const whoOver = items.filter(li => { const b = li.getBoundingClientRect(); const w = li.querySelector('.who')?.getBoundingClientRect(); return !!w && (w.bottom - b.bottom > 0.5 || b.top - w.top > 0.5); }).length;
+      // Testo tagliato in larghezza oltre al nome (motivi, voto, segni)
+      const wideCut = items.filter(li => [...li.querySelectorAll<HTMLElement>('.who small, .reason, .result, .pill-end, .tag')].some(e => e.scrollWidth - e.clientWidth > 1)).length;
+      const nameCut = items.filter(li => { const e = li.querySelector<HTMLElement>('.pick strong'); return !!e && e.scrollWidth - e.clientWidth > 1; }).length;
+      // Dettaglio: quanto scorrono il corpo (Porta/Toglie...) e la scheda; suggerimento del doppio clic tagliato; preferiti
+      const body = document.querySelector<HTMLElement>('.detail .detail-body');
+      const aside = document.querySelector<HTMLElement>('aside.detail');
+      const hint = document.querySelector<HTMLElement>('.list-head .dbl-hint');
+      const favs = ol.querySelectorAll('.result.fav').length;
+      const extra = ` detailBodyScroll=${body ? body.scrollHeight - body.clientHeight : '-'} detailScroll=${aside ? aside.scrollHeight - aside.clientHeight : '-'} hintCut=${hint ? hint.scrollWidth - hint.clientWidth : '-'} hintW=${hint ? `${hint.clientWidth}/${document.querySelector<HTMLElement>('.list-head')?.clientWidth}` : '-'} dashes=${document.querySelectorAll('.pager-dash').length} favs=${favs}`;
+      return `list: ${ol.className} items=${items.length} cols=${ol.style.getPropertyValue('--cols') || '-'} tileH=${ol.style.getPropertyValue('--tile-h') || '-'} reasons=${ol.style.getPropertyValue('--reasons') || '-'} rowH=${ol.style.getPropertyValue('--row-h') || '-'} first=${first ? `${Math.round(first.width)}x${Math.round(first.height)}` : '-'} listScroll=${ol.scrollHeight - ol.clientHeight} cutTiles=${cut} whoOver=${whoOver} wideCut=${wideCut} nameCut=${nameCut}${extra}`;
+    });
     const file = join(out, `${w}x${h}-${name}.png`);
     await page.screenshot({ path: file });
-    console.log(`${file} pageScroll=${scroll} clipped=${clipped} ${dash} ${coach}`);
+    console.log(`${file} pageScroll=${scroll} clipped=${clipped} ${dash} ${coach} ${list}`);
     await page.close();
   }
 }

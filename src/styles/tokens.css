@@ -34,6 +34,35 @@
   --ui: 'Kanit', system-ui, sans-serif;
   --stripes: repeating-linear-gradient(-60deg, #ffffff0d 0 4px, transparent 4px 10px);
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  /* Stile Menu della lista: pillole chiare come i menu di Spada e Scudo (un tema futuro le ridefinisce qui) */
+  --pill-bg: #e7eaf3;
+  --pill-bg-hover: #fff;
+  --pill-ink: #10142b;
+  --pill-muted: #4a5068;
+  /* Verde, rosso, giallo e ciano scuri per segni e testo sulla pillola: contrasto ≥ 4.7 su --pill-bg */
+  --pill-gain: #077045;
+  --pill-bad: #b3261e;
+  --pill-warn: #8a5a00;
+  --pill-info: #006680;
+  /* Nomi dei tipi sulle pillole: varianti scure dei colori dei tipi, contrasto ≥ 4.8 su --pill-bg */
+  --type-normal-ink: #666649;
+  --type-fire-ink: #9a521f;
+  --type-water-ink: #4863a6;
+  --type-electric-ink: #776417;
+  --type-grass-ink: #43702d;
+  --type-ice-ink: #4a6a6a;
+  --type-fighting-ink: #bc2f27;
+  --type-poison-ink: #9d3f9d;
+  --type-ground-ink: #746436;
+  --type-flying-ink: #6c5c9a;
+  --type-psychic-ink: #ab3d5e;
+  --type-bug-ink: #616b13;
+  --type-rock-ink: #746523;
+  --type-ghost-ink: #705898;
+  --type-dragon-ink: #7038f8;
+  --type-dark-ink: #705848;
+  --type-steel-ink: #636370;
+  --type-fairy-ink: #885762;
 }
 /*
  * Contrasto (WCAG), su --panel / --raised / --ground:

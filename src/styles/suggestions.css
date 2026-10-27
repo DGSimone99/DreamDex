@@ -65,19 +65,6 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 
 /* Suggerimenti: lista compatta a sinistra, il candidato selezionato a destra */
 .picker { margin-top: 12px; }
-/* Modalità sempre visibili; negli scambi, la scelta di chi sostituire con le icone dei membri */
-.modes { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; margin-bottom: 12px; }
-.modes .segmented { flex: none; }
-.modes .segmented button { gap: 6px; padding: 7px 14px; font-size: 14px; white-space: nowrap; }
-.modes .segmented .icon { width: 14px; height: 14px; }
-.targets { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-.targets-label { font: 600 12px/1 var(--ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--faint); margin-right: 4px; }
-.targets button { gap: 4px; padding: 3px 11px 3px 6px; border-radius: 14px; background: transparent; font-size: 13px; color: var(--muted); }
-.targets button:first-of-type { padding-left: 11px; }
-.targets button:hover { color: var(--text); }
-.targets button[aria-pressed='true'] { background: var(--accent-soft); border-color: var(--accent); color: var(--text); font-weight: 600; }
-.targets button .mon-icon { margin: -4px -2px -4px -4px; }
-.targets button .icon { width: 12px; height: 12px; color: var(--accent); }
 .picker.has-detail { display: grid; grid-template-columns: minmax(0, 560px) minmax(0, 1fr); gap: 28px; align-items: start; }
 /* Scheletro: la lista tiene l'altezza di una pagina e il dettaglio vuoto resta al suo posto, così la pagina non salta */
 .picker-list { min-width: 0; }
@@ -89,61 +76,6 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .suggestions > li + li { border-top: 1px solid var(--line-soft); }
 /* Lista in ricalcolo dopo un cambio del team */
 .suggestions.stale { opacity: 0.55; transition: opacity 0.15s var(--ease); }
-.suggestion {
-  display: grid;
-  grid-template-columns: 26px 48px minmax(0, 1fr) 52px 34px;
-  gap: 10px;
-  align-items: center;
-  margin: 0;
-  padding: 8px 12px 8px 14px;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-.suggestion:hover { background: color-mix(in srgb, var(--raised) 55%, transparent); }
-.suggestion.first { background: linear-gradient(90deg, var(--accent-2-wash), var(--panel) 70%); }
-.suggestion.selected { background: var(--raised); box-shadow: inset 0 0 0 1px var(--accent); }
-.suggestion.first.selected { background: linear-gradient(90deg, var(--accent-2-wash), var(--raised) 70%); box-shadow: inset 0 0 0 1px var(--accent-2); }
-/* Riga scelta dalla ricerca con le frecce: Invio la aggiunge */
-.suggestion.picked { box-shadow: inset 0 0 0 1px var(--accent); }
-.suggestion .rank { font: 700 24px/1 var(--display); color: var(--faint); text-align: center; }
-.suggestion.first .rank, .suggestion.first .result strong { color: var(--accent-2); }
-.suggestion .sprite { image-rendering: pixelated; }
-.suggestion .who { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
-.suggestion .name-line { display: flex; align-items: center; gap: 6px; min-width: 0; }
-.suggestion .name-line .tag { flex: none; }
-.suggestion .pick { padding: 0; border: 0; background: none; color: inherit; text-align: left; min-width: 0; }
-.suggestion .pick[aria-pressed='true'] { background: none; }
-.suggestion .pick strong { font: 700 17px/1.1 var(--display); font-style: italic; letter-spacing: 0.01em; }
-.suggestion .who small { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.suggestion .types { display: flex; gap: 4px; }
-.suggestion .tags { flex-wrap: nowrap; overflow: hidden; margin-top: 1px; }
-.suggestion .result { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; font-variant-numeric: tabular-nums; }
-/* Quanto sale il voto del team; il voto che ne risulta sotto */
-.suggestion .result strong { font: 700 24px/1 var(--display); }
-.suggestion .result small { font-size: 12px; color: var(--muted); white-space: nowrap; }
-.suggestion .result strong.worse { color: var(--bad); }
-.suggestion .result strong.same { color: var(--muted); }
-/* Scambi liberi: chi esce, tra il nome e il voto */
-.suggestion.swap { grid-template-columns: 26px 48px minmax(0, 1fr) 88px 44px 34px; }
-/* Chi esce: icona dello scambio e del membro, sotto il nome */
-.suggestion .out { display: grid; grid-template-columns: auto auto; justify-content: center; align-items: center; column-gap: 2px; min-width: 0; color: var(--faint); }
-.suggestion .out .out-name { grid-column: 1 / -1; max-width: 88px; font-size: 11px; line-height: 1.2; color: var(--muted); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.suggestion .who small:has(.gain, .loss) { display: flex; gap: 0 6px; }
-.suggestion .who small .gain, .suggestion .who small .loss { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-.suggestion .who small .gain { flex: 0 1 auto; max-width: 62%; color: var(--good); }
-.suggestion .who small .gain:last-child { max-width: none; }
-.suggestion .who small .loss { flex: 1 1 0; color: var(--bad); }
-.suggestion { user-select: none; }
-.suggestion .out .icon { width: 13px; height: 13px; }
-.detail-alts { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin: 8px 0 0; font-size: 13px; color: var(--muted); }
-.detail-alts .alt { display: inline-flex; align-items: center; gap: 4px; color: var(--text); }
-.detail-alts .alt .mon-icon { margin: -6px -4px -6px -6px; }
-.detail-alts strong { font-variant-numeric: tabular-nums; }
-.detail-alts strong.worse { color: var(--bad); }
-.detail-alts strong.same { color: var(--muted); }
-.suggestion .quick { display: grid; place-items: center; width: 34px; height: 34px; padding: 0; border-radius: 4px; color: var(--muted); }
-.suggestion .quick:hover { color: var(--text); background: var(--accent-soft); }
-.suggestion.first .quick { background: var(--accent-2); border-color: var(--accent-2); color: var(--on-accent-2); }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .set { background: var(--field); padding: 10px 12px; border-radius: 4px; white-space: pre-wrap; font-size: 13px; line-height: 1.5; }
 
@@ -151,9 +83,33 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .list-empty { display: grid; justify-items: center; gap: 10px; padding: 40px 16px; background: var(--panel); border: 1px dashed var(--line); border-radius: 6px; text-align: center; color: var(--muted); }
 .list-empty > .icon { width: 28px; height: 28px; color: var(--faint); }
 .list-empty p { margin: 0; font-size: 15px; }
-.pager { display: flex; justify-content: center; gap: 4px; margin-top: 10px; }
-.pager button { justify-content: center; min-width: 34px; height: 34px; padding: 0 8px; font-variant-numeric: tabular-nums; }
-.pager button[aria-current='page'] { background: var(--accent-soft); border-color: var(--accent); font-weight: 700; }
+/* Fascia "Candidati (N)" su una riga: accanto al titolo il suggerimento del doppio clic, a destra la paginazione ‹ trattini › */
+/* La fascia è alta come il pager anche senza pagine: l'altezza della lista (e il numero per pagina) non dipende da lui */
+.list-head { --pager-h: 26px; display: flex; align-items: center; gap: 6px; box-sizing: content-box; min-height: var(--pager-h); }
+/* Titolo e suggerimento tengono la loro larghezza: se manca spazio si stringono prima i trattini del pager */
+.list-head .dbl-hint { flex: none; font-size: 12px; color: var(--faint); white-space: nowrap; }
+.pager { flex: 0 1 auto; min-width: 0; margin-left: auto; display: flex; align-items: center; gap: 2px; height: var(--pager-h); }
+.pager .step { flex: none; display: grid; place-items: center; width: 20px; height: 24px; padding: 0; border: 0; background: none; color: var(--muted); }
+.pager .step:hover:not(:disabled) { color: var(--text); }
+.pager .step:disabled { opacity: 0.35; }
+.pager .step .icon { width: 14px; height: 14px; }
+.pager-dashes { display: flex; gap: 2px; min-width: 0; }
+/* Trattino sottile, ma con un'area cliccabile più alta */
+/* Stretto (8px), e si stringe fino a 3px quando la fascia non basta (molte pagine, finestra stretta) */
+.pager .pager-dash { flex: 0 1 8px; width: 8px; height: 16px; min-width: 3px; padding: 6px 0; border: 0; border-radius: 0; background: var(--line); background-clip: content-box; }
+.pager .pager-dash:hover { background-color: var(--muted); }
+.pager .pager-dash[aria-current='page'] { background-color: var(--accent); }
+/* Vista della lista: in fondo alla fascia, dopo la paginazione; il riquadro scende sopra la lista */
+.list-view { position: relative; flex: none; margin-left: auto; }
+.pager ~ .list-view { margin-left: 2px; }
+.list-view-toggle { display: grid; place-items: center; width: 24px; height: 24px; padding: 0; border: 0; border-radius: 3px; background: none; color: var(--muted); }
+.list-view-toggle:hover, .list-view-toggle[aria-expanded='true'] { color: var(--text); background: var(--accent-soft); }
+.list-view-toggle .icon { width: 14px; height: 14px; }
+.list-view-pop { position: absolute; right: 0; top: calc(100% + 6px); z-index: 30; display: grid; gap: 12px; min-width: 190px; padding: 12px 14px;
+  background: var(--ground); border: 1px solid var(--line); border-radius: 4px; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5); }
+.list-view-pop fieldset { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 0; padding: 0; border: 0; }
+.list-view-pop legend { width: 100%; margin: 0 0 6px; padding: 0; font: 600 11px/1 var(--ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--faint); }
+.list-view-pop label { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text); white-space: nowrap; cursor: pointer; }
 
 /* Dettaglio del candidato: resta in vista mentre si scorre la lista */
 .detail {
@@ -177,6 +133,11 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .detail-sprite { position: relative; display: block; width: 88px; height: 88px; }
 .detail-sprite .sprite { image-rendering: pixelated; width: 100%; height: 100%; }
 .detail-sprite .sprite.covered { visibility: hidden; }
+/* Con la lista a sprite Normale il dettaglio mostra l'icona del box, ingrandita a misura del riquadro (--box-scale, una per
+   misura del dettaglio) e saltellante come la carta selezionata */
+.detail-sprite .box-icon { display: grid; place-items: center; width: 100%; height: 100%; animation: box-hop 0.7s ease-in-out infinite; }
+.detail-sprite .box-icon .mon-icon { margin: 0; transform: scale(var(--box-scale, 2)); }
+@media (prefers-reduced-motion: reduce) { .detail-sprite .box-icon { animation: none; } }
 .detail-sprite .sprite-ani { position: absolute; left: 50%; top: 50%; max-width: none; image-rendering: pixelated; pointer-events: none; transform: translate(-50%, -50%) scale(0.9167); }
 .detail-id { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
 .detail-id h3 { display: flex; align-items: center; gap: 10px; font-size: 26px; line-height: 1; letter-spacing: 0.02em; }
@@ -215,7 +176,7 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .detail-set dt { color: var(--muted); font-size: 12px; }
 .detail-set dd { margin: 0; display: flex; align-items: center; gap: 6px; font-weight: 500; }
 .detail-moves { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
-.detail-moves li { padding: 4px 9px; background: var(--field); border: 1px solid var(--line-soft); border-radius: 4px; font-size: 13px; font-weight: 500; }
+.detail-moves li { padding: 4px 9px; background: var(--field); border: 1px solid var(--line-soft); border-radius: 4px; font-size: 14px; font-weight: 500; }
 .detail-actions { display: flex; gap: 8px; padding: 10px 18px; }
 .detail-actions .smogon-link { margin-left: auto; }
 /* Segni delle liste dell'utente sulle righe: ♥ preferito (blu), ⊘ bannato (rosso) */
@@ -239,8 +200,6 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 /* Tutti i chip della stessa larghezza: in liste e tabelle si allineano in colonna */
 .type-chip { display: inline-block; flex: none; width: 66px; background: var(--chip); text-align: center; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; padding: 1px 0; border-radius: 2px; line-height: 1.5; }
 .type-chip.long { width: auto; min-width: 66px; padding: 1px 5px; letter-spacing: -0.01em; }
-/* Icone dei tipi nelle righe: solo quando le righe sono strette (lists.css) */
-.suggestion .types-compact { display: none; }
 
 .actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .errors { color: var(--bad); }
@@ -250,9 +209,6 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 /* Sezione Pokémon come Box: una riga di strumenti, poi lista dei candidati e scheda di riepilogo che scorrono dentro */
 .suggestions-panel { display: flex; flex-direction: column; gap: 10px; }
 .toolbar { position: relative; display: flex; align-items: center; gap: 10px; }
-.toolbar > .segmented { flex: none; }
-.toolbar > .segmented button { gap: 6px; padding: 8px 14px; font-size: 14px; white-space: nowrap; }
-.toolbar > .segmented .icon { width: 14px; height: 14px; }
 .toolbar .search { flex: 1; min-width: 0; margin: 0; }
 .toolbar .filters { flex: none; margin: 0; padding: 0; background: none; border: 0; border-radius: 0; }
 .toolbar .filters > summary { height: 38px; padding: 0 12px; gap: 10px; border: 1px solid var(--line); border-radius: 4px; background: var(--raised); white-space: nowrap; }
@@ -276,7 +232,26 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
   border-radius: 4px;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
 }
-.subbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; }
+/* Chi esce: la tendina attaccata a Migliora team (un terzo pezzo dello stesso pulsante, con ▾ e l'icona del membro scelto);
+   sotto, Tutti e i membri con icona e nome */
+.mode-switch { position: relative; flex: none; }
+.toolbar .mode-switch > .segmented button { gap: 6px; padding: 8px 14px; font-size: 14px; white-space: nowrap; }
+.toolbar .mode-switch > .segmented .icon { width: 14px; height: 14px; }
+.toolbar .mode-switch > .segmented .target-toggle { flex: none; gap: 2px; padding: 8px 11px; }
+.target-toggle.on { background: var(--accent-soft); color: var(--text); }
+.target-toggle[aria-expanded='true'] { color: var(--text); }
+.target-toggle .mon-icon { margin: -8px -4px -8px -6px; }
+.target-toggle .chevron { width: 6px; height: 6px; margin: -3px 1px 0; border: solid currentColor; border-width: 0 1.5px 1.5px 0; transform: rotate(45deg); transition: transform 0.15s; }
+.target-toggle[aria-expanded='true'] .chevron { margin-top: 3px; transform: rotate(225deg); }
+.target-pop { position: absolute; right: 0; top: calc(100% + 6px); z-index: 30; display: grid; min-width: 200px; padding: 8px;
+  background: var(--ground); border: 1px solid var(--line); border-radius: 4px; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5); }
+.target-pop .targets-label { padding: 2px 8px 6px; font: 600 11px/1 var(--ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--faint); }
+.target-pop button { justify-content: flex-start; gap: 6px; min-height: 32px; padding: 3px 8px; border: 0; border-radius: 3px; background: none; font-size: 14px; color: var(--muted); text-align: left; }
+.target-pop button:hover { background: var(--raised); color: var(--text); }
+.target-pop button[aria-pressed='true'] { background: var(--accent-soft); color: var(--text); font-weight: 600; }
+.target-pop .mon-icon { margin: -4px -2px -4px -4px; }
+.target-pop .target-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.target-pop .icon { width: 12px; height: 12px; color: var(--accent); }
 .picker { margin: 0; }
 .box-head {
   position: sticky;
@@ -292,9 +267,6 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
   clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%);
 }
 .suggestions { border-radius: 0; }
-.suggestion .pick strong { font: 700 16px/1.1 var(--display); font-style: italic; text-transform: none; letter-spacing: 0.01em; }
-.suggestion .rank, .suggestion .result strong { font-style: italic; }
-.suggestion.first .quick:hover { background: var(--accent-2-ink); }
 .detail { border-radius: 0; }
 .detail:not(.detail-empty) { display: flex; flex-direction: column; }
 /* Intestazione come la schermata di riepilogo: sprite, nome e tipi, a destra quanto sale il voto */
@@ -303,12 +275,12 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 14px;
-  padding: 8px 18px;
+  padding: 5px 18px;
   background: var(--stripes), var(--band);
   border-bottom: 1px solid var(--line-soft);
 }
-.detail-hero .detail-sprite { width: 72px; height: 72px; }
-.detail-hero .detail-sprite .sprite-ani { transform: translate(-50%, -50%) scale(0.75); }
+.detail-hero .detail-sprite { --box-scale: 1.9; width: 64px; height: 64px; }
+.detail-hero .detail-sprite .sprite-ani { transform: translate(-50%, -50%) scale(0.6667); }
 .detail-hero .detail-id h3 { flex-wrap: wrap; font-size: 24px; }
 .detail-hero .detail-id h3 > span:first-child { white-space: normal; overflow-wrap: break-word; }
 .detail-hero .swap-head { margin: 0; font-size: 13px; }
@@ -319,7 +291,7 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .detail .detail-sec:not(.wide) + .detail-sec:not(.wide) { border-left: 1px solid var(--line-soft); }
 .detail:not(.detail-empty) > .detail-actions { border-top: 1px solid var(--line-soft); }
 /* Porta in verde, Toglie in rosso: un segno davanti a ogni voce */
-.detail-points { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; font-size: 13px; line-height: 1.35; }
+.detail-points { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; font-size: 14px; line-height: 1.35; }
 .detail-points li { margin: 0; }
 .detail-points li { position: relative; padding-left: 14px; }
 .detail-points li::before { position: absolute; left: 0; top: 0; font-weight: 700; }
@@ -329,18 +301,24 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .detail-points li.none::before { content: none; }
 /* Effetto sul team: una riga di pillole per area */
 .detail .effect .detail-areas { display: flex; flex-wrap: wrap; gap: 6px; }
-.detail .effect .detail-areas div { display: inline-flex; align-items: baseline; gap: 6px; padding: 2px 9px; border: 1px solid var(--line); border-radius: 3px; font-size: 13px; }
+.detail .effect .detail-areas div { display: inline-flex; align-items: baseline; gap: 6px; padding: 2px 9px; border: 1px solid var(--line); border-radius: 3px; font-size: 14px; }
 .detail .effect .detail-areas .change { font: 700 14px/1 var(--display); font-style: italic; color: var(--good); min-width: 0; }
 .detail .effect .detail-areas .change.worse { color: var(--bad); }
 .detail .effect .detail-areas .change.same { color: var(--faint); }
 .detail .effect .detail-areas .change.same::before { content: '±0'; }
 .detail .effect .detail-areas .value { font-size: 14px; }
 .detail .effect .detail-areas .inactive { border-color: var(--line-soft); }
-.detail .effect .detail-alts { margin-top: 6px; }
-/* Set: una riga di voci, poi le mosse 2×2 */
-.detail .detail-set { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin: 0 0 8px; font-size: 13px; font-weight: 500; }
+/* Set: due righe di voci (strumento e abilità, poi natura, EV e Tera), poi le mosse 2×2 */
+.detail .detail-set { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin: 0 0 6px; font-size: 14px; font-weight: 500; }
 .detail .detail-set span { display: inline-flex; align-items: center; gap: 6px; }
+.detail .detail-set .set-line { display: flex; flex-wrap: wrap; gap: 4px 14px; width: 100%; }
 .detail .detail-set .evs { color: var(--muted); font-variant-numeric: tabular-nums; }
+/* Ruoli del set consigliato, in una zona sotto il set con la sua etichetta: neutri, il ruolo principale (quello delle carte
+   del team) in ciano */
+
+.detail-roles { list-style: none; display: flex; flex-wrap: wrap; gap: 4px; margin: 0; padding: 0; }
+.detail-roles li { padding: 1px 8px; border: 1px solid var(--line); border-radius: 4px; font-size: 13px; font-weight: 500; color: var(--muted); white-space: nowrap; }
+.detail-roles li.main { border-color: var(--accent); background: var(--accent-soft); color: var(--text); font-weight: 700; }
 .detail-id h3 { font-style: italic; }
 .detail-score strong { font-style: italic; }
 .detail-sec h4 {
@@ -368,10 +346,9 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
   .picker { flex: 1; min-height: 0; }
   /* Lista circa 2/5, scheda del candidato 3/5 */
   .picker.has-detail { grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 16px; align-items: stretch; height: 100%; }
-  .picker-list { display: flex; flex-direction: column; min-height: 0; overflow: auto; overscroll-behavior: contain; }
-  /* La lista non si schiaccia: con overflow hidden si accorcerebbe tagliando le ultime righe, e a scorrere sarebbe solo il contenitore */
-  .picker-list > .suggestions { flex: none; }
-  .pager { position: sticky; bottom: 0; margin-top: auto; padding: 8px 0 2px; background: var(--ground); }
+  .picker-list { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+  /* La lista prende lo spazio che resta: la sua altezza dice quanti candidati per pagina (niente scrollbar) */
+  .picker-list > .suggestions { flex: 1 1 0; min-height: 0; overflow: hidden; }
   .detail { position: static; top: auto; max-height: none; min-height: 0; overflow: auto; overscroll-behavior: contain; }
 }
 
@@ -391,7 +368,9 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .toolbar .team-type { flex: none; position: relative; display: flex; align-items: center; height: 38px; margin: 0; gap: 0; border: 1px solid var(--line); border-radius: 4px; background: var(--field); }
 .toolbar .team-type:hover, .toolbar .team-type:focus-within { border-color: var(--accent); }
 .toolbar .team-type > span { padding-left: 12px; font: 600 11px/1 var(--ui); text-transform: uppercase; letter-spacing: 0.08em; color: var(--faint); }
-.toolbar .team-type select { height: 100%; max-width: 170px; padding: 0 30px 0 8px; border: 0; background-color: transparent; font-size: 14px; }
+/* Larghezza fissa: cambiare tipo non sposta la ricerca (i nomi lunghi finiscono coi puntini) */
+.toolbar .team-type { width: 220px; }
+.toolbar .team-type select { flex: 1; min-width: 0; height: 100%; padding: 0 30px 0 8px; border: 0; background-color: transparent; font-size: 14px; text-overflow: ellipsis; }
 
 /* Filtri attivi come chip sotto la barra; la × toglie quel filtro */
 .active-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: -2px; }
@@ -407,45 +386,248 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .filters .filter-switches { grid-template-columns: repeat(2, minmax(0, 1fr)) auto; align-items: end; border-bottom: 0; }
 .filters .switch { display: flex; align-items: center; gap: 8px; height: 32px; font-size: 14px; color: var(--text); cursor: pointer; white-space: nowrap; }
 .detail .effect .detail-areas .inactive .change.same::before { content: none; }
-.detail:not(.detail-empty) .detail-sec { padding: 8px 18px 10px; }
-.detail:not(.detail-empty) .detail-sec h4 { margin-bottom: 7px; }
+.detail:not(.detail-empty) .detail-sec { padding: 7px 18px 8px; }
+.detail:not(.detail-empty) .detail-sec h4 { margin-bottom: 6px; }
 
 /* Lista e scheda nella stessa cornice: un riquadro Panel con la fascia a righe in alto e la paginazione dentro, in fondo */
 @media (min-width: 1100px) {
   .picker-list { background: var(--panel); border: 1px solid var(--line-soft); }
   .picker-list > .suggestions { border: 0; }
-  .list-head { position: sticky; top: 0; z-index: 2; padding: 8px 14px; background: var(--stripes), var(--band); border-bottom: 1px solid var(--line-soft); }
+  .list-head { position: sticky; top: 0; z-index: 2; padding: 5px 14px; background: var(--stripes), var(--band); border-bottom: 1px solid var(--line-soft); }
   .list-head .box-head { position: static; margin: 0; }
-  .picker-list .pager { padding: 8px 0; background: var(--panel); border-top: 1px solid var(--line-soft); }
+  /* Carte: lo sprite che esce dalla carta sotto il mouse passa sopra la fascia "Candidati" (la lista non lo ritaglia e,
+     solo mentre c'è una carta sotto il mouse, sta sopra la fascia; a riposo il menu della vista resta sopra la lista) */
+  .picker-list > .suggestions.cards { overflow: visible; position: relative; }
+  .picker-list > .suggestions.cards:has(> .card:hover) { z-index: 3; }
 }
-/* Riga su due righe: nome e tipi, poi chi esce · bonus · malus in grigio, coi segni colorati */
-.suggestion, .suggestion.swap { grid-template-columns: 24px 40px minmax(0, 1fr) auto 30px; gap: 10px; padding: 7px 12px 7px 12px; }
-.suggestion .sprite { width: 40px; height: 40px; }
-.suggestion .rank { font-size: 20px; }
-.suggestion .name-line .types { display: inline-flex; margin: 0 2px; gap: 3px; }
-.suggestion .name-line .types .type-chip { width: 56px; }
-/* I nomi lunghi (Folletto, Coleottero) si allargano invece di tagliarsi */
-.suggestion .name-line .types .type-chip.long { width: auto; min-width: 56px; padding: 1px 4px; }
-.suggestion .who small, .suggestion .who small:has(.gain, .loss) { display: flex; align-items: center; gap: 0 10px; color: var(--muted); }
-.suggestion .who small .gain, .suggestion .who small .loss, .suggestion .who small .plain { color: var(--muted); }
-.suggestion .who small b { margin-right: 2px; font-weight: 700; }
-.suggestion .who small .gain b { color: var(--good); }
-.suggestion .who small .loss b { color: var(--bad); }
-.suggestion .who small .out { flex: none; display: inline-flex; align-items: center; gap: 2px; max-width: 40%; color: var(--faint); }
-.suggestion .who small .out .out-name { max-width: none; font-size: 13px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.suggestion .who small .out .mon-icon { margin: -6px -4px -6px -6px; }
-.suggestion .who small .out::after { content: '·'; margin-left: 8px; color: var(--faint); }
-.suggestion .result strong { font-size: 22px; }
-.suggestion .quick { width: 30px; height: 30px; }
-.list-head .box-head { display: inline-block; }
-.suggestion .who small .out { max-width: none; }
-.suggestion .who small .plain { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.suggestion .name-line .types .type-chip { flex: none; }
-.suggestion.swap { grid-template-columns: 24px 40px minmax(0, 1fr) 32px auto 30px; }
-.suggestion > .out { display: grid; place-items: center; width: 32px; height: 32px; }
-.suggestion > .out .mon-icon { margin: 0; }
-.suggestion .pick { flex: 0 1 auto; overflow: hidden; }
-.suggestion .pick strong { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.suggestion .name-line > :not(.pick) { flex: none; }
+.list-head .box-head { display: inline-block; flex: none; white-space: nowrap; }
 /* Problemi e bonus: la pillola tratteggiata che spiega la parte del voto fuori dalle aree */
 .detail .effect .detail-areas .extras { border-style: dashed; }
+
+/* Stile "Carte": 6 carte verticali (3 × 2) a forma di carta Masters (misure da usePerPage: --cols, --tile-h, --reasons).
+   Oltre l'altezza massima la griglia resta a quella misura e si centra in verticale.
+   Margine di 14px (CARDS_PAD in listLayout.ts): ci sta la carta inclinata e ingrandita sotto il mouse senza essere tagliata */
+.suggestions.cards { display: grid; grid-template-columns: repeat(var(--cols, 3), minmax(min(130px, 100%), 1fr)); gap: 8px; padding: 14px; align-content: center; }
+.suggestions.cards > li + li { border-top: 0; }
+.card {
+  /* Targhetta in basso alta uguale in ogni carta (dai motivi che entrano): 7 + nome 18 + 2 + 16 × motivi + 10 */
+  --plate-h: calc(37px + 16px * var(--reasons, 2));
+  /* Sprite nella zona dell'immagine: altezza − bordo 3 − targhetta − 8, al massimo 140 */
+  --sprite-w: clamp(48px, calc(var(--tile-h, 220px) - 11px - var(--plate-h)), 140px);
+  /* La forma della carta: angolo in alto a destra tagliato */
+  --card-shape: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 0 100%);
+  position: relative;
+  height: var(--tile-h, 220px);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  cursor: pointer;
+  user-select: none;
+}
+/* La carta vera, ritagliata; la casella (li) resta senza ritaglio */
+.card-face {
+  /* Cornice sottile nel colore del tipo; scelta dalla ricerca o selezionata: ciano */
+  --frame-c: color-mix(in srgb, var(--t1) 30%, var(--line));
+  --fw: 1px;
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  overflow: hidden;
+  /* Zona dell'immagine: tinta piatta del tipo primario */
+  background: color-mix(in srgb, var(--t1) 16%, var(--raised));
+  border-bottom: 3px solid var(--t1);
+  clip-path: var(--card-shape);
+  transition: background 0.15s;
+}
+/* Cornice sopra a tutto (anche alla targhetta), senza prendere i clic: un anello che segue anche il taglio
+   (fuori la forma della carta, dentro la stessa rientrata di --fw; 0.4142 = √2 − 1 per il lato a 45°) */
+.card-face::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background: var(--frame-c);
+  clip-path: polygon(evenodd,
+    0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 0 100%, 0 0,
+    var(--fw) var(--fw), var(--fw) calc(100% - var(--fw)), calc(100% - var(--fw)) calc(100% - var(--fw)),
+    calc(100% - var(--fw)) calc(16px + var(--fw) * 0.4142), calc(100% - 16px - var(--fw) * 0.4142) var(--fw), var(--fw) var(--fw), 0 0);
+}
+.card:hover .card-face { background: color-mix(in srgb, var(--t1) 24%, var(--raised)); }
+.card.picked .card-face { --frame-c: var(--accent); }
+.card.selected .card-face { --frame-c: var(--accent); --fw: 2px; }
+.card-sprite { position: absolute; left: 50%; top: 4px; width: var(--sprite-w); transform: translateX(-50%); pointer-events: none; }
+.card-sprite .box-icon { display: grid; place-items: center; width: 100%; aspect-ratio: 1; }
+.card-sprite .box-icon .mon-icon { margin: 0; transform: scale(2.1); }
+.card-sprite .box-icon.big .mon-icon, .pill-sprite .box-icon.big .mon-icon { transform: scale(2.4); }
+.card-sprite .sprite { display: block; width: 100%; height: auto; image-rendering: pixelated; }
+/* Sotto il mouse lo sprite animato di Showdown, grande quanto lo statico: la GIF è il riquadro di 96px ritagliato
+   sul Pokémon, quindi alta --ani-h/96 della casella; appoggiata in basso come i piedi dello statico */
+.card-sprite .sprite.covered { visibility: hidden; }
+.card-sprite .sprite-ani { position: absolute; left: 50%; bottom: calc(var(--sprite-w) / 24); width: auto; max-width: none; height: calc(var(--ani-h, 96) / 96 * var(--sprite-w)); image-rendering: pixelated; transform: translateX(-50%); pointer-events: none; }
+/* Carta "sollevata": sotto il mouse sale di 4px con un'ombra (drop-shadow sul li, che non è ritagliato, così segue l'angolo
+   tagliato), dietro il Pokémon si accende una luce nel colore del tipo, il bordo del tipo si ispessisce da 3 a 5px e lo
+   sprite esce dalla carta: cresce e sale finché la testa sfonda il bordo alto. Le vicine non si muovono.
+   La selezionata resta sollevata e con la luce accesa anche a riposo, con la sua cornice */
+.card { transition: transform 0.18s ease-out, filter 0.18s ease-out; }
+.card:hover { z-index: 5; }
+.card:hover, .card.selected { transform: translateY(-4px); filter: drop-shadow(0 6px 8px rgb(0 0 0 / 0.45)); }
+.card.selected { z-index: 4; }
+/* Riflettore dall'alto: un cono di luce (bianca appena tinta del tipo) che scende dal centro del bordo alto e si apre sul
+   Pokémon, e la pozza di luce ai suoi piedi; sfuma verso la targhetta */
+.card-face::before { --spot: color-mix(in srgb, var(--t1) 25%, #fff);
+  content: ''; position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity 0.25s ease-out;
+  background:
+    radial-gradient(ellipse calc(var(--sprite-w) * 0.55) calc(var(--sprite-w) * 0.11) at 50% calc(4px + var(--sprite-w) * 0.94),
+      color-mix(in srgb, var(--spot) 55%, transparent), transparent),
+    conic-gradient(from 156deg at 50% -56px, transparent 0deg, color-mix(in srgb, var(--spot) 20%, transparent) 11deg,
+      color-mix(in srgb, var(--spot) 30%, transparent) 24deg, color-mix(in srgb, var(--spot) 20%, transparent) 37deg, transparent 48deg);
+  -webkit-mask-image: linear-gradient(#000 60%, transparent 90%); mask-image: linear-gradient(#000 60%, transparent 90%); }
+.card .who::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: var(--t1); opacity: 0; transition: opacity 0.18s ease-out; pointer-events: none; }
+.card:hover .card-face::before, .card.selected .card-face::before,
+.card:hover .who::after, .card.selected .who::after { opacity: 1; }
+.card-sprite.popped { z-index: 1; transform-origin: 50% 100%; animation: sprite-pop 0.22s cubic-bezier(0.3, 1.4, 0.5, 1) both; }
+@keyframes sprite-pop {
+  from { transform: translateX(-50%); }
+  to { transform: translateX(-50%) translateY(-10px) scale(1.15); }
+}
+/* Icona del box: sotto il mouse e sulla selezionata saltella come il membro aperto del team compresso (sul riquadro: l'icona ha già la sua scala) */
+.card:hover .card-sprite .box-icon, .card.selected .card-sprite .box-icon { animation: box-hop 0.7s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .card, .card-face::before, .card .who::after { transition: none; }
+  .card-sprite.popped { animation: none; }
+  .card:hover .card-sprite .box-icon, .card.selected .card-sprite .box-icon { animation: none; }
+}
+/* Targhetta in alto a sinistra: +N (#1 su magenta), −N e ±0 nei loro colori, col team vuoto l'uso nel meta */
+.card .tag { --tag-bg: var(--ground); position: absolute; top: 0; left: 0; z-index: 1; display: flex; align-items: center; gap: 4px; margin: 0; padding: 5px 16px 5px 8px; border-radius: 0; background: var(--tag-bg); color: var(--text);
+  font: 800 15px/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums; clip-path: polygon(0 0, 100% 0, calc(100% - 9px) 100%, 0 100%); }
+.card .tag strong { font: inherit; }
+.card .tag strong.worse { color: var(--bad); }
+.card .tag strong.same { color: var(--muted); }
+.card .tag small { display: none; }
+.card.first .tag { --tag-bg: var(--accent-2); color: var(--on-accent-2); }
+/* Preferito: ♥ davanti al numero e bordo di 2px nel colore dei Preferiti (anche sul lato obliquo), sopra la cornice */
+.card .tag.fav { z-index: 4; background: var(--accent); }
+.card .tag.fav::before { content: ''; position: absolute; inset: 2px; z-index: -1; background: var(--tag-bg); clip-path: polygon(0 0, calc(100% - 0.85px) 0, calc(100% - 6.4px) 100%, 0 100%); }
+.fav-heart { display: inline-flex; color: var(--accent); }
+.fav-heart .icon { width: 12px; height: 12px; fill: currentColor; }
+.card.first .tag .fav-heart { color: inherit; }
+/* Tipi come icone, in colonna in alto a destra (sotto il taglio) */
+.card .card-types { position: absolute; top: 22px; right: 8px; flex-direction: column; gap: 4px; }
+.card .card-types img { width: 20px; height: 20px; box-shadow: none; }
+.card .card-types img + img { margin: 0; }
+/* Chi esce (Migliora · Tutti): pillola in basso a destra della zona immagine, sopra la targhetta: ⇄ e l'icona intera */
+.card .out { position: absolute; right: 6px; bottom: calc(var(--plate-h) + 6px); z-index: 2; display: flex; align-items: center; gap: 1px;
+  height: 22px; padding: 0 2px 0 7px; border-radius: 11px; background: color-mix(in srgb, var(--ground) 82%, transparent); border: 1px solid var(--line); }
+.card .out .icon { width: 12px; height: 12px; color: var(--muted); }
+.card .out .mon-icon { margin: -5px -4px -3px; }
+/* Targhetta in basso a tutta larghezza: nome e motivi. Il nome sta allo stesso punto in ogni carta: la targhetta è alta
+   quanto i motivi che entrano (--reasons), anche se la carta ne ha meno; lo spazio avanzato resta vuoto in fondo */
+.card .who { position: relative; flex: none; min-width: 0; display: flex; flex-direction: column; justify-content: flex-start; gap: 2px;
+  box-sizing: border-box; height: var(--plate-h); padding: 7px 10px 10px;
+  background: color-mix(in srgb, var(--ground) 70%, var(--raised)); border-top: 1px solid color-mix(in srgb, var(--t1) 45%, var(--line)); }
+.card.selected .who { background: color-mix(in srgb, var(--accent) 14%, var(--ground)); }
+.card .name-line { display: flex; align-items: center; gap: 4px; min-width: 0; height: 18px; }
+.card .name-line > :not(.pick) { flex: none; }
+.card .pick { flex: 0 1 auto; min-width: 0; overflow: hidden; padding: 0; border: 0; background: none; color: inherit; text-align: left; }
+.card .pick[aria-pressed='true'] { background: none; }
+.card .pick strong { display: block; font: 800 15px/1.15 var(--display); font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card .name-line .list-mark { font-size: 12px; }
+.card .who small { display: flex; flex-direction: column; min-width: 0; }
+.card .reason { display: block; min-width: 0; font: 500 12px/16px var(--ui); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card .reason b { margin-right: 3px; font-weight: 700; color: var(--good); }
+
+/* Stile "Menu": una colonna di pillole chiare come i menu di Spada e Scudo (altezza della riga da usePerPage: --row-h).
+   A sinistra 30px per il cursore ▶ della selezionata; colori da tokens.css (--pill-*), così un tema li ridefinisce */
+.suggestions.menu { display: flex; flex-direction: column; gap: 6px; padding: 10px 14px 10px 30px; }
+.suggestions.menu > li + li { border-top: 0; }
+.pill {
+  --rh: var(--row-h, 48px);
+  position: relative;
+  height: var(--rh);
+  flex: none;
+  min-width: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 0 18px 0 calc(var(--rh) * 0.95);
+  border-radius: 999px;
+  background: var(--pill-bg);
+  color: var(--pill-ink);
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s;
+}
+.pill:hover { background: var(--pill-bg-hover); }
+.pill.picked { box-shadow: inset 0 0 0 2px var(--accent); }
+.pill.selected { background: var(--accent); color: var(--on-accent); }
+/* Il cursore ▶ fuori dalla pillola, nel margine sinistro della lista */
+.pill.selected::after { content: '▶' / ''; position: absolute; left: -26px; top: 50%; transform: translateY(-50%); color: var(--accent); font-size: 14px; pointer-events: none;
+  /* Alone del colore del pannello: resta leggibile dove tocca il tondo chiaro dello sprite */
+  filter: drop-shadow(0 0 1.5px var(--panel)) drop-shadow(0 0 1.5px var(--panel)); }
+/* Tondo dello sprite: sporge a sinistra, sfumatura chiara nel colore del tipo, anello del colore del pannello */
+.pill-sprite {
+  position: absolute;
+  left: calc(var(--rh) * -0.32);
+  top: 50%;
+  width: calc(var(--rh) * 1.12);
+  height: calc(var(--rh) * 1.12);
+  transform: translateY(-50%);
+  border-radius: 50%;
+  overflow: hidden;
+  background: radial-gradient(circle, color-mix(in srgb, var(--t1) 45%, #fff), color-mix(in srgb, var(--t1) 70%, #c9cfdf));
+  box-shadow: 0 0 0 3px var(--panel);
+  pointer-events: none;
+}
+.pill-sprite .box-icon { position: absolute; inset: 0; display: grid; place-items: center; }
+.pill-sprite .box-icon .mon-icon { margin: 0; transform: scale(2.1); }
+.pill-sprite .sprite { position: absolute; left: 50%; top: 50%; width: calc(var(--rh) * 1.5); height: auto; max-width: none; transform: translate(-50%, -56%); image-rendering: pixelated; }
+.pill .who { position: relative; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.pill .name-line { display: flex; min-width: 0; }
+.pill .pick { min-width: 0; overflow: hidden; padding: 0; border: 0; background: none; color: inherit; text-align: left; }
+.pill .pick[aria-pressed='true'] { background: none; }
+.pill .pick strong { display: block; font: 800 15px/1.15 var(--display); font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Motivi in fila (1, fino a 3 quando la riga è alta), il "+" verde scuro */
+.pill .who small { display: flex; flex-wrap: wrap; gap: 0 14px; min-width: 0; }
+.pill .reason { min-width: 0; max-width: 100%; font: 500 12px/1.3 var(--ui); color: var(--pill-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pill .reason b { margin-right: 3px; font-weight: 700; color: var(--pill-gain); }
+/* Nomi dei tipi nelle varianti scure (il colore inline è per i fondi scuri) */
+.pill .type-name { --type-color: var(--type-ink-dark); }
+/* Destra: segni, icone dei tipi 18px, voto */
+.pill-end { display: flex; align-items: center; gap: 8px; }
+.pill .pill-types { gap: 4px; }
+.pill .pill-types img { width: 18px; height: 18px; box-shadow: none; }
+.pill .pill-types img + img { margin: 0; }
+.pill .score { margin: 0; font: 800 19px/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums; color: var(--pill-ink); }
+.pill .score strong { font: inherit; }
+.pill .score strong.worse { color: var(--pill-bad); }
+.pill .score strong.same { color: var(--pill-muted); }
+.pill .score small { margin-left: 3px; font: 600 11px/1 var(--ui); font-style: normal; color: var(--pill-muted); }
+/* #1: il +N in una pillola magenta */
+.pill.first .score { padding: 3px 9px; border-radius: 99px; background: var(--accent-2); color: var(--on-accent-2); }
+.pill.first .score small { color: inherit; }
+/* Preferito: ♥ e bordo di 2px nel colore dei Preferiti sul +N */
+.pill .score.fav { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 99px; box-shadow: inset 0 0 0 2px var(--pill-info); }
+.pill .score .fav-heart { color: var(--pill-info); }
+.pill.selected .score.fav { box-shadow: inset 0 0 0 2px var(--on-accent); }
+.pill.selected .score .fav-heart { color: var(--on-accent); }
+.pill.selected.first .score .fav-heart { color: var(--on-accent-2); }
+/* Selezionata: tutto il testo in --on-accent, anche i tipi e i segni */
+/* Segni sulla pillola chiara: le varianti scure (solo l'icona: il tooltip resta sul fondo scuro coi suoi colori) */
+.pill .alert-mark.danger .icon, .pill .list-mark.ban { color: var(--pill-bad); }
+.pill .alert-mark.warn .icon { color: var(--pill-warn); }
+.pill .alert-mark.info .icon, .pill .list-mark.fav { color: var(--pill-info); }
+/* Selezionata: tutto il testo e i segni in --on-accent (sul ciano i colori dei tipi e degli stati non si leggono) */
+.pill.selected .reason, .pill.selected .reason b, .pill.selected .score, .pill.selected .score strong,
+.pill.selected .score small, .pill.selected .alert-mark .icon, .pill.selected .list-mark { color: var(--on-accent); }
+.pill.selected .type-name { --type-color: var(--on-accent); }
+/* Il #1 selezionato: il voto resta sulla sua pillola magenta */
+.pill.selected.first .score, .pill.selected.first .score strong, .pill.selected.first .score small { color: var(--on-accent-2); }
+/* Chi esce (Migliora · Tutti): tondino in alto sul tondo dello sprite */
+.pill .out { position: absolute; left: calc(var(--rh) * -0.32 - 4px); top: -4px; z-index: 2; width: 24px; height: 24px; border-radius: 50%; overflow: hidden; background: var(--ground); border: 1px solid var(--line); }
+.pill .out .mon-icon { margin: -6px 0 0 -9px; }
+.pill .out .icon { display: none; }
