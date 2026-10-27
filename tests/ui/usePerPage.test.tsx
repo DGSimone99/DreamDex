@@ -34,9 +34,10 @@ function setup(style: ListStyle, size: { width: number; height: number }, collap
 afterEach(() => { vi.unstubAllGlobals(); });
 
 describe('usePerPage', () => {
-  it('senza misura (jsdom): PAGE per pagina e un motivo', () => {
-    const { result } = setup('cards', { width: 0, height: 0 });
-    expect(result.current).toEqual({ perPage: PAGE, reasons: 1 });
+  it('senza misura (jsdom): Menu PAGE per pagina e un motivo, Carte 6 con 2 motivi (3 a team nascosto)', () => {
+    expect(setup('menu', { width: 0, height: 0 }).result.current).toEqual({ perPage: PAGE, reasons: 1 });
+    expect(setup('cards', { width: 0, height: 0 }).result.current).toEqual({ perPage: 6, columns: 3, reasons: 2 });
+    expect(setup('cards', { width: 0, height: 0 }, true).result.current.reasons).toBe(3);
   });
 
   it('il per-pagina non cambia chiudendo il team', () => {
@@ -62,21 +63,29 @@ describe('usePerPage', () => {
     }
   });
 
-  it('team aperto: un motivo solo anche con caselle alte; team nascosto: di più', () => {
-    for (const style of ['cards', 'menu'] as const) {
-      const fire = stubObservers();
-      // Caselle e righe alte (Carte 3 motivi, Menu 3 dal solo layout): col team aperto resta 1
-      const size = { width: 560, height: style === 'cards' ? 620 : 100 };
-      const { result, rerender } = setup(style, size);
-      fire();
-      expect(style === 'cards' ? result.current.tileHeight : result.current.rowHeight).toBeGreaterThanOrEqual(style === 'cards' ? 141 : 60);
-      expect(result.current.reasons).toBe(1);
-      size.height = 712;
-      rerender({ collapsed: true });
-      fire();
-      expect(result.current.reasons).toBeGreaterThan(1);
-      vi.unstubAllGlobals();
-    }
+  it('Menu: team aperto un motivo anche con righe alte, team nascosto di più', () => {
+    const fire = stubObservers();
+    const size = { width: 560, height: 100 };
+    const { result, rerender } = setup('menu', size);
+    fire();
+    expect(result.current.rowHeight).toBeGreaterThanOrEqual(60);
+    expect(result.current.reasons).toBe(1);
+    size.height = 712;
+    rerender({ collapsed: true });
+    fire();
+    expect(result.current.reasons).toBeGreaterThan(1);
+  });
+
+  it('Carte: 6 per pagina, carta dall’altezza (max 260), motivi 2 → 3 nascondendo il team', () => {
+    const fire = stubObservers();
+    const size = { width: 560, height: 400 };
+    const { result, rerender } = setup('cards', size);
+    fire();
+    expect(result.current).toEqual({ perPage: 6, columns: 3, tileHeight: 186, reasons: 2 });
+    size.height = 900;
+    rerender({ collapsed: true });
+    fire();
+    expect(result.current).toEqual({ perPage: 6, columns: 3, tileHeight: 260, reasons: 3 });
   });
 
   it('Carte: colonne e altezza della tessera; Menu: altezza della riga', () => {

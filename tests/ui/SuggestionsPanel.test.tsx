@@ -70,15 +70,15 @@ describe('SuggestionsPanel', () => {
     expect(within(list()).getByText('Spesso usati insieme: Great Tusk (25%)')).toBeInTheDocument();
   });
 
-  it('pagine da 10: la seconda continua la numerazione', async () => {
+  it('Carte: pagine da 6, la seconda continua la numerazione', async () => {
     const user = await setup('Great Tusk');
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'a');
     const pager = await screen.findByRole('navigation', { name: 'Pagine dei suggerimenti' });
-    expect(rowNames()).toHaveLength(10);
+    expect(rowNames()).toHaveLength(6);
     expect(within(pager).getByRole('button', { name: 'Pagina precedente' })).toBeDisabled();
     await user.click(within(pager).getByRole('button', { name: 'Pagina 2' }));
     expect(within(pager).getByRole('button', { name: 'Pagina 2' })).toHaveAttribute('aria-current', 'page');
-    expect(rankOf(list().querySelector('li')!)).toBe(11);
+    expect(rankOf(list().querySelector('li')!)).toBe(7);
   });
 
   it('aggiunge un suggerimento al team', async () => {
@@ -172,10 +172,11 @@ describe('SuggestionsPanel', () => {
     expect(within(group).getByText('Esce')).toBeInTheDocument();
   });
 
-  it('un solo motivo sotto il nome, senza malus', async () => {
+  it('Carte col team aperto: al massimo due motivi sotto il nome, senza malus', async () => {
     await setup('Great Tusk', 'Gholdengo', 'Kingambit', 'Corviknight', 'Toxapex');
     const first = list().querySelector<HTMLElement>('li')!;
-    expect(first.querySelectorAll('.reason')).toHaveLength(1);
+    expect(first.querySelectorAll('.reason').length).toBeGreaterThanOrEqual(1);
+    expect(first.querySelectorAll('.reason').length).toBeLessThanOrEqual(2);
     expect(first.querySelector('.reason')!.textContent).toMatch(/\S/);
     expect(first.querySelector('.loss')).toBeNull();
   }, 30000);
@@ -185,13 +186,13 @@ describe('SuggestionsPanel', () => {
     const search = screen.getByLabelText('Aggiungi Pokémon');
     await user.type(search, 'a');
     const pager = await screen.findByRole('navigation', { name: 'Pagine dei suggerimenti' });
-    for (let i = 0; i < 10; i++) await user.keyboard('{ArrowDown}');
+    for (let i = 0; i < 6; i++) await user.keyboard('{ArrowDown}');
     expect(within(pager).getByRole('button', { name: 'Pagina 2' })).toHaveAttribute('aria-current', 'page');
-    expect(rankOf(list().querySelector('.picked')!)).toBe(11);
+    expect(rankOf(list().querySelector('.picked')!)).toBe(7);
     // E indietro, prima della prima, alla precedente
     await user.keyboard('{ArrowUp}');
     expect(within(pager).getByRole('button', { name: 'Pagina 1' })).toHaveAttribute('aria-current', 'page');
-    expect(rankOf(list().querySelector('.picked')!)).toBe(10);
+    expect(rankOf(list().querySelector('.picked')!)).toBe(6);
   });
 
   it('un cambio senza bonus: "nessuna differenza", mai un malus come motivo', async () => {
@@ -434,15 +435,16 @@ describe('riga della lista', () => {
     const width = vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(measured('width'));
     const height = vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockImplementation(measured('height'));
     try {
-      const props = { team: [tusk], format: DEFAULT_FORMAT, data, replaceIndex: null, onAdd: () => {}, onReplaceWith: () => {}, onCancelReplace: () => {}, listStyle: 'cards' as const };
+      // Menu: le Carte sono sempre 6 per pagina, il numero cambia solo qui
+      const props = { team: [tusk], format: DEFAULT_FORMAT, data, replaceIndex: null, onAdd: () => {}, onReplaceWith: () => {}, onCancelReplace: () => {}, listStyle: 'menu' as const };
       const { rerender } = renderIt(<SuggestionsPanel {...props} />);
       await screen.findByRole('navigation', { name: 'Pagine dei suggerimenti' });
       const eighth = rowNames()[7];
       rerender(<SuggestionsPanel {...props} focus={{ species: eighth, mode: 'add', nonce: 1 }} />);
       expect(await screen.findByRole('complementary', { name: `Dettaglio di ${eighth}` }, { timeout: 3000 })).toBeInTheDocument();
-      // Prima misura vera: 2 colonne × 3 righe = 6 per pagina, l'ottavo passa a pagina 2
+      // Prima misura vera: righe minime da 42 + 6 → 6 per pagina, l'ottavo passa a pagina 2
       size.width = 300;
-      size.height = 500;
+      size.height = 320;
       act(() => { for (const cb of [...callbacks]) cb(); });
       expect(list().children).toHaveLength(6);
       expect(screen.getByRole('complementary', { name: `Dettaglio di ${eighth}` })).toBeInTheDocument();

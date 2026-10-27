@@ -1,8 +1,8 @@
 import { useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react';
-import { cardsLayout, menuLayout } from './listLayout';
+import { CARDS_COLUMNS, CARDS_ROWS, cardsLayout, cardsReasons, menuLayout } from './listLayout';
 import type { ListStyle } from './theme';
 
-/** Candidati per pagina senza misura (jsdom, layout stretto). */
+/** Candidati per pagina senza misura (jsdom, layout stretto), stile Menu; le Carte sono sempre 6. */
 export const PAGE = 10;
 
 /** Solo con lista e scheda affiancate la lista ha un'altezza sua: sotto, crescerebbe col contenuto. */
@@ -31,7 +31,8 @@ const wide = () => typeof matchMedia !== 'function' || matchMedia(WIDE).matches;
 
 /**
  * Quanti candidati per pagina, dallo spazio del contenitore della lista (ResizeObserver).
- * Il numero si calcola come se il team fosse aperto: chiudendolo le caselle crescono, il numero resta.
+ * Carte: sempre 6 (3 × 2), la carta segue l'altezza. Menu: il numero si calcola come se il team fosse aperto,
+ * chiudendolo le righe crescono e il numero resta.
  */
 export function usePerPage(ref: RefObject<HTMLElement | null>, style: ListStyle, teamCollapsed: boolean): PerPage {
   const [measure, setMeasure] = useState<Measure | null>(null);
@@ -65,16 +66,17 @@ export function usePerPage(ref: RefObject<HTMLElement | null>, style: ListStyle,
   useLayoutEffect(() => () => { observed.current?.observer.disconnect(); observed.current = null; }, []);
 
   return useMemo<PerPage>(() => {
+    if (style === 'cards') {
+      // Senza misura (jsdom, layout stretto) l'altezza della carta resta quella del CSS
+      if (!measure) return { perPage: CARDS_COLUMNS * CARDS_ROWS, columns: CARDS_COLUMNS, reasons: cardsReasons(teamCollapsed) };
+      const { perPage, columns, tileHeight, reasons } = cardsLayout(measure.height, teamCollapsed);
+      return { perPage, columns, tileHeight, reasons };
+    }
     if (!measure) return { perPage: PAGE, reasons: 1 };
     // Partendo col team chiuso, l'altezza attuale finché il team non si apre
     const open = measure.open ?? measure.height;
-    // Col team aperto un motivo solo (lo spazio in più va allo sprite); più motivi solo col team nascosto
-    const fit = (reasons: number) => (teamCollapsed ? reasons : 1);
-    if (style === 'menu') {
-      const { perPage, rowHeight, reasons } = menuLayout(open, measure.height, measure.windowHeight);
-      return { perPage, rowHeight, reasons: fit(reasons) };
-    }
-    const { perPage, columns, tileHeight, reasons } = cardsLayout(measure.width, open, measure.height);
-    return { perPage, columns, tileHeight, reasons: fit(reasons) };
+    // Col team aperto un motivo solo; più motivi solo col team nascosto
+    const { perPage, rowHeight, reasons } = menuLayout(open, measure.height, measure.windowHeight);
+    return { perPage, rowHeight, reasons: teamCollapsed ? reasons : 1 };
   }, [measure, style, teamCollapsed]);
 }

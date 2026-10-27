@@ -13,17 +13,20 @@ export interface CardsLayout {
   reasons: number;
 }
 
-// Carte: griglia; righe dal contenitore a team aperto, altezza tessera da quello attuale.
-export function cardsLayout(width: number, openHeight: number, height: number): CardsLayout {
-  const w = num(width);
-  const open = num(openHeight);
+/** Carte per pagina: sempre 3 × 2, una pagina = un team possibile. */
+export const CARDS_COLUMNS = 3;
+export const CARDS_ROWS = 2;
+/** Altezza massima di una carta: oltre, la griglia resta a questa misura e si centra in verticale. */
+export const CARDS_MAX_TILE = 260;
+
+/** Motivi sotto il nome delle carte: 2 col team aperto, 3 col team nascosto. */
+export const cardsReasons = (teamCollapsed: boolean): number => (teamCollapsed ? 3 : 2);
+
+// Carte: 6 carte verticali (3 colonne × 2 righe) che riempiono l'altezza attuale della lista, al massimo 260 px.
+export function cardsLayout(height: number, teamCollapsed: boolean): CardsLayout {
   const h = num(height);
-  const columns = Math.max(2, Math.floor((w - 20 + 8) / 146));
-  const minTile = open < 460 ? 104 : 120;
-  const rows = Math.max(1, Math.floor((open - 20 + 8) / (minTile + 8)));
-  const tileHeight = Math.max(0, Math.floor((h - 20 + 8) / rows) - 8);
-  const reasons = clamp(Math.floor((tileHeight - 93) / 16), 1, 3);
-  return { columns, rows, perPage: columns * rows, tileHeight, reasons };
+  const tileHeight = clamp(Math.floor((h - 20 + 8) / CARDS_ROWS) - 8, 0, CARDS_MAX_TILE);
+  return { columns: CARDS_COLUMNS, rows: CARDS_ROWS, perPage: CARDS_COLUMNS * CARDS_ROWS, tileHeight, reasons: cardsReasons(teamCollapsed) };
 }
 
 export interface MenuLayout {

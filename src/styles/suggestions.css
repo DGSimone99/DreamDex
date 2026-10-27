@@ -381,22 +381,26 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 /* Problemi e bonus: la pillola tratteggiata che spiega la parte del voto fuori dalle aree */
 .detail .effect .detail-areas .extras { border-style: dashed; }
 
-/* Stile "Carte": griglia di caselle a forma di carta Masters (misure da usePerPage: --cols, --tile-h, --reasons) */
-.suggestions.cards { display: grid; grid-template-columns: repeat(var(--cols, auto-fill), minmax(min(138px, 100%), 1fr)); gap: 8px; padding: 10px; align-content: start; }
+/* Stile "Carte": 6 carte verticali (3 × 2) a forma di carta Masters (misure da usePerPage: --cols, --tile-h, --reasons).
+   Oltre l'altezza massima la griglia resta a quella misura e si centra in verticale */
+.suggestions.cards { display: grid; grid-template-columns: repeat(var(--cols, 3), minmax(min(138px, 100%), 1fr)); gap: 8px; padding: 10px; align-content: center; }
 .suggestions.cards > li + li { border-top: 0; }
 .card {
-  /* Lo sprite si stringe per far posto ai motivi: clamp(60, altezza − 27 − 16 × motivi + 6, 112) */
-  --sprite-w: clamp(60px, calc(var(--tile-h, 120px) - 21px - 16px * var(--reasons, 1)), 112px);
+  /* Targhetta in basso alta uguale in ogni carta (dai motivi che entrano): 7 + nome 18 + 2 + 16 × motivi + 10 */
+  --plate-h: calc(37px + 16px * var(--reasons, 2));
+  /* Sprite nella zona dell'immagine: altezza − bordo 3 − targhetta − 8, al massimo 140 */
+  --sprite-w: clamp(48px, calc(var(--tile-h, 220px) - 11px - var(--plate-h)), 140px);
   position: relative;
-  height: var(--tile-h, 120px);
+  height: var(--tile-h, 220px);
   min-width: 0;
   margin: 0;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  padding: 0 10px 10px;
+  padding: 0;
   overflow: hidden;
-  background: var(--raised);
+  /* Zona dell'immagine: tinta piatta del tipo primario */
+  background: color-mix(in srgb, var(--t1) 16%, var(--raised));
   border-bottom: 3px solid var(--t1);
   /* Angolo in alto a destra tagliato */
   clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 0 100%);
@@ -404,10 +408,12 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
   user-select: none;
   transition: background 0.15s;
 }
-.card:hover { background: color-mix(in srgb, var(--raised), var(--line)); }
-.card.picked { box-shadow: inset 0 0 0 1px var(--accent); }
-.card.selected { background: var(--accent-wash); box-shadow: inset 0 0 0 2px var(--accent); }
-.card-sprite { position: absolute; left: 50%; top: -6px; width: var(--sprite-w); transform: translateX(-50%); pointer-events: none; }
+/* Cornice sottile sopra a tutto (anche alla targhetta), senza prendere i clic */
+.card::after { content: ''; position: absolute; inset: 0; z-index: 3; pointer-events: none; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--t1) 30%, var(--line)); }
+.card:hover { background: color-mix(in srgb, var(--t1) 24%, var(--raised)); }
+.card.picked::after { box-shadow: inset 0 0 0 1px var(--accent); }
+.card.selected::after { box-shadow: inset 0 0 0 2px var(--accent); }
+.card-sprite { position: absolute; left: 50%; top: 4px; width: var(--sprite-w); transform: translateX(-50%); pointer-events: none; }
 .card-sprite .box-icon { display: grid; place-items: center; width: 100%; aspect-ratio: 1; }
 .card-sprite .box-icon .mon-icon { margin: 0; transform: scale(2.1); }
 .card-sprite .box-icon.big .mon-icon, .pill-sprite .box-icon.big .mon-icon { transform: scale(2.4); }
@@ -427,10 +433,12 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 /* Chi esce (Migliora · Tutti): tondino sotto le icone dei tipi */
 .card .out { position: absolute; top: 70px; right: 7px; z-index: 2; width: 24px; height: 24px; border-radius: 50%; overflow: hidden; background: var(--ground); border: 1px solid var(--line); }
 .card .out .mon-icon { margin: -6px 0 0 -9px; }
-.card .who { position: relative; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-/* Il nome sta allo stesso punto in ogni casella, subito sotto lo sprite: il blocco è alto quanto i motivi che entrano
-   (--reasons), anche se la casella ne ha meno; lo spazio avanzato resta vuoto in fondo */
-.card .who { flex: none; height: calc(20px + 16px * var(--reasons, 1)); }
+/* Targhetta in basso a tutta larghezza: nome e motivi. Il nome sta allo stesso punto in ogni carta: la targhetta è alta
+   quanto i motivi che entrano (--reasons), anche se la carta ne ha meno; lo spazio avanzato resta vuoto in fondo */
+.card .who { position: relative; flex: none; min-width: 0; display: flex; flex-direction: column; justify-content: flex-start; gap: 2px;
+  box-sizing: border-box; height: var(--plate-h); padding: 7px 10px 10px;
+  background: color-mix(in srgb, var(--ground) 70%, var(--raised)); border-top: 1px solid color-mix(in srgb, var(--t1) 45%, var(--line)); }
+.card.selected .who { background: color-mix(in srgb, var(--accent) 14%, var(--ground)); }
 .card .name-line { display: flex; align-items: center; gap: 4px; min-width: 0; height: 18px; }
 .card .name-line > :not(.pick) { flex: none; }
 .card .pick { flex: 0 1 auto; min-width: 0; overflow: hidden; padding: 0; border: 0; background: none; color: inherit; text-align: left; }
