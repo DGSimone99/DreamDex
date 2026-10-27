@@ -470,11 +470,11 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .card-face::before { --spot: color-mix(in srgb, var(--t1) 25%, #fff);
   content: ''; position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity 0.25s ease-out;
   background:
-    radial-gradient(ellipse calc(var(--sprite-w) * 0.42) calc(var(--sprite-w) * 0.08) at 50% calc(4px + var(--sprite-w) * 0.94),
-      color-mix(in srgb, var(--spot) 45%, transparent), transparent),
-    conic-gradient(from 158deg at 50% -24px, transparent 0deg, color-mix(in srgb, var(--spot) 16%, transparent) 12deg,
-      color-mix(in srgb, var(--spot) 24%, transparent) 22deg, color-mix(in srgb, var(--spot) 16%, transparent) 32deg, transparent 44deg);
-  -webkit-mask-image: linear-gradient(#000 55%, transparent 85%); mask-image: linear-gradient(#000 55%, transparent 85%); }
+    radial-gradient(ellipse calc(var(--sprite-w) * 0.55) calc(var(--sprite-w) * 0.11) at 50% calc(4px + var(--sprite-w) * 0.94),
+      color-mix(in srgb, var(--spot) 55%, transparent), transparent),
+    conic-gradient(from 150deg at 50% -24px, transparent 0deg, color-mix(in srgb, var(--spot) 20%, transparent) 14deg,
+      color-mix(in srgb, var(--spot) 30%, transparent) 30deg, color-mix(in srgb, var(--spot) 20%, transparent) 46deg, transparent 60deg);
+  -webkit-mask-image: linear-gradient(#000 60%, transparent 90%); mask-image: linear-gradient(#000 60%, transparent 90%); }
 .card .who::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: var(--t1); opacity: 0; transition: opacity 0.18s ease-out; pointer-events: none; }
 .card:hover .card-face::before, .card.selected .card-face::before,
 .card:hover .who::after, .card.selected .who::after { opacity: 1; }
