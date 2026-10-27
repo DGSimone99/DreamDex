@@ -1,14 +1,15 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { act, screen, within } from '@testing-library/react';
+import { act, cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { CoachProblem } from '../../src/engine/coach';
 import type { DashboardData } from '../../src/engine/overviewDashboard';
+import type { TeamSummary } from '../../src/engine/teamSummary';
 import { TYPES } from '../../src/engine/types';
 import { en } from '../../src/i18n/en';
 import { it as itText } from '../../src/i18n/it';
-import { densityFor, OverviewDashboard, TIGHT_BELOW, type Density } from '../../src/ui/OverviewDashboard';
+import { LangProvider } from '../../src/i18n/react';
+import { densityFor, OverviewDashboard, RICH_FROM, TIGHT_BELOW, type Density } from '../../src/ui/OverviewDashboard';
 import { renderIt } from '../helpers/italian';
 
 /** Dati costruiti: Terra scoperta in difesa, Normale in offesa, un ruolo mancante, due corsie, tre minacce. */
@@ -21,6 +22,7 @@ function sample(overrides: Partial<DashboardData> = {}): DashboardData {
         offense: type === 'Normal' ? 'bad' : 'ok',
         defenseNote: type === 'Ground' ? '3 deboli, 1 resiste' : '1 debole, 2 resistono',
         offenseNote: type === 'Normal' ? 'Nessuno lo colpisce super efficace' : 'Colpito super efficace da 2',
+        resist: type === 'Ground' ? 1 : 2,
       })),
       defense: '17/18', offense: '17/18',
     },
@@ -50,12 +52,23 @@ function sample(overrides: Partial<DashboardData> = {}): DashboardData {
   };
 }
 
-/** Problemi che restano righe singole (Offesa e Ruoli senza gruppo). */
-const problem = (i: number, severity: CoachProblem['severity'] = 'minor'): CoachProblem =>
-  ({ severity, category: i % 2 ? 'coverage' : 'roles', text: `Problema numero ${i}`, fixes: [], key: `k${i}` });
-
-const weak = (type: string, severity: CoachProblem['severity'] = 'minor'): CoachProblem =>
-  ({ severity, category: 'defense', text: `Debole a ${type}: 3 Deboli – 1 Resistono`, fixes: [], key: `defense:${type}`, subjects: [type] });
+/** Il Riassunto costruito: due attaccanti, un muro, Stealth Rock, tutto colpito, due debolezze, ruoli a posto, tre minacce. */
+function summaryOf(overrides: Partial<TeamSummary> = {}): TeamSummary {
+  return {
+    archetype: 'hyperOffense', styles: [],
+    attackers: ['Garchomp', 'Zapdos'], walls: ['Toxapex'],
+    field: [{ member: 'Garchomp', items: ['Stealth Rock'] }],
+    hits: { covered: 18, total: 18 },
+    weak: [{ type: 'Ground', serious: true, resist: 0 }, { type: 'Ice', serious: false, resist: 1 }],
+    missingRoles: [],
+    keyRoles: [{ need: 'hazards', covered: true }, { need: 'removal', covered: true }],
+    hitsMissing: [],
+    offenseOf: { Garchomp: 92, Zapdos: 86 },
+    defenseOf: { Toxapex: 88 },
+    threats: [{ species: 'Great Tusk', usage: 0.23 }, { species: 'Kyurem', usage: 0.21 }, { species: 'Heatran', usage: 0.17 }],
+    ...overrides,
+  };
+}
 
 /** Le righe della tabella dei Ruoli (ampio, senza le intestazioni delle fasce). */
 const roleRows = (roles: HTMLElement) => [...roles.querySelectorAll<HTMLElement>('tr.dash-role-row')];
@@ -79,31 +92,46 @@ const manyRoles: DashboardData['roles'] = {
 /** Solo i quattro essenziali coperti di manyRoles. */
 const essentialsOnly: DashboardData['roles'] = { chips: manyRoles.chips.filter(c => c.level === 'essential'), members: ['Great Tusk'], value: '4/4' };
 
-function mount({ density = 'normal' as Density, data = sample(), problems = [problem(1, 'serious'), problem(2)], members = 6 } = {}) {
+function mount({ density = 'normal' as Density, data = sample(), summary = summaryOf(), members = 6 } = {}) {
   const onView = vi.fn();
-  const onMeta = vi.fn();
-  const { unmount } = renderIt(<OverviewDashboard data={data} problems={problems} members={members} onView={onView} onMeta={onMeta} density={density} />);
-  return { onView, onMeta, unmount };
+  const { unmount } = renderIt(<OverviewDashboard data={data} summary={summary} members={members} onView={onView} density={density} />);
+  return { onView, unmount };
 }
 
+/** Le righe del Riassunto per etichetta. */
+const sumRow = (label: string) => within(screen.getByRole('region', { name: 'Riassunto' })).queryByRole('button', { name: new RegExp('^' + label) });
+
 describe('Cruscotto della Panoramica', () => {
-  it('cinque sezioni coi loro titoli', () => {
+  it('quattro sezioni coi loro titoli, senza "Cosa fare" e "Minacce non gestite"', () => {
     mount();
-    for (const title of ['Copertura', 'Ruoli', 'Velocità', 'Cosa fare', 'Minacce non gestite']) {
+    for (const title of ['Riassunto', 'Copertura', 'Ruoli', 'Velocità']) {
       expect(screen.getByRole('heading', { name: title })).toBeInTheDocument();
     }
+    expect(screen.queryByRole('heading', { name: 'Cosa fare' })).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'Minacce non gestite' })).toBeNull();
   });
 
   it('Copertura: 18 colonne, caselle col nome di tipo, riga e dettaglio', () => {
     mount();
     const table = screen.getByRole('table', { name: 'Copertura' });
     expect(within(table).getAllByRole('columnheader')).toHaveLength(18);
-    expect(within(table).getByRole('cell', { name: /^(Terra|Ground), regge: 3 deboli, 1 resiste$/ })).toHaveClass('bad');
-    expect(within(table).getByRole('cell', { name: /^(Erba|Grass), regge: 1 debole, 2 resistono$/ })).toHaveClass('minor');
-    expect(within(table).getByRole('cell', { name: /^(Normale|Normal), colpisce: nessuno lo colpisce super efficace$/ })).toHaveClass('bad');
-    expect(within(table).getByRole('rowheader', { name: 'Regge' })).toBeInTheDocument();
-    expect(within(table).getByRole('rowheader', { name: 'Colpisce' })).toBeInTheDocument();
+    expect(within(table).getByRole('cell', { name: /^(Terra|Ground), difesa: 3 deboli, 1 resiste$/ })).toHaveClass('bad');
+    expect(within(table).getByRole('cell', { name: /^(Erba|Grass), difesa: 1 debole, 2 resistono$/ })).toHaveClass('minor');
+    expect(within(table).getByRole('cell', { name: /^(Normale|Normal), offesa: nessuno lo colpisce super efficace$/ })).toHaveClass('bad');
+    expect(within(table).getByRole('rowheader', { name: 'Difesa' })).toBeInTheDocument();
+    expect(within(table).getByRole('rowheader', { name: 'Offesa' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Copertura' }).querySelector('.dash-meta')).toHaveTextContent('difesa 17/18 · offesa 17/18');
     expect(screen.queryByText('Chi')).toBeNull();
+  });
+
+  it('Copertura in inglese: righe Defense e Offense, anche in testata', () => {
+    render(<LangProvider lang="en"><OverviewDashboard data={sample()} summary={summaryOf()} members={6} onView={vi.fn()} density="normal" /></LangProvider>);
+    const table = screen.getByRole('table', { name: 'Coverage' });
+    expect(within(table).getByRole('rowheader', { name: 'Defense' })).toBeInTheDocument();
+    expect(within(table).getByRole('rowheader', { name: 'Offense' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Coverage' }).querySelector('.dash-meta')).toHaveTextContent('defense 17/18 · offense 17/18');
+    // La riga Colpisce del Riassunto resta "Hits"
+    expect(screen.getByRole('region', { name: 'Summary' }).querySelectorAll('.sum-k')[4]).toHaveTextContent('Hits');
   });
 
   it('Copertura: in testata l\'icona ufficiale di ogni tipo, decorativa, col nome nel tooltip', () => {
@@ -121,14 +149,12 @@ describe('Cruscotto della Panoramica', () => {
 
   it('i link aprono le schede', async () => {
     const user = userEvent.setup();
-    const { onView, onMeta } = mount();
+    const { onView } = mount();
     await user.click(screen.getByRole('button', { name: /^Difesa/ }));
     await user.click(screen.getByRole('button', { name: /^Offesa/ }));
     await user.click(screen.getByRole('button', { name: 'Apri la scheda Ruoli' }));
     await user.click(screen.getByRole('button', { name: 'Apri la scheda Velocità' }));
     expect(onView.mock.calls.map(c => c[0])).toEqual(['defense', 'strength', 'roles', 'speed']);
-    await user.click(screen.getByRole('button', { name: 'Apri la scheda Meta' }));
-    expect(onMeta).toHaveBeenCalled();
   });
 
   it('densityFor (team aperto): sotto TIGHT_BELOW stretto, poi normale a ogni altezza, mai ampio', () => {
@@ -276,122 +302,180 @@ describe('Cruscotto della Panoramica', () => {
     expect(lanes[1]).toHaveTextContent(/Toxapex.*167/);
   });
 
-  it('Cosa fare: la freccia in testata apre il Coaching, anche senza problemi o con un membro', async () => {
-    const user = userEvent.setup();
-    for (const props of [{}, { problems: [] }, { members: 1, problems: [] }]) {
-      const { onView, unmount } = mount(props);
-      await user.click(within(screen.getByRole('region', { name: 'Cosa fare' })).getByRole('button', { name: 'Apri la scheda Coaching' }));
-      expect(onView).toHaveBeenCalledWith('coaching');
-      unmount();
-    }
-  });
-
   it('normale: il controllo con chi lo porta', () => {
     mount();
     expect(screen.getByRole('region', { name: 'Velocità' }).querySelector('.dash-ctrl')).toHaveTextContent(/Controllo:.*\(Toxapex\)/);
   });
 
-  it('12 problemi in stretto: "Tutti i 12 nel Coaching" c\'è e porta al Coaching', async () => {
+});
+
+describe('Riassunto', () => {
+  const labels = () => [...screen.getByRole('region', { name: 'Riassunto' }).querySelectorAll('.sum-k')].map(k => k.textContent);
+
+  it("le righe nell'ordine della spec", () => {
+    mount();
+    expect(labels()).toEqual(['Tipo', 'Attaccanti', 'Muri', 'Campo', 'Colpisce', 'Debole a', 'Ruoli', 'Minacce']);
+  });
+
+  it('righe vuote assenti: niente Muri, Campo, Minacce; restano Tipo, Colpisce, Debole a, Ruoli', () => {
+    mount({ summary: summaryOf({ walls: [], field: [], threats: null }) });
+    expect(labels()).toEqual(['Tipo', 'Attaccanti', 'Colpisce', 'Debole a', 'Ruoli']);
+    cleanup();
+    mount({ summary: summaryOf({ attackers: [], walls: [], field: [], threats: null }) });
+    expect(labels()).toEqual(['Tipo', 'Colpisce', 'Debole a', 'Ruoli']);
+  });
+
+  it("con un solo Pokémon la riga Tipo non c'è, le altre sì", () => {
+    mount({ members: 1 });
+    expect(labels()).toEqual(['Attaccanti', 'Muri', 'Campo', 'Colpisce', 'Debole a', 'Ruoli', 'Minacce']);
+  });
+
+  it('Tipo: nome del tipo e stili, "—" senza tipo, e il "?" apre la guida ai tipi di team', async () => {
     const user = userEvent.setup();
-    const { onView } = mount({ density: 'tight', problems: Array.from({ length: 12 }, (_, i) => problem(i, i < 2 ? 'serious' : 'minor')) });
-    const todo = screen.getByRole('region', { name: 'Cosa fare' });
-    expect(todo).toHaveTextContent(/2 gravi\s*·\s*10 minori/);
-    await user.click(within(todo).getByRole('button', { name: /^Tutti i 12 nel Coaching/ }));
-    expect(onView).toHaveBeenCalledWith('coaching');
+    mount({ summary: summaryOf({ styles: ['rain'] }) });
+    const region = screen.getByRole('region', { name: 'Riassunto' });
+    expect(region).toHaveTextContent('Hyper Offense');
+    expect(region.querySelector('.sum-arch')).toHaveAttribute('title', 'Tutto attacco, pochi o nessun muro');
+    expect(region).toHaveTextContent('Pioggia');
+    await user.click(within(region).getByRole('button', { name: 'Tipi di team: come si riconoscono' }));
+    expect(screen.getByRole('dialog', { name: 'Tipi di team' })).toBeInTheDocument();
+    await user.keyboard('{Escape}');
+    cleanup();
+    mount({ summary: summaryOf({ archetype: null }) });
+    expect(screen.getByRole('region', { name: 'Riassunto' }).querySelector('.sum-arch')).toHaveTextContent('—');
   });
 
-  it('"gli" davanti a 8 e 11', () => {
-    mount({ problems: Array.from({ length: 11 }, (_, i) => problem(i)) });
-    expect(screen.getByRole('button', { name: /^Tutti gli 11 nel Coaching/ })).toBeInTheDocument();
-  });
-
-  it('problema: targhetta di gravità e area come icona col nome', () => {
+  it('Attaccanti: numero, "top" e sprite; Muri: numero e sprite', () => {
     mount();
-    const todo = screen.getByRole('region', { name: 'Cosa fare' });
-    const rows = within(todo).getAllByRole('listitem');
-    expect(rows[0]).toHaveTextContent(/grave/i);
-    expect(within(rows[0]).getByRole('img', { name: 'Offesa' })).toBeInTheDocument();
-    expect(within(rows[1]).getByRole('img', { name: 'Ruoli' })).toBeInTheDocument();
+    const attackers = sumRow('Attaccanti')!;
+    expect(attackers).toHaveTextContent(/2\s*top/);
+    expect(attackers.querySelectorAll('.sprite')).toHaveLength(2);
+    expect(attackers).toHaveTextContent('Garchomp');
+    expect(sumRow('Muri')).toHaveTextContent(/^Muri\s*1/);
   });
 
-  it('Cosa fare: le debolezze in una riga "Debole a" coi tipi, gravi prima, e il numerino', () => {
-    mount({ problems: [problem(2), weak('Fire'), weak('Ground', 'serious'), weak('Ghost')] });
-    const todo = screen.getByRole('region', { name: 'Cosa fare' });
-    const rows = [...todo.querySelectorAll('.dash-problems > li')];
-    expect(rows).toHaveLength(2);
-    const [group] = rows;
-    expect(group).toHaveClass('serious');
-    expect(group.querySelector('.dash-todo-title')).toHaveTextContent(/^Debole a:$/);
-    expect(group.querySelector('.dash-count')).toHaveTextContent(/^3$/);
-    expect([...group.querySelectorAll('.dash-todo-item')].map(x => x.textContent)).toEqual(['Ground', 'Fire', 'Ghost']);
-    expect(group.querySelector('.dash-todo-item')).toHaveClass('serious');
-    // Niente "Deboli – Resiste" nel testo visibile: resta nel tooltip, una riga per tipo
-    const visible = group.querySelector('.dash-problem')!.textContent;
-    expect(visible).not.toMatch(/Deboli|–|Resist/);
-    expect(group.getAttribute('title')).toBe(['Ground', 'Fire', 'Ghost'].map(x => `Debole a ${x}: 3 Deboli – 1 Resistono`).join('\n'));
-    // Si legge intero
-    expect(group.querySelector('.visually-hidden')).toHaveTextContent('Grave. Debole a: Ground, Fire, Ghost. 3 problemi');
-    // L'intestazione conta i problemi singoli
-    expect(todo).toHaveTextContent(/1 grave\s*·\s*3 minori/);
+  it("Campo: il membro con le sue mosse nella lingua dell'interfaccia", () => {
+    mount({ summary: summaryOf({ field: [{ member: 'Garchomp', items: ['Stealth Rock', 'Reflect'], weather: 'Pioggia' }] }) });
+    const field = sumRow('Campo')!;
+    expect(field.querySelectorAll('.sprite')).toHaveLength(1);
+    expect(field).toHaveTextContent(/Lanciarocce|Stealth Rock/);
+    expect(field.querySelectorAll('.sum-pill')).toHaveLength(3);
+    expect(field).toHaveTextContent('Pioggia');
   });
 
-  it('Cosa fare normale e ampio: sotto i gruppi i testi interi dei problemi; stretto no; minacce e ruoli no', () => {
-    const threat = (species: string): CoachProblem => ({ severity: 'minor', category: 'meta', text: `Nessun check per ${species} dal meta`, fixes: [], key: `meta:${species}`, subjects: [species] });
-    const roles: CoachProblem = { severity: 'minor', category: 'roles', text: 'Ruoli mancanti: Hazard', fixes: [], key: 'roles:essential', subjects: ['hazards'] };
-    const problems = [weak('Fire'), weak('Ground', 'serious'), threat('Kyurem'), threat('Heatran'), roles, problem(2)];
-    const { unmount } = mount({ density: 'roomy', problems });
-    const todo = screen.getByRole('region', { name: 'Cosa fare' });
-    const [weakRow, threatRow, rolesRow, single] = [...todo.querySelectorAll('.dash-problems > li')];
-    // Ruoli mancanti: niente dettaglio, ripeterebbe i nomi
-    expect(rolesRow).toHaveTextContent(/Ruoli mancanti/);
-    expect(rolesRow.querySelector('.dash-sub')).toBeNull();
-    expect([...weakRow.querySelectorAll('.dash-sub li')].map(li => li.textContent)).toEqual(['Debole a Ground: 3 Deboli – 1 Resistono', 'Debole a Fire: 3 Deboli – 1 Resistono']);
-    expect(threatRow.querySelector('.dash-sub')).toBeNull();
-    expect(single.querySelector('.dash-sub')).toBeNull();
-    unmount();
-    // Normale: gli stessi dettagli (se ci stanno); stretto: nessuno
-    const { unmount: offNormal } = mount({ density: 'normal', problems });
-    expect(screen.getByRole('region', { name: 'Cosa fare' }).querySelectorAll('.dash-sub li')).toHaveLength(2);
-    offNormal();
-    mount({ density: 'tight', problems });
-    expect(screen.getByRole('region', { name: 'Cosa fare' }).querySelector('.dash-sub')).toBeNull();
-  });
-
-  it('Cosa fare: un gruppo con un elemento solo non ha il numerino', () => {
-    mount({ problems: [weak('Fire'), problem(2)] });
-    const [group] = within(screen.getByRole('region', { name: 'Cosa fare' })).getAllByRole('listitem');
-    expect(group.querySelector('.dash-count')).toBeNull();
-    expect(group.querySelector('.visually-hidden')).toHaveTextContent(/^Minore\. Debole a: Fire\.$/);
-  });
-
-  it('un membro: nessun "nessun problema", l\'invito ad aggiungere', () => {
-    mount({ members: 1, problems: [] });
-    expect(screen.queryByText('Nessun problema da sistemare')).toBeNull();
-    expect(screen.getByRole('region', { name: 'Cosa fare' })).toHaveTextContent(/Aggiungi almeno 2 Pokémon/);
-  });
-
-  it('nessun problema con sei membri: riga positiva', () => {
-    mount({ problems: [] });
-    expect(screen.getByText('Nessun problema da sistemare')).toBeInTheDocument();
-  });
-
-  it('Minacce: titolo con "N su M", nomi e uso', () => {
+  it('Colpisce: N/18 tipi e pill verde se tutti, altrimenti "N mancanti" (1 mancante)', () => {
     mount();
-    const threats = screen.getByRole('region', { name: 'Minacce non gestite' });
-    expect(threats).toHaveTextContent(/3 su 20/);
-    expect(threats).toHaveTextContent(/Great Tusk.*23\s?%/);
+    expect(sumRow('Colpisce')).toHaveTextContent(/18\s*\/18 tipi/);
+    expect(sumRow('Colpisce')).toHaveTextContent('✓ tutti');
+    expect(sumRow('Colpisce')!.querySelector('.sum-pill')).toHaveClass('ok');
+    cleanup();
+    mount({ summary: summaryOf({ hits: { covered: 16, total: 18 } }) });
+    expect(sumRow('Colpisce')).toHaveTextContent(/16\s*\/18 tipi/);
+    expect(sumRow('Colpisce')!.querySelector('.sum-pill')).toHaveTextContent(/^2 mancanti$/);
+    expect(sumRow('Colpisce')!.querySelector('.sum-pill')).toHaveClass('bad');
+    cleanup();
+    mount({ summary: summaryOf({ hits: { covered: 17, total: 18 } }) });
+    expect(sumRow('Colpisce')!.querySelector('.sum-pill')).toHaveTextContent(/^1 mancante$/);
   });
 
-  it('meta spento: "Meta spento" e "media del tier"', () => {
-    const base = sample();
-    mount({ data: { ...base, speed: { ...base.speed, vsMeta: false }, threats: { pods: [], total: 0, available: false, metaOff: true } } });
-    expect(screen.getByRole('region', { name: 'Minacce non gestite' })).toHaveTextContent('Meta spento');
-    expect(screen.getByRole('region', { name: 'Velocità' })).toHaveTextContent(/media del tier/);
+  it('Debole a: 6 debolezze + 2 sono 6 icone e "+2"; le gravi hanno is-serious; nessuna debolezza è "✓ nessuna"', () => {
+    const types = ['Ground', 'Ice', 'Fire', 'Water', 'Rock', 'Fairy', 'Dark', 'Bug'];
+    mount({ summary: summaryOf({ weak: types.map((type, i) => ({ type, serious: i < 2, resist: 1 })) }) });
+    const weak = sumRow('Debole a')!;
+    expect(weak.querySelectorAll('.type-icons')).toHaveLength(6);
+    expect(weak).toHaveTextContent('+2');
+    // Il "+N" letto per intero ai lettori di schermo
+    expect(weak.querySelector('.sum-more .visually-hidden')).toHaveTextContent(/^Altri 2 tipi$/);
+    expect(weak.querySelectorAll('.is-serious')).toHaveLength(2);
+    expect(weak.querySelectorAll('.sum-weak:not(.is-serious)')).toHaveLength(4);
+    expect(weak).toHaveTextContent('8 tipi');
+    cleanup();
+    mount({ summary: summaryOf({ weak: [] }) });
+    expect(sumRow('Debole a')).toHaveTextContent('✓ nessuna');
+    cleanup();
+    mount({ summary: summaryOf({ weak: [{ type: 'Ice', serious: false, resist: 1 }] }) });
+    expect(sumRow('Debole a')!.querySelector('.sum-pill')).toHaveTextContent(/^1 tipo$/);
   });
 
-  it('senza statistiche: "Statistiche non disponibili"', () => {
-    mount({ data: { ...sample(), threats: { pods: [], total: 0, available: false, metaOff: false } } });
-    expect(screen.getByRole('region', { name: 'Minacce non gestite' })).toHaveTextContent('Statistiche non disponibili');
+  it('Ruoli: "✓ importanti coperti" oppure "N mancanti"', () => {
+    mount();
+    expect(sumRow('Ruoli')).toHaveTextContent('✓ importanti coperti');
+    cleanup();
+    mount({ summary: summaryOf({ missingRoles: ['hazards', 'pivot'] }) });
+    expect(sumRow('Ruoli')).toHaveTextContent('2 mancanti');
+    expect(sumRow('Ruoli')!.querySelector('.sum-names')).toHaveTextContent(/Hazard.*Pivot/i);
+    expect(sumRow('Ruoli')!.querySelector('.sum-pill')).toHaveClass('bad');
+    cleanup();
+    mount({ summary: summaryOf({ missingRoles: ['pivot'] }) });
+    expect(sumRow('Ruoli')!.querySelector('.sum-pill')).toHaveTextContent(/^1 mancante$/);
+  });
+
+  it('Minacce: 6 minacce sono 4 sprite e "+2"; "N senza check"; nessuna è "✓ tutte gestite"', () => {
+    const threats = ['Great Tusk', 'Kyurem', 'Heatran', 'Gholdengo', 'Dragonite', 'Zapdos'].map((species, i) => ({ species, usage: 0.3 - i / 20 }));
+    mount({ summary: summaryOf({ threats }) });
+    const row = sumRow('Minacce')!;
+    expect(row.querySelectorAll('.sprite')).toHaveLength(4);
+    expect(row).toHaveTextContent('+2');
+    expect(row).toHaveTextContent('6 senza check');
+    expect(row.querySelector('.sum-more .visually-hidden')).toHaveTextContent(/^Altre 2 minacce$/);
+    cleanup();
+    mount({ summary: summaryOf({ threats: [] }) });
+    expect(sumRow('Minacce')).toHaveTextContent('✓ tutte gestite');
+  });
+
+  it('clic: Attaccanti e Colpisce a Offesa, Muri e Debole a a Difesa, Campo e Ruoli a Ruoli, Minacce al Coaching', async () => {
+    const user = userEvent.setup();
+    const { onView } = mount();
+    for (const label of ['Attaccanti', 'Colpisce', 'Muri', 'Debole a', 'Campo', 'Ruoli', 'Minacce']) await user.click(sumRow(label)!);
+    expect(onView.mock.calls.map(c => c[0])).toEqual(['strength', 'strength', 'defense', 'defense', 'roles', 'roles', 'coaching']);
+  });
+});
+
+describe('Riassunto ampio (team ridotto): righe più ricche', () => {
+  const chips = (row: HTMLElement) => [...row.querySelectorAll<HTMLElement>('.sum-chip')].map(c => c.textContent);
+
+  it('normale e stretto: righe compatte, niente schede coi nomi', () => {
+    mount({ density: 'normal' });
+    expect(screen.getByRole('region', { name: 'Riassunto' }).querySelectorAll('.sum-chip')).toHaveLength(0);
+  });
+
+  it('Attaccanti con nome e Offesa, Muri con nome e Difesa', () => {
+    mount({ density: 'roomy' });
+    expect(chips(sumRow('Attaccanti')!)).toEqual(['Garchomp92', 'Zapdos86']);
+    expect(sumRow('Attaccanti')!.querySelectorAll('.sprite')).toHaveLength(2);
+    expect(chips(sumRow('Muri')!)).toEqual(['Toxapex88']);
+  });
+
+  it('Campo: sprite, nome e quello che prepara', () => {
+    mount({ density: 'roomy', summary: summaryOf({ field: [{ member: 'Garchomp', items: ['Stealth Rock'], weather: 'Pioggia' }] }) });
+    const [chip] = sumRow('Campo')!.querySelectorAll<HTMLElement>('.sum-chip');
+    expect(chip).toHaveTextContent(/^Garchomp(Lanciarocce|Stealth Rock)Pioggia$/);
+    expect(chip.querySelector('.sprite')).not.toBeNull();
+  });
+
+  it('Colpisce: i tipi non colpiti per nome', () => {
+    mount({ density: 'roomy', summary: summaryOf({ hits: { covered: 16, total: 18 }, hitsMissing: ['Normal', 'Ghost'] }) });
+    expect(chips(sumRow('Colpisce')!).join('|')).toMatch(/^(Normale|Normal)\|(Spettro|Ghost)$/);
+  });
+
+  it('Debole a: icona e nome del tipo; le gravi senza resistenze segnate "nessuno resiste"', () => {
+    mount({ density: 'roomy' });
+    const row = sumRow('Debole a')!;
+    expect(chips(row).join('|')).toMatch(/^(Terra|Ground)nessuno resiste\|(Ghiaccio|Ice)$/);
+    expect(row.querySelectorAll('.sum-chip.bad')).toHaveLength(1);
+  });
+
+  it('Ruoli: i ruoli chiave coperti (✓) e mancanti (✕) per nome', () => {
+    mount({ density: 'roomy', summary: summaryOf({ keyRoles: [{ need: 'hazards', covered: true }, { need: 'pivot', covered: false }], missingRoles: ['pivot'] }) });
+    const row = sumRow('Ruoli')!;
+    expect(row.querySelectorAll('.sum-chip.ok')).toHaveLength(1);
+    expect(row.querySelectorAll('.sum-chip.bad')).toHaveLength(1);
+    expect(row.querySelector('.sum-chip.bad')).toHaveTextContent(/Pivot/);
+  });
+
+  it('Minacce: sprite, nome e uso', () => {
+    mount({ density: 'roomy' });
+    expect(chips(sumRow('Minacce')!)).toEqual(['Great Tusk23%', 'Kyurem21%', 'Heatran17%']);
   });
 });
 
@@ -437,6 +521,23 @@ function stubLayout(sizes: Record<string, { box: number; item: number; inline?: 
   });
 }
 
+/**
+ * Layout finto delle righe a misura del Riassunto (.sum-fit, alto 20px): le prime `fits(mostrate)` voci stanno nella riga,
+ * le altre vanno a capo; il "+N" sta nella riga, o va a capo con `moreWraps` quando le voci mostrate sono già `fits`.
+ */
+function stubSumFit(fits: (shown: number) => number, moreWraps = false) {
+  vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (this: Element) {
+    const box = this.closest('.sum-fit');
+    if (!box) return rect(0, 0);
+    if (this === box) return rect(0, 20);
+    const items = [...box.querySelectorAll('[data-fit]')];
+    const room = fits(items.length);
+    if (this.hasAttribute('data-fit-more')) return rect(0, moreWraps && items.length >= room ? 40 : 20);
+    const index = items.indexOf(this);
+    return index < 0 ? rect(0, 0) : rect(0, index < room ? 20 : 40);
+  });
+}
+
 describe('Cruscotto: misure', () => {
   afterEach(() => {
     vi.restoreAllMocks();
@@ -447,7 +548,7 @@ describe('Cruscotto: misure', () => {
     const fire = stubObservers();
     const size = stubHeight();
     size.height = 700;
-    renderIt(<OverviewDashboard data={sample()} problems={[]} members={6} onView={vi.fn()} onMeta={vi.fn()} />);
+    renderIt(<OverviewDashboard data={sample()} summary={summaryOf()} members={6} onView={vi.fn()} />);
     const dash = document.querySelector('.dash')!;
     expect(dash).toHaveAttribute('data-density', 'normal');
     size.height = 300;
@@ -462,12 +563,32 @@ describe('Cruscotto: misure', () => {
     const fire = stubObservers();
     const size = stubHeight();
     size.height = 300;
-    renderIt(<OverviewDashboard data={sample()} problems={[]} members={6} onView={vi.fn()} onMeta={vi.fn()} teamCollapsed />);
+    renderIt(<OverviewDashboard data={sample()} summary={summaryOf()} members={6} onView={vi.fn()} teamCollapsed />);
     const dash = document.querySelector('.dash')!;
     expect(dash).toHaveAttribute('data-density', 'roomy');
     size.height = 1500;
     fire();
     expect(dash).toHaveAttribute('data-density', 'roomy');
+  });
+
+  it('Riassunto ricco solo col team ridotto e abbastanza alto (RICH_FROM), altrimenti compatto', () => {
+    const fire = stubObservers();
+    const size = stubHeight();
+    size.height = RICH_FROM;
+    renderIt(<OverviewDashboard data={sample()} summary={summaryOf()} members={6} onView={vi.fn()} teamCollapsed />);
+    const dash = document.querySelector('.dash')!;
+    expect(dash).toHaveClass('rich');
+    expect(dash.querySelectorAll('.sum-chip').length).toBeGreaterThan(0);
+    size.height = RICH_FROM - 1;
+    fire();
+    expect(dash).not.toHaveClass('rich');
+    expect(dash).toHaveAttribute('data-density', 'roomy');
+    expect(dash.querySelectorAll('.sum-chip')).toHaveLength(0);
+    cleanup();
+    // Team aperto: mai ricco, a ogni altezza
+    size.height = 2000;
+    renderIt(<OverviewDashboard data={sample()} summary={summaryOf()} members={6} onView={vi.fn()} />);
+    expect(document.querySelector('.dash')).not.toHaveClass('rich');
   });
 
   it('una misura a 0×0 non rimette tutte le voci: resta l\'ultimo "+N"', () => {
@@ -552,41 +673,40 @@ describe('Cruscotto: misure', () => {
     expect(within(roles).getByText('+3')).toBeInTheDocument();
   });
 
+  it('Riassunto: gli sprite che non stanno in una riga vanno nel "+N" (Attaccanti, Muri), letto per intero', () => {
+    stubSumFit(() => 2);
+    const six = ['Garchomp', 'Zapdos', 'Kingambit', 'Dragapult', 'Gholdengo', 'Great Tusk'];
+    mount({ summary: summaryOf({ attackers: six, walls: ['Toxapex', 'Corviknight', 'Skarmory'] }) });
+    const attackers = sumRow('Attaccanti')!;
+    expect(attackers).toHaveTextContent(/6\s*top/);
+    expect(attackers.querySelectorAll('.sprite')).toHaveLength(2);
+    expect(attackers.querySelector('.sum-more')).toHaveTextContent('+4');
+    expect(attackers.querySelector('.sum-more .visually-hidden')).toHaveTextContent(/^Altri 4 Pokémon$/);
+    expect(sumRow('Muri')!.querySelectorAll('.sprite')).toHaveLength(2);
+    expect(sumRow('Muri')!.querySelector('.sum-more .visually-hidden')).toHaveTextContent(/^Un altro Pokémon$/);
+  });
+
+  it('Riassunto: con il tetto (6 debolezze) il "+N" che non sta toglie ancora un\'icona', () => {
+    // Le 6 icone stanno, ma il "+N" accanto alla sesta va a capo
+    stubSumFit(shown => (shown >= 6 ? 6 : 99), true);
+    const types = ['Ground', 'Ice', 'Fire', 'Water', 'Rock', 'Fairy', 'Dark', 'Bug'];
+    mount({ summary: summaryOf({ weak: types.map(type => ({ type, serious: false, resist: 1 })) }) });
+    const weak = sumRow('Debole a')!;
+    expect(weak.querySelectorAll('.type-icons')).toHaveLength(5);
+    expect(weak.querySelector('.sum-more')).toHaveTextContent('+3');
+  });
+
+  it('Campo: il "+N" al singolare per un solo piazzatore nascosto', () => {
+    stubSumFit(() => 1);
+    mount({ summary: summaryOf({ field: [{ member: 'Garchomp', items: ['Stealth Rock'] }, { member: 'Ting-Lu', items: ['Spikes'] }] }) });
+    expect(sumRow('Campo')!.querySelector('.sum-more .visually-hidden')).toHaveTextContent(/^Un altro che prepara il campo$/);
+  });
+
   it('Ruoli: le fasce non si stirano (CSS): compatte in alto, alte quanto il contenuto', () => {
     const css = readFileSync(resolve(__dirname, '../../src/styles/analysis.css'), 'utf8');
     const rule = (selector: string) => css.split(/\r?\n/).find(line => line.startsWith(selector + ' {')) ?? '';
     expect(rule('.dash-role-band')).toMatch(/flex: none/);
     expect(rule('.dash-role-bands, .dash-role-bands.dash-fit')).toMatch(/flex: 0 1 auto/);
-  });
-
-  it('Minacce: quelle che non stanno nel "+X", che apre la scheda Meta', async () => {
-    const user = userEvent.setup();
-    stubLayout({ 'dash-threats': { box: 150, item: 50 } });
-    const pods = ['Great Tusk', 'Kyurem', 'Heatran', 'Gholdengo', 'Dragonite'].map((species, i) => ({ species, usage: 0.3 - i / 20 }));
-    const { onMeta } = mount({ data: sample({ threats: { pods, total: 20, available: true, metaOff: false } }) });
-    const threats = screen.getByRole('region', { name: 'Minacce non gestite' });
-    expect(threats.querySelectorAll('.dash-pod:not(.more)')).toHaveLength(2);
-    const more = within(threats).getByRole('button', { name: /3/ });
-    expect(more).toHaveTextContent('+3');
-    await user.click(more);
-    expect(onMeta).toHaveBeenCalledTimes(1);
-  });
-
-  it('Cosa fare: mai meno di 2 problemi, e "Tutti i 12 nel Coaching" resta', () => {
-    stubLayout({ 'dash-todo': { box: 30, item: 40 } });
-    mount({ density: 'tight', problems: Array.from({ length: 12 }, (_, i) => problem(i)) });
-    const todo = screen.getByRole('region', { name: 'Cosa fare' });
-    expect(todo.querySelectorAll('.dash-problems li')).toHaveLength(2);
-    expect(within(todo).getByRole('button', { name: /^Tutti i 12 nel Coaching/ })).toBeVisible();
-  });
-
-  it('Cosa fare ampio: i dettagli solo finché ci stanno, mai a spese di un gruppo', () => {
-    stubLayout({ 'dash-todo': { box: 130, item: 30 } });
-    mount({ density: 'roomy', problems: [weak('Fire'), weak('Ground', 'serious'), weak('Ghost'), problem(2)] });
-    const todo = screen.getByRole('region', { name: 'Cosa fare' });
-    expect(todo.querySelectorAll('.dash-problems > li')).toHaveLength(2);
-    // Gruppo (30) + 2 dettagli (90) + riga singola (120): il terzo dettaglio non ci sta
-    expect(todo.querySelectorAll('.dash-sub li')).toHaveLength(2);
   });
 
   it('Ruoli: se il "+N" sta sulla stessa riga non si toglie nessun ruolo', () => {
@@ -597,9 +717,4 @@ describe('Cruscotto: misure', () => {
     expect(essential[2]).toHaveTextContent('+2');
   });
 
-  it('Cosa fare: quanti ne stanno, se sono più di 2', () => {
-    stubLayout({ 'dash-todo': { box: 130, item: 40 } });
-    mount({ problems: Array.from({ length: 12 }, (_, i) => problem(i)) });
-    expect(screen.getByRole('region', { name: 'Cosa fare' }).querySelectorAll('.dash-problems li')).toHaveLength(3);
-  });
 });

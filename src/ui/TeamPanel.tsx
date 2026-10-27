@@ -23,6 +23,7 @@ import { speedTier, type SpeedTier } from '../engine/speed';
 import { ItemIcon } from './ItemIcon';
 import { AlertMark, type Alert } from './AlertMark';
 import { Sprite, TypeChip, typeColor } from './Sprite';
+import { gainText } from './CoachingView';
 import { Icon } from './icons';
 import { SmogonLink } from './SmogonLink';
 import { illegalParts } from '../engine/learnsets';
@@ -52,7 +53,13 @@ interface Props {
   onBulk?: (kind: 'presets' | 'fill' | 'clear', team: TeamSet[]) => void;
   /** Clic su uno slot vuoto: porta alla ricerca dei Pokémon. */
   onAddClick?: () => void;
+  /** Proposta di mossa del coach: a ogni nonce nuovo apre l'editor del membro e la mostra con Applica / Annulla. */
+  proposal?: MoveProposal | null;
+  /** Proposta chiusa: applicata (true) o annullata (false). */
+  onProposalDone?: (applied: boolean) => void;
 }
+
+export interface MoveProposal { index: number; slot: number; from: string; to: string; gain: number; nonce: number }
 
 /** Tutti i problemi di legalità del membro (possono essere più d'uno). */
 function slotProblems(set: TeamSet, format: Format, lang: Lang): string[] {
@@ -111,8 +118,11 @@ const IdleSetEditor = memo(
     && a.speed === b.speed && a.genLimit === b.genLimit && a.pokedex === b.pokedex && a.teraBannedIn === b.teraBannedIn,
 );
 
-function TeamSlot({ index, set, subRoles, data, format, warning: megaWarning, open, dragging, dropTarget, onToggle, onStep, onMove, onDrag, onPaste, onBest, onIgnoreWarning, onChange, onRemove, onReplace }: {
+function TeamSlot({ index, set, subRoles, proposal, onProposalDone, data, format, warning: megaWarning, open, dragging, dropTarget, onToggle, onStep, onMove, onDrag, onPaste, onBest, onIgnoreWarning, onChange, onRemove, onReplace }: {
   index: number;
+  /** Proposta di mossa per questo membro (si mostra solo con il suo editor aperto). */
+  proposal?: MoveProposal | null;
+  onProposalDone?: (applied: boolean) => void;
   /** Sotto-ruoli misurati del membro nel team (gli stessi del voto, già in cache): la carta li mostra. */
   subRoles?: SubRoleValues;
   dragging: boolean;
@@ -140,6 +150,9 @@ function TeamSlot({ index, set, subRoles, data, format, warning: megaWarning, op
   const lang = useLang();
   const tr = useT();
   const card = useRef<HTMLElement>(null);
+  // Una proposta del coach apre l'editor: il fuoco va su Applica (l'azione che si cerca)
+  const applyRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => { if (open && proposal) applyRef.current?.focus(); }, [open, proposal?.nonce]); // eslint-disable-line react-hooks/exhaustive-deps
   // Calcoli del membro (il confronto di Velocità prova 40 rivali): solo quando cambia il set
   // Preset resi legali fino al limite di generazione: menu e Preset migliore propongono lo stesso set
   const presets = useMemo<Preset[]>(() => presetsForSet(data, set, format.genLimit), [data, set, format.genLimit]);
@@ -362,14 +375,24 @@ function TeamSlot({ index, set, subRoles, data, format, warning: megaWarning, op
             <Icon name="swap" /> <span className="btn-label">{tr('team.replaceButton')}</span>
           </button>
         }
-        notice={open && problems.length > 0 && (
+        proposedSlot={open && proposal ? proposal.slot : undefined}
+        notice={<>{open && proposal && (
+          <div className="move-proposal" role="note">
+            <Icon name="spark" />
+            <span>{proposal.from
+              ? tr('team.moveProposal', { to: gameName('move', proposal.to, lang), from: gameName('move', proposal.from, lang), n: gainText(proposal.gain) })
+              : tr('team.moveProposalEmpty', { to: gameName('move', proposal.to, lang), n: gainText(proposal.gain) })}</span>
+            <button type="button" className="apply" ref={applyRef} onClick={() => onProposalDone?.(true)}>{tr('team.moveProposalApply')}</button>
+            <button type="button" onClick={() => onProposalDone?.(false)}>{tr('team.moveProposalCancel')}</button>
+          </div>
+        )}{open && problems.length > 0 && (
           // I problemi di legalità detti per esteso, con la via d'uscita
           <div className="member-problems" role="note">
             <Icon name="warning" />
             <span>{problems.join(' · ')}</span>
             <button type="button" onClick={stable.onReplace}>{tr('team.findReplacement')}</button>
           </div>
-        )}
+        )}</>}
         smogonAction={<SmogonLink species={name} format={format} presets={presets} iconOnly />}
         ioAction={
           <span className="io-anchor" ref={ioRef}>
@@ -421,7 +444,7 @@ function EmptySlot({ onClick }: { onClick: () => void }) {
   );
 }
 
-export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRemove, onAllowMultipleMegas, onOpenChange, closeSignal, collapsed = false, onPaste, onBulk, onAddClick }: Props) {
+export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRemove, onAllowMultipleMegas, onOpenChange, closeSignal, collapsed = false, onPaste, onBulk, onAddClick, proposal, onProposalDone }: Props) {
   const lang = useLang();
   // Sotto-ruoli misurati di ogni membro: la carta dice quello che dice il voto (stessa cache dell'area Ruoli)
   const subRoles = useMemo(() => team.map(set => measuredSubRoles(set, team, data)), [team, data]);
@@ -437,6 +460,14 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
     lastClose.current = closeSignal;
     setOpenIndex(null);
   }, [closeSignal]);
+  // Proposta nuova: apre il membro (dichiarato dopo il segnale di chiusura, così vince l'apertura)
+  const lastNonce = useRef(proposal?.nonce);
+  useEffect(() => {
+    if (!proposal || proposal.nonce === lastNonce.current) return;
+    lastNonce.current = proposal.nonce;
+    animated(() => setOpenIndex(proposal.index));
+    // Conta solo il nonce: la proposta cambia a ogni modifica, ma si apre una volta per nonce (lastNonce)
+  }, [proposal?.nonce]); // eslint-disable-line react-hooks/exhaustive-deps
   const slotsRef = useRef<HTMLDivElement>(null);
   const focusCard = (i: number) => requestAnimationFrame(() => slotsRef.current?.querySelectorAll<HTMLElement>('.slot > summary')[i]?.focus());
   const step = (from: number, delta: number) => {
@@ -518,6 +549,8 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
             key={keys[i]}
             index={i}
             set={set}
+            proposal={proposal?.index === i ? proposal : null}
+            onProposalDone={onProposalDone}
             subRoles={subRoles[i]}
             dragging={drag?.from === i}
             dropTarget={drag !== null && drag.over === i && drag.from !== i}

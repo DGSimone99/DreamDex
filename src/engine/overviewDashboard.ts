@@ -12,7 +12,8 @@ import type { SpeedCondition } from './speedArea';
 import { t, type Lang } from '../i18n';
 
 export type CellState = 'ok' | 'minor' | 'bad';
-export interface TypeCell { type: string; defense: CellState; offense: CellState; defenseNote: string; offenseNote: string }
+/** resist: quanti membri resistono al tipo (o ne sono immuni). */
+export interface TypeCell { type: string; defense: CellState; offense: CellState; defenseNote: string; offenseNote: string; resist: number }
 export interface RoleChip { need: LevelKey; level: 'essential' | 'important' | 'minor'; covered: boolean; owners: string[] }
 export interface SpeedLane { species: string; speed: number; share: number; above: boolean }
 export interface ThreatPod { species: string; usage: number }
@@ -40,6 +41,7 @@ export function dashboardData(team: TeamSet[], analysis: TeamAnalysis, rating: T
       offense: hitters ? 'ok' : 'bad',
       defenseNote: `${t(lang, row.weak === 1 ? 'dash.weak1' : 'dash.weakN', { n: row.weak })}, ${t(lang, row.resist === 1 ? 'dash.resist1' : 'dash.resistN', { n: row.resist })}`,
       offenseNote: hitters ? t(lang, 'dash.offenseHit', { n: hitters }) : t(lang, 'dash.offenseNone'),
+      resist: row.resist,
     };
   });
 

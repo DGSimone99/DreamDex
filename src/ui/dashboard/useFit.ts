@@ -34,8 +34,10 @@ export function useFit<T extends HTMLElement>(key: string, count: number, { more
         if (bottomIn(item, top) > limit + 0.5) break;
         n++;
       }
+      // Un "+N" già presente (tetto fisso, es. 6 debolezze) che non sta: si controlla anche se le voci stanno tutte
+      const moreOver = more && [...box.querySelectorAll('[data-fit-more]')].some(item => bottomIn(item, top) > limit + 0.5);
       const cut = n < count;
-      setState(s => (s.round === round ? { ...s, fit: cut ? Math.max(min, n) : n, check: cut && more } : s));
+      setState(s => (s.round === round ? { ...s, fit: cut ? Math.max(min, n) : n, check: (cut || moreOver) && more } : s));
       return;
     }
     // Controllo: se una voce mostrata o il "+N" esce, una voce in meno
@@ -70,26 +72,4 @@ export function useFit<T extends HTMLElement>(key: string, count: number, { more
 
   // measured: la misura è finita (si può aggiungere altro, come i dettagli, solo dopo)
   return { ref, box, shown: fit ?? count, measured: fit !== null && !check, round };
-}
-
-/**
- * Quante righe in più (`data-fit-sub`, es. i dettagli sotto un gruppo) si possono mostrare: si parte da `max` e se
- * qualcosa esce dal contenitore se ne toglie una alla volta. Si riparte da `max` quando cambia `key`.
- */
-export function useShrink(box: HTMLElement | null, key: string, max: number) {
-  const [state, setState] = useState({ key, n: max });
-  if (state.key !== key) setState({ key, n: max });
-  const n = state.key === key ? state.n : max;
-
-  // Senza dipendenze di proposito: si ricontrolla dopo ogni render (il contenuto cambia senza che cambi il contenitore);
-  // si ferma da sé quando niente esce o non resta niente da togliere
-  useLayoutEffect(() => {
-    if (!box || n <= 0) return;
-    const { top, height: limit } = box.getBoundingClientRect();
-    if (!limit) return;
-    const over = [...box.querySelectorAll('[data-fit], [data-fit-sub]')].some(item => bottomIn(item, top) > limit + 0.5);
-    if (over) setState(s => (s.key === key ? { ...s, n: s.n - 1 } : s));
-  });
-
-  return n;
 }
