@@ -522,9 +522,11 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .card .card-types { position: absolute; top: 22px; right: 8px; flex-direction: column; gap: 4px; }
 .card .card-types img { width: 20px; height: 20px; box-shadow: none; }
 .card .card-types img + img { margin: 0; }
-/* Chi esce (Migliora · Tutti): tondino sotto le icone dei tipi */
-.card .out { position: absolute; top: 70px; right: 7px; z-index: 2; width: 24px; height: 24px; border-radius: 50%; overflow: hidden; background: var(--ground); border: 1px solid var(--line); }
-.card .out .mon-icon { margin: -6px 0 0 -9px; }
+/* Chi esce (Migliora · Tutti): pillola in basso a destra della zona immagine, sopra la targhetta: ⇄ e l'icona intera */
+.card .out { position: absolute; right: 6px; bottom: calc(var(--plate-h) + 6px); z-index: 2; display: flex; align-items: center; gap: 1px;
+  height: 22px; padding: 0 2px 0 7px; border-radius: 11px; background: color-mix(in srgb, var(--ground) 82%, transparent); border: 1px solid var(--line); }
+.card .out .icon { width: 12px; height: 12px; color: var(--muted); }
+.card .out .mon-icon { margin: -5px -4px -3px; }
 /* Targhetta in basso a tutta larghezza: nome e motivi. Il nome sta allo stesso punto in ogni carta: la targhetta è alta
    quanto i motivi che entrano (--reasons), anche se la carta ne ha meno; lo spazio avanzato resta vuoto in fondo */
 .card .who { position: relative; flex: none; min-width: 0; display: flex; flex-direction: column; justify-content: flex-start; gap: 2px;
@@ -632,3 +634,4 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 /* Chi esce (Migliora · Tutti): tondino in alto sul tondo dello sprite */
 .pill .out { position: absolute; left: calc(var(--rh) * -0.32 - 4px); top: -4px; z-index: 2; width: 24px; height: 24px; border-radius: 50%; overflow: hidden; background: var(--ground); border: 1px solid var(--line); }
 .pill .out .mon-icon { margin: -6px 0 0 -9px; }
+.pill .out .icon { display: none; }

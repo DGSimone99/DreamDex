@@ -203,6 +203,7 @@ export function OutMark({ member }: { member: string }) {
   const tr = useT();
   return (
     <span className="out" title={tr('suggest.outFor', { member })}>
+      <Icon name="swap" />
       <PokemonIcon name={member} />
       <span className="visually-hidden">{tr('suggest.outFor', { member })}</span>
     </span>
