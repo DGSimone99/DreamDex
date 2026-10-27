@@ -459,7 +459,7 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .card-sprite .sprite-ani { position: absolute; left: 50%; bottom: calc(var(--sprite-w) / 24); width: auto; max-width: none; height: calc(var(--ani-h, 96) / 96 * var(--sprite-w)); image-rendering: pixelated; transform: translateX(-50%); pointer-events: none; }
 /* Carta "sollevata": sotto il mouse sale di 4px con un'ombra (drop-shadow sul li, che non è ritagliato, così segue l'angolo
    tagliato), dietro il Pokémon si accende una luce nel colore del tipo, il bordo del tipo si ispessisce da 3 a 5px e lo
-   sprite esce dalla carta: cresce e sale finché la testa sfonda il bordo alto. Le vicine non si muovono.
+   sprite esce dalla carta: sale di 10px sopra la cornice (alle specie alte la testa sfonda il bordo alto). Le vicine non si muovono.
    La selezionata resta sollevata e con la luce accesa anche a riposo, con la sua cornice */
 .card { transition: transform 0.18s ease-out, filter 0.18s ease-out; }
 .card:hover { z-index: 5; }
@@ -481,7 +481,7 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .card-sprite.popped { z-index: 1; transform-origin: 50% 100%; animation: sprite-pop 0.22s cubic-bezier(0.3, 1.4, 0.5, 1) both; }
 @keyframes sprite-pop {
   from { transform: translateX(-50%); }
-  to { transform: translateX(-50%) translateY(-10px) scale(1.15); }
+  to { transform: translateX(-50%) translateY(-10px); }
 }
 /* Icona del box: sotto il mouse saltella come il membro aperto del team compresso (sul riquadro: l'icona ha già la sua scala) */
 .card:hover .card-sprite .box-icon { animation: box-hop 0.7s ease-in-out infinite; }
