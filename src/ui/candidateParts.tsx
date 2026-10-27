@@ -12,6 +12,7 @@ import type { TeamSet } from '../engine/sets';
 import { isUserBanned, isUserFavorite, type EffectiveLists } from '../engine/lists';
 import { formatLabel } from '../engine/formats';
 import { tierLabel } from '../engine/filters';
+import { battleName } from '../engine/dex';
 import { PokemonIcon } from './PokemonName';
 import { AlertMark } from './AlertMark';
 import { Typed } from './TypeText';
@@ -24,6 +25,11 @@ import { useLang, useT } from '../i18n/react';
  * Nelle raccomandazioni libere anche il membro che sostituirebbe e gli altri possibili.
  */
 export type Item = (Suggestion | Replacement) & { teamGain?: TeamGain; replaces?: number; alternatives?: SwapOption[] };
+
+/** Sprite "Icona box": l'icona della forma da battaglia (Mega con la pietra), più grande col team nascosto. */
+export function BoxIcon({ set, big = false }: { set: TeamSet; big?: boolean }) {
+  return <span className={`box-icon${big ? ' big' : ''}`}><PokemonIcon name={battleName(set)} /></span>;
+}
 
 /** I motivi sotto il nome: bonus (col "+" verde) o, senza bonus, una frase sola. */
 export interface ReasonSummary { pros: boolean; texts: string[] }

@@ -18,8 +18,9 @@ describe('cardsLayout', () => {
     // 380: con 104 entrano 3 righe (368/112), con 120 solo 2 (368/128)
     expect(cardsLayout(460, 380, 380).rows).toBe(3);
   });
-  it('confine 459/460: da 460 tessera minima 120', () => {
-    expect(cardsLayout(460, 459, 459).rows).toBe(3);
+  it('confine 460: sotto tessera minima 104, da 460 tessera minima 120', () => {
+    // 395 (il valore più alto sotto 460 dove le due minime danno righe diverse): con 104 3 righe (383/112), con 120 solo 2 (383/128)
+    expect(cardsLayout(460, 395, 395).rows).toBe(3);
     // 460: con 104 sarebbero 4 righe (448/112), con 120 sono 3
     expect(cardsLayout(460, 460, 460).rows).toBe(3);
   });

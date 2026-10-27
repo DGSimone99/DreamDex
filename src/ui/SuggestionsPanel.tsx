@@ -1,4 +1,4 @@
-import { useDeferredValue, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import type { EngineData } from '../engine/data';
 import type { Format } from '../engine/format';
 import type { Archetype } from '../engine/archetype';
@@ -24,14 +24,12 @@ import { Icon } from './icons';
 import { SuggestionDetail } from './SuggestionDetail';
 import { CandidateCard } from './CandidateCard';
 import { CandidatePill } from './CandidatePill';
-import { BanMark, reasonsOf, type CandidateProps, type Item } from './candidateParts';
+import { BanMark, BoxIcon, reasonsOf, type CandidateProps, type Item } from './candidateParts';
 import type { ListSprite, ListStyle } from './theme';
 import { useLang, useT } from '../i18n/react';
-import { PAGE, usePerPage } from './usePerPage';
+import { usePerPage } from './usePerPage';
 
 /** Candidati in tutto; il voto del team si calcola sui primi POOL per punteggio. Per pagina: misurato (PAGE senza misura). */
-export { PAGE };
-export { reasonsOf, signed } from './candidateParts';
 export const MAX = 50;
 const POOL = 100;
 
@@ -213,6 +211,17 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
     }
     setFocusing(null);
   }, [focusing, items, stale, filtering, perPage]);
+  // Cambia il numero per pagina (prima misura, Carte↔Menu, finestra): si resta sulla pagina del candidato
+  // aperto, o della riga scelta con le frecce, o del primo che si vedeva
+  const shownPerPage = useRef(perPage);
+  useLayoutEffect(() => {
+    const before = shownPerPage.current;
+    if (before === perPage) return;
+    shownPerPage.current = perPage;
+    const open = selectedName ? items.findIndex(item => item.species === selectedName) : -1;
+    const anchor = open >= 0 ? open : cursor ?? Math.min(pageState * before, Math.max(0, items.length - 1));
+    setPage(Math.floor(anchor / perPage));
+  }, [perPage]); // eslint-disable-line react-hooks/exhaustive-deps
   const pages = Math.ceil(items.length / perPage);
   // Il numero per pagina può cambiare (finestra): la pagina resta fra quelle che ci sono
   const page = Math.max(0, Math.min(pageState, pages - 1));
@@ -410,7 +419,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
               item,
               reasons: reasonsOf(item, reasons, usage, format, lang),
               sprite: listSprite === 'box'
-                ? <span className={`box-icon${teamCollapsed ? ' big' : ''}`}><PokemonIcon name={battleName(item.set)} /></span>
+                ? <BoxIcon set={item.set} big={teamCollapsed} />
                 : <Sprite species={item.species} item={item.set.item} size={96} />,
               usage,
               out: item.replaces !== undefined ? memberName(item.replaces) : undefined,

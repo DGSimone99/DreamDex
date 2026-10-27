@@ -15,6 +15,7 @@ export function CandidatePill(props: CandidateProps) {
   const { rank, item, reasons, sprite, usage, out, format, lists, selected, onSelect } = props;
   const lang = useLang();
   const types = getSpecies(item.species)?.types ?? [];
+  const typeNames = types.map(type => typeName(type, lang)).join(' / ');
   const className = ['pill', isLead(rank, item) && 'first', stateClasses(props)].filter(Boolean).join(' ');
   return (
     // Sfumatura del tondo nel colore del tipo primario
@@ -30,7 +31,9 @@ export function CandidatePill(props: CandidateProps) {
       {/* A destra: i segni prima delle icone dei tipi, poi il voto */}
       <span className="pill-end">
         <CandidateMarks item={item} format={format} lists={lists} />
-        <TypeIcons types={types} className="pill-types" title={types.map(type => typeName(type, lang)).join(' / ')} />
+        <TypeIcons types={types} className="pill-types" title={typeNames} />
+        {/* Le icone sono decorative: i tipi agli screen reader come testo */}
+        <span className="visually-hidden">{typeNames}</span>
         <ResultCell item={item} usage={usage} className="score" />
       </span>
       <QuickButton {...props} />

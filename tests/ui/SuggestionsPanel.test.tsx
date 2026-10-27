@@ -1,8 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { render, screen, within } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/App';
 import { fixtureData } from '../fixtures/data';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
@@ -188,7 +188,7 @@ describe('SuggestionsPanel', () => {
   });
 
   it('un cambio senza bonus: "nessuna differenza", mai un malus come motivo', async () => {
-    const { reasonsOf } = await import('../../src/ui/SuggestionsPanel');
+    const { reasonsOf } = await import('../../src/ui/candidateParts');
     const none = { roles: [], covers: [], resists: [] };
     const item = {
       species: 'Pelipper', set: { species: 'Pelipper', moves: [] }, score: 0, components: {}, tags: [], penalty: 0, facts: {},
@@ -368,6 +368,47 @@ describe('riga della lista', () => {
     expect(rowNames()).toContain(eleventh);
   });
 
+  it('il numero per pagina cambia dopo il focus: il candidato resta scelto e la sua pagina resta quella aperta', async () => {
+    const { SuggestionsPanel } = await import('../../src/ui/SuggestionsPanel');
+    const { renderIt } = await import('../helpers/italian');
+    const { fixtureStats, tusk } = await import('../fixtures/data');
+    const base = fixtureStats.pokemon['Corviknight'];
+    const extra = ['Skarmory', 'Heatran', 'Clefable', 'Garchomp', 'Ferrothorn', 'Tyranitar', 'Slowbro', 'Zapdos', 'Hippowdon', 'Blissey', 'Excadrill', 'Weavile'];
+    const pokemon = { ...fixtureStats.pokemon, ...Object.fromEntries(extra.map((n, i) => [n, { ...base, usage: 0.05 - i * 0.002, moves: {}, abilities: {}, items: {}, teammates: {}, checks: {} }])) };
+    const data = { stats: { ...fixtureStats, pokemon }, sets: {} };
+    // ResizeObserver finto e misure della lista decise dal test (0×0: scheda nascosta, si resta a 10 per pagina)
+    const callbacks: (() => void)[] = [];
+    vi.stubGlobal('ResizeObserver', class {
+      constructor(cb: () => void) { callbacks.push(cb); }
+      observe() {}
+      disconnect() {}
+    });
+    const size = { width: 0, height: 0 };
+    const measured = (key: 'width' | 'height') => function (this: HTMLElement) { return this.classList.contains('suggestions') ? size[key] : 0; };
+    const width = vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(measured('width'));
+    const height = vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockImplementation(measured('height'));
+    try {
+      const props = { team: [tusk], format: DEFAULT_FORMAT, data, replaceIndex: null, onAdd: () => {}, onReplaceWith: () => {}, onCancelReplace: () => {}, listStyle: 'cards' as const };
+      const { rerender } = renderIt(<SuggestionsPanel {...props} />);
+      await screen.findByRole('navigation', { name: 'Pagine dei suggerimenti' });
+      const eighth = rowNames()[7];
+      rerender(<SuggestionsPanel {...props} focus={{ species: eighth, mode: 'add', nonce: 1 }} />);
+      expect(await screen.findByRole('complementary', { name: `Dettaglio di ${eighth}` }, { timeout: 3000 })).toBeInTheDocument();
+      // Prima misura vera: 2 colonne × 3 righe = 6 per pagina, l'ottavo passa a pagina 2
+      size.width = 300;
+      size.height = 500;
+      act(() => { for (const cb of [...callbacks]) cb(); });
+      expect(list().children).toHaveLength(6);
+      expect(screen.getByRole('complementary', { name: `Dettaglio di ${eighth}` })).toBeInTheDocument();
+      expect(within(screen.getByRole('navigation', { name: 'Pagine dei suggerimenti' })).getByRole('button', { name: 'Pagina 2' })).toHaveAttribute('aria-current', 'page');
+      expect(rowNames()).toContain(eighth);
+    } finally {
+      width.mockRestore();
+      height.mockRestore();
+      vi.unstubAllGlobals();
+    }
+  });
+
   it('Aggiungi: niente "chi esce"', async () => {
     await setup('Great Tusk');
     expect(list().querySelector('.out')).toBeNull();
@@ -527,6 +568,37 @@ describe('sprite Icona box', () => {
         expect(tile.querySelector('.box-icon .mon-icon')).not.toBeNull();
         expect(tile.querySelector('img.sprite')).toBeNull();
       }
+      unmount();
+    }
+  });
+
+  it('Icona box: la forma da battaglia (Mega con la pietra), non la specie base', async () => {
+    const { BoxIcon } = await import('../../src/ui/candidateParts');
+    const { Icons } = await import('@pkmn/img');
+    // jsdom scarta la posizione nel foglio delle icone: si guarda quale icona viene chiesta
+    const getPokemon = vi.spyOn(Icons, 'getPokemon');
+    try {
+      render(<BoxIcon set={{ species: 'Metagross', item: 'Metagrossite', moves: [] } as never} />);
+      expect(getPokemon.mock.calls.map(([name]) => name)).toEqual(['Metagross-Mega']);
+    } finally {
+      getPokemon.mockRestore();
+    }
+  });
+});
+
+describe('tipi del candidato per gli screen reader', () => {
+  it('Carte e Menu: i nomi dei tipi come testo nascosto, le icone restano decorative', async () => {
+    const { SuggestionsPanel } = await import('../../src/ui/SuggestionsPanel');
+    const { renderIt } = await import('../helpers/italian');
+    const { tusk } = await import('../fixtures/data');
+    const { typeName } = await import('../../src/i18n/game');
+    for (const listStyle of ['cards', 'menu'] as const) {
+      const { unmount } = renderIt(<SuggestionsPanel team={[tusk] as never} format={DEFAULT_FORMAT} data={fixtureData} replaceIndex={null}
+        onAdd={() => {}} onReplaceWith={() => {}} onCancelReplace={() => {}} listStyle={listStyle} />);
+      const corviknight = [...list().children].find(li => li.querySelector('.name-line strong')!.textContent!.endsWith('Corviknight'))!;
+      expect(corviknight.querySelector('.type-icons')).toHaveAttribute('aria-hidden', 'true');
+      const names = ['Flying', 'Steel'].map(type => typeName(type, 'it')).join(' / ');
+      expect(corviknight.querySelector('.type-icons + .visually-hidden')?.textContent).toBe(names);
       unmount();
     }
   });

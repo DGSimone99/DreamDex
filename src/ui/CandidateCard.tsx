@@ -14,13 +14,16 @@ export function CandidateCard(props: CandidateProps) {
   const { rank, item, reasons, sprite, usage, out, format, lists, selected, onSelect } = props;
   const lang = useLang();
   const types = getSpecies(item.species)?.types ?? [];
+  const typeNames = types.map(type => typeName(type, lang)).join(' / ');
   const className = ['card', isLead(rank, item) && 'first', stateClasses(props)].filter(Boolean).join(' ');
   return (
     // Bordo inferiore nel colore del tipo primario
     <li className={className} style={{ '--t1': typeColor(types[0] ?? '') } as CSSProperties} {...candidateHandlers(props)}>
       <span className="card-sprite" aria-hidden="true">{sprite}</span>
       <ResultCell item={item} usage={usage} className="tag" />
-      <TypeIcons types={types} className="card-types" title={types.map(type => typeName(type, lang)).join(' / ')} />
+      <TypeIcons types={types} className="card-types" title={typeNames} />
+      {/* Le icone sono decorative: i tipi agli screen reader come testo */}
+      <span className="visually-hidden">{typeNames}</span>
       {out && <OutMark member={out} />}
       <span className="who">
         <span className="name-line">

@@ -89,6 +89,7 @@
 .settings-palette legend { margin-bottom: 8px; font: 600 11px/1 var(--ui); letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); }
 /* Le scelte a due voci (stile e sprite della lista) affiancate: senza campioni, il testo parte allineato */
 .settings-pair { grid-template-columns: 1fr 1fr; }
+.settings-pair legend { grid-column: 1 / -1; }
 .palette-choice { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--line); background: var(--panel); cursor: pointer; }
 .palette-choice:has(input:checked) { border-color: var(--accent); background: var(--accent-wash); }
 .palette-choice .swatches { display: flex; }
