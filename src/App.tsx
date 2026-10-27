@@ -186,15 +186,34 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
     if (index < 0) return;
     setMoveProposal({ index, slot: fix.slot, from: fix.from, to: fix.to, gain: fix.gain, nonce: ++proposalNonce.current });
   };
-  const finishProposal = (applied: boolean) => {
-    const proposal = moveProposal;
-    const set = proposal && team[proposal.index];
-    if (!applied || !proposal || !set || (set.moves[proposal.slot] ?? '') !== proposal.from) return setMoveProposal(null);
+  // Una mossa al posto di un'altra nel membro `index`, annullabile; niente se lo slot non ha più la mossa di partenza
+  const applyMove = ({ index, slot, from, to }: { index: number; slot: number; from: string; to: string }) => {
+    const set = team[index];
+    if (!set || (set.moves[slot] ?? '') !== from) return false;
     const moves = [0, 1, 2, 3].map(i => set.moves[i] ?? '');
-    moves[proposal.slot] = proposal.to;
-    const after = changeTeam(team.map((s, i) => (i === proposal.index ? { ...s, moves } : s)));
+    moves[slot] = to;
+    const after = changeTeam(team.map((s, i) => (i === index ? { ...s, moves } : s)));
     const name = (move: string) => (move ? gameName('move', move, lang) : '—');
-    remember({ kind: 'move', from: battleName(set), to: `${name(proposal.from)} → ${name(proposal.to)}` }, after);
+    remember({ kind: 'move', from: battleName(set), to: `${name(from)} → ${name(to)}` }, after);
+    return true;
+  };
+  const finishProposal = (applied: boolean) => {
+    if (!applied || !moveProposal || !applyMove(moveProposal)) setMoveProposal(null);
+  };
+  // Clic su una proposta del Coaching: si applica subito, come Applica nell'editor o una sostituzione dalla scheda Pokémon
+  const applyMoveFix = (fix: MoveFix) => {
+    const index = proposalIndex({ member: fix.member, slot: fix.slot, from: fix.from });
+    if (index >= 0) applyMove({ index, slot: fix.slot, from: fix.from, to: fix.to });
+  };
+  const applyFix = (fix: CoachFix) => {
+    if (fix.kind === 'swap') {
+      // Il membro si cerca per nome: se non c'è più (consigli di un team precedente), niente
+      const index = team.findIndex(set => battleName(set) === fix.member);
+      if (index >= 0) replaceAt(index, fix.set);
+    } else if (team.length < 6) {
+      const after = changeTeam([...team, fix.set]);
+      remember({ kind: 'add', from: battleName(fix.set) }, after);
+    }
   };
   const analysis = useMemo(() => analyzeTeam(team, rated), [team, rated]);
   const rating = useMemo(() => rateTeam(team, rated, lang), [team, rated, lang]);
@@ -329,7 +348,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
         </TabPanel>
         <TabPanel id="analysis" active={shownTab}>
           <AnalysisPanel team={team} analysis={analysis} data={data} rating={rating} coaching={coaching} advice={advice} view={analysisView} onView={view => { setAnalysisView(view); setAnalysisMemberName(null); }}
-            onFix={openFix} onMoveFix={openMoveFix} member={analysisMember} onMember={i => setAnalysisMemberName(i === null ? null : battleName(team[i]))} onAdd={startAdd}
+            onFix={openFix} onMoveFix={openMoveFix} onApplyFix={applyFix} onApplyMove={applyMoveFix} member={analysisMember} onMember={i => setAnalysisMemberName(i === null ? null : battleName(team[i]))} onAdd={startAdd}
             onMeta={() => openTab('meta')} teamCollapsed={collapsed} />
         </TabPanel>
         <TabPanel id="meta" active={shownTab}>

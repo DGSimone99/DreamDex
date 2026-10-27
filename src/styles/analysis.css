@@ -406,17 +406,27 @@ button.member-card:hover { border-color: var(--accent); }
 .coach-step-subject .type-icons { display: inline-flex; margin-right: 4px; vertical-align: -2px; }
 .coach-step-subject .type-icons img { width: 16px; height: 16px; }
 .coach-step-subject.is-mon .mon-icon { margin: -10px -4px -8px -6px; vertical-align: middle; }
-.coach-prop { position: relative; display: grid; gap: 1px; min-width: 0; }
+.coach-prop { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 4px; min-width: 0; }
 /* La seconda proposta è un'alternativa: "oppure" sulla linea che le separa */
 .coach-prop + .coach-prop { margin-top: 3px; padding-top: 6px; border-top: 1px dashed var(--line); }
 .coach-prop[data-or]::before { content: attr(data-or); position: absolute; top: -7px; right: 0; padding: 0 0 0 6px; font: 600 11px/1 var(--ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--faint); background: color-mix(in srgb, var(--raised) 60%, var(--panel)); }
-/* Proposta: sprite sul piedistallo, "Al posto di X" piccolo, il nome grande in cyan (si apre) col voto in più */
-.coach-fix { display: grid; grid-template-columns: 44px minmax(0, 1fr); align-items: center; gap: 8px; width: 100%; min-width: 0; padding: 0 6px 0 0; text-align: left; color: var(--text); background: none; border-color: transparent; font: inherit; }
+/*
+ * Proposta: tutta l'area è il pulsante che applica il cambio (icona del membro ⇄, sprite sul piedistallo, il nome grande
+ * in cyan col voto in più, "risolve anche"); accanto, fuori dal pulsante, l'icona quieta delle alternative
+ */
+.coach-fix { display: flex; align-items: center; gap: 8px; width: 100%; min-width: 0; padding: 0 6px 0 0; text-align: left; color: var(--text); background: none; border-color: transparent; font: inherit; }
 .coach-fix:hover { border-color: transparent; background: var(--accent-wash); }
-.coach-fix-sprite { display: flex; justify-content: center; align-items: flex-end; width: 44px; height: 40px; overflow: visible;
+.coach-fix:hover .coach-fix-main strong { text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 3px; }
+.coach-fix-from { display: inline-flex; align-items: center; gap: 2px; height: 16px; color: var(--muted); }
+.coach-fix-from .mon-icon { margin: -9px -6px -7px -8px; }
+.coach-fix-from .icon { width: 14px; height: 14px; }
+.coach-alt { display: grid; place-items: center; width: 24px; height: 28px; padding: 0; color: var(--faint); background: none; border: 1px solid transparent; }
+.coach-alt:hover { color: var(--accent-ink); background: var(--raised); border-color: var(--line); }
+.coach-alt .icon { width: 14px; height: 14px; }
+.coach-fix-sprite { flex: none; display: flex; justify-content: center; align-items: flex-end; width: 44px; height: 40px; overflow: visible;
   background: radial-gradient(ellipse 20px 5px at 50% 90%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 70%), radial-gradient(ellipse 19px 5px at 50% 92%, color-mix(in srgb, var(--field) 60%, transparent), transparent 75%); }
 .coach-fix-sprite .sprite { flex: none; width: 56px; height: 56px; margin-bottom: -10px; image-rendering: pixelated; }
-.coach-fix-text { display: grid; min-width: 0; }
+.coach-fix-text { flex: 1; display: grid; min-width: 0; }
 .coach-fix-lead { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; line-height: 1.3; color: var(--muted); }
 .coach-fix-lead b { font-weight: 600; color: var(--text); }
 .coach-fix-main { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
@@ -424,7 +434,7 @@ button.member-card:hover { border-color: var(--accent); }
 /* Il voto in più: piccola etichetta verde accanto al nome */
 .coach-gain { flex: none; display: inline-block; padding: 0 5px; border-radius: 2px; font: 700 12px/18px var(--display); font-variant-numeric: tabular-nums; color: var(--good); background: var(--good-bg); }
 /* "Risolve anche": una riga sola sotto la proposta, allineata al testo; tipi e minacce come icone, il resto nel "+N" */
-.coach-also { display: flex; align-items: center; gap: 6px; min-width: 0; height: 18px; margin: 0 0 0 52px; overflow: hidden; white-space: nowrap; font-size: 12px; color: var(--muted); }
+.coach-also { display: flex; align-items: center; gap: 6px; min-width: 0; height: 18px; margin: 0; overflow: hidden; white-space: nowrap; font-size: 12px; color: var(--muted); }
 .coach-also-label { flex: none; color: var(--faint); }
 .coach-also-item { display: inline-flex; flex: none; align-items: center; gap: 2px; }
 .coach-also .type-icons img { width: 15px; height: 15px; }

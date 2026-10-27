@@ -129,8 +129,9 @@ const STATES: Record<string, State> = {
     await wait(300);
     if (!await clickText(p, '#analysis-view-coaching', /./)) return 'no coaching tab';
     // I consigli arrivano dopo il calcolo: si aspetta la riga delle tappe
-    await p.waitForSelector('.coach-steps:not([aria-busy]) button.coach-fix', { timeout: 20000 });
-    if (!await clickText(p, 'button.coach-fix', /./)) return false;
+    await p.waitForSelector('.coach-steps:not([aria-busy]) button.coach-alt', { timeout: 20000 });
+    // Il clic sulla proposta la applica: le alternative sono nell'icona accanto
+    if (!await clickText(p, 'button.coach-alt', /./)) return false;
     // La lista per membro si calcola dopo il clic: si aspetta che non sia più attenuata
     const start = Date.now();
     await wait(100);
@@ -218,7 +219,7 @@ const STATES: Record<string, State> = {
     await wait(300);
     if (!await clickText(p, '#analysis-view-coaching', /./)) return 'no coaching tab';
     await p.waitForSelector('.coach-steps:not([aria-busy])', { timeout: 20000 });
-    if (!await clickText(p, '.coach-prop.is-move button.coach-fix', /./)) return 'no move proposal';
+    if (!await clickText(p, '.coach-prop.is-move button.coach-alt', /./)) return 'no move proposal';
     await wait(600);
     return (await p.evaluate(() => !!document.querySelector('.move-proposal'))) || 'no preview in the editor';
   } },

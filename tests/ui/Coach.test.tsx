@@ -38,6 +38,9 @@ async function openCoaching(team: TeamSet[]) {
   return user;
 }
 
+/** Il pulsante "Vedi alternative" accanto alla proposta `button` (fuori dal pulsante della proposta). */
+const alternativesOf = (button: HTMLElement) => within(button.closest<HTMLElement>('.coach-prop')!).getByRole('button', { name: /^Vedi alternative a / });
+
 /** Il "+N" della riga del candidato nella lista di Migliora team. */
 const rowGain = (species: string) => {
   const row = [...suggestions().querySelectorAll<HTMLElement>('.suggestions li')]
@@ -57,7 +60,7 @@ describe('scheda Coaching', () => {
     const user = await openCoaching(six);
     const button = within(analysis()).getAllByRole('button', { name: /^Al posto di .+: .+, \+\d+$/ })[0];
     const [, member, species, gain] = /^Al posto di (.+): (.+), \+(\d+)$/.exec(button.getAttribute('aria-label')!)!;
-    await user.click(button);
+    await user.click(alternativesOf(button));
     expect(screen.getByRole('tab', { name: /^Pokémon/ })).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByRole('tab', { name: /^Pokémon/ })).toHaveTextContent(`Sostituisci ${member}`);
     expect(await screen.findByRole('complementary', { name: `Dettaglio di ${species}` })).toBeInTheDocument();
@@ -76,7 +79,7 @@ describe('scheda Coaching', () => {
     await user.click(screen.getByRole('tab', { name: /^Analisi/ }));
     const button = within(analysis()).getAllByRole('button', { name: /^Al posto di .+: .+, \+\d+$/ })[0];
     const [, , species, gain] = /^Al posto di (.+): (.+), \+(\d+)$/.exec(button.getAttribute('aria-label')!)!;
-    await user.click(button);
+    await user.click(alternativesOf(button));
     expect(await screen.findByRole('complementary', { name: `Dettaglio di ${species}` }, { timeout: 3000 })).toBeInTheDocument();
     expect(within(suggestions()).getByLabelText('Aggiungi Pokémon')).toHaveValue('');
     expect(type().value).toBe(recognised);
@@ -87,11 +90,43 @@ describe('scheda Coaching', () => {
     const user = await openCoaching(three);
     const button = within(analysis()).getAllByRole('button', { name: /^Aggiungi .+, \+\d+$/ })[0];
     const [, species, gain] = /^Aggiungi (.+), \+(\d+)$/.exec(button.getAttribute('aria-label')!)!;
-    await user.click(button);
+    await user.click(alternativesOf(button));
     expect(screen.getByRole('tab', { name: /^Pokémon/ })).toHaveAttribute('aria-selected', 'true');
     expect(within(suggestions()).getByRole('button', { name: 'Aggiungi' })).toHaveAttribute('aria-pressed', 'true');
     expect(await screen.findByRole('complementary', { name: `Dettaglio di ${species}` })).toBeInTheDocument();
     expect(rowGain(species)).toBe(`+${gain}`);
+  });
+
+  it('clic su un sostituto: lo applica subito (stessa scheda), avviso con Annulla che riporta il membro', async () => {
+    const user = await openCoaching(six);
+    const button = within(analysis()).getAllByRole('button', { name: /^Al posto di .+: .+, \+\d+$/ })[0];
+    const [, member, species] = /^Al posto di (.+): (.+), \+\d+$/.exec(button.getAttribute('aria-label')!)!;
+    const cards = () => [...document.querySelectorAll('.slot.filled summary')].map(el => el.textContent ?? '');
+    expect(cards().some(text => text.includes(member))).toBe(true);
+    await user.click(button);
+    // Resta su Analisi; il membro è sostituito
+    expect(screen.getByRole('tab', { name: /^Analisi/ })).toHaveAttribute('aria-selected', 'true');
+    expect(cards().some(text => text.includes(member))).toBe(false);
+    expect(cards().some(text => text.includes(species))).toBe(true);
+    const toast = screen.getByRole('status');
+    expect(toast).toHaveTextContent(member);
+    expect(toast).toHaveTextContent(species);
+    await user.click(within(toast).getByRole('button', { name: 'Annulla' }));
+    expect(cards().some(text => text.includes(member))).toBe(true);
+    expect(cards().some(text => text.includes(species))).toBe(false);
+  });
+
+  it('team di 3: clic su un candidato da aggiungere lo aggiunge, Annulla lo toglie', async () => {
+    const user = await openCoaching(three);
+    const button = within(analysis()).getAllByRole('button', { name: /^Aggiungi .+, \+\d+$/ })[0];
+    const species = /^Aggiungi (.+), \+\d+$/.exec(button.getAttribute('aria-label')!)![1];
+    const filled = () => document.querySelectorAll('.slot.filled').length;
+    await user.click(button);
+    expect(filled()).toBe(4);
+    const toast = screen.getByRole('status');
+    expect(toast).toHaveTextContent(`${species} aggiunto`);
+    await user.click(within(toast).getByRole('button', { name: 'Annulla' }));
+    expect(filled()).toBe(3);
   });
 
   it('invito ad aggiungere con meno di 2 membri', async () => {
@@ -110,7 +145,7 @@ describe('scheda Coaching', () => {
 
 describe('CoachingView', () => {
   const rating = (team: TeamSet[]) => rateTeam(team, data, 'it');
-  const noop = { onFix: () => {}, onMoveFix: () => {} };
+  const noop = { onFix: () => {}, onMoveFix: () => {}, onApplyFix: () => {}, onApplyMove: () => {} };
   const view = (team: TeamSet[], over: Partial<Parameters<typeof CoachingView>[0]> = {}) => {
     const coaching = coachTeam(team, DEFAULT_FORMAT, data);
     const advice = adviceOf(team, DEFAULT_FORMAT, data);
@@ -131,10 +166,12 @@ describe('CoachingView', () => {
     });
   });
 
-  it('i pulsanti di ogni tappa hanno il +N e portano al cambio', async () => {
+  it('i pulsanti di ogni tappa hanno il +N: il clic applica il cambio, "Vedi alternative" porta alle alternative', async () => {
     const onFix = vi.fn();
     const onMoveFix = vi.fn();
-    const { advice } = view(six, { onFix, onMoveFix });
+    const onApplyFix = vi.fn();
+    const onApplyMove = vi.fn();
+    const { advice } = view(six, { onFix, onMoveFix, onApplyFix, onApplyMove });
     const user = userEvent.setup();
     const shown = advice!.steps.slice(0, MAX_STEPS);
     const items = within(stepsRegion()).getAllByRole('listitem');
@@ -143,16 +180,26 @@ describe('CoachingView', () => {
       if (step.swap) {
         const label = step.swap.kind === 'add' ? `Aggiungi ${step.swap.species}, +${step.swap.gain}`
           : `Al posto di ${step.swap.member}: ${step.swap.species}, +${step.swap.gain}`;
-        await user.click(within(items[i]).getByRole('button', { name: label }));
+        const button = within(items[i]).getByRole('button', { name: label });
+        await user.click(button);
+        expect(onApplyFix).toHaveBeenLastCalledWith(step.swap);
+        expect(onFix).not.toHaveBeenCalledWith(step.swap);
+        await user.click(within(items[i]).getByRole('button', { name: `Vedi alternative a ${step.swap.species}` }));
         expect(onFix).toHaveBeenLastCalledWith(step.swap);
+        // Niente pulsanti dentro i pulsanti
+        expect(button.querySelector('button')).toBeNull();
       }
       if (step.move) {
         moves++;
-        await user.click(within(items[i]).getByRole('button', { name: `Dai ${step.move.to} a ${step.move.member}, +${step.move.gain}` }));
+        const button = within(items[i]).getByRole('button', { name: `Dai ${step.move.to} a ${step.move.member}, +${step.move.gain}` });
+        await user.click(button);
+        expect(onApplyMove).toHaveBeenLastCalledWith(step.move);
+        await user.click(alternativesOf(button));
         expect(onMoveFix).toHaveBeenLastCalledWith(step.move);
       }
     }
     expect(onFix).toHaveBeenCalled();
+    expect(onApplyFix).toHaveBeenCalled();
     expect(moves).toBeGreaterThanOrEqual(0);
   });
 
@@ -179,16 +226,20 @@ describe('CoachingView', () => {
     const empty: MoveFix = { ...base, index: 1, member: 'Gholdengo', set: six[1], slot: 3, from: '', to: 'Thunderbolt', gain: 2, solves: [p2.key] };
     const steps = [withFrom, empty].map((move, i) => ({ problem: [p1, p2][i], swap: null, move, alsoSolves: [], group: [[p1, p2][i].key] }));
     const onMoveFix = vi.fn();
-    renderIt(<CoachingView coaching={coaching} advice={{ ...advice, steps }} members={6} rating={rating(six)} metaOn onFix={() => {}} onMoveFix={onMoveFix} />);
+    const onApplyMove = vi.fn();
+    renderIt(<CoachingView coaching={coaching} advice={{ ...advice, steps }} members={6} rating={rating(six)} metaOn onFix={() => {}} onMoveFix={onMoveFix}
+      onApplyFix={() => {}} onApplyMove={onApplyMove} />);
     const user = userEvent.setup();
     const a = within(stepsRegion()).getByRole('button', { name: 'Dai Knock Off a Great Tusk, +4' });
     expect(a).toHaveTextContent('al posto di Rapid Spin');
     const b = within(stepsRegion()).getByRole('button', { name: 'Dai Thunderbolt a Gholdengo, +2' });
     expect(b).not.toHaveTextContent('al posto di');
     await user.click(a);
-    expect(onMoveFix).toHaveBeenLastCalledWith(withFrom);
+    expect(onApplyMove).toHaveBeenLastCalledWith(withFrom);
     await user.click(b);
-    expect(onMoveFix).toHaveBeenLastCalledWith(empty);
+    expect(onApplyMove).toHaveBeenLastCalledWith(empty);
+    await user.click(alternativesOf(a));
+    expect(onMoveFix).toHaveBeenLastCalledWith(withFrom);
   });
 
   it('"risolve anche" dice cosa risolve: tipi, ruoli, minacce, membri', () => {
@@ -401,10 +452,29 @@ describe('CoachingView', () => {
       setup();
       const user = userEvent.setup();
       expect(previewed()).toEqual([]);
-      const swapButton = within(stepsRegion()).getByRole('button', { name: /Rotom-Wash/ });
+      const swapButton = within(stepsRegion()).getByRole('button', { name: /^(Al posto di .+: |Aggiungi )Rotom-Wash/ });
       await user.hover(swapButton);
       expect(previewed().sort()).toEqual(['defense:Ice', 'defense:Water', 'meta:Zapdos']);
       await user.unhover(swapButton);
+      expect(previewed()).toEqual([]);
+    });
+
+    it('puntatore sulla tappa: tutto quello che risolvono le sue proposte; su una proposta: solo il suo', async () => {
+      const base = adviceOf(three, DEFAULT_FORMAT, data).fixes[0];
+      const swap = { ...base, kind: 'swap' as const, member: 'Great Tusk', species: 'Rotom-Wash', solves: ['defense:Water', 'defense:Ice'] };
+      const move: MoveFix = { index: 1, member: 'Gholdengo', set: three[1], reduces: [], slot: 1, from: '', to: 'Thunderbolt', gain: 1,
+        solves: ['defense:Water', 'meta:Zapdos'] };
+      const step = { problem: problems[0], swap, move, alsoSolves: ['defense:Ice', 'meta:Zapdos'], group: ['defense:Water'] };
+      renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [step] }} members={3} rating={rating(three)} metaOn {...noop} />);
+      const user = userEvent.setup();
+      const card = within(stepsRegion()).getByRole('listitem');
+      await user.hover(card.querySelector('.coach-step-problem')!);
+      expect(previewed().sort()).toEqual(['defense:Ice', 'defense:Water', 'meta:Zapdos']);
+      await user.hover(within(card).getByRole('button', { name: /^Dai Thunderbolt/ }));
+      expect(previewed().sort()).toEqual(['defense:Water', 'meta:Zapdos']);
+      await user.hover(card.querySelector('.coach-step-num')!);
+      expect(previewed().sort()).toEqual(['defense:Ice', 'defense:Water', 'meta:Zapdos']);
+      await user.unhover(card);
       expect(previewed()).toEqual([]);
     });
 
@@ -441,7 +511,7 @@ describe('proposta di mossa nell\'editor', () => {
   it('clic: si apre l\'editor del membro con la proposta; Applica cambia la mossa, Annulla del toast la riporta', async () => {
     const user = await openCoaching(six);
     const [, to, member, gain] = /^Dai (.+) a (.+), (\+\d+|±0)$/.exec(moveButton().getAttribute('aria-label')!)!;
-    await user.click(moveButton());
+    await user.click(alternativesOf(moveButton()));
     const card = document.querySelector<HTMLDetailsElement>('details.slot[open]')!;
     expect(card).toBeTruthy();
     // Il fuoco va su Applica
@@ -464,9 +534,21 @@ describe('proposta di mossa nell\'editor', () => {
     expect(input().value).toBe(before);
   });
 
+  it('clic sulla proposta: la mossa cambia subito, senza editor; Annulla del toast la riporta', async () => {
+    const user = await openCoaching(six);
+    const [, to, member] = /^Dai (.+) a (.+), (?:\+\d+|±0)$/.exec(moveButton().getAttribute('aria-label')!)!;
+    await user.click(moveButton());
+    expect(document.querySelector('details.slot[open]')).toBeNull();
+    const toast = screen.getByRole('status');
+    expect(toast).toHaveTextContent(`${member}: `);
+    expect(toast).toHaveTextContent(`→ ${to}`);
+    await user.click(within(toast).getByRole('button', { name: 'Annulla' }));
+    expect(screen.queryByRole('status')).toBeNull();
+  });
+
   it('Annulla della proposta: nessun cambio, la proposta sparisce, l\'editor resta aperto', async () => {
     const user = await openCoaching(six);
-    await user.click(moveButton());
+    await user.click(alternativesOf(moveButton()));
     const card = document.querySelector<HTMLDetailsElement>('details.slot[open]')!;
     await user.click(within(card).getByRole('button', { name: 'Annulla' }));
     expect(card.querySelector('.move-proposal')).toBeNull();
@@ -478,7 +560,7 @@ describe('proposta di mossa nell\'editor', () => {
   it('team compresso: il clic apre comunque l editor con la proposta e lo slot evidenziato', async () => {
     const user = await openCoaching(six);
     await user.click(screen.getByRole('button', { name: 'Comprimi team' }));
-    await user.click(moveButton());
+    await user.click(alternativesOf(moveButton()));
     const card = document.querySelector<HTMLDetailsElement>('details.slot[open]')!;
     expect(card).toBeTruthy();
     expect(card.querySelector('.move-proposal')).not.toBeNull();
