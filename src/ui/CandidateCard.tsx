@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { getSpecies } from '../engine/dex';
 import { typeName } from '../i18n/game';
 import { useLang } from '../i18n/react';
@@ -14,14 +14,17 @@ import { CandidateMarks, OutMark, PickButton, Reasons, ResultCell, candidateHand
 export function CandidateCard(props: CandidateProps) {
   const { rank, item, reasons, sprite, usage, out, format, lists, selected, onSelect } = props;
   const lang = useLang();
+  // Carta sotto il mouse: solo lei gioca lo sprite animato (rotazione e ombra sono nel CSS)
+  const [hover, setHover] = useState(false);
   const types = getSpecies(item.species)?.types ?? [];
   const typeNames = types.map(type => typeName(type, lang)).join(' / ');
   const className = ['card', isLead(rank, item) && 'first', stateClasses(props)].filter(Boolean).join(' ');
   return (
     // Bordo inferiore nel colore del tipo primario
-    <li className={className} style={{ '--t1': typeColor(types[0] ?? '') } as CSSProperties} {...candidateHandlers(props)}>
+    <li className={className} style={{ '--t1': typeColor(types[0] ?? '') } as CSSProperties} {...candidateHandlers(props)}
+      onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
       <div className="card-face">
-        <span className="card-sprite" aria-hidden="true">{sprite}</span>
+        <span className="card-sprite" aria-hidden="true">{sprite(hover)}</span>
         <ResultCell item={item} usage={usage} favorite={isFavoriteCandidate(item.set, lists)} className="tag" />
         <TypeIcons types={types} className="card-types" title={typeNames} />
         {/* Le icone sono decorative: i tipi agli screen reader come testo */}

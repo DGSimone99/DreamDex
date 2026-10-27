@@ -81,7 +81,7 @@ describe('usePerPage', () => {
     const size = { width: 560, height: 400 };
     const { result, rerender } = setup('cards', size);
     fire();
-    expect(result.current).toEqual({ perPage: 6, columns: 3, tileHeight: 186, reasons: 2 });
+    expect(result.current).toEqual({ perPage: 6, columns: 3, tileHeight: 182, reasons: 2 });
     size.height = 900;
     rerender({ collapsed: true });
     fire();

@@ -575,7 +575,7 @@ describe('stile Carte', () => {
       const item = { species: 'Great Tusk', set: tusk, score: 0, components: {}, tags: [], penalty: 0, reasons: [],
         facts: { clashes: [] }, teamGain: { gain, grade: 'B', overall: 70 } } as never;
       const { container, unmount } = renderIt(
-        <ol><CandidateCard rank={1} item={item} reasons={{ pros: false, texts: ['x'] }} sprite={null} usage={null} actionLabel="a"
+        <ol><CandidateCard rank={1} item={item} reasons={{ pros: false, texts: ['x'] }} sprite={() => null} usage={null} actionLabel="a"
           selected={false} onSelect={() => {}} onAction={() => {}} format={DEFAULT_FORMAT} /></ol>);
       const li = container.querySelector('li.card')!;
       const result = { first: li.classList.contains('first'), strong: li.querySelector('.tag strong')!.className, text: li.querySelector('.tag')!.textContent };
@@ -652,6 +652,26 @@ describe('sprite Icona box', () => {
         expect(tile.querySelector('.box-icon .mon-icon')).not.toBeNull();
         expect(tile.querySelector('img.sprite')).toBeNull();
       }
+      unmount();
+    }
+  });
+
+  it('Carte: solo la carta sotto il mouse chiede lo sprite animato; con l’icona box mai la GIF', async () => {
+    const { SuggestionsPanel } = await import('../../src/ui/SuggestionsPanel');
+    const { renderIt } = await import('../helpers/italian');
+    const { tusk } = await import('../fixtures/data');
+    const { fireEvent } = await import('@testing-library/react');
+    for (const listSprite of ['normal', 'box'] as const) {
+      const { unmount } = renderIt(<SuggestionsPanel team={[tusk] as never} format={DEFAULT_FORMAT} data={fixtureData} replaceIndex={null}
+        onAdd={() => {}} onReplaceWith={() => {}} onCancelReplace={() => {}} listStyle="cards" listSprite={listSprite} />);
+      const cards = [...list().querySelectorAll<HTMLElement>('.card')];
+      expect(cards.length).toBeGreaterThan(1);
+      expect(list().querySelector('.sprite-ani')).toBeNull();
+      fireEvent.mouseEnter(cards[1]);
+      const animated = [...list().querySelectorAll('.card')].filter(card => card.querySelector('.sprite-ani'));
+      expect(animated).toEqual(listSprite === 'normal' ? [cards[1]] : []);
+      fireEvent.mouseLeave(cards[1]);
+      expect(list().querySelector('.sprite-ani')).toBeNull();
       unmount();
     }
   });

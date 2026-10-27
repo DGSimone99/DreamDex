@@ -3,13 +3,13 @@ import { cardsLayout, menuLayout } from '../../src/ui/listLayout';
 
 describe('cardsLayout', () => {
   it('sempre 6 per pagina (3 × 2), carta dall’altezza della lista', () => {
-    // floor((532 − 20 + 8) / 2) − 8 = 252
-    expect(cardsLayout(532, false)).toEqual({ columns: 3, rows: 2, perPage: 6, tileHeight: 252, reasons: 2 });
+    // floor((532 − 28 + 8) / 2) − 8 = 248
+    expect(cardsLayout(532, false)).toEqual({ columns: 3, rows: 2, perPage: 6, tileHeight: 248, reasons: 2 });
     expect(cardsLayout(400, false).perPage).toBe(6);
-    expect(cardsLayout(400, false).tileHeight).toBe(186);
+    expect(cardsLayout(400, false).tileHeight).toBe(182);
   });
   it('carta al massimo 260 px', () => {
-    expect(cardsLayout(548, false).tileHeight).toBe(260);
+    expect(cardsLayout(556, false).tileHeight).toBe(260);
     expect(cardsLayout(900, true).tileHeight).toBe(260);
   });
   it('motivi: 2 col team aperto, 3 col team nascosto', () => {

@@ -20,7 +20,7 @@ export function CandidatePill(props: CandidateProps) {
   return (
     // Sfumatura del tondo nel colore del tipo primario
     <li className={className} style={{ '--t1': typeColor(types[0] ?? '') } as CSSProperties} {...candidateHandlers(props)}>
-      <span className="pill-sprite" aria-hidden="true">{sprite}</span>
+      <span className="pill-sprite" aria-hidden="true">{sprite(false)}</span>
       {out && <OutMark member={out} />}
       <span className="who">
         <span className="name-line">

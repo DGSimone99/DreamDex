@@ -39,8 +39,8 @@ export interface CandidateProps {
   item: Item;
   /** I motivi da mostrare sotto il nome (già tagliati al numero che entra). */
   reasons: ReasonSummary;
-  /** Lo sprite: normale o icona del box (impostazioni). */
-  sprite: ReactNode;
+  /** Lo sprite: normale o icona del box (impostazioni); `animated` = la carta sotto il mouse (GIF di Showdown, solo sprite normale). */
+  sprite: (animated: boolean) => ReactNode;
   /** Uso nel meta, mostrato al posto del voto col primo Pokémon. */
   usage: number | null;
   /** Il membro che uscirebbe (raccomandazioni libere). */

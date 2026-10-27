@@ -102,10 +102,38 @@ async function focus(page: Page, selector: string): Promise<boolean> {
 const wait = (ms: number) => new Promise(r => setTimeout(r, ms));
 const tab = (page: Page, id: string) => page.evaluate(i => { document.getElementById(`tab-${i}`)?.click(); }, id);
 
+/** Mouse sulla carta n della lista; dopo l'animazione stampa i bordi della carta inclinata rispetto all'interno della lista. */
+async function hoverCard(page: Page, n: number): Promise<boolean | string> {
+  await tab(page, 'pokemon');
+  await wait(1500);
+  const card = (await page.$$('.suggestions.cards > li.card'))[n];
+  if (!card) return 'no card';
+  await card.hover();
+  await wait(1500);
+  const m = await page.evaluate(i => {
+    const list = document.querySelector<HTMLElement>('.suggestions.cards')!;
+    const li = list.querySelectorAll<HTMLElement>(':scope > li.card')[i];
+    const l = list.getBoundingClientRect();
+    const c = li.getBoundingClientRect();
+    const inner = { top: l.top + list.clientTop, left: l.left + list.clientLeft, right: l.left + list.clientLeft + list.clientWidth, bottom: l.top + list.clientTop + list.clientHeight };
+    const cut = Math.max(0, inner.top - c.top, c.left - c.left + inner.left - c.left, c.right - inner.right, c.bottom - inner.bottom);
+    const gif = li.querySelector<HTMLImageElement>('.sprite-ani');
+    const stat = li.querySelector<HTMLImageElement>('.sprite');
+    return { cut: Math.round(cut * 10) / 10, top: Math.round(c.top - inner.top), left: Math.round(c.left - inner.left), right: Math.round(inner.right - c.right), bottom: Math.round(inner.bottom - c.bottom),
+      gif: gif ? `${Math.round(gif.getBoundingClientRect().height)}h (static ${stat ? Math.round(stat.getBoundingClientRect().height) : '-'})` : 'none', anis: list.querySelectorAll('.sprite-ani').length };
+  }, n);
+  console.log(`hover card ${n}: ${JSON.stringify(m)}`);
+  return true;
+}
+
 // storage: chiavi in più nel localStorage prima del caricamento (es. lo stile della lista)
 interface State { hash?: string; lang?: 'it' | 'en'; storage?: Record<string, string>; run?: (page: Page) => Promise<boolean | string> }
 const STATES: Record<string, State> = {
   pokemon: { run: async p => { await tab(p, 'pokemon'); return true; } },
+  // Carta sotto il mouse (la prima è selezionata: la seconda in alto, la prima in basso, l'ultima): stampa quanto esce dalla lista (cut = px tagliati)
+  'pokemon-hover': { run: async p => hoverCard(p, 1) },
+  'pokemon-hover-bl': { run: async p => hoverCard(p, 3) },
+  'pokemon-hover-last': { run: async p => hoverCard(p, 5) },
   // Lista candidati in stile Menu (pillole), team aperto e nascosto
   'pokemon-menu': { storage: { 'dreamdex.listStyle': '"menu"' }, run: async p => { await tab(p, 'pokemon'); return true; } },
   'pokemon-menu-collapsed': { storage: { 'dreamdex.listStyle': '"menu"' }, run: async p => {
@@ -415,7 +443,7 @@ for (const [w, h] of sizes) {
       const aside = document.querySelector<HTMLElement>('aside.detail');
       const hint = document.querySelector<HTMLElement>('.list-head .dbl-hint');
       const favs = ol.querySelectorAll('.result.fav').length;
-      const extra = ` detailBodyScroll=${body ? body.scrollHeight - body.clientHeight : '-'} detailScroll=${aside ? aside.scrollHeight - aside.clientHeight : '-'} hintCut=${hint ? hint.scrollWidth - hint.clientWidth : '-'} favs=${favs}`;
+      const extra = ` detailBodyScroll=${body ? body.scrollHeight - body.clientHeight : '-'} detailScroll=${aside ? aside.scrollHeight - aside.clientHeight : '-'} hintCut=${hint ? hint.scrollWidth - hint.clientWidth : '-'} hintW=${hint ? `${hint.clientWidth}/${document.querySelector<HTMLElement>('.list-head')?.clientWidth}` : '-'} dashes=${document.querySelectorAll('.pager-dash').length} favs=${favs}`;
       return `list: ${ol.className} items=${items.length} cols=${ol.style.getPropertyValue('--cols') || '-'} tileH=${ol.style.getPropertyValue('--tile-h') || '-'} reasons=${ol.style.getPropertyValue('--reasons') || '-'} rowH=${ol.style.getPropertyValue('--row-h') || '-'} first=${first ? `${Math.round(first.width)}x${Math.round(first.height)}` : '-'} listScroll=${ol.scrollHeight - ol.clientHeight} cutTiles=${cut} whoOver=${whoOver} wideCut=${wideCut} nameCut=${nameCut}${extra}`;
     });
     const file = join(out, `${w}x${h}-${name}.png`);

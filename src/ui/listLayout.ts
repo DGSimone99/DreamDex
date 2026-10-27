@@ -22,10 +22,13 @@ export const CARDS_MAX_TILE = 260;
 /** Motivi sotto il nome delle carte: 2 col team aperto, 3 col team nascosto. */
 export const cardsReasons = (teamCollapsed: boolean): number => (teamCollapsed ? 3 : 2);
 
+/** Margine interno della griglia delle carte (CSS .suggestions.cards): lo spazio per la carta inclinata sotto il mouse. */
+export const CARDS_PAD = 14;
+
 // Carte: 6 carte verticali (3 colonne × 2 righe) che riempiono l'altezza attuale della lista, al massimo 260 px.
 export function cardsLayout(height: number, teamCollapsed: boolean): CardsLayout {
   const h = num(height);
-  const tileHeight = clamp(Math.floor((h - 20 + 8) / CARDS_ROWS) - 8, 0, CARDS_MAX_TILE);
+  const tileHeight = clamp(Math.floor((h - 2 * CARDS_PAD + 8) / CARDS_ROWS) - 8, 0, CARDS_MAX_TILE);
   return { columns: CARDS_COLUMNS, rows: CARDS_ROWS, perPage: CARDS_COLUMNS * CARDS_ROWS, tileHeight, reasons: cardsReasons(teamCollapsed) };
 }
 
