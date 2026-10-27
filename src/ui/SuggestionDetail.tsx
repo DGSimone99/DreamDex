@@ -3,7 +3,8 @@ import type { EngineData } from '../engine/data';
 import { rankedChanges } from '../engine/coach';
 import { getSpecies } from '../engine/dex';
 import { rateTeam, type TeamRating } from '../engine/rating';
-import type { Archetype } from '../engine/archetype';
+import { cardRoles, type Archetype } from '../engine/archetype';
+import { detectRoles, roleLabel } from '../engine/roles';
 import { areaDrops, extrasDelta, withCandidate, type SwapOption, type TeamGain } from '../engine/teamGain';
 import { rulesOf } from '../engine/formatRules';
 import { formatPercent } from '../i18n';
@@ -63,6 +64,9 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
 
   // Porta: tutto, nello stesso ordine delle caselle della lista (che ne mostrano le prime voci)
   const brings = bringsOf(item, lang, rulesOf(data)).map(bring => bring.text);
+  // Ruoli del set consigliato: per primo il principale (lo stesso delle carte del team, evidenziato), poi gli altri
+  const mainRole = cardRoles(set, rulesOf(data))[0];
+  const setRoles = [...(mainRole ? [mainRole] : []), ...detectRoles(set, rulesOf(data)).filter(role => role !== mainRole)];
   // Toglie: le perdite del cambio e gli avvisi (meteo in conflitto, mosse indebolite)
   const loses = [...(changes?.cons.map(c => c.text) ?? []), ...(item.facts.clashes ?? []).map(text => text.replace(/^⚠\s*/, ''))];
   // Senza perdite da elencare ma con aree in calo, Toglie dice quali (mai "niente" accanto a pillole rosse)
@@ -166,14 +170,25 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
 
         <section className="detail-sec wide set-sec">
           <h4>{tr('detail.set')}</h4>
-          <p className="detail-set">
-            {set.item && <span><ItemIcon item={set.item} /> {gameName('item', set.item, lang)}</span>}
-            {/* L'abilità in battaglia: con una Megapietra quella della Mega (Mega Venusaur: Grassospesso, non Clorofilla) */}
-            {battleAbility(set) && <span>{gameName('ability', battleAbility(set), lang)}</span>}
-            {set.nature && <span>{natureName(set.nature, lang)}</span>}
-            {evs && <span className="evs">{evs}</span>}
-            {set.teraType && <span>{tr('editor.tera')} {typeName(set.teraType, lang)}</span>}
-          </p>
+          <div className="detail-set-info">
+            <p className="detail-set">
+              {set.item && <span><ItemIcon item={set.item} /> {gameName('item', set.item, lang)}</span>}
+              {/* L'abilità in battaglia: con una Megapietra quella della Mega (Mega Venusaur: Grassospesso, non Clorofilla) */}
+              {battleAbility(set) && <span>{gameName('ability', battleAbility(set), lang)}</span>}
+              {set.nature && <span>{natureName(set.nature, lang)}</span>}
+              {evs && <span className="evs">{evs}</span>}
+              {set.teraType && <span>{tr('editor.tera')} {typeName(set.teraType, lang)}</span>}
+            </p>
+            {setRoles.length > 0 && (
+              <ul className="detail-roles" aria-label={tr('detail.roles')}>
+                {setRoles.map(role => (
+                  <li key={role} className={role === mainRole ? 'main' : undefined}>
+                    {role === 'weather' ? tr('card.weather') : roleLabel(role, lang)}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
           <ul className="detail-moves" aria-label={tr('editor.moves')}>
             {set.moves.map(move => <li key={move}><MoveName move={move} /></li>)}
           </ul>

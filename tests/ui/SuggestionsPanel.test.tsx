@@ -678,6 +678,18 @@ describe('sprite Icona box', () => {
     }
   });
 
+  it('Set consigliato: sotto le voci i ruoli del set, il principale per primo ed evidenziato', async () => {
+    const { SuggestionsPanel } = await import('../../src/ui/SuggestionsPanel');
+    const { renderIt } = await import('../helpers/italian');
+    const { tusk } = await import('../fixtures/data');
+    renderIt(<SuggestionsPanel team={[tusk] as never} format={DEFAULT_FORMAT} data={fixtureData} replaceIndex={null}
+      onAdd={() => {}} onReplaceWith={() => {}} onCancelReplace={() => {}} listStyle="cards" listSprite="normal" />);
+    const roles = [...screen.getByRole('list', { name: 'Ruoli del set' }).querySelectorAll('li')];
+    expect(roles.length).toBeGreaterThan(0);
+    expect(roles[0].classList.contains('main')).toBe(true);
+    expect(roles.slice(1).some(role => role.classList.contains('main'))).toBe(false);
+  });
+
   it('Icona box: la forma da battaglia (Mega con la pietra), non la specie base', async () => {
     const { BoxIcon } = await import('../../src/ui/candidateParts');
     const { Icons } = await import('@pkmn/img');

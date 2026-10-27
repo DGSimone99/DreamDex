@@ -974,6 +974,7 @@ export const en = {
   'detail.losesNothing': "Nothing notable",
   'detail.teamAlone': "Grade with it alone",
   'detail.set': "Suggested set",
+  'detail.roles': "Set roles",
   'tabs.label': "Sections",
   'tabs.pokemon': "Pokémon",
   'tabs.analysis': "Analysis",
