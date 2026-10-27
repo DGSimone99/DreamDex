@@ -144,10 +144,12 @@ interface Props {
   ioAction?: React.ReactNode;
   /** Tutti i ruoli del membro, il principale per primo: il riquadro in fondo all'editor. */
   roles?: string[];
+  /** Slot di mossa evidenziato perché il coach propone di cambiarlo. */
+  proposedSlot?: number;
   onChange: (set: TeamSet) => void;
 }
 
-export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', common, teraBannedIn, speed, title, actions, presetAction, memberAction, notice, smogonAction, ioAction, roles, onChange }: Props) {
+export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', common, teraBannedIn, speed, title, actions, presetAction, memberAction, notice, smogonAction, ioAction, roles, proposedSlot, onChange }: Props) {
   const t = useT();
   const lang = useLang();
   // Le più usate vanno in cima al menu, con la quota d'uso (o "Preset" se vengono dalle analisi)
@@ -427,7 +429,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
       <fieldset className="editor-group moves">
         <legend>{t('editor.moves')}</legend>
         {moves.map((move, i) => (
-          <div key={i} className="field" data-tip={describe.move(move, lang)}>
+          <div key={i} className={`field${proposedSlot === i ? ' is-proposed' : ''}`} data-tip={describe.move(move, lang)}>
             <span className="field-head">
               {t('editor.move', { n: i + 1 })}
               <MoveDetail name={move} />

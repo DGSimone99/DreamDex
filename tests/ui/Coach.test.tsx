@@ -330,3 +330,52 @@ describe('AnalysisPanel: Coaching e profilo di un membro', () => {
     expect(screen.queryByRole('button', { name: /Panoramica/ })).toBeNull();
   });
 });
+
+describe('proposta di mossa nell\'editor', () => {
+  const moveButton = () => within(analysis()).getAllByRole('button', { name: /^Dai .+ a .+, \+\d+$/ })[0];
+
+  it('clic: si apre l\'editor del membro con la proposta; Applica cambia la mossa, Annulla del toast la riporta', async () => {
+    const user = await openCoaching(six);
+    const [, to, member, gain] = /^Dai (.+) a (.+), \+(\d+)$/.exec(moveButton().getAttribute('aria-label')!)!;
+    await user.click(moveButton());
+    const card = document.querySelector<HTMLDetailsElement>('details.slot[open]')!;
+    expect(card).toBeTruthy();
+    const note = within(card).getByText(/^Proposta del coach: /);
+    expect(note).toHaveTextContent(`${to}`);
+    expect(note).toHaveTextContent(`+${gain}`);
+    const field = card.querySelector('.field.is-proposed')!;
+    expect(field).toBeTruthy();
+    const slot = [...card.querySelectorAll('.editor-group.moves .field')].indexOf(field);
+    const input = () => within(card).getAllByRole('combobox', { name: /^Mossa \d$/ })[slot] as HTMLInputElement;
+    const before = input().value;
+    expect(before).not.toBe(to);
+    await user.click(within(card).getByRole('button', { name: 'Applica' }));
+    expect(input().value).toBe(to);
+    expect(card.querySelector('.move-proposal')).toBeNull();
+    const toast = screen.getByRole('status');
+    expect(toast).toHaveTextContent(`${member}: ${before || '—'} → ${to}`);
+    await user.click(within(toast).getByRole('button', { name: 'Annulla' }));
+    expect(input().value).toBe(before);
+  });
+
+  it('Annulla della proposta: nessun cambio, la proposta sparisce, l\'editor resta aperto', async () => {
+    const user = await openCoaching(six);
+    await user.click(moveButton());
+    const card = document.querySelector<HTMLDetailsElement>('details.slot[open]')!;
+    await user.click(within(card).getByRole('button', { name: 'Annulla' }));
+    expect(card.querySelector('.move-proposal')).toBeNull();
+    expect(card.querySelector('.is-proposed')).toBeNull();
+    expect(document.querySelector('details.slot[open]')).toBe(card);
+    expect(screen.queryByRole('status')).toBeNull();
+  });
+
+  it('rimosso il membro, nessuna proposta resta aperta', async () => {
+    const user = await openCoaching(six);
+    const stale = moveButton();
+    // Cambia la mossa dell'unico slot proposto prima del clic: il pulsante resta ma la proposta è vecchia
+    const member = /^Dai .+ a (.+), \+\d+$/.exec(stale.getAttribute('aria-label')!)![1];
+    await user.click(screen.getByRole('button', { name: new RegExp(`^Rimuovi ${member}`) }));
+    await user.click(screen.getByRole('tab', { name: /^Analisi/ }));
+    expect(document.querySelector('.move-proposal')).toBeNull();
+  });
+});
