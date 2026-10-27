@@ -389,6 +389,10 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
   .picker-list > .suggestions { border: 0; }
   .list-head { position: sticky; top: 0; z-index: 2; padding: 5px 14px; background: var(--stripes), var(--band); border-bottom: 1px solid var(--line-soft); }
   .list-head .box-head { position: static; margin: 0; }
+  /* Carte: lo sprite che esce dalla carta sotto il mouse passa sopra la fascia "Candidati" (la lista non lo ritaglia e,
+     solo mentre c'è una carta sotto il mouse, sta sopra la fascia; a riposo il menu della vista resta sopra la lista) */
+  .picker-list > .suggestions.cards { overflow: visible; position: relative; }
+  .picker-list > .suggestions.cards:has(> .card:hover) { z-index: 3; }
 }
 .list-head .box-head { display: inline-block; flex: none; white-space: nowrap; }
 /* Problemi e bonus: la pillola tratteggiata che spiega la parte del voto fuori dalle aree */
