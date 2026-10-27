@@ -1,10 +1,16 @@
 import { Fragment, useId, type ReactNode } from 'react';
 import { PROBLEM_CATEGORIES, type CoachAdvice, type Coaching, type CoachProblem, type ProblemCategory } from '../engine/coach';
-import { fixesForProblem, type CoachFix } from '../engine/coachFixes';
+import type { CoachFix } from '../engine/coachFixes';
+import { columnOf, coveredKeys, MAX_STEPS, type CoachStep, type MapColumn } from '../engine/coachSteps';
+import type { MoveFix } from '../engine/moveFixes';
+import type { TeamRating } from '../engine/rating';
 import { t, type MessageKey } from '../i18n';
+import { typeName } from '../i18n/game';
 import { useLang, useT } from '../i18n/react';
 import { Icon } from './icons';
-import { PokemonList, PokemonName, TypeDot } from './PokemonName';
+import { PokemonName } from './PokemonName';
+import { Sprite } from './Sprite';
+import { TypeIcons } from './typeIcons';
 import { Typed } from './TypeText';
 
 const CATEGORY: Record<ProblemCategory, MessageKey> = {
@@ -33,97 +39,185 @@ function Template({ text, parts }: { text: string; parts: Record<string, ReactNo
   return <>{text.split(/\{(\w+)\}/).map((piece, i) => (i % 2 === 1 ? <Fragment key={i}>{parts[piece]}</Fragment> : piece))}</>;
 }
 
-const gainText = (fix: CoachFix) => `+${fix.gain}`;
-
-/** Un candidato: nome col pallino del tipo e il voto in più; apre la scheda Pokémon su di lui. */
-function FixButton({ fix, onFix }: { fix: CoachFix; onFix: (fix: CoachFix) => void }) {
+/** Un cambio di Pokémon: sprite, "Al posto di X metti Y" / "Aggiungi Y" e il voto in più; apre la scheda Pokémon su di lui. */
+function SwapButton({ fix, onFix }: { fix: CoachFix; onFix: (fix: CoachFix) => void }) {
   const tr = useT();
+  const gain = `+${fix.gain}`;
   const label = fix.kind === 'add'
-    ? tr('coach.fixAddAria', { species: fix.species, gain: gainText(fix) })
-    : tr('coach.fixSwapAria', { member: fix.member ?? '', species: fix.species, gain: gainText(fix) });
+    ? tr('coach.fixAddAria', { species: fix.species, gain })
+    : tr('coach.fixSwapAria', { member: fix.member ?? '', species: fix.species, gain });
+  const species = <strong>{fix.species}</strong>;
   return (
     <button type="button" className="coach-fix" aria-label={label} onClick={() => onFix(fix)}>
-      <TypeDot name={fix.species} /><strong>{fix.species}</strong><span className="coach-gain">{gainText(fix)}</span>
+      <Sprite species={fix.species} size={32} />
+      <span className="coach-fix-text">
+        {fix.kind === 'add'
+          ? <Template text={tr('coach.steps.add')} parts={{ species }} />
+          : <Template text={tr('coach.steps.swap')} parts={{ member: fix.member ? <PokemonName name={fix.member} /> : null, species }} />}
+      </span>
+      <span className="coach-gain">{gain}</span>
     </button>
   );
 }
 
-/** Sotto il problema: chi lo risolve o lo riduce, raggruppato per membro sostituito (le aggiunte insieme). */
-function ProblemFixes({ problem, fixes, onFix }: { problem: CoachProblem; fixes: CoachFix[]; onFix: (fix: CoachFix) => void }) {
+/** Un cambio di mossa: "Dai X a Y" (e "al posto di Z"), col voto in più. */
+function MoveButton({ fix, onMoveFix }: { fix: MoveFix; onMoveFix: (fix: MoveFix) => void }) {
   const tr = useT();
-  const list = fixesForProblem(fixes, problem.key);
-  if (list.length === 0) {
-    // Nessun cambio consigliato lo risolve né lo riduce: restano i nomi di oggi, come testo
-    if (problem.fixes.length === 0) return null;
-    return (
-      <p className="coach-fixes">
-        <Template text={tr('coach.noFix')} parts={{ names: <PokemonList names={problem.fixes} separator={` ${tr('analysis.or')} `} /> }} />
-      </p>
-    );
-  }
-  const groups: CoachFix[][] = [];
-  for (const fix of list) {
-    const group = groups.find(g => g[0].kind === fix.kind && g[0].index === fix.index);
-    if (group) group.push(fix);
-    else groups.push([fix]);
-  }
+  const gain = `+${fix.gain}`;
   return (
-    <p className="coach-fixes">
-      {groups.map((group, g) => {
-        const [{ kind, member }] = group;
-        const key: MessageKey = kind === 'add' ? (g === 0 ? 'coach.considerAdd' : 'coach.alsoAdd') : (g === 0 ? 'coach.considerSwap' : 'coach.alsoSwap');
-        return (
-          <Fragment key={g}>
-            {g > 0 && ' · '}
-            <span className="coach-fix-lead"><Template text={tr(key)} parts={{ member: member ? <PokemonName name={member} /> : null }} /></span>{' '}
-            {group.map((fix, i) => <Fragment key={fix.species}>{i > 0 && ' · '}<FixButton fix={fix} onFix={onFix} /></Fragment>)}
-          </Fragment>
-        );
-      })}
+    <button type="button" className="coach-fix" aria-label={tr('coach.steps.moveAria', { move: fix.to, member: fix.member, gain })} onClick={() => onMoveFix(fix)}>
+      <Sprite species={fix.member} size={32} />
+      <span className="coach-fix-text">
+        <Template text={tr('coach.steps.move')} parts={{ move: <strong>{fix.to}</strong>, member: <PokemonName name={fix.member} /> }} />
+        {fix.from && <small> <Template text={tr('coach.steps.moveFrom')} parts={{ from: fix.from }} /></small>}
+      </span>
+      <span className="coach-gain">{gain}</span>
+    </button>
+  );
+}
+
+/** "Risolve anche": gli altri problemi della proposta, i tipi come icone e il resto col nome dell'area; niente riga se non ce ne sono. */
+function Also({ solves, skip, problems }: { solves: string[]; skip: string; problems: CoachProblem[] }) {
+  const tr = useT();
+  const lang = useLang();
+  const types: string[] = [];
+  const labels: string[] = [];
+  for (const key of new Set(solves)) {
+    if (key === skip) continue;
+    const problem = problems.find(p => p.key === key);
+    if (!problem) continue;
+    if (problem.category === 'defense' && problem.subjects?.length) { for (const type of problem.subjects) if (!types.includes(type)) types.push(type); }
+    else { const label = tr(CATEGORY[problem.category]); if (!labels.includes(label)) labels.push(label); }
+  }
+  if (types.length === 0 && labels.length === 0) return null;
+  const names = types.map(type => typeName(type, lang));
+  return (
+    <p className="coach-also">
+      {tr('coach.steps.also')}{' '}
+      {types.length > 0 && <><TypeIcons types={types} title={names.join(' · ')} /><span className="visually-hidden">{names.join(', ')}</span></>}
+      {types.length > 0 && labels.length > 0 && ' · '}
+      {labels.join(' · ')}
     </p>
   );
 }
 
+function Step({ step, index, problems, onFix, onMoveFix }: {
+  step: CoachStep; index: number; problems: CoachProblem[]; onFix: (fix: CoachFix) => void; onMoveFix: (fix: MoveFix) => void;
+}) {
+  const { problem, swap, move } = step;
+  return (
+    <li className={`coach-step ${problem.severity}`}>
+      <span className="coach-step-num">{index + 1}</span>
+      <div className="coach-step-body">
+        <p className="coach-step-problem"><ProblemText text={problem.text} /></p>
+        {swap && (
+          <div className="coach-prop">
+            <SwapButton fix={swap} onFix={onFix} />
+            <Also solves={swap.solves} skip={problem.key} problems={problems} />
+          </div>
+        )}
+        {move && (
+          <div className="coach-prop">
+            <MoveButton fix={move} onMoveFix={onMoveFix} />
+            <Also solves={move.solves} skip={problem.key} problems={problems} />
+          </div>
+        )}
+      </div>
+    </li>
+  );
+}
+
+/** Un problema nella mappa: gravità, icone del tipo o sprite della minaccia, testo; barrato se una tappa lo copre. */
+function MapProblem({ problem, covered }: { problem: CoachProblem; covered: boolean }) {
+  const tr = useT();
+  const subjects = problem.subjects ?? [];
+  return (
+    <li data-key={problem.key} className={`coach-prob ${problem.severity}${covered ? ' is-covered' : ''}`}>
+      <span className="coach-sev">{tr(problem.severity === 'serious' ? 'dash.serious' : 'dash.minor')}</span>
+      <span className="coach-prob-text">
+        {problem.category === 'defense' && subjects.length > 0 && <TypeIcons types={subjects} />}
+        {problem.category === 'meta' && subjects.length > 0 && <Sprite species={subjects[0]} size={28} />}
+        <ProblemText text={problem.text} />
+      </span>
+    </li>
+  );
+}
+
+const COLUMNS: { key: MapColumn; area: 'defense' | 'strength' | 'roles' | null }[] = [
+  { key: 'defense', area: 'defense' }, { key: 'offense', area: 'strength' }, { key: 'roles', area: 'roles' }, { key: 'rules', area: null },
+];
+
 /**
- * La scheda Coaching: i problemi gravi e minori;
- * sotto ognuno i candidati di Migliora team che lo risolvono o lo riducono, col voto in più. Ogni candidato apre la scheda Pokémon.
- * `advice` null: i consigli si stanno calcolando (i problemi si vedono già).
+ * La scheda Coaching: in alto fino a 3 tappe (cosa farei per prima), sotto la mappa dei problemi per area.
+ * `advice` null: i consigli si stanno calcolando (lo scheletro delle tappe; la mappa si vede già).
  */
-export function CoachingView({ coaching, advice, members, onFix }: {
-  coaching: Coaching; advice: CoachAdvice | null; members: number; onFix: (fix: CoachFix) => void;
+export function CoachingView({ coaching, advice, members, rating, metaOn, onFix, onMoveFix }: {
+  coaching: Coaching; advice: CoachAdvice | null; members: number; rating: TeamRating | null; metaOn: boolean;
+  onFix: (fix: CoachFix) => void; onMoveFix: (fix: MoveFix) => void;
 }) {
   const tr = useT();
   const id = useId();
   const { problems, bannedCount = 0 } = coaching;
   // Sotto i 2 membri il coach non cerca problemi: l'invito ad aggiungere, non "nessun problema"
   if (members < 2) return <div className="coaching"><p className="coach-note coach-top">{tr('coach.addTwo')}</p></div>;
-  const fixes = advice?.fixes ?? [];
-  // In ogni gruppo l'ordine delle categorie: regole per prime
-  const ordered = [...problems].sort((a, b) => PROBLEM_CATEGORIES.indexOf(a.category) - PROBLEM_CATEGORIES.indexOf(b.category));
-  const groups = [
-    { key: 'serious', label: tr('coach.group.serious'), items: ordered.filter(p => p.severity === 'serious') },
-    { key: 'minor', label: tr('coach.group.minor'), items: ordered.filter(p => p.severity === 'minor') },
-  ];
+  const steps = (advice?.steps ?? []).slice(0, MAX_STEPS);
+  const covered = advice ? coveredKeys(advice.steps) : new Set<string>();
+  // Gravi prima, poi l'ordine delle categorie (regole per prime)
+  const ordered = [...problems].sort((a, b) => Number(b.severity === 'serious') - Number(a.severity === 'serious')
+    || PROBLEM_CATEGORIES.indexOf(a.category) - PROBLEM_CATEGORIES.indexOf(b.category));
+  const columnName: Record<MapColumn, string> = {
+    defense: tr('coach.map.defense'), offense: tr('coach.map.offense'), roles: tr('coach.map.roles'), rules: tr(metaOn ? 'coach.map.rulesMeta' : 'coach.map.rules'),
+  };
   return (
     <div className="coaching">
-      {!advice && problems.length > 0 && <p className="coach-note coach-top" role="status">{tr('coach.computing')}</p>}
       {problems.length === 0 && <p className="coach-empty"><Icon name="check" />{tr('coach.noProblems')}</p>}
-      {groups.filter(group => group.items.length > 0).map(group => (
-        <Fragment key={group.key}>
-          <h3 id={`${id}-${group.key}`} className={`coach-group ${group.key}`}>{group.label}</h3>
-          <ul className="coach-problems" aria-labelledby={`${id}-${group.key}`}>
-            {group.items.map(problem => (
-              <li key={`${problem.key}|${problem.text}`} className={`coach-problem ${problem.severity}`}>
-                <div className="coach-problem-line">
-                  <span className="coach-problem-text"><ProblemText text={problem.text} /></span>
-                  <span className="coach-area">{tr(CATEGORY[problem.category])}</span>
+      {problems.length > 0 && (!advice || steps.length > 0) && (
+        <section aria-labelledby={`${id}-steps`} className="coach-steps-region">
+          <h3 id={`${id}-steps`} className="coach-sec">{tr('coach.steps.title')}</h3>
+          {advice ? (
+            <ol className="coach-steps">
+              {steps.map((step, i) => <Step key={step.problem.key} step={step} index={i} problems={problems} onFix={onFix} onMoveFix={onMoveFix} />)}
+            </ol>
+          ) : (
+            <>
+              <ol className="coach-steps" aria-busy="true">
+                {[0, 1, 2].map(i => <li key={i} className="coach-step skeleton" aria-hidden="true" />)}
+              </ol>
+              <p className="visually-hidden" role="status">{tr('coach.computing')}</p>
+            </>
+          )}
+        </section>
+      )}
+      {problems.length > 0 && (
+        <section aria-labelledby={`${id}-map`} className="coach-map-region">
+          <h3 id={`${id}-map`} className="coach-sec muted">{tr('coach.map.title')}</h3>
+          <div className="coach-map">
+            {COLUMNS.map(({ key, area }) => {
+              const items = ordered.filter(p => columnOf(p.category) === key);
+              const main = items.filter(p => p.category !== 'redundancy');
+              const redundancy = items.filter(p => p.category === 'redundancy');
+              const score = area ? rating?.areas.find(a => a.key === area)?.value ?? null : null;
+              const row = (p: CoachProblem) => <MapProblem key={`${p.key}|${p.text}`} problem={p} covered={covered.has(p.key)} />;
+              return (
+                <div key={key} role="group" aria-labelledby={`${id}-${key}`} className="dash-card coach-col">
+                  <header className="dash-head">
+                    <h4 id={`${id}-${key}`} className="dash-plate">{columnName[key]}</h4>
+                    {score !== null && <span className="dash-meta"><b>{Math.round(score)}</b></span>}
+                  </header>
+                  {items.length === 0 && <p className="dash-note good"><Icon name="check" />{tr('coach.map.none')}</p>}
+                  {main.length > 0 && <ul className="coach-probs">{main.map(row)}</ul>}
+                  {redundancy.length > 0 && (
+                    <>
+                      <h5 className="coach-sep">{tr('coach.map.redundancy')}</h5>
+                      <ul className="coach-probs">{redundancy.map(row)}</ul>
+                    </>
+                  )}
                 </div>
-                {advice && <ProblemFixes problem={problem} fixes={fixes} onFix={onFix} />}
-              </li>
-            ))}
-          </ul>
-        </Fragment>
-      ))}
+              );
+            })}
+          </div>
+        </section>
+      )}
       {/* Candidati: chi è nella lista Ban dell'utente non viene proposto, ma si dice quanti sono */}
       {bannedCount > 0 && <p className="coach-note">{tr(bannedCount === 1 ? 'lists.bannedExcludedOne' : 'lists.bannedExcluded', { n: bannedCount })}</p>}
     </div>

@@ -127,14 +127,3 @@ export function coachFixes(team: TeamSet[], format: Format, data: EngineData, pr
   }
   return fixes.sort((a, b) => b.gain - a.gain);
 }
-
-/** I cambi che risolvono o riducono un problema: prima chi lo risolve, poi dal voto più alto, ogni specie una volta. */
-export function fixesForProblem(fixes: CoachFix[], key: string, limit = 3): CoachFix[] {
-  const seen = new Set<string>();
-  const solves = (fix: CoachFix) => Number(fix.solves.includes(key));
-  return fixes
-    .filter(fix => fix.solves.includes(key) || fix.reduces.includes(key))
-    .sort((a, b) => solves(b) - solves(a) || b.gain - a.gain)
-    .filter(fix => !seen.has(fix.species) && !!seen.add(fix.species))
-    .slice(0, limit);
-}

@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/App';
 import { analyzeTeam } from '../../src/engine/analysis';
 import { coachTeam, type Coaching } from '../../src/engine/coach';
+import { columnOf, coveredKeys, MAX_STEPS } from '../../src/engine/coachSteps';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
 import { rateTeam } from '../../src/engine/rating';
 import { emptySet, exportShowdown, mostCommonSet, type TeamSet } from '../../src/engine/sets';
@@ -43,15 +44,10 @@ const rowGain = (species: string) => {
 };
 
 describe('scheda Coaching', () => {
-  it('i gravi sotto "Gravi", prima dei minori', async () => {
+  it('la mappa mette i gravi prima dei minori, nella colonna della loro area', async () => {
     await openCoaching(six);
-    const serious = within(analysis()).getByRole('list', { name: 'Gravi' });
-    const minor = within(analysis()).getByRole('list', { name: 'Minori' });
-    expect(serious).toHaveTextContent('Mosse non legali');
-    expect(minor).toHaveTextContent('Debole a');
-    expect(serious.compareDocumentPosition(minor) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    // Area a destra di ogni problema
-    expect(within(serious).getByText('Regole')).toBeInTheDocument();
+    expect(within(analysis()).getByRole('group', { name: 'Regole · Meta' })).toHaveTextContent('Mosse non legali');
+    expect(within(analysis()).getByRole('group', { name: 'Difesa' })).toHaveTextContent('Debole a');
   });
 
   it('clic su un sostituto: scheda Pokémon, quel membro da sostituire, il candidato aperto, stesso +N', async () => {
@@ -110,65 +106,173 @@ describe('scheda Coaching', () => {
 });
 
 describe('CoachingView', () => {
-  it('candidati sotto il problema raggruppati per membro, anche per chi lo riduce soltanto', () => {
-    const coaching = coachTeam(three, DEFAULT_FORMAT, data);
-    renderIt(<CoachingView coaching={coaching} advice={adviceOf(three, DEFAULT_FORMAT, data)} members={3} onFix={() => {}} />);
-    // Corviknight risolve Psychic come aggiunta
-    const psychic = screen.getAllByRole('listitem').find(li => li.textContent?.startsWith('Debole a Psychic'))!;
-    expect(psychic).toHaveTextContent(/Considera di aggiungere: Corviknight\+\d+/);
-    // Ground si risolve sostituendo Toxapex
-    const ground = screen.getAllByRole('listitem').find(li => li.textContent?.startsWith('Debole a Ground'))!;
-    expect(ground).toHaveTextContent(/Considera, al posto di Toxapex: Rotom-Wash\+\d+/);
-    // Problemi raggruppati: chi copre uno dei tipi o porta uno dei ruoli è un candidato, niente testo di ripiego
-    for (const start of ['Nessuna mossa super efficace contro', 'Ruoli importanti mancanti']) {
-      const item = screen.getAllByRole('listitem').find(li => li.textContent?.startsWith(start))!;
-      expect(within(item).getAllByRole('button').length).toBeGreaterThan(0);
-      expect(item).not.toHaveTextContent('Nessun cambio');
+  const rating = (team: TeamSet[]) => rateTeam(team, data, 'it');
+  const noop = { onFix: () => {}, onMoveFix: () => {} };
+  const view = (team: TeamSet[], over: Partial<Parameters<typeof CoachingView>[0]> = {}) => {
+    const coaching = coachTeam(team, DEFAULT_FORMAT, data);
+    const advice = adviceOf(team, DEFAULT_FORMAT, data);
+    renderIt(<CoachingView coaching={coaching} advice={advice} members={team.length} rating={rating(team)} metaOn {...noop} {...over} />);
+    return { coaching, advice };
+  };
+  const stepsRegion = () => screen.getByRole('region', { name: 'Cosa farei io' });
+
+  it('le tappe: al massimo 3, numerate, nell\'ordine dei consigli', () => {
+    const { advice } = view(six);
+    const items = within(stepsRegion()).getAllByRole('listitem');
+    const shown = advice!.steps.slice(0, MAX_STEPS);
+    expect(shown.length).toBeGreaterThan(0);
+    expect(items).toHaveLength(shown.length);
+    items.forEach((item, i) => {
+      expect(item.querySelector('.coach-step-num')).toHaveTextContent(String(i + 1));
+      expect(item.querySelector('.coach-step-problem')).toHaveTextContent(shown[i].problem.text.replace(/\s+/g, ' ').slice(0, 10));
+    });
+  });
+
+  it('i pulsanti di ogni tappa hanno il +N e portano al cambio', async () => {
+    const onFix = vi.fn();
+    const onMoveFix = vi.fn();
+    const { advice } = view(six, { onFix, onMoveFix });
+    const user = userEvent.setup();
+    const shown = advice!.steps.slice(0, MAX_STEPS);
+    const items = within(stepsRegion()).getAllByRole('listitem');
+    let moves = 0;
+    for (const [i, step] of shown.entries()) {
+      if (step.swap) {
+        const label = step.swap.kind === 'add' ? `Aggiungi ${step.swap.species}, +${step.swap.gain}`
+          : `Al posto di ${step.swap.member}: ${step.swap.species}, +${step.swap.gain}`;
+        await user.click(within(items[i]).getByRole('button', { name: label }));
+        expect(onFix).toHaveBeenLastCalledWith(step.swap);
+      }
+      if (step.move) {
+        moves++;
+        await user.click(within(items[i]).getByRole('button', { name: `Dai ${step.move.to} a ${step.move.member}, +${step.move.gain}` }));
+        expect(onMoveFix).toHaveBeenLastCalledWith(step.move);
+      }
     }
+    expect(onFix).toHaveBeenCalled();
+    expect(moves).toBeGreaterThanOrEqual(0);
   });
 
-  it('nessun candidato lo risolve né lo riduce: chi lo gestisce, come testo', () => {
+  it('"risolve anche": i problemi della proposta tranne quello della tappa, niente riga se vuoto', () => {
+    const { advice } = view(six);
+    const shown = advice!.steps.slice(0, MAX_STEPS);
+    const items = within(stepsRegion()).getAllByRole('listitem');
+    let any = false;
+    shown.forEach((step, i) => {
+      const expected = [step.swap, step.move].filter(p => p && p.solves.some(k => k !== step.problem.key)).length;
+      if (expected) any = true;
+      expect(items[i].querySelectorAll('.coach-also')).toHaveLength(expected);
+      items[i].querySelectorAll('.coach-also').forEach(line => expect(line).toHaveTextContent('risolve anche'));
+    });
+    expect(any).toBe(true);
+  });
+
+  it('nessun nome di candidato compare due volte nelle tappe', () => {
+    const { advice } = view(six);
+    const text = stepsRegion().textContent!;
+    const names = advice!.steps.slice(0, MAX_STEPS).map(s => s.swap?.species).filter(Boolean) as string[];
+    expect(names.length).toBeGreaterThan(0);
+    for (const name of names) expect(text.split(name).length - 1).toBe(1);
+  });
+
+  it('la mappa: quattro gruppi col voto dell\'area, nessun voto per Regole · Meta', () => {
+    const r = rating(six)!;
+    view(six);
+    for (const [name, key] of [['Difesa', 'defense'], ['Offesa', 'strength'], ['Ruoli', 'roles']] as const) {
+      const group = screen.getByRole('group', { name });
+      expect(group.querySelector('.dash-meta')).toHaveTextContent(String(Math.round(r.areas.find(a => a.key === key)!.value!)));
+    }
+    expect(screen.getByRole('group', { name: 'Regole · Meta' }).querySelector('.dash-meta')).toBeNull();
+  });
+
+  it('senza meta il gruppo si chiama Regole', () => {
+    view(three, { metaOn: false });
+    expect(screen.getByRole('group', { name: 'Regole' })).toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: 'Regole · Meta' })).toBeNull();
+  });
+
+  it('ogni problema compare una volta nella colonna di columnOf, gravi prima; i coperti sono is-covered', () => {
+    const { coaching, advice } = view(six);
+    const names = { defense: 'Difesa', offense: 'Offesa', roles: 'Ruoli', rules: 'Regole · Meta' };
+    const covered = coveredKeys(advice!.steps);
+    const unique = [...new Map(coaching.problems.map(p => [`${p.key}|${p.text}`, p])).values()];
+    let total = 0;
+    for (const col of ['defense', 'offense', 'roles', 'rules'] as const) {
+      const group = screen.getByRole('group', { name: names[col] });
+      const rows = [...group.querySelectorAll<HTMLElement>('li[data-key]')];
+      const expected = unique.filter(p => columnOf(p.category) === col);
+      expect(rows).toHaveLength(expected.length);
+      total += rows.length;
+      for (const row of rows) {
+        const p = expected.find(e => e.key === row.dataset.key)!;
+        expect(p).toBeTruthy();
+        expect(row.classList.contains('is-covered')).toBe(covered.has(p.key));
+      }
+      const sev = rows.map(r => r.classList.contains('serious'));
+      expect(sev).toEqual([...sev].sort((x, y) => Number(y) - Number(x)));
+    }
+    expect(total).toBe(unique.length);
+  });
+
+  it('colonna senza problemi: "Nessun problema"', () => {
     const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], threatFixes: {},
-      problems: [{ severity: 'minor', category: 'roles', text: 'Ruoli importanti mancanti: Pivot', fixes: ['Corviknight', 'Rotom-Wash'], key: 'roles:important' }] };
-    renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], moves: [], steps: [] }} members={3} onFix={() => {}} />);
-    const roles = screen.getByRole('listitem');
-    expect(roles).toHaveTextContent('Nessun cambio fra i consigliati lo risolve: lo gestiscono Corviknight o Rotom-Wash');
-    expect(within(roles).queryByRole('button')).toBeNull();
+      problems: [{ severity: 'minor', category: 'roles', text: 'Ruoli importanti mancanti: Pivot', fixes: [], key: 'roles:important' }] };
+    renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], moves: [], steps: [] }} members={3} rating={rating(three)} metaOn {...noop} />);
+    expect(within(screen.getByRole('group', { name: 'Difesa' })).getByText('Nessun problema')).toBeInTheDocument();
+    expect(within(screen.getByRole('group', { name: 'Ruoli' })).queryByText('Nessun problema')).toBeNull();
   });
 
-  it('consigli in calcolo: i problemi sì, al posto dei candidati una riga', () => {
+  it('ridondanze: sotto un separatore nella colonna Ruoli', () => {
+    const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], threatFixes: {},
+      problems: [{ severity: 'minor', category: 'redundancy', text: '2 rimozioni hazard', fixes: [], key: 'redundancy:x' }] };
+    renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], moves: [], steps: [] }} members={3} rating={rating(three)} metaOn {...noop} />);
+    const roles = screen.getByRole('group', { name: 'Ruoli' });
+    expect(roles).toHaveTextContent('Ridondanze');
+    expect(roles).toHaveTextContent('2 rimozioni hazard');
+  });
+
+  it('consigli in calcolo: scheletro delle tappe (aria-busy) e mappa già piena', () => {
     const coaching = coachTeam(three, DEFAULT_FORMAT, data);
-    renderIt(<CoachingView coaching={coaching} advice={null} members={3} onFix={() => {}} />);
-    expect(screen.getByRole('status')).toHaveTextContent('Calcolo dei consigli…');
-    expect(screen.getByRole('list', { name: 'Gravi' })).toBeInTheDocument();
+    renderIt(<CoachingView coaching={coaching} advice={null} members={3} rating={rating(three)} metaOn {...noop} />);
+    expect(stepsRegion().querySelector('[aria-busy="true"]')).not.toBeNull();
     expect(screen.queryByRole('button')).toBeNull();
-    expect(screen.queryByText(/Nessun cambio/)).toBeNull();
+    expect(screen.getByRole('group', { name: 'Difesa' })).toHaveTextContent('Debole a');
   });
 
-  it('con un membro solo: invito ad aggiungere, non "nessun problema"', () => {
+  it('team di 3: la proposta di Pokémon è "Aggiungi …"', () => {
+    const coaching = coachTeam(three, DEFAULT_FORMAT, data);
+    const advice = adviceOf(three, DEFAULT_FORMAT, data);
+    const add = advice.fixes.find(f => f.kind === 'add')!;
+    expect(add).toBeTruthy();
+    const step = { problem: coaching.problems.find(p => add.solves.includes(p.key)) ?? coaching.problems[0], swap: add, move: null, alsoSolves: [] };
+    renderIt(<CoachingView coaching={coaching} advice={{ ...advice, steps: [step] }} members={3} rating={rating(three)} metaOn {...noop} />);
+    const button = within(stepsRegion()).getByRole('button', { name: `Aggiungi ${add.species}, +${add.gain}` });
+    expect(button).toHaveTextContent(`Aggiungi ${add.species}`);
+  });
+
+  it('con meno di 2 membri: solo l\'invito ad aggiungere', () => {
     const coaching = coachTeam([six[0]], DEFAULT_FORMAT, data);
-    renderIt(<CoachingView coaching={coaching} advice={null} members={1} onFix={() => {}} />);
+    renderIt(<CoachingView coaching={coaching} advice={null} members={1} rating={null} metaOn {...noop} />);
     expect(screen.getByText('Aggiungi almeno 2 Pokémon per ricevere il coaching')).toBeInTheDocument();
-    expect(screen.queryByText('Nessun problema: il team è a posto.')).toBeNull();
+    expect(screen.queryByRole('group')).toBeNull();
+    expect(screen.queryByRole('region')).toBeNull();
   });
 
-  it('senza meta nessun problema "senza un check" né candidati', () => {
-    const withMeta = coachTeam(three, DEFAULT_FORMAT, data);
-    expect(withMeta.problems.some(p => /senza un check/.test(p.text))).toBe(true);
+  it('senza meta nessun problema "senza un check"', () => {
     const coaching = coachTeam(three, { ...DEFAULT_FORMAT, meta: false }, { ...data, ignoreMeta: true });
-    renderIt(<CoachingView coaching={coaching} advice={null} members={3} onFix={() => {}} />);
+    renderIt(<CoachingView coaching={coaching} advice={null} members={3} rating={rating(three)} metaOn={false} {...noop} />);
     expect(screen.queryByText(/senza un check/)).toBeNull();
   });
 
   it('nessun problema: un messaggio positivo', () => {
     const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], problems: [], threatFixes: {} };
-    renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], moves: [], steps: [] }} members={6} onFix={() => {}} />);
+    renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], moves: [], steps: [] }} members={6} rating={rating(six)} metaOn {...noop} />);
     expect(screen.getByText('Nessun problema: il team è a posto.')).toBeInTheDocument();
   });
 
   it('dice quanti bannati restano fuori dai candidati', () => {
     const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], problems: [], threatFixes: {}, bannedCount: 1 };
-    renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], moves: [], steps: [] }} members={6} onFix={() => {}} />);
+    renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], moves: [], steps: [] }} members={6} rating={rating(six)} metaOn {...noop} />);
     expect(screen.getByText('1 bannato escluso')).toBeInTheDocument();
   });
 });
@@ -178,7 +282,7 @@ describe('AnalysisPanel: Coaching e profilo di un membro', () => {
     const coaching = coachTeam(three, DEFAULT_FORMAT, data);
     renderIt(<AnalysisPanel team={three} analysis={analyzeTeam(three, data)} rating={rateTeam(three, data, 'it')} data={data} coaching={coaching}
       view="coaching" onView={() => {}} member={0} onMember={() => {}} />);
-    expect(screen.getByRole('list', { name: 'Gravi' })).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'Difesa' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Panoramica/ })).toBeNull();
   });
 });

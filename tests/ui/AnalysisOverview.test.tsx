@@ -104,8 +104,9 @@ describe('Panoramica di Analisi', () => {
   it('regole per prime tra i problemi del Coaching', async () => {
     const user = await setup(['Great Tusk', 'Dragapult']);
     await user.click(within(views()).getByRole('tab', { name: 'Coaching' }));
-    const serious = within(within(panel()).getByRole('list', { name: 'Gravi' })).getAllByRole('listitem');
-    expect(serious[0].querySelector('.coach-area')).toHaveTextContent('Regole');
+    const rows = within(within(panel()).getByRole('group', { name: /^Regole/ })).getAllByRole('listitem');
+    expect(rows[0]).toHaveClass('serious');
+    expect(rows[0].getAttribute('data-key')).toMatch(/^rules:/);
   });
 
   it('team stall: la nota "valutato come stall"', async () => {
