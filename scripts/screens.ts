@@ -371,9 +371,19 @@ for (const [w, h] of sizes) {
       const need = Math.max(0, ...steps.map(s => [...s.querySelectorAll('.coach-step-body > *')].reduce((b, c) => Math.max(b, c.getBoundingClientRect().bottom), 0) - s.getBoundingClientRect().top));
       return `coach: stepsRow=${Math.round(row)} contentMax=${Math.round(need)} stepOverflow=${tall} clippedLines=${wide} usage=${usage.length} usageCut=${usageCut} hScroll=${box.scrollWidth - box.clientWidth} docHScroll=${document.scrollingElement!.scrollWidth - window.innerWidth}`;
     });
+    // Lista candidati: scorrimento interno, caselle tagliate dal fondo, misure delle Carte
+    const list = await page.evaluate(() => {
+      const ol = document.querySelector<HTMLElement>('ol.suggestions');
+      if (!ol) return '';
+      const bottom = ol.getBoundingClientRect().bottom;
+      const items = [...ol.querySelectorAll<HTMLElement>(':scope > li')];
+      const cut = items.filter(li => li.getBoundingClientRect().bottom - bottom > 0.5).length;
+      const first = items[0]?.getBoundingClientRect();
+      return `list: ${ol.className} items=${items.length} cols=${ol.style.getPropertyValue('--cols') || '-'} tileH=${ol.style.getPropertyValue('--tile-h') || '-'} reasons=${ol.style.getPropertyValue('--reasons') || '-'} first=${first ? `${Math.round(first.width)}x${Math.round(first.height)}` : '-'} listScroll=${ol.scrollHeight - ol.clientHeight} cutTiles=${cut}`;
+    });
     const file = join(out, `${w}x${h}-${name}.png`);
     await page.screenshot({ path: file });
-    console.log(`${file} pageScroll=${scroll} clipped=${clipped} ${dash} ${coach}`);
+    console.log(`${file} pageScroll=${scroll} clipped=${clipped} ${dash} ${coach} ${list}`);
     await page.close();
   }
 }

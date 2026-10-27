@@ -166,9 +166,9 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .pager-box { font: 700 13px/1 var(--display); font-style: italic; letter-spacing: 0.04em; color: var(--text); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .pager-dashes { grid-column: 1 / -1; display: flex; gap: 3px; }
 /* Trattino sottile, ma con un'area cliccabile più alta */
-.pager .dash { width: 14px; height: 10px; min-width: 0; padding: 3px 0; border: 0; border-radius: 0; background: var(--line); background-clip: content-box; }
-.pager .dash:hover { background-color: var(--muted); }
-.pager .dash[aria-current='page'] { background-color: var(--accent); }
+.pager .pager-dash { width: 14px; height: 10px; min-width: 0; padding: 3px 0; border: 0; border-radius: 0; background: var(--line); background-clip: content-box; }
+.pager .pager-dash:hover { background-color: var(--muted); }
+.pager .pager-dash[aria-current='page'] { background-color: var(--accent); }
 
 /* Dettaglio del candidato: resta in vista mentre si scorre la lista */
 .detail {
@@ -466,3 +466,64 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .suggestion .name-line > :not(.pick) { flex: none; }
 /* Problemi e bonus: la pillola tratteggiata che spiega la parte del voto fuori dalle aree */
 .detail .effect .detail-areas .extras { border-style: dashed; }
+
+/* Stile "Carte": griglia di caselle a forma di carta Masters (misure da usePerPage: --cols, --tile-h, --reasons) */
+.suggestions.cards { display: grid; grid-template-columns: repeat(var(--cols, auto-fill), minmax(min(138px, 100%), 1fr)); gap: 8px; padding: 10px; align-content: start; }
+.suggestions.cards > li + li { border-top: 0; }
+.card {
+  /* Lo sprite si stringe per far posto ai motivi: clamp(60, altezza − 27 − 16 × motivi + 6, 112) */
+  --sprite-w: clamp(60px, calc(var(--tile-h, 120px) - 21px - 16px * var(--reasons, 1)), 112px);
+  position: relative;
+  height: var(--tile-h, 120px);
+  min-width: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 0 10px 10px;
+  overflow: hidden;
+  background: var(--raised);
+  border-bottom: 3px solid var(--t1);
+  /* Angolo in alto a destra tagliato */
+  clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 0 100%);
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s;
+}
+.card:hover { background: #2e3348; }
+.card.picked { box-shadow: inset 0 0 0 1px var(--accent); }
+.card.selected { background: var(--accent-wash); box-shadow: inset 0 0 0 2px var(--accent); }
+.card-sprite { position: absolute; left: 50%; top: -6px; width: var(--sprite-w); transform: translateX(-50%); pointer-events: none; }
+.card-sprite .sprite { display: block; width: 100%; height: auto; image-rendering: pixelated; }
+/* Targhetta in alto a sinistra: +N (#1 su magenta), −N e ±0 nei loro colori, col team vuoto l'uso nel meta */
+.card .tag { position: absolute; top: 0; left: 0; z-index: 1; margin: 0; padding: 5px 16px 5px 8px; border-radius: 0; background: var(--ground); color: var(--text);
+  font: 800 15px/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums; clip-path: polygon(0 0, 100% 0, calc(100% - 9px) 100%, 0 100%); }
+.card .tag strong { font: inherit; }
+.card .tag strong.worse { color: var(--bad); }
+.card .tag strong.same { color: var(--muted); }
+.card .tag small { display: none; }
+.card.first .tag { background: var(--accent-2); color: var(--on-accent-2); }
+/* Tipi come icone, in colonna in alto a destra (sotto il taglio) */
+.card .card-types { position: absolute; top: 22px; right: 8px; flex-direction: column; gap: 4px; }
+.card .card-types img { width: 20px; height: 20px; box-shadow: none; }
+.card .card-types img + img { margin: 0; }
+/* Chi esce (Migliora · Tutti): tondino sotto le icone dei tipi */
+.card .out { position: absolute; top: 70px; right: 7px; z-index: 2; width: 24px; height: 24px; border-radius: 50%; overflow: hidden; background: var(--ground); border: 1px solid var(--line); }
+.card .out .mon-icon { margin: -6px 0 0 -9px; }
+.card .who { position: relative; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.card .name-line { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.card .name-line > :not(.pick) { flex: none; }
+.card .pick { flex: 0 1 auto; min-width: 0; overflow: hidden; padding: 0; border: 0; background: none; color: inherit; text-align: left; }
+.card .pick[aria-pressed='true'] { background: none; }
+.card .pick strong { display: block; font: 800 15px/1.15 var(--display); font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card .name-line .list-mark { font-size: 12px; }
+.card .who small { display: flex; flex-direction: column; min-width: 0; }
+.card .reason { display: block; min-width: 0; font: 500 12px/1.3 var(--ui); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card .reason b { margin-right: 3px; font-weight: 700; color: var(--good); }
+/* Pulsante rapido: a riposo nascosto, passando sulla casella o col focus a sinistra sotto la targhetta */
+.card .quick { position: absolute; top: 30px; left: 6px; z-index: 2; display: grid; place-items: center; width: 28px; height: 28px; padding: 0; border-radius: 4px;
+  color: var(--muted); background: var(--panel); opacity: 0; transition: opacity 0.15s var(--ease); }
+.card .quick:hover { color: var(--text); background: var(--accent-soft); }
+.card:hover .quick, .card:focus-within .quick { opacity: 1; }
+.card.first .quick { background: var(--accent-2); border-color: var(--accent-2); color: var(--on-accent-2); }
+.card.first .quick:hover { background: var(--accent-2-ink); }

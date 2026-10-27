@@ -1,28 +1,21 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import type { EngineData } from '../engine/data';
 import type { Format } from '../engine/format';
-import { formatRules } from '../engine/formatRules';
 import type { Archetype } from '../engine/archetype';
 import { improveReplacements, keepersFirst, type Replacement } from '../engine/replace';
-import { rankedChanges } from '../engine/coach';
 import { rankedAdditions, rankedReplacements } from '../engine/coachFixes';
-import { topReason } from '../engine/explain';
-import { detectRoles } from '../engine/roles';
-import { OFTEN_TOGETHER } from '../engine/scoring';
 import { ActiveFilters } from './ActiveFilters';
 import type { Suggestion } from '../engine/scoring';
 import type { TeamSet } from '../engine/sets';
 import type { TeamRating } from '../engine/rating';
-import { bestSwaps, rankByTeamGain, rankKey, SWAPS_PER_MEMBER, type SwapOption, type SwapReport, type TeamGain } from '../engine/teamGain';
+import { bestSwaps, rankByTeamGain, rankKey, SWAPS_PER_MEMBER, type SwapReport } from '../engine/teamGain';
 import { battleName } from '../engine/dex';
 import { PokemonIcon } from './PokemonName';
 import { statsEntry } from '../engine/stats';
-import { formatPercent } from '../i18n';
 import { getSpecies } from '../engine/dex';
-import { applyFavorites, isUserBanned, isUserFavorite, type EffectiveLists } from '../engine/lists';
+import { applyFavorites, isUserBanned, isUserFavorite } from '../engine/lists';
 import { bannedNames } from '../engine/scoring';
-import { formatLabel } from '../engine/formats';
-import { activeFilterCount, EMPTY_FILTERS, isFiltering, searchCandidates, searchPool, tierLabel, type CandidateFilters } from '../engine/filters';
+import { activeFilterCount, EMPTY_FILTERS, isFiltering, searchCandidates, searchPool, type CandidateFilters } from '../engine/filters';
 import { defaultSet } from '../engine/sets';
 import { FilterBar } from './FilterBar';
 import { conditionLabel, neededConditions, providesAll, viaName } from '../engine/synergy';
@@ -30,23 +23,17 @@ import { Sprite, TypeChip } from './Sprite';
 import { TypeIcons } from './typeIcons';
 import { Icon } from './icons';
 import { SuggestionDetail } from './SuggestionDetail';
-import { AlertMark } from './AlertMark';
-import { Typed } from './TypeText';
-import { t, type Lang } from '../i18n';
+import { CandidateCard } from './CandidateCard';
+import { BanMark, CandidateMarks, OutMark, PickButton, QuickButton, Reasons, ResultCell, candidateHandlers, reasonsOf, stateClasses, type CandidateProps, type Item } from './candidateParts';
 import type { ListSprite, ListStyle } from './theme';
 import { useLang, useT } from '../i18n/react';
 import { PAGE, usePerPage } from './usePerPage';
 
 /** Candidati in tutto; il voto del team si calcola sui primi POOL per punteggio. Per pagina: misurato (PAGE senza misura). */
 export { PAGE };
+export { reasonsOf, signed } from './candidateParts';
 export const MAX = 50;
 const POOL = 100;
-
-/**
- * Candidato in lista, col voto che darebbe al team (assente col primo Pokémon).
- * Nelle raccomandazioni libere anche il membro che sostituirebbe e gli altri possibili.
- */
-type Item = (Suggestion | Replacement) & { teamGain?: TeamGain; replaces?: number; alternatives?: SwapOption[] };
 
 /** Cosa mostra la lista: aggiunte, scambi liberi con tutto il team, o sostituti di un membro. */
 type View = 'add' | 'all' | 'member';
@@ -83,147 +70,32 @@ export interface CandidateFocus {
   nonce: number;
 }
 
-/** Solo se il Pokémon è bannato nel formato: triangolo rosso con il tier nel tooltip. */
-function BanMark({ species, format }: { species: string; format: Format }) {
-  const lang = useLang();
-  const { label, banned } = tierLabel(species, format);
-  return banned ? <AlertMark alerts={[{ level: 'danger', text: t(lang, 'suggest.banned', { tier: label, format: formatLabel(format, lang) }) }]} /> : null;
-}
-
-/** Il voto del team col candidato (+7, B 80); col primo Pokémon, il suo uso nel meta. */
-function ResultCell({ item, usage }: { item: Item; usage: number | null }) {
-  const tr = useT();
-  const lang = useLang();
-  const result = item.teamGain;
-  if (!result) {
-    return usage === null
-      ? <span className="result" aria-hidden="true" />
-      : (
-        <span className="result" aria-label={tr('suggest.usageAria', { pct: formatPercent(lang, usage) })}>
-          <strong>{formatPercent(lang, usage)}</strong><small>{tr('suggest.usageShort')}</small>
-        </span>
-      );
-  }
-  const gain = signed(result.gain);
-  return (
-    <span className="result" aria-label={tr('suggest.teamGrade', { grade: result.grade, n: result.overall, gain })}>
-      <strong className={result.gain < 0 ? 'worse' : result.gain === 0 ? 'same' : undefined}>{gain}</strong>
-    </span>
-  );
-}
-
-/** +7, −3, ±0. */
-export const signed = (n: number) => (n > 0 ? `+${n}` : n < 0 ? `−${-n}` : '±0');
-
-/** ♥ nei Preferiti dell'utente, ⊘ nella sua lista Ban (mostrato perché cercato per nome o con "mostra"). */
-function ListMarks({ set, lists }: { set: TeamSet; lists?: EffectiveLists }) {
-  const tr = useT();
-  const banned = isUserBanned(set, lists && { ...lists, allow: undefined });
-  const favorite = !banned && isUserFavorite(set, lists);
-  if (!banned && !favorite) return null;
-  return (
-    <span className={`list-mark ${banned ? 'ban' : 'fav'}`} role="img" aria-label={tr(banned ? 'lists.bannedMark' : 'lists.favoriteMark')}
-      title={tr(banned ? 'lists.bannedMark' : 'lists.favoriteMark')}><Icon name={banned ? 'ban' : 'heart'} /></span>
-  );
-}
-
-/**
- * I motivi sotto il nome, dal bonus che vale più punti voto in giù (al massimo `n`). Il malus resta nel dettaglio.
- * Col team vuoto i ruoli principali; senza bonus "nessuna differenza".
- */
-export function reasonsOf(item: Item, n: number, usage: number | null, format: Format, lang: Lang): { pros: boolean; texts: string[] } {
-  const diff = 'diff' in item ? item.diff : null;
-  const changes = diff ? rankedChanges(diff, item.teamGain?.areaPoints, lang) : null;
-  const pros = changes?.pros.slice(0, n).map(p => p.text) ?? [];
-  if (pros.length) return { pros: true, texts: pros };
-  // Con un cambio ma senza bonus: "nessuna differenza" (la ragione che pesa di più potrebbe essere un malus)
-  const text = changes
-    ? t(lang, 'suggest.noDifference')
-    // L'uso nel meta non è un motivo per sceglierlo: resta solo col team vuoto, dove è l'unico criterio
-    // Col team vuoto l'uso sta già a destra: qui i ruoli principali del Pokémon
-    : (usage !== null ? detectRoles(item.set, formatRules(format.formatId)).slice(0, 3).map(role => t(lang, `role.${role}`)).join(', ') : topReason(item.reasons.filter(r => r.component !== 'strength'))?.text) ?? '';
-  return { pros: false, texts: [text] };
-}
-
-function SuggestionRow({ rank, item, usage, out, quickLabel, actionLabel, replacing, picked, selected, onSelect, onAction, format, lists, reasons }: {
-  /** Quanti motivi mostrare sotto il nome. */
-  reasons: number;
-  /** Liste dell'utente, per i segni ♥ e ⊘. */
-  lists?: EffectiveLists;
-  /** Riga scelta dalla ricerca (Invio la aggiunge). */
-  picked?: boolean;
-  /** Riga mostrata nel dettaglio. */
-  selected: boolean;
-  onSelect: () => void;
-  quickLabel: string;
-  actionLabel: string;
-  replacing: boolean;
-  format: Format;
-  rank: number;
-  item: Item;
-  /** Uso nel meta, mostrato al posto del voto col primo Pokémon. */
-  usage: number | null;
-  /** Il membro che uscirebbe (raccomandazioni libere). */
-  out?: string;
-  onAction: () => void;
-}) {
-  const tr = useT();
-  const lang = useLang();
-  const summary = reasonsOf(item, reasons, usage, format, lang);
+/** Stile Menu (finché non c'è il suo componente): la riga di prima, coi pezzi comuni. */
+function SuggestionRow(props: CandidateProps) {
+  const { rank, item, reasons, sprite, usage, out, format, lists, selected, onSelect } = props;
   const types = getSpecies(item.species)?.types ?? [];
-  // Avvisi e "spesso usati insieme" come segni con tooltip, non più etichette lunghe che vanno a capo
-  const warnings = item.facts.clashes.map(text => ({ level: 'warn' as const, text: text.replace(/^⚠\s*/, '') }));
-  const synergy = item.facts.synergy;
-  const together = synergy && synergy.pct >= OFTEN_TOGETHER
-    ? [{ level: 'info' as const, text: tr('tag.oftenTogether', { member: synergy.member, pct: Math.round(synergy.pct * 100) }) }]
-    : [];
-  const className = ['suggestion', rank === 1 && 'first', selected && 'selected', picked && 'picked', out && 'swap'].filter(Boolean).join(' ');
+  const className = ['suggestion', rank === 1 && 'first', stateClasses(props)].filter(Boolean).join(' ');
   return (
     // Tutta la riga apre il dettaglio col mouse; da tastiera lo fa il nome
-    // Doppio clic: aggiunge o fa lo scambio (il pulsante a destra resta la via visibile e da tastiera)
-    <li className={className} onClick={onSelect} onDoubleClick={e => { if (!(e.target as Element).closest('button')) onAction(); }}>
+    <li className={className} {...candidateHandlers(props)}>
       <span className="rank" aria-hidden="true">{rank}</span>
-      <Sprite species={item.species} item={item.set.item} size={48} />
+      {sprite}
       <span className="who">
         <span className="name-line">
-          <button type="button" className="pick" aria-pressed={selected} onClick={e => { e.stopPropagation(); onSelect(); }}>
-            <strong><span className="visually-hidden">{rank}. </span>{item.species}</strong>
-          </button>
+          <PickButton rank={rank} species={item.species} selected={selected} onSelect={onSelect} />
           {/* Il tipo subito dopo il nome, poi i segni (ban, liste, avvisi, usato insieme) */}
           <span className="types">
             {types.map(type => <TypeChip key={type} type={type} />)}
             {/* Righe strette: al posto dei chip le icone dei tipi (il nome del candidato ha la precedenza) */}
             <TypeIcons types={types} className="types-compact" />
           </span>
-          <BanMark species={item.species} format={format} />
-          <ListMarks set={item.set} lists={lists} />
-          <AlertMark alerts={warnings} />
-          <AlertMark alerts={together} icon="spark" />
+          <CandidateMarks item={item} format={format} lists={lists} />
         </span>
-        {/* I bonus principali, quanti ne entrano; il colore solo sul segno */}
-        <small>
-          {summary.texts.map((text, i) => (summary.pros
-            ? <span key={i} className="reason gain"><b aria-hidden="true">+</b><span className="visually-hidden">+</span><Typed text={text} /></span>
-            : <span key={i} className="reason plain"><Typed text={text} /></span>))}
-        </small>
+        <Reasons reasons={reasons} />
       </span>
-      {/* Chi esce: solo la sua icona accanto al voto (con 6 membri basta); il nome nel tooltip e per gli screen reader */}
-      {out && (
-        <span className="out" title={tr('suggest.outFor', { member: out })}>
-          <PokemonIcon name={out} />
-          <span className="visually-hidden">{tr('suggest.outFor', { member: out })}</span>
-        </span>
-      )}
+      {out && <OutMark member={out} />}
       <ResultCell item={item} usage={usage} />
-      <button
-        type="button"
-        className="quick"
-        aria-label={quickLabel}
-        title={actionLabel}
-        onClick={e => { e.stopPropagation(); onAction(); }}
-      >
-        <Icon name={replacing ? 'swap' : 'plus'} />
-      </button>
+      <QuickButton {...props} />
     </li>
   );
 }
@@ -507,6 +379,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
     </>
   );
 
+  const cards = listStyle === 'cards';
   const listVars = {
     '--cols': columns,
     '--tile-h': tileHeight !== undefined ? `${tileHeight}px` : undefined,
@@ -559,26 +432,28 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
     body = (
       <>
         {/* Le misure per le caselle (Carte: colonne e altezza; Menu: altezza della riga) */}
-        <ol className={`suggestions${stale ? ' stale' : ''}`} ref={listRef} aria-busy={stale || undefined} style={listVars}>
-          {pageItems.map((item, i) => (
-            <SuggestionRow
-              key={item.species}
-              reasons={reasons}
-              picked={page * perPage + i === pickedIndex}
-              selected={item === selected}
-              onSelect={() => select(item)}
-              rank={page * perPage + i + 1}
-              item={item}
-              usage={emptyTeam ? usageOf(item.species) : null}
-              out={item.replaces !== undefined ? memberName(item.replaces) : undefined}
-              actionLabel={actionLabelOf(item)}
-              quickLabel={quickLabelOf(item)}
-              replacing={view !== 'add'}
-              onAction={() => act(item)}
-              format={format}
-              lists={data.userLists}
-            />
-          ))}
+        <ol className={`suggestions${cards ? ' cards' : ''}${stale ? ' stale' : ''}`} ref={listRef} aria-busy={stale || undefined} style={listVars}>
+          {pageItems.map((item, i) => {
+            const usage = emptyTeam ? usageOf(item.species) : null;
+            const candidate: CandidateProps = {
+              rank: page * perPage + i + 1,
+              item,
+              reasons: reasonsOf(item, reasons, usage, format, lang),
+              sprite: <Sprite species={item.species} item={item.set.item} size={cards ? 96 : 48} />,
+              usage,
+              out: item.replaces !== undefined ? memberName(item.replaces) : undefined,
+              picked: page * perPage + i === pickedIndex,
+              selected: item === selected,
+              onSelect: () => select(item),
+              actionLabel: actionLabelOf(item),
+              quickLabel: quickLabelOf(item),
+              replacing: view !== 'add',
+              onAction: () => act(item),
+              format,
+              lists: data.userLists,
+            };
+            return cards ? <CandidateCard key={item.species} {...candidate} /> : <SuggestionRow key={item.species} {...candidate} />;
+          })}
         </ol>
       </>
     );
@@ -596,7 +471,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
       </button>
       <span className="pager-dashes">
         {Array.from({ length: pages }, (_, n) => (
-          <button key={n} type="button" className="dash" aria-label={tr('suggest.page', { n: n + 1 })} aria-current={n === page ? 'page' : undefined}
+          <button key={n} type="button" className="pager-dash" aria-label={tr('suggest.page', { n: n + 1 })} aria-current={n === page ? 'page' : undefined}
             onClick={() => goToPage(n)} />
         ))}
       </span>

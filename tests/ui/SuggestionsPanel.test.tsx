@@ -8,6 +8,8 @@ import { DEFAULT_FORMAT } from '../../src/engine/format';
 const suggestions = () => screen.getByRole('region', { name: 'Suggerimenti' });
 const team = () => screen.getByRole('region', { name: 'Team' });
 const list = () => suggestions().querySelector<HTMLElement>('.suggestions')!;
+/** Il posto in classifica, letto dal nome (per gli screen reader: "11. Nome"). */
+const rankOf = (row: Element) => parseInt(row.querySelector('.pick strong')!.textContent!, 10);
 const rowNames = () => [...list().querySelectorAll('.name-line strong')].map(el => el.textContent!.replace(/^\d+\. /, ''));
 
 async function setup(...names: string[]) {
@@ -74,7 +76,7 @@ describe('SuggestionsPanel', () => {
     expect(within(pager).getByRole('button', { name: 'Pagina precedente' })).toBeDisabled();
     await user.click(within(pager).getByRole('button', { name: 'Pagina 2' }));
     expect(within(pager).getByRole('button', { name: 'Pagina 2' })).toHaveAttribute('aria-current', 'page');
-    expect(list().querySelector('.rank')!.textContent).toBe('11');
+    expect(rankOf(list().querySelector('li')!)).toBe(11);
   });
 
   it('aggiunge un suggerimento al team', async () => {
@@ -176,11 +178,11 @@ describe('SuggestionsPanel', () => {
     const pager = await screen.findByRole('navigation', { name: 'Pagine dei suggerimenti' });
     for (let i = 0; i < 10; i++) await user.keyboard('{ArrowDown}');
     expect(within(pager).getByRole('button', { name: 'Pagina 2' })).toHaveAttribute('aria-current', 'page');
-    expect(list().querySelector('.picked .rank')!.textContent).toBe('11');
+    expect(rankOf(list().querySelector('.picked')!)).toBe(11);
     // E indietro, prima della prima, alla precedente
     await user.keyboard('{ArrowUp}');
     expect(within(pager).getByRole('button', { name: 'Pagina 1' })).toHaveAttribute('aria-current', 'page');
-    expect(list().querySelector('.picked .rank')!.textContent).toBe('10');
+    expect(rankOf(list().querySelector('.picked')!)).toBe(10);
   });
 
   it('un cambio senza bonus: "nessuna differenza", mai un malus come motivo', async () => {
@@ -320,7 +322,7 @@ describe('riga della lista', () => {
     const user = await setup(...FULL);
     const first = list().querySelector<HTMLElement>('li')!;
     const name = rowNames()[0];
-    await user.dblClick(first.querySelector<HTMLElement>('.rank')!);
+    await user.dblClick(first.querySelector<HTMLElement>('.result')!);
     expect(within(team()).getByText(name)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Annulla' })).toBeInTheDocument();
   }, 30000);
@@ -401,5 +403,40 @@ describe('scheda del candidato', () => {
     expect(within(detail()).getByRole('heading', { name: 'Porta' })).toBeInTheDocument();
     expect(within(detail()).queryByRole('heading', { name: 'Toglie' })).toBeNull();
     expect(section('Porta').textContent).not.toMatch(/Uso nel meta/);
+  });
+});
+
+describe('stile Carte', () => {
+  async function renderCards(team: unknown[]) {
+    const { SuggestionsPanel } = await import('../../src/ui/SuggestionsPanel');
+    const { renderIt } = await import('../helpers/italian');
+    renderIt(<SuggestionsPanel team={team as never} format={DEFAULT_FORMAT} data={fixtureData} replaceIndex={null}
+      onAdd={() => {}} onReplaceWith={() => {}} onCancelReplace={() => {}} listStyle="cards" />);
+  }
+
+  it('Carte: tipi come icone e +N sulla targhetta', async () => {
+    const { tusk } = await import('../fixtures/data');
+    const { getSpecies } = await import('../../src/engine/dex');
+    const { typeName } = await import('../../src/i18n/game');
+    await renderCards([tusk]);
+    expect(list()).toHaveClass('cards');
+    const first = list().querySelector<HTMLElement>('li')!;
+    expect(first).toHaveClass('card');
+    // Tipi come icone tonde (decorative), il nome dei tipi nel tooltip; nessun chip
+    const types = getSpecies(rowNames()[0])!.types;
+    const icons = first.querySelector('.type-icons')!;
+    expect(icons.querySelectorAll('img')).toHaveLength(types.length);
+    expect(icons).toHaveAttribute('title', types.map(type => typeName(type, 'it')).join(' / '));
+    expect(first.querySelector('.type-chip')).toBeNull();
+    // Quanto sale il voto, sulla targhetta in alto a sinistra
+    expect(first.querySelector('.tag')!.textContent).toMatch(/^(\+\d+|−\d+|±0)$/);
+  });
+
+  it('Carte col team vuoto: uso nel meta al posto di +N', async () => {
+    await renderCards([]);
+    const tag = list().querySelector<HTMLElement>('li .tag')!;
+    expect(tag).toHaveAttribute('aria-label', expect.stringMatching(/^Uso nel meta \d/));
+    expect(tag.textContent).toMatch(/^\d+(,\d+)?\s?%/);
+    expect(tag.textContent).not.toMatch(/^[+−±]/);
   });
 });
