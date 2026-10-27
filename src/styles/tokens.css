@@ -39,8 +39,11 @@
   --pill-bg-hover: #fff;
   --pill-ink: #10142b;
   --pill-muted: #4a5068;
-  --pill-gain: #0a8a55;
+  /* Verde, rosso, giallo e ciano scuri per segni e testo sulla pillola: contrasto ≥ 4.7 su --pill-bg */
+  --pill-gain: #077045;
   --pill-bad: #b3261e;
+  --pill-warn: #8a5a00;
+  --pill-info: #006680;
   /* Nomi dei tipi sulle pillole: varianti scure dei colori dei tipi, contrasto ≥ 4.8 su --pill-bg */
   --type-normal-ink: #666649;
   --type-fire-ink: #9a521f;

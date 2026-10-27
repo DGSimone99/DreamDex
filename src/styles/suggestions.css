@@ -497,7 +497,7 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .pill .reason { min-width: 0; max-width: 100%; font: 500 12px/1.3 var(--ui); color: var(--pill-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pill .reason b { margin-right: 3px; font-weight: 700; color: var(--pill-gain); }
 /* Nomi dei tipi nelle varianti scure (il colore inline è per i fondi scuri) */
-.pill .type-name { color: var(--type-ink) !important; }
+.pill .type-name { --type-color: var(--type-dark); }
 /* Destra: segni, icone dei tipi 18px, voto */
 .pill-end { display: flex; align-items: center; gap: 8px; }
 .pill .pill-types { gap: 4px; }
@@ -512,9 +512,16 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .pill.first .score { padding: 3px 9px; border-radius: 99px; background: var(--accent-2); color: var(--on-accent-2); }
 .pill.first .score small { color: inherit; }
 /* Selezionata: tutto il testo in --on-accent, anche i tipi e i segni */
-.pill.selected .reason, .pill.selected .reason b, .pill.selected .type-name, .pill.selected .score, .pill.selected .score strong, .pill.selected .score small { color: var(--on-accent) !important; }
-.pill.selected.first .score { color: var(--on-accent-2) !important; }
-.pill.selected.first .score strong { color: inherit !important; }
+/* Segni sulla pillola chiara: le varianti scure (solo l'icona: il tooltip resta sul fondo scuro coi suoi colori) */
+.pill .alert-mark.danger .icon, .pill .list-mark.ban { color: var(--pill-bad); }
+.pill .alert-mark.warn .icon { color: var(--pill-warn); }
+.pill .alert-mark.info .icon, .pill .list-mark.fav { color: var(--pill-info); }
+/* Selezionata: tutto il testo e i segni in --on-accent (sul ciano i colori dei tipi e degli stati non si leggono) */
+.pill.selected .reason, .pill.selected .reason b, .pill.selected .score, .pill.selected .score strong,
+.pill.selected .score small, .pill.selected .alert-mark .icon, .pill.selected .list-mark { color: var(--on-accent); }
+.pill.selected .type-name { --type-color: var(--on-accent); }
+/* Il #1 selezionato: il voto resta sulla sua pillola magenta */
+.pill.selected.first .score, .pill.selected.first .score strong, .pill.selected.first .score small { color: var(--on-accent-2); }
 /* Chi esce (Migliora · Tutti): tondino in alto sul tondo dello sprite */
 .pill .out { position: absolute; left: calc(var(--rh) * -0.32 - 4px); top: -4px; z-index: 2; width: 24px; height: 24px; border-radius: 50%; overflow: hidden; background: var(--ground); border: 1px solid var(--line); }
 .pill .out .mon-icon { margin: -6px 0 0 -9px; }

@@ -499,11 +499,16 @@ describe('stile Menu', () => {
     };
     const bg = token('--pill-bg');
     expect(bg).toBe('#e7eaf3');
-    // I tre tipi più chiari: Elettro, Ghiaccio, Normale
-    for (const type of ['electric', 'ice', 'normal']) {
-      const ink = token(`--type-${type}-ink`);
+    // Tutti i tipi, i chiari compresi (Elettro, Ghiaccio, Normale)
+    const { TYPES } = await import('../../src/engine/types');
+    expect(TYPES).toHaveLength(18);
+    for (const type of TYPES) {
+      const ink = token(`--type-${type.toLowerCase()}-ink`);
       expect(ink, type).toBeDefined();
       expect(contrast(ink!, bg!), type).toBeGreaterThanOrEqual(4.5);
     }
+    // Testo e segni della pillola: testo ≥ 4.5 (anche il "+" verde), icone dei segni ≥ 3
+    for (const name of ['--pill-ink', '--pill-muted', '--pill-gain', '--pill-bad']) expect(contrast(token(name)!, bg!), name).toBeGreaterThanOrEqual(4.5);
+    for (const name of ['--pill-warn', '--pill-info']) expect(contrast(token(name)!, bg!), name).toBeGreaterThanOrEqual(3);
   });
 });

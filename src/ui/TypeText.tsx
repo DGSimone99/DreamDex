@@ -35,8 +35,9 @@ export const typeTextColor = (type: string): string | undefined => TEXT_COLORS[t
 /** Il nome di un tipo, nel suo colore. */
 export function TypeLabel({ type }: { type: string }) {
   const lang = useLang();
-  // Sui fondi chiari (pillole del Menu) il CSS usa la variante scura del tipo, da tokens.css
-  return <span className="type-name" style={{ color: typeTextColor(type), '--type-ink': `var(--type-${type.toLowerCase()}-ink)` } as CSSProperties}>{typeName(type, lang)}</span>;
+  // Colore per i fondi scuri; sui fondi chiari (pillole del Menu) il CSS dà --type-color = --type-dark, la variante scura da tokens.css
+  const style = { color: `var(--type-color, ${typeTextColor(type)})`, '--type-dark': `var(--type-${type.toLowerCase()}-ink)` } as CSSProperties;
+  return <span className="type-name" style={style}>{typeName(type, lang)}</span>;
 }
 
 /** Il nome di una mossa, nel colore del suo tipo. */
