@@ -466,9 +466,25 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .card:not(.selected):hover { transform: rotate(var(--tilt)) scale(1.04); filter: drop-shadow(0 6px 8px rgb(0 0 0 / 0.45)); }
 /* Icona del box: sotto il mouse saltella come il membro aperto del team compresso (sul riquadro: l'icona ha già la sua scala) */
 .card:hover .card-sprite .box-icon { animation: box-hop 0.7s ease-in-out infinite; }
+/* Selezionata: dritta ma sollevata (cresce un poco, ombra, sopra le vicine) e un riflesso olografico che la attraversa in
+   diagonale appena scelta e poi ogni ~4s; si muove solo la luce, mai la carta. Sotto la cornice (z 3), sopra sprite e targhetta */
+.card.selected { z-index: 4; transform: scale(1.02); filter: drop-shadow(0 4px 6px rgb(0 0 0 / 0.4)); }
+.card.selected .card-face::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: linear-gradient(115deg, transparent 35%, rgb(255 255 255 / 0.08) 43%, rgb(255 255 255 / 0.28) 50%, rgb(255 255 255 / 0.08) 57%, transparent 65%) no-repeat;
+  background-size: 300% 100%;
+  background-position: 100% 0;
+  animation: holo-sweep 4.2s ease-in-out infinite;
+}
+@keyframes holo-sweep { 0% { background-position: 100% 0; } 15%, 100% { background-position: 0 0; } }
 @media (prefers-reduced-motion: reduce) {
   .card:not(.selected):hover { transform: none; }
   .card:hover .card-sprite .box-icon { animation: none; }
+  .card.selected .card-face::before { display: none; }
 }
 /* Targhetta in alto a sinistra: +N (#1 su magenta), −N e ±0 nei loro colori, col team vuoto l'uso nel meta */
 .card .tag { --tag-bg: var(--ground); position: absolute; top: 0; left: 0; z-index: 1; display: flex; align-items: center; gap: 4px; margin: 0; padding: 5px 16px 5px 8px; border-radius: 0; background: var(--tag-bg); color: var(--text);
