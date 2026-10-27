@@ -26,11 +26,13 @@ async function importTeam(text: string) {
 }
 
 describe('Panoramica di Analisi', () => {
-  it('il cruscotto: cinque sezioni coi titoli', async () => {
+  it('il cruscotto: quattro sezioni coi titoli, senza "Cosa fare" e "Minacce non gestite"', async () => {
     await setup();
-    for (const title of ['Copertura', 'Ruoli', 'Velocità', 'Cosa fare', 'Minacce non gestite']) {
+    for (const title of ['Riassunto', 'Copertura', 'Ruoli', 'Velocità']) {
       expect(within(panel()).getByRole('heading', { name: title })).toBeInTheDocument();
     }
+    expect(within(panel()).queryByRole('heading', { name: 'Cosa fare' })).toBeNull();
+    expect(within(panel()).queryByRole('heading', { name: 'Minacce non gestite' })).toBeNull();
     expect(within(panel()).getByRole('table', { name: 'Copertura' })).toBeInTheDocument();
   });
 
@@ -50,25 +52,17 @@ describe('Panoramica di Analisi', () => {
     expect(within(views()).getByRole('tab', { name: 'Offesa' })).toHaveAttribute('aria-selected', 'true');
   });
 
-  it('le minacce aprono la scheda Meta', async () => {
+  it('il Riassunto: la riga Minacce porta al Coaching, Attaccanti a Offesa', async () => {
     const user = await setup();
-    await user.click(within(panel()).getByRole('button', { name: 'Apri la scheda Meta' }));
-    expect(screen.getByRole('tab', { name: /^Meta/ })).toHaveAttribute('aria-selected', 'true');
-  });
-
-  it('"Cosa fare" porta al Coaching', async () => {
-    const user = await setup(['Great Tusk', 'Dragapult']);
-    const todo = within(panel()).getByRole('region', { name: 'Cosa fare' });
-    expect(todo).toHaveTextContent(/\d+ grav[ei]|\d+ minor[ei]/);
-    await user.click(within(todo).getByRole('button', { name: /^Tutti (i|gli) \d+ nel Coaching/ }));
-    expect(within(views()).getByRole('tab', { name: 'Coaching' })).toHaveAttribute('aria-selected', 'true');
+    const summary = within(panel()).getByRole('region', { name: 'Riassunto' });
+    await user.click(within(summary).getByRole('button', { name: /^Attaccanti/ }));
+    expect(within(views()).getByRole('tab', { name: 'Offesa' })).toHaveAttribute('aria-selected', 'true');
   });
 
   it('un membro solo: niente "nessun problema", l\'invito ad aggiungerne', async () => {
     await setup(['Great Tusk']);
     expect(panel().querySelector('.overview-headline')).toHaveTextContent(/Aggiungi almeno 2 Pokémon/);
     expect(within(panel()).queryByText('Nessun problema da sistemare')).toBeNull();
-    expect(within(panel()).getByRole('region', { name: 'Cosa fare' })).toHaveTextContent(/Aggiungi almeno 2 Pokémon/);
   });
 
   it('meta spento: "Meta spento" e la media del tier', async () => {
@@ -76,7 +70,8 @@ describe('Panoramica di Analisi', () => {
     render(<App initialLang="it" data={{ ...fixtureData, ignoreMeta: true }} />);
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Great Tusk{Enter}');
     await user.click(screen.getByRole('tab', { name: /^Analisi/ }));
-    expect(within(panel()).getByRole('region', { name: 'Minacce non gestite' })).toHaveTextContent('Meta spento');
+    // Meta spento: nel Riassunto niente riga Minacce
+    expect(within(within(panel()).getByRole('region', { name: 'Riassunto' })).queryByRole('button', { name: /^Minacce/ })).toBeNull();
     expect(within(panel()).getByRole('region', { name: 'Velocità' })).toHaveTextContent(/media del tier/);
   });
 
@@ -164,18 +159,20 @@ describe('Panoramica: rifinitura', () => {
     expect(screen.getByRole('tab', { name: /^Pokémon/ })).toHaveAttribute('aria-selected', 'true');
   });
 
-  it('giudizio e tipo di team in cima, con lo stile del team leggibile', async () => {
+  it('giudizio in cima; il tipo di team sta nella riga Tipo del Riassunto', async () => {
     await setup(['Great Tusk', 'Gholdengo', 'Kingambit', 'Dragapult', 'Corviknight', 'Toxapex']);
     const headline = panel().querySelector<HTMLElement>('.overview-headline')!;
-    expect(headline).toHaveTextContent(/Tipo di team/);
-    expect(headline.querySelector('.team-type strong')).not.toBeNull();
+    expect(headline.querySelector('.team-type')).toBeNull();
+    const summary = within(panel()).getByRole('region', { name: 'Riassunto' });
+    expect(summary.querySelector('.sum-arch')).not.toBeNull();
+    expect(summary.querySelector('.sum-arch')).not.toHaveTextContent('—');
   });
 
   it('il "?" accanto al tipo di team apre la guida ai tipi; la scheda Panoramica non ha "?"', async () => {
     const user = userEvent.setup();
     await setup(['Great Tusk', 'Gholdengo', 'Kingambit', 'Dragapult', 'Corviknight', 'Toxapex']);
     expect(within(panel()).queryByRole('button', { name: /^Come funziona/ })).toBeNull();
-    const help = within(panel().querySelector<HTMLElement>('.team-type')!).getByRole('button', { name: 'Tipi di team: come si riconoscono' });
+    const help = within(within(panel()).getByRole('region', { name: 'Riassunto' })).getByRole('button', { name: 'Tipi di team: come si riconoscono' });
     await user.click(help);
     const dialog = screen.getByRole('dialog', { name: 'Tipi di team' });
     // Ogni tipo coi suoi sei posti, letti come frase corta

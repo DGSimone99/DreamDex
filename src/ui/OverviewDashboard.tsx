@@ -1,12 +1,11 @@
 import { useLayoutEffect, useRef, useState } from 'react';
-import type { CoachProblem } from '../engine/coach';
 import type { DashboardData } from '../engine/overviewDashboard';
+import type { TeamSummary } from '../engine/teamSummary';
 import type { AnalysisView } from './analysisView';
 import { CoverageSection } from './dashboard/CoverageSection';
 import { RolesSection } from './dashboard/RolesSection';
 import { SpeedSection } from './dashboard/SpeedSection';
-import { ThreatsSection } from './dashboard/ThreatsSection';
-import { TodoSection } from './dashboard/TodoSection';
+import { SummarySection } from './dashboard/SummarySection';
 
 export type Density = 'tight' | 'normal' | 'roomy';
 
@@ -22,13 +21,11 @@ export function densityFor(height: number): Density {
   return height < TIGHT_BELOW ? 'tight' : 'normal';
 }
 
-/** La Panoramica come cruscotto a due colonne che riempie lo spazio: più alto è, più cose mostra. */
-export function OverviewDashboard({ data, problems, members, onView, onMeta, teamCollapsed = false, density: forced }: {
+/** La Panoramica come cruscotto a due righe che riempie lo spazio: Riassunto | Copertura, poi Ruoli | Velocità. */
+export function OverviewDashboard({ data, summary, onView, teamCollapsed = false, density: forced }: {
   data: DashboardData;
-  problems: CoachProblem[];
-  members: number;
+  summary: TeamSummary;
   onView: (v: AnalysisView) => void;
-  onMeta: () => void;
   /** Team ridotto: sempre la densità ampia. */
   teamCollapsed?: boolean;
   /** Solo per i test: altrimenti viene dall'altezza disponibile. */
@@ -51,17 +48,10 @@ export function OverviewDashboard({ data, problems, members, onView, onMeta, tea
   const density = forced ?? (teamCollapsed ? 'roomy' : measured);
   return (
     <div ref={ref} className={`dash ${density}`} data-density={density}>
-      <div className="dash-col dash-left">
-        <CoverageSection coverage={data.coverage} onView={onView} />
-        <div className="dash-pair">
-          <RolesSection roles={data.roles} density={density} onView={onView} />
-          <SpeedSection speed={data.speed} density={density} onView={onView} />
-        </div>
-      </div>
-      <div className="dash-col dash-right">
-        <TodoSection problems={problems} members={members} density={density} onView={onView} />
-        <ThreatsSection threats={data.threats} density={density} onMeta={onMeta} />
-      </div>
+      <SummarySection summary={summary} density={density} onView={onView} />
+      <CoverageSection coverage={data.coverage} onView={onView} />
+      <RolesSection roles={data.roles} density={density} onView={onView} />
+      <SpeedSection speed={data.speed} density={density} onView={onView} />
     </div>
   );
 }

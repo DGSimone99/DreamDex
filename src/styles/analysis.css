@@ -208,13 +208,13 @@ button.member-card:hover { border-color: var(--accent); }
 
 
 
-/* Panoramica: cruscotto a due colonne (circa 2:1) che riempie lo spazio rimasto; le colonne finiscono alla stessa riga */
-.dash { flex: 1; min-height: 340px; display: grid; grid-template-columns: minmax(0, 1.9fr) minmax(0, 1fr); gap: 10px; overflow: hidden; }
-.dash-col { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
-.dash-pair { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+/* Panoramica: due righe che riempiono lo spazio rimasto. Riga 1 (alta quanto il contenuto, le due card si allineano): Riassunto 8/20 | Copertura 12/20; riga 2 (il resto): Ruoli 11/20 | Velocità 9/20 */
+.dash { flex: 1; min-height: 340px; display: grid; grid-template-columns: repeat(20, minmax(0, 1fr)); grid-template-rows: auto minmax(0, 1fr); gap: 10px; overflow: hidden; }
+.dash-summary { grid-column: span 8; }
+.dash-coverage { grid-column: span 12; }
+.dash-roles { grid-column: span 11; }
+.dash-speed { grid-column: span 9; }
 .dash-card { display: flex; flex-direction: column; min-width: 0; min-height: 0; padding: 0 12px 10px; background: var(--panel); border: 1px solid var(--line-soft); }
-.dash-coverage, .dash-threats { flex: none; }
-.dash-todo { flex: 1; }
 .dash-head { display: flex; align-items: center; gap: 10px; min-width: 0; margin: 0 -12px 8px; padding-right: 6px; background: var(--stripes), var(--band); }
 .dash-plate { flex: none; margin: 0; padding: 4px 22px 4px 12px; font: 700 13px/1.2 var(--display); font-style: italic; color: var(--on-accent-2); background: var(--stripes), var(--accent-2); clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%); }
 /* Un h4 usato come targhetta (colonne del Coaching): la targhetta vince sullo stile degli h4 di Analisi */
@@ -223,9 +223,9 @@ button.member-card:hover { border-color: var(--accent); }
 .dash-meta b { font: 700 14px/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums; color: var(--text); }
 .dash-meta b.bad { color: var(--bad); }
 .dash-links { flex: none; display: flex; gap: 2px; margin-left: auto; }
-.dash-link, .dash-more { gap: 2px; padding: 2px 6px; font-size: 12px; font-weight: 600; color: var(--accent-ink); background: none; border-color: transparent; }
-.dash-link:hover, .dash-more:hover { background: var(--accent-wash); border-color: transparent; }
-.dash-link .icon, .dash-more .icon { width: 14px; height: 14px; }
+.dash-link { gap: 2px; padding: 2px 6px; font-size: 12px; font-weight: 600; color: var(--accent-ink); background: none; border-color: transparent; }
+.dash-link:hover { background: var(--accent-wash); border-color: transparent; }
+.dash-link .icon { width: 14px; height: 14px; }
 /* Le voci che si contano (useFit): niente scorrimento, ciò che non sta finisce nel "+N" */
 .dash-fit { position: relative; flex: 1; min-height: 0; overflow: hidden; }
 .dash-note { display: flex; align-items: center; gap: 6px; margin: 0; font-size: 13px; color: var(--muted); }
@@ -318,30 +318,31 @@ button.member-card:hover { border-color: var(--accent); }
 .dash-ctrl { margin: 6px 0 0; font-size: 12px; color: var(--muted); }
 .dash-ctrl b { font-weight: 500; }
 
-/* Cosa fare: targhetta obliqua di gravità, il testo (due righe al più), l'area come icona */
-.dash-problems { margin: 0; padding: 0; list-style: none; }
-.dash-problems > li { display: grid; grid-template-columns: 70px minmax(0, 1fr) 18px; gap: 8px; align-items: center; padding: 6px 0; font-size: 13px; line-height: 1.35; border-bottom: 1px solid var(--line-soft); }
-.dash-sev { justify-self: start; padding: 2px 10px 2px 6px; font: 700 11px/1.2 var(--ui); text-transform: uppercase; letter-spacing: 0.05em; clip-path: polygon(0 0, 100% 0, calc(100% - 6px) 100%, 0 100%); }
-.dash-problems li.serious .dash-sev { color: var(--bad-bg); background: var(--bad); }
-.dash-problems li.minor .dash-sev { color: var(--warn); background: var(--warn-bg); }
-.dash-problem { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.dash-area { display: grid; place-items: center; color: var(--faint); }
-/* Gruppi (Debole a, Senza check, Non legali, Ruoli mancanti): vanno a capo fra gli elementi, mai dentro un nome */
-.dash-group .dash-problem { display: block; overflow: visible; }
-.dash-todo-title { font-weight: 600; color: var(--muted); }
-.dash-count { display: inline-block; min-width: 18px; margin-left: 5px; padding: 0 5px; font: 700 11px/16px var(--ui); font-variant-numeric: tabular-nums; text-align: center; vertical-align: 1px; color: var(--text); background: var(--raised); border-radius: 8px; }
-.dash-problems li.serious .dash-count { color: var(--bad); background: var(--bad-bg); }
-.dash-todo-item { white-space: nowrap; }
-.dash-sep { color: var(--faint); }
-/* Gravi in rosso e in grassetto; i tipi tengono il loro colore, dentro una pastiglia rossa */
-.dash-todo-item.serious { font-weight: 700; color: var(--bad); }
-/* Specie e membri gravi in rosso: batte il colore del testo di .mon-ref strong (marks.css) */
-.dash-todo-item.serious .mon-ref strong { color: var(--bad); }
-/* Ampio: sotto un gruppo i testi interi dei suoi problemi, piccoli e tenui */
-.dash-sub { grid-column: 2 / -1; margin: -3px 0 0; padding: 0; list-style: none; font-size: 12px; line-height: 1.35; color: var(--muted); }
-.dash-sub li { padding: 1px 0; }
-.dash-todo-item.serious .type-name { padding: 0 5px; background: color-mix(in srgb, var(--bad) 14%, transparent); border: 1px solid color-mix(in srgb, var(--bad) 70%, transparent); border-radius: 4px; }
-.dash-more { flex: none; align-self: flex-start; margin-top: 6px; }
+/* Riassunto: righe "icona · voce · dato" (come le tabelle del cruscotto: righe sottili, numeri grandi in corsivo, pill verdi/rosse) */
+.sum-rows { flex: 1; min-height: 0; display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; }
+.sum-rows > li { flex: 1 1 0; min-height: 30px; display: flex; border-bottom: 1px solid var(--line-soft); }
+.sum-rows > li:last-child { border-bottom: 0; }
+.dash.tight .sum-rows > li { min-height: 24px; }
+.sum-row { flex: 1; min-width: 0; display: grid; grid-template-columns: 20px 84px minmax(0, 1fr); align-items: center; gap: 0 6px; padding: 0; color: inherit; text-align: left; background: none; border: 0; border-radius: 0; }
+button.sum-row:hover { background: var(--accent-wash); }
+.sum-ic { display: grid; place-items: center; color: var(--accent); }
+.sum-ic .icon { width: 15px; height: 15px; }
+.sum-k { font: 600 11px/1.2 var(--ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.sum-v { min-width: 0; display: flex; align-items: center; flex-wrap: nowrap; gap: 4px; overflow: hidden; }
+.sum-big { font: 800 17px/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums; color: var(--accent-ink); }
+.sum-muted { font-size: 11px; color: var(--muted); margin-right: 4px; }
+.sum-arch { font: 800 15px/1 var(--display); font-style: italic; color: var(--text); cursor: help; }
+.sum-v .team-style { flex: none; }
+.sum-sprite { flex: none; display: inline-flex; margin: -6px -4px -6px 0; }
+.sum-sprite .sprite { width: 30px; height: 30px; image-rendering: pixelated; }
+.sum-setter { display: inline-flex; align-items: center; gap: 4px; min-width: 0; }
+.sum-pill { flex: none; padding: 2px 8px; font: 800 10.5px/1.2 var(--ui); white-space: nowrap; border-radius: 10px; color: var(--text); background: var(--raised); }
+.sum-pill.ok { color: var(--good); background: color-mix(in srgb, var(--good) 16%, var(--panel)); }
+.sum-pill.bad { color: var(--bad); background: var(--bad-bg); }
+.sum-weak { flex: none; display: inline-flex; border-radius: 50%; }
+.sum-weak .type-icons img { width: 18px; height: 18px; border-radius: 50%; }
+.sum-weak.is-serious { box-shadow: 0 0 0 2px var(--bad); }
+.sum-more { flex: none; font-size: 12px; font-weight: 600; color: var(--faint); }
 
 /*
  * Lo stesso alone del piedistallo delle Minacce sotto gli altri sprite "in scena": le corsie della Velocità, la testata
@@ -351,28 +352,14 @@ button.member-card:hover { border-color: var(--accent); }
 .dash-lane-sprite .sprite, .dash-role-grid thead .sprite, .detail-sprite {
   background: radial-gradient(ellipse 46% 14% at 50% 85%, color-mix(in srgb, var(--accent) 30%, transparent), transparent 70%), radial-gradient(ellipse 42% 11% at 50% 87%, color-mix(in srgb, var(--field) 60%, transparent), transparent 75%); }
 
-/* Minacce: sprite sul piedistallo ellittico, nome e uso; "+X" tratteggiato apre la scheda Meta */
-/* padding-top: aria sopra la prima fila, così i Pokémon alti (Ferrothorn, Zapdos) non finiscono sotto l'intestazione */
-.dash-pods { --pod-h: 78px; flex: none; display: flex; flex-wrap: wrap; align-content: flex-start; gap: 6px 8px; padding-top: 10px; max-height: calc(var(--rows) * var(--pod-h) + (var(--rows) - 1) * 6px + 10px); }
-.dash-pod { width: 64px; height: var(--pod-h); display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 1px; padding: 0; color: var(--text); background: none; border: 0; border-radius: 0; }
-/* Lo sprite può uscire sopra il piedistallo (overflow visibile): uno alto non si taglia */
-.dash-plinth { width: 56px; height: 46px; display: flex; justify-content: center; align-items: flex-end; overflow: visible;
-  background: radial-gradient(ellipse 26px 7px at 50% 88%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 70%), radial-gradient(ellipse 24px 6px at 50% 90%, color-mix(in srgb, var(--field) 60%, transparent), transparent 75%); }
-.dash-plinth .sprite { flex: none; width: 64px; height: 64px; margin-bottom: -10px; image-rendering: pixelated; }
-.dash-pod b { max-width: 64px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 500 11px/1.25 var(--ui); }
-.dash-pod small { font-size: 11px; line-height: 1.2; color: var(--faint); font-variant-numeric: tabular-nums; }
-.dash-pod.more .dash-plinth { align-items: center; width: 46px; height: 38px; margin: 4px 0; font-weight: 700; color: var(--muted); background: none; border: 1.5px dashed var(--line); border-radius: 8px; }
-.dash-pod.more:hover .dash-plinth, .dash-pod.more:focus-visible .dash-plinth { border-color: var(--accent); color: var(--accent-ink); }
-
 /* Entrata leggera in sequenza e caselle che si sollevano: solo se il sistema non riduce le animazioni */
 @media (prefers-reduced-motion: no-preference) {
   .dash-card { animation: dash-in 0.45s var(--ease) backwards; }
   .dash-roles { animation-delay: 0.05s; }
   .dash-speed { animation-delay: 0.1s; }
-  .dash-todo { animation-delay: 0.08s; }
-  .dash-threats { animation-delay: 0.14s; }
-  .dash-cell, .dash-pod { transition: transform 0.15s var(--ease); }
-  .dash-cell:hover, .dash-pod:hover { transform: translateY(-2px); }
+  .dash-summary { animation-delay: 0.02s; }
+  .dash-cell { transition: transform 0.15s var(--ease); }
+  .dash-cell:hover { transform: translateY(-2px); }
 }
 @keyframes dash-in { from { opacity: 0; transform: translateY(6px); } }
 

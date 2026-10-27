@@ -68,7 +68,13 @@ export function TeamTypeLine({ teamType }: { teamType: NonNullable<Coaching['tea
         <span key={style} className="team-style" title={tr(`teamStyle.${style}.note`)}>{tr(`teamStyle.${style}`)}</span>
       ))}
       {/* La guida ai tipi: in fondo alla riga, dopo gli stili */}
-      <HelpButton title={tr('teamTypes.title')} label={tr('teamTypes.button')} className="tt-dialog"><TeamTypesGuide /></HelpButton>
+      <TeamTypeHelp />
     </p>
   );
+}
+
+/** Il "?" che apre la guida ai tipi di team. */
+export function TeamTypeHelp() {
+  const tr = useT();
+  return <HelpButton title={tr('teamTypes.title')} label={tr('teamTypes.button')} className="tt-dialog"><TeamTypesGuide /></HelpButton>;
 }
