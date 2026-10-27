@@ -20,7 +20,7 @@ import type { ListSprite } from './theme';
 import { Icon } from './icons';
 import { ItemIcon } from './ItemIcon';
 import { BoxIcon, bringsOf } from './candidateParts';
-import { PokemonIcon, PokemonName } from './PokemonName';
+import { PokemonName } from './PokemonName';
 import { battleAbility, battleName } from '../engine/dex';
 import { Sprite, TypeChip } from './Sprite';
 import { StatsBadge } from './StatsBadge';
@@ -133,8 +133,9 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
 
         {after && (
           <section className="detail-sec wide effect">
-            <h4>{tr(before ? 'detail.team' : 'detail.teamAlone')}</h4>
-            {/* Una riga: per area la variazione (o il valore, senza un voto prima); un'area che non conta resta in grigio */}
+            {/* Sotto Porta e Toglie, senza etichetta visibile (ne è il risultato; col primo Pokémon resta "Voto con lui da
+                solo"): una riga, per area la variazione (o il valore, senza un voto prima); un'area che non conta resta in grigio */}
+            <h4 className={before ? 'visually-hidden' : undefined}>{tr(before ? 'detail.team' : 'detail.teamAlone')}</h4>
             <dl className="detail-areas">
               {after.areas.map(area => {
                 const prev = before?.areas.find(a => a.key === area.key);
@@ -157,47 +158,43 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
                 </div>
               )}
             </dl>
-            {/* Raccomandazioni libere: quanto renderebbe al posto degli altri membri */}
-            {item.alternatives && item.alternatives.length > 0 && (
-              <p className="detail-alts">
-                <span>{tr('detail.alternatives')}</span>
-                {item.alternatives.slice(0, 3).map(alt => (
-                  <span key={alt.index} className="alt">
-                    <PokemonIcon name={battleName(team[alt.index])} />
-                    {battleName(team[alt.index])}
-                    <strong className={alt.gain < 0 ? 'worse' : alt.gain === 0 ? 'same' : undefined}>{delta(alt.gain) || '±0'}</strong>
-                  </span>
-                ))}
-              </p>
-            )}
           </section>
         )}
 
+
         <section className="detail-sec wide set-sec">
           <h4>{tr('detail.set')}</h4>
-          <div className="detail-set-info">
-            <p className="detail-set">
+          {/* Due righe: strumento e abilità, poi natura, EV e Tera */}
+          <p className="detail-set">
+            <span className="set-line">
               {set.item && <span><ItemIcon item={set.item} /> {gameName('item', set.item, lang)}</span>}
               {/* L'abilità in battaglia: con una Megapietra quella della Mega (Mega Venusaur: Grassospesso, non Clorofilla) */}
               {battleAbility(set) && <span>{gameName('ability', battleAbility(set), lang)}</span>}
+            </span>
+            <span className="set-line">
               {set.nature && <span>{natureName(set.nature, lang)}</span>}
               {evs && <span className="evs">{evs}</span>}
               {set.teraType && <span>{tr('editor.tera')} {typeName(set.teraType, lang)}</span>}
-            </p>
-            {setRoles.length > 0 && (
-              <ul className="detail-roles" aria-label={tr('detail.roles')}>
-                {setRoles.map(role => (
-                  <li key={role} className={role === mainRole ? 'main' : undefined}>
-                    {role === 'weather' ? tr('card.weather') : roleLabel(role, lang)}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+            </span>
+          </p>
           <ul className="detail-moves" aria-label={tr('editor.moves')}>
             {set.moves.map(move => <li key={move}><MoveName move={move} /></li>)}
           </ul>
         </section>
+
+        {/* Ruoli del set consigliato: il principale per primo ed evidenziato */}
+        {setRoles.length > 0 && (
+          <section className="detail-sec wide roles-sec">
+            <h4>{tr('detail.rolesTitle')}</h4>
+            <ul className="detail-roles" aria-label={tr('detail.roles')}>
+              {setRoles.map(role => (
+                <li key={role} className={role === mainRole ? 'main' : undefined}>
+                  {role === 'weather' ? tr('card.weather') : roleLabel(role, lang)}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
       </div>
 
       <div className="detail-actions">

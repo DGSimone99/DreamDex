@@ -977,6 +977,7 @@ export const it: Record<keyof typeof en, string> = {
   'detail.teamAlone': "Voto con lui da solo",
   'detail.set': "Set consigliato",
   'detail.roles': "Ruoli del set",
+  'detail.rolesTitle': "Ruoli",
   'tabs.label': "Sezioni",
   'tabs.pokemon': "Pokémon",
   'tabs.analysis': "Analisi",

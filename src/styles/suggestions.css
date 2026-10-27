@@ -76,12 +76,6 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .suggestions > li + li { border-top: 1px solid var(--line-soft); }
 /* Lista in ricalcolo dopo un cambio del team */
 .suggestions.stale { opacity: 0.55; transition: opacity 0.15s var(--ease); }
-.detail-alts { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin: 8px 0 0; font-size: 13px; color: var(--muted); }
-.detail-alts .alt { display: inline-flex; align-items: center; gap: 4px; color: var(--text); }
-.detail-alts .alt .mon-icon { margin: -6px -4px -6px -6px; }
-.detail-alts strong { font-variant-numeric: tabular-nums; }
-.detail-alts strong.worse { color: var(--bad); }
-.detail-alts strong.same { color: var(--muted); }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .set { background: var(--field); padding: 10px 12px; border-radius: 4px; white-space: pre-wrap; font-size: 13px; line-height: 1.5; }
 
@@ -182,7 +176,7 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .detail-set dt { color: var(--muted); font-size: 12px; }
 .detail-set dd { margin: 0; display: flex; align-items: center; gap: 6px; font-weight: 500; }
 .detail-moves { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
-.detail-moves li { padding: 4px 9px; background: var(--field); border: 1px solid var(--line-soft); border-radius: 4px; font-size: 13px; font-weight: 500; }
+.detail-moves li { padding: 4px 9px; background: var(--field); border: 1px solid var(--line-soft); border-radius: 4px; font-size: 14px; font-weight: 500; }
 .detail-actions { display: flex; gap: 8px; padding: 10px 18px; }
 .detail-actions .smogon-link { margin-left: auto; }
 /* Segni delle liste dell'utente sulle righe: ♥ preferito (blu), ⊘ bannato (rosso) */
@@ -281,12 +275,12 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 14px;
-  padding: 8px 18px;
+  padding: 5px 18px;
   background: var(--stripes), var(--band);
   border-bottom: 1px solid var(--line-soft);
 }
-.detail-hero .detail-sprite { --box-scale: 2.2; width: 72px; height: 72px; }
-.detail-hero .detail-sprite .sprite-ani { transform: translate(-50%, -50%) scale(0.75); }
+.detail-hero .detail-sprite { --box-scale: 1.9; width: 64px; height: 64px; }
+.detail-hero .detail-sprite .sprite-ani { transform: translate(-50%, -50%) scale(0.6667); }
 .detail-hero .detail-id h3 { flex-wrap: wrap; font-size: 24px; }
 .detail-hero .detail-id h3 > span:first-child { white-space: normal; overflow-wrap: break-word; }
 .detail-hero .swap-head { margin: 0; font-size: 13px; }
@@ -297,7 +291,7 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .detail .detail-sec:not(.wide) + .detail-sec:not(.wide) { border-left: 1px solid var(--line-soft); }
 .detail:not(.detail-empty) > .detail-actions { border-top: 1px solid var(--line-soft); }
 /* Porta in verde, Toglie in rosso: un segno davanti a ogni voce */
-.detail-points { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; font-size: 13px; line-height: 1.35; }
+.detail-points { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; font-size: 14px; line-height: 1.35; }
 .detail-points li { margin: 0; }
 .detail-points li { position: relative; padding-left: 14px; }
 .detail-points li::before { position: absolute; left: 0; top: 0; font-weight: 700; }
@@ -307,21 +301,23 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .detail-points li.none::before { content: none; }
 /* Effetto sul team: una riga di pillole per area */
 .detail .effect .detail-areas { display: flex; flex-wrap: wrap; gap: 6px; }
-.detail .effect .detail-areas div { display: inline-flex; align-items: baseline; gap: 6px; padding: 2px 9px; border: 1px solid var(--line); border-radius: 3px; font-size: 13px; }
+.detail .effect .detail-areas div { display: inline-flex; align-items: baseline; gap: 6px; padding: 2px 9px; border: 1px solid var(--line); border-radius: 3px; font-size: 14px; }
 .detail .effect .detail-areas .change { font: 700 14px/1 var(--display); font-style: italic; color: var(--good); min-width: 0; }
 .detail .effect .detail-areas .change.worse { color: var(--bad); }
 .detail .effect .detail-areas .change.same { color: var(--faint); }
 .detail .effect .detail-areas .change.same::before { content: '±0'; }
 .detail .effect .detail-areas .value { font-size: 14px; }
 .detail .effect .detail-areas .inactive { border-color: var(--line-soft); }
-.detail .effect .detail-alts { margin-top: 6px; }
-/* Set: una riga di voci, poi le mosse 2×2 */
-.detail .detail-set { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin: 0 0 8px; font-size: 13px; font-weight: 500; }
+/* Set: due righe di voci (strumento e abilità, poi natura, EV e Tera), poi le mosse 2×2 */
+.detail .detail-set { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin: 0 0 6px; font-size: 14px; font-weight: 500; }
 .detail .detail-set span { display: inline-flex; align-items: center; gap: 6px; }
+.detail .detail-set .set-line { display: flex; flex-wrap: wrap; gap: 4px 14px; width: 100%; }
 .detail .detail-set .evs { color: var(--muted); font-variant-numeric: tabular-nums; }
-/* Ruoli del set consigliato, sotto le voci: etichette neutre, il ruolo principale (quello delle carte del team) in ciano */
+/* Ruoli del set consigliato, in una zona sotto il set con la sua etichetta: neutri, il ruolo principale (quello delle carte
+   del team) in ciano */
+
 .detail-roles { list-style: none; display: flex; flex-wrap: wrap; gap: 4px; margin: 0; padding: 0; }
-.detail-roles li { padding: 1px 7px; border: 1px solid var(--line); border-radius: 4px; font-size: 12px; font-weight: 500; color: var(--muted); white-space: nowrap; }
+.detail-roles li { padding: 1px 8px; border: 1px solid var(--line); border-radius: 4px; font-size: 13px; font-weight: 500; color: var(--muted); white-space: nowrap; }
 .detail-roles li.main { border-color: var(--accent); background: var(--accent-soft); color: var(--text); font-weight: 700; }
 .detail-id h3 { font-style: italic; }
 .detail-score strong { font-style: italic; }
@@ -390,8 +386,8 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .filters .filter-switches { grid-template-columns: repeat(2, minmax(0, 1fr)) auto; align-items: end; border-bottom: 0; }
 .filters .switch { display: flex; align-items: center; gap: 8px; height: 32px; font-size: 14px; color: var(--text); cursor: pointer; white-space: nowrap; }
 .detail .effect .detail-areas .inactive .change.same::before { content: none; }
-.detail:not(.detail-empty) .detail-sec { padding: 8px 18px 10px; }
-.detail:not(.detail-empty) .detail-sec h4 { margin-bottom: 7px; }
+.detail:not(.detail-empty) .detail-sec { padding: 7px 18px 8px; }
+.detail:not(.detail-empty) .detail-sec h4 { margin-bottom: 6px; }
 
 /* Lista e scheda nella stessa cornice: un riquadro Panel con la fascia a righe in alto e la paginazione dentro, in fondo */
 @media (min-width: 1100px) {

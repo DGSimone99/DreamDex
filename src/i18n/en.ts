@@ -975,6 +975,7 @@ export const en = {
   'detail.teamAlone': "Grade with it alone",
   'detail.set': "Suggested set",
   'detail.roles': "Set roles",
+  'detail.rolesTitle': "Roles",
   'tabs.label': "Sections",
   'tabs.pokemon': "Pokémon",
   'tabs.analysis': "Analysis",
