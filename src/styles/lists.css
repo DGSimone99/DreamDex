@@ -407,6 +407,8 @@
   .slot > summary .sprite { width: 136px; height: 136px; }
   .slot > summary { --sprite-scale: 1.4167; }
   .slot[open] > summary .sprite { transform: scale(calc(var(--open-scale) / var(--sprite-scale))); }
+  /* L'animato parte dalla GIF a 96px, non dallo sprite più grande: solo --open-scale, altrimenti l'ingrandimento conta due volte */
+  .slot[open] > summary .sprite-ani { transform: translateX(-50%) scale(min(var(--open-scale), calc(var(--fit) / var(--ani-h, 96)))); }
 }
 /* Schermi larghi (anche un 2K con il ridimensionamento di Windows): lo sprite animato più grande, sia nella carta aperta
    (fin dove l'altezza della carta lo permette) sia nel dettaglio del Pokémon */
