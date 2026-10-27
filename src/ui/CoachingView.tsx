@@ -1,6 +1,7 @@
 import { Fragment, useId, type ReactNode } from 'react';
 import { PROBLEM_CATEGORIES, type CoachAdvice, type Coaching, type CoachProblem, type ProblemCategory } from '../engine/coach';
 import type { CoachFix } from '../engine/coachFixes';
+import { needLabel, type Need } from '../engine/needs';
 import { columnOf, coveredKeys, MAX_STEPS, type CoachStep, type MapColumn } from '../engine/coachSteps';
 import type { MoveFix } from '../engine/moveFixes';
 import type { TeamRating } from '../engine/rating';
@@ -76,27 +77,31 @@ function MoveButton({ fix, onMoveFix }: { fix: MoveFix; onMoveFix: (fix: MoveFix
   );
 }
 
-/** "Risolve anche": gli altri problemi della proposta, i tipi come icone e il resto col nome dell'area; niente riga se non ce ne sono. */
+/** "Risolve anche": cosa risolve la proposta oltre al problema della tappa (tipi come icone, ruoli, minacce, membri); niente riga se non c'è altro. */
 function Also({ solves, skip, problems }: { solves: string[]; skip: string; problems: CoachProblem[] }) {
   const tr = useT();
   const lang = useLang();
   const types: string[] = [];
-  const labels: string[] = [];
+  const names: string[] = [];
+  const add = (list: string[], value: string) => { if (!list.includes(value)) list.push(value); };
   for (const key of new Set(solves)) {
     if (key === skip) continue;
     const problem = problems.find(p => p.key === key);
     if (!problem) continue;
-    if (problem.category === 'defense' && problem.subjects?.length) { for (const type of problem.subjects) if (!types.includes(type)) types.push(type); }
-    else { const label = tr(CATEGORY[problem.category]); if (!labels.includes(label)) labels.push(label); }
+    const subjects = problem.subjects ?? [];
+    if (subjects.length === 0) add(names, tr(CATEGORY[problem.category]));
+    else if (problem.category === 'defense' || problem.category === 'coverage') subjects.forEach(type => add(types, type));
+    else if (problem.category === 'roles') subjects.forEach(need => add(names, needLabel(need as Need, lang)));
+    else subjects.forEach(subject => add(names, subject));
   }
-  if (types.length === 0 && labels.length === 0) return null;
-  const names = types.map(type => typeName(type, lang));
+  if (types.length === 0 && names.length === 0) return null;
+  const typeNames = types.map(type => typeName(type, lang));
   return (
     <p className="coach-also">
       {tr('coach.steps.also')}{' '}
-      {types.length > 0 && <><TypeIcons types={types} title={names.join(' · ')} /><span className="visually-hidden">{names.join(', ')}</span></>}
-      {types.length > 0 && labels.length > 0 && ' · '}
-      {labels.join(' · ')}
+      {types.length > 0 && <><TypeIcons types={types} title={typeNames.join(' · ')} /><span className="visually-hidden">{typeNames.join(', ')}</span></>}
+      {types.length > 0 && names.length > 0 && ' · '}
+      {names.join(' · ')}
     </p>
   );
 }

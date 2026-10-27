@@ -3,8 +3,10 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/App';
 import { analyzeTeam } from '../../src/engine/analysis';
-import { coachTeam, type Coaching } from '../../src/engine/coach';
+import { coachTeam, type Coaching, type CoachProblem } from '../../src/engine/coach';
 import { columnOf, coveredKeys, MAX_STEPS } from '../../src/engine/coachSteps';
+import type { MoveFix } from '../../src/engine/moveFixes';
+import { needLabel, type Need } from '../../src/engine/needs';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
 import { rateTeam } from '../../src/engine/rating';
 import { emptySet, exportShowdown, mostCommonSet, type TeamSet } from '../../src/engine/sets';
@@ -165,6 +167,48 @@ describe('CoachingView', () => {
       items[i].querySelectorAll('.coach-also').forEach(line => expect(line).toHaveTextContent('risolve anche'));
     });
     expect(any).toBe(true);
+  });
+
+  it('proposta di mossa: etichetta, "al posto di" (o slot vuoto) e clic con onMoveFix', async () => {
+    const coaching = coachTeam(six, DEFAULT_FORMAT, data);
+    const advice = adviceOf(six, DEFAULT_FORMAT, data);
+    const [p1, p2] = coaching.problems;
+    const base = { index: 0, member: 'Great Tusk', set: six[0], reduces: [] };
+    const withFrom: MoveFix = { ...base, slot: 1, from: 'Rapid Spin', to: 'Knock Off', gain: 4, solves: [p1.key] };
+    const empty: MoveFix = { ...base, index: 1, member: 'Gholdengo', set: six[1], slot: 3, from: '', to: 'Thunderbolt', gain: 2, solves: [p2.key] };
+    const steps = [withFrom, empty].map((move, i) => ({ problem: [p1, p2][i], swap: null, move, alsoSolves: [] }));
+    const onMoveFix = vi.fn();
+    renderIt(<CoachingView coaching={coaching} advice={{ ...advice, steps }} members={6} rating={rating(six)} metaOn onFix={() => {}} onMoveFix={onMoveFix} />);
+    const user = userEvent.setup();
+    const a = within(stepsRegion()).getByRole('button', { name: 'Dai Knock Off a Great Tusk, +4' });
+    expect(a).toHaveTextContent('al posto di Rapid Spin');
+    const b = within(stepsRegion()).getByRole('button', { name: 'Dai Thunderbolt a Gholdengo, +2' });
+    expect(b).not.toHaveTextContent('al posto di');
+    await user.click(a);
+    expect(onMoveFix).toHaveBeenLastCalledWith(withFrom);
+    await user.click(b);
+    expect(onMoveFix).toHaveBeenLastCalledWith(empty);
+  });
+
+  it('"risolve anche" dice cosa risolve: tipi, ruoli, minacce, membri', () => {
+    const problem = (category: CoachProblem['category'], key: string, subjects?: string[]): CoachProblem =>
+      ({ severity: 'minor', category, text: key, fixes: [], key, ...(subjects ? { subjects } : {}) });
+    const problems = [
+      problem('roles', 'roles:x'), problem('defense', 'defense:Ground', ['Ground']), problem('coverage', 'coverage', ['Water', 'Fire']),
+      problem('roles', 'roles:essential', ['fieldSetup']), problem('meta', 'meta:Zamazenta', ['Zamazenta']), problem('rules', 'rules:x', ['Dragapult']),
+      problem('redundancy', 'redundancy:y'),
+    ];
+    const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], threatFixes: {}, problems };
+    const swap = { ...adviceOf(three, DEFAULT_FORMAT, data).fixes[0], solves: problems.slice(1).map(p => p.key) };
+    const step = { problem: problems[0], swap, move: null, alsoSolves: [] };
+    renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], moves: [], steps: [step] }} members={3} rating={rating(three)} metaOn {...noop} />);
+    const also = stepsRegion().querySelector('.coach-also')!;
+    expect(also.querySelectorAll('.type-icons img')).toHaveLength(3);
+    expect(also).toHaveTextContent('Zamazenta');
+    expect(also).toHaveTextContent('Dragapult');
+    expect(also).toHaveTextContent(needLabel('fieldSetup' as Need, 'it'));
+    // Senza soggetti: il nome breve dell'area
+    expect(also).toHaveTextContent('Ridondanza');
   });
 
   it('nessun nome di candidato compare due volte nelle tappe', () => {

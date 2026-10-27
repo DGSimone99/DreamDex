@@ -181,7 +181,7 @@ export function findProblems(team: TeamSet[], format: Format, analysis: TeamAnal
     .map(r => r.type);
   if (gaps.length) {
     add('coverage', false, t(lang, 'coach.problem.noCoverage', { types: list(gaps.map(type => typeName(type, lang))) }),
-      fixesFor(candidates, s => s.facts.coverage.types.filter(t => gaps.includes(t)).length), 'coverage', gaps.length);
+      fixesFor(candidates, s => s.facts.coverage.types.filter(t => gaps.includes(t)).length), 'coverage', gaps.length, [...gaps]);
   }
 
   // Minacce del meta senza check (la lista è vuota senza meta)
