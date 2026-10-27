@@ -461,7 +461,8 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
   useEffect(() => {
     if (!proposal || proposal.nonce === lastNonce.current) return;
     lastNonce.current = proposal.nonce;
-    setOpenIndex(proposal.index);
+    animated(() => setOpenIndex(proposal.index));
+    // Conta solo il nonce: la proposta cambia a ogni modifica, ma si apre una volta per nonce (lastNonce)
   }, [proposal?.nonce]); // eslint-disable-line react-hooks/exhaustive-deps
   const slotsRef = useRef<HTMLDivElement>(null);
   const focusCard = (i: number) => requestAnimationFrame(() => slotsRef.current?.querySelectorAll<HTMLElement>('.slot > summary')[i]?.focus());

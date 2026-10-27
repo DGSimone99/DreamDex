@@ -369,13 +369,23 @@ describe('proposta di mossa nell\'editor', () => {
     expect(screen.queryByRole('status')).toBeNull();
   });
 
+  it('team compresso: il clic apre comunque l editor con la proposta e lo slot evidenziato', async () => {
+    const user = await openCoaching(six);
+    await user.click(screen.getByRole('button', { name: 'Comprimi team' }));
+    await user.click(moveButton());
+    const card = document.querySelector<HTMLDetailsElement>('details.slot[open]')!;
+    expect(card).toBeTruthy();
+    expect(card.querySelector('.move-proposal')).not.toBeNull();
+    expect(card.querySelector('.field.is-proposed')).not.toBeNull();
+  });
+
+  // Il clic su una proposta vecchia (membro uscito o slot cambiato) non è raggiungibile dalla UI: dopo ogni modifica
+  // i consigli si ricalcolano e il pulsante sparisce; la guardia in App.openMoveFix non ha un punto d'ingresso nei test.
   it('rimosso il membro, nessuna proposta resta aperta', async () => {
     const user = await openCoaching(six);
-    const stale = moveButton();
-    // Cambia la mossa dell'unico slot proposto prima del clic: il pulsante resta ma la proposta è vecchia
-    const member = /^Dai .+ a (.+), \+\d+$/.exec(stale.getAttribute('aria-label')!)![1];
+    const member = /^Dai .+ a (.+), \+\d+$/.exec(moveButton().getAttribute('aria-label')!)![1];
     await user.click(screen.getByRole('button', { name: new RegExp(`^Rimuovi ${member}`) }));
-    await user.click(screen.getByRole('tab', { name: /^Analisi/ }));
     expect(document.querySelector('.move-proposal')).toBeNull();
+    expect(screen.queryByRole('status')).toHaveTextContent('rimosso');
   });
 });
