@@ -36,6 +36,40 @@ const LONG = [
   member('Scizor', 'Scizorite', 'Technician', ['Bullet Punch', 'U-turn', 'Swords Dance', 'Knock Off'], 'Adamant', { hp: 248, atk: 252, spd: 8 }),
   member('Garchomp', 'Garchompite', 'Rough Skin', ['Earthquake', 'Scale Shot', 'Swords Dance', 'Fire Fang'], 'Jolly', { atk: 252, spe: 252, hp: 4 }),
 ];
+// Sei attaccanti forti (Offesa del membro >= 85): la riga Attaccanti del Riassunto con più sprite di quanti ne stanno
+const ATTACK = [
+  LONG[2],
+  TEAM[0],
+  TEAM[3],
+  member('Iron Valiant', 'Choice Specs', 'Quark Drive', ['Moonblast', 'Focus Blast', 'Thunderbolt', 'Shadow Ball'], 'Timid', { def: 4, spa: 252, spe: 252 }),
+  LONG[5],
+  member('Victini', 'Choice Band', 'Victory Star', ['V-create', 'U-turn', 'Bolt Strike', 'Zen Headbutt'], 'Jolly', { atk: 252, spd: 4, spe: 252 }),
+];
+// Team con una mossa non legale (Flamethrower su Great Tusk): il Coaching propone anche un cambio di mossa
+const MOVE = [
+  member('Great Tusk', 'Booster Energy', 'Protosynthesis', ['Headlong Rush', 'Ice Spinner', 'Flamethrower', 'Bulk Up'], 'Jolly', { atk: 252, spe: 252, hp: 4 }),
+  ...TEAM.slice(1, 3),
+  TEAM[4],
+  SIX[5],
+];
+// Il team dell'utente (.superpowers/sdd/coaching-tweaks/user-team.txt): voto alto, poche tappe
+const USER = [
+  member('Scizor', 'Scizorite', 'Light Metal', ['Swords Dance', 'Bullet Punch', 'Knock Off', 'Roost'], 'Impish', { hp: 248, def: 112, spd: 128, spe: 20 }),
+  member('Garchomp', 'Dragonium Z', 'Rough Skin', ['Swords Dance', 'Earthquake', 'Outrage', 'Stealth Rock'], 'Jolly', { atk: 252, spd: 4, spe: 252 }),
+  member('Victini', 'Choice Scarf', 'Victory Star', ['V-create', 'U-turn', 'Bolt Strike', 'Trick'], 'Jolly', { atk: 252, spd: 4, spe: 252 }),
+  member('Zapdos', 'Heavy-Duty Boots', 'Static', ['Volt Switch', 'Hurricane', 'Heat Wave', 'Roost'], 'Bold', { hp: 248, def: 188, spe: 72 }),
+  member('Iron Valiant', 'Choice Specs', 'Quark Drive', ['Moonblast', 'Focus Blast', 'Thunderbolt', 'Shadow Ball'], 'Timid', { def: 4, spa: 252, spe: 252 }),
+  member('Ogerpon-Cornerstone', 'Cornerstone Mask', 'Sturdy', ['Ivy Cudgel', 'Power Whip', 'Swords Dance', 'Superpower'], 'Jolly', { atk: 252, spd: 4, spe: 252 }),
+];
+// Molti piazzatori di campo e mosse di campo: la riga Campo del Riassunto al limite
+const FIELD = [
+  member('Ting-Lu', 'Leftovers', 'Vessel of Ruin', ['Stealth Rock', 'Spikes', 'Earthquake', 'Whirlwind'], 'Careful', { hp: 252, spd: 252, def: 4 }),
+  member('Glimmora', 'Focus Sash', 'Toxic Debris', ['Toxic Spikes', 'Stealth Rock', 'Power Gem', 'Mortal Spin'], 'Timid', { spa: 252, spe: 252, hp: 4 }),
+  member('Grimmsnarl', 'Light Clay', 'Prankster', ['Reflect', 'Light Screen', 'Spirit Break', 'Parting Shot'], 'Careful', { hp: 252, spd: 252, def: 4 }),
+  member('Ninetales-Alola', 'Light Clay', 'Snow Warning', ['Aurora Veil', 'Blizzard', 'Moonblast', 'Encore'], 'Timid', { spa: 252, spe: 252, hp: 4 }),
+  member('Pelipper', 'Damp Rock', 'Drizzle', ['Hurricane', 'Hydro Pump', 'U-turn', 'Roost'], 'Bold', { hp: 248, def: 252, spe: 8 }),
+  SIX[0],
+];
 const FORMAT = { formatId: 'ou', genLimit: 9, minUsage: 0.01, allowMultipleMegas: false, ignoreBans: false, meta: true };
 const hash = (team: unknown[]) => '#team=' + Buffer.from(JSON.stringify({ team, format: FORMAT })).toString('base64')
   .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
@@ -90,10 +124,17 @@ const STATES: Record<string, State> = {
     await wait(300);
     return clickText(p, '.analysis-help button', /./);
   } },
+  // Stampa l'altezza della riga delle tappe mentre i consigli si calcolano (scheletro) e dopo: devono coincidere
   'coaching-six': { hash: hash(SIX), run: async p => {
     await tab(p, 'analysis');
     await wait(300);
-    return clickText(p, '#analysis-view-coaching', /./);
+    if (!await clickText(p, '#analysis-view-coaching', /./)) return false;
+    const rowH = (sel: string) => p.evaluate(q => document.querySelector(q)?.getBoundingClientRect().height ?? -1, sel);
+    const start = Date.now();
+    const skeleton = await rowH('.coach-steps[aria-busy]');
+    await p.waitForSelector('.coach-steps:not([aria-busy]), .coach-steps-none', { timeout: 20000 });
+    console.log(`coaching-six: tappe pronte in ${Date.now() - start} ms; steps skeleton=${skeleton} real=${await rowH('.coach-steps:not([aria-busy]), .coach-steps-none')}`);
+    return true;
   } },
   'coaching-three': { hash: hash(TEAM.slice(0, 3)), run: async p => {
     await tab(p, 'analysis');
@@ -105,8 +146,10 @@ const STATES: Record<string, State> = {
     await tab(p, 'analysis');
     await wait(300);
     if (!await clickText(p, '#analysis-view-coaching', /./)) return 'no coaching tab';
-    await wait(1500);
-    if (!await clickText(p, 'button.coach-fix', /./)) return false;
+    // I consigli arrivano dopo il calcolo: si aspetta la riga delle tappe
+    await p.waitForSelector('.coach-steps:not([aria-busy]) button.coach-alt', { timeout: 20000 });
+    // Il clic sulla proposta la applica: le alternative sono nell'icona accanto
+    if (!await clickText(p, 'button.coach-alt', /./)) return false;
     // La lista per membro si calcola dopo il clic: si aspetta che non sia più attenuata
     const start = Date.now();
     await wait(100);
@@ -116,6 +159,14 @@ const STATES: Record<string, State> = {
   } },
   // Cruscotto della Panoramica col team ridotto: più spazio, più informazione
   'analysis-collapsed': { hash: hash(SIX), run: async p => {
+    await tab(p, 'analysis');
+    await wait(300);
+    if (!await clickText(p, 'button.band-toggle', /./)) return 'no toggle';
+    await wait(800);
+    return true;
+  } },
+  // Lo stesso in inglese (etichette più lunghe nel Riassunto)
+  'analysis-collapsed-en': { hash: hash(SIX), lang: 'en', run: async p => {
     await tab(p, 'analysis');
     await wait(300);
     if (!await clickText(p, 'button.band-toggle', /./)) return 'no toggle';
@@ -134,10 +185,15 @@ const STATES: Record<string, State> = {
   'team-type-help': { hash: hash(SIX), run: async p => {
     await tab(p, 'analysis');
     await wait(300);
-    if (!await clickText(p, '.team-type .help-button', /./)) return 'no help';
+    if (!await clickText(p, '.dash-summary .help-button', /./)) return 'no help';
     await wait(300);
     return true;
   } },
+  // Il team dell'utente in inglese sulla Panoramica
+  'analysis-user': { hash: hash(USER), lang: 'en', run: async p => { await tab(p, 'analysis'); return true; } },
+  // Riassunto con righe lunghe: molti attaccanti (ATTACK, sei sopra la soglia) e molti piazzatori di campo (FIELD)
+  'analysis-long': { hash: hash(ATTACK), run: async p => { await tab(p, 'analysis'); return true; } },
+  'analysis-field': { hash: hash(FIELD), lang: 'en', run: async p => { await tab(p, 'analysis'); return true; } },
   'analysis-six': { hash: hash(SIX), run: async p => { await tab(p, 'analysis'); return true; } },
   'analysis-empty': { hash: '', run: async p => { await tab(p, 'analysis'); return true; } },
   'analysis-en': { hash: hash(SIX), lang: 'en', run: async p => { await tab(p, 'analysis'); return true; } },
@@ -155,6 +211,48 @@ const STATES: Record<string, State> = {
     await tab(p, 'analysis');
     await wait(300);
     return clickText(p, '#analysis-view-coaching', /./);
+  } },
+  // Il team dell'utente in inglese, a tappe pronte
+  'coaching-user': { hash: hash(USER), lang: 'en', run: async p => {
+    await tab(p, 'analysis');
+    await wait(300);
+    if (!await clickText(p, '#analysis-view-coaching', /./)) return 'no coaching tab';
+    await p.waitForSelector('.coach-steps:not([aria-busy]), .coach-steps-none', { timeout: 20000 });
+    return true;
+  } },
+  // Puntatore sulla prima proposta: stampa quanti problemi della mappa sono in anteprima (barrati) e quanti risolve la proposta
+  'coaching-hover': { hash: hash(SIX), run: async p => {
+    await tab(p, 'analysis');
+    await wait(300);
+    if (!await clickText(p, '#analysis-view-coaching', /./)) return 'no coaching tab';
+    await p.waitForSelector('.coach-steps:not([aria-busy]) button.coach-fix', { timeout: 20000 });
+    const count = () => p.evaluate(() => document.querySelectorAll('.coach-prob.is-solved-preview').length);
+    const before = await count();
+    await p.hover('.coach-steps button.coach-fix');
+    await wait(250);
+    const during = await count();
+    console.log(`coaching-hover: is-solved-preview prima=${before} durante=${during}`);
+    return (before === 0 && during > 0) || `before=${before} during=${during}`;
+  } },
+  // Tappe con proposte di mossa (team con set poveri): stampa quante ce ne sono
+  'coaching-move-steps': { hash: hash(MOVE), run: async p => {
+    await tab(p, 'analysis');
+    await wait(300);
+    if (!await clickText(p, '#analysis-view-coaching', /./)) return 'no coaching tab';
+    await p.waitForSelector('.coach-steps:not([aria-busy])', { timeout: 20000 });
+    const n = await p.evaluate(() => document.querySelectorAll('.coach-steps .coach-prop.is-move').length);
+    console.log(`coaching-move-steps: ${n} proposte di mossa`);
+    return n > 0 || 'no move proposal';
+  } },
+  // Clic su una proposta di mossa: editor del membro con la mossa nuova in anteprima
+  'coaching-move': { hash: hash(MOVE), run: async p => {
+    await tab(p, 'analysis');
+    await wait(300);
+    if (!await clickText(p, '#analysis-view-coaching', /./)) return 'no coaching tab';
+    await p.waitForSelector('.coach-steps:not([aria-busy])', { timeout: 20000 });
+    if (!await clickText(p, '.coach-prop.is-move button.coach-alt', /./)) return 'no move proposal';
+    await wait(600);
+    return (await p.evaluate(() => !!document.querySelector('.move-proposal'))) || 'no preview in the editor';
   } },
   meta: { run: async p => { await tab(p, 'meta'); return true; } },
   lists: { run: async p => { await tab(p, 'lists'); return true; } },
@@ -211,7 +309,7 @@ for (const [w, h] of sizes) {
     await page.setViewport({ width: w, height: h });
     const lang = state.lang ?? 'it';
     await page.evaluateOnNewDocument(l => { localStorage.clear(); localStorage.setItem('dreamdex.lang', JSON.stringify(l)); }, lang);
-    await page.goto(URL + (state.hash ?? hash(TEAM)), { waitUntil: 'networkidle0' });
+    await page.goto(URL + (state.hash ?? hash(TEAM)), { waitUntil: 'networkidle0', timeout: 90000 });
     await wait(1500);
     const result = state.run ? await state.run(page) : true;
     if (result !== true) { console.log(`skip ${name} @${w}x${h}: ${result === false ? 'element not found' : result}`); await page.close(); continue; }
@@ -222,22 +320,60 @@ for (const [w, h] of sizes) {
       const main = document.querySelector('.main');
       const box = document.querySelector<HTMLElement>('.dash');
       // Niente funzioni con nome qui dentro: tsx aggiunge __name, che nella pagina non esiste
-      const [left, right] = ['.dash-left', '.dash-right'].map(sel => {
-        const cards = box ? [...box.querySelectorAll<HTMLElement>(`${sel} > .dash-card, ${sel} > .dash-pair`)] : [];
-        return Math.round(Math.max(0, ...cards.map(c => c.getBoundingClientRect().bottom)) * 10) / 10;
-      });
-      // Contenuto che sborda dalla sua sezione (oltre 1px) senza finire in un "+N"
-      const over = box ? [...box.querySelectorAll<HTMLElement>('.dash-card')].filter(c => c.scrollHeight - c.clientHeight > 1)
-        .map(c => c.className.split(' ').find(n => n.startsWith('dash-') && n !== 'dash-card')) : [];
+      const cards = box ? [...box.querySelectorAll<HTMLElement>(':scope > .dash-card')] : [];
+      const bottom = box ? box.getBoundingClientRect().bottom : 0;
+      const heights = cards.map(c => `${c.className.split(' ').find(n => n.startsWith('dash-') && n !== 'dash-card')?.slice(5)}:${Math.round(c.getBoundingClientRect().height)}`);
+      // Sezioni tagliate dal fondo del cruscotto, o con contenuto che sborda (oltre 1px)
+      const cut = cards.filter(c => c.getBoundingClientRect().bottom - bottom > 1).length;
+      const over = cards.filter(c => c.scrollHeight - c.clientHeight > 1)
+        .map(c => c.className.split(' ').find(n => n.startsWith('dash-') && n !== 'dash-card'));
+      // Righe del Riassunto e voci in EN tagliate in larghezza
+      const sumClip = box ? [...box.querySelectorAll<HTMLElement>('.sum-v, .sum-k, .sum-names')].filter(e => e.scrollWidth - e.clientWidth > 1).map(e => e.className).length : 0;
+      const sumRows = box ? [...box.querySelectorAll<HTMLElement>('.sum-rows > li')].map(li => Math.round(li.getBoundingClientRect().height)) : [];
+      // Righe del Riassunto sotto il fondo della sua card (nascoste) e voci a misura mostrate ma tagliate (fuori dalla riga)
+      const sumCard = box?.querySelector('.dash-summary');
+      const sumBottom = sumCard ? sumCard.getBoundingClientRect().bottom : 0;
+      const sumHidden = box ? [...box.querySelectorAll('.sum-rows > li')].filter(li => li.getBoundingClientRect().bottom - sumBottom > 1).length : 0;
+      const fitCut = box ? [...box.querySelectorAll<HTMLElement>('.sum-fit')].reduce((n, fit) => {
+        const r = fit.getBoundingClientRect();
+        return n + [...fit.querySelectorAll('[data-fit], [data-fit-more]')].filter(i => { const b = i.getBoundingClientRect(); return b.bottom - r.bottom > 0.5 || b.right - r.right > 0.5; }).length;
+      }, 0) : 0;
+      // Riempimento del Riassunto: per ogni riga, dall'alto della riga al fondo dell'ultimo contenuto visibile, sul totale delle righe
+      const sumList = box?.querySelector('.sum-rows');
+      const fill = sumList ? Math.round(100 * [...sumList.querySelectorAll(':scope > li')].reduce((n, li) => {
+        const top = li.getBoundingClientRect().top;
+        const v = li.querySelector('.sum-v')!.getBoundingClientRect();
+        const bottoms = [...li.querySelectorAll('.sum-ic, .sum-k, .sum-top, .sum-v > *')].map(e => e.getBoundingClientRect()).filter(b => b.height && b.bottom <= v.bottom + 0.5).map(b => b.bottom);
+        return n + Math.max(top, ...bottoms) - top;
+      }, 0) / sumList.getBoundingClientRect().height) : 0;
+      // Copertura: vuoto fra la testata e la tabella e fra la tabella e il fondo (padding escluso)
+      const cov = box?.querySelector<HTMLElement>('.dash-coverage');
+      const covHead = cov?.querySelector('.dash-head')?.getBoundingClientRect();
+      const covTable = cov?.querySelector('table')?.getBoundingClientRect();
+      const covBand = cov && covHead && covTable ? `${Math.round(covTable.top - covHead.bottom)}/${Math.round(cov.getBoundingClientRect().bottom - covTable.bottom)}` : '-';
       return {
         scroll: document.scrollingElement!.scrollHeight - window.innerHeight,
         clipped: main ? main.scrollHeight - main.clientHeight : 0,
-        dash: box ? `dash=${box.clientHeight} density=${box.dataset.density} left=${left} right=${right} dashBottom=${Math.round(box.getBoundingClientRect().bottom)} overflow=[${over.join(',')}]` : '',
+        dash: box ? `dash=${box.clientHeight}x${box.clientWidth} density=${box.dataset.density} cards=[${heights.join(',')}] cut=${cut} overflow=[${over.join(',')}] sumClip=${sumClip} rows=[${sumRows.join(',')}] sumHidden=${sumHidden} sumFill=${fill}% fitCut=${fitCut} covBand=${covBand} overviewScroll=${(document.querySelector('.overview')?.scrollHeight ?? 0) - (document.querySelector('.overview')?.clientHeight ?? 0)} hScroll=${document.scrollingElement!.scrollWidth - window.innerWidth}` : '',
       };
+    });
+    // Coaching: tappe che sbordano, righe "risolve anche" o nomi tagliati in larghezza, scorrimento orizzontale
+    const coach = await page.evaluate(() => {
+      const box = document.querySelector<HTMLElement>('.coaching');
+      if (!box) return '';
+      const steps = [...box.querySelectorAll<HTMLElement>('.coach-step')];
+      const tall = steps.filter(s => s.scrollHeight - s.clientHeight > 1).length;
+      const wide = [...box.querySelectorAll<HTMLElement>('.coach-also, .coach-fix-main strong, .coach-fix-lead')].filter(e => e.scrollWidth - e.clientWidth > 1).length;
+      // Minacce: la percentuale d'uso deve restare intera dentro la riga (si accorcia il nome, non il numero)
+      const usage = [...box.querySelectorAll<HTMLElement>('.coach-usage')];
+      const usageCut = usage.filter(u => u.scrollWidth - u.clientWidth > 0 || u.getBoundingClientRect().right - u.parentElement!.getBoundingClientRect().right > 1).length;
+      const row = box.querySelector('.coach-steps')?.getBoundingClientRect().height ?? 0;
+      const need = Math.max(0, ...steps.map(s => [...s.querySelectorAll('.coach-step-body > *')].reduce((b, c) => Math.max(b, c.getBoundingClientRect().bottom), 0) - s.getBoundingClientRect().top));
+      return `coach: stepsRow=${Math.round(row)} contentMax=${Math.round(need)} stepOverflow=${tall} clippedLines=${wide} usage=${usage.length} usageCut=${usageCut} hScroll=${box.scrollWidth - box.clientWidth} docHScroll=${document.scrollingElement!.scrollWidth - window.innerWidth}`;
     });
     const file = join(out, `${w}x${h}-${name}.png`);
     await page.screenshot({ path: file });
-    console.log(`${file} pageScroll=${scroll} clipped=${clipped} ${dash}`);
+    console.log(`${file} pageScroll=${scroll} clipped=${clipped} ${dash} ${coach}`);
     await page.close();
   }
 }

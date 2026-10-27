@@ -81,3 +81,10 @@ describe('Annulla nel team', () => {
     expect(screen.queryByRole('status')).toBeNull();
   });
 });
+
+describe('avviso di mossa', () => {
+  it('dice membro e cambio', () => {
+    renderIt(<UndoToast action={{ id: 3, kind: 'move', from: 'Great Tusk', to: 'Rapid Spin → Ice Spinner' }} onUndo={vi.fn()} onClose={vi.fn()} />);
+    expect(screen.getByRole('status')).toHaveTextContent('Great Tusk: Rapid Spin → Ice Spinner');
+  });
+});

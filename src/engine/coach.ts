@@ -16,7 +16,9 @@ import { bannedInPool, scoreCandidates, type Suggestion } from './scoring';
 import { memberIssues, rateTeam, roleAndTypeRedundancies, weatherClashes } from './rating';
 import { benefits, conditionLabel, viaName, enables, teamSynergies, unmetBeneficiaries, unusedEnablers } from './synergy';
 import type { TeamSet } from './sets';
-import { coachFixes, firstMove, type CoachFix } from './coachFixes';
+import { coachFixes, type CoachFix } from './coachFixes';
+import { buildSteps, type CoachStep } from './coachSteps';
+import { moveFixes } from './moveFixes';
 import type { ScoredArea } from './teamGain';
 import { defensiveMultiplier } from './types';
 
@@ -46,10 +48,10 @@ export interface CoachProblem {
 
 /** I consigli del Coaching: a parte perché lenti, si calcolano solo con la scheda Coaching aperta. */
 export interface CoachAdvice {
-  /** Cambi dalla classifica di Migliora team che alzano il voto, coi problemi che risolvono o riducono. */
+  /** Cambi dalla classifica di Migliora team che alzano il voto (o a pari voto risolvono), coi problemi che risolvono o riducono. */
   fixes: CoachFix[];
-  /** "Prima di tutto": il cambio che risolve di più (null se nessuno risolve qualcosa). */
-  first: CoachFix | null;
+  /** Tutte le tappe, dalla più urgente: la UI ne mostra `MAX_STEPS`. */
+  steps: CoachStep[];
 }
 
 export interface Coaching {
@@ -177,7 +179,7 @@ export function findProblems(team: TeamSet[], format: Format, analysis: TeamAnal
     .map(r => r.type);
   if (gaps.length) {
     add('coverage', false, t(lang, 'coach.problem.noCoverage', { types: list(gaps.map(type => typeName(type, lang))) }),
-      fixesFor(candidates, s => s.facts.coverage.types.filter(t => gaps.includes(t)).length), 'coverage', gaps.length);
+      fixesFor(candidates, s => s.facts.coverage.types.filter(t => gaps.includes(t)).length), 'coverage', gaps.length, [...gaps]);
   }
 
   // Minacce del meta senza check (la lista è vuota senza meta)
@@ -306,10 +308,11 @@ export function coachTeam(team: TeamSet[], format: Format, data: EngineData, lan
   };
 }
 
-/** I cambi della classifica di Migliora team per i problemi di coachTeam, e la prima mossa. */
+/** I cambi della classifica di Migliora team per i problemi di coachTeam, e le tappe. */
 export function coachAdvice(team: TeamSet[], format: Format, data: EngineData, problems: CoachProblem[], lang: Lang = 'it'): CoachAdvice {
-  if (team.length < 2) return { fixes: [], first: null };
+  if (team.length < 2) return { fixes: [], steps: [] };
   if (data.formatId !== format.formatId) data = { ...data, formatId: format.formatId };
   const fixes = coachFixes(team, format, data, problems, lang);
-  return { fixes, first: firstMove(fixes, problems) };
+  const moves = data.stats ? moveFixes(team, format, data, problems, lang) : [];
+  return { fixes, steps: buildSteps(problems, fixes, moves) };
 }

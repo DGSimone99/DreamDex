@@ -5,16 +5,14 @@ import type { EngineData } from '../engine/data';
 import { dashboardData } from '../engine/overviewDashboard';
 import type { TeamRating } from '../engine/rating';
 import type { TeamSet } from '../engine/sets';
+import { teamSummary } from '../engine/teamSummary';
 import { useLang, useT } from '../i18n/react';
 import type { AnalysisView } from './analysisView';
-import { TeamTypeLine } from './CoachPanel';
 import { AlertMark } from './AlertMark';
 import { OverviewDashboard } from './OverviewDashboard';
 
-const noop = () => {};
-
-/** La Panoramica: giudizio e tipo di team in cima, poi il cruscotto a due colonne che riempie lo spazio. */
-export function AnalysisOverview({ team, analysis, rating, coaching, data, onView, onMeta, onAdd, teamCollapsed = false }: {
+/** La Panoramica: il giudizio in cima, poi il cruscotto (Riassunto, Copertura, Ruoli, Velocità) che riempie lo spazio. */
+export function AnalysisOverview({ team, analysis, rating, coaching, data, onView, onAdd, teamCollapsed = false }: {
   /** Team ridotto: il cruscotto usa la densità ampia. */
   teamCollapsed?: boolean;
   onAdd?: () => void;
@@ -24,8 +22,6 @@ export function AnalysisOverview({ team, analysis, rating, coaching, data, onVie
   coaching?: Coaching;
   data: EngineData;
   onView: (view: AnalysisView) => void;
-  /** Le minacce aprono la scheda principale Meta. */
-  onMeta?: () => void;
   /** Messo da parte con la riga Membri: torna quando la riga trova posto. */
   onMember?: (index: number) => void;
 }) {
@@ -38,6 +34,7 @@ export function AnalysisOverview({ team, analysis, rating, coaching, data, onVie
   ];
   const problems = coaching?.problems;
   const dash = useMemo(() => (rating ? dashboardData(team, analysis, rating, problems ?? [], data, lang) : null), [team, analysis, rating, problems, data, lang]);
+  const summary = useMemo(() => (rating && coaching && dash ? teamSummary(team, rating, coaching, dash, data, lang) : null), [team, rating, coaching, dash, data, lang]);
   if (team.length === 0) {
     return (
       <div className="overview-empty">
@@ -48,13 +45,12 @@ export function AnalysisOverview({ team, analysis, rating, coaching, data, onVie
   }
   return (
     <div className="overview">
-      {/* Una riga: giudizio, come è calcolato il voto (nel segno) e tipo di team */}
+      {/* Una riga: giudizio e come è calcolato il voto (nel segno); il tipo di team è nel Riassunto */}
       <div className="overview-headline">
         {coaching && <strong>{coaching.verdict}</strong>}
         {notes.length > 0 && <AlertMark alerts={notes.map(text => ({ level: 'info' as const, text }))} />}
-        {coaching?.teamType && <TeamTypeLine teamType={coaching.teamType} />}
       </div>
-      {dash && <OverviewDashboard data={dash} problems={problems ?? []} members={team.length} onView={onView} onMeta={onMeta ?? noop} teamCollapsed={teamCollapsed} />}
+      {dash && summary && <OverviewDashboard data={dash} summary={summary} members={team.length} onView={onView} teamCollapsed={teamCollapsed} />}
     </div>
   );
 }

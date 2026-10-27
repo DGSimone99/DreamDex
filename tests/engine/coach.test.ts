@@ -107,7 +107,7 @@ describe('coachTeam', () => {
     const noData = coachTeam([tusk, gholdengo, emptySet('Fakemon-Xyz')], DEFAULT_FORMAT, { stats: null, sets: null });
     const advice = adviceOf([tusk, gholdengo, emptySet('Fakemon-Xyz')], DEFAULT_FORMAT, { stats: null, sets: null });
     expect(advice.fixes).toEqual([]);
-    expect(advice.first).toBeNull();
+    expect(advice.steps).toEqual([]);
     expect(noData.problems.every(p => p.fixes.length === 0)).toBe(true);
     expect(noData.problems.some(p => p.text.includes('check'))).toBe(false);
     expect(noData.strengths.some(s => s.startsWith('Ferma'))).toBe(false);

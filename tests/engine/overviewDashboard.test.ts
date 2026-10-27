@@ -29,6 +29,8 @@ describe('dashboardData', () => {
     expect(cells.filter(c => c.defense === 'minor').map(c => c.type)).toEqual(sev('minor'));
     const missing = tile('strength').missing.map(m => (m as { type: string }).type);
     expect(cells.filter(c => c.offense === 'bad').map(c => c.type)).toEqual(missing);
+    // Quanti membri resistono a ogni tipo (la vista ampia del Riassunto segna "nessuno resiste")
+    expect(cells.map(c => c.resist)).toEqual(analysis.weakness.map(r => r.resist));
     expect(dash.coverage.defense).toBe(tile('defense').value);
     expect(dash.coverage.offense).toBe(tile('strength').value);
   });

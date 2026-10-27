@@ -423,3 +423,13 @@
 .grade-badge .grade-delta { position: absolute; top: 3px; right: 22px; margin: 0; padding: 0 6px; font-size: 12px; line-height: 18px; background: var(--panel); }
 .grade-badge .grade-delta.up { background: color-mix(in srgb, var(--good) 22%, var(--panel)); }
 .grade-badge .grade-delta.down { background: color-mix(in srgb, var(--bad) 22%, var(--panel)); }
+
+/* Proposta di mossa del coach nell'editor: stessa riga dei problemi, in magenta */
+.move-proposal { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; padding: 8px 12px; border: 1px solid color-mix(in srgb, var(--accent-2) 55%, transparent); background: color-mix(in srgb, var(--accent-2) 10%, transparent); font-size: 13px; }
+.move-proposal .icon { flex: none; color: var(--accent-2); }
+.move-proposal span { flex: 1; min-width: 0; }
+.move-proposal button { flex: none; height: 30px; white-space: nowrap; }
+/* Applica: l'azione principale, come negli altri pannelli (Incolla, Riempi) */
+.move-proposal .apply { background: var(--accent-soft); border-color: var(--accent); color: var(--text); }
+.move-proposal .apply:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 30%, var(--raised)); }
+.editor-group.moves .field.is-proposed { outline: 2px solid var(--accent-2); outline-offset: 3px; }
