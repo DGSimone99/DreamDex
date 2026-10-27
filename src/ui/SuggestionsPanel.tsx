@@ -1,4 +1,4 @@
-import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
+import { useDeferredValue, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import type { EngineData } from '../engine/data';
 import type { Format } from '../engine/format';
 import { formatRules } from '../engine/formatRules';
@@ -32,12 +32,13 @@ import { Icon } from './icons';
 import { SuggestionDetail } from './SuggestionDetail';
 import { AlertMark } from './AlertMark';
 import { Typed } from './TypeText';
-import { t } from '../i18n';
+import { t, type Lang } from '../i18n';
 import type { ListSprite, ListStyle } from './theme';
 import { useLang, useT } from '../i18n/react';
+import { PAGE, usePerPage } from './usePerPage';
 
-/** Candidati per pagina e in tutto; il voto del team si calcola sui primi POOL per punteggio. */
-export const PAGE = 10;
+/** Candidati in tutto; il voto del team si calcola sui primi POOL per punteggio. Per pagina: misurato (PAGE senza misura). */
+export { PAGE };
 export const MAX = 50;
 const POOL = 100;
 
@@ -71,6 +72,8 @@ interface Props {
   listStyle?: ListStyle;
   /** Sprite della lista (impostazioni): normale o icona box. */
   listSprite?: ListSprite;
+  /** Team nascosto: la lista ha più spazio, il numero per pagina resta quello a team aperto. */
+  teamCollapsed?: boolean;
 }
 
 /** Un candidato scelto nel Coaching: in modalità Aggiungi o fra i sostituti del membro. */
@@ -124,7 +127,26 @@ function ListMarks({ set, lists }: { set: TeamSet; lists?: EffectiveLists }) {
   );
 }
 
-function SuggestionRow({ rank, item, usage, out, quickLabel, actionLabel, replacing, picked, selected, onSelect, onAction, format, lists }: {
+/**
+ * I motivi sotto il nome, dal bonus che vale più punti voto in giù (al massimo `n`). Il malus resta nel dettaglio.
+ * Col team vuoto i ruoli principali; senza bonus la ragione che pesa di più o "nessuna differenza".
+ */
+function reasonsOf(item: Item, n: number, usage: number | null, format: Format, lang: Lang): { pros: boolean; texts: string[] } {
+  const diff = 'diff' in item ? item.diff : null;
+  const changes = diff ? rankedChanges(diff, item.teamGain?.areaPoints, lang) : null;
+  const pros = changes?.pros.slice(0, n).map(p => p.text) ?? [];
+  if (pros.length) return { pros: true, texts: pros };
+  const text = changes
+    ? (item.reasons[0] ? topReason(item.reasons)!.text : t(lang, 'suggest.noDifference'))
+    // L'uso nel meta non è un motivo per sceglierlo: resta solo col team vuoto, dove è l'unico criterio
+    // Col team vuoto l'uso sta già a destra: qui i ruoli principali del Pokémon
+    : (usage !== null ? detectRoles(item.set, formatRules(format.formatId)).slice(0, 3).map(role => t(lang, `role.${role}`)).join(', ') : topReason(item.reasons.filter(r => r.component !== 'strength'))?.text) ?? '';
+  return { pros: false, texts: [text] };
+}
+
+function SuggestionRow({ rank, item, usage, out, quickLabel, actionLabel, replacing, picked, selected, onSelect, onAction, format, lists, reasons }: {
+  /** Quanti motivi mostrare sotto il nome. */
+  reasons: number;
   /** Liste dell'utente, per i segni ♥ e ⊘. */
   lists?: EffectiveLists;
   /** Riga scelta dalla ricerca (Invio la aggiunge). */
@@ -146,16 +168,7 @@ function SuggestionRow({ rank, item, usage, out, quickLabel, actionLabel, replac
 }) {
   const tr = useT();
   const lang = useLang();
-  const diff = 'diff' in item ? item.diff : null;
-  // Una riga sola: il bonus che vale più punti e il malus che ne toglie di più (aggiungendo, la ragione che pesa di più)
-  const changes = diff ? rankedChanges(diff, item.teamGain?.areaPoints, lang) : null;
-  const bonus = changes?.pros[0]?.text ?? null;
-  const malus = changes?.cons[0]?.text ?? null;
-  const summaryText = changes
-    ? (item.reasons[0] ? topReason(item.reasons)!.text : tr('suggest.noDifference'))
-    // L'uso nel meta non è un motivo per sceglierlo: resta solo col team vuoto, dove è l'unico criterio
-    // Col team vuoto l'uso sta già a destra: qui i ruoli principali del Pokémon
-    : (usage !== null ? detectRoles(item.set, formatRules(format.formatId)).slice(0, 3).map(role => tr(`role.${role}`)).join(', ') : topReason(item.reasons.filter(r => r.component !== 'strength'))?.text) ?? '';
+  const summary = reasonsOf(item, reasons, usage, format, lang);
   const types = getSpecies(item.species)?.types ?? [];
   // Avvisi e "spesso usati insieme" come segni con tooltip, non più etichette lunghe che vanno a capo
   const warnings = item.facts.clashes.map(text => ({ level: 'warn' as const, text: text.replace(/^⚠\s*/, '') }));
@@ -186,11 +199,11 @@ function SuggestionRow({ rank, item, usage, out, quickLabel, actionLabel, replac
           <AlertMark alerts={warnings} />
           <AlertMark alerts={together} icon="spark" />
         </span>
-        {/* Bonus e malus principali; il colore solo sui segni */}
+        {/* I bonus principali, quanti ne entrano; il colore solo sul segno */}
         <small>
-          {bonus || malus
-            ? <>{bonus && <span className="gain"><b aria-hidden="true">+</b><span className="visually-hidden">+</span><Typed text={bonus} /></span>}{malus && <span className="loss"><b aria-hidden="true">−</b><span className="visually-hidden">−</span><Typed text={malus} /></span>}</>
-            : <span className="plain"><Typed text={summaryText} /></span>}
+          {summary.texts.map((text, i) => (summary.pros
+            ? <span key={i} className="reason gain"><b aria-hidden="true">+</b><span className="visually-hidden">+</span><Typed text={text} /></span>
+            : <span key={i} className="reason plain"><Typed text={text} /></span>))}
         </small>
       </span>
       {/* Chi esce: solo la sua icona accanto al voto (con 6 membri basta); il nome nel tooltip e per gli screen reader */}
@@ -229,10 +242,13 @@ export const SEARCH_DELAY = 200;
 /** I tipi di team che si possono scegliere per giudicare i cambi, dopo Nessuno. */
 const TEAM_TYPES: Archetype[] = ['hyperOffense', 'bulkyOffense', 'balance', 'semiStall', 'stall'];
 
-export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onReplaceWith, onCancelReplace, rating = null, onTarget, focusSearch, focus, listStyle = 'cards', listSprite = 'normal' }: Props) {
+export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onReplaceWith, onCancelReplace, rating = null, onTarget, focusSearch, focus, listStyle = 'cards', listSprite = 'normal', teamCollapsed = false }: Props) {
   const tr = useT();
   const lang = useLang();
-  const [page, setPage] = useState(0);
+  const [pageState, setPage] = useState(0);
+  // Quanti per pagina: dallo spazio della lista, come se il team fosse aperto
+  const listRef = useRef<HTMLOListElement>(null);
+  const { perPage, columns, tileHeight, rowHeight, reasons } = usePerPage(listRef, listStyle, teamCollapsed);
   const [filters, setFilters] = useState<CandidateFilters>(EMPTY_FILTERS);
   // La lista si ricalcola sui filtri "stabili"; l'input mostra subito quello che scrivi
   const applied = useDebounced(filters, SEARCH_DELAY);
@@ -348,14 +364,16 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
     const index = items.findIndex(item => item.species === focusing);
     // Non c'è (filtri attivi): resta la lista com'è
     if (index >= 0) {
-      setPage(Math.floor(index / PAGE));
+      setPage(Math.floor(index / perPage));
       setCursor(null);
       setSelectedName(focusing);
     }
     setFocusing(null);
-  }, [focusing, items, stale, filtering]);
-  const pages = Math.ceil(items.length / PAGE);
-  const pageItems = items.slice(page * PAGE, (page + 1) * PAGE);
+  }, [focusing, items, stale, filtering, perPage]);
+  const pages = Math.ceil(items.length / perPage);
+  // Il numero per pagina può cambiare (finestra): la pagina resta fra quelle che ci sono
+  const page = Math.max(0, Math.min(pageState, pages - 1));
+  const pageItems = items.slice(page * perPage, (page + 1) * perPage);
   const chosen = fresh && cursor !== null ? items[cursor] : undefined;
   const fallback = fresh ? items[0] : undefined;
   const pickedIndex = !fresh ? -1
@@ -376,16 +394,15 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
     setFilters({ ...filters, query: '' });
   };
   const target = chosen?.species ?? exact?.name ?? fallback?.species;
-  const listRef = useRef<HTMLOListElement>(null);
-  /** Frecce: passa al risultato successivo o precedente, tenendolo in vista. */
+  /** Frecce: passa al risultato successivo o precedente, nell'ordine della lista; oltre la pagina, a quella accanto. */
   const moveCursor = (delta: number) => {
-    const first = page * PAGE;
-    const last = Math.min(items.length, first + PAGE) - 1;
-    if (!fresh || last < first) return;
-    const next = Math.min(last, Math.max(first, Math.max(pickedIndex, first) + delta));
+    if (!fresh || !items.length) return;
+    const first = page * perPage;
+    const from = pickedIndex >= first && pickedIndex < first + perPage ? pickedIndex : first;
+    const next = Math.min(items.length - 1, Math.max(0, from + delta));
     setCursor(next);
     setSelectedName(null);
-    listRef.current?.children[next - first]?.scrollIntoView?.({ block: 'nearest' });
+    setPage(Math.floor(next / perPage));
   };
   const goToPage = (next: number) => {
     setPage(next);
@@ -393,7 +410,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
     setSelectedName(null);
   };
   const selected = pageItems.find(item => item.species === selectedName)
-    ?? (pickedIndex >= page * PAGE && pickedIndex < (page + 1) * PAGE ? items[pickedIndex] : undefined)
+    ?? (pickedIndex >= page * perPage && pickedIndex < (page + 1) * perPage ? items[pickedIndex] : undefined)
     ?? pageItems[0];
   const selectedRank = selected ? items.indexOf(selected) + 1 : 0;
   const usageOf = (species: string) => statsEntry(data.stats, species)?.usage ?? null;
@@ -489,6 +506,13 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
     </>
   );
 
+  const listVars = {
+    '--cols': columns,
+    '--tile-h': tileHeight !== undefined ? `${tileHeight}px` : undefined,
+    '--row-h': rowHeight !== undefined ? `${rowHeight}px` : undefined,
+    '--reasons': reasons,
+  } as CSSProperties;
+
   // Il numero di risultati, sopra la lista quando si cerca o si filtra
   const countText = `${items.length === 1 ? tr('suggest.resultsOne') : tr('suggest.resultsMany', { n: items.length })}${items.length === MAX ? tr('suggest.best') : ''}`;
 
@@ -533,14 +557,16 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
     );
     body = (
       <>
-        <ol className={`suggestions${stale ? ' stale' : ''}`} ref={listRef} aria-busy={stale || undefined}>
+        {/* Le misure per le caselle (Carte: colonne e altezza; Menu: altezza della riga) */}
+        <ol className={`suggestions${stale ? ' stale' : ''}`} ref={listRef} aria-busy={stale || undefined} style={listVars}>
           {pageItems.map((item, i) => (
             <SuggestionRow
               key={item.species}
-              picked={page * PAGE + i === pickedIndex}
+              reasons={reasons}
+              picked={page * perPage + i === pickedIndex}
               selected={item === selected}
               onSelect={() => select(item)}
-              rank={page * PAGE + i + 1}
+              rank={page * perPage + i + 1}
               item={item}
               usage={emptyTeam ? usageOf(item.species) : null}
               out={item.replaces !== undefined ? memberName(item.replaces) : undefined}
@@ -553,25 +579,28 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
             />
           ))}
         </ol>
-        {pages > 1 && (
-          <nav className="pager" aria-label={tr('suggest.pages')}>
-            <button type="button" className="step" aria-label={tr('suggest.prev')} disabled={page === 0} onClick={() => goToPage(page - 1)}>
-              <Icon name="prev" />
-            </button>
-            {Array.from({ length: pages }, (_, n) => (
-              <button key={n} type="button" aria-label={tr('suggest.page', { n: n + 1 })} aria-current={n === page ? 'page' : undefined}
-                onClick={() => goToPage(n)}>
-                {n + 1}
-              </button>
-            ))}
-            <button type="button" className="step" aria-label={tr('suggest.next')} disabled={page === pages - 1} onClick={() => goToPage(page + 1)}>
-              <Icon name="next" />
-            </button>
-          </nav>
-        )}
       </>
     );
   }
+
+  // Paginazione nella fascia "Candidati (N)": ‹ BOX 1/5 › e sotto un trattino per pagina
+  const pager = pages > 1 && (
+    <nav className="pager" aria-label={tr('suggest.pages')}>
+      <button type="button" className="step" aria-label={tr('suggest.prev')} disabled={page === 0} onClick={() => goToPage(page - 1)}>
+        <Icon name="prev" />
+      </button>
+      <span className="pager-box" aria-hidden="true">{tr('suggest.boxPage', { page: page + 1, pages })}</span>
+      <button type="button" className="step" aria-label={tr('suggest.next')} disabled={page === pages - 1} onClick={() => goToPage(page + 1)}>
+        <Icon name="next" />
+      </button>
+      <span className="pager-dashes">
+        {Array.from({ length: pages }, (_, n) => (
+          <button key={n} type="button" className="dash" aria-label={tr('suggest.page', { n: n + 1 })} aria-current={n === page ? 'page' : undefined}
+            onClick={() => goToPage(n)} />
+        ))}
+      </span>
+    </nav>
+  );
 
   return (
     <section aria-label={tr('suggest.title')} className="suggestions-panel">
@@ -583,32 +612,35 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
           <button type="button" aria-pressed={view !== 'add'} disabled={team.length < 2 && !replacing}
             onClick={() => chooseMode('improve')}>{tr('suggest.improve')}</button>
         </div>
-        {search}
-      </div>
-      {!full && <ActiveFilters filters={filters} onChange={setFilters} count={filtering && items.length > 0 ? countText : undefined} />}
-      {view !== 'add' && (
-        <div className="subbar">
-          {/* Chi sostituire: tutti (il motore sceglie per ogni candidato) o un membro preciso */}
+        {view !== 'add' && (
+          // Chi esce: tutti (il motore sceglie per ogni candidato) o un membro preciso, come sola icona
           <div className="targets" role="group" aria-label={tr('suggest.target')}>
             <span className="targets-label" aria-hidden="true">{tr('suggest.targetLabel')}</span>
             <button type="button" aria-pressed={view === 'all'} onClick={() => { setScope('all'); onCancelReplace(); }}>{tr('suggest.targetAll')}</button>
             {team.map((member, index) => (
-              <button key={index} type="button" aria-pressed={replacing && replaceIndex === index}
+              <button key={index} type="button" className="target-member" aria-pressed={replacing && replaceIndex === index}
                 aria-label={tr('suggest.targetMember', { member: battleName(member) })}
-                title={member.favorite ? tr('suggest.targetFavorite') : undefined}
+                title={member.favorite ? `${battleName(member)} · ${tr('suggest.targetFavorite')}` : battleName(member)}
                 onClick={() => onTarget?.(index)}>
                 <PokemonIcon name={battleName(member)} />
-                <span>{battleName(member)}</span>
                 {member.favorite && <Icon name="star" />}
               </button>
             ))}
           </div>
-        </div>
-      )}
+        )}
+        {search}
+      </div>
+      {!full && <ActiveFilters filters={filters} onChange={setFilters} count={filtering && items.length > 0 ? countText : undefined} />}
       {notes}
       <div className={`picker${!full ? ' has-detail' : ''}`}>
         <div className="picker-list">
-          {!full && items.length > 0 && <div className="list-head"><h2 className="box-head">{tr('suggest.listHead', { n: items.length })}</h2></div>}
+          {!full && items.length > 0 && (
+            <div className="list-head">
+              <h2 className="box-head">{tr('suggest.listHead', { n: items.length })}</h2>
+              <span className="dbl-hint">{tr(view === 'add' ? 'suggest.dblHint.add' : 'suggest.dblHint.replace')}</span>
+              {pager}
+            </div>
+          )}
           {body}
         </div>
         {/* Senza candidati resta lo scheletro del dettaglio: la pagina non si accorcia e non salta in alto */}

@@ -136,6 +136,58 @@ describe('SuggestionsPanel', () => {
     expect(within(suggestions()).getByRole('button', { name: 'Aggiungi' })).toHaveAttribute('aria-pressed', 'true');
   });
 
+  it('il pager sta nella fascia Candidati', async () => {
+    const user = await setup('Great Tusk');
+    await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'a');
+    const pager = await screen.findByRole('navigation', { name: 'Pagine dei suggerimenti' });
+    const head = within(suggestions()).getByRole('heading', { name: /^Candidati \(\d+\)$/ }).parentElement!;
+    expect(head).toContainElement(pager);
+    // In fondo alla lista non c'è più un altro pager
+    expect(within(suggestions()).getAllByRole('navigation')).toHaveLength(1);
+    expect(list().nextElementSibling?.tagName).not.toBe('NAV');
+    expect(within(head).getByText('doppio clic per aggiungere')).toBeInTheDocument();
+  });
+
+  it('ESCE sta nella barra comandi, non sotto', async () => {
+    const user = await setup('Great Tusk', 'Gholdengo');
+    await user.click(within(suggestions()).getByRole('button', { name: 'Migliora team' }));
+    const group = screen.getByRole('group', { name: 'Chi sostituire' });
+    expect(group.closest('.toolbar')).not.toBeNull();
+    expect(suggestions().querySelector('.subbar')).toBeNull();
+    // I membri come sole icone: il nome nell'etichetta e nel tooltip
+    const member = within(group).getByRole('button', { name: 'Sostituisci Great Tusk' });
+    expect(member).toHaveAttribute('title', 'Great Tusk');
+    expect(member.textContent).toBe('');
+    expect(within(group).getByText('Esce')).toBeInTheDocument();
+  });
+
+  it('un solo motivo sotto il nome, senza malus', async () => {
+    await setup('Great Tusk', 'Gholdengo', 'Kingambit', 'Corviknight', 'Toxapex');
+    const first = list().querySelector<HTMLElement>('li')!;
+    expect(first.querySelectorAll('.reason')).toHaveLength(1);
+    expect(first.querySelector('.reason')!.textContent).toMatch(/\S/);
+    expect(first.querySelector('.loss')).toBeNull();
+  }, 30000);
+
+  it('frecce oltre la pagina: si passa alla successiva', async () => {
+    const user = await setup('Great Tusk');
+    const search = screen.getByLabelText('Aggiungi Pokémon');
+    await user.type(search, 'a');
+    const pager = await screen.findByRole('navigation', { name: 'Pagine dei suggerimenti' });
+    for (let i = 0; i < 10; i++) await user.keyboard('{ArrowDown}');
+    expect(within(pager).getByRole('button', { name: 'Pagina 2' })).toHaveAttribute('aria-current', 'page');
+    expect(list().querySelector('.picked .rank')!.textContent).toBe('11');
+    // E indietro, prima della prima, alla precedente
+    await user.keyboard('{ArrowUp}');
+    expect(within(pager).getByRole('button', { name: 'Pagina 1' })).toHaveAttribute('aria-current', 'page');
+    expect(list().querySelector('.picked .rank')!.textContent).toBe('10');
+  });
+
+  it('il pulsante rapido resta nella riga (compare al passaggio o col focus)', async () => {
+    await setup('Great Tusk');
+    expect(list().querySelector('li button.quick')).not.toBeNull();
+  });
+
   it('senza dati: messaggio', () => {
     render(<App initialLang="it" data={{ stats: null, sets: null }} />);
     expect(within(suggestions()).getByText('Servono i dati Smogon per i suggerimenti. Puoi comunque cercare un Pokémon per nome.')).toBeInTheDocument();

@@ -357,6 +357,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
             focusSearch={searchRequest}
             listStyle={listStyle}
             listSprite={listSprite}
+            teamCollapsed={collapsed}
           />
         </TabPanel>
         <TabPanel id="analysis" active={shownTab}>

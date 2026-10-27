@@ -143,6 +143,9 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .detail-alts strong.same { color: var(--muted); }
 .suggestion .quick { display: grid; place-items: center; width: 34px; height: 34px; padding: 0; border-radius: 4px; color: var(--muted); }
 .suggestion .quick:hover { color: var(--text); background: var(--accent-soft); }
+/* Il pulsante rapido resta (via da tastiera), ma compare solo passando sulla casella o col focus */
+.suggestion .quick { opacity: 0; transition: opacity 0.15s var(--ease); }
+.suggestion:hover .quick, .suggestion:focus-within .quick { opacity: 1; }
 .suggestion.first .quick { background: var(--accent-2); border-color: var(--accent-2); color: var(--on-accent-2); }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .set { background: var(--field); padding: 10px 12px; border-radius: 4px; white-space: pre-wrap; font-size: 13px; line-height: 1.5; }
@@ -151,9 +154,20 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .list-empty { display: grid; justify-items: center; gap: 10px; padding: 40px 16px; background: var(--panel); border: 1px dashed var(--line); border-radius: 6px; text-align: center; color: var(--muted); }
 .list-empty > .icon { width: 28px; height: 28px; color: var(--faint); }
 .list-empty p { margin: 0; font-size: 15px; }
-.pager { display: flex; justify-content: center; gap: 4px; margin-top: 10px; }
-.pager button { justify-content: center; min-width: 34px; height: 34px; padding: 0 8px; font-variant-numeric: tabular-nums; }
-.pager button[aria-current='page'] { background: var(--accent-soft); border-color: var(--accent); font-weight: 700; }
+/* Fascia "Candidati (N)": a destra il suggerimento del doppio clic e la paginazione ‹ BOX 1/5 › coi trattini sotto */
+.list-head { display: flex; align-items: center; gap: 12px; }
+.list-head .dbl-hint { margin-left: auto; font-size: 12px; color: var(--faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.pager { flex: none; display: grid; grid-template-columns: auto auto auto; align-items: center; justify-items: center; gap: 2px 4px; }
+.pager .step { display: grid; place-items: center; width: 24px; height: 24px; padding: 0; border: 0; background: none; color: var(--muted); }
+.pager .step:hover:not(:disabled) { color: var(--text); }
+.pager .step:disabled { opacity: 0.35; }
+.pager .step .icon { width: 14px; height: 14px; }
+.pager-box { font: 700 13px/1 var(--display); font-style: italic; letter-spacing: 0.04em; color: var(--text); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pager-dashes { grid-column: 1 / -1; display: flex; gap: 3px; }
+/* Trattino sottile, ma con un'area cliccabile più alta */
+.pager .dash { width: 14px; height: 10px; min-width: 0; padding: 3px 0; border: 0; border-radius: 0; background: var(--line); background-clip: content-box; }
+.pager .dash:hover { background-color: var(--muted); }
+.pager .dash[aria-current='page'] { background-color: var(--accent); }
 
 /* Dettaglio del candidato: resta in vista mentre si scorre la lista */
 .detail {
@@ -276,7 +290,11 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
   border-radius: 4px;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
 }
-.subbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; }
+/* Chi esce, nella barra comandi dopo Aggiungi/Migliora: Tutti e i membri come sole icone */
+.toolbar > .targets { flex: none; flex-wrap: nowrap; gap: 4px; }
+.targets .target-member { position: relative; padding: 1px 3px; }
+.targets .target-member .mon-icon { margin: -4px -2px; }
+.targets .target-member .icon { position: absolute; top: -3px; right: -3px; }
 .picker { margin: 0; }
 .box-head {
   position: sticky;
@@ -368,10 +386,9 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
   .picker { flex: 1; min-height: 0; }
   /* Lista circa 2/5, scheda del candidato 3/5 */
   .picker.has-detail { grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 16px; align-items: stretch; height: 100%; }
-  .picker-list { display: flex; flex-direction: column; min-height: 0; overflow: auto; overscroll-behavior: contain; }
-  /* La lista non si schiaccia: con overflow hidden si accorcerebbe tagliando le ultime righe, e a scorrere sarebbe solo il contenitore */
-  .picker-list > .suggestions { flex: none; }
-  .pager { position: sticky; bottom: 0; margin-top: auto; padding: 8px 0 2px; background: var(--ground); }
+  .picker-list { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+  /* La lista prende lo spazio che resta: la sua altezza dice quanti candidati per pagina (niente scrollbar) */
+  .picker-list > .suggestions { flex: 1 1 0; min-height: 0; overflow: hidden; }
   .detail { position: static; top: auto; max-height: none; min-height: 0; overflow: auto; overscroll-behavior: contain; }
 }
 
@@ -416,7 +433,6 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
   .picker-list > .suggestions { border: 0; }
   .list-head { position: sticky; top: 0; z-index: 2; padding: 8px 14px; background: var(--stripes), var(--band); border-bottom: 1px solid var(--line-soft); }
   .list-head .box-head { position: static; margin: 0; }
-  .picker-list .pager { padding: 8px 0; background: var(--panel); border-top: 1px solid var(--line-soft); }
 }
 /* Riga su due righe: nome e tipi, poi chi esce · bonus · malus in grigio, coi segni colorati */
 .suggestion, .suggestion.swap { grid-template-columns: 24px 40px minmax(0, 1fr) auto 30px; gap: 10px; padding: 7px 12px 7px 12px; }
