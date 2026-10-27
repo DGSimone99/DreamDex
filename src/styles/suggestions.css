@@ -378,7 +378,7 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
   .list-head { position: sticky; top: 0; z-index: 2; padding: 8px 14px; background: var(--stripes), var(--band); border-bottom: 1px solid var(--line-soft); }
   .list-head .box-head { position: static; margin: 0; }
 }
-.list-head .box-head { display: inline-block; }
+.list-head .box-head { display: inline-block; flex: none; white-space: nowrap; }
 /* Problemi e bonus: la pillola tratteggiata che spiega la parte del voto fuori dalle aree */
 .detail .effect .detail-areas .extras { border-style: dashed; }
 
@@ -474,7 +474,9 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .pill.picked { box-shadow: inset 0 0 0 2px var(--accent); }
 .pill.selected { background: var(--accent); color: var(--on-accent); }
 /* Il cursore ▶ fuori dalla pillola, nel margine sinistro della lista */
-.pill.selected::after { content: '▶'; position: absolute; left: -26px; top: 50%; transform: translateY(-50%); color: var(--accent); font-size: 14px; pointer-events: none; }
+.pill.selected::after { content: '▶'; position: absolute; left: -26px; top: 50%; transform: translateY(-50%); color: var(--accent); font-size: 14px; pointer-events: none;
+  /* Alone del colore del pannello: resta leggibile dove tocca il tondo chiaro dello sprite */
+  filter: drop-shadow(0 0 1.5px var(--panel)) drop-shadow(0 0 1.5px var(--panel)); }
 /* Tondo dello sprite: sporge a sinistra, sfumatura chiara nel colore del tipo, anello del colore del pannello */
 .pill-sprite {
   position: absolute;
@@ -501,8 +503,10 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .pill .who small { display: flex; flex-wrap: wrap; gap: 0 14px; min-width: 0; }
 .pill .reason { min-width: 0; max-width: 100%; font: 500 12px/1.3 var(--ui); color: var(--pill-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pill .reason b { margin-right: 3px; font-weight: 700; color: var(--pill-gain); }
+/* Una frase sola (senza bonus): va a capo sulle righe dei motivi che entrano, invece di tagliarsi alla prima */
+.card .reason.plain, .pill .reason.plain { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: var(--reasons, 1); white-space: normal; }
 /* Nomi dei tipi nelle varianti scure (il colore inline è per i fondi scuri) */
-.pill .type-name { --type-color: var(--type-dark); }
+.pill .type-name { --type-color: var(--type-ink-dark); }
 /* Destra: segni, icone dei tipi 18px, voto */
 .pill-end { display: flex; align-items: center; gap: 8px; }
 .pill .pill-types { gap: 4px; }
