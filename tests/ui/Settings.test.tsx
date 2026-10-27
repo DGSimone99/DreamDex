@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { App } from '../../src/App';
-import { loadPalette, savePalette } from '../../src/storage';
+import { loadListSprite, loadListStyle, loadPalette, saveListSprite, saveListStyle, savePalette } from '../../src/storage';
 import { fixtureData } from '../fixtures/data';
 
 const memory = (initial: Record<string, string> = {}) => {
@@ -61,5 +61,37 @@ describe('Impostazioni', () => {
     expect(palette()).toBe('sv');
     await user.selectOptions(screen.getByLabelText('Pokédex'), 'natdex');
     expect(palette()).toBe('swsh');
+  });
+});
+
+describe('stile e sprite della lista', () => {
+  it('stile e sprite della lista: round-trip e dati non validi', () => {
+    const storage = memory();
+    saveListStyle('menu', storage);
+    expect(loadListStyle(storage)).toBe('menu');
+    expect(loadListStyle(memory({ 'dreamdex.listStyle': '"rosa"' }))).toBeNull();
+    expect(loadListStyle(memory({ 'dreamdex.listStyle': '{' }))).toBeNull();
+    saveListSprite('box', storage);
+    expect(loadListSprite(storage)).toBe('box');
+    expect(loadListSprite(memory({ 'dreamdex.listSprite': '"rosa"' }))).toBeNull();
+    expect(loadListSprite(memory({ 'dreamdex.listSprite': '{' }))).toBeNull();
+  });
+
+  it('Menu e Icona box si scelgono nelle Impostazioni e restano dopo il riavvio', async () => {
+    const user = userEvent.setup();
+    const storage = memory();
+    const { unmount } = render(<App initialLang="it" data={fixtureData} storage={storage} />);
+    await user.click(screen.getByRole('button', { name: 'Impostazioni' }));
+    expect(screen.getByRole('radio', { name: 'Carte' })).toBeChecked();
+    expect(screen.getByRole('radio', { name: 'Normale' })).toBeChecked();
+    await user.click(screen.getByRole('radio', { name: 'Menu' }));
+    await user.click(screen.getByRole('radio', { name: 'Icona box' }));
+    expect(loadListStyle(storage)).toBe('menu');
+    expect(loadListSprite(storage)).toBe('box');
+    unmount();
+    render(<App initialLang="it" data={fixtureData} storage={storage} />);
+    await user.click(screen.getByRole('button', { name: 'Impostazioni' }));
+    expect(screen.getByRole('radio', { name: 'Menu' })).toBeChecked();
+    expect(screen.getByRole('radio', { name: 'Icona box' })).toBeChecked();
   });
 });

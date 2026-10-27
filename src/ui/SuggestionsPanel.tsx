@@ -33,6 +33,7 @@ import { SuggestionDetail } from './SuggestionDetail';
 import { AlertMark } from './AlertMark';
 import { Typed } from './TypeText';
 import { t } from '../i18n';
+import type { ListSprite, ListStyle } from './theme';
 import { useLang, useT } from '../i18n/react';
 
 /** Candidati per pagina e in tutto; il voto del team si calcola sui primi POOL per punteggio. */
@@ -66,6 +67,10 @@ interface Props {
   focusSearch?: number;
   /** Candidato da mostrare (dal Coaching): a ogni `nonce` nuovo si va alla sua pagina e lo si apre nel dettaglio. */
   focus?: CandidateFocus;
+  /** Stile della lista (impostazioni): carte o menu. */
+  listStyle?: ListStyle;
+  /** Sprite della lista (impostazioni): normale o icona box. */
+  listSprite?: ListSprite;
 }
 
 /** Un candidato scelto nel Coaching: in modalità Aggiungi o fra i sostituti del membro. */
@@ -224,7 +229,7 @@ export const SEARCH_DELAY = 200;
 /** I tipi di team che si possono scegliere per giudicare i cambi, dopo Nessuno. */
 const TEAM_TYPES: Archetype[] = ['hyperOffense', 'bulkyOffense', 'balance', 'semiStall', 'stall'];
 
-export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onReplaceWith, onCancelReplace, rating = null, onTarget, focusSearch, focus }: Props) {
+export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onReplaceWith, onCancelReplace, rating = null, onTarget, focusSearch, focus, listStyle = 'cards', listSprite = 'normal' }: Props) {
   const tr = useT();
   const lang = useLang();
   const [page, setPage] = useState(0);
