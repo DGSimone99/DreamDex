@@ -62,9 +62,10 @@ describe('Annulla nel team', () => {
     render(<App data={fixtureData} initialLang="it" />);
     for (const name of ['Great Tusk', 'Gholdengo']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
     await user.click(screen.getByRole('button', { name: 'Sostituisci Gholdengo' }));
-    const quick = screen.getAllByRole('button', { name: /^Sostituisci con / })[0];
-    const replacement = quick.getAttribute('aria-label')!.replace('Sostituisci con ', '');
-    await user.click(quick);
+    // Il primo sostituto è aperto nel dettaglio: il suo pulsante fa la sostituzione
+    const detail = screen.getByRole('complementary', { name: /^Dettaglio di / });
+    const replacement = detail.getAttribute('aria-label')!.replace('Dettaglio di ', '');
+    await user.click(within(detail).getByRole('button', { name: 'Sostituisci con questo' }));
     expect(names()).toContain(replacement);
     expect(screen.getByRole('status')).toHaveTextContent(`Sostituito con ${replacement}`);
     await user.click(screen.getByRole('button', { name: 'Annulla' }));

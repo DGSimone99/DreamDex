@@ -37,6 +37,8 @@ describe('chi abilita e chi beneficia', () => {
 describe('legami nel team', () => {
   it('candidato abilitato da un membro e candidato che abilita', () => {
     expect(mechanicalLinks(venusaur, [ninetales]).map(l => l.text)).toEqual(['Abilitato da Ninetales (Drought): Chlorophyll']);
+    expect(mechanicalLinks(venusaur, [ninetales]).map(l => l.short)).toEqual(['Abilitato da Ninetales']);
+    expect(mechanicalLinks(ninetales, [venusaur], 'en').map(l => l.short)).toEqual(['Enables Venusaur']);
     expect(mechanicalLinks(ninetales, [venusaur, tusk]).map(l => l.text))
       .toEqual(['Abilita Venusaur: Drought → Chlorophyll', 'Abilita Great Tusk: Drought → Protosynthesis']);
     expect(mechanicalLinks(venusaur, [tusk])).toEqual([]);

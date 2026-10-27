@@ -22,13 +22,13 @@ import type { MoveFix } from './engine/moveFixes';
 import { Rail } from './ui/Rail';
 import { Icon } from './ui/icons';
 import { TabPanel, Tabs, type TabId } from './ui/Tabs';
-import { loadLang, loadLists, loadPalette, loadSession, loadTab, loadTeamCollapsed, saveLang, saveLists, savePalette, saveSession, saveTab, saveTeamCollapsed } from './storage';
+import { loadLang, loadListSprite, loadListStyle, loadLists, loadPalette, loadSession, loadTab, loadTeamCollapsed, saveLang, saveListSprite, saveListStyle, saveLists, savePalette, saveSession, saveTab, saveTeamCollapsed } from './storage';
 import { SettingsDialog } from './ui/SettingsDialog';
 import { EMPTY_LISTS, effectiveLists, type UserLists } from './engine/lists';
 import { t, type Lang } from './i18n';
 import { LangProvider } from './i18n/react';
 import { gameName, hasItalianNames } from './i18n/game';
-import { paletteFor, type PaletteSetting } from './ui/theme';
+import { paletteFor, type ListSprite, type ListStyle, type PaletteSetting } from './ui/theme';
 
 const NO_DATA: EngineData = { stats: null, sets: null };
 
@@ -68,6 +68,17 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
     setPalette(next);
     if (storage) savePalette(next, storage);
   };
+  // Lista candidati: stile (carte/menu) e sprite (normale/icona box), salvati come la palette
+  const [listStyle, setListStyle] = useState<ListStyle>(() => (storage ? loadListStyle(storage) : null) ?? 'cards');
+  const changeListStyle = (next: ListStyle) => {
+    setListStyle(next);
+    if (storage) saveListStyle(next, storage);
+  };
+  const [listSprite, setListSprite] = useState<ListSprite>(() => (storage ? loadListSprite(storage) : null) ?? 'normal');
+  const changeListSprite = (next: ListSprite) => {
+    setListSprite(next);
+    if (storage) saveListSprite(next, storage);
+  };
   const [settingsOpen, setSettingsOpen] = useState(false);
   // Team compresso in una barra sottile: più spazio alla sezione sotto (la scelta resta salvata)
   const [collapsed, setCollapsed] = useState(() => (storage ? loadTeamCollapsed(storage) : null) ?? false);
@@ -79,6 +90,10 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
     setSettingsOpen(false);
     document.querySelector<HTMLElement>('.rail-settings')?.focus();
   }, []);
+  // Con le icone del box, il foglio di sprite di Showdown si scarica in anticipo (una volta sola)
+  useEffect(() => {
+    if (listSprite === 'box') new Image().src = 'https://play.pokemonshowdown.com/sprites/pokemonicons-sheet.png';
+  }, [listSprite]);
   useEffect(() => {
     document.documentElement.dataset.palette = paletteFor(palette, format.formatId);
   }, [palette, format.formatId]);
@@ -344,6 +359,11 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
             focus={candidateFocus}
             onTarget={setReplaceIndex}
             focusSearch={searchRequest}
+            listStyle={listStyle}
+            listSprite={listSprite}
+            onListStyleChange={changeListStyle}
+            onListSpriteChange={changeListSprite}
+            teamCollapsed={collapsed}
           />
         </TabPanel>
         <TabPanel id="analysis" active={shownTab}>
@@ -360,7 +380,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
       </main>
       </div>
       </div>
-      {settingsOpen && <SettingsDialog palette={palette} onPaletteChange={changePalette} onClose={closeSettings} />}
+      {settingsOpen && <SettingsDialog palette={palette} onPaletteChange={changePalette} listStyle={listStyle} onListStyleChange={changeListStyle} listSprite={listSprite} onListSpriteChange={changeListSprite} onClose={closeSettings} />}
       {listUndo && listUndo.after === lists && (
         <UndoToast action={{ id: listUndo.id, kind: 'clearList', from: listUndo.from }} onClose={() => setListUndo(null)}
           onUndo={() => { setLists(listUndo.before); setListUndo(null); }} />

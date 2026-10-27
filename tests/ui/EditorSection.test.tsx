@@ -55,7 +55,7 @@ describe("L'editor del set prende il posto della sezione", () => {
     await user.click(within(container.querySelector('.slot[open]') as HTMLElement).getByRole('button', { name: 'Sostituisci Great Tusk' }));
     expect(workspace(container)).not.toHaveClass('editing');
     expect(screen.getByRole('tab', { name: /^Pokémon/ })).toHaveAttribute('aria-selected', 'true');
-    expect(screen.getByRole('button', { name: /Great Tusk/, pressed: true })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Chi sostituire: Great Tusk' })).toBeInTheDocument();
   });
 
   it('cliccando un\'altra carta l\'editor passa a quel membro', async () => {

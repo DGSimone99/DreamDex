@@ -1,6 +1,8 @@
-import { render, screen, within } from '@testing-library/react';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/App';
 import { fixtureData } from '../fixtures/data';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
@@ -8,6 +10,8 @@ import { DEFAULT_FORMAT } from '../../src/engine/format';
 const suggestions = () => screen.getByRole('region', { name: 'Suggerimenti' });
 const team = () => screen.getByRole('region', { name: 'Team' });
 const list = () => suggestions().querySelector<HTMLElement>('.suggestions')!;
+/** Il posto in classifica, letto dal nome (per gli screen reader: "11. Nome"). */
+const rankOf = (row: Element) => parseInt(row.querySelector('.pick strong')!.textContent!, 10);
 const rowNames = () => [...list().querySelectorAll('.name-line strong')].map(el => el.textContent!.replace(/^\d+\. /, ''));
 
 async function setup(...names: string[]) {
@@ -21,7 +25,7 @@ describe('SuggestionsPanel', () => {
   it('ordina i suggerimenti per il voto che darebbero al team', async () => {
     await setup('Great Tusk', 'Gholdengo');
     // Corviknight, Kingambit, Rotom-Wash, Toxapex (Dragapult è Uber in National Dex)
-    expect(within(suggestions()).getAllByRole('button', { name: /^Aggiungi .+ al team$/ })).toHaveLength(4);
+    expect(list().querySelectorAll('li')).toHaveLength(4);
     const grades = within(list()).getAllByLabelText(/^Voto del team: [SABCD] \d+ \((\+\d+|−\d+|±0)\)$/)
       .map(cell => Number(/ (\d+) \(/.exec(cell.getAttribute('aria-label')!)![1]));
     expect(grades).toHaveLength(4);
@@ -66,15 +70,15 @@ describe('SuggestionsPanel', () => {
     expect(within(list()).getByText('Spesso usati insieme: Great Tusk (25%)')).toBeInTheDocument();
   });
 
-  it('pagine da 10: la seconda continua la numerazione', async () => {
+  it('Carte: pagine da 6, la seconda continua la numerazione', async () => {
     const user = await setup('Great Tusk');
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'a');
     const pager = await screen.findByRole('navigation', { name: 'Pagine dei suggerimenti' });
-    expect(rowNames()).toHaveLength(10);
+    expect(rowNames()).toHaveLength(6);
     expect(within(pager).getByRole('button', { name: 'Pagina precedente' })).toBeDisabled();
     await user.click(within(pager).getByRole('button', { name: 'Pagina 2' }));
     expect(within(pager).getByRole('button', { name: 'Pagina 2' })).toHaveAttribute('aria-current', 'page');
-    expect(list().querySelector('.rank')!.textContent).toBe('11');
+    expect(rankOf(list().querySelector('li')!)).toBe(7);
   });
 
   it('aggiunge un suggerimento al team', async () => {
@@ -89,15 +93,20 @@ describe('SuggestionsPanel', () => {
     expect(within(suggestions()).queryByRole('heading', { name: 'Migliora il team' })).toBeNull();
     expect(within(suggestions()).getByRole('button', { name: 'Migliora team' })).toHaveAttribute('aria-pressed', 'true');
     expect(within(suggestions()).getByRole('button', { name: 'Aggiungi' })).toBeDisabled();
+    // Chi esce: la tendina attaccata a Migliora team dice Tutti; aperta, Tutti è scelto
+    const toggle = within(suggestions()).getByRole('button', { name: 'Chi sostituire: Tutti' });
+    expect(toggle).toHaveTextContent('Tutti');
+    await user.click(toggle);
     expect(within(screen.getByRole('group', { name: 'Chi sostituire' })).getByRole('button', { name: 'Tutti' })).toHaveAttribute('aria-pressed', 'true');
-    // Dal voto più alto; ogni riga dice chi esce, e il pulsante rapido fa lo scambio
+    await user.click(toggle);
+    // Dal voto più alto; ogni riga dice chi esce, e il doppio clic fa lo scambio
     const grades = within(list()).getAllByLabelText(/^Voto del team: /).map(cell => Number(/ (\d+) \(/.exec(cell.getAttribute('aria-label')!)![1]));
     expect(grades.length).toBeGreaterThan(0);
     expect(grades).toEqual([...grades].sort((a, b) => b - a));
     const first = list().querySelector('li')!;
     const out = within(first).getAllByText(/^Al posto di /)[0].textContent!.replace('Al posto di ', '');
     const name = rowNames()[0];
-    await user.click(within(first).getByRole('button', { name: `Metti ${name} al posto di ${out}` }));
+    await user.dblClick(first.querySelector<HTMLElement>('.result')!);
     expect(within(team()).getByText(name)).toBeInTheDocument();
     expect(within(team()).queryByText(out)).toBeNull();
   });
@@ -105,11 +114,18 @@ describe('SuggestionsPanel', () => {
   it('team completo: scegliere un membro mostra solo i suoi sostituti; Tutti torna agli scambi liberi', async () => {
     const user = await setup('Great Tusk', 'Gholdengo', 'Kingambit', 'Dragapult', 'Corviknight', 'Toxapex');
     const targets = () => screen.getByRole('group', { name: 'Chi sostituire' });
+    const toggle = () => within(suggestions()).getByRole('button', { name: /^Chi sostituire: / });
+    await user.click(toggle());
     await user.click(within(targets()).getByRole('button', { name: 'Sostituisci Toxapex' }));
-    expect(within(targets()).getByRole('button', { name: 'Sostituisci Toxapex' })).toHaveAttribute('aria-pressed', 'true');
+    // Scelto un membro la tendina si chiude e mostra la sua icona al posto di "Tutti"
+    expect(screen.queryByRole('group', { name: 'Chi sostituire' })).toBeNull();
+    expect(toggle()).toHaveAccessibleName('Chi sostituire: Toxapex');
+    expect(toggle()).not.toHaveTextContent('Tutti');
     expect(within(list()).queryAllByText(/^Al posto di /)).toHaveLength(0);
+    await user.click(toggle());
+    expect(within(targets()).getByRole('button', { name: 'Sostituisci Toxapex' })).toHaveAttribute('aria-pressed', 'true');
     await user.click(within(targets()).getByRole('button', { name: 'Tutti' }));
-    expect(within(targets()).getByRole('button', { name: 'Tutti' })).toHaveAttribute('aria-pressed', 'true');
+    expect(toggle()).toHaveAccessibleName('Chi sostituire: Tutti');
   });
 
   it('team incompleto: da Aggiungi a Migliora team e ritorno', async () => {
@@ -136,6 +152,143 @@ describe('SuggestionsPanel', () => {
     expect(within(suggestions()).getByRole('button', { name: 'Aggiungi' })).toHaveAttribute('aria-pressed', 'true');
   });
 
+  it('il pager sta nella fascia Candidati', async () => {
+    const user = await setup('Great Tusk');
+    await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'a');
+    const pager = await screen.findByRole('navigation', { name: 'Pagine dei suggerimenti' });
+    const head = within(suggestions()).getByRole('heading', { name: /^Candidati \(\d+\)$/ }).parentElement!;
+    expect(head).toContainElement(pager);
+    // In fondo alla lista non c'è più un altro pager
+    expect(within(suggestions()).getAllByRole('navigation')).toHaveLength(1);
+    expect(list().nextElementSibling?.tagName).not.toBe('NAV');
+    expect(within(head).getByText('doppio clic: aggiungi')).toBeInTheDocument();
+    // Una riga sola: niente più "BOX n/N", solo ‹ trattini ›
+    expect(head.textContent).not.toMatch(/BOX/);
+    const buttons = within(pager).getAllByRole('button');
+    expect(buttons[0]).toHaveAccessibleName('Pagina precedente');
+    expect(buttons[buttons.length - 1]).toHaveAccessibleName('Pagina successiva');
+    await user.click(within(pager).getByRole('button', { name: 'Pagina successiva' }));
+    expect(within(pager).getByRole('button', { name: 'Pagina 2' })).toHaveAttribute('aria-current', 'page');
+  });
+
+  it('chi esce è una tendina attaccata a Migliora team, nella barra comandi', async () => {
+    const user = await setup('Great Tusk', 'Gholdengo');
+    await user.click(within(suggestions()).getByRole('button', { name: 'Migliora team' }));
+    const toggle = within(suggestions()).getByRole('button', { name: 'Chi sostituire: Tutti' });
+    // Terzo pezzo dello stesso pulsante di Aggiungi / Migliora team
+    expect(toggle.closest('[role="group"]')).toHaveAccessibleName('Modalità sostituzione');
+    expect(screen.queryByRole('group', { name: 'Chi sostituire' })).toBeNull();
+    await user.click(toggle);
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    const group = screen.getByRole('group', { name: 'Chi sostituire' });
+    expect(group.closest('.toolbar')).not.toBeNull();
+    expect(suggestions().querySelector('.subbar')).toBeNull();
+    // Nella tendina i membri con icona e nome
+    const member = within(group).getByRole('button', { name: 'Sostituisci Great Tusk' });
+    expect(member).toHaveTextContent('Great Tusk');
+    expect(within(group).getByText('Esce')).toBeInTheDocument();
+    // Esc chiude e il focus torna al pulsante
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('group', { name: 'Chi sostituire' })).toBeNull();
+    expect(toggle).toHaveFocus();
+  });
+
+  it('Carte col team aperto: al massimo due motivi sotto il nome, senza malus', async () => {
+    await setup('Great Tusk', 'Gholdengo', 'Kingambit', 'Corviknight', 'Toxapex');
+    const first = list().querySelector<HTMLElement>('li')!;
+    expect(first.querySelectorAll('.reason').length).toBeGreaterThanOrEqual(1);
+    expect(first.querySelectorAll('.reason').length).toBeLessThanOrEqual(2);
+    expect(first.querySelector('.reason')!.textContent).toMatch(/\S/);
+    expect(first.querySelector('.loss')).toBeNull();
+  }, 30000);
+
+  it('frecce oltre la pagina: si passa alla successiva', async () => {
+    const user = await setup('Great Tusk');
+    const search = screen.getByLabelText('Aggiungi Pokémon');
+    await user.type(search, 'a');
+    const pager = await screen.findByRole('navigation', { name: 'Pagine dei suggerimenti' });
+    for (let i = 0; i < 6; i++) await user.keyboard('{ArrowDown}');
+    expect(within(pager).getByRole('button', { name: 'Pagina 2' })).toHaveAttribute('aria-current', 'page');
+    expect(rankOf(list().querySelector('.picked')!)).toBe(7);
+    // E indietro, prima della prima, alla precedente
+    await user.keyboard('{ArrowUp}');
+    expect(within(pager).getByRole('button', { name: 'Pagina 1' })).toHaveAttribute('aria-current', 'page');
+    expect(rankOf(list().querySelector('.picked')!)).toBe(6);
+  });
+
+  it('un cambio senza bonus: "nessuna differenza", mai un malus come motivo', async () => {
+    const { reasonsOf } = await import('../../src/ui/candidateParts');
+    const none = { roles: [], covers: [], resists: [] };
+    const item = {
+      species: 'Pelipper', set: { species: 'Pelipper', moves: [] }, score: 0, components: {}, tags: [], penalty: 0, facts: {},
+      diff: { gains: none, losses: none, lostResists: [] },
+      reasons: [{ component: 'synergy', weight: -1, text: 'La pioggia si scontra con il sole' }],
+    } as never;
+    expect(reasonsOf(item, 2, null, DEFAULT_FORMAT, 'it')).toEqual({ pros: false, texts: ['Nessuna differenza rilevante'] });
+  });
+
+  it("Aggiungi: le ragioni che pesano di più in forma breve, quante ne entrano (senza l'uso nel meta)", async () => {
+    const { reasonsOf } = await import('../../src/ui/candidateParts');
+    const reason = (component: string, weight: number, text: string, short: string) => ({ component, weight, text, short });
+    const item = {
+      species: 'Rotom-Wash', set: { species: 'Rotom-Wash', moves: [], ability: 'Levitate', item: 'Leftovers', nature: 'Bold', evs: {}, ivs: {} }, score: 0, components: {}, tags: [], penalty: 0, facts: {},
+      reasons: [
+        reason('strength', 9, 'Uso nel meta: 20%', 'Uso nel meta: 20%'),
+        reason('defense', 5, 'Resiste ad Acqua: debolezze del team', 'Resiste ad Acqua'),
+        { ...reason('synergy', 4.5, 'Usato con Great Tusk nel 30% dei team', 'Usato con Great Tusk nel 30% dei team'), usedWith: true },
+        reason('synergy', 3, 'Abilita Venusaur: Siccità → Clorofilla', 'Abilita Venusaur'),
+        reason('roles', 4, 'Porta Pivot (mancanti nel team)', 'Pivot'),
+        reason('coverage', 1, 'Colpisce super efficace Fuoco, scoperti dal team', 'Colpisce Fuoco'),
+      ],
+    } as never;
+    expect(reasonsOf(item, 1, null, DEFAULT_FORMAT, 'it')).toEqual({ pros: true, texts: ['Resiste ad Acqua'] });
+    // "Usato con" mai nelle caselle (lo dice il segno ciano), "Abilita" sì
+    expect(reasonsOf(item, 3, null, DEFAULT_FORMAT, 'it')).toEqual({ pros: true, texts: ['Resiste ad Acqua', 'Pivot', 'Abilita Venusaur'] });
+    // Il "+" verde c'è in Aggiungi; col team vuoto la riga dei ruoli resta senza
+    const roles = reasonsOf({ ...(item as object), set: { species: 'Rotom-Wash', moves: ['Volt Switch'], ability: 'Levitate', item: 'Leftovers', nature: 'Bold', evs: {}, ivs: {} } } as never, 1, 0.2, DEFAULT_FORMAT, 'it');
+    expect(roles.pros).toBe(false);
+  });
+
+  it('Porta: il dettaglio mostra tutte le voci, le caselle le prime nello stesso ordine (senza "Usato con")', async () => {
+    const { bringsOf, reasonsOf } = await import('../../src/ui/candidateParts');
+    const { SuggestionDetail } = await import('../../src/ui/SuggestionDetail');
+    const { formatRules } = await import('../../src/engine/formatRules');
+    const { renderIt } = await import('../helpers/italian');
+    const reason = (component: string, weight: number, text: string, short: string) => ({ component, weight, text, short });
+    const set = { species: 'Rotom-Wash', item: 'Leftovers', ability: 'Levitate', moves: ['Hydro Pump'], nature: 'Bold', evs: { hp: 252 } };
+    const item = {
+      species: 'Rotom-Wash', set, score: 50, components: {}, tags: [], penalty: 0, facts: { clashes: [] },
+      reasons: [
+        { ...reason('synergy', 9, 'Usato con Great Tusk nel 30% dei team', 'Usato con Great Tusk (30%)'), usedWith: true },
+        reason('coverage', 1, 'Colpisce super efficace Fuoco, scoperti dal team', 'Colpisce Fuoco'),
+        reason('defense', 5, 'Resiste ad Acqua: debolezze del team', 'Resiste ad Acqua'),
+        reason('synergy', 3, 'Abilita Venusaur: Siccità → Clorofilla', 'Abilita Venusaur'),
+        reason('roles', 4, 'Porta Pivot (mancanti nel team)', 'Pivot'),
+        reason('threats', 2, 'Ferma Kingambit', 'Ferma Kingambit'),
+      ],
+    } as never;
+    renderIt(<SuggestionDetail item={item} rank={2} team={[]} replaceIndex={null} data={fixtureData} format={DEFAULT_FORMAT} rating={null} usage={null} banMark={null} actionLabel="Aggiungi al team" onAction={() => {}} />);
+    const points = [...screen.getByRole('heading', { name: 'Porta' }).closest('section')!.querySelectorAll('li')].map(li => li.textContent);
+    // Tutte le voci (niente più tetto a 3), dalla più pesante; "Usato con" in fondo
+    expect(points.slice(0, 5)).toEqual(['Resiste ad Acqua: debolezze del team', 'Porta Pivot (mancanti nel team)', 'Abilita Venusaur: Siccità → Clorofilla', 'Ferma Kingambit', 'Colpisce super efficace Fuoco, scoperti dal team']);
+    expect(points[points.length - 1]).toBe('Usato con Great Tusk nel 30% dei team');
+    // Le caselle: le prime voci della stessa lista, in forma breve
+    const brings = bringsOf(item, 'it', formatRules(DEFAULT_FORMAT.formatId));
+    expect(brings.map(b => b.text)).toEqual(points);
+    for (const n of [1, 2, 3]) {
+      const { texts } = reasonsOf(item, n, null, DEFAULT_FORMAT, 'it');
+      expect(texts).toEqual(brings.slice(0, n).map(b => b.short));
+      expect(texts.map(short => brings.find(b => b.short === short)!.text)).toEqual(points.slice(0, n));
+    }
+  });
+
+  it('niente pulsante rapido nelle caselle: si aggiunge col doppio clic o dal dettaglio', async () => {
+    await setup('Great Tusk');
+    expect(list().querySelector('li button.quick')).toBeNull();
+    // Nella casella l'unico pulsante è il nome (apre il dettaglio)
+    expect([...list().querySelector('li')!.querySelectorAll('button')].map(b => b.className)).toEqual(['pick']);
+  });
+
   it('senza dati: messaggio', () => {
     render(<App initialLang="it" data={{ stats: null, sets: null }} />);
     expect(within(suggestions()).getByText('Servono i dati Smogon per i suggerimenti. Puoi comunque cercare un Pokémon per nome.')).toBeInTheDocument();
@@ -158,6 +311,23 @@ describe('dettaglio: abilità in battaglia', () => {
     expect(porta.textContent).not.toMatch(/pioggia/);
     const toglie = screen.getByRole('heading', { name: 'Toglie' }).closest('section')!;
     expect(toglie.textContent).toMatch(/La pioggia si scontra/);
+  });
+
+  it('Porta: "Usato con" sempre per ultimo', async () => {
+    const { SuggestionDetail } = await import('../../src/ui/SuggestionDetail');
+    const { renderIt } = await import('../helpers/italian');
+    const set = { species: 'Rotom-Wash', item: 'Leftovers', ability: 'Levitate', moves: ['Hydro Pump'], nature: 'Bold', evs: { hp: 252 } };
+    const item = {
+      species: 'Rotom-Wash', set, score: 50, components: {}, tags: [], penalty: 0, facts: { clashes: [] },
+      reasons: [
+        { component: 'synergy', weight: 9, text: 'Usato con Great Tusk nel 30% dei team', short: '', usedWith: true },
+        { component: 'defense', weight: 5, text: 'Resiste ad Acqua: debolezze del team', short: '' },
+        { component: 'roles', weight: 2, text: 'Porta Pivot (mancanti nel team)', short: '' },
+      ],
+    } as never;
+    renderIt(<SuggestionDetail item={item} rank={2} team={[]} replaceIndex={null} data={fixtureData} format={DEFAULT_FORMAT} rating={null} usage={null} banMark={null} actionLabel="Aggiungi al team" onAction={() => {}} />);
+    const points = [...screen.getByRole('heading', { name: 'Porta' }).closest('section')!.querySelectorAll('li')].map(li => li.textContent);
+    expect(points).toEqual(['Resiste ad Acqua: debolezze del team', 'Porta Pivot (mancanti nel team)', 'Usato con Great Tusk nel 30% dei team']);
   });
 
   it('con la Megapietra mostra l\u2019abilità della Mega; "Stats" solo nel dettaglio', async () => {
@@ -257,12 +427,12 @@ describe('riga della lista', () => {
     const user = await setup(...FULL);
     const first = list().querySelector<HTMLElement>('li')!;
     const name = rowNames()[0];
-    await user.dblClick(first.querySelector<HTMLElement>('.rank')!);
+    await user.dblClick(first.querySelector<HTMLElement>('.result')!);
     expect(within(team()).getByText(name)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Annulla' })).toBeInTheDocument();
   }, 30000);
 
-  it('doppio clic sul pulsante +: niente azione in più dalla riga', async () => {
+  it('doppio clic sulla casella: aggiunge una volta sola; sul nome solo lo apre', async () => {
     const { SuggestionsPanel } = await import('../../src/ui/SuggestionsPanel');
     const { renderIt } = await import('../helpers/italian');
     const { emptySet } = await import('../../src/engine/sets');
@@ -270,9 +440,10 @@ describe('riga della lista', () => {
     const user = userEvent.setup();
     renderIt(<SuggestionsPanel team={[{ ...emptySet('Great Tusk'), ability: 'Protosynthesis', moves: ['Headlong Rush'] }]} format={DEFAULT_FORMAT} data={fixtureData}
       replaceIndex={null} onAdd={set => added.push(set.species)} onReplaceWith={() => {}} onCancelReplace={() => {}} />);
-    await user.dblClick(list().querySelector<HTMLElement>('li button.quick')!);
-    // Due clic sul pulsante (come prima); il doppio clic non deve aggiungerne un terzo dalla riga
-    expect(added).toHaveLength(2);
+    await user.dblClick(list().querySelector<HTMLElement>('li button.pick')!);
+    expect(added).toHaveLength(0);
+    await user.dblClick(list().querySelector<HTMLElement>('li .result')!);
+    expect(added).toHaveLength(1);
   });
 
   it("focus su un candidato all'11° posto: pagina 2, lui nel dettaglio, ricerca azzerata", async () => {
@@ -299,6 +470,48 @@ describe('riga della lista', () => {
     expect(screen.getByLabelText('Aggiungi Pokémon')).toHaveValue('');
     expect(within(screen.getByRole('navigation', { name: 'Pagine dei suggerimenti' })).getByRole('button', { name: 'Pagina 2' })).toHaveAttribute('aria-current', 'page');
     expect(rowNames()).toContain(eleventh);
+  });
+
+  it('il numero per pagina cambia dopo il focus: il candidato resta scelto e la sua pagina resta quella aperta', async () => {
+    const { SuggestionsPanel } = await import('../../src/ui/SuggestionsPanel');
+    const { renderIt } = await import('../helpers/italian');
+    const { fixtureStats, tusk } = await import('../fixtures/data');
+    const base = fixtureStats.pokemon['Corviknight'];
+    const extra = ['Skarmory', 'Heatran', 'Clefable', 'Garchomp', 'Ferrothorn', 'Tyranitar', 'Slowbro', 'Zapdos', 'Hippowdon', 'Blissey', 'Excadrill', 'Weavile'];
+    const pokemon = { ...fixtureStats.pokemon, ...Object.fromEntries(extra.map((n, i) => [n, { ...base, usage: 0.05 - i * 0.002, moves: {}, abilities: {}, items: {}, teammates: {}, checks: {} }])) };
+    const data = { stats: { ...fixtureStats, pokemon }, sets: {} };
+    // ResizeObserver finto e misure della lista decise dal test (0×0: scheda nascosta, si resta a 10 per pagina)
+    const callbacks: (() => void)[] = [];
+    vi.stubGlobal('ResizeObserver', class {
+      constructor(cb: () => void) { callbacks.push(cb); }
+      observe() {}
+      disconnect() {}
+    });
+    const size = { width: 0, height: 0 };
+    const measured = (key: 'width' | 'height') => function (this: HTMLElement) { return this.classList.contains('suggestions') ? size[key] : 0; };
+    const width = vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(measured('width'));
+    const height = vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockImplementation(measured('height'));
+    try {
+      // Menu: le Carte sono sempre 6 per pagina, il numero cambia solo qui
+      const props = { team: [tusk], format: DEFAULT_FORMAT, data, replaceIndex: null, onAdd: () => {}, onReplaceWith: () => {}, onCancelReplace: () => {}, listStyle: 'menu' as const };
+      const { rerender } = renderIt(<SuggestionsPanel {...props} />);
+      await screen.findByRole('navigation', { name: 'Pagine dei suggerimenti' });
+      const eighth = rowNames()[7];
+      rerender(<SuggestionsPanel {...props} focus={{ species: eighth, mode: 'add', nonce: 1 }} />);
+      expect(await screen.findByRole('complementary', { name: `Dettaglio di ${eighth}` }, { timeout: 3000 })).toBeInTheDocument();
+      // Prima misura vera: righe minime da 42 + 6 → 6 per pagina, l'ottavo passa a pagina 2
+      size.width = 300;
+      size.height = 320;
+      act(() => { for (const cb of [...callbacks]) cb(); });
+      expect(list().children).toHaveLength(6);
+      expect(screen.getByRole('complementary', { name: `Dettaglio di ${eighth}` })).toBeInTheDocument();
+      expect(within(screen.getByRole('navigation', { name: 'Pagine dei suggerimenti' })).getByRole('button', { name: 'Pagina 2' })).toHaveAttribute('aria-current', 'page');
+      expect(rowNames()).toContain(eighth);
+    } finally {
+      width.mockRestore();
+      height.mockRestore();
+      vi.unstubAllGlobals();
+    }
   });
 
   it('Aggiungi: niente "chi esce"', async () => {
@@ -338,5 +551,194 @@ describe('scheda del candidato', () => {
     expect(within(detail()).getByRole('heading', { name: 'Porta' })).toBeInTheDocument();
     expect(within(detail()).queryByRole('heading', { name: 'Toglie' })).toBeNull();
     expect(section('Porta').textContent).not.toMatch(/Uso nel meta/);
+  });
+});
+
+describe('stile Carte', () => {
+  async function renderCards(team: unknown[]) {
+    const { SuggestionsPanel } = await import('../../src/ui/SuggestionsPanel');
+    const { renderIt } = await import('../helpers/italian');
+    renderIt(<SuggestionsPanel team={team as never} format={DEFAULT_FORMAT} data={fixtureData} replaceIndex={null}
+      onAdd={() => {}} onReplaceWith={() => {}} onCancelReplace={() => {}} listStyle="cards" />);
+  }
+
+  it('Carte: tipi come icone e +N sulla targhetta', async () => {
+    const { tusk } = await import('../fixtures/data');
+    const { getSpecies } = await import('../../src/engine/dex');
+    const { typeName } = await import('../../src/i18n/game');
+    await renderCards([tusk]);
+    expect(list()).toHaveClass('cards');
+    const first = list().querySelector<HTMLElement>('li')!;
+    expect(first).toHaveClass('card');
+    // Tipi come icone tonde (decorative), il nome dei tipi nel tooltip; nessun chip
+    const types = getSpecies(rowNames()[0])!.types;
+    const icons = first.querySelector('.type-icons')!;
+    expect(icons.querySelectorAll('img')).toHaveLength(types.length);
+    expect(icons).toHaveAttribute('title', types.map(type => typeName(type, 'it')).join(' / '));
+    expect(first.querySelector('.type-chip')).toBeNull();
+    // Quanto sale il voto, sulla targhetta in alto a sinistra
+    expect(first.querySelector('.tag')!.textContent).toMatch(/^(\+\d+|−\d+|±0)$/);
+  });
+
+  it('Carte col team vuoto: uso nel meta al posto di +N', async () => {
+    await renderCards([]);
+    const tag = list().querySelector<HTMLElement>('li .tag')!;
+    expect(tag).toHaveAttribute('aria-label', expect.stringMatching(/^Uso nel meta \d/));
+    expect(tag.textContent).toMatch(/^\d+(,\d+)?\s?%/);
+    expect(tag.textContent).not.toMatch(/^[+−±]/);
+  });
+
+  it('Carte: il #1 che peggiora o resta pari non è magenta (−N .worse, ±0 .same)', async () => {
+    const { CandidateCard } = await import('../../src/ui/CandidateCard');
+    const { renderIt } = await import('../helpers/italian');
+    const { tusk } = await import('../fixtures/data');
+    const card = (gain: number) => {
+      const item = { species: 'Great Tusk', set: tusk, score: 0, components: {}, tags: [], penalty: 0, reasons: [],
+        facts: { clashes: [] }, teamGain: { gain, grade: 'B', overall: 70 } } as never;
+      const { container, unmount } = renderIt(
+        <ol><CandidateCard rank={1} item={item} reasons={{ pros: false, texts: ['x'] }} sprite={() => null} usage={null} actionLabel="a"
+          selected={false} onSelect={() => {}} onAction={() => {}} format={DEFAULT_FORMAT} /></ol>);
+      const li = container.querySelector('li.card')!;
+      const result = { first: li.classList.contains('first'), strong: li.querySelector('.tag strong')!.className, text: li.querySelector('.tag')!.textContent };
+      unmount();
+      return result;
+    };
+    expect(card(-2)).toEqual({ first: false, strong: 'worse', text: '−2' });
+    expect(card(0)).toEqual({ first: false, strong: 'same', text: '±0' });
+    expect(card(5)).toEqual({ first: true, strong: '', text: '+5' });
+  });
+});
+
+describe('stile Menu', () => {
+  it('Menu: una colonna di pillole, la selezionata ha aria-pressed', async () => {
+    const { SuggestionsPanel } = await import('../../src/ui/SuggestionsPanel');
+    const { renderIt } = await import('../helpers/italian');
+    const { tusk } = await import('../fixtures/data');
+    const user = userEvent.setup();
+    renderIt(<SuggestionsPanel team={[tusk] as never} format={DEFAULT_FORMAT} data={fixtureData} replaceIndex={null}
+      onAdd={() => {}} onReplaceWith={() => {}} onCancelReplace={() => {}} listStyle="menu" />);
+    expect(list()).toHaveClass('menu');
+    expect(list()).not.toHaveClass('cards');
+    const rows = [...list().querySelectorAll<HTMLElement>(':scope > li')];
+    expect(rows.every(row => row.classList.contains('pill'))).toBe(true);
+    // Tipi come icone a destra, niente chip
+    expect(rows[0].querySelector('.type-icons')).not.toBeNull();
+    expect(rows[0].querySelector('.type-chip')).toBeNull();
+    await user.click(rows[1]);
+    expect(rows[1].querySelector('button.pick')).toHaveAttribute('aria-pressed', 'true');
+    expect(rows[1]).toHaveClass('selected');
+    expect(rows[0].querySelector('button.pick')).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('Menu: le varianti scure dei tipi si leggono sulla pillola chiara (contrasto ≥ 4.5)', async () => {
+    // jsdom non carica i fogli di stile: si legge tokens.css come testo
+    const css = readFileSync(resolve(__dirname, '../../src/styles/tokens.css'), 'utf8');
+    const token = (name: string) => css.match(new RegExp(`${name}:\\s*(#[0-9a-fA-F]{6})`))?.[1];
+    const luminance = (hex: string) => {
+      const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255)
+        .map(c => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
+      return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    };
+    const contrast = (a: string, b: string) => {
+      const [x, y] = [luminance(a), luminance(b)].sort((p, q) => q - p);
+      return (x + 0.05) / (y + 0.05);
+    };
+    const bg = token('--pill-bg');
+    expect(bg).toBe('#e7eaf3');
+    // Tutti i tipi, i chiari compresi (Elettro, Ghiaccio, Normale)
+    const { TYPES } = await import('../../src/engine/types');
+    expect(TYPES).toHaveLength(18);
+    for (const type of TYPES) {
+      const ink = token(`--type-${type.toLowerCase()}-ink`);
+      expect(ink, type).toBeDefined();
+      expect(contrast(ink!, bg!), type).toBeGreaterThanOrEqual(4.5);
+    }
+    // Testo e segni della pillola: testo ≥ 4.5 (anche il "+" verde), icone dei segni ≥ 3
+    for (const name of ['--pill-ink', '--pill-muted', '--pill-gain', '--pill-bad']) expect(contrast(token(name)!, bg!), name).toBeGreaterThanOrEqual(4.5);
+    for (const name of ['--pill-warn', '--pill-info']) expect(contrast(token(name)!, bg!), name).toBeGreaterThanOrEqual(3);
+  });
+});
+
+describe('sprite Icona box', () => {
+  it('Icona box: la lista usa le icone del box', async () => {
+    const { SuggestionsPanel } = await import('../../src/ui/SuggestionsPanel');
+    const { renderIt } = await import('../helpers/italian');
+    const { tusk } = await import('../fixtures/data');
+    for (const listStyle of ['cards', 'menu'] as const) {
+      const { unmount } = renderIt(<SuggestionsPanel team={[tusk] as never} format={DEFAULT_FORMAT} data={fixtureData} replaceIndex={null}
+        onAdd={() => {}} onReplaceWith={() => {}} onCancelReplace={() => {}} listStyle={listStyle} listSprite="box" />);
+      const tiles = list().querySelectorAll(listStyle === 'cards' ? '.card' : '.pill');
+      expect(tiles.length).toBeGreaterThan(0);
+      for (const tile of tiles) {
+        expect(tile.querySelector('.box-icon .mon-icon')).not.toBeNull();
+        expect(tile.querySelector('img.sprite')).toBeNull();
+      }
+      unmount();
+    }
+  });
+
+  it('Carte: solo la carta sotto il mouse e la selezionata chiedono lo sprite animato; con l’icona box mai la GIF', async () => {
+    const { SuggestionsPanel } = await import('../../src/ui/SuggestionsPanel');
+    const { renderIt } = await import('../helpers/italian');
+    const { tusk } = await import('../fixtures/data');
+    const { fireEvent } = await import('@testing-library/react');
+    for (const listSprite of ['normal', 'box'] as const) {
+      const { unmount } = renderIt(<SuggestionsPanel team={[tusk] as never} format={DEFAULT_FORMAT} data={fixtureData} replaceIndex={null}
+        onAdd={() => {}} onReplaceWith={() => {}} onCancelReplace={() => {}} listStyle="cards" listSprite={listSprite} />);
+      const cards = [...list().querySelectorAll<HTMLElement>('.card')];
+      expect(cards.length).toBeGreaterThan(1);
+      const animated = () => [...list().querySelectorAll('.card')].filter(card => card.querySelector('.sprite-ani'));
+      // A riposo solo la selezionata (la prima)
+      expect(cards[0].classList.contains('selected')).toBe(true);
+      expect(animated()).toEqual(listSprite === 'normal' ? [cards[0]] : []);
+      fireEvent.mouseEnter(cards[1]);
+      expect(animated()).toEqual(listSprite === 'normal' ? [cards[0], cards[1]] : []);
+      fireEvent.mouseLeave(cards[1]);
+      expect(animated()).toEqual(listSprite === 'normal' ? [cards[0]] : []);
+      unmount();
+    }
+  });
+
+  it('Set consigliato: sotto le voci i ruoli del set, il principale per primo ed evidenziato', async () => {
+    const { SuggestionsPanel } = await import('../../src/ui/SuggestionsPanel');
+    const { renderIt } = await import('../helpers/italian');
+    const { tusk } = await import('../fixtures/data');
+    renderIt(<SuggestionsPanel team={[tusk] as never} format={DEFAULT_FORMAT} data={fixtureData} replaceIndex={null}
+      onAdd={() => {}} onReplaceWith={() => {}} onCancelReplace={() => {}} listStyle="cards" listSprite="normal" />);
+    const roles = [...screen.getByRole('list', { name: 'Ruoli del set' }).querySelectorAll('li')];
+    expect(roles.length).toBeGreaterThan(0);
+    expect(roles[0].classList.contains('main')).toBe(true);
+    expect(roles.slice(1).some(role => role.classList.contains('main'))).toBe(false);
+  });
+
+  it('Icona box: la forma da battaglia (Mega con la pietra), non la specie base', async () => {
+    const { BoxIcon } = await import('../../src/ui/candidateParts');
+    const { Icons } = await import('@pkmn/img');
+    // jsdom scarta la posizione nel foglio delle icone: si guarda quale icona viene chiesta
+    const getPokemon = vi.spyOn(Icons, 'getPokemon');
+    try {
+      render(<BoxIcon set={{ species: 'Metagross', item: 'Metagrossite', moves: [] } as never} />);
+      expect(getPokemon.mock.calls.map(([name]) => name)).toEqual(['Metagross-Mega']);
+    } finally {
+      getPokemon.mockRestore();
+    }
+  });
+});
+
+describe('tipi del candidato per gli screen reader', () => {
+  it('Carte e Menu: i nomi dei tipi come testo nascosto, le icone restano decorative', async () => {
+    const { SuggestionsPanel } = await import('../../src/ui/SuggestionsPanel');
+    const { renderIt } = await import('../helpers/italian');
+    const { tusk } = await import('../fixtures/data');
+    const { typeName } = await import('../../src/i18n/game');
+    for (const listStyle of ['cards', 'menu'] as const) {
+      const { unmount } = renderIt(<SuggestionsPanel team={[tusk] as never} format={DEFAULT_FORMAT} data={fixtureData} replaceIndex={null}
+        onAdd={() => {}} onReplaceWith={() => {}} onCancelReplace={() => {}} listStyle={listStyle} />);
+      const corviknight = [...list().children].find(li => li.querySelector('.name-line strong')!.textContent!.endsWith('Corviknight'))!;
+      expect(corviknight.querySelector('.type-icons')).toHaveAttribute('aria-hidden', 'true');
+      const names = ['Flying', 'Steel'].map(type => typeName(type, 'it')).join(' / ');
+      expect(corviknight.querySelector('.type-icons + .visually-hidden')?.textContent).toBe(names);
+      unmount();
+    }
   });
 });

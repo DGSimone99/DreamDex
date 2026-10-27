@@ -83,7 +83,7 @@
   .band { padding: 10px 16px 20px; gap: 12px; grid-template-columns: minmax(0, 1fr) 168px; }
   .team-head { margin-bottom: 8px; }
   .slots { gap: 8px; }
-  .slot > summary, .slot.empty { min-height: 172px; padding: 6px 10px 10px; gap: 1px; }
+  .slot > summary, .slot.empty { min-height: 155px; padding: 6px 10px 10px; gap: 1px; }
   .slot > summary .sprite { width: 56px; height: 56px; }
   .slot > summary { --sprite-scale: 0.5833; }
   .slot .roles { font-size: 11px; }
@@ -92,33 +92,32 @@
   /* Tipi lunghi (Coleottero, Folletto): il chip si allarga invece di schiacciare il testo */
   .slot .type-chip { width: auto; min-width: 52px; padding-inline: 6px; }
   .empty-ring { width: 44px; height: 44px; }
-  .grade-badge .letter { font-size: 64px; }
+  .grade-badge .letter { font-size: 58px; }
   .grade-badge .overall { font-size: 18px; }
   .grade-areas { gap: 2px; margin-top: 2px; }
   .tab-body { padding: 22px 16px 0; }
-  .toolbar > .segmented button { padding: 6px 10px; font-size: 13px; }
+  .toolbar .mode-switch > .segmented button { padding: 6px 10px; font-size: 13px; }
+  .toolbar .mode-switch > .segmented .target-toggle { padding: 6px 9px; }
   .toolbar .filters > summary { height: 34px; }
   .picker.has-detail { gap: 12px; }
   .suggestions-panel { --picker-gap: 12px; }
-  /* Nelle righe al posto dei chip le icone dei tipi: il nome del candidato ha la precedenza */
-  .suggestion .name-line .types .type-chip { display: none; }
-  .suggestion .name-line .types .types-compact { display: inline-flex; }
-  .detail-hero .detail-id h3 { font-size: 20px; }
-  .detail-hero { padding-top: 6px; padding-bottom: 6px; }
+  .detail-hero .detail-id h3 { font-size: 18px; }
+  .detail-hero { padding-top: 3px; padding-bottom: 3px; }
   /* Chi esce lo dicono già la riga della lista e il pulsante principale */
   .detail-hero .swap-head { display: none; }
-  .detail-hero .detail-sprite { width: 56px; height: 56px; }
-  .detail-hero .detail-sprite .sprite-ani { transform: translate(-50%, -50%) scale(0.5833); }
-  .detail:not(.detail-empty) .detail-sec { padding-top: 7px; padding-bottom: 8px; }
-  /* Set su due righe: voci, poi le quattro mosse affiancate */
-  .detail .detail-sec.set-sec { grid-template-columns: minmax(0, 1fr); }
-  .detail .detail-sec.set-sec .detail-set { margin-bottom: 4px; }
+  .detail-hero .detail-sprite { --box-scale: 1.4; width: 46px; height: 46px; }
+  .detail-hero .detail-sprite .sprite-ani { transform: translate(-50%, -50%) scale(0.4792); }
+  .detail:not(.detail-empty) .detail-sec { padding-top: 4px; padding-bottom: 5px; }
+  .detail:not(.detail-empty) .detail-sec h4 { margin-bottom: 5px; }
+  /* Set: le due righe di voci a sinistra, le mosse 2×2 a destra (alte quanto le voci) */
+  .detail .detail-sec.set-sec .detail-set { margin-bottom: 0; }
   .detail:not(.detail-empty) > .detail-actions { padding-top: 6px; padding-bottom: 6px; }
-  .detail .detail-points { gap: 0; }
-  .detail .detail-moves { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  .detail .detail-moves li { padding: 3px 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .detail-hero .detail-score strong { font-size: 36px; }
-  .suggestion { padding: 6px 10px; }
+  .detail .detail-points { gap: 0; line-height: 1.28; }
+  .detail .detail-moves { gap: 4px; }
+  .detail:not(.detail-empty) .detail-sec h4 { padding-top: 2px; padding-bottom: 2px; }
+  .detail-roles li { padding: 0 7px; }
+  .detail .detail-moves li { padding: 1px 8px; font-size: 13px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .detail-hero .detail-score strong { font-size: 30px; }
 }
 /* Team compresso: una barra sottile con le icone del box, il voto piccolo e la freccia per riaprirla */
 .mini-icon { display: none; }
@@ -202,6 +201,10 @@
 .slot[open] > summary { justify-content: center; --open-scale: 1.5; --fit: 180; }
 .slot[open] > summary > :not(.sprite-wrap, .favorite, .remove, .slot-custom, .slot-lead, .mini-icon) { display: none; }
 .band:not(.collapsed) .slot[open] > summary .sprite-wrap { flex: 1; display: grid; place-items: end center; width: 100%; }
+/* Statico e animato con la stessa scala, quanto lo spazio della carta: la GIF è il riquadro di 96px ritagliato sul Pokémon,
+   quindi alta --ani-h/96 dello statico. Senza GIF (es. Urshifu Pluricolpo) lo statico resta grande uguale, non di più */
+.band:not(.collapsed) .slot[open] > summary .sprite { width: min(100cqh, 100cqw); height: min(100cqh, 100cqw); transform: none; }
+.band:not(.collapsed) .slot[open] > summary .sprite-ani { width: auto; height: calc(var(--ani-h, 96) / 96 * min(100cqh, 100cqw)); transform: translateX(-50%); }
 /* Team compresso: il membro aperto saltella, come nel box dei giochi */
 @keyframes box-hop { 0%, 100% { transform: translateY(0); } 40% { transform: translateY(-5px); } 60% { transform: translateY(0); } }
 .band.collapsed .slot[open] .mini-icon .mon-icon { animation: box-hop 0.7s ease-in-out infinite; }
@@ -369,7 +372,7 @@
 .grade-badge.none { --grade: var(--line); }
 .grade-badge .letter, .grade-badge.grade-C .letter, .grade-badge.grade-D .letter { color: var(--grade); }
 .grade-badge .label { color: var(--grade); font-weight: 600; }
-.grade-badge .grade-areas { align-self: stretch; align-content: space-evenly; gap: 6px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line-soft); }
+.grade-badge .grade-areas { align-self: stretch; align-content: space-evenly; gap: 3px; margin-top: 4px; padding-top: 6px; border-top: 1px solid var(--line-soft); }
 .grade-area { font-size: 12.5px; }
 .grade-area .meter { height: 7px; }
 .grade-area.band-S .meter > span { background: var(--accent-2); }
@@ -401,7 +404,7 @@
 .joined > .combobox input { height: 36px; }
 /* Schermi grandi e alti (1920×1080 in su): carte più alte e sprite animato della carta aperta più grande */
 @media (min-width: 1600px) and (min-height: 1000px) {
-  .slot > summary, .slot.empty { min-height: 256px; }
+  .slot > summary, .slot.empty { min-height: 230px; }
   .slot[open] > summary { --fit: 214; }
   /* Anche gli sprite delle carte chiuse un po' più grandi: le carte più alte non restano vuote */
   .slot > summary .sprite { width: 136px; height: 136px; }
@@ -412,7 +415,7 @@
    (fin dove l'altezza della carta lo permette) sia nel dettaglio del Pokémon */
 @media (min-width: 1600px) {
   .slot[open] > summary { --open-scale: 1.85; --fit: 196; }
-  .detail-hero .detail-sprite { width: 96px; height: 96px; }
+  .detail-hero .detail-sprite { --box-scale: 2.9; width: 96px; height: 96px; }
   .detail-hero .detail-sprite .sprite-ani { transform: translate(-50%, -50%); }
 }
 @media (min-width: 1600px) and (min-height: 1000px) {

@@ -158,6 +158,8 @@ export function benefits(set: TeamSet): ConditionLink[] {
 
 export interface MechanicalLink {
   text: string;
+  /** "Abilita Venusaur", "Abilitato da Ninetales": per le caselle della lista. */
+  short: string;
 }
 
 /** Legami meccanici tra un candidato e i membri: chi lo abilita e chi abilita lui. */
@@ -170,7 +172,10 @@ export function mechanicalLinks(candidate: TeamSet, team: TeamSet[], lang: Lang 
     const enabler = enables(member).find(e => candidateBenefits.some(b => b.condition === e.condition));
     if (enabler) {
       const benefit = candidateBenefits.find(b => b.condition === enabler.condition)!;
-      links.push({ text: t(lang, 'synergy.enabledBy', { member: battleName(member), via: viaName(enabler.via, lang), benefit: viaName(benefit.via, lang) }) });
+      links.push({
+        text: t(lang, 'synergy.enabledBy', { member: battleName(member), via: viaName(enabler.via, lang), benefit: viaName(benefit.via, lang) }),
+        short: t(lang, 'synergy.enabledBy.short', { member: battleName(member) }),
+      });
     }
   }
   const candidateEnables = enables(candidate);
@@ -179,7 +184,10 @@ export function mechanicalLinks(candidate: TeamSet, team: TeamSet[], lang: Lang 
     const enabler = candidateEnables.find(e => memberBenefits.some(b => b.condition === e.condition));
     if (enabler) {
       const benefit = memberBenefits.find(b => b.condition === enabler.condition)!;
-      links.push({ text: t(lang, 'synergy.enables', { member: battleName(member), via: viaName(enabler.via, lang), benefit: viaName(benefit.via, lang) }) });
+      links.push({
+        text: t(lang, 'synergy.enables', { member: battleName(member), via: viaName(enabler.via, lang), benefit: viaName(benefit.via, lang) }),
+        short: t(lang, 'synergy.enables.short', { member: battleName(member) }),
+      });
     }
   }
   return links;
