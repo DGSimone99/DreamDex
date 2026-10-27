@@ -457,17 +457,22 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
    sul Pokémon, quindi alta --ani-h/96 della casella; appoggiata in basso come i piedi dello statico */
 .card-sprite .sprite.covered { visibility: hidden; }
 .card-sprite .sprite-ani { position: absolute; left: 50%; bottom: calc(var(--sprite-w) / 24); width: auto; max-width: none; height: calc(var(--ani-h, 96) / 96 * var(--sprite-w)); image-rendering: pixelated; transform: translateX(-50%); pointer-events: none; }
-/* Carta "presa in mano": sotto il mouse ruota un poco (in senso orario, all'indietro nell'ultima colonna per non uscire
-   dal bordo), cresce e sta sopra le vicine con un'ombra che segue l'angolo tagliato (drop-shadow sul li, che non è ritagliato).
-   La selezionata resta dritta con la sua cornice; col focus da tastiera niente rotazione, basta l'anello del focus */
-.card { --tilt: 4deg; transition: transform 0.18s ease-in-out, filter 0.18s ease-in-out; }
-.card:nth-child(3n) { --tilt: -4deg; }
+/* Carta "sollevata": sotto il mouse sale di 4px con un'ombra (drop-shadow sul li, che non è ritagliato, così segue l'angolo
+   tagliato), il bordo del tipo si ispessisce da 3 a 5px e lo sprite cresce un poco; le vicine non si muovono.
+   La selezionata resta sollevata anche a riposo, con la sua cornice */
+.card { transition: transform 0.18s ease-out, filter 0.18s ease-out; }
 .card:hover { z-index: 5; }
-.card:not(.selected):hover { transform: rotate(var(--tilt)) scale(1.04); filter: drop-shadow(0 6px 8px rgb(0 0 0 / 0.45)); }
+.card:hover, .card.selected { transform: translateY(-4px); filter: drop-shadow(0 6px 8px rgb(0 0 0 / 0.45)); }
+.card.selected { z-index: 4; }
+.card-face::before { content: ''; position: absolute; left: 0; right: 0; bottom: 0; z-index: 2; height: 2px; background: var(--t1); opacity: 0; transition: opacity 0.18s ease-out; pointer-events: none; }
+.card:hover .card-face::before, .card.selected .card-face::before { opacity: 1; }
+.card-sprite { transform-origin: 50% 70%; transition: transform 0.18s ease-out; }
+.card:hover .card-sprite { transform: translateX(-50%) scale(1.1); }
 /* Icona del box: sotto il mouse saltella come il membro aperto del team compresso (sul riquadro: l'icona ha già la sua scala) */
 .card:hover .card-sprite .box-icon { animation: box-hop 0.7s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) {
-  .card:not(.selected):hover { transform: none; }
+  .card, .card-sprite, .card-face::before { transition: none; }
+  .card:hover .card-sprite { transform: translateX(-50%); }
   .card:hover .card-sprite .box-icon { animation: none; }
 }
 /* Targhetta in alto a sinistra: +N (#1 su magenta), −N e ±0 nei loro colori, col team vuoto l'uso nel meta */
