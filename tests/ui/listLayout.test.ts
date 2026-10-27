@@ -15,7 +15,13 @@ describe('cardsLayout', () => {
     expect(cardsLayout(200, 532, 532).columns).toBe(2);
   });
   it('openHeight < 460 usa tessera minima 104', () => {
-    expect(cardsLayout(460, 440, 440).rows).toBe(Math.floor((440 - 20 + 8) / 112));
+    // 380: con 104 entrano 3 righe (368/112), con 120 solo 2 (368/128)
+    expect(cardsLayout(460, 380, 380).rows).toBe(3);
+  });
+  it('confine 459/460: da 460 tessera minima 120', () => {
+    expect(cardsLayout(460, 459, 459).rows).toBe(3);
+    // 460: con 104 sarebbero 4 righe (448/112), con 120 sono 3
+    expect(cardsLayout(460, 460, 460).rows).toBe(3);
   });
   it('input degeneri restano finiti con perPage >= 1', () => {
     for (const a of [0, -50, NaN]) {

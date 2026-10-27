@@ -9,8 +9,8 @@ const LIST_STYLES: ListStyle[] = ['cards', 'menu'];
 const LIST_SPRITES: ListSprite[] = ['normal', 'box'];
 
 /**
- * Impostazioni: per ora solo la palette (segue il gioco o fissa), salvata nel browser.
- * Quando ci saranno gli account passeranno lì.
+ * Impostazioni: la palette (segue il gioco o fissa), lo stile della lista candidati e i suoi sprite,
+ * salvati nel browser. Quando ci saranno gli account passeranno lì.
  */
 export function SettingsDialog({ palette, onPaletteChange, listStyle, onListStyleChange, listSprite, onListSpriteChange, onClose }: {
   palette: PaletteSetting;
@@ -50,7 +50,7 @@ export function SettingsDialog({ palette, onPaletteChange, listStyle, onListStyl
               </label>
             ))}
           </fieldset>
-          <fieldset className="settings-palette">
+          <fieldset className="settings-palette settings-pair">
             <legend>{t('settings.listStyle')}</legend>
             {LIST_STYLES.map(choice => (
               <label key={choice} className="palette-choice">
@@ -60,7 +60,7 @@ export function SettingsDialog({ palette, onPaletteChange, listStyle, onListStyl
               </label>
             ))}
           </fieldset>
-          <fieldset className="settings-palette">
+          <fieldset className="settings-palette settings-pair">
             <legend>{t('settings.listSprite')}</legend>
             {LIST_SPRITES.map(choice => (
               <label key={choice} className="palette-choice">

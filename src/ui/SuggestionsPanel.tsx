@@ -410,7 +410,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
               item,
               reasons: reasonsOf(item, reasons, usage, format, lang),
               sprite: listSprite === 'box'
-                ? <span className={`box-icon${teamCollapsed ? ' big' : ''}`}><PokemonIcon name={item.species} /></span>
+                ? <span className={`box-icon${teamCollapsed ? ' big' : ''}`}><PokemonIcon name={battleName(item.set)} /></span>
                 : <Sprite species={item.species} item={item.set.item} size={96} />,
               usage,
               out: item.replaces !== undefined ? memberName(item.replaces) : undefined,
