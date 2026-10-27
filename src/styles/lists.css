@@ -96,7 +96,8 @@
   .grade-badge .overall { font-size: 18px; }
   .grade-areas { gap: 2px; margin-top: 2px; }
   .tab-body { padding: 22px 16px 0; }
-  .toolbar > .segmented button { padding: 6px 10px; font-size: 13px; }
+  .toolbar .mode-switch > .segmented button { padding: 6px 10px; font-size: 13px; }
+  .toolbar .mode-switch > .segmented .target-toggle { padding: 6px 9px; }
   .toolbar .filters > summary { height: 34px; }
   .picker.has-detail { gap: 12px; }
   .suggestions-panel { --picker-gap: 12px; }

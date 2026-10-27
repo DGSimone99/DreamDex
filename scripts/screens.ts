@@ -331,6 +331,13 @@ const STATES: Record<string, State> = {
   undo: { run: async p => clickText(p, 'button.remove', /Rimuovi/) },
   collapsed: { hash: hash(LONG), run: async p => clickText(p, 'button.band-toggle', /./) },
   improve: { hash: hash(LONG), run: async p => { await tab(p, 'pokemon'); return true; } },
+  'improve-open': { hash: hash(LONG), run: async p => { await tab(p, 'pokemon'); return clickText(p, '.target-toggle', /./); } },
+  'improve-member': { hash: hash(LONG), run: async p => {
+    await tab(p, 'pokemon');
+    await clickText(p, '.target-toggle', /./);
+    await wait(200);
+    return clickText(p, '.target-pop .target-member', /Landorus/);
+  } },
   'filters-chips': { run: async p => {
     await tab(p, 'pokemon');
     return p.evaluate(() => {

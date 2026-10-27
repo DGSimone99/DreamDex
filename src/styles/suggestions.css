@@ -65,19 +65,6 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 
 /* Suggerimenti: lista compatta a sinistra, il candidato selezionato a destra */
 .picker { margin-top: 12px; }
-/* Modalità sempre visibili; negli scambi, la scelta di chi sostituire con le icone dei membri */
-.modes { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; margin-bottom: 12px; }
-.modes .segmented { flex: none; }
-.modes .segmented button { gap: 6px; padding: 7px 14px; font-size: 14px; white-space: nowrap; }
-.modes .segmented .icon { width: 14px; height: 14px; }
-.targets { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-.targets-label { font: 600 12px/1 var(--ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--faint); margin-right: 4px; }
-.targets button { gap: 4px; padding: 3px 11px 3px 6px; border-radius: 14px; background: transparent; font-size: 13px; color: var(--muted); }
-.targets button:first-of-type { padding-left: 11px; }
-.targets button:hover { color: var(--text); }
-.targets button[aria-pressed='true'] { background: var(--accent-soft); border-color: var(--accent); color: var(--text); font-weight: 600; }
-.targets button .mon-icon { margin: -4px -2px -4px -4px; }
-.targets button .icon { width: 12px; height: 12px; color: var(--accent); }
 .picker.has-detail { display: grid; grid-template-columns: minmax(0, 560px) minmax(0, 1fr); gap: 28px; align-items: start; }
 /* Scheletro: la lista tiene l'altezza di una pagina e il dettaglio vuoto resta al suo posto, così la pagina non salta */
 .picker-list { min-width: 0; }
@@ -228,9 +215,6 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 /* Sezione Pokémon come Box: una riga di strumenti, poi lista dei candidati e scheda di riepilogo che scorrono dentro */
 .suggestions-panel { display: flex; flex-direction: column; gap: 10px; }
 .toolbar { position: relative; display: flex; align-items: center; gap: 10px; }
-.toolbar > .segmented { flex: none; }
-.toolbar > .segmented button { gap: 6px; padding: 8px 14px; font-size: 14px; white-space: nowrap; }
-.toolbar > .segmented .icon { width: 14px; height: 14px; }
 .toolbar .search { flex: 1; min-width: 0; margin: 0; }
 .toolbar .filters { flex: none; margin: 0; padding: 0; background: none; border: 0; border-radius: 0; }
 .toolbar .filters > summary { height: 38px; padding: 0 12px; gap: 10px; border: 1px solid var(--line); border-radius: 4px; background: var(--raised); white-space: nowrap; }
@@ -254,11 +238,26 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
   border-radius: 4px;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
 }
-/* Chi esce, nella barra comandi dopo Aggiungi/Migliora: Tutti e i membri come sole icone */
-.toolbar > .targets { flex: none; flex-wrap: nowrap; gap: 4px; }
-.targets .target-member { position: relative; padding: 1px 3px; }
-.targets .target-member .mon-icon { margin: -4px -2px; }
-.targets .target-member .icon { position: absolute; top: -3px; right: -3px; }
+/* Chi esce: la tendina attaccata a Migliora team (un terzo pezzo dello stesso pulsante, con ▾ e l'icona del membro scelto);
+   sotto, Tutti e i membri con icona e nome */
+.mode-switch { position: relative; flex: none; }
+.toolbar .mode-switch > .segmented button { gap: 6px; padding: 8px 14px; font-size: 14px; white-space: nowrap; }
+.toolbar .mode-switch > .segmented .icon { width: 14px; height: 14px; }
+.toolbar .mode-switch > .segmented .target-toggle { flex: none; gap: 2px; padding: 8px 11px; }
+.target-toggle.on { background: var(--accent-soft); color: var(--text); }
+.target-toggle[aria-expanded='true'] { color: var(--text); }
+.target-toggle .mon-icon { margin: -8px -4px -8px -6px; }
+.target-toggle .chevron { width: 6px; height: 6px; margin: -3px 1px 0; border: solid currentColor; border-width: 0 1.5px 1.5px 0; transform: rotate(45deg); transition: transform 0.15s; }
+.target-toggle[aria-expanded='true'] .chevron { margin-top: 3px; transform: rotate(225deg); }
+.target-pop { position: absolute; right: 0; top: calc(100% + 6px); z-index: 30; display: grid; min-width: 200px; padding: 8px;
+  background: var(--ground); border: 1px solid var(--line); border-radius: 4px; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5); }
+.target-pop .targets-label { padding: 2px 8px 6px; font: 600 11px/1 var(--ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--faint); }
+.target-pop button { justify-content: flex-start; gap: 6px; min-height: 32px; padding: 3px 8px; border: 0; border-radius: 3px; background: none; font-size: 14px; color: var(--muted); text-align: left; }
+.target-pop button:hover { background: var(--raised); color: var(--text); }
+.target-pop button[aria-pressed='true'] { background: var(--accent-soft); color: var(--text); font-weight: 600; }
+.target-pop .mon-icon { margin: -4px -2px -4px -4px; }
+.target-pop .target-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.target-pop .icon { width: 12px; height: 12px; color: var(--accent); }
 .picker { margin: 0; }
 .box-head {
   position: sticky;
@@ -373,7 +372,9 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .toolbar .team-type { flex: none; position: relative; display: flex; align-items: center; height: 38px; margin: 0; gap: 0; border: 1px solid var(--line); border-radius: 4px; background: var(--field); }
 .toolbar .team-type:hover, .toolbar .team-type:focus-within { border-color: var(--accent); }
 .toolbar .team-type > span { padding-left: 12px; font: 600 11px/1 var(--ui); text-transform: uppercase; letter-spacing: 0.08em; color: var(--faint); }
-.toolbar .team-type select { height: 100%; max-width: 170px; padding: 0 30px 0 8px; border: 0; background-color: transparent; font-size: 14px; }
+/* Larghezza fissa: cambiare tipo non sposta la ricerca (i nomi lunghi finiscono coi puntini) */
+.toolbar .team-type { width: 220px; }
+.toolbar .team-type select { flex: 1; min-width: 0; height: 100%; padding: 0 30px 0 8px; border: 0; background-color: transparent; font-size: 14px; text-overflow: ellipsis; }
 
 /* Filtri attivi come chip sotto la barra; la × toglie quel filtro */
 .active-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: -2px; }

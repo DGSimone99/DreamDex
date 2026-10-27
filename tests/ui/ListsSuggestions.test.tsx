@@ -103,6 +103,7 @@ describe('liste: nascosti anche negli scambi', () => {
     const user = await setup(storage, 'Great Tusk', 'Gholdengo');
     await user.click(within(suggestions()).getByRole('button', { name: 'Migliora team' }));
     expect(await within(suggestions()).findByText(/1 Pokémon nascost[oi] dalla tua lista Ban/)).toBeInTheDocument();
+    await user.click(within(suggestions()).getByRole('button', { name: /^Chi sostituire/ }));
     await user.click(within(suggestions()).getByRole('button', { name: 'Sostituisci Gholdengo' }));
     expect(await within(suggestions()).findByText(/1 Pokémon nascost[oi] dalla tua lista Ban/)).toBeInTheDocument();
   });

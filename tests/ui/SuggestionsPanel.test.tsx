@@ -93,7 +93,12 @@ describe('SuggestionsPanel', () => {
     expect(within(suggestions()).queryByRole('heading', { name: 'Migliora il team' })).toBeNull();
     expect(within(suggestions()).getByRole('button', { name: 'Migliora team' })).toHaveAttribute('aria-pressed', 'true');
     expect(within(suggestions()).getByRole('button', { name: 'Aggiungi' })).toBeDisabled();
+    // Chi esce: la tendina attaccata a Migliora team dice Tutti; aperta, Tutti è scelto
+    const toggle = within(suggestions()).getByRole('button', { name: 'Chi sostituire: Tutti' });
+    expect(toggle).toHaveTextContent('Tutti');
+    await user.click(toggle);
     expect(within(screen.getByRole('group', { name: 'Chi sostituire' })).getByRole('button', { name: 'Tutti' })).toHaveAttribute('aria-pressed', 'true');
+    await user.click(toggle);
     // Dal voto più alto; ogni riga dice chi esce, e il doppio clic fa lo scambio
     const grades = within(list()).getAllByLabelText(/^Voto del team: /).map(cell => Number(/ (\d+) \(/.exec(cell.getAttribute('aria-label')!)![1]));
     expect(grades.length).toBeGreaterThan(0);
@@ -109,11 +114,18 @@ describe('SuggestionsPanel', () => {
   it('team completo: scegliere un membro mostra solo i suoi sostituti; Tutti torna agli scambi liberi', async () => {
     const user = await setup('Great Tusk', 'Gholdengo', 'Kingambit', 'Dragapult', 'Corviknight', 'Toxapex');
     const targets = () => screen.getByRole('group', { name: 'Chi sostituire' });
+    const toggle = () => within(suggestions()).getByRole('button', { name: /^Chi sostituire: / });
+    await user.click(toggle());
     await user.click(within(targets()).getByRole('button', { name: 'Sostituisci Toxapex' }));
-    expect(within(targets()).getByRole('button', { name: 'Sostituisci Toxapex' })).toHaveAttribute('aria-pressed', 'true');
+    // Scelto un membro la tendina si chiude e mostra la sua icona al posto di "Tutti"
+    expect(screen.queryByRole('group', { name: 'Chi sostituire' })).toBeNull();
+    expect(toggle()).toHaveAccessibleName('Chi sostituire: Toxapex');
+    expect(toggle()).not.toHaveTextContent('Tutti');
     expect(within(list()).queryAllByText(/^Al posto di /)).toHaveLength(0);
+    await user.click(toggle());
+    expect(within(targets()).getByRole('button', { name: 'Sostituisci Toxapex' })).toHaveAttribute('aria-pressed', 'true');
     await user.click(within(targets()).getByRole('button', { name: 'Tutti' }));
-    expect(within(targets()).getByRole('button', { name: 'Tutti' })).toHaveAttribute('aria-pressed', 'true');
+    expect(toggle()).toHaveAccessibleName('Chi sostituire: Tutti');
   });
 
   it('team incompleto: da Aggiungi a Migliora team e ritorno', async () => {
@@ -159,17 +171,26 @@ describe('SuggestionsPanel', () => {
     expect(within(pager).getByRole('button', { name: 'Pagina 2' })).toHaveAttribute('aria-current', 'page');
   });
 
-  it('ESCE sta nella barra comandi, non sotto', async () => {
+  it('chi esce è una tendina attaccata a Migliora team, nella barra comandi', async () => {
     const user = await setup('Great Tusk', 'Gholdengo');
     await user.click(within(suggestions()).getByRole('button', { name: 'Migliora team' }));
+    const toggle = within(suggestions()).getByRole('button', { name: 'Chi sostituire: Tutti' });
+    // Terzo pezzo dello stesso pulsante di Aggiungi / Migliora team
+    expect(toggle.closest('[role="group"]')).toHaveAccessibleName('Modalità sostituzione');
+    expect(screen.queryByRole('group', { name: 'Chi sostituire' })).toBeNull();
+    await user.click(toggle);
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
     const group = screen.getByRole('group', { name: 'Chi sostituire' });
     expect(group.closest('.toolbar')).not.toBeNull();
     expect(suggestions().querySelector('.subbar')).toBeNull();
-    // I membri come sole icone: il nome nell'etichetta e nel tooltip
+    // Nella tendina i membri con icona e nome
     const member = within(group).getByRole('button', { name: 'Sostituisci Great Tusk' });
-    expect(member).toHaveAttribute('title', 'Great Tusk');
-    expect(member.textContent).toBe('');
+    expect(member).toHaveTextContent('Great Tusk');
     expect(within(group).getByText('Esce')).toBeInTheDocument();
+    // Esc chiude e il focus torna al pulsante
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('group', { name: 'Chi sostituire' })).toBeNull();
+    expect(toggle).toHaveFocus();
   });
 
   it('Carte col team aperto: al massimo due motivi sotto il nome, senza malus', async () => {

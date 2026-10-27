@@ -29,6 +29,7 @@ import type { ListSprite, ListStyle } from './theme';
 import { useLang, useT } from '../i18n/react';
 import { usePerPage } from './usePerPage';
 import { ListViewMenu } from './ListViewMenu';
+import { ModeSwitch } from './ModeSwitch';
 
 /** Candidati in tutto; il voto del team si calcola sui primi POOL per punteggio. Per pagina: misurato (PAGE senza misura). */
 export const MAX = 50;
@@ -461,29 +462,10 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   return (
     <section aria-label={tr('suggest.title')} className="suggestions-panel">
       <div className="toolbar">
-        <div className="segmented" role="group" aria-label={tr('suggest.mode')}>
-          <button type="button" aria-pressed={view === 'add'} disabled={team.length >= 6} onClick={() => chooseMode('add')}>
-            <Icon name="plus" />{tr('suggest.addMode')}
-          </button>
-          <button type="button" aria-pressed={view !== 'add'} disabled={team.length < 2 && !replacing}
-            onClick={() => chooseMode('improve')}>{tr('suggest.improve')}</button>
-        </div>
-        {view !== 'add' && (
-          // Chi esce: tutti (il motore sceglie per ogni candidato) o un membro preciso, come sola icona
-          <div className="targets" role="group" aria-label={tr('suggest.target')}>
-            <span className="targets-label" aria-hidden="true">{tr('suggest.targetLabel')}</span>
-            <button type="button" aria-pressed={view === 'all'} onClick={() => { setScope('all'); onCancelReplace(); }}>{tr('suggest.targetAll')}</button>
-            {team.map((member, index) => (
-              <button key={index} type="button" className="target-member" aria-pressed={replacing && replaceIndex === index}
-                aria-label={tr('suggest.targetMember', { member: battleName(member) })}
-                title={member.favorite ? `${battleName(member)} · ${tr('suggest.targetFavorite')}` : battleName(member)}
-                onClick={() => onTarget?.(index)}>
-                <PokemonIcon name={battleName(member)} />
-                {member.favorite && <Icon name="star" />}
-              </button>
-            ))}
-          </div>
-        )}
+        <ModeSwitch team={team} view={view} replacing={replacing} replaceIndex={replaceIndex}
+          addDisabled={team.length >= 6} improveDisabled={team.length < 2 && !replacing}
+          onAdd={() => chooseMode('add')} onImprove={() => chooseMode('improve')}
+          onAll={() => { setScope('all'); onCancelReplace(); }} onTarget={index => onTarget?.(index)} />
         {search}
       </div>
       {!full && <ActiveFilters filters={filters} onChange={setFilters} count={filtering && items.length > 0 ? countText : undefined} />}

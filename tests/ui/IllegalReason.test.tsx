@@ -23,6 +23,6 @@ describe('membro non legale', () => {
     expect(note).toHaveTextContent('Tier troppo alto per National Dex OU');
     await user.click(within(note as HTMLElement).getByRole('button', { name: 'Cerca un sostituto' }));
     expect(screen.getByRole('tab', { name: /^Pokémon/ })).toHaveAttribute('aria-selected', 'true');
-    expect(screen.getByRole('button', { name: /Kyogre/, pressed: true })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Chi sostituire: Kyogre' })).toBeInTheDocument();
   });
 });
