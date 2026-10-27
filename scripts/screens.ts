@@ -111,6 +111,9 @@ const STATES: Record<string, State> = {
     await wait(300);
     return clickText(p, 'button.band-toggle', /./);
   } },
+  // Icone del box al posto degli sprite normali (Carte e Menu)
+  'pokemon-box': { storage: { 'dreamdex.listSprite': '"box"' }, run: async p => { await tab(p, 'pokemon'); return true; } },
+  'pokemon-menu-box': { storage: { 'dreamdex.listStyle': '"menu"', 'dreamdex.listSprite': '"box"' }, run: async p => { await tab(p, 'pokemon'); return true; } },
   editor: { run: async p => clickText(p, '.slot.filled > summary', /./) },
   analysis: { run: async p => { await tab(p, 'analysis'); return true; } },
   'analysis-defense': { run: async p => clickText(p, '.band button.grade-area', /^Difesa/) },

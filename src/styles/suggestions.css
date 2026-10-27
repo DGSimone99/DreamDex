@@ -409,6 +409,9 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .card.picked { box-shadow: inset 0 0 0 1px var(--accent); }
 .card.selected { background: var(--accent-wash); box-shadow: inset 0 0 0 2px var(--accent); }
 .card-sprite { position: absolute; left: 50%; top: -6px; width: var(--sprite-w); transform: translateX(-50%); pointer-events: none; }
+.card-sprite .box-icon { display: grid; place-items: center; width: 100%; aspect-ratio: 1; }
+.card-sprite .box-icon .mon-icon { margin: 0; transform: scale(2.1); }
+.card-sprite .box-icon.big .mon-icon, .pill-sprite .box-icon.big .mon-icon { transform: scale(2.4); }
 .card-sprite .sprite { display: block; width: 100%; height: auto; image-rendering: pixelated; }
 /* Targhetta in alto a sinistra: +N (#1 su magenta), −N e ±0 nei loro colori, col team vuoto l'uso nel meta */
 .card .tag { position: absolute; top: 0; left: 0; z-index: 1; margin: 0; padding: 5px 16px 5px 8px; border-radius: 0; background: var(--ground); color: var(--text);
@@ -486,6 +489,8 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
   box-shadow: 0 0 0 3px var(--panel);
   pointer-events: none;
 }
+.pill-sprite .box-icon { position: absolute; inset: 0; display: grid; place-items: center; }
+.pill-sprite .box-icon .mon-icon { margin: 0; transform: scale(2.1); }
 .pill-sprite .sprite { position: absolute; left: 50%; top: 50%; width: calc(var(--rh) * 1.5); height: auto; max-width: none; transform: translate(-50%, -56%); image-rendering: pixelated; }
 .pill .who { position: relative; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
 .pill .name-line { display: flex; min-width: 0; }

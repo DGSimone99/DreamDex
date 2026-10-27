@@ -512,3 +512,22 @@ describe('stile Menu', () => {
     for (const name of ['--pill-warn', '--pill-info']) expect(contrast(token(name)!, bg!), name).toBeGreaterThanOrEqual(3);
   });
 });
+
+describe('sprite Icona box', () => {
+  it('Icona box: la lista usa le icone del box', async () => {
+    const { SuggestionsPanel } = await import('../../src/ui/SuggestionsPanel');
+    const { renderIt } = await import('../helpers/italian');
+    const { tusk } = await import('../fixtures/data');
+    for (const listStyle of ['cards', 'menu'] as const) {
+      const { unmount } = renderIt(<SuggestionsPanel team={[tusk] as never} format={DEFAULT_FORMAT} data={fixtureData} replaceIndex={null}
+        onAdd={() => {}} onReplaceWith={() => {}} onCancelReplace={() => {}} listStyle={listStyle} listSprite="box" />);
+      const tiles = list().querySelectorAll(listStyle === 'cards' ? '.card' : '.pill');
+      expect(tiles.length).toBeGreaterThan(0);
+      for (const tile of tiles) {
+        expect(tile.querySelector('.box-icon .mon-icon')).not.toBeNull();
+        expect(tile.querySelector('img.sprite')).toBeNull();
+      }
+      unmount();
+    }
+  });
+});

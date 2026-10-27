@@ -90,6 +90,10 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
     setSettingsOpen(false);
     document.querySelector<HTMLElement>('.rail-settings')?.focus();
   }, []);
+  // Con le icone del box, il foglio di sprite di Showdown si scarica in anticipo (una volta sola)
+  useEffect(() => {
+    if (listSprite === 'box') new Image().src = 'https://play.pokemonshowdown.com/sprites/pokemonicons-sheet.png';
+  }, [listSprite]);
   useEffect(() => {
     document.documentElement.dataset.palette = paletteFor(palette, format.formatId);
   }, [palette, format.formatId]);
