@@ -75,6 +75,16 @@ describe('Panoramica di Analisi', () => {
     expect(within(panel()).getByRole('region', { name: 'Velocità' })).toHaveTextContent(/media del tier/);
   });
 
+  it("team di 3 senza statistiche: il Riassunto c'è, nessun crash, nessuna riga Minacce", async () => {
+    const user = userEvent.setup();
+    render(<App initialLang="it" data={{ ...fixtureData, stats: null, sets: null }} />);
+    for (const name of ['Great Tusk', 'Gholdengo', 'Dragapult']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
+    await user.click(screen.getByRole('tab', { name: /^Analisi/ }));
+    const summary = within(panel()).getByRole('region', { name: 'Riassunto' });
+    expect(within(summary).getByRole('button', { name: /^Colpisce/ })).toBeInTheDocument();
+    expect(within(summary).queryByRole('button', { name: /^Minacce/ })).toBeNull();
+  });
+
   it('niente più tessera Bonus/Malus né striscia "Vai al Coaching"', async () => {
     await setup(['Great Tusk', 'Dragapult']);
     // Le linguette dell'Analisi hanno "Bonus/Malus": si guarda solo la Panoramica

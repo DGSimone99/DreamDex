@@ -46,7 +46,7 @@ describe('teamSummary', () => {
   });
 
   it('campo: mosse di un membro raggruppate, meteo, nessuno', () => {
-    expect(build().summary.field.every(f => f.items.length > 0)).toBe(true);
+    expect(build().summary.field.every(f => f.items.length > 0 || f.weather)).toBe(true);
     const setter = { ...base[3], moves: ['Stealth Rock', 'Spikes', 'Roost', 'Defog'] };
     const team = [base[0], base[1], base[2], setter, base[4], base[5]];
     const field = build(team).summary.field;
@@ -56,7 +56,8 @@ describe('teamSummary', () => {
     expect(build(plain).summary.field).toEqual([]);
     const rain = [{ ...base[0], ability: 'Drizzle' }, ...base.slice(1)];
     const w = build(rain).summary.field.find(f => f.member === battleName(rain[0]))!;
-    expect(w.items).toContain('Pioggia');
+    expect(w.weather).toBe('Pioggia');
+    expect(w.items).not.toContain('Pioggia');
   });
 
   it('colpisce: lo stesso numero della card Copertura', () => {

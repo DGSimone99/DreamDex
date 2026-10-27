@@ -533,7 +533,6 @@ export const it: Record<keyof typeof en, string> = {
   'meta.missingStats': "Statistiche Smogon assenti.",
   'meta.notInStats': "non presente nelle statistiche",
   'meta.note': "Solo informativo: non influisce sulla valutazione del team.",
-  'coach.teamType': "Tipo di team",
   'coach.category.rules': "Regole",
   'coach.category.defense': "Difesa",
   'coach.category.coverage': "Offesa",

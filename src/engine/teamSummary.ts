@@ -16,7 +16,8 @@ export const TOP_ATTACKER = 85;
 /** Mosse di campo mostrate nel Riassunto (id). */
 export const FIELD_MOVES = ['stealthrock', 'spikes', 'toxicspikes', 'stickyweb', 'reflect', 'lightscreen', 'auroraveil', 'trickroom'];
 
-export interface FieldSetter { member: string; items: string[] }
+/** items: nomi inglesi delle mosse (la vista li traduce); weather: già nella lingua dell'interfaccia. */
+export interface FieldSetter { member: string; items: string[]; weather?: string }
 export interface TeamSummary {
   archetype: Archetype | null;
   styles: TeamStyle[];
@@ -46,8 +47,7 @@ export function teamSummary(team: TeamSet[], rating: TeamRating, coaching: Coach
     // Mosse di campo e meteo del membro
     const items = set.moves.filter(mv => FIELD_MOVES.includes(toID(mv)));
     const weather = weatherOf(set);
-    if (weather) items.push(conditionName(weather.condition, lang));
-    if (items.length) field.push({ member: name, items });
+    if (items.length || weather) field.push({ member: name, items, ...(weather ? { weather: conditionName(weather.condition, lang) } : {}) });
   });
 
   const weak = coaching.problems

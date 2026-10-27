@@ -1,5 +1,4 @@
 import type { Archetype } from '../engine/archetype';
-import type { Coaching } from '../engine/coach';
 import { useT } from '../i18n/react';
 import { HelpButton } from './AnalysisTabs';
 import { Icon } from './icons';
@@ -54,22 +53,6 @@ function TeamTypesGuide() {
       </ul>
       <p className="tt-note">{t('teamTypes.note')}</p>
     </div>
-  );
-}
-
-/** Tipo di team e stili (Hyper Offense, Pioggia…), col perché nel tooltip e la guida ai tipi nel "?". */
-export function TeamTypeLine({ teamType }: { teamType: NonNullable<Coaching['teamType']> }) {
-  const tr = useT();
-  return (
-    <p className="team-type">
-      <span className="team-type-label">{tr('coach.teamType')}</span>
-      <strong title={tr(`archetype.${teamType.archetype}.note`)}>{tr(`archetype.${teamType.archetype}`)}</strong>
-      {teamType.styles.map(style => (
-        <span key={style} className="team-style" title={tr(`teamStyle.${style}.note`)}>{tr(`teamStyle.${style}`)}</span>
-      ))}
-      {/* La guida ai tipi: in fondo alla riga, dopo gli stili */}
-      <TeamTypeHelp />
-    </p>
   );
 }
 

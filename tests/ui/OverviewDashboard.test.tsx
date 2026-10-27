@@ -86,9 +86,9 @@ const manyRoles: DashboardData['roles'] = {
 /** Solo i quattro essenziali coperti di manyRoles. */
 const essentialsOnly: DashboardData['roles'] = { chips: manyRoles.chips.filter(c => c.level === 'essential'), members: ['Great Tusk'], value: '4/4' };
 
-function mount({ density = 'normal' as Density, data = sample(), summary = summaryOf() } = {}) {
+function mount({ density = 'normal' as Density, data = sample(), summary = summaryOf(), members = 6 } = {}) {
   const onView = vi.fn();
-  const { unmount } = renderIt(<OverviewDashboard data={data} summary={summary} onView={onView} density={density} />);
+  const { unmount } = renderIt(<OverviewDashboard data={data} summary={summary} members={members} onView={onView} density={density} />);
   return { onView, unmount };
 }
 
@@ -304,8 +304,13 @@ describe('Riassunto', () => {
     mount({ summary: summaryOf({ walls: [], field: [], threats: null }) });
     expect(labels()).toEqual(['Tipo', 'Attaccanti', 'Colpisce', 'Debole a', 'Ruoli']);
     cleanup();
-    mount({ summary: summaryOf({ attackers: [], walls: [], field: [], weak: [], threats: null, archetype: null }) });
-    expect(labels()).toEqual(['Tipo', 'Attaccanti', 'Colpisce', 'Debole a', 'Ruoli']);
+    mount({ summary: summaryOf({ attackers: [], walls: [], field: [], threats: null }) });
+    expect(labels()).toEqual(['Tipo', 'Colpisce', 'Debole a', 'Ruoli']);
+  });
+
+  it("con un solo Pokémon la riga Tipo non c'è, le altre sì", () => {
+    mount({ members: 1 });
+    expect(labels()).toEqual(['Attaccanti', 'Muri', 'Campo', 'Colpisce', 'Debole a', 'Ruoli', 'Minacce']);
   });
 
   it('Tipo: nome del tipo e stili, "—" senza tipo, e il "?" apre la guida ai tipi di team', async () => {
@@ -313,6 +318,7 @@ describe('Riassunto', () => {
     mount({ summary: summaryOf({ styles: ['rain'] }) });
     const region = screen.getByRole('region', { name: 'Riassunto' });
     expect(region).toHaveTextContent('Hyper Offense');
+    expect(region.querySelector('.sum-arch')).toHaveAttribute('title', 'Tutto attacco, pochi o nessun muro');
     expect(region).toHaveTextContent('Pioggia');
     await user.click(within(region).getByRole('button', { name: 'Tipi di team: come si riconoscono' }));
     expect(screen.getByRole('dialog', { name: 'Tipi di team' })).toBeInTheDocument();
@@ -332,11 +338,12 @@ describe('Riassunto', () => {
   });
 
   it("Campo: il membro con le sue mosse nella lingua dell'interfaccia", () => {
-    mount({ summary: summaryOf({ field: [{ member: 'Garchomp', items: ['Stealth Rock', 'Reflect'] }] }) });
+    mount({ summary: summaryOf({ field: [{ member: 'Garchomp', items: ['Stealth Rock', 'Reflect'], weather: 'Pioggia' }] }) });
     const field = sumRow('Campo')!;
     expect(field.querySelectorAll('.sprite')).toHaveLength(1);
     expect(field).toHaveTextContent(/Lanciarocce|Stealth Rock/);
-    expect(field.querySelectorAll('.sum-pill')).toHaveLength(2);
+    expect(field.querySelectorAll('.sum-pill')).toHaveLength(3);
+    expect(field).toHaveTextContent('Pioggia');
   });
 
   it('Colpisce: N/18 tipi e pill verde se tutti, altrimenti i tipi mancanti', () => {
@@ -371,6 +378,7 @@ describe('Riassunto', () => {
     cleanup();
     mount({ summary: summaryOf({ missingRoles: ['hazards', 'pivot'] }) });
     expect(sumRow('Ruoli')).toHaveTextContent('2 mancanti');
+    expect(sumRow('Ruoli')!.querySelector('.sum-names')).toHaveTextContent(/Hazard.*Pivot/i);
     expect(sumRow('Ruoli')!.querySelector('.sum-pill')).toHaveClass('bad');
   });
 
@@ -446,7 +454,7 @@ describe('Cruscotto: misure', () => {
     const fire = stubObservers();
     const size = stubHeight();
     size.height = 700;
-    renderIt(<OverviewDashboard data={sample()} summary={summaryOf()} onView={vi.fn()} />);
+    renderIt(<OverviewDashboard data={sample()} summary={summaryOf()} members={6} onView={vi.fn()} />);
     const dash = document.querySelector('.dash')!;
     expect(dash).toHaveAttribute('data-density', 'normal');
     size.height = 300;
@@ -461,7 +469,7 @@ describe('Cruscotto: misure', () => {
     const fire = stubObservers();
     const size = stubHeight();
     size.height = 300;
-    renderIt(<OverviewDashboard data={sample()} summary={summaryOf()} onView={vi.fn()} teamCollapsed />);
+    renderIt(<OverviewDashboard data={sample()} summary={summaryOf()} members={6} onView={vi.fn()} teamCollapsed />);
     const dash = document.querySelector('.dash')!;
     expect(dash).toHaveAttribute('data-density', 'roomy');
     size.height = 1500;

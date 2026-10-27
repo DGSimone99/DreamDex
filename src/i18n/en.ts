@@ -531,7 +531,6 @@ export const en = {
   'meta.missingStats': "Smogon stats missing.",
   'meta.notInStats': "not in the stats",
   'meta.note': "For information only: it doesn't affect the team rating.",
-  'coach.teamType': "Team type",
   'coach.category.rules': "Rules",
   'coach.category.defense': "Defense",
   'coach.category.coverage': "Offense",

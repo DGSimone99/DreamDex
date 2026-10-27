@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { needLabel } from '../../engine/needs';
 import type { TeamSummary } from '../../engine/teamSummary';
 import { gameName, typeName } from '../../i18n/game';
 import { useLang, useT } from '../../i18n/react';
@@ -49,26 +50,29 @@ function Sprites({ names }: { names: string[] }) {
 const Pill = ({ tone, children }: { tone: 'ok' | 'bad' | 'neu'; children: ReactNode }) => <span className={`sum-pill ${tone}`}>{children}</span>;
 
 /** Il Riassunto della Panoramica: poche righe schematiche, ognuna porta alla sua scheda. */
-export function SummarySection({ summary, onView }: { summary: TeamSummary; density: Density; onView: (v: AnalysisView) => void }) {
+export function SummarySection({ summary, members, onView }: { summary: TeamSummary; density: Density; members: number; onView: (v: AnalysisView) => void }) {
   const t = useT();
   const lang = useLang();
   const { archetype, styles, attackers, walls, field, hits, weak, missingRoles, threats } = summary;
   const missingHits = hits.total - hits.covered;
+  const names = missingRoles.map(need => needLabel(need, lang)).join(' · ');
   const shownWeak = weak.slice(0, MAX_WEAK);
   return (
     <DashCard className="dash-summary" title={t('sum.title')}>
       <ul className="sum-rows">
-        <Row icon="team" label={t('sum.type')}>
+        {members >= 2 && <Row icon="team" label={t('sum.type')}>
           {archetype
             ? <strong className="sum-arch" title={t(`archetype.${archetype}.note`)}>{t(`archetype.${archetype}`)}</strong>
             : <span className="sum-arch">—</span>}
           {styles.map(style => <span key={style} className="team-style" title={t(`teamStyle.${style}.note`)}>{t(`teamStyle.${style}`)}</span>)}
           <TeamTypeHelp />
-        </Row>
-        <Row icon="sword" label={t('sum.attackers')} onClick={() => onView('strength')}>
-          <b className="sum-big">{attackers.length}</b><span className="sum-muted">{t('sum.top')}</span>
-          <Sprites names={attackers} />
-        </Row>
+        </Row>}
+        {attackers.length > 0 && (
+          <Row icon="sword" label={t('sum.attackers')} onClick={() => onView('strength')}>
+            <b className="sum-big">{attackers.length}</b><span className="sum-muted">{t('sum.top')}</span>
+            <Sprites names={attackers} />
+          </Row>
+        )}
         {walls.length > 0 && (
           <Row icon="shield" label={t('sum.walls')} onClick={() => onView('defense')}>
             <b className="sum-big">{walls.length}</b>
@@ -81,6 +85,7 @@ export function SummarySection({ summary, onView }: { summary: TeamSummary; dens
               <span key={setter.member} className="sum-setter">
                 <Sprites names={[setter.member]} />
                 {setter.items.map(item => <Pill key={item} tone="neu">{gameName('move', item, lang)}</Pill>)}
+                {setter.weather && <Pill tone="neu">{setter.weather}</Pill>}
               </span>
             ))}
           </Row>
@@ -101,7 +106,7 @@ export function SummarySection({ summary, onView }: { summary: TeamSummary; dens
           {weak.length > 0 && <Pill tone="bad">{t('sum.types', { n: weak.length })}</Pill>}
         </Row>
         <Row icon="roles" label={t('sum.roles')} onClick={() => onView('roles')}>
-          {missingRoles.length === 0 ? <Pill tone="ok">{t('sum.rolesOk')}</Pill> : <Pill tone="bad">{t('sum.rolesMissing', { n: missingRoles.length })}</Pill>}
+          {missingRoles.length === 0 ? <Pill tone="ok">{t('sum.rolesOk')}</Pill> : <><Pill tone="bad">{t('sum.rolesMissing', { n: missingRoles.length })}</Pill><span className="sum-names" title={names}>{names}</span></>}
         </Row>
         {threats && (
           <Row icon="warning" label={t('sum.threats')} onClick={() => onView('coaching')}>

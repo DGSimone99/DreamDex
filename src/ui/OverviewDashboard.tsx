@@ -22,9 +22,11 @@ export function densityFor(height: number): Density {
 }
 
 /** La Panoramica come cruscotto a due righe che riempie lo spazio: Riassunto | Copertura, poi Ruoli | Velocità. */
-export function OverviewDashboard({ data, summary, onView, teamCollapsed = false, density: forced }: {
+export function OverviewDashboard({ data, summary, members, onView, teamCollapsed = false, density: forced }: {
   data: DashboardData;
   summary: TeamSummary;
+  /** Quanti Pokémon ha il team: con uno solo la riga Tipo non c'è. */
+  members: number;
   onView: (v: AnalysisView) => void;
   /** Team ridotto: sempre la densità ampia. */
   teamCollapsed?: boolean;
@@ -48,7 +50,7 @@ export function OverviewDashboard({ data, summary, onView, teamCollapsed = false
   const density = forced ?? (teamCollapsed ? 'roomy' : measured);
   return (
     <div ref={ref} className={`dash ${density}`} data-density={density}>
-      <SummarySection summary={summary} density={density} onView={onView} />
+      <SummarySection summary={summary} members={members} density={density} onView={onView} />
       <CoverageSection coverage={data.coverage} onView={onView} />
       <RolesSection roles={data.roles} density={density} onView={onView} />
       <SpeedSection speed={data.speed} density={density} onView={onView} />

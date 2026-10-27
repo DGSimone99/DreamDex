@@ -50,7 +50,7 @@ export function AnalysisOverview({ team, analysis, rating, coaching, data, onVie
         {coaching && <strong>{coaching.verdict}</strong>}
         {notes.length > 0 && <AlertMark alerts={notes.map(text => ({ level: 'info' as const, text }))} />}
       </div>
-      {dash && summary && <OverviewDashboard data={dash} summary={summary} onView={onView} teamCollapsed={teamCollapsed} />}
+      {dash && summary && <OverviewDashboard data={dash} summary={summary} members={team.length} onView={onView} teamCollapsed={teamCollapsed} />}
     </div>
   );
 }
