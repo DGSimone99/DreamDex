@@ -440,15 +440,11 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
     );
   }
 
-  // Paginazione nella fascia "Candidati (N)": ‹ BOX 1/5 › e sotto un trattino per pagina
+  // Paginazione nella fascia "Candidati (N)", su una riga: ‹ un trattino per pagina ›
   const pager = pages > 1 && (
     <nav className="pager" aria-label={tr('suggest.pages')}>
       <button type="button" className="step" aria-label={tr('suggest.prev')} disabled={page === 0} onClick={() => goToPage(page - 1)}>
         <Icon name="prev" />
-      </button>
-      <span className="pager-box" aria-hidden="true">{tr('suggest.boxPage', { page: page + 1, pages })}</span>
-      <button type="button" className="step" aria-label={tr('suggest.next')} disabled={page === pages - 1} onClick={() => goToPage(page + 1)}>
-        <Icon name="next" />
       </button>
       <span className="pager-dashes">
         {Array.from({ length: pages }, (_, n) => (
@@ -456,6 +452,9 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
             onClick={() => goToPage(n)} />
         ))}
       </span>
+      <button type="button" className="step" aria-label={tr('suggest.next')} disabled={page === pages - 1} onClick={() => goToPage(page + 1)}>
+        <Icon name="next" />
+      </button>
     </nav>
   );
 

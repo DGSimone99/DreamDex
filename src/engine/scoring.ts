@@ -58,7 +58,7 @@ function tagsFor(facts: Facts, lang: Lang): string[] {
   const s = facts.synergy;
   return [
     ...facts.clashes,
-    ...facts.mechanical,
+    ...facts.mechanical.map(link => link.text),
     ...(s && s.pct >= OFTEN_TOGETHER ? [t(lang, 'tag.oftenTogether', { member: s.member, pct: Math.round(s.pct * 100) })] : []),
   ];
 }
@@ -229,7 +229,7 @@ export function scoreCandidates(team: TeamSet[], format: Format, data: EngineDat
       coverage: coverageComponent(set, analysis, team),
       roles: rolesComponent(set, analysis),
       synergy: synergyRaw(set, team, data),
-      mechanical: mechanicalLinks(set, team, lang).map(link => link.text),
+      mechanical: mechanicalLinks(set, team, lang),
       clash: clashFacts(set, team, lang),
     };
   });

@@ -150,6 +150,13 @@ describe('SuggestionsPanel', () => {
     expect(within(suggestions()).getAllByRole('navigation')).toHaveLength(1);
     expect(list().nextElementSibling?.tagName).not.toBe('NAV');
     expect(within(head).getByText('doppio clic per aggiungere')).toBeInTheDocument();
+    // Una riga sola: niente più "BOX n/N", solo ‹ trattini ›
+    expect(head.textContent).not.toMatch(/BOX/);
+    const buttons = within(pager).getAllByRole('button');
+    expect(buttons[0]).toHaveAccessibleName('Pagina precedente');
+    expect(buttons[buttons.length - 1]).toHaveAccessibleName('Pagina successiva');
+    await user.click(within(pager).getByRole('button', { name: 'Pagina successiva' }));
+    expect(within(pager).getByRole('button', { name: 'Pagina 2' })).toHaveAttribute('aria-current', 'page');
   });
 
   it('ESCE sta nella barra comandi, non sotto', async () => {
@@ -196,6 +203,23 @@ describe('SuggestionsPanel', () => {
       reasons: [{ component: 'synergy', weight: -1, text: 'La pioggia si scontra con il sole' }],
     } as never;
     expect(reasonsOf(item, 2, null, DEFAULT_FORMAT, 'it')).toEqual({ pros: false, texts: ['Nessuna differenza rilevante'] });
+  });
+
+  it("Aggiungi: le ragioni che pesano di più in forma breve, quante ne entrano (senza l'uso nel meta)", async () => {
+    const { reasonsOf } = await import('../../src/ui/candidateParts');
+    const reason = (component: string, weight: number, text: string, short: string) => ({ component, weight, text, short });
+    const item = {
+      species: 'Rotom-Wash', set: { species: 'Rotom-Wash', moves: [] }, score: 0, components: {}, tags: [], penalty: 0, facts: {},
+      reasons: [
+        reason('strength', 9, 'Uso nel meta: 20%', 'Uso nel meta: 20%'),
+        reason('defense', 5, 'Resiste ad Acqua: debolezze del team', 'Resiste ad Acqua'),
+        reason('synergy', 3, 'Usato con Great Tusk nel 30% dei team', 'Usato con Great Tusk (30%)'),
+        reason('roles', 4, 'Porta Pivot (mancanti nel team)', 'Porta Pivot'),
+        reason('coverage', 1, 'Colpisce super efficace Fuoco, scoperti dal team', 'Colpisce Fuoco'),
+      ],
+    } as never;
+    expect(reasonsOf(item, 1, null, DEFAULT_FORMAT, 'it')).toEqual({ pros: false, texts: ['Resiste ad Acqua'] });
+    expect(reasonsOf(item, 3, null, DEFAULT_FORMAT, 'it')).toEqual({ pros: false, texts: ['Resiste ad Acqua', 'Porta Pivot', 'Usato con Great Tusk (30%)'] });
   });
 
   it('il pulsante rapido resta nella riga (compare al passaggio o col focus)', async () => {

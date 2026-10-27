@@ -4,7 +4,6 @@ import type { Format } from '../engine/format';
 import { formatRules } from '../engine/formatRules';
 import type { Replacement } from '../engine/replace';
 import { rankedChanges } from '../engine/coach';
-import { topReason } from '../engine/explain';
 import { detectRoles } from '../engine/roles';
 import { OFTEN_TOGETHER, type Suggestion } from '../engine/scoring';
 import type { SwapOption, TeamGain } from '../engine/teamGain';
@@ -76,12 +75,14 @@ export function reasonsOf(item: Item, n: number, usage: number | null, format: F
   const pros = changes?.pros.slice(0, n).map(p => p.text) ?? [];
   if (pros.length) return { pros: true, texts: pros };
   // Con un cambio ma senza bonus: "nessuna differenza" (la ragione che pesa di più potrebbe essere un malus)
-  const text = changes
-    ? t(lang, 'suggest.noDifference')
-    // L'uso nel meta non è un motivo per sceglierlo: resta solo col team vuoto, dove è l'unico criterio
-    // Col team vuoto l'uso sta già a destra: qui i ruoli principali del Pokémon
-    : (usage !== null ? detectRoles(item.set, formatRules(format.formatId)).slice(0, 3).map(role => t(lang, `role.${role}`)).join(', ') : topReason(item.reasons.filter(r => r.component !== 'strength'))?.text) ?? '';
-  return { pros: false, texts: [text] };
+  if (changes) return { pros: false, texts: [t(lang, 'suggest.noDifference')] };
+  // Col team vuoto l'uso sta già a destra: qui i ruoli principali del Pokémon
+  if (usage !== null) return { pros: false, texts: [detectRoles(item.set, formatRules(format.formatId)).slice(0, 3).map(role => t(lang, `role.${role}`)).join(', ')] };
+  // Da aggiungere: le ragioni che pesano di più, in forma breve (una riga ciascuna). L'uso nel meta non è un motivo
+  // per sceglierlo; un avviso (peso negativo) solo se è l'unica ragione
+  const ranked = [...item.reasons.filter(r => r.component !== 'strength')].sort((a, b) => b.weight - a.weight);
+  const texts = ranked.filter((r, i) => i === 0 || r.weight > 0).slice(0, n).map(r => r.short);
+  return { pros: false, texts: texts.length ? texts : [''] };
 }
 
 /** Solo se il Pokémon è bannato nel formato: triangolo rosso con il tier nel tooltip. */

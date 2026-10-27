@@ -102,19 +102,18 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .list-empty { display: grid; justify-items: center; gap: 10px; padding: 40px 16px; background: var(--panel); border: 1px dashed var(--line); border-radius: 6px; text-align: center; color: var(--muted); }
 .list-empty > .icon { width: 28px; height: 28px; color: var(--faint); }
 .list-empty p { margin: 0; font-size: 15px; }
-/* Fascia "Candidati (N)": a destra il suggerimento del doppio clic e la paginazione ‹ BOX 1/5 › coi trattini sotto */
+/* Fascia "Candidati (N)" su una riga: accanto al titolo il suggerimento del doppio clic, a destra la paginazione ‹ trattini › */
 /* La fascia è alta come il pager anche senza pagine: l'altezza della lista (e il numero per pagina) non dipende da lui */
-.list-head { --pager-h: 36px; display: flex; align-items: center; gap: 12px; box-sizing: content-box; min-height: var(--pager-h); }
-.list-head .dbl-hint { margin-left: auto; font-size: 12px; color: var(--faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-.pager { flex: none; display: grid; grid-template-columns: auto auto auto; grid-template-rows: 24px 10px; height: var(--pager-h); align-items: center; justify-items: center; gap: 2px 4px; }
+.list-head { --pager-h: 26px; display: flex; align-items: center; gap: 12px; box-sizing: content-box; min-height: var(--pager-h); }
+.list-head .dbl-hint { flex: 0 1 auto; font-size: 12px; color: var(--faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.pager { flex: none; margin-left: auto; display: flex; align-items: center; gap: 4px; height: var(--pager-h); }
 .pager .step { display: grid; place-items: center; width: 24px; height: 24px; padding: 0; border: 0; background: none; color: var(--muted); }
 .pager .step:hover:not(:disabled) { color: var(--text); }
 .pager .step:disabled { opacity: 0.35; }
 .pager .step .icon { width: 14px; height: 14px; }
-.pager-box { font: 700 13px/1 var(--display); font-style: italic; letter-spacing: 0.04em; color: var(--text); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.pager-dashes { grid-column: 1 / -1; display: flex; gap: 3px; }
+.pager-dashes { display: flex; gap: 3px; }
 /* Trattino sottile, ma con un'area cliccabile più alta */
-.pager .pager-dash { width: 14px; height: 10px; min-width: 0; padding: 3px 0; border: 0; border-radius: 0; background: var(--line); background-clip: content-box; }
+.pager .pager-dash { width: 14px; height: 16px; min-width: 0; padding: 6px 0; border: 0; border-radius: 0; background: var(--line); background-clip: content-box; }
 .pager .pager-dash:hover { background-color: var(--muted); }
 .pager .pager-dash[aria-current='page'] { background-color: var(--accent); }
 
@@ -375,7 +374,7 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 @media (min-width: 1100px) {
   .picker-list { background: var(--panel); border: 1px solid var(--line-soft); }
   .picker-list > .suggestions { border: 0; }
-  .list-head { position: sticky; top: 0; z-index: 2; padding: 8px 14px; background: var(--stripes), var(--band); border-bottom: 1px solid var(--line-soft); }
+  .list-head { position: sticky; top: 0; z-index: 2; padding: 5px 14px; background: var(--stripes), var(--band); border-bottom: 1px solid var(--line-soft); }
   .list-head .box-head { position: static; margin: 0; }
 }
 .list-head .box-head { display: inline-block; flex: none; white-space: nowrap; }
@@ -503,8 +502,6 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .pill .who small { display: flex; flex-wrap: wrap; gap: 0 14px; min-width: 0; }
 .pill .reason { min-width: 0; max-width: 100%; font: 500 12px/1.3 var(--ui); color: var(--pill-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pill .reason b { margin-right: 3px; font-weight: 700; color: var(--pill-gain); }
-/* Una frase sola (senza bonus): va a capo sulle righe dei motivi che entrano, invece di tagliarsi alla prima */
-.card .reason.plain, .pill .reason.plain { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: var(--reasons, 1); white-space: normal; }
 /* Nomi dei tipi nelle varianti scure (il colore inline è per i fondi scuri) */
 .pill .type-name { --type-color: var(--type-ink-dark); }
 /* Destra: segni, icone dei tipi 18px, voto */

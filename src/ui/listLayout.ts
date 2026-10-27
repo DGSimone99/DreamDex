@@ -22,7 +22,7 @@ export function cardsLayout(width: number, openHeight: number, height: number): 
   const minTile = open < 460 ? 104 : 120;
   const rows = Math.max(1, Math.floor((open - 20 + 8) / (minTile + 8)));
   const tileHeight = Math.max(0, Math.floor((h - 20 + 8) / rows) - 8);
-  const reasons = clamp(Math.floor((tileHeight - 93) / 16), 1, 4);
+  const reasons = clamp(Math.floor((tileHeight - 93) / 16), 1, 3);
   return { columns, rows, perPage: columns * rows, tileHeight, reasons };
 }
 

@@ -32,6 +32,30 @@ describe('testi del motore', () => {
     expect(texts).toContain('Brings Pivot, special attacker (missing from the team)');
     expect(texts).toContain('Used with Great Tusk in 30% of teams');
     expect(texts).toContain('Meta usage: 12.3%');
+    const shorts = explain(facts, components, 'en').map(r => r.short);
+    expect(shorts).toEqual(expect.arrayContaining(['Immune to Ground', 'Checks Dragapult', 'Hits Fairy', 'Brings Pivot, special attacker', 'Used with Great Tusk (30%)']));
+  });
+
+  it('forme brevi per le caselle della lista, in italiano ("ad" davanti alla A)', () => {
+    initGameNames({ moves: {}, abilities: {}, items: {}, natures: {}, types: { water: 'Acqua', ground: 'Terra', fire: 'Fuoco' } });
+    const facts = {
+      defense: { immune: ['Ground' as const], covered: ['Water' as const], sharedWeak: [] },
+      threats: { checked: ['Dragapult'] },
+      coverage: { types: ['Fire' as const] },
+      roles: { filled: ['pivot' as const], style: null },
+      synergy: { member: 'Great Tusk', pct: 0.3 },
+      mechanical: [{ text: 'Abilita Venusaur: Siccità → Clorofilla', short: 'Abilita Venusaur' }], clashes: [],
+      strength: { usage: 0.1 },
+    };
+    const components = { defense: 1, threats: 1, coverage: 1, roles: 1, synergy: 1, strength: 1 };
+    const reasons = explain(facts, components, 'it');
+    const byText = Object.fromEntries(reasons.map(r => [r.text, r.short]));
+    expect(byText['Immune a Terra e resiste ad Acqua: debolezze del team']).toBe('Immune a Terra e resiste ad Acqua');
+    expect(byText['Usato con Great Tusk nel 30% dei team']).toBe('Usato con Great Tusk (30%)');
+    expect(byText['Abilita Venusaur: Siccità → Clorofilla']).toBe('Abilita Venusaur');
+    expect(byText['Colpisce super efficace Fuoco, scoperti dal team']).toBe('Colpisce Fuoco');
+    expect(byText['Porta Pivot (mancanti nel team)']).toBe('Porta Pivot');
+    expect(byText['Ferma Dragapult']).toBe('Ferma Dragapult');
   });
 });
 

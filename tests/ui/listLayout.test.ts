@@ -9,7 +9,7 @@ describe('cardsLayout', () => {
     const l = cardsLayout(460, 532, 712);
     expect(l.perPage).toBe(12);
     expect(l.tileHeight).toBe(167);
-    expect(l.reasons).toBe(4);
+    expect(l.reasons).toBe(3);
   });
   it('colonne minime 2', () => {
     expect(cardsLayout(200, 532, 532).columns).toBe(2);
