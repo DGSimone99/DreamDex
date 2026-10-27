@@ -83,7 +83,7 @@
   .band { padding: 10px 16px 20px; gap: 12px; grid-template-columns: minmax(0, 1fr) 168px; }
   .team-head { margin-bottom: 8px; }
   .slots { gap: 8px; }
-  .slot > summary, .slot.empty { min-height: 172px; padding: 6px 10px 10px; gap: 1px; }
+  .slot > summary, .slot.empty { min-height: 155px; padding: 6px 10px 10px; gap: 1px; }
   .slot > summary .sprite { width: 56px; height: 56px; }
   .slot > summary { --sprite-scale: 0.5833; }
   .slot .roles { font-size: 11px; }
@@ -92,7 +92,7 @@
   /* Tipi lunghi (Coleottero, Folletto): il chip si allarga invece di schiacciare il testo */
   .slot .type-chip { width: auto; min-width: 52px; padding-inline: 6px; }
   .empty-ring { width: 44px; height: 44px; }
-  .grade-badge .letter { font-size: 64px; }
+  .grade-badge .letter { font-size: 58px; }
   .grade-badge .overall { font-size: 18px; }
   .grade-areas { gap: 2px; margin-top: 2px; }
   .tab-body { padding: 22px 16px 0; }
@@ -365,7 +365,7 @@
 .grade-badge.none { --grade: var(--line); }
 .grade-badge .letter, .grade-badge.grade-C .letter, .grade-badge.grade-D .letter { color: var(--grade); }
 .grade-badge .label { color: var(--grade); font-weight: 600; }
-.grade-badge .grade-areas { align-self: stretch; align-content: space-evenly; gap: 6px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line-soft); }
+.grade-badge .grade-areas { align-self: stretch; align-content: space-evenly; gap: 3px; margin-top: 4px; padding-top: 6px; border-top: 1px solid var(--line-soft); }
 .grade-area { font-size: 12.5px; }
 .grade-area .meter { height: 7px; }
 .grade-area.band-S .meter > span { background: var(--accent-2); }
@@ -397,7 +397,7 @@
 .joined > .combobox input { height: 36px; }
 /* Schermi grandi e alti (1920×1080 in su): carte più alte e sprite animato della carta aperta più grande */
 @media (min-width: 1600px) and (min-height: 1000px) {
-  .slot > summary, .slot.empty { min-height: 256px; }
+  .slot > summary, .slot.empty { min-height: 230px; }
   .slot[open] > summary { --fit: 214; }
   /* Anche gli sprite delle carte chiuse un po' più grandi: le carte più alte non restano vuote */
   .slot > summary .sprite { width: 136px; height: 136px; }
