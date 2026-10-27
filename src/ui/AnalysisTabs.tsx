@@ -49,12 +49,16 @@ export function HelpButton({ title, label = title, className, children }: { titl
   );
 }
 
-/** Il "?" accanto alla scheda aperta: cosa mostra quella scheda e come conta nel voto (non nella Panoramica). */
-export function ViewHelp({ view }: { view: Exclude<AnalysisView, 'overview'> }) {
+/** Le schede con un "?": la Panoramica e il Coaching non lo hanno. */
+type HelpView = Exclude<AnalysisView, 'overview' | 'coaching'>;
+const hasHelp = (view: AnalysisView): view is HelpView => view !== 'overview' && view !== 'coaching';
+
+/** Il "?" accanto alla scheda aperta: cosa mostra quella scheda e come conta nel voto. */
+export function ViewHelp({ view }: { view: HelpView }) {
   const t = useT();
   return (
     <HelpButton title={t('help.view.button', { view: t(viewLabelKey(view)) })}>
-      {t(`help.view.${view}` as 'help.view.coaching').split('\n').map(line => <p key={line}>{line}</p>)}
+      {t(`help.view.${view}` as const).split('\n').map(line => <p key={line}>{line}</p>)}
     </HelpButton>
   );
 }
@@ -109,8 +113,8 @@ export function AnalysisTabs({ view, onView, panelId, areasDisabled = false, sco
           </button>
         ))}
       </div>
-      {/* La Panoramica non ha "?": il suo aiuto è accanto al tipo di team */}
-      {view !== 'overview' && <span className="analysis-help" style={{ left: helpLeft }}><ViewHelp view={view} /></span>}
+      {/* Panoramica e Coaching non hanno "?" (l'aiuto della Panoramica è accanto al tipo di team) */}
+      {hasHelp(view) && <span className="analysis-help" style={{ left: helpLeft }}><ViewHelp view={view} /></span>}
     </div>
   );
 }

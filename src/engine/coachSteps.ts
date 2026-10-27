@@ -12,6 +12,11 @@ export interface CoachStep {
   move: MoveFix | null;
   /** Altri problemi che la tappa copre (risolti da almeno una delle due proposte), chiavi. */
   alsoSolves: string[];
+  /**
+   * Il titolo della tappa: il suo problema e quelli della stessa categoria che ogni proposta della tappa risolve
+   * (es. "Debole a Acqua, Ghiaccio"), chiavi nell'ordine dei problemi, il problema della tappa per primo.
+   */
+  group: string[];
 }
 
 /** Colonne della mappa delle aree. */
@@ -64,7 +69,11 @@ export function buildSteps(problems: CoachProblem[], fixes: CoachFix[], moves: M
     for (const key of move?.solves ?? []) covered.add(key);
     covered.add(problem.key);
     const solved = new Set([...(swap?.solves ?? []), ...(move?.solves ?? [])]);
-    steps.push({ problem, swap, move, alsoSolves: [...solved].filter(key => key !== problem.key) });
+    const shown = [swap, move].filter(f => f !== null);
+    const group = [problem.key, ...unique
+      .filter(p => p.key !== problem.key && p.category === problem.category && shown.every(f => f.solves.includes(p.key)))
+      .map(p => p.key)];
+    steps.push({ problem, swap, move, alsoSolves: [...solved].filter(key => key !== problem.key), group });
   }
   return steps;
 }

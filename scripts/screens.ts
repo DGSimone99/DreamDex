@@ -43,6 +43,15 @@ const MOVE = [
   TEAM[4],
   SIX[5],
 ];
+// Il team dell'utente (.superpowers/sdd/coaching-tweaks/user-team.txt): voto alto, poche tappe
+const USER = [
+  member('Scizor', 'Scizorite', 'Light Metal', ['Swords Dance', 'Bullet Punch', 'Knock Off', 'Roost'], 'Impish', { hp: 248, def: 112, spd: 128, spe: 20 }),
+  member('Garchomp', 'Dragonium Z', 'Rough Skin', ['Swords Dance', 'Earthquake', 'Outrage', 'Stealth Rock'], 'Jolly', { atk: 252, spd: 4, spe: 252 }),
+  member('Victini', 'Choice Scarf', 'Victory Star', ['V-create', 'U-turn', 'Bolt Strike', 'Trick'], 'Jolly', { atk: 252, spd: 4, spe: 252 }),
+  member('Zapdos', 'Heavy-Duty Boots', 'Static', ['Volt Switch', 'Hurricane', 'Heat Wave', 'Roost'], 'Bold', { hp: 248, def: 188, spe: 72 }),
+  member('Iron Valiant', 'Choice Specs', 'Quark Drive', ['Moonblast', 'Focus Blast', 'Thunderbolt', 'Shadow Ball'], 'Timid', { def: 4, spa: 252, spe: 252 }),
+  member('Ogerpon-Cornerstone', 'Cornerstone Mask', 'Sturdy', ['Ivy Cudgel', 'Power Whip', 'Swords Dance', 'Superpower'], 'Jolly', { atk: 252, spd: 4, spe: 252 }),
+];
 const FORMAT = { formatId: 'ou', genLimit: 9, minUsage: 0.01, allowMultipleMegas: false, ignoreBans: false, meta: true };
 const hash = (team: unknown[]) => '#team=' + Buffer.from(JSON.stringify({ team, format: FORMAT })).toString('base64')
   .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
@@ -170,6 +179,28 @@ const STATES: Record<string, State> = {
     await tab(p, 'analysis');
     await wait(300);
     return clickText(p, '#analysis-view-coaching', /./);
+  } },
+  // Il team dell'utente in inglese, a tappe pronte
+  'coaching-user': { hash: hash(USER), lang: 'en', run: async p => {
+    await tab(p, 'analysis');
+    await wait(300);
+    if (!await clickText(p, '#analysis-view-coaching', /./)) return 'no coaching tab';
+    await p.waitForSelector('.coach-steps:not([aria-busy]), .coach-steps-none', { timeout: 20000 });
+    return true;
+  } },
+  // Puntatore sulla prima proposta: stampa quanti problemi della mappa sono in anteprima (barrati) e quanti risolve la proposta
+  'coaching-hover': { hash: hash(SIX), run: async p => {
+    await tab(p, 'analysis');
+    await wait(300);
+    if (!await clickText(p, '#analysis-view-coaching', /./)) return 'no coaching tab';
+    await p.waitForSelector('.coach-steps:not([aria-busy]) button.coach-fix', { timeout: 20000 });
+    const count = () => p.evaluate(() => document.querySelectorAll('.coach-prob.is-solved-preview').length);
+    const before = await count();
+    await p.hover('.coach-steps button.coach-fix');
+    await wait(250);
+    const during = await count();
+    console.log(`coaching-hover: is-solved-preview prima=${before} durante=${during}`);
+    return (before === 0 && during > 0) || `before=${before} during=${during}`;
   } },
   // Tappe con proposte di mossa (team con set poveri): stampa quante ce ne sono
   'coaching-move-steps': { hash: hash(MOVE), run: async p => {

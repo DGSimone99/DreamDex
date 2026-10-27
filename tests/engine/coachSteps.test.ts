@@ -96,6 +96,30 @@ describe('buildSteps', () => {
   });
 });
 
+describe('buildSteps: problemi raggruppati nel titolo', () => {
+  it('una proposta: il problema della tappa e quelli della stessa categoria che risolve, in ordine', () => {
+    const problems = [problem('defense:Water'), problem('defense:Ice'), problem('meta:X', 'minor', 'meta'), problem('defense:Ghost')];
+    const [step] = buildSteps(problems, [swap('S', 3, ['defense:Ice', 'meta:X', 'defense:Water'])], []);
+    expect(step.problem.key).toBe('defense:Water');
+    expect(step.group).toEqual(['defense:Water', 'defense:Ice']);
+    // alsoSolves resta completo (la mappa numera tutti i problemi coperti)
+    expect(step.alsoSolves).toEqual(['defense:Ice', 'meta:X']);
+  });
+
+  it('due proposte: solo quelli che risolvono entrambe', () => {
+    const problems = [problem('defense:Water'), problem('defense:Ice'), problem('defense:Ghost')];
+    const [step] = buildSteps(problems, [swap('S', 3, ['defense:Water', 'defense:Ice', 'defense:Ghost'])], [move(1, 2, ['defense:Water', 'defense:Ice'])]);
+    expect(step.group).toEqual(['defense:Water', 'defense:Ice']);
+    expect(step.alsoSolves).toEqual(['defense:Ice', 'defense:Ghost']);
+  });
+
+  it('niente da raggruppare: solo il problema della tappa', () => {
+    const problems = [problem('meta:X', 'minor', 'meta'), problem('defense:Ice')];
+    const [step] = buildSteps(problems, [swap('S', 3, ['meta:X', 'defense:Ice'])], []);
+    expect(step.group).toEqual(['meta:X']);
+  });
+});
+
 describe('stepNumbers', () => {
   it('problema → numero della prima tappa che lo copre, solo le prime MAX_STEPS tappe', () => {
     expect(MAX_STEPS).toBe(3);

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { analyzeTeam } from '../../src/engine/analysis';
 import { coachAdvice, coachTeam, findProblems, MIN_COVERAGE_WEIGHT } from '../../src/engine/coach';
-import { coachFixes } from '../../src/engine/coachFixes';
+import { coachFixes, keepSwaps, ZERO_GAIN_SWAPS } from '../../src/engine/coachFixes';
 import { buildSteps } from '../../src/engine/coachSteps';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
 import { moveFixes } from '../../src/engine/moveFixes';
@@ -37,8 +37,8 @@ describe('candidati del Coaching dalla classifica di Migliora team', () => {
     }
   });
 
-  it('solo cambi che alzano il voto', () => {
-    for (const fix of [...fixesSix, ...fixesThree]) expect(fix.gain).toBeGreaterThan(0);
+  it('solo cambi che alzano il voto, o a pari voto che risolvono qualcosa', () => {
+    for (const fix of [...fixesSix, ...fixesThree]) expect(fix.gain > 0 || (fix.gain === 0 && fix.solves.length > 0)).toBe(true);
   });
 
   it('risolve = il problema sparisce nel team col cambio', () => {
@@ -127,6 +127,37 @@ describe('candidati del Coaching dalla classifica di Migliora team', () => {
     const start = performance.now();
     adviceOf(six, format, fixtureData);
     expect(performance.now() - start).toBeLessThan(3000);
+  });
+});
+
+describe('keepSwaps', () => {
+  type Delta = { solves: string[]; reduces: string[]; introduces: string[] };
+  const delta = (solves: string[] = [], introduces: string[] = []): Delta => ({ solves, reduces: [], introduces });
+  const c = (species: string, gain: number, d: Delta) => ({ species, teamGain: { gain }, d });
+  const keep = (items: ReturnType<typeof c>[], limit = 5) => {
+    const asked: string[] = [];
+    const kept = keepSwaps(items, x => { asked.push(x.species); return x.d; }, limit);
+    return { kept: kept.map(k => k.species), asked, all: kept };
+  };
+
+  it('voto in più: i più forti fino al limite; a pari voto solo se risolve e non porta problemi nuovi; voto in meno mai', () => {
+    const { kept, all } = keep([
+      c('up2', 2, delta()), c('up5', 5, delta(['x'])),
+      c('zeroSolves', 0, delta(['a'])), c('zeroNothing', 0, delta()), c('zeroNew', 0, delta(['a'], ['b'])),
+      c('down', -1, delta(['a'])),
+    ]);
+    expect(kept).toEqual(['up5', 'up2', 'zeroSolves']);
+    // I problemi del cambio, senza "introduces"
+    expect(all[2]).toMatchObject({ solves: ['a'], reduces: [] });
+    expect(all[2]).not.toHaveProperty('introduces');
+    expect(keep([c('up3', 3, delta()), c('up2', 2, delta()), c('up1', 1, delta())], 2).kept).toEqual(['up3', 'up2']);
+  });
+
+  it(`a pari voto se ne provano al massimo ${ZERO_GAIN_SWAPS} per membro`, () => {
+    const zeros = Array.from({ length: 6 }, (_, i) => c(`z${i}`, 0, delta(i === 5 ? ['a'] : [])));
+    const { kept, asked } = keep(zeros);
+    expect(asked).toHaveLength(ZERO_GAIN_SWAPS);
+    expect(kept).toEqual([]);
   });
 });
 

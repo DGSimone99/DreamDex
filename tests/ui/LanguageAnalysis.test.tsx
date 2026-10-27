@@ -22,7 +22,7 @@ describe('analisi in inglese', () => {
     expect(within(analysis).getByText('Incomplete team')).toBeInTheDocument();
     // I problemi stanno nel Coaching, nella mappa per area, con i titoli in inglese
     await user.click(within(analysis).getByRole('tab', { name: 'Coaching' }));
-    expect(within(analysis).getByRole('region', { name: 'What I would do' })).toBeInTheDocument();
+    expect(within(analysis).getByRole('region', { name: 'Suggestions' })).toBeInTheDocument();
     expect(within(analysis).getByRole('group', { name: 'Defense' })).toHaveTextContent(/Weak to /);
   });
 });

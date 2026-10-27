@@ -217,6 +217,8 @@ button.member-card:hover { border-color: var(--accent); }
 .dash-todo { flex: 1; }
 .dash-head { display: flex; align-items: center; gap: 10px; min-width: 0; margin: 0 -12px 8px; padding-right: 6px; background: var(--stripes), var(--band); }
 .dash-plate { flex: none; margin: 0; padding: 4px 22px 4px 12px; font: 700 13px/1.2 var(--display); font-style: italic; color: var(--on-accent-2); background: var(--stripes), var(--accent-2); clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%); }
+/* Un h4 usato come targhetta (colonne del Coaching): la targhetta vince sullo stile degli h4 di Analisi */
+.analysis h4.dash-plate { display: block; margin: 0; font: 700 13px/1.2 var(--display); font-style: italic; text-transform: none; letter-spacing: normal; color: var(--on-accent-2); }
 .dash-meta { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: var(--muted); }
 .dash-meta b { font: 700 14px/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums; color: var(--text); }
 .dash-meta b.bad { color: var(--bad); }
@@ -399,6 +401,11 @@ button.member-card:hover { border-color: var(--accent); }
 .coach-step-body { min-width: 0; display: grid; align-content: start; gap: 6px; }
 .coach-step-problem { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: calc(2 * 1.35em); margin: 0; font-size: 14px; font-weight: 600; line-height: 1.35; color: var(--text); }
 .coach-step-problem .coach-sev { margin-right: 2px; vertical-align: 1px; }
+/* Tipi (o minacce) nel titolo: icona e nome */
+.coach-step-subject { white-space: nowrap; }
+.coach-step-subject .type-icons { display: inline-flex; margin-right: 4px; vertical-align: -2px; }
+.coach-step-subject .type-icons img { width: 16px; height: 16px; }
+.coach-step-subject.is-mon .mon-icon { margin: -10px -4px -8px -6px; vertical-align: middle; }
 .coach-prop { position: relative; display: grid; gap: 1px; min-width: 0; }
 /* La seconda proposta è un'alternativa: "oppure" sulla linea che le separa */
 .coach-prop + .coach-prop { margin-top: 3px; padding-top: 6px; border-top: 1px dashed var(--line); }
@@ -423,7 +430,7 @@ button.member-card:hover { border-color: var(--accent); }
 .coach-also .type-icons img { width: 15px; height: 15px; }
 .coach-also-mon .mon-icon { margin: -9px -6px -8px -6px; }
 .coach-also-name { display: block; flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-.coach-also-more { flex: none; padding: 0 5px; font: 600 11px/16px var(--ui); color: var(--muted); background: var(--raised); border-radius: 8px; }
+.coach-also-more { flex: none; padding: 0 5px; font: 600 11px/16px var(--ui); color: var(--muted); background: var(--raised); border-radius: 10px; }
 
 /* Mappa: quattro colonne alte uguali (una fascia), righe col ritmo della Panoramica; più quieta delle tappe */
 .coach-map { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; align-items: stretch; }
@@ -433,14 +440,21 @@ button.member-card:hover { border-color: var(--accent); }
 .coach-prob { display: grid; grid-column: 1 / -1; grid-template-columns: subgrid; align-items: baseline; padding: 5px 0; font-size: 13px; line-height: 1.35; color: var(--text); border-bottom: 1px solid var(--line-soft); }
 .coach-prob:last-child { border-bottom: 0; }
 .coach-prob-text { min-width: 0; }
+.coach-counts { white-space: nowrap; }
 .coach-prob-text .type-icons { display: inline-flex; margin-right: 5px; vertical-align: -2px; }
 .coach-prob:has(.is-threat) { align-items: center; }
 .coach-prob-text.is-threat { display: flex; align-items: center; gap: 4px; overflow: hidden; white-space: nowrap; }
 .coach-prob-text.is-threat .mon-icon { margin: -10px -6px -9px -8px; }
 .coach-prob-text.is-threat strong { overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
-/* Coperto da una tappa: attenuato (niente barrato), targhetta neutra, il numero della tappa in fondo */
-.coach-prob.is-covered .coach-prob-text { opacity: 0.5; }
-.coach-prob.is-covered > .coach-sev { color: var(--faint); background: var(--raised); }
+/*
+ * Coperto da una tappa: solo il numero della tappa in fondo. Puntatore o fuoco su una proposta: i problemi che
+ * risolve si vedono barrati su un fondo magenta tenue (l'ombra allarga il fondo oltre il testo senza spostarlo)
+ */
+.coach-prob.is-solved-preview { background: color-mix(in srgb, var(--accent-2) 14%, transparent); box-shadow: -6px 0 0 color-mix(in srgb, var(--accent-2) 14%, transparent), 6px 0 0 color-mix(in srgb, var(--accent-2) 14%, transparent); }
+.coach-prob.is-solved-preview .coach-prob-text { text-decoration: line-through; text-decoration-color: var(--accent-2-ink); text-decoration-thickness: 1.5px; }
+@media (prefers-reduced-motion: no-preference) {
+  .coach-prob { transition: background-color 120ms ease-out, box-shadow 120ms ease-out; }
+}
 .coach-by { min-width: 12px; font: 800 14px/1 var(--display); font-style: italic; text-align: right; color: color-mix(in srgb, var(--accent-2-ink) 75%, var(--panel)); }
 .coach-sep { margin: 10px 0 2px; font: 600 11px/1.2 var(--ui); text-transform: uppercase; letter-spacing: 0.08em; color: var(--faint); }
 @media (max-width: 1100px) {

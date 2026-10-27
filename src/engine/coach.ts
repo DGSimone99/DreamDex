@@ -48,7 +48,7 @@ export interface CoachProblem {
 
 /** I consigli del Coaching: a parte perché lenti, si calcolano solo con la scheda Coaching aperta. */
 export interface CoachAdvice {
-  /** Cambi dalla classifica di Migliora team che alzano il voto, coi problemi che risolvono o riducono. */
+  /** Cambi dalla classifica di Migliora team che alzano il voto (o a pari voto risolvono), coi problemi che risolvono o riducono. */
   fixes: CoachFix[];
   /** Tutte le tappe, dalla più urgente: la UI ne mostra `MAX_STEPS`. */
   steps: CoachStep[];

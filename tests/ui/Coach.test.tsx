@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/App';
@@ -23,7 +23,8 @@ const three = six.slice(0, 3);
 const data = { ...fixtureData, formatId: DEFAULT_FORMAT.formatId };
 
 const analysis = () => screen.getByRole('region', { name: 'Analisi' });
-const suggestions = () => screen.getByRole('region', { name: 'Suggerimenti' });
+// "Suggerimenti" della scheda Pokémon (anche il Coaching ha una sezione con questo nome, dentro Analisi)
+const suggestions = () => screen.getAllByRole('region', { name: 'Suggerimenti' }).find(r => !analysis().contains(r))!;
 
 /** Importa il team, apre Analisi e la scheda Coaching. */
 async function openCoaching(team: TeamSet[]) {
@@ -116,7 +117,7 @@ describe('CoachingView', () => {
     renderIt(<CoachingView coaching={coaching} advice={advice} members={team.length} rating={rating(team)} metaOn {...noop} {...over} />);
     return { coaching, advice };
   };
-  const stepsRegion = () => screen.getByRole('region', { name: 'Cosa farei io' });
+  const stepsRegion = () => screen.getByRole('region', { name: 'Suggerimenti' });
 
   it('le tappe: al massimo 3, numerate, nell\'ordine dei consigli', () => {
     const { advice } = view(six);
@@ -176,7 +177,7 @@ describe('CoachingView', () => {
     const base = { index: 0, member: 'Great Tusk', set: six[0], reduces: [] };
     const withFrom: MoveFix = { ...base, slot: 1, from: 'Rapid Spin', to: 'Knock Off', gain: 4, solves: [p1.key] };
     const empty: MoveFix = { ...base, index: 1, member: 'Gholdengo', set: six[1], slot: 3, from: '', to: 'Thunderbolt', gain: 2, solves: [p2.key] };
-    const steps = [withFrom, empty].map((move, i) => ({ problem: [p1, p2][i], swap: null, move, alsoSolves: [] }));
+    const steps = [withFrom, empty].map((move, i) => ({ problem: [p1, p2][i], swap: null, move, alsoSolves: [], group: [[p1, p2][i].key] }));
     const onMoveFix = vi.fn();
     renderIt(<CoachingView coaching={coaching} advice={{ ...advice, steps }} members={6} rating={rating(six)} metaOn onFix={() => {}} onMoveFix={onMoveFix} />);
     const user = userEvent.setup();
@@ -200,7 +201,7 @@ describe('CoachingView', () => {
     ];
     const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], threatFixes: {}, problems };
     const swap = { ...adviceOf(three, DEFAULT_FORMAT, data).fixes[0], solves: problems.slice(1).map(p => p.key) };
-    const step = { problem: problems[0], swap, move: null, alsoSolves: [] };
+    const step = { problem: problems[0], swap, move: null, alsoSolves: [], group: [problems[0].key] };
     renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [step] }} members={3} rating={rating(three)} metaOn {...noop} />);
     const also = stepsRegion().querySelector('.coach-also')!;
     expect(also.querySelectorAll('.type-icons img')).toHaveLength(3);
@@ -229,7 +230,7 @@ describe('CoachingView', () => {
     expect([gainText(3), gainText(0), gainText(-2)]).toEqual(['+3', '±0', '−2']);
     const coaching = coachTeam(six, DEFAULT_FORMAT, data);
     const move: MoveFix = { index: 0, member: 'Great Tusk', set: six[0], reduces: [], slot: 1, from: 'Rapid Spin', to: 'Knock Off', gain: 0, solves: [coaching.problems[0].key] };
-    renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [{ problem: coaching.problems[0], swap: null, move, alsoSolves: [] }] }}
+    renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [{ problem: coaching.problems[0], swap: null, move, alsoSolves: [], group: [coaching.problems[0].key] }] }}
       members={6} rating={rating(six)} metaOn {...noop} />);
     const button = within(stepsRegion()).getByRole('button', { name: 'Dai Knock Off a Great Tusk, ±0' });
     expect(button).toHaveTextContent('±0');
@@ -251,7 +252,7 @@ describe('CoachingView', () => {
     const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], threatFixes: {}, problems };
     const base = adviceOf(three, DEFAULT_FORMAT, data).fixes[0];
     const swap = { ...base, species: 'Ogerpon-Wellspring', solves: problems.map(p => p.key) };
-    renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [{ problem: problems[0], swap, move: null, alsoSolves: [] }] }}
+    renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [{ problem: problems[0], swap, move: null, alsoSolves: [], group: [problems[0].key] }] }}
       members={3} rating={rating(three)} metaOn {...noop} />);
     const also = stepsRegion().querySelector('.coach-also')!;
     expect(also).toHaveTextContent('Check per Zapdos');
@@ -337,7 +338,8 @@ describe('CoachingView', () => {
     const advice = adviceOf(three, DEFAULT_FORMAT, data);
     const add = advice.fixes.find(f => f.kind === 'add')!;
     expect(add).toBeTruthy();
-    const step = { problem: coaching.problems.find(p => add.solves.includes(p.key)) ?? coaching.problems[0], swap: add, move: null, alsoSolves: [] };
+    const problem = coaching.problems.find(p => add.solves.includes(p.key)) ?? coaching.problems[0];
+    const step = { problem, swap: add, move: null, alsoSolves: [], group: [problem.key] };
     renderIt(<CoachingView coaching={coaching} advice={{ ...advice, steps: [step] }} members={3} rating={rating(three)} metaOn {...noop} />);
     const button = within(stepsRegion()).getByRole('button', { name: `Aggiungi ${add.species}, +${add.gain}` });
     expect(button).toHaveTextContent(`Aggiungi ${add.species}`);
@@ -361,6 +363,59 @@ describe('CoachingView', () => {
     const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], problems: [], threatFixes: {} };
     renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [] }} members={6} rating={rating(six)} metaOn {...noop} />);
     expect(screen.getByText('Nessun problema: il team è a posto.')).toBeInTheDocument();
+  });
+
+  describe('tappa con debolezze raggruppate e anteprima nella mappa', () => {
+    const weak = (type: string): CoachProblem => ({ severity: 'minor', category: 'defense', text: `Debole a ${type}: 1 Debole – 0 Resistono`,
+      fixes: [], key: `defense:${type}`, subjects: [type], size: 1 });
+    const problems: CoachProblem[] = [weak('Water'), weak('Ice'), weak('Ghost'),
+      { severity: 'minor', category: 'meta', text: 'Zapdos del meta senza un check', fixes: [], key: 'meta:Zapdos', subjects: ['Zapdos'] }];
+    const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], threatFixes: {}, problems };
+    const setup = () => {
+      const base = adviceOf(three, DEFAULT_FORMAT, data).fixes[0];
+      const swap = { ...base, species: 'Rotom-Wash', solves: ['defense:Water', 'defense:Ice', 'meta:Zapdos'] };
+      const move: MoveFix = { index: 0, member: 'Great Tusk', set: three[0], reduces: [], slot: 1, from: 'Rapid Spin', to: 'Knock Off', gain: 1,
+        solves: ['defense:Ghost'] };
+      const step = { problem: problems[0], swap, move: null, alsoSolves: ['defense:Ice', 'meta:Zapdos'], group: ['defense:Water', 'defense:Ice'] };
+      const step2 = { problem: problems[2], swap: null, move, alsoSolves: [], group: ['defense:Ghost'] };
+      renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [step, step2] }} members={3} rating={rating(three)} metaOn {...noop} />);
+    };
+    const previewed = () => [...document.querySelectorAll<HTMLElement>('li.coach-prob.is-solved-preview')].map(li => li.dataset.key);
+
+    it('titolo: "Debole a" coi tipi raggruppati, senza conteggi; i raggruppati non sono in "risolve anche"', () => {
+      setup();
+      const [first, second] = within(stepsRegion()).getAllByRole('listitem');
+      const title = first.querySelector('.coach-step-problem')!;
+      expect(title).toHaveTextContent('Debole a Water, Ice');
+      expect(title).not.toHaveTextContent('Deboli');
+      expect(title).not.toHaveTextContent('Resistono');
+      expect(title.querySelectorAll('.type-icons img')).toHaveLength(2);
+      const also = first.querySelector('.coach-also')!;
+      expect(also.querySelectorAll('.type-icons img')).toHaveLength(0);
+      expect(also).toHaveTextContent('Check per Zapdos');
+      expect(second.querySelector('.coach-step-problem')).toHaveTextContent('Debole a Ghost');
+      expect(second.querySelector('.coach-also')).toBeNull();
+    });
+
+    it('di base nessun problema è barrato; puntatore sopra una proposta: solo quelli che risolve, via all\'uscita', async () => {
+      setup();
+      const user = userEvent.setup();
+      expect(previewed()).toEqual([]);
+      const swapButton = within(stepsRegion()).getByRole('button', { name: /Rotom-Wash/ });
+      await user.hover(swapButton);
+      expect(previewed().sort()).toEqual(['defense:Ice', 'defense:Water', 'meta:Zapdos']);
+      await user.unhover(swapButton);
+      expect(previewed()).toEqual([]);
+    });
+
+    it('fuoco da tastiera su una proposta: anteprima; fuori fuoco: niente', () => {
+      setup();
+      const moveButton = within(stepsRegion()).getByRole('button', { name: /^Dai Knock Off/ });
+      act(() => moveButton.focus());
+      expect(previewed()).toEqual(['defense:Ghost']);
+      act(() => moveButton.blur());
+      expect(previewed()).toEqual([]);
+    });
   });
 
   it('dice quanti bannati restano fuori dai candidati', () => {
