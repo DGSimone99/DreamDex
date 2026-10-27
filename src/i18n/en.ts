@@ -474,6 +474,7 @@ export const en = {
   'sum.attackers': "Attackers",
   'sum.walls': "Walls",
   'sum.field': "Field",
+  'sum.moreField': "{n} more field setters",
   'sum.hits': "Hits",
   'sum.weak': "Weak to",
   'sum.roles': "Roles",

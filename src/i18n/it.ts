@@ -476,6 +476,7 @@ export const it: Record<keyof typeof en, string> = {
   'sum.attackers': "Attaccanti",
   'sum.walls': "Muri",
   'sum.field': "Campo",
+  'sum.moreField': "Altri {n} che preparano il campo",
   'sum.hits': "Colpisce",
   'sum.weak': "Debole a",
   'sum.roles': "Ruoli",

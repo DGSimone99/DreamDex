@@ -206,7 +206,8 @@ button.member-card:hover { border-color: var(--accent); }
 
 
 /* Panoramica: due righe che riempiono lo spazio rimasto. Riga 1 (alta quanto il contenuto, le due card si allineano): Riassunto 8/20 | Copertura 12/20; riga 2 (il resto): Ruoli 11/20 | Velocità 9/20 */
-.dash { flex: 1; min-height: 340px; display: grid; grid-template-columns: repeat(20, minmax(0, 1fr)); grid-template-rows: auto minmax(0, 1fr); gap: 10px; overflow: hidden; }
+.dash { flex: 1; min-height: 340px; display: grid; grid-template-columns: repeat(20, minmax(0, 1fr)); grid-template-rows: minmax(0, auto) minmax(var(--dash-row2), 1fr); gap: 10px; overflow: hidden; --dash-row2: 150px; }
+/* Riga 1 alta quanto il Riassunto, ma mai a spese della riga 2: Ruoli e Velocità tengono sempre --dash-row2 */
 .dash-summary { grid-column: span 8; }
 .dash-coverage { grid-column: span 12; }
 .dash-roles { grid-column: span 11; }
@@ -234,6 +235,11 @@ button.member-card:hover { border-color: var(--accent); }
    Con .dash davanti: le regole generiche delle tabelle dell'Analisi (collapse, padding, riga sotto) non devono vincere */
 .dash .dash-matrix { width: calc(100% + 8px); margin: -4px; border-collapse: separate; border-spacing: 4px; table-layout: fixed; }
 .dash .dash-matrix th, .dash .dash-matrix thead td { border-bottom: 0; }
+/* Alta quanto il Riassunto accanto: la tabella sta al centro dello spazio, non in alto con un vuoto sotto */
+.dash .dash-coverage .dash-matrix { margin: auto -4px; }
+/* Normale e ampia: caselle e icone un po' più grandi, la tabella riempie meglio la card alta quanto il Riassunto */
+.dash:not(.tight) .dash-cell { height: 28px; }
+.dash:not(.tight) .dash-type { width: 26px; height: 26px; }
 .dash-matrix thead td, .dash-matrix th[scope='row'] { width: 64px; }
 .dash-matrix thead th { padding: 0 0 2px; }
 .dash-matrix th[scope='row'] { padding: 0 4px 0 0; font: 600 11px/1 var(--ui); text-align: right; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
@@ -317,9 +323,19 @@ button.member-card:hover { border-color: var(--accent); }
 
 /* Riassunto: righe "icona · voce · dato" (come le tabelle del cruscotto: righe sottili, numeri grandi in corsivo, pill verdi/rosse) */
 .sum-rows { flex: 1; min-height: 0; display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; }
-.sum-rows > li { flex: 1 1 0; min-height: 30px; display: flex; border-bottom: 1px solid var(--line-soft); }
+.sum-rows > li { flex: 1 1 0; min-height: 30px; display: flex; margin: 0; border-bottom: 1px solid var(--line-soft); }
 .sum-rows > li:last-child { border-bottom: 0; }
-.dash.tight .sum-rows > li { min-height: 24px; }
+/* Stretto (1366×768, 1280×800 col team aperto): righe da 20px, sprite e numeri più piccoli, perché la riga 2 abbia il suo spazio */
+.dash.tight .sum-rows > li { min-height: 20px; }
+.dash.roomy .sum-rows > li { min-height: 34px; }
+.dash.tight .sum-sprite { margin: -4px -3px -4px 0; }
+.dash.tight .sum-sprite .sprite { width: 24px; height: 24px; }
+.dash.tight .sum-big { font-size: 15px; }
+.dash.tight .sum-arch { font-size: 14px; }
+.dash.tight .sum-pill { padding: 1px 7px; }
+.dash.tight .sum-weak .type-icons img { width: 16px; height: 16px; }
+.dash.tight .sum-v .help-button { width: 18px; height: 18px; }
+.dash.tight .sum-v .help-button .icon { width: 16px; height: 16px; }
 .sum-row { flex: 1; min-width: 0; display: grid; grid-template-columns: 20px 84px minmax(0, 1fr); align-items: center; gap: 0 6px; padding: 0; color: inherit; text-align: left; background: none; border: 0; border-radius: 0; }
 button.sum-row:hover { background: var(--accent-wash); }
 .sum-ic { display: grid; place-items: center; color: var(--accent); }
@@ -332,7 +348,11 @@ button.sum-row:hover { background: var(--accent-wash); }
 .sum-v .team-style { flex: none; }
 .sum-sprite { flex: none; display: inline-flex; margin: -6px -4px -6px 0; }
 .sum-sprite .sprite { width: 30px; height: 30px; image-rendering: pixelated; }
-.sum-setter { display: inline-flex; align-items: center; gap: 4px; min-width: 0; }
+.sum-setter { flex: none; display: inline-flex; align-items: center; gap: 4px; }
+/* Campo: i piazzatori vanno a capo in righe da 20px dentro un contenitore alto una riga; chi finisce sotto diventa "+N" (useFit) */
+.sum-v.sum-fit { align-self: center; height: 20px; flex-wrap: wrap; align-content: flex-start; gap: 0 8px; }
+.sum-fit > * { min-height: 20px; }
+.sum-fit > .sum-more { display: inline-flex; align-items: center; }
 .sum-pill { flex: none; padding: 2px 8px; font: 800 10.5px/1.2 var(--ui); white-space: nowrap; border-radius: 10px; color: var(--text); background: var(--raised); }
 .sum-pill.ok { color: var(--good); background: color-mix(in srgb, var(--good) 16%, var(--panel)); }
 .sum-pill.bad { color: var(--bad); background: var(--bad-bg); }
@@ -440,7 +460,7 @@ button.sum-row:hover { background: var(--accent-wash); }
 .coach-prob:has(.is-threat) { align-items: center; }
 .coach-prob-text.is-threat { display: flex; align-items: center; gap: 4px; overflow: hidden; white-space: nowrap; }
 .coach-prob-text.is-threat .mon-icon { margin: -10px -6px -9px -8px; }
-.coach-prob-text.is-threat .coach-usage { margin-left: auto; padding-left: 6px; color: var(--muted); font-variant-numeric: tabular-nums; font-size: 12px; }
+.coach-prob-text.is-threat .coach-usage { flex: none; margin-left: auto; padding-left: 6px; color: var(--muted); font-variant-numeric: tabular-nums; font-size: 12px; }
 .coach-prob-text.is-threat strong { overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
 /*
  * Coperto da una tappa: solo il numero della tappa in fondo. Puntatore o fuoco su una proposta: i problemi che

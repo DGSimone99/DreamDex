@@ -6,22 +6,27 @@ import { useLang, useT } from '../../i18n/react';
 import type { AnalysisView } from '../analysisView';
 import { TeamTypeHelp } from '../CoachPanel';
 import { Icon, type IconName } from '../icons';
-import type { Density } from '../OverviewDashboard';
 import { Sprite } from '../Sprite';
 import { TypeIcons } from '../typeIcons';
 import { DashCard } from './DashCard';
+import { useFit } from './useFit';
 
 /** Quante icone di tipo e sprite stanno in una riga prima del "+N". */
 const MAX_WEAK = 6;
 const MAX_THREATS = 4;
 
 /** Una riga: icona · voce · dato visivo. Cliccabile verso la scheda dell'area, o fissa (la riga Tipo ha già il suo "?"). */
-function Row({ icon, label, onClick, children }: { icon: IconName; label: string; onClick?: () => void; children: ReactNode }) {
+function Row({ icon, label, onClick, fit, children }: {
+  icon: IconName; label: string; onClick?: () => void;
+  /** Il dato visivo a misura (useFit): ref del contenitore che va a capo e si taglia. */
+  fit?: (el: HTMLSpanElement | null) => void;
+  children: ReactNode;
+}) {
   const body = (
     <>
       <span className="sum-ic"><Icon name={icon} /></span>
       <span className="sum-k">{label}</span>
-      <span className="sum-v">{children}</span>
+      <span ref={fit} className={fit ? 'sum-v sum-fit' : 'sum-v'}>{children}</span>
     </>
   );
   return (
@@ -50,10 +55,13 @@ function Sprites({ names }: { names: string[] }) {
 const Pill = ({ tone, children }: { tone: 'ok' | 'bad' | 'neu'; children: ReactNode }) => <span className={`sum-pill ${tone}`}>{children}</span>;
 
 /** Il Riassunto della Panoramica: poche righe schematiche, ognuna porta alla sua scheda. */
-export function SummarySection({ summary, members, onView }: { summary: TeamSummary; density: Density; members: number; onView: (v: AnalysisView) => void }) {
+export function SummarySection({ summary, members, onView }: { summary: TeamSummary; members: number; onView: (v: AnalysisView) => void }) {
   const t = useT();
   const lang = useLang();
   const { archetype, styles, attackers, walls, field, hits, weak, missingRoles, threats } = summary;
+  // Campo: i piazzatori che stanno in una riga, gli altri nel "+N" (i nomi delle mosse cambiano larghezza con la lingua)
+  const fieldFit = useFit<HTMLSpanElement>(`${lang}|${field.map(f => `${f.member}:${f.items.join('+')}:${f.weather ?? ''}`).join()}`, field.length, { more: true, min: 1 });
+  const hiddenField = field.length - fieldFit.shown;
   const missingHits = hits.total - hits.covered;
   const names = missingRoles.map(need => needLabel(need, lang)).join(' · ');
   const shownWeak = weak.slice(0, MAX_WEAK);
@@ -80,14 +88,19 @@ export function SummarySection({ summary, members, onView }: { summary: TeamSumm
           </Row>
         )}
         {field.length > 0 && (
-          <Row icon="field" label={t('sum.field')} onClick={() => onView('roles')}>
-            {field.map(setter => (
-              <span key={setter.member} className="sum-setter">
+          <Row icon="field" label={t('sum.field')} onClick={() => onView('roles')} fit={fieldFit.ref}>
+            {field.slice(0, fieldFit.shown).map(setter => (
+              <span key={setter.member} data-fit className="sum-setter">
                 <Sprites names={[setter.member]} />
                 {setter.items.map(item => <Pill key={item} tone="neu">{gameName('move', item, lang)}</Pill>)}
                 {setter.weather && <Pill tone="neu">{setter.weather}</Pill>}
               </span>
             ))}
+            {hiddenField > 0 && (
+              <span data-fit-more className="sum-more" title={t('sum.moreField', { n: hiddenField })}>
+                <span aria-hidden="true">+{hiddenField}</span><span className="visually-hidden">{t('sum.moreField', { n: hiddenField })}</span>
+              </span>
+            )}
           </Row>
         )}
         <Row icon="target" label={t('sum.hits')} onClick={() => onView('strength')}>

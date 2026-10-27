@@ -50,7 +50,7 @@ export function OverviewDashboard({ data, summary, members, onView, teamCollapse
   const density = forced ?? (teamCollapsed ? 'roomy' : measured);
   return (
     <div ref={ref} className={`dash ${density}`} data-density={density}>
-      <SummarySection summary={summary} members={members} density={density} onView={onView} />
+      <SummarySection summary={summary} members={members} onView={onView} />
       <CoverageSection coverage={data.coverage} onView={onView} />
       <RolesSection roles={data.roles} density={density} onView={onView} />
       <SpeedSection speed={data.speed} density={density} onView={onView} />

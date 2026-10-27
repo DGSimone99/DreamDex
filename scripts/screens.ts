@@ -52,6 +52,15 @@ const USER = [
   member('Iron Valiant', 'Choice Specs', 'Quark Drive', ['Moonblast', 'Focus Blast', 'Thunderbolt', 'Shadow Ball'], 'Timid', { def: 4, spa: 252, spe: 252 }),
   member('Ogerpon-Cornerstone', 'Cornerstone Mask', 'Sturdy', ['Ivy Cudgel', 'Power Whip', 'Swords Dance', 'Superpower'], 'Jolly', { atk: 252, spd: 4, spe: 252 }),
 ];
+// Molti piazzatori di campo e mosse di campo: la riga Campo del Riassunto al limite
+const FIELD = [
+  member('Ting-Lu', 'Leftovers', 'Vessel of Ruin', ['Stealth Rock', 'Spikes', 'Earthquake', 'Whirlwind'], 'Careful', { hp: 252, spd: 252, def: 4 }),
+  member('Glimmora', 'Focus Sash', 'Toxic Debris', ['Toxic Spikes', 'Stealth Rock', 'Power Gem', 'Mortal Spin'], 'Timid', { spa: 252, spe: 252, hp: 4 }),
+  member('Grimmsnarl', 'Light Clay', 'Prankster', ['Reflect', 'Light Screen', 'Spirit Break', 'Parting Shot'], 'Careful', { hp: 252, spd: 252, def: 4 }),
+  member('Ninetales-Alola', 'Light Clay', 'Snow Warning', ['Aurora Veil', 'Blizzard', 'Moonblast', 'Encore'], 'Timid', { spa: 252, spe: 252, hp: 4 }),
+  member('Pelipper', 'Damp Rock', 'Drizzle', ['Hurricane', 'Hydro Pump', 'U-turn', 'Roost'], 'Bold', { hp: 248, def: 252, spe: 8 }),
+  SIX[0],
+];
 const FORMAT = { formatId: 'ou', genLimit: 9, minUsage: 0.01, allowMultipleMegas: false, ignoreBans: false, meta: true };
 const hash = (team: unknown[]) => '#team=' + Buffer.from(JSON.stringify({ team, format: FORMAT })).toString('base64')
   .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
@@ -163,6 +172,11 @@ const STATES: Record<string, State> = {
     await wait(300);
     return true;
   } },
+  // Il team dell'utente in inglese sulla Panoramica
+  'analysis-user': { hash: hash(USER), lang: 'en', run: async p => { await tab(p, 'analysis'); return true; } },
+  // Riassunto con righe lunghe: molti attaccanti (LONG) e molti piazzatori di campo (FIELD)
+  'analysis-long': { hash: hash(LONG), run: async p => { await tab(p, 'analysis'); return true; } },
+  'analysis-field': { hash: hash(FIELD), lang: 'en', run: async p => { await tab(p, 'analysis'); return true; } },
   'analysis-six': { hash: hash(SIX), run: async p => { await tab(p, 'analysis'); return true; } },
   'analysis-empty': { hash: '', run: async p => { await tab(p, 'analysis'); return true; } },
   'analysis-en': { hash: hash(SIX), lang: 'en', run: async p => { await tab(p, 'analysis'); return true; } },
@@ -278,7 +292,7 @@ for (const [w, h] of sizes) {
     await page.setViewport({ width: w, height: h });
     const lang = state.lang ?? 'it';
     await page.evaluateOnNewDocument(l => { localStorage.clear(); localStorage.setItem('dreamdex.lang', JSON.stringify(l)); }, lang);
-    await page.goto(URL + (state.hash ?? hash(TEAM)), { waitUntil: 'networkidle0' });
+    await page.goto(URL + (state.hash ?? hash(TEAM)), { waitUntil: 'networkidle0', timeout: 90000 });
     await wait(1500);
     const result = state.run ? await state.run(page) : true;
     if (result !== true) { console.log(`skip ${name} @${w}x${h}: ${result === false ? 'element not found' : result}`); await page.close(); continue; }
@@ -289,17 +303,20 @@ for (const [w, h] of sizes) {
       const main = document.querySelector('.main');
       const box = document.querySelector<HTMLElement>('.dash');
       // Niente funzioni con nome qui dentro: tsx aggiunge __name, che nella pagina non esiste
-      const [left, right] = ['.dash-left', '.dash-right'].map(sel => {
-        const cards = box ? [...box.querySelectorAll<HTMLElement>(`${sel} > .dash-card, ${sel} > .dash-pair`)] : [];
-        return Math.round(Math.max(0, ...cards.map(c => c.getBoundingClientRect().bottom)) * 10) / 10;
-      });
-      // Contenuto che sborda dalla sua sezione (oltre 1px) senza finire in un "+N"
-      const over = box ? [...box.querySelectorAll<HTMLElement>('.dash-card')].filter(c => c.scrollHeight - c.clientHeight > 1)
-        .map(c => c.className.split(' ').find(n => n.startsWith('dash-') && n !== 'dash-card')) : [];
+      const cards = box ? [...box.querySelectorAll<HTMLElement>(':scope > .dash-card')] : [];
+      const bottom = box ? box.getBoundingClientRect().bottom : 0;
+      const heights = cards.map(c => `${c.className.split(' ').find(n => n.startsWith('dash-') && n !== 'dash-card')?.slice(5)}:${Math.round(c.getBoundingClientRect().height)}`);
+      // Sezioni tagliate dal fondo del cruscotto, o con contenuto che sborda (oltre 1px)
+      const cut = cards.filter(c => c.getBoundingClientRect().bottom - bottom > 1).length;
+      const over = cards.filter(c => c.scrollHeight - c.clientHeight > 1)
+        .map(c => c.className.split(' ').find(n => n.startsWith('dash-') && n !== 'dash-card'));
+      // Righe del Riassunto e voci in EN tagliate in larghezza
+      const sumClip = box ? [...box.querySelectorAll<HTMLElement>('.sum-v, .sum-k, .sum-names')].filter(e => e.scrollWidth - e.clientWidth > 1).map(e => e.className).length : 0;
+      const sumRows = box ? [...box.querySelectorAll<HTMLElement>('.sum-rows > li')].map(li => Math.round(li.getBoundingClientRect().height)) : [];
       return {
         scroll: document.scrollingElement!.scrollHeight - window.innerHeight,
         clipped: main ? main.scrollHeight - main.clientHeight : 0,
-        dash: box ? `dash=${box.clientHeight} density=${box.dataset.density} left=${left} right=${right} dashBottom=${Math.round(box.getBoundingClientRect().bottom)} overflow=[${over.join(',')}]` : '',
+        dash: box ? `dash=${box.clientHeight} density=${box.dataset.density} cards=[${heights.join(',')}] cut=${cut} overflow=[${over.join(',')}] sumClip=${sumClip} rows=[${sumRows.join(',')}] hScroll=${document.scrollingElement!.scrollWidth - window.innerWidth}` : '',
       };
     });
     // Coaching: tappe che sbordano, righe "risolve anche" o nomi tagliati in larghezza, scorrimento orizzontale
@@ -309,9 +326,12 @@ for (const [w, h] of sizes) {
       const steps = [...box.querySelectorAll<HTMLElement>('.coach-step')];
       const tall = steps.filter(s => s.scrollHeight - s.clientHeight > 1).length;
       const wide = [...box.querySelectorAll<HTMLElement>('.coach-also, .coach-fix-main strong, .coach-fix-lead')].filter(e => e.scrollWidth - e.clientWidth > 1).length;
+      // Minacce: la percentuale d'uso deve restare intera dentro la riga (si accorcia il nome, non il numero)
+      const usage = [...box.querySelectorAll<HTMLElement>('.coach-usage')];
+      const usageCut = usage.filter(u => u.scrollWidth - u.clientWidth > 0 || u.getBoundingClientRect().right - u.parentElement!.getBoundingClientRect().right > 1).length;
       const row = box.querySelector('.coach-steps')?.getBoundingClientRect().height ?? 0;
       const need = Math.max(0, ...steps.map(s => [...s.querySelectorAll('.coach-step-body > *')].reduce((b, c) => Math.max(b, c.getBoundingClientRect().bottom), 0) - s.getBoundingClientRect().top));
-      return `coach: stepsRow=${Math.round(row)} contentMax=${Math.round(need)} stepOverflow=${tall} clippedLines=${wide} hScroll=${box.scrollWidth - box.clientWidth} docHScroll=${document.scrollingElement!.scrollWidth - window.innerWidth}`;
+      return `coach: stepsRow=${Math.round(row)} contentMax=${Math.round(need)} stepOverflow=${tall} clippedLines=${wide} usage=${usage.length} usageCut=${usageCut} hScroll=${box.scrollWidth - box.clientWidth} docHScroll=${document.scrollingElement!.scrollWidth - window.innerWidth}`;
     });
     const file = join(out, `${w}x${h}-${name}.png`);
     await page.screenshot({ path: file });
