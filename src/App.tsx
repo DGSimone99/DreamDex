@@ -361,6 +361,8 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
             focusSearch={searchRequest}
             listStyle={listStyle}
             listSprite={listSprite}
+            onListStyleChange={changeListStyle}
+            onListSpriteChange={changeListSprite}
             teamCollapsed={collapsed}
           />
         </TabPanel>

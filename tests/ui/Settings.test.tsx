@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { App } from '../../src/App';
@@ -93,5 +93,39 @@ describe('stile e sprite della lista', () => {
     await user.click(screen.getByRole('button', { name: 'Impostazioni' }));
     expect(screen.getByRole('radio', { name: 'Menu' })).toBeChecked();
     expect(screen.getByRole('radio', { name: 'Icona box' })).toBeChecked();
+  });
+
+  it('Vista della lista nella fascia Candidati: stile e sprite, le stesse impostazioni del dialogo', async () => {
+    const user = userEvent.setup();
+    const storage = memory();
+    render(<App initialLang="it" data={fixtureData} storage={storage} />);
+    await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Great Tusk{Enter}');
+    const panel = screen.getByRole('region', { name: 'Suggerimenti' });
+    const toggle = within(panel).getByRole('button', { name: 'Vista della lista' });
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    await user.click(toggle);
+    const pop = within(panel).getByRole('group', { name: 'Vista della lista' });
+    expect(within(pop).getByRole('radio', { name: 'Carte' })).toBeChecked();
+    await user.click(within(pop).getByRole('radio', { name: 'Menu' }));
+    await user.click(within(pop).getByRole('radio', { name: 'Icona box' }));
+    expect(loadListStyle(storage)).toBe('menu');
+    expect(loadListSprite(storage)).toBe('box');
+    expect(panel.querySelector('.suggestions.menu')).not.toBeNull();
+    // Esc chiude e riporta il focus al pulsante
+    await user.keyboard('{Escape}');
+    expect(within(panel).queryByRole('group', { name: 'Vista della lista' })).toBeNull();
+    expect(toggle).toHaveFocus();
+    // Il dialogo Impostazioni mostra le stesse scelte; cambiarle lì aggiorna la vista
+    await user.click(screen.getByRole('button', { name: 'Impostazioni' }));
+    const dialog = screen.getByRole('dialog', { name: 'Impostazioni' });
+    expect(within(dialog).getByRole('radio', { name: 'Menu' })).toBeChecked();
+    expect(within(dialog).getByRole('radio', { name: 'Icona box' })).toBeChecked();
+    await user.click(within(dialog).getByRole('radio', { name: 'Carte' }));
+    await user.keyboard('{Escape}');
+    await user.click(toggle);
+    expect(within(within(panel).getByRole('group', { name: 'Vista della lista' })).getByRole('radio', { name: 'Carte' })).toBeChecked();
+    // Un clic fuori lo chiude
+    await user.click(document.body);
+    expect(within(panel).queryByRole('group', { name: 'Vista della lista' })).toBeNull();
   });
 });

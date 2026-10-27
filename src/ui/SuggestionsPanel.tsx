@@ -28,6 +28,7 @@ import { BanMark, BoxIcon, reasonsOf, type CandidateProps, type Item } from './c
 import type { ListSprite, ListStyle } from './theme';
 import { useLang, useT } from '../i18n/react';
 import { usePerPage } from './usePerPage';
+import { ListViewMenu } from './ListViewMenu';
 
 /** Candidati in tutto; il voto del team si calcola sui primi POOL per punteggio. Per pagina: misurato (PAGE senza misura). */
 export const MAX = 50;
@@ -57,6 +58,9 @@ interface Props {
   listStyle?: ListStyle;
   /** Sprite della lista (impostazioni): normale o icona box. */
   listSprite?: ListSprite;
+  /** Cambiano stile e sprite dalla fascia "Candidati" (le stesse impostazioni del dialogo). */
+  onListStyleChange?: (style: ListStyle) => void;
+  onListSpriteChange?: (sprite: ListSprite) => void;
   /** Team nascosto: la lista ha più spazio, il numero per pagina resta quello a team aperto. */
   teamCollapsed?: boolean;
 }
@@ -83,7 +87,7 @@ export const SEARCH_DELAY = 200;
 /** I tipi di team che si possono scegliere per giudicare i cambi, dopo Nessuno. */
 const TEAM_TYPES: Archetype[] = ['hyperOffense', 'bulkyOffense', 'balance', 'semiStall', 'stall'];
 
-export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onReplaceWith, onCancelReplace, rating = null, onTarget, focusSearch, focus, listStyle = 'cards', listSprite = 'normal', teamCollapsed = false }: Props) {
+export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onReplaceWith, onCancelReplace, rating = null, onTarget, focusSearch, focus, listStyle = 'cards', listSprite = 'normal', onListStyleChange, onListSpriteChange, teamCollapsed = false }: Props) {
   const tr = useT();
   const lang = useLang();
   const [pageState, setPage] = useState(0);
@@ -280,9 +284,6 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   const actionLabelOf = (item: Item) => (item.replaces !== undefined
     ? tr('suggest.swapAction', { member: memberName(item.replaces) })
     : tr(replacing ? 'suggest.replaceWith' : 'suggest.add'));
-  const quickLabelOf = (item: Item) => (item.replaces !== undefined
-    ? tr('suggest.swapQuick', { species: item.species, member: memberName(item.replaces) })
-    : replacing ? tr('suggest.replaceQuick', { species: item.species }) : tr('suggest.addQuick', { species: item.species }));
   /** Modalità: aggiungere o migliorare (tutto il team o un membro). */
   const chooseMode = (next: 'add' | 'improve') => {
     if (next === 'add') {
@@ -427,8 +428,6 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
               selected: item === selected,
               onSelect: () => select(item),
               actionLabel: actionLabelOf(item),
-              quickLabel: quickLabelOf(item),
-              replacing: view !== 'add',
               onAction: () => act(item),
               format,
               lists: data.userLists,
@@ -495,6 +494,9 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
               <h2 className="box-head">{tr('suggest.listHead', { n: items.length })}</h2>
               <span className="dbl-hint">{tr(view === 'add' ? 'suggest.dblHint.add' : 'suggest.dblHint.replace')}</span>
               {pager}
+              {onListStyleChange && onListSpriteChange && (
+                <ListViewMenu listStyle={listStyle} listSprite={listSprite} onListStyleChange={onListStyleChange} onListSpriteChange={onListSpriteChange} />
+              )}
             </div>
           )}
           {body}

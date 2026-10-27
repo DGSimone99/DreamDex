@@ -25,7 +25,7 @@ describe('SuggestionsPanel', () => {
   it('ordina i suggerimenti per il voto che darebbero al team', async () => {
     await setup('Great Tusk', 'Gholdengo');
     // Corviknight, Kingambit, Rotom-Wash, Toxapex (Dragapult è Uber in National Dex)
-    expect(within(suggestions()).getAllByRole('button', { name: /^Aggiungi .+ al team$/ })).toHaveLength(4);
+    expect(list().querySelectorAll('li')).toHaveLength(4);
     const grades = within(list()).getAllByLabelText(/^Voto del team: [SABCD] \d+ \((\+\d+|−\d+|±0)\)$/)
       .map(cell => Number(/ (\d+) \(/.exec(cell.getAttribute('aria-label')!)![1]));
     expect(grades).toHaveLength(4);
@@ -94,14 +94,14 @@ describe('SuggestionsPanel', () => {
     expect(within(suggestions()).getByRole('button', { name: 'Migliora team' })).toHaveAttribute('aria-pressed', 'true');
     expect(within(suggestions()).getByRole('button', { name: 'Aggiungi' })).toBeDisabled();
     expect(within(screen.getByRole('group', { name: 'Chi sostituire' })).getByRole('button', { name: 'Tutti' })).toHaveAttribute('aria-pressed', 'true');
-    // Dal voto più alto; ogni riga dice chi esce, e il pulsante rapido fa lo scambio
+    // Dal voto più alto; ogni riga dice chi esce, e il doppio clic fa lo scambio
     const grades = within(list()).getAllByLabelText(/^Voto del team: /).map(cell => Number(/ (\d+) \(/.exec(cell.getAttribute('aria-label')!)![1]));
     expect(grades.length).toBeGreaterThan(0);
     expect(grades).toEqual([...grades].sort((a, b) => b - a));
     const first = list().querySelector('li')!;
     const out = within(first).getAllByText(/^Al posto di /)[0].textContent!.replace('Al posto di ', '');
     const name = rowNames()[0];
-    await user.click(within(first).getByRole('button', { name: `Metti ${name} al posto di ${out}` }));
+    await user.dblClick(first.querySelector<HTMLElement>('.result')!);
     expect(within(team()).getByText(name)).toBeInTheDocument();
     expect(within(team()).queryByText(out)).toBeNull();
   });
@@ -149,7 +149,7 @@ describe('SuggestionsPanel', () => {
     // In fondo alla lista non c'è più un altro pager
     expect(within(suggestions()).getAllByRole('navigation')).toHaveLength(1);
     expect(list().nextElementSibling?.tagName).not.toBe('NAV');
-    expect(within(head).getByText('doppio clic per aggiungere')).toBeInTheDocument();
+    expect(within(head).getByText('doppio clic: aggiungi')).toBeInTheDocument();
     // Una riga sola: niente più "BOX n/N", solo ‹ trattini ›
     expect(head.textContent).not.toMatch(/BOX/);
     const buttons = within(pager).getAllByRole('button');
@@ -210,7 +210,7 @@ describe('SuggestionsPanel', () => {
     const { reasonsOf } = await import('../../src/ui/candidateParts');
     const reason = (component: string, weight: number, text: string, short: string) => ({ component, weight, text, short });
     const item = {
-      species: 'Rotom-Wash', set: { species: 'Rotom-Wash', moves: [] }, score: 0, components: {}, tags: [], penalty: 0, facts: {},
+      species: 'Rotom-Wash', set: { species: 'Rotom-Wash', moves: [], ability: 'Levitate', item: 'Leftovers', nature: 'Bold', evs: {}, ivs: {} }, score: 0, components: {}, tags: [], penalty: 0, facts: {},
       reasons: [
         reason('strength', 9, 'Uso nel meta: 20%', 'Uso nel meta: 20%'),
         reason('defense', 5, 'Resiste ad Acqua: debolezze del team', 'Resiste ad Acqua'),
@@ -228,9 +228,44 @@ describe('SuggestionsPanel', () => {
     expect(roles.pros).toBe(false);
   });
 
-  it('il pulsante rapido resta nella riga (compare al passaggio o col focus)', async () => {
+  it('Porta: il dettaglio mostra tutte le voci, le caselle le prime nello stesso ordine (senza "Usato con")', async () => {
+    const { bringsOf, reasonsOf } = await import('../../src/ui/candidateParts');
+    const { SuggestionDetail } = await import('../../src/ui/SuggestionDetail');
+    const { formatRules } = await import('../../src/engine/formatRules');
+    const { renderIt } = await import('../helpers/italian');
+    const reason = (component: string, weight: number, text: string, short: string) => ({ component, weight, text, short });
+    const set = { species: 'Rotom-Wash', item: 'Leftovers', ability: 'Levitate', moves: ['Hydro Pump'], nature: 'Bold', evs: { hp: 252 } };
+    const item = {
+      species: 'Rotom-Wash', set, score: 50, components: {}, tags: [], penalty: 0, facts: { clashes: [] },
+      reasons: [
+        { ...reason('synergy', 9, 'Usato con Great Tusk nel 30% dei team', 'Usato con Great Tusk (30%)'), usedWith: true },
+        reason('coverage', 1, 'Colpisce super efficace Fuoco, scoperti dal team', 'Colpisce Fuoco'),
+        reason('defense', 5, 'Resiste ad Acqua: debolezze del team', 'Resiste ad Acqua'),
+        reason('synergy', 3, 'Abilita Venusaur: Siccità → Clorofilla', 'Abilita Venusaur'),
+        reason('roles', 4, 'Porta Pivot (mancanti nel team)', 'Pivot'),
+        reason('threats', 2, 'Ferma Kingambit', 'Ferma Kingambit'),
+      ],
+    } as never;
+    renderIt(<SuggestionDetail item={item} rank={2} team={[]} replaceIndex={null} data={fixtureData} format={DEFAULT_FORMAT} rating={null} usage={null} banMark={null} actionLabel="Aggiungi al team" onAction={() => {}} />);
+    const points = [...screen.getByRole('heading', { name: 'Porta' }).closest('section')!.querySelectorAll('li')].map(li => li.textContent);
+    // Tutte le voci (niente più tetto a 3), dalla più pesante; "Usato con" in fondo
+    expect(points.slice(0, 5)).toEqual(['Resiste ad Acqua: debolezze del team', 'Porta Pivot (mancanti nel team)', 'Abilita Venusaur: Siccità → Clorofilla', 'Ferma Kingambit', 'Colpisce super efficace Fuoco, scoperti dal team']);
+    expect(points[points.length - 1]).toBe('Usato con Great Tusk nel 30% dei team');
+    // Le caselle: le prime voci della stessa lista, in forma breve
+    const brings = bringsOf(item, 'it', formatRules(DEFAULT_FORMAT.formatId));
+    expect(brings.map(b => b.text)).toEqual(points);
+    for (const n of [1, 2, 3]) {
+      const { texts } = reasonsOf(item, n, null, DEFAULT_FORMAT, 'it');
+      expect(texts).toEqual(brings.slice(0, n).map(b => b.short));
+      expect(texts.map(short => brings.find(b => b.short === short)!.text)).toEqual(points.slice(0, n));
+    }
+  });
+
+  it('niente pulsante rapido nelle caselle: si aggiunge col doppio clic o dal dettaglio', async () => {
     await setup('Great Tusk');
-    expect(list().querySelector('li button.quick')).not.toBeNull();
+    expect(list().querySelector('li button.quick')).toBeNull();
+    // Nella casella l'unico pulsante è il nome (apre il dettaglio)
+    expect([...list().querySelector('li')!.querySelectorAll('button')].map(b => b.className)).toEqual(['pick']);
   });
 
   it('senza dati: messaggio', () => {
@@ -376,7 +411,7 @@ describe('riga della lista', () => {
     expect(screen.getByRole('button', { name: 'Annulla' })).toBeInTheDocument();
   }, 30000);
 
-  it('doppio clic sul pulsante +: niente azione in più dalla riga', async () => {
+  it('doppio clic sulla casella: aggiunge una volta sola; sul nome solo lo apre', async () => {
     const { SuggestionsPanel } = await import('../../src/ui/SuggestionsPanel');
     const { renderIt } = await import('../helpers/italian');
     const { emptySet } = await import('../../src/engine/sets');
@@ -384,9 +419,10 @@ describe('riga della lista', () => {
     const user = userEvent.setup();
     renderIt(<SuggestionsPanel team={[{ ...emptySet('Great Tusk'), ability: 'Protosynthesis', moves: ['Headlong Rush'] }]} format={DEFAULT_FORMAT} data={fixtureData}
       replaceIndex={null} onAdd={set => added.push(set.species)} onReplaceWith={() => {}} onCancelReplace={() => {}} />);
-    await user.dblClick(list().querySelector<HTMLElement>('li button.quick')!);
-    // Due clic sul pulsante (come prima); il doppio clic non deve aggiungerne un terzo dalla riga
-    expect(added).toHaveLength(2);
+    await user.dblClick(list().querySelector<HTMLElement>('li button.pick')!);
+    expect(added).toHaveLength(0);
+    await user.dblClick(list().querySelector<HTMLElement>('li .result')!);
+    expect(added).toHaveLength(1);
   });
 
   it("focus su un candidato all'11° posto: pagina 2, lui nel dettaglio, ricerca azzerata", async () => {
@@ -539,8 +575,8 @@ describe('stile Carte', () => {
       const item = { species: 'Great Tusk', set: tusk, score: 0, components: {}, tags: [], penalty: 0, reasons: [],
         facts: { clashes: [] }, teamGain: { gain, grade: 'B', overall: 70 } } as never;
       const { container, unmount } = renderIt(
-        <ol><CandidateCard rank={1} item={item} reasons={{ pros: false, texts: ['x'] }} sprite={null} usage={null} quickLabel="q" actionLabel="a"
-          replacing={false} selected={false} onSelect={() => {}} onAction={() => {}} format={DEFAULT_FORMAT} /></ol>);
+        <ol><CandidateCard rank={1} item={item} reasons={{ pros: false, texts: ['x'] }} sprite={null} usage={null} actionLabel="a"
+          selected={false} onSelect={() => {}} onAction={() => {}} format={DEFAULT_FORMAT} /></ol>);
       const li = container.querySelector('li.card')!;
       const result = { first: li.classList.contains('first'), strong: li.querySelector('.tag strong')!.className, text: li.querySelector('.tag')!.textContent };
       unmount();

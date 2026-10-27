@@ -1,12 +1,12 @@
-// I pezzi comuni a ogni candidato della lista (Carte e Menu): voto o uso, segni, motivi, chi esce, pulsante rapido
+// I pezzi comuni a ogni candidato della lista (Carte e Menu): voto o uso, segni, motivi, chi esce
 import type { MouseEvent, ReactNode } from 'react';
 import type { Format } from '../engine/format';
-import { formatRules } from '../engine/formatRules';
+import { formatRules, type FormatRules } from '../engine/formatRules';
 import type { Replacement } from '../engine/replace';
 import { rankedChanges } from '../engine/coach';
 import { detectRoles } from '../engine/roles';
 import { OFTEN_TOGETHER, type Suggestion } from '../engine/scoring';
-import type { SwapOption, TeamGain } from '../engine/teamGain';
+import type { ScoredArea, SwapOption, TeamGain } from '../engine/teamGain';
 import type { TeamSet } from '../engine/sets';
 import { isUserBanned, isUserFavorite, type EffectiveLists } from '../engine/lists';
 import { formatLabel } from '../engine/formats';
@@ -45,9 +45,7 @@ export interface CandidateProps {
   usage: number | null;
   /** Il membro che uscirebbe (raccomandazioni libere). */
   out?: string;
-  quickLabel: string;
   actionLabel: string;
-  replacing: boolean;
   /** Candidato scelto dalla ricerca (Invio lo aggiunge). */
   picked?: boolean;
   /** Candidato mostrato nel dettaglio. */
@@ -55,7 +53,7 @@ export interface CandidateProps {
   onSelect: () => void;
   onAction: () => void;
   format: Format;
-  /** Liste dell'utente, per i segni ♥ e ⊘. */
+  /** Liste dell'utente: ⊘ accanto al nome, ♥ sul voto (il preferito sale in classifica). */
   lists?: EffectiveLists;
 }
 
@@ -65,25 +63,51 @@ export const isLead = (rank: number, item: Item) => rank === 1 && !(item.teamGai
 /** +7, −3, ±0. */
 export const signed = (n: number) => (n > 0 ? `+${n}` : n < 0 ? `−${-n}` : '±0');
 
+/** L'area del voto di cui parla una ragione, per non ripetere i guadagni del cambio. */
+const REASON_AREA: Partial<Record<string, ScoredArea>> = { defense: 'defense', coverage: 'strength', roles: 'roles' };
+
+/** Una voce di "Porta": il testo lungo (dettaglio) e quello breve (caselle). */
+export interface Bring { text: string; short: string; usedWith?: true }
+
 /**
- * I motivi sotto il nome, dal bonus che vale più punti voto in giù (al massimo `n`). Il malus resta nel dettaglio.
- * Col team vuoto i ruoli principali; senza bonus "nessuna differenza".
+ * Tutto quello che il candidato porta, in un solo ordine per dettaglio e caselle: i guadagni del cambio (dal più pesante),
+ * poi le ragioni dalla più pesante (l'uso nel meta non dice perché sceglierlo), col team vuoto i ruoli; "Usato con" per ultimo.
+ * Il dettaglio le mostra tutte, le caselle le prime (senza "Usato con": lo dice il segno ciano).
  */
-export function reasonsOf(item: Item, n: number, usage: number | null, format: Format, lang: Lang): ReasonSummary {
+export function bringsOf(item: Item, lang: Lang, rules: FormatRules): Bring[] {
   const diff = 'diff' in item ? item.diff : null;
   const changes = diff ? rankedChanges(diff, item.teamGain?.areaPoints, lang) : null;
-  const pros = changes?.pros.slice(0, n).map(p => p.text) ?? [];
-  if (pros.length) return { pros: true, texts: pros };
-  // Con un cambio ma senza bonus: "nessuna differenza" (la ragione che pesa di più potrebbe essere un malus)
-  if (changes) return { pros: false, texts: [t(lang, 'suggest.noDifference')] };
-  // Col team vuoto l'uso sta già a destra: qui i ruoli principali del Pokémon
-  if (usage !== null) return { pros: false, texts: [detectRoles(item.set, formatRules(format.formatId)).slice(0, 3).map(role => t(lang, `role.${role}`)).join(', ')] };
-  // Da aggiungere: le ragioni che pesano di più, in forma breve (una riga ciascuna). L'uso nel meta non è un motivo
-  // per sceglierlo; "usato con" lo dice già il segno ciano; un avviso (peso negativo) solo se è l'unica ragione
-  const ranked = item.reasons.filter(r => r.component !== 'strength' && !r.usedWith).sort((a, b) => b.weight - a.weight);
-  const texts = ranked.filter((r, i) => i === 0 || r.weight > 0).slice(0, n).map(r => r.short);
-  // Col "+" verde se è un vero bonus; un avviso (peso negativo) o niente restano senza
-  return { pros: texts.length > 0 && ranked[0].weight > 0, texts: texts.length ? texts : [''] };
+  // Una ragione che ripete un guadagno della stessa area ("Resiste a Volante" e "Resistente a Volante") si salta
+  const covered = new Set(changes?.pros.map(p => p.area));
+  const reasons = item.reasons
+    // Gli avvisi (peso negativo: meteo in conflitto, mosse indebolite) vanno in Toglie, non qui
+    .filter(reason => reason.weight >= 0 && reason.component !== 'strength' && !covered.has(REASON_AREA[reason.component] as ScoredArea))
+    .map((reason, i) => ({ reason, i }))
+    .sort((a, b) => b.reason.weight - a.reason.weight || a.i - b.i)
+    .map(({ reason }): Bring => ({ text: reason.text, short: reason.short ?? reason.text, ...(reason.usedWith && { usedWith: true as const }) }));
+  // Col team vuoto non c'è niente da confrontare: Porta dice cosa sa fare il Pokémon (i suoi ruoli)
+  const roles = !item.teamGain && !changes ? detectRoles(item.set, rules).map(role => t(lang, `role.${role}`)) : [];
+  const all: Bring[] = [
+    ...(changes?.pros.map(p => ({ text: p.text, short: p.text })) ?? []),
+    ...reasons,
+    ...roles.map(text => ({ text, short: text })),
+  ];
+  // Una voce sola per testo; "Usato con X" sempre per ultimo
+  const seen = new Set<string>();
+  const unique = all.filter(b => !seen.has(b.text) && !!seen.add(b.text));
+  return [...unique.filter(b => !b.usedWith), ...unique.filter(b => b.usedWith)];
+}
+
+/**
+ * I motivi sotto il nome: le prime `n` voci di Porta del dettaglio, in forma breve (stesso ordine, mai una voce che il
+ * dettaglio non ha). Il malus resta nel dettaglio. Col team vuoto i ruoli principali; senza bonus "nessuna differenza".
+ */
+export function reasonsOf(item: Item, n: number, usage: number | null, format: Format, lang: Lang): ReasonSummary {
+  const rules = formatRules(format.formatId);
+  // Col team vuoto l'uso sta già a destra: qui i ruoli principali del Pokémon, in una riga
+  if (usage !== null) return { pros: false, texts: [detectRoles(item.set, rules).slice(0, 3).map(role => t(lang, `role.${role}`)).join(', ')] };
+  const texts = bringsOf(item, lang, rules).filter(b => !b.usedWith).slice(0, n).map(b => b.short);
+  return texts.length ? { pros: true, texts } : { pros: false, texts: [t(lang, 'suggest.noDifference')] };
 }
 
 /** Solo se il Pokémon è bannato nel formato: triangolo rosso con il tier nel tooltip. */
@@ -93,15 +117,16 @@ export function BanMark({ species, format, floating = false }: { species: string
   return banned ? <AlertMark floating={floating} alerts={[{ level: 'danger', text: t(lang, 'suggest.banned', { tier: label, format: formatLabel(format, lang) }) }]} /> : null;
 }
 
-/** ♥ nei Preferiti dell'utente, ⊘ nella sua lista Ban (mostrato perché cercato per nome o con "mostra"). */
+/** Il candidato è nei Preferiti dell'utente (e non nella sua lista Ban): il voto lo dice col ♥. */
+export const isFavoriteCandidate = (set: TeamSet, lists?: EffectiveLists) =>
+  !isUserBanned(set, lists && { ...lists, allow: undefined }) && isUserFavorite(set, lists);
+
+/** ⊘ nella lista Ban dell'utente (mostrato perché cercato per nome o con "mostra"); il ♥ dei Preferiti sta sul voto. */
 function ListMarks({ set, lists }: { set: TeamSet; lists?: EffectiveLists }) {
   const tr = useT();
-  const banned = isUserBanned(set, lists && { ...lists, allow: undefined });
-  const favorite = !banned && isUserFavorite(set, lists);
-  if (!banned && !favorite) return null;
+  if (!isUserBanned(set, lists && { ...lists, allow: undefined })) return null;
   return (
-    <span className={`list-mark ${banned ? 'ban' : 'fav'}`} role="img" aria-label={tr(banned ? 'lists.bannedMark' : 'lists.favoriteMark')}
-      title={tr(banned ? 'lists.bannedMark' : 'lists.favoriteMark')}><Icon name={banned ? 'ban' : 'heart'} /></span>
+    <span className="list-mark ban" role="img" aria-label={tr('lists.bannedMark')} title={tr('lists.bannedMark')}><Icon name="ban" /></span>
   );
 }
 
@@ -124,25 +149,31 @@ export function CandidateMarks({ item, format, lists }: { item: Item; format: Fo
   );
 }
 
-/** Il voto del team col candidato (+7); col primo Pokémon, il suo uso nel meta. */
-export function ResultCell({ item, usage, className = '' }: { item: Item; usage: number | null; className?: string }) {
+/**
+ * Il voto del team col candidato (+7); col primo Pokémon, il suo uso nel meta.
+ * Un preferito ha il ♥ davanti e il bordo del colore dei Preferiti: è più in alto per quello (lo dice il tooltip).
+ */
+export function ResultCell({ item, usage, favorite = false, className = '' }: { item: Item; usage: number | null; favorite?: boolean; className?: string }) {
   const tr = useT();
   const lang = useLang();
   const result = item.teamGain;
-  const cls = `result${className ? ` ${className}` : ''}`;
+  const cls = ['result', favorite && 'fav', className].filter(Boolean).join(' ');
+  const boost = favorite ? tr('lists.favoriteBoost') : undefined;
+  // Il motivo del ♥ anche per gli screen reader, in fondo all'etichetta del voto
+  const label = (text: string) => (boost ? `${text} · ${boost}` : text);
+  const heart = favorite && <span className="fav-heart" aria-hidden="true"><Icon name="heart" /></span>;
   if (!result) {
-    return usage === null
-      ? <span className={cls} aria-hidden="true" />
-      : (
-        <span className={cls} aria-label={tr('suggest.usageAria', { pct: formatPercent(lang, usage) })}>
-          <strong>{formatPercent(lang, usage)}</strong><small>{tr('suggest.usageShort')}</small>
-        </span>
-      );
+    if (usage === null) return favorite ? <span className={cls} aria-label={boost} title={boost}>{heart}</span> : <span className={cls} aria-hidden="true" />;
+    return (
+      <span className={cls} aria-label={label(tr('suggest.usageAria', { pct: formatPercent(lang, usage) }))} title={boost}>
+        {heart}<strong>{formatPercent(lang, usage)}</strong><small>{tr('suggest.usageShort')}</small>
+      </span>
+    );
   }
   const gain = signed(result.gain);
   return (
-    <span className={cls} aria-label={tr('suggest.teamGrade', { grade: result.grade, n: result.overall, gain })}>
-      <strong className={result.gain < 0 ? 'worse' : result.gain === 0 ? 'same' : undefined}>{gain}</strong>
+    <span className={cls} aria-label={label(tr('suggest.teamGrade', { grade: result.grade, n: result.overall, gain }))} title={boost}>
+      {heart}<strong className={result.gain < 0 ? 'worse' : result.gain === 0 ? 'same' : undefined}>{gain}</strong>
     </span>
   );
 }
@@ -178,18 +209,9 @@ export function OutMark({ member }: { member: string }) {
   );
 }
 
-/** Il pulsante rapido "+" o scambio: compare passando sul candidato o col focus. */
-export function QuickButton({ quickLabel, actionLabel, replacing, onAction }: Pick<CandidateProps, 'quickLabel' | 'actionLabel' | 'replacing' | 'onAction'>) {
-  return (
-    <button type="button" className="quick" aria-label={quickLabel} title={actionLabel} onClick={e => { e.stopPropagation(); onAction(); }}>
-      <Icon name={replacing ? 'swap' : 'plus'} />
-    </button>
-  );
-}
-
 /**
  * Clic sul candidato = lo apre nel dettaglio; doppio clic = aggiunge o fa lo scambio
- * (non sui pulsanti: il pulsante rapido fa già la sua azione).
+ * (non sul nome: il suo pulsante apre soltanto).
  */
 export const candidateHandlers = ({ onSelect, onAction }: Pick<CandidateProps, 'onSelect' | 'onAction'>) => ({
   onClick: onSelect,

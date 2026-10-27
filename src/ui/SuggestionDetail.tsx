@@ -4,8 +4,7 @@ import { rankedChanges } from '../engine/coach';
 import { getSpecies } from '../engine/dex';
 import { rateTeam, type TeamRating } from '../engine/rating';
 import type { Archetype } from '../engine/archetype';
-import { areaDrops, extrasDelta, withCandidate, type ScoredArea, type SwapOption, type TeamGain } from '../engine/teamGain';
-import { detectRoles } from '../engine/roles';
+import { areaDrops, extrasDelta, withCandidate, type SwapOption, type TeamGain } from '../engine/teamGain';
 import { rulesOf } from '../engine/formatRules';
 import { formatPercent } from '../i18n';
 import type { Replacement } from '../engine/replace';
@@ -18,16 +17,13 @@ import { useLang, useT } from '../i18n/react';
 import { copyText } from './clipboard';
 import { Icon } from './icons';
 import { ItemIcon } from './ItemIcon';
+import { bringsOf } from './candidateParts';
 import { PokemonIcon, PokemonName } from './PokemonName';
 import { battleAbility, battleName } from '../engine/dex';
 import { Sprite, TypeChip } from './Sprite';
 import { StatsBadge } from './StatsBadge';
 import { MoveName, Typed } from './TypeText';
 
-/** Voci di Porta e Toglie al massimo: la scheda deve stare in una schermata. */
-const MAX_POINTS = 3;
-/** L'area del voto di cui parla una ragione, per non ripetere i guadagni del cambio. */
-const REASON_AREA: Partial<Record<string, string>> = { defense: 'defense', coverage: 'strength', roles: 'roles' };
 
 /**
  * Il candidato selezionato nella lista, dall'alto per importanza: chi è e quanto sale il voto, cosa porta e cosa toglie,
@@ -65,22 +61,12 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
   const delta = (value: number) => (value > 0 ? `+${value}` : value < 0 ? `−${-value}` : '');
   const result = item.teamGain;
 
-  // Porta: i guadagni del cambio (dal più pesante), poi le ragioni; l'uso nel meta non dice perché sceglierlo
-  // Una ragione che ripete un guadagno della stessa area ("Resiste a Volante" e "Resistente a Volante") si salta
-  const covered = new Set(changes?.pros.map(p => p.area));
-  const reasons = item.reasons
-    // Gli avvisi (peso negativo: meteo in conflitto, mosse indebolite) vanno in Toglie, non qui
-    .filter(reason => reason.weight >= 0 && reason.component !== 'strength' && !covered.has(REASON_AREA[reason.component] as ScoredArea));
-  // Col team vuoto non c'è niente da confrontare: Porta dice cosa sa fare il Pokémon (i suoi ruoli)
-  const roles = !item.teamGain && !changes ? detectRoles(set, rulesOf(data)).map(role => tr(`role.${role}`)) : [];
-  const shown = [...new Set([...(changes?.pros.map(p => p.text) ?? []), ...reasons.map(reason => reason.text), ...roles])].slice(0, MAX_POINTS);
-  // Stessi punti di prima, ma "Usato con X" sempre per ultimo
-  const usedWith = new Set(reasons.filter(reason => reason.usedWith).map(reason => reason.text));
-  const brings = [...shown.filter(text => !usedWith.has(text)), ...shown.filter(text => usedWith.has(text))];
+  // Porta: tutto, nello stesso ordine delle caselle della lista (che ne mostrano le prime voci)
+  const brings = bringsOf(item, lang, rulesOf(data)).map(bring => bring.text);
   // Toglie: le perdite del cambio e gli avvisi (meteo in conflitto, mosse indebolite)
-  const loses = [...(changes?.cons.map(c => c.text) ?? []), ...(item.facts.clashes ?? []).map(text => text.replace(/^⚠\s*/, ''))].slice(0, MAX_POINTS);
+  const loses = [...(changes?.cons.map(c => c.text) ?? []), ...(item.facts.clashes ?? []).map(text => text.replace(/^⚠\s*/, ''))];
   // Senza perdite da elencare ma con aree in calo, Toglie dice quali (mai "niente" accanto a pillole rosse)
-  if (replacing && !loses.length && before && after) loses.push(...areaDrops(before, after).slice(0, 2).map(drop => `${drop.label} ${delta(drop.change)}`));
+  if (replacing && !loses.length && before && after) loses.push(...areaDrops(before, after).map(drop => `${drop.label} ${delta(drop.change)}`));
   // Problemi risolti o nuovi, meteo e Tera: la parte del voto che le aree non spiegano, con la sua pillola
   const extras = before && after ? extrasDelta(before, after) : 0;
   // Aggiungendo non si perde nessuno: Toglie compare solo se c'è un avviso

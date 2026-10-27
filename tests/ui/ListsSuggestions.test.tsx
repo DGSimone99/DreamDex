@@ -80,7 +80,13 @@ describe('liste nella scheda Pokémon', () => {
     const { storage } = withLists(favorites(favorite));
     await setup(storage, 'Great Tusk', 'Gholdengo');
     await waitFor(() => expect(rowNames().indexOf(favorite)).toBeLessThan(at));
-    expect(within(suggestions()).getAllByLabelText('Nei tuoi Preferiti').length).toBeGreaterThan(0);
+    // Il ♥ sta sul voto e ne spiega la salita; nella riga del nome niente cuore
+    const row = suggestions().querySelectorAll('.suggestions li')[rowNames().indexOf(favorite)];
+    const tag = within(row as HTMLElement).getByLabelText(/ · Più in alto perché è tra i tuoi preferiti$/);
+    expect(tag).toHaveAttribute('title', 'Più in alto perché è tra i tuoi preferiti');
+    expect(tag.querySelector('.fav-heart')).not.toBeNull();
+    expect(row.querySelector('.name-line .list-mark')).toBeNull();
+    expect(within(suggestions()).queryAllByLabelText('Nei tuoi Preferiti')).toHaveLength(0);
   });
 
   it('la stella delle card del team non tocca le liste', async () => {

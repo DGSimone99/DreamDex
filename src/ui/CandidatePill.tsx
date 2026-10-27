@@ -4,7 +4,7 @@ import { typeName } from '../i18n/game';
 import { useLang } from '../i18n/react';
 import { typeColor } from './Sprite';
 import { TypeIcons } from './typeIcons';
-import { CandidateMarks, OutMark, PickButton, QuickButton, Reasons, ResultCell, candidateHandlers, isLead, stateClasses, type CandidateProps } from './candidateParts';
+import { CandidateMarks, OutMark, PickButton, Reasons, ResultCell, candidateHandlers, isFavoriteCandidate, isLead, stateClasses, type CandidateProps } from './candidateParts';
 
 /**
  * Stile "Menu": una pillola chiara come i menu di Spada e Scudo. Tondo dello sprite che sporge a sinistra,
@@ -34,9 +34,8 @@ export function CandidatePill(props: CandidateProps) {
         <TypeIcons types={types} className="pill-types" title={typeNames} />
         {/* Le icone sono decorative: i tipi agli screen reader come testo */}
         <span className="visually-hidden">{typeNames}</span>
-        <ResultCell item={item} usage={usage} className="score" />
+        <ResultCell item={item} usage={usage} favorite={isFavoriteCandidate(item.set, lists)} className="score" />
       </span>
-      <QuickButton {...props} />
     </li>
   );
 }
