@@ -17,7 +17,7 @@ describe('Riquadro Voto', () => {
     for (const name of ['Great Tusk', 'Gholdengo']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
     expect(band()).toHaveTextContent(/Voto [SABCD], \d+ su 100, \w+/);
     const areas = within(band()).getAllByRole('button', { name: /, apri il dettaglio/ }).map(b => b.getAttribute('aria-label')!.replace(/ \d+, apri il dettaglio.*/, ''));
-    expect(areas).toEqual(['Difesa', 'Offesa', 'Ruoli', 'Velocità']);
+    expect(areas).toEqual(['Offesa', 'Difesa', 'Velocità', 'Ruoli']);
     expect(band()).not.toHaveTextContent('Sinergia');
   });
 

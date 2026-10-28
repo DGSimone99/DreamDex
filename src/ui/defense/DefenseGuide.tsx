@@ -47,18 +47,18 @@ export function DefenseGuideSection({ section, defense, meta, exposed }: { secti
       <>
         <h5>{g('what')}</h5>
         <Rows rows={[
+          [t('detail.coverageTypes'), g('what.types')],
           [t('ddetail.robustness'), g('what.robustness')],
           [t('ddetail.sustain'), g('what.sustain')],
-          [t('detail.coverageTypes'), g('what.types')],
           ...(meta ? [[t('detail.coverageMeta'), g('what.meta', { n: metaRows })] as [string, string]] : []),
         ]} />
         <h5>{g('weights')}</h5>
         <Rows rows={[[t('area.defense'), g(meta ? 'weights.meta' : 'weights.tier')]]} />
         {team([
           [t('area.defense'), defense.value],
+          [t('detail.coverageTypes'), defense.coverageTypes.value],
           [t('ddetail.robustness'), defense.robustness],
           [t('ddetail.sustain'), defense.sustain],
-          [t('detail.coverageTypes'), defense.coverageTypes.value],
           ...(defense.coverageMeta ? [[t('detail.coverageMeta'), defense.coverageMeta.value] as [string, number]] : []),
         ])}
       </>
