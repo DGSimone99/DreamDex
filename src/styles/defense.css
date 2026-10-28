@@ -307,7 +307,7 @@
 .guide-weights-axis { display: flex; justify-content: space-between; margin: 4px 0 0; font-size: 11px; color: var(--faint); }
 .guide-weights-axis span:first-child::before { content: '← '; }
 .guide-weights-axis span:last-child::after { content: ' →'; }
-.ad-panel .guide-sum, .guide-sum { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 10px 0 0; font-size: 14px; color: var(--faint); }
+.ad-panel .guide-sum, .guide-sum { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 16px 0 0; font-size: 14px; color: var(--faint); }
 .guide-sum span { padding: 3px 10px; border: 1px solid var(--line); border-radius: 3px; background: var(--raised); color: var(--muted); }
 .guide-sum span b { margin-right: 4px; color: var(--text); font-variant-numeric: tabular-nums; }
 .guide-sum span.out { border-color: var(--accent-2); background: var(--accent-2-soft); color: var(--text); font-weight: 600; }
