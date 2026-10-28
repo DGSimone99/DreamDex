@@ -5,6 +5,13 @@ import { useLang, useT } from '../../i18n/react';
 type Section = 'general' | 'robustness' | 'sustain' | 'coverageTypes' | 'coverageMeta';
 type Key = Parameters<ReturnType<typeof useT>>[0];
 
+/** La scala della Sicurezza di un tipo: ogni punto di saldo vale 25%. */
+const SCALE = [
+  { balance: '−2', pct: 0, tag: 'serious', tone: 'bad' }, { balance: '−1', pct: 25, tag: 'minor', tone: 'warn' },
+  { balance: '0', pct: 50, tag: 'even', tone: 'even' }, { balance: '+1', pct: 75, tag: 'ok', tone: 'ok' },
+  { balance: '+2', pct: 100, tag: 'safe', tone: 'good' },
+] as const;
+
 /** Righe termine / regola della guida; `stacked`: la regola sotto il termine. */
 function Rows({ rows, stacked = false }: { rows: [ReactNode, ReactNode][]; stacked?: boolean }) {
   return (
@@ -100,21 +107,49 @@ export function DefenseGuideSection({ section, defense, meta }: { section: Secti
   if (section === 'coverageTypes') {
     return (
       <>
-        <h5>{g('types.per')}</h5>
-        <Rows rows={[[g('types.balance'), g('types.balance.rule')]]} />
-        <Points items={[
-          { label: g('types.immune'), value: '+2' }, { label: '×¼', value: dec('+1,5') }, { label: '×½', value: '+1' },
-          { label: g('types.neutral'), value: '0' }, { label: '×2', value: '−1' }, { label: '×4', value: '−2' },
-        ]} />
+        <h5>{g('types.two')}</h5>
+        <div className="guide-two">
+          <div>
+            <h6>{g('types.weighted')}</h6>
+            <Points items={[
+              { label: g('types.immune'), value: '+2' }, { label: '×¼', value: dec('+1,5') }, { label: '×½', value: '+1' },
+              { label: g('types.neutral'), value: '0' }, { label: '×2', value: '−1' }, { label: '×4', value: '−2' },
+            ]} />
+          </div>
+          <div>
+            <h6>{g('types.members')}</h6>
+            <Points items={[
+              { label: g('types.resists'), value: '+1' }, { label: g('types.neutral'), value: '0' }, { label: g('types.weakOne'), value: '−1' },
+            ]} />
+          </div>
+        </div>
+        <p className="guide-formula"><b>{g('types.balance')}</b> = {g('types.formula')}</p>
+
         <h5>{g('types.tosafety')}</h5>
-        <Rows rows={[
-          [g('types.zero'), g('types.zero.rule')],
-          [g('types.safe'), g('types.safe.rule')],
-          [g('types.open'), g('types.open.rule')],
-          [g('types.weak'), g('types.weak.rule')],
-          [g('types.average'), g('types.average.rule')],
-          ...(meta ? [[g('types.split'), g('types.split.rule')] as [string, string]] : []),
-        ]} />
+        <ol className="guide-scale" aria-label={g('types.tosafety')}>
+          {SCALE.map(step => (
+            <li key={step.balance} className={step.tone}>
+              <span>{g('types.balance')} {step.balance}</span><b>{step.pct}%</b><small>{g(`types.tag.${step.tag}`)}</small>
+            </li>
+          ))}
+        </ol>
+        <p className="guide-note">{g('types.weakZone')}</p>
+
+        <h5>{g('types.example')}</h5>
+        <div className="guide-example">
+          <span className="guide-mults" aria-hidden="true">
+            {['×½', '×½', '×½', '×2', '×2', '×4'].map((m, i) => <i key={i} className={i < 3 ? 'res' : i === 5 ? 'x4' : 'weak'}>{m}</i>)}
+          </span>
+          <span>{g('types.ex.weighted')} <b>+3 −4 = −1</b></span>
+          <span>{g('types.ex.members')} <b>+3 −3 = 0</b></span>
+          <span>{g('types.balance')} <b>{dec('−0,5')}</b> → <b className="warn">38%</b> {g('types.tag.minor')}</span>
+        </div>
+
+        <h5>{g('types.vote')}</h5>
+        <ul className="guide-lines">
+          <li><b>{g('types.average')}</b> = {g('types.average.rule')}</li>
+          {meta && <li><b>{g('types.split')}</b>: {g('types.split.rule')}</li>}
+        </ul>
       </>
     );
   }

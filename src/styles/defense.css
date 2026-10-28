@@ -241,3 +241,37 @@
 /* Come funziona: nome e peso su una riga, la descrizione sotto */
 .guide-rows.stacked > div { grid-template-columns: 1fr; gap: 3px; padding: 8px 0; }
 .guide-rows.stacked dd { color: var(--muted); }
+
+/* Guida, Coverage tipi: i due conti affiancati, la formula, la scala del saldo e l'esempio svolto */
+.guide-two { display: grid; grid-template-columns: 3fr 2fr; gap: 10px; }
+.guide-two > div { padding: 8px 10px 2px; border: 1px solid var(--line-soft); border-radius: 4px; background: color-mix(in srgb, var(--raised) 40%, transparent); }
+.guide-two h6 { margin: 0 0 6px; font-size: 12px; font-weight: 600; color: var(--text); }
+.guide-formula { margin: 8px 0 0; font-size: 14px; color: var(--muted); }
+.guide-formula b { color: var(--text); }
+.guide-scale { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; margin: 0; padding: 0; list-style: none; }
+.guide-scale li { display: grid; justify-items: center; gap: 1px; padding: 6px 4px; border-radius: 4px; border-top: 3px solid var(--line); background: var(--raised); }
+.guide-scale span { font-size: 12px; color: var(--muted); }
+.guide-scale b { font: italic 700 18px/1.1 var(--display); color: var(--text); font-variant-numeric: tabular-nums; }
+.guide-scale small { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+.guide-scale .bad { border-top-color: var(--bad); background: var(--bad-bg); }
+.guide-scale .warn { border-top-color: var(--warn); background: var(--warn-bg); }
+.guide-scale .ok { border-top-color: color-mix(in srgb, var(--good) 60%, var(--line)); }
+.guide-scale .good { border-top-color: var(--good); background: var(--good-bg); }
+.guide-scale .bad small { color: var(--bad); }
+.guide-scale .warn small { color: var(--warn); }
+.guide-scale .good small { color: var(--good); }
+.guide-example { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; font-size: 14px; color: var(--muted); }
+.guide-example b { color: var(--text); font-variant-numeric: tabular-nums; }
+.guide-example b.warn { color: var(--warn); }
+.guide-mults { display: inline-flex; gap: 3px; }
+.guide-mults i { display: inline-grid; place-items: center; min-width: 30px; height: 22px; border: 1px solid var(--line); border-radius: 3px; font: normal 700 12px/1 var(--ui); color: var(--text); background: var(--raised); }
+.guide-mults .res { background: color-mix(in srgb, var(--good) 12%, var(--raised)); border-color: color-mix(in srgb, var(--good) 35%, var(--line)); color: var(--muted); }
+.guide-mults .weak { background: color-mix(in srgb, var(--bad) 28%, var(--panel)); border-color: color-mix(in srgb, var(--bad) 80%, transparent); }
+.guide-mults .x4 { background: color-mix(in srgb, var(--bad) 48%, var(--panel)); border-color: var(--bad); }
+@media (max-width: 560px) {
+  .guide-two { grid-template-columns: 1fr; }
+}
+.guide-two .guide-points { gap: 4px; margin-bottom: 6px; }
+.guide-two .guide-points li { padding: 2px 8px; font-size: 13px; gap: 6px; }
+.guide-lines { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; font-size: 14px; color: var(--muted); }
+.guide-lines b { color: var(--text); }
