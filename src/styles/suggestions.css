@@ -318,6 +318,17 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 
 .detail-roles { list-style: none; display: flex; flex-wrap: wrap; gap: 4px; margin: 0; padding: 0; }
 .detail-roles li { padding: 1px 8px; border: 1px solid var(--line); border-radius: 4px; font-size: 13px; font-weight: 500; color: var(--muted); white-space: nowrap; }
+/* Meta (team chiuso): uso, poi "Spesso usato con" e i compagni come pillole (icona, nome, %), in ciano chi è già nel team */
+.detail-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 0; font-size: 14px; }
+.detail-meta .meta-usage { color: var(--muted); }
+.detail-meta .meta-usage strong { color: var(--text); font-variant-numeric: tabular-nums; }
+.detail-meta .meta-label { margin-left: 6px; color: var(--muted); }
+.detail-meta .meta-mates { display: contents; }
+.detail-meta .meta-mate { display: inline-flex; align-items: center; gap: 4px; padding: 1px 8px 1px 4px; border: 1px solid var(--line); border-radius: 4px; font-size: 13px; font-weight: 500; white-space: nowrap; }
+.detail-meta .meta-mate .mon-icon { margin: -6px -4px -6px -4px; }
+.detail-meta .meta-mate strong { color: var(--muted); font-weight: 600; font-variant-numeric: tabular-nums; }
+.detail-meta .meta-mate.in-team { border-color: var(--accent); background: var(--accent-soft); }
+.detail-meta .meta-mate.in-team strong { color: var(--text); }
 .detail-roles li.main { border-color: var(--accent); background: var(--accent-soft); color: var(--text); font-weight: 700; }
 .detail-id h3 { font-style: italic; }
 .detail-score strong { font-style: italic; }
@@ -333,6 +344,8 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
   clip-path: polygon(0 0, 100% 0, calc(100% - 9px) 100%, 0 100%);
 }
 .detail-reasons li::before { background: var(--accent); }
+/* Etichetta solo per gli screen reader (Effetto sul team): niente targhetta magenta, il ritaglio resta quello che la nasconde */
+.detail-sec h4.visually-hidden { padding: 0; clip-path: inset(50%); }
 .detail.first .detail-actions .go {
   background: var(--accent-2);
   border-color: var(--accent-2);
