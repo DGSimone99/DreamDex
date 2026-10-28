@@ -310,6 +310,60 @@ describe('CoachingView', () => {
     expect(also).not.toHaveTextContent('Check per Ogerpon-Wellspring');
   });
 
+  describe('strisce dei suggerimenti', () => {
+    const strip = (over: { swap?: boolean; move?: boolean; add?: boolean }) => {
+      const coaching = coachTeam(three, DEFAULT_FORMAT, data);
+      const problem = coaching.problems[0];
+      const base = adviceOf(three, DEFAULT_FORMAT, data).fixes[0];
+      const swap = over.swap === false ? null
+        : over.add ? { ...base, kind: 'add' as const, member: null, species: 'Rotom-Wash', solves: [problem.key] }
+        : { ...base, kind: 'swap' as const, member: 'Great Tusk', species: 'Rotom-Wash', solves: [problem.key] };
+      const move: MoveFix | null = over.move ? { index: 1, member: 'Gholdengo', set: three[1], reduces: [], slot: 1, from: '', to: 'Thunderbolt', gain: 1, solves: [problem.key] } : null;
+      const step = { problem, swap, move, alsoSolves: [], group: [problem.key] };
+      const handlers = { onFix: vi.fn(), onMoveFix: vi.fn(), onApplyFix: vi.fn(), onApplyMove: vi.fn() };
+      renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [step] }} members={3} rating={rating(three)} metaOn {...handlers} />);
+      return { step, handlers, li: within(stepsRegion()).getByRole('listitem') };
+    };
+
+    it('una sola proposta principale per striscia: il suo pulsante applica lo scambio', async () => {
+      const { step, handlers, li } = strip({ move: true });
+      expect(li).toHaveClass('coach-strip');
+      expect(li.querySelectorAll('.coach-prop.is-main')).toHaveLength(1);
+      await userEvent.setup().click(within(li.querySelector<HTMLElement>('.coach-prop.is-main')!).getByRole('button', { name: /^Al posto di Great Tusk: Rotom-Wash/ }));
+      expect(handlers.onApplyFix).toHaveBeenLastCalledWith(step.swap);
+    });
+
+    it('tappa con sola mossa: la mossa è la proposta principale', async () => {
+      const { step, handlers, li } = strip({ swap: false, move: true });
+      const main = li.querySelector<HTMLElement>('.coach-prop.is-main')!;
+      const button = within(main).getByRole('button', { name: /^Dai / });
+      await userEvent.setup().click(button);
+      expect(handlers.onApplyMove).toHaveBeenLastCalledWith(step.move);
+      expect(li.querySelectorAll('.coach-alt')).toHaveLength(1);
+      expect(li.querySelector('.coach-strip-extras .coach-prop')).toBeNull();
+    });
+
+    it('tappa con scambio e mossa: "oppure" con la mossa nella colonna di destra', () => {
+      const { li } = strip({ move: true });
+      const or = li.querySelector<HTMLElement>('.coach-strip-extras .coach-prop.is-move')!;
+      expect(or).toHaveAttribute('data-or', 'oppure');
+      expect(within(or).getByRole('button', { name: /^Dai Thunderbolt/ })).toBeInTheDocument();
+      expect(li.querySelectorAll('.coach-alt')).toHaveLength(2);
+    });
+
+    it('scambio: chi esce in piccolo, chi entra animato', () => {
+      const { li } = strip({});
+      expect(li.querySelector('.coach-strip-out .sprite')).not.toBeNull();
+      expect(li.querySelector('.coach-strip-in .sprite-ani')).not.toBeNull();
+    });
+
+    it('aggiunta: nessuno esce, resta "Aggiungi"', () => {
+      const { li } = strip({ add: true });
+      expect(li.querySelector('.coach-strip-out')).toBeNull();
+      expect(li.querySelector('.coach-prop.is-main')).toHaveTextContent('Aggiungi');
+    });
+  });
+
   it('le tessere dei problemi vengono prima dei suggerimenti', () => {
     view(six);
     const map = screen.getByRole('region', { name: 'Problemi per area' });

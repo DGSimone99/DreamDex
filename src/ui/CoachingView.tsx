@@ -51,22 +51,6 @@ function Template({ text, parts }: { text: string; parts: Record<string, ReactNo
 /** Il voto in più di una proposta: "+3", a pari voto "±0" (mai "+0"). */
 export const gainText = (gain: number) => (gain > 0 ? `+${gain}` : gain < 0 ? `−${-gain}` : '±0');
 
-/** Il corpo di una proposta: sprite, una riga piccola (chi cambia), il nome grande col voto in più, "risolve anche". */
-function FixBody({ sprite, lead, name, gain, title, also }: {
-  sprite: string; lead: ReactNode; name: string; gain: number; title?: string; also?: ReactNode;
-}) {
-  return (
-    <>
-      <span className="coach-fix-sprite"><Sprite species={sprite} size={56} /></span>
-      <span className="coach-fix-text">
-        <span className="coach-fix-lead" title={title}>{lead}</span>{' '}
-        <span className="coach-fix-main"><strong>{name}</strong> <span className="coach-gain">{gainText(gain)}</span></span>
-        {also}
-      </span>
-    </>
-  );
-}
-
 /** Anteprima nella mappa: i problemi risolti (`solves`), `null` per toglierla. */
 type OnPreview = (solves: string[] | null) => void;
 
@@ -77,19 +61,18 @@ const previewHandlers = (solves: string[], onPreview: OnPreview) => ({
 });
 
 /**
- * Una proposta: tutta l'area (sprite, nome, voto, "risolve anche" in `children`) è il pulsante che applica il cambio; accanto, fuori
- * dal pulsante, un'icona piccola apre le alternative (scheda Pokémon o editor). Puntatore o fuoco: anteprima nella mappa.
+ * Una proposta: il pulsante che applica il cambio (`children`) e, accanto, l'icona piccola che apre le alternative
+ * (scheda Pokémon o editor). Puntatore o fuoco: anteprima nella mappa. `describedBy`: la riga "risolve anche".
  */
-function Proposal({ className = '', label, alsoId, solves, onApply, onAlternatives, alternativesFor, onPreview, or, children }: {
-  className?: string; label: string; alsoId: string; solves: string[]; onApply: () => void; onAlternatives: () => void; alternativesFor: string;
+function Proposal({ className, label, describedBy, solves, onApply, onAlternatives, alternativesFor, onPreview, or, children }: {
+  className: string; label: string; describedBy: string; solves: string[]; onApply: () => void; onAlternatives: () => void; alternativesFor: string;
   onPreview: OnPreview; or?: string; children: ReactNode;
 }) {
   const tr = useT();
   const alternatives = tr('coach.steps.alternativesAria', { name: alternativesFor });
   return (
-    <div className={`coach-prop${className ? ` ${className}` : ''}`} data-or={or} {...previewHandlers(solves, onPreview)}>
-      {/* "risolve anche" (se c'è) descrive il pulsante: il nome resta corto */}
-      <button type="button" className="coach-fix" aria-label={label} aria-describedby={alsoId} onClick={onApply}>{children}</button>
+    <div className={`coach-prop ${className}`} data-or={or} {...previewHandlers(solves, onPreview)}>
+      <button type="button" className="coach-fix" aria-label={label} aria-describedby={describedBy} onClick={onApply}>{children}</button>
       <button type="button" className="coach-alt" aria-label={alternatives} title={tr('coach.steps.alternatives')} onClick={onAlternatives}>
         <Icon name="search" />
       </button>
@@ -97,44 +80,57 @@ function Proposal({ className = '', label, alsoId, solves, onApply, onAlternativ
   );
 }
 
-/** Un cambio di Pokémon: icona del membro e ⇄ sopra Y in grande col voto in più (o "Aggiungi" sopra Y); il clic lo applica. */
-function SwapProposal({ fix, skip, problems, onApply, onFix, onPreview }: {
-  fix: CoachFix; skip: string[]; problems: CoachProblem[]; onApply: (fix: CoachFix) => void; onFix: (fix: CoachFix) => void; onPreview: OnPreview;
+/**
+ * Un cambio di Pokémon, la proposta principale della striscia: chi esce piccolo e spento, ⇄, chi entra grande e animato
+ * col nome e il voto in più (in aggiunta: "Aggiungi" al posto di chi esce). Il suo pulsante copre tutta la striscia.
+ */
+function SwapProposal({ fix, alsoId, onApply, onFix, onPreview }: {
+  fix: CoachFix; alsoId: string; onApply: (fix: CoachFix) => void; onFix: (fix: CoachFix) => void; onPreview: OnPreview;
 }) {
   const tr = useT();
-  const alsoId = useId();
   const gain = gainText(fix.gain);
   const label = fix.kind === 'add'
     ? tr('coach.fixAddAria', { species: fix.species, gain })
     : tr('coach.fixSwapAria', { member: fix.member ?? '', species: fix.species, gain });
-  // Al posto delle parole "Al posto di X": l'icona del membro e il simbolo di scambio (il nome nel tooltip)
-  const lead = fix.kind === 'swap'
-    ? <span className="coach-fix-from"><PokemonIcon name={fix.member ?? ''} /><Icon name="swap" /></span>
-    : tr('coach.steps.add');
   return (
-    <Proposal label={label} alsoId={alsoId} solves={fix.solves} onApply={() => onApply(fix)} onAlternatives={() => onFix(fix)} alternativesFor={fix.species}
-      onPreview={onPreview}>
-      <FixBody sprite={fix.species} lead={lead} name={fix.species} gain={fix.gain} title={fix.kind === 'swap' ? tr('coach.steps.swap', { member: fix.member ?? '' }) : undefined}
-        also={<Also id={alsoId} solves={fix.solves} skip={skip} problems={problems} self={fix.species} />} />
+    <Proposal className="is-main" label={label} describedBy={alsoId} solves={fix.solves} onApply={() => onApply(fix)} onAlternatives={() => onFix(fix)}
+      alternativesFor={fix.species} onPreview={onPreview}>
+      {fix.kind === 'swap' ? (
+        <>
+          <span className="coach-strip-out" title={tr('coach.steps.swap', { member: fix.member ?? '' })}><Sprite species={fix.member ?? ''} size={52} /></span>
+          <span className="coach-strip-arrow"><Icon name="swap" /></span>
+        </>
+      ) : <><span className="coach-strip-add">{tr('coach.steps.add')}</span>{' '}</>}
+      <span className="coach-strip-in"><Sprite species={fix.species} size={72} animated /></span>
+      <span className="coach-fix-main"><strong>{fix.species}</strong></span>
+      <span className="coach-gain">{gain}</span>
     </Proposal>
   );
 }
 
-/** Un cambio di mossa: "Dai a Y · al posto di Z", poi la mossa in grande col voto in più; il clic lo applica. */
-function MoveProposal({ fix, skip, problems, or, onApply, onMoveFix, onPreview }: {
-  fix: MoveFix; skip: string[]; problems: CoachProblem[]; or?: string; onApply: (fix: MoveFix) => void; onMoveFix: (fix: MoveFix) => void; onPreview: OnPreview;
+/**
+ * Un cambio di mossa: "Dai a Y · al posto di Z", la mossa col voto in più. Da sola è la proposta principale (sprite del
+ * membro grande); accanto a uno scambio è l'alternativa "oppure" nella colonna di destra, col suo "risolve anche".
+ */
+function MoveProposal({ fix, main, alsoId, skip, problems, or, onApply, onMoveFix, onPreview }: {
+  fix: MoveFix; main: boolean; alsoId: string; skip: string[]; problems: CoachProblem[]; or?: string;
+  onApply: (fix: MoveFix) => void; onMoveFix: (fix: MoveFix) => void; onPreview: OnPreview;
 }) {
   const tr = useT();
   const lang = useLang();
-  const alsoId = useId();
   const to = gameName('move', fix.to, lang);
   const from = fix.from ? tr('coach.steps.moveFrom', { from: gameName('move', fix.from, lang) }) : '';
   const lead = <><Template text={tr('coach.steps.move')} parts={{ member: <b>{fix.member}</b> }} />{from && ` · ${from}`}</>;
+  const title = `${tr('coach.steps.move', { member: fix.member })}${from ? ` · ${from}` : ''}`;
   return (
-    <Proposal className="is-move" or={or} label={tr('coach.steps.moveAria', { move: to, member: fix.member, gain: gainText(fix.gain) })} alsoId={alsoId}
-      solves={fix.solves} onApply={() => onApply(fix)} onAlternatives={() => onMoveFix(fix)} alternativesFor={to} onPreview={onPreview}>
-      <FixBody sprite={fix.member} lead={lead} name={to} gain={fix.gain} title={`${tr('coach.steps.move', { member: fix.member })}${from ? ` · ${from}` : ''}`}
-        also={<Also id={alsoId} solves={fix.solves} skip={skip} problems={problems} />} />
+    <Proposal className={main ? 'is-main is-move' : 'is-move is-or'} or={or} label={tr('coach.steps.moveAria', { move: to, member: fix.member, gain: gainText(fix.gain) })}
+      describedBy={alsoId} solves={fix.solves} onApply={() => onApply(fix)} onAlternatives={() => onMoveFix(fix)} alternativesFor={to} onPreview={onPreview}>
+      {main && <span className="coach-strip-in"><Sprite species={fix.member} size={72} /></span>}
+      <span className="coach-fix-text">
+        <span className="coach-fix-lead" title={title}>{lead}</span>
+        <span className="coach-fix-main"><strong>{to}</strong> <span className="coach-gain">{gainText(fix.gain)}</span></span>
+        {!main && <Also id={alsoId} solves={fix.solves} skip={skip} problems={problems} />}
+      </span>
     </Proposal>
   );
 }
@@ -231,24 +227,33 @@ interface StepActions {
   onFix: (fix: CoachFix) => void; onMoveFix: (fix: MoveFix) => void; onApplyFix: (fix: CoachFix) => void; onApplyMove: (fix: MoveFix) => void;
 }
 
-/** Una tappa. Puntatore sulla tappa: la mappa mostra tutto quello che le sue proposte risolvono (una proposta: solo il suo). */
+/**
+ * Una tappa, come striscia a tutta larghezza: numero sulla lama, problema, la proposta principale (scambio, o la mossa
+ * se è sola) il cui pulsante copre tutta la striscia, a destra "risolve anche" e l'eventuale mossa "oppure".
+ * Puntatore sulla tappa: la mappa mostra tutto quello che le sue proposte risolvono (una proposta: solo il suo).
+ */
 function Step({ step, index, problems, actions, onCard, onPreview }: {
   step: CoachStep; index: number; problems: CoachProblem[]; actions: StepActions; onCard: OnPreview; onPreview: OnPreview;
 }) {
   const tr = useT();
+  const alsoId = useId();
+  const orId = useId();
   const { problem, swap, move } = step;
   const skip = step.group;
   const solved = [...new Set([...step.group, ...(swap?.solves ?? []), ...(move?.solves ?? [])])];
   return (
-    <li className={`coach-step ${problem.severity}`} onMouseEnter={() => onCard(solved)} onMouseLeave={() => onCard(null)}>
+    <li className={`coach-step coach-strip ${problem.severity}`} style={{ '--i': index } as CSSProperties}
+      onMouseEnter={() => onCard(solved)} onMouseLeave={() => onCard(null)}>
       <span className="coach-step-num">{index + 1}</span>
-      <div className="coach-step-body">
-        <p className="coach-step-problem">
-          <span className="coach-sev">{tr(problem.severity === 'serious' ? 'dash.serious' : 'dash.minor')}</span> <StepTitle step={step} problems={problems} />
-        </p>
-        {swap && <SwapProposal fix={swap} skip={skip} problems={problems} onApply={actions.onApplyFix} onFix={actions.onFix} onPreview={onPreview} />}
-        {move && (
-          <MoveProposal fix={move} skip={skip} problems={problems} or={swap ? tr('coach.steps.or') : undefined}
+      <p className="coach-step-problem">
+        <span className="coach-sev">{tr(problem.severity === 'serious' ? 'dash.serious' : 'dash.minor')}</span> <StepTitle step={step} problems={problems} />
+      </p>
+      {swap ? <SwapProposal fix={swap} alsoId={alsoId} onApply={actions.onApplyFix} onFix={actions.onFix} onPreview={onPreview} />
+        : move && <MoveProposal fix={move} main alsoId={alsoId} skip={skip} problems={problems} onApply={actions.onApplyMove} onMoveFix={actions.onMoveFix} onPreview={onPreview} />}
+      <div className="coach-strip-extras">
+        <Also id={alsoId} solves={swap?.solves ?? move?.solves ?? []} skip={skip} problems={problems} self={swap?.species} />
+        {swap && move && (
+          <MoveProposal fix={move} main={false} alsoId={orId} skip={skip} problems={problems} or={tr('coach.steps.or')}
             onApply={actions.onApplyMove} onMoveFix={actions.onMoveFix} onPreview={onPreview} />
         )}
       </div>
@@ -384,7 +389,7 @@ export function CoachingView({ coaching, advice, members, rating, metaOn, threat
           <h3 id={`${id}-steps`} className="coach-sec">{tr('coach.steps.title')}</h3>
           {advice && steps.length === 0 ? (
             // Nessuna tappa: una riga alta come le tappe, così la mappa non salta
-            <p className="coach-steps-none">{tr('coach.steps.none')}</p>
+            <p className="coach-steps-none"><Icon name="check" />{tr('coach.steps.none')}</p>
           ) : advice ? (
             <ol className="coach-steps">
               {steps.map((step, i) => <Step key={step.problem.key} step={step} index={i} problems={problems} actions={actions} onCard={onCard} onPreview={onPreview} />)}
@@ -392,7 +397,7 @@ export function CoachingView({ coaching, advice, members, rating, metaOn, threat
           ) : (
             <>
               <ol className="coach-steps" aria-busy="true">
-                {[0, 1, 2].map(i => <li key={i} className="coach-step skeleton" aria-hidden="true" />)}
+                {[0, 1, 2].map(i => <li key={i} className="coach-step coach-strip skeleton" aria-hidden="true" />)}
               </ol>
               <p className="visually-hidden" role="status">{tr('coach.computing')}</p>
             </>

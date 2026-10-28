@@ -459,8 +459,8 @@ button.sum-row:hover { background: var(--accent-wash); }
 @keyframes dash-in { from { opacity: 0; transform: translateY(6px); } }
 
 /* Coaching: in alto le tappe (cosa farei io), sotto la mappa dei problemi per area; scorre dentro */
-.coaching { display: flex; flex-direction: column; gap: 6px; height: 100%; min-height: 0; padding-bottom: 12px; overflow: auto; overscroll-behavior: contain; }
-.coach-sec { margin: 0 0 6px; font: 700 12px/1.2 var(--display); font-style: italic; text-transform: uppercase; letter-spacing: 0.04em; color: var(--accent); }
+.coaching { display: flex; flex-direction: column; gap: 6px; height: 100%; min-height: 0; padding-bottom: 4px; overflow: auto; overscroll-behavior: contain; }
+.coach-sec { margin: 0 0 4px; font: 700 12px/1.2 var(--display); font-style: italic; text-transform: uppercase; letter-spacing: 0.04em; color: var(--accent); }
 .coach-sec.muted { color: var(--muted); }
 /* Gravità: targhetta obliqua in riga col testo */
 .coach-sev { display: inline-block; padding: 1px 9px 1px 5px; font: 700 11px/1.3 var(--ui); text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; clip-path: polygon(0 0, 100% 0, calc(100% - 5px) 100%, 0 100%); }
@@ -468,53 +468,77 @@ button.sum-row:hover { background: var(--accent-wash); }
 .minor > .coach-sev, .minor .coach-step-problem .coach-sev { color: var(--warn); background: var(--warn-bg); }
 
 /*
- * Tappe: dominano la scheda. Numero grande, fondo acceso, righe di altezza fissa (problema su due righe al più, ogni
- * proposta una riga piccola + il nome grande, "risolve anche" su una riga): la riga è sempre alta --step-h, anche lo
- * scheletro, così all'arrivo dei consigli niente salta. Con una sola proposta la tappa resta della stessa altezza.
+ * Suggerimenti: strisce a tutta larghezza, alte uguali (anche lo scheletro e la riga "nessuna tappa", così all'arrivo
+ * dei consigli niente salta). Colonne: numero sulla lama magenta · problema · scambio (chi esce spento → chi entra
+ * grande) · "risolve anche" e la mossa "oppure". Il pulsante della proposta principale copre tutta la striscia.
  */
-.coach-steps-region { --step-h: 196px; }
-.coach-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-auto-rows: var(--step-h); gap: 10px; margin: 0 0 12px; padding: 0; list-style: none; }
-.coach-step { position: relative; display: grid; grid-template-columns: 30px minmax(0, 1fr); align-content: start; gap: 10px; min-width: 0; padding: 10px 12px 10px 10px; overflow: hidden;
-  background: radial-gradient(90% 70% at 0 0, color-mix(in srgb, var(--accent-2) 13%, transparent), transparent 70%), color-mix(in srgb, var(--raised) 60%, var(--panel));
-  border: 1px solid color-mix(in srgb, var(--accent-2) 30%, var(--line-soft)); }
-.coach-steps-none { display: flex; align-items: center; justify-content: center; height: var(--step-h); margin: 0 0 12px; padding: 0 16px; text-align: center; font-size: 13px; color: var(--muted); border: 1px dashed var(--line); }
-.coach-step.skeleton { border-style: dashed; border-color: var(--line); background: color-mix(in srgb, var(--raised) 25%, var(--panel)); }
-.coach-step-num { font: 800 46px/0.82 var(--display); font-style: italic; font-variant-numeric: tabular-nums; text-align: center; color: var(--accent-2-ink); }
-.coach-step-body { min-width: 0; display: grid; align-content: start; gap: 6px; }
-.coach-step-problem { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: calc(2 * 1.35em); margin: 0; font-size: 14px; font-weight: 600; line-height: 1.35; color: var(--text); }
-.coach-step-problem .coach-sev { margin-right: 2px; vertical-align: 1px; }
+.coach-steps-region { --step-h: 64px; }
+.coach-steps { display: grid; gap: 6px; margin: 0 0 4px; padding: 0; list-style: none; }
+.coach-strip { position: relative; display: grid; grid-template-columns: 46px minmax(0, 1.3fr) minmax(0, 2.2fr) minmax(0, 1.4fr); align-items: center; height: var(--step-h); min-width: 0;
+  background: var(--panel); border: 1px solid color-mix(in srgb, var(--accent-2) 22%, var(--line)); }
+.coach-strip:hover, .coach-strip:focus-within { border-color: var(--accent); }
+.coach-strip.skeleton { border-style: dashed; border-color: var(--line); background: color-mix(in srgb, var(--raised) 25%, var(--panel)); }
+.coach-steps-none { display: flex; align-items: center; gap: 10px; height: var(--step-h); margin: 0 0 4px; padding: 0 16px; font-size: 13px; color: var(--muted); border: 1px dashed var(--line); }
+.coach-steps-none .icon { width: 16px; height: 16px; color: var(--good); }
+/* Il numero sulla lama: pieno per i gravi, più tenue per i minori */
+.coach-step-num { align-self: stretch; display: flex; align-items: center; justify-content: center; padding-right: 6px; font: 800 30px/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums;
+  color: var(--on-accent-2); background: var(--stripes), var(--accent-2); clip-path: polygon(0 0, 100% 0, 76% 100%, 0 100%); }
+.coach-strip.minor .coach-step-num { background: var(--stripes), color-mix(in srgb, var(--accent-2) 60%, var(--panel)); }
+.coach-step-problem { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin: 0; padding: 0 14px 0 10px; font-size: 13.5px; font-weight: 600; line-height: 1.35; color: var(--text); }
+.coach-step-problem .coach-sev { margin-right: 4px; vertical-align: 1px; }
 /* Tipi (o minacce) nel titolo: icona e nome */
 .coach-step-subject { white-space: nowrap; }
 .coach-step-subject .type-icons { display: inline-flex; margin-right: 4px; vertical-align: -2px; }
 .coach-step-subject .type-icons img { width: 16px; height: 16px; }
 .coach-step-subject.is-mon .mon-icon { margin: -10px -4px -8px -6px; vertical-align: middle; }
-.coach-prop { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 4px; min-width: 0; }
-/* La seconda proposta è un'alternativa: "oppure" sulla linea che le separa */
-.coach-prop + .coach-prop { margin-top: 3px; padding-top: 6px; border-top: 1px dashed var(--line); }
-.coach-prop[data-or]::before { content: attr(data-or); position: absolute; top: -7px; right: 0; padding: 0 0 0 6px; font: 600 11px/1 var(--ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--faint); background: color-mix(in srgb, var(--raised) 60%, var(--panel)); }
-/*
- * Proposta: tutta l'area è il pulsante che applica il cambio (icona del membro ⇄, sprite sul piedistallo, il nome grande
- * in cyan col voto in più, "risolve anche"); accanto, fuori dal pulsante, l'icona quieta delle alternative
- */
-.coach-fix { display: flex; align-items: center; gap: 8px; width: 100%; min-width: 0; padding: 0 6px 0 0; text-align: left; color: var(--text); background: none; border-color: transparent; font: inherit; }
-.coach-fix:hover { border-color: transparent; background: var(--accent-wash); }
-.coach-fix:hover .coach-fix-main strong { text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 3px; }
-.coach-fix-from { display: inline-flex; align-items: center; gap: 2px; height: 16px; color: var(--muted); }
-.coach-fix-from .mon-icon { margin: -9px -6px -7px -8px; }
-.coach-fix-from .icon { width: 14px; height: 14px; }
-.coach-alt { display: grid; place-items: center; width: 24px; height: 28px; padding: 0; color: var(--faint); background: none; border: 1px solid transparent; }
-.coach-alt:hover { color: var(--accent-ink); background: var(--raised); border-color: var(--line); }
-.coach-alt .icon { width: 14px; height: 14px; }
-.coach-fix-sprite { flex: none; display: flex; justify-content: center; align-items: flex-end; width: 44px; height: 40px; overflow: visible;
-  background: radial-gradient(ellipse 20px 5px at 50% 90%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 70%), radial-gradient(ellipse 19px 5px at 50% 92%, color-mix(in srgb, var(--field) 60%, transparent), transparent 75%); }
-.coach-fix-sprite .sprite { flex: none; width: 56px; height: 56px; margin-bottom: -10px; image-rendering: pixelated; }
+/* Proposta principale: lo scambio su un fondo ciano che sfuma; il suo pulsante si allarga a tutta la striscia (::after) */
+.coach-prop { display: flex; align-items: center; min-width: 0; }
+.coach-prop.is-main { align-self: stretch; padding: 0 8px 0 12px; background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--accent) 7%, transparent) 40%, color-mix(in srgb, var(--accent) 12%, transparent)); }
+.coach-fix { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; height: 100%; padding: 0; text-align: left; color: var(--text); background: none; border: 0; font: inherit; }
+.coach-fix:hover { background: none; }
+.coach-prop.is-main .coach-fix::after { content: ''; position: absolute; inset: 0; z-index: 0; }
+.coach-prop.is-main .coach-fix:focus-visible { outline: none; }
+.coach-strip:has(.is-main .coach-fix:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+.coach-strip-out { flex: none; display: flex; width: 40px; height: 40px; align-items: center; justify-content: center; }
+.coach-strip-out .sprite { width: 48px; height: 48px; image-rendering: pixelated; filter: grayscale(1); opacity: 0.55; }
+.coach-strip-arrow { flex: none; display: flex; color: var(--accent-ink); }
+.coach-strip-arrow .icon { width: 18px; height: 18px; }
+.coach-strip-add { flex: none; font: 700 12px/1 var(--ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.coach-strip-in { position: relative; flex: none; display: flex; align-items: center; justify-content: center; width: 58px; height: 58px; }
+.coach-strip-in .sprite { width: 64px; height: 64px; image-rendering: pixelated; }
+.coach-strip-in .sprite.covered { visibility: hidden; }
+.coach-strip-in .sprite-ani { position: absolute; left: 50%; bottom: 0; width: auto; max-width: none; height: calc(var(--ani-h, 96) / 96 * 64px); image-rendering: pixelated; transform: translateX(-50%); pointer-events: none; }
 .coach-fix-text { flex: 1; display: grid; min-width: 0; }
 .coach-fix-lead { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; line-height: 1.3; color: var(--muted); }
 .coach-fix-lead b { font-weight: 600; color: var(--text); }
-.coach-fix-main { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
-.coach-fix-main strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 700 17px/1.2 var(--display); font-style: italic; color: var(--accent-ink); }
-/* Il voto in più: piccola etichetta verde accanto al nome */
+.coach-fix-main { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.coach-fix-main strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 800 19px/1.2 var(--display); font-style: italic; color: var(--accent-ink); }
+.coach-prop.is-main > .coach-fix > .coach-fix-main { flex: 1; }
+.coach-strip:hover .is-main .coach-fix-main strong { text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 3px; }
+/* Il voto in più: grande e verde nella proposta principale, piccola etichetta nella mossa "oppure" */
 .coach-gain { flex: none; display: inline-block; padding: 0 5px; border-radius: 2px; font: 700 12px/18px var(--display); font-variant-numeric: tabular-nums; color: var(--good); background: var(--good-bg); }
+.coach-prop.is-main > .coach-fix > .coach-gain { padding: 0 4px; font: 800 22px/1 var(--display); font-style: italic; background: none; }
+/* Sopra il pulsante allargato: le icone "alternative" e la colonna di destra restano cliccabili */
+.coach-alt { position: relative; z-index: 1; flex: none; display: grid; place-items: center; width: 26px; height: 28px; padding: 0; color: var(--muted); background: none; border: 1px solid transparent; }
+.coach-alt:hover { color: var(--accent-ink); background: var(--raised); border-color: var(--line); }
+.coach-alt .icon { width: 15px; height: 15px; }
+.coach-prop.is-main > .coach-alt { align-self: flex-start; margin-top: 6px; }
+.coach-strip-extras { position: relative; z-index: 1; align-self: stretch; display: flex; flex-direction: column; justify-content: center; gap: 4px; min-width: 0; padding: 0 10px 0 14px;
+  border-left: 1px solid var(--line-soft); pointer-events: none; }
+.coach-strip-extras button, .coach-strip-extras [title] { pointer-events: auto; }
+/* La mossa "oppure": una riga tratteggiata sopra, "oppure" in testa */
+.coach-prop.is-or { gap: 6px; padding-top: 4px; border-top: 1px dashed var(--line); }
+.coach-prop.is-or[data-or]::before { content: attr(data-or); flex: none; font: 600 10.5px/1 var(--ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--faint); }
+.coach-prop.is-or .coach-fix-main strong { font-size: 15px; }
+.coach-prop.is-or .coach-fix:hover .coach-fix-main strong { text-decoration: underline; text-underline-offset: 3px; }
+.coach-prop.is-or .coach-alt { height: 24px; }
+/* Entrata: le strisce scivolano dentro una dopo l'altra; puntatore: un piccolo passo a destra */
+@media (prefers-reduced-motion: no-preference) {
+  .coach-strip { transition: border-color 150ms ease-out, transform 200ms var(--ease); }
+  .coach-strip:hover { transform: translateX(3px); }
+  .coach-strip:not(.skeleton) { animation: coach-strip-in 320ms var(--ease) both; animation-delay: calc(var(--i, 0) * 40ms); }
+}
+@keyframes coach-strip-in { from { opacity: 0; transform: translateX(-8px); } }
 /* "Risolve anche": una riga sola sotto la proposta, allineata al testo; tipi e minacce come icone, il resto nel "+N" */
 .coach-also { display: flex; align-items: center; gap: 6px; min-width: 0; height: 18px; margin: 0; overflow: hidden; white-space: nowrap; font-size: 12px; color: var(--muted); }
 .coach-also-label { flex: none; color: var(--faint); }
@@ -528,18 +552,18 @@ button.sum-row:hover { background: var(--accent-wash); }
  * Problemi per area: quattro tessere (targa magenta, voto grande, barretta del voto), i problemi come pillole col bordo
  * del colore della gravità. Ridondanze e minacce sotto un'etichetta, più quiete. Tessera pulita: tinta di verde.
  */
-.coach-map { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; align-items: start; margin: 0 0 14px; }
-.coach-tile { display: flex; flex-direction: column; min-width: 0; padding: 0 0 10px; background: var(--panel); border: 1px solid var(--line-soft); }
+.coach-map { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; align-items: stretch; margin: 0 0 8px; }
+.coach-tile { display: flex; flex-direction: column; min-width: 0; padding: 0 0 8px; background: var(--panel); border: 1px solid var(--line-soft); }
 .coach-tile-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-right: 12px; }
-.coach-tile-head .dash-meta b { font: 800 26px/1 var(--display); font-style: italic; }
-.coach-tile-bar { height: 4px; margin: 8px 12px 10px; background: linear-gradient(90deg, var(--accent) var(--score, 0%), var(--line-soft) var(--score, 0%)); }
+.coach-tile-head .dash-meta b { font: 800 24px/1 var(--display); font-style: italic; }
+.coach-tile-bar { height: 4px; margin: 6px 12px 8px; background: linear-gradient(90deg, var(--accent) var(--score, 0%), var(--line-soft) var(--score, 0%)); }
 .coach-tile.is-clean { background: linear-gradient(180deg, var(--good-bg), var(--panel) 85%); border-color: color-mix(in srgb, var(--good) 30%, var(--line-soft)); }
 .coach-tile.is-clean .coach-tile-bar { background: linear-gradient(90deg, var(--good) var(--score, 100%), var(--line-soft) var(--score, 100%)); }
 .coach-tile-ok { display: flex; align-items: center; gap: 6px; margin: 4px 12px 0; font-size: 13px; font-weight: 600; color: var(--good); }
 .coach-tile-ok .icon { width: 14px; height: 14px; }
 .coach-tile > .coach-tile-ok:nth-child(2) { margin-top: 12px; }
 .coach-probs { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0 12px; list-style: none; }
-.coach-prob { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; min-width: 0; padding: 3px 9px 3px 6px; font-size: 12.5px; font-weight: 600; line-height: 1.3; color: var(--text);
+.coach-prob { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; min-width: 0; padding: 2px 9px 2px 6px; font-size: 12.5px; font-weight: 600; line-height: 1.3; color: var(--text);
   background: var(--raised); border-left: 3px solid var(--warn); border-radius: 0 999px 999px 0; }
 .coach-prob.serious { border-left-color: var(--bad); background: color-mix(in srgb, var(--bad-bg) 70%, var(--raised)); }
 .coach-prob.is-dim { color: var(--muted); }
@@ -561,9 +585,8 @@ button.sum-row:hover { background: var(--accent-wash); }
   .coach-prob { transition: background-color 120ms ease-out, box-shadow 120ms ease-out, color 120ms ease-out; }
 }
 .coach-by { flex: none; min-width: 16px; padding: 0 4px; font: 800 10.5px/16px var(--display); font-style: italic; text-align: center; color: var(--on-accent-2); background: var(--accent-2); border-radius: 8px; }
-.coach-sep { width: 100%; margin: 10px 12px 6px; font: 600 10.5px/1.2 var(--ui); text-transform: uppercase; letter-spacing: 0.08em; color: var(--faint); }
+.coach-sep { margin: 8px 12px 5px; font: 600 10.5px/1.2 var(--ui); text-transform: uppercase; letter-spacing: 0.08em; color: var(--faint); }
 @media (max-width: 1100px) {
-  .coach-steps { grid-template-columns: 1fr; }
   .coach-map { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 .coach-empty { display: flex; align-items: center; gap: 8px; margin: 0; padding: 8px 12px; color: var(--good); background: color-mix(in srgb, var(--good-bg) 55%, var(--panel)); border: 1px solid color-mix(in srgb, var(--good) 25%, var(--line-soft)); }
