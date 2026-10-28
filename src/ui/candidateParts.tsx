@@ -55,8 +55,6 @@ export interface CandidateProps {
   format: Format;
   /** Liste dell'utente: ⊘ accanto al nome, ♥ sul voto (il preferito sale in classifica). */
   lists?: EffectiveLists;
-  /** Menu: distanza (con segno, al massimo ±3) dalla selezionata nella pagina, per il rullo; 0 senza selezionata. */
-  depth?: number;
 }
 
 /** Il #1 in magenta solo se migliora davvero il team (o col team vuoto): un −N o ±0 resta nei suoi colori. */
