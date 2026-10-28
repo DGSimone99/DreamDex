@@ -410,11 +410,13 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
         )}
       </>
     );
+    const selectedAt = selected ? pageItems.indexOf(selected) : -1;
     body = (
       <>
         {/* Le misure per le caselle (Carte: colonne e altezza; Menu: altezza della riga) */}
         <ol className={`suggestions ${cards ? 'cards' : 'menu'}${stale ? ' stale' : ''}`} ref={listRef} aria-busy={stale || undefined} style={listVars}>
           {pageItems.map((item, i) => {
+            // Menu: il rullo gira attorno alla selezionata (fuori pagina: tutte dritte)
             const usage = emptyTeam ? usageOf(item.species) : null;
             const candidate: CandidateProps = {
               rank: page * perPage + i + 1,
@@ -433,6 +435,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
               onAction: () => act(item),
               format,
               lists: data.userLists,
+              depth: selectedAt < 0 ? 0 : Math.max(-3, Math.min(3, i - selectedAt)),
             };
             return cards ? <CandidateCard key={item.species} {...candidate} /> : <CandidatePill key={item.species} {...candidate} />;
           })}

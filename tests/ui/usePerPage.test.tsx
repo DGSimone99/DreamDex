@@ -63,17 +63,16 @@ describe('usePerPage', () => {
     }
   });
 
-  it('Menu: team aperto un motivo anche con righe alte, team nascosto di più', () => {
+  it('Menu: sempre 6 per pagina, la riga dall’altezza; 3 motivi solo col team nascosto e righe alte', () => {
     const fire = stubObservers();
-    const size = { width: 560, height: 100 };
+    const size = { width: 560, height: 500 };
     const { result, rerender } = setup('menu', size);
     fire();
-    expect(result.current.rowHeight).toBeGreaterThanOrEqual(60);
-    expect(result.current.reasons).toBe(1);
+    expect(result.current).toEqual({ perPage: 6, rowHeight: 71, reasons: 2 });
     size.height = 712;
     rerender({ collapsed: true });
     fire();
-    expect(result.current.reasons).toBeGreaterThan(1);
+    expect(result.current).toEqual({ perPage: 6, rowHeight: 84, reasons: 3 });
   });
 
   it('Carte: 6 per pagina, carta dall’altezza (max 260), motivi 2 → 3 nascondendo il team', () => {
@@ -100,12 +99,5 @@ describe('usePerPage', () => {
     fire();
     expect(menu.result.current.rowHeight).toBeGreaterThan(0);
     expect(menu.result.current.columns).toBeUndefined();
-  });
-
-  it('partendo col team chiuso usa l’altezza attuale', () => {
-    const fire = stubObservers();
-    const { result } = setup('menu', { width: 560, height: 712 }, true);
-    fire();
-    expect(result.current.perPage).toBeGreaterThan(PAGE);
   });
 });

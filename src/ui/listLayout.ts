@@ -38,12 +38,18 @@ export interface MenuLayout {
   reasons: number;
 }
 
-// Menu: una colonna; perPage dal team aperto, riga al massimo 76 px.
-export function menuLayout(openHeight: number, height: number, windowHeight: number): MenuLayout {
-  const open = num(openHeight);
+/** Righe del Menu per pagina: sempre 6, come le Carte (una pagina = un team possibile). */
+export const MENU_ROWS = 6;
+/** Spazio tra le righe del Menu (CSS .suggestions.menu gap): ci sta lo sprite che sporge dal tondo. */
+export const MENU_GAP = 10;
+/** Altezza massima di una riga del Menu: oltre, la colonna resta a questa misura e si centra in verticale. */
+export const MENU_MAX_ROW = 84;
+
+// Menu: 6 righe che riempiono l'altezza attuale della lista (margine 10 sopra e sotto), al massimo 84 px.
+// Motivi: col team aperto 2 se la riga è alta almeno 58 px (sennò 1), col team nascosto fino a 3.
+export function menuLayout(height: number, teamCollapsed: boolean): MenuLayout {
   const h = num(height);
-  const minRow = num(windowHeight) < 820 ? 42 : 48;
-  const perPage = Math.max(1, Math.floor((open - 20 + 6) / (minRow + 6)));
-  const rowHeight = Math.max(0, Math.min(76, Math.floor((h - 20 + 6) / perPage) - 6));
-  return { perPage, rowHeight, reasons: rowHeight >= 60 ? 3 : 1 };
+  const rowHeight = clamp(Math.floor((h - 20 + MENU_GAP) / MENU_ROWS) - MENU_GAP, 0, MENU_MAX_ROW);
+  const reasons = rowHeight >= 76 && teamCollapsed ? 3 : rowHeight >= 58 ? 2 : 1;
+  return { perPage: MENU_ROWS, rowHeight, reasons };
 }

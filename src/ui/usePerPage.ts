@@ -1,9 +1,9 @@
 import { useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react';
-import { CARDS_COLUMNS, CARDS_ROWS, cardsLayout, cardsReasons, menuLayout } from './listLayout';
+import { CARDS_COLUMNS, CARDS_ROWS, MENU_ROWS, cardsLayout, cardsReasons, menuLayout } from './listLayout';
 import type { ListStyle } from './theme';
 
-/** Candidati per pagina senza misura (jsdom, layout stretto), stile Menu; le Carte sono sempre 6. */
-export const PAGE = 10;
+/** Candidati per pagina senza misura (jsdom, layout stretto): come con la misura, 6 in entrambi gli stili. */
+export const PAGE = MENU_ROWS;
 
 /** Solo con lista e scheda affiancate la lista ha un'altezza sua: sotto, crescerebbe col contenuto. */
 const WIDE = '(min-width: 1100px)';
@@ -31,8 +31,8 @@ const wide = () => typeof matchMedia !== 'function' || matchMedia(WIDE).matches;
 
 /**
  * Quanti candidati per pagina, dallo spazio del contenitore della lista (ResizeObserver).
- * Carte: sempre 6 (3 × 2), la carta segue l'altezza. Menu: il numero si calcola come se il team fosse aperto,
- * chiudendolo le righe crescono e il numero resta.
+ * Carte: sempre 6 (3 × 2), la carta segue l'altezza. Menu: sempre 6 righe, la riga segue l'altezza (chiudendo
+ * il team le righe crescono e mostrano più motivi).
  */
 export function usePerPage(ref: RefObject<HTMLElement | null>, style: ListStyle, teamCollapsed: boolean): PerPage {
   const [measure, setMeasure] = useState<Measure | null>(null);
@@ -73,10 +73,7 @@ export function usePerPage(ref: RefObject<HTMLElement | null>, style: ListStyle,
       return { perPage, columns, tileHeight, reasons };
     }
     if (!measure) return { perPage: PAGE, reasons: 1 };
-    // Partendo col team chiuso, l'altezza attuale finché il team non si apre
-    const open = measure.open ?? measure.height;
-    // Col team aperto un motivo solo; più motivi solo col team nascosto
-    const { perPage, rowHeight, reasons } = menuLayout(open, measure.height, measure.windowHeight);
-    return { perPage, rowHeight, reasons: teamCollapsed ? reasons : 1 };
+    const { perPage, rowHeight, reasons } = menuLayout(measure.height, teamCollapsed);
+    return { perPage, rowHeight, reasons };
   }, [measure, style, teamCollapsed]);
 }

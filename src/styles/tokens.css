@@ -34,16 +34,16 @@
   --ui: 'Kanit', system-ui, sans-serif;
   --stripes: repeating-linear-gradient(-60deg, #ffffff0d 0 4px, transparent 4px 10px);
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
-  /* Stile Menu della lista: pillole chiare come i menu di Spada e Scudo (un tema futuro le ridefinisce qui) */
-  --pill-bg: #e7eaf3;
-  --pill-bg-hover: #fff;
-  --pill-ink: #10142b;
-  --pill-muted: #4a5068;
-  /* Verde, rosso, giallo e ciano scuri per segni e testo sulla pillola: contrasto ≥ 4.7 su --pill-bg */
-  --pill-gain: #077045;
-  --pill-bad: #b3261e;
-  --pill-warn: #8a5a00;
-  --pill-info: #006680;
+  /* Stile Menu della lista: pillole scure come le Carte (un tema futuro le ridefinisce qui) */
+  --pill-bg: var(--raised);
+  --pill-bg-hover: color-mix(in srgb, var(--raised) 86%, #fff);
+  --pill-ink: var(--text);
+  --pill-muted: var(--muted);
+  /* Segni e testo sulla pillola: i colori di stato del tema (fondo scuro) */
+  --pill-gain: var(--good);
+  --pill-bad: var(--bad);
+  --pill-warn: var(--warn);
+  --pill-info: var(--accent);
   /* Nomi dei tipi sulle pillole: varianti scure dei colori dei tipi, contrasto ≥ 4.8 su --pill-bg */
   --type-normal-ink: #666649;
   --type-fire-ink: #9a521f;

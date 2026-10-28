@@ -7,19 +7,20 @@ import { TypeIcons } from './typeIcons';
 import { CandidateMarks, OutMark, PickButton, Reasons, ResultCell, candidateHandlers, isFavoriteCandidate, isLead, stateClasses, type CandidateProps } from './candidateParts';
 
 /**
- * Stile "Menu": una pillola chiara come i menu di Spada e Scudo. Tondo dello sprite che sporge a sinistra,
- * nome e motivi al centro, a destra i segni, le icone dei tipi e il +N (#1 in una pillola magenta).
+ * Stile "Menu": una pillola scura come i menu di Spada e Scudo, 6 per pagina su un rullo: la selezionata è dritta e
+ * grande, le altre rimpiccioliscono e si inclinano allontanandosi. Tondo dello sprite che sporge a sinistra (lo
+ * sprite ne esce), nome e motivi al centro, a destra i segni, le icone dei tipi e il +N (#1 in una pillola magenta).
  * La selezionata diventa ciano, col cursore ▶ fuori dalla pillola.
  */
 export function CandidatePill(props: CandidateProps) {
-  const { rank, item, reasons, sprite, usage, out, format, lists, selected, onSelect } = props;
+  const { rank, item, reasons, sprite, usage, out, format, lists, selected, onSelect, depth = 0 } = props;
   const lang = useLang();
   const types = getSpecies(item.species)?.types ?? [];
   const typeNames = types.map(type => typeName(type, lang)).join(' / ');
   const className = ['pill', isLead(rank, item) && 'first', stateClasses(props)].filter(Boolean).join(' ');
   return (
-    // Sfumatura del tondo nel colore del tipo primario
-    <li className={className} style={{ '--t1': typeColor(types[0] ?? '') } as CSSProperties} {...candidateHandlers(props)}>
+    // Sfumatura del tondo nel colore del tipo primario; --d e --ad (distanza dalla selezionata) piegano il rullo
+    <li className={className} style={{ '--t1': typeColor(types[0] ?? ''), '--d': depth, '--ad': Math.abs(depth) } as CSSProperties} {...candidateHandlers(props)}>
       <span className="pill-sprite" aria-hidden="true">{sprite(false)}</span>
       {out && <OutMark member={out} />}
       <span className="who">
