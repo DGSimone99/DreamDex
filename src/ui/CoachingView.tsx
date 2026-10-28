@@ -268,7 +268,7 @@ function Step({ step, index, problems, actions, onCard, onPreview }: {
 /**
  * Un problema nella tessera della sua area, come pillola: bordo del colore della gravità (la gravità detta solo ai
  * lettori di schermo), icona del tipo o della minaccia, testo; le debolezze in breve ("Terra 3↓ 1↑"). Il testo intero
- * nel title. Se una tappa lo copre, il numero della tappa in fondo. `preview`: la proposta sotto il puntatore (o col
+ * nel title; i ruoli mancanti uno per riga con la ×. Se una tappa lo copre, il numero della tappa in fondo. `preview`: la proposta sotto il puntatore (o col
  * fuoco) lo risolve, quindi si vede barrato in verde. `dim`: ridondanze e minacce, più quiete dei problemi veri.
  */
 function MapProblem({ problem, step, preview, usage, dim = false }: { problem: CoachProblem; step: number | null; preview: boolean; usage?: number; dim?: boolean }) {
@@ -280,6 +280,8 @@ function MapProblem({ problem, step, preview, usage, dim = false }: { problem: C
   // Difesa e coverage: le icone dei tipi davanti, il testo senza colori (il tipo non si legge due volte)
   const typed = (problem.category === 'defense' || problem.category === 'coverage') && subjects.length > 0;
   const counts = problem.category === 'defense' && subjects.length === 1 ? problem.counts : undefined;
+  // Ruoli mancanti (essenziali o importanti): uno per riga con la ×, senza la frase davanti (la tessera dice già "Ruoli")
+  const missing = problem.category === 'roles' && (problem.key === 'roles:essential' || problem.key === 'roles:important') && subjects.length > 0;
   const title = covered ? `${problem.text} · ${covered}` : problem.text;
   return (
     <li data-key={problem.key} title={title}
@@ -289,6 +291,12 @@ function MapProblem({ problem, step, preview, usage, dim = false }: { problem: C
         <span className="coach-prob-text is-threat">
           <PokemonIcon name={threat} /><span className="visually-hidden">{problem.text}</span>
           {usage !== undefined && <span className="coach-usage">{formatPercent(lang, usage, 0)}</span>}
+        </span>
+      ) : missing ? (
+        <span className="coach-prob-text is-missing">
+          <span aria-hidden="true">
+            {subjects.map(need => <span key={need} className="coach-miss"><Icon name="close" />{needLabel(need as Need, lang)}</span>)}
+          </span><span className="visually-hidden">{problem.text}</span>
         </span>
       ) : counts ? (
         <span className="coach-prob-text">

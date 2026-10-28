@@ -405,6 +405,19 @@ describe('CoachingView', () => {
     expect(pill).toHaveAttribute('title', text);
   });
 
+  it('ruoli mancanti nella tessera: una riga per ruolo con la ×, senza "Ruoli importanti mancanti"', () => {
+    const text = 'Ruoli importanti mancanti: Rimozione Strumenti, Pivot';
+    const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], threatFixes: {},
+      problems: [{ severity: 'minor', category: 'roles', text, fixes: [], key: 'roles:important', subjects: ['itemRemoval', 'pivot'] }] };
+    renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [] }} members={3} rating={rating(three)} metaOn {...noop} />);
+    const pill = screen.getByRole('group', { name: 'Ruoli' }).querySelector<HTMLElement>('li[data-key="roles:important"]')!;
+    const rows = [...pill.querySelectorAll<HTMLElement>('.coach-miss')];
+    expect(rows.map(r => r.textContent)).toEqual([needLabel('itemRemoval' as Need, 'it'), needLabel('pivot' as Need, 'it')]);
+    rows.forEach(r => expect(r.querySelector('.icon')).not.toBeNull());
+    expect(pill.querySelector('[aria-hidden="true"]')?.textContent ?? '').not.toContain('Ruoli importanti mancanti');
+    expect(pill).toHaveAttribute('title', text);
+  });
+
   it('pillola lunga: title col testo intero', () => {
     const text = 'Great Tusk non è legale in National Dex OU perché la sua abilità è vietata dal formato scelto';
     const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], threatFixes: {},

@@ -575,6 +575,13 @@ button.sum-row:hover { background: var(--accent-wash); }
 .coach-counts { white-space: nowrap; }
 .coach-prob-text .type-icons { display: inline-flex; margin-right: 5px; vertical-align: -3px; }
 .coach-prob-text .type-icons img { width: 16px; height: 16px; }
+/* Ruoli mancanti: una riga per ruolo, la × nel colore della gravità */
+.coach-prob:has(.is-missing) { flex: 1 1 100%; }
+.coach-prob-text.is-missing { display: block; }
+.coach-prob-text.is-missing > span { display: grid; gap: 3px; }
+.coach-miss { display: flex; align-items: center; gap: 6px; }
+.coach-miss .icon { flex: none; width: 12px; height: 12px; color: var(--warn); }
+.coach-prob.serious .coach-miss .icon { color: var(--bad); }
 .coach-prob-text.is-threat { display: flex; align-items: center; gap: 4px; white-space: nowrap; }
 .coach-prob-text.is-threat .mon-icon { margin: -10px -6px -9px -8px; }
 .coach-prob-text.is-threat .coach-usage { flex: none; color: inherit; font-variant-numeric: tabular-nums; }
