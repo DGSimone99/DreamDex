@@ -223,12 +223,6 @@ export function DefenseGuideSection({ section, defense, meta }: { section: Secti
         </ol>
         <div className="guide-weights-axis" aria-hidden="true"><span>{g('meta.depth.one', { pct: DEPTH[0] })}</span><span>{g('meta.depth.all')}</span></div>
       </div>
-      <p className="guide-foot">{g('meta.depth.half')}</p>
-
-      <h5>{g('meta.vote')}</h5>
-      <ul className="guide-lines">
-        <li><b>{t('detail.coverageMeta')}</b> = {g('meta.vote.rule')}</li>
-      </ul>
     </>
   );
 }
