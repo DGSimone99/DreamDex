@@ -11,13 +11,13 @@ const tone = (value: number) => (value >= 80 ? 'good' : value >= 50 ? 'warn' : '
 
 /**
  * La Sostenibilità, nella cornice comune (i membri nello stesso punto delle altre schede). Per ogni membro quello che perde,
- * a parte Stealth Rock (a ogni ingresso, dimezzata se il team toglie gli hazard) e Life Orb (a ogni attacco), e quello che
+ * a parte Stealth Rock (a ogni ingresso, dimezzata se il team toglie gli hazard) e lo strumento (Life Orb, Flame Orb…), e quello che
  * recupera con le fonti; in fondo il valore in pastiglia.
  */
 export function DefenseSustain({ defense, ctx }: { defense: TeamDefense; ctx: AreaContext }) {
   const t = useT();
-  const loss = (x: number, note?: string | null) => (x > 0
-    ? <span className={`sus-loss-val${note ? ' halved' : ''}`} title={note ?? undefined}>−{pct(x)}{note && <sup aria-hidden="true">½</sup>}{note && <span className="visually-hidden"> {note}</span>}</span>
+  const loss = (x: number, note?: string | null, halved = true) => (x > 0
+    ? <span className={`sus-loss-val${note ? ' noted' : ''}`} title={note ?? undefined}>−{pct(x)}{note && halved && <sup aria-hidden="true">½</sup>}{note && <span className="visually-hidden"> {note}</span>}</span>
     : <span className="sus-none" aria-label="0">—</span>);
   return (
     <div className={`def-frame def-sus${ctx.roomy ? ' roomy' : ''}`}>
@@ -44,7 +44,7 @@ export function DefenseSustain({ defense, ctx }: { defense: TeamDefense; ctx: Ar
                 <tr key={`${m.species}-${i}`}>
                   <th scope="row"><MemberMon name={m.species} /></th>
                   <td className="sus-loss">{loss(p.rocks, halvedBy)}</td>
-                  <td className="sus-loss">{loss(p.lifeOrb)}</td>
+                  <td className="sus-loss">{loss(p.itemLoss, p.itemLossFrom, false)}</td>
                   <td className="sus-gain">
                     <div className="sus-flex">
                       <span className="sus-track" aria-hidden="true"><i style={{ width: half(p.recovery) }} /></span>

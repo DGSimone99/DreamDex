@@ -32,7 +32,7 @@ describe('sustainability: recupero contro perdite per turno', () => {
     const corv = set('Corviknight', 'Leftovers', 'Pressure', ['Defog', 'Roost'], 'Impish', { hp: 252, def: 252 });
     const remover = hazardRemover([zard, corv]);
     expect(remover).toBe('Defog (Corviknight)');
-    expect(sustainParts(zard, 1.5, remover)).toMatchObject({ rocks: 0.25, rocksHalvedBy: 'Defog (Corviknight)', lifeOrb: 0.1 });
+    expect(sustainParts(zard, 1.5, remover)).toMatchObject({ rocks: 0.25, rocksHalvedBy: 'Defog (Corviknight)', itemLoss: 0.1 });
     expect(sustainParts(zard, 1.5)).toMatchObject({ rocks: 0.5, rocksHalvedBy: null });
     expect(hazardRemover([zard])).toBeNull();
     // Chi non prende la Stealth Rock non ha niente da dimezzare
@@ -41,8 +41,23 @@ describe('sustainability: recupero contro perdite per turno', () => {
 
   it('Sheer Force toglie il costo di Life Orb solo se una mossa ha effetti secondari', () => {
     const king = set('Nidoking', 'Life Orb', 'Sheer Force', ['Earth Power', 'Sludge Wave'], 'Timid', { spa: 252, spe: 252 });
-    expect(sustainParts(king, 1.5).lifeOrb).toBe(0);
-    expect(sustainParts({ ...king, moves: ['Earthquake', 'Stealth Rock'] }, 1.5).lifeOrb).toBeCloseTo(0.1);
+    expect(sustainParts(king, 1.5).itemLoss).toBe(0);
+    expect(sustainParts({ ...king, moves: ['Earthquake', 'Stealth Rock'] }, 1.5).itemLoss).toBeCloseTo(0.1);
+  });
+
+  it('gli strumenti che tolgono PS: Flame Orb e Toxic Orb (non a chi è immune allo stato), Sticky Barb, Black Sludge fuori dai Veleno', () => {
+    const ursa = set('Ursaluna', 'Flame Orb', 'Guts', ['Facade', 'Headlong Rush'], 'Adamant', { atk: 252 });
+    expect(sustainParts(ursa, 1.5)).toMatchObject({ itemLoss: 0.0625, itemLossFrom: 'Flame Orb' });
+    // Un Fuoco non si brucia, Magic Guard non prende danno
+    expect(sustainParts({ ...ursa, species: 'Arcanine' }, 1.5).itemLoss).toBe(0);
+    expect(sustainParts({ ...ursa, ability: 'Magic Guard' }, 1.5).itemLoss).toBe(0);
+    const toxic = { ...ursa, item: 'Toxic Orb' };
+    expect(sustainParts(toxic, 1.5).itemLoss).toBeCloseTo(0.125);
+    expect(sustainParts({ ...toxic, species: 'Corviknight' }, 1.5).itemLoss).toBe(0);
+    expect(sustainParts({ ...ursa, item: 'Sticky Barb' }, 1.5).itemLoss).toBeCloseTo(0.0625);
+    // Black Sludge: cura un Veleno, toglie PS agli altri
+    expect(sustainParts({ ...ursa, item: 'Black Sludge' }, 1.5)).toMatchObject({ itemLoss: 0.125, recovery: 0 });
+    expect(sustainParts({ ...ursa, species: 'Toxapex', item: 'Black Sludge' }, 1.5)).toMatchObject({ itemLoss: 0, recovery: 0.0625 });
   });
 
   it('Poison Heal cura solo con Toxic Orb (senza, il Pokémon non è avvelenato)', () => {
@@ -86,11 +101,11 @@ describe('memberDefense', () => {
     const m = memberDefense(skarm, [skarm], noStats)!;
     expect(m.sustainParts.sources).toEqual(['Roost', 'Leftovers']);
     expect(m.sustainParts.rocks).toBeCloseTo(0.125);
-    expect(m.sustainParts.lifeOrb).toBe(0);
+    expect(m.sustainParts.itemLoss).toBe(0);
     expect(m.sustainParts.recovery).toBeCloseTo(m.sustainParts.halved ? (0.5 + 0.0625) / 2 : 0.5 + 0.0625);
     const zard = set('Charizard', 'Life Orb', 'Blaze', ['Flamethrower'], 'Timid', { spa: 252, spe: 252 });
     const z = memberDefense(zard, [zard], noStats)!;
-    expect(z.sustainParts).toMatchObject({ sources: [], recovery: 0, lifeOrb: 0.1 });
+    expect(z.sustainParts).toMatchObject({ sources: [], recovery: 0, itemLoss: 0.1 });
     expect(z.sustainParts.rocks).toBeCloseTo(0.5);
   });
 

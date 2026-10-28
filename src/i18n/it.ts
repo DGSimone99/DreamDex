@@ -776,7 +776,7 @@ export const it: Record<keyof typeof en, string> = {
   'ddetail.sus.loss': "Perde",
   'ddetail.sus.gain': "Recupera",
   'ddetail.sus.rocks': "Stealth Rock",
-  'ddetail.sus.orb': "Life Orb",
+  'ddetail.sus.orb': "Strumenti",
   'ddetail.sus.rocksHalved': "Dimezzata: {by} toglie gli hazard",
   'ddetail.halvedTip': "Recupero a metà: in media non regge un 3HKO",
   'ddetail.types.noWeak': "Nessun tipo scoperto",

@@ -774,7 +774,7 @@ export const en = {
   'ddetail.sus.loss': "Loses",
   'ddetail.sus.gain': "Recovers",
   'ddetail.sus.rocks': "Stealth Rock",
-  'ddetail.sus.orb': "Life Orb",
+  'ddetail.sus.orb': "Items",
   'ddetail.sus.rocksHalved': "Halved: {by} removes hazards",
   'ddetail.halvedTip': "Recovery halved: on average it doesn't take a 3HKO",
   'ddetail.types.noWeak': "No uncovered type",

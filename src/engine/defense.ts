@@ -32,7 +32,11 @@ const RECOVERY_ITEMS: Record<string, number> = { leftovers: 0.0625, blacksludge:
 const STEALTH_ROCK = 0.125;
 /** Con chi toglie gli hazard nel team la Stealth Rock pesa metà: le rocce si prendono comunque prima della rimozione. */
 const ROCKS_WITH_REMOVAL = 0.5;
-const LIFE_ORB = 0.1;
+/**
+ * Quanto toglie lo strumento del membro, come quota dei PS: Life Orb a ogni attacco, il bruciore di Flame Orb a ogni turno,
+ * il veleno grave di Toxic Orb come media dei primi tre turni (1/16, 2/16, 3/16), Sticky Barb, Black Sludge su chi non è Veleno.
+ */
+const ITEM_LOSSES: Record<string, number> = { lifeorb: 0.1, flameorb: 0.0625, toxicorb: 0.125, stickybarb: 0.0625, blacksludge: 0.125 };
 /** Sotto un 3HKO medio il recupero vale metà: un Pokémon con Recover non è un muro se non regge i colpi. */
 const RECOVERY_HOLD = 1;
 /** Recupero netto per turno che vale 100 di Sostenibilità. */
@@ -48,7 +52,9 @@ export interface SustainParts {
   rocks: number;
   /** Chi toglie gli hazard nel team ("Defog (Corviknight)"): la Stealth Rock è già dimezzata. */
   rocksHalvedBy: string | null;
-  lifeOrb: number;
+  /** Quanto toglie lo strumento (Life Orb, Flame Orb, Toxic Orb…) e quale. */
+  itemLoss: number;
+  itemLossFrom: string | null;
 }
 
 /** Il primo membro del team con una mossa che toglie gli hazard, come "Defog (Corviknight)". */
@@ -66,25 +72,32 @@ export function sustainParts(set: TeamSet, robustStep: number, remover: string |
   const best = set.moves.reduce<string | null>((acc, m) => ((RECOVERY_MOVES[toID(m)] ?? 0) > (acc ? RECOVERY_MOVES[toID(acc)] : 0) ? m : acc), null);
   // Poison Heal cura solo da avvelenato: lo garantisce Toxic Orb
   const abilityHeal = ability === 'poisonheal' && item !== 'toxicorb' ? 0 : RECOVERY_ABILITIES[ability] ?? 0;
-  const sources = [best, abilityHeal ? battleAbility(set) : null, RECOVERY_ITEMS[item] ? set.item : null]
+  const types: string[] = battleSpecies(set)?.types ?? [];
+  // Black Sludge cura solo i Pokémon Veleno: agli altri toglie PS
+  const itemHeal = item === 'blacksludge' && !types.includes('Poison') ? 0 : RECOVERY_ITEMS[item] ?? 0;
+  const sources = [best, abilityHeal ? battleAbility(set) : null, itemHeal ? set.item : null]
     .filter((x): x is string => !!x);
-  const gross = (best ? RECOVERY_MOVES[toID(best)] : 0) + abilityHeal + (RECOVERY_ITEMS[item] ?? 0);
+  const gross = (best ? RECOVERY_MOVES[toID(best)] : 0) + abilityHeal + itemHeal;
   const halved = gross > 0 && robustStep < RECOVERY_HOLD;
   const magicGuard = ability === 'magicguard';
-  const types = battleSpecies(set)?.types ?? [];
   const fullRocks = item === 'heavydutyboots' || magicGuard ? 0 : STEALTH_ROCK * effectiveness('Rock', types as never);
   const rocksHalvedBy = fullRocks > 0 ? remover : null;
   const rocks = rocksHalvedBy ? fullRocks * ROCKS_WITH_REMOVAL : fullRocks;
   // Sheer Force toglie il contraccolpo di Life Orb alle mosse con effetti secondari
   const sheerForce = ability === 'sheerforce' && set.moves.some(m => { const move = getMove(m); return !!(move?.secondary || move?.secondaries?.length); });
-  const lifeOrb = item === 'lifeorb' && !magicGuard && !sheerForce ? LIFE_ORB : 0;
-  return { sources, recovery: halved ? gross / 2 : gross, halved, rocks, rocksHalvedBy, lifeOrb };
+  // Niente danno con Magic Guard; niente stato per chi ne è immune (Fuoco col bruciore, Veleno e Acciaio col veleno), e
+  // Poison Heal trasforma il veleno di Toxic Orb in cura
+  const immune = (item === 'flameorb' && types.includes('Fire'))
+    || (item === 'toxicorb' && (types.includes('Poison') || types.includes('Steel') || ability === 'poisonheal'))
+    || (item === 'lifeorb' && sheerForce) || (item === 'blacksludge' && itemHeal > 0);
+  const itemLoss = magicGuard || immune ? 0 : ITEM_LOSSES[item] ?? 0;
+  return { sources, recovery: halved ? gross / 2 : gross, halved, rocks, rocksHalvedBy, itemLoss, itemLossFrom: itemLoss ? set.item : null };
 }
 
 /** Recupero meno perdite per turno (in quota dei PS); `robustStep` è il valore medio dei colpi standard ricevuti. */
 export function sustainability(set: TeamSet, robustStep: number, remover: string | null = null): number {
   const parts = sustainParts(set, robustStep, remover);
-  return parts.recovery - parts.rocks - parts.lifeOrb;
+  return parts.recovery - parts.rocks - parts.itemLoss;
 }
 
 /** Mosse di potenziamento difensivo e gli aumenti che i dati non descrivono (Stockpile, Curse). */
@@ -222,7 +235,7 @@ export function memberDefense(set: TeamSet, team: TeamSet[], data: EngineData): 
   const physical = Math.round(plainP + SETUP_SHARE * (softScore(raw.physicalSetupStep / ref.physical) - plainP));
   const special = Math.round(plainS + SETUP_SHARE * (softScore(raw.specialSetupStep / ref.special) - plainS));
   const parts = sustainParts(set, (raw.physicalStep + raw.specialStep) / 2, hazardRemover(team));
-  const sustain = softScore(Math.max(0, parts.recovery - parts.rocks - parts.lifeOrb) / SUSTAIN_FULL);
+  const sustain = softScore(Math.max(0, parts.recovery - parts.rocks - parts.itemLoss) / SUSTAIN_FULL);
   const w = ROBUSTNESS_WEIGHTS;
   const plainValue = Math.round(w.physical * plainP + w.special * plainS + w.sustain * sustain);
   const value = Math.round(w.physical * physical + w.special * special + w.sustain * sustain);
