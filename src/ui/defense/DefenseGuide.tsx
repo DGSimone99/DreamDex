@@ -22,6 +22,12 @@ const HOLD_POINTS = [
 /** Pesi dei membri nel valore di un lato, dal più robusto: quelli del motore, in percentuale. */
 const MEMBER_WEIGHTS = RANK_WEIGHTS.map(w => Math.round(100 * w));
 
+/** Dal netto alla Sostenibilità (la curva comune, +50% netto = riferimento): alcune tappe, coi colori delle barre. */
+const NET_SCALE = [
+  { net: '≤ 0%', value: 0, tone: 'bad' }, { net: '+25%', value: 50, tone: 'warn' },
+  { net: '+40%', value: 80, tone: 'good' }, { net: '+50%', value: 93, tone: 'good' },
+] as const;
+
 /** Tasti dei punti: il moltiplicatore (o chi) sopra, i punti sotto nel colore del segno. */
 function Keys({ items }: { items: { label: string; value: string; title?: string }[] }) {
   const tone = (value: string) => (value.startsWith('+') ? 'good' : value.startsWith('−') ? 'bad' : 'even');
@@ -33,9 +39,9 @@ function Keys({ items }: { items: { label: string; value: string; title?: string
 }
 
 /** Righe termine / regola della guida; `stacked`: la regola sotto il termine. */
-function Rows({ rows, stacked = false }: { rows: [ReactNode, ReactNode][]; stacked?: boolean }) {
+function Rows({ rows, stacked = false, compact = false }: { rows: [ReactNode, ReactNode][]; stacked?: boolean; compact?: boolean }) {
   return (
-    <dl className={`guide-rows${stacked ? ' stacked' : ''}`}>
+    <dl className={`guide-rows${stacked ? ' stacked' : ''}${compact ? ' compact' : ''}`}>
       {rows.map(([term, rule], i) => <div key={i}><dt>{term}</dt><dd>{rule}</dd></div>)}
     </dl>
   );
@@ -114,19 +120,44 @@ export function DefenseGuideSection({ section, defense, meta }: { section: Secti
   if (section === 'sustain') {
     return (
       <>
-        <h5>{g('sus.count')}</h5>
-        <Rows rows={[
-          [g('sus.lead'), g('sus.lead.rule')],
-          [g('sus.recovery'), g('sus.recovery.rule')],
-          [g('sus.ability'), g('sus.ability.rule')],
-          [g('sus.rocks'), g('sus.rocks.rule')],
-          [g('sus.orb'), g('sus.orb.rule')],
+        <h5 className="guide-h-steps">
+          {g('sus.cycle')}
+          <span>{g('sus.step.enter')}</span><i aria-hidden="true">→</i><span>{g('sus.step.attack')}</span><i aria-hidden="true">→</i><span>{g('sus.step.heal')}</span>
+        </h5>
+        <div className="guide-two even">
+          <div>
+            <h6>{t('ddetail.sus.gain')}</h6>
+            <Keys items={[
+              { label: g('sus.k.recover'), value: '+50%' }, { label: 'Regenerator', value: '+33%' }, { label: 'Rest', value: '+33%' },
+              { label: 'Wish', value: '+25%' }, { label: 'Poison Heal', value: dec('+12,5%') }, { label: 'Leftovers', value: '+6%' },
+            ]} />
+          </div>
+          <div>
+            <h6>{t('ddetail.sus.loss')}</h6>
+            <Keys items={[
+              { label: 'Stealth Rock', value: dec('−12,5%'), title: g('sus.k.rocks') }, { label: 'Life Orb', value: '−10%' },
+              { label: 'Toxic Orb', value: dec('−12,5%') }, { label: 'Black Sludge', value: dec('−12,5%'), title: g('sus.k.sludge') },
+              { label: 'Flame Orb', value: '−6%' }, { label: 'Sticky Barb', value: '−6%' },
+            ]} />
+          </div>
+        </div>
+        <p className="guide-foot">{g('sus.k.rocks')} · {g('sus.k.sludge')}</p>
+
+        <h5>{g('sus.except')}</h5>
+        <Rows compact rows={[
+          ['Heavy-Duty Boots', g('sus.x.boots')],
+          [g('sus.x.removal'), g('sus.x.removal.rule')],
+          ['Magic Guard', g('sus.x.guard')],
+          [g('sus.x.status'), g('sus.x.status.rule')],
+          [g('sus.x.frail'), g('sus.x.frail.rule')],
         ]} />
-        <h5>{g('sus.tovote')}</h5>
-        <Rows rows={[
-          [g('sus.half'), g('sus.half.rule')],
-          [g('sus.scale'), g('sus.scale.rule')],
-        ]} />
+
+        <h5 className="guide-h-steps">{g('sus.vote')}<span className="eq">{t('ddetail.sus.net')} = {t('ddetail.sus.gain')} − {t('ddetail.sus.loss')}</span></h5>
+        <ol className="guide-scale net" aria-label={g('sus.vote')}>
+          {NET_SCALE.map(step => (
+            <li key={step.net}><span>{t('ddetail.sus.net')} {dec(step.net)}</span><b className={`ct-pill ${step.tone}`}>{step.value}</b></li>
+          ))}
+        </ol>
       </>
     );
   }
