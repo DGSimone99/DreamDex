@@ -566,13 +566,13 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
   user-select: none;
   /* Rullo: allontanandosi dalla selezionata (--d con segno, --ad senza) la pillola si inclina un poco all'indietro, sopra
      verso l'alto e sotto verso il basso, e si stringe in larghezza più che in altezza (non si schiaccia; la più lontana
-     resta al 94%); sotto il mouse si allunga con un rimbalzo */
+     resta al 94%). Il centro del rullo segue il mouse (--d lo calcola la lista), con un rimbalzo */
   --hs: 1;
   transform: rotateX(calc(var(--d, 0) * -5deg)) scale(calc((1 - var(--ad, 0) * 0.02) * var(--hs)), calc((1 - var(--ad, 0) * 0.012) * var(--hs)));
   opacity: calc(1 - var(--ad, 0) * 0.06);
   transition: background 0.15s, opacity 0.3s, transform 0.42s cubic-bezier(0.34, 1.45, 0.5, 1);
 }
-.pill:hover { --hs: 1.03; z-index: 2; background: var(--pill-bg-hover); opacity: 1; }
+.pill:hover { --hs: 1.02; z-index: 2; background: var(--pill-bg-hover); }
 .pill.selected { z-index: 1; }
 /* Pagina nuova: le righe entrano girando dal rullo, una dopo l'altra (avanti dal basso, indietro dall'alto) */
 .suggestions.menu > .pill { animation: pill-roll-on 0.42s cubic-bezier(0.3, 1.25, 0.5, 1) backwards; animation-delay: calc(var(--i, 0) * 35ms); }

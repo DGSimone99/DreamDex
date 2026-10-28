@@ -143,6 +143,15 @@ const STATES: Record<string, State> = {
   } },
   // Icone del box al posto degli sprite normali (Carte e Menu)
   'pokemon-box': { storage: { 'dreamdex.listSprite': '"box"' }, run: async p => { await tab(p, 'pokemon'); return true; } },
+  'pokemon-menu-hover': { storage: { 'dreamdex.listStyle': '"menu"' }, run: async p => {
+    await tab(p, 'pokemon');
+    await wait(1500);
+    const row = (await p.$$('.suggestions.menu > li'))[4];
+    if (!row) return 'no row';
+    await row.hover();
+    await wait(1200);
+    return true;
+  } },
   'pokemon-menu-box': { storage: { 'dreamdex.listStyle': '"menu"', 'dreamdex.listSprite': '"box"' }, run: async p => { await tab(p, 'pokemon'); return true; } },
   // Team nascosto (tessere/righe più alte) e nomi lunghi, in ogni stile e sprite
   'pokemon-collapsed': { run: async p => { await tab(p, 'pokemon'); await wait(300); return clickText(p, 'button.band-toggle', /./); } },

@@ -270,6 +270,12 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   const lastPage = useRef(page);
   const roll = page < lastPage.current ? 'roll-back' : 'roll-on';
   useEffect(() => { lastPage.current = page; }, [page]);
+  // Menu: la riga sotto il mouse (posto nella pagina): il rullo gira su di lei, uscendo torna sulla selezionata
+  const [hoverRow, setHoverRow] = useState<number | null>(null);
+  const trackRow = (target: EventTarget) => {
+    const li = (target as HTMLElement).closest?.('.suggestions > li');
+    setHoverRow(li?.parentElement ? Array.prototype.indexOf.call(li.parentElement.children, li) : null);
+  };
   // Menu: la rotella sulla lista sfoglia le pagine (una per gesto: le altre tacche dello stesso gesto si ignorano)
   const wheelAt = useRef(0);
   const wheel = (e: React.WheelEvent) => {
@@ -424,14 +430,16 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
         )}
       </>
     );
-    const selectedAt = selected ? pageItems.indexOf(selected) : -1;
+    // Centro del rullo: la riga sotto il mouse, sennò la selezionata
+    const selectedAt = hoverRow !== null && hoverRow < pageItems.length ? hoverRow : selected ? pageItems.indexOf(selected) : -1;
     body = (
       <>
         {/* Le misure per le caselle (Carte: colonne e altezza; Menu: altezza della riga) */}
         <ol className={`suggestions ${cards ? 'cards' : `menu ${roll}`}${stale ? ' stale' : ''}`} ref={listRef} aria-busy={stale || undefined} style={listVars}
-          onWheel={cards ? undefined : wheel}>
+          onWheel={cards ? undefined : wheel}
+          onMouseOver={cards ? undefined : e => trackRow(e.target)} onMouseLeave={cards ? undefined : () => setHoverRow(null)}>
           {pageItems.map((item, i) => {
-            // Menu: il rullo gira attorno alla selezionata (fuori pagina: tutte dritte)
+            // Menu: il rullo gira attorno alla riga sotto il mouse o alla selezionata (fuori pagina: tutte dritte)
             const usage = emptyTeam ? usageOf(item.species) : null;
             const candidate: CandidateProps = {
               rank: page * perPage + i + 1,
