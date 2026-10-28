@@ -35,21 +35,25 @@ export function cardsLayout(height: number, teamCollapsed: boolean): CardsLayout
 export interface MenuLayout {
   perPage: number;
   rowHeight: number;
+  /** Spazio tra le righe (CSS --menu-gap): 10, 6 nelle liste basse perché le righe non si schiaccino. */
+  gap: number;
   reasons: number;
 }
 
 /** Righe del Menu per pagina: sempre 6, come le Carte (una pagina = un team possibile). */
 export const MENU_ROWS = 6;
-/** Spazio tra le righe del Menu (CSS .suggestions.menu gap): ci sta lo sprite che sporge dal tondo. */
+/** Spazio tra le righe del Menu (CSS --menu-gap): ci sta lo sprite che sporge dal tondo; 6 sotto MENU_TIGHT px. */
 export const MENU_GAP = 10;
+export const MENU_TIGHT = 450;
 /** Altezza massima di una riga del Menu: oltre, la colonna resta a questa misura e si centra in verticale. */
 export const MENU_MAX_ROW = 84;
 
-// Menu: 6 righe che riempiono l'altezza attuale della lista (margine 10 sopra e sotto), al massimo 84 px.
-// Motivi: col team aperto 2 se la riga è alta almeno 58 px (sennò 1), col team nascosto fino a 3.
+// Menu: 6 righe che riempiono l'altezza attuale della lista (margine 10 sopra e sotto), al massimo 84 px; nelle liste
+// basse lo spazio tra le righe scende a 6. Motivi: 2 se la riga è alta almeno 56 px (sennò 1), 3 col team nascosto da 76.
 export function menuLayout(height: number, teamCollapsed: boolean): MenuLayout {
   const h = num(height);
-  const rowHeight = clamp(Math.floor((h - 20 + MENU_GAP) / MENU_ROWS) - MENU_GAP, 0, MENU_MAX_ROW);
-  const reasons = rowHeight >= 76 && teamCollapsed ? 3 : rowHeight >= 58 ? 2 : 1;
-  return { perPage: MENU_ROWS, rowHeight, reasons };
+  const gap = h < MENU_TIGHT ? 6 : MENU_GAP;
+  const rowHeight = clamp(Math.floor((h - 20 + gap) / MENU_ROWS) - gap, 0, MENU_MAX_ROW);
+  const reasons = rowHeight >= 76 && teamCollapsed ? 3 : rowHeight >= 56 ? 2 : 1;
+  return { perPage: MENU_ROWS, rowHeight, gap, reasons };
 }

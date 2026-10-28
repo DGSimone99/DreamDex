@@ -32,8 +32,12 @@ describe('menuLayout', () => {
     expect(menuLayout(500, false).rowHeight).toBe(Math.floor((500 - 20 + 10) / 6) - 10);
     expect(menuLayout(2000, false).rowHeight).toBe(84);
   });
-  it('motivi: 1 nelle righe basse, 2 da 58 px, 3 solo col team nascosto e righe da 76', () => {
-    expect(menuLayout(360, false).reasons).toBe(1);
+  it('liste basse: spazio tra le righe 6 invece di 10, righe più alte', () => {
+    expect(menuLayout(400, false)).toMatchObject({ gap: 6, rowHeight: Math.floor((400 - 20 + 6) / 6) - 6 });
+    expect(menuLayout(500, false).gap).toBe(10);
+  });
+  it('motivi: 1 nelle righe basse, 2 da 56 px, 3 solo col team nascosto e righe da 76', () => {
+    expect(menuLayout(340, false).reasons).toBe(1);
     expect(menuLayout(500, false).reasons).toBe(2);
     expect(menuLayout(600, false).reasons).toBe(2);
     expect(menuLayout(600, true).reasons).toBe(3);

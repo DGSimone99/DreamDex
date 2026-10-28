@@ -19,8 +19,10 @@ export function CandidatePill(props: CandidateProps) {
   const typeNames = types.map(type => typeName(type, lang)).join(' / ');
   const className = ['pill', isLead(rank, item) && 'first', stateClasses(props)].filter(Boolean).join(' ');
   return (
-    // Sfumatura del tondo nel colore del tipo primario; --d e --ad (distanza dalla selezionata) piegano il rullo
-    <li className={className} style={{ '--t1': typeColor(types[0] ?? ''), '--d': depth, '--ad': Math.abs(depth) } as CSSProperties} {...candidateHandlers(props)}>
+    // Sfumatura del tondo nel colore del tipo primario; --d e --ad (distanza dalla selezionata) piegano il rullo,
+    // --i (posto nella pagina di 6) scagliona l'entrata delle righe cambiando pagina
+    <li className={className} style={{ '--t1': typeColor(types[0] ?? ''), '--d': depth, '--ad': Math.abs(depth), '--i': (rank - 1) % 6 } as CSSProperties}
+      {...candidateHandlers(props)}>
       <span className="pill-sprite" aria-hidden="true">{sprite(false)}</span>
       {out && <OutMark member={out} />}
       <span className="who">

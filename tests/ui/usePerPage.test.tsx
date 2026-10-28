@@ -68,11 +68,11 @@ describe('usePerPage', () => {
     const size = { width: 560, height: 500 };
     const { result, rerender } = setup('menu', size);
     fire();
-    expect(result.current).toEqual({ perPage: 6, rowHeight: 71, reasons: 2 });
+    expect(result.current).toEqual({ perPage: 6, rowHeight: 71, gap: 10, reasons: 2 });
     size.height = 712;
     rerender({ collapsed: true });
     fire();
-    expect(result.current).toEqual({ perPage: 6, rowHeight: 84, reasons: 3 });
+    expect(result.current).toEqual({ perPage: 6, rowHeight: 84, gap: 10, reasons: 3 });
   });
 
   it('Carte: 6 per pagina, carta dall’altezza (max 260), motivi 2 → 3 nascondendo il team', () => {

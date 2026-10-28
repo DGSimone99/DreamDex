@@ -94,7 +94,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   const [pageState, setPage] = useState(0);
   // Quanti per pagina: dallo spazio della lista, come se il team fosse aperto
   const listRef = useRef<HTMLOListElement>(null);
-  const { perPage, columns, tileHeight, rowHeight, reasons } = usePerPage(listRef, listStyle, teamCollapsed);
+  const { perPage, columns, tileHeight, rowHeight, gap, reasons } = usePerPage(listRef, listStyle, teamCollapsed);
   const [filters, setFilters] = useState<CandidateFilters>(EMPTY_FILTERS);
   // La lista si ricalcola sui filtri "stabili"; l'input mostra subito quello che scrivi
   const applied = useDebounced(filters, SEARCH_DELAY);
@@ -266,6 +266,19 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
     setCursor(null);
     setSelectedName(null);
   };
+  // Menu: le righe di una pagina nuova entrano girando come un rullo, dal basso andando avanti e dall'alto tornando indietro
+  const lastPage = useRef(page);
+  const roll = page < lastPage.current ? 'roll-back' : 'roll-on';
+  useEffect(() => { lastPage.current = page; }, [page]);
+  // Menu: la rotella sulla lista sfoglia le pagine (una per gesto: le altre tacche dello stesso gesto si ignorano)
+  const wheelAt = useRef(0);
+  const wheel = (e: React.WheelEvent) => {
+    if (Math.abs(e.deltaY) < 4 || e.timeStamp - wheelAt.current < 350) return;
+    const next = page + (e.deltaY > 0 ? 1 : -1);
+    if (next < 0 || next >= pages) return;
+    wheelAt.current = e.timeStamp;
+    goToPage(next);
+  };
   const selected = pageItems.find(item => item.species === selectedName)
     ?? (pickedIndex >= page * perPage && pickedIndex < (page + 1) * perPage ? items[pickedIndex] : undefined)
     ?? pageItems[0];
@@ -365,6 +378,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
     '--cols': columns,
     '--tile-h': tileHeight !== undefined ? `${tileHeight}px` : undefined,
     '--row-h': rowHeight !== undefined ? `${rowHeight}px` : undefined,
+    '--menu-gap': gap !== undefined ? `${gap}px` : undefined,
     '--reasons': reasons,
   } as CSSProperties;
 
@@ -414,7 +428,8 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
     body = (
       <>
         {/* Le misure per le caselle (Carte: colonne e altezza; Menu: altezza della riga) */}
-        <ol className={`suggestions ${cards ? 'cards' : 'menu'}${stale ? ' stale' : ''}`} ref={listRef} aria-busy={stale || undefined} style={listVars}>
+        <ol className={`suggestions ${cards ? 'cards' : `menu ${roll}`}${stale ? ' stale' : ''}`} ref={listRef} aria-busy={stale || undefined} style={listVars}
+          onWheel={cards ? undefined : wheel}>
           {pageItems.map((item, i) => {
             // Menu: il rullo gira attorno alla selezionata (fuori pagina: tutte dritte)
             const usage = emptyTeam ? usageOf(item.species) : null;

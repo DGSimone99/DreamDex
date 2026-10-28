@@ -13,8 +13,9 @@ export interface PerPage {
   /** Carte: colonne e altezza di ogni casella. */
   columns?: number;
   tileHeight?: number;
-  /** Menu: altezza di ogni riga. */
+  /** Menu: altezza di ogni riga e spazio tra le righe. */
   rowHeight?: number;
+  gap?: number;
   /** Quanti motivi entrano sotto il nome. */
   reasons: number;
 }
@@ -73,7 +74,6 @@ export function usePerPage(ref: RefObject<HTMLElement | null>, style: ListStyle,
       return { perPage, columns, tileHeight, reasons };
     }
     if (!measure) return { perPage: PAGE, reasons: 1 };
-    const { perPage, rowHeight, reasons } = menuLayout(measure.height, teamCollapsed);
-    return { perPage, rowHeight, reasons };
+    return menuLayout(measure.height, teamCollapsed);
   }, [measure, style, teamCollapsed]);
 }
