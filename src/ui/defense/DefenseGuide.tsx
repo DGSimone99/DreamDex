@@ -120,10 +120,6 @@ export function DefenseGuideSection({ section, defense, meta }: { section: Secti
   if (section === 'sustain') {
     return (
       <>
-        <h5 className="guide-h-steps">
-          {g('sus.cycle')}
-          <span>{g('sus.step.enter')}</span><i aria-hidden="true">→</i><span>{g('sus.step.attack')}</span><i aria-hidden="true">→</i><span>{g('sus.step.heal')}</span>
-        </h5>
         <div className="guide-two even">
           <div>
             <h6>{t('ddetail.sus.gain')}</h6>

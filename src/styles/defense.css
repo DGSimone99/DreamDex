@@ -338,18 +338,13 @@
   .sus-net-num { min-width: 40px; font-size: 13px; }
 }
 
-/* Guida, Sostenibilità: il ciclo in tre passi, Recupera e Perde come tasti, le eccezioni, dal netto al voto */
-.help-panel .guide-steps, .guide-steps { max-width: none; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 10px; }
-.guide-steps span { padding: 3px 10px; border: 1px solid var(--line); border-radius: 3px; background: var(--raised); font-size: 13px; color: var(--text); }
-.guide-steps i { font-style: normal; color: var(--faint); }
+/* Guida, Sostenibilità: Recupera e Perde come tasti, le eccezioni, dal netto al voto */
 .guide-two.even { grid-template-columns: 1fr 1fr; }
 .guide-two .guide-keys { grid-auto-flow: row; grid-template-columns: repeat(3, 1fr); }
 .help-panel .guide-foot, .guide-foot { max-width: none; margin: 6px 0 0; font-size: 12px; color: var(--faint); }
 .guide-scale.net { grid-template-columns: repeat(4, 1fr); margin-top: 10px; }
 .guide-rows.compact > div { padding: 3px 0; }
-/* Titolo di sezione con i passi accanto (il ciclo, l equazione del netto): niente righe in più */
+/* Titolo di sezione con l equazione del netto accanto: niente righe in più */
 .guide-h-steps { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .guide-h-steps span { margin-left: 4px; padding: 1px 8px; border: 1px solid var(--line); border-radius: 3px; background: var(--raised); font-size: 12px; font-weight: 600; text-transform: none; letter-spacing: 0; color: var(--text); }
-.guide-h-steps span + i + span { margin-left: 0; }
-.guide-h-steps i { font-style: normal; color: var(--faint); }
 .guide-h-steps span.eq { margin-left: 8px; color: var(--muted); }
