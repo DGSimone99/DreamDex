@@ -9,7 +9,6 @@ import { DefenseRobustness } from './DefenseRobustness';
 import { DefenseSustain } from './DefenseSustain';
 import type { AreaContext, DetailTab, T } from '../AreaDetail';
 
-export const pct = (x: number) => `${Math.round(100 * x)}%`;
 
 /** Le schede della Difesa: Generale, Robustezza, Sostenibilità, Coverage di tipi e del meta. */
 export function defenseTabs(defense: TeamDefense, meta: boolean, t: T, lang: Lang, ctx: AreaContext): DetailTab[] {
