@@ -110,7 +110,7 @@ describe("dettaglio dell'Offesa a schede", () => {
   it('frecce fra le schede; nessuna finestra', async () => {
     const { user, dialog } = await openOffense('it');
     within(dialog).getAllByRole('tab')[0].focus();
-    await user.keyboard('{ArrowDown}');
+    await user.keyboard('{ArrowRight}');
     expect(within(dialog).getByRole('tab', { name: /^Potenza/ })).toHaveAttribute('aria-selected', 'true');
     expect(screen.queryByRole('dialog')).toBeNull();
   });

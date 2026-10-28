@@ -2,6 +2,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { App } from '../../src/App';
+import { analyzeTeam } from '../../src/engine/analysis';
 import { AreaView } from '../../src/ui/AreaView';
 import { rateTeam } from '../../src/engine/rating';
 import { emptySet } from '../../src/engine/sets';
@@ -89,7 +90,7 @@ describe('Generale dei Ruoli', () => {
       ],
     };
     const rating = { ...base, roles, areas: base.areas.map(a => (a.key === 'roles' ? { ...a, value: 64 } : a)) };
-    renderIt(<AreaView rating={rating} area="roles" problems={[]} />);
+    renderIt(<AreaView rating={rating} area="roles" team={[]} analysis={analyzeTeam([], fixtureData)} problems={[]} />);
     const panel = screen.getByRole('tabpanel');
     expect(within(panel).getAllByRole('term').map(term => term.textContent)).toEqual(['Voci importanti', 'Voci minori', 'Voci essenziali']);
     // Base 67 (media di setup del campo, hazard e rimozione), extra +3, malus −2
@@ -147,7 +148,7 @@ describe('ruolo secondario nel dettaglio dei Ruoli', () => {
     const base = rateTeam([{ ...emptySet('Great Tusk'), moves: ['Headlong Rush'] }], fixtureData, 'it')!;
     const rating = { ...base, roles: rolesWithSecondary() };
     const user = userEvent.setup();
-    renderIt(<AreaView rating={rating} area="roles" problems={[]} />);
+    renderIt(<AreaView rating={rating} area="roles" team={[]} analysis={analyzeTeam([], fixtureData)} problems={[]} />);
     // Generale: chi porta la voce con la nota del secondario
     const general = within(screen.getByRole('tabpanel')).getByRole('row', { name: /^Muro Fisico/ });
     expect(general).toHaveTextContent('Great Tusk (secondario · 50)');

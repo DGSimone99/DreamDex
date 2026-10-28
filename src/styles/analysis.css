@@ -94,17 +94,22 @@
 .analysis-view { flex: 1; min-height: 0; }
 
 /* Un'area sulla pagina: sottostatistiche e problemi a sinistra, il dettaglio a destra; ognuna scorre dentro */
-.area-view { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 16px; height: 100%; min-height: 0; }
-.area-side { display: flex; flex-direction: column; gap: 10px; min-height: 0; overflow: auto; }
-.area-side .ad-nav { padding: 6px; border: 1px solid var(--line-soft); border-right: 1px solid var(--line-soft); }
-.area-side .ad-nav [role='tab'] { display: grid; grid-template-columns: minmax(0, 1fr) 48px auto; gap: 8px; align-items: center; }
-.sub-meter { height: 4px; background: var(--field); }
-.sub-meter > span { display: block; height: 100%; background: var(--accent); }
-.area-problems { margin: 0; padding: 8px 10px; list-style: none; display: grid; gap: 4px; font-size: 13px; border: 1px solid var(--line-soft); background: var(--panel); }
-.area-problems li { position: relative; padding-left: 14px; }
-.area-problems li::before { content: ''; position: absolute; left: 0; top: 0.55em; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
-.area-problems li.serious::before { background: var(--bad); }
-.area-panel { min-height: 0; overflow: auto; overscroll-behavior: contain; background: var(--panel); border: 1px solid var(--line-soft); }
+.area-view { display: flex; flex-direction: column; gap: 10px; height: 100%; min-height: 0; }
+/* Striscia magenta attaccata alla scheda aperta (il margine annulla lo spazio sotto le schede principali) */
+.area-strip { position: relative; margin-top: -12px; flex: none; }
+.area-subs { display: flex; gap: 2px; background: var(--accent-2-wash); border-top: 3px solid var(--accent-2); overflow-x: auto; }
+.area-subs [role='tab'] { display: flex; align-items: baseline; gap: 8px; padding: 9px 14px 8px; border: 0; border-bottom: 3px solid transparent; border-radius: 0; background: none; color: var(--muted); font-size: 13.5px; font-weight: 500; font-style: normal; line-height: 1.2; white-space: nowrap; }
+.area-subs [role='tab'] b { font: 700 15px/1 var(--display); color: var(--accent-2-ink); font-variant-numeric: tabular-nums; }
+.area-subs [role='tab']:hover { color: var(--text); }
+.area-subs [role='tab'][aria-selected='true'] { color: var(--text); background: var(--accent-2-soft); border-bottom-color: var(--accent-2-ink); }
+.area-subs [role='tab'][aria-selected='true'] b { color: var(--text); }
+.sub-help-room { display: inline-block; width: 22px; }
+.area-help { position: absolute; top: 50%; transform: translateY(-50%); }
+.area-problems { margin: 0; padding: 0 2px; list-style: none; display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 12.5px; flex: none; }
+.area-problems li { display: flex; gap: 6px; align-items: baseline; }
+.area-problems li::before { content: '\25CF'; color: var(--warn); }
+.area-problems li.serious::before { color: var(--bad); }
+.area-panel { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; background: var(--panel); border: 1px solid var(--line-soft); }
 .area-extra { margin-bottom: 16px; }
 /* Ogni scheda tiene il posto per il "?": aprendone un'altra le schede non si spostano */
 

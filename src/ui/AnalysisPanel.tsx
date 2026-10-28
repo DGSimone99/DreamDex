@@ -63,7 +63,7 @@ export function AnalysisPanel({ team, analysis, rating, coaching, advice = null,
   let body;
   if (area && rating) {
     body = (
-      <AreaView key={area} rating={rating} area={area} problems={problemsOf(coaching?.problems, area)}
+      <AreaView key={area} rating={rating} area={area} team={team} analysis={analysis} problems={problemsOf(coaching?.problems, area)}
         extra={area === 'defense' ? { tabKey: 'coverageTypes', panel: <DefenseTable team={team} analysis={analysis} /> }
           : area === 'strength' ? { tabKey: 'coverageTypes', panel: <OffenseTable analysis={analysis} /> }
           : area === 'roles' ? { tabKey: 'general', panel: <NeedsTable team={team} analysis={analysis} /> }

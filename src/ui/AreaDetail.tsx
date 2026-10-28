@@ -1,4 +1,6 @@
-import type { ReactElement } from 'react';
+import type { ReactElement, ReactNode } from 'react';
+import type { TeamAnalysis } from '../engine/analysis';
+import type { TeamSet } from '../engine/sets';
 import { MAX_BONUS, MAX_PENALTY, bonusMalusCatalog, type CatalogEntry, type TeamRating } from '../engine/rating';
 import { stepBucket, type CoverageDetail, type WallCell } from '../engine/offense';
 import type { TeamDefense } from '../engine/defense';
@@ -18,7 +20,10 @@ type Sub = Exclude<Tab, 'general'>;
 /** Una scheda del dettaglio: etichetta, valore e contenuto. */
 export type T = ReturnType<typeof useT>;
 
-export interface DetailTab { key: string; label: string; value: number | string | null; panel: ReactElement }
+export interface DetailTab { key: string; label: string; value: number | string | null; panel: ReactElement; help?: ReactNode }
+
+/** Il contesto dell'area oltre al voto: il team e la sua analisi (lo usa la Difesa). */
+export interface AreaContext { team: TeamSet[]; analysis: TeamAnalysis }
 
 /** Casella della tabella dei muri: il danno, e tra parentesi quello dopo il setup quando cambia la soglia. */
 function WallValue({ cell }: { cell: WallCell }) {
@@ -43,7 +48,8 @@ export type AreaKey = DetailArea;
 export const signed = (n: number) => (n < 0 ? `−${-n}` : n > 0 ? `+${n}` : '0');
 
 /** Le schede di un'area (sottostatistiche col loro valore e contenuto): le usano la finestra e la vista in Analisi. */
-export function areaTabs(rating: TeamRating, area: AreaKey, t: T, lang: Lang): DetailTab[] {
+export function areaTabs(rating: TeamRating, area: AreaKey, t: T, lang: Lang, ctx: AreaContext): DetailTab[] {
+  void ctx; // Per ora lo usa solo la Difesa (prossimo passo)
   if (area === 'bonusMalus') return catalogueTabs(rating, t, lang);
   const value = rating.areas.find(a => a.key === area)?.value ?? null;
   return area === 'strength' ? offenseTabs(rating, t, lang)
