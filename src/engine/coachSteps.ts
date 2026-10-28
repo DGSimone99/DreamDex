@@ -2,6 +2,12 @@ import type { CoachProblem, ProblemCategory } from './coach';
 import type { CoachFix } from './coachFixes';
 import type { MoveFix } from './moveFixes';
 
+/**
+ * Una debolezza di tipo diventa tappa (un cambio consigliato) solo da questa pressione in su: Sicurezza del tipo al 25% o meno
+ * (saldo −1 o peggio). Fra 25% e 50% resta un problema minore, ma non basta da solo a consigliare un cambio.
+ */
+export const STEP_MIN_DEFENSE_PRESSURE = 1;
+
 /** Tappe mostrate nel Coaching. */
 export const MAX_STEPS = 3;
 
@@ -59,6 +65,7 @@ export function buildSteps(problems: CoachProblem[], fixes: CoachFix[], moves: M
   const steps: CoachStep[] = [];
   for (const problem of ordered) {
     if (covered.has(problem.key)) continue;
+    if (problem.category === 'defense' && problem.size !== undefined && problem.size < STEP_MIN_DEFENSE_PRESSURE) continue;
     const move = sortedMoves.find(m => m.solves.includes(problem.key) && !usedMembers.has(m.index)) ?? null;
     if (bySwap.has(problem.key) && !move) continue;
     const swap = sortedFixes.find(f => f.solves.includes(problem.key) && !usedSpecies.has(f.species)) ?? null;
