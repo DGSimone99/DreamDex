@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import type { TeamDefense } from '../../engine/defense';
-import { gameName } from '../../i18n/game';
-import { useLang, useT } from '../../i18n/react';
+import { useT } from '../../i18n/react';
 import type { AreaContext } from '../AreaDetail';
 import { Icon } from '../icons';
 import { PokemonIcon } from '../PokemonName';
+import { MoveName } from '../TypeText';
 
 type Row = NonNullable<TeamDefense['coverageMeta']>['rows'][number];
 
@@ -24,7 +24,6 @@ const tone = (row: Row) => (row.heldBy.length === 0 ? 'bad' : row.level >= 80 ? 
  */
 export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaContext }) {
   const t = useT();
-  const lang = useLang();
   const [page, setPage] = useState(0);
   const rows = [...(defense.coverageMeta?.rows ?? [])].sort((a, b) => a.level - b.level || b.weight - a.weight);
   const pages = Math.max(1, Math.ceil(rows.length / META_PAGE));
@@ -73,7 +72,7 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
                   <span key={`${h.species}-${i}`} className={`cm-holder${h.partial ? ' partial' : ''}`} title={`${h.species}: ${h.move} ${h.pct}%`}>
                     <span className="def-box"><PokemonIcon name={h.species} /></span>
                     <span className="cm-holder-name">{h.species}</span>
-                    {ctx.roomy && h.move && <span className="cm-holder-move">{gameName('move', h.move, lang)}</span>}
+                    {ctx.roomy && h.move && <span className="cm-holder-move"><MoveName move={h.move} /></span>}
                     <span className={`cm-holder-pct${h.partial ? ' half' : ''}`}>{h.pct}%</span>
                   </span>
                 ))}
