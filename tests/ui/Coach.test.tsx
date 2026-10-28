@@ -351,6 +351,22 @@ describe('CoachingView', () => {
       expect(li.querySelectorAll('.coach-alt')).toHaveLength(2);
     });
 
+    it('puntatore sul pulsante principale (che copre la striscia): anteprima di tutta la tappa; sulla mossa "oppure": solo la sua', async () => {
+      const coaching = coachTeam(three, DEFAULT_FORMAT, data);
+      const [p1, p2] = coaching.problems;
+      const base = adviceOf(three, DEFAULT_FORMAT, data).fixes[0];
+      const swap = { ...base, kind: 'swap' as const, member: 'Great Tusk', species: 'Rotom-Wash', solves: [p1.key] };
+      const move: MoveFix = { index: 1, member: 'Gholdengo', set: three[1], reduces: [], slot: 1, from: '', to: 'Thunderbolt', gain: 1, solves: [p2.key] };
+      renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [{ problem: p1, swap, move, alsoSolves: [], group: [p1.key] }] }} members={3}
+        rating={rating(three)} metaOn {...noop} />);
+      const lit = () => [...document.querySelectorAll<HTMLElement>('li.coach-prob.is-solved-preview')].map(li => li.dataset.key).sort();
+      const user = userEvent.setup();
+      await user.hover(within(stepsRegion()).getByRole('button', { name: /^Al posto di Great Tusk: Rotom-Wash/ }));
+      expect(lit()).toEqual([p1.key, p2.key].sort());
+      await user.hover(within(stepsRegion()).getByRole('button', { name: /^Dai Thunderbolt/ }));
+      expect(lit()).toEqual([p2.key]);
+    });
+
     it('scambio: chi esce in piccolo, chi entra animato', () => {
       const { li } = strip({});
       expect(li.querySelector('.coach-strip-out .sprite')).not.toBeNull();
