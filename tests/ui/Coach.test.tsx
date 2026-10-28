@@ -405,17 +405,19 @@ describe('CoachingView', () => {
     expect(pill).toHaveAttribute('title', text);
   });
 
-  it('ruoli mancanti nella tessera: una riga per ruolo con la ×, senza "Ruoli importanti mancanti"', () => {
+  it('ruoli mancanti nella tessera: una pillola per ruolo con la ×, senza "Ruoli importanti mancanti"', () => {
     const text = 'Ruoli importanti mancanti: Rimozione Strumenti, Pivot';
     const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], threatFixes: {},
       problems: [{ severity: 'minor', category: 'roles', text, fixes: [], key: 'roles:important', subjects: ['itemRemoval', 'pivot'] }] };
     renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [] }} members={3} rating={rating(three)} metaOn {...noop} />);
-    const pill = screen.getByRole('group', { name: 'Ruoli' }).querySelector<HTMLElement>('li[data-key="roles:important"]')!;
-    const rows = [...pill.querySelectorAll<HTMLElement>('.coach-miss')];
-    expect(rows.map(r => r.textContent)).toEqual([needLabel('itemRemoval' as Need, 'it'), needLabel('pivot' as Need, 'it')]);
-    rows.forEach(r => expect(r.querySelector('.icon')).not.toBeNull());
-    expect(pill.querySelector('[aria-hidden="true"]')?.textContent ?? '').not.toContain('Ruoli importanti mancanti');
-    expect(pill).toHaveAttribute('title', text);
+    const pills = [...screen.getByRole('group', { name: 'Ruoli' }).querySelectorAll<HTMLElement>('li[data-key="roles:important"]')];
+    expect(pills).toHaveLength(2);
+    expect(pills.map(p => p.querySelector('.coach-miss')?.textContent)).toEqual([needLabel('itemRemoval' as Need, 'it'), needLabel('pivot' as Need, 'it')]);
+    for (const pill of pills) {
+      expect(pill.querySelectorAll('.coach-miss')).toHaveLength(1);
+      expect(pill.querySelector('.coach-miss .icon')).not.toBeNull();
+      expect(pill.getAttribute('title')).toContain(text);
+    }
   });
 
   it('pillola lunga: title col testo intero', () => {
@@ -468,7 +470,8 @@ describe('CoachingView', () => {
     let total = 0;
     for (const col of ['defense', 'offense', 'roles', 'rules'] as const) {
       const group = screen.getByRole('group', { name: names[col] });
-      const rows = [...group.querySelectorAll<HTMLElement>('li[data-key]')];
+      // I ruoli mancanti hanno una pillola per ruolo, tutte con la chiave del problema: una riga per chiave
+      const rows = [...group.querySelectorAll<HTMLElement>('li[data-key]')].filter((li, i, all) => all.findIndex(o => o.dataset.key === li.dataset.key) === i);
       const expected = unique.filter(p => columnOf(p.category) === col);
       expect(rows).toHaveLength(expected.length);
       total += rows.length;

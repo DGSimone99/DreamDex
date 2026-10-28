@@ -268,10 +268,14 @@ function Step({ step, index, problems, actions, onCard, onPreview }: {
 /**
  * Un problema nella tessera della sua area, come pillola: bordo del colore della gravità (la gravità detta solo ai
  * lettori di schermo), icona del tipo o della minaccia, testo; le debolezze in breve ("Terra 3↓ 1↑"). Il testo intero
- * nel title; i ruoli mancanti uno per riga con la ×. Se una tappa lo copre, il numero della tappa in fondo. `preview`: la proposta sotto il puntatore (o col
+ * nel title; un ruolo mancante (`role`) con la ×. Se una tappa lo copre, il numero della tappa in fondo. `preview`: la proposta sotto il puntatore (o col
  * fuoco) lo risolve, quindi si vede barrato in verde. `dim`: ridondanze e minacce, più quiete dei problemi veri.
  */
-function MapProblem({ problem, step, preview, usage, dim = false }: { problem: CoachProblem; step: number | null; preview: boolean; usage?: number; dim?: boolean }) {
+function MapProblem({ problem, step, preview, usage, dim = false, role }: {
+  problem: CoachProblem; step: number | null; preview: boolean; usage?: number; dim?: boolean;
+  /** Per i ruoli mancanti: il ruolo di questa pillola (una pillola per ruolo, tutte con la chiave del problema) */
+  role?: string;
+}) {
   const tr = useT();
   const lang = useLang();
   const subjects = problem.subjects ?? [];
@@ -280,8 +284,6 @@ function MapProblem({ problem, step, preview, usage, dim = false }: { problem: C
   // Difesa e coverage: le icone dei tipi davanti, il testo senza colori (il tipo non si legge due volte)
   const typed = (problem.category === 'defense' || problem.category === 'coverage') && subjects.length > 0;
   const counts = problem.category === 'defense' && subjects.length === 1 ? problem.counts : undefined;
-  // Ruoli mancanti (essenziali o importanti): uno per riga con la ×, senza la frase davanti (la tessera dice già "Ruoli")
-  const missing = problem.category === 'roles' && (problem.key === 'roles:essential' || problem.key === 'roles:important') && subjects.length > 0;
   const title = covered ? `${problem.text} · ${covered}` : problem.text;
   return (
     <li data-key={problem.key} title={title}
@@ -292,12 +294,8 @@ function MapProblem({ problem, step, preview, usage, dim = false }: { problem: C
           <PokemonIcon name={threat} /><span className="visually-hidden">{problem.text}</span>
           {usage !== undefined && <span className="coach-usage">{formatPercent(lang, usage, 0)}</span>}
         </span>
-      ) : missing ? (
-        <span className="coach-prob-text is-missing">
-          <span aria-hidden="true">
-            {subjects.map(need => <span key={need} className="coach-miss"><Icon name="close" />{needLabel(need as Need, lang)}</span>)}
-          </span><span className="visually-hidden">{problem.text}</span>
-        </span>
+      ) : role ? (
+        <span className="coach-prob-text coach-miss"><Icon name="close" />{needLabel(role as Need, lang)}</span>
       ) : counts ? (
         <span className="coach-prob-text">
           <TypeIcons types={subjects} /><span aria-hidden="true">{typeName(subjects[0], lang)}{' '}
@@ -314,6 +312,9 @@ function MapProblem({ problem, step, preview, usage, dim = false }: { problem: C
     </li>
   );
 }
+
+/** I problemi "ruoli mancanti" (essenziali o importanti) coi ruoli come soggetti. */
+const isMissingRoles = (p: CoachProblem) => p.category === 'roles' && (p.key === 'roles:essential' || p.key === 'roles:important') && (p.subjects?.length ?? 0) > 0;
 
 const COLUMNS: { key: MapColumn; area: 'defense' | 'strength' | 'roles' | null }[] = [
   { key: 'defense', area: 'defense' }, { key: 'offense', area: 'strength' }, { key: 'roles', area: 'roles' }, { key: 'rules', area: null },
@@ -366,8 +367,10 @@ export function CoachingView({ coaching, advice, members, rating, metaOn, threat
               const threats = items.filter(p => p.category === 'meta');
               const score = area ? rating?.areas.find(a => a.key === area)?.value ?? null : null;
               const clean = items.length === 0;
-              const row = (p: CoachProblem, dim = false) => <MapProblem key={`${p.key}|${p.text}`} problem={p} step={stepOf.get(p.key) ?? null} preview={preview?.has(p.key) ?? false}
-                usage={p.category === 'meta' ? threatUsage?.[p.subjects?.[0] ?? ''] : undefined} dim={dim} />;
+              const row = (p: CoachProblem, dim = false, role?: string) => <MapProblem key={`${p.key}|${p.text}|${role ?? ''}`} problem={p} step={stepOf.get(p.key) ?? null}
+                preview={preview?.has(p.key) ?? false} usage={p.category === 'meta' ? threatUsage?.[p.subjects?.[0] ?? ''] : undefined} dim={dim} role={role} />;
+              // Ruoli mancanti: una pillola per ruolo (possono riempirli Pokémon diversi), senza la frase davanti
+              const rows = (p: CoachProblem) => (isMissingRoles(p) ? (p.subjects ?? []).map(role => row(p, false, role)) : [row(p)]);
               return (
                 <div key={key} role="group" aria-labelledby={`${id}-${key}`} className={`coach-tile${clean ? ' is-clean' : ''}`}
                   style={score !== null ? { '--score': `${Math.max(0, Math.min(100, score))}%` } as CSSProperties : undefined}>
@@ -377,7 +380,7 @@ export function CoachingView({ coaching, advice, members, rating, metaOn, threat
                   </header>
                   {score !== null && <span className="coach-tile-bar" aria-hidden="true" />}
                   {clean && <p className="coach-tile-ok"><Icon name="check" />{tr('coach.map.none')}</p>}
-                  {main.length > 0 && <ul className="coach-probs">{main.map(p => row(p))}</ul>}
+                  {main.length > 0 && <ul className="coach-probs">{main.flatMap(rows)}</ul>}
                   {redundancy.length > 0 && (
                     <>
                       <h5 className="coach-sep">{tr('coach.map.redundancy')}</h5>
