@@ -195,11 +195,11 @@ describe('dettaglio della Difesa a schede', () => {
     }
   });
 
-  it('Coverage tipi: una tabella membri × 18 tipi con la Sicurezza per tipo (squadra aperta)', async () => {
+  it('Coverage tipi: una tabella membri × 18 tipi con Deboli, Resistono e Sicurezza per tipo', async () => {
     const { user, dialog } = await openDefense('it');
     await user.click(within(dialog).getByRole('tab', { name: /^Coverage tipi/ }));
     const table = within(within(dialog).getByRole('tabpanel')).getByRole('table');
-    expect(within(table).getAllByRole('row')).toHaveLength(4); // testata, 2 membri, Sicurezza
+    expect(within(table).getAllByRole('row')).toHaveLength(6); // testata, 2 membri, Deboli, Resistono, Sicurezza
     const safety = within(table).getByRole('row', { name: /^Sicurezza/ });
     expect(within(safety).getAllByRole('cell')).toHaveLength(18);
     for (const cell of within(safety).getAllByRole('cell')) expect(cell).toHaveTextContent(/^\d+%$/);

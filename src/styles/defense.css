@@ -173,19 +173,8 @@
 .sus-gain .ad-halved { margin-left: 8px; color: var(--warn); font-weight: 600; cursor: help; }
 .sus-val { text-align: right; font: italic 700 15px/1 var(--display); color: var(--text); }
 
-/* Coverage tipi: membri in riga, 18 tipi in colonna. Riempimenti da color-mix dei token di stato sul pannello, testo --text
-   (contrasto ≥ 5.2:1 su swsh e sv: vedi il rapporto del task). Il ×0 usa l'accento della palette (ciano su swsh, arancio su sv) */
-/* Coverage tipi: tessere "Chi entra" nella fascia in alto, sotto la griglia a caselle come quella della Panoramica */
-.ct-tile .def-tile-head .ct-tile-type { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 700; text-transform: none; letter-spacing: 0; color: var(--text); }
-.ct-tile-type .type-icons img { display: block; width: 20px; height: 20px; }
-.ct-sev { padding: 0 7px; border-radius: 999px; font: normal 700 10px/1.7 var(--ui); text-transform: uppercase; letter-spacing: 0.05em; }
-.ct-sev.serious { background: var(--bad-bg); color: var(--bad); }
-.ct-sev.minor { background: var(--warn-bg); color: var(--warn); }
-.ct-tile, .ct-tile:hover { cursor: default; background: color-mix(in srgb, var(--raised) 65%, var(--panel)); border-color: var(--line-soft); }
-.ct-swatch { display: inline-grid; place-items: center; }
-.ct-switch-mon { display: inline-flex; align-items: center; gap: 1px; margin-right: 6px; }
-.ct-switch-mon .ct-swatch { min-width: 24px; height: 16px; font-size: 11px; }
-.ct-switch-none { color: var(--bad); font-weight: 600; }
+/* Coverage tipi: la griglia a caselle come quella della Panoramica (membri in riga, 18 tipi in colonna), in fondo i totali
+   per tipo. Riempimenti da color-mix dei token di stato, testo --text; il ×0 usa l accento della palette */
 .ct-table thead th { padding: 0 0 2px; vertical-align: bottom; text-align: center; }
 .ct-table thead .type-icons { display: block; }
 .ct-table thead .type-icons img { display: block; width: 24px; height: 24px; margin: 0 auto; border-radius: 50%; }
@@ -194,12 +183,12 @@
 .ct-table th.sev-serious .ct-flag { background: var(--bad); }
 .ct-table th.sev-minor .ct-flag { background: var(--warn); }
 /* Caselle: neutro come la Panoramica, i colori solo dove il moltiplicatore cambia */
-.def-frame .ct-cell, .ct-swatch { padding: 0; text-align: center; font: 700 15px/1 var(--ui); color: var(--text); border: 1px solid var(--line); border-radius: 3px; background: var(--raised); }
-.def-frame .ct-cell.m-4, .ct-swatch.m-4 { background: color-mix(in srgb, var(--bad) 48%, var(--panel)); border-color: var(--bad); }
-.def-frame .ct-cell.m-2, .ct-swatch.m-2 { background: color-mix(in srgb, var(--bad) 28%, var(--panel)); border-color: color-mix(in srgb, var(--bad) 80%, transparent); }
-.def-frame .ct-cell.m-half, .ct-swatch.m-half { background: color-mix(in srgb, var(--good) 12%, var(--raised)); border-color: color-mix(in srgb, var(--good) 35%, var(--line)); color: var(--muted); }
-.def-frame .ct-cell.m-quarter, .ct-swatch.m-quarter { background: color-mix(in srgb, var(--good) 24%, var(--panel)); border-color: color-mix(in srgb, var(--good) 60%, transparent); }
-.def-frame .ct-cell.m-0, .ct-swatch.m-0 { background: color-mix(in srgb, var(--accent) 22%, var(--panel)); border-color: color-mix(in srgb, var(--accent) 60%, transparent); }
+.def-frame .ct-cell { padding: 0; text-align: center; font: 700 15px/1 var(--ui); color: var(--text); border: 1px solid var(--line); border-radius: 3px; background: var(--raised); }
+.def-frame .ct-cell.m-4 { background: color-mix(in srgb, var(--bad) 48%, var(--panel)); border-color: var(--bad); }
+.def-frame .ct-cell.m-2 { background: color-mix(in srgb, var(--bad) 28%, var(--panel)); border-color: color-mix(in srgb, var(--bad) 80%, transparent); }
+.def-frame .ct-cell.m-half { background: color-mix(in srgb, var(--good) 12%, var(--raised)); border-color: color-mix(in srgb, var(--good) 35%, var(--line)); color: var(--muted); }
+.def-frame .ct-cell.m-quarter { background: color-mix(in srgb, var(--good) 24%, var(--panel)); border-color: color-mix(in srgb, var(--good) 60%, transparent); }
+.def-frame .ct-cell.m-0 { background: color-mix(in srgb, var(--accent) 22%, var(--panel)); border-color: color-mix(in srgb, var(--accent) 60%, transparent); }
 /* Il moltiplicatore cresce con la riga: leggibile anche nelle caselle alte della squadra chiusa */
 .def-frame .ct-table td.ct-cell { font-size: clamp(13px, calc(var(--def-row) * 0.26), 20px); }
 /* Croce del puntatore: bordi più chiari su riga e colonna, nome e icona in evidenza */
