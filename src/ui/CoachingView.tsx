@@ -64,15 +64,15 @@ const previewHandlers = (solves: string[], onPreview: OnPreview) => ({
  * Una proposta: il pulsante che applica il cambio (`children`) e, accanto, l'icona piccola che apre le alternative
  * (scheda Pokémon o editor). Puntatore o fuoco: anteprima nella mappa. `describedBy`: la riga "risolve anche".
  */
-function Proposal({ className, label, describedBy, solves, onApply, onAlternatives, alternativesFor, onPreview, or, children }: {
-  className: string; label: string; describedBy: string; solves: string[]; onApply: () => void; onAlternatives: () => void; alternativesFor: string;
+function Proposal({ className, label, title, describedBy, solves, onApply, onAlternatives, alternativesFor, onPreview, or, children }: {
+  className: string; label: string; title?: string; describedBy: string; solves: string[]; onApply: () => void; onAlternatives: () => void; alternativesFor: string;
   onPreview: OnPreview; or?: string; children: ReactNode;
 }) {
   const tr = useT();
   const alternatives = tr('coach.steps.alternativesAria', { name: alternativesFor });
   return (
     <div className={`coach-prop ${className}`} data-or={or} {...previewHandlers(solves, onPreview)}>
-      <button type="button" className="coach-fix" aria-label={label} aria-describedby={describedBy} onClick={onApply}>{children}</button>
+      <button type="button" className="coach-fix" aria-label={label} aria-describedby={describedBy} title={title} onClick={onApply}>{children}</button>
       <button type="button" className="coach-alt" aria-label={alternatives} title={tr('coach.steps.alternatives')} onClick={onAlternatives}>
         <Icon name="search" />
       </button>
@@ -93,11 +93,13 @@ function SwapProposal({ fix, alsoId, solves, animated, onApply, onFix, onPreview
     ? tr('coach.fixAddAria', { species: fix.species, gain })
     : tr('coach.fixSwapAria', { member: fix.member ?? '', species: fix.species, gain });
   return (
-    <Proposal className="is-main" label={label} describedBy={alsoId} solves={solves} onApply={() => onApply(fix)} onAlternatives={() => onFix(fix)}
+    // Il pulsante copre la striscia: il suo title dice chi esce (lo sprite spento da solo non lo dice)
+    <Proposal className="is-main" label={label} title={fix.kind === 'swap' ? `${tr('coach.steps.swap', { member: fix.member ?? '' })} → ${fix.species}` : `${tr('coach.steps.add')} ${fix.species}`}
+      describedBy={alsoId} solves={solves} onApply={() => onApply(fix)} onAlternatives={() => onFix(fix)}
       alternativesFor={fix.species} onPreview={onPreview}>
       {fix.kind === 'swap' ? (
         <>
-          <span className="coach-strip-out" title={tr('coach.steps.swap', { member: fix.member ?? '' })}><Sprite species={fix.member ?? ''} size={48} /></span>
+          <span className="coach-strip-out"><Sprite species={fix.member ?? ''} size={48} /></span>
           <span className="coach-strip-arrow"><Icon name="swap" /></span>
         </>
       ) : <><span className="coach-strip-add">{tr('coach.steps.add')}</span>{' '}</>}
@@ -124,7 +126,7 @@ function MoveProposal({ fix, main, alsoId, solves = fix.solves, skip, problems, 
   const title = `${tr('coach.steps.move', { member: fix.member })}${from ? ` · ${from}` : ''}`;
   return (
     <Proposal className={main ? 'is-main is-move' : 'is-move is-or'} or={or} label={tr('coach.steps.moveAria', { move: to, member: fix.member, gain: gainText(fix.gain) })}
-      describedBy={alsoId} solves={solves} onApply={() => onApply(fix)} onAlternatives={() => onMoveFix(fix)} alternativesFor={to} onPreview={onPreview}>
+      title={main ? title : undefined} describedBy={alsoId} solves={solves} onApply={() => onApply(fix)} onAlternatives={() => onMoveFix(fix)} alternativesFor={to} onPreview={onPreview}>
       {main && <span className="coach-strip-in"><Sprite species={fix.member} size={64} /></span>}
       <span className="coach-fix-text">
         <span className="coach-fix-lead" title={title}>{lead}</span>
@@ -200,7 +202,7 @@ function Also({ id, solves, skip, problems, self }: { id: string; solves: string
 /**
  * Il titolo di una tappa: il suo problema e quelli raggruppati con lui (`group`). Le debolezze diventano
  * "Debole a" coi tipi (icona e nome, senza i conteggi, che restano nella mappa), le minacce "Nessun check per" coi
- * Pokémon; le altre categorie il loro testo (più problemi separati da " · ").
+ * Pokémon, i ruoli mancanti "Manca" coi ruoli; le altre categorie il loro testo (più problemi separati da " · ").
  */
 function StepTitle({ step, problems }: { step: CoachStep; problems: CoachProblem[] }) {
   const tr = useT();
@@ -213,6 +215,9 @@ function StepTitle({ step, problems }: { step: CoachStep; problems: CoachProblem
     return <>{tr('coach.steps.weakTo')} {list(subjects.map(type => (
       <span className="coach-step-subject"><TypeIcons types={[type]} />{typeName(type, lang)}</span>
     )))}</>;
+  }
+  if (group.every(isMissingRoles)) {
+    return <>{tr('coach.steps.missing')} {list(subjects.map(need => needLabel(need as Need, lang)))}</>;
   }
   if (problem.category === 'meta' && subjects.length === group.length) {
     return <>{tr('coach.steps.noCheck')} {list(subjects.map(species => (
@@ -254,7 +259,12 @@ function Step({ step, index, problems, actions, onCard, onPreview }: {
       </p>
       {swap ? <SwapProposal fix={swap} alsoId={alsoId} solves={solved} animated={hot} onApply={actions.onApplyFix} onFix={actions.onFix} onPreview={onPreview} />
         : move && <MoveProposal fix={move} main alsoId={alsoId} solves={solved} skip={skip} problems={problems} onApply={actions.onApplyMove} onMoveFix={actions.onMoveFix} onPreview={onPreview} />}
-      <div className="coach-strip-extras">
+      {/* La colonna di destra fa parte della striscia: un clic fuori dai suoi pulsanti applica la proposta principale (da tastiera c'è il pulsante) */}
+      <div className="coach-strip-extras" onClick={e => {
+        if ((e.target as Element).closest('button')) return;
+        if (swap) actions.onApplyFix(swap);
+        else if (move) actions.onApplyMove(move);
+      }}>
         <Also id={alsoId} solves={swap?.solves ?? move?.solves ?? []} skip={skip} problems={problems} self={swap?.species} />
         {swap && move && (
           <MoveProposal fix={move} main={false} alsoId={orId} skip={skip} problems={problems} or={tr('coach.steps.or')}
