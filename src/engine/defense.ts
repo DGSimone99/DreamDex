@@ -9,6 +9,7 @@ import { teraAllowed } from './formats';
 import { effectiveness, weaknessTable } from './types';
 import type { EngineData } from './data';
 import { battleAbility, battleSpecies, dex, getMove, toID } from './dex';
+import { REMOVAL_MOVES } from './roles';
 import { mostCommonSet, type TeamSet } from './sets';
 import { softScore } from './scale';
 import { topThreats } from './stats';
@@ -29,6 +30,8 @@ const RECOVERY_ABILITIES: Record<string, number> = { regenerator: 0.33, poisonhe
 const RECOVERY_ITEMS: Record<string, number> = { leftovers: 0.0625, blacksludge: 0.0625 };
 /** Stealth Rock all'ingresso: 1/8 dei PS per l'efficacia della Roccia. */
 const STEALTH_ROCK = 0.125;
+/** Con chi toglie gli hazard nel team la Stealth Rock pesa metà: le rocce si prendono comunque prima della rimozione. */
+const ROCKS_WITH_REMOVAL = 0.5;
 const LIFE_ORB = 0.1;
 /** Sotto un 3HKO medio il recupero vale metà: un Pokémon con Recover non è un muro se non regge i colpi. */
 const RECOVERY_HOLD = 1;
@@ -43,10 +46,21 @@ export interface SustainParts {
   /** Il recupero vale metà: il membro non regge in media un 3HKO. */
   halved: boolean;
   rocks: number;
+  /** Chi toglie gli hazard nel team ("Defog (Corviknight)"): la Stealth Rock è già dimezzata. */
+  rocksHalvedBy: string | null;
   lifeOrb: number;
 }
 
-export function sustainParts(set: TeamSet, robustStep: number): SustainParts {
+/** Il primo membro del team con una mossa che toglie gli hazard, come "Defog (Corviknight)". */
+export function hazardRemover(team: TeamSet[]): string | null {
+  for (const set of team) {
+    const move = set.moves.find(m => REMOVAL_MOVES.has(toID(m)));
+    if (move) return `${getMove(move)?.name ?? move} (${battleSpecies(set)?.name ?? set.species})`;
+  }
+  return null;
+}
+
+export function sustainParts(set: TeamSet, robustStep: number, remover: string | null = null): SustainParts {
   const ability = toID(battleAbility(set));
   const item = toID(set.item);
   const best = set.moves.reduce<string | null>((acc, m) => ((RECOVERY_MOVES[toID(m)] ?? 0) > (acc ? RECOVERY_MOVES[toID(acc)] : 0) ? m : acc), null);
@@ -58,16 +72,18 @@ export function sustainParts(set: TeamSet, robustStep: number): SustainParts {
   const halved = gross > 0 && robustStep < RECOVERY_HOLD;
   const magicGuard = ability === 'magicguard';
   const types = battleSpecies(set)?.types ?? [];
-  const rocks = item === 'heavydutyboots' || magicGuard ? 0 : STEALTH_ROCK * effectiveness('Rock', types as never);
+  const fullRocks = item === 'heavydutyboots' || magicGuard ? 0 : STEALTH_ROCK * effectiveness('Rock', types as never);
+  const rocksHalvedBy = fullRocks > 0 ? remover : null;
+  const rocks = rocksHalvedBy ? fullRocks * ROCKS_WITH_REMOVAL : fullRocks;
   // Sheer Force toglie il contraccolpo di Life Orb alle mosse con effetti secondari
   const sheerForce = ability === 'sheerforce' && set.moves.some(m => { const move = getMove(m); return !!(move?.secondary || move?.secondaries?.length); });
   const lifeOrb = item === 'lifeorb' && !magicGuard && !sheerForce ? LIFE_ORB : 0;
-  return { sources, recovery: halved ? gross / 2 : gross, halved, rocks, lifeOrb };
+  return { sources, recovery: halved ? gross / 2 : gross, halved, rocks, rocksHalvedBy, lifeOrb };
 }
 
 /** Recupero meno perdite per turno (in quota dei PS); `robustStep` è il valore medio dei colpi standard ricevuti. */
-export function sustainability(set: TeamSet, robustStep: number): number {
-  const parts = sustainParts(set, robustStep);
+export function sustainability(set: TeamSet, robustStep: number, remover: string | null = null): number {
+  const parts = sustainParts(set, robustStep, remover);
   return parts.recovery - parts.rocks - parts.lifeOrb;
 }
 
@@ -196,7 +212,7 @@ export function defenseReference(data: EngineData): { physical: number; special:
 }
 
 /** Difesa di un membro: quanti colpi standard regge dai due gruppi di attaccanti, e quanto resta in campo. */
-export function memberDefense(set: TeamSet, _team: TeamSet[], data: EngineData): MemberDefense | null {
+export function memberDefense(set: TeamSet, team: TeamSet[], data: EngineData): MemberDefense | null {
   const raw = rawOf(set, data);
   if (!raw) return null;
   const ref = defenseReference(data);
@@ -205,7 +221,7 @@ export function memberDefense(set: TeamSet, _team: TeamSet[], data: EngineData):
   // Metà del guadagno del setup entra nella Robustezza (come SETUP_SHARE nell'Offesa)
   const physical = Math.round(plainP + SETUP_SHARE * (softScore(raw.physicalSetupStep / ref.physical) - plainP));
   const special = Math.round(plainS + SETUP_SHARE * (softScore(raw.specialSetupStep / ref.special) - plainS));
-  const parts = sustainParts(set, (raw.physicalStep + raw.specialStep) / 2);
+  const parts = sustainParts(set, (raw.physicalStep + raw.specialStep) / 2, hazardRemover(team));
   const sustain = softScore(Math.max(0, parts.recovery - parts.rocks - parts.lifeOrb) / SUSTAIN_FULL);
   const w = ROBUSTNESS_WEIGHTS;
   const plainValue = Math.round(w.physical * plainP + w.special * plainS + w.sustain * sustain);

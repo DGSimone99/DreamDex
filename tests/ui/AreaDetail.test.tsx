@@ -184,14 +184,16 @@ describe('dettaglio della Difesa a schede', () => {
     const { user, dialog } = await openDefense('it');
     await user.click(within(dialog).getByRole('tab', { name: /^Sostenibilità/ }));
     const panel = within(dialog).getByRole('tabpanel');
-    expect(within(panel).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Perde per turno', 'Recupera per turno', 'Sostenibilità']);
-    const rows = within(panel).getAllByRole('row').slice(1);
+    expect(within(panel).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Perde', 'Recupera', 'Sostenibilità', 'Stealth Rock', 'Life Orb']);
+    const rows = within(panel).getAllByRole('row').filter(r => within(r).queryAllByRole('rowheader').length);
     expect(rows).toHaveLength(2);
     for (const row of rows) {
+      // Stealth Rock e Life Orb a parte (un valore negativo o un trattino), poi il recupero e il valore
       const cells = within(row).getAllByRole('cell');
-      expect(cells[0]).toHaveTextContent(/^(−\d+%)?$/);
-      expect(cells[1]).toHaveTextContent(/^(\+\d+%.*)?$/);
-      expect(cells[2]).toHaveTextContent(/^\d+$/);
+      expect(cells[0]).toHaveTextContent(/^(−\d+%.*|—)$/);
+      expect(cells[1]).toHaveTextContent(/^(−\d+%|—)$/);
+      expect(cells[2]).toHaveTextContent(/^(\+\d+%.*|—)$/);
+      expect(cells[3]).toHaveTextContent(/^\d+$/);
     }
   });
 

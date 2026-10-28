@@ -136,8 +136,8 @@
 
 /* Robustezza: membri in riga, 20 attaccanti in colonna. Il vuoto tra fisici e speciali è un margine, non una cella */
 /* Robustezza nella cornice comune: due righe di testata (gruppo, icone) alte quanto la testata delle altre schede */
-.def-frame .rob-matrix thead tr.rob-grp { height: 16px; }
-.def-frame .rob-matrix thead tr.rob-atk { height: calc(var(--def-head) - 16px - var(--def-sp)); }
+.def-frame thead tr.rob-grp { height: 16px; }
+.def-frame thead tr.rob-atk { height: calc(var(--def-head) - 16px - var(--def-sp)); }
 .rob-grp th { padding: 0 0 2px; font-size: 11px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: 0.06em; text-align: center; border-bottom: 2px solid var(--line); white-space: nowrap; }
 .rob-grp th.def-mon-h, .rob-grp .rob-side-h { border-bottom: 0; vertical-align: bottom; }
 .rob-grp th:not(.def-mon-h) { line-height: 1; }
@@ -163,30 +163,39 @@
   .rob-side .ct-pill { min-width: 0; padding: 1px 4px; font-size: 11px; }
 }
 
-/* Sostenibilità: barre divergenti attorno allo zero (50% = metà larghezza piena) */
-.sus-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
-.sus-table thead th { padding: 4px 10px; font-size: 11px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: 0.05em; text-align: left; white-space: nowrap; }
-.sus-table .sus-r { text-align: right; }
-.sus-table th[scope='row'], .sus-table td { padding: 5px 10px; border-bottom: 1px solid var(--line-soft); text-align: left; }
-.sus-table th[scope='row'] { padding-left: 0; font-weight: 600; white-space: nowrap; }
-.sus-loss, .sus-gain { width: 36%; }
-.sus-loss { border-right: 2px solid var(--line); }
+/* Sostenibilità nella cornice comune: Perde (Stealth Rock e Life Orb in colonne a parte), Recupera, il valore in pastiglia */
+.sus-table .sus-col-loss { width: 120px; }
+.sus-table .sus-col-val { width: 120px; }
+.sus-table thead th { font-size: 11px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; }
+.sus-table thead .sus-h { vertical-align: bottom; text-align: left; padding: 0 12px 6px; }
+.sus-table thead .sus-r { text-align: right; padding-right: 0; }
+.sus-table thead .sus-sub th { padding: 0 0 6px; text-align: center; font-size: 10px; letter-spacing: 0.04em; color: var(--muted); line-height: 1; }
+.sus-table td { padding: 0 12px; border-bottom: 1px solid var(--line-soft); }
+.sus-table td.sus-loss { text-align: center; padding: 0; }
+.sus-table td.sus-loss + td.sus-loss { border-right: 2px solid var(--line); }
+.sus-loss-val { display: inline-block; min-width: 56px; padding: 3px 8px; border-radius: 999px; background: var(--bad-bg); color: var(--bad); font: 700 13px/1.2 var(--ui); font-variant-numeric: tabular-nums; }
+.sus-loss-val.halved { cursor: help; }
+.sus-loss-val sup { margin-left: 2px; font-size: 10px; color: var(--warn); }
+.sus-none { color: var(--faint); }
 .sus-flex { display: flex; align-items: center; gap: 0; }
-.sus-loss .sus-flex { justify-content: flex-end; }
 /* Pista a larghezza fissa: la barra è una quota della pista, il testo sta accanto */
-.sus-track { flex: none; display: flex; width: 110px; height: 10px; }
-.sus-track.end { justify-content: flex-end; }
-.sus-track i { display: block; height: 100%; }
-.sus-loss i { background: var(--bad); }
-.sus-gain i { background: var(--good); }
-.ad-panel .sus-legend { margin: 8px 0 0; font-size: 12px; color: var(--muted); }
-.sus-num { margin: 0 6px; font-size: 12px; }
-.sus-num.bad { color: var(--bad); }
+.sus-track { flex: none; display: flex; width: 140px; height: 10px; background: var(--line-soft); }
+.sus-track i { display: block; height: 100%; background: var(--good); }
+.sus-num { margin: 0 8px; font-size: 13px; font-weight: 700; }
 .sus-num.good { color: var(--good); }
-.sus-gain small { margin-left: 6px; font-size: 12px; color: var(--muted); }
+.sus-gain .sus-none { margin: 0 8px; }
+.sus-gain small { margin-left: 4px; font-size: 13px; color: var(--muted); }
+.sus-gain .ad-src { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sus-flex { min-width: 0; }
+@container (max-width: 1100px) {
+  .sus-track { width: 80px; }
+  .sus-table .sus-col-loss { width: 96px; }
+  .sus-table .sus-col-val { width: 90px; }
+}
 .sus-gain small b { font-weight: 600; color: var(--text); }
 .sus-gain .ad-halved { margin-left: 8px; color: var(--warn); font-weight: 600; cursor: help; }
-.sus-val { text-align: right; font: italic 700 15px/1 var(--display); color: var(--text); }
+.sus-table td.sus-val { padding: 0; text-align: right; }
+.sus-val .ct-pill { min-width: 44px; text-align: center; font-size: 13px; }
 
 /* Coverage tipi: la griglia a caselle come quella della Panoramica (membri in riga, 18 tipi in colonna), in fondo i totali
    per tipo. Riempimenti da color-mix dei token di stato, testo --text; il ×0 usa l accento della palette */

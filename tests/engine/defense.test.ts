@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { defensiveSetup, defenseReference, holdStep, intimidateBoost, memberDefense, sustainability, sustainParts, teamDefense } from '../../src/engine/defense';
+import { defensiveSetup, defenseReference, hazardRemover, holdStep, intimidateBoost, memberDefense, sustainability, sustainParts, teamDefense } from '../../src/engine/defense';
 import type { TeamSet } from '../../src/engine/sets';
 import { softScore } from '../../src/engine/scale';
 import { attackerPanels, panelWeights } from '../../src/engine/attackers';
@@ -25,6 +25,18 @@ describe('sustainability: recupero contro perdite per turno', () => {
     expect(sustainability({ ...zard, item: 'Heavy-Duty Boots' }, 1.5)).toBeCloseTo(0);
     const clef = set('Clefable', 'Life Orb', 'Magic Guard', ['Moonblast', 'Moonlight'], 'Modest', { hp: 252, spa: 252 });
     expect(sustainability(clef, 1.5)).toBeCloseTo(0.5);
+  });
+
+  it('con chi toglie gli hazard nel team la Stealth Rock pesa metà (e lo dice), Life Orb no', () => {
+    const zard = set('Charizard', 'Life Orb', 'Blaze', ['Flamethrower'], 'Timid', { spa: 252 });
+    const corv = set('Corviknight', 'Leftovers', 'Pressure', ['Defog', 'Roost'], 'Impish', { hp: 252, def: 252 });
+    const remover = hazardRemover([zard, corv]);
+    expect(remover).toBe('Defog (Corviknight)');
+    expect(sustainParts(zard, 1.5, remover)).toMatchObject({ rocks: 0.25, rocksHalvedBy: 'Defog (Corviknight)', lifeOrb: 0.1 });
+    expect(sustainParts(zard, 1.5)).toMatchObject({ rocks: 0.5, rocksHalvedBy: null });
+    expect(hazardRemover([zard])).toBeNull();
+    // Chi non prende la Stealth Rock non ha niente da dimezzare
+    expect(sustainParts({ ...zard, item: 'Heavy-Duty Boots' }, 1.5, remover).rocksHalvedBy).toBeNull();
   });
 
   it('Sheer Force toglie il costo di Life Orb solo se una mossa ha effetti secondari', () => {
