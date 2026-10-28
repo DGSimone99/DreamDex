@@ -105,11 +105,19 @@
 .area-subs [role='tab']:focus-visible { outline-offset: -3px; }
 .area-subs [role='tab'][aria-selected='true'] { color: var(--text); background: var(--accent-2-soft); border-bottom-color: var(--accent-2-ink); }
 .area-subs [role='tab'][aria-selected='true'] b { color: var(--text); }
-.sub-help-room { display: inline-block; width: 22px; }
-.area-help { position: absolute; top: 50%; transform: translateY(-50%); }
-.area-problems { margin: 0; padding: 0 2px; list-style: none; display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 12.5px; flex: none; }
-.area-problems li { display: flex; gap: 6px; align-items: baseline; }
-.area-problems li::before { content: '\25CF'; color: var(--warn); }
+.sub-help-room { display: inline-block; width: 30px; }
+.area-help { position: absolute; display: flex; }
+.area-help .help-button { width: 18px; height: 18px; color: var(--text); }
+.area-help .help-button .icon { width: 18px; height: 18px; }
+.area-problems-row { display: flex; align-items: baseline; gap: 12px; padding: 0 2px; flex: none; }
+/* L'etichetta "N problemi" in testa: giallo, rosso se ce n'è almeno uno grave */
+.area-problems-label { display: inline-flex; align-items: center; gap: 5px; flex: none; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--warn); background: var(--warn-bg); }
+.area-problems-label .icon { width: 13px; height: 13px; }
+.area-problems-row.serious .area-problems-label { color: var(--bad); background: var(--bad-bg); }
+.area-problems { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 12.5px; }
+/* Testo in linea (niente flex): i nomi dei tipi restano attaccati ai due punti */
+.area-problems li { position: relative; padding-left: 12px; }
+.area-problems li::before { content: '\25CF'; position: absolute; left: 0; color: var(--warn); }
 .area-problems li.serious::before { color: var(--bad); }
 .area-panel { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; background: var(--panel); border: 1px solid var(--line-soft); }
 .area-extra { margin-bottom: 16px; }

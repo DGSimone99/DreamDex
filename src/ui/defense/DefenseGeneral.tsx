@@ -76,6 +76,8 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
       </div>
       <div className="ad-scroll">
         <table className="def-members">
+          {/* Larghezze fisse: i nomi in una colonna, le quattro barre in colonne uguali */}
+          <colgroup><col className="def-col-mon" /><col /><col /><col /><col /></colgroup>
           <thead>
             <tr>
               <th scope="col">{t('detail.member')}</th>

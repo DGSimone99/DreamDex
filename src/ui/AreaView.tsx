@@ -9,6 +9,9 @@ import { AreaGuide } from './AreaGuide';
 import { Icon } from './icons';
 import { Typed } from './TypeText';
 
+/** Lato del "?" sulla scheda aperta (px). */
+const HELP_SIZE = 18;
+
 /** La scheda da cui si parte: la coverage dei tipi in Offesa (la più consultata), altrimenti la prima. */
 const START: Partial<Record<AreaKey, string>> = { strength: 'coverageTypes' };
 
@@ -43,12 +46,22 @@ export function AreaView({ rating, area, problems, team, analysis, extra }: {
   const title = t(`area.${area}`);
 
   // Il "?" sta fuori dal tablist (lì solo schede) ma si vede sulla scheda aperta, a destra
-  const [helpLeft, setHelpLeft] = useState(0);
+  const [helpPlace, setHelpPlace] = useState({ left: 0, top: 0 });
   const hasHelp = current.help !== undefined;
   useLayoutEffect(() => {
     const tab = buttons.current[index];
     if (!tab) return;
-    const place = () => setHelpLeft(tab.offsetLeft + tab.offsetWidth - 28);
+    // Centrato sul valore della scheda, nello spazio riservato dopo il numero
+    const place = () => {
+      const strip = tab.parentElement?.parentElement;
+      const value = tab.querySelector('b');
+      const room = tab.querySelector('.sub-help-room');
+      if (!strip || !value || !room) return;
+      const base = strip.getBoundingClientRect();
+      const v = value.getBoundingClientRect();
+      const r = room.getBoundingClientRect();
+      setHelpPlace({ left: r.right - base.left - HELP_SIZE, top: v.top + v.height / 2 - base.top - HELP_SIZE / 2 });
+    };
     place();
     // La scheda può essere nascosta al primo disegno (misure a 0): si riposiziona quando prende le sue dimensioni
     if (typeof ResizeObserver === 'undefined') return;
@@ -103,7 +116,7 @@ export function AreaView({ rating, area, problems, team, analysis, extra }: {
           ))}
         </div>
         {current.help && (
-          <span className="area-help" style={{ left: helpLeft }}>
+          <span className="area-help" style={helpPlace}>
             <button ref={helpButton} type="button" className="help-button" aria-label={t('area.guide.button', { tab: current.label })}
               title={t('area.guide.button', { tab: current.label })} onClick={() => setGuide(current.key)}>
               <Icon name="help" />
@@ -118,11 +131,17 @@ export function AreaView({ rating, area, problems, team, analysis, extra }: {
           onCurrent={setGuide} onClose={() => setGuide(null)} />
       )}
       {problems.length > 0 && (
-        <ul className="area-problems" aria-label={t('analysis.areaProblems', { area: title })}>
-          {problems.map(problem => (
-            <li key={problem.text} className={problem.severity}><Typed text={problem.text} /></li>
-          ))}
-        </ul>
+        <div className={`area-problems-row${problems.some(p => p.severity === 'serious') ? ' serious' : ''}`}>
+          {/* Un'etichetta dice che cos'è la riga: i problemi dell'area, quanti */}
+          <span className="area-problems-label" aria-hidden="true">
+            <Icon name="warning" />{t(problems.length === 1 ? 'area.problems.one' : 'area.problems.many', { n: problems.length })}
+          </span>
+          <ul className="area-problems" aria-label={t('analysis.areaProblems', { area: title })}>
+            {problems.map(problem => (
+              <li key={problem.text} className={problem.severity}><Typed text={problem.text} /></li>
+            ))}
+          </ul>
+        </div>
       )}
       <div className="area-panel ad-panel" role="tabpanel" id={`${id}-panel`} aria-labelledby={`${id}-${current.key}`}>
         {extra && extra.tabKey === current.key && <div className="area-extra">{extra.panel}</div>}
