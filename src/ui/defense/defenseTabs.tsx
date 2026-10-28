@@ -19,7 +19,7 @@ export function defenseTabs(defense: TeamDefense, meta: boolean, t: T, ctx: Area
   const label = (key: Key) => (key === 'robustness' || key === 'sustain' ? t(`ddetail.${key}`) : t(`detail.${key}`));
   const general = <DefenseGeneral defense={defense} meta={meta} ctx={ctx} />;
 
-  const robustness = <DefenseRobustness defense={defense} />;
+  const robustness = <DefenseRobustness defense={defense} ctx={ctx} />;
   const sustain = <DefenseSustain defense={defense} />;
 
   const coverageTypes = <DefenseTypes defense={defense} ctx={ctx} />;
