@@ -157,16 +157,18 @@ describe('dettaglio della Difesa a schede', () => {
     expect(panel).not.toHaveTextContent(/potenza 100/);
     expect(panel).toHaveTextContent('Attaccanti fisici');
     expect(panel).toHaveTextContent('Attaccanti speciali');
-    const attackers = within(panel).getAllByRole('row').filter(r => within(r).queryAllByRole('cell').length === 2);
-    expect(attackers).toHaveLength(20);
-    for (const row of attackers) for (const cell of within(row).getAllByRole('cell')) expect(cell).toHaveTextContent(/^\d+% (OHKO|2HKO|3HKO|4HKO\+)$/);
+    // Membri in riga: ognuno con 20 attaccanti più il valore di Fisica e Speciale
+    const members = within(panel).getAllByRole('row').filter(r => within(r).queryAllByRole('rowheader').length);
+    expect(members).toHaveLength(2);
+    for (const row of members) expect(within(row).getAllByRole('cell')).toHaveLength(22);
     // Ogni casella dice la soglia: OHKO, 2HKO, 3HKO o 4HKO e oltre
-    expect(panel.querySelectorAll('td .ad-k[title]').length).toBe(40);
-    expect([...panel.querySelectorAll('td .ad-k[title]')].every(k => /^(OHKO|2HKO|3HKO|4HKO\+)$/.test(k.getAttribute('title')!))).toBe(true);
+    const cells = [...panel.querySelectorAll('td.rob-cell')];
+    expect(cells).toHaveLength(40);
+    expect(cells.every(k => /^(OHKO|2HKO|3HKO|4HKO\+)$/.test(k.getAttribute('title')!))).toBe(true);
     expect(panel).toHaveTextContent(/4HKO\+/);
     // Percentuale e soglia dallo stesso tiro (il più alto): 2HKO vuol dire almeno 50%
     const LIMITS: Record<string, [number, number]> = { OHKO: [100, 100], '2HKO': [50, 99], '3HKO': [33, 49], '4HKO+': [0, 33] };
-    for (const tag of panel.querySelectorAll('td .ad-k[title]')) {
+    for (const tag of cells) {
       const pct = Number(tag.textContent!.match(/^(\d+)%/)![1]);
       const [lo, hi] = LIMITS[tag.getAttribute('title')!];
       expect(pct).toBeGreaterThanOrEqual(lo);
@@ -174,24 +176,22 @@ describe('dettaglio della Difesa a schede', () => {
       // La soglia non sta solo nel colore: anche in testo per i lettori di schermo
       expect(tag.querySelector('.visually-hidden')?.textContent).toBe(` ${tag.getAttribute('title')}`);
     }
-    // Un gruppo di righe per lato, ognuno col suo titolo
-    const groups = panel.querySelectorAll('tbody');
-    expect(groups).toHaveLength(2);
-    expect([...groups].map(g => g.querySelector('th[scope="rowgroup"]')?.textContent)).toEqual(['Attaccanti fisici', 'Attaccanti speciali']);
+    // Un gruppo di colonne per lato, ognuno col suo titolo
+    expect(within(panel).getAllByRole('columnheader').filter(h => h.getAttribute('colspan')).map(h => h.textContent)).toEqual(['Attaccanti fisici', 'Attaccanti speciali']);
   });
 
   it('Sostenibilità: recupero, Stealth Rock e Life Orb per membro', async () => {
     const { user, dialog } = await openDefense('it');
     await user.click(within(dialog).getByRole('tab', { name: /^Sostenibilità/ }));
     const panel = within(dialog).getByRole('tabpanel');
-    expect(within(panel).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Recupero', 'Stealth Rock', 'Life Orb', 'Sostenibilità']);
+    expect(within(panel).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Perde per turno', 'Recupera per turno', 'Sostenibilità']);
     const rows = within(panel).getAllByRole('row').slice(1);
     expect(rows).toHaveLength(2);
     for (const row of rows) {
       const cells = within(row).getAllByRole('cell');
-      expect(cells[0]).toHaveTextContent(/^(\+\d+%.*|—)$/);
-      expect(cells[1]).toHaveTextContent(/^(−\d+%|—)$/);
-      expect(cells[3]).toHaveTextContent(/^\d+$/);
+      expect(cells[0]).toHaveTextContent(/^(−\d+%)?$/);
+      expect(cells[1]).toHaveTextContent(/^(\+\d+%.*)?$/);
+      expect(cells[2]).toHaveTextContent(/^\d+$/);
     }
   });
 

@@ -55,3 +55,34 @@ describe('Difesa: Generale e guida', () => {
     expect(help).toHaveFocus();
   });
 });
+
+describe('Difesa: Robustezza e Sostenibilità', () => {
+  it('Robustezza: membri in riga, attaccanti in colonna, fisici poi speciali, valore del lato in fondo a ogni gruppo', async () => {
+    const user = userEvent.setup();
+    const rating = withMeta();
+    renderIt(<AreaView rating={rating} area="defense" team={team} analysis={analysis} problems={[]} />);
+    await user.click(screen.getByRole('tab', { name: /^Robustezza/ }));
+    const table = within(screen.getByRole('tabpanel')).getByRole('table');
+    const rows = within(table).getAllByRole('row').filter(r => within(r).queryAllByRole('rowheader').length);
+    expect(rows).toHaveLength(rating.defense.members.length);
+    const atk = rating.defense.matrix.length;
+    expect(within(rows[0]).getAllByRole('cell')).toHaveLength(atk + 2); // + Fisica e Speciale
+    expect(within(table).getByRole('columnheader', { name: rating.defense.matrix[0].species })).toBeInTheDocument();
+    expect(within(rows[0]).getAllByRole('cell')[0]).toHaveTextContent(/\d+%\s*(OHKO|2HKO|3HKO|4HKO\+)/);
+  });
+
+  it('Sostenibilità: una riga per membro con perdita, recupero e fonti', async () => {
+    const user = userEvent.setup();
+    const rating = withMeta();
+    renderIt(<AreaView rating={rating} area="defense" team={team} analysis={analysis} problems={[]} />);
+    await user.click(screen.getByRole('tab', { name: /^Sostenibilità/ }));
+    const panel = screen.getByRole('tabpanel');
+    // Gholdengo ha Recover (50%) ma con questo team non regge un 3HKO: il recupero vale metà (+25%) e lo dice
+    const gholdengo = rating.defense.members[1].sustainParts;
+    expect(gholdengo.halved).toBe(true);
+    expect(within(panel).getByText('+25%')).toBeInTheDocument();
+    expect(within(panel).getByText('vale metà')).toBeInTheDocument();
+    expect(within(panel).getAllByText(/Recover/).length).toBeGreaterThan(0);
+    expect(within(panel).getAllByRole('row').length).toBeGreaterThanOrEqual(rating.defense.members.length);
+  });
+});

@@ -47,3 +47,37 @@
 @media (max-width: 560px) {
   .guide-rows > div { grid-template-columns: 1fr; gap: 2px; }
 }
+
+/* Robustezza: membri in riga, 20 attaccanti in colonna. Il vuoto tra fisici e speciali è un margine, non una cella */
+.rob-matrix { width: 100%; border-collapse: separate; border-spacing: 2px; font-variant-numeric: tabular-nums; }
+.rob-matrix th { font-weight: 500; }
+.rob-grp th { padding-bottom: 2px; font-size: 11px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: 0.06em; text-align: center; border-bottom: 2px solid var(--line); }
+.rob-grp .rob-side-h { border-bottom-color: transparent; }
+.rob-atk th { padding: 0; text-align: center; }
+.rob-atk .sprite { display: inline-block; vertical-align: middle; }
+.rob-matrix tbody th { padding-right: 6px; text-align: left; font-size: 13px; font-weight: 600; white-space: nowrap; }
+.rob-cell { height: 36px; min-width: 42px; text-align: center; font-size: 12px; font-weight: 600; }
+.rob-side { min-width: 48px; text-align: center; background: var(--raised); font: italic 700 15px/1 var(--display); color: var(--text); }
+/* Spazio tra i due gruppi: solo sulla prima colonna dei speciali */
+.rob-matrix .rob-start { border-left: 8px solid transparent; background-clip: padding-box; }
+.rob-grp th.rob-start { border-left: 8px solid transparent; }
+.rob-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 8px 0 0; font-size: 12px; color: var(--muted); }
+
+/* Sostenibilità: barre divergenti attorno allo zero (50% = metà larghezza piena) */
+.sus-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.sus-table thead th { padding: 4px 10px; font-size: 11px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: 0.05em; text-align: left; white-space: nowrap; }
+.sus-table .sus-r { text-align: right; }
+.sus-table th[scope='row'], .sus-table td { padding: 5px 10px; border-bottom: 1px solid var(--line-soft); text-align: left; }
+.sus-table th[scope='row'] { padding-left: 0; font-weight: 600; white-space: nowrap; }
+.sus-loss, .sus-gain { width: 36%; }
+.sus-loss { display: table-cell; text-align: right; white-space: nowrap; border-right: 2px solid var(--line); }
+.sus-loss i, .sus-gain i { display: inline-block; height: 10px; vertical-align: middle; }
+.sus-loss i { background: var(--bad); }
+.sus-gain i { background: var(--good); }
+.sus-num { margin: 0 6px; font-size: 12px; }
+.sus-num.bad { color: var(--bad); }
+.sus-num.good { color: var(--good); }
+.sus-gain small { margin-left: 6px; font-size: 12px; color: var(--muted); }
+.sus-gain small b { font-weight: 600; color: var(--text); }
+.sus-gain .ad-halved { margin-left: 8px; color: var(--warn); font-weight: 600; cursor: help; }
+.sus-val { text-align: right; font: italic 700 15px/1 var(--display); color: var(--text); }
