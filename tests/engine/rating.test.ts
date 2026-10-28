@@ -51,19 +51,20 @@ describe('pesi delle aree', () => {
 });
 
 describe('typeSafety', () => {
-  it('premia le resistenze, punisce le debolezze scoperte', () => {
-    // Saldo: immunità +2, ×¼ +1,5, ×½ +1, ×2 −1, ×4 −2; sicuro a +2, scoperto a −2
-    expect(typeSafety([0, 1, 1])).toBe(1);
+  it('metà quanto pesano resistenze e debolezze, metà quanti membri resistono o sono deboli', () => {
+    // Saldo = (pesato + membri) / 2. Pesato: immunità +2, ×¼ +1,5, ×½ +1, ×2 −1, ×4 −2; membri: ±1. Sicuro a +2, scoperto a −2
     expect(typeSafety([0.5, 0.5])).toBe(1);
+    expect(typeSafety([0, 1, 1])).toBe(0.875); // un'immunità sola: un membro, non due
     expect(typeSafety([0.5, 1])).toBe(0.75);
     expect(typeSafety([1, 1])).toBe(0.5);
     expect(typeSafety([2, 0.5])).toBe(0.5);
     expect(typeSafety([2, 1])).toBe(0.25);
-    expect(typeSafety([4, 0.5])).toBe(0.25);
-    expect(typeSafety([4, 1])).toBe(0);
-    // Un ×4 pesa come due ×2, un'immunità come due resistenze
-    expect(typeSafety([4])).toBe(typeSafety([2, 2]));
-    expect(typeSafety([0])).toBe(typeSafety([0.5, 0.5]));
+    expect(typeSafety([4, 0.5])).toBe(0.375);
+    expect(typeSafety([4, 1])).toBe(0.125);
+    expect(typeSafety([2, 2])).toBe(0);
+    // Tre che resistono contro tre deboli, uno ×4: in difetto (sotto il 50%) ma meglio di un debole scoperto
+    expect(typeSafety([0.5, 0.5, 0.5, 2, 2, 4])).toBe(0.375);
+    expect(typeSafety([0.5, 0.5, 0.5, 2, 2, 4])).toBeGreaterThan(typeSafety([2, 1, 1]));
   });
 });
 

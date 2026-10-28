@@ -94,7 +94,7 @@ function findStrengths(team: TeamSet[], analysis: TeamAnalysis, lang: Lang): str
   return strengths;
 }
 
-/** Gravità di una debolezza difensiva, come nel voto: grave se i deboli superano di 2 chi resiste. */
+/** Gravità di una debolezza difensiva, dalla Sicurezza del tipo: grave a 0% (saldo −2 o peggio), minore sotto il 50%. */
 export function weaknessSeverity(row: TeamAnalysis['weakness'][number]): 'serious' | 'minor' | null {
   if (row.pressure >= 2) return 'serious';
   return row.pressure > 0 ? 'minor' : null;

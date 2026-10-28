@@ -289,7 +289,7 @@ export function teamDefense(team: TeamSet[], data: EngineData): TeamDefense {
   // Coverage di tipi: il saldo di resistenze e debolezze sui 18 tipi, con la stessa scala dell'Offesa
   const table = weaknessTable(known);
   const typeValue = known.length ? softScore(mean(table.map(row => typeSafety(row.multipliers))) / DEFENSE_FULL) : 0;
-  const weak = table.filter(row => row.weak > row.resist).map(row => row.type);
+  const weak = table.filter(row => row.pressure > 0).map(row => row.type);
   const names = members.map(m => m.species);
   const typeRows = table.map(row => ({
     type: row.type, safety: Math.round(100 * typeSafety(row.multipliers)),
