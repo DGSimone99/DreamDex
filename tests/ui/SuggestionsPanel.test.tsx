@@ -652,6 +652,21 @@ describe('sprite Icona box', () => {
     expect(roles.slice(1).some(role => role.classList.contains('main'))).toBe(false);
   });
 
+  it('Meta nel dettaglio solo col team chiuso: uso e compagni più frequenti', async () => {
+    const { SuggestionsPanel } = await import('../../src/ui/SuggestionsPanel');
+    const { renderIt } = await import('../helpers/italian');
+    const { tusk } = await import('../fixtures/data');
+    const props = { team: [tusk] as never, format: DEFAULT_FORMAT, data: fixtureData, replaceIndex: null,
+      onAdd: () => {}, onReplaceWith: () => {}, onCancelReplace: () => {}, listStyle: 'cards' as const };
+    const { rerender } = renderIt(<SuggestionsPanel {...props} />);
+    const detail = () => screen.getByRole('complementary', { name: /^Dettaglio di / });
+    expect(within(detail()).queryByRole('heading', { name: 'Meta' })).toBeNull();
+    rerender(<SuggestionsPanel {...props} teamCollapsed />);
+    const meta = within(detail()).getByRole('heading', { name: 'Meta' }).closest('section')!;
+    expect(meta).toHaveTextContent(/\d.*uso nel meta/);
+    expect(meta.querySelectorAll('.meta-mates li').length).toBeLessThanOrEqual(5);
+  });
+
   it('Icona box: la forma da battaglia (Mega con la pietra), non la specie base', async () => {
     const { BoxIcon } = await import('../../src/ui/candidateParts');
     const { Icons } = await import('@pkmn/img');
