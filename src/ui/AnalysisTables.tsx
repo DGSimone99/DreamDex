@@ -1,22 +1,19 @@
 import type { TeamAnalysis } from '../engine/analysis';
-import { weaknessSeverity } from '../engine/coach';
-import { battleName } from '../engine/dex';
 import { needLabel, ownersOf } from '../engine/needs';
 import { LEVEL_KEYS, type Level } from '../engine/roleLevels';
 import type { TeamSet } from '../engine/sets';
-import { weatherMitigations, type WeatherMitigation } from '../engine/synergy';
+import type { WeatherMitigation } from '../engine/synergy';
 import { t, type Lang } from '../i18n';
 import { anyGameName, typeName } from '../i18n/game';
 import { useLang, useT } from '../i18n/react';
 import { Icon } from './icons';
-import { IssueCounts, WEAKNESS_LABELS } from './IssueCounts';
 import { TypeChip } from './Sprite';
-import { MoveName, Typed } from './TypeText';
+import { MoveName } from './TypeText';
 
 const MULTIPLIER_LABELS: Record<string, string> = { '4': '×4', '2': '×2', '1': '', '0.5': '×½', '0.25': '×¼', '0': '×0' };
-const formatMultiplier = (m: number) => MULTIPLIER_LABELS[String(m)] ?? `×${m}`;
+export const formatMultiplier = (m: number) => MULTIPLIER_LABELS[String(m)] ?? `×${m}`;
 /** "Col sole (Ninetales, Drought): Water ×2 → ×1 per Ninetales, Great Tusk · il meteo non è sempre attivo" */
-function mitigationNote(m: WeatherMitigation, lang: Lang): string {
+export function mitigationNote(m: WeatherMitigation, lang: Lang): string {
   const groups = new Map<string, string[]>();
   for (const x of m.members) {
     const key = `${formatMultiplier(x.from)} → ${formatMultiplier(x.to) || '×1'}`;
@@ -27,51 +24,6 @@ function mitigationNote(m: WeatherMitigation, lang: Lang): string {
   const [setter, via = ''] = m.source.replace(/\)$/, '').split(' (');
   const source = via ? `${setter}, ${anyGameName(via, lang)}` : setter;
   return t(lang, 'analysis.mitigation', { condition: t(lang, `analysis.mitigation.${m.condition as 'sun' | 'rain' | 'grassyterrain' | 'mistyterrain'}`), source, changes });
-}
-
-/** Debolezze difensive: i 18 tipi × i membri, deboli e resistenze; la riga dice la gravità; sotto le note del meteo. */
-export function DefenseTable({ team, analysis }: { team: TeamSet[]; analysis: TeamAnalysis }) {
-  const tr = useT();
-  const lang = useLang();
-  const severities = analysis.weakness.map(weaknessSeverity);
-  const serious = severities.filter(s => s === 'serious').length;
-  const minor = severities.filter(s => s === 'minor').length;
-  return (
-    <section className="analysis-table" aria-label={tr('analysis.weakness')}>
-      <h4>
-        {tr('analysis.weakness')}
-        <span className="summary-info">
-          {serious + minor === 0 && (team.length ? tr('analysis.noShortfall') : '—')}
-          <IssueCounts serious={serious} minor={minor} labels={WEAKNESS_LABELS} />
-        </span>
-      </h4>
-      <table>
-        <thead>
-          <tr>
-            <th>{tr('analysis.type')}</th>
-            {team.map((set, i) => <th key={i}>{battleName(set)}</th>)}
-            <th>{tr('analysis.weakCol')}</th>
-            <th>{tr('analysis.resistCol')}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {analysis.weakness.map((row, r) => (
-            <tr key={row.type} className={severities[r] ?? (row.resist > row.weak ? 'good' : '')}>
-              <th scope="row">
-                <TypeChip type={row.type} />
-                {/* Il colore della riga dice la gravità; a parole per gli screen reader */}
-                {severities[r] && <span className="visually-hidden">{` ${tr(severities[r] === 'serious' ? 'analysis.shortfallSerious' : 'analysis.shortfall')}`}</span>}
-              </th>
-              {row.multipliers.map((m, i) => <td key={i} className={m > 1 ? 'weak' : m < 1 ? 'resist' : undefined}>{formatMultiplier(m)}</td>)}
-              <td>{row.weak}</td>
-              <td>{row.resist}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      {weatherMitigations(team).map(m => <p key={m.condition} className="note"><Typed text={mitigationNote(m, lang)} /></p>)}
-    </section>
-  );
 }
 
 /** Coverage offensiva: per ogni tipo chi lo colpisce superefficace e con cosa; prima i tipi scoperti. */

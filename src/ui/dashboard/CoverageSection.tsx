@@ -24,7 +24,7 @@ function Cell({ state, label }: { state: CellState; label: string }) {
   );
 }
 
-/** Copertura: i 18 tipi, una riga per la Difesa e una per l'Offesa; non si comprime mai. */
+/** Copertura: i 18 tipi, una riga per l'Offesa e una per la Difesa (l'ordine delle schede); non si comprime mai. */
 export function CoverageSection({ coverage, onView }: { coverage: DashboardData['coverage']; onView: (v: AnalysisView) => void }) {
   const t = useT();
   const lang = useLang();
@@ -34,10 +34,10 @@ export function CoverageSection({ coverage, onView }: { coverage: DashboardData[
   const names = coverage.cells.map(cell => typeName(cell.type, lang));
   return (
     <DashCard className="dash-coverage" title={title}
-      meta={<>{defense.toLocaleLowerCase()} <b>{coverage.defense}</b> · {offense.toLocaleLowerCase()} <b>{coverage.offense}</b></>}
+      meta={<>{offense.toLocaleLowerCase()} <b>{coverage.offense}</b> · {defense.toLocaleLowerCase()} <b>{coverage.defense}</b></>}
       links={<>
-        <DashLink label={t('area.defense')} area={t('area.defense')} onClick={() => onView('defense')} />
         <DashLink label={t('area.strength')} area={t('area.strength')} onClick={() => onView('strength')} />
+        <DashLink label={t('area.defense')} area={t('area.defense')} onClick={() => onView('defense')} />
       </>}>
       <table className="dash-matrix" aria-label={title}>
         <thead>
@@ -53,12 +53,12 @@ export function CoverageSection({ coverage, onView }: { coverage: DashboardData[
         </thead>
         <tbody>
           <tr>
-            <th scope="row">{defense}</th>
-            {coverage.cells.map((cell, i) => <Cell key={cell.type} state={cell.defense} label={`${names[i]}, ${defense.toLocaleLowerCase()}: ${lower(cell.defenseNote)}`} />)}
-          </tr>
-          <tr>
             <th scope="row">{offense}</th>
             {coverage.cells.map((cell, i) => <Cell key={cell.type} state={cell.offense} label={`${names[i]}, ${offense.toLocaleLowerCase()}: ${lower(cell.offenseNote)}`} />)}
+          </tr>
+          <tr>
+            <th scope="row">{defense}</th>
+            {coverage.cells.map((cell, i) => <Cell key={cell.type} state={cell.defense} label={`${names[i]}, ${defense.toLocaleLowerCase()}: ${lower(cell.defenseNote)}`} />)}
           </tr>
         </tbody>
       </table>

@@ -126,6 +126,40 @@ async function hoverCard(page: Page, n: number): Promise<boolean | string> {
   return true;
 }
 
+
+/** Apre la Difesa e, se serve, una sotto-scheda per nome (null = Generale); col team chiuso clicca prima il pulsante della fascia. */
+const defenseState = (sub: RegExp | null, opts: { team?: unknown[]; format?: Partial<typeof FORMAT>; collapsed?: boolean } = {}): State => ({
+  hash: opts.format ? hashWith(opts.team ?? SIX, opts.format) : hash(opts.team ?? SIX),
+  run: async p => {
+    await tab(p, 'analysis');
+    await wait(300);
+    if (opts.collapsed && !await clickText(p, 'button.band-toggle', /./)) return 'no band toggle';
+    await wait(300);
+    if (!await clickText(p, '.band button.grade-area', /^Difesa/)) return 'no defense row';
+    await wait(300);
+    if (sub && !await clickText(p, '.area-subs [role="tab"]', sub)) return 'no sub-tab';
+    await wait(500);
+    return true;
+  },
+});
+const SUBS: Record<string, RegExp | null> = { general: null, robustness: /^Robustezza/, sustain: /^Sostenibilit/, types: /^Coverage tipi/, meta: /^Coverage meta/ };
+const DEFENSE_STATES: Record<string, State> = {
+  ...Object.fromEntries(Object.entries(SUBS).flatMap(([k, re]) => [
+    [`analysis-defense-${k}`, defenseState(re)],
+    [`analysis-defense-${k}-collapsed`, defenseState(re, { collapsed: true })],
+  ])),
+  'analysis-defense-types-nometa': defenseState(SUBS.types, { format: { meta: false } }),
+  'analysis-defense-long': defenseState(null, { team: LONG }),
+  // La guida della Difesa aperta dal "?" di Generale (Come funziona)
+  'analysis-defense-guide': { hash: hash(SIX), run: async p => {
+    const ok = await defenseState(null).run!(p);
+    if (ok !== true) return ok;
+    if (!await clickText(p, '.area-help button', /./)) return 'no guide button';
+    await wait(400);
+    return true;
+  } },
+};
+
 // storage: chiavi in più nel localStorage prima del caricamento (es. lo stile della lista)
 interface State { hash?: string; lang?: 'it' | 'en'; storage?: Record<string, string>; run?: (page: Page) => Promise<boolean | string> }
 const STATES: Record<string, State> = {
@@ -166,6 +200,9 @@ const STATES: Record<string, State> = {
   analysis: { run: async p => { await tab(p, 'analysis'); return true; } },
   'analysis-defense': { run: async p => clickText(p, '.band button.grade-area', /^Difesa/) },
   'analysis-offense': { run: async p => clickText(p, '.band button.grade-area', /^Offesa/) },
+  // Difesa: una scheda per sotto-scheda (SIX), con meta, senza meta, a team chiuso e con nomi lunghi
+  ...DEFENSE_STATES,
+  'analysis-offense-strip': { hash: hash(SIX), run: async p => clickText(p, '.band button.grade-area', /^Offesa/) },
   'analysis-roles': { run: async p => clickText(p, '.band button.grade-area', /^Ruoli/) },
   'analysis-overview-three': { hash: hash(TEAM.slice(0, 3)), run: async p => { await tab(p, 'analysis'); return true; } },
   'analysis-meta-off': { hash: hashWith(TEAM, { meta: false }), run: async p => { await tab(p, 'analysis'); return true; } },
@@ -400,7 +437,7 @@ for (const [w, h] of sizes) {
     await wait(800);
     // pageScroll: quanto scorre la pagina; clipped: quanto della colonna principale resta tagliato (overflow nascosto)
     // dash: altezza e densità del cruscotto, fondo delle due colonne, testo tagliato nelle sezioni
-    const { scroll, clipped, dash } = await page.evaluate(() => {
+    const { scroll, clipped, dash, panel } = await page.evaluate(() => {
       const main = document.querySelector('.main');
       const box = document.querySelector<HTMLElement>('.dash');
       // Niente funzioni con nome qui dentro: tsx aggiunge __name, che nella pagina non esiste
@@ -438,6 +475,7 @@ for (const [w, h] of sizes) {
       return {
         scroll: document.scrollingElement!.scrollHeight - window.innerHeight,
         clipped: main ? main.scrollHeight - main.clientHeight : 0,
+        panel: (() => { const el = document.querySelector<HTMLElement>('.area-panel'); return el ? ` panelOverflow=${el.scrollHeight - el.clientHeight}` : ''; })(),
         dash: box ? `dash=${box.clientHeight}x${box.clientWidth} density=${box.dataset.density} cards=[${heights.join(',')}] cut=${cut} overflow=[${over.join(',')}] sumClip=${sumClip} rows=[${sumRows.join(',')}] sumHidden=${sumHidden} sumFill=${fill}% fitCut=${fitCut} covBand=${covBand} overviewScroll=${(document.querySelector('.overview')?.scrollHeight ?? 0) - (document.querySelector('.overview')?.clientHeight ?? 0)} hScroll=${document.scrollingElement!.scrollWidth - window.innerWidth}` : '',
       };
     });
@@ -478,7 +516,7 @@ for (const [w, h] of sizes) {
     });
     const file = join(out, `${w}x${h}-${name}.png`);
     await page.screenshot({ path: file });
-    console.log(`${file} pageScroll=${scroll} clipped=${clipped} ${dash} ${coach} ${list}`);
+    console.log(`${file} pageScroll=${scroll} clipped=${clipped}${panel} ${dash} ${coach} ${list}`);
     await page.close();
   }
 }

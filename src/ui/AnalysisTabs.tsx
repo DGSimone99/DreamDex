@@ -4,8 +4,8 @@ import { useT } from '../i18n/react';
 import type { AnalysisView } from './analysisView';
 import { Icon } from './icons';
 
-/** Le schede interne di Analisi, nell'ordine: Panoramica e Coaching, poi le aree del voto con Bonus/Malus in fondo. */
-export const ANALYSIS_VIEWS: AnalysisView[] = ['overview', 'coaching', 'defense', 'strength', 'roles', 'speed', 'bonusMalus'];
+/** Le schede interne di Analisi, nell'ordine: Panoramica e Coaching, poi Offesa, Difesa, Velocità e Ruoli, con Bonus/Malus in fondo. */
+export const ANALYSIS_VIEWS: AnalysisView[] = ['overview', 'coaching', 'strength', 'defense', 'speed', 'roles', 'bonusMalus'];
 
 const viewLabelKey = (view: AnalysisView) => (view === 'overview' || view === 'coaching' ? `analysis.view.${view}` : `area.${view}`) as 'analysis.view.overview';
 
@@ -49,9 +49,9 @@ export function HelpButton({ title, label = title, className, children }: { titl
   );
 }
 
-/** Le schede con un "?": la Panoramica e il Coaching non lo hanno. */
-type HelpView = Exclude<AnalysisView, 'overview' | 'coaching'>;
-const hasHelp = (view: AnalysisView): view is HelpView => view !== 'overview' && view !== 'coaching';
+/** Le schede con un "?" di pagina: non lo hanno la Panoramica, il Coaching e la Difesa (che ha la sua guida a sezioni). */
+type HelpView = Exclude<AnalysisView, 'overview' | 'coaching' | 'defense'>;
+const hasHelp = (view: AnalysisView): view is HelpView => view !== 'overview' && view !== 'coaching' && view !== 'defense';
 
 /** Il "?" accanto alla scheda aperta: cosa mostra quella scheda e come conta nel voto. */
 export function ViewHelp({ view }: { view: HelpView }) {

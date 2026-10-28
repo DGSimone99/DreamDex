@@ -6,6 +6,8 @@ import { RatingHelp } from './RatingHelp';
 import { type AreaKey, type DetailArea, signed } from './AreaDetail';
 import { Icon } from './icons';
 import { useT } from '../i18n/react';
+import { ANALYSIS_VIEWS } from './AnalysisTabs';
+import type { AnalysisView } from './analysisView';
 
 const isDetailArea = (key: string): key is DetailArea => key === 'strength' || key === 'defense' || key === 'speed' || key === 'roles' || key === 'bonusMalus';
 
@@ -53,7 +55,7 @@ export function GradeBadge({ rating, ruleIssues = [], onOpen }: { rating: TeamRa
       {/* Le quattro aree + Bonus/Malus: ogni riga porta alla sua scheda in Analisi */}
       {rating && (
         <span className="grade-areas">
-          {rating.areas.map(area => {
+          {[...rating.areas].sort((a, b) => ANALYSIS_VIEWS.indexOf(a.key as AnalysisView) - ANALYSIS_VIEWS.indexOf(b.key as AnalysisView)).map(area => {
             const note = area.inactive ? ` · ${t('rating.notCounted')}` : '';
             return (
               // Ogni barra nel colore della lettera che varrebbe da sola: si vede subito l'area debole

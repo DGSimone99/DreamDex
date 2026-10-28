@@ -2,6 +2,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { App } from '../../src/App';
+import { analyzeTeam } from '../../src/engine/analysis';
 import { AreaView } from '../../src/ui/AreaView';
 import { LangProvider } from '../../src/i18n/react';
 import type { TeamRating } from '../../src/engine/rating';
@@ -16,7 +17,7 @@ describe('Riquadro Voto', () => {
     for (const name of ['Great Tusk', 'Gholdengo']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
     expect(band()).toHaveTextContent(/Voto [SABCD], \d+ su 100, \w+/);
     const areas = within(band()).getAllByRole('button', { name: /, apri il dettaglio/ }).map(b => b.getAttribute('aria-label')!.replace(/ \d+, apri il dettaglio.*/, ''));
-    expect(areas).toEqual(['Difesa', 'Offesa', 'Ruoli', 'Velocità']);
+    expect(areas).toEqual(['Offesa', 'Difesa', 'Velocità', 'Ruoli']);
     expect(band()).not.toHaveTextContent('Sinergia');
   });
 
@@ -40,6 +41,7 @@ describe('Riquadro Voto', () => {
     await user.paste('Ninetales\nAbility: Drought\n- Flamethrower\n\nGreat Tusk\n- Headlong Rush');
     await user.click(screen.getByRole('button', { name: 'Importa' }));
     await user.click(within(band()).getByRole('button', { name: /^Difesa \d+, apri il dettaglio/ }));
+    await user.click(screen.getByRole('tab', { name: /^Coverage tipi/ }));
     expect(screen.getByText((_, el) => el?.textContent === 'Col sole (Ninetales, Drought): Water ×2 → ×1 per Ninetales, Great Tusk · il meteo non è sempre attivo')).toBeInTheDocument();
   });
 
@@ -207,7 +209,7 @@ const catalogRating = (teraCap: number) => ({
 
 async function openCatalog(teraCap = 0) {
   const user = userEvent.setup();
-  render(<LangProvider lang="it"><AreaView rating={catalogRating(teraCap)} area="bonusMalus" problems={[]} /></LangProvider>);
+  render(<LangProvider lang="it"><AreaView rating={catalogRating(teraCap)} area="bonusMalus" team={[]} analysis={analyzeTeam([], fixtureData)} problems={[]} /></LangProvider>);
   return { user, dialog: screen.getByRole('region', { name: 'Bonus/Malus' }) };
 }
 
@@ -247,7 +249,7 @@ describe('Catalogo Bonus/Malus', () => {
   it('somma delle voci oltre il tetto: "(limitato a −15)" accanto al titolo', async () => {
     const user = userEvent.setup();
     const r = { ...catalogRating(0), penalty: { total: 15, items: [{ text: 'A', points: 10, catalog: 'removers' }, { text: 'B', points: 8, catalog: 'hazardDuplicate' }] } } as unknown as TeamRating;
-    render(<LangProvider lang="it"><AreaView rating={r} area="bonusMalus" problems={[]} /></LangProvider>);
+    render(<LangProvider lang="it"><AreaView rating={r} area="bonusMalus" team={[]} analysis={analyzeTeam([], fixtureData)} problems={[]} /></LangProvider>);
     void user;
     expect(within(screen.getByRole('tabpanel')).getByRole('heading', { name: /Malus/ })).toHaveTextContent('(limitato a −15)');
   });
