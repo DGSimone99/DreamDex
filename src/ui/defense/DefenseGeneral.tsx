@@ -54,7 +54,8 @@ function WorstAndRecovery({ hit, parts }: { hit: { species: string; pct: number;
 /**
  * La scheda Generale della Difesa: una tessera per sottostatistica (valore e il fatto più importante, un clic apre la
  * sottoscheda) e sotto i membri con Fisica / Speciale / Sostenibilità / Difesa come barre.
- * Con la squadra chiusa (`ctx.roomy`) le righe riempiono il pannello e compaiono il colpo peggiore e il recupero.
+ * Tessere e righe stanno nella cornice comune (`def-frame`): i membri restano nello stesso punto di Coverage tipi.
+ * Con la squadra chiusa (`ctx.roomy`) le righe si allungano e compaiono il colpo peggiore e il recupero.
  */
 export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; meta: boolean; ctx: AreaContext }) {
   const t = useT();
@@ -145,8 +146,8 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
     (best, row) => (!best || row.cells[i].pct > best.pct ? { species: row.species, ...row.cells[i] } : best), null);
 
   return (
-    <div className={`def-general${roomy ? ' roomy' : ''}`}>
-      <div className="def-tiles">
+    <div className={`def-frame def-general${roomy ? ' roomy' : ''}`}>
+      <div className="def-top def-tiles">
         {tiles.map(tile => (
           <button key={tile.key} type="button" className={`def-tile ${tone(tile.value)}`}
             onClick={() => ctx.open?.(tile.key)}>
@@ -156,7 +157,7 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
         ))}
       </div>
       <div className="ad-scroll">
-        <table className="def-members">
+        <table className="def-grid def-members">
           {/* Larghezze fisse: i nomi in una colonna, le quattro barre in colonne uguali */}
           <colgroup>
             <col className="def-col-mon" /><col /><col /><col /><col />
@@ -176,7 +177,7 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
             {members.map((m, i) => (
               <tr key={`${m.species}-${i}`}>
                 <th scope="row">
-                  <span className="ad-mon"><Sprite species={m.species} size={roomy ? 44 : 27} />{m.species}
+                  <span className="ad-mon"><Sprite species={m.species} size={roomy ? 44 : 28} />{m.species}
                     {i === weakLink && <span className="def-weak">{t('ddetail.weakLink')}</span>}
                   </span>
                 </th>

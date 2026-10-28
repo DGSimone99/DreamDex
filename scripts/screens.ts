@@ -475,7 +475,11 @@ for (const [w, h] of sizes) {
       return {
         scroll: document.scrollingElement!.scrollHeight - window.innerHeight,
         clipped: main ? main.scrollHeight - main.clientHeight : 0,
-        panel: (() => { const el = document.querySelector<HTMLElement>('.area-panel'); return el ? ` panelOverflow=${el.scrollHeight - el.clientHeight}` : ''; })(),
+        panel: (() => { const el = document.querySelector<HTMLElement>('.area-panel'); if (!el) return '';
+          // Righe dei membri (cornice comune della Difesa): y e altezza della prima e dell ultima, per vedere che restano ferme
+          const rows = [...el.querySelectorAll<HTMLElement>('.def-grid tbody th[scope="row"] .ad-mon')].map(r => r.closest('tr')!.getBoundingClientRect());
+          const memberRows = rows.length ? ` memberRows=${Math.round(rows[0].top)}+${Math.round(rows[0].height)}..${Math.round(rows[rows.length - 1].bottom)} monX=${Math.round(el.querySelector('.def-grid tbody .ad-mon')!.getBoundingClientRect().left)}` : '';
+          return ` panelOverflow=${el.scrollHeight - el.clientHeight}${memberRows}`; })(),
         dash: box ? `dash=${box.clientHeight}x${box.clientWidth} density=${box.dataset.density} cards=[${heights.join(',')}] cut=${cut} overflow=[${over.join(',')}] sumClip=${sumClip} rows=[${sumRows.join(',')}] sumHidden=${sumHidden} sumFill=${fill}% fitCut=${fitCut} covBand=${covBand} overviewScroll=${(document.querySelector('.overview')?.scrollHeight ?? 0) - (document.querySelector('.overview')?.clientHeight ?? 0)} hScroll=${document.scrollingElement!.scrollWidth - window.innerWidth}` : '',
       };
     });

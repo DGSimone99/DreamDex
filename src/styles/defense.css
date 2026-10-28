@@ -54,12 +54,30 @@
 .def-mini.warn i { background: var(--warn); }
 .def-mini.bad i { background: var(--bad); }
 
+
+/* Cornice comune delle schede con i membri: fascia in alto, testata e righe di altezza fissa, così cambiando scheda i
+   Pokémon restano nello stesso punto. L altezza delle righe segue quella del pannello (cqh), uguale in ogni scheda:
+   --def-tail è lo spazio tenuto sotto le righe (riepiloghi e legenda), lo stesso per tutte le schede */
+.def-frame { --def-top: 104px; --def-gap: 10px; --def-head: 40px; --def-sp: 3px; --def-tail: 40px; --def-mon: 230px; --def-row-min: 30px; --def-row-max: 42px;
+  --def-row: clamp(var(--def-row-min), calc((100cqh - var(--def-top) - var(--def-gap) - var(--def-head) - var(--def-tail)) / 6 - var(--def-sp)), var(--def-row-max));
+  display: flex; flex-direction: column; height: 100%; min-height: 0; container-type: size; }
+.def-frame.roomy { --def-tail: 130px; --def-mon: 240px; --def-row-min: 34px; --def-row-max: 56px; }
+.def-frame > .def-top { flex: none; height: var(--def-top); margin: 0 0 var(--def-gap); overflow: hidden; }
+.def-top.def-tiles { grid-template-rows: 100%; }
+.def-frame .def-grid { width: 100%; border-collapse: separate; border-spacing: 0 var(--def-sp); table-layout: fixed; font-variant-numeric: tabular-nums; }
+/* Griglie a caselle: lo spazio anche in orizzontale, rientrato perché la prima colonna parta nello stesso punto */
+.def-frame .def-grid.spaced { width: calc(100% + 2 * var(--def-sp)); margin: 0 calc(-1 * var(--def-sp)); border-spacing: var(--def-sp); }
+.def-grid .def-col-mon { width: var(--def-mon); }
+.def-grid thead tr { height: var(--def-head); }
+.def-grid tbody tr { height: var(--def-row); }
+.def-grid tbody th[scope='row'] { padding: 0 8px 0 0; font-size: 14px; font-weight: 600; color: var(--text); text-align: left; white-space: nowrap; }
+.def-grid tbody .ad-mon .sprite { width: auto; max-height: calc(var(--def-row) - 4px); }
+
 /* Tabella dei membri con le barre */
-.def-members { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 14px; font-variant-numeric: tabular-nums; }
-.def-members thead th { padding: 6px 8px; font-size: 11px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: 0.05em; text-align: left; white-space: nowrap; }
-.def-members .def-col-mon { width: 250px; }
+.def-members { table-layout: fixed; font-size: 14px; font-variant-numeric: tabular-nums; }
+.def-members thead th { padding: 0 8px 6px; vertical-align: bottom; font-size: 11px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: 0.05em; text-align: left; white-space: nowrap; }
 .def-members thead th:first-child { padding-left: 0; }
-.def-members td, .def-members th[scope='row'] { padding: 2px 8px; border-bottom: 1px solid var(--line-soft); white-space: nowrap; text-align: left; }
+.def-members td, .def-members th[scope='row'] { padding: 0 8px; border-bottom: 1px solid var(--line-soft); white-space: nowrap; text-align: left; }
 .def-members th[scope='row'] { padding-left: 0; text-align: left; font-weight: 600; color: var(--text); }
 /* Barra e numero in una griglia fissa: la barra parte dove parte l'intestazione della colonna */
 .def-cell { display: inline-grid; grid-template-columns: 150px 3ch; align-items: center; gap: 10px; vertical-align: middle; }
@@ -81,14 +99,6 @@
 .def-members td.def-rec { white-space: normal; font-size: 13px; line-height: 1.3; }
 .def-rec .ad-halved { margin-left: 8px; color: var(--warn); font-weight: 600; cursor: help; }
 
-/* Squadra chiusa: le righe riempiono il pannello (niente scorrimento) */
-.def-general.roomy { display: flex; flex-direction: column; height: 100%; min-height: 0; }
-.def-general.roomy .ad-scroll { flex: 1; min-height: 0; overflow: hidden; }
-.def-general.roomy .def-members { height: 100%; }
-.def-general.roomy .def-members tbody tr { height: auto; }
-.def-general.roomy .def-members td, .def-general.roomy .def-members th[scope='row'] { padding-top: 2px; padding-bottom: 2px; }
-.def-general.roomy .def-members .def-col-mon { width: 240px; }
-.def-general.roomy .def-members thead tr { height: 1px; }
 /* Le barre seguono la larghezza della colonna: con sette colonne non c'è posto per i 150px fissi */
 .def-general.roomy .def-cell { display: grid; grid-template-columns: minmax(0, 1fr) 3ch; width: 100%; }
 .def-general.roomy .def-members .def-col-hit { width: 112px; }
@@ -150,75 +160,51 @@
 
 /* Coverage tipi: membri in riga, 18 tipi in colonna. Riempimenti da color-mix dei token di stato sul pannello, testo --text
    (contrasto ≥ 5.2:1 su swsh e sv: vedi il rapporto del task). Il ×0 usa l'accento della palette (ciano su swsh, arancio su sv) */
-/* Il pannello si riempie in altezza: le righe dei membri si allungano, il riepilogo resta compatto */
-.def-types { display: flex; flex-direction: column; height: 100%; min-height: 0; container-type: inline-size; }
-.ct-wrap { flex: 1 1 auto; min-height: 0; max-height: 620px; }
-.def-types.roomy .ct-wrap { max-height: 560px; }
-.ad-panel .ct-caption { display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin: 0 0 6px; font-size: 13px; color: var(--muted); }
-.ct-count { display: inline-flex; align-items: center; gap: 5px; padding: 2px 9px; border-radius: 999px; font-weight: 600; }
-.ct-count .icon { width: 14px; height: 14px; }
-.ct-count.serious { background: var(--bad-bg); color: var(--bad); }
-.ct-count.minor { background: var(--warn-bg); color: var(--warn); }
-.ct-table { width: 100%; height: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 2px; font-variant-numeric: tabular-nums; }
-.ct-table thead tr, .ct-table tr.ct-sum { height: 1px; }
-.ct-table thead th { padding: 4px 0 5px; font-size: 12px; font-weight: 500; line-height: 1.15; color: var(--muted); text-align: center; white-space: nowrap; vertical-align: bottom; }
-.ct-table thead .type-icons { display: block; margin: 0 auto 3px; }
-.ct-table thead .type-icons img { width: 26px; height: 26px; }
-.ct-name { display: block; overflow: hidden; text-overflow: clip; }
-.ct-table .ct-col-mon { width: 180px; }
-/* Pannello stretto (1280 a squadra chiusa, 1440 aperta): nomi ed etichette più piccoli, così le 18 colonne entrano */
-@container (max-width: 1150px) {
-  .ct-table .ct-col-mon { width: 150px; }
-  .ct-table thead th { font-size: 10.5px; }
-  .ct-table thead .type-icons img { width: 22px; height: 22px; }
-  .ct-sev { padding: 0 3px; font-size: 9px; letter-spacing: 0; }
-  .ct-table tbody th { font-size: 13px; }
-  .ct-table td { font-size: 13px; }
-}
-/* Colonne in difetto: fascia leggera su tutta la colonna, filo ed etichetta in testata */
-.ct-sev { display: inline-block; margin-top: 3px; padding: 0 6px; border-radius: 999px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; line-height: 1.6; }
-.ct-table th.sev-serious { background: var(--bad-bg); box-shadow: inset 0 3px 0 var(--bad); color: var(--text); }
-.ct-table th.sev-minor { background: var(--warn-bg); box-shadow: inset 0 3px 0 var(--warn); color: var(--text); }
-th.sev-serious .ct-sev { background: var(--bad); color: var(--field); }
-th.sev-minor .ct-sev { background: var(--warn); color: var(--field); }
-.ct-table tbody th { padding-right: 8px; text-align: left; font-size: 14px; font-weight: 600; white-space: nowrap; color: var(--text); }
-.ct-table td { height: 30px; text-align: center; font-size: 14px; font-weight: 700; color: var(--text); background: color-mix(in srgb, var(--raised) 40%, var(--panel)); }
-.ct-table td.sev-serious:not([class*="m-"]) { background: color-mix(in srgb, var(--bad-bg) 75%, var(--panel)); }
-.ct-table td.sev-minor:not([class*="m-"]) { background: color-mix(in srgb, var(--warn-bg) 70%, var(--panel)); }
-/* Gerarchia: le debolezze pesano, le resistenze stanno in secondo piano, l immunità nel colore della palette */
-.ct-table td.m-4, .ct-swatch.m-4 { background: color-mix(in srgb, var(--bad) 58%, var(--panel)); box-shadow: inset 0 0 0 2px var(--bad); color: var(--text); }
-.ct-table td.m-2, .ct-swatch.m-2 { background: color-mix(in srgb, var(--bad) 40%, var(--panel)); color: var(--text); }
-.ct-table td.m-half, .ct-swatch.m-half { background: color-mix(in srgb, var(--good) 14%, var(--panel)); color: var(--muted); font-weight: 600; }
-.ct-table td.m-quarter, .ct-swatch.m-quarter { background: color-mix(in srgb, var(--good) 26%, var(--panel)); color: var(--text); font-weight: 600; }
-.ct-table td.m-0, .ct-swatch.m-0 { background: color-mix(in srgb, var(--accent) 24%, var(--panel)); color: var(--text); }
-/* Croce del puntatore: riga e colonna della cella sotto il mouse */
-.ct-table tr.x-row td, .ct-table td.x-col { box-shadow: inset 0 0 0 999px rgb(255 255 255 / 0.07); }
-.ct-table td.m-4.x-col, .ct-table tr.x-row td.m-4 { box-shadow: inset 0 0 0 2px var(--bad), inset 0 0 0 999px rgb(255 255 255 / 0.07); }
-.ct-table tr.x-row th, .ct-table th.x-col { color: var(--accent); }
-/* Riepilogo: Deboli sale dal basso in rosso, Resistono scende dall alto in verde, si toccano sul filo; Sicurezza in pillola */
-.ct-table tbody tr.ct-sum td, .ct-table tbody tr.ct-sum th { height: 28px; background: none; font-size: 13px; font-weight: 600; }
-.ct-table tbody tr.ct-sum-first td, .ct-table tbody tr.ct-sum-first th { border-top: 2px solid var(--line); }
-.ct-table tbody tr.ct-sum td.sev-serious, .ct-table tbody tr.ct-sum td.sev-minor { background: none; }
-.ct-table tbody tr.ct-sum td.ct-weak { background: linear-gradient(to top, color-mix(in srgb, var(--bad) 30%, transparent) calc(var(--f) * 100%), transparent 0); }
-.ct-table tbody tr.ct-sum td.ct-resist { background: linear-gradient(to bottom, color-mix(in srgb, var(--good) 22%, transparent) calc(var(--f) * 100%), transparent 0); color: var(--muted); }
-.ct-table td.bad { color: var(--bad); }
-.ct-pill { display: inline-block; min-width: 44px; padding: 2px 6px; border-radius: 999px; font: 700 12px/1.3 var(--ui); }
+/* Coverage tipi: tessere "Chi entra" nella fascia in alto, sotto la griglia a caselle come quella della Panoramica */
+.ct-tile .def-tile-head .ct-tile-type { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 700; text-transform: none; letter-spacing: 0; color: var(--text); }
+.ct-tile-type .type-icons img { display: block; width: 20px; height: 20px; }
+.ct-sev { padding: 0 7px; border-radius: 999px; font: normal 700 10px/1.7 var(--ui); text-transform: uppercase; letter-spacing: 0.05em; }
+.ct-sev.serious { background: var(--bad-bg); color: var(--bad); }
+.ct-sev.minor { background: var(--warn-bg); color: var(--warn); }
+.ct-tile, .ct-tile:hover { cursor: default; background: color-mix(in srgb, var(--raised) 65%, var(--panel)); border-color: var(--line-soft); }
+.ct-swatch { display: inline-grid; place-items: center; }
+.ct-switch-mon { display: inline-flex; align-items: center; gap: 1px; margin-right: 6px; }
+.ct-switch-mon .ct-swatch { min-width: 24px; height: 16px; font-size: 11px; }
+.ct-switch-none { color: var(--bad); font-weight: 600; }
+.ct-table thead th { padding: 0 0 2px; vertical-align: bottom; text-align: center; }
+.ct-table thead .type-icons { display: block; }
+.ct-table thead .type-icons img { display: block; width: 24px; height: 24px; margin: 0 auto; border-radius: 50%; }
+/* Filo sotto l icona: rosso se grave, giallo se minore, vuoto (stessa altezza) altrimenti */
+.ct-flag { display: block; width: 24px; height: 3px; margin: 4px auto 0; border-radius: 2px; }
+.ct-table th.sev-serious .ct-flag { background: var(--bad); }
+.ct-table th.sev-minor .ct-flag { background: var(--warn); }
+/* Caselle: neutro come la Panoramica, i colori solo dove il moltiplicatore cambia */
+.def-frame .ct-cell, .ct-swatch { padding: 0; text-align: center; font: 700 15px/1 var(--ui); color: var(--text); border: 1px solid var(--line); border-radius: 3px; background: var(--raised); }
+.def-frame .ct-cell.m-4, .ct-swatch.m-4 { background: color-mix(in srgb, var(--bad) 48%, var(--panel)); border-color: var(--bad); }
+.def-frame .ct-cell.m-2, .ct-swatch.m-2 { background: color-mix(in srgb, var(--bad) 28%, var(--panel)); border-color: color-mix(in srgb, var(--bad) 80%, transparent); }
+.def-frame .ct-cell.m-half, .ct-swatch.m-half { background: color-mix(in srgb, var(--good) 12%, var(--raised)); border-color: color-mix(in srgb, var(--good) 35%, var(--line)); color: var(--muted); }
+.def-frame .ct-cell.m-quarter, .ct-swatch.m-quarter { background: color-mix(in srgb, var(--good) 24%, var(--panel)); border-color: color-mix(in srgb, var(--good) 60%, transparent); }
+.def-frame .ct-cell.m-0, .ct-swatch.m-0 { background: color-mix(in srgb, var(--accent) 22%, var(--panel)); border-color: color-mix(in srgb, var(--accent) 60%, transparent); }
+/* Croce del puntatore: bordi più chiari su riga e colonna, nome e icona in evidenza */
+.ct-table tr.x-row .ct-cell, .ct-table .ct-cell.x-col { border-color: var(--faint); }
+.ct-table tr.x-row th[scope='row'] { color: var(--accent); }
+.ct-table thead th.x-col img { transform: scale(1.15); }
+/* Riepilogo: righe basse, etichette come le righe della Panoramica */
+.ct-table tr.ct-sum { height: 30px; }
+.ct-table tr.ct-sum th { padding: 0 8px 0 0; font: 600 11px/1 var(--ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); text-align: left; }
+.ct-table tr.ct-sum td { padding: 0; text-align: center; font-size: 13px; font-weight: 600; color: var(--text); }
+.ct-table tr.ct-sum td.bad { color: var(--bad); }
+.ct-pill { display: inline-block; min-width: 42px; padding: 2px 6px; border-radius: 999px; font: 700 12px/1.3 var(--ui); }
 .ct-pill.bad { background: var(--bad-bg); color: var(--bad); }
 .ct-pill.warn { background: var(--warn-bg); color: var(--warn); }
 .ct-pill.good { background: var(--good-bg); color: var(--good); }
-/* Legenda e "Chi entra" */
-.ad-panel .ct-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin: 8px 0 0; font-size: 12px; color: var(--muted); }
+.ad-panel .ct-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin: 6px 0 0; font-size: 12px; color: var(--muted); }
 .ct-key { display: inline-flex; align-items: center; gap: 6px; }
-.ct-swatch { display: inline-grid; place-items: center; min-width: 30px; height: 20px; padding: 0 4px; border-radius: 2px; font-size: 12px; font-weight: 700; }
-.ct-switch { margin-top: 14px; }
-.ct-switch h5 { margin: 0 0 6px; font-size: 11px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: 0.05em; }
-.ct-switch ul { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; }
-.ct-switch li { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 8px 12px; border-radius: 4px; background: var(--raised); box-shadow: inset 0 3px 0 var(--bad); }
-.ct-switch li.sev-minor { box-shadow: inset 0 3px 0 var(--warn); }
-.ct-switch-type { display: inline-flex; align-items: center; gap: 6px; min-width: 96px; font-weight: 600; color: var(--text); }
-.ct-switch-type .type-icons img { width: 22px; height: 22px; }
-.ct-switch-mon { display: inline-flex; align-items: center; gap: 2px; }
-.ct-switch-none { color: var(--bad); font-weight: 600; }
+.ct-legend .ct-swatch { display: inline-grid; place-items: center; min-width: 30px; height: 20px; font-size: 12px; }
+@container (max-width: 1100px) {
+  .ct-table thead .type-icons img { width: 20px; height: 20px; }
+  .ct-cell { font-size: 12px; }
+}
 
 /* Coverage meta: una tessera per minaccia */
 .cm-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 4px; }

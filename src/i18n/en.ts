@@ -792,6 +792,8 @@ export const en = {
   'ddetail.m0': "immune",
   'ddetail.ctSwitch': "Who switches in on the weak types",
   'ddetail.ctSwitchNone': "nobody resists it",
+  'ddetail.ctSwitchCap': "Switch-ins",
+  'ddetail.ctMore': "More weak types",
   'ddetail.withSetup': "With setup: {move}",
   'ddetail.tile.recovery': "Recovery in {n} of {m} members",
   'ddetail.tile.recoveryOne': "Recovery in 1 of {m} members",

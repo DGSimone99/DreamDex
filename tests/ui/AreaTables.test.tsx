@@ -22,8 +22,8 @@ describe('tabelle complete nelle schede d\'area', () => {
     await user.click(within(view()).getByRole('tab', { name: /^Coverage tipi/ }));
     const table = within(view()).getByRole('table');
     expect(within(table).getAllByRole('columnheader')).toHaveLength(19);
-    // Testata, 2 membri, poi Deboli, Resistono, Sicurezza
-    expect(within(table).getAllByRole('row')).toHaveLength(6);
+    // Testata, 2 membri, poi Sicurezza (Deboli e Resistono solo a squadra chiusa)
+    expect(within(table).getAllByRole('row')).toHaveLength(4);
   });
 
   it('Difesa: la nota del meteo sotto la tabella', async () => {

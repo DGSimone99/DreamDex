@@ -794,6 +794,8 @@ export const it: Record<keyof typeof en, string> = {
   'ddetail.m0': "immune",
   'ddetail.ctSwitch': "Chi entra sui tipi in difetto",
   'ddetail.ctSwitchNone': "nessuno lo resiste",
+  'ddetail.ctSwitchCap': "Chi entra",
+  'ddetail.ctMore': "Altri tipi in difetto",
   'ddetail.withSetup': "Con il setup: {move}",
   'ddetail.tile.recovery': "Recupero in {n} membri su {m}",
   'ddetail.tile.recoveryOne': "Recupero in 1 membro su {m}",

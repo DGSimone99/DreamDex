@@ -1,4 +1,4 @@
-import { useState, type CSSProperties } from 'react';
+import { useState } from 'react';
 import { weaknessSeverity } from '../../engine/coach';
 import { battleName } from '../../engine/dex';
 import type { TeamDefense } from '../../engine/defense';
@@ -18,55 +18,98 @@ const cellClass = (m: number) => (m === 4 ? 'm-4' : m > 1 ? 'm-2' : m === 0 ? 'm
 /** Colore della Sicurezza: rosso sotto 50, giallo sotto 100, verde a 100. */
 const safetyTone = (value: number) => (value < 50 ? 'bad' : value < 100 ? 'warn' : 'good');
 
+/** Tessere "Chi entra" nella fascia in alto: oltre questo numero l'ultima raccoglie gli altri tipi. */
+const SWITCH_TILES = 4;
+
 const LEGEND = [
   [4, 'm-4', 'ddetail.m4'], [2, 'm-2', 'ddetail.m2'], [0.5, 'm-half', 'ddetail.mHalf'],
   [0.25, 'm-quarter', 'ddetail.mQuarter'], [0, 'm-0', 'ddetail.m0'],
 ] as const;
 
 /**
- * Coverage tipi: una tabella sola, un membro per riga e i 18 tipi in colonna, poi Deboli / Resistono / Sicurezza per tipo
- * e sotto la legenda e le note del meteo. "Debole" è sempre `weaknessSeverity`: fascia sulla colonna, riga Deboli e conteggi.
- * Con la squadra chiusa (`ctx.roomy`) sotto compare "Chi entra": per ogni tipo in difetto, chi lo resiste o ne è immune.
+ * Coverage tipi. In alto, alla stessa altezza delle tessere di Generale, "Chi entra": una tessera per tipo in difetto con
+ * chi lo resiste. Sotto la griglia come quella della Panoramica: un membro per riga (nello stesso punto di Generale), i 18
+ * tipi in colonna e la Sicurezza; a squadra chiusa anche Deboli, Resistono e la legenda.
+ * "Debole" è sempre `weaknessSeverity`: tessere, filo sotto l'icona del tipo e riga Deboli.
  */
 export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: AreaContext }) {
   const t = useT();
   const lang = useLang();
   const { team, analysis } = ctx;
+  const roomy = !!ctx.roomy;
   const [hover, setHover] = useState<{ row: number; col: number } | null>(null);
   const severities = analysis.weakness.map(weaknessSeverity);
-  const serious = severities.filter(s => s === 'serious').length;
-  const minor = severities.filter(s => s === 'minor').length;
   const safety = new Map(defense.coverageTypes.rows.map(row => [row.type, row.safety]));
-  const shortName = (type: string) => (type === 'Bug' ? t('ddetail.typeShort.Bug') : typeName(type, lang));
-  const size = Math.max(team.length, 1);
-  /** Classi di una cella della colonna `col`: fascia del difetto e croce del puntatore. */
-  const colClass = (col: number, extra = '') =>
-    [extra, severities[col] && `sev-${severities[col]}`, hover?.col === col && 'x-col'].filter(Boolean).join(' ') || undefined;
-  const flagged = analysis.weakness.flatMap((row, i) => (severities[i] ? [{ row, severity: severities[i] }] : []));
+  const sevLabel = (severity: 'serious' | 'minor') => t(severity === 'serious' ? 'ddetail.sevSerious' : 'ddetail.sevMinor');
+  /** Classi di una cella della colonna `col`: il puntatore accende riga e colonna. */
+  const colClass = (col: number, extra = '') => [extra, hover?.col === col && 'x-col'].filter(Boolean).join(' ') || undefined;
+
+  // Tipi in difetto, i gravi per primi
+  const flagged = analysis.weakness
+    .flatMap((row, i) => (severities[i] ? [{ row, severity: severities[i]! }] : []))
+    .sort((a, b) => Number(b.severity === 'serious') - Number(a.severity === 'serious'));
+  const shown = flagged.length > SWITCH_TILES ? flagged.slice(0, SWITCH_TILES - 1) : flagged;
+  const rest = flagged.slice(shown.length);
 
   return (
-    <div className={`def-types${ctx.roomy ? ' roomy' : ''}`}>
-      <p className="ct-caption">
-        {serious + minor === 0
-          ? (team.length ? t('analysis.noShortfall') : '—')
-          : <>
-              {serious > 0 && <span className="ct-count serious"><Icon name="warning" />{serious} {t(serious === 1 ? 'issues.shortfallSeriousOne' : 'issues.shortfallSeriousMany')}</span>}
-              {minor > 0 && <span className="ct-count minor"><Icon name="warning" />{minor} {t(minor === 1 ? 'issues.shortfallOne' : 'issues.shortfallMany')}</span>}
-            </>}
-      </p>
-      <div className="ct-wrap">
-        <table className="ct-table" onMouseLeave={() => setHover(null)}>
-          <colgroup><col className="ct-col-mon" /></colgroup>
+    <div className={`def-frame def-types${roomy ? ' roomy' : ''}`}>
+      <div className="def-top def-tiles" aria-label={t('ddetail.ctSwitch')} role="group">
+        {flagged.length === 0 && (
+          <div className="def-tile good ct-tile">
+            <span className="def-tile-head"><span>{t('ddetail.ctSwitchCap')}</span></span>
+            <span className="def-tile-fact"><span className="def-visual def-none"><Icon name="check" />{t('ddetail.types.noWeak')}</span></span>
+          </div>
+        )}
+        {shown.map(({ row, severity }) => {
+          const safe = team.map((set, i) => ({ set, m: row.multipliers[i] })).filter(x => x.m < 1).sort((a, b) => a.m - b.m);
+          return (
+            <div key={row.type} className={`def-tile ct-tile ${severity === 'serious' ? 'bad' : 'warn'} ${severity}`}>
+              <span className="def-tile-head">
+                <span className="ct-tile-type"><TypeIcons types={[row.type]} />{typeName(row.type, lang)}</span>
+                <em className={`ct-sev ${severity}`}>{sevLabel(severity)}</em>
+              </span>
+              <span className="def-tile-fact">
+                <span className="def-cap"><em>{t('ddetail.ctSwitchCap')}</em><b>{safe.length}/{team.length}</b></span>
+                <span className="def-visual">
+                  {safe.length === 0
+                    ? <span className="ct-switch-none">{t('ddetail.ctSwitchNone')}</span>
+                    : safe.map(({ set, m }, i) => (
+                        <span key={i} className="ct-switch-mon" title={`${battleName(set)} ${formatMultiplier(m)}`}>
+                          <Sprite species={set.species} item={set.item} size={24} />
+                          <span className={`ct-swatch ${cellClass(m)}`}>{formatMultiplier(m)}</span>
+                          <span className="visually-hidden">{battleName(set)}</span>
+                        </span>
+                      ))}
+                </span>
+              </span>
+            </div>
+          );
+        })}
+        {rest.length > 0 && (
+          <div className="def-tile ct-tile warn">
+            <span className="def-tile-head"><span>{t('ddetail.ctMore')}</span><b>+{rest.length}</b></span>
+            <span className="def-tile-fact">
+              <span className="def-visual">
+                {rest.map(({ row, severity }) => (
+                  <span key={row.type} className={`def-chip ${severity}`}><TypeIcons types={[row.type]} />{typeName(row.type, lang)}</span>
+                ))}
+              </span>
+            </span>
+          </div>
+        )}
+      </div>
+      <div className="ad-scroll">
+        <table className="def-grid spaced ct-table" onMouseLeave={() => setHover(null)}>
+          <colgroup><col className="def-col-mon" /></colgroup>
           <thead>
             <tr>
               <th scope="col"><span className="visually-hidden">{t('detail.member')}</span></th>
               {analysis.weakness.map((row, i) => {
                 const severity = severities[i];
                 return (
-                  <th key={row.type} scope="col" className={colClass(i)} title={typeName(row.type, lang)}>
+                  <th key={row.type} scope="col" className={colClass(i, severity ? `sev-${severity}` : '')} title={typeName(row.type, lang)}>
                     <TypeIcons types={[row.type]} />
-                    <span className="ct-name" aria-hidden="true">{shortName(row.type)}</span>
-                    {severity && <span className="ct-sev" aria-hidden="true">{t(severity === 'serious' ? 'ddetail.sevSerious' : 'ddetail.sevMinor')}</span>}
+                    <span className="ct-flag" aria-hidden="true" />
                     <span className="visually-hidden">
                       {typeName(row.type, lang)}{severity && ` ${t(severity === 'serious' ? 'analysis.shortfallSerious' : 'analysis.shortfall')}`}
                     </span>
@@ -78,34 +121,30 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
           <tbody>
             {team.map((set, member) => (
               <tr key={member} className={hover?.row === member ? 'x-row' : undefined}>
-                <th scope="row"><span className="ad-mon"><Sprite species={set.species} item={set.item} size={30} />{battleName(set)}</span></th>
+                <th scope="row"><span className="ad-mon"><Sprite species={set.species} item={set.item} size={roomy ? 44 : 28} />{battleName(set)}</span></th>
                 {analysis.weakness.map((row, i) => {
                   const m = row.multipliers[member];
                   return (
-                    <td key={row.type} className={colClass(i, cellClass(m))} onMouseEnter={() => setHover({ row: member, col: i })}>
+                    <td key={row.type} className={colClass(i, `ct-cell ${cellClass(m)}`)} onMouseEnter={() => setHover({ row: member, col: i })}>
                       {formatMultiplier(m)}
                     </td>
                   );
                 })}
               </tr>
             ))}
-            <tr className="ct-sum ct-sum-first">
-              <th scope="row">{t('ddetail.weak')}</th>
-              {analysis.weakness.map((row, i) => (
-                <td key={row.type} className={colClass(i, `ct-weak${severities[i] ? ' bad' : ''}`)} style={{ '--f': row.weak / size } as CSSProperties}>
-                  {row.weak}
-                </td>
-              ))}
-            </tr>
-            <tr className="ct-sum">
-              <th scope="row">{t('ddetail.resist')}</th>
-              {analysis.weakness.map((row, i) => (
-                <td key={row.type} className={colClass(i, 'ct-resist')} style={{ '--f': row.resist / size } as CSSProperties}>
-                  {row.resist}
-                </td>
-              ))}
-            </tr>
-            <tr className="ct-sum ct-safety">
+            {roomy && (
+              <>
+                <tr className="ct-sum ct-sum-first">
+                  <th scope="row">{t('ddetail.weak')}</th>
+                  {analysis.weakness.map((row, i) => <td key={row.type} className={colClass(i, severities[i] ? 'bad' : '')}>{row.weak}</td>)}
+                </tr>
+                <tr className="ct-sum">
+                  <th scope="row">{t('ddetail.resist')}</th>
+                  {analysis.weakness.map((row, i) => <td key={row.type} className={colClass(i)}>{row.resist}</td>)}
+                </tr>
+              </>
+            )}
+            <tr className={`ct-sum${roomy ? '' : ' ct-sum-first'}`}>
               <th scope="row">{t('ddetail.safety')}</th>
               {analysis.weakness.map((row, i) => {
                 const value = safety.get(row.type) ?? 0;
@@ -115,33 +154,11 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
           </tbody>
         </table>
       </div>
-      <p className="ct-legend">
-        {t('ddetail.ctLegend')}
-        {LEGEND.map(([m, cls, key]) => <span key={cls} className="ct-key"><span className={`ct-swatch ${cls}`}>{formatMultiplier(m)}</span>{t(key)}</span>)}
-      </p>
-      {ctx.roomy && flagged.length > 0 && (
-        <section className="ct-switch" aria-label={t('ddetail.ctSwitch')}>
-          <h5>{t('ddetail.ctSwitch')}</h5>
-          <ul>
-            {flagged.map(({ row, severity }) => {
-              const safe = team.map((set, i) => ({ set, m: row.multipliers[i] })).filter(x => x.m < 1).sort((a, b) => a.m - b.m);
-              return (
-                <li key={row.type} className={`sev-${severity}`}>
-                  <span className="ct-switch-type"><TypeIcons types={[row.type]} />{typeName(row.type, lang)}</span>
-                  {safe.length === 0
-                    ? <span className="ct-switch-none">{t('ddetail.ctSwitchNone')}</span>
-                    : safe.map(({ set, m }, i) => (
-                        <span key={i} className="ct-switch-mon" title={`${battleName(set)} ${formatMultiplier(m)}`}>
-                          <Sprite species={set.species} item={set.item} size={36} />
-                          <span className={`ct-swatch ${cellClass(m)}`}>{formatMultiplier(m)}</span>
-                          <span className="visually-hidden">{battleName(set)}</span>
-                        </span>
-                      ))}
-                </li>
-              );
-            })}
-          </ul>
-        </section>
+      {roomy && (
+        <p className="ct-legend">
+          {t('ddetail.ctLegend')}
+          {LEGEND.map(([m, cls, key]) => <span key={cls} className="ct-key"><span className={`ct-swatch ${cls}`}>{formatMultiplier(m)}</span>{t(key)}</span>)}
+        </p>
       )}
       {weatherMitigations(team).map(m => <p key={m.condition} className="note"><Typed text={mitigationNote(m, lang)} /></p>)}
     </div>
