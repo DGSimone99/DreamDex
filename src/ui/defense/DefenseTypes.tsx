@@ -53,57 +53,12 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
 
   return (
     <div className={`def-frame def-types${roomy ? ' roomy' : ''}`}>
-      <div className="def-top def-tiles" aria-label={t('ddetail.ctSwitch')} role="group">
-        {flagged.length === 0 && (
-          <div className="def-tile good ct-tile">
-            <span className="def-tile-head"><span>{t('ddetail.ctSwitchCap')}</span></span>
-            <span className="def-tile-fact"><span className="def-visual def-none"><Icon name="check" />{t('ddetail.types.noWeak')}</span></span>
-          </div>
-        )}
-        {shown.map(({ row, severity }) => {
-          const safe = team.map((set, i) => ({ set, m: row.multipliers[i] })).filter(x => x.m < 1).sort((a, b) => a.m - b.m);
-          return (
-            <div key={row.type} className={`def-tile ct-tile ${severity === 'serious' ? 'bad' : 'warn'} ${severity}`}>
-              <span className="def-tile-head">
-                <span className="ct-tile-type"><TypeIcons types={[row.type]} />{typeName(row.type, lang)}</span>
-                <em className={`ct-sev ${severity}`}>{sevLabel(severity)}</em>
-              </span>
-              <span className="def-tile-fact">
-                <span className="def-cap"><em>{t('ddetail.ctSwitchCap')}</em><b>{safe.length}/{team.length}</b></span>
-                <span className="def-visual">
-                  {safe.length === 0
-                    ? <span className="ct-switch-none">{t('ddetail.ctSwitchNone')}</span>
-                    : safe.map(({ set, m }, i) => (
-                        <span key={i} className="ct-switch-mon" title={`${battleName(set)} ${formatMultiplier(m)}`}>
-                          <Sprite species={set.species} item={set.item} size={24} />
-                          <span className={`ct-swatch ${cellClass(m)}`}>{formatMultiplier(m)}</span>
-                          <span className="visually-hidden">{battleName(set)}</span>
-                        </span>
-                      ))}
-                </span>
-              </span>
-            </div>
-          );
-        })}
-        {rest.length > 0 && (
-          <div className="def-tile ct-tile warn">
-            <span className="def-tile-head"><span>{t('ddetail.ctMore')}</span><b>+{rest.length}</b></span>
-            <span className="def-tile-fact">
-              <span className="def-visual">
-                {rest.map(({ row, severity }) => (
-                  <span key={row.type} className={`def-chip ${severity}`}><TypeIcons types={[row.type]} />{typeName(row.type, lang)}</span>
-                ))}
-              </span>
-            </span>
-          </div>
-        )}
-      </div>
       <div className="ad-scroll">
         <table className="def-grid spaced ct-table" onMouseLeave={() => setHover(null)}>
           <colgroup><col className="def-col-mon" /></colgroup>
           <thead>
             <tr>
-              <th scope="col"><span className="visually-hidden">{t('detail.member')}</span></th>
+              <th scope="col" className="def-mon-h">{t('detail.member')}</th>
               {analysis.weakness.map((row, i) => {
                 const severity = severities[i];
                 return (
@@ -161,6 +116,51 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
         </p>
       )}
       {weatherMitigations(team).map(m => <p key={m.condition} className="note"><Typed text={mitigationNote(m, lang)} /></p>)}
+      <div className="def-sum def-tiles" aria-label={t('ddetail.ctSwitch')} role="group">
+        {flagged.length === 0 && (
+          <div className="def-tile good ct-tile">
+            <span className="def-tile-head"><span>{t('ddetail.ctSwitchCap')}</span></span>
+            <span className="def-tile-fact"><span className="def-visual def-none"><Icon name="check" />{t('ddetail.types.noWeak')}</span></span>
+          </div>
+        )}
+        {shown.map(({ row, severity }) => {
+          const safe = team.map((set, i) => ({ set, m: row.multipliers[i] })).filter(x => x.m < 1).sort((a, b) => a.m - b.m);
+          return (
+            <div key={row.type} className={`def-tile ct-tile ${severity === 'serious' ? 'bad' : 'warn'} ${severity}`}>
+              <span className="def-tile-head">
+                <span className="ct-tile-type"><TypeIcons types={[row.type]} />{typeName(row.type, lang)}</span>
+                <em className={`ct-sev ${severity}`}>{sevLabel(severity)}</em>
+              </span>
+              <span className="def-tile-fact">
+                <span className="def-cap"><em>{t('ddetail.ctSwitchCap')}</em><b>{safe.length}/{team.length}</b></span>
+                <span className="def-visual">
+                  {safe.length === 0
+                    ? <span className="ct-switch-none">{t('ddetail.ctSwitchNone')}</span>
+                    : safe.map(({ set, m }, i) => (
+                        <span key={i} className="ct-switch-mon" title={`${battleName(set)} ${formatMultiplier(m)}`}>
+                          <Sprite species={set.species} item={set.item} size={24} />
+                          <span className={`ct-swatch ${cellClass(m)}`}>{formatMultiplier(m)}</span>
+                          <span className="visually-hidden">{battleName(set)}</span>
+                        </span>
+                      ))}
+                </span>
+              </span>
+            </div>
+          );
+        })}
+        {rest.length > 0 && (
+          <div className="def-tile ct-tile warn">
+            <span className="def-tile-head"><span>{t('ddetail.ctMore')}</span><b>+{rest.length}</b></span>
+            <span className="def-tile-fact">
+              <span className="def-visual">
+                {rest.map(({ row, severity }) => (
+                  <span key={row.type} className={`def-chip ${severity}`}><TypeIcons types={[row.type]} />{typeName(row.type, lang)}</span>
+                ))}
+              </span>
+            </span>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

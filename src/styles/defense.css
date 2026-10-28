@@ -55,15 +55,20 @@
 .def-mini.bad i { background: var(--bad); }
 
 
-/* Cornice comune delle schede con i membri: fascia in alto, testata e righe di altezza fissa, così cambiando scheda i
-   Pokémon restano nello stesso punto. L altezza delle righe segue quella del pannello (cqh), uguale in ogni scheda:
+/* Cornice comune delle schede con i membri: la lista in alto (testata e righe di altezza fissa, così cambiando scheda i
+   Pokémon restano nello stesso punto), le tessere di riepilogo in fondo. L altezza delle righe segue quella del pannello (cqh), uguale in ogni scheda:
    --def-tail è lo spazio tenuto sotto le righe (riepiloghi e legenda), lo stesso per tutte le schede */
-.def-frame { --def-top: 104px; --def-gap: 10px; --def-head: 40px; --def-sp: 3px; --def-tail: 40px; --def-mon: 230px; --def-row-min: 30px; --def-row-max: 42px;
+.def-frame { --def-top: 104px; --def-gap: 10px; --def-head: 34px; --def-sp: 3px; --def-tail: 46px; --def-mon: 230px; --def-row-min: 26px; --def-row-max: 64px;
   --def-row: clamp(var(--def-row-min), calc((100cqh - var(--def-top) - var(--def-gap) - var(--def-head) - var(--def-tail)) / 6 - var(--def-sp)), var(--def-row-max));
   display: flex; flex-direction: column; height: 100%; min-height: 0; container-type: size; }
-.def-frame.roomy { --def-tail: 130px; --def-mon: 240px; --def-row-min: 34px; --def-row-max: 56px; }
-.def-frame > .def-top { flex: none; height: var(--def-top); margin: 0 0 var(--def-gap); overflow: hidden; }
-.def-top.def-tiles { grid-template-rows: 100%; }
+.def-frame.roomy { --def-tail: 130px; --def-mon: 240px; --def-row-min: 34px; --def-row-max: 88px; }
+.def-frame > .ad-scroll { flex: none; margin-bottom: var(--def-gap); }
+/* La lista parte subito sotto la riga dei problemi: meno margine in alto nel pannello */
+.area-panel:has(> .def-frame) { padding-top: 6px; }
+.def-frame > .def-sum { flex: none; height: var(--def-top); margin: auto 0 0; overflow: hidden; }
+.def-sum.def-tiles { grid-template-rows: 100%; margin-bottom: 0; }
+/* L etichetta "Pokémon" sopra la colonna dei nomi, uguale in ogni tabella */
+.ad-panel table thead th.def-mon-h { padding: 0 0 6px; vertical-align: bottom; text-align: left; font: 600 11px/1 var(--ui); text-transform: uppercase; letter-spacing: 0.05em; color: var(--faint); }
 .def-frame .def-grid { width: 100%; border-collapse: separate; border-spacing: 0 var(--def-sp); table-layout: fixed; font-variant-numeric: tabular-nums; }
 /* Griglie a caselle: lo spazio anche in orizzontale, rientrato perché la prima colonna parta nello stesso punto */
 .def-frame .def-grid.spaced { width: calc(100% + 2 * var(--def-sp)); margin: 0 calc(-1 * var(--def-sp)); border-spacing: var(--def-sp); }
@@ -185,12 +190,14 @@
 .def-frame .ct-cell.m-half, .ct-swatch.m-half { background: color-mix(in srgb, var(--good) 12%, var(--raised)); border-color: color-mix(in srgb, var(--good) 35%, var(--line)); color: var(--muted); }
 .def-frame .ct-cell.m-quarter, .ct-swatch.m-quarter { background: color-mix(in srgb, var(--good) 24%, var(--panel)); border-color: color-mix(in srgb, var(--good) 60%, transparent); }
 .def-frame .ct-cell.m-0, .ct-swatch.m-0 { background: color-mix(in srgb, var(--accent) 22%, var(--panel)); border-color: color-mix(in srgb, var(--accent) 60%, transparent); }
+/* Il moltiplicatore cresce con la riga: leggibile anche nelle caselle alte della squadra chiusa */
+.def-frame .ct-table td.ct-cell { font-size: clamp(13px, calc(var(--def-row) * 0.26), 20px); }
 /* Croce del puntatore: bordi più chiari su riga e colonna, nome e icona in evidenza */
 .ct-table tr.x-row .ct-cell, .ct-table .ct-cell.x-col { border-color: var(--faint); }
 .ct-table tr.x-row th[scope='row'] { color: var(--accent); }
 .ct-table thead th.x-col img { transform: scale(1.15); }
 /* Riepilogo: righe basse, etichette come le righe della Panoramica */
-.ct-table tr.ct-sum { height: 30px; }
+.ct-table tr.ct-sum { height: 26px; }
 .ct-table tr.ct-sum th { padding: 0 8px 0 0; font: 600 11px/1 var(--ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); text-align: left; }
 .ct-table tr.ct-sum td { padding: 0; text-align: center; font-size: 13px; font-weight: 600; color: var(--text); }
 .ct-table tr.ct-sum td.bad { color: var(--bad); }

@@ -147,15 +147,6 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
 
   return (
     <div className={`def-frame def-general${roomy ? ' roomy' : ''}`}>
-      <div className="def-top def-tiles">
-        {tiles.map(tile => (
-          <button key={tile.key} type="button" className={`def-tile ${tone(tile.value)}`}
-            onClick={() => ctx.open?.(tile.key)}>
-            <span className="def-tile-head"><span>{tile.label}</span><b>{tile.value}</b></span>
-            <span className="def-tile-fact">{tile.fact}</span>
-          </button>
-        ))}
-      </div>
       <div className="ad-scroll">
         <table className="def-grid def-members">
           {/* Larghezze fisse: i nomi in una colonna, le quattro barre in colonne uguali */}
@@ -194,6 +185,15 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
             ))}
           </tbody>
         </table>
+      </div>
+      <div className="def-sum def-tiles">
+        {tiles.map(tile => (
+          <button key={tile.key} type="button" className={`def-tile ${tone(tile.value)}`}
+            onClick={() => ctx.open?.(tile.key)}>
+            <span className="def-tile-head"><span>{tile.label}</span><b>{tile.value}</b></span>
+            <span className="def-tile-fact">{tile.fact}</span>
+          </button>
+        ))}
       </div>
     </div>
   );
