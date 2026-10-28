@@ -19,7 +19,7 @@ const tone = (row: Row) => (row.heldBy.length === 0 ? 'bad' : row.level >= 80 ? 
 /**
  * Coverage meta: le minacce del meta a pagine da 8, dalla meno coperta (a pari livello la più usata). Ogni tessera ha
  * l'icona e il nome della minaccia, il livello in pastiglia e chi la regge, col danno che prende dal colpo migliore della
- * minaccia (½ se regge solo a metà); a squadra chiusa anche la mossa di quel colpo. In alto le pagine, cosa dice il % e i
+ * minaccia (in giallo se regge solo a metà); a squadra chiusa anche la mossa di quel colpo. In alto le pagine, cosa dice il % e i
  * conteggi dei tre gruppi.
  */
 export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaContext }) {
@@ -74,8 +74,7 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
                     <span className="def-box"><PokemonIcon name={h.species} /></span>
                     <span className="cm-holder-name">{h.species}</span>
                     {ctx.roomy && h.move && <span className="cm-holder-move">{gameName('move', h.move, lang)}</span>}
-                    <span className="cm-holder-pct">{h.pct}%</span>
-                    {h.partial && <i>½</i>}
+                    <span className={`cm-holder-pct${h.partial ? ' half' : ''}`}>{h.pct}%</span>
                   </span>
                 ))}
               </span>

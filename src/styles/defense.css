@@ -267,7 +267,7 @@
 .cm-holder { display: flex; align-items: center; gap: 4px; min-width: 0; font-size: 13px; }
 .cm-holder-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
 .cm-holder-pct { color: var(--muted); font-variant-numeric: tabular-nums; }
-.cm-holder i { padding: 0 4px; border-radius: 2px; background: var(--warn-bg); color: var(--warn); font: normal 700 10px/1.4 var(--ui); }
+.cm-holder-pct.half { padding: 1px 6px; border-radius: 999px; background: var(--warn-bg); color: var(--warn); font-weight: 700; }
 .cm-holder.partial .cm-holder-name, .cm-holder.partial .def-box { opacity: 0.55; }
 .cm-frame .cm-threat { --bs: 1.2; }
 .cm-frame .cm-by .def-box { --bs: 0.7; }
