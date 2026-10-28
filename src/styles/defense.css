@@ -266,8 +266,8 @@
 .cm-by { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 10px; align-content: start; min-height: 0; }
 .cm-holder { display: flex; align-items: center; gap: 4px; min-width: 0; font-size: 13px; }
 .cm-holder-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
-.cm-holder-pct { color: var(--muted); font-variant-numeric: tabular-nums; }
-.cm-holder-pct.half { padding: 1px 6px; border-radius: 999px; background: var(--warn-bg); color: var(--warn); font-weight: 700; }
+.cm-holder-pct { flex: none; min-width: 46px; padding: 1px 6px; border-radius: 999px; text-align: center; color: var(--muted); font-variant-numeric: tabular-nums; }
+.cm-holder-pct.half { background: var(--warn-bg); color: var(--warn); font-weight: 700; }
 .cm-holder.partial .cm-holder-name, .cm-holder.partial .def-box { opacity: 0.55; }
 .cm-frame .cm-threat { --bs: 1.2; }
 .cm-frame .cm-by .def-box { --bs: 0.7; }
@@ -376,3 +376,9 @@
 .cm-frame.roomy .cm-by { grid-template-columns: 1fr; gap: 4px; }
 .cm-frame.roomy .cm-holder-name { flex: 0 1 auto; }
 .cm-frame.roomy .cm-holder-move { flex: 1; }
+/* Coverage meta: una minaccia che manda KO tutti lo dice nella tessera; a squadra chiusa, con più di 4 membri che la
+   reggono, righe più strette (con 6 l ultimo non resta tagliato) */
+.cm-empty { font-size: 13px; color: var(--bad); }
+.cm-frame.roomy .cm-by.many { gap: 1px; }
+.cm-frame.roomy .cm-by.many .def-box { --bs: 0.7; }
+.cm-frame.roomy .cm-by.many .cm-holder { font-size: 12px; }

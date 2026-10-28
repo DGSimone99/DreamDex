@@ -67,7 +67,8 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
                 <b className="cm-name">{row.species}</b>
                 <span className={`ct-pill ${tone(row)}`}>{row.heldBy.length ? `${row.level}%` : t('detail.nobody')}</span>
               </span>
-              <span className="cm-by" aria-hidden="true">
+              {row.heldBy.length === 0 && <span className="cm-empty" aria-hidden="true">{t('ddetail.cm.allKo')}</span>}
+              <span className={`cm-by${row.heldBy.length > 4 ? ' many' : ''}`} aria-hidden="true">
                 {row.heldBy.map((h, i) => (
                   <span key={`${h.species}-${i}`} className={`cm-holder${h.partial ? ' partial' : ''}`} title={`${h.species}: ${h.move} ${h.pct}%`}>
                     <span className="def-box"><PokemonIcon name={h.species} /></span>

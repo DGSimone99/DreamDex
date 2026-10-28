@@ -788,6 +788,7 @@ export const en = {
   'ddetail.cm.held': "handled",
   'ddetail.cm.partial': "only half",
   'ddetail.cm.none': "nobody",
+  'ddetail.cm.allKo': "Every member is knocked out in one hit",
   'ddetail.cm.damage': "% = damage taken from the threat's best hit",
   'ddetail.cm.pages': "Threat pages",
   'ddetail.cm.prev': "Previous threats",
