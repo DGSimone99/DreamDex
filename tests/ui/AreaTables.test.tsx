@@ -17,13 +17,13 @@ async function openTab(area: 'Difesa' | 'Offesa' | 'Ruoli', paste = 'Great Tusk\
 }
 
 describe('tabelle complete nelle schede d\'area', () => {
-  it('Difesa: la tabella delle debolezze, tipi × membri, in Coverage tipi', async () => {
+  it('Difesa: la tabella dei tipi, membri × tipi, in Coverage tipi', async () => {
     const user = await openTab('Difesa');
     await user.click(within(view()).getByRole('tab', { name: /^Coverage tipi/ }));
-    const table = within(view()).getByRole('region', { name: 'Debolezze difensive' });
-    const headers = within(table).getAllByRole('columnheader').map(h => h.textContent);
-    expect(headers).toEqual(['Tipo', 'Great Tusk', 'Gholdengo', 'Deboli', 'Resistono']);
-    expect(within(table).getAllByRole('row')).toHaveLength(19);
+    const table = within(view()).getByRole('table');
+    expect(within(table).getAllByRole('columnheader')).toHaveLength(19);
+    // Testata, 2 membri, poi Deboli, Resistono, Sicurezza
+    expect(within(table).getAllByRole('row')).toHaveLength(6);
   });
 
   it('Difesa: la nota del meteo sotto la tabella', async () => {

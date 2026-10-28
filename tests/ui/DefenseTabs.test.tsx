@@ -2,6 +2,7 @@ import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { analyzeTeam } from '../../src/engine/analysis';
+import { weaknessSeverity } from '../../src/engine/coach';
 import { rateTeam } from '../../src/engine/rating';
 import { emptySet } from '../../src/engine/sets';
 import { AreaView } from '../../src/ui/AreaView';
@@ -84,5 +85,49 @@ describe('Difesa: Robustezza e Sostenibilità', () => {
     expect(within(panel).getByText('vale metà')).toBeInTheDocument();
     expect(within(panel).getAllByText(/Recover/).length).toBeGreaterThan(0);
     expect(within(panel).getAllByRole('row').length).toBeGreaterThanOrEqual(rating.defense.members.length);
+  });
+});
+
+describe('Difesa: Coverage tipi e Coverage meta', () => {
+  it('Coverage tipi: una tabella sola, membri in riga e 18 tipi in colonna, poi Deboli/Resistono/Sicurezza', async () => {
+    const user = userEvent.setup();
+    renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[]} />);
+    await user.click(screen.getByRole('tab', { name: /^Coverage tipi/ }));
+    const panel = screen.getByRole('tabpanel');
+    const tables = within(panel).getAllByRole('table');
+    expect(tables).toHaveLength(1);
+    expect(within(tables[0]).getAllByRole('columnheader').length).toBe(19); // angolo + 18 tipi
+    const tusk = within(tables[0]).getByRole('row', { name: /^Great Tusk/ });
+    // Great Tusk è debole a più tipi: la cella dell'Acqua dice ×2
+    const water = analysis.weakness.findIndex(row => row.type === 'Water');
+    expect(within(tusk).getAllByRole('cell')[water]).toHaveTextContent('×2');
+    for (const name of ['Deboli', 'Resistono', 'Sicurezza']) expect(within(tables[0]).getByRole('row', { name: new RegExp(`^${name}`) })).toBeInTheDocument();
+    // I conteggi gravi + minori della vecchia tabella restano
+    const counts = [...panel.querySelectorAll('.issue [aria-hidden="true"]')].map(el => Number(el.textContent));
+    expect(counts.reduce((a, b) => a + b, 0)).toBe(analysis.weakness.filter(row => weaknessSeverity(row)).length);
+  });
+
+  it('Coverage tipi: i tipi in difetto hanno il segno in testata, la Sicurezza è quella del motore', async () => {
+    const user = userEvent.setup();
+    const rating = withMeta();
+    renderIt(<AreaView rating={rating} area="defense" team={team} analysis={analysis} problems={[]} />);
+    await user.click(screen.getByRole('tab', { name: /^Coverage tipi/ }));
+    const table = within(screen.getByRole('tabpanel')).getByRole('table');
+    const marked = [...table.querySelectorAll('thead th.sev-serious, thead th.sev-minor')];
+    expect(marked).toHaveLength(analysis.weakness.filter(row => weaknessSeverity(row)).length);
+    const safety = within(table).getByRole('row', { name: /^Sicurezza/ });
+    expect(within(safety).getAllByRole('cell').map(c => c.textContent))
+      .toEqual(rating.defense.coverageTypes.rows.map(row => `${row.safety}%`));
+  });
+
+  it('Coverage meta: una tessera per minaccia, con livello e chi la regge nel nome accessibile', async () => {
+    const user = userEvent.setup();
+    const rating = withMeta();
+    renderIt(<AreaView rating={rating} area="defense" team={team} analysis={analysis} problems={[]} />);
+    await user.click(screen.getByRole('tab', { name: /^Coverage meta/ }));
+    const tiles = within(screen.getByRole('tabpanel')).getAllByRole('listitem');
+    expect(tiles).toHaveLength(rating.defense.coverageMeta!.rows.length);
+    const top = [...rating.defense.coverageMeta!.rows].sort((a, b) => b.weight - a.weight)[0];
+    expect(tiles[0]).toHaveAccessibleName(new RegExp(`^${top.species}.*${top.level}%`));
   });
 });

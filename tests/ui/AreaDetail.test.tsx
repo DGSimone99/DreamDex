@@ -195,31 +195,22 @@ describe('dettaglio della Difesa a schede', () => {
     }
   });
 
-  it('Coverage tipi: i 18 tipi con sicurezza, deboli e resistenti', async () => {
+  it('Coverage tipi: una tabella membri × 18 tipi con Deboli, Resistono e Sicurezza per tipo', async () => {
     const { user, dialog } = await openDefense('it');
     await user.click(within(dialog).getByRole('tab', { name: /^Coverage tipi/ }));
-    const panel = within(dialog).getByRole('tabpanel');
-    // In cima la tabella completa delle debolezze (vedi AreaTables.test); qui quella della sicurezza per tipo
-    const safety = within(panel).getAllByRole('table').at(-1)!;
-    expect(within(safety).getAllByRole('row')).toHaveLength(19);
-    expect(within(safety).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Tipi', 'Sicurezza', 'Deboli', 'Resistono']);
-    expect(panel).toHaveTextContent(/Più deboli che resistenti:|Nessun tipo scoperto/);
+    const table = within(within(dialog).getByRole('tabpanel')).getByRole('table');
+    expect(within(table).getAllByRole('row')).toHaveLength(6); // testata, 2 membri, 3 riepiloghi
+    const safety = within(table).getByRole('row', { name: /^Sicurezza/ });
+    expect(within(safety).getAllByRole('cell')).toHaveLength(18);
+    for (const cell of within(safety).getAllByRole('cell')) expect(cell).toHaveTextContent(/^\d+%$/);
   });
 
-  it('Coverage meta: ogni minaccia con quanto è retta e chi la regge; quelle senza risposta', async () => {
+  it('Coverage meta: una tessera per minaccia con quanto è retta e chi la regge', async () => {
     const { user, dialog } = await openDefense('it');
     await user.click(within(dialog).getByRole('tab', { name: /^Coverage meta/ }));
-    const panel = within(dialog).getByRole('tabpanel');
-    expect(panel).toHaveTextContent(/Senza risposta:|Ogni minaccia ha una risposta/);
-    expect(within(panel).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Minaccia', 'Retta', 'Chi la regge']);
-    const rows = within(panel).getAllByRole('row').slice(1);
-    expect(rows.length).toBeGreaterThan(0);
-    for (const row of rows) expect(within(row).getAllByRole('cell')[0]).toHaveTextContent(/^\d+%$/);
-    const holder = panel.querySelector('.ad-cover [title]');
-    if (holder) {
-      expect(holder.getAttribute('title')).toMatch(/^.+: .+ \d+%( \(.+\))?$/);
-      expect(holder.querySelector('.visually-hidden')?.textContent).toBe(holder.getAttribute('title'));
-    }
+    const tiles = within(within(dialog).getByRole('tabpanel')).getAllByRole('listitem');
+    expect(tiles.length).toBeGreaterThan(0);
+    for (const tile of tiles) expect(tile.getAttribute('aria-label')).toMatch(/^.+: \d+%, (nessuno|.+: .+ \d+%.*)$/);
   });
 
   it('in inglese', async () => {

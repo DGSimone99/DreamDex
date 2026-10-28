@@ -26,7 +26,8 @@ function Points({ items }: { items: { label: ReactNode; value?: ReactNode; note?
 }
 
 /** Il contenuto della guida alla Difesa per una sezione: schematico, con in fondo i valori del tuo team. */
-export function DefenseGuideSection({ section, defense, meta }: { section: Section; defense: TeamDefense; meta: boolean }) {
+/** `exposed`: quanti tipi scoperti (gli stessi della tessera Generale e della tabella: `weaknessSeverity`). */
+export function DefenseGuideSection({ section, defense, meta, exposed }: { section: Section; defense: TeamDefense; meta: boolean; exposed: number }) {
   const t = useT();
   const lang = useLang();
   // Decimali alla maniera della lingua (0,5 in italiano, 0.5 in inglese)
@@ -139,7 +140,7 @@ export function DefenseGuideSection({ section, defense, meta }: { section: Secti
         ]} />
         {team([
           [t('detail.coverageTypes'), defense.coverageTypes.value],
-          [g('types.exposed'), defense.coverageTypes.weak.length],
+          [g('types.exposed'), exposed],
         ])}
       </>
     );

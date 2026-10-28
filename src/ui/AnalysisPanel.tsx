@@ -9,7 +9,7 @@ import { formatPercent } from '../i18n';
 import { useLang, useT } from '../i18n/react';
 import { AnalysisOverview } from './AnalysisOverview';
 import { AnalysisTabs } from './AnalysisTabs';
-import { DefenseTable, NeedsTable, OffenseTable } from './AnalysisTables';
+import { NeedsTable, OffenseTable } from './AnalysisTables';
 import type { AnalysisView } from './analysisView';
 import type { AreaKey } from './AreaDetail';
 import { AreaView } from './AreaView';
@@ -64,8 +64,7 @@ export function AnalysisPanel({ team, analysis, rating, coaching, advice = null,
   if (area && rating) {
     body = (
       <AreaView key={area} rating={rating} area={area} team={team} analysis={analysis} problems={problemsOf(coaching?.problems, area)}
-        extra={area === 'defense' ? { tabKey: 'coverageTypes', panel: <DefenseTable team={team} analysis={analysis} /> }
-          : area === 'strength' ? { tabKey: 'coverageTypes', panel: <OffenseTable analysis={analysis} /> }
+        extra={area === 'strength' ? { tabKey: 'coverageTypes', panel: <OffenseTable analysis={analysis} /> }
           : area === 'roles' ? { tabKey: 'general', panel: <NeedsTable team={team} analysis={analysis} /> }
           : undefined} />
     );
