@@ -2,10 +2,11 @@
 
 /* Soglie del colpo standard (OHKO … 4HKO+): sfondo dal colore sulla tinta del pannello, testo --text (≥ 4.5:1 su ogni palette).
    Le usano le pillole della guida e le celle della Robustezza. */
-.hold-ohko { background: color-mix(in srgb, var(--bad) 30%, var(--panel)); color: var(--text); }
+/* Scala dal pericolo alla sicurezza, come le caselle di Coverage tipi: OHKO rosso pieno, 2HKO giallo, 3HKO neutro, 4HKO+ verde tenue */
+.hold-ohko { background: color-mix(in srgb, var(--bad) 46%, var(--panel)); color: var(--text); }
 .hold-2 { background: color-mix(in srgb, var(--warn) 30%, var(--panel)); color: var(--text); }
-.hold-3 { background: color-mix(in srgb, var(--accent) 30%, var(--panel)); color: var(--text); }
-.hold-4 { background: color-mix(in srgb, var(--good) 30%, var(--panel)); color: var(--text); }
+.hold-3 { background: var(--raised); color: var(--text); }
+.hold-4 { background: color-mix(in srgb, var(--good) 14%, var(--raised)); color: var(--muted); }
 .hold-chip { display: inline-block; padding: 2px 8px; border-radius: 3px; font: 700 12px/1.3 var(--ui); font-variant-numeric: tabular-nums; }
 
 /* Le quattro tessere */
@@ -58,7 +59,7 @@
 /* Cornice comune delle schede con i membri: la lista in alto (testata e righe di altezza fissa, così cambiando scheda i
    Pokémon restano nello stesso punto), le tessere di riepilogo in fondo. L altezza delle righe segue quella del pannello (cqh), uguale in ogni scheda:
    --def-tail è il margine tenuto sotto la fascia in fondo, lo stesso per tutte le schede */
-.def-frame { --def-top: 104px; --def-gap: 10px; --def-head: 34px; --def-sp: 3px; --def-tail: 4px; --def-mon: 270px; --def-row-min: 26px; --def-row-max: 999px;
+.def-frame { --def-top: 104px; --def-gap: 10px; --def-head: 44px; --def-sp: 3px; --def-tail: 4px; --def-mon: 270px; --def-row-min: 28px; --def-row-max: 999px;
   --def-row: clamp(var(--def-row-min), calc((100cqh - var(--def-top) - var(--def-gap) - var(--def-head) - var(--def-tail)) / 6 - var(--def-sp)), var(--def-row-max));
   display: flex; flex-direction: column; height: 100%; min-height: 0; container-type: size; }
 .def-frame.roomy { --def-tail: 4px; --def-mon: 270px; --def-row-min: 34px; --def-row-max: 999px; }
@@ -134,19 +135,33 @@
 }
 
 /* Robustezza: membri in riga, 20 attaccanti in colonna. Il vuoto tra fisici e speciali è un margine, non una cella */
-.rob-matrix { width: 100%; border-collapse: separate; border-spacing: 2px; font-variant-numeric: tabular-nums; }
-.rob-matrix th { font-weight: 500; }
-.rob-grp th { padding-bottom: 2px; font-size: 11px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: 0.06em; text-align: center; border-bottom: 2px solid var(--line); }
-.rob-grp .rob-side-h { border-bottom-color: transparent; }
-.rob-atk th { padding: 0; text-align: center; }
-.rob-atk .sprite { display: inline-block; vertical-align: middle; }
-.rob-matrix tbody th { padding-right: 6px; text-align: left; font-size: 13px; font-weight: 600; white-space: nowrap; }
-.rob-cell { height: 36px; min-width: 42px; text-align: center; font-size: 12px; font-weight: 600; }
-.rob-side { min-width: 48px; text-align: center; background: var(--raised); font: italic 700 15px/1 var(--display); color: var(--text); }
-/* Spazio tra i due gruppi: solo sulla prima colonna dei speciali */
-.rob-matrix .rob-start { border-left: 8px solid transparent; background-clip: padding-box; }
-.rob-grp th.rob-start { border-left: 8px solid transparent; }
-.ad-panel .rob-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 8px 0 0; font-size: 12px; color: var(--muted); }
+/* Robustezza nella cornice comune: due righe di testata (gruppo, icone) alte quanto la testata delle altre schede */
+.def-frame .rob-matrix thead tr.rob-grp { height: 16px; }
+.def-frame .rob-matrix thead tr.rob-atk { height: calc(var(--def-head) - 16px - var(--def-sp)); }
+.rob-grp th { padding: 0 0 2px; font-size: 11px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: 0.06em; text-align: center; border-bottom: 2px solid var(--line); white-space: nowrap; }
+.rob-grp th.def-mon-h, .rob-grp .rob-side-h { border-bottom: 0; vertical-align: bottom; }
+.rob-grp th:not(.def-mon-h) { line-height: 1; }
+.rob-grp .rob-side-h { text-align: center; overflow: visible; max-width: none; text-overflow: clip; }
+.rob-atk th { padding: 0; line-height: 0; text-align: center; vertical-align: bottom; }
+.def-frame .rob-atk .def-box { --bs: 0.8; }
+.rob-matrix .rob-col-side { width: 58px; }
+.rob-matrix .rob-col-gap { width: 6px; }
+.rob-gap { padding: 0; border: 0; }
+/* Caselle come la griglia di Coverage tipi: il colore dice la soglia, il testo il % del colpo */
+.def-frame .rob-cell { padding: 0; text-align: center; font: 700 clamp(12px, calc(var(--def-row) * 0.22), 20px)/1 var(--ui); border: 1px solid var(--line); border-radius: 3px; font-variant-numeric: tabular-nums; }
+.def-frame .rob-cell.hold-ohko { border-color: var(--bad); }
+.def-frame .rob-cell.hold-2 { border-color: color-mix(in srgb, var(--warn) 70%, transparent); }
+.def-frame .rob-cell.hold-4 { border-color: color-mix(in srgb, var(--good) 35%, var(--line)); }
+.rob-side { padding: 0; text-align: center; }
+.rob-side .ct-pill { min-width: 40px; font-size: 13px; }
+.ad-panel .rob-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: auto 0 0; padding-top: 8px; font-size: 12px; color: var(--muted); }
+@container (max-width: 1100px) {
+  .def-frame .rob-atk .def-box { --bs: 0.65; }
+  .rob-matrix .rob-col-side { width: 52px; }
+  .rob-grp .rob-side-h { font-size: 10px; letter-spacing: 0; }
+  .def-frame .rob-cell { font-size: 11px; letter-spacing: -0.02em; }
+  .rob-side .ct-pill { min-width: 0; padding: 1px 4px; font-size: 11px; }
+}
 
 /* Sostenibilità: barre divergenti attorno allo zero (50% = metà larghezza piena) */
 .sus-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
@@ -272,3 +287,30 @@
 
 /* La guida della Difesa è più larga dei modali d aiuto: i due conti e la scala stanno su una riga */
 .help-dialog.area-guide { width: min(920px, 100%); }
+
+/* Guida, Robustezza: le quattro soglie come tasti, i pesi dei membri come barra a segmenti, la somma dei lati */
+.guide-holds { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin: 0; padding: 0; list-style: none; }
+.guide-holds li { display: grid; justify-items: center; gap: 4px; padding: 8px 4px; border: 1px solid var(--line-soft); background: color-mix(in srgb, var(--raised) 55%, var(--panel)); }
+.guide-holds b { font: italic 700 18px/1 var(--display); color: var(--text); font-variant-numeric: tabular-nums; }
+.guide-holds small { font-size: 12px; color: var(--muted); }
+.guide-weights { padding: 8px 10px 6px; border: 1px solid var(--line-soft); background: color-mix(in srgb, var(--raised) 35%, transparent); }
+.guide-weights h6 { margin: 0 0 8px; font-size: 11px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: 0.05em; }
+.guide-weights ol { display: flex; gap: 3px; margin: 0; padding: 0; list-style: none; }
+.guide-weights li { flex-basis: 0; display: grid; justify-items: center; gap: 2px; min-width: 0; padding: 6px 2px; background: color-mix(in srgb, var(--accent-2) 30%, var(--panel)); }
+.guide-weights li:nth-child(2) { background: color-mix(in srgb, var(--accent-2) 24%, var(--panel)); }
+.guide-weights li:nth-child(3) { background: color-mix(in srgb, var(--accent-2) 19%, var(--panel)); }
+.guide-weights li:nth-child(4) { background: color-mix(in srgb, var(--accent-2) 15%, var(--panel)); }
+.guide-weights li:nth-child(5) { background: color-mix(in srgb, var(--accent-2) 12%, var(--panel)); }
+.guide-weights li:nth-child(6) { background: color-mix(in srgb, var(--accent-2) 9%, var(--panel)); }
+.guide-weights li span { font-size: 11px; font-weight: 600; color: var(--muted); }
+.guide-weights li b { font: italic 700 16px/1 var(--display); color: var(--text); font-variant-numeric: tabular-nums; }
+.guide-weights-axis { display: flex; justify-content: space-between; margin: 4px 0 0; font-size: 11px; color: var(--faint); }
+.guide-weights-axis span:first-child::before { content: '← '; }
+.guide-weights-axis span:last-child::after { content: ' →'; }
+.help-panel .guide-sum, .guide-sum { max-width: none; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 16px 0 0; font-size: 14px; color: var(--faint); }
+.guide-sum span { padding: 3px 10px; border: 1px solid var(--line); border-radius: 3px; background: var(--raised); color: var(--muted); }
+.guide-sum span b { margin-right: 4px; color: var(--text); font-variant-numeric: tabular-nums; }
+.guide-sum span.out { border-color: var(--accent-2); background: var(--accent-2-soft); color: var(--text); font-weight: 600; }
+@media (max-width: 560px) {
+  .guide-holds { grid-template-columns: repeat(2, 1fr); }
+}
