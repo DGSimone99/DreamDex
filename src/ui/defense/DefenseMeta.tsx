@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { TeamDefense } from '../../engine/defense';
-import { useT } from '../../i18n/react';
+import { gameName } from '../../i18n/game';
+import { useLang, useT } from '../../i18n/react';
 import type { AreaContext } from '../AreaDetail';
 import { Icon } from '../icons';
 import { PokemonIcon } from '../PokemonName';
@@ -17,11 +18,13 @@ const tone = (row: Row) => (row.heldBy.length === 0 ? 'bad' : row.level >= 80 ? 
 
 /**
  * Coverage meta: le minacce del meta a pagine da 8, dalla meno coperta (a pari livello la più usata). Ogni tessera ha
- * l'icona e il nome della minaccia, il livello in pastiglia e chi la regge, col danno che prende (½ se regge solo a metà).
- * In alto le pagine e i conteggi dei tre gruppi.
+ * l'icona e il nome della minaccia, il livello in pastiglia e chi la regge, col danno che prende dal colpo migliore della
+ * minaccia (½ se regge solo a metà); a squadra chiusa anche la mossa di quel colpo. In alto le pagine, cosa dice il % e i
+ * conteggi dei tre gruppi.
  */
 export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaContext }) {
   const t = useT();
+  const lang = useLang();
   const [page, setPage] = useState(0);
   const rows = [...(defense.coverageMeta?.rows ?? [])].sort((a, b) => a.level - b.level || b.weight - a.weight);
   const pages = Math.max(1, Math.ceil(rows.length / META_PAGE));
@@ -49,6 +52,7 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
           </button>
         </nav>
         <p className="cm-summary">
+          <span className="cm-dmg">{t('ddetail.cm.damage')}</span>
           <span>{t('ddetail.cm.threats', { n: rows.length })}</span>
           {pill('held', 'good', 'ddetail.cm.held')}{pill('partial', 'warn', 'ddetail.cm.partial')}{pill('none', 'bad', 'ddetail.cm.none')}
         </p>
@@ -69,6 +73,7 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
                   <span key={`${h.species}-${i}`} className={`cm-holder${h.partial ? ' partial' : ''}`} title={`${h.species}: ${h.move} ${h.pct}%`}>
                     <span className="def-box"><PokemonIcon name={h.species} /></span>
                     <span className="cm-holder-name">{h.species}</span>
+                    {ctx.roomy && h.move && <span className="cm-holder-move">{gameName('move', h.move, lang)}</span>}
                     <span className="cm-holder-pct">{h.pct}%</span>
                     {h.partial && <i>½</i>}
                   </span>

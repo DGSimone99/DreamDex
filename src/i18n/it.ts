@@ -790,6 +790,7 @@ export const it: Record<keyof typeof en, string> = {
   'ddetail.cm.held': "rette",
   'ddetail.cm.partial': "solo a metà",
   'ddetail.cm.none': "senza nessuno",
+  'ddetail.cm.damage': "% = danno subito dal colpo migliore della minaccia",
   'ddetail.cm.pages': "Pagine delle minacce",
   'ddetail.cm.prev': "Minacce precedenti",
   'ddetail.cm.next': "Minacce successive",

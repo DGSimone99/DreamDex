@@ -370,3 +370,9 @@
 .guide-h-steps { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .guide-h-steps span { margin-left: 4px; padding: 1px 8px; border: 1px solid var(--line); border-radius: 3px; background: var(--raised); font-size: 12px; font-weight: 600; text-transform: none; letter-spacing: 0; color: var(--text); }
 .guide-h-steps span.eq { margin-left: 8px; color: var(--muted); }
+/* Coverage meta: cosa dice il % (in testa ai conteggi) e, a squadra chiusa, la mossa del colpo su una colonna sola */
+.cm-summary .cm-dmg { margin-right: 10px; font-size: 12px; color: var(--faint); }
+.cm-holder-move { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: var(--muted); }
+.cm-frame.roomy .cm-by { grid-template-columns: 1fr; gap: 4px; }
+.cm-frame.roomy .cm-holder-name { flex: 0 1 auto; }
+.cm-frame.roomy .cm-holder-move { flex: 1; }
