@@ -1,7 +1,6 @@
 import type { ReactElement } from 'react';
 import { weaknessSeverity } from '../../engine/coach';
 import type { TeamDefense } from '../../engine/defense';
-import type { Lang } from '../../i18n';
 import { DefenseGeneral } from './DefenseGeneral';
 import { DefenseMeta } from './DefenseMeta';
 import { DefenseTypes } from './DefenseTypes';
@@ -10,9 +9,8 @@ import { DefenseRobustness } from './DefenseRobustness';
 import { DefenseSustain } from './DefenseSustain';
 import type { AreaContext, DetailTab, T } from '../AreaDetail';
 
-
 /** Le schede della Difesa: Generale, Robustezza, Sostenibilità, Coverage di tipi e del meta. */
-export function defenseTabs(defense: TeamDefense, meta: boolean, t: T, lang: Lang, ctx: AreaContext): DetailTab[] {
+export function defenseTabs(defense: TeamDefense, meta: boolean, t: T, ctx: AreaContext): DetailTab[] {
   const coverageMeta = defense.coverageMeta;
   type Key = 'robustness' | 'sustain' | 'coverageTypes' | 'coverageMeta';
   const subs: Key[] = coverageMeta ? ['robustness', 'sustain', 'coverageTypes', 'coverageMeta'] : ['robustness', 'sustain', 'coverageTypes'];

@@ -92,7 +92,7 @@
    (contrasto ≥ 5.2:1 su swsh e sv: vedi il rapporto del task). Il ×0 usa l'accento della palette (ciano su swsh, arancio su sv) */
 .ct-caption { display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin: 0 0 6px; font-size: 13px; color: var(--muted); }
 .ct-table { width: 100%; border-collapse: separate; border-spacing: 2px; font-variant-numeric: tabular-nums; }
-.ct-table thead th { padding: 3px 0 2px; font-size: 10.5px; font-weight: 500; line-height: 1.1; color: var(--muted); text-align: center; white-space: nowrap; }
+.ct-table thead th { padding: 3px 0 2px; font-size: 11px; font-weight: 500; line-height: 1.1; color: var(--muted); text-align: center; white-space: nowrap; }
 .ct-table thead .type-icons { display: block; margin: 0 auto 2px; }
 .ct-table thead .type-icons img { width: 20px; height: 20px; }
 .ct-table thead th.sev-serious { box-shadow: inset 0 3px 0 var(--bad); }
@@ -105,8 +105,8 @@
 .ct-table td.m-quarter { background: color-mix(in srgb, var(--good) 42%, var(--panel)); }
 .ct-table td.m-0 { background: color-mix(in srgb, var(--accent) 30%, var(--panel)); }
 /* Righe riassuntive: senza riempimento, la prima con il filo sopra */
-.ct-table tbody tr:nth-last-child(-n+3) td, .ct-table tbody tr:nth-last-child(-n+3) th { background: none; font-weight: 600; }
-.ct-table tbody tr:nth-last-child(3) td, .ct-table tbody tr:nth-last-child(3) th { border-top: 2px solid var(--line); }
+.ct-table tbody tr.ct-sum td, .ct-table tbody tr.ct-sum th { background: none; font-weight: 600; }
+.ct-table tbody tr.ct-sum-first td, .ct-table tbody tr.ct-sum-first th { border-top: 2px solid var(--line); }
 .ct-table td.bad { color: var(--bad); }
 .ct-table td.warn { color: var(--warn); }
 .ct-table td.good { color: var(--good); }

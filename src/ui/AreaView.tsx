@@ -79,8 +79,6 @@ export function AreaView({ rating, area, problems, team, analysis, extra }: {
 
   return (
     <section className="area-view" aria-label={title}>
-      {/* Nome e voto dell'area stanno già nella scheda aperta: qui solo la nota quando l'area non conta */}
-      {rating.areas.find(a => a.key === area)?.inactive && <p className="area-inactive" role="note">{t('rating.notCounted')}</p>}
       <div className="area-strip">
         <div className="area-subs" role="tablist" aria-orientation="horizontal" aria-label={t('area.subtabs', { area: title })}>
           {tabs.map((tab, i) => (
@@ -103,6 +101,8 @@ export function AreaView({ rating, area, problems, team, analysis, extra }: {
           </span>
         )}
       </div>
+      {/* Nome e voto dell'area stanno già nella scheda aperta: sotto la striscia solo la nota quando l'area non conta */}
+      {rating.areas.find(a => a.key === area)?.inactive && <p className="area-inactive" role="note">{t('rating.notCounted')}</p>}
       {guide && sections.length > 0 && (
         <AreaGuide title={t('area.guide.title', { area: title })} sections={sections} current={current.key}
           onCurrent={key => setPicked(key)} onClose={() => setGuide(false)} />

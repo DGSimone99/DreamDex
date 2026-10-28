@@ -2,7 +2,7 @@ import type { TeamDefense } from '../../engine/defense';
 import { useT } from '../../i18n/react';
 import { Sprite } from '../Sprite';
 
-export const pct = (x: number) => `${Math.round(100 * x)}%`;
+const pct = (x: number) => `${Math.round(100 * x)}%`;
 /** Larghezza di una barra: 50% = mezza larghezza piena. */
 const half = (x: number) => `${Math.min(100, Math.round(200 * x))}%`;
 

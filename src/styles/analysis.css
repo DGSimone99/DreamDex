@@ -101,6 +101,8 @@
 .area-subs [role='tab'] { display: flex; align-items: baseline; gap: 8px; padding: 9px 14px 8px; border: 0; border-bottom: 3px solid transparent; border-radius: 0; background: none; color: var(--muted); font-size: 13.5px; font-weight: 500; font-style: normal; line-height: 1.2; white-space: nowrap; }
 .area-subs [role='tab'] b { font: 700 15px/1 var(--display); color: var(--accent-2-ink); font-variant-numeric: tabular-nums; }
 .area-subs [role='tab']:hover { color: var(--text); }
+/* La striscia scorre (overflow): il contorno del fuoco va dentro la scheda, o verrebbe tagliato */
+.area-subs [role='tab']:focus-visible { outline-offset: -3px; }
 .area-subs [role='tab'][aria-selected='true'] { color: var(--text); background: var(--accent-2-soft); border-bottom-color: var(--accent-2-ink); }
 .area-subs [role='tab'][aria-selected='true'] b { color: var(--text); }
 .sub-help-room { display: inline-block; width: 22px; }

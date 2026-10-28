@@ -28,6 +28,7 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
   const t = useT();
   const lang = useLang();
   const { coverageMeta, members } = defense;
+  const recoverers = members.filter(m => m.sustainParts.recovery > 0).length;
 
   // Tipi scoperti, i gravi per primi
   const exposed = ctx.analysis.weakness
@@ -42,7 +43,7 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
     },
     {
       key: 'sustain', label: t('ddetail.sustain'), value: defense.sustain,
-      fact: t('ddetail.tile.recovery', { n: members.filter(m => m.sustainParts.recovery > 0).length, m: members.length }),
+      fact: recoverers === 1 ? t('ddetail.tile.recoveryOne', { m: members.length }) : t('ddetail.tile.recovery', { n: recoverers, m: members.length }),
     },
     {
       key: 'coverageTypes', label: t('detail.coverageTypes'), value: defense.coverageTypes.value,

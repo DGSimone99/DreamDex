@@ -52,7 +52,7 @@ export function areaTabs(rating: TeamRating, area: AreaKey, t: T, lang: Lang, ct
   if (area === 'bonusMalus') return catalogueTabs(rating, t, lang);
   const value = rating.areas.find(a => a.key === area)?.value ?? null;
   return area === 'strength' ? offenseTabs(rating, t, lang)
-    : area === 'defense' ? defenseTabs(rating.defense, !!rating.meta, t, lang, ctx)
+    : area === 'defense' ? defenseTabs(rating.defense, !!rating.meta, t, ctx)
     : area === 'roles' ? rolesTabs(rating, value, t)
     : speedTabs(rating.speed, !!rating.meta, t);
 }

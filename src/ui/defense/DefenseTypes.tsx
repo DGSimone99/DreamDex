@@ -66,15 +66,15 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
                 })}
               </tr>
             ))}
-            <tr className="ct-sum">
+            <tr className="ct-sum ct-sum-first">
               <th scope="row">{t('ddetail.weak')}</th>
               {analysis.weakness.map((row, i) => <td key={row.type} className={severities[i] ? 'bad' : undefined}>{row.weak}</td>)}
             </tr>
-            <tr>
+            <tr className="ct-sum">
               <th scope="row">{t('ddetail.resist')}</th>
               {analysis.weakness.map(row => <td key={row.type}>{row.resist}</td>)}
             </tr>
-            <tr className="ct-safety">
+            <tr className="ct-sum ct-safety">
               <th scope="row">{t('ddetail.safety')}</th>
               {analysis.weakness.map(row => {
                 const value = safety.get(row.type) ?? 0;
