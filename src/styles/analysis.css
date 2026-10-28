@@ -562,9 +562,11 @@ button.sum-row:hover { background: var(--accent-wash); }
 .coach-tile-ok { display: flex; align-items: center; gap: 6px; margin: 4px 12px 0; font-size: 13px; font-weight: 600; color: var(--good); }
 .coach-tile-ok .icon { width: 14px; height: 14px; }
 .coach-tile > .coach-tile-ok:nth-child(2) { margin-top: 12px; }
+/* Senza voto (Regole · Meta) niente barretta: lo stesso respiro sotto la targa */
+.coach-tile-head + .coach-probs, .coach-tile-head + .coach-sep { margin-top: 12px; }
 .coach-probs { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0 12px; list-style: none; }
 .coach-prob { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; min-width: 0; padding: 2px 9px 2px 6px; font-size: 12.5px; font-weight: 600; line-height: 1.3; color: var(--text);
-  background: var(--raised); border-left: 3px solid var(--warn); border-radius: 0 999px 999px 0; }
+  background: var(--raised); border-left: 3px solid var(--warn); border-radius: 0 11px 11px 0; }
 .coach-prob.serious { border-left-color: var(--bad); background: color-mix(in srgb, var(--bad-bg) 70%, var(--raised)); }
 .coach-prob.is-dim { color: var(--muted); }
 /* Testo: due righe al più, poi i puntini (il testo intero nel title della pillola) */

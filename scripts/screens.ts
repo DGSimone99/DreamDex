@@ -195,6 +195,12 @@ const STATES: Record<string, State> = {
     console.log(`coaching-six: tappe pronte in ${Date.now() - start} ms; steps skeleton=${skeleton} real=${await rowH('.coach-steps:not([aria-busy]), .coach-steps-none')}`);
     return true;
   } },
+  // Coaching con la palette Scarlatto/Violetto (controllo dei token)
+  'coaching-sv': { hash: hash(SIX), storage: { 'dreamdex.palette': '"sv"' }, run: async p => {
+    await tab(p, 'analysis');
+    await wait(300);
+    return clickText(p, '#analysis-view-coaching', /./);
+  } },
   'coaching-three': { hash: hash(TEAM.slice(0, 3)), run: async p => {
     await tab(p, 'analysis');
     await wait(300);
