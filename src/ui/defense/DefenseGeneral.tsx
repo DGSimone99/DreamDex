@@ -6,6 +6,7 @@ import { typeName } from '../../i18n/game';
 import type { AreaContext } from '../AreaDetail';
 import { Icon } from '../icons';
 import { Sprite } from '../Sprite';
+import { MemberMon } from './MemberMon';
 import { TypeIcons } from '../typeIcons';
 import { HOLD_TAGS } from './DefenseRobustness';
 
@@ -156,7 +157,7 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
           </colgroup>
           <thead>
             <tr>
-              <th scope="col">{t('detail.member')}</th>
+              <th scope="col" className="def-mon-h">{t('detail.member')}</th>
               <th scope="col">{t('ddetail.physical')}</th>
               <th scope="col">{t('ddetail.special')}</th>
               <th scope="col">{t('ddetail.sustain')}</th>
@@ -168,9 +169,9 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
             {members.map((m, i) => (
               <tr key={`${m.species}-${i}`}>
                 <th scope="row">
-                  <span className="ad-mon"><Sprite species={m.species} size={roomy ? 44 : 28} />{m.species}
+                  <MemberMon name={m.species}>
                     {i === weakLink && <span className="def-weak">{t('ddetail.weakLink')}</span>}
-                  </span>
+                  </MemberMon>
                 </th>
                 <td><Bar value={m.physical} /></td>
                 <td><Bar value={m.special} /></td>

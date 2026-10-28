@@ -1,6 +1,6 @@
 import type { TeamDefense } from '../../engine/defense';
 import { useT } from '../../i18n/react';
-import { Sprite } from '../Sprite';
+import { MemberMon } from './MemberMon';
 
 const pct = (x: number) => `${Math.round(100 * x)}%`;
 /** Larghezza di una barra: 50% = mezza larghezza piena. */
@@ -31,7 +31,7 @@ export function DefenseSustain({ defense }: { defense: TeamDefense }) {
               const loss = p.rocks + p.lifeOrb;
               return (
                 <tr key={`${m.species}-${i}`}>
-                  <th scope="row"><span className="ad-mon"><Sprite species={m.species} size={30} />{m.species}</span></th>
+                  <th scope="row"><MemberMon name={m.species} /></th>
                   <td className="sus-loss">
                     <div className="sus-flex">
                       {loss > 0 && <span className="sus-num bad">{`−${pct(loss)}`}</span>}

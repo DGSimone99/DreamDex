@@ -139,7 +139,7 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
       .toEqual(rating.defense.coverageTypes.rows.map(row => `${row.safety}%`));
   });
 
-  it('Coverage tipi: "Chi entra" in alto, una tessera per tipo in difetto (i gravi prima) con chi lo resiste; a squadra chiusa anche Deboli e Resistono', async () => {
+  it('Coverage tipi: "Chi entra" in alto, una tessera per tipo in difetto (i gravi prima) con chi lo resiste; a squadra chiusa anche Deboli e Resistono, mai la legenda', async () => {
     const user = userEvent.setup();
     renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[]} roomy />);
     await user.click(screen.getByRole('tab', { name: /^Coverage tipi/ }));
@@ -155,7 +155,7 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
     });
     const table = within(panel).getByRole('table');
     for (const name of ['Deboli', 'Resistono', 'Sicurezza']) expect(within(table).getByRole('row', { name: new RegExp(`^${name}`) })).toBeInTheDocument();
-    expect(panel.querySelector('.ct-legend')).not.toBeNull();
+    expect(panel.querySelector('.ct-legend')).toBeNull();
   });
 
   it('Coverage meta: una tessera per minaccia, con livello e chi la regge nel nome accessibile', async () => {

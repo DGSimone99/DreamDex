@@ -58,17 +58,17 @@
 /* Cornice comune delle schede con i membri: la lista in alto (testata e righe di altezza fissa, così cambiando scheda i
    Pokémon restano nello stesso punto), le tessere di riepilogo in fondo. L altezza delle righe segue quella del pannello (cqh), uguale in ogni scheda:
    --def-tail è lo spazio tenuto sotto le righe (riepiloghi e legenda), lo stesso per tutte le schede */
-.def-frame { --def-top: 104px; --def-gap: 10px; --def-head: 34px; --def-sp: 3px; --def-tail: 46px; --def-mon: 230px; --def-row-min: 26px; --def-row-max: 64px;
+.def-frame { --def-top: 104px; --def-gap: 10px; --def-head: 34px; --def-sp: 3px; --def-tail: 46px; --def-mon: 230px; --def-row-min: 26px; --def-row-max: 999px;
   --def-row: clamp(var(--def-row-min), calc((100cqh - var(--def-top) - var(--def-gap) - var(--def-head) - var(--def-tail)) / 6 - var(--def-sp)), var(--def-row-max));
   display: flex; flex-direction: column; height: 100%; min-height: 0; container-type: size; }
-.def-frame.roomy { --def-tail: 130px; --def-mon: 240px; --def-row-min: 34px; --def-row-max: 88px; }
-.def-frame > .ad-scroll { flex: none; margin-bottom: var(--def-gap); }
+.def-frame.roomy { --def-tail: 92px; --def-mon: 240px; --def-row-min: 34px; --def-row-max: 999px; }
+.def-frame > .ad-scroll { flex: none; margin-bottom: var(--def-gap); overflow: visible; }
 /* La lista parte subito sotto la riga dei problemi: meno margine in alto nel pannello */
 .area-panel:has(> .def-frame) { padding-top: 6px; }
 .def-frame > .def-sum { flex: none; height: var(--def-top); margin: auto 0 0; overflow: hidden; }
 .def-sum.def-tiles { grid-template-rows: 100%; margin-bottom: 0; }
 /* L etichetta "Pokémon" sopra la colonna dei nomi, uguale in ogni tabella */
-.ad-panel table thead th.def-mon-h { padding: 0 0 6px; vertical-align: bottom; text-align: left; font: 600 11px/1 var(--ui); text-transform: uppercase; letter-spacing: 0.05em; color: var(--faint); }
+.ad-panel table thead th.def-mon-h { padding: 0 0 6px; vertical-align: bottom; text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--faint); }
 .def-frame .def-grid { width: 100%; border-collapse: separate; border-spacing: 0 var(--def-sp); table-layout: fixed; font-variant-numeric: tabular-nums; }
 /* Griglie a caselle: lo spazio anche in orizzontale, rientrato perché la prima colonna parta nello stesso punto */
 .def-frame .def-grid.spaced { width: calc(100% + 2 * var(--def-sp)); margin: 0 calc(-1 * var(--def-sp)); border-spacing: var(--def-sp); }
@@ -76,7 +76,17 @@
 .def-grid thead tr { height: var(--def-head); }
 .def-grid tbody tr { height: var(--def-row); }
 .def-grid tbody th[scope='row'] { padding: 0 8px 0 0; font-size: 14px; font-weight: 600; color: var(--text); text-align: left; white-space: nowrap; }
-.def-grid tbody .ad-mon .sprite { width: auto; max-height: calc(var(--def-row) - 4px); }
+/* Il membro come icona del box (MemberMon): nitida da piccola, ingrandita a gradini con l altezza delle righe.
+   I gradini sono soglie sull altezza della cornice: righe ≥ 40px → ×1,4, ≥ 58px → ×1,7, ≥ 66px → ×2 */
+.def-box { --bs: 1; display: inline-grid; place-items: center; flex: none; width: calc(40px * var(--bs)); height: calc(30px * var(--bs)); }
+.def-box .mon-icon { transform: scale(var(--bs)); image-rendering: pixelated; }
+.def-frame .def-box { --bs: 0.8; }
+@container (min-height: 452px) { .def-frame:not(.roomy) .def-box { --bs: 1.4; } }
+@container (min-height: 548px) { .def-frame:not(.roomy) .def-box { --bs: 1.7; } }
+@container (min-height: 596px) { .def-frame:not(.roomy) .def-box { --bs: 2; } }
+@container (min-height: 536px) { .def-frame.roomy .def-box { --bs: 1.4; } }
+@container (min-height: 632px) { .def-frame.roomy .def-box { --bs: 1.7; } }
+@container (min-height: 680px) { .def-frame.roomy .def-box { --bs: 2; } }
 
 /* Tabella dei membri con le barre */
 .def-members { table-layout: fixed; font-size: 14px; font-variant-numeric: tabular-nums; }
@@ -205,9 +215,6 @@
 .ct-pill.bad { background: var(--bad-bg); color: var(--bad); }
 .ct-pill.warn { background: var(--warn-bg); color: var(--warn); }
 .ct-pill.good { background: var(--good-bg); color: var(--good); }
-.ad-panel .ct-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin: 6px 0 0; font-size: 12px; color: var(--muted); }
-.ct-key { display: inline-flex; align-items: center; gap: 6px; }
-.ct-legend .ct-swatch { display: inline-grid; place-items: center; min-width: 30px; height: 20px; font-size: 12px; }
 @container (max-width: 1100px) {
   .ct-table thead .type-icons img { width: 20px; height: 20px; }
   .ct-cell { font-size: 12px; }

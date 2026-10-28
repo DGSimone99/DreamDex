@@ -9,6 +9,7 @@ import { formatMultiplier, mitigationNote } from '../AnalysisTables';
 import type { AreaContext } from '../AreaDetail';
 import { Icon } from '../icons';
 import { Sprite } from '../Sprite';
+import { MemberMon } from './MemberMon';
 import { Typed } from '../TypeText';
 import { TypeIcons } from '../typeIcons';
 
@@ -21,15 +22,10 @@ const safetyTone = (value: number) => (value < 50 ? 'bad' : value < 100 ? 'warn'
 /** Tessere "Chi entra" nella fascia in alto: oltre questo numero l'ultima raccoglie gli altri tipi. */
 const SWITCH_TILES = 4;
 
-const LEGEND = [
-  [4, 'm-4', 'ddetail.m4'], [2, 'm-2', 'ddetail.m2'], [0.5, 'm-half', 'ddetail.mHalf'],
-  [0.25, 'm-quarter', 'ddetail.mQuarter'], [0, 'm-0', 'ddetail.m0'],
-] as const;
-
 /**
  * Coverage tipi. In alto, alla stessa altezza delle tessere di Generale, "Chi entra": una tessera per tipo in difetto con
  * chi lo resiste. Sotto la griglia come quella della Panoramica: un membro per riga (nello stesso punto di Generale), i 18
- * tipi in colonna e la Sicurezza; a squadra chiusa anche Deboli, Resistono e la legenda.
+ * tipi in colonna e la Sicurezza; a squadra chiusa anche Deboli e Resistono.
  * "Debole" è sempre `weaknessSeverity`: tessere, filo sotto l'icona del tipo e riga Deboli.
  */
 export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: AreaContext }) {
@@ -76,7 +72,7 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
           <tbody>
             {team.map((set, member) => (
               <tr key={member} className={hover?.row === member ? 'x-row' : undefined}>
-                <th scope="row"><span className="ad-mon"><Sprite species={set.species} item={set.item} size={roomy ? 44 : 28} />{battleName(set)}</span></th>
+                <th scope="row"><MemberMon name={battleName(set)} /></th>
                 {analysis.weakness.map((row, i) => {
                   const m = row.multipliers[member];
                   return (
@@ -109,12 +105,6 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
           </tbody>
         </table>
       </div>
-      {roomy && (
-        <p className="ct-legend">
-          {t('ddetail.ctLegend')}
-          {LEGEND.map(([m, cls, key]) => <span key={cls} className="ct-key"><span className={`ct-swatch ${cls}`}>{formatMultiplier(m)}</span>{t(key)}</span>)}
-        </p>
-      )}
       {weatherMitigations(team).map(m => <p key={m.condition} className="note"><Typed text={mitigationNote(m, lang)} /></p>)}
       <div className="def-sum def-tiles" aria-label={t('ddetail.ctSwitch')} role="group">
         {flagged.length === 0 && (
