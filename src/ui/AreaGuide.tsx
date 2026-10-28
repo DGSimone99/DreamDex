@@ -42,7 +42,7 @@ export function AreaGuide({ title, sections, current, onCurrent, onClose }: {
 
   return createPortal(
     <div className="help-backdrop" onClick={onClose}>
-      <div className="help-dialog" role="dialog" aria-modal="true" aria-labelledby={`${id}-title`} onClick={e => e.stopPropagation()}>
+      <div className="help-dialog area-guide" role="dialog" aria-modal="true" aria-labelledby={`${id}-title`} onClick={e => e.stopPropagation()}>
         <header className="help-head">
           <h3 id={`${id}-title`}>{title}</h3>
           <button type="button" className="help-close" aria-label={t('help.close')} onClick={onClose}><Icon name="close" /></button>
@@ -57,10 +57,23 @@ export function AreaGuide({ title, sections, current, onCurrent, onClose }: {
               </button>
             ))}
           </nav>
-          <section className="help-panel" id={`${id}-panel`} role="tabpanel" aria-labelledby={`${id}-tab-${section.key}`}>
-            <h4>{section.label}</h4>
-            {section.content}
-          </section>
+          {/* Tutte le sezioni nella stessa cella, le altre invisibili: il riquadro prende l'altezza della più lunga e non
+              cambia misura passando da una sezione all'altra */}
+          <div className="guide-stack">
+            {sections.map(item => (item === section
+              ? (
+                <section key={item.key} className="help-panel" id={`${id}-panel`} role="tabpanel" aria-labelledby={`${id}-tab-${item.key}`}>
+                  <h4>{item.label}</h4>
+                  {item.content}
+                </section>
+              )
+              : (
+                <div key={item.key} className="help-panel guide-ghost" aria-hidden="true" inert>
+                  <h4>{item.label}</h4>
+                  {item.content}
+                </div>
+              )))}
+          </div>
         </div>
       </div>
     </div>,

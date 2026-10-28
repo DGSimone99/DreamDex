@@ -1,5 +1,4 @@
 import type { ReactElement } from 'react';
-import { weaknessSeverity } from '../../engine/coach';
 import type { TeamDefense } from '../../engine/defense';
 import { DefenseGeneral } from './DefenseGeneral';
 import { DefenseMeta } from './DefenseMeta';
@@ -27,7 +26,7 @@ export function defenseTabs(defense: TeamDefense, meta: boolean, t: T, ctx: Area
   const metaTab = coverageMeta && <DefenseMeta defense={defense} />;
 
   const panels: Record<Key, ReactElement | null> = { robustness, sustain, coverageTypes, coverageMeta: metaTab };
-  const guide = (section: Parameters<typeof DefenseGuideSection>[0]['section']) => <DefenseGuideSection section={section} defense={defense} meta={meta} exposed={ctx.analysis.weakness.filter(row => weaknessSeverity(row)).length} />;
+  const guide = (section: Parameters<typeof DefenseGuideSection>[0]['section']) => <DefenseGuideSection section={section} defense={defense} meta={meta} />;
   return [
     { key: 'general', label: t('detail.tab.general'), value: defense.value, panel: general, help: guide('general') },
     ...subs.map(key => ({ key, label: label(key), value: values[key], panel: panels[key]!, help: guide(key) })),

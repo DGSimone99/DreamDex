@@ -150,6 +150,14 @@ const DEFENSE_STATES: Record<string, State> = {
   ])),
   'analysis-defense-types-nometa': defenseState(SUBS.types, { format: { meta: false } }),
   'analysis-defense-long': defenseState(null, { team: LONG }),
+  // La guida della Difesa aperta dal "?" di Generale (Come funziona)
+  'analysis-defense-guide': { hash: hash(SIX), run: async p => {
+    const ok = await defenseState(null).run!(p);
+    if (ok !== true) return ok;
+    if (!await clickText(p, '.area-help button', /./)) return 'no guide button';
+    await wait(400);
+    return true;
+  } },
 };
 
 // storage: chiavi in più nel localStorage prima del caricamento (es. lo stile della lista)

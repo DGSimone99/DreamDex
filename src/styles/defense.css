@@ -182,3 +182,12 @@
 .cm-by { display: flex; justify-content: flex-end; align-items: center; min-height: 24px; }
 .cm-by .partial { opacity: 0.45; }
 .cm-by em { font-style: normal; font-size: 11px; color: var(--bad); }
+/* Peso di ogni parte nella Difesa, accanto al nome (guida, Come funziona) */
+.guide-pct { margin-left: 8px; padding: 0 6px; border-radius: 3px; background: var(--accent-2-soft); color: var(--text); font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
+/* Guida a sezioni: le sezioni stanno una sopra l'altra nella stessa cella; si vede solo quella aperta */
+.guide-stack { display: grid; min-height: 0; overflow-y: auto; }
+.guide-stack > .help-panel { grid-area: 1 / 1; overflow: visible; }
+.guide-ghost { visibility: hidden; }
+/* Come funziona: nome e peso su una riga, la descrizione sotto */
+.guide-rows.stacked > div { grid-template-columns: 1fr; gap: 3px; padding: 8px 0; }
+.guide-rows.stacked dd { color: var(--muted); }

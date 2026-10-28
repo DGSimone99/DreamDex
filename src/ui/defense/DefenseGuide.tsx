@@ -5,10 +5,10 @@ import { useLang, useT } from '../../i18n/react';
 type Section = 'general' | 'robustness' | 'sustain' | 'coverageTypes' | 'coverageMeta';
 type Key = Parameters<ReturnType<typeof useT>>[0];
 
-/** Righe termine / regola della guida. */
-function Rows({ rows }: { rows: [ReactNode, ReactNode][] }) {
+/** Righe termine / regola della guida; `stacked`: la regola sotto il termine. */
+function Rows({ rows, stacked = false }: { rows: [ReactNode, ReactNode][]; stacked?: boolean }) {
   return (
-    <dl className="guide-rows">
+    <dl className={`guide-rows${stacked ? ' stacked' : ''}`}>
       {rows.map(([term, rule], i) => <div key={i}><dt>{term}</dt><dd>{rule}</dd></div>)}
     </dl>
   );
@@ -25,9 +25,8 @@ function Points({ items }: { items: { label: ReactNode; value?: ReactNode; note?
   );
 }
 
-/** Il contenuto della guida alla Difesa per una sezione: schematico, con in fondo i valori del tuo team. */
-/** `exposed`: quanti tipi scoperti (gli stessi della tessera Generale e della tabella: `weaknessSeverity`). */
-export function DefenseGuideSection({ section, defense, meta, exposed }: { section: Section; defense: TeamDefense; meta: boolean; exposed: number }) {
+/** Il contenuto della guida alla Difesa per una sezione: schematico e generico (niente valori del team). */
+export function DefenseGuideSection({ section, defense, meta }: { section: Section; defense: TeamDefense; meta: boolean }) {
   const t = useT();
   const lang = useLang();
   // Decimali alla maniera della lingua (0,5 in italiano, 0.5 in inglese)
@@ -35,32 +34,18 @@ export function DefenseGuideSection({ section, defense, meta, exposed }: { secti
   const g = (key: string, params?: Record<string, string | number>) => t(`guide.def.${key}` as Key, params);
   const metaRows = defense.coverageMeta?.rows.length ?? 0;
   const physicalCount = defense.matrix.filter(row => row.physical).length;
-  const team = (items: [string, ReactNode][]) => (
-    <>
-      <h5>{g('team')}</h5>
-      <Points items={items.map(([label, value]) => ({ label, value }))} />
-    </>
-  );
 
   if (section === 'general') {
+    // Cosa misura ogni parte e quanto pesa nella Difesa (Robustezza e Sostenibilità insieme)
+    const pct = (n: number) => <span className="guide-pct">{n}%</span>;
     return (
       <>
         <h5>{g('what')}</h5>
-        <Rows rows={[
-          [t('detail.coverageTypes'), g('what.types')],
-          [t('ddetail.robustness'), g('what.robustness')],
-          [t('ddetail.sustain'), g('what.sustain')],
-          ...(meta ? [[t('detail.coverageMeta'), g('what.meta', { n: metaRows })] as [string, string]] : []),
+        <Rows stacked rows={[
+          [<>{t('detail.coverageTypes')}{pct(meta ? 25 : 50)}</>, g('what.types')],
+          [<>{t('ddetail.robustness')} + {t('ddetail.sustain')}{pct(50)}</>, g('what.robustness', { n: physicalCount })],
+          ...(meta ? [[<>{t('detail.coverageMeta')}{pct(25)}</>, g('what.meta', { n: metaRows })] as [ReactNode, string]] : []),
         ]} />
-        <h5>{g('weights')}</h5>
-        <Rows rows={[[t('area.defense'), g(meta ? 'weights.meta' : 'weights.tier')]]} />
-        {team([
-          [t('area.defense'), defense.value],
-          [t('detail.coverageTypes'), defense.coverageTypes.value],
-          [t('ddetail.robustness'), defense.robustness],
-          [t('ddetail.sustain'), defense.sustain],
-          ...(defense.coverageMeta ? [[t('detail.coverageMeta'), defense.coverageMeta.value] as [string, number]] : []),
-        ])}
       </>
     );
   }
@@ -88,11 +73,6 @@ export function DefenseGuideSection({ section, defense, meta, exposed }: { secti
           [g('rob.weights'), g('rob.weights.rule')],
           [t('ddetail.robustness'), g('rob.total')],
         ]} />
-        {team([
-          [t('ddetail.physical'), defense.physical],
-          [t('ddetail.special'), defense.special],
-          [t('ddetail.robustness'), defense.robustness],
-        ])}
       </>
     );
   }
@@ -113,10 +93,6 @@ export function DefenseGuideSection({ section, defense, meta, exposed }: { secti
           [g('sus.half'), g('sus.half.rule')],
           [g('sus.scale'), g('sus.scale.rule')],
         ]} />
-        {team([
-          [t('ddetail.sustain'), defense.sustain],
-          [g('sus.members'), `${defense.members.filter(m => m.sustainParts.recovery > 0).length}/${defense.members.length}`],
-        ])}
       </>
     );
   }
@@ -138,10 +114,6 @@ export function DefenseGuideSection({ section, defense, meta, exposed }: { secti
           [g('types.average'), g('types.average.rule')],
           ...(meta ? [[g('types.split'), g('types.split.rule')] as [string, string]] : []),
         ]} />
-        {team([
-          [t('detail.coverageTypes'), defense.coverageTypes.value],
-          [g('types.exposed'), exposed],
-        ])}
       </>
     );
   }
@@ -159,10 +131,6 @@ export function DefenseGuideSection({ section, defense, meta, exposed }: { secti
         { label: g('meta.one'), value: '70%' }, { label: g('meta.two'), value: '90%' }, { label: g('meta.three'), value: '100%' },
       ]} />
       <Rows rows={[[g('types.split'), g('types.split.rule')]]} />
-      {team([
-        [t('detail.coverageMeta'), defense.coverageMeta?.value ?? 0],
-        [g('meta.unanswered'), defense.coverageMeta?.unanswered.length ?? 0],
-      ])}
     </>
   );
 }
