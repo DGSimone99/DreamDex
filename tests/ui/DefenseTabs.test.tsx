@@ -139,19 +139,27 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
       .toEqual(rating.defense.coverageTypes.rows.map(row => `${row.safety}%`));
   });
 
-  it('Coverage meta: una tessera per minaccia, prima senza risposta, poi a metà, poi rette (ognuna per uso), livello e chi la regge nel nome accessibile', async () => {
+  it('Coverage meta: pagine da 8 minacce, dalla meno coperta (a pari livello la più usata), livello e chi la regge nel nome accessibile', async () => {
     const user = userEvent.setup();
     const rating = withMeta();
     renderIt(<AreaView rating={rating} area="defense" team={team} analysis={analysis} problems={[]} />);
     await user.click(screen.getByRole('tab', { name: /^Coverage meta/ }));
-    const tiles = within(screen.getByRole('tabpanel')).getAllByRole('listitem');
+    const panel = within(screen.getByRole('tabpanel'));
     const rows = rating.defense.coverageMeta!.rows;
-    expect(tiles).toHaveLength(rows.length);
-    const group = (r: typeof rows[number]) => (r.heldBy.length === 0 ? 0 : r.heldBy.some(h => !h.partial) ? 2 : 1);
-    const expected = [...rows].sort((a, b) => group(a) - group(b) || b.weight - a.weight);
-    expect(tiles[0]).toHaveAccessibleName(new RegExp(`^${expected[0].species}.*${expected[0].level}%`));
-    // Le tessere seguono i gruppi: nessuna retta prima di una senza risposta
-    expect(tiles.map(tile => (tile.classList.contains('none') ? 0 : tile.classList.contains('partial') ? 1 : 2))).toEqual(expected.map(group));
+    const expected = [...rows].sort((a, b) => a.level - b.level || b.weight - a.weight);
+    const names = () => panel.getAllByRole('listitem').map(tile => tile.getAttribute('aria-label')!.split(':')[0]);
+    expect(names()).toEqual(expected.slice(0, 8).map(r => r.species));
+    expect(panel.getAllByRole('listitem')[0]).toHaveAccessibleName(new RegExp(`^${expected[0].species}.*${expected[0].level}%`));
+    // Una pagina per ogni 8 minacce; la seconda mostra le successive, e "precedente" torna alla prima
+    const pages = panel.getByRole('navigation', { name: 'Pagine delle minacce' });
+    expect(within(pages).getAllByRole('button', { name: /^Minacce da/ })).toHaveLength(Math.ceil(rows.length / 8));
+    expect(within(pages).getByRole('button', { name: 'Minacce precedenti' })).toBeDisabled();
+    if (rows.length > 8) {
+      await user.click(within(pages).getByRole('button', { name: /^Minacce da 9 / }));
+      expect(names()).toEqual(expected.slice(8, 16).map(r => r.species));
+      await user.click(within(pages).getByRole('button', { name: 'Minacce precedenti' }));
+      expect(names()).toEqual(expected.slice(0, 8).map(r => r.species));
+    }
   });
 });
 
