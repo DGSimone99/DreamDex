@@ -12,6 +12,16 @@ const SCALE = [
   { balance: '+2', pct: 100, tag: 'safe', tone: 'good' },
 ] as const;
 
+/** Tasti dei punti: il moltiplicatore (o chi) sopra, i punti sotto nel colore del segno. */
+function Keys({ items }: { items: { label: string; value: string; title?: string }[] }) {
+  const tone = (value: string) => (value.startsWith('+') ? 'good' : value.startsWith('−') ? 'bad' : 'even');
+  return (
+    <ul className="guide-keys">
+      {items.map(item => <li key={item.label} className={tone(item.value)} title={item.title}><span>{item.label}</span><b>{item.value}</b></li>)}
+    </ul>
+  );
+}
+
 /** Righe termine / regola della guida; `stacked`: la regola sotto il termine. */
 function Rows({ rows, stacked = false }: { rows: [ReactNode, ReactNode][]; stacked?: boolean }) {
   return (
@@ -111,19 +121,22 @@ export function DefenseGuideSection({ section, defense, meta }: { section: Secti
         <div className="guide-two">
           <div>
             <h6>{g('types.weighted')}</h6>
-            <Points items={[
-              { label: g('types.immune'), value: '+2' }, { label: '×¼', value: dec('+1,5') }, { label: '×½', value: '+1' },
-              { label: g('types.neutral'), value: '0' }, { label: '×2', value: '−1' }, { label: '×4', value: '−2' },
+            <Keys items={[
+              { label: '×0', title: g('types.immune'), value: '+2' }, { label: '×¼', value: dec('+1,5') }, { label: '×½', value: '+1' },
+              { label: '×1', title: g('types.neutral'), value: '0' }, { label: '×2', value: '−1' }, { label: '×4', value: '−2' },
             ]} />
           </div>
           <div>
             <h6>{g('types.members')}</h6>
-            <Points items={[
+            <Keys items={[
               { label: g('types.resists'), value: '+1' }, { label: g('types.neutral'), value: '0' }, { label: g('types.weakOne'), value: '−1' },
             ]} />
           </div>
         </div>
-        <p className="guide-formula"><b>{g('types.balance')}</b> = {g('types.formula')}</p>
+        <p className="guide-eq">
+          <b>{g('types.balance')}</b> = ( <span>{g('types.ex.weighted')}</span> + <span>{g('types.ex.members')}</span> ) ÷ 2
+          <small>{g('types.abilities')}</small>
+        </p>
 
         <h5>{g('types.tosafety')}</h5>
         <ol className="guide-scale" aria-label={g('types.tosafety')}>
@@ -133,16 +146,18 @@ export function DefenseGuideSection({ section, defense, meta }: { section: Secti
             </li>
           ))}
         </ol>
-        <p className="guide-note">{g('types.weakZone')}</p>
+        <p className="guide-zone">{g('types.weakZone')}</p>
 
         <h5>{g('types.example')}</h5>
         <div className="guide-example">
           <span className="guide-mults" aria-hidden="true">
             {['×½', '×½', '×½', '×2', '×2', '×4'].map((m, i) => <i key={i} className={i < 3 ? 'res' : i === 5 ? 'x4' : 'weak'}>{m}</i>)}
           </span>
-          <span>{g('types.ex.weighted')} <b>+3 −4 = −1</b></span>
-          <span>{g('types.ex.members')} <b>+3 −3 = 0</b></span>
-          <span>{g('types.balance')} <b>{dec('−0,5')}</b> → <b className="warn">38%</b> {g('types.tag.minor')}</span>
+          <span className="guide-res"><small>{g('types.ex.weighted')}</small><b>+3 −4 = −1</b></span>
+          <span className="guide-res"><small>{g('types.ex.members')}</small><b>+3 −3 = 0</b></span>
+          <span className="guide-res"><small>{g('types.balance')}</small><b>{dec('−0,5')}</b></span>
+          <span className="guide-arrow" aria-hidden="true">→</span>
+          <span className="guide-verdict warn"><b>38%</b>{g('types.tag.minor')}</span>
         </div>
 
         <h5>{g('types.vote')}</h5>
