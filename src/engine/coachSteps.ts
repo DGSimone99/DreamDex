@@ -8,6 +8,9 @@ import type { MoveFix } from './moveFixes';
  */
 export const STEP_MIN_DEFENSE_PRESSURE = 1;
 
+/** Un problema che può guidare una tappa o comparire nel suo titolo (le debolezze lievi finiscono solo in "risolve anche"). */
+const leads = (p: CoachProblem) => !(p.category === 'defense' && p.size !== undefined && p.size < STEP_MIN_DEFENSE_PRESSURE);
+
 /** Tappe mostrate nel Coaching. */
 export const MAX_STEPS = 3;
 
@@ -65,7 +68,7 @@ export function buildSteps(problems: CoachProblem[], fixes: CoachFix[], moves: M
   const steps: CoachStep[] = [];
   for (const problem of ordered) {
     if (covered.has(problem.key)) continue;
-    if (problem.category === 'defense' && problem.size !== undefined && problem.size < STEP_MIN_DEFENSE_PRESSURE) continue;
+    if (!leads(problem)) continue;
     const move = sortedMoves.find(m => m.solves.includes(problem.key) && !usedMembers.has(m.index)) ?? null;
     if (bySwap.has(problem.key) && !move) continue;
     const swap = sortedFixes.find(f => f.solves.includes(problem.key) && !usedSpecies.has(f.species)) ?? null;
@@ -78,7 +81,7 @@ export function buildSteps(problems: CoachProblem[], fixes: CoachFix[], moves: M
     const solved = new Set([...(swap?.solves ?? []), ...(move?.solves ?? [])]);
     const shown = [swap, move].filter(f => f !== null);
     const group = [problem.key, ...unique
-      .filter(p => p.key !== problem.key && p.category === problem.category && shown.every(f => f.solves.includes(p.key)))
+      .filter(p => p.key !== problem.key && p.category === problem.category && leads(p) && shown.every(f => f.solves.includes(p.key)))
       .map(p => p.key)];
     steps.push({ problem, swap, move, alsoSolves: [...solved].filter(key => key !== problem.key), group });
   }

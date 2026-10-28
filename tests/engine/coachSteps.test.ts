@@ -27,6 +27,10 @@ describe('buildSteps', () => {
     const real = { ...problem('defense:Flying'), size: 1 };
     const steps = buildSteps([mild, real], [swap('A', 5, ['defense:Ice']), swap('B', 3, ['defense:Flying'])], []);
     expect(steps.map(s => s.problem.key)).toEqual(['defense:Flying']);
+    // Se lo stesso cambio risolve anche la debolezza lieve, sta in "risolve anche" ma non nel titolo
+    const both = buildSteps([mild, real], [swap('C', 4, ['defense:Flying', 'defense:Ice'])], []);
+    expect(both[0].group).toEqual(['defense:Flying']);
+    expect(both[0].alsoSolves).toEqual(['defense:Ice']);
   });
 
   it('senza problemi: nessuna tappa', () => {
