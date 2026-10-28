@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import type { TeamDefense } from '../../engine/defense';
+import { RANK_WEIGHTS } from '../../engine/offense';
 import { useLang, useT } from '../../i18n/react';
 
 type Section = 'general' | 'robustness' | 'sustain' | 'coverageTypes' | 'coverageMeta';
@@ -11,6 +12,15 @@ const SCALE = [
   { balance: '0', pct: 50, tag: 'even', tone: 'warn' }, { balance: '+1', pct: 75, tag: 'ok', tone: 'warn' },
   { balance: '+2', pct: 100, tag: 'safe', tone: 'good' },
 ] as const;
+
+/** Punti di ogni soglia del colpo standard, dalla peggiore. */
+const HOLD_POINTS = [
+  { cls: 'hold-ohko', tag: 'OHKO', points: '0', note: 'rob.ohko' }, { cls: 'hold-2', tag: '2HKO', points: '0,5', note: 'rob.two' },
+  { cls: 'hold-3', tag: '3HKO', points: '1', note: 'rob.three' }, { cls: 'hold-4', tag: '4HKO+', points: '1,5', note: 'rob.four' },
+] as const;
+
+/** Pesi dei membri nel valore di un lato, dal più robusto: quelli del motore, in percentuale. */
+const MEMBER_WEIGHTS = RANK_WEIGHTS.map(w => Math.round(100 * w));
 
 /** Tasti dei punti: il moltiplicatore (o chi) sopra, i punti sotto nel colore del segno. */
 function Keys({ items }: { items: { label: string; value: string; title?: string }[] }) {
@@ -73,23 +83,30 @@ export function DefenseGuideSection({ section, defense, meta }: { section: Secti
         <h5>{g('rob.test')}</h5>
         <Rows rows={[
           [g('rob.attackers'), g('rob.attackers.rule', { n: physicalCount })],
-          [g('rob.hit'), g('rob.hit.rule')],
           [g('rob.count'), g('rob.count.rule')],
         ]} />
+
         <h5>{g('rob.points')}</h5>
-        <p className="guide-note">{g('rob.damage')}</p>
-        <Points items={[
-          { label: <span className="hold-chip hold-ohko">OHKO</span>, value: 0, note: g('rob.ohko') },
-          { label: <span className="hold-chip hold-2">2HKO</span>, value: dec('0,5'), note: g('rob.two') },
-          { label: <span className="hold-chip hold-3">3HKO</span>, value: 1, note: g('rob.three') },
-          { label: <span className="hold-chip hold-4">4HKO+</span>, value: dec('1,5'), note: g('rob.four') },
-        ]} />
+        <ul className="guide-holds">
+          {HOLD_POINTS.map(h => (
+            <li key={h.cls}><span className={`hold-chip ${h.cls}`}>{h.tag}</span><b>{dec(h.points)}</b><small>{g(h.note)}</small></li>
+          ))}
+        </ul>
+
         <h5>{g('rob.toteam')}</h5>
-        <Rows rows={[
-          [g('rob.scale'), g('rob.scale.rule')],
-          [g('rob.weights'), g('rob.weights.rule')],
-          [t('ddetail.robustness'), g('rob.total')],
-        ]} />
+        <div className="guide-weights">
+          <h6>{g('rob.weights')}</h6>
+          <ol aria-label={g('rob.weights')}>
+            {MEMBER_WEIGHTS.map((w, i) => (
+              <li key={i} style={{ flexGrow: w }}><span>{g('rob.rank', { n: i + 1 })}</span><b>{w}%</b></li>
+            ))}
+          </ol>
+          <div className="guide-weights-axis" aria-hidden="true"><span>{g('rob.best')}</span><span>{g('rob.worst')}</span></div>
+        </div>
+        <p className="guide-sum">
+          <span><b>40%</b> {t('ddetail.physical')}</span>+<span><b>40%</b> {t('ddetail.special')}</span>+<span><b>20%</b> {t('ddetail.sustain')}</span>
+          =<span className="out">{t('ddetail.robustness')}</span>
+        </p>
       </>
     );
   }

@@ -287,3 +287,30 @@
 
 /* La guida della Difesa è più larga dei modali d aiuto: i due conti e la scala stanno su una riga */
 .help-dialog.area-guide { width: min(920px, 100%); }
+
+/* Guida, Robustezza: le quattro soglie come tasti, i pesi dei membri come barra a segmenti, la somma dei lati */
+.guide-holds { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin: 0; padding: 0; list-style: none; }
+.guide-holds li { display: grid; justify-items: center; gap: 4px; padding: 8px 4px; border: 1px solid var(--line-soft); background: color-mix(in srgb, var(--raised) 55%, var(--panel)); }
+.guide-holds b { font: italic 700 18px/1 var(--display); color: var(--text); font-variant-numeric: tabular-nums; }
+.guide-holds small { font-size: 12px; color: var(--muted); }
+.guide-weights { padding: 8px 10px 6px; border: 1px solid var(--line-soft); background: color-mix(in srgb, var(--raised) 35%, transparent); }
+.guide-weights h6 { margin: 0 0 8px; font-size: 11px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: 0.05em; }
+.guide-weights ol { display: flex; gap: 3px; margin: 0; padding: 0; list-style: none; }
+.guide-weights li { flex-basis: 0; display: grid; justify-items: center; gap: 2px; min-width: 0; padding: 6px 2px; background: color-mix(in srgb, var(--accent-2) 30%, var(--panel)); }
+.guide-weights li:nth-child(2) { background: color-mix(in srgb, var(--accent-2) 24%, var(--panel)); }
+.guide-weights li:nth-child(3) { background: color-mix(in srgb, var(--accent-2) 19%, var(--panel)); }
+.guide-weights li:nth-child(4) { background: color-mix(in srgb, var(--accent-2) 15%, var(--panel)); }
+.guide-weights li:nth-child(5) { background: color-mix(in srgb, var(--accent-2) 12%, var(--panel)); }
+.guide-weights li:nth-child(6) { background: color-mix(in srgb, var(--accent-2) 9%, var(--panel)); }
+.guide-weights li span { font-size: 11px; font-weight: 600; color: var(--muted); }
+.guide-weights li b { font: italic 700 16px/1 var(--display); color: var(--text); font-variant-numeric: tabular-nums; }
+.guide-weights-axis { display: flex; justify-content: space-between; margin: 4px 0 0; font-size: 11px; color: var(--faint); }
+.guide-weights-axis span:first-child::before { content: '← '; }
+.guide-weights-axis span:last-child::after { content: ' →'; }
+.ad-panel .guide-sum, .guide-sum { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 10px 0 0; font-size: 14px; color: var(--faint); }
+.guide-sum span { padding: 3px 10px; border: 1px solid var(--line); border-radius: 3px; background: var(--raised); color: var(--muted); }
+.guide-sum span b { margin-right: 4px; color: var(--text); font-variant-numeric: tabular-nums; }
+.guide-sum span.out { border-color: var(--accent-2); background: var(--accent-2-soft); color: var(--text); font-weight: 600; }
+@media (max-width: 560px) {
+  .guide-holds { grid-template-columns: repeat(2, 1fr); }
+}
