@@ -33,8 +33,8 @@
 .def-none { gap: 6px; color: var(--good); font-weight: 600; }
 .def-none .icon { flex: none; }
 /* Chip del tipo scoperto: icona rotonda e nome su sfondo di gravità */
-.def-chip { display: inline-flex; align-items: center; gap: 4px; padding: 1px 7px 1px 3px; border-left: 3px solid var(--warn); background: var(--warn-bg); color: var(--warn); font-size: 12px; font-weight: 600; line-height: 20px; }
-.def-chip.serious { border-left-color: var(--bad); background: var(--bad-bg); color: var(--bad); }
+.def-chip { display: inline-flex; align-items: center; gap: 4px; padding: 1px 8px 1px 3px; border-radius: 10px; background: var(--warn-bg); color: var(--warn); font-size: 12px; font-weight: 600; line-height: 20px; }
+.def-chip.serious { background: var(--bad-bg); color: var(--bad); }
 .def-chip .type-icons img { display: block; width: 16px; height: 16px; }
 .def-open-mon { display: inline-flex; padding-bottom: 2px; border-bottom: 2px solid var(--good); }
 /* Chi recupera ha la riga verde sotto; chi no è spento e senza riga */
