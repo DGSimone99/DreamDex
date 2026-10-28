@@ -569,6 +569,7 @@ export const it: Record<keyof typeof en, string> = {
   'coach.fixAddAria': "Aggiungi {species}, {gain}",
   'coach.steps.title': "Suggerimenti",
   'coach.steps.weakTo': "Debole a",
+  'coach.steps.missing': "Manca",
   'coach.steps.noCheck': "Nessun check per",
   'coach.steps.swap': "Al posto di {member}",
   'coach.steps.add': "Aggiungi",
