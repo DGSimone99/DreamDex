@@ -17,7 +17,7 @@ function Keys({ items }: { items: { label: string; value: string; title?: string
   const tone = (value: string) => (value.startsWith('+') ? 'good' : value.startsWith('−') ? 'bad' : 'even');
   return (
     <ul className="guide-keys">
-      {items.map(item => <li key={item.label} className={tone(item.value)} title={item.title}><span>{item.label}</span><b>{item.value}</b></li>)}
+      {items.map(item => <li key={item.label} className={tone(item.value)} title={item.title}><span>{item.label}{item.title && <span className="visually-hidden"> {item.title}</span>}</span><b>{item.value}</b></li>)}
     </ul>
   );
 }
