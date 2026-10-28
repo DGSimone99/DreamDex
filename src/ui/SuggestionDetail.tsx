@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, type CSSProperties } from 'react';
 import type { EngineData } from '../engine/data';
 import { rankedChanges } from '../engine/coach';
 import { getSpecies } from '../engine/dex';
@@ -20,9 +20,10 @@ import type { ListSprite } from './theme';
 import { Icon } from './icons';
 import { ItemIcon } from './ItemIcon';
 import { BoxIcon, bringsOf } from './candidateParts';
-import { PokemonName } from './PokemonName';
-import { battleAbility, battleName } from '../engine/dex';
-import { Sprite, TypeChip } from './Sprite';
+import { PokemonIcon, PokemonName } from './PokemonName';
+import { battleAbility, battleName, toID } from '../engine/dex';
+import { statsEntry } from '../engine/stats';
+import { Sprite, TypeChip, typeColor } from './Sprite';
 import { StatsBadge } from './StatsBadge';
 import { MoveName, Typed } from './TypeText';
 
@@ -31,7 +32,7 @@ import { MoveName, Typed } from './TypeText';
  * Il candidato selezionato nella lista, dall'alto per importanza: chi è e quanto sale il voto, cosa porta e cosa toglie,
  * l'effetto sul team area per area (una riga), il set consigliato, le azioni.
  */
-export function SuggestionDetail({ item, rank, team, replaceIndex, data, format, rating, archetype, usage, banMark, actionLabel, onAction, listSprite = 'normal' }: {
+export function SuggestionDetail({ item, rank, team, replaceIndex, data, format, rating, archetype, usage, banMark, actionLabel, onAction, listSprite = 'normal', teamCollapsed = false }: {
   item: (Suggestion | Replacement) & { teamGain?: TeamGain; alternatives?: SwapOption[] };
   rank: number;
   team: TeamSet[];
@@ -50,6 +51,8 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
   onAction: () => void;
   /** Lo sprite della lista: il dettaglio mostra l'altro (lista Normale → icona box, lista Icona box → sprite animato). */
   listSprite?: ListSprite;
+  /** Team chiuso: c'è altezza per la sezione Meta. */
+  teamCollapsed?: boolean;
 }) {
   const tr = useT();
   const lang = useLang();
@@ -69,6 +72,18 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
   const brings = bringsOf(item, lang, rulesOf(data)).map(bring => bring.text);
   // Ruoli del set consigliato: per primo il principale (lo stesso delle carte del team, evidenziato), poi gli altri
   const mainRole = cardRoles(set, rulesOf(data))[0];
+  // Meta: uso nel meta e i 5 compagni più frequenti (quota dei team che lo usano), chi è già nel team riconosciuto per specie
+  const statsOf = statsEntry(data.stats, item.species);
+  const inTeam = new Set(team.map(member => toID(member.species)));
+  const mates = statsOf ? Object.entries(statsOf.teammates).sort((a, b) => b[1] - a[1]).slice(0, 5)
+    .map(([name, share]) => ({ name, share, inTeam: inTeam.has(toID(name)) })) : [];
+  const meta = statsOf ? {
+    usage: statsOf.usage,
+    // Posto nella classifica d'uso del formato (1 = il più usato)
+    place: Object.values(data.stats?.pokemon ?? {}).filter(entry => entry.usage > statsOf.usage).length + 1,
+    mates,
+    top: mates[0]?.share || 1,
+  } : null;
   const setRoles = [...(mainRole ? [mainRole] : []), ...detectRoles(set, rulesOf(data)).filter(role => role !== mainRole)];
   // Toglie: le perdite del cambio e gli avvisi (meteo in conflitto, mosse indebolite)
   const loses = [...(changes?.cons.map(c => c.text) ?? []), ...(item.facts.clashes ?? []).map(text => text.replace(/^⚠\s*/, ''))];
@@ -193,6 +208,40 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
                 </li>
               ))}
             </ul>
+          </section>
+        )}
+
+        {/* Meta, solo col team chiuso (c'è l'altezza): a sinistra l'uso nel meta e il posto in classifica, a destra i 5
+            compagni più frequenti come una classifica a barre (lunghe quanto la quota, rispetto al primo; colore del tipo);
+            chi è già nel team in ciano con la spunta. Senza statistiche la sezione non c'è */}
+        {teamCollapsed && meta && (
+          <section className="detail-sec wide meta-sec">
+            <h4>{tr('detail.meta')}</h4>
+            <div className="detail-meta">
+              <p className="meta-usage">
+                <strong>{formatPercent(lang, meta.usage)}</strong>
+                <span>{tr('detail.metaUsageLong')}</span>
+                {meta.place > 0 && <span className="meta-place">{tr('detail.metaPlace', { n: meta.place })}</span>}
+              </p>
+              {meta.mates.length > 0 && (
+                <div className="meta-mates-box">
+                  <span className="meta-label">{tr('detail.metaWith')}</span>
+                  <ol className="meta-mates" aria-label={tr('detail.metaWith')}>
+                    {meta.mates.map(mate => (
+                      <li key={mate.name} className={mate.inTeam ? 'in-team' : undefined}
+                        style={{ '--mate-c': typeColor(getSpecies(mate.name)?.types[0] ?? ''), '--share': mate.share / meta.top } as CSSProperties}
+                        title={mate.inTeam ? tr('detail.metaInTeam', { name: mate.name }) : undefined}>
+                        <PokemonIcon name={mate.name} />
+                        <span className="mate-name">{mate.name}</span>
+                        <span className="mate-check">{mate.inTeam && <Icon name="check" />}</span>
+                        <span className="mate-bar" aria-hidden="true" />
+                        <strong>{formatPercent(lang, mate.share)}</strong>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              )}
+            </div>
           </section>
         )}
       </div>

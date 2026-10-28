@@ -318,6 +318,26 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 
 .detail-roles { list-style: none; display: flex; flex-wrap: wrap; gap: 4px; margin: 0; padding: 0; }
 .detail-roles li { padding: 1px 8px; border: 1px solid var(--line); border-radius: 4px; font-size: 13px; font-weight: 500; color: var(--muted); white-space: nowrap; }
+/* Meta (team chiuso): a sinistra l'uso grande (come il +N dell'intestazione, in piccolo) col posto in classifica; a destra
+   "Spesso usato con" e la classifica dei compagni: icona, nome, barra lunga quanto la quota (rispetto al primo, nel colore
+   del tipo del compagno), percentuale. Chi è già nel team: nome in ciano e spunta */
+.detail-meta { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 0 22px; align-items: start; }
+.meta-usage { display: grid; gap: 2px; margin: 0; padding-right: 22px; border-right: 1px solid var(--line-soft); }
+.meta-usage strong { font: 800 30px/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums; color: var(--text); }
+.meta-usage span { font-size: 13px; color: var(--muted); }
+.meta-usage .meta-place { color: var(--faint); font-size: 12px; }
+.meta-mates-box { min-width: 0; }
+.meta-mates-box .meta-label { display: block; margin-bottom: 4px; font-size: 12px; color: var(--faint); }
+.meta-mates { list-style: none; max-width: 560px; margin: 0; padding: 0; display: grid; gap: 2px; }
+.meta-mates li { display: grid; grid-template-columns: 26px minmax(0, 8.6em) 13px minmax(24px, 1fr) 46px; align-items: center; gap: 0 6px; height: 22px; font-size: 14px; font-weight: 500; }
+.meta-mates .mon-icon { margin: -6px -8px -4px -6px; }
+.meta-mates .mate-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.meta-mates .mate-check { display: grid; place-items: center; }
+.meta-mates .icon { width: 13px; height: 13px; color: var(--accent); }
+.meta-mates .mate-bar { height: 6px; border-radius: 3px; background: linear-gradient(90deg, var(--mate-c) calc(var(--share) * 100%), var(--field) 0); }
+.meta-mates strong { font-size: 13px; font-weight: 600; color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
+.meta-mates li.in-team .mate-name { color: var(--accent); }
+.meta-mates li.in-team strong { color: var(--text); }
 .detail-roles li.main { border-color: var(--accent); background: var(--accent-soft); color: var(--text); font-weight: 700; }
 .detail-id h3 { font-style: italic; }
 .detail-score strong { font-style: italic; }
@@ -333,6 +353,8 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
   clip-path: polygon(0 0, 100% 0, calc(100% - 9px) 100%, 0 100%);
 }
 .detail-reasons li::before { background: var(--accent); }
+/* Etichetta solo per gli screen reader (Effetto sul team): niente targhetta magenta, il ritaglio resta quello che la nasconde */
+.detail-sec h4.visually-hidden { padding: 0; clip-path: inset(50%); }
 .detail.first .detail-actions .go {
   background: var(--accent-2);
   border-color: var(--accent-2);

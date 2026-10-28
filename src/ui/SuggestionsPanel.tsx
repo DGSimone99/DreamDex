@@ -523,6 +523,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
             actionLabel={actionLabelOf(selected)}
             onAction={() => act(selected)}
             listSprite={listSprite}
+            teamCollapsed={teamCollapsed}
           />
         )}
       </div>
