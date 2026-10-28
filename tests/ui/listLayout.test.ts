@@ -27,21 +27,24 @@ describe('cardsLayout', () => {
 });
 
 describe('menuLayout', () => {
-  it('perPage dal team aperto', () => {
-    expect(menuLayout(500, 500, 900).perPage).toBe(9);
+  it('sempre 6 per pagina, la riga riempie l’altezza fino a 84', () => {
+    expect(menuLayout(500, false).perPage).toBe(6);
+    expect(menuLayout(500, false).rowHeight).toBe(Math.floor((500 - 20 + 10) / 6) - 10);
+    expect(menuLayout(2000, false).rowHeight).toBe(84);
   });
-  it('team chiuso: perPage invariato, riga <= 76, 3 motivi', () => {
-    const l = menuLayout(500, 700, 900);
-    expect(l.perPage).toBe(9);
-    expect(l.rowHeight).toBeLessThanOrEqual(76);
-    expect(l.reasons).toBe(3);
+  it('liste basse: spazio tra le righe 6 invece di 10, righe più alte', () => {
+    expect(menuLayout(400, false)).toMatchObject({ gap: 6, rowHeight: Math.floor((400 - 20 + 6) / 6) - 6 });
+    expect(menuLayout(500, false).gap).toBe(10);
   });
-  it('windowHeight 768 usa riga minima 42', () => {
-    expect(menuLayout(500, 500, 768).perPage).toBe(Math.floor((500 - 20 + 6) / 48));
+  it('motivi: 1 nelle righe basse, 2 da 56 px, 3 solo col team nascosto e righe da 76', () => {
+    expect(menuLayout(340, false).reasons).toBe(1);
+    expect(menuLayout(500, false).reasons).toBe(2);
+    expect(menuLayout(600, false).reasons).toBe(2);
+    expect(menuLayout(600, true).reasons).toBe(3);
   });
   it('input degeneri restano finiti con perPage >= 1', () => {
     for (const a of [0, -50, NaN]) {
-      const l = menuLayout(a, a, a);
+      const l = menuLayout(a, false);
       expect(Object.values(l).every(Number.isFinite)).toBe(true);
       expect(l.perPage).toBeGreaterThanOrEqual(1);
     }
