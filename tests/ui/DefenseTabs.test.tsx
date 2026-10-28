@@ -122,8 +122,8 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
     const water = analysis.weakness.findIndex(row => row.type === 'Water');
     expect(within(tusk).getAllByRole('cell')[water]).toHaveTextContent('×2');
     for (const name of ['Deboli', 'Resistono', 'Sicurezza']) expect(within(tables[0]).getByRole('row', { name: new RegExp(`^${name}`) })).toBeInTheDocument();
-    // I conteggi gravi + minori della vecchia tabella restano
-    const counts = [...panel.querySelectorAll('.issue [aria-hidden="true"]')].map(el => Number(el.textContent));
+    // I conteggi gravi + minori restano, scritti per esteso
+    const counts = [...panel.querySelectorAll('.ct-count')].map(el => parseInt(el.textContent ?? '', 10));
     expect(counts.reduce((a, b) => a + b, 0)).toBe(analysis.weakness.filter(row => weaknessSeverity(row)).length);
   });
 
@@ -138,6 +138,20 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
     const safety = within(table).getByRole('row', { name: /^Sicurezza/ });
     expect(within(safety).getAllByRole('cell').map(c => c.textContent))
       .toEqual(rating.defense.coverageTypes.rows.map(row => `${row.safety}%`));
+  });
+
+  it('Coverage tipi a squadra chiusa: "Chi entra" elenca un riquadro per tipo in difetto, con chi lo resiste', async () => {
+    const user = userEvent.setup();
+    renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[]} roomy />);
+    await user.click(screen.getByRole('tab', { name: /^Coverage tipi/ }));
+    const flagged = analysis.weakness.filter(row => weaknessSeverity(row));
+    const section = within(screen.getByRole('tabpanel')).getByRole('region', { name: /Chi entra/ });
+    const items = within(section).getAllByRole('listitem');
+    expect(items).toHaveLength(flagged.length);
+    flagged.forEach((row, i) => {
+      const safe = row.multipliers.filter(m => m < 1).length;
+      expect(items[i].querySelectorAll('.ct-switch-mon')).toHaveLength(safe);
+    });
   });
 
   it('Coverage meta: una tessera per minaccia, con livello e chi la regge nel nome accessibile', async () => {

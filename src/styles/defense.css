@@ -150,27 +150,75 @@
 
 /* Coverage tipi: membri in riga, 18 tipi in colonna. Riempimenti da color-mix dei token di stato sul pannello, testo --text
    (contrasto ≥ 5.2:1 su swsh e sv: vedi il rapporto del task). Il ×0 usa l'accento della palette (ciano su swsh, arancio su sv) */
+/* Il pannello si riempie in altezza: le righe dei membri si allungano, il riepilogo resta compatto */
+.def-types { display: flex; flex-direction: column; height: 100%; min-height: 0; container-type: inline-size; }
+.ct-wrap { flex: 1 1 auto; min-height: 0; max-height: 620px; }
+.def-types.roomy .ct-wrap { max-height: 560px; }
 .ad-panel .ct-caption { display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin: 0 0 6px; font-size: 13px; color: var(--muted); }
-.ct-table { width: 100%; border-collapse: separate; border-spacing: 2px; font-variant-numeric: tabular-nums; }
-.ct-table thead th { padding: 3px 0 2px; font-size: 11px; font-weight: 500; line-height: 1.1; color: var(--muted); text-align: center; white-space: nowrap; }
-.ct-table thead .type-icons { display: block; margin: 0 auto 2px; }
-.ct-table thead .type-icons img { width: 20px; height: 20px; }
-.ct-table thead th.sev-serious { box-shadow: inset 0 3px 0 var(--bad); }
-.ct-table thead th.sev-minor { box-shadow: inset 0 3px 0 var(--warn); }
-.ct-table tbody th { padding-right: 6px; text-align: left; font-size: 13px; font-weight: 600; white-space: nowrap; color: var(--text); }
-.ct-table td { height: 30px; min-width: 38px; text-align: center; font-size: 12px; font-weight: 600; color: var(--text); background: color-mix(in srgb, var(--raised) 45%, var(--panel)); }
-.ct-table td.m-4 { background: color-mix(in srgb, var(--bad) 45%, var(--panel)); }
-.ct-table td.m-2 { background: color-mix(in srgb, var(--bad) 28%, var(--panel)); }
-.ct-table td.m-half { background: color-mix(in srgb, var(--good) 26%, var(--panel)); }
-.ct-table td.m-quarter { background: color-mix(in srgb, var(--good) 42%, var(--panel)); }
-.ct-table td.m-0 { background: color-mix(in srgb, var(--accent) 30%, var(--panel)); }
-/* Righe riassuntive: senza riempimento, la prima con il filo sopra */
-.ct-table tbody tr.ct-sum td, .ct-table tbody tr.ct-sum th { background: none; font-weight: 600; }
+.ct-count { display: inline-flex; align-items: center; gap: 5px; padding: 2px 9px; border-radius: 999px; font-weight: 600; }
+.ct-count .icon { width: 14px; height: 14px; }
+.ct-count.serious { background: var(--bad-bg); color: var(--bad); }
+.ct-count.minor { background: var(--warn-bg); color: var(--warn); }
+.ct-table { width: 100%; height: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 2px; font-variant-numeric: tabular-nums; }
+.ct-table thead tr, .ct-table tr.ct-sum { height: 1px; }
+.ct-table thead th { padding: 4px 0 5px; font-size: 12px; font-weight: 500; line-height: 1.15; color: var(--muted); text-align: center; white-space: nowrap; vertical-align: bottom; }
+.ct-table thead .type-icons { display: block; margin: 0 auto 3px; }
+.ct-table thead .type-icons img { width: 26px; height: 26px; }
+.ct-name { display: block; overflow: hidden; text-overflow: clip; }
+.ct-table .ct-col-mon { width: 180px; }
+/* Pannello stretto (1280 a squadra chiusa, 1440 aperta): nomi ed etichette più piccoli, così le 18 colonne entrano */
+@container (max-width: 1150px) {
+  .ct-table .ct-col-mon { width: 150px; }
+  .ct-table thead th { font-size: 10.5px; }
+  .ct-table thead .type-icons img { width: 22px; height: 22px; }
+  .ct-sev { padding: 0 3px; font-size: 9px; letter-spacing: 0; }
+  .ct-table tbody th { font-size: 13px; }
+  .ct-table td { font-size: 13px; }
+}
+/* Colonne in difetto: fascia leggera su tutta la colonna, filo ed etichetta in testata */
+.ct-sev { display: inline-block; margin-top: 3px; padding: 0 6px; border-radius: 999px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; line-height: 1.6; }
+.ct-table th.sev-serious { background: var(--bad-bg); box-shadow: inset 0 3px 0 var(--bad); color: var(--text); }
+.ct-table th.sev-minor { background: var(--warn-bg); box-shadow: inset 0 3px 0 var(--warn); color: var(--text); }
+th.sev-serious .ct-sev { background: var(--bad); color: var(--field); }
+th.sev-minor .ct-sev { background: var(--warn); color: var(--field); }
+.ct-table tbody th { padding-right: 8px; text-align: left; font-size: 14px; font-weight: 600; white-space: nowrap; color: var(--text); }
+.ct-table td { height: 30px; text-align: center; font-size: 14px; font-weight: 700; color: var(--text); background: color-mix(in srgb, var(--raised) 40%, var(--panel)); }
+.ct-table td.sev-serious:not([class*="m-"]) { background: color-mix(in srgb, var(--bad-bg) 75%, var(--panel)); }
+.ct-table td.sev-minor:not([class*="m-"]) { background: color-mix(in srgb, var(--warn-bg) 70%, var(--panel)); }
+/* Gerarchia: le debolezze pesano, le resistenze stanno in secondo piano, l immunità nel colore della palette */
+.ct-table td.m-4, .ct-swatch.m-4 { background: color-mix(in srgb, var(--bad) 58%, var(--panel)); box-shadow: inset 0 0 0 2px var(--bad); color: var(--text); }
+.ct-table td.m-2, .ct-swatch.m-2 { background: color-mix(in srgb, var(--bad) 40%, var(--panel)); color: var(--text); }
+.ct-table td.m-half, .ct-swatch.m-half { background: color-mix(in srgb, var(--good) 14%, var(--panel)); color: var(--muted); font-weight: 600; }
+.ct-table td.m-quarter, .ct-swatch.m-quarter { background: color-mix(in srgb, var(--good) 26%, var(--panel)); color: var(--text); font-weight: 600; }
+.ct-table td.m-0, .ct-swatch.m-0 { background: color-mix(in srgb, var(--accent) 24%, var(--panel)); color: var(--text); }
+/* Croce del puntatore: riga e colonna della cella sotto il mouse */
+.ct-table tr.x-row td, .ct-table td.x-col { box-shadow: inset 0 0 0 999px rgb(255 255 255 / 0.07); }
+.ct-table td.m-4.x-col, .ct-table tr.x-row td.m-4 { box-shadow: inset 0 0 0 2px var(--bad), inset 0 0 0 999px rgb(255 255 255 / 0.07); }
+.ct-table tr.x-row th, .ct-table th.x-col { color: var(--accent); }
+/* Riepilogo: Deboli sale dal basso in rosso, Resistono scende dall alto in verde, si toccano sul filo; Sicurezza in pillola */
+.ct-table tbody tr.ct-sum td, .ct-table tbody tr.ct-sum th { height: 28px; background: none; font-size: 13px; font-weight: 600; }
 .ct-table tbody tr.ct-sum-first td, .ct-table tbody tr.ct-sum-first th { border-top: 2px solid var(--line); }
+.ct-table tbody tr.ct-sum td.sev-serious, .ct-table tbody tr.ct-sum td.sev-minor { background: none; }
+.ct-table tbody tr.ct-sum td.ct-weak { background: linear-gradient(to top, color-mix(in srgb, var(--bad) 30%, transparent) calc(var(--f) * 100%), transparent 0); }
+.ct-table tbody tr.ct-sum td.ct-resist { background: linear-gradient(to bottom, color-mix(in srgb, var(--good) 22%, transparent) calc(var(--f) * 100%), transparent 0); color: var(--muted); }
 .ct-table td.bad { color: var(--bad); }
-.ct-table td.warn { color: var(--warn); }
-.ct-table td.good { color: var(--good); }
-.ct-safety td { font: italic 700 13px/1 var(--display); }
+.ct-pill { display: inline-block; min-width: 44px; padding: 2px 6px; border-radius: 999px; font: 700 12px/1.3 var(--ui); }
+.ct-pill.bad { background: var(--bad-bg); color: var(--bad); }
+.ct-pill.warn { background: var(--warn-bg); color: var(--warn); }
+.ct-pill.good { background: var(--good-bg); color: var(--good); }
+/* Legenda e "Chi entra" */
+.ad-panel .ct-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin: 8px 0 0; font-size: 12px; color: var(--muted); }
+.ct-key { display: inline-flex; align-items: center; gap: 6px; }
+.ct-swatch { display: inline-grid; place-items: center; min-width: 30px; height: 20px; padding: 0 4px; border-radius: 2px; font-size: 12px; font-weight: 700; }
+.ct-switch { margin-top: 14px; }
+.ct-switch h5 { margin: 0 0 6px; font-size: 11px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: 0.05em; }
+.ct-switch ul { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; }
+.ct-switch li { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 8px 12px; border-radius: 4px; background: var(--raised); box-shadow: inset 0 3px 0 var(--bad); }
+.ct-switch li.sev-minor { box-shadow: inset 0 3px 0 var(--warn); }
+.ct-switch-type { display: inline-flex; align-items: center; gap: 6px; min-width: 96px; font-weight: 600; color: var(--text); }
+.ct-switch-type .type-icons img { width: 22px; height: 22px; }
+.ct-switch-mon { display: inline-flex; align-items: center; gap: 2px; }
+.ct-switch-none { color: var(--bad); font-weight: 600; }
 
 /* Coverage meta: una tessera per minaccia */
 .cm-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 4px; }
