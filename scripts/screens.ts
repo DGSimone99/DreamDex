@@ -452,7 +452,7 @@ for (const [w, h] of sizes) {
       const usage = [...box.querySelectorAll<HTMLElement>('.coach-usage')];
       const usageCut = usage.filter(u => u.scrollWidth - u.clientWidth > 0 || u.getBoundingClientRect().right - u.parentElement!.getBoundingClientRect().right > 1).length;
       const row = box.querySelector('.coach-steps')?.getBoundingClientRect().height ?? 0;
-      const need = Math.max(0, ...steps.map(s => [...s.querySelectorAll('.coach-step-body > *')].reduce((b, c) => Math.max(b, c.getBoundingClientRect().bottom), 0) - s.getBoundingClientRect().top));
+      const need = Math.max(0, ...steps.map(s => [...s.querySelectorAll('.coach-step-problem, .coach-prop.is-main > .coach-fix > *, .coach-strip-extras > *')].reduce((b, c) => Math.max(b, c.getBoundingClientRect().bottom), 0) - s.getBoundingClientRect().top));
       return `coach: stepsRow=${Math.round(row)} contentMax=${Math.round(need)} stepOverflow=${tall} clippedLines=${wide} usage=${usage.length} usageCut=${usageCut} hScroll=${box.scrollWidth - box.clientWidth} coachScroll=${box.scrollHeight - box.clientHeight} coachH=${box.clientHeight} docHScroll=${document.scrollingElement!.scrollWidth - window.innerWidth}`;
     });
     // Lista candidati: scorrimento interno, caselle tagliate dal fondo, misure delle Carte

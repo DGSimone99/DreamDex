@@ -567,6 +567,7 @@ export const en = {
   'coach.fixAddAria': "Add {species}, {gain}",
   'coach.steps.title': "Suggestions",
   'coach.steps.weakTo': "Weak to",
+  'coach.steps.missing': "Missing",
   'coach.steps.noCheck': "No check for",
   'coach.steps.swap': "Instead of {member}",
   'coach.steps.add': "Add",

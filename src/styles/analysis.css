@@ -505,9 +505,9 @@ button.sum-row:hover { background: var(--accent-wash); }
 .coach-strip-arrow .icon { width: 18px; height: 18px; }
 .coach-strip-add { flex: none; font: 700 12px/1 var(--ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
 .coach-strip-in { position: relative; flex: none; display: flex; align-items: center; justify-content: center; width: 58px; height: 58px; }
-.coach-strip-in .sprite { width: 64px; height: 64px; image-rendering: pixelated; }
+.coach-strip-in .sprite { width: 60px; height: 60px; image-rendering: pixelated; }
 .coach-strip-in .sprite.covered { visibility: hidden; }
-.coach-strip-in .sprite-ani { position: absolute; left: 50%; bottom: 0; width: auto; max-width: none; height: calc(var(--ani-h, 96) / 96 * 64px); image-rendering: pixelated; transform: translateX(-50%); pointer-events: none; }
+.coach-strip-in .sprite-ani { position: absolute; left: 50%; bottom: 0; width: auto; max-width: none; height: calc(var(--ani-h, 96) / 96 * 60px); image-rendering: pixelated; transform: translateX(-50%); pointer-events: none; }
 .coach-fix-text { flex: 1; display: grid; min-width: 0; }
 .coach-fix-lead { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; line-height: 1.3; color: var(--muted); }
 .coach-fix-lead b { font-weight: 600; color: var(--text); }
@@ -523,11 +523,10 @@ button.sum-row:hover { background: var(--accent-wash); }
 .coach-alt:hover { color: var(--accent-ink); background: var(--raised); border-color: var(--line); }
 .coach-alt .icon { width: 15px; height: 15px; }
 .coach-prop.is-main > .coach-alt { align-self: flex-start; margin-top: 6px; }
-.coach-strip-extras { position: relative; z-index: 1; align-self: stretch; display: flex; flex-direction: column; justify-content: center; gap: 4px; min-width: 0; padding: 0 10px 0 14px;
-  border-left: 1px solid var(--line-soft); pointer-events: none; }
-.coach-strip-extras button, .coach-strip-extras [title] { pointer-events: auto; }
+.coach-strip-extras { position: relative; z-index: 1; align-self: stretch; display: flex; flex-direction: column; justify-content: center; gap: 2px; min-width: 0; padding: 0 10px 0 14px;
+  border-left: 1px solid var(--line-soft); cursor: pointer; }
 /* La mossa "oppure": una riga tratteggiata sopra, "oppure" in testa */
-.coach-prop.is-or { gap: 6px; padding-top: 4px; border-top: 1px dashed var(--line); }
+.coach-prop.is-or { gap: 6px; padding-top: 2px; border-top: 1px dashed var(--line); }
 .coach-prop.is-or[data-or]::before { content: attr(data-or); flex: none; font: 600 10.5px/1 var(--ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--faint); }
 .coach-prop.is-or .coach-fix-main strong { font-size: 15px; }
 .coach-prop.is-or .coach-fix:hover .coach-fix-main strong { text-decoration: underline; text-underline-offset: 3px; }

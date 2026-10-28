@@ -162,7 +162,10 @@ describe('CoachingView', () => {
     expect(items).toHaveLength(shown.length);
     items.forEach((item, i) => {
       expect(item.querySelector('.coach-step-num')).toHaveTextContent(String(i + 1));
-      expect(item.querySelector('.coach-step-problem')).toHaveTextContent(shown[i].problem.text.replace(/\s+/g, ' ').slice(0, 10));
+      // I ruoli mancanti dicono "Manca …" al posto della frase del problema
+      const { problem } = shown[i];
+      const missing = (problem.key === 'roles:important' || problem.key === 'roles:essential') && (problem.subjects?.length ?? 0) > 0;
+      expect(item.querySelector('.coach-step-problem')).toHaveTextContent(missing ? 'Manca' : problem.text.replace(/\s+/g, ' ').slice(0, 10));
     });
   });
 
@@ -331,6 +334,36 @@ describe('CoachingView', () => {
       expect(li.querySelectorAll('.coach-prop.is-main')).toHaveLength(1);
       await userEvent.setup().click(within(li.querySelector<HTMLElement>('.coach-prop.is-main')!).getByRole('button', { name: /^Al posto di Great Tusk: Rotom-Wash/ }));
       expect(handlers.onApplyFix).toHaveBeenLastCalledWith(step.swap);
+    });
+
+    it('il pulsante principale dice nel title chi esce (lo sprite spento è sotto il pulsante)', () => {
+      const { li } = strip({});
+      const main = within(li.querySelector<HTMLElement>('.coach-prop.is-main')!).getByRole('button', { name: /^Al posto di Great Tusk/ });
+      expect(main.getAttribute('title')).toContain('Great Tusk');
+      expect(main.getAttribute('title')).toContain('Rotom-Wash');
+    });
+
+    it('clic nella colonna "risolve anche" applica la proposta principale; il pulsante "oppure" solo la mossa', async () => {
+      const { step, handlers, li } = strip({ move: true });
+      const user = userEvent.setup();
+      await user.click(li.querySelector<HTMLElement>('.coach-strip-extras')!);
+      expect(handlers.onApplyFix).toHaveBeenLastCalledWith(step.swap);
+      expect(handlers.onApplyMove).not.toHaveBeenCalled();
+      await user.click(within(li.querySelector<HTMLElement>('.coach-strip-extras')!).getByRole('button', { name: /^Dai Thunderbolt/ }));
+      expect(handlers.onApplyMove).toHaveBeenLastCalledWith(step.move);
+      expect(handlers.onApplyFix).toHaveBeenCalledTimes(1);
+    });
+
+    it('tappa sui ruoli mancanti: "Manca" coi ruoli, senza "Ruoli importanti mancanti"', () => {
+      const problem: CoachProblem = { severity: 'minor', category: 'roles', text: 'Ruoli importanti mancanti: Pivot, Rimozione Strumenti', fixes: [],
+        key: 'roles:important', subjects: ['pivot', 'itemRemoval'] };
+      const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], threatFixes: {}, problems: [problem] };
+      const swap = { ...adviceOf(three, DEFAULT_FORMAT, data).fixes[0], solves: [problem.key] };
+      renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [{ problem, swap, move: null, alsoSolves: [], group: [problem.key] }] }} members={3}
+        rating={rating(three)} metaOn {...noop} />);
+      const title = stepsRegion().querySelector('.coach-step-problem')!;
+      expect(title).toHaveTextContent(`Manca ${needLabel('pivot' as Need, 'it')}, ${needLabel('itemRemoval' as Need, 'it')}`);
+      expect(title).not.toHaveTextContent('Ruoli importanti mancanti');
     });
 
     it('tappa con sola mossa: la mossa è la proposta principale', async () => {
