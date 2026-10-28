@@ -57,11 +57,11 @@
 
 /* Cornice comune delle schede con i membri: la lista in alto (testata e righe di altezza fissa, così cambiando scheda i
    Pokémon restano nello stesso punto), le tessere di riepilogo in fondo. L altezza delle righe segue quella del pannello (cqh), uguale in ogni scheda:
-   --def-tail è lo spazio tenuto sotto le righe (riepiloghi e legenda), lo stesso per tutte le schede */
-.def-frame { --def-top: 104px; --def-gap: 10px; --def-head: 34px; --def-sp: 3px; --def-tail: 46px; --def-mon: 230px; --def-row-min: 26px; --def-row-max: 999px;
+   --def-tail è il margine tenuto sotto la fascia in fondo, lo stesso per tutte le schede */
+.def-frame { --def-top: 104px; --def-gap: 10px; --def-head: 34px; --def-sp: 3px; --def-tail: 4px; --def-mon: 270px; --def-row-min: 26px; --def-row-max: 999px;
   --def-row: clamp(var(--def-row-min), calc((100cqh - var(--def-top) - var(--def-gap) - var(--def-head) - var(--def-tail)) / 6 - var(--def-sp)), var(--def-row-max));
   display: flex; flex-direction: column; height: 100%; min-height: 0; container-type: size; }
-.def-frame.roomy { --def-tail: 92px; --def-mon: 240px; --def-row-min: 34px; --def-row-max: 999px; }
+.def-frame.roomy { --def-tail: 4px; --def-mon: 270px; --def-row-min: 34px; --def-row-max: 999px; }
 .def-frame > .ad-scroll { flex: none; margin-bottom: var(--def-gap); overflow: visible; }
 /* La lista parte subito sotto la riga dei problemi: meno margine in alto nel pannello */
 .area-panel:has(> .def-frame) { padding-top: 6px; }
@@ -77,16 +77,16 @@
 .def-grid tbody tr { height: var(--def-row); }
 .def-grid tbody th[scope='row'] { padding: 0 8px 0 0; font-size: 14px; font-weight: 600; color: var(--text); text-align: left; white-space: nowrap; }
 /* Il membro come icona del box (MemberMon): nitida da piccola, ingrandita a gradini con l altezza delle righe.
-   I gradini sono soglie sull altezza della cornice: righe ≥ 40px → ×1,4, ≥ 58px → ×1,7, ≥ 66px → ×2 */
+   Le soglie sono sull altezza della cornice, la stessa a squadra aperta e chiusa (sotto le righe resta solo --def-tail):
+   righe ≥ 40px → ×1,4 · ≥ 58 → ×1,7 · ≥ 66 → ×2 · ≥ 90 → ×2,5 · ≥ 110 → ×3 */
 .def-box { --bs: 1; display: inline-grid; place-items: center; flex: none; width: calc(40px * var(--bs)); height: calc(30px * var(--bs)); }
 .def-box .mon-icon { transform: scale(var(--bs)); image-rendering: pixelated; }
 .def-frame .def-box { --bs: 0.8; }
-@container (min-height: 452px) { .def-frame:not(.roomy) .def-box { --bs: 1.4; } }
-@container (min-height: 548px) { .def-frame:not(.roomy) .def-box { --bs: 1.7; } }
-@container (min-height: 596px) { .def-frame:not(.roomy) .def-box { --bs: 2; } }
-@container (min-height: 536px) { .def-frame.roomy .def-box { --bs: 1.4; } }
-@container (min-height: 632px) { .def-frame.roomy .def-box { --bs: 1.7; } }
-@container (min-height: 680px) { .def-frame.roomy .def-box { --bs: 2; } }
+@container (min-height: 410px) { .def-frame .def-box { --bs: 1.4; } }
+@container (min-height: 518px) { .def-frame .def-box { --bs: 1.7; } }
+@container (min-height: 566px) { .def-frame .def-box { --bs: 2; } }
+@container (min-height: 710px) { .def-frame .def-box { --bs: 2.5; } }
+@container (min-height: 830px) { .def-frame .def-box { --bs: 3; } }
 
 /* Tabella dei membri con le barre */
 .def-members { table-layout: fixed; font-size: 14px; font-variant-numeric: tabular-nums; }
@@ -190,7 +190,7 @@
 .def-frame .ct-cell.m-quarter { background: color-mix(in srgb, var(--good) 24%, var(--panel)); border-color: color-mix(in srgb, var(--good) 60%, transparent); }
 .def-frame .ct-cell.m-0 { background: color-mix(in srgb, var(--accent) 22%, var(--panel)); border-color: color-mix(in srgb, var(--accent) 60%, transparent); }
 /* Il moltiplicatore cresce con la riga: leggibile anche nelle caselle alte della squadra chiusa */
-.def-frame .ct-table td.ct-cell { font-size: clamp(13px, calc(var(--def-row) * 0.26), 20px); }
+.def-frame .ct-table td.ct-cell { font-size: clamp(13px, calc(var(--def-row) * 0.24), 24px); }
 /* Croce del puntatore: bordi più chiari su riga e colonna, nome e icona in evidenza */
 .ct-table tr.x-row .ct-cell, .ct-table .ct-cell.x-col { border-color: var(--faint); }
 .ct-table tr.x-row th[scope='row'] { color: var(--accent); }
@@ -208,6 +208,7 @@
 .ct-pill.good { background: var(--good-bg); color: var(--good); }
 @container (max-width: 1100px) {
   .ct-table thead .type-icons img { width: 20px; height: 20px; }
+  .ct-table .ct-pill { min-width: 0; padding: 1px 4px; font-size: 11px; }
   .ct-cell { font-size: 12px; }
 }
 
