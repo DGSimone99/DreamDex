@@ -20,7 +20,7 @@ export function defenseTabs(defense: TeamDefense, meta: boolean, t: T, ctx: Area
   const general = <DefenseGeneral defense={defense} meta={meta} ctx={ctx} />;
 
   const robustness = <DefenseRobustness defense={defense} ctx={ctx} />;
-  const sustain = <DefenseSustain defense={defense} />;
+  const sustain = <DefenseSustain defense={defense} ctx={ctx} />;
 
   const coverageTypes = <DefenseTypes defense={defense} ctx={ctx} />;
   const metaTab = coverageMeta && <DefenseMeta defense={defense} />;
