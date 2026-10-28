@@ -1,4 +1,4 @@
-import { Fragment, useId, useState, type ReactNode } from 'react';
+import { Fragment, useId, useState, type CSSProperties, type ReactNode } from 'react';
 import { PROBLEM_CATEGORIES, type CoachAdvice, type Coaching, type CoachProblem, type ProblemCategory } from '../engine/coach';
 import type { CoachFix } from '../engine/coachFixes';
 import { needLabel, type Need } from '../engine/needs';
@@ -257,10 +257,12 @@ function Step({ step, index, problems, actions, onCard, onPreview }: {
 }
 
 /**
- * Un problema nella mappa: gravità, icona del tipo o della minaccia, testo; se una tappa lo copre, il numero della
- * tappa in fondo. `preview`: la proposta sotto il puntatore (o col fuoco) lo risolve, quindi si vede barrato ed evidenziato.
+ * Un problema nella tessera della sua area, come pillola: bordo del colore della gravità (la gravità detta solo ai
+ * lettori di schermo), icona del tipo o della minaccia, testo; le debolezze in breve ("Terra 3↓ 1↑"). Il testo intero
+ * nel title. Se una tappa lo copre, il numero della tappa in fondo. `preview`: la proposta sotto il puntatore (o col
+ * fuoco) lo risolve, quindi si vede barrato in verde. `dim`: ridondanze e minacce, più quiete dei problemi veri.
  */
-function MapProblem({ problem, step, preview, usage }: { problem: CoachProblem; step: number | null; preview: boolean; usage?: number }) {
+function MapProblem({ problem, step, preview, usage, dim = false }: { problem: CoachProblem; step: number | null; preview: boolean; usage?: number; dim?: boolean }) {
   const tr = useT();
   const lang = useLang();
   const subjects = problem.subjects ?? [];
@@ -268,13 +270,22 @@ function MapProblem({ problem, step, preview, usage }: { problem: CoachProblem; 
   const covered = step !== null ? tr('coach.map.coveredBy', { n: step }) : '';
   // Difesa e coverage: le icone dei tipi davanti, il testo senza colori (il tipo non si legge due volte)
   const typed = (problem.category === 'defense' || problem.category === 'coverage') && subjects.length > 0;
+  const counts = problem.category === 'defense' && subjects.length === 1 ? problem.counts : undefined;
+  const title = covered ? `${problem.text} · ${covered}` : problem.text;
   return (
-    <li data-key={problem.key} className={`coach-prob ${problem.severity}${step !== null ? ' is-covered' : ''}${preview ? ' is-solved-preview' : ''}`} title={covered || undefined}>
-      <span className="coach-sev">{tr(problem.severity === 'serious' ? 'dash.serious' : 'dash.minor')}</span>
+    <li data-key={problem.key} title={title}
+      className={`coach-prob ${problem.severity}${dim ? ' is-dim' : ''}${step !== null ? ' is-covered' : ''}${preview ? ' is-solved-preview' : ''}`}>
+      <span className="coach-sev visually-hidden">{tr(problem.severity === 'serious' ? 'dash.serious' : 'dash.minor')}</span>
       {threat ? (
-        <span className="coach-prob-text is-threat" title={problem.text}>
-          <PokemonIcon name={threat} /><strong aria-hidden="true">{threat}</strong><span className="visually-hidden">{problem.text}</span>
+        <span className="coach-prob-text is-threat">
+          <PokemonIcon name={threat} /><span className="visually-hidden">{problem.text}</span>
           {usage !== undefined && <span className="coach-usage">{formatPercent(lang, usage, 0)}</span>}
+        </span>
+      ) : counts ? (
+        <span className="coach-prob-text">
+          <TypeIcons types={subjects} /><span aria-hidden="true">{typeName(subjects[0], lang)}{' '}
+            <span className="coach-counts"><span className="count-weak">{counts.weak}↓</span> <span className="count-resist">{counts.resist}↑</span></span>
+          </span><span className="visually-hidden">{problem.text}</span>
         </span>
       ) : (
         <span className="coach-prob-text">
@@ -292,7 +303,7 @@ const COLUMNS: { key: MapColumn; area: 'defense' | 'strength' | 'roles' | null }
 ];
 
 /**
- * La scheda Coaching: in alto fino a 3 tappe (cosa farei per prima), sotto la mappa dei problemi per area.
+ * La scheda Coaching: in alto i problemi per area (quattro tessere), sotto fino a 3 tappe (cosa farei per prima).
  * `advice` null: i consigli si stanno calcolando (lo scheletro delle tappe; la mappa si vede già).
  */
 export function CoachingView({ coaching, advice, members, rating, metaOn, threatUsage, onFix, onMoveFix, onApplyFix, onApplyMove }: {
@@ -327,6 +338,48 @@ export function CoachingView({ coaching, advice, members, rating, metaOn, threat
     <div className="coaching">
       {problems.length === 0 && <p className="coach-empty"><Icon name="check" />{tr('coach.noProblems')}</p>}
       {problems.length > 0 && (
+        <section aria-labelledby={`${id}-map`} className="coach-map-region">
+          <h3 id={`${id}-map`} className="coach-sec muted">{tr('coach.map.title')}</h3>
+          <div className="coach-map">
+            {COLUMNS.map(({ key, area }) => {
+              const items = ordered.filter(p => columnOf(p.category) === key);
+              // Ridondanze e minacce (sempre minori) sotto un'etichetta, più quiete: l'ordine "gravi prima" resta
+              const main = items.filter(p => p.category !== 'redundancy' && p.category !== 'meta');
+              const redundancy = items.filter(p => p.category === 'redundancy');
+              const threats = items.filter(p => p.category === 'meta');
+              const score = area ? rating?.areas.find(a => a.key === area)?.value ?? null : null;
+              const clean = items.length === 0;
+              const row = (p: CoachProblem, dim = false) => <MapProblem key={`${p.key}|${p.text}`} problem={p} step={stepOf.get(p.key) ?? null} preview={preview?.has(p.key) ?? false}
+                usage={p.category === 'meta' ? threatUsage?.[p.subjects?.[0] ?? ''] : undefined} dim={dim} />;
+              return (
+                <div key={key} role="group" aria-labelledby={`${id}-${key}`} className={`coach-tile${clean ? ' is-clean' : ''}`}
+                  style={score !== null ? { '--score': `${Math.max(0, Math.min(100, score))}%` } as CSSProperties : undefined}>
+                  <header className="coach-tile-head">
+                    <h4 id={`${id}-${key}`} className="dash-plate">{columnName[key]}</h4>
+                    {score !== null && <span className="dash-meta"><b>{Math.round(score)}</b></span>}
+                  </header>
+                  {score !== null && <span className="coach-tile-bar" aria-hidden="true" />}
+                  {clean && <p className="coach-tile-ok"><Icon name="check" />{tr('coach.map.none')}</p>}
+                  {main.length > 0 && <ul className="coach-probs">{main.map(p => row(p))}</ul>}
+                  {redundancy.length > 0 && (
+                    <>
+                      <h5 className="coach-sep">{tr('coach.map.redundancy')}</h5>
+                      <ul className="coach-probs">{redundancy.map(p => row(p, true))}</ul>
+                    </>
+                  )}
+                  {threats.length > 0 && (
+                    <>
+                      <h5 className="coach-sep">{tr('dash.todo.threats')}</h5>
+                      <ul className="coach-probs">{threats.map(p => row(p, true))}</ul>
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+      {problems.length > 0 && (
         <section aria-labelledby={`${id}-steps`} className="coach-steps-region">
           <h3 id={`${id}-steps`} className="coach-sec">{tr('coach.steps.title')}</h3>
           {advice && steps.length === 0 ? (
@@ -344,44 +397,6 @@ export function CoachingView({ coaching, advice, members, rating, metaOn, threat
               <p className="visually-hidden" role="status">{tr('coach.computing')}</p>
             </>
           )}
-        </section>
-      )}
-      {problems.length > 0 && (
-        <section aria-labelledby={`${id}-map`} className="coach-map-region">
-          <h3 id={`${id}-map`} className="coach-sec muted">{tr('coach.map.title')}</h3>
-          <div className="coach-map">
-            {COLUMNS.map(({ key, area }) => {
-              const items = ordered.filter(p => columnOf(p.category) === key);
-              // Ridondanze e minacce (sempre minori) sotto un separatore: l'ordine "gravi prima" resta
-              const main = items.filter(p => p.category !== 'redundancy' && p.category !== 'meta');
-              const redundancy = items.filter(p => p.category === 'redundancy');
-              const threats = items.filter(p => p.category === 'meta');
-              const score = area ? rating?.areas.find(a => a.key === area)?.value ?? null : null;
-              const row = (p: CoachProblem) => <MapProblem key={`${p.key}|${p.text}`} problem={p} step={stepOf.get(p.key) ?? null} preview={preview?.has(p.key) ?? false} usage={p.category === 'meta' ? threatUsage?.[p.subjects?.[0] ?? ''] : undefined} />;
-              return (
-                <div key={key} role="group" aria-labelledby={`${id}-${key}`} className="dash-card coach-col">
-                  <header className="dash-head">
-                    <h4 id={`${id}-${key}`} className="dash-plate">{columnName[key]}</h4>
-                    {score !== null && <span className="dash-meta"><b>{Math.round(score)}</b></span>}
-                  </header>
-                  {items.length === 0 && <p className="dash-note good"><Icon name="check" />{tr('coach.map.none')}</p>}
-                  {main.length > 0 && <ul className="coach-probs">{main.map(row)}</ul>}
-                  {redundancy.length > 0 && (
-                    <>
-                      <h5 className="coach-sep">{tr('coach.map.redundancy')}</h5>
-                      <ul className="coach-probs">{redundancy.map(row)}</ul>
-                    </>
-                  )}
-                  {threats.length > 0 && (
-                    <>
-                      <h5 className="coach-sep">{tr('dash.todo.threats')}</h5>
-                      <ul className="coach-probs">{threats.map(row)}</ul>
-                    </>
-                  )}
-                </div>
-              );
-            })}
-          </div>
         </section>
       )}
       {/* Candidati: chi è nella lista Ban dell'utente non viene proposto, ma si dice quanti sono */}

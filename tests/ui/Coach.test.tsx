@@ -310,6 +310,32 @@ describe('CoachingView', () => {
     expect(also).not.toHaveTextContent('Check per Ogerpon-Wellspring');
   });
 
+  it('le tessere dei problemi vengono prima dei suggerimenti', () => {
+    view(six);
+    const map = screen.getByRole('region', { name: 'Problemi per area' });
+    expect(map.compareDocumentPosition(stepsRegion()) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('pillola di difesa: icona, tipo e conteggi brevi, testo intero nel title', () => {
+    const text = 'Debole a Ground: 3 Deboli – 1 Resiste';
+    const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], threatFixes: {},
+      problems: [{ severity: 'serious', category: 'defense', text, fixes: [], key: 'defense:Ground', subjects: ['Ground'], counts: { weak: 3, resist: 1 } }] };
+    renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [] }} members={3} rating={rating(three)} metaOn {...noop} />);
+    const pill = screen.getByRole('group', { name: 'Difesa' }).querySelector<HTMLElement>('li[data-key="defense:Ground"]')!;
+    expect(pill.querySelectorAll('.type-icons img')).toHaveLength(1);
+    expect(pill).toHaveTextContent('3↓');
+    expect(pill).toHaveTextContent('1↑');
+    expect(pill).toHaveAttribute('title', text);
+  });
+
+  it('pillola lunga: title col testo intero', () => {
+    const text = 'Great Tusk non è legale in National Dex OU perché la sua abilità è vietata dal formato scelto';
+    const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], threatFixes: {},
+      problems: [{ severity: 'serious', category: 'rules', text, fixes: [], key: 'rules:x' }] };
+    renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [] }} members={3} rating={rating(three)} metaOn {...noop} />);
+    expect(screen.getByRole('group', { name: 'Regole · Meta' }).querySelector('li.coach-prob[data-key="rules:x"]')).toHaveAttribute('title', text);
+  });
+
   it('mappa: le righe di coverage hanno le icone dei tipi, i nomi senza colore', () => {
     const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], threatFixes: {},
       problems: [{ severity: 'minor', category: 'coverage', text: 'Nessuna mossa super efficace contro Water e Fire', fixes: [], key: 'coverage', subjects: ['Water', 'Fire'] }] };
@@ -373,7 +399,9 @@ describe('CoachingView', () => {
       problems: [{ severity: 'minor', category: 'roles', text: 'Ruoli importanti mancanti: Pivot', fixes: [], key: 'roles:important' }] };
     renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [] }} members={3} rating={rating(three)} metaOn {...noop} />);
     expect(within(screen.getByRole('group', { name: 'Difesa' })).getByText('Nessun problema')).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'Difesa' })).toHaveClass('is-clean');
     expect(within(screen.getByRole('group', { name: 'Ruoli' })).queryByText('Nessun problema')).toBeNull();
+    expect(screen.getByRole('group', { name: 'Ruoli' })).not.toHaveClass('is-clean');
   });
 
   it('ridondanze: sotto un separatore nella colonna Ruoli', () => {

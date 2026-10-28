@@ -44,6 +44,8 @@ export interface CoachProblem {
    * il membro (nome in battaglia) per i problemi di regole di un membro, le voci per roles:essential / roles:important.
    */
   subjects?: string[];
+  /** Solo per le debolezze (defense): quanti membri sono deboli e quanti resistono, per le pillole corte "Terra 3↓ 1↑". */
+  counts?: { weak: number; resist: number };
 }
 
 /** I consigli del Coaching: a parte perché lenti, si calcolano solo con la scheda Coaching aperta. */
@@ -102,8 +104,8 @@ export function findProblems(team: TeamSet[], format: Format, analysis: TeamAnal
   const serious: CoachProblem[] = [];
   const minor: CoachProblem[] = [];
   // Chiave predefinita dal testo, senza numeri: un cambio che sposta solo un conteggio non "risolve" il problema
-  const add = (category: ProblemCategory, isSerious: boolean, text: string, fixes: string[], key = `${category}:${text.replace(/\d+/g, '#')}`, size?: number, subjects?: string[]) =>
-    (isSerious ? serious : minor).push({ severity: isSerious ? 'serious' : 'minor', category, text, fixes, key, ...(size === undefined ? {} : { size }), ...(subjects ? { subjects } : {}) });
+  const add = (category: ProblemCategory, isSerious: boolean, text: string, fixes: string[], key = `${category}:${text.replace(/\d+/g, '#')}`, size?: number, subjects?: string[], counts?: CoachProblem['counts']) =>
+    (isSerious ? serious : minor).push({ severity: isSerious ? 'serious' : 'minor', category, text, fixes, key, ...(size === undefined ? {} : { size }), ...(subjects ? { subjects } : {}), ...(counts ? { counts } : {}) });
 
   for (const row of analysis.weakness) {
     const severity = weaknessSeverity(row);
@@ -115,7 +117,7 @@ export function findProblems(team: TeamSet[], format: Format, analysis: TeamAnal
       resistWord: t(lang, row.resist === 1 ? 'coach.word.resistOne' : 'coach.word.resistMany'),
     });
     const fixes = fixesFor(candidates, s => Number(defensiveMultiplier(row.type, s.set) < 1));
-    add('defense', isSerious, text, fixes, `defense:${row.type}`, row.pressure, [row.type]);
+    add('defense', isSerious, text, fixes, `defense:${row.type}`, row.pressure, [row.type], { weak: row.weak, resist: row.resist });
   }
 
   for (const set of team) {
