@@ -472,48 +472,6 @@ describe('riga della lista', () => {
     expect(rowNames()).toContain(eleventh);
   });
 
-  it('il numero per pagina cambia dopo il focus: il candidato resta scelto e la sua pagina resta quella aperta', async () => {
-    const { SuggestionsPanel } = await import('../../src/ui/SuggestionsPanel');
-    const { renderIt } = await import('../helpers/italian');
-    const { fixtureStats, tusk } = await import('../fixtures/data');
-    const base = fixtureStats.pokemon['Corviknight'];
-    const extra = ['Skarmory', 'Heatran', 'Clefable', 'Garchomp', 'Ferrothorn', 'Tyranitar', 'Slowbro', 'Zapdos', 'Hippowdon', 'Blissey', 'Excadrill', 'Weavile'];
-    const pokemon = { ...fixtureStats.pokemon, ...Object.fromEntries(extra.map((n, i) => [n, { ...base, usage: 0.05 - i * 0.002, moves: {}, abilities: {}, items: {}, teammates: {}, checks: {} }])) };
-    const data = { stats: { ...fixtureStats, pokemon }, sets: {} };
-    // ResizeObserver finto e misure della lista decise dal test (0×0: scheda nascosta, si resta a 10 per pagina)
-    const callbacks: (() => void)[] = [];
-    vi.stubGlobal('ResizeObserver', class {
-      constructor(cb: () => void) { callbacks.push(cb); }
-      observe() {}
-      disconnect() {}
-    });
-    const size = { width: 0, height: 0 };
-    const measured = (key: 'width' | 'height') => function (this: HTMLElement) { return this.classList.contains('suggestions') ? size[key] : 0; };
-    const width = vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockImplementation(measured('width'));
-    const height = vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockImplementation(measured('height'));
-    try {
-      // Menu: le Carte sono sempre 6 per pagina, il numero cambia solo qui
-      const props = { team: [tusk], format: DEFAULT_FORMAT, data, replaceIndex: null, onAdd: () => {}, onReplaceWith: () => {}, onCancelReplace: () => {}, listStyle: 'menu' as const };
-      const { rerender } = renderIt(<SuggestionsPanel {...props} />);
-      await screen.findByRole('navigation', { name: 'Pagine dei suggerimenti' });
-      const eighth = rowNames()[7];
-      rerender(<SuggestionsPanel {...props} focus={{ species: eighth, mode: 'add', nonce: 1 }} />);
-      expect(await screen.findByRole('complementary', { name: `Dettaglio di ${eighth}` }, { timeout: 3000 })).toBeInTheDocument();
-      // Prima misura vera: righe minime da 42 + 6 → 6 per pagina, l'ottavo passa a pagina 2
-      size.width = 300;
-      size.height = 320;
-      act(() => { for (const cb of [...callbacks]) cb(); });
-      expect(list().children).toHaveLength(6);
-      expect(screen.getByRole('complementary', { name: `Dettaglio di ${eighth}` })).toBeInTheDocument();
-      expect(within(screen.getByRole('navigation', { name: 'Pagine dei suggerimenti' })).getByRole('button', { name: 'Pagina 2' })).toHaveAttribute('aria-current', 'page');
-      expect(rowNames()).toContain(eighth);
-    } finally {
-      width.mockRestore();
-      height.mockRestore();
-      vi.unstubAllGlobals();
-    }
-  });
-
   it('Aggiungi: niente "chi esce"', async () => {
     await setup('Great Tusk');
     expect(list().querySelector('.out')).toBeNull();
@@ -630,32 +588,15 @@ describe('stile Menu', () => {
     expect(rows[0].querySelector('button.pick')).toHaveAttribute('aria-pressed', 'false');
   });
 
-  it('Menu: le varianti scure dei tipi si leggono sulla pillola chiara (contrasto ≥ 4.5)', async () => {
+  it('Menu: pillole scure coi colori del tema (fondo, testo e segni)', () => {
     // jsdom non carica i fogli di stile: si legge tokens.css come testo
     const css = readFileSync(resolve(__dirname, '../../src/styles/tokens.css'), 'utf8');
-    const token = (name: string) => css.match(new RegExp(`${name}:\\s*(#[0-9a-fA-F]{6})`))?.[1];
-    const luminance = (hex: string) => {
-      const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255)
-        .map(c => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
-      return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-    };
-    const contrast = (a: string, b: string) => {
-      const [x, y] = [luminance(a), luminance(b)].sort((p, q) => q - p);
-      return (x + 0.05) / (y + 0.05);
-    };
-    const bg = token('--pill-bg');
-    expect(bg).toBe('#e7eaf3');
-    // Tutti i tipi, i chiari compresi (Elettro, Ghiaccio, Normale)
-    const { TYPES } = await import('../../src/engine/types');
-    expect(TYPES).toHaveLength(18);
-    for (const type of TYPES) {
-      const ink = token(`--type-${type.toLowerCase()}-ink`);
-      expect(ink, type).toBeDefined();
-      expect(contrast(ink!, bg!), type).toBeGreaterThanOrEqual(4.5);
-    }
-    // Testo e segni della pillola: testo ≥ 4.5 (anche il "+" verde), icone dei segni ≥ 3
-    for (const name of ['--pill-ink', '--pill-muted', '--pill-gain', '--pill-bad']) expect(contrast(token(name)!, bg!), name).toBeGreaterThanOrEqual(4.5);
-    for (const name of ['--pill-warn', '--pill-info']) expect(contrast(token(name)!, bg!), name).toBeGreaterThanOrEqual(3);
+    const token = (name: string) => css.match(new RegExp(`${name}:\s*([^;]+);`))?.[1].trim();
+    expect(token('--pill-bg')).toBe('var(--raised)');
+    expect(token('--pill-ink')).toBe('var(--text)');
+    expect(token('--pill-muted')).toBe('var(--muted)');
+    expect(token('--pill-gain')).toBe('var(--good)');
+    expect(token('--pill-bad')).toBe('var(--bad)');
   });
 });
 

@@ -397,7 +397,11 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
   .list-head .box-head { position: static; margin: 0; }
   /* Carte: lo sprite che esce dalla carta sotto il mouse passa sopra la fascia "Candidati" (la lista non lo ritaglia e,
      solo mentre c'è una carta sotto il mouse, sta sopra la fascia; a riposo il menu della vista resta sopra la lista) */
-  .picker-list > .suggestions.cards { overflow: visible; position: relative; }
+  .picker-list > .suggestions.cards, .picker-list > .suggestions.menu { overflow: visible; position: relative; }
+  /* Lo sprite ingrandito può uscire dalla lista e dal pannello e passare sopra la barra laterale invece di essere
+     tagliato: la lista non ritaglia e la scheda ritaglia solo oltre 48px dal bordo (senza diventare scorrevole) */
+  .picker-list { overflow: visible; }
+  #panel-pokemon.active { overflow: clip; overflow-clip-margin: 48px; }
   .picker-list > .suggestions.cards:has(> .card:hover) { z-index: 3; }
 }
 .list-head .box-head { display: inline-block; flex: none; white-space: nowrap; }
@@ -539,9 +543,9 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .card .reason { display: block; min-width: 0; font: 500 12px/16px var(--ui); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .card .reason b { margin-right: 3px; font-weight: 700; color: var(--good); }
 
-/* Stile "Menu": una colonna di pillole chiare come i menu di Spada e Scudo (altezza della riga da usePerPage: --row-h).
+/* Stile "Menu": una colonna di 6 pillole scure (altezza della riga e spazio da usePerPage: --row-h, --menu-gap).
    A sinistra 30px per il cursore ▶ della selezionata; colori da tokens.css (--pill-*), così un tema li ridefinisce */
-.suggestions.menu { display: flex; flex-direction: column; gap: 6px; padding: 10px 14px 10px 30px; }
+.suggestions.menu { display: flex; flex-direction: column; justify-content: center; gap: var(--menu-gap, 10px); padding: 10px 14px 10px 30px; }
 .suggestions.menu > li + li { border-top: 0; }
 .pill {
   --rh: var(--row-h, 48px);
@@ -560,16 +564,38 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
   color: var(--pill-ink);
   cursor: pointer;
   user-select: none;
-  transition: background 0.15s;
+  /* La pillola resta 14px più corta della fila: sotto il mouse e selezionata esce verso destra in quello spazio, con un
+     rimbalzo e un'ombra (come la voce scelta nei menu dei giochi); le altre restano ferme */
+  margin-right: 14px;
+  transition: background 0.15s, transform 0.3s cubic-bezier(0.34, 1.5, 0.5, 1), filter 0.2s;
 }
-.pill:hover { background: var(--pill-bg-hover); }
+.pill:hover { z-index: 2; background: var(--pill-bg-hover); }
+.pill.selected { z-index: 1; }
+.pill:hover, .pill.selected { transform: translateX(14px); filter: drop-shadow(0 4px 6px rgb(0 0 0 / 0.4)); }
+/* Il Pokémon esce dal tondo: cresce e sale un poco (sotto il mouse; sulla selezionata resta animato ma fermo) */
+.pill-sprite .sprite, .pill-sprite .sprite-ani, .pill-sprite .box-icon { transition: transform 0.3s cubic-bezier(0.34, 1.5, 0.5, 1); }
+.pill:hover .pill-sprite .sprite, .pill:hover .pill-sprite .sprite-ani { transform: translateX(-50%) translateY(-6%) scale(1.15); }
+.pill:hover .pill-sprite .box-icon, .pill.selected .pill-sprite .box-icon { animation: box-hop 0.7s ease-in-out infinite; }
+/* Pagina nuova: le righe entrano scivolando una dopo l'altra (avanti da destra, indietro da sinistra) */
+.suggestions.menu > .pill { animation: pill-slide-on 0.38s cubic-bezier(0.3, 1.3, 0.5, 1) backwards; animation-delay: calc(var(--i, 0) * 35ms); }
+.suggestions.menu.roll-back > .pill { animation-name: pill-slide-back; }
+@keyframes pill-slide-on { from { opacity: 0; transform: translateX(48px); } }
+@keyframes pill-slide-back { from { opacity: 0; transform: translateX(-48px); } }
+@media (prefers-reduced-motion: reduce) {
+  .pill, .pill-sprite .sprite, .pill-sprite .sprite-ani { transition: background 0.15s; }
+  .pill:hover, .pill.selected { transform: none; }
+  .pill:hover .pill-sprite .sprite, .pill:hover .pill-sprite .sprite-ani { transform: translateX(-50%); }
+  .pill:hover .pill-sprite .box-icon, .pill.selected .pill-sprite .box-icon { animation: none; }
+  .suggestions.menu > .pill { animation: none; }
+}
 .pill.picked { box-shadow: inset 0 0 0 2px var(--accent); }
 .pill.selected { background: var(--accent); color: var(--on-accent); }
 /* Il cursore ▶ fuori dalla pillola, nel margine sinistro della lista */
 .pill.selected::after { content: '▶' / ''; position: absolute; left: -26px; top: 50%; transform: translateY(-50%); color: var(--accent); font-size: 14px; pointer-events: none;
   /* Alone del colore del pannello: resta leggibile dove tocca il tondo chiaro dello sprite */
   filter: drop-shadow(0 0 1.5px var(--panel)) drop-shadow(0 0 1.5px var(--panel)); }
-/* Tondo dello sprite: sporge a sinistra, sfumatura chiara nel colore del tipo, anello del colore del pannello */
+/* Tondo dello sprite: sporge a sinistra, sfumatura scura nel colore del tipo, anello del colore del pannello.
+   Il tondo è lo sfondo (::before): lo sprite non è ritagliato e ne esce sopra */
 .pill-sprite {
   position: absolute;
   left: calc(var(--rh) * -0.32);
@@ -577,15 +603,17 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
   width: calc(var(--rh) * 1.12);
   height: calc(var(--rh) * 1.12);
   transform: translateY(-50%);
-  border-radius: 50%;
-  overflow: hidden;
-  background: radial-gradient(circle, color-mix(in srgb, var(--t1) 45%, #fff), color-mix(in srgb, var(--t1) 70%, #c9cfdf));
-  box-shadow: 0 0 0 3px var(--panel);
   pointer-events: none;
 }
+.pill-sprite::before { content: ''; position: absolute; inset: 0; border-radius: 50%; box-shadow: 0 0 0 3px var(--panel);
+  background: radial-gradient(circle, color-mix(in srgb, var(--t1) 55%, var(--raised)), color-mix(in srgb, var(--t1) 28%, var(--ground))); }
 .pill-sprite .box-icon { position: absolute; inset: 0; display: grid; place-items: center; }
 .pill-sprite .box-icon .mon-icon { margin: 0; transform: scale(2.1); }
-.pill-sprite .sprite { position: absolute; left: 50%; top: 50%; width: calc(var(--rh) * 1.5); height: auto; max-width: none; transform: translate(-50%, -56%); image-rendering: pixelated; }
+.pill-sprite .sprite { position: absolute; left: 50%; bottom: 4%; width: calc(var(--rh) * 1.4); height: auto; max-width: none; transform: translateX(-50%); transform-origin: 50% 100%; image-rendering: pixelated; }
+/* Sprite animato (riga sotto il mouse e selezionata): la GIF ritagliata, grande quanto lo statico e coi piedi allo stesso punto */
+.pill-sprite .sprite.covered { visibility: hidden; }
+.pill-sprite .sprite-ani { position: absolute; left: 50%; bottom: calc(4% + var(--rh) * 1.4 / 24); width: auto; max-width: none; height: calc(var(--ani-h, 96) / 96 * var(--rh) * 1.4);
+  transform: translateX(-50%); transform-origin: 50% 100%; image-rendering: pixelated; pointer-events: none; }
 .pill .who { position: relative; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
 .pill .name-line { display: flex; min-width: 0; }
 .pill .pick { min-width: 0; overflow: hidden; padding: 0; border: 0; background: none; color: inherit; text-align: left; }
@@ -595,8 +623,6 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .pill .who small { display: flex; flex-wrap: wrap; gap: 0 14px; min-width: 0; }
 .pill .reason { min-width: 0; max-width: 100%; font: 500 12px/1.3 var(--ui); color: var(--pill-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pill .reason b { margin-right: 3px; font-weight: 700; color: var(--pill-gain); }
-/* Nomi dei tipi nelle varianti scure (il colore inline è per i fondi scuri) */
-.pill .type-name { --type-color: var(--type-ink-dark); }
 /* Destra: segni, icone dei tipi 18px, voto */
 .pill-end { display: flex; align-items: center; gap: 8px; }
 .pill .pill-types { gap: 4px; }
@@ -617,7 +643,7 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .pill.selected .score .fav-heart { color: var(--on-accent); }
 .pill.selected.first .score .fav-heart { color: var(--on-accent-2); }
 /* Selezionata: tutto il testo in --on-accent, anche i tipi e i segni */
-/* Segni sulla pillola chiara: le varianti scure (solo l'icona: il tooltip resta sul fondo scuro coi suoi colori) */
+/* Segni sulla pillola: i colori di stato del tema (solo l'icona: il tooltip ha i suoi colori) */
 .pill .alert-mark.danger .icon, .pill .list-mark.ban { color: var(--pill-bad); }
 .pill .alert-mark.warn .icon { color: var(--pill-warn); }
 .pill .alert-mark.info .icon, .pill .list-mark.fav { color: var(--pill-info); }
