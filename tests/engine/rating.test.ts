@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { teamPower } from '../../src/engine/power';
 import { teamNeeds } from '../../src/engine/needs';
-import { AREA_KNEE, ARCHETYPE_WEIGHTS, DEFENSE_FULL, areaValue, gradeFor, memberIssues, rateTeam, typeSafety } from '../../src/engine/rating';
+import { AREA_KNEE, ARCHETYPE_WEIGHTS, areaValue, gradeFor, memberIssues, rateTeam, typeSafety } from '../../src/engine/rating';
 import { memberPower } from '../../src/engine/power';
 import { teamOffense } from '../../src/engine/offense';
 import { teamDefense } from '../../src/engine/defense';
@@ -14,7 +14,6 @@ import { UNIFORM_TYPE_WEIGHTS } from '../../src/engine/analysis';
 import { superEffectiveMoves, TYPES, weaknessTable } from '../../src/engine/types';
 
 /** Coverage difensiva mostrata: riferimento all'80%, poi la cima più lenta. */
-const defenseShown = (percent: number) => Math.round(100 * areaValue(percent / 100, DEFENSE_FULL));
 import { emptySet, mostCommonSet, type TeamSet } from '../../src/engine/sets';
 import { fixtureData, fixtureStats, gholdengo, tusk } from '../fixtures/data';
 

@@ -2,9 +2,6 @@
  * Sicurezza di tipo del team: modulo foglia, così Difesa (defense.ts) e voto (rating.ts) la usano senza importarsi a vicenda.
  */
 
-/** La Coverage tipi della Difesa è piena all'80% del saldo perfetto (ogni tipo resistito due volte). */
-export const DEFENSE_FULL = 0.8;
-
 /** Punti di un membro contro un tipo: immunità +2, ×¼ +1,5, ×½ +1, neutro 0, ×2 −1, ×4 −2. */
 export function resistPoints(multiplier: number): number {
   if (multiplier === 0) return 2;

@@ -111,6 +111,7 @@ export function DefenseGuideSection({ section, defense, meta }: { section: Secti
           [g('types.zero'), g('types.zero.rule')],
           [g('types.safe'), g('types.safe.rule')],
           [g('types.open'), g('types.open.rule')],
+          [g('types.weak'), g('types.weak.rule')],
           [g('types.average'), g('types.average.rule')],
           ...(meta ? [[g('types.split'), g('types.split.rule')] as [string, string]] : []),
         ]} />

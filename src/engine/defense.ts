@@ -3,7 +3,7 @@ import { attackerPanels, metaThreats, panelWeights } from './attackers';
 import { COVERAGE_DEPTH, ownConditions } from './coverage';
 import { bestHit, setKey, standardHit, type FieldCondition, type Hit } from './damage';
 import { ONE_USE_SHARE, rankWeighted, SETUP_SHARE } from './offense';
-import { DEFENSE_FULL, typeSafety } from './typeSafety';
+import { typeSafety } from './typeSafety';
 import { DEFAULT_FORMAT } from './format';
 import { teraAllowed } from './formats';
 import { effectiveness, weaknessTable } from './types';
@@ -286,9 +286,9 @@ export function teamDefense(team: TeamSet[], data: EngineData): TeamDefense {
   const robust = rankWeighted(members.map(m => (w.physical * m.physical + w.special * m.special) / sides));
   const robustness = Math.round(sides * robust + w.sustain * sustain);
 
-  // Coverage di tipi: il saldo di resistenze e debolezze sui 18 tipi, con la stessa scala dell'Offesa
+  // Coverage di tipi: la media della Sicurezza dei 18 tipi, senza riferimento (100% di media = pieno), sulla scala comune
   const table = weaknessTable(known);
-  const typeValue = known.length ? softScore(mean(table.map(row => typeSafety(row.multipliers))) / DEFENSE_FULL) : 0;
+  const typeValue = known.length ? softScore(mean(table.map(row => typeSafety(row.multipliers)))) : 0;
   const weak = table.filter(row => row.pressure > 0).map(row => row.type);
   const names = members.map(m => m.species);
   const typeRows = table.map(row => ({
