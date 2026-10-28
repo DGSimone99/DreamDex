@@ -155,6 +155,18 @@ describe('chiavi dei problemi e minacce del meta', () => {
     expect(weak.map(p => p.key)).toContain('defense:Fighting');
   });
 
+  it('le debolezze portano i conteggi (deboli, resistono) della riga di analisi; gli altri problemi no', () => {
+    const { problems } = coachTeam(team, DEFAULT_FORMAT, fixtureData);
+    const rows = analyzeTeam(team, fixtureData).weakness;
+    const defense = problems.filter(p => p.category === 'defense');
+    expect(defense.length).toBeGreaterThan(0);
+    for (const p of defense) {
+      const row = rows.find(r => `defense:${r.type}` === p.key)!;
+      expect(p.counts).toEqual({ weak: row.weak, resist: row.resist });
+    }
+    expect(problems.filter(p => p.category !== 'defense').every(p => p.counts === undefined)).toBe(true);
+  });
+
   it('col meta, una minaccia senza check è un problema minore', () => {
     const coaching = coachTeam(team, DEFAULT_FORMAT, fixtureData);
     const open = analyzeTeam(team, fixtureData).threats.filter(t => !t.handledBy.length);

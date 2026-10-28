@@ -310,6 +310,124 @@ describe('CoachingView', () => {
     expect(also).not.toHaveTextContent('Check per Ogerpon-Wellspring');
   });
 
+  describe('strisce dei suggerimenti', () => {
+    const strip = (over: { swap?: boolean; move?: boolean; add?: boolean }) => {
+      const coaching = coachTeam(three, DEFAULT_FORMAT, data);
+      const problem = coaching.problems[0];
+      const base = adviceOf(three, DEFAULT_FORMAT, data).fixes[0];
+      const swap = over.swap === false ? null
+        : over.add ? { ...base, kind: 'add' as const, member: null, species: 'Rotom-Wash', solves: [problem.key] }
+        : { ...base, kind: 'swap' as const, member: 'Great Tusk', species: 'Rotom-Wash', solves: [problem.key] };
+      const move: MoveFix | null = over.move ? { index: 1, member: 'Gholdengo', set: three[1], reduces: [], slot: 1, from: '', to: 'Thunderbolt', gain: 1, solves: [problem.key] } : null;
+      const step = { problem, swap, move, alsoSolves: [], group: [problem.key] };
+      const handlers = { onFix: vi.fn(), onMoveFix: vi.fn(), onApplyFix: vi.fn(), onApplyMove: vi.fn() };
+      renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [step] }} members={3} rating={rating(three)} metaOn {...handlers} />);
+      return { step, handlers, li: within(stepsRegion()).getByRole('listitem') };
+    };
+
+    it('una sola proposta principale per striscia: il suo pulsante applica lo scambio', async () => {
+      const { step, handlers, li } = strip({ move: true });
+      expect(li).toHaveClass('coach-strip');
+      expect(li.querySelectorAll('.coach-prop.is-main')).toHaveLength(1);
+      await userEvent.setup().click(within(li.querySelector<HTMLElement>('.coach-prop.is-main')!).getByRole('button', { name: /^Al posto di Great Tusk: Rotom-Wash/ }));
+      expect(handlers.onApplyFix).toHaveBeenLastCalledWith(step.swap);
+    });
+
+    it('tappa con sola mossa: la mossa è la proposta principale', async () => {
+      const { step, handlers, li } = strip({ swap: false, move: true });
+      const main = li.querySelector<HTMLElement>('.coach-prop.is-main')!;
+      const button = within(main).getByRole('button', { name: /^Dai / });
+      await userEvent.setup().click(button);
+      expect(handlers.onApplyMove).toHaveBeenLastCalledWith(step.move);
+      expect(li.querySelectorAll('.coach-alt')).toHaveLength(1);
+      expect(li.querySelector('.coach-strip-extras .coach-prop')).toBeNull();
+    });
+
+    it('tappa con scambio e mossa: "oppure" con la mossa nella colonna di destra', () => {
+      const { li } = strip({ move: true });
+      const or = li.querySelector<HTMLElement>('.coach-strip-extras .coach-prop.is-move')!;
+      expect(or).toHaveAttribute('data-or', 'oppure');
+      expect(within(or).getByRole('button', { name: /^Dai Thunderbolt/ })).toBeInTheDocument();
+      expect(li.querySelectorAll('.coach-alt')).toHaveLength(2);
+    });
+
+    it('puntatore sul pulsante principale (che copre la striscia): anteprima di tutta la tappa; sulla mossa "oppure": solo la sua', async () => {
+      const coaching = coachTeam(three, DEFAULT_FORMAT, data);
+      const [p1, p2] = coaching.problems;
+      const base = adviceOf(three, DEFAULT_FORMAT, data).fixes[0];
+      const swap = { ...base, kind: 'swap' as const, member: 'Great Tusk', species: 'Rotom-Wash', solves: [p1.key] };
+      const move: MoveFix = { index: 1, member: 'Gholdengo', set: three[1], reduces: [], slot: 1, from: '', to: 'Thunderbolt', gain: 1, solves: [p2.key] };
+      renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [{ problem: p1, swap, move, alsoSolves: [], group: [p1.key] }] }} members={3}
+        rating={rating(three)} metaOn {...noop} />);
+      const lit = () => [...document.querySelectorAll<HTMLElement>('li.coach-prob.is-solved-preview')].map(li => li.dataset.key).sort();
+      const user = userEvent.setup();
+      await user.hover(within(stepsRegion()).getByRole('button', { name: /^Al posto di Great Tusk: Rotom-Wash/ }));
+      expect(lit()).toEqual([p1.key, p2.key].sort());
+      await user.hover(within(stepsRegion()).getByRole('button', { name: /^Dai Thunderbolt/ }));
+      expect(lit()).toEqual([p2.key]);
+    });
+
+    it('scambio: chi esce in piccolo, chi entra animato solo col puntatore (o il fuoco) sulla striscia', async () => {
+      const { li } = strip({});
+      expect(li.querySelector('.coach-strip-out .sprite')).not.toBeNull();
+      expect(li.querySelector('.coach-strip-in .sprite-ani')).toBeNull();
+      const user = userEvent.setup();
+      await user.hover(li);
+      expect(li.querySelector('.coach-strip-in .sprite-ani')).not.toBeNull();
+      await user.unhover(li);
+      expect(li.querySelector('.coach-strip-in .sprite-ani')).toBeNull();
+      act(() => within(li).getByRole('button', { name: /^Al posto di Great Tusk/ }).focus());
+      expect(li.querySelector('.coach-strip-in .sprite-ani')).not.toBeNull();
+    });
+
+    it('aggiunta: nessuno esce, resta "Aggiungi"', () => {
+      const { li } = strip({ add: true });
+      expect(li.querySelector('.coach-strip-out')).toBeNull();
+      expect(li.querySelector('.coach-prop.is-main')).toHaveTextContent('Aggiungi');
+    });
+  });
+
+  it('le tessere dei problemi vengono prima dei suggerimenti', () => {
+    view(six);
+    const map = screen.getByRole('region', { name: 'Problemi per area' });
+    expect(map.compareDocumentPosition(stepsRegion()) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('pillola di difesa: icona, tipo e conteggi brevi, testo intero nel title', () => {
+    const text = 'Debole a Ground: 3 Deboli – 1 Resiste';
+    const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], threatFixes: {},
+      problems: [{ severity: 'serious', category: 'defense', text, fixes: [], key: 'defense:Ground', subjects: ['Ground'], counts: { weak: 3, resist: 1 } }] };
+    renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [] }} members={3} rating={rating(three)} metaOn {...noop} />);
+    const pill = screen.getByRole('group', { name: 'Difesa' }).querySelector<HTMLElement>('li[data-key="defense:Ground"]')!;
+    expect(pill.querySelectorAll('.type-icons img')).toHaveLength(1);
+    expect(pill).toHaveTextContent('3↓');
+    expect(pill).toHaveTextContent('1↑');
+    expect(pill).toHaveAttribute('title', text);
+  });
+
+  it('ruoli mancanti nella tessera: una pillola per ruolo con la ×, senza "Ruoli importanti mancanti"', () => {
+    const text = 'Ruoli importanti mancanti: Rimozione Strumenti, Pivot';
+    const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], threatFixes: {},
+      problems: [{ severity: 'minor', category: 'roles', text, fixes: [], key: 'roles:important', subjects: ['itemRemoval', 'pivot'] }] };
+    renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [] }} members={3} rating={rating(three)} metaOn {...noop} />);
+    const pills = [...screen.getByRole('group', { name: 'Ruoli' }).querySelectorAll<HTMLElement>('li[data-key="roles:important"]')];
+    expect(pills).toHaveLength(2);
+    expect(pills.map(p => p.querySelector('.coach-miss')?.textContent)).toEqual([needLabel('itemRemoval' as Need, 'it'), needLabel('pivot' as Need, 'it')]);
+    for (const pill of pills) {
+      expect(pill.querySelectorAll('.coach-miss')).toHaveLength(1);
+      expect(pill.querySelector('.coach-miss .icon')).not.toBeNull();
+      expect(pill.getAttribute('title')).toContain(text);
+    }
+  });
+
+  it('pillola lunga: title col testo intero', () => {
+    const text = 'Great Tusk non è legale in National Dex OU perché la sua abilità è vietata dal formato scelto';
+    const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], threatFixes: {},
+      problems: [{ severity: 'serious', category: 'rules', text, fixes: [], key: 'rules:x' }] };
+    renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [] }} members={3} rating={rating(three)} metaOn {...noop} />);
+    expect(screen.getByRole('group', { name: 'Regole · Meta' }).querySelector('li.coach-prob[data-key="rules:x"]')).toHaveAttribute('title', text);
+  });
+
   it('mappa: le righe di coverage hanno le icone dei tipi, i nomi senza colore', () => {
     const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], threatFixes: {},
       problems: [{ severity: 'minor', category: 'coverage', text: 'Nessuna mossa super efficace contro Water e Fire', fixes: [], key: 'coverage', subjects: ['Water', 'Fire'] }] };
@@ -352,7 +470,8 @@ describe('CoachingView', () => {
     let total = 0;
     for (const col of ['defense', 'offense', 'roles', 'rules'] as const) {
       const group = screen.getByRole('group', { name: names[col] });
-      const rows = [...group.querySelectorAll<HTMLElement>('li[data-key]')];
+      // I ruoli mancanti hanno una pillola per ruolo, tutte con la chiave del problema: una riga per chiave
+      const rows = [...group.querySelectorAll<HTMLElement>('li[data-key]')].filter((li, i, all) => all.findIndex(o => o.dataset.key === li.dataset.key) === i);
       const expected = unique.filter(p => columnOf(p.category) === col);
       expect(rows).toHaveLength(expected.length);
       total += rows.length;
@@ -373,7 +492,9 @@ describe('CoachingView', () => {
       problems: [{ severity: 'minor', category: 'roles', text: 'Ruoli importanti mancanti: Pivot', fixes: [], key: 'roles:important' }] };
     renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [] }} members={3} rating={rating(three)} metaOn {...noop} />);
     expect(within(screen.getByRole('group', { name: 'Difesa' })).getByText('Nessun problema')).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'Difesa' })).toHaveClass('is-clean');
     expect(within(screen.getByRole('group', { name: 'Ruoli' })).queryByText('Nessun problema')).toBeNull();
+    expect(screen.getByRole('group', { name: 'Ruoli' })).not.toHaveClass('is-clean');
   });
 
   it('ridondanze: sotto un separatore nella colonna Ruoli', () => {
