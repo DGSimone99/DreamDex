@@ -663,8 +663,8 @@ describe('sprite Icona box', () => {
     expect(within(detail()).queryByRole('heading', { name: 'Meta' })).toBeNull();
     rerender(<SuggestionsPanel {...props} teamCollapsed />);
     const meta = within(detail()).getByRole('heading', { name: 'Meta' }).closest('section')!;
-    expect(meta).toHaveTextContent(/Uso \d/);
-    expect(meta.querySelectorAll('.meta-mate').length).toBeLessThanOrEqual(5);
+    expect(meta).toHaveTextContent(/\d.*uso nel meta/);
+    expect(meta.querySelectorAll('.meta-mates li').length).toBeLessThanOrEqual(5);
   });
 
   it('Icona box: la forma da battaglia (Mega con la pietra), non la specie base', async () => {
