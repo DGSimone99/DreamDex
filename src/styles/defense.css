@@ -126,10 +126,6 @@
 .guide-rows dt { font-weight: 600; color: var(--text); }
 .guide-rows dd { margin: 0; color: var(--muted); }
 .guide-note { margin: 0 0 6px; color: var(--muted); }
-.guide-points { list-style: none; margin: 0 0 8px; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
-.guide-points li { display: flex; align-items: baseline; gap: 8px; padding: 5px 10px; background: var(--panel); border: 1px solid var(--line-soft); border-radius: 4px; font-size: 14px; color: var(--muted); }
-.guide-points li b { font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
-.guide-points li small { font-size: 12px; color: var(--muted); }
 @media (max-width: 560px) {
   .guide-rows > div { grid-template-columns: 1fr; gap: 2px; }
 }
@@ -382,3 +378,6 @@
 .cm-frame.roomy .cm-by.many { gap: 1px; }
 .cm-frame.roomy .cm-by.many .def-box { --bs: 0.7; }
 .cm-frame.roomy .cm-by.many .cm-holder { font-size: 12px; }
+/* Guida, Coverage meta: le tre soglie di chi regge con le pastiglie della tabella, la profondità come barra a segmenti */
+.guide-holds.three { grid-template-columns: repeat(3, 1fr); }
+.guide-holds.three b { font: 600 14px/1.2 var(--ui); font-style: normal; }
