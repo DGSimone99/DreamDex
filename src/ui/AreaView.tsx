@@ -20,13 +20,15 @@ const START: Partial<Record<AreaKey, string>> = { strength: 'coverageTypes' };
  * aperta, una riga coi problemi dell'area e il dettaglio di quella scelta a tutta larghezza.
  * `extra`: contenuto in più in cima a una scheda (la coverage dei tipi, i bisogni dei ruoli).
  */
-export function AreaView({ rating, area, problems, team, analysis, extra }: {
+export function AreaView({ rating, area, problems, team, analysis, extra, roomy = false }: {
   rating: TeamRating;
   area: AreaKey;
   problems: CoachProblem[];
   team: TeamSet[];
   analysis: TeamAnalysis;
   extra?: { tabKey: string; panel: ReactNode };
+  /** Squadra chiusa: più spazio per il contenuto. */
+  roomy?: boolean;
 }) {
   const t = useT();
   const lang = useLang();
@@ -35,7 +37,7 @@ export function AreaView({ rating, area, problems, team, analysis, extra }: {
   // `open`: le tessere della scheda Generale aprono la sottoscheda e le passano il focus (il pannello che le ospitava sparisce)
   const focusKey = useRef<string | null>(null);
   const open = (key: string) => { focusKey.current = key; setPicked(key); };
-  const tabs = areaTabs(rating, area, t, lang, { team, analysis, open });
+  const tabs = areaTabs(rating, area, t, lang, { team, analysis, open, roomy });
   const start = Math.max(0, tabs.findIndex(tab => tab.key === START[area]));
   const index = Math.max(0, picked === null ? start : tabs.findIndex(tab => tab.key === picked));
   const current = tabs[index];

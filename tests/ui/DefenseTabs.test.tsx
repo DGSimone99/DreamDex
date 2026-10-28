@@ -151,3 +151,84 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
     expect(tiles[0]).toHaveAccessibleName(new RegExp(`^${top.species}.*${top.level}%`));
   });
 });
+
+describe('Difesa: ordine, barre e Generale a squadra chiusa', () => {
+  const subTabs = () => within(screen.getByRole('tablist', { name: /Difesa/ })).getAllByRole('tab').map(tab => tab.querySelector('span')!.textContent);
+
+  it('sottoschede nell\'ordine Generale, Coverage tipi, Robustezza, Sostenibilità, Coverage meta', () => {
+    renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[]} />);
+    expect(subTabs()).toEqual(['Generale', 'Coverage tipi', 'Robustezza', 'Sostenibilità', 'Coverage meta']);
+  });
+
+  it('senza meta niente Coverage meta, stesso ordine', () => {
+    renderIt(<AreaView rating={noMeta()} area="defense" team={team} analysis={analysis} problems={[]} />);
+    expect(subTabs()).toEqual(['Generale', 'Coverage tipi', 'Robustezza', 'Sostenibilità']);
+  });
+
+  it('le tessere seguono l\'ordine delle sottoschede', () => {
+    renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[]} />);
+    const names = within(screen.getByRole('tabpanel')).getAllByRole('button').map(b => /^(Coverage tipi|Robustezza|Sostenibilità|Coverage meta)/.exec(b.textContent ?? '')?.[1]);
+    expect(names).toEqual(['Coverage tipi', 'Robustezza', 'Sostenibilità', 'Coverage meta']);
+  });
+
+  it('le barre hanno la classe della soglia e l\'anello debole è solo sul più basso, solo sotto 50', () => {
+    const rating = withMeta();
+    renderIt(<AreaView rating={rating} area="defense" team={team} analysis={analysis} problems={[]} />);
+    const tone = (v: number) => (v >= 80 ? 'good' : v >= 50 ? 'warn' : 'bad');
+    const rows = Array.from(document.querySelectorAll('.def-members tbody tr'));
+    rating.defense.members.forEach((m, i) => {
+      const bars = rows[i].querySelectorAll('.def-bar');
+      expect(bars[0]).toHaveClass(tone(m.physical));
+      expect(bars[3]).toHaveClass(tone(m.value));
+    });
+    const values = rating.defense.members.map(m => m.value);
+    const lowest = values.indexOf(Math.min(...values));
+    const chips = document.querySelectorAll('.def-weak');
+    if (values[lowest] < 50) {
+      expect(chips).toHaveLength(1);
+      expect(rows[lowest].querySelector('.def-weak')).toHaveTextContent('Anello debole');
+    } else {
+      expect(chips).toHaveLength(0);
+    }
+  });
+
+  it('una Difesa bassa dà la barra rossa e l\'anello debole', () => {
+    const rating = withMeta();
+    const weak = { ...rating, defense: { ...rating.defense, members: rating.defense.members.map((m, i) => (i === 1 ? { ...m, value: 30 } : { ...m, value: 85 })) } };
+    renderIt(<AreaView rating={weak} area="defense" team={team} analysis={analysis} problems={[]} />);
+    const rows = Array.from(document.querySelectorAll('.def-members tbody tr'));
+    expect(rows[1].querySelectorAll('.def-bar')[3]).toHaveClass('bad');
+    expect(rows[0].querySelectorAll('.def-bar')[3]).toHaveClass('good');
+    expect(document.querySelectorAll('.def-weak')).toHaveLength(1);
+    expect(rows[1].querySelector('.def-weak')).toBeTruthy();
+  });
+
+  it('la tessera del meta elenca le minacce senza risposta (nome nascosto) o dice che tutte hanno risposta', () => {
+    const rating = withMeta();
+    const cm = rating.defense.coverageMeta!;
+    const some = { ...rating, defense: { ...rating.defense, coverageMeta: { ...cm, unanswered: ['Garchomp', 'Zapdos'] } } };
+    const { unmount } = renderIt(<AreaView rating={some} area="defense" team={team} analysis={analysis} problems={[]} />);
+    const tile = within(screen.getByRole('tabpanel')).getByRole('button', { name: /^Coverage meta/ });
+    expect(tile).toHaveTextContent('Senza risposta:');
+    expect(tile).toHaveTextContent('Garchomp');
+    expect(tile).toHaveTextContent('Zapdos');
+    expect(tile).toHaveTextContent(/2 su \d+/);
+    unmount();
+    const none = { ...rating, defense: { ...rating.defense, coverageMeta: { ...cm, unanswered: [] } } };
+    renderIt(<AreaView rating={none} area="defense" team={team} analysis={analysis} problems={[]} />);
+    expect(within(screen.getByRole('tabpanel')).getByRole('button', { name: /^Coverage meta/ })).toHaveTextContent('Ogni minaccia ha una risposta');
+  });
+
+  it('a squadra chiusa compaiono Colpo peggiore e Recupero, con un % per ogni riga; altrimenti no', () => {
+    const { unmount } = renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[]} roomy />);
+    const headers = screen.getAllByRole('columnheader').map(h => h.textContent);
+    expect(headers).toEqual(['Pokémon', 'Fisica', 'Speciale', 'Sostenibilità', 'Difesa', 'Colpo peggiore', 'Recupero']);
+    const rows = Array.from(document.querySelectorAll('.def-members tbody tr'));
+    expect(rows).toHaveLength(team.length);
+    rows.forEach(row => expect(row.querySelector('.def-hit .hold-chip')).toHaveTextContent(/\d+%/));
+    unmount();
+    renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[]} />);
+    expect(screen.getAllByRole('columnheader').map(h => h.textContent)).not.toContain('Colpo peggiore');
+    expect(document.querySelector('.def-hit')).toBeNull();
+  });
+});

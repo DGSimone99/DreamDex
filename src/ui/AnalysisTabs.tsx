@@ -4,8 +4,8 @@ import { useT } from '../i18n/react';
 import type { AnalysisView } from './analysisView';
 import { Icon } from './icons';
 
-/** Le schede interne di Analisi, nell'ordine: Panoramica e Coaching, poi le aree del voto con Bonus/Malus in fondo. */
-export const ANALYSIS_VIEWS: AnalysisView[] = ['overview', 'coaching', 'defense', 'strength', 'roles', 'speed', 'bonusMalus'];
+/** Le schede interne di Analisi, nell'ordine: Panoramica e Coaching, poi Offesa, Difesa, Velocità e Ruoli, con Bonus/Malus in fondo. */
+export const ANALYSIS_VIEWS: AnalysisView[] = ['overview', 'coaching', 'strength', 'defense', 'speed', 'roles', 'bonusMalus'];
 
 const viewLabelKey = (view: AnalysisView) => (view === 'overview' || view === 'coaching' ? `analysis.view.${view}` : `area.${view}`) as 'analysis.view.overview';
 

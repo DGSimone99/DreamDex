@@ -20,11 +20,17 @@
 .def-tile-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; width: 100%; padding-bottom: 7px; }
 .def-tile-head span { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
 .def-tile-head b { font: italic 700 26px/1 var(--display); letter-spacing: 0; color: var(--text); font-variant-numeric: tabular-nums; }
+/* Il numero ha il colore della soglia, come il bordo della tessera */
+.def-tile.good .def-tile-head b { color: var(--good); }
+.def-tile.warn .def-tile-head b { color: var(--warn); }
+.def-tile.bad .def-tile-head b { color: var(--bad); }
 /* Il fatto principale sotto una riga sottile */
 .def-tile-fact { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px; width: 100%; padding-top: 7px; border-top: 1px solid var(--line-soft); font-size: 13px; color: var(--text); }
 .def-tile-fact em { font-style: normal; color: var(--muted); }
 .def-exposed { display: inline-flex; align-items: center; gap: 4px; }
 .def-exposed .type-icons img { width: 16px; height: 16px; }
+.def-open-mon { display: inline-flex; }
+.def-more { font-weight: 600; color: var(--muted); }
 
 /* Tabella dei membri con le barre */
 .def-members { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 14px; font-variant-numeric: tabular-nums; }
@@ -36,9 +42,35 @@
 /* Barra e numero in una griglia fissa: la barra parte dove parte l'intestazione della colonna */
 .def-cell { display: inline-grid; grid-template-columns: 150px 3ch; align-items: center; gap: 10px; vertical-align: middle; }
 .def-bar { position: relative; display: block; width: 100%; height: 8px; background: var(--line-soft); }
-.def-bar i { position: absolute; inset: 0 auto 0 0; background: var(--accent); }
-.def-bar.total i { background: var(--accent-2-ink); }
+.def-bar i { position: absolute; inset: 0 auto 0 0; background: var(--good); }
+.def-bar.warn i { background: var(--warn); }
+.def-bar.bad i { background: var(--bad); }
 .def-num { min-width: 2ch; text-align: right; color: var(--text); }
+/* Difesa: il numero in evidenza, del colore della soglia */
+.def-num.total { font: italic 700 17px/1 var(--display); font-variant-numeric: tabular-nums; }
+.def-num.total.good { color: var(--good); }
+.def-num.total.warn { color: var(--warn); }
+.def-num.total.bad { color: var(--bad); }
+/* Anello debole: chip dopo il nome */
+.def-weak { flex: none; padding: 1px 6px; border-radius: 2px; background: var(--bad-bg); color: var(--bad); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; line-height: 1.5; }
+.def-members .def-col-hit { width: 120px; }
+.def-members .def-col-rec { width: 190px; }
+.def-hit { display: inline-flex; align-items: center; gap: 6px; vertical-align: middle; }
+.def-members td.def-rec { white-space: normal; font-size: 13px; line-height: 1.3; }
+.def-rec .ad-halved { margin-left: 8px; color: var(--warn); font-weight: 600; cursor: help; }
+
+/* Squadra chiusa: le righe riempiono il pannello (niente scorrimento) */
+.def-general.roomy { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.def-general.roomy .ad-scroll { flex: 1; min-height: 0; overflow: hidden; }
+.def-general.roomy .def-members { height: 100%; }
+.def-general.roomy .def-members tbody tr { height: auto; }
+.def-general.roomy .def-members td, .def-general.roomy .def-members th[scope='row'] { padding-top: 2px; padding-bottom: 2px; }
+.def-general.roomy .def-members .def-col-mon { width: 240px; }
+.def-general.roomy .def-members thead tr { height: 1px; }
+/* Le barre seguono la larghezza della colonna: con sette colonne non c'è posto per i 150px fissi */
+.def-general.roomy .def-cell { display: grid; grid-template-columns: minmax(0, 1fr) 3ch; width: 100%; }
+.def-general.roomy .def-members .def-col-hit { width: 112px; }
+.def-general.roomy .def-members .def-col-rec { width: 170px; }
 
 /* Guida: righe termine / regola, pillole di punti */
 .guide-rows { display: grid; gap: 0; margin: 0 0 8px; }

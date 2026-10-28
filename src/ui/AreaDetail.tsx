@@ -23,7 +23,9 @@ export type T = ReturnType<typeof useT>;
 export interface DetailTab { key: string; label: string; value: number | string | null; panel: ReactElement; help?: ReactNode }
 
 /** Il contesto dell'area oltre al voto: il team e la sua analisi (lo usa la Difesa). */
-export interface AreaContext { team: TeamSet[]; analysis: TeamAnalysis; open?: (key: string) => void }
+export interface AreaContext { team: TeamSet[]; analysis: TeamAnalysis; open?: (key: string) => void;
+  /** Squadra chiusa: più spazio, la scheda Generale della Difesa mostra più colonne. */
+  roomy?: boolean }
 
 /** Casella della tabella dei muri: il danno, e tra parentesi quello dopo il setup quando cambia la soglia. */
 function WallValue({ cell }: { cell: WallCell }) {

@@ -9,11 +9,11 @@ import { DefenseRobustness } from './DefenseRobustness';
 import { DefenseSustain } from './DefenseSustain';
 import type { AreaContext, DetailTab, T } from '../AreaDetail';
 
-/** Le schede della Difesa: Generale, Robustezza, Sostenibilità, Coverage di tipi e del meta. */
+/** Le schede della Difesa: Generale, Coverage di tipi, Robustezza, Sostenibilità, Coverage del meta. */
 export function defenseTabs(defense: TeamDefense, meta: boolean, t: T, ctx: AreaContext): DetailTab[] {
   const coverageMeta = defense.coverageMeta;
   type Key = 'robustness' | 'sustain' | 'coverageTypes' | 'coverageMeta';
-  const subs: Key[] = coverageMeta ? ['robustness', 'sustain', 'coverageTypes', 'coverageMeta'] : ['robustness', 'sustain', 'coverageTypes'];
+  const subs: Key[] = coverageMeta ? ['coverageTypes', 'robustness', 'sustain', 'coverageMeta'] : ['coverageTypes', 'robustness', 'sustain'];
   const values: Record<Key, number | null> = {
     robustness: defense.robustness, sustain: defense.sustain, coverageTypes: defense.coverageTypes.value, coverageMeta: coverageMeta?.value ?? null,
   };
