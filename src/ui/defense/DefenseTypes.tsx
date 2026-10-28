@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { weaknessSeverity } from '../../engine/coach';
 import { battleName } from '../../engine/dex';
 import type { TeamDefense } from '../../engine/defense';
@@ -6,8 +7,7 @@ import { useLang, useT } from '../../i18n/react';
 import { typeName } from '../../i18n/game';
 import { formatMultiplier, mitigationNote } from '../AnalysisTables';
 import type { AreaContext } from '../AreaDetail';
-import { IssueCounts, WEAKNESS_LABELS } from '../IssueCounts';
-import { Sprite } from '../Sprite';
+import { MemberMon } from './MemberMon';
 import { Typed } from '../TypeText';
 import { TypeIcons } from '../typeIcons';
 
@@ -18,36 +18,35 @@ const cellClass = (m: number) => (m === 4 ? 'm-4' : m > 1 ? 'm-2' : m === 0 ? 'm
 const safetyTone = (value: number) => (value < 50 ? 'bad' : value < 100 ? 'warn' : 'good');
 
 /**
- * Coverage tipi: una tabella sola, un membro per riga e i 18 tipi in colonna, poi Deboli / Resistono / Sicurezza per tipo
- * e sotto le note del meteo. "Debole" è sempre `weaknessSeverity`: segno in testata, riga Deboli e conteggi.
+ * Coverage tipi: la griglia come quella della Panoramica, un membro per riga (nello stesso punto di Generale) e i 18 tipi
+ * in colonna, in fondo i totali per tipo (Deboli, Resistono, Sicurezza). "Debole" è sempre `weaknessSeverity`: filo sotto
+ * l'icona del tipo e numero rosso nella riga Deboli.
  */
 export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: AreaContext }) {
   const t = useT();
   const lang = useLang();
   const { team, analysis } = ctx;
+  const roomy = !!ctx.roomy;
+  const [hover, setHover] = useState<{ row: number; col: number } | null>(null);
   const severities = analysis.weakness.map(weaknessSeverity);
-  const serious = severities.filter(s => s === 'serious').length;
-  const minor = severities.filter(s => s === 'minor').length;
   const safety = new Map(defense.coverageTypes.rows.map(row => [row.type, row.safety]));
-  const shortName = (type: string) => (type === 'Bug' ? t('ddetail.typeShort.Bug') : typeName(type, lang));
+  /** Classi di una cella della colonna `col`: il puntatore accende riga e colonna. */
+  const colClass = (col: number, extra = '') => [extra, hover?.col === col && 'x-col'].filter(Boolean).join(' ') || undefined;
 
   return (
-    <>
-      <p className="ct-caption">
-        {serious + minor === 0 && (team.length ? t('analysis.noShortfall') : '—')}
-        <IssueCounts serious={serious} minor={minor} labels={WEAKNESS_LABELS} />
-      </p>
+    <div className={`def-frame def-types${roomy ? ' roomy' : ''}`}>
       <div className="ad-scroll">
-        <table className="ct-table">
+        <table className="def-grid spaced ct-table" onMouseLeave={() => setHover(null)}>
+          <colgroup><col className="def-col-mon" /></colgroup>
           <thead>
             <tr>
-              <th scope="col"><span className="visually-hidden">{t('detail.member')}</span></th>
+              <th scope="col" className="def-mon-h">{t('detail.member')}</th>
               {analysis.weakness.map((row, i) => {
                 const severity = severities[i];
                 return (
-                  <th key={row.type} scope="col" className={severity ? `sev-${severity}` : undefined} title={typeName(row.type, lang)}>
+                  <th key={row.type} scope="col" className={colClass(i, severity ? `sev-${severity}` : '')} title={typeName(row.type, lang)}>
                     <TypeIcons types={[row.type]} />
-                    <span aria-hidden="true">{shortName(row.type)}</span>
+                    <span className="ct-flag" aria-hidden="true" />
                     <span className="visually-hidden">
                       {typeName(row.type, lang)}{severity && ` ${t(severity === 'serious' ? 'analysis.shortfallSerious' : 'analysis.shortfall')}`}
                     </span>
@@ -58,33 +57,37 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
           </thead>
           <tbody>
             {team.map((set, member) => (
-              <tr key={member}>
-                <th scope="row"><span className="ad-mon"><Sprite species={set.species} item={set.item} size={30} />{battleName(set)}</span></th>
-                {analysis.weakness.map(row => {
+              <tr key={member} className={hover?.row === member ? 'x-row' : undefined}>
+                <th scope="row"><MemberMon name={battleName(set)} /></th>
+                {analysis.weakness.map((row, i) => {
                   const m = row.multipliers[member];
-                  return <td key={row.type} className={cellClass(m)}>{formatMultiplier(m)}</td>;
+                  return (
+                    <td key={row.type} className={colClass(i, `ct-cell ${cellClass(m)}`)} onMouseEnter={() => setHover({ row: member, col: i })}>
+                      {formatMultiplier(m)}
+                    </td>
+                  );
                 })}
               </tr>
             ))}
             <tr className="ct-sum ct-sum-first">
               <th scope="row">{t('ddetail.weak')}</th>
-              {analysis.weakness.map((row, i) => <td key={row.type} className={severities[i] ? 'bad' : undefined}>{row.weak}</td>)}
+              {analysis.weakness.map((row, i) => <td key={row.type} className={colClass(i, severities[i] ? 'bad' : '')}>{row.weak}</td>)}
             </tr>
             <tr className="ct-sum">
               <th scope="row">{t('ddetail.resist')}</th>
-              {analysis.weakness.map(row => <td key={row.type}>{row.resist}</td>)}
+              {analysis.weakness.map((row, i) => <td key={row.type} className={colClass(i)}>{row.resist}</td>)}
             </tr>
-            <tr className="ct-sum ct-safety">
+            <tr className="ct-sum">
               <th scope="row">{t('ddetail.safety')}</th>
-              {analysis.weakness.map(row => {
+              {analysis.weakness.map((row, i) => {
                 const value = safety.get(row.type) ?? 0;
-                return <td key={row.type} className={safetyTone(value)}>{value}%</td>;
+                return <td key={row.type} className={colClass(i)}><span className={`ct-pill ${safetyTone(value)}`}>{value}%</span></td>;
               })}
             </tr>
           </tbody>
         </table>
       </div>
       {weatherMitigations(team).map(m => <p key={m.condition} className="note"><Typed text={mitigationNote(m, lang)} /></p>)}
-    </>
+    </div>
   );
 }

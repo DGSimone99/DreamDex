@@ -1,6 +1,7 @@
 import type { TeamDefense } from '../../engine/defense';
 import { useT } from '../../i18n/react';
 import { Sprite } from '../Sprite';
+import { MemberMon } from './MemberMon';
 
 /** Soglia di un colpo standard ricevuto, dal valore del colpo (holdStep: OHKO 0 … 4HKO o più 1,5). */
 export const HOLD_TAGS: Record<number, { cls: string; tag: string }> = {
@@ -32,7 +33,7 @@ export function DefenseRobustness({ defense }: { defense: TeamDefense }) {
               ])}
             </tr>
             <tr className="rob-atk">
-              <th scope="col"><span className="visually-hidden">{t('detail.member')}</span></th>
+              <th scope="col" className="def-mon-h">{t('detail.member')}</th>
               {groups.map(g => [
                 ...g.rows.map((row, i) => (
                   <th key={`${row.species}-${i}`} scope="col" aria-label={row.species} title={row.species} className={g.key === 'special' && i === 0 ? 'rob-start' : undefined}>
@@ -46,7 +47,7 @@ export function DefenseRobustness({ defense }: { defense: TeamDefense }) {
           <tbody>
             {members.map((m, mi) => (
               <tr key={`${m.species}-${mi}`}>
-                <th scope="row"><span className="ad-mon"><Sprite species={m.species} size={30} />{m.species}</span></th>
+                <th scope="row"><MemberMon name={m.species} /></th>
                 {groups.map(g => [
                   ...g.rows.map((row, i) => {
                     const cell = row.cells[mi];

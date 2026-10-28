@@ -4,9 +4,9 @@ import { battleName, battleSpecies, toID } from './dex';
 import { hitQuality, memberPower, teamPower, type MemberPower } from './power';
 import { teamOffense, type TeamOffense } from './offense';
 import { teamDefense, type TeamDefense } from './defense';
-import { BALANCE_SPAN, DEFENSE_FULL, resistPoints, typeSafety } from './typeSafety';
+import { BALANCE_SPAN, resistPoints, typeSafety } from './typeSafety';
 
-export { BALANCE_SPAN, DEFENSE_FULL, resistPoints, typeSafety };
+export { BALANCE_SPAN, resistPoints, typeSafety };
 import type { Archetype } from './archetype';
 import { hasSpeedControl, isPassive, isStall } from './roles';
 import { rulesOf } from './formatRules';

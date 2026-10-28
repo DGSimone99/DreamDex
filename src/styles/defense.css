@@ -54,12 +54,45 @@
 .def-mini.warn i { background: var(--warn); }
 .def-mini.bad i { background: var(--bad); }
 
+
+/* Cornice comune delle schede con i membri: la lista in alto (testata e righe di altezza fissa, così cambiando scheda i
+   Pokémon restano nello stesso punto), le tessere di riepilogo in fondo. L altezza delle righe segue quella del pannello (cqh), uguale in ogni scheda:
+   --def-tail è il margine tenuto sotto la fascia in fondo, lo stesso per tutte le schede */
+.def-frame { --def-top: 104px; --def-gap: 10px; --def-head: 34px; --def-sp: 3px; --def-tail: 4px; --def-mon: 270px; --def-row-min: 26px; --def-row-max: 999px;
+  --def-row: clamp(var(--def-row-min), calc((100cqh - var(--def-top) - var(--def-gap) - var(--def-head) - var(--def-tail)) / 6 - var(--def-sp)), var(--def-row-max));
+  display: flex; flex-direction: column; height: 100%; min-height: 0; container-type: size; }
+.def-frame.roomy { --def-tail: 4px; --def-mon: 270px; --def-row-min: 34px; --def-row-max: 999px; }
+.def-frame > .ad-scroll { flex: none; margin-bottom: var(--def-gap); overflow: visible; }
+/* La lista parte subito sotto la riga dei problemi: meno margine in alto nel pannello */
+.area-panel:has(> .def-frame) { padding-top: 6px; }
+.def-frame > .def-sum { flex: none; height: var(--def-top); margin: auto 0 0; overflow: hidden; }
+.def-sum.def-tiles { grid-template-rows: 100%; margin-bottom: 0; }
+/* L etichetta "Pokémon" sopra la colonna dei nomi, uguale in ogni tabella */
+.ad-panel table thead th.def-mon-h { padding: 0 0 6px; vertical-align: bottom; text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--faint); }
+.def-frame .def-grid { width: 100%; border-collapse: separate; border-spacing: 0 var(--def-sp); table-layout: fixed; font-variant-numeric: tabular-nums; }
+/* Griglie a caselle: lo spazio anche in orizzontale, rientrato perché la prima colonna parta nello stesso punto */
+.def-frame .def-grid.spaced { width: calc(100% + 2 * var(--def-sp)); margin: 0 calc(-1 * var(--def-sp)); border-spacing: var(--def-sp); }
+.def-grid .def-col-mon { width: var(--def-mon); }
+.def-grid thead tr { height: var(--def-head); }
+.def-grid tbody tr { height: var(--def-row); }
+.def-grid tbody th[scope='row'] { padding: 0 8px 0 0; font-size: 14px; font-weight: 600; color: var(--text); text-align: left; white-space: nowrap; }
+/* Il membro come icona del box (MemberMon): nitida da piccola, ingrandita a gradini con l altezza delle righe.
+   Le soglie sono sull altezza della cornice, la stessa a squadra aperta e chiusa (sotto le righe resta solo --def-tail):
+   righe ≥ 40px → ×1,4 · ≥ 58 → ×1,7 · ≥ 66 → ×2 · ≥ 90 → ×2,5 · ≥ 110 → ×3 */
+.def-box { --bs: 1; display: inline-grid; place-items: center; flex: none; width: calc(40px * var(--bs)); height: calc(30px * var(--bs)); }
+.def-box .mon-icon { transform: scale(var(--bs)); image-rendering: pixelated; }
+.def-frame .def-box { --bs: 0.8; }
+@container (min-height: 410px) { .def-frame .def-box { --bs: 1.4; } }
+@container (min-height: 518px) { .def-frame .def-box { --bs: 1.7; } }
+@container (min-height: 566px) { .def-frame .def-box { --bs: 2; } }
+@container (min-height: 710px) { .def-frame .def-box { --bs: 2.5; } }
+@container (min-height: 830px) { .def-frame .def-box { --bs: 3; } }
+
 /* Tabella dei membri con le barre */
-.def-members { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 14px; font-variant-numeric: tabular-nums; }
-.def-members thead th { padding: 6px 8px; font-size: 11px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: 0.05em; text-align: left; white-space: nowrap; }
-.def-members .def-col-mon { width: 250px; }
+.def-members { table-layout: fixed; font-size: 14px; font-variant-numeric: tabular-nums; }
+.def-members thead th { padding: 0 8px 6px; vertical-align: bottom; font-size: 11px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: 0.05em; text-align: left; white-space: nowrap; }
 .def-members thead th:first-child { padding-left: 0; }
-.def-members td, .def-members th[scope='row'] { padding: 2px 8px; border-bottom: 1px solid var(--line-soft); white-space: nowrap; text-align: left; }
+.def-members td, .def-members th[scope='row'] { padding: 0 8px; border-bottom: 1px solid var(--line-soft); white-space: nowrap; text-align: left; }
 .def-members th[scope='row'] { padding-left: 0; text-align: left; font-weight: 600; color: var(--text); }
 /* Barra e numero in una griglia fissa: la barra parte dove parte l'intestazione della colonna */
 .def-cell { display: inline-grid; grid-template-columns: 150px 3ch; align-items: center; gap: 10px; vertical-align: middle; }
@@ -81,14 +114,6 @@
 .def-members td.def-rec { white-space: normal; font-size: 13px; line-height: 1.3; }
 .def-rec .ad-halved { margin-left: 8px; color: var(--warn); font-weight: 600; cursor: help; }
 
-/* Squadra chiusa: le righe riempiono il pannello (niente scorrimento) */
-.def-general.roomy { display: flex; flex-direction: column; height: 100%; min-height: 0; }
-.def-general.roomy .ad-scroll { flex: 1; min-height: 0; overflow: hidden; }
-.def-general.roomy .def-members { height: 100%; }
-.def-general.roomy .def-members tbody tr { height: auto; }
-.def-general.roomy .def-members td, .def-general.roomy .def-members th[scope='row'] { padding-top: 2px; padding-bottom: 2px; }
-.def-general.roomy .def-members .def-col-mon { width: 240px; }
-.def-general.roomy .def-members thead tr { height: 1px; }
 /* Le barre seguono la larghezza della colonna: con sette colonne non c'è posto per i 150px fissi */
 .def-general.roomy .def-cell { display: grid; grid-template-columns: minmax(0, 1fr) 3ch; width: 100%; }
 .def-general.roomy .def-members .def-col-hit { width: 112px; }
@@ -148,29 +173,44 @@
 .sus-gain .ad-halved { margin-left: 8px; color: var(--warn); font-weight: 600; cursor: help; }
 .sus-val { text-align: right; font: italic 700 15px/1 var(--display); color: var(--text); }
 
-/* Coverage tipi: membri in riga, 18 tipi in colonna. Riempimenti da color-mix dei token di stato sul pannello, testo --text
-   (contrasto ≥ 5.2:1 su swsh e sv: vedi il rapporto del task). Il ×0 usa l'accento della palette (ciano su swsh, arancio su sv) */
-.ad-panel .ct-caption { display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin: 0 0 6px; font-size: 13px; color: var(--muted); }
-.ct-table { width: 100%; border-collapse: separate; border-spacing: 2px; font-variant-numeric: tabular-nums; }
-.ct-table thead th { padding: 3px 0 2px; font-size: 11px; font-weight: 500; line-height: 1.1; color: var(--muted); text-align: center; white-space: nowrap; }
-.ct-table thead .type-icons { display: block; margin: 0 auto 2px; }
-.ct-table thead .type-icons img { width: 20px; height: 20px; }
-.ct-table thead th.sev-serious { box-shadow: inset 0 3px 0 var(--bad); }
-.ct-table thead th.sev-minor { box-shadow: inset 0 3px 0 var(--warn); }
-.ct-table tbody th { padding-right: 6px; text-align: left; font-size: 13px; font-weight: 600; white-space: nowrap; color: var(--text); }
-.ct-table td { height: 30px; min-width: 38px; text-align: center; font-size: 12px; font-weight: 600; color: var(--text); background: color-mix(in srgb, var(--raised) 45%, var(--panel)); }
-.ct-table td.m-4 { background: color-mix(in srgb, var(--bad) 45%, var(--panel)); }
-.ct-table td.m-2 { background: color-mix(in srgb, var(--bad) 28%, var(--panel)); }
-.ct-table td.m-half { background: color-mix(in srgb, var(--good) 26%, var(--panel)); }
-.ct-table td.m-quarter { background: color-mix(in srgb, var(--good) 42%, var(--panel)); }
-.ct-table td.m-0 { background: color-mix(in srgb, var(--accent) 30%, var(--panel)); }
-/* Righe riassuntive: senza riempimento, la prima con il filo sopra */
-.ct-table tbody tr.ct-sum td, .ct-table tbody tr.ct-sum th { background: none; font-weight: 600; }
-.ct-table tbody tr.ct-sum-first td, .ct-table tbody tr.ct-sum-first th { border-top: 2px solid var(--line); }
-.ct-table td.bad { color: var(--bad); }
-.ct-table td.warn { color: var(--warn); }
-.ct-table td.good { color: var(--good); }
-.ct-safety td { font: italic 700 13px/1 var(--display); }
+/* Coverage tipi: la griglia a caselle come quella della Panoramica (membri in riga, 18 tipi in colonna), in fondo i totali
+   per tipo. Riempimenti da color-mix dei token di stato, testo --text; il ×0 usa l accento della palette */
+.ct-table thead th { padding: 0 0 2px; vertical-align: bottom; text-align: center; }
+.ct-table thead .type-icons { display: block; }
+.ct-table thead .type-icons img { display: block; width: 24px; height: 24px; margin: 0 auto; border-radius: 50%; }
+/* Filo sotto l icona: rosso se grave, giallo se minore, vuoto (stessa altezza) altrimenti */
+.ct-flag { display: block; width: 24px; height: 3px; margin: 4px auto 0; border-radius: 2px; }
+.ct-table th.sev-serious .ct-flag { background: var(--bad); }
+.ct-table th.sev-minor .ct-flag { background: var(--warn); }
+/* Caselle: neutro come la Panoramica, i colori solo dove il moltiplicatore cambia */
+.def-frame .ct-cell { padding: 0; text-align: center; font: 700 15px/1 var(--ui); color: var(--text); border: 1px solid var(--line); border-radius: 3px; background: var(--raised); }
+.def-frame .ct-cell.m-4 { background: color-mix(in srgb, var(--bad) 48%, var(--panel)); border-color: var(--bad); }
+.def-frame .ct-cell.m-2 { background: color-mix(in srgb, var(--bad) 28%, var(--panel)); border-color: color-mix(in srgb, var(--bad) 80%, transparent); }
+.def-frame .ct-cell.m-half { background: color-mix(in srgb, var(--good) 12%, var(--raised)); border-color: color-mix(in srgb, var(--good) 35%, var(--line)); color: var(--muted); }
+.def-frame .ct-cell.m-quarter { background: color-mix(in srgb, var(--good) 24%, var(--panel)); border-color: color-mix(in srgb, var(--good) 60%, transparent); }
+.def-frame .ct-cell.m-0 { background: color-mix(in srgb, var(--accent) 22%, var(--panel)); border-color: color-mix(in srgb, var(--accent) 60%, transparent); }
+/* Il moltiplicatore cresce con la riga: leggibile anche nelle caselle alte della squadra chiusa */
+.def-frame .ct-table td.ct-cell { font-size: clamp(13px, calc(var(--def-row) * 0.24), 24px); }
+/* Croce del puntatore: bordi più chiari su riga e colonna, nome e icona in evidenza */
+.ct-table tr.x-row .ct-cell, .ct-table .ct-cell.x-col { border-color: var(--faint); }
+.ct-table tr.x-row th[scope='row'] { color: var(--accent); }
+.ct-table thead th.x-col img { transform: scale(1.15); }
+/* Riepilogo: righe basse, etichette come le righe della Panoramica */
+.ct-table tr.ct-sum { height: 26px; }
+.ct-table tr.ct-sum th { padding: 0 8px 0 0; font: 600 11px/1 var(--ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); text-align: left; }
+.ct-table tr.ct-sum td { padding: 0; text-align: center; font-size: 13px; font-weight: 600; color: var(--text); }
+.ct-table tr.ct-sum td.bad { color: var(--bad); }
+/* A squadra aperta la Sicurezza è l unico riepilogo: staccata di qualche px dalle caselle */
+.def-frame:not(.roomy) .ct-table tr.ct-sum-first > * { padding-top: 7px; }
+.ct-pill { display: inline-block; min-width: 42px; padding: 2px 6px; border-radius: 999px; font: 700 12px/1.3 var(--ui); }
+.ct-pill.bad { background: var(--bad-bg); color: var(--bad); }
+.ct-pill.warn { background: var(--warn-bg); color: var(--warn); }
+.ct-pill.good { background: var(--good-bg); color: var(--good); }
+@container (max-width: 1100px) {
+  .ct-table thead .type-icons img { width: 20px; height: 20px; }
+  .ct-table .ct-pill { min-width: 0; padding: 1px 4px; font-size: 11px; }
+  .ct-cell { font-size: 12px; }
+}
 
 /* Coverage meta: una tessera per minaccia */
 .cm-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 4px; }
@@ -191,3 +231,44 @@
 /* Come funziona: nome e peso su una riga, la descrizione sotto */
 .guide-rows.stacked > div { grid-template-columns: 1fr; gap: 3px; padding: 8px 0; }
 .guide-rows.stacked dd { color: var(--muted); }
+
+/* Guida, Coverage tipi: i due conti come tasti, la scala con le targhette della riga Sicurezza e
+   l esempio svolto in fila. I colori seguono il segno (verde aggiunge, rosso toglie) e la griglia (caselle ×½ ×2 ×4) */
+.guide-two { display: grid; grid-template-columns: 3fr 2fr; gap: 10px; }
+.guide-two > div { padding: 8px 10px 10px; border: 1px solid var(--line-soft); background: color-mix(in srgb, var(--raised) 35%, transparent); }
+.guide-two h6 { margin: 0 0 8px; font-size: 11px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: 0.05em; }
+.guide-keys { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.guide-keys li { display: grid; justify-items: center; gap: 2px; padding: 5px 4px 6px; border: 1px solid var(--line); border-radius: 3px; background: var(--raised); }
+.guide-keys span { font-size: 12px; font-weight: 600; line-height: 1.2; text-align: center; color: var(--muted); }
+.guide-keys b { font: italic 700 16px/1 var(--display); font-variant-numeric: tabular-nums; color: var(--text); }
+.guide-keys .good b { color: var(--good); }
+.guide-keys .bad b { color: var(--bad); }
+.guide-keys .even b { color: var(--muted); }
+.guide-keys li[title] { cursor: help; }
+.guide-scale { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0; margin: 0; padding: 0; list-style: none; border: 1px solid var(--line-soft); }
+.guide-scale li { display: grid; justify-items: center; gap: 4px; padding: 7px 4px; background: color-mix(in srgb, var(--raised) 55%, var(--panel)); }
+.guide-scale li + li { border-left: 1px solid var(--line-soft); }
+.guide-scale span { font-size: 12px; color: var(--muted); }
+.guide-scale b.ct-pill { min-width: 52px; text-align: center; font-size: 13px; }
+.guide-scale small { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+.guide-example { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; font-size: 14px; color: var(--muted); }
+.guide-example .guide-mults { flex-basis: 100%; }
+.guide-mults { display: inline-flex; gap: 3px; }
+.guide-mults i { display: inline-grid; place-items: center; min-width: 30px; height: 26px; border: 1px solid var(--line); border-radius: 3px; font: normal 700 12px/1 var(--ui); color: var(--text); background: var(--raised); }
+.guide-mults .res { background: color-mix(in srgb, var(--good) 12%, var(--raised)); border-color: color-mix(in srgb, var(--good) 35%, var(--line)); color: var(--muted); }
+.guide-mults .weak { background: color-mix(in srgb, var(--bad) 28%, var(--panel)); border-color: color-mix(in srgb, var(--bad) 80%, transparent); }
+.guide-mults .x4 { background: color-mix(in srgb, var(--bad) 48%, var(--panel)); border-color: var(--bad); }
+.guide-arrow { color: var(--faint); }
+.guide-res { display: grid; gap: 1px; padding: 0 12px 0 0; margin-right: 4px; border-right: 1px solid var(--line-soft); }
+.guide-res small { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--faint); }
+.guide-res b { color: var(--text); font-variant-numeric: tabular-nums; }
+.guide-verdict { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--bad); }
+.guide-verdict b.ct-pill { font-size: 13px; text-transform: none; letter-spacing: 0; }
+.guide-lines { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; font-size: 14px; color: var(--muted); }
+.guide-lines b { color: var(--text); }
+@media (max-width: 560px) {
+  .guide-two { grid-template-columns: 1fr; }
+}
+
+/* La guida della Difesa è più larga dei modali d aiuto: i due conti e la scala stanno su una riga */
+.help-dialog.area-guide { width: min(920px, 100%); }

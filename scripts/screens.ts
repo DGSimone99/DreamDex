@@ -151,6 +151,13 @@ const DEFENSE_STATES: Record<string, State> = {
   'analysis-defense-types-nometa': defenseState(SUBS.types, { format: { meta: false } }),
   'analysis-defense-long': defenseState(null, { team: LONG }),
   // La guida della Difesa aperta dal "?" di Generale (Come funziona)
+  'analysis-defense-guide-types': { hash: hash(SIX), run: async p => {
+    const ok = await defenseState(SUBS.types).run!(p);
+    if (ok !== true) return ok;
+    if (!await clickText(p, '.area-help button', /./)) return 'no guide button';
+    await wait(400);
+    return true;
+  } },
   'analysis-defense-guide': { hash: hash(SIX), run: async p => {
     const ok = await defenseState(null).run!(p);
     if (ok !== true) return ok;
@@ -475,7 +482,13 @@ for (const [w, h] of sizes) {
       return {
         scroll: document.scrollingElement!.scrollHeight - window.innerHeight,
         clipped: main ? main.scrollHeight - main.clientHeight : 0,
-        panel: (() => { const el = document.querySelector<HTMLElement>('.area-panel'); return el ? ` panelOverflow=${el.scrollHeight - el.clientHeight}` : ''; })(),
+        panel: (() => { const el = document.querySelector<HTMLElement>('.area-panel'); if (!el) return '';
+          // Righe dei membri (cornice comune della Difesa): y e altezza della prima e dell ultima, per vedere che restano ferme
+          const rows = [...el.querySelectorAll<HTMLElement>('.def-grid tbody th[scope="row"] .ad-mon')].map(r => r.closest('tr')!.getBoundingClientRect());
+          const memberRows = rows.length ? ` memberRows=${Math.round(rows[0].top)}+${Math.round(rows[0].height)}..${Math.round(rows[rows.length - 1].bottom)} monX=${Math.round(el.querySelector('.def-grid tbody .ad-mon')!.getBoundingClientRect().left)}` : '';
+          const label = el.querySelector<HTMLElement>('th.def-mon-h');
+          const labelAt = label ? (() => { const r = document.createRange(); r.selectNodeContents(label); const b = r.getBoundingClientRect(); return ` label=${Math.round(b.left)},${Math.round(b.top)}`; })() : '';
+          return ` panelOverflow=${el.scrollHeight - el.clientHeight} panelX=${el.scrollWidth - el.clientWidth}${memberRows}${labelAt}`; })(),
         dash: box ? `dash=${box.clientHeight}x${box.clientWidth} density=${box.dataset.density} cards=[${heights.join(',')}] cut=${cut} overflow=[${over.join(',')}] sumClip=${sumClip} rows=[${sumRows.join(',')}] sumHidden=${sumHidden} sumFill=${fill}% fitCut=${fitCut} covBand=${covBand} overviewScroll=${(document.querySelector('.overview')?.scrollHeight ?? 0) - (document.querySelector('.overview')?.clientHeight ?? 0)} hScroll=${document.scrollingElement!.scrollWidth - window.innerWidth}` : '',
       };
     });
