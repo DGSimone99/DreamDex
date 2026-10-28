@@ -775,6 +775,7 @@ export const it: Record<keyof typeof en, string> = {
   'ddetail.holdLegend': "Colpo standard più forte ricevuto:",
   'ddetail.sus.loss': "Perde",
   'ddetail.sus.gain': "Recupera",
+  'ddetail.sus.net': "Netto",
   'ddetail.sus.rocks': "Stealth Rock",
   'ddetail.sus.orb': "Strumenti",
   'ddetail.sus.rocksHalved': "Dimezzata: {by} toglie gli hazard",

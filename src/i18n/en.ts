@@ -773,6 +773,7 @@ export const en = {
   'ddetail.holdLegend': "Strongest standard hit taken:",
   'ddetail.sus.loss': "Loses",
   'ddetail.sus.gain': "Recovers",
+  'ddetail.sus.net': "Net",
   'ddetail.sus.rocks': "Stealth Rock",
   'ddetail.sus.orb': "Items",
   'ddetail.sus.rocksHalved': "Halved: {by} removes hazards",
