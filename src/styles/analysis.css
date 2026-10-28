@@ -553,11 +553,11 @@ button.sum-row:hover { background: var(--accent-wash); }
  * Problemi per area: quattro tessere (targa magenta, voto grande, barretta del voto), i problemi come pillole col bordo
  * del colore della gravità. Ridondanze e minacce sotto un'etichetta, più quiete. Tessera pulita: tinta di verde.
  */
-.coach-map { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 0.85fr) minmax(0, 1.3fr) minmax(0, 1fr); gap: 10px; align-items: stretch; margin: 0 0 8px; }
-.coach-tile { display: flex; flex-direction: column; min-width: 0; padding: 0 0 6px; background: var(--panel); border: 1px solid var(--line-soft); }
+.coach-map { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, 1.2fr); gap: 10px; align-items: stretch; margin: 0 0 7px; }
+.coach-tile { display: flex; flex-direction: column; min-width: 0; padding: 0 0 5px; background: var(--panel); border: 1px solid var(--line-soft); }
 .coach-tile-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-right: 12px; }
 .coach-tile-head .dash-meta b { font: 800 24px/1 var(--display); font-style: italic; }
-.coach-tile-bar { height: 4px; margin: 5px 12px 7px; background: linear-gradient(90deg, var(--accent) var(--score, 0%), var(--line-soft) var(--score, 0%)); }
+.coach-tile-bar { height: 4px; margin: 4px 12px 6px; background: linear-gradient(90deg, var(--accent) var(--score, 0%), var(--line-soft) var(--score, 0%)); }
 .coach-tile.is-clean { background: linear-gradient(180deg, var(--good-bg), var(--panel) 85%); border-color: color-mix(in srgb, var(--good) 30%, var(--line-soft)); }
 .coach-tile.is-clean .coach-tile-bar { background: linear-gradient(90deg, var(--good) var(--score, 100%), var(--line-soft) var(--score, 100%)); }
 .coach-tile-ok { display: flex; align-items: center; gap: 6px; margin: 4px 12px 0; font-size: 13px; font-weight: 600; color: var(--good); }
@@ -614,10 +614,10 @@ button.sum-row:hover { background: var(--accent-wash); }
   .coach-fix-main strong { font-size: 22px; }
   .coach-prop.is-main > .coach-fix > .coach-gain { font-size: 26px; }
   .coach-also { font-size: 12.5px; }
-  .coach-map { gap: 12px; margin-bottom: 10px; }
-  .coach-tile { padding-bottom: 12px; }
+  .coach-map { gap: 12px; margin-bottom: 6px; }
+  .coach-tile { padding-bottom: 10px; }
   .coach-tile-head .dash-meta b { font-size: 28px; }
-  .coach-tile-bar { margin: 8px 12px 12px; }
+  .coach-tile-bar { margin: 7px 12px 10px; }
   .coach-probs { gap: 7px; }
   .coach-prob { padding: 4px 10px 4px 7px; font-size: 13px; }
   .coach-sec { margin-bottom: 6px; }
