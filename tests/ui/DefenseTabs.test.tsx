@@ -109,7 +109,7 @@ describe('Difesa: Robustezza e Sostenibilità', () => {
 });
 
 describe('Difesa: Coverage tipi e Coverage meta', () => {
-  it('Coverage tipi: una tabella sola, membri in riga e 18 tipi in colonna, poi Deboli/Resistono/Sicurezza', async () => {
+  it('Coverage tipi: una tabella sola, membri in riga e 18 tipi in colonna, in fondo Deboli, Resistono e Sicurezza', async () => {
     const user = userEvent.setup();
     renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[]} />);
     await user.click(screen.getByRole('tab', { name: /^Coverage tipi/ }));
@@ -122,9 +122,8 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
     const water = analysis.weakness.findIndex(row => row.type === 'Water');
     expect(within(tusk).getAllByRole('cell')[water]).toHaveTextContent('×2');
     for (const name of ['Deboli', 'Resistono', 'Sicurezza']) expect(within(tables[0]).getByRole('row', { name: new RegExp(`^${name}`) })).toBeInTheDocument();
-    // I conteggi gravi + minori della vecchia tabella restano
-    const counts = [...panel.querySelectorAll('.issue [aria-hidden="true"]')].map(el => Number(el.textContent));
-    expect(counts.reduce((a, b) => a + b, 0)).toBe(analysis.weakness.filter(row => weaknessSeverity(row)).length);
+    // Niente legenda e niente tessere "Chi entra": la griglia con i totali basta
+    expect(panel.querySelector('.ct-legend, .def-sum')).toBeNull();
   });
 
   it('Coverage tipi: i tipi in difetto hanno il segno in testata, la Sicurezza è quella del motore', async () => {

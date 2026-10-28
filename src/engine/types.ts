@@ -1,6 +1,7 @@
 import { battleAbility, battleSpecies, dex, getMove, isDefined, toID } from './dex';
 import type { TeamSet } from './sets';
 import { memoBySet } from './memo';
+import { typeBalance } from './typeSafety';
 
 export const TYPES = [
   'Normal', 'Fire', 'Water', 'Electric', 'Grass', 'Ice', 'Fighting', 'Poison', 'Ground',
@@ -57,7 +58,8 @@ export function weaknessTable(team: TeamSet[]): WeaknessRow[] {
     const multipliers = team.map(set => defensiveMultiplier(type, set));
     const weak = multipliers.filter(m => m > 1).length;
     const resist = multipliers.filter(m => m < 1).length;
-    return { type, multipliers, weak, resist, pressure: Math.max(0, weak - resist) };
+    // Quanto il tipo è in difetto: il saldo negativo della Sicurezza (0 dal 50% in su, 2 o più a 0%)
+    return { type, multipliers, weak, resist, pressure: Math.max(0, -typeBalance(multipliers)) };
   });
 }
 
