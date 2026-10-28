@@ -545,7 +545,7 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 
 /* Stile "Menu": una colonna di 6 pillole scure su un rullo (altezza della riga e spazio da usePerPage: --row-h, --menu-gap).
    A sinistra 30px per il cursore ▶ della selezionata; colori da tokens.css (--pill-*), così un tema li ridefinisce */
-.suggestions.menu { display: flex; flex-direction: column; justify-content: center; gap: var(--menu-gap, 10px); padding: 10px 14px 10px 30px; perspective: 900px; }
+.suggestions.menu { display: flex; flex-direction: column; justify-content: center; gap: var(--menu-gap, 10px); padding: 10px 14px 10px 30px; perspective: 700px; }
 .suggestions.menu > li + li { border-top: 0; }
 .pill {
   --rh: var(--row-h, 48px);
@@ -566,10 +566,10 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
   user-select: none;
   /* Rullo: allontanandosi dalla selezionata (--d con segno, --ad senza) la pillola si inclina un poco all'indietro, sopra
      verso l'alto e sotto verso il basso, e si stringe in larghezza più che in altezza (non si schiaccia; la più lontana
-     resta al 94%). Il centro del rullo segue il mouse (--d lo calcola la lista), con un rimbalzo */
+     resta all'88% in larghezza, al 94% in altezza). Il centro del rullo segue il mouse (--d lo calcola la lista), con un rimbalzo */
   --hs: 1;
-  transform: rotateX(calc(var(--d, 0) * -5deg)) scale(calc((1 - var(--ad, 0) * 0.02) * var(--hs)), calc((1 - var(--ad, 0) * 0.012) * var(--hs)));
-  opacity: calc(1 - var(--ad, 0) * 0.06);
+  transform: rotateX(calc(var(--d, 0) * -10deg)) scale(calc((1 - var(--ad, 0) * 0.04) * var(--hs)), calc((1 - var(--ad, 0) * 0.02) * var(--hs)));
+  opacity: calc(1 - var(--ad, 0) * 0.1);
   transition: background 0.15s, opacity 0.3s, transform 0.42s cubic-bezier(0.34, 1.45, 0.5, 1);
 }
 .pill:hover { --hs: 1.02; z-index: 2; background: var(--pill-bg-hover); }
