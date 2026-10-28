@@ -133,7 +133,7 @@ describe('dettaglio della Difesa a schede', () => {
     expect(tabs.map(tab => tab.textContent!.replace(/\s*\d+$/, ''))).toEqual(['Generale', 'Robustezza', 'Sostenibilità', 'Coverage tipi', 'Coverage meta']);
     for (const tab of tabs) expect(tab.textContent).toMatch(/\d+$/);
     const panel = within(dialog).getByRole('tabpanel');
-    expect(within(panel).getAllByRole('button').map(b => b.getAttribute('aria-label')!.replace(/\s*\d+$/, ''))).toEqual(['Robustezza', 'Sostenibilità', 'Coverage tipi', 'Coverage meta']);
+    expect(within(panel).getAllByRole('button').map(b => b.querySelector('.def-tile-head span')!.textContent)).toEqual(['Robustezza', 'Sostenibilità', 'Coverage tipi', 'Coverage meta']);
     const table = within(panel).getByRole('table');
     expect(within(table).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Fisica', 'Speciale', 'Sostenibilità', 'Difesa']);
     const rows = within(table).getAllByRole('row').slice(1);

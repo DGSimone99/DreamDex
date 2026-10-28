@@ -15,7 +15,7 @@ const START: Partial<Record<AreaKey, string>> = { strength: 'coverageTypes' };
 /**
  * Un'area del voto sulla pagina (scheda di Analisi): una striscia di sottoschede (col loro valore) attaccata alla scheda
  * aperta, una riga coi problemi dell'area e il dettaglio di quella scelta a tutta larghezza.
- * `extra`: contenuto in più in cima a una scheda (la tabella completa delle debolezze, della coverage, dei bisogni).
+ * `extra`: contenuto in più in cima a una scheda (la coverage dei tipi, i bisogni dei ruoli).
  */
 export function AreaView({ rating, area, problems, team, analysis, extra }: {
   rating: TeamRating;
@@ -29,14 +29,17 @@ export function AreaView({ rating, area, problems, team, analysis, extra }: {
   const lang = useLang();
   const id = useId();
   const [picked, setPicked] = useState<string | null>(null);
-  // `open`: le tessere della scheda Generale aprono la sottoscheda
-  const tabs = areaTabs(rating, area, t, lang, { team, analysis, open: setPicked });
+  // `open`: le tessere della scheda Generale aprono la sottoscheda e le passano il focus (il pannello che le ospitava sparisce)
+  const focusKey = useRef<string | null>(null);
+  const open = (key: string) => { focusKey.current = key; setPicked(key); };
+  const tabs = areaTabs(rating, area, t, lang, { team, analysis, open });
   const start = Math.max(0, tabs.findIndex(tab => tab.key === START[area]));
   const index = Math.max(0, picked === null ? start : tabs.findIndex(tab => tab.key === picked));
   const current = tabs[index];
   const buttons = useRef<(HTMLButtonElement | null)[]>([]);
   const helpButton = useRef<HTMLButtonElement>(null);
-  const [guide, setGuide] = useState(false);
+  // La guida ha la sua sezione: cambiarla non sposta la sottoscheda dietro (null = chiusa)
+  const [guide, setGuide] = useState<string | null>(null);
   const title = t(`area.${area}`);
 
   // Il "?" sta fuori dal tablist (lì solo schede) ma si vede sulla scheda aperta, a destra
@@ -54,12 +57,19 @@ export function AreaView({ rating, area, problems, team, analysis, extra }: {
     return () => observer.disconnect();
   }, [index, t, hasHelp]);
 
-  // Alla chiusura della guida il focus torna al "?"
+  // Alla chiusura della guida il focus torna al "?" della sottoscheda su cui si era
   const wasOpen = useRef(false);
   useEffect(() => {
-    if (wasOpen.current && !guide) helpButton.current?.focus();
-    wasOpen.current = guide;
+    if (wasOpen.current && guide === null) helpButton.current?.focus();
+    wasOpen.current = guide !== null;
   }, [guide]);
+
+  // Dopo un'apertura da tessera il focus va alla sottoscheda scelta
+  useEffect(() => {
+    if (focusKey.current === null) return;
+    buttons.current[tabs.findIndex(tab => tab.key === focusKey.current)]?.focus();
+    focusKey.current = null;
+  });
 
   // Frecce destra/sinistra (con giro), Home e End fra le sottostatistiche
   const onKey = (e: KeyboardEvent, i: number) => {
@@ -95,7 +105,7 @@ export function AreaView({ rating, area, problems, team, analysis, extra }: {
         {current.help && (
           <span className="area-help" style={{ left: helpLeft }}>
             <button ref={helpButton} type="button" className="help-button" aria-label={t('area.guide.button', { tab: current.label })}
-              title={t('area.guide.button', { tab: current.label })} onClick={() => setGuide(true)}>
+              title={t('area.guide.button', { tab: current.label })} onClick={() => setGuide(current.key)}>
               <Icon name="help" />
             </button>
           </span>
@@ -103,9 +113,9 @@ export function AreaView({ rating, area, problems, team, analysis, extra }: {
       </div>
       {/* Nome e voto dell'area stanno già nella scheda aperta: sotto la striscia solo la nota quando l'area non conta */}
       {rating.areas.find(a => a.key === area)?.inactive && <p className="area-inactive" role="note">{t('rating.notCounted')}</p>}
-      {guide && sections.length > 0 && (
-        <AreaGuide title={t('area.guide.title', { area: title })} sections={sections} current={current.key}
-          onCurrent={key => setPicked(key)} onClose={() => setGuide(false)} />
+      {guide !== null && sections.length > 0 && (
+        <AreaGuide title={t('area.guide.title', { area: title })} sections={sections} current={guide}
+          onCurrent={setGuide} onClose={() => setGuide(null)} />
       )}
       {problems.length > 0 && (
         <ul className="area-problems" aria-label={t('analysis.areaProblems', { area: title })}>

@@ -31,7 +31,14 @@ describe('Difesa: Generale e guida', () => {
     const panel = screen.getByRole('tabpanel');
     expect(within(panel).getAllByRole('button', { name: /Robustezza|Sostenibilità|Coverage tipi|Coverage meta/ })).toHaveLength(4);
     await user.click(within(panel).getByRole('button', { name: /^Robustezza/ }));
-    expect(screen.getByRole('tab', { name: /^Robustezza/ })).toHaveAttribute('aria-selected', 'true');
+    const tab = screen.getByRole('tab', { name: /^Robustezza/ });
+    expect(tab).toHaveAttribute('aria-selected', 'true');
+    expect(tab).toHaveFocus();
+  });
+
+  it('le tessere hanno come nome il testo visibile, col fatto principale', () => {
+    renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[]} />);
+    expect(within(screen.getByRole('tabpanel')).getByRole('button', { name: /^Robustezza.*Fisica.*Speciale/ })).toBeInTheDocument();
   });
 
   it('senza meta: 3 tessere e nessuna sezione Coverage meta nella guida', async () => {
@@ -54,6 +61,19 @@ describe('Difesa: Generale e guida', () => {
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(help).toHaveFocus();
+  });
+
+  it('cambiare sezione nella guida non sposta la sottoscheda; alla chiusura il focus torna al "?"', async () => {
+    const user = userEvent.setup();
+    renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[]} />);
+    await user.click(screen.getByRole('tab', { name: /^Robustezza/ }));
+    await user.click(screen.getByRole('button', { name: 'Come funziona Robustezza' }));
+    const dialog = screen.getByRole('dialog', { name: 'Guida: Difesa' });
+    await user.click(within(dialog).getByRole('tab', { name: 'Come funziona' }));
+    expect(within(dialog).getByRole('tab', { name: 'Come funziona' })).toHaveAttribute('aria-selected', 'true');
+    await user.keyboard('{Escape}');
+    expect(screen.getByRole('tab', { name: /^Robustezza/ })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('button', { name: 'Come funziona Robustezza' })).toHaveFocus();
   });
 });
 

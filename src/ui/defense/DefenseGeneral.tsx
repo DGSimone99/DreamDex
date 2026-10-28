@@ -67,7 +67,7 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
     <>
       <div className="def-tiles">
         {tiles.map(tile => (
-          <button key={tile.key} type="button" className={`def-tile ${tone(tile.value)}`} aria-label={`${tile.label} ${tile.value}`}
+          <button key={tile.key} type="button" className={`def-tile ${tone(tile.value)}`}
             onClick={() => ctx.open?.(tile.key)}>
             <span className="def-tile-head"><span>{tile.label}</span><b>{tile.value}</b></span>
             <span className="def-tile-fact">{tile.fact}</span>

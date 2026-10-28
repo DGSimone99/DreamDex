@@ -61,7 +61,7 @@
 /* Spazio tra i due gruppi: solo sulla prima colonna dei speciali */
 .rob-matrix .rob-start { border-left: 8px solid transparent; background-clip: padding-box; }
 .rob-grp th.rob-start { border-left: 8px solid transparent; }
-.rob-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 8px 0 0; font-size: 12px; color: var(--muted); }
+.ad-panel .rob-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 8px 0 0; font-size: 12px; color: var(--muted); }
 
 /* Sostenibilità: barre divergenti attorno allo zero (50% = metà larghezza piena) */
 .sus-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
@@ -79,7 +79,7 @@
 .sus-track i { display: block; height: 100%; }
 .sus-loss i { background: var(--bad); }
 .sus-gain i { background: var(--good); }
-.sus-legend { margin: 8px 0 0; font-size: 12px; color: var(--muted); }
+.ad-panel .sus-legend { margin: 8px 0 0; font-size: 12px; color: var(--muted); }
 .sus-num { margin: 0 6px; font-size: 12px; }
 .sus-num.bad { color: var(--bad); }
 .sus-num.good { color: var(--good); }
@@ -90,7 +90,7 @@
 
 /* Coverage tipi: membri in riga, 18 tipi in colonna. Riempimenti da color-mix dei token di stato sul pannello, testo --text
    (contrasto ≥ 5.2:1 su swsh e sv: vedi il rapporto del task). Il ×0 usa l'accento della palette (ciano su swsh, arancio su sv) */
-.ct-caption { display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin: 0 0 6px; font-size: 13px; color: var(--muted); }
+.ad-panel .ct-caption { display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin: 0 0 6px; font-size: 13px; color: var(--muted); }
 .ct-table { width: 100%; border-collapse: separate; border-spacing: 2px; font-variant-numeric: tabular-nums; }
 .ct-table thead th { padding: 3px 0 2px; font-size: 11px; font-weight: 500; line-height: 1.1; color: var(--muted); text-align: center; white-space: nowrap; }
 .ct-table thead .type-icons { display: block; margin: 0 auto 2px; }

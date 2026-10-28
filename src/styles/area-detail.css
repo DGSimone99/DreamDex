@@ -3,12 +3,6 @@
 .ad-head h3 { display: flex; align-items: baseline; gap: 12px; font-size: 20px; }
 .ad-head h3 strong { font: 700 30px/1 var(--display); color: var(--text); font-variant-numeric: tabular-nums; }
 .ad-body { display: grid; grid-template-columns: 180px minmax(0, 1fr); min-height: 0; flex: 1; }
-.ad-nav { display: flex; flex-direction: column; gap: 2px; padding: 10px; border-right: 1px solid var(--line-soft); background: var(--panel); }
-.ad-nav [role='tab'] { display: flex; justify-content: space-between; align-items: baseline; padding: 8px 10px; border: 0; border-radius: 4px; background: none; color: var(--muted); font-size: 14px; text-align: left; }
-.ad-nav [role='tab'] b { font: 700 18px/1 var(--display); color: var(--faint); font-variant-numeric: tabular-nums; }
-.ad-nav [role='tab']:hover { color: var(--text); background: color-mix(in srgb, var(--raised) 55%, transparent); }
-.ad-nav [role='tab'][aria-selected='true'] { color: var(--text); background: var(--accent-soft); font-weight: 600; }
-.ad-nav [role='tab'][aria-selected='true'] b { color: var(--text); }
 .ad-panel { padding: 16px 22px 22px; overflow-y: auto; }
 .ad-panel h4 { margin: 0 0 8px; font: 700 18px/1.1 var(--display); font-style: italic; letter-spacing: 0.01em; }
 /* Le spiegazioni occupano tutta la larghezza del pannello: il modale è largo apposta */
@@ -51,7 +45,6 @@
 .ad-k.setup.two, .ad-k.setup.ohko { color: var(--text); }
 .ad-t .ad-group th { padding: 12px 0 4px; font-size: 11px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: 0.05em; text-align: left; border-bottom: 1px solid var(--line); }
 .ad-t .ad-src { font: 500 12px/1 var(--ui); color: var(--faint); }
-.ad-t .ad-halved { font: 600 12px/1 var(--ui); color: var(--warn); cursor: help; }
 .ad-t .gap { padding-left: 22px; }
 .ad-legend { margin: 8px 0 0 !important; font-size: 12px !important; color: var(--faint) !important; }
 .ad-cover .sprite { margin-right: -6px; }
@@ -75,8 +68,6 @@
 .ad-cover > span.partial { opacity: 0.45; }
 @media (max-width: 560px) {
   .ad-body { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr); }
-  .ad-nav { flex-direction: row; overflow-x: auto; border-right: 0; border-bottom: 1px solid var(--line-soft); }
-  .ad-nav [role='tab'] { gap: 8px; white-space: nowrap; }
   .ad-panel { padding: 12px 14px 16px; }
 }
 
