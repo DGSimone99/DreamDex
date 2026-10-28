@@ -139,15 +139,19 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
       .toEqual(rating.defense.coverageTypes.rows.map(row => `${row.safety}%`));
   });
 
-  it('Coverage meta: una tessera per minaccia, con livello e chi la regge nel nome accessibile', async () => {
+  it('Coverage meta: una tessera per minaccia, prima senza risposta, poi a metà, poi rette (ognuna per uso), livello e chi la regge nel nome accessibile', async () => {
     const user = userEvent.setup();
     const rating = withMeta();
     renderIt(<AreaView rating={rating} area="defense" team={team} analysis={analysis} problems={[]} />);
     await user.click(screen.getByRole('tab', { name: /^Coverage meta/ }));
     const tiles = within(screen.getByRole('tabpanel')).getAllByRole('listitem');
-    expect(tiles).toHaveLength(rating.defense.coverageMeta!.rows.length);
-    const top = [...rating.defense.coverageMeta!.rows].sort((a, b) => b.weight - a.weight)[0];
-    expect(tiles[0]).toHaveAccessibleName(new RegExp(`^${top.species}.*${top.level}%`));
+    const rows = rating.defense.coverageMeta!.rows;
+    expect(tiles).toHaveLength(rows.length);
+    const group = (r: typeof rows[number]) => (r.heldBy.length === 0 ? 0 : r.heldBy.some(h => !h.partial) ? 2 : 1);
+    const expected = [...rows].sort((a, b) => group(a) - group(b) || b.weight - a.weight);
+    expect(tiles[0]).toHaveAccessibleName(new RegExp(`^${expected[0].species}.*${expected[0].level}%`));
+    // Le tessere seguono i gruppi: nessuna retta prima di una senza risposta
+    expect(tiles.map(tile => (tile.classList.contains('none') ? 0 : tile.classList.contains('partial') ? 1 : 2))).toEqual(expected.map(group));
   });
 });
 
