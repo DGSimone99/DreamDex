@@ -43,10 +43,10 @@ describe('schede interne di Analisi', () => {
 
   it('il ? accanto alla scheda aperta spiega quella scheda', async () => {
     const user = await setup();
-    await user.click(within(views()).getByRole('tab', { name: 'Difesa' }));
-    const help = within(panel()).getByRole('button', { name: 'Come funziona Difesa' });
+    await user.click(within(views()).getByRole('tab', { name: 'Offesa' }));
+    const help = within(panel()).getByRole('button', { name: 'Come funziona Offesa' });
     await user.click(help);
-    expect(screen.getByRole('dialog', { name: /Difesa/ })).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: /Offesa/ })).toBeInTheDocument();
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(help).toHaveFocus();

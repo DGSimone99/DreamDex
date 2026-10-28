@@ -18,7 +18,8 @@ async function openTab(area: 'Difesa' | 'Offesa' | 'Ruoli', paste = 'Great Tusk\
 
 describe('tabelle complete nelle schede d\'area', () => {
   it('Difesa: la tabella delle debolezze, tipi × membri, in Coverage tipi', async () => {
-    await openTab('Difesa');
+    const user = await openTab('Difesa');
+    await user.click(within(view()).getByRole('tab', { name: /^Coverage tipi/ }));
     const table = within(view()).getByRole('region', { name: 'Debolezze difensive' });
     const headers = within(table).getAllByRole('columnheader').map(h => h.textContent);
     expect(headers).toEqual(['Tipo', 'Great Tusk', 'Gholdengo', 'Deboli', 'Resistono']);
@@ -26,7 +27,8 @@ describe('tabelle complete nelle schede d\'area', () => {
   });
 
   it('Difesa: la nota del meteo sotto la tabella', async () => {
-    await openTab('Difesa', 'Ninetales\nAbility: Drought\n- Flamethrower\n\nGreat Tusk\n- Headlong Rush');
+    const user = await openTab('Difesa', 'Ninetales\nAbility: Drought\n- Flamethrower\n\nGreat Tusk\n- Headlong Rush');
+    await user.click(within(view()).getByRole('tab', { name: /^Coverage tipi/ }));
     expect(within(view()).getByText((_, el) => el?.textContent === 'Col sole (Ninetales, Drought): Water ×2 → ×1 per Ninetales, Great Tusk · il meteo non è sempre attivo')).toBeInTheDocument();
   });
 

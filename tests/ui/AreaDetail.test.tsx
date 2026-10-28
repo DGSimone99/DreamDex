@@ -133,25 +133,28 @@ describe('dettaglio della Difesa a schede', () => {
     expect(tabs.map(tab => tab.textContent!.replace(/\s*\d+$/, ''))).toEqual(['Generale', 'Robustezza', 'Sostenibilità', 'Coverage tipi', 'Coverage meta']);
     for (const tab of tabs) expect(tab.textContent).toMatch(/\d+$/);
     const panel = within(dialog).getByRole('tabpanel');
-    expect(within(panel).getAllByRole('term').map(term => term.textContent)).toEqual(['Robustezza', 'Sostenibilità', 'Coverage tipi', 'Coverage meta']);
+    expect(within(panel).getAllByRole('button').map(b => b.getAttribute('aria-label')!.replace(/\s*\d+$/, ''))).toEqual(['Robustezza', 'Sostenibilità', 'Coverage tipi', 'Coverage meta']);
     const table = within(panel).getByRole('table');
     expect(within(table).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Fisica', 'Speciale', 'Sostenibilità', 'Difesa']);
     const rows = within(table).getAllByRole('row').slice(1);
     expect(rows.map(r => within(r).getByRole('rowheader').textContent)).toEqual(['Great Tusk', 'Gholdengo']);
-    for (const row of rows) for (const cell of within(row).getAllByRole('cell')) expect(cell).toHaveTextContent(/^\d+$/);
+    for (const row of rows) for (const cell of within(row).getAllByRole('cell')) expect(cell).toHaveTextContent(/^\d+( \(\+\d+\))?$/);
   });
 
-  it('Coverage tipi: spiega i punti per tipo (immunità +2 ... ×4 −2)', async () => {
+  it('Coverage tipi: i punti per tipo (immunità +2 ... ×4 −2) stanno nella guida, non sulla pagina', async () => {
     const { user, dialog } = await openDefense('it');
     await user.click(within(dialog).getByRole('tab', { name: /^Coverage tipi/ }));
-    expect(within(dialog).getByRole('tabpanel')).toHaveTextContent('immunità +2, ×¼ +1,5, ×½ +1, neutro 0, debolezza ×2 −1, ×4 −2');
+    expect(within(dialog).getByRole('tabpanel')).not.toHaveTextContent('immunità +2');
+    await user.click(within(dialog).getByRole('button', { name: 'Come funziona Coverage tipi' }));
+    const guide = within(screen.getByRole('dialog')).getByRole('tabpanel');
+    for (const text of ['Immunità', '+2', '×¼', '+1,5', '×½', 'Neutro', '×2', '−1', '×4', '−2']) expect(guide).toHaveTextContent(text);
   });
 
   it('Robustezza: attaccanti fisici e speciali per membro, con il danno del colpo standard e la soglia', async () => {
     const { user, dialog } = await openDefense('it');
     await user.click(within(dialog).getByRole('tab', { name: /^Robustezza/ }));
     const panel = within(dialog).getByRole('tabpanel');
-    expect(panel).toHaveTextContent(/potenza 100/);
+    expect(panel).not.toHaveTextContent(/potenza 100/);
     expect(panel).toHaveTextContent('Attaccanti fisici');
     expect(panel).toHaveTextContent('Attaccanti speciali');
     const attackers = within(panel).getAllByRole('row').filter(r => within(r).queryAllByRole('cell').length === 2);

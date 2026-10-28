@@ -19,10 +19,10 @@ const noMeta = () => rateTeam(team, { ...fixtureData, ignoreMeta: true }, 'it')!
 const tabs = () => screen.getAllByRole('tab').map(tab => tab.textContent!.replace(/\s*[\d.,%n/d–]+$/, '').trim());
 
 describe('vista di un\'area sulla pagina', () => {
-  it('Difesa: sottostatistiche calcolate, Coverage tipi aperta di default', () => {
+  it('Difesa: sottostatistiche calcolate, Generale aperta di default', () => {
     renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[]} />);
     expect(tabs()).toEqual(expect.arrayContaining(['Robustezza', 'Sostenibilità', 'Coverage tipi', 'Coverage meta']));
-    expect(screen.getByRole('tab', { name: /^Coverage tipi/ })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tab', { name: /^Generale/ })).toHaveAttribute('aria-selected', 'true');
   });
 
   it('senza meta niente Coverage meta', () => {

@@ -9,8 +9,8 @@ import { AreaGuide } from './AreaGuide';
 import { Icon } from './icons';
 import { Typed } from './TypeText';
 
-/** La scheda da cui si parte: la coverage dei tipi in Difesa e Offesa (la più consultata), altrimenti la prima. */
-const START: Partial<Record<AreaKey, string>> = { defense: 'coverageTypes', strength: 'coverageTypes' };
+/** La scheda da cui si parte: la coverage dei tipi in Offesa (la più consultata), altrimenti la prima. */
+const START: Partial<Record<AreaKey, string>> = { strength: 'coverageTypes' };
 
 /**
  * Un'area del voto sulla pagina (scheda di Analisi): una striscia di sottoschede (col loro valore) attaccata alla scheda
@@ -28,9 +28,10 @@ export function AreaView({ rating, area, problems, team, analysis, extra }: {
   const t = useT();
   const lang = useLang();
   const id = useId();
-  const tabs = areaTabs(rating, area, t, lang, { team, analysis });
-  const start = Math.max(0, tabs.findIndex(tab => tab.key === START[area]));
   const [picked, setPicked] = useState<string | null>(null);
+  // `open`: le tessere della scheda Generale aprono la sottoscheda
+  const tabs = areaTabs(rating, area, t, lang, { team, analysis, open: setPicked });
+  const start = Math.max(0, tabs.findIndex(tab => tab.key === START[area]));
   const index = Math.max(0, picked === null ? start : tabs.findIndex(tab => tab.key === picked));
   const current = tabs[index];
   const buttons = useRef<(HTMLButtonElement | null)[]>([]);
