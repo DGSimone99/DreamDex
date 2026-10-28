@@ -242,7 +242,7 @@
 .guide-rows.stacked > div { grid-template-columns: 1fr; gap: 3px; padding: 8px 0; }
 .guide-rows.stacked dd { color: var(--muted); }
 
-/* Guida, Coverage tipi: i due conti come tasti, l equazione del saldo, la scala continua con la fascia in difetto e
+/* Guida, Coverage tipi: i due conti come tasti, la scala con le targhette della riga Sicurezza e
    l esempio svolto in fila. I colori seguono il segno (verde aggiunge, rosso toglie) e la griglia (caselle ×½ ×2 ×4) */
 .guide-two { display: grid; grid-template-columns: 3fr 2fr; gap: 10px; }
 .guide-two > div { padding: 8px 10px 10px; border: 1px solid var(--line-soft); background: color-mix(in srgb, var(--raised) 35%, transparent); }
@@ -255,25 +255,12 @@
 .guide-keys .bad b { color: var(--bad); }
 .guide-keys .even b { color: var(--muted); }
 .guide-keys li[title] { cursor: help; }
-.ad-panel .guide-eq, .guide-eq { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 10px 0 0; font-size: 14px; color: var(--muted); }
-.guide-eq > b { font-weight: 700; color: var(--text); }
-.guide-eq > span { padding: 1px 8px; border: 1px solid var(--line); border-radius: 3px; background: var(--raised); color: var(--text); font-weight: 600; }
-.guide-eq small { margin-left: 8px; font-size: 12px; color: var(--faint); }
 .guide-scale { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0; margin: 0; padding: 0; list-style: none; border: 1px solid var(--line-soft); }
-.guide-scale li { display: grid; justify-items: center; gap: 1px; padding: 6px 4px; border-top: 3px solid var(--line); background: var(--raised); }
+.guide-scale li { display: grid; justify-items: center; gap: 4px; padding: 7px 4px; background: color-mix(in srgb, var(--raised) 55%, var(--panel)); }
 .guide-scale li + li { border-left: 1px solid var(--line-soft); }
 .guide-scale span { font-size: 12px; color: var(--muted); }
-.guide-scale b { font: italic 700 18px/1.1 var(--display); color: var(--text); font-variant-numeric: tabular-nums; }
+.guide-scale b.ct-pill { min-width: 52px; text-align: center; font-size: 13px; }
 .guide-scale small { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
-.guide-scale .bad { border-top-color: var(--bad); background: var(--bad-bg); }
-.guide-scale .warn { border-top-color: var(--warn); background: var(--warn-bg); }
-.guide-scale .ok { border-top-color: color-mix(in srgb, var(--good) 55%, var(--line)); }
-.guide-scale .good { border-top-color: var(--good); background: var(--good-bg); }
-.guide-scale .bad small { color: var(--bad); }
-.guide-scale .warn small { color: var(--warn); }
-.guide-scale .good small { color: var(--good); }
-/* La fascia "in difetto": una staffa sotto le prime due caselle (fino al 50% escluso) */
-.ad-panel .guide-zone, .guide-zone { width: 40%; margin: 3px 0 0; padding: 2px 0 0; border-top: 2px solid var(--warn); font-size: 12px; font-weight: 600; text-align: center; color: var(--warn); }
 .guide-example { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; font-size: 14px; color: var(--muted); }
 .guide-example .guide-mults { flex-basis: 100%; }
 .guide-mults { display: inline-flex; gap: 3px; }
@@ -285,12 +272,13 @@
 .guide-res { display: grid; gap: 1px; padding: 0 12px 0 0; margin-right: 4px; border-right: 1px solid var(--line-soft); }
 .guide-res small { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--faint); }
 .guide-res b { color: var(--text); font-variant-numeric: tabular-nums; }
-.guide-verdict { display: inline-flex; align-items: baseline; gap: 6px; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
-.guide-verdict b { font: italic 700 16px/1 var(--display); text-transform: none; }
-.guide-verdict.warn { background: var(--warn-bg); color: var(--warn); }
+.guide-verdict { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--bad); }
+.guide-verdict b.ct-pill { font-size: 13px; text-transform: none; letter-spacing: 0; }
 .guide-lines { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; font-size: 14px; color: var(--muted); }
 .guide-lines b { color: var(--text); }
 @media (max-width: 560px) {
   .guide-two { grid-template-columns: 1fr; }
-  .ad-panel .guide-zone, .guide-zone { width: 100%; }
 }
+
+/* La guida della Difesa è più larga dei modali d aiuto: i due conti e la scala stanno su una riga */
+.help-dialog.area-guide { width: min(920px, 100%); }

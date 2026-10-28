@@ -5,10 +5,10 @@ import { useLang, useT } from '../../i18n/react';
 type Section = 'general' | 'robustness' | 'sustain' | 'coverageTypes' | 'coverageMeta';
 type Key = Parameters<ReturnType<typeof useT>>[0];
 
-/** La scala della Sicurezza di un tipo: ogni punto di saldo vale 25%. */
+/** La scala della Sicurezza di un tipo: ogni punto di saldo vale 25%; le targhette hanno i colori della riga Sicurezza. */
 const SCALE = [
-  { balance: '−2', pct: 0, tag: 'serious', tone: 'bad' }, { balance: '−1', pct: 25, tag: 'minor', tone: 'warn' },
-  { balance: '0', pct: 50, tag: 'even', tone: 'even' }, { balance: '+1', pct: 75, tag: 'ok', tone: 'ok' },
+  { balance: '−2', pct: 0, tag: 'serious', tone: 'bad' }, { balance: '−1', pct: 25, tag: 'minor', tone: 'bad' },
+  { balance: '0', pct: 50, tag: 'even', tone: 'warn' }, { balance: '+1', pct: 75, tag: 'ok', tone: 'warn' },
   { balance: '+2', pct: 100, tag: 'safe', tone: 'good' },
 ] as const;
 
@@ -133,20 +133,14 @@ export function DefenseGuideSection({ section, defense, meta }: { section: Secti
             ]} />
           </div>
         </div>
-        <p className="guide-eq">
-          <b>{g('types.balance')}</b> = ( <span>{g('types.ex.weighted')}</span> + <span>{g('types.ex.members')}</span> ) ÷ 2
-          <small>{g('types.abilities')}</small>
-        </p>
-
         <h5>{g('types.tosafety')}</h5>
         <ol className="guide-scale" aria-label={g('types.tosafety')}>
           {SCALE.map(step => (
-            <li key={step.balance} className={step.tone}>
-              <span>{g('types.balance')} {step.balance}</span><b>{step.pct}%</b><small>{g(`types.tag.${step.tag}`)}</small>
+            <li key={step.balance}>
+              <span>{g('types.balance')} {step.balance}</span><b className={`ct-pill ${step.tone}`}>{step.pct}%</b><small>{g(`types.tag.${step.tag}`)}</small>
             </li>
           ))}
         </ol>
-        <p className="guide-zone">{g('types.weakZone')}</p>
 
         <h5>{g('types.example')}</h5>
         <div className="guide-example">
@@ -157,13 +151,12 @@ export function DefenseGuideSection({ section, defense, meta }: { section: Secti
           <span className="guide-res"><small>{g('types.ex.members')}</small><b>+3 −3 = 0</b></span>
           <span className="guide-res"><small>{g('types.balance')}</small><b>{dec('−0,5')}</b></span>
           <span className="guide-arrow" aria-hidden="true">→</span>
-          <span className="guide-verdict warn"><b>38%</b>{g('types.tag.minor')}</span>
+          <span className="guide-verdict"><b className="ct-pill bad">38%</b>{g('types.tag.minor')}</span>
         </div>
 
         <h5>{g('types.vote')}</h5>
         <ul className="guide-lines">
           <li><b>{g('types.average')}</b> = {g('types.average.rule')}</li>
-          {meta && <li><b>{g('types.split')}</b>: {g('types.split.rule')}</li>}
         </ul>
       </>
     );
