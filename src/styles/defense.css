@@ -172,7 +172,7 @@
 .sus-table thead .sus-sub th { padding: 0 0 6px; text-align: center; font-size: 10px; letter-spacing: 0.04em; color: var(--muted); line-height: 1; }
 .sus-table td { padding: 0 12px; border-bottom: 1px solid var(--line-soft); }
 .sus-table td.sus-loss { text-align: center; padding: 0; }
-.sus-table td.sus-loss + td.sus-loss { border-right: 2px solid var(--line); }
+.sus-table td.sus-loss + td.sus-loss { border-right: 1px solid var(--line); }
 .sus-loss-val { display: inline-block; min-width: 56px; padding: 3px 8px; border-radius: 999px; background: var(--bad-bg); color: var(--bad); font: 700 13px/1.2 var(--ui); font-variant-numeric: tabular-nums; }
 .sus-loss-val.halved { cursor: help; }
 .sus-loss-val sup { margin-left: 2px; font-size: 10px; color: var(--warn); }
