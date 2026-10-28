@@ -120,7 +120,7 @@ describe('Cruscotto della Panoramica', () => {
     expect(within(table).getByRole('cell', { name: /^(Normale|Normal), offesa: nessuno lo colpisce super efficace$/ })).toHaveClass('bad');
     expect(within(table).getByRole('rowheader', { name: 'Difesa' })).toBeInTheDocument();
     expect(within(table).getByRole('rowheader', { name: 'Offesa' })).toBeInTheDocument();
-    expect(screen.getByRole('region', { name: 'Copertura' }).querySelector('.dash-meta')).toHaveTextContent('difesa 17/18 · offesa 17/18');
+    expect(screen.getByRole('region', { name: 'Copertura' }).querySelector('.dash-meta')).toHaveTextContent('offesa 17/18 · difesa 17/18');
     expect(screen.queryByText('Chi')).toBeNull();
   });
 
@@ -129,7 +129,7 @@ describe('Cruscotto della Panoramica', () => {
     const table = screen.getByRole('table', { name: 'Coverage' });
     expect(within(table).getByRole('rowheader', { name: 'Defense' })).toBeInTheDocument();
     expect(within(table).getByRole('rowheader', { name: 'Offense' })).toBeInTheDocument();
-    expect(screen.getByRole('region', { name: 'Coverage' }).querySelector('.dash-meta')).toHaveTextContent('defense 17/18 · offense 17/18');
+    expect(screen.getByRole('region', { name: 'Coverage' }).querySelector('.dash-meta')).toHaveTextContent('offense 17/18 · defense 17/18');
     // La riga Colpisce del Riassunto resta "Hits"
     expect(screen.getByRole('region', { name: 'Summary' }).querySelectorAll('.sum-k')[4]).toHaveTextContent('Hits');
   });

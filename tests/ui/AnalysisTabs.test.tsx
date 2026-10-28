@@ -18,7 +18,7 @@ async function setup(names = ['Great Tusk', 'Gholdengo']) {
 describe('schede interne di Analisi', () => {
   it('schede interne con Panoramica di default', async () => {
     await setup();
-    expect(within(views()).getAllByRole('tab').map(tab => tab.querySelector('span')!.textContent)).toEqual(['Panoramica', 'Coaching', 'Difesa', 'Offesa', 'Ruoli', 'Velocità', 'Bonus/Malus']);
+    expect(within(views()).getAllByRole('tab').map(tab => tab.querySelector('span')!.textContent)).toEqual(['Panoramica', 'Coaching', 'Offesa', 'Difesa', 'Velocità', 'Ruoli', 'Bonus/Malus']);
     // Il voto di ogni area nella sua scheda, non nella Panoramica
     expect(within(views()).getByRole('tab', { name: 'Difesa' }).querySelector('.tab-score')).toHaveTextContent(/^\d+$/);
     expect(within(views()).getByRole('tab', { name: 'Panoramica' }).querySelector('.tab-score')).toBeNull();
@@ -43,13 +43,21 @@ describe('schede interne di Analisi', () => {
 
   it('il ? accanto alla scheda aperta spiega quella scheda', async () => {
     const user = await setup();
-    await user.click(within(views()).getByRole('tab', { name: 'Difesa' }));
-    const help = within(panel()).getByRole('button', { name: 'Come funziona Difesa' });
+    await user.click(within(views()).getByRole('tab', { name: 'Offesa' }));
+    const help = within(panel()).getByRole('button', { name: 'Come funziona Offesa' });
     await user.click(help);
-    expect(screen.getByRole('dialog', { name: /Difesa/ })).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: /Offesa/ })).toBeInTheDocument();
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(help).toHaveFocus();
+  });
+
+  it("la scheda Difesa non ha il ? della vista (ce l'hanno le sottoschede), l'Offesa sì", async () => {
+    const user = await setup();
+    await user.click(within(views()).getByRole('tab', { name: 'Difesa' }));
+    expect(screen.queryByRole('button', { name: 'Come funziona Difesa' })).toBeNull();
+    await user.click(within(views()).getByRole('tab', { name: 'Offesa' }));
+    expect(screen.getByRole('button', { name: 'Come funziona Offesa' })).toBeInTheDocument();
   });
 
   it('la scheda resta aperta cambiando il team', async () => {

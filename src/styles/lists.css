@@ -384,6 +384,12 @@
 @media (min-width: 2200px) and (min-height: 1100px) {
   html { zoom: 1.25; }
   .app { height: calc(100dvh / 1.25); min-height: 0; }
+  /* Schermo largo: la carta del voto prende più larghezza (dalle carte del team) e scritte e barre un po' più grandi */
+  .band { grid-template-columns: minmax(0, 1fr) 330px; }
+  .grade-area { font-size: 14.5px; }
+  .grade-badge button.grade-area { font-size: 14.5px; grid-template-columns: 78px 1fr 28px 10px; }
+  .grade-badge button.grade-area.grade-bm { grid-template-columns: 1fr 28px 10px; }
+  .grade-area .meter { height: 9px; }
 }
 @media (min-width: 3000px) and (min-height: 1500px) {
   html { zoom: 1.6; }

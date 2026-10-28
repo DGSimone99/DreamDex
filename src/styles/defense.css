@@ -1,0 +1,193 @@
+/* Difesa: scheda Generale (tessere e barre dei membri), guida a sezioni e colori delle soglie dei colpi */
+
+/* Soglie del colpo standard (OHKO … 4HKO+): sfondo dal colore sulla tinta del pannello, testo --text (≥ 4.5:1 su ogni palette).
+   Le usano le pillole della guida e le celle della Robustezza. */
+.hold-ohko { background: color-mix(in srgb, var(--bad) 30%, var(--panel)); color: var(--text); }
+.hold-2 { background: color-mix(in srgb, var(--warn) 30%, var(--panel)); color: var(--text); }
+.hold-3 { background: color-mix(in srgb, var(--accent) 30%, var(--panel)); color: var(--text); }
+.hold-4 { background: color-mix(in srgb, var(--good) 30%, var(--panel)); color: var(--text); }
+.hold-chip { display: inline-block; padding: 2px 8px; border-radius: 3px; font: 700 12px/1.3 var(--ui); font-variant-numeric: tabular-nums; }
+
+/* Le quattro tessere */
+.def-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 8px; margin-bottom: 10px; }
+.def-tile { display: flex; flex-direction: column; align-items: stretch; gap: 0; padding: 8px 12px; text-align: left; font: inherit; color: var(--text);
+  background: color-mix(in srgb, var(--raised) 65%, var(--panel)); border: 1px solid var(--line-soft); border-top: 3px solid var(--good); border-radius: 0; cursor: pointer; }
+.def-tile.warn { border-top-color: var(--warn); }
+.def-tile.bad { border-top-color: var(--bad); }
+.def-tile:hover { background: var(--raised); border-color: var(--line); }
+.def-tile:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* Nome a sinistra, valore grande a destra: ben separati */
+.def-tile-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; width: 100%; padding-bottom: 5px; }
+.def-tile-head span { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+.def-tile-head b { font: italic 700 24px/1 var(--display); letter-spacing: 0; color: var(--text); font-variant-numeric: tabular-nums; }
+/* Il numero ha il colore della soglia, come il bordo della tessera */
+.def-tile.good .def-tile-head b { color: var(--good); }
+.def-tile.warn .def-tile-head b { color: var(--warn); }
+.def-tile.bad .def-tile-head b { color: var(--bad); }
+/* Il contenuto: didascalia minuscola e sotto l'elemento visivo, alto uguale in tutte le tessere */
+.def-tile-fact { display: flex; flex-direction: column; gap: 4px; width: 100%; height: 50px; padding-top: 5px; border-top: 1px solid var(--line-soft); font-size: 13px; color: var(--text); overflow: hidden; }
+.def-cap { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; line-height: 1.2; }
+.def-cap em, .def-meter-top em { font-style: normal; font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.def-cap b { font-size: 12px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
+.def-visual { display: flex; align-items: center; gap: 4px; min-height: 24px; min-width: 0; white-space: nowrap; }
+.def-none { gap: 6px; color: var(--good); font-weight: 600; }
+.def-none .icon { flex: none; }
+/* Chip del tipo scoperto: icona rotonda e nome su sfondo di gravità */
+.def-chip { display: inline-flex; align-items: center; gap: 4px; padding: 1px 8px 1px 3px; border-radius: 10px; background: var(--warn-bg); color: var(--warn); font-size: 12px; font-weight: 600; line-height: 20px; }
+.def-chip.serious { background: var(--bad-bg); color: var(--bad); }
+.def-chip .type-icons img { display: block; width: 16px; height: 16px; }
+.def-open-mon { display: inline-flex; padding-bottom: 2px; border-bottom: 2px solid var(--good); }
+/* Chi recupera ha la riga verde sotto; chi no è spento e senza riga */
+/* Senza recupero: sprite spento */
+.def-open-mon.off { opacity: 0.35; filter: grayscale(1); border-bottom-color: transparent; }
+.def-more { font-size: 12px; font-weight: 600; color: var(--muted); }
+/* Robustezza: due mini misuratori affiancati */
+.def-meters { align-items: stretch; gap: 12px; flex: 1; }
+.def-meter { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 3px; min-width: 0; }
+.def-meter-top { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; }
+.def-meter-top b { font: italic 700 16px/1 var(--display); font-variant-numeric: tabular-nums; }
+.def-meter-top b.good { color: var(--good); }
+.def-meter-top b.warn { color: var(--warn); }
+.def-meter-top b.bad { color: var(--bad); }
+.def-mini { position: relative; display: block; height: 4px; background: var(--line-soft); }
+.def-mini i { position: absolute; inset: 0 auto 0 0; background: var(--good); }
+.def-mini.warn i { background: var(--warn); }
+.def-mini.bad i { background: var(--bad); }
+
+/* Tabella dei membri con le barre */
+.def-members { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 14px; font-variant-numeric: tabular-nums; }
+.def-members thead th { padding: 6px 8px; font-size: 11px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: 0.05em; text-align: left; white-space: nowrap; }
+.def-members .def-col-mon { width: 250px; }
+.def-members thead th:first-child { padding-left: 0; }
+.def-members td, .def-members th[scope='row'] { padding: 2px 8px; border-bottom: 1px solid var(--line-soft); white-space: nowrap; text-align: left; }
+.def-members th[scope='row'] { padding-left: 0; text-align: left; font-weight: 600; color: var(--text); }
+/* Barra e numero in una griglia fissa: la barra parte dove parte l'intestazione della colonna */
+.def-cell { display: inline-grid; grid-template-columns: 150px 3ch; align-items: center; gap: 10px; vertical-align: middle; }
+.def-bar { position: relative; display: block; width: 100%; height: 8px; background: var(--line-soft); }
+.def-bar i { position: absolute; inset: 0 auto 0 0; background: var(--good); }
+.def-bar.warn i { background: var(--warn); }
+.def-bar.bad i { background: var(--bad); }
+.def-num { min-width: 2ch; text-align: right; color: var(--text); }
+/* Difesa: il numero in evidenza, del colore della soglia */
+.def-num.total { font: italic 700 17px/1 var(--display); font-variant-numeric: tabular-nums; }
+.def-num.total.good { color: var(--good); }
+.def-num.total.warn { color: var(--warn); }
+.def-num.total.bad { color: var(--bad); }
+/* Anello debole: chip dopo il nome */
+.def-weak { flex: none; padding: 1px 6px; border-radius: 2px; background: var(--bad-bg); color: var(--bad); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; line-height: 1.5; }
+.def-members .def-col-hit { width: 120px; }
+.def-members .def-col-rec { width: 190px; }
+.def-hit { display: inline-flex; align-items: center; gap: 6px; vertical-align: middle; }
+.def-members td.def-rec { white-space: normal; font-size: 13px; line-height: 1.3; }
+.def-rec .ad-halved { margin-left: 8px; color: var(--warn); font-weight: 600; cursor: help; }
+
+/* Squadra chiusa: le righe riempiono il pannello (niente scorrimento) */
+.def-general.roomy { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.def-general.roomy .ad-scroll { flex: 1; min-height: 0; overflow: hidden; }
+.def-general.roomy .def-members { height: 100%; }
+.def-general.roomy .def-members tbody tr { height: auto; }
+.def-general.roomy .def-members td, .def-general.roomy .def-members th[scope='row'] { padding-top: 2px; padding-bottom: 2px; }
+.def-general.roomy .def-members .def-col-mon { width: 240px; }
+.def-general.roomy .def-members thead tr { height: 1px; }
+/* Le barre seguono la larghezza della colonna: con sette colonne non c'è posto per i 150px fissi */
+.def-general.roomy .def-cell { display: grid; grid-template-columns: minmax(0, 1fr) 3ch; width: 100%; }
+.def-general.roomy .def-members .def-col-hit { width: 112px; }
+.def-general.roomy .def-members .def-col-rec { width: 170px; }
+
+/* Guida: righe termine / regola, pillole di punti */
+.guide-rows { display: grid; gap: 0; margin: 0 0 8px; }
+.guide-rows > div { display: grid; grid-template-columns: minmax(110px, 160px) 1fr; gap: 12px; padding: 5px 0; border-bottom: 1px solid var(--line-soft); }
+.guide-rows dt { font-weight: 600; color: var(--text); }
+.guide-rows dd { margin: 0; color: var(--muted); }
+.guide-note { margin: 0 0 6px; color: var(--muted); }
+.guide-points { list-style: none; margin: 0 0 8px; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.guide-points li { display: flex; align-items: baseline; gap: 8px; padding: 5px 10px; background: var(--panel); border: 1px solid var(--line-soft); border-radius: 4px; font-size: 14px; color: var(--muted); }
+.guide-points li b { font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
+.guide-points li small { font-size: 12px; color: var(--muted); }
+@media (max-width: 560px) {
+  .guide-rows > div { grid-template-columns: 1fr; gap: 2px; }
+}
+
+/* Robustezza: membri in riga, 20 attaccanti in colonna. Il vuoto tra fisici e speciali è un margine, non una cella */
+.rob-matrix { width: 100%; border-collapse: separate; border-spacing: 2px; font-variant-numeric: tabular-nums; }
+.rob-matrix th { font-weight: 500; }
+.rob-grp th { padding-bottom: 2px; font-size: 11px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: 0.06em; text-align: center; border-bottom: 2px solid var(--line); }
+.rob-grp .rob-side-h { border-bottom-color: transparent; }
+.rob-atk th { padding: 0; text-align: center; }
+.rob-atk .sprite { display: inline-block; vertical-align: middle; }
+.rob-matrix tbody th { padding-right: 6px; text-align: left; font-size: 13px; font-weight: 600; white-space: nowrap; }
+.rob-cell { height: 36px; min-width: 42px; text-align: center; font-size: 12px; font-weight: 600; }
+.rob-side { min-width: 48px; text-align: center; background: var(--raised); font: italic 700 15px/1 var(--display); color: var(--text); }
+/* Spazio tra i due gruppi: solo sulla prima colonna dei speciali */
+.rob-matrix .rob-start { border-left: 8px solid transparent; background-clip: padding-box; }
+.rob-grp th.rob-start { border-left: 8px solid transparent; }
+.ad-panel .rob-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 8px 0 0; font-size: 12px; color: var(--muted); }
+
+/* Sostenibilità: barre divergenti attorno allo zero (50% = metà larghezza piena) */
+.sus-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.sus-table thead th { padding: 4px 10px; font-size: 11px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: 0.05em; text-align: left; white-space: nowrap; }
+.sus-table .sus-r { text-align: right; }
+.sus-table th[scope='row'], .sus-table td { padding: 5px 10px; border-bottom: 1px solid var(--line-soft); text-align: left; }
+.sus-table th[scope='row'] { padding-left: 0; font-weight: 600; white-space: nowrap; }
+.sus-loss, .sus-gain { width: 36%; }
+.sus-loss { border-right: 2px solid var(--line); }
+.sus-flex { display: flex; align-items: center; gap: 0; }
+.sus-loss .sus-flex { justify-content: flex-end; }
+/* Pista a larghezza fissa: la barra è una quota della pista, il testo sta accanto */
+.sus-track { flex: none; display: flex; width: 110px; height: 10px; }
+.sus-track.end { justify-content: flex-end; }
+.sus-track i { display: block; height: 100%; }
+.sus-loss i { background: var(--bad); }
+.sus-gain i { background: var(--good); }
+.ad-panel .sus-legend { margin: 8px 0 0; font-size: 12px; color: var(--muted); }
+.sus-num { margin: 0 6px; font-size: 12px; }
+.sus-num.bad { color: var(--bad); }
+.sus-num.good { color: var(--good); }
+.sus-gain small { margin-left: 6px; font-size: 12px; color: var(--muted); }
+.sus-gain small b { font-weight: 600; color: var(--text); }
+.sus-gain .ad-halved { margin-left: 8px; color: var(--warn); font-weight: 600; cursor: help; }
+.sus-val { text-align: right; font: italic 700 15px/1 var(--display); color: var(--text); }
+
+/* Coverage tipi: membri in riga, 18 tipi in colonna. Riempimenti da color-mix dei token di stato sul pannello, testo --text
+   (contrasto ≥ 5.2:1 su swsh e sv: vedi il rapporto del task). Il ×0 usa l'accento della palette (ciano su swsh, arancio su sv) */
+.ad-panel .ct-caption { display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin: 0 0 6px; font-size: 13px; color: var(--muted); }
+.ct-table { width: 100%; border-collapse: separate; border-spacing: 2px; font-variant-numeric: tabular-nums; }
+.ct-table thead th { padding: 3px 0 2px; font-size: 11px; font-weight: 500; line-height: 1.1; color: var(--muted); text-align: center; white-space: nowrap; }
+.ct-table thead .type-icons { display: block; margin: 0 auto 2px; }
+.ct-table thead .type-icons img { width: 20px; height: 20px; }
+.ct-table thead th.sev-serious { box-shadow: inset 0 3px 0 var(--bad); }
+.ct-table thead th.sev-minor { box-shadow: inset 0 3px 0 var(--warn); }
+.ct-table tbody th { padding-right: 6px; text-align: left; font-size: 13px; font-weight: 600; white-space: nowrap; color: var(--text); }
+.ct-table td { height: 30px; min-width: 38px; text-align: center; font-size: 12px; font-weight: 600; color: var(--text); background: color-mix(in srgb, var(--raised) 45%, var(--panel)); }
+.ct-table td.m-4 { background: color-mix(in srgb, var(--bad) 45%, var(--panel)); }
+.ct-table td.m-2 { background: color-mix(in srgb, var(--bad) 28%, var(--panel)); }
+.ct-table td.m-half { background: color-mix(in srgb, var(--good) 26%, var(--panel)); }
+.ct-table td.m-quarter { background: color-mix(in srgb, var(--good) 42%, var(--panel)); }
+.ct-table td.m-0 { background: color-mix(in srgb, var(--accent) 30%, var(--panel)); }
+/* Righe riassuntive: senza riempimento, la prima con il filo sopra */
+.ct-table tbody tr.ct-sum td, .ct-table tbody tr.ct-sum th { background: none; font-weight: 600; }
+.ct-table tbody tr.ct-sum-first td, .ct-table tbody tr.ct-sum-first th { border-top: 2px solid var(--line); }
+.ct-table td.bad { color: var(--bad); }
+.ct-table td.warn { color: var(--warn); }
+.ct-table td.good { color: var(--good); }
+.ct-safety td { font: italic 700 13px/1 var(--display); }
+
+/* Coverage meta: una tessera per minaccia */
+.cm-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 4px; }
+.cm-tile { display: grid; grid-template-columns: 32px 1fr; grid-template-rows: auto auto; align-items: center; column-gap: 6px; height: 60px; padding: 3px 5px; background: var(--panel); border-left: 3px solid var(--good); color: var(--text); }
+.cm-tile.warn { border-left-color: var(--warn); }
+.cm-tile.bad { border-left-color: var(--bad); background: var(--bad-bg); }
+.cm-tile > .sprite { grid-row: span 2; }
+.cm-level { text-align: right; font: italic 700 13px/1 var(--display); }
+.cm-by { display: flex; justify-content: flex-end; align-items: center; min-height: 24px; }
+.cm-by .partial { opacity: 0.45; }
+.cm-by em { font-style: normal; font-size: 11px; color: var(--bad); }
+/* Peso di ogni parte nella Difesa, accanto al nome (guida, Come funziona) */
+.guide-pct { margin-left: 8px; padding: 0 6px; border-radius: 3px; background: var(--accent-2-soft); color: var(--text); font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
+/* Guida a sezioni: le sezioni stanno una sopra l'altra nella stessa cella; si vede solo quella aperta */
+.guide-stack { display: grid; min-height: 0; overflow-y: auto; }
+.guide-stack > .help-panel { grid-area: 1 / 1; overflow: visible; }
+.guide-ghost { visibility: hidden; }
+/* Come funziona: nome e peso su una riga, la descrizione sotto */
+.guide-rows.stacked > div { grid-template-columns: 1fr; gap: 3px; padding: 8px 0; }
+.guide-rows.stacked dd { color: var(--muted); }
