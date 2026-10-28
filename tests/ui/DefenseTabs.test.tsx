@@ -209,10 +209,10 @@ describe('Difesa: ordine, barre e Generale a squadra chiusa', () => {
     const some = { ...rating, defense: { ...rating.defense, coverageMeta: { ...cm, unanswered: ['Garchomp', 'Zapdos'] } } };
     const { unmount } = renderIt(<AreaView rating={some} area="defense" team={team} analysis={analysis} problems={[]} />);
     const tile = within(screen.getByRole('tabpanel')).getByRole('button', { name: /^Coverage meta/ });
-    expect(tile).toHaveTextContent('Senza risposta:');
+    expect(tile).toHaveTextContent('Senza risposta');
     expect(tile).toHaveTextContent('Garchomp');
     expect(tile).toHaveTextContent('Zapdos');
-    expect(tile).toHaveTextContent(/2 su \d+/);
+    expect(tile).toHaveTextContent(/2\/\d+/);
     unmount();
     const none = { ...rating, defense: { ...rating.defense, coverageMeta: { ...cm, unanswered: [] } } };
     renderIt(<AreaView rating={none} area="defense" team={team} analysis={analysis} problems={[]} />);

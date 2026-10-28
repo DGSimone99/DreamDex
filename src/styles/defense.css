@@ -9,35 +9,56 @@
 .hold-chip { display: inline-block; padding: 2px 8px; border-radius: 3px; font: 700 12px/1.3 var(--ui); font-variant-numeric: tabular-nums; }
 
 /* Le quattro tessere */
-.def-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 8px; margin-bottom: 14px; }
-.def-tile { display: flex; flex-direction: column; align-items: stretch; gap: 0; padding: 10px 14px 9px; text-align: left; font: inherit; color: var(--text);
+.def-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 8px; margin-bottom: 10px; }
+.def-tile { display: flex; flex-direction: column; align-items: stretch; gap: 0; padding: 8px 12px; text-align: left; font: inherit; color: var(--text);
   background: color-mix(in srgb, var(--raised) 65%, var(--panel)); border: 1px solid var(--line-soft); border-top: 3px solid var(--good); border-radius: 0; cursor: pointer; }
 .def-tile.warn { border-top-color: var(--warn); }
 .def-tile.bad { border-top-color: var(--bad); }
 .def-tile:hover { background: var(--raised); border-color: var(--line); }
 .def-tile:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 /* Nome a sinistra, valore grande a destra: ben separati */
-.def-tile-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; width: 100%; padding-bottom: 7px; }
+.def-tile-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; width: 100%; padding-bottom: 5px; }
 .def-tile-head span { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
-.def-tile-head b { font: italic 700 26px/1 var(--display); letter-spacing: 0; color: var(--text); font-variant-numeric: tabular-nums; }
+.def-tile-head b { font: italic 700 24px/1 var(--display); letter-spacing: 0; color: var(--text); font-variant-numeric: tabular-nums; }
 /* Il numero ha il colore della soglia, come il bordo della tessera */
 .def-tile.good .def-tile-head b { color: var(--good); }
 .def-tile.warn .def-tile-head b { color: var(--warn); }
 .def-tile.bad .def-tile-head b { color: var(--bad); }
-/* Il fatto principale sotto una riga sottile */
-.def-tile-fact { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px; width: 100%; padding-top: 7px; border-top: 1px solid var(--line-soft); font-size: 13px; color: var(--text); }
-.def-tile-fact em { font-style: normal; color: var(--muted); }
-.def-exposed { display: inline-flex; align-items: center; gap: 4px; }
-.def-exposed .type-icons img { width: 16px; height: 16px; }
+/* Il contenuto: didascalia minuscola e sotto l'elemento visivo, alto uguale in tutte le tessere */
+.def-tile-fact { display: flex; flex-direction: column; gap: 4px; width: 100%; height: 50px; padding-top: 5px; border-top: 1px solid var(--line-soft); font-size: 13px; color: var(--text); overflow: hidden; }
+.def-cap { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; line-height: 1.2; }
+.def-cap em, .def-meter-top em { font-style: normal; font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.def-cap b { font-size: 12px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
+.def-visual { display: flex; align-items: center; gap: 4px; min-height: 24px; min-width: 0; white-space: nowrap; }
+.def-none { gap: 6px; color: var(--good); font-weight: 600; }
+.def-none .icon { flex: none; }
+/* Chip del tipo scoperto: icona rotonda e nome su sfondo di gravità */
+.def-chip { display: inline-flex; align-items: center; gap: 4px; padding: 1px 7px 1px 3px; border-left: 3px solid var(--warn); background: var(--warn-bg); color: var(--warn); font-size: 12px; font-weight: 600; line-height: 20px; }
+.def-chip.serious { border-left-color: var(--bad); background: var(--bad-bg); color: var(--bad); }
+.def-chip .type-icons img { display: block; width: 16px; height: 16px; }
 .def-open-mon { display: inline-flex; }
-.def-more { font-weight: 600; color: var(--muted); }
+/* Senza recupero: sprite spento */
+.def-open-mon.off { opacity: 0.3; filter: grayscale(1); }
+.def-more { font-size: 12px; font-weight: 600; color: var(--muted); }
+/* Robustezza: due mini misuratori affiancati */
+.def-meters { align-items: stretch; gap: 12px; flex: 1; }
+.def-meter { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 3px; min-width: 0; }
+.def-meter-top { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; }
+.def-meter-top b { font: italic 700 16px/1 var(--display); font-variant-numeric: tabular-nums; }
+.def-meter-top b.good { color: var(--good); }
+.def-meter-top b.warn { color: var(--warn); }
+.def-meter-top b.bad { color: var(--bad); }
+.def-mini { position: relative; display: block; height: 4px; background: var(--line-soft); }
+.def-mini i { position: absolute; inset: 0 auto 0 0; background: var(--good); }
+.def-mini.warn i { background: var(--warn); }
+.def-mini.bad i { background: var(--bad); }
 
 /* Tabella dei membri con le barre */
 .def-members { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 14px; font-variant-numeric: tabular-nums; }
 .def-members thead th { padding: 6px 8px; font-size: 11px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: 0.05em; text-align: left; white-space: nowrap; }
 .def-members .def-col-mon { width: 250px; }
 .def-members thead th:first-child { padding-left: 0; }
-.def-members td, .def-members th[scope='row'] { padding: 4px 8px; border-bottom: 1px solid var(--line-soft); white-space: nowrap; text-align: left; }
+.def-members td, .def-members th[scope='row'] { padding: 2px 8px; border-bottom: 1px solid var(--line-soft); white-space: nowrap; text-align: left; }
 .def-members th[scope='row'] { padding-left: 0; text-align: left; font-weight: 600; color: var(--text); }
 /* Barra e numero in una griglia fissa: la barra parte dove parte l'intestazione della colonna */
 .def-cell { display: inline-grid; grid-template-columns: 150px 3ch; align-items: center; gap: 10px; vertical-align: middle; }
