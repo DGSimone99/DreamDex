@@ -81,11 +81,11 @@ function Proposal({ className, label, describedBy, solves, onApply, onAlternativ
 }
 
 /**
- * Un cambio di Pokémon, la proposta principale della striscia: chi esce piccolo e spento, ⇄, chi entra grande e animato
- * col nome e il voto in più (in aggiunta: "Aggiungi" al posto di chi esce). Il suo pulsante copre tutta la striscia.
+ * Un cambio di Pokémon, la proposta principale della striscia: chi esce piccolo e spento, ⇄, chi entra grande (animato
+ * solo con la striscia sotto il puntatore o col fuoco: `animated`) col nome e il voto in più (in aggiunta: "Aggiungi" al posto di chi esce). Il suo pulsante copre tutta la striscia.
  */
-function SwapProposal({ fix, alsoId, solves, onApply, onFix, onPreview }: {
-  fix: CoachFix; alsoId: string; solves: string[]; onApply: (fix: CoachFix) => void; onFix: (fix: CoachFix) => void; onPreview: OnPreview;
+function SwapProposal({ fix, alsoId, solves, animated, onApply, onFix, onPreview }: {
+  fix: CoachFix; alsoId: string; solves: string[]; animated: boolean; onApply: (fix: CoachFix) => void; onFix: (fix: CoachFix) => void; onPreview: OnPreview;
 }) {
   const tr = useT();
   const gain = gainText(fix.gain);
@@ -101,7 +101,7 @@ function SwapProposal({ fix, alsoId, solves, onApply, onFix, onPreview }: {
           <span className="coach-strip-arrow"><Icon name="swap" /></span>
         </>
       ) : <><span className="coach-strip-add">{tr('coach.steps.add')}</span>{' '}</>}
-      <span className="coach-strip-in"><Sprite species={fix.species} size={64} animated /></span>
+      <span className="coach-strip-in"><Sprite species={fix.species} size={64} animated={animated} /></span>
       <span className="coach-fix-main"><strong>{fix.species}</strong></span>
       <span className="coach-gain">{gain}</span>
     </Proposal>
@@ -239,17 +239,20 @@ function Step({ step, index, problems, actions, onCard, onPreview }: {
   const tr = useT();
   const alsoId = useId();
   const orId = useId();
+  // Striscia sotto il puntatore o col fuoco dentro: chi entra si anima
+  const [hot, setHot] = useState(false);
   const { problem, swap, move } = step;
   const skip = step.group;
   const solved = [...new Set([...step.group, ...(swap?.solves ?? []), ...(move?.solves ?? [])])];
   return (
     <li className={`coach-step coach-strip ${problem.severity}`} style={{ '--i': index } as CSSProperties}
-      onMouseEnter={() => onCard(solved)} onMouseLeave={() => onCard(null)}>
+      onMouseEnter={() => { onCard(solved); setHot(true); }} onMouseLeave={() => { onCard(null); setHot(false); }}
+      onFocus={() => setHot(true)} onBlur={() => setHot(false)}>
       <span className="coach-step-num">{index + 1}</span>
       <p className="coach-step-problem">
         <span className="coach-sev">{tr(problem.severity === 'serious' ? 'dash.serious' : 'dash.minor')}</span> <StepTitle step={step} problems={problems} />
       </p>
-      {swap ? <SwapProposal fix={swap} alsoId={alsoId} solves={solved} onApply={actions.onApplyFix} onFix={actions.onFix} onPreview={onPreview} />
+      {swap ? <SwapProposal fix={swap} alsoId={alsoId} solves={solved} animated={hot} onApply={actions.onApplyFix} onFix={actions.onFix} onPreview={onPreview} />
         : move && <MoveProposal fix={move} main alsoId={alsoId} solves={solved} skip={skip} problems={problems} onApply={actions.onApplyMove} onMoveFix={actions.onMoveFix} onPreview={onPreview} />}
       <div className="coach-strip-extras">
         <Also id={alsoId} solves={swap?.solves ?? move?.solves ?? []} skip={skip} problems={problems} self={swap?.species} />

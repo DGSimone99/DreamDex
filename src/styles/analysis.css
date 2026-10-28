@@ -472,7 +472,7 @@ button.sum-row:hover { background: var(--accent-wash); }
  * dei consigli niente salta). Colonne: numero sulla lama magenta · problema · scambio (chi esce spento → chi entra
  * grande) · "risolve anche" e la mossa "oppure". Il pulsante della proposta principale copre tutta la striscia.
  */
-.coach-steps-region { --step-h: 64px; }
+.coach-steps-region { --step-h: 61px; }
 .coach-steps { display: grid; gap: 5px; margin: 0 0 4px; padding: 0; list-style: none; }
 .coach-strip { position: relative; display: grid; grid-template-columns: 46px minmax(0, 1.3fr) minmax(0, 2.2fr) minmax(0, 1.4fr); align-items: center; height: var(--step-h); min-width: 0;
   background: var(--panel); border: 1px solid color-mix(in srgb, var(--accent-2) 22%, var(--line)); }
@@ -557,7 +557,7 @@ button.sum-row:hover { background: var(--accent-wash); }
 .coach-tile { display: flex; flex-direction: column; min-width: 0; padding: 0 0 5px; background: var(--panel); border: 1px solid var(--line-soft); }
 .coach-tile-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-right: 12px; }
 .coach-tile-head .dash-meta b { font: 800 24px/1 var(--display); font-style: italic; }
-.coach-tile-bar { height: 4px; margin: 4px 12px 6px; background: linear-gradient(90deg, var(--accent) var(--score, 0%), var(--line-soft) var(--score, 0%)); }
+.coach-tile-bar { height: 4px; margin: 9px 12px 9px; background: linear-gradient(90deg, var(--accent) var(--score, 0%), var(--line-soft) var(--score, 0%)); }
 .coach-tile.is-clean { background: linear-gradient(180deg, var(--good-bg), var(--panel) 85%); border-color: color-mix(in srgb, var(--good) 30%, var(--line-soft)); }
 .coach-tile.is-clean .coach-tile-bar { background: linear-gradient(90deg, var(--good) var(--score, 100%), var(--line-soft) var(--score, 100%)); }
 .coach-tile-ok { display: flex; align-items: center; gap: 6px; margin: 4px 12px 0; font-size: 13px; font-weight: 600; color: var(--good); }
@@ -602,7 +602,7 @@ button.sum-row:hover { background: var(--accent-wash); }
  * A scatti, secondo l'altezza della scheda, così non cambia mentre la si guarda.
  */
 @container coaching (min-height: 540px) {
-  .coach-steps-region { --step-h: 84px; }
+  .coach-steps-region { --step-h: 82px; }
   .coach-steps { gap: 8px; }
   .coach-step-num { font-size: 38px; }
   .coach-step-problem { font-size: 14.5px; padding-left: 14px; }
@@ -617,8 +617,33 @@ button.sum-row:hover { background: var(--accent-wash); }
   .coach-map { gap: 12px; margin-bottom: 6px; }
   .coach-tile { padding-bottom: 10px; }
   .coach-tile-head .dash-meta b { font-size: 28px; }
-  .coach-tile-bar { margin: 7px 12px 10px; }
+  .coach-tile-bar { margin: 11px 12px 12px; }
   .coach-probs { gap: 7px; }
   .coach-prob { padding: 4px 10px 4px 7px; font-size: 13px; }
   .coach-sec { margin-bottom: 6px; }
+}
+/* Molto spazio (schermo grande, team chiuso): tutto un passo più grande, perché la scheda non resti mezza vuota */
+@container coaching (min-height: 680px) {
+  .coach-steps-region { --step-h: 100px; }
+  .coach-steps { gap: 10px; }
+  .coach-step-num { font-size: 46px; }
+  .coach-step-problem { font-size: 15.5px; padding-left: 16px; }
+  .coach-strip-in { width: 86px; height: 86px; }
+  .coach-strip-in .sprite { width: 96px; height: 96px; }
+  .coach-strip-in .sprite-ani { height: calc(var(--ani-h, 96) / 96 * 96px); }
+  .coach-strip-out { width: 56px; height: 56px; }
+  .coach-strip-out .sprite { width: 64px; height: 64px; }
+  .coach-strip-arrow .icon { width: 22px; height: 22px; }
+  .coach-fix-main strong { font-size: 26px; }
+  .coach-prop.is-main > .coach-fix > .coach-gain { font-size: 30px; }
+  .coach-also, .coach-fix-lead { font-size: 13px; }
+  .coach-map { gap: 14px; margin-bottom: 12px; }
+  .coach-tile { padding-bottom: 14px; }
+  .coach-tile-head .dash-meta b { font-size: 32px; }
+  .coach-tile-bar { margin: 12px 14px 14px; }
+  .coach-probs { gap: 8px; padding: 0 14px; }
+  .coach-prob { padding: 5px 11px 5px 8px; font-size: 14px; }
+  .coach-prob-text .type-icons img { width: 18px; height: 18px; }
+  .coach-sep { margin: 12px 14px 7px; }
+  .coach-sec { margin-bottom: 8px; font-size: 13px; }
 }
