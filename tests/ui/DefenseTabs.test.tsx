@@ -210,7 +210,8 @@ describe('Difesa: ordine, barre e Generale a squadra chiusa', () => {
     const rows = Array.from(document.querySelectorAll('.def-members tbody tr'));
     expect(rows[1].querySelectorAll('.def-bar')[3]).toHaveClass('bad');
     expect(rows[0].querySelectorAll('.def-bar')[3]).toHaveClass('good');
-    expect(document.querySelectorAll('.def-weak')).toHaveLength(1);
+    // L'etichetta c'è due volte nel DOM (accanto al nome e accanto alle statistiche, il CSS ne mostra una), sempre in un membro solo
+    expect(rows.filter(r => r.querySelector('.def-weak'))).toHaveLength(1);
     expect(rows[1].querySelector('.def-weak')).toBeTruthy();
   });
 

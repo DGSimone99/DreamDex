@@ -58,7 +58,7 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
           <tbody>
             {team.map((set, member) => (
               <tr key={member} className={hover?.row === member ? 'x-row' : undefined}>
-                <th scope="row"><MemberMon name={battleName(set)} set={set} /></th>
+                <th scope="row"><MemberMon name={battleName(set)} set={set} stats /></th>
                 {analysis.weakness.map((row, i) => {
                   const m = row.multipliers[member];
                   return (

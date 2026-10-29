@@ -169,7 +169,7 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
             {members.map((m, i) => (
               <tr key={`${m.species}-${i}`}>
                 <th scope="row">
-                  <MemberMon name={m.species} set={setOf(ctx.team, m.species)}>
+                  <MemberMon name={m.species} set={setOf(ctx.team, m.species)} stats>
                     {i === weakLink && <span className="def-weak">{t('ddetail.weakLink')}</span>}
                   </MemberMon>
                 </th>

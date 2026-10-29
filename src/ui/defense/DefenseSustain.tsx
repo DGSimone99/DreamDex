@@ -48,7 +48,7 @@ export function DefenseSustain({ defense, ctx }: { defense: TeamDefense; ctx: Ar
               const net = p.recovery - p.rocks - p.itemLoss;
               return (
                 <tr key={`${m.species}-${i}`}>
-                  <th scope="row"><MemberMon name={m.species} set={setOf(ctx.team, m.species)} /></th>
+                  <th scope="row"><MemberMon name={m.species} set={setOf(ctx.team, m.species)} stats /></th>
                   <td className="sus-loss">{loss(p.rocks, halvedBy)}</td>
                   <td className="sus-loss">{loss(p.itemLoss, p.itemLossFrom, false)}</td>
                   <td className="sus-gain">
