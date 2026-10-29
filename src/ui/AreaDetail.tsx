@@ -2,7 +2,6 @@ import type { ReactElement, ReactNode } from 'react';
 import type { TeamAnalysis } from '../engine/analysis';
 import type { TeamSet } from '../engine/sets';
 import { MAX_BONUS, MAX_PENALTY, bonusMalusCatalog, type CatalogEntry, type TeamRating } from '../engine/rating';
-import { stepBucket, type CoverageDetail, type WallCell } from '../engine/offense';
 import { CONTROL_CONDITIONS, type MemberSpeed, type SpeedCondition, type TeamSpeed } from '../engine/speedArea';
 import { ESSENTIAL_POINTS, type TeamRoles } from '../engine/rolesArea';
 import { MISSING_BELOW } from '../engine/needs';
@@ -10,12 +9,9 @@ import type { Level, LevelKey } from '../engine/roleLevels';
 import { FAMILIES, secondaryRoles, type Family, type SubRole, type SubRoleReason } from '../engine/subRoles';
 import { useT } from '../i18n/react';
 import type { Lang } from '../i18n';
-import { typeName } from '../i18n/game';
-import { Sprite, TypeChip } from './Sprite';
+import { Sprite } from './Sprite';
 import { defenseTabs } from './defense/defenseTabs';
-
-type Tab = 'general' | 'power' | 'wallbreaking' | 'coverageTypes' | 'coverageMeta';
-type Sub = Exclude<Tab, 'general'>;
+import { offenseTabs } from './offense/offenseTabs';
 
 /** Una scheda del dettaglio: etichetta, valore e contenuto. */
 export type T = ReturnType<typeof useT>;
@@ -26,17 +22,6 @@ export interface DetailTab { key: string; label: string; value: number | string 
 export interface AreaContext { team: TeamSet[]; analysis: TeamAnalysis; open?: (key: string) => void;
   /** Squadra chiusa: più spazio, la scheda Generale della Difesa mostra più colonne. */
   roomy?: boolean }
-
-/** Casella della tabella dei muri: il danno, e tra parentesi quello dopo il setup quando cambia la soglia. */
-function WallValue({ cell }: { cell: WallCell }) {
-  const bucket = stepBucket(cell.step);
-  const upgraded = cell.setupStep !== null && stepBucket(cell.setupStep) !== bucket;
-  return (
-    <span className={`ad-k ${bucket}${upgraded ? ' setup' : ''}`}>
-      {cell.pct}%{upgraded ? ` (${cell.setupPct}%)` : ''}
-    </span>
-  );
-}
 
 /**
  * Dettaglio di un'area (Offesa o Difesa): una scheda generale e una per sottostatistica, ognuna con come si calcola
@@ -53,7 +38,7 @@ export const signed = (n: number) => (n < 0 ? `−${-n}` : n > 0 ? `+${n}` : '0'
 export function areaTabs(rating: TeamRating, area: AreaKey, t: T, lang: Lang, ctx: AreaContext): DetailTab[] {
   if (area === 'bonusMalus') return catalogueTabs(rating, t, lang);
   const value = rating.areas.find(a => a.key === area)?.value ?? null;
-  return area === 'strength' ? offenseTabs(rating, t, lang)
+  return area === 'strength' ? offenseTabs(rating, t, ctx)
     : area === 'defense' ? defenseTabs(rating.defense, !!rating.meta, t, ctx)
     : area === 'roles' ? rolesTabs(rating, value, t)
     : speedTabs(rating.speed, !!rating.meta, t);
@@ -114,201 +99,6 @@ function catalogueTabs(rating: TeamRating, t: T, lang: Lang): DetailTab[] {
     { key: 'malus', label: t('catalogue.malus'), value: signed(-rating.penalty.total), panel: panelOf('malus') },
     { key: 'bonus', label: t('catalogue.bonus'), value: signed(rating.bonus.total), panel: panelOf('bonus') },
   ];
-}
-
-/** Le schede dell'Offesa: Generale, Potenza, Wallbreaking, Coverage di tipi e del meta. */
-function offenseTabs(rating: TeamRating, t: T, lang: Lang): DetailTab[] {
-  const area = 'strength';
-  const offense = rating.offense;
-  const value = rating.areas.find(a => a.key === area)?.value ?? null;
-  const meta = !!rating.meta;
-  // La Coverage del meta c'è solo col meta: senza, una scheda in meno
-  const coverageMeta = offense.coverageMeta;
-  const subs: Sub[] = coverageMeta ? ['power', 'wallbreaking', 'coverageTypes', 'coverageMeta'] : ['power', 'wallbreaking', 'coverageTypes'];
-  const TABS: Tab[] = ['general', ...subs];
-
-  const values: Record<Tab, number | null> = {
-    general: value, power: offense.power, wallbreaking: offense.wallbreaking,
-    coverageTypes: offense.coverageTypes.value, coverageMeta: coverageMeta?.value ?? null,
-  };
-  const tabLabel = (key: Tab) => (key === 'general' ? t('detail.tab.general') : t(`detail.${key}`));
-  const setters = offense.setters.map(s => `${s.species} (${s.move})`).join(', ');
-  const holesOf = (detail: CoverageDetail) => (detail.holes.length ? t('detail.coverage.holes', { list: detail.holes.map(h => typeName(h, lang)).join(', ') }) : t('detail.coverage.noHoles'));
-
-  const general = (
-    <>
-      <h4>{t('detail.general.title')}</h4>
-      <p>{t(meta ? 'detail.general.lead.meta' : 'detail.general.lead.tier', { walls: offense.defenders.length })}</p>
-      {/* Solo informazione: quanti attaccanti per stile, non entra nel voto */}
-      <p className="ad-holes">{t('detail.attackers', {
-        physical: `${offense.attackers.physical} ${t(offense.attackers.physical === 1 ? 'detail.attackers.physical.one' : 'detail.attackers.physical.many')}`,
-        special: `${offense.attackers.special} ${t(offense.attackers.special === 1 ? 'detail.attackers.special.one' : 'detail.attackers.special.many')}`,
-        mixed: `${offense.attackers.mixed} ${t(offense.attackers.mixed === 1 ? 'detail.attackers.mixed.one' : 'detail.attackers.mixed.many')}`,
-      })}</p>
-      <dl className="ad-subs">
-        {subs.map(sub => (
-          <div key={sub} className="ad-sub">
-            <dt>{t(`detail.${sub}`)}</dt>
-            <dd>
-              <meter min={0} max={100} value={values[sub] ?? 0} aria-hidden="true" />
-              <strong>{values[sub]}</strong>
-              <span>
-                {t(`detail.general.${sub}`)}
-                {sub === 'wallbreaking' && ` · ${setters ? t('detail.setters', { list: setters }) : t('detail.setup.none')}`}
-                {sub === 'coverageTypes' && ` · ${holesOf(offense.coverageTypes)}`}
-                {sub === 'coverageMeta' && coverageMeta && ` · ${holesOf(coverageMeta)}`}
-              </span>
-            </dd>
-          </div>
-        ))}
-      </dl>
-      <table className="ad-t">
-        <thead>
-          <tr>
-            <th scope="col">{t('detail.member')}</th>
-            <th scope="col">{t('detail.power')}</th>
-            <th scope="col">{t('detail.wallbreaking')}</th>
-            <th scope="col">{t('detail.coverage')}</th>
-            <th scope="col">{t(`area.${area}`)}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {offense.members.map((m, i) => (
-            <tr key={`${m.species}-${i}`}>
-              <th scope="row"><span className="ad-mon"><Sprite species={m.species} size={40} />{m.species}</span></th>
-              <td>{m.power}</td>
-              <td>
-                {m.wallbreaking}
-                {m.wallbreakingGain > 0 && <small className="ad-gain" title={t('detail.withSetup', { move: m.setupMove ?? '' })}> (+{m.wallbreakingGain})</small>}
-              </td>
-              <td>{m.covered}%</td>
-              <td className="total">
-                {m.value}
-                {m.oneUseGain > 0 && m.oneUse && (
-                  <small className="ad-once" title={m.oneUse.kind === 'tera' ? t('detail.withTera', { type: m.oneUse.name }) : t('detail.withZ', { item: m.oneUse.name })}> (+{m.oneUseGain})</small>
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </>
-  );
-
-  const power = (
-    <>
-      <h4>{t('detail.power')}</h4>
-      <div className="ad-how">
-        <p>{t('detail.power.how1', { targets: coverageMeta ? t('detail.targets.meta', { n: coverageMeta.rows.length }) : t('detail.targets.tier') })}</p>
-        <p>{t('detail.power.how2')}</p>
-        <p>{offense.referenceAttackers.length ? t('detail.power.how3.meta', { list: offense.referenceAttackers.join(', ') }) : t('detail.power.how3.fixed')}</p>
-      </div>
-      <table className="ad-t">
-        <thead>
-          <tr>
-            <th scope="col">{t('detail.member')}</th>
-            <th scope="col" aria-hidden="true" />
-            <th scope="col">{t('detail.power')}</th>
-            <th scope="col" className="left">{t('detail.bestMove')}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {[...offense.members].sort((a, b) => b.power - a.power).map((m, i) => (
-            <tr key={`${m.species}-${i}`}>
-              <th scope="row"><span className="ad-mon"><Sprite species={m.species} size={32} />{m.species}</span></th>
-              <td><meter min={0} max={100} value={m.power} aria-hidden="true" /></td>
-              <td className="total">{m.power}</td>
-              <td className="left">{m.bestMove ?? '—'}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </>
-  );
-
-  const wallbreaking = (
-    <>
-      <h4>{t('detail.wallbreaking')}</h4>
-      <div className="ad-how">
-        <p>{t(offense.metaDefenders ? 'detail.wall.how1.meta' : 'detail.wall.how1.tier', { n: offense.defenders.length })}</p>
-        <p>{t('detail.wall.how2')}</p>
-        <p>{setters ? t('detail.wall.how3', { list: setters }) : t('detail.setup.none')}</p>
-      </div>
-      <div className="ad-scroll">
-        <table className="ad-t ad-matrix">
-          <thead>
-            <tr>
-              <th scope="col">{t('detail.wall')}</th>
-              {offense.members.map((m, i) => (
-                <th key={`${m.species}-${i}`} scope="col" aria-label={m.species} title={m.species}><Sprite species={m.species} size={32} /></th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {offense.walls.map(wall => (
-              <tr key={wall.species}>
-                <th scope="row"><span className="ad-mon"><Sprite species={wall.species} size={32} />{wall.species}</span></th>
-                {wall.cells.map((cell, i) => <td key={i}><WallValue cell={cell} /></td>)}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <p className="ad-legend">{t('detail.legend')}</p>
-    </>
-  );
-
-  // Una scheda per ogni Coverage: di tipi (i 18 tipi contro un bersaglio neutro) e del meta (i Pokémon più usati)
-  const coverageTab = (kind: 'coverageTypes' | 'coverageMeta', detail: CoverageDetail) => (
-    <>
-      <h4>{t(`detail.${kind}`)}</h4>
-      <div className="ad-how">
-        <p>{t(kind === 'coverageMeta' ? 'detail.coverage.how1.meta' : 'detail.coverage.how1.tier', { n: detail.rows.length })}</p>
-        <p>{t('detail.coverage.how2')}</p>
-        {coverageMeta && <p>{t('detail.coverage.split')}</p>}
-      </div>
-      <p className="ad-holes">{holesOf(detail)}</p>
-      <table className="ad-t">
-        <thead>
-          <tr>
-            <th scope="col">{t('detail.types')}</th>
-            {kind === 'coverageMeta' && <th scope="col" className="left">{t('detail.member')}</th>}
-            <th scope="col">{t('detail.level')}</th>
-            <th scope="col" className="left">{t('detail.coveredBy')}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {/* Dal più usato: l'ordine dice anche quanto pesa ogni bersaglio */}
-          {[...detail.rows].sort((a, b) => b.weight - a.weight).map(row => (
-            <tr key={row.label}>
-              <th scope="row">{row.label.split('/').map(type => <TypeChip key={type} type={type} />)}</th>
-              {kind === 'coverageMeta' && <td className="left"><span className="ad-mon"><Sprite species={row.species} size={32} />{row.species}</span></td>}
-              <td>{row.level}%</td>
-              <td className="left ad-cover">
-                {row.coveredBy.length
-                  ? row.coveredBy.map((c, i) => (
-                    <span key={`${c.species}-${i}`} className={c.partial ? 'partial' : undefined}
-                      title={`${c.species}: ${c.move} ${c.pct}%${c.partial ? ` (${t('detail.partial')})` : ''}`}>
-                      <Sprite species={c.species} size={28} />
-                      {/* Lo sprite da solo non dice niente a un lettore di schermo */}
-                      <span className="visually-hidden">{`${c.species}: ${c.move} ${c.pct}%${c.partial ? ` (${t('detail.partial')})` : ''}`}</span>
-                    </span>
-                  ))
-                  : <span className="ad-k none">{t('detail.nobody')}</span>}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </>
-  );
-
-  const panels: Record<Tab, ReactElement | null> = {
-    general, power, wallbreaking,
-    coverageTypes: coverageTab('coverageTypes', offense.coverageTypes),
-    coverageMeta: coverageMeta && coverageTab('coverageMeta', coverageMeta),
-  };
-  return TABS.map(key => ({ key, label: tabLabel(key), value: values[key], panel: panels[key]! }));
 }
 
 const OWN_CONDITIONS: SpeedCondition[] = ['setup', 'weather', 'unburden', 'priority'];

@@ -26,7 +26,7 @@ describe("dettaglio dell'Offesa a schede", () => {
   it('quattro schede col loro valore; si parte da Generale con le sottostatistiche e i membri', async () => {
     const { dialog } = await openOffense('it');
     const tabs = within(dialog).getAllByRole('tab');
-    expect(tabs.map(tab => tab.textContent!.replace(/\s*\d+$/, ''))).toEqual(['Generale', 'Potenza', 'Wallbreaking', 'Coverage tipi', 'Coverage meta']);
+    expect(tabs.map(tab => tab.textContent!.replace(/\s*\d+$/, ''))).toEqual(['Generale', 'Coverage tipi', 'Potenza', 'Wallbreaking', 'Coverage meta']);
     expect(tabs[0]).toHaveAttribute('aria-selected', 'true');
     const panel = within(dialog).getByRole('tabpanel');
     expect(within(panel).getAllByRole('term').map(term => term.textContent)).toEqual(['Potenza', 'Wallbreaking', 'Coverage tipi', 'Coverage meta']);
@@ -56,13 +56,12 @@ describe("dettaglio dell'Offesa a schede", () => {
     expect(within(dialog).getByRole('tabpanel')).toHaveTextContent('Attackers: 1 physical · 1 special · 0 mixed');
   });
 
-  it('Potenza: come si calcola e la Potenza di ogni membro col suo colpo migliore', async () => {
+  it('Potenza: la Potenza di ogni membro col suo colpo migliore', async () => {
     const { user, dialog } = await openOffense('it');
     await user.click(within(dialog).getByRole('tab', { name: /^Potenza/ }));
     const panel = within(dialog).getByRole('tabpanel');
-    expect(panel).toHaveTextContent(/3° miglior attaccante/);
-    // La scala: lineare fino a 80, poi sempre più piano, e il 100 non si raggiunge
-    expect(panel).toHaveTextContent(/100 non si raggiunge/);
+    // Le spiegazioni stanno nella guida, non sulla pagina
+    expect(panel.querySelector('.ad-how')).toBeNull();
     expect(within(panel).getAllByRole('row').length).toBe(3);
   });
 
@@ -111,13 +110,13 @@ describe("dettaglio dell'Offesa a schede", () => {
     const { user, dialog } = await openOffense('it');
     within(dialog).getAllByRole('tab')[0].focus();
     await user.keyboard('{ArrowRight}');
-    expect(within(dialog).getByRole('tab', { name: /^Potenza/ })).toHaveAttribute('aria-selected', 'true');
+    expect(within(dialog).getByRole('tab', { name: /^Coverage tipi/ })).toHaveAttribute('aria-selected', 'true');
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
   it('in inglese', async () => {
     const { dialog } = await openOffense('en');
-    expect(within(dialog).getAllByRole('tab').map(tab => tab.textContent!.replace(/\s*\d+$/, ''))).toEqual(['General', 'Power', 'Wallbreaking', 'Type coverage', 'Meta coverage']);
+    expect(within(dialog).getAllByRole('tab').map(tab => tab.textContent!.replace(/\s*\d+$/, ''))).toEqual(['General', 'Type coverage', 'Power', 'Wallbreaking', 'Meta coverage']);
     expect(within(dialog).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Power', 'Wallbreaking', 'Coverage', 'Offense']);
   });
 });

@@ -12,9 +12,6 @@ import { Typed } from './TypeText';
 /** Lato del "?" sulla scheda aperta (px). */
 const HELP_SIZE = 18;
 
-/** La scheda da cui si parte: la coverage dei tipi in Offesa (la più consultata), altrimenti la prima. */
-const START: Partial<Record<AreaKey, string>> = { strength: 'coverageTypes' };
-
 /**
  * Un'area del voto sulla pagina (scheda di Analisi): una striscia di sottoschede (col loro valore) attaccata alla scheda
  * aperta, una riga coi problemi dell'area e il dettaglio di quella scelta a tutta larghezza.
@@ -38,8 +35,8 @@ export function AreaView({ rating, area, problems, team, analysis, extra, roomy 
   const focusKey = useRef<string | null>(null);
   const open = (key: string) => { focusKey.current = key; setPicked(key); };
   const tabs = areaTabs(rating, area, t, lang, { team, analysis, open, roomy });
-  const start = Math.max(0, tabs.findIndex(tab => tab.key === START[area]));
-  const index = Math.max(0, picked === null ? start : tabs.findIndex(tab => tab.key === picked));
+  // Si parte sempre dalla prima scheda (Generale)
+  const index = Math.max(0, picked === null ? 0 : tabs.findIndex(tab => tab.key === picked));
   const current = tabs[index];
   const buttons = useRef<(HTMLButtonElement | null)[]>([]);
   const helpButton = useRef<HTMLButtonElement>(null);

@@ -43,21 +43,21 @@ describe('schede interne di Analisi', () => {
 
   it('il ? accanto alla scheda aperta spiega quella scheda', async () => {
     const user = await setup();
-    await user.click(within(views()).getByRole('tab', { name: 'Offesa' }));
-    const help = within(panel()).getByRole('button', { name: 'Come funziona Offesa' });
+    await user.click(within(views()).getByRole('tab', { name: 'Velocità' }));
+    const help = within(panel()).getByRole('button', { name: 'Come funziona Velocità' });
     await user.click(help);
-    expect(screen.getByRole('dialog', { name: /Offesa/ })).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: /Velocità/ })).toBeInTheDocument();
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(help).toHaveFocus();
   });
 
-  it("la scheda Difesa non ha il ? della vista (ce l'hanno le sottoschede), l'Offesa sì", async () => {
+  it("le schede Offesa e Difesa non hanno il ? della vista (ce l'hanno le sottoschede)", async () => {
     const user = await setup();
     await user.click(within(views()).getByRole('tab', { name: 'Difesa' }));
     expect(screen.queryByRole('button', { name: 'Come funziona Difesa' })).toBeNull();
     await user.click(within(views()).getByRole('tab', { name: 'Offesa' }));
-    expect(screen.getByRole('button', { name: 'Come funziona Offesa' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Come funziona Offesa' })).toBeNull();
   });
 
   it('la scheda resta aperta cambiando il team', async () => {

@@ -65,7 +65,7 @@ describe('vista di un\'area sulla pagina', () => {
   });
 
   it('aree senza guida: nessun "?" nelle sottoschede', () => {
-    renderIt(<AreaView rating={withMeta()} area="strength" team={team} analysis={analysis} problems={[]} />);
+    renderIt(<AreaView rating={withMeta()} area="speed" team={team} analysis={analysis} problems={[]} />);
     expect(screen.queryByRole('button', { name: /^Come funziona/ })).toBeNull();
   });
 
