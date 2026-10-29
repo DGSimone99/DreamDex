@@ -57,4 +57,22 @@ describe('teamLinks', () => {
     const team = [mk('Scizor', ['U-turn', 'Stealth Rock']), mk('Landorus-Therian', ['U-turn', 'Roar']), mk('Ninjask', ['Baton Pass']), mk('Blissey', ['Wish'])];
     expect(teamLinks(team, []).map(l => l.kind)).toEqual(['pivot', 'batonpass', 'wish', 'phazer']);
   });
+  it('pivot: to è solo il primo attaccante non pivot', () => {
+    const team = [mk('Scizor', ['U-turn']), mk('Landorus-Therian', ['U-turn']), mk('Garchomp'), mk('Dragapult')];
+    expect(teamLinks(team, ['Garchomp', 'Dragapult'])[0].to).toEqual(['Garchomp']);
+  });
+  it('pivot: conta ogni mossa pivot di ogni membro', () => {
+    const team = [mk('Rotom-Wash', ['U-turn', 'Volt Switch']), mk('Scizor', ['Volt Switch']), mk('Landorus-Therian', ['Volt Switch'])];
+    expect(teamLinks(team, [])[0].move).toBe('Volt Switch');
+  });
+  it('Haze non è un phazer', () => {
+    expect(teamLinks([mk('Toxapex', ['Haze']), mk('Garchomp', ['Stealth Rock'])], [])).toEqual([]);
+  });
+  it('Shed Tail dà pivot e batonpass insieme', () => {
+    const team = [mk('Orthworm', ['Shed Tail']), mk('Scizor', ['U-turn'])];
+    expect(teamLinks(team, []).map(l => l.kind)).toEqual(['pivot', 'batonpass']);
+  });
+  it('due Wish, due link', () => {
+    expect(teamLinks([mk('Blissey', ['Wish']), mk('Clefable', ['Wish'])], []).map(l => l.kind)).toEqual(['wish', 'wish']);
+  });
 });

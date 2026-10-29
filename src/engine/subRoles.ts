@@ -115,7 +115,7 @@ const RECOVERY: Record<string, number> = {
 const HAZARDS: Record<string, number> = { stealthrock: 1, spikes: 1, stoneaxe: 1, ceaselessedge: 1, toxicspikes: 0.75 };
 const REMOVAL = new Set(['defog', 'rapidspin', 'mortalspin', 'tidyup', 'courtchange']);
 const PIVOT = new Set(['uturn', 'voltswitch', 'flipturn', 'partingshot', 'teleport', 'shedtail', 'chillyreception']);
-export const PHAZER = new Set(['haze', 'clearsmog', 'whirlwind', 'roar', 'dragontail', 'circlethrow']);
+const PHAZER = new Set(['haze', 'clearsmog', 'whirlwind', 'roar', 'dragontail', 'circlethrow']);
 const SNOW = new Set(['snowscape', 'chillyreception']);
 
 /** Soglia di statistica reale (Att/AttSp o Vel) per contare come attaccante o veloce. */

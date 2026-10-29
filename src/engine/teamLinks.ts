@@ -1,7 +1,6 @@
 import { battleName, getMove, toID } from './dex';
 import { PIVOT_MOVES } from './roles';
 import type { TeamSet } from './sets';
-import { PHAZER } from './subRoles';
 
 /** Mosse che mettono hazard sul campo avversario (per il legame hazard + phazer). */
 export const HAZARD_MOVES = ['stealthrock', 'spikes', 'toxicspikes', 'stickyweb'];
@@ -12,6 +11,8 @@ export type LinkKind = 'pivot' | 'batonpass' | 'wish' | 'phazer';
 export interface TeamLink { kind: LinkKind; from: string[]; to: string[]; move: string }
 
 const BATON_MOVES = ['batonpass', 'shedtail'];
+/** Mosse che forzano il cambio (Haze e Clear Smog no: non fanno uscire nessuno). */
+const FORCE_SWITCH = ['roar', 'whirlwind', 'dragontail', 'circlethrow'];
 
 interface Member { name: string; ids: string[]; moves: string[] }
 
@@ -33,17 +34,21 @@ export function teamLinks(team: TeamSet[], attackers: string[]): TeamLink[] {
   // Pivot: almeno due membri; la mossa è quella più usata (a pari merito, la prima del team)
   const pivots = members.filter(m => firstMove(m, PIVOT_MOVES));
   if (pivots.length >= 2) {
+    // ogni mossa pivot di ogni membro conta una volta; a pari merito vince la prima incontrata
     const counts = new Map<string, { n: number; name: string }>();
     for (const m of pivots) {
-      const mv = firstMove(m, PIVOT_MOVES)!;
-      const c = counts.get(mv.id) ?? { n: 0, name: mv.name };
-      c.n++;
-      counts.set(mv.id, c);
+      m.ids.forEach((id, i) => {
+        if (!PIVOT_MOVES.has(id) || m.ids.indexOf(id) !== i) return;
+        const c = counts.get(id) ?? { n: 0, name: getMove(m.moves[i])?.name ?? m.moves[i] };
+        c.n++;
+        counts.set(id, c);
+      });
     }
     let best: { n: number; name: string } | null = null;
     for (const c of counts.values()) if (!best || c.n > best.n) best = c;
     const names = pivots.map(m => m.name);
-    links.push({ kind: 'pivot', from: names, to: attackers.filter(a => !names.includes(a)), move: best!.name });
+    const target = attackers.find(a => !names.includes(a));
+    links.push({ kind: 'pivot', from: names, to: target ? [target] : [], move: best!.name });
   }
 
   // Baton Pass / Shed Tail: ogni membro che la usa passa al primo attaccante diverso da sé
@@ -61,7 +66,7 @@ export function teamLinks(team: TeamSet[], attackers: string[]): TeamLink[] {
 
   // Hazard + phazer: servono due membri diversi
   for (const phazer of members) {
-    const mv = firstMove(phazer, PHAZER);
+    const mv = firstMove(phazer, FORCE_SWITCH);
     if (!mv) continue;
     const setter = members.find(m => m !== phazer && firstMove(m, HAZARD_MOVES));
     if (!setter) continue;
