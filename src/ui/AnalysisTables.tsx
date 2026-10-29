@@ -7,8 +7,6 @@ import { t, type Lang } from '../i18n';
 import { anyGameName, typeName } from '../i18n/game';
 import { useLang, useT } from '../i18n/react';
 import { Icon } from './icons';
-import { TypeChip } from './Sprite';
-import { MoveName } from './TypeText';
 
 const MULTIPLIER_LABELS: Record<string, string> = { '4': '×4', '2': '×2', '1': '', '0.5': '×½', '0.25': '×¼', '0': '×0' };
 export const formatMultiplier = (m: number) => MULTIPLIER_LABELS[String(m)] ?? `×${m}`;
@@ -24,28 +22,6 @@ export function mitigationNote(m: WeatherMitigation, lang: Lang): string {
   const [setter, via = ''] = m.source.replace(/\)$/, '').split(' (');
   const source = via ? `${setter}, ${anyGameName(via, lang)}` : setter;
   return t(lang, 'analysis.mitigation', { condition: t(lang, `analysis.mitigation.${m.condition as 'sun' | 'rain' | 'grassyterrain' | 'mistyterrain'}`), source, changes });
-}
-
-/** Coverage offensiva: per ogni tipo chi lo colpisce superefficace e con cosa; prima i tipi scoperti. */
-export function OffenseTable({ analysis }: { analysis: TeamAnalysis }) {
-  const tr = useT();
-  const uncovered = analysis.coverage.filter(row => row.hitters.length === 0);
-  const rows = [...uncovered, ...analysis.coverage.filter(row => row.hitters.length > 0)];
-  return (
-    <section className="analysis-table" aria-label={tr('analysis.coverage')}>
-      <h4>{tr('analysis.coverage')}<span className="summary-info">{tr('analysis.coverageSummary', { n: 18 - uncovered.length })}</span></h4>
-      <ul className="type-rows">
-        {rows.map(row => (
-          <li key={row.type} className={row.hitters.length ? '' : 'bad'}>
-            <TypeChip type={row.type} />
-            {row.hitters.length
-              ? <span>{row.hitters.map((h, i) => <span key={i} className="hitter">{h.member} <small><MoveName move={h.move} /></small></span>)}</span>
-              : <span className="missing">{tr('analysis.noSuperEffective')}</span>}
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
 }
 
 /** I bisogni del team per livello (essenziali, importanti, minori, non richiesti), con chi li copre e le note. */

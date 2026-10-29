@@ -461,13 +461,43 @@ describe('CoachingView', () => {
     expect(screen.getByRole('group', { name: 'Regole · Meta' }).querySelector('li.coach-prob[data-key="rules:x"]')).toHaveAttribute('title', text);
   });
 
+  it('mappa: le pillole che non stanno nella tessera vanno nel "+N"; restano prima le risolvibili, poi le gravi', () => {
+    // Misura finta: la tessera è alta 130px, testata 40px, ogni pillola (e il "+N") 30px
+    const tall = vi.spyOn(Element.prototype, 'clientHeight', 'get').mockImplementation(function (this: Element) { return this.classList.contains('coach-tile') ? 130 : 0; });
+    const scroll = vi.spyOn(Element.prototype, 'scrollHeight', 'get').mockImplementation(function (this: Element) {
+      return this.classList.contains('coach-tile') ? 40 + 30 * this.querySelectorAll('li.coach-prob, .coach-more').length : 0;
+    });
+    try {
+      const p = (type: string, severity: CoachProblem['severity'], fixes: string[] = []): CoachProblem =>
+        ({ severity, category: 'defense', text: `Debole a ${type}`, fixes, key: `defense:${type}`, subjects: [type] });
+      const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], threatFixes: {},
+        problems: [p('Fire', 'minor'), p('Ice', 'serious'), p('Water', 'minor', ['Rotom-Wash']), p('Ground', 'minor')] };
+      renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [] }} members={3} rating={rating(three)} metaOn {...noop} />);
+      const tile = screen.getByRole('group', { name: 'Difesa' });
+      expect([...tile.querySelectorAll('li.coach-prob')].map(li => li.getAttribute('data-key'))).toEqual(['defense:Ice', 'defense:Water']);
+      const more = tile.querySelector('.coach-more')!;
+      expect(more).toHaveTextContent(/^\+2/);
+      expect(more).toHaveAttribute('title', 'Debole a Fire\nDebole a Ground');
+      expect(more.querySelector('.visually-hidden')).toHaveTextContent('Altri 2 problemi: Debole a Fire; Debole a Ground');
+    } finally {
+      tall.mockRestore();
+      scroll.mockRestore();
+    }
+  });
+
   it('mappa: le righe di coverage hanno le icone dei tipi, i nomi senza colore', () => {
     const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], threatFixes: {},
-      problems: [{ severity: 'minor', category: 'coverage', text: 'Nessuna mossa super efficace contro Water e Fire', fixes: [], key: 'coverage', subjects: ['Water', 'Fire'] }] };
+      problems: [
+        { severity: 'serious', category: 'coverage', text: 'Scoperto Water: nessun colpo super efficace', fixes: [], key: 'coverage:Water', size: 2, subjects: ['Water'] },
+        { severity: 'minor', category: 'coverage', text: 'Coperto a metà Fire: 1 solo in tre colpi', fixes: [], key: 'coverage:Fire', size: 1, subjects: ['Fire'] },
+      ] };
     renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [] }} members={3} rating={rating(three)} metaOn {...noop} />);
-    const row = screen.getByRole('group', { name: 'Offesa' }).querySelector('li[data-key="coverage"]')!;
-    expect(row.querySelectorAll('.type-icons img')).toHaveLength(2);
-    expect(row.querySelector('.type-name, .type-dot')).toBeNull();
+    // Un problema per tipo: una riga con l'icona del suo tipo
+    for (const type of ['Water', 'Fire']) {
+      const row = screen.getByRole('group', { name: 'Offesa' }).querySelector(`li[data-key="coverage:${type}"]`)!;
+      expect(row.querySelectorAll('.type-icons img')).toHaveLength(1);
+      expect(row.querySelector('.type-name, .type-dot')).toBeNull();
+    }
   });
 
   it("mappa: la riga della minaccia mostra la % d'uso, senza dato resta com'è", () => {

@@ -8,8 +8,19 @@ import type { MoveFix } from './moveFixes';
  */
 export const STEP_MIN_DEFENSE_PRESSURE = 1;
 
-/** Un problema che può guidare una tappa o comparire nel suo titolo (le debolezze lievi finiscono solo in "risolve anche"). */
-const leads = (p: CoachProblem) => !(p.category === 'defense' && p.size !== undefined && p.size < STEP_MIN_DEFENSE_PRESSURE);
+/**
+ * Un buco di coverage diventa tappa solo se il tipo è scoperto del tutto (taglia 2: nessun colpo super efficace al 33%)
+ * e pesa abbastanza (`MIN_COVERAGE_WEIGHT`: allora il problema è grave). Un tipo coperto a metà (solo in tre colpi, taglia 1)
+ * o leggero resta un problema minore, ma non basta da solo a consigliare un cambio.
+ */
+export const STEP_MIN_COVERAGE_SIZE = 2;
+
+/** Un problema che può guidare una tappa o comparire nel suo titolo (debolezze lievi e coverage minore finiscono solo in "risolve anche"). */
+const leads = (p: CoachProblem) => {
+  if (p.category === 'defense') return !(p.size !== undefined && p.size < STEP_MIN_DEFENSE_PRESSURE);
+  if (p.category === 'coverage') return p.severity === 'serious' && (p.size ?? 0) >= STEP_MIN_COVERAGE_SIZE;
+  return true;
+};
 
 /** Tappe mostrate nel Coaching. */
 export const MAX_STEPS = 3;

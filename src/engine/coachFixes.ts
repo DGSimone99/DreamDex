@@ -105,7 +105,7 @@ export function problemChanges(team: TeamSet[], format: Format, data: EngineData
   for (const p of problems) if (!now.has(p.key)) now.set(p.key, p);
   return (after: TeamSet[]) => {
     const left = new Map<string, CoachProblem>();
-    for (const p of findProblems(after, format, analyzeTeam(after, data), [], lang)) if (!left.has(p.key)) left.set(p.key, p);
+    for (const p of findProblems(after, format, data, analyzeTeam(after, data), [], lang)) if (!left.has(p.key)) left.set(p.key, p);
     const solves: string[] = [];
     const reduces: string[] = [];
     for (const [key, was] of now) {

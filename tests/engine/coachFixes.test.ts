@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { analyzeTeam } from '../../src/engine/analysis';
-import { coachAdvice, coachTeam, findProblems, MIN_COVERAGE_WEIGHT } from '../../src/engine/coach';
+import { coachAdvice, coachTeam, findProblems } from '../../src/engine/coach';
+import { teamCoverage } from '../../src/engine/coverage';
 import { coachFixes, keepSwaps, ZERO_GAIN_SWAPS } from '../../src/engine/coachFixes';
 import { buildSteps } from '../../src/engine/coachSteps';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
@@ -17,7 +18,7 @@ const data = { ...fixtureData, formatId: format.formatId };
 const junk = (species: string): TeamSet => ({ ...emptySet(species), moves: ['Splash'] });
 const six = [...['Great Tusk', 'Gholdengo', 'Toxapex', 'Corviknight'].map(n => mostCommonSet(fixtureStats, n)!), junk('Magikarp'), junk('Sunkern')];
 const three = six.slice(0, 3);
-const problemsOf = (team: TeamSet[]) => findProblems(team, format, analyzeTeam(team, data), [], 'it');
+const problemsOf = (team: TeamSet[]) => findProblems(team, format, data, analyzeTeam(team, data), [], 'it');
 const fixesOf = (team: TeamSet[]) => coachFixes(team, format, data, problemsOf(team), 'it');
 
 describe('candidati del Coaching dalla classifica di Migliora team', () => {
@@ -99,18 +100,16 @@ describe('candidati del Coaching dalla classifica di Migliora team', () => {
     }
   });
 
-  it('copertura: il problema raggruppato ha candidati che coprono uno dei tipi', () => {
-    const gaps = (team: TeamSet[]) => {
-      const analysis = analyzeTeam(team, data);
-      return analysis.coverage.filter(r => r.hitters.length === 0 && analysis.typeWeights[r.type] >= MIN_COVERAGE_WEIGHT).map(r => r.type);
+  it('copertura: un problema per tipo; i candidati che lo risolvono o riducono coprono meglio quel tipo', () => {
+    const level = (team: TeamSet[], type: string) => {
+      const coverage = teamCoverage(team, data, 'types');
+      return coverage.holes.includes(type) ? 0 : coverage.rows.find(r => r.label === type)!.level;
     };
-    expect(problemsOf(three).some(p => p.key === 'coverage')).toBe(true);
-    const list = fixesThree.filter(f => f.solves.includes('coverage') || f.reduces.includes('coverage'));
+    const keys = problemsOf(three).filter(p => p.category === 'coverage').map(p => p.key);
+    expect(keys.length).toBeGreaterThan(0);
+    const list = fixesThree.flatMap(f => [...f.solves, ...f.reduces].filter(key => keys.includes(key)).map(key => ({ f, type: key.slice('coverage:'.length) })));
     expect(list.length).toBeGreaterThan(0);
-    for (const fix of list) {
-      const left = gaps(withCandidate(three, fix.set, fix.index));
-      expect(gaps(three).some(type => !left.includes(type))).toBe(true);
-    }
+    for (const { f, type } of list) expect(level(withCandidate(three, f.set, f.index), type)).toBeGreaterThan(level(three, type));
   });
 
   it('debolezza da grave a minore: il candidato è sotto il problema ma non fra quelli che lo risolvono', () => {

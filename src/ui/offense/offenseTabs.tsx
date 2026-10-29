@@ -1,0 +1,28 @@
+import type { ReactElement } from 'react';
+import type { TeamRating } from '../../engine/rating';
+import type { AreaContext, DetailTab, T } from '../AreaDetail';
+import { OffenseGeneral } from './OffenseGeneral';
+import { OffensePower } from './OffensePower';
+import { OffenseMeta } from './OffenseMeta';
+import { OffenseWalls } from './OffenseWalls';
+import { OffenseTypes } from './OffenseTypes';
+import { OffenseGuideSection, type OffenseSection } from './OffenseGuide';
+
+/** Le schede dell'Offesa, nell'ordine della Difesa: Generale, Coverage tipi, Potenza, Wallbreaking, Coverage meta. */
+export function offenseTabs(rating: TeamRating, t: T, ctx: AreaContext): DetailTab[] {
+  const offense = rating.offense;
+  const meta = !!rating.meta;
+  const coverageMeta = offense.coverageMeta;
+  const value = rating.areas.find(a => a.key === 'strength')?.value ?? null;
+  const guide = (section: OffenseSection) => <OffenseGuideSection section={section} offense={offense} meta={meta} />;
+
+  const tabs: { key: OffenseSection; label: string; value: number | null; panel: ReactElement }[] = [
+    { key: 'general', label: t('detail.tab.general'), value, panel: <OffenseGeneral offense={offense} meta={meta} ctx={ctx} /> },
+    { key: 'coverageTypes', label: t('detail.coverageTypes'), value: offense.coverageTypes.value, panel: <OffenseTypes offense={offense} ctx={ctx} /> },
+    { key: 'power', label: t('detail.power'), value: offense.power, panel: <OffensePower offense={offense} ctx={ctx} /> },
+    { key: 'wallbreaking', label: t('detail.wallbreaking'), value: offense.wallbreaking, panel: <OffenseWalls offense={offense} ctx={ctx} /> },
+    // La Coverage del meta c'è solo col meta: senza, una scheda in meno
+    ...(coverageMeta ? [{ key: 'coverageMeta' as const, label: t('detail.coverageMeta'), value: coverageMeta.value, panel: <OffenseMeta offense={offense} ctx={ctx} /> }] : []),
+  ];
+  return tabs.map(tab => ({ ...tab, help: guide(tab.key) }));
+}
