@@ -132,3 +132,33 @@ describe('Offesa: Generale', () => {
     expect(flagged).toHaveLength(holes.length);
   });
 });
+
+describe('Offesa: Potenza', () => {
+  const view = () => {
+    const rating = withMeta();
+    renderIt(<AreaView rating={rating} area="strength" team={team} analysis={analysis} problems={[]} />);
+    return rating;
+  };
+
+  it('Potenza: membri in ordine di team, ognuno col suo colpo migliore', async () => {
+    const user = userEvent.setup();
+    const rating = view();
+    await user.click(screen.getByRole('tab', { name: /^Potenza/ }));
+    expect([...document.querySelectorAll('.def-mon-name')].map(n => n.textContent)).toEqual(['Great Tusk', 'Gholdengo']);
+    const rows = document.querySelectorAll('.def-members tbody tr');
+    rating.offense.members.forEach((m, i) => {
+      expect(m.bestMove).toBeTruthy();
+      expect(rows[i].querySelector('.pw-move .move-name')!.textContent).not.toBe('');
+      expect(rows[i].querySelector('.pw-move')).toBeInTheDocument();
+    });
+  });
+
+  it('Potenza: i tre attaccanti di riferimento', async () => {
+    const user = userEvent.setup();
+    const rating = view();
+    await user.click(screen.getByRole('tab', { name: /^Potenza/ }));
+    const refs = rating.offense.referenceAttackers;
+    expect(refs).toHaveLength(3);
+    refs.forEach(s => expect(document.querySelector(`.pw-ref [title="${s}"]`)).toBeInTheDocument());
+  });
+});

@@ -7,6 +7,7 @@ import { useLang } from '../../i18n/react';
 import { Sprite, TypeChip } from '../Sprite';
 import type { AreaContext, DetailTab, T } from '../AreaDetail';
 import { OffenseGeneral } from './OffenseGeneral';
+import { OffensePower } from './OffensePower';
 import { OffenseTypes } from './OffenseTypes';
 import { OffenseGuideSection, type OffenseSection } from './OffenseGuide';
 
@@ -26,32 +27,6 @@ const holesOf = (detail: CoverageDetail, t: T, lang: Lang) =>
   (detail.holes.length ? t('detail.coverage.holes', { list: detail.holes.map(h => typeName(h, lang)).join(', ') }) : t('detail.coverage.noHoles'));
 
 // Pannelli provvisori: le tabelle di prima senza le spiegazioni (ora nella guida); i compiti 4-7 li sostituiscono uno a uno.
-
-/** Potenza (provvisorio). */
-function OffensePower({ offense, t }: { offense: TeamOffense; t: T }) {
-  return (
-    <table className="ad-t">
-      <thead>
-        <tr>
-          <th scope="col">{t('detail.member')}</th>
-          <th scope="col" aria-hidden="true" />
-          <th scope="col">{t('detail.power')}</th>
-          <th scope="col" className="left">{t('detail.bestMove')}</th>
-        </tr>
-      </thead>
-      <tbody>
-        {[...offense.members].sort((a, b) => b.power - a.power).map((m, i) => (
-          <tr key={`${m.species}-${i}`}>
-            <th scope="row"><span className="ad-mon"><Sprite species={m.species} size={32} />{m.species}</span></th>
-            <td><meter min={0} max={100} value={m.power} aria-hidden="true" /></td>
-            <td className="total">{m.power}</td>
-            <td className="left">{m.bestMove ?? '—'}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  );
-}
 
 /** Wallbreaking (provvisorio). */
 function OffenseWallbreaking({ offense, t }: { offense: TeamOffense; t: T }) {
@@ -132,7 +107,7 @@ export function offenseTabs(rating: TeamRating, t: T, ctx: AreaContext): DetailT
   const tabs: { key: OffenseSection; label: string; value: number | null; panel: ReactElement }[] = [
     { key: 'general', label: t('detail.tab.general'), value, panel: <OffenseGeneral offense={offense} meta={meta} ctx={ctx} /> },
     { key: 'coverageTypes', label: t('detail.coverageTypes'), value: offense.coverageTypes.value, panel: <OffenseTypes offense={offense} ctx={ctx} /> },
-    { key: 'power', label: t('detail.power'), value: offense.power, panel: <OffensePower offense={offense} t={t} /> },
+    { key: 'power', label: t('detail.power'), value: offense.power, panel: <OffensePower offense={offense} ctx={ctx} /> },
     { key: 'wallbreaking', label: t('detail.wallbreaking'), value: offense.wallbreaking, panel: <OffenseWallbreaking offense={offense} t={t} /> },
     // La Coverage del meta c'è solo col meta: senza, una scheda in meno
     ...(coverageMeta ? [{ key: 'coverageMeta' as const, label: t('detail.coverageMeta'), value: coverageMeta.value, panel: <OffenseCoverage kind="coverageMeta" detail={coverageMeta} t={t} /> }] : []),
