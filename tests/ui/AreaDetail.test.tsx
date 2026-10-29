@@ -77,7 +77,7 @@ describe("dettaglio dell'Offesa a schede", () => {
       const cells = within(row).getAllByRole('cell');
       // 12 muri + il valore del membro
       expect(cells).toHaveLength(13);
-      for (const cell of cells.slice(0, 12)) expect(cell).toHaveTextContent(/^\d+%( (OHKO|2HKO|3HKO))?( setup \d+%)?$/);
+      for (const cell of cells.slice(0, 12)) expect(cell).toHaveTextContent(/^\d+%( (OHKO|2HKO|3HKO))?(setup \d+%)?$/);
     }
   });
 
