@@ -105,4 +105,30 @@ describe('Offesa: Generale', () => {
     expect(document.querySelectorAll('.def-members tbody tr')).toHaveLength(1);
     expect(document.querySelector('.def-general')!.textContent).not.toContain('NaN');
   });
+
+  it('Coverage tipi: una tabella membri × 18 tipi con la riga Copertura', async () => {
+    const user = userEvent.setup();
+    view();
+    await user.click(screen.getByRole('tab', { name: /^Coverage tipi/ }));
+    expect(screen.getAllByRole('table')).toHaveLength(1);
+    expect(screen.getAllByRole('columnheader')).toHaveLength(19);
+    const rows = screen.getAllByRole('row');
+    const last = rows[rows.length - 1];
+    expect(within(last).getByRole('rowheader')).toHaveTextContent('Copertura');
+    const cells = within(last).getAllByRole('cell');
+    expect(cells).toHaveLength(18);
+    cells.forEach(c => expect(c.textContent).toMatch(/\d+%/));
+  });
+
+  it('i tipi scoperti sono segnati anche a parole', async () => {
+    const user = userEvent.setup();
+    const rating = withMeta();
+    view(team, rating);
+    await user.click(screen.getByRole('tab', { name: /^Coverage tipi/ }));
+    const heads = screen.getAllByRole('columnheader').slice(1);
+    const holes = rating.offense.coverageTypes.holes;
+    expect(holes.length).toBeGreaterThan(0);
+    const flagged = heads.filter(h => h.textContent!.includes('scoperto'));
+    expect(flagged).toHaveLength(holes.length);
+  });
 });

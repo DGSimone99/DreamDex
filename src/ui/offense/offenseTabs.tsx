@@ -7,6 +7,7 @@ import { useLang } from '../../i18n/react';
 import { Sprite, TypeChip } from '../Sprite';
 import type { AreaContext, DetailTab, T } from '../AreaDetail';
 import { OffenseGeneral } from './OffenseGeneral';
+import { OffenseTypes } from './OffenseTypes';
 import { OffenseGuideSection, type OffenseSection } from './OffenseGuide';
 
 /** Casella della tabella dei muri: il danno, e tra parentesi quello dopo il setup quando cambia la soglia. */
@@ -130,7 +131,7 @@ export function offenseTabs(rating: TeamRating, t: T, ctx: AreaContext): DetailT
 
   const tabs: { key: OffenseSection; label: string; value: number | null; panel: ReactElement }[] = [
     { key: 'general', label: t('detail.tab.general'), value, panel: <OffenseGeneral offense={offense} meta={meta} ctx={ctx} /> },
-    { key: 'coverageTypes', label: t('detail.coverageTypes'), value: offense.coverageTypes.value, panel: <OffenseCoverage kind="coverageTypes" detail={offense.coverageTypes} t={t} /> },
+    { key: 'coverageTypes', label: t('detail.coverageTypes'), value: offense.coverageTypes.value, panel: <OffenseTypes offense={offense} ctx={ctx} /> },
     { key: 'power', label: t('detail.power'), value: offense.power, panel: <OffensePower offense={offense} t={t} /> },
     { key: 'wallbreaking', label: t('detail.wallbreaking'), value: offense.wallbreaking, panel: <OffenseWallbreaking offense={offense} t={t} /> },
     // La Coverage del meta c'è solo col meta: senza, una scheda in meno

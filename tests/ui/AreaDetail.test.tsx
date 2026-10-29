@@ -84,8 +84,9 @@ describe("dettaglio dell'Offesa a schede", () => {
     const { user, dialog } = await openOffense('it');
     await user.click(within(dialog).getByRole('tab', { name: /^Coverage tipi/ }));
     const typesPanel = within(dialog).getByRole('tabpanel');
-    expect(within(typesPanel).getAllByRole('row')).toHaveLength(19);
-    expect(within(typesPanel).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Tipi', 'Copertura', 'Coperto da']);
+    // Ora una tabella membri × 18 tipi: intestazione, un membro per riga, riga Copertura
+    expect(within(typesPanel).getAllByRole('columnheader')).toHaveLength(19);
+    expect(within(typesPanel).getAllByRole('row').at(-1)).toHaveTextContent(/^Copertura/);
   });
 
   it('Coverage meta: i buchi e ogni bersaglio con chi lo copre', async () => {
