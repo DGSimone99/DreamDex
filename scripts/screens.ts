@@ -142,6 +142,25 @@ const defenseState = (sub: RegExp | null, opts: { team?: unknown[]; format?: Par
     return true;
   },
 });
+const offenseState = (sub: RegExp | null, opts: { collapsed?: boolean } = {}): State => ({
+  hash: hash(SIX),
+  run: async p => {
+    await tab(p, 'analysis');
+    await wait(300);
+    if (opts.collapsed && !await clickText(p, 'button.band-toggle', /./)) return 'no band toggle';
+    await wait(300);
+    if (!await clickText(p, '.band button.grade-area', /^Offesa/)) return 'no offense row';
+    await wait(300);
+    if (sub && !await clickText(p, '.area-subs [role="tab"]', sub)) return 'no sub-tab';
+    await wait(500);
+    return true;
+  },
+});
+const OFFENSE_SUBS: Record<string, RegExp | null> = { general: /^Generale/, power: /^Potenza/, wall: /^Wallbreaking/, types: /^Coverage tipi/, meta: /^Coverage meta/ };
+const OFFENSE_STATES: Record<string, State> = Object.fromEntries(Object.entries(OFFENSE_SUBS).flatMap(([k, re]) => [
+  [`analysis-offense-${k}`, offenseState(re)],
+  [`analysis-offense-${k}-collapsed`, offenseState(re, { collapsed: true })],
+]));
 const SUBS: Record<string, RegExp | null> = { general: null, robustness: /^Robustezza/, sustain: /^Sostenibilit/, types: /^Coverage tipi/, meta: /^Coverage meta/ };
 const DEFENSE_STATES: Record<string, State> = {
   ...Object.fromEntries(Object.entries(SUBS).flatMap(([k, re]) => [
@@ -230,6 +249,7 @@ const STATES: Record<string, State> = {
   'analysis-offense': { run: async p => clickText(p, '.band button.grade-area', /^Offesa/) },
   // Difesa: una scheda per sotto-scheda (SIX), con meta, senza meta, a team chiuso e con nomi lunghi
   ...DEFENSE_STATES,
+  ...OFFENSE_STATES,
   'analysis-offense-strip': { hash: hash(SIX), run: async p => clickText(p, '.band button.grade-area', /^Offesa/) },
   'analysis-roles': { run: async p => clickText(p, '.band button.grade-area', /^Ruoli/) },
   'analysis-coaching': { run: async p => { await tab(p, 'analysis'); await wait(300); const ok = await clickText(p, '.analysis-tabs [role="tab"]', /^Coaching/); await wait(900); return ok; } },
