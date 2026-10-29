@@ -32,11 +32,10 @@ describe('tabelle complete nelle schede d\'area', () => {
     expect(within(view()).getByText((_, el) => el?.textContent === 'Col sole (Ninetales, Drought): Water ×2 → ×1 per Ninetales, Great Tusk · il meteo non è sempre attivo')).toBeInTheDocument();
   });
 
-  it('Offesa: la coverage offensiva, prima i tipi scoperti', async () => {
-    await openTab('Offesa');
-    const table = within(view()).getByRole('region', { name: 'Coverage offensiva' });
-    const first = within(table).getAllByRole('listitem')[0];
-    expect(first).toHaveClass('bad');
+  it('Offesa: Coverage tipi ha una tabella sola', async () => {
+    const user = await openTab('Offesa');
+    await user.click(within(view()).getByRole('tab', { name: /^Coverage tipi/ }));
+    expect(within(view()).getAllByRole('table')).toHaveLength(1);
   });
 
   it('Ruoli: la tabella completa dei bisogni, con tutti i livelli e la nota sul tipo di team', async () => {

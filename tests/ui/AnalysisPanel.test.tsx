@@ -2,7 +2,7 @@ import { render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { analyzeTeam } from '../../src/engine/analysis';
 import { MetaPanel } from '../../src/ui/AnalysisPanel';
-import { NeedsTable, OffenseTable } from '../../src/ui/AnalysisTables';
+import { NeedsTable } from '../../src/ui/AnalysisTables';
 import type { TeamSet } from '../../src/engine/sets';
 import { fixtureData, gholdengo, tusk } from '../fixtures/data';
 import { renderIt } from '../helpers/italian';
@@ -16,7 +16,6 @@ const AllTables = ({ team }: { team: TeamSet[] }) => {
   const analysis = analyzeTeam(team, fixtureData);
   return (
     <section aria-label="Analisi">
-      <OffenseTable analysis={analysis} />
       <NeedsTable team={team} analysis={analysis} />
       <MetaPanel team={team} analysis={analysis} data={fixtureData} />
     </section>
@@ -30,7 +29,6 @@ describe('tabelle dell\'Analisi', () => {
   it('anteprime di una riga', () => {
     renderPanel();
     const panel = screen.getByRole('region', { name: 'Analisi' });
-    expect(within(panel).getByText('15/18 tipi')).toBeInTheDocument();
     expect(within(panel).getByText('Minacce del meta')).toBeInTheDocument();
     expect(within(panel).getByText('4 scoperte')).toBeInTheDocument();
   });

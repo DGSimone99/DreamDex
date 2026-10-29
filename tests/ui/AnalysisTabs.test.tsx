@@ -43,21 +43,31 @@ describe('schede interne di Analisi', () => {
 
   it('il ? accanto alla scheda aperta spiega quella scheda', async () => {
     const user = await setup();
-    await user.click(within(views()).getByRole('tab', { name: 'Offesa' }));
-    const help = within(panel()).getByRole('button', { name: 'Come funziona Offesa' });
+    await user.click(within(views()).getByRole('tab', { name: 'Velocità' }));
+    const help = within(panel()).getByRole('button', { name: 'Come funziona Velocità' });
     await user.click(help);
-    expect(screen.getByRole('dialog', { name: /Offesa/ })).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: /Velocità/ })).toBeInTheDocument();
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(help).toHaveFocus();
   });
 
-  it("la scheda Difesa non ha il ? della vista (ce l'hanno le sottoschede), l'Offesa sì", async () => {
+  it("le schede Offesa e Difesa non hanno il ? della vista (ce l'hanno le sottoschede)", async () => {
     const user = await setup();
     await user.click(within(views()).getByRole('tab', { name: 'Difesa' }));
     expect(screen.queryByRole('button', { name: 'Come funziona Difesa' })).toBeNull();
     await user.click(within(views()).getByRole('tab', { name: 'Offesa' }));
-    expect(screen.getByRole('button', { name: 'Come funziona Offesa' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Come funziona Offesa' })).toBeNull();
+  });
+
+  it('ogni area ricorda la sua sottoscheda: Difesa → Robustezza → Offesa → Difesa riapre Robustezza', async () => {
+    const user = await setup();
+    await user.click(within(views()).getByRole('tab', { name: 'Difesa' }));
+    await user.click(within(panel()).getByRole('tab', { name: /^Robustezza/ }));
+    await user.click(within(views()).getByRole('tab', { name: 'Offesa' }));
+    expect(within(panel()).getByRole('tab', { name: /^Generale/ })).toHaveAttribute('aria-selected', 'true');
+    await user.click(within(views()).getByRole('tab', { name: 'Difesa' }));
+    expect(within(panel()).getByRole('tab', { name: /^Robustezza/ })).toHaveAttribute('aria-selected', 'true');
   });
 
   it('la scheda resta aperta cambiando il team', async () => {
@@ -71,18 +81,19 @@ describe('schede interne di Analisi', () => {
   });
 
   it('Coaching: badge coi problemi gravi, il nome resta "Coaching"', async () => {
-    // Kingambit e Gholdengo sono entrambi deboli a Fire e Ground: due problemi gravi
+    // Kingambit e Gholdengo sono entrambi deboli a Fire e Ground, e nessuno colpisce super efficace Water e Fighting: quattro problemi gravi
     await setup(['Great Tusk', 'Gholdengo', 'Kingambit']);
     const tab = within(views()).getByRole('tab', { name: 'Coaching' });
     const badge = tab.querySelector('.tab-badge');
     expect(badge).toHaveTextContent(/^\d+$/);
     expect(badge).toHaveAttribute('aria-hidden', 'true');
-    expect(badge).toHaveTextContent('2');
-    expect(tab).toHaveAttribute('title', '2 problemi gravi');
+    expect(badge).toHaveTextContent('4');
+    expect(tab).toHaveAttribute('title', '4 problemi gravi');
   });
 
   it('Coaching senza problemi gravi: nessun badge', async () => {
-    await setup();
+    // Nessun tipo scoperto che pesa, nessuna debolezza grave
+    await setup(['Great Tusk', 'Gholdengo', 'Corviknight', 'Rotom-Wash']);
     expect(within(views()).getByRole('tab', { name: 'Coaching' }).querySelector('.tab-badge')).toBeNull();
   });
 

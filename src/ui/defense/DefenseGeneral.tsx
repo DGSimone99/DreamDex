@@ -11,7 +11,7 @@ import { TypeIcons } from '../typeIcons';
 import { HOLD_TAGS } from './DefenseRobustness';
 
 /** Il colore della tessera dal valore: buono da 80, medio da 50, scarso sotto. */
-const tone = (value: number) => (value >= 80 ? 'good' : value >= 50 ? 'warn' : 'bad');
+export const tone = (value: number) => (value >= 80 ? 'good' : value >= 50 ? 'warn' : 'bad');
 
 /** Sotto questo valore il membro con la Difesa più bassa è l'anello debole. */
 const WEAK_LINK_BELOW = 50;
@@ -20,12 +20,18 @@ const UNANSWERED_SPRITES = 6;
 /** Quanti tipi scoperti si mostrano come chip nella tessera dei tipi; gli altri vanno in "+N". */
 const EXPOSED_CHIPS = 3;
 
-/** Una barra con il numero accanto (0-100), del colore della soglia del valore. */
-function Bar({ value, total }: { value: number; total?: boolean }) {
+/**
+ * Una barra con il numero accanto (0-100), del colore della soglia del valore.
+ * `gain`: il "+N" (setup, Tera, mossa Z) in un posto suo dopo il numero, così non sborda nella colonna dopo.
+ * `reserve`: il posto c'è anche senza "+N", per tutta la colonna, così le barre della colonna restano lunghe uguali.
+ */
+export function Bar({ value, total, unit = '', gain, reserve = false }: { value: number; total?: boolean; unit?: string; gain?: ReactNode; reserve?: boolean }) {
+  const slot = reserve || !!gain;
   return (
-    <span className="def-cell">
+    <span className={`def-cell${slot ? ' with-gain' : ''}`}>
       <span className={`def-bar ${tone(value)}${total ? ' total' : ''}`} aria-hidden="true"><i style={{ width: `${Math.max(0, Math.min(100, value))}%` }} /></span>
-      <span className={`def-num ${tone(value)}${total ? ' total' : ''}`}>{value}</span>
+      <span className={`def-num ${tone(value)}${total ? ' total' : ''}`}>{value}{unit}</span>
+      {slot && <span className="def-gain">{gain}</span>}
     </span>
   );
 }
@@ -64,6 +70,8 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
   const { coverageMeta, members } = defense;
   const roomy = !!ctx.roomy;
   const recoverers = members.filter(m => m.sustainParts.recovery > 0).length;
+  // La colonna Difesa riserva il posto del "+N" se almeno un membro ha un setup difensivo
+  const setupColumn = members.some(m => m.setupGain > 0 && !!m.setupMove);
 
   // Tipi scoperti, i gravi per primi
   const exposed = ctx.analysis.weakness
@@ -177,9 +185,9 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
                 <td><Bar value={m.special} /></td>
                 <td><Bar value={m.sustain} /></td>
                 <td>
-                  <Bar value={m.value} total />
                   {/* Quanto aggiunge il setup difensivo (metà del guadagno entra nel voto) */}
-                  {m.setupGain > 0 && m.setupMove && <small className="ad-gain" title={t('ddetail.withSetup', { move: m.setupMove })}> (+{m.setupGain})</small>}
+                  <Bar value={m.value} total reserve={setupColumn}
+                    gain={m.setupGain > 0 && m.setupMove && <small className="ad-gain" title={t('ddetail.withSetup', { move: m.setupMove })}> (+{m.setupGain})</small>} />
                 </td>
                 {roomy && <WorstAndRecovery hit={worstHit(i)} parts={m.sustainParts} />}
               </tr>

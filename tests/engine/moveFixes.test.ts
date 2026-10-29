@@ -14,7 +14,7 @@ const format = DEFAULT_FORMAT;
 const data = { ...fixtureData, formatId: format.formatId };
 const junk = (species: string): TeamSet => ({ ...emptySet(species), moves: ['Splash'] });
 const six = [...['Great Tusk', 'Gholdengo', 'Toxapex', 'Corviknight'].map(n => mostCommonSet(fixtureStats, n)!), junk('Magikarp'), junk('Sunkern')];
-const problemsOf = (team: TeamSet[], d = data, f: Format = format) => findProblems(team, f, analyzeTeam(team, d), [], 'it');
+const problemsOf = (team: TeamSet[], d = data, f: Format = format) => findProblems(team, f, d, analyzeTeam(team, d), [], 'it');
 const fixesOf = (team: TeamSet[], d = data, f: Format = format) => moveFixes(team, f, d, problemsOf(team, d, f), 'it');
 
 describe('cambi di mossa del Coaching', () => {

@@ -1,0 +1,63 @@
+/* Offesa: regole solo dell'Offesa, sopra quelle della Difesa (defense.css) */
+
+/* Generale: i tre contatori della Potenza (fisici ciano, speciali rosa, misti neutri) */
+.def-mini.phys i { background: var(--accent); }
+.def-mini.spec i { background: var(--accent-2-ink); }
+.def-mini.mixed i { background: var(--muted); }
+.def-meter-top b.phys { color: var(--accent-ink); }
+.def-meter-top b.spec { color: var(--accent-2-ink); }
+.def-meter-top b.mixed { color: var(--muted); }
+.def-open-mon.plain { border-bottom-color: transparent; }
+.def-faint { color: var(--muted); }
+
+/* Coverage tipi: verde dove il membro copre il tipo, giallo a metà (3HKO); testo --text su fondi scuri, contrasto ampio */
+.def-frame .ct-cell.ok-full { background: color-mix(in srgb, var(--good) 30%, var(--panel)); border-color: color-mix(in srgb, var(--good) 70%, transparent); }
+.def-frame .ct-cell.ok-half { background: color-mix(in srgb, var(--warn) 26%, var(--panel)); border-color: color-mix(in srgb, var(--warn) 65%, transparent); }
+.def-frame .ct-table td.ct-cell.ok-full, .def-frame .ct-table td.ct-cell.ok-half { font-size: clamp(11px, calc(var(--def-row) * 0.2), 16px); }
+.ct-legend { display: flex; flex-wrap: wrap; gap: 14px; margin: 8px 0 0; font-size: 12px; color: var(--muted); }
+.ct-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.ct-legend i { width: 12px; height: 12px; border-radius: 3px; border: 1px solid var(--line); }
+.ct-legend i.ok-full { background: color-mix(in srgb, var(--good) 30%, var(--panel)); border-color: var(--good); }
+.ct-legend i.ok-half { background: color-mix(in srgb, var(--warn) 26%, var(--panel)); border-color: var(--warn); }
+.ct-legend i.hole { height: 3px; border: 0; background: var(--bad); }
+
+/* Potenza: barra lunga e colpo migliore come chip nel colore del tipo (testo scelto per contrasto ≥ 4,5) */
+.def-power .def-col-mon + col { width: auto; }
+.def-power .pw-col-move { width: 240px; }
+.def-power .pw-bar .def-cell { grid-template-columns: minmax(120px, 360px) 3ch; }
+.def-power .pw-move { display: inline-block; max-width: 100%; padding: 3px 12px; border-radius: 4px; font-size: 13px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; vertical-align: middle; }
+.def-power .pw-ref { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 8px 0 0; font-size: 12px; color: var(--muted); }
+.def-power .pw-ref .def-open-mon { display: inline-grid; }
+.def-power .pw-legend { margin-left: auto; }
+
+/* "+N" dei guadagni nelle tabelle def-grid: verde il setup, blu Tera e mossa Z (come .ad-t) */
+.def-frame .ad-gain { display: inline; margin-left: 4px; font: 600 13px/1 var(--ui); color: var(--good); cursor: help; }
+.def-frame .ad-once { display: inline; margin-left: 4px; font: 600 13px/1 var(--ui); color: var(--accent); cursor: help; }
+.def-sub { font-style: normal; font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+
+/* Wallbreaking: soglie in verde (OHKO forte, 2HKO, 3HKO giallo), diverse dai hold-* della Difesa; testo --text su fondi scuri */
+.ko-ohko { background: color-mix(in srgb, var(--good) 46%, var(--panel)); color: var(--text); }
+.ko-two { background: color-mix(in srgb, var(--good) 22%, var(--panel)); color: var(--text); }
+.ko-three { background: color-mix(in srgb, var(--warn) 24%, var(--panel)); color: var(--text); }
+.ko-none { background: var(--raised); color: var(--muted); }
+.def-walls .rob-cell { font-size: clamp(11px, calc(var(--def-row) * 0.2), 17px); line-height: 1.05; vertical-align: middle; }
+.def-walls .rob-cell.ko-ohko { border-color: var(--good); }
+.def-walls .rob-cell.ko-two { border-color: color-mix(in srgb, var(--good) 55%, transparent); }
+.def-walls .rob-cell.ko-three { border-color: color-mix(in srgb, var(--warn) 60%, transparent); }
+.def-walls .wall-pct { display: block; }
+.def-walls .wall-setup { display: block; margin-top: 1px; font: 600 clamp(9px, calc(var(--def-row) * 0.15), 12px)/1.05 var(--ui); white-space: nowrap; opacity: 0.9; }
+/* Righe basse (squadra aperta): il "setup N%" resta solo nel title e nel testo nascosto, come le statistiche nella Difesa */
+.def-walls:not(.roomy) .wall-setup { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.def-walls .wall-side-h { width: auto; }
+.def-walls .rob-side { white-space: nowrap; }
+.def-walls .rob-col-side { width: 84px; }
+.def-walls .wall-gain { display: inline; margin: 0 0 0 4px; font-size: 12px; }
+.def-walls .rob-cell.has-setup { position: relative; }
+/* Segno verde nell'angolo: la casella sale di soglia col setup (a squadra aperta il "setup N%" resta nascosto) */
+.def-walls .rob-cell.has-setup::after { content: ''; position: absolute; top: 0; right: 0; border-style: solid; border-width: 0 9px 9px 0; border-color: transparent var(--good) transparent transparent; }
+.def-walls .rob-legend .wall-legend-setup { display: inline-flex; align-items: center; gap: 6px; }
+.def-walls .wall-tick { width: 9px; height: 9px; background: linear-gradient(225deg, var(--good) 50%, transparent 50%); border: 1px solid var(--line); }
+.def-walls .wall-h { padding: 0; line-height: 0; text-align: center; vertical-align: bottom; }
+.def-frame.def-walls .wall-h .def-box { --bs: 1.2; }
+.def-walls .rob-legend .wall-legend-setup { margin-left: auto; }
+.def-walls .ct-sum td { height: 26px; }

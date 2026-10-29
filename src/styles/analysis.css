@@ -118,12 +118,19 @@
 .area-help { position: absolute; display: flex; }
 .area-help .help-button { width: 18px; height: 18px; color: var(--text); }
 .area-help .help-button .icon { width: 18px; height: 18px; }
-.area-problems-row { display: flex; align-items: baseline; gap: 12px; padding: 0 2px; flex: none; }
+/* Altezza fissa: con o senza problemi il pannello sotto parte dallo stesso punto in ogni area */
+.area-problems-row { display: flex; align-items: center; gap: 12px; padding: 0 2px; flex: none; height: 25px; }
 /* L'etichetta "N problemi" in testa: giallo, rosso se ce n'è almeno uno grave */
 .area-problems-label { display: inline-flex; align-items: center; gap: 5px; flex: none; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--warn); background: var(--warn-bg); }
 .area-problems-label .icon { width: 13px; height: 13px; }
 .area-problems-row.serious .area-problems-label { color: var(--bad); background: var(--bad-bg); }
-.area-problems { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 12.5px; }
+/* Nessun problema: l'etichetta in verde con la spunta, la riga alta come quella con i problemi */
+.area-problems-row.is-clear .area-problems-label { color: var(--good); background: var(--good-bg); }
+.area-problems { flex: 1; min-width: 0; margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: nowrap; gap: 4px 18px; overflow: hidden; font-size: 12.5px; }
+.area-problems > li { flex: none; white-space: nowrap; }
+/* Il "+N" dei problemi che non stanno nella riga (il title li elenca) */
+.area-problems li.area-problems-more { padding: 0 7px; border-radius: 10px; font: 600 11px/18px var(--ui); color: var(--muted); background: var(--raised); cursor: help; }
+.area-problems li.area-problems-more::before { content: none; }
 /* Testo in linea (niente flex): i nomi dei tipi restano attaccati ai due punti */
 .area-problems li { position: relative; padding-left: 12px; }
 .area-problems li::before { content: '\25CF'; position: absolute; left: 0; color: var(--warn); }
@@ -591,8 +598,12 @@ button.sum-row:hover { background: var(--accent-wash); }
  * Problemi per area: quattro tessere (targa magenta, voto grande, barretta del voto), i problemi come pillole col bordo
  * del colore della gravità. Ridondanze e minacce sotto un'etichetta, più quiete. Tessera pulita: tinta di verde.
  */
-.coach-map { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, 1.2fr); gap: 10px; align-items: stretch; margin: 0 0 7px; }
-.coach-tile { display: flex; flex-direction: column; min-width: 0; padding: 0 0 5px; background: var(--panel); border: 1px solid var(--line-soft); }
+/* La mappa cede l'altezza alle tappe: il Coaching non scorre, le pillole che non stanno vanno nel "+N" della tessera */
+.coach-map-region { flex: 0 1 auto; min-height: 0; display: flex; flex-direction: column; }
+.coach-steps-region { flex: none; }
+.coach-map { flex: 0 1 auto; min-height: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, 1.2fr); grid-template-rows: minmax(0, 1fr); gap: 10px; align-items: stretch; margin: 0 0 7px; }
+.coach-tile { display: flex; flex-direction: column; min-width: 0; min-height: 0; padding: 0 0 5px; overflow: hidden; background: var(--panel); border: 1px solid var(--line-soft); }
+.coach-more { flex: none; align-self: flex-start; margin: 6px 12px 0; padding: 0 7px; border-radius: 10px; font: 600 11px/18px var(--ui); color: var(--muted); background: var(--raised); cursor: help; }
 .coach-tile-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-right: 12px; }
 .coach-tile-head .dash-meta b { font: 800 24px/1 var(--display); font-style: italic; }
 .coach-tile-bar { height: 4px; margin: 9px 12px 9px; background: linear-gradient(90deg, var(--accent) var(--score, 0%), var(--line-soft) var(--score, 0%)); }

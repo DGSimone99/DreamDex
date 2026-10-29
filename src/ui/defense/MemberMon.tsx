@@ -12,15 +12,15 @@ export const setOf = (team: TeamSet[], species: string) => team.find(set => (bat
 
 /**
  * Il membro nella prima colonna delle tabelle della Difesa: icona del box (nitida anche piccola, cresce con la riga), nome e
- * tipi; con `stats` sotto il nome PS, Difesa e Difesa Speciale finali (livello 100, con EV, IV e natura: in verde o rosso
+ * tipi; con `stats` sotto il nome PS, Difesa e Difesa Speciale finali (con `'offense'`: Attacco, Attacco Speciale e Velocità; livello 100, con EV, IV e natura: in verde o rosso
  * se la natura le alza o le abbassa), coi simboli e i nomi per lo screen reader. `children` (es. "Anello debole") va accanto
  * alle statistiche, così il nome resta intero.
  */
-export function MemberMon({ name, set, stats = false, children }: { name: string; set?: TeamSet; stats?: boolean; children?: ReactNode }) {
+export function MemberMon({ name, set, stats = false, children }: { name: string; set?: TeamSet; stats?: boolean | 'offense'; children?: ReactNode }) {
   const t = useT();
   const species = set ? battleSpecies(set) : getSpecies(name);
   const lines = stats && set ? statLines(set) : null;
-  const stat = (id: 'hp' | 'def' | 'spd', icon: 'heart' | 'physical' | 'special') => {
+  const stat = (id: 'hp' | 'def' | 'spd' | 'atk' | 'spa' | 'spe', icon: 'heart' | 'physical' | 'special' | 'speed') => {
     const line = lines!.find(l => l.stat === id)!;
     return (
       <span className={line.nature ?? undefined} title={t(`stat.${id}`)}>
@@ -37,7 +37,9 @@ export function MemberMon({ name, set, stats = false, children }: { name: string
           {species && <TypeIcons types={species.types} className="def-mon-types" />}
           {children && <span className="def-mon-tag line">{children}</span>}
         </span>
-        {lines && <span className="def-mon-stats">{stat('hp', 'heart')}{stat('def', 'physical')}{stat('spd', 'special')}{children && <span className="def-mon-tag">{children}</span>}</span>}
+        {lines && <span className="def-mon-stats">{stats === 'offense'
+          ? <>{stat('atk', 'physical')}{stat('spa', 'special')}{stat('spe', 'speed')}</>
+          : <>{stat('hp', 'heart')}{stat('def', 'physical')}{stat('spd', 'special')}</>}{children && <span className="def-mon-tag">{children}</span>}</span>}
       </span>
     </span>
   );
