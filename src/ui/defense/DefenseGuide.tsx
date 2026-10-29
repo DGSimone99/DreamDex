@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import type { TeamDefense } from '../../engine/defense';
+import { COVERAGE_DEPTH } from '../../engine/coverage';
 import { RANK_WEIGHTS } from '../../engine/offense';
 import { useLang, useT } from '../../i18n/react';
 
@@ -28,6 +29,9 @@ const NET_SCALE = [
   { net: '+40%', value: 80, tone: 'good' }, { net: '+50%', value: 93, tone: 'good' },
 ] as const;
 
+/** Quanto vale chi regge una minaccia, dal primo al terzo: quelli del motore (COVERAGE_DEPTH), in percentuale. */
+const DEPTH = COVERAGE_DEPTH.map(w => Math.round(100 * w));
+
 /** Tasti dei punti: il moltiplicatore (o chi) sopra, i punti sotto nel colore del segno. */
 function Keys({ items }: { items: { label: string; value: string; title?: string }[] }) {
   const tone = (value: string) => (value.startsWith('+') ? 'good' : value.startsWith('−') ? 'bad' : 'even');
@@ -44,17 +48,6 @@ function Rows({ rows, stacked = false, compact = false }: { rows: [ReactNode, Re
     <dl className={`guide-rows${stacked ? ' stacked' : ''}${compact ? ' compact' : ''}`}>
       {rows.map(([term, rule], i) => <div key={i}><dt>{term}</dt><dd>{rule}</dd></div>)}
     </dl>
-  );
-}
-
-/** Pillole di punti o valori: etichetta, numero e una nota. */
-function Points({ items }: { items: { label: ReactNode; value?: ReactNode; note?: string }[] }) {
-  return (
-    <ul className="guide-points">
-      {items.map((item, i) => (
-        <li key={i}>{item.label}{item.value !== undefined && <b>{item.value}</b>}{item.note && <small>{item.note}</small>}</li>
-      ))}
-    </ul>
   );
 }
 
@@ -209,16 +202,27 @@ export function DefenseGuideSection({ section, defense, meta }: { section: Secti
   return (
     <>
       <h5>{g('meta.test')}</h5>
-      <Rows rows={[
+      <Rows compact rows={[
         [g('meta.threats'), g('meta.threats.rule', { n: metaRows })],
         [g('meta.hit'), g('meta.hit.rule')],
-        [g('meta.holds'), g('meta.holds.rule')],
       ]} />
-      <h5>{g('meta.toteam')}</h5>
-      <Points items={[
-        { label: g('meta.one'), value: '70%' }, { label: g('meta.two'), value: '90%' }, { label: g('meta.three'), value: '100%' },
-      ]} />
-      <Rows rows={[[g('types.split'), g('types.split.rule')]]} />
+
+      <h5>{g('meta.holds')}</h5>
+      <ul className="guide-holds three">
+        <li><span className="cm-holder-pct">38%</span><b>{g('meta.hold.full')}</b><small>{g('meta.hold.full.rule')}</small></li>
+        <li><span className="cm-holder-pct half">72%</span><b>{g('meta.hold.half')}</b><small>{g('meta.hold.half.rule')}</small></li>
+        <li><span className="ct-pill bad">{t('detail.nobody')}</span><b>{g('meta.hold.ko')}</b><small>{g('meta.hold.ko.rule')}</small></li>
+      </ul>
+
+      <h5>{g('meta.depth')}</h5>
+      <div className="guide-weights">
+        <ol aria-label={g('meta.depth')}>
+          {DEPTH.map((w, i) => (
+            <li key={i} style={{ flexGrow: w }}><span>{g('meta.rank', { n: i + 1 })}</span><b>+{w}%</b></li>
+          ))}
+        </ol>
+        <div className="guide-weights-axis" aria-hidden="true"><span>{g('meta.depth.one', { pct: DEPTH[0] })}</span><span>{g('meta.depth.all')}</span></div>
+      </div>
     </>
   );
 }

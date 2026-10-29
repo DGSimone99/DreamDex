@@ -151,6 +151,13 @@ const DEFENSE_STATES: Record<string, State> = {
   'analysis-defense-types-nometa': defenseState(SUBS.types, { format: { meta: false } }),
   'analysis-defense-long': defenseState(null, { team: LONG }),
   // La guida della Difesa aperta dal "?" di Generale (Come funziona)
+  'analysis-defense-guide-meta': { hash: hash(SIX), run: async p => {
+    const ok = await defenseState(SUBS.meta).run!(p);
+    if (ok !== true) return ok;
+    if (!await clickText(p, '.area-help button', /./)) return 'no guide button';
+    await wait(400);
+    return true;
+  } },
   'analysis-defense-guide-sus': { hash: hash(SIX), run: async p => {
     const ok = await defenseState(SUBS.sustain).run!(p);
     if (ok !== true) return ok;
@@ -225,6 +232,8 @@ const STATES: Record<string, State> = {
   ...DEFENSE_STATES,
   'analysis-offense-strip': { hash: hash(SIX), run: async p => clickText(p, '.band button.grade-area', /^Offesa/) },
   'analysis-roles': { run: async p => clickText(p, '.band button.grade-area', /^Ruoli/) },
+  'analysis-coaching': { run: async p => { await tab(p, 'analysis'); await wait(300); const ok = await clickText(p, '.analysis-tabs [role="tab"]', /^Coaching/); await wait(900); return ok; } },
+  'analysis-bonus': { run: async p => { await tab(p, 'analysis'); await wait(300); const ok = await clickText(p, '.analysis-tabs [role="tab"]', /^Bonus/); await wait(900); return ok; } },
   'analysis-overview-three': { hash: hash(TEAM.slice(0, 3)), run: async p => { await tab(p, 'analysis'); return true; } },
   'analysis-meta-off': { hash: hashWith(TEAM, { meta: false }), run: async p => { await tab(p, 'analysis'); return true; } },
   'analysis-one': { hash: hash(TEAM.slice(0, 2)), run: async p => { await tab(p, 'analysis'); return true; } },

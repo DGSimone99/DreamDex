@@ -126,10 +126,6 @@
 .guide-rows dt { font-weight: 600; color: var(--text); }
 .guide-rows dd { margin: 0; color: var(--muted); }
 .guide-note { margin: 0 0 6px; color: var(--muted); }
-.guide-points { list-style: none; margin: 0 0 8px; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
-.guide-points li { display: flex; align-items: baseline; gap: 8px; padding: 5px 10px; background: var(--panel); border: 1px solid var(--line-soft); border-radius: 4px; font-size: 14px; color: var(--muted); }
-.guide-points li b { font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
-.guide-points li small { font-size: 12px; color: var(--muted); }
 @media (max-width: 560px) {
   .guide-rows > div { grid-template-columns: 1fr; gap: 2px; }
 }
@@ -242,15 +238,37 @@
 }
 
 /* Coverage meta: una tessera per minaccia */
-.cm-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 4px; }
-.cm-tile { display: grid; grid-template-columns: 32px 1fr; grid-template-rows: auto auto; align-items: center; column-gap: 6px; height: 60px; padding: 3px 5px; background: var(--panel); border-left: 3px solid var(--good); color: var(--text); }
-.cm-tile.warn { border-left-color: var(--warn); }
-.cm-tile.bad { border-left-color: var(--bad); background: var(--bad-bg); }
-.cm-tile > .sprite { grid-row: span 2; }
-.cm-level { text-align: right; font: italic 700 13px/1 var(--display); }
-.cm-by { display: flex; justify-content: flex-end; align-items: center; min-height: 24px; }
-.cm-by .partial { opacity: 0.45; }
-.cm-by em { font-style: normal; font-size: 11px; color: var(--bad); }
+/* Coverage meta: pagine da 8 minacce (4 × 2) che riempiono il pannello, la meno coperta per prima. In alto le pagine a
+   sinistra e i conteggi a destra; le icone crescono a gradini con l altezza del pannello (cm-frame è il contenitore) */
+.cm-frame { display: flex; flex-direction: column; height: 100%; min-height: 0; container-type: size; }
+.cm-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 8px; }
+.cm-pages { display: flex; align-items: center; gap: 4px; }
+.cm-pages button { display: inline-grid; place-items: center; min-width: 30px; height: 28px; padding: 0 8px; border: 1px solid var(--line); border-radius: 3px; background: var(--raised); color: var(--muted); font: 600 13px/1 var(--ui); cursor: pointer; }
+.cm-pages button:hover:not(:disabled) { border-color: var(--accent-2); color: var(--text); }
+.cm-pages button[aria-current='page'] { border-color: var(--accent-2); background: var(--accent-2-soft); color: var(--text); }
+.cm-pages button:disabled { opacity: 0.4; cursor: default; }
+.cm-pages button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.cm-pages .icon { width: 14px; height: 14px; }
+.ad-panel .cm-summary { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0; font-size: 13px; color: var(--muted); }
+.cm-summary .ct-pill { font-size: 12px; }
+.ct-pill.zero { background: var(--raised); color: var(--faint); }
+.cm-grid { flex: 1; min-height: 0; list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.cm-tile { display: flex; flex-direction: column; gap: 8px; min-width: 0; min-height: 0; padding: 10px 12px; border: 1px solid var(--line-soft); border-top: 3px solid var(--good); background: color-mix(in srgb, var(--raised) 55%, var(--panel)); color: var(--text); overflow: hidden; }
+.cm-tile.partial { border-top-color: var(--warn); }
+.cm-tile.none { border-top-color: var(--bad); background: color-mix(in srgb, var(--bad-bg) 80%, var(--panel)); }
+.cm-head { display: flex; align-items: center; gap: 8px; padding-bottom: 6px; border-bottom: 1px solid var(--line-soft); }
+.cm-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: italic 700 15px/1.1 var(--display); }
+.cm-head .ct-pill { font-size: 13px; }
+.cm-by { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 10px; align-content: start; min-height: 0; }
+.cm-holder { display: flex; align-items: center; gap: 4px; min-width: 0; font-size: 13px; }
+.cm-holder-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
+.cm-holder-pct { flex: none; min-width: 46px; padding: 1px 6px; border-radius: 999px; text-align: center; color: var(--muted); font-variant-numeric: tabular-nums; }
+.cm-holder-pct.half { background: var(--warn-bg); color: var(--warn); font-weight: 700; }
+.cm-holder.partial .cm-holder-name, .cm-holder.partial .def-box { opacity: 0.55; }
+.cm-frame .cm-threat { --bs: 1.2; }
+.cm-frame .cm-by .def-box { --bs: 0.7; }
+@container (min-height: 420px) { .cm-frame .cm-threat { --bs: 1.6; } .cm-frame .cm-by .def-box { --bs: 0.85; } .cm-holder { font-size: 14px; } }
+@container (min-height: 600px) { .cm-frame .cm-threat { --bs: 2; } .cm-frame .cm-by .def-box { --bs: 1; } .cm-name { font-size: 17px; } }
 /* Peso di ogni parte nella Difesa, accanto al nome (guida, Come funziona) */
 .guide-pct { margin-left: 8px; padding: 0 6px; border-radius: 3px; background: var(--accent-2-soft); color: var(--text); font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
 /* Guida a sezioni: le sezioni stanno una sopra l'altra nella stessa cella; si vede solo quella aperta */
@@ -348,3 +366,40 @@
 .guide-h-steps { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .guide-h-steps span { margin-left: 4px; padding: 1px 8px; border: 1px solid var(--line); border-radius: 3px; background: var(--raised); font-size: 12px; font-weight: 600; text-transform: none; letter-spacing: 0; color: var(--text); }
 .guide-h-steps span.eq { margin-left: 8px; color: var(--muted); }
+/* Coverage meta: cosa dice il % (in testa ai conteggi) e, a squadra chiusa, la mossa del colpo su una colonna sola */
+.cm-summary .cm-dmg { margin-right: 10px; font-size: 12px; color: var(--faint); }
+.cm-holder-move { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: var(--muted); }
+.cm-frame.roomy .cm-by { grid-template-columns: 1fr; gap: 4px; }
+.cm-frame.roomy .cm-holder-name { flex: 0 1 auto; }
+.cm-frame.roomy .cm-holder-move { flex: 1; }
+/* Coverage meta: una minaccia che manda KO tutti lo dice nella tessera; a squadra chiusa, con più di 4 membri che la
+   reggono, righe più strette (con 6 l ultimo non resta tagliato) */
+.cm-empty { font-size: 13px; color: var(--bad); }
+.cm-frame.roomy .cm-by.many { gap: 1px; }
+.cm-frame.roomy .cm-by.many .def-box { --bs: 0.7; }
+.cm-frame.roomy .cm-by.many .cm-holder { font-size: 12px; }
+/* Guida, Coverage meta: le tre soglie di chi regge con le pastiglie della tabella, la profondità come barra a segmenti */
+.guide-holds.three { grid-template-columns: repeat(3, 1fr); }
+.guide-holds.three b { font: 600 14px/1.2 var(--ui); font-style: normal; }
+/* Il membro: nome e tipi sulla stessa riga, sotto PS, Difesa e Difesa Speciale finali coi simboli */
+.def-mon-text { display: grid; gap: 1px; min-width: 0; }
+.def-mon-line { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.def-mon-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.def-mon-types img { display: block; width: 15px; height: 15px; }
+.def-mon-types { display: inline-flex; gap: 2px; flex: none; }
+.def-mon-stats { display: flex; gap: 10px; font-size: 11px; font-weight: 600; line-height: 1.2; color: var(--muted); font-variant-numeric: tabular-nums; }
+.def-mon-stats > span { display: inline-flex; align-items: center; gap: 3px; cursor: help; }
+.def-mon-stats .icon { width: 11px; height: 11px; color: var(--faint); }
+.def-mon-stats .up { color: var(--good); }
+.def-mon-stats .down { color: var(--bad); }
+/* Fisica e Speciale in testata col loro simbolo */
+.rob-side-h .icon { width: 15px; height: 15px; color: var(--muted); vertical-align: middle; }
+/* Righe troppo basse per due righe di testo (sotto ~35px, es. 1366 a squadra aperta): niente statistiche sotto il nome,
+   così le righe restano alte quanto nelle altre schede. Soglia sull altezza della cornice (righe = (h − 202) / 6 − 3) */
+@container (max-height: 440px) { .def-frame .def-mon-stats { display: none; } }
+.def-mon-stats .def-weak { padding: 0 5px; font-size: 9.5px; line-height: 1.5; }
+/* "Anello debole": accanto alle statistiche quando ci sono, accanto al nome quando le righe sono troppo basse */
+.def-mon-tag { display: inline-flex; }
+.def-mon-tag.line { display: none; }
+.def-mon-text:not(:has(.def-mon-stats)) .def-mon-tag.line { display: inline-flex; }
+@container (max-height: 440px) { .def-frame .def-mon-tag.line { display: inline-flex; } }
