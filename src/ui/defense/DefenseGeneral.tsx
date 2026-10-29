@@ -11,7 +11,7 @@ import { TypeIcons } from '../typeIcons';
 import { HOLD_TAGS } from './DefenseRobustness';
 
 /** Il colore della tessera dal valore: buono da 80, medio da 50, scarso sotto. */
-const tone = (value: number) => (value >= 80 ? 'good' : value >= 50 ? 'warn' : 'bad');
+export const tone = (value: number) => (value >= 80 ? 'good' : value >= 50 ? 'warn' : 'bad');
 
 /** Sotto questo valore il membro con la Difesa più bassa è l'anello debole. */
 const WEAK_LINK_BELOW = 50;
@@ -21,11 +21,11 @@ const UNANSWERED_SPRITES = 6;
 const EXPOSED_CHIPS = 3;
 
 /** Una barra con il numero accanto (0-100), del colore della soglia del valore. */
-function Bar({ value, total }: { value: number; total?: boolean }) {
+export function Bar({ value, total, unit = '' }: { value: number; total?: boolean; unit?: string }) {
   return (
     <span className="def-cell">
       <span className={`def-bar ${tone(value)}${total ? ' total' : ''}`} aria-hidden="true"><i style={{ width: `${Math.max(0, Math.min(100, value))}%` }} /></span>
-      <span className={`def-num ${tone(value)}${total ? ' total' : ''}`}>{value}</span>
+      <span className={`def-num ${tone(value)}${total ? ' total' : ''}`}>{value}{unit}</span>
     </span>
   );
 }

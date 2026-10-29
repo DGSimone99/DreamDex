@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { analyzeTeam } from '../../src/engine/analysis';
 import { rateTeam } from '../../src/engine/rating';
-import { emptySet } from '../../src/engine/sets';
+import { emptySet, type TeamSet } from '../../src/engine/sets';
 import { LangProvider } from '../../src/i18n/react';
 import { AreaView } from '../../src/ui/AreaView';
 import { fixtureData } from '../fixtures/data';
@@ -66,5 +66,43 @@ describe('Offesa: navigazione e guida', () => {
     expect(names()).toEqual(['General', 'Type coverage', 'Power', 'Wallbreaking', 'Meta coverage']);
     await user.click(screen.getByRole('button', { name: 'How General works' }));
     expect(screen.getByRole('dialog', { name: 'Guide: Offense' })).toBeInTheDocument();
+  });
+});
+
+describe('Offesa: Generale', () => {
+  const view = (t: TeamSet[] = team, rating = withMeta()) => renderIt(<AreaView rating={rating} area="strength" team={t} analysis={analyzeTeam(t, fixtureData)} problems={[]} />);
+
+  it('Generale: righe in ordine di team, colonne Pokémon, Potenza, Wallbreaking, Coverage, Offesa', () => {
+    view();
+    expect(screen.getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Potenza', 'Wallbreaking', 'Coverage', 'Offesa']);
+    expect([...document.querySelectorAll('.def-mon-name')].map(n => n.textContent)).toEqual(['Great Tusk', 'Gholdengo']);
+  });
+
+  it('quattro tessere, cliccandole si apre la sottoscheda e prende il focus', async () => {
+    const user = userEvent.setup();
+    const { unmount } = view();
+    const tiles = () => screen.getAllByRole('button', { name: /^(Coverage tipi|Potenza|Wallbreaking|Coverage meta)/ });
+    expect(tiles()).toHaveLength(4);
+    await user.click(screen.getByRole('button', { name: /^Wallbreaking/ }));
+    const tab = screen.getByRole('tab', { name: /^Wallbreaking/ });
+    expect(tab).toHaveAttribute('aria-selected', 'true');
+    expect(tab).toHaveFocus();
+    unmount();
+    view(team, noMeta());
+    expect(tiles()).toHaveLength(3);
+  });
+
+  it('membro senza attacchi: la riga resta con "—"', () => {
+    const t = [team[0], { ...emptySet('Blissey'), moves: ['Soft-Boiled', 'Toxic', 'Stealth Rock', 'Teleport'] }];
+    view(t);
+    const rows = document.querySelectorAll('.def-members tbody tr');
+    expect(rows).toHaveLength(2);
+    expect(within(rows[1] as HTMLElement).getAllByText('—').length).toBeGreaterThan(0);
+  });
+
+  it('un solo membro', () => {
+    view([team[0]]);
+    expect(document.querySelectorAll('.def-members tbody tr')).toHaveLength(1);
+    expect(document.querySelector('.def-general')!.textContent).not.toContain('NaN');
   });
 });

@@ -403,3 +403,13 @@
 .def-mon-tag.line { display: none; }
 .def-mon-text:not(:has(.def-mon-stats)) .def-mon-tag.line { display: inline-flex; }
 @container (max-height: 440px) { .def-frame .def-mon-tag.line { display: inline-flex; } }
+
+/* Offesa, Generale: i tre contatori della Potenza (fisici ciano, speciali rosa, misti neutri) */
+.def-mini.phys i { background: var(--accent); }
+.def-mini.spec i { background: var(--accent-2-ink); }
+.def-mini.mixed i { background: var(--muted); }
+.def-meter-top b.phys { color: var(--accent-ink); }
+.def-meter-top b.spec { color: var(--accent-2-ink); }
+.def-meter-top b.mixed { color: var(--muted); }
+.def-open-mon.plain { border-bottom-color: transparent; }
+.def-faint { color: var(--muted); }

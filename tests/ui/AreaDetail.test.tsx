@@ -29,11 +29,12 @@ describe("dettaglio dell'Offesa a schede", () => {
     expect(tabs.map(tab => tab.textContent!.replace(/\s*\d+$/, ''))).toEqual(['Generale', 'Coverage tipi', 'Potenza', 'Wallbreaking', 'Coverage meta']);
     expect(tabs[0]).toHaveAttribute('aria-selected', 'true');
     const panel = within(dialog).getByRole('tabpanel');
-    expect(within(panel).getAllByRole('term').map(term => term.textContent)).toEqual(['Potenza', 'Wallbreaking', 'Coverage tipi', 'Coverage meta']);
+    // Quattro tessere cliccabili al posto delle sottostatistiche
+    expect(within(panel).getAllByRole('button').map(btn => btn.querySelector('.def-tile-head span')!.textContent)).toEqual(['Coverage tipi', 'Potenza', 'Wallbreaking', 'Coverage meta']);
     const table = within(panel).getByRole('table');
     expect(within(table).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Potenza', 'Wallbreaking', 'Coverage', 'Offesa']);
     const rows = within(table).getAllByRole('row').slice(1);
-    expect(rows.map(r => within(r).getByRole('rowheader').textContent)).toEqual(['Great Tusk', 'Gholdengo']);
+    expect(rows.map(r => r.querySelector('.def-mon-name')!.textContent)).toEqual(['Great Tusk', 'Gholdengo']);
     for (const row of rows) {
       const cells = within(row).getAllByRole('cell');
       // Il Wallbreaking, con tra parentesi quanto lo alza il setup nel voto (tooltip "Con il setup")
@@ -46,14 +47,14 @@ describe("dettaglio dell'Offesa a schede", () => {
     }
   });
 
-  it('Generale: quanti attaccanti fisici, speciali e misti (solo informazione)', async () => {
+  it('Generale: la tessera Potenza conta gli attaccanti fisici, speciali e misti (solo informazione)', async () => {
     const { dialog } = await openOffense('it');
-    expect(within(dialog).getByRole('tabpanel')).toHaveTextContent('Attaccanti: 1 fisico · 1 speciale · 0 misti');
+    expect(within(dialog).getByRole('button', { name: /^Potenza/ })).toHaveTextContent(/Fisici1Speciali1Misti0/);
   });
 
-  it('Generale in inglese: la riga degli attaccanti', async () => {
+  it('Generale in inglese: la tessera degli attaccanti', async () => {
     const { dialog } = await openOffense('en');
-    expect(within(dialog).getByRole('tabpanel')).toHaveTextContent('Attackers: 1 physical · 1 special · 0 mixed');
+    expect(within(dialog).getByRole('button', { name: /^Power/ })).toHaveTextContent(/Physical1Special1Mixed0/);
   });
 
   it('Potenza: la Potenza di ogni membro col suo colpo migliore', async () => {

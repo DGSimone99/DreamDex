@@ -6,9 +6,8 @@ import { typeName } from '../../i18n/game';
 import { useLang } from '../../i18n/react';
 import { Sprite, TypeChip } from '../Sprite';
 import type { AreaContext, DetailTab, T } from '../AreaDetail';
+import { OffenseGeneral } from './OffenseGeneral';
 import { OffenseGuideSection, type OffenseSection } from './OffenseGuide';
-
-type Sub = Exclude<OffenseSection, 'general'>;
 
 /** Casella della tabella dei muri: il danno, e tra parentesi quello dopo il setup quando cambia la soglia. */
 function WallValue({ cell }: { cell: WallCell }) {
@@ -25,76 +24,7 @@ function WallValue({ cell }: { cell: WallCell }) {
 const holesOf = (detail: CoverageDetail, t: T, lang: Lang) =>
   (detail.holes.length ? t('detail.coverage.holes', { list: detail.holes.map(h => typeName(h, lang)).join(', ') }) : t('detail.coverage.noHoles'));
 
-// Pannelli provvisori: le tabelle di prima senza le spiegazioni (ora nella guida); i compiti 3-7 li sostituiscono uno a uno.
-
-/** Generale (provvisorio). */
-function OffenseGeneral({ rating, t }: { rating: TeamRating; t: T }) {
-  const lang = useLang();
-  const offense = rating.offense;
-  const coverageMeta = offense.coverageMeta;
-  const subs: Sub[] = coverageMeta ? ['power', 'wallbreaking', 'coverageTypes', 'coverageMeta'] : ['power', 'wallbreaking', 'coverageTypes'];
-  const values: Record<Sub, number | null> = {
-    power: offense.power, wallbreaking: offense.wallbreaking, coverageTypes: offense.coverageTypes.value, coverageMeta: coverageMeta?.value ?? null,
-  };
-  const setters = offense.setters.map(s => `${s.species} (${s.move})`).join(', ');
-  return (
-    <>
-      {/* Solo informazione: quanti attaccanti per stile, non entra nel voto */}
-      <p className="ad-holes">{t('detail.attackers', {
-        physical: `${offense.attackers.physical} ${t(offense.attackers.physical === 1 ? 'detail.attackers.physical.one' : 'detail.attackers.physical.many')}`,
-        special: `${offense.attackers.special} ${t(offense.attackers.special === 1 ? 'detail.attackers.special.one' : 'detail.attackers.special.many')}`,
-        mixed: `${offense.attackers.mixed} ${t(offense.attackers.mixed === 1 ? 'detail.attackers.mixed.one' : 'detail.attackers.mixed.many')}`,
-      })}</p>
-      <dl className="ad-subs">
-        {subs.map(sub => (
-          <div key={sub} className="ad-sub">
-            <dt>{t(`detail.${sub}`)}</dt>
-            <dd>
-              <meter min={0} max={100} value={values[sub] ?? 0} aria-hidden="true" />
-              <strong>{values[sub]}</strong>
-              <span>
-                {t(`detail.general.${sub}`)}
-                {sub === 'wallbreaking' && ` · ${setters ? t('detail.setters', { list: setters }) : t('detail.setup.none')}`}
-                {sub === 'coverageTypes' && ` · ${holesOf(offense.coverageTypes, t, lang)}`}
-                {sub === 'coverageMeta' && coverageMeta && ` · ${holesOf(coverageMeta, t, lang)}`}
-              </span>
-            </dd>
-          </div>
-        ))}
-      </dl>
-      <table className="ad-t">
-        <thead>
-          <tr>
-            <th scope="col">{t('detail.member')}</th>
-            <th scope="col">{t('detail.power')}</th>
-            <th scope="col">{t('detail.wallbreaking')}</th>
-            <th scope="col">{t('detail.coverage')}</th>
-            <th scope="col">{t('area.strength')}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {offense.members.map((m, i) => (
-            <tr key={`${m.species}-${i}`}>
-              <th scope="row"><span className="ad-mon"><Sprite species={m.species} size={40} />{m.species}</span></th>
-              <td>{m.power}</td>
-              <td>
-                {m.wallbreaking}
-                {m.wallbreakingGain > 0 && <small className="ad-gain" title={t('detail.withSetup', { move: m.setupMove ?? '' })}> (+{m.wallbreakingGain})</small>}
-              </td>
-              <td>{m.covered}%</td>
-              <td className="total">
-                {m.value}
-                {m.oneUseGain > 0 && m.oneUse && (
-                  <small className="ad-once" title={m.oneUse.kind === 'tera' ? t('detail.withTera', { type: m.oneUse.name }) : t('detail.withZ', { item: m.oneUse.name })}> (+{m.oneUseGain})</small>
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </>
-  );
-}
+// Pannelli provvisori: le tabelle di prima senza le spiegazioni (ora nella guida); i compiti 4-7 li sostituiscono uno a uno.
 
 /** Potenza (provvisorio). */
 function OffensePower({ offense, t }: { offense: TeamOffense; t: T }) {
@@ -191,7 +121,7 @@ function OffenseCoverage({ kind, detail, t }: { kind: 'coverageTypes' | 'coverag
 }
 
 /** Le schede dell'Offesa, nell'ordine della Difesa: Generale, Coverage tipi, Potenza, Wallbreaking, Coverage meta. */
-export function offenseTabs(rating: TeamRating, t: T, _ctx: AreaContext): DetailTab[] {
+export function offenseTabs(rating: TeamRating, t: T, ctx: AreaContext): DetailTab[] {
   const offense = rating.offense;
   const meta = !!rating.meta;
   const coverageMeta = offense.coverageMeta;
@@ -199,7 +129,7 @@ export function offenseTabs(rating: TeamRating, t: T, _ctx: AreaContext): Detail
   const guide = (section: OffenseSection) => <OffenseGuideSection section={section} offense={offense} meta={meta} />;
 
   const tabs: { key: OffenseSection; label: string; value: number | null; panel: ReactElement }[] = [
-    { key: 'general', label: t('detail.tab.general'), value, panel: <OffenseGeneral rating={rating} t={t} /> },
+    { key: 'general', label: t('detail.tab.general'), value, panel: <OffenseGeneral offense={offense} meta={meta} ctx={ctx} /> },
     { key: 'coverageTypes', label: t('detail.coverageTypes'), value: offense.coverageTypes.value, panel: <OffenseCoverage kind="coverageTypes" detail={offense.coverageTypes} t={t} /> },
     { key: 'power', label: t('detail.power'), value: offense.power, panel: <OffensePower offense={offense} t={t} /> },
     { key: 'wallbreaking', label: t('detail.wallbreaking'), value: offense.wallbreaking, panel: <OffenseWallbreaking offense={offense} t={t} /> },
