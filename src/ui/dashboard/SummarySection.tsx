@@ -66,7 +66,6 @@ function Section<T>({ title, empty, rows, rowKey, fitKey, more, render, classNam
   return (
     <div className={`sum-sec${className ? ` ${className}` : ''}`}>
       <h4 className="sum-sec-h">{title}</h4>
-      {hidden > 0 && <span className="sum-sec-more"><More n={hidden} label={more(hidden, rows.slice(shown))} /></span>}
       {rows.length === 0
         ? <p className="sum-none">{empty}</p>
         : (
@@ -74,6 +73,8 @@ function Section<T>({ title, empty, rows, rowKey, fitKey, more, render, classNam
             {rows.slice(0, shown).map(row => <li key={rowKey(row)} data-fit>{render(row)}</li>)}
           </ul>
         )}
+      {/* Dopo la lista nell'ordine di lettura; a vista sta a destra del titolo (posizione assoluta) */}
+      {hidden > 0 && <span className="sum-sec-more"><More n={hidden} label={more(hidden, rows.slice(shown))} /></span>}
     </div>
   );
 }
@@ -109,7 +110,7 @@ function useSynergyView() {
     switch (link.kind) {
       case 'pivot':
         return { ...base, title: t('sum.pivotTitle', { move }),
-          text: to ? t('sum.pivotText', { n: link.from.length, move, target: to }) : t('sum.pivotTextAlone', { n: link.from.length, move }),
+          text: to ? t('sum.pivotText', { n: link.from.length, target: to }) : t('sum.pivotTextAlone', { n: link.from.length }),
           mons: [from, to ?? link.from[1]] };
       case 'batonpass':
         return { ...base, title: t('sum.batonTitle', { move }),
@@ -266,7 +267,11 @@ export function SummarySection({ summary, members, density, rich = false, onView
         <Section className="sum-syn-sec" title={t('sum.synergies')} empty={t('sum.noSynergies')} rows={synergies}
           rowKey={syn => synergyView(syn).key}
           fitKey={keyOf(synergies.map(syn => synergyView(syn).key))}
-          more={(n, hidden) => `${count('sum.moreSyn', n)}: ${hidden.map(syn => synergyView(syn).title).join(', ')}`}
+          more={(n, hidden) => `${count('sum.moreSyn', n)}: ${hidden.map(syn => {
+            // Per ogni sinergia nascosta etichetta e titolo; per i legami anche la frase
+            const view = synergyView(syn);
+            return syn.core ? `${view.tag} ${view.title}` : `${view.tag} ${view.title}: ${view.text}`;
+          }).join('; ')}`}
           render={syn => {
             const view = synergyView(syn);
             return <SynergyRow syn={syn} view={view} rich={rich} small={small} onClick={() => onView(syn.core ? 'defense' : 'roles')} />;

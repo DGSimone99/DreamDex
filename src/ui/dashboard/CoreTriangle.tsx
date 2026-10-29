@@ -40,7 +40,8 @@ export function CoreTriangle({ core, size, descId }: { core: Core; size: 'normal
   const lang = useLang();
   const ownId = useId();
   const sprite = size === 'roomy' ? 52 : 40;
-  const marker = `${ownId}-arrow`;
+  // Senza i due punti (e simili) di useId: l'id va dentro url(#…)
+  const marker = `${ownId.replace(/[^\w-]/g, '')}-arrow`;
   const edges = VERTICES.map((v, i) => edge(v, VERTICES[(i + 1) % 3]));
   return (
     <span className={`sum-tri-row ${size}`}>

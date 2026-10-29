@@ -456,7 +456,7 @@ describe('Riassunto', () => {
     expect(core.querySelector('.sum-syn-text')).toHaveTextContent('Pelipper para Fuoco, Ferrothorn para Elettro');
     expect(pivot.querySelector('.sum-syn-tag')).toHaveTextContent('Pivot');
     expect(pivot.querySelector('.sum-syn-title')).toHaveTextContent('Giro di U-turn');
-    expect(pivot.querySelector('.sum-syn-text')).toHaveTextContent('2 membri con U-turn portano dentro Iron Valiant');
+    expect(pivot.querySelector('.sum-syn-text')).toHaveTextContent('2 pivot portano dentro Iron Valiant');
     expect([...pivot.querySelectorAll('.sum-pair-mon')].map(s => s.getAttribute('title'))).toEqual(['Scizor', 'Iron Valiant']);
   });
 
@@ -484,7 +484,7 @@ describe('Riassunto', () => {
     expect(core.querySelector('.sum-syn-title')).toHaveTextContent('Dragon / Steel / Fairy');
     expect(core).toHaveAccessibleDescription('Garchomp blocks Fire for Scizor, Scizor blocks Steel for Iron Valiant, Iron Valiant blocks Dragon for Garchomp');
     expect(pivot.querySelector('.sum-syn-title')).toHaveTextContent('U-turn loop');
-    expect(pivot.querySelector('.sum-syn-text')).toHaveTextContent('2 members with U-turn bring in Iron Valiant');
+    expect(pivot.querySelector('.sum-syn-text')).toHaveTextContent('2 pivots bring in Iron Valiant');
   });
 
   it('ricco (team ridotto): sprite più grandi nell\'eroe', () => {
@@ -557,6 +557,7 @@ function stubSumFit(fits: (shown: number) => number, moreWraps = false) {
 
 describe('Cruscotto: misure', () => {
   afterEach(() => {
+    initGameNames(null);
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
   });
@@ -726,9 +727,14 @@ describe('Cruscotto: misure', () => {
     expect(within(syn).getAllByRole('button')).toHaveLength(2);
     const more = syn.querySelector('.sum-more')!;
     expect(more).toHaveTextContent('+4');
-    expect(more.querySelector('.visually-hidden')).toHaveTextContent(/^Altre 4 sinergie: Giro di U-turn, Cure al team, .+, .+$/);
+    expect(more.querySelector('.visually-hidden')!.textContent).toBe('Altre 4 sinergie: '
+      + 'Pivot Giro di U-turn: 2 pivot portano dentro Iron Valiant; '
+      + 'Desiderio Cure al team: Clefable usa Desiderio per curare il prossimo in campo; '
+      + 'Baton Pass Passaggio con Baton Pass: Hatterene fa entrare Iron Valiant senza perdere i vantaggi; '
+      + 'Trappole + cambio Avversari sulle trappole: Skarmory con Whirlwind trascina gli avversari sulle trappole di Landorus-Therian');
+    // Dopo la lista nell'ordine di lettura
+    expect(syn.querySelector('.sum-lines')!.compareDocumentPosition(more) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(more).toHaveAttribute('title', more.querySelector('.visually-hidden')!.textContent);
-    initGameNames(null);
   });
 
   it('Ruoli: le fasce non si stirano (CSS): compatte in alto, alte quanto il contenuto', () => {
