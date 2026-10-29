@@ -66,17 +66,18 @@ describe("dettaglio dell'Offesa a schede", () => {
     expect(within(panel).getAllByRole('row').length).toBe(3);
   });
 
-  it('Wallbreaking: muro per muro, il danno di ogni membro (senza colonna delle risposte)', async () => {
+  it('Wallbreaking: membri in riga, il danno su ogni muro (12 muri + valore)', async () => {
     const { user, dialog } = await openOffense('it');
     await user.click(within(dialog).getByRole('tab', { name: /^Wallbreaking/ }));
     const panel = within(dialog).getByRole('tabpanel');
-    const rows = within(panel).getAllByRole('row').slice(1);
-    expect(rows).toHaveLength(12);
+    // Intestazione, un membro per riga (2), riga "Lo sfondano"
+    const rows = within(panel).getAllByRole('row').slice(1, -1);
+    expect(rows).toHaveLength(2);
     for (const row of rows) {
       const cells = within(row).getAllByRole('cell');
-      // Solo i due membri: chi sfonda il muro si vede già dalle caselle
-      expect(cells).toHaveLength(2);
-      for (const cell of cells) expect(cell).toHaveTextContent(/^\d+%( \(\d+%\))?$/);
+      // 12 muri + il valore del membro
+      expect(cells).toHaveLength(13);
+      for (const cell of cells.slice(0, 12)) expect(cell).toHaveTextContent(/^\d+%( (OHKO|2HKO|3HKO))?( setup \d+%)?$/);
     }
   });
 

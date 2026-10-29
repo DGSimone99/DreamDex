@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react';
-import { stepBucket, type CoverageDetail, type TeamOffense, type WallCell } from '../../engine/offense';
+import type { CoverageDetail } from '../../engine/offense';
 import type { TeamRating } from '../../engine/rating';
 import type { Lang } from '../../i18n';
 import { typeName } from '../../i18n/game';
@@ -8,51 +8,15 @@ import { Sprite, TypeChip } from '../Sprite';
 import type { AreaContext, DetailTab, T } from '../AreaDetail';
 import { OffenseGeneral } from './OffenseGeneral';
 import { OffensePower } from './OffensePower';
+import { OffenseWalls } from './OffenseWalls';
 import { OffenseTypes } from './OffenseTypes';
 import { OffenseGuideSection, type OffenseSection } from './OffenseGuide';
-
-/** Casella della tabella dei muri: il danno, e tra parentesi quello dopo il setup quando cambia la soglia. */
-function WallValue({ cell }: { cell: WallCell }) {
-  const bucket = stepBucket(cell.step);
-  const upgraded = cell.setupStep !== null && stepBucket(cell.setupStep) !== bucket;
-  return (
-    <span className={`ad-k ${bucket}${upgraded ? ' setup' : ''}`}>
-      {cell.pct}%{upgraded ? ` (${cell.setupPct}%)` : ''}
-    </span>
-  );
-}
 
 /** I buchi di una Coverage, in una riga. */
 const holesOf = (detail: CoverageDetail, t: T, lang: Lang) =>
   (detail.holes.length ? t('detail.coverage.holes', { list: detail.holes.map(h => typeName(h, lang)).join(', ') }) : t('detail.coverage.noHoles'));
 
-// Pannelli provvisori: le tabelle di prima senza le spiegazioni (ora nella guida); i compiti 4-7 li sostituiscono uno a uno.
-
-/** Wallbreaking (provvisorio). */
-function OffenseWallbreaking({ offense, t }: { offense: TeamOffense; t: T }) {
-  return (
-    <div className="ad-scroll">
-      <table className="ad-t ad-matrix">
-        <thead>
-          <tr>
-            <th scope="col">{t('detail.wall')}</th>
-            {offense.members.map((m, i) => (
-              <th key={`${m.species}-${i}`} scope="col" aria-label={m.species} title={m.species}><Sprite species={m.species} size={32} /></th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {offense.walls.map(wall => (
-            <tr key={wall.species}>
-              <th scope="row"><span className="ad-mon"><Sprite species={wall.species} size={32} />{wall.species}</span></th>
-              {wall.cells.map((cell, i) => <td key={i}><WallValue cell={cell} /></td>)}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
+// Pannello provvisorio: la tabella di prima senza le spiegazioni (ora nella guida); un compito successivo la sostituisce.
 
 /** Coverage di tipi o del meta (provvisorio): i bersagli con chi li copre. */
 function OffenseCoverage({ kind, detail, t }: { kind: 'coverageTypes' | 'coverageMeta'; detail: CoverageDetail; t: T }) {
@@ -108,7 +72,7 @@ export function offenseTabs(rating: TeamRating, t: T, ctx: AreaContext): DetailT
     { key: 'general', label: t('detail.tab.general'), value, panel: <OffenseGeneral offense={offense} meta={meta} ctx={ctx} /> },
     { key: 'coverageTypes', label: t('detail.coverageTypes'), value: offense.coverageTypes.value, panel: <OffenseTypes offense={offense} ctx={ctx} /> },
     { key: 'power', label: t('detail.power'), value: offense.power, panel: <OffensePower offense={offense} ctx={ctx} /> },
-    { key: 'wallbreaking', label: t('detail.wallbreaking'), value: offense.wallbreaking, panel: <OffenseWallbreaking offense={offense} t={t} /> },
+    { key: 'wallbreaking', label: t('detail.wallbreaking'), value: offense.wallbreaking, panel: <OffenseWalls offense={offense} ctx={ctx} /> },
     // La Coverage del meta c'è solo col meta: senza, una scheda in meno
     ...(coverageMeta ? [{ key: 'coverageMeta' as const, label: t('detail.coverageMeta'), value: coverageMeta.value, panel: <OffenseCoverage kind="coverageMeta" detail={coverageMeta} t={t} /> }] : []),
   ];

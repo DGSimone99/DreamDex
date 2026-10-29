@@ -29,3 +29,25 @@
 .def-power .pw-ref { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 8px 0 0; font-size: 12px; color: var(--muted); }
 .def-power .pw-ref .def-open-mon { display: inline-grid; }
 .def-power .pw-legend { margin-left: auto; }
+
+/* Wallbreaking: soglie in verde (OHKO forte, 2HKO, 3HKO giallo), diverse dai hold-* della Difesa; testo --text su fondi scuri */
+.ko-ohko { background: color-mix(in srgb, var(--good) 46%, var(--panel)); color: var(--text); }
+.ko-two { background: color-mix(in srgb, var(--good) 22%, var(--panel)); color: var(--text); }
+.ko-three { background: color-mix(in srgb, var(--warn) 24%, var(--panel)); color: var(--text); }
+.ko-none { background: var(--raised); color: var(--muted); }
+.def-walls .rob-cell { font-size: clamp(11px, calc(var(--def-row) * 0.2), 17px); line-height: 1.05; vertical-align: middle; }
+.def-walls .rob-cell.ko-ohko { border-color: var(--good); }
+.def-walls .rob-cell.ko-two { border-color: color-mix(in srgb, var(--good) 55%, transparent); }
+.def-walls .rob-cell.ko-three { border-color: color-mix(in srgb, var(--warn) 60%, transparent); }
+.def-walls .wall-pct { display: block; }
+.def-walls .wall-setup { display: block; margin-top: 1px; font: 600 clamp(9px, calc(var(--def-row) * 0.15), 12px)/1.05 var(--ui); white-space: nowrap; opacity: 0.9; }
+/* Righe basse (squadra aperta): il "setup N%" resta solo nel title e nel testo nascosto, come le statistiche nella Difesa */
+.def-walls:not(.roomy) .wall-setup { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.def-walls .wall-side-h { width: auto; }
+.def-walls .rob-side { white-space: nowrap; }
+.def-walls .rob-col-side { width: 84px; }
+.def-walls .wall-gain { display: inline; margin: 0 0 0 4px; font-size: 12px; }
+.def-walls .wall-h { padding: 0; line-height: 0; text-align: center; vertical-align: bottom; }
+.def-frame.def-walls .wall-h .def-box { --bs: 1.2; }
+.def-walls .rob-legend .wall-legend-setup { margin-left: auto; }
+.def-walls .ct-sum td { height: 26px; }

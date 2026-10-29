@@ -201,4 +201,23 @@ describe('Offesa: Potenza', () => {
     expect(refs).toHaveLength(3);
     refs.forEach(s => expect(document.querySelector(`.pw-ref [title="${s}"]`)).toBeInTheDocument());
   });
+
+  it('Wallbreaking: membri in riga, un muro per colonna, la riga Lo sfondano', async () => {
+    const user = userEvent.setup();
+    const rating = view();
+    await user.click(screen.getByRole('tab', { name: /^Wallbreaking/ }));
+    const heads = screen.getAllByRole('columnheader').map(h => h.getAttribute('aria-label')).filter(Boolean);
+    expect(heads).toEqual(rating.offense.walls.map(w => w.species));
+    const rows = [...document.querySelectorAll('.def-walls tbody tr')];
+    expect(rows).toHaveLength(team.length + 1);
+    expect(within(rows[rows.length - 1] as HTMLElement).getByRole('rowheader')).toHaveTextContent('Lo sfondano');
+  });
+
+  it('le soglie sono scritte anche a parole', async () => {
+    const user = userEvent.setup();
+    view();
+    await user.click(screen.getByRole('tab', { name: /^Wallbreaking/ }));
+    const words = [...document.querySelectorAll('.def-walls .rob-cell .visually-hidden')].map(el => el.textContent!.trim());
+    expect(words.some(w => w === '2HKO' || w === 'OHKO')).toBe(true);
+  });
 });
