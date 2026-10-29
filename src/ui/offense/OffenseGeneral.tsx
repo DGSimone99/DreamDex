@@ -47,6 +47,8 @@ export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; m
   // Coverage meta: i bersagli che nessuno colpisce, con la specie che li rappresenta
   const noHit = coverageMeta ? coverageMeta.rows.filter(r => coverageMeta.holes.includes(r.label)) : [];
 
+  const hiddenMeta = noHit.slice(NO_HIT_ICONS).map(r => r.species).join(', ');
+
   const tiles: { key: string; label: string; value: number; fact: ReactNode }[] = [
     {
       key: 'coverageTypes', label: t('detail.coverageTypes'), value: offense.coverageTypes.value,
@@ -71,11 +73,12 @@ export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; m
     {
       key: 'wallbreaking', label: t('detail.wallbreaking'), value: offense.wallbreaking,
       fact: <>
-        {cap(t('odetail.tile.setup'), <b>{t('odetail.tile.broken', { n: broken, total: offense.walls.length })}</b>)}
+        {cap(t('odetail.tile.walls'), <b>{broken}/{offense.walls.length}</b>)}
         {offense.setters.length
           ? <span className="def-visual">
-            {offense.setters.map(s => (
-              <span key={`${s.species}-${s.move}`} className="def-open-mon" title={`${s.species} (${s.move})`}>
+            <em className="def-sub">{t('odetail.tile.setup')}</em>
+            {offense.setters.map((s, i) => (
+              <span key={`${s.species}-${s.move}-${i}`} className="def-open-mon" title={`${s.species} (${s.move})`}>
                 <PokemonIcon name={s.species} /><span className="visually-hidden">{s.species} ({s.move})</span>
               </span>
             ))}
@@ -94,7 +97,7 @@ export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; m
             {noHit.slice(0, NO_HIT_ICONS).map(r => (
               <span key={r.label} className="def-open-mon plain" title={r.species}><PokemonIcon name={r.species} /><span className="visually-hidden">{r.species}</span></span>
             ))}
-            {noHit.length > NO_HIT_ICONS && <span className="def-more" title={noHit.slice(NO_HIT_ICONS).map(r => r.species).join(', ')}>+{noHit.length - NO_HIT_ICONS}</span>}
+            {hiddenMeta && <span className="def-more" title={hiddenMeta}>+{noHit.length - NO_HIT_ICONS}<span className="visually-hidden"> {hiddenMeta}</span></span>}
           </span>
           : <span className="def-visual def-none"><Icon name="check" />{t('odetail.meta.allHit')}</span>}
       </>,

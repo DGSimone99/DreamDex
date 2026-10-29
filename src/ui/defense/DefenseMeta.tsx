@@ -45,5 +45,6 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
       </li>
     );
   };
-  return <MetaFrame rows={rows} roomy={ctx.roomy} summary={summary} tile={tile} />;
+  return <MetaFrame rows={rows} roomy={ctx.roomy} summary={summary} tile={tile}
+    labels={{ pages: t('ddetail.cm.pages'), prev: t('ddetail.cm.prev'), next: t('ddetail.cm.next'), page: (from, to) => t('ddetail.cm.page', { from, to }) }} />;
 }

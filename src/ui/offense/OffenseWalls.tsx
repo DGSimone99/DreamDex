@@ -96,7 +96,7 @@ export function OffenseWalls({ offense, ctx }: { offense: TeamOffense; ctx: Area
       <p className="rob-legend" aria-hidden="true">
         {KO_ORDER.map(b => <span key={b} className={`hold-chip ${KO[b].cls}`}>{KO[b].tag}</span>)}
         <span className="hold-chip ko-none">{t('odetail.wall.legendLess')}</span>
-        <span className="wall-legend-setup">{t('odetail.wall.legendSetup')}</span>
+        <span className="wall-legend-setup"><i className="wall-tick" />{t('odetail.wall.legendSetup')}</span>
       </p>
     </div>
   );

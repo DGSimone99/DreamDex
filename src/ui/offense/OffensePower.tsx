@@ -58,7 +58,7 @@ export function OffensePower({ offense, ctx }: { offense: TeamOffense; ctx: Area
                       <td className="pw-bar">
                         <Bar value={m.power} />
                         {gain > 0 && m.oneUse && (
-                          <small className="ad-gain" title={m.oneUse.kind === 'tera' ? t('detail.withTera', { type: m.oneUse.name }) : t('detail.withZ', { item: m.oneUse.name })}> (+{gain})</small>
+                          <small className="ad-once" title={m.oneUse.kind === 'tera' ? t('detail.withTera', { type: m.oneUse.name }) : t('detail.withZ', { item: m.oneUse.name })}> (+{gain})</small>
                         )}
                       </td>
                       <td>{m.bestMove ? <span className="pw-move" style={chipStyle(m.bestMove)}><MoveName move={m.bestMove} plain /></span> : '—'}</td>
@@ -72,7 +72,7 @@ export function OffensePower({ offense, ctx }: { offense: TeamOffense; ctx: Area
       </div>
       <p className="pw-ref">
         <span>{refs.length ? t('odetail.power.ref') : t('odetail.power.refFixed', { pct: Math.round(100 * POWER_FULL) })}</span>
-        {refs.map(species => <span key={species} className="def-open-mon plain" title={species}><PokemonIcon name={species} /></span>)}
+        {refs.map(species => <span key={species} className="def-open-mon plain" title={species}><PokemonIcon name={species} /><span className="visually-hidden">{species}</span></span>)}
         <span className="pw-legend">{t('odetail.power.legend')}</span>
       </p>
     </div>

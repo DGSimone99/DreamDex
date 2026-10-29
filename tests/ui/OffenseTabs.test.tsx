@@ -2,6 +2,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { analyzeTeam } from '../../src/engine/analysis';
+import { stepBucket } from '../../src/engine/offense';
 import { rateTeam } from '../../src/engine/rating';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
 import { LangProvider } from '../../src/i18n/react';
@@ -94,6 +95,15 @@ describe('Offesa: Generale', () => {
     expect(tiles()).toHaveLength(3);
   });
 
+  it('la tessera Wallbreaking conta i muri sfondati senza setup', () => {
+    const rating = withMeta();
+    view(team, rating);
+    const expected = rating.offense.walls.filter(w => w.cells.some(c => ['ohko', 'two'].includes(stepBucket(c.step)))).length;
+    const tile = screen.getByRole('button', { name: /^Wallbreaking/ });
+    expect(within(tile).getByText('Muri sfondati')).toBeInTheDocument();
+    expect(within(tile).getByText(`${expected}/${rating.offense.walls.length}`)).toBeInTheDocument();
+  });
+
   it('membro senza attacchi: la riga resta con "—"', () => {
     const t = [team[0], { ...emptySet('Blissey'), moves: ['Soft-Boiled', 'Toxic', 'Stealth Rock', 'Teleport'] }];
     view(t);
@@ -165,7 +175,7 @@ describe('Offesa: Potenza', () => {
     await user.click(screen.getByRole('tab', { name: /^Potenza/ }));
     const gains = rating.offense.members.filter(m => m.oneUse && Math.round(m.powerInGrade - m.power) > 0);
     expect(gains.length).toBeGreaterThan(0);
-    const small = [...document.querySelectorAll('.pw-bar small.ad-gain')];
+    const small = [...document.querySelectorAll('.pw-bar small.ad-once')];
     expect(small).toHaveLength(gains.length);
     small.forEach(el => {
       expect(el.textContent).toMatch(/\(\+\d+\)/);
@@ -237,7 +247,7 @@ describe('Offesa: Coverage meta', () => {
     const tiles = within(screen.getByRole('tabpanel')).getAllByRole('listitem');
     expect(tiles).toHaveLength(8);
     expect(level(tiles[0])).toBeLessThanOrEqual(level(tiles[tiles.length - 1]));
-    await user.click(screen.getByRole('button', { name: 'Minacce successive' }));
+    await user.click(screen.getByRole('button', { name: 'Bersagli successivi' }));
     expect(within(screen.getByRole('tabpanel')).getAllByRole('listitem').length).toBeGreaterThan(0);
   });
 

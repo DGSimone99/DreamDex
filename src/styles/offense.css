@@ -30,6 +30,11 @@
 .def-power .pw-ref .def-open-mon { display: inline-grid; }
 .def-power .pw-legend { margin-left: auto; }
 
+/* "+N" dei guadagni nelle tabelle def-grid: verde il setup, blu Tera e mossa Z (come .ad-t) */
+.def-frame .ad-gain { display: inline; margin-left: 4px; font: 600 13px/1 var(--ui); color: var(--good); cursor: help; }
+.def-frame .ad-once { display: inline; margin-left: 4px; font: 600 13px/1 var(--ui); color: var(--accent); cursor: help; }
+.def-sub { font-style: normal; font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+
 /* Wallbreaking: soglie in verde (OHKO forte, 2HKO, 3HKO giallo), diverse dai hold-* della Difesa; testo --text su fondi scuri */
 .ko-ohko { background: color-mix(in srgb, var(--good) 46%, var(--panel)); color: var(--text); }
 .ko-two { background: color-mix(in srgb, var(--good) 22%, var(--panel)); color: var(--text); }
@@ -47,6 +52,11 @@
 .def-walls .rob-side { white-space: nowrap; }
 .def-walls .rob-col-side { width: 84px; }
 .def-walls .wall-gain { display: inline; margin: 0 0 0 4px; font-size: 12px; }
+.def-walls .rob-cell.has-setup { position: relative; }
+/* Segno verde nell'angolo: la casella sale di soglia col setup (a squadra aperta il "setup N%" resta nascosto) */
+.def-walls .rob-cell.has-setup::after { content: ''; position: absolute; top: 0; right: 0; border-style: solid; border-width: 0 9px 9px 0; border-color: transparent var(--good) transparent transparent; }
+.def-walls .rob-legend .wall-legend-setup { display: inline-flex; align-items: center; gap: 6px; }
+.def-walls .wall-tick { width: 9px; height: 9px; background: linear-gradient(225deg, var(--good) 50%, transparent 50%); border: 1px solid var(--line); }
 .def-walls .wall-h { padding: 0; line-height: 0; text-align: center; vertical-align: bottom; }
 .def-frame.def-walls .wall-h .def-box { --bs: 1.2; }
 .def-walls .rob-legend .wall-legend-setup { margin-left: auto; }

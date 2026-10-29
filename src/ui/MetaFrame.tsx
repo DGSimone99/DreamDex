@@ -1,5 +1,4 @@
 import { useState, type ReactNode } from 'react';
-import { useT } from '../i18n/react';
 import { Icon } from './icons';
 import { PokemonIcon } from './PokemonName';
 import { MoveName } from './TypeText';
@@ -12,12 +11,14 @@ export function MetaCount({ n, tone, label }: { n: number; tone: 'good' | 'warn'
   return <span className={`ct-pill ${n ? tone : 'zero'}`}>{n} {label}</span>;
 }
 
+/** Le etichette della navigazione tra le pagine: minacce per la Difesa, bersagli per l'Offesa. */
+export type MetaLabels = { pages: string; prev: string; next: string; page: (from: number, to: number) => string };
+
 /**
  * Cornice di Coverage meta, uguale per Difesa e Offesa: in alto le pagine e il riepilogo, sotto la griglia 4 × 2 di
  * tessere. Le righe arrivano già ordinate; la cornice taglia la pagina e disegna ogni tessera con `tile`.
  */
-export function MetaFrame<R>({ rows, roomy, summary, tile }: { rows: R[]; roomy?: boolean; summary: ReactNode; tile: (row: R) => ReactNode }) {
-  const t = useT();
+export function MetaFrame<R>({ rows, roomy, summary, tile, labels }: { rows: R[]; roomy?: boolean; summary: ReactNode; tile: (row: R) => ReactNode; labels: MetaLabels }) {
   const [page, setPage] = useState(0);
   const pages = Math.max(1, Math.ceil(rows.length / META_PAGE));
   const current = Math.min(page, pages - 1);
@@ -25,18 +26,18 @@ export function MetaFrame<R>({ rows, roomy, summary, tile }: { rows: R[]; roomy?
   return (
     <div className={`cm-frame${roomy ? ' roomy' : ''}`}>
       <div className="cm-bar">
-        <nav className="cm-pages" aria-label={t('ddetail.cm.pages')}>
-          <button type="button" className="cm-step" aria-label={t('ddetail.cm.prev')} disabled={current === 0} onClick={() => setPage(current - 1)}>
+        <nav className="cm-pages" aria-label={labels.pages}>
+          <button type="button" className="cm-step" aria-label={labels.prev} disabled={current === 0} onClick={() => setPage(current - 1)}>
             <Icon name="prev" />
           </button>
           {Array.from({ length: pages }, (_, i) => (
             <button key={i} type="button" className="cm-page" aria-current={i === current ? 'page' : undefined}
-              aria-label={t('ddetail.cm.page', { from: i * META_PAGE + 1, to: Math.min(rows.length, (i + 1) * META_PAGE) })}
+              aria-label={labels.page(i * META_PAGE + 1, Math.min(rows.length, (i + 1) * META_PAGE))}
               onClick={() => setPage(i)}>
               {i + 1}
             </button>
           ))}
-          <button type="button" className="cm-step" aria-label={t('ddetail.cm.next')} disabled={current === pages - 1} onClick={() => setPage(current + 1)}>
+          <button type="button" className="cm-step" aria-label={labels.next} disabled={current === pages - 1} onClick={() => setPage(current + 1)}>
             <Icon name="next" />
           </button>
         </nav>

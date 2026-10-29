@@ -43,5 +43,6 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
       </li>
     );
   };
-  return <MetaFrame rows={rows} roomy={ctx.roomy} summary={summary} tile={tile} />;
+  return <MetaFrame rows={rows} roomy={ctx.roomy} summary={summary} tile={tile}
+    labels={{ pages: t('odetail.cm.pages'), prev: t('odetail.cm.prev'), next: t('odetail.cm.next'), page: (from, to) => t('odetail.cm.page', { from, to }) }} />;
 }

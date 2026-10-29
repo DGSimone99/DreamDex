@@ -56,6 +56,7 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
                 <tr key={`${name}-${slot}`} className={hover?.row === slot ? 'x-row' : undefined}>
                   <th scope="row"><MemberMon name={name} set={set} stats="offense" /></th>
                   {TYPES.map((type, i) => {
+                    if (slots[slot] === null) return <td key={type} className={colClass(i, 'ct-cell')} onMouseEnter={() => setHover({ row: slot, col: i })}>—</td>;
                     const hit = member ? byType.get(type)?.coveredBy.find(c => c.species === member.species) : undefined;
                     return (
                       <td key={type} className={colClass(i, `ct-cell${hit ? (hit.partial ? ' ok-half' : ' ok-full') : ''}`)}
