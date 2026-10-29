@@ -460,6 +460,7 @@ export const it: Record<keyof typeof en, string> = {
   'area.guide.title': "Guida: {area}",
   'area.guide.button': "Come funziona {tab}",
   'area.guide.general': "Come funziona",
+  'area.problems.none': "Nessun problema",
   'area.problems.one': "1 problema",
   'area.problems.many': "{n} problemi",
   'analysis.areaProblems': "Problemi in {area}",

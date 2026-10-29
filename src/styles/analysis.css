@@ -123,6 +123,10 @@
 .area-problems-label { display: inline-flex; align-items: center; gap: 5px; flex: none; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--warn); background: var(--warn-bg); }
 .area-problems-label .icon { width: 13px; height: 13px; }
 .area-problems-row.serious .area-problems-label { color: var(--bad); background: var(--bad-bg); }
+/* Nessun problema: l'etichetta in verde con la spunta, la riga alta come quella con i problemi */
+.area-problems-row.is-clear .area-problems-label { color: var(--good); background: var(--good-bg); }
+/* Alta come una riga di problemi su una linea (la lista a 12.5px allineata alla base dell'etichetta, misurata a 1440x900) */
+.area-problems-row.is-clear { min-height: 24.6px; }
 .area-problems { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 12.5px; }
 /* Testo in linea (niente flex): i nomi dei tipi restano attaccati ai due punti */
 .area-problems li { position: relative; padding-left: 12px; }

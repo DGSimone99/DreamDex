@@ -458,6 +458,7 @@ export const en = {
   'area.guide.title': "Guide: {area}",
   'area.guide.button': "How {tab} works",
   'area.guide.general': "How it works",
+  'area.problems.none': "No problems",
   'area.problems.one': "1 problem",
   'area.problems.many': "{n} problems",
   'analysis.areaProblems': "Problems in {area}",

@@ -129,7 +129,12 @@ export function AreaView({ rating, area, problems, team, analysis, extra, roomy 
         <AreaGuide title={t('area.guide.title', { area: title })} sections={sections} current={guide}
           onCurrent={setGuide} onClose={() => setGuide(null)} />
       )}
-      {problems.length > 0 && (
+      {/* La riga c'è sempre, anche senza problemi: il pannello sotto parte alla stessa altezza in ogni area */}
+      {problems.length === 0 ? (
+        <div className="area-problems-row is-clear" role="note" aria-label={t('analysis.areaProblems', { area: title })}>
+          <span className="area-problems-label"><Icon name="check" />{t('area.problems.none')}</span>
+        </div>
+      ) : (
         <div className={`area-problems-row${problems.some(p => p.severity === 'serious') ? ' serious' : ''}`}>
           {/* Un'etichetta dice che cos'è la riga: i problemi dell'area, quanti */}
           <span className="area-problems-label" aria-hidden="true">
