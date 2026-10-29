@@ -4,6 +4,8 @@ import { act, cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { DashboardData } from '../../src/engine/overviewDashboard';
+import type { Core } from '../../src/engine/cores';
+import type { TeamLink } from '../../src/engine/teamLinks';
 import type { TeamSummary } from '../../src/engine/teamSummary';
 import { TYPES } from '../../src/engine/types';
 import { en } from '../../src/i18n/en';
@@ -67,6 +69,33 @@ function summaryOf(overrides: Partial<TeamSummary> = {}): TeamSummary {
     ...overrides,
   };
 }
+
+/** Il core del team di prova: Garchomp para il Fuoco a Scizor, Scizor l'Acciaio a Iron Valiant, Iron Valiant il Drago a Garchomp. */
+const trio: Core = {
+  members: ['Garchomp', 'Scizor', 'Iron Valiant'],
+  sides: [
+    { from: 'Garchomp', to: 'Scizor', type: 'Fire' },
+    { from: 'Scizor', to: 'Iron Valiant', type: 'Steel' },
+    { from: 'Iron Valiant', to: 'Garchomp', type: 'Dragon' },
+  ],
+  names: [['Dragon'], ['Steel'], ['Fairy']],
+  strength: 4,
+};
+/** Una coppia: Pelipper e Ferrothorn si parano a vicenda. */
+const pair: Core = {
+  members: ['Pelipper', 'Ferrothorn'],
+  sides: [{ from: 'Pelipper', to: 'Ferrothorn', type: 'Fire' }, { from: 'Ferrothorn', to: 'Pelipper', type: 'Electric' }],
+  names: [['Water', 'Flying'], ['Grass', 'Steel']],
+  strength: 3,
+};
+const pivotLink: TeamLink = { kind: 'pivot', from: ['Scizor', 'Landorus-Therian'], to: ['Iron Valiant'], move: 'U-turn' };
+const wishLink: TeamLink = { kind: 'wish', from: ['Clefable'], to: [], move: 'Wish' };
+/** Nomi italiani dei tipi, delle mosse e delle abilità usati nel Riassunto. */
+const italianNames = () => initGameNames({
+  moves: { uturn: { name: 'U-turn' }, wish: { name: 'Desiderio' } }, abilities: { swiftswim: { name: 'Nuotovelox' } }, items: {},
+  types: { fire: 'Fuoco', steel: 'Acciaio', dragon: 'Drago', fairy: 'Folletto', water: 'Acqua', flying: 'Volante', grass: 'Erba', electric: 'Elettro' },
+  natures: {},
+});
 
 /** Le righe della tabella dei Ruoli (ampio, senza le intestazioni delle fasce). */
 const roleRows = (roles: HTMLElement) => [...roles.querySelectorAll<HTMLElement>('tr.dash-role-row')];
@@ -351,15 +380,17 @@ describe('Riassunto', () => {
 
   it('Meteo e campo: chi lo porta, la condizione e chi ne approfitta; clic a Ruoli', async () => {
     const user = userEvent.setup();
-    const { onView } = mount({ summary: summaryOf({ conditions: [{ member: 'Pelipper', label: 'Pioggia', key: 'rain', users: ['Barraskewda', 'Zapdos'] }] }) });
+    italianNames();
+    const { onView } = mount({ summary: summaryOf({ conditions: [{ member: 'Pelipper', label: 'Pioggia', key: 'rain', users: [{ name: 'Barraskewda', via: 'Swift Swim' }, { name: 'Zapdos' }] }] }) });
     const row = within(section('Meteo e campo')).getByRole('button');
     expect(row).toHaveTextContent('Pelipper');
     expect(row.querySelector('.sum-tag')).toHaveTextContent('Pioggia');
     const users = [...row.querySelectorAll<HTMLElement>('.sum-user')];
-    expect(users.map(u => u.getAttribute('title'))).toEqual(['Barraskewda', 'Zapdos']);
+    // Nel tooltip anche l'abilità o la mossa con cui la sfrutta, nella lingua dell'interfaccia
+    expect(users.map(u => u.getAttribute('title'))).toEqual(['Barraskewda · Nuotovelox', 'Zapdos']);
     expect(users[0].querySelector('.sprite')).not.toBeNull();
     // I nomi letti anche dai lettori di schermo
-    expect(row).toHaveAccessibleName(/Pelipper.*Pioggia.*Barraskewda.*Zapdos/);
+    expect(row).toHaveAccessibleName(/Pelipper.*Pioggia.*Barraskewda · Nuotovelox.*Zapdos/);
     await user.click(row);
     expect(onView).toHaveBeenCalledWith('roles');
   });
@@ -387,7 +418,7 @@ describe('Riassunto', () => {
   it('le vecchie righe non ci sono più: niente Colpisce, Debole a, Ruoli, Minacce', () => {
     mount();
     for (const label of ['Colpisce', 'Debole a', 'Ruoli', 'Minacce']) expect(within(region()).queryByText(label)).toBeNull();
-    expect(within(region()).getAllByRole('heading').map(h => h.textContent)).toEqual(['Riassunto', 'Meteo e campo', 'Trappole']);
+    expect(within(region()).getAllByRole('heading').map(h => h.textContent)).toEqual(['Riassunto', 'Meteo e campo', 'Trappole', 'Sinergie']);
   });
 
   it('in inglese: Offense / Defense, Weather & field, Hazards, None', () => {
@@ -399,6 +430,61 @@ describe('Riassunto', () => {
     expect(within(summary).getByRole('button', { name: 'Toxapex, Defense 88' })).toBeInTheDocument();
     expect(within(summary).getByRole('heading', { name: 'Weather & field' }).closest('.sum-sec')).toHaveTextContent(/None$/);
     expect(within(summary).getByRole('heading', { name: 'Hazards' }).closest('.sum-sec')).toHaveTextContent(/None$/);
+  });
+
+  it('Sinergie: il core da 3 è un triangolo (tre sprite, tre icone di tipo sui lati) col giro letto in parole', () => {
+    italianNames();
+    mount({ summary: summaryOf({ cores: [trio] }) });
+    const row = within(section('Sinergie')).getByRole('button');
+    const tri = row.querySelector<HTMLElement>('.sum-tri')!;
+    expect(tri.querySelectorAll('.sprite')).toHaveLength(3);
+    expect(tri.querySelectorAll('.sum-tri-badge img')).toHaveLength(3);
+    expect(row.querySelector('.sum-syn-title')).toHaveTextContent('Drago / Acciaio / Folletto');
+    expect(row.querySelector('.sum-syn-tag')).toHaveTextContent('Core');
+    expect([...row.querySelectorAll('.sum-cover > span')].map(l => l.textContent)).toEqual(['Garchomp para Fuoco', 'Scizor para Acciaio', 'Iron Valiant para Drago']);
+    expect(row).toHaveAccessibleName('Core Drago / Acciaio / Folletto');
+    expect(row).toHaveAccessibleDescription('Garchomp para Fuoco a Scizor, Scizor para Acciaio a Iron Valiant, Iron Valiant para Drago a Garchomp');
+  });
+
+  it('Sinergie: il core da 2 e il giro di pivot sono righe a due sprite con etichetta, titolo e frase', () => {
+    italianNames();
+    mount({ summary: summaryOf({ cores: [pair], links: [pivotLink] }) });
+    const [core, pivot] = within(section('Sinergie')).getAllByRole('button');
+    expect(core.querySelector('.sum-syn-tag')).toHaveTextContent('Core');
+    expect(core.querySelector('.sum-syn-title')).toHaveTextContent('Acqua-Volante / Erba-Acciaio');
+    expect(core.querySelectorAll('.sum-pair .sprite')).toHaveLength(2);
+    expect(core.querySelector('.sum-syn-text')).toHaveTextContent('Pelipper para Fuoco, Ferrothorn para Elettro');
+    expect(pivot.querySelector('.sum-syn-tag')).toHaveTextContent('Pivot');
+    expect(pivot.querySelector('.sum-syn-title')).toHaveTextContent('Giro di U-turn');
+    expect(pivot.querySelector('.sum-syn-text')).toHaveTextContent('2 membri con U-turn portano dentro Iron Valiant');
+    expect([...pivot.querySelectorAll('.sum-pair-mon')].map(s => s.getAttribute('title'))).toEqual(['Scizor', 'Iron Valiant']);
+  });
+
+  it('Sinergie: prima il triangolo, poi la coppia, poi i legami nel loro ordine; clic: core a Difesa, legami a Ruoli', async () => {
+    italianNames();
+    const user = userEvent.setup();
+    const { onView } = mount({ summary: summaryOf({ cores: [pair, trio], links: [pivotLink, wishLink] }) });
+    const rows = within(section('Sinergie')).getAllByRole('button');
+    expect(rows.map(r => r.querySelector('.sum-syn-title')!.textContent)).toEqual(['Drago / Acciaio / Folletto', 'Acqua-Volante / Erba-Acciaio', 'Giro di U-turn', 'Cure al team']);
+    expect(rows[3].querySelector('.sum-syn-tag')).toHaveTextContent('Desiderio');
+    for (const row of rows) await user.click(row);
+    expect(onView.mock.calls.map(c => c[0])).toEqual(['defense', 'defense', 'roles', 'roles']);
+  });
+
+  it('Sinergie vuote: una frase attenuata', () => {
+    mount();
+    expect(section('Sinergie')).toHaveTextContent(/^SinergieNessuna sinergia: ognuno lavora da solo$/);
+    expect(within(section('Sinergie')).queryByRole('button')).toBeNull();
+  });
+
+  it('Sinergie in inglese: nomi dei tipi e frasi', () => {
+    render(<LangProvider lang="en"><OverviewDashboard data={sample()} summary={summaryOf({ cores: [trio], links: [pivotLink] })} members={6} onView={vi.fn()} density="normal" /></LangProvider>);
+    const syn = within(screen.getByRole('region', { name: 'Summary' })).getByRole('heading', { name: 'Synergies' }).closest<HTMLElement>('.sum-sec')!;
+    const [core, pivot] = within(syn).getAllByRole('button');
+    expect(core.querySelector('.sum-syn-title')).toHaveTextContent('Dragon / Steel / Fairy');
+    expect(core).toHaveAccessibleDescription('Garchomp blocks Fire for Scizor, Scizor blocks Steel for Iron Valiant, Iron Valiant blocks Dragon for Garchomp');
+    expect(pivot.querySelector('.sum-syn-title')).toHaveTextContent('U-turn loop');
+    expect(pivot.querySelector('.sum-syn-text')).toHaveTextContent('2 members with U-turn bring in Iron Valiant');
   });
 
   it('ricco (team ridotto): sprite più grandi nell\'eroe', () => {
@@ -625,6 +711,24 @@ describe('Cruscotto: misure', () => {
     const weather = within(screen.getByRole('region', { name: 'Riassunto' })).getByRole('heading', { name: 'Meteo e campo' }).closest<HTMLElement>('.sum-sec')!;
     expect(within(weather).getAllByRole('button')).toHaveLength(1);
     expect(weather.querySelector('.sum-more .visually-hidden')).toHaveTextContent(/^Un altro che prepara il campo$/);
+  });
+
+  it('Riassunto: le sinergie che non stanno vanno nel "+N", con l\'elenco per intero', () => {
+    italianNames();
+    stubSumFit(() => 2);
+    const links: TeamLink[] = [
+      pivotLink, wishLink,
+      { kind: 'batonpass', from: ['Hatterene'], to: ['Iron Valiant'], move: 'Baton Pass' },
+      { kind: 'phazer', from: ['Landorus-Therian'], to: ['Skarmory'], move: 'Whirlwind' },
+    ];
+    mount({ summary: summaryOf({ cores: [trio, pair], links }) });
+    const syn = within(screen.getByRole('region', { name: 'Riassunto' })).getByRole('heading', { name: 'Sinergie' }).closest<HTMLElement>('.sum-sec')!;
+    expect(within(syn).getAllByRole('button')).toHaveLength(2);
+    const more = syn.querySelector('.sum-more')!;
+    expect(more).toHaveTextContent('+4');
+    expect(more.querySelector('.visually-hidden')).toHaveTextContent(/^Altre 4 sinergie: Giro di U-turn, Cure al team, .+, .+$/);
+    expect(more).toHaveAttribute('title', more.querySelector('.visually-hidden')!.textContent);
+    initGameNames(null);
   });
 
   it('Ruoli: le fasce non si stirano (CSS): compatte in alto, alte quanto il contenuto', () => {

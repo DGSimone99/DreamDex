@@ -45,6 +45,8 @@ const paths = {
   shieldx: 'M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6zM9.5 9.5l5 5M14.5 9.5l-5 5',
   roles: 'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z',
   cloud: 'M7 18h10a4 4 0 0 0 .4-8A6 6 0 0 0 6 11.5 3.3 3.3 0 0 0 7 18z',
+  // Legame tra due membri (Sinergie del Riassunto): due anelli di catena
+  chain: 'M9.8 14.2l4.4-4.4M7.5 10.5l-2.2 2.2a3.2 3.2 0 0 0 4.5 4.5L12 15M16.5 13.5l2.2-2.2a3.2 3.2 0 0 0-4.5-4.5L12 9',
 } as const;
 
 export type IconName = keyof typeof paths;

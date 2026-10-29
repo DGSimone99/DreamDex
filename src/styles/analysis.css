@@ -383,14 +383,13 @@ button.member-card:hover { border-color: var(--accent); }
  * Riassunto, ritratto del team (come sinergie-v3): in alto l'eroe (tipo di team grande, chi lo rende tale su un piedistallo
  * luminoso), sotto le sezioni con intestazione in maiuscoletto e righe separate da --line-soft, come le fasce di Ruoli.
  * Niente riquadri scuri dentro la card. Misure per densità in variabili: --sum-big (sprite dell'eroe), --sum-small (sprite
- * delle righe), --sum-line (altezza minima di una riga). Ricca (team ridotto): sprite più grandi e sezioni distribuite
- * su tutta l'altezza.
+ * delle righe), --sum-line (altezza minima di una riga). Ricca (team ridotto): sprite più grandi; le Sinergie prendono
+ * l'altezza che resta e le loro righe crescono fino a un tetto, così sotto non resta un vuoto.
  */
 .dash-summary { --sum-big: 40px; --sum-small: 34px; --sum-mini: 28px; --sum-line: 36px; --sum-arch: 24px; }
 .dash.tight .dash-summary { --sum-line: 32px; --sum-arch: 20px; }
 .dash.rich .dash-summary { --sum-big: 56px; --sum-small: 44px; --sum-mini: 38px; --sum-line: 48px; --sum-arch: 30px; }
 .sum-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
-.dash.rich .sum-body { justify-content: space-between; }
 
 /* Eroe: righe diagonali leggere e una sfumatura magenta dall'alto, da bordo a bordo della card */
 .sum-hero { flex: none; margin: -8px -12px 0; padding: 12px 12px 8px; border-bottom: 1px solid var(--line-soft);
@@ -430,14 +429,16 @@ button.member-card:hover { border-color: var(--accent); }
 .sum-plinth .sprite, .sum-user .sprite { position: relative; display: block; image-rendering: pixelated; }
 
 /* Sezioni: intestazione in maiuscoletto, righe separate; alte quanto il contenuto, e si stringono (useFit) se manca spazio */
-.sum-sec { flex: 0 1 auto; min-height: 0; display: flex; flex-direction: column; padding-top: 8px; }
+.sum-sec { position: relative; flex: 0 1 auto; min-height: 0; display: flex; flex-direction: column; padding-top: 8px; }
 .dash.rich .sum-sec { padding-top: 12px; }
 .sum-sec-h, .analysis h4.sum-sec-h { flex: none; display: block; margin: 0; padding-bottom: 5px; font: 700 11px/1.2 var(--display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); border-bottom: 1px solid var(--line-soft); }
 .sum-none { margin: 0; padding: 7px 0 3px; font-size: 12px; color: var(--faint); }
 .sum-lines { flex: 0 1 auto; min-height: var(--sum-line); margin: 0; padding: 0; list-style: none; overflow: hidden; }
 .sum-lines > li { border-bottom: 1px solid var(--line-soft); }
 .sum-lines > li:last-child { border-bottom: 0; }
-.sum-lines-more { min-height: 22px; display: flex; align-items: center; }
+/* Il "+N" di una sezione, a destra sulla riga del titolo */
+.sum-sec-more { position: absolute; right: 4px; top: 7px; line-height: 1.2; }
+.dash.rich .sum-sec-more { top: 11px; }
 .sum-line { width: 100%; min-height: var(--sum-line); display: flex; align-items: center; gap: 8px; padding: 2px 4px 2px 0; font: inherit; color: inherit; text-align: left; background: none; border: 0; border-radius: 0; }
 .sum-line:hover { background: var(--accent-wash); }
 .sum-line .sum-plinth { width: var(--sum-small); }
@@ -452,6 +453,60 @@ button.member-card:hover { border-color: var(--accent); }
 /* Chi ne approfitta: mini-sprite accostati; vanno a capo invece di essere tagliati */
 .sum-users { min-width: 0; display: flex; flex-wrap: wrap; }
 .sum-user { flex: none; display: flex; margin: calc(var(--sum-mini) * -0.1) calc(var(--sum-mini) * -0.16); }
+
+/*
+ * Sinergie: l'ultima sezione prende lo spazio che resta (le altre restano alte quanto il contenuto); le righe che non
+ * stanno vanno nel "+N" (accanto al titolo). Ricca: le righe crescono fino a un tetto, il contenuto resta al centro.
+ * La lista è un contenitore (cqh): il triangolo si rimpicciolisce per stare nell'altezza che c'è.
+ */
+.sum-syn-sec { flex: 1 1 0; min-height: calc(var(--sum-line) + 24px); }
+/* Col triangolo la sezione tiene almeno il triangolo più piccolo: cedono prima le righe di meteo e trappole (nel loro "+N") */
+.sum-syn-sec:has(.sum-syn.trio) { min-height: 112px; }
+.dash.rich .sum-syn-sec:has(.sum-syn.trio) { min-height: 140px; }
+.sum-syn-sec .sum-lines { flex: 1 1 0; display: flex; flex-direction: column; container-type: size; }
+.sum-syn-sec .sum-lines > li { flex: none; display: flex; }
+.dash.rich .sum-syn-sec .sum-lines > li[data-fit] { flex: 1 0 auto; max-height: 88px; }
+.dash.rich .sum-syn-sec .sum-lines > li[data-fit]:has(.sum-syn.trio) { max-height: 196px; }
+.sum-syn { --link-w: 16px; width: 100%; min-width: 0; min-height: var(--sum-line); display: flex; align-items: center; gap: 10px; padding: 6px 4px 6px 0; font: inherit; color: inherit; text-align: left; background: none; border: 0; border-radius: 0; }
+.sum-syn:hover { background: var(--accent-wash); }
+/* Due sprite unite da un anello "catena" nel colore del legame; con una sola sprite la colonna resta larga uguale */
+.sum-pair { flex: none; min-width: calc(var(--sum-small) * 1.56 + var(--link-w) - 6px); display: flex; align-items: center; justify-content: center; }
+.sum-pair-ring { display: flex; align-items: center; }
+.sum-pair-mon { position: relative; z-index: 1; display: flex; margin: calc(var(--sum-small) * -0.14) calc(var(--sum-small) * -0.11); }
+.sum-pair-mon .sprite { display: block; image-rendering: pixelated; }
+.sum-link { position: relative; z-index: 2; width: var(--link-w); height: var(--link-w); margin: 0 -3px; display: grid; place-items: center; color: var(--c); background: var(--panel); border: 1.5px solid var(--c); border-radius: 50%; }
+.sum-link .icon { width: 10px; height: 10px; }
+.sum-syn-body { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.sum-syn-head { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sum-syn-tag { margin-right: 6px; font: 700 9.5px/1 var(--display); font-style: normal; letter-spacing: 0.07em; text-transform: uppercase; color: var(--c); vertical-align: 1px; }
+.sum-syn-title { font: 700 13px/1.15 var(--display); }
+.sum-syn-text { font-size: 11.5px; line-height: 1.3; color: var(--muted); }
+.dash.rich .sum-syn-title { font-size: 14px; }
+.dash.rich .sum-syn-text { font-size: 12px; }
+
+/* Core da 3 a triangolo (sinergie-trio, opzione A): sprite ai vertici su un piedistallo verde, frecce del giro, tipo parato su ogni lato */
+.sum-syn.trio { padding: 4px 4px 4px 0; }
+.sum-tri-row { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 12px; }
+.sum-tri-row .sum-syn-body { flex: 1 1 auto; }
+.sum-tri { --tri-w: clamp(84px, calc((100cqh - 20px) * 150 / 128), 118px); --tri-badge: 20px; position: relative; flex: none; width: var(--tri-w); aspect-ratio: 150 / 128; }
+.sum-tri-row.roomy .sum-tri { --tri-w: clamp(84px, calc((100cqh - 20px) * 150 / 128), 150px); --tri-badge: 22px; }
+.sum-tri-edges { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.sum-tri-edges line { stroke: var(--good); stroke-width: 2; }
+.sum-tri-edges marker path { fill: var(--good); }
+.sum-tri-v { position: absolute; display: flex; transform: translate(-50%, -50%); }
+.sum-tri-v::before { content: ""; position: absolute; left: 50%; bottom: 8%; width: 74%; height: 18%; transform: translateX(-50%); border-radius: 50%; background: radial-gradient(ellipse, color-mix(in srgb, var(--good) 45%, transparent), transparent 70%); }
+.sum-tri-v .sprite { position: relative; display: block; width: calc(var(--tri-w) * 0.345); height: auto; image-rendering: pixelated; }
+.sum-tri-badge { position: absolute; width: var(--tri-badge); height: var(--tri-badge); display: grid; place-items: center; transform: translate(-50%, -50%); background: var(--panel); border: 1.5px solid var(--good); border-radius: 50%; }
+.sum-tri-badge img { width: calc(var(--tri-badge) - 7px); height: calc(var(--tri-badge) - 7px); }
+/* Ampia: l'etichetta sopra il nome dei tipi, come nel mockup; normale: sulla stessa riga, per stare più bassa */
+.sum-tri-row.roomy .sum-syn-head { display: flex; flex-direction: column; gap: 2px; }
+.sum-cover { margin-top: 4px; display: flex; flex-direction: column; gap: 3px; }
+.sum-cover > span { min-width: 0; display: flex; align-items: center; gap: 6px; font-size: 11.5px; line-height: 1.25; white-space: nowrap; color: var(--muted); }
+.sum-cover > span > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.sum-cover img { flex: none; width: 14px; height: 14px; }
+.sum-cover b { font-weight: 600; color: var(--text); }
+.dash.rich .sum-cover { gap: 6px; }
+.dash.rich .sum-cover > span { font-size: 12px; }
 
 /*
  * Lo stesso alone del piedistallo delle Minacce sotto gli altri sprite "in scena": le corsie della Velocità, la testata

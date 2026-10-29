@@ -11,7 +11,9 @@ import { rateTeam } from '../../src/engine/rating';
 import { emptySet, mostCommonSet, type TeamSet } from '../../src/engine/sets';
 import { measuredSubRoles } from '../../src/engine/subRoles';
 import { hasSetup } from '../../src/engine/roles';
+import { viaName } from '../../src/engine/synergy';
 import { teamLinks } from '../../src/engine/teamLinks';
+import { t } from '../../src/i18n';
 import { TOP_ATTACKER, teamSummary } from '../../src/engine/teamSummary';
 import { fixtureData, fixtureStats } from '../fixtures/data';
 import { megaData } from '../fixtures/megaData';
@@ -66,7 +68,7 @@ describe('teamSummary', () => {
     const team = swap(1, { ...emptySet('Barraskewda'), ability: 'Swift Swim', moves: ['Liquidation'] });
     team[0] = { ...emptySet('Pelipper'), ability: 'Drizzle', moves: ['Surf'] };
     const rain = build(team).summary.conditions.filter(c => c.key === 'rain');
-    expect(rain).toEqual([{ member: 'Pelipper', key: 'rain', label: 'Pioggia', users: ['Barraskewda'] }]);
+    expect(rain).toEqual([{ member: 'Pelipper', key: 'rain', label: 'Pioggia', users: [{ name: 'Barraskewda', via: 'Swift Swim' }] }]);
   });
 
   it('condizioni: Trick Room con un membro lento tra gli utenti', () => {
@@ -74,7 +76,9 @@ describe('teamSummary', () => {
     team[0] = { ...emptySet('Hatterene'), ability: 'Magic Bounce', moves: ['Trick Room', 'Psychic'] };
     const row = build(team).summary.conditions.find(c => c.key === 'trickroom')!;
     expect(row.member).toBe('Hatterene');
-    expect(row.users).toEqual(['Torkoal', 'Kingambit', 'Toxapex']);
+    expect(row.users.map(u => u.name)).toEqual(['Torkoal', 'Kingambit', 'Toxapex']);
+    // Il lento ne approfitta per la velocità bassa (viaName la traduce)
+    expect(viaName(row.users[0].via!, 'it')).toBe(t('it', 'synergy.slow'));
   });
 
   it('condizioni: Reflect e Light Screen, una riga per chiave con gli stessi utenti (mossa di potenziamento, anche gli sweeper)', () => {
@@ -88,7 +92,7 @@ describe('teamSummary', () => {
     expect(setups).toEqual(expect.arrayContaining(['Toxapex', 'Kingambit']));
     const rows = summary.conditions.filter(c => c.member === 'Grimmsnarl');
     expect(rows.map(r => r.key)).toEqual(['reflect', 'lightscreen']);
-    expect(rows.map(r => r.users)).toEqual([setups, setups]);
+    expect(rows.map(r => r.users.map(u => u.name))).toEqual([setups, setups]);
   });
 
   it('condizioni: Tailwind senza utenti', () => {

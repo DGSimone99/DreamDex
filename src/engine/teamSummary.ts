@@ -19,8 +19,10 @@ export const TOP_ATTACKER = 85;
 /** Mosse di schermo e Tailwind mostrate come condizioni (id). */
 const SCREEN_MOVES = ['reflect', 'lightscreen', 'auroraveil', 'tailwind'];
 
+/** Chi approfitta di una condizione; via: abilità o mossa (inglese) con cui la sfrutta, se c'è (gli schermi non l'hanno). */
+export interface ConditionUser { name: string; via?: string }
 /** Una condizione portata da un membro; key: id della condizione o della mossa di schermo; label già nella lingua dell'interfaccia. */
-export interface ConditionRow { member: string; label: string; key: string; users: string[] }
+export interface ConditionRow { member: string; label: string; key: string; users: ConditionUser[] }
 /** Hazard messi da un membro (nomi inglesi delle mosse, la vista li traduce). */
 export interface HazardRow { member: string; moves: string[] }
 export interface TeamSummary {
@@ -53,14 +55,17 @@ export function teamSummary(team: TeamSet[], rating: TeamRating, coaching: Coach
     const others = named.filter(o => o.set !== set);
     // Meteo, campi e Trick Room: chi ne approfitta tra i compagni (mai il portatore stesso)
     for (const link of enables(set)) {
-      const users = others.filter(o => benefits(o.set).some(b => b.condition === link.condition)).map(o => o.name);
+      const users = others.flatMap(o => {
+        const use = benefits(o.set).find(b => b.condition === link.condition);
+        return use ? [{ name: o.name, via: use.via }] : [];
+      });
       conditions.push({ member: name, label: conditionName(link.condition, lang), key: link.condition, users });
     }
     // Schermi: servono ai membri con una mossa di potenziamento; Tailwind non ha un beneficiario fisso
     const ids = set.moves.map(toID);
     for (const key of SCREEN_MOVES) {
       if (!ids.includes(key)) continue;
-      const users = key === 'tailwind' ? [] : others.filter(o => hasSetup(o.set)).map(o => o.name);
+      const users = key === 'tailwind' ? [] : others.filter(o => hasSetup(o.set)).map(o => ({ name: o.name }));
       conditions.push({ member: name, label: gameName('move', getMove(key)?.name ?? key, lang), key, users });
     }
     const mine = set.moves.filter(mv => HAZARD_MOVES.includes(toID(mv)));
