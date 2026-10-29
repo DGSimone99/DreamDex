@@ -103,8 +103,14 @@
 .area-subs [role='tab']:hover { color: var(--text); }
 /* La striscia scorre (overflow): il contorno del fuoco va dentro la scheda, o verrebbe tagliato */
 .area-subs [role='tab']:focus-visible { outline-offset: -3px; }
-.area-subs [role='tab'][aria-selected='true'] { color: var(--text); background: var(--accent-2-soft); border-bottom-color: var(--accent-2-ink); }
-.area-subs [role='tab'][aria-selected='true'] b { color: var(--text); }
+/* La sottoscheda aperta come la scheda principale aperta, in piccolo: righe magenta, taglio diagonale a destra e testo
+   appena più grande, così si riconosce subito */
+.area-subs [role='tab'][aria-selected='true'] {
+  color: var(--text); background: var(--stripes), var(--accent-2-soft); border-bottom-color: var(--accent-2-ink);
+  clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
+  padding-right: 24px; font-size: 14.5px; font-weight: 600;
+}
+.area-subs [role='tab'][aria-selected='true'] b { color: var(--text); font-size: 16.5px; }
 .sub-help-room { display: inline-block; width: 30px; }
 .area-help { position: absolute; display: flex; }
 .area-help .help-button { width: 18px; height: 18px; color: var(--text); }
@@ -179,6 +185,11 @@ button.member-card:hover { border-color: var(--accent); }
   background: var(--stripes), var(--accent-2);
   clip-path: polygon(0 0, 100% 0, calc(100% - 14px) 100%, 0 100%);
   padding-right: 48px;
+}
+/* Coaching e Bonus/Malus chiudono un gruppo (prima dello stacco, in fondo alla riga): il taglio diagonale va a sinistra */
+.analysis-tabs [role='tab'][aria-selected='true']:is(#analysis-view-coaching, #analysis-view-bonusMalus) {
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 14px 100%);
+  padding-right: 14px; padding-left: 48px;
 }
 .analysis-tabs .tab-score { font: 700 17px/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums; color: var(--accent); }
 .analysis-tabs [role='tab'][aria-selected='true'] .tab-score { color: var(--on-accent-2); }
