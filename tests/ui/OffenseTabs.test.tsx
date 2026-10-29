@@ -221,3 +221,37 @@ describe('Offesa: Potenza', () => {
     expect(words.some(w => w === '2HKO' || w === 'OHKO')).toBe(true);
   });
 });
+
+describe('Offesa: Coverage meta', () => {
+  const open = async () => {
+    const user = userEvent.setup();
+    const rating = withMeta();
+    renderIt(<AreaView rating={rating} area="strength" team={team} analysis={analysis} problems={[]} />);
+    await user.click(screen.getByRole('tab', { name: /^Coverage meta/ }));
+    return { user, rating };
+  };
+  const level = (li: HTMLElement) => Number(/: (\d+)%/.exec(li.getAttribute('aria-label') ?? '')![1]);
+
+  it('Coverage meta: pagine da 8 dal bersaglio meno coperto', async () => {
+    const { user } = await open();
+    const tiles = within(screen.getByRole('tabpanel')).getAllByRole('listitem');
+    expect(tiles).toHaveLength(8);
+    expect(level(tiles[0])).toBeLessThanOrEqual(level(tiles[tiles.length - 1]));
+    await user.click(screen.getByRole('button', { name: 'Minacce successive' }));
+    expect(within(screen.getByRole('tabpanel')).getAllByRole('listitem').length).toBeGreaterThan(0);
+  });
+
+  it('un bersaglio senza colpi dice nessuno', async () => {
+    const { rating } = await open();
+    const rows = rating.offense.coverageMeta!.rows;
+    const none = rows.find(r => r.coveredBy.length === 0);
+    if (!none) return;
+    const pages = Math.ceil(rows.length / 8);
+    for (let i = 0; i < pages; i++) {
+      const tile = within(screen.getByRole('tabpanel')).getAllByRole('listitem').find(li => li.getAttribute('aria-label')!.startsWith(`${none.species}:`));
+      if (tile) { expect(tile.getAttribute('aria-label')).toContain('nessuno'); return; }
+      if (i < pages - 1) await userEvent.setup().click(screen.getByRole('button', { name: 'Minacce successive' }));
+    }
+    throw new Error('tessera non trovata');
+  });
+});

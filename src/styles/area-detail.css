@@ -31,7 +31,7 @@
 .ad-sub strong.ad-plus { grid-row: 1 / span 2; color: var(--good); }
 .ad-t td meter { display: block; width: 110px; }
 .ad-mon { display: flex; align-items: center; gap: 8px; }
-.ad-mon .sprite, .ad-cover .sprite, .ad-matrix thead .sprite { flex: none; }
+.ad-mon .sprite, .ad-matrix thead .sprite { flex: none; }
 .ad-scroll { overflow-x: auto; }
 .ad-matrix thead th { text-align: center; padding: 6px 2px; }
 .ad-matrix td { text-align: center; padding: 3px 2px; }
@@ -47,8 +47,6 @@
 .ad-t .ad-src { font: 500 12px/1 var(--ui); color: var(--faint); }
 .ad-t .gap { padding-left: 22px; }
 .ad-legend { margin: 8px 0 0 !important; font-size: 12px !important; color: var(--faint) !important; }
-.ad-cover .sprite { margin-right: -6px; }
-.ad-cover > span { display: inline-block; }
 /* Ruoli: malus delle essenziali in rosso, zero in grigio; le mancanze sotto le sottostatistiche */
 .ad-sub strong.ad-minus, .ad-sub strong.ad-zero { grid-row: 1 / span 2; }
 .ad-minus { color: var(--bad); }
@@ -65,7 +63,6 @@
 .ad-t .ad-group .ad-level.important { color: var(--muted); }
 .ad-t tbody.ad-ignored { opacity: 0.55; }
 /* Copre a metà (superefficace ma solo da 3HKO): sprite più tenue */
-.ad-cover > span.partial { opacity: 0.45; }
 @media (max-width: 560px) {
   .ad-body { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr); }
   .ad-panel { padding: 12px 14px 16px; }

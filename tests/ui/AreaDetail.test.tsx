@@ -90,23 +90,12 @@ describe("dettaglio dell'Offesa a schede", () => {
     expect(within(typesPanel).getAllByRole('row').at(-1)).toHaveTextContent(/^Copertura/);
   });
 
-  it('Coverage meta: i buchi e ogni bersaglio con chi lo copre', async () => {
+  it('Coverage meta: le tessere dei bersagli, ognuna con il livello nel nome accessibile', async () => {
     const { user, dialog } = await openOffense('it');
     await user.click(within(dialog).getByRole('tab', { name: /^Coverage meta/ }));
-    const panel = within(dialog).getByRole('tabpanel');
-    expect(panel).toHaveTextContent(/Buchi:|Nessun buco/);
-    // Al posto del peso, quanto è coperto ogni bersaglio
-    expect(within(panel).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Tipi', 'Pokémon', 'Copertura', 'Coperto da']);
-    const rows = within(panel).getAllByRole('row').slice(1);
-    expect(rows.length).toBeGreaterThan(0);
-    // 70/90/100 per chi manda KO in due colpi; un superefficace da 3HKO copre a metà (35, 45…)
-    for (const row of rows) expect(within(row).getAllByRole('cell')[1]).toHaveTextContent(/^\d+%$/);
-    // Per i lettori di schermo chi copre è scritto in testo (lo sprite da solo non dice niente)
-    const firstCover = panel.querySelector('.ad-cover');
-    if (firstCover?.querySelector('img')) expect(firstCover.querySelector('.visually-hidden')?.textContent).toMatch(/\d+%/);
-    // Passando sul Pokémon che copre: la mossa e il danno
-    const cover = panel.querySelector('.ad-cover [title]');
-    if (cover) expect(cover.getAttribute('title')).toMatch(/^.+: .+ \d+%( \(.+\))?$/);
+    const tiles = within(within(dialog).getByRole('tabpanel')).getAllByRole('listitem');
+    expect(tiles.length).toBeGreaterThan(0);
+    for (const tile of tiles) expect(tile.getAttribute('aria-label')).toMatch(/^.+: \d+%, .+$/);
   });
 
   it('frecce fra le schede; nessuna finestra', async () => {

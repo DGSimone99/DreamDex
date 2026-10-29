@@ -1,15 +1,10 @@
-import { useState } from 'react';
 import type { TeamDefense } from '../../engine/defense';
 import { useT } from '../../i18n/react';
 import type { AreaContext } from '../AreaDetail';
-import { Icon } from '../icons';
+import { MetaCount, MetaFrame, MetaHolders } from '../MetaFrame';
 import { PokemonIcon } from '../PokemonName';
-import { MoveName } from '../TypeText';
 
 type Row = NonNullable<TeamDefense['coverageMeta']>['rows'][number];
-
-/** Minacce per pagina: 4 colonne × 2 righe, abbastanza grandi da mostrare chi le regge per nome. */
-export const META_PAGE = 8;
 
 /** Gruppo di una minaccia: nessuno la regge, solo a metà (chi regge va KO in due colpi), retta. */
 const groupOf = (row: Row) => (row.heldBy.length === 0 ? 'none' : row.heldBy.some(h => !h.partial) ? 'held' : 'partial');
@@ -24,64 +19,31 @@ const tone = (row: Row) => (row.heldBy.length === 0 ? 'bad' : row.level >= 80 ? 
  */
 export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaContext }) {
   const t = useT();
-  const [page, setPage] = useState(0);
   const rows = [...(defense.coverageMeta?.rows ?? [])].sort((a, b) => a.level - b.level || b.weight - a.weight);
-  const pages = Math.max(1, Math.ceil(rows.length / META_PAGE));
-  const current = Math.min(page, pages - 1);
-  const shown = rows.slice(current * META_PAGE, (current + 1) * META_PAGE);
   const count = (group: 'held' | 'partial' | 'none') => rows.filter(r => groupOf(r) === group).length;
-  const pill = (group: 'held' | 'partial' | 'none', cls: string, key: 'ddetail.cm.held' | 'ddetail.cm.partial' | 'ddetail.cm.none') =>
-    <span className={`ct-pill ${count(group) ? cls : 'zero'}`}>{count(group)} {t(key)}</span>;
-  return (
-    <div className={`cm-frame${ctx.roomy ? ' roomy' : ''}`}>
-      <div className="cm-bar">
-        <nav className="cm-pages" aria-label={t('ddetail.cm.pages')}>
-          <button type="button" className="cm-step" aria-label={t('ddetail.cm.prev')} disabled={current === 0} onClick={() => setPage(current - 1)}>
-            <Icon name="prev" />
-          </button>
-          {Array.from({ length: pages }, (_, i) => (
-            <button key={i} type="button" className="cm-page" aria-current={i === current ? 'page' : undefined}
-              aria-label={t('ddetail.cm.page', { from: i * META_PAGE + 1, to: Math.min(rows.length, (i + 1) * META_PAGE) })}
-              onClick={() => setPage(i)}>
-              {i + 1}
-            </button>
-          ))}
-          <button type="button" className="cm-step" aria-label={t('ddetail.cm.next')} disabled={current === pages - 1} onClick={() => setPage(current + 1)}>
-            <Icon name="next" />
-          </button>
-        </nav>
-        <p className="cm-summary">
-          <span className="cm-dmg">{t('ddetail.cm.damage')}</span>
-          <span>{t('ddetail.cm.threats', { n: rows.length })}</span>
-          {pill('held', 'good', 'ddetail.cm.held')}{pill('partial', 'warn', 'ddetail.cm.partial')}{pill('none', 'bad', 'ddetail.cm.none')}
-        </p>
-      </div>
-      <ul className="cm-grid">
-        {shown.map(row => {
-          const holders = row.heldBy.map(h => `${h.species}: ${h.move} ${h.pct}%${h.partial ? ` (${t('ddetail.partial')})` : ''}`);
-          const label = `${row.species}: ${row.level}%, ${holders.length ? holders.join('; ') : t('detail.nobody')}`;
-          return (
-            <li key={row.species} className={`cm-tile ${groupOf(row)}`} aria-label={label}>
-              <span className="cm-head">
-                <span className="def-box cm-threat"><PokemonIcon name={row.species} /></span>
-                <b className="cm-name">{row.species}</b>
-                <span className={`ct-pill ${tone(row)}`}>{row.heldBy.length ? `${row.level}%` : t('detail.nobody')}</span>
-              </span>
-              {row.heldBy.length === 0 && <span className="cm-empty" aria-hidden="true">{t('ddetail.cm.allKo')}</span>}
-              <span className={`cm-by${row.heldBy.length > 4 ? ' many' : ''}`} aria-hidden="true">
-                {row.heldBy.map((h, i) => (
-                  <span key={`${h.species}-${i}`} className={`cm-holder${h.partial ? ' partial' : ''}`} title={`${h.species}: ${h.move} ${h.pct}%`}>
-                    <span className="def-box"><PokemonIcon name={h.species} /></span>
-                    <span className="cm-holder-name">{h.species}</span>
-                    {ctx.roomy && h.move && <span className="cm-holder-move"><MoveName move={h.move} /></span>}
-                    <span className={`cm-holder-pct${h.partial ? ' half' : ''}`}>{h.pct}%</span>
-                  </span>
-                ))}
-              </span>
-            </li>
-          );
-        })}
-      </ul>
-    </div>
+  const summary = (
+    <>
+      <span className="cm-dmg">{t('ddetail.cm.damage')}</span>
+      <span>{t('ddetail.cm.threats', { n: rows.length })}</span>
+      <MetaCount n={count('held')} tone="good" label={t('ddetail.cm.held')} />
+      <MetaCount n={count('partial')} tone="warn" label={t('ddetail.cm.partial')} />
+      <MetaCount n={count('none')} tone="bad" label={t('ddetail.cm.none')} />
+    </>
   );
+  const tile = (row: Row) => {
+    const holders = row.heldBy.map(h => `${h.species}: ${h.move} ${h.pct}%${h.partial ? ` (${t('ddetail.partial')})` : ''}`);
+    const label = `${row.species}: ${row.level}%, ${holders.length ? holders.join('; ') : t('detail.nobody')}`;
+    return (
+      <li key={row.species} className={`cm-tile ${groupOf(row)}`} aria-label={label}>
+        <span className="cm-head">
+          <span className="def-box cm-threat"><PokemonIcon name={row.species} /></span>
+          <b className="cm-name">{row.species}</b>
+          <span className={`ct-pill ${tone(row)}`}>{row.heldBy.length ? `${row.level}%` : t('detail.nobody')}</span>
+        </span>
+        {row.heldBy.length === 0 && <span className="cm-empty" aria-hidden="true">{t('ddetail.cm.allKo')}</span>}
+        <MetaHolders list={row.heldBy} roomy={ctx.roomy} />
+      </li>
+    );
+  };
+  return <MetaFrame rows={rows} roomy={ctx.roomy} summary={summary} tile={tile} />;
 }
