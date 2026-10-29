@@ -118,15 +118,14 @@
 .area-help { position: absolute; display: flex; }
 .area-help .help-button { width: 18px; height: 18px; color: var(--text); }
 .area-help .help-button .icon { width: 18px; height: 18px; }
-.area-problems-row { display: flex; align-items: baseline; gap: 12px; padding: 0 2px; flex: none; }
+/* Altezza fissa: con o senza problemi il pannello sotto parte dallo stesso punto in ogni area */
+.area-problems-row { display: flex; align-items: center; gap: 12px; padding: 0 2px; flex: none; height: 25px; }
 /* L'etichetta "N problemi" in testa: giallo, rosso se ce n'è almeno uno grave */
 .area-problems-label { display: inline-flex; align-items: center; gap: 5px; flex: none; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--warn); background: var(--warn-bg); }
 .area-problems-label .icon { width: 13px; height: 13px; }
 .area-problems-row.serious .area-problems-label { color: var(--bad); background: var(--bad-bg); }
 /* Nessun problema: l'etichetta in verde con la spunta, la riga alta come quella con i problemi */
 .area-problems-row.is-clear .area-problems-label { color: var(--good); background: var(--good-bg); }
-/* Alta come una riga di problemi su una linea: un segnaposto invisibile con lo stesso corpo della lista (12.5px) allineato alla base dell'etichetta */
-.area-problems-row.is-clear::after { content: '\200b'; font-size: 12.5px; }
 .area-problems { flex: 1; min-width: 0; margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: nowrap; gap: 4px 18px; overflow: hidden; font-size: 12.5px; }
 .area-problems > li { flex: none; white-space: nowrap; }
 /* Il "+N" dei problemi che non stanno nella riga (il title li elenca) */
