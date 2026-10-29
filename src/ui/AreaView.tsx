@@ -161,7 +161,7 @@ export function AreaView({ rating, area, problems, team, analysis, extra, roomy 
             {hidden.length > 0 && (
               <li className="area-problems-more" title={hidden.map(p => p.text).join('\n')}>
                 <span aria-hidden="true">+{hidden.length}</span>
-                <span className="visually-hidden">{hidden.map(p => p.text).join('; ')}</span>
+                <span className="visually-hidden">{t(hidden.length === 1 ? 'area.problems.moreOne' : 'area.problems.moreMany', { n: hidden.length })} {hidden.map(p => p.text).join('; ')}</span>
               </li>
             )}
           </ul>

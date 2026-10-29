@@ -463,6 +463,8 @@ export const it: Record<keyof typeof en, string> = {
   'area.problems.none': "Nessun problema",
   'area.problems.one': "1 problema",
   'area.problems.many': "{n} problemi",
+  'area.problems.moreOne': "Altro 1 problema:",
+  'area.problems.moreMany': "Altri {n} problemi:",
   'analysis.areaProblems': "Problemi in {area}",
   'analysis.region': "Analisi",
   'analysis.noShortfall': "Nessuna mancanza",

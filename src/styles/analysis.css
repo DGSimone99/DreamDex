@@ -125,8 +125,8 @@
 .area-problems-row.serious .area-problems-label { color: var(--bad); background: var(--bad-bg); }
 /* Nessun problema: l'etichetta in verde con la spunta, la riga alta come quella con i problemi */
 .area-problems-row.is-clear .area-problems-label { color: var(--good); background: var(--good-bg); }
-/* Alta come una riga di problemi su una linea (la lista a 12.5px allineata alla base dell'etichetta, misurata a 1440x900) */
-.area-problems-row.is-clear { min-height: 24.6px; }
+/* Alta come una riga di problemi su una linea: un segnaposto invisibile con lo stesso corpo della lista (12.5px) allineato alla base dell'etichetta */
+.area-problems-row.is-clear::after { content: '\200b'; font-size: 12.5px; }
 .area-problems { flex: 1; min-width: 0; margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: nowrap; gap: 4px 18px; overflow: hidden; font-size: 12.5px; }
 .area-problems > li { flex: none; white-space: nowrap; }
 /* Il "+N" dei problemi che non stanno nella riga (il title li elenca) */

@@ -478,7 +478,7 @@ describe('CoachingView', () => {
       const more = tile.querySelector('.coach-more')!;
       expect(more).toHaveTextContent(/^\+2/);
       expect(more).toHaveAttribute('title', 'Debole a Fire\nDebole a Ground');
-      expect(more.querySelector('.visually-hidden')).toHaveTextContent('Debole a Fire; Debole a Ground');
+      expect(more.querySelector('.visually-hidden')).toHaveTextContent('Altri 2 problemi: Debole a Fire; Debole a Ground');
     } finally {
       tall.mockRestore();
       scroll.mockRestore();

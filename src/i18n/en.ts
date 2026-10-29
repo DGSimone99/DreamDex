@@ -461,6 +461,8 @@ export const en = {
   'area.problems.none': "No problems",
   'area.problems.one': "1 problem",
   'area.problems.many': "{n} problems",
+  'area.problems.moreOne': "1 more problem:",
+  'area.problems.moreMany': "{n} more problems:",
   'analysis.areaProblems': "Problems in {area}",
   'analysis.region': "Analysis",
   'analysis.noShortfall': "No shortfalls",

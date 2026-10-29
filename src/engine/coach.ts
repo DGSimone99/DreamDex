@@ -182,6 +182,8 @@ export function findProblems(team: TeamSet[], format: Format, data: EngineData, 
   // Coverage: la stessa regola della Coverage tipi del voto, un problema per tipo che nessuno manda KO in due colpi
   // (livello sotto 70). Scoperto (nessun colpo super efficace al 33%): grave se il tipo pesa; coperto a metà (solo 3HKO): minore.
   // Rimedi: i candidati col proprio set che ha una mossa super efficace contro il tipo (approssima la regola dei due colpi, senza calcolo dei danni)
+  // I rimedi della copertura sono un'approssimazione della regola dei due colpi: conta qualsiasi mossa super efficace del candidato.
+  // Cosa si risolve davvero lo dicono le tappe, con problemChanges.
   const coverage = teamCoverage(team, data, 'types');
   for (const row of coverage.rows) {
     if (row.level >= COVERED_LEVEL) continue;

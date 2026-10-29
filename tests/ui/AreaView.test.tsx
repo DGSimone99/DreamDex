@@ -75,7 +75,7 @@ describe('vista di un\'area sulla pagina', () => {
       expect(items.map(li => li.textContent)).toEqual(['Problema c', 'Problema b', expect.stringMatching(/^\+3/)]);
       const more = items[2];
       expect(more).toHaveAttribute('title', 'Problema e\nProblema a\nProblema d');
-      expect(more.querySelector('.visually-hidden')).toHaveTextContent('Problema e; Problema a; Problema d');
+      expect(more.querySelector('.visually-hidden')).toHaveTextContent('Altri 3 problemi: Problema e; Problema a; Problema d');
     } finally {
       width.mockRestore();
       scroll.mockRestore();

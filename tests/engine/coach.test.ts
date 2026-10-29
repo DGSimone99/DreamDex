@@ -220,11 +220,11 @@ describe('chiavi dei problemi e minacce del meta', () => {
     const half = found.filter(p => p.size === 1);
     expect(half.length).toBeGreaterThan(0);
     expect(half.some(p => p.fixes.length > 0)).toBe(true);
-    for (const p of found) {
-      for (const species of p.fixes) {
-        const set = mostCommonSet(fixtureStats, species) ?? emptySet(species);
-        expect(superEffectiveMoves(set, p.subjects![0] as TypeName).length > 0 || !mostCommonSet(fixtureStats, species)).toBe(true);
-      }
+    // Solo le specie con statistiche: senza, il set è vuoto e non c'è nulla da verificare
+    const withStats = found.flatMap(p => p.fixes.filter(species => mostCommonSet(fixtureStats, species)).map(species => ({ p, species })));
+    expect(withStats.length).toBeGreaterThan(0);
+    for (const { p, species } of withStats) {
+      expect(superEffectiveMoves(mostCommonSet(fixtureStats, species)!, p.subjects![0] as TypeName).length).toBeGreaterThan(0);
     }
   });
 

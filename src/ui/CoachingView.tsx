@@ -387,7 +387,7 @@ function MapTile({ id, name, items, score, stepOf, preview, threatUsage, watch }
       {hidden.length > 0 && (
         <p className="coach-more" title={hidden.map(hiddenText).join('\n')}>
           <span aria-hidden="true">+{hidden.length}</span>
-          <span className="visually-hidden">{hidden.map(hiddenText).join('; ')}</span>
+          <span className="visually-hidden">{tr(hidden.length === 1 ? 'area.problems.moreOne' : 'area.problems.moreMany', { n: hidden.length })} {hidden.map(hiddenText).join('; ')}</span>
         </p>
       )}
     </div>
