@@ -142,8 +142,8 @@ const defenseState = (sub: RegExp | null, opts: { team?: unknown[]; format?: Par
     return true;
   },
 });
-const offenseState = (sub: RegExp | null, opts: { collapsed?: boolean } = {}): State => ({
-  hash: hash(SIX),
+const offenseState = (sub: RegExp | null, opts: { collapsed?: boolean; format?: Partial<typeof FORMAT> } = {}): State => ({
+  hash: opts.format ? hashWith(SIX, opts.format) : hash(SIX),
   run: async p => {
     await tab(p, 'analysis');
     await wait(300);
@@ -161,6 +161,17 @@ const OFFENSE_STATES: Record<string, State> = Object.fromEntries(Object.entries(
   [`analysis-offense-${k}`, offenseState(re)],
   [`analysis-offense-${k}-collapsed`, offenseState(re, { collapsed: true })],
 ]));
+// Guida dell'Offesa aperta dal "?" (Generale, Wallbreaking) e Coverage tipi senza meta
+const offenseGuide = (sub: RegExp | null): State => ({ hash: hash(SIX), run: async p => {
+  const ok = await offenseState(sub).run!(p);
+  if (ok !== true) return ok;
+  if (!await clickText(p, '.area-help button', /./)) return 'no guide button';
+  await wait(400);
+  return true;
+} });
+OFFENSE_STATES['analysis-offense-types-nometa'] = offenseState(OFFENSE_SUBS.types, { format: { meta: false } });
+OFFENSE_STATES['analysis-offense-guide'] = offenseGuide(OFFENSE_SUBS.general);
+OFFENSE_STATES['analysis-offense-guide-wall'] = offenseGuide(OFFENSE_SUBS.wall);
 const SUBS: Record<string, RegExp | null> = { general: null, robustness: /^Robustezza/, sustain: /^Sostenibilit/, types: /^Coverage tipi/, meta: /^Coverage meta/ };
 const DEFENSE_STATES: Record<string, State> = {
   ...Object.fromEntries(Object.entries(SUBS).flatMap(([k, re]) => [
@@ -528,7 +539,7 @@ for (const [w, h] of sizes) {
         panel: (() => { const el = document.querySelector<HTMLElement>('.area-panel'); if (!el) return '';
           // Righe dei membri (cornice comune della Difesa): y e altezza della prima e dell ultima, per vedere che restano ferme
           const rows = [...el.querySelectorAll<HTMLElement>('.def-grid tbody th[scope="row"] .ad-mon')].map(r => r.closest('tr')!.getBoundingClientRect());
-          const memberRows = rows.length ? ` memberRows=${Math.round(rows[0].top)}+${Math.round(rows[0].height)}..${Math.round(rows[rows.length - 1].bottom)} monX=${Math.round(el.querySelector('.def-grid tbody .ad-mon')!.getBoundingClientRect().left)}` : '';
+          const memberRows = rows.length ? ` memberRows=${Math.round(rows[0].top)}+${Math.round(rows[0].height)}..${Math.round(rows[rows.length - 1].bottom)} monX=${Math.round(el.querySelector('.def-grid tbody .ad-mon')!.getBoundingClientRect().left)} firstRowY=${Math.round(rows[0].top)}` : '';
           const label = el.querySelector<HTMLElement>('th.def-mon-h');
           const labelAt = label ? (() => { const r = document.createRange(); r.selectNodeContents(label); const b = r.getBoundingClientRect(); return ` label=${Math.round(b.left)},${Math.round(b.top)}`; })() : '';
           return ` panelOverflow=${el.scrollHeight - el.clientHeight} panelX=${el.scrollWidth - el.clientWidth}${memberRows}${labelAt}`; })(),
