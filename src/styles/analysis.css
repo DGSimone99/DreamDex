@@ -170,7 +170,9 @@ button.member-card:hover { border-color: var(--accent); }
 
 /* Schede interne a larghezza uguale su tutta la riga; quella aperta come le teste (magenta a righe, inclinata) */
 .analysis-tabs { border-bottom: 0; }
-.analysis-tabs [role='tablist'] { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; width: 100%; }
+/* Panoramica e Coaching (la lettura del team) separate dalle aree del voto da uno stacco con un filo sottile */
+.analysis-tabs [role='tablist'] { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)) 14px repeat(5, minmax(0, 1fr)); gap: 4px; width: 100%; }
+.analysis-tabs [role='tablist']::before { content: ''; grid-column: 3; grid-row: 1; justify-self: center; width: 1px; margin: 6px 0; background: var(--line); }
 .analysis-tabs [role='tab'] { display: flex; align-items: baseline; justify-content: center; gap: 8px; width: 100%; padding: 8px 14px; border: 1px solid var(--line-soft); background: var(--panel); }
 .analysis-tabs [role='tab'][aria-selected='true'] {
   color: var(--on-accent-2); border-color: var(--accent-2);
