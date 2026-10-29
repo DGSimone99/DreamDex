@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { cardRoles } from '../../src/engine/archetype';
 import { analyzeTeam } from '../../src/engine/analysis';
 import { coachTeam, type Coaching } from '../../src/engine/coach';
+import { teamCores } from '../../src/engine/cores';
 import { battleName, toID } from '../../src/engine/dex';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
 import { rulesOf } from '../../src/engine/formatRules';
@@ -9,7 +10,11 @@ import { dashboardData } from '../../src/engine/overviewDashboard';
 import { rateTeam } from '../../src/engine/rating';
 import { emptySet, mostCommonSet, type TeamSet } from '../../src/engine/sets';
 import { measuredSubRoles } from '../../src/engine/subRoles';
-import { FIELD_MOVES, TOP_ATTACKER, teamSummary } from '../../src/engine/teamSummary';
+import { hasSetup } from '../../src/engine/roles';
+import { viaName } from '../../src/engine/synergy';
+import { teamLinks } from '../../src/engine/teamLinks';
+import { t } from '../../src/i18n';
+import { TOP_ATTACKER, teamSummary } from '../../src/engine/teamSummary';
 import { fixtureData, fixtureStats } from '../fixtures/data';
 import { megaData } from '../fixtures/megaData';
 
@@ -22,10 +27,14 @@ const build = (team: TeamSet[] = base, data = fixtureData, tweak?: (c: Coaching)
   return { rating, coaching, dash, summary: teamSummary(team, rating, coaching, dash, data), data };
 };
 
+// Team senza mosse di campo né abilità di condizione: punto di partenza per i test di condizioni e hazard
+const FIELD_IDS = ['stealthrock', 'spikes', 'toxicspikes', 'stickyweb', 'reflect', 'lightscreen', 'auroraveil', 'tailwind', 'trickroom'];
+const plain = base.map(s => ({ ...s, ability: 'Pressure', moves: s.moves.filter(m => !FIELD_IDS.includes(toID(m))) }));
+const swap = (i: number, set: TeamSet) => plain.map((s, j) => (j === i ? set : s));
+
 describe('teamSummary', () => {
   it('costanti', () => {
     expect(TOP_ATTACKER).toBe(85);
-    expect(FIELD_MOVES).toEqual(['stealthrock', 'spikes', 'toxicspikes', 'stickyweb', 'reflect', 'lightscreen', 'auroraveil', 'trickroom']);
   });
 
   it('attaccanti: Offesa del membro come in tabella (value, setup e Tera/Z compresi) >= 85, in ordine di team', () => {
@@ -55,54 +64,66 @@ describe('teamSummary', () => {
     expect(summary.walls).toEqual(expected);
   });
 
-  it('campo: mosse di un membro raggruppate, meteo, nessuno', () => {
-    expect(build().summary.field.every(f => f.items.length > 0 || f.weather)).toBe(true);
-    const setter = { ...base[3], moves: ['Stealth Rock', 'Spikes', 'Roost', 'Defog'] };
-    const team = [base[0], base[1], base[2], setter, base[4], base[5]];
-    const field = build(team).summary.field;
-    const entry = field.find(f => f.member === battleName(setter))!;
-    expect(entry.items).toEqual(['Stealth Rock', 'Spikes']);
-    const plain = base.map(s => ({ ...s, ability: 'Pressure', moves: s.moves.filter(m => !FIELD_MOVES.includes(toID(m))) }));
-    expect(build(plain).summary.field).toEqual([]);
-    const rain = [{ ...base[0], ability: 'Drizzle' }, ...base.slice(1)];
-    const w = build(rain).summary.field.find(f => f.member === battleName(rain[0]))!;
-    expect(w.weather).toBe('Pioggia');
-    expect(w.items).not.toContain('Pioggia');
+  it('condizioni: Drizzle + Swift Swim, il setter non è tra gli utenti', () => {
+    const team = swap(1, { ...emptySet('Barraskewda'), ability: 'Swift Swim', moves: ['Liquidation'] });
+    team[0] = { ...emptySet('Pelipper'), ability: 'Drizzle', moves: ['Surf'] };
+    const rain = build(team).summary.conditions.filter(c => c.key === 'rain');
+    expect(rain).toEqual([{ member: 'Pelipper', key: 'rain', label: 'Pioggia', users: [{ name: 'Barraskewda', via: 'Swift Swim' }] }]);
   });
 
-  it('colpisce: lo stesso numero della card Copertura', () => {
-    const { summary, dash } = build();
-    expect(summary.hits).toEqual({ covered: dash.coverage.cells.filter(c => c.offense === 'ok').length, total: 18 });
-    expect(dash.coverage.offense).toBe(`${summary.hits.covered}/18`);
+  it('condizioni: Trick Room con un membro lento tra gli utenti', () => {
+    const team = swap(1, { ...emptySet('Torkoal'), ability: 'Drought', moves: ['Eruption'] });
+    team[0] = { ...emptySet('Hatterene'), ability: 'Magic Bounce', moves: ['Trick Room', 'Psychic'] };
+    const row = build(team).summary.conditions.find(c => c.key === 'trickroom')!;
+    expect(row.member).toBe('Hatterene');
+    expect(row.users.map(u => u.name)).toEqual(['Torkoal', 'Kingambit', 'Toxapex']);
+    // Il lento ne approfitta per la velocità bassa (viaName la traduce)
+    expect(viaName(row.users[0].via!, 'it')).toBe(t('it', 'synergy.slow'));
   });
 
-  it('debole a: tipi dei problemi defense:*, gravi prima', () => {
-    const { summary, coaching } = build();
-    const defense = coaching.problems.filter(p => p.key.startsWith('defense:'));
-    expect(summary.weak.map(w => w.type).sort()).toEqual(defense.map(p => p.key.slice('defense:'.length)).sort());
-    const flags = summary.weak.map(w => w.serious);
-    expect(flags).toEqual([...flags].sort((a, b) => Number(b) - Number(a)));
-    for (const w of summary.weak) expect(w.serious).toBe(defense.find(p => p.key === `defense:${w.type}`)!.severity === 'serious');
+  it('condizioni: Reflect e Light Screen, una riga per chiave con gli stessi utenti (mossa di potenziamento, anche gli sweeper)', () => {
+    const wall = { ...mostCommonSet(fixtureStats, 'Toxapex')!, moves: ['Calm Mind', 'Recover', 'Scald', 'Toxic'] };
+    const sweeper = { ...mostCommonSet(fixtureStats, 'Kingambit')!, moves: ['Swords Dance', 'Sucker Punch', 'Iron Head', 'Kowtow Cleave'] };
+    const team = swap(1, wall);
+    team[2] = sweeper;
+    team[0] = { ...emptySet('Grimmsnarl'), ability: 'Prankster', moves: ['Reflect', 'Light Screen'] };
+    const { summary } = build(team);
+    const setups = team.filter(s => s.species !== 'Grimmsnarl' && hasSetup(s)).map(battleName);
+    expect(setups).toEqual(expect.arrayContaining(['Toxapex', 'Kingambit']));
+    const rows = summary.conditions.filter(c => c.member === 'Grimmsnarl');
+    expect(rows.map(r => r.key)).toEqual(['reflect', 'lightscreen']);
+    expect(rows.map(r => r.users.map(u => u.name))).toEqual([setups, setups]);
   });
 
-  it('ruoli mancanti: essenziali e importanti scoperti', () => {
-    const { summary, dash } = build();
-    expect(summary.missingRoles).toEqual(dash.roles.chips.filter(c => c.level !== 'minor' && !c.covered).map(c => c.need));
+  it('condizioni: Tailwind senza utenti', () => {
+    const team = swap(3, { ...plain[3], moves: ['Tailwind', 'Roost', 'Brave Bird', 'Defog'] });
+    const row = build(team).summary.conditions.find(c => c.key === 'tailwind')!;
+    expect(row.member).toBe(battleName(plain[3]));
+    expect(row.users).toEqual([]);
   });
 
-  it('vista ampia: Offesa e Difesa di ogni membro per nome, i tipi non colpiti, i ruoli chiave coperti o no, chi resiste alle debolezze', () => {
-    const { summary, rating, dash } = build();
+  it('hazard: mosse di un membro raggruppate, nessuna', () => {
+    const setter = { ...plain[3], moves: ['Stealth Rock', 'Spikes', 'Roost', 'Defog'] };
+    expect(build(swap(3, setter)).summary.hazards).toEqual([{ member: battleName(setter), moves: ['Stealth Rock', 'Spikes'] }]);
+    expect(build(plain).summary.hazards).toEqual([]);
+  });
+
+  it('hazard: Ceaseless Edge e Stone Axe contano come in Ruoli', () => {
+    const setter = { ...emptySet('Samurott-Hisui'), moves: ['Ceaseless Edge', 'Stone Axe'] };
+    const rows = build(swap(3, setter)).summary.hazards;
+    expect(rows.map(r => r.member)).toContain(battleName(setter));
+  });
+
+  it('cores e legami: esattamente teamCores e teamLinks', () => {
+    const { summary } = build();
+    expect(summary.cores).toEqual(teamCores(base));
+    expect(summary.links).toEqual(teamLinks(base, summary.attackers));
+  });
+
+  it('Offesa e Difesa di ogni membro per nome', () => {
+    const { summary, rating } = build();
     for (const m of rating.offense.members) expect(summary.offenseOf[m.species]).toBe(m.value);
     for (const m of rating.defense.members) expect(summary.defenseOf[m.species]).toBe(m.value);
-    expect(summary.hitsMissing).toEqual(dash.coverage.cells.filter(c => c.offense !== 'ok').map(c => c.type));
-    expect(summary.keyRoles).toEqual(dash.roles.chips.filter(c => c.level !== 'minor').map(c => ({ need: c.need, covered: c.covered })));
-    for (const w of summary.weak) expect(w.resist).toBe(dash.coverage.cells.find(c => c.type === w.type)!.resist);
-  });
-
-  it('minacce: pods col meta, null a meta spento', () => {
-    const on = build();
-    expect(on.summary.threats).toEqual(on.dash.threats.pods);
-    expect(build(base, { ...fixtureData, ignoreMeta: true }).summary.threats).toBeNull();
   });
 
   it('tipo del team da coaching.teamType, null senza', () => {

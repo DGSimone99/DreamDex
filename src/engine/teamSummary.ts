@@ -1,84 +1,87 @@
-import { cardRoles, weatherOf, type Archetype, type TeamStyle } from './archetype';
+import { cardRoles, type Archetype, type TeamStyle } from './archetype';
 import type { Coaching } from './coach';
+import { teamCores, type Core } from './cores';
 import type { EngineData } from './data';
-import { battleName, toID } from './dex';
+import { battleName, getMove, toID } from './dex';
 import { rulesOf } from './formatRules';
-import type { Need } from './needs';
 import type { DashboardData } from './overviewDashboard';
 import type { TeamRating } from './rating';
 import type { TeamSet } from './sets';
 import { measuredSubRoles } from './subRoles';
-import { conditionName } from './synergy';
+import { hasSetup, HAZARD_MOVES } from './roles';
+import { benefits, conditionName, enables } from './synergy';
+import { teamLinks, type TeamLink } from './teamLinks';
+import { gameName } from '../i18n/game';
 import type { Lang } from '../i18n';
 
 /** Offesa del membro (il numero della tabella di Offesa) da cui è un attaccante "top". */
 export const TOP_ATTACKER = 85;
-/** Mosse di campo mostrate nel Riassunto (id). */
-export const FIELD_MOVES = ['stealthrock', 'spikes', 'toxicspikes', 'stickyweb', 'reflect', 'lightscreen', 'auroraveil', 'trickroom'];
+/** Mosse di schermo e Tailwind mostrate come condizioni (id). */
+const SCREEN_MOVES = ['reflect', 'lightscreen', 'auroraveil', 'tailwind'];
 
-/** items: nomi inglesi delle mosse (la vista li traduce); weather: già nella lingua dell'interfaccia. */
-export interface FieldSetter { member: string; items: string[]; weather?: string }
+/** Chi approfitta di una condizione; via: abilità o mossa (inglese) con cui la sfrutta, se c'è (gli schermi non l'hanno). */
+export interface ConditionUser { name: string; via?: string }
+/** Una condizione portata da un membro; key: id della condizione o della mossa di schermo; label già nella lingua dell'interfaccia. */
+export interface ConditionRow { member: string; label: string; key: string; users: ConditionUser[] }
+/** Hazard messi da un membro (nomi inglesi delle mosse, la vista li traduce). */
+export interface HazardRow { member: string; moves: string[] }
 export interface TeamSummary {
   archetype: Archetype | null;
   styles: TeamStyle[];
   attackers: string[];
   walls: string[];
-  field: FieldSetter[];
-  hits: { covered: number; total: number };
-  /** Tipi che nessuno colpisce super efficace (vista ampia). */
-  hitsMissing: string[];
-  /** Gravi prima; resist: quanti membri resistono (0 = nessuno). */
-  weak: { type: string; serious: boolean; resist: number }[];
-  missingRoles: Need[];
-  /** Ruoli essenziali e importanti, coperti o no (vista ampia). */
-  keyRoles: { need: Need; covered: boolean }[];
-  /** Offesa e Difesa del membro per nome in battaglia, come nelle tabelle delle schede (vista ampia). */
+  /** Offesa e Difesa del membro per nome in battaglia, come nelle tabelle delle schede. */
   offenseOf: Record<string, number>;
   defenseOf: Record<string, number>;
-  /** null: meta spento o senza statistiche. */
-  threats: { species: string; usage: number }[] | null;
+  conditions: ConditionRow[];
+  hazards: HazardRow[];
+  cores: Core[];
+  links: TeamLink[];
 }
 
-/** I dati del Riassunto della Panoramica: solo riuso di ciò che il motore già calcola. */
-export function teamSummary(team: TeamSet[], rating: TeamRating, coaching: Coaching, dash: DashboardData, data: EngineData, lang: Lang = 'it'): TeamSummary {
+/** I dati del Riassunto della Panoramica: riusa ciò che il motore già calcola e ne ricava core e legami di squadra. `_dash` resta per non cambiare la firma. */
+export function teamSummary(team: TeamSet[], rating: TeamRating, coaching: Coaching, _dash: DashboardData, data: EngineData, lang: Lang = 'it'): TeamSummary {
   const rules = rulesOf(data);
   const attackers: string[] = [];
   const walls: string[] = [];
-  const field: FieldSetter[] = [];
-  team.forEach(set => {
-    const name = battleName(set);
+  const conditions: ConditionRow[] = [];
+  const hazards: HazardRow[] = [];
+  const named = team.map(set => ({ set, name: battleName(set), roles: cardRoles(set, rules, measuredSubRoles(set, team, data)) }));
+  named.forEach(({ set, name, roles }) => {
     // Per nome: i membri senza Offesa non sono nella lista, gli indici non corrispondono al team
     const m = rating.offense.members.find(x => x.species === name);
     if (m && m.value >= TOP_ATTACKER) attackers.push(name);
-    const roles = cardRoles(set, rules, measuredSubRoles(set, team, data));
     if (roles.includes('physicalWall') || roles.includes('specialWall')) walls.push(name);
-    // Mosse di campo e meteo del membro
-    const items = set.moves.filter(mv => FIELD_MOVES.includes(toID(mv)));
-    const weather = weatherOf(set);
-    if (items.length || weather) field.push({ member: name, items, ...(weather ? { weather: conditionName(weather.condition, lang) } : {}) });
+    const others = named.filter(o => o.set !== set);
+    // Meteo, campi e Trick Room: chi ne approfitta tra i compagni (mai il portatore stesso)
+    for (const link of enables(set)) {
+      const users = others.flatMap(o => {
+        const use = benefits(o.set).find(b => b.condition === link.condition);
+        return use ? [{ name: o.name, via: use.via }] : [];
+      });
+      conditions.push({ member: name, label: conditionName(link.condition, lang), key: link.condition, users });
+    }
+    // Schermi: servono ai membri con una mossa di potenziamento; Tailwind non ha un beneficiario fisso
+    const ids = set.moves.map(toID);
+    for (const key of SCREEN_MOVES) {
+      if (!ids.includes(key)) continue;
+      const users = key === 'tailwind' ? [] : others.filter(o => hasSetup(o.set)).map(o => ({ name: o.name }));
+      conditions.push({ member: name, label: gameName('move', getMove(key)?.name ?? key, lang), key, users });
+    }
+    const mine = set.moves.filter(mv => HAZARD_MOVES.has(toID(mv)));
+    if (mine.length) hazards.push({ member: name, moves: mine.map(mv => getMove(mv)?.name ?? mv) });
   });
-
-  const weak = coaching.problems
-    .filter(p => p.key.startsWith('defense:'))
-    .map(p => {
-      const type = p.key.slice('defense:'.length);
-      return { type, serious: p.severity === 'serious', resist: dash.coverage.cells.find(c => c.type === type)?.resist ?? 0 };
-    })
-    .sort((a, b) => Number(b.serious) - Number(a.serious));
 
   return {
     archetype: coaching.teamType?.archetype ?? null,
     styles: coaching.teamType?.styles ?? [],
     attackers,
     walls,
-    field,
-    hits: { covered: dash.coverage.cells.filter(c => c.offense === 'ok').length, total: dash.coverage.cells.length },
-    hitsMissing: dash.coverage.cells.filter(c => c.offense !== 'ok').map(c => c.type),
-    weak,
-    missingRoles: dash.roles.chips.filter(c => c.level !== 'minor' && !c.covered).map(c => c.need),
-    keyRoles: dash.roles.chips.filter(c => c.level !== 'minor').map(c => ({ need: c.need, covered: c.covered })),
     offenseOf: Object.fromEntries(rating.offense.members.map(m => [m.species, m.value])),
     defenseOf: Object.fromEntries(rating.defense.members.map(m => [m.species, m.value])),
-    threats: dash.threats.available && !dash.threats.metaOff ? dash.threats.pods : null,
+    conditions,
+    hazards,
+    cores: teamCores(team),
+    links: teamLinks(team, attackers),
   };
 }
