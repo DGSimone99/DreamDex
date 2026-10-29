@@ -245,13 +245,37 @@ describe('Offesa: Coverage meta', () => {
     const { rating } = await open();
     const rows = rating.offense.coverageMeta!.rows;
     const none = rows.find(r => r.coveredBy.length === 0);
-    if (!none) return;
-    const pages = Math.ceil(rows.length / 8);
-    for (let i = 0; i < pages; i++) {
-      const tile = within(screen.getByRole('tabpanel')).getAllByRole('listitem').find(li => li.getAttribute('aria-label')!.startsWith(`${none.species}:`));
-      if (tile) { expect(tile.getAttribute('aria-label')).toContain('nessuno'); return; }
-      if (i < pages - 1) await userEvent.setup().click(screen.getByRole('button', { name: 'Minacce successive' }));
+    // La squadra di prova lascia scoperti dei bersagli: senza, il test non dimostrerebbe niente
+    expect(none).toBeDefined();
+    // I meno coperti stanno in prima pagina
+    const tile = within(screen.getByRole('tabpanel')).getAllByRole('listitem').find(li => li.getAttribute('aria-label')!.startsWith(`${none!.species}:`));
+    expect(tile).toBeDefined();
+    expect(tile!.getAttribute('aria-label')).toContain('nessuno');
+    expect(tile).toHaveClass('none');
+    expect(tile!.querySelector('.ct-pill')).toHaveClass('bad');
+  });
+
+  it('i conteggi in alto coincidono con i gruppi delle righe', async () => {
+    const { rating } = await open();
+    const rows = rating.offense.coverageMeta!.rows;
+    const none = rows.filter(r => r.coveredBy.length === 0).length;
+    const partial = rows.filter(r => r.coveredBy.length > 0 && r.coveredBy.every(c => c.partial)).length;
+    const summary = document.querySelector('.cm-summary')!;
+    expect(summary).toHaveTextContent(`${rows.length} bersagli`);
+    expect(summary).toHaveTextContent(`${rows.length - none - partial} coperti`);
+    expect(summary).toHaveTextContent(`${partial} a metà`);
+    expect(summary).toHaveTextContent(`${none} nessuno`);
+  });
+
+  it('pastiglia del livello col colore giusto e % gialla per chi copre a metà', async () => {
+    await open();
+    const tiles = within(screen.getByRole('tabpanel')).getAllByRole('listitem');
+    for (const tile of tiles) {
+      const lvl = level(tile);
+      expect(tile.querySelector('.cm-head .ct-pill')).toHaveClass(lvl === 0 ? 'bad' : lvl < 80 ? 'warn' : 'good');
     }
-    throw new Error('tessera non trovata');
+    // Un colpo da 3HKO copre a metà: la sua % è gialla
+    expect(document.querySelectorAll('.cm-holder.partial .cm-holder-pct.half').length).toBeGreaterThan(0);
+    expect(document.querySelectorAll('.cm-holder:not(.partial) .cm-holder-pct.half')).toHaveLength(0);
   });
 });
