@@ -18,7 +18,7 @@ const HELP_SIZE = 18;
  * aperta, una riga coi problemi dell'area e il dettaglio di quella scelta a tutta larghezza.
  * `extra`: contenuto in più in cima a una scheda (la coverage dei tipi, i bisogni dei ruoli).
  */
-export function AreaView({ rating, area, problems, team, analysis, extra, roomy = false }: {
+export function AreaView({ rating, area, problems, team, analysis, extra, roomy = false, picked: remembered, onPick }: {
   rating: TeamRating;
   area: AreaKey;
   problems: CoachProblem[];
@@ -27,16 +27,21 @@ export function AreaView({ rating, area, problems, team, analysis, extra, roomy 
   extra?: { tabKey: string; panel: ReactNode };
   /** Squadra chiusa: più spazio per il contenuto. */
   roomy?: boolean;
+  /** La sottoscheda scelta, tenuta da chi contiene la vista (così resta cambiando area); senza, la tiene la vista. */
+  picked?: string | null;
+  onPick?: (key: string) => void;
 }) {
   const t = useT();
   const lang = useLang();
   const id = useId();
-  const [picked, setPicked] = useState<string | null>(null);
+  const [own, setOwn] = useState<string | null>(null);
+  const picked = remembered !== undefined ? remembered : own;
+  const setPicked = (key: string) => (onPick ? onPick(key) : setOwn(key));
   // `open`: le tessere della scheda Generale aprono la sottoscheda e le passano il focus (il pannello che le ospitava sparisce)
   const focusKey = useRef<string | null>(null);
   const open = (key: string) => { focusKey.current = key; setPicked(key); };
   const tabs = areaTabs(rating, area, t, lang, { team, analysis, open, roomy });
-  // Si parte sempre dalla prima scheda (Generale)
+  // Si parte dalla prima scheda (Generale), anche se la sottoscheda ricordata non c'è più (es. meta spento)
   const index = Math.max(0, picked === null ? 0 : tabs.findIndex(tab => tab.key === picked));
   const current = tabs[index];
   const buttons = useRef<(HTMLButtonElement | null)[]>([]);

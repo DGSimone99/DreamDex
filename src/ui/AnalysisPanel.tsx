@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { threatScore, type TeamAnalysis } from '../engine/analysis';
 import type { CoachAdvice, Coaching, CoachProblem, ProblemCategory } from '../engine/coach';
 import type { CoachFix } from '../engine/coachFixes';
@@ -55,6 +56,8 @@ export function AnalysisPanel({ team, analysis, rating, coaching, advice = null,
   onMember: (index: number | null) => void;
 }) {
   const tr = useT();
+  // La sottoscheda scelta in ogni area, solo in memoria: tornando su un'area si ritrova (Generale se non c'è più)
+  const [subTabs, setSubTabs] = useState<Partial<Record<AreaKey, string>>>({});
   const area = view !== 'overview' && view !== 'coaching' && rating ? view : null;
   const showCoaching = view === 'coaching' && !!rating;
   const serious = (coaching?.problems ?? []).filter(p => p.severity === 'serious').length;
@@ -64,6 +67,7 @@ export function AnalysisPanel({ team, analysis, rating, coaching, advice = null,
   if (area && rating) {
     body = (
       <AreaView key={area} rating={rating} area={area} team={team} analysis={analysis} problems={problemsOf(coaching?.problems, area)} roomy={teamCollapsed}
+        picked={subTabs[area] ?? null} onPick={key => setSubTabs(tabs => ({ ...tabs, [area]: key }))}
         extra={area === 'roles' ? { tabKey: 'general', panel: <NeedsTable team={team} analysis={analysis} /> }
           : undefined} />
     );
