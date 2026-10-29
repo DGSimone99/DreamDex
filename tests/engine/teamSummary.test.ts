@@ -10,6 +10,7 @@ import { dashboardData } from '../../src/engine/overviewDashboard';
 import { rateTeam } from '../../src/engine/rating';
 import { emptySet, mostCommonSet, type TeamSet } from '../../src/engine/sets';
 import { measuredSubRoles } from '../../src/engine/subRoles';
+import { hasSetup } from '../../src/engine/roles';
 import { teamLinks } from '../../src/engine/teamLinks';
 import { TOP_ATTACKER, teamSummary } from '../../src/engine/teamSummary';
 import { fixtureData, fixtureStats } from '../fixtures/data';
@@ -73,18 +74,18 @@ describe('teamSummary', () => {
     team[0] = { ...emptySet('Hatterene'), ability: 'Magic Bounce', moves: ['Trick Room', 'Psychic'] };
     const row = build(team).summary.conditions.find(c => c.key === 'trickroom')!;
     expect(row.member).toBe('Hatterene');
-    expect(row.users).toContain('Torkoal');
-    expect(row.users).not.toContain('Hatterene');
+    expect(row.users).toEqual(['Torkoal', 'Kingambit', 'Toxapex']);
   });
 
-  it('condizioni: Reflect e Light Screen, una riga per chiave con gli stessi utenti (ruolo setup)', () => {
-    const sweeper = { ...mostCommonSet(fixtureStats, 'Toxapex')!, moves: ['Calm Mind', 'Recover', 'Scald', 'Toxic'] };
-    const team = swap(1, sweeper);
+  it('condizioni: Reflect e Light Screen, una riga per chiave con gli stessi utenti (mossa di potenziamento, anche gli sweeper)', () => {
+    const wall = { ...mostCommonSet(fixtureStats, 'Toxapex')!, moves: ['Calm Mind', 'Recover', 'Scald', 'Toxic'] };
+    const sweeper = { ...mostCommonSet(fixtureStats, 'Kingambit')!, moves: ['Swords Dance', 'Sucker Punch', 'Iron Head', 'Kowtow Cleave'] };
+    const team = swap(1, wall);
+    team[2] = sweeper;
     team[0] = { ...emptySet('Grimmsnarl'), ability: 'Prankster', moves: ['Reflect', 'Light Screen'] };
-    const { summary, data } = build(team);
-    const rules = rulesOf(data);
-    const setups = team.filter(s => s.species !== 'Grimmsnarl' && cardRoles(s, rules, measuredSubRoles(s, team, data)).includes('setup')).map(battleName);
-    expect(setups).toContain('Toxapex');
+    const { summary } = build(team);
+    const setups = team.filter(s => s.species !== 'Grimmsnarl' && hasSetup(s)).map(battleName);
+    expect(setups).toEqual(expect.arrayContaining(['Toxapex', 'Kingambit']));
     const rows = summary.conditions.filter(c => c.member === 'Grimmsnarl');
     expect(rows.map(r => r.key)).toEqual(['reflect', 'lightscreen']);
     expect(rows.map(r => r.users)).toEqual([setups, setups]);

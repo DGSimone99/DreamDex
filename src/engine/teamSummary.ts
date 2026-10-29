@@ -8,6 +8,7 @@ import type { DashboardData } from './overviewDashboard';
 import type { TeamRating } from './rating';
 import type { TeamSet } from './sets';
 import { measuredSubRoles } from './subRoles';
+import { hasSetup } from './roles';
 import { benefits, conditionName, enables } from './synergy';
 import { HAZARD_MOVES, teamLinks, type TeamLink } from './teamLinks';
 import { gameName } from '../i18n/game';
@@ -36,7 +37,7 @@ export interface TeamSummary {
   links: TeamLink[];
 }
 
-/** I dati del Riassunto della Panoramica: solo riuso di ciò che il motore già calcola. */
+/** I dati del Riassunto della Panoramica: solo riuso di ciò che il motore già calcola. `_dash` resta per non cambiare la firma. */
 export function teamSummary(team: TeamSet[], rating: TeamRating, coaching: Coaching, _dash: DashboardData, data: EngineData, lang: Lang = 'it'): TeamSummary {
   const rules = rulesOf(data);
   const attackers: string[] = [];
@@ -55,11 +56,11 @@ export function teamSummary(team: TeamSet[], rating: TeamRating, coaching: Coach
       const users = others.filter(o => benefits(o.set).some(b => b.condition === link.condition)).map(o => o.name);
       conditions.push({ member: name, label: conditionName(link.condition, lang), key: link.condition, users });
     }
-    // Schermi: servono a chi si potenzia (ruolo setup); Tailwind non ha un beneficiario fisso
+    // Schermi: servono ai membri con una mossa di potenziamento; Tailwind non ha un beneficiario fisso
     const ids = set.moves.map(toID);
     for (const key of SCREEN_MOVES) {
       if (!ids.includes(key)) continue;
-      const users = key === 'tailwind' ? [] : others.filter(o => o.roles.includes('setup')).map(o => o.name);
+      const users = key === 'tailwind' ? [] : others.filter(o => hasSetup(o.set)).map(o => o.name);
       conditions.push({ member: name, label: gameName('move', getMove(key)?.name ?? key, lang), key, users });
     }
     const mine = set.moves.filter(mv => HAZARD_MOVES.includes(toID(mv)));
