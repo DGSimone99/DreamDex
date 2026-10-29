@@ -20,7 +20,6 @@
 .swap-head small { font-size: 12px; color: var(--faint); }
 .swap-head .gain.worse { color: var(--bad); }
 .swap-head .gain.same { color: var(--muted); }
-.team-style { font-size: 12px; font-weight: 600; padding: 1px 7px; border-radius: 3px; border: 1px solid var(--line); color: var(--muted); cursor: help; }
 
 .analysis table { border-collapse: collapse; width: 100%; font-size: 13px; }
 .analysis th, .analysis td { padding: 4px 3px; text-align: center; border-bottom: 1px solid var(--line-soft); }
@@ -253,7 +252,7 @@ button.member-card:hover { border-color: var(--accent); }
 /*
  * Panoramica: il Riassunto è una colonna a sinistra (30%) alta quanto tutto il cruscotto; a destra (70%) la Copertura in alto,
  * alta quanto la sua tabella, e sotto Ruoli 40% | Velocità 30% con tutta l'altezza che resta (almeno --dash-row2).
- * Altezza minima vera: il più alto fra il Riassunto con le righe al minimo (8 righe + testata) e la colonna di destra
+ * Altezza minima vera: il più alto fra il Riassunto al minimo (8 × --sum-row-min + testata) e la colonna di destra
  * (Copertura + stacco + --dash-row2, ~300px); sotto, scorre la Panoramica (.overview), mai righe nascoste.
  */
 .dash {
@@ -375,115 +374,144 @@ button.member-card:hover { border-color: var(--accent); }
 .dash-ctrl { margin: 6px 0 0; font-size: 12px; color: var(--muted); }
 .dash-ctrl b { font-weight: 500; }
 
-/* Riassunto: righe "icona · voce · dato" (come le tabelle del cruscotto: righe sottili, numeri grandi in corsivo, pill verdi/rosse) */
-.sum-rows { flex: 1; min-height: 0; display: flex; flex-direction: column; margin: 0; padding: 0; list-style: none; }
-/* Le righe si dividono l'altezza della colonna; mai sotto --sum-row-min (il cruscotto ha l'altezza minima per tutte) */
-.sum-rows > li { flex: 1 1 0; min-height: var(--sum-row-min); display: flex; margin: 0; border-bottom: 1px solid var(--line-soft); }
-.sum-rows > li:last-child { border-bottom: 0; }
-.sum-row { flex: 1; min-width: 0; display: grid; grid-template-columns: 20px 84px minmax(0, 1fr); align-items: center; gap: 0 6px; padding: 0; color: inherit; text-align: left; background: none; border: 0; border-radius: 0; }
-button.sum-row:hover { background: var(--accent-wash); }
-.sum-ic { display: grid; place-items: center; color: var(--accent); }
-.sum-ic .icon { width: 15px; height: 15px; }
-.sum-k { font: 600 11px/1.2 var(--ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
-.sum-v { min-width: 0; display: flex; align-items: center; flex-wrap: nowrap; gap: 4px; overflow: hidden; }
-.sum-big { font: 800 17px/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums; color: var(--accent-ink); }
-.sum-muted { font-size: 11px; color: var(--muted); margin-right: 4px; }
-.sum-arch { font: 800 15px/1 var(--display); font-style: italic; color: var(--text); cursor: help; }
-.sum-v .team-style { flex: none; }
-.sum-sprite { flex: none; display: inline-flex; margin: -6px -4px -6px 0; }
-.sum-sprite .sprite { width: 30px; height: 30px; image-rendering: pixelated; }
-.sum-setter { flex: none; display: inline-flex; align-items: center; gap: 4px; }
-/* Righe a misura (sprite, icone, piazzatori): le voci vanno a capo in righe da 20px dentro un contenitore alto una riga;
-   chi finisce sotto diventa "+N" (useFit), nessuna voce tagliata a metà */
-.sum-v.sum-fit { align-self: center; height: 20px; flex-wrap: wrap; align-content: flex-start; }
-.sum-fit > * { min-height: 20px; }
-.sum-item, .sum-fit > .sum-more { flex: none; display: inline-flex; align-items: center; }
-.sum-item .sum-setter { margin-right: 4px; }
-/* Un piazzatore più largo della riga (il primo si mostra sempre): le sue pill si accorciano coi puntini, il "+N" resta accanto */
-.sum-item:has(> .sum-setter) { min-width: 0; max-width: calc(100% - 28px); }
-.sum-setter { min-width: 0; max-width: 100%; }
-.sum-setter .sum-pill { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-.sum-pill { flex: none; padding: 2px 8px; font: 800 10.5px/1.2 var(--ui); white-space: nowrap; border-radius: 10px; color: var(--text); background: var(--raised); }
-.sum-pill.ok { color: var(--good); background: color-mix(in srgb, var(--good) 16%, var(--panel)); }
-.sum-pill.bad { color: var(--bad); background: var(--bad-bg); }
-.sum-weak { flex: none; display: inline-flex; border-radius: 50%; }
-.sum-weak .type-icons img { width: 18px; height: 18px; border-radius: 50%; }
-.sum-weak.is-serious { box-shadow: 0 0 0 2px var(--bad); }
-.sum-names { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: var(--muted); }
-.sum-more { flex: none; font-size: 12px; font-weight: 600; color: var(--faint); }
-
-/* Ampia ma non ricca (team ridotto su uno schermo basso, 1366×768): le righe compatte con sprite, icone e numeri più grandi */
-.dash.roomy:not(.rich) .sum-row { grid-template-columns: 22px 96px minmax(0, 1fr); gap: 0 8px; }
-.dash.roomy:not(.rich) .sum-ic .icon { width: 17px; height: 17px; }
-.dash.roomy:not(.rich) .sum-k { font-size: 12px; }
-.dash.roomy:not(.rich) .sum-big { font-size: 22px; }
-.dash.roomy:not(.rich) .sum-arch { font-size: 19px; }
-.dash.roomy:not(.rich) .sum-pill { padding: 3px 10px; font-size: 11.5px; border-radius: 12px; }
-.dash.roomy:not(.rich) .sum-v.sum-fit { height: 28px; }
-.dash.roomy:not(.rich) .sum-fit > * { min-height: 28px; }
-.dash.roomy:not(.rich) .sum-sprite { margin: -5px -4px -5px 0; }
-.dash.roomy:not(.rich) .sum-sprite .sprite { width: 38px; height: 38px; }
-.dash.roomy:not(.rich) .sum-weak .type-icons img { width: 22px; height: 22px; }
+/* Altezza minima del cruscotto (.dash) da --sum-row-min: col Riassunto ricco il cruscotto è alto almeno RICH_FROM */
+.dash.rich { --sum-row-min: 68px; }
+.dash.rich.tall { --sum-row-min: 94px; }
 
 /*
- * Ricca (team ridotto e cruscotto alto, RICH_FROM): ogni riga diventa un blocco a due linee. A sinistra l'icona; in alto
- * la voce e, allineato a destra, il suo numero o la pill (come una scheda statistiche); sotto, le schede con nome e numero
- * che vanno a capo (useFit: ciò che non sta va nel "+N"). Ogni blocco parte da una linea di schede (68px: 5+24+3+28+5 e il bordo, 2px di margine; solo testata
- * 40px) e prende lo spazio che avanza in proporzione alle linee in più (--grow): la colonna è piena, senza righe vuote.
+ * Riassunto, ritratto del team (come sinergie-v3): in alto l'eroe (tipo di team grande, chi lo rende tale su un piedistallo
+ * luminoso), sotto le sezioni con intestazione in maiuscoletto e righe separate da --line-soft, come le fasce di Ruoli.
+ * Niente riquadri scuri dentro la card. Misure per densità in variabili: --sum-big (sprite dell'eroe), --sum-small (sprite
+ * delle righe), --sum-line (altezza minima di una riga). Ricca (team ridotto): sprite più grandi; le Sinergie prendono
+ * l'altezza che resta e le loro righe crescono fino a un tetto, così sotto non resta un vuoto.
  */
-.dash.rich { --sum-row-min: 68px; }
-.dash.rich .sum-rows > li { flex: var(--grow, 0.05) 1 var(--sum-row-min); }
-.dash.rich .sum-rows > li.is-flat { flex-basis: 40px; min-height: 40px; }
-.dash.rich .sum-row { grid-template-columns: 24px minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); align-items: start; gap: 3px 10px; padding: 5px 10px 5px 4px; box-shadow: inset 2px 0 0 transparent; transition: box-shadow 0.15s var(--ease), background-color 0.15s var(--ease); }
-.dash.rich .is-flat .sum-row { grid-template-rows: auto; align-items: center; }
-.dash.rich button.sum-row:hover { box-shadow: inset 2px 0 0 var(--accent); }
-.dash.rich .sum-ic { height: 24px; }
-.dash.rich .sum-ic .icon { width: 18px; height: 18px; }
-.sum-top { min-width: 0; min-height: 24px; display: flex; align-items: center; gap: 6px; }
-.sum-top .sum-k { flex: 1; min-width: 0; font-size: 12px; letter-spacing: 0.08em; }
-.dash.rich .is-flat .sum-v { display: none; }
-.dash.rich .sum-v { grid-column: 2; align-self: stretch; gap: 6px; }
-.dash.rich .sum-v:not(.sum-fit) { align-self: start; min-height: 28px; }
-.dash.rich .sum-v.sum-fit { height: auto; min-height: 0; align-content: flex-start; }
-.dash.rich .sum-fit > * { min-height: 28px; }
-.dash.rich .sum-item { min-width: 0; max-width: 100%; }
-.dash.rich .sum-big { font-size: 24px; }
-.dash.rich .sum-muted { font-size: 12px; margin-right: 2px; }
-.dash.rich .sum-arch { font-size: 21px; }
-.dash.rich .sum-v .team-style { font-size: 13px; padding: 2px 9px; }
-.dash.rich .sum-pill { padding: 3px 10px; font-size: 11.5px; border-radius: 12px; }
+.dash-summary { --sum-big: 40px; --sum-small: 34px; --sum-mini: 28px; --sum-line: 36px; --sum-arch: 24px; }
+.dash.tight .dash-summary { --sum-line: 32px; --sum-arch: 20px; }
+.dash.rich .dash-summary { --sum-big: 56px; --sum-small: 44px; --sum-mini: 38px; --sum-line: 48px; --sum-arch: 30px; }
+.sum-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+
+/* Eroe: righe diagonali leggere e una sfumatura magenta dall'alto, da bordo a bordo della card */
+.sum-hero { flex: none; margin: -8px -12px 0; padding: 12px 12px 8px; border-bottom: 1px solid var(--line-soft);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent-2) 10%, transparent), transparent 70%), repeating-linear-gradient(-55deg, #ffffff05 0 2px, transparent 2px 9px); }
+.dash.rich .sum-hero { padding: 14px 14px 10px; margin-left: -12px; margin-right: -12px; }
+/* Il nome del tipo con la barretta magenta a sinistra, sul bordo della card */
+.sum-type { position: relative; min-width: 0; display: flex; align-items: center; gap: 8px; }
+.sum-type::before { content: ""; position: absolute; left: -12px; top: 50%; width: 4px; height: calc(var(--sum-arch) + 4px); transform: translateY(-50%); background: var(--accent-2); }
+.dash.rich .sum-type::before { left: -14px; }
+.sum-arch { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 800 var(--sum-arch)/1.05 var(--display); font-style: italic; color: var(--text); cursor: help; }
+/* Lo stile (Pioggia, Sole…): etichetta tagliata in diagonale nel colore della condizione */
+.sum-style { flex: none; padding: 2px 14px 2px 9px; font: 800 12.5px/1.2 var(--display); font-style: italic; color: var(--ground); background: var(--c); clip-path: polygon(0 0, 100% 0, calc(100% - 8px) 100%, 0 100%); cursor: help; }
+.sum-type .help-button { flex: none; }
+
+/* Chi rende il team tale: una riga di sprite (attaccanti, poi muri dopo una linea sottile); chi non sta va nel "+N" */
+.sum-crew { --crew-h: calc(var(--sum-big) + 8px); height: var(--crew-h); margin-top: 8px; display: flex; flex-wrap: wrap; align-items: flex-end; align-content: flex-start; gap: 0 2px; overflow: hidden; }
+.sum-type + .sum-crew { margin-top: 10px; }
+.sum-side { display: contents; }
+.sum-maker { flex: none; height: var(--crew-h); display: flex; align-items: flex-end; }
+.sum-maker.first { margin-left: 8px; padding-left: 10px; border-left: 1px solid var(--line); }
+.sum-maker.atk { --c: var(--accent-ink); --glow: color-mix(in srgb, var(--accent) 45%, transparent); }
+.sum-maker.def { --c: var(--good); --glow: color-mix(in srgb, var(--good) 42%, transparent); }
+.sum-mon { width: calc(var(--sum-big) + 2px); display: flex; flex-direction: column; align-items: center; padding: 0; color: inherit; background: none; border: 0; border-radius: 3px; }
+.sum-mon:hover { background: color-mix(in srgb, var(--c) 10%, transparent); }
+.sum-mon .sprite { margin-bottom: calc(var(--sum-big) * -0.12); }
+.sum-score { position: relative; display: flex; align-items: center; gap: 3px; font: 700 10px/1.2 var(--display); font-variant-numeric: tabular-nums; letter-spacing: 0.04em; color: var(--c); }
+.sum-score .icon { width: 10px; height: 10px; }
+.dash.rich .sum-score { font-size: 11px; }
+.dash.rich .sum-score .icon { width: 11px; height: 11px; }
+.sum-crew-more { flex: none; align-self: center; margin-left: 6px; }
+.sum-more { flex: none; font-size: 12px; font-weight: 600; color: var(--faint); }
 .dash.rich .sum-more { font-size: 14px; }
-/* Ricca e alta (RICH_TALL, 2560×1440): blocchi e schede più grandi, la colonna resta piena */
-.dash.rich.tall { --sum-row-min: 94px; }
-.dash.rich.tall .sum-rows > li.is-flat { flex-basis: 52px; min-height: 52px; }
-.dash.rich.tall .sum-row { gap: 8px 12px; padding: 10px 12px 10px 4px; }
-.dash.rich.tall .sum-top, .dash.rich.tall .sum-ic { min-height: 28px; height: auto; }
-.dash.rich.tall .sum-top .sum-k { font-size: 13px; }
-.dash.rich.tall .sum-big { font-size: 28px; }
-.dash.rich.tall .sum-arch { font-size: 24px; }
-.dash.rich.tall .sum-v { gap: 8px; }
-.dash.rich.tall .sum-fit > * { min-height: 36px; }
-.dash.rich.tall .sum-chip { height: 36px; gap: 8px; padding-right: 12px; font-size: 14px; }
-.dash.rich.tall .sum-chip-sprite .sprite { width: 42px; height: 42px; margin: -3px -4px -3px -2px; }
-.dash.rich.tall .sum-chip-type img { width: 26px; height: 26px; }
-.dash.rich.tall .sum-chip-num { font-size: 19px; }
-.dash.rich.tall .sum-chip-use { font-size: 13px; }
-.dash.rich.tall .sum-chip .sum-pill { font-size: 12px; padding: 3px 9px; }
-/* Scheda: sprite o icona, nome, poi il numero (corsivo come i numeri del cruscotto), l'uso o le pill del campo */
-.sum-chip { max-width: 100%; height: 28px; display: inline-flex; align-items: center; gap: 6px; padding: 0 9px 0 3px; font-size: 12.5px; font-weight: 600; white-space: nowrap; color: var(--text); background: color-mix(in srgb, var(--raised) 55%, var(--panel)); border: 1px solid var(--line-soft); border-radius: 4px; }
-.sum-chip > .icon:first-child { flex: none; width: 13px; height: 13px; margin-left: 5px; stroke-width: 2.5; }
-.sum-chip-sprite { flex: none; display: flex; }
-.sum-chip-sprite .sprite { width: 32px; height: 32px; margin: -2px -3px -2px -2px; image-rendering: pixelated; }
-.sum-chip-type { flex: none; display: flex; margin-left: 2px; }
-.sum-chip-type img { width: 20px; height: 20px; border-radius: 50%; }
-.sum-chip-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-.sum-chip-num { flex: none; margin-left: 2px; font: 800 16px/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums; color: var(--accent-ink); }
-.sum-chip-use { flex: none; font-size: 12px; font-weight: 500; font-variant-numeric: tabular-nums; color: var(--muted); }
-.sum-chip .sum-pill { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; padding: 2px 7px; font-size: 11px; }
-.sum-chip.ok > .icon { color: var(--good); }
-.sum-chip.bad { background: color-mix(in srgb, var(--bad) 22%, var(--panel)); border-color: color-mix(in srgb, var(--bad) 60%, transparent); }
-.sum-chip.bad > .icon { color: var(--bad); }
-.sum-flag { flex: none; font: 700 10px/1 var(--ui); text-transform: uppercase; letter-spacing: 0.05em; color: var(--bad); }
+
+/* Sprite sul piedistallo: un'ellisse luminosa sotto i piedi, come nelle corsie della Velocità */
+.sum-plinth { position: relative; flex: none; display: flex; justify-content: center; }
+.sum-plinth::before { content: ""; position: absolute; left: 50%; bottom: 10%; width: 76%; height: 20%; transform: translateX(-50%); border-radius: 50%; background: radial-gradient(ellipse, var(--glow, color-mix(in srgb, var(--accent) 30%, transparent)), transparent 70%); }
+.sum-plinth .sprite, .sum-user .sprite { position: relative; display: block; image-rendering: pixelated; }
+
+/* Sezioni: intestazione in maiuscoletto, righe separate; alte quanto il contenuto, e si stringono (useFit) se manca spazio */
+.sum-sec { position: relative; flex: 0 1 auto; min-height: 0; display: flex; flex-direction: column; padding-top: 8px; }
+.dash.rich .sum-sec { padding-top: 12px; }
+.sum-sec-h, .analysis h4.sum-sec-h { flex: none; display: block; margin: 0; padding-bottom: 5px; font: 700 11px/1.2 var(--display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); border-bottom: 1px solid var(--line-soft); }
+.sum-none { margin: 0; padding: 7px 0 3px; font-size: 12px; color: var(--faint); }
+.sum-lines { flex: 0 1 auto; min-height: var(--sum-line); margin: 0; padding: 0; list-style: none; overflow: hidden; }
+.sum-lines > li { border-bottom: 1px solid var(--line-soft); }
+.sum-lines > li:last-child { border-bottom: 0; }
+/* Il "+N" di una sezione, a destra sulla riga del titolo */
+.sum-sec-more { position: absolute; right: 4px; top: 7px; line-height: 1.2; }
+.dash.rich .sum-sec-more { top: 11px; }
+.sum-line { width: 100%; min-height: var(--sum-line); display: flex; align-items: center; gap: 8px; padding: 2px 4px 2px 0; font: inherit; color: inherit; text-align: left; background: none; border: 0; border-radius: 0; }
+.sum-line:hover { background: var(--accent-wash); }
+.sum-line .sum-plinth { width: var(--sum-small); }
+.sum-line .sum-plinth .sprite { margin: calc(var(--sum-small) * -0.12) 0 calc(var(--sum-small) * -0.15); }
+.sum-name { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12.5px; font-weight: 600; }
+.dash.rich .sum-name { font-size: 13.5px; }
+/* Schermo stretto: la card del Riassunto è più stretta, tipo di team e nomi un po' più piccoli perché non si tronchino */
+@media (max-width: 1320px) {
+  .dash.rich .dash-summary { --sum-arch: 22px; }
+  .dash.rich .sum-name { font-size: 12.5px; }
+}
+/* Chip come quelle dei ruoli: bordo --line e pallino colorato */
+.sum-tag { flex: none; display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; font-size: 11.5px; font-weight: 600; white-space: nowrap; color: var(--text); border: 1px solid var(--line); }
+.sum-tag i { width: 6px; height: 6px; border-radius: 50%; background: var(--c); }
+.sum-tags { flex: 1 1 0; min-width: 0; display: flex; flex-wrap: wrap; gap: 4px; }
+.sum-tags .sum-tag { padding: 2px 6px; gap: 4px; }
+.sum-to { flex: none; color: var(--faint); }
+/* Chi ne approfitta: mini-sprite accostati; vanno a capo invece di essere tagliati */
+.sum-users { min-width: 0; display: flex; flex-wrap: wrap; }
+.sum-user { flex: none; display: flex; margin: calc(var(--sum-mini) * -0.1) calc(var(--sum-mini) * -0.16); }
+
+/*
+ * Sinergie: l'ultima sezione prende lo spazio che resta (le altre restano alte quanto il contenuto); le righe che non
+ * stanno vanno nel "+N" (accanto al titolo). Ricca: le righe crescono fino a un tetto, il contenuto resta al centro.
+ * La lista è un contenitore (cqh): il triangolo si rimpicciolisce per stare nell'altezza che c'è.
+ */
+.sum-syn-sec { flex: 1 1 0; min-height: calc(var(--sum-line) + 24px); }
+/* Col triangolo la sezione tiene almeno il triangolo più piccolo: cedono prima le righe di meteo e trappole (nel loro "+N") */
+.sum-syn-sec:has(.sum-syn.trio) { min-height: 112px; }
+.dash.rich .sum-syn-sec:has(.sum-syn.trio) { min-height: 140px; }
+.sum-syn-sec .sum-lines { flex: 1 1 0; display: flex; flex-direction: column; container-type: size; }
+.sum-syn-sec .sum-lines > li { flex: none; display: flex; }
+.dash.rich .sum-syn-sec .sum-lines > li[data-fit] { flex: 1 0 auto; max-height: 88px; }
+.dash.rich .sum-syn-sec .sum-lines > li[data-fit]:has(.sum-syn.trio) { max-height: 196px; }
+.sum-syn { --link-w: 16px; width: 100%; min-width: 0; min-height: var(--sum-line); display: flex; align-items: center; gap: 10px; padding: 6px 4px 6px 0; font: inherit; color: inherit; text-align: left; background: none; border: 0; border-radius: 0; }
+.sum-syn:hover { background: var(--accent-wash); }
+/* Due sprite unite da un anello "catena" nel colore del legame; con una sola sprite la colonna resta larga uguale */
+.sum-pair { flex: none; min-width: calc(var(--sum-small) * 1.56 + var(--link-w) - 6px); display: flex; align-items: center; justify-content: center; }
+.sum-pair-ring { display: flex; align-items: center; }
+.sum-pair-mon { position: relative; z-index: 1; display: flex; margin: calc(var(--sum-small) * -0.14) calc(var(--sum-small) * -0.11); }
+.sum-pair-mon .sprite { display: block; image-rendering: pixelated; }
+.sum-link { position: relative; z-index: 2; width: var(--link-w); height: var(--link-w); margin: 0 -3px; display: grid; place-items: center; color: var(--c); background: var(--panel); border: 1.5px solid var(--c); border-radius: 50%; }
+.sum-link .icon { width: 10px; height: 10px; }
+.sum-syn-body { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.sum-syn-head { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sum-syn-tag { margin-right: 6px; font: 700 9.5px/1 var(--display); font-style: normal; letter-spacing: 0.07em; text-transform: uppercase; color: var(--c); vertical-align: 1px; }
+.sum-syn-title { font: 700 13px/1.15 var(--display); }
+.sum-syn-text { font-size: 11.5px; line-height: 1.3; color: var(--muted); }
+.dash.rich .sum-syn-title { font-size: 14px; }
+.dash.rich .sum-syn-text { font-size: 12px; }
+
+/* Core da 3 a triangolo (sinergie-trio, opzione A): sprite ai vertici su un piedistallo verde, frecce del giro, tipo parato su ogni lato */
+.sum-syn.trio { padding: 4px 4px 4px 0; }
+.sum-tri-row { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 12px; }
+.sum-tri-row .sum-syn-body { flex: 1 1 auto; }
+.sum-tri { --tri-w: clamp(84px, calc((100cqh - 20px) * 150 / 128), 118px); --tri-badge: 20px; position: relative; flex: none; width: var(--tri-w); aspect-ratio: 150 / 128; }
+.sum-tri-row.roomy .sum-tri { --tri-w: clamp(84px, calc((100cqh - 20px) * 150 / 128), 150px); --tri-badge: 22px; }
+.sum-tri-edges { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.sum-tri-edges line { stroke: var(--good); stroke-width: 2; }
+.sum-tri-edges marker path { fill: var(--good); }
+.sum-tri-v { position: absolute; display: flex; transform: translate(-50%, -50%); }
+.sum-tri-v::before { content: ""; position: absolute; left: 50%; bottom: 8%; width: 74%; height: 18%; transform: translateX(-50%); border-radius: 50%; background: radial-gradient(ellipse, color-mix(in srgb, var(--good) 45%, transparent), transparent 70%); }
+.sum-tri-v .sprite { position: relative; display: block; width: calc(var(--tri-w) * 0.345); height: auto; image-rendering: pixelated; }
+.sum-tri-badge { position: absolute; width: var(--tri-badge); height: var(--tri-badge); display: grid; place-items: center; transform: translate(-50%, -50%); background: var(--panel); border: 1.5px solid var(--good); border-radius: 50%; }
+.sum-tri-badge img { width: calc(var(--tri-badge) - 7px); height: calc(var(--tri-badge) - 7px); }
+/* Ampia: l'etichetta sopra il nome dei tipi, come nel mockup; normale: sulla stessa riga, per stare più bassa */
+.sum-tri-row.roomy .sum-syn-head { display: flex; flex-direction: column; gap: 2px; }
+.sum-cover { margin-top: 4px; display: flex; flex-direction: column; gap: 3px; }
+.sum-cover > span { min-width: 0; display: flex; align-items: center; gap: 6px; font-size: 11.5px; line-height: 1.25; white-space: nowrap; color: var(--muted); }
+.sum-cover > span > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.sum-cover img { flex: none; width: 14px; height: 14px; }
+.sum-cover b { font-weight: 600; color: var(--text); }
+.dash.rich .sum-cover { gap: 6px; }
+.dash.rich .sum-cover > span { font-size: 12px; }
 
 /*
  * Lo stesso alone del piedistallo delle Minacce sotto gli altri sprite "in scena": le corsie della Velocità, la testata

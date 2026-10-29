@@ -28,6 +28,24 @@ const TEAM = [
   member('Corviknight', 'Leftovers', 'Pressure', ['Brave Bird', 'Defog', 'Roost', 'U-turn'], 'Impish', { hp: 248, def: 168, spd: 92 }),
 ];
 const SIX = [...TEAM, member('Gholdengo', 'Air Balloon', 'Good as Gold', ['Make It Rain', 'Shadow Ball', 'Recover', 'Nasty Plot'], 'Timid', { spa: 252, spe: 252, def: 4 })];
+/** Pioggia: tutte le sezioni del Riassunto (sinergie, legami, campo, hazard). */
+const RAIN = [
+  member('Pelipper', 'Damp Rock', 'Drizzle', ['Hurricane', 'Surf', 'U-turn', 'Roost'], 'Bold', { hp: 248, def: 252, spd: 8 }),
+  member('Barraskewda', 'Choice Band', 'Swift Swim', ['Liquidation', 'Close Combat', 'Flip Turn', 'Psychic Fangs'], 'Adamant', { atk: 252, spe: 252, hp: 4 }),
+  member('Zapdos', 'Heavy-Duty Boots', 'Static', ['Thunder', 'Hurricane', 'Roost', 'Heat Wave'], 'Timid', { spa: 252, spe: 252, hp: 4 }),
+  member('Ferrothorn', 'Leftovers', 'Iron Barbs', ['Stealth Rock', 'Spikes', 'Leech Seed', 'Power Whip'], 'Relaxed', { hp: 252, def: 252, spd: 4 }),
+  member('Kingambit', 'Black Glasses', 'Supreme Overlord', ['Swords Dance', 'Kowtow Cleave', 'Sucker Punch', 'Iron Head'], 'Adamant', { hp: 200, atk: 252, spe: 56 }),
+  member('Great Tusk', 'Booster Energy', 'Protosynthesis', ['Headlong Rush', 'Ice Spinner', 'Rapid Spin', 'Bulk Up'], 'Jolly', { atk: 252, spe: 252, hp: 4 }),
+];
+/** Team senza sinergie né legami (nessun core, nessun pivot): il Riassunto ne mostra le sezioni vuote. */
+const LONE = [
+  member('Garchomp', 'Life Orb', 'Rough Skin', ['Earthquake', 'Dragon Claw', 'Stone Edge', 'Swords Dance'], 'Jolly', { atk: 252, spe: 252, hp: 4 }),
+  member('Salamence', 'Choice Band', 'Intimidate', ['Dragon Claw', 'Earthquake', 'Fire Fang', 'Roost'], 'Adamant', { atk: 252, spe: 252, hp: 4 }),
+  member('Haxorus', 'Choice Scarf', 'Mold Breaker', ['Dragon Claw', 'Earthquake', 'Poison Jab', 'Dragon Dance'], 'Jolly', { atk: 252, spe: 252, hp: 4 }),
+  member('Dragonite', 'Heavy-Duty Boots', 'Multiscale', ['Extreme Speed', 'Dragon Dance', 'Earthquake', 'Roost'], 'Adamant', { atk: 252, spe: 252, hp: 4 }),
+  member('Goodra', 'Assault Vest', 'Sap Sipper', ['Draco Meteor', 'Sludge Bomb', 'Fire Blast', 'Thunderbolt'], 'Modest', { spa: 252, hp: 252, spd: 4 }),
+  member('Kommo-o', 'Leftovers', 'Soundproof', ['Close Combat', 'Clanging Scales', 'Dragon Dance', 'Iron Head'], 'Adamant', { atk: 252, spe: 252, hp: 4 }),
+];
 /** Preferiti per gli stati *-fav: Pokémon che di solito compaiono fra i primi candidati. */
 const FAVS = ['Corviknight', 'Dragapult', 'Gholdengo', 'Rotom-Wash', 'Landorus-Therian', 'Iron Valiant', 'Zamazenta', 'Slowking-Galar', 'Heatran', 'Garganacl'];
 const LONG = [
@@ -344,6 +362,24 @@ const STATES: Record<string, State> = {
     await wait(800);
     return true;
   } },
+  // Riassunto completo: team pioggia, aperto e col team ridotto, e team senza sinergie
+  'analysis-rain': { hash: hash(RAIN), run: async p => { await tab(p, 'analysis'); await wait(300); return true; } },
+  'analysis-rain-collapsed': { hash: hash(RAIN), run: async p => {
+    await tab(p, 'analysis');
+    await wait(300);
+    if (!await clickText(p, 'button.band-toggle', /./)) return 'no toggle';
+    await wait(800);
+    return true;
+  } },
+  'analysis-rain-en': { hash: hash(RAIN), lang: 'en', run: async p => { await tab(p, 'analysis'); await wait(300); return true; } },
+  'analysis-rain-collapsed-en': { hash: hash(RAIN), lang: 'en', run: async p => {
+    await tab(p, 'analysis');
+    await wait(300);
+    if (!await clickText(p, 'button.band-toggle', /./)) return 'no toggle';
+    await wait(800);
+    return true;
+  } },
+  'analysis-lone': { hash: hash(LONE), run: async p => { await tab(p, 'analysis'); await wait(300); return true; } },
   // Lo stesso in inglese (etichette più lunghe nel Riassunto)
   'analysis-collapsed-en': { hash: hash(SIX), lang: 'en', run: async p => {
     await tab(p, 'analysis');
@@ -517,25 +553,20 @@ for (const [w, h] of sizes) {
       const cut = cards.filter(c => c.getBoundingClientRect().bottom - bottom > 1).length;
       const over = cards.filter(c => c.scrollHeight - c.clientHeight > 1)
         .map(c => c.className.split(' ').find(n => n.startsWith('dash-') && n !== 'dash-card'));
-      // Righe del Riassunto e voci in EN tagliate in larghezza
-      const sumClip = box ? [...box.querySelectorAll<HTMLElement>('.sum-v, .sum-k, .sum-names')].filter(e => e.scrollWidth - e.clientWidth > 1).map(e => e.className).length : 0;
-      const sumRows = box ? [...box.querySelectorAll<HTMLElement>('.sum-rows > li')].map(li => Math.round(li.getBoundingClientRect().height)) : [];
-      // Righe del Riassunto sotto il fondo della sua card (nascoste) e voci a misura mostrate ma tagliate (fuori dalla riga)
+      // Riassunto: nome del tipo, riga dell'eroe e righe delle sezioni tagliati in larghezza (anche in EN)
+      const sumClip = box ? [...box.querySelectorAll<HTMLElement>('.sum-type, .sum-arch, .sum-crew, .sum-line, .sum-name')].filter(e => e.scrollWidth - e.clientWidth > 1).map(e => e.className).length : 0;
+      const sumRows = box ? [...box.querySelectorAll<HTMLElement>('.sum-hero, .sum-sec')].map(li => Math.round(li.getBoundingClientRect().height)) : [];
+      // Parti del Riassunto sotto il fondo della sua card (nascoste) e voci a misura mostrate ma tagliate (fuori dalla riga)
       const sumCard = box?.querySelector('.dash-summary');
       const sumBottom = sumCard ? sumCard.getBoundingClientRect().bottom : 0;
-      const sumHidden = box ? [...box.querySelectorAll('.sum-rows > li')].filter(li => li.getBoundingClientRect().bottom - sumBottom > 1).length : 0;
+      const sumHidden = box ? [...box.querySelectorAll('.sum-hero, .sum-sec, .sum-lines > li')].filter(li => li.getBoundingClientRect().bottom - sumBottom > 1).length : 0;
       const fitCut = box ? [...box.querySelectorAll<HTMLElement>('.sum-fit')].reduce((n, fit) => {
         const r = fit.getBoundingClientRect();
         return n + [...fit.querySelectorAll('[data-fit], [data-fit-more]')].filter(i => { const b = i.getBoundingClientRect(); return b.bottom - r.bottom > 0.5 || b.right - r.right > 0.5; }).length;
       }, 0) : 0;
-      // Riempimento del Riassunto: per ogni riga, dall'alto della riga al fondo dell'ultimo contenuto visibile, sul totale delle righe
-      const sumList = box?.querySelector('.sum-rows');
-      const fill = sumList ? Math.round(100 * [...sumList.querySelectorAll(':scope > li')].reduce((n, li) => {
-        const top = li.getBoundingClientRect().top;
-        const v = li.querySelector('.sum-v')!.getBoundingClientRect();
-        const bottoms = [...li.querySelectorAll('.sum-ic, .sum-k, .sum-top, .sum-v > *')].map(e => e.getBoundingClientRect()).filter(b => b.height && b.bottom <= v.bottom + 0.5).map(b => b.bottom);
-        return n + Math.max(top, ...bottoms) - top;
-      }, 0) / sumList.getBoundingClientRect().height) : 0;
+      // Riempimento del Riassunto: altezza delle sue parti (eroe, sezioni) sull'altezza del corpo della card
+      const sumBody = box?.querySelector('.sum-body');
+      const fill = sumBody ? Math.round(100 * [...sumBody.children].reduce((n, el) => n + el.getBoundingClientRect().height, 0) / sumBody.getBoundingClientRect().height) : 0;
       // Copertura: vuoto fra la testata e la tabella e fra la tabella e il fondo (padding escluso)
       const cov = box?.querySelector<HTMLElement>('.dash-coverage');
       const covHead = cov?.querySelector('.dash-head')?.getBoundingClientRect();
