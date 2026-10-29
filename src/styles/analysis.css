@@ -104,13 +104,16 @@
 /* La striscia scorre (overflow): il contorno del fuoco va dentro la scheda, o verrebbe tagliato */
 .area-subs [role='tab']:focus-visible { outline-offset: -3px; }
 /* La sottoscheda aperta come la scheda principale aperta, in piccolo: righe magenta, taglio diagonale a destra e testo
-   appena più grande, così si riconosce subito */
+   appena più grande (solo visivo), così si riconosce subito */
 .area-subs [role='tab'][aria-selected='true'] {
   color: var(--text); background: var(--stripes), var(--accent-2-soft); border-bottom-color: var(--accent-2-ink);
   clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
-  padding-right: 24px; font-size: 14.5px; font-weight: 600;
 }
-.area-subs [role='tab'][aria-selected='true'] b { color: var(--text); font-size: 16.5px; }
+.area-subs [role='tab'][aria-selected='true'] b { color: var(--text); }
+/* Ingrandimento solo visivo (scale dal centro): la larghezza della scheda non cambia, quindi nulla si sposta */
+.area-subs [role='tab'] > span:first-child, .area-subs [role='tab'] > b { display: inline-block; transform-origin: center; }
+.area-subs [role='tab'][aria-selected='true'] > span:first-child, .area-subs [role='tab'][aria-selected='true'] > b { transform: scale(1.05); }
+.area-subs [role='tab'][aria-selected='true'] > span:first-child { font-weight: 500; }
 .sub-help-room { display: inline-block; width: 30px; }
 .area-help { position: absolute; display: flex; }
 .area-help .help-button { width: 18px; height: 18px; color: var(--text); }
@@ -186,11 +189,6 @@ button.member-card:hover { border-color: var(--accent); }
   clip-path: polygon(0 0, 100% 0, calc(100% - 14px) 100%, 0 100%);
   padding-right: 48px;
 }
-/* Coaching e Bonus/Malus chiudono un gruppo (prima dello stacco, in fondo alla riga): il taglio diagonale va a sinistra */
-.analysis-tabs [role='tab'][aria-selected='true']:is(#analysis-view-coaching, #analysis-view-bonusMalus) {
-  clip-path: polygon(0 0, 100% 0, 100% 100%, 14px 100%);
-  padding-right: 14px; padding-left: 48px;
-}
 .analysis-tabs .tab-score { font: 700 17px/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums; color: var(--accent); }
 .analysis-tabs [role='tab'][aria-selected='true'] .tab-score { color: var(--on-accent-2); }
 /* Badge dei problemi gravi: rosso sulla scheda chiusa, scuro su quella aperta */
@@ -207,9 +205,22 @@ button.member-card:hover { border-color: var(--accent); }
   z-index: 1;
   width: calc(100% + 30px);
   margin-right: -30px;
-  padding-right: 70px;
+  /* Il padding in più è esattamente l'allungamento (30px): il testo resta dove stava da chiusa */
+  padding-right: 44px;
   clip-path: polygon(0 0, 100% 0, calc(100% - 22px) 100%, 0 100%);
   animation: tab-stretch 0.24s var(--ease) both;
+}
+/* Coaching e Bonus/Malus chiudono un gruppo (prima dello stacco, in fondo alla riga): il lato destro resta dritto e la
+   scheda si allunga a sinistra, col taglio inclinato sopra la scheda vicina (Panoramica, Ruoli) */
+.analysis-tabs [role='tab'][aria-selected='true']:is(#analysis-view-coaching, #analysis-view-bonusMalus) {
+  margin-right: 0; margin-left: -30px;
+  padding-right: 14px; padding-left: 44px;
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 22px 100%);
+  animation-name: tab-stretch-left;
+}
+@keyframes tab-stretch-left {
+  from { clip-path: polygon(22px 0, 100% 0, 100% 100%, 36px 100%); }
+  to { clip-path: polygon(0 0, 100% 0, 100% 100%, 22px 100%); }
 }
 @keyframes tab-stretch {
   from { clip-path: polygon(0 0, calc(100% - 22px) 0, calc(100% - 36px) 100%, 0 100%); }
