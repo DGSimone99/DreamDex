@@ -45,6 +45,8 @@ describe("dettaglio dell'Offesa a schede", () => {
       const once = cells[3].querySelector('.ad-once');
       if (once) expect(once.getAttribute('title')).toMatch(/^Con (Tera|la mossa Z)/);
     }
+    // Il "+N" sta nel suo posto della cella della barra (non sborda nella colonna dopo)
+    for (const gain of table.querySelectorAll('.ad-gain, .ad-once')) expect(gain.closest('.def-cell.with-gain > .def-gain')).not.toBeNull();
   });
 
   it('Generale: la tessera Potenza conta gli attaccanti fisici, speciali e misti (solo informazione)', async () => {

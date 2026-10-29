@@ -183,6 +183,28 @@ describe('Offesa: Potenza', () => {
     });
   });
 
+  it('Generale: il "+N" del setup e di Tera sta nel posto riservato della cella, in ogni riga della colonna', () => {
+    const t = [
+      { ...emptySet('Kingambit'), ability: 'Supreme Overlord', item: 'Black Glasses', moves: ['Swords Dance', 'Kowtow Cleave', 'Sucker Punch', 'Iron Head'], evs: { hp: 252, atk: 252 }, teraType: 'Dark' },
+      team[0],
+    ];
+    const gen9 = { ...fixtureData, formatId: 'gen9ou' as const };
+    renderIt(<AreaView rating={rateTeam(t, gen9, 'it')!} area="strength" team={t} analysis={analyzeTeam(t, gen9)} problems={[]} />);
+    const table = screen.getByRole('table');
+    const gains = [...table.querySelectorAll('.ad-gain, .ad-once')];
+    expect(gains.map(g => g.className.split(' ')[0]).sort()).toEqual(['ad-gain', 'ad-once']);
+    const rows = [...table.querySelectorAll('tbody tr')];
+    for (const gain of gains) {
+      expect(gain.closest('.def-cell.with-gain > .def-gain')).not.toBeNull();
+      // Il numero e il "+N" si leggono insieme: "50 (+23)"
+      expect(gain.closest('.def-cell')).toHaveTextContent(/^\d+ \(\+\d+\)$/);
+      const column = [...gain.closest('tr')!.children].indexOf(gain.closest('td')!);
+      for (const row of rows) expect(row.children[column].querySelector('.def-cell')).toHaveClass('with-gain');
+    }
+    // Le colonne senza "+N" non riservano il posto
+    expect(rows[0].children[1].querySelector('.def-cell')).not.toHaveClass('with-gain');
+  });
+
   it('Potenza: membro scartato resta con "—"', async () => {
     const user = userEvent.setup();
     const t = [team[0], { ...emptySet('Blissey'), moves: ['Soft-Boiled', 'Toxic', 'Stealth Rock', 'Teleport'] }];

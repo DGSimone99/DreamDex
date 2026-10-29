@@ -97,6 +97,10 @@
 .def-members th[scope='row'] { padding-left: 0; text-align: left; font-weight: 600; color: var(--text); }
 /* Barra e numero in una griglia fissa: la barra parte dove parte l'intestazione della colonna */
 .def-cell { display: inline-grid; grid-template-columns: 150px 3ch; align-items: center; gap: 10px; vertical-align: middle; }
+/* Col "+N" (setup, Tera, mossa Z): un terzo posto fisso dopo il numero, per tutta la colonna; la barra cede lo spazio, non sborda */
+.def-cell.with-gain { display: grid; width: 100%; grid-template-columns: minmax(0, 150px) 3ch 5.5ch; }
+.def-gain { margin-left: -6px; white-space: nowrap; }
+.def-frame .def-gain small { margin-left: 0; }
 .def-bar { position: relative; display: block; width: 100%; height: 8px; background: var(--line-soft); }
 .def-bar i { position: absolute; inset: 0 auto 0 0; background: var(--good); }
 .def-bar.warn i { background: var(--warn); }
@@ -117,6 +121,10 @@
 
 /* Le barre seguono la larghezza della colonna: con sette colonne non c'è posto per i 150px fissi */
 .def-general.roomy .def-cell { display: grid; grid-template-columns: minmax(0, 1fr) 3ch; width: 100%; }
+/* A squadra chiusa le colonne sono strette ma le righe alte: il "+N" va sotto il numero, piccolo, e la barra resta lunga */
+.def-general.roomy .def-cell.with-gain { position: relative; grid-template-columns: minmax(0, 1fr) 3ch; }
+.def-general.roomy .def-gain { position: absolute; top: 100%; right: 0; margin: 1px 0 0; }
+.def-general.roomy .def-gain small { font-size: 11px; }
 .def-general.roomy .def-members .def-col-hit { width: 112px; }
 .def-general.roomy .def-members .def-col-rec { width: 170px; }
 

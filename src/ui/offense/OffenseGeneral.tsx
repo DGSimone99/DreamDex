@@ -26,6 +26,9 @@ export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; m
   const lang = useLang();
   const { coverageMeta, members, attackers } = offense;
   const slots = offenseSlots(ctx.team, members);
+  // Le colonne Wallbreaking e Offesa riservano il posto del "+N" se almeno un membro ce l'ha (barre lunghe uguali)
+  const setupColumn = members.some(m => m.wallbreakingGain > 0);
+  const onceColumn = members.some(m => m.oneUseGain > 0 && !!m.oneUse);
   const cap = (text: string, extra?: ReactNode) => <span className="def-cap"><em>{text}</em>{extra}</span>;
 
   // Tipi scoperti
@@ -129,17 +132,16 @@ export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; m
                     ? <>
                       <td><Bar value={m.power} /></td>
                       <td>
-                        <Bar value={m.wallbreaking} />
                         {/* Quanto aggiunge il setup al Wallbreaking del membro */}
-                        {m.wallbreakingGain > 0 && <small className="ad-gain" title={t('detail.withSetup', { move: m.setupMove ?? '' })}> (+{m.wallbreakingGain})</small>}
+                        <Bar value={m.wallbreaking} reserve={setupColumn}
+                          gain={m.wallbreakingGain > 0 && <small className="ad-gain" title={t('detail.withSetup', { move: m.setupMove ?? '' })}> (+{m.wallbreakingGain})</small>} />
                       </td>
                       <td><Bar value={m.covered} unit="%" /></td>
                       <td>
-                        <Bar value={m.value} total />
                         {/* Tera o mossa Z: una volta a partita, un quarto del guadagno entra nel voto */}
-                        {m.oneUseGain > 0 && m.oneUse && (
+                        <Bar value={m.value} total reserve={onceColumn} gain={m.oneUseGain > 0 && m.oneUse && (
                           <small className="ad-once" title={m.oneUse.kind === 'tera' ? t('detail.withTera', { type: m.oneUse.name }) : t('detail.withZ', { item: m.oneUse.name })}> (+{m.oneUseGain})</small>
-                        )}
+                        )} />
                       </td>
                     </>
                     : <><td>—</td><td>—</td><td>—</td><td>—</td></>}
