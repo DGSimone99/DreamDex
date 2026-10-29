@@ -46,6 +46,10 @@ describe('teamLinks', () => {
       { kind: 'phazer', from: ['Garchomp'], to: ['Hippowdon'], move: 'Whirlwind' },
     ]);
   });
+  it('phazer dopo Ceaseless Edge', () => {
+    const l = teamLinks([mk('Samurott-Hisui', ['Ceaseless Edge']), mk('Hippowdon', ['Whirlwind'])], []);
+    expect(l.map(x => x.kind)).toEqual(['phazer']);
+  });
   it('phazer: stesso membro con entrambi, nessun link', () => {
     expect(teamLinks([mk('Skarmory', ['Stealth Rock', 'Whirlwind']), mk('Garchomp')], [])).toEqual([]);
   });

@@ -108,6 +108,12 @@ describe('teamSummary', () => {
     expect(build(plain).summary.hazards).toEqual([]);
   });
 
+  it('hazard: Ceaseless Edge e Stone Axe contano come in Ruoli', () => {
+    const setter = { ...emptySet('Samurott-Hisui'), moves: ['Ceaseless Edge', 'Stone Axe'] };
+    const rows = build(swap(3, setter)).summary.hazards;
+    expect(rows.map(r => r.member)).toContain(battleName(setter));
+  });
+
   it('cores e legami: esattamente teamCores e teamLinks', () => {
     const { summary } = build();
     expect(summary.cores).toEqual(teamCores(base));

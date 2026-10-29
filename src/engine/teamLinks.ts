@@ -1,9 +1,7 @@
 import { battleName, getMove, toID } from './dex';
-import { PIVOT_MOVES } from './roles';
+import { HAZARD_MOVES, PIVOT_MOVES } from './roles';
 import type { TeamSet } from './sets';
 
-/** Mosse che mettono hazard sul campo avversario (per il legame hazard + phazer). */
-export const HAZARD_MOVES = ['stealthrock', 'spikes', 'toxicspikes', 'stickyweb'];
 
 export type LinkKind = 'pivot' | 'batonpass' | 'wish' | 'phazer';
 

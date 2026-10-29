@@ -70,7 +70,7 @@ function Section<T>({ title, empty, rows, rowKey, fitKey, more, render, classNam
         ? <p className="sum-none">{empty}</p>
         : (
           <ul ref={fit.ref} className="sum-lines sum-fit">
-            {rows.slice(0, shown).map(row => <li key={rowKey(row)} data-fit>{render(row)}</li>)}
+            {rows.slice(0, shown).map((row, i) => <li key={`${rowKey(row)}#${i}`} data-fit>{render(row)}</li>)}
           </ul>
         )}
       {/* Dopo la lista nell'ordine di lettura; a vista sta a destra del titolo (posizione assoluta) */}
@@ -78,6 +78,12 @@ function Section<T>({ title, empty, rows, rowKey, fitKey, more, render, classNam
     </div>
   );
 }
+
+/** Elenco a parole: "A", "A e B", "A, B e C" ("and" in inglese, senza virgola prima). */
+const joinList = (items: string[], lang: string) => {
+  if (items.length < 2) return items.join('');
+  return `${items.slice(0, -1).join(', ')} ${lang === 'en' ? 'and' : 'e'} ${items[items.length - 1]}`;
+};
 
 /** Una sinergia: un core difensivo (da 2 o 3) o un legame tra membri. */
 type Synergy = { core: Core; link?: undefined } | { link: TeamLink; core?: undefined };
@@ -98,7 +104,7 @@ function useSynergyView() {
       const { core } = syn;
       return {
         key: `core:${core.members.join('+')}`, tag: t('sum.link.core'), color: 'var(--good)', title: coreTitle(core, lang),
-        text: core.sides.map(side => t('sum.parry', { name: side.from, type: typeName(side.type, lang) })).join(', '),
+        text: core.sides.map(side => t('sum.parry', { name: side.from, type: joinList(side.types.map(ty => typeName(ty, lang)), lang) })).join(', '),
         mons: core.members, trio: core.members.length === 3,
       };
     }
@@ -139,7 +145,7 @@ function SynergyRow({ syn, view, rich, small, onClick }: { syn: Synergy; view: S
           <>
             <span className="sum-pair" aria-hidden="true">
               {view.mons.map((name, i) => (
-                <span key={name} className="sum-pair-ring">
+                <span key={`${name}:${i}`} className="sum-pair-ring">
                   {i > 0 && <span className="sum-link"><Icon name="chain" /></span>}
                   <span className="sum-pair-mon" title={name}><Sprite species={name} size={small} /></span>
                 </span>
@@ -190,8 +196,8 @@ export function SummarySection({ summary, members, density, rich = false, onView
   const crew = useFit<HTMLDivElement>(keyOf(makers.map(m => `${m.side}:${m.name}`)), makers.length, { more: true });
   const shown = makers.slice(0, Math.min(crew.shown, makers.length));
   const hiddenMakers = makers.length - shown.length;
-  const maker = (m: (typeof makers)[number], first = false) => (
-    <span key={m.name} data-fit className={`sum-maker ${m.side}${first ? ' first' : ''}`}>
+  const maker = (m: (typeof makers)[number], i: number, first = false) => (
+    <span key={`${m.name}#${i}`} data-fit className={`sum-maker ${m.side}${first ? ' first' : ''}`}>
       <button type="button" className="sum-mon" title={m.name} onClick={() => onView(m.side === 'atk' ? 'strength' : 'defense')}
         aria-label={m.score === undefined ? m.name : t(m.side === 'atk' ? 'sum.offenseOf' : 'sum.defenseOf', { name: m.name, n: m.score })}>
         <Plinth name={m.name} size={big} />
@@ -222,9 +228,9 @@ export function SummarySection({ summary, members, density, rich = false, onView
             )}
             {makers.length > 0 && (
               <div ref={crew.ref} className="sum-crew sum-fit">
-                {shownAtk.length > 0 && <span role="group" aria-label={t('sum.attack')} className="sum-side">{shownAtk.map(m => maker(m))}</span>}
+                {shownAtk.length > 0 && <span role="group" aria-label={t('sum.attack')} className="sum-side">{shownAtk.map((m, i) => maker(m, i))}</span>}
                 {/* Una linea sottile separa i muri dagli attaccanti */}
-                {shownDef.length > 0 && <span role="group" aria-label={t('sum.hold')} className="sum-side">{shownDef.map((m, i) => maker(m, i === 0 && shownAtk.length > 0))}</span>}
+                {shownDef.length > 0 && <span role="group" aria-label={t('sum.hold')} className="sum-side">{shownDef.map((m, i) => maker(m, i, i === 0 && shownAtk.length > 0))}</span>}
                 {hiddenMakers > 0 && <span data-fit-more className="sum-crew-more"><More n={hiddenMakers} label={count('sum.moreMons', hiddenMakers)} /></span>}
               </div>
             )}
@@ -243,10 +249,10 @@ export function SummarySection({ summary, members, density, rich = false, onView
                 <>
                   <span className="sum-to" aria-hidden="true">→</span>
                   <span className="sum-users">
-                    {row.users.map(user => {
+                    {row.users.map((user, i) => {
                       // Con l'abilità o la mossa con cui la sfrutta: "Barraskewda · Nuotovelox"
                       const label = user.via ? `${user.name} · ${viaName(user.via, lang)}` : user.name;
-                      return <span key={user.name} className="sum-user" title={label}><Sprite species={user.name} size={mini} /><span className="visually-hidden">{label}</span></span>;
+                      return <span key={`${user.name}#${i}`} className="sum-user" title={label}><Sprite species={user.name} size={mini} /><span className="visually-hidden">{label}</span></span>;
                     })}
                   </span>
                 </>
@@ -270,7 +276,7 @@ export function SummarySection({ summary, members, density, rich = false, onView
           more={(n, hidden) => `${count('sum.moreSyn', n)}: ${hidden.map(syn => {
             // Per ogni sinergia nascosta etichetta e titolo; per i legami anche la frase
             const view = synergyView(syn);
-            return syn.core ? `${view.tag} ${view.title}` : `${view.tag} ${view.title}: ${view.text}`;
+            return `${view.tag} ${view.title}: ${syn.core ? view.mons.join(', ') : view.text}`;
           }).join('; ')}`}
           render={syn => {
             const view = synergyView(syn);

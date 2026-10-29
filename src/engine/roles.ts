@@ -69,7 +69,7 @@ export function isStall(team: TeamSet[], rules: FormatRules): boolean {
   return team.filter(set => isPassive(set, rules)).length >= STALL_PASSIVE;
 }
 
-const HAZARD_MOVES = new Set(['stealthrock', 'spikes', 'toxicspikes', 'stickyweb', 'stoneaxe', 'ceaselessedge']);
+export const HAZARD_MOVES = new Set(['stealthrock', 'spikes', 'toxicspikes', 'stickyweb', 'stoneaxe', 'ceaselessedge']);
 /** Mosse che tolgono gli hazard (anche la Difesa le usa: con una di queste nel team la Stealth Rock pesa metà). */
 export const REMOVAL_MOVES = new Set(['defog', 'rapidspin', 'mortalspin', 'tidyup', 'courtchange']);
 export const PIVOT_MOVES = new Set(['uturn', 'voltswitch', 'flipturn', 'partingshot', 'teleport', 'shedtail', 'chillyreception']);

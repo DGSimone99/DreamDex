@@ -74,9 +74,9 @@ function summaryOf(overrides: Partial<TeamSummary> = {}): TeamSummary {
 const trio: Core = {
   members: ['Garchomp', 'Scizor', 'Iron Valiant'],
   sides: [
-    { from: 'Garchomp', to: 'Scizor', type: 'Fire' },
-    { from: 'Scizor', to: 'Iron Valiant', type: 'Steel' },
-    { from: 'Iron Valiant', to: 'Garchomp', type: 'Dragon' },
+    { from: 'Garchomp', to: 'Scizor', type: 'Fire', types: ['Fire'] },
+    { from: 'Scizor', to: 'Iron Valiant', type: 'Steel', types: ['Steel'] },
+    { from: 'Iron Valiant', to: 'Garchomp', type: 'Dragon', types: ['Dragon'] },
   ],
   names: [['Dragon'], ['Steel'], ['Fairy']],
   strength: 4,
@@ -84,7 +84,7 @@ const trio: Core = {
 /** Una coppia: Pelipper e Ferrothorn si parano a vicenda. */
 const pair: Core = {
   members: ['Pelipper', 'Ferrothorn'],
-  sides: [{ from: 'Pelipper', to: 'Ferrothorn', type: 'Fire' }, { from: 'Ferrothorn', to: 'Pelipper', type: 'Electric' }],
+  sides: [{ from: 'Pelipper', to: 'Ferrothorn', type: 'Fire', types: ['Fire', 'Fighting'] }, { from: 'Ferrothorn', to: 'Pelipper', type: 'Electric', types: ['Electric', 'Rock'] }],
   names: [['Water', 'Flying'], ['Grass', 'Steel']],
   strength: 3,
 };
@@ -93,7 +93,7 @@ const wishLink: TeamLink = { kind: 'wish', from: ['Clefable'], to: [], move: 'Wi
 /** Nomi italiani dei tipi, delle mosse e delle abilità usati nel Riassunto. */
 const italianNames = () => initGameNames({
   moves: { uturn: { name: 'U-turn' }, wish: { name: 'Desiderio' } }, abilities: { swiftswim: { name: 'Nuotovelox' } }, items: {},
-  types: { fire: 'Fuoco', steel: 'Acciaio', dragon: 'Drago', fairy: 'Folletto', water: 'Acqua', flying: 'Volante', grass: 'Erba', electric: 'Elettro' },
+  types: { fire: 'Fuoco', steel: 'Acciaio', dragon: 'Drago', fairy: 'Folletto', water: 'Acqua', flying: 'Volante', grass: 'Erba', electric: 'Elettro', fighting: 'Lotta', rock: 'Roccia' },
   natures: {},
 });
 
@@ -453,7 +453,7 @@ describe('Riassunto', () => {
     expect(core.querySelector('.sum-syn-tag')).toHaveTextContent('Core');
     expect(core.querySelector('.sum-syn-title')).toHaveTextContent('Acqua-Volante / Erba-Acciaio');
     expect(core.querySelectorAll('.sum-pair .sprite')).toHaveLength(2);
-    expect(core.querySelector('.sum-syn-text')).toHaveTextContent('Pelipper para Fuoco, Ferrothorn para Elettro');
+    expect(core.querySelector('.sum-syn-text')).toHaveTextContent('Pelipper para Fuoco e Lotta, Ferrothorn para Elettro e Roccia');
     expect(pivot.querySelector('.sum-syn-tag')).toHaveTextContent('Pivot');
     expect(pivot.querySelector('.sum-syn-title')).toHaveTextContent('Giro di U-turn');
     expect(pivot.querySelector('.sum-syn-text')).toHaveTextContent('2 pivot portano dentro Iron Valiant');

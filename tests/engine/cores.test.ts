@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { parries, teamCores } from '../../src/engine/cores';
+import { defensiveMultiplier } from '../../src/engine/types';
 import { emptySet } from '../../src/engine/sets';
 import type { TeamSet } from '../../src/engine/sets';
 
@@ -34,6 +35,10 @@ describe('teamCores', () => {
     expect(core.sides).toHaveLength(3);
     const sets: Record<string, TeamSet> = { Garchomp: garchomp, Scizor: scizor, 'Iron Valiant': valiant };
     for (const s of core.sides) expect(parries(sets[s.from], sets[s.to])).toContain(s.type);
+    for (const s of core.sides) {
+      expect(s.types[0]).toBe(s.type);
+      expect(s.types).toEqual(parries(sets[s.from], sets[s.to]).sort((a, b) => defensiveMultiplier(b, sets[s.to]) - defensiveMultiplier(a, sets[s.to])));
+    }
     expect(core.sides.find((s) => s.from === 'Iron Valiant' && s.to === 'Garchomp')?.type).toBe('Dragon');
   });
   it('il trio assorbe le coppie, nessun membro in due core', () => {

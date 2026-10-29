@@ -8,9 +8,9 @@ import type { DashboardData } from './overviewDashboard';
 import type { TeamRating } from './rating';
 import type { TeamSet } from './sets';
 import { measuredSubRoles } from './subRoles';
-import { hasSetup } from './roles';
+import { hasSetup, HAZARD_MOVES } from './roles';
 import { benefits, conditionName, enables } from './synergy';
-import { HAZARD_MOVES, teamLinks, type TeamLink } from './teamLinks';
+import { teamLinks, type TeamLink } from './teamLinks';
 import { gameName } from '../i18n/game';
 import type { Lang } from '../i18n';
 
@@ -39,7 +39,7 @@ export interface TeamSummary {
   links: TeamLink[];
 }
 
-/** I dati del Riassunto della Panoramica: solo riuso di ciò che il motore già calcola. `_dash` resta per non cambiare la firma. */
+/** I dati del Riassunto della Panoramica: riusa ciò che il motore già calcola e ne ricava core e legami di squadra. `_dash` resta per non cambiare la firma. */
 export function teamSummary(team: TeamSet[], rating: TeamRating, coaching: Coaching, _dash: DashboardData, data: EngineData, lang: Lang = 'it'): TeamSummary {
   const rules = rulesOf(data);
   const attackers: string[] = [];
@@ -68,7 +68,7 @@ export function teamSummary(team: TeamSet[], rating: TeamRating, coaching: Coach
       const users = key === 'tailwind' ? [] : others.filter(o => hasSetup(o.set)).map(o => ({ name: o.name }));
       conditions.push({ member: name, label: gameName('move', getMove(key)?.name ?? key, lang), key, users });
     }
-    const mine = set.moves.filter(mv => HAZARD_MOVES.includes(toID(mv)));
+    const mine = set.moves.filter(mv => HAZARD_MOVES.has(toID(mv)));
     if (mine.length) hazards.push({ member: name, moves: mine.map(mv => getMove(mv)?.name ?? mv) });
   });
 

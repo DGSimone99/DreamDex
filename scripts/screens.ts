@@ -371,6 +371,14 @@ const STATES: Record<string, State> = {
     await wait(800);
     return true;
   } },
+  'analysis-rain-en': { hash: hash(RAIN), lang: 'en', run: async p => { await tab(p, 'analysis'); await wait(300); return true; } },
+  'analysis-rain-collapsed-en': { hash: hash(RAIN), lang: 'en', run: async p => {
+    await tab(p, 'analysis');
+    await wait(300);
+    if (!await clickText(p, 'button.band-toggle', /./)) return 'no toggle';
+    await wait(800);
+    return true;
+  } },
   'analysis-lone': { hash: hash(LONE), run: async p => { await tab(p, 'analysis'); await wait(300); return true; } },
   // Lo stesso in inglese (etichette più lunghe nel Riassunto)
   'analysis-collapsed-en': { hash: hash(SIX), lang: 'en', run: async p => {

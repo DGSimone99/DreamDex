@@ -4,7 +4,13 @@ import { defensiveMultiplier, effectiveness, TYPES } from './types';
 import type { TypeName } from './types';
 
 /** `from` para `type` per `to`: resiste ciò che colpirebbe forte `to` (nomi di battaglia). */
-export interface CoreSide { from: string; to: string; type: TypeName }
+export interface CoreSide {
+  from: string; to: string;
+  /** Il tipo parato più forte (per le frecce del triangolo). */
+  type: TypeName;
+  /** Tutti i tipi parati, dal moltiplicatore più alto su `to`; a parità l'ordine di TYPES. */
+  types: TypeName[];
+}
 
 export interface Core {
   /** 2 o 3 nomi di battaglia; nel trio l'ordine del ciclo è members[0]→[1]→[2]→[0]. */
@@ -18,6 +24,11 @@ export interface Core {
 /** Tipi che `covered` subisce in modo super efficace e che `cover` resiste o annulla. */
 export function parries(cover: TeamSet, covered: TeamSet): TypeName[] {
   return TYPES.filter((t) => defensiveMultiplier(t, covered) > 1 && defensiveMultiplier(t, cover) < 1);
+}
+
+/** Tipi ordinati per moltiplicatore decrescente su `covered`; sort stabile, quindi a parità resta l'ordine di TYPES. */
+function sortedTypes(covered: TeamSet, types: TypeName[]): TypeName[] {
+  return [...types].sort((a, b) => defensiveMultiplier(b, covered) - defensiveMultiplier(a, covered));
 }
 
 interface Side { from: number; to: number; types: TypeName[]; type: TypeName; weight: number }
@@ -99,7 +110,7 @@ export function teamCores(team: TeamSet[], max = 2): Core[] {
     });
     return {
       members,
-      sides: cand.sides.map((s) => ({ from: battleName(team[s.from]), to: battleName(team[s.to]), type: s.type })),
+      sides: cand.sides.map((s) => ({ from: battleName(team[s.from]), to: battleName(team[s.to]), type: s.type, types: sortedTypes(team[s.to], s.types) })),
       names,
       strength: cand.strength,
     };
