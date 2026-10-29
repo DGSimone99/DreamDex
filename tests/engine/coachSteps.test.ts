@@ -33,6 +33,17 @@ describe('buildSteps', () => {
     expect(both[0].alsoSolves).toEqual(['defense:Ice']);
   });
 
+  it('coverage: guida una tappa solo un tipo scoperto e pesante (grave); i coperti a metà e i tipi leggeri solo in "risolve anche"', () => {
+    const hole = { ...problem('coverage:Water', 'serious', 'coverage'), size: 2 };
+    const light = { ...problem('coverage:Normal', 'minor', 'coverage'), size: 2 };
+    const half = { ...problem('coverage:Flying', 'minor', 'coverage'), size: 1 };
+    const fixes = [swap('A', 9, ['coverage:Normal']), swap('B', 8, ['coverage:Flying']), swap('C', 3, ['coverage:Water', 'coverage:Flying'])];
+    const steps = buildSteps([hole, light, half], fixes, []);
+    expect(steps.map(s => s.problem.key)).toEqual(['coverage:Water']);
+    expect(steps[0].group).toEqual(['coverage:Water']);
+    expect(steps[0].alsoSolves).toEqual(['coverage:Flying']);
+  });
+
   it('senza problemi: nessuna tappa', () => {
     expect(buildSteps([], [swap('A', 5, ['A'])], [])).toEqual([]);
   });

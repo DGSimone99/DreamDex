@@ -13,7 +13,7 @@ const team = ['Great Tusk', 'Gholdengo', 'Kingambit', 'Corviknight', 'Toxapex', 
 const build = (data = fixtureData) => {
   const analysis = analyzeTeam(team, data);
   const rating = rateTeam(team, data)!;
-  const problems = findProblems(team, DEFAULT_FORMAT, analysis, [], 'it');
+  const problems = findProblems(team, DEFAULT_FORMAT, data, analysis, [], 'it');
   const tiles = summarizeTeam(analysis, rating, problems, data);
   return { analysis, rating, problems, tiles, tile: (key: string) => tiles.find(t => t.key === key)! };
 };

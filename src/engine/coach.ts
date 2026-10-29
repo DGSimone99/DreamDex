@@ -20,11 +20,14 @@ import { coachFixes, type CoachFix } from './coachFixes';
 import { buildSteps, type CoachStep } from './coachSteps';
 import { moveFixes } from './moveFixes';
 import type { ScoredArea } from './teamGain';
-import { defensiveMultiplier } from './types';
+import { teamCoverage } from './coverage';
+import { defensiveMultiplier, type TypeName } from './types';
 
 export const SIMILAR_THRESHOLD = 0.6;
 export const MIN_COVERAGE_WEIGHT = 0.05;
 export const STRONG_COVERAGE = 15;
+/** Un tipo della Coverage tipi è coperto quando un membro lo manda KO in due colpi (livello 70 o più): sotto è un problema. */
+export const COVERED_LEVEL = 70;
 
 /** Categorie dei problemi, nell'ordine in cui si mostrano. */
 export const PROBLEM_CATEGORIES = ['rules', 'defense', 'coverage', 'roles', 'conditions', 'redundancy', 'meta'] as const;
@@ -100,7 +103,7 @@ export function weaknessSeverity(row: TeamAnalysis['weakness'][number]): 'seriou
   return row.pressure > 0 ? 'minor' : null;
 }
 
-export function findProblems(team: TeamSet[], format: Format, analysis: TeamAnalysis, candidates: Suggestion[], lang: Lang): CoachProblem[] {
+export function findProblems(team: TeamSet[], format: Format, data: EngineData, analysis: TeamAnalysis, candidates: Suggestion[], lang: Lang): CoachProblem[] {
   const serious: CoachProblem[] = [];
   const minor: CoachProblem[] = [];
   // Chiave predefinita dal testo, senza numeri: un cambio che sposta solo un conteggio non "risolve" il problema
@@ -176,12 +179,19 @@ export function findProblems(team: TeamSet[], format: Format, analysis: TeamAnal
       `conditions:unmet:${issue.member}:${issue.via}`);
   }
 
-  const gaps = analysis.coverage
-    .filter(r => r.hitters.length === 0 && analysis.typeWeights[r.type] >= MIN_COVERAGE_WEIGHT)
-    .map(r => r.type);
-  if (gaps.length) {
-    add('coverage', false, t(lang, 'coach.problem.noCoverage', { types: list(gaps.map(type => typeName(type, lang))) }),
-      fixesFor(candidates, s => s.facts.coverage.types.filter(t => gaps.includes(t)).length), 'coverage', gaps.length, [...gaps]);
+  // Coverage: la stessa regola della Coverage tipi del voto, un problema per tipo che nessuno manda KO in due colpi
+  // (livello sotto 70). Scoperto (nessun colpo super efficace al 33%): grave se il tipo pesa; coperto a metà (solo 3HKO): minore.
+  // I rimedi usano ancora i fatti dei candidati (tipi colpiti super efficace fra quelli senza nessuna mossa super efficace)
+  const coverage = teamCoverage(team, data, 'types');
+  for (const row of coverage.rows) {
+    if (row.level >= COVERED_LEVEL) continue;
+    const type = row.label;
+    const hole = coverage.holes.includes(type);
+    const text = hole
+      ? t(lang, 'coach.problem.uncovered', { type: typeName(type, lang) })
+      : t(lang, 'coach.problem.halfCovered', { type: typeName(type, lang), n: row.coveredBy.length });
+    add('coverage', hole && analysis.typeWeights[type as TypeName] >= MIN_COVERAGE_WEIGHT, text,
+      fixesFor(candidates, s => Number(s.facts.coverage.types.includes(type as TypeName))), `coverage:${type}`, hole ? 2 : 1, [type]);
   }
 
   // Minacce del meta senza check (la lista è vuota senza meta)
@@ -297,7 +307,7 @@ export function coachTeam(team: TeamSet[], format: Format, data: EngineData, lan
   if (data.formatId !== format.formatId) data = { ...data, formatId: format.formatId };
   const analysis = analyzeTeam(team, data);
   const candidates = data.stats ? scoreCandidates(team, format, data) : [];
-  const problems = findProblems(team, format, analysis, candidates, lang);
+  const problems = findProblems(team, format, data, analysis, candidates, lang);
   return {
     verdict: verdictFor(team, problems.filter(p => p.category !== 'meta'), rateTeam(team, data, lang)?.grade ?? 'D', lang),
     teamType: teamArchetype(team, analysis.needs.rules),

@@ -463,11 +463,17 @@ describe('CoachingView', () => {
 
   it('mappa: le righe di coverage hanno le icone dei tipi, i nomi senza colore', () => {
     const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], threatFixes: {},
-      problems: [{ severity: 'minor', category: 'coverage', text: 'Nessuna mossa super efficace contro Water e Fire', fixes: [], key: 'coverage', subjects: ['Water', 'Fire'] }] };
+      problems: [
+        { severity: 'serious', category: 'coverage', text: 'Scoperto Water: nessun colpo super efficace', fixes: [], key: 'coverage:Water', size: 2, subjects: ['Water'] },
+        { severity: 'minor', category: 'coverage', text: 'Coperto a metà Fire: 1 solo in tre colpi', fixes: [], key: 'coverage:Fire', size: 1, subjects: ['Fire'] },
+      ] };
     renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [] }} members={3} rating={rating(three)} metaOn {...noop} />);
-    const row = screen.getByRole('group', { name: 'Offesa' }).querySelector('li[data-key="coverage"]')!;
-    expect(row.querySelectorAll('.type-icons img')).toHaveLength(2);
-    expect(row.querySelector('.type-name, .type-dot')).toBeNull();
+    // Un problema per tipo: una riga con l'icona del suo tipo
+    for (const type of ['Water', 'Fire']) {
+      const row = screen.getByRole('group', { name: 'Offesa' }).querySelector(`li[data-key="coverage:${type}"]`)!;
+      expect(row.querySelectorAll('.type-icons img')).toHaveLength(1);
+      expect(row.querySelector('.type-name, .type-dot')).toBeNull();
+    }
   });
 
   it("mappa: la riga della minaccia mostra la % d'uso, senza dato resta com'è", () => {

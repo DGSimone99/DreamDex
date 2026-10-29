@@ -71,18 +71,19 @@ describe('schede interne di Analisi', () => {
   });
 
   it('Coaching: badge coi problemi gravi, il nome resta "Coaching"', async () => {
-    // Kingambit e Gholdengo sono entrambi deboli a Fire e Ground: due problemi gravi
+    // Kingambit e Gholdengo sono entrambi deboli a Fire e Ground, e nessuno colpisce super efficace Water e Fighting: quattro problemi gravi
     await setup(['Great Tusk', 'Gholdengo', 'Kingambit']);
     const tab = within(views()).getByRole('tab', { name: 'Coaching' });
     const badge = tab.querySelector('.tab-badge');
     expect(badge).toHaveTextContent(/^\d+$/);
     expect(badge).toHaveAttribute('aria-hidden', 'true');
-    expect(badge).toHaveTextContent('2');
-    expect(tab).toHaveAttribute('title', '2 problemi gravi');
+    expect(badge).toHaveTextContent('4');
+    expect(tab).toHaveAttribute('title', '4 problemi gravi');
   });
 
   it('Coaching senza problemi gravi: nessun badge', async () => {
-    await setup();
+    // Nessun tipo scoperto che pesa, nessuna debolezza grave
+    await setup(['Great Tusk', 'Gholdengo', 'Corviknight', 'Rotom-Wash']);
     expect(within(views()).getByRole('tab', { name: 'Coaching' }).querySelector('.tab-badge')).toBeNull();
   });
 
