@@ -52,10 +52,10 @@ describe('Panoramica di Analisi', () => {
     expect(within(views()).getByRole('tab', { name: 'Offesa' })).toHaveAttribute('aria-selected', 'true');
   });
 
-  it('il Riassunto: la riga Minacce porta al Coaching, Attaccanti a Offesa', async () => {
+  it("il Riassunto: un attaccante dell'eroe porta a Offesa", async () => {
     const user = await setup();
     const summary = within(panel()).getByRole('region', { name: 'Riassunto' });
-    await user.click(within(summary).getByRole('button', { name: /^Attaccanti/ }));
+    await user.click(within(within(summary).getByRole('group', { name: 'Attaccano' })).getAllByRole('button')[0]);
     expect(within(views()).getByRole('tab', { name: 'Offesa' })).toHaveAttribute('aria-selected', 'true');
   });
 
@@ -70,19 +70,20 @@ describe('Panoramica di Analisi', () => {
     render(<App initialLang="it" data={{ ...fixtureData, ignoreMeta: true }} />);
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Great Tusk{Enter}');
     await user.click(screen.getByRole('tab', { name: /^Analisi/ }));
-    // Meta spento: nel Riassunto niente riga Minacce
-    expect(within(within(panel()).getByRole('region', { name: 'Riassunto' })).queryByRole('button', { name: /^Minacce/ })).toBeNull();
+    // Meta spento: nel Riassunto niente Minacce
+    expect(within(within(panel()).getByRole('region', { name: 'Riassunto' })).queryByText('Minacce')).toBeNull();
     expect(within(panel()).getByRole('region', { name: 'Velocità' })).toHaveTextContent(/media del tier/);
   });
 
-  it("team di 3 senza statistiche: il Riassunto c'è, nessun crash, nessuna riga Minacce", async () => {
+  it("team di 3 senza statistiche: il Riassunto c'è, nessun crash, niente Minacce", async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={{ ...fixtureData, stats: null, sets: null }} />);
     for (const name of ['Great Tusk', 'Gholdengo', 'Dragapult']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
     await user.click(screen.getByRole('tab', { name: /^Analisi/ }));
     const summary = within(panel()).getByRole('region', { name: 'Riassunto' });
-    expect(within(summary).getByRole('button', { name: /^Colpisce/ })).toBeInTheDocument();
-    expect(within(summary).queryByRole('button', { name: /^Minacce/ })).toBeNull();
+    expect(within(summary).getByRole('heading', { name: 'Meteo e campo' })).toBeInTheDocument();
+    expect(within(summary).getByRole('heading', { name: 'Trappole' })).toBeInTheDocument();
+    expect(within(summary).queryByText('Minacce')).toBeNull();
   });
 
   it('niente più tessera Bonus/Malus né striscia "Vai al Coaching"', async () => {
@@ -169,7 +170,7 @@ describe('Panoramica: rifinitura', () => {
     expect(screen.getByRole('tab', { name: /^Pokémon/ })).toHaveAttribute('aria-selected', 'true');
   });
 
-  it('giudizio in cima; il tipo di team sta nella riga Tipo del Riassunto', async () => {
+  it('giudizio in cima; il tipo di team sta in cima al Riassunto', async () => {
     await setup(['Great Tusk', 'Gholdengo', 'Kingambit', 'Dragapult', 'Corviknight', 'Toxapex']);
     const headline = panel().querySelector<HTMLElement>('.overview-headline')!;
     expect(headline.querySelector('.team-type')).toBeNull();
