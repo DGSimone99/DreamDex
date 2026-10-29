@@ -6,6 +6,8 @@ import { rateTeam } from '../../src/engine/rating';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
 import { LangProvider } from '../../src/i18n/react';
 import { AreaView } from '../../src/ui/AreaView';
+import { gameName } from '../../src/i18n/game';
+import { offenseSlots } from '../../src/ui/offense/slots';
 import { fixtureData } from '../fixtures/data';
 import { renderIt } from '../helpers/italian';
 
@@ -146,11 +148,49 @@ describe('Offesa: Potenza', () => {
     await user.click(screen.getByRole('tab', { name: /^Potenza/ }));
     expect([...document.querySelectorAll('.def-mon-name')].map(n => n.textContent)).toEqual(['Great Tusk', 'Gholdengo']);
     const rows = document.querySelectorAll('.def-members tbody tr');
-    rating.offense.members.forEach((m, i) => {
+    const slots = offenseSlots(team, rating.offense.members);
+    team.forEach((_, slot) => {
+      const m = rating.offense.members[slots[slot]!];
       expect(m.bestMove).toBeTruthy();
-      expect(rows[i].querySelector('.pw-move .move-name')!.textContent).not.toBe('');
-      expect(rows[i].querySelector('.pw-move')).toBeInTheDocument();
+      expect(rows[slot].querySelector('.pw-move')!.textContent).toBe(gameName('move', m.bestMove!, 'it'));
     });
+  });
+
+  it('Potenza: il +N di Tera o mossa Z ha il suo titolo', async () => {
+    const user = userEvent.setup();
+    const t = [{ ...emptySet('Kingambit'), ability: 'Supreme Overlord', item: 'Black Glasses', moves: ['Kowtow Cleave', 'Sucker Punch', 'Iron Head'], evs: { hp: 252, atk: 252 }, teraType: 'Dark' }];
+    const gen9 = { ...fixtureData, formatId: 'gen9ou' as const };
+    const rating = rateTeam(t, gen9, 'it')!;
+    renderIt(<AreaView rating={rating} area="strength" team={t} analysis={analyzeTeam(t, gen9)} problems={[]} />);
+    await user.click(screen.getByRole('tab', { name: /^Potenza/ }));
+    const gains = rating.offense.members.filter(m => m.oneUse && Math.round(m.powerInGrade - m.power) > 0);
+    expect(gains.length).toBeGreaterThan(0);
+    const small = [...document.querySelectorAll('.pw-bar small.ad-gain')];
+    expect(small).toHaveLength(gains.length);
+    small.forEach(el => {
+      expect(el.textContent).toMatch(/\(\+\d+\)/);
+      expect(el.getAttribute('title')).toMatch(/una volta a partita/);
+    });
+  });
+
+  it('Potenza: membro scartato resta con "—"', async () => {
+    const user = userEvent.setup();
+    const t = [team[0], { ...emptySet('Blissey'), moves: ['Soft-Boiled', 'Toxic', 'Stealth Rock', 'Teleport'] }];
+    renderIt(<AreaView rating={rateTeam(t, fixtureData, 'it')!} area="strength" team={t} analysis={analyzeTeam(t, fixtureData)} problems={[]} />);
+    await user.click(screen.getByRole('tab', { name: /^Potenza/ }));
+    const rows = document.querySelectorAll('.def-members tbody tr');
+    expect(rows).toHaveLength(2);
+    expect(rows[1].querySelector('.pw-move')).toBeNull();
+    expect(within(rows[1] as HTMLElement).getAllByText('—').length).toBeGreaterThan(0);
+  });
+
+  it('Potenza: senza statistiche il riferimento è fisso', async () => {
+    const user = userEvent.setup();
+    const noStats = { ...fixtureData, stats: null };
+    renderIt(<AreaView rating={rateTeam(team, noStats, 'it')!} area="strength" team={team} analysis={analyzeTeam(team, noStats)} problems={[]} />);
+    await user.click(screen.getByRole('tab', { name: /^Potenza/ }));
+    expect(document.querySelector('.pw-ref')!.textContent).toMatch(/100 = un danno medio del \d+% dei PS/);
+    expect(document.querySelectorAll('.pw-ref .def-open-mon')).toHaveLength(0);
   });
 
   it('Potenza: i tre attaccanti di riferimento', async () => {

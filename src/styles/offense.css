@@ -26,8 +26,6 @@
 .def-power .pw-col-move { width: 240px; }
 .def-power .pw-bar .def-cell { grid-template-columns: minmax(120px, 360px) 3ch; }
 .def-power .pw-move { display: inline-block; max-width: 100%; padding: 3px 12px; border-radius: 4px; font-size: 13px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; vertical-align: middle; }
-/* MoveName colora il testo per i fondi scuri: sul chip vale il colore scelto per il suo fondo */
-.def-power .pw-move .move-name { color: inherit !important; }
 .def-power .pw-ref { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 8px 0 0; font-size: 12px; color: var(--muted); }
 .def-power .pw-ref .def-open-mon { display: inline-grid; }
 .def-power .pw-legend { margin-left: auto; }

@@ -10,12 +10,12 @@ import { useLang } from '../i18n/react';
 // Il fondo dei pannelli (--panel in tokens.css): il testo dei tipi ci si legge con contrasto ≥ 6
 const PANEL = '#1a1d2a';
 
-function luminance(rgb: number[]): number {
+export function luminance(rgb: number[]): number {
   const [r, g, b] = rgb.map(c => c / 255).map(c => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
 
-const hexToRgb = (hex: string) => [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16));
+export const hexToRgb = (hex: string) => [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16));
 
 /** Il colore del tipo, schiarito quanto basta per leggersi come testo sul fondo scuro (contrasto ≥ 6, uniforme tra i tipi). */
 function readable(hex: string): string {
@@ -40,11 +40,11 @@ export function TypeLabel({ type }: { type: string }) {
   return <span className="type-name" style={style}>{typeName(type, lang)}</span>;
 }
 
-/** Il nome di una mossa, nel colore del suo tipo. */
-export function MoveName({ move }: { move: string }) {
+/** Il nome di una mossa, nel colore del suo tipo (con `plain` senza colore: lo dà chi lo contiene, es. un chip colorato). */
+export function MoveName({ move, plain = false }: { move: string; plain?: boolean }) {
   const lang = useLang();
   const type = getMove(move)?.type;
-  return <span className="move-name" style={type ? { color: typeTextColor(type) } : undefined}>{gameName('move', move, lang)}</span>;
+  return <span className="move-name" style={type && !plain ? { color: typeTextColor(type) } : undefined}>{gameName('move', move, lang)}</span>;
 }
 
 const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');

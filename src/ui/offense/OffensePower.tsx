@@ -7,20 +7,13 @@ import type { AreaContext } from '../AreaDetail';
 import { Bar } from '../defense/DefenseGeneral';
 import { MemberMon } from '../defense/MemberMon';
 import { PokemonIcon } from '../PokemonName';
-import { MoveName } from '../TypeText';
+import { MoveName, hexToRgb, luminance } from '../TypeText';
 import { offenseSlots } from './slots';
-
-/** Luminanza relativa di un colore #rrggbb. */
-function luminance(hex: string): number {
-  const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255)
-    .map(c => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-}
 
 /** Testo scuro o chiaro, quello con più contrasto sul colore del tipo (sempre ≥ 4,5). */
 function inkOn(hex: string): string {
-  const l = luminance(hex);
-  return (l + 0.05) / (luminance('#111111') + 0.05) >= (1.05) / (l + 0.05) ? '#111111' : '#ffffff';
+  const l = luminance(hexToRgb(hex));
+  return (l + 0.05) / (luminance([17, 17, 17]) + 0.05) >= 1.05 / (l + 0.05) ? '#111111' : '#ffffff';
 }
 
 /** Il fondo del chip di una mossa: il colore del suo tipo, col testo che ci si legge meglio. */
@@ -68,7 +61,7 @@ export function OffensePower({ offense, ctx }: { offense: TeamOffense; ctx: Area
                           <small className="ad-gain" title={m.oneUse.kind === 'tera' ? t('detail.withTera', { type: m.oneUse.name }) : t('detail.withZ', { item: m.oneUse.name })}> (+{gain})</small>
                         )}
                       </td>
-                      <td>{m.bestMove ? <span className="pw-move" style={chipStyle(m.bestMove)}><MoveName move={m.bestMove} /></span> : '—'}</td>
+                      <td>{m.bestMove ? <span className="pw-move" style={chipStyle(m.bestMove)}><MoveName move={m.bestMove} plain /></span> : '—'}</td>
                     </>
                     : <><td>—</td><td>—</td></>}
                 </tr>
