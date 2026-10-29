@@ -103,8 +103,17 @@
 .area-subs [role='tab']:hover { color: var(--text); }
 /* La striscia scorre (overflow): il contorno del fuoco va dentro la scheda, o verrebbe tagliato */
 .area-subs [role='tab']:focus-visible { outline-offset: -3px; }
-.area-subs [role='tab'][aria-selected='true'] { color: var(--text); background: var(--accent-2-soft); border-bottom-color: var(--accent-2-ink); }
+/* La sottoscheda aperta come la scheda principale aperta, in piccolo: righe magenta, taglio diagonale a destra e testo
+   appena più grande (solo visivo), così si riconosce subito */
+.area-subs [role='tab'][aria-selected='true'] {
+  color: var(--text); background: var(--stripes), var(--accent-2-soft); border-bottom-color: var(--accent-2-ink);
+  clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
+}
 .area-subs [role='tab'][aria-selected='true'] b { color: var(--text); }
+/* Ingrandimento solo visivo (scale dal centro): la larghezza della scheda non cambia, quindi nulla si sposta */
+.area-subs [role='tab'] > span:first-child, .area-subs [role='tab'] > b { display: inline-block; transform-origin: center; }
+.area-subs [role='tab'][aria-selected='true'] > span:first-child, .area-subs [role='tab'][aria-selected='true'] > b { transform: scale(1.05); }
+.area-subs [role='tab'][aria-selected='true'] > span:first-child { font-weight: 500; }
 .sub-help-room { display: inline-block; width: 30px; }
 .area-help { position: absolute; display: flex; }
 .area-help .help-button { width: 18px; height: 18px; color: var(--text); }
@@ -170,7 +179,9 @@ button.member-card:hover { border-color: var(--accent); }
 
 /* Schede interne a larghezza uguale su tutta la riga; quella aperta come le teste (magenta a righe, inclinata) */
 .analysis-tabs { border-bottom: 0; }
-.analysis-tabs [role='tablist'] { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; width: 100%; }
+/* Panoramica e Coaching (la lettura del team) separate dalle aree del voto da uno stacco con un filo sottile */
+.analysis-tabs [role='tablist'] { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)) 14px repeat(5, minmax(0, 1fr)); gap: 4px; width: 100%; }
+.analysis-tabs [role='tablist']::before { content: ''; grid-column: 3; grid-row: 1; justify-self: center; width: 1px; margin: 6px 0; background: var(--line); }
 .analysis-tabs [role='tab'] { display: flex; align-items: baseline; justify-content: center; gap: 8px; width: 100%; padding: 8px 14px; border: 1px solid var(--line-soft); background: var(--panel); }
 .analysis-tabs [role='tab'][aria-selected='true'] {
   color: var(--on-accent-2); border-color: var(--accent-2);
@@ -194,9 +205,22 @@ button.member-card:hover { border-color: var(--accent); }
   z-index: 1;
   width: calc(100% + 30px);
   margin-right: -30px;
-  padding-right: 70px;
+  /* Il padding in più è esattamente l'allungamento (30px): il testo resta dove stava da chiusa */
+  padding-right: 44px;
   clip-path: polygon(0 0, 100% 0, calc(100% - 22px) 100%, 0 100%);
   animation: tab-stretch 0.24s var(--ease) both;
+}
+/* Coaching e Bonus/Malus chiudono un gruppo (prima dello stacco, in fondo alla riga): il lato destro resta dritto e la
+   scheda si allunga a sinistra, col taglio inclinato sopra la scheda vicina (Panoramica, Ruoli) */
+.analysis-tabs [role='tab'][aria-selected='true']:is(#analysis-view-coaching, #analysis-view-bonusMalus) {
+  margin-right: 0; margin-left: -30px;
+  padding-right: 14px; padding-left: 44px;
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 22px 100%);
+  animation-name: tab-stretch-left;
+}
+@keyframes tab-stretch-left {
+  from { clip-path: polygon(22px 0, 100% 0, 100% 100%, 36px 100%); }
+  to { clip-path: polygon(0 0, 100% 0, 100% 100%, 22px 100%); }
 }
 @keyframes tab-stretch {
   from { clip-path: polygon(0 0, calc(100% - 22px) 0, calc(100% - 36px) 100%, 0 100%); }

@@ -23,7 +23,7 @@ export function defenseTabs(defense: TeamDefense, meta: boolean, t: T, ctx: Area
   const sustain = <DefenseSustain defense={defense} ctx={ctx} />;
 
   const coverageTypes = <DefenseTypes defense={defense} ctx={ctx} />;
-  const metaTab = coverageMeta && <DefenseMeta defense={defense} />;
+  const metaTab = coverageMeta && <DefenseMeta defense={defense} ctx={ctx} />;
 
   const panels: Record<Key, ReactElement | null> = { robustness, sustain, coverageTypes, coverageMeta: metaTab };
   const guide = (section: Parameters<typeof DefenseGuideSection>[0]['section']) => <DefenseGuideSection section={section} defense={defense} meta={meta} />;

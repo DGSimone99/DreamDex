@@ -2,7 +2,8 @@ import type { TeamDefense } from '../../engine/defense';
 import { useT } from '../../i18n/react';
 import type { AreaContext } from '../AreaDetail';
 import { PokemonIcon } from '../PokemonName';
-import { MemberMon } from './MemberMon';
+import { Icon } from '../icons';
+import { MemberMon, setOf } from './MemberMon';
 
 /** Soglia di un colpo standard ricevuto, dal valore del colpo (holdStep: OHKO 0 … 4HKO o più 1,5). */
 export const HOLD_TAGS: Record<number, { cls: string; tag: string }> = {
@@ -44,7 +45,9 @@ export function DefenseRobustness({ defense, ctx }: { defense: TeamDefense; ctx:
               <th scope="col" rowSpan={2} className="def-mon-h">{t('detail.member')}</th>
               {groups.map((g, gi) => [
                 <th key={g.key} scope="colgroup" colSpan={g.rows.length}>{g.title}</th>,
-                <th key={`${g.key}-side`} scope="col" rowSpan={2} className="rob-side-h">{g.side}</th>,
+                <th key={`${g.key}-side`} scope="col" rowSpan={2} className="rob-side-h" title={g.side}>
+                  <Icon name={g.key} /><span className="visually-hidden">{g.side}</span>
+                </th>,
                 ...(gi === 0 ? [gap('head', 'th')] : []),
               ])}
             </tr>
@@ -62,7 +65,7 @@ export function DefenseRobustness({ defense, ctx }: { defense: TeamDefense; ctx:
           <tbody>
             {members.map((m, mi) => (
               <tr key={`${m.species}-${mi}`}>
-                <th scope="row"><MemberMon name={m.species} /></th>
+                <th scope="row"><MemberMon name={m.species} set={setOf(ctx.team, m.species)} stats /></th>
                 {groups.map((g, gi) => [
                   ...g.rows.map((row, i) => {
                     const cell = row.cells[mi];

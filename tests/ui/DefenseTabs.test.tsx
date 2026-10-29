@@ -139,15 +139,27 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
       .toEqual(rating.defense.coverageTypes.rows.map(row => `${row.safety}%`));
   });
 
-  it('Coverage meta: una tessera per minaccia, con livello e chi la regge nel nome accessibile', async () => {
+  it('Coverage meta: pagine da 8 minacce, dalla meno coperta (a pari livello la più usata), livello e chi la regge nel nome accessibile', async () => {
     const user = userEvent.setup();
     const rating = withMeta();
     renderIt(<AreaView rating={rating} area="defense" team={team} analysis={analysis} problems={[]} />);
     await user.click(screen.getByRole('tab', { name: /^Coverage meta/ }));
-    const tiles = within(screen.getByRole('tabpanel')).getAllByRole('listitem');
-    expect(tiles).toHaveLength(rating.defense.coverageMeta!.rows.length);
-    const top = [...rating.defense.coverageMeta!.rows].sort((a, b) => b.weight - a.weight)[0];
-    expect(tiles[0]).toHaveAccessibleName(new RegExp(`^${top.species}.*${top.level}%`));
+    const panel = within(screen.getByRole('tabpanel'));
+    const rows = rating.defense.coverageMeta!.rows;
+    const expected = [...rows].sort((a, b) => a.level - b.level || b.weight - a.weight);
+    const names = () => panel.getAllByRole('listitem').map(tile => tile.getAttribute('aria-label')!.split(':')[0]);
+    expect(names()).toEqual(expected.slice(0, 8).map(r => r.species));
+    expect(panel.getAllByRole('listitem')[0]).toHaveAccessibleName(new RegExp(`^${expected[0].species}.*${expected[0].level}%`));
+    // Una pagina per ogni 8 minacce; la seconda mostra le successive, e "precedente" torna alla prima
+    const pages = panel.getByRole('navigation', { name: 'Pagine delle minacce' });
+    expect(within(pages).getAllByRole('button', { name: /^Minacce da/ })).toHaveLength(Math.ceil(rows.length / 8));
+    expect(within(pages).getByRole('button', { name: 'Minacce precedenti' })).toBeDisabled();
+    if (rows.length > 8) {
+      await user.click(within(pages).getByRole('button', { name: /^Minacce da 9 / }));
+      expect(names()).toEqual(expected.slice(8, 16).map(r => r.species));
+      await user.click(within(pages).getByRole('button', { name: 'Minacce precedenti' }));
+      expect(names()).toEqual(expected.slice(0, 8).map(r => r.species));
+    }
   });
 });
 
@@ -198,7 +210,8 @@ describe('Difesa: ordine, barre e Generale a squadra chiusa', () => {
     const rows = Array.from(document.querySelectorAll('.def-members tbody tr'));
     expect(rows[1].querySelectorAll('.def-bar')[3]).toHaveClass('bad');
     expect(rows[0].querySelectorAll('.def-bar')[3]).toHaveClass('good');
-    expect(document.querySelectorAll('.def-weak')).toHaveLength(1);
+    // L'etichetta c'è due volte nel DOM (accanto al nome e accanto alle statistiche, il CSS ne mostra una), sempre in un membro solo
+    expect(rows.filter(r => r.querySelector('.def-weak'))).toHaveLength(1);
     expect(rows[1].querySelector('.def-weak')).toBeTruthy();
   });
 
