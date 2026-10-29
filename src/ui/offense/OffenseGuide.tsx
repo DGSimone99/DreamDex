@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import type { TeamOffense } from '../../engine/offense';
-import { COVERAGE_SHARE, OFFENSE_WEIGHTS, RANK_WEIGHTS, WALL_DEPTH } from '../../engine/offense';
+import { COVERAGE_SHARE, OFFENSE_WEIGHTS, POWER_FULL, RANK_WEIGHTS, STEP_2HKO, STEP_3HKO, STEP_OHKO, THREE_HIT, TWO_HIT, WALL_DEPTH } from '../../engine/offense';
 import { COVERAGE_DEPTH } from '../../engine/coverage';
 import { useLang, useT } from '../../i18n/react';
 import { Rows } from '../guideParts';
@@ -30,7 +30,8 @@ export function OffenseGuideSection({ section, offense, meta }: { section: Offen
   const t = useT();
   const lang = useLang();
   // Decimali alla maniera della lingua (0,5 in italiano, 0.5 in inglese)
-  const dec = (text: string) => (lang === 'it' ? text : text.replace(',', '.'));
+  const num = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1)).replace('.', lang === 'it' ? ',' : '.');
+  const pctOf = (x: number) => Math.round(100 * x);
   const g = (key: string, params?: Record<string, string | number>) => t(`guide.off.${key}` as Key, params);
   const walls = offense.defenders.length;
   const targets = meta ? g('targets.meta', { n: offense.coverageMeta?.rows.length ?? 0 }) : g('targets.tier');
@@ -42,16 +43,21 @@ export function OffenseGuideSection({ section, offense, meta }: { section: Offen
   const lines = (items: ReactNode[]) => <ul className="guide-lines">{items.map((item, i) => <li key={i}>{item}</li>)}</ul>;
 
   if (section === 'general') {
-    const own = Math.round(100 * (1 - COVERAGE_SHARE));
-    const share = Math.round(100 * COVERAGE_SHARE);
+    const own = pctOf(1 - COVERAGE_SHARE);
+    const share = pctOf(COVERAGE_SHARE);
+    // Le quote vere dell'Offesa: la parte dei membri divisa fra Potenza e Wallbreaking (pesi rinormalizzati), poi la Coverage
+    const w = OFFENSE_WEIGHTS;
+    const powerShare = Math.round(own * w.power / (w.power + w.wallbreaking));
+    const wallShare = own - powerShare;
+    const coverageShare = meta ? share / 2 : share;
     return (
       <>
         <h5>{g('what')}</h5>
         <Rows stacked rows={[
-          [<>{t('detail.power')}<span className="guide-pct">{Math.round(100 * OFFENSE_WEIGHTS.power)}</span></>, g('what.power', { targets })],
-          [<>{t('detail.wallbreaking')}<span className="guide-pct">{Math.round(100 * OFFENSE_WEIGHTS.wallbreaking)}</span></>, g('what.wall', { n: walls })],
-          [<>{t('detail.coverageTypes')}{pct(meta ? dec(String(share / 2).replace('.', ',')) : share)}</>, g('what.types')],
-          ...(meta ? [[<>{t('detail.coverageMeta')}{pct(dec(String(share / 2).replace('.', ',')))}</>, g('what.meta')] as [ReactNode, string]] : []),
+          [<>{t('detail.power')}{pct(powerShare)}</>, g('what.power', { targets })],
+          [<>{t('detail.wallbreaking')}{pct(wallShare)}</>, g('what.wall', { n: walls })],
+          [<>{t('detail.coverageTypes')}{pct(num(coverageShare))}</>, g('what.types')],
+          ...(meta ? [[<>{t('detail.coverageMeta')}{pct(num(coverageShare))}</>, g('what.meta')] as [ReactNode, string]] : []),
         ]} />
 
         <h5>{g('test')}</h5>
@@ -64,7 +70,7 @@ export function OffenseGuideSection({ section, offense, meta }: { section: Offen
         <h5>{g('toteam')}</h5>
         {lines([
           g('toteam.split', { own, share }),
-          g('toteam.weights', { power: Math.round(100 * OFFENSE_WEIGHTS.power), wall: Math.round(100 * OFFENSE_WEIGHTS.wallbreaking) }),
+          g('toteam.weights', { power: pctOf(OFFENSE_WEIGHTS.power), wall: pctOf(OFFENSE_WEIGHTS.wallbreaking) }),
         ])}
         <h6>{g('rank.weights')}</h6>
         {members}
@@ -90,7 +96,7 @@ export function OffenseGuideSection({ section, offense, meta }: { section: Offen
         ]} />
 
         <h5>{g('power.vote')}</h5>
-        {lines([offense.referenceAttackers.length ? g('power.ref.meta', { list: offense.referenceAttackers.join(', ') }) : g('power.ref.fixed'), g('power.scale')])}
+        {lines([offense.referenceAttackers.length ? g('power.ref.meta', { list: offense.referenceAttackers.join(', ') }) : g('power.ref.fixed', { pct: pctOf(POWER_FULL) }), g('power.scale')])}
 
         <h5>{g('toteam')}</h5>
         {members}
@@ -109,9 +115,9 @@ export function OffenseGuideSection({ section, offense, meta }: { section: Offen
 
         <h5>{g('wall.points')}</h5>
         <ul className="guide-holds three">
-          <li><span className="ad-k ohko">OHKO</span><b>{dec('1,5')}</b><small>{g('wall.ohko')}</small></li>
-          <li><span className="ad-k two">2HKO</span><b>1</b><small>{g('wall.two')}</small></li>
-          <li><span className="ad-k three">3HKO</span><b>{dec('0,5')}</b><small>{g('wall.three')}</small></li>
+          <li><span className="ad-k ohko">OHKO</span><b>{num(STEP_OHKO)}</b><small>{g('wall.ohko')}</small></li>
+          <li><span className="ad-k two">2HKO</span><b>{num(STEP_2HKO)}</b><small>{g('wall.two', { pct: pctOf(TWO_HIT) })}</small></li>
+          <li><span className="ad-k three">3HKO</span><b>{num(STEP_3HKO)}</b><small>{g('wall.three', { pct: pctOf(THREE_HIT) })}</small></li>
         </ul>
 
         <h5>{g('wall.depth')}</h5>
@@ -121,6 +127,7 @@ export function OffenseGuideSection({ section, offense, meta }: { section: Offen
         <h5>{g('wall.setup')}</h5>
         {lines([
           offense.setters.length ? g('wall.setters', { list: offense.setters.map(s => `${s.species} (${s.move})`).join(', ') }) : t('detail.setup.none'),
+          g('rules.setup'),
           g('wall.legend'),
         ])}
       </>
@@ -137,7 +144,7 @@ export function OffenseGuideSection({ section, offense, meta }: { section: Offen
         [g('test.targets'), isMeta ? g('cov.targets.meta', { n: count }) : g('cov.targets.tier', { n: count })],
         [g('cov.hit'), g('cov.hit.rule')],
         [g('cov.half'), g('cov.half.rule')],
-        [g('cov.hole'), g('cov.hole.rule')],
+        [g('cov.hole'), g('cov.hole.rule', { pct: pctOf(THREE_HIT) })],
       ]} />
 
       <h5>{g('cov.depth')}</h5>
