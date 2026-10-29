@@ -461,6 +461,30 @@ describe('CoachingView', () => {
     expect(screen.getByRole('group', { name: 'Regole · Meta' }).querySelector('li.coach-prob[data-key="rules:x"]')).toHaveAttribute('title', text);
   });
 
+  it('mappa: le pillole che non stanno nella tessera vanno nel "+N"; restano prima le risolvibili, poi le gravi', () => {
+    // Misura finta: la tessera è alta 130px, testata 40px, ogni pillola (e il "+N") 30px
+    const tall = vi.spyOn(Element.prototype, 'clientHeight', 'get').mockImplementation(function (this: Element) { return this.classList.contains('coach-tile') ? 130 : 0; });
+    const scroll = vi.spyOn(Element.prototype, 'scrollHeight', 'get').mockImplementation(function (this: Element) {
+      return this.classList.contains('coach-tile') ? 40 + 30 * this.querySelectorAll('li.coach-prob, .coach-more').length : 0;
+    });
+    try {
+      const p = (type: string, severity: CoachProblem['severity'], fixes: string[] = []): CoachProblem =>
+        ({ severity, category: 'defense', text: `Debole a ${type}`, fixes, key: `defense:${type}`, subjects: [type] });
+      const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], threatFixes: {},
+        problems: [p('Fire', 'minor'), p('Ice', 'serious'), p('Water', 'minor', ['Rotom-Wash']), p('Ground', 'minor')] };
+      renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [] }} members={3} rating={rating(three)} metaOn {...noop} />);
+      const tile = screen.getByRole('group', { name: 'Difesa' });
+      expect([...tile.querySelectorAll('li.coach-prob')].map(li => li.getAttribute('data-key'))).toEqual(['defense:Ice', 'defense:Water']);
+      const more = tile.querySelector('.coach-more')!;
+      expect(more).toHaveTextContent(/^\+2/);
+      expect(more).toHaveAttribute('title', 'Debole a Fire\nDebole a Ground');
+      expect(more.querySelector('.visually-hidden')).toHaveTextContent('Debole a Fire; Debole a Ground');
+    } finally {
+      tall.mockRestore();
+      scroll.mockRestore();
+    }
+  });
+
   it('mappa: le righe di coverage hanno le icone dei tipi, i nomi senza colore', () => {
     const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], threatFixes: {},
       problems: [

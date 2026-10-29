@@ -599,8 +599,12 @@ button.sum-row:hover { background: var(--accent-wash); }
  * Problemi per area: quattro tessere (targa magenta, voto grande, barretta del voto), i problemi come pillole col bordo
  * del colore della gravità. Ridondanze e minacce sotto un'etichetta, più quiete. Tessera pulita: tinta di verde.
  */
-.coach-map { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, 1.2fr); gap: 10px; align-items: stretch; margin: 0 0 7px; }
-.coach-tile { display: flex; flex-direction: column; min-width: 0; padding: 0 0 5px; background: var(--panel); border: 1px solid var(--line-soft); }
+/* La mappa cede l'altezza alle tappe: il Coaching non scorre, le pillole che non stanno vanno nel "+N" della tessera */
+.coach-map-region { flex: 0 1 auto; min-height: 0; display: flex; flex-direction: column; }
+.coach-steps-region { flex: none; }
+.coach-map { flex: 0 1 auto; min-height: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, 1.2fr); grid-template-rows: minmax(0, 1fr); gap: 10px; align-items: stretch; margin: 0 0 7px; }
+.coach-tile { display: flex; flex-direction: column; min-width: 0; min-height: 0; padding: 0 0 5px; overflow: hidden; background: var(--panel); border: 1px solid var(--line-soft); }
+.coach-more { flex: none; align-self: flex-start; margin: 6px 12px 0; padding: 0 7px; border-radius: 10px; font: 600 11px/18px var(--ui); color: var(--muted); background: var(--raised); cursor: help; }
 .coach-tile-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-right: 12px; }
 .coach-tile-head .dash-meta b { font: 800 24px/1 var(--display); font-style: italic; }
 .coach-tile-bar { height: 4px; margin: 9px 12px 9px; background: linear-gradient(90deg, var(--accent) var(--score, 0%), var(--line-soft) var(--score, 0%)); }

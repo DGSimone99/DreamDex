@@ -1,4 +1,4 @@
-import { Fragment, useId, useState, type CSSProperties, type ReactNode } from 'react';
+import { Fragment, useId, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react';
 import { PROBLEM_CATEGORIES, type CoachAdvice, type Coaching, type CoachProblem, type ProblemCategory } from '../engine/coach';
 import type { CoachFix } from '../engine/coachFixes';
 import { needLabel, type Need } from '../engine/needs';
@@ -13,6 +13,7 @@ import { PokemonIcon } from './PokemonName';
 import { Sprite } from './Sprite';
 import { TypeIcons } from './typeIcons';
 import { Typed } from './TypeText';
+import { useFitCount } from './useFit';
 
 const CATEGORY: Record<ProblemCategory, MessageKey> = {
   rules: 'coach.category.rules', defense: 'coach.category.defense', coverage: 'coach.category.coverage', roles: 'coach.category.roles',
@@ -331,6 +332,69 @@ const COLUMNS: { key: MapColumn; area: 'defense' | 'strength' | 'roles' | null }
 ];
 
 /**
+ * Una tessera della mappa: targa, voto, barretta e i problemi della colonna come pillole. Le pillole che non stanno
+ * nell'altezza della tessera finiscono in un "+N" (title e testo nascosto con tutte): prima restano quelle risolvibili
+ * (rimedi o una tappa mostrata), poi i gravi, poi l'ordine di `items`. Ridondanze e minacce sotto un'etichetta, più quiete.
+ */
+function MapTile({ id, name, items, score, stepOf, preview, threatUsage, watch }: {
+  id: string; name: string; items: CoachProblem[]; score: number | null; stepOf: Map<string, number>; preview: Set<string> | null;
+  threatUsage?: Record<string, number>;
+  /** Il contenitore del Coaching: quando cambia misura si rimisura (la tessera stessa si stringe col contenuto). */
+  watch: RefObject<HTMLElement | null>;
+}) {
+  const tr = useT();
+  const lang = useLang();
+  const ref = useRef<HTMLDivElement>(null);
+  type Section = 'main' | 'redundancy' | 'meta';
+  const sectionOf = (p: CoachProblem): Section => (p.category === 'redundancy' ? 'redundancy' : p.category === 'meta' ? 'meta' : 'main');
+  // Ruoli mancanti: una pillola per ruolo (possono riempirli Pokémon diversi), senza la frase davanti
+  const pills = items.flatMap(p => (isMissingRoles(p) ? (p.subjects ?? []).map(role => ({ p, role })) : [{ p, role: undefined as string | undefined }]))
+    .map((pill, i) => ({ ...pill, i, section: sectionOf(pill.p) }));
+  const solvable = (p: CoachProblem) => p.fixes.length > 0 || stepOf.has(p.key);
+  const priority = [...pills].sort((a, b) => Number(solvable(b.p)) - Number(solvable(a.p))
+    || Number(b.p.severity === 'serious') - Number(a.p.severity === 'serious') || a.i - b.i);
+  const fit = useFitCount(ref, pills.length, `${lang}|${pills.map(x => `${x.p.key}|${x.p.text}|${x.role ?? ''}`).join('#')}`, watch);
+  const shown = new Set(priority.slice(0, fit).map(x => x.i));
+  const hidden = priority.slice(fit);
+  const hiddenText = (x: typeof pills[number]) => (x.role ? needLabel(x.role as Need, lang) : x.p.text);
+  const clean = items.length === 0;
+  const row = ({ p, role, section }: typeof pills[number]) => <MapProblem key={`${p.key}|${p.text}|${role ?? ''}`} problem={p} step={stepOf.get(p.key) ?? null}
+    preview={preview?.has(p.key) ?? false} usage={p.category === 'meta' ? threatUsage?.[p.subjects?.[0] ?? ''] : undefined} dim={section !== 'main'} role={role} />;
+  const list = (section: Section) => pills.filter(x => x.section === section && shown.has(x.i));
+  const [main, redundancy, threats] = [list('main'), list('redundancy'), list('meta')];
+  return (
+    <div ref={ref} role="group" aria-labelledby={id} className={`coach-tile${clean ? ' is-clean' : ''}`}
+      style={score !== null ? { '--score': `${Math.max(0, Math.min(100, score))}%` } as CSSProperties : undefined}>
+      <header className="coach-tile-head">
+        <h4 id={id} className="dash-plate">{name}</h4>
+        {score !== null && <span className="dash-meta"><b>{Math.round(score)}</b></span>}
+      </header>
+      {score !== null && <span className="coach-tile-bar" aria-hidden="true" />}
+      {clean && <p className="coach-tile-ok"><Icon name="check" />{tr('coach.map.none')}</p>}
+      {main.length > 0 && <ul className="coach-probs">{main.map(row)}</ul>}
+      {redundancy.length > 0 && (
+        <>
+          <h5 className="coach-sep">{tr('coach.map.redundancy')}</h5>
+          <ul className="coach-probs">{redundancy.map(row)}</ul>
+        </>
+      )}
+      {threats.length > 0 && (
+        <>
+          <h5 className="coach-sep">{tr('dash.todo.threats')}</h5>
+          <ul className="coach-probs">{threats.map(row)}</ul>
+        </>
+      )}
+      {hidden.length > 0 && (
+        <p className="coach-more" title={hidden.map(hiddenText).join('\n')}>
+          <span aria-hidden="true">+{hidden.length}</span>
+          <span className="visually-hidden">{hidden.map(hiddenText).join('; ')}</span>
+        </p>
+      )}
+    </div>
+  );
+}
+
+/**
  * La scheda Coaching: in alto i problemi per area (quattro tessere), sotto fino a 3 tappe (cosa farei per prima).
  * `advice` null: i consigli si stanno calcolando (lo scheletro delle tappe; la mappa si vede già).
  */
@@ -351,6 +415,7 @@ export function CoachingView({ coaching, advice, members, rating, metaOn, threat
   const onPreview: OnPreview = prop => setHover(h => ({ advice, card: h.advice === advice ? h.card : null, prop }));
   const actions: StepActions = { onFix, onMoveFix, onApplyFix, onApplyMove };
   const { problems, bannedCount = 0 } = coaching;
+  const root = useRef<HTMLDivElement>(null);
   // Sotto i 2 membri il coach non cerca problemi: l'invito ad aggiungere, non "nessun problema"
   if (members < 2) return <div className="coaching"><p className="coach-note coach-top">{tr('coach.addTwo')}</p></div>;
   const steps = (advice?.steps ?? []).slice(0, MAX_STEPS);
@@ -363,49 +428,16 @@ export function CoachingView({ coaching, advice, members, rating, metaOn, threat
     defense: tr('coach.map.defense'), offense: tr('coach.map.offense'), roles: tr('coach.map.roles'), rules: tr(metaOn ? 'coach.map.rulesMeta' : 'coach.map.rules'),
   };
   return (
-    <div className="coaching">
+    <div className="coaching" ref={root}>
       {problems.length === 0 && <p className="coach-empty"><Icon name="check" />{tr('coach.noProblems')}</p>}
       {problems.length > 0 && (
         <section aria-labelledby={`${id}-map`} className="coach-map-region">
           <h3 id={`${id}-map`} className="coach-sec muted">{tr('coach.map.title')}</h3>
           <div className="coach-map">
-            {COLUMNS.map(({ key, area }) => {
-              const items = ordered.filter(p => columnOf(p.category) === key);
-              // Ridondanze e minacce (sempre minori) sotto un'etichetta, più quiete: l'ordine "gravi prima" resta
-              const main = items.filter(p => p.category !== 'redundancy' && p.category !== 'meta');
-              const redundancy = items.filter(p => p.category === 'redundancy');
-              const threats = items.filter(p => p.category === 'meta');
-              const score = area ? rating?.areas.find(a => a.key === area)?.value ?? null : null;
-              const clean = items.length === 0;
-              const row = (p: CoachProblem, dim = false, role?: string) => <MapProblem key={`${p.key}|${p.text}|${role ?? ''}`} problem={p} step={stepOf.get(p.key) ?? null}
-                preview={preview?.has(p.key) ?? false} usage={p.category === 'meta' ? threatUsage?.[p.subjects?.[0] ?? ''] : undefined} dim={dim} role={role} />;
-              // Ruoli mancanti: una pillola per ruolo (possono riempirli Pokémon diversi), senza la frase davanti
-              const rows = (p: CoachProblem) => (isMissingRoles(p) ? (p.subjects ?? []).map(role => row(p, false, role)) : [row(p)]);
-              return (
-                <div key={key} role="group" aria-labelledby={`${id}-${key}`} className={`coach-tile${clean ? ' is-clean' : ''}`}
-                  style={score !== null ? { '--score': `${Math.max(0, Math.min(100, score))}%` } as CSSProperties : undefined}>
-                  <header className="coach-tile-head">
-                    <h4 id={`${id}-${key}`} className="dash-plate">{columnName[key]}</h4>
-                    {score !== null && <span className="dash-meta"><b>{Math.round(score)}</b></span>}
-                  </header>
-                  {score !== null && <span className="coach-tile-bar" aria-hidden="true" />}
-                  {clean && <p className="coach-tile-ok"><Icon name="check" />{tr('coach.map.none')}</p>}
-                  {main.length > 0 && <ul className="coach-probs">{main.flatMap(rows)}</ul>}
-                  {redundancy.length > 0 && (
-                    <>
-                      <h5 className="coach-sep">{tr('coach.map.redundancy')}</h5>
-                      <ul className="coach-probs">{redundancy.map(p => row(p, true))}</ul>
-                    </>
-                  )}
-                  {threats.length > 0 && (
-                    <>
-                      <h5 className="coach-sep">{tr('dash.todo.threats')}</h5>
-                      <ul className="coach-probs">{threats.map(p => row(p, true))}</ul>
-                    </>
-                  )}
-                </div>
-              );
-            })}
+            {COLUMNS.map(({ key, area }) => (
+              <MapTile key={key} id={`${id}-${key}`} name={columnName[key]} items={ordered.filter(p => columnOf(p.category) === key)}
+                score={area ? rating?.areas.find(a => a.key === area)?.value ?? null : null} stepOf={stepOf} preview={preview} threatUsage={threatUsage} watch={root} />
+            ))}
           </div>
         </section>
       )}

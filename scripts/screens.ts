@@ -293,6 +293,14 @@ const STATES: Record<string, State> = {
     console.log(`coaching-six: tappe pronte in ${Date.now() - start} ms; steps skeleton=${skeleton} real=${await rowH('.coach-steps:not([aria-busy]), .coach-steps-none')}`);
     return true;
   } },
+  // Coaching del team coi nomi lunghi (molti problemi minori di coverage)
+  'coaching-long': { hash: hash(LONG), run: async p => {
+    await tab(p, 'analysis');
+    await wait(300);
+    if (!await clickText(p, '#analysis-view-coaching', /./)) return false;
+    await p.waitForSelector('.coach-steps:not([aria-busy]), .coach-steps-none', { timeout: 20000 });
+    return true;
+  } },
   // Coaching col team chiuso: la scheda ha più altezza (versione estesa)
   'coaching-collapsed': { hash: hash(SIX), run: async p => {
     await tab(p, 'analysis');
