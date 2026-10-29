@@ -381,3 +381,17 @@
 /* Guida, Coverage meta: le tre soglie di chi regge con le pastiglie della tabella, la profondità come barra a segmenti */
 .guide-holds.three { grid-template-columns: repeat(3, 1fr); }
 .guide-holds.three b { font: 600 14px/1.2 var(--ui); font-style: normal; }
+/* Il membro: nome e tipi sulla stessa riga, sotto (Robustezza) PS, Difesa e Difesa Speciale base coi simboli */
+.def-mon-text { display: grid; gap: 1px; min-width: 0; }
+.def-mon-line { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.def-mon-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.def-mon-types img { display: block; width: 15px; height: 15px; }
+.def-mon-types { display: inline-flex; gap: 2px; flex: none; }
+.def-mon-stats { display: flex; gap: 10px; font-size: 11px; font-weight: 600; line-height: 1.2; color: var(--muted); font-variant-numeric: tabular-nums; }
+.def-mon-stats > span { display: inline-flex; align-items: center; gap: 3px; cursor: help; }
+.def-mon-stats .icon { width: 11px; height: 11px; color: var(--faint); }
+/* Fisica e Speciale in testata col loro simbolo */
+.rob-side-h .icon { width: 15px; height: 15px; color: var(--muted); vertical-align: middle; }
+/* Righe troppo basse per due righe di testo (sotto ~35px, es. 1366 a squadra aperta): niente statistiche sotto il nome,
+   così le righe restano alte quanto nelle altre schede. Soglia sull altezza della cornice (righe = (h − 202) / 6 − 3) */
+@container (max-height: 440px) { .def-frame .def-mon-stats { display: none; } }

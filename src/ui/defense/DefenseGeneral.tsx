@@ -6,7 +6,7 @@ import { typeName } from '../../i18n/game';
 import type { AreaContext } from '../AreaDetail';
 import { Icon } from '../icons';
 import { Sprite } from '../Sprite';
-import { MemberMon } from './MemberMon';
+import { MemberMon, setOf } from './MemberMon';
 import { TypeIcons } from '../typeIcons';
 import { HOLD_TAGS } from './DefenseRobustness';
 
@@ -169,7 +169,7 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
             {members.map((m, i) => (
               <tr key={`${m.species}-${i}`}>
                 <th scope="row">
-                  <MemberMon name={m.species}>
+                  <MemberMon name={m.species} set={setOf(ctx.team, m.species)}>
                     {i === weakLink && <span className="def-weak">{t('ddetail.weakLink')}</span>}
                   </MemberMon>
                 </th>
