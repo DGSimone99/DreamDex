@@ -21,7 +21,7 @@ import { buildSteps, type CoachStep } from './coachSteps';
 import { moveFixes } from './moveFixes';
 import type { ScoredArea } from './teamGain';
 import { teamCoverage } from './coverage';
-import { defensiveMultiplier, type TypeName } from './types';
+import { defensiveMultiplier, superEffectiveMove, type TypeName } from './types';
 
 export const SIMILAR_THRESHOLD = 0.6;
 export const MIN_COVERAGE_WEIGHT = 0.05;
@@ -181,7 +181,7 @@ export function findProblems(team: TeamSet[], format: Format, data: EngineData, 
 
   // Coverage: la stessa regola della Coverage tipi del voto, un problema per tipo che nessuno manda KO in due colpi
   // (livello sotto 70). Scoperto (nessun colpo super efficace al 33%): grave se il tipo pesa; coperto a metà (solo 3HKO): minore.
-  // I rimedi usano ancora i fatti dei candidati (tipi colpiti super efficace fra quelli senza nessuna mossa super efficace)
+  // Rimedi: i candidati col proprio set che ha una mossa super efficace contro il tipo (approssima la regola dei due colpi, senza calcolo dei danni)
   const coverage = teamCoverage(team, data, 'types');
   for (const row of coverage.rows) {
     if (row.level >= COVERED_LEVEL) continue;
@@ -191,7 +191,7 @@ export function findProblems(team: TeamSet[], format: Format, data: EngineData, 
       ? t(lang, 'coach.problem.uncovered', { type: typeName(type, lang) })
       : t(lang, 'coach.problem.halfCovered', { type: typeName(type, lang), n: row.coveredBy.length });
     add('coverage', hole && analysis.typeWeights[type as TypeName] >= MIN_COVERAGE_WEIGHT, text,
-      fixesFor(candidates, s => Number(s.facts.coverage.types.includes(type as TypeName))), `coverage:${type}`, hole ? 2 : 1, [type]);
+      fixesFor(candidates, s => Number(superEffectiveMove(s.set, type as TypeName) !== null)), `coverage:${type}`, hole ? 2 : 1, [type]);
   }
 
   // Minacce del meta senza check (la lista è vuota senza meta)

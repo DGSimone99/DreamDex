@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { analyzeTeam } from '../../src/engine/analysis';
 import { coachTeam, describeDiff, MIN_COVERAGE_WEIGHT, rankedChanges, verdictFor } from '../../src/engine/coach';
 import { teamCoverage } from '../../src/engine/coverage';
+import { superEffectiveMoves, type TypeName } from '../../src/engine/types';
 import { topReason } from '../../src/engine/explain';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
 import { emptySet, mostCommonSet, type TeamSet } from '../../src/engine/sets';
@@ -211,6 +212,20 @@ describe('chiavi dei problemi e minacce del meta', () => {
     // In inglese
     const en = coachTeam(team, DEFAULT_FORMAT, fixtureData, 'en').problems.filter(p => p.category === 'coverage').map(p => p.text);
     expect(en.some(text => /^Uncovered \w+: no super-effective hit$/.test(text))).toBe(true);
+  });
+
+  it('coverage: i rimedi sono candidati con una mossa super efficace contro il tipo (anche per i coperti a metà)', () => {
+    const coaching = coachTeam(team, DEFAULT_FORMAT, fixtureData);
+    const found = coaching.problems.filter(p => p.category === 'coverage');
+    const half = found.filter(p => p.size === 1);
+    expect(half.length).toBeGreaterThan(0);
+    expect(half.some(p => p.fixes.length > 0)).toBe(true);
+    for (const p of found) {
+      for (const species of p.fixes) {
+        const set = mostCommonSet(fixtureStats, species) ?? emptySet(species);
+        expect(superEffectiveMoves(set, p.subjects![0] as TypeName).length > 0 || !mostCommonSet(fixtureStats, species)).toBe(true);
+      }
+    }
   });
 
   it('il giudizio non cambia per le minacce', () => {
