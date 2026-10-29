@@ -62,6 +62,26 @@ describe('vista di un\'area sulla pagina', () => {
     }
   });
 
+  it('i problemi stanno in una riga: prima i risolvibili, poi i gravi; quelli che non stanno nel "+N" (title e testo nascosto)', () => {
+    // Misura finta: la lista è larga 300px, ogni voce (anche il "+N") 100px
+    const width = vi.spyOn(Element.prototype, 'clientWidth', 'get').mockImplementation(function (this: Element) { return this.classList.contains('area-problems') ? 300 : 0; });
+    const scroll = vi.spyOn(Element.prototype, 'scrollWidth', 'get').mockImplementation(function (this: Element) { return this.classList.contains('area-problems') ? 100 * this.children.length : 0; });
+    try {
+      const p = (key: string, severity: 'serious' | 'minor', fixes: string[] = []) => ({ severity, category: 'coverage' as const, text: `Problema ${key}`, fixes, key });
+      renderIt(<AreaView rating={withMeta()} area="strength" team={team} analysis={analysis}
+        problems={[p('a', 'minor'), p('b', 'serious'), p('c', 'minor', ['Kyurem']), p('d', 'minor'), p('e', 'serious')]} />);
+      const list = screen.getByRole('list', { name: /Problemi/ });
+      const items = within(list).getAllByRole('listitem');
+      expect(items.map(li => li.textContent)).toEqual(['Problema c', 'Problema b', expect.stringMatching(/^\+3/)]);
+      const more = items[2];
+      expect(more).toHaveAttribute('title', 'Problema e\nProblema a\nProblema d');
+      expect(more.querySelector('.visually-hidden')).toHaveTextContent('Problema e; Problema a; Problema d');
+    } finally {
+      width.mockRestore();
+      scroll.mockRestore();
+    }
+  });
+
   it('frecce destra/sinistra con giro, Home e End', async () => {
     const user = userEvent.setup();
     renderIt(<AreaView rating={withMeta()} area="strength" team={team} analysis={analysis} problems={[]} />);

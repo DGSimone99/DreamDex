@@ -127,7 +127,11 @@
 .area-problems-row.is-clear .area-problems-label { color: var(--good); background: var(--good-bg); }
 /* Alta come una riga di problemi su una linea (la lista a 12.5px allineata alla base dell'etichetta, misurata a 1440x900) */
 .area-problems-row.is-clear { min-height: 24.6px; }
-.area-problems { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 12.5px; }
+.area-problems { flex: 1; min-width: 0; margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: nowrap; gap: 4px 18px; overflow: hidden; font-size: 12.5px; }
+.area-problems > li { flex: none; white-space: nowrap; }
+/* Il "+N" dei problemi che non stanno nella riga (il title li elenca) */
+.area-problems li.area-problems-more { padding: 0 7px; border-radius: 10px; font: 600 11px/18px var(--ui); color: var(--muted); background: var(--raised); cursor: help; }
+.area-problems li.area-problems-more::before { content: none; }
 /* Testo in linea (niente flex): i nomi dei tipi restano attaccati ai due punti */
 .area-problems li { position: relative; padding-left: 12px; }
 .area-problems li::before { content: '\25CF'; position: absolute; left: 0; color: var(--warn); }

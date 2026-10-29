@@ -1,5 +1,5 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
-import type { CoachProblem } from '../engine/coach';
+import { PROBLEM_CATEGORIES, type CoachProblem } from '../engine/coach';
 import type { TeamAnalysis } from '../engine/analysis';
 import type { TeamRating } from '../engine/rating';
 import type { TeamSet } from '../engine/sets';
@@ -8,6 +8,7 @@ import { areaTabs, type AreaKey } from './AreaDetail';
 import { AreaGuide } from './AreaGuide';
 import { Icon } from './icons';
 import { Typed } from './TypeText';
+import { useFitCount } from './useFit';
 
 /** Lato del "?" sulla scheda aperta (px). */
 const HELP_SIZE = 18;
@@ -43,6 +44,13 @@ export function AreaView({ rating, area, problems, team, analysis, extra, roomy 
   // La guida ha la sua sezione: cambiarla non sposta la sottoscheda dietro (null = chiusa)
   const [guide, setGuide] = useState<string | null>(null);
   const title = t(`area.${area}`);
+  // Problemi: prima quelli che i Suggerimenti risolvono, poi i gravi, poi l'ordine delle categorie; in riga quelli che stanno
+  const sorted = [...problems].sort((a, b) => Number(b.fixes.length > 0) - Number(a.fixes.length > 0)
+    || Number(b.severity === 'serious') - Number(a.severity === 'serious')
+    || PROBLEM_CATEGORIES.indexOf(a.category) - PROBLEM_CATEGORIES.indexOf(b.category));
+  const listRef = useRef<HTMLUListElement>(null);
+  const fit = useFitCount(listRef, sorted.length, `${lang}|${sorted.map(p => p.text).join('|')}`);
+  const hidden = sorted.slice(fit);
 
   // Il "?" sta fuori dal tablist (lì solo schede) ma si vede sulla scheda aperta, a destra
   const [helpPlace, setHelpPlace] = useState({ left: 0, top: 0 });
@@ -140,10 +148,17 @@ export function AreaView({ rating, area, problems, team, analysis, extra, roomy 
           <span className="area-problems-label" aria-hidden="true">
             <Icon name="warning" />{t(problems.length === 1 ? 'area.problems.one' : 'area.problems.many', { n: problems.length })}
           </span>
-          <ul className="area-problems" aria-label={t('analysis.areaProblems', { area: title })}>
-            {problems.map(problem => (
+          {/* Sempre una riga: quelli che non stanno finiscono nel "+N" (title e testo nascosto con tutti) */}
+          <ul ref={listRef} className="area-problems" aria-label={t('analysis.areaProblems', { area: title })}>
+            {sorted.slice(0, fit).map(problem => (
               <li key={problem.text} className={problem.severity}><Typed text={problem.text} /></li>
             ))}
+            {hidden.length > 0 && (
+              <li className="area-problems-more" title={hidden.map(p => p.text).join('\n')}>
+                <span aria-hidden="true">+{hidden.length}</span>
+                <span className="visually-hidden">{hidden.map(p => p.text).join('; ')}</span>
+              </li>
+            )}
           </ul>
         </div>
       )}
