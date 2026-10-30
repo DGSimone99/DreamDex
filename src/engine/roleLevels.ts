@@ -44,7 +44,8 @@ const E = 'essential' as const, I = 'important' as const, M = 'minor' as const, 
  * Il Debuff è minore anche in semi-stall e stall: paralisi o sonno aiutano, ma uno stall non ne ha bisogno (utente).
  */
 const ROWS: [LevelKey, Level, Level, Level, Level, Level][] = [
-  ['attacker', E, E, E, E, X],
+  // Semi-stall e stall vincono logorando: senza attaccanti nessun malus (2026-10-30; l'Offesa misura comunque il danno)
+  ['attacker', E, E, E, X, X],
   ['physicalSweeper', M, M, M, M, X],
   ['specialSweeper', M, M, M, M, X],
   ['physicalBreaker', M, M, M, M, M],

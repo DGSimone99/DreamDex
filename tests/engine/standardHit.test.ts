@@ -39,8 +39,9 @@ describe('standardHit: colpo standard senza tipo, potenza 100', () => {
   });
 
   it('Parental Bond: i tiri dei due colpi si sommano', () => {
-    const kanga = { species: 'Kangaskhan-Mega', item: 'Kangaskhanite', ability: 'Parental Bond', moves: [], nature: 'Adamant', evs: { atk: 252 } };
-    const single = { ...kanga, ability: 'Scrappy' };
+    // Una Mega ha sempre la sua abilità (battleAbility): la meccanica si prova su una specie normale con l'abilità "prestata"
+    const kanga = { species: 'Ursaluna', item: 'Leftovers', ability: 'Parental Bond', moves: [], nature: 'Adamant', evs: { atk: 252 } };
+    const single = { ...kanga, ability: 'Bulletproof' };
     const tank = set('Ting-Lu', 'Leftovers', 'Vessel of Ruin', [], 'Impish', { hp: 252, def: 252 });
     const ratio = standardHit(kanga, tank, 'Physical')!.max / standardHit(single, tank, 'Physical')!.max;
     expect(ratio).toBeGreaterThan(1.2);

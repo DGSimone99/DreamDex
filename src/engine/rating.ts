@@ -1,6 +1,6 @@
 import { analyzeTeam, threatScore, UNIFORM_TYPE_WEIGHTS, usesMeta, type TeamAnalysis } from './analysis';
 import type { EngineData } from './data';
-import { battleName, battleSpecies, toID } from './dex';
+import { battleAbility, battleName, battleSpecies, toID } from './dex';
 import { hitQuality, memberPower, teamPower, type MemberPower } from './power';
 import { teamOffense, type TeamOffense } from './offense';
 import { teamDefense, type TeamDefense } from './defense';
@@ -236,6 +236,7 @@ export const WEAK_MEMBER_MAX = 6;
 
 /**
  * Membri deboli senza utilità chiave (−2 ciascuno, al massimo −6; non dipende dal meta: Pelipper che porta la pioggia è esente).
+ * Ditto con Imposter è esente: copia l'avversario, le sue statistiche base non dicono nulla.
  * Lo squilibrio degli attaccanti è una mancanza essenziale dei Ruoli (rolesArea.ts).
  */
 export function memberIssues(team: TeamSet[], lang: Lang, needs: TeamNeeds): Redundancy[] {
@@ -243,6 +244,7 @@ export function memberIssues(team: TeamSet[], lang: Lang, needs: TeamNeeds): Red
   const items: Redundancy[] = [];
   let total = 0;
   for (const [i, set] of team.entries()) {
+    if (toID(battleAbility(set)) === 'imposter') continue;
     const power = memberPower(set);
     // Un muro passivo si giudica dalla sua robustezza (Mega Sableye), gli altri dalla forza complessiva
     if (power && (isPassive(set, rules) ? power.bulk : power.power) < WEAK_POWER && !bringsUtility(set, needs.members[i] ?? {})) {
@@ -256,8 +258,9 @@ export function memberIssues(team: TeamSet[], lang: Lang, needs: TeamNeeds): Red
 }
 
 /**
- * Debolezze condivise: 2 punti per ogni membro debole scoperto oltre il primo (deboli meno resistenti), su qualsiasi tipo.
- * Tolte e poi rimesse dall'utente il 2026-10-25 dopo il bench: portano il distacco tra team da torneo e medi.
+ * Debolezze condivise: 2 punti per ogni membro debole oltre il primo, solo sui tipi a cui nessuno nel team resiste:
+ * un membro che resiste è il cambio normale su quella debolezza (2026-10-30: "3 deboli, 1 resiste" colpiva metà dei
+ * team da torneo). Tolte e poi rimesse dall'utente il 2026-10-25 dopo il bench: portano il distacco tra torneo e medi.
  */
 export const SHARED_WEAK_POINTS = 2;
 /** Un membro che ha bisogno di una condizione (meteo, campo, Trick Room) che il team non porta: −3. */
@@ -266,13 +269,10 @@ export const UNMET_POINTS = 3;
 export function redundancies(team: TeamSet[], analysis: TeamAnalysis, lang: Lang = 'it'): Redundancies {
   // Il meta conta solo nell'area Meta: le debolezze si contano su tutti i tipi
   const weaknesses = analysis.weakness
-    .filter(row => row.weak - row.resist >= 2)
+    .filter(row => row.resist === 0 && row.weak >= 2)
     .map(row => ({
-      text: t(lang, 'rating.redundancy.sharedWeak', {
-        n: row.weak, type: typeName(row.type, lang),
-        resistText: row.resist === 0 ? t(lang, 'rating.redundancy.noneResist') : t(lang, 'rating.redundancy.someResist', { n: row.resist }),
-      }),
-      points: (row.weak - row.resist - 1) * SHARED_WEAK_POINTS,
+      text: t(lang, 'rating.redundancy.sharedWeak', { n: row.weak, type: typeName(row.type, lang), resistText: t(lang, 'rating.redundancy.noneResist') }),
+      points: (row.weak - 1) * SHARED_WEAK_POINTS,
       catalog: 'sharedWeak' as const,
     }));
   const dependencies = [
