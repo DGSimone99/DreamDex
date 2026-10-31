@@ -745,7 +745,7 @@ export const it: Record<keyof typeof en, string> = {
   'ddetail.sus.rocks': "Stealth Rock",
   'ddetail.sus.orb': "Strumenti",
   'ddetail.sus.rocksHalved': "Dimezzata: {by} toglie gli hazard",
-  'ddetail.halvedTip': "Recupero a metà: in media non regge un 3HKO",
+  'ddetail.halvedTip': "Recupero a metà: regge meno del 35% dei colpi di tipo",
   'ddetail.types.noWeak': "Nessun tipo scoperto",
   'ddetail.meta.allAnswered': "Ogni minaccia ha una risposta",
   'ddetail.partial': "2HKO: regge a metà",

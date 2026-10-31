@@ -743,7 +743,7 @@ export const en = {
   'ddetail.sus.rocks': "Stealth Rock",
   'ddetail.sus.orb': "Items",
   'ddetail.sus.rocksHalved': "Halved: {by} removes hazards",
-  'ddetail.halvedTip': "Recovery halved: on average it doesn't take a 3HKO",
+  'ddetail.halvedTip': "Recovery halved: it takes less than 35% of the type hits",
   'ddetail.types.noWeak': "No uncovered type",
   'ddetail.meta.allAnswered': "Every threat has an answer",
   'ddetail.partial': "2HKO: half credit",

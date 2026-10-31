@@ -93,6 +93,20 @@ describe('Difesa: Robustezza e Sostenibilità', () => {
   });
 });
 
+describe('Difesa: recupero a metà', () => {
+  it('il segno "vale metà" spiega la regola nuova (meno del 35% dei colpi di tipo)', async () => {
+    const user = userEvent.setup();
+    const zam: TeamSet[] = [{ ...emptySet('Alakazam'), item: 'Life Orb', ability: 'Magic Guard', moves: ['Psychic', 'Recover'], evs: { spa: 252, spe: 252 } }];
+    const rating = rateTeam(zam, fixtureData, 'it')!;
+    expect(rating.defense.members[0].sustainParts.halved).toBe(true);
+    renderIt(<AreaView rating={rating} area="defense" team={zam} analysis={analyzeTeam(zam, fixtureData)} problems={[]} />);
+    await user.click(screen.getByRole('tab', { name: /^Sostenibilità/ }));
+    const chip = document.querySelector('.ad-halved')!;
+    expect(chip.getAttribute('title')).toMatch(/35%/);
+    expect(chip.getAttribute('title')).not.toMatch(/3HKO/);
+  });
+});
+
 describe('Difesa: Coverage tipi e Coverage meta', () => {
   const openTypes = async (t: TeamSet[] = team) => {
     const user = userEvent.setup();

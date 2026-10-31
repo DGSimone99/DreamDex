@@ -239,3 +239,16 @@ describe('attaccante finto e colpi per tipo', () => {
     expect([0, 0.33, 1 / 3, 0.49, 0.5, 1].map(holdCredit)).toEqual([1, 1, 0.5, 0.5, 0, 0]);
   });
 });
+
+describe('Wonder Guard sui colpi di tipo', () => {
+  it('Shedinja regge tutti i colpi non super efficaci e va KO solo con Fuoco, Volante, Roccia, Spettro e Buio', () => {
+    const natdex = { stats: null, sets: null, formatId: 'ou' as const };
+    const shedinja = set('Shedinja', 'Focus Sash', 'Wonder Guard', ['Shadow Sneak'], 'Adamant', { atk: 252 });
+    const { plain } = typedHits(shedinja, natdex);
+    const at = (type: string) => plain[2 * TYPES.indexOf(type as never)];
+    expect(at('Normal')).toBe(0);
+    expect(at('Water')).toBe(0);
+    expect(at('Fire')).toBe(1);
+    expect(at('Ghost')).toBe(1);
+  });
+});
