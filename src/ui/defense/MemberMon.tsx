@@ -14,7 +14,7 @@ export const setOf = (team: TeamSet[], species: string) => team.find(set => (bat
 /**
  * Il membro nella prima colonna delle tabelle della Difesa: icona del box (nitida anche piccola, cresce con la riga), nome e
  * tipi; con `stats` sotto il nome PS, Difesa e Difesa Speciale finali (con `'offense'`: Attacco, Attacco Speciale e Velocità; livello 100, con EV, IV e natura: in verde o rosso
- * se la natura le alza o le abbassa; con `'speed'`: solo la Velocità reale, Sciarpa compresa), coi simboli e i nomi per lo screen reader. `children` (es. "Anello debole") va accanto
+ * se la natura le alza o le abbassa; la Velocità è sempre quella reale, Sciarpa compresa; con `'speed'`: solo la Velocità), coi simboli e i nomi per lo screen reader. `children` (es. "Anello debole") va accanto
  * alle statistiche, così il nome resta intero.
  */
 export function MemberMon({ name, set, stats = false, children }: { name: string; set?: TeamSet; stats?: boolean | 'offense' | 'speed'; children?: ReactNode }) {
@@ -50,7 +50,7 @@ export function MemberMon({ name, set, stats = false, children }: { name: string
           {children && <span className="def-mon-tag line">{children}</span>}
         </span>
         {lines && <span className="def-mon-stats">{stats === 'offense'
-          ? <>{stat('atk', 'physical')}{stat('spa', 'special')}{stat('spe', 'speed')}</>
+          ? <>{stat('atk', 'physical')}{stat('spa', 'special')}{realSpeed(set!)}</>
           : stats === 'speed' ? realSpeed(set!) : <>{stat('hp', 'heart')}{stat('def', 'physical')}{stat('spd', 'special')}</>}{children && <span className="def-mon-tag">{children}</span>}</span>}
       </span>
     </span>
