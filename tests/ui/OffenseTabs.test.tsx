@@ -254,56 +254,106 @@ describe('Offesa: Potenza', () => {
 });
 
 describe('Offesa: Coverage meta', () => {
-  const open = async () => {
+  const ko = (pct: number) => (pct >= 100 ? 'ohko' : pct >= 50 ? 'two' : pct >= 34 ? 'three' : 'none');
+  const open = async (t: TeamSet[] = team) => {
     const user = userEvent.setup();
-    const rating = withMeta();
-    renderIt(<AreaView rating={rating} area="strength" team={team} analysis={analysis} problems={[]} />);
+    const rating = rateTeam(t, fixtureData, 'it')!;
+    renderIt(<AreaView rating={rating} area="strength" team={t} analysis={analyzeTeam(t, fixtureData)} problems={[]} />);
     await user.click(screen.getByRole('tab', { name: /^Coverage meta/ }));
-    return { user, rating };
+    const sorted = [...rating.offense.coverageMeta!.rows].sort((a, b) => a.level - b.level || b.weight - a.weight);
+    return { user, rating, sorted };
   };
-  const level = (li: HTMLElement) => Number(/: (\d+)%/.exec(li.getAttribute('aria-label') ?? '')![1]);
+  const table = () => within(screen.getByRole('tabpanel')).getByRole('table');
+  const heads = () => [...table().querySelectorAll('thead th[aria-label]')].map(th => th.getAttribute('aria-label'));
+  const bodyRows = () => [...table().querySelectorAll('tbody tr')] as HTMLElement[];
 
-  it('Coverage meta: pagine da 8 dal bersaglio meno coperto', async () => {
-    const { user } = await open();
-    const tiles = within(screen.getByRole('tabpanel')).getAllByRole('listitem');
-    expect(tiles).toHaveLength(8);
-    expect(level(tiles[0])).toBeLessThanOrEqual(level(tiles[tiles.length - 1]));
-    await user.click(screen.getByRole('button', { name: 'Bersagli successivi' }));
-    expect(within(screen.getByRole('tabpanel')).getAllByRole('listitem').length).toBeGreaterThan(0);
+  it('una riga per membro, 8 bersagli per pagina dal meno coperto, e la riga Lo coprono', async () => {
+    const { user, sorted } = await open();
+    expect(heads()).toEqual(sorted.slice(0, 8).map(r => r.species));
+    const rows = bodyRows();
+    expect(rows).toHaveLength(team.length + 1);
+    expect(rows.slice(0, team.length).map(r => r.querySelector('.def-mon-name')!.textContent)).toEqual(['Great Tusk', 'Gholdengo']);
+    expect(within(rows[rows.length - 1]).getByRole('rowheader')).toHaveTextContent('Lo coprono');
+    const next = screen.getByRole('button', { name: 'Bersagli successivi' });
+    if (sorted.length > 8) {
+      await user.click(next);
+      expect(heads()).toEqual(sorted.slice(8, 16).map(r => r.species));
+    } else {
+      // Una sola pagina: la freccia è spenta
+      expect(next).toBeDisabled();
+    }
   });
 
-  it('un bersaglio senza colpi dice nessuno', async () => {
-    const { rating } = await open();
-    const rows = rating.offense.coverageMeta!.rows;
-    const none = rows.find(r => r.coveredBy.length === 0);
-    // La squadra di prova lascia scoperti dei bersagli: senza, il test non dimostrerebbe niente
-    expect(none).toBeDefined();
-    // I meno coperti stanno in prima pagina
-    const tile = within(screen.getByRole('tabpanel')).getAllByRole('listitem').find(li => li.getAttribute('aria-label')!.startsWith(`${none!.species}:`));
-    expect(tile).toBeDefined();
-    expect(tile!.getAttribute('aria-label')).toContain('nessuno');
-    expect(tile).toHaveClass('none');
-    expect(tile!.querySelector('.ct-pill')).toHaveClass('bad');
+  it('ogni casella: il danno del colpo semplice, colorato per soglia e scritto anche a parole', async () => {
+    const { sorted } = await open();
+    const rows = bodyRows();
+    sorted.slice(0, 8).forEach((target, col) => {
+      team.forEach((_, m) => {
+        const cell = rows[m].querySelectorAll('td')[col];
+        const { pct } = target.cells![m];
+        expect(cell.querySelector('.wall-pct')!.textContent).toBe(`${pct}%`);
+        expect(cell).toHaveClass(`ko-${ko(pct)}`);
+        if (ko(pct) !== 'none') expect(cell.querySelector('.visually-hidden')!.textContent!.trim()).toBe({ ohko: 'OHKO', two: '2HKO', three: '3HKO' }[ko(pct) as 'ohko']);
+      });
+    });
   });
 
-  it('i conteggi in alto coincidono con i gruppi delle righe', async () => {
+  it('con il setup che cambia soglia la casella lo dice ("setup N%")', async () => {
+    const { user, sorted } = await open();
+    const jumps = sorted.flatMap((target, i) => target.cells!.map((c, m) => ({ i, m, c }))
+      .filter(({ c }) => c.setupPct !== null && ko(c.setupPct) !== ko(c.pct)));
+    expect(jumps.length).toBeGreaterThan(0);
+    const first = jumps[0];
+    for (let p = 0; p < Math.floor(first.i / 8); p++) await user.click(screen.getByRole('button', { name: 'Bersagli successivi' }));
+    const cell = bodyRows()[first.m].querySelectorAll('td')[first.i % 8];
+    expect(cell).toHaveClass('has-setup');
+    expect(cell.querySelector('.wall-setup')!.textContent).toBe(`setup ${first.c.setupPct}%`);
+  });
+
+  it('Lo coprono conta chi lo manda KO in due colpi', async () => {
+    const { sorted } = await open();
+    const rows = bodyRows();
+    const counts = [...rows[rows.length - 1].querySelectorAll('td')].map(td => Number(td.textContent));
+    expect(counts).toEqual(sorted.slice(0, 8).map(r => r.cells!.filter(c => c.pct >= 50).length));
+  });
+
+  it('i conteggi in alto: coperti, solo 3HKO, scoperti', async () => {
     const { rating } = await open();
     const rows = rating.offense.coverageMeta!.rows;
-    const none = rows.filter(r => r.coveredBy.length === 0).length;
-    const partial = rows.filter(r => r.coveredBy.length > 0 && r.coveredBy.every(c => c.partial)).length;
+    const covered = rows.filter(r => r.level > 0).length;
+    const only3 = rows.filter(r => r.level === 0 && r.cells!.some(c => c.pct >= 34)).length;
     const summary = document.querySelector('.cm-summary')!;
     expect(summary).toHaveTextContent(`${rows.length} bersagli`);
-    expect(summary).toHaveTextContent(`${rows.length - none - partial} coperti`);
-    expect(summary).toHaveTextContent(`${partial} a metà`);
-    expect(summary).toHaveTextContent(`${none} nessuno`);
+    expect(summary).toHaveTextContent(`${covered} coperti`);
+    expect(summary).toHaveTextContent(`${only3} solo 3HKO`);
+    expect(summary).toHaveTextContent(`${rows.length - covered - only3} scoperti`);
+    expect(screen.getByRole('tabpanel')).toHaveTextContent(/un quarto.*Tera/);
   });
 
-  it('pastiglia del livello col colore giusto', async () => {
-    await open();
-    const tiles = within(screen.getByRole('tabpanel')).getAllByRole('listitem');
-    for (const tile of tiles) {
-      const lvl = level(tile);
-      expect(tile.querySelector('.cm-head .ct-pill')).toHaveClass(lvl === 0 ? 'bad' : lvl < 80 ? 'warn' : 'good');
-    }
+  it('un bersaglio immune a tutti: 0% ovunque e nessuno lo copre', async () => {
+    const lax = [{ ...emptySet('Snorlax'), ability: 'Thick Fat', moves: ['Body Slam', 'Double-Edge'], evs: { atk: 252, hp: 252 } }];
+    const { user, sorted } = await open(lax);
+    const ghost = sorted.findIndex(r => r.cells![0].pct === 0 && r.level === 0);
+    expect(ghost).toBeGreaterThanOrEqual(0);
+    for (let p = 0; p < Math.floor(ghost / 8); p++) await user.click(screen.getByRole('button', { name: 'Bersagli successivi' }));
+    const rows = bodyRows();
+    expect(rows[0].querySelectorAll('td')[ghost % 8].querySelector('.wall-pct')!.textContent).toBe('0%');
+    expect(rows[rows.length - 1].querySelectorAll('td')[ghost % 8]).toHaveTextContent('0');
+  });
+
+  it('un membro che il motore non conosce resta con "—"', async () => {
+    const t = [team[0], { ...emptySet('Notamon'), moves: ['Tackle'] }];
+    await open(t);
+    const cells = bodyRows()[1].querySelectorAll('td');
+    expect(cells).toHaveLength(8);
+    cells.forEach(td => expect(td).toHaveTextContent('—'));
+  });
+
+  it('in inglese', async () => {
+    const user = userEvent.setup();
+    render(<LangProvider lang="en"><AreaView rating={rateTeam(team, fixtureData, 'en')!} area="strength" team={team} analysis={analysis} problems={[]} /></LangProvider>);
+    await user.click(screen.getByRole('tab', { name: /^Meta coverage/ }));
+    expect(within(table()).getByRole('rowheader', { name: 'Covered by' })).toBeInTheDocument();
+    expect(document.querySelector('.cm-summary')).toHaveTextContent(/3HKO only/);
   });
 });

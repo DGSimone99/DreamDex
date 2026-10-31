@@ -61,3 +61,7 @@
 .def-frame.def-walls .wall-h .def-box { --bs: 1.2; }
 .def-walls .rob-legend .wall-legend-setup { margin-left: auto; }
 .def-walls .ct-sum td { height: 26px; }
+
+/* Coverage meta a tabella: pagine e riepilogo sotto la tabella, così la tabella parte dove partono le altre schede */
+.cm-matrix .cm-bar { margin: 8px 0 0; }
+.cm-matrix .cm-note { margin: 4px 0 0; font-size: 12px; color: var(--muted); }

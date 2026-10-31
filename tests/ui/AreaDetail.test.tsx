@@ -77,12 +77,17 @@ describe("dettaglio dell'Offesa a schede", () => {
     expect(within(typesPanel).getAllByRole('row').at(-1)).toHaveTextContent(/^Copertura/);
   });
 
-  it('Coverage meta: le tessere dei bersagli, ognuna con il livello nel nome accessibile', async () => {
+  it('Coverage meta: una tabella membri × bersagli, con la riga Lo coprono', async () => {
     const { user, dialog } = await openOffense('it');
     await user.click(within(dialog).getByRole('tab', { name: /^Coverage meta/ }));
-    const tiles = within(within(dialog).getByRole('tabpanel')).getAllByRole('listitem');
-    expect(tiles.length).toBeGreaterThan(0);
-    for (const tile of tiles) expect(tile.getAttribute('aria-label')).toMatch(/^.+: \d+%, .+$/);
+    const panel = within(dialog).getByRole('tabpanel');
+    const rows = within(panel).getAllByRole('row');
+    // Intestazione, due membri, Lo coprono
+    expect(rows).toHaveLength(4);
+    for (const row of rows.slice(1, 3)) {
+      for (const cell of within(row).getAllByRole('cell')) expect(cell).toHaveTextContent(/^\d+%( (OHKO|2HKO|3HKO))?(setup \d+%)?$/);
+    }
+    expect(rows[3]).toHaveTextContent(/^Lo coprono/);
   });
 
   it('frecce fra le schede; nessuna finestra', async () => {
