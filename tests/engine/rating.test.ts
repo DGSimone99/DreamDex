@@ -21,13 +21,15 @@ const value = (rating: ReturnType<typeof rateTeam>, key: string) => rating!.area
 
 describe('gradeFor', () => {
   it('soglie S / A / B / C / D', () => {
-    expect(gradeFor(90)).toEqual({ grade: 'S', label: 'Eccellente' });
-    expect(gradeFor(89)).toEqual({ grade: 'A', label: 'Ottimo' });
-    expect(gradeFor(82)).toEqual({ grade: 'A', label: 'Ottimo' });
-    expect(gradeFor(81)).toEqual({ grade: 'B', label: 'Buono' });
-    expect(gradeFor(70)).toEqual({ grade: 'B', label: 'Buono' });
-    expect(gradeFor(60)).toEqual({ grade: 'C', label: 'Discreto' });
-    expect(gradeFor(59)).toEqual({ grade: 'D', label: 'Debole' });
+    // Scala 2026-10-31 (banco col meta): S i migliori team da torneo (~5%), A la maggior parte di quelli da torneo,
+    // B il team tipico del ladder medio, C un team con buchi evidenti, D i team brutti
+    expect(gradeFor(86)).toEqual({ grade: 'S', label: 'Eccellente' });
+    expect(gradeFor(85)).toEqual({ grade: 'A', label: 'Ottimo' });
+    expect(gradeFor(79)).toEqual({ grade: 'A', label: 'Ottimo' });
+    expect(gradeFor(78)).toEqual({ grade: 'B', label: 'Buono' });
+    expect(gradeFor(68)).toEqual({ grade: 'B', label: 'Buono' });
+    expect(gradeFor(55)).toEqual({ grade: 'C', label: 'Discreto' });
+    expect(gradeFor(54)).toEqual({ grade: 'D', label: 'Debole' });
   });
 });
 

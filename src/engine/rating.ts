@@ -69,14 +69,15 @@ export function areaValue(value: number, full: number): number {
 export const TOP_THREATS = 0.5;
 
 /**
- * Soglie tarate sui dati reali (2026-09, 1630+): team ben costruiti 88–90,
- * team casuali di Pokémon del meta mediana 74, team con membri inutili sotto 60.
+ * Soglie tarate sul banco col meta (2026-10-31, scripts/bench): team da torneo mediana 80 (S il 5%, A il 57%),
+ * team veri del ladder medio (rating 1100–1400) mediana 75 (B il 57%), team brutti tutti sotto 55.
+ * S = tra i migliori team da torneo, A = livello torneo, B = il team tipico di un giocatore medio, C = buchi evidenti, D = debole.
  */
 export const GRADES: { min: number; grade: 'S' | 'A' | 'B' | 'C' | 'D' }[] = [
-  { min: 90, grade: 'S' },
-  { min: 82, grade: 'A' },
-  { min: 70, grade: 'B' },
-  { min: 60, grade: 'C' },
+  { min: 86, grade: 'S' },
+  { min: 79, grade: 'A' },
+  { min: 68, grade: 'B' },
+  { min: 55, grade: 'C' },
   { min: 0, grade: 'D' },
 ];
 
