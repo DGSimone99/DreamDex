@@ -84,8 +84,9 @@ export interface MemberSpeed {
   cells: SpeedCell[];
 }
 
-const SETUP_PLUS_ONE = new Set(['dragondance', 'quiverdance', 'shiftgear', 'victorydance', 'tidyup', 'trailblaze', 'flamecharge', 'rapidspin', 'aquastep', 'esperwing']);
-const SETUP_PLUS_TWO = new Set(['shellsmash', 'agility', 'rockpolish', 'autotomize']);
+/** Mosse che alzano la Velocità di uno stadio (×1,5) o di due (×2; Shift Gear ne dà due, Geomancy con la Power Herb). */
+const SETUP_PLUS_ONE = new Set(['dragondance', 'quiverdance', 'victorydance', 'tidyup', 'trailblaze', 'flamecharge', 'rapidspin', 'aquastep', 'esperwing', 'scaleshot']);
+const SETUP_PLUS_TWO = new Set(['shellsmash', 'agility', 'rockpolish', 'autotomize', 'shiftgear', 'geomancy']);
 /** Abilità che raddoppiano la velocità col meteo o il campo giusto. */
 const WEATHER_SPEED: Record<string, { weather?: string; terrain?: string }> = {
   swiftswim: { weather: 'rain' }, chlorophyll: { weather: 'sun' }, sandrush: { weather: 'sand' }, slushrush: { weather: 'snow' },

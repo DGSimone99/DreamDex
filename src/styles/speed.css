@@ -42,8 +42,9 @@
 .sp-stack .sp-seg-raw { background: var(--good); }
 .sp-bar-btn.warn .sp-seg-raw { background: var(--warn); }
 .sp-bar-btn.bad .sp-seg-raw { background: var(--bad); }
-.sp-stack .sp-seg-own { background: repeating-linear-gradient(135deg, var(--warn) 0 3px, color-mix(in srgb, var(--warn) 55%, var(--panel)) 3px 6px); }
-.sp-stack .sp-seg-team { background: repeating-linear-gradient(135deg, var(--accent-2) 0 3px, color-mix(in srgb, var(--accent-2) 55%, var(--panel)) 3px 6px); }
+/* I segmenti dei guadagni staccati dalla velocità pura con una riga scura: si vede dove finisce la velocità propria */
+.sp-stack .sp-seg-own { background: repeating-linear-gradient(135deg, var(--warn) 0 3px, color-mix(in srgb, var(--warn) 55%, var(--panel)) 3px 6px); box-shadow: inset 2px 0 0 var(--ground); }
+.sp-stack .sp-seg-team { background: repeating-linear-gradient(135deg, var(--accent-2) 0 3px, color-mix(in srgb, var(--accent-2) 55%, var(--panel)) 3px 6px); box-shadow: inset 2px 0 0 var(--ground); }
 .sp-total { font: italic 700 17px/1 var(--display); text-align: right; font-variant-numeric: tabular-nums; }
 .sp-total.good { color: var(--good); }
 .sp-total.warn { color: var(--warn); }

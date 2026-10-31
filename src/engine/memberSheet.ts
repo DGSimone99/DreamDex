@@ -67,7 +67,7 @@ const BULK_ABILITIES: Record<string, number> = {
 };
 /** Mosse con cui Contrary alza invece di abbassare (Serperior con Leaf Storm). */
 const CONTRARY_MOVES = new Set(['leafstorm', 'dracometeor', 'overheat', 'superpower', 'vcreate']);
-const SPEED_SETUP = new Set(['dragondance', 'quiverdance', 'shellsmash', 'shiftgear', 'agility', 'rockpolish', 'victorydance', 'tidyup', 'filletaway', 'trailblaze', 'flamecharge']);
+const SPEED_SETUP = new Set(['dragondance', 'quiverdance', 'shellsmash', 'shiftgear', 'agility', 'rockpolish', 'autotomize', 'geomancy', 'victorydance', 'tidyup', 'filletaway', 'trailblaze', 'flamecharge', 'rapidspin', 'aquastep', 'esperwing', 'scaleshot']);
 const SETUP = new Set(['swordsdance', 'nastyplot', 'calmmind', 'bulkup', 'dragondance', 'quiverdance', 'shellsmash', 'shiftgear', 'victorydance',
   'tidyup', 'curse', 'coil', 'agility', 'rockpolish', 'tailglow', 'geomancy', 'bellydrum', 'filletaway']);
 const RECOVERY = new Set(['recover', 'roost', 'softboiled', 'slackoff', 'wish', 'rest', 'moonlight', 'synthesis', 'morningsun', 'strengthsap', 'shoreup', 'milkdrink', 'lifedew', 'junglehealing']);

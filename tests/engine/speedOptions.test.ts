@@ -25,6 +25,15 @@ describe('le condizioni di velocità di un membro (i check del modale, le stesse
     expect(speedOptions(smasher, [smasher]).map(brief)).toEqual([{ condition: 'setup', source: 'Shell Smash', memberFactor: 2, by: undefined }]);
   });
 
+  it('Scale Shot vale +1, Shift Gear e Geomancy +2', () => {
+    const chomp = set('Garchomp', 'Loaded Dice', 'Rough Skin', ['Scale Shot', 'Earthquake', 'Swords Dance', 'Stone Edge'], 'Jolly');
+    expect(speedOptions(chomp, [chomp]).map(brief)).toEqual([{ condition: 'setup', source: 'Scale Shot', memberFactor: 1.5, by: undefined }]);
+    const klink = set('Klinklang', 'Leftovers', 'Clear Body', ['Shift Gear', 'Gear Grind', 'Wild Charge', 'Substitute'], 'Jolly');
+    expect(speedOptions(klink, [klink]).map(brief)).toEqual([{ condition: 'setup', source: 'Shift Gear', memberFactor: 2, by: undefined }]);
+    const xern = set('Xerneas', 'Power Herb', 'Fairy Aura', ['Geomancy', 'Moonblast', 'Thunderbolt', 'Focus Blast'], 'Timid');
+    expect(speedOptions(xern, [xern]).map(brief)).toEqual([{ condition: 'setup', source: 'Geomancy', memberFactor: 2, by: undefined }]);
+  });
+
   it('Swift Swim solo con la pioggia del team (×2)', () => {
     expect(speedOptions(barra, [barra])).toEqual([]);
     expect(speedOptions(barra, [barra, pelipper]).map(brief)).toEqual([{ condition: 'weather', source: 'Swift Swim', memberFactor: 2, by: undefined }]);

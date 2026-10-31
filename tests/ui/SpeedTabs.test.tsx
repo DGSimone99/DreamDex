@@ -155,11 +155,33 @@ describe('Velocità: una scheda a barre', () => {
     expect(within(last as HTMLElement).queryByRole('button')).toBeNull();
   });
 
+  it('il "?" apre la guida della Velocità: rivali, guadagni con le quote, pesi dei membri, il modale non cambia il voto', async () => {
+    const user = userEvent.setup();
+    view();
+    await user.click(screen.getByRole('button', { name: 'Come funziona Generale' }));
+    const dialog = screen.getByRole('dialog', { name: 'Guida: Velocità' });
+    const panel = within(dialog).getByRole('tabpanel');
+    expect(panel).toHaveTextContent(/40 Pokémon più usati/);
+    expect(panel).toHaveTextContent(/Sciarpa/);
+    expect(panel).toHaveTextContent(/Booster/);
+    expect(panel).toHaveTextContent(/Trick Room/);
+    expect(panel).toHaveTextContent(/Tailwind/);
+    expect(panel).toHaveTextContent(/25%/);
+    expect(panel).toHaveTextContent(/12%/);
+    expect(panel).toHaveTextContent(/90%/);
+    expect(panel).toHaveTextContent(/non cambia il voto/);
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
   it('in inglese', async () => {
     const user = userEvent.setup();
     render(<LangProvider lang="en"><AreaView rating={rateTeam(team, fixtureData, 'en')!} area="speed" team={team} analysis={analyzeTeam(team, fixtureData)} problems={[]} /></LangProvider>);
     expect(names()).toEqual(['General']);
     await user.click(screen.getByRole('button', { name: 'Speed of Dragonite: open the rivals' }));
     expect(screen.getByRole('dialog', { name: 'Speed of Dragonite' })).toHaveTextContent('the grade does not change');
+    await user.keyboard('{Escape}');
+    await user.click(screen.getByRole('button', { name: 'How General works' }));
+    expect(screen.getByRole('dialog', { name: 'Guide: Speed' })).toHaveTextContent(/Scarf/);
   });
 });
