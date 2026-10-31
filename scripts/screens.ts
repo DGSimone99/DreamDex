@@ -206,14 +206,21 @@ const speedState = (sub: RegExp | null, opts: { collapsed?: boolean; format?: Pa
     return true;
   },
 });
-const SPEED_SUBS: Record<string, RegExp | null> = { general: /^Generale/, threats: /^Chi supera/, control: /^Controllo/ };
-const SPEED_STATES: Record<string, State> = Object.fromEntries(Object.entries(SPEED_SUBS).flatMap(([k, re]) => [
-  [`analysis-speed-${k}`, speedState(re)],
-  [`analysis-speed-${k}-collapsed`, speedState(re, { collapsed: true })],
-]));
-SPEED_STATES['analysis-speed-threats-nometa'] = speedState(SPEED_SUBS.threats, { format: { meta: false } });
+const SPEED_STATES: Record<string, State> = {
+  'analysis-speed-general': speedState(null),
+  'analysis-speed-general-collapsed': speedState(null, { collapsed: true }),
+  'analysis-speed-nometa': speedState(null, { format: { meta: false } }),
+  // Il modale del membro: la barra di Great Tusk
+  'analysis-speed-member': { hash: hash(SPEED_SIX), run: async p => {
+    const ok = await speedState(null).run!(p);
+    if (ok !== true) return ok;
+    if (!await clickText(p, '.sp-bar-btn', /./)) return 'no bar';
+    await wait(400);
+    return true;
+  } },
+};
 SPEED_STATES['analysis-speed-guide'] = { hash: hash(SPEED_SIX), run: async p => {
-  const ok = await speedState(SPEED_SUBS.threats).run!(p);
+  const ok = await speedState(null).run!(p);
   if (ok !== true) return ok;
   if (!await clickText(p, '.area-help button', /./)) return 'no guide button';
   await wait(400);

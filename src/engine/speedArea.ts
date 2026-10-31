@@ -54,6 +54,8 @@ export interface SpeedCell {
   speed: number;
   scarf: boolean;
   booster: boolean;
+  /** Sticky Web non lo rallenta (Volante, Levitate, Boots, Air Balloon). */
+  webImmune: boolean;
   /** Peso del rivale (0 per la propria specie, che non si confronta con sé). */
   weight: number;
   /** Quanto il rivale porta al totale del membro: supera (1), pareggio (0,5) o 0, più i guadagni; senza tetto. */
@@ -311,7 +313,7 @@ function measure(set: TeamSet, data: EngineData, team: TeamConditions): MemberSp
   const controlConds = [...perRival.keys()].filter(c => CONTROL_CONDITIONS.includes(c) && (room > speedUps ? c === 'trickroom' : c !== 'trickroom'));
   const sourceOf = (condition: SpeedCondition) => gains.find(g => g.condition === condition)?.source ?? null;
   const cells: SpeedCell[] = pool.map((r, i) => {
-    if (!weights[i]) return { species: r.species, speed: r.value, scarf: r.scarf, booster: !!r.booster, weight: 0, credit: 0, base: 0, via: null, source: null };
+    if (!weights[i]) return { species: r.species, speed: r.value, scarf: r.scarf, booster: !!r.booster, webImmune: !!r.webImmune, weight: 0, credit: 0, base: 0, via: null, source: null };
     let credit = bases[i];
     let via: SpeedCondition | null = null;
     let best = 0;
@@ -320,7 +322,7 @@ function measure(set: TeamSet, data: EngineData, team: TeamConditions): MemberSp
       credit += extra;
       if (extra > best) { best = extra; via = condition; }
     }
-    return { species: r.species, speed: r.value, scarf: r.scarf, booster: !!r.booster, weight: weights[i], credit, base: bases[i], via, source: via ? sourceOf(via) : null };
+    return { species: r.species, speed: r.value, scarf: r.scarf, booster: !!r.booster, webImmune: !!r.webImmune, weight: weights[i], credit, base: bases[i], via, source: via ? sourceOf(via) : null };
   });
   return { species: species.name, speed, raw, gains, own: ownTotal, total, controlOptions, cells };
 }

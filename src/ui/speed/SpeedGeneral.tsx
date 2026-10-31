@@ -1,47 +1,48 @@
+import { useRef, useState, type ReactNode } from 'react';
 import { battleSpecies } from '../../engine/dex';
 import { CONTROL_CONDITIONS, type MemberSpeed, type TeamSpeed } from '../../engine/speedArea';
 import { useT } from '../../i18n/react';
 import type { AreaContext } from '../AreaDetail';
-import { Bar, tone } from '../defense/DefenseGeneral';
+import { tone } from '../defense/DefenseGeneral';
 import { MemberMon } from '../defense/MemberMon';
 import { Icon } from '../icons';
 import { offenseSlots } from '../offense/slots';
 import { PokemonIcon } from '../PokemonName';
+import { SpeedMemberDialog } from './SpeedMemberDialog';
 
 /** Quanti rivali che nessuno supera si mostrano come icone nella tessera; gli altri vanno in "+N". */
 const HOLE_ICONS = 6;
 const points = (x: number) => Math.round(100 * x);
 
 /**
- * La scheda Generale della Velocità, nella cornice comune (`def-frame`): i membri dal più veloce con una colonna per
- * voce (Velocità reale, Pura, Propria coi guadagni del membro, Con il team coi guadagni del controllo) e sotto le due
- * tessere, Velocità e Controllo velocità (un clic apre la sottoscheda).
+ * La scheda della Velocità, nella cornice comune (`def-frame`): i membri dal più veloce, ognuno con una barra a segmenti
+ * (velocità pura, i guadagni suoi, quelli del team) e il totale; la barra è un bottone che apre il modale del membro coi
+ * rivali e i check "e se". Sotto, le tessere Velocità (chi nessuno supera) e Controllo velocità (le mosse che aiutano).
  * Le righe seguono il team dal più veloce; chi il motore non conosce resta con "—".
  */
-export function SpeedGeneral({ speed, ctx }: { speed: TeamSpeed; meta: boolean; ctx: AreaContext }) {
+export function SpeedGeneral({ speed, meta, ctx }: { speed: TeamSpeed; meta: boolean; ctx: AreaContext }) {
   const t = useT();
   const { members, threats } = speed;
   const slots = offenseSlots(ctx.team, members);
   const rows = ctx.team
     .map((set, slot) => ({ set, m: slots[slot] === null ? null : members[slots[slot]!] }))
     .sort((a, b) => (b.m?.speed ?? -1) - (a.m?.speed ?? -1));
-  const ownGains = (m: MemberSpeed) => m.gains.filter(g => !CONTROL_CONDITIONS.includes(g.condition));
-  const teamGains = (m: MemberSpeed) => m.gains.filter(g => CONTROL_CONDITIONS.includes(g.condition));
-  const tip = (list: MemberSpeed['gains']) => list.map(g => `${t(`sdetail.cond.${g.condition}`)} (${g.source}): +${points(g.gain)}`).join('\n');
-  const gainOf = (from: number, to: number, list: MemberSpeed['gains']) => {
-    const plus = points(to) - points(from);
-    return plus > 0 ? <small className="ad-gain" title={tip(list)}> (+{plus})</small> : undefined;
+  const [open, setOpen] = useState<MemberSpeed | null>(null);
+  const bars = useRef(new Map<string, HTMLButtonElement | null>());
+  const tip = (m: MemberSpeed) => m.gains.map(g => `${t(`sdetail.cond.${g.condition}`)} (${g.source}${g.by ? `, ${g.by.join(', ')}` : ''}): +${points(g.gain)}`).join('\n');
+  const close = () => {
+    const back = open ? bars.current.get(open.species) : null;
+    setOpen(null);
+    back?.focus();
   };
-  const ownColumn = members.some(m => points(m.own) > points(m.raw));
-  const teamColumn = members.some(m => points(m.total) > points(m.own));
 
   // Tessera Velocità: i rivali che nessuno supera da solo
   const holes = threats.filter(th => th.outsped === 0);
   const hiddenHoles = holes.slice(HOLE_ICONS).map(th => th.species).join(', ');
   const controls = speed.sources.filter(src => src.helped > 0);
-  const tiles = [
+  const tiles: { key: string; label: string; value: string; cls: string; fact: ReactNode }[] = [
     {
-      key: 'threats', label: t('sdetail.speed'), value: speed.speed,
+      key: 'speed', label: t('sdetail.speed'), value: String(speed.speed), cls: tone(speed.speed),
       fact: <>
         <span className="def-cap"><em>{t('sdetail.tile.holes')}</em><b>{holes.length}/{threats.length}</b></span>
         {holes.length
@@ -55,11 +56,11 @@ export function SpeedGeneral({ speed, ctx }: { speed: TeamSpeed; meta: boolean; 
       </>,
     },
     {
-      key: 'control', label: t('sdetail.control'), value: speed.control,
+      key: 'control', label: t('sdetail.control'), value: `+${speed.control}`, cls: speed.control > 0 ? 'good' : 'warn',
       fact: controls.length
         ? <>
-          <span className="def-cap"><em>{t('sdetail.tile.control')}</em><b>+{speed.control}</b></span>
-          <span className="def-visual sp-controls">{controls.map(src => <span key={`${src.condition}-${src.move}`} className="sp-control-move">{src.move}</span>)}</span>
+          <span className="def-cap"><em>{t('sdetail.tile.control')}</em><b>{t(controls.length === 1 ? 'sdetail.mates.one' : 'sdetail.mates.many', { n: controls.length })}</b></span>
+          <span className="def-visual sp-controls">{controls.map(src => <span key={`${src.condition}-${src.move}`} className="sp-control-move" title={src.by.join(', ')}>{src.move}</span>)}</span>
         </>
         : <span className="def-visual def-faint">{t('sdetail.general.controlNone')}</span>,
     },
@@ -69,14 +70,11 @@ export function SpeedGeneral({ speed, ctx }: { speed: TeamSpeed; meta: boolean; 
     <div className="def-frame def-general sp-general">
       <div className="ad-scroll">
         <table className="def-grid def-members">
-          <colgroup><col className="def-col-mon" /><col className="sp-col-speed" /><col /><col /><col /></colgroup>
+          <colgroup><col className="def-col-mon" /><col /></colgroup>
           <thead>
             <tr>
               <th scope="col" className="def-mon-h">{t('detail.member')}</th>
-              <th scope="col">{t('sdetail.speed')}</th>
-              <th scope="col">{t('sdetail.raw')}</th>
-              <th scope="col">{t('sdetail.own')}</th>
-              <th scope="col">{t('sdetail.withTeam')}</th>
+              <th scope="col">{t('sdetail.bar')}</th>
             </tr>
           </thead>
           <tbody>
@@ -85,14 +83,12 @@ export function SpeedGeneral({ speed, ctx }: { speed: TeamSpeed; meta: boolean; 
               return (
                 <tr key={`${name}-${i}`}>
                   <th scope="row"><MemberMon name={name} set={set} stats="offense" /></th>
-                  {m
-                    ? <>
-                      <td className="sp-speed"><b>{m.speed}</b>{set.item.toLowerCase() === 'choice scarf' && <small className="sp-mark">{t('sdetail.mark.scarf')}</small>}</td>
-                      <td><Bar value={points(m.raw)} unit="%" /></td>
-                      <td><Bar value={points(m.own)} unit="%" reserve={ownColumn} gain={gainOf(m.raw, m.own, ownGains(m))} /></td>
-                      <td><Bar value={points(m.total)} unit="%" reserve={teamColumn} gain={gainOf(m.own, m.total, teamGains(m))} /></td>
-                    </>
-                    : <><td>—</td><td>—</td><td>—</td><td>—</td></>}
+                  <td>
+                    {m
+                      ? <StackedBar m={m} title={tip(m)} label={t('sdetail.bar.open', { name: m.species })} onOpen={() => setOpen(m)}
+                        refer={el => bars.current.set(m.species, el)} />
+                      : '—'}
+                  </td>
                 </tr>
               );
             })}
@@ -101,12 +97,43 @@ export function SpeedGeneral({ speed, ctx }: { speed: TeamSpeed; meta: boolean; 
       </div>
       <div className="def-sum def-tiles sp-tiles">
         {tiles.map(tile => (
-          <button key={tile.key} type="button" className={`def-tile ${tile.key === 'control' ? (tile.value > 0 ? 'good' : 'warn') : tone(tile.value)}`} onClick={() => ctx.open?.(tile.key)}>
-            <span className="def-tile-head"><span>{tile.label}</span><b>{tile.key === 'control' ? `+${tile.value}` : tile.value}</b></span>
+          <div key={tile.key} className={`def-tile sp-tile ${tile.cls}`}>
+            <span className="def-tile-head"><span>{tile.label}</span><b>{tile.value}</b></span>
             <span className="def-tile-fact">{tile.fact}</span>
-          </button>
+          </div>
         ))}
       </div>
+      {open && <SpeedMemberDialog member={open} set={ctx.team.find(s => (battleSpecies(s)?.name ?? s.species) === open.species) ?? ctx.team[0]} team={ctx.team} meta={meta} onClose={close} />}
     </div>
   );
 }
+
+/**
+ * La barra a segmenti del membro: la velocità pura (piena), i suoi guadagni (chiaro) e quelli del team (secondo accento),
+ * col totale e il dettaglio "58 · +18 · +22". È un bottone: apre il modale del membro.
+ */
+function StackedBar({ m, title, label, onOpen, refer }: { m: MemberSpeed; title: string; label: string; onOpen: () => void; refer: (el: HTMLButtonElement | null) => void }) {
+  const raw = points(m.raw);
+  const own = points(m.own) - raw;
+  const team = points(m.total) - points(m.own);
+  const total = points(m.total);
+  const cls = tone(total);
+  return (
+    <button ref={refer} type="button" className={`sp-bar-btn ${cls}`} aria-label={label} title={title || undefined} onClick={onOpen}>
+      <span className="sp-stack" aria-hidden="true">
+        <i className="sp-seg-raw" style={{ width: `${raw}%` }} />
+        <i className="sp-seg-own" style={{ width: `${Math.max(0, own)}%` }} />
+        <i className="sp-seg-team" style={{ width: `${Math.max(0, team)}%` }} />
+      </span>
+      <span className={`sp-total ${cls}`}>{total}%</span>
+      <span className="sp-parts">
+        <span>{raw}</span>
+        {own > 0 && <span className="sp-part-own">+{own}</span>}
+        {team > 0 && <span className="sp-part-team">+{team}</span>}
+      </span>
+      <Icon name="next" />
+    </button>
+  );
+}
+
+export { CONTROL_CONDITIONS };
