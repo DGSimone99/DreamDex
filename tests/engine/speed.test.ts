@@ -25,7 +25,7 @@ describe('Velocità al livello 100 (IV 31)', () => {
 });
 
 const entry = (usage: number, spread: string, item = 'leftovers'): SpeciesStats => ({
-  usage, count: 100, abilities: {}, items: { [item]: 0.6 }, moves: {}, teraTypes: {}, spreads: { [spread]: 0.5 }, teammates: {}, checks: {},
+  usage, count: 100, abilities: {}, items: { [item]: 0.85 }, moves: {}, teraTypes: {}, spreads: { [spread]: 0.5 }, teammates: {}, checks: {},
 });
 const stats: StatsData = { meta: { month: 'm', cutoff: 1, battles: 1 }, pokemon: {
   'Great Tusk': entry(0.4, 'Jolly:0/252/4/0/0/252'), // 87 base → 300
@@ -56,7 +56,7 @@ describe('posto nel meta', () => {
 
 describe('quota superata, la stessa ovunque', () => {
   it('un pareggio vale metà', () => {
-    const pool = [{ species: 'A', value: 100, scarf: false }, { species: 'B', value: 200, scarf: false }, { species: 'C', value: 300, scarf: false }];
+    const pool = [{ species: 'A', value: 100, scarf: false, weight: 1 }, { species: 'B', value: 200, scarf: false, weight: 1 }, { species: 'C', value: 300, scarf: false, weight: 1 }];
     expect(outspeedShare(200, pool)).toBeCloseTo(0.5);
     // La specie stessa non si confronta con sé
     expect(outspeedShare(250, pool, 'C')).toBe(1);

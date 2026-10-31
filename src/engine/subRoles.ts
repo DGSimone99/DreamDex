@@ -8,7 +8,7 @@ import { usesMeta } from './analysis';
 import { setKey } from './damage';
 import { rolesMemberOffense } from './offense';
 import { memberSpeed } from './speedArea';
-import { outspeedShare, speedPool, speedStat, type SpeedRival } from './speed';
+import { outspeedShare, poolSpecies, speedPool, speedStat, statsKey, type SpeedRival } from './speed';
 import { teamField } from './types';
 import { memoBySet } from './memo';
 import type { Archetype } from './archetype';
@@ -213,17 +213,17 @@ const statusPools = new Map<string, StatusRival[]>();
 
 /** Stesse specie di speedPool; col meta set più comune e uso come peso, senza meta prima abilità e peso uguale. */
 export function statusPool(data: EngineData): StatusRival[] {
-  const key = `${data.formatId ?? 'ou'}|${usesMeta(data)}|${!!data.stats}`;
+  const key = `${data.formatId ?? 'ou'}|${usesMeta(data)}|${statsKey(data.stats)}`;
   let pool = statusPools.get(key);
   if (pool) return pool;
   const meta = usesMeta(data);
-  pool = speedPool(data).flatMap(r => {
-    const species = getSpecies(r.species);
+  pool = poolSpecies(data).flatMap(name => {
+    const species = getSpecies(name);
     if (!species) return [];
-    const common = meta ? mostCommonSet(data.stats, r.species) : null;
-    const usage = meta ? data.stats!.pokemon[r.species]?.usage ?? 0 : 1;
+    const common = meta ? mostCommonSet(data.stats, name) : null;
+    const usage = meta ? data.stats!.pokemon[name]?.usage ?? 0 : 1;
     return [{
-      species: r.species, types: [...species.types],
+      species: name, types: [...species.types],
       ability: common?.ability || species.abilities[0] || '', item: common?.item ?? '', weight: usage > 0 ? usage : 0,
     }];
   });
@@ -408,7 +408,7 @@ const CACHE_LIMIT = 500;
 const cache = new Map<string, { values: SubRoleValues; reasons: SubRoleReason[] }>();
 
 function measured(set: TeamSet, team: TeamSet[], data: EngineData) {
-  const key = `${setKey(set)}|${team.map(setKey).join(',')}|${data.formatId ?? 'ou'}|${usesMeta(data)}|${!!data.stats}`;
+  const key = `${setKey(set)}|${team.map(setKey).join(',')}|${data.formatId ?? 'ou'}|${usesMeta(data)}|${statsKey(data.stats)}`;
   let hit = cache.get(key);
   if (hit) return hit;
   if (cache.size >= CACHE_LIMIT) cache.clear();

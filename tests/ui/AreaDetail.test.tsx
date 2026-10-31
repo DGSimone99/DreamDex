@@ -188,49 +188,18 @@ async function openSpeed(lang: 'it' | 'en') {
 }
 
 describe('dettaglio della Velocità a schede', () => {
-  it('tre schede col loro valore; Generale con Velocità e Controllo velocità e i membri', async () => {
+  it('una scheda sola col suo valore; i membri con la barra e le tessere', async () => {
     const { dialog } = await openSpeed('it');
     const tabs = within(dialog).getAllByRole('tab');
-    expect(tabs.map(tab => tab.textContent!.replace(/\s*\+?\d+$/, ''))).toEqual(['Generale', 'Velocità', 'Controllo velocità']);
+    expect(tabs.map(tab => tab.textContent!.replace(/\s*\+?\d+$/, ''))).toEqual(['Generale']);
     for (const tab of tabs) expect(tab.textContent).toMatch(/\d+$/);
     const panel = within(dialog).getByRole('tabpanel');
-    expect(within(panel).getAllByRole('term').map(term => term.textContent)).toEqual(['Velocità', 'Controllo velocità']);
-    // Il controllo è un plus in punti sopra la Velocità
-    expect(within(panel).getAllByRole('definition')[1]).toHaveTextContent(/^\+\d+/);
-    const table = within(panel).getByRole('table');
-    expect(within(table).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Velocità', 'Superati', 'Totale']);
-    const rows = within(table).getAllByRole('row').slice(1);
-    expect(rows.map(r => within(r).getByRole('rowheader').textContent)).toEqual(['Great Tusk', 'Gholdengo']);
-    for (const row of rows) {
-      const cells = within(row).getAllByRole('cell');
-      expect(cells[0]).toHaveTextContent(/^\d+$/);
-      expect(cells[1]).toHaveTextContent(/^\d+%$/);
-      // Il totale coi guadagni: tra parentesi, in verde, quanto aggiungono le condizioni (il tooltip dice quali)
-      expect(cells[2]).toHaveTextContent(/^\d+%( \(\+\d+\))?$/);
-      const gain = cells[2].querySelector('.ad-gain');
-      if (gain) expect(gain.getAttribute('title')).toMatch(/: \+\d+/);
-    }
+    expect(within(panel).getByRole('button', { name: 'Velocità di Great Tusk: apri i rivali' })).toBeInTheDocument();
+    expect(within(panel).getByRole('button', { name: 'Velocità di Gholdengo: apri i rivali' })).toBeInTheDocument();
+    expect(panel.querySelectorAll('.def-tile')).toHaveLength(0);
   });
 
-  it('Velocità: la quota pura e una colonna per ogni condizione del membro (setup, meteo, Unburden, priorità)', async () => {
-    const { user, dialog } = await openSpeed('it');
-    await user.click(within(dialog).getByRole('tab', { name: /^Velocità/ }));
-    const panel = within(dialog).getByRole('tabpanel');
-    expect(panel).toHaveTextContent(/25\/20\/16\/14\/13\/12/);
-    const headers = within(panel).getAllByRole('columnheader').map(h => h.textContent);
-    expect(headers.slice(0, 3)).toEqual(['Pokémon', 'Velocità', 'Pura']);
-    for (const h of headers.slice(3, -1)) expect(['Setup', 'Meteo', 'Unburden', 'Priorità']).toContain(h);
-    expect(headers[headers.length - 1]).toBe('Totale');
-  });
-
-  it('Controllo velocità senza mosse di controllo: una riga, e un plus di 0', async () => {
-    const { user, dialog } = await openSpeed('it');
-    expect(within(dialog).getAllByRole('tab')[2]).toHaveTextContent(/^Controllo velocità \+0$/);
-    await user.click(within(dialog).getByRole('tab', { name: /^Controllo velocità/ }));
-    expect(within(dialog).getByRole('tabpanel')).toHaveTextContent('nessun controllo della velocità');
-  });
-
-  it('Controllo velocità: chi porta la mossa, quanti compagni aiuta e quanti punti aggiunge', async () => {
+  it('col controllo: la barra spiega la mossa nel suggerimento', async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} />);
     await user.click(screen.getByLabelText('Testo Showdown'));
@@ -238,23 +207,13 @@ describe('dettaglio della Velocità a schede', () => {
     await user.click(screen.getByRole('button', { name: 'Importa' }));
     await user.click(within(document.querySelector<HTMLElement>('.band')!).getByRole('button', { name: /^Velocità \d+, apri il dettaglio/ }));
     const dialog = within(document.getElementById('panel-analysis')!).getAllByRole('region').find(r => r.classList.contains('area-view'))!;
-    const controlTab = within(dialog).getByRole('tab', { name: /^Controllo velocità/ });
-    expect(controlTab).toHaveTextContent(/^Controllo velocità \+\d+$/);
-    await user.click(controlTab);
-    const table = within(within(dialog).getByRole('tabpanel')).getByRole('table');
-    expect(within(table).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Mossa', 'Aiuta', 'Punti']);
-    const row = within(table).getAllByRole('row')[1];
-    expect(within(row).getByRole('rowheader')).toHaveTextContent('Clefable');
-    const cells = within(row).getAllByRole('cell');
-    expect(cells[0]).toHaveTextContent('Thunder Wave');
-    // I membri aiutati, chi porta la mossa compreso
-    expect(cells[1]).toHaveTextContent(/^\d membr[oi]$/);
-    expect(cells[2]).toHaveTextContent(/^\+\d+$/);
+    const bar = within(dialog).getByRole('button', { name: 'Velocità di Clefable: apri i rivali' });
+    expect(bar.getAttribute('title')).toMatch(/Thunder Wave/);
   });
 
   it('in inglese', async () => {
     const { dialog } = await openSpeed('en');
-    expect(within(dialog).getAllByRole('tab').map(tab => tab.textContent!.replace(/\s*\+?\d+$/, ''))).toEqual(['General', 'Speed', 'Speed control']);
-    expect(within(dialog).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Speed', 'Outsped', 'Total']);
+    expect(within(dialog).getAllByRole('tab').map(tab => tab.textContent!.replace(/\s*\+?\d+$/, ''))).toEqual(['General']);
+    expect(within(dialog).getByRole('button', { name: 'Speed of Great Tusk: open the rivals' })).toBeInTheDocument();
   });
 });

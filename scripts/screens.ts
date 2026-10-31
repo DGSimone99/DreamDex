@@ -190,6 +190,42 @@ const offenseGuide = (sub: RegExp | null): State => ({ hash: hash(SIX), run: asy
 OFFENSE_STATES['analysis-offense-types-nometa'] = offenseState(OFFENSE_SUBS.types, { format: { meta: false } });
 OFFENSE_STATES['analysis-offense-guide'] = offenseGuide(OFFENSE_SUBS.general);
 OFFENSE_STATES['analysis-offense-guide-wall'] = offenseGuide(OFFENSE_SUBS.wall);
+// Velocità: lo stesso team con Ribombee (Sticky Web e Stun Spore) al posto di Gholdengo, così il controllo del team si vede
+const SPEED_SIX = [...TEAM, member('Ribombee', 'Focus Sash', 'Shield Dust', ['Sticky Web', 'Moonblast', 'Stun Spore', 'U-turn'], 'Timid', { spa: 252, spe: 252, hp: 4 })];
+const speedState = (sub: RegExp | null, opts: { collapsed?: boolean; format?: Partial<typeof FORMAT> } = {}): State => ({
+  hash: opts.format ? hashWith(SPEED_SIX, opts.format) : hash(SPEED_SIX),
+  run: async p => {
+    await tab(p, 'analysis');
+    await wait(300);
+    if (opts.collapsed && !await clickText(p, 'button.band-toggle', /./)) return 'no band toggle';
+    await wait(300);
+    if (!await clickText(p, '.band button.grade-area', /^Velocit/)) return 'no speed row';
+    await wait(300);
+    if (sub && !await clickText(p, '.area-subs [role="tab"]', sub)) return 'no sub-tab';
+    await wait(500);
+    return true;
+  },
+});
+const SPEED_STATES: Record<string, State> = {
+  'analysis-speed-general': speedState(null),
+  'analysis-speed-general-collapsed': speedState(null, { collapsed: true }),
+  'analysis-speed-nometa': speedState(null, { format: { meta: false } }),
+  // Il modale del membro: la barra di Great Tusk
+  'analysis-speed-member': { hash: hash(SPEED_SIX), run: async p => {
+    const ok = await speedState(null).run!(p);
+    if (ok !== true) return ok;
+    if (!await clickText(p, '.sp-bar-btn', /./)) return 'no bar';
+    await wait(400);
+    return true;
+  } },
+};
+SPEED_STATES['analysis-speed-guide'] = { hash: hash(SPEED_SIX), run: async p => {
+  const ok = await speedState(null).run!(p);
+  if (ok !== true) return ok;
+  if (!await clickText(p, '.area-help button', /./)) return 'no guide button';
+  await wait(400);
+  return true;
+} };
 const SUBS: Record<string, RegExp | null> = { general: null, robustness: /^Robustezza/, sustain: /^Sostenibilit/, types: /^Coverage tipi/, meta: /^Coverage meta/ };
 const DEFENSE_STATES: Record<string, State> = {
   ...Object.fromEntries(Object.entries(SUBS).flatMap(([k, re]) => [
@@ -279,6 +315,7 @@ const STATES: Record<string, State> = {
   // Difesa: una scheda per sotto-scheda (SIX), con meta, senza meta, a team chiuso e con nomi lunghi
   ...DEFENSE_STATES,
   ...OFFENSE_STATES,
+  ...SPEED_STATES,
   'analysis-offense-strip': { hash: hash(SIX), run: async p => clickText(p, '.band button.grade-area', /^Offesa/) },
   'analysis-roles': { run: async p => clickText(p, '.band button.grade-area', /^Ruoli/) },
   'analysis-coaching': { run: async p => { await tab(p, 'analysis'); await wait(300); const ok = await clickText(p, '.analysis-tabs [role="tab"]', /^Coaching/); await wait(900); return ok; } },

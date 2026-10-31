@@ -88,8 +88,11 @@ describe('summarizeTeam', () => {
 });
 
 describe('poolMedian', () => {
-  it('è la Velocità a metà del gruppo', () => {
-    const sorted = speedPool(fixtureData).map(r => r.value).sort((a, b) => a - b);
-    expect(poolMedian(fixtureData)).toBe(sorted[Math.floor(sorted.length / 2)]);
+  it('è la Velocità a metà del gruppo, pesando le versioni con la Sciarpa', () => {
+    const sorted = [...speedPool(fixtureData)].sort((a, b) => a.value - b.value);
+    const half = sorted.reduce((acc, r) => acc + r.weight, 0) / 2;
+    let cumulative = 0;
+    const expected = sorted.find(r => (cumulative += r.weight) >= half)!.value;
+    expect(poolMedian(fixtureData)).toBe(expected);
   });
 });
