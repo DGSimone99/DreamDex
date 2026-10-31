@@ -82,7 +82,7 @@ export function SpeedGeneral({ speed, meta, ctx }: { speed: TeamSpeed; meta: boo
               const name = battleSpecies(set)?.name ?? set.species;
               return (
                 <tr key={`${name}-${i}`}>
-                  <th scope="row"><MemberMon name={name} set={set} stats="offense" /></th>
+                  <th scope="row"><MemberMon name={name} set={set} stats="speed" /></th>
                   <td>
                     {m
                       ? <StackedBar m={m} title={tip(m)} label={t('sdetail.bar.open', { name: m.species })} onOpen={() => setOpen(m)}

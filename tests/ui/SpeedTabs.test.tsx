@@ -140,6 +140,19 @@ describe('Velocità: una scheda a barre', () => {
     expect(within(dialog).getAllByRole('listitem').length).toBe(poolSpecies(noMetaData).filter(sp => sp !== 'Dragonite').length + 1);
   });
 
+  it('la velocità nella riga è quella reale, con la Sciarpa: Victini 328 diventa 492', () => {
+    const victini = set('Victini', 'Choice Scarf', 'Victory Star', ['V-create', 'Bolt Strike', 'U-turn', 'Trick'], 'Jolly', { atk: 252, spe: 252 });
+    const t = [victini, pex];
+    view(t, withMeta(t));
+    const row = document.querySelectorAll('.def-members tbody tr')[0] as HTMLElement;
+    expect(row).toHaveTextContent('Victini');
+    const stat = row.querySelector('.def-mon-stats')!;
+    expect(stat).toHaveTextContent('492');
+    expect(stat).not.toHaveTextContent('328');
+    expect(stat).toHaveTextContent('Scarf');
+    expect(barOf('Victini')).toBeInTheDocument();
+  });
+
   it('una specie sconosciuta: riga con "—", senza barra', () => {
     const odd = [...team, emptySet('Nessuno')];
     view(odd, withMeta(odd));
