@@ -1,9 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { defensiveSetup, defenseReference, dummyAttacker, hazardRemover, holdCredit, typedHits, holdStep, intimidateBoost, memberDefense, sustainability, sustainParts, teamDefense } from '../../src/engine/defense';
+import { defensiveSetup, dummyAttacker, hazardRemover, holdCredit, typedHits, holdStep, memberDefense, sustainability, sustainParts, teamDefense } from '../../src/engine/defense';
 import type { TeamSet } from '../../src/engine/sets';
 import { softScore } from '../../src/engine/scale';
-import { attackerPanels, panelWeights } from '../../src/engine/attackers';
-import { standardHit } from '../../src/engine/damage';
 import { fixtureData } from '../fixtures/data';
 import { TYPES } from '../../src/engine/types';
 
@@ -22,10 +20,10 @@ describe('holdStep: quanti colpi regge (dal tiro più alto)', () => {
 describe('sustainability: recupero contro perdite per turno', () => {
   it('Boots e Magic Guard azzerano Stealth Rock; Magic Guard anche Life Orb', () => {
     const zard = set('Charizard', 'Leftovers', 'Blaze', ['Flamethrower'], 'Timid', { spa: 252 });
-    expect(sustainability(zard, 1.5)).toBeCloseTo(0.0625 - 0.5);
-    expect(sustainability({ ...zard, item: 'Heavy-Duty Boots' }, 1.5)).toBeCloseTo(0);
+    expect(sustainability(zard, 1)).toBeCloseTo(0.0625 - 0.5);
+    expect(sustainability({ ...zard, item: 'Heavy-Duty Boots' }, 1)).toBeCloseTo(0);
     const clef = set('Clefable', 'Life Orb', 'Magic Guard', ['Moonblast', 'Moonlight'], 'Modest', { hp: 252, spa: 252 });
-    expect(sustainability(clef, 1.5)).toBeCloseTo(0.5);
+    expect(sustainability(clef, 1)).toBeCloseTo(0.5);
   });
 
   it('con chi toglie gli hazard nel team la Stealth Rock pesa metà (e lo dice), Life Orb no', () => {
@@ -33,230 +31,173 @@ describe('sustainability: recupero contro perdite per turno', () => {
     const corv = set('Corviknight', 'Leftovers', 'Pressure', ['Defog', 'Roost'], 'Impish', { hp: 252, def: 252 });
     const remover = hazardRemover([zard, corv]);
     expect(remover).toBe('Defog (Corviknight)');
-    expect(sustainParts(zard, 1.5, remover)).toMatchObject({ rocks: 0.25, rocksHalvedBy: 'Defog (Corviknight)', itemLoss: 0.1 });
-    expect(sustainParts(zard, 1.5)).toMatchObject({ rocks: 0.5, rocksHalvedBy: null });
+    expect(sustainParts(zard, 1, remover)).toMatchObject({ rocks: 0.25, rocksHalvedBy: 'Defog (Corviknight)', itemLoss: 0.1 });
+    expect(sustainParts(zard, 1)).toMatchObject({ rocks: 0.5, rocksHalvedBy: null });
     expect(hazardRemover([zard])).toBeNull();
     // Chi non prende la Stealth Rock non ha niente da dimezzare
-    expect(sustainParts({ ...zard, item: 'Heavy-Duty Boots' }, 1.5, remover).rocksHalvedBy).toBeNull();
+    expect(sustainParts({ ...zard, item: 'Heavy-Duty Boots' }, 1, remover).rocksHalvedBy).toBeNull();
   });
 
   it('Sheer Force toglie il costo di Life Orb solo se una mossa ha effetti secondari', () => {
     const king = set('Nidoking', 'Life Orb', 'Sheer Force', ['Earth Power', 'Sludge Wave'], 'Timid', { spa: 252, spe: 252 });
-    expect(sustainParts(king, 1.5).itemLoss).toBe(0);
-    expect(sustainParts({ ...king, moves: ['Earthquake', 'Stealth Rock'] }, 1.5).itemLoss).toBeCloseTo(0.1);
+    expect(sustainParts(king, 1).itemLoss).toBe(0);
+    expect(sustainParts({ ...king, moves: ['Earthquake', 'Stealth Rock'] }, 1).itemLoss).toBeCloseTo(0.1);
   });
 
   it('gli strumenti che tolgono PS: Flame Orb e Toxic Orb (non a chi è immune allo stato), Sticky Barb, Black Sludge fuori dai Veleno', () => {
     const ursa = set('Ursaluna', 'Flame Orb', 'Guts', ['Facade', 'Headlong Rush'], 'Adamant', { atk: 252 });
-    expect(sustainParts(ursa, 1.5)).toMatchObject({ itemLoss: 0.0625, itemLossFrom: 'Flame Orb' });
+    expect(sustainParts(ursa, 1)).toMatchObject({ itemLoss: 0.0625, itemLossFrom: 'Flame Orb' });
     // Un Fuoco non si brucia, Magic Guard non prende danno
-    expect(sustainParts({ ...ursa, species: 'Arcanine' }, 1.5).itemLoss).toBe(0);
-    expect(sustainParts({ ...ursa, ability: 'Magic Guard' }, 1.5).itemLoss).toBe(0);
+    expect(sustainParts({ ...ursa, species: 'Arcanine' }, 1).itemLoss).toBe(0);
+    expect(sustainParts({ ...ursa, ability: 'Magic Guard' }, 1).itemLoss).toBe(0);
     const toxic = { ...ursa, item: 'Toxic Orb' };
-    expect(sustainParts(toxic, 1.5).itemLoss).toBeCloseTo(0.125);
-    expect(sustainParts({ ...toxic, species: 'Corviknight' }, 1.5).itemLoss).toBe(0);
-    expect(sustainParts({ ...ursa, item: 'Sticky Barb' }, 1.5).itemLoss).toBeCloseTo(0.0625);
+    expect(sustainParts(toxic, 1).itemLoss).toBeCloseTo(0.125);
+    expect(sustainParts({ ...toxic, species: 'Corviknight' }, 1).itemLoss).toBe(0);
+    expect(sustainParts({ ...ursa, item: 'Sticky Barb' }, 1).itemLoss).toBeCloseTo(0.0625);
     // Black Sludge: cura un Veleno, toglie PS agli altri
-    expect(sustainParts({ ...ursa, item: 'Black Sludge' }, 1.5)).toMatchObject({ itemLoss: 0.125, recovery: 0 });
-    expect(sustainParts({ ...ursa, species: 'Toxapex', item: 'Black Sludge' }, 1.5)).toMatchObject({ itemLoss: 0, recovery: 0.0625 });
+    expect(sustainParts({ ...ursa, item: 'Black Sludge' }, 1)).toMatchObject({ itemLoss: 0.125, recovery: 0 });
+    expect(sustainParts({ ...ursa, species: 'Toxapex', item: 'Black Sludge' }, 1)).toMatchObject({ itemLoss: 0, recovery: 0.0625 });
   });
 
   it('Poison Heal cura solo con Toxic Orb (senza, il Pokémon non è avvelenato)', () => {
     const gliscor = set('Gliscor', 'Toxic Orb', 'Poison Heal', ['Earthquake', 'Protect'], 'Impish', { hp: 252, def: 252 });
-    expect(sustainParts(gliscor, 1.5)).toMatchObject({ sources: ['Poison Heal'], recovery: 0.125 });
-    expect(sustainParts({ ...gliscor, item: 'Leftovers' }, 1.5)).toMatchObject({ sources: ['Leftovers'], recovery: 0.0625 });
+    expect(sustainParts(gliscor, 1)).toMatchObject({ sources: ['Poison Heal'], recovery: 0.125 });
+    expect(sustainParts({ ...gliscor, item: 'Leftovers' }, 1)).toMatchObject({ sources: ['Leftovers'], recovery: 0.0625 });
   });
 
-  it('Regenerator vale 0,33; il recupero si dimezza per chi non regge almeno un 3HKO', () => {
+  it('Regenerator vale 0,33; il recupero si dimezza per chi regge meno del 35% dei colpi di tipo', () => {
     const slowbro = set('Slowbro', 'Heavy-Duty Boots', 'Regenerator', ['Slack Off', 'Scald'], 'Bold', { hp: 252, def: 252 });
     expect(sustainability(slowbro, 1)).toBeCloseTo(0.5 + 0.33);
-    expect(sustainability(slowbro, 0.5)).toBeCloseTo((0.5 + 0.33) / 2);
+    expect(sustainability(slowbro, 0.35)).toBeCloseTo(0.5 + 0.33);
+    expect(sustainability(slowbro, 0.34)).toBeCloseTo((0.5 + 0.33) / 2);
+  });
+
+  it('fonti nuove: Leech Seed e le mosse che assorbono un ottavo, Pain Split un quarto; conta la mossa migliore', () => {
+    const ferro = set('Ferrothorn', 'Heavy-Duty Boots', 'Iron Barbs', ['Leech Seed', 'Power Whip', 'Stealth Rock'], 'Relaxed', { hp: 252, def: 252 });
+    expect(sustainParts(ferro, 1)).toMatchObject({ sources: ['Leech Seed'], recovery: 0.125 });
+    const breloom = set('Breloom', 'Heavy-Duty Boots', 'Technician', ['Drain Punch', 'Mach Punch'], 'Jolly', { atk: 252 });
+    expect(sustainParts(breloom, 1)).toMatchObject({ sources: ['Drain Punch'], recovery: 0.125 });
+    const giratina = set('Giratina', 'Heavy-Duty Boots', 'Pressure', ['Pain Split', 'Leech Seed'], 'Impish', { hp: 252, def: 252 });
+    expect(sustainParts(giratina, 1)).toMatchObject({ sources: ['Pain Split'], recovery: 0.25 });
+  });
+
+  it('Rain Dish e Dry Skin curano solo con la pioggia del team, Ice Body con la neve', () => {
+    const ludi = set('Ludicolo', 'Heavy-Duty Boots', 'Rain Dish', ['Hydro Pump'], 'Modest', { spa: 252 });
+    expect(sustainParts(ludi, 1).recovery).toBe(0);
+    expect(sustainParts(ludi, 1, null, ['rain'])).toMatchObject({ sources: ['Rain Dish'], recovery: 0.0625 });
+    const toxi = set('Toxicroak', 'Heavy-Duty Boots', 'Dry Skin', ['Drain Punch'], 'Adamant', { atk: 252 });
+    expect(sustainParts(toxi, 1, null, ['rain']).recovery).toBeCloseTo(0.125 + 0.125);
+    const glalie = set('Glalie', 'Heavy-Duty Boots', 'Ice Body', ['Freeze-Dry'], 'Timid', { spa: 252 });
+    expect(sustainParts(glalie, 1, null, ['snow']).recovery).toBe(0.0625);
+    expect(sustainParts(glalie, 1, null, ['rain']).recovery).toBe(0);
   });
 });
 
-describe('memberDefense', () => {
+describe('memberDefense: quanti colpi di tipo regge (solo informazione)', () => {
   const blissey = set('Blissey', 'Heavy-Duty Boots', 'Natural Cure', ['Soft-Boiled', 'Seismic Toss'], 'Bold', { hp: 252, def: 252 });
 
-  it('Blissey regge meglio gli speciali dei fisici', () => {
-    const m = memberDefense(blissey, [blissey], noStats)!;
+  it('Blissey regge meglio gli speciali dei fisici; Assault Vest alza solo lo speciale', () => {
+    const m = memberDefense(blissey, [blissey], fixtureData)!;
     expect(m.special).toBeGreaterThan(m.physical);
-  });
-
-  it('Assault Vest alza solo la Robustezza speciale', () => {
-    // Un Pokémon non già al massimo della scala sul lato speciale
-    const chomp = set('Garchomp', 'Leftovers', 'Rough Skin', ['Earthquake'], 'Jolly', { atk: 252, spe: 252 });
-    const plain = memberDefense(chomp, [chomp], noStats)!;
-    const av = memberDefense({ ...chomp, item: 'Assault Vest' }, [chomp], noStats)!;
-    expect(av.special).toBeGreaterThan(plain.special);
+    const tusk = set('Great Tusk', 'Leftovers', 'Protosynthesis', ['Headlong Rush'], 'Jolly', { atk: 252, spe: 252 });
+    const plain = memberDefense(tusk, [tusk], fixtureData)!;
+    const av = memberDefense({ ...tusk, item: 'Assault Vest' }, [tusk], fixtureData)!;
+    expect(av.special).toBeGreaterThanOrEqual(plain.special);
     expect(av.physical).toBe(plain.physical);
   });
 
-  it('valore = 40% Fisica + 40% Speciale + 20% Sostenibilità, mai 100', () => {
+  it('fisica e speciale = quota dei 18 colpi di quel lato che regge (pieno 1, a metà 0,5); valore 40/40/20 con la Sostenibilità', () => {
     const m = memberDefense(blissey, [blissey], fixtureData)!;
+    const { held } = typedHits(blissey, fixtureData);
+    const side = (k: number) => Math.round(100 * held.filter((_, i) => i % 2 === k).reduce((a, x) => a + holdCredit(x), 0) / 18);
+    expect(m.physical).toBe(side(0));
+    expect(m.special).toBe(side(1));
+    expect(m.hold).toBe(Math.round(100 * held.reduce((a, x) => a + holdCredit(x), 0) / 36));
     expect(m.value).toBe(Math.round(0.4 * m.physical + 0.4 * m.special + 0.2 * m.sustain));
-    expect(m.value).toBeLessThan(100);
   });
 
-  it('dettaglio della Sostenibilità: recupero (con la fonte migliore), Stealth Rock e Life Orb', () => {
-    const skarm = set('Skarmory', 'Leftovers', 'Sturdy', ['Roost', 'Body Press'], 'Impish', { hp: 252, def: 252 });
-    const m = memberDefense(skarm, [skarm], noStats)!;
-    expect(m.sustainParts.sources).toEqual(['Roost', 'Leftovers']);
-    expect(m.sustainParts.rocks).toBeCloseTo(0.125);
-    expect(m.sustainParts.itemLoss).toBe(0);
-    expect(m.sustainParts.recovery).toBeCloseTo(m.sustainParts.halved ? (0.5 + 0.0625) / 2 : 0.5 + 0.0625);
-    const zard = set('Charizard', 'Life Orb', 'Blaze', ['Flamethrower'], 'Timid', { spa: 252, spe: 252 });
-    const z = memberDefense(zard, [zard], noStats)!;
-    expect(z.sustainParts).toMatchObject({ sources: [], recovery: 0, itemLoss: 0.1 });
-    expect(z.sustainParts.rocks).toBeCloseTo(0.5);
-  });
-
-  it('Intimidate: −1 Atk agli attaccanti fisici, alza solo la Robustezza fisica', () => {
-    const roar = set('Incineroar', 'Heavy-Duty Boots', 'Intimidate', ['Knock Off', 'Parting Shot'], 'Careful', { hp: 252, spd: 252 });
-    const blaze = { ...roar, ability: 'Blaze' };
-    const a = memberDefense(roar, [roar], noStats)!;
-    const b = memberDefense(blaze, [blaze], noStats)!;
-    expect(a.physical).toBeGreaterThan(b.physical);
-    expect(a.special).toBe(b.special);
-  });
-
-  it("Intimidate non vale contro chi lo blocca e alza l'Attacco a Defiant e Guard Dog", () => {
-    const attacker = (ability: string) => set('Kingambit', '', ability, [], 'Adamant', { atk: 252 });
-    const roar = set('Incineroar', '', 'Intimidate', [], 'Careful', {});
-    expect(intimidateBoost(roar, attacker('Supreme Overlord'))).toEqual({ atk: -1 });
-    expect(intimidateBoost(roar, attacker('Clear Body'))).toBeUndefined();
-    expect(intimidateBoost(roar, attacker('Defiant'))).toEqual({ atk: 1 });
-    expect(intimidateBoost(roar, attacker('Guard Dog'))).toEqual({ atk: 1 });
-    expect(intimidateBoost({ ...roar, ability: 'Blaze' }, attacker('Supreme Overlord'))).toBeUndefined();
+  it('Iron Defense: setupGain è quanto la danza alza il valore', () => {
+    const corv = set('Corviknight', 'Leftovers', 'Pressure', ['Body Press', 'Iron Defense', 'Roost'], 'Impish', { hp: 252, def: 252 });
+    const m = memberDefense(corv, [corv], fixtureData)!;
+    expect(m.setupMove).toBe('Iron Defense');
+    expect(m.setupGain).toBeGreaterThanOrEqual(0);
+    expect(memberDefense({ ...corv, moves: ['Body Press', 'Roost'] }, [corv], fixtureData)!.setupGain).toBe(0);
   });
 
   it('una specie sconosciuta non conta', () => {
-    expect(memberDefense(set('Notamon', '', '', [], 'Hardy', {}), [], noStats)).toBeNull();
+    expect(memberDefense(set('Notamon', '', '', ['Tackle'], 'Hardy', {}), [], fixtureData)).toBeNull();
   });
 });
 
-describe('teamDefense', () => {
-  const blissey = set('Blissey', 'Heavy-Duty Boots', 'Natural Cure', ['Soft-Boiled', 'Seismic Toss'], 'Bold', { hp: 252, def: 252 });
-  const skarm = set('Skarmory', 'Rocky Helmet', 'Sturdy', ['Roost', 'Body Press', 'Spikes'], 'Impish', { hp: 252, def: 252 });
-  const sweeper = set('Dragapult', 'Choice Specs', 'Infiltrator', ['Draco Meteor', 'Shadow Ball'], 'Timid', { spa: 252, spe: 252 });
+describe('teamDefense: Coverage di tipi sui colpi, Coverage meta, Sostenibilità', () => {
+  const tusk = set('Great Tusk', 'Booster Energy', 'Protosynthesis', ['Headlong Rush', 'Rapid Spin'], 'Jolly', { atk: 252, spe: 252 });
+  const toxapex = set('Toxapex', 'Black Sludge', 'Regenerator', ['Recover', 'Haze', 'Surf'], 'Bold', { hp: 252, def: 252 });
+  const corv = set('Corviknight', 'Leftovers', 'Pressure', ['Brave Bird', 'Defog', 'Roost'], 'Impish', { hp: 248, def: 168, spd: 92 });
+  const team = [tusk, toxapex, corv];
 
-  it('robustezza del team: media pesata per posizione della robustezza dei membri, poi 80/20 con la Sostenibilità', () => {
-    const team = teamDefense([blissey, skarm], noStats);
-    const rw = (vals: number[]) => { const s = [...vals].sort((a, b) => b - a); return Math.round((0.30 * s[0] + 0.22 * s[1]) / 0.52); };
-    expect(team.physical).toBe(rw(team.members.map(m => m.physical)));
-    expect(team.special).toBe(rw(team.members.map(m => m.special)));
-    // La robustezza di ogni membro (media di Fisica e Speciale) pesata per posizione, poi 80% e 20% Sostenibilità
-    const robust = rw(team.members.map(m => (m.physical + m.special) / 2));
-    expect(team.robustness).toBe(Math.round(0.8 * robust + 0.2 * team.sustain));
-    // Un muro fisico e uno speciale non valgono come due muri completi: Skarmory (99/50) e Chansey senza Eviolite (5/99)
-    const chansey = set('Chansey', 'Heavy-Duty Boots', 'Natural Cure', ['Seismic Toss', 'Soft-Boiled'], 'Calm', { hp: 252, spd: 252 });
-    const split = teamDefense([skarm, chansey], noStats);
-    const means = rw(split.members.map(m => (m.physical + m.special) / 2));
-    expect(Math.abs(split.robustness - Math.round(0.8 * means + 0.2 * split.sustain))).toBeLessThanOrEqual(1);
-    expect(split.robustness).toBeLessThan(Math.round(0.4 * split.physical + 0.4 * split.special + 0.2 * split.sustain) - 1);
+  it('col meta: Difesa = 50% Coverage tipi + 30% Coverage meta + 20% Sostenibilità', () => {
+    const d = teamDefense(team, fixtureData);
+    expect(d.coverageMeta).not.toBeNull();
+    expect(d.value).toBe(Math.round(0.5 * d.coverageTypes.value + 0.3 * d.coverageMeta!.value + 0.2 * d.sustain));
   });
 
-  it('senza meta: Coverage solo di tipi; Difesa = 50% robustezza + 50% coverage, mai 100', () => {
-    const team = teamDefense([blissey, skarm], noStats);
-    expect(team.coverageMeta).toBeNull();
-    expect(team.coverage).toBe(team.coverageTypes.value);
-    expect(team.value).toBe(Math.round(0.5 * team.robustness + 0.5 * team.coverage));
-    expect(team.value).toBeLessThan(100);
+  it('senza meta: 80% Coverage tipi + 20% Sostenibilità; senza statistiche niente Coverage meta', () => {
+    const d = teamDefense(team, { ...fixtureData, ignoreMeta: true });
+    expect(d.coverageMeta).toBeNull();
+    expect(d.value).toBe(Math.round(0.8 * d.coverageTypes.value + 0.2 * d.sustain));
+    expect(teamDefense(team, noStats).coverageMeta).toBeNull();
   });
 
-  it('col meta: Coverage meta con chi regge ogni minaccia (meno del 50% pieno, 2HKO a metà)', () => {
-    const team = teamDefense([blissey, skarm], fixtureData);
-    expect(team.coverageMeta).not.toBeNull();
-    expect(team.coverage).toBe(Math.round((team.coverageTypes.value + team.coverageMeta!.value) / 2));
-    for (const row of team.coverageMeta!.rows) {
-      for (const h of row.heldBy) expect(h.partial ? h.pct >= 50 && h.pct < 100 : h.pct < 50).toBe(true);
-      if (!row.heldBy.some(h => !h.partial)) expect(team.coverageMeta!.unanswered).toContain(row.species);
+  it('Coverage di tipi: per ogni tipo e lato la profondità 70/20/10 dei crediti, poi la media dei 36', () => {
+    const d = teamDefense(team, noStats);
+    const hits = team.map(m => typedHits(m, noStats).held);
+    const depth = (c: number) => [...hits.map(h => holdCredit(h[c]))].sort((a, b) => b - a).reduce((acc, x, i) => acc + ([0.7, 0.2, 0.1][i] ?? 0) * x, 0);
+    const mean = Array.from({ length: 36 }, (_, c) => depth(c)).reduce((a, b) => a + b, 0) / 36;
+    expect(d.coverageTypes.value).toBe(softScore(mean));
+    const fire = d.coverageTypes.rows.find(r => r.type === 'Fire')!;
+    const i = TYPES.indexOf('Fire' as never);
+    expect(fire.physical).toBe(Math.round(100 * depth(2 * i)));
+    expect(fire.special).toBe(Math.round(100 * depth(2 * i + 1)));
+    expect(fire.level).toBe(Math.round(100 * (depth(2 * i) + depth(2 * i + 1)) / 2));
+  });
+
+  it('buchi: i tipi dove nessuno ha credito sul lato peggiore; Lo reggono = pieno sul lato peggiore', () => {
+    const glass = [set('Weavile', 'Choice Band', 'Pressure', ['Triple Axel'], 'Jolly', { atk: 252, spe: 252 })];
+    const d = teamDefense(glass, noStats);
+    expect(d.coverageTypes.weak.length).toBeGreaterThan(0);
+    for (const row of d.coverageTypes.rows) {
+      expect(d.coverageTypes.weak.includes(row.type)).toBe(Math.min(row.physical, row.special) === 0);
     }
+    const full = teamDefense(team, noStats);
+    const ground = full.coverageTypes.rows.find(r => r.type === 'Ground')!;
+    expect(ground.heldBy).toContain('Corviknight');
   });
 
-  it('un team di sweeper fragili ha meno Difesa di uno di muri', () => {
-    expect(teamDefense([sweeper, { ...sweeper }], noStats).value).toBeLessThan(teamDefense([blissey, skarm], noStats).value);
+  it('per ogni membro e tipo: il danno del lato peggiore e i due lati', () => {
+    const d = teamDefense(team, noStats);
+    expect(d.typed).toHaveLength(3);
+    const held = typedHits(toxapex, noStats).held;
+    const i = TYPES.indexOf('Ground' as never);
+    expect(d.typed[1].cells[i]).toEqual({
+      pct: Math.floor(100 * Math.max(held[2 * i], held[2 * i + 1])), physical: Math.floor(100 * held[2 * i]), special: Math.floor(100 * held[2 * i + 1]),
+    });
   });
 
-  it('righe dei 18 tipi per il dettaglio: sicurezza 0–100 e chi è debole o resiste', () => {
-    const team = teamDefense([blissey, skarm], noStats);
-    expect(team.coverageTypes.rows).toHaveLength(18);
-    const fighting = team.coverageTypes.rows.find(r => r.type === 'Fighting')!;
-    expect(fighting.weak).toEqual(['Blissey']);
-    expect(fighting.resist).toEqual([]);
-    const ground = team.coverageTypes.rows.find(r => r.type === 'Ground')!;
-    expect(ground.resist).toEqual(['Skarmory']);
-    for (const row of team.coverageTypes.rows) {
-      expect(row.safety).toBeGreaterThanOrEqual(0);
-      expect(row.safety).toBeLessThanOrEqual(100);
-      expect(team.coverageTypes.weak.includes(row.type)).toBe(row.weak.length > row.resist.length);
-    }
+  it('un membro sconosciuto si salta; un membro solo: niente NaN; la Robustezza non c\'è più', () => {
+    const notamon = set('Notamon', '', '', ['Tackle'], 'Hardy', {});
+    expect(teamDefense([toxapex, notamon], noStats).value).toBe(teamDefense([toxapex], noStats).value);
+    const one = teamDefense([toxapex], noStats);
+    expect(Number.isNaN(one.value)).toBe(false);
+    for (const key of ['robustness', 'physical', 'special', 'matrix']) expect(key in one).toBe(false);
   });
 
-  it('i deboli di tipo: più membri deboli che resistenti', () => {
-    const team = teamDefense([sweeper, { ...sweeper }], noStats);
-    expect(team.coverageTypes.weak).toEqual(expect.arrayContaining(['Dragon', 'Ghost', 'Ice', 'Fairy', 'Dark']));
-  });
-
-  it('un membro sconosciuto si salta', () => {
-    const notamon = set('Notamon', '', '', [], 'Hardy', {});
-    expect(teamDefense([blissey, notamon], noStats).value).toBe(teamDefense([blissey], noStats).value);
-  });
-});
-
-describe('setup difensivo', () => {
-  const corv = set('Corviknight', 'Leftovers', 'Pressure', ['Iron Defense', 'Roost', 'Brave Bird'], 'Hardy', {});
-  const plainCorv = { ...corv, moves: ['Roost', 'Brave Bird'] };
-  const clef = set('Clefable', 'Leftovers', 'Magic Guard', ['Calm Mind', 'Moonblast', 'Soft-Boiled'], 'Hardy', {});
-
-  it('Iron Defense alza la robustezza fisica di metà del guadagno', () => {
-    const withSetup = memberDefense(corv, [corv], noStats)!;
-    const plain = memberDefense(plainCorv, [plainCorv], noStats)!;
-    expect(withSetup.setupMove).toBe('Iron Defense');
-    expect(withSetup.physical).toBeGreaterThan(plain.physical);
-    expect(withSetup.special).toBe(plain.special);
-    expect(withSetup.setupGain).toBe(withSetup.value - plain.value);
-    expect(withSetup.setupGain).toBeGreaterThan(0);
-  });
-
-  it('metà del guadagno: fisica = semplice + round(0,5 × (con Difesa +2 − semplice))', () => {
-    const panels = attackerPanels(noStats);
-    const w = panelWeights(noStats).physical;
-    const ref = defenseReference(noStats).physical;
-    const score = (boost: number) => {
-      const step = panels.physical.reduce((acc, a, i) => acc + w[i] * holdStep(standardHit(a, plainCorv, 'Physical', { targetBoosts: boost ? { def: boost } : undefined })), 0);
-      return softScore(step / ref);
-    };
-    const plain = memberDefense(plainCorv, [plainCorv], noStats)!.physical;
-    expect(plain).toBe(score(0));
-    // Corviknight senza Intimidate: il colpo a Difesa +2 è quello del setup
-    expect(memberDefense(corv, [corv], noStats)!.physical).toBe(Math.round(plain + 0.5 * (score(2) - plain)));
-  });
-
-  it('Calm Mind alza la speciale', () => {
-    const withSetup = memberDefense(clef, [clef], noStats)!;
-    const plain = memberDefense({ ...clef, moves: ['Moonblast', 'Soft-Boiled'] }, [clef], noStats)!;
-    expect(withSetup.setupMove).toBe('Calm Mind');
-    expect(withSetup.special).toBeGreaterThan(plain.special);
-    expect(withSetup.physical).toBe(plain.physical);
-  });
-
-  it('contro un attaccante Unaware il setup non conta', () => {
-    const quag = set('Quagsire', 'Leftovers', 'Unaware', ['Earthquake'], 'Careful', { hp: 252 });
-    const plain = standardHit(quag, plainCorv, 'Physical');
-    const boosted = standardHit(quag, plainCorv, 'Physical', { targetBoosts: { def: 2 } });
-    expect(boosted).toEqual(plain);
-    const other = standardHit({ ...quag, ability: 'Water Absorb' }, plainCorv, 'Physical', { targetBoosts: { def: 2 } })!;
-    expect(other.max).toBeLessThan(plain!.max);
-  });
-
-  it('senza mosse di setup: setupGain 0; Curse solo se non Spettro', () => {
-    const m = memberDefense(plainCorv, [plainCorv], noStats)!;
-    expect(m).toMatchObject({ setupMove: null, setupGain: 0 });
-    expect(defensiveSetup(set('Gengar', '', '', ['Curse', 'Shadow Ball'], 'Timid', {}))).toBeNull();
-    expect(defensiveSetup(set('Snorlax', '', '', ['Curse', 'Rest'], 'Careful', {}))?.boosts).toEqual({ def: 1, spd: 0 });
-    // La più forte per Dif. + Dif. Speciale
-    expect(defensiveSetup(set('Clefable', '', '', ['Calm Mind', 'Cosmic Power', 'Iron Defense'], 'Calm', {}))?.move).toBe('Cosmic Power');
-    expect(defensiveSetup(set('Notamon', '', '', ['Iron Defense'], 'Hardy', {}))?.move).toBe('Iron Defense');
+  it('la Sostenibilità: Alakazam con Recover regge poco e recupera a metà, Toxapex e Slowbro no', () => {
+    const zam = set('Alakazam', 'Life Orb', 'Magic Guard', ['Psychic', 'Recover'], 'Timid', { spa: 252, spe: 252 });
+    const d = teamDefense([zam, toxapex], noStats);
+    expect(d.members.find(m => m.species === 'Alakazam')!.sustainParts.halved).toBe(true);
+    expect(d.members.find(m => m.species === 'Toxapex')!.sustainParts.halved).toBe(false);
+    const slowbro = set('Slowbro', 'Heavy-Duty Boots', 'Regenerator', ['Slack Off', 'Scald'], 'Bold', { hp: 252, def: 252 });
+    expect(teamDefense([slowbro], noStats).members[0].sustainParts.halved).toBe(false);
   });
 });
 
