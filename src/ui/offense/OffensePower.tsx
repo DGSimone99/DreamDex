@@ -25,7 +25,7 @@ function chipStyle(move: string): CSSProperties | undefined {
 
 /**
  * La scheda Potenza dell'Offesa, nella stessa cornice delle altre schede con i membri (`def-frame`): barra lunga col voto,
- * il +N di Tera o mossa Z, e il colpo migliore nel colore del suo tipo. Righe in ordine di squadra; sotto, il riferimento del 100.
+ * il +N del setup e quello di Tera o mossa Z, e il colpo migliore nel colore del suo tipo. Righe in ordine di squadra; sotto, il riferimento del 100.
  */
 export function OffensePower({ offense, ctx }: { offense: TeamOffense; ctx: AreaContext }) {
   const t = useT();
@@ -48,8 +48,7 @@ export function OffensePower({ offense, ctx }: { offense: TeamOffense; ctx: Area
             {ctx.team.map((set, slot) => {
               const name = battleSpecies(set)?.name ?? set.species;
               const m = slots[slot] === null ? null : offense.members[slots[slot]!];
-              // Quanto Tera o la mossa Z alzano la Potenza del membro (la parte che entra nel voto)
-              const gain = m ? Math.round(m.powerInGrade - m.power) : 0;
+
               return (
                 <tr key={`${name}-${slot}`}>
                   <th scope="row"><MemberMon name={name} set={set} stats="offense" /></th>
@@ -57,8 +56,10 @@ export function OffensePower({ offense, ctx }: { offense: TeamOffense; ctx: Area
                     ? <>
                       <td className="pw-bar">
                         <Bar value={m.power} />
-                        {gain > 0 && m.oneUse && (
-                          <small className="ad-once" title={m.oneUse.kind === 'tera' ? t('detail.withTera', { type: m.oneUse.name }) : t('detail.withZ', { item: m.oneUse.name })}> (+{gain})</small>
+                        {/* Le parti che entrano nel voto: metà del setup, un quarto di Tera o mossa Z */}
+                        {m.setupGain > 0 && <small className="ad-gain" title={t('detail.withSetup', { move: m.setupMove ?? '' })}> (+{m.setupGain})</small>}
+                        {m.oneUseGain > 0 && m.oneUse && (
+                          <small className="ad-once" title={m.oneUse.kind === 'tera' ? t('detail.withTera', { type: m.oneUse.name }) : t('detail.withZ', { item: m.oneUse.name })}> (+{m.oneUseGain})</small>
                         )}
                       </td>
                       <td>{m.bestMove ? <span className="pw-move" style={chipStyle(m.bestMove)}><MoveName move={m.bestMove} plain /></span> : '—'}</td>
