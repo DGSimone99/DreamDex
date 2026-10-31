@@ -1,28 +1,18 @@
 import type { ReactNode } from 'react';
 import type { TeamDefense } from '../../engine/defense';
 import { COVERAGE_DEPTH } from '../../engine/coverage';
-import { RANK_WEIGHTS } from '../../engine/offense';
+import { DEFENSE_SHARES, DEFENSE_SHARES_NO_META } from '../../engine/defense';
 import { useLang, useT } from '../../i18n/react';
 import { Keys, Rows } from '../guideParts';
 
-type Section = 'general' | 'robustness' | 'sustain' | 'coverageTypes' | 'coverageMeta';
+type Section = 'general' | 'sustain' | 'coverageTypes' | 'coverageMeta';
 type Key = Parameters<ReturnType<typeof useT>>[0];
 
-/** La scala della Sicurezza di un tipo: ogni punto di saldo vale 25%; le targhette hanno i colori della riga Sicurezza. */
-const SCALE = [
-  { balance: '−2', pct: 0, tag: 'serious', tone: 'bad' }, { balance: '−1', pct: 25, tag: 'minor', tone: 'bad' },
-  { balance: '0', pct: 50, tag: 'even', tone: 'warn' }, { balance: '+1', pct: 75, tag: 'ok', tone: 'warn' },
-  { balance: '+2', pct: 100, tag: 'safe', tone: 'good' },
-] as const;
-
-/** Punti di ogni soglia del colpo standard, dalla peggiore. */
+/** Quanto vale ogni soglia del colpo di tipo, dalla peggiore: il credito del membro. */
 const HOLD_POINTS = [
-  { cls: 'hold-ohko', tag: 'OHKO', points: '0', note: 'rob.ohko' }, { cls: 'hold-2', tag: '2HKO', points: '0,5', note: 'rob.two' },
-  { cls: 'hold-3', tag: '3HKO', points: '1', note: 'rob.three' }, { cls: 'hold-4', tag: '4HKO+', points: '1,5', note: 'rob.four' },
+  { cls: 'hold-ohko', tag: 'OHKO', points: '0', note: 'types.ohko' }, { cls: 'hold-2', tag: '2HKO', points: '0', note: 'types.two' },
+  { cls: 'hold-3', tag: '3HKO', points: '0,5', note: 'types.three' }, { cls: 'hold-4', tag: '4HKO+', points: '1', note: 'types.four' },
 ] as const;
-
-/** Pesi dei membri nel valore di un lato, dal più robusto: quelli del motore, in percentuale. */
-const MEMBER_WEIGHTS = RANK_WEIGHTS.map(w => Math.round(100 * w));
 
 /** Dal netto alla Sostenibilità (la curva comune, +50% netto = riferimento): alcune tappe, coi colori delle barre. */
 const NET_SCALE = [
@@ -41,53 +31,21 @@ export function DefenseGuideSection({ section, defense, meta }: { section: Secti
   const dec = (text: string) => (lang === 'it' ? text : text.replace(',', '.'));
   const g = (key: string, params?: Record<string, string | number>) => t(`guide.def.${key}` as Key, params);
   const metaRows = defense.coverageMeta?.rows.length ?? 0;
-  const physicalCount = defense.matrix.filter(row => row.physical).length;
 
   if (section === 'general') {
-    // Cosa misura ogni parte e quanto pesa nella Difesa (Robustezza e Sostenibilità insieme)
+    // Cosa misura ogni parte e quanto pesa nella Difesa
     const pct = (n: number) => <span className="guide-pct">{n}%</span>;
+    const share = (x: number) => Math.round(100 * x);
+    const types = meta ? DEFENSE_SHARES.types : DEFENSE_SHARES_NO_META.types;
+    const sustain = meta ? DEFENSE_SHARES.sustain : DEFENSE_SHARES_NO_META.sustain;
     return (
       <>
         <h5>{g('what')}</h5>
         <Rows stacked rows={[
-          [<>{t('detail.coverageTypes')}{pct(meta ? 25 : 50)}</>, g('what.types')],
-          [<>{t('ddetail.robustness')} + {t('ddetail.sustain')}{pct(50)}</>, g('what.robustness', { n: physicalCount })],
-          ...(meta ? [[<>{t('detail.coverageMeta')}{pct(25)}</>, g('what.meta', { n: metaRows })] as [ReactNode, string]] : []),
+          [<>{t('detail.coverageTypes')}{pct(share(types))}</>, g('what.types')],
+          ...(meta ? [[<>{t('detail.coverageMeta')}{pct(share(DEFENSE_SHARES.meta))}</>, g('what.meta', { n: metaRows })] as [ReactNode, string]] : []),
+          [<>{t('ddetail.sustain')}{pct(share(sustain))}</>, g('what.sustain')],
         ]} />
-      </>
-    );
-  }
-
-  if (section === 'robustness') {
-    return (
-      <>
-        <h5>{g('rob.test')}</h5>
-        <Rows rows={[
-          [g('rob.attackers'), g('rob.attackers.rule', { n: physicalCount })],
-          [g('rob.count'), g('rob.count.rule')],
-        ]} />
-
-        <h5>{g('rob.points')}</h5>
-        <ul className="guide-holds">
-          {HOLD_POINTS.map(h => (
-            <li key={h.cls}><span className={`hold-chip ${h.cls}`}>{h.tag}</span><b>{dec(h.points)}</b><small>{g(h.note)}</small></li>
-          ))}
-        </ul>
-
-        <h5>{g('rob.toteam')}</h5>
-        <div className="guide-weights">
-          <h6>{g('rob.weights')}</h6>
-          <ol aria-label={g('rob.weights')}>
-            {MEMBER_WEIGHTS.map((w, i) => (
-              <li key={i} style={{ flexGrow: w }}><span>{g('rob.rank', { n: i + 1 })}</span><b>{w}%</b></li>
-            ))}
-          </ol>
-          <div className="guide-weights-axis" aria-hidden="true"><span>{g('rob.best')}</span><span>{g('rob.worst')}</span></div>
-        </div>
-        <p className="guide-sum">
-          <span><b>40%</b> {t('ddetail.physical')}</span>+<span><b>40%</b> {t('ddetail.special')}</span>+<span><b>20%</b> {t('ddetail.sustain')}</span>
-          =<span className="out">{t('ddetail.robustness')}</span>
-        </p>
       </>
     );
   }
@@ -100,7 +58,8 @@ export function DefenseGuideSection({ section, defense, meta }: { section: Secti
             <h6>{t('ddetail.sus.gain')}</h6>
             <Keys items={[
               { label: g('sus.k.recover'), value: '+50%' }, { label: 'Regenerator', value: '+33%' }, { label: 'Rest', value: '+33%' },
-              { label: 'Wish', value: '+25%' }, { label: 'Poison Heal', value: dec('+12,5%') }, { label: 'Leftovers', value: '+6%' },
+              { label: 'Wish', value: '+25%' }, { label: 'Pain Split', value: '+25%' }, { label: g('sus.k.drain'), value: dec('+12,5%') },
+              { label: 'Poison Heal', value: dec('+12,5%') }, { label: 'Leftovers', value: '+6%' }, { label: g('sus.k.weather'), value: '+6%' },
             ]} />
           </div>
           <div>
@@ -136,41 +95,28 @@ export function DefenseGuideSection({ section, defense, meta }: { section: Secti
   if (section === 'coverageTypes') {
     return (
       <>
-        <h5>{g('types.two')}</h5>
-        <div className="guide-two">
-          <div>
-            <h6>{g('types.weighted')}</h6>
-            <Keys items={[
-              { label: '×0', title: g('types.immune'), value: '+2' }, { label: '×¼', value: dec('+1,5') }, { label: '×½', value: '+1' },
-              { label: '×1', title: g('types.neutral'), value: '0' }, { label: '×2', value: '−1' }, { label: '×4', value: '−2' },
-            ]} />
-          </div>
-          <div>
-            <h6>{g('types.members')}</h6>
-            <Keys items={[
-              { label: g('types.resists'), value: '+1' }, { label: g('types.neutral'), value: '0' }, { label: g('types.weakOne'), value: '−1' },
-            ]} />
-          </div>
-        </div>
-        <h5>{g('types.tosafety')}</h5>
-        <ol className="guide-scale" aria-label={g('types.tosafety')}>
-          {SCALE.map(step => (
-            <li key={step.balance}>
-              <span>{g('types.balance')} {step.balance}</span><b className={`ct-pill ${step.tone}`}>{step.pct}%</b><small>{g(`types.tag.${step.tag}`)}</small>
-            </li>
-          ))}
-        </ol>
+        <h5>{g('types.test')}</h5>
+        <Rows compact rows={[
+          [g('types.attacker'), g('types.attacker.rule')],
+          [g('types.hits'), g('types.hits.rule')],
+          [g('types.setup'), g('types.setup.rule')],
+        ]} />
 
-        <h5>{g('types.example')}</h5>
-        <div className="guide-example">
-          <span className="guide-mults" aria-hidden="true">
-            {['×½', '×½', '×½', '×2', '×2', '×4'].map((m, i) => <i key={i} className={i < 3 ? 'res' : i === 5 ? 'x4' : 'weak'}>{m}</i>)}
-          </span>
-          <span className="guide-res"><small>{g('types.ex.weighted')}</small><b>+3 −4 = −1</b></span>
-          <span className="guide-res"><small>{g('types.ex.members')}</small><b>+3 −3 = 0</b></span>
-          <span className="guide-res"><small>{g('types.balance')}</small><b>{dec('−0,5')}</b></span>
-          <span className="guide-arrow" aria-hidden="true">→</span>
-          <span className="guide-verdict"><b className="ct-pill bad">38%</b>{g('types.tag.minor')}</span>
+        <h5>{g('types.points')}</h5>
+        <ul className="guide-holds">
+          {HOLD_POINTS.map(h => (
+            <li key={h.cls}><span className={`hold-chip ${h.cls}`}>{h.tag}</span><b>{dec(h.points)}</b><small>{g(h.note)}</small></li>
+          ))}
+        </ul>
+
+        <h5>{g('types.depth')}</h5>
+        <div className="guide-weights">
+          <ol aria-label={g('types.depth')}>
+            {DEPTH.map((w, i) => (
+              <li key={i} style={{ flexGrow: w }}><span>{g('meta.rank', { n: i + 1 })}</span><b>+{w}%</b></li>
+            ))}
+          </ol>
+          <div className="guide-weights-axis" aria-hidden="true"><span>{g('meta.depth.one', { pct: DEPTH[0] })}</span><span>{g('types.depth.all')}</span></div>
         </div>
 
         <h5>{g('types.vote')}</h5>

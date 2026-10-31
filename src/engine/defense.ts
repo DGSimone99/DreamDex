@@ -267,6 +267,10 @@ export interface ThreatRow {
   heldBy: { species: string; move: string; pct: number; partial: boolean }[];
 }
 
+/** Quanti colpi regge sul lato peggiore: KO, 2HKO, 3HKO, 4 o più. */
+export type HoldBand = 'ohko' | 'two' | 'three' | 'four';
+export const holdBand = (x: number): HoldBand => (x >= 1 ? 'ohko' : x >= 1 / 2 ? 'two' : x >= 1 / 3 ? 'three' : 'four');
+
 export interface TypeHoldRow {
   type: string;
   /** Copertura del tipo (0–100): la media delle profondità dei due lati. */
@@ -287,7 +291,7 @@ export interface TeamDefense {
   coverageMeta: { value: number; unanswered: string[]; rows: ThreatRow[] } | null;
   members: MemberDefense[];
   /** Per ogni membro (ordine di `members`) e tipo (ordine di TYPES): danno % del lato peggiore e dei due lati. */
-  typed: { species: string; cells: { pct: number; physical: number; special: number }[] }[];
+  typed: { species: string; cells: { pct: number; physical: number; special: number; band: HoldBand }[] }[];
 }
 
 /** Danno del colpo migliore vero di una minaccia su un membro; Tera e mossa Z della minaccia a un quarto. */
@@ -351,7 +355,7 @@ export function teamDefense(team: TeamSet[], data: EngineData): TeamDefense {
     species: names[m],
     cells: TYPES.map((_, i) => {
       const [p, s] = [hits[m][2 * i], hits[m][2 * i + 1]];
-      return { pct: Math.floor(100 * Math.max(p, s)), physical: Math.floor(100 * p), special: Math.floor(100 * s) };
+      return { pct: Math.floor(100 * Math.max(p, s)), physical: Math.floor(100 * p), special: Math.floor(100 * s), band: holdBand(Math.max(p, s)) };
     }),
   }));
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { defensiveSetup, dummyAttacker, hazardRemover, holdCredit, typedHits, holdStep, memberDefense, sustainability, sustainParts, teamDefense } from '../../src/engine/defense';
+import { defensiveSetup, dummyAttacker, hazardRemover, holdBand, holdCredit, typedHits, holdStep, memberDefense, sustainability, sustainParts, teamDefense } from '../../src/engine/defense';
 import type { TeamSet } from '../../src/engine/sets';
 import { softScore } from '../../src/engine/scale';
 import { fixtureData } from '../fixtures/data';
@@ -180,6 +180,7 @@ describe('teamDefense: Coverage di tipi sui colpi, Coverage meta, Sostenibilità
     const i = TYPES.indexOf('Ground' as never);
     expect(d.typed[1].cells[i]).toEqual({
       pct: Math.floor(100 * Math.max(held[2 * i], held[2 * i + 1])), physical: Math.floor(100 * held[2 * i]), special: Math.floor(100 * held[2 * i + 1]),
+      band: holdBand(Math.max(held[2 * i], held[2 * i + 1])),
     });
   });
 

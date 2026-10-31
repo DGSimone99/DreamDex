@@ -60,14 +60,14 @@ describe('schede interne di Analisi', () => {
     expect(screen.queryByRole('button', { name: 'Come funziona Offesa' })).toBeNull();
   });
 
-  it('ogni area ricorda la sua sottoscheda: Difesa → Robustezza → Offesa → Difesa riapre Robustezza', async () => {
+  it('ogni area ricorda la sua sottoscheda: Difesa → Sostenibilità → Offesa → Difesa riapre Sostenibilità', async () => {
     const user = await setup();
     await user.click(within(views()).getByRole('tab', { name: 'Difesa' }));
-    await user.click(within(panel()).getByRole('tab', { name: /^Robustezza/ }));
+    await user.click(within(panel()).getByRole('tab', { name: /^Sostenibilità/ }));
     await user.click(within(views()).getByRole('tab', { name: 'Offesa' }));
     expect(within(panel()).getByRole('tab', { name: /^Generale/ })).toHaveAttribute('aria-selected', 'true');
     await user.click(within(views()).getByRole('tab', { name: 'Difesa' }));
-    expect(within(panel()).getByRole('tab', { name: /^Robustezza/ })).toHaveAttribute('aria-selected', 'true');
+    expect(within(panel()).getByRole('tab', { name: /^Sostenibilità/ })).toHaveAttribute('aria-selected', 'true');
   });
 
   it('la scheda resta aperta cambiando il team', async () => {

@@ -14,12 +14,12 @@ import { TypeIcons } from '../typeIcons';
 /** La classe della cella dal moltiplicatore (×1 resta neutro). */
 const cellClass = (m: number) => (m === 4 ? 'm-4' : m > 1 ? 'm-2' : m === 0 ? 'm-0' : m <= 0.25 ? 'm-quarter' : m < 1 ? 'm-half' : '');
 
-/** Colore della Sicurezza: rosso sotto 50, giallo sotto 100, verde a 100. */
-const safetyTone = (value: number) => (value < 50 ? 'bad' : value < 100 ? 'warn' : 'good');
+/** Colore della Copertura del tipo: verde da 80, giallo da 50, rosso sotto. */
+const levelTone = (value: number) => (value >= 80 ? 'good' : value >= 50 ? 'warn' : 'bad');
 
 /**
  * Coverage tipi: la griglia come quella della Panoramica, un membro per riga (nello stesso punto di Generale) e i 18 tipi
- * in colonna, in fondo i totali per tipo (Deboli, Resistono, Sicurezza). "Debole" è sempre `weaknessSeverity`: filo sotto
+ * in colonna, in fondo i totali per tipo (Deboli, Resistono, Copertura). "Debole" è sempre `weaknessSeverity`: filo sotto
  * l'icona del tipo e numero rosso nella riga Deboli.
  */
 export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: AreaContext }) {
@@ -29,7 +29,7 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
   const roomy = !!ctx.roomy;
   const [hover, setHover] = useState<{ row: number; col: number } | null>(null);
   const severities = analysis.weakness.map(weaknessSeverity);
-  const safety = new Map(defense.coverageTypes.rows.map(row => [row.type, row.safety]));
+  const level = new Map(defense.coverageTypes.rows.map(row => [row.type, row.level]));
   /** Classi di una cella della colonna `col`: il puntatore accende riga e colonna. */
   const colClass = (col: number, extra = '') => [extra, hover?.col === col && 'x-col'].filter(Boolean).join(' ') || undefined;
 
@@ -78,10 +78,10 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
               {analysis.weakness.map((row, i) => <td key={row.type} className={colClass(i)}>{row.resist}</td>)}
             </tr>
             <tr className="ct-sum">
-              <th scope="row">{t('ddetail.safety')}</th>
+              <th scope="row">{t('ddetail.level')}</th>
               {analysis.weakness.map((row, i) => {
-                const value = safety.get(row.type) ?? 0;
-                return <td key={row.type} className={colClass(i)}><span className={`ct-pill ${safetyTone(value)}`}>{value}%</span></td>;
+                const value = level.get(row.type) ?? 0;
+                return <td key={row.type} className={colClass(i)}><span className={`ct-pill ${levelTone(value)}`}>{value}%</span></td>;
               })}
             </tr>
           </tbody>
