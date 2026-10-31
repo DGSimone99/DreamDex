@@ -152,14 +152,15 @@ describe('dettaglio della Difesa a schede', () => {
     }
   });
 
-  it('Coverage tipi: una tabella membri × 18 tipi con Deboli, Resistono e Copertura per tipo', async () => {
+  it('Coverage tipi: una tabella membri × 18 tipi con Lo reggono e Copertura per tipo', async () => {
     const { user, dialog } = await openDefense('it');
     await user.click(within(dialog).getByRole('tab', { name: /^Coverage tipi/ }));
     const table = within(within(dialog).getByRole('tabpanel')).getByRole('table');
-    expect(within(table).getAllByRole('row')).toHaveLength(6); // testata, 2 membri, Deboli, Resistono, Copertura
+    expect(within(table).getAllByRole('row')).toHaveLength(5); // testata, 2 membri, Lo reggono, Copertura
     const safety = within(table).getByRole('row', { name: /^Copertura/ });
-    expect(within(safety).getAllByRole('cell')).toHaveLength(18);
-    for (const cell of within(safety).getAllByRole('cell')) expect(cell).toHaveTextContent(/^\d+%$/);
+    const cells = within(safety).getAllByRole('cell').slice(0, 18);
+    expect(cells).toHaveLength(18);
+    for (const cell of cells) expect(cell).toHaveTextContent(/^\d+%$/);
   });
 
   it('Coverage meta: una tessera per minaccia con quanto è retta e chi la regge', async () => {
@@ -173,6 +174,10 @@ describe('dettaglio della Difesa a schede', () => {
   it('in inglese', async () => {
     const { dialog } = await openDefense('en');
     expect(within(dialog).getAllByRole('tab').map(tab => tab.textContent!.replace(/\s*\d+$/, ''))).toEqual(['General', 'Type coverage', 'Sustainability', 'Meta coverage']);
+    const { user } = { user: userEvent.setup() };
+    await user.click(within(dialog).getByRole('tab', { name: /^Type coverage/ }));
+    expect(within(within(dialog).getByRole('tabpanel')).getByRole('rowheader', { name: 'Take it' })).toBeInTheDocument();
+    await user.click(within(dialog).getByRole('tab', { name: /^General/ }));
     expect(within(dialog).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Physical', 'Special', 'Sustainability', 'Defense']);
   });
 });
