@@ -196,11 +196,10 @@ describe('dettaglio della Velocità a schede', () => {
     const panel = within(dialog).getByRole('tabpanel');
     expect(within(panel).getByRole('button', { name: 'Velocità di Great Tusk: apri i rivali' })).toBeInTheDocument();
     expect(within(panel).getByRole('button', { name: 'Velocità di Gholdengo: apri i rivali' })).toBeInTheDocument();
-    expect(panel.querySelectorAll('.def-tile')).toHaveLength(2);
-    expect(panel).toHaveTextContent('Nessun controllo');
+    expect(panel.querySelectorAll('.def-tile')).toHaveLength(0);
   });
 
-  it('col controllo: la tessera elenca la mossa', async () => {
+  it('col controllo: la barra spiega la mossa nel suggerimento', async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} />);
     await user.click(screen.getByLabelText('Testo Showdown'));
@@ -208,9 +207,8 @@ describe('dettaglio della Velocità a schede', () => {
     await user.click(screen.getByRole('button', { name: 'Importa' }));
     await user.click(within(document.querySelector<HTMLElement>('.band')!).getByRole('button', { name: /^Velocità \d+, apri il dettaglio/ }));
     const dialog = within(document.getElementById('panel-analysis')!).getAllByRole('region').find(r => r.classList.contains('area-view'))!;
-    const tiles = dialog.querySelectorAll('.def-tile');
-    expect(tiles[1]).toHaveTextContent('Thunder Wave');
-    expect(tiles[1]).toHaveTextContent(/\+\d+/);
+    const bar = within(dialog).getByRole('button', { name: 'Velocità di Clefable: apri i rivali' });
+    expect(bar.getAttribute('title')).toMatch(/Thunder Wave/);
   });
 
   it('in inglese', async () => {

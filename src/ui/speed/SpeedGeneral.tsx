@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode } from 'react';
+import { useRef, useState } from 'react';
 import { battleSpecies } from '../../engine/dex';
 import { CONTROL_CONDITIONS, type MemberSpeed, type TeamSpeed } from '../../engine/speedArea';
 import { useT } from '../../i18n/react';
@@ -7,22 +7,19 @@ import { tone } from '../defense/DefenseGeneral';
 import { MemberMon } from '../defense/MemberMon';
 import { Icon } from '../icons';
 import { offenseSlots } from '../offense/slots';
-import { PokemonIcon } from '../PokemonName';
 import { SpeedMemberDialog } from './SpeedMemberDialog';
 
-/** Quanti rivali che nessuno supera si mostrano come icone nella tessera; gli altri vanno in "+N". */
-const HOLE_ICONS = 6;
 const points = (x: number) => Math.round(100 * x);
 
 /**
  * La scheda della Velocità, nella cornice comune (`def-frame`): i membri dal più veloce, ognuno con una barra a segmenti
  * (velocità pura, i guadagni suoi, quelli del team) e il totale; la barra è un bottone che apre il modale del membro coi
- * rivali e i check "e se". Sotto, le tessere Velocità (chi nessuno supera) e Controllo velocità (le mosse che aiutano).
+ * rivali e i check "e se". Niente tessere sotto (scelta dell'utente): la tabella basta.
  * Le righe seguono il team dal più veloce; chi il motore non conosce resta con "—".
  */
 export function SpeedGeneral({ speed, meta, ctx }: { speed: TeamSpeed; meta: boolean; ctx: AreaContext }) {
   const t = useT();
-  const { members, threats } = speed;
+  const { members } = speed;
   const slots = offenseSlots(ctx.team, members);
   const rows = ctx.team
     .map((set, slot) => ({ set, m: slots[slot] === null ? null : members[slots[slot]!] }))
@@ -35,36 +32,6 @@ export function SpeedGeneral({ speed, meta, ctx }: { speed: TeamSpeed; meta: boo
     setOpen(null);
     back?.focus();
   };
-
-  // Tessera Velocità: i rivali che nessuno supera da solo
-  const holes = threats.filter(th => th.outsped === 0);
-  const hiddenHoles = holes.slice(HOLE_ICONS).map(th => th.species).join(', ');
-  const controls = speed.sources.filter(src => src.helped > 0);
-  const tiles: { key: string; label: string; value: string; cls: string; fact: ReactNode }[] = [
-    {
-      key: 'speed', label: t('sdetail.speed'), value: String(speed.speed), cls: tone(speed.speed),
-      fact: <>
-        <span className="def-cap"><em>{t('sdetail.tile.holes')}</em><b>{holes.length}/{threats.length}</b></span>
-        {holes.length
-          ? <span className="def-visual">
-            {holes.slice(0, HOLE_ICONS).map(th => (
-              <span key={th.index} className="def-open-mon plain" title={th.species}><PokemonIcon name={th.species} /><span className="visually-hidden">{th.species}</span></span>
-            ))}
-            {hiddenHoles && <span className="def-more" title={hiddenHoles}>+{holes.length - HOLE_ICONS}<span className="visually-hidden"> {hiddenHoles}</span></span>}
-          </span>
-          : <span className="def-visual def-none"><Icon name="check" />{t('sdetail.tile.noHoles')}</span>}
-      </>,
-    },
-    {
-      key: 'control', label: t('sdetail.control'), value: `+${speed.control}`, cls: speed.control > 0 ? 'good' : 'warn',
-      fact: controls.length
-        ? <>
-          <span className="def-cap"><em>{t('sdetail.tile.control')}</em><b>{t(controls.length === 1 ? 'sdetail.mates.one' : 'sdetail.mates.many', { n: controls.length })}</b></span>
-          <span className="def-visual sp-controls">{controls.map(src => <span key={`${src.condition}-${src.move}`} className="sp-control-move" title={src.by.join(', ')}>{src.move}</span>)}</span>
-        </>
-        : <span className="def-visual def-faint">{t('sdetail.general.controlNone')}</span>,
-    },
-  ];
 
   return (
     <div className="def-frame def-general sp-general">
@@ -94,14 +61,6 @@ export function SpeedGeneral({ speed, meta, ctx }: { speed: TeamSpeed; meta: boo
             })}
           </tbody>
         </table>
-      </div>
-      <div className="def-sum def-tiles sp-tiles">
-        {tiles.map(tile => (
-          <div key={tile.key} className={`def-tile sp-tile ${tile.cls}`}>
-            <span className="def-tile-head"><span>{tile.label}</span><b>{tile.value}</b></span>
-            <span className="def-tile-fact">{tile.fact}</span>
-          </div>
-        ))}
       </div>
       {open && <SpeedMemberDialog member={open} set={ctx.team.find(s => (battleSpecies(s)?.name ?? s.species) === open.species) ?? ctx.team[0]} team={ctx.team} meta={meta} onClose={close} />}
     </div>

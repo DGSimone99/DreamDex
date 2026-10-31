@@ -17,7 +17,6 @@ const webber = set('Ribombee', 'Focus Sash', 'Shield Dust', ['Sticky Web', 'Moon
 const valiant = set('Iron Valiant', 'Booster Energy', 'Quark Drive', ['Moonblast', 'Close Combat', 'Knock Off', 'Encore'], 'Timid', { spa: 252, spe: 252 });
 const pex = set('Toxapex', 'Black Sludge', 'Regenerator', ['Scald', 'Recover', 'Haze', 'Toxic'], 'Bold', { hp: 252, def: 252 });
 const team = [dnite, webber, valiant, pex];
-const noControl = [dnite, valiant, pex];
 
 const withMeta = (t = team) => rateTeam(t, fixtureData, 'it')!;
 const noMetaData = { ...fixtureData, ignoreMeta: true };
@@ -51,18 +50,10 @@ describe('Velocità: una scheda a barre', () => {
     expect(bar.getAttribute('title')).toMatch(/Sticky Web/);
   });
 
-  it('le tessere: Velocità con "Nessuno li supera" e il Controllo con le mosse; senza controllo il testo', () => {
-    const { unmount } = view();
-    const tiles = document.querySelectorAll('.def-tile');
-    expect(tiles).toHaveLength(2);
-    expect(tiles[0]).toHaveTextContent('Velocità');
-    expect(tiles[0]).toHaveTextContent(/Nessuno li supera\d+\/\d+/);
-    expect(tiles[1]).toHaveTextContent('Controllo velocità');
-    expect(tiles[1]).toHaveTextContent('Sticky Web');
-    expect(tiles[0].tagName).toBe('DIV');
-    unmount();
-    view(noControl, withMeta(noControl));
-    expect(document.querySelectorAll('.def-tile')[1]).toHaveTextContent('Nessun controllo');
+  it('niente tessere sotto la tabella: solo i membri', () => {
+    view();
+    expect(document.querySelectorAll('.def-tile')).toHaveLength(0);
+    expect(document.querySelectorAll('.sp-bar-btn')).toHaveLength(4);
   });
 
   it('il modale di Dragonite: i check che esistono davvero, la lista dei rivali (una riga per specie) col membro al suo posto', async () => {
