@@ -39,10 +39,13 @@ const BASE_AREAS: BaseArea[] = ['defense', 'strength', 'roles', 'speed'];
  * Un team incompleto si giudica come balance. Trick Room è una condizione della Velocità (speedArea.ts).
  */
 export const ARCHETYPE_WEIGHTS: Record<Archetype, Record<BaseArea, number>> = {
-  // L'Offesa ha preso il peso della vecchia Coverage offensiva, la Difesa quello di Coverage difensiva e Robustezza
-  hyperOffense: { defense: 20, strength: 46, roles: 14, speed: 20 },
-  bulkyOffense: { defense: 28, strength: 42, roles: 16, speed: 14 },
-  balance: { defense: 36, strength: 34, roles: 18, speed: 12 },
+  // L'Offesa ha preso il peso della vecchia Coverage offensiva, la Difesa quello di Coverage difensiva e Robustezza.
+  // 2026-10-31: Difesa dimezzata in HO, BO e balance. Sul banco la Difesa dà lo stesso numero ai team da torneo e a
+  // quelli medi (75 contro 76: distingue solo i brutti), mentre Offesa, Ruoli e Velocità li separano; col peso spostato
+  // il distacco torneo − medio sale da 7,1 a 8,0 e le partite vere da 52,7% a 53,0%. Semi-stall e stall come prima.
+  hyperOffense: { defense: 10, strength: 52, roles: 16, speed: 22 },
+  bulkyOffense: { defense: 16, strength: 48, roles: 18, speed: 18 },
+  balance: { defense: 22, strength: 42, roles: 22, speed: 14 },
   semiStall: { defense: 46, strength: 26, roles: 20, speed: 8 },
   stall: { defense: 56, strength: 18, roles: 26, speed: 0 },
 };

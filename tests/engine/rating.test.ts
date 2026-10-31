@@ -44,8 +44,10 @@ describe('pesi delle aree', () => {
     // La Coverage offensiva è una sottostatistica dell'Offesa: il suo peso è passato all'Offesa
     // La Difesa ha preso il peso di Coverage difensiva e Robustezza (e il Meta è dentro di lei)
     expect(Object.keys(balance)).toEqual(['defense', 'strength', 'roles', 'speed']);
-    expect([ho.defense, ARCHETYPE_WEIGHTS.bulkyOffense.defense, balance.defense, ARCHETYPE_WEIGHTS.semiStall.defense, stall.defense]).toEqual([20, 28, 36, 46, 56]);
-    expect([ho.strength, balance.strength, stall.strength]).toEqual([46, 34, 18]);
+    // 2026-10-31: Difesa dimezzata in HO, BO e balance (sul banco non distingue torneo da medi: 75 contro 76), il peso
+    // va a Offesa, Ruoli e Velocità; semi-stall e stall restano come prima
+    expect([ho.defense, ARCHETYPE_WEIGHTS.bulkyOffense.defense, balance.defense, ARCHETYPE_WEIGHTS.semiStall.defense, stall.defense]).toEqual([10, 16, 22, 46, 56]);
+    expect([ho.strength, balance.strength, stall.strength]).toEqual([52, 42, 18]);
   });
 });
 
