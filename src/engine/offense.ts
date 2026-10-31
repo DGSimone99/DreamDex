@@ -58,10 +58,13 @@ export interface MemberOffense {
   oneUseGain: number;
   /** Potenza con metà del guadagno del setup e un quarto di quello di Tera/Z: entra nella Potenza del team. */
   powerInGrade: number;
-  /** Il valore del membro: `powerInGrade` arrotondata. */
+  /** Il valore del membro: `powerInGrade` arrotondata (dice chi è un attaccante forte). */
   value: number;
-  /** Bersagli della Coverage che manda KO in due colpi (la Coverage vera è del team). */
-  covered: number;
+  /** Quota (0–100) dei 18 tipi e dei bersagli del meta che il membro copre da solo (null senza meta). */
+  coverTypes: number;
+  coverMeta: number | null;
+  /** Quanto il membro porta all'Offesa, coi pesi della squadra: 60/20/20, senza meta 60/40. */
+  total: number;
 }
 
 export interface CoverageDetail {
@@ -300,9 +303,14 @@ export function memberOffense(set: TeamSet, team: TeamSet[], data: EngineData): 
   const withSetup = power + SETUP_SHARE * (setupPower - power);
   const powerInGrade = withSetup + ONE_USE_SHARE * (oneUsePower - power);
   const value = Math.round(powerInGrade);
+  const coverTypes = teamCoverage([set], data, 'types').perMember[0];
+  const coverMeta = usesMeta(data) ? teamCoverage([set], data, 'meta').perMember[0] : null;
+  const total = Math.round(coverMeta === null
+    ? OFFENSE_SHARES.power * powerInGrade + OFFENSE_SHARES.coverage * coverTypes
+    : OFFENSE_SHARES.power * powerInGrade + (OFFENSE_SHARES.coverage / 2) * (coverTypes + coverMeta));
   return {
     species: raw.species, power, setupMove: raw.setupMove, bestMove: raw.bestMove,
-    setupGain: Math.round(withSetup) - power, value, covered: 0,
+    setupGain: Math.round(withSetup) - power, value, coverTypes, coverMeta, total,
     oneUse: one && { kind: one.kind, name: one.name }, oneUseGain: value - Math.round(withSetup), powerInGrade,
   };
 }
@@ -353,10 +361,9 @@ export function teamOffense(team: TeamSet[], data: EngineData): TeamOffense {
   const types = teamCoverage(team, data, 'types');
   const metaCoverage = usesMeta(data) ? teamCoverage(team, data, 'meta') : null;
   const coverageValue = metaCoverage ? Math.round((types.value + metaCoverage.value) / 2) : types.value;
-  const perMember = team.map((_, i) => (metaCoverage ? Math.round((types.perMember[i] + metaCoverage.perMember[i]) / 2) : types.perMember[i]));
   const ref = offenseReference(data);
   const members = team
-    .map((set, i) => { const m = memberOffense(set, team, data); return m && { ...m, covered: perMember[i] }; })
+    .map(set => memberOffense(set, team, data))
     .filter((m): m is MemberOffense => m !== null);
   const final = (power: number) => {
     if (!members.length) return 0;

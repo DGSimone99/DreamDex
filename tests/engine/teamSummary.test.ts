@@ -122,7 +122,8 @@ describe('teamSummary', () => {
 
   it('Offesa e Difesa di ogni membro per nome', () => {
     const { summary, rating } = build();
-    for (const m of rating.offense.members) expect(summary.offenseOf[m.species]).toBe(m.value);
+    // Il punteggio mostrato è quanto il membro porta all'Offesa (la scelta degli attaccanti resta sulla Potenza)
+    for (const m of rating.offense.members) expect(summary.offenseOf[m.species]).toBe(m.total);
     for (const m of rating.defense.members) expect(summary.defenseOf[m.species]).toBe(m.value);
   });
 

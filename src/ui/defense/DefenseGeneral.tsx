@@ -61,7 +61,8 @@ function WorstAndRecovery({ hit, parts }: { hit: { type: string; pct: number; ba
 
 /**
  * La scheda Generale della Difesa: una tessera per sottostatistica (valore e il fatto più importante, un clic apre la
- * sottoscheda) e sotto i membri con Fisica / Speciale (quota dei colpi di tipo che reggono) / Sostenibilità / Difesa.
+ * sottoscheda) e sotto i membri con una colonna per voce (Regge i tipi, Regge il meta, Sostenibilità) e la Difesa del
+ * membro coi pesi della squadra.
  * Tessere e righe stanno nella cornice comune (`def-frame`): i membri restano nello stesso punto di Coverage tipi.
  * Con la squadra chiusa (`ctx.roomy`) le righe si allungano e compaiono il colpo peggiore e il recupero.
  */
@@ -148,14 +149,14 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
         <table className="def-grid def-members">
           {/* Larghezze fisse: i nomi in una colonna, le quattro barre in colonne uguali */}
           <colgroup>
-            <col className="def-col-mon" /><col /><col /><col /><col />
+            <col className="def-col-mon" /><col />{meta && <col />}<col /><col />
             {roomy && <><col className="def-col-hit" /><col className="def-col-rec" /></>}
           </colgroup>
           <thead>
             <tr>
               <th scope="col" className="def-mon-h">{t('detail.member')}</th>
-              <th scope="col">{t('ddetail.physical')}</th>
-              <th scope="col">{t('ddetail.special')}</th>
+              <th scope="col">{t('ddetail.holdTypes')}</th>
+              {meta && <th scope="col">{t('ddetail.holdMeta')}</th>}
               <th scope="col">{t('ddetail.sustain')}</th>
               <th scope="col">{t('area.defense')}</th>
               {roomy && <><th scope="col">{t('ddetail.worstHit')}</th><th scope="col">{t('ddetail.recoveryCol')}</th></>}
@@ -169,8 +170,9 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
                     {i === weakLink && <span className="def-weak">{t('ddetail.weakLink')}</span>}
                   </MemberMon>
                 </th>
-                <td><Bar value={m.physical} /></td>
-                <td><Bar value={m.special} /></td>
+                {/* Quanti colpi di tipo regge (i due lati nel suggerimento) e quante minacce del meta */}
+                <td title={t('ddetail.sides', { p: m.physical, s: m.special })}><Bar value={m.hold} unit="%" /></td>
+                {meta && <td><Bar value={m.metaHold ?? 0} unit="%" /></td>}
                 <td><Bar value={m.sustain} /></td>
                 <td>
                   {/* Quanto aggiunge il setup difensivo (metà del guadagno entra nel voto) */}

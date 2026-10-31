@@ -151,8 +151,10 @@ export interface MemberDefense {
   /** Quota (0–100) dei 18 colpi fisici e dei 18 speciali di tipo che regge: pieno 1, a metà 0,5. Solo informazione. */
   physical: number;
   special: number;
-  /** Lo stesso sui 36 colpi. */
+  /** Lo stesso sui 36 colpi: la colonna "Regge i tipi". */
   hold: number;
+  /** Quota (0–100, pesata per uso) delle minacce del meta che regge: sotto metà PS pieno, sotto il KO a metà. Null senza meta. */
+  metaHold: number | null;
   sustain: number;
   sustainParts: SustainParts;
   value: number;
@@ -219,8 +221,6 @@ export function typedHits(member: TeamSet, data: EngineData): { plain: number[];
   return value;
 }
 
-/** Valore del membro (solo informazione): Fisica, Speciale e Sostenibilità, 40/40/20 come prima della revisione. */
-const MEMBER_WEIGHTS = { physical: 0.4, special: 0.4, sustain: 0.2 };
 /** Difesa del team: Coverage tipi 50, Coverage meta 30, Sostenibilità 20; senza meta Coverage tipi 80, Sostenibilità 20. */
 export const DEFENSE_SHARES = { types: 0.5, meta: 0.3, sustain: 0.2 };
 export const DEFENSE_SHARES_NO_META = { types: 0.8, sustain: 0.2 };
@@ -242,17 +242,28 @@ export function memberDefense(set: TeamSet, team: TeamSet[], data: EngineData): 
   const { plain, held } = typedHits(set, data);
   const parts = sustainParts(set, holdShare(held), hazardRemover(team), teamConditions(team));
   const sustain = softScore(Math.max(0, parts.recovery - parts.rocks - parts.itemLoss) / SUSTAIN_FULL);
+  // Le minacce del meta: chi regge il colpo migliore vero, pesato per uso
+  const threats = metaThreats(data);
+  const metaHold = threats.length
+    ? Math.round(100 * threats.reduce((acc, { weight }, i) => {
+      const x = Math.min(1, threatHitsOf(set, data)[i]?.expected ?? 0);
+      return acc + weight * (x < HOLD_FULL ? 1 : x < 1 ? 0.5 : 0);
+    }, 0))
+    : null;
+  // Il valore del membro coi pesi della squadra: 50/30/20, senza meta 80/20
   const valueOf = (hits: number[]) => {
-    const physical = Math.round(100 * holdShare(hits, 0));
-    const special = Math.round(100 * holdShare(hits, 1));
-    const w = MEMBER_WEIGHTS;
-    return { physical, special, value: Math.round(w.physical * physical + w.special * special + w.sustain * sustain) };
+    // Dai numeri mostrati nelle colonne, così il conto si rifà a mano
+    const hold = Math.round(100 * holdShare(hits));
+    return Math.round(metaHold === null
+      ? DEFENSE_SHARES_NO_META.types * hold + DEFENSE_SHARES_NO_META.sustain * sustain
+      : DEFENSE_SHARES.types * hold + DEFENSE_SHARES.meta * metaHold + DEFENSE_SHARES.sustain * sustain);
   };
-  const now = valueOf(held);
+  const value = valueOf(held);
   const setup = defensiveSetup(set);
   return {
-    species: species.name, setupMove: setup?.move ?? null, setupGain: now.value - valueOf(plain).value,
-    physical: now.physical, special: now.special, hold: Math.round(100 * holdShare(held)), sustain, sustainParts: parts, value: now.value,
+    species: species.name, setupMove: setup?.move ?? null, setupGain: value - valueOf(plain),
+    physical: Math.round(100 * holdShare(held, 0)), special: Math.round(100 * holdShare(held, 1)), hold: Math.round(100 * holdShare(held)),
+    metaHold, sustain, sustainParts: parts, value,
   };
 }
 

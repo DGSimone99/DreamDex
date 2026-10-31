@@ -85,9 +85,20 @@ describe('Offesa: navigazione e guida', () => {
 describe('Offesa: Generale', () => {
   const view = (t: TeamSet[] = team, rating = withMeta()) => renderIt(<AreaView rating={rating} area="strength" team={t} analysis={analyzeTeam(t, fixtureData)} problems={[]} />);
 
-  it('Generale: righe in ordine di team, colonne Pokémon, Potenza, Coverage, Offesa', () => {
-    view();
-    expect(screen.getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Potenza', 'Coverage', 'Offesa']);
+  it("Generale: una colonna per voce (Potenza, Coverage tipi, Coverage meta) e l'Offesa del membro coi pesi della squadra", () => {
+    const rating = withMeta();
+    const { unmount } = view(team, rating);
+    expect(screen.getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Potenza', 'Coverage tipi', 'Coverage meta', 'Offesa']);
+    const rows = document.querySelectorAll('.def-members tbody tr');
+    rating.offense.members.forEach((m, i) => {
+      const cells = rows[i].querySelectorAll('td');
+      expect(cells[1]).toHaveTextContent(`${m.coverTypes}%`);
+      expect(cells[2]).toHaveTextContent(`${m.coverMeta}%`);
+      expect(cells[3]).toHaveTextContent(`${m.total}`);
+    });
+    unmount();
+    view(team, noMeta());
+    expect(screen.getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Potenza', 'Coverage tipi', 'Offesa']);
     expect([...document.querySelectorAll('.def-mon-name')].map(n => n.textContent)).toEqual(['Great Tusk', 'Gholdengo']);
   });
 
@@ -210,8 +221,8 @@ describe('Offesa: Potenza', () => {
     const rows = [...table.querySelectorAll('tbody tr')];
     for (const gain of gains) {
       expect(gain.closest('.def-cell.with-gain > .def-gain')).not.toBeNull();
-      // Il numero e il "+N" si leggono insieme: "50 (+23)"
-      expect(gain.closest('.def-cell')).toHaveTextContent(/^\d+ \(\+\d+\)$/);
+      // Il numero e i "+N" si leggono insieme: "50 (+23)" o, con setup e Tera, "50 (+11) (+3)"
+      expect(gain.closest('.def-cell')).toHaveTextContent(/^\d+( \(\+\d+\))+$/);
       const column = [...gain.closest('tr')!.children].indexOf(gain.closest('td')!);
       for (const row of rows) expect(row.children[column].querySelector('.def-cell')).toHaveClass('with-gain');
     }

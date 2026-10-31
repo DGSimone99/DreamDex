@@ -2,7 +2,7 @@ import { softScore } from '../../src/engine/scale';
 import { describe, expect, it } from 'vitest';
 import { memberOffense, offenseReference, rolesMemberOffense, stepBucket, POWER_FULL, RANK_WEIGHTS, REFERENCE_RANK, SETUP_SHARE, ONE_USE_SHARE, stepValue, teamOffense } from '../../src/engine/offense';
 import { bestHit } from '../../src/engine/damage';
-import { coverageTargets } from '../../src/engine/coverage';
+import { coverageTargets, teamCoverage } from '../../src/engine/coverage';
 import { mostCommonSet } from '../../src/engine/sets';
 import type { TeamSet } from '../../src/engine/sets';
 import { fixtureData, fixtureStats, tusk } from '../fixtures/data';
@@ -189,7 +189,7 @@ describe('la Coverage dentro l\'Offesa', () => {
     const team = teamOffense([chomp, blissey], fixtureData);
     expect(Array.isArray(team.coverageTypes.holes)).toBe(true);
     expect(team.value).toBe(Math.round(0.6 * team.power + 0.2 * team.coverageTypes.value + 0.2 * team.coverageMeta!.value));
-    expect(team.members.map(m => m.covered)).toHaveLength(2);
+    expect(team.members.map(m => m.coverTypes)).toHaveLength(2);
   });
 
   it('senza meta: Offesa = Potenza 60% + Coverage tipi 40%', () => {
@@ -228,7 +228,7 @@ describe('Offesa di squadra', () => {
   it('la Coverage del membro è una percentuale pesata', () => {
     const targets = coverageTargets(noStats);
     const covered = targets.filter(t => Math.min(1, bestHit(chomp, t.set, { superEffectiveOnly: true })?.expected ?? 0) >= 0.5).length;
-    expect(teamOffense([chomp], noStats).members[0].covered).toBe(Math.round(100 * covered / targets.length));
+    expect(teamOffense([chomp], noStats).members[0].coverTypes).toBe(Math.round(100 * covered / targets.length));
   });
 });
 
@@ -325,5 +325,19 @@ describe('Tera e mosse Z: una volta a partita', () => {
     expect(m.oneUse).toEqual({ kind: 'z', name: 'Groundium Z' });
     expect(m.oneUseGain).toBeGreaterThanOrEqual(0);
     expect(memberOffense(chomp, [chomp], noStats)!.oneUse).toBeNull();
+  });
+});
+
+describe('il membro nelle colonne di Generale', () => {
+  it('Coverage tipi e meta del membro, e il suo totale con i pesi della squadra (60/20/20, senza meta 60/40)', () => {
+    const m = memberOffense(chomp, [chomp], fixtureData)!;
+    expect(m.coverTypes).toBe(teamCoverage([chomp], fixtureData, 'types').perMember[0]);
+    expect(m.coverMeta).toBe(teamCoverage([chomp], fixtureData, 'meta').perMember[0]);
+    expect(m.total).toBe(Math.round(0.6 * m.powerInGrade + 0.2 * m.coverTypes + 0.2 * m.coverMeta!));
+    const plain = memberOffense(chomp, [chomp], { ...fixtureData, ignoreMeta: true })!;
+    expect(plain.coverMeta).toBeNull();
+    expect(plain.total).toBe(Math.round(0.6 * plain.powerInGrade + 0.4 * plain.coverTypes));
+    // Il valore resta la Potenza (serve a dire chi è un attaccante forte)
+    expect(m.value).toBe(Math.round(m.powerInGrade));
   });
 });

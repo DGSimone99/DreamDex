@@ -804,6 +804,8 @@ export const en = {
   'guide.def.what': "What it measures",
   'ddetail.level': "Coverage",
   'ddetail.holdCol': "Holds",
+  'ddetail.holdTypes': "Holds types",
+  'ddetail.holdMeta': "Holds meta",
   'ddetail.heldBy': "Take it",
   'ddetail.holdLegend': "Strong hit, worse side:",
   'ddetail.multNote': "×2 / ×½ in the corner = weakness or resistance",

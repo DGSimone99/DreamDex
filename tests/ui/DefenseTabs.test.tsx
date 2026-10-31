@@ -219,7 +219,8 @@ describe('Difesa: ordine, barre e Generale a squadra chiusa', () => {
     const rows = Array.from(document.querySelectorAll('.def-members tbody tr'));
     rating.defense.members.forEach((m, i) => {
       const bars = rows[i].querySelectorAll('.def-bar');
-      expect(bars[0]).toHaveClass(tone(m.physical));
+      expect(bars[0]).toHaveClass(tone(m.hold));
+      expect(bars[1]).toHaveClass(tone(m.metaHold!));
       expect(bars[3]).toHaveClass(tone(m.value));
     });
     const values = rating.defense.members.map(m => m.value);
@@ -265,7 +266,7 @@ describe('Difesa: ordine, barre e Generale a squadra chiusa', () => {
   it('a squadra chiusa compaiono Colpo peggiore (il tipo che fa più male) e Recupero, con un % per ogni riga; altrimenti no', () => {
     const { unmount } = renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[]} roomy />);
     const headers = screen.getAllByRole('columnheader').map(h => h.textContent);
-    expect(headers).toEqual(['Pokémon', 'Fisica', 'Speciale', 'Sostenibilità', 'Difesa', 'Colpo peggiore', 'Recupero']);
+    expect(headers).toEqual(['Pokémon', 'Regge i tipi', 'Regge il meta', 'Sostenibilità', 'Difesa', 'Colpo peggiore', 'Recupero']);
     const rows = Array.from(document.querySelectorAll('.def-members tbody tr'));
     expect(rows).toHaveLength(team.length);
     rows.forEach(row => {

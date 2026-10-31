@@ -806,6 +806,8 @@ export const it: Record<keyof typeof en, string> = {
   'guide.def.what': "Cosa misura",
   'ddetail.level': "Copertura",
   'ddetail.holdCol': "Regge",
+  'ddetail.holdTypes': "Regge i tipi",
+  'ddetail.holdMeta': "Regge il meta",
   'ddetail.heldBy': "Lo reggono",
   'ddetail.holdLegend': "Colpo forte del lato peggiore:",
   'ddetail.multNote': "×2 / ×½ nell'angolo = debolezza o resistenza",

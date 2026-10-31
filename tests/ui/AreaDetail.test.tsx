@@ -32,17 +32,18 @@ describe("dettaglio dell'Offesa a schede", () => {
     // Tre tessere cliccabili al posto delle sottostatistiche
     expect(within(panel).getAllByRole('button').map(btn => btn.querySelector('.def-tile-head span')!.textContent)).toEqual(['Coverage tipi', 'Potenza', 'Coverage meta']);
     const table = within(panel).getByRole('table');
-    expect(within(table).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Potenza', 'Coverage', 'Offesa']);
+    expect(within(table).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Potenza', 'Coverage tipi', 'Coverage meta', 'Offesa']);
     const rows = within(table).getAllByRole('row').slice(1);
     expect(rows.map(r => r.querySelector('.def-mon-name')!.textContent)).toEqual(['Great Tusk', 'Gholdengo']);
     for (const row of rows) {
       const cells = within(row).getAllByRole('cell');
-      // La Potenza, con tra parentesi quanto la alza il setup nel voto (tooltip "Con il setup")
-      expect(cells[0]).toHaveTextContent(/^\d+( \(\+\d+\))?$/);
+      // La Potenza, con tra parentesi quanto la alzano il setup e Tera o mossa Z nel voto
+      expect(cells[0]).toHaveTextContent(/^\d+( \(\+\d+\))*$/);
       expect(cells[1]).toHaveTextContent(/^\d+%$/);
-      // L'Offesa del membro, con tra parentesi quanto aggiunge Tera o mossa Z (tooltip "Con Tera…")
-      expect(cells[2]).toHaveTextContent(/^\d+( \(\+\d+\))?$/);
-      const once = cells[2].querySelector('.ad-once');
+      expect(cells[2]).toHaveTextContent(/^\d+%$/);
+      // L'Offesa del membro, coi pesi della squadra
+      expect(cells[3]).toHaveTextContent(/^\d+$/);
+      const once = cells[0].querySelector('.ad-once');
       if (once) expect(once.getAttribute('title')).toMatch(/^Con (Tera|la mossa Z)/);
     }
     // Il "+N" sta nel suo posto della cella della barra (non sborda nella colonna dopo)
@@ -101,7 +102,7 @@ describe("dettaglio dell'Offesa a schede", () => {
   it('in inglese', async () => {
     const { dialog } = await openOffense('en');
     expect(within(dialog).getAllByRole('tab').map(tab => tab.textContent!.replace(/\s*\d+$/, ''))).toEqual(['General', 'Type coverage', 'Power', 'Meta coverage']);
-    expect(within(dialog).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Power', 'Coverage', 'Offense']);
+    expect(within(dialog).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Power', 'Type coverage', 'Meta coverage', 'Offense']);
   });
 });
 
@@ -118,10 +119,10 @@ describe('dettaglio della Difesa a schede', () => {
     const panel = within(dialog).getByRole('tabpanel');
     expect(within(panel).getAllByRole('button').map(b => b.querySelector('.def-tile-head span')!.textContent)).toEqual(['Coverage tipi', 'Sostenibilità', 'Coverage meta']);
     const table = within(panel).getByRole('table');
-    expect(within(table).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Fisica', 'Speciale', 'Sostenibilità', 'Difesa']);
+    expect(within(table).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Regge i tipi', 'Regge il meta', 'Sostenibilità', 'Difesa']);
     const rows = within(table).getAllByRole('row').slice(1);
     expect(rows.map(r => within(r).getByRole('rowheader').querySelector('.def-mon-name')!.textContent)).toEqual(['Great Tusk', 'Gholdengo']);
-    for (const row of rows) for (const cell of within(row).getAllByRole('cell')) expect(cell).toHaveTextContent(/^\d+( \(\+\d+\))?$/);
+    for (const row of rows) for (const cell of within(row).getAllByRole('cell')) expect(cell).toHaveTextContent(/^\d+%?( \(\+\d+\))?$/);
   });
 
   it('Coverage tipi: la regola (attaccante forte, 4HKO pieno, 3HKO a metà) sta nella guida, non sulla pagina', async () => {
@@ -178,7 +179,7 @@ describe('dettaglio della Difesa a schede', () => {
     await user.click(within(dialog).getByRole('tab', { name: /^Type coverage/ }));
     expect(within(within(dialog).getByRole('tabpanel')).getByRole('rowheader', { name: 'Take it' })).toBeInTheDocument();
     await user.click(within(dialog).getByRole('tab', { name: /^General/ }));
-    expect(within(dialog).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Physical', 'Special', 'Sustainability', 'Defense']);
+    expect(within(dialog).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Holds types', 'Holds meta', 'Sustainability', 'Defense']);
   });
 });
 

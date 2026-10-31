@@ -106,14 +106,26 @@ describe('memberDefense: quanti colpi di tipo regge (solo informazione)', () => 
     expect(av.physical).toBe(plain.physical);
   });
 
-  it('fisica e speciale = quota dei 18 colpi di quel lato che regge (pieno 1, a metà 0,5); valore 40/40/20 con la Sostenibilità', () => {
-    const m = memberDefense(blissey, [blissey], fixtureData)!;
-    const { held } = typedHits(blissey, fixtureData);
+  it('fisica e speciale = quota dei 18 colpi di quel lato che regge (pieno 1, a metà 0,5)', () => {
+    const m = memberDefense(blissey, [blissey], noStats)!;
+    const { held } = typedHits(blissey, noStats);
     const side = (k: number) => Math.round(100 * held.filter((_, i) => i % 2 === k).reduce((a, x) => a + holdCredit(x), 0) / 18);
     expect(m.physical).toBe(side(0));
     expect(m.special).toBe(side(1));
     expect(m.hold).toBe(Math.round(100 * held.reduce((a, x) => a + holdCredit(x), 0) / 36));
-    expect(m.value).toBe(Math.round(0.4 * m.physical + 0.4 * m.special + 0.2 * m.sustain));
+    // Il valore del membro con i pesi della squadra: senza statistiche niente meta, 80/20
+    expect(m.metaHold).toBeNull();
+  });
+
+  it('Regge il meta: quota pesata per uso delle minacce che regge; valore 50/30/20 col meta, 80/20 senza', () => {
+    const m = memberDefense(blissey, [blissey], fixtureData)!;
+    expect(m.metaHold).not.toBeNull();
+    expect(m.metaHold!).toBeGreaterThanOrEqual(0);
+    expect(m.metaHold!).toBeLessThanOrEqual(100);
+    expect(m.value).toBe(Math.round(0.5 * m.hold + 0.3 * m.metaHold! + 0.2 * m.sustain));
+    const plain = memberDefense(blissey, [blissey], { ...fixtureData, ignoreMeta: true })!;
+    expect(plain.metaHold).toBeNull();
+    expect(plain.value).toBe(Math.round(0.8 * plain.hold + 0.2 * plain.sustain));
   });
 
   it('Iron Defense: setupGain è quanto la danza alza il valore', () => {

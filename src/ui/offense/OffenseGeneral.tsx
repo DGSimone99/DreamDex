@@ -17,8 +17,9 @@ const UNCOVERED_CHIPS = 3;
 const NO_HIT_ICONS = 6;
 
 /**
- * La scheda Generale dell'Offesa, nella stessa cornice della Difesa (`def-frame`): i membri come righe con Potenza
- * (col "+N" del setup), Coverage e Offesa (col "+N" di Tera o Z), sotto una tessera per sottostatistica (un clic apre la sottoscheda).
+ * La scheda Generale dell'Offesa, nella stessa cornice della Difesa (`def-frame`): i membri come righe con una colonna per
+ * voce del voto (Potenza col "+N" di setup e Tera/Z, Coverage tipi, Coverage meta) e l'Offesa del membro coi pesi della
+ * squadra; sotto una tessera per sottostatistica (un clic apre la sottoscheda).
  * Le righe seguono il team; chi il motore ha scartato (nessun attacco) resta con "—".
  */
 export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; meta: boolean; ctx: AreaContext }) {
@@ -104,12 +105,13 @@ export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; m
     <div className="def-frame def-general">
       <div className="ad-scroll">
         <table className="def-grid def-members">
-          <colgroup><col className="def-col-mon" /><col /><col /><col /></colgroup>
+          <colgroup><col className="def-col-mon" /><col /><col />{meta && <col />}<col /></colgroup>
           <thead>
             <tr>
               <th scope="col" className="def-mon-h">{t('detail.member')}</th>
               <th scope="col">{t('detail.power')}</th>
-              <th scope="col">{t('detail.coverage')}</th>
+              <th scope="col">{t('detail.coverageTypes')}</th>
+              {meta && <th scope="col">{t('detail.coverageMeta')}</th>}
               <th scope="col">{t('area.strength')}</th>
             </tr>
           </thead>
@@ -123,19 +125,20 @@ export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; m
                   {m
                     ? <>
                       <td>
-                        {/* Quanto aggiunge il setup alla Potenza del membro (la metà del guadagno che entra nel voto) */}
-                        <Bar value={m.power} reserve={setupColumn}
-                          gain={m.setupGain > 0 && <small className="ad-gain" title={t('detail.withSetup', { move: m.setupMove ?? '' })}> (+{m.setupGain})</small>} />
+                        {/* Quanto aggiungono setup (metà) e Tera o mossa Z (un quarto) alla Potenza del membro nel voto */}
+                        <Bar value={m.power} reserve={setupColumn || onceColumn} gain={(m.setupGain > 0 || (m.oneUseGain > 0 && m.oneUse)) && <>
+                          {m.setupGain > 0 && <small className="ad-gain" title={t('detail.withSetup', { move: m.setupMove ?? '' })}> (+{m.setupGain})</small>}
+                          {m.oneUseGain > 0 && m.oneUse && (
+                            <small className="ad-once" title={m.oneUse.kind === 'tera' ? t('detail.withTera', { type: m.oneUse.name }) : t('detail.withZ', { item: m.oneUse.name })}> (+{m.oneUseGain})</small>
+                          )}
+                        </>} />
                       </td>
-                      <td><Bar value={m.covered} unit="%" /></td>
-                      <td>
-                        {/* Tera o mossa Z: una volta a partita, un quarto del guadagno entra nel voto */}
-                        <Bar value={m.value} total reserve={onceColumn} gain={m.oneUseGain > 0 && m.oneUse && (
-                          <small className="ad-once" title={m.oneUse.kind === 'tera' ? t('detail.withTera', { type: m.oneUse.name }) : t('detail.withZ', { item: m.oneUse.name })}> (+{m.oneUseGain})</small>
-                        )} />
-                      </td>
+                      <td><Bar value={m.coverTypes} unit="%" /></td>
+                      {meta && <td><Bar value={m.coverMeta ?? 0} unit="%" /></td>}
+                      {/* Quanto il membro porta all'Offesa, coi pesi della squadra */}
+                      <td><Bar value={m.total} total /></td>
                     </>
-                    : <><td>—</td><td>—</td><td>—</td></>}
+                    : <><td>—</td><td>—</td>{meta && <td>—</td>}<td>—</td></>}
                 </tr>
               );
             })}
