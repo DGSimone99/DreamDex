@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
-import { weaknessSeverity } from '../../engine/coach';
-import type { SustainParts, TeamDefense } from '../../engine/defense';
+import type { HoldBand, SustainParts, TeamDefense } from '../../engine/defense';
 import { useLang, useT } from '../../i18n/react';
 import { typeName } from '../../i18n/game';
 import type { AreaContext } from '../AreaDetail';
@@ -8,7 +7,8 @@ import { Icon } from '../icons';
 import { Sprite } from '../Sprite';
 import { MemberMon, setOf } from './MemberMon';
 import { TypeIcons } from '../typeIcons';
-import { HOLD_TAGS } from './DefenseRobustness';
+import { TYPES } from '../../engine/types';
+import { HOLD_BANDS } from './holds';
 
 /** Il colore della tessera dal valore: buono da 80, medio da 50, scarso sotto. */
 export const tone = (value: number) => (value >= 80 ? 'good' : value >= 50 ? 'warn' : 'bad');
@@ -36,17 +36,18 @@ export function Bar({ value, total, unit = '', gain, reserve = false }: { value:
   );
 }
 
-/** Le due colonne in più a squadra chiusa: il colpo più duro che il membro riceve e come recupera. */
-function WorstAndRecovery({ hit, parts }: { hit: { species: string; pct: number; step: number } | null; parts: SustainParts }) {
+/** Le due colonne in più a squadra chiusa: il colpo di tipo che fa più male al membro e come recupera. */
+function WorstAndRecovery({ hit, parts }: { hit: { type: string; pct: number; band: HoldBand } | null; parts: SustainParts }) {
   const t = useT();
-  const hold = hit ? HOLD_TAGS[hit.step] : undefined;
+  const lang = useLang();
+  const hold = hit ? HOLD_BANDS[hit.band] : undefined;
   return (
     <>
       <td>
         {hit && hold && (
           <span className="def-hit">
-            <Sprite species={hit.species} size={28} />
-            <span className={`hold-chip ${hold.cls}`} title={`${hit.species}: ${hold.tag}`}>{hit.pct}%<span className="visually-hidden"> {hold.tag}</span></span>
+            <TypeIcons types={[hit.type]} title={typeName(hit.type, lang)} />
+            <span className={`hold-chip ${hold.cls}`} title={`${typeName(hit.type, lang)}: ${hold.tag}`}>{hit.pct}%<span className="visually-hidden"> {typeName(hit.type, lang)} {hold.tag}</span></span>
           </span>
         )}
       </td>
@@ -60,7 +61,8 @@ function WorstAndRecovery({ hit, parts }: { hit: { species: string; pct: number;
 
 /**
  * La scheda Generale della Difesa: una tessera per sottostatistica (valore e il fatto più importante, un clic apre la
- * sottoscheda) e sotto i membri con Fisica / Speciale / Sostenibilità / Difesa come barre.
+ * sottoscheda) e sotto i membri con una colonna per voce (Regge i tipi, Regge il meta, Sostenibilità) e la Difesa del
+ * membro coi pesi della squadra.
  * Tessere e righe stanno nella cornice comune (`def-frame`): i membri restano nello stesso punto di Coverage tipi.
  * Con la squadra chiusa (`ctx.roomy`) le righe si allungano e compaiono il colpo peggiore e il recupero.
  */
@@ -73,23 +75,14 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
   // La colonna Difesa riserva il posto del "+N" se almeno un membro ha un setup difensivo
   const setupColumn = members.some(m => m.setupGain > 0 && !!m.setupMove);
 
-  // Tipi scoperti, i gravi per primi
-  const exposed = ctx.analysis.weakness
-    .map(row => ({ type: row.type, severity: weaknessSeverity(row) }))
-    .filter(row => row.severity !== null)
-    .sort((a, b) => Number(b.severity === 'serious') - Number(a.severity === 'serious'));
+  // Tipi scoperti: quelli che nessuno regge sul lato peggiore
+  const exposed = defense.coverageTypes.weak.map(type => ({ type, severity: 'serious' as const }));
 
-  // L'ordine è quello delle sottoschede: Coverage tipi, Robustezza, Sostenibilità, Coverage meta.
+  // L'ordine è quello delle sottoschede: Coverage tipi, Sostenibilità, Coverage meta.
   // Ogni tessera ha la stessa struttura: una didascalia minuscola e sotto l'elemento visivo
   const cap = (text: string, extra?: ReactNode) => <span className="def-cap"><em>{text}</em>{extra}</span>;
   const shownExposed = exposed.slice(0, EXPOSED_CHIPS);
   const hiddenNames = exposed.slice(EXPOSED_CHIPS).map(row => typeName(row.type, lang)).join(', ');
-  const meter = (label: string, value: number) => (
-    <span className="def-meter">
-      <span className="def-meter-top"><em>{label}</em><b className={tone(value)}>{value}</b></span>
-      <span className={`def-mini ${tone(value)}`} aria-hidden="true"><i style={{ width: `${Math.max(0, Math.min(100, value))}%` }} /></span>
-    </span>
-  );
   const tiles: { key: string; label: string; value: number; fact: ReactNode }[] = [
     {
       key: 'coverageTypes', label: t('detail.coverageTypes'), value: defense.coverageTypes.value,
@@ -104,10 +97,6 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
           </span>
           : <span className="def-visual def-none"><Icon name="check" />{t('ddetail.types.noWeak')}</span>}
       </>,
-    },
-    {
-      key: 'robustness', label: t('ddetail.robustness'), value: defense.robustness,
-      fact: <span className="def-visual def-meters">{meter(t('ddetail.physical'), defense.physical)}{meter(t('ddetail.special'), defense.special)}</span>,
     },
     {
       key: 'sustain', label: t('ddetail.sustain'), value: defense.sustain,
@@ -150,9 +139,9 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
   const lowest = members.reduce((best, m, i) => (m.value < members[best].value ? i : best), 0);
   const weakLink = members.length > 0 && members[lowest].value < WEAK_LINK_BELOW ? lowest : -1;
 
-  // Squadra chiusa: il colpo più duro tra gli attaccanti per ogni membro (a parità, il primo)
-  const worstHit = (i: number) => defense.matrix.reduce<{ species: string; pct: number; step: number } | null>(
-    (best, row) => (!best || row.cells[i].pct > best.pct ? { species: row.species, ...row.cells[i] } : best), null);
+  // Squadra chiusa: il colpo di tipo che fa più male a ogni membro (a parità, il primo tipo)
+  const worstHit = (i: number) => (defense.typed[i]?.cells ?? []).reduce<{ type: string; pct: number; band: HoldBand } | null>(
+    (best, cell, k) => (!best || cell.pct > best.pct ? { type: TYPES[k], pct: cell.pct, band: cell.band } : best), null);
 
   return (
     <div className={`def-frame def-general${roomy ? ' roomy' : ''}`}>
@@ -160,14 +149,14 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
         <table className="def-grid def-members">
           {/* Larghezze fisse: i nomi in una colonna, le quattro barre in colonne uguali */}
           <colgroup>
-            <col className="def-col-mon" /><col /><col /><col /><col />
+            <col className="def-col-mon" /><col />{meta && <col />}<col /><col />
             {roomy && <><col className="def-col-hit" /><col className="def-col-rec" /></>}
           </colgroup>
           <thead>
             <tr>
               <th scope="col" className="def-mon-h">{t('detail.member')}</th>
-              <th scope="col">{t('ddetail.physical')}</th>
-              <th scope="col">{t('ddetail.special')}</th>
+              <th scope="col">{t('ddetail.holdTypes')}</th>
+              {meta && <th scope="col">{t('ddetail.holdMeta')}</th>}
               <th scope="col">{t('ddetail.sustain')}</th>
               <th scope="col">{t('area.defense')}</th>
               {roomy && <><th scope="col">{t('ddetail.worstHit')}</th><th scope="col">{t('ddetail.recoveryCol')}</th></>}
@@ -181,8 +170,9 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
                     {i === weakLink && <span className="def-weak">{t('ddetail.weakLink')}</span>}
                   </MemberMon>
                 </th>
-                <td><Bar value={m.physical} /></td>
-                <td><Bar value={m.special} /></td>
+                {/* Quanti colpi di tipo regge (i due lati nel suggerimento) e quante minacce del meta */}
+                <td title={t('ddetail.sides', { p: m.physical, s: m.special })}><Bar value={m.hold} unit="%" /></td>
+                {meta && <td><Bar value={m.metaHold ?? 0} unit="%" /></td>}
                 <td><Bar value={m.sustain} /></td>
                 <td>
                   {/* Quanto aggiunge il setup difensivo (metà del guadagno entra nel voto) */}

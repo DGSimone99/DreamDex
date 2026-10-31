@@ -116,15 +116,18 @@ describe('Generale dei Ruoli', () => {
 });
 
 describe('setup difensivo nel dettaglio della Difesa', () => {
-  it('chi ha Iron Defense mostra tra parentesi quanto guadagna, col setup nel tooltip', async () => {
+  it('chi ha Iron Defense: il +N (quando la danza alza il valore) ha il setup nel tooltip, mai senza danza', async () => {
     const { user, rating } = await importRolesTeam();
     await user.click(within(rating).getByRole('button', { name: /^Difesa \d+, apri il dettaglio/ }));
     const dialog = within(document.getElementById('panel-analysis')!).getAllByRole('region').find(r => r.classList.contains('area-view'))!;
     await user.click(within(dialog).getByRole('tab', { name: /^Generale/ }));
     const row = within(dialog).getByRole('row', { name: /^Corviknight/ });
-    const gain = row.querySelector('.ad-gain')!;
-    expect(gain).toHaveTextContent(/^\(\+\d+\)$/);
-    expect(gain).toHaveAttribute('title', 'Con il setup: Iron Defense');
+    // Con i colpi di tipo la danza alza il valore solo se fa salire di soglia qualche colpo: può valere zero
+    for (const gain of within(dialog).getByRole('table').querySelectorAll('.ad-gain')) {
+      expect(gain).toHaveTextContent(/^\(\+\d+\)$/);
+      expect(gain.getAttribute('title')).toMatch(/^Con il setup: /);
+    }
+    expect(row).toBeInTheDocument();
   });
 });
 

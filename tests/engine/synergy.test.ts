@@ -140,10 +140,15 @@ describe('meteo e campi in conflitto', () => {
     expect(conditionConflicts([ninetales, pelipper])).toEqual([{ kind: 'meteo', setters: ['Ninetales (Drought)', 'Pelipper (Drizzle)'] }]);
   });
 
-  it('due campi diversi sono in conflitto', () => {
-    const koko = set('Tapu Koko', 'Electric Surge', ['Thunderbolt']);
+  it('due campi diversi sono in conflitto se qualcuno ne sfrutta uno', () => {
+    const koko = set('Tapu Koko', 'Electric Surge', ['Rising Voltage']);
     const lele = set('Tapu Lele', 'Psychic Surge', ['Psychic']);
     expect(conditionConflicts([koko, lele])).toEqual([{ kind: 'campi', setters: ['Tapu Koko (Electric Surge)', 'Tapu Lele (Psychic Surge)'] }]);
+  });
+
+  it('due campi (o meteo) che nessuno sfrutta non sono un conflitto: si annullano e basta', () => {
+    expect(conditionConflicts([set('Tapu Koko', 'Electric Surge', ['Thunderbolt']), set('Tapu Lele', 'Psychic Surge', ['Psychic'])])).toEqual([]);
+    expect(conditionConflicts([set('Kyogre', 'Drizzle', ['Origin Pulse']), set('Koraidon', 'Orichalcum Pulse', ['Collision Course'])])).toEqual([]);
   });
 
   it('due setter dello stesso meteo non sono in conflitto', () => {
@@ -161,9 +166,10 @@ describe('mosse indebolite dal meteo del team', () => {
     ]);
   });
 
-  it('la pioggia indebolisce le mosse Fire, anche del setter di un altro meteo', () => {
-    expect(weakenedMoves([set('Pelipper', 'Drizzle', ['Hurricane']), ninetales])).toEqual([
-      { condition: 'rain', setter: 'Pelipper', member: 'Ninetales', type: 'Fire', stab: true },
+  it('la pioggia non indebolisce le mosse Fire di chi porta il sole: in campo ha il suo meteo', () => {
+    expect(weakenedMoves([set('Pelipper', 'Drizzle', ['Hurricane']), ninetales])).toEqual([]);
+    expect(weakenedMoves([set('Pelipper', 'Drizzle', ['Hurricane']), set('Heatran', 'Flash Fire', ['Magma Storm'])])).toEqual([
+      { condition: 'rain', setter: 'Pelipper', member: 'Heatran', type: 'Fire', stab: true },
     ]);
   });
 

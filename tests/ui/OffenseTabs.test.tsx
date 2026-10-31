@@ -2,7 +2,6 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { analyzeTeam } from '../../src/engine/analysis';
-import { stepBucket } from '../../src/engine/offense';
 import { rateTeam } from '../../src/engine/rating';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
 import { LangProvider } from '../../src/i18n/react';
@@ -30,21 +29,21 @@ describe('Offesa: navigazione e guida', () => {
 
   it('ordine delle sottoschede', () => {
     const { unmount } = renderIt(<AreaView rating={withMeta()} area="strength" team={team} analysis={analysis} problems={[]} />);
-    expect(names()).toEqual(['Generale', 'Coverage tipi', 'Potenza', 'Wallbreaking', 'Coverage meta']);
+    expect(names()).toEqual(['Generale', 'Coverage tipi', 'Potenza', 'Coverage meta']);
     unmount();
     renderIt(<AreaView rating={noMeta()} area="strength" team={team} analysis={analysis} problems={[]} />);
-    expect(names()).toEqual(['Generale', 'Coverage tipi', 'Potenza', 'Wallbreaking']);
+    expect(names()).toEqual(['Generale', 'Coverage tipi', 'Potenza']);
   });
 
   it('il "?" della sottoscheda aperta apre la guida su quella sezione', async () => {
     const user = userEvent.setup();
     renderIt(<AreaView rating={withMeta()} area="strength" team={team} analysis={analysis} problems={[]} />);
-    await user.click(screen.getByRole('tab', { name: /^Wallbreaking/ }));
-    const help = screen.getByRole('button', { name: 'Come funziona Wallbreaking' });
+    await user.click(screen.getByRole('tab', { name: /^Potenza/ }));
+    const help = screen.getByRole('button', { name: 'Come funziona Potenza' });
     await user.click(help);
     const dialog = screen.getByRole('dialog', { name: 'Guida: Offesa' });
-    expect(within(dialog).getByRole('tab', { name: 'Wallbreaking' })).toHaveAttribute('aria-selected', 'true');
-    expect(within(dialog).getByRole('tabpanel')).toHaveTextContent('OHKO');
+    expect(within(dialog).getByRole('tab', { name: 'Potenza' })).toHaveAttribute('aria-selected', 'true');
+    expect(within(dialog).getByRole('tabpanel')).toHaveTextContent('Pokémon medio');
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(help).toHaveFocus();
@@ -56,52 +55,78 @@ describe('Offesa: navigazione e guida', () => {
     await user.click(screen.getByRole('button', { name: 'Come funziona Generale' }));
     const dialog = screen.getByRole('dialog', { name: 'Guida: Offesa' });
     expect(within(dialog).getByRole('tab', { name: 'Coverage meta' })).toBeInTheDocument();
-    expect(within(dialog).getByRole('tabpanel')).toHaveTextContent(/Potenza.*50/);
+    expect(within(dialog).getByRole('tabpanel')).toHaveTextContent(/Potenza.*60/);
+    expect(within(dialog).getByRole('tabpanel')).toHaveTextContent(/Coverage meta.*20/);
     unmount();
     renderIt(<AreaView rating={noMeta()} area="strength" team={team} analysis={analysis} problems={[]} />);
     await user.click(screen.getByRole('button', { name: 'Come funziona Generale' }));
     expect(within(screen.getByRole('dialog')).queryByRole('tab', { name: 'Coverage meta' })).toBeNull();
+    expect(within(screen.getByRole('dialog')).getByRole('tabpanel')).toHaveTextContent(/Coverage tipi.*40/);
+  });
+
+  it('il Wallbreaking non compare più, né nelle schede né nella guida', async () => {
+    const user = userEvent.setup();
+    renderIt(<AreaView rating={withMeta()} area="strength" team={team} analysis={analysis} problems={[]} />);
+    expect(document.body.textContent).not.toMatch(/Wallbreaking|Muri sfondati/);
+    await user.click(screen.getByRole('button', { name: 'Come funziona Generale' }));
+    expect(document.body.textContent).not.toMatch(/Wallbreaking|muri/i);
   });
 
   it('in inglese', async () => {
     const user = userEvent.setup();
     render(<LangProvider lang="en"><AreaView rating={rateTeam(team, fixtureData, 'en')!} area="strength" team={team} analysis={analysis} problems={[]} /></LangProvider>);
-    expect(names()).toEqual(['General', 'Type coverage', 'Power', 'Wallbreaking', 'Meta coverage']);
+    expect(names()).toEqual(['General', 'Type coverage', 'Power', 'Meta coverage']);
     await user.click(screen.getByRole('button', { name: 'How General works' }));
     expect(screen.getByRole('dialog', { name: 'Guide: Offense' })).toBeInTheDocument();
+    expect(document.body.textContent).not.toMatch(/Wallbreaking/);
   });
 });
 
 describe('Offesa: Generale', () => {
   const view = (t: TeamSet[] = team, rating = withMeta()) => renderIt(<AreaView rating={rating} area="strength" team={t} analysis={analyzeTeam(t, fixtureData)} problems={[]} />);
 
-  it('Generale: righe in ordine di team, colonne Pokémon, Potenza, Wallbreaking, Coverage, Offesa', () => {
-    view();
-    expect(screen.getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Potenza', 'Wallbreaking', 'Coverage', 'Offesa']);
+  it("Generale: una colonna per voce (Potenza, Coverage tipi, Coverage meta) e l'Offesa del membro coi pesi della squadra", () => {
+    const rating = withMeta();
+    const { unmount } = view(team, rating);
+    expect(screen.getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Potenza', 'Coverage tipi', 'Coverage meta', 'Offesa']);
+    const rows = document.querySelectorAll('.def-members tbody tr');
+    rating.offense.members.forEach((m, i) => {
+      const cells = rows[i].querySelectorAll('td');
+      expect(cells[1]).toHaveTextContent(`${m.coverTypes}%`);
+      expect(cells[2]).toHaveTextContent(`${m.coverMeta}%`);
+      expect(cells[3]).toHaveTextContent(`${m.total}`);
+    });
+    unmount();
+    view(team, noMeta());
+    expect(screen.getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Potenza', 'Coverage tipi', 'Offesa']);
     expect([...document.querySelectorAll('.def-mon-name')].map(n => n.textContent)).toEqual(['Great Tusk', 'Gholdengo']);
   });
 
-  it('quattro tessere, cliccandole si apre la sottoscheda e prende il focus', async () => {
+  it('tre tessere, cliccandole si apre la sottoscheda e prende il focus', async () => {
     const user = userEvent.setup();
     const { unmount } = view();
-    const tiles = () => screen.getAllByRole('button', { name: /^(Coverage tipi|Potenza|Wallbreaking|Coverage meta)/ });
-    expect(tiles()).toHaveLength(4);
-    await user.click(screen.getByRole('button', { name: /^Wallbreaking/ }));
-    const tab = screen.getByRole('tab', { name: /^Wallbreaking/ });
+    const tiles = () => screen.getAllByRole('button', { name: /^(Coverage tipi|Potenza|Coverage meta)/ });
+    expect(tiles()).toHaveLength(3);
+    await user.click(screen.getByRole('button', { name: /^Potenza/ }));
+    const tab = screen.getByRole('tab', { name: /^Potenza/ });
     expect(tab).toHaveAttribute('aria-selected', 'true');
     expect(tab).toHaveFocus();
     unmount();
     view(team, noMeta());
-    expect(tiles()).toHaveLength(3);
+    expect(tiles()).toHaveLength(2);
   });
 
-  it('la tessera Wallbreaking conta i muri sfondati senza setup', () => {
-    const rating = withMeta();
-    view(team, rating);
-    const expected = rating.offense.walls.filter(w => w.cells.some(c => ['ohko', 'two'].includes(stepBucket(c.step)))).length;
-    const tile = screen.getByRole('button', { name: /^Wallbreaking/ });
-    expect(within(tile).getByText('Muri sfondati')).toBeInTheDocument();
-    expect(within(tile).getByText(`${expected}/${rating.offense.walls.length}`)).toBeInTheDocument();
+  it('la tessera Potenza mostra chi ha una mossa di setup', () => {
+    view();
+    const tile = screen.getByRole('button', { name: /^Potenza/ });
+    expect(within(tile).getByText('Gholdengo (Nasty Plot)')).toBeInTheDocument();
+  });
+
+  it('la tessera Coverage meta dice quanti nessuno manda KO in due colpi', () => {
+    view();
+    const tile = screen.getByRole('button', { name: /^Coverage meta/ });
+    expect(tile).toHaveTextContent(/Nessuno lo manda KO in due colpi|Tutti mandati KO in due colpi/);
+    expect(tile).not.toHaveTextContent(/Nessun colpo|Ogni bersaglio colpito/);
   });
 
   it('membro senza attacchi: la riga resta con "—"', () => {
@@ -162,7 +187,7 @@ describe('Offesa: Potenza', () => {
     team.forEach((_, slot) => {
       const m = rating.offense.members[slots[slot]!];
       expect(m.bestMove).toBeTruthy();
-      expect(rows[slot].querySelector('.pw-move')!.textContent).toBe(gameName('move', m.bestMove!, 'it'));
+      expect(rows[slot].querySelector('td:last-child .pw-move')!.textContent).toBe(gameName('move', m.bestMove!, 'it'));
     });
   });
 
@@ -173,7 +198,7 @@ describe('Offesa: Potenza', () => {
     const rating = rateTeam(t, gen9, 'it')!;
     renderIt(<AreaView rating={rating} area="strength" team={t} analysis={analyzeTeam(t, gen9)} problems={[]} />);
     await user.click(screen.getByRole('tab', { name: /^Potenza/ }));
-    const gains = rating.offense.members.filter(m => m.oneUse && Math.round(m.powerInGrade - m.power) > 0);
+    const gains = rating.offense.members.filter(m => m.oneUse && m.oneUseGain > 0);
     expect(gains.length).toBeGreaterThan(0);
     const small = [...document.querySelectorAll('.pw-bar small.ad-once')];
     expect(small).toHaveLength(gains.length);
@@ -196,13 +221,13 @@ describe('Offesa: Potenza', () => {
     const rows = [...table.querySelectorAll('tbody tr')];
     for (const gain of gains) {
       expect(gain.closest('.def-cell.with-gain > .def-gain')).not.toBeNull();
-      // Il numero e il "+N" si leggono insieme: "50 (+23)"
-      expect(gain.closest('.def-cell')).toHaveTextContent(/^\d+ \(\+\d+\)$/);
+      // Il numero e i "+N" si leggono insieme: "50 (+23)" o, con setup e Tera, "50 (+11) (+3)"
+      expect(gain.closest('.def-cell')).toHaveTextContent(/^\d+( \(\+\d+\))+$/);
       const column = [...gain.closest('tr')!.children].indexOf(gain.closest('td')!);
       for (const row of rows) expect(row.children[column].querySelector('.def-cell')).toHaveClass('with-gain');
     }
-    // Le colonne senza "+N" non riservano il posto
-    expect(rows[0].children[1].querySelector('.def-cell')).not.toHaveClass('with-gain');
+    // Le colonne senza "+N" non riservano il posto (la Coverage)
+    expect(rows[0].children[2].querySelector('.def-cell')).not.toHaveClass('with-gain');
   });
 
   it('Potenza: membro scartato resta con "—"', async () => {
@@ -212,7 +237,7 @@ describe('Offesa: Potenza', () => {
     await user.click(screen.getByRole('tab', { name: /^Potenza/ }));
     const rows = document.querySelectorAll('.def-members tbody tr');
     expect(rows).toHaveLength(2);
-    expect(rows[1].querySelector('.pw-move')).toBeNull();
+    expect(rows[1].querySelector('td:last-child .pw-move')).toBeNull();
     expect(within(rows[1] as HTMLElement).getAllByText('—').length).toBeGreaterThan(0);
   });
 
@@ -234,80 +259,134 @@ describe('Offesa: Potenza', () => {
     refs.forEach(s => expect(document.querySelector(`.pw-ref [title="${s}"]`)).toBeInTheDocument());
   });
 
-  it('Wallbreaking: membri in riga, un muro per colonna, la riga Lo sfondano', async () => {
+  it('Potenza: una colonna Setup con la mossa e il +N che entra nel voto; "—" per chi non ha setup', async () => {
     const user = userEvent.setup();
     const rating = view();
-    await user.click(screen.getByRole('tab', { name: /^Wallbreaking/ }));
-    const heads = screen.getAllByRole('columnheader').map(h => h.getAttribute('aria-label')).filter(Boolean);
-    expect(heads).toEqual(rating.offense.walls.map(w => w.species));
-    const rows = [...document.querySelectorAll('.def-walls tbody tr')];
-    expect(rows).toHaveLength(team.length + 1);
-    expect(within(rows[rows.length - 1] as HTMLElement).getByRole('rowheader')).toHaveTextContent('Lo sfondano');
-  });
-
-  it('le soglie sono scritte anche a parole', async () => {
-    const user = userEvent.setup();
-    view();
-    await user.click(screen.getByRole('tab', { name: /^Wallbreaking/ }));
-    const words = [...document.querySelectorAll('.def-walls .rob-cell .visually-hidden')].map(el => el.textContent!.trim());
-    expect(words.some(w => w === '2HKO' || w === 'OHKO')).toBe(true);
+    await user.click(screen.getByRole('tab', { name: /^Potenza/ }));
+    expect(screen.getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Potenza', 'Setup', 'Colpo migliore']);
+    const rows = document.querySelectorAll('.def-members tbody tr');
+    const slots = offenseSlots(team, rating.offense.members);
+    team.forEach((_, slot) => {
+      const m = rating.offense.members[slots[slot]!];
+      const cell = rows[slot].querySelector('.pw-setup')!;
+      if (m.setupMove) {
+        expect(cell.querySelector('.pw-move')!.textContent).toBe(gameName('move', m.setupMove, 'it'));
+        if (m.setupGain > 0) {
+          expect(cell.querySelector('small.ad-gain')!.textContent).toBe(` (+${m.setupGain})`);
+          expect(cell.querySelector('small.ad-gain')!.getAttribute('title')).toMatch(/setup.*Potenza/);
+        }
+      } else {
+        expect(cell).toHaveTextContent('—');
+      }
+    });
+    // Il +N del setup non sta più accanto alla barra
+    expect(document.querySelectorAll('.pw-bar small.ad-gain')).toHaveLength(0);
+    expect(rating.offense.members.some(m => m.setupMove)).toBe(true);
+    expect(document.querySelector('.pw-ref')).toHaveTextContent('Pokémon medio dei 18 tipi');
   });
 });
 
 describe('Offesa: Coverage meta', () => {
-  const open = async () => {
+  const ko = (pct: number) => (pct >= 100 ? 'ohko' : pct >= 50 ? 'two' : pct >= 34 ? 'three' : 'none');
+  const open = async (t: TeamSet[] = team) => {
     const user = userEvent.setup();
-    const rating = withMeta();
-    renderIt(<AreaView rating={rating} area="strength" team={team} analysis={analysis} problems={[]} />);
+    const rating = rateTeam(t, fixtureData, 'it')!;
+    renderIt(<AreaView rating={rating} area="strength" team={t} analysis={analyzeTeam(t, fixtureData)} problems={[]} />);
     await user.click(screen.getByRole('tab', { name: /^Coverage meta/ }));
-    return { user, rating };
+    const sorted = [...rating.offense.coverageMeta!.rows].sort((a, b) => a.level - b.level || b.weight - a.weight);
+    return { user, rating, sorted };
   };
-  const level = (li: HTMLElement) => Number(/: (\d+)%/.exec(li.getAttribute('aria-label') ?? '')![1]);
+  const table = () => within(screen.getByRole('tabpanel')).getByRole('table');
+  const heads = () => [...table().querySelectorAll('thead th[aria-label]')].map(th => th.getAttribute('aria-label'));
+  const bodyRows = () => [...table().querySelectorAll('tbody tr')] as HTMLElement[];
 
-  it('Coverage meta: pagine da 8 dal bersaglio meno coperto', async () => {
-    const { user } = await open();
-    const tiles = within(screen.getByRole('tabpanel')).getAllByRole('listitem');
-    expect(tiles).toHaveLength(8);
-    expect(level(tiles[0])).toBeLessThanOrEqual(level(tiles[tiles.length - 1]));
-    await user.click(screen.getByRole('button', { name: 'Bersagli successivi' }));
-    expect(within(screen.getByRole('tabpanel')).getAllByRole('listitem').length).toBeGreaterThan(0);
+  it('una riga per membro, 8 bersagli per pagina dal meno coperto, e la riga Lo coprono', async () => {
+    const { user, sorted } = await open();
+    expect(heads()).toEqual(sorted.slice(0, 8).map(r => r.species));
+    const rows = bodyRows();
+    expect(rows).toHaveLength(team.length + 1);
+    expect(rows.slice(0, team.length).map(r => r.querySelector('.def-mon-name')!.textContent)).toEqual(['Great Tusk', 'Gholdengo']);
+    expect(within(rows[rows.length - 1]).getByRole('rowheader')).toHaveTextContent('Lo coprono');
+    const next = screen.getByRole('button', { name: 'Bersagli successivi' });
+    if (sorted.length > 8) {
+      await user.click(next);
+      expect(heads()).toEqual(sorted.slice(8, 16).map(r => r.species));
+    } else {
+      // Una sola pagina: la freccia è spenta
+      expect(next).toBeDisabled();
+    }
   });
 
-  it('un bersaglio senza colpi dice nessuno', async () => {
-    const { rating } = await open();
-    const rows = rating.offense.coverageMeta!.rows;
-    const none = rows.find(r => r.coveredBy.length === 0);
-    // La squadra di prova lascia scoperti dei bersagli: senza, il test non dimostrerebbe niente
-    expect(none).toBeDefined();
-    // I meno coperti stanno in prima pagina
-    const tile = within(screen.getByRole('tabpanel')).getAllByRole('listitem').find(li => li.getAttribute('aria-label')!.startsWith(`${none!.species}:`));
-    expect(tile).toBeDefined();
-    expect(tile!.getAttribute('aria-label')).toContain('nessuno');
-    expect(tile).toHaveClass('none');
-    expect(tile!.querySelector('.ct-pill')).toHaveClass('bad');
+  it('ogni casella: il danno del colpo semplice, colorato per soglia e scritto anche a parole', async () => {
+    const { sorted } = await open();
+    const rows = bodyRows();
+    sorted.slice(0, 8).forEach((target, col) => {
+      team.forEach((_, m) => {
+        const cell = rows[m].querySelectorAll('td')[col];
+        const { pct } = target.cells![m];
+        expect(cell.querySelector('.wall-pct')!.textContent).toBe(`${pct}%`);
+        expect(cell).toHaveClass(`ko-${ko(pct)}`);
+        if (ko(pct) !== 'none') expect(cell.querySelector('.visually-hidden')!.textContent!.trim()).toBe({ ohko: 'OHKO', two: '2HKO', three: '3HKO' }[ko(pct) as 'ohko']);
+      });
+    });
   });
 
-  it('i conteggi in alto coincidono con i gruppi delle righe', async () => {
+  it('con il setup che cambia soglia la casella lo dice ("setup N%")', async () => {
+    const { user, sorted } = await open();
+    const jumps = sorted.flatMap((target, i) => target.cells!.map((c, m) => ({ i, m, c }))
+      .filter(({ c }) => c.setupPct !== null && ko(c.setupPct) !== ko(c.pct)));
+    expect(jumps.length).toBeGreaterThan(0);
+    const first = jumps[0];
+    for (let p = 0; p < Math.floor(first.i / 8); p++) await user.click(screen.getByRole('button', { name: 'Bersagli successivi' }));
+    const cell = bodyRows()[first.m].querySelectorAll('td')[first.i % 8];
+    expect(cell).toHaveClass('has-setup');
+    expect(cell.querySelector('.wall-setup')!.textContent).toBe(`setup ${first.c.setupPct}%`);
+  });
+
+  it('Lo coprono conta chi lo manda KO in due colpi', async () => {
+    const { sorted } = await open();
+    const rows = bodyRows();
+    const counts = [...rows[rows.length - 1].querySelectorAll('td')].map(td => Number(td.textContent));
+    expect(counts).toEqual(sorted.slice(0, 8).map(r => r.cells!.filter(c => c.pct >= 50).length));
+  });
+
+  it('i conteggi in alto: coperti, solo 3HKO, scoperti', async () => {
     const { rating } = await open();
     const rows = rating.offense.coverageMeta!.rows;
-    const none = rows.filter(r => r.coveredBy.length === 0).length;
-    const partial = rows.filter(r => r.coveredBy.length > 0 && r.coveredBy.every(c => c.partial)).length;
+    const covered = rows.filter(r => r.level > 0).length;
+    const only3 = rows.filter(r => r.level === 0 && r.cells!.some(c => c.pct >= 34)).length;
     const summary = document.querySelector('.cm-summary')!;
     expect(summary).toHaveTextContent(`${rows.length} bersagli`);
-    expect(summary).toHaveTextContent(`${rows.length - none - partial} coperti`);
-    expect(summary).toHaveTextContent(`${partial} a metà`);
-    expect(summary).toHaveTextContent(`${none} nessuno`);
+    expect(summary).toHaveTextContent(`${covered} coperti`);
+    expect(summary).toHaveTextContent(`${only3} solo 3HKO`);
+    expect(summary).toHaveTextContent(`${rows.length - covered - only3} scoperti`);
+    expect(screen.getByRole('tabpanel')).toHaveTextContent(/un quarto.*Tera/);
   });
 
-  it('pastiglia del livello col colore giusto e % gialla per chi copre a metà', async () => {
-    await open();
-    const tiles = within(screen.getByRole('tabpanel')).getAllByRole('listitem');
-    for (const tile of tiles) {
-      const lvl = level(tile);
-      expect(tile.querySelector('.cm-head .ct-pill')).toHaveClass(lvl === 0 ? 'bad' : lvl < 80 ? 'warn' : 'good');
-    }
-    // Un colpo da 3HKO copre a metà: la sua % è gialla
-    expect(document.querySelectorAll('.cm-holder.partial .cm-holder-pct.half').length).toBeGreaterThan(0);
-    expect(document.querySelectorAll('.cm-holder:not(.partial) .cm-holder-pct.half')).toHaveLength(0);
+  it('un bersaglio immune a tutti: 0% ovunque e nessuno lo copre', async () => {
+    const lax = [{ ...emptySet('Snorlax'), ability: 'Thick Fat', moves: ['Body Slam', 'Double-Edge'], evs: { atk: 252, hp: 252 } }];
+    const { user, sorted } = await open(lax);
+    const ghost = sorted.findIndex(r => r.cells![0].pct === 0 && r.level === 0);
+    expect(ghost).toBeGreaterThanOrEqual(0);
+    for (let p = 0; p < Math.floor(ghost / 8); p++) await user.click(screen.getByRole('button', { name: 'Bersagli successivi' }));
+    const rows = bodyRows();
+    expect(rows[0].querySelectorAll('td')[ghost % 8].querySelector('.wall-pct')!.textContent).toBe('0%');
+    expect(rows[rows.length - 1].querySelectorAll('td')[ghost % 8]).toHaveTextContent('0');
+  });
+
+  it('un membro che il motore non conosce resta con "—"', async () => {
+    const t = [team[0], { ...emptySet('Notamon'), moves: ['Tackle'] }];
+    await open(t);
+    const cells = bodyRows()[1].querySelectorAll('td');
+    expect(cells).toHaveLength(8);
+    cells.forEach(td => expect(td).toHaveTextContent('—'));
+  });
+
+  it('in inglese', async () => {
+    const user = userEvent.setup();
+    render(<LangProvider lang="en"><AreaView rating={rateTeam(team, fixtureData, 'en')!} area="strength" team={team} analysis={analysis} problems={[]} /></LangProvider>);
+    await user.click(screen.getByRole('tab', { name: /^Meta coverage/ }));
+    expect(within(table()).getByRole('rowheader', { name: 'Covered by' })).toBeInTheDocument();
+    expect(document.querySelector('.cm-summary')).toHaveTextContent(/3HKO only/);
   });
 });

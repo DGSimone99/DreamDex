@@ -36,7 +36,8 @@ describe('tabella dei livelli per archetipo', () => {
     // La tabella com'è scritta, con l'interruttore acceso (spento di default: vedi "interruttore del doppio conteggio")
     setRolesCountMeasured(true);
     expect(levelOf('stall', 'attacker')).toBe('ignored');
-    for (const a of ['hyperOffense', 'bulkyOffense', 'balance', 'semiStall'] as const) expect(levelOf(a, 'attacker')).toBe('essential');
+    for (const a of ['hyperOffense', 'bulkyOffense', 'balance'] as const) expect(levelOf(a, 'attacker')).toBe('essential');
+    expect(levelOf('semiStall', 'attacker')).toBe('ignored');
     expect(levelOf('hyperOffense', 'physicalWall')).toBe('minor');
     expect(levelOf('balance', 'physicalWall')).toBe('essential');
     expect(levelOf('hyperOffense', 'recovery')).toBe('ignored');

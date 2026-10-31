@@ -93,6 +93,10 @@ export const viaName = (via: string, lang: Lang = 'it'): string => (via === SLOW
 const GENERIC_MOVES = new Set(['weatherball', 'terrainpulse']);
 /** Abilità Paradox: il meteo/campo è un bonus, funzionano anche senza (Booster Energy o nessun boost). */
 const PARADOX = new Set(['protosynthesis', 'quarkdrive']);
+/** Abilità passive che il meteo accende ma di cui il Pokémon non ha bisogno (Manaphy con Hydration): sinergia sì, dipendenza no. */
+const PASSIVE_ABILITIES = new Set(['hydration', 'raindish', 'icebody', 'harvest']);
+/** Abilitatori che potenziano chi li ha (Attacco o Attacco Speciale col proprio meteo/campo): sfruttano da sé la condizione. */
+const SELF_BOOST_ENABLERS = new Set(['orichalcumpulse', 'hadronengine']);
 /** Mosse che il meteo migliora ma che funzionano bene anche senza (precisione o carica): sinergia sì, dipendenza no. */
 const OPTIONAL_MOVES = new Set(['hurricane', 'thunder', 'electroshot', 'blizzard']);
 /** Meteo che fa danno agli avversari a ogni turno: è sempre sfruttato. */
@@ -210,6 +214,7 @@ const DEFENDED_TYPE: Partial<Record<Condition, string>> = { sand: 'Rock', snow: 
 /** L'abilitatore sfrutta da sé la condizione (mosse potenziate, difese, Weather Ball, Solar Beam, velocità bassa in Trick Room). */
 function boostsItself(set: TeamSet, condition: Condition): boolean {
   if (benefits(set).some(b => b.condition === condition)) return true;
+  if (SELF_BOOST_ENABLERS.has(toID(battleAbility(set)))) return true;
   const defended = DEFENDED_TYPE[condition];
   if (defended && ((battleSpecies(set)?.types ?? []) as readonly string[]).includes(defended)) return true;
   const boosted = BOOSTED_TYPE[condition];
@@ -235,7 +240,7 @@ export function unmetBeneficiaries(team: TeamSet[]): TeamConditionIssue[] {
     benefits(member)
       .filter(b => !available.has(b.condition))
       .filter(b => !GENERIC_MOVES.has(toID(b.via)))
-      .filter(b => !PARADOX.has(toID(b.via)) && !OPTIONAL_MOVES.has(toID(b.via)))
+      .filter(b => !PARADOX.has(toID(b.via)) && !OPTIONAL_MOVES.has(toID(b.via)) && !PASSIVE_ABILITIES.has(toID(b.via)))
       .filter(b => b.via !== SLOW)
       .map(b => ({ member: battleName(member), ...b })));
 }
@@ -307,9 +312,14 @@ export interface ConditionConflict {
   setters: string[];
 }
 
-/** Meteo (o campi) diversi nello stesso team si sovrascrivono a vicenda. */
+/**
+ * Meteo (o campi) diversi nello stesso team si sovrascrivono a vicenda. È un conflitto solo se qualcuno nel team
+ * sfrutta una delle condizioni (Swift Swim, Hurricane, Solar Beam…): due meteo automatici che si annullano senza
+ * nessuno che ne dipenda (Kyogre + Koraidon) sono una scelta normale, non un errore (2026-10-30).
+ */
 export function conditionConflicts(team: TeamSet[], lang: Lang = 'it'): ConditionConflict[] {
   const groups: [ConditionConflict['kind'], Condition[]][] = [['meteo', WEATHERS], ['campi', TERRAINS]];
+  const used = new Set(team.flatMap(benefits).filter(b => !GENERIC_MOVES.has(toID(b.via))).map(b => b.condition));
   return groups.flatMap(([kind, group]) => {
     const setters = team.flatMap(member =>
       enables(member)
@@ -317,7 +327,8 @@ export function conditionConflicts(team: TeamSet[], lang: Lang = 'it'): Conditio
         .map(e => ({ condition: e.condition, primal: isPrimal(e), label: `${battleName(member)} (${viaName(e.via, lang)})` })));
     // Due meteo primordiali non si incontrano mai (ognuno sparisce quando esce chi lo porta)
     const clash = setters.some(a => setters.some(b => a.condition !== b.condition && !(a.primal && b.primal)));
-    return clash ? [{ kind, setters: setters.map(s => s.label) }] : [];
+    const dependent = setters.some(s => used.has(s.condition));
+    return clash && dependent ? [{ kind, setters: setters.map(s => s.label) }] : [];
   });
 }
 
@@ -333,7 +344,10 @@ export interface WeakenedMove {
   stab: boolean;
 }
 
-/** Membri le cui mosse sono indebolite dal meteo portato dal team stesso. */
+/**
+ * Membri le cui mosse sono indebolite dal meteo portato dal team stesso. Chi porta un altro meteo (Groudon con
+ * Kyogre nel team) non conta: quando è in campo ha il suo.
+ */
 export function weakenedMoves(team: TeamSet[]): WeakenedMove[] {
   const seen = new Set<Condition>();
   const result: WeakenedMove[] = [];
@@ -344,6 +358,7 @@ export function weakenedMoves(team: TeamSet[]): WeakenedMove[] {
       seen.add(e.condition);
       for (const member of team) {
         if (isPrimal(e) && member !== setter) continue;
+        if (enables(member).some(own => WEATHERS.includes(own.condition) && own.condition !== e.condition)) continue;
         const hit = attackingMoves(member).some(m => m.type === type && toID(m.name) !== 'hydrosteam');
         if (!hit) continue;
         const stab = ((battleSpecies(member)?.types ?? []) as readonly string[]).includes(type);

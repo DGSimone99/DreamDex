@@ -1,18 +1,16 @@
 import { usesMeta } from './analysis';
-import { attackerPanels, metaThreats, panelWeights } from './attackers';
-import { COVERAGE_DEPTH, ownConditions } from './coverage';
-import { bestHit, setKey, standardHit, type FieldCondition, type Hit } from './damage';
+import { metaThreats } from './attackers';
+import { COVERAGE_DEPTH, dexPool, ownConditions } from './coverage';
+import { bestHit, setKey, standardHit, type FieldCondition, type Hit, type Target } from './damage';
 import { ONE_USE_SHARE, rankWeighted, SETUP_SHARE } from './offense';
-import { typeSafety } from './typeSafety';
 import { DEFAULT_FORMAT } from './format';
-import { teraAllowed } from './formats';
-import { effectiveness, weaknessTable } from './types';
+import { pokedexOf, teraAllowed } from './formats';
+import { effectiveness, TYPES } from './types';
 import type { EngineData } from './data';
 import { battleAbility, battleSpecies, dex, getMove, toID } from './dex';
 import { REMOVAL_MOVES } from './roles';
-import { mostCommonSet, type TeamSet } from './sets';
+import type { TeamSet } from './sets';
 import { softScore } from './scale';
-import { topThreats } from './stats';
 
 /** Valore di un colpo standard ricevuto (dal tiro più alto): OHKO 0, 2HKO 0,5, 3HKO 1, 4HKO o più 1,5. */
 export function holdStep(hit: Hit | null): number {
@@ -24,6 +22,13 @@ export function holdStep(hit: Hit | null): number {
 const RECOVERY_MOVES: Record<string, number> = {
   recover: 0.5, roost: 0.5, slackoff: 0.5, softboiled: 0.5, milkdrink: 0.5, moonlight: 0.5, synthesis: 0.5,
   morningsun: 0.5, shoreup: 0.5, strengthsap: 0.5, wish: 0.25, rest: 0.33,
+  leechseed: 0.125, painsplit: 0.25, junglehealing: 0.25, lunarblessing: 0.25,
+};
+/** Le mosse d'attacco che assorbono (Drain Punch, Giga Drain, Horn Leech, Draining Kiss…): circa un ottavo per turno. */
+const DRAIN_RECOVERY = 0.125;
+/** Abilità che curano solo col meteo del team: Rain Dish e Dry Skin con la pioggia, Ice Body con la neve. */
+const WEATHER_HEAL: Record<string, { condition: FieldCondition; heal: number }> = {
+  raindish: { condition: 'rain', heal: 0.0625 }, dryskin: { condition: 'rain', heal: 0.125 }, icebody: { condition: 'snow', heal: 0.0625 },
 };
 /** Recupero dell'abilità e dello strumento. */
 const RECOVERY_ABILITIES: Record<string, number> = { regenerator: 0.33, poisonheal: 0.125 };
@@ -37,8 +42,12 @@ const ROCKS_WITH_REMOVAL = 0.5;
  * il veleno grave di Toxic Orb come media dei primi tre turni (1/16, 2/16, 3/16), Sticky Barb, Black Sludge su chi non è Veleno.
  */
 const ITEM_LOSSES: Record<string, number> = { lifeorb: 0.1, flameorb: 0.0625, toxicorb: 0.125, stickybarb: 0.0625, blacksludge: 0.125 };
-/** Sotto un 3HKO medio il recupero vale metà: un Pokémon con Recover non è un muro se non regge i colpi. */
-const RECOVERY_HOLD = 1;
+/**
+ * Il recupero vale metà se il membro regge meno del 35% dei 36 colpi di tipo (pieno 1, a metà 0,5): un Pokémon con
+ * Recover non è un muro se non regge i colpi. Con l'attaccante forte i muri veri stanno sopra (Toxapex 64%, Slowbro 43%,
+ * Blissey 51%), gli attaccanti sotto (Garchomp 22%, Alakazam 3%).
+ */
+export const RECOVERY_HOLD = 0.35;
 /** Recupero netto per turno che vale 100 di Sostenibilità. */
 export const SUSTAIN_FULL = 0.5;
 
@@ -47,7 +56,7 @@ export interface SustainParts {
   /** Mossa, abilità e strumento che curano (la mossa migliore sola). */
   sources: string[];
   recovery: number;
-  /** Il recupero vale metà: il membro non regge in media un 3HKO. */
+  /** Il recupero vale metà: il membro regge meno del 35% dei colpi di tipo. */
   halved: boolean;
   rocks: number;
   /** Chi toglie gli hazard nel team ("Defog (Corviknight)"): la Stealth Rock è già dimezzata. */
@@ -66,19 +75,30 @@ export function hazardRemover(team: TeamSet[]): string | null {
   return null;
 }
 
-export function sustainParts(set: TeamSet, robustStep: number, remover: string | null = null): SustainParts {
+/**
+ * Le voci della Sostenibilità del membro. `holdShare` è la quota (0–1) dei 36 colpi di tipo che regge (pieno 1, a metà 0,5);
+ * `conditions` il meteo che il team porta (per Rain Dish, Dry Skin, Ice Body).
+ */
+export function sustainParts(set: TeamSet, holdShare: number, remover: string | null = null, conditions: FieldCondition[] = []): SustainParts {
   const ability = toID(battleAbility(set));
   const item = toID(set.item);
-  const best = set.moves.reduce<string | null>((acc, m) => ((RECOVERY_MOVES[toID(m)] ?? 0) > (acc ? RECOVERY_MOVES[toID(acc)] : 0) ? m : acc), null);
-  // Poison Heal cura solo da avvelenato: lo garantisce Toxic Orb
-  const abilityHeal = ability === 'poisonheal' && item !== 'toxicorb' ? 0 : RECOVERY_ABILITIES[ability] ?? 0;
+  const moveHeal = (m: string) => {
+    const move = getMove(m);
+    return RECOVERY_MOVES[toID(m)] ?? (move && move.category !== 'Status' && move.drain ? DRAIN_RECOVERY : 0);
+  };
+  const best = set.moves.reduce<string | null>((acc, m) => (moveHeal(m) > (acc ? moveHeal(acc) : 0) ? m : acc), null);
+  // Poison Heal cura solo da avvelenato: lo garantisce Toxic Orb; Rain Dish, Dry Skin e Ice Body solo col loro meteo
+  const weather = WEATHER_HEAL[ability];
+  const abilityHeal = ability === 'poisonheal' && item !== 'toxicorb' ? 0
+    : weather ? (conditions.includes(weather.condition) ? weather.heal : 0)
+      : RECOVERY_ABILITIES[ability] ?? 0;
   const types: string[] = battleSpecies(set)?.types ?? [];
   // Black Sludge cura solo i Pokémon Veleno: agli altri toglie PS
   const itemHeal = item === 'blacksludge' && !types.includes('Poison') ? 0 : RECOVERY_ITEMS[item] ?? 0;
   const sources = [best, abilityHeal ? battleAbility(set) : null, itemHeal ? set.item : null]
     .filter((x): x is string => !!x);
-  const gross = (best ? RECOVERY_MOVES[toID(best)] : 0) + abilityHeal + itemHeal;
-  const halved = gross > 0 && robustStep < RECOVERY_HOLD;
+  const gross = (best ? moveHeal(best) : 0) + abilityHeal + itemHeal;
+  const halved = gross > 0 && holdShare < RECOVERY_HOLD;
   const magicGuard = ability === 'magicguard';
   const fullRocks = item === 'heavydutyboots' || magicGuard ? 0 : STEALTH_ROCK * effectiveness('Rock', types as never);
   const rocksHalvedBy = fullRocks > 0 ? remover : null;
@@ -94,9 +114,9 @@ export function sustainParts(set: TeamSet, robustStep: number, remover: string |
   return { sources, recovery: halved ? gross / 2 : gross, halved, rocks, rocksHalvedBy, itemLoss, itemLossFrom: itemLoss ? set.item : null };
 }
 
-/** Recupero meno perdite per turno (in quota dei PS); `robustStep` è il valore medio dei colpi standard ricevuti. */
-export function sustainability(set: TeamSet, robustStep: number, remover: string | null = null): number {
-  const parts = sustainParts(set, robustStep, remover);
+/** Recupero meno perdite per turno (in quota dei PS); `holdShare` come in `sustainParts`. */
+export function sustainability(set: TeamSet, holdShare: number, remover: string | null = null, conditions: FieldCondition[] = []): number {
+  const parts = sustainParts(set, holdShare, remover, conditions);
   return parts.recovery - parts.rocks - parts.itemLoss;
 }
 
@@ -125,125 +145,128 @@ export function defensiveSetup(set: TeamSet): { move: string; boosts: { def: num
 
 export interface MemberDefense {
   species: string;
-  /** Mossa di setup difensivo e punti di Robustezza (valore) che porta: metà del guadagno, già dentro fisica, speciale e valore. */
+  /** Mossa di setup difensivo e quanto alza il valore (metà del guadagno, già dentro fisica, speciale e valore). */
   setupMove: string | null;
   setupGain: number;
+  /** Quota (0–100) dei 18 colpi fisici e dei 18 speciali di tipo che regge: pieno 1, a metà 0,5. Solo informazione. */
   physical: number;
   special: number;
+  /** Lo stesso sui 36 colpi: la colonna "Regge i tipi". */
+  hold: number;
+  /** Quota (0–100, pesata per uso) delle minacce del meta che regge: sotto metà PS pieno, sotto il KO a metà. Null senza meta. */
+  metaHold: number | null;
   sustain: number;
   sustainParts: SustainParts;
   value: number;
 }
 
-/** Pesi della Robustezza del membro: Fisica, Speciale, Sostenibilità. */
-export const ROBUSTNESS_WEIGHTS = { physical: 0.4, special: 0.4, sustain: 0.2 };
+/**
+ * Credito di un membro su un colpo standard tipizzato (danno atteso, al massimo 1): pieno se regge 4 colpi o più
+ * (sotto un terzo dei PS), metà se ne regge 3 (sotto la metà), niente da lì in su.
+ */
+export const holdCredit = (x: number): number => (x < 1 / 3 ? 1 : x < 1 / 2 ? 0.5 : 0);
 
-const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
+const dummies = new Map<string, Target>();
 
-/** Colpi standard ricevuti dai due gruppi di attaccanti; per contenuto del set, formato e meta. */
-interface Raw {
-  species: string; physical: (Hit | null)[]; special: (Hit | null)[]; physicalStep: number; specialStep: number;
-  /** Passi medi dopo un uso del setup difensivo (uguali ai normali senza setup). */
-  setupMove: string | null; physicalSetupStep: number; specialSetupStep: number;
-}
-const raws = new Map<string, Raw | null>();
-const RAW_LIMIT = 5000;
-
-/** Abilità che ignorano Intimidate (Mirror Armor lo rimanda indietro); Defiant e Guard Dog invece alzano l'Attacco. */
-const INTIMIDATE_IMMUNE = new Set(['clearbody', 'hypercutter', 'innerfocus', 'oblivious', 'owntempo', 'scrappy', 'fullmetalbody', 'whitesmoke', 'mirrorarmor']);
-const INTIMIDATE_RAISES = new Set(['defiant', 'guarddog']);
-
-/** Il cambio d'Attacco dell'attaccante fisico quando il membro ha Intimidate; `undefined` se non ne ha. */
-export function intimidateBoost(member: TeamSet, attacker: TeamSet): { atk: number } | undefined {
-  if (toID(battleAbility(member)) !== 'intimidate') return undefined;
-  const theirs = toID(battleAbility(attacker));
-  if (INTIMIDATE_IMMUNE.has(theirs)) return undefined;
-  return { atk: INTIMIDATE_RAISES.has(theirs) ? 1 : -1 };
-}
-
-function measure(set: TeamSet, data: EngineData): Raw | null {
-  const species = battleSpecies(set);
-  if (!species) return null;
-  const panels = attackerPanels(data);
-  const mine = ownConditions(set);
-  // Il meteo dell'abilità dell'attaccante vale sempre; quello del membro protegge lui (sabbia sulla Difesa Speciale della Roccia)
-  const setup = defensiveSetup(set);
-  const against = (attacker: TeamSet, category: 'Physical' | 'Special', boosted = false) => {
-    const theirs = ownConditions(attacker);
-    const conditions: FieldCondition[] = theirs.length ? theirs : mine;
-    const boosts = category === 'Physical' ? intimidateBoost(set, attacker) : undefined;
-    return standardHit(attacker, set, category, { conditions, boosts, targetBoosts: boosted ? setup?.boosts : undefined });
+/**
+ * L'attaccante finto della Coverage di tipi: un attaccante forte, con l'Attacco (o l'Attacco Speciale) medio del quarto
+ * più forte dei completamente evoluti del Pokédex del formato; le altre statistiche 100, 252 EV e natura che lo alza,
+ * nessuno strumento né abilità che conti, del tipo del colpo (STAB per tutti allo stesso modo).
+ */
+export function dummyAttacker(data: EngineData, side: 'atk' | 'spa', type: string): Target {
+  const format = { ...DEFAULT_FORMAT, formatId: data.formatId ?? 'ou' };
+  const key = `${pokedexOf(format)}|${side}|${type}`;
+  let dummy = dummies.get(key);
+  if (dummy) return dummy;
+  const values = dexPool(format).map(s => s.baseStats[side]).sort((a, b) => b - a);
+  const top = values.slice(0, Math.max(1, Math.ceil(values.length / 4)));
+  const stat = Math.round(top.reduce((a, b) => a + b, 0) / top.length);
+  dummy = {
+    species: 'Mew', item: '', ability: 'Synchronize', moves: [], nature: side === 'atk' ? 'Adamant' : 'Modest',
+    evs: { [side]: 252 }, types: [type], baseStats: { [side]: stat },
   };
-  const physical = panels.physical.map(a => against(a, 'Physical'));
-  const special = panels.special.map(a => against(a, 'Special'));
-  if (![...physical, ...special].some(Boolean)) return null;
-  // Media pesata per uso: reggere il più usato conta di più
-  const weights = panelWeights(data);
-  const weighted = (hits: (Hit | null)[], w: number[]) => hits.reduce((acc, hit, i) => acc + w[i] * holdStep(hit), 0);
-  const physicalStep = weighted(physical, weights.physical);
-  const specialStep = weighted(special, weights.special);
-  // Dopo un uso del setup: gli attaccanti Unaware lo ignorano (lo decide standardHit)
-  const boostedP = setup ? weighted(panels.physical.map(a => against(a, 'Physical', true)), weights.physical) : physicalStep;
-  const boostedS = setup ? weighted(panels.special.map(a => against(a, 'Special', true)), weights.special) : specialStep;
-  return {
-    species: species.name,
-    physical, special, physicalStep, specialStep,
-    setupMove: setup?.move ?? null, physicalSetupStep: boostedP, specialSetupStep: boostedS,
-  };
+  dummies.set(key, dummy);
+  return dummy;
 }
 
-function rawOf(set: TeamSet, data: EngineData): Raw | null {
-  const key = `${setKey(set)}|${data.formatId ?? 'ou'}|${usesMeta(data)}|${!!data.stats}`;
-  if (raws.has(key)) return raws.get(key)!;
-  if (raws.size >= RAW_LIMIT) raws.clear();
-  const value = measure(set, data);
-  raws.set(key, value);
+const typedCache = new Map<string, { plain: number[]; held: number[] }>();
+const TYPED_LIMIT = 5000;
+
+/**
+ * I 36 colpi standard tipizzati sul membro (per ogni tipo, prima il fisico poi lo speciale): danno atteso, al massimo 1.
+ * `plain` senza setup; `held` con la danza difensiva che conta per metà (uguale a `plain` senza danza).
+ * Il meteo e il terreno che il membro porta con la sua abilità valgono per lui.
+ */
+export function typedHits(member: TeamSet, data: EngineData): { plain: number[]; held: number[] } {
+  const key = `${setKey(member)}|${data.formatId ?? 'ou'}`;
+  const cachedHits = typedCache.get(key);
+  if (cachedHits) return cachedHits;
+  if (typedCache.size >= TYPED_LIMIT) typedCache.clear();
+  const conditions = ownConditions(member);
+  const setup = defensiveSetup(member);
+  const hit = (type: string, category: 'Physical' | 'Special', boosted: boolean) => {
+    const attacker = dummyAttacker(data, category === 'Physical' ? 'atk' : 'spa', type);
+    const result = standardHit(attacker, member, category, { conditions, moveType: type, targetBoosts: boosted ? setup?.boosts : undefined });
+    return Math.min(1, result?.expected ?? 0);
+  };
+  const plain = TYPES.flatMap(type => [hit(type, 'Physical', false), hit(type, 'Special', false)]);
+  const held = setup
+    ? TYPES.flatMap((type, i) => [hit(type, 'Physical', true), hit(type, 'Special', true)].map((boosted, k) => {
+      const x = plain[2 * i + k];
+      return x - SETUP_SHARE * (x - boosted);
+    }))
+    : plain;
+  const value = { plain, held };
+  typedCache.set(key, value);
   return value;
 }
 
-/** Riferimento di riserva senza statistiche: un 3HKO in media vale circa 93. */
-const FALLBACK_STEP = 1;
-/** Il 100 di Robustezza: il 3° più robusto fra i più usati del meta, per lato. */
-const REFERENCE_RANK = 3;
-const REFERENCE_SCAN = 40;
-const references = new Map<string, { physical: number; special: number }>();
+/** Difesa del team: Coverage tipi 50, Coverage meta 30, Sostenibilità 20; senza meta Coverage tipi 80, Sostenibilità 20. */
+export const DEFENSE_SHARES = { types: 0.5, meta: 0.3, sustain: 0.2 };
+export const DEFENSE_SHARES_NO_META = { types: 0.8, sustain: 0.2 };
 
-export function defenseReference(data: EngineData): { physical: number; special: number } {
-  const key = `${data.formatId ?? 'ou'}|${usesMeta(data)}|${!!data.stats}`;
-  let ref = references.get(key);
-  if (ref) return ref;
-  const measured = topThreats(data.stats, REFERENCE_SCAN, [])
-    .map(name => mostCommonSet(data.stats, name))
-    .map(set => (set ? rawOf(set, data) : null))
-    .filter((r): r is Raw => r !== null);
-  const nth = (values: number[]) => values.sort((a, b) => b - a)[Math.min(REFERENCE_RANK, values.length) - 1];
-  const physical = measured.length ? nth(measured.map(r => r.physicalStep)) : 0;
-  const special = measured.length ? nth(measured.map(r => r.specialStep)) : 0;
-  ref = { physical: physical > 0 ? physical : FALLBACK_STEP, special: special > 0 ? special : FALLBACK_STEP };
-  references.set(key, ref);
-  return ref;
-}
+const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
+/** Quota (0–1) dei colpi che il membro regge: pieno 1, a metà 0,5. `side` 0 i fisici, 1 gli speciali, assente tutti. */
+const holdShare = (hits: number[], side?: 0 | 1) => mean(hits.filter((_, i) => side === undefined || i % 2 === side).map(holdCredit));
 
-/** Difesa di un membro: quanti colpi standard regge dai due gruppi di attaccanti, e quanto resta in campo. */
+/** Meteo che i membri del team portano con l'abilità: Rain Dish, Dry Skin e Ice Body curano solo con loro. */
+const teamConditions = (team: TeamSet[]): FieldCondition[] => [...new Set(team.flatMap(member => ownConditions(member)))];
+
+/**
+ * Difesa di un membro, solo informazione (il voto è del team): quanti dei 36 colpi di tipo regge per lato, la
+ * Sostenibilità, e il valore 40/40/20. La danza difensiva conta per metà; `setupGain` è quanto alza il valore.
+ */
 export function memberDefense(set: TeamSet, team: TeamSet[], data: EngineData): MemberDefense | null {
-  const raw = rawOf(set, data);
-  if (!raw) return null;
-  const ref = defenseReference(data);
-  const plainP = softScore(raw.physicalStep / ref.physical);
-  const plainS = softScore(raw.specialStep / ref.special);
-  // Metà del guadagno del setup entra nella Robustezza (come SETUP_SHARE nell'Offesa)
-  const physical = Math.round(plainP + SETUP_SHARE * (softScore(raw.physicalSetupStep / ref.physical) - plainP));
-  const special = Math.round(plainS + SETUP_SHARE * (softScore(raw.specialSetupStep / ref.special) - plainS));
-  const parts = sustainParts(set, (raw.physicalStep + raw.specialStep) / 2, hazardRemover(team));
+  const species = battleSpecies(set);
+  if (!species) return null;
+  const { plain, held } = typedHits(set, data);
+  const parts = sustainParts(set, holdShare(held), hazardRemover(team), teamConditions(team));
   const sustain = softScore(Math.max(0, parts.recovery - parts.rocks - parts.itemLoss) / SUSTAIN_FULL);
-  const w = ROBUSTNESS_WEIGHTS;
-  const plainValue = Math.round(w.physical * plainP + w.special * plainS + w.sustain * sustain);
-  const value = Math.round(w.physical * physical + w.special * special + w.sustain * sustain);
-  return { species: raw.species, setupMove: raw.setupMove, setupGain: value - plainValue, physical, special, sustain, sustainParts: parts, value };
+  // Le minacce del meta: chi regge il colpo migliore vero, pesato per uso
+  const threats = metaThreats(data);
+  const metaHold = threats.length
+    ? Math.round(100 * threats.reduce((acc, { weight }, i) => {
+      const x = Math.min(1, threatHitsOf(set, data)[i]?.expected ?? 0);
+      return acc + weight * (x < HOLD_FULL ? 1 : x < 1 ? 0.5 : 0);
+    }, 0))
+    : null;
+  // Il valore del membro coi pesi della squadra: 50/30/20, senza meta 80/20
+  const valueOf = (hits: number[]) => {
+    // Dai numeri mostrati nelle colonne, così il conto si rifà a mano
+    const hold = Math.round(100 * holdShare(hits));
+    return Math.round(metaHold === null
+      ? DEFENSE_SHARES_NO_META.types * hold + DEFENSE_SHARES_NO_META.sustain * sustain
+      : DEFENSE_SHARES.types * hold + DEFENSE_SHARES.meta * metaHold + DEFENSE_SHARES.sustain * sustain);
+  };
+  const value = valueOf(held);
+  const setup = defensiveSetup(set);
+  return {
+    species: species.name, setupMove: setup?.move ?? null, setupGain: value - valueOf(plain),
+    physical: Math.round(100 * holdShare(held, 0)), special: Math.round(100 * holdShare(held, 1)), hold: Math.round(100 * holdShare(held)),
+    metaHold, sustain, sustainParts: parts, value,
+  };
 }
 
-/** Robustezza e coverage nella Difesa: 50 e 50 (la coverage non va mai oltre il 50%). */
-export const DEFENSE_SHARES = { robustness: 0.5, coverage: 0.5 };
 /** Una minaccia è retta se toglie meno di metà PS; a metà se manda KO in due colpi. */
 const HOLD_FULL = 0.5;
 
@@ -255,19 +278,31 @@ export interface ThreatRow {
   heldBy: { species: string; move: string; pct: number; partial: boolean }[];
 }
 
-export interface TeamDefense {
-  value: number;
+/** Quanti colpi regge sul lato peggiore: KO, 2HKO, 3HKO, 4 o più. */
+export type HoldBand = 'ohko' | 'two' | 'three' | 'four';
+export const holdBand = (x: number): HoldBand => (x >= 1 ? 'ohko' : x >= 1 / 2 ? 'two' : x >= 1 / 3 ? 'three' : 'four');
+
+export interface TypeHoldRow {
+  type: string;
+  /** Copertura del tipo (0–100): la media delle profondità dei due lati. */
+  level: number;
+  /** Profondità (0–100) dei crediti sul colpo fisico e su quello speciale. */
   physical: number;
   special: number;
+  /** Chi regge del tutto il lato peggiore. */
+  heldBy: string[];
+}
+
+export interface TeamDefense {
+  /** Coverage tipi 50 + Coverage meta 30 + Sostenibilità 20 (senza meta 80 + 20). */
+  value: number;
   sustain: number;
-  robustness: number;
-  coverage: number;
-  /** `rows`: per ogni tipo la sicurezza 0–100 e chi è debole o resiste (immuni compresi). */
-  coverageTypes: { value: number; weak: string[]; rows: { type: string; safety: number; weak: string[]; resist: string[] }[] };
+  /** `weak`: i tipi dove nessuno ha credito sul lato peggiore. */
+  coverageTypes: { value: number; weak: string[]; rows: TypeHoldRow[] };
   coverageMeta: { value: number; unanswered: string[]; rows: ThreatRow[] } | null;
   members: MemberDefense[];
-  /** Per ogni attaccante dei due gruppi: danno del colpo standard su ogni membro (tiro più alto, come la soglia; ordine di `members`). */
-  matrix: { species: string; physical: boolean; cells: { pct: number; step: number }[] }[];
+  /** Per ogni membro (ordine di `members`) e tipo (ordine di TYPES): danno % del lato peggiore e dei due lati. */
+  typed: { species: string; cells: { pct: number; physical: number; special: number; band: HoldBand }[] }[];
 }
 
 /** Danno del colpo migliore vero di una minaccia su un membro; Tera e mossa Z della minaccia a un quarto. */
@@ -293,7 +328,7 @@ function threatHitsOf(member: TeamSet, data: EngineData): (Hit | null)[] {
   const key = `${setKey({ ...member, moves: [] })}|${data.formatId ?? 'ou'}|${usesMeta(data)}|${!!data.stats}`;
   let hits = threatCache.get(key);
   if (hits) return hits;
-  if (threatCache.size >= RAW_LIMIT) threatCache.clear();
+  if (threatCache.size >= TYPED_LIMIT) threatCache.clear();
   hits = metaThreats(data).map(({ set }) => threatHit(set, member, data));
   threatCache.set(key, hits);
   return hits;
@@ -301,28 +336,38 @@ function threatHitsOf(member: TeamSet, data: EngineData): (Hit | null)[] {
 
 const depthOf = (credits: number[]) => [...credits].sort((a, b) => b - a).reduce((acc, c, i) => acc + (COVERAGE_DEPTH[i] ?? 0) * c, 0);
 
-/** Difesa del team: robustezza (media pesata per posizione) e coverage difensiva di tipi e, col meta, del meta. */
+/**
+ * Difesa del team. Coverage di tipi: per ognuno dei 36 colpi di tipo (18 tipi × fisico e speciale) i crediti dei
+ * membri con la profondità 70/20/10, poi la media. Coverage meta: chi regge il colpo migliore vero di ogni minaccia.
+ * Sostenibilità: media pesata per posizione. Col meta 50/30/20, senza 80/20.
+ */
 export function teamDefense(team: TeamSet[], data: EngineData): TeamDefense {
-  const known = team.filter(set => rawOf(set, data) !== null);
+  const known = team.filter(set => !!battleSpecies(set));
   const members = known.map(set => memberDefense(set, team, data)!);
-  const physical = rankWeighted(members.map(m => m.physical));
-  const special = rankWeighted(members.map(m => m.special));
   const sustain = rankWeighted(members.map(m => m.sustain));
-  // La robustezza di ogni membro (Fisica e Speciale insieme) pesata per posizione: un muro fisico e uno speciale
-  // non valgono come due muri completi
-  const w = ROBUSTNESS_WEIGHTS;
-  const sides = w.physical + w.special;
-  const robust = rankWeighted(members.map(m => (w.physical * m.physical + w.special * m.special) / sides));
-  const robustness = Math.round(sides * robust + w.sustain * sustain);
 
-  // Coverage di tipi: la media della Sicurezza dei 18 tipi, senza riferimento (100% di media = pieno), sulla scala comune
-  const table = weaknessTable(known);
-  const typeValue = known.length ? softScore(mean(table.map(row => typeSafety(row.multipliers)))) : 0;
-  const weak = table.filter(row => row.pressure > 0).map(row => row.type);
+  // Coverage di tipi sui colpi
+  const hits = known.map(set => typedHits(set, data).held);
+  const columnDepth = (c: number) => depthOf(hits.map(h => holdCredit(h[c])));
+  const depths = Array.from({ length: 2 * TYPES.length }, (_, c) => columnDepth(c));
+  const typeValue = known.length ? softScore(mean(depths)) : 0;
   const names = members.map(m => m.species);
-  const typeRows = table.map(row => ({
-    type: row.type, safety: Math.round(100 * typeSafety(row.multipliers)),
-    weak: names.filter((_, i) => row.multipliers[i] > 1), resist: names.filter((_, i) => row.multipliers[i] < 1),
+  const rows = TYPES.map((type, i) => {
+    const [p, s] = [depths[2 * i], depths[2 * i + 1]];
+    // Il lato peggiore del tipo: quello dove i membri reggono meno
+    const worse = p <= s ? 2 * i : 2 * i + 1;
+    return {
+      type, level: Math.round(100 * (p + s) / 2), physical: Math.round(100 * p), special: Math.round(100 * s),
+      heldBy: names.filter((_, m) => holdCredit(hits[m][worse]) === 1),
+    };
+  });
+  const weak = rows.filter(row => Math.min(row.physical, row.special) === 0).map(row => row.type);
+  const typed = known.map((set, m) => ({
+    species: names[m],
+    cells: TYPES.map((_, i) => {
+      const [p, s] = [hits[m][2 * i], hits[m][2 * i + 1]];
+      return { pct: Math.floor(100 * Math.max(p, s)), physical: Math.floor(100 * p), special: Math.floor(100 * s), band: holdBand(Math.max(p, s)) };
+    }),
   }));
 
   // Coverage meta: per ogni minaccia, chi regge il suo colpo migliore vero
@@ -330,7 +375,7 @@ export function teamDefense(team: TeamSet[], data: EngineData): TeamDefense {
   let coverageMeta: TeamDefense['coverageMeta'] = null;
   if (threats.length && known.length) {
     let total = 0;
-    const rows = threats.map(({ set: threat, weight }, i) => {
+    const threatRows = threats.map(({ set: threat, weight }, i) => {
       const heldBy = known.flatMap(member => {
         const hit = threatHitsOf(member, data)[i];
         const x = Math.min(1, hit?.expected ?? 0);
@@ -341,22 +386,11 @@ export function teamDefense(team: TeamSet[], data: EngineData): TeamDefense {
       total += weight * level;
       return { species: threat.species, weight, level: Math.round(100 * level), heldBy };
     });
-    coverageMeta = { value: softScore(total), unanswered: rows.filter(r => !r.heldBy.some(h => !h.partial)).map(r => r.species), rows };
+    coverageMeta = { value: softScore(total), unanswered: threatRows.filter(r => !r.heldBy.some(h => !h.partial)).map(r => r.species), rows: threatRows };
   }
-  const coverage = coverageMeta ? Math.round((typeValue + coverageMeta.value) / 2) : typeValue;
 
-  const panels = attackerPanels(data);
-  const raws = known.map(set => rawOf(set, data)!);
-  const row = (attacker: TeamSet, i: number, physicalSide: boolean) => ({
-    species: attacker.species, physical: physicalSide,
-    cells: raws.map(r => { const hit = (physicalSide ? r.physical : r.special)[i]; return { pct: Math.floor(100 * Math.min(1, hit?.max ?? 0)), step: holdStep(hit) }; }),
-  });
-  return {
-    value: known.length ? Math.round(DEFENSE_SHARES.robustness * robustness + DEFENSE_SHARES.coverage * coverage) : 0,
-    physical, special, sustain, robustness, coverage,
-    coverageTypes: { value: typeValue, weak, rows: typeRows },
-    coverageMeta,
-    members,
-    matrix: [...panels.physical.map((a, i) => row(a, i, true)), ...panels.special.map((a, i) => row(a, i, false))],
-  };
+  const value = !known.length ? 0 : coverageMeta
+    ? Math.round(DEFENSE_SHARES.types * typeValue + DEFENSE_SHARES.meta * coverageMeta.value + DEFENSE_SHARES.sustain * sustain)
+    : Math.round(DEFENSE_SHARES_NO_META.types * typeValue + DEFENSE_SHARES_NO_META.sustain * sustain);
+  return { value, sustain, coverageTypes: { value: typeValue, weak, rows }, coverageMeta, members, typed };
 }

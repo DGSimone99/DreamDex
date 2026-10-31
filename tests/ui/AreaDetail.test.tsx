@@ -23,26 +23,27 @@ async function openOffense(lang: 'it' | 'en') {
 }
 
 describe("dettaglio dell'Offesa a schede", () => {
-  it('quattro schede col loro valore; si parte da Generale con le sottostatistiche e i membri', async () => {
+  it('quattro schede col loro valore (niente Wallbreaking); si parte da Generale con le sottostatistiche e i membri', async () => {
     const { dialog } = await openOffense('it');
     const tabs = within(dialog).getAllByRole('tab');
-    expect(tabs.map(tab => tab.textContent!.replace(/\s*\d+$/, ''))).toEqual(['Generale', 'Coverage tipi', 'Potenza', 'Wallbreaking', 'Coverage meta']);
+    expect(tabs.map(tab => tab.textContent!.replace(/\s*\d+$/, ''))).toEqual(['Generale', 'Coverage tipi', 'Potenza', 'Coverage meta']);
     expect(tabs[0]).toHaveAttribute('aria-selected', 'true');
     const panel = within(dialog).getByRole('tabpanel');
-    // Quattro tessere cliccabili al posto delle sottostatistiche
-    expect(within(panel).getAllByRole('button').map(btn => btn.querySelector('.def-tile-head span')!.textContent)).toEqual(['Coverage tipi', 'Potenza', 'Wallbreaking', 'Coverage meta']);
+    // Tre tessere cliccabili al posto delle sottostatistiche
+    expect(within(panel).getAllByRole('button').map(btn => btn.querySelector('.def-tile-head span')!.textContent)).toEqual(['Coverage tipi', 'Potenza', 'Coverage meta']);
     const table = within(panel).getByRole('table');
-    expect(within(table).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Potenza', 'Wallbreaking', 'Coverage', 'Offesa']);
+    expect(within(table).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Potenza', 'Coverage tipi', 'Coverage meta', 'Offesa']);
     const rows = within(table).getAllByRole('row').slice(1);
     expect(rows.map(r => r.querySelector('.def-mon-name')!.textContent)).toEqual(['Great Tusk', 'Gholdengo']);
     for (const row of rows) {
       const cells = within(row).getAllByRole('cell');
-      // Il Wallbreaking, con tra parentesi quanto lo alza il setup nel voto (tooltip "Con il setup")
-      expect(cells[1]).toHaveTextContent(/^\d+( \(\+\d+\))?$/);
+      // La Potenza, con tra parentesi quanto la alzano il setup e Tera o mossa Z nel voto
+      expect(cells[0]).toHaveTextContent(/^\d+( \(\+\d+\))*$/);
+      expect(cells[1]).toHaveTextContent(/^\d+%$/);
       expect(cells[2]).toHaveTextContent(/^\d+%$/);
-      // L'Offesa del membro, con tra parentesi quanto aggiunge Tera o mossa Z (tooltip "Con Tera…")
-      expect(cells[3]).toHaveTextContent(/^\d+( \(\+\d+\))?$/);
-      const once = cells[3].querySelector('.ad-once');
+      // L'Offesa del membro, coi pesi della squadra
+      expect(cells[3]).toHaveTextContent(/^\d+$/);
+      const once = cells[0].querySelector('.ad-once');
       if (once) expect(once.getAttribute('title')).toMatch(/^Con (Tera|la mossa Z)/);
     }
     // Il "+N" sta nel suo posto della cella della barra (non sborda nella colonna dopo)
@@ -68,21 +69,6 @@ describe("dettaglio dell'Offesa a schede", () => {
     expect(within(panel).getAllByRole('row').length).toBe(3);
   });
 
-  it('Wallbreaking: membri in riga, il danno su ogni muro (12 muri + valore)', async () => {
-    const { user, dialog } = await openOffense('it');
-    await user.click(within(dialog).getByRole('tab', { name: /^Wallbreaking/ }));
-    const panel = within(dialog).getByRole('tabpanel');
-    // Intestazione, un membro per riga (2), riga "Lo sfondano"
-    const rows = within(panel).getAllByRole('row').slice(1, -1);
-    expect(rows).toHaveLength(2);
-    for (const row of rows) {
-      const cells = within(row).getAllByRole('cell');
-      // 12 muri + il valore del membro
-      expect(cells).toHaveLength(13);
-      for (const cell of cells.slice(0, 12)) expect(cell).toHaveTextContent(/^\d+%( (OHKO|2HKO|3HKO))?(setup \d+%)?$/);
-    }
-  });
-
   it('Coverage tipi: i 18 tipi, i buchi e chi li copre', async () => {
     const { user, dialog } = await openOffense('it');
     await user.click(within(dialog).getByRole('tab', { name: /^Coverage tipi/ }));
@@ -92,12 +78,17 @@ describe("dettaglio dell'Offesa a schede", () => {
     expect(within(typesPanel).getAllByRole('row').at(-1)).toHaveTextContent(/^Copertura/);
   });
 
-  it('Coverage meta: le tessere dei bersagli, ognuna con il livello nel nome accessibile', async () => {
+  it('Coverage meta: una tabella membri × bersagli, con la riga Lo coprono', async () => {
     const { user, dialog } = await openOffense('it');
     await user.click(within(dialog).getByRole('tab', { name: /^Coverage meta/ }));
-    const tiles = within(within(dialog).getByRole('tabpanel')).getAllByRole('listitem');
-    expect(tiles.length).toBeGreaterThan(0);
-    for (const tile of tiles) expect(tile.getAttribute('aria-label')).toMatch(/^.+: \d+%, .+$/);
+    const panel = within(dialog).getByRole('tabpanel');
+    const rows = within(panel).getAllByRole('row');
+    // Intestazione, due membri, Lo coprono
+    expect(rows).toHaveLength(4);
+    for (const row of rows.slice(1, 3)) {
+      for (const cell of within(row).getAllByRole('cell')) expect(cell).toHaveTextContent(/^\d+%( (OHKO|2HKO|3HKO))?(setup \d+%)?$/);
+    }
+    expect(rows[3]).toHaveTextContent(/^Lo coprono/);
   });
 
   it('frecce fra le schede; nessuna finestra', async () => {
@@ -110,8 +101,8 @@ describe("dettaglio dell'Offesa a schede", () => {
 
   it('in inglese', async () => {
     const { dialog } = await openOffense('en');
-    expect(within(dialog).getAllByRole('tab').map(tab => tab.textContent!.replace(/\s*\d+$/, ''))).toEqual(['General', 'Type coverage', 'Power', 'Wallbreaking', 'Meta coverage']);
-    expect(within(dialog).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Power', 'Wallbreaking', 'Coverage', 'Offense']);
+    expect(within(dialog).getAllByRole('tab').map(tab => tab.textContent!.replace(/\s*\d+$/, ''))).toEqual(['General', 'Type coverage', 'Power', 'Meta coverage']);
+    expect(within(dialog).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Power', 'Type coverage', 'Meta coverage', 'Offense']);
   });
 });
 
@@ -120,57 +111,28 @@ async function openDefense(lang: 'it' | 'en') {
 }
 
 describe('dettaglio della Difesa a schede', () => {
-  it('cinque schede col loro valore; Generale con le sottostatistiche e Fisica, Speciale, Sostenibilità di ogni membro', async () => {
+  it('quattro schede col loro valore; Generale con le sottostatistiche e Fisica, Speciale, Sostenibilità di ogni membro', async () => {
     const { dialog } = await openDefense('it');
     const tabs = within(dialog).getAllByRole('tab');
-    expect(tabs.map(tab => tab.textContent!.replace(/\s*\d+$/, ''))).toEqual(['Generale', 'Coverage tipi', 'Robustezza', 'Sostenibilità', 'Coverage meta']);
+    expect(tabs.map(tab => tab.textContent!.replace(/\s*\d+$/, ''))).toEqual(['Generale', 'Coverage tipi', 'Sostenibilità', 'Coverage meta']);
     for (const tab of tabs) expect(tab.textContent).toMatch(/\d+$/);
     const panel = within(dialog).getByRole('tabpanel');
-    expect(within(panel).getAllByRole('button').map(b => b.querySelector('.def-tile-head span')!.textContent)).toEqual(['Coverage tipi', 'Robustezza', 'Sostenibilità', 'Coverage meta']);
+    expect(within(panel).getAllByRole('button').map(b => b.querySelector('.def-tile-head span')!.textContent)).toEqual(['Coverage tipi', 'Sostenibilità', 'Coverage meta']);
     const table = within(panel).getByRole('table');
-    expect(within(table).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Fisica', 'Speciale', 'Sostenibilità', 'Difesa']);
+    expect(within(table).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Regge i tipi', 'Regge il meta', 'Sostenibilità', 'Difesa']);
     const rows = within(table).getAllByRole('row').slice(1);
     expect(rows.map(r => within(r).getByRole('rowheader').querySelector('.def-mon-name')!.textContent)).toEqual(['Great Tusk', 'Gholdengo']);
-    for (const row of rows) for (const cell of within(row).getAllByRole('cell')) expect(cell).toHaveTextContent(/^\d+( \(\+\d+\))?$/);
+    for (const row of rows) for (const cell of within(row).getAllByRole('cell')) expect(cell).toHaveTextContent(/^\d+%?( \(\+\d+\))?$/);
   });
 
-  it('Coverage tipi: i punti per tipo (immunità +2 ... ×4 −2) stanno nella guida, non sulla pagina', async () => {
+  it('Coverage tipi: la regola (attaccante forte, 4HKO pieno, 3HKO a metà) sta nella guida, non sulla pagina', async () => {
     const { user, dialog } = await openDefense('it');
     await user.click(within(dialog).getByRole('tab', { name: /^Coverage tipi/ }));
-    expect(within(dialog).getByRole('tabpanel')).not.toHaveTextContent('immunità +2');
+    expect(within(dialog).getByRole('tabpanel')).not.toHaveTextContent('quarto più forte');
     await user.click(within(dialog).getByRole('button', { name: 'Come funziona Coverage tipi' }));
     const guide = within(screen.getByRole('dialog')).getByRole('tabpanel');
-    for (const text of ['Immunità', '+2', '×¼', '+1,5', '×½', 'Neutro', '×2', '−1', '×4', '−2']) expect(guide).toHaveTextContent(text);
-  });
-
-  it('Robustezza: attaccanti fisici e speciali per membro, con il danno del colpo standard e la soglia', async () => {
-    const { user, dialog } = await openDefense('it');
-    await user.click(within(dialog).getByRole('tab', { name: /^Robustezza/ }));
-    const panel = within(dialog).getByRole('tabpanel');
-    expect(panel).not.toHaveTextContent(/potenza 100/);
-    expect(panel).toHaveTextContent('Attaccanti fisici');
-    expect(panel).toHaveTextContent('Attaccanti speciali');
-    // Membri in riga: ognuno con 20 attaccanti più il valore di Fisica e Speciale
-    const members = within(panel).getAllByRole('row').filter(r => within(r).queryAllByRole('rowheader').length);
-    expect(members).toHaveLength(2);
-    for (const row of members) expect(within(row).getAllByRole('cell')).toHaveLength(22);
-    // Ogni casella dice la soglia: OHKO, 2HKO, 3HKO o 4HKO e oltre
-    const cells = [...panel.querySelectorAll('td.rob-cell')];
-    expect(cells).toHaveLength(40);
-    expect(cells.every(k => /^(OHKO|2HKO|3HKO|4HKO\+)$/.test(k.getAttribute('title')!))).toBe(true);
-    expect(panel).toHaveTextContent(/4HKO\+/);
-    // Percentuale e soglia dallo stesso tiro (il più alto): 2HKO vuol dire almeno 50%
-    const LIMITS: Record<string, [number, number]> = { OHKO: [100, 100], '2HKO': [50, 99], '3HKO': [33, 49], '4HKO+': [0, 33] };
-    for (const tag of cells) {
-      const pct = Number(tag.textContent!.match(/^(\d+)%/)![1]);
-      const [lo, hi] = LIMITS[tag.getAttribute('title')!];
-      expect(pct).toBeGreaterThanOrEqual(lo);
-      expect(pct).toBeLessThanOrEqual(hi);
-      // La soglia non sta solo nel colore: anche in testo per i lettori di schermo
-      expect(tag.querySelector('.visually-hidden')?.textContent).toBe(` ${tag.getAttribute('title')}`);
-    }
-    // Un gruppo di colonne per lato, ognuno col suo titolo
-    expect(within(panel).getAllByRole('columnheader').filter(h => h.getAttribute('colspan')).map(h => h.textContent)).toEqual(['Attaccanti fisici', 'Attaccanti speciali']);
+    for (const text of ['quarto più forte', '4HKO', '3HKO', '2HKO', '70%']) expect(guide).toHaveTextContent(text);
+    expect(guide).not.toHaveTextContent('+1,5');
   });
 
   it('Sostenibilità: recupero, Stealth Rock e strumenti per membro', async () => {
@@ -191,14 +153,15 @@ describe('dettaglio della Difesa a schede', () => {
     }
   });
 
-  it('Coverage tipi: una tabella membri × 18 tipi con Deboli, Resistono e Sicurezza per tipo', async () => {
+  it('Coverage tipi: una tabella membri × 18 tipi con Lo reggono e Copertura per tipo', async () => {
     const { user, dialog } = await openDefense('it');
     await user.click(within(dialog).getByRole('tab', { name: /^Coverage tipi/ }));
     const table = within(within(dialog).getByRole('tabpanel')).getByRole('table');
-    expect(within(table).getAllByRole('row')).toHaveLength(6); // testata, 2 membri, Deboli, Resistono, Sicurezza
-    const safety = within(table).getByRole('row', { name: /^Sicurezza/ });
-    expect(within(safety).getAllByRole('cell')).toHaveLength(18);
-    for (const cell of within(safety).getAllByRole('cell')) expect(cell).toHaveTextContent(/^\d+%$/);
+    expect(within(table).getAllByRole('row')).toHaveLength(5); // testata, 2 membri, Lo reggono, Copertura
+    const safety = within(table).getByRole('row', { name: /^Copertura/ });
+    const cells = within(safety).getAllByRole('cell').slice(0, 18);
+    expect(cells).toHaveLength(18);
+    for (const cell of cells) expect(cell).toHaveTextContent(/^\d+%$/);
   });
 
   it('Coverage meta: una tessera per minaccia con quanto è retta e chi la regge', async () => {
@@ -211,8 +174,12 @@ describe('dettaglio della Difesa a schede', () => {
 
   it('in inglese', async () => {
     const { dialog } = await openDefense('en');
-    expect(within(dialog).getAllByRole('tab').map(tab => tab.textContent!.replace(/\s*\d+$/, ''))).toEqual(['General', 'Type coverage', 'Robustness', 'Sustainability', 'Meta coverage']);
-    expect(within(dialog).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Physical', 'Special', 'Sustainability', 'Defense']);
+    expect(within(dialog).getAllByRole('tab').map(tab => tab.textContent!.replace(/\s*\d+$/, ''))).toEqual(['General', 'Type coverage', 'Sustainability', 'Meta coverage']);
+    const { user } = { user: userEvent.setup() };
+    await user.click(within(dialog).getByRole('tab', { name: /^Type coverage/ }));
+    expect(within(within(dialog).getByRole('tabpanel')).getByRole('rowheader', { name: 'Take it' })).toBeInTheDocument();
+    await user.click(within(dialog).getByRole('tab', { name: /^General/ }));
+    expect(within(dialog).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Holds types', 'Holds meta', 'Sustainability', 'Defense']);
   });
 });
 

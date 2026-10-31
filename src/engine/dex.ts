@@ -85,6 +85,8 @@ function itemFormes(): Map<string, string> {
 /** Abilità in battaglia: una forma Mega/Primal usa la propria abilità, non quella del set base. */
 export function battleAbility(set: { species: string; item: string; ability: string }): string {
   const forme = battleSpecies(set);
+  // Mega e Primal hanno una sola abilità: vale anche se il set dichiara quella della forma base (Groudon-Primal con Drought)
+  if (forme && (forme.isMega || forme.isPrimal)) return forme.abilities[0];
   return forme && forme.name !== getSpecies(set.species)?.name ? forme.abilities[0] : set.ability;
 }
 

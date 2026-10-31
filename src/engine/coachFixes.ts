@@ -130,6 +130,10 @@ export function coachFixes(team: TeamSet[], format: Format, data: EngineData, pr
   const forme = (set: TeamSet) => battleSpecies(set)?.name ?? set.species;
   const changes = problemChanges(team, format, data, problems, lang);
 
+  // Membri con un problema di regole (specie, Mega, strumento… non legali nel formato)
+  const illegal = new Set(problems.filter(p => p.category === 'rules').flatMap(p => p.subjects ?? []));
+  const solvesRules = (c: { solves: string[] }) => c.solves.some(key => key.startsWith('rules:'));
+
   const fixes: CoachFix[] = [];
   team.forEach((member, index) => {
     // I preferiti non si propongono come membri da sostituire; niente doppioni (stesse regole di bestSwaps)
@@ -137,8 +141,17 @@ export function coachFixes(team: TeamSet[], format: Format, data: EngineData, pr
     const others = new Set(team.filter((_, i) => i !== index).map(base));
     const ranked = rankedReplacements(team, index, format, data, SWAPS_PER_MEMBER, lang, archetype)
       .filter(c => !others.has(base(c.set)) && forme(c.set) !== forme(member));
-    for (const c of keepSwaps(ranked, x => changes(withCandidate(team, x.set, index)), FIXES_PER_MEMBER)) {
-      fixes.push({ kind: 'swap', species: c.species, set: c.set, index, member: battleName(member), gain: c.teamGain!.gain, solves: c.solves, reduces: c.reduces });
+    const delta = (x: (typeof ranked)[number]) => changes(withCandidate(team, x.set, index));
+    const kept = keepSwaps(ranked, delta, FIXES_PER_MEMBER);
+    // Un membro illegale va sostituito comunque: se nessun cambio tenuto risolve le regole, il migliore che lo fa, anche a voto pari o più basso
+    if (illegal.has(battleName(member)) && !kept.some(solvesRules)) {
+      for (const c of ranked) {
+        const d = delta(c);
+        if (solvesRules(d)) { kept.push({ ...c, solves: d.solves, reduces: d.reduces }); break; }
+      }
+    }
+    for (const c of kept) {
+      fixes.push({ kind: 'swap', species: c.species, set: c.set, index, member: battleName(member), gain: c.teamGain?.gain ?? 0, solves: c.solves, reduces: c.reduces });
     }
   });
   if (team.length < 6) {

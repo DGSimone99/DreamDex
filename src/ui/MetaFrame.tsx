@@ -15,16 +15,19 @@ export function MetaCount({ n, tone, label }: { n: number; tone: 'good' | 'warn'
 export type MetaLabels = { pages: string; prev: string; next: string; page: (from: number, to: number) => string };
 
 /**
- * Cornice di Coverage meta, uguale per Difesa e Offesa: in alto le pagine e il riepilogo, sotto la griglia 4 × 2 di
- * tessere. Le righe arrivano già ordinate; la cornice taglia la pagina e disegna ogni tessera con `tile`.
+ * Cornice di Coverage meta per Difesa e Offesa. Con `tile`: in alto le pagine e il riepilogo, sotto la griglia 4 × 2 di
+ * tessere. Con `body`: il corpo lo disegna chi chiama (la tabella dell'Offesa) e riceve la barra di pagine e riepilogo
+ * da mettere dove serve. Le righe arrivano già ordinate; la cornice taglia la pagina.
  */
-export function MetaFrame<R>({ rows, roomy, summary, tile, labels }: { rows: R[]; roomy?: boolean; summary: ReactNode; tile: (row: R) => ReactNode; labels: MetaLabels }) {
+export function MetaFrame<R>({ rows, roomy, summary, tile, body, labels }: {
+  rows: R[]; roomy?: boolean; summary: ReactNode; labels: MetaLabels;
+  tile?: (row: R) => ReactNode; body?: (shown: R[], bar: ReactNode) => ReactNode;
+}) {
   const [page, setPage] = useState(0);
   const pages = Math.max(1, Math.ceil(rows.length / META_PAGE));
   const current = Math.min(page, pages - 1);
   const shown = rows.slice(current * META_PAGE, (current + 1) * META_PAGE);
-  return (
-    <div className={`cm-frame${roomy ? ' roomy' : ''}`}>
+  const bar = (
       <div className="cm-bar">
         <nav className="cm-pages" aria-label={labels.pages}>
           <button type="button" className="cm-step" aria-label={labels.prev} disabled={current === 0} onClick={() => setPage(current - 1)}>
@@ -43,7 +46,12 @@ export function MetaFrame<R>({ rows, roomy, summary, tile, labels }: { rows: R[]
         </nav>
         <p className="cm-summary">{summary}</p>
       </div>
-      <ul className="cm-grid">{shown.map(tile)}</ul>
+  );
+  if (body) return <>{body(shown, bar)}</>;
+  return (
+    <div className={`cm-frame${roomy ? ' roomy' : ''}`}>
+      {bar}
+      <ul className="cm-grid">{shown.map(row => tile!(row))}</ul>
     </div>
   );
 }
