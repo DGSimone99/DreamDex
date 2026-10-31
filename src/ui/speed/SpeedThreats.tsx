@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { battleSpecies } from '../../engine/dex';
-import type { SpeedCell, SpeedCondition, SpeedThreat, TeamSpeed } from '../../engine/speedArea';
+import type { MemberSpeed, SpeedCell, SpeedCondition, SpeedThreat, TeamSpeed } from '../../engine/speedArea';
 import { useT } from '../../i18n/react';
 import type { AreaContext } from '../AreaDetail';
 import { MemberMon } from '../defense/MemberMon';
@@ -11,12 +11,6 @@ import { PokemonIcon } from '../PokemonName';
 type Kind = 'full' | 'tie' | 'own' | 'team' | 'none';
 const KINDS: Kind[] = ['full', 'tie', 'own', 'team', 'none'];
 const TEAM_CONDITIONS: SpeedCondition[] = ['web', 'trickroom', 'tailwind', 'slow'];
-/** Il nome corto dei setup nella cella (gli altri prendono la prima parola della mossa). */
-const SHORT: Record<string, string> = {
-  'Dragon Dance': 'DD', 'Quiver Dance': 'QD', 'Shell Smash': 'Smash', 'Shift Gear': 'Gear', 'Rock Polish': 'Polish',
-  'Victory Dance': 'VD', 'Tidy Up': 'Tidy', 'Flame Charge': 'Charge', 'Rapid Spin': 'Spin', 'Aqua Step': 'Step', 'Esper Wing': 'Wing',
-  'Thunder Wave': 'T-Wave', 'Stun Spore': 'Spore', 'Icy Wind': 'Icy', 'Low Sweep': 'Sweep', 'Rock Tomb': 'Tomb',
-};
 /** Quanti membri lo superano da soli: 0 rosso, 1 giallo, da 2 verde. */
 const outspedTone = (n: number) => (n === 0 ? 'bad' : n === 1 ? 'warn' : 'good');
 
@@ -49,39 +43,30 @@ export function SpeedThreats({ speed, meta, ctx }: { speed: TeamSpeed; meta: boo
   const mark = (th: { scarf: boolean; booster: boolean }) =>
     th.scarf ? t('sdetail.mark.scarf') : th.booster ? t('sdetail.mark.booster') : '';
 
-  const label = (c: SpeedCell, kind: Kind) => {
-    if (kind === 'full') return t('sdetail.cell.yes');
-    if (kind === 'tie') return t('sdetail.cell.tie');
-    if (kind === 'none') return '—';
-    const source = c.source ?? '';
-    switch (c.via) {
-      case 'setup': case 'slow': return SHORT[source] ?? source.split(' ')[0];
-      case 'priority': return t('sdetail.cell.prio');
-      case 'trickroom': return t('sdetail.cell.tr');
-      case 'web': return t('sdetail.cell.web');
-      case 'tailwind': return t('sdetail.cell.tailwind');
-      case 'weather': return t('sdetail.cell.weather');
-      case 'booster': return t('sdetail.cell.booster');
-      case 'unburden': return t('sdetail.cell.unburden');
-      default: return source;
-    }
-  };
-  const how = (c: SpeedCell, kind: Kind) => {
+  /** La risposta nella cella: Sì se lo supera da solo, Pari, altrimenti No (con sotto la condizione che lo fa arrivare prima). */
+  const label = (kind: Kind) => (kind === 'full' ? t('sdetail.cell.yes') : kind === 'tie' ? t('sdetail.cell.tie') : t('sdetail.cell.no'));
+  /** Chi porta la mossa di controllo (Sticky Web di Ribombee), per il suggerimento. */
+  const bringer = (m: MemberSpeed, c: SpeedCell) => (c.via && TEAM_CONDITIONS.includes(c.via) ? m.gains.find(g => g.condition === c.via && g.source === c.source)?.by?.join(', ') ?? '' : '');
+  const how = (m: MemberSpeed, c: SpeedCell, kind: Kind) => {
     if (kind === 'full') return t('sdetail.how.full');
     if (kind === 'tie') return t('sdetail.how.tie');
     if (kind === 'none') return t('sdetail.how.none');
-    return t(c.via === 'priority' ? 'sdetail.how.priority' : 'sdetail.how.via', { source: c.source ?? '' });
+    const by = bringer(m, c);
+    const source = by ? t('sdetail.how.by', { source: c.source ?? '', by }) : c.source ?? '';
+    return t(c.via === 'priority' ? 'sdetail.how.priority' : 'sdetail.how.via', { source });
   };
-  const cell = (th: SpeedThreat, col: number, member: SpeedCell[] | null, memberName: string, memberSpeed: number, row: number) => {
-    const c = member?.[th.index];
-    if (!c || !c.weight) return <td key={th.index} className={colClass(col, 'rob-cell sp-cell sp-none')}>—</td>;
+  const cell = (th: SpeedThreat, col: number, m: MemberSpeed | null, memberName: string, row: number) => {
+    const c = m?.cells[th.index];
+    if (!m || !c || !c.weight) return <td key={th.index} className={colClass(col, 'rob-cell sp-cell sp-none')}>—</td>;
     const kind = kindOf(c);
     const rivalMark = mark(th);
-    const tip = t('sdetail.cell.tip', { member: memberName, speed: memberSpeed, rival: th.species, rivalSpeed: th.speed, mark: rivalMark ? ` (${rivalMark})` : '', how: how(c, kind) });
+    const tip = t('sdetail.cell.tip', { member: memberName, speed: m.speed, rival: th.species, rivalSpeed: th.speed, mark: rivalMark ? ` (${rivalMark})` : '', how: how(m, c, kind) });
+    const plus = kind === 'own' || kind === 'team';
     return (
-      <td key={th.index} className={colClass(col, `rob-cell sp-cell sp-${kind}`)} title={tip} onMouseEnter={() => setHover({ row, col })}>
-        <span className="sp-cell-text">{label(c, kind)}</span>
-        <span className="visually-hidden"> {how(c, kind)}</span>
+      <td key={th.index} className={colClass(col, `rob-cell sp-cell sp-${kind}${plus ? ' has-plus' : ''}`)} title={tip} onMouseEnter={() => setHover({ row, col })}>
+        <span className="sp-cell-text">{label(kind)}</span>
+        {plus && <small className="sp-cell-via" aria-hidden="true">+ {c.source}</small>}
+        <span className="visually-hidden"> {how(m, c, kind)}</span>
       </td>
     );
   };
@@ -118,7 +103,7 @@ export function SpeedThreats({ speed, meta, ctx }: { speed: TeamSpeed; meta: boo
               return (
                 <tr key={`${name}-${row}`} className={hover?.row === row ? 'x-row' : undefined}>
                   <th scope="row"><MemberMon name={name} set={set} stats="offense" /></th>
-                  {shown.map((th, col) => cell(th, col, m?.cells ?? null, name, m?.speed ?? 0, row))}
+                  {shown.map((th, col) => cell(th, col, m, name, row))}
                 </tr>
               );
             })}

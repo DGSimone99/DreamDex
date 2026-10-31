@@ -38,7 +38,10 @@
 .sp-controls { gap: 6px; flex-wrap: wrap; white-space: normal; }
 .sp-control-move { padding: 1px 6px; border: 1px solid var(--line); border-radius: 3px; font-size: 12px; }
 /* Chi supera: le celle per quanto il membro arriva prima */
-.def-frame .sp-cell { font: 700 clamp(11px, calc(var(--def-row) * 0.2), 15px)/1.05 var(--ui); text-align: center; }
+.def-frame .sp-cell { padding: 2px 3px; font: 700 clamp(11px, calc(var(--def-row) * 0.2), 15px)/1.05 var(--ui); text-align: center; }
+.def-frame .sp-cell .sp-cell-text { display: block; }
+/* La condizione che lo fa arrivare prima, sotto la risposta: "+ Stun Spore" */
+.def-frame .sp-cell .sp-cell-via { display: block; max-width: 100%; margin-top: 2px; overflow: hidden; font: 600 clamp(9px, calc(var(--def-row) * 0.15), 11px)/1.1 var(--ui); white-space: nowrap; text-overflow: ellipsis; opacity: 0.9; }
 .sp-full { background: color-mix(in srgb, var(--good) 34%, var(--panel)); color: var(--text); }
 .sp-tie { background: color-mix(in srgb, var(--warn) 30%, var(--panel)); color: var(--text); }
 .sp-own { background: color-mix(in srgb, var(--warn) 18%, var(--panel)); color: var(--text); }
