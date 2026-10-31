@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { coverageTargets, teamCoverage } from '../../src/engine/coverage';
+import { coverageTargets, teamCoverage, typeAverage } from '../../src/engine/coverage';
 import { bestHit } from '../../src/engine/damage';
 import type { TeamSet } from '../../src/engine/sets';
 import { usageOf } from '../../src/engine/stats';
@@ -31,12 +31,38 @@ describe('coverageTargets', () => {
       expect(target.weight).toBeCloseTo(1 / 18);
       expect(target.set.species).toBe('Mew');
       expect(target.set.types).toEqual([target.label]);
+      expect(target.set.baseStats).toEqual(typeAverage(target.label, noMeta));
     }
     // Il bersaglio neutro prende il tipo: Earthquake è super efficace sull'Elettro, nullo sul Volante
     const electric = targets.find(t => t.label === 'Electric')!.set;
     const flying = targets.find(t => t.label === 'Flying')!.set;
     expect(bestHit(chomp, electric)!.expected).toBeGreaterThan(bestHit(chomp, targets.find(t => t.label === 'Water')!.set)!.expected);
     expect(bestHit(chomp, flying)!.expected).toBe(0);
+  });
+});
+
+describe('manichini per tipo', () => {
+  it("l'Acciaio medio del National Dex ha le difese di Bulbapedia (Mega comprese)", () => {
+    const steel = typeAverage('Steel', { stats: null, sets: null, formatId: 'ou' });
+    expect(Math.abs(steel.hp - 79)).toBeLessThanOrEqual(3);
+    expect(Math.abs(steel.def - 116)).toBeLessThanOrEqual(3);
+    expect(Math.abs(steel.spd - 90)).toBeLessThanOrEqual(3);
+  });
+
+  it("in Gen 9 niente Mega: l'Acciaio medio ha meno Difesa", () => {
+    const natdex = typeAverage('Steel', { stats: null, sets: null, formatId: 'ou' });
+    const gen9 = typeAverage('Steel', { stats: null, sets: null, formatId: 'gen9ou' });
+    expect(gen9.def).toBeLessThan(natdex.def);
+  });
+
+  it('il Coleottero medio è più fragile della Roccia media, e lo stesso colpo neutro gli fa più male del Drago medio', () => {
+    const data = { stats: null, sets: null, formatId: 'ou' as const };
+    expect(typeAverage('Bug', data).def).toBeLessThan(typeAverage('Rock', data).def);
+    const targets = coverageTargets(noMeta);
+    const slam = set('Garchomp', '', 'Rough Skin', ['Body Slam'], 'Adamant', { atk: 252 });
+    const bug = targets.find(t => t.label === 'Bug')!.set;
+    const dragon = targets.find(t => t.label === 'Dragon')!.set;
+    expect(bestHit(slam, bug)!.expected).toBeGreaterThan(bestHit(slam, dragon)!.expected);
   });
 });
 
@@ -60,16 +86,16 @@ describe('teamCoverage', () => {
   });
 
   it('un superefficace da 3HKO (fra il 33% e il 50%) copre a metà', () => {
-    // Urshifu-RS con Choice Scarf: Ice Spinner (80, non STAB) fa circa il 42% al Volante medio
+    // Urshifu-RS con Choice Scarf: Ice Spinner (80, non STAB) fa circa il 43% al Drago medio
     const urshifu = set('Urshifu-Rapid-Strike', 'Choice Scarf', 'Unseen Fist', ['Surging Strikes', 'Close Combat', 'U-turn', 'Ice Spinner'], 'Jolly', { atk: 252, spe: 252 });
-    const flying = teamOffenseRows([urshifu]).find(r => r.label === 'Flying')!;
+    const flying = teamOffenseRows([urshifu]).find(r => r.label === 'Dragon')!;
     expect(flying.coveredBy).toEqual([expect.objectContaining({ move: 'Ice Spinner', partial: true })]);
     // Metà del 70% del primo membro
     expect(flying.level).toBe(35);
     expect(flying.coveredBy[0].pct).toBeGreaterThanOrEqual(33);
     expect(flying.coveredBy[0].pct).toBeLessThan(50);
     // Due membri da 3HKO: 35 + 10
-    const two = teamCoverage([urshifu, { ...urshifu }], noMeta).rows.find(r => r.label === 'Flying')!;
+    const two = teamCoverage([urshifu, { ...urshifu }], noMeta).rows.find(r => r.label === 'Dragon')!;
     expect(two.level).toBe(45);
   });
 
@@ -92,7 +118,9 @@ describe('teamCoverage', () => {
   });
 
   it('una mossa speciale debole su un attaccante fisico non copre niente', () => {
-    const weak = set('Garchomp', 'Life Orb', 'Rough Skin', ['Earthquake', 'Ice Beam'], 'Adamant', { atk: 252, spe: 252 });
-    expect(teamCoverage([weak], noMeta).value).toBe(teamCoverage([chomp], noMeta).value);
+    // Senza Life Orb: Ice Beam da Garchomp fa al massimo il 32% (al Volante medio), sotto il 3HKO
+    const plain = { ...chomp, item: '' };
+    const weak = { ...plain, moves: ['Earthquake', 'Ice Beam'] };
+    expect(teamCoverage([weak], noMeta).value).toBe(teamCoverage([plain], noMeta).value);
   });
 });

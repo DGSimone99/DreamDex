@@ -57,12 +57,15 @@ function instantCharge(id: string, conditions: FieldCondition[], item: string): 
   return id === 'electroshot' && conditions.includes('rain');
 }
 
-/** Un bersaglio può avere i tipi sovrascritti (il bersaglio neutro della Coverage senza meta: Mew di un solo tipo). */
-export type Target = TeamSet & { types?: string[] };
+/**
+ * Un bersaglio può avere tipi e difese base sovrascritti: il manichino della Coverage di tipi e della Potenza è un
+ * Pokémon di un solo tipo con le difese medie di quel tipo.
+ */
+export type Target = TeamSet & { types?: string[]; baseStats?: { hp: number; def: number; spd: number } };
 
 /** Chiave del set per il contenuto: le proposte creano set sempre nuovi, uguali a quelli già calcolati. */
 export const setKey = (set: Target): string =>
-  JSON.stringify([set.species, set.item, set.ability, set.moves, set.nature, set.evs, set.ivs ?? null, set.teraType ?? null, set.types ?? null]);
+  JSON.stringify([set.species, set.item, set.ability, set.moves, set.nature, set.evs, set.ivs ?? null, set.teraType ?? null, set.types ?? null, set.baseStats ?? null]);
 
 /** Cache limitate: oltre il limite si svuotano (i Pokémon e le mosse della libreria si riusano, il calcolo li copia). */
 const LIMIT = 20000;
@@ -111,7 +114,11 @@ function tryPokemon(name: string, set: Target, options: HitOptions): Pokemon | n
       ivs: set.ivs,
       boosts: options.boosts,
       teraType: options.tera && set.teraType ? set.teraType as Pokemon['teraType'] : undefined,
-      overrides: set.types ? { types: set.types as [Pokemon['types'][0]] } : undefined,
+      overrides: set.types || set.baseStats ? {
+        ...(set.types ? { types: set.types as [Pokemon['types'][0]] } : {}),
+        // Il manichino: le difese medie del tipo, il resto 100 (non conta per chi riceve il colpo)
+        ...(set.baseStats ? { baseStats: { atk: 100, spa: 100, spe: 100, ...set.baseStats } } : {}),
+      } : undefined,
     });
   } catch {
     return null;

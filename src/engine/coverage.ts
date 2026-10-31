@@ -1,9 +1,10 @@
 import { usesMeta } from './analysis';
 import { bestHit, setKey, type FieldCondition, type Target } from './damage';
 import type { EngineData } from './data';
-import { battleAbility, battleSpecies, dex, getMove, toID } from './dex';
+import type { Species } from '@pkmn/dex';
+import { battleAbility, battleSpecies, dex, getMove, isSelectable, toID } from './dex';
 import { DEFAULT_FORMAT } from './format';
-import { teraAllowed } from './formats';
+import { pokedexOf, speciesInPokedex, teraAllowed } from './formats';
 import { enables } from './synergy';
 import { mostCommonSet, type TeamSet } from './sets';
 import { topThreats, usageOf } from './stats';
@@ -29,16 +30,35 @@ export interface CoverageTarget {
   weight: number;
 }
 
-/** Bersaglio neutro senza meta: statistiche 100 (Mew), 252 PS e il resto diviso fra le difese, nessuno strumento, solo il tipo. */
-function neutralTarget(type: string): Target {
-  return { species: 'Mew', item: '', ability: 'Synchronize', moves: [], nature: 'Hardy', evs: { hp: 252, def: 128, spd: 128 }, types: [type] };
+const typeAverages = new Map<string, { hp: number; def: number; spd: number }>();
+
+/**
+ * Difese base medie del tipo: la media dei completamente evoluti del Pokédex del formato che hanno quel tipo
+ * (in National Dex anche le Mega, in Gen 9 no; niente forme Totem). Un doppio tipo conta per entrambi i suoi tipi.
+ */
+export function typeAverage(type: string, data: EngineData): { hp: number; def: number; spd: number } {
+  const format = { ...DEFAULT_FORMAT, formatId: data.formatId ?? 'ou' };
+  const key = `${pokedexOf(format)}|${type}`;
+  let average = typeAverages.get(key);
+  if (average) return average;
+  const pool = dex.species.all().filter(s => s.exists && !s.nfe && s.num > 0 && isSelectable(s) && speciesInPokedex(s, format)
+    && !s.forme.includes('Totem') && (s.types as string[]).includes(type));
+  const mean = (stat: (s: Species) => number) => Math.round(pool.reduce((acc, s) => acc + stat(s), 0) / Math.max(1, pool.length));
+  average = { hp: mean(s => s.baseStats.hp), def: mean(s => s.baseStats.def), spd: mean(s => s.baseStats.spd) };
+  typeAverages.set(key, average);
+  return average;
+}
+
+/** Il Pokémon medio di un tipo: un solo tipo, le difese medie del tipo, 252 PS e il resto diviso fra le difese, nessuno strumento. */
+function typeDummy(type: string, data: EngineData): Target {
+  return { species: 'Mew', item: '', ability: 'Synchronize', moves: [], nature: 'Hardy', evs: { hp: 252, def: 128, spd: 128 }, types: [type], baseStats: typeAverage(type, data) };
 }
 
 const targetsCache = new Map<string, CoverageTarget[]>();
 
 /**
  * Cosa deve colpire il team. Col meta: le combinazioni di tipi dei più usati, pesate per uso, ognuna col suo Pokémon
- * più usato e il suo set più comune (difese, abilità e strumento veri). Senza meta: i 18 tipi, stesso peso, bersaglio neutro.
+ * più usato e il suo set più comune (difese, abilità e strumento veri). Senza meta: i 18 tipi, stesso peso, il Pokémon medio del tipo.
  */
 /** Coverage di tipi (i 18 tipi, bersaglio neutro) o del meta (i Pokémon più usati). */
 export type CoverageKind = 'types' | 'meta';
@@ -63,7 +83,7 @@ export function coverageTargets(data: EngineData, kind: CoverageKind = usesMeta(
     const total = [...byTypes.values()].reduce((a, e) => a + e.usage, 0);
     targets = [...byTypes].map(([label, e]) => ({ label, set: e.set, weight: total ? e.usage / total : 0 }));
   } else {
-    targets = TYPES.map(type => ({ label: type, set: neutralTarget(type), weight: 1 / TYPES.length }));
+    targets = TYPES.map(type => ({ label: type, set: typeDummy(type, data), weight: 1 / TYPES.length }));
   }
   targetsCache.set(key, targets);
   return targets;
