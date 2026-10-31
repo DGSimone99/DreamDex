@@ -121,7 +121,7 @@ interface CoverHit { x: number; move: string; plain: number; setup: number | nul
 const hitsCache = new Map<string, CoverHit[]>();
 const HITS_LIMIT = 5000;
 function hitsOf(set: TeamSet, data: EngineData, targets: CoverageTarget[], kind: CoverageKind): CoverHit[] {
-  const key = `${setKey(set)}|${data.formatId ?? 'ou'}|${kind === 'meta' && usesMeta(data)}|${!!data.stats}`;
+  const key = `${setKey(set)}|${data.formatId ?? 'ou'}|${kind}|${!!data.stats}`;
   let hits = hitsCache.get(key);
   if (hits) return hits;
   if (hitsCache.size >= HITS_LIMIT) hitsCache.clear();
@@ -160,7 +160,9 @@ export function ownConditions(set: TeamSet): FieldCondition[] {
 const depthOf = (credits: number[]) => [...credits].sort((a, b) => b - a).reduce((acc, c, i) => acc + (COVERAGE_DEPTH[i] ?? 0) * c, 0);
 
 /** Coverage del team: chi manda KO in due colpi ogni bersaglio, con la profondità; i buchi per nome. */
-export function teamCoverage(team: TeamSet[], data: EngineData, kind: CoverageKind = usesMeta(data) ? 'meta' : 'types'): TeamCoverage {
+export function teamCoverage(team: TeamSet[], data: EngineData, asked: CoverageKind = usesMeta(data) ? 'meta' : 'types'): TeamCoverage {
+  // Senza meta la Coverage "meta" è quella di tipi (bersagli, regola e memoria dei calcoli): una sola misura per tipo
+  const kind: CoverageKind = asked === 'meta' && usesMeta(data) ? 'meta' : 'types';
   const targets = coverageTargets(data, kind);
   const hits = team.map(set => hitsOf(set, data, targets, kind));
   let value = 0;

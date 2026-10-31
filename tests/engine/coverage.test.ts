@@ -162,6 +162,15 @@ describe('Coverage meta: colpo migliore di qualunque tipo, solo 2HKO', () => {
     expect(rows[i].cells![0].pct).toBe(Math.floor(100 * any(tusk, i)));
   });
 
+  it('chiedere la Coverage meta senza meta non sporca la Coverage di tipi dello stesso set', () => {
+    const noMetaData = { ...fixtureData, ignoreMeta: true };
+    const before = teamCoverage([tusk], noMetaData, 'types').value;
+    teamCoverage([{ ...tusk }], noMetaData, 'meta');
+    expect(teamCoverage([{ ...tusk }], noMetaData, 'types').value).toBe(before);
+    // Senza meta la Coverage "meta" è quella di tipi: solo colpi super efficaci, nessuna casella
+    expect(teamCoverage([{ ...tusk }], noMetaData, 'meta').rows.every(r => r.cells === null)).toBe(true);
+  });
+
   it('la Coverage di tipi non ha caselle', () => {
     expect(teamCoverage([tusk], noMeta, 'types').rows.every(row => row.cells === null)).toBe(true);
   });

@@ -111,6 +111,13 @@ describe('Offesa: Generale', () => {
     expect(within(tile).getByText('Gholdengo (Nasty Plot)')).toBeInTheDocument();
   });
 
+  it('la tessera Coverage meta dice quanti nessuno manda KO in due colpi', () => {
+    view();
+    const tile = screen.getByRole('button', { name: /^Coverage meta/ });
+    expect(tile).toHaveTextContent(/Nessuno lo manda KO in due colpi|Tutti mandati KO in due colpi/);
+    expect(tile).not.toHaveTextContent(/Nessun colpo|Ogni bersaglio colpito/);
+  });
+
   it('membro senza attacchi: la riga resta con "—"', () => {
     const t = [team[0], { ...emptySet('Blissey'), moves: ['Soft-Boiled', 'Toxic', 'Stealth Rock', 'Teleport'] }];
     view(t);
