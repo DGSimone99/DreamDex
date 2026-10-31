@@ -220,7 +220,6 @@ export function standardHit(attacker: Target, defender: Target, category: 'Physi
   const targetBoosts = toID(battleAbility(attacker)) === 'unaware' ? undefined : options.targetBoosts;
   const target = toPokemon(defender, { boosts: targetBoosts }, 'defender');
   if (!own || !target) return null;
-  // Wonder Guard ferma un colpo senza tipo, ma i colpi veri lo prendono super efficace: vale un OHKO
   // Il colpo tipizzato lo calcola la libreria (Wonder Guard ferma i non super efficaci); senza tipo vale un OHKO
   if (!options.moveType && toID(battleAbility(defender as TeamSet)) === 'wonderguard') return { move: category, expected: 1, min: 1, max: 1 };
   // Il colpo fisico è di contatto (come quasi tutte le mosse fisiche: Fluffy, Tough Claws), lo speciale no
