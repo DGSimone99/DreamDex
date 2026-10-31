@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { defensiveSetup, defenseReference, hazardRemover, holdStep, intimidateBoost, memberDefense, sustainability, sustainParts, teamDefense } from '../../src/engine/defense';
+import { defensiveSetup, defenseReference, dummyAttacker, hazardRemover, holdCredit, typedHits, holdStep, intimidateBoost, memberDefense, sustainability, sustainParts, teamDefense } from '../../src/engine/defense';
 import type { TeamSet } from '../../src/engine/sets';
 import { softScore } from '../../src/engine/scale';
 import { attackerPanels, panelWeights } from '../../src/engine/attackers';
 import { standardHit } from '../../src/engine/damage';
 import { fixtureData } from '../fixtures/data';
+import { TYPES } from '../../src/engine/types';
 
 const set = (species: string, item: string, ability: string, moves: string[], nature: string, evs: TeamSet['evs']): TeamSet =>
   ({ species, item, ability, moves, nature, evs });
@@ -256,5 +257,43 @@ describe('setup difensivo', () => {
     // La più forte per Dif. + Dif. Speciale
     expect(defensiveSetup(set('Clefable', '', '', ['Calm Mind', 'Cosmic Power', 'Iron Defense'], 'Calm', {}))?.move).toBe('Cosmic Power');
     expect(defensiveSetup(set('Notamon', '', '', ['Iron Defense'], 'Hardy', {}))?.move).toBe('Iron Defense');
+  });
+});
+
+describe('attaccante finto e colpi per tipo', () => {
+  const natdex = { stats: null, sets: null, formatId: 'ou' as const };
+  const gen9 = { stats: null, sets: null, formatId: 'gen9ou' as const };
+  const idx = (type: string, special = false) => 2 * TYPES.indexOf(type as never) + (special ? 1 : 0);
+
+  it("l'attaccante finto ha l'Attacco medio del quarto più forte del Pokédex (in Gen 9 senza Mega)", () => {
+    expect(Math.abs(dummyAttacker(natdex, 'atk', 'Normal').baseStats!.atk! - 133)).toBeLessThanOrEqual(4);
+    expect(Math.abs(dummyAttacker(natdex, 'spa', 'Normal').baseStats!.spa! - 129)).toBeLessThanOrEqual(4);
+    expect(dummyAttacker(gen9, 'atk', 'Normal').baseStats!.atk!).toBeLessThanOrEqual(dummyAttacker(natdex, 'atk', 'Normal').baseStats!.atk!);
+    expect(dummyAttacker(natdex, 'atk', 'Fire').types).toEqual(['Fire']);
+  });
+
+  it('36 colpi: Blissey regge meglio lo speciale; Levitate e Flash Fire annullano Terra e Fuoco', () => {
+    const blissey = set('Blissey', 'Heavy-Duty Boots', 'Natural Cure', ['Soft-Boiled'], 'Bold', { hp: 252, def: 252 });
+    const b = typedHits(blissey, natdex).plain;
+    expect(b).toHaveLength(36);
+    expect(b[idx('Normal', true)]).toBeLessThan(b[idx('Normal')]);
+    const rotom = set('Rotom-Wash', 'Leftovers', 'Levitate', ['Volt Switch'], 'Bold', { hp: 252, def: 252 });
+    expect(typedHits(rotom, natdex).plain[idx('Ground')]).toBe(0);
+    const heatran = set('Heatran', 'Leftovers', 'Flash Fire', ['Magma Storm'], 'Calm', { hp: 252, spd: 252 });
+    expect(typedHits(heatran, natdex).plain[idx('Fire', true)]).toBe(0);
+    const chomp = set('Garchomp', 'Leftovers', 'Rough Skin', ['Earthquake'], 'Jolly', { atk: 252, spe: 252 });
+    expect(typedHits(chomp, natdex).plain[idx('Ground')]).toBeLessThan(typedHits(heatran, natdex).plain[idx('Ground')]);
+  });
+
+  it('la danza difensiva conta per metà: Iron Defense abbassa i colpi fisici, senza danza niente cambia', () => {
+    const corv = set('Corviknight', 'Leftovers', 'Pressure', ['Body Press', 'Iron Defense', 'Roost'], 'Impish', { hp: 252, def: 252 });
+    const withSetup = typedHits(corv, natdex);
+    expect(withSetup.held[idx('Fighting')]).toBeLessThan(withSetup.plain[idx('Fighting')]);
+    const noSetup = typedHits({ ...corv, moves: ['Body Press', 'Roost'] }, natdex);
+    expect(noSetup.held).toEqual(noSetup.plain);
+  });
+
+  it('credito: pieno sotto un terzo, metà sotto la metà, niente da lì in su', () => {
+    expect([0, 0.33, 1 / 3, 0.49, 0.5, 1].map(holdCredit)).toEqual([1, 1, 0.5, 0.5, 0, 0]);
   });
 });

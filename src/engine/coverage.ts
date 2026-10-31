@@ -3,7 +3,7 @@ import { bestHit, setKey, type FieldCondition, type Target } from './damage';
 import type { EngineData } from './data';
 import type { Species } from '@pkmn/dex';
 import { battleAbility, battleSpecies, dex, getMove, isSelectable, toID } from './dex';
-import { DEFAULT_FORMAT } from './format';
+import { DEFAULT_FORMAT, type Format } from './format';
 import { pokedexOf, speciesInPokedex, teraAllowed } from './formats';
 import { enables } from './synergy';
 import { mostCommonSet, type TeamSet } from './sets';
@@ -31,6 +31,19 @@ export interface CoverageTarget {
   weight: number;
 }
 
+const pools = new Map<string, Species[]>();
+
+/** I completamente evoluti del Pokédex del formato (in National Dex anche le Mega, in Gen 9 no; niente forme Totem). */
+export function dexPool(format: Format): Species[] {
+  const key = pokedexOf(format);
+  let pool = pools.get(key);
+  if (!pool) {
+    pool = dex.species.all().filter(s => s.exists && !s.nfe && s.num > 0 && isSelectable(s) && speciesInPokedex(s, format) && !s.forme.includes('Totem'));
+    pools.set(key, pool);
+  }
+  return pool;
+}
+
 const typeAverages = new Map<string, { hp: number; def: number; spd: number }>();
 
 /**
@@ -42,8 +55,7 @@ export function typeAverage(type: string, data: EngineData): { hp: number; def: 
   const key = `${pokedexOf(format)}|${type}`;
   let average = typeAverages.get(key);
   if (average) return average;
-  const pool = dex.species.all().filter(s => s.exists && !s.nfe && s.num > 0 && isSelectable(s) && speciesInPokedex(s, format)
-    && !s.forme.includes('Totem') && (s.types as string[]).includes(type));
+  const pool = dexPool(format).filter(s => (s.types as string[]).includes(type));
   const mean = (stat: (s: Species) => number) => Math.round(pool.reduce((acc, s) => acc + stat(s), 0) / Math.max(1, pool.length));
   average = { hp: mean(s => s.baseStats.hp), def: mean(s => s.baseStats.def), spd: mean(s => s.baseStats.spd) };
   typeAverages.set(key, average);

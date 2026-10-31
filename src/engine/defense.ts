@@ -1,12 +1,12 @@
 import { usesMeta } from './analysis';
 import { attackerPanels, metaThreats, panelWeights } from './attackers';
-import { COVERAGE_DEPTH, ownConditions } from './coverage';
-import { bestHit, setKey, standardHit, type FieldCondition, type Hit } from './damage';
+import { COVERAGE_DEPTH, dexPool, ownConditions } from './coverage';
+import { bestHit, setKey, standardHit, type FieldCondition, type Hit, type Target } from './damage';
 import { ONE_USE_SHARE, rankWeighted, SETUP_SHARE } from './offense';
 import { typeSafety } from './typeSafety';
 import { DEFAULT_FORMAT } from './format';
-import { teraAllowed } from './formats';
-import { effectiveness, weaknessTable } from './types';
+import { pokedexOf, teraAllowed } from './formats';
+import { effectiveness, TYPES, weaknessTable } from './types';
 import type { EngineData } from './data';
 import { battleAbility, battleSpecies, dex, getMove, toID } from './dex';
 import { REMOVAL_MOVES } from './roles';
@@ -133,6 +133,67 @@ export interface MemberDefense {
   sustain: number;
   sustainParts: SustainParts;
   value: number;
+}
+
+/**
+ * Credito di un membro su un colpo standard tipizzato (danno atteso, al massimo 1): pieno se regge 4 colpi o più
+ * (sotto un terzo dei PS), metà se ne regge 3 (sotto la metà), niente da lì in su.
+ */
+export const holdCredit = (x: number): number => (x < 1 / 3 ? 1 : x < 1 / 2 ? 0.5 : 0);
+
+const dummies = new Map<string, Target>();
+
+/**
+ * L'attaccante finto della Coverage di tipi: un attaccante forte, con l'Attacco (o l'Attacco Speciale) medio del quarto
+ * più forte dei completamente evoluti del Pokédex del formato; le altre statistiche 100, 252 EV e natura che lo alza,
+ * nessuno strumento né abilità che conti, del tipo del colpo (STAB per tutti allo stesso modo).
+ */
+export function dummyAttacker(data: EngineData, side: 'atk' | 'spa', type: string): Target {
+  const format = { ...DEFAULT_FORMAT, formatId: data.formatId ?? 'ou' };
+  const key = `${pokedexOf(format)}|${side}|${type}`;
+  let dummy = dummies.get(key);
+  if (dummy) return dummy;
+  const values = dexPool(format).map(s => s.baseStats[side]).sort((a, b) => b - a);
+  const top = values.slice(0, Math.max(1, Math.ceil(values.length / 4)));
+  const stat = Math.round(top.reduce((a, b) => a + b, 0) / top.length);
+  dummy = {
+    species: 'Mew', item: '', ability: 'Synchronize', moves: [], nature: side === 'atk' ? 'Adamant' : 'Modest',
+    evs: { [side]: 252 }, types: [type], baseStats: { [side]: stat },
+  };
+  dummies.set(key, dummy);
+  return dummy;
+}
+
+const typedCache = new Map<string, { plain: number[]; held: number[] }>();
+const TYPED_LIMIT = 5000;
+
+/**
+ * I 36 colpi standard tipizzati sul membro (per ogni tipo, prima il fisico poi lo speciale): danno atteso, al massimo 1.
+ * `plain` senza setup; `held` con la danza difensiva che conta per metà (uguale a `plain` senza danza).
+ * Il meteo e il terreno che il membro porta con la sua abilità valgono per lui.
+ */
+export function typedHits(member: TeamSet, data: EngineData): { plain: number[]; held: number[] } {
+  const key = `${setKey(member)}|${data.formatId ?? 'ou'}`;
+  const cachedHits = typedCache.get(key);
+  if (cachedHits) return cachedHits;
+  if (typedCache.size >= TYPED_LIMIT) typedCache.clear();
+  const conditions = ownConditions(member);
+  const setup = defensiveSetup(member);
+  const hit = (type: string, category: 'Physical' | 'Special', boosted: boolean) => {
+    const attacker = dummyAttacker(data, category === 'Physical' ? 'atk' : 'spa', type);
+    const result = standardHit(attacker, member, category, { conditions, moveType: type, targetBoosts: boosted ? setup?.boosts : undefined });
+    return Math.min(1, result?.expected ?? 0);
+  };
+  const plain = TYPES.flatMap(type => [hit(type, 'Physical', false), hit(type, 'Special', false)]);
+  const held = setup
+    ? TYPES.flatMap((type, i) => [hit(type, 'Physical', true), hit(type, 'Special', true)].map((boosted, k) => {
+      const x = plain[2 * i + k];
+      return x - SETUP_SHARE * (x - boosted);
+    }))
+    : plain;
+  const value = { plain, held };
+  typedCache.set(key, value);
+  return value;
 }
 
 /** Pesi della Robustezza del membro: Fisica, Speciale, Sostenibilità. */

@@ -18,6 +18,8 @@ export interface HitOptions {
   boosts?: Partial<Record<'atk' | 'spa' | 'def' | 'spd', number>>;
   /** Aumenti di Difesa e Dif. Speciale del bersaglio (setup difensivo); un attaccante Unaware li ignora. */
   targetBoosts?: Partial<Record<'def' | 'spd', number>>;
+  /** Tipo del colpo standard (`standardHit`); senza, un colpo senza tipo. */
+  moveType?: string;
   /** Solo le mosse super efficaci sul bersaglio (la Coverage: il vantaggio di tipo, non il danno neutro). */
   superEffectiveOnly?: boolean;
   /** Solo le mosse prioritarie (Grassy Glide col Grassy Terrain); Fake Out e First Impression valgono metà (solo al primo turno). */
@@ -61,7 +63,7 @@ function instantCharge(id: string, conditions: FieldCondition[], item: string): 
  * Un bersaglio può avere tipi e difese base sovrascritti: il manichino della Coverage di tipi e della Potenza è un
  * Pokémon di un solo tipo con le difese medie di quel tipo.
  */
-export type Target = TeamSet & { types?: string[]; baseStats?: { hp: number; def: number; spd: number } };
+export type Target = TeamSet & { types?: string[]; baseStats?: Partial<Record<'hp' | 'atk' | 'def' | 'spa' | 'spd', number>> };
 
 /** Chiave del set per il contenuto: le proposte creano set sempre nuovi, uguali a quelli già calcolati. */
 export const setKey = (set: Target): string =>
@@ -117,7 +119,7 @@ function tryPokemon(name: string, set: Target, options: HitOptions): Pokemon | n
       overrides: set.types || set.baseStats ? {
         ...(set.types ? { types: set.types as [Pokemon['types'][0]] } : {}),
         // Il manichino: le difese medie del tipo, il resto 100 (non conta per chi riceve il colpo)
-        ...(set.baseStats ? { baseStats: { atk: 100, spa: 100, spe: 100, ...set.baseStats } } : {}),
+        ...(set.baseStats ? { baseStats: { hp: 100, atk: 100, def: 100, spa: 100, spd: 100, spe: 100, ...set.baseStats } } : {}),
       } : undefined,
     });
   } catch {
@@ -212,7 +214,7 @@ function rollSums(result: unknown): { avg: number; low: number; high: number } |
   };
 }
 
-export function standardHit(attacker: TeamSet, defender: Target, category: 'Physical' | 'Special', options: HitOptions = {}): Hit | null {
+export function standardHit(attacker: Target, defender: Target, category: 'Physical' | 'Special', options: HitOptions = {}): Hit | null {
   const own = toPokemon(attacker, options);
   // Unaware ignora gli aumenti del bersaglio; la chiave della cache li contiene
   const targetBoosts = toID(battleAbility(attacker)) === 'unaware' ? undefined : options.targetBoosts;
@@ -221,8 +223,9 @@ export function standardHit(attacker: TeamSet, defender: Target, category: 'Phys
   // Wonder Guard ferma un colpo senza tipo, ma i colpi veri lo prendono super efficace: vale un OHKO
   if (toID(battleAbility(defender as TeamSet)) === 'wonderguard') return { move: category, expected: 1, min: 1, max: 1 };
   // Il colpo fisico è di contatto (come quasi tutte le mosse fisiche: Fluffy, Tough Claws), lo speciale no
-  const move = cached(moves, `standard|${category}`, () => new CalcMove(gen, 'Tackle', {
-    overrides: { type: '???', basePower: 100, category, flags: { contact: category === 'Physical' ? 1 : 0 } },
+  const type = options.moveType ?? '???';
+  const move = cached(moves, `standard|${category}|${type}`, () => new CalcMove(gen, 'Tackle', {
+    overrides: { type: type as never, basePower: 100, category, flags: { contact: category === 'Physical' ? 1 : 0 } },
   }));
   if (!move) return null;
   const hp = target.maxHP() / (LOCKING.has(toID(attacker.item)) ? CHOICE_LOCK : 1);
