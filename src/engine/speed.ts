@@ -2,6 +2,7 @@ import type { Species } from '@pkmn/dex';
 import type { EngineData } from './data';
 import { battleSpecies, dex, getSpecies, isSelectable, toID } from './dex';
 import { parseSpread, type TeamSet } from './sets';
+import { statLines } from './statCalc';
 import { DEFAULT_FORMAT, type FormatId } from './format';
 import { usesMeta } from './analysis';
 import { isLegalIn, tierIn } from './formats';
@@ -25,6 +26,21 @@ export function speedStat(set: Pick<TeamSet, 'species' | 'item' | 'nature' | 'ev
   const withNature = Math.floor(raw * (nature.plus === 'spe' ? 1.1 : nature.minus === 'spe' ? 0.9 : 1));
   const scarf = toID(set.item) === 'choicescarf';
   return { value: scarf ? Math.floor(withNature * 1.5) : withNature, scarf };
+}
+
+/** Le abilità dei Paradox: alzano la statistica più alta (×1,5 se è la Velocità) con la Booster Energy, il sole o il campo elettrico. */
+export const PARADOX_ABILITIES = new Set(['protosynthesis', 'quarkdrive']);
+
+/**
+ * Se Protosynthesis o Quark Drive alzerebbero la Velocità: deve essere la statistica finale più alta (livello 100, EV, IV,
+ * natura, senza strumento); a pari valore vince la statistica che viene prima (Attacco, Difesa, Att. Sp., Dif. Sp.), mai la Velocità.
+ */
+export function paradoxSpeedBoost(set: Pick<TeamSet, 'species' | 'ability' | 'item' | 'nature' | 'evs' | 'ivs'>): boolean {
+  if (!PARADOX_ABILITIES.has(toID(set.ability))) return false;
+  const lines = statLines(set);
+  const value = (stat: string) => lines.find(l => l.stat === stat)?.value ?? 0;
+  const spe = value('spe');
+  return ['atk', 'def', 'spa', 'spd'].every(stat => value(stat) < spe);
 }
 
 export interface SpeedRival extends Speed {

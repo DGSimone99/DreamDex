@@ -57,7 +57,7 @@ describe('Velocità: ogni membro, coi guadagni delle condizioni', () => {
   });
 
   it('Tailwind e paralisi a un quarto', () => {
-    expect(CONDITION_QUOTA).toEqual({ setup: 0.5, weather: 0.5, unburden: 0.5, priority: 0.5, web: 0.5, trickroom: 0.5, tailwind: 0.25, slow: 0.25 });
+    expect(CONDITION_QUOTA).toEqual({ setup: 0.5, weather: 0.5, booster: 0.5, unburden: 0.5, priority: 0.5, web: 0.5, trickroom: 0.5, tailwind: 0.25, slow: 0.25 });
     // Stun Spore del compagno: paralisi, avversari a metà velocità
     const p = memberSpeed(pex, [pex, webber], noMeta)!;
     const slow = p.gains.find(g => g.condition === 'slow')!;

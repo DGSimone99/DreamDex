@@ -722,6 +722,7 @@ export const en = {
   'sdetail.raw': "Raw",
   'sdetail.cond.setup': "Setup",
   'sdetail.cond.weather': "Weather",
+  'sdetail.cond.booster': "Booster",
   'sdetail.cond.unburden': "Unburden",
   'sdetail.cond.web': "Sticky Web",
   'sdetail.cond.trickroom': "Trick Room",

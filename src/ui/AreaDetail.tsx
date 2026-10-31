@@ -101,7 +101,7 @@ function catalogueTabs(rating: TeamRating, t: T, lang: Lang): DetailTab[] {
   ];
 }
 
-const OWN_CONDITIONS: SpeedCondition[] = ['setup', 'weather', 'unburden', 'priority'];
+const OWN_CONDITIONS: SpeedCondition[] = ['setup', 'weather', 'booster', 'unburden', 'priority'];
 const points = (x: number) => Math.round(100 * x);
 
 /** Le schede della Velocità: Generale, Velocità (ogni membro da solo) e Controllo velocità (quello che porta il team). */

@@ -5,14 +5,20 @@ import { bestHit, setKey } from './damage';
 import { ownConditions } from './coverage';
 import { usesMeta } from './analysis';
 import { mostCommonSet, type TeamSet } from './sets';
-import { isWebImmune, outspeedShare, sameSelf, speedPool, speedStat, type SpeedRival } from './speed';
+import { isWebImmune, outspeedShare, paradoxSpeedBoost, sameSelf, speedPool, speedStat, type SpeedRival } from './speed';
 import { ownField } from './types';
 import { getSpecies } from './dex';
 
 export { isWebImmune };
 
-/** Le condizioni che fanno superare più Pokémon: setup, meteo/campo, Unburden, Sticky Web, Trick Room, Tailwind, paralisi e rallentamenti. */
-export type SpeedCondition = 'setup' | 'weather' | 'unburden' | 'priority' | 'web' | 'trickroom' | 'tailwind' | 'slow';
+/**
+ * Le condizioni che fanno superare più Pokémon: setup, meteo/campo, boost dei Paradox (Booster Energy, sole, campo elettrico),
+ * Unburden, Sticky Web, Trick Room, Tailwind, paralisi e rallentamenti.
+ */
+export type SpeedCondition = 'setup' | 'weather' | 'booster' | 'unburden' | 'priority' | 'web' | 'trickroom' | 'tailwind' | 'slow';
+
+/** Protosynthesis e Quark Drive: Velocità ×1,5 quando è la statistica più alta. */
+export const PARADOX_SPEED = 1.5;
 
 /** Le condizioni che porta il team (il Controllo velocità); le altre sono del membro stesso (la sua Velocità). */
 export const CONTROL_CONDITIONS: SpeedCondition[] = ['web', 'trickroom', 'tailwind', 'slow'];
@@ -30,7 +36,7 @@ export const SPEED_RANK_WEIGHTS = [25, 20, 16, 14, 13, 12];
  * Quota del guadagno che entra nel voto: metà per ciò che dura o regge il team (setup, meteo, Web, Trick Room),
  * un quarto per Tailwind e un bersaglio rallentato.
  */
-export const CONDITION_QUOTA: Record<SpeedCondition, number> = { setup: 0.5, weather: 0.5, unburden: 0.5, priority: 0.5, web: 0.5, trickroom: 0.5, tailwind: 0.25, slow: 0.25 };
+export const CONDITION_QUOTA: Record<SpeedCondition, number> = { setup: 0.5, weather: 0.5, booster: 0.5, unburden: 0.5, priority: 0.5, web: 0.5, trickroom: 0.5, tailwind: 0.25, slow: 0.25 };
 
 export interface SpeedGain {
   condition: SpeedCondition;
@@ -171,6 +177,12 @@ function measure(set: TeamSet, data: EngineData, team: TeamConditions): MemberSp
   const needs = WEATHER_SPEED[ability];
   if (needs && ((needs.weather && team.weathers.includes(needs.weather)) || (needs.terrain && team.terrains.includes(needs.terrain)))) {
     add('weather', battleAbility(set), shareWith(speed * 2));
+  }
+  // Paradox: la Booster Energy (si consuma) o il sole / campo elettrico del team, se la Velocità è la statistica più alta
+  if (paradoxSpeedBoost(set)) {
+    const byItem = toID(set.item) === 'boosterenergy';
+    const byField = (ability === 'protosynthesis' && team.weathers.includes('sun')) || (ability === 'quarkdrive' && team.terrains.includes('electric'));
+    if (byItem || byField) add('booster', byItem ? 'Booster Energy' : battleAbility(set), shareWith(Math.floor(speed * PARADOX_SPEED)));
   }
   if (ability === 'unburden' && consumable(set.item)) add('unburden', battleAbility(set), shareWith(speed * 2));
   if (team.web) add('web', team.web, shareWith(speed, r => (r.webImmune ? 1 : 2 / 3)));

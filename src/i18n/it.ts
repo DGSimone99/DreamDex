@@ -724,6 +724,7 @@ export const it: Record<keyof typeof en, string> = {
   'sdetail.raw': "Pura",
   'sdetail.cond.setup': "Setup",
   'sdetail.cond.weather': "Meteo",
+  'sdetail.cond.booster': "Booster",
   'sdetail.cond.unburden': "Unburden",
   'sdetail.cond.web': "Sticky Web",
   'sdetail.cond.trickroom': "Trick Room",
