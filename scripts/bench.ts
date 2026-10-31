@@ -20,6 +20,9 @@ import { initTiers } from '../src/engine/dex';
 import { DEFAULT_FORMAT, type FormatId } from '../src/engine/format';
 import { formatRules } from '../src/engine/formatRules';
 import { rateTeam, type TeamRating } from '../src/engine/rating';
+// Il voto v1 congelato (legacy/voto-v1): solo per --confronta
+import { initTiers as initTiersV1 } from '../legacy/voto-v1/engine/dex';
+import { rateTeam as rateTeamV1 } from '../legacy/voto-v1/engine/rating';
 import { setRolesCountMeasured } from '../src/engine/roleLevels';
 import { improveReplacements } from '../src/engine/replace';
 import { defaultSet, type TeamSet } from '../src/engine/sets';
@@ -64,8 +67,10 @@ if (!existsSync(join('data', SOURCES.ou!, 'stats.json'))) {
   process.exit(1);
 }
 const tiers = read('_tiers', 'tiers');
-if (tiers) initTiers(tiers);
+if (tiers) { initTiers(tiers); initTiersV1(tiers); }
 const DATA = Object.fromEntries(Object.keys(SOURCES).map(id => [id, load(id as FormatId)])) as Record<string, EngineData>;
+/** Gli stessi dati, oggetti separati: le cache dei due motori non si toccano. */
+const DATA_V1 = Object.fromEntries(Object.keys(SOURCES).map(id => [id, load(id as FormatId)])) as Record<string, EngineData>;
 
 const teams = JSON.parse(readFileSync(join('scripts', 'bench', 'teams.json'), 'utf8')) as BenchTeam[];
 // Per le medie, stessi Pokémon nella stessa categoria e formato contano una volta sola
@@ -239,7 +244,79 @@ function replayFile(name: string, games: Game[]) {
   }
 }
 
-if (process.argv.includes('--replays')) {
+type Rate = (team: TeamSet[], fmt: FormatId, withMeta: boolean) => TeamRating;
+const ENGINES: { name: string; rate: Rate }[] = [
+  { name: 'v1', rate: (team, fmt, withMeta) => rateTeamV1(team, withMeta ? DATA_V1[fmt] : { ...DATA_V1[fmt], ignoreMeta: true }) as unknown as TeamRating },
+  { name: 'nuovo', rate: (team, fmt, withMeta) => rateTeam(team, withMeta ? DATA[fmt] : { ...DATA[fmt], ignoreMeta: true })! },
+];
+const AREA_KEYS = ['strength', 'defense', 'speed', 'roles'];
+const areaOf = (r: TeamRating, key: string) => r.areas.find(a => a.key === key)?.value ?? 0;
+const arrow = (a: number, b: number) => `${a.toFixed(1)} → ${b.toFixed(1)}`;
+
+/** --confronta: gli stessi team nel voto v1 congelato e nel voto attuale, gruppo per gruppo e area per area. */
+function confronta() {
+  const ladder = ladderTeams().map((t, i) => ({ name: `ladder ${i + 1}`, fmt: t.fmt, cat: 'ladder', team: t.team }) as BenchTeam);
+  const pool = [...unique, ...ladder];
+  for (const withMeta of [true, false]) {
+    console.log(`
+[${withMeta ? 'col meta' : 'senza meta'}]  v1 → nuovo`);
+    const rated = pool.map(t => ({ t, v1: ENGINES[0].rate(t.team, t.fmt, withMeta), now: ENGINES[1].rate(t.team, t.fmt, withMeta) }));
+    const avg: Record<string, [number, number]> = {};
+    for (const cat of ['torneo', 'buono', 'medio', 'brutto', 'ladder']) {
+      const rs = rated.filter(r => r.t.cat === cat);
+      if (!rs.length) continue;
+      avg[cat] = [mean(rs.map(r => r.v1.overall)), mean(rs.map(r => r.now.overall))];
+      const areaText = AREA_KEYS.map(k => `${k} ${arrow(mean(rs.map(r => areaOf(r.v1, k))), mean(rs.map(r => areaOf(r.now, k))))}`).join(' · ');
+      console.log(`  ${cat.padEnd(7)} ${String(rs.length).padStart(3)} team  voto ${arrow(avg[cat][0], avg[cat][1])}   ${grades(rs.map(r => r.v1))} → ${grades(rs.map(r => r.now))}`);
+      console.log(`          ${areaText}`);
+    }
+    const gap = (a: string, b: string, i: 0 | 1) => (avg[a] && avg[b] ? avg[a][i] - avg[b][i] : 0);
+    console.log(`  distacco torneo − medio ${arrow(gap('torneo', 'medio', 0), gap('torneo', 'medio', 1))}, torneo − ladder ${arrow(gap('torneo', 'ladder', 0), gap('torneo', 'ladder', 1))}`);
+    const moved = rated.filter(r => r.t.cat !== 'ladder').sort((a, b) => Math.abs(b.now.overall - b.v1.overall) - Math.abs(a.now.overall - a.v1.overall)).slice(0, 10);
+    console.log('  i 10 team che si muovono di più:');
+    for (const r of moved) {
+      const deltas = AREA_KEYS.map(k => `${k} ${(areaOf(r.now, k) - areaOf(r.v1, k)) >= 0 ? '+' : ''}${areaOf(r.now, k) - areaOf(r.v1, k)}`).join(' ');
+      console.log(`    ${(r.now.overall - r.v1.overall) >= 0 ? '+' : ''}${r.now.overall - r.v1.overall}  ${r.v1.overall} → ${r.now.overall}  ${r.t.name} [${r.t.fmt}, ${r.t.cat}]  (${deltas})`);
+    }
+  }
+}
+
+/** --confronta --replays: quante partite indovina il voto più alto, v1 e attuale fianco a fianco. */
+function confrontaReplays() {
+  for (const name of ['replays.json', 'ladder.json']) {
+    const games = readGames(name);
+    if (!games.length) continue;
+    console.log(`
+== ${name === 'ladder.json' ? 'ladder medio (rating 1100–1400)' : 'alto livello'}: ${name}   v1 → nuovo`);
+    for (const withMeta of [true, false]) {
+      const bins = [[1, 4], [5, 9], [10, 100]] as const;
+      const result = ENGINES.map(engine => {
+        const stats = bins.map(() => ({ right: 0, total: 0 }));
+        for (const game of games) {
+          const fmt = REPLAY_FORMAT[game.format];
+          const [a, b] = [gameTeam(fmt, game.p1), gameTeam(fmt, game.p2)];
+          if (!a || !b) continue;
+          const diff = engine.rate(a, fmt, withMeta).overall - engine.rate(b, fmt, withMeta).overall;
+          const bin = bins.findIndex(([lo, hi]) => Math.abs(diff) >= lo && Math.abs(diff) <= hi);
+          if (bin < 0) continue;
+          stats[bin].total++;
+          if ((diff > 0 && game.winner === 1) || (diff < 0 && game.winner === 2)) stats[bin].right++;
+        }
+        const all = stats.reduce((acc, x) => ({ right: acc.right + x.right, total: acc.total + x.total }), { right: 0, total: 0 });
+        return [all, ...stats];
+      });
+      const pct = (x: { right: number; total: number }) => (x.total ? `${(100 * x.right / x.total).toFixed(1)}% (${x.total})` : '–');
+      console.log(`  [${withMeta ? 'col meta' : 'senza meta'}]`);
+      ['vince il voto più alto', 'differenza 1–4', 'differenza 5–9', 'differenza 10–…'].forEach((label, i) =>
+        console.log(`    ${label.padEnd(23)} ${pct(result[0][i]).padEnd(14)} → ${pct(result[1][i])}`));
+    }
+  }
+}
+
+if (process.argv.includes('--confronta')) {
+  if (process.argv.includes('--replays')) confrontaReplays();
+  else confronta();
+} else if (process.argv.includes('--replays')) {
   replays();
 } else if (process.argv.includes('--climb')) {
   // Il team di riferimento e la base migliore di ogni archetipo in OU
