@@ -136,6 +136,59 @@ const teamMove = (team: TeamSet[], ids: Set<string>) => {
 const holders = (team: TeamSet[], move: string) =>
   team.filter(member => member.moves.some(m => toID(m) === toID(move))).map(member => battleSpecies(member)?.name ?? member.species);
 
+/**
+ * Una condizione che fa arrivare prima il membro: le sue (setup, meteo, Booster, Unburden) moltiplicano la sua velocità,
+ * quelle del team (Web, paralisi) rallentano i rivali, Tailwind raddoppia il membro, Trick Room inverte l'ordine.
+ * Sono i check del modale della Velocità e le condizioni che il voto misura (la priorità è a parte: dipende dal danno).
+ */
+export interface SpeedOption {
+  condition: SpeedCondition;
+  /** La mossa, l'abilità o lo strumento. */
+  source: string;
+  /** Per il controllo del team: chi porta la mossa. */
+  by?: string[];
+  /** Quanto moltiplica la velocità del membro (1 se agisce sui rivali). */
+  memberFactor: number;
+  /** Quanto moltiplica la velocità di un rivale (Web: 2/3 se non immune; paralisi: metà se non immune). */
+  rivalFactor?: (rival: SpeedRival) => number;
+  /** Trick Room: un rivale è "superato" se è più veloce. */
+  trickRoom?: boolean;
+}
+
+/** Le condizioni di velocità di un membro nel suo team, nell'ordine del voto: prima le sue, poi quelle del team. */
+export function speedOptions(set: TeamSet, team: TeamSet[]): SpeedOption[] {
+  const options: SpeedOption[] = [];
+  const fields = [...team, set].map(ownField);
+  const weathers = fields.map(f => f.weather).filter(Boolean) as string[];
+  const terrains = fields.map(f => f.terrain).filter(Boolean) as string[];
+  const ability = toID(battleAbility(set));
+  const plusTwo = moveName(set, SETUP_PLUS_TWO);
+  const plusOne = moveName(set, SETUP_PLUS_ONE) ?? (ability === 'speedboost' ? battleAbility(set) : null);
+  if (plusTwo) options.push({ condition: 'setup', source: getMove(plusTwo)?.name ?? plusTwo, memberFactor: 2 });
+  else if (plusOne) options.push({ condition: 'setup', source: getMove(plusOne)?.name ?? plusOne, memberFactor: 1.5 });
+  const needs = WEATHER_SPEED[ability];
+  if (needs && ((needs.weather && weathers.includes(needs.weather)) || (needs.terrain && terrains.includes(needs.terrain)))) {
+    options.push({ condition: 'weather', source: battleAbility(set), memberFactor: 2 });
+  }
+  // Paradox: la Booster Energy (si consuma) o il sole / campo elettrico del team, se la Velocità è la statistica più alta
+  if (paradoxSpeedBoost(set)) {
+    const byItem = toID(set.item) === 'boosterenergy';
+    const byField = (ability === 'protosynthesis' && weathers.includes('sun')) || (ability === 'quarkdrive' && terrains.includes('electric'));
+    if (byItem || byField) options.push({ condition: 'booster', source: byItem ? 'Booster Energy' : battleAbility(set), memberFactor: PARADOX_SPEED });
+  }
+  if (ability === 'unburden' && consumable(set.item)) options.push({ condition: 'unburden', source: battleAbility(set), memberFactor: 2 });
+  const web = teamMove(team, new Set(['stickyweb']));
+  if (web) options.push({ condition: 'web', source: web, by: holders(team, web), memberFactor: 1, rivalFactor: r => (r.webImmune ? 1 : 2 / 3) });
+  const trickRoom = teamMove(team, new Set(['trickroom']));
+  if (trickRoom) options.push({ condition: 'trickroom', source: trickRoom, by: holders(team, trickRoom), memberFactor: 1, trickRoom: true });
+  const tailwind = teamMove(team, new Set(['tailwind']));
+  if (tailwind) options.push({ condition: 'tailwind', source: tailwind, by: holders(team, tailwind), memberFactor: 2 });
+  // Tutte le mosse che rallentano del team (immunità diverse): il voto conta poi la migliore
+  const slowing = [...new Set(team.flatMap(member => member.moves.map(m => getMove(m)).filter(m => !!m && (PARALYSIS.has(m.id) || SPEED_DROP.has(m.id))).map(m => m!.name)))].sort();
+  for (const move of slowing) options.push({ condition: 'slow', source: move, by: holders(team, move), memberFactor: 1, rivalFactor: r => slowFactor(move, r.species) });
+  return options;
+}
+
 const members = new Map<string, MemberSpeed | null>();
 const MEMBER_LIMIT = 5000;
 
@@ -145,16 +198,12 @@ export function memberSpeed(set: TeamSet, team: TeamSet[], data: EngineData): Me
   const fields = [...team, set].map(ownField);
   const weathers = [...new Set(fields.map(f => f.weather).filter(Boolean))].sort() as string[];
   const terrains = [...new Set(fields.map(f => f.terrain).filter(Boolean))].sort() as string[];
-  const web = teamMove(team, new Set(['stickyweb']));
-  const trickRoom = teamMove(team, new Set(['trickroom']));
-  const tailwind = teamMove(team, new Set(['tailwind']));
-  // Tutte le mosse che rallentano del team (immunità diverse): conta poi la migliore
-  const slowing = [...new Set(team.flatMap(member => member.moves.map(m => getMove(m)).filter(m => !!m && (PARALYSIS.has(m.id) || SPEED_DROP.has(m.id))).map(m => m!.name)))].sort();
-  const bringers = [web, trickRoom, tailwind, ...slowing].filter((m): m is string => !!m).map(m => `${m}:${holders(team, m)}`).join(',');
+  const options = speedOptions(set, team);
+  const bringers = options.filter(o => o.by).map(o => `${o.source}:${o.by}`).join(',');
   const key = `${setKey(set)}|${weathers}|${terrains}|${bringers}|${data.formatId ?? 'ou'}|${usesMeta(data)}|${statsKey(data.stats)}`;
   if (members.has(key)) return members.get(key)!;
   if (members.size >= MEMBER_LIMIT) members.clear();
-  const value = measure(set, data, { weathers, terrains, web, trickRoom, tailwind, slowing, holders: (move: string) => holders(team, move) });
+  const value = measure(set, data, { weathers, terrains, options });
   members.set(key, value);
   return value;
 }
@@ -162,11 +211,8 @@ export function memberSpeed(set: TeamSet, team: TeamSet[], data: EngineData): Me
 interface TeamConditions {
   weathers: string[];
   terrains: string[];
-  web: string | null;
-  trickRoom: string | null;
-  tailwind: string | null;
-  slowing: string[];
-  holders: (move: string) => string[];
+  /** Le condizioni del membro e del team (speedOptions). */
+  options: SpeedOption[];
 }
 
 function measure(set: TeamSet, data: EngineData, team: TeamConditions): MemberSpeed | null {
@@ -194,48 +240,31 @@ function measure(set: TeamSet, data: EngineData, team: TeamConditions): MemberSp
    */
   const extraOf = (condition: SpeedCondition, boosted: number[]) => boosted.map((b, i) => CONDITION_QUOTA[condition] * (b - bases[i]));
   const gainOf = (condition: SpeedCondition, share: number) => CONDITION_QUOTA[condition] * Math.max(0, share - raw);
-  const add = (condition: SpeedCondition, source: string, boosted: number[]) => {
+  const add = (condition: SpeedCondition, source: string, boosted: number[], by?: string[]) => {
     const extra = extraOf(condition, boosted);
     const gain = wmean(extra);
     if (gain <= 0) return;
-    const entry = CONTROL_CONDITIONS.includes(condition) ? { condition, source, gain, by: team.holders(source) } : { condition, source, gain };
+    const entry = by ? { condition, source, gain, by } : { condition, source, gain };
     gains.push(entry);
     perRival.set(condition, extra);
     if (entry.by) controlOptions.push(entry);
   };
+  /** I rivali "superati" con la condizione: il membro più veloce, i rivali più lenti, o l'ordine invertito (Trick Room:
+   *  chi è lento supera chi è più veloce, a pari velocità metà, e perde i più lenti). */
+  const boostedWith = (o: SpeedOption) => (o.trickRoom ? bases.map((b, i) => (weights[i] ? 1 - b : 0))
+    : o.rivalFactor ? basesWith(speed, o.rivalFactor) : basesWith(Math.floor(speed * o.memberFactor)));
 
-  const ability = toID(battleAbility(set));
-  const plusTwo = moveName(set, SETUP_PLUS_TWO);
-  const plusOne = moveName(set, SETUP_PLUS_ONE) ?? (ability === 'speedboost' ? battleAbility(set) : null);
-  if (plusTwo) add('setup', getMove(plusTwo)?.name ?? plusTwo, basesWith(speed * 2));
-  else if (plusOne) add('setup', getMove(plusOne)?.name ?? plusOne, basesWith(Math.floor(speed * 1.5)));
-
-  const needs = WEATHER_SPEED[ability];
-  if (needs && ((needs.weather && team.weathers.includes(needs.weather)) || (needs.terrain && team.terrains.includes(needs.terrain)))) {
-    add('weather', battleAbility(set), basesWith(speed * 2));
-  }
-  // Paradox: la Booster Energy (si consuma) o il sole / campo elettrico del team, se la Velocità è la statistica più alta
-  if (paradoxSpeedBoost(set)) {
-    const byItem = toID(set.item) === 'boosterenergy';
-    const byField = (ability === 'protosynthesis' && team.weathers.includes('sun')) || (ability === 'quarkdrive' && team.terrains.includes('electric'));
-    if (byItem || byField) add('booster', byItem ? 'Booster Energy' : battleAbility(set), basesWith(Math.floor(speed * PARADOX_SPEED)));
-  }
-  if (ability === 'unburden' && consumable(set.item)) add('unburden', battleAbility(set), basesWith(speed * 2));
-  if (team.web) add('web', team.web, basesWith(speed, r => (r.webImmune ? 1 : 2 / 3)));
-  // Trick Room: chi è lento "supera" chi è più veloce di lui (a pari velocità metà) e perde i più lenti. Misura da sola
-  // chi è adatto: i lenti guadagnano molto, i veloci niente
-  if (team.trickRoom) add('trickroom', team.trickRoom, bases.map((b, i) => (weights[i] ? 1 - b : 0)));
-  if (team.tailwind) add('tailwind', team.tailwind, basesWith(speed * 2));
+  for (const o of team.options.filter(o => o.condition !== 'slow')) add(o.condition, o.source, boostedWith(o), o.by);
   // Rallentare: conta la mossa migliore che il team ha, con le immunità di tipo
-  const options = team.slowing
-    .map(move => ({ move, boosted: basesWith(speed, r => slowFactor(move, r.species)) }))
-    .map(o => ({ ...o, share: wmean(o.boosted) }))
+  const slowing = team.options.filter(o => o.condition === 'slow')
+    .map(o => ({ o, boosted: boostedWith(o) }))
+    .map(x => ({ ...x, share: wmean(x.boosted) }))
     .sort((a, b) => b.share - a.share);
-  if (options[0]) add('slow', options[0].move, options[0].boosted);
-  // Le altre non si sommano, ma la tabella del controllo mostra anche il loro effetto da sole
-  for (const option of options.slice(1)) {
+  if (slowing[0]) add('slow', slowing[0].o.source, slowing[0].boosted, slowing[0].o.by);
+  // Le altre non si sommano, ma il modale mostra anche il loro effetto da sole
+  for (const option of slowing.slice(1)) {
     const gain = gainOf('slow', option.share);
-    if (gain > 0) controlOptions.push({ condition: 'slow', source: option.move, gain, by: team.holders(option.move) });
+    if (gain > 0) controlOptions.push({ condition: 'slow', source: option.o.source, gain, by: option.o.by });
   }
 
   // Priorità come il setup: colpisce per primo anche chi è più veloce, pesato da quanto fa male (metà PS vale pieno)
