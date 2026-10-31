@@ -153,9 +153,9 @@ describe('Velocità: casi particolari', () => {
   });
 
   it('si esclude solo la propria forma (le Mega contano come la base)', () => {
-    const pool = [{ species: 'Rotom-Heat', value: 100, scarf: false }, { species: 'Garchomp', value: 100, scarf: false }];
+    const pool = [{ species: 'Rotom-Heat', value: 100, scarf: false, weight: 1 }, { species: 'Garchomp', value: 100, scarf: false, weight: 1 }];
     expect(outspeedShare(200, pool, 'Rotom-Wash')).toBe(1);
-    expect(outspeedShare(200, pool.slice(0, 1).concat({ species: 'Rotom-Wash', value: 300, scarf: false }), 'Rotom-Wash')).toBe(1);
+    expect(outspeedShare(200, pool.slice(0, 1).concat({ species: 'Rotom-Wash', value: 300, scarf: false, weight: 1 }), 'Rotom-Wash')).toBe(1);
     expect(outspeedShare(50, pool, 'Garchomp-Mega')).toBe(0);
   });
 

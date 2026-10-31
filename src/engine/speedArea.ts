@@ -5,7 +5,7 @@ import { bestHit, setKey } from './damage';
 import { ownConditions } from './coverage';
 import { usesMeta } from './analysis';
 import { mostCommonSet, type TeamSet } from './sets';
-import { isWebImmune, outspeedShare, paradoxSpeedBoost, sameSelf, speedPool, speedStat, type SpeedRival } from './speed';
+import { isWebImmune, outspeedShare, paradoxSpeedBoost, sameSelf, speedPool, speedStat, statsKey, type SpeedRival } from './speed';
 import { ownField } from './types';
 import { getSpecies } from './dex';
 
@@ -131,7 +131,7 @@ export function memberSpeed(set: TeamSet, team: TeamSet[], data: EngineData): Me
   // Tutte le mosse che rallentano del team (immunità diverse): conta poi la migliore
   const slowing = [...new Set(team.flatMap(member => member.moves.map(m => getMove(m)).filter(m => !!m && (PARALYSIS.has(m.id) || SPEED_DROP.has(m.id))).map(m => m!.name)))].sort();
   const bringers = [web, trickRoom, tailwind, ...slowing].filter((m): m is string => !!m).map(m => `${m}:${holders(team, m)}`).join(',');
-  const key = `${setKey(set)}|${weathers}|${terrains}|${bringers}|${data.formatId ?? 'ou'}|${usesMeta(data)}|${!!data.stats}`;
+  const key = `${setKey(set)}|${weathers}|${terrains}|${bringers}|${data.formatId ?? 'ou'}|${usesMeta(data)}|${statsKey(data.stats)}`;
   if (members.has(key)) return members.get(key)!;
   if (members.size >= MEMBER_LIMIT) members.clear();
   const value = measure(set, data, { weathers, terrains, web, trickRoom, tailwind, slowing, holders: (move: string) => holders(team, move) });
@@ -212,7 +212,8 @@ function measure(set: TeamSet, data: EngineData, team: TeamConditions): MemberSp
   const terrain = grassy ? ['grassyterrain' as const] : ownTerrain.length ? [] : team.terrains.slice(0, 1).map(tr => TERRAIN_TO_CONDITION[tr]).filter(Boolean);
   const conditions = [...own.filter(c => WEATHER_CONDITIONS.has(c) || !grassy), ...teamWeather, ...terrain] as typeof own;
   const faster = pool.filter(r => r.value >= speed && !sameSelf(r.species, set.species));
-  const rivalsCount = pool.filter(r => !sameSelf(r.species, set.species)).length;
+  // Le versioni di una specie (con e senza Sciarpa) pesano per la loro quota
+  const rivalsCount = pool.filter(r => !sameSelf(r.species, set.species)).reduce((acc, r) => acc + r.weight, 0);
   // Senza mosse che qui sono prioritarie (Grassy Glide senza campo erboso) niente calcoli
   const hasPriority = set.moves.some(m => { const d = getMove(m); return !!d && d.category !== 'Status' && (d.priority > 0 || (d.id === 'grassyglide' && grassy)); });
   const byMove = new Map<string, number>();
@@ -220,7 +221,7 @@ function measure(set: TeamSet, data: EngineData, team: TeamConditions): MemberSp
     for (const r of faster) {
       const hit = bestHit(set, rivalSet(r.species, data), { priorityOnly: true, conditions });
       if (!hit) continue;
-      byMove.set(hit.move, (byMove.get(hit.move) ?? 0) + (r.value === speed ? 0.5 : 1) * Math.min(1, hit.expected / PRIORITY_FULL));
+      byMove.set(hit.move, (byMove.get(hit.move) ?? 0) + r.weight * (r.value === speed ? 0.5 : 1) * Math.min(1, hit.expected / PRIORITY_FULL));
     }
   }
   const firstHits = [...byMove.values()].reduce((a, b) => a + b, 0);

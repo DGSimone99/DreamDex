@@ -384,6 +384,7 @@ export const en = {
   'editor.speedTies': "Same speed",
   'editor.speedSlower': "Slower",
   'editor.scarf': "with Scarf",
+  'editor.booster': "with Booster",
   'editor.speedNote': "Each one’s most used spread and item, level 100",
   'editor.megaAbilityNote': "Set by the Mega",
   'editor.base': "Base {n}",

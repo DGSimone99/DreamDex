@@ -386,6 +386,7 @@ export const it: Record<keyof typeof en, string> = {
   'editor.speedTies': "Stessa velocità",
   'editor.speedSlower': "Più lenti",
   'editor.scarf': "con Sciarpa",
+  'editor.booster': "con Booster",
   'editor.speedNote': "Spread e strumento più usati di ciascuno, livello 100",
   'editor.megaAbilityNote': "Fissata dalla Mega",
   'editor.base': "Base {n}",

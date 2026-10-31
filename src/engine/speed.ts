@@ -1,5 +1,6 @@
 import type { Species } from '@pkmn/dex';
 import type { EngineData } from './data';
+import type { SpeciesStats } from './stats';
 import { battleSpecies, dex, getSpecies, isSelectable, toID } from './dex';
 import { parseSpread, type TeamSet } from './sets';
 import { statLines } from './statCalc';
@@ -47,13 +48,34 @@ export interface SpeedRival extends Speed {
   species: string;
   /** Sticky Web non lo rallenta: Volante, Levitate o Heavy-Duty Boots (senza meta: solo dal tipo e dall'abilità). */
   webImmune?: boolean;
+  /** Protosynthesis o Quark Drive con la Booster Energy: Velocità ×1,5 (vedi paradoxSpeedBoost). */
+  booster?: boolean;
+  /** Quanto pesa questa versione della specie (le versioni di una specie sommano 1: la specie vale sempre 1 nel gruppo). */
+  weight: number;
+}
+
+/** Da questa quota dei set, lo strumento che alza la Velocità (Sciarpa o Booster) fa una seconda versione del rivale. */
+export const SPEED_ITEM_SPLIT = 0.2;
+/** Da questa quota conta solo la versione con lo strumento. */
+export const SPEED_ITEM_ONLY = 0.8;
+
+const SPEED_ITEMS = new Set(['choicescarf', 'boosterenergy']);
+
+const statsIds = new WeakMap<object, number>();
+let lastStatsId = 0;
+/** Chiave delle statistiche per le cache (per identità: due file diversi non condividono il gruppo). */
+export function statsKey(stats: object | null | undefined): string {
+  if (!stats) return '0';
+  let id = statsIds.get(stats);
+  if (id === undefined) statsIds.set(stats, (id = ++lastStatsId));
+  return String(id);
 }
 
 export interface SpeedTier {
   speed: number;
   /** Confronto coi più usati del meta (true) o col tier alla velocità massima (false). */
   vsMeta: boolean;
-  /** Pokémon del meta confrontati (la specie stessa esclusa). */
+  /** Specie del meta confrontate (la specie stessa esclusa; le versioni con la Sciarpa non contano due volte). */
   total: number;
   /** Quota di quei Pokémon più lenti del set. */
   outspeeds: number;
@@ -74,7 +96,7 @@ const pools = new Map<string, SpeedRival[]>();
 export function speedPool(data: EngineData): SpeedRival[] {
   const formatId = data.formatId ?? 'ou';
   const meta = usesMeta(data);
-  const key = `${formatId}|${meta}|${!!data.stats}`;
+  const key = `${formatId}|${meta}|${statsKey(data.stats)}`;
   let pool = pools.get(key);
   if (pool) return pool;
   pool = meta
@@ -83,18 +105,41 @@ export function speedPool(data: EngineData): SpeedRival[] {
       .filter(([name]) => !!getSpecies(name))
       .sort((a, b) => b[1].usage - a[1].usage)
       .slice(0, SPEED_POOL)
-      .map(([name, entry]) => {
-        const { nature, evs } = parseSpread(top(entry.spreads));
-        const item = dex.items.get(top(entry.items) ?? '').name ?? '';
-        const webImmune = isWebImmune(name, top(entry.abilities) ?? '', item);
-        return { species: name, ...speedStat({ species: name, item, nature, evs }), webImmune };
-      })
+      .flatMap(([name, entry]) => rivalVersions(name, entry))
     : tierSpecies(formatId).map(s => ({
-      species: s.name, value: Math.floor((2 * s.baseStats.spe + 31 + 63 + 5) * 1.1), scarf: false,
+      species: s.name, value: Math.floor((2 * s.baseStats.spe + 31 + 63 + 5) * 1.1), scarf: false, weight: 1,
       webImmune: isWebImmune(s.name, s.abilities[0], ''),
     }));
   pools.set(key, pool);
   return pool;
+}
+
+/**
+ * Le versioni di un rivale del meta: col suo spread, abilità e strumento più comuni. Se la Sciarpa Scelta (o la Booster
+ * Energy, per un Paradox a cui alza la Velocità) sta su almeno il 20% dei suoi set, il rivale conta anche in quella
+ * versione, pesata per la quota; da 80% conta solo quella. Le versioni di una specie pesano 1 in tutto.
+ */
+function rivalVersions(name: string, entry: SpeciesStats): SpeedRival[] {
+  const { nature, evs } = parseSpread(top(entry.spreads));
+  const ability = dex.abilities.get(top(entry.abilities) ?? '').name ?? '';
+  const plainId = Object.entries(entry.items).filter(([id]) => !SPEED_ITEMS.has(id)).sort((a, b) => b[1] - a[1])[0]?.[0] ?? '';
+  const plainItem = dex.items.get(plainId).name ?? '';
+  const webImmune = isWebImmune(name, ability, plainItem);
+  const plain: SpeedRival = { species: name, ...speedStat({ species: name, item: plainItem, nature, evs }), webImmune, weight: 1 };
+  const scarfShare = entry.items.choicescarf ?? 0;
+  const boosterShare = paradoxSpeedBoost({ species: name, ability, item: '', nature, evs }) ? entry.items.boosterenergy ?? 0 : 0;
+  const share = Math.max(scarfShare, boosterShare);
+  if (share < SPEED_ITEM_SPLIT) return [plain];
+  const boosted: SpeedRival = scarfShare >= boosterShare
+    ? { ...plain, ...speedStat({ species: name, item: 'Choice Scarf', nature, evs }), webImmune: isWebImmune(name, ability, 'Choice Scarf') }
+    : { ...plain, value: Math.floor(plain.value * 1.5), booster: true };
+  if (share >= SPEED_ITEM_ONLY) return [boosted];
+  return [{ ...plain, weight: 1 - share }, { ...boosted, weight: share }];
+}
+
+/** Le specie del gruppo, una volta sola e nell'ordine del gruppo (le versioni con la Sciarpa non si ripetono). */
+export function poolSpecies(data: EngineData): string[] {
+  return [...new Set(speedPool(data).map(r => r.species))];
 }
 
 /** Sticky Web non rallenta i Volanti, chi ha Levitate, Heavy-Duty Boots o Air Balloon. */
@@ -110,11 +155,15 @@ const selfOf = (name: string) => {
 };
 export const sameSelf = (a: string, b: string) => selfOf(a) === selfOf(b);
 
-/** Quota del gruppo più lenta di `speed`; un pareggio vale metà. La specie stessa (`ownSpecies`) non si confronta con sé. */
+/**
+ * Quota del gruppo più lenta di `speed`, pesata per le versioni (una specie vale sempre 1); un pareggio vale metà.
+ * La specie stessa (`ownSpecies`) non si confronta con sé.
+ */
 export function outspeedShare(speed: number, pool: SpeedRival[], ownSpecies?: string): number {
   const rivals = ownSpecies ? pool.filter(r => !sameSelf(r.species, ownSpecies)) : pool;
-  if (!rivals.length) return 0;
-  return rivals.reduce((acc, r) => acc + (r.value < speed ? 1 : r.value === speed ? 0.5 : 0), 0) / rivals.length;
+  const total = rivals.reduce((acc, r) => acc + r.weight, 0);
+  if (!total) return 0;
+  return rivals.reduce((acc, r) => acc + r.weight * (r.value < speed ? 1 : r.value === speed ? 0.5 : 0), 0) / total;
 }
 
 /** Velocità del set rispetto al gruppo del formato (speedPool), coi vicini più veloci e più lenti. */
@@ -125,7 +174,7 @@ export function speedTier(set: TeamSet, data: EngineData): SpeedTier | null {
   return {
     speed,
     vsMeta: usesMeta(data),
-    total: rivals.length,
+    total: new Set(rivals.map(r => r.species)).size,
     outspeeds: outspeedShare(speed, rivals),
     faster: rivals.filter(r => r.value > speed).sort((a, b) => a.value - b.value).slice(0, NEIGHBOURS),
     slower: rivals.filter(r => r.value < speed).sort((a, b) => b.value - a.value).slice(0, NEIGHBOURS),
@@ -179,8 +228,12 @@ export function referenceSpeeds(formatId: FormatId = 'ou'): number[] {
   return speeds;
 }
 
-/** Velocità del rivale a metà del gruppo (speedPool); null se il gruppo è vuoto. */
+/** Velocità del rivale a metà del gruppo (speedPool), pesando le versioni; null se il gruppo è vuoto. */
 export function poolMedian(data: EngineData): number | null {
-  const values = speedPool(data).map(r => r.value).sort((a, b) => a - b);
-  return values.length ? values[Math.floor(values.length / 2)] : null;
+  const sorted = [...speedPool(data)].sort((a, b) => a.value - b.value);
+  const total = sorted.reduce((acc, r) => acc + r.weight, 0);
+  if (!total) return null;
+  let cumulative = 0;
+  for (const r of sorted) { cumulative += r.weight; if (cumulative >= total / 2) return r.value; }
+  return sorted[sorted.length - 1].value;
 }

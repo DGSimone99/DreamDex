@@ -8,7 +8,7 @@ import { usesMeta } from './analysis';
 import { setKey } from './damage';
 import { rolesMemberOffense } from './offense';
 import { memberSpeed } from './speedArea';
-import { outspeedShare, speedPool, speedStat, type SpeedRival } from './speed';
+import { outspeedShare, poolSpecies, speedPool, speedStat, type SpeedRival } from './speed';
 import { teamField } from './types';
 import { memoBySet } from './memo';
 import type { Archetype } from './archetype';
@@ -217,13 +217,13 @@ export function statusPool(data: EngineData): StatusRival[] {
   let pool = statusPools.get(key);
   if (pool) return pool;
   const meta = usesMeta(data);
-  pool = speedPool(data).flatMap(r => {
-    const species = getSpecies(r.species);
+  pool = poolSpecies(data).flatMap(name => {
+    const species = getSpecies(name);
     if (!species) return [];
-    const common = meta ? mostCommonSet(data.stats, r.species) : null;
-    const usage = meta ? data.stats!.pokemon[r.species]?.usage ?? 0 : 1;
+    const common = meta ? mostCommonSet(data.stats, name) : null;
+    const usage = meta ? data.stats!.pokemon[name]?.usage ?? 0 : 1;
     return [{
-      species: r.species, types: [...species.types],
+      species: name, types: [...species.types],
       ability: common?.ability || species.abilities[0] || '', item: common?.item ?? '', weight: usage > 0 ? usage : 0,
     }];
   });
