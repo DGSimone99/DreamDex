@@ -26,10 +26,11 @@ export function SpeedLine({ name, tier, scarf }: { name: string; tier: SpeedTier
     <span className="speed-group">
       <span className="speed-group-title">{title}</span>
       {rivals.map(r => (
-        <span key={r.species} className="speed-rival">
+        <span key={`${r.species}-${r.scarf}-${!!r.booster}`} className="speed-rival">
           <PokemonIcon name={r.species} />
           <span className="speed-rival-name">{r.species}</span>
           {r.scarf && <span className="speed-scarf">{t('editor.scarf')}</span>}
+          {r.booster && <span className="speed-scarf">{t('editor.booster')}</span>}
           <span className="speed-rival-value">{r.value}</span>
         </span>
       ))}

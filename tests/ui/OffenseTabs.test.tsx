@@ -82,6 +82,18 @@ describe('Offesa: navigazione e guida', () => {
   });
 });
 
+describe('Offesa: la velocità nella riga del membro è quella reale', () => {
+  it('Victini con la Sciarpa mostra 492 e il segno Scarf, non 328', () => {
+    const victini: TeamSet = { ...emptySet('Victini'), item: 'Choice Scarf', ability: 'Victory Star', nature: 'Jolly', evs: { atk: 252, spe: 252 }, moves: ['V-create', 'Bolt Strike', 'U-turn', 'Trick'] };
+    const t = [victini];
+    renderIt(<AreaView rating={rateTeam(t, fixtureData, 'it')!} area="strength" team={t} analysis={analyzeTeam(t, fixtureData)} problems={[]} />);
+    const stat = document.querySelector('.def-members .def-mon-stats')!;
+    expect(stat).toHaveTextContent('492');
+    expect(stat).not.toHaveTextContent('328');
+    expect(stat).toHaveTextContent('Scarf');
+  });
+});
+
 describe('Offesa: Generale', () => {
   const view = (t: TeamSet[] = team, rating = withMeta()) => renderIt(<AreaView rating={rating} area="strength" team={t} analysis={analyzeTeam(t, fixtureData)} problems={[]} />);
 

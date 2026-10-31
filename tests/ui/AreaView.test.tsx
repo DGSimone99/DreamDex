@@ -97,9 +97,12 @@ describe('vista di un\'area sulla pagina', () => {
     expect(all.at(-1)).toHaveFocus();
   });
 
-  it('aree senza guida: nessun "?" nelle sottoschede', () => {
-    renderIt(<AreaView rating={withMeta()} area="speed" team={team} analysis={analysis} problems={[]} />);
+  it('aree senza guida: nessun "?" nelle sottoschede (i Ruoli); la Velocità ora ce l\'ha', () => {
+    const { unmount } = renderIt(<AreaView rating={withMeta()} area="roles" team={team} analysis={analysis} problems={[]} />);
     expect(screen.queryByRole('button', { name: /^Come funziona/ })).toBeNull();
+    unmount();
+    renderIt(<AreaView rating={withMeta()} area="speed" team={team} analysis={analysis} problems={[]} />);
+    expect(screen.getByRole('button', { name: /^Come funziona/ })).toBeInTheDocument();
   });
 
   it('AreaGuide: si apre sulla sezione scelta, Esc chiude', async () => {

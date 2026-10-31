@@ -29,3 +29,61 @@
 .speed-rival-value { margin-left: auto; font-weight: 700; font-variant-numeric: tabular-nums; }
 .speed-self { margin: 0 -8px; padding: 3px 8px; background: var(--accent-soft); border-radius: 3px; font-weight: 700; }
 .speed-note { font-size: 11px; color: var(--faint); }
+
+/* Velocità: la scheda a barre (una per membro) e il modale del membro */
+.sp-general .def-members thead th:nth-child(2) { text-align: left; }
+.sp-bar-btn { display: grid; grid-template-columns: minmax(0, 1fr) 5.5ch auto 18px; align-items: center; gap: 12px; width: 100%; padding: 6px 4px 6px 0; border: 0; border-radius: 4px; background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.sp-bar-btn:hover { background: var(--raised); }
+.sp-bar-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.sp-bar-btn svg { width: 16px; height: 16px; color: var(--faint); }
+.sp-bar-btn:hover svg { color: var(--text); }
+.sp-stack { position: relative; display: flex; height: 10px; background: var(--line-soft); overflow: hidden; }
+.sp-stack i { display: block; height: 100%; flex: none; }
+.sp-stack .sp-seg-raw { background: var(--good); }
+.sp-bar-btn.warn .sp-seg-raw { background: var(--warn); }
+.sp-bar-btn.bad .sp-seg-raw { background: var(--bad); }
+/* I segmenti dei guadagni staccati dalla velocità pura con una riga scura: si vede dove finisce la velocità propria */
+.sp-stack .sp-seg-own { background: repeating-linear-gradient(135deg, var(--warn) 0 3px, color-mix(in srgb, var(--warn) 55%, var(--panel)) 3px 6px); box-shadow: inset 2px 0 0 var(--ground); }
+.sp-stack .sp-seg-team { background: repeating-linear-gradient(135deg, var(--accent-2) 0 3px, color-mix(in srgb, var(--accent-2) 55%, var(--panel)) 3px 6px); box-shadow: inset 2px 0 0 var(--ground); }
+.sp-total { font: italic 700 17px/1 var(--display); text-align: right; font-variant-numeric: tabular-nums; }
+.sp-total.good { color: var(--good); }
+.sp-total.warn { color: var(--warn); }
+.sp-total.bad { color: var(--bad); }
+.sp-parts { display: flex; gap: 6px; min-width: 9ch; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.sp-parts .sp-part-own { color: var(--warn); }
+.sp-parts .sp-part-team { color: var(--accent-2-ink); }
+.sp-mark { display: inline-block; margin-left: 4px; padding: 1px 5px; border-radius: 3px; background: var(--accent-2-soft); color: var(--text); font: 700 10px/1.3 var(--ui); letter-spacing: 0.02em; vertical-align: middle; }
+.sp-tile { cursor: default; }
+.sp-controls { gap: 6px; flex-wrap: wrap; white-space: normal; }
+.sp-control-move { padding: 1px 6px; border: 1px solid var(--line); border-radius: 3px; font-size: 12px; }
+/* Il modale del membro */
+.help-dialog.sp-dialog { width: min(560px, 100%); max-height: min(760px, calc(100vh - 48px)); }
+.sp-dialog .help-head h3 { display: flex; align-items: center; gap: 8px; }
+.sp-dialog-body { display: flex; flex-direction: column; gap: 10px; min-height: 0; padding: 14px 18px 16px; overflow: auto; }
+.sp-dlg-head { display: flex; align-items: baseline; gap: 10px; margin: 0; color: var(--muted); }
+.sp-dlg-speed { font: italic 700 26px/1 var(--display); color: var(--text); font-variant-numeric: tabular-nums; }
+.sp-dlg-note { margin: 0; font-size: 12px; color: var(--faint); }
+.sp-checks { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 8px 10px 10px; border: 1px solid var(--line); border-radius: 4px; }
+.sp-checks legend { padding: 0 4px; font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.sp-check { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border: 1px solid var(--line); border-radius: 999px; font-size: 13px; cursor: pointer; }
+.sp-check.on { border-color: var(--accent); background: var(--accent-soft); }
+.sp-check input { margin: 0; }
+.sp-check-effect { color: var(--muted); font-size: 11px; }
+.sp-priority { margin: 0; font-size: 12px; color: var(--muted); }
+.sp-dlg-count { margin: 0; font-weight: 700; }
+.sp-list { display: flex; flex-direction: column; gap: 2px; margin: 0; padding: 0; list-style: none; }
+.sp-row { display: grid; grid-template-columns: 28px minmax(0, 1fr) 6ch 5ch; align-items: center; gap: 8px; padding: 2px 8px; border-left: 3px solid var(--line); border-radius: 3px; font-size: 13px; font-variant-numeric: tabular-nums; }
+.sp-row .def-box { --bs: 0.8; }
+.sp-row.sp-beats { border-left-color: var(--good); }
+.sp-row.sp-beats .sp-rival-diff { color: var(--good); }
+.sp-row.sp-loses { border-left-color: var(--bad); }
+.sp-row.sp-loses .sp-rival-diff { color: var(--bad); }
+.sp-row.sp-tie { border-left-color: var(--warn); }
+.sp-row.sp-tie .sp-rival-diff { color: var(--warn); }
+.sp-row.sp-me { border-left-color: var(--accent); background: var(--accent-soft); font-weight: 700; }
+.sp-rival-name { display: flex; align-items: center; gap: 6px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.sp-row.sp-boosted .sp-rival-name { font-style: italic; }
+.sp-row .item-icon { flex: none; display: inline-block; }
+.sp-rival-speed { text-align: right; }
+.sp-rival-diff { text-align: right; font-weight: 700; }
+.sp-dlg-foot { margin: 0; font-size: 11px; color: var(--faint); }

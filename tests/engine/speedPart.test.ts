@@ -57,7 +57,7 @@ describe('Velocità: ogni membro, coi guadagni delle condizioni', () => {
   });
 
   it('Tailwind e paralisi a un quarto', () => {
-    expect(CONDITION_QUOTA).toEqual({ setup: 0.5, weather: 0.5, unburden: 0.5, priority: 0.5, web: 0.5, trickroom: 0.5, tailwind: 0.25, slow: 0.25 });
+    expect(CONDITION_QUOTA).toEqual({ setup: 0.5, weather: 0.5, booster: 0.5, unburden: 0.5, priority: 0.5, web: 0.5, trickroom: 0.5, tailwind: 0.25, slow: 0.25 });
     // Stun Spore del compagno: paralisi, avversari a metà velocità
     const p = memberSpeed(pex, [pex, webber], noMeta)!;
     const slow = p.gains.find(g => g.condition === 'slow')!;
@@ -153,9 +153,9 @@ describe('Velocità: casi particolari', () => {
   });
 
   it('si esclude solo la propria forma (le Mega contano come la base)', () => {
-    const pool = [{ species: 'Rotom-Heat', value: 100, scarf: false }, { species: 'Garchomp', value: 100, scarf: false }];
+    const pool = [{ species: 'Rotom-Heat', value: 100, scarf: false, weight: 1 }, { species: 'Garchomp', value: 100, scarf: false, weight: 1 }];
     expect(outspeedShare(200, pool, 'Rotom-Wash')).toBe(1);
-    expect(outspeedShare(200, pool.slice(0, 1).concat({ species: 'Rotom-Wash', value: 300, scarf: false }), 'Rotom-Wash')).toBe(1);
+    expect(outspeedShare(200, pool.slice(0, 1).concat({ species: 'Rotom-Wash', value: 300, scarf: false, weight: 1 }), 'Rotom-Wash')).toBe(1);
     expect(outspeedShare(50, pool, 'Garchomp-Mega')).toBe(0);
   });
 
@@ -183,9 +183,9 @@ describe('Velocità: casi particolari', () => {
 
 describe("Velocità: l'ordine dei membri non conta", () => {
   it('a pari velocità le posizioni si dividono il peso', () => {
-    const a = { species: 'A', speed: 300, raw: 0.5, gains: [], own: 0.9, total: 0.9, controlOptions: [] };
-    const b = { species: 'B', speed: 300, raw: 0.5, gains: [], own: 0.5, total: 0.5, controlOptions: [] };
-    const c = { species: 'C', speed: 100, raw: 0.1, gains: [], own: 0.1, total: 0.1, controlOptions: [] };
+    const a = { species: 'A', speed: 300, raw: 0.5, gains: [], own: 0.9, total: 0.9, controlOptions: [], cells: [] };
+    const b = { species: 'B', speed: 300, raw: 0.5, gains: [], own: 0.5, total: 0.5, controlOptions: [], cells: [] };
+    const c = { species: 'C', speed: 100, raw: 0.1, gains: [], own: 0.1, total: 0.1, controlOptions: [], cells: [] };
     expect(speedPart([a, b, c])).toBe(speedPart([b, a, c]));
     // Le due posizioni in parità valgono (25 + 20) / 2 ciascuna
     expect(speedPart([a, b, c])).toBe(softScore((22.5 * 0.9 + 22.5 * 0.5 + 16 * 0.1) / 61 / SPEED_FULL));
