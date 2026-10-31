@@ -18,7 +18,7 @@ const points = (x: number) => Math.round(100 * x);
  * tessere, Velocità e Controllo velocità (un clic apre la sottoscheda).
  * Le righe seguono il team dal più veloce; chi il motore non conosce resta con "—".
  */
-export function SpeedGeneral({ speed, meta, ctx }: { speed: TeamSpeed; meta: boolean; ctx: AreaContext }) {
+export function SpeedGeneral({ speed, ctx }: { speed: TeamSpeed; meta: boolean; ctx: AreaContext }) {
   const t = useT();
   const { members, threats } = speed;
   const slots = offenseSlots(ctx.team, members);
@@ -30,7 +30,7 @@ export function SpeedGeneral({ speed, meta, ctx }: { speed: TeamSpeed; meta: boo
   const tip = (list: MemberSpeed['gains']) => list.map(g => `${t(`sdetail.cond.${g.condition}`)} (${g.source}): +${points(g.gain)}`).join('\n');
   const gainOf = (from: number, to: number, list: MemberSpeed['gains']) => {
     const plus = points(to) - points(from);
-    return plus > 0 ? <small className="ad-gain" title={tip(list)}>(+{plus})</small> : undefined;
+    return plus > 0 ? <small className="ad-gain" title={tip(list)}> (+{plus})</small> : undefined;
   };
   const ownColumn = members.some(m => points(m.own) > points(m.raw));
   const teamColumn = members.some(m => points(m.total) > points(m.own));
@@ -90,7 +90,7 @@ export function SpeedGeneral({ speed, meta, ctx }: { speed: TeamSpeed; meta: boo
                       <td className="sp-speed"><b>{m.speed}</b>{set.item.toLowerCase() === 'choice scarf' && <small className="sp-mark">{t('sdetail.mark.scarf')}</small>}</td>
                       <td><Bar value={points(m.raw)} unit="%" /></td>
                       <td><Bar value={points(m.own)} unit="%" reserve={ownColumn} gain={gainOf(m.raw, m.own, ownGains(m))} /></td>
-                      <td><Bar value={points(m.total)} unit="%" total reserve={teamColumn} gain={gainOf(m.own, m.total, teamGains(m))} /></td>
+                      <td><Bar value={points(m.total)} unit="%" reserve={teamColumn} gain={gainOf(m.own, m.total, teamGains(m))} /></td>
                     </>
                     : <><td>—</td><td>—</td><td>—</td><td>—</td></>}
                 </tr>
@@ -99,7 +99,6 @@ export function SpeedGeneral({ speed, meta, ctx }: { speed: TeamSpeed; meta: boo
           </tbody>
         </table>
       </div>
-      <p className="sp-lead">{t(meta ? 'sdetail.lead.meta' : 'sdetail.lead.tier')}</p>
       <div className="def-sum def-tiles sp-tiles">
         {tiles.map(tile => (
           <button key={tile.key} type="button" className={`def-tile ${tile.key === 'control' ? (tile.value > 0 ? 'good' : 'warn') : tone(tile.value)}`} onClick={() => ctx.open?.(tile.key)}>

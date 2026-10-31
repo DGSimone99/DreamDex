@@ -35,12 +35,11 @@ export function SpeedThreats({ speed, meta, ctx }: { speed: TeamSpeed; meta: boo
   const { members, threats } = speed;
   const slots = offenseSlots(ctx.team, members);
   const [hover, setHover] = useState<{ row: number; col: number } | null>(null);
-  const species = new Set(threats.map(th => th.species)).size;
   const outsped = threats.filter(th => th.outsped > 0).length;
   const onlyWith = threats.filter(th => th.outsped === 0 && th.reached > 0).length;
   const summary = (
     <>
-      <span>{t('sdetail.threats.rivals', { n: species })}</span>
+      <span>{t('sdetail.threats.rivals', { n: threats.length })}</span>
       <MetaCount n={outsped} tone="good" label={t('sdetail.threats.outsped')} />
       <MetaCount n={onlyWith} tone="warn" label={t('sdetail.threats.onlyWith')} />
       <MetaCount n={threats.length - outsped - onlyWith} tone="bad" label={t('sdetail.threats.nobody')} />
