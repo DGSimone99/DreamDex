@@ -5,6 +5,8 @@ import { analyzeTeam } from '../../src/engine/analysis';
 import { rateTeam } from '../../src/engine/rating';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
 import { poolSpecies } from '../../src/engine/speed';
+import type { EngineData } from '../../src/engine/data';
+import type { SpeciesStats } from '../../src/engine/stats';
 import { LangProvider } from '../../src/i18n/react';
 import { AreaView } from '../../src/ui/AreaView';
 import { fixtureData } from '../fixtures/data';
@@ -108,6 +110,51 @@ describe('Velocità: una scheda a barre', () => {
     expect(dialog).not.toHaveTextContent(/versione con lo strumento/);
     // Il voto in testa non cambia
     expect(screen.getByRole('tab', { name: /^Generale/ })).toHaveTextContent(String(withMeta().speed.value));
+  });
+
+  it('un rivale con la Sciarpa su quasi tutti i set (85%): una riga sola, sempre con l\'icona, anche a check spento', async () => {
+    const user = userEvent.setup();
+    const entry = (usage: number, spread: string, items: Record<string, number>): SpeciesStats =>
+      ({ usage, count: 100, abilities: {}, items, moves: {}, teraTypes: {}, spreads: { [spread]: 0.5 }, teammates: {}, checks: {} });
+    const data: EngineData = { stats: { meta: { month: 'm', cutoff: 1, battles: 1 }, pokemon: {
+      Rillaboom: entry(0.4, 'Adamant:0/252/0/0/4/252', { choicescarf: 0.85 }),
+      Garchomp: entry(0.3, 'Jolly:0/252/0/0/4/252', { rockyhelmet: 0.9 }),
+      Gholdengo: entry(0.2, 'Timid:0/0/0/252/4/252', { airballoon: 0.6, choicescarf: 0.3 }),
+    } }, sets: {} };
+    const t = [dnite, pex];
+    renderIt(<AreaView rating={rateTeam(t, data, 'it')!} area="speed" team={t} analysis={analyzeTeam(t, data)} problems={[]} />);
+    await user.click(barOf('Dragonite'));
+    const dialog = dialogOf('Dragonite');
+    const rowsOf = (name: string) => within(dialog).getAllByRole('listitem').filter(r => r.textContent!.includes(name));
+    expect(rowsOf('Rillaboom')).toHaveLength(1);
+    expect(rowsOf('Rillaboom')[0].querySelector('.sp-rival-speed')).toHaveTextContent('403');
+    expect(rowsOf('Rillaboom')[0].querySelector('.item-icon')).not.toBeNull();
+    expect(rowsOf('Rillaboom')[0].getAttribute('title')).toMatch(/Rillaboom con Choice Scarf \(85% dei suoi set\)/);
+    // Il check toglie la seconda versione di Gholdengo (30%), non la riga di Rillaboom che è sempre con la Sciarpa
+    expect(rowsOf('Gholdengo')).toHaveLength(2);
+    await user.click(within(dialog).getByRole('checkbox', { name: 'Rivali con Sciarpa o Booster' }));
+    expect(rowsOf('Gholdengo')).toHaveLength(1);
+    expect(rowsOf('Rillaboom')).toHaveLength(1);
+    expect(rowsOf('Rillaboom')[0].querySelector('.item-icon')).not.toBeNull();
+    expect(rowsOf('Garchomp')).toHaveLength(1);
+  });
+
+  it('due membri della stessa specie: ogni barra apre il modale del proprio set', async () => {
+    const user = userEvent.setup();
+    const plain = set('Dragonite', 'Choice Band', 'Multiscale', ['Outrage', 'Extreme Speed', 'Earthquake', 'Fire Punch'], 'Adamant', { atk: 252, spe: 4 });
+    const t = [dnite, plain, pex];
+    view(t, withMeta(t));
+    const bars = screen.getAllByRole('button', { name: 'Velocità di Dragonite: apri i rivali' });
+    expect(bars).toHaveLength(2);
+    // Il primo (dal più veloce) è quello con Dragon Dance, il secondo no
+    await user.click(bars[0]);
+    expect(checks(dialogOf('Dragonite'))).toContain('Dragon Dance');
+    await user.keyboard('{Escape}');
+    expect(bars[0]).toHaveFocus();
+    await user.click(bars[1]);
+    expect(checks(dialogOf('Dragonite'))).not.toContain('Dragon Dance');
+    await user.keyboard('{Escape}');
+    expect(bars[1]).toHaveFocus();
   });
 
   it('Iron Valiant ha il check Booster Energy; Esc chiude e il focus torna alla barra', async () => {

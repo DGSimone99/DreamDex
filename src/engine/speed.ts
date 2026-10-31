@@ -52,6 +52,8 @@ export interface SpeedRival extends Speed {
   booster?: boolean;
   /** Quanto pesa questa versione della specie (le versioni di una specie sommano 1: la specie vale sempre 1 nel gruppo). */
   weight: number;
+  /** Per la versione con la Sciarpa o la Booster: la quota dei set che la usano (anche quando è l'unica versione). */
+  itemShare?: number;
 }
 
 /** Da questa quota dei set, lo strumento che alza la Velocità (Sciarpa o Booster) fa una seconda versione del rivale. */
@@ -85,7 +87,7 @@ export interface SpeedTier {
   ties: SpeedRival[];
 }
 
-const top = (shares: Record<string, number>) => Object.entries(shares).sort((a, b) => b[1] - a[1])[0]?.[0];
+const top = (shares: Record<string, number> | undefined) => Object.entries(shares ?? {}).sort((a, b) => b[1] - a[1])[0]?.[0];
 
 /**
  * Il gruppo con cui si confronta la velocità, lo stesso per editor, scheda dei membri e voto. Col meta attivo:
@@ -122,17 +124,19 @@ export function speedPool(data: EngineData): SpeedRival[] {
 function rivalVersions(name: string, entry: SpeciesStats): SpeedRival[] {
   const { nature, evs } = parseSpread(top(entry.spreads));
   const ability = dex.abilities.get(top(entry.abilities) ?? '').name ?? '';
-  const plainId = Object.entries(entry.items).filter(([id]) => !SPEED_ITEMS.has(id)).sort((a, b) => b[1] - a[1])[0]?.[0] ?? '';
+  // Una voce senza strumenti (dati di riserva) ha solo la versione normale
+  const items = entry.items ?? {};
+  const plainId = Object.entries(items).filter(([id]) => !SPEED_ITEMS.has(id)).sort((a, b) => b[1] - a[1])[0]?.[0] ?? '';
   const plainItem = dex.items.get(plainId).name ?? '';
   const webImmune = isWebImmune(name, ability, plainItem);
   const plain: SpeedRival = { species: name, ...speedStat({ species: name, item: plainItem, nature, evs }), webImmune, weight: 1 };
-  const scarfShare = entry.items.choicescarf ?? 0;
-  const boosterShare = paradoxSpeedBoost({ species: name, ability, item: '', nature, evs }) ? entry.items.boosterenergy ?? 0 : 0;
+  const scarfShare = items.choicescarf ?? 0;
+  const boosterShare = paradoxSpeedBoost({ species: name, ability, item: '', nature, evs }) ? items.boosterenergy ?? 0 : 0;
   const share = Math.max(scarfShare, boosterShare);
   if (share < SPEED_ITEM_SPLIT) return [plain];
   const boosted: SpeedRival = scarfShare >= boosterShare
-    ? { ...plain, ...speedStat({ species: name, item: 'Choice Scarf', nature, evs }), webImmune: isWebImmune(name, ability, 'Choice Scarf') }
-    : { ...plain, value: Math.floor(plain.value * 1.5), booster: true };
+    ? { ...plain, ...speedStat({ species: name, item: 'Choice Scarf', nature, evs }), webImmune: isWebImmune(name, ability, 'Choice Scarf'), itemShare: share }
+    : { ...plain, value: Math.floor(plain.value * 1.5), booster: true, itemShare: share };
   if (share >= SPEED_ITEM_ONLY) return [boosted];
   return [{ ...plain, weight: 1 - share }, { ...boosted, weight: share }];
 }

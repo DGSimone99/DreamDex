@@ -1,6 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import type { SpeedRival } from '../../engine/speed';
+import { speedStat, type SpeedRival } from '../../engine/speed';
 import { speedOptions, type MemberSpeed, type SpeedOption } from '../../engine/speedArea';
 import type { TeamSet } from '../../engine/sets';
 import { formatPercent } from '../../i18n';
@@ -9,19 +9,22 @@ import { Icon } from '../icons';
 import { ItemIcon } from '../ItemIcon';
 import { PokemonIcon } from '../PokemonName';
 
-/** Una specie del gruppo nella lista: la versione normale e, se c'è, quella con la Sciarpa o la Booster. */
-interface RivalRow { species: string; plain: SpeedRival; boosted: SpeedRival | null }
+/**
+ * Una specie del gruppo nella lista: la versione normale e, se c'è, quella con la Sciarpa o la Booster. Chi usa lo
+ * strumento su quasi tutti i set (da 80%) ha solo quella: `plain` è null e la riga con l'icona c'è sempre.
+ */
+interface RivalRow { species: string; plain: SpeedRival | null; boosted: SpeedRival | null }
 
 /** Le specie del gruppo con le loro versioni, dalle celle del membro (una o due per specie; la propria specie pesa 0 e non c'è). */
 function rivalRows(member: MemberSpeed): RivalRow[] {
   const rivals: SpeedRival[] = member.cells.filter(c => c.weight > 0)
-    .map(c => ({ species: c.species, value: c.speed, scarf: c.scarf, booster: c.booster, webImmune: c.webImmune, weight: c.weight }));
+    .map(c => ({ species: c.species, value: c.speed, scarf: c.scarf, booster: c.booster, webImmune: c.webImmune, weight: c.weight, itemShare: c.itemShare }));
   const species = [...new Set(rivals.map(r => r.species))];
   return species.map(name => {
     const versions = rivals.filter(r => r.species === name);
     const boosted = versions.find(r => r.scarf || r.booster) ?? null;
-    const plain = versions.find(r => !r.scarf && !r.booster) ?? versions[0];
-    return { species: name, plain, boosted: boosted === plain ? null : boosted };
+    const plain = versions.find(r => !r.scarf && !r.booster) ?? null;
+    return { species: name, plain, boosted };
   });
 }
 
@@ -51,7 +54,8 @@ export function SpeedMemberDialog({ member, set, team, meta, onClose }: { member
   const [on, setOn] = useState<Set<string>>(() => new Set());
   // I rivali che usano spesso la Sciarpa o la Booster compaiono anche in quella versione (come nel voto): acceso di base
   const [versions, setVersions] = useState(true);
-  const withVersions = rows.some(r => r.boosted);
+  // Il check ha senso solo se qualche rivale ha anche la versione normale: chi è sempre con lo strumento resta com'è
+  const withVersions = rows.some(r => r.boosted && r.plain);
   const keyOf = (o: SpeedOption) => `${o.condition}|${o.source}`;
   const toggle = (key: string) => setOn(prev => { const next = new Set(prev); if (next.has(key)) next.delete(key); else next.add(key); return next; });
 
@@ -63,7 +67,10 @@ export function SpeedMemberDialog({ member, set, team, meta, onClose }: { member
   const beats = (rival: number): 'beats' | 'tie' | 'loses' =>
     (rival === mySpeed ? 'tie' : (trickRoom ? rival > mySpeed : rival < mySpeed) ? 'beats' : 'loses');
   const list = rows
-    .flatMap(row => [{ row, rival: row.plain, boosted: false }, ...(versions && row.boosted ? [{ row, rival: row.boosted, boosted: true }] : [])])
+    .flatMap(row => [
+      ...(row.plain ? [{ row, rival: row.plain, boosted: false }] : []),
+      ...(row.boosted && (versions || !row.plain) ? [{ row, rival: row.boosted, boosted: true }] : []),
+    ])
     .map(x => ({ ...x, value: rivalSpeed(x.rival) }))
     .sort((a, b) => b.value - a.value);
   const beaten = list.filter(x => beats(x.value) === 'beats').length;
@@ -72,7 +79,7 @@ export function SpeedMemberDialog({ member, set, team, meta, onClose }: { member
   const myIndex = list.findIndex(x => x.value < mySpeed || (x.value === mySpeed));
   const insertAt = myIndex < 0 ? list.length : myIndex;
   const priority = member.gains.find(g => g.condition === 'priority');
-  const item = set.item.toLowerCase() === 'choice scarf' ? t('sdetail.mark.scarf') : null;
+  const item = speedStat(set).scarf ? t('sdetail.mark.scarf') : null;
   const optionLabel = (o: SpeedOption) => {
     const effect = o.trickRoom ? t('sdetail.opt.trickroom') : o.rivalFactor ? t('sdetail.opt.rivals') : t('sdetail.opt.member', { x: String(o.memberFactor).replace('.', lang === 'it' ? ',' : '.') });
     return `${effect}${o.by ? ` · ${t('sdetail.opt.by', { by: o.by.join(', ') })}` : ''}`;
@@ -138,7 +145,7 @@ export function SpeedMemberDialog({ member, set, team, meta, onClose }: { member
     const result = beats(value);
     const diff = mySpeed - value;
     const item = boosted ? (rival.scarf ? 'Choice Scarf' : 'Booster Energy') : '';
-    const title = boosted ? t('sdetail.dlg.versionTip', { name: row.species, item, pct: formatPercent(lang, rival.weight, 0) }) : undefined;
+    const title = boosted ? t('sdetail.dlg.versionTip', { name: row.species, item, pct: formatPercent(lang, rival.itemShare ?? rival.weight, 0) }) : undefined;
     return (
       <li key={`${row.species}-${boosted}`} className={`sp-row sp-${result}${boosted ? ' sp-boosted' : ''}`} title={title}>
         <span className="def-box"><PokemonIcon name={row.species} /></span>

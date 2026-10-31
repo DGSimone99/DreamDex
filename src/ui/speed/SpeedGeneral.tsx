@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { battleSpecies } from '../../engine/dex';
+import type { TeamSet } from '../../engine/sets';
 import { CONTROL_CONDITIONS, type MemberSpeed, type TeamSpeed } from '../../engine/speedArea';
 import { useT } from '../../i18n/react';
 import type { AreaContext } from '../AreaDetail';
@@ -24,11 +25,11 @@ export function SpeedGeneral({ speed, meta, ctx }: { speed: TeamSpeed; meta: boo
   const rows = ctx.team
     .map((set, slot) => ({ set, m: slots[slot] === null ? null : members[slots[slot]!] }))
     .sort((a, b) => (b.m?.speed ?? -1) - (a.m?.speed ?? -1));
-  const [open, setOpen] = useState<MemberSpeed | null>(null);
-  const bars = useRef(new Map<string, HTMLButtonElement | null>());
+  const [open, setOpen] = useState<{ m: MemberSpeed; set: TeamSet; slot: number } | null>(null);
+  const bars = useRef(new Map<number, HTMLButtonElement | null>());
   const tip = (m: MemberSpeed) => m.gains.map(g => `${t(`sdetail.cond.${g.condition}`)} (${g.source}${g.by ? `, ${g.by.join(', ')}` : ''}): +${points(g.gain)}`).join('\n');
   const close = () => {
-    const back = open ? bars.current.get(open.species) : null;
+    const back = open ? bars.current.get(open.slot) : null;
     setOpen(null);
     back?.focus();
   };
@@ -52,8 +53,8 @@ export function SpeedGeneral({ speed, meta, ctx }: { speed: TeamSpeed; meta: boo
                   <th scope="row"><MemberMon name={name} set={set} stats="speed" /></th>
                   <td>
                     {m
-                      ? <StackedBar m={m} title={tip(m)} label={t('sdetail.bar.open', { name: m.species })} onOpen={() => setOpen(m)}
-                        refer={el => bars.current.set(m.species, el)} />
+                      ? <StackedBar m={m} title={tip(m)} label={t('sdetail.bar.open', { name: m.species })} onOpen={() => setOpen({ m, set, slot: i })}
+                        refer={el => bars.current.set(i, el)} />
                       : '—'}
                   </td>
                 </tr>
@@ -62,7 +63,7 @@ export function SpeedGeneral({ speed, meta, ctx }: { speed: TeamSpeed; meta: boo
           </tbody>
         </table>
       </div>
-      {open && <SpeedMemberDialog member={open} set={ctx.team.find(s => (battleSpecies(s)?.name ?? s.species) === open.species) ?? ctx.team[0]} team={ctx.team} meta={meta} onClose={close} />}
+      {open && <SpeedMemberDialog member={open.m} set={open.set} team={ctx.team} meta={meta} onClose={close} />}
     </div>
   );
 }

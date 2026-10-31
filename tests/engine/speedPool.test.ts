@@ -95,6 +95,18 @@ describe('gruppo della velocità: Sciarpa e Booster come due versioni della stes
     expect(split).toBeCloseTo(0.3 * all);
   });
 
+  it('una voce delle statistiche senza strumenti né spread (dati di riserva): una versione, peso 1, niente errori', () => {
+    const bare = { usage: 0.3, count: 10, abilities: {}, moves: {}, teraTypes: {}, teammates: {}, checks: {} } as unknown as SpeciesStats;
+    const d = dataOf({ Garchomp: bare, Gholdengo: entry(0.2, 'Timid:0/0/0/252/4/252', { choicescarf: 0.3 }) });
+    const pool = speedPool(d);
+    const chomp = pool.filter(r => r.species === 'Garchomp');
+    expect(chomp).toHaveLength(1);
+    expect(chomp[0].weight).toBe(1);
+    expect(chomp[0].scarf).toBe(false);
+    expect(Number.isFinite(chomp[0].value)).toBe(true);
+    expect(pool.filter(r => r.species === 'Gholdengo')).toHaveLength(2);
+  });
+
   it('senza meta: una versione per specie, peso 1, nessun Booster', () => {
     const pool = speedPool({ stats: null, sets: null });
     expect(pool.length).toBeGreaterThan(20);
