@@ -65,3 +65,6 @@
 /* Coverage meta a tabella: pagine e riepilogo sotto la tabella, così la tabella parte dove partono le altre schede */
 .cm-matrix .cm-bar { margin: 8px 0 0; }
 .cm-matrix .cm-note { margin: 4px 0 0; font-size: 12px; color: var(--muted); }
+.def-power .pw-col-setup { width: 240px; }
+.def-power .pw-setup { white-space: nowrap; }
+.def-power .pw-setup .ad-gain { margin-left: 6px; }

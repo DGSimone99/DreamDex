@@ -176,7 +176,7 @@ describe('Offesa: Potenza', () => {
     team.forEach((_, slot) => {
       const m = rating.offense.members[slots[slot]!];
       expect(m.bestMove).toBeTruthy();
-      expect(rows[slot].querySelector('.pw-move')!.textContent).toBe(gameName('move', m.bestMove!, 'it'));
+      expect(rows[slot].querySelector('td:last-child .pw-move')!.textContent).toBe(gameName('move', m.bestMove!, 'it'));
     });
   });
 
@@ -226,7 +226,7 @@ describe('Offesa: Potenza', () => {
     await user.click(screen.getByRole('tab', { name: /^Potenza/ }));
     const rows = document.querySelectorAll('.def-members tbody tr');
     expect(rows).toHaveLength(2);
-    expect(rows[1].querySelector('.pw-move')).toBeNull();
+    expect(rows[1].querySelector('td:last-child .pw-move')).toBeNull();
     expect(within(rows[1] as HTMLElement).getAllByText('—').length).toBeGreaterThan(0);
   });
 
@@ -248,15 +248,30 @@ describe('Offesa: Potenza', () => {
     refs.forEach(s => expect(document.querySelector(`.pw-ref [title="${s}"]`)).toBeInTheDocument());
   });
 
-  it('Potenza: il +N del setup ha il suo titolo', async () => {
+  it('Potenza: una colonna Setup con la mossa e il +N che entra nel voto; "—" per chi non ha setup', async () => {
     const user = userEvent.setup();
     const rating = view();
     await user.click(screen.getByRole('tab', { name: /^Potenza/ }));
-    const setters = rating.offense.members.filter(m => m.setupGain > 0);
-    expect(setters.length).toBeGreaterThan(0);
-    const small = [...document.querySelectorAll('.pw-bar small.ad-gain')];
-    expect(small).toHaveLength(setters.length);
-    small.forEach(el => expect(el.getAttribute('title')).toMatch(/setup.*Potenza/));
+    expect(screen.getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Potenza', 'Setup', 'Colpo migliore']);
+    const rows = document.querySelectorAll('.def-members tbody tr');
+    const slots = offenseSlots(team, rating.offense.members);
+    team.forEach((_, slot) => {
+      const m = rating.offense.members[slots[slot]!];
+      const cell = rows[slot].querySelector('.pw-setup')!;
+      if (m.setupMove) {
+        expect(cell.querySelector('.pw-move')!.textContent).toBe(gameName('move', m.setupMove, 'it'));
+        if (m.setupGain > 0) {
+          expect(cell.querySelector('small.ad-gain')!.textContent).toBe(` (+${m.setupGain})`);
+          expect(cell.querySelector('small.ad-gain')!.getAttribute('title')).toMatch(/setup.*Potenza/);
+        }
+      } else {
+        expect(cell).toHaveTextContent('—');
+      }
+    });
+    // Il +N del setup non sta più accanto alla barra
+    expect(document.querySelectorAll('.pw-bar small.ad-gain')).toHaveLength(0);
+    expect(rating.offense.members.some(m => m.setupMove)).toBe(true);
+    expect(document.querySelector('.pw-ref')).toHaveTextContent('Pokémon medio dei 18 tipi');
   });
 });
 
