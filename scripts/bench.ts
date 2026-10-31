@@ -1,9 +1,12 @@
 /**
  * Banco del voto: i team di scripts/bench/teams.json valutati sui dati scaricati (npm run fetch-data).
  *
- *   npm run bench            medie e voti per categoria, col meta e senza; ordine buono > medio > scarso; archetipi
+ *   npm run bench            medie e voti per categoria, col meta e senza; ordine buono > medio > scarso; archetipi;
+ *                            con scripts/bench/ladder.json (npx tsx scripts/fetch-replays.ts --ladder) anche il gruppo
+ *                            "ladder": team veri di giocatori medi (rating 1100–1400), il "medio" non costruito a mano
  *   npm run bench -- --climb  la "salita": da alcuni team si applica sempre lo scambio libero migliore finché il voto sale
- *   npm run bench -- --replays partite vere di alto livello (scripts/bench/replays.json): quante ne vince il team col voto più alto
+ *   npm run bench -- --replays partite vere (scripts/bench/replays.json di alto livello e, se c'è, ladder.json dei medi):
+ *                            quante ne vince il team col voto più alto
  *   ROLES_MEASURED=1 npm run bench   con l'interruttore dei Ruoli acceso (Attacco, muri e Recupero contano anche nei Ruoli)
  *
  * Serve a verificare ogni modifica al voto: i team da torneo devono stare in alto, i brutti in basso,
@@ -79,6 +82,34 @@ const grades = (rs: TeamRating[]) => ['S', 'A', 'B', 'C', 'D'].map(g => `${g}${r
 const areas = (r: TeamRating) => r.areas.map(a => `${a.key} ${a.value ?? '–'}`).join(' · ');
 const reference = teams.find(t => t.cat === 'riferimento');
 
+interface Game { format: string; rating: number; p1: string[]; p2: string[]; winner: 1 | 2 }
+const REPLAY_FORMAT: Record<string, FormatId> = { gen9nationaldex: 'ou', gen9ou: 'gen9ou', gen9nationaldexubers: 'ubers', gen9uu: 'gen9uu', gen9nationaldexuu: 'uu' };
+const readGames = (name: string): Game[] => {
+  const file = join('scripts', 'bench', name);
+  return existsSync(file) ? (JSON.parse(readFileSync(file, 'utf8')) as Game[]).filter(g => REPLAY_FORMAT[g.format] && DATA[REPLAY_FORMAT[g.format]]) : [];
+};
+/** Team di una partita coi set più usati di ogni Pokémon (null se a qualcuno manca il set). */
+const gameTeam = (formatId: FormatId, names: string[]): TeamSet[] | null => {
+  const team = names.map(name => defaultSet(DATA[formatId], name, 9)).filter((s): s is TeamSet => !!s);
+  return team.length === 6 ? team : null;
+};
+/** I team del ladder medio, uno per combinazione di Pokémon, col formato. */
+const ladderTeams = (): { fmt: FormatId; team: TeamSet[] }[] => {
+  const out: { fmt: FormatId; team: TeamSet[] }[] = [];
+  const seenTeams = new Set<string>();
+  for (const game of readGames('ladder.json')) {
+    const fmt = REPLAY_FORMAT[game.format];
+    for (const names of [game.p1, game.p2]) {
+      const key = `${fmt} ${[...names].sort().join('/')}`;
+      const team = seenTeams.has(key) ? null : gameTeam(fmt, names);
+      if (!team) continue;
+      seenTeams.add(key);
+      out.push({ fmt, team });
+    }
+  }
+  return out;
+};
+
 /** Tempo medio di un voto: a freddo (prima volta per ogni team) e a cache calda. Il voto non deve bloccare la pagina. */
 function timing() {
   const time = () => {
@@ -115,6 +146,17 @@ function summary() {
     }
     console.log(`  Ruoli dei team da torneo: ${[...byType].map(([type, vs]) => `${type} ${mean(vs).toFixed(1)} (${vs.length})`).join(' · ')}`);
     console.log(`  distacco torneo − medio ${(averages.torneo - averages.medio).toFixed(1)}, buono − medio ${(averages.buono - averages.medio).toFixed(1)}`);
+    // Il ladder medio: team veri di giocatori medi, per formato; il torneo dello stesso formato deve stare sopra
+    const ladder = ladderTeams();
+    if (ladder.length) {
+      const rs = ladder.map(t => rateTeam(t.team, withMeta ? DATA[t.fmt] : { ...DATA[t.fmt], ignoreMeta: true })!);
+      console.log(`  ladder    ${String(rs.length).padStart(3)} team  media ${mean(rs.map(r => r.overall)).toFixed(1).padStart(4)}  ${grades(rs)}   distacco torneo − ladder ${(averages.torneo - mean(rs.map(r => r.overall))).toFixed(1)}`);
+      for (const fmt of [...new Set(ladder.map(t => t.fmt))]) {
+        const l = ladder.filter(t => t.fmt === fmt).map(t => rateTeam(t.team, withMeta ? DATA[fmt] : { ...DATA[fmt], ignoreMeta: true })!.overall);
+        const tour = unique.filter(t => t.fmt === fmt && t.cat === 'torneo').map(t => rate(t).overall);
+        console.log(`    ${fmt.padEnd(7)} ladder ${mean(l).toFixed(1)} (${l.length}) · torneo ${mean(tour).toFixed(1)} (${tour.length}) · distacco ${(mean(tour) - mean(l)).toFixed(1)}`);
+      }
+    }
     // Per formato: i team da torneo di NatDex OU sono la maggioranza e non devono coprire gli altri
     for (const fmt of Object.keys(SOURCES)) {
       const cells = ['torneo', 'datato', 'buono', 'generato', 'medio', 'brutto'].flatMap(cat => {
@@ -163,24 +205,25 @@ function climb(start: BenchTeam, steps = 10) {
  * La bravura dei giocatori pesa molto: il 50% è il caso puro, ogni punto sopra è un segnale.
  */
 function replays() {
-  const file = join('scripts', 'bench', 'replays.json');
-  if (!existsSync(file)) {
+  if (!existsSync(join('scripts', 'bench', 'replays.json'))) {
     console.error('Mancano le partite: lancia npx tsx scripts/fetch-replays.ts');
     return;
   }
-  const FORMAT: Record<string, FormatId> = { gen9nationaldex: 'ou', gen9ou: 'gen9ou', gen9nationaldexubers: 'ubers', gen9uu: 'gen9uu', gen9nationaldexuu: 'uu' };
-  const games = (JSON.parse(readFileSync(file, 'utf8')) as { format: string; rating: number; p1: string[]; p2: string[]; winner: 1 | 2 }[])
-    .filter(g => FORMAT[g.format] && DATA[FORMAT[g.format]]);
+  for (const name of ['replays.json', 'ladder.json']) replayFile(name, readGames(name));
+}
+
+function replayFile(name: string, games: Game[]) {
+  if (!games.length) return;
+  console.log(`\n== ${name === 'ladder.json' ? 'ladder medio (rating 1100–1400)' : 'alto livello'}: ${name}`);
   for (const withMeta of [true, false]) {
     const bins = [[1, 4], [5, 9], [10, 100]] as const;
     const stats = bins.map(() => ({ right: 0, total: 0 }));
     let skipped = 0;
     for (const game of games) {
-      const formatId = FORMAT[game.format];
+      const formatId = REPLAY_FORMAT[game.format];
       const data = withMeta ? DATA[formatId] : { ...DATA[formatId], ignoreMeta: true };
-      const build = (names: string[]) => names.map(name => defaultSet(DATA[formatId], name, 9)).filter((s): s is TeamSet => !!s);
-      const [a, b] = [build(game.p1), build(game.p2)];
-      if (a.length !== 6 || b.length !== 6) { skipped++; continue; }
+      const [a, b] = [gameTeam(formatId, game.p1), gameTeam(formatId, game.p2)];
+      if (!a || !b) { skipped++; continue; }
       const diff = rateTeam(a, data)!.overall - rateTeam(b, data)!.overall;
       const bin = bins.findIndex(([lo, hi]) => Math.abs(diff) >= lo && Math.abs(diff) <= hi);
       if (bin < 0) continue;
