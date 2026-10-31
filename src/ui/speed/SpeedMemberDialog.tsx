@@ -6,6 +6,7 @@ import type { TeamSet } from '../../engine/sets';
 import { formatPercent } from '../../i18n';
 import { useLang, useT } from '../../i18n/react';
 import { Icon } from '../icons';
+import { ItemIcon } from '../ItemIcon';
 import { PokemonIcon } from '../PokemonName';
 
 /** Una specie del gruppo nella lista: la versione normale e, se c'è, quella con la Sciarpa o la Booster. */
@@ -48,29 +49,29 @@ export function SpeedMemberDialog({ member, set, team, meta, onClose }: { member
   const options = useMemo(() => speedOptions(set, team), [set, team]);
   const rows = useMemo(() => rivalRows(member), [member]);
   const [on, setOn] = useState<Set<string>>(() => new Set());
-  const [boosted, setBoosted] = useState<Set<string>>(() => new Set());
+  // I rivali che usano spesso la Sciarpa o la Booster compaiono anche in quella versione (come nel voto): acceso di base
+  const [versions, setVersions] = useState(true);
+  const withVersions = rows.some(r => r.boosted);
   const keyOf = (o: SpeedOption) => `${o.condition}|${o.source}`;
   const toggle = (key: string) => setOn(prev => { const next = new Set(prev); if (next.has(key)) next.delete(key); else next.add(key); return next; });
-  const toggleBoosted = (species: string) => setBoosted(prev => { const next = new Set(prev); if (next.has(species)) next.delete(species); else next.add(species); return next; });
 
   // Le velocità con i check accesi
   const active = options.filter(o => on.has(keyOf(o)));
   const trickRoom = active.some(o => o.trickRoom);
   const mySpeed = Math.floor(active.reduce((v, o) => v * o.memberFactor, member.speed));
-  const rivalSpeed = (row: RivalRow) => {
-    const base = boosted.has(row.species) && row.boosted ? row.boosted : row.plain;
-    return Math.floor(active.reduce((v, o) => v * (o.rivalFactor?.(base) ?? 1), base.value));
-  };
+  const rivalSpeed = (rival: SpeedRival) => Math.floor(active.reduce((v, o) => v * (o.rivalFactor?.(rival) ?? 1), rival.value));
   const beats = (rival: number): 'beats' | 'tie' | 'loses' =>
     (rival === mySpeed ? 'tie' : (trickRoom ? rival > mySpeed : rival < mySpeed) ? 'beats' : 'loses');
-  const list = rows.map(row => ({ row, value: rivalSpeed(row) })).sort((a, b) => b.value - a.value);
+  const list = rows
+    .flatMap(row => [{ row, rival: row.plain, boosted: false }, ...(versions && row.boosted ? [{ row, rival: row.boosted, boosted: true }] : [])])
+    .map(x => ({ ...x, value: rivalSpeed(x.rival) }))
+    .sort((a, b) => b.value - a.value);
   const beaten = list.filter(x => beats(x.value) === 'beats').length;
   const ties = list.filter(x => beats(x.value) === 'tie').length;
   // Il membro va inserito al suo posto, dal più veloce (con Trick Room l'ordine della lista non cambia: cambia chi vince)
   const myIndex = list.findIndex(x => x.value < mySpeed || (x.value === mySpeed));
   const insertAt = myIndex < 0 ? list.length : myIndex;
   const priority = member.gains.find(g => g.condition === 'priority');
-  const commonBoosted = rows.filter(r => r.boosted).map(r => `${r.species} (${r.boosted!.scarf ? t('sdetail.mark.scarf') : t('sdetail.mark.booster')} ${formatPercent(lang, r.boosted!.weight, 0)})`);
   const item = set.item.toLowerCase() === 'choice scarf' ? t('sdetail.mark.scarf') : null;
   const optionLabel = (o: SpeedOption) => {
     const effect = o.trickRoom ? t('sdetail.opt.trickroom') : o.rivalFactor ? t('sdetail.opt.rivals') : t('sdetail.opt.member', { x: String(o.memberFactor).replace('.', lang === 'it' ? ',' : '.') });
@@ -99,7 +100,7 @@ export function SpeedMemberDialog({ member, set, team, meta, onClose }: { member
             <span>{t(meta ? 'sdetail.dlg.share.meta' : 'sdetail.dlg.share.tier', { pct: formatPercent(lang, member.raw, 0), n: rows.length })}</span>
           </p>
           <p className="sp-dlg-note">{t('sdetail.dlg.note')}</p>
-          {options.length > 0 && (
+          {(options.length > 0 || withVersions) && (
             <fieldset className="sp-checks">
               <legend>{t('sdetail.dlg.checks')}</legend>
               {options.map(o => (
@@ -109,36 +110,39 @@ export function SpeedMemberDialog({ member, set, team, meta, onClose }: { member
                   <small className="sp-check-effect">{optionLabel(o)}</small>
                 </label>
               ))}
+              {withVersions && (
+                <label className={`sp-check sp-check-versions${versions ? ' on' : ''}`}>
+                  <input type="checkbox" aria-label={t('sdetail.dlg.versions')} checked={versions} onChange={() => setVersions(v => !v)} />
+                  <span className="sp-check-name">{t('sdetail.dlg.versions')}</span>
+                  <small className="sp-check-effect">{t('sdetail.dlg.versionsEffect')}</small>
+                </label>
+              )}
             </fieldset>
           )}
           {priority && <p className="sp-priority">{t('sdetail.dlg.priority', { move: priority.source, n: Math.round(100 * priority.gain) })}</p>}
           <p className="sp-dlg-count" aria-live="polite">{t('sdetail.dlg.count', { n: beaten, m: list.length })}{ties > 0 && ` · ${t('sdetail.dlg.ties', { n: ties })}`}{trickRoom && ` · ${t('sdetail.dlg.underRoom')}`}</p>
           <ul className="sp-list" aria-label={t('sdetail.dlg.list')}>
-            {list.slice(0, insertAt).map(x => rivalItem(x.row, x.value))}
+            {list.slice(0, insertAt).map(x => rivalItem(x.row, x.rival, x.boosted, x.value))}
             {memberRow}
-            {list.slice(insertAt).map(x => rivalItem(x.row, x.value))}
+            {list.slice(insertAt).map(x => rivalItem(x.row, x.rival, x.boosted, x.value))}
           </ul>
-          {commonBoosted.length > 0 && <p className="sp-dlg-foot">{t('sdetail.dlg.boostedNote', { list: commonBoosted.join(', ') })}</p>}
+          {withVersions && versions && <p className="sp-dlg-foot">{t('sdetail.dlg.versionsNote')}</p>}
         </div>
       </div>
     </div>,
     document.body,
   );
 
-  function rivalItem(row: RivalRow, value: number) {
+  /** Una riga della lista; la versione con lo strumento ha l'icona accanto al nome e dice quale strumento e su quanti set. */
+  function rivalItem(row: RivalRow, rival: SpeedRival, boosted: boolean, value: number) {
     const result = beats(value);
     const diff = mySpeed - value;
-    const mark = row.boosted ? (row.boosted.scarf ? t('sdetail.mark.scarf') : t('sdetail.mark.booster')) : '';
+    const item = boosted ? (rival.scarf ? 'Choice Scarf' : 'Booster Energy') : '';
+    const title = boosted ? t('sdetail.dlg.versionTip', { name: row.species, item, pct: formatPercent(lang, rival.weight, 0) }) : undefined;
     return (
-      <li key={row.species} className={`sp-row sp-${result}`}>
+      <li key={`${row.species}-${boosted}`} className={`sp-row sp-${result}${boosted ? ' sp-boosted' : ''}`} title={title}>
         <span className="def-box"><PokemonIcon name={row.species} /></span>
-        <span className="sp-rival-name">{row.species}</span>
-        {row.boosted && (
-          <label className="sp-rival-boost">
-            <input type="checkbox" aria-label={`${mark} ${formatPercent(lang, row.boosted.weight, 0)}`} checked={boosted.has(row.species)} onChange={() => toggleBoosted(row.species)} />
-            <span aria-hidden="true">{mark} {formatPercent(lang, row.boosted.weight, 0)}</span>
-          </label>
-        )}
+        <span className="sp-rival-name">{row.species}{boosted && <><ItemIcon item={item} size={16} /><span className="visually-hidden"> {item}</span></>}</span>
         <b className="sp-rival-speed">{value}</b>
         <span className="sp-rival-diff">{result === 'tie' ? t('sdetail.cell.tie') : `${diff > 0 ? '+' : '−'}${Math.abs(diff)}`}</span>
       </li>

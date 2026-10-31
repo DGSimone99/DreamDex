@@ -75,7 +75,8 @@ describe('Velocità: una scheda a barre', () => {
     expect(dialog).toHaveTextContent('il voto non cambia');
     const list = within(dialog).getByRole('list', { name: /rivali/i });
     const rows = within(list).getAllByRole('listitem');
-    expect(rows).toHaveLength(poolSpecies(fixtureData).filter(sp => sp !== 'Dragonite').length + 1);
+    // Una riga per specie, più la seconda versione di chi usa spesso la Sciarpa o la Booster (Gholdengo), più il membro
+    expect(rows).toHaveLength(poolSpecies(fixtureData).filter(sp => sp !== 'Dragonite').length + 1 + 1);
     const me = rows.find(r => r.getAttribute('aria-current') === 'true')!;
     expect(me).toHaveTextContent('Dragonite');
     // Dal più veloce: il primo rivale è più veloce dell'ultimo
@@ -100,14 +101,20 @@ describe('Velocità: una scheda a barre', () => {
     const before = count();
     await user.click(within(dialog).getByRole('checkbox', { name: 'Dragon Dance' }));
     expect(count()).toBeGreaterThan(before);
-    // Gholdengo con la Sciarpa sul 37% dei set: il check sulla sua riga
-    const gholdengo = within(dialog).getAllByRole('listitem').find(r => r.textContent!.includes('Gholdengo'))!;
-    expect(gholdengo.querySelector('.sp-rival-speed')).toHaveTextContent('293');
-    const scarf = within(gholdengo).getByRole('checkbox', { name: /^Scarf \d+%$/ });
-    await user.click(scarf);
-    const after = within(dialog).getAllByRole('listitem').find(r => r.textContent!.includes('Gholdengo'))!;
-    expect(after.querySelector('.sp-rival-speed')).toHaveTextContent('439');
-    expect(dialog).toHaveTextContent(/Nel voto contano anche.*Gholdengo \(Scarf \d+%\)/);
+    // Gholdengo con la Sciarpa sul 38% dei set: di base compare due volte, la versione con la Sciarpa ha l'icona e il tooltip
+    const rowsOf = (name: string) => within(dialog).getAllByRole('listitem').filter(r => r.textContent!.includes(name));
+    expect(rowsOf('Gholdengo')).toHaveLength(2);
+    const scarfed = rowsOf('Gholdengo').find(r => r.classList.contains('sp-boosted'))!;
+    expect(scarfed.querySelector('.sp-rival-speed')).toHaveTextContent('439');
+    expect(scarfed.querySelector('.item-icon')).not.toBeNull();
+    expect(scarfed.getAttribute('title')).toMatch(/Gholdengo con Choice Scarf \(\d+% dei suoi set\)/);
+    expect(rowsOf('Gholdengo').find(r => !r.classList.contains('sp-boosted'))!.querySelector('.sp-rival-speed')).toHaveTextContent('293');
+    // Il check unico spegne le versioni in più
+    const versions = within(dialog).getByRole('checkbox', { name: 'Rivali con Sciarpa o Booster' });
+    expect(versions).toBeChecked();
+    await user.click(versions);
+    expect(rowsOf('Gholdengo')).toHaveLength(1);
+    expect(dialog).not.toHaveTextContent(/versione con lo strumento/);
     // Il voto in testa non cambia
     expect(screen.getByRole('tab', { name: /^Generale/ })).toHaveTextContent(String(withMeta().speed.value));
   });
@@ -129,7 +136,7 @@ describe('Velocità: una scheda a barre', () => {
     await user.click(barOf('Dragonite'));
     const dialog = dialogOf('Dragonite');
     expect(dialog).toHaveTextContent(/tier/);
-    expect(within(dialog).queryByRole('checkbox', { name: /^(Scarf|Booster) \d+%$/ })).toBeNull();
+    expect(within(dialog).queryByRole('checkbox', { name: 'Rivali con Sciarpa o Booster' })).toBeNull();
     expect(within(dialog).getAllByRole('listitem').length).toBe(poolSpecies(noMetaData).filter(sp => sp !== 'Dragonite').length + 1);
   });
 

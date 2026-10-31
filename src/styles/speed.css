@@ -71,7 +71,7 @@
 .sp-priority { margin: 0; font-size: 12px; color: var(--muted); }
 .sp-dlg-count { margin: 0; font-weight: 700; }
 .sp-list { display: flex; flex-direction: column; gap: 2px; margin: 0; padding: 0; list-style: none; }
-.sp-row { display: grid; grid-template-columns: 28px minmax(0, 1fr) auto 6ch 5ch; align-items: center; gap: 8px; padding: 2px 8px; border-left: 3px solid var(--line); border-radius: 3px; font-size: 13px; font-variant-numeric: tabular-nums; }
+.sp-row { display: grid; grid-template-columns: 28px minmax(0, 1fr) 6ch 5ch; align-items: center; gap: 8px; padding: 2px 8px; border-left: 3px solid var(--line); border-radius: 3px; font-size: 13px; font-variant-numeric: tabular-nums; }
 .sp-row .def-box { --bs: 0.8; }
 .sp-row.sp-beats { border-left-color: var(--good); }
 .sp-row.sp-beats .sp-rival-diff { color: var(--good); }
@@ -80,9 +80,9 @@
 .sp-row.sp-tie { border-left-color: var(--warn); }
 .sp-row.sp-tie .sp-rival-diff { color: var(--warn); }
 .sp-row.sp-me { border-left-color: var(--accent); background: var(--accent-soft); font-weight: 700; }
-.sp-rival-name { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.sp-rival-boost { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: var(--muted); cursor: pointer; }
-.sp-rival-boost input { margin: 0; }
+.sp-rival-name { display: flex; align-items: center; gap: 6px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.sp-row.sp-boosted .sp-rival-name { font-style: italic; }
+.sp-row .item-icon { flex: none; display: inline-block; }
 .sp-rival-speed { text-align: right; }
 .sp-rival-diff { text-align: right; font-weight: 700; }
 .sp-dlg-foot { margin: 0; font-size: 11px; color: var(--faint); }
