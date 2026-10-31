@@ -7,6 +7,7 @@ import { DEFAULT_FORMAT } from './format';
 import { pokedexOf, speciesInPokedex, teraAllowed } from './formats';
 import { enables } from './synergy';
 import { mostCommonSet, type TeamSet } from './sets';
+import { setupBoosts } from './setupBoosts';
 import { topThreats, usageOf } from './stats';
 import { softScore } from './scale';
 import { TYPES } from './types';
@@ -106,39 +107,49 @@ export interface CoverageRow {
   weight: number;
   /** Quanto è coperto: 0, 70, 90 o 100% (1°, 2° e 3° membro che lo manda KO in due colpi). */
   level: number;
-  /** `partial`: superefficace ma solo da 3HKO (fra il 33% e il 50%): copre a metà. */
+  /** `partial`: superefficace ma solo da 3HKO (fra il 33% e il 50%): copre a metà (mai nel meta). */
   coveredBy: { species: string; move: string; pct: number; partial: boolean }[];
+  /**
+   * Solo nel meta, una casella per membro nell'ordine del team: danno % del colpo semplice (senza Tera, Z e setup;
+   * -1 se il motore non conosce il membro) e dopo una danza (null senza mossa di potenziamento). Null nei tipi.
+   */
+  cells: { pct: number; setupPct: number | null }[] | null;
 }
 
 /** Colpo migliore del set contro ogni bersaglio: danno (in quota dei PS, al massimo 1) e mossa; per contenuto del set. */
-const hitsCache = new Map<string, { x: number; move: string }[]>();
+interface CoverHit { x: number; move: string; plain: number; setup: number | null }
+const hitsCache = new Map<string, CoverHit[]>();
 const HITS_LIMIT = 5000;
-function hitsOf(set: TeamSet, data: EngineData, targets: CoverageTarget[], kind: CoverageKind): { x: number; move: string }[] {
+function hitsOf(set: TeamSet, data: EngineData, targets: CoverageTarget[], kind: CoverageKind): CoverHit[] {
   const key = `${setKey(set)}|${data.formatId ?? 'ou'}|${kind === 'meta' && usesMeta(data)}|${!!data.stats}`;
   let hits = hitsCache.get(key);
   if (hits) return hits;
   if (hitsCache.size >= HITS_LIMIT) hitsCache.clear();
-  // Copre chi ha il vantaggio di tipo: il colpo migliore fra quelli super efficaci (il danno neutro lo misura la Potenza).
+  // Nei tipi copre chi ha il vantaggio di tipo (solo i colpi super efficaci); nel meta conta il colpo migliore di qualunque tipo.
   // Come nel resto dell'Offesa: il meteo che il membro porta con la sua abilità è sempre attivo, Tera e mosse Z contano a metà
   const conditions = ownConditions(set);
   const teraOk = teraAllowed({ ...DEFAULT_FORMAT, formatId: data.formatId ?? 'ou' }) && !!set.teraType;
   const zType = dex.items.get(set.item).zMoveType;
   const zOk = !!zType && set.moves.some(m => getMove(m)?.type === zType);
+  const superEffectiveOnly = kind !== 'meta';
+  // La danza si mostra solo nella tabella del meta: non entra nel credito
+  const setup = kind === 'meta' ? setupBoosts(set) : null;
   hits = targets.map(target => {
-    const base = bestHit(set, target.set, { superEffectiveOnly: true, conditions });
-    const once = [teraOk && bestHit(set, target.set, { superEffectiveOnly: true, conditions, tera: true }), zOk && bestHit(set, target.set, { superEffectiveOnly: true, conditions, z: true })]
+    const base = bestHit(set, target.set, { superEffectiveOnly, conditions });
+    const once = [teraOk && bestHit(set, target.set, { superEffectiveOnly, conditions, tera: true }), zOk && bestHit(set, target.set, { superEffectiveOnly, conditions, z: true })]
       .filter((hit): hit is NonNullable<typeof base> => !!hit);
     const x = Math.min(1, base?.expected ?? 0);
     const boosted = Math.max(x, ...once.map(hit => Math.min(1, hit.expected)));
     // Tera e mossa Z una volta a partita: un quarto di quello che aggiungono
-    return { x: x + ONE_USE_COVER * (boosted - x), move: base?.move ?? once[0]?.move ?? '' };
+    const danced = setup ? Math.max(x, Math.min(1, bestHit(set, target.set, { superEffectiveOnly, conditions, boosts: setup.boosts })?.expected ?? 0)) : null;
+    return { x: x + ONE_USE_COVER * (boosted - x), move: base?.move ?? once[0]?.move ?? '', plain: x, setup: danced };
   });
   hitsCache.set(key, hits);
   return hits;
 }
 
-/** Quanto copre un colpo superefficace: pieno da 2HKO, a metà da 3HKO, niente sotto. */
-const creditOf = (x: number) => (x >= COVER_HIT ? 1 : x >= HOLE_HIT ? 0.5 : 0);
+/** Quanto copre un colpo: pieno da 2HKO; a metà da 3HKO solo nei tipi (nel meta un 3HKO neutro lo fa quasi chiunque). */
+const creditOf = (x: number, kind: CoverageKind) => (x >= COVER_HIT ? 1 : kind === 'types' && x >= HOLE_HIT ? 0.5 : 0);
 /** Profondità: i crediti dei membri dal più alto, al 70, 20 e 10%. */
 /** Meteo e terreni che il set porta con la sua abilità: per lui sono sempre attivi. */
 export function ownConditions(set: TeamSet): FieldCondition[] {
@@ -154,20 +165,27 @@ export function teamCoverage(team: TeamSet[], data: EngineData, kind: CoverageKi
   const hits = team.map(set => hitsOf(set, data, targets, kind));
   let value = 0;
   const holes: string[] = [];
+  // Nel meta è un buco chi nessuno manda KO in due colpi; nei tipi chi nessuno porta al 33% super efficace
+  const holeBelow = kind === 'meta' ? COVER_HIT : HOLE_HIT;
   targets.forEach((target, i) => {
-    value += target.weight * depthOf(hits.map(h => creditOf(h[i].x)));
-    if (Math.max(0, ...hits.map(h => h[i].x)) < HOLE_HIT) holes.push(target.label);
+    value += target.weight * depthOf(hits.map(h => creditOf(h[i].x, kind)));
+    if (Math.max(0, ...hits.map(h => h[i].x)) < holeBelow) holes.push(target.label);
   });
+  const known = team.map(set => !!battleSpecies(set));
+  const pctOf = (x: number) => Math.floor(100 * Math.min(1, x));
   return {
     // Lineare fino a 80, poi sempre più piano: anche ogni bersaglio coperto tre volte resta sotto 100
     value: softScore(value),
     holes,
-    perMember: hits.map(h => Math.round(100 * targets.reduce((acc, target, i) => acc + creditOf(h[i].x) * target.weight, 0))),
+    perMember: hits.map(h => Math.round(100 * targets.reduce((acc, target, i) => acc + creditOf(h[i].x, kind) * target.weight, 0))),
     rows: targets.map((target, i) => {
-      const coveredBy = team.flatMap((set, m) => (creditOf(hits[m][i].x) > 0
+      const coveredBy = team.flatMap((set, m) => (creditOf(hits[m][i].x, kind) > 0
         ? [{ species: battleSpecies(set)?.name ?? set.species, move: hits[m][i].move, pct: Math.floor(100 * hits[m][i].x), partial: hits[m][i].x < COVER_HIT }]
         : []));
-      return { label: target.label, species: target.set.species, weight: target.weight, level: Math.round(100 * depthOf(hits.map(h => creditOf(h[i].x)))), coveredBy };
+      const cells = kind === 'meta'
+        ? hits.map((h, m) => (known[m] ? { pct: pctOf(h[i].plain), setupPct: h[i].setup === null ? null : pctOf(h[i].setup) } : { pct: -1, setupPct: null }))
+        : null;
+      return { label: target.label, species: target.set.species, weight: target.weight, level: Math.round(100 * depthOf(hits.map(h => creditOf(h[i].x, kind)))), coveredBy, cells };
     }),
   };
 }

@@ -124,3 +124,45 @@ describe('teamCoverage', () => {
     expect(teamCoverage([weak], noMeta).value).toBe(teamCoverage([plain], noMeta).value);
   });
 });
+
+describe('Coverage meta: colpo migliore di qualunque tipo, solo 2HKO', () => {
+  const tusk = set('Great Tusk', 'Choice Band', 'Protosynthesis', ['Headlong Rush', 'Close Combat', 'Ice Spinner'], 'Adamant', { atk: 252, spe: 252 });
+  const gliscor = set('Gliscor', 'Toxic Orb', 'Poison Heal', ['Swords Dance', 'Earthquake', 'Facade', 'Knock Off'], 'Jolly', { atk: 252, spe: 252 });
+  const targets = coverageTargets(fixtureData, 'meta');
+  const any = (attacker: TeamSet, i: number) => Math.min(1, bestHit(attacker, targets[i].set)?.expected ?? 0);
+  const superOnly = (attacker: TeamSet, i: number) => Math.min(1, bestHit(attacker, targets[i].set, { superEffectiveOnly: true })?.expected ?? 0);
+
+  it('un colpo neutro da 2HKO copre il bersaglio del meta', () => {
+    const i = targets.findIndex((_, k) => any(tusk, k) >= 0.5 && superOnly(tusk, k) < 0.5);
+    expect(i).toBeGreaterThanOrEqual(0);
+    const row = teamCoverage([tusk], fixtureData, 'meta').rows[i];
+    expect(row.level).toBe(70);
+    expect(row.coveredBy).toEqual([expect.objectContaining({ species: 'Great Tusk', partial: false })]);
+  });
+
+  it('un 3HKO non vale niente nel meta (nei tipi resta a metà)', () => {
+    const i = targets.findIndex((_, k) => any(gliscor, k) >= 1 / 3 && any(gliscor, k) < 0.5);
+    expect(i).toBeGreaterThanOrEqual(0);
+    const row = teamCoverage([gliscor], fixtureData, 'meta').rows[i];
+    expect(row.level).toBe(0);
+    expect(row.coveredBy).toEqual([]);
+  });
+
+  it('per ogni bersaglio una casella per membro: danno del colpo semplice e, con il setup, dopo una danza', () => {
+    const notamon = set('Notamon', '', '', ['Tackle'], 'Hardy', {});
+    const rows = teamCoverage([tusk, gliscor, notamon], fixtureData, 'meta').rows;
+    for (const row of rows) {
+      expect(row.cells).toHaveLength(3);
+      expect(row.cells![0].setupPct).toBeNull();
+      expect(row.cells![2].pct).toBe(-1);
+      expect(row.cells![1].setupPct).toBeGreaterThanOrEqual(row.cells![1].pct);
+    }
+    expect(rows.some(row => row.cells![1].setupPct! > row.cells![1].pct)).toBe(true);
+    const i = targets.findIndex((_, k) => any(tusk, k) > 0);
+    expect(rows[i].cells![0].pct).toBe(Math.floor(100 * any(tusk, i)));
+  });
+
+  it('la Coverage di tipi non ha caselle', () => {
+    expect(teamCoverage([tusk], noMeta, 'types').rows.every(row => row.cells === null)).toBe(true);
+  });
+});
