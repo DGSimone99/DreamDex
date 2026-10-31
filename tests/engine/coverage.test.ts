@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { coverageTargets, teamCoverage } from '../../src/engine/coverage';
+import { coverageTargets, teamCoverage, typeAverage } from '../../src/engine/coverage';
 import { bestHit } from '../../src/engine/damage';
 import type { TeamSet } from '../../src/engine/sets';
 import { usageOf } from '../../src/engine/stats';
@@ -31,12 +31,38 @@ describe('coverageTargets', () => {
       expect(target.weight).toBeCloseTo(1 / 18);
       expect(target.set.species).toBe('Mew');
       expect(target.set.types).toEqual([target.label]);
+      expect(target.set.baseStats).toEqual(typeAverage(target.label, noMeta));
     }
     // Il bersaglio neutro prende il tipo: Earthquake è super efficace sull'Elettro, nullo sul Volante
     const electric = targets.find(t => t.label === 'Electric')!.set;
     const flying = targets.find(t => t.label === 'Flying')!.set;
     expect(bestHit(chomp, electric)!.expected).toBeGreaterThan(bestHit(chomp, targets.find(t => t.label === 'Water')!.set)!.expected);
     expect(bestHit(chomp, flying)!.expected).toBe(0);
+  });
+});
+
+describe('manichini per tipo', () => {
+  it("l'Acciaio medio del National Dex ha le difese di Bulbapedia (Mega comprese)", () => {
+    const steel = typeAverage('Steel', { stats: null, sets: null, formatId: 'ou' });
+    expect(Math.abs(steel.hp - 79)).toBeLessThanOrEqual(3);
+    expect(Math.abs(steel.def - 116)).toBeLessThanOrEqual(3);
+    expect(Math.abs(steel.spd - 90)).toBeLessThanOrEqual(3);
+  });
+
+  it("in Gen 9 niente Mega: l'Acciaio medio ha meno Difesa", () => {
+    const natdex = typeAverage('Steel', { stats: null, sets: null, formatId: 'ou' });
+    const gen9 = typeAverage('Steel', { stats: null, sets: null, formatId: 'gen9ou' });
+    expect(gen9.def).toBeLessThan(natdex.def);
+  });
+
+  it('il Coleottero medio è più fragile della Roccia media, e lo stesso colpo neutro gli fa più male del Drago medio', () => {
+    const data = { stats: null, sets: null, formatId: 'ou' as const };
+    expect(typeAverage('Bug', data).def).toBeLessThan(typeAverage('Rock', data).def);
+    const targets = coverageTargets(noMeta);
+    const slam = set('Garchomp', '', 'Rough Skin', ['Body Slam'], 'Adamant', { atk: 252 });
+    const bug = targets.find(t => t.label === 'Bug')!.set;
+    const dragon = targets.find(t => t.label === 'Dragon')!.set;
+    expect(bestHit(slam, bug)!.expected).toBeGreaterThan(bestHit(slam, dragon)!.expected);
   });
 });
 
@@ -60,16 +86,16 @@ describe('teamCoverage', () => {
   });
 
   it('un superefficace da 3HKO (fra il 33% e il 50%) copre a metà', () => {
-    // Urshifu-RS con Choice Scarf: Ice Spinner (80, non STAB) fa circa il 42% al Volante medio
+    // Urshifu-RS con Choice Scarf: Ice Spinner (80, non STAB) fa circa il 43% al Drago medio
     const urshifu = set('Urshifu-Rapid-Strike', 'Choice Scarf', 'Unseen Fist', ['Surging Strikes', 'Close Combat', 'U-turn', 'Ice Spinner'], 'Jolly', { atk: 252, spe: 252 });
-    const flying = teamOffenseRows([urshifu]).find(r => r.label === 'Flying')!;
+    const flying = teamOffenseRows([urshifu]).find(r => r.label === 'Dragon')!;
     expect(flying.coveredBy).toEqual([expect.objectContaining({ move: 'Ice Spinner', partial: true })]);
     // Metà del 70% del primo membro
     expect(flying.level).toBe(35);
     expect(flying.coveredBy[0].pct).toBeGreaterThanOrEqual(33);
     expect(flying.coveredBy[0].pct).toBeLessThan(50);
     // Due membri da 3HKO: 35 + 10
-    const two = teamCoverage([urshifu, { ...urshifu }], noMeta).rows.find(r => r.label === 'Flying')!;
+    const two = teamCoverage([urshifu, { ...urshifu }], noMeta).rows.find(r => r.label === 'Dragon')!;
     expect(two.level).toBe(45);
   });
 
@@ -92,7 +118,60 @@ describe('teamCoverage', () => {
   });
 
   it('una mossa speciale debole su un attaccante fisico non copre niente', () => {
-    const weak = set('Garchomp', 'Life Orb', 'Rough Skin', ['Earthquake', 'Ice Beam'], 'Adamant', { atk: 252, spe: 252 });
-    expect(teamCoverage([weak], noMeta).value).toBe(teamCoverage([chomp], noMeta).value);
+    // Senza Life Orb: Ice Beam da Garchomp fa al massimo il 32% (al Volante medio), sotto il 3HKO
+    const plain = { ...chomp, item: '' };
+    const weak = { ...plain, moves: ['Earthquake', 'Ice Beam'] };
+    expect(teamCoverage([weak], noMeta).value).toBe(teamCoverage([plain], noMeta).value);
+  });
+});
+
+describe('Coverage meta: colpo migliore di qualunque tipo, solo 2HKO', () => {
+  const tusk = set('Great Tusk', 'Choice Band', 'Protosynthesis', ['Headlong Rush', 'Close Combat', 'Ice Spinner'], 'Adamant', { atk: 252, spe: 252 });
+  const gliscor = set('Gliscor', 'Toxic Orb', 'Poison Heal', ['Swords Dance', 'Earthquake', 'Facade', 'Knock Off'], 'Jolly', { atk: 252, spe: 252 });
+  const targets = coverageTargets(fixtureData, 'meta');
+  const any = (attacker: TeamSet, i: number) => Math.min(1, bestHit(attacker, targets[i].set)?.expected ?? 0);
+  const superOnly = (attacker: TeamSet, i: number) => Math.min(1, bestHit(attacker, targets[i].set, { superEffectiveOnly: true })?.expected ?? 0);
+
+  it('un colpo neutro da 2HKO copre il bersaglio del meta', () => {
+    const i = targets.findIndex((_, k) => any(tusk, k) >= 0.5 && superOnly(tusk, k) < 0.5);
+    expect(i).toBeGreaterThanOrEqual(0);
+    const row = teamCoverage([tusk], fixtureData, 'meta').rows[i];
+    expect(row.level).toBe(70);
+    expect(row.coveredBy).toEqual([expect.objectContaining({ species: 'Great Tusk', partial: false })]);
+  });
+
+  it('un 3HKO non vale niente nel meta (nei tipi resta a metà)', () => {
+    const i = targets.findIndex((_, k) => any(gliscor, k) >= 1 / 3 && any(gliscor, k) < 0.5);
+    expect(i).toBeGreaterThanOrEqual(0);
+    const row = teamCoverage([gliscor], fixtureData, 'meta').rows[i];
+    expect(row.level).toBe(0);
+    expect(row.coveredBy).toEqual([]);
+  });
+
+  it('per ogni bersaglio una casella per membro: danno del colpo semplice e, con il setup, dopo una danza', () => {
+    const notamon = set('Notamon', '', '', ['Tackle'], 'Hardy', {});
+    const rows = teamCoverage([tusk, gliscor, notamon], fixtureData, 'meta').rows;
+    for (const row of rows) {
+      expect(row.cells).toHaveLength(3);
+      expect(row.cells![0].setupPct).toBeNull();
+      expect(row.cells![2].pct).toBe(-1);
+      expect(row.cells![1].setupPct).toBeGreaterThanOrEqual(row.cells![1].pct);
+    }
+    expect(rows.some(row => row.cells![1].setupPct! > row.cells![1].pct)).toBe(true);
+    const i = targets.findIndex((_, k) => any(tusk, k) > 0);
+    expect(rows[i].cells![0].pct).toBe(Math.floor(100 * any(tusk, i)));
+  });
+
+  it('chiedere la Coverage meta senza meta non sporca la Coverage di tipi dello stesso set', () => {
+    const noMetaData = { ...fixtureData, ignoreMeta: true };
+    const before = teamCoverage([tusk], noMetaData, 'types').value;
+    teamCoverage([{ ...tusk }], noMetaData, 'meta');
+    expect(teamCoverage([{ ...tusk }], noMetaData, 'types').value).toBe(before);
+    // Senza meta la Coverage "meta" è quella di tipi: solo colpi super efficaci, nessuna casella
+    expect(teamCoverage([{ ...tusk }], noMetaData, 'meta').rows.every(r => r.cells === null)).toBe(true);
+  });
+
+  it('la Coverage di tipi non ha caselle', () => {
+    expect(teamCoverage([tusk], noMeta, 'types').rows.every(row => row.cells === null)).toBe(true);
   });
 });

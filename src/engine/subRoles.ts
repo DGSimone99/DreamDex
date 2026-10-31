@@ -6,7 +6,7 @@ import { attackStyle, SPEED_ABILITIES } from './roles';
 import type { EngineData } from './data';
 import { usesMeta } from './analysis';
 import { setKey } from './damage';
-import { memberOffense } from './offense';
+import { rolesMemberOffense } from './offense';
 import { memberSpeed } from './speedArea';
 import { outspeedShare, speedPool, speedStat, type SpeedRival } from './speed';
 import { teamField } from './types';
@@ -372,7 +372,7 @@ export function measureWith(set: TeamSet, team: TeamSet[], data: EngineData, poo
   else if (reflect || lightScreen) put('screens', 0.6 * clay, screenMoves);
 
   // Attacco dai numeri dell'Offesa e della Velocità
-  const offense = memberOffense(set, team, data);
+  const offense = rolesMemberOffense(set, team, data);
   const side = offense?.bestMove ? attackSide(set, offense.bestMove) : null;
   if (offense && side && !uninvestedWall(set, side, offense.bestMove!, offense.setupMove, values)) {
     if (offense.wallbreaking + offense.wallbreakingGain >= BREAKER_WALLBREAKING) put(`${side}Breaker`, 1, offense.bestMove!);

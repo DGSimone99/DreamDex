@@ -102,9 +102,11 @@ describe('penalità e bonus del meteo', () => {
       { ...withMoves('Ninetales', ['Flamethrower']), ability: 'Drought' },
       { ...withMoves('Pelipper', ['Hurricane']), ability: 'Drizzle' },
     ];
-    const problems = coachTeam(team, DEFAULT_FORMAT, fixtureData).problems.map(p => p.text);
+    const problems = coachTeam([...team, withMoves('Heatran', ['Magma Storm'])], DEFAULT_FORMAT, fixtureData).problems.map(p => p.text);
     expect(problems).toContain('Meteo in conflitto: Ninetales (Drought), Pelipper (Drizzle)');
-    expect(problems).toContain('La pioggia di Pelipper indebolisce le mosse Fire di Ninetales');
+    // Ninetales porta il sole e non conta; Heatran sì
+    expect(problems).toContain('La pioggia di Pelipper indebolisce le mosse Fire di Heatran');
+    expect(problems).not.toContain('La pioggia di Pelipper indebolisce le mosse Fire di Ninetales');
   });
 
   const ninetales = { ...withMoves('Ninetales', ['Flamethrower']), ability: 'Drought' };

@@ -77,7 +77,7 @@ export function teamSummary(team: TeamSet[], rating: TeamRating, coaching: Coach
     styles: coaching.teamType?.styles ?? [],
     attackers,
     walls,
-    offenseOf: Object.fromEntries(rating.offense.members.map(m => [m.species, m.value])),
+    offenseOf: Object.fromEntries(rating.offense.members.map(m => [m.species, m.total])),
     defenseOf: Object.fromEntries(rating.defense.members.map(m => [m.species, m.value])),
     conditions,
     hazards,

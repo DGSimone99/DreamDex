@@ -20,7 +20,7 @@ describe('coachTeam', () => {
     expect(coaching.verdict).toBe('Team incompleto');
     // Gravi solo i tipi scoperti del tutto che pesano (Water, Fighting)
     expect(coaching.problems.filter(p => p.severity === 'serious').map(p => p.key)).toEqual(['coverage:Water', 'coverage:Fighting']);
-    expect(coaching.problems.filter(p => p.category !== 'meta')).toHaveLength(13);
+    expect(coaching.problems.filter(p => p.category !== 'meta')).toHaveLength(11);
   });
 
   it('punti di forza', () => {
@@ -50,9 +50,7 @@ describe('coachTeam', () => {
       'Ruoli mancanti: Muro Speciale',
       'Ruoli importanti mancanti: Hazard, Pivot, Hazer/Phazer, Rimozione Strumenti',
       // Coverage tipi del voto: un problema per tipo, nell'ordine dei tipi (Bug scoperto ma leggero: minore)
-      'Coperto a metà Grass: 1 solo in tre colpi',
       'Coperto a metà Ground: 1 solo in tre colpi',
-      'Coperto a metà Flying: 1 solo in tre colpi',
       'Scoperto Bug: nessun colpo super efficace',
       'Coperto a metà Dragon: 1 solo in tre colpi',
     ]);

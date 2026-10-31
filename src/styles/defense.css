@@ -411,3 +411,11 @@
 .def-mon-tag.line { display: none; }
 .def-mon-text:not(:has(.def-mon-stats)) .def-mon-tag.line { display: inline-flex; }
 @container (max-height: 440px) { .def-frame .def-mon-tag.line { display: inline-flex; } }
+
+/* Coverage tipi sui colpi: il danno del lato peggiore, il moltiplicatore classico piccolo in un angolo */
+.def-frame .ht-cell { position: relative; font-size: clamp(12px, calc(var(--def-row) * 0.22), 18px); }
+.def-frame .ht-cell .ct-mult { position: absolute; top: 2px; right: 4px; font: 600 10px/1 var(--ui); opacity: 0.75; }
+.def-frame .ht-cell.hold-none { color: var(--muted); }
+.def-frame .ht-col-side { width: 64px; }
+.def-frame .ht-side, .def-frame .ht-side-h { text-align: center; }
+.def-types .rob-legend .ht-mult-note { margin-left: auto; }

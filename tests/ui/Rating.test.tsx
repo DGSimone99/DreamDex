@@ -114,7 +114,7 @@ describe('Riquadro Voto', () => {
     await user.click(within(dialog).getByRole('tab', { name: 'Come funziona' }));
     const general = within(dialog).getByRole('tabpanel');
     expect(general).toHaveTextContent('Bonus/Malus');
-    expect(general).toHaveTextContent('S da 90, A da 82, B da 70, C da 60');
+    expect(general).toHaveTextContent('S da 86, A da 79, B da 68, C da 55');
     for (const tab of within(dialog).getAllByRole('tab')) {
       await user.click(tab);
       expect(within(dialog).getByRole('tabpanel')).not.toHaveTextContent('Debolezze condivise');
