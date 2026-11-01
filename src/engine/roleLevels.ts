@@ -47,11 +47,13 @@ const E = 'essential' as const, I = 'important' as const, M = 'minor' as const, 
  * Tabella 2026-11-01, dai 231 team da torneo del banco (quota di team che portano la voce, per tipo) e dal confronto
  * con 878 team di ladder: essenziale ≈ 99% dei team da torneo, importante ≈ 70%, sotto minore; attaccanti, muri e
  * Recupero restano requisiti come prima. Il setup del campo (hazard, schermi o Sticky Web a metà) è l'unica voce di
- * campo: hazard e schermi non hanno più un livello loro (contavano due volte). HO: nessuna importante (è "attaccanti
- * e campo preparato", il resto è minore). Balance: phazer (48%) e rimozione strumenti (69%, più in ladder) minori.
+ * campo: hazard e schermi non hanno più un livello loro (contavano due volte). HO: il setup del campo è l'unica
+ * importante (a doppio peso): essenziale (malus −2) riempiva la base di qualunque HO e i team brutti fatti a mano
+ * salivano di 15–20 punti; importante tiene i brutti a 44 e le partite di alto livello al 53,5%.
+ * Balance: phazer (48%) e rimozione strumenti (69%, più in ladder) minori.
  * BO: rimozione strumenti importante (78%). Semi-stall: setup del campo essenziale (100%). Supporto (Wish, Healing
- * Wish, Heal Bell) minore da balance in giù (6–24%). Sul banco: distacco torneo − medio 7,7 → 8,2, torneo − ladder
- * 5,9 → 6,4, partite di alto livello 51,6% → 53,3%.
+ * Wish, Heal Bell) minore da balance in giù (6–24%). Sul banco (tabella costruita): torneo − medio 7,7 → 7,4,
+ * torneo − ladder 5,9 → 6,1, partite di alto livello 51,6% → 53,5%, ladder con distacco ≥10 57,1% → 57,9%.
  */
 const ROWS: [LevelKey, Level, Level, Level, Level, Level][] = [
   // Semi-stall e stall vincono logorando: senza attaccanti nessun malus (2026-10-30; l'Offesa misura comunque il danno)
@@ -63,7 +65,7 @@ const ROWS: [LevelKey, Level, Level, Level, Level, Level][] = [
   ['physicalWall', M, M, E, E, E],
   ['specialWall', M, M, E, E, E],
   ['recovery', X, M, I, I, I],
-  ['fieldSetup', E, I, I, E, I],
+  ['fieldSetup', I, I, I, E, I],
   ['hazards', X, X, X, X, X],
   ['removal', M, I, I, I, I],
   ['pivot', M, I, I, M, M],

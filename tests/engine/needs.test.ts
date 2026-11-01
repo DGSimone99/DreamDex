@@ -47,7 +47,7 @@ describe('tabella dei livelli per archetipo', () => {
       expect(levelOf(a, 'hazards')).toBe('ignored');
       expect(levelOf(a, 'screens')).toBe('ignored');
     }
-    expect(levelOf('hyperOffense', 'fieldSetup')).toBe('essential');
+    expect(levelOf('hyperOffense', 'fieldSetup')).toBe('important');
     expect(levelOf('bulkyOffense', 'fieldSetup')).toBe('important');
     expect(levelOf('balance', 'fieldSetup')).toBe('important');
     expect(levelOf('semiStall', 'fieldSetup')).toBe('essential');
@@ -66,17 +66,17 @@ describe('tabella dei livelli per archetipo', () => {
     expect(LEVEL_KEYS.indexOf('support')).toBe(LEVEL_KEYS.indexOf('screens') + 1);
   });
 
-  it('HO: setup del campo essenziale, nessuna voce importante', () => {
-    expect(levelOf('hyperOffense', 'fieldSetup')).toBe('essential');
-    expect(LEVEL_KEYS.filter(k => levelOf('hyperOffense', k) === 'important')).toEqual([]);
+  it('HO: il setup del campo è la sola voce importante (a doppio peso)', () => {
+    expect(levelOf('hyperOffense', 'fieldSetup')).toBe('important');
+    expect(LEVEL_KEYS.filter(k => levelOf('hyperOffense', k) === 'important')).toEqual(['fieldSetup']);
     // Calibrazione: il pivot in HO è minore (i team HO da torneo spesso non ne hanno)
     expect(levelOf('hyperOffense', 'pivot')).toBe('minor');
     const needs = teamNeeds(hyperOffense, fixtureData);
     expect(needs.archetype).toBe('hyperOffense');
-    expect(needs.levels.fieldSetup).toBe('essential');
+    expect(needs.levels.fieldSetup).toBe('important');
     expect(needs.levels.hazards).toBe('ignored');
     expect(needs.values.fieldSetup).toBe(1);
-    expect(needs.essentialMissing).not.toContain('fieldSetup');
+    expect(needs.importantMissing).not.toContain('fieldSetup');
   });
 
   it('HO con Sticky Web e senza hazard: setup del campo 0.5, non manca', () => {
@@ -85,7 +85,7 @@ describe('tabella dei livelli per archetipo', () => {
     expect(needs.archetype).toBe('hyperOffense');
     expect(needs.values.hazards).toBe(0);
     expect(needs.values.fieldSetup).toBe(0.5);
-    expect(needs.essentialMissing).not.toContain('fieldSetup');
+    expect(needs.importantMissing).not.toContain('fieldSetup');
   });
 
   it('HO con Aurora Veil e neve: setup del campo 1', () => {
@@ -96,19 +96,19 @@ describe('tabella dei livelli per archetipo', () => {
     expect(needs.values.fieldSetup).toBe(1);
   });
 
-  it('HO senza hazard, schermi né Sticky Web: setup del campo manca (essenziale), malus di 2 con sei membri', () => {
+  it('HO senza hazard, schermi né Sticky Web: setup del campo manca (importante), base a zero, nessun malus essenziale', () => {
     const none = [set('Glimmora', 'Focus Sash', 'Toxic Debris', ['Mortal Spin', 'Power Gem', 'Sludge Wave', 'Earth Power']), ...hyperOffense.slice(1)];
     const needs = teamNeeds(none, fixtureData);
     expect(needs.archetype).toBe('hyperOffense');
     expect(needs.values.fieldSetup).toBe(0);
-    expect(needs.essentialMissing).toContain('fieldSetup');
-    expect(needs.importantMissing).not.toContain('fieldSetup');
+    expect(needs.importantMissing).toContain('fieldSetup');
+    expect(needs.essentialMissing).not.toContain('fieldSetup');
     expect(needs.missingRoles).toEqual(expect.arrayContaining(['hazards', 'screens']));
     const area = teamRolesArea(none, fixtureData, 'it', needs);
-    // Nessuna voce importante nell'HO: la base è piena, restano le minori; il buco è un malus
-    expect(area.base).toBe(1);
-    if (none.length === 6) expect(area.failures.some(f => /Setup del Campo/.test(f.text) && f.points === 2)).toBe(true);
-    expect(area.value).toBeLessThanOrEqual(teamRolesArea(hyperOffense, fixtureData, 'it').value);
+    // Unica voce importante a 0: base 0, restano solo le minori
+    expect(area.base).toBe(0);
+    expect(area.failures.some(f => /hazard|setup/i.test(f.text))).toBe(false);
+    expect(area.value).toBeLessThan(teamRolesArea(hyperOffense, fixtureData, 'it').value);
     // Il gruppo ha un'etichetta propria, nelle due lingue
     expect(needLabel('fieldSetup', 'it')).toBe('Setup del Campo');
     expect(needLabel('fieldSetup', 'en')).toBe('Field Setup');

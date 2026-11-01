@@ -53,14 +53,12 @@ describe('regole di Ubers', () => {
   const ubers: EngineData = { ...fixtureData, formatId: 'ubers' };
   const noHazards = ho.map(s => ({ ...s, moves: s.moves.map(m => (['Stealth Rock', 'Spikes'].includes(m) ? 'Protect' : m)) }));
 
-  it('in Ubers un team senza hazard non ha più un malus del formato: lo pagano i Ruoli (setup del campo essenziale in HO)', () => {
+  it('in Ubers un team senza hazard non ha più un malus del formato: lo pagano i Ruoli (setup del campo importante in HO)', () => {
     const penalty = (team: TeamSet[], data: EngineData = ubers) => rateTeam(team, data)!.penalty.items.find(i => i.text.startsWith('Nessun hazard'));
     expect(penalty(noHazards)).toBeUndefined();
     expect(penalty(ho)).toBeUndefined();
-    const rated = (team: TeamSet[]) => rateTeam(team, ubers)!;
-    expect(rated(noHazards).roles.failures.some(f => /Setup del Campo/.test(f.text))).toBe(true);
-    expect(rated(ho).roles.failures.some(f => /Setup del Campo/.test(f.text))).toBe(false);
-    expect(rated(noHazards).overall).toBeLessThan(rated(ho).overall);
+    const roles = (team: TeamSet[]) => rateTeam(team, ubers)!.roles.value;
+    expect(roles(noHazards)).toBeLessThan(roles(ho));
   });
 
   it('in Ubers il coach non propone sostituzioni che cambiano il tipo di team (team da B in su)', () => {
