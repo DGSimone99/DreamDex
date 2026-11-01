@@ -3,5 +3,3 @@
 .ad-t.ad-catalog tr.active { background: var(--line-soft); }
 .ad-t.ad-catalog tr.active th, .ad-t.ad-catalog tr.active td.total { color: var(--text); font-weight: 700; }
 .ad-t.ad-catalog tr.na td:nth-child(n+3) { opacity: 0.55; }
-.ad-limited { font: 500 12px/1 var(--ui); color: var(--faint); text-transform: none; letter-spacing: 0; }
-.ad-cap { margin: 8px 0 0; font-size: 13px; color: var(--muted); }

@@ -219,10 +219,10 @@ describe('Catalogo Bonus/Malus', () => {
     expect(within(dialog).getAllByRole('tab').map(tab => tab.textContent)).toEqual(['Malus −8', 'Bonus +2']);
   });
 
-  it('Malus: gli 11 malus con nome, quando e punti; gli attivi evidenziati col punteggio attuale', async () => {
+  it('Malus: i 12 malus con nome, quando e punti; gli attivi evidenziati col punteggio attuale', async () => {
     const { dialog } = await openCatalog();
     const rows = within(within(dialog).getByRole('tabpanel')).getAllByRole('row').slice(1);
-    expect(rows).toHaveLength(11);
+    expect(rows).toHaveLength(12);
     const hazard = rows.find(r => within(r).queryByText('Hazard ripetuto'))!;
     expect(hazard).toHaveClass('active');
     expect(hazard).toHaveAttribute('aria-current', 'true');
@@ -236,34 +236,28 @@ describe('Catalogo Bonus/Malus', () => {
     expect(rows.filter(r => r.classList.contains('active'))).toHaveLength(2);
   });
 
-  it('ogni scheda dice il tetto; il suggerimento "limitato" compare solo se la somma lo supera', async () => {
-    const { user, dialog } = await openCatalog();
-    const panel = () => within(dialog).getByRole('tabpanel');
-    expect(panel()).toHaveTextContent('Totale massimo −15');
-    expect(panel()).not.toHaveTextContent('limitato');
-    await user.click(within(dialog).getByRole('tab', { name: /^Bonus/ }));
-    expect(panel()).toHaveTextContent('Totale massimo +6');
-    expect(panel()).not.toHaveTextContent('limitato');
-  });
-
-  it('somma delle voci oltre il tetto: "(limitato a −15)" accanto al titolo', async () => {
-    const user = userEvent.setup();
-    const r = { ...catalogRating(0), penalty: { total: 15, items: [{ text: 'A', points: 10, catalog: 'removers' }, { text: 'B', points: 8, catalog: 'hazardDuplicate' }] } } as unknown as TeamRating;
+  it('niente tetti: nessuna riga "Totale massimo" né "limitato", anche con una somma alta', async () => {
+    const r = { ...catalogRating(0), penalty: { total: 18, items: [{ text: 'A', points: 10, catalog: 'removers' }, { text: 'B', points: 8, catalog: 'hazardDuplicate' }] } } as unknown as TeamRating;
     render(<LangProvider lang="it"><AreaView rating={r} area="bonusMalus" team={[]} analysis={analyzeTeam([], fixtureData)} problems={[]} /></LangProvider>);
-    void user;
-    expect(within(screen.getByRole('tabpanel')).getByRole('heading', { name: /Malus/ })).toHaveTextContent('(limitato a −15)');
+    const panel = screen.getByRole('tabpanel');
+    expect(panel).not.toHaveTextContent('Totale massimo');
+    expect(panel).not.toHaveTextContent('limitato');
+    expect(within(screen.getByRole('region', { name: 'Bonus/Malus' })).getByRole('tab', { name: /^Malus/ })).toHaveTextContent('−18');
   });
 
   it('Bonus: Tera non applicabile fuori dalla Gen 9, mai attivo', async () => {
     const { user, dialog } = await openCatalog(0);
     await user.click(within(dialog).getByRole('tab', { name: /^Bonus/ }));
     const rows = within(within(dialog).getByRole('tabpanel')).getAllByRole('row').slice(1);
-    expect(rows).toHaveLength(2);
-    expect(rows[0]).toHaveClass('active');
-    expect(rows[0]).toHaveTextContent('+2');
-    expect(rows[1]).toHaveClass('na');
-    expect(rows[1]).toHaveTextContent('Solo Gen 9');
-    expect(rows[1]).not.toHaveAttribute('aria-current');
+    expect(rows).toHaveLength(6);
+    const weather = rows.find(r => within(r).queryByText('Meteo che protegge'))!;
+    expect(weather).toHaveClass('active');
+    expect(weather).toHaveTextContent('+2');
+    const tera = rows.at(-1)!;
+    expect(tera).toHaveClass('na');
+    expect(tera).toHaveTextContent('Solo Gen 9');
+    expect(tera).not.toHaveAttribute('aria-current');
+    expect(rows.filter(r => r.classList.contains('active'))).toHaveLength(1);
   });
 
   it('Bonus con Tera applicabile: nessuna nota', async () => {

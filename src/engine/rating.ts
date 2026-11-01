@@ -20,7 +20,8 @@ import type { TeamSet } from './sets';
 import { t, type Lang } from '../i18n';
 import { gameName, typeName } from '../i18n/game';
 import { effectiveness, superEffectiveMoves, teamField, TYPES } from './types';
-import { conditionConflicts, conditionLabel, enables, viaName, unmetBeneficiaries, unusedEnablers, weakenedMoves, weatherMitigations, type Condition } from './synergy';
+import { benefits, conditionConflicts, conditionLabel, enables, viaName, unmetBeneficiaries, unusedEnablers, weakenedMoves, weatherMitigations, type Condition } from './synergy';
+import { teamCores } from './cores';
 
 export type AreaKey = 'coverage' | 'defense' | 'strength' | 'bulk' | 'roles' | 'speed' | 'meta';
 /** Le aree del voto senza meta. */
@@ -91,8 +92,9 @@ export interface RatingArea {
 }
 
 /** Chiave della voce del catalogo bonus/malus a cui appartiene una voce del voto. */
-export type CatalogKey = 'sharedWeak' | 'hazardDuplicate' | 'removers' | 'weatherClash' | 'weakenedMove' | 'unmetCondition' | 'unusedEnabler'
-  | 'weakMember' | 'essentialRole' | 'oneStyle' | 'trickRoomFast' | 'weatherHelp' | 'tera';
+export type CatalogKey = 'sharedWeak' | 'sameType' | 'hazardDuplicate' | 'removers' | 'weatherClash' | 'weakenedMove' | 'unmetCondition' | 'unusedEnabler'
+  | 'weakMember' | 'essentialRole' | 'oneStyle' | 'trickRoomFast'
+  | 'coreTrio' | 'weakCovered' | 'typeVariety' | 'conditionUsed' | 'weatherHelp' | 'tera';
 
 export interface Redundancy {
   text: string;
@@ -153,10 +155,7 @@ export interface TeamRating {
 
 const sum = (xs: number[]) => xs.reduce((a, b) => a + b, 0);
 
-/** Penalità massima per ridondanze: da sole non possono affossare un team. */
-export const MAX_PENALTY = 15;
-/** Bonus massimo per debolezze smorzate dal meteo: il meteo non è sempre attivo. */
-export const MAX_BONUS = 6;
+// Niente tetti (2026-11-01, scelta dell'utente): penalità e bonus sono la somma delle loro voci.
 
 const HAZARDS: Record<string, string> = {
   stealthrock: 'Stealth Rock', stoneaxe: 'Stealth Rock',
@@ -174,12 +173,11 @@ export const REMOVER_EXTRA_POINTS = 1;
 export const WEATHER_CLASH_POINTS = 3;
 /** Un attivatore (meteo, campo, Trick Room) che nessun compagno usa costa 2 punti. */
 export const UNUSED_ENABLER_POINTS = 2;
+/** Ogni membro oltre il secondo dello stesso tipo costa 1 punto (3% dei team da torneo, 20% della ladder). */
+export const SAME_TYPE_POINTS = 1;
 
-/**
- * Ruoli ripetuti senza bisogno: stesso hazard, più rimozioni. Con `sameType` anche i 3+ membri dello stesso tipo:
- * nel voto non è una penalità (lo misura la Difesa), ma il coach lo consiglia ancora.
- */
-export function roleAndTypeRedundancies(team: TeamSet[], lang: Lang = 'it', opts: { sameType?: boolean } = {}): Redundancy[] {
+/** Ruoli ripetuti senza bisogno: stesso hazard, più rimozioni, e i 3+ membri dello stesso tipo (−1 per ogni membro oltre il secondo). */
+export function roleAndTypeRedundancies(team: TeamSet[], lang: Lang = 'it'): Redundancy[] {
   const items: Redundancy[] = [];
   const setters = new Map<string, number>();
   for (const set of team) {
@@ -190,9 +188,9 @@ export function roleAndTypeRedundancies(team: TeamSet[], lang: Lang = 'it', opts
   for (const [hazard, n] of setters) if (n > 1) items.push({ text: t(lang, 'rating.redundancy.setters', { n, hazard: gameName('move', hazard, lang) }), points: HAZARD_DUPLICATE * (n - 1), catalog: 'hazardDuplicate' });
   const removers = team.filter(set => set.moves.some(m => REMOVAL.has(toID(m)))).length;
   if (removers > 1) items.push({ text: t(lang, 'rating.redundancy.removers', { n: removers }), points: (removers - 1) * REMOVER_EXTRA_POINTS, catalog: 'removers' });
-  for (const type of opts.sameType ? TYPES : []) {
+  for (const type of TYPES) {
     const n = team.filter(set => (battleSpecies(set)?.types as readonly string[] | undefined)?.includes(type)).length;
-    if (n >= 3) items.push({ text: t(lang, 'rating.redundancy.sameType', { n, type: typeName(type, lang) }), points: n - 2 });
+    if (n >= 3) items.push({ text: t(lang, 'rating.redundancy.sameType', { n, type: typeName(type, lang) }), points: (n - 2) * SAME_TYPE_POINTS, catalog: 'sameType' });
   }
   return items;
 }
@@ -287,7 +285,7 @@ export function redundancies(team: TeamSet[], analysis: TeamAnalysis, lang: Lang
     ...weaknesses, ...roleAndTypeRedundancies(team, lang), ...dependencies, ...weatherClashes(team, lang),
     ...memberIssues(team, lang, analysis.needs),
   ];
-  return { total: Math.min(MAX_PENALTY, sum(items.map(i => i.points))), items };
+  return { total: sum(items.map(i => i.points)), items };
 }
 
 
@@ -333,6 +331,66 @@ export function teraBonus(team: TeamSet[], analysis: TeamAnalysis, cap: number, 
     if (!member) continue;
     items.push({ text: t(lang, 'rating.bonus.tera', { tera: typeName(member.teraType!, lang), member: battleName(member), type: typeName(row.type, lang) }), points: 1, catalog: 'tera' });
     if (items.length === cap) break;
+  }
+  return items;
+}
+
+/** Un core a tre dell'Analisi (tre membri che si parano le debolezze a giro) vale 2 punti; le coppie non danno punti. */
+export const CORE_TRIO_POINTS = 2;
+
+/** +2 per ogni trio fra i core dell'Analisi (al massimo due). I trii sono nel 100% dei team da torneo e nel 61% dei brutti. */
+export function coreTrioBonus(team: TeamSet[], lang: Lang = 'it'): Redundancy[] {
+  return teamCores(team)
+    .filter(core => core.members.length === 3)
+    .map(core => ({ text: t(lang, 'rating.bonus.coreTrio', { list: core.members.join(', ') }), points: CORE_TRIO_POINTS, catalog: 'coreTrio' as const }));
+}
+
+/** Tipi diversi fra i membri da cui il team conta come vario (67% dei team da torneo, 37% della ladder, 0% dei brutti). */
+export const TYPE_VARIETY_MIN = 10;
+export const TYPE_VARIETY_POINTS = 1;
+
+/** +1 se i membri mettono insieme almeno 10 tipi diversi: lo specchio del malus "stesso tipo". */
+export function typeVarietyBonus(team: TeamSet[], lang: Lang = 'it'): Redundancy[] {
+  const types = new Set(team.flatMap(set => (battleSpecies(set)?.types as readonly string[] | undefined) ?? []));
+  return types.size >= TYPE_VARIETY_MIN
+    ? [{ text: t(lang, 'rating.bonus.variety', { n: types.size }), points: TYPE_VARIETY_POINTS, catalog: 'typeVariety' }]
+    : [];
+}
+
+export const WEAK_COVERED_POINTS = 1;
+
+/**
+ * +1 se, in un team da 6, ogni tipo a cui almeno due membri sono deboli ha un membro che lo resiste: lo specchio del
+ * malus "debolezza condivisa" (86% dei team da torneo, 58% della ladder, 24% dei brutti).
+ */
+export function weakCoveredBonus(team: TeamSet[], analysis: TeamAnalysis, lang: Lang = 'it'): Redundancy[] {
+  if (team.length < 6) return [];
+  const shared = analysis.weakness.filter(row => row.weak >= 2);
+  return shared.every(row => row.resist >= 1)
+    ? [{ text: t(lang, 'rating.bonus.weakCovered', { n: shared.length }), points: WEAK_COVERED_POINTS, catalog: 'weakCovered' }]
+    : [];
+}
+
+/** Compagni (non il portatore) che devono sfruttare un meteo, un campo o Trick Room perché valga il bonus. */
+export const CONDITION_USERS_MIN = 2;
+export const CONDITION_USED_POINTS = 1;
+
+/** +1 per ogni condizione portata da un membro e sfruttata da almeno due compagni: lo specchio di "attivatore inutilizzato". */
+export function conditionUsedBonus(team: TeamSet[], lang: Lang = 'it'): Redundancy[] {
+  const items: Redundancy[] = [];
+  const seen = new Set<Condition>();
+  for (const [i, set] of team.entries()) {
+    for (const link of enables(set)) {
+      if (seen.has(link.condition)) continue;
+      const users = team.filter((other, j) => j !== i && benefits(other).some(b => b.condition === link.condition));
+      if (users.length < CONDITION_USERS_MIN) continue;
+      seen.add(link.condition);
+      items.push({
+        text: t(lang, 'rating.bonus.conditionUsed', { condition: capitalize(conditionLabel(link.condition, lang)), setter: battleName(set), list: users.map(battleName).join(', ') }),
+        points: CONDITION_USED_POINTS,
+        catalog: 'conditionUsed',
+      });
+    }
   }
   return items;
 }
@@ -414,11 +472,14 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it', o
   // Le mancanze essenziali dei Ruoli (solo team di 6) si sommano alle altre penalità, entro il massimo
   const extraItems = [...roles.failures, ...roomItems];
   const penalty = extraItems.length
-    ? { total: Math.min(MAX_PENALTY, redundant.total + sum(extraItems.map(i => i.points))), items: [...redundant.items, ...extraItems] }
+    ? { total: redundant.total + sum(extraItems.map(i => i.points)), items: [...redundant.items, ...extraItems] }
     : redundant;
-  const weather = weatherBonus(team, lang);
-  const tera = teraBonus(team, analysis, rules.teraBonusCap, lang);
-  const bonus = { total: Math.min(MAX_BONUS, weather.total + sum(tera.map(i => i.points))), items: [...weather.items, ...tera] };
+  // Bonus: le cose fatte bene, senza tetto (core a tre, debolezze coperte, tipi vari, condizione sfruttata, meteo, Tera)
+  const bonusItems = [
+    ...coreTrioBonus(team, lang), ...weakCoveredBonus(team, analysis, lang), ...typeVarietyBonus(team, lang), ...conditionUsedBonus(team, lang),
+    ...weatherBonus(team, lang).items, ...teraBonus(team, analysis, rules.teraBonusCap, lang),
+  ];
+  const bonus = { total: sum(bonusItems.map(i => i.points)), items: bonusItems };
   const overall = Math.min(100, Math.max(0, base - penalty.total + bonus.total));
   return {
     base, teraCap: rules.teraBonusCap, penalty, bonus, power: power.members, overall, ...gradeFor(overall, lang), provisional: team.length < 6, areas, archetype, meta,
@@ -439,9 +500,9 @@ export interface CatalogEntry {
 }
 
 const CATALOG_ORDER: { key: CatalogKey; kind: 'malus' | 'bonus' }[] = [
-  ...(['sharedWeak', 'hazardDuplicate', 'removers', 'weatherClash', 'weakenedMove', 'unmetCondition', 'unusedEnabler', 'weakMember', 'essentialRole', 'oneStyle', 'trickRoomFast'] as const)
+  ...(['sharedWeak', 'sameType', 'hazardDuplicate', 'removers', 'weatherClash', 'weakenedMove', 'unmetCondition', 'unusedEnabler', 'weakMember', 'essentialRole', 'oneStyle', 'trickRoomFast'] as const)
     .map(key => ({ key, kind: 'malus' as const })),
-  ...(['weatherHelp', 'tera'] as const).map(key => ({ key, kind: 'bonus' as const })),
+  ...(['coreTrio', 'weakCovered', 'typeVariety', 'conditionUsed', 'weatherHelp', 'tera'] as const).map(key => ({ key, kind: 'bonus' as const })),
 ];
 
 /** Tutti i bonus e malus possibili, con il testo per il modale; i punti nei testi vengono dalle costanti. */
@@ -450,6 +511,8 @@ export function bonusMalusCatalog(lang: Lang, teraCap: number): CatalogEntry[] {
     shared: SHARED_WEAK_POINTS, unmet: UNMET_POINTS, hazard: HAZARD_DUPLICATE, hurt: WEATHER_HURT, hurtStab: WEATHER_HURT_STAB, member: WEAK_MEMBER_POINTS, memberMax: WEAK_MEMBER_MAX,
     essential: ESSENTIAL_POINTS, style: ONE_STYLE_POINTS, room: TRICK_ROOM_MAX, roomEach: TRICK_ROOM_FAST_POINTS, remover: REMOVER_EXTRA_POINTS, clash: WEATHER_CLASH_POINTS, unused: UNUSED_ENABLER_POINTS,
     help: WEATHER_HELP, cap: teraCap,
+    same: SAME_TYPE_POINTS, trio: CORE_TRIO_POINTS, covered: WEAK_COVERED_POINTS, variety: TYPE_VARIETY_POINTS, varietyMin: TYPE_VARIETY_MIN,
+    used: CONDITION_USED_POINTS, users: CONDITION_USERS_MIN,
   };
   return CATALOG_ORDER.map(({ key, kind }) => ({
     key, kind,

@@ -24,7 +24,9 @@ describe('sostituzioni giudicate col voto', () => {
       for (const fix of swaps) {
         const after = rateTeam(swapped(team, fix.index!, fix.set), fixtureData)!.overall;
         expect(after - before).toBe(fix.gain);
-        expect(fix.gain).toBeGreaterThan(0);
+        // A pari voto il cambio resta solo se risolve un problema (il team brutto sta a 0 anche dopo il cambio: senza tetto la penalità supera la base)
+        expect(fix.gain).toBeGreaterThanOrEqual(0);
+        if (fix.gain === 0) expect(fix.solves.length).toBeGreaterThan(0);
       }
     }
   });
