@@ -189,15 +189,26 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
     const held = within(table).getByRole('row', { name: /^Regge/ });
     expect(within(held).getAllByRole('cell').map(c => c.textContent)).toEqual(expected.slice(0, 8).map(r => `${r.heldBy.filter(h => !h.partial).length}`));
     expect(panel.queryAllByRole('listitem')).toHaveLength(0);
-    // Una pagina per ogni 8 minacce; la seconda mostra le successive, e "precedente" torna alla prima
-    const pages = panel.getByRole('navigation', { name: 'Pagine delle minacce' });
-    expect(within(pages).getAllByRole('button', { name: /^Minacce da/ })).toHaveLength(Math.ceil(rows.length / 8));
+    // Le pagine compatte "‹ 1/N ›" stanno nella casella in alto a sinistra della tabella, al posto di "Pokémon";
+    // "successive" mostra le 8 dopo, "precedente" torna alla prima. Sotto la tabella una riga sola: legenda e conteggi
+    const corner = table.querySelector('thead th.def-mon-h')!;
+    const pages = within(corner as HTMLElement).getByRole('navigation', { name: 'Pagine delle minacce' });
+    expect(corner).not.toHaveTextContent('Pokémon');
+    const total = Math.ceil(rows.length / 8);
+    expect(pages).toHaveTextContent(`1/${total}`);
+    expect(pages).toHaveTextContent(`Minacce da 1 a ${Math.min(8, rows.length)}`);
     expect(within(pages).getByRole('button', { name: 'Minacce precedenti' })).toBeDisabled();
+    expect(within(pages).getAllByRole('button')).toHaveLength(2);
+    expect(document.querySelectorAll('.def-frame > .rob-legend')).toHaveLength(1);
+    expect(document.querySelector('.def-frame > .rob-legend .cm-summary')).toHaveTextContent(`${rows.length} minacce`);
     if (rows.length > 8) {
-      await user.click(within(pages).getByRole('button', { name: /^Minacce da 9 / }));
+      await user.click(within(pages).getByRole('button', { name: 'Minacce successive' }));
       expect(names()).toEqual(expected.slice(8, 16).map(r => r.species));
+      expect(pages).toHaveTextContent(`2/${total}`);
       await user.click(within(pages).getByRole('button', { name: 'Minacce precedenti' }));
       expect(names()).toEqual(expected.slice(0, 8).map(r => r.species));
+    } else {
+      expect(within(pages).getByRole('button', { name: 'Minacce successive' })).toBeDisabled();
     }
   });
 });

@@ -36,7 +36,8 @@ function cellsOf(row: Row, names: (string | null)[]): (Holder | 'ko' | null)[] {
  * Coverage meta della Difesa, a tabella come quella dell'Offesa: i membri in riga (nello stesso punto delle altre schede),
  * le minacce del meta in colonna, 8 per pagina dalla meno coperta (a pari livello la più usata). In ogni casella il danno
  * che il membro prende dal colpo migliore della minaccia, verde se regge (sotto metà PS), giallo se solo a metà, rosso se
- * va KO; in fondo Regge conta chi la regge del tutto. Pagine e riepilogo stanno sotto la tabella.
+ * va KO; in fondo Regge conta chi la regge del tutto. Le pagine ("‹ 1/5 ›") stanno nella casella in alto a sinistra;
+ * sotto la tabella una sola riga con la legenda e il riepilogo.
  */
 export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaContext }) {
   const t = useT();
@@ -65,7 +66,7 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
     );
   };
 
-  const body = (shown: Row[], bar: ReactNode) => {
+  const body = (shown: Row[], pager: ReactNode, counts: ReactNode) => {
     const cells = shown.map(r => cellsOf(r, names));
     return (
       <div className={`def-frame def-meta-grid cm-matrix${ctx.roomy ? ' roomy' : ''}`}>
@@ -77,7 +78,7 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
             </colgroup>
             <thead>
               <tr>
-                <th scope="col" className="def-mon-h">{t('detail.member')}</th>
+                <th scope="col" className="def-mon-h cm-pager-h">{pager}</th>
                 {shown.map(r => (
                   <th key={r.species} scope="col" aria-label={r.species} title={r.species} className="dm-h">
                     <span className="def-box"><PokemonIcon name={r.species} /></span>
@@ -102,11 +103,13 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
             </tbody>
           </table>
         </div>
-        <p className="rob-legend" aria-hidden="true">
-          <span>{t('ddetail.cm.damage')}</span>
-          {LEGEND.map(l => <span key={l.cls} className={`hold-chip ${l.cls}`}>{l.tag}</span>)}
-        </p>
-        {bar}
+        <div className="rob-legend cm-foot">
+          <span className="cm-legend" aria-hidden="true">
+            <span>{t('ddetail.cm.damage')}</span>
+            {LEGEND.map(l => <span key={l.cls} className={`hold-chip ${l.cls}`}>{l.tag}</span>)}
+          </span>
+          {counts}
+        </div>
       </div>
     );
   };

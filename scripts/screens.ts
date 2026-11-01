@@ -153,7 +153,7 @@ const defenseState = (sub: RegExp | null, opts: { team?: unknown[]; format?: Par
     await wait(300);
     if (opts.collapsed && !await clickText(p, 'button.band-toggle', /./)) return 'no band toggle';
     await wait(300);
-    if (!await clickText(p, '.band button.grade-area', /^Difesa/)) return 'no defense row';
+    if (!await clickText(p, '.band button.grade-area', /^(Difesa|Defense)/)) return 'no defense row';
     await wait(300);
     if (sub && !await clickText(p, '.area-subs [role="tab"]', sub)) return 'no sub-tab';
     await wait(500);
@@ -190,16 +190,17 @@ const offenseGuide = (sub: RegExp | null, section?: RegExp): State => ({ hash: h
   return true;
 } });
 OFFENSE_STATES['analysis-offense-types-nometa'] = offenseState(OFFENSE_SUBS.types, { format: { meta: false } });
+OFFENSE_STATES['analysis-offense-meta-en'] = { ...offenseState(/^Meta coverage/), lang: 'en' };
 OFFENSE_STATES['analysis-offense-guide'] = offenseGuide(OFFENSE_SUBS.general);
-// Come funziona con la freccina della Potenza aperta: le difese medie dei 18 bersagli
-OFFENSE_STATES['analysis-offense-guide-targets'] = { hash: hash(SIX), run: async p => {
-  const ok = await offenseGuide(OFFENSE_SUBS.general).run!(p);
+// La pagina Potenza con la freccina del Colpo aperta: le difese medie dei 18 bersagli (il modale non cambia altezza)
+OFFENSE_STATES['analysis-offense-guide-power-open'] = { hash: hash(SIX), run: async p => {
+  const ok = await offenseGuide(OFFENSE_SUBS.general, /^(Potenza|Power)/).run!(p);
   if (ok !== true) return ok;
   if (!await clickText(p, '.guide-more > summary', /./)) return 'no targets toggle';
   await wait(300);
   return true;
 } };
-OFFENSE_STATES['analysis-offense-guide-targets-en'] = { ...OFFENSE_STATES['analysis-offense-guide-targets'], lang: 'en' } as State;
+OFFENSE_STATES['analysis-offense-guide-power-open-en'] = { ...OFFENSE_STATES['analysis-offense-guide-power-open'], lang: 'en' } as State;
 OFFENSE_STATES['analysis-offense-guide-types'] = offenseGuide(OFFENSE_SUBS.general, /^Coverage tipi/);
 OFFENSE_STATES['analysis-offense-guide-power'] = offenseGuide(OFFENSE_SUBS.general, /^Potenza/);
 OFFENSE_STATES['analysis-offense-guide-meta'] = offenseGuide(OFFENSE_SUBS.general, /^Coverage meta/);
@@ -260,6 +261,10 @@ const DEFENSE_STATES: Record<string, State> = {
   ])),
   'analysis-defense-types-nometa': defenseState(SUBS.types, { format: { meta: false } }),
   'analysis-defense-long': defenseState(null, { team: LONG }),
+  // Coverage tipi con le note del meteo (Pelipper porta la pioggia), Coverage tipi e meta in inglese: sotto la tabella resta una riga
+  'analysis-defense-types-rain': defenseState(SUBS.types, { team: RAIN }),
+  'analysis-defense-types-en': { ...defenseState(/^Type coverage/), lang: 'en' },
+  'analysis-defense-meta-en': { ...defenseState(/^Meta coverage/), lang: 'en' },
   // La guida della Difesa aperta dal "?" di Generale (Come funziona)
   'analysis-defense-guide-meta': { hash: hash(SIX), run: async p => {
     const ok = await defenseState(SUBS.meta).run!(p);
@@ -708,7 +713,10 @@ for (const [w, h] of sizes) {
             const cs = getComputedStyle(c);
             need += c.getBoundingClientRect().height + (c.classList.contains('rob-legend') ? 0 : parseFloat(cs.marginTop) || 0) + (parseFloat(cs.marginBottom) || 0);
           }
-          const below = frame && rows.length ? ` below=${Math.round(need)}/${Math.round(frame.getBoundingClientRect().bottom - last)}` : '';
+          // Le parti sotto le righe dei membri: righe di riepilogo della tabella, poi gli elementi dopo la tabella (legenda, note)
+          const tail = scroller ? [...scroller.querySelectorAll<HTMLElement>('tbody tr:not(:has(.ad-mon))')].map(r => Math.round(r.getBoundingClientRect().height))
+            .concat([...frame!.children].filter(c => c !== scroller).map(c => Math.round(c.getBoundingClientRect().height))) : [];
+          const below = frame && rows.length ? ` below=${Math.round(need)}/${Math.round(frame.getBoundingClientRect().bottom - last)} belowParts=[${tail.join(',')}]` : '';
           const label = el.querySelector<HTMLElement>('th.def-mon-h');
           const labelAt = label ? (() => { const r = document.createRange(); r.selectNodeContents(label); const b = r.getBoundingClientRect(); return ` label=${Math.round(b.left)},${Math.round(b.top)}`; })() : '';
           const gp = document.querySelector<HTMLElement>('.help-dialog .help-panel');

@@ -1,8 +1,5 @@
 /* Offesa: regole solo dell'Offesa, sopra quelle della Difesa (defense.css) */
 
-/* Tutte le schede dell'Offesa: una sola altezza delle righe, misurata sulla scheda con più roba sotto la tabella
-   (Coverage meta: riga Lo coprono, legenda e pagine, ~107px), così cambiando scheda le righe non si spostano */
-.def-frame.off-frame { --def-top: 97px; }
 /* Generale: i tipi coperti "8/18" in una barra neutra (non è un voto) */
 .off-general .def-cell.ct-count { grid-template-columns: 150px 5ch; }
 .def-bar.neutral i { background: var(--accent); }
@@ -54,11 +51,8 @@
 .def-walls .wall-tick { width: 9px; height: 9px; background: linear-gradient(225deg, var(--good) 50%, transparent 50%); border: 1px solid var(--line); }
 .def-walls .wall-h { padding: 0; line-height: 0; text-align: center; vertical-align: bottom; }
 .def-frame.def-walls .wall-h .def-box { --bs: 1.2; }
-.def-walls .rob-legend .wall-legend-setup { margin-left: auto; }
+.def-walls .rob-legend .wall-legend-setup { margin-left: 6px; }
 .def-walls .ct-sum td { height: 26px; }
-
-/* Coverage meta a tabella: pagine e riepilogo sotto la tabella, così la tabella parte dove partono le altre schede */
-.cm-matrix .cm-bar { margin: 8px 0 0; }
 .def-power .pw-col-setup { width: auto; }
 .def-power .pw-table th:nth-child(3) { text-align: center; }
 .def-power .pw-setup { white-space: nowrap; text-align: center; }

@@ -13,36 +13,31 @@ export function MetaCount({ n, tone, label }: { n: number; tone: 'good' | 'warn'
 export type MetaLabels = { pages: string; prev: string; next: string; page: (from: number, to: number) => string };
 
 /**
- * Cornice di Coverage meta per Difesa e Offesa: il corpo (la tabella) lo disegna chi chiama e riceve la barra di pagine e
- * riepilogo da mettere dove serve. Le righe arrivano già ordinate; la cornice taglia la pagina.
+ * Cornice di Coverage meta per Difesa e Offesa: il corpo (la tabella) lo disegna chi chiama e riceve le pagine compatte
+ * ("‹ 1/5 ›", da mettere nella casella in alto a sinistra della tabella) e il riepilogo (da mettere sulla riga sotto,
+ * accanto alla legenda). Le righe arrivano già ordinate; la cornice taglia la pagina.
  */
 export function MetaFrame<R>({ rows, summary, body, labels }: {
   rows: R[]; summary: ReactNode; labels: MetaLabels;
-  body: (shown: R[], bar: ReactNode) => ReactNode;
+  body: (shown: R[], pager: ReactNode, summary: ReactNode) => ReactNode;
 }) {
   const [page, setPage] = useState(0);
   const pages = Math.max(1, Math.ceil(rows.length / META_PAGE));
   const current = Math.min(page, pages - 1);
   const shown = rows.slice(current * META_PAGE, (current + 1) * META_PAGE);
-  const bar = (
-      <div className="cm-bar">
-        <nav className="cm-pages" aria-label={labels.pages}>
-          <button type="button" className="cm-step" aria-label={labels.prev} disabled={current === 0} onClick={() => setPage(current - 1)}>
-            <Icon name="prev" />
-          </button>
-          {Array.from({ length: pages }, (_, i) => (
-            <button key={i} type="button" className="cm-page" aria-current={i === current ? 'page' : undefined}
-              aria-label={labels.page(i * META_PAGE + 1, Math.min(rows.length, (i + 1) * META_PAGE))}
-              onClick={() => setPage(i)}>
-              {i + 1}
-            </button>
-          ))}
-          <button type="button" className="cm-step" aria-label={labels.next} disabled={current === pages - 1} onClick={() => setPage(current + 1)}>
-            <Icon name="next" />
-          </button>
-        </nav>
-        <p className="cm-summary">{summary}</p>
-      </div>
+  const pager = (
+    <nav className="cm-pages" aria-label={labels.pages}>
+      <button type="button" className="cm-step" aria-label={labels.prev} title={labels.prev} disabled={current === 0} onClick={() => setPage(current - 1)}>
+        <Icon name="prev" />
+      </button>
+      <span className="cm-at" aria-live="polite">
+        <span aria-hidden="true">{current + 1}/{pages}</span>
+        <span className="visually-hidden">{labels.page(current * META_PAGE + 1, Math.min(rows.length, (current + 1) * META_PAGE))}</span>
+      </span>
+      <button type="button" className="cm-step" aria-label={labels.next} title={labels.next} disabled={current === pages - 1} onClick={() => setPage(current + 1)}>
+        <Icon name="next" />
+      </button>
+    </nav>
   );
-  return <>{body(shown, bar)}</>;
+  return <>{body(shown, pager, <span className="cm-summary">{summary}</span>)}</>;
 }

@@ -12,8 +12,11 @@
 
 /* Cornice comune delle schede con i membri: la lista in alto (testata e righe di altezza fissa, così cambiando scheda i
    Pokémon restano nello stesso punto), sotto la fascia della scheda (legenda, riepiloghi). L altezza delle righe segue quella del pannello (cqh), uguale in ogni scheda:
-   --def-tail è il margine tenuto sotto la fascia in fondo, lo stesso per tutte le schede */
-.def-frame { --def-top: 104px; --def-gap: 10px; --def-head: 44px; --def-sp: 3px; --def-tail: 4px; --def-mon: 270px; --def-row-min: 28px; --def-row-max: 999px;
+   --def-tail è il margine tenuto sotto la fascia in fondo, lo stesso per tutte le schede.
+   --def-top è lo spazio tenuto sotto le righe dei membri, uguale in tutte le schede e in tutte le aree (Difesa, Offesa,
+   Velocità), così le righe hanno la stessa altezza ovunque: lo misura la scheda con più roba sotto, Coverage tipi della
+   Difesa (le righe Regge e Copertura, poi una riga di legenda) */
+.def-frame { --def-top: 90px; --def-gap: 10px; --def-head: 44px; --def-sp: 3px; --def-tail: 4px; --def-mon: 270px; --def-row-min: 28px; --def-row-max: 999px;
   --def-row: clamp(var(--def-row-min), calc((100cqh - var(--def-top) - var(--def-gap) - var(--def-head) - var(--def-tail)) / 6 - var(--def-sp)), var(--def-row-max));
   display: flex; flex-direction: column; height: 100%; min-height: 0; container-type: size; }
 .def-frame.roomy { --def-tail: 4px; --def-mon: 270px; --def-row-min: 34px; --def-row-max: 999px; }
@@ -203,16 +206,23 @@
   .ct-cell { font-size: 12px; }
 }
 
-/* Coverage meta: pagine da 8 minacce, la meno coperta per prima; a sinistra le pagine, a destra i conteggi */
-.cm-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 8px; }
-.cm-pages { display: flex; align-items: center; gap: 4px; }
-.cm-pages button { display: inline-grid; place-items: center; min-width: 30px; height: 28px; padding: 0 8px; border: 1px solid var(--line); border-radius: 3px; background: var(--raised); color: var(--muted); font: 600 13px/1 var(--ui); cursor: pointer; }
+/* Coverage meta: pagine da 8 minacce, la meno coperta per prima. Le pagine compatte "‹ 1/5 ›" stanno nella casella in alto
+   a sinistra della tabella (al posto di "Pokémon"); sotto la tabella una riga sola: a sinistra la legenda, a destra i conteggi */
+.ad-panel table thead th.cm-pager-h { padding: 0 0 6px; text-transform: none; letter-spacing: 0; }
+.cm-pages { display: inline-flex; align-items: center; gap: 4px; }
+.cm-pages button { display: inline-grid; place-items: center; width: 28px; height: 26px; padding: 0; border: 1px solid var(--line); border-radius: 3px; background: var(--raised); color: var(--muted); cursor: pointer; }
 .cm-pages button:hover:not(:disabled) { border-color: var(--accent-2); color: var(--text); }
-.cm-pages button[aria-current='page'] { border-color: var(--accent-2); background: var(--accent-2-soft); color: var(--text); }
 .cm-pages button:disabled { opacity: 0.4; cursor: default; }
 .cm-pages button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .cm-pages .icon { width: 14px; height: 14px; }
-.ad-panel .cm-summary { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0; font-size: 13px; color: var(--muted); }
+.cm-at { min-width: 4.5ch; text-align: center; font: 600 13px/1 var(--ui); color: var(--text); font-variant-numeric: tabular-nums; }
+.ad-panel .rob-legend.cm-foot { flex-wrap: nowrap; justify-content: space-between; gap: 12px; white-space: nowrap; }
+/* Coverage tipi della Difesa: legenda e note del meteo su una riga; le note si tagliano coi puntini (testo intero nel title) */
+.ad-panel .rob-legend.ht-foot { flex-wrap: nowrap; gap: 16px; white-space: nowrap; }
+.ht-legend { display: inline-flex; flex: none; align-items: center; gap: 6px; }
+.ad-panel .ht-notes { flex: 1 1 0; min-width: 0; margin: 0; overflow: hidden; text-overflow: ellipsis; text-align: right; font-size: 12px; cursor: help; }
+.cm-legend { display: inline-flex; align-items: center; gap: 6px; }
+.ad-panel .cm-summary { display: inline-flex; align-items: center; gap: 6px; margin: 0 0 0 auto; font-size: 13px; color: var(--muted); }
 .cm-summary .ct-pill { font-size: 12px; }
 .ct-pill.zero { background: var(--raised); color: var(--faint); }
 /* Peso di ogni parte nella Difesa, accanto al nome (guida, Come funziona) */

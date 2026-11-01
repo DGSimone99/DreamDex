@@ -42,6 +42,8 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
   });
   /** Classi di una cella della colonna `col`: il puntatore accende riga e colonna. */
   const colClass = (col: number, extra = '') => [extra, hover?.col === col && 'x-col'].filter(Boolean).join(' ') || undefined;
+  // Le note del meteo stanno sulla riga della legenda; se non ci entrano si tagliano coi puntini e il testo intero è nel suggerimento
+  const notes = weatherMitigations(team).map(m => mitigationNote(m, lang));
 
   return (
     <div className={`def-frame def-types${roomy ? ' roomy' : ''}`}>
@@ -98,11 +100,17 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
           </tbody>
         </table>
       </div>
-      <p className="rob-legend" aria-hidden="true">
-        <span>{t('ddetail.holdLegend')}</span>
-        {HOLD_ORDER.map(b => <span key={b} className={`hold-chip ${HOLD_BANDS[b].cls}`}>{HOLD_BANDS[b].tag}</span>)}
-      </p>
-      {weatherMitigations(team).map(m => <p key={m.condition} className="note"><Typed text={mitigationNote(m, lang)} /></p>)}
+      <div className="rob-legend ht-foot">
+        <span className="ht-legend" aria-hidden="true">
+          <span>{t('ddetail.holdLegend')}</span>
+          {HOLD_ORDER.map(b => <span key={b} className={`hold-chip ${HOLD_BANDS[b].cls}`}>{HOLD_BANDS[b].tag}</span>)}
+        </span>
+        {notes.length > 0 && (
+          <span className="ht-notes note" title={notes.join('\n')}>
+            <Typed text={notes.join(' · ')} />
+          </span>
+        )}
+      </div>
     </div>
   );
 }
