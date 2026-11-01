@@ -87,15 +87,15 @@ export interface MemberSpeed {
 }
 
 /** Mosse che alzano la Velocità di uno stadio (×1,5) o di due (×2; Shift Gear ne dà due, Geomancy con la Power Herb). */
-const SETUP_PLUS_ONE = new Set(['dragondance', 'quiverdance', 'victorydance', 'tidyup', 'trailblaze', 'flamecharge', 'rapidspin', 'aquastep', 'esperwing', 'scaleshot']);
-const SETUP_PLUS_TWO = new Set(['shellsmash', 'agility', 'rockpolish', 'autotomize', 'shiftgear', 'geomancy']);
+export const SETUP_PLUS_ONE = new Set(['dragondance', 'quiverdance', 'victorydance', 'tidyup', 'trailblaze', 'flamecharge', 'rapidspin', 'aquastep', 'esperwing', 'scaleshot']);
+export const SETUP_PLUS_TWO = new Set(['shellsmash', 'agility', 'rockpolish', 'autotomize', 'shiftgear', 'geomancy']);
 /** Abilità che raddoppiano la velocità col meteo o il campo giusto. */
-const WEATHER_SPEED: Record<string, { weather?: string; terrain?: string }> = {
+export const WEATHER_SPEED: Record<string, { weather?: string; terrain?: string }> = {
   swiftswim: { weather: 'rain' }, chlorophyll: { weather: 'sun' }, sandrush: { weather: 'sand' }, slushrush: { weather: 'snow' },
   surgesurfer: { terrain: 'electric' },
 };
-const PARALYSIS = new Set(['thunderwave', 'glare', 'stunspore', 'nuzzle']);
-const SPEED_DROP = new Set(['icywind', 'electroweb', 'bulldoze', 'rocktomb', 'lowsweep']);
+export const PARALYSIS = new Set(['thunderwave', 'glare', 'stunspore', 'nuzzle']);
+export const SPEED_DROP = new Set(['icywind', 'electroweb', 'bulldoze', 'rocktomb', 'lowsweep']);
 
 /** Strumenti che si consumano e attivano Unburden (oltre a bacche, gemme e semi). */
 const CONSUMED = new Set([
@@ -364,7 +364,7 @@ function controlConditionOf(id: string): SpeedCondition | null {
 }
 
 /** Metà PS tolti con una mossa prioritaria valgono il colpo pieno: basta a finire un avversario indebolito. */
-const PRIORITY_FULL = 0.5;
+export const PRIORITY_FULL = 0.5;
 
 /** Il set di un avversario del gruppo: col meta il più comune, senza un set neutro. */
 export function rivalSet(species: string, data: EngineData): TeamSet {

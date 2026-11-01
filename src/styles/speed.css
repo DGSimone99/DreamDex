@@ -68,7 +68,6 @@
 .sp-check.on { border-color: var(--accent); background: var(--accent-soft); }
 .sp-check input { margin: 0; }
 .sp-check-effect { color: var(--muted); font-size: 11px; }
-.sp-priority { margin: 0; font-size: 12px; color: var(--muted); }
 .sp-dlg-count { margin: 0; font-weight: 700; }
 .sp-list { display: flex; flex-direction: column; gap: 2px; margin: 0; padding: 0; list-style: none; }
 .sp-row { display: grid; grid-template-columns: 28px minmax(0, 1fr) 6ch 5ch; align-items: center; gap: 8px; padding: 2px 8px; border-left: 3px solid var(--line); border-radius: 3px; font-size: 13px; font-variant-numeric: tabular-nums; }
@@ -85,8 +84,7 @@
 .sp-row .item-icon { flex: none; display: inline-block; }
 .sp-rival-speed { text-align: right; }
 .sp-rival-diff { text-align: right; font-weight: 700; }
-.sp-dlg-foot { margin: 0; font-size: 11px; color: var(--faint); }
-/* Guida della Velocità: le quattro fonti come tessere (nome e quota sopra, una riga sotto), come le soglie della Difesa */
+/* Guida della Velocità: le tre fonti come tessere (nome e quota sopra, una riga sotto), come le soglie della Difesa */
 .guide-tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin: 0; padding: 0; list-style: none; }
 .guide-tiles li { display: grid; align-content: start; gap: 4px; padding: 8px 10px; border: 1px solid var(--line-soft); background: color-mix(in srgb, var(--raised) 55%, var(--panel)); }
 .guide-tile-head { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
@@ -95,6 +93,29 @@
 .guide-pct.low { background: color-mix(in srgb, var(--accent-2) 10%, var(--raised)); color: var(--muted); }
 .guide-tiles small { font-size: 12px; line-height: 1.35; color: var(--muted); }
 .help-panel .guide-scale { margin-top: 6px; font-size: 13px; color: var(--muted); }
+/* Le tessere si aprono: con una aperta restano solo nome e quota (una fila bassa) e sotto c'è il dettaglio */
+.sp-guide-tiles { grid-template-columns: repeat(3, 1fr); }
+.sp-guide-tiles li { padding: 0; }
+.sp-guide-tiles li.on { border-color: var(--accent); background: var(--accent-soft); }
+.sp-guide-tiles button { display: grid; align-content: start; gap: 4px; width: 100%; height: 100%; padding: 8px 10px; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.sp-guide-tiles button:hover { background: color-mix(in srgb, var(--raised) 70%, transparent); }
+.sp-guide-tiles button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.sp-guide-tiles.compact button { padding: 6px 10px; }
+.sp-guide-sub { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding-top: 4px; border-top: 1px dashed var(--line-soft); }
+/* Il dettaglio di una fonte: righe nome · valore · lista, la quota in fondo */
+.help-dialog:has(.sp-gd) { max-height: min(720px, calc(100vh - 48px)); }
+.sp-gd { position: relative; margin-top: 4px; padding: 8px 40px 8px 12px; border: 1px solid var(--line-soft); border-top: 2px solid var(--accent); background: color-mix(in srgb, var(--raised) 55%, var(--panel)); }
+.sp-gd-rows { display: grid; grid-template-columns: max-content 4ch minmax(0, 1fr); column-gap: 10px; row-gap: 5px; align-items: baseline; font-size: 13px; line-height: 1.35; }
+.sp-gd-row { display: contents; }
+.sp-gd-row b { font-weight: 600; color: var(--text); }
+.sp-gd-val { font-weight: 700; color: var(--accent-2-ink); font-variant-numeric: tabular-nums; }
+.sp-gd-text { color: var(--muted); }
+.help-panel .sp-gd-group { grid-column: 1 / -1; max-width: none; margin: 4px 0 0; line-height: 1.3; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--faint); }
+.help-panel .sp-gd-group:first-child { margin-top: 0; }
+.help-panel .sp-gd-foot { max-width: none; margin: 6px 0 0; font-size: 12px; line-height: 1.4; color: var(--faint); }
+.sp-gd-close { position: absolute; top: 4px; right: 4px; }
 @media (max-width: 560px) {
   .guide-tiles { grid-template-columns: repeat(2, 1fr); }
+  .sp-gd-rows { grid-template-columns: max-content minmax(0, 1fr); }
+  .sp-gd-text { grid-column: 1 / -1; }
 }

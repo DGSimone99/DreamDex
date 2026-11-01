@@ -212,7 +212,7 @@ const speedState = (sub: RegExp | null, opts: { collapsed?: boolean; format?: Pa
     await wait(300);
     if (opts.collapsed && !await clickText(p, 'button.band-toggle', /./)) return 'no band toggle';
     await wait(300);
-    if (!await clickText(p, '.band button.grade-area', /^Velocit/)) return 'no speed row';
+    if (!await clickText(p, '.band button.grade-area', /^(Velocit|Speed)/)) return 'no speed row';
     await wait(300);
     if (sub && !await clickText(p, '.area-subs [role="tab"]', sub)) return 'no sub-tab';
     await wait(500);
@@ -241,6 +241,17 @@ const speedGuide = (format?: Partial<typeof FORMAT>): State => ({ hash: format ?
 } });
 SPEED_STATES['analysis-speed-guide'] = speedGuide();
 SPEED_STATES['analysis-speed-guide-nometa'] = speedGuide({ meta: false });
+// La guida con una tessera aperta (Boost, Priorità, Controllo del team): il dettaglio di quella fonte
+for (const [key, re] of [['boost', /^Boost/], ['priority', /^Priorit/], ['control', /^(Controllo|Team control)/]] as const) {
+  SPEED_STATES[`analysis-speed-guide-${key}`] = { hash: hash(SPEED_SIX), run: async p => {
+    const ok = await speedGuide().run!(p);
+    if (ok !== true) return ok;
+    if (!await clickText(p, '.sp-guide-tiles button', re)) return 'no tile';
+    await wait(300);
+    return true;
+  } };
+}
+SPEED_STATES['analysis-speed-guide-control-en'] = { ...SPEED_STATES['analysis-speed-guide-control'], lang: 'en' } as State;
 const SUBS: Record<string, RegExp | null> = { general: null, robustness: /^Robustezza/, sustain: /^Sostenibilit/, types: /^Coverage tipi/, meta: /^Coverage meta/ };
 const DEFENSE_STATES: Record<string, State> = {
   ...Object.fromEntries(Object.entries(SUBS).flatMap(([k, re]) => [
