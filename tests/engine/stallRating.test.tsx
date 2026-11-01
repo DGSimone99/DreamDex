@@ -35,7 +35,8 @@ describe('team stall', () => {
     // il Danno nel Tempo (il gruppo del fixture è pieno di Acciaio e Veleno, immuni a Toxic); il Debuff è minore
     const needs = teamNeeds(stall, fixtureData);
     expect(needs.essentialMissing).toEqual([]);
-    expect(needs.levels.attacker).toBe('ignored');
+    expect(needs.levels.anySweeper).toBe('ignored');
+    expect(needs.levels.anyBreaker).toBe('ignored');
     expect(needs.importantMissing).toEqual(['dot']);
     expect(needs.levels.debuff).toBe('minor');
     // Area Ruoli: base degli importanti da stall, extra dei minori (rolesArea.ts)

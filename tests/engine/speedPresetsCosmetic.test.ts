@@ -29,12 +29,12 @@ describe('Controllo Velocità: solo con mosse che la controllano', () => {
     }
   });
 
-  it("velocità e controllo velocità non sono bisogni del team: li misura l'area Velocità", () => {
+  it("velocità e controllo velocità non sono bisogni del team: lo Speed Control è una voce ignorata, li misura l'area Velocità", () => {
     const needs = teamNeeds([gardevoir, tusk], fixtureData);
     const missing = [...needs.essentialMissing, ...needs.importantMissing] as string[];
     expect(missing).not.toContain('speed');
     expect(missing).not.toContain('speedControl');
-    expect(Object.keys(needs.levels)).not.toContain('speedControl');
+    expect(needs.levels.speedControl).toBe('ignored');
   });
 
   it('il coaching non chiede controllo velocità a un team con membri veloci', () => {

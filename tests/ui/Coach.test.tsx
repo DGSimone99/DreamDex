@@ -257,7 +257,7 @@ describe('CoachingView', () => {
       ({ severity: 'minor', category, text: key, fixes: [], key, ...(subjects ? { subjects } : {}) });
     const problems = [
       problem('roles', 'roles:x'), problem('defense', 'defense:Ground', ['Ground']), problem('coverage', 'coverage', ['Water', 'Fire']),
-      problem('roles', 'roles:essential', ['fieldSetup']), problem('meta', 'meta:Zamazenta', ['Zamazenta']), problem('rules', 'rules:x', ['Dragapult']),
+      problem('roles', 'roles:essential', ['hazards']), problem('meta', 'meta:Zamazenta', ['Zamazenta']), problem('rules', 'rules:x', ['Dragapult']),
       problem('redundancy', 'redundancy:y'),
     ];
     const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], threatFixes: {}, problems };
@@ -268,7 +268,7 @@ describe('CoachingView', () => {
     expect(also.querySelectorAll('.type-icons img')).toHaveLength(3);
     expect(also).toHaveTextContent('Zamazenta');
     expect(also).toHaveTextContent('Dragapult');
-    expect(also).toHaveTextContent(needLabel('fieldSetup' as Need, 'it'));
+    expect(also).toHaveTextContent(needLabel('hazards' as Need, 'it'));
     // Senza soggetti: il nome breve dell'area
     expect(also).toHaveTextContent('Ridondanza');
   });

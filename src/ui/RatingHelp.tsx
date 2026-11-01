@@ -14,8 +14,8 @@ const WEIGHT_AREAS = ['defense', 'strength', 'roles', 'speed'] as const;
 const LEVELS: Exclude<Level, 'ignored'>[] = ['essential', 'important', 'minor'];
 
 const topicLabel = (topic: Topic): MessageKey => (topic === 'general' ? 'help.general' : `archetype.${topic}`);
-/** Etichetta di una voce della tabella dei livelli (gli attaccanti e il setup del campo sono gruppi). */
-const keyLabel = (key: LevelKey): MessageKey => (key === 'attacker' || key === 'fieldSetup' ? `need.${key}` : `role.${key}`);
+/** Etichetta di una voce della tabella dei livelli ("almeno uno Sweeper / un Wallbreaker" sono gruppi). */
+const keyLabel = (key: LevelKey): MessageKey => (key === 'anySweeper' || key === 'anyBreaker' ? `need.${key}` : `role.${key}`);
 
 /**
  * Come funziona il voto: un piccolo modale con gli argomenti a sinistra (come funziona in generale e un tab per tipo

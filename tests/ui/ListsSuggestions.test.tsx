@@ -67,7 +67,8 @@ describe('liste nella scheda Pokémon', () => {
 
   it('un preferito quasi alla pari passa davanti e ha il cuore', async () => {
     const plain = memory();
-    await setup(plain.storage, 'Great Tusk', 'Gholdengo');
+    // Con Toxapex i candidati sono vicini tra loro (con Gholdengo distano 3-4 punti, più del margine dei preferiti)
+    await setup(plain.storage, 'Great Tusk', 'Toxapex');
     await waitFor(() => expect(rowOverall().length).toBeGreaterThan(2));
     const names = rowNames();
     const overall = rowOverall();
@@ -78,7 +79,7 @@ describe('liste nella scheda Pokémon', () => {
     document.body.innerHTML = '';
 
     const { storage } = withLists(favorites(favorite));
-    await setup(storage, 'Great Tusk', 'Gholdengo');
+    await setup(storage, 'Great Tusk', 'Toxapex');
     await waitFor(() => expect(rowNames().indexOf(favorite)).toBeLessThan(at));
     // Il ♥ sta sul voto e ne spiega la salita; nella riga del nome niente cuore
     const row = suggestions().querySelectorAll('.suggestions li')[rowNames().indexOf(favorite)];

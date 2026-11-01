@@ -35,13 +35,13 @@ describe('tabelle dell\'Analisi', () => {
 
   it('ruoli: giudicati col tipo di team; nel riassunto gli essenziali coperti, nel dettaglio chi li copre', () => {
     renderPanel();
-    // Team incompleto: giudicato come Balance (essenziali: minaccia offensiva e i due muri)
-    expect(screen.getByText('Balance · 2/3 essenziali')).toBeInTheDocument();
+    // Team incompleto: giudicato come Balance (essenziali: uno sweeper, un wallbreaker e i due muri)
+    expect(screen.getByText('Balance · 3/4 essenziali')).toBeInTheDocument();
     expect(screen.getByText(/Team incompleto/)).toBeInTheDocument();
     expect(row('Muro Speciale')).toHaveTextContent('Mancante');
     expect(row('Muro Speciale')).toHaveClass('bad');
     expect(row('Controllo Hazard')).toHaveTextContent('Great Tusk');
-    expect(row('Minaccia Offensiva')).toHaveTextContent('Great Tusk');
+    expect(row('Almeno un Wallbreaker')).toHaveTextContent('Great Tusk');
     expect(screen.getByText('Importanti')).toBeInTheDocument();
     expect(screen.getByText(/^Minori/)).toBeInTheDocument();
   });
@@ -74,10 +74,10 @@ describe('tabelle dell\'Analisi', () => {
     renderIt(<AllTables team={stall} />);
     // Essenziali dello stall: i due muri e il Recupero (interruttore spento); gli attaccanti sono ignorati
     expect(screen.getByText('Stall · 3/3 essenziali')).toBeInTheDocument();
-    // Fra i non richiesti, in grigio: qui un membro (con gli EV d'attacco di Great Tusk) è misurato come attaccante,
+    // Fra i non richiesti, in grigio: qui un membro (con gli EV d'attacco di Great Tusk) è misurato come sweeper,
     // quindi la riga mostra chi lo copre invece di "Non richiesto"
-    expect(row('Minaccia Offensiva').closest('.role-group')!.querySelector('h5')).toHaveTextContent('Non richiesti');
-    expect(row('Minaccia Offensiva')).toHaveClass('soft');
+    expect(row('Almeno uno Sweeper').closest('.role-group')!.querySelector('h5')).toHaveTextContent('Non richiesti');
+    expect(row('Almeno uno Sweeper')).toHaveClass('soft');
   });
 
   it("velocità, controllo velocità e priorità non sono ruoli: niente righe (li misura l'area Velocità)", () => {

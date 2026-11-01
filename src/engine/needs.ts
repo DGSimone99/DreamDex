@@ -56,13 +56,12 @@ export function needsArchetype(team: TeamSet[], rules: FormatRules): Archetype {
   return teamArchetype(team, rules)?.archetype ?? 'balance';
 }
 
-/** I sotto-ruoli dietro una voce: "attacker" sono tutti quelli d'Attacco, "fieldSetup" hazard e schermi. */
+/** I sotto-ruoli dietro una voce: i gruppi "almeno uno Sweeper" e "almeno un Wallbreaker" valgono per i due lati. */
 export const keyRoles = (key: LevelKey): SubRole[] =>
-  (key === 'attacker' ? FAMILIES.attack : key === 'fieldSetup' ? ['hazards', 'screens'] : [key]);
+  (key === 'anySweeper' ? ['physicalSweeper', 'specialSweeper'] : key === 'anyBreaker' ? ['physicalBreaker', 'specialBreaker'] : [key]);
 
-/** Valore di una voce per un membro (o un candidato); il setup del campo conta anche Sticky Web (`web`, a metà). */
-export const keyValue = (v: SubRoleValues, key: LevelKey): number =>
-  Math.max(0, ...keyRoles(key).map(r => v[r] ?? 0), key === 'fieldSetup' ? v.web ?? 0 : 0);
+/** Valore di una voce per un membro (o un candidato): il miglior sotto-ruolo dietro la voce. */
+export const keyValue = (v: SubRoleValues, key: LevelKey): number => Math.max(0, ...keyRoles(key).map(r => v[r] ?? 0));
 
 /** Chi copre una voce: i membri col valore misurato (col credito del secondario) almeno MISSING_BELOW, come i bisogni. */
 export const ownersOf = (team: TeamSet[], needs: Pick<TeamNeeds, 'credited' | 'members'>, need: Need): string[] =>
@@ -94,7 +93,7 @@ export function teamNeeds(team: TeamSet[], data: EngineData, members?: SubRoleVa
   };
 }
 
-/** Nome del bisogno: i sotto-ruoli col loro nome, più "Minaccia offensiva" e "Setup del campo" per i gruppi. */
+/** Nome del bisogno: i sotto-ruoli col loro nome, più "Almeno uno Sweeper / un Wallbreaker" per i gruppi. */
 export function needLabel(need: Need, lang: Lang = 'it'): string {
-  return need === 'attacker' || need === 'fieldSetup' ? t(lang, `need.${need}`) : roleLabel(need, lang);
+  return need === 'anySweeper' || need === 'anyBreaker' ? t(lang, `need.${need}`) : roleLabel(need, lang);
 }

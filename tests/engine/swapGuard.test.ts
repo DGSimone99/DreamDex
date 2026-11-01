@@ -14,7 +14,7 @@ const set = (species: string, item: string, ability: string, moves: string[], na
 const bulky = { hp: 252, def: 252, spd: 4 };
 const fast = { atk: 252, spe: 252, hp: 4 };
 
-// Balance con un solo setter del campo (Garchomp con Stealth Rock, nessuno schermo)
+// Balance con un solo hazard setter (Garchomp con Stealth Rock)
 const balance: TeamSet[] = [
   set('Great Tusk', 'Leftovers', 'Protosynthesis', ['Headlong Rush', 'Close Combat', 'Rapid Spin', 'Knock Off'], 'Jolly', fast),
   set('Kingambit', 'Leftovers', 'Supreme Overlord', ['Kowtow Cleave', 'Sucker Punch', 'Iron Head', 'Swords Dance'], 'Adamant', fast),
@@ -29,26 +29,26 @@ const needs = (team: TeamSet[]) => teamNeeds(team, fixtureData, undefined, 'bala
 
 describe('swapGuard', () => {
   it('perde l\'unico hazard setter: voce persa col livello del tipo scelto', () => {
-    // Il setup del campo è l'unica voce di campo (2026-11-01): perdere l'unico hazard setter è perdere quella
-    const level = levelOf('balance', 'fieldSetup');
+    // Gli hazard sono la voce di campo (2026-11-01): perdere l'unico hazard setter è perdere quella
+    const level = levelOf('balance', 'hazards');
     expect(level).toBe('important');
     const lost = lostRoles(needs(balance), needs(swapped));
-    expect(lost).toEqual([{ key: 'fieldSetup', level }]);
+    expect(lost).toEqual([{ key: 'hazards', level }]);
     expect(rolePenalty(lost)).toBe(ROLE_PENALTY.important);
   });
 
-  it('nel bulky offense la stessa perdita è il setup del campo', () => {
+  it('nel bulky offense la stessa perdita sono gli hazard', () => {
     const bo = (team: TeamSet[]) => teamNeeds(team, fixtureData, undefined, 'bulkyOffense');
-    expect(lostRoles(bo(balance), bo(swapped)).map(r => r.key)).toContain('fieldSetup');
+    expect(lostRoles(bo(balance), bo(swapped)).map(r => r.key)).toContain('hazards');
   });
 
   it('una voce che mancava già non conta, una riempita neppure', () => {
-    // Al contrario: il setup del campo si riempie, niente di perso
+    // Al contrario: gli hazard si riempiono, niente di perso
     expect(lostRoles(needs(swapped), needs(balance))).toEqual([]);
   });
 
   it('penalità: 3 per essenziale, 2 per importante', () => {
-    expect(rolePenalty([{ key: 'fieldSetup', level: 'important' }, { key: 'specialWall', level: 'essential' }])).toBe(5);
+    expect(rolePenalty([{ key: 'hazards', level: 'important' }, { key: 'specialWall', level: 'essential' }])).toBe(5);
     expect(rolePenalty([])).toBe(0);
   });
 

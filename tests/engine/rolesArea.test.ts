@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { rateTeam } from '../../src/engine/rating';
 import { teamNeeds } from '../../src/engine/needs';
 import { LEVEL_KEYS } from '../../src/engine/roleLevels';
-import { importantWeight, MINOR_CAP, MINOR_STEP, rolesScore, teamRolesArea } from '../../src/engine/rolesArea';
+import { IMPORTANT_WEIGHT, importantWeight, MINOR_CAP, MINOR_STEP, rolesScore, teamRolesArea } from '../../src/engine/rolesArea';
 import { softScore } from '../../src/engine/scale';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
 import { fixtureData } from '../fixtures/data';
@@ -64,11 +64,12 @@ describe('area Ruoli: base degli importanti, extra dei minori', () => {
 
   it('righe: le voci dell\'archetipo col valore del team e chi le porta', () => {
     const roles = teamRolesArea(physical, fixtureData, 'it');
-    const field = roles.rows.find(r => r.key === 'fieldSetup')!;
-    expect(field.level).toBe('important');
-    expect(field.value).toBe(1);
-    expect(field.by.map(b => b.species)).toEqual(expect.arrayContaining(['Garchomp', 'Skarmory']));
-    expect(roles.rows.find(r => r.key === 'hazards')).toBeUndefined();
+    const hazards = roles.rows.find(r => r.key === 'hazards')!;
+    expect(hazards.level).toBe('important');
+    expect(hazards.value).toBe(1);
+    expect(hazards.by.map(b => b.species)).toEqual(expect.arrayContaining(['Garchomp', 'Skarmory']));
+    // Le voci ignorate dall'archetipo (gli schermi nel Balance) non hanno una riga
+    expect(roles.rows.find(r => r.key === 'screens')).toBeUndefined();
     expect(roles.rows.every(r => r.level !== 'ignored')).toBe(true);
     expect(roles.members.map(m => m.species)).toEqual(physical.map(m => m.species));
   });
@@ -95,11 +96,11 @@ describe('area Ruoli: base degli importanti, extra dei minori', () => {
 });
 
 describe('peso degli importanti', () => {
-  it('il setup del campo pesa il doppio nella base (gli hazard non sono più una voce)', () => {
+  it('nessuna voce pesa di più: gli hazard sono una voce come le altre (IMPORTANT_WEIGHT vuoto)', () => {
+    expect(IMPORTANT_WEIGHT).toEqual({});
     expect(importantWeight('hazards')).toBe(1);
-    expect(importantWeight('fieldSetup')).toBe(2);
     expect(importantWeight('removal')).toBe(1);
-    // Hazard mancanti (peso 2) e rimozione presente (peso 1): base 1/3, non 1/2
+    // La base sa ancora pesare: una voce a 0 con peso 2 e una a 1 con peso 1 danno 1/3, non 1/2
     expect(rolesScore([0, 1], [], [2, 1]).base).toBeCloseTo(1 / 3);
     // Senza pesi: media semplice
     expect(rolesScore([0, 1], []).base).toBeCloseTo(0.5);

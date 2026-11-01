@@ -18,9 +18,10 @@ describe('roles (sotto-ruoli del set)', () => {
     expect(detectRoles(corviknight, DEFAULT_RULES)).toEqual(['physicalWall', 'recovery', 'removal', 'pivot']);
   });
 
-  it('Great Tusk: muro fisico e wallbreaker fisico, hazard, rimozione', () => {
+  it('Great Tusk: muro fisico e wallbreaker fisico, rimozione, hazard', () => {
     const tuskSr = set('Great Tusk', ['Headlong Rush', 'Close Combat', 'Rapid Spin', 'Stealth Rock'], 'Leftovers', { atk: 252, hp: 4 }, 'Adamant');
-    expect(detectRoles(tuskSr, DEFAULT_RULES)).toEqual(['physicalBreaker', 'physicalWall', 'hazards', 'removal']);
+    // Nell'ordine delle famiglie: Attacco, muri, Support (rimozione), Utility (hazard)
+    expect(detectRoles(tuskSr, DEFAULT_RULES)).toEqual(['physicalBreaker', 'physicalWall', 'removal', 'hazards']);
   });
 
   it('Kingambit non è un muro', () => {
@@ -60,7 +61,7 @@ describe('roles (sotto-ruoli del set)', () => {
     // Team incompleto: si giudica come balance; Great Tusk e Gholdengo coprono rimozione, recupero, attaccanti e muro fisico
     const needs = teamNeeds([tusk, gholdengo], fixtureData);
     expect(needs.essentialMissing).toEqual(['specialWall']);
-    expect(needs.importantMissing).toEqual(['fieldSetup', 'pivot']);
+    expect(needs.importantMissing).toEqual(['hazards', 'pivot']);
     expect(needs.needStyle).toBeNull();
     // Squilibrio solo con almeno 4 attaccanti tutti dello stesso tipo (come nel voto)
     expect(teamNeeds([tusk, kingambit], fixtureData).needStyle).toBeNull();

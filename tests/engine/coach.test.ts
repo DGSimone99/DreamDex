@@ -26,8 +26,8 @@ describe('coachTeam', () => {
   it('punti di forza', () => {
     expect(coaching.strengths).toEqual([
       'Gestisce bene Poison, Bug, Rock',
-      // Solo le voci essenziali dell'archetipo (balance: attaccanti e muri); la rimozione ora è importante
-      'Ruoli coperti: Minaccia Offensiva, Muro Fisico',
+      // Solo le voci essenziali dell'archetipo (balance: sweeper, wallbreaker e muri); la rimozione ora è importante
+      'Ruoli coperti: Almeno uno Sweeper, Almeno un Wallbreaker, Muro Fisico',
       'Colpisce super efficace 15/18 tipi',
     ]);
   });
@@ -48,7 +48,7 @@ describe('coachTeam', () => {
       'Debole a Ghost: 1 Debole – 0 Resistono',
       // Le voci essenziali mancanti, poi in una riga a parte le importanti (hazard e pivot ora sono importanti)
       'Ruoli mancanti: Muro Speciale',
-      'Ruoli importanti mancanti: Setup del Campo, Pivot',
+      'Ruoli importanti mancanti: Hazard, Pivot',
       // Coverage tipi del voto: un problema per tipo, nell'ordine dei tipi (Bug scoperto ma leggero: minore)
       'Coperto a metà Ground: 1 solo in tre colpi',
       'Scoperto Bug: nessun colpo super efficace',

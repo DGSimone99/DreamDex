@@ -4,19 +4,20 @@ import type { SubRole } from './subRoles';
 /** Livello di un sotto-ruolo per l'archetipo: essenziale (solo malus), importante (±), minore (solo +), ignorato. */
 export type Level = 'essential' | 'important' | 'minor' | 'ignored';
 /**
- * Una voce della tabella: un sotto-ruolo, o un gruppo: "attacker" = un sotto-ruolo d'Attacco qualunque,
- * "fieldSetup" = hazard, schermi o Sticky Web (il setup del campo dell'HO).
+ * Una voce della tabella: un sotto-ruolo, o un gruppo: "anySweeper" = uno sweeper fisico o speciale,
+ * "anyBreaker" = un wallbreaker fisico o speciale.
  */
-export type LevelKey = SubRole | 'attacker' | 'fieldSetup';
+export type LevelKey = SubRole | 'anySweeper' | 'anyBreaker';
 
 /**
  * Tutte le voci della tabella, nell'ordine della specifica: prima il gruppo degli attaccanti, poi le famiglie (FAMILIES).
  * Scritte per esteso: subRoles.ts è in un ciclo di import e qui servono già al caricamento del modulo.
  */
 export const LEVEL_KEYS: LevelKey[] = [
-  'attacker', 'physicalSweeper', 'specialSweeper', 'physicalBreaker', 'specialBreaker',
-  'physicalWall', 'specialWall', 'recovery', 'fieldSetup', 'hazards', 'removal', 'pivot', 'screens', 'support',
-  'dot', 'debuff', 'phazer', 'taunt', 'encore', 'itemRemoval',
+  'anySweeper', 'anyBreaker', 'physicalSweeper', 'specialSweeper', 'physicalBreaker', 'specialBreaker',
+  'physicalWall', 'specialWall', 'recovery',
+  'support', 'removal', 'screens', 'speedControl', 'debuff', 'phazer',
+  'hazards', 'pivot', 'dot', 'taunt', 'encore', 'itemRemoval',
 ];
 
 /**
@@ -57,7 +58,9 @@ const E = 'essential' as const, I = 'important' as const, M = 'minor' as const, 
  */
 const ROWS: [LevelKey, Level, Level, Level, Level, Level][] = [
   // Semi-stall e stall vincono logorando: senza attaccanti nessun malus (2026-10-30; l'Offesa misura comunque il danno)
-  ['attacker', E, E, E, X, X],
+  // Tabella provvisoria (voci nuove, livelli di ieri): il setup del campo è diventato Hazard, l'Attaccante le due righe di gruppo
+  ['anySweeper', E, E, E, X, X],
+  ['anyBreaker', E, E, E, X, X],
   ['physicalSweeper', M, M, M, M, X],
   ['specialSweeper', M, M, M, M, X],
   ['physicalBreaker', M, M, M, M, M],
@@ -65,15 +68,17 @@ const ROWS: [LevelKey, Level, Level, Level, Level, Level][] = [
   ['physicalWall', M, M, E, E, E],
   ['specialWall', M, M, E, E, E],
   ['recovery', X, M, I, I, I],
-  ['fieldSetup', I, I, I, E, I],
-  ['hazards', X, X, X, X, X],
-  ['removal', M, I, I, I, I],
-  ['pivot', M, I, I, M, M],
-  ['screens', X, X, X, X, X],
+  // Support
   ['support', X, X, M, M, M],
-  ['dot', X, M, M, I, I],
+  ['removal', M, I, I, I, I],
+  ['screens', X, X, X, X, X],
+  ['speedControl', X, X, X, X, X],
   ['debuff', X, M, M, M, M],
   ['phazer', X, M, M, I, I],
+  // Utility
+  ['hazards', I, I, I, E, I],
+  ['pivot', M, I, I, M, M],
+  ['dot', X, M, M, I, I],
   ['taunt', M, M, M, M, M],
   ['encore', M, M, M, M, M],
   ['itemRemoval', M, I, M, I, I],
