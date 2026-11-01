@@ -93,6 +93,8 @@ async function main() {
     const { sets, errors } = importShowdown(paste.paste, 'it');
     if (errors.length || sets.length !== 6) { skipped.push(`${src.url}: ${sets.length} Pokémon, ${errors.length} errori`); continue; }
     if (monotype(sets)) { skipped.push(`${src.url}: monotype`); continue; }
+    // Un paste di Gen 9 ha sempre il Teratipo: senza, è un team di Gen 8 (SS) e il meta è un altro
+    if (!src.fmt && sets.every(set => !set.teraType)) { skipped.push(`${src.url}: senza Teratipo (Gen 8)`); continue; }
     const formatOf = (dated: boolean) => (src.fmt
       ? (legalIn(sets, src.fmt, dated) ? src.fmt : undefined)
       : LADDER[src.family!].find(([f, tier]) => legalIn(sets, f, dated) && hasTier(sets, f, tier))?.[0]);
