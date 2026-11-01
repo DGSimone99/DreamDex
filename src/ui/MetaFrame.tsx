@@ -1,9 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { Icon } from './icons';
-import { PokemonIcon } from './PokemonName';
-import { MoveName } from './TypeText';
 
-/** Tessere per pagina: 4 colonne × 2 righe, abbastanza grandi da mostrare chi copre o regge per nome. */
+/** Pokémon del meta per pagina: le colonne della tabella. */
 export const META_PAGE = 8;
 
 /** Pastiglia con il conteggio di un gruppo (grigia a zero), come nella barra di Coverage meta. */
@@ -15,13 +13,12 @@ export function MetaCount({ n, tone, label }: { n: number; tone: 'good' | 'warn'
 export type MetaLabels = { pages: string; prev: string; next: string; page: (from: number, to: number) => string };
 
 /**
- * Cornice di Coverage meta per Difesa e Offesa. Con `tile`: in alto le pagine e il riepilogo, sotto la griglia 4 × 2 di
- * tessere. Con `body`: il corpo lo disegna chi chiama (la tabella dell'Offesa) e riceve la barra di pagine e riepilogo
- * da mettere dove serve. Le righe arrivano già ordinate; la cornice taglia la pagina.
+ * Cornice di Coverage meta per Difesa e Offesa: il corpo (la tabella) lo disegna chi chiama e riceve la barra di pagine e
+ * riepilogo da mettere dove serve. Le righe arrivano già ordinate; la cornice taglia la pagina.
  */
-export function MetaFrame<R>({ rows, roomy, summary, tile, body, labels }: {
-  rows: R[]; roomy?: boolean; summary: ReactNode; labels: MetaLabels;
-  tile?: (row: R) => ReactNode; body?: (shown: R[], bar: ReactNode) => ReactNode;
+export function MetaFrame<R>({ rows, summary, body, labels }: {
+  rows: R[]; summary: ReactNode; labels: MetaLabels;
+  body: (shown: R[], bar: ReactNode) => ReactNode;
 }) {
   const [page, setPage] = useState(0);
   const pages = Math.max(1, Math.ceil(rows.length / META_PAGE));
@@ -47,27 +44,5 @@ export function MetaFrame<R>({ rows, roomy, summary, tile, body, labels }: {
         <p className="cm-summary">{summary}</p>
       </div>
   );
-  if (body) return <>{body(shown, bar)}</>;
-  return (
-    <div className={`cm-frame${roomy ? ' roomy' : ''}`}>
-      {bar}
-      <ul className="cm-grid">{shown.map(row => tile!(row))}</ul>
-    </div>
-  );
-}
-
-/** Chi regge (Difesa) o chi copre (Offesa) una tessera: icona, nome, mossa a squadra chiusa e % (gialla se solo a metà). */
-export function MetaHolders({ list, roomy }: { list: { species: string; move: string; pct: number; partial: boolean }[]; roomy?: boolean }) {
-  return (
-    <span className={`cm-by${list.length > 4 ? ' many' : ''}`} aria-hidden="true">
-      {list.map((h, i) => (
-        <span key={`${h.species}-${i}`} className={`cm-holder${h.partial ? ' partial' : ''}`} title={`${h.species}: ${h.move} ${h.pct}%`}>
-          <span className="def-box"><PokemonIcon name={h.species} /></span>
-          <span className="cm-holder-name">{h.species}</span>
-          {roomy && h.move && <span className="cm-holder-move"><MoveName move={h.move} /></span>}
-          <span className={`cm-holder-pct${h.partial ? ' half' : ''}`}>{h.pct}%</span>
-        </span>
-      ))}
-    </span>
-  );
+  return <>{body(shown, bar)}</>;
 }

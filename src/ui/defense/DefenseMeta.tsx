@@ -1,50 +1,116 @@
+import type { ReactNode } from 'react';
+import { battleName, battleSpecies } from '../../engine/dex';
 import type { TeamDefense } from '../../engine/defense';
 import { useT } from '../../i18n/react';
 import type { AreaContext } from '../AreaDetail';
-import { MetaCount, MetaFrame, MetaHolders } from '../MetaFrame';
+import { MetaCount, MetaFrame } from '../MetaFrame';
 import { PokemonIcon } from '../PokemonName';
+import { MemberMon } from './MemberMon';
 
 type Row = NonNullable<TeamDefense['coverageMeta']>['rows'][number];
+type Holder = Row['heldBy'][number];
 
 /** Gruppo di una minaccia: nessuno la regge, solo a metà (chi regge va KO in due colpi), retta. */
 const groupOf = (row: Row) => (row.heldBy.length === 0 ? 'none' : row.heldBy.some(h => !h.partial) ? 'held' : 'partial');
-/** Colore del livello, come le altre pastiglie: verde da 80, giallo sopra zero, rosso senza difensori. */
-const tone = (row: Row) => (row.heldBy.length === 0 ? 'bad' : row.level >= 80 ? 'good' : 'warn');
+/** Quanti membri la reggono del tutto: 0 rosso, 1 giallo, da 2 verde (come "Lo coprono" dell'Offesa). */
+const countTone = (n: number) => (n === 0 ? 'bad' : n === 1 ? 'warn' : 'good');
+/** Le tre soglie della casella, coi colori di Coverage tipi: regge (sotto metà PS), a metà (KO in due colpi), KO. */
+const LEGEND = [{ cls: 'hold-4', tag: '< 50%' }, { cls: 'hold-3', tag: '50–99%' }, { cls: 'hold-ohko', tag: 'KO' }] as const;
 
 /**
- * Coverage meta: le minacce del meta a pagine da 8, dalla meno coperta (a pari livello la più usata). Ogni tessera ha
- * l'icona e il nome della minaccia, il livello in pastiglia e chi la regge, col danno che prende dal colpo migliore della
- * minaccia (in giallo se regge solo a metà); a squadra chiusa anche la mossa di quel colpo. In alto le pagine, cosa dice il % e i
- * conteggi dei tre gruppi.
+ * Per ogni posto del team, cosa prende dal colpo migliore della minaccia: `null` se il motore non conosce il membro,
+ * 'ko' se va KO in un colpo (il motore lo lascia fuori da `heldBy`), altrimenti la voce di `heldBy`. Le voci di `heldBy`
+ * seguono l'ordine dei membri conosciuti, così anche due membri della stessa specie restano al loro posto.
+ */
+function cellsOf(row: Row, names: (string | null)[]): (Holder | 'ko' | null)[] {
+  let next = 0;
+  return names.map(name => {
+    if (!name) return null;
+    const h = row.heldBy[next];
+    if (h && h.species === name) { next++; return h; }
+    return 'ko';
+  });
+}
+
+/**
+ * Coverage meta della Difesa, a tabella come quella dell'Offesa: i membri in riga (nello stesso punto delle altre schede),
+ * le minacce del meta in colonna, 8 per pagina dalla meno coperta (a pari livello la più usata). In ogni casella il danno
+ * che il membro prende dal colpo migliore della minaccia, verde se regge (sotto metà PS), giallo se solo a metà, rosso se
+ * va KO; in fondo Regge conta chi la regge del tutto. Pagine e riepilogo stanno sotto la tabella.
  */
 export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaContext }) {
   const t = useT();
   const rows = [...(defense.coverageMeta?.rows ?? [])].sort((a, b) => a.level - b.level || b.weight - a.weight);
+  const names = ctx.team.map(set => battleSpecies(set)?.name ?? null);
   const count = (group: 'held' | 'partial' | 'none') => rows.filter(r => groupOf(r) === group).length;
   const summary = (
     <>
-      <span className="cm-dmg">{t('ddetail.cm.damage')}</span>
       <span>{t('ddetail.cm.threats', { n: rows.length })}</span>
       <MetaCount n={count('held')} tone="good" label={t('ddetail.cm.held')} />
       <MetaCount n={count('partial')} tone="warn" label={t('ddetail.cm.partial')} />
       <MetaCount n={count('none')} tone="bad" label={t('ddetail.cm.none')} />
     </>
   );
-  const tile = (row: Row) => {
-    const holders = row.heldBy.map(h => `${h.species}: ${h.move} ${h.pct}%${h.partial ? ` (${t('ddetail.partial')})` : ''}`);
-    const label = `${row.species}: ${row.level}%, ${holders.length ? holders.join('; ') : t('detail.nobody')}`;
+
+  const cell = (row: Row, c: Holder | 'ko' | null, m: number) => {
+    const key = `${row.species}-${m}`;
+    if (c === null) return <td key={key} className="rob-cell hold-none">—</td>;
+    if (c === 'ko') return <td key={key} className="rob-cell hold-ohko" title={`${row.species}: KO`}>KO</td>;
+    const cls = c.partial ? 'hold-3' : 'hold-4';
+    const title = `${row.species}: ${c.move ? `${c.move} ` : ''}${c.pct}%`;
     return (
-      <li key={row.species} className={`cm-tile ${groupOf(row)}`} aria-label={label}>
-        <span className="cm-head">
-          <span className="def-box cm-threat"><PokemonIcon name={row.species} /></span>
-          <b className="cm-name">{row.species}</b>
-          <span className={`ct-pill ${tone(row)}`}>{row.heldBy.length ? `${row.level}%` : t('detail.nobody')}</span>
-        </span>
-        {row.heldBy.length === 0 && <span className="cm-empty" aria-hidden="true">{t('ddetail.cm.allKo')}</span>}
-        <MetaHolders list={row.heldBy} roomy={ctx.roomy} />
-      </li>
+      <td key={key} className={`rob-cell ${cls}`} title={title}>
+        {c.pct}%<span className="visually-hidden"> {title}</span>
+      </td>
     );
   };
-  return <MetaFrame rows={rows} roomy={ctx.roomy} summary={summary} tile={tile}
+
+  const body = (shown: Row[], bar: ReactNode) => {
+    const cells = shown.map(r => cellsOf(r, names));
+    return (
+      <div className={`def-frame def-meta-grid cm-matrix${ctx.roomy ? ' roomy' : ''}`}>
+        <div className="ad-scroll">
+          <table className="def-grid spaced ct-table">
+            <colgroup>
+              <col className="def-col-mon" />
+              {shown.map(r => <col key={r.species} />)}
+            </colgroup>
+            <thead>
+              <tr>
+                <th scope="col" className="def-mon-h">{t('detail.member')}</th>
+                {shown.map(r => (
+                  <th key={r.species} scope="col" aria-label={r.species} title={r.species} className="dm-h">
+                    <span className="def-box"><PokemonIcon name={r.species} /></span>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {ctx.team.map((set, m) => (
+                <tr key={`${names[m] ?? set.species}-${m}`}>
+                  <th scope="row"><MemberMon name={battleName(set)} set={set} stats /></th>
+                  {shown.map((r, k) => cell(r, cells[k][m], m))}
+                </tr>
+              ))}
+              <tr className="ct-sum ct-sum-first">
+                <th scope="row">{t('ddetail.heldBy')}</th>
+                {shown.map(r => {
+                  const n = r.heldBy.filter(h => !h.partial).length;
+                  return <td key={r.species}><span className={`ct-pill ${countTone(n)}`}>{n}</span></td>;
+                })}
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p className="rob-legend" aria-hidden="true">
+          <span>{t('ddetail.cm.damage')}</span>
+          {LEGEND.map(l => <span key={l.cls} className={`hold-chip ${l.cls}`}>{l.tag}</span>)}
+        </p>
+        {bar}
+      </div>
+    );
+  };
+
+  return <MetaFrame rows={rows} summary={summary} body={body}
     labels={{ pages: t('ddetail.cm.pages'), prev: t('ddetail.cm.prev'), next: t('ddetail.cm.next'), page: (from, to) => t('ddetail.cm.page', { from, to }) }} />;
 }

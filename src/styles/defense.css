@@ -1,51 +1,17 @@
-/* Difesa: scheda Generale (tessere e barre dei membri), guida a sezioni e colori delle soglie dei colpi */
+/* Difesa: scheda Generale (barre dei membri), guida a sezioni e colori delle soglie dei colpi */
 
 /* Soglie del colpo standard (OHKO … 4HKO+): sfondo dal colore sulla tinta del pannello, testo --text (≥ 4.5:1 su ogni palette).
    Le usano le pillole della guida e le celle della Robustezza. */
-/* Scala dal pericolo alla sicurezza, come le caselle di Coverage tipi: OHKO rosso pieno, 2HKO giallo, 3HKO neutro, 4HKO+ verde tenue */
+/* Il colore dice quanto vale il colpo retto (holdCredit): OHKO rosso pieno, 2HKO rosso scuro (niente), 3HKO giallo (metà),
+   4HKO+ verde (pieno). Le stesse tinte nelle caselle di Coverage tipi e Coverage meta, nelle pillole della guida e della legenda */
 .hold-ohko { background: color-mix(in srgb, var(--bad) 46%, var(--panel)); color: var(--text); }
-.hold-2 { background: color-mix(in srgb, var(--warn) 30%, var(--panel)); color: var(--text); }
-.hold-3 { background: var(--raised); color: var(--text); }
-.hold-4 { background: color-mix(in srgb, var(--good) 14%, var(--raised)); color: var(--muted); }
+.hold-2 { background: color-mix(in srgb, var(--bad) 22%, var(--panel)); color: var(--text); }
+.hold-3 { background: color-mix(in srgb, var(--warn) 26%, var(--panel)); color: var(--text); }
+.hold-4 { background: color-mix(in srgb, var(--good) 30%, var(--panel)); color: var(--text); }
 .hold-chip { display: inline-block; padding: 2px 8px; border-radius: 3px; font: 700 12px/1.3 var(--ui); font-variant-numeric: tabular-nums; }
 
-/* Le quattro tessere */
-.def-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 8px; margin-bottom: 10px; }
-.def-tile { display: flex; flex-direction: column; align-items: stretch; gap: 0; padding: 8px 12px; text-align: left; font: inherit; color: var(--text);
-  background: color-mix(in srgb, var(--raised) 65%, var(--panel)); border: 1px solid var(--line-soft); border-top: 3px solid var(--good); border-radius: 0; cursor: pointer; }
-.def-tile.warn { border-top-color: var(--warn); }
-.def-tile.bad { border-top-color: var(--bad); }
-.def-tile:hover { background: var(--raised); border-color: var(--line); }
-.def-tile:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-/* Nome a sinistra, valore grande a destra: ben separati */
-.def-tile-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; width: 100%; padding-bottom: 5px; }
-.def-tile-head span { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
-.def-tile-head b { font: italic 700 24px/1 var(--display); letter-spacing: 0; color: var(--text); font-variant-numeric: tabular-nums; }
-/* Il numero ha il colore della soglia, come il bordo della tessera */
-.def-tile.good .def-tile-head b { color: var(--good); }
-.def-tile.warn .def-tile-head b { color: var(--warn); }
-.def-tile.bad .def-tile-head b { color: var(--bad); }
-/* Il contenuto: didascalia minuscola e sotto l'elemento visivo, alto uguale in tutte le tessere */
-.def-tile-fact { display: flex; flex-direction: column; gap: 4px; width: 100%; height: 50px; padding-top: 5px; border-top: 1px solid var(--line-soft); font-size: 13px; color: var(--text); overflow: hidden; }
-.def-cap { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; line-height: 1.2; }
-.def-cap em { font-style: normal; font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
-.def-cap b { font-size: 12px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
-.def-visual { display: flex; align-items: center; gap: 4px; min-height: 24px; min-width: 0; white-space: nowrap; }
-.def-none { gap: 6px; color: var(--good); font-weight: 600; }
-.def-none .icon { flex: none; }
-/* Chip del tipo scoperto: icona rotonda e nome su sfondo di gravità */
-.def-chip { display: inline-flex; align-items: center; gap: 4px; padding: 1px 8px 1px 3px; border-radius: 10px; background: var(--warn-bg); color: var(--warn); font-size: 12px; font-weight: 600; line-height: 20px; }
-.def-chip.serious { background: var(--bad-bg); color: var(--bad); }
-.def-chip .type-icons img { display: block; width: 16px; height: 16px; }
-.def-open-mon { display: inline-flex; padding-bottom: 2px; border-bottom: 2px solid var(--good); }
-/* Chi recupera ha la riga verde sotto; chi no è spento e senza riga */
-/* Senza recupero: sprite spento */
-.def-open-mon.off { opacity: 0.35; filter: grayscale(1); border-bottom-color: transparent; }
-.def-more { font-size: 12px; font-weight: 600; color: var(--muted); }
-
-
 /* Cornice comune delle schede con i membri: la lista in alto (testata e righe di altezza fissa, così cambiando scheda i
-   Pokémon restano nello stesso punto), le tessere di riepilogo in fondo. L altezza delle righe segue quella del pannello (cqh), uguale in ogni scheda:
+   Pokémon restano nello stesso punto), sotto la fascia della scheda (legenda, riepiloghi). L altezza delle righe segue quella del pannello (cqh), uguale in ogni scheda:
    --def-tail è il margine tenuto sotto la fascia in fondo, lo stesso per tutte le schede */
 .def-frame { --def-top: 104px; --def-gap: 10px; --def-head: 44px; --def-sp: 3px; --def-tail: 4px; --def-mon: 270px; --def-row-min: 28px; --def-row-max: 999px;
   --def-row: clamp(var(--def-row-min), calc((100cqh - var(--def-top) - var(--def-gap) - var(--def-head) - var(--def-tail)) / 6 - var(--def-sp)), var(--def-row-max));
@@ -54,8 +20,6 @@
 .def-frame > .ad-scroll { flex: none; margin-bottom: var(--def-gap); overflow: visible; }
 /* La lista parte subito sotto la riga dei problemi: meno margine in alto nel pannello */
 .area-panel:has(> .def-frame) { padding-top: 6px; }
-.def-frame > .def-sum { flex: none; height: var(--def-top); margin: auto 0 0; overflow: hidden; }
-.def-sum.def-tiles { grid-template-rows: 100%; margin-bottom: 0; }
 /* L etichetta "Pokémon" sopra la colonna dei nomi, uguale in ogni tabella */
 .ad-panel table thead th.def-mon-h { padding: 0 0 6px; vertical-align: bottom; text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--faint); }
 .def-frame .def-grid { width: 100%; border-collapse: separate; border-spacing: 0 var(--def-sp); table-layout: fixed; font-variant-numeric: tabular-nums; }
@@ -147,8 +111,9 @@
 /* Caselle come la griglia di Coverage tipi: il colore dice la soglia, il testo il % del colpo */
 .def-frame .rob-cell { padding: 0; text-align: center; font: 700 clamp(12px, calc(var(--def-row) * 0.22), 20px)/1 var(--ui); border: 1px solid var(--line); border-radius: 3px; font-variant-numeric: tabular-nums; }
 .def-frame .rob-cell.hold-ohko { border-color: var(--bad); }
-.def-frame .rob-cell.hold-2 { border-color: color-mix(in srgb, var(--warn) 70%, transparent); }
-.def-frame .rob-cell.hold-4 { border-color: color-mix(in srgb, var(--good) 35%, var(--line)); }
+.def-frame .rob-cell.hold-2 { border-color: color-mix(in srgb, var(--bad) 55%, transparent); }
+.def-frame .rob-cell.hold-3 { border-color: color-mix(in srgb, var(--warn) 65%, transparent); }
+.def-frame .rob-cell.hold-4 { border-color: color-mix(in srgb, var(--good) 70%, transparent); }
 .rob-side { padding: 0; text-align: center; }
 .rob-side .ct-pill { min-width: 40px; font-size: 13px; }
 .ad-panel .rob-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: auto 0 0; padding-top: 8px; font-size: 12px; color: var(--muted); }
@@ -238,10 +203,7 @@
   .ct-cell { font-size: 12px; }
 }
 
-/* Coverage meta: una tessera per minaccia */
-/* Coverage meta: pagine da 8 minacce (4 × 2) che riempiono il pannello, la meno coperta per prima. In alto le pagine a
-   sinistra e i conteggi a destra; le icone crescono a gradini con l altezza del pannello (cm-frame è il contenitore) */
-.cm-frame { display: flex; flex-direction: column; height: 100%; min-height: 0; container-type: size; }
+/* Coverage meta: pagine da 8 minacce, la meno coperta per prima; a sinistra le pagine, a destra i conteggi */
 .cm-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 8px; }
 .cm-pages { display: flex; align-items: center; gap: 4px; }
 .cm-pages button { display: inline-grid; place-items: center; min-width: 30px; height: 28px; padding: 0 8px; border: 1px solid var(--line); border-radius: 3px; background: var(--raised); color: var(--muted); font: 600 13px/1 var(--ui); cursor: pointer; }
@@ -253,23 +215,6 @@
 .ad-panel .cm-summary { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0; font-size: 13px; color: var(--muted); }
 .cm-summary .ct-pill { font-size: 12px; }
 .ct-pill.zero { background: var(--raised); color: var(--faint); }
-.cm-grid { flex: 1; min-height: 0; list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 6px; }
-.cm-tile { display: flex; flex-direction: column; gap: 8px; min-width: 0; min-height: 0; padding: 10px 12px; border: 1px solid var(--line-soft); border-top: 3px solid var(--good); background: color-mix(in srgb, var(--raised) 55%, var(--panel)); color: var(--text); overflow: hidden; }
-.cm-tile.partial { border-top-color: var(--warn); }
-.cm-tile.none { border-top-color: var(--bad); background: color-mix(in srgb, var(--bad-bg) 80%, var(--panel)); }
-.cm-head { display: flex; align-items: center; gap: 8px; padding-bottom: 6px; border-bottom: 1px solid var(--line-soft); }
-.cm-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: italic 700 15px/1.1 var(--display); }
-.cm-head .ct-pill { font-size: 13px; }
-.cm-by { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 10px; align-content: start; min-height: 0; }
-.cm-holder { display: flex; align-items: center; gap: 4px; min-width: 0; font-size: 13px; }
-.cm-holder-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
-.cm-holder-pct { flex: none; min-width: 46px; padding: 1px 6px; border-radius: 999px; text-align: center; color: var(--muted); font-variant-numeric: tabular-nums; }
-.cm-holder-pct.half { background: var(--warn-bg); color: var(--warn); font-weight: 700; }
-.cm-holder.partial .cm-holder-name, .cm-holder.partial .def-box { opacity: 0.55; }
-.cm-frame .cm-threat { --bs: 1.2; }
-.cm-frame .cm-by .def-box { --bs: 0.7; }
-@container (min-height: 420px) { .cm-frame .cm-threat { --bs: 1.6; } .cm-frame .cm-by .def-box { --bs: 0.85; } .cm-holder { font-size: 14px; } }
-@container (min-height: 600px) { .cm-frame .cm-threat { --bs: 2; } .cm-frame .cm-by .def-box { --bs: 1; } .cm-name { font-size: 17px; } }
 /* Peso di ogni parte nella Difesa, accanto al nome (guida, Come funziona) */
 .guide-pct { margin-left: 8px; padding: 0 6px; border-radius: 3px; background: var(--accent-2-soft); color: var(--text); font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
 /* Guida a sezioni: le sezioni stanno una sopra l'altra nella stessa cella; si vede solo quella aperta */
@@ -293,12 +238,6 @@
 .guide-keys .bad b { color: var(--bad); }
 .guide-keys .even b { color: var(--muted); }
 .guide-keys li[title] { cursor: help; }
-.guide-scale { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0; margin: 0; padding: 0; list-style: none; border: 1px solid var(--line-soft); }
-.guide-scale li { display: grid; justify-items: center; gap: 4px; padding: 7px 4px; background: color-mix(in srgb, var(--raised) 55%, var(--panel)); }
-.guide-scale li + li { border-left: 1px solid var(--line-soft); }
-.guide-scale span { font-size: 12px; color: var(--muted); }
-.guide-scale b.ct-pill { min-width: 52px; text-align: center; font-size: 13px; }
-.guide-scale small { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
 .guide-example { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; font-size: 14px; color: var(--muted); }
 .guide-example .guide-mults { flex-basis: 100%; }
 .guide-mults { display: inline-flex; gap: 3px; }
@@ -363,24 +302,7 @@
 .guide-two.even { grid-template-columns: 1fr 1fr; }
 .guide-two .guide-keys { grid-auto-flow: row; grid-template-columns: repeat(3, 1fr); }
 .help-panel .guide-foot, .guide-foot { max-width: none; margin: 6px 0 0; font-size: 12px; color: var(--faint); }
-.guide-scale.net { grid-template-columns: repeat(4, 1fr); margin-top: 10px; }
 .guide-rows.compact > div { padding: 3px 0; }
-/* Titolo di sezione con l equazione del netto accanto: niente righe in più */
-.guide-h-steps { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-.guide-h-steps span { margin-left: 4px; padding: 1px 8px; border: 1px solid var(--line); border-radius: 3px; background: var(--raised); font-size: 12px; font-weight: 600; text-transform: none; letter-spacing: 0; color: var(--text); }
-.guide-h-steps span.eq { margin-left: 8px; color: var(--muted); }
-/* Coverage meta: cosa dice il % (in testa ai conteggi) e, a squadra chiusa, la mossa del colpo su una colonna sola */
-.cm-summary .cm-dmg { margin-right: 10px; font-size: 12px; color: var(--faint); }
-.cm-holder-move { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: var(--muted); }
-.cm-frame.roomy .cm-by { grid-template-columns: 1fr; gap: 4px; }
-.cm-frame.roomy .cm-holder-name { flex: 0 1 auto; }
-.cm-frame.roomy .cm-holder-move { flex: 1; }
-/* Coverage meta: una minaccia che manda KO tutti lo dice nella tessera; a squadra chiusa, con più di 4 membri che la
-   reggono, righe più strette (con 6 l ultimo non resta tagliato) */
-.cm-empty { font-size: 13px; color: var(--bad); }
-.cm-frame.roomy .cm-by.many { gap: 1px; }
-.cm-frame.roomy .cm-by.many .def-box { --bs: 0.7; }
-.cm-frame.roomy .cm-by.many .cm-holder { font-size: 12px; }
 /* Guida, Coverage meta: le tre soglie di chi regge con le pastiglie della tabella, la profondità come barra a segmenti */
 .guide-holds.three { grid-template-columns: repeat(3, 1fr); }
 .guide-holds.three b { font: 600 14px/1.2 var(--ui); font-style: normal; }
@@ -407,10 +329,16 @@
 .def-mon-text:not(:has(.def-mon-stats)) .def-mon-tag.line { display: inline-flex; }
 @container (max-height: 440px) { .def-frame .def-mon-tag.line { display: inline-flex; } }
 
-/* Coverage tipi sui colpi: il danno del lato peggiore, il moltiplicatore classico piccolo in un angolo */
-.def-frame .ht-cell { position: relative; font-size: clamp(12px, calc(var(--def-row) * 0.22), 18px); }
-.def-frame .ht-cell .ct-mult { position: absolute; top: 2px; right: 4px; font: 600 10px/1 var(--ui); opacity: 0.75; }
+/* Coverage tipi sui colpi: il danno del lato peggiore, sotto il moltiplicatore classico (×2, ×½…) se non è neutro */
+.def-frame .ht-cell { font-size: clamp(12px, calc(var(--def-row) * 0.22), 18px); line-height: 1.05; }
+.def-frame .ht-cell .hold-pct { display: block; }
+.def-frame .ht-cell .ct-mult { display: block; margin-top: 1px; font: 700 11px/1 var(--ui); color: var(--text); opacity: 0.8; }
 .def-frame .ht-cell.hold-none { color: var(--muted); }
-.def-frame .ht-col-side { width: 64px; }
-.def-frame .ht-side, .def-frame .ht-side-h { text-align: center; }
-.def-types .rob-legend .ht-mult-note { margin-left: auto; }
+
+/* Coverage meta a tabella, come quella dell'Offesa: in ogni casella il danno preso dal colpo migliore della minaccia,
+   coi colori di Coverage tipi (verde regge, giallo a metà, rosso KO) */
+.def-meta-grid .rob-cell { font-size: clamp(11px, calc(var(--def-row) * 0.2), 17px); line-height: 1.05; vertical-align: middle; }
+.def-meta-grid .rob-cell.hold-none { color: var(--muted); }
+.def-meta-grid .dm-h { padding: 0; line-height: 0; text-align: center; vertical-align: bottom; }
+.def-frame.def-meta-grid .dm-h .def-box { --bs: 1.2; }
+.def-meta-grid .ct-sum td { height: 26px; }
