@@ -15,14 +15,14 @@ import type { Archetype } from './archetype';
 
 export type Family = 'attack' | 'defense' | 'field' | 'disruption';
 export type SubRole = 'physicalSweeper' | 'specialSweeper' | 'physicalBreaker' | 'specialBreaker'
-  | 'physicalWall' | 'specialWall' | 'recovery' | 'hazards' | 'removal' | 'pivot' | 'screens'
+  | 'physicalWall' | 'specialWall' | 'recovery' | 'hazards' | 'removal' | 'pivot' | 'screens' | 'support'
   | 'dot' | 'debuff' | 'phazer' | 'taunt' | 'encore' | 'itemRemoval';
 
 /** Le sotto-ruoli di ogni famiglia, nell'ordine della tabella della specifica. */
 export const FAMILIES: Record<Family, SubRole[]> = {
   attack: ['physicalSweeper', 'specialSweeper', 'physicalBreaker', 'specialBreaker'],
   defense: ['physicalWall', 'specialWall', 'recovery'],
-  field: ['hazards', 'removal', 'pivot', 'screens'],
+  field: ['hazards', 'removal', 'pivot', 'screens', 'support'],
   disruption: ['dot', 'debuff', 'phazer', 'taunt', 'encore', 'itemRemoval'],
 };
 
@@ -116,6 +116,10 @@ const HAZARDS: Record<string, number> = { stealthrock: 1, spikes: 1, stoneaxe: 1
 const REMOVAL = new Set(['defog', 'rapidspin', 'mortalspin', 'tidyup', 'courtchange']);
 const PIVOT = new Set(['uturn', 'voltswitch', 'flipturn', 'partingshot', 'teleport', 'shedtail', 'chillyreception']);
 const PHAZER = new Set(['haze', 'clearsmog', 'whirlwind', 'roar', 'dragontail', 'circlethrow']);
+/** Supporto ai compagni: cure passate (Wish, Healing Wish, Lunar Dance, Revival Blessing) 1, cura degli stati (Heal Bell, Aromatherapy) 0,75. */
+const SUPPORT: Record<string, number> = { wish: 1, healingwish: 1, lunardance: 1, revivalblessing: 1, healbell: 0.75, aromatherapy: 0.75 };
+/** Magic Bounce rimanda indietro gli hazard: vale metà controllo hazard quando il set non ha una mossa di rimozione. */
+const BOUNCE_REMOVAL = 0.5;
 const SNOW = new Set(['snowscape', 'chillyreception']);
 
 /** Soglia di statistica reale (Att/AttSp o Vel) per contare come attaccante o veloce. */
@@ -174,7 +178,9 @@ function computeSetSubRoles(set: TeamSet, rules: FormatRules): SubRoleValues {
   ids.forEach(id => put('hazards', HAZARDS[id] ?? 0));
   if (ids.includes('stickyweb')) v.web = WEB_VALUE;
   if (ids.some(id => REMOVAL.has(id))) put('removal', 1);
+  else if (ability === 'magicbounce') put('removal', BOUNCE_REMOVAL);
   if (ids.some(id => PIVOT.has(id))) put('pivot', 1);
+  ids.forEach(id => put('support', SUPPORT[id] ?? 0));
   const clay = item === 'lightclay' ? 1 : 0.75;
   const veil = ids.includes('auroraveil');
   const snow = ability === 'snowwarning' || ids.some(id => SNOW.has(id));
@@ -281,8 +287,9 @@ function setSource(role: SubRole, ids: string[], ability: string, item: string):
     if (ability === 'regenerator' && !(id && RECOVERY[id] === 1)) return 'Regenerator';
   }
   if (role === 'hazards') id = best(HAZARDS);
-  if (role === 'removal') id = first(REMOVAL);
+  if (role === 'removal') { id = first(REMOVAL); if (!id && ability === 'magicbounce') return 'Magic Bounce'; }
   if (role === 'pivot') id = first(PIVOT);
+  if (role === 'support') id = best(SUPPORT);
   if (role === 'phazer') { id = first(PHAZER); if (!id && ability === 'unaware') return 'Unaware'; }
   if (role === 'itemRemoval') {
     if (ids.includes('knockoff')) id = 'knockoff';
@@ -348,7 +355,7 @@ export function measureWith(set: TeamSet, team: TeamSet[], data: EngineData, poo
   if (ids.includes('stickyweb')) values.web = WEB_VALUE;
 
   // Difesa e campo come nel rilevatore del set; Aurora Veil conta con la neve del team
-  const keep: SubRole[] = ['recovery', 'hazards', 'removal', 'pivot', 'phazer', 'itemRemoval'];
+  const keep: SubRole[] = ['recovery', 'hazards', 'removal', 'pivot', 'support', 'phazer', 'itemRemoval'];
   for (const role of keep) if (base[role]) put(role, base[role]!, setSource(role, ids, ability, toID(set.item)));
   // I muri con l'indice reale e la soglia, per il motivo nella scheda
   const rules = rulesOf(data);

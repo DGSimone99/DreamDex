@@ -91,7 +91,7 @@ describe('coaching di uno stall', () => {
     expect(needs.missingRoles).toContain('removal');
     const texts = coachTeam(noRemoval, DEFAULT_FORMAT, fixtureData, 'it').problems.map(p => p.text);
     expect(texts).not.toContainEqual(expect.stringMatching(/Ruoli mancanti/));
-    expect(texts).toContainEqual(expect.stringMatching(/^Ruoli importanti mancanti: .*Rimozione Hazard/));
+    expect(texts).toContainEqual(expect.stringMatching(/^Ruoli importanti mancanti: .*Controllo Hazard/));
   });
 });
 

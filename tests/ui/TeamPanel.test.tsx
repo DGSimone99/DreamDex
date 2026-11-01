@@ -69,7 +69,7 @@ describe('TeamPanel', () => {
     expect(roles.textContent!.split(' · ')).toHaveLength(1);
     const all = roles.getAttribute('title')!.split(' · ');
     expect(all.length).toBeGreaterThan(2);
-    expect(all.slice(0, 2)).toEqual(['Sweeper Speciale', 'Rimozione Hazard']);
+    expect(all.slice(0, 2)).toEqual(['Sweeper Speciale', 'Controllo Hazard']);
     expect(all).toEqual(expect.arrayContaining(['Muro Speciale']));
     expect(new Set(all).size).toBe(all.length);
   });

@@ -5,7 +5,7 @@ import { App } from '../../src/App';
 import { analyzeTeam } from '../../src/engine/analysis';
 import { AreaView } from '../../src/ui/AreaView';
 import { rateTeam } from '../../src/engine/rating';
-import { emptySet } from '../../src/engine/sets';
+import { emptySet, type TeamSet } from '../../src/engine/sets';
 import type { TeamRoles } from '../../src/engine/rolesArea';
 import { fixtureData } from '../fixtures/data';
 import { renderIt } from '../helpers/italian';
@@ -67,6 +67,38 @@ describe('dettaglio dei Ruoli a schede', () => {
   });
 });
 
+describe('note nella scheda Generale dei Ruoli', () => {
+  it('pivot: "offensivo" su un attaccante, "difensivo" su un muro; "misto" su chi attacca da entrambi i lati', () => {
+    const base = rateTeam([{ ...emptySet('Gliscor'), moves: ['Stealth Rock'] }], fixtureData, 'it')!;
+    const corv: TeamSet = { ...emptySet('Corviknight'), item: 'Leftovers', ability: 'Pressure', nature: 'Impish', evs: { hp: 248, def: 168, spd: 92 }, moves: ['Roost', 'Brave Bird', 'Defog', 'U-turn'] };
+    const pult: TeamSet = { ...emptySet('Dragapult'), item: 'Choice Specs', ability: 'Infiltrator', nature: 'Timid', evs: { spa: 252, spe: 252 }, moves: ['Draco Meteor', 'Shadow Ball', 'U-turn', 'Flamethrower'] };
+    const mixed: TeamSet = { ...emptySet('Infernape'), item: 'Life Orb', ability: 'Blaze', nature: 'Naive', evs: { atk: 128, spa: 128, spe: 252 }, moves: ['Close Combat', 'Fire Blast', 'U-turn', 'Grass Knot'] };
+    const roles: TeamRoles = {
+      value: 70, base: 1, extra: 0,
+      rows: [
+        { key: 'attacker', level: 'essential', value: 1, by: [{ species: 'Dragapult', value: 1, source: 'Draco Meteor' }, { species: 'Infernape', value: 1, source: 'Close Combat' }] },
+        { key: 'pivot', level: 'important', value: 1, by: [{ species: 'Corviknight', value: 1, source: 'U-turn' }, { species: 'Dragapult', value: 1, source: 'U-turn' }] },
+      ],
+      failures: [],
+      members: [
+        { species: 'Corviknight', values: { physicalWall: 1, pivot: 1, removal: 1 }, primary: 'wall', reasons: [] },
+        { species: 'Dragapult', values: { specialSweeper: 1, pivot: 1 }, primary: 'attack', reasons: [] },
+        { species: 'Infernape', values: { physicalBreaker: 1, pivot: 1 }, primary: 'attack', reasons: [] },
+      ],
+    };
+    const team = [corv, pult, mixed];
+    const rating = { ...base, roles, areas: base.areas.map(a => (a.key === 'roles' ? { ...a, value: 70 } : a)) };
+    renderIt(<AreaView rating={rating} area="roles" team={team} analysis={analyzeTeam(team, fixtureData)} problems={[]} />);
+    const table = within(screen.getByRole('tabpanel')).getByRole('table');
+    const row = (name: string) => within(table).getByRole('row', { name: new RegExp(`^${name}`) });
+    expect(row('Pivot')).toHaveTextContent('Corviknight (U-turn · difensivo)');
+    expect(row('Pivot')).toHaveTextContent('Dragapult (U-turn · offensivo)');
+    expect(row('Minaccia Offensiva')).toHaveTextContent('Infernape (Close Combat · misto)');
+    expect(row('Minaccia Offensiva')).toHaveTextContent('Dragapult (Draco Meteor)');
+    expect(row('Minaccia Offensiva')).not.toHaveTextContent('Dragapult (Draco Meteor · misto)');
+  });
+});
+
 describe('Generale dei Ruoli', () => {
   it('voci importanti con valore e chi le porta, extra delle minori, mancanze essenziali coi punti', () => {
     const base = rateTeam([{ ...emptySet('Gliscor'), moves: ['Stealth Rock'] }], fixtureData, 'it')!;
@@ -102,7 +134,7 @@ describe('Generale dei Ruoli', () => {
     expect(row('Hazard')).toHaveTextContent('Gliscor (Stealth Rock)');
     // Il gruppo del campo ha la sua riga, con la mossa di chi lo porta
     expect(row('Setup del Campo')).toHaveTextContent('Gliscor (Stealth Rock)');
-    expect(within(row('Rimozione Hazard')).getAllByRole('cell')[0]).toHaveTextContent('0');
+    expect(within(row('Controllo Hazard')).getAllByRole('cell')[0]).toHaveTextContent('0');
     expect(row('Taunt')).toHaveTextContent('Zapdos (Taunt)');
     // L'essenziale mancante: il suo malus al posto del valore, e il motivo nella voce
     expect(within(row('Minaccia Offensiva')).getAllByRole('cell')[0]).toHaveTextContent('−2');
@@ -110,7 +142,8 @@ describe('Generale dei Ruoli', () => {
     expect([...table.querySelectorAll('.ad-group th')].map(th => th.textContent)).toEqual(['Essenziali', 'Importanti', 'Minori']);
     // Le schede delle famiglie contano le voci coperte con la soglia dei bisogni (0,5): gli schermi a 0,45 no
     const tab = (name: string) => screen.getByRole('tab', { name: new RegExp(`^${name}`) });
-    expect(tab('Campo')).toHaveTextContent(/1\/4$/);
+    // Campo ha cinque sotto-ruoli (hazard, controllo hazard, pivot, schermi, supporto)
+    expect(tab('Campo')).toHaveTextContent(/1\/5$/);
     expect(tab('Disturbo')).toHaveTextContent(/1\/6$/);
   });
 });

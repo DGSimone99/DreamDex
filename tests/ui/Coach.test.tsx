@@ -19,6 +19,13 @@ import { renderIt } from '../helpers/italian';
 // Due membri deboli lasciano spazio ai sostituti delle statistiche di prova (come nei test del motore)
 const junk = (species: string): TeamSet => ({ ...emptySet(species), moves: ['Splash'] });
 const six = [...['Great Tusk', 'Gholdengo', 'Toxapex', 'Corviknight'].map(n => mostCommonSet(fixtureStats, n)!), junk('Magikarp'), junk('Sunkern')];
+// Un Balance completo senza controllo hazard: il coach propone Rapid Spin o Defog (per i test delle proposte di mossa)
+const mk = (species: string, item: string, ability: string, moves: string[], nature: string, evs: TeamSet['evs']): TeamSet => ({ ...emptySet(species), item, ability, moves, nature, evs });
+const fixable = [...['Gholdengo', 'Toxapex'].map(n => mostCommonSet(fixtureStats, n)!),
+  mk('Great Tusk', 'Leftovers', 'Protosynthesis', ['Headlong Rush', 'Close Combat', 'Ice Spinner', 'Knock Off'], 'Jolly', { atk: 252, spe: 252 }),
+  mk('Corviknight', 'Leftovers', 'Pressure', ['Roost', 'Brave Bird', 'U-turn', 'Iron Defense'], 'Impish', { hp: 248, def: 168, spd: 92 }),
+  mk('Dragonite', 'Heavy-Duty Boots', 'Multiscale', ['Dragon Dance', 'Extreme Speed', 'Earthquake', 'Roost'], 'Adamant', { atk: 252, spe: 252 }),
+  mk('Kingambit', 'Black Glasses', 'Supreme Overlord', ['Swords Dance', 'Kowtow Cleave', 'Sucker Punch', 'Iron Head'], 'Adamant', { hp: 200, atk: 252, spe: 56 })];
 const three = six.slice(0, 3);
 const data = { ...fixtureData, formatId: DEFAULT_FORMAT.formatId };
 
@@ -702,7 +709,7 @@ describe('proposta di mossa nell\'editor', () => {
   const moveButton = () => within(analysis()).getAllByRole('button', { name: /^Dai .+ a .+, (?:\+\d+|±0)$/ })[0];
 
   it('clic: si apre l\'editor del membro con la proposta; Applica cambia la mossa, Annulla del toast la riporta', async () => {
-    const user = await openCoaching(six);
+    const user = await openCoaching(fixable);
     const [, to, member, gain] = /^Dai (.+) a (.+), (\+\d+|±0)$/.exec(moveButton().getAttribute('aria-label')!)!;
     await user.click(alternativesOf(moveButton()));
     const card = document.querySelector<HTMLDetailsElement>('details.slot[open]')!;
@@ -728,7 +735,7 @@ describe('proposta di mossa nell\'editor', () => {
   });
 
   it('clic sulla proposta: la mossa cambia subito, senza editor; Annulla del toast la riporta', async () => {
-    const user = await openCoaching(six);
+    const user = await openCoaching(fixable);
     const [, to, member] = /^Dai (.+) a (.+), (?:\+\d+|±0)$/.exec(moveButton().getAttribute('aria-label')!)!;
     await user.click(moveButton());
     expect(document.querySelector('details.slot[open]')).toBeNull();
@@ -740,7 +747,7 @@ describe('proposta di mossa nell\'editor', () => {
   });
 
   it('Annulla della proposta: nessun cambio, la proposta sparisce, l\'editor resta aperto', async () => {
-    const user = await openCoaching(six);
+    const user = await openCoaching(fixable);
     await user.click(alternativesOf(moveButton()));
     const card = document.querySelector<HTMLDetailsElement>('details.slot[open]')!;
     await user.click(within(card).getByRole('button', { name: 'Annulla' }));
@@ -751,7 +758,7 @@ describe('proposta di mossa nell\'editor', () => {
   });
 
   it('team compresso: il clic apre comunque l editor con la proposta e lo slot evidenziato', async () => {
-    const user = await openCoaching(six);
+    const user = await openCoaching(fixable);
     await user.click(screen.getByRole('button', { name: 'Comprimi team' }));
     await user.click(alternativesOf(moveButton()));
     const card = document.querySelector<HTMLDetailsElement>('details.slot[open]')!;
@@ -763,7 +770,7 @@ describe('proposta di mossa nell\'editor', () => {
   // Il clic su una proposta vecchia (membro uscito o slot cambiato) non è raggiungibile dalla UI: dopo ogni modifica
   // i consigli si ricalcolano e il pulsante sparisce; la guardia in App.openMoveFix non ha un punto d'ingresso nei test.
   it('rimosso il membro, nessuna proposta resta aperta', async () => {
-    const user = await openCoaching(six);
+    const user = await openCoaching(fixable);
     const member = /^Dai .+ a (.+), (?:\+\d+|±0)$/.exec(moveButton().getAttribute('aria-label')!)![1];
     await user.click(screen.getByRole('button', { name: new RegExp(`^Rimuovi ${member}`) }));
     expect(document.querySelector('.move-proposal')).toBeNull();
