@@ -103,15 +103,16 @@ describe('scoreCandidates', () => {
 
 describe('ruoli del candidato pesati per livello', () => {
   it('un candidato che porta un essenziale mancante vale più di uno che porta un minore', () => {
-    // Team incompleto (balance) senza muro fisico: il muro è essenziale, Encore minore (sweeper e wallbreaker ci sono)
+    // Team incompleto (balance) senza muro fisico: il muro è essenziale, il Danno nel Tempo minore
+    // (sweeper, wallbreaker e attaccante fisico ci sono; Encore è ignorato in ogni tipo di team)
     const team = [gholdengo];
-    const needs = teamNeeds(team, fixtureData, [{ specialSweeper: 1, specialBreaker: 1, specialWall: 1, recovery: 1, hazards: 1, removal: 1, pivot: 1, phazer: 1, itemRemoval: 1 }]);
+    const needs = teamNeeds(team, fixtureData, [{ specialSweeper: 1, specialBreaker: 1, physicalBreaker: 1, specialWall: 1, recovery: 1, hazards: 1, removal: 1, pivot: 1, phazer: 1, itemRemoval: 1 }]);
     expect(needs.essentialMissing).toEqual(['physicalWall']);
     const analysis = { ...analyzeTeam(team, fixtureData), needs };
     const wall = { ...emptySet('Corviknight'), item: 'Leftovers', ability: 'Pressure', moves: ['Body Press', 'Iron Defense'], nature: 'Impish', evs: { hp: 252, def: 252 } };
-    const encore = { ...emptySet('Whimsicott'), moves: ['Encore'] };
+    const toxic = { ...emptySet('Whimsicott'), moves: ['Toxic'] };
     const a = rolesComponent(wall, analysis);
-    const b = rolesComponent(encore, analysis);
+    const b = rolesComponent(toxic, analysis);
     expect(a.facts.filled).toEqual(['physicalWall']);
     expect(b.facts.filled).toEqual([]);
     expect(b.value).toBeGreaterThan(0);

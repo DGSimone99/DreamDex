@@ -29,12 +29,12 @@ const needs = (team: TeamSet[]) => teamNeeds(team, fixtureData, undefined, 'bala
 
 describe('swapGuard', () => {
   it('perde l\'unico hazard setter: voce persa col livello del tipo scelto', () => {
-    // Gli hazard sono la voce di campo (2026-11-01): perdere l'unico hazard setter è perdere quella
+    // Gli hazard sono la voce di campo (2026-11-01), essenziale nel Balance: perdere l'unico hazard setter è perdere quella
     const level = levelOf('balance', 'hazards');
-    expect(level).toBe('important');
+    expect(level).toBe('essential');
     const lost = lostRoles(needs(balance), needs(swapped));
     expect(lost).toEqual([{ key: 'hazards', level }]);
-    expect(rolePenalty(lost)).toBe(ROLE_PENALTY.important);
+    expect(rolePenalty(lost)).toBe(ROLE_PENALTY.essential);
   });
 
   it('nel bulky offense la stessa perdita sono gli hazard', () => {

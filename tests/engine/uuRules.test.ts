@@ -79,7 +79,8 @@ describe('regole di UU', () => {
   it('un team completo senza hazard non ha un malus del formato in UU: gli hazard li chiedono i Ruoli', () => {
     const penalty = (data: EngineData) => rateTeam(team, data)!.penalty.items.find(i => i.text.startsWith('Nessun hazard'));
     expect(penalty(uuData)).toBeUndefined();
-    expect(rateTeam(team, uuData)!.roles.rows.find(r => r.key === 'hazards')).toMatchObject({ level: 'important', value: 0 });
+    // Team incompleto di hazard giudicato come Balance: lì gli hazard sono essenziali
+    expect(rateTeam(team, uuData)!.roles.rows.find(r => r.key === 'hazards')).toMatchObject({ level: 'essential', value: 0 });
   });
 
   it('le statistiche si confrontano coi Pokémon legali in UU: un Pokémon di UU vale di più che contro tutti', () => {

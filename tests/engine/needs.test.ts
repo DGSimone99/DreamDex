@@ -32,21 +32,25 @@ const hyperOffense = [
 afterEach(() => setRolesCountMeasured(false));
 
 describe('tabella dei livelli per archetipo', () => {
-  it('la tabella dai team da torneo (2026-11-01): attaccanti essenziali tranne negli stall, muri essenziali da balance in giù', () => {
+  it('la tabella dai team da torneo (2026-11-01): attaccanti essenziali fino al balance, importanti nel semi-stall, ignorati nello stall; muri essenziali da balance in giù', () => {
     // La tabella com'è scritta, con l'interruttore acceso (spento di default: vedi "interruttore del doppio conteggio")
     setRolesCountMeasured(true);
     for (const key of ['anySweeper', 'anyBreaker'] as const) {
       expect(levelOf('stall', key)).toBe('ignored');
       for (const a of ['hyperOffense', 'bulkyOffense', 'balance'] as const) expect(levelOf(a, key)).toBe('essential');
-      expect(levelOf('semiStall', key)).toBe('ignored');
+      expect(levelOf('semiStall', key)).toBe('important');
     }
-    // HO (2026-11-01, dai 39 HO da torneo di Natdex OU): anche "almeno un fisico / uno speciale" essenziali, Hazard,
-    // Controllo Hazard e Pivot importanti, muri, Recupero e Rimozione Strumenti minori, Taunt ed Encore ignorati
+    // Regola unica (95 / 70 / 30 dei team del tipo): "almeno un fisico / uno speciale" essenziali in HO e BO; nel Balance
+    // lo speciale scende a importante (91%), nel semi-stall il fisico è importante e lo speciale minore (68%)
     expect(levelOf('hyperOffense', 'anyPhysical')).toBe('essential');
     expect(levelOf('hyperOffense', 'anySpecial')).toBe('essential');
     expect(levelOf('bulkyOffense', 'anyPhysical')).toBe('essential');
     expect(levelOf('bulkyOffense', 'anySpecial')).toBe('essential');
-    expect(levelOf('balance', 'anyPhysical')).toBe('ignored');
+    expect(levelOf('balance', 'anyPhysical')).toBe('essential');
+    expect(levelOf('balance', 'anySpecial')).toBe('important');
+    expect(levelOf('semiStall', 'anyPhysical')).toBe('important');
+    expect(levelOf('semiStall', 'anySpecial')).toBe('minor');
+    // HO: Hazard, Controllo Hazard e Pivot importanti, muri, Recupero e Rimozione Strumenti minori, Taunt ed Encore ignorati
     // BO (201 BO da torneo di Natdex OU, 95 / 70 / 30): sotto il 30% Taunt, Anti-setup, Cleric, Debuff ed Encore sono ignorati
     expect(levelOf('bulkyOffense', 'taunt')).toBe('ignored');
     expect(levelOf('bulkyOffense', 'phazer')).toBe('ignored');
@@ -57,28 +61,34 @@ describe('tabella dei livelli per archetipo', () => {
     expect(levelOf('hyperOffense', 'itemRemoval')).toBe('minor');
     expect(levelOf('hyperOffense', 'taunt')).toBe('ignored');
     expect(levelOf('hyperOffense', 'encore')).toBe('ignored');
-    expect(levelOf('semiStall', 'pivot')).toBe('minor');
-    // Gli hazard sono la voce di campo col loro livello (tabella provvisoria); schermi e Speed Control sono ignorati ovunque
+    expect(levelOf('semiStall', 'pivot')).toBe('important');
+    expect(levelOf('stall', 'pivot')).toBe('ignored');
+    // Gli hazard: importanti negli offensivi (90–92%), essenziali da balance in giù (99–100%); schermi e Speed Control sono ignorati ovunque
     for (const a of Object.keys(ROLE_LEVELS) as (keyof typeof ROLE_LEVELS)[]) {
       expect(levelOf(a, 'screens')).toBe('ignored');
       expect(levelOf(a, 'speedControl')).toBe('ignored');
     }
     expect(levelOf('hyperOffense', 'hazards')).toBe('important');
     expect(levelOf('bulkyOffense', 'hazards')).toBe('important');
-    expect(levelOf('balance', 'hazards')).toBe('important');
+    expect(levelOf('balance', 'hazards')).toBe('essential');
     expect(levelOf('semiStall', 'hazards')).toBe('essential');
-    expect(levelOf('stall', 'hazards')).toBe('important');
-    // Balance: phazer e rimozione strumenti scendono a minori; BO: rimozione strumenti sale a importante
+    expect(levelOf('stall', 'hazards')).toBe('essential');
+    // Balance: Anti-setup minore (41%), Rimozione Strumenti importante; BO e semi-stall: Rimozione Strumenti importante
     expect(levelOf('balance', 'phazer')).toBe('minor');
-    expect(levelOf('balance', 'itemRemoval')).toBe('minor');
+    expect(levelOf('balance', 'itemRemoval')).toBe('important');
     expect(levelOf('bulkyOffense', 'itemRemoval')).toBe('important');
     expect(levelOf('semiStall', 'itemRemoval')).toBe('important');
-    // Cleric (Wish, Healing Wish, Heal Bell): minore da balance in giù, non conta negli offensivi
-    expect(levelOf('balance', 'support')).toBe('minor');
+    // Cleric (Wish, Healing Wish, Heal Bell): minore nel semi-stall (35%), essenziale nello stall (100%), ignorato altrove
+    expect(levelOf('balance', 'support')).toBe('ignored');
     expect(levelOf('semiStall', 'support')).toBe('minor');
-    expect(levelOf('stall', 'support')).toBe('minor');
+    expect(levelOf('stall', 'support')).toBe('essential');
     expect(levelOf('hyperOffense', 'support')).toBe('ignored');
     expect(levelOf('bulkyOffense', 'support')).toBe('ignored');
+    // Stall: Danno nel Tempo e Anti-setup essenziali, Controllo Hazard importante, Rimozione Strumenti minore
+    expect(levelOf('stall', 'dot')).toBe('essential');
+    expect(levelOf('stall', 'phazer')).toBe('essential');
+    expect(levelOf('stall', 'removal')).toBe('important');
+    expect(levelOf('stall', 'itemRemoval')).toBe('minor');
     expect(LEVEL_KEYS.indexOf('support')).toBe(LEVEL_KEYS.indexOf('recovery') + 1);
   });
 
@@ -150,7 +160,7 @@ describe('tabella dei livelli per archetipo', () => {
     expect(subRoleReasons(veil[0], veil, fixtureData).find(r => r.role === 'screens')).toMatchObject({ value: 1, source: 'Aurora Veil' });
   });
 
-  it('interruttore spento: i muri minori diventano ignorati, Recovery essenziale in stall', () => {
+  it('interruttore spento: i muri minori diventano ignorati, Recupero essenziale da balance in giù e ignorato altrove', () => {
     setRolesCountMeasured(false);
     expect(levelOf('hyperOffense', 'physicalWall')).toBe('ignored');
     expect(levelOf('bulkyOffense', 'specialWall')).toBe('ignored');
@@ -162,11 +172,12 @@ describe('tabella dei livelli per archetipo', () => {
     expect(levelOf('hyperOffense', 'anyBreaker')).toBe('essential');
     expect(levelOf('stall', 'recovery')).toBe('essential');
     expect(levelOf('semiStall', 'recovery')).toBe('essential');
-    expect(levelOf('balance', 'recovery')).toBe('ignored');
+    expect(levelOf('balance', 'recovery')).toBe('essential');
     expect(levelOf('bulkyOffense', 'recovery')).toBe('ignored');
+    expect(levelOf('hyperOffense', 'recovery')).toBe('ignored');
     // Le altre famiglie restano com'erano
     expect(levelOf('hyperOffense', 'pivot')).toBe('important');
-    expect(levelOf('balance', 'taunt')).toBe('minor');
+    expect(levelOf('balance', 'phazer')).toBe('minor');
   });
 
   it("le voci: i gruppi degli attaccanti e poi i sotto-ruoli nell'ordine delle famiglie", () => {
@@ -212,11 +223,13 @@ describe('voci a livello di team (teamRolesArea)', () => {
   ];
   const area = () => teamRolesArea(balance, fixtureData, 'it', teamNeeds(balance, fixtureData, undefined, 'balance'));
 
-  it('Cleric: Alomomola con Wish porta la voce (minore) nel Balance; in HO la voce non esiste', () => {
-    const support = area().rows.find(r => r.key === 'support')!;
+  it('Cleric: Alomomola con Wish porta la voce (minore) nel Semi-stall; nel Balance e in HO la voce non esiste', () => {
+    const semiStall = teamRolesArea(balance, fixtureData, 'it', teamNeeds(balance, fixtureData, undefined, 'semiStall'));
+    const support = semiStall.rows.find(r => r.key === 'support')!;
     expect(support.level).toBe('minor');
     expect(support.value).toBe(1);
     expect(support.by[0]).toMatchObject({ species: 'Alomomola', source: 'Wish' });
+    expect(area().rows.find(r => r.key === 'support')).toBeUndefined();
     expect(teamRolesArea(hyperOffense, fixtureData, 'it').rows.find(r => r.key === 'support')).toBeUndefined();
   });
 
@@ -244,13 +257,15 @@ describe('bisogni del team dai sotto-ruoli', () => {
     const members = [{ specialWall: 1, recovery: 1, dot: 1 }, { specialBreaker: 1, specialSweeper: 1 }];
     const needs = teamNeeds(team, fixtureData, members);
     expect(needs.archetype).toBe('balance');
-    expect(needs.essentialMissing).toEqual(['physicalWall']);
+    // Nel Balance sono essenziali anche "almeno un attaccante fisico" (qui solo speciali) e gli Hazard, nell'ordine delle voci
+    expect(needs.essentialMissing).toEqual(['anyPhysical', 'physicalWall', 'hazards']);
     expect(needs.values.specialWall).toBe(1);
     expect(needs.values.anySweeper).toBe(1);
     expect(needs.values.anyBreaker).toBe(1);
-    // Tabella 2026-11-01: in Balance le importanti sono rimozione, hazard e pivot (phazer e rimozione strumenti minori), nell'ordine delle voci
-    expect(needs.importantMissing).toEqual(['removal', 'hazards', 'pivot']);
-    expect(needs.missingRoles).toEqual(['physicalWall', 'removal', 'hazards', 'pivot']);
+    expect(needs.values.anySpecial).toBe(1);
+    // Tabella 2026-11-01: in Balance le importanti sono "almeno uno speciale" (coperto), rimozione, pivot e rimozione strumenti (phazer minore)
+    expect(needs.importantMissing).toEqual(['removal', 'pivot', 'itemRemoval']);
+    expect(needs.missingRoles).toEqual(['physicalSweeper', 'physicalBreaker', 'physicalWall', 'hazards', 'removal', 'pivot', 'itemRemoval']);
   });
 
   it('il valore del team è il migliore dei membri; senza attaccanti manca il gruppo', () => {
@@ -258,14 +273,18 @@ describe('bisogni del team dai sotto-ruoli', () => {
     const needs = teamNeeds(team, fixtureData, [{ specialWall: 1, recovery: 0.5 }, { physicalWall: 1, recovery: 1, taunt: 0.3 }]);
     expect(needs.values.recovery).toBe(1);
     expect(needs.values.taunt).toBe(0.3);
-    expect(needs.essentialMissing).toEqual(['anySweeper', 'anyBreaker']);
+    // Due muri col Recupero: mancano i tre gruppi degli attaccanti e gli Hazard (essenziali nel Balance)
+    expect(needs.essentialMissing).toEqual(['anySweeper', 'anyBreaker', 'anyPhysical', 'hazards']);
     expect(needs.missingRoles.slice(0, 4)).toEqual(FAMILIES.attack);
   });
 
   it('senza valori dei membri li misura (come nel voto)', () => {
     const needs = teamNeeds(stall, fixtureData);
     expect(needs.archetype).toBe('stall');
-    expect(needs.essentialMissing).toEqual([]);
+    // Da stall gli attaccanti non contano; fra gli essenziali manca solo il Danno nel Tempo (misurato sul meta del
+    // fixture, pieno di Acciaio e Veleno immuni a Toxic): muri, Recupero, Cleric, Anti-setup e Hazard ci sono
+    expect(needs.essentialMissing).toEqual(['dot']);
+    expect(needs.importantMissing).toEqual([]);
     expect(needs.levels.anySweeper).toBe('ignored');
     expect(needs.levels.anyBreaker).toBe('ignored');
   });
@@ -289,9 +308,11 @@ describe('bisogni del team dai sotto-ruoli', () => {
 });
 
 describe('voto e coach seguono i livelli dell\'archetipo', () => {
-  it('lo stall non riceve "Ruoli mancanti"', () => {
+  it('lo stall non riceve "Ruoli mancanti" per gli attaccanti', () => {
     const texts = coachTeam(stall, DEFAULT_FORMAT, fixtureData).problems.map(p => p.text).join(' | ');
-    expect(texts).not.toMatch(/Ruoli mancanti/);
+    expect(texts).not.toMatch(/Ruoli mancanti:[^|]*(Sweeper|Wallbreaker|attaccante)/);
+    // L'unico essenziale da stall che manca a questo team è il Danno nel Tempo (vedi "senza valori dei membri li misura")
+    expect(texts).toMatch(/Ruoli mancanti: Danno nel Tempo( \||$)/);
   });
 
   it('un team senza attaccanti né muro speciale li riceve come ruoli mancanti', () => {
@@ -322,6 +343,7 @@ describe('interruttore del doppio conteggio', () => {
   it('spento di default: Attacco e muri minori non danno punti nei Ruoli', () => {
     expect(levelOf('hyperOffense', 'physicalWall')).toBe('ignored');
     expect(levelOf('stall', 'recovery')).toBe('essential');
-    expect(levelOf('balance', 'recovery')).toBe('ignored');
+    expect(levelOf('balance', 'recovery')).toBe('essential');
+    expect(levelOf('bulkyOffense', 'recovery')).toBe('ignored');
   });
 });

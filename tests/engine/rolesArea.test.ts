@@ -65,7 +65,8 @@ describe('area Ruoli: base degli importanti, extra dei minori', () => {
   it('righe: le voci dell\'archetipo col valore del team e chi le porta', () => {
     const roles = teamRolesArea(physical, fixtureData, 'it');
     const hazards = roles.rows.find(r => r.key === 'hazards')!;
-    expect(hazards.level).toBe('important');
+    // Nel Balance gli hazard sono essenziali (99% dei team da torneo)
+    expect(hazards.level).toBe('essential');
     expect(hazards.value).toBe(1);
     expect(hazards.by.map(b => b.species)).toEqual(expect.arrayContaining(['Garchomp', 'Skarmory']));
     // Le voci ignorate dall'archetipo (gli schermi nel Balance) non hanno una riga
