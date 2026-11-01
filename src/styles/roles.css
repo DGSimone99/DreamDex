@@ -39,13 +39,15 @@
 .ad-panel .rl-allgood { display: inline-flex; align-items: center; gap: 8px; margin: 0; padding: 6px 12px 6px 10px; border: 1px solid var(--line-soft); border-left: 3px solid var(--good); border-radius: 3px; background: var(--good-bg); color: var(--good); font-size: 14px; font-weight: 600; }
 .rl-allgood .icon { width: 15px; height: 15px; }
 
-/* Coperti: nome a sinistra, chi li copre a destra (icone dal migliore); su due colonne quando sono tanti */
-.rl-covered { display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: 0 28px; margin: 0; padding: 0; list-style: none; }
-.rl-covered.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.rl-covered.three { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 22px; }
-.rl-covered li { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 36px; padding: 0; border-bottom: 1px solid var(--line-soft); }
+/* Coperti: nome a sinistra, chi li copre subito dopo (icone dal migliore); su due colonne quando sono tanti.
+   Ogni colonna ha due piste, il nome (largo quanto il nome più lungo della colonna) e le icone: le righe sono sottogriglie,
+   così in una colonna le icone partono tutte nello stesso punto, vicino ai nomi */
+.rl-covered { display: grid; grid-template-columns: max-content minmax(0, 1fr); align-content: start; gap: 0 28px; margin: 0; padding: 0; list-style: none; }
+.rl-covered.two { grid-template-columns: repeat(2, max-content minmax(0, 1fr)); }
+.rl-covered.three { grid-template-columns: repeat(3, max-content minmax(0, 1fr)); gap: 0 22px; }
+.rl-covered li { display: grid; grid-column: span 2; grid-template-columns: subgrid; column-gap: 14px; align-items: center; min-height: 36px; padding: 0; border-bottom: 1px solid var(--line-soft); }
 .rl-covered .rl-name { display: inline-flex; align-items: center; gap: 8px; min-width: 0; font-size: 14px; font-weight: 600; color: var(--text); }
-.rl-mons { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 2px; }
+.rl-mons { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 2px; }
 
 /* Chi porta la voce: icona del box col valore piccolo sotto; secondario o parziale più tenue */
 .rl-mon { position: relative; display: inline-grid; justify-items: center; width: 44px; cursor: help; }

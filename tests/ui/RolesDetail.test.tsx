@@ -248,6 +248,21 @@ describe('note e secondario nelle sottoschede', () => {
     expect(row.querySelector('.rl-sec')).toHaveTextContent('sec.');
     expect(row.querySelector('.rl-reason')).toHaveTextContent('PS×Dif 111k (soglia 100k)');
   });
+
+  it('sotto l\'icona il valore compare solo quando non è pieno (sotto 100)', () => {
+    const base = rateTeam([{ ...emptySet('Great Tusk'), moves: ['Headlong Rush'] }], fixtureData, 'it')!;
+    const roles: TeamRoles = {
+      value: 60, base: 1, extra: 0,
+      rows: [{ key: 'physicalWall', level: 'essential', value: 1, by: [{ species: 'Great Tusk', value: 1, source: 'wall' }] }],
+      failures: [],
+      members: [{ species: 'Great Tusk', primary: 'attack', values: { physicalWall: 1 }, credited: { physicalWall: 1 }, reasons: [] }],
+    };
+    renderIt(<AreaView rating={{ ...base, roles }} area="roles" team={[]} analysis={analyzeTeam([], fixtureData)} problems={[]} />);
+    // Il muro di un attaccante è secondario (tenue), ma pieno: niente numero sotto, il 100 resta nel tooltip
+    const mon = within(screen.getByRole('tabpanel')).getByText('Great Tusk (secondario)').closest('.rl-mon')!;
+    expect(mon.querySelector('.rl-val')).toBeNull();
+    expect(mon.getAttribute('title')).toMatch(/· 100$/);
+  });
 });
 
 describe('setup difensivo nel dettaglio della Difesa', () => {

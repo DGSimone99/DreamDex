@@ -51,8 +51,8 @@ export function LevelTag({ level, t }: { level: Level; t: T }) {
 }
 
 /**
- * Chi porta la voce: l'icona del box col valore piccolo sotto; il secondario e chi la porta solo in parte (sotto il
- * pieno) più tenui. Nome, valore e motivo per lo screen reader e nel tooltip.
+ * Chi porta la voce: l'icona del box, col valore piccolo sotto solo quando non è pieno (sotto 100); il secondario e chi
+ * la porta solo in parte (sotto il pieno) più tenui. Nome, valore e motivo per lo screen reader e nel tooltip.
  */
 export function RoleMon({ h, why, t, mark = false }: { h: RoleHolder; why?: string; t: T; mark?: boolean }) {
   const weak = h.secondary || h.value < 1;
@@ -62,7 +62,7 @@ export function RoleMon({ h, why, t, mark = false }: { h: RoleHolder; why?: stri
     <span className={`rl-mon${weak ? ' weak' : ''}${h.value < MISSING_BELOW ? ' partial' : ''}`} title={title}>
       <span className="rl-box"><PokemonIcon name={h.species} /></span>
       <span className="visually-hidden">{h.species}{h.secondary ? ` (${t('rdetail.secondary')})` : ''}</span>
-      <small className="rl-val">{value}</small>
+      {value < 100 && <small className="rl-val">{value}</small>}
       {mark && h.secondary && <small className="rl-sec" aria-hidden="true">{t('rdetail.secondaryShort')}</small>}
     </span>
   );
