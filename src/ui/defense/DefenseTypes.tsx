@@ -19,9 +19,10 @@ const countTone = (n: number) => (n === 0 ? 'bad' : n === 1 ? 'warn' : 'good');
 
 /**
  * Coverage tipi della Difesa: un membro per riga (nello stesso punto delle altre schede), i 18 tipi in colonna. In ogni
- * casella il danno di un colpo forte di quel tipo sul lato peggiore (fisico o speciale), colorato per quanti colpi regge
- * (OHKO, 2HKO, 3HKO, 4 o più), col moltiplicatore classico piccolo in un angolo; il suggerimento dà i due lati.
- * A destra quanto regge il membro; in fondo Lo reggono (chi regge del tutto il lato peggiore) e la Copertura del tipo.
+ * casella il danno di un colpo forte di quel tipo sul lato peggiore (fisico o speciale), colorato per quanto vale
+ * (OHKO rosso pieno, 2HKO rosso scuro = niente, 3HKO giallo = metà, 4 o più verde = pieno), col moltiplicatore classico
+ * sotto il % quando non è neutro; il suggerimento dà i due lati.
+ * In fondo Regge (chi regge del tutto il lato peggiore) e la Copertura del tipo.
  * I tipi che nessuno regge hanno il filo rosso sotto l'icona.
  */
 export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: AreaContext }) {
@@ -46,7 +47,7 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
     <div className={`def-frame def-types${roomy ? ' roomy' : ''}`}>
       <div className="ad-scroll">
         <table className="def-grid spaced ct-table" onMouseLeave={() => setHover(null)}>
-          <colgroup><col className="def-col-mon" />{rows.map(row => <col key={row.type} />)}<col className="ht-col-side" /></colgroup>
+          <colgroup><col className="def-col-mon" />{rows.map(row => <col key={row.type} />)}</colgroup>
           <thead>
             <tr>
               <th scope="col" className="def-mon-h">{t('detail.member')}</th>
@@ -60,14 +61,12 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
                   </th>
                 );
               })}
-              <th scope="col" className="ht-side-h">{t('ddetail.holdCol')}</th>
             </tr>
           </thead>
           <tbody>
             {team.map((set, member) => {
               const s = slots[member];
               const typed = s === null ? null : defense.typed[s];
-              const m = s === null ? null : defense.members[s];
               return (
                 <tr key={member} className={hover?.row === member ? 'x-row' : undefined}>
                   <th scope="row"><MemberMon name={battleName(set)} set={set} stats /></th>
@@ -85,19 +84,16 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
                       </td>
                     );
                   })}
-                  <td className="ht-side">{m ? <span className={`ct-pill ${tone(m.hold)}`}>{m.hold}%</span> : '—'}</td>
                 </tr>
               );
             })}
             <tr className="ct-sum ct-sum-first">
               <th scope="row">{t('ddetail.heldBy')}</th>
               {rows.map((row, i) => <td key={row.type} className={colClass(i)}><span className={`ct-pill ${countTone(row.heldBy.length)}`}>{row.heldBy.length}</span></td>)}
-              <td />
             </tr>
             <tr className="ct-sum">
               <th scope="row">{t('ddetail.level')}</th>
               {rows.map((row, i) => <td key={row.type} className={colClass(i)}><span className={`ct-pill ${tone(row.level)}`}>{row.level}%</span></td>)}
-              <td />
             </tr>
           </tbody>
         </table>
@@ -105,7 +101,6 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
       <p className="rob-legend" aria-hidden="true">
         <span>{t('ddetail.holdLegend')}</span>
         {HOLD_ORDER.map(b => <span key={b} className={`hold-chip ${HOLD_BANDS[b].cls}`}>{HOLD_BANDS[b].tag}</span>)}
-        <span className="ht-mult-note">{t('ddetail.multNote')}</span>
       </p>
       {weatherMitigations(team).map(m => <p key={m.condition} className="note"><Typed text={mitigationNote(m, lang)} /></p>)}
     </div>

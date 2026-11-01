@@ -109,8 +109,7 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
 
   it('Coverage tipi: membri × 18 tipi, in ogni casella il danno del colpo forte sul lato peggiore, colorato per quanti colpi regge', async () => {
     const { rating, table } = await openTypes();
-    expect(within(table).getAllByRole('columnheader').map(h => h.textContent).slice(-1)).toEqual(['Regge']);
-    expect(within(table).getAllByRole('columnheader')).toHaveLength(20); // angolo + 18 tipi + Regge
+    expect(within(table).getAllByRole('columnheader')).toHaveLength(19); // angolo + 18 tipi, niente colonna Regge
     const typed = rating.defense.typed;
     team.forEach((_, m) => {
       const row = within(table).getAllByRole('row')[m + 1];
@@ -121,19 +120,21 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
         expect(cells[i].querySelector('.visually-hidden')!.textContent!.trim()).toBe(TAG[cell.band]);
         expect(cells[i].getAttribute('title')).toContain(`fisico ${cell.physical}% · speciale ${cell.special}%`);
       });
-      // A destra quanto regge il membro (solo informazione)
-      expect(cells[18]).toHaveTextContent(`${rating.defense.members[m].hold}%`);
+      expect(cells).toHaveLength(18);
     });
-    // Il moltiplicatore classico resta in piccolo: Great Tusk è debole all'Acqua
+    // Il moltiplicatore classico sotto il %: Great Tusk è debole all'Acqua; niente sui tipi neutri
     const water = rating.defense.coverageTypes.rows.findIndex(r => r.type === 'Water');
+    const normal = rating.defense.coverageTypes.rows.findIndex(r => r.type === 'Normal');
     const tusk = within(table).getByRole('row', { name: /^Great Tusk/ });
     expect(within(tusk).getAllByRole('cell')[water].querySelector('.ct-mult')).toHaveTextContent('×2');
+    expect(within(tusk).getAllByRole('cell')[normal].querySelector('.ct-mult')).toBeNull();
+    expect(document.querySelector('.ht-mult-note')).toBeNull();
   });
 
-  it('in fondo Lo reggono e Copertura del motore; niente più Deboli e Resistono; i buchi segnati in testata', async () => {
+  it('in fondo Regge e Copertura del motore; niente più Deboli e Resistono; i buchi segnati in testata', async () => {
     const { rating, table } = await openTypes();
     const rows = rating.defense.coverageTypes.rows;
-    const held = within(table).getByRole('row', { name: /^Lo reggono/ });
+    const held = within(table).getByRole('row', { name: /^Regge/ });
     expect(within(held).getAllByRole('cell').slice(0, 18).map(c => c.textContent)).toEqual(rows.map(r => `${r.heldBy.length}`));
     const level = within(table).getByRole('row', { name: /^Copertura/ });
     expect(within(level).getAllByRole('cell').slice(0, 18).map(c => c.textContent)).toEqual(rows.map(r => `${r.level}%`));
@@ -153,7 +154,7 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
     const { table } = await openTypes([team[0], { ...emptySet('Notamon'), moves: ['Tackle'] }]);
     const row = within(table).getAllByRole('row')[2];
     const cells = within(row).getAllByRole('cell');
-    expect(cells).toHaveLength(19);
+    expect(cells).toHaveLength(18);
     cells.forEach(td => expect(td).toHaveTextContent('—'));
   });
 

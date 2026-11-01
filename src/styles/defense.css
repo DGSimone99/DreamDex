@@ -2,11 +2,12 @@
 
 /* Soglie del colpo standard (OHKO … 4HKO+): sfondo dal colore sulla tinta del pannello, testo --text (≥ 4.5:1 su ogni palette).
    Le usano le pillole della guida e le celle della Robustezza. */
-/* Scala dal pericolo alla sicurezza, come le caselle di Coverage tipi: OHKO rosso pieno, 2HKO giallo, 3HKO neutro, 4HKO+ verde tenue */
+/* Il colore dice quanto vale il colpo retto (holdCredit): OHKO rosso pieno, 2HKO rosso scuro (niente), 3HKO giallo (metà),
+   4HKO+ verde (pieno). Le stesse tinte nelle caselle di Coverage tipi e Coverage meta, nelle pillole della guida e della legenda */
 .hold-ohko { background: color-mix(in srgb, var(--bad) 46%, var(--panel)); color: var(--text); }
-.hold-2 { background: color-mix(in srgb, var(--warn) 30%, var(--panel)); color: var(--text); }
-.hold-3 { background: var(--raised); color: var(--text); }
-.hold-4 { background: color-mix(in srgb, var(--good) 14%, var(--raised)); color: var(--muted); }
+.hold-2 { background: color-mix(in srgb, var(--bad) 22%, var(--panel)); color: var(--text); }
+.hold-3 { background: color-mix(in srgb, var(--warn) 26%, var(--panel)); color: var(--text); }
+.hold-4 { background: color-mix(in srgb, var(--good) 30%, var(--panel)); color: var(--text); }
 .hold-chip { display: inline-block; padding: 2px 8px; border-radius: 3px; font: 700 12px/1.3 var(--ui); font-variant-numeric: tabular-nums; }
 
 /* Cornice comune delle schede con i membri: la lista in alto (testata e righe di altezza fissa, così cambiando scheda i
@@ -110,8 +111,9 @@
 /* Caselle come la griglia di Coverage tipi: il colore dice la soglia, il testo il % del colpo */
 .def-frame .rob-cell { padding: 0; text-align: center; font: 700 clamp(12px, calc(var(--def-row) * 0.22), 20px)/1 var(--ui); border: 1px solid var(--line); border-radius: 3px; font-variant-numeric: tabular-nums; }
 .def-frame .rob-cell.hold-ohko { border-color: var(--bad); }
-.def-frame .rob-cell.hold-2 { border-color: color-mix(in srgb, var(--warn) 70%, transparent); }
-.def-frame .rob-cell.hold-4 { border-color: color-mix(in srgb, var(--good) 35%, var(--line)); }
+.def-frame .rob-cell.hold-2 { border-color: color-mix(in srgb, var(--bad) 55%, transparent); }
+.def-frame .rob-cell.hold-3 { border-color: color-mix(in srgb, var(--warn) 65%, transparent); }
+.def-frame .rob-cell.hold-4 { border-color: color-mix(in srgb, var(--good) 70%, transparent); }
 .rob-side { padding: 0; text-align: center; }
 .rob-side .ct-pill { min-width: 40px; font-size: 13px; }
 .ad-panel .rob-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: auto 0 0; padding-top: 8px; font-size: 12px; color: var(--muted); }
@@ -370,10 +372,8 @@
 .def-mon-text:not(:has(.def-mon-stats)) .def-mon-tag.line { display: inline-flex; }
 @container (max-height: 440px) { .def-frame .def-mon-tag.line { display: inline-flex; } }
 
-/* Coverage tipi sui colpi: il danno del lato peggiore, il moltiplicatore classico piccolo in un angolo */
-.def-frame .ht-cell { position: relative; font-size: clamp(12px, calc(var(--def-row) * 0.22), 18px); }
-.def-frame .ht-cell .ct-mult { position: absolute; top: 2px; right: 4px; font: 600 10px/1 var(--ui); opacity: 0.75; }
+/* Coverage tipi sui colpi: il danno del lato peggiore, sotto il moltiplicatore classico (×2, ×½…) se non è neutro */
+.def-frame .ht-cell { font-size: clamp(12px, calc(var(--def-row) * 0.22), 18px); line-height: 1.05; }
+.def-frame .ht-cell .hold-pct { display: block; }
+.def-frame .ht-cell .ct-mult { display: block; margin-top: 1px; font: 700 11px/1 var(--ui); color: var(--text); opacity: 0.8; }
 .def-frame .ht-cell.hold-none { color: var(--muted); }
-.def-frame .ht-col-side { width: 64px; }
-.def-frame .ht-side, .def-frame .ht-side-h { text-align: center; }
-.def-types .rob-legend .ht-mult-note { margin-left: auto; }
