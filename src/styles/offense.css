@@ -6,7 +6,6 @@
 /* Generale: i tipi coperti "8/18" in una barra neutra (non è un voto) */
 .off-general .def-cell.ct-count { grid-template-columns: 150px 5ch; }
 .def-bar.neutral i { background: var(--accent); }
-.def-open-mon.plain { border-bottom-color: transparent; }
 
 /* Coverage tipi: verde dove il membro copre il tipo, giallo a metà (3HKO); testo --text su fondi scuri, contrasto ampio */
 .def-frame .ct-cell.ok-full { background: color-mix(in srgb, var(--good) 30%, var(--panel)); border-color: color-mix(in srgb, var(--good) 70%, transparent); }

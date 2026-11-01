@@ -24,26 +24,15 @@ describe('Difesa: Generale e guida', () => {
     expect(screen.getByRole('tabpanel')).not.toHaveTextContent(/potenza 100/);
   });
 
-  it('Generale: una tessera per sottostatistica, cliccandola si apre la sottoscheda', async () => {
-    const user = userEvent.setup();
+  it('Generale: niente tessere sotto la tabella', () => {
     renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[]} />);
-    const panel = screen.getByRole('tabpanel');
-    expect(within(panel).getAllByRole('button', { name: /Sostenibilità|Coverage tipi|Coverage meta/ })).toHaveLength(3);
-    await user.click(within(panel).getByRole('button', { name: /^Sostenibilità/ }));
-    const tab = screen.getByRole('tab', { name: /^Sostenibilità/ });
-    expect(tab).toHaveAttribute('aria-selected', 'true');
-    expect(tab).toHaveFocus();
+    expect(document.querySelector('.def-tile')).toBeNull();
+    expect(within(screen.getByRole('tabpanel')).queryByRole('button', { name: /^(Sostenibilità|Coverage tipi|Coverage meta)/ })).toBeNull();
   });
 
-  it('le tessere hanno come nome il testo visibile, col fatto principale', () => {
-    renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[]} />);
-    expect(within(screen.getByRole('tabpanel')).getByRole('button', { name: /^Sostenibilità.*Recupero.*\d+\/\d+/ })).toBeInTheDocument();
-  });
-
-  it('senza meta: 3 tessere e nessuna sezione Coverage meta nella guida', async () => {
+  it('senza meta: nessuna sezione Coverage meta nella guida', async () => {
     const user = userEvent.setup();
     renderIt(<AreaView rating={noMeta()} area="defense" team={team} analysis={analysis} problems={[]} />);
-    expect(within(screen.getByRole('tabpanel')).getAllByRole('button', { name: /Sostenibilità|Coverage/ })).toHaveLength(2);
     await user.click(screen.getByRole('button', { name: 'Come funziona Generale' }));
     expect(within(screen.getByRole('dialog')).queryByRole('tab', { name: 'Coverage meta' })).toBeNull();
   });
@@ -206,12 +195,6 @@ describe('Difesa: ordine, barre e Generale a squadra chiusa', () => {
     expect(subTabs()).toEqual(['Generale', 'Coverage tipi', 'Sostenibilità']);
   });
 
-  it('le tessere seguono l\'ordine delle sottoschede', () => {
-    renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[]} />);
-    const names = within(screen.getByRole('tabpanel')).getAllByRole('button').map(b => /^(Coverage tipi|Sostenibilità|Coverage meta)/.exec(b.textContent ?? '')?.[1]);
-    expect(names).toEqual(['Coverage tipi', 'Sostenibilità', 'Coverage meta']);
-  });
-
   it('le barre hanno la classe della soglia e l\'anello debole è solo sul più basso, solo sotto 50', () => {
     const rating = withMeta();
     renderIt(<AreaView rating={rating} area="defense" team={team} analysis={analysis} problems={[]} />);
@@ -245,22 +228,6 @@ describe('Difesa: ordine, barre e Generale a squadra chiusa', () => {
     // L'etichetta c'è due volte nel DOM (accanto al nome e accanto alle statistiche, il CSS ne mostra una), sempre in un membro solo
     expect(rows.filter(r => r.querySelector('.def-weak'))).toHaveLength(1);
     expect(rows[1].querySelector('.def-weak')).toBeTruthy();
-  });
-
-  it('la tessera del meta elenca le minacce senza risposta (nome nascosto) o dice che tutte hanno risposta', () => {
-    const rating = withMeta();
-    const cm = rating.defense.coverageMeta!;
-    const some = { ...rating, defense: { ...rating.defense, coverageMeta: { ...cm, unanswered: ['Garchomp', 'Zapdos'] } } };
-    const { unmount } = renderIt(<AreaView rating={some} area="defense" team={team} analysis={analysis} problems={[]} />);
-    const tile = within(screen.getByRole('tabpanel')).getByRole('button', { name: /^Coverage meta/ });
-    expect(tile).toHaveTextContent('Senza risposta');
-    expect(tile).toHaveTextContent('Garchomp');
-    expect(tile).toHaveTextContent('Zapdos');
-    expect(tile).toHaveTextContent(/2\/\d+/);
-    unmount();
-    const none = { ...rating, defense: { ...rating.defense, coverageMeta: { ...cm, unanswered: [] } } };
-    renderIt(<AreaView rating={none} area="defense" team={team} analysis={analysis} problems={[]} />);
-    expect(within(screen.getByRole('tabpanel')).getByRole('button', { name: /^Coverage meta/ })).toHaveTextContent('Ogni minaccia ha una risposta');
   });
 
   it('a squadra chiusa compaiono Colpo peggiore (il tipo che fa più male) e Recupero, con un % per ogni riga; altrimenti no', () => {
