@@ -355,7 +355,7 @@ export function measureWith(set: TeamSet, team: TeamSet[], data: EngineData, poo
   if (ids.includes('stickyweb')) values.web = WEB_VALUE;
 
   // Difesa e campo come nel rilevatore del set; Aurora Veil conta con la neve del team
-  const keep: SubRole[] = ['recovery', 'hazards', 'removal', 'pivot', 'phazer', 'itemRemoval'];
+  const keep: SubRole[] = ['recovery', 'hazards', 'removal', 'pivot', 'support', 'phazer', 'itemRemoval'];
   for (const role of keep) if (base[role]) put(role, base[role]!, setSource(role, ids, ability, toID(set.item)));
   // I muri con l'indice reale e la soglia, per il motivo nella scheda
   const rules = rulesOf(data);

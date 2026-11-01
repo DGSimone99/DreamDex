@@ -153,6 +153,40 @@ describe('tabella dei livelli per archetipo', () => {
   });
 });
 
+describe('voci a livello di team (teamRolesArea)', () => {
+  const balance = [
+    set('Garchomp', 'Rocky Helmet', 'Rough Skin', ['Earthquake', 'Stealth Rock', 'Dragon Tail', 'Fire Fang']),
+    set('Dragapult', 'Choice Specs', 'Infiltrator', ['Draco Meteor', 'Shadow Ball', 'U-turn', 'Flamethrower']),
+    set('Corviknight', 'Leftovers', 'Pressure', ['Brave Bird', 'Roost', 'U-turn', 'Bulk Up']),
+    set('Toxapex', 'Black Sludge', 'Regenerator', ['Surf', 'Recover', 'Haze', 'Toxic']),
+    set('Alomomola', 'Heavy-Duty Boots', 'Regenerator', ['Wish', 'Protect', 'Flip Turn', 'Scald']),
+    set('Hatterene', 'Leftovers', 'Magic Bounce', ['Psychic', 'Draining Kiss', 'Calm Mind', 'Mystical Fire']),
+  ];
+  const area = () => teamRolesArea(balance, fixtureData, 'it', teamNeeds(balance, fixtureData, undefined, 'balance'));
+
+  it('Supporto: Alomomola con Wish porta la voce (minore) nel Balance; in HO la voce non esiste', () => {
+    const support = area().rows.find(r => r.key === 'support')!;
+    expect(support.level).toBe('minor');
+    expect(support.value).toBe(1);
+    expect(support.by[0]).toMatchObject({ species: 'Alomomola', source: 'Wish' });
+    expect(teamRolesArea(hyperOffense, fixtureData, 'it').rows.find(r => r.key === 'support')).toBeUndefined();
+  });
+
+  it('Controllo hazard: Hatterene con Magic Bounce e nessun Defog vale metà, con la fonte', () => {
+    const removal = area().rows.find(r => r.key === 'removal')!;
+    expect(removal.level).toBe('important');
+    expect(removal.value).toBe(0.5);
+    expect(removal.by[0]).toMatchObject({ species: 'Hatterene', value: 0.5, source: 'Magic Bounce' });
+  });
+
+  it('HO di 6 con gli hazard: setup del campo pieno, base piena, nessun malus', () => {
+    const ho = teamRolesArea(hyperOffense, fixtureData, 'it');
+    expect(ho.rows.find(r => r.key === 'fieldSetup')).toMatchObject({ level: 'important', value: 1 });
+    expect(ho.base).toBe(1);
+    expect(ho.failures.some(f => /Setup del Campo/.test(f.text))).toBe(false);
+  });
+});
+
 describe('bisogni del team dai sotto-ruoli', () => {
   it('Balance senza muro fisico: essenziale mancante', () => {
     // Team incompleto: si giudica come balance; valori dei membri passati a mano
