@@ -238,12 +238,6 @@
 .guide-keys .bad b { color: var(--bad); }
 .guide-keys .even b { color: var(--muted); }
 .guide-keys li[title] { cursor: help; }
-.guide-scale { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0; margin: 0; padding: 0; list-style: none; border: 1px solid var(--line-soft); }
-.guide-scale li { display: grid; justify-items: center; gap: 4px; padding: 7px 4px; background: color-mix(in srgb, var(--raised) 55%, var(--panel)); }
-.guide-scale li + li { border-left: 1px solid var(--line-soft); }
-.guide-scale span { font-size: 12px; color: var(--muted); }
-.guide-scale b.ct-pill { min-width: 52px; text-align: center; font-size: 13px; }
-.guide-scale small { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
 .guide-example { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; font-size: 14px; color: var(--muted); }
 .guide-example .guide-mults { flex-basis: 100%; }
 .guide-mults { display: inline-flex; gap: 3px; }
@@ -308,12 +302,7 @@
 .guide-two.even { grid-template-columns: 1fr 1fr; }
 .guide-two .guide-keys { grid-auto-flow: row; grid-template-columns: repeat(3, 1fr); }
 .help-panel .guide-foot, .guide-foot { max-width: none; margin: 6px 0 0; font-size: 12px; color: var(--faint); }
-.guide-scale.net { grid-template-columns: repeat(4, 1fr); margin-top: 10px; }
 .guide-rows.compact > div { padding: 3px 0; }
-/* Titolo di sezione con l equazione del netto accanto: niente righe in più */
-.guide-h-steps { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-.guide-h-steps span { margin-left: 4px; padding: 1px 8px; border: 1px solid var(--line); border-radius: 3px; background: var(--raised); font-size: 12px; font-weight: 600; text-transform: none; letter-spacing: 0; color: var(--text); }
-.guide-h-steps span.eq { margin-left: 8px; color: var(--muted); }
 /* Guida, Coverage meta: le tre soglie di chi regge con le pastiglie della tabella, la profondità come barra a segmenti */
 .guide-holds.three { grid-template-columns: repeat(3, 1fr); }
 .guide-holds.three b { font: 600 14px/1.2 var(--ui); font-style: normal; }

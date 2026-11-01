@@ -45,7 +45,9 @@ describe('Difesa: Generale e guida', () => {
     await user.click(help);
     const dialog = screen.getByRole('dialog', { name: 'Guida: Difesa' });
     expect(within(dialog).getByRole('tab', { name: 'Sostenibilità' })).toHaveAttribute('aria-selected', 'true');
-    expect(within(dialog).getByRole('tabpanel')).toHaveTextContent('Leech Seed');
+    expect(within(dialog).getByRole('tabpanel')).toHaveTextContent('Mosse che assorbono');
+    // Niente più la riga "Regge poco" né la sezione del voto
+    expect(within(dialog).getByRole('tabpanel')).not.toHaveTextContent(/Regge poco|Il voto/);
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(help).toHaveFocus();

@@ -24,7 +24,7 @@ export function defenseTabs(defense: TeamDefense, meta: boolean, t: T, ctx: Area
   const metaTab = coverageMeta && <DefenseMeta defense={defense} ctx={ctx} />;
 
   const panels: Record<Key, ReactElement | null> = { sustain, coverageTypes, coverageMeta: metaTab };
-  const guide = (section: Parameters<typeof DefenseGuideSection>[0]['section']) => <DefenseGuideSection section={section} defense={defense} meta={meta} />;
+  const guide = (section: Parameters<typeof DefenseGuideSection>[0]['section']) => <DefenseGuideSection section={section} defense={defense} meta={meta} formatId={ctx.formatId} />;
   return [
     { key: 'general', label: t('detail.tab.general'), value: defense.value, panel: general, help: guide('general') },
     ...subs.map(key => ({ key, label: label(key), value: values[key], panel: panels[key]!, help: guide(key) })),

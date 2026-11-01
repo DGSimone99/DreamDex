@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { defensiveSetup, dummyAttacker, hazardRemover, holdBand, holdCredit, typedHits, holdStep, memberDefense, sustainability, sustainParts, teamDefense } from '../../src/engine/defense';
+import { defensiveSetup, dummyAttacker, dummyStats, hazardRemover, holdBand, holdCredit, typedHits, holdStep, memberDefense, sustainability, sustainParts, teamDefense } from '../../src/engine/defense';
 import type { TeamSet } from '../../src/engine/sets';
 import { softScore } from '../../src/engine/scale';
 import { fixtureData } from '../fixtures/data';
@@ -224,6 +224,12 @@ describe('attaccante finto e colpi per tipo', () => {
     expect(Math.abs(dummyAttacker(natdex, 'spa', 'Normal').baseStats!.spa! - 129)).toBeLessThanOrEqual(4);
     expect(dummyAttacker(gen9, 'atk', 'Normal').baseStats!.atk!).toBeLessThanOrEqual(dummyAttacker(natdex, 'atk', 'Normal').baseStats!.atk!);
     expect(dummyAttacker(natdex, 'atk', 'Fire').types).toEqual(['Fire']);
+  });
+
+  it("dummyStats dà alla guida le stesse statistiche dell'attaccante finto del formato", () => {
+    for (const data of [natdex, gen9]) {
+      expect(dummyStats(data.formatId)).toEqual({ atk: dummyAttacker(data, 'atk', 'Water').baseStats!.atk!, spa: dummyAttacker(data, 'spa', 'Water').baseStats!.spa! });
+    }
   });
 
   it('36 colpi: Blissey regge meglio lo speciale; Levitate e Flash Fire annullano Terra e Fuoco', () => {

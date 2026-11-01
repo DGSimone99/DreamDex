@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
 import type { TeamDefense } from '../../engine/defense';
 import { COVERAGE_DEPTH } from '../../engine/coverage';
-import { DEFENSE_SHARES, DEFENSE_SHARES_NO_META } from '../../engine/defense';
+import { DEFENSE_SHARES, DEFENSE_SHARES_NO_META, dummyStats } from '../../engine/defense';
+import { DEFAULT_FORMAT, type FormatId } from '../../engine/format';
 import { useLang, useT } from '../../i18n/react';
 import { Keys, Rows } from '../guideParts';
 
@@ -14,17 +15,16 @@ const HOLD_POINTS = [
   { cls: 'hold-3', tag: '3HKO', points: '0,5', note: 'types.three' }, { cls: 'hold-4', tag: '4HKO+', points: '1', note: 'types.four' },
 ] as const;
 
-/** Dal netto alla Sostenibilità (la curva comune, +50% netto = riferimento): alcune tappe, coi colori delle barre. */
-const NET_SCALE = [
-  { net: '≤ 0%', value: 0, tone: 'bad' }, { net: '+25%', value: 50, tone: 'warn' },
-  { net: '+40%', value: 80, tone: 'good' }, { net: '+50%', value: 93, tone: 'good' },
-] as const;
-
 /** Quanto vale chi regge una minaccia, dal primo al terzo: quelli del motore (COVERAGE_DEPTH), in percentuale. */
 const DEPTH = COVERAGE_DEPTH.map(w => Math.round(100 * w));
 
-/** Il contenuto della guida alla Difesa per una sezione: schematico e generico (niente valori del team). */
-export function DefenseGuideSection({ section, defense, meta }: { section: Section; defense: TeamDefense; meta: boolean }) {
+/**
+ * Il contenuto della guida alla Difesa per una sezione: schematico e generico (niente valori del team). `formatId` dà
+ * l'Attacco e l'Attacco Speciale dell'attaccante finto di Coverage tipi.
+ */
+export function DefenseGuideSection({ section, defense, meta, formatId = DEFAULT_FORMAT.formatId }: {
+  section: Section; defense: TeamDefense; meta: boolean; formatId?: FormatId;
+}) {
   const t = useT();
   const lang = useLang();
   // Decimali alla maniera della lingua (0,5 in italiano, 0.5 in inglese)
@@ -79,15 +79,7 @@ export function DefenseGuideSection({ section, defense, meta }: { section: Secti
           [g('sus.x.removal'), g('sus.x.removal.rule')],
           ['Magic Guard', g('sus.x.guard')],
           [g('sus.x.status'), g('sus.x.status.rule')],
-          [g('sus.x.frail'), g('sus.x.frail.rule')],
         ]} />
-
-        <h5 className="guide-h-steps">{g('sus.vote')}<span className="eq">{t('ddetail.sus.net')} = {t('ddetail.sus.gain')} − {t('ddetail.sus.loss')}</span></h5>
-        <ol className="guide-scale net" aria-label={g('sus.vote')}>
-          {NET_SCALE.map(step => (
-            <li key={step.net}><span>{t('ddetail.sus.net')} {dec(step.net)}</span><b className={`ct-pill ${step.tone}`}>{step.value}</b></li>
-          ))}
-        </ol>
       </>
     );
   }
@@ -97,7 +89,7 @@ export function DefenseGuideSection({ section, defense, meta }: { section: Secti
       <>
         <h5>{g('types.test')}</h5>
         <Rows compact rows={[
-          [g('types.attacker'), g('types.attacker.rule')],
+          [g('types.attacker'), g('types.attacker.rule', dummyStats(formatId))],
           [g('types.hits'), g('types.hits.rule')],
           [g('types.setup'), g('types.setup.rule')],
         ]} />
@@ -116,13 +108,7 @@ export function DefenseGuideSection({ section, defense, meta }: { section: Secti
               <li key={i} style={{ flexGrow: w }}><span>{g('meta.rank', { n: i + 1 })}</span><b>+{w}%</b></li>
             ))}
           </ol>
-          <div className="guide-weights-axis" aria-hidden="true"><span>{g('meta.depth.one', { pct: DEPTH[0] })}</span><span>{g('types.depth.all')}</span></div>
         </div>
-
-        <h5>{g('types.vote')}</h5>
-        <ul className="guide-lines">
-          <li><b>{g('types.average')}</b> = {g('types.average.rule')}</li>
-        </ul>
       </>
     );
   }
@@ -149,7 +135,6 @@ export function DefenseGuideSection({ section, defense, meta }: { section: Secti
             <li key={i} style={{ flexGrow: w }}><span>{g('meta.rank', { n: i + 1 })}</span><b>+{w}%</b></li>
           ))}
         </ol>
-        <div className="guide-weights-axis" aria-hidden="true"><span>{g('meta.depth.one', { pct: DEPTH[0] })}</span><span>{g('meta.depth.all')}</span></div>
       </div>
     </>
   );
