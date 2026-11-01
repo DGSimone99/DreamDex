@@ -135,7 +135,6 @@
 .area-problems li::before { content: '\25CF'; position: absolute; left: 0; color: var(--warn); }
 .area-problems li.serious::before { color: var(--bad); }
 .area-panel { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; background: var(--panel); border: 1px solid var(--line-soft); }
-.area-extra { margin-bottom: 16px; }
 /* Ogni scheda tiene il posto per il "?": aprendone un'altra le schede non si spostano */
 
 /* Panoramica: giudizio e tipo di team, poi il cruscotto che prende il resto; scorre solo sotto la misura minima */

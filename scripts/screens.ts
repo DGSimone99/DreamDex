@@ -287,6 +287,53 @@ const DEFENSE_STATES: Record<string, State> = {
   } },
 };
 
+// Ruoli: Generale e una scheda per livello (SIX), col team di 5 (incompleto) e con un team a cui mancano ruoli (LONE)
+const rolesState = (sub: RegExp | null, opts: { team?: unknown[]; collapsed?: boolean; lang?: 'it' | 'en' } = {}): State => ({
+  hash: hash(opts.team ?? SIX),
+  lang: opts.lang,
+  run: async p => {
+    await tab(p, 'analysis');
+    await wait(300);
+    if (opts.collapsed && !await clickText(p, 'button.band-toggle', /./)) return 'no band toggle';
+    await wait(300);
+    if (!await clickText(p, '.band button.grade-area', /^(Ruoli|Roles)/)) return 'no roles row';
+    await wait(300);
+    if (sub && !await clickText(p, '.area-subs [role="tab"]', sub)) return 'no sub-tab';
+    await wait(500);
+    return true;
+  },
+});
+const ROLES_SUBS: Record<string, RegExp | null> = { general: null, essential: /^(Essenziali|Essential)/, important: /^(Importanti|Important)/, minor: /^(Minori|Minor)/, ignored: /^(Non contano|Don)/ };
+const rolesGuide = (section?: RegExp, opts: { team?: unknown[]; lang?: 'it' | 'en' } = {}): State => ({ hash: hash(opts.team ?? SIX), lang: opts.lang, run: async p => {
+  const ok = await rolesState(null, opts).run!(p);
+  if (ok !== true) return ok;
+  if (!await clickText(p, '.area-help button', /./)) return 'no guide button';
+  await wait(400);
+  if (section && !await clickText(p, '.help-nav [role="tab"]', section)) return 'no guide section';
+  await wait(300);
+  return true;
+} });
+const ROLES_STATES: Record<string, State> = {
+  ...Object.fromEntries(Object.entries(ROLES_SUBS).flatMap(([k, re]) => [
+    [`analysis-roles-${k}`, rolesState(re)],
+    [`analysis-roles-${k}-five`, rolesState(re, { team: TEAM })],
+    [`analysis-roles-${k}-missing`, rolesState(re, { team: LONE })],
+    [`analysis-roles-${k}-collapsed`, rolesState(re, { collapsed: true })],
+  ])),
+  'analysis-roles-general-en': rolesState(null, { lang: 'en' }),
+  'analysis-roles-general-long': rolesState(null, { team: LONG }),
+  'analysis-roles-guide': rolesGuide(),
+  'analysis-roles-guide-en': rolesGuide(undefined, { lang: 'en' }),
+  'analysis-roles-guide-types': rolesGuide(/^(Ruoli per tipo|Roles per team)/),
+  'analysis-roles-guide-types-en': rolesGuide(/^(Ruoli per tipo|Roles per team)/, { lang: 'en' }),
+  'analysis-roles-guide-earn-a': rolesGuide(/(attacco e difesa|attack and defense)/),
+  'analysis-roles-guide-earn-a-en': rolesGuide(/(attacco e difesa|attack and defense)/, { lang: 'en' }),
+  'analysis-roles-guide-earn-b': rolesGuide(/: support$/),
+  'analysis-roles-guide-earn-b-en': rolesGuide(/: support$/, { lang: 'en' }),
+  'analysis-roles-guide-earn-c': rolesGuide(/: utility$/),
+  'analysis-roles-guide-earn-c-en': rolesGuide(/: utility$/, { lang: 'en' }),
+};
+
 // storage: chiavi in più nel localStorage prima del caricamento (es. lo stile della lista)
 interface State { hash?: string; lang?: 'it' | 'en'; storage?: Record<string, string>; run?: (page: Page) => Promise<boolean | string> }
 const STATES: Record<string, State> = {
@@ -331,6 +378,7 @@ const STATES: Record<string, State> = {
   ...DEFENSE_STATES,
   ...OFFENSE_STATES,
   ...SPEED_STATES,
+  ...ROLES_STATES,
   'analysis-offense-strip': { hash: hash(SIX), run: async p => clickText(p, '.band button.grade-area', /^Offesa/) },
   'analysis-roles': { run: async p => clickText(p, '.band button.grade-area', /^Ruoli/) },
   'analysis-coaching': { run: async p => { await tab(p, 'analysis'); await wait(300); const ok = await clickText(p, '.analysis-tabs [role="tab"]', /^Coaching/); await wait(900); return ok; } },
@@ -655,8 +703,15 @@ for (const [w, h] of sizes) {
           const gp = document.querySelector<HTMLElement>('.help-dialog .help-panel');
           const gs = gp?.closest<HTMLElement>('.guide-stack');
           // La guida a sezioni scorre nella pila (.guide-stack), non nel pannello: conta il più alto dei due
-          const guide = gp ? ` guideScroll=${Math.max(gp.scrollHeight - gp.clientHeight, gs ? gs.scrollHeight - gs.clientHeight : 0)} guideH=${Math.round(gp.closest('.help-dialog')!.getBoundingClientRect().height)}` : '';
-          return `${guide} panelOverflow=${el.scrollHeight - el.clientHeight} panelX=${el.scrollWidth - el.clientWidth}${memberRows}${below}${labelAt}`; })(),
+          // Altezza del contenuto di ogni pagina della pila (le pagine si allungano tutte alla più alta) sull'altezza della pila
+          const pages = gs ? [...gs.querySelectorAll<HTMLElement>(':scope > .help-panel')].map(sec => { const last = sec.lastElementChild?.getBoundingClientRect(); return last ? Math.round(last.bottom - sec.getBoundingClientRect().top + (parseFloat(getComputedStyle(sec).paddingBottom) || 0)) : 0; }) : [];
+          const guide = gp ? ` guideScroll=${Math.max(gp.scrollHeight - gp.clientHeight, gs ? gs.scrollHeight - gs.clientHeight : 0)} guideH=${Math.round(gp.closest('.help-dialog')!.getBoundingClientRect().height)}${gs ? ` guidePages=[${pages.join(',')}]/${gs.clientHeight}` : ''}` : '';
+          const rl = el.querySelector<HTMLElement>('.rl-frame');
+          const rlScroll = rl?.querySelector<HTMLElement>('.rl-scroll');
+          const rlRows = rl ? rl.querySelectorAll('.rl-covered > li, .rl-table tbody tr:not(.rl-fam)').length : 0;
+          const rlLast = rl ? [...rl.querySelectorAll<HTMLElement>('.rl-covered > li, .rl-missing > li')].reduce((b, li) => Math.max(b, li.getBoundingClientRect().bottom), 0) : 0;
+          const roles = rl ? ` roles: rows=${rlRows} cols=${rl.querySelector('.rl-covered.two') ? 2 : 1} missing=${rl.querySelectorAll('.rl-missing > li').length} listScroll=${rlScroll ? rlScroll.scrollHeight - rlScroll.clientHeight : '-'} lastRowGap=${rlLast ? Math.round(rl.getBoundingClientRect().bottom - rlLast) : '-'} frameH=${Math.round(rl.getBoundingClientRect().height)} parts=[${[...rl.children].map(c => Math.round(c.getBoundingClientRect().height)).join(',')}] reasonCut=${[...rl.querySelectorAll<HTMLElement>('.rl-reason')].filter(e => e.scrollWidth - e.clientWidth > 1).length}` : '';
+          return `${guide}${roles} panelOverflow=${el.scrollHeight - el.clientHeight} panelX=${el.scrollWidth - el.clientWidth}${memberRows}${below}${labelAt}`; })(),
         dash: box ? `dash=${box.clientHeight}x${box.clientWidth} density=${box.dataset.density} cards=[${heights.join(',')}] cut=${cut} overflow=[${over.join(',')}] sumClip=${sumClip} rows=[${sumRows.join(',')}] sumHidden=${sumHidden} sumFill=${fill}% fitCut=${fitCut} covBand=${covBand} overviewScroll=${(document.querySelector('.overview')?.scrollHeight ?? 0) - (document.querySelector('.overview')?.clientHeight ?? 0)} hScroll=${document.scrollingElement!.scrollWidth - window.innerWidth}` : '',
       };
     });

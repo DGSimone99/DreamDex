@@ -1,4 +1,4 @@
-import { useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { PROBLEM_CATEGORIES, type CoachProblem } from '../engine/coach';
 import type { TeamAnalysis } from '../engine/analysis';
 import type { TeamRating } from '../engine/rating';
@@ -17,15 +17,13 @@ const HELP_SIZE = 18;
 /**
  * Un'area del voto sulla pagina (scheda di Analisi): una striscia di sottoschede (col loro valore) attaccata alla scheda
  * aperta, una riga coi problemi dell'area e il dettaglio di quella scelta a tutta larghezza.
- * `extra`: contenuto in più in cima a una scheda (la coverage dei tipi, i bisogni dei ruoli).
  */
-export function AreaView({ rating, area, problems, team, analysis, extra, roomy = false, picked: remembered, onPick, formatId }: {
+export function AreaView({ rating, area, problems, team, analysis, roomy = false, picked: remembered, onPick, formatId }: {
   rating: TeamRating;
   area: AreaKey;
   problems: CoachProblem[];
   team: TeamSet[];
   analysis: TeamAnalysis;
-  extra?: { tabKey: string; panel: ReactNode };
   /** Squadra chiusa: più spazio per il contenuto. */
   roomy?: boolean;
   /** La sottoscheda scelta, tenuta da chi contiene la vista (così resta cambiando area); senza, la tiene la vista. */
@@ -109,11 +107,11 @@ export function AreaView({ rating, area, problems, team, analysis, extra, roomy 
     buttons.current[next]?.focus();
   };
 
-  const sections = tabs.filter(tab => tab.help).map(tab => ({
+  const sections = tabs.filter(tab => tab.help).flatMap(tab => [{
     key: tab.key,
     label: tab.key === 'general' ? t('area.guide.general') : tab.label,
     content: tab.help,
-  }));
+  }, ...(tab.guidePages ?? [])]);
 
   return (
     <section className="area-view" aria-label={title}>
@@ -171,7 +169,6 @@ export function AreaView({ rating, area, problems, team, analysis, extra, roomy 
         </div>
       )}
       <div className="area-panel ad-panel" role="tabpanel" id={`${id}-panel`} aria-labelledby={`${id}-${current.key}`}>
-        {extra && extra.tabKey === current.key && <div className="area-extra">{extra.panel}</div>}
         {current.panel}
       </div>
     </section>

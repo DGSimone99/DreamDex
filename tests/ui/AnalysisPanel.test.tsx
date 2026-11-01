@@ -2,7 +2,6 @@ import { render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { analyzeTeam } from '../../src/engine/analysis';
 import { MetaPanel } from '../../src/ui/AnalysisPanel';
-import { NeedsTable } from '../../src/ui/AnalysisTables';
 import type { TeamSet } from '../../src/engine/sets';
 import { fixtureData, gholdengo, tusk } from '../fixtures/data';
 import { renderIt } from '../helpers/italian';
@@ -11,12 +10,11 @@ import { renderIt } from '../helpers/italian';
 const row = (name: string) => screen.getAllByRole('listitem')
   .find(li => li.querySelector('.role, .who strong')?.textContent === name)!;
 
-/** Le tabelle delle schede d'area e le minacce del meta, insieme come nella vecchia Analisi. */
+/** Le minacce del meta, come nella vecchia Analisi (i ruoli sono nella scheda Ruoli: RolesDetail.test.tsx). */
 const AllTables = ({ team }: { team: TeamSet[] }) => {
   const analysis = analyzeTeam(team, fixtureData);
   return (
     <section aria-label="Analisi">
-      <NeedsTable team={team} analysis={analysis} />
       <MetaPanel team={team} analysis={analysis} data={fixtureData} />
     </section>
   );
@@ -31,63 +29,6 @@ describe('tabelle dell\'Analisi', () => {
     const panel = screen.getByRole('region', { name: 'Analisi' });
     expect(within(panel).getByText('Minacce del meta')).toBeInTheDocument();
     expect(within(panel).getByText('4 scoperte')).toBeInTheDocument();
-  });
-
-  it('ruoli: giudicati col tipo di team; nel riassunto gli essenziali coperti, nel dettaglio chi li copre', () => {
-    renderPanel();
-    // Team incompleto: giudicato come Balance (essenziali: sweeper, wallbreaker, attaccante fisico, i due muri, Recupero e Hazard;
-    // mancano Muro Speciale e Hazard)
-    expect(screen.getByText('Balance · 5/7 essenziali')).toBeInTheDocument();
-    expect(screen.getByText(/Team incompleto/)).toBeInTheDocument();
-    expect(row('Muro Speciale')).toHaveTextContent('Mancante');
-    expect(row('Muro Speciale')).toHaveClass('bad');
-    expect(row('Controllo Hazard')).toHaveTextContent('Great Tusk');
-    expect(row('Almeno un Wallbreaker')).toHaveTextContent('Great Tusk');
-    expect(screen.getByText('Importanti')).toBeInTheDocument();
-    expect(screen.getByText(/^Minori/)).toBeInTheDocument();
-  });
-
-  it('ruoli importanti mancanti: avviso tenue, distinto dai minori mancanti e senza croce rossa', () => {
-    renderPanel();
-    // Pivot è importante nel balance (prima era essenziale)
-    expect(row('Pivot')).toHaveClass('warn');
-    expect(row('Pivot')).not.toHaveClass('bad');
-    expect(row('Pivot')).not.toHaveClass('soft');
-    expect(row('Pivot')).toHaveTextContent('Da coprire');
-    // Un minore mancante resta grigio con il trattino
-    const minor = [...document.querySelectorAll('.role-group')].find(g => /^Minori/.test(g.querySelector('h5')!.textContent!))!;
-    const missingMinor = [...minor.querySelectorAll('li')].find(li => !li.querySelector('.owner'));
-    // Precondizione: il team di prova ha almeno un minore mancante
-    expect(missingMinor).toBeDefined();
-    expect(missingMinor).toHaveClass('soft');
-    expect(missingMinor).toHaveTextContent('—');
-  });
-
-  it('per uno stall i ruoli offensivi non sono richiesti', () => {
-    const stall = [
-      { ...tusk, species: 'Toxapex', item: 'Black Sludge', ability: 'Regenerator', moves: ['Scald', 'Toxic', 'Recover', 'Haze'] },
-      { ...tusk, species: 'Blissey', item: 'Leftovers', ability: 'Natural Cure', moves: ['Seismic Toss', 'Soft-Boiled', 'Toxic', 'Wish'] },
-      { ...tusk, species: 'Corviknight', item: 'Leftovers', ability: 'Pressure', moves: ['Body Press', 'Defog', 'Iron Defense', 'Roost'] },
-      { ...tusk, species: 'Gliscor', item: 'Toxic Orb', ability: 'Poison Heal', moves: ['Earthquake', 'Protect', 'Stealth Rock', 'Toxic'] },
-      { ...tusk, species: 'Dondozo', item: 'Leftovers', ability: 'Unaware', moves: ['Body Press', 'Liquidation', 'Rest', 'Sleep Talk'] },
-      { ...tusk, species: 'Clodsire', item: 'Leftovers', ability: 'Unaware', moves: ['Amnesia', 'Poison Jab', 'Recover', 'Spikes'] },
-    ];
-    renderIt(<AllTables team={stall} />);
-    // Essenziali dello stall: i due muri, Recupero, Cleric, Anti-setup, Hazard e Danno nel Tempo (qui mancante: il meta
-    // del fixture è pieno di Acciaio e Veleno, immuni a Toxic); gli attaccanti sono ignorati
-    expect(screen.getByText('Stall · 6/7 essenziali')).toBeInTheDocument();
-    // Fra i non richiesti, in grigio: qui un membro (con gli EV d'attacco di Great Tusk) è misurato come sweeper,
-    // quindi la riga mostra chi lo copre invece di "Non richiesto"
-    expect(row('Almeno uno Sweeper').closest('.role-group')!.querySelector('h5')).toHaveTextContent('Non richiesti');
-    expect(row('Almeno uno Sweeper')).toHaveClass('soft');
-  });
-
-  it("velocità, controllo velocità e priorità non sono ruoli: niente righe (li misura l'area Velocità)", () => {
-    const fast = [...team, { ...tusk, species: 'Dragapult', item: 'Choice Specs', ability: 'Infiltrator', moves: ['Shadow Ball', 'Draco Meteor'] }];
-    renderIt(<AllTables team={fast} />);
-    expect(row('Velocità')).toBeUndefined();
-    expect(row('Controllo Velocità')).toBeUndefined();
-    expect(row('Priorità')).toBeUndefined();
   });
 
   it('dettaglio minacce', () => {
