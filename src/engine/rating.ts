@@ -75,8 +75,8 @@ export const TOP_THREATS = 0.5;
  * S = tra i migliori team da torneo, A = livello torneo, B = il team tipico di un giocatore medio, C = buchi evidenti, D = debole.
  */
 export const GRADES: { min: number; grade: 'S' | 'A' | 'B' | 'C' | 'D' }[] = [
-  { min: 86, grade: 'S' },
-  { min: 79, grade: 'A' },
+  { min: 90, grade: 'S' },
+  { min: 80, grade: 'A' },
   { min: 68, grade: 'B' },
   { min: 55, grade: 'C' },
   { min: 0, grade: 'D' },

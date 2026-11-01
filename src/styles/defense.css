@@ -314,7 +314,7 @@
 }
 
 /* La guida della Difesa è più larga dei modali d aiuto: i due conti e la scala stanno su una riga */
-.help-dialog.area-guide { width: min(920px, 100%); }
+.help-dialog.area-guide { width: min(980px, 100%); }
 
 /* Guida, Robustezza: le quattro soglie come tasti, i pesi dei membri come barra a segmenti, la somma dei lati */
 .guide-holds { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin: 0; padding: 0; list-style: none; }

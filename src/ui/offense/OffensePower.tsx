@@ -1,13 +1,12 @@
 import type { CSSProperties } from 'react';
 import { battleSpecies, getMove } from '../../engine/dex';
-import { POWER_FULL, type TeamOffense } from '../../engine/offense';
+import type { TeamOffense } from '../../engine/offense';
 import { TYPE_COLORS } from '../Sprite';
 import { useLang, useT } from '../../i18n/react';
 import { gameName, typeName } from '../../i18n/game';
 import type { AreaContext } from '../AreaDetail';
 import { Bar } from '../defense/DefenseGeneral';
 import { MemberMon } from '../defense/MemberMon';
-import { PokemonIcon } from '../PokemonName';
 import { MoveName, hexToRgb, luminance } from '../TypeText';
 import { offenseSlots } from './slots';
 
@@ -32,13 +31,12 @@ export function OffensePower({ offense, ctx }: { offense: TeamOffense; ctx: Area
   const t = useT();
   const lang = useLang();
   const slots = offenseSlots(ctx.team, offense.members);
-  const refs = offense.referenceAttackers;
 
   return (
     <div className="def-frame off-frame def-power">
       <div className="ad-scroll">
         <table className="def-grid def-members pw-table">
-          <colgroup><col className="def-col-mon" /><col /><col className="pw-col-setup" /><col className="pw-col-move" /></colgroup>
+          <colgroup><col className="def-col-mon" /><col className="pw-col-power" /><col className="pw-col-setup" /><col className="pw-col-move" /></colgroup>
           <thead>
             <tr>
               <th scope="col" className="def-mon-h">{t('detail.member')}</th>
@@ -82,10 +80,6 @@ export function OffensePower({ offense, ctx }: { offense: TeamOffense; ctx: Area
           </tbody>
         </table>
       </div>
-      <p className="pw-ref">
-        <span>{refs.length ? t('odetail.power.ref') : t('odetail.power.refFixed', { pct: Math.round(100 * POWER_FULL) })}</span>
-        {refs.map(species => <span key={species} className="def-open-mon plain" title={species}><PokemonIcon name={species} /><span className="visually-hidden">{species}</span></span>)}
-      </p>
     </div>
   );
 }

@@ -167,14 +167,14 @@ const offenseState = (sub: RegExp | null, opts: { collapsed?: boolean; format?: 
     await wait(300);
     if (opts.collapsed && !await clickText(p, 'button.band-toggle', /./)) return 'no band toggle';
     await wait(300);
-    if (!await clickText(p, '.band button.grade-area', /^Offesa/)) return 'no offense row';
+    if (!await clickText(p, '.band button.grade-area', /^Offe(sa|nse)/)) return 'no offense row';
     await wait(300);
     if (sub && !await clickText(p, '.area-subs [role="tab"]', sub)) return 'no sub-tab';
     await wait(500);
     return true;
   },
 });
-const OFFENSE_SUBS: Record<string, RegExp | null> = { general: /^Generale/, power: /^Potenza/, types: /^Coverage tipi/, meta: /^Coverage meta/ };
+const OFFENSE_SUBS: Record<string, RegExp | null> = { general: /^General/, power: /^Potenza/, types: /^Coverage tipi/, meta: /^Coverage meta/ };
 const OFFENSE_STATES: Record<string, State> = Object.fromEntries(Object.entries(OFFENSE_SUBS).flatMap(([k, re]) => [
   [`analysis-offense-${k}`, offenseState(re)],
   [`analysis-offense-${k}-collapsed`, offenseState(re, { collapsed: true })],
@@ -199,6 +199,7 @@ OFFENSE_STATES['analysis-offense-guide-targets'] = { hash: hash(SIX), run: async
   await wait(300);
   return true;
 } };
+OFFENSE_STATES['analysis-offense-guide-targets-en'] = { ...OFFENSE_STATES['analysis-offense-guide-targets'], lang: 'en' } as State;
 OFFENSE_STATES['analysis-offense-guide-types'] = offenseGuide(OFFENSE_SUBS.general, /^Coverage tipi/);
 OFFENSE_STATES['analysis-offense-guide-power'] = offenseGuide(OFFENSE_SUBS.general, /^Potenza/);
 OFFENSE_STATES['analysis-offense-guide-meta'] = offenseGuide(OFFENSE_SUBS.general, /^Coverage meta/);
@@ -649,7 +650,9 @@ for (const [w, h] of sizes) {
           const below = frame && rows.length ? ` below=${Math.round(need)}/${Math.round(frame.getBoundingClientRect().bottom - last)}` : '';
           const label = el.querySelector<HTMLElement>('th.def-mon-h');
           const labelAt = label ? (() => { const r = document.createRange(); r.selectNodeContents(label); const b = r.getBoundingClientRect(); return ` label=${Math.round(b.left)},${Math.round(b.top)}`; })() : '';
-          return ` panelOverflow=${el.scrollHeight - el.clientHeight} panelX=${el.scrollWidth - el.clientWidth}${memberRows}${below}${labelAt}`; })(),
+          const gp = document.querySelector<HTMLElement>('.help-dialog .help-panel');
+          const guide = gp ? ` guideScroll=${gp.scrollHeight - gp.clientHeight} guideH=${Math.round(gp.closest('.help-dialog')!.getBoundingClientRect().height)}` : '';
+          return `${guide} panelOverflow=${el.scrollHeight - el.clientHeight} panelX=${el.scrollWidth - el.clientWidth}${memberRows}${below}${labelAt}`; })(),
         dash: box ? `dash=${box.clientHeight}x${box.clientWidth} density=${box.dataset.density} cards=[${heights.join(',')}] cut=${cut} overflow=[${over.join(',')}] sumClip=${sumClip} rows=[${sumRows.join(',')}] sumHidden=${sumHidden} sumFill=${fill}% fitCut=${fitCut} covBand=${covBand} overviewScroll=${(document.querySelector('.overview')?.scrollHeight ?? 0) - (document.querySelector('.overview')?.clientHeight ?? 0)} hScroll=${document.scrollingElement!.scrollWidth - window.innerWidth}` : '',
       };
     });

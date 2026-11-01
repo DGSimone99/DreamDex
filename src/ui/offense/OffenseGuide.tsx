@@ -38,7 +38,7 @@ function TypeTargets({ formatId }: { formatId: FormatId }) {
     <details className="guide-more">
       <summary><Icon name="next" />{t('guide.off.targets.stats')}</summary>
       <div className="guide-targets-cols">
-        {[TYPES.slice(0, 9), TYPES.slice(9)].map((half, col) => (
+        {[TYPES.slice(0, 6), TYPES.slice(6, 12), TYPES.slice(12)].map((half, col) => (
           <table key={col} className="guide-targets">
             <thead>
               <tr>

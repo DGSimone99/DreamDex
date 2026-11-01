@@ -22,11 +22,10 @@
 
 /* Potenza: barra lunga e colpo migliore come chip nel colore del tipo (testo scelto per contrasto ≥ 4,5) */
 .def-power .def-col-mon + col { width: auto; }
-.def-power .pw-col-move { width: 240px; }
-.def-power .pw-bar .def-cell { grid-template-columns: minmax(120px, 360px) 3ch; }
+.def-power .pw-col-power { width: 36%; }
+.def-power .pw-col-move { width: 20%; }
+.def-power .pw-bar .def-cell { width: 100%; grid-template-columns: minmax(120px, 1fr) 3ch; }
 .def-power .pw-move { display: inline-block; max-width: 100%; padding: 3px 12px; border-radius: 4px; font-size: 13px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; vertical-align: middle; }
-.def-power .pw-ref { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 8px 0 0; font-size: 12px; color: var(--muted); }
-.def-power .pw-ref .def-open-mon { display: inline-grid; }
 
 /* "+N" dei guadagni nelle tabelle def-grid: verde il setup, blu Tera e mossa Z (come .ad-t) */
 .def-frame .ad-gain { display: inline; margin-left: 4px; font: 600 13px/1 var(--ui); color: var(--good); cursor: help; }
@@ -61,8 +60,9 @@
 
 /* Coverage meta a tabella: pagine e riepilogo sotto la tabella, così la tabella parte dove partono le altre schede */
 .cm-matrix .cm-bar { margin: 8px 0 0; }
-.def-power .pw-col-setup { width: 240px; }
-.def-power .pw-setup { white-space: nowrap; }
+.def-power .pw-col-setup { width: auto; }
+.def-power .pw-table th:nth-child(3) { text-align: center; }
+.def-power .pw-setup { white-space: nowrap; text-align: center; }
 .def-power .pw-setup .ad-gain { margin-left: 6px; }
 
 /* Guida, Come funziona: le difese medie dei 18 bersagli della Potenza, chiuse sotto una freccina */
@@ -73,7 +73,7 @@
 .guide-more > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .guide-more > summary .icon { width: 14px; height: 14px; transition: transform 0.15s ease-out; }
 .guide-more[open] > summary .icon { transform: rotate(90deg); }
-.guide-targets-cols { display: flex; flex-wrap: wrap; gap: 0 40px; align-items: flex-start; }
+.guide-targets-cols { display: flex; flex-wrap: wrap; gap: 0 32px; align-items: flex-start; }
 .guide-targets { margin: 6px 0 2px; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
 .guide-targets th, .guide-targets td { padding: 2px 10px 2px 0; border-bottom: 1px solid var(--line-soft); text-align: right; }
 .guide-targets thead th { font-size: 11px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: 0.05em; }

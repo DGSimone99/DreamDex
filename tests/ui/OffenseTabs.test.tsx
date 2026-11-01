@@ -235,24 +235,6 @@ describe('Offesa: Potenza', () => {
     expect(within(rows[1] as HTMLElement).getAllByText('—').length).toBeGreaterThan(0);
   });
 
-  it('Potenza: senza statistiche il riferimento è fisso', async () => {
-    const user = userEvent.setup();
-    const noStats = { ...fixtureData, stats: null };
-    renderIt(<AreaView rating={rateTeam(team, noStats, 'it')!} area="strength" team={team} analysis={analyzeTeam(team, noStats)} problems={[]} />);
-    await user.click(screen.getByRole('tab', { name: /^Potenza/ }));
-    expect(document.querySelector('.pw-ref')!.textContent).toMatch(/100 = un danno medio del \d+% dei PS/);
-    expect(document.querySelectorAll('.pw-ref .def-open-mon')).toHaveLength(0);
-  });
-
-  it('Potenza: i tre attaccanti di riferimento', async () => {
-    const user = userEvent.setup();
-    const rating = view();
-    await user.click(screen.getByRole('tab', { name: /^Potenza/ }));
-    const refs = rating.offense.referenceAttackers;
-    expect(refs).toHaveLength(3);
-    refs.forEach(s => expect(document.querySelector(`.pw-ref [title="${s}"]`)).toBeInTheDocument());
-  });
-
   it('Potenza: una colonna Setup con la mossa e il +N che entra nel voto; "—" per chi non ha setup', async () => {
     const user = userEvent.setup();
     const rating = view();
@@ -276,8 +258,8 @@ describe('Offesa: Potenza', () => {
     // Il +N del setup non sta più accanto alla barra
     expect(document.querySelectorAll('.pw-bar small.ad-gain')).toHaveLength(0);
     expect(rating.offense.members.some(m => m.setupMove)).toBe(true);
-    // Niente più legenda in fondo: solo il riferimento del 100
-    expect(document.querySelector('.pw-ref')).not.toHaveTextContent('un quarto');
+    // Niente legenda né riferimento del 100 sotto la tabella
+    expect(document.querySelector('.pw-ref')).toBeNull();
   });
 });
 
