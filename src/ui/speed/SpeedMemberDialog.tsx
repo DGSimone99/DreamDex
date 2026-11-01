@@ -106,7 +106,6 @@ export function SpeedMemberDialog({ member, set, team, meta, onClose }: { member
             <b className="sp-dlg-speed">{member.speed}</b>{item && <small className="sp-mark">{item}</small>}
             <span>{t(meta ? 'sdetail.dlg.share.meta' : 'sdetail.dlg.share.tier', { pct: formatPercent(lang, member.raw, 0), n: rows.length })}</span>
           </p>
-          <p className="sp-dlg-note">{t('sdetail.dlg.note')}</p>
           {(options.length > 0 || withVersions) && (
             <fieldset className="sp-checks">
               <legend>{t('sdetail.dlg.checks')}</legend>

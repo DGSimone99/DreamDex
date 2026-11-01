@@ -605,14 +605,12 @@ button.member-card:hover { border-color: var(--accent); }
 .coach-prop.is-or .coach-fix-main strong { font-size: 15px; }
 .coach-prop.is-or .coach-fix:hover .coach-fix-main strong { text-decoration: underline; text-underline-offset: 3px; }
 .coach-prop.is-or .coach-alt { height: 24px; }
-/* Entrata: le strisce scivolano dentro una dopo l'altra; puntatore: un piccolo passo a destra */
+/* Puntatore: un piccolo passo a destra (nessuna entrata animata: cambiando passo le strisce restano ferme) */
 @media (prefers-reduced-motion: no-preference) {
   .coach-strip { transition: border-color 150ms ease-out, background-color 150ms ease-out; }
   .coach-step-num { transition: padding 200ms var(--ease); }
   .coach-strip:hover .coach-step-num { padding: 0 0 0 6px; }
-  .coach-strip:not(.skeleton) { animation: coach-strip-in 320ms var(--ease) both; animation-delay: calc(var(--i, 0) * 40ms); }
 }
-@keyframes coach-strip-in { from { opacity: 0; transform: translateX(-8px); } }
 /* "Risolve anche": una riga sola sotto la proposta, allineata al testo; tipi e minacce come icone, il resto nel "+N" */
 .coach-also { display: flex; align-items: center; gap: 6px; min-width: 0; height: 18px; margin: 0; overflow: hidden; white-space: nowrap; font-size: 12px; color: var(--muted); }
 .coach-also-label { flex: none; color: var(--faint); }

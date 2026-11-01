@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import type { HoldBand, SustainParts, TeamDefense } from '../../engine/defense';
 import { useLang, useT } from '../../i18n/react';
-import { typeName } from '../../i18n/game';
+import { gameName, typeName } from '../../i18n/game';
 import type { AreaContext } from '../AreaDetail';
 import { Icon } from '../icons';
 import { Sprite } from '../Sprite';
@@ -25,11 +25,14 @@ const EXPOSED_CHIPS = 3;
  * `gain`: il "+N" (setup, Tera, mossa Z) in un posto suo dopo il numero, così non sborda nella colonna dopo.
  * `reserve`: il posto c'è anche senza "+N", per tutta la colonna, così le barre della colonna restano lunghe uguali.
  */
-export function Bar({ value, total, unit = '', gain, reserve = false }: { value: number; total?: boolean; unit?: string; gain?: ReactNode; reserve?: boolean }) {
+/** `extra`: un guadagno possibile (il setup) disegnato a righe dopo la barra, staccato da una riga scura. */
+export function Bar({ value, total, unit = '', gain, reserve = false, extra = 0, extraTitle }: { value: number; total?: boolean; unit?: string; gain?: ReactNode; reserve?: boolean; extra?: number; extraTitle?: string }) {
   const slot = reserve || !!gain;
+  const base = Math.max(0, Math.min(100, value));
+  const more = Math.max(0, Math.min(100 - base, extra));
   return (
     <span className={`def-cell${slot ? ' with-gain' : ''}`}>
-      <span className={`def-bar ${tone(value)}${total ? ' total' : ''}`} aria-hidden="true"><i style={{ width: `${Math.max(0, Math.min(100, value))}%` }} /></span>
+      <span className={`def-bar ${tone(value)}${total ? ' total' : ''}`} aria-hidden="true"><i style={{ width: `${base}%` }} />{more > 0 && <i className="def-bar-extra" title={extraTitle} style={{ left: `${base}%`, width: `${more}%` }} />}</span>
       <span className={`def-num ${tone(value)}${total ? ' total' : ''}`}>{value}{unit}</span>
       {slot && <span className="def-gain">{gain}</span>}
     </span>
@@ -177,7 +180,7 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
                 <td>
                   {/* Quanto aggiunge il setup difensivo (metà del guadagno entra nel voto) */}
                   <Bar value={m.value} total reserve={setupColumn}
-                    gain={m.setupGain > 0 && m.setupMove && <small className="ad-gain" title={t('ddetail.withSetup', { move: m.setupMove })}> (+{m.setupGain})</small>} />
+                    gain={m.setupGain > 0 && m.setupMove && <small className="ad-gain" title={t('ddetail.withSetup', { move: gameName('move', m.setupMove, lang) })}> (+{m.setupGain})</small>} />
                 </td>
                 {roomy && <WorstAndRecovery hit={worstHit(i)} parts={m.sustainParts} />}
               </tr>

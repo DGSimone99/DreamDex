@@ -446,29 +446,28 @@ describe('Riassunto', () => {
     expect(row).toHaveAccessibleDescription('Garchomp para Fuoco a Scizor, Scizor para Acciaio a Iron Valiant, Iron Valiant para Drago a Garchomp');
   });
 
-  it('Sinergie: il core da 2 e il giro di pivot sono righe a due sprite con etichetta, titolo e frase', () => {
+  it('Sinergie: il core da 2 (senza core da 3) è una riga a due sprite con etichetta, titolo e frase; i pivot non compaiono', () => {
     italianNames();
     mount({ summary: summaryOf({ cores: [pair], links: [pivotLink] }) });
-    const [core, pivot] = within(section('Sinergie')).getAllByRole('button');
+    const rows = within(section('Sinergie')).getAllByRole('button');
+    expect(rows).toHaveLength(1);
+    const [core] = rows;
     expect(core.querySelector('.sum-syn-tag')).toHaveTextContent('Core');
     expect(core.querySelector('.sum-syn-title')).toHaveTextContent('Acqua-Volante / Erba-Acciaio');
     expect(core.querySelectorAll('.sum-pair .sprite')).toHaveLength(2);
     expect(core.querySelector('.sum-syn-text')).toHaveTextContent('Pelipper para Fuoco e Lotta, Ferrothorn para Elettro e Roccia');
-    expect(pivot.querySelector('.sum-syn-tag')).toHaveTextContent('Pivot');
-    expect(pivot.querySelector('.sum-syn-title')).toHaveTextContent('Giro di U-turn');
-    expect(pivot.querySelector('.sum-syn-text')).toHaveTextContent('2 pivot portano dentro Iron Valiant');
-    expect([...pivot.querySelectorAll('.sum-pair-mon')].map(s => s.getAttribute('title'))).toEqual(['Scizor', 'Iron Valiant']);
+    expect(section('Sinergie')).not.toHaveTextContent('Giro di U-turn');
   });
 
-  it('Sinergie: prima il triangolo, poi la coppia, poi i legami nel loro ordine; clic: core a Difesa, legami a Ruoli', async () => {
+  it('Sinergie: col triangolo la coppia non compare; poi i legami nel loro ordine, senza pivot; clic: core a Difesa, legami a Ruoli', async () => {
     italianNames();
     const user = userEvent.setup();
     const { onView } = mount({ summary: summaryOf({ cores: [pair, trio], links: [pivotLink, wishLink] }) });
     const rows = within(section('Sinergie')).getAllByRole('button');
-    expect(rows.map(r => r.querySelector('.sum-syn-title')!.textContent)).toEqual(['Drago / Acciaio / Folletto', 'Acqua-Volante / Erba-Acciaio', 'Giro di U-turn', 'Cure al team']);
-    expect(rows[3].querySelector('.sum-syn-tag')).toHaveTextContent('Desiderio');
+    expect(rows.map(r => r.querySelector('.sum-syn-title')!.textContent)).toEqual(['Drago / Acciaio / Folletto', 'Cure al team']);
+    expect(rows[1].querySelector('.sum-syn-tag')).toHaveTextContent('Desiderio');
     for (const row of rows) await user.click(row);
-    expect(onView.mock.calls.map(c => c[0])).toEqual(['defense', 'defense', 'roles', 'roles']);
+    expect(onView.mock.calls.map(c => c[0])).toEqual(['defense', 'roles']);
   });
 
   it('Sinergie vuote: una frase attenuata', () => {
@@ -480,11 +479,10 @@ describe('Riassunto', () => {
   it('Sinergie in inglese: nomi dei tipi e frasi', () => {
     render(<LangProvider lang="en"><OverviewDashboard data={sample()} summary={summaryOf({ cores: [trio], links: [pivotLink] })} members={6} onView={vi.fn()} density="normal" /></LangProvider>);
     const syn = within(screen.getByRole('region', { name: 'Summary' })).getByRole('heading', { name: 'Synergies' }).closest<HTMLElement>('.sum-sec')!;
-    const [core, pivot] = within(syn).getAllByRole('button');
+    const [core, ...rest] = within(syn).getAllByRole('button');
+    expect(rest).toHaveLength(0);
     expect(core.querySelector('.sum-syn-title')).toHaveTextContent('Dragon / Steel / Fairy');
     expect(core).toHaveAccessibleDescription('Garchomp blocks Fire for Scizor, Scizor blocks Steel for Iron Valiant, Iron Valiant blocks Dragon for Garchomp');
-    expect(pivot.querySelector('.sum-syn-title')).toHaveTextContent('U-turn loop');
-    expect(pivot.querySelector('.sum-syn-text')).toHaveTextContent('2 pivots bring in Iron Valiant');
   });
 
   it('ricco (team ridotto): sprite più grandi nell\'eroe', () => {
@@ -726,10 +724,9 @@ describe('Cruscotto: misure', () => {
     const syn = within(screen.getByRole('region', { name: 'Riassunto' })).getByRole('heading', { name: 'Sinergie' }).closest<HTMLElement>('.sum-sec')!;
     expect(within(syn).getAllByRole('button')).toHaveLength(2);
     const more = syn.querySelector('.sum-more')!;
-    expect(more).toHaveTextContent('+4');
-    expect(more.querySelector('.visually-hidden')!.textContent).toBe('Altre 4 sinergie: '
-      + 'Pivot Giro di U-turn: 2 pivot portano dentro Iron Valiant; '
-      + 'Desiderio Cure al team: Clefable usa Desiderio per curare il prossimo in campo; '
+    // Il core da 3 e Desiderio in riga (niente coppia né pivot), gli altri due nel "+N"
+    expect(more).toHaveTextContent('+2');
+    expect(more.querySelector('.visually-hidden')!.textContent).toBe('Altre 2 sinergie: '
       + 'Baton Pass Passaggio con Baton Pass: Hatterene fa entrare Iron Valiant senza perdere i vantaggi; '
       + 'Trappole + cambio Avversari sulle trappole: Skarmory con Whirlwind trascina gli avversari sulle trappole di Landorus-Therian');
     // Dopo la lista nell'ordine di lettura

@@ -167,29 +167,42 @@ const offenseState = (sub: RegExp | null, opts: { collapsed?: boolean; format?: 
     await wait(300);
     if (opts.collapsed && !await clickText(p, 'button.band-toggle', /./)) return 'no band toggle';
     await wait(300);
-    if (!await clickText(p, '.band button.grade-area', /^Offesa/)) return 'no offense row';
+    if (!await clickText(p, '.band button.grade-area', /^Offe(sa|nse)/)) return 'no offense row';
     await wait(300);
     if (sub && !await clickText(p, '.area-subs [role="tab"]', sub)) return 'no sub-tab';
     await wait(500);
     return true;
   },
 });
-const OFFENSE_SUBS: Record<string, RegExp | null> = { general: /^Generale/, power: /^Potenza/, wall: /^Wallbreaking/, types: /^Coverage tipi/, meta: /^Coverage meta/ };
+const OFFENSE_SUBS: Record<string, RegExp | null> = { general: /^General/, power: /^Potenza/, types: /^Coverage tipi/, meta: /^Coverage meta/ };
 const OFFENSE_STATES: Record<string, State> = Object.fromEntries(Object.entries(OFFENSE_SUBS).flatMap(([k, re]) => [
   [`analysis-offense-${k}`, offenseState(re)],
   [`analysis-offense-${k}-collapsed`, offenseState(re, { collapsed: true })],
 ]));
-// Guida dell'Offesa aperta dal "?" (Generale, Wallbreaking) e Coverage tipi senza meta
-const offenseGuide = (sub: RegExp | null): State => ({ hash: hash(SIX), run: async p => {
+// Guida dell'Offesa aperta dal "?" (sulla Generale), eventualmente su un'altra sezione; e Coverage tipi senza meta
+const offenseGuide = (sub: RegExp | null, section?: RegExp): State => ({ hash: hash(SIX), run: async p => {
   const ok = await offenseState(sub).run!(p);
   if (ok !== true) return ok;
   if (!await clickText(p, '.area-help button', /./)) return 'no guide button';
   await wait(400);
+  if (section && !await clickText(p, '.help-nav [role="tab"]', section)) return 'no guide section';
+  await wait(300);
   return true;
 } });
 OFFENSE_STATES['analysis-offense-types-nometa'] = offenseState(OFFENSE_SUBS.types, { format: { meta: false } });
 OFFENSE_STATES['analysis-offense-guide'] = offenseGuide(OFFENSE_SUBS.general);
-OFFENSE_STATES['analysis-offense-guide-wall'] = offenseGuide(OFFENSE_SUBS.wall);
+// Come funziona con la freccina della Potenza aperta: le difese medie dei 18 bersagli
+OFFENSE_STATES['analysis-offense-guide-targets'] = { hash: hash(SIX), run: async p => {
+  const ok = await offenseGuide(OFFENSE_SUBS.general).run!(p);
+  if (ok !== true) return ok;
+  if (!await clickText(p, '.guide-more > summary', /./)) return 'no targets toggle';
+  await wait(300);
+  return true;
+} };
+OFFENSE_STATES['analysis-offense-guide-targets-en'] = { ...OFFENSE_STATES['analysis-offense-guide-targets'], lang: 'en' } as State;
+OFFENSE_STATES['analysis-offense-guide-types'] = offenseGuide(OFFENSE_SUBS.general, /^Coverage tipi/);
+OFFENSE_STATES['analysis-offense-guide-power'] = offenseGuide(OFFENSE_SUBS.general, /^Potenza/);
+OFFENSE_STATES['analysis-offense-guide-meta'] = offenseGuide(OFFENSE_SUBS.general, /^Coverage meta/);
 // Velocità: lo stesso team con Ribombee (Sticky Web e Stun Spore) al posto di Gholdengo, così il controllo del team si vede
 const SPEED_SIX = [...TEAM, member('Ribombee', 'Focus Sash', 'Shield Dust', ['Sticky Web', 'Moonblast', 'Stun Spore', 'U-turn'], 'Timid', { spa: 252, spe: 252, hp: 4 })];
 const speedState = (sub: RegExp | null, opts: { collapsed?: boolean; format?: Partial<typeof FORMAT> } = {}): State => ({
@@ -441,6 +454,13 @@ const STATES: Record<string, State> = {
     await wait(300);
     return true;
   } },
+  'team-type-help-en': { hash: hash(SIX), lang: 'en', run: async p => {
+    await tab(p, 'analysis');
+    await wait(300);
+    if (!await clickText(p, '.dash-summary .help-button', /./)) return 'no help';
+    await wait(300);
+    return true;
+  } },
   // Il team dell'utente in inglese sulla Panoramica
   'analysis-user': { hash: hash(USER), lang: 'en', run: async p => { await tab(p, 'analysis'); return true; } },
   // Riassunto con righe lunghe: molti attaccanti (ATTACK, sei sopra la soglia) e molti piazzatori di campo (FIELD)
@@ -616,9 +636,23 @@ for (const [w, h] of sizes) {
           // Righe dei membri (cornice comune della Difesa): y e altezza della prima e dell ultima, per vedere che restano ferme
           const rows = [...el.querySelectorAll<HTMLElement>('.def-grid tbody th[scope="row"] .ad-mon')].map(r => r.closest('tr')!.getBoundingClientRect());
           const memberRows = rows.length ? ` memberRows=${Math.round(rows[0].top)}+${Math.round(rows[0].height)}..${Math.round(rows[rows.length - 1].bottom)} monX=${Math.round(el.querySelector('.def-grid tbody .ad-mon')!.getBoundingClientRect().left)} firstRowY=${Math.round(rows[0].top)}` : '';
+          // Sotto le righe: quanto occupa il resto (riga di riepilogo, legenda, pagine) e quanto spazio c'è fino al fondo della cornice
+          const frame = el.querySelector<HTMLElement>('.def-frame');
+          const last = rows[rows.length - 1]?.bottom ?? 0;
+          const scroller = frame?.querySelector<HTMLElement>(':scope > .ad-scroll');
+          // Il margine in alto della legenda è "auto" (spinge in fondo): non è spazio che serve
+          let need = scroller ? scroller.getBoundingClientRect().bottom - last + (parseFloat(getComputedStyle(scroller).marginBottom) || 0) : 0;
+          for (const c of scroller ? [...frame!.children] : []) {
+            if (c === scroller) continue;
+            const cs = getComputedStyle(c);
+            need += c.getBoundingClientRect().height + (c.classList.contains('rob-legend') ? 0 : parseFloat(cs.marginTop) || 0) + (parseFloat(cs.marginBottom) || 0);
+          }
+          const below = frame && rows.length ? ` below=${Math.round(need)}/${Math.round(frame.getBoundingClientRect().bottom - last)}` : '';
           const label = el.querySelector<HTMLElement>('th.def-mon-h');
           const labelAt = label ? (() => { const r = document.createRange(); r.selectNodeContents(label); const b = r.getBoundingClientRect(); return ` label=${Math.round(b.left)},${Math.round(b.top)}`; })() : '';
-          return ` panelOverflow=${el.scrollHeight - el.clientHeight} panelX=${el.scrollWidth - el.clientWidth}${memberRows}${labelAt}`; })(),
+          const gp = document.querySelector<HTMLElement>('.help-dialog .help-panel');
+          const guide = gp ? ` guideScroll=${gp.scrollHeight - gp.clientHeight} guideH=${Math.round(gp.closest('.help-dialog')!.getBoundingClientRect().height)}` : '';
+          return `${guide} panelOverflow=${el.scrollHeight - el.clientHeight} panelX=${el.scrollWidth - el.clientWidth}${memberRows}${below}${labelAt}`; })(),
         dash: box ? `dash=${box.clientHeight}x${box.clientWidth} density=${box.dataset.density} cards=[${heights.join(',')}] cut=${cut} overflow=[${over.join(',')}] sumClip=${sumClip} rows=[${sumRows.join(',')}] sumHidden=${sumHidden} sumFill=${fill}% fitCut=${fitCut} covBand=${covBand} overviewScroll=${(document.querySelector('.overview')?.scrollHeight ?? 0) - (document.querySelector('.overview')?.clientHeight ?? 0)} hScroll=${document.scrollingElement!.scrollWidth - window.innerWidth}` : '',
       };
     });

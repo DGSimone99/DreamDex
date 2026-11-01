@@ -7,8 +7,10 @@ import { Icon } from './icons';
  * La guida di un'area, a sezioni: stesso guscio del modale "Come funziona il voto" (argomenti a sinistra, testo a destra).
  * Si apre sulla sezione `current`; Esc o clic fuori chiudono.
  */
-export function AreaGuide({ title, sections, current, onCurrent, onClose }: {
+export function AreaGuide({ title, sections, current, onCurrent, onClose, className = '' }: {
   title: string;
+  /** Classe in più sul modale (es. l'altezza fissa della guida dell'Offesa). */
+  className?: string;
   sections: { key: string; label: string; content: ReactNode }[];
   current: string;
   onCurrent: (key: string) => void;
@@ -42,7 +44,7 @@ export function AreaGuide({ title, sections, current, onCurrent, onClose }: {
 
   return createPortal(
     <div className="help-backdrop" onClick={onClose}>
-      <div className="help-dialog area-guide" role="dialog" aria-modal="true" aria-labelledby={`${id}-title`} onClick={e => e.stopPropagation()}>
+      <div className={`help-dialog area-guide${className ? ` ${className}` : ''}`} role="dialog" aria-modal="true" aria-labelledby={`${id}-title`} onClick={e => e.stopPropagation()}>
         <header className="help-head">
           <h3 id={`${id}-title`}>{title}</h3>
           <button type="button" className="help-close" aria-label={t('help.close')} onClick={onClose}><Icon name="close" /></button>

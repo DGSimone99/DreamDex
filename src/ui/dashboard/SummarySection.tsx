@@ -178,10 +178,11 @@ export function SummarySection({ summary, members, density, rich = false, onView
   const { archetype, styles, attackers, walls, offenseOf, defenseOf, conditions, hazards, cores, links } = summary;
   const count = (key: 'sum.moreMons' | 'sum.moreField' | 'sum.moreHazards' | 'sum.moreSyn', n: number) => t(`${key}${n === 1 ? 'One' : 'Many'}`, { n });
   const synergyView = useSynergyView();
-  // Prima i core da 3, poi quelli da 2 (sort stabile: dentro ciascuno l'ordine del motore), poi i legami
+  // Solo i core da 3; quelli da 2 solo se il team non ne ha da 3. Poi i legami, senza i pivot
+  const trios = cores.filter(core => core.members.length === 3);
   const synergies: Synergy[] = [
-    ...[...cores].sort((a, b) => b.members.length - a.members.length).map(core => ({ core })),
-    ...links.map(link => ({ link })),
+    ...(trios.length ? trios : cores).map(core => ({ core })),
+    ...links.filter(link => link.kind !== 'pivot').map(link => ({ link })),
   ];
   const keyOf = (parts: string[]) => `${lang}|${density}|${rich}|${parts.join()}`;
   const big = rich ? 56 : 40;

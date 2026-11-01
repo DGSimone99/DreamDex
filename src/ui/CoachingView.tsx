@@ -251,7 +251,7 @@ function Step({ step, index, problems, actions, onCard, onPreview }: {
   const skip = step.group;
   const solved = [...new Set([...step.group, ...(swap?.solves ?? []), ...(move?.solves ?? [])])];
   return (
-    <li className={`coach-step coach-strip ${problem.severity}`} style={{ '--i': index } as CSSProperties}
+    <li className={`coach-step coach-strip ${problem.severity}`}
       onMouseEnter={() => { onCard(solved); setHot(true); }} onMouseLeave={() => { onCard(null); setHot(false); }}
       onFocus={() => setHot(true)} onBlur={() => setHot(false)}>
       <span className="coach-step-num">{index + 1}</span>

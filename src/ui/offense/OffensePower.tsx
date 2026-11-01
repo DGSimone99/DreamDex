@@ -1,12 +1,12 @@
 import type { CSSProperties } from 'react';
 import { battleSpecies, getMove } from '../../engine/dex';
-import { POWER_FULL, type TeamOffense } from '../../engine/offense';
+import type { TeamOffense } from '../../engine/offense';
 import { TYPE_COLORS } from '../Sprite';
-import { useT } from '../../i18n/react';
+import { useLang, useT } from '../../i18n/react';
+import { gameName, typeName } from '../../i18n/game';
 import type { AreaContext } from '../AreaDetail';
 import { Bar } from '../defense/DefenseGeneral';
 import { MemberMon } from '../defense/MemberMon';
-import { PokemonIcon } from '../PokemonName';
 import { MoveName, hexToRgb, luminance } from '../TypeText';
 import { offenseSlots } from './slots';
 
@@ -29,14 +29,14 @@ function chipStyle(move: string): CSSProperties | undefined {
  */
 export function OffensePower({ offense, ctx }: { offense: TeamOffense; ctx: AreaContext }) {
   const t = useT();
+  const lang = useLang();
   const slots = offenseSlots(ctx.team, offense.members);
-  const refs = offense.referenceAttackers;
 
   return (
-    <div className="def-frame def-power">
+    <div className="def-frame off-frame def-power">
       <div className="ad-scroll">
         <table className="def-grid def-members pw-table">
-          <colgroup><col className="def-col-mon" /><col /><col className="pw-col-setup" /><col className="pw-col-move" /></colgroup>
+          <colgroup><col className="def-col-mon" /><col className="pw-col-power" /><col className="pw-col-setup" /><col className="pw-col-move" /></colgroup>
           <thead>
             <tr>
               <th scope="col" className="def-mon-h">{t('detail.member')}</th>
@@ -56,10 +56,10 @@ export function OffensePower({ offense, ctx }: { offense: TeamOffense; ctx: Area
                   {m
                     ? <>
                       <td className="pw-bar">
-                        <Bar value={m.power} />
+                        <Bar value={m.power} extra={m.setupGain} extraTitle={m.setupMove ? t('detail.setupExtra', { move: gameName('move', m.setupMove, lang), n: m.setupGain }) : undefined} />
                         {/* Tera o mossa Z: un quarto del guadagno entra nel voto */}
                         {m.oneUseGain > 0 && m.oneUse && (
-                          <small className="ad-once" title={m.oneUse.kind === 'tera' ? t('detail.withTera', { type: m.oneUse.name }) : t('detail.withZ', { item: m.oneUse.name })}> (+{m.oneUseGain})</small>
+                          <small className="ad-once" title={m.oneUse.kind === 'tera' ? t('detail.withTera', { type: typeName(m.oneUse.name, lang) }) : t('detail.withZ', { item: gameName('item', m.oneUse.name, lang) })}> (+{m.oneUseGain})</small>
                         )}
                       </td>
                       <td className="pw-setup">
@@ -67,7 +67,7 @@ export function OffensePower({ offense, ctx }: { offense: TeamOffense; ctx: Area
                         {m.setupMove
                           ? <>
                             <span className="pw-move" style={chipStyle(m.setupMove)}><MoveName move={m.setupMove} plain /></span>
-                            {m.setupGain > 0 && <small className="ad-gain" title={t('detail.withSetup', { move: m.setupMove })}> (+{m.setupGain})</small>}
+                            {m.setupGain > 0 && <small className="ad-gain" title={t('detail.withSetup', { move: gameName('move', m.setupMove, lang) })}> (+{m.setupGain})</small>}
                           </>
                           : '—'}
                       </td>
@@ -80,11 +80,6 @@ export function OffensePower({ offense, ctx }: { offense: TeamOffense; ctx: Area
           </tbody>
         </table>
       </div>
-      <p className="pw-ref">
-        <span>{refs.length ? t('odetail.power.ref') : t('odetail.power.refFixed', { pct: Math.round(100 * POWER_FULL) })}</span>
-        {refs.map(species => <span key={species} className="def-open-mon plain" title={species}><PokemonIcon name={species} /><span className="visually-hidden">{species}</span></span>)}
-        <span className="pw-legend">{t('odetail.power.legend')}</span>
-      </p>
     </div>
   );
 }
