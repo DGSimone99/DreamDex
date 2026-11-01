@@ -29,6 +29,7 @@ export function roleLines(rating: TeamRating): RoleLine[] {
     // Le righe del voto sono tutte le voci che contano: le altre sono ignorate per questo tipo di team
     const row = roles.rows.find(r => r.key === key);
     const level: Level = row?.level ?? 'ignored';
+    // Dal valore più alto; a pari valore prima chi la porta da principale
     const by: RoleHolder[] = roles.members.map((m, slot) => {
       const values = m.credited ?? m.values;
       const role = keyRoles(key).reduce((best, r) => ((values[r] ?? 0) > (values[best] ?? 0) ? r : best));
@@ -36,7 +37,7 @@ export function roleLines(rating: TeamRating): RoleLine[] {
       const secondary = !!m.values[role] && secondaryRoles(m.primary).includes(role);
       const source = reason?.source ?? row?.by.find(b => b.species === m.species)?.source ?? '';
       return { species: m.species, slot, value: keyValue(values, key), source, secondary, reason };
-    }).filter(h => h.value > 0).sort((a, b) => b.value - a.value);
+    }).filter(h => h.value > 0).sort((a, b) => b.value - a.value || Number(a.secondary) - Number(b.secondary));
     const value = row?.value ?? Math.max(0, ...by.map(h => h.value));
     return { key, level, family: familyOf(key), value, missing: value < MISSING_BELOW, by };
   });

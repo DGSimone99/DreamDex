@@ -38,10 +38,10 @@ describe('tabelle complete nelle schede d\'area', () => {
     expect(within(view()).getAllByRole('table')).toHaveLength(1);
   });
 
-  it('Ruoli: la tabella completa dei bisogni, con tutti i livelli e la nota sul tipo di team', async () => {
+  it('Ruoli: nel Generale il tipo di team, cosa manca e i ruoli coperti; i livelli nelle sottoschede', async () => {
     await openTab('Ruoli');
-    const table = within(view()).getByRole('region', { name: 'Ruoli del team' });
-    expect(within(table).getByRole('heading', { name: 'Essenziali' })).toBeInTheDocument();
-    expect(table).toHaveTextContent(/[Gg]iudicati come/);
+    expect(within(view()).getByRole('region', { name: 'Ruoli che mancano' })).toBeInTheDocument();
+    expect(view()).toHaveTextContent(/[Gg]iudicati come|giudicati come per un/);
+    expect(within(view()).getByRole('tab', { name: /^Essenziali/ })).toBeInTheDocument();
   });
 });

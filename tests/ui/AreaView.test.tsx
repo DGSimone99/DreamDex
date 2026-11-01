@@ -97,9 +97,9 @@ describe('vista di un\'area sulla pagina', () => {
     expect(all.at(-1)).toHaveFocus();
   });
 
-  it('aree senza guida: nessun "?" nelle sottoschede (i Ruoli); la Velocità ora ce l\'ha', () => {
+  it('i Ruoli e la Velocità hanno il "?" sul Generale', () => {
     const { unmount } = renderIt(<AreaView rating={withMeta()} area="roles" team={team} analysis={analysis} problems={[]} />);
-    expect(screen.queryByRole('button', { name: /^Come funziona/ })).toBeNull();
+    expect(screen.getByRole('button', { name: /^Come funziona/ })).toBeInTheDocument();
     unmount();
     renderIt(<AreaView rating={withMeta()} area="speed" team={team} analysis={analysis} problems={[]} />);
     expect(screen.getByRole('button', { name: /^Come funziona/ })).toBeInTheDocument();
