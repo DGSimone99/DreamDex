@@ -21,7 +21,7 @@ const keyLabel = (key: LevelKey): MessageKey => (isGroupKey(key) ? `need.${key}`
  * Come funziona il voto: un piccolo modale con gli argomenti a sinistra (come funziona in generale e un tab per tipo
  * di team) e la spiegazione a destra. Le spiegazioni di ogni area stanno nel suo modale, di bonus e malus nel catalogo.
  */
-export function RatingHelp({ teamType, trickRoom }: { teamType: Archetype; trickRoom: boolean }) {
+export function RatingHelp({ teamType, trickRoom, meta = true }: { teamType: Archetype; trickRoom: boolean; meta?: boolean }) {
   const t = useT();
   const [open, setOpen] = useState(false);
   // Si apre sul tipo del team: quello che si sta guardando di solito
@@ -79,7 +79,7 @@ export function RatingHelp({ teamType, trickRoom }: { teamType: Archetype; trick
               </nav>
               <section className="help-panel" id="help-panel" role="tabpanel" aria-labelledby={`help-tab-${topic}`}>
                 <h4>{t(topicLabel(topic))}</h4>
-                {topic === 'general' ? <GeneralTopic teamType={teamType} trickRoom={trickRoom} /> : <TypeTopic type={topic} current={topic === teamType} trickRoom={trickRoom} />}
+                {topic === 'general' ? <GeneralTopic teamType={teamType} trickRoom={trickRoom} meta={meta} /> : <TypeTopic type={topic} current={topic === teamType} trickRoom={trickRoom} />}
               </section>
             </div>
           </div>
@@ -91,7 +91,7 @@ export function RatingHelp({ teamType, trickRoom }: { teamType: Archetype; trick
 }
 
 /** Come funziona in generale: la formula del voto, le lettere dalle soglie e i pesi di tutti i tipi. */
-function GeneralTopic({ teamType, trickRoom }: { teamType: Archetype; trickRoom: boolean }) {
+function GeneralTopic({ teamType, trickRoom, meta }: { teamType: Archetype; trickRoom: boolean; meta: boolean }) {
   const t = useT();
   const letters = Object.fromEntries(GRADES.filter(g => g.grade !== 'D').map(g => [g.grade, g.min]));
   return (
@@ -99,7 +99,7 @@ function GeneralTopic({ teamType, trickRoom }: { teamType: Archetype; trickRoom:
       <p>{t('help.general.1')}</p>
       <p>{t('help.general.letters', letters)}</p>
       <p>{t('help.general.2')}</p>
-      <p>{t('help.general.3')}</p>
+      <p>{t(meta ? 'help.general.3' : 'help.general.3.noMeta')}</p>
       <p className="help-yours">{t('help.general.yours', { type: t(`archetype.${teamType}`) })}{trickRoom ? ` · ${t('help.general.trickRoom')}` : ''}</p>
       <div className="help-table-wrap">
         <table className="help-weights">

@@ -42,10 +42,10 @@ describe('coachTeam', () => {
   it('problemi minori: debolezze, ruoli, coverage', () => {
     const minor = coaching.problems.filter(p => p.severity === 'minor' && p.category !== 'meta').map(p => p.text);
     expect(minor).toEqual([
-      'Debole a Fire: 1 Debole – 0 Resistono',
-      'Debole a Water: 1 Debole – 0 Resistono',
-      'Debole a Ground: 1 Debole – 0 Resistono',
-      'Debole a Ghost: 1 Debole – 0 Resistono',
+      'Debole a Fire: 1 Debole, 0 Resistono',
+      'Debole a Water: 1 Debole, 0 Resistono',
+      'Debole a Ground: 1 Debole, 0 Resistono',
+      'Debole a Ghost: 1 Debole, 0 Resistono',
       // Le voci essenziali mancanti (nel Balance gli Hazard sono essenziali), poi in una riga a parte le importanti
       'Ruoli mancanti: Muro Speciale, Hazard',
       'Ruoli importanti mancanti: Pivot, Rimozione Strumenti',
@@ -61,7 +61,7 @@ describe('coachTeam', () => {
   it('debolezza seria: 3 membri deboli a Ice', () => {
     const team = ['Great Tusk', 'Garchomp', 'Dragapult'].map(n => mostCommonSet(fixtureStats, n)!);
     const ice = coachTeam(team, DEFAULT_FORMAT, fixtureData).problems.find(p => p.text.startsWith('Debole a Ice'));
-    expect(ice).toMatchObject({ severity: 'serious', text: 'Debole a Ice: 3 Deboli – 0 Resistono' });
+    expect(ice).toMatchObject({ severity: 'serious', text: 'Debole a Ice: 3 Deboli, 0 Resistono' });
   });
 
   it('i preferiti non ricevono mai suggerimenti di sostituzione', () => {

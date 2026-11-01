@@ -65,7 +65,7 @@ describe('Velocità: una scheda a barre', () => {
     const dialog = dialogOf('Dragonite');
     expect(checks(dialog)).toEqual(expect.arrayContaining(['Dragon Dance', 'Sticky Web', 'Stun Spore']));
     expect(checks(dialog).filter(c => ['Dragon Dance', 'Sticky Web', 'Stun Spore', 'Booster Energy', 'Tailwind', 'Trick Room'].includes(c!))).toEqual(['Dragon Dance', 'Sticky Web', 'Stun Spore']);
-    expect(dialog).toHaveTextContent('il voto non cambia');
+    expect(dialog).not.toHaveTextContent('il voto non cambia');
     const list = within(dialog).getByRole('list', { name: /rivali/i });
     const rows = within(list).getAllByRole('listitem');
     // Una riga per specie, più la seconda versione di chi usa spesso la Sciarpa o la Booster (Gholdengo), più il membro
@@ -226,7 +226,7 @@ describe('Velocità: una scheda a barre', () => {
     render(<LangProvider lang="en"><AreaView rating={rateTeam(team, fixtureData, 'en')!} area="speed" team={team} analysis={analyzeTeam(team, fixtureData)} problems={[]} /></LangProvider>);
     expect(names()).toEqual(['General']);
     await user.click(screen.getByRole('button', { name: 'Speed of Dragonite: open the rivals' }));
-    expect(screen.getByRole('dialog', { name: 'Speed of Dragonite' })).toHaveTextContent('the grade does not change');
+    expect(screen.getByRole('dialog', { name: 'Speed of Dragonite' })).not.toHaveTextContent('the grade does not change');
     await user.keyboard('{Escape}');
     await user.click(screen.getByRole('button', { name: 'How General works' }));
     expect(screen.getByRole('dialog', { name: 'Guide: Speed' })).toHaveTextContent(/Scarf/);
