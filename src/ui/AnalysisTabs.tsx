@@ -49,9 +49,9 @@ export function HelpButton({ title, label = title, className, children }: { titl
   );
 }
 
-/** Le schede con un "?" di pagina: non lo hanno la Panoramica, il Coaching, l'Offesa e la Difesa (che hanno la loro guida a sezioni). */
-type HelpView = Exclude<AnalysisView, 'overview' | 'coaching' | 'strength' | 'defense'>;
-const hasHelp = (view: AnalysisView): view is HelpView => view !== 'overview' && view !== 'coaching' && view !== 'strength' && view !== 'defense';
+/** Le schede con un "?" di pagina: non lo hanno la Panoramica, il Coaching, l'Offesa, la Difesa e la Velocità (che hanno la loro guida a sezioni). */
+type HelpView = Exclude<AnalysisView, 'overview' | 'coaching' | 'strength' | 'defense' | 'speed'>;
+const hasHelp = (view: AnalysisView): view is HelpView => view !== 'overview' && view !== 'coaching' && view !== 'strength' && view !== 'defense' && view !== 'speed';
 
 /** Il "?" accanto alla scheda aperta: cosa mostra quella scheda e come conta nel voto. */
 export function ViewHelp({ view }: { view: HelpView }) {

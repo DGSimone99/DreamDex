@@ -469,7 +469,6 @@ export const it: Record<keyof typeof en, string> = {
   'teamTypes.note': "Cambia i ruoli richiesti e i pesi del voto",
   'help.view.bonusMalus': "Bonus e malus si sommano al voto: qui ci sono quelli attivi e il catalogo completo.",
   'help.view.roles': "I Ruoli misurano se il team copre ciò che serve al suo tipo: le voci essenziali e importanti contano di più, le minori aggiungono poco. Una voce essenziale mancante in un team completo è un malus. I livelli vengono dai team da torneo: una voce è essenziale se la porta almeno il 95% dei team di quel tipo, importante dal 70%, minore dal 30%.\nQui c'è la tabella completa dei bisogni e il dettaglio per famiglia di ruoli.",
-  'help.view.speed': "La Velocità misura quanto spesso il team si muove per primo: ogni membro da solo (velocità, setup, Booster, meteo, priorità) e il controllo della velocità del team (Sticky Web, Thunder Wave, Tailwind…).",
   'analysis.rolesTable': "Ruoli del team",
   'summary.control': "Controllo:",
   'analysis.members': "Membri",

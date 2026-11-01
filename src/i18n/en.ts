@@ -467,7 +467,6 @@ export const en = {
   'teamTypes.note': "Changes the required roles and the weights of the grade",
   'help.view.bonusMalus': "Bonuses and maluses add to the grade: here are the active ones and the full catalogue.",
   'help.view.roles': "Roles measure whether the team covers what its type needs: essential and important entries weigh more, minor ones add little. A missing essential entry in a full team is a malus. Levels come from tournament teams: an entry is essential when at least 95% of the teams of that type carry it, important from 70%, minor from 30%.\nHere are the full needs table and the detail by role family.",
-  'help.view.speed': "Speed measures how often the team moves first: each member alone (speed, setup, Booster, weather, priority) and the team's speed control (Sticky Web, Thunder Wave, Tailwind…).",
   'analysis.rolesTable': "Team roles",
   'summary.control': "Control:",
   'analysis.members': "Members",
