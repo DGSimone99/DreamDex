@@ -5,7 +5,7 @@ import { App } from '../../src/App';
 import { analyzeTeam } from '../../src/engine/analysis';
 import { AreaView } from '../../src/ui/AreaView';
 import { rateTeam } from '../../src/engine/rating';
-import { emptySet } from '../../src/engine/sets';
+import { emptySet, type TeamSet } from '../../src/engine/sets';
 import type { TeamRoles } from '../../src/engine/rolesArea';
 import { fixtureData } from '../fixtures/data';
 import { renderIt } from '../helpers/italian';
@@ -64,6 +64,38 @@ describe('dettaglio dei Ruoli a schede', () => {
   it('in inglese', async () => {
     const { dialog } = await openRoles('en');
     expect(within(dialog).getAllByRole('tab').map(tab => tab.textContent!.replace(/\s*[\d/]+$/, ''))).toEqual(['General', 'Attack', 'Defense', 'Field', 'Disruption']);
+  });
+});
+
+describe('note nella scheda Generale dei Ruoli', () => {
+  it('pivot: "offensivo" su un attaccante, "difensivo" su un muro; "misto" su chi attacca da entrambi i lati', () => {
+    const base = rateTeam([{ ...emptySet('Gliscor'), moves: ['Stealth Rock'] }], fixtureData, 'it')!;
+    const corv: TeamSet = { ...emptySet('Corviknight'), item: 'Leftovers', ability: 'Pressure', nature: 'Impish', evs: { hp: 248, def: 168, spd: 92 }, moves: ['Roost', 'Brave Bird', 'Defog', 'U-turn'] };
+    const pult: TeamSet = { ...emptySet('Dragapult'), item: 'Choice Specs', ability: 'Infiltrator', nature: 'Timid', evs: { spa: 252, spe: 252 }, moves: ['Draco Meteor', 'Shadow Ball', 'U-turn', 'Flamethrower'] };
+    const mixed: TeamSet = { ...emptySet('Infernape'), item: 'Life Orb', ability: 'Blaze', nature: 'Naive', evs: { atk: 128, spa: 128, spe: 252 }, moves: ['Close Combat', 'Fire Blast', 'U-turn', 'Grass Knot'] };
+    const roles: TeamRoles = {
+      value: 70, base: 1, extra: 0,
+      rows: [
+        { key: 'attacker', level: 'essential', value: 1, by: [{ species: 'Dragapult', value: 1, source: 'Draco Meteor' }, { species: 'Infernape', value: 1, source: 'Close Combat' }] },
+        { key: 'pivot', level: 'important', value: 1, by: [{ species: 'Corviknight', value: 1, source: 'U-turn' }, { species: 'Dragapult', value: 1, source: 'U-turn' }] },
+      ],
+      failures: [],
+      members: [
+        { species: 'Corviknight', values: { physicalWall: 1, pivot: 1, removal: 1 }, primary: 'wall', reasons: [] },
+        { species: 'Dragapult', values: { specialSweeper: 1, pivot: 1 }, primary: 'attack', reasons: [] },
+        { species: 'Infernape', values: { physicalBreaker: 1, pivot: 1 }, primary: 'attack', reasons: [] },
+      ],
+    };
+    const team = [corv, pult, mixed];
+    const rating = { ...base, roles, areas: base.areas.map(a => (a.key === 'roles' ? { ...a, value: 70 } : a)) };
+    renderIt(<AreaView rating={rating} area="roles" team={team} analysis={analyzeTeam(team, fixtureData)} problems={[]} />);
+    const table = within(screen.getByRole('tabpanel')).getByRole('table');
+    const row = (name: string) => within(table).getByRole('row', { name: new RegExp(`^${name}`) });
+    expect(row('Pivot')).toHaveTextContent('Corviknight (U-turn · difensivo)');
+    expect(row('Pivot')).toHaveTextContent('Dragapult (U-turn · offensivo)');
+    expect(row('Minaccia Offensiva')).toHaveTextContent('Infernape (Close Combat · misto)');
+    expect(row('Minaccia Offensiva')).toHaveTextContent('Dragapult (Draco Meteor)');
+    expect(row('Minaccia Offensiva')).not.toHaveTextContent('Dragapult (Draco Meteor · misto)');
   });
 });
 
