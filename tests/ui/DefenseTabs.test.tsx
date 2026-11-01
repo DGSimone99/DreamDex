@@ -158,7 +158,7 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
     cells.forEach(td => expect(td).toHaveTextContent('—'));
   });
 
-  it('Coverage meta: pagine da 8 minacce, dalla meno coperta (a pari livello la più usata), livello e chi la regge nel nome accessibile', async () => {
+  it('Coverage meta: tabella membri × minacce a pagine da 8, dalla meno coperta (a pari livello la più usata); danno colorato e riga Regge', async () => {
     const user = userEvent.setup();
     const rating = withMeta();
     renderIt(<AreaView rating={rating} area="defense" team={team} analysis={analysis} problems={[]} />);
@@ -166,9 +166,27 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
     const panel = within(screen.getByRole('tabpanel'));
     const rows = rating.defense.coverageMeta!.rows;
     const expected = [...rows].sort((a, b) => a.level - b.level || b.weight - a.weight);
-    const names = () => panel.getAllByRole('listitem').map(tile => tile.getAttribute('aria-label')!.split(':')[0]);
+    const names = () => panel.getAllByRole('columnheader').slice(1).map(h => h.getAttribute('aria-label'));
     expect(names()).toEqual(expected.slice(0, 8).map(r => r.species));
-    expect(panel.getAllByRole('listitem')[0]).toHaveAccessibleName(new RegExp(`^${expected[0].species}.*${expected[0].level}%`));
+    // Ogni casella: il danno di chi regge (verde sotto metà PS, giallo a metà), KO rosso per chi non c'è in heldBy
+    const table = panel.getByRole('table');
+    team.forEach((set, m) => {
+      const cells = within(within(table).getAllByRole('row')[m + 1]).getAllByRole('cell');
+      expected.slice(0, 8).forEach((r, k) => {
+        const h = r.heldBy.find(x => x.species === set.species);
+        if (!h) {
+          expect(cells[k]).toHaveTextContent(/^KO$/);
+          expect(cells[k]).toHaveClass('hold-ohko');
+        } else {
+          expect(cells[k]).toHaveTextContent(new RegExp(`^${h.pct}%`));
+          expect(cells[k]).toHaveClass(h.partial ? 'hold-3' : 'hold-4');
+          expect(cells[k].getAttribute('title')).toBe(`${r.species}: ${h.move} ${h.pct}%`);
+        }
+      });
+    });
+    const held = within(table).getByRole('row', { name: /^Regge/ });
+    expect(within(held).getAllByRole('cell').map(c => c.textContent)).toEqual(expected.slice(0, 8).map(r => `${r.heldBy.filter(h => !h.partial).length}`));
+    expect(panel.queryAllByRole('listitem')).toHaveLength(0);
     // Una pagina per ogni 8 minacce; la seconda mostra le successive, e "precedente" torna alla prima
     const pages = panel.getByRole('navigation', { name: 'Pagine delle minacce' });
     expect(within(pages).getAllByRole('button', { name: /^Minacce da/ })).toHaveLength(Math.ceil(rows.length / 8));

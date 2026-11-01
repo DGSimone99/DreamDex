@@ -155,12 +155,12 @@ describe('dettaglio della Difesa a schede', () => {
     for (const cell of cells) expect(cell).toHaveTextContent(/^\d+%$/);
   });
 
-  it('Coverage meta: una tessera per minaccia con quanto è retta e chi la regge', async () => {
+  it('Coverage meta: una tabella membri × minacce, con la riga Regge', async () => {
     const { user, dialog } = await openDefense('it');
     await user.click(within(dialog).getByRole('tab', { name: /^Coverage meta/ }));
-    const tiles = within(within(dialog).getByRole('tabpanel')).getAllByRole('listitem');
-    expect(tiles.length).toBeGreaterThan(0);
-    for (const tile of tiles) expect(tile.getAttribute('aria-label')).toMatch(/^.+: \d+%, (nessuno|.+: .+ \d+%.*)$/);
+    const table = within(within(dialog).getByRole('tabpanel')).getByRole('table');
+    expect(within(table).getByRole('row', { name: /^Regge/ })).toBeInTheDocument();
+    for (const cell of within(within(table).getAllByRole('row')[1]).getAllByRole('cell')) expect(cell).toHaveTextContent(/^(\d+%.*|KO)$/);
   });
 
   it('in inglese', async () => {

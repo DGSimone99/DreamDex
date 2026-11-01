@@ -137,9 +137,9 @@ export function DefenseGuideSection({ section, defense, meta }: { section: Secti
 
       <h5>{g('meta.holds')}</h5>
       <ul className="guide-holds three">
-        <li><span className="cm-holder-pct">38%</span><b>{g('meta.hold.full')}</b><small>{g('meta.hold.full.rule')}</small></li>
-        <li><span className="cm-holder-pct half">72%</span><b>{g('meta.hold.half')}</b><small>{g('meta.hold.half.rule')}</small></li>
-        <li><span className="ct-pill bad">{t('detail.nobody')}</span><b>{g('meta.hold.ko')}</b><small>{g('meta.hold.ko.rule')}</small></li>
+        <li><span className="hold-chip hold-4">38%</span><b>{g('meta.hold.full')}</b><small>{g('meta.hold.full.rule')}</small></li>
+        <li><span className="hold-chip hold-3">72%</span><b>{g('meta.hold.half')}</b><small>{g('meta.hold.half.rule')}</small></li>
+        <li><span className="hold-chip hold-ohko">KO</span><b>{g('meta.hold.ko')}</b><small>{g('meta.hold.ko.rule')}</small></li>
       </ul>
 
       <h5>{g('meta.depth')}</h5>
