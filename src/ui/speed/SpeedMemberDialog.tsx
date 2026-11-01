@@ -30,9 +30,9 @@ function rivalRows(member: MemberSpeed): RivalRow[] {
 
 /**
  * Il modale della Velocità di un membro: un calcolatore "e se". In alto la velocità reale e la quota superata; poi i check
- * che il membro e il team hanno davvero (setup, Booster, Sticky Web di un compagno, paralisi, Tailwind, Trick Room); la
- * riga delle priorità (dal calcolo vero del voto); la lista di tutti i rivali del gruppo dal più veloce, col membro al
- * suo posto, e sui rivali che usano spesso la Sciarpa o la Booster un check per vederli con quella.
+ * che il membro e il team hanno davvero (setup, Booster, Sticky Web di un compagno, paralisi, Tailwind, Trick Room) e
+ * l'interruttore "Strumenti avversari" (i rivali che usano spesso la Sciarpa o la Booster anche in quella versione); poi
+ * la lista di tutti i rivali del gruppo dal più veloce, col membro al suo posto.
  * I check non cambiano il voto: il voto resta quello della formula.
  */
 export function SpeedMemberDialog({ member, set, team, meta, onClose }: { member: MemberSpeed; set: TeamSet; team: TeamSet[]; meta: boolean; onClose: () => void }) {
@@ -78,7 +78,6 @@ export function SpeedMemberDialog({ member, set, team, meta, onClose }: { member
   // Il membro va inserito al suo posto, dal più veloce (con Trick Room l'ordine della lista non cambia: cambia chi vince)
   const myIndex = list.findIndex(x => x.value < mySpeed || (x.value === mySpeed));
   const insertAt = myIndex < 0 ? list.length : myIndex;
-  const priority = member.gains.find(g => g.condition === 'priority');
   const item = speedStat(set).scarf ? t('sdetail.mark.scarf') : null;
   const optionLabel = (o: SpeedOption) => {
     const effect = o.trickRoom ? t('sdetail.opt.trickroom') : o.rivalFactor ? t('sdetail.opt.rivals') : t('sdetail.opt.member', { x: String(o.memberFactor).replace('.', lang === 'it' ? ',' : '.') });
@@ -120,19 +119,16 @@ export function SpeedMemberDialog({ member, set, team, meta, onClose }: { member
                 <label className={`sp-check sp-check-versions${versions ? ' on' : ''}`}>
                   <input type="checkbox" aria-label={t('sdetail.dlg.versions')} checked={versions} onChange={() => setVersions(v => !v)} />
                   <span className="sp-check-name">{t('sdetail.dlg.versions')}</span>
-                  <small className="sp-check-effect">{t('sdetail.dlg.versionsEffect')}</small>
                 </label>
               )}
             </fieldset>
           )}
-          {priority && <p className="sp-priority">{t('sdetail.dlg.priority', { move: priority.source, n: Math.round(100 * priority.gain) })}</p>}
           <p className="sp-dlg-count" aria-live="polite">{t('sdetail.dlg.count', { n: beaten, m: list.length })}{ties > 0 && ` · ${t('sdetail.dlg.ties', { n: ties })}`}{trickRoom && ` · ${t('sdetail.dlg.underRoom')}`}</p>
           <ul className="sp-list" aria-label={t('sdetail.dlg.list')}>
             {list.slice(0, insertAt).map(x => rivalItem(x.row, x.rival, x.boosted, x.value))}
             {memberRow}
             {list.slice(insertAt).map(x => rivalItem(x.row, x.rival, x.boosted, x.value))}
           </ul>
-          {withVersions && versions && <p className="sp-dlg-foot">{t('sdetail.dlg.versionsNote')}</p>}
         </div>
       </div>
     </div>,
