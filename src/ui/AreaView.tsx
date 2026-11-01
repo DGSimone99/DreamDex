@@ -143,7 +143,7 @@ export function AreaView({ rating, area, problems, team, analysis, extra, roomy 
       {rating.areas.find(a => a.key === area)?.inactive && <p className="area-inactive" role="note">{t('rating.notCounted')}</p>}
       {guide !== null && sections.length > 0 && (
         <AreaGuide title={t('area.guide.title', { area: title })} sections={sections} current={guide}
-          onCurrent={setGuide} onClose={() => setGuide(null)} />
+          onCurrent={setGuide} onClose={() => setGuide(null)} className={`area-guide-${area}`} />
       )}
       {/* La riga c'è sempre, anche senza problemi: il pannello sotto parte alla stessa altezza in ogni area */}
       {problems.length === 0 ? (
