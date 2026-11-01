@@ -53,7 +53,7 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
   };
 
   const body = (shown: Row[], bar: ReactNode) => (
-    <div className={`def-frame def-walls cm-matrix${ctx.roomy ? ' roomy' : ''}`}>
+    <div className={`def-frame off-frame def-walls cm-matrix${ctx.roomy ? ' roomy' : ''}`}>
       <div className="ad-scroll">
         <table className="def-grid spaced ct-table">
           <colgroup>
@@ -95,7 +95,6 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
         <span className="hold-chip ko-none">{t('odetail.wall.legendLess')}</span>
         <span className="wall-legend-setup"><i className="wall-tick" />{t('odetail.wall.legendSetup')}</span>
       </p>
-      <p className="cm-note">{t('odetail.cm.oneUseNote')}</p>
       {bar}
     </div>
   );

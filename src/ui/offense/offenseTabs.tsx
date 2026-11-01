@@ -13,7 +13,7 @@ export function offenseTabs(rating: TeamRating, t: T, ctx: AreaContext): DetailT
   const meta = !!rating.meta;
   const coverageMeta = offense.coverageMeta;
   const value = rating.areas.find(a => a.key === 'strength')?.value ?? null;
-  const guide = (section: OffenseSection) => <OffenseGuideSection section={section} offense={offense} meta={meta} />;
+  const guide = (section: OffenseSection) => <OffenseGuideSection section={section} offense={offense} meta={meta} formatId={ctx.formatId} />;
 
   const tabs: { key: OffenseSection; label: string; value: number | null; panel: ReactElement }[] = [
     { key: 'general', label: t('detail.tab.general'), value, panel: <OffenseGeneral offense={offense} meta={meta} ctx={ctx} /> },

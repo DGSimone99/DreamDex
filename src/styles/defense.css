@@ -28,7 +28,7 @@
 /* Il contenuto: didascalia minuscola e sotto l'elemento visivo, alto uguale in tutte le tessere */
 .def-tile-fact { display: flex; flex-direction: column; gap: 4px; width: 100%; height: 50px; padding-top: 5px; border-top: 1px solid var(--line-soft); font-size: 13px; color: var(--text); overflow: hidden; }
 .def-cap { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; line-height: 1.2; }
-.def-cap em, .def-meter-top em { font-style: normal; font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.def-cap em { font-style: normal; font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
 .def-cap b { font-size: 12px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
 .def-visual { display: flex; align-items: center; gap: 4px; min-height: 24px; min-width: 0; white-space: nowrap; }
 .def-none { gap: 6px; color: var(--good); font-weight: 600; }
@@ -42,18 +42,6 @@
 /* Senza recupero: sprite spento */
 .def-open-mon.off { opacity: 0.35; filter: grayscale(1); border-bottom-color: transparent; }
 .def-more { font-size: 12px; font-weight: 600; color: var(--muted); }
-/* Robustezza: due mini misuratori affiancati */
-.def-meters { align-items: stretch; gap: 12px; flex: 1; }
-.def-meter { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 3px; min-width: 0; }
-.def-meter-top { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; }
-.def-meter-top b { font: italic 700 16px/1 var(--display); font-variant-numeric: tabular-nums; }
-.def-meter-top b.good { color: var(--good); }
-.def-meter-top b.warn { color: var(--warn); }
-.def-meter-top b.bad { color: var(--bad); }
-.def-mini { position: relative; display: block; height: 4px; background: var(--line-soft); }
-.def-mini i { position: absolute; inset: 0 auto 0 0; background: var(--good); }
-.def-mini.warn i { background: var(--warn); }
-.def-mini.bad i { background: var(--bad); }
 
 
 /* Cornice comune delle schede con i membri: la lista in alto (testata e righe di altezza fissa, così cambiando scheda i
@@ -105,6 +93,11 @@
 .def-bar i { position: absolute; inset: 0 auto 0 0; background: var(--good); }
 .def-bar.warn i { background: var(--warn); }
 .def-bar.bad i { background: var(--bad); }
+/* Il guadagno del setup: a righe nel colore della barra, staccato con una riga scura (come nella Velocità) */
+.def-bar i.def-bar-extra { right: auto; background: repeating-linear-gradient(135deg, var(--bar-c) 0 3px, color-mix(in srgb, var(--bar-c) 55%, var(--panel)) 3px 6px); box-shadow: inset 2px 0 0 var(--ground); }
+.def-bar { --bar-c: var(--good); }
+.def-bar.warn { --bar-c: var(--warn); }
+.def-bar.bad { --bar-c: var(--bad); }
 .def-num { min-width: 2ch; text-align: right; color: var(--text); }
 /* Difesa: il numero in evidenza, del colore della soglia */
 .def-num.total { font: italic 700 17px/1 var(--display); font-variant-numeric: tabular-nums; }
@@ -326,7 +319,9 @@
 }
 
 /* La guida della Difesa è più larga dei modali d aiuto: i due conti e la scala stanno su una riga */
-.help-dialog.area-guide { width: min(920px, 100%); }
+.help-dialog.area-guide { width: min(980px, 100%); }
+/* Guida dell'Offesa: sempre alta come con le statistiche medie aperte, così aprirle non la ridimensiona */
+.help-dialog.area-guide-strength { height: min(560px, calc(100vh - 48px)); }
 
 /* Guida, Robustezza: le quattro soglie come tasti, i pesi dei membri come barra a segmenti, la somma dei lati */
 .guide-holds { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin: 0; padding: 0; list-style: none; }

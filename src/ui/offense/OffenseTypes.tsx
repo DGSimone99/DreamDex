@@ -29,7 +29,7 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
   const colClass = (col: number, extra = '') => [extra, hover?.col === col && 'x-col'].filter(Boolean).join(' ') || undefined;
 
   return (
-    <div className={`def-frame def-types${roomy ? ' roomy' : ''}`}>
+    <div className={`def-frame off-frame def-types${roomy ? ' roomy' : ''}`}>
       <div className="ad-scroll">
         <table className="def-grid spaced ct-table" onMouseLeave={() => setHover(null)}>
           <colgroup><col className="def-col-mon" /></colgroup>
@@ -84,7 +84,6 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
       <p className="ct-legend" aria-hidden="true">
         <span><i className="ok-full" />{t('odetail.types.legendFull')}</span>
         <span><i className="ok-half" />{t('odetail.types.legendHalf')}</span>
-        <span><i className="hole" />{t('odetail.types.legendHole')}</span>
       </p>
     </div>
   );
