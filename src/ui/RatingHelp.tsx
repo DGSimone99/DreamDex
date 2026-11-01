@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
 import { createPortal } from 'react-dom';
 import type { Archetype } from '../engine/archetype';
 import { ARCHETYPE_WEIGHTS, GRADES, TRICK_ROOM_MAX } from '../engine/rating';
-import { LEVEL_KEYS, levelOf, type Level, type LevelKey } from '../engine/roleLevels';
+import { isGroupKey, LEVEL_KEYS, levelOf, type Level, type LevelKey } from '../engine/roleLevels';
 import type { MessageKey } from '../i18n';
 import { useT } from '../i18n/react';
 import { Icon } from './icons';
@@ -15,7 +15,7 @@ const LEVELS: Exclude<Level, 'ignored'>[] = ['essential', 'important', 'minor'];
 
 const topicLabel = (topic: Topic): MessageKey => (topic === 'general' ? 'help.general' : `archetype.${topic}`);
 /** Etichetta di una voce della tabella dei livelli ("almeno uno Sweeper / un Wallbreaker" sono gruppi). */
-const keyLabel = (key: LevelKey): MessageKey => (key === 'anySweeper' || key === 'anyBreaker' ? `need.${key}` : `role.${key}`);
+const keyLabel = (key: LevelKey): MessageKey => (isGroupKey(key) ? `need.${key}` : `role.${key}`);
 
 /**
  * Come funziona il voto: un piccolo modale con gli argomenti a sinistra (come funziona in generale e un tab per tipo

@@ -4,17 +4,27 @@ import type { SubRole } from './subRoles';
 /** Livello di un sotto-ruolo per l'archetipo: essenziale (solo malus), importante (±), minore (solo +), ignorato. */
 export type Level = 'essential' | 'important' | 'minor' | 'ignored';
 /**
- * Una voce della tabella: un sotto-ruolo, o un gruppo: "anySweeper" = uno sweeper fisico o speciale,
- * "anyBreaker" = un wallbreaker fisico o speciale.
+ * Una voce della tabella: un sotto-ruolo, o un gruppo di attaccanti: "anySweeper" = uno sweeper fisico o speciale,
+ * "anyBreaker" = un wallbreaker fisico o speciale, "anyPhysical" / "anySpecial" = un attaccante (sweeper o
+ * wallbreaker) da quel lato.
  */
-export type LevelKey = SubRole | 'anySweeper' | 'anyBreaker';
+export type GroupKey = 'anySweeper' | 'anyBreaker' | 'anyPhysical' | 'anySpecial';
+export type LevelKey = SubRole | GroupKey;
+/** I sotto-ruoli dietro ogni gruppo (scritti per esteso: subRoles.ts è in un ciclo di import). */
+export const GROUP_ROLES: Record<GroupKey, SubRole[]> = {
+  anySweeper: ['physicalSweeper', 'specialSweeper'],
+  anyBreaker: ['physicalBreaker', 'specialBreaker'],
+  anyPhysical: ['physicalSweeper', 'physicalBreaker'],
+  anySpecial: ['specialSweeper', 'specialBreaker'],
+};
+export const isGroupKey = (key: LevelKey): key is GroupKey => key in GROUP_ROLES;
 
 /**
  * Tutte le voci della tabella, nell'ordine della specifica: prima il gruppo degli attaccanti, poi le famiglie (FAMILIES).
  * Scritte per esteso: subRoles.ts è in un ciclo di import e qui servono già al caricamento del modulo.
  */
 export const LEVEL_KEYS: LevelKey[] = [
-  'anySweeper', 'anyBreaker', 'physicalSweeper', 'specialSweeper', 'physicalBreaker', 'specialBreaker',
+  'anySweeper', 'anyBreaker', 'anyPhysical', 'anySpecial', 'physicalSweeper', 'specialSweeper', 'physicalBreaker', 'specialBreaker',
   'physicalWall', 'specialWall', 'recovery',
   'support', 'removal', 'screens', 'speedControl', 'debuff', 'phazer',
   'hazards', 'pivot', 'dot', 'taunt', 'encore', 'itemRemoval',
@@ -57,30 +67,37 @@ const E = 'essential' as const, I = 'important' as const, M = 'minor' as const, 
  * torneo − ladder 5,9 → 6,1, partite di alto livello 51,6% → 53,6%, ladder 52,5% → 52,3% (rumore).
  */
 const ROWS: [LevelKey, Level, Level, Level, Level, Level][] = [
+  // HO (2026-11-01, dai 39 HO da torneo di Natdex OU, soglie 95 / 70 / 30 sulla quota di team che portano la voce):
+  // essenziali i quattro gruppi degli attaccanti (100% / 100% / 100% / 99%; le righe singole restano minori, le misura
+  // l'Offesa); importanti Hazard 92%, Controllo Hazard 82%, Pivot 74%; minori Muri 59% / 36%, Recupero 62%,
+  // Rimozione Strumenti 69%; il resto sotto il 30%. Hazard essenziale (soglia 90) crollava gli HO da torneo a 53 di
+  // Ruoli, sotto la ladder, e la base media valeva quanto la buona.
+  // Le altre colonne sono provvisorie (livelli di ieri sulle voci nuove), da fissare una alla volta.
   // Semi-stall e stall vincono logorando: senza attaccanti nessun malus (2026-10-30; l'Offesa misura comunque il danno)
-  // Tabella provvisoria (voci nuove, livelli di ieri): il setup del campo è diventato Hazard, l'Attaccante le due righe di gruppo
   ['anySweeper', E, E, E, X, X],
   ['anyBreaker', E, E, E, X, X],
+  ['anyPhysical', E, X, X, X, X],
+  ['anySpecial', E, X, X, X, X],
   ['physicalSweeper', M, M, M, M, X],
   ['specialSweeper', M, M, M, M, X],
   ['physicalBreaker', M, M, M, M, M],
   ['specialBreaker', M, M, M, M, M],
   ['physicalWall', M, M, E, E, E],
   ['specialWall', M, M, E, E, E],
-  ['recovery', X, M, I, I, I],
+  ['recovery', M, M, I, I, I],
   // Support
   ['support', X, X, M, M, M],
-  ['removal', M, I, I, I, I],
+  ['removal', I, I, I, I, I],
   ['screens', X, X, X, X, X],
   ['speedControl', X, X, X, X, X],
   ['debuff', X, M, M, M, M],
   ['phazer', X, M, M, I, I],
   // Utility
   ['hazards', I, I, I, E, I],
-  ['pivot', M, I, I, M, M],
+  ['pivot', I, I, I, M, M],
   ['dot', X, M, M, I, I],
-  ['taunt', M, M, M, M, M],
-  ['encore', M, M, M, M, M],
+  ['taunt', X, M, M, M, M],
+  ['encore', X, M, M, M, M],
   ['itemRemoval', M, I, M, I, I],
 ];
 const COLUMNS: Archetype[] = ['hyperOffense', 'bulkyOffense', 'balance', 'semiStall', 'stall'];

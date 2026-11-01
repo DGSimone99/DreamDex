@@ -31,6 +31,8 @@ export const en = {
   'family.utility': "Utility",
   'need.anySweeper': "At least one Sweeper",
   'need.anyBreaker': "At least one Wallbreaker",
+  'need.anyPhysical': "At least one physical attacker",
+  'need.anySpecial': "At least one special attacker",
   'card.weather': "Weather",
   'card.weatherTitle': "Sets {condition} ({via})",
   'roleShort.physicalSweeper': "Phys. Sweeper",

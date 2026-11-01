@@ -5,7 +5,7 @@ import { rulesOf, type FormatRules } from './formatRules';
 import type { EngineData } from './data';
 import type { TeamSet } from './sets';
 import { creditedValues, FAMILIES, measuredSubRoles, primaryFamily, type PrimaryFamily, type SubRole, type SubRoleValues } from './subRoles';
-import { LEVEL_KEYS, levelOf, type Level, type LevelKey } from './roleLevels';
+import { GROUP_ROLES, isGroupKey, LEVEL_KEYS, levelOf, type Level, type LevelKey } from './roleLevels';
 import { t, type Lang } from '../i18n';
 
 /**
@@ -56,9 +56,8 @@ export function needsArchetype(team: TeamSet[], rules: FormatRules): Archetype {
   return teamArchetype(team, rules)?.archetype ?? 'balance';
 }
 
-/** I sotto-ruoli dietro una voce: i gruppi "almeno uno Sweeper" e "almeno un Wallbreaker" valgono per i due lati. */
-export const keyRoles = (key: LevelKey): SubRole[] =>
-  (key === 'anySweeper' ? ['physicalSweeper', 'specialSweeper'] : key === 'anyBreaker' ? ['physicalBreaker', 'specialBreaker'] : [key]);
+/** I sotto-ruoli dietro una voce: i gruppi degli attaccanti (almeno uno Sweeper, un Wallbreaker, un fisico, uno speciale) o il sotto-ruolo stesso. */
+export const keyRoles = (key: LevelKey): SubRole[] => (isGroupKey(key) ? GROUP_ROLES[key] : [key]);
 
 /** Valore di una voce per un membro (o un candidato): il miglior sotto-ruolo dietro la voce. */
 export const keyValue = (v: SubRoleValues, key: LevelKey): number => Math.max(0, ...keyRoles(key).map(r => v[r] ?? 0));
@@ -83,7 +82,9 @@ export function teamNeeds(team: TeamSet[], data: EngineData, members?: SubRoleVa
   const styles = team.map(attackStyle);
   const physical = styles.filter(s => s === 'physical' || s === 'mixed').length;
   const special = styles.filter(s => s === 'special' || s === 'mixed').length;
-  const lopsided = archetype !== 'stall' && physical + special >= ONE_STYLE_ATTACKERS && (physical === 0 || special === 0);
+  // Dove "almeno un fisico" e "almeno uno speciale" sono essenziali, lo squilibrio lo dicono già quelle righe: niente malus doppio
+  const styleRows = levels.anyPhysical === 'essential' && levels.anySpecial === 'essential';
+  const lopsided = !styleRows && archetype !== 'stall' && physical + special >= ONE_STYLE_ATTACKERS && (physical === 0 || special === 0);
   return {
     archetype, levels, values, essentialMissing, importantMissing,
     missingRoles: [...new Set([...essentialMissing, ...importantMissing].flatMap(keyRoles))],
@@ -93,7 +94,7 @@ export function teamNeeds(team: TeamSet[], data: EngineData, members?: SubRoleVa
   };
 }
 
-/** Nome del bisogno: i sotto-ruoli col loro nome, più "Almeno uno Sweeper / un Wallbreaker" per i gruppi. */
+/** Nome del bisogno: i sotto-ruoli col loro nome, "Almeno uno Sweeper / un Wallbreaker / un fisico / uno speciale" per i gruppi. */
 export function needLabel(need: Need, lang: Lang = 'it'): string {
-  return need === 'anySweeper' || need === 'anyBreaker' ? t(lang, `need.${need}`) : roleLabel(need, lang);
+  return isGroupKey(need) ? t(lang, `need.${need}`) : roleLabel(need, lang);
 }

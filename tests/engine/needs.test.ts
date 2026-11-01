@@ -40,9 +40,17 @@ describe('tabella dei livelli per archetipo', () => {
       for (const a of ['hyperOffense', 'bulkyOffense', 'balance'] as const) expect(levelOf(a, key)).toBe('essential');
       expect(levelOf('semiStall', key)).toBe('ignored');
     }
+    // HO (2026-11-01, dai 39 HO da torneo di Natdex OU): anche "almeno un fisico / uno speciale" essenziali, Hazard,
+    // Controllo Hazard e Pivot importanti, muri, Recupero e Rimozione Strumenti minori, Taunt ed Encore ignorati
+    expect(levelOf('hyperOffense', 'anyPhysical')).toBe('essential');
+    expect(levelOf('hyperOffense', 'anySpecial')).toBe('essential');
+    expect(levelOf('bulkyOffense', 'anyPhysical')).toBe('ignored');
     expect(levelOf('hyperOffense', 'physicalWall')).toBe('minor');
     expect(levelOf('balance', 'physicalWall')).toBe('essential');
-    expect(levelOf('hyperOffense', 'recovery')).toBe('ignored');
+    expect(levelOf('hyperOffense', 'recovery')).toBe('minor');
+    expect(levelOf('hyperOffense', 'itemRemoval')).toBe('minor');
+    expect(levelOf('hyperOffense', 'taunt')).toBe('ignored');
+    expect(levelOf('hyperOffense', 'encore')).toBe('ignored');
     expect(levelOf('semiStall', 'pivot')).toBe('minor');
     // Gli hazard sono la voce di campo col loro livello (tabella provvisoria); schermi e Speed Control sono ignorati ovunque
     for (const a of Object.keys(ROLE_LEVELS) as (keyof typeof ROLE_LEVELS)[]) {
@@ -68,11 +76,11 @@ describe('tabella dei livelli per archetipo', () => {
     expect(LEVEL_KEYS.indexOf('support')).toBe(LEVEL_KEYS.indexOf('recovery') + 1);
   });
 
-  it('HO: gli hazard sono la sola voce importante', () => {
+  it('HO: le voci importanti sono Controllo Hazard, Hazard e Pivot (nell\'ordine delle voci)', () => {
     expect(levelOf('hyperOffense', 'hazards')).toBe('important');
-    expect(LEVEL_KEYS.filter(k => levelOf('hyperOffense', k) === 'important')).toEqual(['hazards']);
-    // Calibrazione: il pivot in HO è minore (i team HO da torneo spesso non ne hanno)
-    expect(levelOf('hyperOffense', 'pivot')).toBe('minor');
+    expect(LEVEL_KEYS.filter(k => levelOf('hyperOffense', k) === 'important')).toEqual(['removal', 'hazards', 'pivot']);
+    // Il pivot in HO è importante: il 74% degli HO da torneo di Natdex OU ne ha uno (2026-11-01)
+    expect(levelOf('hyperOffense', 'pivot')).toBe('important');
     const needs = teamNeeds(hyperOffense, fixtureData);
     expect(needs.archetype).toBe('hyperOffense');
     expect(needs.levels.hazards).toBe('important');
@@ -100,7 +108,7 @@ describe('tabella dei livelli per archetipo', () => {
     expect(needs.importantMissing).toContain('hazards');
   });
 
-  it('HO senza hazard: la voce manca (importante), base a zero, nessun malus essenziale', () => {
+  it('HO senza hazard: la voce manca (importante), base più bassa, nessun malus essenziale', () => {
     const none = [set('Glimmora', 'Focus Sash', 'Toxic Debris', ['Mortal Spin', 'Power Gem', 'Sludge Wave', 'Earth Power']), ...hyperOffense.slice(1)];
     const needs = teamNeeds(none, fixtureData);
     expect(needs.archetype).toBe('hyperOffense');
@@ -110,15 +118,19 @@ describe('tabella dei livelli per archetipo', () => {
     expect(needs.missingRoles).toContain('hazards');
     expect(needs.missingRoles).not.toContain('screens');
     const area = teamRolesArea(none, fixtureData, 'it', needs);
-    // Unica voce importante a 0: base 0, restano solo le minori
-    expect(area.base).toBe(0);
+    // Hazard a 0 fra tre voci importanti: la base è la media delle altre due, non zero
+    const full = teamRolesArea(hyperOffense, fixtureData, 'it');
+    expect(area.base).toBeLessThan(full.base);
+    expect(area.base).toBeGreaterThan(0);
     expect(area.failures.some(f => /hazard/i.test(f.text))).toBe(false);
-    expect(area.value).toBeLessThan(teamRolesArea(hyperOffense, fixtureData, 'it').value);
+    expect(area.value).toBeLessThan(full.value);
     // I gruppi degli attaccanti hanno un'etichetta propria, nelle due lingue
     expect(needLabel('anySweeper', 'it')).toBe('Almeno uno Sweeper');
     expect(needLabel('anySweeper', 'en')).toBe('At least one Sweeper');
     expect(needLabel('anyBreaker', 'it')).toBe('Almeno un Wallbreaker');
     expect(needLabel('anyBreaker', 'en')).toBe('At least one Wallbreaker');
+    expect(needLabel('anyPhysical', 'it')).toBe('Almeno un attaccante fisico');
+    expect(needLabel('anySpecial', 'en')).toBe('At least one special attacker');
   });
 
   it('"Chi la porta" degli hazard nomina la mossa; Sticky Web è Speed Control e Aurora Veil Screen Setter, non hazard', () => {
@@ -147,13 +159,32 @@ describe('tabella dei livelli per archetipo', () => {
     expect(levelOf('balance', 'recovery')).toBe('ignored');
     expect(levelOf('bulkyOffense', 'recovery')).toBe('ignored');
     // Le altre famiglie restano com'erano
-    expect(levelOf('hyperOffense', 'taunt')).toBe('minor');
+    expect(levelOf('hyperOffense', 'pivot')).toBe('important');
+    expect(levelOf('bulkyOffense', 'taunt')).toBe('minor');
   });
 
   it("le voci: i gruppi degli attaccanti e poi i sotto-ruoli nell'ordine delle famiglie", () => {
     const { attack, defense, support, utility } = FAMILIES;
-    // "Almeno uno Sweeper" e "Almeno un Wallbreaker" sono gruppi davanti all'Attacco
-    expect(LEVEL_KEYS).toEqual(['anySweeper', 'anyBreaker', ...attack, ...defense, ...support, ...utility]);
+    // I quattro gruppi degli attaccanti (Sweeper, Wallbreaker, fisico, speciale) stanno davanti all'Attacco
+    expect(LEVEL_KEYS).toEqual(['anySweeper', 'anyBreaker', 'anyPhysical', 'anySpecial', ...attack, ...defense, ...support, ...utility]);
+  });
+
+  it('HO tutto fisico: mancano "almeno uno speciale" (essenziale) e il malus "un solo stile" non si somma', () => {
+    // Tutti attaccanti fisici (giudicati come HO), nessuno speciale
+    const physical = [
+      set('Garchomp', 'Rocky Helmet', 'Rough Skin', ['Earthquake', 'Stealth Rock', 'Scale Shot', 'Swords Dance']),
+      hyperOffense[1], hyperOffense[4], hyperOffense[5],
+      set('Dragonite', 'Heavy-Duty Boots', 'Multiscale', ['Dragon Dance', 'Extreme Speed', 'Earthquake', 'Fire Punch']),
+      set('Weavile', 'Heavy-Duty Boots', 'Pressure', ['Swords Dance', 'Knock Off', 'Triple Axel', 'Ice Shard']),
+    ];
+    const needs = teamNeeds(physical, fixtureData, undefined, 'hyperOffense');
+    expect(needs.values.anySpecial).toBe(0);
+    expect(needs.essentialMissing).toEqual(['anySpecial']);
+    expect(needs.needStyle).toBeNull();
+    const area = teamRolesArea(physical, fixtureData, 'it', needs);
+    expect(area.failures).toHaveLength(1);
+    expect(area.failures[0]).toMatchObject({ points: 2, catalog: 'essentialRole' });
+    expect(area.failures[0].text).toContain('Almeno un attaccante speciale');
   });
 
   it('priorità e velocità non sono voci dei Ruoli; lo Speed Control lo è, ma ignorato in ogni tipo di team', () => {
@@ -190,11 +221,13 @@ describe('voci a livello di team (teamRolesArea)', () => {
     expect(removal.by[0]).toMatchObject({ species: 'Hatterene', value: 0.5, source: 'Magic Bounce' });
   });
 
-  it('HO di 6 con gli hazard: voce piena, base piena, nessun malus', () => {
+  it('HO di 6 con hazard e controllo hazard ma senza pivot: base 2/3, nessun malus', () => {
     const ho = teamRolesArea(hyperOffense, fixtureData, 'it');
     expect(ho.rows.find(r => r.key === 'hazards')).toMatchObject({ level: 'important', value: 1 });
-    expect(ho.base).toBe(1);
-    expect(ho.failures.some(f => /Hazard/.test(f.text))).toBe(false);
+    expect(ho.rows.find(r => r.key === 'removal')).toMatchObject({ level: 'important', value: 1 });
+    expect(ho.rows.find(r => r.key === 'pivot')).toMatchObject({ level: 'important', value: 0 });
+    expect(ho.base).toBeCloseTo(2 / 3);
+    expect(ho.failures).toEqual([]);
   });
 });
 

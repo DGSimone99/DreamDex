@@ -33,6 +33,8 @@ export const it: Record<keyof typeof en, string> = {
   'family.utility': "Utility",
   'need.anySweeper': "Almeno uno Sweeper",
   'need.anyBreaker': "Almeno un Wallbreaker",
+  'need.anyPhysical': "Almeno un attaccante fisico",
+  'need.anySpecial': "Almeno un attaccante speciale",
   'card.weather': "Meteo",
   'card.weatherTitle': "Porta {condition} ({via})",
   'roleShort.physicalSweeper': "Sweeper Fis.",
