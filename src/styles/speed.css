@@ -86,3 +86,15 @@
 .sp-rival-speed { text-align: right; }
 .sp-rival-diff { text-align: right; font-weight: 700; }
 .sp-dlg-foot { margin: 0; font-size: 11px; color: var(--faint); }
+/* Guida della Velocità: le quattro fonti come tessere (nome e quota sopra, una riga sotto), come le soglie della Difesa */
+.guide-tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin: 0; padding: 0; list-style: none; }
+.guide-tiles li { display: grid; align-content: start; gap: 4px; padding: 8px 10px; border: 1px solid var(--line-soft); background: color-mix(in srgb, var(--raised) 55%, var(--panel)); }
+.guide-tile-head { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.guide-tile-head b { font-size: 13px; font-weight: 600; line-height: 1.2; color: var(--text); }
+.guide-tile-head .guide-pct { flex: none; margin-left: 0; }
+.guide-pct.low { background: color-mix(in srgb, var(--accent-2) 10%, var(--raised)); color: var(--muted); }
+.guide-tiles small { font-size: 12px; line-height: 1.35; color: var(--muted); }
+.help-panel .guide-scale { margin-top: 6px; font-size: 13px; color: var(--muted); }
+@media (max-width: 560px) {
+  .guide-tiles { grid-template-columns: repeat(2, 1fr); }
+}

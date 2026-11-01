@@ -216,7 +216,10 @@ describe('Velocità: una scheda a barre', () => {
     expect(panel).toHaveTextContent(/25%/);
     expect(panel).toHaveTextContent(/12%/);
     expect(panel).toHaveTextContent(/90%/);
-    expect(panel).toHaveTextContent(/non cambia il voto/);
+    expect(panel).toHaveTextContent(/non cambiano il voto/);
+    // Schematica: le quattro fonti come tessere con la quota, niente moltiplicatori di dettaglio
+    expect(panel.querySelectorAll('.guide-tiles li')).toHaveLength(4);
+    expect(panel).not.toHaveTextContent(/×1,5|Trick Room contro il resto/);
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).toBeNull();
   });

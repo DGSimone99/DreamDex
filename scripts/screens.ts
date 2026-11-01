@@ -232,13 +232,15 @@ const SPEED_STATES: Record<string, State> = {
     return true;
   } },
 };
-SPEED_STATES['analysis-speed-guide'] = { hash: hash(SPEED_SIX), run: async p => {
-  const ok = await speedState(null).run!(p);
+const speedGuide = (format?: Partial<typeof FORMAT>): State => ({ hash: format ? hashWith(SPEED_SIX, format) : hash(SPEED_SIX), run: async p => {
+  const ok = await speedState(null, { format }).run!(p);
   if (ok !== true) return ok;
   if (!await clickText(p, '.area-help button', /./)) return 'no guide button';
   await wait(400);
   return true;
-} };
+} });
+SPEED_STATES['analysis-speed-guide'] = speedGuide();
+SPEED_STATES['analysis-speed-guide-nometa'] = speedGuide({ meta: false });
 const SUBS: Record<string, RegExp | null> = { general: null, robustness: /^Robustezza/, sustain: /^Sostenibilit/, types: /^Coverage tipi/, meta: /^Coverage meta/ };
 const DEFENSE_STATES: Record<string, State> = {
   ...Object.fromEntries(Object.entries(SUBS).flatMap(([k, re]) => [
@@ -651,7 +653,9 @@ for (const [w, h] of sizes) {
           const label = el.querySelector<HTMLElement>('th.def-mon-h');
           const labelAt = label ? (() => { const r = document.createRange(); r.selectNodeContents(label); const b = r.getBoundingClientRect(); return ` label=${Math.round(b.left)},${Math.round(b.top)}`; })() : '';
           const gp = document.querySelector<HTMLElement>('.help-dialog .help-panel');
-          const guide = gp ? ` guideScroll=${gp.scrollHeight - gp.clientHeight} guideH=${Math.round(gp.closest('.help-dialog')!.getBoundingClientRect().height)}` : '';
+          const gs = gp?.closest<HTMLElement>('.guide-stack');
+          // La guida a sezioni scorre nella pila (.guide-stack), non nel pannello: conta il più alto dei due
+          const guide = gp ? ` guideScroll=${Math.max(gp.scrollHeight - gp.clientHeight, gs ? gs.scrollHeight - gs.clientHeight : 0)} guideH=${Math.round(gp.closest('.help-dialog')!.getBoundingClientRect().height)}` : '';
           return `${guide} panelOverflow=${el.scrollHeight - el.clientHeight} panelX=${el.scrollWidth - el.clientWidth}${memberRows}${below}${labelAt}`; })(),
         dash: box ? `dash=${box.clientHeight}x${box.clientWidth} density=${box.dataset.density} cards=[${heights.join(',')}] cut=${cut} overflow=[${over.join(',')}] sumClip=${sumClip} rows=[${sumRows.join(',')}] sumHidden=${sumHidden} sumFill=${fill}% fitCut=${fitCut} covBand=${covBand} overviewScroll=${(document.querySelector('.overview')?.scrollHeight ?? 0) - (document.querySelector('.overview')?.clientHeight ?? 0)} hScroll=${document.scrollingElement!.scrollWidth - window.innerWidth}` : '',
       };

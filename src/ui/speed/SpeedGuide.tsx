@@ -1,13 +1,19 @@
-import type { ReactNode } from 'react';
-import { CONDITION_QUOTA, PARADOX_SPEED, SPEED_FULL, SPEED_RANK_WEIGHTS, type TeamSpeed } from '../../engine/speedArea';
+import { CONDITION_QUOTA, SPEED_FULL, SPEED_RANK_WEIGHTS, type TeamSpeed } from '../../engine/speedArea';
 import { SPEED_ITEM_ONLY, SPEED_ITEM_SPLIT, SPEED_POOL } from '../../engine/speed';
-import { useLang, useT } from '../../i18n/react';
-import { Rows } from '../guideParts';
+import { useT } from '../../i18n/react';
 
 type Key = Parameters<ReturnType<typeof useT>>[0];
 
 /** Pesi per posizione di velocità, in percentuale (sommano 100). */
 const MEMBER_WEIGHTS = SPEED_RANK_WEIGHTS;
+
+/** Le quattro fonti di velocità in più, ognuna con la sua quota (quella del motore, CONDITION_QUOTA). */
+const GAINS = [
+  { key: 'own', quota: CONDITION_QUOTA.setup },
+  { key: 'priority', quota: CONDITION_QUOTA.setup },
+  { key: 'control', quota: CONDITION_QUOTA.setup },
+  { key: 'short', quota: CONDITION_QUOTA.tailwind },
+] as const;
 
 /** Una barra di pesi (come quella dell'Offesa): ogni posizione larga quanto pesa. */
 function Bar({ label, weights, rank, from, to }: { label: string; weights: number[]; rank: (n: number) => string; from: string; to: string }) {
@@ -21,17 +27,11 @@ function Bar({ label, weights, rank, from, to }: { label: string; weights: numbe
   );
 }
 
-/** La guida della Velocità (una sezione): i rivali, cosa conta per ogni membro e con quale quota, i pesi, il modale. */
+/** La guida della Velocità (una sezione, schematica): i rivali, le quattro fonti in tessere con la quota, i pesi, la finestra. */
 export function SpeedGuideSection({ speed, meta }: { speed: TeamSpeed; meta: boolean }) {
   const t = useT();
-  const lang = useLang();
-  const num = (n: number) => (Number.isInteger(n) ? String(n) : String(n)).replace('.', lang === 'it' ? ',' : '.');
   const pctOf = (x: number) => Math.round(100 * x);
   const g = (key: string, params?: Record<string, string | number>) => t(`guide.speed.${key}` as Key, params);
-  const pct = (n: number | string) => <span className="guide-pct">{n}%</span>;
-  const lines = (items: ReactNode[]) => <ul className="guide-lines">{items.map((item, i) => <li key={i}>{item}</li>)}</ul>;
-  const half = pctOf(CONDITION_QUOTA.setup);
-  const quarter = pctOf(CONDITION_QUOTA.tailwind);
   const rivals = meta
     ? g('rivals.meta', { n: SPEED_POOL, split: pctOf(SPEED_ITEM_SPLIT), only: pctOf(SPEED_ITEM_ONLY) })
     : g('rivals.tier');
@@ -40,24 +40,33 @@ export function SpeedGuideSection({ speed, meta }: { speed: TeamSpeed; meta: boo
   return (
     <>
       <h5>{g('what')}</h5>
-      {lines([g('what.rule'), rivals, g('what.tie')])}
+      <ul className="guide-lines">
+        <li>{g('what.rule')}</li>
+        <li>{rivals}</li>
+      </ul>
 
       <h5>{g('gains')}</h5>
-      <Rows compact rows={[
-        [<>{g('gains.own')}{pct(half)}</>, g('gains.own.rule', { x: num(PARADOX_SPEED) })],
-        [<>{g('gains.priority')}{pct(half)}</>, g('gains.priority.rule')],
-        [<>{g('gains.control')}{pct(half)}</>, g('gains.control.rule')],
-        [<>{g('gains.short')}{pct(quarter)}</>, g('gains.short.rule')],
-        [g('gains.room'), g('gains.room.rule')],
-      ]} />
+      <ul className="guide-tiles">
+        {GAINS.map(gain => (
+          <li key={gain.key}>
+            <span className="guide-tile-head">
+              <b>{g(`gains.${gain.key}`)}</b>
+              <span className={`guide-pct${gain.quota < CONDITION_QUOTA.setup ? ' low' : ''}`}>{pctOf(gain.quota)}%</span>
+            </span>
+            <small>{g(`gains.${gain.key}.rule`)}</small>
+          </li>
+        ))}
+      </ul>
+      <p className="guide-foot">{g('gains.foot')}</p>
 
       <h5>{g('toteam')}</h5>
-      <h6>{g('rank.weights')}</h6>
       <Bar label={g('rank.weights')} weights={MEMBER_WEIGHTS} rank={n => g('rank', { n })} from={g('rank.best')} to={g('rank.worst')} />
-      {lines([g('scale', { pct: pctOf(SPEED_FULL) })])}
+      <p className="guide-foot guide-scale">{g('scale', { pct: pctOf(SPEED_FULL) })}</p>
 
       <h5>{g('dialog')}</h5>
-      {lines([g('dialog.rule'), g('dialog.versions'), g('dialog.grade')])}
+      <ul className="guide-lines">
+        <li>{g('dialog.rule')}</li>
+      </ul>
     </>
   );
 }
