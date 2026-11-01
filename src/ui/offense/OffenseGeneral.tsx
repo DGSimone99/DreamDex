@@ -1,108 +1,45 @@
-import type { ReactNode } from 'react';
 import { battleSpecies } from '../../engine/dex';
 import type { TeamOffense } from '../../engine/offense';
+import { TYPES } from '../../engine/types';
 import { useLang, useT } from '../../i18n/react';
-import { typeName } from '../../i18n/game';
+import { gameName, typeName } from '../../i18n/game';
 import type { AreaContext } from '../AreaDetail';
-import { Bar, tone } from '../defense/DefenseGeneral';
+import { Bar } from '../defense/DefenseGeneral';
 import { MemberMon } from '../defense/MemberMon';
-import { Icon } from '../icons';
-import { PokemonIcon } from '../PokemonName';
-import { TypeIcons } from '../typeIcons';
 import { offenseSlots } from './slots';
 
-/** Quanti tipi scoperti si mostrano come chip nella tessera dei tipi; gli altri vanno in "+N". */
-const UNCOVERED_CHIPS = 3;
-/** Quanti bersagli senza colpo si mostrano come icone nella tessera del meta. */
-const NO_HIT_ICONS = 6;
+/**
+ * Tipi che il membro copre del tutto (super efficace e KO in due colpi), su 18: le caselle verdi della tabella Coverage tipi.
+ * La barra è lunga quanto il conto e neutra: un membro da solo copre pochi tipi, non è un allarme.
+ */
+function TypeCount({ count }: { count: number }) {
+  return (
+    <span className="def-cell ct-count">
+      <span className="def-bar neutral" aria-hidden="true"><i style={{ width: `${(100 * count) / TYPES.length}%` }} /></span>
+      <span className="def-num">{count}/{TYPES.length}</span>
+    </span>
+  );
+}
 
 /**
  * La scheda Generale dell'Offesa, nella stessa cornice della Difesa (`def-frame`): i membri come righe con una colonna per
- * voce del voto (Potenza col "+N" di setup e Tera/Z, Coverage tipi, Coverage meta) e l'Offesa del membro coi pesi della
- * squadra; sotto una tessera per sottostatistica (un clic apre la sottoscheda).
+ * voce del voto (Potenza col "+N" di setup e Tera/Z, tipi coperti, Coverage meta) e l'Offesa del membro coi pesi della squadra.
  * Le righe seguono il team; chi il motore ha scartato (nessun attacco) resta con "—".
  */
 export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; meta: boolean; ctx: AreaContext }) {
   const t = useT();
   const lang = useLang();
-  const { coverageMeta, members, attackers } = offense;
+  const { members } = offense;
   const slots = offenseSlots(ctx.team, members);
   // Le colonne Potenza e Offesa riservano il posto del "+N" se almeno un membro ce l'ha (barre lunghe uguali)
   const setupColumn = members.some(m => m.setupGain > 0);
   const onceColumn = members.some(m => m.oneUseGain > 0 && !!m.oneUse);
-  const cap = (text: string, extra?: ReactNode) => <span className="def-cap"><em>{text}</em>{extra}</span>;
-
-  // Tipi scoperti
-  const holes = offense.coverageTypes.holes;
-  const hiddenTypes = holes.slice(UNCOVERED_CHIPS).map(h => typeName(h, lang)).join(', ');
-
-  // Potenza: quanti attaccanti per stile, in barre sulla taglia della squadra
-  const size = Math.max(1, ctx.team.length);
-  const meter = (label: string, count: number, kind: 'phys' | 'spec' | 'mixed') => (
-    <span className="def-meter">
-      <span className="def-meter-top"><em>{label}</em><b className={kind}>{count}</b></span>
-      <span className={`def-mini ${kind}`} aria-hidden="true"><i style={{ width: `${Math.min(100, (100 * count) / size)}%` }} /></span>
-    </span>
-  );
-
-  // Coverage meta: i bersagli che nessuno colpisce, con la specie che li rappresenta
-  const noHit = coverageMeta ? coverageMeta.rows.filter(r => coverageMeta.holes.includes(r.label)) : [];
-
-  const hiddenMeta = noHit.slice(NO_HIT_ICONS).map(r => r.species).join(', ');
-
-  const tiles: { key: string; label: string; value: number; fact: ReactNode }[] = [
-    {
-      key: 'coverageTypes', label: t('detail.coverageTypes'), value: offense.coverageTypes.value,
-      fact: <>
-        {cap(t('odetail.tile.uncovered'), <b>{holes.length}/18</b>)}
-        {holes.length
-          ? <span className="def-visual">
-            {holes.slice(0, UNCOVERED_CHIPS).map(type => (
-              <span key={type} className="def-chip serious"><TypeIcons types={[type]} />{typeName(type, lang)}</span>
-            ))}
-            {hiddenTypes && <span className="def-more" title={hiddenTypes}>+{holes.length - UNCOVERED_CHIPS}<span className="visually-hidden"> {hiddenTypes}</span></span>}
-          </span>
-          : <span className="def-visual def-none"><Icon name="check" />{t('odetail.types.none')}</span>}
-      </>,
-    },
-    {
-      key: 'power', label: t('detail.power'), value: offense.power,
-      fact: <>
-        <span className="def-visual def-meters">
-          {meter(t('odetail.physical'), attackers.physical, 'phys')}{meter(t('odetail.special'), attackers.special, 'spec')}{meter(t('odetail.mixed'), attackers.mixed, 'mixed')}
-        </span>
-        {offense.setters.length
-          ? <span className="def-visual">
-            <em className="def-sub">{t('odetail.tile.setup')}</em>
-            {offense.setters.map((s, i) => (
-              <span key={`${s.species}-${s.move}-${i}`} className="def-open-mon" title={`${s.species} (${s.move})`}>
-                <PokemonIcon name={s.species} /><span className="visually-hidden">{s.species} ({s.move})</span>
-              </span>
-            ))}
-          </span>
-          : <span className="def-visual def-faint">{t('odetail.tile.noSetup')}</span>}
-      </>,
-    },
-  ];
-  if (meta && coverageMeta) {
-    tiles.push({
-      key: 'coverageMeta', label: t('detail.coverageMeta'), value: coverageMeta.value,
-      fact: <>
-        {cap(t('odetail.tile.noHit'), noHit.length ? <b>{noHit.length}/{coverageMeta.rows.length}</b> : undefined)}
-        {noHit.length
-          ? <span className="def-visual">
-            {noHit.slice(0, NO_HIT_ICONS).map(r => (
-              <span key={r.label} className="def-open-mon plain" title={r.species}><PokemonIcon name={r.species} /><span className="visually-hidden">{r.species}</span></span>
-            ))}
-            {hiddenMeta && <span className="def-more" title={hiddenMeta}>+{noHit.length - NO_HIT_ICONS}<span className="visually-hidden"> {hiddenMeta}</span></span>}
-          </span>
-          : <span className="def-visual def-none"><Icon name="check" />{t('odetail.meta.allHit')}</span>}
-      </>,
-    });
-  }
+  // Per membro, quanti tipi copre del tutto (le stesse caselle verdi della scheda Coverage tipi)
+  const typesCovered = (species: string) =>
+    offense.coverageTypes.rows.filter(row => row.coveredBy.some(c => c.species === species && !c.partial)).length;
 
   return (
-    <div className="def-frame def-general">
+    <div className="def-frame off-frame def-general off-general">
       <div className="ad-scroll">
         <table className="def-grid def-members">
           <colgroup><col className="def-col-mon" /><col /><col />{meta && <col />}<col /></colgroup>
@@ -127,13 +64,13 @@ export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; m
                       <td>
                         {/* Quanto aggiungono setup (metà) e Tera o mossa Z (un quarto) alla Potenza del membro nel voto */}
                         <Bar value={m.power} reserve={setupColumn || onceColumn} gain={(m.setupGain > 0 || (m.oneUseGain > 0 && m.oneUse)) && <>
-                          {m.setupGain > 0 && <small className="ad-gain" title={t('detail.withSetup', { move: m.setupMove ?? '' })}> (+{m.setupGain})</small>}
+                          {m.setupGain > 0 && <small className="ad-gain" title={t('detail.withSetup', { move: gameName('move', m.setupMove ?? '', lang) })}> (+{m.setupGain})</small>}
                           {m.oneUseGain > 0 && m.oneUse && (
-                            <small className="ad-once" title={m.oneUse.kind === 'tera' ? t('detail.withTera', { type: m.oneUse.name }) : t('detail.withZ', { item: m.oneUse.name })}> (+{m.oneUseGain})</small>
+                            <small className="ad-once" title={m.oneUse.kind === 'tera' ? t('detail.withTera', { type: typeName(m.oneUse.name, lang) }) : t('detail.withZ', { item: gameName('item', m.oneUse.name, lang) })}> (+{m.oneUseGain})</small>
                           )}
                         </>} />
                       </td>
-                      <td><Bar value={m.coverTypes} unit="%" /></td>
+                      <td><TypeCount count={typesCovered(m.species)} /></td>
                       {meta && <td><Bar value={m.coverMeta ?? 0} unit="%" /></td>}
                       {/* Quanto il membro porta all'Offesa, coi pesi della squadra */}
                       <td><Bar value={m.total} total /></td>
@@ -144,14 +81,6 @@ export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; m
             })}
           </tbody>
         </table>
-      </div>
-      <div className="def-sum def-tiles">
-        {tiles.map(tile => (
-          <button key={tile.key} type="button" className={`def-tile ${tone(tile.value)}`} onClick={() => ctx.open?.(tile.key)}>
-            <span className="def-tile-head"><span>{tile.label}</span><b>{tile.value}</b></span>
-            <span className="def-tile-fact">{tile.fact}</span>
-          </button>
-        ))}
       </div>
     </div>
   );

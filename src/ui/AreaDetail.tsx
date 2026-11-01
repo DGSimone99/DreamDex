@@ -1,5 +1,6 @@
 import type { ReactElement, ReactNode } from 'react';
 import type { TeamAnalysis } from '../engine/analysis';
+import type { FormatId } from '../engine/format';
 import type { TeamSet } from '../engine/sets';
 import { bonusMalusCatalog, type CatalogEntry, type TeamRating } from '../engine/rating';
 import { ESSENTIAL_POINTS, type TeamRoles } from '../engine/rolesArea';
@@ -22,7 +23,9 @@ export interface DetailTab { key: string; label: string; value: number | string 
 /** Il contesto dell'area oltre al voto: il team e la sua analisi (lo ricevono la Difesa e l'Offesa). */
 export interface AreaContext { team: TeamSet[]; analysis: TeamAnalysis; open?: (key: string) => void;
   /** Squadra chiusa: più spazio, la scheda Generale della Difesa mostra più colonne. */
-  roomy?: boolean }
+  roomy?: boolean;
+  /** Formato scelto (la guida dell'Offesa mostra i bersagli del suo Pokédex, e Tera / mosse Z solo dove ci sono). */
+  formatId?: FormatId }
 
 /**
  * Dettaglio di un'area (Offesa o Difesa): una scheda generale e una per sottostatistica, ognuna con come si calcola

@@ -66,7 +66,7 @@ export function AnalysisPanel({ team, analysis, rating, coaching, advice = null,
   let body;
   if (area && rating) {
     body = (
-      <AreaView key={area} rating={rating} area={area} team={team} analysis={analysis} problems={problemsOf(coaching?.problems, area)} roomy={teamCollapsed}
+      <AreaView key={area} rating={rating} area={area} team={team} analysis={analysis} problems={problemsOf(coaching?.problems, area)} roomy={teamCollapsed} formatId={data.formatId}
         picked={subTabs[area] ?? null} onPick={key => setSubTabs(tabs => ({ ...tabs, [area]: key }))}
         extra={area === 'roles' ? { tabKey: 'general', panel: <NeedsTable team={team} analysis={analysis} /> }
           : undefined} />

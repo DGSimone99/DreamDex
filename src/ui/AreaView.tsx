@@ -2,6 +2,7 @@ import { useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent
 import { PROBLEM_CATEGORIES, type CoachProblem } from '../engine/coach';
 import type { TeamAnalysis } from '../engine/analysis';
 import type { TeamRating } from '../engine/rating';
+import type { FormatId } from '../engine/format';
 import type { TeamSet } from '../engine/sets';
 import { useLang, useT } from '../i18n/react';
 import { areaTabs, type AreaKey } from './AreaDetail';
@@ -18,7 +19,7 @@ const HELP_SIZE = 18;
  * aperta, una riga coi problemi dell'area e il dettaglio di quella scelta a tutta larghezza.
  * `extra`: contenuto in più in cima a una scheda (la coverage dei tipi, i bisogni dei ruoli).
  */
-export function AreaView({ rating, area, problems, team, analysis, extra, roomy = false, picked: remembered, onPick }: {
+export function AreaView({ rating, area, problems, team, analysis, extra, roomy = false, picked: remembered, onPick, formatId }: {
   rating: TeamRating;
   area: AreaKey;
   problems: CoachProblem[];
@@ -30,6 +31,8 @@ export function AreaView({ rating, area, problems, team, analysis, extra, roomy 
   /** La sottoscheda scelta, tenuta da chi contiene la vista (così resta cambiando area); senza, la tiene la vista. */
   picked?: string | null;
   onPick?: (key: string) => void;
+  /** Formato scelto, per la guida dell'Offesa. */
+  formatId?: FormatId;
 }) {
   const t = useT();
   const lang = useLang();
@@ -40,7 +43,7 @@ export function AreaView({ rating, area, problems, team, analysis, extra, roomy 
   // `open`: le tessere della scheda Generale aprono la sottoscheda e le passano il focus (il pannello che le ospitava sparisce)
   const focusKey = useRef<string | null>(null);
   const open = (key: string) => { focusKey.current = key; setPicked(key); };
-  const tabs = areaTabs(rating, area, t, lang, { team, analysis, open, roomy });
+  const tabs = areaTabs(rating, area, t, lang, { team, analysis, open, roomy, formatId });
   // Si parte dalla prima scheda (Generale), anche se la sottoscheda ricordata non c'è più (es. meta spento)
   const index = Math.max(0, picked === null ? 0 : tabs.findIndex(tab => tab.key === picked));
   const current = tabs[index];

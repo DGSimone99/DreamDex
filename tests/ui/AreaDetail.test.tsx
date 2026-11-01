@@ -29,8 +29,8 @@ describe("dettaglio dell'Offesa a schede", () => {
     expect(tabs.map(tab => tab.textContent!.replace(/\s*\d+$/, ''))).toEqual(['Generale', 'Coverage tipi', 'Potenza', 'Coverage meta']);
     expect(tabs[0]).toHaveAttribute('aria-selected', 'true');
     const panel = within(dialog).getByRole('tabpanel');
-    // Tre tessere cliccabili al posto delle sottostatistiche
-    expect(within(panel).getAllByRole('button').map(btn => btn.querySelector('.def-tile-head span')!.textContent)).toEqual(['Coverage tipi', 'Potenza', 'Coverage meta']);
+    // Solo la tabella dei membri: niente tessere sotto
+    expect(within(panel).queryAllByRole('button')).toHaveLength(0);
     const table = within(panel).getByRole('table');
     expect(within(table).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Potenza', 'Coverage tipi', 'Coverage meta', 'Offesa']);
     const rows = within(table).getAllByRole('row').slice(1);
@@ -39,25 +39,16 @@ describe("dettaglio dell'Offesa a schede", () => {
       const cells = within(row).getAllByRole('cell');
       // La Potenza, con tra parentesi quanto la alzano il setup e Tera o mossa Z nel voto
       expect(cells[0]).toHaveTextContent(/^\d+( \(\+\d+\))*$/);
-      expect(cells[1]).toHaveTextContent(/^\d+%$/);
+      // Coverage tipi: i tipi coperti del tutto su 18
+      expect(cells[1]).toHaveTextContent(/^\d+\/18$/);
       expect(cells[2]).toHaveTextContent(/^\d+%$/);
       // L'Offesa del membro, coi pesi della squadra
       expect(cells[3]).toHaveTextContent(/^\d+$/);
       const once = cells[0].querySelector('.ad-once');
-      if (once) expect(once.getAttribute('title')).toMatch(/^Con (Tera|la mossa Z)/);
+      if (once) expect(once.getAttribute('title')).toMatch(/^Tera \S+$|Z$/);
     }
     // Il "+N" sta nel suo posto della cella della barra (non sborda nella colonna dopo)
     for (const gain of table.querySelectorAll('.ad-gain, .ad-once')) expect(gain.closest('.def-cell.with-gain > .def-gain')).not.toBeNull();
-  });
-
-  it('Generale: la tessera Potenza conta gli attaccanti fisici, speciali e misti (solo informazione)', async () => {
-    const { dialog } = await openOffense('it');
-    expect(within(dialog).getByRole('button', { name: /^Potenza/ })).toHaveTextContent(/Fisici1Speciali1Misti0/);
-  });
-
-  it('Generale in inglese: la tessera degli attaccanti', async () => {
-    const { dialog } = await openOffense('en');
-    expect(within(dialog).getByRole('button', { name: /^Power/ })).toHaveTextContent(/Physical1Special1Mixed0/);
   });
 
   it('Potenza: la Potenza di ogni membro col suo colpo migliore', async () => {

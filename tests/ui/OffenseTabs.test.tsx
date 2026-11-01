@@ -6,7 +6,7 @@ import { rateTeam } from '../../src/engine/rating';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
 import { LangProvider } from '../../src/i18n/react';
 import { AreaView } from '../../src/ui/AreaView';
-import { gameName } from '../../src/i18n/game';
+import { gameName, typeName } from '../../src/i18n/game';
 import { offenseSlots } from '../../src/ui/offense/slots';
 import { fixtureData } from '../fixtures/data';
 import { renderIt } from '../helpers/italian';
@@ -104,7 +104,9 @@ describe('Offesa: Generale', () => {
     const rows = document.querySelectorAll('.def-members tbody tr');
     rating.offense.members.forEach((m, i) => {
       const cells = rows[i].querySelectorAll('td');
-      expect(cells[1]).toHaveTextContent(`${m.coverTypes}%`);
+      // Tipi coperti del tutto su 18: le caselle verdi della scheda Coverage tipi
+      const full = rating.offense.coverageTypes.rows.filter(r => r.coveredBy.some(c => c.species === m.species && !c.partial)).length;
+      expect(cells[1]).toHaveTextContent(`${full}/18`);
       expect(cells[2]).toHaveTextContent(`${m.coverMeta}%`);
       expect(cells[3]).toHaveTextContent(`${m.total}`);
     });
@@ -114,31 +116,10 @@ describe('Offesa: Generale', () => {
     expect([...document.querySelectorAll('.def-mon-name')].map(n => n.textContent)).toEqual(['Great Tusk', 'Gholdengo']);
   });
 
-  it('tre tessere, cliccandole si apre la sottoscheda e prende il focus', async () => {
-    const user = userEvent.setup();
-    const { unmount } = view();
-    const tiles = () => screen.getAllByRole('button', { name: /^(Coverage tipi|Potenza|Coverage meta)/ });
-    expect(tiles()).toHaveLength(3);
-    await user.click(screen.getByRole('button', { name: /^Potenza/ }));
-    const tab = screen.getByRole('tab', { name: /^Potenza/ });
-    expect(tab).toHaveAttribute('aria-selected', 'true');
-    expect(tab).toHaveFocus();
-    unmount();
-    view(team, noMeta());
-    expect(tiles()).toHaveLength(2);
-  });
-
-  it('la tessera Potenza mostra chi ha una mossa di setup', () => {
+  it('niente tessere sotto la tabella', () => {
     view();
-    const tile = screen.getByRole('button', { name: /^Potenza/ });
-    expect(within(tile).getByText('Gholdengo (Nasty Plot)')).toBeInTheDocument();
-  });
-
-  it('la tessera Coverage meta dice quanti nessuno manda KO in due colpi', () => {
-    view();
-    const tile = screen.getByRole('button', { name: /^Coverage meta/ });
-    expect(tile).toHaveTextContent(/Nessuno lo manda KO in due colpi|Tutti mandati KO in due colpi/);
-    expect(tile).not.toHaveTextContent(/Nessun colpo|Ogni bersaglio colpito/);
+    expect(document.querySelector('.def-tile')).toBeNull();
+    expect(screen.queryByRole('button', { name: /^(Coverage tipi|Potenza|Coverage meta)/ })).toBeNull();
   });
 
   it('membro senza attacchi: la riga resta con "—"', () => {
@@ -216,7 +197,8 @@ describe('Offesa: Potenza', () => {
     expect(small).toHaveLength(gains.length);
     small.forEach(el => {
       expect(el.textContent).toMatch(/\(\+\d+\)/);
-      expect(el.getAttribute('title')).toMatch(/una volta a partita/);
+      // Solo il nome: "Tera" e il tipo
+      expect(el.getAttribute('title')).toBe(`Tera ${typeName('Dark', 'it')}`);
     });
   });
 
@@ -285,7 +267,7 @@ describe('Offesa: Potenza', () => {
         expect(cell.querySelector('.pw-move')!.textContent).toBe(gameName('move', m.setupMove, 'it'));
         if (m.setupGain > 0) {
           expect(cell.querySelector('small.ad-gain')!.textContent).toBe(` (+${m.setupGain})`);
-          expect(cell.querySelector('small.ad-gain')!.getAttribute('title')).toMatch(/setup.*Potenza/);
+          expect(cell.querySelector('small.ad-gain')!.getAttribute('title')).toBe(gameName('move', m.setupMove, 'it'));
         }
       } else {
         expect(cell).toHaveTextContent('—');
@@ -294,7 +276,8 @@ describe('Offesa: Potenza', () => {
     // Il +N del setup non sta più accanto alla barra
     expect(document.querySelectorAll('.pw-bar small.ad-gain')).toHaveLength(0);
     expect(rating.offense.members.some(m => m.setupMove)).toBe(true);
-    expect(document.querySelector('.pw-ref')).toHaveTextContent('Pokémon medio dei 18 tipi');
+    // Niente più legenda in fondo: solo il riferimento del 100
+    expect(document.querySelector('.pw-ref')).not.toHaveTextContent('un quarto');
   });
 });
 
@@ -372,7 +355,7 @@ describe('Offesa: Coverage meta', () => {
     expect(summary).toHaveTextContent(`${covered} coperti`);
     expect(summary).toHaveTextContent(`${only3} solo 3HKO`);
     expect(summary).toHaveTextContent(`${rows.length - covered - only3} scoperti`);
-    expect(screen.getByRole('tabpanel')).toHaveTextContent(/un quarto.*Tera/);
+    expect(screen.getByRole('tabpanel')).not.toHaveTextContent(/un quarto/);
   });
 
   it('un bersaglio immune a tutti: 0% ovunque e nessuno lo copre', async () => {

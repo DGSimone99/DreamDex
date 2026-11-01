@@ -155,7 +155,9 @@ describe('setup difensivo nel dettaglio della Difesa', () => {
     // Con i colpi di tipo la danza alza il valore solo se fa salire di soglia qualche colpo: può valere zero
     for (const gain of within(dialog).getByRole('table').querySelectorAll('.ad-gain')) {
       expect(gain).toHaveTextContent(/^\(\+\d+\)$/);
-      expect(gain.getAttribute('title')).toMatch(/^Con il setup: /);
+      // Solo il nome della mossa
+      expect(gain.getAttribute('title')).toMatch(/^\S.*\S$/);
+      expect(gain.getAttribute('title')).not.toMatch(/setup/i);
     }
     expect(row).toBeInTheDocument();
   });

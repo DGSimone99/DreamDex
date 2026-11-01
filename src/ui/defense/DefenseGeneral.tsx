@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import type { HoldBand, SustainParts, TeamDefense } from '../../engine/defense';
 import { useLang, useT } from '../../i18n/react';
-import { typeName } from '../../i18n/game';
+import { gameName, typeName } from '../../i18n/game';
 import type { AreaContext } from '../AreaDetail';
 import { Icon } from '../icons';
 import { Sprite } from '../Sprite';
@@ -177,7 +177,7 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
                 <td>
                   {/* Quanto aggiunge il setup difensivo (metà del guadagno entra nel voto) */}
                   <Bar value={m.value} total reserve={setupColumn}
-                    gain={m.setupGain > 0 && m.setupMove && <small className="ad-gain" title={t('ddetail.withSetup', { move: m.setupMove })}> (+{m.setupGain})</small>} />
+                    gain={m.setupGain > 0 && m.setupMove && <small className="ad-gain" title={t('ddetail.withSetup', { move: gameName('move', m.setupMove, lang) })}> (+{m.setupGain})</small>} />
                 </td>
                 {roomy && <WorstAndRecovery hit={worstHit(i)} parts={m.sustainParts} />}
               </tr>

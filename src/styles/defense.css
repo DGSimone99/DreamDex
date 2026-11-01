@@ -28,7 +28,7 @@
 /* Il contenuto: didascalia minuscola e sotto l'elemento visivo, alto uguale in tutte le tessere */
 .def-tile-fact { display: flex; flex-direction: column; gap: 4px; width: 100%; height: 50px; padding-top: 5px; border-top: 1px solid var(--line-soft); font-size: 13px; color: var(--text); overflow: hidden; }
 .def-cap { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; line-height: 1.2; }
-.def-cap em, .def-meter-top em { font-style: normal; font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.def-cap em { font-style: normal; font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
 .def-cap b { font-size: 12px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
 .def-visual { display: flex; align-items: center; gap: 4px; min-height: 24px; min-width: 0; white-space: nowrap; }
 .def-none { gap: 6px; color: var(--good); font-weight: 600; }
@@ -42,18 +42,6 @@
 /* Senza recupero: sprite spento */
 .def-open-mon.off { opacity: 0.35; filter: grayscale(1); border-bottom-color: transparent; }
 .def-more { font-size: 12px; font-weight: 600; color: var(--muted); }
-/* Robustezza: due mini misuratori affiancati */
-.def-meters { align-items: stretch; gap: 12px; flex: 1; }
-.def-meter { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 3px; min-width: 0; }
-.def-meter-top { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; }
-.def-meter-top b { font: italic 700 16px/1 var(--display); font-variant-numeric: tabular-nums; }
-.def-meter-top b.good { color: var(--good); }
-.def-meter-top b.warn { color: var(--warn); }
-.def-meter-top b.bad { color: var(--bad); }
-.def-mini { position: relative; display: block; height: 4px; background: var(--line-soft); }
-.def-mini i { position: absolute; inset: 0 auto 0 0; background: var(--good); }
-.def-mini.warn i { background: var(--warn); }
-.def-mini.bad i { background: var(--bad); }
 
 
 /* Cornice comune delle schede con i membri: la lista in alto (testata e righe di altezza fissa, così cambiando scheda i
