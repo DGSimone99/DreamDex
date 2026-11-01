@@ -76,8 +76,8 @@ const ROWS: [LevelKey, Level, Level, Level, Level, Level][] = [
   // Semi-stall e stall vincono logorando: senza attaccanti nessun malus (2026-10-30; l'Offesa misura comunque il danno)
   ['anySweeper', E, E, E, X, X],
   ['anyBreaker', E, E, E, X, X],
-  ['anyPhysical', E, X, X, X, X],
-  ['anySpecial', E, X, X, X, X],
+  ['anyPhysical', E, E, X, X, X],
+  ['anySpecial', E, E, X, X, X],
   ['physicalSweeper', M, M, M, M, X],
   ['specialSweeper', M, M, M, M, X],
   ['physicalBreaker', M, M, M, M, M],
@@ -90,14 +90,14 @@ const ROWS: [LevelKey, Level, Level, Level, Level, Level][] = [
   ['removal', I, I, I, I, I],
   ['screens', X, X, X, X, X],
   ['speedControl', X, X, X, X, X],
-  ['debuff', X, M, M, M, M],
-  ['phazer', X, M, M, I, I],
+  ['debuff', X, X, M, M, M],
+  ['phazer', X, X, M, I, I],
   // Utility
   ['hazards', I, I, I, E, I],
   ['pivot', I, I, I, M, M],
   ['dot', X, M, M, I, I],
-  ['taunt', X, M, M, M, M],
-  ['encore', X, M, M, M, M],
+  ['taunt', X, X, M, M, M],
+  ['encore', X, X, M, M, M],
   ['itemRemoval', M, I, M, I, I],
 ];
 const COLUMNS: Archetype[] = ['hyperOffense', 'bulkyOffense', 'balance', 'semiStall', 'stall'];

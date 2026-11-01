@@ -44,7 +44,13 @@ describe('tabella dei livelli per archetipo', () => {
     // Controllo Hazard e Pivot importanti, muri, Recupero e Rimozione Strumenti minori, Taunt ed Encore ignorati
     expect(levelOf('hyperOffense', 'anyPhysical')).toBe('essential');
     expect(levelOf('hyperOffense', 'anySpecial')).toBe('essential');
-    expect(levelOf('bulkyOffense', 'anyPhysical')).toBe('ignored');
+    expect(levelOf('bulkyOffense', 'anyPhysical')).toBe('essential');
+    expect(levelOf('bulkyOffense', 'anySpecial')).toBe('essential');
+    expect(levelOf('balance', 'anyPhysical')).toBe('ignored');
+    // BO (201 BO da torneo di Natdex OU, 95 / 70 / 30): sotto il 30% Taunt, Anti-setup, Cleric, Debuff ed Encore sono ignorati
+    expect(levelOf('bulkyOffense', 'taunt')).toBe('ignored');
+    expect(levelOf('bulkyOffense', 'phazer')).toBe('ignored');
+    expect(levelOf('bulkyOffense', 'dot')).toBe('minor');
     expect(levelOf('hyperOffense', 'physicalWall')).toBe('minor');
     expect(levelOf('balance', 'physicalWall')).toBe('essential');
     expect(levelOf('hyperOffense', 'recovery')).toBe('minor');
@@ -160,7 +166,7 @@ describe('tabella dei livelli per archetipo', () => {
     expect(levelOf('bulkyOffense', 'recovery')).toBe('ignored');
     // Le altre famiglie restano com'erano
     expect(levelOf('hyperOffense', 'pivot')).toBe('important');
-    expect(levelOf('bulkyOffense', 'taunt')).toBe('minor');
+    expect(levelOf('balance', 'taunt')).toBe('minor');
   });
 
   it("le voci: i gruppi degli attaccanti e poi i sotto-ruoli nell'ordine delle famiglie", () => {
