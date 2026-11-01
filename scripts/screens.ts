@@ -15,7 +15,7 @@ const arg = (name: string) => {
   const i = process.argv.indexOf(`--${name}`);
   return i >= 0 ? process.argv[i + 1] : undefined;
 };
-const out = arg('out') ?? 'shots/restyle';
+const out = arg('out') ?? 'shots';
 const sizes = (arg('sizes') ?? '1440x900,1280x800,1366x768').split(',').map(s => s.split('x').map(Number) as [number, number]);
 
 const member = (species: string, item: string, ability: string, moves: string[], nature: string, evs: Record<string, number>) =>
@@ -72,7 +72,7 @@ const MOVE = [
   TEAM[4],
   SIX[5],
 ];
-// Il team dell'utente: voto alto, poche tappe
+// Il mio team di prova: voto alto, poche tappe
 const USER = [
   member('Scizor', 'Scizorite', 'Light Metal', ['Swords Dance', 'Bullet Punch', 'Knock Off', 'Roost'], 'Impish', { hp: 248, def: 112, spd: 128, spe: 20 }),
   member('Garchomp', 'Dragonium Z', 'Rough Skin', ['Swords Dance', 'Earthquake', 'Outrage', 'Stealth Rock'], 'Jolly', { atk: 252, spd: 4, spe: 252 }),
