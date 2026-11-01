@@ -225,7 +225,7 @@ describe('Cruscotto della Panoramica', () => {
     expect([...table.querySelectorAll('.dash-role-sep')].map(x => x.textContent)).toEqual(['Essenziali', 'Importanti', 'Minori']);
     const rows = roleRows(roles);
     expect(rows.map(r => r.querySelector('th')!.textContent)).toEqual([
-      'Hazard, coperto da Great Tusk', 'Rimozione Hazard, coperto da Great Tusk, Corviknight, Toxapex', 'Pivot, mancante', 'Schermi, mancante',
+      'Hazard, coperto da Great Tusk', 'Controllo Hazard, coperto da Great Tusk, Corviknight, Toxapex', 'Pivot, mancante', 'Schermi, mancante',
     ]);
     // Rimozione: pallini sotto Great Tusk, Corviknight, Toxapex, non sotto Dragapult
     expect([...rows[1].querySelectorAll('td')].map(td => !!td.querySelector('.dash-dot'))).toEqual([true, true, true, false]);
@@ -237,8 +237,8 @@ describe('Cruscotto della Panoramica', () => {
     // Niente chip nell'ampio
     expect(roles.querySelector('.dash-role')).toBeNull();
     // Chi copre il ruolo è nel tooltip della riga, il membro in quello della casella
-    expect(rows[1]).toHaveAttribute('title', 'Rimozione Hazard: Great Tusk, Corviknight, Toxapex');
-    expect(rows[1].querySelectorAll('td')[1]).toHaveAttribute('title', 'Rimozione Hazard: Corviknight');
+    expect(rows[1]).toHaveAttribute('title', 'Controllo Hazard: Great Tusk, Corviknight, Toxapex');
+    expect(rows[1].querySelectorAll('td')[1]).toHaveAttribute('title', 'Controllo Hazard: Corviknight');
   });
 
   it('Ruoli: tre fasce una sotto l\'altra, Essenziali, Importanti, Minori, con l\'etichetta a sinistra', () => {
@@ -313,8 +313,8 @@ describe('Cruscotto della Panoramica', () => {
     const roles = screen.getByRole('region', { name: 'Ruoli' });
     for (const chip of roles.querySelectorAll('.dash-role:not(.more)')) expect([...chip.children].map(x => x.className)).toEqual(['dash-role-tag']);
     const removal = within(roleBand(roles, 'Essenziali')).getAllByRole('listitem')[1];
-    expect(removal).toHaveTextContent(/^Rimozione Hazard, coperto da Great Tusk, Corviknight, Toxapex$/);
-    expect(removal).toHaveAttribute('title', 'Rimozione Hazard: Great Tusk, Corviknight, Toxapex');
+    expect(removal).toHaveTextContent(/^Controllo Hazard, coperto da Great Tusk, Corviknight, Toxapex$/);
+    expect(removal).toHaveAttribute('title', 'Controllo Hazard: Great Tusk, Corviknight, Toxapex');
   });
 
   it('ogni corsia della Velocità ha il nome del Pokémon per i lettori di schermo', () => {

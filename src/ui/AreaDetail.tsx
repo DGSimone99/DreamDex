@@ -5,6 +5,7 @@ import { MAX_BONUS, MAX_PENALTY, bonusMalusCatalog, type CatalogEntry, type Team
 import { ESSENTIAL_POINTS, type TeamRoles } from '../engine/rolesArea';
 import { MISSING_BELOW } from '../engine/needs';
 import type { Level, LevelKey } from '../engine/roleLevels';
+import { attackStyle } from '../engine/roles';
 import { FAMILIES, secondaryRoles, type Family, type SubRole, type SubRoleReason } from '../engine/subRoles';
 import { useT } from '../i18n/react';
 import type { Lang } from '../i18n';
@@ -40,7 +41,7 @@ export function areaTabs(rating: TeamRating, area: AreaKey, t: T, lang: Lang, ct
   const value = rating.areas.find(a => a.key === area)?.value ?? null;
   return area === 'strength' ? offenseTabs(rating, t, ctx)
     : area === 'defense' ? defenseTabs(rating.defense, !!rating.meta, t, ctx)
-    : area === 'roles' ? rolesTabs(rating, value, t)
+    : area === 'roles' ? rolesTabs(rating, value, t, ctx)
     : speedTabs(rating.speed, !!rating.meta, t, ctx);
 }
 
@@ -120,7 +121,7 @@ function reasonText(r: SubRoleReason, pool: string, t: T): string {
 }
 
 /** Le schede dei Ruoli: Generale (livelli, base, extra, mancanze) e una per famiglia coi sotto-ruoli di ogni membro. */
-function rolesTabs(rating: TeamRating, value: number | null, t: T): DetailTab[] {
+function rolesTabs(rating: TeamRating, value: number | null, t: T, ctx: AreaContext): DetailTab[] {
   const roles: TeamRoles = rating.roles;
   const pool = t(rating.meta ? 'rdetail.pool.meta' : 'rdetail.pool.tier');
   const archetype = t(`archetype.${rating.teamType}`);
@@ -136,8 +137,18 @@ function rolesTabs(rating: TeamRating, value: number | null, t: T): DetailTab[] 
   // Fonte e valore di chi porta la voce: le fonti generiche (set, muro: l'indice è nella scheda Difesa) non si mostrano,
   // il valore solo se non pieno
   // il valore solo se non pieno; il secondario (famiglia non principale) col suo segno
-  const byNote = (source: string, v: number, secondary?: boolean) =>
-    [secondary && t('rdetail.secondary'), source !== 'set' && source !== 'wall' && source, v < 1 && points(v)].filter(Boolean).join(' · ');
+  /** Il set del membro che porta una voce (i membri dei Ruoli seguono l'ordine del team). */
+  const setOf = (species: string) => { const i = roles.members.findIndex(m => m.species === species); return i >= 0 ? ctx.team[i] : undefined; };
+  const isWall = (species: string) => { const m = roles.members.find(x => x.species === species); const v = m?.credited ?? m?.values ?? {}; return (v.physicalWall ?? 0) >= MISSING_BELOW || (v.specialWall ?? 0) >= MISSING_BELOW; };
+  const ATTACK_KEYS = new Set<LevelKey>(['attacker', ...FAMILIES.attack]);
+  /** La nota dopo la fonte: pivot offensivo o difensivo (se chi lo porta è un muro), "misto" per chi attacca da entrambi i lati. */
+  const kindNote = (key: LevelKey, species: string) => {
+    if (key === 'pivot') return t(isWall(species) ? 'rdetail.pivot.defensive' : 'rdetail.pivot.offensive');
+    const set = setOf(species);
+    return ATTACK_KEYS.has(key) && set && attackStyle(set) === 'mixed' ? t('rdetail.mixed') : '';
+  };
+  const byNote = (source: string, v: number, secondary?: boolean, kind = '') =>
+    [secondary && t('rdetail.secondary'), source !== 'set' && source !== 'wall' && source, kind, v < 1 && points(v)].filter(Boolean).join(' · ');
 
   const general = (
     <>
@@ -200,7 +211,7 @@ function rolesTabs(rating: TeamRating, value: number | null, t: T): DetailTab[] 
                       <td className="left gap ad-by">
                         {row.by.length
                           ? row.by.map((b, i) => {
-                            const note = byNote(b.source, b.value, b.secondary);
+                            const note = byNote(b.source, b.value, b.secondary, kindNote(row.key, b.species));
                             return (
                               <span key={`${b.species}-${i}`} className="ad-mon">
                                 <Sprite species={b.species} size={28} />{b.species}

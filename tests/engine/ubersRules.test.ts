@@ -53,7 +53,7 @@ describe('regole di Ubers', () => {
   const ubers: EngineData = { ...fixtureData, formatId: 'ubers' };
   const noHazards = ho.map(s => ({ ...s, moves: s.moves.map(m => (['Stealth Rock', 'Spikes'].includes(m) ? 'Protect' : m)) }));
 
-  it('in Ubers un team senza hazard non ha più un malus del formato: lo paga solo nei Ruoli (hazard importanti)', () => {
+  it('in Ubers un team senza hazard non ha più un malus del formato: lo pagano i Ruoli (setup del campo importante in HO)', () => {
     const penalty = (team: TeamSet[], data: EngineData = ubers) => rateTeam(team, data)!.penalty.items.find(i => i.text.startsWith('Nessun hazard'));
     expect(penalty(noHazards)).toBeUndefined();
     expect(penalty(ho)).toBeUndefined();

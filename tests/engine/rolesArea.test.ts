@@ -64,10 +64,11 @@ describe('area Ruoli: base degli importanti, extra dei minori', () => {
 
   it('righe: le voci dell\'archetipo col valore del team e chi le porta', () => {
     const roles = teamRolesArea(physical, fixtureData, 'it');
-    const hazards = roles.rows.find(r => r.key === 'hazards')!;
-    expect(hazards.level).toBe('important');
-    expect(hazards.value).toBe(1);
-    expect(hazards.by.map(b => b.species)).toEqual(expect.arrayContaining(['Garchomp', 'Skarmory']));
+    const field = roles.rows.find(r => r.key === 'fieldSetup')!;
+    expect(field.level).toBe('important');
+    expect(field.value).toBe(1);
+    expect(field.by.map(b => b.species)).toEqual(expect.arrayContaining(['Garchomp', 'Skarmory']));
+    expect(roles.rows.find(r => r.key === 'hazards')).toBeUndefined();
     expect(roles.rows.every(r => r.level !== 'ignored')).toBe(true);
     expect(roles.members.map(m => m.species)).toEqual(physical.map(m => m.species));
   });
@@ -94,8 +95,8 @@ describe('area Ruoli: base degli importanti, extra dei minori', () => {
 });
 
 describe('peso degli importanti', () => {
-  it('hazard e setup del campo pesano il doppio nella base', () => {
-    expect(importantWeight('hazards')).toBe(2);
+  it('il setup del campo pesa il doppio nella base (gli hazard non sono più una voce)', () => {
+    expect(importantWeight('hazards')).toBe(1);
     expect(importantWeight('fieldSetup')).toBe(2);
     expect(importantWeight('removal')).toBe(1);
     // Hazard mancanti (peso 2) e rimozione presente (peso 1): base 1/3, non 1/2

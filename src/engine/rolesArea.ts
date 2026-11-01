@@ -16,10 +16,10 @@ export const ROLES_FULL = 1;
 /** Malus di ogni voce essenziale mancante (solo team di 6). */
 export const ESSENTIAL_POINTS = 2;
 /**
- * Peso delle voci importanti nella base: gli hazard (e il Setup del campo che li contiene) contano il doppio,
- * perché fanno danno a ogni cambio per tutta la partita (calibrazione 2026-10-25: distacco torneo − medio 6,7 → 8,1).
+ * Peso delle voci importanti nella base: il Setup del campo (gli hazard, in pratica) conta il doppio, perché fa danno
+ * a ogni cambio per tutta la partita (calibrazione 2026-10-25: distacco torneo − medio 6,7 → 8,1).
  */
-export const IMPORTANT_WEIGHT: Partial<Record<LevelKey, number>> = { hazards: 2, fieldSetup: 2 };
+export const IMPORTANT_WEIGHT: Partial<Record<LevelKey, number>> = { fieldSetup: 2 };
 export const importantWeight = (key: LevelKey): number => IMPORTANT_WEIGHT[key] ?? 1;
 /** Lo squilibrio degli attaccanti tiene il suo malus di sempre (testo "Nessun attaccante fisico/speciale"). */
 export const ONE_STYLE_POINTS = 3;

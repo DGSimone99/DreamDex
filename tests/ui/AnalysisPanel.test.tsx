@@ -40,7 +40,7 @@ describe('tabelle dell\'Analisi', () => {
     expect(screen.getByText(/Team incompleto/)).toBeInTheDocument();
     expect(row('Muro Speciale')).toHaveTextContent('Mancante');
     expect(row('Muro Speciale')).toHaveClass('bad');
-    expect(row('Rimozione Hazard')).toHaveTextContent('Great Tusk');
+    expect(row('Controllo Hazard')).toHaveTextContent('Great Tusk');
     expect(row('Minaccia Offensiva')).toHaveTextContent('Great Tusk');
     expect(screen.getByText('Importanti')).toBeInTheDocument();
     expect(screen.getByText(/^Minori/)).toBeInTheDocument();

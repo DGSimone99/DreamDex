@@ -15,7 +15,11 @@ import { gameName } from '../i18n/game';
 import type { Lang } from '../i18n';
 
 /** Offesa del membro (il numero della tabella di Offesa) da cui è un attaccante "top". */
-export const TOP_ATTACKER = 85;
+/**
+ * Offesa del membro da cui il Riassunto lo chiama "attaccante principale". 80 (era 85): con la nuova Offesa il miglior
+ * attaccante dei team da torneo sta a 85 nel primo quartile (mediana 90), e a 85 il 22% dei team non ne elencava nessuno; a 80 il 13%.
+ */
+export const TOP_ATTACKER = 80;
 /** Mosse di schermo e Tailwind mostrate come condizioni (id). */
 const SCREEN_MOVES = ['reflect', 'lightscreen', 'auroraveil', 'tailwind'];
 

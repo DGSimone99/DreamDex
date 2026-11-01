@@ -32,7 +32,7 @@ const hyperOffense = [
 afterEach(() => setRolesCountMeasured(false));
 
 describe('tabella dei livelli per archetipo', () => {
-  it('la bozza della specifica: attaccanti essenziali tranne nello stall, muri minori nell\'HO, hazard sempre importanti', () => {
+  it('la tabella dai team da torneo (2026-11-01): attaccanti essenziali tranne negli stall, muri essenziali da balance in giù', () => {
     // La tabella com'è scritta, con l'interruttore acceso (spento di default: vedi "interruttore del doppio conteggio")
     setRolesCountMeasured(true);
     expect(levelOf('stall', 'attacker')).toBe('ignored');
@@ -42,25 +42,41 @@ describe('tabella dei livelli per archetipo', () => {
     expect(levelOf('balance', 'physicalWall')).toBe('essential');
     expect(levelOf('hyperOffense', 'recovery')).toBe('ignored');
     expect(levelOf('semiStall', 'pivot')).toBe('minor');
-    // Da balance in giù gli hazard sono importanti; in HO e BO lo è il gruppo "setup del campo" (hazard minori)
-    for (const a of ['balance', 'semiStall', 'stall'] as const) expect(levelOf(a, 'hazards')).toBe('important');
-    for (const a of ['hyperOffense', 'bulkyOffense'] as const) expect(levelOf(a, 'hazards')).toBe('minor');
+    // Il setup del campo è l'unica voce di campo: hazard e schermi non sono più voci della tabella
     for (const a of Object.keys(ROLE_LEVELS) as (keyof typeof ROLE_LEVELS)[]) {
-      expect(levelOf(a, 'fieldSetup')).toBe(a === 'hyperOffense' || a === 'bulkyOffense' ? 'important' : 'ignored');
+      expect(levelOf(a, 'hazards')).toBe('ignored');
+      expect(levelOf(a, 'screens')).toBe('ignored');
     }
+    expect(levelOf('hyperOffense', 'fieldSetup')).toBe('important');
+    expect(levelOf('bulkyOffense', 'fieldSetup')).toBe('important');
+    expect(levelOf('balance', 'fieldSetup')).toBe('important');
+    expect(levelOf('semiStall', 'fieldSetup')).toBe('essential');
+    expect(levelOf('stall', 'fieldSetup')).toBe('important');
+    // Balance: phazer e rimozione strumenti scendono a minori; BO: rimozione strumenti sale a importante
+    expect(levelOf('balance', 'phazer')).toBe('minor');
+    expect(levelOf('balance', 'itemRemoval')).toBe('minor');
+    expect(levelOf('bulkyOffense', 'itemRemoval')).toBe('important');
+    expect(levelOf('semiStall', 'itemRemoval')).toBe('important');
+    // Supporto (Wish, Healing Wish, Heal Bell): minore da balance in giù, non conta negli offensivi
+    expect(levelOf('balance', 'support')).toBe('minor');
+    expect(levelOf('semiStall', 'support')).toBe('minor');
+    expect(levelOf('stall', 'support')).toBe('minor');
+    expect(levelOf('hyperOffense', 'support')).toBe('ignored');
+    expect(levelOf('bulkyOffense', 'support')).toBe('ignored');
+    expect(LEVEL_KEYS.indexOf('support')).toBe(LEVEL_KEYS.indexOf('screens') + 1);
   });
 
-  it('HO: setup del campo importante, hazard minori', () => {
+  it('HO: il setup del campo è la sola voce importante (a doppio peso)', () => {
     expect(levelOf('hyperOffense', 'fieldSetup')).toBe('important');
-    expect(levelOf('hyperOffense', 'hazards')).toBe('minor');
-    expect(levelOf('hyperOffense', 'screens')).toBe('minor');
+    expect(LEVEL_KEYS.filter(k => levelOf('hyperOffense', k) === 'important')).toEqual(['fieldSetup']);
     // Calibrazione: il pivot in HO è minore (i team HO da torneo spesso non ne hanno)
     expect(levelOf('hyperOffense', 'pivot')).toBe('minor');
     const needs = teamNeeds(hyperOffense, fixtureData);
     expect(needs.archetype).toBe('hyperOffense');
     expect(needs.levels.fieldSetup).toBe('important');
-    expect(needs.levels.hazards).toBe('minor');
+    expect(needs.levels.hazards).toBe('ignored');
     expect(needs.values.fieldSetup).toBe(1);
+    expect(needs.importantMissing).not.toContain('fieldSetup');
   });
 
   it('HO con Sticky Web e senza hazard: setup del campo 0.5, non manca', () => {
@@ -80,7 +96,7 @@ describe('tabella dei livelli per archetipo', () => {
     expect(needs.values.fieldSetup).toBe(1);
   });
 
-  it('HO senza hazard, schermi né Sticky Web: setup del campo manca (importante), nessun malus essenziale', () => {
+  it('HO senza hazard, schermi né Sticky Web: setup del campo manca (importante), base a zero, nessun malus essenziale', () => {
     const none = [set('Glimmora', 'Focus Sash', 'Toxic Debris', ['Mortal Spin', 'Power Gem', 'Sludge Wave', 'Earth Power']), ...hyperOffense.slice(1)];
     const needs = teamNeeds(none, fixtureData);
     expect(needs.archetype).toBe('hyperOffense');
@@ -121,7 +137,7 @@ describe('tabella dei livelli per archetipo', () => {
     expect(levelOf('balance', 'recovery')).toBe('ignored');
     expect(levelOf('bulkyOffense', 'recovery')).toBe('ignored');
     // Le altre famiglie restano com'erano
-    expect(levelOf('hyperOffense', 'screens')).toBe('minor');
+    expect(levelOf('hyperOffense', 'taunt')).toBe('minor');
   });
 
   it("le voci: il gruppo degli attaccanti e poi i sotto-ruoli nell'ordine delle famiglie", () => {
@@ -137,6 +153,40 @@ describe('tabella dei livelli per archetipo', () => {
   });
 });
 
+describe('voci a livello di team (teamRolesArea)', () => {
+  const balance = [
+    set('Garchomp', 'Rocky Helmet', 'Rough Skin', ['Earthquake', 'Stealth Rock', 'Dragon Tail', 'Fire Fang']),
+    set('Dragapult', 'Choice Specs', 'Infiltrator', ['Draco Meteor', 'Shadow Ball', 'U-turn', 'Flamethrower']),
+    set('Corviknight', 'Leftovers', 'Pressure', ['Brave Bird', 'Roost', 'U-turn', 'Bulk Up']),
+    set('Toxapex', 'Black Sludge', 'Regenerator', ['Surf', 'Recover', 'Haze', 'Toxic']),
+    set('Alomomola', 'Heavy-Duty Boots', 'Regenerator', ['Wish', 'Protect', 'Flip Turn', 'Scald']),
+    set('Hatterene', 'Leftovers', 'Magic Bounce', ['Psychic', 'Draining Kiss', 'Calm Mind', 'Mystical Fire']),
+  ];
+  const area = () => teamRolesArea(balance, fixtureData, 'it', teamNeeds(balance, fixtureData, undefined, 'balance'));
+
+  it('Supporto: Alomomola con Wish porta la voce (minore) nel Balance; in HO la voce non esiste', () => {
+    const support = area().rows.find(r => r.key === 'support')!;
+    expect(support.level).toBe('minor');
+    expect(support.value).toBe(1);
+    expect(support.by[0]).toMatchObject({ species: 'Alomomola', source: 'Wish' });
+    expect(teamRolesArea(hyperOffense, fixtureData, 'it').rows.find(r => r.key === 'support')).toBeUndefined();
+  });
+
+  it('Controllo hazard: Hatterene con Magic Bounce e nessun Defog vale metà, con la fonte', () => {
+    const removal = area().rows.find(r => r.key === 'removal')!;
+    expect(removal.level).toBe('important');
+    expect(removal.value).toBe(0.5);
+    expect(removal.by[0]).toMatchObject({ species: 'Hatterene', value: 0.5, source: 'Magic Bounce' });
+  });
+
+  it('HO di 6 con gli hazard: setup del campo pieno, base piena, nessun malus', () => {
+    const ho = teamRolesArea(hyperOffense, fixtureData, 'it');
+    expect(ho.rows.find(r => r.key === 'fieldSetup')).toMatchObject({ level: 'important', value: 1 });
+    expect(ho.base).toBe(1);
+    expect(ho.failures.some(f => /Setup del Campo/.test(f.text))).toBe(false);
+  });
+});
+
 describe('bisogni del team dai sotto-ruoli', () => {
   it('Balance senza muro fisico: essenziale mancante', () => {
     // Team incompleto: si giudica come balance; valori dei membri passati a mano
@@ -147,8 +197,9 @@ describe('bisogni del team dai sotto-ruoli', () => {
     expect(needs.essentialMissing).toEqual(['physicalWall']);
     expect(needs.values.specialWall).toBe(1);
     expect(needs.values.attacker).toBe(1);
-    expect(needs.importantMissing).toEqual(['hazards', 'removal', 'pivot', 'phazer', 'itemRemoval']);
-    expect(needs.missingRoles).toEqual(['physicalWall', 'hazards', 'removal', 'pivot', 'phazer', 'itemRemoval']);
+    // Tabella 2026-11-01: in Balance le importanti sono setup del campo, rimozione e pivot (phazer e rimozione strumenti minori)
+    expect(needs.importantMissing).toEqual(['fieldSetup', 'removal', 'pivot']);
+    expect(needs.missingRoles).toEqual(['physicalWall', 'hazards', 'screens', 'removal', 'pivot']);
   });
 
   it('il valore del team è il migliore dei membri; senza attaccanti manca il gruppo', () => {
