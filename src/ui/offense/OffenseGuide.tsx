@@ -89,7 +89,7 @@ export function OffenseGuideSection({ section, offense, meta, formatId = DEFAULT
       <>
         <h5>{g('what')}</h5>
         <Rows stacked rows={[
-          [<>{t('detail.power')}{pct(power)}</>, <>{g('what.power', { targets })}<TypeTargets formatId={formatId} /></>],
+          [<>{t('detail.power')}{pct(power)}</>, g('what.power', { targets })],
           [<>{t('detail.coverageTypes')}{pct(num(coverageShare))}</>, g('what.types')],
           ...(meta ? [[<>{t('detail.coverageMeta')}{pct(num(coverageShare))}</>, g('what.meta')] as [ReactNode, string]] : []),
         ]} />
@@ -110,7 +110,8 @@ export function OffenseGuideSection({ section, offense, meta, formatId = DEFAULT
       <>
         <h5>{g('test')}</h5>
         <Rows compact rows={[
-          [g('power.hit'), g('power.hit.rule', { targets })],
+          // I 18 bersagli valgono sempre, con e senza meta: le loro difese medie sotto il Colpo, chiuse sotto una freccina
+          [g('power.hit'), <>{g('power.hit.rule', { targets })}<TypeTargets formatId={formatId} /></>],
           [g('power.locked'), g('power.locked.rule')],
           [g('power.weather'), g('power.weather.rule')],
           [g('power.setup'), g('rules.setup')],
