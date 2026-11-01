@@ -24,26 +24,15 @@ describe('Difesa: Generale e guida', () => {
     expect(screen.getByRole('tabpanel')).not.toHaveTextContent(/potenza 100/);
   });
 
-  it('Generale: una tessera per sottostatistica, cliccandola si apre la sottoscheda', async () => {
-    const user = userEvent.setup();
+  it('Generale: niente tessere sotto la tabella', () => {
     renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[]} />);
-    const panel = screen.getByRole('tabpanel');
-    expect(within(panel).getAllByRole('button', { name: /Sostenibilità|Coverage tipi|Coverage meta/ })).toHaveLength(3);
-    await user.click(within(panel).getByRole('button', { name: /^Sostenibilità/ }));
-    const tab = screen.getByRole('tab', { name: /^Sostenibilità/ });
-    expect(tab).toHaveAttribute('aria-selected', 'true');
-    expect(tab).toHaveFocus();
+    expect(document.querySelector('.def-tile')).toBeNull();
+    expect(within(screen.getByRole('tabpanel')).queryByRole('button', { name: /^(Sostenibilità|Coverage tipi|Coverage meta)/ })).toBeNull();
   });
 
-  it('le tessere hanno come nome il testo visibile, col fatto principale', () => {
-    renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[]} />);
-    expect(within(screen.getByRole('tabpanel')).getByRole('button', { name: /^Sostenibilità.*Recupero.*\d+\/\d+/ })).toBeInTheDocument();
-  });
-
-  it('senza meta: 3 tessere e nessuna sezione Coverage meta nella guida', async () => {
+  it('senza meta: nessuna sezione Coverage meta nella guida', async () => {
     const user = userEvent.setup();
     renderIt(<AreaView rating={noMeta()} area="defense" team={team} analysis={analysis} problems={[]} />);
-    expect(within(screen.getByRole('tabpanel')).getAllByRole('button', { name: /Sostenibilità|Coverage/ })).toHaveLength(2);
     await user.click(screen.getByRole('button', { name: 'Come funziona Generale' }));
     expect(within(screen.getByRole('dialog')).queryByRole('tab', { name: 'Coverage meta' })).toBeNull();
   });
@@ -56,7 +45,9 @@ describe('Difesa: Generale e guida', () => {
     await user.click(help);
     const dialog = screen.getByRole('dialog', { name: 'Guida: Difesa' });
     expect(within(dialog).getByRole('tab', { name: 'Sostenibilità' })).toHaveAttribute('aria-selected', 'true');
-    expect(within(dialog).getByRole('tabpanel')).toHaveTextContent('Leech Seed');
+    expect(within(dialog).getByRole('tabpanel')).toHaveTextContent('Mosse che assorbono');
+    // Niente più la riga "Regge poco" né la sezione del voto
+    expect(within(dialog).getByRole('tabpanel')).not.toHaveTextContent(/Regge poco|Il voto/);
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(help).toHaveFocus();
@@ -120,8 +111,7 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
 
   it('Coverage tipi: membri × 18 tipi, in ogni casella il danno del colpo forte sul lato peggiore, colorato per quanti colpi regge', async () => {
     const { rating, table } = await openTypes();
-    expect(within(table).getAllByRole('columnheader').map(h => h.textContent).slice(-1)).toEqual(['Regge']);
-    expect(within(table).getAllByRole('columnheader')).toHaveLength(20); // angolo + 18 tipi + Regge
+    expect(within(table).getAllByRole('columnheader')).toHaveLength(19); // angolo + 18 tipi, niente colonna Regge
     const typed = rating.defense.typed;
     team.forEach((_, m) => {
       const row = within(table).getAllByRole('row')[m + 1];
@@ -132,19 +122,21 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
         expect(cells[i].querySelector('.visually-hidden')!.textContent!.trim()).toBe(TAG[cell.band]);
         expect(cells[i].getAttribute('title')).toContain(`fisico ${cell.physical}% · speciale ${cell.special}%`);
       });
-      // A destra quanto regge il membro (solo informazione)
-      expect(cells[18]).toHaveTextContent(`${rating.defense.members[m].hold}%`);
+      expect(cells).toHaveLength(18);
     });
-    // Il moltiplicatore classico resta in piccolo: Great Tusk è debole all'Acqua
+    // Il moltiplicatore classico sotto il %: Great Tusk è debole all'Acqua; niente sui tipi neutri
     const water = rating.defense.coverageTypes.rows.findIndex(r => r.type === 'Water');
+    const normal = rating.defense.coverageTypes.rows.findIndex(r => r.type === 'Normal');
     const tusk = within(table).getByRole('row', { name: /^Great Tusk/ });
     expect(within(tusk).getAllByRole('cell')[water].querySelector('.ct-mult')).toHaveTextContent('×2');
+    expect(within(tusk).getAllByRole('cell')[normal].querySelector('.ct-mult')).toBeNull();
+    expect(document.querySelector('.ht-mult-note')).toBeNull();
   });
 
-  it('in fondo Lo reggono e Copertura del motore; niente più Deboli e Resistono; i buchi segnati in testata', async () => {
+  it('in fondo Regge e Copertura del motore; niente più Deboli e Resistono; i buchi segnati in testata', async () => {
     const { rating, table } = await openTypes();
     const rows = rating.defense.coverageTypes.rows;
-    const held = within(table).getByRole('row', { name: /^Lo reggono/ });
+    const held = within(table).getByRole('row', { name: /^Regge/ });
     expect(within(held).getAllByRole('cell').slice(0, 18).map(c => c.textContent)).toEqual(rows.map(r => `${r.heldBy.length}`));
     const level = within(table).getByRole('row', { name: /^Copertura/ });
     expect(within(level).getAllByRole('cell').slice(0, 18).map(c => c.textContent)).toEqual(rows.map(r => `${r.level}%`));
@@ -164,11 +156,11 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
     const { table } = await openTypes([team[0], { ...emptySet('Notamon'), moves: ['Tackle'] }]);
     const row = within(table).getAllByRole('row')[2];
     const cells = within(row).getAllByRole('cell');
-    expect(cells).toHaveLength(19);
+    expect(cells).toHaveLength(18);
     cells.forEach(td => expect(td).toHaveTextContent('—'));
   });
 
-  it('Coverage meta: pagine da 8 minacce, dalla meno coperta (a pari livello la più usata), livello e chi la regge nel nome accessibile', async () => {
+  it('Coverage meta: tabella membri × minacce a pagine da 8, dalla meno coperta (a pari livello la più usata); danno colorato e riga Regge', async () => {
     const user = userEvent.setup();
     const rating = withMeta();
     renderIt(<AreaView rating={rating} area="defense" team={team} analysis={analysis} problems={[]} />);
@@ -176,9 +168,27 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
     const panel = within(screen.getByRole('tabpanel'));
     const rows = rating.defense.coverageMeta!.rows;
     const expected = [...rows].sort((a, b) => a.level - b.level || b.weight - a.weight);
-    const names = () => panel.getAllByRole('listitem').map(tile => tile.getAttribute('aria-label')!.split(':')[0]);
+    const names = () => panel.getAllByRole('columnheader').slice(1).map(h => h.getAttribute('aria-label'));
     expect(names()).toEqual(expected.slice(0, 8).map(r => r.species));
-    expect(panel.getAllByRole('listitem')[0]).toHaveAccessibleName(new RegExp(`^${expected[0].species}.*${expected[0].level}%`));
+    // Ogni casella: il danno di chi regge (verde sotto metà PS, giallo a metà), KO rosso per chi non c'è in heldBy
+    const table = panel.getByRole('table');
+    team.forEach((set, m) => {
+      const cells = within(within(table).getAllByRole('row')[m + 1]).getAllByRole('cell');
+      expected.slice(0, 8).forEach((r, k) => {
+        const h = r.heldBy.find(x => x.species === set.species);
+        if (!h) {
+          expect(cells[k]).toHaveTextContent(/^KO$/);
+          expect(cells[k]).toHaveClass('hold-ohko');
+        } else {
+          expect(cells[k]).toHaveTextContent(new RegExp(`^${h.pct}%`));
+          expect(cells[k]).toHaveClass(h.partial ? 'hold-3' : 'hold-4');
+          expect(cells[k].getAttribute('title')).toBe(`${r.species}: ${h.move} ${h.pct}%`);
+        }
+      });
+    });
+    const held = within(table).getByRole('row', { name: /^Regge/ });
+    expect(within(held).getAllByRole('cell').map(c => c.textContent)).toEqual(expected.slice(0, 8).map(r => `${r.heldBy.filter(h => !h.partial).length}`));
+    expect(panel.queryAllByRole('listitem')).toHaveLength(0);
     // Una pagina per ogni 8 minacce; la seconda mostra le successive, e "precedente" torna alla prima
     const pages = panel.getByRole('navigation', { name: 'Pagine delle minacce' });
     expect(within(pages).getAllByRole('button', { name: /^Minacce da/ })).toHaveLength(Math.ceil(rows.length / 8));
@@ -204,12 +214,6 @@ describe('Difesa: ordine, barre e Generale a squadra chiusa', () => {
   it('senza meta niente Coverage meta, stesso ordine', () => {
     renderIt(<AreaView rating={noMeta()} area="defense" team={team} analysis={analysis} problems={[]} />);
     expect(subTabs()).toEqual(['Generale', 'Coverage tipi', 'Sostenibilità']);
-  });
-
-  it('le tessere seguono l\'ordine delle sottoschede', () => {
-    renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[]} />);
-    const names = within(screen.getByRole('tabpanel')).getAllByRole('button').map(b => /^(Coverage tipi|Sostenibilità|Coverage meta)/.exec(b.textContent ?? '')?.[1]);
-    expect(names).toEqual(['Coverage tipi', 'Sostenibilità', 'Coverage meta']);
   });
 
   it('le barre hanno la classe della soglia e l\'anello debole è solo sul più basso, solo sotto 50', () => {
@@ -245,22 +249,6 @@ describe('Difesa: ordine, barre e Generale a squadra chiusa', () => {
     // L'etichetta c'è due volte nel DOM (accanto al nome e accanto alle statistiche, il CSS ne mostra una), sempre in un membro solo
     expect(rows.filter(r => r.querySelector('.def-weak'))).toHaveLength(1);
     expect(rows[1].querySelector('.def-weak')).toBeTruthy();
-  });
-
-  it('la tessera del meta elenca le minacce senza risposta (nome nascosto) o dice che tutte hanno risposta', () => {
-    const rating = withMeta();
-    const cm = rating.defense.coverageMeta!;
-    const some = { ...rating, defense: { ...rating.defense, coverageMeta: { ...cm, unanswered: ['Garchomp', 'Zapdos'] } } };
-    const { unmount } = renderIt(<AreaView rating={some} area="defense" team={team} analysis={analysis} problems={[]} />);
-    const tile = within(screen.getByRole('tabpanel')).getByRole('button', { name: /^Coverage meta/ });
-    expect(tile).toHaveTextContent('Senza risposta');
-    expect(tile).toHaveTextContent('Garchomp');
-    expect(tile).toHaveTextContent('Zapdos');
-    expect(tile).toHaveTextContent(/2\/\d+/);
-    unmount();
-    const none = { ...rating, defense: { ...rating.defense, coverageMeta: { ...cm, unanswered: [] } } };
-    renderIt(<AreaView rating={none} area="defense" team={team} analysis={analysis} problems={[]} />);
-    expect(within(screen.getByRole('tabpanel')).getByRole('button', { name: /^Coverage meta/ })).toHaveTextContent('Ogni minaccia ha una risposta');
   });
 
   it('a squadra chiusa compaiono Colpo peggiore (il tipo che fa più male) e Recupero, con un % per ogni riga; altrimenti no', () => {

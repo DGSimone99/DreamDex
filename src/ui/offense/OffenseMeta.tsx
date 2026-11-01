@@ -99,6 +99,6 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
     </div>
   );
 
-  return <MetaFrame rows={rows} roomy={ctx.roomy} summary={summary} body={body}
+  return <MetaFrame rows={rows} summary={summary} body={body}
     labels={{ pages: t('odetail.cm.pages'), prev: t('odetail.cm.prev'), next: t('odetail.cm.next'), page: (from, to) => t('odetail.cm.page', { from, to }) }} />;
 }

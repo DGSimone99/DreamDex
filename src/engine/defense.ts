@@ -189,6 +189,12 @@ export function dummyAttacker(data: EngineData, side: 'atk' | 'spa', type: strin
   return dummy;
 }
 
+/** L'Attacco e l'Attacco Speciale base dell'attaccante finto del formato: quelli di `dummyAttacker` (per la guida). */
+export function dummyStats(formatId: EngineData['formatId']): { atk: number; spa: number } {
+  const data: EngineData = { stats: null, sets: null, formatId };
+  return { atk: dummyAttacker(data, 'atk', 'Normal').baseStats?.atk ?? 0, spa: dummyAttacker(data, 'spa', 'Normal').baseStats?.spa ?? 0 };
+}
+
 const typedCache = new Map<string, { plain: number[]; held: number[] }>();
 const TYPED_LIMIT = 5000;
 
