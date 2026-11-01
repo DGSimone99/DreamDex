@@ -77,8 +77,8 @@ export const TOP_THREATS = 0.5;
 export const GRADES: { min: number; grade: 'S' | 'A' | 'B' | 'C' | 'D' }[] = [
   { min: 90, grade: 'S' },
   { min: 80, grade: 'A' },
-  { min: 68, grade: 'B' },
-  { min: 55, grade: 'C' },
+  { min: 70, grade: 'B' },
+  { min: 60, grade: 'C' },
   { min: 0, grade: 'D' },
 ];
 
