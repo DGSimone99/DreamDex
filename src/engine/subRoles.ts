@@ -15,14 +15,14 @@ import type { Archetype } from './archetype';
 
 export type Family = 'attack' | 'defense' | 'field' | 'disruption';
 export type SubRole = 'physicalSweeper' | 'specialSweeper' | 'physicalBreaker' | 'specialBreaker'
-  | 'physicalWall' | 'specialWall' | 'recovery' | 'hazards' | 'removal' | 'pivot' | 'screens'
+  | 'physicalWall' | 'specialWall' | 'recovery' | 'hazards' | 'removal' | 'pivot' | 'screens' | 'support'
   | 'dot' | 'debuff' | 'phazer' | 'taunt' | 'encore' | 'itemRemoval';
 
 /** Le sotto-ruoli di ogni famiglia, nell'ordine della tabella della specifica. */
 export const FAMILIES: Record<Family, SubRole[]> = {
   attack: ['physicalSweeper', 'specialSweeper', 'physicalBreaker', 'specialBreaker'],
   defense: ['physicalWall', 'specialWall', 'recovery'],
-  field: ['hazards', 'removal', 'pivot', 'screens'],
+  field: ['hazards', 'removal', 'pivot', 'screens', 'support'],
   disruption: ['dot', 'debuff', 'phazer', 'taunt', 'encore', 'itemRemoval'],
 };
 

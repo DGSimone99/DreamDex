@@ -12,8 +12,12 @@ import { fixtureData, fixtureStats } from '../fixtures/data';
 
 const format = DEFAULT_FORMAT;
 const data = { ...fixtureData, formatId: format.formatId };
-const junk = (species: string): TeamSet => ({ ...emptySet(species), moves: ['Splash'] });
-const six = [...['Great Tusk', 'Gholdengo', 'Toxapex', 'Corviknight'].map(n => mostCommonSet(fixtureStats, n)!), junk('Magikarp'), junk('Sunkern')];
+const mk = (species: string, item: string, ability: string, moves: string[], nature: string, evs: TeamSet['evs']): TeamSet => ({ ...emptySet(species), item, ability, moves, nature, evs });
+// Un Balance completo senza hazard: il cambio ovvio è Stealth Rock su Great Tusk (tabella 2026-11-01: il setup del campo è importante)
+const six = [...['Great Tusk', 'Gholdengo', 'Toxapex'].map(n => mostCommonSet(fixtureStats, n)!),
+  mk('Corviknight', 'Leftovers', 'Pressure', ['Roost', 'Brave Bird', 'Defog', 'U-turn'], 'Impish', { hp: 248, def: 168, spd: 92 }),
+  mk('Dragonite', 'Heavy-Duty Boots', 'Multiscale', ['Dragon Dance', 'Extreme Speed', 'Earthquake', 'Roost'], 'Adamant', { atk: 252, spe: 252 }),
+  mk('Kingambit', 'Black Glasses', 'Supreme Overlord', ['Swords Dance', 'Kowtow Cleave', 'Sucker Punch', 'Iron Head'], 'Adamant', { hp: 200, atk: 252, spe: 56 })];
 const problemsOf = (team: TeamSet[], d = data, f: Format = format) => findProblems(team, f, d, analyzeTeam(team, d), [], 'it');
 const fixesOf = (team: TeamSet[], d = data, f: Format = format) => moveFixes(team, f, d, problemsOf(team, d, f), 'it');
 
@@ -50,30 +54,34 @@ describe('cambi di mossa del Coaching', () => {
   });
 
   it('mosse oltre la generazione del formato o vietate dal formato: mai proposte', () => {
-    // Body Press (Gen 8) si propone a Corviknight in Gen 9…
-    expect(fixes.some(f => f.to === 'Body Press')).toBe(true);
-    // …non con un limite di generazione più basso
-    const gen7 = { ...format, genLimit: 7 };
-    for (const f of fixesOf(six, data, gen7)) expect(getMove(f.to)!.gen).toBeLessThanOrEqual(7);
-    // …né se il formato la vieta, anche con Custom Skillset
-    initBans({ ou: { moves: ['Body Press'], abilities: [], items: [], species: [] } });
-    expect(fixesOf(six).filter(f => f.to === 'Body Press')).toEqual([]);
-    expect(fixesOf(six.map(s => ({ ...s, customSkillset: true }))).filter(f => f.to === 'Body Press')).toEqual([]);
+    // Stealth Rock si propone a Great Tusk…
+    expect(fixes.some(f => f.to === 'Stealth Rock')).toBe(true);
+    // …ogni proposta rispetta il limite di generazione
+    const gen3 = { ...format, genLimit: 3 };
+    for (const f of fixesOf(six, data, gen3)) expect(getMove(f.to)!.gen).toBeLessThanOrEqual(3);
+    expect(fixesOf(six, data, gen3).some(f => f.to === 'Stealth Rock')).toBe(false);
+    // …né si propone se il formato la vieta, anche con Custom Skillset
+    initBans({ ou: { moves: ['Stealth Rock'], abilities: [], items: [], species: [] } });
+    expect(fixesOf(six).filter(f => f.to === 'Stealth Rock')).toEqual([]);
+    expect(fixesOf(six.map(s => ({ ...s, customSkillset: true }))).filter(f => f.to === 'Stealth Rock')).toEqual([]);
   });
 
   describe('Sunkern con le mosse di Great Tusk', () => {
     // Statistiche di prova: Sunkern usa le mosse di Great Tusk, che non impara
     const tuskMoves = ['Headlong Rush', 'Rapid Spin', 'Close Combat', 'Ice Spinner', 'Stealth Rock'];
     const local = () => ({ ...data, stats: { ...fixtureStats, pokemon: { ...fixtureStats.pokemon, Sunkern: fixtureStats.pokemon['Great Tusk'] } } });
+    // Lo stesso team con Sunkern (una mossa sola) al sesto posto
+    const junk = (species: string): TeamSet => ({ ...emptySet(species), moves: ['Splash'] });
+    const withSunkern = six.map((s, i) => (i === 5 ? junk('Sunkern') : s));
     const sunkernTo = (team: TeamSet[]) => fixesOf(team, local()).filter(f => f.index === 5);
-    const custom = six.map((s, i) => (i === 5 ? { ...s, customSkillset: true } : s));
+    const custom = withSunkern.map((s, i) => (i === 5 ? { ...s, customSkillset: true } : s));
 
     it('un membro con una sola mossa riempie uno slot vuoto', () => {
       expect(sunkernTo(custom).some(f => f.slot >= 1 && f.from === '')).toBe(true);
     });
 
     it('mosse non legali solo con Custom Skillset', () => {
-      expect(sunkernTo(six).filter(f => tuskMoves.includes(f.to))).toEqual([]);
+      expect(sunkernTo(withSunkern).filter(f => tuskMoves.includes(f.to))).toEqual([]);
       expect(sunkernTo(custom).filter(f => tuskMoves.includes(f.to)).length).toBeGreaterThan(0);
     });
   });

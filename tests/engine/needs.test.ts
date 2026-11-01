@@ -32,7 +32,7 @@ const hyperOffense = [
 afterEach(() => setRolesCountMeasured(false));
 
 describe('tabella dei livelli per archetipo', () => {
-  it('la bozza della specifica: attaccanti essenziali tranne nello stall, muri minori nell\'HO, hazard sempre importanti', () => {
+  it('la tabella dai team da torneo (2026-11-01): attaccanti essenziali tranne negli stall, muri essenziali da balance in giù', () => {
     // La tabella com'è scritta, con l'interruttore acceso (spento di default: vedi "interruttore del doppio conteggio")
     setRolesCountMeasured(true);
     expect(levelOf('stall', 'attacker')).toBe('ignored');
@@ -42,25 +42,41 @@ describe('tabella dei livelli per archetipo', () => {
     expect(levelOf('balance', 'physicalWall')).toBe('essential');
     expect(levelOf('hyperOffense', 'recovery')).toBe('ignored');
     expect(levelOf('semiStall', 'pivot')).toBe('minor');
-    // Da balance in giù gli hazard sono importanti; in HO e BO lo è il gruppo "setup del campo" (hazard minori)
-    for (const a of ['balance', 'semiStall', 'stall'] as const) expect(levelOf(a, 'hazards')).toBe('important');
-    for (const a of ['hyperOffense', 'bulkyOffense'] as const) expect(levelOf(a, 'hazards')).toBe('minor');
+    // Il setup del campo è l'unica voce di campo: hazard e schermi non sono più voci della tabella
     for (const a of Object.keys(ROLE_LEVELS) as (keyof typeof ROLE_LEVELS)[]) {
-      expect(levelOf(a, 'fieldSetup')).toBe(a === 'hyperOffense' || a === 'bulkyOffense' ? 'important' : 'ignored');
+      expect(levelOf(a, 'hazards')).toBe('ignored');
+      expect(levelOf(a, 'screens')).toBe('ignored');
     }
+    expect(levelOf('hyperOffense', 'fieldSetup')).toBe('essential');
+    expect(levelOf('bulkyOffense', 'fieldSetup')).toBe('important');
+    expect(levelOf('balance', 'fieldSetup')).toBe('important');
+    expect(levelOf('semiStall', 'fieldSetup')).toBe('essential');
+    expect(levelOf('stall', 'fieldSetup')).toBe('important');
+    // Balance: phazer e rimozione strumenti scendono a minori; BO: rimozione strumenti sale a importante
+    expect(levelOf('balance', 'phazer')).toBe('minor');
+    expect(levelOf('balance', 'itemRemoval')).toBe('minor');
+    expect(levelOf('bulkyOffense', 'itemRemoval')).toBe('important');
+    expect(levelOf('semiStall', 'itemRemoval')).toBe('important');
+    // Supporto (Wish, Healing Wish, Heal Bell): minore da balance in giù, non conta negli offensivi
+    expect(levelOf('balance', 'support')).toBe('minor');
+    expect(levelOf('semiStall', 'support')).toBe('minor');
+    expect(levelOf('stall', 'support')).toBe('minor');
+    expect(levelOf('hyperOffense', 'support')).toBe('ignored');
+    expect(levelOf('bulkyOffense', 'support')).toBe('ignored');
+    expect(LEVEL_KEYS.indexOf('support')).toBe(LEVEL_KEYS.indexOf('screens') + 1);
   });
 
-  it('HO: setup del campo importante, hazard minori', () => {
-    expect(levelOf('hyperOffense', 'fieldSetup')).toBe('important');
-    expect(levelOf('hyperOffense', 'hazards')).toBe('minor');
-    expect(levelOf('hyperOffense', 'screens')).toBe('minor');
+  it('HO: setup del campo essenziale, nessuna voce importante', () => {
+    expect(levelOf('hyperOffense', 'fieldSetup')).toBe('essential');
+    expect(LEVEL_KEYS.filter(k => levelOf('hyperOffense', k) === 'important')).toEqual([]);
     // Calibrazione: il pivot in HO è minore (i team HO da torneo spesso non ne hanno)
     expect(levelOf('hyperOffense', 'pivot')).toBe('minor');
     const needs = teamNeeds(hyperOffense, fixtureData);
     expect(needs.archetype).toBe('hyperOffense');
-    expect(needs.levels.fieldSetup).toBe('important');
-    expect(needs.levels.hazards).toBe('minor');
+    expect(needs.levels.fieldSetup).toBe('essential');
+    expect(needs.levels.hazards).toBe('ignored');
     expect(needs.values.fieldSetup).toBe(1);
+    expect(needs.essentialMissing).not.toContain('fieldSetup');
   });
 
   it('HO con Sticky Web e senza hazard: setup del campo 0.5, non manca', () => {
@@ -69,7 +85,7 @@ describe('tabella dei livelli per archetipo', () => {
     expect(needs.archetype).toBe('hyperOffense');
     expect(needs.values.hazards).toBe(0);
     expect(needs.values.fieldSetup).toBe(0.5);
-    expect(needs.importantMissing).not.toContain('fieldSetup');
+    expect(needs.essentialMissing).not.toContain('fieldSetup');
   });
 
   it('HO con Aurora Veil e neve: setup del campo 1', () => {
@@ -80,19 +96,19 @@ describe('tabella dei livelli per archetipo', () => {
     expect(needs.values.fieldSetup).toBe(1);
   });
 
-  it('HO senza hazard, schermi né Sticky Web: setup del campo manca (importante), nessun malus essenziale', () => {
+  it('HO senza hazard, schermi né Sticky Web: setup del campo manca (essenziale), malus di 2 con sei membri', () => {
     const none = [set('Glimmora', 'Focus Sash', 'Toxic Debris', ['Mortal Spin', 'Power Gem', 'Sludge Wave', 'Earth Power']), ...hyperOffense.slice(1)];
     const needs = teamNeeds(none, fixtureData);
     expect(needs.archetype).toBe('hyperOffense');
     expect(needs.values.fieldSetup).toBe(0);
-    expect(needs.importantMissing).toContain('fieldSetup');
-    expect(needs.essentialMissing).not.toContain('fieldSetup');
+    expect(needs.essentialMissing).toContain('fieldSetup');
+    expect(needs.importantMissing).not.toContain('fieldSetup');
     expect(needs.missingRoles).toEqual(expect.arrayContaining(['hazards', 'screens']));
     const area = teamRolesArea(none, fixtureData, 'it', needs);
-    // Unica voce importante a 0: base 0, restano solo le minori
-    expect(area.base).toBe(0);
-    expect(area.failures.some(f => /hazard|setup/i.test(f.text))).toBe(false);
-    expect(area.value).toBeLessThan(teamRolesArea(hyperOffense, fixtureData, 'it').value);
+    // Nessuna voce importante nell'HO: la base è piena, restano le minori; il buco è un malus
+    expect(area.base).toBe(1);
+    if (none.length === 6) expect(area.failures.some(f => /Setup del Campo/.test(f.text) && f.points === 2)).toBe(true);
+    expect(area.value).toBeLessThanOrEqual(teamRolesArea(hyperOffense, fixtureData, 'it').value);
     // Il gruppo ha un'etichetta propria, nelle due lingue
     expect(needLabel('fieldSetup', 'it')).toBe('Setup del Campo');
     expect(needLabel('fieldSetup', 'en')).toBe('Field Setup');
@@ -121,7 +137,7 @@ describe('tabella dei livelli per archetipo', () => {
     expect(levelOf('balance', 'recovery')).toBe('ignored');
     expect(levelOf('bulkyOffense', 'recovery')).toBe('ignored');
     // Le altre famiglie restano com'erano
-    expect(levelOf('hyperOffense', 'screens')).toBe('minor');
+    expect(levelOf('hyperOffense', 'taunt')).toBe('minor');
   });
 
   it("le voci: il gruppo degli attaccanti e poi i sotto-ruoli nell'ordine delle famiglie", () => {
@@ -147,8 +163,9 @@ describe('bisogni del team dai sotto-ruoli', () => {
     expect(needs.essentialMissing).toEqual(['physicalWall']);
     expect(needs.values.specialWall).toBe(1);
     expect(needs.values.attacker).toBe(1);
-    expect(needs.importantMissing).toEqual(['hazards', 'removal', 'pivot', 'phazer', 'itemRemoval']);
-    expect(needs.missingRoles).toEqual(['physicalWall', 'hazards', 'removal', 'pivot', 'phazer', 'itemRemoval']);
+    // Tabella 2026-11-01: in Balance le importanti sono setup del campo, rimozione e pivot (phazer e rimozione strumenti minori)
+    expect(needs.importantMissing).toEqual(['fieldSetup', 'removal', 'pivot']);
+    expect(needs.missingRoles).toEqual(['physicalWall', 'hazards', 'screens', 'removal', 'pivot']);
   });
 
   it('il valore del team è il migliore dei membri; senza attaccanti manca il gruppo', () => {

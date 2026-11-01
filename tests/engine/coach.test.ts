@@ -48,7 +48,7 @@ describe('coachTeam', () => {
       'Debole a Ghost: 1 Debole – 0 Resistono',
       // Le voci essenziali mancanti, poi in una riga a parte le importanti (hazard e pivot ora sono importanti)
       'Ruoli mancanti: Muro Speciale',
-      'Ruoli importanti mancanti: Hazard, Pivot, Hazer/Phazer, Rimozione Strumenti',
+      'Ruoli importanti mancanti: Setup del Campo, Pivot',
       // Coverage tipi del voto: un problema per tipo, nell'ordine dei tipi (Bug scoperto ma leggero: minore)
       'Coperto a metà Ground: 1 solo in tre colpi',
       'Scoperto Bug: nessun colpo super efficace',
