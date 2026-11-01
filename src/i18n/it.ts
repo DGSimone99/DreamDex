@@ -721,6 +721,7 @@ export const it: Record<keyof typeof en, string> = {
   'detail.setup.none': "Nessun membro ha una mossa di potenziamento",
   'detail.tab.general': "Generale",
   'detail.withSetup': "{move}",
+  'detail.setupExtra': "Con {move}: +{n} di Potenza (nel voto entra metà)",
   'detail.withTera': "Tera {type}",
   'detail.withZ': "{item}",
   'detail.bestMove': "Colpo migliore",

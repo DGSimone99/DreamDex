@@ -719,6 +719,7 @@ export const en = {
   'detail.setup.none': "No member has a boosting move",
   'detail.tab.general': "General",
   'detail.withSetup': "{move}",
+  'detail.setupExtra': "With {move}: +{n} Power (half of it enters the grade)",
   'detail.withTera': "Tera {type}",
   'detail.withZ': "{item}",
   'detail.bestMove': "Best hit",
