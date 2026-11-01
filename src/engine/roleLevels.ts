@@ -52,8 +52,8 @@ const E = 'essential' as const, I = 'important' as const, M = 'minor' as const, 
  * salivano di 15–20 punti; importante tiene i brutti a 44 e le partite di alto livello al 53,5%.
  * Balance: phazer (48%) e rimozione strumenti (69%, più in ladder) minori.
  * BO: rimozione strumenti importante (78%). Semi-stall: setup del campo essenziale (100%). Supporto (Wish, Healing
- * Wish, Heal Bell) minore da balance in giù (6–24%). Sul banco (tabella costruita): torneo − medio 7,7 → 7,4,
- * torneo − ladder 5,9 → 6,1, partite di alto livello 51,6% → 53,5%, ladder con distacco ≥10 57,1% → 57,9%.
+ * Wish, Heal Bell) minore da balance in giù (6–24%). Sul banco (tabella costruita): torneo − medio 7,7 → 7,3,
+ * torneo − ladder 5,9 → 6,1, partite di alto livello 51,6% → 53,6%, ladder 52,5% → 52,3% (rumore).
  */
 const ROWS: [LevelKey, Level, Level, Level, Level, Level][] = [
   // Semi-stall e stall vincono logorando: senza attaccanti nessun malus (2026-10-30; l'Offesa misura comunque il danno)
