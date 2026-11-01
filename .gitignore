@@ -1,6 +1,4 @@
 node_modules/
 dist/
 /data/
-.superpowers/
-.impeccable/mocks/
-.impeccable/review/
+shots/

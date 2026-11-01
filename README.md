@@ -28,5 +28,4 @@ Inserisci uno o più Pokémon e DreamDex suggerisce, in ordine, quelli che compl
 - `src/ui/`: componenti React
 - `src/i18n/`: testi EN/IT e nomi del gioco
 - `scripts/`: download dei dati Smogon e PokeAPI
-- `docs/superpowers/`: spec e piani di implementazione
 - `DESIGN.md`, `PRODUCT.md`: sistema di design e contesto del prodotto
