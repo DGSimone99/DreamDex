@@ -93,6 +93,11 @@
 .def-bar i { position: absolute; inset: 0 auto 0 0; background: var(--good); }
 .def-bar.warn i { background: var(--warn); }
 .def-bar.bad i { background: var(--bad); }
+/* Il guadagno del setup: a righe nel colore della barra, staccato con una riga scura (come nella Velocità) */
+.def-bar i.def-bar-extra { right: auto; background: repeating-linear-gradient(135deg, var(--bar-c) 0 3px, color-mix(in srgb, var(--bar-c) 55%, var(--panel)) 3px 6px); box-shadow: inset 2px 0 0 var(--ground); }
+.def-bar { --bar-c: var(--good); }
+.def-bar.warn { --bar-c: var(--warn); }
+.def-bar.bad { --bar-c: var(--bad); }
 .def-num { min-width: 2ch; text-align: right; color: var(--text); }
 /* Difesa: il numero in evidenza, del colore della soglia */
 .def-num.total { font: italic 700 17px/1 var(--display); font-variant-numeric: tabular-nums; }

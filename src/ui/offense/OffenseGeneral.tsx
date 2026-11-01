@@ -63,7 +63,7 @@ export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; m
                     ? <>
                       <td>
                         {/* Quanto aggiungono setup (metà) e Tera o mossa Z (un quarto) alla Potenza del membro nel voto */}
-                        <Bar value={m.power} reserve={setupColumn || onceColumn} gain={(m.setupGain > 0 || (m.oneUseGain > 0 && m.oneUse)) && <>
+                        <Bar value={m.power} extra={m.setupGain} reserve={setupColumn || onceColumn} gain={(m.setupGain > 0 || (m.oneUseGain > 0 && m.oneUse)) && <>
                           {m.setupGain > 0 && <small className="ad-gain" title={t('detail.withSetup', { move: gameName('move', m.setupMove ?? '', lang) })}> (+{m.setupGain})</small>}
                           {m.oneUseGain > 0 && m.oneUse && (
                             <small className="ad-once" title={m.oneUse.kind === 'tera' ? t('detail.withTera', { type: typeName(m.oneUse.name, lang) }) : t('detail.withZ', { item: gameName('item', m.oneUse.name, lang) })}> (+{m.oneUseGain})</small>

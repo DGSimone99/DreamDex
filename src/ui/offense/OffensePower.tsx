@@ -56,7 +56,7 @@ export function OffensePower({ offense, ctx }: { offense: TeamOffense; ctx: Area
                   {m
                     ? <>
                       <td className="pw-bar">
-                        <Bar value={m.power} />
+                        <Bar value={m.power} extra={m.setupGain} />
                         {/* Tera o mossa Z: un quarto del guadagno entra nel voto */}
                         {m.oneUseGain > 0 && m.oneUse && (
                           <small className="ad-once" title={m.oneUse.kind === 'tera' ? t('detail.withTera', { type: typeName(m.oneUse.name, lang) }) : t('detail.withZ', { item: gameName('item', m.oneUse.name, lang) })}> (+{m.oneUseGain})</small>
