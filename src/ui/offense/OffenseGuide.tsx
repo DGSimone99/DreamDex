@@ -37,27 +37,31 @@ function TypeTargets({ formatId }: { formatId: FormatId }) {
   return (
     <details className="guide-more">
       <summary><Icon name="next" />{t('guide.off.targets.stats')}</summary>
-      <table className="guide-targets">
-        <thead>
-          <tr>
-            <th scope="col">{t('guide.off.targets.type')}</th>
-            <th scope="col">{t('stat.hp')}</th>
-            <th scope="col">{t('stat.def')}</th>
-            <th scope="col">{t('stat.spd')}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {TYPES.map(type => {
-            const avg = typeAverage(type, { stats: null, sets: null, formatId });
-            return (
-              <tr key={type}>
-                <th scope="row"><TypeIcons types={[type]} />{typeName(type, lang)}</th>
-                <td>{avg.hp}</td><td>{avg.def}</td><td>{avg.spd}</td>
+      <div className="guide-targets-cols">
+        {[TYPES.slice(0, 9), TYPES.slice(9)].map((half, col) => (
+          <table key={col} className="guide-targets">
+            <thead>
+              <tr>
+                <th scope="col">{t('guide.off.targets.type')}</th>
+                <th scope="col">{t('stat.hp')}</th>
+                <th scope="col">{t('stat.def')}</th>
+                <th scope="col">{t('stat.spd')}</th>
               </tr>
-            );
-          })}
-        </tbody>
-      </table>
+            </thead>
+            <tbody>
+              {half.map(type => {
+                const avg = typeAverage(type, { stats: null, sets: null, formatId });
+                return (
+                  <tr key={type}>
+                    <th scope="row"><TypeIcons types={[type]} />{typeName(type, lang)}</th>
+                    <td>{avg.hp}</td><td>{avg.def}</td><td>{avg.spd}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        ))}
+      </div>
     </details>
   );
 }
@@ -107,7 +111,6 @@ export function OffenseGuideSection({ section, offense, meta, formatId = DEFAULT
         <h5>{g('test')}</h5>
         <Rows compact rows={[
           [g('power.hit'), g('power.hit.rule', { targets })],
-          [g('power.cap'), g('power.cap.rule')],
           [g('power.locked'), g('power.locked.rule')],
           [g('power.weather'), g('power.weather.rule')],
           [g('power.setup'), g('rules.setup')],

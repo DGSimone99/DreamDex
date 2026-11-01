@@ -887,8 +887,6 @@ export const en = {
   'guide.off.rules.setup': "Setup costs a turn: members with a boosting move use it once, and half the gain enters the grade",
   'guide.off.power.hit': "Hit",
   'guide.off.power.hit.rule': "For each member, its best hit against {targets}",
-  'guide.off.power.cap': "Beyond the KO",
-  'guide.off.power.cap.rule': "A hit that knocks out counts as 100%, even if it would do more",
   'guide.off.power.locked': "Band and Specs",
   'guide.off.power.locked.rule': "Damage counts 10% less, because they lock the member into one move",
   'guide.off.power.weather': "Weather",

@@ -889,8 +889,6 @@ export const it: Record<keyof typeof en, string> = {
   'guide.off.rules.setup': "Il setup costa un turno: chi ha una mossa di potenziamento la usa una volta, e nel voto entra metà del guadagno",
   'guide.off.power.hit': "Colpo",
   'guide.off.power.hit.rule': "Per ogni membro conta il colpo migliore contro {targets}",
-  'guide.off.power.cap': "Oltre il KO",
-  'guide.off.power.cap.rule': "Un colpo che manda KO conta 100%, anche se farebbe di più",
   'guide.off.power.locked': "Band e Specs",
   'guide.off.power.locked.rule': "Il danno conta il 10% in meno, perché bloccano il membro su una mossa",
   'guide.off.power.weather': "Meteo",
