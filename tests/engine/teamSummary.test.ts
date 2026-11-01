@@ -34,14 +34,14 @@ const swap = (i: number, set: TeamSet) => plain.map((s, j) => (j === i ? set : s
 
 describe('teamSummary', () => {
   it('costanti', () => {
-    expect(TOP_ATTACKER).toBe(85);
+    expect(TOP_ATTACKER).toBe(80);
   });
 
-  it('attaccanti: Offesa del membro come in tabella (value, setup e Tera/Z compresi) >= 85, in ordine di team', () => {
+  it('attaccanti: Offesa del membro come in tabella (value, setup e Tera/Z compresi) >= 80, in ordine di team', () => {
     const { rating, coaching, dash, data } = build();
-    const members = rating.offense.members.map((m, i) => ({ ...m, setupGain: 0, oneUseGain: 0, value: [90, 84.9, 85, 50, 100, 20][i] }));
+    const members = rating.offense.members.map((m, i) => ({ ...m, setupGain: 0, oneUseGain: 0, value: [90, 79.9, 80, 50, 100, 20][i] }));
     members[4] = { ...members[4], setupGain: 30, oneUseGain: 5, value: 100 }; // 65 senza setup e Tera: conta il numero mostrato
-    members[1] = { ...members[1], value: 84.9 };
+    members[1] = { ...members[1], value: 79.9 };
     const fake = { ...rating, offense: { ...rating.offense, members } };
     const s = teamSummary(base, fake, coaching, dash, data);
     expect(s.attackers).toEqual([battleName(base[0]), battleName(base[2]), battleName(base[4])]);
