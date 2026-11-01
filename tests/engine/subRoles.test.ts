@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_RULES, formatRules, UBERS_RULES } from '../../src/engine/formatRules';
 import type { TeamSet } from '../../src/engine/sets';
-import { attackSide, rolesList, uninvestedWall, setSubRoles, statusSources, wallIndex } from '../../src/engine/subRoles';
+import { attackSide, rolesList, subRoleReasons, uninvestedWall, setSubRoles, statusSources, wallIndex } from '../../src/engine/subRoles';
 
 const set = (species: string, moves: string[], item = '', ability = '', evs: TeamSet['evs'] = {}, nature = 'Serious'): TeamSet =>
   ({ species, ability, item, moves, nature, evs });
@@ -107,6 +107,21 @@ describe('subRoles', () => {
     expect(roles(set('Landorus-Therian', ['Knock Off'])).itemRemoval).toBe(1);
     expect(roles(set('Gholdengo', ['Trick'], 'Choice Scarf')).itemRemoval).toBe(1);
     expect(roles(set('Gholdengo', ['Trick'], 'Leftovers')).itemRemoval).toBe(0.5);
+  });
+
+  it('Supporto: Wish, Healing Wish e Lunar Dance 1, Heal Bell e Aromatherapy 0.75', () => {
+    expect(roles(set('Alomomola', ['Wish', 'Protect', 'Flip Turn', 'Scald'])).support).toBe(1);
+    expect(roles(set('Hatterene', ['Healing Wish', 'Psychic', 'Draining Kiss', 'Mystical Fire'])).support).toBe(1);
+    expect(roles(set('Blissey', ['Heal Bell', 'Soft-Boiled', 'Seismic Toss', 'Toxic'])).support).toBe(0.75);
+    expect(roles(set('Garchomp', ['Earthquake', 'Stealth Rock'])).support ?? 0).toBe(0);
+  });
+
+  it('Controllo hazard: Magic Bounce vale metà senza una mossa di rimozione; Good as Gold niente', () => {
+    expect(roles(set('Hatterene', ['Psychic', 'Draining Kiss', 'Calm Mind', 'Mystical Fire'], 'Leftovers', 'Magic Bounce')).removal).toBe(0.5);
+    expect(roles(set('Hatterene', ['Defog', 'Draining Kiss', 'Calm Mind', 'Mystical Fire'], 'Leftovers', 'Magic Bounce')).removal).toBe(1);
+    expect(roles(set('Gholdengo', ['Make It Rain', 'Shadow Ball', 'Nasty Plot', 'Recover'], 'Air Balloon', 'Good as Gold')).removal ?? 0).toBe(0);
+    const reasons = subRoleReasons(set('Hatterene', ['Psychic', 'Draining Kiss', 'Calm Mind', 'Mystical Fire'], 'Leftovers', 'Magic Bounce'), [], { stats: null, sets: null });
+    expect(reasons.find(r => r.role === 'removal')?.source).toBe('Magic Bounce');
   });
 
   it('Unaware è un hazer', () => {

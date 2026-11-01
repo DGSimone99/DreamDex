@@ -102,7 +102,7 @@ describe('Generale dei Ruoli', () => {
     expect(row('Hazard')).toHaveTextContent('Gliscor (Stealth Rock)');
     // Il gruppo del campo ha la sua riga, con la mossa di chi lo porta
     expect(row('Setup del Campo')).toHaveTextContent('Gliscor (Stealth Rock)');
-    expect(within(row('Rimozione Hazard')).getAllByRole('cell')[0]).toHaveTextContent('0');
+    expect(within(row('Controllo Hazard')).getAllByRole('cell')[0]).toHaveTextContent('0');
     expect(row('Taunt')).toHaveTextContent('Zapdos (Taunt)');
     // L'essenziale mancante: il suo malus al posto del valore, e il motivo nella voce
     expect(within(row('Minaccia Offensiva')).getAllByRole('cell')[0]).toHaveTextContent('−2');
@@ -110,7 +110,8 @@ describe('Generale dei Ruoli', () => {
     expect([...table.querySelectorAll('.ad-group th')].map(th => th.textContent)).toEqual(['Essenziali', 'Importanti', 'Minori']);
     // Le schede delle famiglie contano le voci coperte con la soglia dei bisogni (0,5): gli schermi a 0,45 no
     const tab = (name: string) => screen.getByRole('tab', { name: new RegExp(`^${name}`) });
-    expect(tab('Campo')).toHaveTextContent(/1\/4$/);
+    // Campo ha cinque sotto-ruoli (hazard, controllo hazard, pivot, schermi, supporto)
+    expect(tab('Campo')).toHaveTextContent(/1\/5$/);
     expect(tab('Disturbo')).toHaveTextContent(/1\/6$/);
   });
 });

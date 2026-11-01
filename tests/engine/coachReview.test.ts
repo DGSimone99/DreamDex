@@ -64,7 +64,7 @@ describe('vantaggi e svantaggi', () => {
   it('raggruppa copre/resiste e le perdite', () => {
     const diff = { gains: { roles: ['removal' as const], covers: ['Normal' as const, 'Grass' as const, 'Ice' as const], resists: [] }, losses: { roles: ['hazards' as const], covers: [], resists: ['Dark' as const] }, lostResists: [] };
     expect(describeDiff(diff)).toEqual({
-      pros: ['Rimozione Hazard', 'Forte contro Normal, Grass, Ice'],
+      pros: ['Controllo Hazard', 'Forte contro Normal, Grass, Ice'],
       cons: ['Hazard', 'Non più resistente a Dark'],
     });
   });
