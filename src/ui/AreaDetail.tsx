@@ -1,7 +1,7 @@
 import type { ReactElement, ReactNode } from 'react';
 import type { TeamAnalysis } from '../engine/analysis';
 import type { TeamSet } from '../engine/sets';
-import { MAX_BONUS, MAX_PENALTY, bonusMalusCatalog, type CatalogEntry, type TeamRating } from '../engine/rating';
+import { bonusMalusCatalog, type CatalogEntry, type TeamRating } from '../engine/rating';
 import { ESSENTIAL_POINTS, type TeamRoles } from '../engine/rolesArea';
 import { MISSING_BELOW } from '../engine/needs';
 import type { Level, LevelKey } from '../engine/roleLevels';
@@ -56,13 +56,9 @@ function catalogueTabs(rating: TeamRating, t: T, lang: Lang): DetailTab[] {
     const items = kind === 'malus' ? rating.penalty.items : rating.bonus.items;
     // Punti attuali di una voce del catalogo: somma delle voci del voto con la sua chiave
     const nowOf = (entry: CatalogEntry) => items.filter(i => i.catalog === entry.key).reduce((n, i) => n + i.points, 0);
-    const cap = kind === 'malus' ? MAX_PENALTY : MAX_BONUS;
-    const capText = signed(kind === 'malus' ? -cap : cap);
-    // Somma grezza delle voci attive: se supera il tetto, il totale mostrato è limitato
-    const raw = items.reduce((n, i) => n + i.points, 0);
     return (
       <>
-        <h4>{t(`catalogue.${kind}`)}{raw > cap && <small className="ad-limited"> {t('catalogue.limited', { cap: capText })}</small>}</h4>
+        <h4>{t(`catalogue.${kind}`)}</h4>
         <div className="ad-scroll">
           <table className="ad-t ad-catalog">
             <thead>
@@ -92,7 +88,6 @@ function catalogueTabs(rating: TeamRating, t: T, lang: Lang): DetailTab[] {
             </tbody>
           </table>
         </div>
-        <p className="ad-cap">{t(kind === 'malus' ? 'catalogue.capMalus' : 'catalogue.capBonus', { max: capText })}</p>
       </>
     );
   };

@@ -34,11 +34,12 @@ describe('catalogo bonus e malus', () => {
     expect(rateTeam(teams.bonus, fixtureData)!.bonus.items.map(i => i.catalog)).toEqual(['weatherHelp']);
   });
 
-  it('catalogo IT: 13 voci, 11 malus prima, Tera attivo solo con un limite', () => {
+  it('catalogo IT: 18 voci, 12 malus prima, Tera attivo solo con un limite', () => {
     const none = bonusMalusCatalog('it', 0);
-    expect(none).toHaveLength(13);
-    expect(none.slice(0, 11).every(e => e.kind === 'malus')).toBe(true);
-    expect(none.slice(11).every(e => e.kind === 'bonus')).toBe(true);
+    expect(none).toHaveLength(18);
+    expect(none.slice(0, 12).every(e => e.kind === 'malus')).toBe(true);
+    expect(none.slice(12).every(e => e.kind === 'bonus')).toBe(true);
+    expect(none.map(e => e.key)).toEqual(expect.arrayContaining(['sameType', 'coreTrio', 'weakCovered', 'typeVariety', 'conditionUsed']));
     expect(none.find(e => e.key === 'tera')!.applies).toBe(false);
     expect(bonusMalusCatalog('it', 3).find(e => e.key === 'tera')!.applies).toBe(true);
   });
@@ -55,6 +56,8 @@ describe('catalogo bonus e malus', () => {
     expect(c.find(e => e.key === 'weatherClash')!.points).toBe(`−${WEATHER_CLASH_POINTS}`);
     expect(c.find(e => e.key === 'unusedEnabler')!.points).toBe(`−${UNUSED_ENABLER_POINTS}`);
     expect(c.find(e => e.key === 'trickRoomFast')!.points).toContain(`−${TRICK_ROOM_FAST_POINTS} per membro`);
+    expect(c.find(e => e.key === 'coreTrio')!.points).toContain('2');
+    expect(c.find(e => e.key === 'typeVariety')!.when).toContain('10');
   });
 
   it('catalogo EN: stesse chiavi, testi non vuoti', () => {

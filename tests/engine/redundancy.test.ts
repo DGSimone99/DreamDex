@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { analyzeTeam } from '../../src/engine/analysis';
 import { coachTeam } from '../../src/engine/coach';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
-import { MAX_PENALTY, rateTeam, redundancies } from '../../src/engine/rating';
+import { rateTeam, redundancies } from '../../src/engine/rating';
 import { emptySet, mostCommonSet, type TeamSet } from '../../src/engine/sets';
 import { fixtureData, fixtureStats, gholdengo, tusk } from '../fixtures/data';
 
@@ -35,9 +35,9 @@ describe('ridondanze', () => {
     expect(items(team)).toContainEqual(expect.objectContaining({ text: '2 rimozioni hazard', points: 1 }));
   });
 
-  it('tre o più membri dello stesso tipo', () => {
+  it('tre o più membri dello stesso tipo: −1 nel voto e nel coach', () => {
     const team = ['Gholdengo', 'Kingambit', 'Corviknight'].map(n => withMoves(n, []));
-    expect(items(team).some(i => /di tipo Steel/.test(i.text))).toBe(false);
+    expect(items(team)).toContainEqual(expect.objectContaining({ text: '3 membri di tipo Steel', points: 1, catalog: 'sameType' }));
     expect(coachTeam(team, DEFAULT_FORMAT, fixtureData).problems)
       .toContainEqual(expect.objectContaining({ category: 'redundancy', text: '3 membri di tipo Steel' }));
   });
@@ -46,14 +46,16 @@ describe('ridondanze', () => {
     expect(redundancies([tusk, gholdengo], analyzeTeam([tusk, gholdengo], fixtureData))).toEqual({ total: 0, items: [] });
   });
 
-  it('penalità massima', () => {
-    // 5 Tusks con Stealth Rock + Spin (4 + 4), un conflitto di meteo (3) e due mosse STAB indebolite (2 + 2)
+  it('nessun tetto: la penalità è la somma delle voci', () => {
+    // 5 Tusks con Stealth Rock + Spin (4 + 4), un conflitto di meteo (3), due mosse STAB indebolite (2 + 2), 5 dello stesso tipo
     const team = [
       ...Array(5).fill(0).map(() => withMoves('Great Tusk', ['Stealth Rock', 'Rapid Spin'])),
       { ...withMoves('Ninetales', ['Flamethrower']), ability: 'Drought' },
       { ...withMoves('Pelipper', ['Surf']), ability: 'Drizzle' },
     ];
-    expect(redundancies(team, analyzeTeam(team, fixtureData)).total).toBe(MAX_PENALTY);
+    const r = redundancies(team, analyzeTeam(team, fixtureData));
+    expect(r.total).toBe(r.items.reduce((n, i) => n + i.points, 0));
+    expect(r.total).toBeGreaterThan(15);
   });
 });
 
@@ -124,11 +126,14 @@ describe('penalità e bonus del meteo', () => {
     expect(rating.overall).toBe(Math.min(100, Math.max(0, rating.base - rating.penalty.total + rating.bonus.total)));
   });
 
-  it('bonus: abilitare Clorofilla non conta più', () => {
+  it('bonus: abilitare Clorofilla non conta nel "meteo che protegge" (ma il sole sfruttato da due compagni è un bonus a parte)', () => {
     const team = [ninetales, withMoves('Great Tusk', ['Headlong Rush']), { ...withMoves('Leafeon', ['Leaf Blade']), ability: 'Chlorophyll' }];
     const bonus = bonusOf(team);
-    expect(bonus.total).toBe(1);
-    expect(bonus.items.map(i => i.text).join(' | ')).not.toContain('Leafeon');
+    const help = bonus.items.filter(i => i.catalog === 'weatherHelp');
+    expect(help).toHaveLength(1);
+    expect(help[0].text).not.toContain('Leafeon');
+    // Protosynthesis di Great Tusk e Clorofilla di Leafeon sfruttano il sole: +1 "condizione sfruttata"
+    expect(bonus.items).toContainEqual(expect.objectContaining({ catalog: 'conditionUsed', points: 1 }));
   });
 
   it('bonus: il meteo primordiale da solo con un compagno debole non dà bonus', () => {
