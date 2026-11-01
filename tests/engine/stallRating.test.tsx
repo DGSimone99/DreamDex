@@ -31,13 +31,15 @@ describe('team stall', () => {
   it('riconosciuto: ruoli giudicati come stall (niente sweeper né velocità richiesti)', () => {
     const rating = rateTeam(stall, fixtureData)!;
     expect(rating.archetype).toBe('stall');
-    // da stall: i due muri essenziali ci sono, gli attaccanti non sono richiesti; fra gli importanti mancano
-    // il Danno nel Tempo (il gruppo del fixture è pieno di Acciaio e Veleno, immuni a Toxic); il Debuff è minore
+    // da stall: muri, Recupero, Cleric, Anti-setup e Hazard essenziali ci sono, gli attaccanti non sono richiesti;
+    // fra gli essenziali manca il Danno nel Tempo (il gruppo del fixture è pieno di Acciaio e Veleno, immuni a Toxic);
+    // il Controllo Hazard (importante) c'è; il Debuff è ignorato
     const needs = teamNeeds(stall, fixtureData);
-    expect(needs.essentialMissing).toEqual([]);
-    expect(needs.levels.attacker).toBe('ignored');
-    expect(needs.importantMissing).toEqual(['dot']);
-    expect(needs.levels.debuff).toBe('minor');
+    expect(needs.essentialMissing).toEqual(['dot']);
+    expect(needs.levels.anySweeper).toBe('ignored');
+    expect(needs.levels.anyBreaker).toBe('ignored');
+    expect(needs.importantMissing).toEqual([]);
+    expect(needs.levels.debuff).toBe('ignored');
     // Area Ruoli: base degli importanti da stall, extra dei minori (rolesArea.ts)
     const keys = (level: string) => LEVEL_KEYS.filter(k => needs.levels[k] === level);
     const of = (level: string) => keys(level).map(k => needs.values[k]);
@@ -90,7 +92,8 @@ describe('coaching di uno stall', () => {
     expect(needs.importantMissing).toContain('removal');
     expect(needs.missingRoles).toContain('removal');
     const texts = coachTeam(noRemoval, DEFAULT_FORMAT, fixtureData, 'it').problems.map(p => p.text);
-    expect(texts).not.toContainEqual(expect.stringMatching(/Ruoli mancanti/));
+    // La riga "Ruoli mancanti" (qui c'è: il Danno nel Tempo è essenziale da stall) non nomina il Controllo Hazard
+    expect(texts).not.toContainEqual(expect.stringMatching(/^Ruoli mancanti: .*Controllo Hazard/));
     expect(texts).toContainEqual(expect.stringMatching(/^Ruoli importanti mancanti: .*Controllo Hazard/));
   });
 });

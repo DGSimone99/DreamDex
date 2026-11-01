@@ -11,9 +11,9 @@ describe('etichette del motore', () => {
     expect(roleLabel('removal', 'it')).toBe('Controllo Hazard');
     expect(roleLabel('removal')).toBe('Controllo Hazard');
     expect(roleLabel('phazer', 'it')).toBe('Anti-setup');
-    expect(roleLabel('support', 'it')).toBe('Supporto');
+    expect(roleLabel('support', 'it')).toBe('Cleric');
     expect(roleLabel('removal', 'en')).toBe('Hazard Control');
-    expect(roleLabel('support', 'en')).toBe('Support');
+    expect(roleLabel('support', 'en')).toBe('Cleric');
   });
 
   it('meteo e campi in frase e nei menu', () => {

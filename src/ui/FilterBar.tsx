@@ -9,8 +9,8 @@ import { typeName } from '../i18n/game';
 import { Icon } from './icons';
 import { useLang, useT } from '../i18n/react';
 
-/** I 17 sotto-ruoli nell'ordine delle famiglie, poi i tre filtri sulle mosse (ricerca, non voto). */
-const ROLES: FilterRole[] = [...Object.values(FAMILIES).flat(), 'priority', 'speedControl', 'setup'];
+/** I sotto-ruoli nell'ordine delle famiglie, poi i filtri sulle mosse (ricerca, non voto); il Controllo Velocità è già fra i sotto-ruoli. */
+const ROLES: FilterRole[] = [...Object.values(FAMILIES).flat(), 'priority', 'setup'];
 const toggle = <T,>(list: T[], value: T) => (list.includes(value) ? list.filter(v => v !== value) : [...list, value]);
 
 /** Griglia dei 18 tipi da accendere e spegnere, nei loro colori. */

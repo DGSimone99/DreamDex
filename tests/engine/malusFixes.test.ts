@@ -28,9 +28,12 @@ describe('malus corretti', () => {
     expect(texts(team)).not.toMatch(/Ditto è debole/);
   });
 
-  it('un semi-stall senza attaccanti non perde punti, come lo stall', () => {
-    expect(levelOf('semiStall', 'attacker')).toBe('ignored');
-    expect(levelOf('balance', 'attacker')).toBe('essential');
+  it('un semi-stall senza attaccanti non perde punti: i gruppi degli attaccanti sono importanti (±), non essenziali; nello stall ignorati', () => {
+    for (const key of ['anySweeper', 'anyBreaker'] as const) {
+      expect(levelOf('semiStall', key)).toBe('important');
+      expect(levelOf('stall', key)).toBe('ignored');
+      expect(levelOf('balance', key)).toBe('essential');
+    }
   });
 
   it('due meteo automatici che si annullano, senza compagni che ne dipendono: nessun conflitto', () => {

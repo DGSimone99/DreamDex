@@ -225,7 +225,7 @@ describe('Cruscotto della Panoramica', () => {
     expect([...table.querySelectorAll('.dash-role-sep')].map(x => x.textContent)).toEqual(['Essenziali', 'Importanti', 'Minori']);
     const rows = roleRows(roles);
     expect(rows.map(r => r.querySelector('th')!.textContent)).toEqual([
-      'Hazard, coperto da Great Tusk', 'Controllo Hazard, coperto da Great Tusk, Corviknight, Toxapex', 'Pivot, mancante', 'Schermi, mancante',
+      'Hazard, coperto da Great Tusk', 'Controllo Hazard, coperto da Great Tusk, Corviknight, Toxapex', 'Pivot, mancante', 'Screen Setter, mancante',
     ]);
     // Rimozione: pallini sotto Great Tusk, Corviknight, Toxapex, non sotto Dragapult
     expect([...rows[1].querySelectorAll('td')].map(td => !!td.querySelector('.dash-dot'))).toEqual([true, true, true, false]);

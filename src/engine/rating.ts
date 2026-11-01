@@ -222,7 +222,7 @@ export const TRICK_ROOM_MAX = 3;
 export const WEAK_POWER = 30;
 /** Valore minimo di un sotto-ruolo di Campo o Disturbo perché un Pokémon debole porti un'utilità chiave. */
 export const UTILITY_MIN = 0.5;
-const UTILITY_ROLES = [...FAMILIES.field, ...FAMILIES.disruption];
+const UTILITY_ROLES = [...FAMILIES.support, ...FAMILIES.utility];
 
 /**
  * Il membro porta un'utilità chiave: un sotto-ruolo di Campo o Disturbo (Delibird con Spikes), il controllo velocità

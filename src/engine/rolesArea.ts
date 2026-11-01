@@ -19,7 +19,7 @@ export const ESSENTIAL_POINTS = 2;
  * Peso delle voci importanti nella base: il Setup del campo (gli hazard, in pratica) conta il doppio, perché fa danno
  * a ogni cambio per tutta la partita (calibrazione 2026-10-25: distacco torneo − medio 6,7 → 8,1).
  */
-export const IMPORTANT_WEIGHT: Partial<Record<LevelKey, number>> = { fieldSetup: 2 };
+export const IMPORTANT_WEIGHT: Partial<Record<LevelKey, number>> = {};
 export const importantWeight = (key: LevelKey): number => IMPORTANT_WEIGHT[key] ?? 1;
 /** Lo squilibrio degli attaccanti tiene il suo malus di sempre (testo "Nessun attaccante fisico/speciale"). */
 export const ONE_STYLE_POINTS = 3;
@@ -72,9 +72,7 @@ function essentialFailures(team: TeamSet[], needs: TeamNeeds, lang: Lang): Redun
   if (team.length !== 6) return [];
   const archetype = t(lang, `archetype.${needs.archetype}`);
   const items: Redundancy[] = needs.essentialMissing.map(key => ({
-    text: key === 'attacker'
-      ? t(lang, 'rating.failure.noAttacker')
-      : t(lang, 'rating.failure.missing', { archetype, role: needLabel(key, lang) }),
+    text: t(lang, 'rating.failure.missing', { archetype, role: needLabel(key, lang) }),
     points: ESSENTIAL_POINTS,
     catalog: 'essentialRole' as const,
   }));
@@ -91,12 +89,10 @@ export function teamRolesArea(team: TeamSet[], data: EngineData, lang: Lang, giv
     const by = team.map((set, i) => {
       const values = needs.credited[i] ?? {};
       const value = keyValue(values, key);
-      // La fonte del sotto-ruolo migliore dietro la voce (per "attacker": il miglior sotto-ruolo d'Attacco)
+      // La fonte del sotto-ruolo migliore dietro la voce (per i gruppi: il lato che vale di più)
       const role = keyRoles(key).reduce((best, r) => ((values[r] ?? 0) > (values[best] ?? 0) ? r : best));
-      // Setup del campo: Sticky Web (non è un sotto-ruolo) fa da fonte solo se supera hazard e schermi
-      const web = key === 'fieldSetup' && (values.web ?? 0) > (values[role] ?? 0);
-      const source = web ? 'Sticky Web' : reasons[i].find(r => r.role === role)?.source ?? '';
-      const secondary = !web && secondaryRoles(needs.primary[i] ?? null).includes(role);
+      const source = reasons[i].find(r => r.role === role)?.source ?? '';
+      const secondary = secondaryRoles(needs.primary[i] ?? null).includes(role);
       return secondary ? { species: battleName(set), value, source, secondary } : { species: battleName(set), value, source };
     }).filter(b => b.value > 0).sort((a, b) => b.value - a.value);
     return { key, level: needs.levels[key], value: needs.values[key], by };

@@ -38,7 +38,7 @@ describe('dettaglio dei Ruoli a schede', () => {
   it('la riga dei Ruoli porta alla scheda: Generale e una scheda per famiglia', async () => {
     const { dialog } = await openRoles();
     const tabs = within(dialog).getAllByRole('tab');
-    expect(tabs.map(tab => tab.textContent!.replace(/\s*[\d/]+$/, ''))).toEqual(['Generale', 'Attacco', 'Difesa', 'Campo', 'Disturbo']);
+    expect(tabs.map(tab => tab.textContent!.replace(/\s*[\d/]+$/, ''))).toEqual(['Generale', 'Attaccanti', 'Difensori', 'Support', 'Utility']);
     expect(tabs[0]).toHaveAttribute('aria-selected', 'true');
     // Le famiglie mostrano quante voci il team copre
     for (const tab of tabs.slice(1)) expect(tab.textContent).toMatch(/\d+\/\d+$/);
@@ -46,7 +46,7 @@ describe('dettaglio dei Ruoli a schede', () => {
 
   it('una famiglia: ogni sotto-ruolo con chi lo porta, il valore e il motivo', async () => {
     const { user, dialog } = await openRoles();
-    await user.click(within(dialog).getByRole('tab', { name: /^Disturbo/ }));
+    await user.click(within(dialog).getByRole('tab', { name: /^Utility/ }));
     const panel = within(dialog).getByRole('tabpanel');
     const table = within(panel).getByRole('table');
     expect(within(table).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Motivo', 'Valore']);
@@ -63,7 +63,7 @@ describe('dettaglio dei Ruoli a schede', () => {
 
   it('in inglese', async () => {
     const { dialog } = await openRoles('en');
-    expect(within(dialog).getAllByRole('tab').map(tab => tab.textContent!.replace(/\s*[\d/]+$/, ''))).toEqual(['General', 'Attack', 'Defense', 'Field', 'Disruption']);
+    expect(within(dialog).getAllByRole('tab').map(tab => tab.textContent!.replace(/\s*[\d/]+$/, ''))).toEqual(['General', 'Attackers', 'Defenders', 'Support', 'Utility']);
   });
 });
 
@@ -76,7 +76,7 @@ describe('note nella scheda Generale dei Ruoli', () => {
     const roles: TeamRoles = {
       value: 70, base: 1, extra: 0,
       rows: [
-        { key: 'attacker', level: 'essential', value: 1, by: [{ species: 'Dragapult', value: 1, source: 'Draco Meteor' }, { species: 'Infernape', value: 1, source: 'Close Combat' }] },
+        { key: 'anyBreaker', level: 'essential', value: 1, by: [{ species: 'Dragapult', value: 1, source: 'Draco Meteor' }, { species: 'Infernape', value: 1, source: 'Close Combat' }] },
         { key: 'pivot', level: 'important', value: 1, by: [{ species: 'Corviknight', value: 1, source: 'U-turn' }, { species: 'Dragapult', value: 1, source: 'U-turn' }] },
       ],
       failures: [],
@@ -93,9 +93,9 @@ describe('note nella scheda Generale dei Ruoli', () => {
     const row = (name: string) => within(table).getByRole('row', { name: new RegExp(`^${name}`) });
     expect(row('Pivot')).toHaveTextContent('Corviknight (U-turn · difensivo)');
     expect(row('Pivot')).toHaveTextContent('Dragapult (U-turn · offensivo)');
-    expect(row('Minaccia Offensiva')).toHaveTextContent('Infernape (Close Combat · misto)');
-    expect(row('Minaccia Offensiva')).toHaveTextContent('Dragapult (Draco Meteor)');
-    expect(row('Minaccia Offensiva')).not.toHaveTextContent('Dragapult (Draco Meteor · misto)');
+    expect(row('Almeno un Wallbreaker')).toHaveTextContent('Infernape (Close Combat · misto)');
+    expect(row('Almeno un Wallbreaker')).toHaveTextContent('Dragapult (Draco Meteor)');
+    expect(row('Almeno un Wallbreaker')).not.toHaveTextContent('Dragapult (Draco Meteor · misto)');
   });
 });
 
@@ -103,15 +103,14 @@ describe('Generale dei Ruoli', () => {
   it('voci importanti con valore e chi le porta, extra delle minori, mancanze essenziali coi punti', () => {
     const base = rateTeam([{ ...emptySet('Gliscor'), moves: ['Stealth Rock'] }], fixtureData, 'it')!;
     const roles: TeamRoles = {
-      value: 64, base: 2 / 3, extra: 0.03,
+      value: 64, base: 0.5, extra: 0.03,
       rows: [
-        { key: 'attacker', level: 'essential', value: 0, by: [] },
-        { key: 'fieldSetup', level: 'important', value: 1, by: [{ species: 'Gliscor', value: 1, source: 'Stealth Rock' }] },
+        { key: 'anySweeper', level: 'essential', value: 0, by: [] },
         { key: 'hazards', level: 'important', value: 1, by: [{ species: 'Gliscor', value: 1, source: 'Stealth Rock' }] },
         { key: 'removal', level: 'important', value: 0, by: [] },
         { key: 'taunt', level: 'minor', value: 1, by: [{ species: 'Zapdos', value: 1, source: 'Taunt' }] },
       ],
-      failures: [{ text: 'Nessun attaccante nel team', points: 2 }],
+      failures: [{ text: 'Balance senza Almeno uno Sweeper', points: 2 }],
       members: [
         { species: 'Gliscor', values: { hazards: 1 }, primary: null, reasons: [{ role: 'hazards', value: 1, source: 'Stealth Rock' }] },
         { species: 'Zapdos', values: { taunt: 1 }, primary: null, reasons: [{ role: 'taunt', value: 1, source: 'Taunt', share: 1 }] },
@@ -125,26 +124,24 @@ describe('Generale dei Ruoli', () => {
     renderIt(<AreaView rating={rating} area="roles" team={[]} analysis={analyzeTeam([], fixtureData)} problems={[]} />);
     const panel = screen.getByRole('tabpanel');
     expect(within(panel).getAllByRole('term').map(term => term.textContent)).toEqual(['Voci importanti', 'Voci minori', 'Voci essenziali']);
-    // Base 67 (media di setup del campo, hazard e rimozione), extra +3, malus −2
-    expect(within(panel).getAllByRole('definition').map(d => d.querySelector('strong')!.textContent)).toEqual(['67', '+3', '−2']);
+    // Base 50 (media di hazard e rimozione), extra +3, malus −2
+    expect(within(panel).getAllByRole('definition').map(d => d.querySelector('strong')!.textContent)).toEqual(['50', '+3', '−2']);
     const table = within(panel).getByRole('table');
     expect(within(table).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Voce', 'Valore', 'Chi la porta']);
     const row = (name: string) => within(table).getByRole('row', { name: new RegExp(`^${name}`) });
     expect(within(row('Hazard')).getAllByRole('cell')[0]).toHaveTextContent('100');
     expect(row('Hazard')).toHaveTextContent('Gliscor (Stealth Rock)');
-    // Il gruppo del campo ha la sua riga, con la mossa di chi lo porta
-    expect(row('Setup del Campo')).toHaveTextContent('Gliscor (Stealth Rock)');
     expect(within(row('Controllo Hazard')).getAllByRole('cell')[0]).toHaveTextContent('0');
     expect(row('Taunt')).toHaveTextContent('Zapdos (Taunt)');
     // L'essenziale mancante: il suo malus al posto del valore, e il motivo nella voce
-    expect(within(row('Minaccia Offensiva')).getAllByRole('cell')[0]).toHaveTextContent('−2');
-    expect(panel).toHaveTextContent('Nessun attaccante nel team (−2)');
+    expect(within(row('Almeno uno Sweeper')).getAllByRole('cell')[0]).toHaveTextContent('−2');
+    expect(panel).toHaveTextContent('Balance senza Almeno uno Sweeper (−2)');
     expect([...table.querySelectorAll('.ad-group th')].map(th => th.textContent)).toEqual(['Essenziali', 'Importanti', 'Minori']);
     // Le schede delle famiglie contano le voci coperte con la soglia dei bisogni (0,5): gli schermi a 0,45 no
     const tab = (name: string) => screen.getByRole('tab', { name: new RegExp(`^${name}`) });
-    // Campo ha cinque sotto-ruoli (hazard, controllo hazard, pivot, schermi, supporto)
-    expect(tab('Campo')).toHaveTextContent(/1\/5$/);
-    expect(tab('Disturbo')).toHaveTextContent(/1\/6$/);
+    // Support ha sei sotto-ruoli (cleric, controllo hazard, schermi, speed control, debuff, anti-setup), Utility sei (hazard, pivot, danno nel tempo, taunt, encore, rimozione strumenti)
+    expect(tab('Support')).toHaveTextContent(/0\/6$/);
+    expect(tab('Utility')).toHaveTextContent(/2\/6$/);
   });
 });
 
@@ -189,7 +186,7 @@ describe('ruolo secondario nel dettaglio dei Ruoli', () => {
     const general = within(screen.getByRole('tabpanel')).getByRole('row', { name: /^Muro Fisico/ });
     expect(general).toHaveTextContent('Great Tusk (secondario · 50)');
     // Scheda Difesa: il valore accreditato (50, non 100) e il segno
-    await user.click(screen.getByRole('tab', { name: /^Difesa/ }));
+    await user.click(screen.getByRole('tab', { name: /^Difensori/ }));
     const row = within(screen.getByRole('tabpanel')).getAllByRole('row').find(r => /Great Tusk/.test(r.textContent!))!;
     expect(row).toHaveTextContent('(secondario)');
     expect(within(row).getAllByRole('cell').at(-1)).toHaveTextContent(/^50$/);

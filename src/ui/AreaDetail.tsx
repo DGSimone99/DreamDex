@@ -4,7 +4,7 @@ import type { TeamSet } from '../engine/sets';
 import { bonusMalusCatalog, type CatalogEntry, type TeamRating } from '../engine/rating';
 import { ESSENTIAL_POINTS, type TeamRoles } from '../engine/rolesArea';
 import { MISSING_BELOW } from '../engine/needs';
-import type { Level, LevelKey } from '../engine/roleLevels';
+import { isGroupKey, type Level, type LevelKey } from '../engine/roleLevels';
 import { attackStyle } from '../engine/roles';
 import { FAMILIES, secondaryRoles, type Family, type SubRole, type SubRoleReason } from '../engine/subRoles';
 import { useT } from '../i18n/react';
@@ -99,7 +99,7 @@ function catalogueTabs(rating: TeamRating, t: T, lang: Lang): DetailTab[] {
 
 const points = (x: number) => Math.round(100 * x);
 const ROLE_LEVELS_SHOWN = ['essential', 'important', 'minor'] as const;
-const FAMILY_TABS: Family[] = ['attack', 'defense', 'field', 'disruption'];
+const FAMILY_TABS: Family[] = ['attack', 'defense', 'support', 'utility'];
 const thousands = (n: number) => `${Math.round(n / 1000)}k`;
 
 /** Il motivo di un sotto-ruolo in parole: quota del gruppo per Taunt, Encore e stati, indice per i muri, colpo per l'Attacco. */
@@ -122,7 +122,7 @@ function rolesTabs(rating: TeamRating, value: number | null, t: T, ctx: AreaCont
   const archetype = t(`archetype.${rating.teamType}`);
   const full = roles.members.length === 6;
   const levelOf = (key: LevelKey): Level => roles.rows.find(r => r.key === key)?.level ?? 'ignored';
-  const keyLabel = (key: LevelKey) => (key === 'attacker' || key === 'fieldSetup' ? t(`need.${key}`) : t(`role.${key}`));
+  const keyLabel = (key: LevelKey) => (isGroupKey(key) ? t(`need.${key}`) : t(`role.${key}`));
   const malus = roles.failures.reduce((a, f) => a + f.points, 0);
   const base = points(roles.base);
   const extra = points(roles.extra);
@@ -135,7 +135,7 @@ function rolesTabs(rating: TeamRating, value: number | null, t: T, ctx: AreaCont
   /** Il set del membro che porta una voce (i membri dei Ruoli seguono l'ordine del team). */
   const setOf = (species: string) => { const i = roles.members.findIndex(m => m.species === species); return i >= 0 ? ctx.team[i] : undefined; };
   const isWall = (species: string) => { const m = roles.members.find(x => x.species === species); const v = m?.credited ?? m?.values ?? {}; return (v.physicalWall ?? 0) >= MISSING_BELOW || (v.specialWall ?? 0) >= MISSING_BELOW; };
-  const ATTACK_KEYS = new Set<LevelKey>(['attacker', ...FAMILIES.attack]);
+  const ATTACK_KEYS = new Set<LevelKey>(['anySweeper', 'anyBreaker', 'anyPhysical', 'anySpecial', ...FAMILIES.attack]);
   /** La nota dopo la fonte: pivot offensivo o difensivo (se chi lo porta è un muro), "misto" per chi attacca da entrambi i lati. */
   const kindNote = (key: LevelKey, species: string) => {
     if (key === 'pivot') return t(isWall(species) ? 'rdetail.pivot.defensive' : 'rdetail.pivot.offensive');

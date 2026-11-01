@@ -13,8 +13,10 @@ import { fixtureData, fixtureStats } from '../fixtures/data';
 const format = DEFAULT_FORMAT;
 const data = { ...fixtureData, formatId: format.formatId };
 const mk = (species: string, item: string, ability: string, moves: string[], nature: string, evs: TeamSet['evs']): TeamSet => ({ ...emptySet(species), item, ability, moves, nature, evs });
-// Un Balance completo senza hazard: il cambio ovvio è Stealth Rock su Great Tusk (tabella 2026-11-01: il setup del campo è importante)
-const six = [...['Great Tusk', 'Gholdengo', 'Toxapex'].map(n => mostCommonSet(fixtureStats, n)!),
+// Un Balance completo senza hazard (Toxapex senza Toxic Spikes: col set comune ne avrebbe 0,75): il cambio ovvio è
+// Stealth Rock su Great Tusk (tabella 2026-11-01: gli hazard sono importanti)
+const six = [...['Great Tusk', 'Gholdengo'].map(n => mostCommonSet(fixtureStats, n)!),
+  mk('Toxapex', 'Black Sludge', 'Regenerator', ['Recover', 'Toxic', 'Surf', 'Haze'], 'Bold', { hp: 252, def: 252, spd: 4 }),
   mk('Corviknight', 'Leftovers', 'Pressure', ['Roost', 'Brave Bird', 'Defog', 'U-turn'], 'Impish', { hp: 248, def: 168, spd: 92 }),
   mk('Dragonite', 'Heavy-Duty Boots', 'Multiscale', ['Dragon Dance', 'Extreme Speed', 'Earthquake', 'Roost'], 'Adamant', { atk: 252, spe: 252 }),
   mk('Kingambit', 'Black Glasses', 'Supreme Overlord', ['Swords Dance', 'Kowtow Cleave', 'Sucker Punch', 'Iron Head'], 'Adamant', { hp: 200, atk: 252, spe: 56 })];

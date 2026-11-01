@@ -27,6 +27,9 @@ const fixable = [...['Gholdengo', 'Toxapex'].map(n => mostCommonSet(fixtureStats
   mk('Dragonite', 'Heavy-Duty Boots', 'Multiscale', ['Dragon Dance', 'Extreme Speed', 'Earthquake', 'Roost'], 'Adamant', { atk: 252, spe: 252 }),
   mk('Kingambit', 'Black Glasses', 'Supreme Overlord', ['Swords Dance', 'Kowtow Cleave', 'Sucker Punch', 'Iron Head'], 'Adamant', { hp: 200, atk: 252, spe: 56 })];
 const three = six.slice(0, 3);
+// Per i test delle aggiunte: con Great Tusk, Gholdengo e Toxapex le sostituzioni di Toxapex battono ogni aggiunta e nessuna
+// tappa propone "Aggiungi"; con questo trio le prime tappe sono uno scambio (Great Tusk) e due aggiunte (Corviknight, Rotom-Wash)
+const trio = ['Gholdengo', 'Toxapex', 'Kingambit'].map(n => mostCommonSet(fixtureStats, n)!);
 const data = { ...fixtureData, formatId: DEFAULT_FORMAT.formatId };
 
 const analysis = () => screen.getByRole('region', { name: 'Analisi' });
@@ -94,7 +97,7 @@ describe('scheda Coaching', () => {
   });
 
   it('team di 3: un candidato da aggiungere apre Aggiungi con lui nel dettaglio, stesso +N', async () => {
-    const user = await openCoaching(three);
+    const user = await openCoaching(trio);
     const button = within(analysis()).getAllByRole('button', { name: /^Aggiungi .+, \+\d+$/ })[0];
     const [, species, gain] = /^Aggiungi (.+), \+(\d+)$/.exec(button.getAttribute('aria-label')!)!;
     await user.click(alternativesOf(button));
@@ -124,7 +127,7 @@ describe('scheda Coaching', () => {
   });
 
   it('team di 3: clic su un candidato da aggiungere lo aggiunge, Annulla lo toglie', async () => {
-    const user = await openCoaching(three);
+    const user = await openCoaching(trio);
     const button = within(analysis()).getAllByRole('button', { name: /^Aggiungi .+, \+\d+$/ })[0];
     const species = /^Aggiungi (.+), \+\d+$/.exec(button.getAttribute('aria-label')!)![1];
     const filled = () => document.querySelectorAll('.slot.filled').length;
@@ -257,7 +260,7 @@ describe('CoachingView', () => {
       ({ severity: 'minor', category, text: key, fixes: [], key, ...(subjects ? { subjects } : {}) });
     const problems = [
       problem('roles', 'roles:x'), problem('defense', 'defense:Ground', ['Ground']), problem('coverage', 'coverage', ['Water', 'Fire']),
-      problem('roles', 'roles:essential', ['fieldSetup']), problem('meta', 'meta:Zamazenta', ['Zamazenta']), problem('rules', 'rules:x', ['Dragapult']),
+      problem('roles', 'roles:essential', ['hazards']), problem('meta', 'meta:Zamazenta', ['Zamazenta']), problem('rules', 'rules:x', ['Dragapult']),
       problem('redundancy', 'redundancy:y'),
     ];
     const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], threatFixes: {}, problems };
@@ -268,7 +271,7 @@ describe('CoachingView', () => {
     expect(also.querySelectorAll('.type-icons img')).toHaveLength(3);
     expect(also).toHaveTextContent('Zamazenta');
     expect(also).toHaveTextContent('Dragapult');
-    expect(also).toHaveTextContent(needLabel('fieldSetup' as Need, 'it'));
+    expect(also).toHaveTextContent(needLabel('hazards' as Need, 'it'));
     // Senza soggetti: il nome breve dell'area
     expect(also).toHaveTextContent('Ridondanza');
   });

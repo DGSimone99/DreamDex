@@ -4,19 +4,30 @@ import type { SubRole } from './subRoles';
 /** Livello di un sotto-ruolo per l'archetipo: essenziale (solo malus), importante (±), minore (solo +), ignorato. */
 export type Level = 'essential' | 'important' | 'minor' | 'ignored';
 /**
- * Una voce della tabella: un sotto-ruolo, o un gruppo: "attacker" = un sotto-ruolo d'Attacco qualunque,
- * "fieldSetup" = hazard, schermi o Sticky Web (il setup del campo dell'HO).
+ * Una voce della tabella: un sotto-ruolo, o un gruppo di attaccanti: "anySweeper" = uno sweeper fisico o speciale,
+ * "anyBreaker" = un wallbreaker fisico o speciale, "anyPhysical" / "anySpecial" = un attaccante (sweeper o
+ * wallbreaker) da quel lato.
  */
-export type LevelKey = SubRole | 'attacker' | 'fieldSetup';
+export type GroupKey = 'anySweeper' | 'anyBreaker' | 'anyPhysical' | 'anySpecial';
+export type LevelKey = SubRole | GroupKey;
+/** I sotto-ruoli dietro ogni gruppo (scritti per esteso: subRoles.ts è in un ciclo di import). */
+export const GROUP_ROLES: Record<GroupKey, SubRole[]> = {
+  anySweeper: ['physicalSweeper', 'specialSweeper'],
+  anyBreaker: ['physicalBreaker', 'specialBreaker'],
+  anyPhysical: ['physicalSweeper', 'physicalBreaker'],
+  anySpecial: ['specialSweeper', 'specialBreaker'],
+};
+export const isGroupKey = (key: LevelKey): key is GroupKey => key in GROUP_ROLES;
 
 /**
  * Tutte le voci della tabella, nell'ordine della specifica: prima il gruppo degli attaccanti, poi le famiglie (FAMILIES).
  * Scritte per esteso: subRoles.ts è in un ciclo di import e qui servono già al caricamento del modulo.
  */
 export const LEVEL_KEYS: LevelKey[] = [
-  'attacker', 'physicalSweeper', 'specialSweeper', 'physicalBreaker', 'specialBreaker',
-  'physicalWall', 'specialWall', 'recovery', 'fieldSetup', 'hazards', 'removal', 'pivot', 'screens', 'support',
-  'dot', 'debuff', 'phazer', 'taunt', 'encore', 'itemRemoval',
+  'anySweeper', 'anyBreaker', 'anyPhysical', 'anySpecial', 'physicalSweeper', 'specialSweeper', 'physicalBreaker', 'specialBreaker',
+  'physicalWall', 'specialWall', 'recovery',
+  'support', 'removal', 'screens', 'speedControl', 'debuff', 'phazer',
+  'hazards', 'pivot', 'dot', 'taunt', 'encore', 'itemRemoval',
 ];
 
 /**
@@ -44,39 +55,53 @@ const E = 'essential' as const, I = 'important' as const, M = 'minor' as const, 
  * Il Debuff è minore anche in semi-stall e stall: paralisi o sonno aiutano, ma uno stall non ne ha bisogno (utente).
  */
 /**
- * Tabella 2026-11-01, dai 231 team da torneo del banco (quota di team che portano la voce, per tipo) e dal confronto
- * con 878 team di ladder: essenziale ≈ 99% dei team da torneo, importante ≈ 70%, sotto minore; attaccanti, muri e
- * Recupero restano requisiti come prima. Il setup del campo (hazard, schermi o Sticky Web a metà) è l'unica voce di
- * campo: hazard e schermi non hanno più un livello loro (contavano due volte). HO: il setup del campo è l'unica
- * importante (a doppio peso): essenziale (malus −2) riempiva la base di qualunque HO e i team brutti fatti a mano
- * salivano di 15–20 punti; importante tiene i brutti a 44 e le partite di alto livello al 53,5%.
- * Balance: phazer (48%) e rimozione strumenti (69%, più in ladder) minori.
- * BO: rimozione strumenti importante (78%). Semi-stall: setup del campo essenziale (100%). Supporto (Wish, Healing
- * Wish, Heal Bell) minore da balance in giù (6–24%). Sul banco (tabella costruita): torneo − medio 7,7 → 7,3,
- * torneo − ladder 5,9 → 6,1, partite di alto livello 51,6% → 53,6%, ladder 52,5% → 52,3% (rumore).
+ * Tabella 2026-11-01 (sera), dal censimento dei team da torneo del banco: 422 di Natdex OU (HO 39, BO 201, Balance 138,
+ * Semi-stall 40, Stall 4) e, per lo Stall, i 6 di tutti i formati. Per ogni voce si conta la quota di team del tipo
+ * con almeno un membro che la porta (valore ≥ 0,5). Regola unica (utente): essenziale dal 95%, importante dal 70%,
+ * minore dal 30%, sotto ignorato. Due eccezioni fisse: le quattro righe singole degli attaccanti e i muri col Recupero
+ * non vanno mai oltre il minore (li misurano già Offesa e Difesa; contano i gruppi degli attaccanti), tranne i muri e
+ * il Recupero essenziali dove stanno sopra il 95% (Balance, Semi-stall, Stall).
+ * Prove sul banco (scripts/bench-levels-spike.ts, cancellato prima del merge): Hazard essenziale con soglia 90 faceva
+ * crollare gli HO da torneo sotto la ladder (Ruoli 53 contro 70); muri e Recupero importanti nel BO allagavano la base
+ * (la base media saliva a 83–90, vicina alla buona); nessun peso doppio (utente). Basi buona / media / scarsa (Ruoli):
+ * HO 74 / 44 / 32, BO 93 / 76 / 51, Balance 89 / 89 / 65, Semi-stall 90 / 90 / 52, Stall 94 / 94 / 47.
+ * Quote (Natdex OU) dietro i livelli, per colonna:
+ *   HO: gruppi 100 / 100 / 100 / 100; Hazard 92, Controllo 82, Pivot 74; Muri 59 / 36, Recupero 62, Rimozione 69.
+ *   BO: gruppi 100 / 100 / 97 / 95; Hazard 90, Controllo 86, Pivot 80, Rimozione 73; Muri 94 / 83, Recupero 83, DoT 34.
+ *   Balance: gruppi 100 / 100 / 96 / 91; Muri 100 / 98, Recupero 100, Hazard 99; Pivot 93, Controllo 83, Rimozione 78;
+ *     DoT 55, Anti-setup 41.
+ *   Semi-stall: Muri 100 / 100, Recupero 100, Hazard 100; Rimozione 90, Controllo 88, DoT 83, Anti-setup 78, Pivot 73,
+ *     gruppi 85 / 80 / 83 / 68; Cleric 35.
+ *   Stall (6 team): Muri, Recupero, Hazard, Cleric, DoT, Anti-setup 100; Controllo 83; Rimozione 67; gruppi e Pivot 17.
  */
 const ROWS: [LevelKey, Level, Level, Level, Level, Level][] = [
-  // Semi-stall e stall vincono logorando: senza attaccanti nessun malus (2026-10-30; l'Offesa misura comunque il danno)
-  ['attacker', E, E, E, X, X],
+  // Attaccanti: i gruppi (le righe singole restano minori o ignorate)
+  ['anySweeper', E, E, E, I, X],
+  ['anyBreaker', E, E, E, I, X],
+  ['anyPhysical', E, E, E, I, X],
+  ['anySpecial', E, E, I, M, X],
   ['physicalSweeper', M, M, M, M, X],
   ['specialSweeper', M, M, M, M, X],
-  ['physicalBreaker', M, M, M, M, M],
-  ['specialBreaker', M, M, M, M, M],
+  ['physicalBreaker', M, M, M, M, X],
+  ['specialBreaker', M, M, M, M, X],
+  // Difensori
   ['physicalWall', M, M, E, E, E],
   ['specialWall', M, M, E, E, E],
-  ['recovery', X, M, I, I, I],
-  ['fieldSetup', I, I, I, E, I],
-  ['hazards', X, X, X, X, X],
-  ['removal', M, I, I, I, I],
-  ['pivot', M, I, I, M, M],
+  ['recovery', M, M, E, E, E],
+  // Support
+  ['support', X, X, X, M, E],
+  ['removal', I, I, I, I, I],
   ['screens', X, X, X, X, X],
-  ['support', X, X, M, M, M],
-  ['dot', X, M, M, I, I],
-  ['debuff', X, M, M, M, M],
-  ['phazer', X, M, M, I, I],
-  ['taunt', M, M, M, M, M],
-  ['encore', M, M, M, M, M],
-  ['itemRemoval', M, I, M, I, I],
+  ['speedControl', X, X, X, X, X],
+  ['debuff', X, X, X, X, X],
+  ['phazer', X, X, M, I, E],
+  // Utility
+  ['hazards', I, I, E, E, E],
+  ['pivot', I, I, I, I, X],
+  ['dot', X, M, M, I, E],
+  ['taunt', X, X, X, X, X],
+  ['encore', X, X, X, X, X],
+  ['itemRemoval', M, I, I, I, M],
 ];
 const COLUMNS: Archetype[] = ['hyperOffense', 'bulkyOffense', 'balance', 'semiStall', 'stall'];
 
@@ -94,8 +119,8 @@ const SWITCHED = new Set<LevelKey>(['physicalSweeper', 'specialSweeper', 'physic
 export function levelOf(archetype: Archetype, key: LevelKey): Level {
   const level = ROLE_LEVELS[archetype][key] ?? 'ignored';
   if (ROLES_COUNT_MEASURED) return level;
-  // Il Recupero lo misura già la Sostenibilità: resta solo come requisito degli archetipi difensivi
-  if (key === 'recovery') return archetype === 'semiStall' || archetype === 'stall' ? 'essential' : 'ignored';
+  // Il Recupero lo misura già la Sostenibilità: resta solo dove la tabella lo chiede come essenziale (Balance, semi-stall, stall)
+  if (key === 'recovery') return level === 'essential' ? 'essential' : 'ignored';
   if (SWITCHED.has(key) && level === 'minor') return 'ignored';
   return level;
 }
