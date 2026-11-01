@@ -13,29 +13,26 @@ import { teamField } from './types';
 import { memoBySet } from './memo';
 import type { Archetype } from './archetype';
 
-export type Family = 'attack' | 'defense' | 'field' | 'disruption';
+/** Le quattro famiglie (2026-11-01): Attaccanti, Difensori, Support (aiuta i tuoi) e Utility (disturba gli altri). */
+export type Family = 'attack' | 'defense' | 'support' | 'utility';
 export type SubRole = 'physicalSweeper' | 'specialSweeper' | 'physicalBreaker' | 'specialBreaker'
-  | 'physicalWall' | 'specialWall' | 'recovery' | 'hazards' | 'removal' | 'pivot' | 'screens' | 'support'
+  | 'physicalWall' | 'specialWall' | 'recovery' | 'hazards' | 'removal' | 'pivot' | 'screens' | 'support' | 'speedControl'
   | 'dot' | 'debuff' | 'phazer' | 'taunt' | 'encore' | 'itemRemoval';
 
 /** Le sotto-ruoli di ogni famiglia, nell'ordine della tabella della specifica. */
 export const FAMILIES: Record<Family, SubRole[]> = {
   attack: ['physicalSweeper', 'specialSweeper', 'physicalBreaker', 'specialBreaker'],
   defense: ['physicalWall', 'specialWall', 'recovery'],
-  field: ['hazards', 'removal', 'pivot', 'screens', 'support'],
-  disruption: ['dot', 'debuff', 'phazer', 'taunt', 'encore', 'itemRemoval'],
+  // 'support' il sotto-ruolo è il Cleric (Wish, Healing Wish, Heal Bell…); 'support' la famiglia è tutto ciò che aiuta i compagni
+  support: ['support', 'removal', 'screens', 'speedControl', 'debuff', 'phazer'],
+  utility: ['hazards', 'pivot', 'dot', 'taunt', 'encore', 'itemRemoval'],
 };
 
 /** Sotto-ruoli misurati: famiglia Attacco, muri e Recupero. */
 export const MEASURED: SubRole[] = [...FAMILIES.attack, 'physicalWall', 'specialWall', 'recovery'];
 
-/**
- * Valori 0-1 per sotto-ruolo; solo le voci > 0. `web` è interno (0,5 se il set ha Sticky Web): non è un sotto-ruolo,
- * conta solo nel gruppo "setup del campo" (keyValue).
- */
-export type SubRoleValues = Partial<Record<SubRole, number>> & { web?: number };
-/** Sticky Web vale metà di un hazard nel setup del campo. */
-export const WEB_VALUE = 0.5;
+/** Valori 0-1 per sotto-ruolo; solo le voci > 0. */
+export type SubRoleValues = Partial<Record<SubRole, number>>;
 
 export interface StatusSource {
   move: string;
@@ -118,6 +115,8 @@ const PIVOT = new Set(['uturn', 'voltswitch', 'flipturn', 'partingshot', 'telepo
 const PHAZER = new Set(['haze', 'clearsmog', 'whirlwind', 'roar', 'dragontail', 'circlethrow']);
 /** Supporto ai compagni: cure passate (Wish, Healing Wish, Lunar Dance, Revival Blessing) 1, cura degli stati (Heal Bell, Aromatherapy) 0,75. */
 const SUPPORT: Record<string, number> = { wish: 1, healingwish: 1, lunardance: 1, revivalblessing: 1, healbell: 0.75, aromatherapy: 0.75 };
+/** Controllo velocità di gruppo (Sticky Web, Tailwind, Trick Room); le mosse su un solo bersaglio (T-Wave) le misura l'area Velocità. */
+const SPEED_CONTROL = new Set(['stickyweb', 'tailwind', 'trickroom']);
 /** Magic Bounce rimanda indietro gli hazard: vale metà controllo hazard quando il set non ha una mossa di rimozione. */
 const BOUNCE_REMOVAL = 0.5;
 const SNOW = new Set(['snowscape', 'chillyreception']);
@@ -176,7 +175,7 @@ function computeSetSubRoles(set: TeamSet, rules: FormatRules): SubRoleValues {
 
   // Campo
   ids.forEach(id => put('hazards', HAZARDS[id] ?? 0));
-  if (ids.includes('stickyweb')) v.web = WEB_VALUE;
+  if (ids.some(id => SPEED_CONTROL.has(id))) put('speedControl', 1);
   if (ids.some(id => REMOVAL.has(id))) put('removal', 1);
   else if (ability === 'magicbounce') put('removal', BOUNCE_REMOVAL);
   if (ids.some(id => PIVOT.has(id))) put('pivot', 1);
@@ -290,6 +289,7 @@ function setSource(role: SubRole, ids: string[], ability: string, item: string):
   if (role === 'removal') { id = first(REMOVAL); if (!id && ability === 'magicbounce') return 'Magic Bounce'; }
   if (role === 'pivot') id = first(PIVOT);
   if (role === 'support') id = best(SUPPORT);
+  if (role === 'speedControl') id = first(SPEED_CONTROL);
   if (role === 'phazer') { id = first(PHAZER); if (!id && ability === 'unaware') return 'Unaware'; }
   if (role === 'itemRemoval') {
     if (ids.includes('knockoff')) id = 'knockoff';
@@ -351,11 +351,9 @@ export function measureWith(set: TeamSet, team: TeamSet[], data: EngineData, poo
   };
   const ids: string[] = set.moves.map(getMove).filter(isDefined).map(m => m.id);
   const ability = toID(battleAbility(set));
-  // Sticky Web: valore interno del setup del campo (prima che la cache congeli i valori)
-  if (ids.includes('stickyweb')) values.web = WEB_VALUE;
 
   // Difesa e campo come nel rilevatore del set; Aurora Veil conta con la neve del team
-  const keep: SubRole[] = ['recovery', 'hazards', 'removal', 'pivot', 'support', 'phazer', 'itemRemoval'];
+  const keep: SubRole[] = ['recovery', 'hazards', 'removal', 'pivot', 'support', 'speedControl', 'phazer', 'itemRemoval'];
   for (const role of keep) if (base[role]) put(role, base[role]!, setSource(role, ids, ability, toID(set.item)));
   // I muri con l'indice reale e la soglia, per il motivo nella scheda
   const rules = rulesOf(data);
@@ -462,7 +460,7 @@ export function setPrimary(set: TeamSet, values: SubRoleValues): PrimaryFamily |
   const attacks = set.moves.map(getMove).filter(isDefined).filter(m => m.category !== 'Status').length;
   if ((invested('atk') || invested('spa')) && attacks >= ATTACK_MOVES) return 'attack';
   const bulk = (['hp', 'def', 'spd'] as const).reduce((a, id) => a + (line(id)?.ev ?? 0), 0);
-  const utility = [...FAMILIES.field, ...FAMILIES.disruption].some(r => (values[r] ?? 0) >= 0.5);
+  const utility = [...FAMILIES.support, ...FAMILIES.utility].some(r => (values[r] ?? 0) >= 0.5);
   if (bulk >= DEFENSE_EVS && ((values.recovery ?? 0) >= 0.5 || utility)) return 'wall';
   return null;
 }

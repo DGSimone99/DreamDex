@@ -16,7 +16,7 @@ describe('ruoli sulla carta: prima il ruolo principale, poi un supporto', () => 
     expect(cardRoles(lando, DEFAULT_RULES)).toEqual(['physicalSweeper', 'removal']);
   });
 
-  it('un muro da stall: il wall prima degli hazard', () => {
+  it('un muro da stall: il wall prima degli hazard (sulla carta gli hazard vengono prima di Anti-setup, non conta la famiglia)', () => {
     const tingLu = set('Ting-Lu', 'Leftovers', 'Vessel of Ruin', ['Earthquake', 'Ruination', 'Stealth Rock', 'Whirlwind']);
     expect(cardRoles(tingLu, DEFAULT_RULES)).toEqual(['physicalWall', 'hazards']);
   });
@@ -26,7 +26,7 @@ describe('ruoli sulla carta: prima il ruolo principale, poi un supporto', () => 
     expect(cardRoles(kartana, DEFAULT_RULES)[0]).not.toBe('physicalWall');
   });
 
-  it('senza attacco né muro: il principale viene da Campo e Disturbo; il Recupero è solo secondario', () => {
+  it('senza attacco né muro: il principale viene da Support e Utility; il Recupero è solo secondario', () => {
     const clefable = set('Clefable', 'Leftovers', 'Magic Guard', ['Moonblast', 'Soft-Boiled', 'Stealth Rock', 'Thunder Wave']);
     expect(cardRoles(clefable, DEFAULT_RULES)).toEqual(['hazards', 'recovery']);
   });

@@ -67,6 +67,7 @@ describe('liste nella scheda Pokémon', () => {
 
   it('un preferito quasi alla pari passa davanti e ha il cuore', async () => {
     const plain = memory();
+    // Con Gholdengo i primi due candidati distano 2 punti, il margine dei preferiti (con Toxapex distano 3-5 punti)
     await setup(plain.storage, 'Great Tusk', 'Gholdengo');
     await waitFor(() => expect(rowOverall().length).toBeGreaterThan(2));
     const names = rowNames();

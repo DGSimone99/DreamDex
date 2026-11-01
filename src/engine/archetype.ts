@@ -121,7 +121,9 @@ export function cardRoles(set: TeamSet, rules: FormatRules, measured?: SubRoleVa
   const values = measured ?? setSubRoles(set, rules);
   const primary = primaryFamily(set, values);
   const order = primary === 'wall' ? [...walls, ...FAMILIES.attack] : [...FAMILIES.attack, ...walls];
-  const support = [...FAMILIES.field, ...FAMILIES.disruption].filter(role => roles.includes(role));
+  // Il supporto sulla carta nell'ordine di sempre (hazard prima di tutto), non in quello delle famiglie Support e Utility
+  const CARD_SUPPORT: SubRole[] = ['hazards', 'removal', 'pivot', 'screens', 'speedControl', 'support', 'dot', 'debuff', 'phazer', 'taunt', 'encore', 'itemRemoval'];
+  const support = CARD_SUPPORT.filter(role => roles.includes(role));
   const main = order.find(role => roles.includes(role)) ?? support[0] ?? (roles.includes('recovery') ? 'recovery' : undefined);
   const sweeper = main === 'physicalSweeper' || main === 'specialSweeper';
   const weather: CardRole[] = weatherOf(set) ? ['weather'] : [];
