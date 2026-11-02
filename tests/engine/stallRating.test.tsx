@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { ARCHETYPE_WEIGHTS, rateTeam } from '../../src/engine/rating';
 import { teamNeeds } from '../../src/engine/needs';
 import { LEVEL_KEYS } from '../../src/engine/roleLevels';
-import { importantWeight, rolesScore } from '../../src/engine/rolesArea';
+import { ESSENTIAL_POINTS } from '../../src/engine/rolesArea';
 
 import { memberPower, teamPower } from '../../src/engine/power';
 import { isPassive } from '../../src/engine/roles';
@@ -40,11 +40,10 @@ describe('team stall', () => {
     expect(needs.levels.anyBreaker).toBe('ignored');
     expect(needs.importantMissing).toEqual([]);
     expect(needs.levels.debuff).toBe('ignored');
-    // Area Ruoli: base degli importanti da stall, extra dei minori (rolesArea.ts)
-    const keys = (level: string) => LEVEL_KEYS.filter(k => needs.levels[k] === level);
-    const of = (level: string) => keys(level).map(k => needs.values[k]);
-    const score = rolesScore(of('important'), of('minor'), keys('important').map(importantWeight));
-    expect(rating.areas.find(a => a.key === 'roles')!.value).toBe(score.value);
+    // Ruoli: una lista delle voci da stall; il Danno nel Tempo che manca è un malus essenziale (rolesArea.ts)
+    expect(rating.roles.total).toBe(LEVEL_KEYS.filter(k => needs.levels[k] !== 'ignored').length);
+    expect(rating.roles.failures.filter(f => f.catalog === 'essentialRole')).toEqual([expect.objectContaining({ points: ESSENTIAL_POINTS })]);
+    expect(rating.areas.some(a => a.key === 'roles')).toBe(false);
     // Nello stall la velocità non conta
     // La Velocità resta visibile ma inattiva: ha un valore, non un peso
     const speed = rating.areas.find(a => a.key === 'speed')!;

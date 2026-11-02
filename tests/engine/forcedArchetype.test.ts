@@ -42,9 +42,9 @@ describe('archetipo forzato nel voto', () => {
     expect(rating.teamType).toBe('stall');
     expect(rating.archetype).toBe('stall');
     const w = ARCHETYPE_WEIGHTS.stall;
-    const total = w.defense + w.strength + w.roles;
+    const total = w.defense + w.strength;
     expect(rating.weights.defense).toBeCloseTo(w.defense / total);
-    expect(rating.weights.roles).toBeCloseTo(w.roles / total);
+    expect(rating.weights.strength).toBeCloseTo(w.strength / total);
     expect(rating.weights.speed).toBeUndefined();
     expect(rating.areas.find(a => a.key === 'speed')?.inactive).toBe(true);
   });
