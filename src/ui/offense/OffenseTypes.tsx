@@ -16,6 +16,7 @@ const coverTone = (value: number) => (value === 0 ? 'bad' : value < 80 ? 'warn' 
  * Coverage tipi dell'Offesa: stessa griglia della Difesa (un membro per riga, 18 tipi in colonna) con, per ogni tipo,
  * chi lo colpisce super efficace e quanto (verde = copre, giallo = copre a metà). Il filo sotto l'icona è rosso sui tipi
  * scoperti; in fondo la riga Copertura. Chi il motore ha scartato resta con le caselle vuote.
+ * La legenda dei colori sta sulla riga dei problemi (OffenseTypesLegend).
  */
 export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: AreaContext }) {
   const t = useT();
@@ -81,10 +82,17 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
           </tbody>
         </table>
       </div>
-      <p className="ct-legend" aria-hidden="true">
-        <span><i className="ok-full" />{t('odetail.types.legendFull')}</span>
-        <span><i className="ok-half" />{t('odetail.types.legendHalf')}</span>
-      </p>
     </div>
+  );
+}
+
+/** La legenda dei colori di Coverage tipi dell'Offesa, sulla riga dei problemi: copre, copre a metà. */
+export function OffenseTypesLegend() {
+  const t = useT();
+  return (
+    <>
+      <span className="area-legend-swatch"><i className="ok-full" />{t('odetail.types.legendFull')}</span>
+      <span className="area-legend-swatch"><i className="ok-half" />{t('odetail.types.legendHalf')}</span>
+    </>
   );
 }

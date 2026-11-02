@@ -1,0 +1,114 @@
+/* Ruoli: scheda Generale (cosa manca, chi copre ciò che conta), sottoschede per livello e guida */
+
+/* Cornice: alta quanto il pannello, mai la pagina che scorre; le sottoschede scorrono dentro .rl-scroll */
+.rl-frame { display: flex; flex-direction: column; gap: 8px; height: 100%; min-height: 0; }
+.area-panel:has(> .rl-frame) { padding-top: 10px; padding-bottom: 12px; }
+
+/* Etichetta del livello: lo stesso colore in Generale, sottoschede e guida */
+.rl-tag { display: inline-block; flex: none; padding: 1px 7px; border-radius: 3px; font: 600 11px/1.4 var(--ui); letter-spacing: 0.02em; white-space: nowrap; color: var(--muted); background: var(--raised); }
+.rl-tag.essential { color: var(--text); background: var(--accent-2-soft); }
+.rl-tag.important { color: var(--text); background: var(--accent-soft); }
+.rl-tag.minor { color: var(--muted); background: var(--raised); }
+.rl-tag.ignored { color: var(--faint); background: none; border: 1px solid var(--line-soft); padding: 0 6px; }
+
+/* Testata: con che tipo di team si giudica, i punti dell'area in tre pillole */
+.rl-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 16px; }
+.ad-panel .rl-judged { margin: 0; font-size: 14px; font-weight: 600; color: var(--text); }
+.rl-score { display: flex; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.rl-score li { display: inline-flex; align-items: baseline; gap: 6px; padding: 3px 10px; border: 1px solid var(--line-soft); border-radius: 3px; background: var(--raised); font-size: 12px; color: var(--muted); cursor: help; }
+.rl-score b { font: 700 15px/1 var(--display); color: var(--text); font-variant-numeric: tabular-nums; }
+.rl-score b.good { color: var(--good); }
+.rl-score b.bad { color: var(--bad); }
+.rl-score b.zero { color: var(--faint); }
+
+/* Blocchi della Generale: titolo piccolo maiuscolo, poi le righe */
+.rl-block { min-height: 0; }
+.rl-block h5 { margin: 0 0 6px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--faint); }
+.rl-block-covered { flex: 1; display: flex; flex-direction: column; }
+
+/* Che cosa manca: righe rosse (essenziali) e gialle (importanti) */
+.rl-missing { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.rl-missing li { display: inline-flex; align-items: center; gap: 8px; padding: 5px 12px 5px 10px; border: 1px solid var(--line-soft); border-left-width: 3px; border-radius: 3px; font-size: 14px; }
+.rl-missing li.bad { border-left-color: var(--bad); background: var(--bad-bg); }
+.rl-missing li.warn { border-left-color: var(--warn); background: var(--warn-bg); }
+.rl-missing li .icon { width: 15px; height: 15px; flex: none; }
+.rl-missing li.bad .icon { color: var(--bad); }
+.rl-missing li.warn .icon { color: var(--warn); }
+.rl-missing .rl-name { font-weight: 600; color: var(--text); }
+.rl-malus { font: 700 14px/1 var(--display); color: var(--bad); cursor: help; }
+.ad-panel .rl-allgood { display: inline-flex; align-items: center; gap: 8px; margin: 0; padding: 6px 12px 6px 10px; border: 1px solid var(--line-soft); border-left: 3px solid var(--good); border-radius: 3px; background: var(--good-bg); color: var(--good); font-size: 14px; font-weight: 600; }
+.rl-allgood .icon { width: 15px; height: 15px; }
+
+/* Coperti: nome a sinistra, chi li copre subito dopo (icone dal migliore); su due colonne quando sono tanti.
+   Ogni colonna ha due piste, il nome (largo quanto il nome più lungo della colonna) e le icone: le righe sono sottogriglie,
+   così in una colonna le icone partono tutte nello stesso punto, vicino ai nomi */
+.rl-covered { display: grid; grid-template-columns: max-content minmax(0, 1fr); align-content: start; gap: 0 28px; margin: 0; padding: 0; list-style: none; }
+.rl-covered.two { grid-template-columns: repeat(2, max-content minmax(0, 1fr)); }
+.rl-covered.three { grid-template-columns: repeat(3, max-content minmax(0, 1fr)); gap: 0 22px; }
+.rl-covered li { display: grid; grid-column: span 2; grid-template-columns: subgrid; column-gap: 14px; align-items: center; min-height: 36px; padding: 0; border-bottom: 1px solid var(--line-soft); }
+.rl-covered .rl-name { display: inline-flex; align-items: center; gap: 8px; min-width: 0; font-size: 14px; font-weight: 600; color: var(--text); }
+.rl-mons { display: flex; flex-wrap: wrap; justify-content: flex-start; gap: 2px; }
+
+/* Chi porta la voce: icona del box col valore piccolo sotto; secondario o parziale più tenue */
+.rl-mon { position: relative; display: inline-grid; justify-items: center; width: 44px; cursor: help; }
+.rl-box { display: grid; place-items: center; width: 40px; height: 28px; }
+.rl-box .mon-icon { image-rendering: pixelated; }
+.rl-val { margin-top: -3px; font: 600 10px/1 var(--ui); color: var(--muted); font-variant-numeric: tabular-nums; }
+.rl-mon.weak .rl-box { opacity: 0.45; filter: grayscale(0.6); }
+.rl-mon.weak .rl-val { color: var(--faint); }
+.rl-sec { position: absolute; top: -2px; right: -2px; padding: 0 3px; border-radius: 2px; font: 700 9px/1.3 var(--ui); color: var(--muted); background: var(--raised); }
+
+/* Sottoschede per livello: la tabella scorre dentro la sua cornice */
+.rl-scroll { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.rl-table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 14px; font-variant-numeric: tabular-nums; }
+.rl-table .rl-col-role { width: 210px; }
+.rl-table .rl-col-val { width: 72px; }
+.rl-table .rl-col-by { width: 42%; }
+.rl-table thead th { position: sticky; top: 0; z-index: 1; padding: 0 8px 6px; background: var(--panel); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--faint); text-align: left; white-space: nowrap; }
+.rl-table thead th:first-child { padding-left: 0; }
+.rl-table tr.rl-fam th { padding: 10px 0 3px; font: 700 12px/1 var(--display); text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent-ink); text-align: left; border-bottom: 1px solid var(--line); }
+.rl-table tbody:first-of-type tr.rl-fam th { padding-top: 2px; }
+.rl-table tbody tr:not(.rl-fam) { height: 46px; }
+.rl-table tbody th[scope='row'], .rl-table td { padding: 2px 8px; border-bottom: 1px solid var(--line-soft); text-align: left; vertical-align: middle; }
+.rl-table tbody th[scope='row'] { padding-left: 10px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-left: 3px solid transparent; }
+.rl-table tr.bad th[scope='row'] { border-left-color: var(--bad); }
+.rl-table tr.warn th[scope='row'] { border-left-color: var(--warn); }
+.rl-table tr.soft th[scope='row'] { color: var(--muted); }
+.rl-table .rl-by .rl-mon { margin-right: 2px; }
+.rl-nobody { font-size: 13px; color: var(--faint); }
+.rl-reason { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ct-pill.quiet { background: var(--raised); color: var(--muted); }
+.rl-table .ct-pill { text-align: center; }
+
+/* Guida: tessere dei livelli, tabella dei tipi di team, gettoni di come si ottiene un ruolo */
+.rl-guide-tiles .guide-tile-head .rl-tile-val { font: italic 700 16px/1 var(--display); color: var(--text); font-variant-numeric: tabular-nums; }
+.rl-guide-tiles li.essential .rl-tile-val { color: var(--bad); }
+.rl-guide-tiles li.minor .rl-tile-val { color: var(--good); }
+.rl-guide-tiles li.ignored .rl-tile-val { color: var(--faint); }
+
+.rl-types { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 13px; }
+.rl-types thead th { padding: 0 4px 5px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--faint); text-align: center; white-space: nowrap; }
+.rl-types thead th:first-child { width: 190px; text-align: left; padding-left: 0; }
+.rl-types thead th.now { color: var(--text); }
+.rl-types tr.rl-fam th { padding: 6px 0 2px; font: 700 11px/1 var(--display); text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent-ink); text-align: left; }
+.rl-types tbody th[scope='row'] { padding: 0; height: 23px; font-weight: 600; color: var(--text); text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rl-types td { padding: 1px 4px; text-align: center; border-bottom: 1px solid var(--line-soft); }
+.rl-types tbody th[scope='row'] { border-bottom: 1px solid var(--line-soft); }
+.rl-types .now { background: color-mix(in srgb, var(--accent) 9%, transparent); }
+.rl-types thead th.now { box-shadow: inset 0 -2px 0 var(--accent); }
+.rl-types .rl-tag { padding: 0 6px; font-size: 10.5px; }
+.rl-dash { color: var(--faint); }
+
+.rl-how { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
+.rl-how li { display: grid; grid-template-columns: 150px minmax(0, 1fr); align-items: center; gap: 12px; padding: 5px 0; border-bottom: 1px solid var(--line-soft); }
+.rl-how-role { font-size: 13px; font-weight: 600; color: var(--text); }
+.rl-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.rl-chip { display: inline-flex; align-items: center; gap: 6px; padding: 2px 4px 2px 8px; border: 1px solid var(--line); border-radius: 3px; background: var(--raised); font-size: 12px; line-height: 1.35; color: var(--muted); }
+.rl-chip b { padding: 0 5px; border-radius: 2px; background: var(--accent-2-soft); font: 700 12px/1.4 var(--ui); color: var(--text); font-variant-numeric: tabular-nums; }
+.rl-chip.cond { padding-right: 8px; background: none; border-style: dashed; }
+.rl-chip.share { padding-right: 8px; background: none; border-color: transparent; color: var(--faint); font-style: italic; }
+
+@media (max-width: 1100px) {
+  .rl-table .rl-col-role { width: 170px; }
+  .rl-how li { grid-template-columns: 120px minmax(0, 1fr); }
+}

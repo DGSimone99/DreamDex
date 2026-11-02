@@ -134,8 +134,10 @@
 .area-problems li { position: relative; padding-left: 12px; }
 .area-problems li::before { content: '\25CF'; position: absolute; left: 0; color: var(--warn); }
 .area-problems li.serious::before { color: var(--bad); }
+/* La legenda dei colori della scheda aperta, a destra sulla riga dei problemi: sempre intera (i problemi cedono col "+N") */
+.area-legend { display: inline-flex; flex: none; align-items: center; gap: 5px; margin-left: auto; white-space: nowrap; font-size: 12px; color: var(--muted); }
+.area-legend .hold-chip { padding: 1px 6px; font-size: 11px; line-height: 16px; }
 .area-panel { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; background: var(--panel); border: 1px solid var(--line-soft); }
-.area-extra { margin-bottom: 16px; }
 /* Ogni scheda tiene il posto per il "?": aprendone un'altra le schede non si spostano */
 
 /* Panoramica: giudizio e tipo di team, poi il cruscotto che prende il resto; scorre solo sotto la misura minima */

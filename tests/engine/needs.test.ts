@@ -141,12 +141,12 @@ describe('tabella dei livelli per archetipo', () => {
     expect(area.failures.some(f => /hazard/i.test(f.text))).toBe(false);
     expect(area.value).toBeLessThan(full.value);
     // I gruppi degli attaccanti hanno un'etichetta propria, nelle due lingue
-    expect(needLabel('anySweeper', 'it')).toBe('Almeno uno Sweeper');
-    expect(needLabel('anySweeper', 'en')).toBe('At least one Sweeper');
-    expect(needLabel('anyBreaker', 'it')).toBe('Almeno un Wallbreaker');
-    expect(needLabel('anyBreaker', 'en')).toBe('At least one Wallbreaker');
-    expect(needLabel('anyPhysical', 'it')).toBe('Almeno un attaccante fisico');
-    expect(needLabel('anySpecial', 'en')).toBe('At least one special attacker');
+    expect(needLabel('anySweeper', 'it')).toBe('Sweeper');
+    expect(needLabel('anySweeper', 'en')).toBe('Sweeper');
+    expect(needLabel('anyBreaker', 'it')).toBe('Wallbreaker');
+    expect(needLabel('anyBreaker', 'en')).toBe('Wallbreaker');
+    expect(needLabel('anyPhysical', 'it')).toBe('Attaccante fisico');
+    expect(needLabel('anySpecial', 'en')).toBe('Special Attacker');
   });
 
   it('"Chi la porta" degli hazard nomina la mossa; Sticky Web è Speed Control e Aurora Veil Screen Setter, non hazard', () => {
@@ -201,7 +201,7 @@ describe('tabella dei livelli per archetipo', () => {
     const area = teamRolesArea(physical, fixtureData, 'it', needs);
     expect(area.failures).toHaveLength(1);
     expect(area.failures[0]).toMatchObject({ points: 2, catalog: 'essentialRole' });
-    expect(area.failures[0].text).toContain('Almeno un attaccante speciale');
+    expect(area.failures[0].text).toContain('Attaccante speciale');
   });
 
   it('priorità e velocità non sono voci dei Ruoli; lo Speed Control lo è, ma ignorato in ogni tipo di team', () => {
@@ -294,8 +294,8 @@ describe('bisogni del team dai sotto-ruoli', () => {
   });
 
   it('etichette: i gruppi degli attaccanti e i sotto-ruoli', () => {
-    expect(needLabel('anySweeper', 'it')).toBe('Almeno uno Sweeper');
-    expect(needLabel('anyBreaker', 'en')).toBe('At least one Wallbreaker');
+    expect(needLabel('anySweeper', 'it')).toBe('Sweeper');
+    expect(needLabel('anyBreaker', 'en')).toBe('Wallbreaker');
     expect(needLabel('hazards', 'it')).toBe('Hazard');
     expect(needLabel('physicalWall', 'en')).toBe('Physical Wall');
   });
@@ -319,7 +319,7 @@ describe('voto e coach seguono i livelli dell\'archetipo', () => {
     // Incompleto (balance): attaccanti e muri sono essenziali
     const team = [stall[3], stall[2]];
     const texts = coachTeam(team, DEFAULT_FORMAT, fixtureData).problems.map(p => p.text).join(' | ');
-    expect(texts).toMatch(/Ruoli mancanti:.*Almeno uno Sweeper/);
+    expect(texts).toMatch(/Ruoli mancanti:.*Sweeper/);
   });
 
   it("l'area Ruoli del voto: base delle voci importanti ed extra delle minori dell'archetipo", () => {

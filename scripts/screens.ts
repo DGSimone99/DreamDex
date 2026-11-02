@@ -153,7 +153,7 @@ const defenseState = (sub: RegExp | null, opts: { team?: unknown[]; format?: Par
     await wait(300);
     if (opts.collapsed && !await clickText(p, 'button.band-toggle', /./)) return 'no band toggle';
     await wait(300);
-    if (!await clickText(p, '.band button.grade-area', /^Difesa/)) return 'no defense row';
+    if (!await clickText(p, '.band button.grade-area', /^(Difesa|Defense)/)) return 'no defense row';
     await wait(300);
     if (sub && !await clickText(p, '.area-subs [role="tab"]', sub)) return 'no sub-tab';
     await wait(500);
@@ -190,16 +190,17 @@ const offenseGuide = (sub: RegExp | null, section?: RegExp): State => ({ hash: h
   return true;
 } });
 OFFENSE_STATES['analysis-offense-types-nometa'] = offenseState(OFFENSE_SUBS.types, { format: { meta: false } });
+OFFENSE_STATES['analysis-offense-meta-en'] = { ...offenseState(/^Meta coverage/), lang: 'en' };
 OFFENSE_STATES['analysis-offense-guide'] = offenseGuide(OFFENSE_SUBS.general);
-// Come funziona con la freccina della Potenza aperta: le difese medie dei 18 bersagli
-OFFENSE_STATES['analysis-offense-guide-targets'] = { hash: hash(SIX), run: async p => {
-  const ok = await offenseGuide(OFFENSE_SUBS.general).run!(p);
+// La pagina Potenza con la freccina del Colpo aperta: le difese medie dei 18 bersagli (il modale non cambia altezza)
+OFFENSE_STATES['analysis-offense-guide-power-open'] = { hash: hash(SIX), run: async p => {
+  const ok = await offenseGuide(OFFENSE_SUBS.general, /^(Potenza|Power)/).run!(p);
   if (ok !== true) return ok;
   if (!await clickText(p, '.guide-more > summary', /./)) return 'no targets toggle';
   await wait(300);
   return true;
 } };
-OFFENSE_STATES['analysis-offense-guide-targets-en'] = { ...OFFENSE_STATES['analysis-offense-guide-targets'], lang: 'en' } as State;
+OFFENSE_STATES['analysis-offense-guide-power-open-en'] = { ...OFFENSE_STATES['analysis-offense-guide-power-open'], lang: 'en' } as State;
 OFFENSE_STATES['analysis-offense-guide-types'] = offenseGuide(OFFENSE_SUBS.general, /^Coverage tipi/);
 OFFENSE_STATES['analysis-offense-guide-power'] = offenseGuide(OFFENSE_SUBS.general, /^Potenza/);
 OFFENSE_STATES['analysis-offense-guide-meta'] = offenseGuide(OFFENSE_SUBS.general, /^Coverage meta/);
@@ -212,7 +213,7 @@ const speedState = (sub: RegExp | null, opts: { collapsed?: boolean; format?: Pa
     await wait(300);
     if (opts.collapsed && !await clickText(p, 'button.band-toggle', /./)) return 'no band toggle';
     await wait(300);
-    if (!await clickText(p, '.band button.grade-area', /^Velocit/)) return 'no speed row';
+    if (!await clickText(p, '.band button.grade-area', /^(Velocit|Speed)/)) return 'no speed row';
     await wait(300);
     if (sub && !await clickText(p, '.area-subs [role="tab"]', sub)) return 'no sub-tab';
     await wait(500);
@@ -232,13 +233,27 @@ const SPEED_STATES: Record<string, State> = {
     return true;
   } },
 };
-SPEED_STATES['analysis-speed-guide'] = { hash: hash(SPEED_SIX), run: async p => {
-  const ok = await speedState(null).run!(p);
+const speedGuide = (format?: Partial<typeof FORMAT>): State => ({ hash: format ? hashWith(SPEED_SIX, format) : hash(SPEED_SIX), run: async p => {
+  const ok = await speedState(null, { format }).run!(p);
   if (ok !== true) return ok;
   if (!await clickText(p, '.area-help button', /./)) return 'no guide button';
   await wait(400);
   return true;
-} };
+} });
+SPEED_STATES['analysis-speed-guide'] = speedGuide();
+SPEED_STATES['analysis-speed-guide-nometa'] = speedGuide({ meta: false });
+// La guida con una tessera aperta (Boost, Priorità, Controllo del team): il dettaglio di quella fonte
+for (const [key, re] of [['boost', /^Boost/], ['priority', /^Priorit/], ['control', /^(Controllo|Team control)/]] as const) {
+  SPEED_STATES[`analysis-speed-guide-${key}`] = { hash: hash(SPEED_SIX), run: async p => {
+    const ok = await speedGuide().run!(p);
+    if (ok !== true) return ok;
+    if (!await clickText(p, '.sp-guide-tiles button', re)) return 'no tile';
+    await wait(300);
+    return true;
+  } };
+}
+for (const key of ['boost', 'priority', 'control']) SPEED_STATES[`analysis-speed-guide-${key}-en`] = { ...SPEED_STATES[`analysis-speed-guide-${key}`], lang: 'en' } as State;
+SPEED_STATES['analysis-speed-guide-en'] = { ...SPEED_STATES['analysis-speed-guide'], lang: 'en' } as State;
 const SUBS: Record<string, RegExp | null> = { general: null, robustness: /^Robustezza/, sustain: /^Sostenibilit/, types: /^Coverage tipi/, meta: /^Coverage meta/ };
 const DEFENSE_STATES: Record<string, State> = {
   ...Object.fromEntries(Object.entries(SUBS).flatMap(([k, re]) => [
@@ -247,6 +262,10 @@ const DEFENSE_STATES: Record<string, State> = {
   ])),
   'analysis-defense-types-nometa': defenseState(SUBS.types, { format: { meta: false } }),
   'analysis-defense-long': defenseState(null, { team: LONG }),
+  // Coverage tipi con le note del meteo (Pelipper porta la pioggia), Coverage tipi e meta in inglese: sotto la tabella resta una riga
+  'analysis-defense-types-rain': defenseState(SUBS.types, { team: RAIN }),
+  'analysis-defense-types-en': { ...defenseState(/^Type coverage/), lang: 'en' },
+  'analysis-defense-meta-en': { ...defenseState(/^Meta coverage/), lang: 'en' },
   // La guida della Difesa aperta dal "?" di Generale (Come funziona)
   'analysis-defense-guide-meta': { hash: hash(SIX), run: async p => {
     const ok = await defenseState(SUBS.meta).run!(p);
@@ -283,6 +302,53 @@ const DEFENSE_STATES: Record<string, State> = {
     await wait(400);
     return true;
   } },
+};
+
+// Ruoli: Generale e una scheda per livello (SIX), col team di 5 (incompleto) e con un team a cui mancano ruoli (LONE)
+const rolesState = (sub: RegExp | null, opts: { team?: unknown[]; collapsed?: boolean; lang?: 'it' | 'en' } = {}): State => ({
+  hash: hash(opts.team ?? SIX),
+  lang: opts.lang,
+  run: async p => {
+    await tab(p, 'analysis');
+    await wait(300);
+    if (opts.collapsed && !await clickText(p, 'button.band-toggle', /./)) return 'no band toggle';
+    await wait(300);
+    if (!await clickText(p, '.band button.grade-area', /^(Ruoli|Roles)/)) return 'no roles row';
+    await wait(300);
+    if (sub && !await clickText(p, '.area-subs [role="tab"]', sub)) return 'no sub-tab';
+    await wait(500);
+    return true;
+  },
+});
+const ROLES_SUBS: Record<string, RegExp | null> = { general: null, essential: /^(Essenziali|Essential)/, important: /^(Importanti|Important)/, minor: /^(Minori|Minor)/, ignored: /^(Non contano|Don)/ };
+const rolesGuide = (section?: RegExp, opts: { team?: unknown[]; lang?: 'it' | 'en' } = {}): State => ({ hash: hash(opts.team ?? SIX), lang: opts.lang, run: async p => {
+  const ok = await rolesState(null, opts).run!(p);
+  if (ok !== true) return ok;
+  if (!await clickText(p, '.area-help button', /./)) return 'no guide button';
+  await wait(400);
+  if (section && !await clickText(p, '.help-nav [role="tab"]', section)) return 'no guide section';
+  await wait(300);
+  return true;
+} });
+const ROLES_STATES: Record<string, State> = {
+  ...Object.fromEntries(Object.entries(ROLES_SUBS).flatMap(([k, re]) => [
+    [`analysis-roles-${k}`, rolesState(re)],
+    [`analysis-roles-${k}-five`, rolesState(re, { team: TEAM })],
+    [`analysis-roles-${k}-missing`, rolesState(re, { team: LONE })],
+    [`analysis-roles-${k}-collapsed`, rolesState(re, { collapsed: true })],
+  ])),
+  'analysis-roles-general-en': rolesState(null, { lang: 'en' }),
+  'analysis-roles-general-long': rolesState(null, { team: LONG }),
+  'analysis-roles-guide': rolesGuide(),
+  'analysis-roles-guide-en': rolesGuide(undefined, { lang: 'en' }),
+  'analysis-roles-guide-types': rolesGuide(/^(Ruoli per tipo|Roles per team)/),
+  'analysis-roles-guide-types-en': rolesGuide(/^(Ruoli per tipo|Roles per team)/, { lang: 'en' }),
+  'analysis-roles-guide-earn-a': rolesGuide(/(attacco e difesa|attack and defense)/),
+  'analysis-roles-guide-earn-a-en': rolesGuide(/(attacco e difesa|attack and defense)/, { lang: 'en' }),
+  'analysis-roles-guide-earn-b': rolesGuide(/: support$/),
+  'analysis-roles-guide-earn-b-en': rolesGuide(/: support$/, { lang: 'en' }),
+  'analysis-roles-guide-earn-c': rolesGuide(/: utility$/),
+  'analysis-roles-guide-earn-c-en': rolesGuide(/: utility$/, { lang: 'en' }),
 };
 
 // storage: chiavi in più nel localStorage prima del caricamento (es. lo stile della lista)
@@ -329,6 +395,7 @@ const STATES: Record<string, State> = {
   ...DEFENSE_STATES,
   ...OFFENSE_STATES,
   ...SPEED_STATES,
+  ...ROLES_STATES,
   'analysis-offense-strip': { hash: hash(SIX), run: async p => clickText(p, '.band button.grade-area', /^Offesa/) },
   'analysis-roles': { run: async p => clickText(p, '.band button.grade-area', /^Ruoli/) },
   'analysis-coaching': { run: async p => { await tab(p, 'analysis'); await wait(300); const ok = await clickText(p, '.analysis-tabs [role="tab"]', /^Coaching/); await wait(900); return ok; } },
@@ -647,12 +714,30 @@ for (const [w, h] of sizes) {
             const cs = getComputedStyle(c);
             need += c.getBoundingClientRect().height + (c.classList.contains('rob-legend') ? 0 : parseFloat(cs.marginTop) || 0) + (parseFloat(cs.marginBottom) || 0);
           }
-          const below = frame && rows.length ? ` below=${Math.round(need)}/${Math.round(frame.getBoundingClientRect().bottom - last)}` : '';
+          // Le parti sotto le righe dei membri: righe di riepilogo della tabella, poi gli elementi dopo la tabella (legenda, note)
+          const tail = scroller ? [...scroller.querySelectorAll<HTMLElement>('tbody tr:not(:has(.ad-mon))')].map(r => Math.round(r.getBoundingClientRect().height))
+            .concat([...frame!.children].filter(c => c !== scroller).map(c => Math.round(c.getBoundingClientRect().height))) : [];
+          const below = frame && rows.length ? ` below=${Math.round(need)}/${Math.round(frame.getBoundingClientRect().bottom - last)} belowParts=[${tail.join(',')}]` : '';
           const label = el.querySelector<HTMLElement>('th.def-mon-h');
           const labelAt = label ? (() => { const r = document.createRange(); r.selectNodeContents(label); const b = r.getBoundingClientRect(); return ` label=${Math.round(b.left)},${Math.round(b.top)}`; })() : '';
           const gp = document.querySelector<HTMLElement>('.help-dialog .help-panel');
-          const guide = gp ? ` guideScroll=${gp.scrollHeight - gp.clientHeight} guideH=${Math.round(gp.closest('.help-dialog')!.getBoundingClientRect().height)}` : '';
-          return `${guide} panelOverflow=${el.scrollHeight - el.clientHeight} panelX=${el.scrollWidth - el.clientWidth}${memberRows}${below}${labelAt}`; })(),
+          const gs = gp?.closest<HTMLElement>('.guide-stack');
+          // La guida a sezioni scorre nella pila (.guide-stack), non nel pannello: conta il più alto dei due
+          // Altezza del contenuto di ogni pagina della pila (le pagine si allungano tutte alla più alta) sull'altezza della pila
+          const pages = gs ? [...gs.querySelectorAll<HTMLElement>(':scope > .help-panel')].map(sec => { const last = sec.lastElementChild?.getBoundingClientRect(); return last ? Math.round(last.bottom - sec.getBoundingClientRect().top + (parseFloat(getComputedStyle(sec).paddingBottom) || 0)) : 0; }) : [];
+          const guide = gp ? ` guideScroll=${Math.max(gp.scrollHeight - gp.clientHeight, gs ? gs.scrollHeight - gs.clientHeight : 0)} guideH=${Math.round(gp.closest('.help-dialog')!.getBoundingClientRect().height)}${gs ? ` guidePages=[${pages.join(',')}]/${gs.clientHeight}` : ''}` : '';
+          const rl = el.querySelector<HTMLElement>('.rl-frame');
+          const rlScroll = rl?.querySelector<HTMLElement>('.rl-scroll');
+          const rlRows = rl ? rl.querySelectorAll('.rl-covered > li, .rl-table tbody tr:not(.rl-fam)').length : 0;
+          const rlLast = rl ? [...rl.querySelectorAll<HTMLElement>('.rl-covered > li, .rl-missing > li')].reduce((b, li) => Math.max(b, li.getBoundingClientRect().bottom), 0) : 0;
+          const roles = rl ? ` roles: rows=${rlRows} cols=${rl.querySelector('.rl-covered.two') ? 2 : 1} missing=${rl.querySelectorAll('.rl-missing > li').length} listScroll=${rlScroll ? rlScroll.scrollHeight - rlScroll.clientHeight : '-'} lastRowGap=${rlLast ? Math.round(rl.getBoundingClientRect().bottom - rlLast) : '-'} frameH=${Math.round(rl.getBoundingClientRect().height)} parts=[${[...rl.children].map(c => Math.round(c.getBoundingClientRect().height)).join(',')}] reasonCut=${[...rl.querySelectorAll<HTMLElement>('.rl-reason')].filter(e => e.scrollWidth - e.clientWidth > 1).length}` : '';
+          // Legenda sulla riga dei problemi: larghezza, quanto sborda dalla riga (0 = intera) e problemi mostrati / nel "+N"
+          const lg = document.querySelector<HTMLElement>('.area-problems-row .area-legend');
+          const lgRow = lg?.parentElement?.getBoundingClientRect();
+          const shownP = document.querySelectorAll('.area-problems > li:not(.area-problems-more)').length;
+          const moreP = document.querySelector('.area-problems-more')?.textContent?.match(/\+(\d+)/)?.[1] ?? '0';
+          const legendAt = lg && lgRow ? ` legend=${Math.round(lg.getBoundingClientRect().width)} legendCut=${Math.max(0, Math.round(lg.getBoundingClientRect().right - lgRow.right), lg.scrollWidth - lg.clientWidth)} problems=${shownP}+${moreP} stripH=${Math.round(lgRow.height)}` : '';
+          return `${guide}${roles}${legendAt} panelOverflow=${el.scrollHeight - el.clientHeight} panelX=${el.scrollWidth - el.clientWidth}${memberRows}${below}${labelAt}`; })(),
         dash: box ? `dash=${box.clientHeight}x${box.clientWidth} density=${box.dataset.density} cards=[${heights.join(',')}] cut=${cut} overflow=[${over.join(',')}] sumClip=${sumClip} rows=[${sumRows.join(',')}] sumHidden=${sumHidden} sumFill=${fill}% fitCut=${fitCut} covBand=${covBand} overviewScroll=${(document.querySelector('.overview')?.scrollHeight ?? 0) - (document.querySelector('.overview')?.clientHeight ?? 0)} hScroll=${document.scrollingElement!.scrollWidth - window.innerWidth}` : '',
       };
     });
