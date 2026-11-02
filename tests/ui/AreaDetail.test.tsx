@@ -119,10 +119,10 @@ describe('dettaglio della Difesa a schede', () => {
   it('Coverage tipi: la regola (attaccante forte, 4HKO pieno, 3HKO a metà) sta nella guida, non sulla pagina', async () => {
     const { user, dialog } = await openDefense('it');
     await user.click(within(dialog).getByRole('tab', { name: /^Coverage tipi/ }));
-    expect(within(dialog).getByRole('tabpanel')).not.toHaveTextContent(/Att\. \d+ · Att\. Sp\. \d+/);
+    expect(within(dialog).getByRole('tabpanel')).not.toHaveTextContent(/quarto più forte di quel tipo/);
     await user.click(within(dialog).getByRole('button', { name: 'Come funziona Coverage tipi' }));
     const guide = within(screen.getByRole('dialog')).getByRole('tabpanel');
-    for (const text of [/Att\. \d+ · Att\. Sp\. \d+, 252 EV, senza strumento/, '4HKO', '3HKO', '2HKO', '70%']) expect(guide).toHaveTextContent(text);
+    for (const text of [/quarto più forte di quel tipo; 252 EV, senza strumento/, "Att. e Att. Sp. dell'attaccante di ogni tipo", '4HKO', '3HKO', '2HKO', '70%']) expect(guide).toHaveTextContent(text);
     expect(guide).not.toHaveTextContent(/Il voto|uno basta|tre lo reggono/);
     expect(guide).not.toHaveTextContent('+1,5');
   });
