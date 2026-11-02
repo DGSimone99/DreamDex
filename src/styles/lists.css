@@ -389,6 +389,7 @@
   .grade-area { font-size: 14.5px; }
   .grade-badge button.grade-area { font-size: 14.5px; grid-template-columns: 78px 1fr 28px 10px; }
   .grade-badge button.grade-area.grade-bm { grid-template-columns: 1fr 28px 10px; }
+  .grade-badge button.grade-area.grade-roles { grid-template-columns: 78px 1fr 10px; }
   .grade-area .meter { height: 9px; }
 }
 @media (min-width: 3000px) and (min-height: 1500px) {

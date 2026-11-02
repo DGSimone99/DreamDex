@@ -34,12 +34,12 @@ describe('catalogo bonus e malus', () => {
     expect(rateTeam(teams.bonus, fixtureData)!.bonus.items.map(i => i.catalog)).toEqual(['weatherHelp']);
   });
 
-  it('catalogo IT: 18 voci, 12 malus prima, Tera attivo solo con un limite', () => {
+  it('catalogo IT: 20 voci, 13 malus prima, Tera attivo solo con un limite', () => {
     const none = bonusMalusCatalog('it', 0);
-    expect(none).toHaveLength(18);
-    expect(none.slice(0, 12).every(e => e.kind === 'malus')).toBe(true);
-    expect(none.slice(12).every(e => e.kind === 'bonus')).toBe(true);
-    expect(none.map(e => e.key)).toEqual(expect.arrayContaining(['sameType', 'coreTrio', 'weakCovered', 'typeVariety', 'conditionUsed']));
+    expect(none).toHaveLength(20);
+    expect(none.slice(0, 13).every(e => e.kind === 'malus')).toBe(true);
+    expect(none.slice(13).every(e => e.kind === 'bonus')).toBe(true);
+    expect(none.map(e => e.key)).toEqual(expect.arrayContaining(['sameType', 'coreTrio', 'weakCovered', 'typeVariety', 'conditionUsed', 'importantRole', 'minorRole']));
     expect(none.find(e => e.key === 'tera')!.applies).toBe(false);
     expect(bonusMalusCatalog('it', 3).find(e => e.key === 'tera')!.applies).toBe(true);
   });

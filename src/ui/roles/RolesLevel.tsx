@@ -1,5 +1,5 @@
 import type { TeamRating } from '../../engine/rating';
-import { ESSENTIAL_POINTS } from '../../engine/rolesArea';
+import { ESSENTIAL_POINTS, IMPORTANT_POINTS, MINOR_POINTS } from '../../engine/rolesArea';
 import type { Level } from '../../engine/roleLevels';
 import { useT } from '../../i18n/react';
 import type { AreaContext } from '../AreaDetail';
@@ -20,11 +20,16 @@ export function RolesLevel({ rating, level, ctx }: { rating: TeamRating; level: 
   const groups = byFamily(roleLines(rating).filter(l => l.level === level));
 
   const pill = (l: RoleLine) => {
-    // Essenziale che manca in un team di 6: al posto del valore il suo malus
-    if (full && level === 'essential' && l.missing) {
-      return <span className="ct-pill bad" title={t('rdetail.missingTip', { n: ESSENTIAL_POINTS })}>−{ESSENTIAL_POINTS}</span>;
-    }
     const n = points(l.value);
+    // Essenziale o importante che manca in un team di 6: al posto del valore il suo malus
+    if (full && l.missing && (level === 'essential' || level === 'important')) {
+      const malus = level === 'essential' ? ESSENTIAL_POINTS : IMPORTANT_POINTS;
+      return <span className="ct-pill bad" title={t('rdetail.missingTip', { n: malus })}>−{malus}</span>;
+    }
+    // Minore coperta: al posto del valore il suo bonus (il valore resta nel titolo)
+    if (level === 'minor' && !l.missing) {
+      return <span className="ct-pill good" title={t('rdetail.bonusTip', { v: n, n: MINOR_POINTS })}>+{MINOR_POINTS}</span>;
+    }
     // Le voci che non contano: valore in grigio, senza il colore del voto
     const cls = n === 0 ? 'zero' : level === 'ignored' ? 'quiet' : tone(n);
     return <span className={`ct-pill ${cls}`}>{n}</span>;

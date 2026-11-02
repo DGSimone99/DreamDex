@@ -41,7 +41,9 @@ describe('dashboardData', () => {
     expect(dash.roles.chips.map(c => c.need)).toEqual(expected);
     for (const chip of dash.roles.chips) expect(chip.covered).toBe(chip.owners.length > 0);
     expect(dash.roles.chips.some(c => c.level === 'minor')).toBe(true);
-    expect(dash.roles.value).toBe(tile('roles').value);
+    // Il numero della carta: voci coperte sul totale, come il pannello del voto
+    const rating = rateTeam(team, fixtureData)!;
+    expect(dash.roles.value).toBe(`${rating.roles.covered}/${rating.roles.total}`);
     // Le colonne della tabella: i membri in ordine, scritti come chi copre i ruoli
     expect(dash.roles.members).toHaveLength(team.length);
     for (const chip of dash.roles.chips) for (const owner of chip.owners) expect(dash.roles.members).toContain(owner);

@@ -1,3 +1,4 @@
+import { ESSENTIAL_POINTS } from '../../src/engine/rolesArea';
 import { describe, expect, it } from 'vitest';
 import { analyzeTeam } from '../../src/engine/analysis';
 import { coachTeam } from '../../src/engine/coach';
@@ -180,12 +181,12 @@ describe('mancanze essenziali dei Ruoli tra le penalità', () => {
     s('Skarmory', 'Rocky Helmet', 'Sturdy', ['Brave Bird', 'Roost', 'Whirlwind', 'Spikes'], 'Impish', bulky),
   ];
 
-  it('team di 6 senza muro speciale in balance: −2 con testo', () => {
+  it('team di 6 senza muro speciale in balance: −4 con testo (ESSENTIAL_POINTS)', () => {
     const rating = rateTeam(physical, fixtureData)!;
     expect(rating.teamType).toBe('balance');
-    expect(rating.penalty.items).toContainEqual(expect.objectContaining({ text: 'Balance senza Muro Speciale', points: 2 }));
-    expect(rating.roles.failures).toContainEqual(expect.objectContaining({ text: 'Balance senza Muro Speciale', points: 2 }));
-    expect(rateTeam(physical, fixtureData, 'en')!.penalty.items).toContainEqual(expect.objectContaining({ text: 'Balance with no Special Wall', points: 2 }));
+    expect(rating.penalty.items).toContainEqual(expect.objectContaining({ text: 'Balance senza Muro Speciale', points: ESSENTIAL_POINTS }));
+    expect(rating.roles.failures).toContainEqual(expect.objectContaining({ text: 'Balance senza Muro Speciale', points: ESSENTIAL_POINTS }));
+    expect(rateTeam(physical, fixtureData, 'en')!.penalty.items).toContainEqual(expect.objectContaining({ text: 'Balance with no Special Wall', points: ESSENTIAL_POINTS }));
   });
 
   it('tutti fisici: −3, una volta sola', () => {
