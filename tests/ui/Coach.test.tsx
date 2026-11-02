@@ -522,10 +522,14 @@ describe('CoachingView', () => {
   it('la mappa: quattro gruppi col voto dell\'area, nessun voto per Regole · Meta', () => {
     const r = rating(six)!;
     view(six);
-    for (const [name, key] of [['Difesa', 'defense'], ['Offesa', 'strength'], ['Ruoli', 'roles']] as const) {
+    for (const [name, key] of [['Difesa', 'defense'], ['Offesa', 'strength']] as const) {
       const group = screen.getByRole('group', { name });
       expect(group.querySelector('.dash-meta')).toHaveTextContent(String(Math.round(r.areas.find(a => a.key === key)!.value!)));
     }
+    // I Ruoli non hanno un voto: coperti sul totale, senza barretta
+    const roles = screen.getByRole('group', { name: 'Ruoli' });
+    expect(roles.querySelector('.dash-meta')).toHaveTextContent(`${r.roles.covered}/${r.roles.total}`);
+    expect(roles.querySelector('.coach-tile-bar')).toBeNull();
     expect(screen.getByRole('group', { name: 'Regole · Meta' }).querySelector('.dash-meta')).toBeNull();
   });
 
