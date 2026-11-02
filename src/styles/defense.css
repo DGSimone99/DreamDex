@@ -14,9 +14,10 @@
    Pokémon restano nello stesso punto), sotto la fascia della scheda (legenda, riepiloghi). L altezza delle righe segue quella del pannello (cqh), uguale in ogni scheda:
    --def-tail è il margine tenuto sotto la fascia in fondo, lo stesso per tutte le schede.
    --def-top è lo spazio tenuto sotto le righe dei membri, uguale in tutte le schede e in tutte le aree (Difesa, Offesa,
-   Velocità), così le righe hanno la stessa altezza ovunque: lo misura la scheda con più roba sotto, Coverage tipi della
-   Difesa (le righe Regge e Copertura, poi una riga di legenda) */
-.def-frame { --def-top: 90px; --def-gap: 10px; --def-head: 44px; --def-sp: 3px; --def-tail: 4px; --def-mon: 270px; --def-row-min: 28px; --def-row-max: 999px;
+   Velocità), così le righe hanno la stessa altezza ovunque: lo misura la scheda con più roba sotto, una riga di riepilogo
+   (Regge, Lo coprono) e una riga bassa dopo la tabella (i conteggi di Coverage meta, le note del meteo). Le legende dei
+   colori stanno sulla riga dei problemi, fuori dalla cornice */
+.def-frame { --def-top: 50px; --def-gap: 6px; --def-head: 44px; --def-sp: 3px; --def-tail: 4px; --def-mon: 270px; --def-row-min: 28px; --def-row-max: 999px;
   --def-row: clamp(var(--def-row-min), calc((100cqh - var(--def-top) - var(--def-gap) - var(--def-head) - var(--def-tail)) / 6 - var(--def-sp)), var(--def-row-max));
   display: flex; flex-direction: column; height: 100%; min-height: 0; container-type: size; }
 .def-frame.roomy { --def-tail: 4px; --def-mon: 270px; --def-row-min: 34px; --def-row-max: 999px; }
@@ -190,12 +191,12 @@
 .ct-table tr.x-row th[scope='row'] { color: var(--accent); }
 .ct-table thead th.x-col img { transform: scale(1.15); }
 /* Riepilogo: righe basse, etichette come le righe della Panoramica */
-.ct-table tr.ct-sum { height: 26px; }
+.ct-table tr.ct-sum { height: 24px; }
 .ct-table tr.ct-sum th { padding: 0 8px 0 0; font: 600 11px/1 var(--ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); text-align: left; }
 .ct-table tr.ct-sum td { padding: 0; text-align: center; font-size: 13px; font-weight: 600; color: var(--text); }
 .ct-table tr.ct-sum td.bad { color: var(--bad); }
 /* A squadra aperta la Sicurezza è l unico riepilogo: staccata di qualche px dalle caselle */
-.def-frame:not(.roomy) .ct-table tr.ct-sum-first > * { padding-top: 7px; }
+.def-frame:not(.roomy) .ct-table tr.ct-sum-first > * { padding-top: 3px; }
 .ct-pill { display: inline-block; min-width: 42px; padding: 2px 6px; border-radius: 999px; font: 700 12px/1.3 var(--ui); }
 .ct-pill.bad { background: var(--bad-bg); color: var(--bad); }
 .ct-pill.warn { background: var(--warn-bg); color: var(--warn); }
@@ -217,11 +218,11 @@
 .cm-pages .icon { width: 14px; height: 14px; }
 .cm-at { min-width: 4.5ch; text-align: center; font: 600 13px/1 var(--ui); color: var(--text); font-variant-numeric: tabular-nums; }
 .ad-panel .rob-legend.cm-foot { flex-wrap: nowrap; justify-content: space-between; gap: 12px; white-space: nowrap; }
-/* Coverage tipi della Difesa: legenda e note del meteo su una riga; le note si tagliano coi puntini (testo intero nel title) */
-.ad-panel .rob-legend.ht-foot { flex-wrap: nowrap; gap: 16px; white-space: nowrap; }
-.ht-legend { display: inline-flex; flex: none; align-items: center; gap: 6px; }
-.ad-panel .ht-notes { flex: 1 1 0; min-width: 0; margin: 0; overflow: hidden; text-overflow: ellipsis; text-align: right; font-size: 12px; cursor: help; }
-.cm-legend { display: inline-flex; align-items: center; gap: 6px; }
+/* Sotto la tabella una riga sola e bassa (la legenda sta sulla riga dei problemi): i conteggi di Coverage meta, le note del
+   meteo di Coverage tipi della Difesa (tagliate coi puntini, testo intero nel title) */
+.ad-panel .rob-legend.cm-foot, .ad-panel .rob-legend.ht-foot { height: 20px; padding-top: 0; }
+.ad-panel .rob-legend.ht-foot { flex-wrap: nowrap; white-space: nowrap; }
+.ad-panel .ht-notes { flex: 1 1 0; min-width: 0; margin: 0; overflow: hidden; text-overflow: ellipsis; text-align: left; font-size: 12px; cursor: help; }
 .ad-panel .cm-summary { display: inline-flex; align-items: center; gap: 6px; margin: 0 0 0 auto; font-size: 13px; color: var(--muted); }
 .cm-summary .ct-pill { font-size: 12px; }
 .ct-pill.zero { background: var(--raised); color: var(--faint); }
@@ -351,4 +352,4 @@
 .def-meta-grid .rob-cell.hold-none { color: var(--muted); }
 .def-meta-grid .dm-h { padding: 0; line-height: 0; text-align: center; vertical-align: bottom; }
 .def-frame.def-meta-grid .dm-h .def-box { --bs: 1.2; }
-.def-meta-grid .ct-sum td { height: 26px; }
+.def-meta-grid .ct-sum td { height: 24px; }

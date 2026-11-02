@@ -145,15 +145,15 @@ describe('dettaglio della Difesa a schede', () => {
     }
   });
 
-  it('Coverage tipi: una tabella membri × 18 tipi con Regge e Copertura per tipo', async () => {
+  it('Coverage tipi: una tabella membri × 18 tipi con Regge, e la Copertura del tipo nel suggerimento', async () => {
     const { user, dialog } = await openDefense('it');
     await user.click(within(dialog).getByRole('tab', { name: /^Coverage tipi/ }));
     const table = within(within(dialog).getByRole('tabpanel')).getByRole('table');
-    expect(within(table).getAllByRole('row')).toHaveLength(5); // testata, 2 membri, Regge, Copertura
-    const safety = within(table).getByRole('row', { name: /^Copertura/ });
-    const cells = within(safety).getAllByRole('cell').slice(0, 18);
+    expect(within(table).getAllByRole('row')).toHaveLength(4); // testata, 2 membri, Regge
+    const held = within(table).getByRole('row', { name: /^Regge/ });
+    const cells = within(held).getAllByRole('cell').slice(0, 18);
     expect(cells).toHaveLength(18);
-    for (const cell of cells) expect(cell).toHaveTextContent(/^\d+%$/);
+    for (const cell of cells) expect(cell.querySelector('.ct-pill')).toHaveAttribute('title', expect.stringMatching(/^Copertura \d+%$/));
   });
 
   it('Coverage meta: una tabella membri × minacce, con la riga Regge', async () => {

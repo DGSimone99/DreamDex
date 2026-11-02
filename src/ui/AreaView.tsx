@@ -45,6 +45,7 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
   // Si parte dalla prima scheda (Generale), anche se la sottoscheda ricordata non c'è più (es. meta spento)
   const index = Math.max(0, picked === null ? 0 : tabs.findIndex(tab => tab.key === picked));
   const current = tabs[index];
+  const legend = current.legend && <span className="area-legend" aria-hidden="true">{current.legend}</span>;
   const buttons = useRef<(HTMLButtonElement | null)[]>([]);
   const helpButton = useRef<HTMLButtonElement>(null);
   // La guida ha la sua sezione: cambiarla non sposta la sottoscheda dietro (null = chiusa)
@@ -143,10 +144,12 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
         <AreaGuide title={t('area.guide.title', { area: title })} sections={sections} current={guide}
           onCurrent={setGuide} onClose={() => setGuide(null)} className={`area-guide-${area}`} />
       )}
-      {/* La riga c'è sempre, anche senza problemi: il pannello sotto parte alla stessa altezza in ogni area */}
+      {/* La riga c'è sempre, anche senza problemi: il pannello sotto parte alla stessa altezza in ogni area.
+          A destra la legenda dei colori della scheda aperta (sempre intera: sono i problemi a finire nel "+N") */}
       {problems.length === 0 ? (
         <div className="area-problems-row is-clear" role="note" aria-label={t('analysis.areaProblems', { area: title })}>
           <span className="area-problems-label"><Icon name="check" />{t('area.problems.none')}</span>
+          {legend}
         </div>
       ) : (
         <div className={`area-problems-row${problems.some(p => p.severity === 'serious') ? ' serious' : ''}`}>
@@ -166,6 +169,7 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
               </li>
             )}
           </ul>
+          {legend}
         </div>
       )}
       <div className="area-panel ad-panel" role="tabpanel" id={`${id}-panel`} aria-labelledby={`${id}-${current.key}`}>

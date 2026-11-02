@@ -14,6 +14,8 @@ import { speedTabs } from './speed/speedTabs';
 export type T = ReturnType<typeof useT>;
 
 export interface DetailTab { key: string; label: string; value: number | string | null; panel: ReactElement; help?: ReactNode;
+  /** Legenda dei colori della scheda: sta a destra sulla riga dei problemi, così sotto la tabella resta più spazio alle righe. */
+  legend?: ReactNode;
   /** Pagine in più della guida dopo quella della scheda (i Ruoli: tipi di team, come si ottiene un ruolo). */
   guidePages?: { key: string; label: string; content: ReactNode }[] }
 

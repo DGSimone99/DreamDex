@@ -22,7 +22,7 @@ const coverTone = (n: number) => (n === 0 ? 'bad' : n === 1 ? 'warn' : 'good');
  * 8 per pagina dal meno coperto (a pari livello il più usato). In ogni casella il danno % del colpo semplice (senza
  * Tera, Z e setup) colorato per soglia, con "setup N%" quando la danza cambia soglia; in fondo "Lo coprono" conta chi
  * lo manda KO in due colpi. Le pagine ("‹ 1/5 ›") stanno nella casella in alto a sinistra, al posto di "Pokémon";
- * sotto la tabella una sola riga con la legenda e il riepilogo.
+ * sotto la tabella una sola riga col riepilogo; la legenda dei colori sta sulla riga dei problemi (OffenseMetaLegend).
  */
 export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaContext }) {
   const t = useT();
@@ -91,17 +91,22 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
           </tbody>
         </table>
       </div>
-      <div className="rob-legend cm-foot">
-        <span className="cm-legend" aria-hidden="true">
-          {KO_ORDER.map(b => <span key={b} className={`hold-chip ko-${b}`}>{TAG[b]}</span>)}
-          <span className="hold-chip ko-none">{t('odetail.wall.legendLess')}</span>
-          <span className="wall-legend-setup"><i className="wall-tick" />{t('odetail.wall.legendSetup')}</span>
-        </span>
-        {counts}
-      </div>
+      <div className="rob-legend cm-foot">{counts}</div>
     </div>
   );
 
   return <MetaFrame rows={rows} summary={summary} body={body}
     labels={{ pages: t('odetail.cm.pages'), prev: t('odetail.cm.prev'), next: t('odetail.cm.next'), page: (from, to) => t('odetail.cm.page', { from, to }) }} />;
+}
+
+/** La legenda dei colori di Coverage meta dell'Offesa, sulla riga dei problemi: le soglie e il segno del setup. */
+export function OffenseMetaLegend() {
+  const t = useT();
+  return (
+    <>
+      {KO_ORDER.map(b => <span key={b} className={`hold-chip ko-${b}`}>{TAG[b]}</span>)}
+      <span className="hold-chip ko-none">{t('odetail.wall.legendLess')}</span>
+      <span className="wall-legend-setup"><i className="wall-tick" />{t('odetail.wall.legendSetup')}</span>
+    </>
+  );
 }

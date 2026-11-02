@@ -133,13 +133,16 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
     expect(document.querySelector('.ht-mult-note')).toBeNull();
   });
 
-  it('in fondo Regge e Copertura del motore; niente più Deboli e Resistono; i buchi segnati in testata', async () => {
+  it('in fondo Regge del motore, con la Copertura del tipo nel suggerimento; niente più Deboli e Resistono; i buchi segnati in testata', async () => {
     const { rating, table } = await openTypes();
     const rows = rating.defense.coverageTypes.rows;
     const held = within(table).getByRole('row', { name: /^Regge/ });
-    expect(within(held).getAllByRole('cell').slice(0, 18).map(c => c.textContent)).toEqual(rows.map(r => `${r.heldBy.length}`));
-    const level = within(table).getByRole('row', { name: /^Copertura/ });
-    expect(within(level).getAllByRole('cell').slice(0, 18).map(c => c.textContent)).toEqual(rows.map(r => `${r.level}%`));
+    const pills = within(held).getAllByRole('cell').slice(0, 18).map(c => c.querySelector('.ct-pill')!);
+    expect(pills.map(p => p.firstChild!.textContent)).toEqual(rows.map(r => `${r.heldBy.length}`));
+    // La Copertura non ha più una riga: sta nel title della pillola e nel testo nascosto
+    expect(pills.map(p => p.getAttribute('title'))).toEqual(rows.map(r => `Copertura ${r.level}%`));
+    expect(pills.map(p => p.textContent)).toEqual(rows.map(r => `${r.heldBy.length} · Copertura ${r.level}%`));
+    expect(within(table).queryByRole('row', { name: /^Copertura/ })).toBeNull();
     expect(within(table).queryByRole('row', { name: /^Deboli/ })).toBeNull();
     expect(within(table).queryByRole('row', { name: /^Resistono/ })).toBeNull();
     expect(table.querySelectorAll('thead th.sev-serious')).toHaveLength(rating.defense.coverageTypes.weak.length);
@@ -201,6 +204,8 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
     expect(within(pages).getAllByRole('button')).toHaveLength(2);
     expect(document.querySelectorAll('.def-frame > .rob-legend')).toHaveLength(1);
     expect(document.querySelector('.def-frame > .rob-legend .cm-summary')).toHaveTextContent(`${rows.length} minacce`);
+    // La legenda dei colori non sta più sotto la tabella
+    expect(document.querySelector('.def-frame > .rob-legend')).not.toHaveTextContent('Danno subito');
     if (rows.length > 8) {
       await user.click(within(pages).getByRole('button', { name: 'Minacce successive' }));
       expect(names()).toEqual(expected.slice(8, 16).map(r => r.species));

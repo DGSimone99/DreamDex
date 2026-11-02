@@ -735,6 +735,7 @@ export const en = {
   'ddetail.cm.partial': "only half",
   'ddetail.cm.none': "nobody",
   'ddetail.cm.damage': "% = damage taken from the threat's best hit",
+  'ddetail.cm.damageShort': "Damage taken:",
   'ddetail.cm.pages': "Threat pages",
   'ddetail.cm.prev': "Previous threats",
   'ddetail.cm.next': "Next threats",

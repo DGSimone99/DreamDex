@@ -22,14 +22,31 @@ describe('tabelle complete nelle schede d\'area', () => {
     await user.click(within(view()).getByRole('tab', { name: /^Coverage tipi/ }));
     const table = within(view()).getByRole('table');
     expect(within(table).getAllByRole('columnheader')).toHaveLength(19); // angolo e 18 tipi
-    // Testata, 2 membri, poi Regge e Copertura
-    expect(within(table).getAllByRole('row')).toHaveLength(5);
+    // Testata, 2 membri, poi Regge (la Copertura sta nel suggerimento della pillola)
+    expect(within(table).getAllByRole('row')).toHaveLength(4);
+  });
+
+  it('le legende dei colori stanno a destra sulla riga dei problemi, non sotto la tabella; le schede senza legenda non ne hanno', async () => {
+    const user = await openTab('Difesa');
+    const legend = () => view().querySelector('.area-problems-row > .area-legend');
+    expect(legend()).toBeNull(); // Generale
+    await user.click(within(view()).getByRole('tab', { name: /^Coverage tipi/ }));
+    expect(legend()).toHaveTextContent('Colpo forte del lato peggiore:OHKO2HKO3HKO4HKO+');
+    expect(view().querySelector('.area-panel .hold-chip')).toBeNull();
+  });
+
+  it('Offesa: la legenda di Coverage tipi sulla riga dei problemi', async () => {
+    const user = await openTab('Offesa');
+    const legend = () => view().querySelector('.area-problems-row > .area-legend');
+    await user.click(within(view()).getByRole('tab', { name: /^Coverage tipi/ }));
+    expect(legend()).toHaveTextContent('CopreCopre a metà');
+    expect(view().querySelector('.area-panel .area-legend-swatch')).toBeNull();
   });
 
   it('Difesa: la nota del meteo sotto la tabella', async () => {
     const user = await openTab('Difesa', 'Ninetales\nAbility: Drought\n- Flamethrower\n\nGreat Tusk\n- Headlong Rush');
     await user.click(within(view()).getByRole('tab', { name: /^Coverage tipi/ }));
-    expect(within(view()).getByText((_, el) => el?.textContent === 'Col sole (Ninetales, Drought): Water ×2 → ×1 per Ninetales, Great Tusk · il meteo non è sempre attivo')).toBeInTheDocument();
+    expect(within(view()).getByText((_, el) => !!el?.classList.contains('ht-notes') && el.textContent === 'Col sole (Ninetales, Drought): Water ×2 → ×1 per Ninetales, Great Tusk · il meteo non è sempre attivo')).toBeInTheDocument();
   });
 
   it('Offesa: Coverage tipi ha una tabella sola', async () => {

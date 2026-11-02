@@ -42,7 +42,7 @@ describe('Riquadro Voto', () => {
     await user.click(screen.getByRole('button', { name: 'Importa' }));
     await user.click(within(band()).getByRole('button', { name: /^Difesa \d+, apri il dettaglio/ }));
     await user.click(screen.getByRole('tab', { name: /^Coverage tipi/ }));
-    expect(screen.getByText((_, el) => el?.textContent === 'Col sole (Ninetales, Drought): Water ×2 → ×1 per Ninetales, Great Tusk · il meteo non è sempre attivo')).toBeInTheDocument();
+    expect(screen.getByText((_, el) => !!el?.classList.contains('ht-notes') && el.textContent === 'Col sole (Ninetales, Drought): Water ×2 → ×1 per Ninetales, Great Tusk · il meteo non è sempre attivo')).toBeInTheDocument();
   });
 
   it('nessuna valutazione con il team vuoto', () => {
