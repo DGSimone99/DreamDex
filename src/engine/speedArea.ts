@@ -24,10 +24,9 @@ export const PARADOX_SPEED = 1.5;
 export const CONTROL_CONDITIONS: SpeedCondition[] = ['web', 'trickroom', 'tailwind', 'slow'];
 
 /**
- * La quota media di Pokémon superati che vale "piena" (100): i più lenti del meta li supera chiunque e non
- * contano, quindi non serve superare proprio tutti.
+ * La quota media di Pokémon superati che vale 100: tutti. Il voto è la quota vera (superarne il 74% vale 74).
  */
-export const SPEED_FULL = 0.9;
+export const SPEED_FULL = 1;
 
 /** Peso di ogni membro per posizione di velocità, dal più veloce: i due più rapidi fanno quasi tutto, ma la velocità serve a tutti. */
 export const SPEED_RANK_WEIGHTS = [25, 20, 16, 14, 13, 12];

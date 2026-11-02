@@ -85,7 +85,7 @@ describe('Velocità: ogni membro, coi guadagni delle condizioni', () => {
     const sorted = [...members].sort((a, b) => b.speed - a.speed);
     const mean = sorted.reduce((a, m, i) => a + SPEED_RANK_WEIGHTS[i] * m.total, 0) / 100;
     // Piena (circa 93) quando il team supera in media il 90% del gruppo: i più lenti del meta li supera chiunque
-    expect(SPEED_FULL).toBe(0.9);
+    expect(SPEED_FULL).toBe(1);
     expect(speedPart(members)).toBe(softScore(mean / SPEED_FULL));
     expect(speedPart(members)).toBeLessThan(100);
     // Con meno membri si normalizza sui pesi usati

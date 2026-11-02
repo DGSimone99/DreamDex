@@ -852,7 +852,7 @@ export const en = {
   'guide.speed.rank': "{n}th",
   'guide.speed.rank.best': "the fastest",
   'guide.speed.rank.worst': "the slowest",
-  'guide.speed.scale': "Outspeeding {pct}% of the rivals on average scores 100.",
+  'guide.speed.scale': "The score is the average share of rivals outsped: outspeeding 74% scores 74.",
   'guide.off.what': "What it measures",
   'guide.off.what.power': "The members' average damage against {targets}",
   'guide.off.what.types': "The 18 types hit super effectively and 2HKOed",
