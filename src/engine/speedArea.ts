@@ -24,7 +24,7 @@ export const PARADOX_SPEED = 1.5;
 export const CONTROL_CONDITIONS: SpeedCondition[] = ['web', 'trickroom', 'tailwind', 'slow'];
 
 /**
- * La quota media di Pokémon superati che vale "piena" (circa 93): i più lenti del meta li supera chiunque e non
+ * La quota media di Pokémon superati che vale "piena" (100): i più lenti del meta li supera chiunque e non
  * contano, quindi non serve superare proprio tutti.
  */
 export const SPEED_FULL = 0.9;
@@ -330,7 +330,7 @@ function measure(set: TeamSet, data: EngineData, team: TeamConditions): MemberSp
   return { species: species.name, speed, raw, gains, own: ownTotal, total, controlOptions, cells };
 }
 
-/** La parte Velocità del team: i membri pesati dal più veloce (25/20/16/14/13/12), poi la scala morbida (100 non si raggiunge). */
+/** La parte Velocità del team: i membri pesati dal più veloce (25/20/16/14/13/12), poi la scala lineare (il riferimento vale 100). */
 export function speedPart(list: MemberSpeed[]): number {
   return softScore(weightedMean(list, m => m.total) / SPEED_FULL);
 }

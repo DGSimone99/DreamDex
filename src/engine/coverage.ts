@@ -188,7 +188,7 @@ export function teamCoverage(team: TeamSet[], data: EngineData, asked: CoverageK
   const known = team.map(set => !!battleSpecies(set));
   const pctOf = (x: number) => Math.floor(100 * Math.min(1, x));
   return {
-    // Lineare fino a 80, poi sempre più piano: anche ogni bersaglio coperto tre volte resta sotto 100
+    // Lineare: ogni bersaglio coperto tre volte vale 100
     value: softScore(value),
     holes,
     perMember: hits.map(h => Math.round(100 * targets.reduce((acc, target, i) => acc + creditOf(h[i].x, kind) * target.weight, 0))),

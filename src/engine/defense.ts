@@ -1,6 +1,6 @@
 import { usesMeta } from './analysis';
 import { metaThreats } from './attackers';
-import { COVERAGE_DEPTH, dexPool, ownConditions } from './coverage';
+import { dexPool, ownConditions } from './coverage';
 import { bestHit, setKey, standardHit, type FieldCondition, type Hit, type Target } from './damage';
 import { ONE_USE_SHARE, rankWeighted, SETUP_SHARE } from './offense';
 import { DEFAULT_FORMAT } from './format';
@@ -340,7 +340,12 @@ function threatHitsOf(member: TeamSet, data: EngineData): (Hit | null)[] {
   return hits;
 }
 
-const depthOf = (credits: number[]) => [...credits].sort((a, b) => b - a).reduce((acc, c, i) => acc + (COVERAGE_DEPTH[i] ?? 0) * c, 0);
+/**
+ * Quanto vale chi regge un colpo o una minaccia, dal primo al terzo: 50/30/20. Meno sbilanciato dell'Offesa (70/20/10):
+ * in Difesa conta avere più risposte, e col 70 al primo metà dei team forti finiva fra 95 e 100.
+ */
+export const DEFENSE_DEPTH = [0.5, 0.3, 0.2];
+const depthOf = (credits: number[]) => [...credits].sort((a, b) => b - a).reduce((acc, c, i) => acc + (DEFENSE_DEPTH[i] ?? 0) * c, 0);
 
 /**
  * Difesa del team. Coverage di tipi: per ognuno dei 36 colpi di tipo (18 tipi × fisico e speciale) i crediti dei

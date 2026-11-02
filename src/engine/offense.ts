@@ -111,7 +111,7 @@ export function stepBucket(step: number): 'ohko' | 'two' | 'three' | 'none' {
 }
 
 const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
-/** Dal rapporto col riferimento al punteggio: lineare fino a 80, poi sempre più piano (il 100 non si raggiunge). */
+/** Dal rapporto col riferimento al punteggio: lineare, il riferimento vale 100. */
 const toScore = (x: number, full: number) => softScore(x / full);
 
 /** Condizioni di campo (meteo, terreni) che il team porta; quelle che il set porta con la sua abilità sono sempre attive per lui. */

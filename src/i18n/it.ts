@@ -854,7 +854,7 @@ export const it: Record<keyof typeof en, string> = {
   'guide.speed.rank': "{n}°",
   'guide.speed.rank.best': "il più veloce",
   'guide.speed.rank.worst': "il più lento",
-  'guide.speed.scale': "Superare in media il {pct}% dei rivali vale circa 93; il 100 non si raggiunge.",
+  'guide.speed.scale': "Superare in media il {pct}% dei rivali vale 100.",
   'guide.off.what': "Cosa misura",
   'guide.off.what.power': "Il danno medio dei membri contro {targets}",
   'guide.off.what.types': "I 18 tipi colpiti super efficace e mandati KO in due colpi",

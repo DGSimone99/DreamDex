@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
 import type { TeamDefense } from '../../engine/defense';
-import { COVERAGE_DEPTH } from '../../engine/coverage';
-import { DEFENSE_SHARES, DEFENSE_SHARES_NO_META, dummyStats } from '../../engine/defense';
+import { DEFENSE_DEPTH, DEFENSE_SHARES, DEFENSE_SHARES_NO_META, dummyStats } from '../../engine/defense';
 import { DEFAULT_FORMAT, type FormatId } from '../../engine/format';
 import { TYPES } from '../../engine/types';
 import { useLang, useT } from '../../i18n/react';
@@ -19,8 +18,8 @@ const HOLD_POINTS = [
   { cls: 'hold-3', tag: '3HKO', points: '0,5', note: 'types.three' }, { cls: 'hold-4', tag: '4HKO+', points: '1', note: 'types.four' },
 ] as const;
 
-/** Quanto vale chi regge una minaccia, dal primo al terzo: quelli del motore (COVERAGE_DEPTH), in percentuale. */
-const DEPTH = COVERAGE_DEPTH.map(w => Math.round(100 * w));
+/** Quanto vale chi regge una minaccia, dal primo al terzo: quelli del motore (DEFENSE_DEPTH), in percentuale. */
+const DEPTH = DEFENSE_DEPTH.map(w => Math.round(100 * w));
 
 /** L'attaccante finto di ogni tipo: Attacco e Attacco Speciale base (quelli che usa il motore), come le medie dell'Offesa. */
 function TypeAttackers({ formatId }: { formatId: FormatId }) {
