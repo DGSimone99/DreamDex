@@ -12,7 +12,7 @@ import { hasSpeedControl, isPassive, isStall } from './roles';
 import { rulesOf } from './formatRules';
 import type { TeamNeeds } from './needs';
 import { FAMILIES, type SubRoleValues } from './subRoles';
-import { ESSENTIAL_POINTS, ONE_STYLE_POINTS, teamRolesArea, type TeamRoles } from './rolesArea';
+import { ESSENTIAL_POINTS, IMPORTANT_POINTS, MINOR_POINTS, ONE_STYLE_POINTS, teamRolesArea, type TeamRoles } from './rolesArea';
 import { teamSpeedArea, type TeamSpeed } from './speedArea';
 import { strengthComponent } from './scoring';
 import { usageOf } from './stats';
@@ -29,9 +29,9 @@ export type AreaKey = 'coverage' | 'defense' | 'strength' | 'bulk' | 'roles' | '
  * La Coverage offensiva è una sottostatistica dell'Offesa (offense.ts); Robustezza, Coverage difensiva e Meta
  * sono parti della Difesa (defense.ts).
  */
-type BaseArea = Exclude<AreaKey, 'meta' | 'coverage' | 'bulk'>;
-/** Nell'ordine del pannello: Difesa e Offesa, Ruoli e Velocità. */
-const BASE_AREAS: BaseArea[] = ['defense', 'strength', 'roles', 'speed'];
+type BaseArea = Exclude<AreaKey, 'meta' | 'coverage' | 'bulk' | 'roles'>;
+/** Nell'ordine del pannello: Difesa, Offesa e Velocità (i Ruoli sono una lista: malus e bonus, rolesArea.ts). */
+const BASE_AREAS: BaseArea[] = ['defense', 'strength', 'speed'];
 
 /**
  * Peso di ogni area secondo il tipo di team (somma 100): ognuno si giudica su quello con cui vince.
@@ -44,11 +44,12 @@ export const ARCHETYPE_WEIGHTS: Record<Archetype, Record<BaseArea, number>> = {
   // 2026-10-31: Difesa dimezzata in HO, BO e balance. Sul banco la Difesa dà lo stesso numero ai team da torneo e a
   // quelli medi (75 contro 76: distingue solo i brutti), mentre Offesa, Ruoli e Velocità li separano; col peso spostato
   // il distacco torneo − medio sale da 7,1 a 8,0 e le partite vere da 52,7% a 53,0%. Semi-stall e stall come prima.
-  hyperOffense: { defense: 10, strength: 52, roles: 16, speed: 22 },
-  bulkyOffense: { defense: 16, strength: 48, roles: 18, speed: 18 },
-  balance: { defense: 22, strength: 42, roles: 22, speed: 14 },
-  semiStall: { defense: 46, strength: 26, roles: 20, speed: 8 },
-  stall: { defense: 56, strength: 18, roles: 26, speed: 0 },
+  // 2026-11-02: i Ruoli diventano una lista (malus e bonus) e il loro peso si divide in proporzione fra le altre tre.
+  hyperOffense: { defense: 12, strength: 62, speed: 26 },
+  bulkyOffense: { defense: 20, strength: 58, speed: 22 },
+  balance: { defense: 28, strength: 54, speed: 18 },
+  semiStall: { defense: 57, strength: 33, speed: 10 },
+  stall: { defense: 76, strength: 24, speed: 0 },
 };
 
 
@@ -93,8 +94,8 @@ export interface RatingArea {
 
 /** Chiave della voce del catalogo bonus/malus a cui appartiene una voce del voto. */
 export type CatalogKey = 'sharedWeak' | 'sameType' | 'hazardDuplicate' | 'removers' | 'weatherClash' | 'weakenedMove' | 'unmetCondition' | 'unusedEnabler'
-  | 'weakMember' | 'essentialRole' | 'oneStyle' | 'trickRoomFast'
-  | 'coreTrio' | 'weakCovered' | 'typeVariety' | 'conditionUsed' | 'weatherHelp' | 'tera';
+  | 'weakMember' | 'essentialRole' | 'importantRole' | 'oneStyle' | 'trickRoomFast'
+  | 'coreTrio' | 'minorRole' | 'weakCovered' | 'typeVariety' | 'conditionUsed' | 'weatherHelp' | 'tera';
 
 export interface Redundancy {
   text: string;
@@ -435,7 +436,7 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it', o
   const attack = offense.members.length ? offense.value / 100 : null;
   const raw: Record<BaseArea, number | null> = {
     defense: defense.members.length ? defense.value / 100 : null, strength: attack,
-    roles: roles.members.length ? roles.value / 100 : null, speed: speed.members.length ? speed.value / 100 : null,
+    speed: speed.members.length ? speed.value / 100 : null,
   };
   const available = BASE_AREAS.filter(key => raw[key] !== null && effective[key] > 0);
   const totalWeight = sum(available.map(key => effective[key]));
@@ -469,7 +470,7 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it', o
   const roomItems = fastMembers.length
     ? [{ text: t(lang, fastMembers.length === 1 ? 'rating.redundancy.trickRoomFastOne' : 'rating.redundancy.trickRoomFast', { setter: battleName(roomSetter!), n: fastMembers.length, list: fastMembers.map(m => m.species).join(', ') }), points: Math.min(TRICK_ROOM_MAX, fastMembers.length * TRICK_ROOM_FAST_POINTS), catalog: 'trickRoomFast' as const }]
     : [];
-  // Le mancanze essenziali dei Ruoli (solo team di 6) si sommano alle altre penalità, entro il massimo
+  // Le mancanze dei Ruoli (essenziali e importanti, solo team di 6) si sommano alle altre penalità
   const extraItems = [...roles.failures, ...roomItems];
   const penalty = extraItems.length
     ? { total: redundant.total + sum(extraItems.map(i => i.points)), items: [...redundant.items, ...extraItems] }
@@ -477,7 +478,7 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it', o
   // Bonus: le cose fatte bene, senza tetto (core a tre, debolezze coperte, tipi vari, condizione sfruttata, meteo, Tera)
   const bonusItems = [
     ...coreTrioBonus(team, lang), ...weakCoveredBonus(team, analysis, lang), ...typeVarietyBonus(team, lang), ...conditionUsedBonus(team, lang),
-    ...weatherBonus(team, lang).items, ...teraBonus(team, analysis, rules.teraBonusCap, lang),
+    ...weatherBonus(team, lang).items, ...teraBonus(team, analysis, rules.teraBonusCap, lang), ...roles.bonuses,
   ];
   const bonus = { total: sum(bonusItems.map(i => i.points)), items: bonusItems };
   const overall = Math.min(100, Math.max(0, base - penalty.total + bonus.total));
@@ -500,16 +501,16 @@ export interface CatalogEntry {
 }
 
 const CATALOG_ORDER: { key: CatalogKey; kind: 'malus' | 'bonus' }[] = [
-  ...(['sharedWeak', 'sameType', 'hazardDuplicate', 'removers', 'weatherClash', 'weakenedMove', 'unmetCondition', 'unusedEnabler', 'weakMember', 'essentialRole', 'oneStyle', 'trickRoomFast'] as const)
+  ...(['sharedWeak', 'sameType', 'hazardDuplicate', 'removers', 'weatherClash', 'weakenedMove', 'unmetCondition', 'unusedEnabler', 'weakMember', 'essentialRole', 'importantRole', 'oneStyle', 'trickRoomFast'] as const)
     .map(key => ({ key, kind: 'malus' as const })),
-  ...(['coreTrio', 'weakCovered', 'typeVariety', 'conditionUsed', 'weatherHelp', 'tera'] as const).map(key => ({ key, kind: 'bonus' as const })),
+  ...(['coreTrio', 'weakCovered', 'typeVariety', 'conditionUsed', 'weatherHelp', 'tera', 'minorRole'] as const).map(key => ({ key, kind: 'bonus' as const })),
 ];
 
 /** Tutti i bonus e malus possibili, con il testo per il modale; i punti nei testi vengono dalle costanti. */
 export function bonusMalusCatalog(lang: Lang, teraCap: number): CatalogEntry[] {
   const values = {
     shared: SHARED_WEAK_POINTS, unmet: UNMET_POINTS, hazard: HAZARD_DUPLICATE, hurt: WEATHER_HURT, hurtStab: WEATHER_HURT_STAB, member: WEAK_MEMBER_POINTS, memberMax: WEAK_MEMBER_MAX,
-    essential: ESSENTIAL_POINTS, style: ONE_STYLE_POINTS, room: TRICK_ROOM_MAX, roomEach: TRICK_ROOM_FAST_POINTS, remover: REMOVER_EXTRA_POINTS, clash: WEATHER_CLASH_POINTS, unused: UNUSED_ENABLER_POINTS,
+    essential: ESSENTIAL_POINTS, important: IMPORTANT_POINTS, minor: MINOR_POINTS, style: ONE_STYLE_POINTS, room: TRICK_ROOM_MAX, roomEach: TRICK_ROOM_FAST_POINTS, remover: REMOVER_EXTRA_POINTS, clash: WEATHER_CLASH_POINTS, unused: UNUSED_ENABLER_POINTS,
     help: WEATHER_HELP, cap: teraCap,
     same: SAME_TYPE_POINTS, trio: CORE_TRIO_POINTS, covered: WEAK_COVERED_POINTS, variety: TYPE_VARIETY_POINTS, varietyMin: TYPE_VARIETY_MIN,
     used: CONDITION_USED_POINTS, users: CONDITION_USERS_MIN,
