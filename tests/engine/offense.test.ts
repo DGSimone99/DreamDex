@@ -84,12 +84,12 @@ describe('memberOffense', () => {
     expect('wallbreakingGain' in m).toBe(false);
   });
 
-  it("il 100 della Potenza è il 3° miglior attaccante del meta, misurato sui 18 Pokémon medi", () => {
+  it("il 100 della Potenza è il miglior attaccante del meta, misurato sui 18 Pokémon medi", () => {
     const ref = offenseReference(fixtureData);
-    const third = mostCommonSet(fixtureStats, ref.byPower[Math.min(REFERENCE_RANK, ref.byPower.length) - 1])!;
-    const m = memberOffense(third, [third], fixtureData)!;
-    // Il riferimento vale circa 93: la scala rallenta sopra 80 e non arriva mai a 100
-    expect(Math.abs(m.power - 93)).toBeLessThanOrEqual(1);
+    const best = mostCommonSet(fixtureStats, ref.byPower[0])!;
+    const m = memberOffense(best, [best], fixtureData)!;
+    // Il riferimento vale 100: la scala è lineare
+    expect(Math.abs(m.power - 100)).toBeLessThanOrEqual(1);
   });
 
   it('la Potenza è la stessa con e senza meta', () => {

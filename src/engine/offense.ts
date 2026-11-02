@@ -27,8 +27,10 @@ export const STEP_2HKO = 1;
 export const STEP_OHKO = 1.5;
 /** Riferimento di riserva: media dei valori che vale Wallbreaking 100. */
 export const STEP_FULL = 1.25;
-/** Il 100 della Potenza del membro: il 3° miglior attaccante fra i più usati del formato (un 100 raro). */
+/** Il 100 dei Ruoli (Potenza e Wallbreaking della misura dei Ruoli): il 3° miglior attaccante fra i più usati del formato. */
 export const REFERENCE_RANK = 3;
+/** Il 100 della Potenza: il miglior attaccante del meta (senza curva, il 3° avrebbe dato 100 anche ai più forti di lui). */
+export const POWER_REFERENCE_RANK = 1;
 /** Quanti Pokémon del meta, dal più usato, si scorrono per trovare gli attaccanti di riferimento. */
 const REFERENCE_SCAN = 40;
 /** Offesa del team: Potenza 60% e Coverage 40% (col meta 20% tipi e 20% meta, senza meta 40% tipi). */
@@ -111,7 +113,7 @@ export function stepBucket(step: number): 'ohko' | 'two' | 'three' | 'none' {
 }
 
 const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
-/** Dal rapporto col riferimento al punteggio: lineare fino a 80, poi sempre più piano (il 100 non si raggiunge). */
+/** Dal rapporto col riferimento al punteggio: lineare, il riferimento vale 100. */
 const toScore = (x: number, full: number) => softScore(x / full);
 
 /** Condizioni di campo (meteo, terreni) che il team porta; quelle che il set porta con la sua abilità sono sempre attive per lui. */
@@ -252,9 +254,9 @@ export interface OffenseReference {
 const references = new Map<string, OffenseReference>();
 
 /**
- * Il 100 della Potenza: il 3° miglior attaccante fra i più usati del formato (set più comune), misurato come i membri
+ * Il 100 della Potenza: il miglior attaccante fra i più usati del formato (set più comune), misurato come i membri
  * contro i 18 Pokémon medi. Così 100 vuol dire "fra i migliori del meta", non una soglia che nessuno raggiunge.
- * Gli stessi attaccanti danno il 100 della vecchia misura dei Ruoli. Senza statistiche: i valori fissi di riserva.
+ * Per i Ruoli il 100 resta il 3° miglior attaccante (REFERENCE_RANK). Senza statistiche: i valori fissi di riserva.
  */
 export function offenseReference(data: EngineData): OffenseReference {
   // Anche senza meta il riferimento usa le statistiche, se ci sono: mentre si caricano non devono restare quelle di riserva
@@ -272,8 +274,8 @@ export function offenseReference(data: EngineData): OffenseReference {
   const forRoles = sets.map(set => rawOf(set, [set], data, 'roles'))
     .filter((raw): raw is Raw => raw !== null)
     .map(raw => ({ species: raw.species, expected: raw.expected, step: mean(raw.steps) }));
-  const nth = (values: number[]) => values.sort((a, b) => b - a)[Math.min(REFERENCE_RANK, values.length) - 1];
-  const power = measured.length ? nth(measured.map(r => r.expected)) : 0;
+  const nth = (values: number[], rank = REFERENCE_RANK) => values.sort((a, b) => b - a)[Math.min(rank, values.length) - 1];
+  const power = measured.length ? nth(measured.map(r => r.expected), POWER_REFERENCE_RANK) : 0;
   const rolesPower = forRoles.length ? nth(forRoles.map(r => r.expected)) : 0;
   const step = forRoles.length ? nth(forRoles.map(r => r.step)) : 0;
   reference = {

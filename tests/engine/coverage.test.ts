@@ -136,7 +136,7 @@ describe('Coverage meta: colpo migliore di qualunque tipo, solo 2HKO', () => {
     const i = targets.findIndex((_, k) => any(tusk, k) >= 0.5 && superOnly(tusk, k) < 0.5);
     expect(i).toBeGreaterThanOrEqual(0);
     const row = teamCoverage([tusk], fixtureData, 'meta').rows[i];
-    expect(row.level).toBe(70);
+    expect(row.level).toBe(50);
     expect(row.coveredBy).toEqual([expect.objectContaining({ species: 'Great Tusk', partial: false })]);
   });
 

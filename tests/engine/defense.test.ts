@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { defensiveSetup, dummyAttacker, dummyStats, hazardRemover, holdBand, holdCredit, typedHits, holdStep, memberDefense, sustainability, sustainParts, teamDefense } from '../../src/engine/defense';
+import { DEFENSE_DEPTH, defensiveSetup, dummyAttacker, dummyStats, hazardRemover, holdBand, holdCredit, typedHits, holdStep, memberDefense, sustainability, sustainParts, teamDefense } from '../../src/engine/defense';
 import type { TeamSet } from '../../src/engine/sets';
 import { softScore } from '../../src/engine/scale';
 import { fixtureData } from '../fixtures/data';
@@ -163,7 +163,7 @@ describe('teamDefense: Coverage di tipi sui colpi, Coverage meta, Sostenibilità
   it('Coverage di tipi: per ogni tipo e lato la profondità 70/20/10 dei crediti, poi la media dei 36', () => {
     const d = teamDefense(team, noStats);
     const hits = team.map(m => typedHits(m, noStats).held);
-    const depth = (c: number) => [...hits.map(h => holdCredit(h[c]))].sort((a, b) => b - a).reduce((acc, x, i) => acc + ([0.7, 0.2, 0.1][i] ?? 0) * x, 0);
+    const depth = (c: number) => [...hits.map(h => holdCredit(h[c]))].sort((a, b) => b - a).reduce((acc, x, i) => acc + (DEFENSE_DEPTH[i] ?? 0) * x, 0);
     const mean = Array.from({ length: 36 }, (_, c) => depth(c)).reduce((a, b) => a + b, 0) / 36;
     expect(d.coverageTypes.value).toBe(softScore(mean));
     const fire = d.coverageTypes.rows.find(r => r.type === 'Fire')!;
@@ -219,16 +219,21 @@ describe('attaccante finto e colpi per tipo', () => {
   const gen9 = { stats: null, sets: null, formatId: 'gen9ou' as const };
   const idx = (type: string, special = false) => 2 * TYPES.indexOf(type as never) + (special ? 1 : 0);
 
-  it("l'attaccante finto ha l'Attacco medio del quarto più forte del Pokédex (in Gen 9 senza Mega)", () => {
-    expect(Math.abs(dummyAttacker(natdex, 'atk', 'Normal').baseStats!.atk! - 133)).toBeLessThanOrEqual(4);
-    expect(Math.abs(dummyAttacker(natdex, 'spa', 'Normal').baseStats!.spa! - 129)).toBeLessThanOrEqual(4);
-    expect(dummyAttacker(gen9, 'atk', 'Normal').baseStats!.atk!).toBeLessThanOrEqual(dummyAttacker(natdex, 'atk', 'Normal').baseStats!.atk!);
+  it("l'attaccante finto ha l'Attacco medio del quarto più forte del suo tipo (in Gen 9 senza Mega)", () => {
+    // National Dex: Drago speciale forte (~151), Lotta speciale debole (~114), Lotta fisico forte (~144)
+    expect(Math.abs(dummyAttacker(natdex, 'spa', 'Dragon').baseStats!.spa! - 151)).toBeLessThanOrEqual(4);
+    expect(Math.abs(dummyAttacker(natdex, 'spa', 'Fighting').baseStats!.spa! - 114)).toBeLessThanOrEqual(4);
+    expect(Math.abs(dummyAttacker(natdex, 'atk', 'Fighting').baseStats!.atk! - 144)).toBeLessThanOrEqual(4);
+    expect(dummyAttacker(natdex, 'spa', 'Dragon').baseStats!.spa!).toBeGreaterThan(dummyAttacker(natdex, 'spa', 'Fighting').baseStats!.spa!);
+    expect(dummyAttacker(gen9, 'spa', 'Dragon').baseStats!.spa!).toBeLessThanOrEqual(dummyAttacker(natdex, 'spa', 'Dragon').baseStats!.spa!);
     expect(dummyAttacker(natdex, 'atk', 'Fire').types).toEqual(['Fire']);
   });
 
-  it("dummyStats dà alla guida le stesse statistiche dell'attaccante finto del formato", () => {
+  it("dummyStats dà alla guida le stesse statistiche dell'attaccante finto del tipo", () => {
     for (const data of [natdex, gen9]) {
-      expect(dummyStats(data.formatId)).toEqual({ atk: dummyAttacker(data, 'atk', 'Water').baseStats!.atk!, spa: dummyAttacker(data, 'spa', 'Water').baseStats!.spa! });
+      for (const type of ['Water', 'Dragon', 'Bug']) {
+        expect(dummyStats(data.formatId, type)).toEqual({ atk: dummyAttacker(data, 'atk', type).baseStats!.atk!, spa: dummyAttacker(data, 'spa', type).baseStats!.spa! });
+      }
     }
   });
 

@@ -1,6 +1,6 @@
 import { usesMeta } from './analysis';
 import { metaThreats } from './attackers';
-import { COVERAGE_DEPTH, dexPool, ownConditions } from './coverage';
+import { dexPool, ownConditions } from './coverage';
 import { bestHit, setKey, standardHit, type FieldCondition, type Hit, type Target } from './damage';
 import { ONE_USE_SHARE, rankWeighted, SETUP_SHARE } from './offense';
 import { DEFAULT_FORMAT } from './format';
@@ -169,8 +169,8 @@ export const holdCredit = (x: number): number => (x < 1 / 3 ? 1 : x < 1 / 2 ? 0.
 const dummies = new Map<string, Target>();
 
 /**
- * L'attaccante finto della Coverage di tipi: un attaccante forte, con l'Attacco (o l'Attacco Speciale) medio del quarto
- * più forte dei completamente evoluti del Pokédex del formato; le altre statistiche 100, 252 EV e natura che lo alza,
+ * L'attaccante finto della Coverage di tipi: un attaccante forte del tipo del colpo, con l'Attacco (o l'Attacco Speciale)
+ * medio del quarto più forte dei completamente evoluti di quel tipo nel Pokédex del formato; le altre statistiche 100, 252 EV e natura che lo alza,
  * nessuno strumento né abilità che conti, del tipo del colpo (STAB per tutti allo stesso modo).
  */
 export function dummyAttacker(data: EngineData, side: 'atk' | 'spa', type: string): Target {
@@ -178,7 +178,7 @@ export function dummyAttacker(data: EngineData, side: 'atk' | 'spa', type: strin
   const key = `${pokedexOf(format)}|${side}|${type}`;
   let dummy = dummies.get(key);
   if (dummy) return dummy;
-  const values = dexPool(format).map(s => s.baseStats[side]).sort((a, b) => b - a);
+  const values = dexPool(format).filter(s => (s.types as string[]).includes(type)).map(s => s.baseStats[side]).sort((a, b) => b - a);
   const top = values.slice(0, Math.max(1, Math.ceil(values.length / 4)));
   const stat = Math.round(top.reduce((a, b) => a + b, 0) / top.length);
   dummy = {
@@ -189,10 +189,10 @@ export function dummyAttacker(data: EngineData, side: 'atk' | 'spa', type: strin
   return dummy;
 }
 
-/** L'Attacco e l'Attacco Speciale base dell'attaccante finto del formato: quelli di `dummyAttacker` (per la guida). */
-export function dummyStats(formatId: EngineData['formatId']): { atk: number; spa: number } {
+/** L'Attacco e l'Attacco Speciale base dell'attaccante finto di un tipo nel formato: quelli di `dummyAttacker` (per la guida). */
+export function dummyStats(formatId: EngineData['formatId'], type: string): { atk: number; spa: number } {
   const data: EngineData = { stats: null, sets: null, formatId };
-  return { atk: dummyAttacker(data, 'atk', 'Normal').baseStats?.atk ?? 0, spa: dummyAttacker(data, 'spa', 'Normal').baseStats?.spa ?? 0 };
+  return { atk: dummyAttacker(data, 'atk', type).baseStats?.atk ?? 0, spa: dummyAttacker(data, 'spa', type).baseStats?.spa ?? 0 };
 }
 
 const typedCache = new Map<string, { plain: number[]; held: number[] }>();
@@ -340,7 +340,12 @@ function threatHitsOf(member: TeamSet, data: EngineData): (Hit | null)[] {
   return hits;
 }
 
-const depthOf = (credits: number[]) => [...credits].sort((a, b) => b - a).reduce((acc, c, i) => acc + (COVERAGE_DEPTH[i] ?? 0) * c, 0);
+/**
+ * Quanto vale chi regge un colpo o una minaccia, dal primo al terzo: 50/30/20. Meno sbilanciato dell'Offesa (70/20/10):
+ * in Difesa conta avere più risposte, e col 70 al primo metà dei team forti finiva fra 95 e 100.
+ */
+export const DEFENSE_DEPTH = [0.5, 0.3, 0.2];
+const depthOf = (credits: number[]) => [...credits].sort((a, b) => b - a).reduce((acc, c, i) => acc + (DEFENSE_DEPTH[i] ?? 0) * c, 0);
 
 /**
  * Difesa del team. Coverage di tipi: per ognuno dei 36 colpi di tipo (18 tipi × fisico e speciale) i crediti dei
