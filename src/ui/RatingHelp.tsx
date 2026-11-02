@@ -65,7 +65,7 @@ export function RatingHelp({ teamType, trickRoom, meta = true }: { teamType: Arc
       {/* Nel body della pagina: sopra tutto, senza ereditare gli stili del pannello in cui sta il "?" */}
       {open && createPortal(
         <div className="help-backdrop" onClick={close}>
-          <div className="help-dialog" role="dialog" aria-modal="true" aria-labelledby={titleId} onClick={e => e.stopPropagation()}>
+          <div className="help-dialog rating-help" role="dialog" aria-modal="true" aria-labelledby={titleId} onClick={e => e.stopPropagation()}>
             <header className="help-head">
               <h3 id={titleId}>{t('help.title')}</h3>
               <button type="button" className="help-close" aria-label={t('help.close')} onClick={close}><Icon name="close" /></button>

@@ -75,7 +75,7 @@
 .help-weights tr.current { background: var(--accent-soft); }
 .help-weights tr.current th, .help-weights tr.current td { color: var(--text); }
 /* Sotto la tabella dei pesi: i Ruoli non hanno peso, contano come malus e bonus */
-.help-panel .help-roles-note { margin-top: 8px; font-size: 13px; color: var(--muted); }
+.help-panel .help-roles-note { margin: 6px 0 0; font-size: 12px; line-height: 1.4; color: var(--muted); max-width: none; }
 .help-points { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
 .help-points li { display: flex; align-items: baseline; gap: 8px; padding: 5px 10px; background: var(--panel); border: 1px solid var(--line-soft); border-radius: 4px; font-size: 14px; color: var(--muted); }
 .help-panel .help-note { color: var(--text); }
