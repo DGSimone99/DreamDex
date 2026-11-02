@@ -730,7 +730,13 @@ for (const [w, h] of sizes) {
           const rlRows = rl ? rl.querySelectorAll('.rl-covered > li, .rl-table tbody tr:not(.rl-fam)').length : 0;
           const rlLast = rl ? [...rl.querySelectorAll<HTMLElement>('.rl-covered > li, .rl-missing > li')].reduce((b, li) => Math.max(b, li.getBoundingClientRect().bottom), 0) : 0;
           const roles = rl ? ` roles: rows=${rlRows} cols=${rl.querySelector('.rl-covered.two') ? 2 : 1} missing=${rl.querySelectorAll('.rl-missing > li').length} listScroll=${rlScroll ? rlScroll.scrollHeight - rlScroll.clientHeight : '-'} lastRowGap=${rlLast ? Math.round(rl.getBoundingClientRect().bottom - rlLast) : '-'} frameH=${Math.round(rl.getBoundingClientRect().height)} parts=[${[...rl.children].map(c => Math.round(c.getBoundingClientRect().height)).join(',')}] reasonCut=${[...rl.querySelectorAll<HTMLElement>('.rl-reason')].filter(e => e.scrollWidth - e.clientWidth > 1).length}` : '';
-          return `${guide}${roles} panelOverflow=${el.scrollHeight - el.clientHeight} panelX=${el.scrollWidth - el.clientWidth}${memberRows}${below}${labelAt}`; })(),
+          // Legenda sulla riga dei problemi: larghezza, quanto sborda dalla riga (0 = intera) e problemi mostrati / nel "+N"
+          const lg = document.querySelector<HTMLElement>('.area-problems-row .area-legend');
+          const lgRow = lg?.parentElement?.getBoundingClientRect();
+          const shownP = document.querySelectorAll('.area-problems > li:not(.area-problems-more)').length;
+          const moreP = document.querySelector('.area-problems-more')?.textContent?.match(/\+(\d+)/)?.[1] ?? '0';
+          const legendAt = lg && lgRow ? ` legend=${Math.round(lg.getBoundingClientRect().width)} legendCut=${Math.max(0, Math.round(lg.getBoundingClientRect().right - lgRow.right), lg.scrollWidth - lg.clientWidth)} problems=${shownP}+${moreP} stripH=${Math.round(lgRow.height)}` : '';
+          return `${guide}${roles}${legendAt} panelOverflow=${el.scrollHeight - el.clientHeight} panelX=${el.scrollWidth - el.clientWidth}${memberRows}${below}${labelAt}`; })(),
         dash: box ? `dash=${box.clientHeight}x${box.clientWidth} density=${box.dataset.density} cards=[${heights.join(',')}] cut=${cut} overflow=[${over.join(',')}] sumClip=${sumClip} rows=[${sumRows.join(',')}] sumHidden=${sumHidden} sumFill=${fill}% fitCut=${fitCut} covBand=${covBand} overviewScroll=${(document.querySelector('.overview')?.scrollHeight ?? 0) - (document.querySelector('.overview')?.clientHeight ?? 0)} hScroll=${document.scrollingElement!.scrollWidth - window.innerWidth}` : '',
       };
     });
