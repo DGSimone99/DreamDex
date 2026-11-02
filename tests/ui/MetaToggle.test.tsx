@@ -29,15 +29,14 @@ describe('voto col meta e senza', () => {
     expect(on.defense.coverageMeta).not.toBeNull();
     expect(off.defense.coverageMeta).toBeNull();
     // Anche i Ruoli si misurano contro il meta (sotto-ruoli da Offesa, Velocità e gruppo del meta), ma cambiano di poco
-    const roles = (r: typeof on) => r.areas.find(a => a.key === 'roles')!.value!;
-    expect(Math.abs(roles(on) - roles(off))).toBeLessThanOrEqual(5);
+    expect(Math.abs(on.roles.covered - off.roles.covered)).toBeLessThanOrEqual(1);
     expect(on.overall).toBe(Math.max(0, Math.min(100, on.base - on.penalty.total + on.bonus.total)));
   });
 
   it('senza meta: niente area Meta, tipi tutti uguali, nessuna minaccia', () => {
     const rating = rateTeam([tusk, gholdengo], noMeta)!;
     expect(rating.meta).toBeNull();
-    expect(rating.areas.map(a => a.key)).toEqual(['defense', 'strength', 'roles', 'speed']);
+    expect(rating.areas.map(a => a.key)).toEqual(['defense', 'strength', 'speed']);
     const analysis = analyzeTeam([tusk, gholdengo], noMeta);
     expect(analysis.typeWeights).toEqual(UNIFORM_TYPE_WEIGHTS);
     expect(analysis.threats).toEqual([]);

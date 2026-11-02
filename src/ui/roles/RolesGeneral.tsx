@@ -1,17 +1,21 @@
 import type { TeamRating } from '../../engine/rating';
-import { ESSENTIAL_POINTS } from '../../engine/rolesArea';
+import { MISSING_BELOW } from '../../engine/needs';
+import { ESSENTIAL_POINTS, IMPORTANT_POINTS, MINOR_POINTS } from '../../engine/rolesArea';
 import { useT } from '../../i18n/react';
 import type { AreaContext } from '../AreaDetail';
 import { Icon } from '../icons';
 import { holderReason, keyLabel, LevelTag, RoleMon } from './RoleParts';
-import { points, roleLines, type RoleLine } from './rolesRows';
+import { roleLines, type RoleLine } from './rolesRows';
 
 /** Oltre queste voci coperte la lista va su due colonne, oltre l'altra soglia su tre (mai scorrere la scheda). */
 const ONE_COLUMN_MAX = 6;
 const TWO_COLUMNS_MAX = 12;
+/** Malus di una voce che manca in un team di 6: essenziale o importante. */
+const missingPoints = (level: RoleLine['level']) => (level === 'essential' ? ESSENTIAL_POINTS : IMPORTANT_POINTS);
 
 /**
- * La scheda Generale dei Ruoli, in una schermata: con che tipo di team si giudicano e i punti dell'area, poi i ruoli che
+ * La scheda Generale dei Ruoli, in una schermata: con che tipo di team si giudicano, quante voci sono coperte, malus e
+ * bonus dei Ruoli, poi i ruoli che
  * mancano (essenziali in rosso, importanti in giallo), poi i ruoli che contano già coperti con chi li copre (icone, dal
  * migliore). Minori e voci che non contano stanno nelle loro sottoschede.
  */
@@ -26,10 +30,16 @@ export function RolesGeneral({ rating, ctx }: { rating: TeamRating; ctx: AreaCon
   const missing = lines.filter(l => l.missing).sort(order);
   const covered = lines.filter(l => !l.missing).sort(order);
   const malus = roles.failures.reduce((a, f) => a + f.points, 0);
-  const hasImportant = lines.some(l => l.level === 'important');
-  const essentialTip = [
-    t(!full ? 'rdetail.general.essentialIncomplete' : malus ? 'rdetail.general.essentialMissing' : 'rdetail.general.essentialOk'),
+  const bonus = roles.bonuses.reduce((a, f) => a + f.points, 0);
+  const values = { essential: ESSENTIAL_POINTS, important: IMPORTANT_POINTS, minor: MINOR_POINTS };
+  // Nel titolo la regola e poi le voci coi loro punti
+  const malusTip = [
+    t(!full ? 'rdetail.general.essentialIncomplete' : malus ? 'rdetail.general.malus' : 'rdetail.general.malusNone', values),
     ...roles.failures.map(f => `${f.text} (−${f.points})`),
+  ].join('\n');
+  const bonusTip = [
+    t(bonus ? 'rdetail.general.bonus' : 'rdetail.general.bonusNone', values),
+    ...roles.bonuses.map(f => `${f.text} (+${f.points})`),
   ].join('\n');
 
   return (
@@ -39,13 +49,11 @@ export function RolesGeneral({ rating, ctx }: { rating: TeamRating; ctx: AreaCon
           {roles.members.length < 6 ? t('analysis.judgedIncomplete', { archetype }) : t('rdetail.judged', { archetype })}
         </p>
         <ul className="rl-score" aria-label={t('rdetail.score')}>
-          <li title={t(hasImportant ? 'rdetail.general.important' : 'rdetail.general.importantNone')}>
-            {t('rdetail.group.important')} <b>{points(roles.base)}</b>
+          <li title={t('rdetail.general.covered', { pct: Math.round(100 * MISSING_BELOW) })}>
+            {t('rdetail.group.covered')} <b>{roles.covered}/{roles.total}</b>
           </li>
-          <li title={t('rdetail.general.minor')}>{t('rdetail.group.minor')} <b className="good">+{points(roles.extra)}</b></li>
-          <li title={essentialTip}>
-            {t('rdetail.group.essential')} <b className={malus ? 'bad' : 'zero'}>{malus ? `−${malus}` : '0'}</b>
-          </li>
+          <li title={malusTip}>Malus <b className={malus ? 'bad' : 'zero'}>{malus ? `−${malus}` : '0'}</b></li>
+          <li title={bonusTip}>Bonus <b className={bonus ? 'good' : 'zero'}>{bonus ? `+${bonus}` : '0'}</b></li>
         </ul>
       </header>
 
@@ -62,7 +70,7 @@ export function RolesGeneral({ rating, ctx }: { rating: TeamRating; ctx: AreaCon
                     <Icon name={tone === 'bad' ? 'close' : 'warning'} />
                     <span className="rl-name">{keyLabel(l.key, t)}</span>
                     <LevelTag level={l.level} t={t} />
-                    {full && l.level === 'essential' && <b className="rl-malus" title={t('rdetail.missingTip', { n: ESSENTIAL_POINTS })}>−{ESSENTIAL_POINTS}</b>}
+                    {full && <b className="rl-malus" title={t('rdetail.missingTip', { n: missingPoints(l.level) })}>−{missingPoints(l.level)}</b>}
                   </li>
                 );
               })}

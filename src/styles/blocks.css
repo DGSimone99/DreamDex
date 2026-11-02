@@ -55,6 +55,8 @@
  * tratteggiato = l'uno o l'altro) e una frase corta; gli stili come formula "chi lo porta + chi lo sfrutta".
  */
 .help-dialog.tt-dialog { width: min(600px, 100%); }
+/* Come funziona il voto: altezza fissa, non cambia fra un argomento e l'altro (il testo scorre dentro) */
+.help-dialog.rating-help { height: min(620px, calc(100vh - 48px)); }
 .tt-types { display: grid; grid-template-columns: max-content max-content minmax(0, 1fr); align-items: center; gap: 0 16px; margin: 0; padding: 0; list-style: none; }
 .tt-types li { display: contents; }
 .tt-types li > * { padding: 9px 0; border-bottom: 1px solid var(--line-soft); }

@@ -1,9 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { rateTeam } from '../../src/engine/rating';
-import { teamNeeds } from '../../src/engine/needs';
-import { LEVEL_KEYS } from '../../src/engine/roleLevels';
-import { IMPORTANT_WEIGHT, importantWeight, MINOR_CAP, MINOR_STEP, rolesScore, teamRolesArea } from '../../src/engine/rolesArea';
-import { softScore } from '../../src/engine/scale';
+import { MISSING_BELOW, teamNeeds } from '../../src/engine/needs';
+import { ESSENTIAL_POINTS, IMPORTANT_POINTS, MINOR_POINTS, teamRolesArea } from '../../src/engine/rolesArea';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
 import { fixtureData } from '../fixtures/data';
 
@@ -31,35 +29,43 @@ const stall: TeamSet[] = [
   s('Toxapex', 'Rocky Helmet', 'Regenerator', ['Knock Off', 'Recover', 'Scald', 'Toxic Spikes'], 'Bold', { hp: 252, def: 252, spd: 4 }),
 ];
 
-describe('area Ruoli: base degli importanti, extra dei minori', () => {
-  it('base = media degli importanti, extra dei minori fino a 0.12', () => {
-    const score = rolesScore([1, 0.5], [1, 1, 1, 1, 1]);
-    expect(score.base).toBeCloseTo(0.75);
-    // 5 × 0,03 = 0,15 → fermato a 0,12
-    expect(score.extra).toBeCloseTo(MINOR_CAP);
-    expect(score.value).toBe(softScore(0.75 + 0.12));
-    expect(rolesScore([1], [1]).extra).toBeCloseTo(MINOR_STEP);
-
-    // Sul team: le voci importanti e minori dell'archetipo coi valori del team
-    const needs = teamNeeds(physical, fixtureData);
-    const of = (level: string) => LEVEL_KEYS.filter(k => needs.levels[k] === level).map(k => needs.values[k]);
-    const important = of('important');
-    const base = important.reduce((a, b) => a + b, 0) / important.length;
-    const extra = Math.min(MINOR_CAP, MINOR_STEP * of('minor').reduce((a, b) => a + b, 0));
+describe('Ruoli come lista: coperti, malus e bonus', () => {
+  it('coperti/totale: le voci dell\'archetipo col valore del team almeno MISSING_BELOW', () => {
     const roles = teamRolesArea(physical, fixtureData, 'it');
-    expect(roles.base).toBeCloseTo(base);
-    expect(roles.extra).toBeCloseTo(extra);
-    expect(roles.value).toBe(softScore(base + extra));
-    expect(rateTeam(physical, fixtureData)!.areas.find(a => a.key === 'roles')!.value).toBe(roles.value);
+    expect(roles.total).toBe(roles.rows.length);
+    expect(roles.total).toBeGreaterThan(0);
+    expect(roles.covered).toBe(roles.rows.filter(r => r.value >= MISSING_BELOW).length);
+    expect(roles.covered).toBeLessThanOrEqual(roles.total);
+    // I Ruoli non sono più un'area del voto
+    expect(rateTeam(physical, fixtureData)!.areas.map(a => a.key)).not.toContain('roles');
   });
 
-  it('nessun importante: base 1 (RF4)', () => {
-    const score = rolesScore([], [0.5]);
-    expect(score.base).toBe(1);
-    expect(score.extra).toBeCloseTo(0.015);
-    expect(Number.isNaN(score.value)).toBe(false);
-    expect(score.value).toBe(softScore(1.015));
-    expect(rolesScore([], []).value).toBe(softScore(1));
+  it('team di 6: −4 per ogni essenziale mancante, −2 per ogni importante mancante, nel malus del voto', () => {
+    for (const team of [physical, stall]) {
+      const needs = teamNeeds(team, fixtureData);
+      const roles = teamRolesArea(team, fixtureData, 'it');
+      const essential = roles.failures.filter(f => f.catalog === 'essentialRole');
+      const important = roles.failures.filter(f => f.catalog === 'importantRole');
+      expect(essential).toHaveLength(needs.essentialMissing.length);
+      expect(important).toHaveLength(needs.importantMissing.length);
+      expect(essential.every(f => f.points === ESSENTIAL_POINTS)).toBe(true);
+      expect(important.every(f => f.points === IMPORTANT_POINTS)).toBe(true);
+      const rating = rateTeam(team, fixtureData)!;
+      for (const f of roles.failures) expect(rating.penalty.items).toContainEqual(f);
+    }
+    // Il team fisico manca almeno di una voce (il muro speciale): il malus c'è davvero
+    expect(teamRolesArea(physical, fixtureData, 'it').failures.length).toBeGreaterThan(0);
+  });
+
+  it('+1 per ogni minore coperta, senza tetto, anche con meno di 6 membri', () => {
+    for (const team of [physical, stall, physical.slice(0, 4)]) {
+      const roles = teamRolesArea(team, fixtureData, 'it');
+      const minors = roles.rows.filter(r => r.level === 'minor' && r.value >= MISSING_BELOW);
+      expect(roles.bonuses).toHaveLength(minors.length);
+      expect(roles.bonuses.every(b => b.points === MINOR_POINTS && b.catalog === 'minorRole')).toBe(true);
+      const rating = rateTeam(team, fixtureData)!;
+      for (const b of roles.bonuses) expect(rating.bonus.items).toContainEqual(b);
+    }
   });
 
   it('righe: le voci dell\'archetipo col valore del team e chi le porta', () => {
@@ -75,35 +81,18 @@ describe('area Ruoli: base degli importanti, extra dei minori', () => {
     expect(roles.members.map(m => m.species)).toEqual(physical.map(m => m.species));
   });
 
-  it('team incompleto: niente malus degli essenziali, area calcolata (RF3)', () => {
+  it('team incompleto: niente malus delle mancanze (RF3)', () => {
     // Solo attaccanti fisici: da balance mancano i muri, ma il team non è finito
     const team = physical.slice(0, 4);
     const roles = teamRolesArea(team, fixtureData, 'it');
     expect(roles.failures).toEqual([]);
+    expect(roles.covered).toBeLessThan(roles.total);
     const rating = rateTeam(team, fixtureData)!;
-    expect(rating.areas.find(a => a.key === 'roles')!.value).toBe(roles.value);
     expect(rating.penalty.items.map(i => i.text).join(' | ')).not.toMatch(/Balance senza/);
   });
 
-  it('team vuoto: nessuna area (RF3)', () => {
-    expect(teamRolesArea([], fixtureData, 'it').members).toEqual([]);
+  it('team vuoto: lista vuota (RF3)', () => {
+    expect(teamRolesArea([], fixtureData, 'it')).toMatchObject({ covered: 0, total: 0, members: [], failures: [], bonuses: [] });
     expect(rateTeam([], fixtureData)).toBeNull();
-  });
-
-  it('stall: Ruoli non sotto il valore di master', () => {
-    // Su master (a72aceb) l'area Ruoli di questo stall valeva 72
-    expect(teamRolesArea(stall, fixtureData, 'it').value).toBeGreaterThanOrEqual(72);
-  });
-});
-
-describe('peso degli importanti', () => {
-  it('nessuna voce pesa di più: gli hazard sono una voce come le altre (IMPORTANT_WEIGHT vuoto)', () => {
-    expect(IMPORTANT_WEIGHT).toEqual({});
-    expect(importantWeight('hazards')).toBe(1);
-    expect(importantWeight('removal')).toBe(1);
-    // La base sa ancora pesare: una voce a 0 con peso 2 e una a 1 con peso 1 danno 1/3, non 1/2
-    expect(rolesScore([0, 1], [], [2, 1]).base).toBeCloseTo(1 / 3);
-    // Senza pesi: media semplice
-    expect(rolesScore([0, 1], []).base).toBeCloseTo(0.5);
   });
 });

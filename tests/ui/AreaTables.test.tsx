@@ -12,7 +12,7 @@ async function openTab(area: 'Difesa' | 'Offesa' | 'Ruoli', paste = 'Great Tusk\
   await user.click(screen.getByLabelText('Testo Showdown'));
   await user.paste(paste);
   await user.click(screen.getByRole('button', { name: 'Importa' }));
-  await user.click(within(document.querySelector<HTMLElement>('.band')!).getByRole('button', { name: new RegExp(`^${area} \\d+, apri il dettaglio`) }));
+  await user.click(within(document.querySelector<HTMLElement>('.band')!).getByRole('button', { name: new RegExp(`^${area} [\\d/]+, .*apri il dettaglio`) }));
   return user;
 }
 

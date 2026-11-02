@@ -40,16 +40,19 @@ export const signed = (n: number) => (n < 0 ? `−${-n}` : n > 0 ? `+${n}` : '0'
 /** Le schede di un'area (sottostatistiche col loro valore e contenuto): le usano la finestra e la vista in Analisi. */
 export function areaTabs(rating: TeamRating, area: AreaKey, t: T, lang: Lang, ctx: AreaContext): DetailTab[] {
   if (area === 'bonusMalus') return catalogueTabs(rating, t, lang);
-  const value = rating.areas.find(a => a.key === area)?.value ?? null;
   return area === 'strength' ? offenseTabs(rating, t, ctx)
     : area === 'defense' ? defenseTabs(rating.defense, !!rating.meta, t, ctx)
-    : area === 'roles' ? rolesTabs(rating, value, t, ctx)
+    : area === 'roles' ? rolesTabs(rating, rolesValue(rating), t, ctx)
     : speedTabs(rating.speed, !!rating.meta, t, ctx);
 }
 
-/** Il valore di un'area per la testa: il netto per Bonus/Malus, altrimenti il valore dell'area. */
+/** I Ruoli non hanno un valore 0–100: voci coperte sul totale ("7/9"). */
+export const rolesValue = (rating: TeamRating): string => `${rating.roles.covered}/${rating.roles.total}`;
+
+/** Il valore di un'area per la testa: il netto per Bonus/Malus, coperti/totale per i Ruoli, altrimenti il valore dell'area. */
 export const areaValue = (rating: TeamRating, area: AreaKey): number | string | null =>
-  (area === 'bonusMalus' ? signed(rating.bonus.total - rating.penalty.total) : rating.areas.find(a => a.key === area)?.value ?? null);
+  (area === 'bonusMalus' ? signed(rating.bonus.total - rating.penalty.total)
+    : area === 'roles' ? rolesValue(rating) : rating.areas.find(a => a.key === area)?.value ?? null);
 
 /** Catalogo di bonus e malus: due schede, ogni voce con quando scatta e quanto vale; quelle attive ora sono evidenziate. */
 function catalogueTabs(rating: TeamRating, t: T, lang: Lang): DetailTab[] {

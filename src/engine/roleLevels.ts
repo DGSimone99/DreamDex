@@ -51,7 +51,8 @@ const E = 'essential' as const, I = 'important' as const, M = 'minor' as const, 
  * questo ha base 0 e Ruoli bassi (restano le minori), ma nessuna penalità essenziale. Pavimento e media con le
  * minori sono stati provati e scartati: abbassavano il distacco torneo − medio sotto 6,5.
  * Calibrazione 2026-10-25: il setup del campo è importante anche nel Bulky Offense (team con Sticky Web), dove gli
- * hazard da soli diventano minori; nella base hazard e setup del campo pesano il doppio (IMPORTANT_WEIGHT, rolesArea.ts).
+ * hazard da soli diventano minori; allora nella base pesavano il doppio;
+ * dal 2026-11-02 i Ruoli sono una lista con malus e bonus (rolesArea.ts).
  * Il Debuff è minore anche in semi-stall e stall: paralisi o sonno aiutano, ma uno stall non ne ha bisogno (utente).
  */
 /**

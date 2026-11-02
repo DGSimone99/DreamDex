@@ -57,7 +57,7 @@ describe('regole di Ubers', () => {
     const penalty = (team: TeamSet[], data: EngineData = ubers) => rateTeam(team, data)!.penalty.items.find(i => i.text.startsWith('Nessun hazard'));
     expect(penalty(noHazards)).toBeUndefined();
     expect(penalty(ho)).toBeUndefined();
-    const roles = (team: TeamSet[]) => rateTeam(team, ubers)!.roles.value;
+    const roles = (team: TeamSet[]) => rateTeam(team, ubers)!.roles.covered;
     expect(roles(noHazards)).toBeLessThan(roles(ho));
   });
 

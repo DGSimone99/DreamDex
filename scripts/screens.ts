@@ -421,6 +421,12 @@ const STATES: Record<string, State> = {
     return clickText(p, '.member-cards button.member-card', /./);
   } },
   'rating-help': { run: async p => clickText(p, '.band .grade-tools button.help-button', /./) },
+  // Come funziona il voto, pagina generale: la tabella dei pesi e la riga dei Ruoli sotto
+  'rating-help-general': { run: async p => {
+    if (!await clickText(p, '.band .grade-tools button.help-button', /./)) return 'no help button';
+    await wait(300);
+    return clickText(p, '.help-nav [role="tab"]', /^(Come funziona|How it works)$/);
+  } },
   'analysis-help': { run: async p => {
     if (!await clickText(p, '.band button.grade-area', /^Difesa/)) return 'no row';
     await wait(300);

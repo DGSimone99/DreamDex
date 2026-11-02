@@ -14,6 +14,7 @@ import { Sprite } from './Sprite';
 import { TypeIcons } from './typeIcons';
 import { Typed } from './TypeText';
 import { useFitCount } from './useFit';
+import { rolesValue } from './AreaDetail';
 
 const CATEGORY: Record<ProblemCategory, MessageKey> = {
   rules: 'coach.category.rules', defense: 'coach.category.defense', coverage: 'coach.category.coverage', roles: 'coach.category.roles',
@@ -336,8 +337,10 @@ const COLUMNS: { key: MapColumn; area: 'defense' | 'strength' | 'roles' | null }
  * nell'altezza della tessera finiscono in un "+N" (title e testo nascosto con tutte): prima restano quelle risolvibili
  * (rimedi o una tappa mostrata), poi i gravi, poi l'ordine di `items`. Ridondanze e minacce sotto un'etichetta, più quiete.
  */
-function MapTile({ id, name, items, score, stepOf, preview, threatUsage, watch }: {
-  id: string; name: string; items: CoachProblem[]; score: number | null; stepOf: Map<string, number>; preview: Set<string> | null;
+function MapTile({ id, name, items, score, count, stepOf, preview, threatUsage, watch }: {
+  id: string; name: string; items: CoachProblem[]; score: number | null;
+  /** Al posto del voto, senza barretta: i Ruoli coperti sul totale ("7/9"). */
+  count?: string; stepOf: Map<string, number>; preview: Set<string> | null;
   threatUsage?: Record<string, number>;
   /** Il contenitore del Coaching: quando cambia misura si rimisura (la tessera stessa si stringe col contenuto). */
   watch: RefObject<HTMLElement | null>;
@@ -367,7 +370,7 @@ function MapTile({ id, name, items, score, stepOf, preview, threatUsage, watch }
       style={score !== null ? { '--score': `${Math.max(0, Math.min(100, score))}%` } as CSSProperties : undefined}>
       <header className="coach-tile-head">
         <h4 id={id} className="dash-plate">{name}</h4>
-        {score !== null && <span className="dash-meta"><b>{Math.round(score)}</b></span>}
+        {score !== null ? <span className="dash-meta"><b>{Math.round(score)}</b></span> : count && <span className="dash-meta"><b>{count}</b></span>}
       </header>
       {score !== null && <span className="coach-tile-bar" aria-hidden="true" />}
       {clean && <p className="coach-tile-ok"><Icon name="check" />{tr('coach.map.none')}</p>}
@@ -436,7 +439,8 @@ export function CoachingView({ coaching, advice, members, rating, metaOn, threat
           <div className="coach-map">
             {COLUMNS.map(({ key, area }) => (
               <MapTile key={key} id={`${id}-${key}`} name={columnName[key]} items={ordered.filter(p => columnOf(p.category) === key)}
-                score={area ? rating?.areas.find(a => a.key === area)?.value ?? null : null} stepOf={stepOf} preview={preview} threatUsage={threatUsage} watch={root} />
+                score={area ? rating?.areas.find(a => a.key === area)?.value ?? null : null}
+                count={key === 'roles' && rating ? rolesValue(rating) : undefined} stepOf={stepOf} preview={preview} threatUsage={threatUsage} watch={root} />
             ))}
           </div>
         </section>

@@ -16,7 +16,7 @@ describe('Riquadro Voto', () => {
     render(<App initialLang="it" data={fixtureData} />);
     for (const name of ['Great Tusk', 'Gholdengo']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
     expect(band()).toHaveTextContent(/Voto [SABCD], \d+ su 100, \w+/);
-    const areas = within(band()).getAllByRole('button', { name: /, apri il dettaglio/ }).map(b => b.getAttribute('aria-label')!.replace(/ \d+, apri il dettaglio.*/, ''));
+    const areas = within(band()).getAllByRole('button', { name: /, apri il dettaglio/ }).map(b => b.getAttribute('aria-label')!.replace(/ [\d/]+, .*apri il dettaglio.*/, ''));
     expect(areas).toEqual(['Offesa', 'Difesa', 'Velocità', 'Ruoli']);
     expect(band()).not.toHaveTextContent('Sinergia');
   });
@@ -27,7 +27,7 @@ describe('Riquadro Voto', () => {
     for (const name of ['Great Tusk', 'Gholdengo']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
     expect(within(band()).queryByRole('button', { name: /^Coverage offensiva/ })).toBeNull();
     for (const area of ['Difesa', 'Offesa', 'Ruoli']) {
-      const button = within(band()).getByRole('button', { name: new RegExp(`^${area} \\d+, apri il dettaglio`) });
+      const button = within(band()).getByRole('button', { name: new RegExp(`^${area} [\\d/]+, .*apri il dettaglio`) });
       expect(button).not.toHaveAttribute('aria-haspopup');
       await user.click(button);
       expect(within(document.getElementById('panel-analysis')!).getByRole('region', { name: area })).toBeInTheDocument();
@@ -219,10 +219,10 @@ describe('Catalogo Bonus/Malus', () => {
     expect(within(dialog).getAllByRole('tab').map(tab => tab.textContent)).toEqual(['Malus −8', 'Bonus +2']);
   });
 
-  it('Malus: i 12 malus con nome, quando e punti; gli attivi evidenziati col punteggio attuale', async () => {
+  it('Malus: i 13 malus con nome, quando e punti; gli attivi evidenziati col punteggio attuale', async () => {
     const { dialog } = await openCatalog();
     const rows = within(within(dialog).getByRole('tabpanel')).getAllByRole('row').slice(1);
-    expect(rows).toHaveLength(12);
+    expect(rows).toHaveLength(13);
     const hazard = rows.find(r => within(r).queryByText('Hazard ripetuto'))!;
     expect(hazard).toHaveClass('active');
     expect(hazard).toHaveAttribute('aria-current', 'true');
@@ -249,11 +249,11 @@ describe('Catalogo Bonus/Malus', () => {
     const { user, dialog } = await openCatalog(0);
     await user.click(within(dialog).getByRole('tab', { name: /^Bonus/ }));
     const rows = within(within(dialog).getByRole('tabpanel')).getAllByRole('row').slice(1);
-    expect(rows).toHaveLength(6);
+    expect(rows).toHaveLength(7);
     const weather = rows.find(r => within(r).queryByText('Meteo che protegge'))!;
     expect(weather).toHaveClass('active');
     expect(weather).toHaveTextContent('+2');
-    const tera = rows.at(-1)!;
+    const tera = rows.find(r => r.textContent!.includes('Tera'))!;
     expect(tera).toHaveClass('na');
     expect(tera).toHaveTextContent('Solo Gen 9');
     expect(tera).not.toHaveAttribute('aria-current');

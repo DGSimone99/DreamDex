@@ -66,7 +66,7 @@ export function ViewHelp({ view }: { view: HelpView }) {
 /** Le schede interne: tablist orizzontale (frecce, Home/End), col "?" accanto a quella aperta. */
 /** `areasDisabled`: senza voto (team vuoto) le aree non hanno niente da mostrare: restano visibili ma spente. */
 /** `scores`: il voto di ogni area, scritto nella sua scheda (la Panoramica non ne ha). */
-export function AnalysisTabs({ view, onView, panelId, areasDisabled = false, scores = {}, badges = {} }: { view: AnalysisView; onView: (view: AnalysisView) => void; panelId: string; areasDisabled?: boolean; scores?: Partial<Record<AnalysisView, number | null>>; badges?: Partial<Record<AnalysisView, number>> }) {
+export function AnalysisTabs({ view, onView, panelId, areasDisabled = false, scores = {}, badges = {} }: { view: AnalysisView; onView: (view: AnalysisView) => void; panelId: string; areasDisabled?: boolean; scores?: Partial<Record<AnalysisView, number | string | null>>; badges?: Partial<Record<AnalysisView, number>> }) {
 
   const t = useT();
   const buttons = useRef<(HTMLButtonElement | null)[]>([]);

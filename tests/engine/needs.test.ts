@@ -4,7 +4,7 @@ import { DEFAULT_FORMAT } from '../../src/engine/format';
 import { needLabel, teamNeeds } from '../../src/engine/needs';
 import { levelOf, LEVEL_KEYS, ROLE_LEVELS, setRolesCountMeasured } from '../../src/engine/roleLevels';
 import { rateTeam } from '../../src/engine/rating';
-import { importantWeight, rolesScore, teamRolesArea } from '../../src/engine/rolesArea';
+import { ESSENTIAL_POINTS, IMPORTANT_POINTS, teamRolesArea } from '../../src/engine/rolesArea';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
 import { FAMILIES, rolesList, subRoleReasons, type SubRole } from '../../src/engine/subRoles';
 import { fixtureData } from '../fixtures/data';
@@ -124,7 +124,7 @@ describe('tabella dei livelli per archetipo', () => {
     expect(needs.importantMissing).toContain('hazards');
   });
 
-  it('HO senza hazard: la voce manca (importante), base più bassa, nessun malus essenziale', () => {
+  it('HO senza hazard: la voce manca (importante), una voce coperta in meno, malus −2 e nessun malus essenziale', () => {
     const none = [set('Glimmora', 'Focus Sash', 'Toxic Debris', ['Mortal Spin', 'Power Gem', 'Sludge Wave', 'Earth Power']), ...hyperOffense.slice(1)];
     const needs = teamNeeds(none, fixtureData);
     expect(needs.archetype).toBe('hyperOffense');
@@ -134,12 +134,13 @@ describe('tabella dei livelli per archetipo', () => {
     expect(needs.missingRoles).toContain('hazards');
     expect(needs.missingRoles).not.toContain('screens');
     const area = teamRolesArea(none, fixtureData, 'it', needs);
-    // Hazard a 0 fra tre voci importanti: la base è la media delle altre due, non zero
+    // Hazard a 0: una voce coperta in meno e il malus dell'importante, non quello dell'essenziale
     const full = teamRolesArea(hyperOffense, fixtureData, 'it');
-    expect(area.base).toBeLessThan(full.base);
-    expect(area.base).toBeGreaterThan(0);
-    expect(area.failures.some(f => /hazard/i.test(f.text))).toBe(false);
-    expect(area.value).toBeLessThan(full.value);
+    expect(area.covered).toBe(full.covered - 1);
+    expect(area.total).toBe(full.total);
+    const hazard = area.failures.filter(f => /hazard/i.test(f.text));
+    expect(hazard).toEqual([expect.objectContaining({ points: IMPORTANT_POINTS, catalog: 'importantRole' })]);
+    expect(area.failures.some(f => f.catalog === 'essentialRole')).toBe(false);
     // I gruppi degli attaccanti hanno un'etichetta propria, nelle due lingue
     expect(needLabel('anySweeper', 'it')).toBe('Sweeper');
     expect(needLabel('anySweeper', 'en')).toBe('Sweeper');
@@ -199,9 +200,13 @@ describe('tabella dei livelli per archetipo', () => {
     expect(needs.essentialMissing).toEqual(['anySpecial']);
     expect(needs.needStyle).toBeNull();
     const area = teamRolesArea(physical, fixtureData, 'it', needs);
-    expect(area.failures).toHaveLength(1);
-    expect(area.failures[0]).toMatchObject({ points: 2, catalog: 'essentialRole' });
-    expect(area.failures[0].text).toContain('Attaccante speciale');
+    // Un solo malus essenziale (le importanti mancanti hanno il loro), niente "un solo stile" in più
+    const essential = area.failures.filter(f => f.catalog === 'essentialRole');
+    expect(essential).toHaveLength(1);
+    expect(essential[0]).toMatchObject({ points: ESSENTIAL_POINTS });
+    expect(essential[0].text).toContain('Attaccante speciale');
+    expect(area.failures.some(f => f.catalog === 'oneStyle')).toBe(false);
+    expect(area.failures.filter(f => f.catalog === 'importantRole')).toHaveLength(needs.importantMissing.length);
   });
 
   it('priorità e velocità non sono voci dei Ruoli; lo Speed Control lo è, ma ignorato in ogni tipo di team', () => {
@@ -240,13 +245,13 @@ describe('voci a livello di team (teamRolesArea)', () => {
     expect(removal.by[0]).toMatchObject({ species: 'Hatterene', value: 0.5, source: 'Magic Bounce' });
   });
 
-  it('HO di 6 con hazard e controllo hazard ma senza pivot: base 2/3, nessun malus', () => {
+  it('HO di 6 con hazard e controllo hazard ma senza pivot: solo il malus del pivot (−2)', () => {
     const ho = teamRolesArea(hyperOffense, fixtureData, 'it');
     expect(ho.rows.find(r => r.key === 'hazards')).toMatchObject({ level: 'important', value: 1 });
     expect(ho.rows.find(r => r.key === 'removal')).toMatchObject({ level: 'important', value: 1 });
     expect(ho.rows.find(r => r.key === 'pivot')).toMatchObject({ level: 'important', value: 0 });
-    expect(ho.base).toBeCloseTo(2 / 3);
-    expect(ho.failures).toEqual([]);
+    expect(ho.failures).toEqual([expect.objectContaining({ points: IMPORTANT_POINTS, catalog: 'importantRole' })]);
+    expect(ho.covered).toBe(ho.rows.filter(r => r.value >= 0.5).length);
   });
 });
 
@@ -322,13 +327,13 @@ describe('voto e coach seguono i livelli dell\'archetipo', () => {
     expect(texts).toMatch(/Ruoli mancanti:.*Sweeper/);
   });
 
-  it("l'area Ruoli del voto: base delle voci importanti ed extra delle minori dell'archetipo", () => {
+  it("i Ruoli del voto: una lista delle voci dell'archetipo, non un'area", () => {
     const rating = rateTeam(hyperOffense, fixtureData)!;
     const needs = teamNeeds(hyperOffense, fixtureData);
-    const keys = (level: string) => LEVEL_KEYS.filter(k => needs.levels[k] === level);
-    const of = (level: string) => keys(level).map(k => needs.values[k]);
-    const score = rolesScore(of('important'), of('minor'), keys('important').map(importantWeight));
-    expect(rating.areas.find(a => a.key === 'roles')!.value).toBe(score.value);
+    const counted = LEVEL_KEYS.filter(k => needs.levels[k] !== 'ignored');
+    expect(rating.areas.map(a => a.key)).not.toContain('roles');
+    expect(rating.roles.total).toBe(counted.length);
+    expect(rating.roles.covered).toBe(counted.filter(k => needs.values[k] >= 0.5).length);
   });
 
   it('il coaching non chiede la priorità né la velocità', () => {

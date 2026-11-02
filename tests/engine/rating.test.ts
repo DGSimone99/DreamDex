@@ -38,7 +38,7 @@ describe('pesi delle aree', () => {
   it('una tabella per tipo di team, ogni riga somma 100: ognuno si giudica su quello con cui vince', () => {
     for (const row of Object.values(ARCHETYPE_WEIGHTS)) expect(Object.values(row).reduce((a, b) => a + b, 0)).toBe(100);
     const { hyperOffense: ho, balance, stall } = ARCHETYPE_WEIGHTS;
-    // L'hyper offense vince con Offesa e Velocità, lo stall con Difesa e Ruoli; il balance sta nel mezzo
+    // L'hyper offense vince con Offesa e Velocità, lo stall con la Difesa; il balance sta nel mezzo
     expect(ho.strength).toBeGreaterThan(stall.strength);
     expect(ho.speed).toBeGreaterThan(balance.speed);
     expect(stall.speed).toBe(0);
@@ -46,11 +46,11 @@ describe('pesi delle aree', () => {
     expect(balance.defense).toBeGreaterThan(ho.defense);
     // La Coverage offensiva è una sottostatistica dell'Offesa: il suo peso è passato all'Offesa
     // La Difesa ha preso il peso di Coverage difensiva e Robustezza (e il Meta è dentro di lei)
-    expect(Object.keys(balance)).toEqual(['defense', 'strength', 'roles', 'speed']);
-    // 2026-10-31: Difesa dimezzata in HO, BO e balance (sul banco non distingue torneo da medi: 75 contro 76), il peso
-    // va a Offesa, Ruoli e Velocità; semi-stall e stall restano come prima
-    expect([ho.defense, ARCHETYPE_WEIGHTS.bulkyOffense.defense, balance.defense, ARCHETYPE_WEIGHTS.semiStall.defense, stall.defense]).toEqual([10, 16, 22, 46, 56]);
-    expect([ho.strength, balance.strength, stall.strength]).toEqual([52, 42, 18]);
+    // 2026-11-02: i Ruoli sono una lista (malus e bonus), non un'area col peso: il loro peso è andato in proporzione
+    // a Difesa, Offesa e Velocità
+    expect(Object.keys(balance)).toEqual(['defense', 'strength', 'speed']);
+    expect([ho.defense, ARCHETYPE_WEIGHTS.bulkyOffense.defense, balance.defense, ARCHETYPE_WEIGHTS.semiStall.defense, stall.defense]).toEqual([12, 20, 28, 57, 76]);
+    expect([ho.strength, balance.strength, stall.strength]).toEqual([62, 54, 24]);
   });
 });
 
@@ -99,7 +99,7 @@ describe('rateTeam', () => {
 
   it('ordine e nomi delle aree', () => {
     // Il Meta non è più un'area: le minacce sono nella Coverage meta della Difesa
-    expect(rating.areas.map(a => a.label)).toEqual(['Difesa', 'Offesa', 'Ruoli', 'Velocità']);
+    expect(rating.areas.map(a => a.label)).toEqual(['Difesa', 'Offesa', 'Velocità']);
   });
 
   it('team completo: non provvisorio', () => {
@@ -152,20 +152,25 @@ describe('il meta conta solo nella sua area', () => {
     // I Ruoli usano i sotto-ruoli misurati (Offesa, Velocità e gruppo del meta o del tier): possono cambiare di poco
     const areas = (r: typeof on) => r.areas.filter(a => !['meta', 'strength', 'defense', 'speed', 'roles'].includes(a.key)).map(a => [a.key, a.value]);
     expect(areas(on)).toEqual(areas(off));
-    const roles = (r: typeof on) => r.areas.find(a => a.key === 'roles')!.value!;
-    expect(Math.abs(roles(on) - roles(off))).toBeLessThanOrEqual(5);
+    // Ruoli coperti: al più una voce di differenza
+    expect(Math.abs(on.roles.covered - off.roles.covered)).toBeLessThanOrEqual(1);
+    expect(on.roles.total).toBe(off.roles.total);
     expect(on.areas.some(a => a.key === 'meta')).toBe(false);
     expect(on.meta).not.toBeNull();
   });
 });
 
-describe('area Ruoli nel voto', () => {
-  it('il valore dell\'area è quello di teamRolesArea', async () => {
+describe('Ruoli nel voto', () => {
+  it('una lista, non un\'area: coperti e totale da teamRolesArea, i pesi senza Ruoli sommano 100', async () => {
     const { teamRolesArea } = await import('../../src/engine/rolesArea');
     const team = [tusk, gholdengo];
     const rating = rateTeam(team, fixtureData)!;
-    expect(rating.roles.value).toBe(teamRolesArea(team, fixtureData, 'it').value);
-    expect(value(rating, 'roles')).toBe(rating.roles.value);
+    const roles = teamRolesArea(team, fixtureData, 'it');
+    expect(rating.roles).toMatchObject({ covered: roles.covered, total: roles.total });
+    expect(rating.areas.find(a => a.key === 'roles')).toBeUndefined();
+    expect(rating.areas.map(a => a.key)).not.toContain('roles');
+    expect(Object.keys(rating.weights)).not.toContain('roles');
+    expect(Object.values(rating.weights).reduce((a, b) => a + (b ?? 0), 0)).toBeCloseTo(1);
   });
 });
 

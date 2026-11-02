@@ -45,8 +45,9 @@ describe('preset ritoccato tra le mosse più usate', () => {
     const { tuneSet, MAX_TUNES } = await import('../../src/engine/bestPreset');
     const { commonChoices } = await import('../../src/engine/common');
     const { fillData } = await import('../fixtures/fillData');
-    // Preset di Garchomp senza Stealth Rock, in un team senza hazard: tra le più usate c'è Stealth Rock
-    const preset = { ...emptySet('Garchomp'), item: 'Rocky Helmet', ability: 'Rough Skin', moves: ['Swords Dance', 'Earthquake', 'Outrage', 'Fire Fang'] };
+    // Preset di Garchomp senza Stealth Rock, in un team senza hazard: tra le più usate c'è Stealth Rock (al posto di
+    // Protect: con i Ruoli a lista togliere un attacco costerebbe il Wallbreaker, −4, più dei −2 degli hazard)
+    const preset = { ...emptySet('Garchomp'), item: 'Rocky Helmet', ability: 'Rough Skin', moves: ['Swords Dance', 'Earthquake', 'Outrage', 'Protect'] };
     const team = [preset, ...['Dragapult', 'Weavile', 'Kingambit', 'Gholdengo', 'Iron Valiant'].map(name => set(name, ['Protect']))];
     const tuned = tuneSet(team, 0, fillData, 9);
     const common = commonChoices(fillData, preset);
@@ -63,7 +64,7 @@ describe('preset ritoccato tra le mosse più usate', () => {
   it('Preset migliori ritocca davvero: dal preset senza Stealth Rock al set che la usa', async () => {
     const { bestPresets } = await import('../../src/engine/bestPreset');
     const { fillData } = await import('../fixtures/fillData');
-    const preset = { ...emptySet('Garchomp'), item: 'Rocky Helmet', ability: 'Rough Skin', moves: ['Swords Dance', 'Earthquake', 'Outrage', 'Fire Fang'] };
+    const preset = { ...emptySet('Garchomp'), item: 'Rocky Helmet', ability: 'Rough Skin', moves: ['Swords Dance', 'Earthquake', 'Outrage', 'Protect'] };
     const data = { ...fillData, presets: { Garchomp: [{ name: 'SD', format: 'gen9nationaldex', set: preset }] } };
     const team = [set('Garchomp', ['Earthquake']), ...['Dragapult', 'Weavile', 'Kingambit', 'Gholdengo', 'Iron Valiant'].map(name => set(name, ['Protect']))];
     expect(bestPresets(team, data, 9)[0].moves).toContain('Stealth Rock');

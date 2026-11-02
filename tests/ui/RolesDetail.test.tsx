@@ -6,7 +6,7 @@ import { analyzeTeam } from '../../src/engine/analysis';
 import { AreaView } from '../../src/ui/AreaView';
 import { rateTeam } from '../../src/engine/rating';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
-import type { TeamRoles } from '../../src/engine/rolesArea';
+import { IMPORTANT_POINTS, MINOR_POINTS, type TeamRoles } from '../../src/engine/rolesArea';
 import { fixtureData, gholdengo, tusk } from '../fixtures/data';
 import { renderIt } from '../helpers/italian';
 
@@ -27,7 +27,7 @@ async function importRolesTeam(lang: 'it' | 'en' = 'it') {
 
 async function openRoles(lang: 'it' | 'en' = 'it') {
   const { user, rating } = await importRolesTeam(lang);
-  const bar = within(rating).getByRole('button', { name: lang === 'it' ? /^Ruoli \d+, apri il dettaglio/ : /^Roles \d+, open details/ });
+  const bar = within(rating).getByRole('button', { name: lang === 'it' ? /^Ruoli \d+\/\d+, .+, apri il dettaglio/ : /^Roles \d+\/\d+, .+, open details/ });
   await user.click(bar);
   // La scheda Ruoli di Analisi, sulla pagina
   const view = within(document.getElementById('panel-analysis')!).getAllByRole('region').find(r => r.classList.contains('area-view'))!;
@@ -50,6 +50,8 @@ describe('Ruoli a schede: Generale e una per livello', () => {
     expect(tabs[4].querySelector('b')!.textContent).toMatch(/^\d+$/);
     // Il team incompleto si giudica come Balance: sette essenziali
     expect(tabs[1].querySelector('b')!.textContent).toMatch(/\/7$/);
+    // Il Generale porta i Ruoli coperti sul totale, come la riga del voto
+    expect(tabs[0].querySelector('b')!.textContent).toMatch(/^\d+\/\d+$/);
   });
 
   it('una sottoscheda: ruolo, valore, chi lo copre e motivo, sotto le famiglie', async () => {
@@ -67,6 +69,14 @@ describe('Ruoli a schede: Generale e una per livello', () => {
     expect(levelRow('Encore', area)).toHaveTextContent('Nessuno');
     await user.click(within(view).getByRole('tab', { name: /^Minori/ }));
     expect(view.querySelector('.area-panel')).toHaveTextContent(/Toxic: \d+% del (meta|tier) non immune/);
+  });
+
+  it('la riga Ruoli del voto: coperti/totale e quanti mancano in rosso, senza barra', async () => {
+    const { bar } = await openRoles();
+    expect(bar).toHaveClass('grade-roles');
+    expect(bar.querySelector('.meter')).toBeNull();
+    expect(bar).toHaveTextContent(/^Ruoli\d+\/\d+ · (\d+ mancano|1 manca)$/);
+    expect(bar.querySelector('em')).toHaveClass('bad');
   });
 
   it('in inglese', async () => {
@@ -104,7 +114,7 @@ describe('Generale dei Ruoli', () => {
 
   it('prima cosa manca (essenziali in rosso col malus, importanti in giallo), poi i coperti con le icone; niente minori', () => {
     const roles: TeamRoles = {
-      value: 64, base: 0.5, extra: 0.03,
+      covered: 3, total: 5,
       rows: [
         { key: 'anySweeper', level: 'essential', value: 0, by: [] },
         { key: 'hazards', level: 'essential', value: 1, by: [{ species: 'Gliscor', value: 1, source: 'Stealth Rock' }] },
@@ -112,7 +122,8 @@ describe('Generale dei Ruoli', () => {
         { key: 'pivot', level: 'important', value: 1, by: [{ species: 'Zapdos', value: 1, source: 'U-turn' }] },
         { key: 'taunt', level: 'minor', value: 1, by: [{ species: 'Zapdos', value: 1, source: 'Taunt' }] },
       ],
-      failures: [{ text: 'Balance senza Sweeper', points: 2 }],
+      failures: [{ text: 'Balance senza Sweeper', points: 4 }, { text: 'Balance senza Controllo Hazard (importante)', points: 2 }],
+      bonuses: [{ text: 'Taunt: ruolo minore coperto', points: 1 }],
       members: [
         { species: 'Gliscor', values: { hazards: 1 }, primary: null, reasons: [{ role: 'hazards', value: 1, source: 'Stealth Rock' }] },
         { species: 'Zapdos', values: { taunt: 1, pivot: 1 }, primary: null, reasons: [{ role: 'taunt', value: 1, source: 'Taunt', share: 1 }, { role: 'pivot', value: 1, source: 'U-turn' }] },
@@ -121,17 +132,21 @@ describe('Generale dei Ruoli', () => {
         ...sixMembers,
       ],
     };
-    const rating = { ...base(), roles, areas: base().areas.map(a => (a.key === 'roles' ? { ...a, value: 64 } : a)) };
+    const rating = { ...base(), roles };
     renderIt(<AreaView rating={rating} area="roles" team={[]} analysis={analyzeTeam([], fixtureData)} problems={[]} />);
     const panel = screen.getByRole('tabpanel');
-    // I punti dell'area: base 50, extra +3, malus −2
-    expect([...panel.querySelectorAll('.rl-score b')].map(b => b.textContent)).toEqual(['50', '+3', '−2']);
+    // Coperti, malus (−4 essenziale, −2 importante) e bonus (+1 del minore); nei titoli le voci coi punti
+    expect([...panel.querySelectorAll('.rl-score b')].map(b => b.textContent)).toEqual(['3/5', '−6', '+1']);
+    const [, malus, bonus] = panel.querySelectorAll('.rl-score li');
+    expect(malus.getAttribute('title')).toContain('Balance senza Sweeper (−4)');
+    expect(bonus.getAttribute('title')).toContain('Taunt: ruolo minore coperto (+1)');
     const missing = within(panel).getByRole('region', { name: 'Ruoli che mancano' });
     const items = within(missing).getAllByRole('listitem');
     expect(items.map(li => li.querySelector('.rl-name')!.textContent)).toEqual(['Sweeper', 'Controllo Hazard']);
     expect(items[0]).toHaveClass('bad');
-    expect(items[0]).toHaveTextContent('Essenziale−2');
+    expect(items[0]).toHaveTextContent('Essenziale−4');
     expect(items[1]).toHaveClass('warn');
+    expect(items[1]).toHaveTextContent('Importante−2');
     const covered = within(panel).getByRole('region', { name: 'Ruoli che contano, coperti' });
     const row = (name: string) => within(covered).getAllByRole('listitem').find(li => li.querySelector('.rl-name')!.textContent!.startsWith(name))!;
     expect(monsOf(row('Hazard'))).toEqual(['Gliscor']);
@@ -141,9 +156,41 @@ describe('Generale dei Ruoli', () => {
     expect(panel).not.toHaveTextContent('Taunt');
   });
 
+  it('Minori: chi è coperto mostra +1 in verde al posto del valore; Importanti: chi manca mostra −2 (team di 6)', async () => {
+    const roles: TeamRoles = {
+      covered: 2, total: 4,
+      rows: [
+        { key: 'removal', level: 'important', value: 0, by: [] },
+        { key: 'pivot', level: 'important', value: 1, by: [{ species: 'Zapdos', value: 1, source: 'U-turn' }] },
+        { key: 'taunt', level: 'minor', value: 0.8, by: [{ species: 'Zapdos', value: 0.8, source: 'Taunt' }] },
+        { key: 'encore', level: 'minor', value: 0, by: [] },
+      ],
+      failures: [{ text: 'Balance senza Controllo Hazard (importante)', points: IMPORTANT_POINTS }],
+      bonuses: [{ text: 'Taunt: ruolo minore coperto', points: MINOR_POINTS }],
+      members: [
+        { species: 'Zapdos', values: { taunt: 0.8, pivot: 1 }, primary: null, reasons: [] },
+        { species: 'Gliscor', values: {}, primary: null, reasons: [] },
+        ...sixMembers, { species: 'Clefable', values: {}, primary: null, reasons: [] },
+      ],
+    };
+    const user = userEvent.setup();
+    renderIt(<AreaView rating={{ ...base(), roles }} area="roles" team={[]} analysis={analyzeTeam([], fixtureData)} problems={[]} />);
+    await user.click(screen.getByRole('tab', { name: /^Minori/ }));
+    const taunt = levelRow('Taunt').querySelector('.ct-pill')!;
+    expect(taunt).toHaveTextContent(`+${MINOR_POINTS}`);
+    expect(taunt).toHaveClass('good');
+    expect(taunt).toHaveAttribute('title', 'Coperto (valore 80): bonus +1');
+    // Un minore che manca: il suo valore, nessun bonus né malus
+    expect(levelRow('Encore').querySelector('.ct-pill')).toHaveTextContent('0');
+    await user.click(screen.getByRole('tab', { name: /^Importanti/ }));
+    const removal = levelRow('Controllo Hazard').querySelector('.ct-pill')!;
+    expect(removal).toHaveTextContent(`−${IMPORTANT_POINTS}`);
+    expect(removal).toHaveAttribute('title', `Manca: malus −${IMPORTANT_POINTS}`);
+  });
+
   it('niente che manca: una riga verde', () => {
     const roles: TeamRoles = {
-      value: 80, base: 1, extra: 0,
+      covered: 1, total: 1, bonuses: [],
       rows: [{ key: 'hazards', level: 'essential', value: 1, by: [{ species: 'Gliscor', value: 1, source: 'Stealth Rock' }] }],
       failures: [],
       members: [{ species: 'Gliscor', values: { hazards: 1 }, primary: null, reasons: [] }],
@@ -164,7 +211,7 @@ describe('Generale dei Ruoli', () => {
     const missing = within(panel).getByRole('region', { name: 'Ruoli che mancano' });
     const bad = within(missing).getAllByRole('listitem').filter(li => li.classList.contains('bad')).map(li => li.querySelector('.rl-name')!.textContent);
     expect(bad).toEqual(expect.arrayContaining(['Muro Speciale', 'Hazard']));
-    expect(missing).not.toHaveTextContent('−2');
+    expect(missing).not.toHaveTextContent(/−\d/);
     // Pivot è importante nel Balance: giallo
     expect(within(missing).getAllByRole('listitem').find(li => li.textContent!.startsWith('Pivot'))).toHaveClass('warn');
     // Il gruppo dei wallbreaker si chiama "Wallbreaker", con Great Tusk
@@ -203,7 +250,7 @@ describe('note e secondario nelle sottoschede', () => {
     const pult: TeamSet = { ...emptySet('Dragapult'), item: 'Choice Specs', ability: 'Infiltrator', nature: 'Timid', evs: { spa: 252, spe: 252 }, moves: ['Draco Meteor', 'Shadow Ball', 'U-turn', 'Flamethrower'] };
     const mixed: TeamSet = { ...emptySet('Infernape'), item: 'Life Orb', ability: 'Blaze', nature: 'Naive', evs: { atk: 128, spa: 128, spe: 252 }, moves: ['Close Combat', 'Fire Blast', 'U-turn', 'Grass Knot'] };
     const roles: TeamRoles = {
-      value: 70, base: 1, extra: 0,
+      covered: 2, total: 2, bonuses: [],
       rows: [
         { key: 'anyBreaker', level: 'essential', value: 1, by: [{ species: 'Infernape', value: 1, source: 'Close Combat' }, { species: 'Dragapult', value: 1, source: 'Draco Meteor' }] },
         { key: 'pivot', level: 'important', value: 1, by: [{ species: 'Corviknight', value: 1, source: 'U-turn' }, { species: 'Dragapult', value: 1, source: 'U-turn' }, { species: 'Infernape', value: 1, source: 'U-turn' }] },
@@ -229,7 +276,7 @@ describe('note e secondario nelle sottoschede', () => {
   it('chi ha un muro secondario: segnato, tenue, col valore accreditato', async () => {
     const base = rateTeam([{ ...emptySet('Great Tusk'), moves: ['Headlong Rush'] }], fixtureData, 'it')!;
     const roles: TeamRoles = {
-      value: 60, base: 0.5, extra: 0,
+      covered: 1, total: 1, bonuses: [],
       rows: [{ key: 'physicalWall', level: 'essential', value: 0.5, by: [{ species: 'Great Tusk', value: 0.5, source: 'wall', secondary: true }] }],
       failures: [],
       members: [{
@@ -252,7 +299,7 @@ describe('note e secondario nelle sottoschede', () => {
   it('sotto l\'icona il valore compare solo quando non è pieno (sotto 100)', () => {
     const base = rateTeam([{ ...emptySet('Great Tusk'), moves: ['Headlong Rush'] }], fixtureData, 'it')!;
     const roles: TeamRoles = {
-      value: 60, base: 1, extra: 0,
+      covered: 1, total: 1, bonuses: [],
       rows: [{ key: 'physicalWall', level: 'essential', value: 1, by: [{ species: 'Great Tusk', value: 1, source: 'wall' }] }],
       failures: [],
       members: [{ species: 'Great Tusk', primary: 'attack', values: { physicalWall: 1 }, credited: { physicalWall: 1 }, reasons: [] }],

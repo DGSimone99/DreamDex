@@ -71,3 +71,9 @@
 .grade-badge button.grade-area.grade-bm { grid-template-columns: 1fr 24px 10px; }
 .grade-badge button.grade-area.grade-bm.pos b { color: var(--good); }
 .grade-badge button.grade-area.grade-bm.neg b { color: var(--bad); }
+/* Ruoli: coperti/totale e quanti mancano al posto di barra e numero (stessa altezza delle altre righe) */
+.grade-badge button.grade-area.grade-roles { grid-template-columns: 58px 1fr 10px; }
+.grade-roles-val { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.grade-roles-val em { font-style: normal; font-weight: 600; }
+.grade-roles-val em.bad { color: var(--bad); }
+.grade-roles-val em.good { color: var(--good); }
