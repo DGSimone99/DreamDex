@@ -1,4 +1,4 @@
-import { useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { PROBLEM_CATEGORIES, type CoachProblem } from '../engine/coach';
 import type { TeamAnalysis } from '../engine/analysis';
 import type { TeamRating } from '../engine/rating';
@@ -17,15 +17,13 @@ const HELP_SIZE = 18;
 /**
  * Un'area del voto sulla pagina (scheda di Analisi): una striscia di sottoschede (col loro valore) attaccata alla scheda
  * aperta, una riga coi problemi dell'area e il dettaglio di quella scelta a tutta larghezza.
- * `extra`: contenuto in più in cima a una scheda (la coverage dei tipi, i bisogni dei ruoli).
  */
-export function AreaView({ rating, area, problems, team, analysis, extra, roomy = false, picked: remembered, onPick, formatId }: {
+export function AreaView({ rating, area, problems, team, analysis, roomy = false, picked: remembered, onPick, formatId }: {
   rating: TeamRating;
   area: AreaKey;
   problems: CoachProblem[];
   team: TeamSet[];
   analysis: TeamAnalysis;
-  extra?: { tabKey: string; panel: ReactNode };
   /** Squadra chiusa: più spazio per il contenuto. */
   roomy?: boolean;
   /** La sottoscheda scelta, tenuta da chi contiene la vista (così resta cambiando area); senza, la tiene la vista. */
@@ -47,6 +45,7 @@ export function AreaView({ rating, area, problems, team, analysis, extra, roomy 
   // Si parte dalla prima scheda (Generale), anche se la sottoscheda ricordata non c'è più (es. meta spento)
   const index = Math.max(0, picked === null ? 0 : tabs.findIndex(tab => tab.key === picked));
   const current = tabs[index];
+  const legend = current.legend && <span className="area-legend" aria-hidden="true">{current.legend}</span>;
   const buttons = useRef<(HTMLButtonElement | null)[]>([]);
   const helpButton = useRef<HTMLButtonElement>(null);
   // La guida ha la sua sezione: cambiarla non sposta la sottoscheda dietro (null = chiusa)
@@ -109,11 +108,11 @@ export function AreaView({ rating, area, problems, team, analysis, extra, roomy 
     buttons.current[next]?.focus();
   };
 
-  const sections = tabs.filter(tab => tab.help).map(tab => ({
+  const sections = tabs.filter(tab => tab.help).flatMap(tab => [{
     key: tab.key,
     label: tab.key === 'general' ? t('area.guide.general') : tab.label,
     content: tab.help,
-  }));
+  }, ...(tab.guidePages ?? [])]);
 
   return (
     <section className="area-view" aria-label={title}>
@@ -145,10 +144,12 @@ export function AreaView({ rating, area, problems, team, analysis, extra, roomy 
         <AreaGuide title={t('area.guide.title', { area: title })} sections={sections} current={guide}
           onCurrent={setGuide} onClose={() => setGuide(null)} className={`area-guide-${area}`} />
       )}
-      {/* La riga c'è sempre, anche senza problemi: il pannello sotto parte alla stessa altezza in ogni area */}
+      {/* La riga c'è sempre, anche senza problemi: il pannello sotto parte alla stessa altezza in ogni area.
+          A destra la legenda dei colori della scheda aperta (sempre intera: sono i problemi a finire nel "+N") */}
       {problems.length === 0 ? (
         <div className="area-problems-row is-clear" role="note" aria-label={t('analysis.areaProblems', { area: title })}>
           <span className="area-problems-label"><Icon name="check" />{t('area.problems.none')}</span>
+          {legend}
         </div>
       ) : (
         <div className={`area-problems-row${problems.some(p => p.severity === 'serious') ? ' serious' : ''}`}>
@@ -168,10 +169,10 @@ export function AreaView({ rating, area, problems, team, analysis, extra, roomy 
               </li>
             )}
           </ul>
+          {legend}
         </div>
       )}
       <div className="area-panel ad-panel" role="tabpanel" id={`${id}-panel`} aria-labelledby={`${id}-${current.key}`}>
-        {extra && extra.tabKey === current.key && <div className="area-extra">{extra.panel}</div>}
         {current.panel}
       </div>
     </section>

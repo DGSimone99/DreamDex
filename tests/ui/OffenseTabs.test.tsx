@@ -44,6 +44,8 @@ describe('Offesa: navigazione e guida', () => {
     const dialog = screen.getByRole('dialog', { name: 'Guida: Offesa' });
     expect(within(dialog).getByRole('tab', { name: 'Potenza' })).toHaveAttribute('aria-selected', 'true');
     expect(within(dialog).getByRole('tabpanel')).toHaveTextContent('Pokémon medio');
+    // Le difese medie dei 18 bersagli stanno qui, sotto il Colpo (chiuse sotto una freccina)
+    expect(within(within(dialog).getByRole('tabpanel')).getByText('Statistiche medie dei 18 bersagli').closest('details')).not.toHaveAttribute('open');
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(help).toHaveFocus();
@@ -57,6 +59,7 @@ describe('Offesa: navigazione e guida', () => {
     expect(within(dialog).getByRole('tab', { name: 'Coverage meta' })).toBeInTheDocument();
     expect(within(dialog).getByRole('tabpanel')).toHaveTextContent(/Potenza.*60/);
     expect(within(dialog).getByRole('tabpanel')).toHaveTextContent(/Coverage meta.*20/);
+    expect(within(dialog).getByRole('tabpanel')).not.toHaveTextContent('Statistiche medie');
     unmount();
     renderIt(<AreaView rating={noMeta()} area="strength" team={team} analysis={analysis} problems={[]} />);
     await user.click(screen.getByRole('button', { name: 'Come funziona Generale' }));
@@ -284,7 +287,11 @@ describe('Offesa: Coverage meta', () => {
     expect(rows).toHaveLength(team.length + 1);
     expect(rows.slice(0, team.length).map(r => r.querySelector('.def-mon-name')!.textContent)).toEqual(['Great Tusk', 'Gholdengo']);
     expect(within(rows[rows.length - 1]).getByRole('rowheader')).toHaveTextContent('Lo coprono');
-    const next = screen.getByRole('button', { name: 'Bersagli successivi' });
+    // Le pagine "‹ 1/N ›" nella casella in alto a sinistra, al posto di "Pokémon"
+    const corner = table().querySelector<HTMLElement>('thead th.def-mon-h')!;
+    expect(within(corner).getByRole('navigation', { name: 'Pagine dei bersagli' })).toHaveTextContent(`1/${Math.ceil(sorted.length / 8)}`);
+    expect(corner).not.toHaveTextContent('Pokémon');
+    const next = within(corner).getByRole('button', { name: 'Bersagli successivi' });
     if (sorted.length > 8) {
       await user.click(next);
       expect(heads()).toEqual(sorted.slice(8, 16).map(r => r.species));

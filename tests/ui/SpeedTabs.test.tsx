@@ -79,10 +79,8 @@ describe('Velocità: una scheda a barre', () => {
     const meIndex = rows.indexOf(me);
     expect(rows[meIndex - 1]?.classList.contains('sp-loses') ?? true).toBe(true);
     expect(rows[meIndex + 1]?.classList.contains('sp-beats') ?? true).toBe(true);
-    // La riga delle priorità c'è solo se il voto conta una priorità (Extreme Speed non tocca Dragapult, che è Spettro)
-    const priority = withMeta().speed.members.find(m => m.species === 'Dragonite')!.gains.find(g => g.condition === 'priority');
-    if (priority) expect(dialog).toHaveTextContent(new RegExp(`Con ${priority.source} colpisce prima`));
-    else expect(dialog).not.toHaveTextContent(/colpisce prima/);
+    // Niente riga delle priorità né note sull'interruttore degli strumenti
+    expect(dialog).not.toHaveTextContent(/colpisce prima|compare due volte|Le righe con l'icona/);
   });
 
   it('i check cambiano la lista e il conteggio, non il voto: Dragon Dance fa superare di più; Scarf sul rivale lo fa correre', async () => {
@@ -103,7 +101,7 @@ describe('Velocità: una scheda a barre', () => {
     expect(scarfed.getAttribute('title')).toMatch(/Gholdengo con Choice Scarf \(\d+% dei suoi set\)/);
     expect(rowsOf('Gholdengo').find(r => !r.classList.contains('sp-boosted'))!.querySelector('.sp-rival-speed')).toHaveTextContent('293');
     // Il check unico spegne le versioni in più
-    const versions = within(dialog).getByRole('checkbox', { name: 'Rivali con Sciarpa o Booster' });
+    const versions = within(dialog).getByRole('checkbox', { name: 'Strumenti avversari' });
     expect(versions).toBeChecked();
     await user.click(versions);
     expect(rowsOf('Gholdengo')).toHaveLength(1);
@@ -132,7 +130,7 @@ describe('Velocità: una scheda a barre', () => {
     expect(rowsOf('Rillaboom')[0].getAttribute('title')).toMatch(/Rillaboom con Choice Scarf \(85% dei suoi set\)/);
     // Il check toglie la seconda versione di Gholdengo (30%), non la riga di Rillaboom che è sempre con la Sciarpa
     expect(rowsOf('Gholdengo')).toHaveLength(2);
-    await user.click(within(dialog).getByRole('checkbox', { name: 'Rivali con Sciarpa o Booster' }));
+    await user.click(within(dialog).getByRole('checkbox', { name: 'Strumenti avversari' }));
     expect(rowsOf('Gholdengo')).toHaveLength(1);
     expect(rowsOf('Rillaboom')).toHaveLength(1);
     expect(rowsOf('Rillaboom')[0].querySelector('.item-icon')).not.toBeNull();
@@ -174,7 +172,7 @@ describe('Velocità: una scheda a barre', () => {
     await user.click(barOf('Dragonite'));
     const dialog = dialogOf('Dragonite');
     expect(dialog).toHaveTextContent(/tier/);
-    expect(within(dialog).queryByRole('checkbox', { name: 'Rivali con Sciarpa o Booster' })).toBeNull();
+    expect(within(dialog).queryByRole('checkbox', { name: 'Strumenti avversari' })).toBeNull();
     expect(within(dialog).getAllByRole('listitem').length).toBe(poolSpecies(noMetaData).filter(sp => sp !== 'Dragonite').length + 1);
   });
 
@@ -210,13 +208,39 @@ describe('Velocità: una scheda a barre', () => {
     const panel = within(dialog).getByRole('tabpanel');
     expect(panel).toHaveTextContent(/40 Pokémon più usati/);
     expect(panel).toHaveTextContent(/Sciarpa/);
-    expect(panel).toHaveTextContent(/Booster/);
-    expect(panel).toHaveTextContent(/Trick Room/);
-    expect(panel).toHaveTextContent(/Tailwind/);
     expect(panel).toHaveTextContent(/25%/);
     expect(panel).toHaveTextContent(/12%/);
     expect(panel).toHaveTextContent(/90%/);
-    expect(panel).toHaveTextContent(/non cambia il voto/);
+    expect(panel).not.toHaveTextContent(/La finestra di ogni membro|non cambiano il voto/);
+    // Schematica: tre fonti come tessere con solo nome, quota e freccia (il controllo breve dentro il Controllo del team),
+    // niente dettaglio né mosse a tessere chiuse
+    expect(panel.querySelectorAll('.guide-tiles li')).toHaveLength(3);
+    expect(panel.querySelectorAll('.sp-guide-chev')).toHaveLength(3);
+    expect(panel.querySelector('.sp-guide-sub')).toHaveTextContent(/^Breve25%$/);
+    expect(panel).not.toHaveTextContent(/×1,5|Tailwind|Trick Room|Booster/);
+    // Una tessera si apre (una alla volta) e mostra tutto quello che conta, dalle tabelle del motore
+    const boost = within(panel).getByRole('button', { name: /^Boost/ });
+    expect(boost).toHaveAttribute('aria-expanded', 'false');
+    await user.click(boost);
+    expect(boost).toHaveAttribute('aria-expanded', 'true');
+    const detail = within(panel).getByRole('region', { name: 'Boost' });
+    const chips = (el: HTMLElement) => [...el.querySelectorAll('.sp-gd-chip')].map(c => c.textContent);
+    // Mosse e abilità come etichette, il meteo o il campo che serve dentro l'etichetta
+    expect(chips(detail)).toContain('Shell Smash');
+    expect(chips(detail)).toContain('Swift Swimpioggia');
+    expect(chips(detail)).toContain('Booster Energy');
+    expect(detail).toHaveTextContent(/×1,5/);
+    await user.click(within(panel).getByRole('button', { name: /^Controllo del team/ }));
+    expect(boost).toHaveAttribute('aria-expanded', 'false');
+    const control = within(panel).getByRole('region', { name: 'Controllo del team' });
+    // Le mosse che rallentano come etichette, coi tipi immuni dentro; la regola tiene solo l'eccezione comune
+    // (i nomi dei tipi in italiano arrivano coi dati del gioco: qui, senza, restano in inglese)
+    expect(chips(control)).toEqual(expect.arrayContaining(['Thunder Wavenon Ground', 'Glare', 'Stun Sporenon Grass', 'Nuzzlenon Ground', 'Icy Wind', 'Electrowebnon Ground']));
+    expect(control).toHaveTextContent(/Non sui tipi Elettro/);
+    expect(control).toHaveTextContent(/Trick Room/);
+    expect(control).toHaveTextContent(/Tailwind/);
+    await user.click(within(control).getByRole('button', { name: 'Chiudi' }));
+    expect(within(panel).queryByRole('region')).toBeNull();
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).toBeNull();
   });

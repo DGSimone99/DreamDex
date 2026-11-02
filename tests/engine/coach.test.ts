@@ -27,7 +27,7 @@ describe('coachTeam', () => {
     expect(coaching.strengths).toEqual([
       'Gestisce bene Poison, Bug, Rock',
       // Solo le voci essenziali dell'archetipo (balance: i gruppi degli attaccanti, i muri, Recupero e Hazard); la rimozione è importante
-      'Ruoli coperti: Almeno uno Sweeper, Almeno un Wallbreaker, Almeno un attaccante fisico, Muro Fisico, Recupero',
+      'Ruoli coperti: Sweeper, Wallbreaker, Attaccante fisico, Muro Fisico, Recupero',
       'Colpisce super efficace 15/18 tipi',
     ]);
   });

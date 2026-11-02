@@ -1,8 +1,8 @@
 import type { ReactElement } from 'react';
 import type { TeamDefense } from '../../engine/defense';
 import { DefenseGeneral } from './DefenseGeneral';
-import { DefenseMeta } from './DefenseMeta';
-import { DefenseTypes } from './DefenseTypes';
+import { DefenseMeta, DefenseMetaLegend } from './DefenseMeta';
+import { DefenseTypes, DefenseTypesLegend } from './DefenseTypes';
 import { DefenseGuideSection } from './DefenseGuide';
 import { DefenseSustain } from './DefenseSustain';
 import type { AreaContext, DetailTab, T } from '../AreaDetail';
@@ -24,9 +24,10 @@ export function defenseTabs(defense: TeamDefense, meta: boolean, t: T, ctx: Area
   const metaTab = coverageMeta && <DefenseMeta defense={defense} ctx={ctx} />;
 
   const panels: Record<Key, ReactElement | null> = { sustain, coverageTypes, coverageMeta: metaTab };
+  const legends: Partial<Record<Key, ReactElement>> = { coverageTypes: <DefenseTypesLegend />, coverageMeta: <DefenseMetaLegend /> };
   const guide = (section: Parameters<typeof DefenseGuideSection>[0]['section']) => <DefenseGuideSection section={section} defense={defense} meta={meta} formatId={ctx.formatId} />;
   return [
     { key: 'general', label: t('detail.tab.general'), value: defense.value, panel: general, help: guide('general') },
-    ...subs.map(key => ({ key, label: label(key), value: values[key], panel: panels[key]!, help: guide(key) })),
+    ...subs.map(key => ({ key, label: label(key), value: values[key], panel: panels[key]!, help: guide(key), legend: legends[key] })),
   ];
 }

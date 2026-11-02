@@ -21,7 +21,8 @@ const coverTone = (n: number) => (n === 0 ? 'bad' : n === 1 ? 'warn' : 'good');
  * Coverage meta dell'Offesa: i membri in riga (nello stesso punto delle altre schede), i Pokémon del meta in colonna,
  * 8 per pagina dal meno coperto (a pari livello il più usato). In ogni casella il danno % del colpo semplice (senza
  * Tera, Z e setup) colorato per soglia, con "setup N%" quando la danza cambia soglia; in fondo "Lo coprono" conta chi
- * lo manda KO in due colpi. Pagine e riepilogo stanno sotto la tabella, così la tabella parte dove partono le altre.
+ * lo manda KO in due colpi. Le pagine ("‹ 1/5 ›") stanno nella casella in alto a sinistra, al posto di "Pokémon";
+ * sotto la tabella una sola riga col riepilogo; la legenda dei colori sta sulla riga dei problemi (OffenseMetaLegend).
  */
 export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaContext }) {
   const t = useT();
@@ -52,7 +53,7 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
     );
   };
 
-  const body = (shown: Row[], bar: ReactNode) => (
+  const body = (shown: Row[], pager: ReactNode, counts: ReactNode) => (
     <div className={`def-frame off-frame def-walls cm-matrix${ctx.roomy ? ' roomy' : ''}`}>
       <div className="ad-scroll">
         <table className="def-grid spaced ct-table">
@@ -62,7 +63,7 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
           </colgroup>
           <thead>
             <tr>
-              <th scope="col" className="def-mon-h">{t('detail.member')}</th>
+              <th scope="col" className="def-mon-h cm-pager-h">{pager}</th>
               {shown.map(r => (
                 <th key={r.species} scope="col" aria-label={r.species} title={r.species} className="wall-h">
                   <span className="def-box"><PokemonIcon name={r.species} /></span>
@@ -90,15 +91,22 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
           </tbody>
         </table>
       </div>
-      <p className="rob-legend" aria-hidden="true">
-        {KO_ORDER.map(b => <span key={b} className={`hold-chip ko-${b}`}>{TAG[b]}</span>)}
-        <span className="hold-chip ko-none">{t('odetail.wall.legendLess')}</span>
-        <span className="wall-legend-setup"><i className="wall-tick" />{t('odetail.wall.legendSetup')}</span>
-      </p>
-      {bar}
+      <div className="rob-legend cm-foot">{counts}</div>
     </div>
   );
 
   return <MetaFrame rows={rows} summary={summary} body={body}
     labels={{ pages: t('odetail.cm.pages'), prev: t('odetail.cm.prev'), next: t('odetail.cm.next'), page: (from, to) => t('odetail.cm.page', { from, to }) }} />;
+}
+
+/** La legenda dei colori di Coverage meta dell'Offesa, sulla riga dei problemi: le soglie e il segno del setup. */
+export function OffenseMetaLegend() {
+  const t = useT();
+  return (
+    <>
+      {KO_ORDER.map(b => <span key={b} className={`hold-chip ko-${b}`}>{TAG[b]}</span>)}
+      <span className="hold-chip ko-none">{t('odetail.wall.legendLess')}</span>
+      <span className="wall-legend-setup"><i className="wall-tick" />{t('odetail.wall.legendSetup')}</span>
+    </>
+  );
 }

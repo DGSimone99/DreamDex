@@ -94,7 +94,7 @@ export function teamNeeds(team: TeamSet[], data: EngineData, members?: SubRoleVa
   };
 }
 
-/** Nome del bisogno: i sotto-ruoli col loro nome, "Almeno uno Sweeper / un Wallbreaker / un fisico / uno speciale" per i gruppi. */
+/** Nome del bisogno: i sotto-ruoli col loro nome, "Sweeper", "Wallbreaker", "Attaccante fisico" / "Attaccante speciale" per i gruppi. */
 export function needLabel(need: Need, lang: Lang = 'it'): string {
   return isGroupKey(need) ? t(lang, `need.${need}`) : roleLabel(need, lang);
 }

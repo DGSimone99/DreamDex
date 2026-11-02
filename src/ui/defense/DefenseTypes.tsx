@@ -12,8 +12,6 @@ import { Typed } from '../TypeText';
 import { TypeIcons } from '../typeIcons';
 import { HOLD_BANDS, HOLD_ORDER } from './holds';
 
-/** Colore di una percentuale: verde da 80, giallo da 50, rosso sotto. */
-const tone = (value: number) => (value >= 80 ? 'good' : value >= 50 ? 'warn' : 'bad');
 /** Quanti membri reggono del tutto il tipo: 0 rosso, 1 giallo, da 2 verde. */
 const countTone = (n: number) => (n === 0 ? 'bad' : n === 1 ? 'warn' : 'good');
 
@@ -22,7 +20,8 @@ const countTone = (n: number) => (n === 0 ? 'bad' : n === 1 ? 'warn' : 'good');
  * casella il danno di un colpo forte di quel tipo sul lato peggiore (fisico o speciale), colorato per quanto vale
  * (OHKO rosso pieno, 2HKO rosso scuro = niente, 3HKO giallo = metà, 4 o più verde = pieno), col moltiplicatore classico
  * sotto il % quando non è neutro; il suggerimento dà i due lati.
- * In fondo Regge (chi regge del tutto il lato peggiore) e la Copertura del tipo.
+ * In fondo Regge (chi regge del tutto il lato peggiore); la Copertura del tipo sta nel suggerimento della sua pillola.
+ * La legenda dei colori sta sulla riga dei problemi (DefenseTypesLegend); sotto la tabella solo le note del meteo.
  * I tipi che nessuno regge hanno il filo rosso sotto l'icona.
  */
 export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: AreaContext }) {
@@ -42,6 +41,8 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
   });
   /** Classi di una cella della colonna `col`: il puntatore accende riga e colonna. */
   const colClass = (col: number, extra = '') => [extra, hover?.col === col && 'x-col'].filter(Boolean).join(' ') || undefined;
+  // Le note del meteo stanno sulla riga della legenda; se non ci entrano si tagliano coi puntini e il testo intero è nel suggerimento
+  const notes = weatherMitigations(team).map(m => mitigationNote(m, lang));
 
   return (
     <div className={`def-frame def-types${roomy ? ' roomy' : ''}`}>
@@ -89,20 +90,38 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
             })}
             <tr className="ct-sum ct-sum-first">
               <th scope="row">{t('ddetail.heldBy')}</th>
-              {rows.map((row, i) => <td key={row.type} className={colClass(i)}><span className={`ct-pill ${countTone(row.heldBy.length)}`}>{row.heldBy.length}</span></td>)}
-            </tr>
-            <tr className="ct-sum">
-              <th scope="row">{t('ddetail.level')}</th>
-              {rows.map((row, i) => <td key={row.type} className={colClass(i)}><span className={`ct-pill ${tone(row.level)}`}>{row.level}%</span></td>)}
+              {rows.map((row, i) => {
+                const level = `${t('ddetail.level')} ${row.level}%`;
+                return (
+                  <td key={row.type} className={colClass(i)}>
+                    <span className={`ct-pill ${countTone(row.heldBy.length)}`} title={level}>
+                      {row.heldBy.length}<span className="visually-hidden"> · {level}</span>
+                    </span>
+                  </td>
+                );
+              })}
             </tr>
           </tbody>
         </table>
       </div>
-      <p className="rob-legend" aria-hidden="true">
-        <span>{t('ddetail.holdLegend')}</span>
-        {HOLD_ORDER.map(b => <span key={b} className={`hold-chip ${HOLD_BANDS[b].cls}`}>{HOLD_BANDS[b].tag}</span>)}
-      </p>
-      {weatherMitigations(team).map(m => <p key={m.condition} className="note"><Typed text={mitigationNote(m, lang)} /></p>)}
+      {notes.length > 0 && (
+        <div className="rob-legend ht-foot">
+          <span className="ht-notes note" title={notes.join('\n')}>
+            <Typed text={notes.join(' · ')} />
+          </span>
+        </div>
+      )}
     </div>
+  );
+}
+
+/** La legenda dei colori di Coverage tipi della Difesa, sulla riga dei problemi: le quattro soglie del colpo. */
+export function DefenseTypesLegend() {
+  const t = useT();
+  return (
+    <>
+      <span>{t('ddetail.holdLegend')}</span>
+      {HOLD_ORDER.map(b => <span key={b} className={`hold-chip ${HOLD_BANDS[b].cls}`}>{HOLD_BANDS[b].tag}</span>)}
+    </>
   );
 }
