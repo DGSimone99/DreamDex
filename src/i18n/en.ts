@@ -893,7 +893,7 @@ export const en = {
   'guide.off.cov.hole.rule.meta': "Not even the best hit, of any type, 2HKOs it",
   'guide.off.cov.depth': "How many cover it",
   'guide.off.cov.rank': "member #{n}",
-  'guide.off.cov.scale': "A target covered by one member is worth 70%, by two 90%, by three 100%",
+  'guide.off.cov.scale': "A target covered by one member is worth {one}%, by two {two}%, by three {three}%",
   'sdetail.cond.priority': "Priority",
   'sdetail.cond.setup': "Setup",
   'sdetail.cond.weather': "Weather",

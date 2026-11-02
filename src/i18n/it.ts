@@ -895,7 +895,7 @@ export const it: Record<keyof typeof en, string> = {
   'guide.off.cov.hole.rule.meta': "Nemmeno il colpo migliore, di qualunque tipo, lo manda KO in due colpi",
   'guide.off.cov.depth': "Quanti lo coprono",
   'guide.off.cov.rank': "{n}° membro",
-  'guide.off.cov.scale': "Un bersaglio coperto da un solo membro vale il 70%, da due il 90%, da tre il 100%",
+  'guide.off.cov.scale': "Un bersaglio coperto da un solo membro vale il {one}%, da due il {two}%, da tre il {three}%",
   'sdetail.cond.priority': "Priorità",
   'sdetail.cond.setup': "Setup",
   'sdetail.cond.weather': "Meteo",

@@ -22,6 +22,10 @@ export const HOLE_HIT = 1 / 3;
 const ONE_USE_COVER = 0.25;
 /** Profondità: il 1°, 2° e 3° membro che copre un bersaglio valgono 70, 20 e 10%. */
 export const COVERAGE_DEPTH = [0.7, 0.2, 0.1];
+/** Nel meta il 2° e il 3° membro contano di più (50/30/20): col 70 al primo un terzo dei team forti stava fra 95 e 100. */
+export const META_DEPTH = [0.5, 0.3, 0.2];
+/** I pesi della profondità per la misura: tipi 70/20/10, meta 50/30/20. */
+export const depthWeights = (kind: CoverageKind): number[] => (kind === 'meta' ? META_DEPTH : COVERAGE_DEPTH);
 
 export interface CoverageTarget {
   /** Combinazione di tipi ("Water/Ground") o, senza meta, il tipo. */
@@ -169,7 +173,7 @@ export function ownConditions(set: TeamSet): FieldCondition[] {
   return enables(set).filter(l => toID(l.via) === ability && l.condition !== 'trickroom').map(l => l.condition as FieldCondition);
 }
 
-const depthOf = (credits: number[]) => [...credits].sort((a, b) => b - a).reduce((acc, c, i) => acc + (COVERAGE_DEPTH[i] ?? 0) * c, 0);
+const depthOf = (credits: number[], kind: CoverageKind) => [...credits].sort((a, b) => b - a).reduce((acc, c, i) => acc + (depthWeights(kind)[i] ?? 0) * c, 0);
 
 /** Coverage del team: chi manda KO in due colpi ogni bersaglio, con la profondità; i buchi per nome. */
 export function teamCoverage(team: TeamSet[], data: EngineData, asked: CoverageKind = usesMeta(data) ? 'meta' : 'types'): TeamCoverage {
@@ -182,7 +186,7 @@ export function teamCoverage(team: TeamSet[], data: EngineData, asked: CoverageK
   // Nel meta è un buco chi nessuno manda KO in due colpi; nei tipi chi nessuno porta al 33% super efficace
   const holeBelow = kind === 'meta' ? COVER_HIT : HOLE_HIT;
   targets.forEach((target, i) => {
-    value += target.weight * depthOf(hits.map(h => creditOf(h[i].x, kind)));
+    value += target.weight * depthOf(hits.map(h => creditOf(h[i].x, kind)), kind);
     if (Math.max(0, ...hits.map(h => h[i].x)) < holeBelow) holes.push(target.label);
   });
   const known = team.map(set => !!battleSpecies(set));
@@ -199,7 +203,7 @@ export function teamCoverage(team: TeamSet[], data: EngineData, asked: CoverageK
       const cells = kind === 'meta'
         ? hits.map((h, m) => (known[m] ? { pct: pctOf(h[i].plain), setupPct: h[i].setup === null ? null : pctOf(h[i].setup) } : { pct: -1, setupPct: null }))
         : null;
-      return { label: target.label, species: target.set.species, weight: target.weight, level: Math.round(100 * depthOf(hits.map(h => creditOf(h[i].x, kind)))), coveredBy, cells };
+      return { label: target.label, species: target.set.species, weight: target.weight, level: Math.round(100 * depthOf(hits.map(h => creditOf(h[i].x, kind)), kind)), coveredBy, cells };
     }),
   };
 }

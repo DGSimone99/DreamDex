@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import type { TeamOffense } from '../../engine/offense';
 import { OFFENSE_SHARES, RANK_WEIGHTS, THREE_HIT } from '../../engine/offense';
-import { COVERAGE_DEPTH, typeAverage } from '../../engine/coverage';
+import { depthWeights, typeAverage } from '../../engine/coverage';
 import { DEFAULT_FORMAT, type FormatId } from '../../engine/format';
 import { pokedexOf, teraAllowed } from '../../engine/formats';
 import { TYPES } from '../../engine/types';
@@ -14,9 +14,10 @@ import { TypeIcons } from '../typeIcons';
 export type OffenseSection = 'general' | 'coverageTypes' | 'power' | 'coverageMeta';
 type Key = Parameters<ReturnType<typeof useT>>[0];
 
-/** Pesi per posizione nel team e profondità della Coverage: quelli del motore, in percentuale. */
+/** Pesi per posizione nel team e profondità della Coverage (tipi 70/20/10, meta 50/30/20): quelli del motore, in percentuale. */
+const scaleOf = (d: number[]) => ({ one: d[0], two: d[0] + d[1], three: d[0] + d[1] + d[2] });
 const MEMBER_WEIGHTS = RANK_WEIGHTS.map(w => Math.round(100 * w));
-const DEPTH = COVERAGE_DEPTH.map(w => Math.round(100 * w));
+const depthOf = (meta: boolean) => depthWeights(meta ? 'meta' : 'types').map(w => Math.round(100 * w));
 
 /** Una barra di pesi (come quella della Difesa): ogni posizione larga quanto pesa; le scritte agli estremi sono facoltative. */
 function Bar({ label, weights, rank, from, to }: { label: string; weights: number[]; rank: (n: number) => string; from?: string; to?: string }) {
@@ -144,8 +145,8 @@ export function OffenseGuideSection({ section, offense, meta, formatId = DEFAULT
       ]} />
 
       <h5>{g('cov.depth')}</h5>
-      <Bar label={g('cov.depth')} weights={DEPTH} rank={n => g('cov.rank', { n })} />
-      {lines([g('cov.scale')])}
+      <Bar label={g('cov.depth')} weights={depthOf(isMeta)} rank={n => g('cov.rank', { n })} />
+      {lines([g('cov.scale', scaleOf(depthOf(isMeta)))])}
     </>
   );
 }
