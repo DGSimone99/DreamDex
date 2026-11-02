@@ -12,7 +12,7 @@ import type { AnalysisView } from './analysisView';
 const isDetailArea = (key: string): key is DetailArea => key === 'strength' || key === 'defense' || key === 'speed' || key === 'roles' || key === 'bonusMalus';
 
 
-/** Voto grande accanto alla fila del team: lettera, punteggio e le quattro aree, che portano alle schede di Analisi. */
+/** Voto grande accanto alla fila del team: lettera, punteggio, le tre aree, i Ruoli e Bonus/Malus, che portano alle schede di Analisi. */
 /**
  * `onOpen`: le righe delle aree e di Bonus/Malus portano alla scheda di quell'area in Analisi.
  * `ruleIssues`: problemi di regole, triangolo rosso nella testa.
@@ -52,7 +52,7 @@ export function GradeBadge({ rating, ruleIssues = [], onOpen }: { rating: TeamRa
           <RatingHelp teamType={rating.teamType} trickRoom={rating.trickRoom} meta={rating.offense.coverageMeta !== null} />
         </span>
       )}
-      {/* Le quattro aree + Bonus/Malus: ogni riga porta alla sua scheda in Analisi */}
+      {/* Le tre aree, i Ruoli e Bonus/Malus: ogni riga porta alla sua scheda in Analisi */}
       {rating && (
         <span className="grade-areas">
           {[...rating.areas].sort((a, b) => ANALYSIS_VIEWS.indexOf(a.key as AnalysisView) - ANALYSIS_VIEWS.indexOf(b.key as AnalysisView)).map(area => {
@@ -71,7 +71,22 @@ export function GradeBadge({ rating, ruleIssues = [], onOpen }: { rating: TeamRa
               </button>
             );
           })}
-          {/* Quinta riga: netto di bonus e malus, senza barra */}
+          {/* Ruoli: una lista, non un'area col peso; senza barra, coperti/totale e quanti mancano */}
+          {rating.roles.total > 0 && (() => {
+            const { covered, total } = rating.roles;
+            const missing = total - covered;
+            const state = missing === 0 ? t('rating.rolesAll') : missing === 1 ? t('rating.rolesMissingOne') : t('rating.rolesMissing', { n: missing });
+            return (
+              <button type="button" className="grade-area grade-roles"
+                aria-label={t('rating.openArea', { area: t('area.roles'), value: `${covered}/${total}, ${state}` })}
+                onClick={() => onOpen?.('roles')}>
+                <span>{t('area.roles')}</span>
+                <span className="grade-roles-val"><b>{covered}/{total}</b> · <em className={missing ? 'bad' : 'good'}>{state}</em></span>
+                <Icon name="next" />
+              </button>
+            );
+          })()}
+          {/* Ultima riga: netto di bonus e malus, senza barra */}
           {(() => {
             const net = rating.bonus.total - rating.penalty.total;
             const value = net === 0 ? '±0' : signed(net);

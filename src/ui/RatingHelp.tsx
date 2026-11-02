@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import type { Archetype } from '../engine/archetype';
 import { ARCHETYPE_WEIGHTS, GRADES, TRICK_ROOM_MAX } from '../engine/rating';
 import { isGroupKey, LEVEL_KEYS, levelOf, type Level, type LevelKey } from '../engine/roleLevels';
+import { ESSENTIAL_POINTS, IMPORTANT_POINTS, MINOR_POINTS } from '../engine/rolesArea';
 import type { MessageKey } from '../i18n';
 import { useT } from '../i18n/react';
 import { Icon } from './icons';
@@ -10,7 +11,9 @@ import { Icon } from './icons';
 type Topic = 'general' | Archetype;
 const ARCHETYPES: Archetype[] = ['hyperOffense', 'bulkyOffense', 'balance', 'semiStall', 'stall'];
 const TOPICS: Topic[] = ['general', ...ARCHETYPES];
-const WEIGHT_AREAS = ['defense', 'strength', 'roles', 'speed'] as const;
+/** Le aree col peso: i Ruoli non ne hanno, contano come malus e bonus (ROLE_POINTS). */
+const WEIGHT_AREAS = ['defense', 'strength', 'speed'] as const;
+const ROLE_POINTS = { essential: ESSENTIAL_POINTS, important: IMPORTANT_POINTS, minor: MINOR_POINTS };
 const LEVELS: Exclude<Level, 'ignored'>[] = ['essential', 'important', 'minor'];
 
 const topicLabel = (topic: Topic): MessageKey => (topic === 'general' ? 'help.general' : `archetype.${topic}`);
@@ -116,6 +119,7 @@ function GeneralTopic({ teamType, trickRoom, meta }: { teamType: Archetype; tric
           </tbody>
         </table>
       </div>
+      <p className="help-roles-note">{t('help.general.rolesNote', ROLE_POINTS)}</p>
     </>
   );
 }
@@ -144,7 +148,7 @@ function TypeTopic({ type, current, trickRoom }: { type: Archetype; current: boo
         })}
       </dl>
       <h5>{t('area.roles')}</h5>
-      <p>{t('help.type.levels')}</p>
+      <p>{t('help.type.levels', ROLE_POINTS)}</p>
       {LEVELS.map(level => {
         const keys = LEVEL_KEYS.filter(key => levelOf(type, key) === level);
         if (keys.length === 0) return null;

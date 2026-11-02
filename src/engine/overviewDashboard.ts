@@ -62,7 +62,8 @@ export function dashboardData(team: TeamSet[], analysis: TeamAnalysis, rating: T
   const available = !tile('meta').unavailable;
   return {
     coverage: { cells, defense: tile('defense').value, offense: tile('strength').value },
-    roles: { chips, members: team.map(set => battleName(set)), value: tile('roles').value },
+    // Ruoli: voci coperte sul totale (essenziali, importanti e minori), come nel pannello del voto
+    roles: { chips, members: team.map(set => battleName(set)), value: `${rating.roles.covered}/${rating.roles.total}` },
     speed: {
       lanes, median: poolMedian(data), vsMeta: usesMeta(data),
       control: rating.speed.sources.map(s => ({ condition: s.condition, move: s.move, by: s.by })),

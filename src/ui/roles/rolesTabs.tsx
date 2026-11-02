@@ -11,7 +11,7 @@ import { LEVEL_ORDER, roleLines } from './rolesRows';
  * ("3/5"; Non contano: solo quante sono). Un livello senza voci per questo tipo di team non ha la scheda.
  * La guida sta sul Generale: Come funziona, Ruoli per tipo di team, Come si ottiene un ruolo.
  */
-export function rolesTabs(rating: TeamRating, value: number | null, t: T, ctx: AreaContext): DetailTab[] {
+export function rolesTabs(rating: TeamRating, value: string, t: T, ctx: AreaContext): DetailTab[] {
   const lines = roleLines(rating);
   const archetype = rating.needs.archetype;
   const meta = !!rating.meta;

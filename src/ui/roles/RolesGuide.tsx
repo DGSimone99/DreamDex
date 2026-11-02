@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import type { Archetype } from '../../engine/archetype';
 import { MISSING_BELOW } from '../../engine/needs';
-import { ESSENTIAL_POINTS, MINOR_CAP, MINOR_STEP, ONE_STYLE_POINTS } from '../../engine/rolesArea';
+import { ESSENTIAL_POINTS, IMPORTANT_POINTS, MINOR_POINTS, ONE_STYLE_POINTS } from '../../engine/rolesArea';
 import { LEVEL_KEYS, levelOf, type Level, type LevelKey } from '../../engine/roleLevels';
 import { BREAKER_WALLBREAKING, SWEEPER_OFFENSE, SWEEPER_SPEED } from '../../engine/subRoles';
 import { useLang, useT } from '../../i18n/react';
@@ -67,8 +67,8 @@ export function RolesGuideSection({ section, archetype, meta }: { section: Roles
   if (section === 'general') {
     const tile: Record<Level, { value: string; rule: string }> = {
       essential: { value: `−${ESSENTIAL_POINTS}`, rule: g('essential.rule') },
-      important: { value: g('important.value'), rule: g('important.rule') },
-      minor: { value: `+${Math.round(100 * MINOR_STEP)}%`, rule: g('minor.rule', { cap: Math.round(100 * MINOR_CAP) }) },
+      important: { value: `−${IMPORTANT_POINTS}`, rule: g('important.rule') },
+      minor: { value: `+${MINOR_POINTS}`, rule: g('minor.rule') },
       ignored: { value: '0', rule: g('ignored.rule') },
     };
     return (
@@ -77,6 +77,7 @@ export function RolesGuideSection({ section, archetype, meta }: { section: Roles
         <ul className="guide-lines">
           <li>{g('what.level', { archetype: t(`archetype.${archetype}`) })}</li>
           <li>{g('what.value', { pct: Math.round(100 * MISSING_BELOW) })}</li>
+          <li>{g('what.points')}</li>
         </ul>
         <h5>{g('levels')}</h5>
         <ul className="guide-tiles rl-guide-tiles">
