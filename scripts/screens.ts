@@ -295,6 +295,16 @@ const DEFENSE_STATES: Record<string, State> = {
     await wait(400);
     return true;
   } },
+  /** La guida di Coverage tipi con la tabella dell'attaccante di ogni tipo aperta. */
+  'analysis-defense-guide-types-open': { hash: hash(SIX), run: async p => {
+    const ok = await defenseState(SUBS.types).run!(p);
+    if (ok !== true) return ok;
+    if (!await clickText(p, '.area-help button', /./)) return 'no guide button';
+    await wait(400);
+    if (!await clickText(p, '.guide-more > summary', /./)) return 'no attackers toggle';
+    await wait(300);
+    return true;
+  } },
   'analysis-defense-guide': { hash: hash(SIX), run: async p => {
     const ok = await defenseState(null).run!(p);
     if (ok !== true) return ok;

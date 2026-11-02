@@ -1,7 +1,7 @@
 import { useId, useRef, useState, type ReactNode } from 'react';
 import { dex, getMove } from '../../engine/dex';
 import {
-  CONDITION_QUOTA, PARADOX_SPEED, PARALYSIS, PRIORITY_FULL, SETUP_PLUS_ONE, SETUP_PLUS_TWO, SPEED_DROP, SPEED_FULL,
+  CONDITION_QUOTA, PARADOX_SPEED, PARALYSIS, PRIORITY_FULL, SETUP_PLUS_ONE, SETUP_PLUS_TWO, SPEED_DROP,
   SPEED_RANK_WEIGHTS, WEATHER_SPEED, type TeamSpeed,
 } from '../../engine/speedArea';
 import { SPEED_POOL } from '../../engine/speed';
@@ -164,7 +164,7 @@ export function SpeedGuideSection({ speed, meta }: { speed: TeamSpeed; meta: boo
 
       <h5>{g('toteam')}</h5>
       <Bar label={g('rank.weights')} weights={MEMBER_WEIGHTS} rank={n => g('rank', { n })} from={g('rank.best')} to={g('rank.worst')} />
-      <p className="guide-foot guide-scale">{g('scale', { pct: pctOf(SPEED_FULL) })}</p>
+      <p className="guide-foot guide-scale">{g('scale')}</p>
     </>
   );
 }
