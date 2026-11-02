@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useEditing } from './editing';
 import { GRADES, type TeamRating } from '../engine/rating';
+import { MISSING_BELOW } from '../engine/needs';
 import { AlertMark } from './AlertMark';
 import { RatingHelp } from './RatingHelp';
 import { type AreaKey, type DetailArea, signed } from './AreaDetail';
@@ -71,17 +72,18 @@ export function GradeBadge({ rating, ruleIssues = [], onOpen }: { rating: TeamRa
               </button>
             );
           })}
-          {/* Ruoli: una lista, non un'area col peso; senza barra, coperti/totale e quanti mancano */}
+          {/* Ruoli: una lista, non un'area col peso; senza barra, coperti/totale e quanti mancano fra quelli che tolgono punti
+              (essenziali e importanti): un minore scoperto non è un difetto, quindi non si conta in rosso */}
           {rating.roles.total > 0 && (() => {
             const { covered, total } = rating.roles;
-            const missing = total - covered;
-            const state = missing === 0 ? t('rating.rolesAll') : missing === 1 ? t('rating.rolesMissingOne') : t('rating.rolesMissing', { n: missing });
+            const missing = rating.roles.rows.filter(r => r.level !== 'minor' && r.value < MISSING_BELOW).length;
+            const state = missing > 1 ? t('rating.rolesMissing', { n: missing }) : missing === 1 ? t('rating.rolesMissingOne') : covered === total ? t('rating.rolesAll') : '';
             return (
               <button type="button" className="grade-area grade-roles"
-                aria-label={t('rating.openArea', { area: t('area.roles'), value: `${covered}/${total}, ${state}` })}
+                aria-label={t('rating.openArea', { area: t('area.roles'), value: state ? `${covered}/${total}, ${state}` : `${covered}/${total}` })}
                 onClick={() => onOpen?.('roles')}>
                 <span>{t('area.roles')}</span>
-                <span className="grade-roles-val"><b>{covered}/{total}</b> · <em className={missing ? 'bad' : 'good'}>{state}</em></span>
+                <span className="grade-roles-val"><b>{covered}/{total}</b>{state && <> · <em className={missing ? 'bad' : 'good'}>{state}</em></>}</span>
                 <Icon name="next" />
               </button>
             );
