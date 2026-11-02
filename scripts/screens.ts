@@ -252,7 +252,8 @@ for (const [key, re] of [['boost', /^Boost/], ['priority', /^Priorit/], ['contro
     return true;
   } };
 }
-SPEED_STATES['analysis-speed-guide-control-en'] = { ...SPEED_STATES['analysis-speed-guide-control'], lang: 'en' } as State;
+for (const key of ['boost', 'priority', 'control']) SPEED_STATES[`analysis-speed-guide-${key}-en`] = { ...SPEED_STATES[`analysis-speed-guide-${key}`], lang: 'en' } as State;
+SPEED_STATES['analysis-speed-guide-en'] = { ...SPEED_STATES['analysis-speed-guide'], lang: 'en' } as State;
 const SUBS: Record<string, RegExp | null> = { general: null, robustness: /^Robustezza/, sustain: /^Sostenibilit/, types: /^Coverage tipi/, meta: /^Coverage meta/ };
 const DEFENSE_STATES: Record<string, State> = {
   ...Object.fromEntries(Object.entries(SUBS).flatMap(([k, re]) => [

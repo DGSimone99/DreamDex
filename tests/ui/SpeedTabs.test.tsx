@@ -208,31 +208,37 @@ describe('Velocità: una scheda a barre', () => {
     const panel = within(dialog).getByRole('tabpanel');
     expect(panel).toHaveTextContent(/40 Pokémon più usati/);
     expect(panel).toHaveTextContent(/Sciarpa/);
-    expect(panel).toHaveTextContent(/Booster/);
-    expect(panel).toHaveTextContent(/Trick Room/);
-    expect(panel).toHaveTextContent(/Tailwind/);
     expect(panel).toHaveTextContent(/25%/);
     expect(panel).toHaveTextContent(/12%/);
     expect(panel).toHaveTextContent(/90%/);
     expect(panel).not.toHaveTextContent(/La finestra di ogni membro|non cambiano il voto/);
-    // Schematica: tre fonti come tessere con la quota (il controllo breve dentro il Controllo del team), niente dettaglio chiuso
+    // Schematica: tre fonti come tessere con solo nome, quota e freccia (il controllo breve dentro il Controllo del team),
+    // niente dettaglio né mosse a tessere chiuse
     expect(panel.querySelectorAll('.guide-tiles li')).toHaveLength(3);
-    expect(panel).toHaveTextContent(/Breve: Tailwind/);
-    expect(panel).not.toHaveTextContent(/×1,5/);
+    expect(panel.querySelectorAll('.sp-guide-chev')).toHaveLength(3);
+    expect(panel.querySelector('.sp-guide-sub')).toHaveTextContent(/^Breve25%$/);
+    expect(panel).not.toHaveTextContent(/×1,5|Tailwind|Trick Room|Booster/);
     // Una tessera si apre (una alla volta) e mostra tutto quello che conta, dalle tabelle del motore
     const boost = within(panel).getByRole('button', { name: /^Boost/ });
     expect(boost).toHaveAttribute('aria-expanded', 'false');
     await user.click(boost);
     expect(boost).toHaveAttribute('aria-expanded', 'true');
     const detail = within(panel).getByRole('region', { name: 'Boost' });
-    expect(detail).toHaveTextContent(/Shell Smash/);
-    expect(detail).toHaveTextContent(/Swift Swim \(pioggia\)/);
+    const chips = (el: HTMLElement) => [...el.querySelectorAll('.sp-gd-chip')].map(c => c.textContent);
+    // Mosse e abilità come etichette, il meteo o il campo che serve dentro l'etichetta
+    expect(chips(detail)).toContain('Shell Smash');
+    expect(chips(detail)).toContain('Swift Swimpioggia');
+    expect(chips(detail)).toContain('Booster Energy');
     expect(detail).toHaveTextContent(/×1,5/);
     await user.click(within(panel).getByRole('button', { name: /^Controllo del team/ }));
     expect(boost).toHaveAttribute('aria-expanded', 'false');
     const control = within(panel).getByRole('region', { name: 'Controllo del team' });
-    expect(control).toHaveTextContent(/Thunder Wave, Glare, Stun Spore, Nuzzle/);
-    expect(control).toHaveTextContent(/Icy Wind, Electroweb/);
+    // Le mosse che rallentano come etichette, coi tipi immuni dentro; la regola tiene solo l'eccezione comune
+    // (i nomi dei tipi in italiano arrivano coi dati del gioco: qui, senza, restano in inglese)
+    expect(chips(control)).toEqual(expect.arrayContaining(['Thunder Wavenon Ground', 'Glare', 'Stun Sporenon Grass', 'Nuzzlenon Ground', 'Icy Wind', 'Electrowebnon Ground']));
+    expect(control).toHaveTextContent(/Non sui tipi Elettro/);
+    expect(control).toHaveTextContent(/Trick Room/);
+    expect(control).toHaveTextContent(/Tailwind/);
     await user.click(within(control).getByRole('button', { name: 'Chiudi' }));
     expect(within(panel).queryByRole('region')).toBeNull();
     await user.keyboard('{Escape}');

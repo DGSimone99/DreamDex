@@ -5,6 +5,7 @@ import {
   SPEED_RANK_WEIGHTS, WEATHER_SPEED, type TeamSpeed,
 } from '../../engine/speedArea';
 import { SPEED_POOL } from '../../engine/speed';
+import { typeName } from '../../i18n/game';
 import { useLang, useT } from '../../i18n/react';
 import { Icon } from '../icons';
 
@@ -24,7 +25,11 @@ type GainKey = typeof GAINS[number]['key'];
 /** Esempi di mosse prioritarie (il motore non ha una lista: conta ogni mossa d'attacco con priorità). */
 const PRIORITY_EXAMPLES = ['extremespeed', 'suckerpunch', 'aquajet', 'bulletpunch', 'iceshard', 'shadowsneak', 'machpunch', 'jetpunch'];
 
-const moveNames = (ids: Iterable<string>) => [...ids].map(id => getMove(id)?.name ?? id).join(', ');
+/** I tipi immuni a una mossa che rallenta, oltre agli Elettro per la paralisi (le stesse eccezioni di slowFactor nel motore). */
+const SLOW_IMMUNE: Record<string, string> = { thunderwave: 'Ground', nuzzle: 'Ground', stunspore: 'Grass', bulldoze: 'Flying', electroweb: 'Ground', lowsweep: 'Ghost' };
+
+const moveChips = (ids: Iterable<string>, note?: (id: string) => string | undefined): Chip[] =>
+  [...ids].map(id => ({ name: getMove(id)?.name ?? id, note: note?.(id) }));
 const abilityName = (id: string) => dex.abilities.get(id).name;
 
 /** Una barra di pesi (come quella dell'Offesa): ogni posizione larga quanto pesa. */
@@ -39,8 +44,10 @@ function Bar({ label, weights, rank, from, to }: { label: string; weights: numbe
   );
 }
 
-/** Una riga del dettaglio: cosa conta, quanto vale, e la lista o la regola. */
-interface Row { label: string; value?: string; text: ReactNode }
+/** Una mossa, abilità o strumento come etichetta; `note` è il meteo o il campo che serve, scritto piccolo dentro. */
+interface Chip { name: string; note?: string }
+/** Una riga del dettaglio: cosa conta, quanto vale, le etichette (mosse, abilità) e la regola breve sotto. */
+interface Row { label: string; value?: string; chips?: Chip[]; text?: ReactNode; group?: string }
 
 /**
  * La guida della Velocità (una sezione, schematica): i rivali, le tre fonti in tessere con la quota, i pesi.
@@ -60,15 +67,22 @@ export function SpeedGuideSection({ speed, meta }: { speed: TeamSpeed; meta: boo
 
   const close = () => { const was = open; setOpen(null); if (was) tiles.current[was]?.focus(); };
 
-  const weather = Object.entries(WEATHER_SPEED).map(([ability, need]) =>
-    `${abilityName(ability)} (${need.weather ? t(`conditionName.${need.weather}` as Key).toLowerCase() : t(`conditionName.${need.terrain}terrain` as Key)})`).join(', ');
-  const details: Record<GainKey, { rows: (Row | string)[]; foot: string }> = {
+  const field = (need: { weather?: string; terrain?: string }) =>
+    need.weather ? t(`conditionName.${need.weather}` as Key).toLowerCase() : t(`conditionName.${need.terrain}terrain` as Key);
+  const weather: Chip[] = Object.entries(WEATHER_SPEED).map(([ability, need]) => ({ name: abilityName(ability), note: field(need) }));
+  const immune = (id: string) => (SLOW_IMMUNE[id] ? g('d.ctrl.not', { type: typeName(SLOW_IMMUNE[id], lang) }) : undefined);
+  const paradox: Chip[] = [
+    { name: dex.items.get('boosterenergy').name },
+    { name: abilityName('protosynthesis'), note: field({ weather: 'sun' }) },
+    { name: abilityName('quarkdrive'), note: field({ terrain: 'electric' }) },
+  ];
+  const details: Record<GainKey, { rows: Row[]; foot: string; grouped?: boolean }> = {
     boost: {
       rows: [
-        { label: g('d.boost.plus1'), value: times(1.5), text: `${moveNames(SETUP_PLUS_ONE)}, ${abilityName('speedboost')}` },
-        { label: g('d.boost.plus2'), value: times(2), text: moveNames(SETUP_PLUS_TWO) },
-        { label: g('d.boost.weather'), value: times(2), text: weather },
-        { label: g('d.boost.paradox'), value: times(PARADOX_SPEED), text: g('d.boost.paradox.rule') },
+        { label: g('d.boost.plus1'), value: times(1.5), chips: [...moveChips(SETUP_PLUS_ONE), { name: abilityName('speedboost') }] },
+        { label: g('d.boost.plus2'), value: times(2), chips: moveChips(SETUP_PLUS_TWO) },
+        { label: g('d.boost.weather'), value: times(2), chips: weather },
+        { label: g('d.boost.paradox'), value: times(PARADOX_SPEED), chips: paradox, text: g('d.boost.paradox.rule') },
         { label: abilityName('unburden'), value: times(2), text: g('d.boost.unburden.rule') },
       ],
       foot: g('d.quota', { pct: pctOf(CONDITION_QUOTA.setup) }),
@@ -76,22 +90,21 @@ export function SpeedGuideSection({ speed, meta }: { speed: TeamSpeed; meta: boo
     priority: {
       rows: [
         { label: g('d.prio.how'), text: g('d.prio.how.rule', { pct: pctOf(PRIORITY_FULL) }) },
-        { label: g('d.prio.moves'), text: g('d.prio.moves.rule', { list: moveNames(PRIORITY_EXAMPLES), glide: getMove('grassyglide')?.name ?? 'Grassy Glide' }) },
+        { label: g('d.prio.moves'), chips: moveChips(PRIORITY_EXAMPLES), text: g('d.prio.moves.rule', { glide: getMove('grassyglide')?.name ?? 'Grassy Glide' }) },
         { label: g('d.prio.field'), text: g('d.prio.field.rule') },
       ],
       foot: g('d.quota', { pct: pctOf(CONDITION_QUOTA.priority) }),
     },
     control: {
       rows: [
-        g('d.ctrl.long', { pct: pctOf(CONDITION_QUOTA.web) }),
-        { label: getMove('stickyweb')?.name ?? 'Sticky Web', value: '−1', text: g('d.ctrl.web.rule') },
+        { group: g('d.ctrl.long', { pct: pctOf(CONDITION_QUOTA.web) }), label: getMove('stickyweb')?.name ?? 'Sticky Web', value: '−1', text: g('d.ctrl.web.rule') },
         { label: getMove('trickroom')?.name ?? 'Trick Room', text: g('d.ctrl.room.rule') },
-        g('d.ctrl.short', { pct: pctOf(CONDITION_QUOTA.tailwind) }),
-        { label: getMove('tailwind')?.name ?? 'Tailwind', value: times(2), text: g('d.ctrl.tail.rule') },
-        { label: g('d.ctrl.para'), value: '×½', text: g('d.ctrl.para.rule', { list: moveNames(PARALYSIS) }) },
-        { label: g('d.ctrl.drop'), value: '×⅔', text: g('d.ctrl.drop.rule', { list: moveNames(SPEED_DROP) }) },
+        { group: g('d.ctrl.short', { pct: pctOf(CONDITION_QUOTA.tailwind) }), label: getMove('tailwind')?.name ?? 'Tailwind', value: times(2), text: g('d.ctrl.tail.rule') },
+        { label: g('d.ctrl.para'), value: '×½', chips: moveChips(PARALYSIS, immune), text: g('d.ctrl.para.rule') },
+        { label: g('d.ctrl.drop'), value: '×⅔', chips: moveChips(SPEED_DROP, immune) },
       ],
       foot: g('d.ctrl.foot'),
+      grouped: true,
     },
   };
   const detail = open ? details[open] : null;
@@ -114,8 +127,8 @@ export function SpeedGuideSection({ speed, meta }: { speed: TeamSpeed; meta: boo
               <span className="guide-tile-head">
                 <b>{g(`gains.${gain.key}`)}</b>
                 <span className="guide-pct">{pctOf(gain.quota)}%</span>
+                <i className="sp-guide-chev" aria-hidden="true" />
               </span>
-              {!open && <small>{g(`gains.${gain.key}.rule`)}</small>}
               {!open && gain.key === 'control' && (
                 <span className="sp-guide-sub">
                   <small>{g('gains.control.short')}</small>
@@ -128,16 +141,20 @@ export function SpeedGuideSection({ speed, meta }: { speed: TeamSpeed; meta: boo
       </ul>
       {detail && openGain && (
         <section id={`${id}-detail`} className="sp-gd" aria-label={g(`gains.${openGain.key}`)}>
-          <div className="sp-gd-rows">
-            {detail.rows.map((row, i) => (typeof row === 'string'
-              ? <p key={i} className="sp-gd-group">{row}</p>
-              : (
-                <div key={i} className="sp-gd-row">
-                  <b>{row.label}</b>
-                  <span className="sp-gd-val">{row.value}</span>
-                  <span className="sp-gd-text">{row.text}</span>
+          <div className={`sp-gd-rows${detail.grouped ? ' grouped' : ''}`}>
+            {detail.rows.map((row, i) => (
+              <div key={i} className={`sp-gd-row${row.group && i > 0 ? ' next-group' : ''}`}>
+                {detail.grouped && <span className="sp-gd-group">{row.group}</span>}
+                <b>{row.label}</b>
+                <span className="sp-gd-val">{row.value}</span>
+                <span className="sp-gd-body">
+                  {row.chips?.map(chip => (
+                    <span key={chip.name} className="sp-gd-chip">{chip.name}{chip.note && <small>{chip.note}</small>}</span>
+                    ))}
+                    {row.text && <span className="sp-gd-text">{row.text}</span>}
+                  </span>
                 </div>
-              )))}
+            ))}
           </div>
           <p className="sp-gd-foot">{detail.foot}</p>
           <button type="button" className="help-close sp-gd-close" aria-label={t('help.close')} title={t('help.close')} onClick={close}><Icon name="close" /></button>

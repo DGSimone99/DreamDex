@@ -84,7 +84,7 @@
 .sp-row .item-icon { flex: none; display: inline-block; }
 .sp-rival-speed { text-align: right; }
 .sp-rival-diff { text-align: right; font-weight: 700; }
-/* Guida della Velocità: le tre fonti come tessere (nome e quota sopra, una riga sotto), come le soglie della Difesa */
+/* Guida della Velocità: le tre fonti come tessere (nome, quota e freccia), come le soglie della Difesa */
 .guide-tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin: 0; padding: 0; list-style: none; }
 .guide-tiles li { display: grid; align-content: start; gap: 4px; padding: 8px 10px; border: 1px solid var(--line-soft); background: color-mix(in srgb, var(--raised) 55%, var(--panel)); }
 .guide-tile-head { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
@@ -101,23 +101,38 @@
 .sp-guide-tiles button:hover { background: color-mix(in srgb, var(--raised) 70%, transparent); }
 .sp-guide-tiles button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 .sp-guide-tiles.compact button { padding: 6px 10px; }
+.sp-guide-tiles .guide-tile-head b { margin-right: auto; }
+/* La freccia dice che la tessera si apre: giù da chiusa, su da aperta (due bordi ruotati, come gli altri chevron) */
+.sp-guide-chev { flex: none; width: 7px; height: 7px; margin: -4px 2px 0 2px; border: solid var(--faint); border-width: 0 2px 2px 0; transform: rotate(45deg); }
+.sp-guide-tiles button:hover .sp-guide-chev { border-color: var(--text); }
+.sp-guide-tiles li.on .sp-guide-chev { margin-top: 3px; border-color: var(--accent); transform: rotate(225deg); }
+@media (prefers-reduced-motion: no-preference) { .sp-guide-chev { transition: transform 0.15s var(--ease), margin 0.15s var(--ease); } }
 .sp-guide-sub { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding-top: 4px; border-top: 1px dashed var(--line-soft); }
-/* Il dettaglio di una fonte: righe nome · valore · lista, la quota in fondo */
+/* Il dettaglio di una fonte: righe nome · valore · etichette e regola breve, la nota in fondo */
 /* Il modale ha sempre la stessa altezza, chiuso o con una tessera aperta (come la guida dell'Offesa): il dettaglio è
-   compatto e, se ancora non ci sta, scorre dentro il pannello della guida */
+   compatto (etichette piccole, regole brevi) e ci sta senza scorrere a 1440x900 e 1366x768, in italiano e in inglese */
 .help-dialog.area-guide-speed { height: min(560px, calc(100vh - 48px)); }
-.sp-gd { position: relative; margin-top: 4px; padding: 6px 40px 6px 12px; border: 1px solid var(--line-soft); border-top: 2px solid var(--accent); background: color-mix(in srgb, var(--raised) 55%, var(--panel)); }
-.sp-gd-rows { display: grid; grid-template-columns: max-content 4ch minmax(0, 1fr); column-gap: 10px; row-gap: 3px; align-items: baseline; font-size: 12.5px; line-height: 1.3; }
+.area-guide-speed .help-panel { padding-bottom: 12px; }
+.area-guide-speed .help-panel h5 { margin-top: 10px; }
+.area-guide-speed .guide-weights li { padding: 4px 2px; }
+.sp-gd { position: relative; margin-top: 4px; padding: 5px 30px 5px 10px; border: 1px solid var(--line-soft); border-top: 2px solid var(--accent); background: color-mix(in srgb, var(--raised) 55%, var(--panel)); }
+.sp-gd-rows { display: grid; grid-template-columns: max-content 4ch minmax(0, 1fr); column-gap: 10px; row-gap: 2px; align-items: baseline; font-size: 12.5px; line-height: 1.3; }
 .sp-gd-row { display: contents; }
 .sp-gd-row b { font-weight: 600; color: var(--text); }
 .sp-gd-val { font-weight: 700; color: var(--accent-2-ink); font-variant-numeric: tabular-nums; }
-.sp-gd-text { color: var(--muted); }
-.help-panel .sp-gd-group { grid-column: 1 / -1; max-width: none; margin: 3px 0 0; line-height: 1.3; font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--faint); }
-.help-panel .sp-gd-group:first-child { margin-top: 0; }
+.sp-gd-body { display: flex; flex-wrap: wrap; align-items: baseline; gap: 3px 4px; min-width: 0; }
+/* Ogni mossa o abilità è un'etichetta squadrata (3px, come i tag); il meteo o il campo che serve è scritto piccolo dentro */
+.sp-gd-chip { display: inline-flex; align-items: baseline; gap: 4px; padding: 0 4px; border: 1px solid var(--line); border-radius: 3px; background: var(--panel); color: var(--text); font-size: 11px; line-height: 1.35; white-space: nowrap; }
+.sp-gd-chip small { font-size: 10px; color: var(--muted); }
+.sp-gd-text { flex: 0 1 auto; color: var(--muted); font-size: 12px; line-height: 1.3; }
+.sp-gd-rows.grouped { grid-template-columns: max-content max-content 4ch minmax(0, 1fr); }
+/* Il gruppo (Lunghi · 50%, Brevi · 25%) sta a sinistra della sua prima riga; un po' d'aria tra un gruppo e l'altro */
+.sp-gd-group { font-size: 10.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap; color: var(--faint); }
+.sp-gd-row.next-group > * { margin-top: 5px; }
 .help-panel .sp-gd-foot { max-width: none; margin: 4px 0 0; font-size: 12px; line-height: 1.35; color: var(--faint); }
-.sp-gd-close { position: absolute; top: 4px; right: 4px; }
+.sp-gd-close { position: absolute; top: 1px; right: 1px; }
 @media (max-width: 560px) {
   .guide-tiles { grid-template-columns: repeat(2, 1fr); }
   .sp-gd-rows { grid-template-columns: max-content minmax(0, 1fr); }
-  .sp-gd-text { grid-column: 1 / -1; }
+  .sp-gd-body { grid-column: 1 / -1; }
 }
