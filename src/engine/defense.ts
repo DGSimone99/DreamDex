@@ -145,7 +145,7 @@ export function defensiveSetup(set: TeamSet): { move: string; boosts: { def: num
 
 export interface MemberDefense {
   species: string;
-  /** Mossa di setup difensivo e quanto alza il valore (metà del guadagno, già dentro fisica, speciale e valore). */
+  /** Mossa di setup difensivo e quanto alza il valore (tre quarti del guadagno, già dentro fisica, speciale e valore). */
   setupMove: string | null;
   setupGain: number;
   /** Quota (0–100) dei 18 colpi fisici e dei 18 speciali di tipo che regge: pieno 1, a metà 0,5. Solo informazione. */
