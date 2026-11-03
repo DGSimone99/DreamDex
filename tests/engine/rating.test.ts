@@ -177,12 +177,12 @@ describe('membro debole e controllo velocità', () => {
     expect(issues(['Present', 'Drill Peck'])).toHaveLength(1);
   });
 
-  it('membri deboli: −2 ciascuno, al massimo −6', () => {
+  it('membri deboli: −4 ciascuno, al massimo −12', () => {
     const weak: TeamSet = { species: 'Delibird', ability: 'Hustle', item: '', moves: ['Present', 'Drill Peck'], nature: 'Serious', evs: {} };
     const team = [weak, weak, weak, weak];
     const issues = memberIssues(team, 'it', teamNeeds(team, fixtureData));
     expect(issues).toHaveLength(4);
-    expect(issues.reduce((a, b) => a + b.points, 0)).toBe(6);
-    expect(issues.every(i => i.points <= 2)).toBe(true);
+    expect(issues.reduce((a, b) => a + b.points, 0)).toBe(12);
+    expect(issues.every(i => i.points <= 4)).toBe(true);
   });
 });

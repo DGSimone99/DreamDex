@@ -24,9 +24,9 @@ describe('membri deboli senza utilità (indipendente dal meta)', () => {
   const raticate = withMoves('Raticate', ['Body Slam', 'Crunch']);
   const tusk = withMoves('Great Tusk', ['Headlong Rush']);
 
-  it('debole e senza utilità: −2, anche senza statistiche Smogon', () => {
+  it('debole e senza utilità: −4, anche senza statistiche Smogon', () => {
     expect(penalties([raticate, tusk], { stats: null, sets: null }))
-      .toContainEqual(expect.objectContaining({ text: 'Raticate è debole e non porta utilità al team', points: 2 }));
+      .toContainEqual(expect.objectContaining({ text: 'Raticate è debole e non porta utilità al team', points: 4 }));
   });
 
   it("debole ma con un'utilità chiave (meteo, hazard): nessuna penalità", () => {

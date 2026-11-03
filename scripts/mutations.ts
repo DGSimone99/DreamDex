@@ -6,6 +6,7 @@
  *   npx tsx scripts/mutations.ts                 team da torneo di NatDex OU
  *   npx tsx scripts/mutations.ts --fmt=gen9ou    un altro formato
  *   npx tsx scripts/mutations.ts --limit=100     solo i primi N team (più veloce)
+ *   SPEED_TOP=1 npx tsx scripts/mutations.ts     con la Velocità pesata dal più veloce
  *
  * Le regole controllano solo cose che devono valere sempre: un'area che non c'entra non si muove, un'area che si
  * indebolisce non sale, il voto di un team peggiorato non sale.
@@ -17,6 +18,10 @@ import { getMove, initTiers, toID } from '../src/engine/dex';
 import type { FormatId } from '../src/engine/format';
 import { rateTeam, type TeamRating } from '../src/engine/rating';
 import type { TeamSet } from '../src/engine/sets';
+import { setSpeedTopHeavy } from '../src/engine/speedArea';
+
+// SPEED_TOP=1: Velocità coi pesi per posizione dal più veloce invece della media semplice (come nel banco)
+if (process.env.SPEED_TOP === '1') setSpeedTopHeavy(true);
 
 const SOURCES: Partial<Record<FormatId, string>> = {
   ou: 'gen9nationaldex', ubers: 'gen9nationaldexubers', uu: 'gen9nationaldexuu', gen9ou: 'gen9ou', gen9uu: 'gen9uu', gen9ag: 'gen9anythinggoes',

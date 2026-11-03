@@ -106,9 +106,8 @@ describe('memberOffense', () => {
 });
 
 describe('teamOffense', () => {
-  it('media pesata per posizione: il più offensivo pesa di più (30/22/17/13/10/8), nessun peso per i supporti', () => {
-    // Più ripidi: le minacce principali contano di più, i supporti meno
-    expect(RANK_WEIGHTS).toEqual([0.30, 0.22, 0.17, 0.13, 0.10, 0.08]);
+  it('media semplice: ogni membro pesa uguale (scelta 2026-11-03), nessun peso per i supporti', () => {
+    expect(RANK_WEIGHTS).toEqual(Array(6).fill(1 / 6));
     const team = teamOffense([blissey, chomp], fixtureData);
     expect('support' in team.members[0]).toBe(false);
   });
@@ -176,10 +175,10 @@ describe('scala dei membri e del team', () => {
     expect(memberOffense(ninetales, [ninetales], noStats)!.power).toBe(capped);
   });
 
-  it('il 100 del membro è il 3° miglior attaccante del meta; la Potenza del team è la media pesata, senza moltiplicatori', () => {
+  it('il 100 del membro è il 3° miglior attaccante del meta; la Potenza del team è la media dei membri, senza moltiplicatori', () => {
     expect(REFERENCE_RANK).toBe(3);
     const team = teamOffense([chomp, blissey], fixtureData);
-    const raw = (0.30 * Math.max(...team.members.map(m => m.power)) + 0.22 * Math.min(...team.members.map(m => m.power))) / 0.52;
+    const raw = (Math.max(...team.members.map(m => m.power)) + Math.min(...team.members.map(m => m.power))) / 2;
     expect(team.power).toBe(Math.round(raw));
   });
 });

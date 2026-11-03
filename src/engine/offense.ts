@@ -42,8 +42,12 @@ const ROLES_WEIGHTS = { power: 0.5, wallbreaking: 0.35 };
  * (2026-11-03: da metà; il giudice cieco conta il setup 8 coppie a 0, il banco è neutro).
  */
 export const SETUP_SHARE = 0.75;
-/** Pesi per posizione nel team, dal membro più offensivo al meno: un membro debole conta poco perché è in fondo. */
-export const RANK_WEIGHTS = [0.30, 0.22, 0.17, 0.13, 0.10, 0.08];
+/**
+ * Pesi per posizione nel team (Potenza dell'Offesa e Sostenibilità della Difesa): tutti uguali, una media semplice
+ * (scelta dell'utente 2026-11-03: con 30/22/17/13/10/8 il membro più debole pesava l'8% e quasi non si notava; sul banco
+ * separazione e partite restano uguali, i voti scendono per tutti).
+ */
+export const RANK_WEIGHTS = [1, 1, 1, 1, 1, 1].map(w => w / 6);
 /** Tera e mosse Z si usano una volta a partita: nel voto entra un quarto di quello che aggiungono. */
 export const ONE_USE_SHARE = 0.25;
 
@@ -349,7 +353,7 @@ export function rolesMemberOffense(set: TeamSet, team: TeamSet[], data: EngineDa
   return { wallbreaking, wallbreakingGain, value, bestMove: raw.bestMove, setupMove: raw.setupMove };
 }
 
-/** Media pesata per posizione: valori dal più alto al più basso, pesi 30/22/17/13/10/8% (rinormalizzati se sono meno di sei). */
+/** Media coi pesi per posizione (oggi uguali): valori dal più alto al più basso, pesi rinormalizzati se sono meno di sei. */
 export function rankWeighted(values: number[]): number {
   if (!values.length) return 0;
   const sorted = [...values].sort((a, b) => b - a);

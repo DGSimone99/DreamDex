@@ -224,12 +224,15 @@ function bringsUtility(set: TeamSet, values: SubRoleValues): boolean {
   return UTILITY_ROLES.some(role => (values[role] ?? 0) >= UTILITY_MIN) || hasSpeedControl(set) || enables(set).length > 0;
 }
 
-/** Ogni membro debole senza utilità chiave costa 2 punti, fino a un massimo di 6. */
-export const WEAK_MEMBER_POINTS = 2;
-export const WEAK_MEMBER_MAX = 6;
+/**
+ * Ogni membro debole senza utilità chiave costa 4 punti, fino a un massimo di 12 (2026-11-03: era −2; con −2 mettere
+ * Raticate al posto di un muro poteva alzare il voto, perché le aree quasi non lo notano. Nessun team da torneo ne ha uno).
+ */
+export const WEAK_MEMBER_POINTS = 4;
+export const WEAK_MEMBER_MAX = 12;
 
 /**
- * Membri deboli senza utilità chiave (−2 ciascuno, al massimo −6; non dipende dal meta: Pelipper che porta la pioggia è esente).
+ * Membri deboli senza utilità chiave (−4 ciascuno, al massimo −12; non dipende dal meta: Pelipper che porta la pioggia è esente).
  * Ditto con Imposter è esente: copia l'avversario, le sue statistiche base non dicono nulla.
  * Lo squilibrio degli attaccanti è una mancanza essenziale dei Ruoli (rolesArea.ts).
  */
