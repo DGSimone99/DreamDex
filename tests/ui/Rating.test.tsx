@@ -98,11 +98,12 @@ describe('Riquadro Voto', () => {
     expect(balance).toHaveTextContent('Un team incompleto si giudica come Balance');
     // I livelli vengono dalla tabella del codice, non dai testi
     expect(balance).toHaveTextContent(/Essenziali.*Muro Fisico/);
-    // Stall: Velocità allo 0% e nota grigia; Recupero essenziale
+    // Stall: Difesa 65, Offesa 25, Velocità 10 (conta poco ma conta: niente nota grigia); Recupero essenziale
     await user.click(within(dialog).getByRole('tab', { name: 'Stall' }));
     const stall = within(dialog).getByRole('tabpanel');
-    expect(stall).toHaveTextContent('Velocità0%');
-    expect(stall).toHaveTextContent('Non conta nello Stall');
+    expect(stall).toHaveTextContent('Difesa65%');
+    expect(stall).toHaveTextContent('Velocità10%');
+    expect(stall).not.toHaveTextContent('Non conta nello Stall');
     expect(stall).toHaveTextContent(/Essenziali.*Recupero.*Importanti/);
     expect(stall).not.toHaveTextContent('Il tuo team è giudicato come');
     // Trick Room: la regola intera su ogni tab di tipo
@@ -180,9 +181,9 @@ Bold Nature
     ].join('\n\n'));
     await user.click(screen.getByRole('button', { name: 'Importa' }));
     const speed = within(band()).getByRole('button', { name: /^Velocità \d+, apri il dettaglio/ });
-    expect(speed).toHaveClass('inactive');
-    expect(speed).toHaveAccessibleName(/Non conta nello Stall/);
-    // Le altre aree non sono grigie
+    // Dal 2026-11-03 la Velocità pesa il 10% anche nello stall: nessuna riga è grigia
+    expect(speed).not.toHaveClass('inactive');
+    expect(speed).not.toHaveAccessibleName(/Non conta nello Stall/);
     expect(within(band()).getByRole('button', { name: /^Difesa \d+, apri il dettaglio/ })).not.toHaveClass('inactive');
     await user.click(speed);
     expect(within(document.getElementById('panel-analysis')!).getByRole('region', { name: 'Velocità' })).toBeInTheDocument();

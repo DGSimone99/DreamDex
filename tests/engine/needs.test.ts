@@ -50,7 +50,7 @@ describe('tabella dei livelli per archetipo', () => {
     expect(levelOf('balance', 'anySpecial')).toBe('important');
     expect(levelOf('semiStall', 'anyPhysical')).toBe('important');
     expect(levelOf('semiStall', 'anySpecial')).toBe('minor');
-    // HO: Hazard, Controllo Hazard e Pivot importanti, muri, Recupero e Rimozione Strumenti minori, Taunt ed Encore ignorati
+    // HO: Hazard e Controllo Hazard importanti; muri, Recupero, Pivot e Rimozione Strumenti minori, Taunt ed Encore ignorati
     // BO (201 BO da torneo di Natdex OU, 95 / 70 / 30): sotto il 30% Taunt, Anti-setup, Cleric, Debuff ed Encore sono ignorati
     expect(levelOf('bulkyOffense', 'taunt')).toBe('ignored');
     expect(levelOf('bulkyOffense', 'phazer')).toBe('ignored');
@@ -61,7 +61,8 @@ describe('tabella dei livelli per archetipo', () => {
     expect(levelOf('hyperOffense', 'itemRemoval')).toBe('minor');
     expect(levelOf('hyperOffense', 'taunt')).toBe('ignored');
     expect(levelOf('hyperOffense', 'encore')).toBe('ignored');
-    expect(levelOf('semiStall', 'pivot')).toBe('important');
+    // 2026-11-03: Pivot e Rimozione Strumenti minori ovunque (il censimento dice che non distinguono i team da torneo dal ladder)
+    expect(levelOf('semiStall', 'pivot')).toBe('minor');
     expect(levelOf('stall', 'pivot')).toBe('ignored');
     // Gli hazard: importanti negli offensivi (90–92%), essenziali da balance in giù (99–100%); schermi e Speed Control sono ignorati ovunque
     for (const a of Object.keys(ROLE_LEVELS) as (keyof typeof ROLE_LEVELS)[]) {
@@ -73,11 +74,11 @@ describe('tabella dei livelli per archetipo', () => {
     expect(levelOf('balance', 'hazards')).toBe('essential');
     expect(levelOf('semiStall', 'hazards')).toBe('essential');
     expect(levelOf('stall', 'hazards')).toBe('essential');
-    // Balance: Anti-setup minore (41%), Rimozione Strumenti importante; BO e semi-stall: Rimozione Strumenti importante
+    // Balance: Anti-setup minore (41%); Rimozione Strumenti minore in Balance, BO e semi-stall (2026-11-03)
     expect(levelOf('balance', 'phazer')).toBe('minor');
-    expect(levelOf('balance', 'itemRemoval')).toBe('important');
-    expect(levelOf('bulkyOffense', 'itemRemoval')).toBe('important');
-    expect(levelOf('semiStall', 'itemRemoval')).toBe('important');
+    expect(levelOf('balance', 'itemRemoval')).toBe('minor');
+    expect(levelOf('bulkyOffense', 'itemRemoval')).toBe('minor');
+    expect(levelOf('semiStall', 'itemRemoval')).toBe('minor');
     // Cleric (Wish, Healing Wish, Heal Bell): minore nel semi-stall (35%), essenziale nello stall (100%), ignorato altrove
     expect(levelOf('balance', 'support')).toBe('ignored');
     expect(levelOf('semiStall', 'support')).toBe('minor');
@@ -92,11 +93,11 @@ describe('tabella dei livelli per archetipo', () => {
     expect(LEVEL_KEYS.indexOf('support')).toBe(LEVEL_KEYS.indexOf('recovery') + 1);
   });
 
-  it('HO: le voci importanti sono Controllo Hazard, Hazard e Pivot (nell\'ordine delle voci)', () => {
+  it('HO: le voci importanti sono Controllo Hazard e Hazard (nell\'ordine delle voci)', () => {
     expect(levelOf('hyperOffense', 'hazards')).toBe('important');
-    expect(LEVEL_KEYS.filter(k => levelOf('hyperOffense', k) === 'important')).toEqual(['removal', 'hazards', 'pivot']);
-    // Il pivot in HO è importante: il 74% degli HO da torneo di Natdex OU ne ha uno (2026-11-01)
-    expect(levelOf('hyperOffense', 'pivot')).toBe('important');
+    expect(LEVEL_KEYS.filter(k => levelOf('hyperOffense', k) === 'important')).toEqual(['removal', 'hazards']);
+    // Il pivot in HO è minore (2026-11-03): manca al 47% degli HO da torneo, non distingue; averlo vale +1
+    expect(levelOf('hyperOffense', 'pivot')).toBe('minor');
     const needs = teamNeeds(hyperOffense, fixtureData);
     expect(needs.archetype).toBe('hyperOffense');
     expect(needs.levels.hazards).toBe('important');
@@ -105,14 +106,14 @@ describe('tabella dei livelli per archetipo', () => {
     expect(needs.importantMissing).not.toContain('hazards');
   });
 
-  it('HO con Sticky Web e senza hazard: Sticky Web è Speed Control (ignorato), gli hazard mancano', () => {
+  it('HO con Sticky Web e senza altri hazard: Sticky Web copre gli Hazard e resta Speed Control (ignorato)', () => {
     const web = [set('Galvantula', 'Focus Sash', 'Compound Eyes', ['Sticky Web', 'Bug Buzz', 'Thunder', 'Giga Drain']), ...hyperOffense.slice(1)];
     const needs = teamNeeds(web, fixtureData);
     expect(needs.archetype).toBe('hyperOffense');
-    expect(needs.values.hazards).toBe(0);
+    expect(needs.values.hazards).toBe(1);
     expect(needs.values.speedControl).toBe(1);
     expect(needs.levels.speedControl).toBe('ignored');
-    expect(needs.importantMissing).toContain('hazards');
+    expect(needs.importantMissing).not.toContain('hazards');
   });
 
   it('HO con Aurora Veil e neve: Screen Setter 1, ma gli schermi non valgono come hazard', () => {
@@ -150,11 +151,11 @@ describe('tabella dei livelli per archetipo', () => {
     expect(needLabel('anySpecial', 'en')).toBe('Special Attacker');
   });
 
-  it('"Chi la porta" degli hazard nomina la mossa; Sticky Web è Speed Control e Aurora Veil Screen Setter, non hazard', () => {
+  it('"Chi la porta" degli hazard nomina la mossa; Sticky Web è hazard e Speed Control, Aurora Veil Screen Setter e non hazard', () => {
     const by = (team: TeamSet[]) => teamRolesArea(team, fixtureData, 'it').rows.find(r => r.key === 'hazards')!.by;
     expect(by(hyperOffense)[0]).toMatchObject({ species: 'Glimmora', source: 'Stealth Rock' });
     const web = [set('Galvantula', 'Focus Sash', 'Compound Eyes', ['Sticky Web', 'Bug Buzz', 'Thunder', 'Giga Drain']), ...hyperOffense.slice(1)];
-    expect(by(web)).toEqual([]);
+    expect(by(web)).toEqual([expect.objectContaining({ species: 'Galvantula', source: 'Sticky Web' })]);
     expect(subRoleReasons(web[0], web, fixtureData).find(r => r.role === 'speedControl')).toMatchObject({ value: 1, source: 'Sticky Web' });
     const veil = [set('Ninetales-Alola', 'Light Clay', 'Snow Warning', ['Aurora Veil', 'Blizzard', 'Moonblast', 'Encore']), ...hyperOffense.slice(1)];
     expect(by(veil)).toEqual([]);
@@ -177,7 +178,7 @@ describe('tabella dei livelli per archetipo', () => {
     expect(levelOf('bulkyOffense', 'recovery')).toBe('ignored');
     expect(levelOf('hyperOffense', 'recovery')).toBe('ignored');
     // Le altre famiglie restano com'erano
-    expect(levelOf('hyperOffense', 'pivot')).toBe('important');
+    expect(levelOf('hyperOffense', 'pivot')).toBe('minor');
     expect(levelOf('balance', 'phazer')).toBe('minor');
   });
 
@@ -245,12 +246,12 @@ describe('voci a livello di team (teamRolesArea)', () => {
     expect(removal.by[0]).toMatchObject({ species: 'Hatterene', value: 0.5, source: 'Magic Bounce' });
   });
 
-  it('HO di 6 con hazard e controllo hazard ma senza pivot: solo il malus del pivot (−2)', () => {
+  it('HO di 6 con hazard e controllo hazard ma senza pivot: nessun malus, e il pivot è una voce minore', () => {
     const ho = teamRolesArea(hyperOffense, fixtureData, 'it');
     expect(ho.rows.find(r => r.key === 'hazards')).toMatchObject({ level: 'important', value: 1 });
     expect(ho.rows.find(r => r.key === 'removal')).toMatchObject({ level: 'important', value: 1 });
-    expect(ho.rows.find(r => r.key === 'pivot')).toMatchObject({ level: 'important', value: 0 });
-    expect(ho.failures).toEqual([expect.objectContaining({ points: IMPORTANT_POINTS, catalog: 'importantRole' })]);
+    expect(ho.rows.find(r => r.key === 'pivot')).toMatchObject({ level: 'minor', value: 0 });
+    expect(ho.failures).toEqual([]);
     expect(ho.covered).toBe(ho.rows.filter(r => r.value >= 0.5).length);
   });
 });
@@ -268,9 +269,9 @@ describe('bisogni del team dai sotto-ruoli', () => {
     expect(needs.values.anySweeper).toBe(1);
     expect(needs.values.anyBreaker).toBe(1);
     expect(needs.values.anySpecial).toBe(1);
-    // Tabella 2026-11-01: in Balance le importanti sono "almeno uno speciale" (coperto), rimozione, pivot e rimozione strumenti (phazer minore)
-    expect(needs.importantMissing).toEqual(['removal', 'pivot', 'itemRemoval']);
-    expect(needs.missingRoles).toEqual(['physicalSweeper', 'physicalBreaker', 'physicalWall', 'hazards', 'removal', 'pivot', 'itemRemoval']);
+    // In Balance le importanti sono "almeno uno speciale" (coperto) e la rimozione; pivot e rimozione strumenti sono minori (2026-11-03), phazer minore
+    expect(needs.importantMissing).toEqual(['removal']);
+    expect(needs.missingRoles).toEqual(['physicalSweeper', 'physicalBreaker', 'physicalAttacker', 'physicalWall', 'hazards', 'removal']);
   });
 
   it('il valore del team è il migliore dei membri; senza attaccanti manca il gruppo', () => {

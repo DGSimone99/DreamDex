@@ -59,10 +59,10 @@ describe('roles (sotto-ruoli del set)', () => {
 
   it('bisogni del team', () => {
     // Team incompleto: si giudica come balance; Great Tusk e Gholdengo coprono rimozione, recupero, attaccanti e muro fisico
-    // (mancano muro speciale e hazard, essenziali nel Balance; pivot e rimozione strumenti sono importanti)
+    // (mancano muro speciale e hazard, essenziali nel Balance; pivot e rimozione strumenti sono minori, non entrano fra le mancanze)
     const needs = teamNeeds([tusk, gholdengo], fixtureData);
     expect(needs.essentialMissing).toEqual(['specialWall', 'hazards']);
-    expect(needs.importantMissing).toEqual(['pivot', 'itemRemoval']);
+    expect(needs.importantMissing).toEqual([]);
     expect(needs.needStyle).toBeNull();
     // Squilibrio solo con almeno 4 attaccanti tutti dello stesso tipo (come nel voto)
     expect(teamNeeds([tusk, kingambit], fixtureData).needStyle).toBeNull();

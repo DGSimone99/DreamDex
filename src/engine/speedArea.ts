@@ -28,14 +28,20 @@ export const CONTROL_CONDITIONS: SpeedCondition[] = ['web', 'trickroom', 'tailwi
  */
 export const SPEED_FULL = 1;
 
-/** Peso di ogni membro per posizione di velocità, dal più veloce: i due più rapidi fanno quasi tutto, ma la velocità serve a tutti. */
-export const SPEED_RANK_WEIGHTS = [25, 20, 16, 14, 13, 12];
+/**
+ * Peso di ogni membro per posizione di velocità, dal più veloce: la Velocità del team la fanno i tre più veloci, i lenti
+ * contano poco (2026-11-03: con 25/20/16/14/13/12 la metà lenta pesava il 39% e i team da torneo stavano a 64; il giudice
+ * cieco ha preferito i pesi concentrati sui veloci 8 coppie a 0).
+ */
+export const SPEED_RANK_WEIGHTS = [30, 30, 20, 10, 5, 5];
 
 /**
- * Quota del guadagno che entra nel voto: metà per ciò che dura o regge il team (setup, meteo, Web, Trick Room),
- * un quarto per Tailwind e un bersaglio rallentato.
+ * Quota del guadagno che entra nel voto: metà per ciò che il membro si porta da solo e dura (setup, meteo, Booster,
+ * Unburden); un quarto per la priorità e per il controllo del team che va messo in campo (Sticky Web, Trick Room); un
+ * ottavo per Tailwind e un bersaglio rallentato. 2026-11-03: controllo e priorità dimezzati (il giudice cieco non
+ * considera veloce un team di Trick Room o di Web, 8 coppie a 0; sul banco la separazione torneo-ladder migliora).
  */
-export const CONDITION_QUOTA: Record<SpeedCondition, number> = { setup: 0.5, weather: 0.5, booster: 0.5, unburden: 0.5, priority: 0.5, web: 0.5, trickroom: 0.5, tailwind: 0.25, slow: 0.25 };
+export const CONDITION_QUOTA: Record<SpeedCondition, number> = { setup: 0.5, weather: 0.5, booster: 0.5, unburden: 0.5, priority: 0.25, web: 0.25, trickroom: 0.25, tailwind: 0.125, slow: 0.125 };
 
 export interface SpeedGain {
   condition: SpeedCondition;
@@ -329,12 +335,12 @@ function measure(set: TeamSet, data: EngineData, team: TeamConditions): MemberSp
   return { species: species.name, speed, raw, gains, own: ownTotal, total, controlOptions, cells };
 }
 
-/** La parte Velocità del team: i membri pesati dal più veloce (25/20/16/14/13/12), poi la scala lineare (il riferimento vale 100). */
+/** La parte Velocità del team: i membri pesati dal più veloce (30/30/20/10/5/5), poi la scala lineare (il riferimento vale 100). */
 export function speedPart(list: MemberSpeed[]): number {
   return softScore(weightedMean(list, m => m.total) / SPEED_FULL);
 }
 
-/** Media dei membri pesata per posizione di velocità (25/20/16/14/13/12; a pari velocità le posizioni si dividono il peso). */
+/** Media dei membri pesata per posizione di velocità (30/30/20/10/5/5; a pari velocità le posizioni si dividono il peso). */
 function weightedMean(list: MemberSpeed[], pick: (m: MemberSpeed) => number): number {
   if (!list.length) return 0;
   const sorted = [...list].sort((a, b) => b.speed - a.speed);

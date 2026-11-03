@@ -20,7 +20,8 @@ describe('coachTeam', () => {
     expect(coaching.verdict).toBe('Team incompleto');
     // Gravi solo i tipi scoperti del tutto che pesano (Water, Fighting)
     expect(coaching.problems.filter(p => p.severity === 'serious').map(p => p.key)).toEqual(['coverage:Water', 'coverage:Fighting']);
-    expect(coaching.problems.filter(p => p.category !== 'meta')).toHaveLength(11);
+    // Pivot e Rimozione Strumenti sono voci minori: nessun problema "Ruoli importanti mancanti"
+    expect(coaching.problems.filter(p => p.category !== 'meta')).toHaveLength(10);
   });
 
   it('punti di forza', () => {
@@ -46,9 +47,9 @@ describe('coachTeam', () => {
       'Debole a Water: 1 Debole, 0 Resistono',
       'Debole a Ground: 1 Debole, 0 Resistono',
       'Debole a Ghost: 1 Debole, 0 Resistono',
-      // Le voci essenziali mancanti (nel Balance gli Hazard sono essenziali), poi in una riga a parte le importanti
+      // Le voci essenziali mancanti (nel Balance gli Hazard sono essenziali); Pivot e Rimozione Strumenti sono minori,
+      // quindi non c'è la riga delle importanti
       'Ruoli mancanti: Muro Speciale, Hazard',
-      'Ruoli importanti mancanti: Pivot, Rimozione Strumenti',
       // Coverage tipi del voto: un problema per tipo, nell'ordine dei tipi (Bug scoperto ma leggero: minore)
       'Coperto a metà Ground: 1 solo in tre colpi',
       'Scoperto Bug: nessun colpo super efficace',

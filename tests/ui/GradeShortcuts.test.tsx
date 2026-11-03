@@ -29,7 +29,7 @@ describe('riquadro Voto: le righe portano alla scheda di Analisi', () => {
     expect(within(document.getElementById('panel-analysis')!).getByRole('tab', { name: /^Bonus\/Malus/ })).toHaveAttribute('aria-selected', 'true');
   });
 
-  it('Velocità inattiva nello stall: resta, grigia, e il nome lo dice', async () => {
+  it('Velocità nello stall: conta poco (10%) ma conta, quindi non è grigia e non ha la nota', async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} />);
     await user.click(screen.getByLabelText('Testo Showdown'));
@@ -85,10 +85,10 @@ Bold Nature
     ].join('\n\n'));
     await user.click(screen.getByRole('button', { name: 'Importa' }));
     const speed = within(band()).getByRole('button', { name: /^Velocità \d+, apri il dettaglio/ });
-    expect(speed).toHaveAccessibleName(/Non conta nello Stall/);
-    expect(speed).toHaveClass('inactive');
-    // Si vede anche senza lettore di schermo: il tooltip lo dice
-    expect(speed).toHaveAttribute('title', expect.stringContaining('Non conta nello Stall'));
+    // Dal 2026-11-03 lo stall pesa la Velocità al 10%: nessuna area è inattiva, niente grigio né tooltip
+    expect(speed).not.toHaveAccessibleName(/Non conta nello Stall/);
+    expect(speed).not.toHaveClass('inactive');
+    expect(speed).not.toHaveAttribute('title');
   });
 
   it('il ? del voto sta nel riquadro', async () => {

@@ -195,6 +195,18 @@ export function dummyStats(formatId: EngineData['formatId'], type: string): { at
   return { atk: dummyAttacker(data, 'atk', type).baseStats?.atk ?? 0, spa: dummyAttacker(data, 'spa', type).baseStats?.spa ?? 0 };
 }
 
+/** Un'abilità che non tocca i danni ricevuti: prende il posto di Tera Shell nei colpi della Difesa. */
+const NEUTRAL_ABILITY = 'Pressure';
+
+/**
+ * Tera Shell rende poco efficace ogni colpo solo a PS pieni; la Difesa misura colpi ripetuti, quindi il membro si misura
+ * come se l'abilità non ci fosse (Coverage tipi e Coverage meta; l'Offesa non cambia). Senza Tera Shell: il set stesso.
+ * Le cache restano per set: il set senza abilità dipende solo da quello vero.
+ */
+export function withoutTeraShell(member: TeamSet): TeamSet {
+  return toID(battleAbility(member)) === 'terashell' ? { ...member, ability: NEUTRAL_ABILITY } : member;
+}
+
 const typedCache = new Map<string, { plain: number[]; held: number[] }>();
 const TYPED_LIMIT = 5000;
 
@@ -210,9 +222,10 @@ export function typedHits(member: TeamSet, data: EngineData): { plain: number[];
   if (typedCache.size >= TYPED_LIMIT) typedCache.clear();
   const conditions = ownConditions(member);
   const setup = defensiveSetup(member);
+  const target = withoutTeraShell(member);
   const hit = (type: string, category: 'Physical' | 'Special', boosted: boolean) => {
     const attacker = dummyAttacker(data, category === 'Physical' ? 'atk' : 'spa', type);
-    const result = standardHit(attacker, member, category, { conditions, moveType: type, targetBoosts: boosted ? setup?.boosts : undefined });
+    const result = standardHit(attacker, target, category, { conditions, moveType: type, targetBoosts: boosted ? setup?.boosts : undefined });
     return Math.min(1, result?.expected ?? 0);
   };
   const plain = TYPES.flatMap(type => [hit(type, 'Physical', false), hit(type, 'Special', false)]);
@@ -227,9 +240,13 @@ export function typedHits(member: TeamSet, data: EngineData): { plain: number[];
   return value;
 }
 
-/** Difesa del team: Coverage tipi 50, Coverage meta 30, Sostenibilità 20; senza meta Coverage tipi 80, Sostenibilità 20. */
-export const DEFENSE_SHARES = { types: 0.5, meta: 0.3, sustain: 0.2 };
-export const DEFENSE_SHARES_NO_META = { types: 0.8, sustain: 0.2 };
+/**
+ * Difesa del team: Coverage tipi 40, Coverage meta 30, Sostenibilità 30; senza meta Coverage tipi 70, Sostenibilità 30.
+ * 2026-11-03: Sostenibilità da 20 a 30 (via di mezzo): reggere i colpi senza recupero vale poco (il giudice cieco ha
+ * preferito il recupero 8 coppie a 0; gli Hyper Offense con molte resistenze prendevano più Difesa dei core con Regenerator).
+ */
+export const DEFENSE_SHARES = { types: 0.4, meta: 0.3, sustain: 0.3 };
+export const DEFENSE_SHARES_NO_META = { types: 0.7, sustain: 0.3 };
 
 const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
 /** Quota (0–1) dei colpi che il membro regge: pieno 1, a metà 0,5. `side` 0 i fisici, 1 gli speciali, assente tutti. */
@@ -240,7 +257,7 @@ const teamConditions = (team: TeamSet[]): FieldCondition[] => [...new Set(team.f
 
 /**
  * Difesa di un membro, solo informazione (il voto è del team): quanti dei 36 colpi di tipo regge per lato, la
- * Sostenibilità, e il valore 40/40/20. La danza difensiva conta per metà; `setupGain` è quanto alza il valore.
+ * Sostenibilità, e il valore 40/30/30. La danza difensiva conta per metà; `setupGain` è quanto alza il valore.
  */
 export function memberDefense(set: TeamSet, team: TeamSet[], data: EngineData): MemberDefense | null {
   const species = battleSpecies(set);
@@ -256,7 +273,7 @@ export function memberDefense(set: TeamSet, team: TeamSet[], data: EngineData): 
       return acc + weight * (x < HOLD_FULL ? 1 : x < 1 ? 0.5 : 0);
     }, 0))
     : null;
-  // Il valore del membro coi pesi della squadra: 50/30/20, senza meta 80/20
+  // Il valore del membro coi pesi della squadra: 40/30/30, senza meta 70/30
   const valueOf = (hits: number[]) => {
     // Dai numeri mostrati nelle colonne, così il conto si rifà a mano
     const hold = Math.round(100 * holdShare(hits));
@@ -279,7 +296,7 @@ const HOLD_FULL = 0.5;
 export interface ThreatRow {
   species: string;
   weight: number;
-  /** Quanto è retta: 0–100, coi crediti dei membri al 70, 20 e 10%. */
+  /** Quanto è retta: 0–100, coi crediti dei membri al 50, 30 e 20%. */
   level: number;
   heldBy: { species: string; move: string; pct: number; partial: boolean }[];
 }
@@ -300,7 +317,7 @@ export interface TypeHoldRow {
 }
 
 export interface TeamDefense {
-  /** Coverage tipi 50 + Coverage meta 30 + Sostenibilità 20 (senza meta 80 + 20). */
+  /** Coverage tipi 40 + Coverage meta 30 + Sostenibilità 30 (senza meta 70 + 30). */
   value: number;
   sustain: number;
   /** `weak`: i tipi dove nessuno ha credito sul lato peggiore. */
@@ -335,7 +352,8 @@ function threatHitsOf(member: TeamSet, data: EngineData): (Hit | null)[] {
   let hits = threatCache.get(key);
   if (hits) return hits;
   if (threatCache.size >= TYPED_LIMIT) threatCache.clear();
-  hits = metaThreats(data).map(({ set }) => threatHit(set, member, data));
+  const target = withoutTeraShell(member);
+  hits = metaThreats(data).map(({ set }) => threatHit(set, target, data));
   threatCache.set(key, hits);
   return hits;
 }
@@ -349,8 +367,8 @@ const depthOf = (credits: number[]) => [...credits].sort((a, b) => b - a).reduce
 
 /**
  * Difesa del team. Coverage di tipi: per ognuno dei 36 colpi di tipo (18 tipi × fisico e speciale) i crediti dei
- * membri con la profondità 70/20/10, poi la media. Coverage meta: chi regge il colpo migliore vero di ogni minaccia.
- * Sostenibilità: media pesata per posizione. Col meta 50/30/20, senza 80/20.
+ * membri con la profondità 50/30/20, poi la media. Coverage meta: chi regge il colpo migliore vero di ogni minaccia.
+ * Sostenibilità: media pesata per posizione. Col meta 40/30/30, senza 70/30.
  */
 export function teamDefense(team: TeamSet[], data: EngineData): TeamDefense {
   const known = team.filter(set => !!battleSpecies(set));

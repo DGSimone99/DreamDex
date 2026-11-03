@@ -49,10 +49,26 @@ describe('sostituzioni in uno stall', () => {
     set('Toxapex', 'Rocky Helmet', 'Regenerator', ['Knock Off', 'Recover', 'Scald', 'Toxic Spikes']),
   ];
 
-  it('un muro passivo si sostituisce solo con un altro passivo, e il team resta stall', () => {
-    for (const fix of adviceOf(stall, DEFAULT_FORMAT, fixtureData).fixes) {
-      expect(isPassive(fix.set, DEFAULT_RULES)).toBe(true);
-      expect(rateTeam(swapped(stall, fix.index!, fix.set), fixtureData)!.archetype).toBe('stall');
+  it('i cambi alzano il voto vero; con un sostituto passivo il team resta stall, con un attaccante può diventare semi-stall', () => {
+    // Il Coaching non blocca il tipo di team fuori da Ubers (archetypeLock): giudica col voto vero, "Tipo di team Qualunque".
+    // Coi pesi 2026-11-03 (stall 65/25/10) uno stall vale meno di prima in Difesa, e mettere un attaccante (Gholdengo al
+    // posto di Clodsire, +8) lo porta a semi-stall con un voto più alto: il cambio si propone. Con un passivo (Rotom-Wash)
+    // il team resta stall. Prima dei nuovi pesi (76/24/0) uscivano solo sostituti passivi: era un effetto dei pesi, non una regola.
+    const before = rateTeam(stall, fixtureData)!;
+    expect(before.archetype).toBe('stall');
+    const fixes = adviceOf(stall, DEFAULT_FORMAT, fixtureData).fixes;
+    expect(fixes.length).toBeGreaterThan(0);
+    expect(fixes.some(fix => isPassive(fix.set, DEFAULT_RULES))).toBe(true);
+    for (const fix of fixes) {
+      const after = rateTeam(swapped(stall, fix.index!, fix.set), fixtureData)!;
+      expect(after.overall - before.overall).toBe(fix.gain);
+      expect(fix.gain).toBeGreaterThanOrEqual(0);
+      if (isPassive(fix.set, DEFAULT_RULES)) expect(after.archetype).toBe('stall');
+      // Se il tipo di team cambia, cambia per un voto più alto (e resta un team difensivo: semi-stall)
+      if (after.archetype !== 'stall') {
+        expect(fix.gain).toBeGreaterThan(0);
+        expect(after.teamType).toBe('semiStall');
+      }
     }
   });
 });

@@ -3,8 +3,10 @@ import type { TeamSet } from '../../src/engine/sets';
 import { speedPool, speedStat } from '../../src/engine/speed';
 import { outspeedShare } from '../../src/engine/speed';
 import {
-  measuredSubRoles, measureWith, setSubRoles, statusPool, subRoleReasons, MEASURED, type StatusRival,
+  measuredSubRoles, measureWith, rolesList, setSubRoles, statusPool, subRoleReasons, MEASURED, type StatusRival,
 } from '../../src/engine/subRoles';
+import { teamNeeds } from '../../src/engine/needs';
+import { LEVEL_KEYS } from '../../src/engine/roleLevels';
 import { rulesOf } from '../../src/engine/formatRules';
 import { fixtureData } from '../fixtures/data';
 
@@ -117,5 +119,55 @@ describe('sotto-ruoli misurati', () => {
     expect(measuredSubRoles(set('Notamon', ['Toxic', 'Taunt']), [], fixtureData)).toEqual({});
     expect(() => measuredSubRoles(set('Great Tusk', ['', 'Notamove']), [], fixtureData)).not.toThrow();
     expect(MEASURED).toContain('recovery');
+  });
+});
+
+describe('Attaccante fisico e speciale: chi attacca seriamente da un lato', () => {
+  const zapdos = set('Zapdos', ['Hurricane', 'Heat Wave', 'Volt Switch', 'Roost'], 'Heavy-Duty Boots', 'Static', { hp: 248, def: 244, spe: 16 }, 'Bold');
+  const team = [zapdos,
+    set('Great Tusk', ['Headlong Rush', 'Close Combat', 'Ice Spinner', 'Rapid Spin'], 'Booster Energy', 'Protosynthesis', { atk: 252, spe: 252 }, 'Jolly'),
+    set('Kingambit', ['Swords Dance', 'Kowtow Cleave', 'Sucker Punch', 'Iron Head'], 'Black Glasses', 'Defiant', { hp: 4, atk: 252, spe: 252 }, 'Adamant'),
+    set('Garchomp', ['Stealth Rock', 'Earthquake', 'Dragon Tail', 'Spikes'], 'Rocky Helmet', 'Rough Skin', { hp: 252, def: 252 }, 'Impish'),
+    set('Corviknight', ['Body Press', 'Iron Defense', 'Roost', 'Defog'], 'Leftovers', 'Pressure', { hp: 252, def: 252 }, 'Impish'),
+    set('Dragonite', ['Dragon Dance', 'Extreme Speed', 'Earthquake', 'Roost'], 'Heavy-Duty Boots', 'Multiscale', { atk: 252, spe: 252 }, 'Adamant'),
+  ];
+
+  it('Zapdos muro con Hurricane e Heat Wave: attaccante speciale (non sweeper né breaker), copre la voce nel Bulky Offense', () => {
+    const v = measuredSubRoles(zapdos, team, fixtureData);
+    expect(v.specialAttacker).toBe(1);
+    expect(v.specialSweeper).toBeUndefined();
+    expect(v.specialBreaker).toBeUndefined();
+    expect(subRoleReasons(zapdos, team, fixtureData).find(r => r.role === 'specialAttacker')!.source).toBe('Hurricane');
+    const needs = teamNeeds(team, fixtureData, undefined, 'bulkyOffense');
+    expect(needs.values.anySpecial).toBe(1);
+    expect(needs.essentialMissing).not.toContain('anySpecial');
+    // Non è una riga propria né un ruolo delle carte o delle liste
+    expect(LEVEL_KEYS).not.toContain('specialAttacker');
+    expect(rolesList(v)).not.toContain('specialAttacker');
+  });
+
+  it('i pivot non contano fra i due attacchi: Hurricane + Volt Switch non basta', () => {
+    const pivot = set('Zapdos', ['Hurricane', 'Volt Switch', 'Roost', 'Defog'], 'Heavy-Duty Boots', 'Static', { hp: 248, def: 244, spe: 16 }, 'Bold');
+    expect(measuredSubRoles(pivot, [pivot, ...team.slice(1)], fixtureData).specialAttacker).toBeUndefined();
+  });
+
+  it('serve Offesa almeno 40: Toxapex con Scald e Sludge Bomb non è un attaccante', () => {
+    const pex = set('Toxapex', ['Scald', 'Sludge Bomb', 'Recover', 'Haze'], 'Black Sludge', 'Regenerator', { hp: 252, def: 252 }, 'Bold');
+    expect(measuredSubRoles(pex, [pex], fixtureData).specialAttacker).toBeUndefined();
+  });
+});
+
+describe('Sticky Web è un hazard', () => {
+  it('Ribombee con Sticky Web: Hazard 1 con fonte Sticky Web, e resta Controllo velocità', () => {
+    const web = set('Ribombee', ['Sticky Web', 'Moonblast', 'Stun Spore', 'Skill Swap'], 'Focus Sash', 'Shield Dust', { spa: 252, spe: 252 }, 'Timid');
+    const v = measuredSubRoles(web, [web], fixtureData);
+    expect(v).toMatchObject({ hazards: 1, speedControl: 1 });
+    expect(subRoleReasons(web, [web], fixtureData).find(r => r.role === 'hazards')!.source).toBe('Sticky Web');
+    expect(setSubRoles(web, rulesOf(fixtureData)).hazards).toBe(1);
+    // Un team con Ribombee come solo setter non è più "senza Hazard"
+    const team = [web, set('Kingambit', ['Swords Dance', 'Kowtow Cleave', 'Sucker Punch', 'Iron Head'], 'Black Glasses', 'Defiant', { atk: 252, spe: 252 }, 'Adamant')];
+    const needs = teamNeeds(team, fixtureData, undefined, 'balance');
+    expect(needs.values.hazards).toBe(1);
+    expect(needs.essentialMissing).not.toContain('hazards');
   });
 });

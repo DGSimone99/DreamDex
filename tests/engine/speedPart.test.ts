@@ -56,15 +56,15 @@ describe('Velocità: ogni membro, coi guadagni delle condizioni', () => {
     expect(pool.some(r => r.webImmune)).toBe(true);
   });
 
-  it('Tailwind e paralisi a un quarto', () => {
-    expect(CONDITION_QUOTA).toEqual({ setup: 0.5, weather: 0.5, booster: 0.5, unburden: 0.5, priority: 0.5, web: 0.5, trickroom: 0.5, tailwind: 0.25, slow: 0.25 });
+  it('Tailwind e paralisi a un ottavo; Web, Trick Room e priorità a un quarto', () => {
+    expect(CONDITION_QUOTA).toEqual({ setup: 0.5, weather: 0.5, booster: 0.5, unburden: 0.5, priority: 0.25, web: 0.25, trickroom: 0.25, tailwind: 0.125, slow: 0.125 });
     // Stun Spore del compagno: paralisi, avversari a metà velocità
     const p = memberSpeed(pex, [pex, webber], noMeta)!;
     const slow = p.gains.find(g => g.condition === 'slow')!;
     expect(slow.source).toBe('Stun Spore');
     // Gli immuni (Elettro, Erba per le polveri) non rallentano
     const slowed = outspeedShare(p.speed, pool.map(r => ({ ...r, value: Math.floor(r.value * slowFactor('stunspore', r.species)) })), 'Toxapex');
-    expect(slow.gain).toBeCloseTo(0.25 * (slowed - p.raw));
+    expect(slow.gain).toBeCloseTo(CONDITION_QUOTA.slow * (slowed - p.raw));
   });
 
   it('i guadagni si sommano ma un membro non supera 1', () => {
@@ -78,8 +78,8 @@ describe('Velocità: ogni membro, coi guadagni delle condizioni', () => {
     expect(memberSpeed(set('Fakemon', '', '', []), [], noMeta)).toBeNull();
   });
 
-  it('la parte Velocità: ogni membro pesato dal più veloce 25/20/16/14/13/12, poi la scala morbida', () => {
-    expect(SPEED_RANK_WEIGHTS).toEqual([25, 20, 16, 14, 13, 12]);
+  it('la parte Velocità: ogni membro pesato dal più veloce 30/30/20/10/5/5, poi la scala morbida', () => {
+    expect(SPEED_RANK_WEIGHTS).toEqual([30, 30, 20, 10, 5, 5]);
     const team = [pex, dnite, barra, pelipper, webber, smasher];
     const members = team.map(s => memberSpeed(s, team, noMeta)!);
     const sorted = [...members].sort((a, b) => b.speed - a.speed);
@@ -88,8 +88,8 @@ describe('Velocità: ogni membro, coi guadagni delle condizioni', () => {
     expect(SPEED_FULL).toBe(1);
     expect(speedPart(members)).toBe(softScore(mean / SPEED_FULL));
     expect(speedPart(members)).toBeLessThan(100);
-    // Con meno membri si normalizza sui pesi usati
-    expect(speedPart(members.slice(0, 2))).toBe(softScore([...members.slice(0, 2)].sort((a, b) => b.speed - a.speed).reduce((a, m, i) => a + SPEED_RANK_WEIGHTS[i] * m.total, 0) / 45 / SPEED_FULL));
+    // Con meno membri si normalizza sui pesi usati (i primi due: 30 + 30)
+    expect(speedPart(members.slice(0, 2))).toBe(softScore([...members.slice(0, 2)].sort((a, b) => b.speed - a.speed).reduce((a, m, i) => a + SPEED_RANK_WEIGHTS[i] * m.total, 0) / 60 / SPEED_FULL));
     expect(speedPart([])).toBe(0);
   });
 });
@@ -114,16 +114,16 @@ describe('Priorità come il setup: chi colpisce per primo anche i più veloci', 
     expect(plain).toBeTruthy();
   });
 
-  it('il guadagno: metà dei più veloci colpiti per primi, ognuno pesato dal danno (metà PS vale pieno)', () => {
+  it('il guadagno: un quarto dei più veloci colpiti per primi, ognuno pesato dal danno (metà PS vale pieno)', () => {
     const m = memberSpeed(gambit, [gambit], noMeta)!;
     const prio = m.gains.find(g => g.condition === 'priority')!;
     expect(prio.source).toBe('Sucker Punch');
-    expect(CONDITION_QUOTA.priority).toBe(0.5);
+    expect(CONDITION_QUOTA.priority).toBe(0.25);
     const rivals = pool.filter(r => r.species !== 'Kingambit');
     const neutral = (species: string) => ({ species, item: '', ability: getSpecies(species)!.abilities[0], moves: [], nature: 'Hardy', evs: {} });
     const credit = (species: string) => Math.min(1, (bestHit(gambit, neutral(species), { priorityOnly: true })?.expected ?? 0) / 0.5);
     const hand = rivals.reduce((acc, r) => acc + (r.value > m.speed ? credit(r.species) : r.value === m.speed ? credit(r.species) / 2 : 0), 0) / rivals.length;
-    expect(prio.gain).toBeCloseTo(0.5 * hand);
+    expect(prio.gain).toBeCloseTo(CONDITION_QUOTA.priority * hand);
   });
 
   it('senza mosse prioritarie nessun guadagno', () => {
@@ -187,8 +187,8 @@ describe("Velocità: l'ordine dei membri non conta", () => {
     const b = { species: 'B', speed: 300, raw: 0.5, gains: [], own: 0.5, total: 0.5, controlOptions: [], cells: [] };
     const c = { species: 'C', speed: 100, raw: 0.1, gains: [], own: 0.1, total: 0.1, controlOptions: [], cells: [] };
     expect(speedPart([a, b, c])).toBe(speedPart([b, a, c]));
-    // Le due posizioni in parità valgono (25 + 20) / 2 ciascuna
-    expect(speedPart([a, b, c])).toBe(softScore((22.5 * 0.9 + 22.5 * 0.5 + 16 * 0.1) / 61 / SPEED_FULL));
+    // Le due posizioni in parità valgono (30 + 30) / 2 ciascuna, la terza 20
+    expect(speedPart([a, b, c])).toBe(softScore((30 * 0.9 + 30 * 0.5 + 20 * 0.1) / 80 / SPEED_FULL));
   });
 
   it('con più mosse che rallentano conta la migliore, in qualunque ordine', () => {

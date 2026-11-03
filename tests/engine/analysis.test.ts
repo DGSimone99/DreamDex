@@ -26,7 +26,9 @@ describe('analyzeTeam', () => {
   it('riusa tabelle di tipi e bisogni', () => {
     expect(analysis.weakness.filter(r => r.pressure > 0).map(r => r.type)).toEqual(['Fire', 'Water', 'Ground', 'Ghost']);
     expect(analysis.coverage.filter(r => r.hitters.length === 0).map(r => r.type)).toEqual(['Water', 'Fighting', 'Bug']);
-    expect(analysis.needs.missingRoles).toContain('pivot');
+    // Essenziali e importanti mancanti (il Pivot è una voce minore: non entra qui)
+    expect(analysis.needs.missingRoles).toEqual(['specialWall', 'hazards']);
+    expect(analysis.needs.missingRoles).not.toContain('pivot');
   });
 
   it('senza statistiche: niente minacce, analisi di tipo disponibile', () => {

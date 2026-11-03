@@ -208,15 +208,19 @@ describe('Velocità: una scheda a barre', () => {
     const panel = within(dialog).getByRole('tabpanel');
     expect(panel).toHaveTextContent(/40 Pokémon più usati/);
     expect(panel).toHaveTextContent(/Sciarpa/);
+    // Le quote (setup 50%, priorità e controllo 25%, il controllo breve 12,5%) e i pesi dei membri 30/30/20/10/5/5
+    expect(panel).toHaveTextContent(/50%/);
     expect(panel).toHaveTextContent(/25%/);
-    expect(panel).toHaveTextContent(/12%/);
+    expect(panel).toHaveTextContent(/12,5%/);
+    expect(panel).toHaveTextContent(/30%/);
+    expect(panel).toHaveTextContent(/5%/);
     expect(panel).toHaveTextContent(/superarne il 74% vale 74/);
     expect(panel).not.toHaveTextContent(/La finestra di ogni membro|non cambiano il voto/);
     // Schematica: tre fonti come tessere con solo nome, quota e freccia (il controllo breve dentro il Controllo del team),
     // niente dettaglio né mosse a tessere chiuse
     expect(panel.querySelectorAll('.guide-tiles li')).toHaveLength(3);
     expect(panel.querySelectorAll('.sp-guide-chev')).toHaveLength(3);
-    expect(panel.querySelector('.sp-guide-sub')).toHaveTextContent(/^Breve25%$/);
+    expect(panel.querySelector('.sp-guide-sub')).toHaveTextContent(/^Breve12,5%$/);
     expect(panel).not.toHaveTextContent(/×1,5|Tailwind|Trick Room|Booster/);
     // Una tessera si apre (una alla volta) e mostra tutto quello che conta, dalle tabelle del motore
     const boost = within(panel).getByRole('button', { name: /^Boost/ });
