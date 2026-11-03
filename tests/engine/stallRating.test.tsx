@@ -44,13 +44,12 @@ describe('team stall', () => {
     expect(rating.roles.total).toBe(LEVEL_KEYS.filter(k => needs.levels[k] !== 'ignored').length);
     expect(rating.roles.failures.filter(f => f.catalog === 'essentialRole')).toEqual([expect.objectContaining({ points: ESSENTIAL_POINTS })]);
     expect(rating.areas.some(a => a.key === 'roles')).toBe(false);
-    // Nello stall la velocità non conta
-    // La Velocità resta visibile ma inattiva: ha un valore, non un peso
+    // Nello stall la Velocità conta poco (10%) ma conta: nessuna area è inattiva
     const speed = rating.areas.find(a => a.key === 'speed')!;
-    expect(speed.inactive).toBe(true);
+    expect(speed.inactive).toBeUndefined();
     expect(typeof speed.value).toBe('number');
-    expect(rating.weights.speed).toBeUndefined();
-    expect(rating.areas.filter(a => a.key !== 'speed').every(a => !a.inactive)).toBe(true);
+    expect(rating.weights.speed!).toBeCloseTo(ARCHETYPE_WEIGHTS.stall.speed / 100);
+    expect(rating.areas.every(a => !a.inactive)).toBe(true);
   });
 
   it('un team normale non è stall e non cambia', () => {
@@ -146,12 +145,12 @@ describe('voto dello stall', () => {
     expect(rating.weights.strength!).toBeCloseTo(ARCHETYPE_WEIGHTS.stall.strength / 100);
   });
 
-  it('pesi da stall: la Difesa pesa più di tutto, la Velocità non conta', () => {
+  it('pesi da stall: la Difesa pesa più di tutto, la Velocità conta poco', () => {
     const rating = rateTeam(stall, fixtureData)!;
     expect(Math.abs(rating.base - weighted(rating))).toBeLessThanOrEqual(1);
     expect(rating.weights.defense!).toBeCloseTo(ARCHETYPE_WEIGHTS.stall.defense / 100);
-    expect(rating.areas.find(a => a.key === 'speed')).toMatchObject({ inactive: true });
-    expect(rating.weights.speed).toBeUndefined();
+    expect(rating.areas.find(a => a.key === 'speed')!.inactive).toBeUndefined();
+    expect(rating.weights.speed!).toBeCloseTo(ARCHETYPE_WEIGHTS.stall.speed / 100);
     // Il voto non cambia: la base usa solo le aree attive
     expect(rating.overall).toBe(Math.min(100, Math.max(0, rating.base - rating.penalty.total + rating.bonus.total)));
   });

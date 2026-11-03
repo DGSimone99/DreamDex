@@ -37,8 +37,11 @@ const REFERENCE_SCAN = 40;
 export const OFFENSE_SHARES = { power: 0.6, coverage: 0.4 };
 /** Solo per i Ruoli (wallbreaker, sweeper): il vecchio valore del membro, Potenza e Wallbreaking 50 e 35. */
 const ROLES_WEIGHTS = { power: 0.5, wallbreaking: 0.35 };
-/** Il setup costa un turno libero: nel voto entra metà di quanto alza la Potenza dopo una danza. */
-export const SETUP_SHARE = 0.5;
+/**
+ * Il setup costa un turno libero: nel voto entrano tre quarti di quanto alza la Potenza dopo una danza
+ * (2026-11-03: da metà; il giudice cieco conta il setup 8 coppie a 0, il banco è neutro).
+ */
+export const SETUP_SHARE = 0.75;
 /** Pesi per posizione nel team, dal membro più offensivo al meno: un membro debole conta poco perché è in fondo. */
 export const RANK_WEIGHTS = [0.30, 0.22, 0.17, 0.13, 0.10, 0.08];
 /** Tera e mosse Z si usano una volta a partita: nel voto entra un quarto di quello che aggiungono. */
@@ -346,7 +349,7 @@ export function rolesMemberOffense(set: TeamSet, team: TeamSet[], data: EngineDa
   return { wallbreaking, wallbreakingGain, value, bestMove: raw.bestMove, setupMove: raw.setupMove };
 }
 
-/** Media pesata per posizione: valori dal più alto al più basso, pesi 22/18/16/15/15/14% (rinormalizzati se sono meno di sei). */
+/** Media pesata per posizione: valori dal più alto al più basso, pesi 30/22/17/13/10/8% (rinormalizzati se sono meno di sei). */
 export function rankWeighted(values: number[]): number {
   if (!values.length) return 0;
   const sorted = [...values].sort((a, b) => b - a);

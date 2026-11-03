@@ -41,12 +41,13 @@ describe('archetipo forzato nel voto', () => {
     const rating = rateTeam(balance, fixtureData, 'it', { archetype: 'stall' })!;
     expect(rating.teamType).toBe('stall');
     expect(rating.archetype).toBe('stall');
+    // Nello stall la Velocità conta (10%): le tre aree sono attive e i pesi sono quelli della tabella su 100
     const w = ARCHETYPE_WEIGHTS.stall;
-    const total = w.defense + w.strength;
+    const total = w.defense + w.strength + w.speed;
     expect(rating.weights.defense).toBeCloseTo(w.defense / total);
     expect(rating.weights.strength).toBeCloseTo(w.strength / total);
-    expect(rating.weights.speed).toBeUndefined();
-    expect(rating.areas.find(a => a.key === 'speed')?.inactive).toBe(true);
+    expect(rating.weights.speed).toBeCloseTo(w.speed / total);
+    expect(rating.areas.find(a => a.key === 'speed')?.inactive).toBeUndefined();
   });
 
   it('archetipo forzato non stall su uno stall: niente modalità stall', () => {

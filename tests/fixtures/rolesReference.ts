@@ -514,7 +514,7 @@ const gen9ag: RoleExpectation[] = [
   { species: 'Calyrex-Ice', set: 'Boots, Brave 248/252 Atk · Glacial Lance, High Horsepower, Trick Room, Swords Dance',
     has: ['physicalBreaker'] },
   { species: 'Ribombee', set: 'Focus Sash, Shield Dust, Timid · Sticky Web, Moonblast, Quiver Dance, Pounce',
-    not: ['hazards', ...WALLS], judgement: 'Sticky Web is excluded from Hazard setter (spec)' },
+    has: ['hazards'], not: WALLS, judgement: 'Sticky Web counts as Hazard setter (2026-11-03) and stays Speed Control' },
   { species: 'Eternatus', set: 'Boots, Calm 216/108 Def/140 SpD · Recover, Dynamax Cannon, Toxic, Toxic Spikes',
     has: ['specialWall', 'physicalWall', 'recovery'], values: { hazards: 0.75 }, present: ['dot'], not: ['specialSweeper'], judgement: 'mixed-bulk set; physical wall at ~120k is on the line' },
   { species: 'Grimmsnarl', set: 'Light Clay, Prankster, Careful · Parting Shot, Reflect, Light Screen, Spirit Break',

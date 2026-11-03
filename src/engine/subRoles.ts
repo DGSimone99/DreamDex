@@ -17,7 +17,8 @@ import type { Archetype } from './archetype';
 export type Family = 'attack' | 'defense' | 'support' | 'utility';
 export type SubRole = 'physicalSweeper' | 'specialSweeper' | 'physicalBreaker' | 'specialBreaker'
   | 'physicalWall' | 'specialWall' | 'recovery' | 'hazards' | 'removal' | 'pivot' | 'screens' | 'support' | 'speedControl'
-  | 'dot' | 'debuff' | 'phazer' | 'taunt' | 'encore' | 'itemRemoval';
+  | 'dot' | 'debuff' | 'phazer' | 'taunt' | 'encore' | 'itemRemoval'
+  | 'physicalAttacker' | 'specialAttacker';
 
 /** Le sotto-ruoli di ogni famiglia, nell'ordine della tabella della specifica. */
 export const FAMILIES: Record<Family, SubRole[]> = {
@@ -27,6 +28,13 @@ export const FAMILIES: Record<Family, SubRole[]> = {
   support: ['support', 'removal', 'screens', 'speedControl', 'debuff', 'phazer'],
   utility: ['hazards', 'pivot', 'dot', 'taunt', 'encore', 'itemRemoval'],
 };
+
+/**
+ * Chi attacca seriamente da un lato senza essere sweeper né wallbreaker (Zapdos con Hurricane e Heat Wave): conta solo
+ * per le voci "Attaccante fisico" e "Attaccante speciale" (GROUP_ROLES). Fuori dalle famiglie: niente righe proprie,
+ * niente carte, filtri o famiglia principale; come secondario segue gli attaccanti (secondaryRoles).
+ */
+export const ATTACKER_ROLES: SubRole[] = ['physicalAttacker', 'specialAttacker'];
 
 /** Sotto-ruoli misurati: famiglia Attacco, muri e Recupero. */
 export const MEASURED: SubRole[] = [...FAMILIES.attack, 'physicalWall', 'specialWall', 'recovery'];
@@ -109,7 +117,7 @@ const RECOVERY: Record<string, number> = {
   recover: 1, roost: 1, slackoff: 1, softboiled: 1, milkdrink: 1, moonlight: 1, synthesis: 1, morningsun: 1,
   shoreup: 1, strengthsap: 1, wish: 1, rest: 0.5, painsplit: 0.5, leechseed: 0.25,
 };
-const HAZARDS: Record<string, number> = { stealthrock: 1, spikes: 1, stoneaxe: 1, ceaselessedge: 1, toxicspikes: 0.75 };
+const HAZARDS: Record<string, number> = { stealthrock: 1, spikes: 1, stoneaxe: 1, ceaselessedge: 1, stickyweb: 1, toxicspikes: 0.75 };
 const REMOVAL = new Set(['defog', 'rapidspin', 'mortalspin', 'tidyup', 'courtchange']);
 const PIVOT = new Set(['uturn', 'voltswitch', 'flipturn', 'partingshot', 'teleport', 'shedtail', 'chillyreception']);
 const PHAZER = new Set(['haze', 'clearsmog', 'whirlwind', 'roar', 'dragontail', 'circlethrow']);
@@ -334,6 +342,11 @@ export function uninvestedWall(set: TeamSet, side: 'physical' | 'special', bestM
   return true;
 }
 
+/** Mosse d'attacco che servono solo a cambiare: non contano fra i due attacchi di "Attaccante fisico/speciale". */
+const PIVOT_ATTACKS = new Set(['uturn', 'voltswitch', 'flipturn']);
+/** Attacchi di un lato (senza i pivot) che fanno di un membro un "Attaccante fisico/speciale", con Offesa almeno SWEEPER_OFFENSE. */
+const ATTACKER_MOVES = 2;
+
 const isPriorityAttack = (set: TeamSet) => set.moves.map(getMove).filter(isDefined).some(m => m.category !== 'Status' && m.priority > 0);
 
 /** Calcolo con i gruppi dati (i test li passano a mano); restituisce valori e motivi per la scheda. */
@@ -386,6 +399,19 @@ export function measureWith(set: TeamSet, team: TeamSet[], data: EngineData, poo
       const fast = !!speed && speed.total >= SWEEPER_SPEED;
       const setupSpeed = !!speed?.gains.some(g => g.condition === 'setup');
       if (fast || setupSpeed || (offense.setupMove && isPriorityAttack(set))) put(`${side}Sweeper`, 1, offense.bestMove!);
+    }
+  }
+  // Attaccante di un lato: almeno 2 attacchi di quel lato (U-turn, Volt Switch e Flip Turn non contano) e Offesa
+  // almeno SWEEPER_OFFENSE; la regola del muro senza investimento non vale (un muro con Hurricane e Heat Wave attacca)
+  if (offense && offense.value >= SWEEPER_OFFENSE) {
+    for (const s of ['physical', 'special'] as const) {
+      const hits = set.moves.map(getMove).filter(isDefined).filter(m => !PIVOT_ATTACKS.has(m.id) && attackSide(set, m.name) === s);
+      if (hits.length < ATTACKER_MOVES) continue;
+      // La fonte: la mossa migliore dell'Offesa se è di questo lato, altrimenti l'attacco più potente del lato
+      const best = offense.bestMove && hits.some(m => m.name === offense.bestMove)
+        ? offense.bestMove
+        : hits.reduce((a, m) => ((m.basePower ?? 0) > (a.basePower ?? 0) ? m : a)).name;
+      put(`${s}Attacker`, 1, best);
     }
   }
 
@@ -482,9 +508,9 @@ export function primaryFamily(set: TeamSet, values: SubRoleValues): PrimaryFamil
 /** Quanto conta un sotto-ruolo secondario nel valore di team, per archetipo (approvato dall'utente). */
 export const SECONDARY_CREDIT: Record<Archetype, number> = { hyperOffense: 1, bulkyOffense: 1, balance: 1, semiStall: 0.5, stall: 0 };
 
-/** Ruoli secondari del membro: i sotto-ruoli d'Attacco o dei muri della famiglia non principale. */
+/** Ruoli secondari del membro: i sotto-ruoli d'Attacco (con gli attaccanti di un lato) o dei muri della famiglia non principale. */
 export const secondaryRoles = (primary: PrimaryFamily | null): SubRole[] =>
-  (primary ? familyRoles(primary === 'attack' ? 'wall' : 'attack') : []);
+  (primary === 'wall' ? [...FAMILIES.attack, ...ATTACKER_ROLES] : primary ? familyRoles('wall') : []);
 
 /**
  * Valori col credito del secondario: la famiglia non principale x il credito dell'archetipo; Campo, Disturbo e

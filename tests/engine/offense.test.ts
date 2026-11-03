@@ -203,9 +203,9 @@ describe('Offesa di squadra', () => {
   const corv = set('Corviknight', 'Leftovers', 'Pressure', ['Body Press', 'Iron Defense', 'Roost'], 'Impish', { hp: 252, def: 252 });
   const gliscor = set('Gliscor', 'Toxic Orb', 'Poison Heal', ['Swords Dance', 'Earthquake', 'Facade', 'Protect'], 'Jolly', { hp: 244, atk: 12, spe: 252 });
 
-  it('il setup: nel voto entra metà del guadagno di Potenza; +X è quanto alza l\'Offesa finale', () => {
+  it('il setup: nel voto entrano tre quarti del guadagno di Potenza; +X è quanto alza l\'Offesa finale', () => {
     const team = teamOffense([gliscor, chomp], noStats);
-    expect(SETUP_SHARE).toBe(0.5);
+    expect(SETUP_SHARE).toBe(0.75);
     expect(team.setupGain).toBeGreaterThan(0);
     const g = team.members.find(m => m.species === 'Gliscor')!;
     expect(g.setupGain).toBeGreaterThan(0);

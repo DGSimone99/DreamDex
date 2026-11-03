@@ -3,7 +3,7 @@ import { isGroupKey, type Level, type LevelKey } from '../../engine/roleLevels';
 import { MISSING_BELOW } from '../../engine/needs';
 import type { TeamRoles } from '../../engine/rolesArea';
 import type { TeamSet } from '../../engine/sets';
-import { FAMILIES, type SubRoleReason } from '../../engine/subRoles';
+import { ATTACKER_ROLES, FAMILIES, type SubRoleReason } from '../../engine/subRoles';
 import type { T } from '../AreaDetail';
 import { PokemonIcon } from '../PokemonName';
 import { points, type RoleHolder } from './rolesRows';
@@ -22,7 +22,7 @@ export function reasonText(r: SubRoleReason, pool: string, t: T): string {
   if ((r.role === 'physicalWall' || r.role === 'specialWall') && r.index !== undefined) {
     return t(r.role === 'physicalWall' ? 'rdetail.reason.wall.physical' : 'rdetail.reason.wall.special', { index: thousands(r.index), threshold: thousands(r.threshold ?? 0) });
   }
-  if (FAMILIES.attack.includes(r.role)) return t('rdetail.reason.attack', { move: r.source });
+  if (FAMILIES.attack.includes(r.role) || ATTACKER_ROLES.includes(r.role)) return t('rdetail.reason.attack', { move: r.source });
   // 'set': fonte generica del solo set, senza una mossa da nominare
   return r.source === 'set' || r.source === 'wall' ? '' : r.source;
 }

@@ -45,25 +45,16 @@ export const ARCHETYPE_WEIGHTS: Record<Archetype, Record<BaseArea, number>> = {
   // quelli medi (75 contro 76: distingue solo i brutti), mentre Offesa, Ruoli e Velocità li separano; col peso spostato
   // il distacco torneo − medio sale da 7,1 a 8,0 e le partite vere da 52,7% a 53,0%. Semi-stall e stall come prima.
   // 2026-11-02: i Ruoli diventano una lista (malus e bonus) e il loro peso si divide in proporzione fra le altre tre.
+  // 2026-11-03 (test dei pesi): balance più difensivo (era 28/54/18: il tipo giudicato peggio, 16% di A fra i team da
+  // torneo, perché giudicato per metà sull'Offesa dove fa 72); stall con meno Difesa e un po' di Velocità (era 76/24/0:
+  // bastava essere uno stall per prendere A, anche sul ladder). HO, BO e semi-stall provati e lasciati.
   hyperOffense: { defense: 12, strength: 62, speed: 26 },
   bulkyOffense: { defense: 20, strength: 58, speed: 22 },
-  balance: { defense: 28, strength: 54, speed: 18 },
+  balance: { defense: 40, strength: 45, speed: 15 },
   semiStall: { defense: 57, strength: 33, speed: 10 },
-  stall: { defense: 76, strength: 24, speed: 0 },
+  stall: { defense: 65, strength: 25, speed: 10 },
 };
 
-
-/**
- * Per le aree con un riferimento: oltre il 95% del riferimento l'area sale più piano,
- * il 100 arriva solo con la perfezione. Sotto il ginocchio il valore è lineare.
- */
-export const AREA_KNEE = 0.95;
-export function areaValue(value: number, full: number): number {
-  const x = value / full;
-  if (x <= AREA_KNEE) return Math.max(0, x);
-  const perfect = 1 / full;
-  return Math.min(1, AREA_KNEE + (1 - AREA_KNEE) * (x - AREA_KNEE) / (perfect - AREA_KNEE));
-}
 
 
 
@@ -88,7 +79,7 @@ export interface RatingArea {
   label: string;
   /** 0–100, o null se mancano i dati per calcolarla. */
   value: number | null;
-  /** Ha un valore ma peso 0 nel voto (oggi solo la Velocità nello stall): si mostra in grigio. */
+  /** Ha un valore ma peso 0 nel voto (oggi nessuna area: lo stall ha Velocità 10): si mostrerebbe in grigio. */
   inactive?: boolean;
 }
 
@@ -269,7 +260,11 @@ export const SHARED_WEAK_POINTS = 2;
 /** Un membro che ha bisogno di una condizione (meteo, campo, Trick Room) che il team non porta: −3. */
 export const UNMET_POINTS = 3;
 
-export function redundancies(team: TeamSet[], analysis: TeamAnalysis, lang: Lang = 'it'): Redundancies {
+/**
+ * `roomFast`: il membro la cui Trick Room ha già il malus "Trick Room in team veloce"; la sua Trick Room non prende
+ * anche "attivatore inutilizzato" (stessa mossa, un malus solo). Meteo e campi inutilizzati restano.
+ */
+export function redundancies(team: TeamSet[], analysis: TeamAnalysis, lang: Lang = 'it', roomFast?: string): Redundancies {
   // Il meta conta solo nell'area Meta: le debolezze si contano su tutti i tipi
   const weaknesses = analysis.weakness
     .filter(row => row.resist === 0 && row.weak >= 2)
@@ -280,7 +275,7 @@ export function redundancies(team: TeamSet[], analysis: TeamAnalysis, lang: Lang
     }));
   const dependencies = [
     ...unmetBeneficiaries(team).map(i => ({ text: t(lang, 'rating.redundancy.unmet', { member: i.member, via: viaName(i.via, lang), condition: conditionLabel(i.condition, lang) }), points: UNMET_POINTS, catalog: 'unmetCondition' as const })),
-    ...unusedEnablers(team).map(i => ({ text: t(lang, 'rating.redundancy.unused', { via: viaName(i.via, lang), member: i.member }), points: UNUSED_ENABLER_POINTS, catalog: 'unusedEnabler' as const })),
+    ...unusedEnablers(team).filter(i => !(i.condition === 'trickroom' && i.member === roomFast)).map(i => ({ text: t(lang, 'rating.redundancy.unused', { via: viaName(i.via, lang), member: i.member }), points: UNUSED_ENABLER_POINTS, catalog: 'unusedEnabler' as const })),
   ];
   const items = [
     ...weaknesses, ...roleAndTypeRedundancies(team, lang), ...dependencies, ...weatherClashes(team, lang),
@@ -462,11 +457,12 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it', o
       ...(!((areaWeights[key] ?? 0) > 0) && { inactive: true }),
     }));
   const base = Math.round(100 * score);
-  const redundant = redundancies(team, analysis, lang);
   // Niente più penalità del meta: le minacce scoperte abbassano la Coverage meta della Difesa.
   // Trick Room in un team veloce: −1 per ogni membro che supera da solo almeno metà del meta (sotto Trick Room perde), fino a −3
   const roomSetter = team.find(set => set.moves.some(move => toID(move) === 'trickroom'));
   const fastMembers = roomSetter ? speed.members.filter(m => m.raw >= TRICK_ROOM_FAST) : [];
+  // Con quel malus la stessa Trick Room non conta anche come attivatore inutilizzato
+  const redundant = redundancies(team, analysis, lang, fastMembers.length ? battleName(roomSetter!) : undefined);
   const roomItems = fastMembers.length
     ? [{ text: t(lang, fastMembers.length === 1 ? 'rating.redundancy.trickRoomFastOne' : 'rating.redundancy.trickRoomFast', { setter: battleName(roomSetter!), n: fastMembers.length, list: fastMembers.map(m => m.species).join(', ') }), points: Math.min(TRICK_ROOM_MAX, fastMembers.length * TRICK_ROOM_FAST_POINTS), catalog: 'trickRoomFast' as const }]
     : [];

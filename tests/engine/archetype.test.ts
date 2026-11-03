@@ -114,3 +114,34 @@ describe('archetipi di Ubers', () => {
     expect(teamArchetype(deoSpeed, DEFAULT_RULES)?.archetype).toBe('hyperOffense');
   });
 });
+
+describe('riconoscimento: muri senza recupero e Webs (test dei pesi, 2026-11-03)', () => {
+  it('un muro senza recupero che attacca pochissimo è passivo (Lanturn); un attaccante no', () => {
+    expect(isPassive(set('Lanturn', 'Heavy-Duty Boots', 'Volt Absorb', ['Scald', 'Toxic', 'Volt Switch', 'Protect']), DEFAULT_RULES)).toBe(true);
+    expect(isPassive(set('Garchomp', 'Rocky Helmet', 'Rough Skin', ['Earthquake', 'Dragon Tail', 'Stealth Rock', 'Spikes']), DEFAULT_RULES)).toBe(false);
+  });
+
+  it('uno stall con Lanturn al posto di un muro col recupero resta stall', () => {
+    const team = [
+      set('Clefable', 'Heavy-Duty Boots', 'Unaware', ['Moonblast', 'Calm Mind', 'Soft-Boiled', 'Aromatherapy']),
+      set('Skarmory', 'Shed Shell', 'Sturdy', ['Defog', 'Spikes', 'Body Press', 'Roost']),
+      set('Lanturn', 'Heavy-Duty Boots', 'Volt Absorb', ['Scald', 'Toxic', 'Volt Switch', 'Protect']),
+      set('Sableye-Mega', 'Sablenite', 'Prankster', ['Knock Off', 'Will-O-Wisp', 'Recover', 'Protect']),
+      set('Alomomola', 'Rocky Helmet', 'Regenerator', ['Wish', 'Protect', 'Scald', 'Mirror Coat']),
+      set('Chansey', 'Eviolite', 'Natural Cure', ['Sing', 'Soft-Boiled', 'Stealth Rock', 'Seismic Toss']),
+    ];
+    expect(teamArchetype(team, DEFAULT_RULES)?.archetype).toBe('stall');
+  });
+
+  it('un team Webs con un solo passivo è Hyper Offense anche se gli attaccanti sono robusti', () => {
+    const team = [
+      set('Ribombee', 'Focus Sash', 'Shield Dust', ['Sticky Web', 'Moonblast', 'Stun Spore', 'U-turn']),
+      set('Gholdengo', 'Leftovers', 'Good as Gold', ['Make It Rain', 'Shadow Ball', 'Recover', 'Thunder Wave']),
+      set('Glimmora', 'Power Herb', 'Toxic Debris', ['Meteor Beam', 'Earth Power', 'Sludge Wave', 'Power Gem']),
+      set('Manaphy', 'Leftovers', 'Hydration', ['Tail Glow', 'Surf', 'Ice Beam', 'Energy Ball']),
+      set('Roaring Moon', 'Booster Energy', 'Protosynthesis', ['Dragon Dance', 'Acrobatics', 'Knock Off', 'Earthquake']),
+      set('Zamazenta', 'Leftovers', 'Dauntless Shield', ['Iron Defense', 'Body Press', 'Crunch', 'Rest']),
+    ];
+    expect(teamArchetype(team, DEFAULT_RULES)?.archetype).toBe('hyperOffense');
+  });
+});

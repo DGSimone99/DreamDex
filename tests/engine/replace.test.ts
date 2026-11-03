@@ -27,7 +27,8 @@ describe('similarity', () => {
 describe('diffContribution', () => {
   it('Great Tusk → Corviknight accanto a Gholdengo', () => {
     const diff = diffContribution(tusk, corviknight, analyzeTeam([gholdengo], fixtureData), [gholdengo]);
-    expect(diff.gains).toEqual({ roles: ['pivot'], covers: ['Fighting', 'Bug'], resists: ['Ground'] });
+    // I ruoli del diff sono solo le voci essenziali o importanti che mancano: il Pivot è minore, quindi non compare
+    expect(diff.gains).toEqual({ roles: [], covers: ['Fighting', 'Bug'], resists: ['Ground'] });
     expect(diff.losses.covers).toContain('Fire');
     // Dopo il cambio nessuno resiste più a Buio: sta fra le resistenze uniche perse, non si ripete
     expect(diff.lostResists).toContain('Dark');
@@ -47,7 +48,10 @@ describe('improveReplacements', () => {
   });
 
   it('ogni candidato ha un diff', () => {
-    expect(list.find(r => r.species === 'Corviknight')!.diff.gains.roles).toContain('pivot');
+    const corv = list.find(r => r.species === 'Corviknight')!.diff;
+    expect(corv.gains.covers).toContain('Fighting');
+    // Il Pivot è una voce minore: non è fra i ruoli guadagnati
+    expect(corv.gains.roles).toEqual([]);
   });
 });
 

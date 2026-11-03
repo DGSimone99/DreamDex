@@ -212,8 +212,9 @@ describe('Generale dei Ruoli', () => {
     const bad = within(missing).getAllByRole('listitem').filter(li => li.classList.contains('bad')).map(li => li.querySelector('.rl-name')!.textContent);
     expect(bad).toEqual(expect.arrayContaining(['Muro Speciale', 'Hazard']));
     expect(missing).not.toHaveTextContent(/−\d/);
-    // Pivot è importante nel Balance: giallo
-    expect(within(missing).getAllByRole('listitem').find(li => li.textContent!.startsWith('Pivot'))).toHaveClass('warn');
+    // Pivot e Rimozione Strumenti sono minori (2026-11-03): non stanno fra i mancanti, e qui nessuna importante manca (giallo)
+    expect(within(missing).getAllByRole('listitem').find(li => li.textContent!.startsWith('Pivot'))).toBeUndefined();
+    expect(within(missing).getAllByRole('listitem').some(li => li.classList.contains('warn'))).toBe(false);
     // Il gruppo dei wallbreaker si chiama "Wallbreaker", con Great Tusk
     const covered = within(panel).getByRole('region', { name: 'Ruoli che contano, coperti' });
     const breaker = within(covered).getAllByRole('listitem').find(li => li.querySelector('.rl-name')!.textContent!.startsWith('Wallbreaker'))!;

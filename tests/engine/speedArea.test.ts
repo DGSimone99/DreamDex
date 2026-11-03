@@ -74,7 +74,8 @@ describe('area Velocità', () => {
     const area = teamSpeedArea(tr, noMeta);
     const room = (name: string) => area.members.find(m => m.species === name)!.gains.find(g => g.condition === 'trickroom');
     expect(room('Toxapex')!.source).toBe('Trick Room');
-    expect(room('Toxapex')!.gain).toBeGreaterThan(0.3);
+    // La quota di Trick Room è un quarto: il guadagno massimo è 0,25
+    expect(room('Toxapex')!.gain).toBeGreaterThan(0.15);
     expect(room('Dragapult')).toBeUndefined();
     // Senza Trick Room la condizione non c'è
     expect(teamSpeedArea([slowpex, dragapult], noMeta).members.some(m => m.gains.some(g => g.condition === 'trickroom'))).toBe(false);
@@ -116,6 +117,18 @@ describe('malus: Trick Room in un team veloce', () => {
     const team = [hatt, { ...toxapex, nature: 'Relaxed', evs: {} }, slow('Ursaluna'), slow('Torkoal')].map(s => ({ ...s, evs: {} }));
     expect(rateTeam(team, fixtureData)!.penalty.items.some(i => i.text.startsWith('Trick Room'))).toBe(false);
     expect(rateTeam([fast('Regieleki'), fast('Dragapult')], fixtureData)!.penalty.items.some(i => i.text.startsWith('Trick Room'))).toBe(false);
+  });
+});
+
+describe('Trick Room non si punisce due volte', () => {
+  const fast = (species: string, moves = ['Thunderbolt']) => set(species, 'Life Orb', '', moves, 'Timid');
+  it('con "Trick Room in team veloce" la stessa Trick Room non è anche attivatore inutilizzato; la pioggia inutilizzata resta', () => {
+    const pelipper = set('Pelipper', 'Damp Rock', 'Drizzle', ['U-turn', 'Roost'], 'Bold');
+    const team = [fast('Dragapult', ['Trick Room', 'Shadow Ball']), fast('Regieleki'), fast('Iron Bundle'), pelipper];
+    const items = rateTeam(team, fixtureData)!.penalty.items;
+    expect(items.some(i => i.catalog === 'trickRoomFast')).toBe(true);
+    const unused = items.filter(i => i.catalog === 'unusedEnabler');
+    expect(unused.map(i => i.text)).toEqual([expect.stringContaining('Pelipper')]);
   });
 });
 

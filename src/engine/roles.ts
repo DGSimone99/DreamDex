@@ -3,6 +3,7 @@ import type { TeamSet } from './sets';
 import type { FormatRules } from './formatRules';
 import { rolesList, setSubRoles, type Family, type SubRole } from './subRoles';
 import { memoBySet } from './memo';
+import { memberPower } from './power';
 import { t, type Lang } from '../i18n';
 
 /** I ruoli del motore sono i 17 sotto-ruoli (vedi subRoles.ts). */
@@ -58,8 +59,14 @@ export function isPassive(set: TeamSet, rules: FormatRules): boolean {
   const attacks = set.moves.filter(m => (getMove(m)?.category ?? 'Status') !== 'Status').length;
   if (attacks > 2 || isFastSetupSweeper(set, roles) || isSetupBreaker(roles)) return false;
   const heals = set.moves.some(m => RECOVERY_MOVES.has(toID(m))) || RECOVERY_ABILITIES.has(toID(set.ability));
-  return heals || roles.some(r => WALLS.includes(r));
+  if (heals || roles.some(r => WALLS.includes(r))) return true;
+  // Muro senza recupero: attacca pochissimo e incassa molto (Lanturn con Scald, Toxic, Volt Switch: Offesa 12, Robustezza 76)
+  const power = memberPower(set);
+  return !!power && power.offense < PASSIVE_LOW_OFFENSE && power.bulk >= PASSIVE_MIN_BULK;
 }
+/** Percentili (statistiche base) sotto e sopra cui un membro senza recupero né statistiche da muro conta comunque come passivo. */
+const PASSIVE_LOW_OFFENSE = 35;
+const PASSIVE_MIN_BULK = 60;
 
 /** Membri passivi di uno stall: tutti e 6. Con una o due minacce offensive il team è un semi-stall. */
 export const STALL_PASSIVE = 6;

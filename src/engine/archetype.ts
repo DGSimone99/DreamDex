@@ -47,6 +47,8 @@ function archetypeOf(team: TeamSet[], rules: FormatRules): Archetype {
   const bulk = team.reduce((acc, set) => acc + (memberPower(set)?.bulk ?? 0), 0) / team.length;
   const sash = team.some(set => toID(set.item) === 'focussash');
   if (bulk < BULKY || (passive === 0 && (bulk < FRAIL || sash))) return 'hyperOffense';
+  // Webs e lead con Focus Sash: con al massimo un passivo è Hyper Offense anche se gli altri sono robusti (Gen 9)
+  if (passive <= 1 && (sash || team.some(set => set.moves.some(m => toID(m) === 'stickyweb')))) return 'hyperOffense';
   // In Ubers anche gli HO sono robusti: li distingue la velocità di quasi tutti i membri
   if (passive === 0 && team.filter(fastOrSpeedSetup).length >= HO_FAST_MEMBERS) return 'hyperOffense';
   return 'bulkyOffense';
