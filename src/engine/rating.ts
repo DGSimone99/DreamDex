@@ -260,7 +260,11 @@ export const SHARED_WEAK_POINTS = 2;
 /** Un membro che ha bisogno di una condizione (meteo, campo, Trick Room) che il team non porta: −3. */
 export const UNMET_POINTS = 3;
 
-export function redundancies(team: TeamSet[], analysis: TeamAnalysis, lang: Lang = 'it'): Redundancies {
+/**
+ * `roomFast`: il membro la cui Trick Room ha già il malus "Trick Room in team veloce"; la sua Trick Room non prende
+ * anche "attivatore inutilizzato" (stessa mossa, un malus solo). Meteo e campi inutilizzati restano.
+ */
+export function redundancies(team: TeamSet[], analysis: TeamAnalysis, lang: Lang = 'it', roomFast?: string): Redundancies {
   // Il meta conta solo nell'area Meta: le debolezze si contano su tutti i tipi
   const weaknesses = analysis.weakness
     .filter(row => row.resist === 0 && row.weak >= 2)
@@ -271,7 +275,7 @@ export function redundancies(team: TeamSet[], analysis: TeamAnalysis, lang: Lang
     }));
   const dependencies = [
     ...unmetBeneficiaries(team).map(i => ({ text: t(lang, 'rating.redundancy.unmet', { member: i.member, via: viaName(i.via, lang), condition: conditionLabel(i.condition, lang) }), points: UNMET_POINTS, catalog: 'unmetCondition' as const })),
-    ...unusedEnablers(team).map(i => ({ text: t(lang, 'rating.redundancy.unused', { via: viaName(i.via, lang), member: i.member }), points: UNUSED_ENABLER_POINTS, catalog: 'unusedEnabler' as const })),
+    ...unusedEnablers(team).filter(i => !(i.condition === 'trickroom' && i.member === roomFast)).map(i => ({ text: t(lang, 'rating.redundancy.unused', { via: viaName(i.via, lang), member: i.member }), points: UNUSED_ENABLER_POINTS, catalog: 'unusedEnabler' as const })),
   ];
   const items = [
     ...weaknesses, ...roleAndTypeRedundancies(team, lang), ...dependencies, ...weatherClashes(team, lang),
@@ -453,11 +457,12 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it', o
       ...(!((areaWeights[key] ?? 0) > 0) && { inactive: true }),
     }));
   const base = Math.round(100 * score);
-  const redundant = redundancies(team, analysis, lang);
   // Niente più penalità del meta: le minacce scoperte abbassano la Coverage meta della Difesa.
   // Trick Room in un team veloce: −1 per ogni membro che supera da solo almeno metà del meta (sotto Trick Room perde), fino a −3
   const roomSetter = team.find(set => set.moves.some(move => toID(move) === 'trickroom'));
   const fastMembers = roomSetter ? speed.members.filter(m => m.raw >= TRICK_ROOM_FAST) : [];
+  // Con quel malus la stessa Trick Room non conta anche come attivatore inutilizzato
+  const redundant = redundancies(team, analysis, lang, fastMembers.length ? battleName(roomSetter!) : undefined);
   const roomItems = fastMembers.length
     ? [{ text: t(lang, fastMembers.length === 1 ? 'rating.redundancy.trickRoomFastOne' : 'rating.redundancy.trickRoomFast', { setter: battleName(roomSetter!), n: fastMembers.length, list: fastMembers.map(m => m.species).join(', ') }), points: Math.min(TRICK_ROOM_MAX, fastMembers.length * TRICK_ROOM_FAST_POINTS), catalog: 'trickRoomFast' as const }]
     : [];

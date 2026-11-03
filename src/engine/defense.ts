@@ -195,6 +195,18 @@ export function dummyStats(formatId: EngineData['formatId'], type: string): { at
   return { atk: dummyAttacker(data, 'atk', type).baseStats?.atk ?? 0, spa: dummyAttacker(data, 'spa', type).baseStats?.spa ?? 0 };
 }
 
+/** Un'abilità che non tocca i danni ricevuti: prende il posto di Tera Shell nei colpi della Difesa. */
+const NEUTRAL_ABILITY = 'Pressure';
+
+/**
+ * Tera Shell rende poco efficace ogni colpo solo a PS pieni; la Difesa misura colpi ripetuti, quindi il membro si misura
+ * come se l'abilità non ci fosse (Coverage tipi e Coverage meta; l'Offesa non cambia). Senza Tera Shell: il set stesso.
+ * Le cache restano per set: il set senza abilità dipende solo da quello vero.
+ */
+export function withoutTeraShell(member: TeamSet): TeamSet {
+  return toID(battleAbility(member)) === 'terashell' ? { ...member, ability: NEUTRAL_ABILITY } : member;
+}
+
 const typedCache = new Map<string, { plain: number[]; held: number[] }>();
 const TYPED_LIMIT = 5000;
 
@@ -210,9 +222,10 @@ export function typedHits(member: TeamSet, data: EngineData): { plain: number[];
   if (typedCache.size >= TYPED_LIMIT) typedCache.clear();
   const conditions = ownConditions(member);
   const setup = defensiveSetup(member);
+  const target = withoutTeraShell(member);
   const hit = (type: string, category: 'Physical' | 'Special', boosted: boolean) => {
     const attacker = dummyAttacker(data, category === 'Physical' ? 'atk' : 'spa', type);
-    const result = standardHit(attacker, member, category, { conditions, moveType: type, targetBoosts: boosted ? setup?.boosts : undefined });
+    const result = standardHit(attacker, target, category, { conditions, moveType: type, targetBoosts: boosted ? setup?.boosts : undefined });
     return Math.min(1, result?.expected ?? 0);
   };
   const plain = TYPES.flatMap(type => [hit(type, 'Physical', false), hit(type, 'Special', false)]);
@@ -339,7 +352,8 @@ function threatHitsOf(member: TeamSet, data: EngineData): (Hit | null)[] {
   let hits = threatCache.get(key);
   if (hits) return hits;
   if (threatCache.size >= TYPED_LIMIT) threatCache.clear();
-  hits = metaThreats(data).map(({ set }) => threatHit(set, member, data));
+  const target = withoutTeraShell(member);
+  hits = metaThreats(data).map(({ set }) => threatHit(set, target, data));
   threatCache.set(key, hits);
   return hits;
 }

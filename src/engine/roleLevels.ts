@@ -5,8 +5,8 @@ import type { SubRole } from './subRoles';
 export type Level = 'essential' | 'important' | 'minor' | 'ignored';
 /**
  * Una voce della tabella: un sotto-ruolo, o un gruppo di attaccanti: "anySweeper" = uno sweeper fisico o speciale,
- * "anyBreaker" = un wallbreaker fisico o speciale, "anyPhysical" / "anySpecial" = un attaccante (sweeper o
- * wallbreaker) da quel lato.
+ * "anyBreaker" = un wallbreaker fisico o speciale, "anyPhysical" / "anySpecial" = un attaccante da quel lato (sweeper,
+ * wallbreaker, o chi ha almeno 2 attacchi di quel lato con Offesa almeno 40: physicalAttacker / specialAttacker).
  */
 export type GroupKey = 'anySweeper' | 'anyBreaker' | 'anyPhysical' | 'anySpecial';
 export type LevelKey = SubRole | GroupKey;
@@ -14,8 +14,9 @@ export type LevelKey = SubRole | GroupKey;
 export const GROUP_ROLES: Record<GroupKey, SubRole[]> = {
   anySweeper: ['physicalSweeper', 'specialSweeper'],
   anyBreaker: ['physicalBreaker', 'specialBreaker'],
-  anyPhysical: ['physicalSweeper', 'physicalBreaker'],
-  anySpecial: ['specialSweeper', 'specialBreaker'],
+  // Gli attaccanti di un lato per ultimi: a pari valore la fonte mostrata resta quella dello sweeper o del breaker
+  anyPhysical: ['physicalSweeper', 'physicalBreaker', 'physicalAttacker'],
+  anySpecial: ['specialSweeper', 'specialBreaker', 'specialAttacker'],
 };
 export const isGroupKey = (key: LevelKey): key is GroupKey => key in GROUP_ROLES;
 

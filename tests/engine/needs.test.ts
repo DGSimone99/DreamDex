@@ -106,14 +106,14 @@ describe('tabella dei livelli per archetipo', () => {
     expect(needs.importantMissing).not.toContain('hazards');
   });
 
-  it('HO con Sticky Web e senza hazard: Sticky Web è Speed Control (ignorato), gli hazard mancano', () => {
+  it('HO con Sticky Web e senza altri hazard: Sticky Web copre gli Hazard e resta Speed Control (ignorato)', () => {
     const web = [set('Galvantula', 'Focus Sash', 'Compound Eyes', ['Sticky Web', 'Bug Buzz', 'Thunder', 'Giga Drain']), ...hyperOffense.slice(1)];
     const needs = teamNeeds(web, fixtureData);
     expect(needs.archetype).toBe('hyperOffense');
-    expect(needs.values.hazards).toBe(0);
+    expect(needs.values.hazards).toBe(1);
     expect(needs.values.speedControl).toBe(1);
     expect(needs.levels.speedControl).toBe('ignored');
-    expect(needs.importantMissing).toContain('hazards');
+    expect(needs.importantMissing).not.toContain('hazards');
   });
 
   it('HO con Aurora Veil e neve: Screen Setter 1, ma gli schermi non valgono come hazard', () => {
@@ -151,11 +151,11 @@ describe('tabella dei livelli per archetipo', () => {
     expect(needLabel('anySpecial', 'en')).toBe('Special Attacker');
   });
 
-  it('"Chi la porta" degli hazard nomina la mossa; Sticky Web è Speed Control e Aurora Veil Screen Setter, non hazard', () => {
+  it('"Chi la porta" degli hazard nomina la mossa; Sticky Web è hazard e Speed Control, Aurora Veil Screen Setter e non hazard', () => {
     const by = (team: TeamSet[]) => teamRolesArea(team, fixtureData, 'it').rows.find(r => r.key === 'hazards')!.by;
     expect(by(hyperOffense)[0]).toMatchObject({ species: 'Glimmora', source: 'Stealth Rock' });
     const web = [set('Galvantula', 'Focus Sash', 'Compound Eyes', ['Sticky Web', 'Bug Buzz', 'Thunder', 'Giga Drain']), ...hyperOffense.slice(1)];
-    expect(by(web)).toEqual([]);
+    expect(by(web)).toEqual([expect.objectContaining({ species: 'Galvantula', source: 'Sticky Web' })]);
     expect(subRoleReasons(web[0], web, fixtureData).find(r => r.role === 'speedControl')).toMatchObject({ value: 1, source: 'Sticky Web' });
     const veil = [set('Ninetales-Alola', 'Light Clay', 'Snow Warning', ['Aurora Veil', 'Blizzard', 'Moonblast', 'Encore']), ...hyperOffense.slice(1)];
     expect(by(veil)).toEqual([]);
@@ -271,7 +271,7 @@ describe('bisogni del team dai sotto-ruoli', () => {
     expect(needs.values.anySpecial).toBe(1);
     // In Balance le importanti sono "almeno uno speciale" (coperto) e la rimozione; pivot e rimozione strumenti sono minori (2026-11-03), phazer minore
     expect(needs.importantMissing).toEqual(['removal']);
-    expect(needs.missingRoles).toEqual(['physicalSweeper', 'physicalBreaker', 'physicalWall', 'hazards', 'removal']);
+    expect(needs.missingRoles).toEqual(['physicalSweeper', 'physicalBreaker', 'physicalAttacker', 'physicalWall', 'hazards', 'removal']);
   });
 
   it('il valore del team è il migliore dei membri; senza attaccanti manca il gruppo', () => {

@@ -120,6 +120,18 @@ describe('malus: Trick Room in un team veloce', () => {
   });
 });
 
+describe('Trick Room non si punisce due volte', () => {
+  const fast = (species: string, moves = ['Thunderbolt']) => set(species, 'Life Orb', '', moves, 'Timid');
+  it('con "Trick Room in team veloce" la stessa Trick Room non è anche attivatore inutilizzato; la pioggia inutilizzata resta', () => {
+    const pelipper = set('Pelipper', 'Damp Rock', 'Drizzle', ['U-turn', 'Roost'], 'Bold');
+    const team = [fast('Dragapult', ['Trick Room', 'Shadow Ball']), fast('Regieleki'), fast('Iron Bundle'), pelipper];
+    const items = rateTeam(team, fixtureData)!.penalty.items;
+    expect(items.some(i => i.catalog === 'trickRoomFast')).toBe(true);
+    const unused = items.filter(i => i.catalog === 'unusedEnabler');
+    expect(unused.map(i => i.text)).toEqual([expect.stringContaining('Pelipper')]);
+  });
+});
+
 describe('controllo e malus: casi limite', () => {
   const fast = (species: string) => set(species, 'Life Orb', '', ['Thunderbolt'], 'Timid');
 

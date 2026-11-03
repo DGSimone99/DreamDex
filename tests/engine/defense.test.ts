@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFENSE_DEPTH, DEFENSE_SHARES, DEFENSE_SHARES_NO_META, defensiveSetup, dummyAttacker, dummyStats, hazardRemover, holdBand, holdCredit, typedHits, holdStep, memberDefense, sustainability, sustainParts, teamDefense } from '../../src/engine/defense';
+import { DEFENSE_DEPTH, DEFENSE_SHARES, DEFENSE_SHARES_NO_META, defensiveSetup, dummyAttacker, dummyStats, hazardRemover, holdBand, holdCredit, typedHits, holdStep, memberDefense, withoutTeraShell, sustainability, sustainParts, teamDefense } from '../../src/engine/defense';
 import type { TeamSet } from '../../src/engine/sets';
 import { softScore } from '../../src/engine/scale';
 import { fixtureData } from '../fixtures/data';
@@ -275,5 +275,19 @@ describe('Wonder Guard sui colpi di tipo', () => {
     expect(at('Water')).toBe(0);
     expect(at('Fire')).toBe(1);
     expect(at('Ghost')).toBe(1);
+  });
+});
+
+describe('Tera Shell nella Difesa', () => {
+  it('Terapagos-Terastal si misura senza Tera Shell (vale solo a PS pieni): regge sotto il 100%', () => {
+    const tera = set('Terapagos-Terastal', 'Leftovers', 'Tera Shell', ['Tera Starstorm', 'Calm Mind', 'Rapid Spin', 'Rest'], 'Bold', { hp: 252, def: 252, spa: 4 });
+    const plain = { ...tera, ability: 'Pressure' };
+    expect(withoutTeraShell(tera).ability).toBe('Pressure');
+    expect(withoutTeraShell(plain)).toBe(plain);
+    expect(typedHits(tera, fixtureData)).toEqual(typedHits(plain, fixtureData));
+    const d = memberDefense(tera, [tera], fixtureData)!;
+    expect(d.hold).toBeLessThan(100);
+    expect(d.metaHold).toBe(memberDefense(plain, [plain], fixtureData)!.metaHold);
+    expect(d.metaHold!).toBeLessThan(100);
   });
 });

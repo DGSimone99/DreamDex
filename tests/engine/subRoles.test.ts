@@ -43,9 +43,9 @@ describe('subRoles', () => {
     expect(formatRules('gen9ag').teraBonusCap).toBe(formatRules('gen9ou').teraBonusCap);
   });
 
-  it('Toxic Spikes 0.75, Sticky Web non è hazard', () => {
+  it('Toxic Spikes 0.75, Sticky Web è hazard (2026-11-03)', () => {
     expect(roles(set('Toxapex', ['Toxic Spikes'])).hazards).toBe(0.75);
-    expect(roles(set('Toxapex', ['Sticky Web'])).hazards).toBeUndefined();
+    expect(roles(set('Toxapex', ['Sticky Web'])).hazards).toBe(1);
     expect(roles(set('Toxapex', ['Toxic Spikes', 'Stealth Rock'])).hazards).toBe(1);
   });
 
