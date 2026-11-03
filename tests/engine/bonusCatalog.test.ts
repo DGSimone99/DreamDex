@@ -48,9 +48,9 @@ describe('catalogo bonus e malus', () => {
     const c = bonusMalusCatalog('it', 3);
     expect(c.find(e => e.key === 'hazardDuplicate')!.points).toContain('1');
     const weak = c.find(e => e.key === 'weakMember')!.points;
-    expect(weak).toContain('2');
-    expect(weak).toContain('6');
-    expect(c.find(e => e.key === 'sharedWeak')!.points).toContain('2');
+    expect(weak).toContain('4');
+    expect(weak).toContain('12');
+    expect(c.find(e => e.key === 'sharedWeak')!.points).toContain('1');
     expect(c.find(e => e.key === 'unmetCondition')!.points).toContain('3');
     expect(c.find(e => e.key === 'removers')!.points).toBe(`−${REMOVER_EXTRA_POINTS} per ogni rimozione in più`);
     expect(c.find(e => e.key === 'weatherClash')!.points).toBe(`−${WEATHER_CLASH_POINTS}`);

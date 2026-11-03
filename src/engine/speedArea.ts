@@ -29,11 +29,21 @@ export const CONTROL_CONDITIONS: SpeedCondition[] = ['web', 'trickroom', 'tailwi
 export const SPEED_FULL = 1;
 
 /**
- * Peso di ogni membro per posizione di velocità, dal più veloce: la Velocità del team la fanno i tre più veloci, i lenti
- * contano poco (2026-11-03: con 25/20/16/14/13/12 la metà lenta pesava il 39% e i team da torneo stavano a 64; il giudice
- * cieco ha preferito i pesi concentrati sui veloci 8 coppie a 0).
+ * Peso di ogni membro nella Velocità del team: tutti uguali (media semplice, scelta dell'utente 2026-11-03: sul banco
+ * la separazione torneo-ladder e le partite non cambiano rispetto ai pesi per posizione, e un membro lento conta come gli altri).
+ * Interruttore da valutare a lavoro finito: `setSpeedTopHeavy(true)` (o SPEED_TOP=1 nel banco) torna ai pesi per posizione
+ * dal più veloce 30/30/20/10/5/5, che il giudice cieco aveva preferito 8 coppie a 0.
  */
-export const SPEED_RANK_WEIGHTS = [30, 30, 20, 10, 5, 5];
+export const SPEED_EQUAL_WEIGHTS = [1, 1, 1, 1, 1, 1];
+export const SPEED_TOP_WEIGHTS = [30, 30, 20, 10, 5, 5];
+let speedTopHeavy = false;
+/** Per il banco e i test: i pesi per posizione dal più veloce invece della media semplice. */
+export function setSpeedTopHeavy(v: boolean): void {
+  speedTopHeavy = v;
+  members.clear();
+}
+/** I pesi per posizione in uso (dal più veloce al più lento). */
+export const speedRankWeights = (): number[] => (speedTopHeavy ? SPEED_TOP_WEIGHTS : SPEED_EQUAL_WEIGHTS);
 
 /**
  * Quota del guadagno che entra nel voto: metà per ciò che il membro si porta da solo e dura (setup, meteo, Booster,
@@ -335,16 +345,17 @@ function measure(set: TeamSet, data: EngineData, team: TeamConditions): MemberSp
   return { species: species.name, speed, raw, gains, own: ownTotal, total, controlOptions, cells };
 }
 
-/** La parte Velocità del team: i membri pesati dal più veloce (30/30/20/10/5/5), poi la scala lineare (il riferimento vale 100). */
+/** La parte Velocità del team: la media dei membri (o i pesi per posizione, con l'interruttore), poi la scala lineare (il riferimento vale 100). */
 export function speedPart(list: MemberSpeed[]): number {
   return softScore(weightedMean(list, m => m.total) / SPEED_FULL);
 }
 
-/** Media dei membri pesata per posizione di velocità (30/30/20/10/5/5; a pari velocità le posizioni si dividono il peso). */
+/** Media dei membri, coi pesi per posizione di velocità in uso (oggi uguali; a pari velocità le posizioni si dividono il peso). */
 function weightedMean(list: MemberSpeed[], pick: (m: MemberSpeed) => number): number {
   if (!list.length) return 0;
   const sorted = [...list].sort((a, b) => b.speed - a.speed);
-  const rankWeight = (i: number) => SPEED_RANK_WEIGHTS[Math.min(i, SPEED_RANK_WEIGHTS.length - 1)];
+  const w = speedRankWeights();
+  const rankWeight = (i: number) => w[Math.min(i, w.length - 1)];
   // A pari velocità le posizioni si dividono il peso: il risultato non dipende dall'ordine dei membri
   const weights = sorted.map(m => {
     const tied = sorted.map((o, i) => (o.speed === m.speed ? rankWeight(i) : null)).filter((w): w is number => w !== null);

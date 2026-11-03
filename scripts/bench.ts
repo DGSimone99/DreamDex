@@ -5,8 +5,10 @@
  *                            con scripts/bench/ladder.json (npx tsx scripts/fetch-replays.ts --ladder) anche il gruppo
  *                            "ladder": team veri di giocatori medi (rating 1100–1400), il "medio" non costruito a mano
  *   npm run bench -- --climb  la "salita": da alcuni team si applica sempre lo scambio libero migliore finché il voto sale
+ *   npm run bench -- --games   partite coi set veri (scripts/bench/games.json): quante ne vince il voto più alto
  *   npm run bench -- --replays partite vere (scripts/bench/replays.json di alto livello e, se c'è, ladder.json dei medi):
  *                            quante ne vince il team col voto più alto
+ *   SPEED_TOP=1 npm run bench        Velocità coi pesi per posizione dal più veloce (30/30/20/10/5/5) invece della media semplice
  *   ROLES_MEASURED=1 npm run bench   con l'interruttore dei Ruoli acceso (Attacco, muri e Recupero contano anche nei Ruoli)
  *
  * Serve a verificare ogni modifica al voto: i team da torneo devono stare in alto, i brutti in basso,
@@ -24,8 +26,11 @@ import { rateTeam, type TeamRating } from '../src/engine/rating';
 import { initTiers as initTiersV1 } from '../legacy/voto-v1/engine/dex';
 import { rateTeam as rateTeamV1 } from '../legacy/voto-v1/engine/rating';
 import { setRolesCountMeasured } from '../src/engine/roleLevels';
+import { setSpeedTopHeavy } from '../src/engine/speedArea';
 import { improveReplacements } from '../src/engine/replace';
 import { defaultSet, type TeamSet } from '../src/engine/sets';
+import { getMove } from '../src/engine/dex';
+import type { Game as RealGame, Revealed } from './fetch-games';
 import { bestSwaps, withCandidate } from '../src/engine/teamGain';
 
 interface BenchTeam {
@@ -57,6 +62,10 @@ const load = (formatId: FormatId): EngineData => {
   } as EngineData;
 };
 
+if (process.env.SPEED_TOP === '1') {
+  setSpeedTopHeavy(true);
+  console.log('Velocità: pesi per posizione dal più veloce (SPEED_TOP=1)');
+}
 if (process.env.ROLES_MEASURED === '1') {
   setRolesCountMeasured(true);
   console.log('Ruoli: interruttore acceso (ROLES_MEASURED=1)');
@@ -244,6 +253,56 @@ function replayFile(name: string, games: Game[]) {
   }
 }
 
+/**
+ * Il set di un Pokémon da quello che la partita rivela: mosse usate (al massimo 4, niente mosse Z o Dinamax), strumento,
+ * abilità e Tera; il resto (mosse mancanti, EV, natura) dal set più usato. Null se manca il set più usato.
+ */
+export function realSet(fmt: FormatId, r: Revealed): TeamSet | null {
+  const base = defaultSet(DATA[fmt], r.species, 9);
+  if (!base) return null;
+  const used = [...new Set(r.moves)].filter(m => { const d = getMove(m); return !!d && !d.isZ && !d.isMax; }).slice(0, 4);
+  const fill = base.moves.filter(m => !used.some(u => getMove(u)?.id === getMove(m)?.id));
+  // Una Mega tiene la sua pietra anche se la partita non la mostra
+  const item = /-Mega(-[XY])?$/.test(r.species) ? base.item : r.item ?? base.item;
+  return { ...base, moves: [...used, ...fill].slice(0, 4), item, ability: r.ability ?? base.ability, ...(r.tera || base.teraType ? { teraType: r.tera ?? base.teraType } : {}) };
+}
+const GAMES_FORMAT: Record<string, FormatId> = REPLAY_FORMAT;
+export const readRealGames = (): RealGame[] => {
+  const file = join('scripts', 'bench', 'games.json');
+  return existsSync(file) ? (JSON.parse(readFileSync(file, 'utf8')) as RealGame[]).filter(g => GAMES_FORMAT[g.format] && DATA[GAMES_FORMAT[g.format]]) : [];
+};
+export const realTeam = (fmt: FormatId, side: Revealed[]): TeamSet[] | null => {
+  const team = side.map(r => realSet(fmt, r)).filter((s): s is TeamSet => !!s);
+  return team.length === 6 ? team : null;
+};
+
+/** --games: le partite coi set veri (scripts/bench/games.json, da scripts/fetch-games.ts): quante ne vince il voto più alto. */
+function realGames() {
+  const games = readRealGames();
+  if (!games.length) { console.error('Mancano le partite: lancia npx tsx scripts/fetch-games.ts'); return; }
+  const bins = [[1, 4], [5, 9], [10, 100]] as const;
+  for (const fmt of [...new Set(games.map(g => GAMES_FORMAT[g.format]))]) {
+    const stats = bins.map(() => ({ right: 0, total: 0 }));
+    let skipped = 0;
+    const list = games.filter(g => GAMES_FORMAT[g.format] === fmt);
+    for (const g of list) {
+      const [a, b] = [realTeam(fmt, g.p1), realTeam(fmt, g.p2)];
+      if (!a || !b) { skipped++; continue; }
+      const diff = rateTeam(a, DATA[fmt])!.overall - rateTeam(b, DATA[fmt])!.overall;
+      const bin = bins.findIndex(([lo, hi]) => Math.abs(diff) >= lo && Math.abs(diff) <= hi);
+      if (bin < 0) continue;
+      stats[bin].total++;
+      if ((diff > 0 && g.winner === 1) || (diff < 0 && g.winner === 2)) stats[bin].right++;
+    }
+    const all = stats.reduce((acc, x) => ({ right: acc.right + x.right, total: acc.total + x.total }), { right: 0, total: 0 });
+    const pct = (x: { right: number; total: number }) => (x.total ? `${(100 * x.right / x.total).toFixed(1)}% su ${x.total}` : '–');
+    console.log(`
+== ${fmt}: ${list.length} partite coi set veri (${skipped} saltate)`);
+    console.log(`  vince il voto più alto: ${pct(all)}`);
+    bins.forEach(([lo, hi], i) => console.log(`  differenza ${lo}–${hi === 100 ? '…' : hi}: ${pct(stats[i])}`));
+  }
+}
+
 type Rate = (team: TeamSet[], fmt: FormatId, withMeta: boolean) => TeamRating;
 const ENGINES: { name: string; rate: Rate }[] = [
   { name: 'v1', rate: (team, fmt, withMeta) => rateTeamV1(team, withMeta ? DATA_V1[fmt] : { ...DATA_V1[fmt], ignoreMeta: true }) as unknown as TeamRating },
@@ -313,7 +372,9 @@ function confrontaReplays() {
   }
 }
 
-if (process.argv.includes('--confronta')) {
+if (process.argv.includes('--games')) {
+  realGames();
+} else if (process.argv.includes('--confronta')) {
   if (process.argv.includes('--replays')) confrontaReplays();
   else confronta();
 } else if (process.argv.includes('--replays')) {

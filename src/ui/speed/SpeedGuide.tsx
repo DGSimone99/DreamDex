@@ -2,17 +2,19 @@ import { useId, useRef, useState, type ReactNode } from 'react';
 import { dex, getMove } from '../../engine/dex';
 import {
   CONDITION_QUOTA, PARADOX_SPEED, PARALYSIS, PRIORITY_FULL, SETUP_PLUS_ONE, SETUP_PLUS_TWO, SPEED_DROP,
-  SPEED_RANK_WEIGHTS, WEATHER_SPEED, type TeamSpeed,
+  speedRankWeights, WEATHER_SPEED, type TeamSpeed,
 } from '../../engine/speedArea';
 import { SPEED_POOL } from '../../engine/speed';
 import { typeName } from '../../i18n/game';
 import { useLang, useT } from '../../i18n/react';
 import { Icon } from '../icons';
+/** I pesi per posizione in percentuale (somma 100), come li mostra la guida. */
+const percentWeights = (w: number[]) => { const total = w.reduce((a, b) => a + b, 0); return w.map(x => Math.round(100 * x / total)); };
 
 type Key = Parameters<ReturnType<typeof useT>>[0];
 
 /** Pesi per posizione di velocità, in percentuale (sommano 100). */
-const MEMBER_WEIGHTS = SPEED_RANK_WEIGHTS;
+
 
 /** Le tre fonti di velocità in più, ognuna con la sua quota (quella del motore, CONDITION_QUOTA). */
 const GAINS = [
@@ -164,7 +166,7 @@ export function SpeedGuideSection({ speed, meta }: { speed: TeamSpeed; meta: boo
       {!open && <p className="guide-foot">{g('gains.foot')}</p>}
 
       <h5>{g('toteam')}</h5>
-      <Bar label={g('rank.weights')} weights={MEMBER_WEIGHTS} rank={n => g('rank', { n })} from={g('rank.best')} to={g('rank.worst')} />
+      <Bar label={g('rank.weights')} weights={percentWeights(speedRankWeights())} rank={n => g('rank', { n })} from={g('rank.best')} to={g('rank.worst')} />
       <p className="guide-foot guide-scale">{g('scale')}</p>
     </>
   );

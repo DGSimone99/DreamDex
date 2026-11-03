@@ -5,7 +5,7 @@ import { emptySet, type TeamSet } from '../../src/engine/sets';
 import { outspeedShare, speedPool, speedStat } from '../../src/engine/speed';
 import { getSpecies } from '../../src/engine/dex';
 import { fixtureData } from '../fixtures/data';
-import { CONDITION_QUOTA, CONTROL_CONDITIONS, isWebImmune, memberSpeed, rivalSet, slowFactor, SPEED_FULL, SPEED_RANK_WEIGHTS, speedPart } from '../../src/engine/speedArea';
+import { CONDITION_QUOTA, CONTROL_CONDITIONS, isWebImmune, memberSpeed, rivalSet, slowFactor, SPEED_EQUAL_WEIGHTS, SPEED_FULL, SPEED_TOP_WEIGHTS, setSpeedTopHeavy, speedPart, speedRankWeights } from '../../src/engine/speedArea';
 import { bestHit } from '../../src/engine/damage';
 
 const set = (species: string, item: string, ability: string, moves: string[], nature = 'Jolly', spe = 252): TeamSet =>
@@ -78,18 +78,23 @@ describe('Velocità: ogni membro, coi guadagni delle condizioni', () => {
     expect(memberSpeed(set('Fakemon', '', '', []), [], noMeta)).toBeNull();
   });
 
-  it('la parte Velocità: ogni membro pesato dal più veloce 30/30/20/10/5/5, poi la scala morbida', () => {
-    expect(SPEED_RANK_WEIGHTS).toEqual([30, 30, 20, 10, 5, 5]);
+  it('la parte Velocità: la media semplice dei membri, poi la scala lineare; col suo interruttore i pesi dal più veloce', () => {
+    expect(speedRankWeights()).toEqual(SPEED_EQUAL_WEIGHTS);
     const team = [pex, dnite, barra, pelipper, webber, smasher];
     const members = team.map(s => memberSpeed(s, team, noMeta)!);
     const sorted = [...members].sort((a, b) => b.speed - a.speed);
-    const mean = sorted.reduce((a, m, i) => a + SPEED_RANK_WEIGHTS[i] * m.total, 0) / 100;
+    const mean = sorted.reduce((a, m) => a + m.total, 0) / 6;
+    // L'interruttore: 30/30/20/10/5/5 dal più veloce
+    setSpeedTopHeavy(true);
+    expect(speedRankWeights()).toEqual([30, 30, 20, 10, 5, 5]);
+    expect(speedPart(members)).toBe(softScore(sorted.reduce((a, m, i) => a + SPEED_TOP_WEIGHTS[i] * m.total, 0) / 100 / SPEED_FULL));
+    setSpeedTopHeavy(false);
     // Piena (circa 93) quando il team supera in media il 90% del gruppo: i più lenti del meta li supera chiunque
     expect(SPEED_FULL).toBe(1);
     expect(speedPart(members)).toBe(softScore(mean / SPEED_FULL));
     expect(speedPart(members)).toBeLessThan(100);
-    // Con meno membri si normalizza sui pesi usati (i primi due: 30 + 30)
-    expect(speedPart(members.slice(0, 2))).toBe(softScore([...members.slice(0, 2)].sort((a, b) => b.speed - a.speed).reduce((a, m, i) => a + SPEED_RANK_WEIGHTS[i] * m.total, 0) / 60 / SPEED_FULL));
+    // Con meno membri è la media di quelli che ci sono
+    expect(speedPart(members.slice(0, 2))).toBe(softScore((members[0].total + members[1].total) / 2 / SPEED_FULL));
     expect(speedPart([])).toBe(0);
   });
 });
@@ -187,8 +192,12 @@ describe("Velocità: l'ordine dei membri non conta", () => {
     const b = { species: 'B', speed: 300, raw: 0.5, gains: [], own: 0.5, total: 0.5, controlOptions: [], cells: [] };
     const c = { species: 'C', speed: 100, raw: 0.1, gains: [], own: 0.1, total: 0.1, controlOptions: [], cells: [] };
     expect(speedPart([a, b, c])).toBe(speedPart([b, a, c]));
-    // Le due posizioni in parità valgono (30 + 30) / 2 ciascuna, la terza 20
+    // Media semplice; con l'interruttore le due posizioni in parità valgono (30 + 30) / 2 ciascuna, la terza 20
+    expect(speedPart([a, b, c])).toBe(softScore((0.9 + 0.5 + 0.1) / 3 / SPEED_FULL));
+    setSpeedTopHeavy(true);
+    expect(speedPart([a, b, c])).toBe(speedPart([b, a, c]));
     expect(speedPart([a, b, c])).toBe(softScore((30 * 0.9 + 30 * 0.5 + 20 * 0.1) / 80 / SPEED_FULL));
+    setSpeedTopHeavy(false);
   });
 
   it('con più mosse che rallentano conta la migliore, in qualunque ordine', () => {
