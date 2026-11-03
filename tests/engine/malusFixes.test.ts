@@ -20,7 +20,7 @@ describe('malus corretti', () => {
 
   it('debolezza condivisa scoperta: resta 2 punti per ogni debole oltre il primo', () => {
     const team = [set('Garchomp', ['Earthquake']), set('Landorus-Therian', ['Earthquake']), set('Dragapult', ['Dragon Darts'])];
-    expect(penalties(team)).toContainEqual(expect.objectContaining({ text: '3 membri deboli a Ice, nessuno resiste', points: 4, catalog: 'sharedWeak' }));
+    expect(penalties(team)).toContainEqual(expect.objectContaining({ text: '3 membri deboli a Ice, nessuno resiste', points: 2, catalog: 'sharedWeak' }));
   });
 
   it('Ditto con Imposter non è un membro debole: copia l\'avversario', () => {

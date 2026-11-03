@@ -88,11 +88,27 @@ export function teamCores(team: TeamSet[], max = 2): Core[] {
     }
   }
 
-  // Greedy: prima i trii, poi le coppie, dal più forte; un membro sta in un solo core.
-  const byStrength = (x: Candidate, y: Candidate) => y.strength - x.strength;
+  // Dal più forte; a parità decidono i nomi, così il risultato non dipende dall'ordine dei membri
+  const nameKey = (x: Candidate) => x.order.map((m) => battleName(team[m])).sort().join('/');
+  const byStrength = (x: Candidate, y: Candidate) => y.strength - x.strength || nameKey(x).localeCompare(nameKey(y));
+  trios.sort(byStrength);
+  pairs.sort(byStrength);
   const chosen: Candidate[] = [];
   const used = new Set<number>();
-  for (const cand of [...trios.sort(byStrength), ...pairs.sort(byStrength)]) {
+  // Due trii senza membri in comune valgono più del trio più forte da solo: se ci sono, si prendono quelli
+  // (prima il trio più forte poteva rubare un membro al secondo, e l'ordine dei membri cambiava il risultato)
+  const disjoint = (x: Candidate, y: Candidate) => !x.order.some((m) => y.order.includes(m));
+  let bestPair: [Candidate, Candidate] | null = null;
+  if (max >= 2) {
+    for (let x = 0; x < trios.length; x++) {
+      for (let y = x + 1; y < trios.length; y++) {
+        if (!disjoint(trios[x], trios[y])) continue;
+        if (!bestPair || trios[x].strength + trios[y].strength > bestPair[0].strength + bestPair[1].strength) bestPair = [trios[x], trios[y]];
+      }
+    }
+  }
+  const order = bestPair ? [...bestPair, ...pairs] : [...trios, ...pairs];
+  for (const cand of order) {
     if (chosen.length >= max) break;
     if (cand.order.some((m) => used.has(m))) continue;
     chosen.push(cand);

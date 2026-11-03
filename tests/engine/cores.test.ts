@@ -67,3 +67,14 @@ describe('teamCores', () => {
     expect(teamCores(team).length).toBeLessThanOrEqual(2);
   });
 });
+
+describe('core a tre: il risultato non dipende dall\'ordine dei membri', () => {
+  it('stessi core, in qualunque ordine', async () => {
+    const { teamCores } = await import('../../src/engine/cores');
+    const { emptySet } = await import('../../src/engine/sets');
+    const team = ['Kyurem', 'Alomomola', 'Scizor-Mega', 'Zapdos', 'Ting-Lu', 'Zamazenta'].map(s => ({ ...emptySet(s), moves: [] }));
+    const key = (t: typeof team) => teamCores(t).map(c => [...c.members].sort().join('/')).sort().join(' | ');
+    expect(key([...team].reverse())).toBe(key(team));
+    expect(key([team[3], team[0], team[5], team[1], team[4], team[2]])).toBe(key(team));
+  });
+});

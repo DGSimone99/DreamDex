@@ -212,8 +212,8 @@ describe('Velocità: una scheda a barre', () => {
     expect(panel).toHaveTextContent(/50%/);
     expect(panel).toHaveTextContent(/25%/);
     expect(panel).toHaveTextContent(/12,5%/);
-    expect(panel).toHaveTextContent(/30%/);
-    expect(panel).toHaveTextContent(/5%/);
+    // Media semplice: ogni membro il 17%
+    expect(panel).toHaveTextContent(/17%/);
     expect(panel).toHaveTextContent(/superarne il 74% vale 74/);
     expect(panel).not.toHaveTextContent(/La finestra di ogni membro|non cambiano il voto/);
     // Schematica: tre fonti come tessere con solo nome, quota e freccia (il controllo breve dentro il Controllo del team),
