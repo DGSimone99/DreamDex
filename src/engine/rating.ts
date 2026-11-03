@@ -255,11 +255,13 @@ export function memberIssues(team: TeamSet[], lang: Lang, needs: TeamNeeds): Red
 }
 
 /**
- * Debolezze condivise: 2 punti per ogni membro debole oltre il primo, solo sui tipi a cui nessuno nel team resiste:
+ * Debolezze condivise: 1 punto per ogni membro debole oltre il primo, solo sui tipi a cui nessuno nel team resiste:
  * un membro che resiste è il cambio normale su quella debolezza (2026-10-30: "3 deboli, 1 resiste" colpiva metà dei
  * team da torneo). Tolte e poi rimesse dall'utente il 2026-10-25 dopo il bench: portano il distacco tra torneo e medi.
+ * 2026-11-04: da 2 a 1 punto. A 2 allargavano le differenze fra team dello stesso tipo senza seguire torneo/ladder
+ * (separazione nello stesso tipo 1,31 → 1,38).
  */
-export const SHARED_WEAK_POINTS = 2;
+export const SHARED_WEAK_POINTS = 1;
 /** Un membro che ha bisogno di una condizione (meteo, campo, Trick Room) che il team non porta: −3. */
 export const UNMET_POINTS = 3;
 
