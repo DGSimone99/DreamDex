@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { teamPower } from '../../src/engine/power';
 import { teamNeeds } from '../../src/engine/needs';
-import { AREA_KNEE, ARCHETYPE_WEIGHTS, areaValue, gradeFor, memberIssues, rateTeam, typeSafety } from '../../src/engine/rating';
+import { ARCHETYPE_WEIGHTS, gradeFor, memberIssues, rateTeam, typeSafety } from '../../src/engine/rating';
 import { memberPower } from '../../src/engine/power';
 import { teamOffense } from '../../src/engine/offense';
 import { teamDefense } from '../../src/engine/defense';
@@ -41,7 +41,9 @@ describe('pesi delle aree', () => {
     // L'hyper offense vince con Offesa e Velocità, lo stall con la Difesa; il balance sta nel mezzo
     expect(ho.strength).toBeGreaterThan(stall.strength);
     expect(ho.speed).toBeGreaterThan(balance.speed);
-    expect(stall.speed).toBe(0);
+    // Anche lo stall tiene un po' di Velocità (10): nessuna riga ha uno zero, nessuna area è inattiva
+    expect(stall.speed).toBeGreaterThan(0);
+    expect(stall.speed).toBeLessThan(balance.speed);
     expect(stall.defense).toBeGreaterThan(balance.defense);
     expect(balance.defense).toBeGreaterThan(ho.defense);
     // La Coverage offensiva è una sottostatistica dell'Offesa: il suo peso è passato all'Offesa
@@ -49,8 +51,10 @@ describe('pesi delle aree', () => {
     // 2026-11-02: i Ruoli sono una lista (malus e bonus), non un'area col peso: il loro peso è andato in proporzione
     // a Difesa, Offesa e Velocità
     expect(Object.keys(balance)).toEqual(['defense', 'strength', 'speed']);
-    expect([ho.defense, ARCHETYPE_WEIGHTS.bulkyOffense.defense, balance.defense, ARCHETYPE_WEIGHTS.semiStall.defense, stall.defense]).toEqual([12, 20, 28, 57, 76]);
-    expect([ho.strength, balance.strength, stall.strength]).toEqual([62, 54, 24]);
+    // 2026-11-03 (test dei pesi): balance 40/45/15 (era 28/54/18), stall 65/25/10 (era 76/24/0)
+    expect([ho.defense, ARCHETYPE_WEIGHTS.bulkyOffense.defense, balance.defense, ARCHETYPE_WEIGHTS.semiStall.defense, stall.defense]).toEqual([12, 20, 40, 57, 65]);
+    expect([ho.strength, balance.strength, stall.strength]).toEqual([62, 45, 25]);
+    expect([ho.speed, balance.speed, stall.speed]).toEqual([26, 15, 10]);
   });
 });
 
@@ -124,16 +128,6 @@ describe('rateTeam', () => {
   });
 });
 
-describe('cima delle aree', () => {
-  it('fino al ginocchio come prima; il riferimento vale meno di 100; il 100 solo con la perfezione', () => {
-    expect(areaValue(0.5, 0.9)).toBeCloseTo(0.5 / 0.9);
-    expect(areaValue(AREA_KNEE * 0.9, 0.9)).toBeCloseTo(AREA_KNEE);
-    expect(areaValue(0.9, 0.9)).toBeGreaterThan(AREA_KNEE);
-    expect(areaValue(0.9, 0.9)).toBeLessThan(1);
-    expect(areaValue(1, 0.9)).toBe(1);
-  });
-
-});
 
 
 describe('pesi secondo il tipo di team', () => {

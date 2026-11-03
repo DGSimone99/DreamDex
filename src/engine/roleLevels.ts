@@ -74,6 +74,10 @@ const E = 'essential' as const, I = 'important' as const, M = 'minor' as const, 
  *   Semi-stall: Muri 100 / 100, Recupero 100, Hazard 100; Rimozione 90, Controllo 88, DoT 83, Anti-setup 78, Pivot 73,
  *     gruppi 85 / 80 / 83 / 68; Cleric 35.
  *   Stall (6 team): Muri, Recupero, Hazard, Cleric, DoT, Anti-setup 100; Controllo 83; Rimozione 67; gruppi e Pivot 17.
+ * 2026-11-03 (test dei pesi): Pivot e Rimozione Strumenti scendono a minori ovunque. Il censimento su tutti i formati
+ * dice che non distinguono: il Pivot manca al 47% degli HO da torneo e solo al 17% di quelli del ladder (nel semi-stall
+ * 39% contro 10%), Knock Off manca al 30% dei BO da torneo e al 33% del ladder. Costavano 2 punti a team da torneo
+ * senza separare; come minori danno +1 a chi li ha. Hazard, Rimozione e l'attaccante fisico del semi-stall separano e restano.
  */
 const ROWS: [LevelKey, Level, Level, Level, Level, Level][] = [
   // Attaccanti: i gruppi (le righe singole restano minori o ignorate)
@@ -98,11 +102,11 @@ const ROWS: [LevelKey, Level, Level, Level, Level, Level][] = [
   ['phazer', X, X, M, I, E],
   // Utility
   ['hazards', I, I, E, E, E],
-  ['pivot', I, I, I, I, X],
+  ['pivot', M, M, M, M, X],
   ['dot', X, M, M, I, E],
   ['taunt', X, X, X, X, X],
   ['encore', X, X, X, X, X],
-  ['itemRemoval', M, I, I, I, M],
+  ['itemRemoval', M, M, M, M, M],
 ];
 const COLUMNS: Archetype[] = ['hyperOffense', 'bulkyOffense', 'balance', 'semiStall', 'stall'];
 

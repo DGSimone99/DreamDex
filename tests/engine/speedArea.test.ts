@@ -74,7 +74,8 @@ describe('area Velocità', () => {
     const area = teamSpeedArea(tr, noMeta);
     const room = (name: string) => area.members.find(m => m.species === name)!.gains.find(g => g.condition === 'trickroom');
     expect(room('Toxapex')!.source).toBe('Trick Room');
-    expect(room('Toxapex')!.gain).toBeGreaterThan(0.3);
+    // La quota di Trick Room è un quarto: il guadagno massimo è 0,25
+    expect(room('Toxapex')!.gain).toBeGreaterThan(0.15);
     expect(room('Dragapult')).toBeUndefined();
     // Senza Trick Room la condizione non c'è
     expect(teamSpeedArea([slowpex, dragapult], noMeta).members.some(m => m.gains.some(g => g.condition === 'trickroom'))).toBe(false);

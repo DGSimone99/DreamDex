@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFENSE_DEPTH, defensiveSetup, dummyAttacker, dummyStats, hazardRemover, holdBand, holdCredit, typedHits, holdStep, memberDefense, sustainability, sustainParts, teamDefense } from '../../src/engine/defense';
+import { DEFENSE_DEPTH, DEFENSE_SHARES, DEFENSE_SHARES_NO_META, defensiveSetup, dummyAttacker, dummyStats, hazardRemover, holdBand, holdCredit, typedHits, holdStep, memberDefense, sustainability, sustainParts, teamDefense } from '../../src/engine/defense';
 import type { TeamSet } from '../../src/engine/sets';
 import { softScore } from '../../src/engine/scale';
 import { fixtureData } from '../fixtures/data';
@@ -113,19 +113,21 @@ describe('memberDefense: quanti colpi di tipo regge (solo informazione)', () => 
     expect(m.physical).toBe(side(0));
     expect(m.special).toBe(side(1));
     expect(m.hold).toBe(Math.round(100 * held.reduce((a, x) => a + holdCredit(x), 0) / 36));
-    // Il valore del membro con i pesi della squadra: senza statistiche niente meta, 80/20
+    // Il valore del membro con i pesi della squadra: senza statistiche niente meta, 70/30
     expect(m.metaHold).toBeNull();
   });
 
-  it('Regge il meta: quota pesata per uso delle minacce che regge; valore 50/30/20 col meta, 80/20 senza', () => {
+  it('Regge il meta: quota pesata per uso delle minacce che regge; valore 40/30/30 col meta, 70/30 senza', () => {
     const m = memberDefense(blissey, [blissey], fixtureData)!;
     expect(m.metaHold).not.toBeNull();
     expect(m.metaHold!).toBeGreaterThanOrEqual(0);
     expect(m.metaHold!).toBeLessThanOrEqual(100);
-    expect(m.value).toBe(Math.round(0.5 * m.hold + 0.3 * m.metaHold! + 0.2 * m.sustain));
+    expect(DEFENSE_SHARES).toEqual({ types: 0.4, meta: 0.3, sustain: 0.3 });
+    expect(m.value).toBe(Math.round(DEFENSE_SHARES.types * m.hold + DEFENSE_SHARES.meta * m.metaHold! + DEFENSE_SHARES.sustain * m.sustain));
     const plain = memberDefense(blissey, [blissey], { ...fixtureData, ignoreMeta: true })!;
     expect(plain.metaHold).toBeNull();
-    expect(plain.value).toBe(Math.round(0.8 * plain.hold + 0.2 * plain.sustain));
+    expect(DEFENSE_SHARES_NO_META).toEqual({ types: 0.7, sustain: 0.3 });
+    expect(plain.value).toBe(Math.round(DEFENSE_SHARES_NO_META.types * plain.hold + DEFENSE_SHARES_NO_META.sustain * plain.sustain));
   });
 
   it('Iron Defense: setupGain è quanto la danza alza il valore', () => {
@@ -147,16 +149,16 @@ describe('teamDefense: Coverage di tipi sui colpi, Coverage meta, Sostenibilità
   const corv = set('Corviknight', 'Leftovers', 'Pressure', ['Brave Bird', 'Defog', 'Roost'], 'Impish', { hp: 248, def: 168, spd: 92 });
   const team = [tusk, toxapex, corv];
 
-  it('col meta: Difesa = 50% Coverage tipi + 30% Coverage meta + 20% Sostenibilità', () => {
+  it('col meta: Difesa = 40% Coverage tipi + 30% Coverage meta + 30% Sostenibilità', () => {
     const d = teamDefense(team, fixtureData);
     expect(d.coverageMeta).not.toBeNull();
-    expect(d.value).toBe(Math.round(0.5 * d.coverageTypes.value + 0.3 * d.coverageMeta!.value + 0.2 * d.sustain));
+    expect(d.value).toBe(Math.round(DEFENSE_SHARES.types * d.coverageTypes.value + DEFENSE_SHARES.meta * d.coverageMeta!.value + DEFENSE_SHARES.sustain * d.sustain));
   });
 
-  it('senza meta: 80% Coverage tipi + 20% Sostenibilità; senza statistiche niente Coverage meta', () => {
+  it('senza meta: 70% Coverage tipi + 30% Sostenibilità; senza statistiche niente Coverage meta', () => {
     const d = teamDefense(team, { ...fixtureData, ignoreMeta: true });
     expect(d.coverageMeta).toBeNull();
-    expect(d.value).toBe(Math.round(0.8 * d.coverageTypes.value + 0.2 * d.sustain));
+    expect(d.value).toBe(Math.round(DEFENSE_SHARES_NO_META.types * d.coverageTypes.value + DEFENSE_SHARES_NO_META.sustain * d.sustain));
     expect(teamDefense(team, noStats).coverageMeta).toBeNull();
   });
 

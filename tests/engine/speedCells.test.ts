@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { EngineData } from '../../src/engine/data';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
 import { speedPool } from '../../src/engine/speed';
-import { CONTROL_CONDITIONS, memberSpeed, teamSpeedArea, type MemberSpeed, type SpeedCell } from '../../src/engine/speedArea';
+import { CONDITION_QUOTA, CONTROL_CONDITIONS, memberSpeed, teamSpeedArea, type MemberSpeed, type SpeedCell } from '../../src/engine/speedArea';
 
 const set = (species: string, item: string, ability: string, moves: string[], nature = 'Jolly', spe = 252): TeamSet =>
   ({ ...emptySet(species), item, ability, moves, nature, evs: { spe } });
@@ -60,10 +60,11 @@ describe('celle della Velocità: ogni rivale del gruppo, per ogni membro', () =>
     expect(fast.base).toBe(0);
     expect(fast.via).toBe('trickroom');
     expect(fast.source).toBe('Trick Room');
-    expect(fast.credit).toBeCloseTo(0.5);
-    // Sotto Trick Room un rivale più lento si perde: da 1 a metà
+    // Il credito di Trick Room per rivale è la sua quota (un quarto)
+    expect(fast.credit).toBeCloseTo(CONDITION_QUOTA.trickroom);
+    // Sotto Trick Room un rivale più lento si perde: da 1 a tre quarti
     const slower = h.cells.find(c => c.weight > 0 && c.speed < h.speed);
-    if (slower) expect(slower.credit).toBeCloseTo(0.5);
+    if (slower) expect(slower.credit).toBeCloseTo(1 - CONDITION_QUOTA.trickroom);
   });
 
   it('il controllo nelle celle è quello che vince per il membro (Trick Room oppure Web e paralisi), non il migliore per rivale', () => {

@@ -346,7 +346,7 @@ describe('dettaglio: abilità in battaglia', () => {
     expect(screen.getByRole('complementary', { name: /^Dettaglio di / }).querySelector('.stats-badge')).not.toBeNull();
   });
 
-  it('stall: la Velocità nel dettaglio è grigia, con la nota e senza variazione', async () => {
+  it('stall: la Velocità nel dettaglio conta (10%), quindi non è grigia e non ha la nota', async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} />);
     await user.click(screen.getByLabelText('Testo Showdown'));
@@ -401,10 +401,13 @@ Bold Nature
 - Toxic Spikes`,
     ].join('\n\n'));
     await user.click(screen.getByRole('button', { name: 'Importa' }));
-    const speed = screen.getByRole('complementary', { name: /^Dettaglio di / }).querySelector('.detail-areas .inactive')!;
-    expect(speed).toHaveTextContent(/^Velocità/);
-    expect(speed.querySelector('dt')).toHaveAttribute('aria-description', 'Non conta nello Stall');
-    expect(speed.querySelector('.change')).toHaveTextContent(/^$/);
+    const areas = screen.getByRole('complementary', { name: /^Dettaglio di / }).querySelector('.detail-areas')!;
+    // Dal 2026-11-03 nessuna area è inattiva nello stall: niente grigio, niente nota
+    expect(areas.querySelector('.inactive')).toBeNull();
+    const speed = [...areas.querySelectorAll('div')].find(d => d.querySelector('dt')?.textContent === 'Velocità')!;
+    expect(speed).toBeDefined();
+    expect(speed.querySelector('dt')).not.toHaveAttribute('aria-description');
+    expect(speed.querySelector('.change')).not.toBeNull();
   });
 });
 

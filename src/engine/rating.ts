@@ -45,25 +45,16 @@ export const ARCHETYPE_WEIGHTS: Record<Archetype, Record<BaseArea, number>> = {
   // quelli medi (75 contro 76: distingue solo i brutti), mentre Offesa, Ruoli e Velocità li separano; col peso spostato
   // il distacco torneo − medio sale da 7,1 a 8,0 e le partite vere da 52,7% a 53,0%. Semi-stall e stall come prima.
   // 2026-11-02: i Ruoli diventano una lista (malus e bonus) e il loro peso si divide in proporzione fra le altre tre.
+  // 2026-11-03 (test dei pesi): balance più difensivo (era 28/54/18: il tipo giudicato peggio, 16% di A fra i team da
+  // torneo, perché giudicato per metà sull'Offesa dove fa 72); stall con meno Difesa e un po' di Velocità (era 76/24/0:
+  // bastava essere uno stall per prendere A, anche sul ladder). HO, BO e semi-stall provati e lasciati.
   hyperOffense: { defense: 12, strength: 62, speed: 26 },
   bulkyOffense: { defense: 20, strength: 58, speed: 22 },
-  balance: { defense: 28, strength: 54, speed: 18 },
+  balance: { defense: 40, strength: 45, speed: 15 },
   semiStall: { defense: 57, strength: 33, speed: 10 },
-  stall: { defense: 76, strength: 24, speed: 0 },
+  stall: { defense: 65, strength: 25, speed: 10 },
 };
 
-
-/**
- * Per le aree con un riferimento: oltre il 95% del riferimento l'area sale più piano,
- * il 100 arriva solo con la perfezione. Sotto il ginocchio il valore è lineare.
- */
-export const AREA_KNEE = 0.95;
-export function areaValue(value: number, full: number): number {
-  const x = value / full;
-  if (x <= AREA_KNEE) return Math.max(0, x);
-  const perfect = 1 / full;
-  return Math.min(1, AREA_KNEE + (1 - AREA_KNEE) * (x - AREA_KNEE) / (perfect - AREA_KNEE));
-}
 
 
 
@@ -88,7 +79,7 @@ export interface RatingArea {
   label: string;
   /** 0–100, o null se mancano i dati per calcolarla. */
   value: number | null;
-  /** Ha un valore ma peso 0 nel voto (oggi solo la Velocità nello stall): si mostra in grigio. */
+  /** Ha un valore ma peso 0 nel voto (oggi nessuna area: lo stall ha Velocità 10): si mostrerebbe in grigio. */
   inactive?: boolean;
 }
 

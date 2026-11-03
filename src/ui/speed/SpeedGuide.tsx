@@ -59,7 +59,8 @@ export function SpeedGuideSection({ speed, meta }: { speed: TeamSpeed; meta: boo
   const id = useId();
   const [open, setOpen] = useState<GainKey | null>(null);
   const tiles = useRef<Partial<Record<GainKey, HTMLButtonElement | null>>>({});
-  const pctOf = (x: number) => Math.round(100 * x);
+  // Un decimale dove serve (Tailwind e rallentamenti valgono un ottavo: 12,5%), con la virgola in italiano
+  const pctOf = (x: number) => String(Math.round(1000 * x) / 10).replace('.', lang === 'it' ? ',' : '.');
   const g = (key: string, params?: Record<string, string | number>) => t(`guide.speed.${key}` as Key, params);
   const times = (x: number) => `×${String(x).replace('.', lang === 'it' ? ',' : '.')}`;
   const rivals = meta ? g('rivals.meta', { n: SPEED_POOL }) : g('rivals.tier');
