@@ -20,7 +20,7 @@ describe('coachTeam', () => {
 
   it('verdetto con conteggi', () => {
     expect(coaching.verdict).toBe('Team incompleto');
-    // Gravi solo i tipi che nessuno colpisce oltre il 33% e che pesano: Great Tusk e Gholdengo colpiscono tutto oltre il 33%
+    // Gravi solo i tipi che nessuno manda KO in due colpi e che pesano: Great Tusk e Gholdengo arrivano al 50% su tutti
     expect(coaching.problems.filter(p => p.severity === 'serious').map(p => p.key)).toEqual([]);
     // Pivot e Rimozione Strumenti sono voci minori: nessun problema "Ruoli importanti mancanti"
     expect(coaching.problems.filter(p => p.category !== 'meta')).toHaveLength(13);
@@ -204,14 +204,14 @@ describe('chiavi dei problemi e minacce del meta', () => {
       const p = found.find(x => x.key === `coverage:${row.label}`)!;
       expect(p.subjects).toEqual([row.label]);
       if (coverage.holes.includes(row.label)) {
-        expect(p).toMatchObject({ size: 2, text: `Scoperto ${row.label}: nessuno lo colpisce oltre il 33%`, severity: weights[row.label] >= MIN_COVERAGE_WEIGHT ? 'serious' : 'minor' });
+        expect(p).toMatchObject({ size: 2, text: `Scoperto ${row.label}: nessuno lo manda KO in due colpi`, severity: weights[row.label] >= MIN_COVERAGE_WEIGHT ? 'serious' : 'minor' });
       } else {
         expect(p).toMatchObject({ size: 1, severity: 'minor', text: `Coperto poco ${row.label}: nessuno lo manda KO in un colpo e pochi lo colpiscono forte` });
       }
     }
     // In inglese
     const en = coachTeam(team, DEFAULT_FORMAT, fixtureData, 'en').problems.filter(p => p.category === 'coverage').map(p => p.text);
-    expect(en.some(text => /^(Uncovered \w+: nobody hits it above 33%|Weakly covered \w+: nobody OHKOs it and few hit it hard)$/.test(text))).toBe(true);
+    expect(en.some(text => /^(Uncovered \w+: nobody 2HKOs it|Weakly covered \w+: nobody OHKOs it and few hit it hard)$/.test(text))).toBe(true);
   });
 
   it('coverage: i rimedi sono candidati con una mossa super efficace contro il tipo (anche per i coperti a metà)', () => {
@@ -242,5 +242,15 @@ describe('copertura sul team di prova del pacchetto (National Dex OU)', () => {
     const keys = coachTeam(team, DEFAULT_FORMAT, fixtureData).problems.filter(p => p.category === 'coverage').map(p => p.key);
     expect(keys).not.toContain('coverage:Fighting');
     expect(keys).not.toContain('coverage:Dragon');
+  });
+});
+
+describe('scoperto sotto il 50%', () => {
+  it('un tipo colpito solo fra il 33% e il 50% è scoperto, non coperto poco', () => {
+    // Toxapex con Surf fa il 33,5% al Terra medio: conta per il pacchetto, ma nessuno lo manda KO in due colpi
+    const pex = { ...emptySet('Toxapex'), ability: 'Regenerator', moves: ['Surf'], nature: 'Bold', evs: { hp: 252, def: 252 } };
+    const wall = { ...emptySet('Blissey'), moves: ['Soft-Boiled', 'Toxic'] };
+    const texts = coachTeam([pex, wall], DEFAULT_FORMAT, fixtureData).problems.filter(p => p.category === 'coverage').map(p => p.text);
+    expect(texts).toContain('Scoperto Ground: nessuno lo manda KO in due colpi');
   });
 });

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import type { TeamOffense } from '../../engine/offense';
-import { CREDIT_FLOOR, OFFENSE_DEPTH, OFFENSE_SHARES } from '../../engine/offense';
+import { CREDIT_FLOOR, HOLE_HIT, OFFENSE_DEPTH, OFFENSE_SHARES } from '../../engine/offense';
 import { depthWeights, typeAverage } from '../../engine/coverage';
 import { DEFAULT_FORMAT, type FormatId } from '../../engine/format';
 import { pokedexOf, teraAllowed } from '../../engine/formats';
@@ -118,6 +118,7 @@ export function OffenseGuideSection({ section, offense, meta, formatId = DEFAULT
           [swatch('ok-full', g('cov.hit')), g('cov.hit.rule')],
           [swatch('ok-half', g('cov.half')), g('cov.half.rule')],
           [swatch('empty', g('cov.hole')), g('cov.hole.rule', { pct: pctOf(CREDIT_FLOOR) })],
+          [g('cov.gap'), g('cov.gap.rule', { pct: pctOf(HOLE_HIT) })],
         ]} />
 
         <h5>{g('cov.depth')}</h5>

@@ -85,7 +85,7 @@ describe('schede interne di Analisi', () => {
   });
 
   it('Coaching: badge coi problemi gravi, il nome resta "Coaching"', async () => {
-    // Kingambit e Gholdengo sono entrambi deboli a Fire e Ground: due problemi gravi (tutti i tipi sono colpiti oltre il 33%, nessuno scoperto)
+    // Kingambit e Gholdengo sono entrambi deboli a Fire e Ground: due problemi gravi (su ogni tipo qualcuno arriva al 50%, nessuno scoperto)
     await setup(['Great Tusk', 'Gholdengo', 'Kingambit']);
     const tab = within(views()).getByRole('tab', { name: 'Coaching' });
     const badge = tab.querySelector('.tab-badge');

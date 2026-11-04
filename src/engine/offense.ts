@@ -44,6 +44,8 @@ export const OFFENSE_SHARES = { types: 0.7, meta: 0.3 };
 export const CREDIT_FLOOR = 1 / 3;
 /** Per ogni tipo, il 1°, 2° e 3° membro che lo colpisce meglio valgono 50, 30 e 20% (come la Difesa). */
 export const OFFENSE_DEPTH = [0.5, 0.3, 0.2];
+/** Un tipo è scoperto se nessun membro lo manda KO in due colpi (danno sotto il 50%): un problema grave del Coaching. */
+export const HOLE_HIT = TWO_HIT;
 /**
  * Il setup costa un turno libero e ripaga dal terzo turno: in tre turni un +2 fa quattro colpi invece di tre, e se il membro
  * esce perde il potenziamento. Nell'Offesa entra un terzo del guadagno dopo una danza, per ogni setup (+1 e +2 allo stesso modo).
@@ -118,7 +120,7 @@ export interface TeamOffense {
   attackers: { physical: number; special: number; mixed: number };
   /** Pacchetto 70% + Coverage meta 30% (senza meta il pacchetto). */
   value: number;
-  /** Il pacchetto dei tipi: valore, una riga per tipo, e i buchi (i tipi dove nessun membro conta, cioè nessuno li colpisce oltre il 33%). */
+  /** Il pacchetto dei tipi: valore, una riga per tipo, e i buchi (i tipi che nessuno manda KO in due colpi). */
   types: { value: number; rows: TypeRow[]; holes: string[] };
   /** null senza meta. */
   coverageMeta: CoverageDetail | null;
@@ -426,7 +428,7 @@ export function teamOffense(team: TeamSet[], data: EngineData): TeamOffense {
   return {
     attackers: { physical: styles.filter(s => s === 'physical').length, special: styles.filter(s => s === 'special').length, mixed: styles.filter(s => s === 'mixed').length },
     value,
-    types: { value: typesValue, rows, holes: rows.filter(r => r.best.length === 0).map(r => r.label) },
+    types: { value: typesValue, rows, holes: labels.filter((_, i) => !members.some(m => m.hits[i].pct >= 100 * HOLE_HIT)) },
     coverageMeta: metaCoverage && { value: metaCoverage.value, holes: metaCoverage.holes, rows: metaCoverage.rows },
     setupGain: value - withoutSetup,
     setters: members.filter(m => m.setupMove).map(m => ({ species: m.species, move: m.setupMove! })),

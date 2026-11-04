@@ -28,7 +28,7 @@ export const MIN_COVERAGE_WEIGHT = 0.05;
 export const STRONG_COVERAGE = 15;
 /**
  * Un tipo del pacchetto dell'Offesa è coperto dal livello 50: tre membri al 66%, o uno che lo manda KO e uno al 66%.
- * Sotto è un problema; scoperto (livello 0) se nessuno lo colpisce oltre il 33%.
+ * Sotto è un problema; scoperto (grave se il tipo pesa) se nessuno lo manda KO in due colpi (HOLE_HIT, 50%).
  */
 export const COVERED_LEVEL = 50;
 
@@ -183,7 +183,7 @@ export function findProblems(team: TeamSet[], format: Format, data: EngineData, 
   }
 
   // Coverage: lo stesso pacchetto dei tipi del voto, un problema per tipo sotto il livello 50 (COVERED_LEVEL).
-  // Scoperto (nessuno lo colpisce oltre il 33%): grave se il tipo pesa; coperto poco (qualcuno lo colpisce, non abbastanza forte): minore.
+  // Scoperto (nessuno lo manda KO in due colpi): grave se il tipo pesa; coperto poco (nessuno lo manda KO in un colpo, pochi lo colpiscono forte): minore.
   // Rimedi: i candidati col proprio set che ha una mossa super efficace contro il tipo (un'approssimazione, senza calcolo dei danni).
   // Cosa si risolve davvero lo dicono le tappe, con problemChanges.
   const coverage = teamOffense(team, data).types;

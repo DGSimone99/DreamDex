@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  CREDIT_FLOOR, memberOffense, offenseCredit, OFFENSE_DEPTH, OFFENSE_SHARES, ONE_USE_SHARE, ROLES_SETUP_SHARE, rolesMemberOffense,
+  CREDIT_FLOOR, HOLE_HIT, memberOffense, offenseCredit, OFFENSE_DEPTH, OFFENSE_SHARES, ONE_USE_SHARE, ROLES_SETUP_SHARE, rolesMemberOffense,
   SETUP_SHARE, stepBucket, stepValue, teamOffense, type MemberOffense,
 } from '../../src/engine/offense';
 import { bestHit } from '../../src/engine/damage';
@@ -197,7 +197,7 @@ describe('teamOffense: il pacchetto dei tipi', () => {
     expect(team.value).toBe(Math.round(0.7 * team.types.value + 0.3 * team.coverageMeta!.value));
   });
 
-  it('per ogni tipo: il livello del team e i migliori tre con credito; buchi dove nessuno supera il 33%', () => {
+  it('per ogni tipo: il livello del team e i migliori tre con credito; buchi dove nessuno lo manda KO in due colpi', () => {
     const team = teamOffense([chomp], noStats);
     expect(team.types.rows).toHaveLength(18);
     const electric = team.types.rows.find(r => r.label === 'Electric')!;
@@ -205,7 +205,7 @@ describe('teamOffense: il pacchetto dei tipi', () => {
     expect(electric.level).toBe(Math.round(100 * 0.5 * electric.best[0].credit));
     // Il Volante, immune a Earthquake: lo colpisce Stone Edge
     expect(team.members[0].hits.find(h => h.label === 'Flying')!.move).toBe('Stone Edge');
-    for (const row of team.types.rows) expect(team.types.holes.includes(row.label)).toBe(row.level === 0);
+    team.types.rows.forEach((row, i) => expect(team.types.holes.includes(row.label)).toBe(!team.members.some(m => m.hits[i].pct >= 100 * HOLE_HIT)));
   });
 
   it('il setup alza l\'Offesa del team; setupGain e setters', () => {
@@ -250,12 +250,14 @@ describe('i Ruoli', () => {
 });
 
 describe('correzioni della revisione finale', () => {
-  it('un buco è un tipo dove nessuno conta: mai un buco con un membro nella lista dei migliori', () => {
-    // Toxapex con Surf fa il 33,5% al Terra medio: credito piccolissimo, livello arrotondato a 0, ma conta
+  it('scoperto: nessuno lo manda KO in due colpi (sotto il 50%), anche se qualcuno conta', () => {
+    expect(HOLE_HIT).toBe(0.5);
+    // Toxapex con Surf fa il 33,5% al Terra medio: conta poco, ma il Terra resta scoperto
     const pex = set('Toxapex', '', 'Regenerator', ['Surf'], 'Bold', { hp: 252, def: 252 });
     const team = teamOffense([pex], noStats);
-    const ground = team.types.rows.find(r => r.label === 'Ground')!;
-    expect(ground.best.length).toBeGreaterThan(0);
-    for (const row of team.types.rows) expect(team.types.holes.includes(row.label)).toBe(row.best.length === 0);
+    expect(team.types.rows.find(r => r.label === 'Ground')!.best.length).toBeGreaterThan(0);
+    expect(team.types.holes).toContain('Ground');
+    // Garchomp con Earthquake manda KO in due colpi l'Elettro medio: non è scoperto
+    expect(teamOffense([pex, chomp], noStats).types.holes).not.toContain('Electric');
   });
 });

@@ -16,7 +16,7 @@ const coverTone = (value: number) => (value === 0 ? 'bad' : value < COVERED_LEVE
 /**
  * Il pacchetto dei tipi dell'Offesa: stessa griglia della Difesa (un membro per riga, 18 tipi in colonna) con, per ogni tipo,
  * il danno del colpo migliore del membro sul Pokémon medio (verde = oltre il 66%, vale almeno metà; giallo = oltre il 33%,
- * conta; vuota = non conta). Il filo sotto l'icona è rosso sui tipi che nessuno colpisce oltre il 33%; in fondo la riga
+ * conta; vuota = non conta). Il filo sotto l'icona è rosso sui tipi che nessuno manda KO in due colpi (scoperti); in fondo la riga
  * Copertura. Chi il motore ha scartato resta con le caselle vuote.
  * La legenda dei colori sta sulla riga dei problemi (OffenseTypesLegend).
  */

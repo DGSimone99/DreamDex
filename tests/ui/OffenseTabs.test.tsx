@@ -48,6 +48,7 @@ describe('Offesa: navigazione e guida', () => {
     expect(panel).toHaveTextContent('Pokémon medio');
     // La regola del credito e il setup a un terzo
     expect(panel).toHaveTextContent('Oltre il 33%');
+    expect(panel).toHaveTextContent('Un tipo che nessuno manda KO in due colpi (al 50%) è scoperto');
     expect(panel).toHaveTextContent('un terzo del guadagno');
     // Le difese medie dei 18 bersagli stanno qui, sotto il Colpo (chiuse sotto una freccina)
     expect(within(panel).getByText('Statistiche medie dei 18 bersagli').closest('details')).not.toHaveAttribute('open');
