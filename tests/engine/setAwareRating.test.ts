@@ -14,8 +14,8 @@ const entry = (usage: number): SpeciesStats => ({ usage, count: 100, abilities: 
 
 describe('copertura pesata da chi colpisce', () => {
   it('un Close Combat di Alakazam copre meno di uno di Great Tusk', () => {
-    // La Coverage è dentro l'Offesa: copre chi manda KO in due colpi, e il Close Combat di Alakazam non ci arriva
-    const coverage = (team: TeamSet[]) => rateTeam(team, fixtureData)!.offense.coverage;
+    // Il pacchetto dei tipi dell'Offesa: conta il danno sopra il 33%, e il Close Combat di Alakazam fa molto meno
+    const coverage = (team: TeamSet[]) => rateTeam(team, fixtureData)!.offense.types.value;
     expect(coverage([withMoves('Alakazam', ['Close Combat'])])).toBeLessThan(coverage([withMoves('Great Tusk', ['Close Combat'])]));
   });
 });

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { Generations, Move } from '@smogon/calc';
 import { bestHit } from '../../src/engine/damage';
 import type { TeamSet } from '../../src/engine/sets';
 
@@ -132,5 +133,36 @@ describe('correzioni della revisione finale', () => {
     expect(bestHit(lapras, swampert, { superEffectiveOnly: true })).not.toBeNull();
     // Un colpo neutro resta escluso
     expect(bestHit({ ...sylveon, ability: 'Cute Charm' }, dragon, { superEffectiveOnly: true })).toBeNull();
+  });
+});
+
+describe('Loaded Dice', () => {
+  const chomp = (item: string, moves: string[]) => set('Garchomp', item, 'Rough Skin', moves, 'Jolly', { atk: 252, spe: 252 });
+  const target = set('Blissey', '', 'Natural Cure', [], 'Bold', { hp: 252, def: 252 });
+  it('Scale Shot con Loaded Dice fa 4,5 colpi medi (fra 3 e 5 colpi, tre quarti della differenza)', () => {
+    const three = bestHit(chomp('', ['Scale Shot']), target)!.expected;
+    const dice = bestHit(chomp('Loaded Dice', ['Scale Shot']), target)!.expected;
+    expect(dice / three).toBeCloseTo(1.5, 1);
+  });
+  it('una mossa a colpo singolo non cambia con Loaded Dice', () => {
+    expect(bestHit(chomp('Loaded Dice', ['Earthquake']), target)!.expected)
+      .toBeCloseTo(bestHit(chomp('', ['Earthquake']), target)!.expected, 5);
+  });
+  it('Population Bomb resta ai colpi della libreria (già tutti a segno)', () => {
+    const maus = (item: string) => set('Maushold', item, 'Technician', ['Population Bomb'], 'Jolly', { atk: 252, spe: 252 });
+    expect(new Move(Generations.get(9), 'Population Bomb').hits).toBe(10);
+    expect(bestHit(maus('Loaded Dice'), target)!.expected).toBeCloseTo(bestHit(maus(''), target)!.expected, 5);
+  });
+  it('con Skill Link Loaded Dice non cambia niente (sempre 5 colpi)', () => {
+    const cinccino = (item: string) => set('Cinccino', item, 'Skill Link', ['Tail Slap'], 'Jolly', { atk: 252, spe: 252 });
+    expect(bestHit(cinccino('Loaded Dice'), target)!.expected).toBeCloseTo(bestHit(cinccino(''), target)!.expected, 5);
+  });
+});
+
+describe('Loaded Dice e Population Bomb', () => {
+  it('con Loaded Dice Population Bomb non vale meno che senza strumento', () => {
+    const target = set('Blissey', '', 'Natural Cure', [], 'Bold', { hp: 252, def: 252 });
+    const maus = (item: string) => set('Maushold', item, 'Technician', ['Population Bomb'], 'Jolly', { atk: 252, spe: 252 });
+    expect(bestHit(maus('Loaded Dice'), target)!.expected).toBeGreaterThanOrEqual(bestHit(maus(''), target)!.expected);
   });
 });

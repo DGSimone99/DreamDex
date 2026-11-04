@@ -2,7 +2,7 @@ import { usesMeta } from './analysis';
 import { metaThreats } from './attackers';
 import { dexPool, ownConditions } from './coverage';
 import { bestHit, setKey, standardHit, type FieldCondition, type Hit, type Target } from './damage';
-import { ONE_USE_SHARE, rankWeighted, SETUP_SHARE } from './offense';
+import { ONE_USE_SHARE, rankWeighted } from './offense';
 import { DEFAULT_FORMAT } from './format';
 import { pokedexOf, teraAllowed } from './formats';
 import { effectiveness, TYPES } from './types';
@@ -207,12 +207,17 @@ export function withoutTeraShell(member: TeamSet): TeamSet {
   return toID(battleAbility(member)) === 'terashell' ? { ...member, ability: NEUTRAL_ABILITY } : member;
 }
 
+/**
+ * La danza difensiva (Iron Defense, Calm Mind, Bulk Up…) conta per tre quarti del guadagno: aiuta già dal primo turno,
+ * a differenza del setup offensivo dell'Offesa (un terzo). Scelta dell'utente 2026-11-04.
+ */
+export const DEFENSE_SETUP_SHARE = 0.75;
 const typedCache = new Map<string, { plain: number[]; held: number[] }>();
 const TYPED_LIMIT = 5000;
 
 /**
  * I 36 colpi standard tipizzati sul membro (per ogni tipo, prima il fisico poi lo speciale): danno atteso, al massimo 1.
- * `plain` senza setup; `held` con la danza difensiva che conta per metà (uguale a `plain` senza danza).
+ * `plain` senza setup; `held` con la danza difensiva che conta per tre quarti (uguale a `plain` senza danza).
  * Il meteo e il terreno che il membro porta con la sua abilità valgono per lui.
  */
 export function typedHits(member: TeamSet, data: EngineData): { plain: number[]; held: number[] } {
@@ -232,7 +237,7 @@ export function typedHits(member: TeamSet, data: EngineData): { plain: number[];
   const held = setup
     ? TYPES.flatMap((type, i) => [hit(type, 'Physical', true), hit(type, 'Special', true)].map((boosted, k) => {
       const x = plain[2 * i + k];
-      return x - SETUP_SHARE * (x - boosted);
+      return x - DEFENSE_SETUP_SHARE * (x - boosted);
     }))
     : plain;
   const value = { plain, held };

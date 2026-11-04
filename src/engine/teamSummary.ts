@@ -7,19 +7,15 @@ import { rulesOf } from './formatRules';
 import type { DashboardData } from './overviewDashboard';
 import type { TeamRating } from './rating';
 import type { TeamSet } from './sets';
-import { measuredSubRoles } from './subRoles';
+import { FAMILIES, measuredSubRoles } from './subRoles';
 import { hasSetup, HAZARD_MOVES } from './roles';
 import { benefits, conditionName, enables } from './synergy';
 import { teamLinks, type TeamLink } from './teamLinks';
 import { gameName } from '../i18n/game';
 import type { Lang } from '../i18n';
 
-/** Offesa del membro (il numero della tabella di Offesa) da cui è un attaccante "top". */
-/**
- * Offesa del membro da cui il Riassunto lo chiama "attaccante principale". 80 (era 85): con la nuova Offesa il miglior
- * attaccante dei team da torneo sta a 85 nel primo quartile (mediana 90), e a 85 il 22% dei team non ne elencava nessuno; a 80 il 13%.
- */
-export const TOP_ATTACKER = 80;
+/** I ruoli della carta che fanno di un membro un "attaccante principale" del Riassunto: sweeper e breaker, fisici e speciali. */
+const ATTACK_ROLES: string[] = FAMILIES.attack;
 /** Mosse di schermo e Tailwind mostrate come condizioni (id). */
 const SCREEN_MOVES = ['reflect', 'lightscreen', 'auroraveil', 'tailwind'];
 
@@ -52,9 +48,8 @@ export function teamSummary(team: TeamSet[], rating: TeamRating, coaching: Coach
   const hazards: HazardRow[] = [];
   const named = team.map(set => ({ set, name: battleName(set), roles: cardRoles(set, rules, measuredSubRoles(set, team, data)) }));
   named.forEach(({ set, name, roles }) => {
-    // Per nome: i membri senza Offesa non sono nella lista, gli indici non corrispondono al team
-    const m = rating.offense.members.find(x => x.species === name);
-    if (m && m.value >= TOP_ATTACKER) attackers.push(name);
+    // Attaccante principale: chi ha un ruolo d'attacco sulla carta, qualunque sia la sua Offesa
+    if (roles.some(role => ATTACK_ROLES.includes(role))) attackers.push(name);
     if (roles.includes('physicalWall') || roles.includes('specialWall')) walls.push(name);
     const others = named.filter(o => o.set !== set);
     // Meteo, campi e Trick Room: chi ne approfitta tra i compagni (mai il portatore stesso)

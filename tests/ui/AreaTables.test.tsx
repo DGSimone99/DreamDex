@@ -39,7 +39,7 @@ describe('tabelle complete nelle schede d\'area', () => {
     const user = await openTab('Offesa');
     const legend = () => view().querySelector('.area-problems-row > .area-legend');
     await user.click(within(view()).getByRole('tab', { name: /^Coverage tipi/ }));
-    expect(legend()).toHaveTextContent('CopreCopre a metà');
+    expect(legend()).toHaveTextContent('Forte (oltre 66%)Conta (oltre 33%)');
     expect(view().querySelector('.area-panel .area-legend-swatch')).toBeNull();
   });
 
