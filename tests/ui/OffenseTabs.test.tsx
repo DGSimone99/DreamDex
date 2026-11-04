@@ -7,7 +7,7 @@ import { emptySet, type TeamSet } from '../../src/engine/sets';
 import { TYPES } from '../../src/engine/types';
 import { LangProvider } from '../../src/i18n/react';
 import { AreaView } from '../../src/ui/AreaView';
-import { typeName } from '../../src/i18n/game';
+import { gameName, typeName } from '../../src/i18n/game';
 import { offenseSlots } from '../../src/ui/offense/slots';
 import { fixtureData } from '../fixtures/data';
 import { renderIt } from '../helpers/italian';
@@ -107,20 +107,29 @@ describe('Offesa: la velocità nella riga del membro è quella reale', () => {
 describe('Offesa: Generale', () => {
   const view = (t: TeamSet[] = team, rating = withMeta()) => renderIt(<AreaView rating={rating} area="strength" team={t} analysis={analyzeTeam(t, fixtureData)} problems={[]} />);
 
-  it("Generale: il valore sui tipi, la Coverage meta e l'Offesa del membro coi pesi della squadra", () => {
+  it('Generale: per membro i tipi per fascia, i bersagli del meta e i punti che porta; la riga Totale coi voti del team', () => {
     const rating = withMeta();
     const { unmount } = view(team, rating);
     expect(screen.getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Coverage tipi', 'Coverage meta', 'Offesa']);
     const rows = document.querySelectorAll('.def-members tbody tr');
-    rating.offense.members.forEach((m, i) => {
+    rating.offense.shares.forEach((s, i) => {
       const cells = rows[i].querySelectorAll('td');
-      expect(cells[0]).toHaveTextContent(`${m.value - m.setupGain - m.oneUseGain}`);
-      expect(cells[1]).toHaveTextContent(`${m.coverMeta}%`);
-      expect(cells[2]).toHaveTextContent(`${m.total}`);
+      expect(cells[0]).toHaveTextContent(`OHKO ${s.types.ohko}`);
+      expect(cells[0]).toHaveTextContent(`Forti ${s.types.strong}`);
+      expect(cells[0]).toHaveTextContent(`Contano ${s.types.counts}`);
+      expect(cells[1]).toHaveTextContent(`${s.meta!.covered}/${s.meta!.total}`);
+      expect(cells[2]).toHaveTextContent(`+${s.points}`);
     });
+    const total = document.querySelector('.def-members tfoot tr')!;
+    expect(within(total as HTMLElement).getByRole('rowheader')).toHaveTextContent('Totale');
+    expect([...total.querySelectorAll('td')].map(c => c.textContent)).toEqual([`${rating.offense.types.value}`, `${rating.offense.coverageMeta!.value}`, `${rating.offense.value}`]);
+    // I punti dei membri sommati fanno l'Offesa del team
+    expect(rating.offense.shares.reduce((a, s) => a + s.points, 0)).toBe(rating.offense.value);
     unmount();
-    view(team, noMeta());
+    const plain = noMeta();
+    view(team, plain);
     expect(screen.getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Coverage tipi', 'Offesa']);
+    expect([...document.querySelectorAll('.def-members tfoot td')].map(c => c.textContent)).toEqual([`${plain.offense.types.value}`, `${plain.offense.value}`]);
     expect([...document.querySelectorAll('.def-mon-name')].map(n => n.textContent)).toEqual(['Great Tusk', 'Gholdengo']);
   });
 
@@ -144,41 +153,17 @@ describe('Offesa: Generale', () => {
     expect(document.querySelector('.def-general')!.textContent).not.toContain('NaN');
   });
 
-  it('il +N di Tera o mossa Z ha il suo titolo', () => {
-    const t = [{ ...emptySet('Kingambit'), ability: 'Supreme Overlord', item: 'Black Glasses', moves: ['Kowtow Cleave', 'Sucker Punch', 'Iron Head'], evs: { hp: 252, atk: 252 }, teraType: 'Dark' }];
+  it('il titolo dei punti dice che setup e Tera sono già dentro', () => {
+    const t = [{ ...emptySet('Kingambit'), ability: 'Supreme Overlord', item: 'Black Glasses', moves: ['Swords Dance', 'Kowtow Cleave', 'Sucker Punch', 'Iron Head'], evs: { hp: 252, atk: 252 }, teraType: 'Dark' }];
     const gen9 = { ...fixtureData, formatId: 'gen9ou' as const };
     const rating = rateTeam(t, gen9, 'it')!;
     renderIt(<AreaView rating={rating} area="strength" team={t} analysis={analyzeTeam(t, gen9)} problems={[]} />);
-    const gains = rating.offense.members.filter(m => m.oneUse && m.oneUseGain > 0);
-    expect(gains.length).toBeGreaterThan(0);
-    const small = [...document.querySelectorAll('.def-members small.ad-once')];
-    expect(small).toHaveLength(gains.length);
-    small.forEach(el => {
-      expect(el.textContent).toMatch(/\(\+\d+\)/);
-      expect(el.getAttribute('title')).toBe(`Tera ${typeName('Dark', 'it')}`);
-    });
-  });
-
-  it('il "+N" del setup e di Tera sta nel posto riservato della cella, in ogni riga della colonna', () => {
-    const t = [
-      { ...emptySet('Kingambit'), ability: 'Supreme Overlord', item: 'Black Glasses', moves: ['Swords Dance', 'Kowtow Cleave', 'Sucker Punch', 'Iron Head'], evs: { hp: 252, atk: 252 }, teraType: 'Dark' },
-      team[0],
-    ];
-    const gen9 = { ...fixtureData, formatId: 'gen9ou' as const };
-    renderIt(<AreaView rating={rateTeam(t, gen9, 'it')!} area="strength" team={t} analysis={analyzeTeam(t, gen9)} problems={[]} />);
-    const table = screen.getByRole('table');
-    const gains = [...table.querySelectorAll('.ad-gain, .ad-once')];
-    expect(gains.map(g => g.className.split(' ')[0]).sort()).toEqual(['ad-gain', 'ad-once']);
-    const rows = [...table.querySelectorAll('tbody tr')];
-    for (const gain of gains) {
-      expect(gain.closest('.def-cell.with-gain > .def-gain')).not.toBeNull();
-      // Il numero e i "+N" si leggono insieme: "50 (+23)" o, con setup e Tera, "50 (+11) (+3)"
-      expect(gain.closest('.def-cell')).toHaveTextContent(/^\d+( \(\+\d+\))+$/);
-      const column = [...gain.closest('tr')!.children].indexOf(gain.closest('td')!);
-      for (const row of rows) expect(row.children[column].querySelector('.def-cell')).toHaveClass('with-gain');
-    }
-    // Le colonne senza "+N" non riservano il posto (la Coverage meta)
-    expect(rows[0].children[2].querySelector('.def-cell')).not.toHaveClass('with-gain');
+    const m = rating.offense.members[0];
+    expect(m.setupGain).toBeGreaterThan(0);
+    const cell = document.querySelector('.def-members tbody tr td:last-child .og-points')!;
+    expect(cell.getAttribute('title')).toContain(`+${rating.offense.shares[0].points}`);
+    expect(cell.getAttribute('title')).toContain(gameName('move', 'Swords Dance', 'it'));
+    if (m.oneUseGain > 0) expect(cell.getAttribute('title')).toContain(`Tera ${typeName('Dark', 'it')}`);
   });
 });
 

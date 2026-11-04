@@ -33,20 +33,17 @@ describe("dettaglio dell'Offesa a schede", () => {
     expect(within(panel).queryAllByRole('button')).toHaveLength(0);
     const table = within(panel).getByRole('table');
     expect(within(table).getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Coverage tipi', 'Coverage meta', 'Offesa']);
-    const rows = within(table).getAllByRole('row').slice(1);
+    const rows = [...table.querySelectorAll('tbody tr')] as HTMLElement[];
     expect(rows.map(r => r.querySelector('.def-mon-name')!.textContent)).toEqual(['Great Tusk', 'Gholdengo']);
     for (const row of rows) {
       const cells = within(row).getAllByRole('cell');
-      // Il valore sui tipi, con tra parentesi quanto lo alzano il setup e Tera o mossa Z nel voto
-      expect(cells[0]).toHaveTextContent(/^\d+( \(\+\d+\))*$/);
-      expect(cells[1]).toHaveTextContent(/^\d+%$/);
-      // L'Offesa del membro, coi pesi della squadra
-      expect(cells[2]).toHaveTextContent(/^\d+$/);
-      const once = cells[0].querySelector('.ad-once');
-      if (once) expect(once.getAttribute('title')).toMatch(/^Tera \S+$|Z$/);
+      // I tipi per fascia, i bersagli del meta mandati KO in due colpi, i punti che il membro porta
+      expect(cells[0]).toHaveTextContent(/^OHKO \d+Forti \d+Contano \d+$/);
+      expect(cells[1]).toHaveTextContent(/^\d+\/\d+$/);
+      expect(cells[2]).toHaveTextContent(/^\+\d+$/);
     }
-    // Il "+N" sta nel suo posto della cella della barra (non sborda nella colonna dopo)
-    for (const gain of table.querySelectorAll('.ad-gain, .ad-once')) expect(gain.closest('.def-cell.with-gain > .def-gain')).not.toBeNull();
+    // La riga Totale coi voti del team
+    expect(table.querySelector('tfoot tr')).toHaveTextContent(/^Totale\d+\d+\d+$/);
   });
 
   it('Coverage tipi: i 18 tipi, i buchi e quanto li colpisce ogni membro', async () => {

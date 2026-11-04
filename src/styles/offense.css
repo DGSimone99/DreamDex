@@ -62,3 +62,14 @@
 .guide-targets tbody th { font-weight: 600; color: var(--text); white-space: nowrap; }
 .guide-targets tbody th .type-icons { margin-right: 6px; vertical-align: middle; }
 .guide-targets td { min-width: 4ch; color: var(--text); }
+
+/* Generale dell'Offesa: i tipi del membro per fascia (stesse caselle della scheda Coverage tipi, l'OHKO pieno) e la riga Totale */
+.off-general .og-bands { display: flex; flex-wrap: wrap; gap: 4px 12px; font: 600 13px/1.2 var(--ui); color: var(--text); }
+.off-general .og-band { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.off-general .og-band i { width: 12px; height: 12px; border-radius: 3px; border: 1px solid var(--line); background: var(--raised); }
+.off-general .og-band i.ok-ohko { background: color-mix(in srgb, var(--good) 70%, var(--panel)); border-color: var(--good); }
+.off-general .og-band i.ok-full { background: color-mix(in srgb, var(--good) 30%, var(--panel)); border-color: var(--good); }
+.off-general .og-band i.ok-half { background: color-mix(in srgb, var(--warn) 26%, var(--panel)); border-color: var(--warn); }
+.off-general .og-points, .off-general .og-meta { cursor: help; }
+.off-general tfoot .og-total th { padding: 8px 8px 0 0; font: 600 11px/1 var(--ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); text-align: left; }
+.off-general tfoot .og-total td { padding-top: 8px; font: 700 15px/1 var(--ui); color: var(--text); border-top: 1px solid var(--line); }

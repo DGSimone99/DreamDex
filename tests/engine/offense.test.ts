@@ -261,3 +261,44 @@ describe('correzioni della revisione finale', () => {
     expect(teamOffense([pex, chomp], noStats).types.holes).not.toContain('Electric');
   });
 });
+
+describe('quanto porta ogni membro (la Generale)', () => {
+  const pex = set('Toxapex', 'Black Sludge', 'Regenerator', ['Surf', 'Recover'], 'Bold', { hp: 252, def: 252 });
+
+  it('tipi del membro: quanti ne manda KO, quanti colpisce forte (oltre 66%) e quanti contano (oltre 33%), senza doppioni', () => {
+    const team = teamOffense([chomp, tusk], noStats);
+    team.members.forEach((m, i) => {
+      const share = team.shares[i];
+      expect(share.species).toBe(m.species);
+      expect(share.types.ohko).toBe(m.hits.filter(h => h.credit >= 1).length);
+      expect(share.types.strong).toBe(m.hits.filter(h => h.credit >= 0.5 && h.credit < 1).length);
+      expect(share.types.counts).toBe(m.hits.filter(h => h.credit > 0 && h.credit < 0.5).length);
+    });
+  });
+
+  it('i punti dei membri sommati danno il voto del team, col meta e senza', () => {
+    for (const data of [fixtureData, noStats]) {
+      const team = teamOffense([chomp, tusk, pex], data);
+      expect(team.shares.reduce((a, s) => a + s.points, 0)).toBe(team.value);
+    }
+  });
+
+  it('chi non porta crediti porta 0; il migliore porta di più', () => {
+    const support = { ...blissey, moves: ['Soft-Boiled', 'Toxic', 'Stealth Rock', 'Heal Bell'] };
+    const team = teamOffense([chomp, support], noStats);
+    expect(team.shares[1].points).toBe(0);
+    expect(team.shares[0].points).toBe(team.value);
+  });
+
+  it('a pari merito su un bersaglio due membri si dividono il peso: due set uguali portano uguale', () => {
+    const team = teamOffense([chomp, { ...chomp }], noStats);
+    expect(Math.abs(team.shares[0].points - team.shares[1].points)).toBeLessThanOrEqual(1);
+  });
+
+  it('meta del membro: quanti bersagli del meta manda KO in due colpi, sul totale; null senza meta', () => {
+    const team = teamOffense([chomp, tusk], fixtureData);
+    const rows = team.coverageMeta!.rows;
+    team.members.forEach((m, i) => expect(team.shares[i].meta).toEqual({ covered: rows.filter(r => r.coveredBy.some(c => c.species === m.species)).length, total: rows.length }));
+    expect(teamOffense([chomp], noStats).shares[0].meta).toBeNull();
+  });
+});
