@@ -110,7 +110,7 @@ export function DefenseGeneral({ defense, meta, ctx }: { defense: TeamDefense; m
                 {meta && <td><Bar value={m.metaHold ?? 0} unit="%" /></td>}
                 <td><Bar value={m.sustain} /></td>
                 <td>
-                  {/* Quanto aggiunge il setup difensivo (metà del guadagno entra nel voto) */}
+                  {/* Quanto aggiunge il setup difensivo (tre quarti del guadagno entrano nel voto) */}
                   <Bar value={m.value} total reserve={setupColumn}
                     gain={m.setupGain > 0 && m.setupMove && <small className="ad-gain" title={t('ddetail.withSetup', { move: gameName('move', m.setupMove, lang) })}> (+{m.setupGain})</small>} />
                 </td>

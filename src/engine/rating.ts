@@ -118,6 +118,8 @@ export interface TeamRating {
   /** Forza dei singoli membri dalle statistiche base. */
   power: MemberPower[];
   overall: number;
+  /** Il punto fisso per membro già dentro `overall` (un team completo +6); non si mostra. */
+  memberPoints: number;
   grade: string;
   label: string;
   provisional: boolean;
@@ -262,6 +264,8 @@ export function memberIssues(team: TeamSet[], lang: Lang, needs: TeamNeeds): Red
  * (separazione nello stesso tipo 1,31 → 1,38).
  */
 export const SHARED_WEAK_POINTS = 1;
+/** Punto fisso per ogni membro del team nel voto finale (non mostrato): un team completo prende +6. */
+export const MEMBER_POINT = 1;
 /** Un membro che ha bisogno di una condizione (meteo, campo, Trick Room) che il team non porta: −3. */
 export const UNMET_POINTS = 3;
 
@@ -482,9 +486,12 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it', o
     ...weatherBonus(team, lang).items, ...teraBonus(team, analysis, rules.teraBonusCap, lang), ...roles.bonuses,
   ];
   const bonus = { total: sum(bonusItems.map(i => i.points)), items: bonusItems };
-  const overall = Math.min(100, Math.max(0, base - penalty.total + bonus.total));
+  // Ogni membro del team vale un punto a prescindere (un team completo +6): con la media semplice dei membri nessun team
+  // ha sei membri perfetti, e il voto si fermava qualche punto sotto (scelta dell'utente 2026-11-04). Non si mostra.
+  const memberPoints = MEMBER_POINT * team.filter(set => !!battleSpecies(set)).length;
+  const overall = Math.min(100, Math.max(0, base - penalty.total + bonus.total + memberPoints));
   return {
-    base, teraCap: rules.teraBonusCap, penalty, bonus, power: power.members, overall, ...gradeFor(overall, lang), provisional: team.length < 6, areas, archetype, meta,
+    base, teraCap: rules.teraBonusCap, penalty, bonus, memberPoints, power: power.members, overall, ...gradeFor(overall, lang), provisional: team.length < 6, areas, archetype, meta,
     teamType: analysis.needs.archetype, trickRoom, needs: analysis.needs,
     weights: areaWeights, offense, defense, speed, roles,
   };
