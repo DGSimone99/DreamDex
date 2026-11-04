@@ -9,12 +9,12 @@ import { rulesOf } from '../../src/engine/formatRules';
 import { dashboardData } from '../../src/engine/overviewDashboard';
 import { rateTeam } from '../../src/engine/rating';
 import { emptySet, mostCommonSet, type TeamSet } from '../../src/engine/sets';
-import { measuredSubRoles } from '../../src/engine/subRoles';
+import { FAMILIES, measuredSubRoles } from '../../src/engine/subRoles';
 import { hasSetup } from '../../src/engine/roles';
 import { viaName } from '../../src/engine/synergy';
 import { teamLinks } from '../../src/engine/teamLinks';
 import { t } from '../../src/i18n';
-import { TOP_ATTACKER, teamSummary } from '../../src/engine/teamSummary';
+import { teamSummary } from '../../src/engine/teamSummary';
 import { fixtureData, fixtureStats } from '../fixtures/data';
 import { megaData } from '../fixtures/megaData';
 
@@ -33,28 +33,25 @@ const plain = base.map(s => ({ ...s, ability: 'Pressure', moves: s.moves.filter(
 const swap = (i: number, set: TeamSet) => plain.map((s, j) => (j === i ? set : s));
 
 describe('teamSummary', () => {
-  it('costanti', () => {
-    expect(TOP_ATTACKER).toBe(80);
+  /** Chi l'app considera un attaccante: un ruolo della famiglia Attacco sulla carta (sweeper o breaker, fisico o speciale). */
+  const attackersOf = (team: TeamSet[], data = fixtureData) => team
+    .filter(set => cardRoles(set, rulesOf(data), measuredSubRoles(set, team, data)).some(role => (FAMILIES.attack as string[]).includes(role)))
+    .map(battleName);
+
+  it("attaccanti: tutti i membri con un ruolo d'attacco sulla carta, in ordine di team", () => {
+    const { summary } = build();
+    expect(summary.attackers).toEqual(attackersOf(base));
+    expect(summary.attackers.length).toBeGreaterThan(0);
   });
 
-  it('attaccanti: Offesa del membro come in tabella (value, setup e Tera/Z compresi) >= 80, in ordine di team', () => {
+  it("attaccanti: l'Offesa del membro non conta, solo il ruolo", () => {
     const { rating, coaching, dash, data } = build();
-    const members = rating.offense.members.map((m, i) => ({ ...m, setupGain: 0, oneUseGain: 0, value: [90, 79.9, 80, 50, 100, 20][i] }));
-    members[4] = { ...members[4], setupGain: 30, oneUseGain: 5, value: 100 }; // 65 senza setup e Tera: conta il numero mostrato
-    members[1] = { ...members[1], value: 79.9 };
-    const fake = { ...rating, offense: { ...rating.offense, members } };
-    const s = teamSummary(base, fake, coaching, dash, data);
-    expect(s.attackers).toEqual([battleName(base[0]), battleName(base[2]), battleName(base[4])]);
-  });
-
-  it('attaccanti: il membro si trova per nome, non per posizione (membri senza Offesa tolti dalla lista)', () => {
-    const { rating, coaching, dash, data } = build();
-    // Gholdengo (indice 1) senza Offesa: la lista dei membri ha un elemento in meno e gli indici scorrono
-    const members = rating.offense.members
-      .filter(m => m.species !== battleName(base[1]))
-      .map(m => ({ ...m, value: m.species === battleName(base[2]) ? 99 : 50 }));
-    const fake = { ...rating, offense: { ...rating.offense, members } };
-    expect(teamSummary(base, fake, coaching, dash, data).attackers).toEqual([battleName(base[2])]);
+    const low = { ...rating, offense: { ...rating.offense, members: rating.offense.members.map(m => ({ ...m, value: 1, total: 1 })) } };
+    const high = { ...rating, offense: { ...rating.offense, members: rating.offense.members.map(m => ({ ...m, value: 100, total: 100 })) } };
+    expect(teamSummary(base, low, coaching, dash, data).attackers).toEqual(attackersOf(base));
+    expect(teamSummary(base, high, coaching, dash, data).attackers).toEqual(attackersOf(base));
+    // Un muro (Toxapex) non è un attaccante anche con l'Offesa al massimo
+    expect(teamSummary(base, high, coaching, dash, data).attackers).not.toContain('Toxapex');
   });
 
   it('muri: physicalWall/specialWall nelle carte del team', () => {
@@ -141,8 +138,8 @@ describe('teamSummary', () => {
     const tusk = mostCommonSet(megaData.stats, 'Great Tusk')!;
     const team = [lopunny, tusk];
     const { rating, coaching, dash, data } = build(team, megaData);
-    const members = rating.offense.members.map(m => ({ ...m, setupGain: 0, oneUseGain: 0, value: 99 }));
-    const s = teamSummary(team, { ...rating, offense: { ...rating.offense, members } }, coaching, dash, data);
-    expect(s.attackers).toEqual(['Lopunny-Mega', 'Great Tusk']);
+    const s = teamSummary(team, rating, coaching, dash, data);
+    expect(s.attackers).toEqual(attackersOf(team, megaData));
+    expect(s.attackers).not.toContain('Lopunny');
   });
 });
