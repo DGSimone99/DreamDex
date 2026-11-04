@@ -30,7 +30,7 @@ describe('voto col meta e senza', () => {
     expect(off.defense.coverageMeta).toBeNull();
     // Anche i Ruoli si misurano contro il meta (sotto-ruoli da Offesa, Velocità e gruppo del meta), ma cambiano di poco
     expect(Math.abs(on.roles.covered - off.roles.covered)).toBeLessThanOrEqual(1);
-    expect(on.overall).toBe(Math.max(0, Math.min(100, on.base - on.penalty.total + on.bonus.total)));
+    expect(on.overall).toBe(Math.max(0, Math.min(100, on.base - on.penalty.total + on.bonus.total + on.memberPoints)));
   });
 
   it('senza meta: niente area Meta, tipi tutti uguali, nessuna minaccia', () => {

@@ -122,6 +122,6 @@ describe('niente tetti', () => {
     expect(r.bonus.total).toBe(r.bonus.items.reduce((n, i) => n + i.points, 0));
     expect(r.penalty.total).toBe(r.penalty.items.reduce((n, i) => n + i.points, 0));
     expect(r.bonus.items.map(i => i.catalog)).toContain('coreTrio');
-    expect(r.overall).toBe(Math.min(100, Math.max(0, r.base - r.penalty.total + r.bonus.total)));
+    expect(r.overall).toBe(Math.min(100, Math.max(0, r.base - r.penalty.total + r.bonus.total + r.memberPoints)));
   });
 });

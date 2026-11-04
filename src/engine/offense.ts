@@ -59,13 +59,13 @@ export interface MemberOffense {
   setupMove: string | null;
   /** La mossa più spesso migliore contro i 18 Pokémon medi dei tipi; null senza mosse d'attacco. */
   bestMove: string | null;
-  /** Punti di Potenza che vengono dal setup (già dentro `value`: metà del guadagno dopo una danza). */
+  /** Punti di Potenza che vengono dal setup (già dentro `value`: tre quarti del guadagno dopo una danza). */
   setupGain: number;
   /** Tera o mossa Z del membro (una volta a partita), null se non ne ha. */
   oneUse: { kind: 'tera' | 'z'; name: string } | null;
   /** Punti di Offesa del membro che vengono da Tera/Z (già dentro `value`: un quarto del guadagno). */
   oneUseGain: number;
-  /** Potenza con metà del guadagno del setup e un quarto di quello di Tera/Z: entra nella Potenza del team. */
+  /** Potenza con tre quarti del guadagno del setup e un quarto di quello di Tera/Z: entra nella Potenza del team. */
   powerInGrade: number;
   /** Il valore del membro: `powerInGrade` arrotondata (dice chi è un attaccante forte). */
   value: number;
@@ -298,7 +298,7 @@ export function offenseReference(data: EngineData): OffenseReference {
 
 /**
  * Offesa di un membro: la Potenza, il danno medio del colpo migliore contro il Pokémon medio di ognuno dei 18 tipi
- * (con e senza meta). Nel voto entrano metà del guadagno del setup e un quarto di Tera/Z. Null se la libreria non
+ * (con e senza meta). Nel voto entrano tre quarti del guadagno del setup e un quarto di Tera/Z. Null se la libreria non
  * conosce il Pokémon.
  */
 export function memberOffense(set: TeamSet, team: TeamSet[], data: EngineData): MemberOffense | null {
@@ -335,7 +335,7 @@ export interface RolesMemberOffense {
 
 /**
  * La misura dei Ruoli, com'era prima della revisione: Potenza contro i bersagli della Coverage e Wallbreaking contro
- * i muri del formato (pesi 50 e 35), setup a metà del guadagno di Wallbreaking, Tera/Z a un quarto.
+ * i muri del formato (pesi 50 e 35), setup a tre quarti del guadagno di Wallbreaking, Tera/Z a un quarto.
  */
 export function rolesMemberOffense(set: TeamSet, team: TeamSet[], data: EngineData): RolesMemberOffense | null {
   const raw = rawOf(set, team, data, 'roles');

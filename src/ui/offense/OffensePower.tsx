@@ -63,7 +63,7 @@ export function OffensePower({ offense, ctx }: { offense: TeamOffense; ctx: Area
                         )}
                       </td>
                       <td className="pw-setup">
-                        {/* La mossa di setup e la metà del guadagno che entra nel voto */}
+                        {/* La mossa di setup e i tre quarti del guadagno che entrano nel voto */}
                         {m.setupMove
                           ? <>
                             <span className="pw-move" style={chipStyle(m.setupMove)}><MoveName move={m.setupMove} plain /></span>

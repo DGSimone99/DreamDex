@@ -8,7 +8,6 @@
  *   npm run bench -- --games   partite coi set veri (scripts/bench/games.json): quante ne vince il voto più alto
  *   npm run bench -- --replays partite vere (scripts/bench/replays.json di alto livello e, se c'è, ladder.json dei medi):
  *                            quante ne vince il team col voto più alto
- *   SPEED_TOP=1 npm run bench        Velocità coi pesi per posizione dal più veloce (30/30/20/10/5/5) invece della media semplice
  *   ROLES_MEASURED=1 npm run bench   con l'interruttore dei Ruoli acceso (Attacco, muri e Recupero contano anche nei Ruoli)
  *
  * Serve a verificare ogni modifica al voto: i team da torneo devono stare in alto, i brutti in basso,
@@ -26,7 +25,6 @@ import { rateTeam, type TeamRating } from '../src/engine/rating';
 import { initTiers as initTiersV1 } from '../legacy/voto-v1/engine/dex';
 import { rateTeam as rateTeamV1 } from '../legacy/voto-v1/engine/rating';
 import { setRolesCountMeasured } from '../src/engine/roleLevels';
-import { setSpeedTopHeavy } from '../src/engine/speedArea';
 import { improveReplacements } from '../src/engine/replace';
 import { defaultSet, type TeamSet } from '../src/engine/sets';
 import { getMove } from '../src/engine/dex';
@@ -62,10 +60,6 @@ const load = (formatId: FormatId): EngineData => {
   } as EngineData;
 };
 
-if (process.env.SPEED_TOP === '1') {
-  setSpeedTopHeavy(true);
-  console.log('Velocità: pesi per posizione dal più veloce (SPEED_TOP=1)');
-}
 if (process.env.ROLES_MEASURED === '1') {
   setRolesCountMeasured(true);
   console.log('Ruoli: interruttore acceso (ROLES_MEASURED=1)');

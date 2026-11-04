@@ -152,7 +152,7 @@ describe('voto dello stall', () => {
     expect(rating.areas.find(a => a.key === 'speed')!.inactive).toBeUndefined();
     expect(rating.weights.speed!).toBeCloseTo(ARCHETYPE_WEIGHTS.stall.speed / 100);
     // Il voto non cambia: la base usa solo le aree attive
-    expect(rating.overall).toBe(Math.min(100, Math.max(0, rating.base - rating.penalty.total + rating.bonus.total)));
+    expect(rating.overall).toBe(Math.min(100, Math.max(0, rating.base - rating.penalty.total + rating.bonus.total + rating.memberPoints)));
   });
 
   it('un team incompleto usa i pesi del balance e l\'Offesa media dei membri', () => {
