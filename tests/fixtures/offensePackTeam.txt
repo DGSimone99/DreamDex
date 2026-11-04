@@ -1,0 +1,53 @@
+Garchomp @ Dragonium Z
+Ability: Rough Skin
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+- Swords Dance
+- Earthquake
+- Outrage
+- Stealth Rock
+
+Gardevoir @ Gardevoirite
+Ability: Trace
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Hyper Voice
+- Psyshock
+- Mystical Fire
+- Calm Mind
+
+Ninetales @ Heat Rock
+Ability: Drought
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Fire Blast
+- Solar Beam
+- Nasty Plot
+- Toxic
+
+Leafeon @ Life Orb
+Ability: Chlorophyll
+EVs: 252 Atk / 4 SpD / 252 Spe
+Jolly Nature
+- Swords Dance
+- Solar Blade
+- Knock Off
+- Double-Edge
+
+Corviknight @ Rocky Helmet
+Ability: Pressure
+EVs: 248 HP / 252 Def / 8 SpD
+Impish Nature
+- Brave Bird
+- Defog
+- U-turn
+- Roost
+
+Greninja @ Life Orb
+Ability: Battle Bond
+EVs: 252 SpA / 4 SpD / 252 Spe
+Timid Nature
+- Hydro Pump
+- Dark Pulse
+- Water Shuriken
+- Ice Beam

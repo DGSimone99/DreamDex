@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { analyzeTeam } from '../../src/engine/analysis';
-import { coachTeam, describeDiff, MIN_COVERAGE_WEIGHT, rankedChanges, verdictFor } from '../../src/engine/coach';
-import { teamCoverage } from '../../src/engine/coverage';
+import { coachTeam, COVERED_LEVEL, describeDiff, MIN_COVERAGE_WEIGHT, rankedChanges, verdictFor } from '../../src/engine/coach';
+import { teamOffense } from '../../src/engine/offense';
 import { superEffectiveMoves, type TypeName } from '../../src/engine/types';
 import { topReason } from '../../src/engine/explain';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
-import { emptySet, mostCommonSet, type TeamSet } from '../../src/engine/sets';
+import { emptySet, importShowdown, mostCommonSet, type TeamSet } from '../../src/engine/sets';
 import { rateTeam } from '../../src/engine/rating';
 import { fixtureData, fixtureStats, gholdengo, tusk } from '../fixtures/data';
 import { megaData } from '../fixtures/megaData';
@@ -18,10 +20,10 @@ describe('coachTeam', () => {
 
   it('verdetto con conteggi', () => {
     expect(coaching.verdict).toBe('Team incompleto');
-    // Gravi solo i tipi scoperti del tutto che pesano (Water, Fighting)
-    expect(coaching.problems.filter(p => p.severity === 'serious').map(p => p.key)).toEqual(['coverage:Water', 'coverage:Fighting']);
+    // Gravi solo i tipi che nessuno colpisce oltre il 33% e che pesano: Great Tusk e Gholdengo colpiscono tutto oltre il 33%
+    expect(coaching.problems.filter(p => p.severity === 'serious').map(p => p.key)).toEqual([]);
     // Pivot e Rimozione Strumenti sono voci minori: nessun problema "Ruoli importanti mancanti"
-    expect(coaching.problems.filter(p => p.category !== 'meta')).toHaveLength(10);
+    expect(coaching.problems.filter(p => p.category !== 'meta')).toHaveLength(13);
   });
 
   it('punti di forza', () => {
@@ -50,10 +52,8 @@ describe('coachTeam', () => {
       // Le voci essenziali mancanti (nel Balance gli Hazard sono essenziali); Pivot e Rimozione Strumenti sono minori,
       // quindi non c'è la riga delle importanti
       'Ruoli mancanti: Muro Speciale, Hazard',
-      // Coverage tipi del voto: un problema per tipo, nell'ordine dei tipi (Bug scoperto ma leggero: minore)
-      'Coperto a metà Ground: 1 solo in tre colpi',
-      'Scoperto Bug: nessun colpo super efficace',
-      'Coperto a metà Dragon: 1 solo in tre colpi',
+      // Il pacchetto dei tipi dell'Offesa: un problema per tipo sotto 50, nell'ordine dei tipi (due membri arrivano al massimo a 80)
+      ...['Water', 'Grass', 'Fighting', 'Ground', 'Flying', 'Psychic', 'Bug', 'Dragon'].map(type => `Coperto poco ${type}: nessuno lo colpisce abbastanza forte`),
     ]);
     const fire = coaching.problems.find(p => p.text.startsWith('Debole a Fire'))!;
     expect([...fire.fixes].sort()).toEqual(['Rotom-Wash', 'Toxapex']);
@@ -190,12 +190,13 @@ describe('chiavi dei problemi e minacce del meta', () => {
     expect(problems.some(p => p.category === 'meta')).toBe(false);
   });
 
-  it('coverage: un problema per tipo della Coverage tipi del voto (livello sotto 70)', () => {
+  it("coverage: un problema per tipo del pacchetto dei tipi dell'Offesa (livello sotto 50)", () => {
     const { problems } = coachTeam(team, DEFAULT_FORMAT, fixtureData);
     const data = { ...fixtureData, formatId: DEFAULT_FORMAT.formatId };
-    const coverage = teamCoverage(team, data, 'types');
+    const coverage = teamOffense(team, data).types;
+    expect(COVERED_LEVEL).toBe(50);
     const weights = analyzeTeam(team, data).typeWeights as Record<string, number>;
-    const open = coverage.rows.filter(r => r.level < 70);
+    const open = coverage.rows.filter(r => r.level < COVERED_LEVEL);
     const found = problems.filter(p => p.category === 'coverage');
     expect(open.length).toBeGreaterThan(1);
     expect(found.map(p => p.key).sort()).toEqual(open.map(r => `coverage:${r.label}`).sort());
@@ -203,14 +204,14 @@ describe('chiavi dei problemi e minacce del meta', () => {
       const p = found.find(x => x.key === `coverage:${row.label}`)!;
       expect(p.subjects).toEqual([row.label]);
       if (coverage.holes.includes(row.label)) {
-        expect(p).toMatchObject({ size: 2, text: `Scoperto ${row.label}: nessun colpo super efficace`, severity: weights[row.label] >= MIN_COVERAGE_WEIGHT ? 'serious' : 'minor' });
+        expect(p).toMatchObject({ size: 2, text: `Scoperto ${row.label}: nessuno lo colpisce oltre il 33%`, severity: weights[row.label] >= MIN_COVERAGE_WEIGHT ? 'serious' : 'minor' });
       } else {
-        expect(p).toMatchObject({ size: 1, severity: 'minor', text: `Coperto a metà ${row.label}: ${row.coveredBy.length} solo in tre colpi` });
+        expect(p).toMatchObject({ size: 1, severity: 'minor', text: `Coperto poco ${row.label}: nessuno lo colpisce abbastanza forte` });
       }
     }
     // In inglese
     const en = coachTeam(team, DEFAULT_FORMAT, fixtureData, 'en').problems.filter(p => p.category === 'coverage').map(p => p.text);
-    expect(en.some(text => /^Uncovered \w+: no super-effective hit$/.test(text))).toBe(true);
+    expect(en.some(text => /^(Uncovered \w+: nobody hits it above 33%|Weakly covered \w+: nobody hits it hard enough)$/.test(text))).toBe(true);
   });
 
   it('coverage: i rimedi sono candidati con una mossa super efficace contro il tipo (anche per i coperti a metà)', () => {
@@ -231,5 +232,15 @@ describe('chiavi dei problemi e minacce del meta', () => {
     const coaching = coachTeam(team, DEFAULT_FORMAT, fixtureData);
     const grade = rateTeam(team, fixtureData, 'it')?.grade ?? 'D';
     expect(coaching.verdict).toBe(verdictFor(team, coaching.problems.filter(p => p.category !== 'meta'), grade, 'it'));
+  });
+});
+
+describe('copertura sul team di prova del pacchetto (National Dex OU)', () => {
+  it('ci sono problemi di copertura, ma non su Lotta e Drago (Gardevoir-Mega li manda KO)', () => {
+    const team = importShowdown(readFileSync(join('tests', 'fixtures', 'offensePackTeam.txt'), 'utf8')).sets;
+    expect(team).toHaveLength(6);
+    const keys = coachTeam(team, DEFAULT_FORMAT, fixtureData).problems.filter(p => p.category === 'coverage').map(p => p.key);
+    expect(keys).not.toContain('coverage:Fighting');
+    expect(keys).not.toContain('coverage:Dragon');
   });
 });
