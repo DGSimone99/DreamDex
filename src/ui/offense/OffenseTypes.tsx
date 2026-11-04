@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { COVERED_LEVEL } from '../../engine/coach';
 import { battleSpecies } from '../../engine/dex';
 import type { TeamOffense } from '../../engine/offense';
 import { TYPES } from '../../engine/types';
@@ -9,13 +10,14 @@ import { MemberMon } from '../defense/MemberMon';
 import { TypeIcons } from '../typeIcons';
 import { offenseSlots } from './slots';
 
-/** Colore della riga Copertura: rosso a 0, giallo sotto 80, verde da 80. */
-const coverTone = (value: number) => (value === 0 ? 'bad' : value < 80 ? 'warn' : 'good');
+/** Colore della riga Copertura: rosso a 0, giallo sotto il livello coperto (50), verde da lì. */
+const coverTone = (value: number) => (value === 0 ? 'bad' : value < COVERED_LEVEL ? 'warn' : 'good');
 
 /**
- * Coverage tipi dell'Offesa: stessa griglia della Difesa (un membro per riga, 18 tipi in colonna) con, per ogni tipo,
- * chi lo colpisce super efficace e quanto (verde = copre, giallo = copre a metà). Il filo sotto l'icona è rosso sui tipi
- * scoperti; in fondo la riga Copertura. Chi il motore ha scartato resta con le caselle vuote.
+ * Il pacchetto dei tipi dell'Offesa: stessa griglia della Difesa (un membro per riga, 18 tipi in colonna) con, per ogni tipo,
+ * il danno del colpo migliore del membro sul Pokémon medio (verde = oltre il 66%, vale almeno metà; giallo = oltre il 33%,
+ * conta; vuota = non conta). Il filo sotto l'icona è rosso sui tipi che nessuno colpisce oltre il 33%; in fondo la riga
+ * Copertura. Chi il motore ha scartato resta con le caselle vuote.
  * La legenda dei colori sta sulla riga dei problemi (OffenseTypesLegend).
  */
 export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: AreaContext }) {
@@ -24,7 +26,7 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
   const { team } = ctx;
   const roomy = !!ctx.roomy;
   const [hover, setHover] = useState<{ row: number; col: number } | null>(null);
-  const { rows, holes } = offense.coverageTypes;
+  const { rows, holes } = offense.types;
   const byType = new Map(rows.map(row => [row.label, row]));
   const slots = offenseSlots(team, offense.members);
   const colClass = (col: number, extra = '') => [extra, hover?.col === col && 'x-col'].filter(Boolean).join(' ') || undefined;
@@ -58,13 +60,15 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
                   <th scope="row"><MemberMon name={name} set={set} stats="offense" /></th>
                   {TYPES.map((type, i) => {
                     if (slots[slot] === null) return <td key={type} className={colClass(i, 'ct-cell')} onMouseEnter={() => setHover({ row: slot, col: i })}>—</td>;
-                    const hit = member ? byType.get(type)?.coveredBy.find(c => c.species === member.species) : undefined;
+                    const found = member?.hits.find(h => h.label === type);
+                    const hit = found && found.credit > 0 ? found : undefined;
+                    const strong = !!hit && hit.credit >= 0.5;
                     return (
-                      <td key={type} className={colClass(i, `ct-cell${hit ? (hit.partial ? ' ok-half' : ' ok-full') : ''}`)}
-                        title={hit ? `${hit.species}: ${hit.move} ${hit.pct}%` : undefined} onMouseEnter={() => setHover({ row: slot, col: i })}>
+                      <td key={type} className={colClass(i, `ct-cell${hit ? (strong ? ' ok-full' : ' ok-half') : ''}`)}
+                        title={hit ? `${member!.species}: ${hit.move ?? ''} ${hit.pct}%` : undefined} onMouseEnter={() => setHover({ row: slot, col: i })}>
                         {hit && <>
                           {hit.pct}%
-                          <span className="visually-hidden"> {t(hit.partial ? 'odetail.types.half' : 'odetail.types.covers')}</span>
+                          <span className="visually-hidden"> {t(strong ? 'odetail.types.covers' : 'odetail.types.half')}</span>
                         </>}
                       </td>
                     );
@@ -86,7 +90,7 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
   );
 }
 
-/** La legenda dei colori di Coverage tipi dell'Offesa, sulla riga dei problemi: copre, copre a metà. */
+/** La legenda dei colori della scheda dei tipi dell'Offesa, sulla riga dei problemi: forte, conta. */
 export function OffenseTypesLegend() {
   const t = useT();
   return (
