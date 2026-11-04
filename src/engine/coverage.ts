@@ -142,7 +142,7 @@ function hitsOf(set: TeamSet, data: EngineData, targets: CoverageTarget[], kind:
   if (hits) return hits;
   if (hitsCache.size >= HITS_LIMIT) hitsCache.clear();
   // Nei tipi copre chi ha il vantaggio di tipo (solo i colpi super efficaci); nel meta conta il colpo migliore di qualunque tipo.
-  // Come nel resto dell'Offesa: il meteo che il membro porta con la sua abilità è sempre attivo, Tera e mosse Z contano a metà
+  // Come nel resto dell'Offesa: il meteo che il membro porta con la sua abilità è sempre attivo, Tera e mosse Z contano un quarto
   const conditions = ownConditions(set);
   const teraOk = teraAllowed({ ...DEFAULT_FORMAT, formatId: data.formatId ?? 'ou' }) && !!set.teraType;
   const zType = dex.items.get(set.item).zMoveType;
