@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { Generations, Move } from '@smogon/calc';
 import { bestHit } from '../../src/engine/damage';
 import type { TeamSet } from '../../src/engine/sets';
 
@@ -132,5 +133,25 @@ describe('correzioni della revisione finale', () => {
     expect(bestHit(lapras, swampert, { superEffectiveOnly: true })).not.toBeNull();
     // Un colpo neutro resta escluso
     expect(bestHit({ ...sylveon, ability: 'Cute Charm' }, dragon, { superEffectiveOnly: true })).toBeNull();
+  });
+});
+
+describe('Loaded Dice', () => {
+  const chomp = (item: string, moves: string[]) => set('Garchomp', item, 'Rough Skin', moves, 'Jolly', { atk: 252, spe: 252 });
+  const target = set('Blissey', '', 'Natural Cure', [], 'Bold', { hp: 252, def: 252 });
+  it('Scale Shot con Loaded Dice fa 4,5 colpi medi (fra 3 e 5 colpi, tre quarti della differenza)', () => {
+    const three = bestHit(chomp('', ['Scale Shot']), target)!.expected;
+    const dice = bestHit(chomp('Loaded Dice', ['Scale Shot']), target)!.expected;
+    expect(dice / three).toBeCloseTo(1.5, 1);
+  });
+  it('una mossa a colpo singolo non cambia con Loaded Dice', () => {
+    expect(bestHit(chomp('Loaded Dice', ['Earthquake']), target)!.expected)
+      .toBeCloseTo(bestHit(chomp('', ['Earthquake']), target)!.expected, 5);
+  });
+  it('Population Bomb con Loaded Dice: la media dei colpi da 4 a 10, rispetto ai colpi che la libreria usa di base', () => {
+    const maus = (item: string) => set('Maushold', item, 'Technician', ['Population Bomb'], 'Jolly', { atk: 252, spe: 252 });
+    const baseHits = new Move(Generations.get(9), 'Population Bomb').hits;
+    const ratio = bestHit(maus('Loaded Dice'), target)!.expected / bestHit(maus(''), target)!.expected;
+    expect(ratio).toBeCloseTo(7 / baseHits, 1);
   });
 });

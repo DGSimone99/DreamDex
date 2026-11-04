@@ -135,15 +135,30 @@ function toField(conditions: FieldCondition[] = []): Field {
   });
 }
 
-/** Abilità e strumento dell'attaccante decidono quanti colpi fa una mossa multicolpo (Skill Link 5, Loaded Dice 4). */
-function toMove(name: string, useZ: boolean, ability: string, item: string): CalcMove | null {
-  return cached(moves, `${name}|${useZ}|${ability}|${item}`, () => {
+/**
+ * La mossa per la libreria. L'abilità decide quanti colpi fa una multicolpo (Skill Link 5); `hits` li fissa a mano
+ * (Loaded Dice, che la libreria ignora: vedi `diceHits`).
+ */
+function toMove(name: string, useZ: boolean, ability: string, item: string, hits?: number): CalcMove | null {
+  return cached(moves, `${name}|${useZ}|${ability}|${item}|${hits ?? ''}`, () => {
     try {
-      return new CalcMove(gen, name, { useZ, ability: (ability || undefined) as CalcMove['ability'], item: (item || undefined) as CalcMove['item'] });
+      return new CalcMove(gen, name, { useZ, ability: (ability || undefined) as CalcMove['ability'], item: (item || undefined) as CalcMove['item'], ...(hits ? { hits } : {}) });
     } catch {
       return null;
     }
   });
+}
+
+/**
+ * Quanti colpi fa una multicolpo con Loaded Dice: 4 o 5 per quelle da 2-5 colpi, da 4 a 10 per Population Bomb.
+ * Senza Loaded Dice, o per le altre mosse, quelli che decide la libreria (un solo calcolo).
+ */
+function diceHits(move: NonNullable<ReturnType<typeof getMove>>, item: string): (number | undefined)[] {
+  if (toID(item) !== 'loadeddice') return [undefined];
+  const range = move.multihit;
+  if (Array.isArray(range) && range[0] === 2 && range[1] === 5) return [4, 5];
+  if (range === 10) return [4, 5, 6, 7, 8, 9, 10];
+  return [undefined];
 }
 
 /** Il colpo migliore del set contro il difensore (mai terastallizzato); null senza mosse d'attacco o se la libreria non conosce i Pokémon. */
@@ -171,15 +186,20 @@ export function bestHit(attacker: TeamSet, defender: Target, options: HitOptions
       if (!best || hit.expected > best.expected) best = hit;
       continue;
     }
-    const move = toMove(data.name, !!zType && zType === data.type, battleAbility(attacker), attacker.item);
-    if (!move) continue;
+    const useZ = !!zType && zType === data.type;
+    // Loaded Dice: la media dei colpi possibili, ognuno col suo calcolo (la libreria ne conterebbe sempre quelli di base)
+    const hitCounts = useZ ? [undefined] : diceHits(data, attacker.item);
+    const calcMoves = hitCounts.map(hits => toMove(data.name, useZ, battleAbility(attacker), attacker.item, hits));
+    if (calcMoves.some(m => !m)) continue;
     try {
-      const result = calculate(gen, own, target, move, field);
+      const results = calcMoves.map(m => calculate(gen, own, target, m!, field));
       // La Coverage vuole il vantaggio di tipo: si guarda il tipo con cui la mossa colpisce davvero (Pixilate, Ivy Cudgel, Tera Blast…)
-      if (options.superEffectiveOnly && !superEffective(result.move.type, data.id, types)) continue;
-      const sums = rollSums(result.damage);
-      if (!sums) continue;
-      const { avg, low, high } = sums;
+      if (options.superEffectiveOnly && !superEffective(results[0].move.type, data.id, types)) continue;
+      const all = results.map(r => rollSums(r.damage));
+      if (all.some(x => !x)) continue;
+      const avg = all.reduce((acc, x) => acc + x!.avg, 0) / all.length;
+      const low = Math.min(...all.map(x => x!.low));
+      const high = Math.max(...all.map(x => x!.high));
       // Mosse a due turni (Solar Blade, Meteor Beam…): un colpo ogni due turni, salvo sole/pioggia giusti o Power Herb
       const charge = data.flags.charge && !instantCharge(data.id, options.conditions ?? [], attacker.item) ? 0.5 : 1;
       const firstTurn = !options.priorityOnly ? 1 : FIRST_TURN.has(data.id) ? 0.5 : IF_ATTACKED.has(data.id) ? 0.75 : 1;
