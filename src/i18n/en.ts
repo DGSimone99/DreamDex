@@ -149,7 +149,7 @@ export const en = {
   'coach.problem.unmet': "{member} has {via} but the team doesn't bring {condition}",
   'coach.problem.threat': "No check for {species} from the meta",
   'coach.problem.uncovered': "Uncovered {type}: nobody hits it above 33%",
-  'coach.problem.halfCovered': "Weakly covered {type}: nobody hits it hard enough",
+  'coach.problem.halfCovered': "Weakly covered {type}: nobody OHKOs it and few hit it hard",
   'rating.redundancy.setters': "{n} {hazard} setters",
   'rating.redundancy.removers': "{n} hazard removers",
   'rating.redundancy.sameType': "{n} {type}-type members",

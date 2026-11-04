@@ -248,3 +248,14 @@ describe('i Ruoli', () => {
     expect(rolesMemberOffense(set('Notamon', '', '', ['Tackle'], 'Hardy', {}), [tusk], fixtureData)).toBeNull();
   });
 });
+
+describe('correzioni della revisione finale', () => {
+  it('un buco è un tipo dove nessuno conta: mai un buco con un membro nella lista dei migliori', () => {
+    // Toxapex con Surf fa il 33,5% al Terra medio: credito piccolissimo, livello arrotondato a 0, ma conta
+    const pex = set('Toxapex', '', 'Regenerator', ['Surf'], 'Bold', { hp: 252, def: 252 });
+    const team = teamOffense([pex], noStats);
+    const ground = team.types.rows.find(r => r.label === 'Ground')!;
+    expect(ground.best.length).toBeGreaterThan(0);
+    for (const row of team.types.rows) expect(team.types.holes.includes(row.label)).toBe(row.best.length === 0);
+  });
+});

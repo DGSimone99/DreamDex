@@ -151,7 +151,7 @@ export const it: Record<keyof typeof en, string> = {
   'coach.problem.unmet': "{member} ha {via} ma il team non porta {condition}",
   'coach.problem.threat': "{species} del meta senza un check",
   'coach.problem.uncovered': "Scoperto {type}: nessuno lo colpisce oltre il 33%",
-  'coach.problem.halfCovered': "Coperto poco {type}: nessuno lo colpisce abbastanza forte",
+  'coach.problem.halfCovered': "Coperto poco {type}: nessuno lo manda KO in un colpo e pochi lo colpiscono forte",
   'rating.redundancy.setters': "{n} setter di {hazard}",
   'rating.redundancy.removers': "{n} rimozioni hazard",
   'rating.redundancy.sameType': "{n} membri di tipo {type}",

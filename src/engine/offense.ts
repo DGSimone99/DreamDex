@@ -118,7 +118,7 @@ export interface TeamOffense {
   attackers: { physical: number; special: number; mixed: number };
   /** Pacchetto 70% + Coverage meta 30% (senza meta il pacchetto). */
   value: number;
-  /** Il pacchetto dei tipi: valore, un riga per tipo, e i buchi (i tipi che nessuno colpisce oltre il 33%). */
+  /** Il pacchetto dei tipi: valore, una riga per tipo, e i buchi (i tipi dove nessun membro conta, cioè nessuno li colpisce oltre il 33%). */
   types: { value: number; rows: TypeRow[]; holes: string[] };
   /** null senza meta. */
   coverageMeta: CoverageDetail | null;
@@ -426,7 +426,7 @@ export function teamOffense(team: TeamSet[], data: EngineData): TeamOffense {
   return {
     attackers: { physical: styles.filter(s => s === 'physical').length, special: styles.filter(s => s === 'special').length, mixed: styles.filter(s => s === 'mixed').length },
     value,
-    types: { value: typesValue, rows, holes: rows.filter(r => r.level === 0).map(r => r.label) },
+    types: { value: typesValue, rows, holes: rows.filter(r => r.best.length === 0).map(r => r.label) },
     coverageMeta: metaCoverage && { value: metaCoverage.value, holes: metaCoverage.holes, rows: metaCoverage.rows },
     setupGain: value - withoutSetup,
     setters: members.filter(m => m.setupMove).map(m => ({ species: m.species, move: m.setupMove! })),

@@ -148,10 +148,21 @@ describe('Loaded Dice', () => {
     expect(bestHit(chomp('Loaded Dice', ['Earthquake']), target)!.expected)
       .toBeCloseTo(bestHit(chomp('', ['Earthquake']), target)!.expected, 5);
   });
-  it('Population Bomb con Loaded Dice: la media dei colpi da 4 a 10, rispetto ai colpi che la libreria usa di base', () => {
+  it('Population Bomb resta ai colpi della libreria (già tutti a segno)', () => {
     const maus = (item: string) => set('Maushold', item, 'Technician', ['Population Bomb'], 'Jolly', { atk: 252, spe: 252 });
-    const baseHits = new Move(Generations.get(9), 'Population Bomb').hits;
-    const ratio = bestHit(maus('Loaded Dice'), target)!.expected / bestHit(maus(''), target)!.expected;
-    expect(ratio).toBeCloseTo(7 / baseHits, 1);
+    expect(new Move(Generations.get(9), 'Population Bomb').hits).toBe(10);
+    expect(bestHit(maus('Loaded Dice'), target)!.expected).toBeCloseTo(bestHit(maus(''), target)!.expected, 5);
+  });
+  it('con Skill Link Loaded Dice non cambia niente (sempre 5 colpi)', () => {
+    const cinccino = (item: string) => set('Cinccino', item, 'Skill Link', ['Tail Slap'], 'Jolly', { atk: 252, spe: 252 });
+    expect(bestHit(cinccino('Loaded Dice'), target)!.expected).toBeCloseTo(bestHit(cinccino(''), target)!.expected, 5);
+  });
+});
+
+describe('Loaded Dice e Population Bomb', () => {
+  it('con Loaded Dice Population Bomb non vale meno che senza strumento', () => {
+    const target = set('Blissey', '', 'Natural Cure', [], 'Bold', { hp: 252, def: 252 });
+    const maus = (item: string) => set('Maushold', item, 'Technician', ['Population Bomb'], 'Jolly', { atk: 252, spe: 252 });
+    expect(bestHit(maus('Loaded Dice'), target)!.expected).toBeGreaterThanOrEqual(bestHit(maus(''), target)!.expected);
   });
 });

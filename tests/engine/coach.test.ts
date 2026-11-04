@@ -53,7 +53,7 @@ describe('coachTeam', () => {
       // quindi non c'è la riga delle importanti
       'Ruoli mancanti: Muro Speciale, Hazard',
       // Il pacchetto dei tipi dell'Offesa: un problema per tipo sotto 50, nell'ordine dei tipi (due membri arrivano al massimo a 80)
-      ...['Water', 'Grass', 'Fighting', 'Ground', 'Flying', 'Psychic', 'Bug', 'Dragon'].map(type => `Coperto poco ${type}: nessuno lo colpisce abbastanza forte`),
+      ...['Water', 'Grass', 'Fighting', 'Ground', 'Flying', 'Psychic', 'Bug', 'Dragon'].map(type => `Coperto poco ${type}: nessuno lo manda KO in un colpo e pochi lo colpiscono forte`),
     ]);
     const fire = coaching.problems.find(p => p.text.startsWith('Debole a Fire'))!;
     expect([...fire.fixes].sort()).toEqual(['Rotom-Wash', 'Toxapex']);
@@ -206,12 +206,12 @@ describe('chiavi dei problemi e minacce del meta', () => {
       if (coverage.holes.includes(row.label)) {
         expect(p).toMatchObject({ size: 2, text: `Scoperto ${row.label}: nessuno lo colpisce oltre il 33%`, severity: weights[row.label] >= MIN_COVERAGE_WEIGHT ? 'serious' : 'minor' });
       } else {
-        expect(p).toMatchObject({ size: 1, severity: 'minor', text: `Coperto poco ${row.label}: nessuno lo colpisce abbastanza forte` });
+        expect(p).toMatchObject({ size: 1, severity: 'minor', text: `Coperto poco ${row.label}: nessuno lo manda KO in un colpo e pochi lo colpiscono forte` });
       }
     }
     // In inglese
     const en = coachTeam(team, DEFAULT_FORMAT, fixtureData, 'en').problems.filter(p => p.category === 'coverage').map(p => p.text);
-    expect(en.some(text => /^(Uncovered \w+: nobody hits it above 33%|Weakly covered \w+: nobody hits it hard enough)$/.test(text))).toBe(true);
+    expect(en.some(text => /^(Uncovered \w+: nobody hits it above 33%|Weakly covered \w+: nobody OHKOs it and few hit it hard)$/.test(text))).toBe(true);
   });
 
   it('coverage: i rimedi sono candidati con una mossa super efficace contro il tipo (anche per i coperti a metà)', () => {
