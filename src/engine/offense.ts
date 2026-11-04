@@ -14,9 +14,7 @@ import { topThreats } from './stats';
 import { softScore } from './scale';
 import { enables } from './synergy';
 
-/** Riferimento di riserva (senza statistiche del formato): danno medio sui 18 Pokémon medi che vale Potenza 100 (i formati con statistiche stanno fra 0,75 e 0,88). */
-export const POWER_FULL = 0.8;
-/** Solo per i Ruoli: il vecchio riferimento di riserva della Potenza (bersagli della Coverage). */
+/** Solo per i Ruoli: il riferimento di riserva della loro Potenza (bersagli della Coverage). */
 const ROLES_POWER_FULL = 0.6;
 /** Soglie del colpo migliore contro un difensore: 3HKO e 2HKO (il difensore non può entrare due volte). */
 export const THREE_HIT = 1 / 3;
@@ -25,60 +23,93 @@ export const TWO_HIT = 0.5;
 export const STEP_3HKO = 0.5;
 export const STEP_2HKO = 1;
 export const STEP_OHKO = 1.5;
-/** Riferimento di riserva: media dei valori che vale Wallbreaking 100. */
+/** Riferimento di riserva: media dei valori che vale Wallbreaking 100 (misura dei Ruoli). */
 export const STEP_FULL = 1.25;
 /** Il 100 dei Ruoli (Potenza e Wallbreaking della misura dei Ruoli): il 3° miglior attaccante fra i più usati del formato. */
 export const REFERENCE_RANK = 3;
-/** Il 100 della Potenza: il miglior attaccante del meta (senza curva, il 3° avrebbe dato 100 anche ai più forti di lui). */
-export const POWER_REFERENCE_RANK = 1;
-/** Quanti Pokémon del meta, dal più usato, si scorrono per trovare gli attaccanti di riferimento. */
+/** Quanti Pokémon del meta, dal più usato, si scorrono per trovare gli attaccanti di riferimento dei Ruoli. */
 const REFERENCE_SCAN = 40;
-/** Offesa del team: Potenza 60% e Coverage 40% (col meta 20% tipi e 20% meta, senza meta 40% tipi). */
-export const OFFENSE_SHARES = { power: 0.6, coverage: 0.4 };
 /** Solo per i Ruoli (wallbreaker, sweeper): il vecchio valore del membro, Potenza e Wallbreaking 50 e 35. */
 const ROLES_WEIGHTS = { power: 0.5, wallbreaking: 0.35 };
+
 /**
- * Il setup costa un turno libero: nel voto entrano tre quarti di quanto alza la Potenza dopo una danza
- * (2026-11-03: da metà; il giudice cieco conta il setup 8 coppie a 0, il banco è neutro).
+ * Offesa del team (2026-11-04): il pacchetto dei tipi 70% e la Coverage del meta 30%; senza meta il pacchetto vale tutto.
+ * Il pacchetto ha preso il posto di Potenza e Coverage tipi, che misuravano quasi la stessa cosa sugli stessi bersagli.
  */
-export const SETUP_SHARE = 0.75;
+export const OFFENSE_SHARES = { types: 0.7, meta: 0.3 };
 /**
- * Pesi per posizione nel team (Potenza dell'Offesa e Sostenibilità della Difesa): tutti uguali, una media semplice
- * (scelta dell'utente 2026-11-03: con 30/22/17/13/10/8 il membro più debole pesava l'8% e quasi non si notava; sul banco
- * separazione e partite restano uguali, i voti scendono per tutti).
+ * Il credito di un colpo parte da qui: conta solo il danno sopra il 33% (chi non manda KO nemmeno in tre colpi non è una
+ * risposta), pieno con l'OHKO. 50% vale 0,25, 66% vale 0,5. Così i team tipici restano dove stavano senza riferimenti.
+ */
+export const CREDIT_FLOOR = 1 / 3;
+/** Per ogni tipo, il 1°, 2° e 3° membro che lo colpisce meglio valgono 50, 30 e 20% (come la Difesa). */
+export const OFFENSE_DEPTH = [0.5, 0.3, 0.2];
+/** Un tipo è scoperto se nessun membro lo manda KO in due colpi (danno sotto il 50%): un problema grave del Coaching. */
+export const HOLE_HIT = TWO_HIT;
+/**
+ * Il setup costa un turno libero e ripaga dal terzo turno: in tre turni un +2 fa quattro colpi invece di tre, e se il membro
+ * esce perde il potenziamento. Nell'Offesa entra un terzo del guadagno dopo una danza, per ogni setup (+1 e +2 allo stesso modo).
+ */
+export const SETUP_SHARE = 1 / 3;
+/** I Ruoli (wallbreaker, sweeper) tengono il setup a tre quarti: le loro soglie sono tarate su questo. */
+export const ROLES_SETUP_SHARE = 0.75;
+/**
+ * Pesi per posizione per la Sostenibilità della Difesa: tutti uguali, una media semplice (scelta dell'utente 2026-11-03).
+ * L'Offesa non li usa più: il pacchetto pesa i membri per bersaglio (OFFENSE_DEPTH).
  */
 export const RANK_WEIGHTS = [1, 1, 1, 1, 1, 1].map(w => w / 6);
 /** Tera e mosse Z si usano una volta a partita: nel voto entra un quarto di quello che aggiungono. */
 export const ONE_USE_SHARE = 0.25;
 
+/** Il credito di un colpo da x (quota dei PS del bersaglio): 0 fino al 33%, poi in linea fino a 1 con l'OHKO. */
+export function offenseCredit(x: number): number {
+  return Math.max(0, Math.min(1, (x - CREDIT_FLOOR) / (1 - CREDIT_FLOOR)));
+}
+
+/** Il colpo di un membro su uno dei 18 Pokémon medi: danno (con un terzo del setup e un quarto di Tera/Z) e credito. */
+export interface TargetHit {
+  /** Il tipo del bersaglio. */
+  label: string;
+  /** La mossa migliore senza setup né Tera/Z (null se nessuna lo colpisce). */
+  move: string | null;
+  /** Danno % arrotondato in basso, al massimo 100. */
+  pct: number;
+  /** 0–1. */
+  credit: number;
+}
+
 export interface MemberOffense {
   species: string;
-  /** Potenza senza setup né Tera/Z: danno medio contro il Pokémon medio dei 18 tipi. */
-  power: number;
+  /** La mossa più spesso migliore contro i 18 Pokémon medi; null senza mosse d'attacco. */
+  bestMove: string | null;
   /** La mossa di potenziamento del set (null se non ne ha). */
   setupMove: string | null;
-  /** La mossa più spesso migliore contro i 18 Pokémon medi dei tipi; null senza mosse d'attacco. */
-  bestMove: string | null;
-  /** Punti di Potenza che vengono dal setup (già dentro `value`: tre quarti del guadagno dopo una danza). */
-  setupGain: number;
   /** Tera o mossa Z del membro (una volta a partita), null se non ne ha. */
   oneUse: { kind: 'tera' | 'z'; name: string } | null;
-  /** Punti di Offesa del membro che vengono da Tera/Z (già dentro `value`: un quarto del guadagno). */
-  oneUseGain: number;
-  /** Potenza con tre quarti del guadagno del setup e un quarto di quello di Tera/Z: entra nella Potenza del team. */
-  powerInGrade: number;
-  /** Il valore del membro: `powerInGrade` arrotondata (dice chi è un attaccante forte). */
+  /** 0–100: la media dei crediti sui 18 Pokémon medi, setup (un terzo) e Tera/Z (un quarto) compresi. */
   value: number;
-  /** Quota (0–100) dei 18 tipi e dei bersagli del meta che il membro copre da solo (null senza meta). */
-  coverTypes: number;
+  /** Punti di `value` che vengono dal setup. */
+  setupGain: number;
+  /** Punti di `value` che vengono da Tera/Z. */
+  oneUseGain: number;
+  /** I 18 bersagli, nell'ordine di `coverageTargets(data, 'types')`. */
+  hits: TargetHit[];
+  /** Quota (0–100) dei bersagli del meta che il membro manda KO in due colpi da solo (null senza meta). */
   coverMeta: number | null;
-  /** Quanto il membro porta all'Offesa, coi pesi della squadra: 60/20/20, senza meta 60/40. */
+  /** Quanto il membro porta all'Offesa coi pesi della squadra: 70% `value` + 30% `coverMeta`; senza meta `value`. */
   total: number;
+}
+
+/** Un tipo del pacchetto: il livello del team (0–100) e i migliori tre membri che lo colpiscono oltre il 33%. */
+export interface TypeRow {
+  label: string;
+  level: number;
+  best: { species: string; move: string | null; pct: number; credit: number }[];
 }
 
 export interface CoverageDetail {
   value: number;
-  /** Bersagli che nessuno colpisce super efficace al 33%. */
+  /** Bersagli che nessuno manda KO in due colpi. */
   holes: string[];
   /** Per ogni bersaglio: tipi, Pokémon, peso, quanto è coperto e chi lo copre (con quale mossa). */
   rows: CoverageRow[];
@@ -87,21 +118,16 @@ export interface CoverageDetail {
 export interface TeamOffense {
   /** Quanti attaccanti fisici, speciali e misti (solo informazione, non entra nel voto). */
   attackers: { physical: number; special: number; mixed: number };
-  /** Potenza 60% + Coverage 40% (col meta 20% tipi e 20% meta). */
+  /** Pacchetto 70% + Coverage meta 30% (senza meta il pacchetto). */
   value: number;
-  /** Coverage nel voto: col meta la media di quella di tipi e di quella del meta, senza meta quella di tipi. */
-  coverage: number;
-  coverageTypes: CoverageDetail;
+  /** Il pacchetto dei tipi: valore, una riga per tipo, e i buchi (i tipi che nessuno manda KO in due colpi). */
+  types: { value: number; rows: TypeRow[]; holes: string[] };
   /** null senza meta. */
   coverageMeta: CoverageDetail | null;
-  /** Media pesata per posizione della Potenza dei membri (setup e Tera/Z compresi). */
-  power: number;
   /** Punti di Offesa finale che vengono dal setup. */
   setupGain: number;
   setters: { species: string; move: string }[];
   members: MemberOffense[];
-  /** I tre migliori attaccanti del meta: il 3° è il 100 della Potenza (vuoto senza statistiche). */
-  referenceAttackers: string[];
 }
 
 /** Valore del colpo migliore contro un difensore: 0, 0,5 (3HKO), 1 (2HKO) o 1,5 (OHKO sicuro; mai per le mosse OHKO, che possono mancare). */
@@ -120,7 +146,7 @@ export function stepBucket(step: number): 'ohko' | 'two' | 'three' | 'none' {
 }
 
 const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
-/** Dal rapporto col riferimento al punteggio: lineare, il riferimento vale 100. */
+/** Dal rapporto col riferimento al punteggio: lineare, il riferimento vale 100 (solo misura dei Ruoli). */
 const toScore = (x: number, full: number) => softScore(x / full);
 
 /** Condizioni di campo (meteo, terreni) che il team porta; quelle che il set porta con la sua abilità sono sempre attive per lui. */
@@ -147,10 +173,12 @@ function fieldCombos(own: FieldCondition[], all: FieldCondition[]): FieldConditi
   return combos.filter(c => c.length > own.length);
 }
 
+/** Per ognuno dei 18 bersagli del pacchetto: danno senza niente, dopo una danza e con Tera/Z (al massimo 1), e la mossa migliore. */
+interface PerTarget { plain: number[]; danced: number[] | null; once: number[] | null; moves: (string | null)[] }
 
 /**
- * Misure grezze del set: danno medio contro i bersagli della Coverage (i Pokémon più usati, o i 18 tipi neutri),
- * e il valore del colpo migliore contro ogni muro del formato, anche dopo il setup.
+ * Misure grezze del set. Pacchetto (`power`): danno contro i 18 Pokémon medi dei tipi, bersaglio per bersaglio.
+ * Ruoli (`roles`): danno medio contro i bersagli della Coverage e valore del colpo migliore contro ogni muro del formato.
  */
 interface Raw {
   species: string; expected: number; setupMove: string | null; bestMove: string | null;
@@ -160,10 +188,12 @@ interface Raw {
   steps: number[]; hits: number[]; setupSteps: number[] | null; setupHits: number[] | null;
   /** Danno medio dopo una danza (null senza mossa di potenziamento). */
   setupExpected: number | null;
+  /** Solo nel pacchetto: i 18 bersagli uno per uno. */
+  perTarget: PerTarget | null;
 }
 
 /**
- * Su cosa si misura il set. `power`: la Potenza del voto, contro i 18 Pokémon medi dei tipi (con e senza meta), senza muri.
+ * Su cosa si misura il set. `power`: il pacchetto del voto, contro i 18 Pokémon medi dei tipi (con e senza meta), senza muri.
  * `roles`: la vecchia misura che usano solo i Ruoli: danno contro i bersagli della Coverage e colpi contro i muri del formato.
  */
 type Measure = 'power' | 'roles';
@@ -206,31 +236,35 @@ function measureSet(set: TeamSet, team: TeamSet[], data: EngineData, measure: Me
   };
 
   const targets = measure === 'power' ? coverageTargets(data, 'types') : coverageTargets(data);
-  // Danno medio pesato, e quale mossa è più spesso la migliore (per la scheda Potenza)
+  const setup = attacks ? setupBoosts(set) : null;
+  const withOneUse = attacks && oneUseVariants.length > 0;
+  // Bersaglio per bersaglio: senza niente, dopo una danza, con Tera/Z (mai sotto il danno senza)
+  const plainHits = targets.map(target => against(target.set));
+  const plain = plainHits.map(h => h.expected);
+  const danced = setup ? targets.map(target => against(target.set, setup.boosts).expected) : null;
+  const once = withOneUse ? targets.map((target, i) => Math.max(plain[i], against(target.set, undefined, true).expected)) : null;
+  const weighted = (xs: number[]) => targets.reduce((acc, target, i) => acc + target.weight * xs[i], 0);
+  // Quale mossa è più spesso la migliore (per le schede)
   const byMove = new Map<string, number>();
-  const expected = targets.reduce((acc, target) => {
-    const hit = against(target.set);
-    if (hit.move) byMove.set(hit.move, (byMove.get(hit.move) ?? 0) + target.weight);
-    return acc + target.weight * hit.expected;
-  }, 0);
+  plainHits.forEach((hit, i) => { if (hit.move) byMove.set(hit.move, (byMove.get(hit.move) ?? 0) + targets[i].weight); });
   const bestMove = [...byMove].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
   const defenders = measure === 'roles' ? defenderPanel(data) : [];
-  const plain = defenders.map(defender => against(defender));
+  const plainWalls = defenders.map(defender => against(defender));
   // Ha mosse d'attacco ma la libreria non sa calcolarne nessuna: Pokémon sconosciuto, non conta
   if (attacks && !known) return null;
-  const setup = attacks ? setupBoosts(set) : null;
   const boosted = setup ? defenders.map(defender => against(defender, setup.boosts)) : null;
-  const setupExpected = setup ? targets.reduce((acc, target) => acc + target.weight * against(target.set, setup.boosts).expected, 0) : null;
-  const oneUse = attacks && oneUseVariants.length ? {
+  const oneUse = withOneUse ? {
     kind: teraOk ? 'tera' as const : 'z' as const,
     name: teraOk ? set.teraType! : zItem.name,
-    expected: targets.reduce((acc, target) => acc + target.weight * Math.max(against(target.set, undefined, true).expected, against(target.set).expected), 0),
-    steps: defenders.map((defender, d) => Math.max(plain[d].step, against(defender, undefined, true).step)),
+    expected: weighted(once!),
+    steps: defenders.map((defender, d) => Math.max(plainWalls[d].step, against(defender, undefined, true).step)),
   } : null;
   return {
-    species: species.name, expected, setupMove: setup?.move ?? null, bestMove, oneUse, setupExpected,
-    steps: plain.map(r => r.step), hits: plain.map(r => r.expected),
+    species: species.name, expected: weighted(plain), setupMove: setup?.move ?? null, bestMove, oneUse,
+    setupExpected: danced ? weighted(danced) : null,
+    steps: plainWalls.map(r => r.step), hits: plainWalls.map(r => r.expected),
     setupSteps: boosted?.map(r => r.step) ?? null, setupHits: boosted?.map(r => r.expected) ?? null,
+    perTarget: measure === 'power' ? { plain, danced, once, moves: plainHits.map(h => h.move) } : null,
   };
 }
 
@@ -247,23 +281,26 @@ function rawOf(set: TeamSet, team: TeamSet[], data: EngineData, measure: Measure
   return value;
 }
 
+/** I danni dei 18 bersagli con le quote date di setup e di Tera/Z (al massimo 1). */
+function shareDamage(p: PerTarget, setupShare: number, oneShare: number): number[] {
+  return p.plain.map((x, i) => Math.min(1, x + setupShare * Math.max(0, (p.danced?.[i] ?? x) - x) + oneShare * Math.max(0, (p.once?.[i] ?? x) - x)));
+}
+const creditsOf = (p: PerTarget, setupShare: number, oneShare: number) => shareDamage(p, setupShare, oneShare).map(offenseCredit);
+const meanScore = (credits: number[]) => Math.round(100 * mean(credits));
+
 export interface OffenseReference {
-  /** Danno medio contro i 18 Pokémon medi che vale Potenza 100. */
-  power: number;
   /** Solo per i Ruoli: danno medio contro i bersagli della Coverage e valore medio dei colpi sui muri che valgono 100. */
   rolesPower: number;
   step: number;
-  /** Gli attaccanti più usati del formato, dal miglior Wallbreaking e dal danno medio più alto (vuoti senza statistiche). */
+  /** Gli attaccanti più usati del formato, dal miglior Wallbreaking (vuoto senza statistiche). */
   attackers: string[];
-  byPower: string[];
 }
 
 const references = new Map<string, OffenseReference>();
 
 /**
- * Il 100 della Potenza: il miglior attaccante fra i più usati del formato (set più comune), misurato come i membri
- * contro i 18 Pokémon medi. Così 100 vuol dire "fra i migliori del meta", non una soglia che nessuno raggiunge.
- * Per i Ruoli il 100 resta il 3° miglior attaccante (REFERENCE_RANK). Senza statistiche: i valori fissi di riserva.
+ * Il 100 della misura dei Ruoli: il 3° miglior attaccante fra i più usati del formato (set più comune), per danno medio
+ * e per Wallbreaking. Senza statistiche: i valori fissi di riserva. Il voto dell'Offesa non usa riferimenti.
  */
 export function offenseReference(data: EngineData): OffenseReference {
   // Anche senza meta il riferimento usa le statistiche, se ci sono: mentre si caricano non devono restare quelle di riserva
@@ -275,52 +312,44 @@ export function offenseReference(data: EngineData): OffenseReference {
     .map(name => mostCommonSet(data.stats, name))
     .filter((set): set is TeamSet => !!set
       && set.moves.filter(m => (getMove(m)?.category ?? 'Status') !== 'Status').length >= 2 && !isDefensiveSet(set, rules));
-  const measured = sets.map(set => rawOf(set, [set], data, 'power'))
-    .filter((raw): raw is Raw => raw !== null)
-    .map(raw => ({ species: raw.species, expected: raw.expected }));
   const forRoles = sets.map(set => rawOf(set, [set], data, 'roles'))
     .filter((raw): raw is Raw => raw !== null)
     .map(raw => ({ species: raw.species, expected: raw.expected, step: mean(raw.steps) }));
-  const nth = (values: number[], rank = REFERENCE_RANK) => values.sort((a, b) => b - a)[Math.min(rank, values.length) - 1];
-  const power = measured.length ? nth(measured.map(r => r.expected), POWER_REFERENCE_RANK) : 0;
+  const nth = (values: number[]) => values.sort((a, b) => b - a)[Math.min(REFERENCE_RANK, values.length) - 1];
   const rolesPower = forRoles.length ? nth(forRoles.map(r => r.expected)) : 0;
   const step = forRoles.length ? nth(forRoles.map(r => r.step)) : 0;
   reference = {
-    power: power > 0 ? power : POWER_FULL,
     rolesPower: rolesPower > 0 ? rolesPower : ROLES_POWER_FULL,
     step: step > 0 ? step : STEP_FULL,
     attackers: [...forRoles].sort((a, b) => b.step - a.step).map(r => r.species),
-    byPower: [...measured].sort((a, b) => b.expected - a.expected).map(r => r.species),
   };
   references.set(key, reference);
   return reference;
 }
 
 /**
- * Offesa di un membro: la Potenza, il danno medio del colpo migliore contro il Pokémon medio di ognuno dei 18 tipi
- * (con e senza meta). Nel voto entrano tre quarti del guadagno del setup e un quarto di Tera/Z. Null se la libreria non
- * conosce il Pokémon.
+ * Offesa di un membro: per ognuno dei 18 Pokémon medi il danno del colpo migliore (un terzo del setup, un quarto di
+ * Tera/Z, il meteo di un compagno a metà), poi il credito (solo il danno sopra il 33%, pieno con l'OHKO) e la media.
+ * Null se la libreria non conosce il Pokémon.
  */
 export function memberOffense(set: TeamSet, team: TeamSet[], data: EngineData): MemberOffense | null {
   const raw = rawOf(set, team, data, 'power');
-  if (!raw) return null;
-  const ref = offenseReference(data);
-  const power = toScore(raw.expected, ref.power);
-  const setupPower = raw.setupExpected !== null ? toScore(Math.max(raw.expected, raw.setupExpected), ref.power) : power;
-  const one = raw.oneUse;
-  const oneUsePower = one ? toScore(one.expected, ref.power) : power;
-  const withSetup = power + SETUP_SHARE * (setupPower - power);
-  const powerInGrade = withSetup + ONE_USE_SHARE * (oneUsePower - power);
-  const value = Math.round(powerInGrade);
-  const coverTypes = teamCoverage([set], data, 'types').perMember[0];
+  if (!raw?.perTarget) return null;
+  const p = raw.perTarget;
+  const damage = shareDamage(p, SETUP_SHARE, ONE_USE_SHARE);
+  const credits = damage.map(offenseCredit);
+  const value = meanScore(credits);
+  const setupGain = value - meanScore(creditsOf(p, 0, ONE_USE_SHARE));
+  const oneUseGain = value - meanScore(creditsOf(p, SETUP_SHARE, 0));
+  const labels = coverageTargets(data, 'types').map(t => t.label);
   const coverMeta = usesMeta(data) ? teamCoverage([set], data, 'meta').perMember[0] : null;
-  const total = Math.round(coverMeta === null
-    ? OFFENSE_SHARES.power * powerInGrade + OFFENSE_SHARES.coverage * coverTypes
-    : OFFENSE_SHARES.power * powerInGrade + (OFFENSE_SHARES.coverage / 2) * (coverTypes + coverMeta));
   return {
-    species: raw.species, power, setupMove: raw.setupMove, bestMove: raw.bestMove,
-    setupGain: Math.round(withSetup) - power, value, coverTypes, coverMeta, total,
-    oneUse: one && { kind: one.kind, name: one.name }, oneUseGain: value - Math.round(withSetup), powerInGrade,
+    species: raw.species, bestMove: raw.bestMove, setupMove: raw.setupMove,
+    oneUse: raw.oneUse && { kind: raw.oneUse.kind, name: raw.oneUse.name },
+    value, setupGain, oneUseGain,
+    hits: labels.map((label, i) => ({ label, move: p.moves[i], pct: Math.floor(100 * damage[i]), credit: credits[i] })),
+    coverMeta,
+    total: coverMeta === null ? value : Math.round(OFFENSE_SHARES.types * value + OFFENSE_SHARES.meta * coverMeta),
   };
 }
 
@@ -344,7 +373,7 @@ export function rolesMemberOffense(set: TeamSet, team: TeamSet[], data: EngineDa
   const power = toScore(raw.expected, ref.rolesPower);
   const wallbreaking = toScore(mean(raw.steps), ref.step);
   const withSetup = raw.setupSteps ? toScore(mean(raw.steps.map((x, d) => Math.max(x, raw.setupSteps![d]))), ref.step) : wallbreaking;
-  const wallbreakingGain = Math.round(SETUP_SHARE * (withSetup - wallbreaking));
+  const wallbreakingGain = Math.round(ROLES_SETUP_SHARE * (withSetup - wallbreaking));
   const one = raw.oneUse;
   const powerInGrade = one ? power + ONE_USE_SHARE * (toScore(one.expected, ref.rolesPower) - power) : power;
   const wallOneUse = one ? ONE_USE_SHARE * (toScore(mean(one.steps), ref.step) - wallbreaking) : 0;
@@ -362,38 +391,45 @@ export function rankWeighted(values: number[]): number {
   return Math.round(sorted.reduce((acc, v, i) => acc + v * weights[i], 0) / total);
 }
 
+/** Per ogni bersaglio, i crediti dei membri dal più alto, coi pesi 50/30/20. */
+const depthOf = (credits: number[]) => [...credits].sort((a, b) => b - a).reduce((acc, c, i) => acc + (OFFENSE_DEPTH[i] ?? 0) * c, 0);
+/** Il pacchetto: per ogni bersaglio la profondità dei crediti dei membri, poi la media ×100 (0 senza membri). */
+const packOf = (lists: number[][], targets: number) =>
+  lists.length ? Math.round(100 * mean(Array.from({ length: targets }, (_, i) => depthOf(lists.map(c => c[i]))))) : 0;
+
 /**
- * Offesa del team: Potenza (media pesata per posizione dei membri) 60% e Coverage 40%; col meta la Coverage è metà
- * di tipi e metà del meta (20% e 20%), senza meta tutta di tipi.
+ * Offesa del team: il pacchetto dei tipi (per ognuno dei 18 Pokémon medi i crediti dei membri con la profondità 50/30/20,
+ * poi la media) 70% e la Coverage del meta 30%; senza meta il pacchetto vale tutto. Un membro che non attacca non porta
+ * crediti ma non abbassa il team.
  */
 export function teamOffense(team: TeamSet[], data: EngineData): TeamOffense {
-  const types = teamCoverage(team, data, 'types');
+  const labels = coverageTargets(data, 'types').map(t => t.label);
   const metaCoverage = usesMeta(data) ? teamCoverage(team, data, 'meta') : null;
-  const coverageValue = metaCoverage ? Math.round((types.value + metaCoverage.value) / 2) : types.value;
-  const ref = offenseReference(data);
-  const members = team
-    .map(set => memberOffense(set, team, data))
-    .filter((m): m is MemberOffense => m !== null);
-  const final = (power: number) => {
-    if (!members.length) return 0;
-    const coverage = metaCoverage
-      ? (OFFENSE_SHARES.coverage / 2) * (types.value + metaCoverage.value)
-      : OFFENSE_SHARES.coverage * types.value;
-    return Math.round(OFFENSE_SHARES.power * power + coverage);
-  };
-  const power = rankWeighted(members.map(m => m.powerInGrade));
-  const value = final(power);
-  // Quanto vale il setup sull'Offesa finale: lo stesso conto senza la parte del setup
-  const withoutSetup = final(rankWeighted(members.map(m => m.powerInGrade - Math.max(0, m.setupGain))));
+  const measured = team
+    .map(set => ({ set, member: memberOffense(set, team, data) }))
+    .filter((x): x is { set: TeamSet; member: MemberOffense } => x.member !== null);
+  const members = measured.map(x => x.member);
+  const final = (types: number) => (!members.length ? 0 : metaCoverage
+    ? Math.round(OFFENSE_SHARES.types * types + OFFENSE_SHARES.meta * metaCoverage.value)
+    : types);
+  const typesValue = packOf(members.map(m => m.hits.map(h => h.credit)), labels.length);
+  const value = final(typesValue);
+  // Quanto vale il setup sull'Offesa finale: lo stesso conto con i membri senza la parte del setup
+  const withoutSetup = final(packOf(measured.map(({ set }) => creditsOf(rawOf(set, team, data, 'power')!.perTarget!, 0, ONE_USE_SHARE)), labels.length));
+  const rows = labels.map((label, i) => {
+    const best = members
+      .map(m => ({ species: m.species, move: m.hits[i].move, pct: m.hits[i].pct, credit: m.hits[i].credit }))
+      .filter(b => b.credit > 0)
+      .sort((a, b) => b.credit - a.credit)
+      .slice(0, OFFENSE_DEPTH.length);
+    return { label, level: Math.round(100 * depthOf(members.map(m => m.hits[i].credit))), best };
+  });
   const styles = team.filter(set => battleSpecies(set)).map(attackStyle);
   return {
     attackers: { physical: styles.filter(s => s === 'physical').length, special: styles.filter(s => s === 'special').length, mixed: styles.filter(s => s === 'mixed').length },
     value,
-    coverage: coverageValue,
-    coverageTypes: { value: types.value, holes: types.holes, rows: types.rows },
+    types: { value: typesValue, rows, holes: labels.filter((_, i) => !members.some(m => m.hits[i].pct >= 100 * HOLE_HIT)) },
     coverageMeta: metaCoverage && { value: metaCoverage.value, holes: metaCoverage.holes, rows: metaCoverage.rows },
-    referenceAttackers: ref.byPower.slice(0, REFERENCE_RANK),
-    power,
     setupGain: value - withoutSetup,
     setters: members.filter(m => m.setupMove).map(m => ({ species: m.species, move: m.setupMove! })),
     members,

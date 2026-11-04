@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import type { TeamOffense } from '../../engine/offense';
-import { OFFENSE_SHARES, RANK_WEIGHTS, THREE_HIT } from '../../engine/offense';
+import { CREDIT_FLOOR, HOLE_HIT, OFFENSE_DEPTH, OFFENSE_SHARES } from '../../engine/offense';
 import { depthWeights, typeAverage } from '../../engine/coverage';
 import { DEFAULT_FORMAT, type FormatId } from '../../engine/format';
 import { pokedexOf, teraAllowed } from '../../engine/formats';
@@ -11,13 +11,12 @@ import { Rows } from '../guideParts';
 import { Icon } from '../icons';
 import { TypeIcons } from '../typeIcons';
 
-export type OffenseSection = 'general' | 'coverageTypes' | 'power' | 'coverageMeta';
+export type OffenseSection = 'general' | 'types' | 'coverageMeta';
 type Key = Parameters<ReturnType<typeof useT>>[0];
 
-/** Pesi per posizione nel team e profondità della Coverage (tipi 70/20/10, meta 50/30/20): quelli del motore, in percentuale. */
+/** Profondità del pacchetto dei tipi (50/30/20) e della Coverage meta (50/30/20): quelle del motore, in percentuale. */
 const scaleOf = (d: number[]) => ({ one: d[0], two: d[0] + d[1], three: d[0] + d[1] + d[2] });
-const MEMBER_WEIGHTS = RANK_WEIGHTS.map(w => Math.round(100 * w));
-const depthOf = (meta: boolean) => depthWeights(meta ? 'meta' : 'types').map(w => Math.round(100 * w));
+const depthOf = (meta: boolean) => (meta ? depthWeights('meta') : OFFENSE_DEPTH).map(w => Math.round(100 * w));
 
 /** Una barra di pesi (come quella della Difesa): ogni posizione larga quanto pesa; le scritte agli estremi sono facoltative. */
 function Bar({ label, weights, rank, from, to }: { label: string; weights: number[]; rank: (n: number) => string; from?: string; to?: string }) {
@@ -31,7 +30,7 @@ function Bar({ label, weights, rank, from, to }: { label: string; weights: numbe
   );
 }
 
-/** I 18 bersagli della Potenza: le difese base medie di ogni tipo nel Pokédex del formato (quelle che usa il motore). */
+/** I 18 bersagli dei tipi: le difese base medie di ogni tipo nel Pokédex del formato (quelle che usa il motore). */
 function TypeTargets({ formatId }: { formatId: FormatId }) {
   const t = useT();
   const lang = useLang();
@@ -77,28 +76,25 @@ export function OffenseGuideSection({ section, offense, meta, formatId = DEFAULT
   const num = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1)).replace('.', lang === 'it' ? ',' : '.');
   const pctOf = (x: number) => Math.round(100 * x);
   const g = (key: string, params?: Record<string, string | number>) => t(`guide.off.${key}` as Key, params);
-  // La Potenza si misura sempre sui 18 Pokémon medi, con e senza meta
+  // Il pacchetto dei tipi si misura sempre sui 18 Pokémon medi, con e senza meta
   const targets = g('targets.tier');
   const pct = (n: number | string) => <span className="guide-pct">{n}%</span>;
   const lines = (items: ReactNode[]) => <ul className="guide-lines">{items.map((item, i) => <li key={i}>{item}</li>)}</ul>;
 
   if (section === 'general') {
-    const power = pctOf(OFFENSE_SHARES.power);
-    const share = pctOf(OFFENSE_SHARES.coverage);
-    const coverageShare = meta ? share / 2 : share;
+    const types = meta ? pctOf(OFFENSE_SHARES.types) : 100;
     return (
       <>
         <h5>{g('what')}</h5>
         <Rows stacked rows={[
-          [<>{t('detail.power')}{pct(power)}</>, g('what.power', { targets })],
-          [<>{t('detail.coverageTypes')}{pct(num(coverageShare))}</>, g('what.types')],
-          ...(meta ? [[<>{t('detail.coverageMeta')}{pct(num(coverageShare))}</>, g('what.meta')] as [ReactNode, string]] : []),
+          [<>{t('detail.coverageTypes')}{pct(num(types))}</>, g('what.types')],
+          ...(meta ? [[<>{t('detail.coverageMeta')}{pct(num(pctOf(OFFENSE_SHARES.meta)))}</>, g('what.meta')] as [ReactNode, string]] : []),
         ]} />
       </>
     );
   }
 
-  if (section === 'power') {
+  if (section === 'types') {
     // Tera solo dove il formato lo ammette, mosse Z solo nel National Dex (in Scarlatto/Violetto non esistono)
     const format = { ...DEFAULT_FORMAT, formatId };
     const tera = teraAllowed(format);
@@ -107,6 +103,8 @@ export function OffenseGuideSection({ section, offense, meta, formatId = DEFAULT
       : tera ? [g('power.tera'), g('power.tera.rule')]
       : z ? [g('power.z'), g('power.z.rule')]
       : null;
+    // Accanto ai termini le stesse caselle della tabella (verde forte, gialla conta, vuota non conta)
+    const swatch = (cls: string, term: string) => <><span className={`guide-swatch ${cls}`} aria-hidden="true" />{term}</>;
     return (
       <>
         <h5>{g('test')}</h5>
@@ -117,36 +115,33 @@ export function OffenseGuideSection({ section, offense, meta, formatId = DEFAULT
           [g('power.weather'), g('power.weather.rule')],
           [g('power.setup'), g('rules.setup')],
           ...(oneUse ? [oneUse] : []),
+          [swatch('ok-full', g('cov.hit')), g('cov.hit.rule')],
+          [swatch('ok-half', g('cov.half')), g('cov.half.rule')],
+          [swatch('empty', g('cov.hole')), g('cov.hole.rule', { pct: pctOf(CREDIT_FLOOR) })],
+          [g('cov.gap'), g('cov.gap.rule', { pct: pctOf(HOLE_HIT) })],
         ]} />
 
-        <h5>{g('toteam')}</h5>
-        <Bar label={g('rank.weights')} weights={MEMBER_WEIGHTS} rank={n => g('rank', { n })} from={g('rank.best')} to={g('rank.worst')} />
+        <h5>{g('cov.depth')}</h5>
+        <Bar label={g('cov.depth')} weights={depthOf(false)} rank={n => g('cov.rank', { n })} />
+        {lines([g('cov.scale', scaleOf(depthOf(false)))])}
       </>
     );
   }
 
-  // Coverage di tipi e del meta: stesso test, cambiano i bersagli
-  const isMeta = section === 'coverageMeta';
-  const count = isMeta ? offense.coverageMeta?.rows.length ?? 0 : offense.coverageTypes.rows.length;
-  // Accanto ai termini le stesse caselle della tabella Coverage tipi (verde copre, gialla a metà, vuota buco)
-  const swatch = (cls: string, term: string) => <><span className={`guide-swatch ${cls}`} aria-hidden="true" />{term}</>;
+  // Coverage del meta: i Pokémon più usati mandati KO in due colpi
+  const count = offense.coverageMeta?.rows.length ?? 0;
   return (
     <>
       <h5>{g('test')}</h5>
-      <Rows compact rows={isMeta ? [
+      <Rows compact rows={[
         [g('test.targets'), g('cov.targets.meta', { n: count })],
-        [g('cov.hit'), g('cov.hit.rule.meta')],
-        [g('cov.hole'), g('cov.hole.rule.meta')],
-      ] : [
-        [g('test.targets'), g('cov.targets.tier', { n: count })],
-        [swatch('ok-full', g('cov.hit')), g('cov.hit.rule')],
-        [swatch('ok-half', g('cov.half')), g('cov.half.rule')],
-        [swatch('empty', g('cov.hole')), g('cov.hole.rule', { pct: pctOf(THREE_HIT) })],
+        [g('meta.hit'), g('cov.hit.rule.meta')],
+        [g('meta.hole'), g('cov.hole.rule.meta')],
       ]} />
 
       <h5>{g('cov.depth')}</h5>
-      <Bar label={g('cov.depth')} weights={depthOf(isMeta)} rank={n => g('cov.rank', { n })} />
-      {lines([g('cov.scale', scaleOf(depthOf(isMeta)))])}
+      <Bar label={g('cov.depth')} weights={depthOf(true)} rank={n => g('cov.rank', { n })} />
+      {lines([g('cov.scale', scaleOf(depthOf(true)))])}
     </>
   );
 }

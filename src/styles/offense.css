@@ -15,12 +15,6 @@
 .area-legend-swatch i.ok-half, .guide-swatch.ok-half { background: color-mix(in srgb, var(--warn) 26%, var(--panel)); border-color: var(--warn); }
 .guide-swatch { display: inline-block; flex: none; margin-right: 6px; vertical-align: -1px; }
 
-/* Potenza: barra lunga e colpo migliore come chip nel colore del tipo (testo scelto per contrasto ≥ 4,5) */
-.def-power .def-col-mon + col { width: auto; }
-.def-power .pw-col-power { width: 36%; }
-.def-power .pw-col-move { width: 20%; }
-.def-power .pw-bar .def-cell { width: 100%; grid-template-columns: minmax(120px, 1fr) 3ch; }
-.def-power .pw-move { display: inline-block; max-width: 100%; padding: 3px 12px; border-radius: 4px; font-size: 13px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; vertical-align: middle; }
 
 /* "+N" dei guadagni nelle tabelle def-grid: verde il setup, blu Tera e mossa Z (come .ad-t) */
 .def-frame .ad-gain { display: inline; margin-left: 4px; font: 600 13px/1 var(--ui); color: var(--good); cursor: help; }
@@ -51,12 +45,8 @@
 .def-walls .wall-h { padding: 0; line-height: 0; text-align: center; vertical-align: bottom; }
 .def-frame.def-walls .wall-h .def-box { --bs: 1.2; }
 .def-walls .ct-sum td { height: 24px; }
-.def-power .pw-col-setup { width: auto; }
-.def-power .pw-table th:nth-child(3) { text-align: center; }
-.def-power .pw-setup { white-space: nowrap; text-align: center; }
-.def-power .pw-setup .ad-gain { margin-left: 6px; }
 
-/* Guida, Come funziona: le difese medie dei 18 bersagli della Potenza, chiuse sotto una freccina */
+/* Guida, Come funziona: le difese medie dei 18 bersagli dei tipi, chiuse sotto una freccina */
 .guide-more { margin: 6px 0 0; }
 .guide-more > summary { display: inline-flex; align-items: center; gap: 4px; padding: 2px 4px 2px 0; font-size: 13px; font-weight: 600; color: var(--accent-ink); cursor: pointer; list-style: none; }
 .guide-more > summary::-webkit-details-marker { display: none; }

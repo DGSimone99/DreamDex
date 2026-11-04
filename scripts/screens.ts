@@ -56,7 +56,7 @@ const LONG = [
   member('Scizor', 'Scizorite', 'Technician', ['Bullet Punch', 'U-turn', 'Swords Dance', 'Knock Off'], 'Adamant', { hp: 248, atk: 252, spd: 8 }),
   member('Garchomp', 'Garchompite', 'Rough Skin', ['Earthquake', 'Scale Shot', 'Swords Dance', 'Fire Fang'], 'Jolly', { atk: 252, spe: 252, hp: 4 }),
 ];
-// Sei attaccanti forti (Offesa del membro >= 85): la riga Attaccanti del Riassunto con più sprite di quanti ne stanno
+// Sei attaccanti forti (tutti con un ruolo d'attacco sulla carta): la riga Attaccanti del Riassunto con più sprite di quanti ne stanno
 const ATTACK = [
   LONG[2],
   TEAM[0],
@@ -174,7 +174,7 @@ const offenseState = (sub: RegExp | null, opts: { collapsed?: boolean; format?: 
     return true;
   },
 });
-const OFFENSE_SUBS: Record<string, RegExp | null> = { general: /^General/, power: /^Potenza/, types: /^Coverage tipi/, meta: /^Coverage meta/ };
+const OFFENSE_SUBS: Record<string, RegExp | null> = { general: /^General/, types: /^Coverage tipi/, meta: /^Coverage meta/ };
 const OFFENSE_STATES: Record<string, State> = Object.fromEntries(Object.entries(OFFENSE_SUBS).flatMap(([k, re]) => [
   [`analysis-offense-${k}`, offenseState(re)],
   [`analysis-offense-${k}-collapsed`, offenseState(re, { collapsed: true })],
@@ -192,17 +192,16 @@ const offenseGuide = (sub: RegExp | null, section?: RegExp): State => ({ hash: h
 OFFENSE_STATES['analysis-offense-types-nometa'] = offenseState(OFFENSE_SUBS.types, { format: { meta: false } });
 OFFENSE_STATES['analysis-offense-meta-en'] = { ...offenseState(/^Meta coverage/), lang: 'en' };
 OFFENSE_STATES['analysis-offense-guide'] = offenseGuide(OFFENSE_SUBS.general);
-// La pagina Potenza con la freccina del Colpo aperta: le difese medie dei 18 bersagli (il modale non cambia altezza)
-OFFENSE_STATES['analysis-offense-guide-power-open'] = { hash: hash(SIX), run: async p => {
-  const ok = await offenseGuide(OFFENSE_SUBS.general, /^(Potenza|Power)/).run!(p);
+// La pagina Coverage tipi con la freccina del Colpo aperta: le difese medie dei 18 bersagli (il modale non cambia altezza)
+OFFENSE_STATES['analysis-offense-guide-types-open'] = { hash: hash(SIX), run: async p => {
+  const ok = await offenseGuide(OFFENSE_SUBS.general, /^(Coverage tipi|Type coverage)/).run!(p);
   if (ok !== true) return ok;
   if (!await clickText(p, '.guide-more > summary', /./)) return 'no targets toggle';
   await wait(300);
   return true;
 } };
-OFFENSE_STATES['analysis-offense-guide-power-open-en'] = { ...OFFENSE_STATES['analysis-offense-guide-power-open'], lang: 'en' } as State;
+OFFENSE_STATES['analysis-offense-guide-types-open-en'] = { ...OFFENSE_STATES['analysis-offense-guide-types-open'], lang: 'en' } as State;
 OFFENSE_STATES['analysis-offense-guide-types'] = offenseGuide(OFFENSE_SUBS.general, /^Coverage tipi/);
-OFFENSE_STATES['analysis-offense-guide-power'] = offenseGuide(OFFENSE_SUBS.general, /^Potenza/);
 OFFENSE_STATES['analysis-offense-guide-meta'] = offenseGuide(OFFENSE_SUBS.general, /^Coverage meta/);
 // Velocità: lo stesso team con Ribombee (Sticky Web e Stun Spore) al posto di Gholdengo, così il controllo del team si vede
 const SPEED_SIX = [...TEAM, member('Ribombee', 'Focus Sash', 'Shield Dust', ['Sticky Web', 'Moonblast', 'Stun Spore', 'U-turn'], 'Timid', { spa: 252, spe: 252, hp: 4 })];

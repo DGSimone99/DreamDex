@@ -20,14 +20,17 @@ import { coachFixes, type CoachFix } from './coachFixes';
 import { buildSteps, type CoachStep } from './coachSteps';
 import { moveFixes } from './moveFixes';
 import type { ScoredArea } from './teamGain';
-import { teamCoverage } from './coverage';
+import { teamOffense } from './offense';
 import { defensiveMultiplier, superEffectiveMove, type TypeName } from './types';
 
 export const SIMILAR_THRESHOLD = 0.6;
 export const MIN_COVERAGE_WEIGHT = 0.05;
 export const STRONG_COVERAGE = 15;
-/** Un tipo della Coverage tipi è coperto quando un membro lo manda KO in due colpi (livello 70 o più): sotto è un problema. */
-export const COVERED_LEVEL = 70;
+/**
+ * Un tipo del pacchetto dell'Offesa è coperto dal livello 50: tre membri al 66%, o uno che lo manda KO e uno al 66%.
+ * Sotto è un problema; scoperto (grave se il tipo pesa) se nessuno lo manda KO in due colpi (HOLE_HIT, 50%).
+ */
+export const COVERED_LEVEL = 50;
 
 /** Categorie dei problemi, nell'ordine in cui si mostrano. */
 export const PROBLEM_CATEGORIES = ['rules', 'defense', 'coverage', 'roles', 'conditions', 'redundancy', 'meta'] as const;
@@ -179,19 +182,18 @@ export function findProblems(team: TeamSet[], format: Format, data: EngineData, 
       `conditions:unmet:${issue.member}:${issue.via}`);
   }
 
-  // Coverage: la stessa regola della Coverage tipi del voto, un problema per tipo che nessuno manda KO in due colpi
-  // (livello sotto 70). Scoperto (nessun colpo super efficace al 33%): grave se il tipo pesa; coperto a metà (solo 3HKO): minore.
-  // Rimedi: i candidati col proprio set che ha una mossa super efficace contro il tipo (approssima la regola dei due colpi, senza calcolo dei danni)
-  // I rimedi della copertura sono un'approssimazione della regola dei due colpi: conta qualsiasi mossa super efficace del candidato.
+  // Coverage: lo stesso pacchetto dei tipi del voto, un problema per tipo sotto il livello 50 (COVERED_LEVEL).
+  // Scoperto (nessuno lo manda KO in due colpi): grave se il tipo pesa; coperto poco (nessuno lo manda KO in un colpo, pochi lo colpiscono forte): minore.
+  // Rimedi: i candidati col proprio set che ha una mossa super efficace contro il tipo (un'approssimazione, senza calcolo dei danni).
   // Cosa si risolve davvero lo dicono le tappe, con problemChanges.
-  const coverage = teamCoverage(team, data, 'types');
+  const coverage = teamOffense(team, data).types;
   for (const row of coverage.rows) {
     if (row.level >= COVERED_LEVEL) continue;
     const type = row.label;
     const hole = coverage.holes.includes(type);
     const text = hole
       ? t(lang, 'coach.problem.uncovered', { type: typeName(type, lang) })
-      : t(lang, 'coach.problem.halfCovered', { type: typeName(type, lang), n: row.coveredBy.length });
+      : t(lang, 'coach.problem.halfCovered', { type: typeName(type, lang) });
     add('coverage', hole && analysis.typeWeights[type as TypeName] >= MIN_COVERAGE_WEIGHT, text,
       fixesFor(candidates, s => Number(superEffectiveMove(s.set, type as TypeName) !== null)), `coverage:${type}`, hole ? 2 : 1, [type]);
   }

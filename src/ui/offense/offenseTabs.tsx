@@ -2,12 +2,11 @@ import type { ReactElement } from 'react';
 import type { TeamRating } from '../../engine/rating';
 import type { AreaContext, DetailTab, T } from '../AreaDetail';
 import { OffenseGeneral } from './OffenseGeneral';
-import { OffensePower } from './OffensePower';
 import { OffenseMeta, OffenseMetaLegend } from './OffenseMeta';
 import { OffenseTypes, OffenseTypesLegend } from './OffenseTypes';
 import { OffenseGuideSection, type OffenseSection } from './OffenseGuide';
 
-/** Le schede dell'Offesa, nell'ordine della Difesa: Generale, Coverage tipi, Potenza, Coverage meta. */
+/** Le schede dell'Offesa, nell'ordine della Difesa: Generale, Coverage tipi (il pacchetto dei tipi), Coverage meta. */
 export function offenseTabs(rating: TeamRating, t: T, ctx: AreaContext): DetailTab[] {
   const offense = rating.offense;
   const meta = !!rating.meta;
@@ -17,8 +16,7 @@ export function offenseTabs(rating: TeamRating, t: T, ctx: AreaContext): DetailT
 
   const tabs: { key: OffenseSection; label: string; value: number | null; panel: ReactElement; legend?: ReactElement }[] = [
     { key: 'general', label: t('detail.tab.general'), value, panel: <OffenseGeneral offense={offense} meta={meta} ctx={ctx} /> },
-    { key: 'coverageTypes', label: t('detail.coverageTypes'), value: offense.coverageTypes.value, panel: <OffenseTypes offense={offense} ctx={ctx} />, legend: <OffenseTypesLegend /> },
-    { key: 'power', label: t('detail.power'), value: offense.power, panel: <OffensePower offense={offense} ctx={ctx} /> },
+    { key: 'types', label: t('detail.coverageTypes'), value: offense.types.value, panel: <OffenseTypes offense={offense} ctx={ctx} />, legend: <OffenseTypesLegend /> },
     // La Coverage del meta c'è solo col meta: senza, una scheda in meno
     ...(coverageMeta ? [{ key: 'coverageMeta' as const, label: t('detail.coverageMeta'), value: coverageMeta.value, panel: <OffenseMeta offense={offense} ctx={ctx} />, legend: <OffenseMetaLegend /> }] : []),
   ];

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { analyzeTeam } from '../../src/engine/analysis';
 import { coachAdvice, coachTeam, findProblems } from '../../src/engine/coach';
-import { teamCoverage } from '../../src/engine/coverage';
+import { teamOffense } from '../../src/engine/offense';
 import { coachFixes, keepSwaps, ZERO_GAIN_SWAPS } from '../../src/engine/coachFixes';
 import { buildSteps } from '../../src/engine/coachSteps';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
@@ -102,8 +102,7 @@ describe('candidati del Coaching dalla classifica di Migliora team', () => {
 
   it('copertura: un problema per tipo; i candidati che lo risolvono o riducono coprono meglio quel tipo', () => {
     const level = (team: TeamSet[], type: string) => {
-      const coverage = teamCoverage(team, data, 'types');
-      return coverage.holes.includes(type) ? 0 : coverage.rows.find(r => r.label === type)!.level;
+      return teamOffense(team, data).types.rows.find(r => r.label === type)!.level;
     };
     const keys = problemsOf(three).filter(p => p.category === 'coverage').map(p => p.key);
     expect(keys.length).toBeGreaterThan(0);

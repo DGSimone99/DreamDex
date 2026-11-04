@@ -2,13 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { teamArchetype } from '../../src/engine/archetype';
 import { archetypeLock, coachTeam } from '../../src/engine/coach';
 import type { EngineData } from '../../src/engine/data';
-import { DEFAULT_FORMAT } from '../../src/engine/format';
 import { DEFAULT_RULES, formatRules, UBERS_RULES } from '../../src/engine/formatRules';
 import { rateTeam } from '../../src/engine/rating';
 import { detectRoles, legacyWall } from '../../src/engine/roles';
 import { emptySet, mostCommonSet, type TeamSet } from '../../src/engine/sets';
 import { fixtureData, fixtureStats } from '../fixtures/data';
-import { adviceOf } from '../helpers/coach';
 
 const set = (species: string, item: string, ability: string, moves: string[]): TeamSet => ({ ...emptySet(species), item, ability, moves });
 const walls = (s: TeamSet, rules = UBERS_RULES) => detectRoles(s, rules).filter(r => r === 'physicalWall' || r === 'specialWall');
@@ -61,18 +59,15 @@ describe('regole di Ubers', () => {
     expect(roles(noHazards)).toBeLessThan(roles(ho));
   });
 
-  it('in Ubers il coach non propone sostituzioni che cambiano il tipo di team (team da B in su)', () => {
-    const format = { ...DEFAULT_FORMAT, formatId: 'ubers' as const, meta: false };
+  it('in Ubers il tipo di team da mantenere è quello del team (team da B in su)', () => {
     // Senza meta: le minacce dei dati di prova sono di OU e abbasserebbero il voto con la penalità del meta
     const data = { ...ubers, ignoreMeta: true };
     const team = ['Great Tusk', 'Gholdengo', 'Kingambit', 'Dragapult', 'Corviknight', 'Garchomp'].map(n => mostCommonSet(fixtureStats, n)!);
     const grade = rateTeam(team, data)!.grade;
     expect(['S', 'A', 'B']).toContain(grade);
     const before = teamArchetype(team, UBERS_RULES)?.archetype;
-    // Da B in su il tipo di team è bloccato: ogni scambio proposto lo mantiene
     expect(archetypeLock(team, UBERS_RULES, grade)).toBe(before);
-    const fixes = adviceOf(team, format, data).fixes;
-    for (const fix of fixes) expect(teamArchetype(team.map((s, i) => (i === fix.index ? fix.set : s)), UBERS_RULES)?.archetype).toBe(before);
+    // I consigli del Coaching usano il tipo di team Qualunque (7e8f88c): il blocco non filtra più gli scambi
   });
 
   it('un team da C o D si può ancora ricostruire: lì i consigli possono cambiare tipo di team', () => {
