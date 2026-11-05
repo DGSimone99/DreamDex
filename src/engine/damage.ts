@@ -115,6 +115,9 @@ function tryPokemon(name: string, set: Target, options: HitOptions): Pokemon | n
       evs: set.evs,
       ivs: set.ivs,
       boosts: options.boosts,
+      // Protosynthesis / Quark Drive: la libreria li accende solo con questo campo. Statistica più alta ×1,3 (×1,5 la Velocità) con la
+      // Booster Energy o col sole / campo elettrico del calcolo (il campo dei compagni vale metà: vedi offense.ts)
+      boostedStat: 'auto',
       teraType: options.tera && set.teraType ? set.teraType as Pokemon['teraType'] : undefined,
       overrides: set.types || set.baseStats ? {
         ...(set.types ? { types: set.types as [Pokemon['types'][0]] } : {}),

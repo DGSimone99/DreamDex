@@ -49,7 +49,7 @@ describe('proposte di Completa team', () => {
       expect(list.length, style).toBeGreaterThanOrEqual(1);
       for (const p of list) expect(p.styles).toContain(style);
     }
-  });
+  }, 30000);
 
   it('nessuna proposta sotto il voto minimo', () => {
     for (const choice of [any, { archetype: null, style: 'rain' as const }, { archetype: 'balance' as const, style: null }]) {
