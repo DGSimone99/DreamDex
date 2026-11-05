@@ -192,9 +192,9 @@ describe('mancanze essenziali dei Ruoli tra le penalità', () => {
   it('tutti fisici: −3, una volta sola', () => {
     const texts = rateTeam(physical, fixtureData)!.penalty.items.filter(i => i.text === 'Nessun attaccante speciale');
     expect(texts).toEqual([expect.objectContaining({ text: 'Nessun attaccante speciale', points: 3 })]);
-    // Il coach lo segnala ancora tra i ruoli
+    // Il coach lo segnala ancora tra i ruoli (in National Dex OU, col recupero e la velocità, il team è un Bulky Offense)
     expect(coachTeam(physical, DEFAULT_FORMAT, fixtureData).problems)
-      .toContainEqual(expect.objectContaining({ category: 'roles', text: 'Nessun attaccante speciale' }));
+      .toContainEqual(expect.objectContaining({ category: 'roles', text: expect.stringContaining('Attaccante speciale') }));
   });
 
   it('Ubers senza hazard: nessun malus del formato', () => {

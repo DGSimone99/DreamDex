@@ -1,7 +1,7 @@
 import { battleSpecies, getMove, toID } from './dex';
 import { memberPower } from './power';
 import { detectRoles, hasSetup, isFast, isPassive, isStall, legacyRoles } from './roles';
-import { FAMILIES, primaryFamily, rolesList, setSubRoles, type SubRole, type SubRoleValues } from './subRoles';
+import { ATTACKER_ROLES, FAMILIES, primaryFamily, rolesList, setSubRoles, type SubRole, type SubRoleValues } from './subRoles';
 import type { FormatRules } from './formatRules';
 import type { TeamSet } from './sets';
 import { benefits, enables, type Condition } from './synergy';
@@ -37,8 +37,48 @@ const heals = (set: TeamSet) => set.moves.some(m => HEAL_MOVES.has(toID(m))) || 
 const fastOrSpeedSetup = (set: TeamSet) => isFast(set)
   || set.moves.some(m => { const move = getMove(m); return move?.category === 'Status' && move.target === 'self' && (move.boosts?.spe ?? 0) > 0; });
 
+/**
+ * Soglie della regola di National Dex OU (typeRule 'recoverySpeed'), sul punteggio
+ * membri con una mossa di recupero − velocità base media / 15 − Focus Sash: sotto la prima Hyper Offense, poi Bulky Offense,
+ * Balance e Semi-stall. Tarate il 2026-11-05 sui 102 team di National Dex OU del banco di cui l'autore ha scritto il tipo:
+ * 83% di giusti (80% su team lasciati fuori dalla taratura), contro il 74% della regola dei muri. Il recupero spinge verso
+ * la difesa; la velocità e la Focus Sash verso l'attacco. La robustezza media delle statistiche separava peggio di tutte:
+ * Garchomp e Mega Gardevoir sono robusti di natura ma attaccano. La Scarf e il meteo provati: peggio.
+ * Fra Balance e Semi-stall conta solo il recupero di chi non attacca: Dragonite con Dragon Dance e Roost o Gholdengo con
+ * Recover non rendono un Balance un Semi-stall (sul banco gli stessi giusti; il Balance Tusk, Gholdengo, Toxapex,
+ * Corviknight, Dragonite, Kingambit tornava Semi-stall). Per HO e BO conta tutto il recupero: tolto anche lì, peggio.
+ */
+const RECOVERY_SPEED_CUTS = { hyperOffense: -5.11, bulkyOffense: -3.69, balance: -1.31 };
+/** Il membro attacca (famiglia principale Attacco, o un sotto-ruolo d'attacco da almeno 0,5): il suo recupero non fa un muro. */
+function attacks(set: TeamSet, rules: FormatRules): boolean {
+  const values = setSubRoles(set, rules);
+  if (primaryFamily(set, values) === 'attack') return true;
+  return [...FAMILIES.attack, ...ATTACKER_ROLES].some(role => (values[role] ?? 0) >= 0.5);
+}
+
+/** Velocità base che vale un recupero nel punteggio. */
+const RECOVERY_SPEED_SCALE = 15;
+
+/** National Dex OU: il tipo dal recupero, dalla velocità base media e dalle Focus Sash; lo stall resta tutti e 6 passivi. */
+function recoverySpeedArchetype(team: TeamSet[], rules: FormatRules): Archetype {
+  if (isStall(team, rules)) return 'stall';
+  const healing = team.filter(set => set.moves.some(m => HEAL_MOVES.has(toID(m))));
+  const recovery = healing.length;
+  const speed = team.reduce((acc, set) => acc + (battleSpecies(set)?.baseStats.spe ?? 0), 0) / team.length;
+  const sashes = team.filter(set => toID(set.item) === 'focussash').length;
+  const speedPart = speed / RECOVERY_SPEED_SCALE + sashes;
+  const score = recovery - speedPart;
+  if (score < RECOVERY_SPEED_CUTS.hyperOffense) return 'hyperOffense';
+  if (score < RECOVERY_SPEED_CUTS.bulkyOffense) return 'bulkyOffense';
+  // Fra Balance e Semi-stall: solo il recupero di chi non attacca
+  const wallRecovery = healing.filter(set => !attacks(set, rules)).length;
+  if (wallRecovery - speedPart < RECOVERY_SPEED_CUTS.balance) return 'balance';
+  return 'semiStall';
+}
+
 /** Archetipo dal numero di muri passivi (e dal recupero e dalla robustezza per distinguere i team offensivi). */
 function archetypeOf(team: TeamSet[], rules: FormatRules): Archetype {
+  if (rules.typeRule === 'recoverySpeed') return recoverySpeedArchetype(team, rules);
   if (isStall(team, rules)) return 'stall';
   const passive = team.filter(set => isPassive(set, rules)).length;
   if (passive === 4 || passive === 5) return 'semiStall';

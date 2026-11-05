@@ -50,7 +50,7 @@ export function GradeBadge({ rating, ruleIssues = [], onOpen }: { rating: TeamRa
             { level: 'danger', text: t('rating.rulesBroken') },
             ...ruleIssues.map(text => ({ level: 'danger' as const, text })),
           ]} />}
-          <RatingHelp teamType={rating.teamType} trickRoom={rating.trickRoom} meta={rating.offense.coverageMeta !== null} />
+          <RatingHelp teamType={rating.teamType} trickRoom={rating.trickRoom} meta={rating.offense.coverageMeta !== null} weights={rating.weightTable} />
         </span>
       )}
       {/* Le tre aree, i Ruoli e Bonus/Malus: ogni riga porta alla sua scheda in Analisi */}

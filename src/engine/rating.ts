@@ -9,7 +9,7 @@ import { BALANCE_SPAN, resistPoints, typeSafety } from './typeSafety';
 export { BALANCE_SPAN, resistPoints, typeSafety };
 import type { Archetype } from './archetype';
 import { hasSpeedControl, isPassive, isStall } from './roles';
-import { rulesOf } from './formatRules';
+import { rulesOf, type FormatRules } from './formatRules';
 import type { TeamNeeds } from './needs';
 import { FAMILIES, type SubRoleValues } from './subRoles';
 import { ESSENTIAL_POINTS, IMPORTANT_POINTS, MINOR_POINTS, ONE_STYLE_POINTS, teamRolesArea, type TeamRoles } from './rolesArea';
@@ -40,6 +40,7 @@ const BASE_AREAS: BaseArea[] = ['defense', 'strength', 'speed'];
  * Un team incompleto si giudica come balance. Trick Room è una condizione della Velocità (speedArea.ts).
  */
 export const ARCHETYPE_WEIGHTS: Record<Archetype, Record<BaseArea, number>> = {
+  // Tutti i formati tranne National Dex OU (NATDEX_OU_WEIGHTS).
   // L'Offesa ha preso il peso della vecchia Coverage offensiva, la Difesa quello di Coverage difensiva e Robustezza.
   // 2026-10-31: Difesa dimezzata in HO, BO e balance. Sul banco la Difesa dà lo stesso numero ai team da torneo e a
   // quelli medi (75 contro 76: distingue solo i brutti), mentre Offesa, Ruoli e Velocità li separano; col peso spostato
@@ -54,6 +55,28 @@ export const ARCHETYPE_WEIGHTS: Record<Archetype, Record<BaseArea, number>> = {
   semiStall: { defense: 57, strength: 33, speed: 10 },
   stall: { defense: 65, strength: 25, speed: 10 },
 };
+
+export type AreaWeightTable = Record<Archetype, Record<BaseArea, number>>;
+
+/**
+ * National Dex OU (typeRule 'recoverySpeed', 2026-11-05), col tipo riconosciuto dal recupero e dalla velocità:
+ * una scala regolare, perché due tipi vicini hanno pesi vicini e uno sbaglio di un passo costa poco (prima la Difesa
+ * saltava da 20 a 40 fra BO e Balance). Sul banco fra torneo e ladder cambia solo la Difesa (68 contro 61, anche negli HO),
+ * ma nelle partite vere vince più spesso chi ha più Offesa: una via di mezzo. Separazione torneo/ladder da 1,00 a 1,16,
+ * dentro lo stesso tipo da 1,11 a 1,23, partite vere 54,4% → 54,5%; A o S fra i team da torneo HO 60%, BO 59%, Balance 68%.
+ * La Velocità scende regolare (30/25/15/10/10): un HO vince soprattutto perché è veloce.
+ */
+export const NATDEX_OU_WEIGHTS: AreaWeightTable = {
+  hyperOffense: { defense: 20, strength: 50, speed: 30 },
+  bulkyOffense: { defense: 30, strength: 45, speed: 25 },
+  balance: { defense: 45, strength: 40, speed: 15 },
+  semiStall: { defense: 55, strength: 35, speed: 10 },
+  stall: { defense: 65, strength: 25, speed: 10 },
+};
+
+/** I pesi delle aree del formato: quelli di National Dex OU con la sua regola dei tipi, altrimenti quelli di sempre. */
+export const areaWeightTable = (rules: FormatRules): AreaWeightTable =>
+  rules.typeRule === 'recoverySpeed' ? NATDEX_OU_WEIGHTS : ARCHETYPE_WEIGHTS;
 
 
 
@@ -134,6 +157,8 @@ export interface TeamRating {
   meta: MetaScore | null;
   /** Peso di ogni area nel voto (somma 1); il Meta non pesa, è una penalità. */
   weights: Partial<Record<AreaKey, number>>;
+  /** La tabella dei pesi per tipo usata dal formato (per la guida del voto). */
+  weightTable: AreaWeightTable;
   /** Offesa: danno vero dei set contro i difensori del formato, con le sottostatistiche per membro. */
   offense: TeamOffense;
   /** Difesa: robustezza, sostenibilità e coverage difensiva di tipi e del meta, con le sottostatistiche per membro. */
@@ -430,7 +455,8 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it', o
   const defense = teamDefense(team, data);
   const trickRoom = team.some(set => set.moves.some(move => toID(move) === 'trickroom'));
   // I pesi dal tipo di team (un team incompleto si giudica come balance)
-  const table = ARCHETYPE_WEIGHTS[analysis.needs.archetype];
+  const weightTable = areaWeightTable(rules);
+  const table = weightTable[analysis.needs.archetype];
   // Trick Room non azzera più la Velocità: è una sua condizione (speedArea.ts), che premia i membri lenti
   const effective: Record<BaseArea, number> = table;
   // Velocità: ogni membro coi guadagni suoi e del controllo del team (speedArea.ts); col meta contro i più usati
@@ -493,7 +519,7 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it', o
   return {
     base, teraCap: rules.teraBonusCap, penalty, bonus, memberPoints, power: power.members, overall, ...gradeFor(overall, lang), provisional: team.length < 6, areas, archetype, meta,
     teamType: analysis.needs.archetype, trickRoom, needs: analysis.needs,
-    weights: areaWeights, offense, defense, speed, roles,
+    weights: areaWeights, weightTable, offense, defense, speed, roles,
   };
 }
 

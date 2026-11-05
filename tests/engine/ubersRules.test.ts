@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { teamArchetype } from '../../src/engine/archetype';
 import { archetypeLock, coachTeam } from '../../src/engine/coach';
 import type { EngineData } from '../../src/engine/data';
-import { DEFAULT_RULES, formatRules, UBERS_RULES } from '../../src/engine/formatRules';
+import { DEFAULT_RULES, formatRules, NATDEX_OU_RULES, UBERS_RULES } from '../../src/engine/formatRules';
 import { rateTeam } from '../../src/engine/rating';
 import { detectRoles, legacyWall } from '../../src/engine/roles';
 import { emptySet, mostCommonSet, type TeamSet } from '../../src/engine/sets';
@@ -16,9 +16,10 @@ const ferrothorn = set('Ferrothorn', 'Leftovers', 'Iron Barbs', ['Spikes', 'Leec
 const giratina = set('Giratina-Origin', 'Griseous Core', 'Levitate', ['Defog', 'Will-O-Wisp', 'Poltergeist', 'Shadow Sneak']);
 
 describe('regole di Ubers', () => {
-  it('solo Ubers ha regole proprie', () => {
+  it('Ubers ha regole proprie; National Dex OU solo la regola dei tipi di team', () => {
     expect(formatRules('ubers')).toBe(UBERS_RULES);
-    expect(formatRules('ou')).toBe(DEFAULT_RULES);
+    expect(formatRules('ou')).toBe(NATDEX_OU_RULES);
+    expect(NATDEX_OU_RULES).toEqual({ ...DEFAULT_RULES, typeRule: 'recoverySpeed' });
     expect(formatRules(undefined)).toBe(DEFAULT_RULES);
   });
 
