@@ -70,7 +70,10 @@
 .off-general .og-band i.ok-ohko { background: color-mix(in srgb, var(--good) 70%, var(--panel)); border-color: var(--good); }
 .off-general .og-band i.ok-full { background: color-mix(in srgb, var(--good) 30%, var(--panel)); border-color: var(--good); }
 .off-general .og-band i.ok-half { background: color-mix(in srgb, var(--warn) 26%, var(--panel)); border-color: var(--warn); }
-.off-general .og-points, .off-general .og-meta, .off-general .og-own { cursor: help; }
+.off-general .og-points, .off-general .og-meta, .off-general .og-own, .off-general .og-score, .off-general .og-metacell { cursor: help; }
+.off-general .og-score { font-weight: 700; color: var(--text); margin-right: 4px; }
+.off-general .og-metacell { display: inline-flex; align-items: baseline; gap: 10px; }
+.off-general .og-metacell .og-meta { color: var(--muted); font-size: 12px; }
 .off-general .og-strength { display: inline-flex; align-items: baseline; gap: 8px; }
 .off-general .og-own { color: var(--muted); font-weight: 600; }
 .off-general tfoot .og-total th { padding: 8px 8px 0 0; font: 600 11px/1 var(--ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); text-align: left; }

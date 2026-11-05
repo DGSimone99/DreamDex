@@ -38,8 +38,8 @@ describe("dettaglio dell'Offesa a schede", () => {
     for (const row of rows) {
       const cells = within(row).getAllByRole('cell');
       // I tipi per fascia, i bersagli del meta mandati KO in due colpi, i punti che il membro porta
-      expect(cells[0]).toHaveTextContent(/^OHKO \d+Forti \d+Contano \d+$/);
-      expect(cells[1]).toHaveTextContent(/^\d+\/\d+$/);
+      expect(cells[0]).toHaveTextContent(/^\d+OHKO \d+Forti \d+Contano \d+$/);
+      expect(cells[1]).toHaveTextContent(/^\d+\d+\/\d+$/);
       expect(cells[2]).toHaveTextContent(/^\d+\+\d+$/);
     }
     // La riga Totale coi voti del team

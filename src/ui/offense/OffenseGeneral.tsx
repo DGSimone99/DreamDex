@@ -7,10 +7,11 @@ import { MemberMon } from '../defense/MemberMon';
 import { offenseSlots } from './slots';
 
 /** I tipi del membro per fascia, coi colori della scheda Coverage tipi: KO in un colpo, forti (oltre 66%), contano (oltre 33%). */
-function TypeBands({ share }: { share: MemberShare }) {
+function TypeBands({ share, score }: { share: MemberShare; score: number }) {
   const t = useT();
   return (
     <span className="def-cell og-bands">
+      <span className="def-num og-score" title={t('odetail.gen.typesTitle', { n: score })}>{score}</span>
       <span className="og-band"><i className="ok-ohko" aria-hidden="true" />{t('odetail.gen.ohko', { n: share.types.ohko })}</span>
       <span className="og-band"><i className="ok-full" aria-hidden="true" />{t('odetail.gen.strong', { n: share.types.strong })}</span>
       <span className="og-band"><i className="ok-half" aria-hidden="true" />{t('odetail.gen.counts', { n: share.types.counts })}</span>
@@ -19,8 +20,8 @@ function TypeBands({ share }: { share: MemberShare }) {
 }
 
 /**
- * La scheda Generale dell'Offesa, nella stessa cornice della Difesa (`def-frame`). Per ogni membro: i tipi per fascia, i
- * bersagli del meta che manda KO in due colpi e i punti che porta davvero all'Offesa (sommati fanno il voto del team).
+ * La scheda Generale dell'Offesa, nella stessa cornice della Difesa (`def-frame`). Per ogni membro, come nella riga Totale: il voto tipi coi tipi per
+ * fascia, il voto meta coi bersagli del meta che manda KO in due colpi e i punti che porta davvero all'Offesa (sommati fanno il voto del team).
  * In fondo la riga Totale coi voti del team. Le righe seguono il team; chi il motore ha scartato resta con "—".
  */
 export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; meta: boolean; ctx: AreaContext }) {
@@ -59,11 +60,18 @@ export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; m
                   <th scope="row"><MemberMon name={name} set={set} stats="offense" /></th>
                   {m && s
                     ? <>
-                      <td><TypeBands share={s} /></td>
-                      {meta && <td><span className="def-num og-meta" title={t('odetail.gen.metaTitle', { n: s.meta?.covered ?? 0, total: s.meta?.total ?? 0 })}>{s.meta?.covered ?? 0}/{s.meta?.total ?? 0}</span></td>}
+                      <td><TypeBands share={s} score={m.value} /></td>
+                      {meta && (
+                        <td>
+                          <span className="og-metacell" title={t('odetail.gen.metaTitle', { n: s.meta?.covered ?? 0, total: s.meta?.total ?? 0, score: m.coverMeta ?? 0 })}>
+                            <span className="def-num og-score">{m.coverMeta ?? 0}</span>
+                            <span className="og-meta">{s.meta?.covered ?? 0}/{s.meta?.total ?? 0}</span>
+                          </span>
+                        </td>
+                      )}
                       <td>
                         <span className="og-strength">
-                          <span className="def-num og-own" title={t('odetail.gen.ownTitle', { n: m.total })}>{m.total}</span>
+                          <span className="def-num og-own" title={m.coverMeta === null ? t('odetail.gen.ownTitleNoMeta', { n: m.total }) : t('odetail.gen.ownTitle', { types: m.value, meta: m.coverMeta, n: m.total })}>{m.total}</span>
                           <span className="def-num og-points" title={pointsTitle(m, s)}>+{s.points}</span>
                         </span>
                       </td>

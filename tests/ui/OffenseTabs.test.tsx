@@ -163,6 +163,18 @@ describe('Offesa: Generale', () => {
     });
   });
 
+  it('ogni riga si legge come il Totale: voto tipi, voto meta e come fanno il voto del membro', () => {
+    const rating = withMeta();
+    renderIt(<AreaView rating={rating} area="strength" team={team} analysis={analyzeTeam(team, fixtureData)} problems={[]} />);
+    const rows = document.querySelectorAll('.def-members tbody tr');
+    rating.offense.members.forEach((m, i) => {
+      const cells = rows[i].querySelectorAll('td');
+      expect(cells[0].querySelector('.og-score')!.textContent).toBe(String(m.value));
+      expect(cells[1].querySelector('.og-score')!.textContent).toBe(String(m.coverMeta));
+      expect(cells[2].querySelector('.og-own')!.getAttribute('title')).toContain(`70% di ${m.value} + 30% di ${m.coverMeta} = ${m.total}`);
+    });
+  });
+
   it('il titolo dei punti dice che setup e Tera sono già dentro', () => {
     const t = [{ ...emptySet('Kingambit'), ability: 'Supreme Overlord', item: 'Black Glasses', moves: ['Swords Dance', 'Kowtow Cleave', 'Sucker Punch', 'Iron Head'], evs: { hp: 252, atk: 252 }, teraType: 'Dark' }];
     const gen9 = { ...fixtureData, formatId: 'gen9ou' as const };
