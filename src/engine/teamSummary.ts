@@ -3,7 +3,7 @@ import type { Coaching } from './coach';
 import { teamCores, type Core } from './cores';
 import type { EngineData } from './data';
 import { battleName, getMove, toID } from './dex';
-import { rulesOf } from './formatRules';
+import { rulesOf, type FormatRules } from './formatRules';
 import type { DashboardData } from './overviewDashboard';
 import type { TeamRating } from './rating';
 import type { TeamSet } from './sets';
@@ -27,6 +27,8 @@ export interface ConditionRow { member: string; label: string; key: string; user
 export interface HazardRow { member: string; moves: string[] }
 export interface TeamSummary {
   archetype: Archetype | null;
+  /** Come il formato riconosce il tipo di team (la guida "Tipi di team" spiega la regola di National Dex OU). */
+  typeRule: FormatRules['typeRule'];
   styles: TeamStyle[];
   attackers: string[];
   walls: string[];
@@ -73,6 +75,7 @@ export function teamSummary(team: TeamSet[], rating: TeamRating, coaching: Coach
 
   return {
     archetype: coaching.teamType?.archetype ?? null,
+    typeRule: rules.typeRule,
     styles: coaching.teamType?.styles ?? [],
     attackers,
     walls,
