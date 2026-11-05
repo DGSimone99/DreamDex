@@ -61,7 +61,12 @@ export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; m
                     ? <>
                       <td><TypeBands share={s} /></td>
                       {meta && <td><span className="def-num og-meta" title={t('odetail.gen.metaTitle', { n: s.meta?.covered ?? 0, total: s.meta?.total ?? 0 })}>{s.meta?.covered ?? 0}/{s.meta?.total ?? 0}</span></td>}
-                      <td><span className="def-num og-points" title={pointsTitle(m, s)}>+{s.points}</span></td>
+                      <td>
+                        <span className="og-strength">
+                          <span className="def-num og-own" title={t('odetail.gen.ownTitle', { n: m.total })}>{m.total}</span>
+                          <span className="def-num og-points" title={pointsTitle(m, s)}>+{s.points}</span>
+                        </span>
+                      </td>
                     </>
                     : <><td>—</td>{meta && <td>—</td>}<td>—</td></>}
                 </tr>

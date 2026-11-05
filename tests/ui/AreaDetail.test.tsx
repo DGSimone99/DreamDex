@@ -40,7 +40,7 @@ describe("dettaglio dell'Offesa a schede", () => {
       // I tipi per fascia, i bersagli del meta mandati KO in due colpi, i punti che il membro porta
       expect(cells[0]).toHaveTextContent(/^OHKO \d+Forti \d+Contano \d+$/);
       expect(cells[1]).toHaveTextContent(/^\d+\/\d+$/);
-      expect(cells[2]).toHaveTextContent(/^\+\d+$/);
+      expect(cells[2]).toHaveTextContent(/^\d+\+\d+$/);
     }
     // La riga Totale coi voti del team
     expect(table.querySelector('tfoot tr')).toHaveTextContent(/^Totale\d+\d+\d+$/);

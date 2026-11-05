@@ -153,6 +153,16 @@ describe('Offesa: Generale', () => {
     expect(document.querySelector('.def-general')!.textContent).not.toContain('NaN');
   });
 
+  it("la colonna Offesa mostra il voto del membro da solo accanto ai punti che porta", () => {
+    const rating = withMeta();
+    renderIt(<AreaView rating={rating} area="strength" team={team} analysis={analyzeTeam(team, fixtureData)} problems={[]} />);
+    const cells = document.querySelectorAll('.def-members tbody tr td:last-child');
+    rating.offense.members.forEach((m, i) => {
+      expect(cells[i].querySelector('.og-own')!.textContent).toBe(String(m.total));
+      expect(cells[i].querySelector('.og-points')!.textContent).toBe(`+${rating.offense.shares[i].points}`);
+    });
+  });
+
   it('il titolo dei punti dice che setup e Tera sono già dentro', () => {
     const t = [{ ...emptySet('Kingambit'), ability: 'Supreme Overlord', item: 'Black Glasses', moves: ['Swords Dance', 'Kowtow Cleave', 'Sucker Punch', 'Iron Head'], evs: { hp: 252, atk: 252 }, teraType: 'Dark' }];
     const gen9 = { ...fixtureData, formatId: 'gen9ou' as const };
