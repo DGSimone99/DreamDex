@@ -66,7 +66,11 @@ const setsUp = (set: TeamSet, condition: Condition) => enables(set).some(e => e.
 const uses = (set: TeamSet, condition: Condition) => benefits(set).some(b => b.condition === condition && toID(b.via) !== 'weatherball');
 const FIT: Partial<Record<Archetype, FitArchetype>> = { stall: 'stall', semiStall: 'stall', hyperOffense: 'hyperOffense', bulkyOffense: 'bulkyOffense' };
 
-/** Muri passivi da raggiungere per tipo (come li conta teamArchetype): Stall 6, Semi-Stall 4–5, Balance 3, Offense nessuno. */
+/**
+ * Muri passivi da raggiungere per tipo (come li conta la regola dei muri di teamArchetype): Stall 6, Semi-Stall 4–5,
+ * Balance 3, Offense nessuno. In National Dex OU il tipo si riconosce dal recupero e dalla velocità: la quota resta la
+ * strada per costruire, e matchesChoice controlla il tipo con la regola del formato.
+ */
 const PASSIVE_QUOTA: Record<Archetype, number> = { stall: 6, semiStall: 4, balance: 3, hyperOffense: 0, bulkyOffense: 0 };
 /** Un Pokémon si distingue per forma in battaglia: Charizard, Charizard-Mega-X e Charizard-Mega-Y sono tre Pokémon. */
 const formeId = (set: TeamSet) => toID(battleName(set));

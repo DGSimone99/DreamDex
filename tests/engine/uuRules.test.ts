@@ -4,7 +4,7 @@ import type { EngineData } from '../../src/engine/data';
 import { getSpecies, initTiers, natDexTier } from '../../src/engine/dex';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
 import { isLegalIn } from '../../src/engine/formats';
-import { DEFAULT_RULES, formatRules, UU_RULES } from '../../src/engine/formatRules';
+import { DEFAULT_RULES, formatRules, NATDEX_OU_RULES, UU_RULES } from '../../src/engine/formatRules';
 import { memberPower, teamPower } from '../../src/engine/power';
 import { rateTeam } from '../../src/engine/rating';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
@@ -71,9 +71,9 @@ describe('regole di UU', () => {
     set('Excadrill', 'Leftovers', 'Mold Breaker', ['Swords Dance', 'Earthquake', 'Iron Head', 'Rapid Spin']),
   ];
 
-  it('UU ha le sue regole, OU quelle di sempre', () => {
+  it('UU ha le sue regole, OU le sue', () => {
     expect(formatRules('uu')).toBe(UU_RULES);
-    expect(formatRules('ou')).toBe(DEFAULT_RULES);
+    expect(formatRules('ou')).toBe(NATDEX_OU_RULES);
   });
 
   it('un team completo senza hazard non ha un malus del formato in UU: gli hazard li chiedono i Ruoli', () => {
