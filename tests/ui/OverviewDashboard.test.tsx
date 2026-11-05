@@ -58,7 +58,7 @@ function sample(overrides: Partial<DashboardData> = {}): DashboardData {
 /** Il Riassunto costruito: Hyper Offense, due attaccanti, un muro, nessun meteo, Stealth Rock. */
 function summaryOf(overrides: Partial<TeamSummary> = {}): TeamSummary {
   return {
-    archetype: 'hyperOffense', styles: [],
+    archetype: 'hyperOffense', typeRule: 'recoverySpeed', styles: [],
     attackers: ['Garchomp', 'Zapdos'], walls: ['Toxapex'],
     offenseOf: { Garchomp: 92, Zapdos: 86 },
     defenseOf: { Toxapex: 88 },
@@ -345,7 +345,16 @@ describe('Riassunto', () => {
     expect(arch).toHaveAttribute('title', 'Tutto attacco, pochi o nessun muro');
     expect(region().querySelector('.sum-style')).toHaveTextContent('Pioggia');
     await user.click(within(region()).getByRole('button', { name: 'Tipi di team: come si riconoscono' }));
-    expect(screen.getByRole('dialog', { name: 'Tipi di team' })).toBeInTheDocument();
+    const dialog = screen.getByRole('dialog', { name: 'Tipi di team' });
+    // National Dex OU: come si riconosce il tipo (recupero, velocità, Focus Sash)
+    expect(within(dialog).getByRole('heading', { name: 'Come si riconosce in National Dex OU' })).toBeInTheDocument();
+    expect(dialog).toHaveTextContent('Ogni Focus Sash spinge verso Hyper Offense');
+    await user.keyboard('{Escape}');
+    cleanup();
+    // Gli altri formati riconoscono il tipo dai muri: la sezione non c'è
+    mount({ summary: summaryOf({ typeRule: 'walls' }) });
+    await user.click(within(region()).getByRole('button', { name: 'Tipi di team: come si riconoscono' }));
+    expect(within(screen.getByRole('dialog', { name: 'Tipi di team' })).queryByRole('heading', { name: 'Come si riconosce in National Dex OU' })).toBeNull();
     await user.keyboard('{Escape}');
     cleanup();
     mount({ summary: summaryOf({ archetype: null }) });
