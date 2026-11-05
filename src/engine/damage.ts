@@ -126,10 +126,19 @@ function buildPokemon(set: Target, options: HitOptions, role: 'attacker' | 'defe
   return null;
 }
 
+/**
+ * L'abilità per la libreria. Tera Shell (Terapagos-Terastal) rende poco efficace ogni colpo solo a PS pieni: Offesa e
+ * Difesa misurano colpi ripetuti, quindi conta come un'abilità senza effetto sul danno.
+ */
+function calcAbility(set: Target): string | undefined {
+  const ability = battleAbility(set);
+  return toID(ability) === 'terashell' ? 'Pressure' : ability || undefined;
+}
+
 function tryPokemon(name: string, set: Target, options: HitOptions): Pokemon | null {
   try {
     return new Pokemon(gen, name, {
-      ability: battleAbility(set) || undefined,
+      ability: calcAbility(set),
       item: set.item || undefined,
       nature: set.nature || undefined,
       evs: set.evs,
