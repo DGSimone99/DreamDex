@@ -90,6 +90,7 @@ export function OffenseGuideSection({ section, offense, meta, formatId = DEFAULT
           [<>{t('detail.coverageTypes')}{pct(num(types))}</>, g('what.types')],
           ...(meta ? [[<>{t('detail.coverageMeta')}{pct(num(pctOf(OFFENSE_SHARES.meta)))}</>, g('what.meta')] as [ReactNode, string]] : []),
         ]} />
+        {lines([g('what.sum')])}
       </>
     );
   }

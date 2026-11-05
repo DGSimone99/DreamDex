@@ -1,5 +1,5 @@
 import { usesMeta } from './analysis';
-import { coverageTargets, teamCoverage, type CoverageRow } from './coverage';
+import { coverageTargets, META_DEPTH, teamCoverage, type CoverageRow } from './coverage';
 import { bestHit, setKey, type FieldCondition, type Hit, type HitOptions, type Target } from './damage';
 import type { EngineData } from './data';
 import { defenderPanel, isDefensiveSet } from './defenders';
@@ -128,6 +128,50 @@ export interface TeamOffense {
   setupGain: number;
   setters: { species: string; move: string }[];
   members: MemberOffense[];
+  /** Per ogni membro (ordine di `members`): cosa copre e quanto porta davvero al voto; i `points` sommati fanno `value`. */
+  shares: MemberShare[];
+}
+
+/** Il membro nella Generale: i tipi per fascia (senza doppioni), i bersagli del meta mandati KO in due colpi, i punti che porta. */
+export interface MemberShare {
+  species: string;
+  /** Su 18: KO in un colpo, forti (oltre il 66%, senza KO), contano (oltre il 33%, sotto il 66%). */
+  types: { ohko: number; strong: number; counts: number };
+  /** null senza meta. */
+  meta: { covered: number; total: number } | null;
+  /** Punti di Offesa che porta al team: 70% di quanto porta ai tipi + 30% di quanto porta al meta (senza meta solo i tipi). */
+  points: number;
+}
+
+/**
+ * Quanto porta ogni membro su un bersaglio con la profondità: il 1° prende il primo peso, il 2° il secondo…; a pari credito
+ * i membri si dividono i pesi dei loro posti (due set uguali portano uguale). Il totale è la profondità del bersaglio.
+ */
+function depthShares(credits: number[], depth: number[]): number[] {
+  const order = credits.map((c, k) => ({ c, k })).sort((a, b) => b.c - a.c);
+  const out = credits.map(() => 0);
+  for (let i = 0; i < order.length;) {
+    let j = i;
+    while (j < order.length && order[j].c === order[i].c) j++;
+    const weight = depth.slice(i, j).reduce((a, w) => a + w, 0) / (j - i);
+    for (let k = i; k < j; k++) out[order[k].k] = weight * order[k].c;
+    i = j;
+  }
+  return out;
+}
+
+/** Arrotonda i punti in modo che la somma faccia esattamente `total` (si danno i punti mancanti ai resti più grandi). */
+function roundToTotal(raw: number[], total: number): number[] {
+  const floors = raw.map(Math.floor);
+  let missing = total - floors.reduce((a, b) => a + b, 0);
+  const byRest = raw.map((x, k) => ({ k, rest: x - Math.floor(x) })).sort((a, b) => b.rest - a.rest);
+  const out = [...floors];
+  // Di solito manca o avanza un punto; il giro si ripete solo se ne mancano più dei membri
+  for (let n = 0; missing !== 0 && n < 10 * raw.length; n++) {
+    const k = byRest[n % raw.length].k;
+    if (missing > 0) { out[k]++; missing--; } else if (out[k] > 0) { out[k]--; missing++; }
+  }
+  return out;
 }
 
 /** Valore del colpo migliore contro un difensore: 0, 0,5 (3HKO), 1 (2HKO) o 1,5 (OHKO sicuro; mai per le mosse OHKO, che possono mancare). */
@@ -433,5 +477,33 @@ export function teamOffense(team: TeamSet[], data: EngineData): TeamOffense {
     setupGain: value - withoutSetup,
     setters: members.filter(m => m.setupMove).map(m => ({ species: m.species, move: m.setupMove! })),
     members,
+    shares: memberShares(members, labels.length, metaCoverage?.rows ?? null, value),
   };
+}
+
+/**
+ * Cosa copre e quanto porta ogni membro. Tipi: per ogni bersaglio la sua parte della profondità 50/30/20, poi la media.
+ * Meta: lo stesso coi bersagli del meta (credito pieno a chi lo manda KO in due colpi), pesati per uso.
+ * I punti sommati fanno l'Offesa del team.
+ */
+function memberShares(members: MemberOffense[], targets: number, metaRows: CoverageRow[] | null, value: number): MemberShare[] {
+  const typePart = members.map(() => 0);
+  for (let i = 0; i < targets; i++) depthShares(members.map(m => m.hits[i].credit), OFFENSE_DEPTH).forEach((x, k) => { typePart[k] += (100 * x) / targets; });
+  const metaPart = members.map(() => 0);
+  for (const row of metaRows ?? []) {
+    const credits = members.map(m => (row.coveredBy.some(c => c.species === m.species) ? 1 : 0));
+    depthShares(credits, META_DEPTH).forEach((x, k) => { metaPart[k] += 100 * row.weight * x; });
+  }
+  const raw = members.map((_, k) => (metaRows ? OFFENSE_SHARES.types * typePart[k] + OFFENSE_SHARES.meta * metaPart[k] : typePart[k]));
+  const points = roundToTotal(raw, value);
+  return members.map((m, k) => ({
+    species: m.species,
+    types: {
+      ohko: m.hits.filter(h => h.credit >= 1).length,
+      strong: m.hits.filter(h => h.credit >= 0.5 && h.credit < 1).length,
+      counts: m.hits.filter(h => h.credit > 0 && h.credit < 0.5).length,
+    },
+    meta: metaRows && { covered: metaRows.filter(r => r.coveredBy.some(c => c.species === m.species)).length, total: metaRows.length },
+    points: points[k],
+  }));
 }
