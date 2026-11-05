@@ -64,15 +64,19 @@
 .guide-targets td { min-width: 4ch; color: var(--text); }
 
 /* Generale dell'Offesa: tre barre col numero; a squadra chiusa sotto le barre i dettagli (tipi per fascia, meta, punti al team) */
+/* Il posto del numero tiene anche il "%" del meta (e il 100%): le tre colonne restano allineate */
+.off-general .def-cell { grid-template-columns: 150px 4.5ch; }
+.off-general.roomy .def-cell { grid-template-columns: minmax(0, 1fr) 4.5ch; }
 .off-general .og-stack { display: block; cursor: help; }
-.off-general .og-detail { display: flex; flex-wrap: wrap; gap: 2px 10px; margin-top: 4px; font: 600 12px/1.2 var(--ui); color: var(--muted); }
-.off-general .og-detail b { color: var(--text); }
-.off-general .og-band { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
-.off-general .og-band i { width: 10px; height: 10px; border-radius: 3px; border: 1px solid var(--line); background: var(--raised); }
-.off-general .og-band i.ok-ohko { background: color-mix(in srgb, var(--good) 70%, var(--panel)); border-color: var(--good); }
-.off-general .og-band i.ok-full { background: color-mix(in srgb, var(--good) 30%, var(--panel)); border-color: var(--good); }
-.off-general .og-band i.ok-half { background: color-mix(in srgb, var(--warn) 26%, var(--panel)); border-color: var(--warn); }
-.off-general .og-points { cursor: help; }
-.off-general.roomy .def-members td { padding-top: 6px; padding-bottom: 6px; }
-.off-general tfoot .og-total th { padding: 8px 8px 0 0; font: 600 11px/1 var(--ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); text-align: left; }
-.off-general tfoot .og-total td { padding-top: 8px; font: 700 15px/1 var(--ui); color: var(--text); border-top: 1px solid var(--line); }
+.off-general .og-detail { display: flex; flex-wrap: wrap; align-items: center; gap: 3px 12px; margin-top: 6px; font: 600 12px/1.2 var(--ui); color: var(--muted); }
+.off-general .og-band { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.off-general .og-band i { width: 9px; height: 9px; border-radius: 2px; border: 1px solid var(--line); background: var(--raised); }
+.off-general .og-band i.ok-ohko { background: var(--good); border-color: var(--good); }
+.off-general .og-band i.ok-full { background: color-mix(in srgb, var(--good) 35%, var(--panel)); border-color: var(--good); }
+.off-general .og-band i.ok-half { background: color-mix(in srgb, var(--warn) 30%, var(--panel)); border-color: var(--warn); }
+/* Quanto porta al team: la pillola nel colore dell'Offesa */
+.off-general .og-points { padding: 2px 7px; border-radius: 2px; background: var(--accent-2-soft); color: var(--accent-2-ink); font: italic 700 13px/1 var(--display); font-variant-numeric: tabular-nums; cursor: help; }
+.off-general.roomy .def-members td { padding-top: 8px; padding-bottom: 8px; }
+/* Team Coverage: la riga del team come una fascia a sé, con la riga sopra per tutta la larghezza */
+.off-general tfoot .og-total > * { padding-top: 12px; padding-bottom: 12px; border-top: 1px solid var(--accent-2-soft); border-bottom: 0; background: color-mix(in srgb, var(--accent-2) 6%, transparent); }
+.off-general tfoot .og-total th { padding-left: 12px; font: italic 700 14px/1 var(--display); text-transform: uppercase; letter-spacing: 0.03em; color: var(--accent-2-ink); text-align: left; white-space: nowrap; }

@@ -69,7 +69,7 @@ export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; m
                       </td>
                       {meta && (
                         <td>
-                          <span className="og-stack" title={t('odetail.gen.metaTitle', { n: s.meta?.covered ?? 0, total: s.meta?.total ?? 0, score: m.coverMeta ?? 0 })}><Bar value={m.coverMeta ?? 0} /></span>
+                          <span className="og-stack" title={t('odetail.gen.metaTitle', { n: s.meta?.covered ?? 0, total: s.meta?.total ?? 0, score: m.coverMeta ?? 0 })}><Bar value={m.coverMeta ?? 0} unit="%" /></span>
                           {roomy && <span className="og-detail og-meta">{t('odetail.gen.metaCount', { n: s.meta?.covered ?? 0, total: s.meta?.total ?? 0 })}</span>}
                         </td>
                       )}
@@ -87,7 +87,7 @@ export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; m
             <tr className="og-total">
               <th scope="row">{t('odetail.gen.total')}</th>
               <td><Bar value={offense.types.value} total /></td>
-              {meta && <td><Bar value={offense.coverageMeta?.value ?? 0} total /></td>}
+              {meta && <td><Bar value={offense.coverageMeta?.value ?? 0} unit="%" total /></td>}
               <td><Bar value={offense.value} total /></td>
             </tr>
           </tfoot>

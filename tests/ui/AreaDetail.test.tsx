@@ -38,10 +38,11 @@ describe("dettaglio dell'Offesa a schede", () => {
     for (const row of rows) {
       const cells = within(row).getAllByRole('cell');
       // Tre barre col numero: voto tipi, voto meta, voto del membro (i dettagli solo a squadra chiusa)
-      for (const cell of cells) expect(cell).toHaveTextContent(/^\d+$/);
+      for (const cell of cells) expect(cell).toHaveTextContent(/^\d+%?$/);
+      expect(cells[1]).toHaveTextContent(/%$/);
     }
     // La riga Totale coi voti del team
-    expect(table.querySelector('tfoot tr')).toHaveTextContent(/^Team Coverage\d+\d+\d+$/);
+    expect(table.querySelector('tfoot tr')).toHaveTextContent(/^Team Coverage\d+\d+%\d+$/);
   });
 
   it('Coverage tipi: i 18 tipi, i buchi e quanto li colpisce ogni membro', async () => {
