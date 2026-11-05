@@ -17,6 +17,7 @@ import { teamSpeedArea, type TeamSpeed } from './speedArea';
 import { strengthComponent } from './scoring';
 import { usageOf } from './stats';
 import type { TeamSet } from './sets';
+import { lockedStatusMoves, withUsableMoves } from './lockedMoves';
 import { t, type Lang } from '../i18n';
 import { gameName, typeName } from '../i18n/game';
 import { effectiveness, superEffectiveMoves, teamField, TYPES } from './types';
@@ -108,7 +109,7 @@ export interface RatingArea {
 
 /** Chiave della voce del catalogo bonus/malus a cui appartiene una voce del voto. */
 export type CatalogKey = 'sharedWeak' | 'sameType' | 'hazardDuplicate' | 'removers' | 'weatherClash' | 'weakenedMove' | 'unmetCondition' | 'unusedEnabler'
-  | 'weakMember' | 'essentialRole' | 'importantRole' | 'oneStyle' | 'trickRoomFast'
+  | 'weakMember' | 'lockedStatus' | 'essentialRole' | 'importantRole' | 'oneStyle' | 'trickRoomFast'
   | 'coreTrio' | 'minorRole' | 'weakCovered' | 'typeVariety' | 'conditionUsed' | 'weatherHelp' | 'tera';
 
 export interface Redundancy {
@@ -282,6 +283,21 @@ export function memberIssues(team: TeamSet[], lang: Lang, needs: TeamNeeds): Red
 }
 
 /**
+ * Choice o Assault Vest con mosse di stato che non servono (lockedMoves.ts): −2 per membro. Le mosse valgono già come
+ * se non ci fossero; il malus segnala la combinazione che non ha senso (scelta dell'utente 2026-11-05).
+ */
+export const LOCKED_STATUS_POINTS = 2;
+
+export function lockedStatusIssues(team: TeamSet[], lang: Lang): Redundancy[] {
+  return team.flatMap(set => {
+    const locked = lockedStatusMoves(set);
+    if (!locked.length) return [];
+    const moves = locked.map(m => gameName('move', m, lang)).join(', ');
+    return [{ text: t(lang, 'rating.redundancy.lockedStatus', { member: battleName(set), item: gameName('item', set.item, lang), moves }), points: LOCKED_STATUS_POINTS, catalog: 'lockedStatus' as const }];
+  });
+}
+
+/**
  * Debolezze condivise: 1 punto per ogni membro debole oltre il primo, solo sui tipi a cui nessuno nel team resiste:
  * un membro che resiste è il cambio normale su quella debolezza (2026-10-30: "3 deboli, 1 resiste" colpiva metà dei
  * team da torneo). Tolte e poi rimesse dall'utente il 2026-10-25 dopo il bench: portano il distacco tra torneo e medi.
@@ -435,8 +451,10 @@ export interface RateOptions {
   archetype?: Archetype;
 }
 
-export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it', opts: RateOptions = {}): TeamRating | null {
-  if (team.length === 0) return null;
+export function rateTeam(input: TeamSet[], data: EngineData, lang: Lang = 'it', opts: RateOptions = {}): TeamRating | null {
+  if (input.length === 0) return null;
+  // Le mosse di stato che con la Choice o l'Assault Vest non servono valgono come se non ci fossero (lockedMoves.ts)
+  const team = input.map(withUsableMoves);
   const analysis = analyzeTeam(team, data, opts.archetype);
   // I 18 tipi pesano uguale (il meta del mese non cambia le coverage); l'Offesa invece si misura contro i difensori del meta, se attivo
   const weights = UNIFORM_TYPE_WEIGHTS;
@@ -502,7 +520,7 @@ export function rateTeam(team: TeamSet[], data: EngineData, lang: Lang = 'it', o
     ? [{ text: t(lang, fastMembers.length === 1 ? 'rating.redundancy.trickRoomFastOne' : 'rating.redundancy.trickRoomFast', { setter: battleName(roomSetter!), n: fastMembers.length, list: fastMembers.map(m => m.species).join(', ') }), points: Math.min(TRICK_ROOM_MAX, fastMembers.length * TRICK_ROOM_FAST_POINTS), catalog: 'trickRoomFast' as const }]
     : [];
   // Le mancanze dei Ruoli (essenziali e importanti, solo team di 6) si sommano alle altre penalità
-  const extraItems = [...roles.failures, ...roomItems];
+  const extraItems = [...roles.failures, ...roomItems, ...lockedStatusIssues(input, lang)];
   const penalty = extraItems.length
     ? { total: redundant.total + sum(extraItems.map(i => i.points)), items: [...redundant.items, ...extraItems] }
     : redundant;
@@ -535,7 +553,7 @@ export interface CatalogEntry {
 }
 
 const CATALOG_ORDER: { key: CatalogKey; kind: 'malus' | 'bonus' }[] = [
-  ...(['sharedWeak', 'sameType', 'hazardDuplicate', 'removers', 'weatherClash', 'weakenedMove', 'unmetCondition', 'unusedEnabler', 'weakMember', 'essentialRole', 'importantRole', 'oneStyle', 'trickRoomFast'] as const)
+  ...(['sharedWeak', 'sameType', 'hazardDuplicate', 'removers', 'weatherClash', 'weakenedMove', 'unmetCondition', 'unusedEnabler', 'weakMember', 'lockedStatus', 'essentialRole', 'importantRole', 'oneStyle', 'trickRoomFast'] as const)
     .map(key => ({ key, kind: 'malus' as const })),
   ...(['coreTrio', 'weakCovered', 'typeVariety', 'conditionUsed', 'weatherHelp', 'tera', 'minorRole'] as const).map(key => ({ key, kind: 'bonus' as const })),
 ];
@@ -543,7 +561,7 @@ const CATALOG_ORDER: { key: CatalogKey; kind: 'malus' | 'bonus' }[] = [
 /** Tutti i bonus e malus possibili, con il testo per il modale; i punti nei testi vengono dalle costanti. */
 export function bonusMalusCatalog(lang: Lang, teraCap: number): CatalogEntry[] {
   const values = {
-    shared: SHARED_WEAK_POINTS, unmet: UNMET_POINTS, hazard: HAZARD_DUPLICATE, hurt: WEATHER_HURT, hurtStab: WEATHER_HURT_STAB, member: WEAK_MEMBER_POINTS, memberMax: WEAK_MEMBER_MAX,
+    shared: SHARED_WEAK_POINTS, unmet: UNMET_POINTS, hazard: HAZARD_DUPLICATE, hurt: WEATHER_HURT, hurtStab: WEATHER_HURT_STAB, member: WEAK_MEMBER_POINTS, memberMax: WEAK_MEMBER_MAX, locked: LOCKED_STATUS_POINTS,
     essential: ESSENTIAL_POINTS, important: IMPORTANT_POINTS, minor: MINOR_POINTS, style: ONE_STYLE_POINTS, room: TRICK_ROOM_MAX, roomEach: TRICK_ROOM_FAST_POINTS, remover: REMOVER_EXTRA_POINTS, clash: WEATHER_CLASH_POINTS, unused: UNUSED_ENABLER_POINTS,
     help: WEATHER_HELP, cap: teraCap,
     same: SAME_TYPE_POINTS, trio: CORE_TRIO_POINTS, covered: WEAK_COVERED_POINTS, variety: TYPE_VARIETY_POINTS, varietyMin: TYPE_VARIETY_MIN,

@@ -22,6 +22,7 @@ import { moveFixes } from './moveFixes';
 import type { ScoredArea } from './teamGain';
 import { teamOffense } from './offense';
 import { defensiveMultiplier, superEffectiveMove, type TypeName } from './types';
+import { withUsableMoves } from './lockedMoves';
 
 export const SIMILAR_THRESHOLD = 0.6;
 export const MIN_COVERAGE_WEIGHT = 0.05;
@@ -186,7 +187,7 @@ export function findProblems(team: TeamSet[], format: Format, data: EngineData, 
   // Scoperto (nessuno lo manda KO in due colpi): grave se il tipo pesa; coperto poco (nessuno lo manda KO in un colpo, pochi lo colpiscono forte): minore.
   // Rimedi: i candidati col proprio set che ha una mossa super efficace contro il tipo (un'approssimazione, senza calcolo dei danni).
   // Cosa si risolve davvero lo dicono le tappe, con problemChanges.
-  const coverage = teamOffense(team, data).types;
+  const coverage = teamOffense(team.map(withUsableMoves), data).types;
   for (const row of coverage.rows) {
     if (row.level >= COVERED_LEVEL) continue;
     const type = row.label;

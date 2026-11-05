@@ -7,6 +7,7 @@ import { isBannedName, pokedexOfId } from './formats';
 import { isLearnable, isLegalAbility, legalAbilities, legalMoves } from './learnsets';
 import { findByName, statsEntry, type StatsData } from './stats';
 import { generatedSet } from './generatedSet';
+import { lockedStatusMoves } from './lockedMoves';
 
 export type StatID = 'hp' | 'atk' | 'def' | 'spa' | 'spd' | 'spe';
 export const STAT_IDS: StatID[] = ['hp', 'atk', 'def', 'spa', 'spd', 'spe'];
@@ -65,14 +66,25 @@ export function mostCommonSet(stats: StatsData | null, speciesName: string): Tea
   const entry = statsEntry(stats, speciesName);
   if (!entry) return null;
   const { nature, evs } = parseSpread(sortedKeys(entry.spreads)[0]);
-  const itemId = sortedKeys(entry.items)[0];
   const abilityId = sortedKeys(entry.abilities)[0];
   const tera = sortedKeys(entry.teraTypes)[0];
+  const itemId = sortedKeys(entry.items)[0];
+  const item = itemId ? dex.items.get(itemId).name : '';
+  // Strumento e mosse più usati sono contati a parte: con la Choice o l'Assault Vest si saltano le mosse di stato che
+  // non servono e si prendono le successive (Alomomola Assault Vest: niente Wish e Protect, i suoi attacchi)
+  let pool = sortedKeys(entry.moves).map(id => getMove(id)?.name ?? id);
+  let moves = pool.slice(0, 4);
+  for (;;) {
+    const locked = lockedStatusMoves({ species: speciesName, item, ability: '', moves, nature: '', evs: {} });
+    if (!locked.length) break;
+    pool = pool.filter(m => !locked.includes(m));
+    moves = pool.slice(0, 4);
+  }
   return {
     species: speciesName,
-    item: itemId ? dex.items.get(itemId).name : '',
+    item,
     ability: abilityId ? dex.abilities.get(abilityId).name : getSpecies(speciesName)?.abilities[0] ?? '',
-    moves: sortedKeys(entry.moves).slice(0, 4).map(id => getMove(id)?.name ?? id),
+    moves,
     nature,
     evs,
     ...(tera ? { teraType: tera } : {}),

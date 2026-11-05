@@ -343,17 +343,17 @@ function threatHit(threat: TeamSet, member: TeamSet, data: EngineData, teamField
   // Il meteo della minaccia è sempre il suo; quello del team, dove la minaccia non ne porta uno, a metà
   const own = ownConditions(threat);
   const conditions = own;
-  const base = bestHit(threat, member, { conditions });
+  const base = bestHit(threat, member, { conditions, incoming: true });
   const teraOk = teraAllowed({ ...DEFAULT_FORMAT, formatId: data.formatId ?? 'ou' }) && !!threat.teraType;
   const zType = dex.items.get(threat.item).zMoveType;
   const zOk = !!zType && threat.moves.some(m => getMove(m)?.type === zType);
-  const once = [teraOk && bestHit(threat, member, { conditions, tera: true }), zOk && bestHit(threat, member, { conditions, z: true })]
+  const once = [teraOk && bestHit(threat, member, { conditions, tera: true, incoming: true }), zOk && bestHit(threat, member, { conditions, z: true, incoming: true })]
     .filter((h): h is Hit => !!h);
   // Tera e mossa Z: il guadagno sul campo della minaccia, uguale anche col meteo del team (un calcolo in meno per campo)
   const oneUse = base && once.length ? ONE_USE_SHARE * Math.max(0, Math.max(...once.map(h => h.expected)) - base.expected) : 0;
   if (!base) return base;
   const combos = fieldCombos(own, teamField);
-  const expected = onField(own, combos, field => (field === own ? base : bestHit(threat, member, { conditions: field }))?.expected ?? 0);
+  const expected = onField(own, combos, field => (field === own ? base : bestHit(threat, member, { conditions: field, incoming: true }))?.expected ?? 0);
   return { ...base, expected: expected + oneUse };
 }
 
