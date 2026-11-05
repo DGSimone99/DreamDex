@@ -194,7 +194,7 @@ const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.l
 const toScore = (x: number, full: number) => softScore(x / full);
 
 /** Condizioni di campo (meteo, terreni) che il team porta; quelle che il set porta con la sua abilità sono sempre attive per lui. */
-function conditionsOf(set: TeamSet, team: TeamSet[]) {
+export function conditionsOf(set: TeamSet, team: TeamSet[]) {
   const field = (links: ReturnType<typeof enables>) => links.map(l => l.condition).filter((c): c is FieldCondition => c !== 'trickroom');
   const own = field(enables(set).filter(l => toID(l.via) === toID(battleAbility(set))));
   const all = [...new Set([...own, ...team.flatMap(member => field(enables(member)))])].sort();
@@ -207,7 +207,7 @@ const WEATHERS: FieldCondition[] = ['sun', 'rain', 'sand', 'snow'];
  * Le combinazioni di campo che il team può dare al membro, oltre alle sue: un meteo e un terreno alla volta
  * (due meteo non stanno insieme). Quelli che il membro porta con la sua abilità restano sempre.
  */
-function fieldCombos(own: FieldCondition[], all: FieldCondition[]): FieldCondition[][] {
+export function fieldCombos(own: FieldCondition[], all: FieldCondition[]): FieldCondition[][] {
   const isWeather = (c: FieldCondition) => WEATHERS.includes(c);
   const options = (pick: (c: FieldCondition) => boolean) => {
     const mine = own.filter(pick);

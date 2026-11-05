@@ -130,6 +130,7 @@ export function DefenseGuideSection({ section, defense, meta, formatId = DEFAULT
           [g('types.attacker'), g('types.attacker.rule')],
           [g('types.hits'), g('types.hits.rule')],
           [g('types.setup'), g('types.setup.rule')],
+          [g('types.weather'), g('types.weather.rule')],
         ]} />
         <TypeAttackers formatId={formatId} />
 
@@ -158,6 +159,7 @@ export function DefenseGuideSection({ section, defense, meta, formatId = DEFAULT
       <Rows compact rows={[
         [g('meta.threats'), g('meta.threats.rule', { n: metaRows })],
         [g('meta.hit'), g('meta.hit.rule')],
+        [g('types.weather'), g('meta.weather.rule')],
       ]} />
 
       <h5>{g('meta.holds')}</h5>

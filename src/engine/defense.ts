@@ -2,7 +2,7 @@ import { usesMeta } from './analysis';
 import { metaThreats } from './attackers';
 import { dexPool, ownConditions } from './coverage';
 import { bestHit, setKey, standardHit, type FieldCondition, type Hit, type Target } from './damage';
-import { ONE_USE_SHARE, rankWeighted } from './offense';
+import { conditionsOf, fieldCombos, ONE_USE_SHARE, rankWeighted } from './offense';
 import { DEFAULT_FORMAT } from './format';
 import { pokedexOf, teraAllowed } from './formats';
 import { effectiveness, TYPES } from './types';
@@ -212,26 +212,39 @@ export function withoutTeraShell(member: TeamSet): TeamSet {
  * a differenza del setup offensivo dell'Offesa (un terzo). Scelta dell'utente 2026-11-04.
  */
 export const DEFENSE_SETUP_SHARE = 0.75;
+/**
+ * Il danno sul campo del team: il meteo / terreno che il membro (o la minaccia) porta con l'abilità vale sempre; quello
+ * dei compagni a metà, come in Offesa: metà senza, metà con (con più combinazioni possibili, la loro media).
+ * Lo calcola la libreria: sole e pioggia su Fuoco e Acqua, Dif. Speciale ×1,5 alle Roccia con la sabbia, Difesa ×1,5
+ * alle Ghiaccio con la neve, i terreni (Misty sul Drago, Grassy sul Terremoto), le difese dei Paradox.
+ */
+function onField(own: FieldCondition[], combos: FieldCondition[][], damage: (conditions: FieldCondition[]) => number): number {
+  const off = damage(own);
+  if (!combos.length) return off;
+  return (off + combos.reduce((acc, c) => acc + damage(c), 0) / combos.length) / 2;
+}
+
 const typedCache = new Map<string, { plain: number[]; held: number[] }>();
 const TYPED_LIMIT = 5000;
 
 /**
  * I 36 colpi standard tipizzati sul membro (per ogni tipo, prima il fisico poi lo speciale): danno atteso, al massimo 1.
  * `plain` senza setup; `held` con la danza difensiva che conta per tre quarti (uguale a `plain` senza danza).
- * Il meteo e il terreno che il membro porta con la sua abilità valgono per lui.
+ * Il meteo e il terreno che il membro porta con la sua abilità valgono per lui; quelli dei compagni a metà (`onField`).
  */
-export function typedHits(member: TeamSet, data: EngineData): { plain: number[]; held: number[] } {
-  const key = `${setKey(member)}|${data.formatId ?? 'ou'}`;
+export function typedHits(member: TeamSet, data: EngineData, team: TeamSet[] = [member]): { plain: number[]; held: number[] } {
+  const own = ownConditions(member);
+  const combos = fieldCombos(own, conditionsOf(member, team).all);
+  const key = `${setKey(member)}|${data.formatId ?? 'ou'}|${JSON.stringify(combos)}`;
   const cachedHits = typedCache.get(key);
   if (cachedHits) return cachedHits;
   if (typedCache.size >= TYPED_LIMIT) typedCache.clear();
-  const conditions = ownConditions(member);
   const setup = defensiveSetup(member);
   const target = withoutTeraShell(member);
   const hit = (type: string, category: 'Physical' | 'Special', boosted: boolean) => {
     const attacker = dummyAttacker(data, category === 'Physical' ? 'atk' : 'spa', type);
-    const result = standardHit(attacker, target, category, { conditions, moveType: type, targetBoosts: boosted ? setup?.boosts : undefined });
-    return Math.min(1, result?.expected ?? 0);
+    const options = { moveType: type, targetBoosts: boosted ? setup?.boosts : undefined };
+    return onField(own, combos, conditions => Math.min(1, standardHit(attacker, target, category, { ...options, conditions })?.expected ?? 0));
   };
   const plain = TYPES.flatMap(type => [hit(type, 'Physical', false), hit(type, 'Special', false)]);
   const held = setup
@@ -267,14 +280,15 @@ const teamConditions = (team: TeamSet[]): FieldCondition[] => [...new Set(team.f
 export function memberDefense(set: TeamSet, team: TeamSet[], data: EngineData): MemberDefense | null {
   const species = battleSpecies(set);
   if (!species) return null;
-  const { plain, held } = typedHits(set, data);
+  const { plain, held } = typedHits(set, data, team);
   const parts = sustainParts(set, holdShare(held), hazardRemover(team), teamConditions(team));
   const sustain = softScore(Math.max(0, parts.recovery - parts.rocks - parts.itemLoss) / SUSTAIN_FULL);
   // Le minacce del meta: chi regge il colpo migliore vero, pesato per uso
   const threats = metaThreats(data);
+  const threatHits = threats.length ? threatHitsOf(set, data, team) : [];
   const metaHold = threats.length
     ? Math.round(100 * threats.reduce((acc, { weight }, i) => {
-      const x = Math.min(1, threatHitsOf(set, data)[i]?.expected ?? 0);
+      const x = Math.min(1, threatHits[i]?.expected ?? 0);
       return acc + weight * (x < HOLD_FULL ? 1 : x < 1 ? 0.5 : 0);
     }, 0))
     : null;
@@ -334,17 +348,22 @@ export interface TeamDefense {
 }
 
 /** Danno del colpo migliore vero di una minaccia su un membro; Tera e mossa Z della minaccia a un quarto. */
-function threatHit(threat: TeamSet, member: TeamSet, data: EngineData): Hit | null {
-  const conditions = ownConditions(threat);
+function threatHit(threat: TeamSet, member: TeamSet, data: EngineData, teamField: FieldCondition[] = []): Hit | null {
+  // Il meteo della minaccia è sempre il suo; quello del team, dove la minaccia non ne porta uno, a metà
+  const own = ownConditions(threat);
+  const conditions = own;
   const base = bestHit(threat, member, { conditions });
   const teraOk = teraAllowed({ ...DEFAULT_FORMAT, formatId: data.formatId ?? 'ou' }) && !!threat.teraType;
   const zType = dex.items.get(threat.item).zMoveType;
   const zOk = !!zType && threat.moves.some(m => getMove(m)?.type === zType);
   const once = [teraOk && bestHit(threat, member, { conditions, tera: true }), zOk && bestHit(threat, member, { conditions, z: true })]
     .filter((h): h is Hit => !!h);
-  if (!base || !once.length) return base;
-  const boosted = Math.max(...once.map(h => h.expected));
-  return { ...base, expected: base.expected + ONE_USE_SHARE * Math.max(0, boosted - base.expected) };
+  // Tera e mossa Z: il guadagno sul campo della minaccia, uguale anche col meteo del team (un calcolo in meno per campo)
+  const oneUse = base && once.length ? ONE_USE_SHARE * Math.max(0, Math.max(...once.map(h => h.expected)) - base.expected) : 0;
+  if (!base) return base;
+  const combos = fieldCombos(own, teamField);
+  const expected = onField(own, combos, field => (field === own ? base : bestHit(threat, member, { conditions: field }))?.expected ?? 0);
+  return { ...base, expected: expected + oneUse };
 }
 
 /**
@@ -352,13 +371,14 @@ function threatHit(threat: TeamSet, member: TeamSet, data: EngineData): Hit | nu
  * membro non contano (subisce il colpo): un set che cambia solo le mosse riusa i calcoli (cambi di mossa del Coaching).
  */
 const threatCache = new Map<string, (Hit | null)[]>();
-function threatHitsOf(member: TeamSet, data: EngineData): (Hit | null)[] {
-  const key = `${setKey({ ...member, moves: [] })}|${data.formatId ?? 'ou'}|${usesMeta(data)}|${!!data.stats}`;
+function threatHitsOf(member: TeamSet, data: EngineData, team: TeamSet[] = [member]): (Hit | null)[] {
+  const teamField = conditionsOf(member, team).all;
+  const key = `${setKey({ ...member, moves: [] })}|${data.formatId ?? 'ou'}|${usesMeta(data)}|${!!data.stats}|${teamField.join(',')}`;
   let hits = threatCache.get(key);
   if (hits) return hits;
   if (threatCache.size >= TYPED_LIMIT) threatCache.clear();
   const target = withoutTeraShell(member);
-  hits = metaThreats(data).map(({ set }) => threatHit(set, target, data));
+  hits = metaThreats(data).map(({ set }) => threatHit(set, target, data, teamField));
   threatCache.set(key, hits);
   return hits;
 }
@@ -381,7 +401,7 @@ export function teamDefense(team: TeamSet[], data: EngineData): TeamDefense {
   const sustain = rankWeighted(members.map(m => m.sustain));
 
   // Coverage di tipi sui colpi
-  const hits = known.map(set => typedHits(set, data).held);
+  const hits = known.map(set => typedHits(set, data, team).held);
   const columnDepth = (c: number) => depthOf(hits.map(h => holdCredit(h[c])));
   const depths = Array.from({ length: 2 * TYPES.length }, (_, c) => columnDepth(c));
   const typeValue = known.length ? softScore(mean(depths)) : 0;
@@ -409,9 +429,10 @@ export function teamDefense(team: TeamSet[], data: EngineData): TeamDefense {
   let coverageMeta: TeamDefense['coverageMeta'] = null;
   if (threats.length && known.length) {
     let total = 0;
+    const memberHits = known.map(member => threatHitsOf(member, data, team));
     const threatRows = threats.map(({ set: threat, weight }, i) => {
-      const heldBy = known.flatMap(member => {
-        const hit = threatHitsOf(member, data)[i];
+      const heldBy = known.flatMap((member, m) => {
+        const hit = memberHits[m][i];
         const x = Math.min(1, hit?.expected ?? 0);
         if (x >= 1) return [];
         return [{ species: battleSpecies(member)?.name ?? member.species, move: hit?.move ?? '', pct: Math.floor(100 * x), partial: x >= HOLD_FULL }];
