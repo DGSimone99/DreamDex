@@ -63,18 +63,16 @@
 .guide-targets tbody th .type-icons { margin-right: 6px; vertical-align: middle; }
 .guide-targets td { min-width: 4ch; color: var(--text); }
 
-/* Generale dell'Offesa: i tipi del membro per fascia (stesse caselle della scheda Coverage tipi, l'OHKO pieno) e la riga Totale */
-.off-general .og-bands { display: flex; flex-wrap: wrap; gap: 4px 12px; font: 600 13px/1.2 var(--ui); color: var(--text); }
-.off-general .og-band { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
-.off-general .og-band i { width: 12px; height: 12px; border-radius: 3px; border: 1px solid var(--line); background: var(--raised); }
+/* Generale dell'Offesa: tre barre col numero; a squadra chiusa sotto le barre i dettagli (tipi per fascia, meta, punti al team) */
+.off-general .og-stack { display: block; cursor: help; }
+.off-general .og-detail { display: flex; flex-wrap: wrap; gap: 2px 10px; margin-top: 4px; font: 600 12px/1.2 var(--ui); color: var(--muted); }
+.off-general .og-detail b { color: var(--text); }
+.off-general .og-band { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.off-general .og-band i { width: 10px; height: 10px; border-radius: 3px; border: 1px solid var(--line); background: var(--raised); }
 .off-general .og-band i.ok-ohko { background: color-mix(in srgb, var(--good) 70%, var(--panel)); border-color: var(--good); }
 .off-general .og-band i.ok-full { background: color-mix(in srgb, var(--good) 30%, var(--panel)); border-color: var(--good); }
 .off-general .og-band i.ok-half { background: color-mix(in srgb, var(--warn) 26%, var(--panel)); border-color: var(--warn); }
-.off-general .og-points, .off-general .og-meta, .off-general .og-own, .off-general .og-score, .off-general .og-metacell { cursor: help; }
-.off-general .og-score { font-weight: 700; color: var(--text); margin-right: 4px; }
-.off-general .og-metacell { display: inline-flex; align-items: baseline; gap: 10px; }
-.off-general .og-metacell .og-meta { color: var(--muted); font-size: 12px; }
-.off-general .og-strength { display: inline-flex; align-items: baseline; gap: 8px; }
-.off-general .og-own { color: var(--muted); font-weight: 600; }
+.off-general .og-points { cursor: help; }
+.off-general.roomy .def-members td { padding-top: 6px; padding-bottom: 6px; }
 .off-general tfoot .og-total th { padding: 8px 8px 0 0; font: 600 11px/1 var(--ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); text-align: left; }
 .off-general tfoot .og-total td { padding-top: 8px; font: 700 15px/1 var(--ui); color: var(--text); border-top: 1px solid var(--line); }

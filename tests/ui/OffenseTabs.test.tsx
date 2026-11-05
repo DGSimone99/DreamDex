@@ -107,21 +107,12 @@ describe('Offesa: la velocità nella riga del membro è quella reale', () => {
 describe('Offesa: Generale', () => {
   const view = (t: TeamSet[] = team, rating = withMeta()) => renderIt(<AreaView rating={rating} area="strength" team={t} analysis={analyzeTeam(t, fixtureData)} problems={[]} />);
 
-  it('Generale: per membro i tipi per fascia, i bersagli del meta e i punti che porta; la riga Totale coi voti del team', () => {
+  it('Generale: le colonne, la riga Team Coverage coi voti del team, e i punti dei membri sommati fanno il voto', () => {
     const rating = withMeta();
     const { unmount } = view(team, rating);
     expect(screen.getAllByRole('columnheader').map(h => h.textContent)).toEqual(['Pokémon', 'Coverage tipi', 'Coverage meta', 'Offesa']);
-    const rows = document.querySelectorAll('.def-members tbody tr');
-    rating.offense.shares.forEach((s, i) => {
-      const cells = rows[i].querySelectorAll('td');
-      expect(cells[0]).toHaveTextContent(`OHKO ${s.types.ohko}`);
-      expect(cells[0]).toHaveTextContent(`Forti ${s.types.strong}`);
-      expect(cells[0]).toHaveTextContent(`Contano ${s.types.counts}`);
-      expect(cells[1]).toHaveTextContent(`${s.meta!.covered}/${s.meta!.total}`);
-      expect(cells[2]).toHaveTextContent(`+${s.points}`);
-    });
     const total = document.querySelector('.def-members tfoot tr')!;
-    expect(within(total as HTMLElement).getByRole('rowheader')).toHaveTextContent('Totale');
+    expect(within(total as HTMLElement).getByRole('rowheader')).toHaveTextContent('Team Coverage');
     expect([...total.querySelectorAll('td')].map(c => c.textContent)).toEqual([`${rating.offense.types.value}`, `${rating.offense.coverageMeta!.value}`, `${rating.offense.value}`]);
     // I punti dei membri sommati fanno l'Offesa del team
     expect(rating.offense.shares.reduce((a, s) => a + s.points, 0)).toBe(rating.offense.value);
@@ -153,33 +144,47 @@ describe('Offesa: Generale', () => {
     expect(document.querySelector('.def-general')!.textContent).not.toContain('NaN');
   });
 
-  it("la colonna Offesa mostra il voto del membro da solo accanto ai punti che porta", () => {
-    const rating = withMeta();
-    renderIt(<AreaView rating={rating} area="strength" team={team} analysis={analyzeTeam(team, fixtureData)} problems={[]} />);
-    const cells = document.querySelectorAll('.def-members tbody tr td:last-child');
-    rating.offense.members.forEach((m, i) => {
-      expect(cells[i].querySelector('.og-own')!.textContent).toBe(String(m.total));
-      expect(cells[i].querySelector('.og-points')!.textContent).toBe(`+${rating.offense.shares[i].points}`);
-    });
-  });
-
-  it('ogni riga si legge come il Totale: voto tipi, voto meta e come fanno il voto del membro', () => {
+  it('squadra aperta: tre barre col numero (voto tipi, voto meta, voto del membro), niente dettagli; il titolo dice il conto', () => {
     const rating = withMeta();
     renderIt(<AreaView rating={rating} area="strength" team={team} analysis={analyzeTeam(team, fixtureData)} problems={[]} />);
     const rows = document.querySelectorAll('.def-members tbody tr');
     rating.offense.members.forEach((m, i) => {
       const cells = rows[i].querySelectorAll('td');
-      expect(cells[0].querySelector('.og-score')!.textContent).toBe(String(m.value));
-      expect(cells[1].querySelector('.og-score')!.textContent).toBe(String(m.coverMeta));
+      expect(cells[0]).toHaveTextContent(new RegExp(`^${m.value}$`));
+      expect(cells[1]).toHaveTextContent(new RegExp(`^${m.coverMeta}$`));
+      expect(cells[2]).toHaveTextContent(new RegExp(`^${m.total}$`));
+      cells.forEach(c => expect(c.querySelector('.def-bar')).not.toBeNull());
       expect(cells[2].querySelector('.og-own')!.getAttribute('title')).toContain(`70% di ${m.value} + 30% di ${m.coverMeta} = ${m.total}`);
     });
+    expect(document.querySelector('.og-detail')).toBeNull();
+  });
+
+  it('squadra chiusa: sotto le barre i tipi per fascia, i Pokémon del meta mandati KO e i punti che porta al team', () => {
+    const rating = withMeta();
+    renderIt(<AreaView rating={rating} area="strength" team={team} analysis={analyzeTeam(team, fixtureData)} problems={[]} roomy />);
+    const rows = document.querySelectorAll('.def-members tbody tr');
+    rating.offense.members.forEach((m, i) => {
+      const cells = rows[i].querySelectorAll('td');
+      const s = rating.offense.shares[i];
+      expect(cells[0].querySelector('.og-detail')).toHaveTextContent(`OHKO ${s.types.ohko}Forti ${s.types.strong}Contano ${s.types.counts}`);
+      expect(cells[1].querySelector('.og-detail')).toHaveTextContent(`${s.meta!.covered}/${s.meta!.total}`);
+      expect(cells[2].querySelector('.og-points')!.textContent).toBe(`+${s.points}`);
+    });
+  });
+
+  it('la riga in fondo si chiama Team Coverage e ha i voti del team', () => {
+    const rating = withMeta();
+    renderIt(<AreaView rating={rating} area="strength" team={team} analysis={analyzeTeam(team, fixtureData)} problems={[]} />);
+    const foot = document.querySelector('.def-members tfoot tr')!;
+    expect(foot.querySelector('th')).toHaveTextContent('Team Coverage');
+    expect([...foot.querySelectorAll('td')].map(c => c.textContent)).toEqual([String(rating.offense.types.value), String(rating.offense.coverageMeta!.value), String(rating.offense.value)]);
   });
 
   it('il titolo dei punti dice che setup e Tera sono già dentro', () => {
     const t = [{ ...emptySet('Kingambit'), ability: 'Supreme Overlord', item: 'Black Glasses', moves: ['Swords Dance', 'Kowtow Cleave', 'Sucker Punch', 'Iron Head'], evs: { hp: 252, atk: 252 }, teraType: 'Dark' }];
     const gen9 = { ...fixtureData, formatId: 'gen9ou' as const };
     const rating = rateTeam(t, gen9, 'it')!;
-    renderIt(<AreaView rating={rating} area="strength" team={t} analysis={analyzeTeam(t, gen9)} problems={[]} />);
+    renderIt(<AreaView rating={rating} area="strength" team={t} analysis={analyzeTeam(t, gen9)} problems={[]} roomy />);
     const m = rating.offense.members[0];
     expect(m.setupGain).toBeGreaterThan(0);
     const cell = document.querySelector('.def-members tbody tr td:last-child .og-points')!;

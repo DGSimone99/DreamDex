@@ -37,13 +37,11 @@ describe("dettaglio dell'Offesa a schede", () => {
     expect(rows.map(r => r.querySelector('.def-mon-name')!.textContent)).toEqual(['Great Tusk', 'Gholdengo']);
     for (const row of rows) {
       const cells = within(row).getAllByRole('cell');
-      // I tipi per fascia, i bersagli del meta mandati KO in due colpi, i punti che il membro porta
-      expect(cells[0]).toHaveTextContent(/^\d+OHKO \d+Forti \d+Contano \d+$/);
-      expect(cells[1]).toHaveTextContent(/^\d+\d+\/\d+$/);
-      expect(cells[2]).toHaveTextContent(/^\d+\+\d+$/);
+      // Tre barre col numero: voto tipi, voto meta, voto del membro (i dettagli solo a squadra chiusa)
+      for (const cell of cells) expect(cell).toHaveTextContent(/^\d+$/);
     }
     // La riga Totale coi voti del team
-    expect(table.querySelector('tfoot tr')).toHaveTextContent(/^Totale\d+\d+\d+$/);
+    expect(table.querySelector('tfoot tr')).toHaveTextContent(/^Team Coverage\d+\d+\d+$/);
   });
 
   it('Coverage tipi: i 18 tipi, i buchi e quanto li colpisce ogni membro', async () => {
