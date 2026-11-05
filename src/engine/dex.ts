@@ -55,8 +55,18 @@ export function battleSpecies(set: { species: string; item: string }): Species |
   return cached;
 }
 
+/**
+ * Forme che il Pokémon prende sempre in battaglia, senza strumento: Terapagos entra Terastal (Tera Shift), Palafin
+ * combatte Hero (Zero to Hero dopo il primo cambio), Wishiwashi in banco (Schooling dal livello 20). Nelle statistiche
+ * Smogon restano col nome base (`battleName`).
+ */
+const ALWAYS_FORMES: Record<string, string> = { terapagos: 'Terapagos-Terastal', palafin: 'Palafin-Hero', wishiwashi: 'Wishiwashi-School' };
+const ALWAYS_BASE = new Map(Object.entries(ALWAYS_FORMES).map(([base, forme]) => [forme, base]));
+
 function findBattleSpecies(set: { species: string; item: string }): Species | null {
   const species = getSpecies(set.species);
+  const always = species && ALWAYS_FORMES[species.id];
+  if (always) return getSpecies(always) ?? species;
   if (!species || !set.item) return species;
   const item = dex.items.get(set.item);
   if (!item?.exists) return species;
@@ -108,8 +118,10 @@ export function effectiveStats(set: { species: string; item: string; ability: st
 }
 
 /** Nome con cui la specie compare nelle statistiche Smogon. */
-export const battleName = (set: { species: string; item: string }): string =>
-  battleSpecies(set)?.name ?? set.species;
+export const battleName = (set: { species: string; item: string }): string => {
+  const name = battleSpecies(set)?.name;
+  return (name && ALWAYS_BASE.has(name) ? getSpecies(ALWAYS_BASE.get(name)!)?.name : name) ?? set.species;
+};
 
 /** Vero se il set è una Mega in battaglia (pietra o forma Mega). Le forme Primal non contano. */
 export const isMega = (set: { species: string; item: string }): boolean =>

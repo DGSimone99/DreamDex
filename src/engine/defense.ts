@@ -197,16 +197,6 @@ export function dummyStats(formatId: EngineData['formatId'], type: string): { at
 }
 
 /** Un'abilità che non tocca i danni ricevuti: prende il posto di Tera Shell nei colpi della Difesa. */
-const NEUTRAL_ABILITY = 'Pressure';
-
-/**
- * Tera Shell rende poco efficace ogni colpo solo a PS pieni; la Difesa misura colpi ripetuti, quindi il membro si misura
- * come se l'abilità non ci fosse (Coverage tipi e Coverage meta; l'Offesa non cambia). Senza Tera Shell: il set stesso.
- * Le cache restano per set: il set senza abilità dipende solo da quello vero.
- */
-export function withoutTeraShell(member: TeamSet): TeamSet {
-  return toID(battleAbility(member)) === 'terashell' ? { ...member, ability: NEUTRAL_ABILITY } : member;
-}
 
 /**
  * La danza difensiva (Iron Defense, Calm Mind, Bulk Up…) conta per tre quarti del guadagno: aiuta già dal primo turno,
@@ -241,7 +231,7 @@ export function typedHits(member: TeamSet, data: EngineData, team: TeamSet[] = [
   if (cachedHits) return cachedHits;
   if (typedCache.size >= TYPED_LIMIT) typedCache.clear();
   const setup = defensiveSetup(member);
-  const target = withoutTeraShell(member);
+  const target = member;
   const hit = (type: string, category: 'Physical' | 'Special', boosted: boolean) => {
     const attacker = dummyAttacker(data, category === 'Physical' ? 'atk' : 'spa', type);
     const options = { moveType: type, targetBoosts: boosted ? setup?.boosts : undefined };
@@ -378,7 +368,7 @@ function threatHitsOf(member: TeamSet, data: EngineData, team: TeamSet[] = [memb
   let hits = threatCache.get(key);
   if (hits) return hits;
   if (threatCache.size >= TYPED_LIMIT) threatCache.clear();
-  const target = withoutTeraShell(member);
+  const target = member;
   hits = metaThreats(data).map(({ set }) => threatHit(set, target, data, teamField));
   threatCache.set(key, hits);
   return hits;
