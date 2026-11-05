@@ -22,6 +22,7 @@ import { commonChoices, type CommonChoices } from '../engine/common';
 import { speedTier, type SpeedTier } from '../engine/speed';
 import { ItemIcon } from './ItemIcon';
 import { AlertMark, type Alert } from './AlertMark';
+import { lockedStatusMoves } from '../engine/lockedMoves';
 import { Sprite, TypeChip, typeColor } from './Sprite';
 import { gainText } from './CoachingView';
 import { Icon } from './icons';
@@ -223,10 +224,13 @@ function TeamSlot({ index, set, subRoles, proposal, onProposalDone, data, format
     : role === 'weather' ? tr('card.weather') : roleLabel(role, lang)));
   const rolesTitle = roleLabels.join(' · ');
   const illegal = illegalParts(set, format.genLimit, pokedexOf(format));
+  // Choice o Assault Vest con mosse di stato: non si usano (anche un malus nel voto)
+  const locked = lockedStatusMoves(set);
   const warnings = [
     megaWarning,
     illegal.moves.length ? tr('team.illegalMoves', { list: illegal.moves.map(m => gameName('move', m, lang)).join(', ') }) : null,
     illegal.ability ? tr('team.illegalAbility', { name: gameName('ability', illegal.ability, lang) }) : null,
+    locked.length ? tr('team.lockedStatus', { item: gameName('item', set.item, lang), moves: locked.map(m => gameName('move', m, lang)).join(', ') }) : null,
   ].filter((w): w is string => !!w);
   // Problemi di legalità in rosso, avvisi in giallo: due triangoli distinti sullo sprite, il dettaglio nei tooltip
   const dangers: Alert[] = problems.map(text => ({ level: 'danger', text }));

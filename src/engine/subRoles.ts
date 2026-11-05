@@ -6,6 +6,7 @@ import { attackStyle, SPEED_ABILITIES } from './roles';
 import type { EngineData } from './data';
 import { usesMeta } from './analysis';
 import { orbStatus, setKey } from './damage';
+import { withUsableMoves } from './lockedMoves';
 import { rolesMemberOffense } from './offense';
 import { memberSpeed } from './speedArea';
 import { outspeedShare, poolSpecies, speedPool, speedStat, statsKey, type SpeedRival } from './speed';
@@ -438,7 +439,10 @@ export function measureWith(set: TeamSet, team: TeamSet[], data: EngineData, poo
 const CACHE_LIMIT = 500;
 const cache = new Map<string, { values: SubRoleValues; reasons: SubRoleReason[] }>();
 
-function measured(set: TeamSet, team: TeamSet[], data: EngineData) {
+function measured(input: TeamSet, inputTeam: TeamSet[], data: EngineData) {
+  // Le mosse di stato che la Choice o l'Assault Vest non lasciano usare non danno ruoli (lockedMoves.ts)
+  const set = withUsableMoves(input);
+  const team = inputTeam.map(withUsableMoves);
   const key = `${setKey(set)}|${team.map(setKey).join(',')}|${data.formatId ?? 'ou'}|${usesMeta(data)}|${statsKey(data.stats)}`;
   let hit = cache.get(key);
   if (hit) return hit;
