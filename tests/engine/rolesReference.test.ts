@@ -18,8 +18,8 @@ import { REFERENCE_DIRS, ROLES_REFERENCE, type ReferenceFormat, type RoleExpecta
  */
 const STRICT = process.env.ROLES_REFERENCE_STRICT === '1';
 const WRITE_REPORT = process.env.ROLES_REFERENCE_REPORT === '1';
-/** Controlli riusciti con tutti i dati dopo la calibrazione (1139 su 1146), più gli 8 controlli `primary` (Task 11). */
-const KNOWN_OK = 1147;
+/** Controlli riusciti con tutti i dati dopo la calibrazione (1139 su 1146), più gli 8 controlli `primary` (Task 11); 2026-11-05: −5 per i set più usati senza mosse di stato bloccate (lockedMoves.ts). */
+const KNOWN_OK = 1142;
 /** Discrepanze note e accettate (formato, specie, sotto-ruolo, tipo di controllo). */
 const KNOWN_MISMATCHES = new Set([
   'ubers Groudon-Primal physicalBreaker has',
@@ -31,6 +31,13 @@ const KNOWN_MISMATCHES = new Set([
   'gen9ou Cresselia specialSweeper or specialBreaker hasAny',
   'gen9uu Skarmory physicalBreaker has',
   'gen9uu Rotom-Wash physicalWall has',
+  // Il set più usato con la Choice o l'Assault Vest non prende le mosse di stato (lockedMoves.ts): il ruolo veniva da
+  // un set misto che nessuno usa (Alomomola Assault Vest con Toxic, Gholdengo Scarf con Recover…)
+  'ou Alomomola dot present',
+  'ubers Gholdengo recovery has',
+  'uu Amoonguss debuff present',
+  'gen9ou Dragapult dot present',
+  'gen9ag Groudon hazards has',
 ]);
 const REPORT = join('.superpowers', 'sdd', '2026-10-24-rating-roles', 'reference-mismatches.md');
 const TOLERANCE = 0.1;

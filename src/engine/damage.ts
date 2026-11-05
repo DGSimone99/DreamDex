@@ -24,6 +24,11 @@ export interface HitOptions {
   superEffectiveOnly?: boolean;
   /** Solo le mosse prioritarie (Grassy Glide col Grassy Terrain); Fake Out e First Impression valgono metà (solo al primo turno). */
   priorityOnly?: boolean;
+  /**
+   * Il colpo lo riceve il team (le minacce del meta): niente sconto della Choice. Il blocco su una mossa è un costo per
+   * chi attacca, non toglie danno a chi lo prende.
+   */
+  incoming?: boolean;
 }
 
 export interface Hit {
@@ -202,7 +207,8 @@ export function bestHit(attacker: TeamSet, defender: Target, options: HitOptions
   const field = toField(options.conditions);
   const zType = options.z ? dex.items.get(attacker.item).zMoveType : undefined;
   // Lo sconto di Band e Specs si applica come PS del difensore più alti di un nono: danno ×0,9 su tutte le misure
-  const hp = target.maxHP() / (LOCKING.has(toID(attacker.item)) ? CHOICE_LOCK : 1);
+  // (solo quando attacca un membro del team: chi riceve il colpo prende il danno pieno)
+  const hp = target.maxHP() / (LOCKING.has(toID(attacker.item)) && !options.incoming ? CHOICE_LOCK : 1);
   const types = target.types as string[];
   let best: Hit | null = null;
   for (const name of attacker.moves) {
