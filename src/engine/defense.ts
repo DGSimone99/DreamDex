@@ -1,7 +1,7 @@
 import { usesMeta } from './analysis';
 import { metaThreats } from './attackers';
 import { dexPool, ownConditions } from './coverage';
-import { bestHit, setKey, standardHit, type FieldCondition, type Hit, type Target } from './damage';
+import { bestHit, orbStatus, setKey, standardHit, type FieldCondition, type Hit, type Target } from './damage';
 import { conditionsOf, fieldCombos, ONE_USE_SHARE, rankWeighted } from './offense';
 import { DEFAULT_FORMAT } from './format';
 import { pokedexOf, teraAllowed } from './formats';
@@ -88,8 +88,9 @@ export function sustainParts(set: TeamSet, holdShare: number, remover: string | 
   };
   const best = set.moves.reduce<string | null>((acc, m) => (moveHeal(m) > (acc ? moveHeal(acc) : 0) ? m : acc), null);
   // Poison Heal cura solo da avvelenato: lo garantisce Toxic Orb; Rain Dish, Dry Skin e Ice Body solo col loro meteo
+  const status = orbStatus(set);
   const weather = WEATHER_HEAL[ability];
-  const abilityHeal = ability === 'poisonheal' && item !== 'toxicorb' ? 0
+  const abilityHeal = ability === 'poisonheal' && status !== 'tox' ? 0
     : weather ? (conditions.includes(weather.condition) ? weather.heal : 0)
       : RECOVERY_ABILITIES[ability] ?? 0;
   const types: string[] = battleSpecies(set)?.types ?? [];
@@ -105,12 +106,12 @@ export function sustainParts(set: TeamSet, holdShare: number, remover: string | 
   const rocks = rocksHalvedBy ? fullRocks * ROCKS_WITH_REMOVAL : fullRocks;
   // Sheer Force toglie il contraccolpo di Life Orb alle mosse con effetti secondari
   const sheerForce = ability === 'sheerforce' && set.moves.some(m => { const move = getMove(m); return !!(move?.secondary || move?.secondaries?.length); });
-  // Niente danno con Magic Guard; niente stato per chi ne è immune (Fuoco col bruciore, Veleno e Acciaio col veleno), e
-  // Poison Heal trasforma il veleno di Toxic Orb in cura
-  const immune = (item === 'flameorb' && types.includes('Fire'))
-    || (item === 'toxicorb' && (types.includes('Poison') || types.includes('Steel') || ability === 'poisonheal'))
+  // Niente danno con Magic Guard; niente stato per chi ne è immune (tipo o abilità, `orbStatus`), e Poison Heal trasforma
+  // il veleno di Toxic Orb in cura; Heatproof dimezza il bruciore
+  const orb = item === 'flameorb' || item === 'toxicorb';
+  const immune = (orb && (!status || ability === 'poisonheal'))
     || (item === 'lifeorb' && sheerForce) || (item === 'blacksludge' && itemHeal > 0);
-  const itemLoss = magicGuard || immune ? 0 : ITEM_LOSSES[item] ?? 0;
+  const itemLoss = magicGuard || immune ? 0 : (ITEM_LOSSES[item] ?? 0) * (status === 'brn' && ability === 'heatproof' ? 0.5 : 1);
   return { sources, recovery: halved ? gross / 2 : gross, halved, rocks, rocksHalvedBy, itemLoss, itemLossFrom: itemLoss ? set.item : null };
 }
 
