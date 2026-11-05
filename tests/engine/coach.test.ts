@@ -23,7 +23,7 @@ describe('coachTeam', () => {
     // Gravi solo i tipi che nessuno manda KO in due colpi e che pesano: Great Tusk e Gholdengo arrivano al 50% su tutti
     expect(coaching.problems.filter(p => p.severity === 'serious').map(p => p.key)).toEqual([]);
     // Pivot e Rimozione Strumenti sono voci minori: nessun problema "Ruoli importanti mancanti"
-    expect(coaching.problems.filter(p => p.category !== 'meta')).toHaveLength(13);
+    expect(coaching.problems.filter(p => p.category !== 'meta')).toHaveLength(11);
   });
 
   it('punti di forza', () => {
@@ -53,7 +53,8 @@ describe('coachTeam', () => {
       // quindi non c'è la riga delle importanti
       'Ruoli mancanti: Muro Speciale, Hazard',
       // Il pacchetto dei tipi dell'Offesa: un problema per tipo sotto 50, nell'ordine dei tipi (due membri arrivano al massimo a 80)
-      ...['Water', 'Grass', 'Fighting', 'Ground', 'Flying', 'Psychic', 'Bug', 'Dragon'].map(type => `Coperto poco ${type}: nessuno lo manda KO in un colpo e pochi lo colpiscono forte`),
+      // Great Tusk con la Booster Energy (Attacco ×1,3) copre Flying e Psychic
+      ...['Water', 'Grass', 'Fighting', 'Ground', 'Bug', 'Dragon'].map(type => `Coperto poco ${type}: nessuno lo manda KO in un colpo e pochi lo colpiscono forte`),
     ]);
     const fire = coaching.problems.find(p => p.text.startsWith('Debole a Fire'))!;
     expect([...fire.fixes].sort()).toEqual(['Rotom-Wash', 'Toxapex']);
