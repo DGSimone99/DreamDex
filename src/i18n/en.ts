@@ -830,7 +830,7 @@ export const en = {
   'guide.def.sus.x.removal.rule': "If a member removes hazards, Stealth Rock is halved for everyone",
   'guide.def.sus.x.guard': "No Stealth Rock and no item damage",
   'guide.def.sus.x.status': "Status-immune",
-  'guide.def.sus.x.status.rule': "No Flame Orb for Fire types, no Toxic Orb for Poison and Steel types",
+  'guide.def.sus.x.status.rule': "No Flame Orb for Fire types or with Water Veil, Water Bubble, Thermal Exchange; no Toxic Orb for Poison and Steel types or with Immunity, Pastel Veil; neither with Comatose or Purifying Salt. Heatproof halves the burn; Poison Heal heals while poisoned",
   'guide.def.meta.test': "The test",
   'guide.def.meta.threats': "Threats",
   'guide.def.meta.threats.rule': "The {n} most used in the meta",

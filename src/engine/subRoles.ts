@@ -5,7 +5,7 @@ import { statLines } from './statCalc';
 import { attackStyle, SPEED_ABILITIES } from './roles';
 import type { EngineData } from './data';
 import { usesMeta } from './analysis';
-import { setKey } from './damage';
+import { orbStatus, setKey } from './damage';
 import { rolesMemberOffense } from './offense';
 import { memberSpeed } from './speedArea';
 import { outspeedShare, poolSpecies, speedPool, speedStat, statsKey, type SpeedRival } from './speed';
@@ -69,7 +69,7 @@ export function wallIndex(set: TeamSet): { physical: number; special: number } {
   if (item === 'eviolite' && (species.evos?.length ?? 0) > 0) { def *= 1.5; spd *= 1.5; }
   if (ability === 'furcoat') def *= 2;
   if (ability === 'icescales') spd *= 2;
-  if (ability === 'marvelscale' && (item === 'flameorb' || item === 'toxicorb')) def *= 1.5;
+  if (ability === 'marvelscale' && orbStatus(set)) def *= 1.5;
   return { physical: value('hp') * value('def') * def, special: value('hp') * value('spd') * spd };
 }
 

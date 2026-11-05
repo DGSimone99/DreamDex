@@ -82,6 +82,26 @@ const pokemon = new Map<string, Pokemon | null>();
 const moves = new Map<string, CalcMove | null>();
 const fields = new Map<string, Field>();
 
+/** Abilità che impediscono lo stato dello strumento: bruciore (Water Veil, Water Bubble, Thermal Exchange) o tutti e due. */
+const NO_BURN = new Set(['waterveil', 'waterbubble', 'thermalexchange']);
+const NO_POISON = new Set(['immunity', 'pastelveil']);
+const NO_STATUS = new Set(['comatose', 'purifyingsalt']);
+
+/**
+ * Lo stato che il membro si dà da solo con lo strumento: Flame Orb scotta, Toxic Orb avvelena gravemente. Null se non ha
+ * l'Orb o ne è immune (Fuoco col bruciore, Veleno e Acciaio col veleno, o l'abilità). Vale per il danno (Guts, Facade,
+ * Toxic Boost, Marvel Scale, il bruciore che dimezza l'Attacco) e per la Sostenibilità (la perdita, Poison Heal).
+ */
+export function orbStatus(set: Target): 'brn' | 'tox' | null {
+  const item = toID(set.item);
+  if (item !== 'flameorb' && item !== 'toxicorb') return null;
+  const ability = toID(battleAbility(set));
+  const types: string[] = set.types ?? battleSpecies(set)?.types ?? [];
+  if (NO_STATUS.has(ability)) return null;
+  if (item === 'flameorb') return types.includes('Fire') || NO_BURN.has(ability) ? null : 'brn';
+  return types.includes('Poison') || types.includes('Steel') || NO_POISON.has(ability) ? null : 'tox';
+}
+
 /** Il Pokémon della libreria dal set: forma in battaglia (la Mega), abilità, strumento, natura, EV e IV. */
 function toPokemon(set: Target, options: HitOptions = {}, role: 'attacker' | 'defender' = 'attacker'): Pokemon | null {
   return cached(pokemon, `${setKey(set)}|${JSON.stringify(options.boosts ?? null)}|${!!options.tera}|${role}`, () => buildPokemon(set, options, role));
@@ -118,6 +138,7 @@ function tryPokemon(name: string, set: Target, options: HitOptions): Pokemon | n
       // Protosynthesis / Quark Drive: la libreria li accende solo con questo campo. Statistica più alta ×1,3 (×1,5 la Velocità) con la
       // Booster Energy o col sole / campo elettrico del calcolo (il campo dei compagni vale metà: vedi offense.ts)
       boostedStat: 'auto',
+      status: orbStatus(set) ?? undefined,
       teraType: options.tera && set.teraType ? set.teraType as Pokemon['teraType'] : undefined,
       overrides: set.types || set.baseStats ? {
         ...(set.types ? { types: set.types as [Pokemon['types'][0]] } : {}),

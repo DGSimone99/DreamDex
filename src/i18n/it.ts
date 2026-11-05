@@ -832,7 +832,7 @@ export const it: Record<keyof typeof en, string> = {
   'guide.def.sus.x.removal.rule': "Se un membro toglie gli hazard, Stealth Rock a metà per tutti",
   'guide.def.sus.x.guard': "Niente Stealth Rock né danni dagli strumenti",
   'guide.def.sus.x.status': "Immuni allo stato",
-  'guide.def.sus.x.status.rule': "Niente Flame Orb per i Fuoco, niente Toxic Orb per Veleno e Acciaio",
+  'guide.def.sus.x.status.rule': "Niente Flame Orb per i Fuoco e con Water Veil, Water Bubble, Thermal Exchange; niente Toxic Orb per Veleno, Acciaio e con Immunity, Pastel Veil; niente per Comatose e Purifying Salt. Heatproof dimezza il bruciore; Poison Heal col veleno cura",
   'guide.def.meta.test': "Il test",
   'guide.def.meta.threats': "Minacce",
   'guide.def.meta.threats.rule': "Le {n} più usate del meta",
