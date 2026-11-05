@@ -26,6 +26,8 @@ const KNOWN_MISMATCHES = new Set([
   'ubers Arceus physicalBreaker has',
   'ubers Dondozo physicalBreaker has',
   'gen9ou Gholdengo specialSweeper has',
+  // Terapagos-Terastal (Tera Shift, Timid 295) supera Gholdengo (293): Gholdengo batte il 48,7% del meta, sotto il 50%
+  'ou Gholdengo specialSweeper has',
   'gen9ou Cresselia specialSweeper or specialBreaker hasAny',
   'gen9uu Skarmory physicalBreaker has',
   'gen9uu Rotom-Wash physicalWall has',
