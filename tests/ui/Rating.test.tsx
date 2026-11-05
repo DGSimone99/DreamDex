@@ -220,10 +220,10 @@ describe('Catalogo Bonus/Malus', () => {
     expect(within(dialog).getAllByRole('tab').map(tab => tab.textContent)).toEqual(['Malus −8', 'Bonus +2']);
   });
 
-  it('Malus: i 14 malus con nome, quando e punti; gli attivi evidenziati col punteggio attuale', async () => {
+  it('Malus: i 13 malus con nome, quando e punti; gli attivi evidenziati col punteggio attuale', async () => {
     const { dialog } = await openCatalog();
     const rows = within(within(dialog).getByRole('tabpanel')).getAllByRole('row').slice(1);
-    expect(rows).toHaveLength(14);
+    expect(rows).toHaveLength(13);
     const hazard = rows.find(r => within(r).queryByText('Hazard ripetuto'))!;
     expect(hazard).toHaveClass('active');
     expect(hazard).toHaveAttribute('aria-current', 'true');

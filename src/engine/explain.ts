@@ -10,7 +10,7 @@ export interface Facts {
   defense: { immune: TypeName[]; covered: TypeName[]; sharedWeak: TypeName[] };
   threats: { checked: string[] };
   coverage: { types: TypeName[] };
-  roles: { filled: Role[]; style: 'physical' | 'special' | null };
+  roles: { filled: Role[] };
   synergy: { member: string; pct: number } | null;
   /** Legami meccanici con il team (meteo, campi, Trick Room): testo lungo e breve. */
   mechanical: { text: string; short: string }[];
@@ -58,7 +58,6 @@ export function explain(facts: Facts, components: Components, lang: Lang = 'it')
     add('coverage', t(lang, 'explain.coverage', { types: hit }), t(lang, 'explain.coverage.short', { types: hit }));
   }
   const roles = facts.roles.filled.map(role => roleLabel(role, lang));
-  if (facts.roles.style) roles.push(t(lang, `explain.style.${facts.roles.style}`));
   if (roles.length) add('roles', t(lang, 'explain.roles', { list: list(roles) }), t(lang, 'explain.roles.short', { list: list(roles) }));
   for (const link of facts.mechanical) add('synergy', link.text, link.short);
   // Gli avvisi vanno in fondo: peso negativo

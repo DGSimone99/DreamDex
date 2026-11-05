@@ -63,11 +63,6 @@ describe('roles (sotto-ruoli del set)', () => {
     const needs = teamNeeds([tusk, gholdengo], fixtureData);
     expect(needs.essentialMissing).toEqual(['specialWall', 'hazards']);
     expect(needs.importantMissing).toEqual([]);
-    expect(needs.needStyle).toBeNull();
-    // Squilibrio solo con almeno 4 attaccanti tutti dello stesso tipo (come nel voto)
-    expect(teamNeeds([tusk, kingambit], fixtureData).needStyle).toBeNull();
-    const physical = ['Great Tusk', 'Kingambit', 'Dragonite', 'Garchomp'].map(n => set(n, ['Earthquake', 'Close Combat']));
-    expect(teamNeeds(physical, fixtureData).needStyle).toBe('special');
   });
 });
 

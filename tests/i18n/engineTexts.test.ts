@@ -19,7 +19,7 @@ describe('testi del motore', () => {
       defense: { immune: ['Ground' as const], covered: [], sharedWeak: [] },
       threats: { checked: ['Dragapult'] },
       coverage: { types: ['Fairy' as const] },
-      roles: { filled: ['pivot' as const], style: 'special' as const },
+      roles: { filled: ['pivot' as const] },
       synergy: { member: 'Great Tusk', pct: 0.3 },
       mechanical: [], clashes: [],
       strength: { usage: 0.123 },
@@ -29,11 +29,11 @@ describe('testi del motore', () => {
     expect(texts).toContain('Immune to Ground: team weaknesses');
     expect(texts).toContain('Checks Dragapult');
     expect(texts).toContain('Hits Fairy super effectively, uncovered by the team');
-    expect(texts).toContain('Brings Pivot, special attacker (missing from the team)');
+    expect(texts).toContain('Brings Pivot (missing from the team)');
     expect(texts).toContain('Used with Great Tusk in 30% of teams');
     expect(texts).toContain('Meta usage: 12.3%');
     const shorts = explain(facts, components, 'en').map(r => r.short);
-    expect(shorts).toEqual(expect.arrayContaining(['Immune to Ground', 'Checks Dragapult', 'Hits Fairy', 'Pivot, special attacker']));
+    expect(shorts).toEqual(expect.arrayContaining(['Immune to Ground', 'Checks Dragapult', 'Hits Fairy', 'Pivot']));
     // "Used with": niente forma breve (nelle caselle non compare), segnata per il dettaglio
     expect(explain(facts, components, 'en').filter(r => r.usedWith).map(r => r.text)).toEqual(['Used with Great Tusk in 30% of teams']);
   });

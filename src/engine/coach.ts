@@ -165,8 +165,6 @@ export function findProblems(team: TeamSet[], format: Format, data: EngineData, 
 
   for (const item of memberIssues(team, lang, analysis.needs)) add('roles', false, item.text, [], `roles:member:${item.text}`);
   // Squilibrio degli attaccanti (nel voto è una mancanza essenziale dei Ruoli, solo a team finito)
-  const style = analysis.needs.needStyle;
-  if (style) add('roles', false, t(lang, 'rating.redundancy.oneStyle', { style: t(lang, `analysis.style.${style}`) }), [], 'roles:style');
   // I punti crescono col conteggio: meno doppioni, problema ridotto
   for (const item of roleAndTypeRedundancies(team, lang)) add('redundancy', false, item.text, [], undefined, item.points);
   // Conflitti e mosse indebolite si riconoscono dalla condizione, non da chi la porta

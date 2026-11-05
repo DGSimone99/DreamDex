@@ -18,8 +18,6 @@ export const ESSENTIAL_POINTS = 4;
 export const IMPORTANT_POINTS = 2;
 /** Bonus di ogni voce minore coperta, senza tetto (ogni tipo di team ne ha una o due). */
 export const MINOR_POINTS = 1;
-/** Lo squilibrio degli attaccanti tiene il suo malus di sempre (testo "Nessun attaccante fisico/speciale"). */
-export const ONE_STYLE_POINTS = 3;
 
 export interface RoleRow {
   key: LevelKey;
@@ -56,12 +54,10 @@ function roleFailures(team: TeamSet[], needs: TeamNeeds, lang: Lang): Redundancy
   const archetype = t(lang, `archetype.${needs.archetype}`);
   const missing = (keys: LevelKey[], text: 'rating.failure.missing' | 'rating.failure.missingImportant', points: number, catalog: 'essentialRole' | 'importantRole') =>
     keys.map(key => ({ text: t(lang, text, { archetype, role: needLabel(key, lang) }), points, catalog }));
-  const items: Redundancy[] = [
+  return [
     ...missing(needs.essentialMissing, 'rating.failure.missing', ESSENTIAL_POINTS, 'essentialRole'),
     ...missing(needs.importantMissing, 'rating.failure.missingImportant', IMPORTANT_POINTS, 'importantRole'),
   ];
-  if (needs.needStyle) items.push({ text: t(lang, 'rating.redundancy.oneStyle', { style: t(lang, `analysis.style.${needs.needStyle}`) }), points: ONE_STYLE_POINTS, catalog: 'oneStyle' });
-  return items;
 }
 
 /** Ruoli: la lista delle voci del tipo di team coi valori del team; le mancanze sono malus, i minori coperti bonus. */

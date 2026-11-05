@@ -1,6 +1,6 @@
 import { teamArchetype, type Archetype } from './archetype';
 import { battleName } from './dex';
-import { attackStyle, roleLabel } from './roles';
+import { roleLabel } from './roles';
 import { rulesOf, type FormatRules } from './formatRules';
 import type { EngineData } from './data';
 import type { TeamSet } from './sets';
@@ -24,9 +24,6 @@ export const LEVEL_WEIGHT: Record<Level, number> = { essential: ESSENTIAL, impor
 /** Sotto il valore di team 0,5 la voce manca (stessa soglia con cui un membro "ha" un sotto-ruolo, rolesList). */
 export const MISSING_BELOW = 0.5;
 
-/** Attaccanti minimi perché un team tutto fisico o tutto speciale sia una scelta e non un caso. */
-const ONE_STYLE_ATTACKERS = 4;
-
 export interface TeamNeeds {
   /** Archetipo con cui si giudicano i ruoli: quello del team completo, "balance" per un team incompleto. */
   archetype: Archetype;
@@ -45,8 +42,6 @@ export interface TeamNeeds {
   primary: (PrimaryFamily | null)[];
   /** Valori di ogni membro col credito del secondario per l'archetipo: da questi vengono i valori di team. */
   credited: SubRoleValues[];
-  /** Tipo di attaccante che manca del tutto (team con almeno 4 attaccanti tutti dello stesso tipo, non stall). */
-  needStyle: 'physical' | 'special' | null;
   /** Regole del formato con cui sono stati riconosciuti i ruoli (per giudicare allo stesso modo i candidati). */
   rules: FormatRules;
 }
@@ -79,17 +74,12 @@ export function teamNeeds(team: TeamSet[], data: EngineData, members?: SubRoleVa
   const missing = (level: Level) => LEVEL_KEYS.filter(k => levels[k] === level && values[k] < MISSING_BELOW);
   const essentialMissing = missing('essential');
   const importantMissing = missing('important');
-  const styles = team.map(attackStyle);
-  const physical = styles.filter(s => s === 'physical' || s === 'mixed').length;
-  const special = styles.filter(s => s === 'special' || s === 'mixed').length;
-  // Dove "almeno un fisico" e "almeno uno speciale" sono essenziali, lo squilibrio lo dicono già quelle righe: niente malus doppio
-  const styleRows = levels.anyPhysical === 'essential' && levels.anySpecial === 'essential';
-  const lopsided = !styleRows && archetype !== 'stall' && physical + special >= ONE_STYLE_ATTACKERS && (physical === 0 || special === 0);
+  // Lo squilibrio fra attaccanti fisici e speciali lo dicono le righe "Attaccante fisico" e "Attaccante speciale", col
+  // livello del tipo di team (2026-11-05: tolto il malus a parte "un solo stile", che contava due volte la stessa mancanza)
   return {
     archetype, levels, values, essentialMissing, importantMissing,
     missingRoles: [...new Set([...essentialMissing, ...importantMissing].flatMap(keyRoles))],
     members: measured, primary, credited,
-    needStyle: lopsided ? (physical === 0 ? 'physical' : 'special') : null,
     rules,
   };
 }
