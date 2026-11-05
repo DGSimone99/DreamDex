@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
 import { createPortal } from 'react-dom';
 import type { Archetype } from '../engine/archetype';
-import { ARCHETYPE_WEIGHTS, GRADES, TRICK_ROOM_MAX } from '../engine/rating';
+import { ARCHETYPE_WEIGHTS, GRADES, TRICK_ROOM_MAX, type AreaWeightTable } from '../engine/rating';
 import { isGroupKey, LEVEL_KEYS, levelOf, type Level, type LevelKey } from '../engine/roleLevels';
 import { ESSENTIAL_POINTS, IMPORTANT_POINTS, MINOR_POINTS } from '../engine/rolesArea';
 import type { MessageKey } from '../i18n';
@@ -24,7 +24,8 @@ const keyLabel = (key: LevelKey): MessageKey => (isGroupKey(key) ? `need.${key}`
  * Come funziona il voto: un piccolo modale con gli argomenti a sinistra (come funziona in generale e un tab per tipo
  * di team) e la spiegazione a destra. Le spiegazioni di ogni area stanno nel suo modale, di bonus e malus nel catalogo.
  */
-export function RatingHelp({ teamType, trickRoom, meta = true }: { teamType: Archetype; trickRoom: boolean; meta?: boolean }) {
+/** `weights`: la tabella dei pesi del formato del team (rating.weightTable); senza, quella di sempre. */
+export function RatingHelp({ teamType, trickRoom, meta = true, weights = ARCHETYPE_WEIGHTS }: { teamType: Archetype; trickRoom: boolean; meta?: boolean; weights?: AreaWeightTable }) {
   const t = useT();
   const [open, setOpen] = useState(false);
   // Si apre sul tipo del team: quello che si sta guardando di solito
@@ -82,7 +83,7 @@ export function RatingHelp({ teamType, trickRoom, meta = true }: { teamType: Arc
               </nav>
               <section className="help-panel" id="help-panel" role="tabpanel" aria-labelledby={`help-tab-${topic}`}>
                 <h4>{t(topicLabel(topic))}</h4>
-                {topic === 'general' ? <GeneralTopic teamType={teamType} trickRoom={trickRoom} meta={meta} /> : <TypeTopic type={topic} current={topic === teamType} trickRoom={trickRoom} />}
+                {topic === 'general' ? <GeneralTopic teamType={teamType} trickRoom={trickRoom} meta={meta} weights={weights} /> : <TypeTopic type={topic} current={topic === teamType} trickRoom={trickRoom} weights={weights} />}
               </section>
             </div>
           </div>
@@ -94,7 +95,7 @@ export function RatingHelp({ teamType, trickRoom, meta = true }: { teamType: Arc
 }
 
 /** Come funziona in generale: la formula del voto, le lettere dalle soglie e i pesi di tutti i tipi. */
-function GeneralTopic({ teamType, trickRoom, meta }: { teamType: Archetype; trickRoom: boolean; meta: boolean }) {
+function GeneralTopic({ teamType, trickRoom, meta, weights }: { teamType: Archetype; trickRoom: boolean; meta: boolean; weights: AreaWeightTable }) {
   const t = useT();
   const letters = Object.fromEntries(GRADES.filter(g => g.grade !== 'D').map(g => [g.grade, g.min]));
   return (
@@ -113,7 +114,7 @@ function GeneralTopic({ teamType, trickRoom, meta }: { teamType: Archetype; tric
             {ARCHETYPES.map(arch => (
               <tr key={arch} className={arch === teamType ? 'current' : undefined} aria-current={arch === teamType || undefined}>
                 <th scope="row">{t(`archetype.${arch}`)}</th>
-                {WEIGHT_AREAS.map(area => <td key={area}>{ARCHETYPE_WEIGHTS[arch][area]}%</td>)}
+                {WEIGHT_AREAS.map(area => <td key={area}>{weights[arch][area]}%</td>)}
               </tr>
             ))}
           </tbody>
@@ -125,7 +126,7 @@ function GeneralTopic({ teamType, trickRoom, meta }: { teamType: Archetype; tric
 }
 
 /** Un tipo di team: come vince, i pesi delle aree e le voci dei Ruoli per livello, letti dalle tabelle del motore. */
-function TypeTopic({ type, current, trickRoom }: { type: Archetype; current: boolean; trickRoom: boolean }) {
+function TypeTopic({ type, current, trickRoom, weights }: { type: Archetype; current: boolean; trickRoom: boolean; weights: AreaWeightTable }) {
   const t = useT();
   return (
     <>
@@ -137,11 +138,11 @@ function TypeTopic({ type, current, trickRoom }: { type: Archetype; current: boo
       <h5>{t('help.type.weights')}</h5>
       <dl className="help-weights-row">
         {WEIGHT_AREAS.map(area => {
-          const inactive = ARCHETYPE_WEIGHTS[type][area] === 0;
+          const inactive = weights[type][area] === 0;
           return (
             <div key={area} className={inactive ? 'inactive' : undefined}>
               <dt>{t(`area.${area}`)}</dt>
-              <dd>{ARCHETYPE_WEIGHTS[type][area]}%</dd>
+              <dd>{weights[type][area]}%</dd>
               {inactive && <dd className="help-inactive-note">{t('rating.notCounted')}</dd>}
             </div>
           );

@@ -1,7 +1,7 @@
 import type { EngineData } from './data';
 import type { FormatId } from './format';
 
-/** Regole del voto e del coach che cambiano col formato (oggi Ubers, UU e Gen 9; National Dex OU usa quelle di sempre). */
+/** Regole del voto e del coach che cambiano col formato (National Dex OU, Ubers, UU e Gen 9; gli altri usano quelle di sempre). */
 export interface FormatRules {
   /**
    * PS × difesa minimo perché un Pokémon con un set offensivo (3+ attacchi o un setup offensivo) sia un muro;
@@ -19,9 +19,19 @@ export interface FormatRules {
   teraBonusCap: number;
   /** Soglie dell'indice di muro (PS x Dif / PS x DifSp sulle statistiche reali): sotto non è un muro fisico/speciale. */
   wallIndex: { physical: number; special: number };
+  /**
+   * Come si riconosce il tipo di team e quali pesi delle aree usa (archetype.ts, rating.ts).
+   * 'walls': la regola di sempre, dai muri passivi, dal recupero e dalla robustezza.
+   * 'recoverySpeed': National Dex OU (2026-11-05), dai membri con una mossa di recupero, dalla velocità base media e dalle
+   * Focus Sash; tarata sui team del banco di cui l'autore ha scritto il tipo (dal 74% all'80% di giusti), coi suoi pesi.
+   */
+  typeRule: 'walls' | 'recoverySpeed';
 }
 
-export const DEFAULT_RULES: FormatRules = { offensiveWallBulk: 0, keepArchetype: false, strengthPool: null, teraBonusCap: 0, wallIndex: { physical: 100000, special: 95000 } };
+export const DEFAULT_RULES: FormatRules = { offensiveWallBulk: 0, keepArchetype: false, strengthPool: null, teraBonusCap: 0, wallIndex: { physical: 100000, special: 95000 }, typeRule: 'walls' };
+
+/** National Dex OU: il tipo di team dal recupero e dalla velocità, coi suoi pesi. Gli altri formati per ora no (in Ubers sono tutti molto robusti: serviranno soglie loro). */
+export const NATDEX_OU_RULES: FormatRules = { ...DEFAULT_RULES, typeRule: 'recoverySpeed' };
 
 /** Ubers: Zacian-Crowned con Swords Dance non è un muro, un HO resta HO (gli hazard li chiedono i Ruoli, come altrove). */
 export const UBERS_RULES: FormatRules = { ...DEFAULT_RULES, offensiveWallBulk: 11000, keepArchetype: true, wallIndex: { physical: 120000, special: 115000 } };
@@ -40,7 +50,7 @@ export const GEN9_UU_RULES: FormatRules = { ...UU_RULES, strengthPool: 'gen9uu',
 export const GEN9_AG_RULES: FormatRules = { ...GEN9_RULES, wallIndex: UBERS_RULES.wallIndex };
 
 const RULES: Partial<Record<FormatId, FormatRules>> = {
-  ubers: UBERS_RULES, uu: UU_RULES,
+  ou: NATDEX_OU_RULES, ubers: UBERS_RULES, uu: UU_RULES,
   gen9ou: GEN9_RULES, gen9ubers: GEN9_UBERS_RULES, gen9uu: GEN9_UU_RULES, gen9ag: GEN9_AG_RULES,
 };
 

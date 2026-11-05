@@ -10,6 +10,8 @@ import { adviceOf } from '../helpers/coach';
 
 const set = (species: string, item: string, ability: string, moves: string[]): TeamSet =>
   ({ ...emptySet(species), item, ability, moves });
+/** I dati nel formato del coach (DEFAULT_FORMAT, National Dex OU): il voto del test è lo stesso con cui il coach misura il guadagno. */
+const ouData = { ...fixtureData, formatId: DEFAULT_FORMAT.formatId };
 const swapped = (team: TeamSet[], index: number, replacement: TeamSet) => team.map((m, i) => (i === index ? replacement : m));
 
 const balance = ['Great Tusk', 'Gholdengo', 'Kingambit', 'Toxapex', 'Corviknight', 'Rotom-Wash'].map(n => mostCommonSet(fixtureStats, n)!);
@@ -18,11 +20,11 @@ const weak = ['Magikarp', 'Caterpie', 'Weedle', 'Metapod', 'Kakuna', 'Sunkern'].
 describe('sostituzioni giudicate col voto', () => {
   it('ogni sostituzione alza davvero il voto, di quanto dice', () => {
     for (const team of [balance, weak]) {
-      const before = rateTeam(team, fixtureData)!.overall;
+      const before = rateTeam(team, ouData)!.overall;
       const swaps = adviceOf(team, DEFAULT_FORMAT, fixtureData).fixes.filter(f => f.kind === 'swap');
       if (team === weak) expect(swaps.length).toBeGreaterThan(0);
       for (const fix of swaps) {
-        const after = rateTeam(swapped(team, fix.index!, fix.set), fixtureData)!.overall;
+        const after = rateTeam(swapped(team, fix.index!, fix.set), ouData)!.overall;
         expect(after - before).toBe(fix.gain);
         // A pari voto il cambio resta solo se risolve un problema (il team brutto sta a 0 anche dopo il cambio: senza tetto la penalità supera la base)
         expect(fix.gain).toBeGreaterThanOrEqual(0);
@@ -54,13 +56,13 @@ describe('sostituzioni in uno stall', () => {
     // Coi pesi 2026-11-03 (stall 65/25/10) uno stall vale meno di prima in Difesa, e mettere un attaccante (Gholdengo al
     // posto di Clodsire, +8) lo porta a semi-stall con un voto più alto: il cambio si propone. Con un passivo (Rotom-Wash)
     // il team resta stall. Prima dei nuovi pesi (76/24/0) uscivano solo sostituti passivi: era un effetto dei pesi, non una regola.
-    const before = rateTeam(stall, fixtureData)!;
+    const before = rateTeam(stall, ouData)!;
     expect(before.archetype).toBe('stall');
     const fixes = adviceOf(stall, DEFAULT_FORMAT, fixtureData).fixes;
     expect(fixes.length).toBeGreaterThan(0);
     expect(fixes.some(fix => isPassive(fix.set, DEFAULT_RULES))).toBe(true);
     for (const fix of fixes) {
-      const after = rateTeam(swapped(stall, fix.index!, fix.set), fixtureData)!;
+      const after = rateTeam(swapped(stall, fix.index!, fix.set), ouData)!;
       expect(after.overall - before.overall).toBe(fix.gain);
       expect(fix.gain).toBeGreaterThanOrEqual(0);
       if (isPassive(fix.set, DEFAULT_RULES)) expect(after.archetype).toBe('stall');
