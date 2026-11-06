@@ -6,6 +6,7 @@
  *                            "ladder": team veri di giocatori medi (rating 1100–1400), il "medio" non costruito a mano
  *   npm run bench -- --climb  la "salita": da alcuni team si applica sempre lo scambio libero migliore finché il voto sale
  *   npm run bench -- --games   partite coi set veri (scripts/bench/games.json): quante ne vince il voto più alto
+ *                            (nei formati con le Mega solo le partite dove tutti e due i lati la mostrano)
  *   npm run bench -- --replays partite vere (scripts/bench/replays.json di alto livello e, se c'è, ladder.json dei medi):
  *                            quante ne vince il team col voto più alto
  *   ROLES_MEASURED=1 npm run bench   con l'interruttore dei Ruoli acceso (Attacco, muri e Recupero contano anche nei Ruoli)
@@ -282,16 +283,23 @@ export const realTeam = (fmt: FormatId, side: Revealed[]): TeamSet[] | null => {
   return team.length === 6 ? team : null;
 };
 
-/** --games: le partite coi set veri (scripts/bench/games.json, da scripts/fetch-games.ts): quante ne vince il voto più alto. */
+/** Formati National Dex, dove ci sono le Mega. */
+const MEGA_FORMATS = new Set<FormatId>(['ou', 'ubers', 'uu']);
+const showsMega = (side: Revealed[]) => side.some(r => /-Mega(-[XY])?$/.test(r.species));
+
+/** --games: le partite coi set veri (scripts/bench/games.json, da scripts/fetch-games.ts): quante ne vince il voto più alto.
+ *  Nei formati con le Mega contano solo le partite dove tutti e due i lati mostrano la Mega: chi vince spesso non manda
+ *  in campo la sua, e il team che perde sembrerebbe più forte (Mega vista in 2179 team che perdono, 1986 che vincono). */
 function realGames() {
   const games = readRealGames();
   if (!games.length) { console.error('Mancano le partite: lancia npx tsx scripts/fetch-games.ts'); return; }
   const bins = [[1, 4], [5, 9], [10, 100]] as const;
   for (const fmt of [...new Set(games.map(g => GAMES_FORMAT[g.format]))]) {
     const stats = bins.map(() => ({ right: 0, total: 0 }));
-    let skipped = 0;
+    let skipped = 0, noMega = 0;
     const list = games.filter(g => GAMES_FORMAT[g.format] === fmt);
     for (const g of list) {
+      if (MEGA_FORMATS.has(fmt) && !(showsMega(g.p1) && showsMega(g.p2))) { noMega++; continue; }
       const [a, b] = [realTeam(fmt, g.p1), realTeam(fmt, g.p2)];
       if (!a || !b) { skipped++; continue; }
       const diff = rateTeam(a, DATA[fmt])!.overall - rateTeam(b, DATA[fmt])!.overall;
@@ -303,7 +311,7 @@ function realGames() {
     const all = stats.reduce((acc, x) => ({ right: acc.right + x.right, total: acc.total + x.total }), { right: 0, total: 0 });
     const pct = (x: { right: number; total: number }) => (x.total ? `${(100 * x.right / x.total).toFixed(1)}% su ${x.total}` : '–');
     console.log(`
-== ${fmt}: ${list.length} partite coi set veri (${skipped} saltate)`);
+== ${fmt}: ${list.length} partite coi set veri (${skipped} saltate${noMega ? `, ${noMega} senza la Mega vista da tutti e due i lati` : ''})`);
     console.log(`  vince il voto più alto: ${pct(all)}`);
     bins.forEach(([lo, hi], i) => console.log(`  differenza ${lo}–${hi === 100 ? '…' : hi}: ${pct(stats[i])}`));
   }
