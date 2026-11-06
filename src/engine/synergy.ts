@@ -94,7 +94,9 @@ const GENERIC_MOVES = new Set(['weatherball', 'terrainpulse']);
 /** Abilità Paradox: il meteo/campo è un bonus, funzionano anche senza (Booster Energy o nessun boost). */
 const PARADOX = new Set(['protosynthesis', 'quarkdrive']);
 /** Abilità passive che il meteo accende ma di cui il Pokémon non ha bisogno (Manaphy con Hydration): sinergia sì, dipendenza no. */
-const PASSIVE_ABILITIES = new Set(['hydration', 'raindish', 'icebody', 'harvest']);
+const PASSIVE_ABILITIES = new Set(['hydration', 'raindish', 'dryskin', 'icebody', 'harvest']);
+/** Mosse a due turni che la Power Herb fa partire subito: con lo strumento non dipendono dal sole. */
+const POWER_HERB_MOVES = new Set(['solarbeam', 'solarblade', 'meteorbeam', 'electroshot']);
 /** Abilitatori che potenziano chi li ha (Attacco o Attacco Speciale col proprio meteo/campo): sfruttano da sé la condizione. */
 const SELF_BOOST_ENABLERS = new Set(['orichalcumpulse', 'hadronengine']);
 /** Mosse che il meteo migliora ma che funzionano bene anche senza (precisione o carica): sinergia sì, dipendenza no. */
@@ -241,6 +243,7 @@ export function unmetBeneficiaries(team: TeamSet[]): TeamConditionIssue[] {
       .filter(b => !available.has(b.condition))
       .filter(b => !GENERIC_MOVES.has(toID(b.via)))
       .filter(b => !PARADOX.has(toID(b.via)) && !OPTIONAL_MOVES.has(toID(b.via)) && !PASSIVE_ABILITIES.has(toID(b.via)))
+      .filter(b => !(POWER_HERB_MOVES.has(toID(b.via)) && toID(member.item) === 'powerherb'))
       .filter(b => b.via !== SLOW)
       .map(b => ({ member: battleName(member), ...b })));
 }
