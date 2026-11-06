@@ -44,11 +44,12 @@ describe('preset senza abilità (Pokémon con una sola abilità)', () => {
     Dragapult: [{ name: 'Specs', format: 'gen9nationaldex', set: noAbility }],
   } };
 
-  it('presetsFor e defaultSet mettono la prima abilità della specie', async () => {
+  it('presetsFor e defaultSet mettono l\'abilità più usata della specie (senza statistiche, la prima)', async () => {
     const { presetsFor } = await import('../../src/engine/sets');
     expect(presetsFor(withPresets, 'Gholdengo')[0].set.ability).toBe('Good as Gold');
     expect(defaultSet(withPresets, 'Gholdengo').ability).toBe('Good as Gold');
-    expect(defaultSet(withPresets, 'Dragapult').ability).toBe('Clear Body');
+    expect(defaultSet(withPresets, 'Dragapult').ability).toBe('Infiltrator');
+    expect(defaultSet({ ...withPresets, stats: null, fallbackStats: null }, 'Dragapult').ability).toBe('Clear Body');
   });
 
   it('caricato dall’editor: abilità impostata e preset riconosciuto', async () => {

@@ -6,10 +6,13 @@
  *   npx tsx scripts/fetch-games.ts [--min=1500] [--max=Infinity] [--target=3000] [--days=60] [formato…]
  *
  * Scorre le partite dalle più recenti all'indietro (search.json?before=…), tiene quelle col rating nella fascia, e
- * aggiunge a scripts/bench/games.json (le partite già salvate si saltano). Una richiesta ogni 300 ms.
+ * aggiunge a scripts/bench/games.json (le partite già salvate si saltano). Una richiesta ogni 300 ms. I log restano in
+ * data/replay-logs: con --reparse le partite già salvate si rileggono col parser di oggi senza riscaricarle.
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
+import { canHaveAbility, replayLog, teamForme } from './replay-shared';
 
 const arg = (name: string, fallback: number) => Number(process.argv.find(a => a.startsWith(`--${name}=`))?.slice(name.length + 3) ?? fallback);
 const MIN_RATING = arg('min', 1500);
@@ -70,6 +73,10 @@ export function parseGame(log: string) {
   const nicks: Record<'p1' | 'p2', Map<string, string>> = { p1: new Map(), p2: new Map() };
   /** Per lato: specie di base → dati rivelati. */
   const info: Record<'p1' | 'p2', Map<string, { forme: string; moves: Set<string>; item?: string; ability?: string; tera?: string; tricked?: boolean }>> = { p1: new Map(), p2: new Map() };
+  /** Per lato: chi è andato KO (dopo il KO la Mega torna forma base: quel cambio non conta). */
+  const fainted: Record<'p1' | 'p2', Set<string>> = { p1: new Set(), p2: new Set() };
+  /** Per lato: chi si è trasformato (Transform, Imposter): mosse e abilità sono del bersaglio finché non esce. */
+  const transformed: Record<'p1' | 'p2', Set<string>> = { p1: new Set(), p2: new Set() };
   let winner: string | null = null;
   let turns = 0;
   const entry = (side: 'p1' | 'p2', nick: string) => {
@@ -80,6 +87,8 @@ export function parseGame(log: string) {
     if (!e) { e = { forme, moves: new Set() }; info[side].set(base, e); }
     return e;
   };
+  /** Come entry, ma null per chi è trasformato: quello che fa e mostra non è suo. */
+  const own = (side: 'p1' | 'p2', nick: string) => (transformed[side].has(nick) ? null : entry(side, nick));
   for (const line of log.split('\n')) {
     const parts = line.split('|');
     const kind = parts[1];
@@ -88,16 +97,30 @@ export function parseGame(log: string) {
     else if (kind === 'switch' || kind === 'drag' || kind === 'detailschange' || kind === 'replace') {
       const w = who(parts[2]);
       if (!w) continue;
-      const forme = speciesOf(parts[3]);
+      if (kind !== 'detailschange') { fainted[w.side].delete(w.nick); transformed[w.side].delete(w.nick); }
+      // Dopo il KO Showdown riporta la Mega alla forma base (|detailschange|…|[silent]): la forma vera resta la Mega
+      else if (fainted[w.side].has(w.nick)) continue;
+      const forme = teamForme(speciesOf(parts[3]));
       nicks[w.side].set(w.nick, forme);
       const e = entry(w.side, w.nick);
       // La forma più "avanzata" vince (la Mega dopo la base)
       if (e && (kind === 'detailschange' || forme.length > e.forme.length)) e.forme = forme;
+    } else if (kind === 'faint') {
+      const w = who(parts[2]);
+      if (w) fainted[w.side].add(w.nick);
+    } else if (kind === '-transform') {
+      const w = who(parts[2]);
+      if (!w) continue;
+      const from = tag(parts, 'from');
+      const e = entry(w.side, w.nick);
+      if (e && from?.startsWith('ability: ')) e.ability ??= from.slice(9);
+      transformed[w.side].add(w.nick);
+      continue;
     } else if (kind === 'move') {
       const w = who(parts[2]);
       // Le mosse chiamate da altre (Sleep Talk, Dancer, Magic Bounce…) non sono del set
       if (!w || parts.slice(4).some(p => p.startsWith('[from]'))) continue;
-      const e = entry(w.side, w.nick);
+      const e = own(w.side, w.nick);
       if (e && parts[3] && parts[3] !== 'Struggle') e.moves.add(parts[3]);
     } else if (kind === '-item' || kind === '-enditem') {
       const w = who(parts[2]);
@@ -107,6 +130,8 @@ export function parseGame(log: string) {
       if (!e) continue;
       // Trick e Switcheroo: lo strumento ricevuto non è quello del set; il primo visto prima dello scambio resta
       if (/move: (Trick|Switcheroo|Bestow)/.test(from)) { e.tricked = true; continue; }
+      // Magician e Pickpocket: chi ruba ha l'abilità, lo strumento rubato non è del suo set
+      if (kind === '-item' && /ability: (Magician|Pickpocket)/.test(from)) { e.tricked = true; e.ability ??= from.slice(9); continue; }
       if (!e.item && !e.tricked) e.item = parts[3];
     } else if (kind === '-terastallize') {
       const w = who(parts[2]);
@@ -114,8 +139,19 @@ export function parseGame(log: string) {
       if (e) e.tera = parts[3];
     } else if (kind === '-ability') {
       const w = who(parts[2]);
-      const e = w && entry(w.side, w.nick);
-      if (e && !e.ability && !tag(parts, 'from')?.startsWith('move:')) e.ability = parts[3];
+      const from = tag(parts, 'from');
+      if (from === 'ability: Trace') {
+        // "|-ability|Gardevoir|Regenerator|[from] ability: Trace|[of] Alomomola": Trace è di chi copia, l'abilità copiata del bersaglio
+        const of = who(tag(parts, 'of'));
+        const tracer = w && own(w.side, w.nick);
+        const target = of && own(of.side, of.nick);
+        if (tracer && !tracer.ability && canHaveAbility(tracer.forme, 'Trace')) tracer.ability = 'Trace';
+        if (target && !target.ability && canHaveAbility(target.forme, parts[3])) target.ability = parts[3];
+        continue;
+      }
+      const e = w && own(w.side, w.nick);
+      // Skill Swap, Role Play, Entrainment ([from] move: …) e Receiver/Power of Alchemy ([from] ability: …) danno un'abilità non del set
+      if (e && !e.ability && !from && canHaveAbility(e.forme, parts[3])) e.ability = parts[3];
     } else if (kind === 'turn') turns = Number(parts[2]) || turns;
     else if (kind === 'win') winner = parts[2];
     // Strumenti e abilità rivelati da altre righe: "[from] item: Life Orb" (di chi subisce, o di [of] se c'è)
@@ -124,10 +160,16 @@ export function parseGame(log: string) {
       const of = who(tag(parts, 'of'));
       const subject = who(parts[2]);
       const owner = of ?? subject;
-      if (from && owner) {
-        const e = entry(owner.side, owner.nick);
+      // Magician e Pickpocket: già visti sopra (in queste righe [of] è chi viene derubato)
+      if (from && !/ability: (Magician|Pickpocket)/.test(from)) {
+        const e = owner && own(owner.side, owner.nick);
         if (e && from.startsWith('item: ') && !e.item && !e.tricked) e.item = from.slice(6);
-        if (e && from.startsWith('ability: ') && !e.ability) e.ability = from.slice(9);
+        if (from.startsWith('ability: ')) {
+          // [of] a volte ha l'abilità (Static, Rough Skin), a volte l'ha solo colpita (Water Absorb): va a chi può averla
+          const ability = from.slice(9);
+          const holder = [of, subject].map(w => w && own(w.side, w.nick)).find(x => x && canHaveAbility(x.forme, ability));
+          if (holder && !holder.ability) holder.ability = ability;
+        }
       }
     }
   }
@@ -135,8 +177,10 @@ export function parseGame(log: string) {
   const resolve = (side: 'p1' | 'p2'): Revealed[] => preview[side].map(name => {
     const base = name.replace(/-\*$/, '').split('-')[0];
     const e = info[side].get(base);
-    const species = e?.forme ?? name.replace(/-\*$/, '');
-    return { species, moves: e ? [...e.moves] : [], ...(e?.item && { item: e.item }), ...(e?.ability && { ability: e.ability }), ...(e?.tera && { tera: e.tera }) };
+    const species = e?.forme ?? teamForme(name.replace(/-\*$/, ''));
+    // Un'abilità che la forma non può avere (Embody Aspect di Ogerpon terastallizzato) non è del set
+    const ability = e?.ability && canHaveAbility(species, e.ability) ? e.ability : undefined;
+    return { species, moves: e ? [...e.moves] : [], ...(e?.item && { item: e.item }), ...(ability && { ability }), ...(e?.tera && { tera: e.tera }) };
   });
   return { p1: resolve('p1'), p2: resolve('p2'), winner, turns, players };
 }
@@ -157,9 +201,8 @@ async function fetchFormat(format: string, known: Set<string>): Promise<Game[]> 
       if (found.length >= TARGET) break;
       const rating = e.rating ?? 0;
       if (rating < MIN_RATING || rating > MAX_RATING || known.has(e.id)) continue;
-      const replay = await json<{ log: string }>(`https://replay.pokemonshowdown.com/${e.id}.json`);
-      await sleep(DELAY);
-      const g = replay && parseGame(replay.log);
+      const log = await replayLog(e.id, DELAY);
+      const g = log && parseGame(log);
       if (!g || !g.winner || g.turns < MIN_TURNS) continue;
       const winner = g.players.p1 === g.winner ? 1 : g.players.p2 === g.winner ? 2 : null;
       if (!winner) continue;
@@ -173,20 +216,40 @@ async function fetchFormat(format: string, known: Set<string>): Promise<Game[]> 
   return found;
 }
 
-// --parse=<file.log>: mostra cosa si legge da un log salvato, senza scaricare niente (per controllare il parser)
-const parseOnly = process.argv.find(a => a.startsWith('--parse='))?.slice(8);
-if (parseOnly) {
-  console.log(JSON.stringify(parseGame(readFileSync(parseOnly, 'utf8')), null, 1));
-  process.exit(0);
+async function main() {
+  // --parse=<file.log>: mostra cosa si legge da un log salvato, senza scaricare niente (per controllare il parser)
+  const parseOnly = process.argv.find(a => a.startsWith('--parse='))?.slice(8);
+  if (parseOnly) {
+    console.log(JSON.stringify(parseGame(readFileSync(parseOnly, 'utf8')), null, 1));
+    process.exit(0);
+  }
+  const file = join('scripts', 'bench', 'games.json');
+  const save = (games: Game[]) => writeFileSync(file, '[\n' + games.map(g => JSON.stringify(g)).join(',\n') + '\n]\n');
+  // --reparse: rilegge le partite già salvate col parser di oggi (i log da data/replay-logs, o riscaricati una volta)
+  if (process.argv.includes('--reparse')) {
+    const games: Game[] = JSON.parse(readFileSync(file, 'utf8'));
+    const kept: Game[] = [];
+    for (const [i, game] of games.entries()) {
+      const log = await replayLog(game.id, DELAY);
+      const g = log && parseGame(log);
+      if (g) kept.push({ ...game, p1: g.p1, p2: g.p2 });
+      if ((i + 1) % 500 === 0) console.log(`${i + 1}/${games.length} rilette`);
+    }
+    save(kept);
+    console.log(`Rilette ${kept.length} partite su ${games.length} in ${file}`);
+    process.exit(0);
+  }
+  const formats = process.argv.slice(2).filter(a => !a.startsWith('--'));
+  const existing: Game[] = existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : [];
+  const known = new Set(existing.map(g => g.id));
+  const all = [...existing];
+  for (const format of formats.length ? formats : ['gen9nationaldex', 'gen9ou']) {
+    all.push(...await fetchFormat(format, known));
+    // Salva dopo ogni formato: un'interruzione non perde tutto
+    save(all);
+  }
+  console.log(`Salvate ${all.length} partite in ${file}`);
 }
-const file = join('scripts', 'bench', 'games.json');
-const formats = process.argv.slice(2).filter(a => !a.startsWith('--'));
-const existing: Game[] = existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : [];
-const known = new Set(existing.map(g => g.id));
-const all = [...existing];
-for (const format of formats.length ? formats : ['gen9nationaldex', 'gen9ou']) {
-  all.push(...await fetchFormat(format, known));
-  // Salva dopo ogni formato: un'interruzione non perde tutto
-  writeFileSync(file, '[\n' + all.map(g => JSON.stringify(g)).join(',\n') + '\n]\n');
-}
-console.log(`Salvate ${all.length} partite in ${file}`);
+
+// Solo se lanciato da riga di comando: importato (per parseGame) non scarica niente
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) await main();

@@ -104,10 +104,13 @@ async function main() {
     if (known.has(key(sets))) { skipped.push(`${src.url}: già presente`); continue; }
     known.add(key(sets));
     const title = paste.title?.trim();
-    added.push({
-      name: `${src.source}${src.label ? ` ${src.label}` : ''}${title ? ` "${title}"` : ''}`,
-      fmt, cat: current ? 'torneo' : 'datato', paste: src.url, ...(src.finals ? { finals: true } : {}), team: sets,
-    });
+    const cat = current ? 'torneo' : 'datato';
+    // Più paste con lo stesso titolo ("Untitled 1283") nello stesso formato e gruppo: "(2)", "(3)"… per distinguerli
+    const base = `${src.source}${src.label ? ` ${src.label}` : ''}${title ? ` "${title}"` : ''}`;
+    const taken = (name: string) => [...kept, ...added].some(t => t.fmt === fmt && t.cat === cat && t.name === name);
+    let name = base;
+    for (let n = 2; taken(name); n++) name = `${base} (${n})`;
+    added.push({ name, fmt, cat, paste: src.url, ...(src.finals ? { finals: true } : {}), team: sets });
   }
   // Un team per riga, come il resto del file
   writeFileSync(file, `[\n${[...kept, ...added].map(t => JSON.stringify(t)).join(',\n')}\n]\n`);
