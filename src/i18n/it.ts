@@ -237,6 +237,8 @@ export const it: Record<keyof typeof en, string> = {
   'import.unreadable': "Blocco {n} non leggibile: \"{line}\"",
   'import.tooMany': "Più di 6 Pokémon: ignorato {name}",
   'import.unknown': "Pokémon sconosciuto: {name}",
+  'import.unknownNature': "{name}: natura sconosciuta \"{nature}\", usata una neutra",
+  'import.unknownItem': "{name}: strumento sconosciuto \"{item}\", non conta",
   'top.dex': "Pokédex",
   'top.tier': "Tier",
   'top.tierAria': "Tier del formato",

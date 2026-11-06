@@ -235,6 +235,8 @@ export const en = {
   'import.unreadable': "Block {n} can't be read: \"{line}\"",
   'import.tooMany': "More than 6 Pokémon: ignored {name}",
   'import.unknown': "Unknown Pokémon: {name}",
+  'import.unknownNature': "{name}: unknown nature \"{nature}\", a neutral one is used",
+  'import.unknownItem': "{name}: unknown item \"{item}\", it doesn't count",
   'top.dex': "Pokédex",
   'top.tier': "Tier",
   'top.tierAria': "Format tier",
