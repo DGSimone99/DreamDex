@@ -512,7 +512,9 @@ export function rateTeam(input: TeamSet[], data: EngineData, lang: Lang = 'it', 
       value: Math.round(100 * raw[key]!),
       ...(!((areaWeights[key] ?? 0) > 0) && { inactive: true }),
     }));
-  const base = Math.round(100 * score);
+  // Le aree sono numeri interi: il piccolo margine evita che un ,5 esatto (56,4999… per i calcoli in virgola) scenda
+  // di un punto rispetto al conto fatto a mano con le aree mostrate
+  const base = Math.round(100 * score + 1e-9);
   // Niente più penalità del meta: le minacce scoperte abbassano la Coverage meta della Difesa.
   // Trick Room in un team veloce: −1 per ogni membro che supera da solo almeno metà del meta (sotto Trick Room perde), fino a −3
   const roomSetter = team.find(set => set.moves.some(move => toID(move) === 'trickroom'));
@@ -538,7 +540,7 @@ export function rateTeam(input: TeamSet[], data: EngineData, lang: Lang = 'it', 
   const memberPoints = MEMBER_POINT * team.filter(set => !!battleSpecies(set)).length;
   const overall = Math.min(100, Math.max(0, base - penalty.total + bonus.total + memberPoints));
   return {
-    base, teraCap: rules.teraBonusCap, penalty, bonus, memberPoints, power: power.members, overall, ...gradeFor(overall, lang), provisional: team.length < 6, areas, archetype, meta,
+    base, teraCap: rules.teraBonusCap, penalty, bonus, memberPoints, power: power.members, overall, ...gradeFor(overall, lang), provisional: team.filter(set => !!battleSpecies(set)).length < 6, areas, archetype, meta,
     teamType: analysis.needs.archetype, trickRoom, needs: analysis.needs,
     weights: areaWeights, weightTable, offense, defense, speed, roles,
   };

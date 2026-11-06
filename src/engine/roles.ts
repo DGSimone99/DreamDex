@@ -1,4 +1,4 @@
-import { battleAbility, battleSpecies, effectiveStats, getMove, isDefined, toID } from './dex';
+import { battleAbility, battleSpecies, effectiveStats, getMove, hasPriorityAttack, isDefined, toID } from './dex';
 import type { TeamSet } from './sets';
 import type { FormatRules } from './formatRules';
 import { rolesList, setSubRoles, type Family, type SubRole } from './subRoles';
@@ -105,7 +105,7 @@ export const legacyRoles = memoBySet((set: TeamSet, rules: FormatRules): LegacyR
   if (ids.some(id => HAZARD_MOVES.has(id))) roles.add('hazards');
   if (ids.some(id => REMOVAL_MOVES.has(id))) roles.add('removal');
   if (ids.some(id => PIVOT_MOVES.has(id))) roles.add('pivot');
-  if (moves.some(m => m.category !== 'Status' && m.priority > 0)) roles.add('priority');
+  if (hasPriorityAttack(set)) roles.add('priority');
   // Controllo velocità solo con mosse che la controllano: essere veloci è un'altra cosa (vedi isFast)
   if (ids.some(id => SPEED_MOVES.has(id))) roles.add('speed');
   // Setup: mosse che alzano attacco, attacco speciale o velocità; anche la Difesa con Body Press, che colpisce con la Difesa
@@ -119,7 +119,7 @@ export const legacyRoles = memoBySet((set: TeamSet, rules: FormatRules): LegacyR
   // Un Pokémon lento con un setup che alza solo l'attacco (Magearna con Calm Mind) è un wallbreaker, non uno sweeper.
   const fast = stats.spe >= 100 || item === 'choicescarf' || SPEED_ABILITIES.has(toID(battleAbility(set)));
   const selfBoost = (stat: 'atk' | 'spa' | 'spe') => moves.some(m => m.category === 'Status' && m.target === 'self' && (m.boosts?.[stat] ?? 0) > 0);
-  const priority = moves.some(m => m.category !== 'Status' && m.priority > 0);
+  const priority = hasPriorityAttack(set);
   const outspeeds = (stat: 'atk' | 'spa') => fast || selfBoost('spe') || (selfBoost(stat) && priority);
   const style = attackStyle(set);
   if (style === 'physical' && stats.atk >= 100 && outspeeds('atk')) roles.add('physicalSweeper');
@@ -154,7 +154,7 @@ export function isFast(set: TeamSet): boolean {
 
 /** Mossa d'attacco con priorità (filtro di ricerca, non un ruolo). */
 export function hasPriority(set: TeamSet): boolean {
-  return set.moves.map(getMove).filter(isDefined).some(m => m.category !== 'Status' && m.priority > 0);
+  return hasPriorityAttack(set);
 }
 
 /** Mossa che controlla la velocità: paralisi, Sticky Web, Trick Room, Tailwind, mosse che rallentano (filtro, non un ruolo). */
