@@ -37,6 +37,15 @@ describe('set di default', () => {
     expect(defaultSet(fixtureData, 'Skarmory')).toEqual(generatedSet('Skarmory'));
     expect(emptySet('Skarmory').ability).toBe('Keen Eye');
   });
+
+  it('è una copia: modificarla non cambia i set dopo', () => {
+    const data = { ...fixtureData, sets: { Skarmory: { ...skarmory, moves: [...skarmory.moves], evs: { ...skarmory.evs } } } };
+    const first = defaultSet(data, 'Skarmory');
+    first.moves.push('Roost');
+    first.evs.hp = 0;
+    first.item = 'Leftovers';
+    expect(defaultSet(data, 'Skarmory')).toEqual(skarmory);
+  });
 });
 
 describe('set delle analisi Smogon', () => {
