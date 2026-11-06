@@ -13,7 +13,7 @@ import { roleLabel } from './roles';
 import { keyRoles, needLabel } from './needs';
 import { LEVEL_KEYS } from './roleLevels';
 import { bannedInPool, scoreCandidates, type Suggestion } from './scoring';
-import { memberIssues, rateTeam, roleAndTypeRedundancies, weatherClashes } from './rating';
+import { memberIssues, rateTeam, roleAndTypeRedundancies, weakenedMoveNotes, weatherClashes } from './rating';
 import { benefits, conditionLabel, viaName, enables, teamSynergies, unmetBeneficiaries, unusedEnablers } from './synergy';
 import type { TeamSet } from './sets';
 import { coachFixes, type CoachFix } from './coachFixes';
@@ -168,7 +168,7 @@ export function findProblems(team: TeamSet[], format: Format, data: EngineData, 
   // I punti crescono col conteggio: meno doppioni, problema ridotto
   for (const item of roleAndTypeRedundancies(team, lang)) add('redundancy', false, item.text, [], undefined, item.points);
   // Conflitti e mosse indebolite si riconoscono dalla condizione, non da chi la porta
-  for (const item of weatherClashes(team, lang)) add('conditions', false, item.text, [], item.key && `conditions:${item.key}`);
+  for (const item of [...weatherClashes(team, lang), ...weakenedMoveNotes(team, lang)]) add('conditions', false, item.text, [], item.key && `conditions:${item.key}`);
 
   for (const issue of unusedEnablers(team)) {
     add('conditions', false, t(lang, 'coach.problem.unused', { via: viaName(issue.via, lang), member: issue.member }),

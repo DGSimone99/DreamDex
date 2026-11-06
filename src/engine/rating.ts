@@ -108,7 +108,7 @@ export interface RatingArea {
 }
 
 /** Chiave della voce del catalogo bonus/malus a cui appartiene una voce del voto. */
-export type CatalogKey = 'sharedWeak' | 'sameType' | 'hazardDuplicate' | 'removers' | 'weatherClash' | 'weakenedMove' | 'unmetCondition' | 'unusedEnabler'
+export type CatalogKey = 'sharedWeak' | 'sameType' | 'hazardDuplicate' | 'removers' | 'weatherClash' | 'unmetCondition' | 'unusedEnabler'
   | 'weakMember' | 'lockedStatus' | 'essentialRole' | 'importantRole' | 'trickRoomFast'
   | 'coreTrio' | 'minorRole' | 'weakCovered' | 'typeVariety' | 'conditionUsed' | 'weatherHelp' | 'tera';
 
@@ -215,21 +215,22 @@ export function roleAndTypeRedundancies(team: TeamSet[], lang: Lang = 'it'): Red
   return items;
 }
 
-/** Una mossa STAB indebolita dal meteo del team costa di più di una di coverage. */
-export const WEATHER_HURT_STAB = 2;
-
-/** Meteo/campi in conflitto (−3) e per ogni membro con mosse indebolite dal meteo del team −2 (STAB) o −1 (coverage). */
+/** Meteo/campi in conflitto: −3. */
 export function weatherClashes(team: TeamSet[], lang: Lang = 'it'): Redundancy[] {
+  return conditionConflicts(team, lang).map(c => ({ text: t(lang, 'rating.redundancy.conflict', { kind: t(lang, `conflict.${c.kind}`), list: c.setters.join(', ') }), points: WEATHER_CLASH_POINTS, catalog: 'weatherClash' as const, key: `conflict:${c.kind}` }));
+}
+
+/**
+ * Mosse indebolite dal meteo del team (il sole sull'Acqua): solo un avviso del coach, senza punti. L'Offesa conta già il
+ * danno col meteo del team (a metà); un malus in più contava due volte e premiava chi toglieva la mossa STAB (2026-11-06).
+ */
+export function weakenedMoveNotes(team: TeamSet[], lang: Lang = 'it'): Redundancy[] {
   const cap = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
-  return [
-    ...conditionConflicts(team, lang).map(c => ({ text: t(lang, 'rating.redundancy.conflict', { kind: t(lang, `conflict.${c.kind}`), list: c.setters.join(', ') }), points: WEATHER_CLASH_POINTS, catalog: 'weatherClash' as const, key: `conflict:${c.kind}` })),
-    ...weakenedMoves(team).map(w => ({
-      text: t(lang, 'rating.redundancy.weakens', { condition: cap(conditionLabel(w.condition, lang)), setter: w.setter, type: typeName(w.type, lang), member: w.member }),
-      points: w.stab ? WEATHER_HURT_STAB : WEATHER_HURT,
-      catalog: 'weakenedMove' as const,
-      key: `weakens:${w.condition}:${w.member}:${w.type}`,
-    })),
-  ];
+  return weakenedMoves(team).map(w => ({
+    text: t(lang, 'rating.redundancy.weakens', { condition: cap(conditionLabel(w.condition, lang)), setter: w.setter, type: typeName(w.type, lang), member: w.member }),
+    points: 0,
+    key: `weakens:${w.condition}:${w.member}:${w.type}`,
+  }));
 }
 
 /** Trick Room rallenta un membro che supera da solo almeno questa quota del meta; il malus si ferma a −3. */
@@ -340,7 +341,6 @@ const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1
 
 /** Il meteo/campo del team vale +1 se smorza una debolezza ad almeno un compagno, comunque e a quanti. */
 export const WEATHER_HELP = 1;
-export const WEATHER_HURT = 1;
 
 /**
  * +1 una volta sola se il meteo o il campo che il team porta smorza una debolezza di un compagno
@@ -556,7 +556,7 @@ export interface CatalogEntry {
 }
 
 const CATALOG_ORDER: { key: CatalogKey; kind: 'malus' | 'bonus' }[] = [
-  ...(['sharedWeak', 'sameType', 'hazardDuplicate', 'removers', 'weatherClash', 'weakenedMove', 'unmetCondition', 'unusedEnabler', 'weakMember', 'lockedStatus', 'essentialRole', 'importantRole', 'trickRoomFast'] as const)
+  ...(['sharedWeak', 'sameType', 'hazardDuplicate', 'removers', 'weatherClash', 'unmetCondition', 'unusedEnabler', 'weakMember', 'lockedStatus', 'essentialRole', 'importantRole', 'trickRoomFast'] as const)
     .map(key => ({ key, kind: 'malus' as const })),
   ...(['coreTrio', 'weakCovered', 'typeVariety', 'conditionUsed', 'weatherHelp', 'tera', 'minorRole'] as const).map(key => ({ key, kind: 'bonus' as const })),
 ];
@@ -564,7 +564,7 @@ const CATALOG_ORDER: { key: CatalogKey; kind: 'malus' | 'bonus' }[] = [
 /** Tutti i bonus e malus possibili, con il testo per il modale; i punti nei testi vengono dalle costanti. */
 export function bonusMalusCatalog(lang: Lang, teraCap: number): CatalogEntry[] {
   const values = {
-    shared: SHARED_WEAK_POINTS, unmet: UNMET_POINTS, hazard: HAZARD_DUPLICATE, hurt: WEATHER_HURT, hurtStab: WEATHER_HURT_STAB, member: WEAK_MEMBER_POINTS, memberMax: WEAK_MEMBER_MAX, locked: LOCKED_STATUS_POINTS,
+    shared: SHARED_WEAK_POINTS, unmet: UNMET_POINTS, hazard: HAZARD_DUPLICATE, member: WEAK_MEMBER_POINTS, memberMax: WEAK_MEMBER_MAX, locked: LOCKED_STATUS_POINTS,
     essential: ESSENTIAL_POINTS, important: IMPORTANT_POINTS, minor: MINOR_POINTS, room: TRICK_ROOM_MAX, roomEach: TRICK_ROOM_FAST_POINTS, remover: REMOVER_EXTRA_POINTS, clash: WEATHER_CLASH_POINTS, unused: UNUSED_ENABLER_POINTS,
     help: WEATHER_HELP, cap: teraCap,
     same: SAME_TYPE_POINTS, trio: CORE_TRIO_POINTS, covered: WEAK_COVERED_POINTS, variety: TYPE_VARIETY_POINTS, varietyMin: TYPE_VARIETY_MIN,

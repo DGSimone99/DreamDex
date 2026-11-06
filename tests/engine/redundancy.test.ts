@@ -90,14 +90,15 @@ describe('penalità e bonus del meteo', () => {
     expect(texts(team)).toContainEqual(expect.objectContaining({ text: 'Meteo in conflitto: Ninetales (Drought), Pelipper (Drizzle)', points: 3 }));
   });
 
-  it('mosse indebolite dal meteo del team: −1 coverage, −2 STAB', () => {
+  // 2026-11-06: nessun malus (l'Offesa conta già il meteo del team), resta l'avviso del coach
+  it('mosse indebolite dal meteo del team: nessun malus, avviso nel coach', () => {
     const team = [
       { ...withMoves('Ninetales', ['Flamethrower']), ability: 'Drought' },
       withMoves('Kingdra', ['Hydro Pump']),
       withMoves('Kyurem', ['Surf']),
     ];
-    expect(texts(team)).toContainEqual(expect.objectContaining({ text: 'Il sole di Ninetales indebolisce le mosse Water di Kingdra', points: 2 }));
-    expect(texts(team)).toContainEqual(expect.objectContaining({ text: 'Il sole di Ninetales indebolisce le mosse Water di Kyurem', points: 1 }));
+    expect(texts(team).map(i => i.text).join(' | ')).not.toMatch(/indebolisce/);
+    expect(coachTeam(team, DEFAULT_FORMAT, fixtureData).problems.map(p => p.text)).toContain('Il sole di Ninetales indebolisce le mosse Water di Kingdra');
   });
 
   it('il coaching segnala conflitti e mosse indebolite', () => {

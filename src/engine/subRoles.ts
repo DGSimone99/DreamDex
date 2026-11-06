@@ -181,6 +181,8 @@ function computeSetSubRoles(set: TeamSet, rules: FormatRules): SubRoleValues {
   if (wall.special >= rules.wallIndex.special) put('specialWall', 1);
   ids.forEach(id => put('recovery', RECOVERY[id] ?? 0));
   if (ability === 'regenerator') put('recovery', 1);
+  // Poison Heal col veleno di Toxic Orb cura un ottavo a turno, sempre: un recupero vero (Gliscor)
+  if (ability === 'poisonheal' && orbStatus(set) === 'tox') put('recovery', 1);
 
   // Campo
   ids.forEach(id => put('hazards', HAZARDS[id] ?? 0));
