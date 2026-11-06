@@ -189,9 +189,10 @@ describe('mancanze essenziali dei Ruoli tra le penalità', () => {
     expect(rateTeam(physical, fixtureData, 'en')!.penalty.items).toContainEqual(expect.objectContaining({ text: 'Balance with no Special Wall', points: ESSENTIAL_POINTS }));
   });
 
-  it('tutti fisici: −3, una volta sola', () => {
-    const texts = rateTeam(physical, fixtureData)!.penalty.items.filter(i => i.text === 'Nessun attaccante speciale');
-    expect(texts).toEqual([expect.objectContaining({ text: 'Nessun attaccante speciale', points: 3 })]);
+  it('tutti fisici: la riga "Attaccante speciale" dei Ruoli, una volta sola (niente malus a parte "un solo stile")', () => {
+    const items = rateTeam(physical, fixtureData)!.penalty.items;
+    expect(items.filter(i => i.text.includes('Attaccante speciale'))).toHaveLength(1);
+    expect(items.map(i => i.text)).not.toContain('Nessun attaccante speciale');
     // Il coach lo segnala ancora tra i ruoli (in National Dex OU, col recupero e la velocità, il team è un Bulky Offense)
     expect(coachTeam(physical, DEFAULT_FORMAT, fixtureData).problems)
       .toContainEqual(expect.objectContaining({ category: 'roles', text: expect.stringContaining('Attaccante speciale') }));

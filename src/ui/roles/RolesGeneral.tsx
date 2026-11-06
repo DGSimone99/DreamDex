@@ -59,7 +59,7 @@ export function RolesGeneral({ rating, ctx }: { rating: TeamRating; ctx: AreaCon
 
       <section className="rl-block" aria-label={t('rdetail.missingHead')}>
         <h5>{t('rdetail.missingHead')}</h5>
-        {missing.length === 0 && !needs.needStyle
+        {missing.length === 0
           ? <p className="rl-allgood"><Icon name="check" />{t('rdetail.allCovered')}</p>
           : (
             <ul className="rl-missing">
@@ -74,12 +74,6 @@ export function RolesGeneral({ rating, ctx }: { rating: TeamRating; ctx: AreaCon
                   </li>
                 );
               })}
-              {needs.needStyle && (
-                <li className="bad">
-                  <Icon name="close" />
-                  <span className="rl-name">{t('analysis.unbalanced', { style: t(`analysis.style.${needs.needStyle}`) })}</span>
-                </li>
-              )}
             </ul>
           )}
       </section>

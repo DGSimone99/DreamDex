@@ -7,7 +7,6 @@ import { battleName, getSpecies, isCosmeticForme, isDefined, isMega, toID, withi
 import { isLegalIn } from './formats';
 import { explain, type Components, type Facts, type Reason } from './explain';
 import type { Format } from './format';
-import { attackStyle } from './roles';
 import { keyValue, LEVEL_WEIGHT, MISSING_BELOW } from './needs';
 import { LEVEL_KEYS } from './roleLevels';
 import { creditedValues, primaryFamily, setSubRoles } from './subRoles';
@@ -141,7 +140,7 @@ function coverageComponent(set: TeamSet, analysis: TeamAnalysis, team: TeamSet[]
  * I valori del candidato vengono dal rilevatore del solo set (senza calcolo dei danni).
  */
 export function rolesComponent(set: TeamSet, analysis: TeamAnalysis) {
-  const { levels, values, missingRoles, needStyle, rules, archetype } = analysis.needs;
+  const { levels, values, missingRoles, rules, archetype } = analysis.needs;
   // Il candidato col credito del secondario, come i membri del team (un attaccante non è un muro nello stall)
   const raw = setSubRoles(set, rules);
   const candidate = creditedValues(raw, primaryFamily(set, raw), archetype);
@@ -156,13 +155,12 @@ export function rolesComponent(set: TeamSet, analysis: TeamAnalysis) {
     else required += weight * room;
     gained += weight * Math.min(room, Math.max(0, keyValue(candidate, key) - values[key]));
   }
-  const style = needStyle && attackStyle(set) === needStyle ? needStyle : null;
   // Senza voci essenziali o importanti scoperte il margine è quello delle minori
-  const total = (required > 0 ? required : minorRoom) + (needStyle ? 0.5 : 0);
-  const got = gained + (style ? 0.5 : 0);
+  const total = required > 0 ? required : minorRoom;
+  const got = gained;
   // Sotto-ruoli mancanti che il candidato porta (per le motivazioni e il coach)
   const filled = missingRoles.filter(role => (candidate[role] ?? 0) >= MISSING_BELOW);
-  return { value: total > 0 ? Math.min(1, got / total) : 0, facts: { filled, style } };
+  return { value: total > 0 ? Math.min(1, got / total) : 0, facts: { filled } };
 }
 
 function synergyRaw(set: TeamSet, team: TeamSet[], data: EngineData) {
@@ -182,7 +180,7 @@ const NO_FACTS = (usage: number): Facts => ({
   defense: { immune: [], covered: [], sharedWeak: [] },
   threats: { checked: [] },
   coverage: { types: [] },
-  roles: { filled: [], style: null },
+  roles: { filled: [] },
   synergy: null,
   mechanical: [],
   clashes: [],

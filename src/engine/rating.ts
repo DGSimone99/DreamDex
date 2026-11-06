@@ -12,7 +12,7 @@ import { hasSpeedControl, isPassive, isStall } from './roles';
 import { rulesOf, type FormatRules } from './formatRules';
 import type { TeamNeeds } from './needs';
 import { FAMILIES, type SubRoleValues } from './subRoles';
-import { ESSENTIAL_POINTS, IMPORTANT_POINTS, MINOR_POINTS, ONE_STYLE_POINTS, teamRolesArea, type TeamRoles } from './rolesArea';
+import { ESSENTIAL_POINTS, IMPORTANT_POINTS, MINOR_POINTS, teamRolesArea, type TeamRoles } from './rolesArea';
 import { teamSpeedArea, type TeamSpeed } from './speedArea';
 import { strengthComponent } from './scoring';
 import { usageOf } from './stats';
@@ -109,7 +109,7 @@ export interface RatingArea {
 
 /** Chiave della voce del catalogo bonus/malus a cui appartiene una voce del voto. */
 export type CatalogKey = 'sharedWeak' | 'sameType' | 'hazardDuplicate' | 'removers' | 'weatherClash' | 'weakenedMove' | 'unmetCondition' | 'unusedEnabler'
-  | 'weakMember' | 'lockedStatus' | 'essentialRole' | 'importantRole' | 'oneStyle' | 'trickRoomFast'
+  | 'weakMember' | 'lockedStatus' | 'essentialRole' | 'importantRole' | 'trickRoomFast'
   | 'coreTrio' | 'minorRole' | 'weakCovered' | 'typeVariety' | 'conditionUsed' | 'weatherHelp' | 'tera';
 
 export interface Redundancy {
@@ -553,7 +553,7 @@ export interface CatalogEntry {
 }
 
 const CATALOG_ORDER: { key: CatalogKey; kind: 'malus' | 'bonus' }[] = [
-  ...(['sharedWeak', 'sameType', 'hazardDuplicate', 'removers', 'weatherClash', 'weakenedMove', 'unmetCondition', 'unusedEnabler', 'weakMember', 'lockedStatus', 'essentialRole', 'importantRole', 'oneStyle', 'trickRoomFast'] as const)
+  ...(['sharedWeak', 'sameType', 'hazardDuplicate', 'removers', 'weatherClash', 'weakenedMove', 'unmetCondition', 'unusedEnabler', 'weakMember', 'lockedStatus', 'essentialRole', 'importantRole', 'trickRoomFast'] as const)
     .map(key => ({ key, kind: 'malus' as const })),
   ...(['coreTrio', 'weakCovered', 'typeVariety', 'conditionUsed', 'weatherHelp', 'tera', 'minorRole'] as const).map(key => ({ key, kind: 'bonus' as const })),
 ];
@@ -562,7 +562,7 @@ const CATALOG_ORDER: { key: CatalogKey; kind: 'malus' | 'bonus' }[] = [
 export function bonusMalusCatalog(lang: Lang, teraCap: number): CatalogEntry[] {
   const values = {
     shared: SHARED_WEAK_POINTS, unmet: UNMET_POINTS, hazard: HAZARD_DUPLICATE, hurt: WEATHER_HURT, hurtStab: WEATHER_HURT_STAB, member: WEAK_MEMBER_POINTS, memberMax: WEAK_MEMBER_MAX, locked: LOCKED_STATUS_POINTS,
-    essential: ESSENTIAL_POINTS, important: IMPORTANT_POINTS, minor: MINOR_POINTS, style: ONE_STYLE_POINTS, room: TRICK_ROOM_MAX, roomEach: TRICK_ROOM_FAST_POINTS, remover: REMOVER_EXTRA_POINTS, clash: WEATHER_CLASH_POINTS, unused: UNUSED_ENABLER_POINTS,
+    essential: ESSENTIAL_POINTS, important: IMPORTANT_POINTS, minor: MINOR_POINTS, room: TRICK_ROOM_MAX, roomEach: TRICK_ROOM_FAST_POINTS, remover: REMOVER_EXTRA_POINTS, clash: WEATHER_CLASH_POINTS, unused: UNUSED_ENABLER_POINTS,
     help: WEATHER_HELP, cap: teraCap,
     same: SAME_TYPE_POINTS, trio: CORE_TRIO_POINTS, covered: WEAK_COVERED_POINTS, variety: TYPE_VARIETY_POINTS, varietyMin: TYPE_VARIETY_MIN,
     used: CONDITION_USED_POINTS, users: CONDITION_USERS_MIN,
