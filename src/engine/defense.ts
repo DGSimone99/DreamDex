@@ -1,7 +1,7 @@
 import { usesMeta } from './analysis';
 import { metaThreats } from './attackers';
 import { dexPool, ownConditions } from './coverage';
-import { bestHit, orbStatus, setKey, standardHit, type FieldCondition, type Hit, type Target } from './damage';
+import { bestHit, FIRST_HIT_SHARE, FIRST_HIT_SHARE_RECOVERY, orbStatus, setKey, standardHit, type FieldCondition, type Hit, type Target } from './damage';
 import { conditionsOf, fieldCombos, ONE_USE_SHARE, rankWeighted } from './offense';
 import { DEFAULT_FORMAT } from './format';
 import { pokedexOf, teraAllowed } from './formats';
@@ -115,6 +115,18 @@ export function sustainParts(set: TeamSet, holdShare: number, remover: string | 
   return { sources, recovery: halved ? gross / 2 : gross, halved, rocks, rocksHalvedBy, itemLoss, itemLossFrom: itemLoss ? set.item : null };
 }
 
+/**
+ * Quanto conta l'effetto del primo colpo (Multiscale, Shadow Shield, Tera Shell) di chi lo subisce: metà se la sua
+ * Sostenibilità arriva a 50 (si cura e torna a PS pieni), altrimenti un quarto. La Sostenibilità qui non si dimezza per
+ * chi regge pochi colpi (servirebbero i colpi, che dipendono da questa quota).
+ */
+export const FIRST_HIT_SUSTAIN = 50;
+export function firstHitShare(set: TeamSet, team: TeamSet[] = [set]): number {
+  const parts = sustainParts(set, 1, hazardRemover(team), teamConditions(team));
+  const sustain = softScore(Math.max(0, parts.recovery - parts.rocks - parts.itemLoss) / SUSTAIN_FULL);
+  return sustain >= FIRST_HIT_SUSTAIN ? FIRST_HIT_SHARE_RECOVERY : FIRST_HIT_SHARE;
+}
+
 /** Recupero meno perdite per turno (in quota dei PS); `holdShare` come in `sustainParts`. */
 export function sustainability(set: TeamSet, holdShare: number, remover: string | null = null, conditions: FieldCondition[] = []): number {
   const parts = sustainParts(set, holdShare, remover, conditions);
@@ -226,7 +238,8 @@ const TYPED_LIMIT = 5000;
 export function typedHits(member: TeamSet, data: EngineData, team: TeamSet[] = [member]): { plain: number[]; held: number[] } {
   const own = ownConditions(member);
   const combos = fieldCombos(own, conditionsOf(member, team).all);
-  const key = `${setKey(member)}|${data.formatId ?? 'ou'}|${JSON.stringify(combos)}`;
+  const firstHit = firstHitShare(member, team);
+  const key = `${setKey(member)}|${data.formatId ?? 'ou'}|${JSON.stringify(combos)}|${firstHit}`;
   const cachedHits = typedCache.get(key);
   if (cachedHits) return cachedHits;
   if (typedCache.size >= TYPED_LIMIT) typedCache.clear();
@@ -234,7 +247,7 @@ export function typedHits(member: TeamSet, data: EngineData, team: TeamSet[] = [
   const target = member;
   const hit = (type: string, category: 'Physical' | 'Special', boosted: boolean) => {
     const attacker = dummyAttacker(data, category === 'Physical' ? 'atk' : 'spa', type);
-    const options = { moveType: type, targetBoosts: boosted ? setup?.boosts : undefined };
+    const options = { moveType: type, targetBoosts: boosted ? setup?.boosts : undefined, firstHitShare: firstHit };
     return onField(own, combos, conditions => Math.min(1, standardHit(attacker, target, category, { ...options, conditions })?.expected ?? 0));
   };
   const plain = TYPES.flatMap(type => [hit(type, 'Physical', false), hit(type, 'Special', false)]);
@@ -339,21 +352,22 @@ export interface TeamDefense {
 }
 
 /** Danno del colpo migliore vero di una minaccia su un membro; Tera e mossa Z della minaccia a un quarto. */
-function threatHit(threat: TeamSet, member: TeamSet, data: EngineData, teamField: FieldCondition[] = []): Hit | null {
+function threatHit(threat: TeamSet, member: TeamSet, data: EngineData, teamField: FieldCondition[] = [], firstHit = FIRST_HIT_SHARE): Hit | null {
   // Il meteo della minaccia è sempre il suo; quello del team, dove la minaccia non ne porta uno, a metà
   const own = ownConditions(threat);
   const conditions = own;
-  const base = bestHit(threat, member, { conditions, incoming: true });
+  const incoming = { incoming: true, firstHitShare: firstHit };
+  const base = bestHit(threat, member, { conditions, ...incoming });
   const teraOk = teraAllowed({ ...DEFAULT_FORMAT, formatId: data.formatId ?? 'ou' }) && !!threat.teraType;
   const zType = dex.items.get(threat.item).zMoveType;
   const zOk = !!zType && threat.moves.some(m => getMove(m)?.type === zType);
-  const once = [teraOk && bestHit(threat, member, { conditions, tera: true, incoming: true }), zOk && bestHit(threat, member, { conditions, z: true, incoming: true })]
+  const once = [teraOk && bestHit(threat, member, { conditions, tera: true, ...incoming }), zOk && bestHit(threat, member, { conditions, z: true, ...incoming })]
     .filter((h): h is Hit => !!h);
   // Tera e mossa Z: il guadagno sul campo della minaccia, uguale anche col meteo del team (un calcolo in meno per campo)
   const oneUse = base && once.length ? ONE_USE_SHARE * Math.max(0, Math.max(...once.map(h => h.expected)) - base.expected) : 0;
   if (!base) return base;
   const combos = fieldCombos(own, teamField);
-  const expected = onField(own, combos, field => (field === own ? base : bestHit(threat, member, { conditions: field, incoming: true }))?.expected ?? 0);
+  const expected = onField(own, combos, field => (field === own ? base : bestHit(threat, member, { conditions: field, ...incoming }))?.expected ?? 0);
   return { ...base, expected: expected + oneUse };
 }
 
@@ -364,12 +378,14 @@ function threatHit(threat: TeamSet, member: TeamSet, data: EngineData, teamField
 const threatCache = new Map<string, (Hit | null)[]>();
 function threatHitsOf(member: TeamSet, data: EngineData, team: TeamSet[] = [member]): (Hit | null)[] {
   const teamField = conditionsOf(member, team).all;
-  const key = `${setKey({ ...member, moves: [] })}|${data.formatId ?? 'ou'}|${usesMeta(data)}|${!!data.stats}|${teamField.join(',')}`;
+  // Le mosse non contano, salvo per la quota del primo colpo (con un recupero metà invece di un quarto)
+  const firstHit = firstHitShare(member, team);
+  const key = `${setKey({ ...member, moves: [] })}|${data.formatId ?? 'ou'}|${usesMeta(data)}|${!!data.stats}|${teamField.join(',')}|${firstHit}`;
   let hits = threatCache.get(key);
   if (hits) return hits;
   if (threatCache.size >= TYPED_LIMIT) threatCache.clear();
   const target = member;
-  hits = metaThreats(data).map(({ set }) => threatHit(set, target, data, teamField));
+  hits = metaThreats(data).map(({ set }) => threatHit(set, target, data, teamField, firstHit));
   threatCache.set(key, hits);
   return hits;
 }

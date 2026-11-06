@@ -3,6 +3,8 @@ import { coverageTargets, META_DEPTH, teamCoverage, type CoverageRow } from './c
 import { bestHit, setKey, type FieldCondition, type Hit, type HitOptions, type Target } from './damage';
 import type { EngineData } from './data';
 import { defenderPanel, isDefensiveSet } from './defenders';
+// Import circolare con defense.ts: si usano solo funzioni, chiamate dopo il caricamento
+import { firstHitShare } from './defense';
 import { battleAbility, battleSpecies, dex, getMove, toID } from './dex';
 import { DEFAULT_FORMAT } from './format';
 import { teraAllowed } from './formats';
@@ -260,8 +262,10 @@ function measureSet(set: TeamSet, team: TeamSet[], data: EngineData, measure: Me
     const expected: number[] = [];
     const steps: number[] = [];
     let move: string | null = null;
+    // Multiscale, Tera Shell, Air Balloon del bersaglio: un quarto, metà se si cura (damage.ts)
+    const firstHit = firstHitShare(target);
     for (const variant of oneUse ? oneUseVariants : [{ tera: false, z: false }]) {
-      const base = { ...variant, boosts };
+      const base = { ...variant, boosts, firstHitShare: firstHit };
       const off = bestHit(set, target, { ...base, conditions: own });
       // Col meteo del team: ogni combinazione possibile (un meteo e un terreno alla volta), quella che conviene di più
       const on = combos.reduce<Hit | null>((best, conditions) => {

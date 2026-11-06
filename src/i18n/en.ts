@@ -810,6 +810,8 @@ export const en = {
   'guide.def.types.setup.rule': "Defensive boosts count for three quarters of the gain",
   'guide.def.types.weather': "Weather",
   'guide.def.types.weather.rule': "Team weather and terrains change the hits (Fire and Water in sun and rain, Rock types get Sp. Def ×1.5 in sand, Ice types get Def ×1.5 in snow). If a teammate brings them they count half; if the member brings them with its ability, in full",
+  'guide.def.types.firstHit': "First hit",
+  'guide.def.types.firstHit.rule': "Multiscale, Shadow Shield, Tera Shell and Air Balloon only work on the first hit: they count a quarter of their effect, half if the member heals (Sustainability at least 50); Air Balloon always a quarter, once popped it's gone",
   'guide.def.meta.weather.rule': "As in the type hits: team weather counts half if a teammate brings it, in full if the member does; the threat's own weather always applies",
   'guide.def.types.points': "How well it takes each hit (average damage)",
   'guide.def.types.ohko': "KO in one hit",

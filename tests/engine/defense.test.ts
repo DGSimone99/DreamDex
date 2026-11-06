@@ -280,21 +280,25 @@ describe('Wonder Guard sui colpi di tipo', () => {
 });
 
 describe("Tera Shell nella Difesa e nell'Offesa", () => {
-  it('Terapagos-Terastal si misura senza Tera Shell (vale solo a PS pieni): regge sotto il 100%', () => {
+  // 2026-11-06: gli effetti del primo colpo contano un quarto, metà se il Pokémon si cura (damage.ts, firstHitShare)
+  it('Terapagos-Terastal con Rest: Tera Shell conta a metà, regge più che senza ma sotto il 100%', () => {
     const tera = set('Terapagos-Terastal', 'Leftovers', 'Tera Shell', ['Tera Starstorm', 'Calm Mind', 'Rapid Spin', 'Rest'], 'Bold', { hp: 252, def: 252, spa: 4 });
     const plain = { ...tera, ability: 'Pressure' };
-    // Anche col nome base (Tera Shift lo porta subito in forma Terastal)
-    expect(typedHits({ ...tera, species: 'Terapagos', ability: 'Tera Shift' }, fixtureData)).toEqual(typedHits(plain, fixtureData));
-    expect(typedHits(tera, fixtureData)).toEqual(typedHits(plain, fixtureData));
+    // Col nome base è la stessa cosa (Tera Shift lo porta subito in forma Terastal)
+    expect(typedHits({ ...tera, species: 'Terapagos', ability: 'Tera Shift' }, fixtureData)).toEqual(typedHits(tera, fixtureData));
+    const sum = (xs: number[]) => xs.reduce((a, b) => a + b, 0);
+    expect(sum(typedHits(tera, fixtureData).plain)).toBeLessThan(sum(typedHits(plain, fixtureData).plain));
     const d = memberDefense(tera, [tera], fixtureData)!;
     expect(d.hold).toBeLessThan(100);
-    expect(d.metaHold).toBe(memberDefense(plain, [plain], fixtureData)!.metaHold);
     expect(d.metaHold!).toBeLessThan(100);
   });
 
-  it("come bersaglio dell'Offesa Tera Shell non dimezza i colpi", () => {
-    const tera = set('Terapagos', 'Leftovers', 'Tera Shift', ['Rest'], 'Bold', { hp: 252, def: 252 });
+  it("come bersaglio dell'Offesa Tera Shell toglie un quarto del suo effetto (senza recupero)", () => {
+    const tera = set('Terapagos', 'Leftovers', 'Tera Shift', ['Tera Starstorm'], 'Bold', { hp: 252, def: 252 });
     const ghold = set('Gholdengo', 'Choice Specs', 'Good as Gold', ['Focus Blast'], 'Modest', { spa: 252, spe: 252 });
-    expect(bestHit(ghold, tera)!.expected).toBe(bestHit(ghold, { ...tera, species: 'Terapagos-Terastal', ability: 'Pressure' })!.expected);
+    const on = bestHit(ghold, tera)!.expected;
+    const off = bestHit(ghold, { ...tera, species: 'Terapagos-Terastal', ability: 'Pressure' })!.expected;
+    expect(on).toBeLessThan(off);
+    expect(on).toBeGreaterThan(0.7 * off);
   });
 });
