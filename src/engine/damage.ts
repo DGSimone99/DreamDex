@@ -285,7 +285,10 @@ function bestHitOn(attacker: TeamSet, defender: Target, options: HitOptions): Hi
       const low = Math.min(...all.map(x => x!.low));
       const high = Math.max(...all.map(x => x!.high));
       // Mosse a due turni (Solar Blade, Meteor Beam…): un colpo ogni due turni, salvo sole/pioggia giusti o Power Herb
-      const charge = data.flags.charge && !instantCharge(data.id, options.conditions ?? [], attacker.item) ? 0.5 : 1;
+      const twoTurn = data.flags.charge && !instantCharge(data.id, options.conditions ?? [], attacker.item) ? 0.5 : 1;
+      // Ricarica (Hyper Beam, Giga Impact): un colpo ogni due turni, metà. KO di chi la usa (Explosion, Final Gambit):
+      // una volta a partita, un quarto come Tera e mosse Z
+      const charge = twoTurn * (data.flags.recharge ? RECHARGE_SHARE : 1) * (data.selfdestruct ? SELF_KO_SHARE : 1);
       const firstTurn = !options.priorityOnly ? 1 : FIRST_TURN.has(data.id) ? 0.5 : IF_ATTACKED.has(data.id) ? 0.75 : 1;
       const hit = { move: data.name, expected: (avg / hp) * accuracy * charge * firstTurn, min: (low / hp) * charge, max: (high / hp) * charge };
       if (!best || hit.expected > best.expected) best = hit;
@@ -301,6 +304,10 @@ function bestHitOn(attacker: TeamSet, defender: Target, options: HitOptions): Hi
  * con statistiche, EV, natura, strumento e abilità veri dell'attaccante contro il set vero del difensore.
  * Misura solo quanto il difensore regge, indipendentemente dalle mosse che l'attaccante porta.
  */
+/** Mosse con ricarica: metà (un colpo ogni due turni, come le mosse a due turni). */
+export const RECHARGE_SHARE = 0.5;
+/** Mosse che mandano KO chi le usa: un quarto (una volta a partita, come Tera e mosse Z). */
+export const SELF_KO_SHARE = 0.25;
 /** Mosse prioritarie che funzionano solo al primo turno in campo: metà. */
 const FIRST_TURN = new Set(['fakeout', 'firstimpression']);
 /** Mosse prioritarie che falliscono se l'avversario non attacca (setup, mosse di stato): tre quarti. */
