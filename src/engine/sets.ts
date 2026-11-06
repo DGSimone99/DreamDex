@@ -395,12 +395,17 @@ function fromPkmn(parsed: Partial<PkmnSet>): TeamSet {
   const teraType = (parsed as { teraType?: string }).teraType;
   const name = String(parsed.name ?? '').trim();
   const speciesName = species?.name ?? String(parsed.species ?? '');
+  // I nomi come li scrive il gioco ("choice band" → "Choice Band"); quelli sconosciuti restano com'erano (segnalati all'import)
+  const item = String(parsed.item ?? '');
+  const ability = String(parsed.ability || species?.abilities[0] || '');
+  const nature = String(parsed.nature || 'Serious');
   return {
     species: species?.name ?? String(parsed.species ?? ''),
-    item: String(parsed.item ?? ''),
-    ability: String(parsed.ability || species?.abilities[0] || ''),
-    moves: [...(parsed.moves ?? [])].map(String),
-    nature: String(parsed.nature || 'Serious'),
+    item: (item && dex.items.get(item).exists ? dex.items.get(item).name : item),
+    ability: (ability && dex.abilities.get(ability).exists ? dex.abilities.get(ability).name : ability),
+    moves: [...(parsed.moves ?? [])].map(m => getMove(String(m))?.name ?? String(m)),
+    // Una natura sconosciuta diventa neutra (Serious): la libreria del danno non la accetta
+    nature: dex.natures.get(nature).exists ? dex.natures.get(nature).name : 'Serious',
     evs,
     ...(Object.keys(ivs).length ? { ivs } : {}),
     ...(teraType ? { teraType } : {}),
@@ -439,6 +444,9 @@ export function importShowdown(text: string, lang: Lang = 'it'): ImportResult {
     }
     const set = fromPkmn(parsed);
     if (!getSpecies(set.species)) errors.push(t(lang, 'import.unknown', { name: set.species }));
+    const nature = String(parsed.nature ?? '');
+    if (nature && !dex.natures.get(nature).exists) errors.push(t(lang, 'import.unknownNature', { name: set.species, nature }));
+    if (set.item && !dex.items.get(set.item).exists) errors.push(t(lang, 'import.unknownItem', { name: set.species, item: set.item }));
     sets.push(set);
   });
   return { sets, errors };

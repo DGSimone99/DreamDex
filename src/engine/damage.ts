@@ -140,12 +140,19 @@ function calcAbility(set: Target): string | undefined {
   return toID(ability) === 'terashell' ? 'Pressure' : ability || undefined;
 }
 
+/** Il nome dello strumento come lo vuole la libreria ("choice band" → "Choice Band"); niente se sconosciuto. */
+function knownItem(item: string): string | undefined {
+  const found = item ? dex.items.get(item) : null;
+  return found?.exists ? found.name : undefined;
+}
+
 function tryPokemon(name: string, set: Target, options: HitOptions): Pokemon | null {
   try {
     return new Pokemon(gen, name, {
       ability: calcAbility(set),
-      item: set.item || undefined,
-      nature: set.nature || undefined,
+      // Strumento e natura sconosciuti non fanno fallire il calcolo (il Pokémon sparirebbe): niente strumento, natura neutra
+      item: knownItem(set.item),
+      nature: set.nature && dex.natures.get(set.nature).exists ? dex.natures.get(set.nature).name : undefined,
       evs: set.evs,
       ivs: set.ivs,
       boosts: options.boosts,
@@ -228,7 +235,7 @@ export function bestHit(attacker: TeamSet, defender: Target, options: HitOptions
     const useZ = !!zType && zType === data.type;
     // Loaded Dice: la media dei colpi possibili, ognuno col suo calcolo (la libreria ne conterebbe sempre quelli di base)
     const hitCounts = useZ ? [undefined] : diceHits(data, attacker.item, battleAbility(attacker));
-    const calcMoves = hitCounts.map(hits => toMove(data.name, useZ, battleAbility(attacker), attacker.item, hits));
+    const calcMoves = hitCounts.map(hits => toMove(data.name, useZ, battleAbility(attacker), knownItem(attacker.item) ?? '', hits));
     if (calcMoves.some(m => !m)) continue;
     try {
       const results = calcMoves.map(m => calculate(gen, own, target, m!, field));
