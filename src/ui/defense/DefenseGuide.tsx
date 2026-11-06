@@ -98,6 +98,7 @@ export function DefenseGuideSection({ section, defense, meta, formatId = DEFAULT
               { label: g('sus.k.recover'), value: '+50%' }, { label: 'Regenerator', value: '+33%' }, { label: 'Rest', value: '+33%' },
               { label: 'Wish', value: '+25%' }, { label: 'Pain Split', value: '+25%' }, { label: g('sus.k.drain'), value: dec('+12,5%') },
               { label: 'Poison Heal', value: dec('+12,5%') }, { label: 'Leftovers', value: '+6%' }, { label: g('sus.k.weather'), value: '+6%' },
+              { label: 'Grassy Terrain', value: '+6%', title: g('sus.k.grassy') },
             ]} />
           </div>
           <div>
@@ -106,6 +107,7 @@ export function DefenseGuideSection({ section, defense, meta, formatId = DEFAULT
               { label: 'Stealth Rock', value: dec('−12,5%'), title: g('sus.k.rocks') }, { label: 'Life Orb', value: '−10%' },
               { label: 'Toxic Orb', value: dec('−12,5%') }, { label: 'Black Sludge', value: dec('−12,5%'), title: g('sus.k.sludge') },
               { label: 'Flame Orb', value: '−6%' }, { label: 'Sticky Barb', value: '−6%' },
+              { label: g('sus.k.sand'), value: '−6%', title: g('sus.k.sand.rule') },
             ]} />
           </div>
         </div>

@@ -146,9 +146,13 @@ export function poolSpecies(data: EngineData): string[] {
   return [...new Set(speedPool(data).map(r => r.species))];
 }
 
-/** Sticky Web non rallenta i Volanti, chi ha Levitate, Heavy-Duty Boots o Air Balloon. */
+/**
+ * Sticky Web non rallenta i Volanti, chi ha Levitate, Heavy-Duty Boots o Air Balloon, né chi blocca i cali (Clear Body,
+ * White Smoke, Full Metal Body, Mirror Armor). Defiant e Competitive contano come immuni: il calo li potenzia.
+ */
+const WEB_IMMUNE_ABILITIES = ['levitate', 'clearbody', 'whitesmoke', 'fullmetalbody', 'mirrorarmor', 'defiant', 'competitive'];
 export function isWebImmune(species: string, ability: string, item: string): boolean {
-  return !!getSpecies(species)?.types.includes('Flying') || ['levitate'].includes(toID(ability)) || ['heavydutyboots', 'airballoon'].includes(toID(item));
+  return !!getSpecies(species)?.types.includes('Flying') || WEB_IMMUNE_ABILITIES.includes(toID(ability)) || ['heavydutyboots', 'airballoon'].includes(toID(item));
 }
 
 /** La forma che conta come "sé stesso": la propria (Rotom-Wash non è Rotom-Heat), le Mega e le Primal come la base. */
