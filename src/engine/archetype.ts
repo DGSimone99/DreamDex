@@ -1,4 +1,4 @@
-import { battleSpecies, getMove, toID } from './dex';
+import { battleAbility, battleSpecies, getMove, toID } from './dex';
 import { memberPower } from './power';
 import { detectRoles, hasSetup, isFast, isPassive, isStall, legacyRoles } from './roles';
 import { ATTACKER_ROLES, FAMILIES, primaryFamily, rolesList, setSubRoles, type SubRole, type SubRoleValues } from './subRoles';
@@ -32,7 +32,7 @@ const HEAL_MOVES = new Set([
 const HEAL_ABILITIES = new Set(['regenerator', 'poisonheal']);
 const CONDITION_STYLES: [Condition, TeamStyle][] = [['rain', 'rain'], ['sun', 'sun'], ['sand', 'sand'], ['snow', 'snow'], ['trickroom', 'trickroom']];
 
-const heals = (set: TeamSet) => set.moves.some(m => HEAL_MOVES.has(toID(m))) || HEAL_ABILITIES.has(toID(set.ability));
+const heals = (set: TeamSet) => set.moves.some(m => HEAL_MOVES.has(toID(m))) || HEAL_ABILITIES.has(toID(battleAbility(set)));
 /** Veloce di suo (statistica, Scarf, abilità) o con una mossa che gli alza la velocità (Dragon Dance, Quiver Dance…). */
 const fastOrSpeedSetup = (set: TeamSet) => isFast(set)
   || set.moves.some(m => { const move = getMove(m); return move?.category === 'Status' && move.target === 'self' && (move.boosts?.spe ?? 0) > 0; });

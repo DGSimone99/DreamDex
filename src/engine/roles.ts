@@ -58,7 +58,7 @@ export function isPassive(set: TeamSet, rules: FormatRules): boolean {
   const roles = legacyRoles(set, rules);
   const attacks = set.moves.filter(m => (getMove(m)?.category ?? 'Status') !== 'Status').length;
   if (attacks > 2 || isFastSetupSweeper(set, roles) || isSetupBreaker(roles)) return false;
-  const heals = set.moves.some(m => RECOVERY_MOVES.has(toID(m))) || RECOVERY_ABILITIES.has(toID(set.ability));
+  const heals = set.moves.some(m => RECOVERY_MOVES.has(toID(m))) || RECOVERY_ABILITIES.has(toID(battleAbility(set)));
   if (heals || roles.some(r => WALLS.includes(r))) return true;
   // Muro senza recupero: attacca pochissimo e incassa molto (Lanturn con Scald, Toxic, Volt Switch: Offesa 12, Robustezza 76)
   const power = memberPower(set);
