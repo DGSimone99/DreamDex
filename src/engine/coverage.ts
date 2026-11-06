@@ -66,9 +66,13 @@ export function typeAverage(type: string, data: EngineData): { hp: number; def: 
   return average;
 }
 
-/** Il Pokémon medio di un tipo: un solo tipo, le difese medie del tipo, 252 PS e il resto diviso fra le difese, nessuno strumento. */
+/**
+ * Il Pokémon medio di un tipo: un solo tipo, le difese medie del tipo, 252 PS e il resto diviso fra le difese. Tiene
+ * uno strumento che non cambia il danno (Leftovers), come quasi tutti i Pokémon veri: Knock Off ×1,5 e Poltergeist
+ * contano come in partita.
+ */
 function typeDummy(type: string, data: EngineData): Target {
-  return { species: 'Mew', item: '', ability: 'Synchronize', moves: [], nature: 'Hardy', evs: { hp: 252, def: 128, spd: 128 }, types: [type], baseStats: typeAverage(type, data) };
+  return { species: 'Mew', item: 'Leftovers', ability: 'Synchronize', moves: [], nature: 'Hardy', evs: { hp: 252, def: 128, spd: 128 }, types: [type], baseStats: typeAverage(type, data) };
 }
 
 const targetsCache = new Map<string, CoverageTarget[]>();
