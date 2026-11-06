@@ -125,9 +125,17 @@ function baseFormeSet(sets: SetsData | null | undefined, speciesName: string): T
   return { ...base, species: species.name, item: species.requiredItem ?? base.item };
 }
 
-/** Le analisi non scrivono l'abilità quando la specie ne ha una sola: si mette la prima della specie. */
-export function withAbility(set: TeamSet): TeamSet {
-  return set.ability ? set : { ...set, ability: getSpecies(set.species)?.abilities[0] ?? '' };
+/**
+ * Molti preset e analisi non scrivono l'abilità: si mette la più usata della specie nelle statistiche del formato
+ * (o del formato in cui è più giocata), altrimenti la prima della specie. Ninetales prende Drought, non Flash Fire.
+ */
+export function withAbility(set: TeamSet, data?: EngineData): TeamSet {
+  if (set.ability) return set;
+  const species = getSpecies(set.species);
+  const own = Object.values(species?.abilities ?? {}).map(toID);
+  const entry = data && (statsEntry(data.stats, set.species) ?? findByName(data.fallbackStats ?? undefined, set.species));
+  const used = entry ? sortedKeys(entry.abilities).find(id => own.includes(toID(id))) : undefined;
+  return { ...set, ability: used ? dex.abilities.get(used).name : species?.abilities[0] ?? '' };
 }
 
 /**
@@ -135,8 +143,14 @@ export function withAbility(set: TeamSet): TeamSet {
  * → analisi → primo preset di un altro formato → riserva (il formato in cui è più popolare)
  * → set della forma base → set generato dalle mosse imparabili.
  * Reso legale fino a `genLimit` (mosse non imparabili sostituite dalle successive più usate).
+ * È sempre una copia: chi la modifica non tocca i preset né le statistiche (e i voti dopo restano giusti).
  */
 export function defaultSet(data: EngineData, speciesName: string, genLimit = 9): TeamSet {
+  const set = referenceSet(data, speciesName, genLimit);
+  return { ...set, moves: [...set.moves], evs: { ...set.evs }, ...(set.ivs ? { ivs: { ...set.ivs } } : {}) };
+}
+
+function referenceSet(data: EngineData, speciesName: string, genLimit: number): TeamSet {
   // Forma solo da battaglia (Necrozma-Ultra): nel team va la forma che la raggiunge, col suo strumento
   const team = teamFormeOf(speciesName);
   if (team) {
@@ -163,7 +177,7 @@ export function defaultSet(data: EngineData, speciesName: string, genLimit = 9):
     ?? statsSet
     ?? findByName(data.fallback ?? undefined, speciesName)
     ?? baseFormeSet(data.fallback, speciesName);
-  const base = found && withAbility(withoutStone(found, stones, data));
+  const base = found && withAbility(withoutStone(found, stones, data), data);
   if (!base) return generatedSet(getSpecies(speciesName)?.name ?? speciesName, genLimit);
   const legal = makeLegal(base, data, genLimit);
   // Se le mosse illegali non hanno sostituti dalle statistiche, si completa con quelle generate
@@ -348,7 +362,7 @@ function allPresetsFor(data: EngineData, speciesName: string): Preset[] {
       .filter(p => p.set.species === species);
   const own = [...(findByName(data.presets ?? undefined, speciesName) ?? []), ...battleFormePresets(data.presets)];
   const other = [...(findByName(data.fallbackPresets ?? undefined, speciesName) ?? []), ...battleFormePresets(data.fallbackPresets)];
-  return (mergePresets([{ x: own }, { x: other }]).x ?? []).map(p => ({ ...p, set: withAbility(p.set) }));
+  return (mergePresets([{ x: own }, { x: other }]).x ?? []).map(p => ({ ...p, set: withAbility(p.set, data) }));
 }
 
 const TIER_NAMES: Record<string, string> = { '': 'OU', ubers: 'Ubers', monotype: 'Monotype', ag: 'AG', lc: 'LC' };

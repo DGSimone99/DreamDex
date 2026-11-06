@@ -4,10 +4,12 @@
  *      npx tsx scripts/fetch-replays.ts --ladder [formato…]   partite di giocatori medi (rating 1100–1400, le più recenti)
  * Formati predefiniti: gen9nationaldex, gen9ou. Scrive scripts/bench/replays.json (alto livello) o
  * scripts/bench/ladder.json (medi): i team del ladder medio fanno da gruppo "ladder" nel banco, un "medio" vero e non
- * costruito a mano. Rispetta il server: una richiesta ogni 300 ms.
+ * costruito a mano. Rispetta il server: una richiesta ogni 300 ms. I log restano in data/replay-logs: con --reparse
+ * (insieme a --ladder per il ladder medio) le partite già salvate si rileggono col parser di oggi.
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { replayLog, teamForme } from './replay-shared';
 
 const LADDER = process.argv.includes('--ladder');
 /** Rating della partita (alto livello: dal minimo in su; ladder medio: tra minimo e massimo) e quanto indietro andare (il meta cambia). */
@@ -53,6 +55,9 @@ export function parseLog(log: string): { p1: string[]; p2: string[]; winner: str
   const players: Record<string, string> = {};
   const preview: Record<'p1' | 'p2', string[]> = { p1: [], p2: [] };
   const seen: Record<'p1' | 'p2', Map<string, string>> = { p1: new Map(), p2: new Map() };
+  /** Chi è andato KO ("p1: Nick"): dopo il KO Showdown riporta la Mega alla forma base, quel cambio non conta. */
+  const fainted = new Set<string>();
+  const ref = (text: string) => text.replace(/^(p[12])[a-d]?: /, '$1: ');
   let winner: string | null = null;
   let turns = 0;
   for (const line of log.split('\n')) {
@@ -60,9 +65,12 @@ export function parseLog(log: string): { p1: string[]; p2: string[]; winner: str
     const kind = parts[1];
     if (kind === 'player' && parts[3]) players[parts[2]] = parts[3];
     else if (kind === 'poke' && (parts[2] === 'p1' || parts[2] === 'p2')) preview[parts[2]].push(speciesOf(parts[3]));
+    else if (kind === 'faint' && parts[2]) fainted.add(ref(parts[2]));
     else if ((kind === 'switch' || kind === 'drag' || kind === 'detailschange') && parts[2]) {
+      if (kind !== 'detailschange') fainted.delete(ref(parts[2]));
+      else if (fainted.has(ref(parts[2]))) continue;
       const side = parts[2].slice(0, 2) as 'p1' | 'p2';
-      const forme = speciesOf(parts[3]);
+      const forme = teamForme(speciesOf(parts[3]));
       const base = forme.split('-')[0];
       if (side === 'p1' || side === 'p2') seen[side].set(base, forme);
     } else if (kind === 'turn') turns = Number(parts[2]) || turns;
@@ -71,7 +79,7 @@ export function parseLog(log: string): { p1: string[]; p2: string[]; winner: str
   if (preview.p1.length !== 6 || preview.p2.length !== 6) return null;
   const resolve = (side: 'p1' | 'p2') => preview[side].map(name => {
     const base = name.replace(/-\*$/, '').split('-')[0];
-    return seen[side].get(base) ?? name.replace(/-\*$/, '');
+    return seen[side].get(base) ?? teamForme(name.replace(/-\*$/, ''));
   });
   return { p1: resolve('p1'), p2: resolve('p2'), winner, turns, players };
 }
@@ -91,9 +99,8 @@ async function fetchFormat(format: string, known: Set<string>): Promise<Replay[]
       if (found.length >= MAX_REPLAYS) break;
       const rating = entry.rating ?? 0;
       if (rating < MIN_RATING || rating > MAX_RATING || entry.uploadtime < cutoff || known.has(entry.id)) continue;
-      const replay = await json<{ log: string; players: string[] }>(`https://replay.pokemonshowdown.com/${entry.id}.json`);
-      await sleep(DELAY);
-      const parsed = replay && parseLog(replay.log);
+      const log = await replayLog(entry.id, DELAY);
+      const parsed = log && parseLog(log);
       if (!parsed || !parsed.winner || parsed.turns < MIN_TURNS) continue;
       const winner = parsed.players.p1 === parsed.winner ? 1 : parsed.players.p2 === parsed.winner ? 2 : null;
       if (!winner) continue;
@@ -105,6 +112,19 @@ async function fetchFormat(format: string, known: Set<string>): Promise<Replay[]
 }
 
 const file = join('scripts', 'bench', LADDER ? 'ladder.json' : 'replays.json');
+// --reparse: rilegge le partite già salvate col parser di oggi (i log da data/replay-logs, o riscaricati una volta)
+if (process.argv.includes('--reparse')) {
+  const saved: Replay[] = JSON.parse(readFileSync(file, 'utf8'));
+  const kept: Replay[] = [];
+  for (const r of saved) {
+    const log = await replayLog(r.id, DELAY);
+    const parsed = log && parseLog(log);
+    if (parsed) kept.push({ ...r, p1: parsed.p1, p2: parsed.p2 });
+  }
+  writeFileSync(file, '[\n' + kept.map(r => JSON.stringify(r)).join(',\n') + '\n]\n');
+  console.log(`Rilette ${kept.length} partite su ${saved.length} in ${file}`);
+  process.exit(0);
+}
 const args = process.argv.slice(2).filter(a => a !== '--ladder');
 const formats = args.length ? args : ['gen9nationaldex', 'gen9ou'];
 const existing: Replay[] = existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : [];

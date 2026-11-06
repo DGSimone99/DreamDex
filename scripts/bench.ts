@@ -27,7 +27,9 @@ import { rateTeam as rateTeamV1 } from '../legacy/voto-v1/engine/rating';
 import { setRolesCountMeasured } from '../src/engine/roleLevels';
 import { improveReplacements } from '../src/engine/replace';
 import { defaultSet, type TeamSet } from '../src/engine/sets';
-import { getMove } from '../src/engine/dex';
+import { getMove, toID } from '../src/engine/dex';
+import { lockedStatusMoves } from '../src/engine/lockedMoves';
+import { statsEntry } from '../src/engine/stats';
 import type { Game as RealGame, Revealed } from './fetch-games';
 import { bestSwaps, withCandidate } from '../src/engine/teamGain';
 
@@ -255,10 +257,20 @@ export function realSet(fmt: FormatId, r: Revealed): TeamSet | null {
   const base = defaultSet(DATA[fmt], r.species, 9);
   if (!base) return null;
   const used = [...new Set(r.moves)].filter(m => { const d = getMove(m); return !!d && !d.isZ && !d.isMax; }).slice(0, 4);
-  const fill = base.moves.filter(m => !used.some(u => getMove(u)?.id === getMove(m)?.id));
   // Una Mega tiene la sua pietra anche se la partita non la mostra
   const item = /-Mega(-[XY])?$/.test(r.species) ? base.item : r.item ?? base.item;
-  return { ...base, moves: [...used, ...fill].slice(0, 4), item, ability: r.ability ?? base.ability, ...(r.tera || base.teraType ? { teraType: r.tera ?? base.teraType } : {}) };
+  // Le mosse che mancano: dal set di default, poi le più usate; mai una che con lo strumento vero non si usa
+  // (Choice Scarf vista in partita, Swords Dance dal set di default)
+  const ranking = Object.entries(statsEntry(DATA[fmt].stats, r.species)?.moves ?? {}).sort((a, b) => b[1] - a[1])
+    .flatMap(([id]): string[] => { const move = getMove(id); return move ? [move.name] : []; });
+  const moves = [...used];
+  for (const m of [...base.moves, ...ranking]) {
+    if (moves.length >= 4) break;
+    if (moves.some(u => toID(u) === toID(m))) continue;
+    if (lockedStatusMoves({ ...base, item, moves: [...moves, m] }).includes(m)) continue;
+    moves.push(m);
+  }
+  return { ...base, moves, item, ability: r.ability ?? base.ability, ...(r.tera || base.teraType ? { teraType: r.tera ?? base.teraType } : {}) };
 }
 const GAMES_FORMAT: Record<string, FormatId> = REPLAY_FORMAT;
 export const readRealGames = (): RealGame[] => {
