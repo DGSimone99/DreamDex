@@ -30,6 +30,10 @@ const DRAIN_RECOVERY = 0.125;
 const WEATHER_HEAL: Record<string, { condition: FieldCondition; heal: number }> = {
   raindish: { condition: 'rain', heal: 0.0625 }, dryskin: { condition: 'rain', heal: 0.125 }, icebody: { condition: 'snow', heal: 0.0625 },
 };
+/** Cura di Grassy Terrain e danno della sabbia a turno. */
+const FIELD_TICK = 0.0625;
+/** Abilità che non prendono danno dalla sabbia. */
+const SAND_PROOF = new Set(['sandveil', 'sandrush', 'sandforce', 'overcoat']);
 /** Recupero dell'abilità e dello strumento. */
 const RECOVERY_ABILITIES: Record<string, number> = { regenerator: 0.33, poisonheal: 0.125 };
 const RECOVERY_ITEMS: Record<string, number> = { leftovers: 0.0625, blacksludge: 0.0625 };
@@ -66,13 +70,14 @@ export interface SustainParts {
   itemLossFrom: string | null;
 }
 
-/** Il primo membro del team con una mossa che toglie gli hazard, come "Defog (Corviknight)". */
+/** Il primo membro del team con una mossa che toglie gli hazard, come "Defog (Corviknight)"; senza, chi ha Magic Bounce (li rimbalza). */
 export function hazardRemover(team: TeamSet[]): string | null {
   for (const set of team) {
     const move = set.moves.find(m => REMOVAL_MOVES.has(toID(m)));
     if (move) return `${getMove(move)?.name ?? move} (${battleSpecies(set)?.name ?? set.species})`;
   }
-  return null;
+  const bouncer = team.find(set => toID(battleAbility(set)) === 'magicbounce');
+  return bouncer ? `${battleAbility(bouncer)} (${battleSpecies(bouncer)?.name ?? bouncer.species})` : null;
 }
 
 /**
@@ -104,15 +109,30 @@ export function sustainParts(set: TeamSet, holdShare: number, remover: string | 
   const fullRocks = item === 'heavydutyboots' || magicGuard ? 0 : STEALTH_ROCK * effectiveness('Rock', types as never);
   const rocksHalvedBy = fullRocks > 0 ? remover : null;
   const rocks = rocksHalvedBy ? fullRocks * ROCKS_WITH_REMOVAL : fullRocks;
-  // Sheer Force toglie il contraccolpo di Life Orb alle mosse con effetti secondari
-  const sheerForce = ability === 'sheerforce' && set.moves.some(m => { const move = getMove(m); return !!(move?.secondary || move?.secondaries?.length); });
+  // Sheer Force toglie il contraccolpo di Life Orb alle mosse con effetti secondari: la perdita è per la quota degli
+  // attacchi senza effetti (con tutti gli attacchi coperti, nessuna perdita)
+  const attacksList = set.moves.map(getMove).filter(m => !!m && m.category !== 'Status');
+  const withEffect = attacksList.filter(m => !!(m!.secondary || m!.secondaries?.length)).length;
+  const sheerShare = ability === 'sheerforce' && attacksList.length ? 1 - withEffect / attacksList.length : 1;
+  const sheerForce = sheerShare === 0;
   // Niente danno con Magic Guard; niente stato per chi ne è immune (tipo o abilità, `orbStatus`), e Poison Heal trasforma
   // il veleno di Toxic Orb in cura; Heatproof dimezza il bruciore
   const orb = item === 'flameorb' || item === 'toxicorb';
   const immune = (orb && (!status || ability === 'poisonheal'))
     || (item === 'lifeorb' && sheerForce) || (item === 'blacksludge' && itemHeal > 0);
-  const itemLoss = magicGuard || immune ? 0 : (ITEM_LOSSES[item] ?? 0) * (status === 'brn' && ability === 'heatproof' ? 0.5 : 1);
-  return { sources, recovery: halved ? gross / 2 : gross, halved, rocks, rocksHalvedBy, itemLoss, itemLossFrom: itemLoss ? set.item : null };
+  const itemLoss = magicGuard || immune ? 0
+    : (ITEM_LOSSES[item] ?? 0) * (status === 'brn' && ability === 'heatproof' ? 0.5 : 1) * (item === 'lifeorb' ? sheerShare : 1);
+  // Il campo del team: Grassy Terrain cura chi tocca terra di 1/16, la sabbia toglie 1/16 a chi non è Roccia, Terra o
+  // Acciaio (né ha un'abilità o gli Occhialini che la evitano)
+  const grounded = !types.includes('Flying') && ability !== 'levitate' && item !== 'airballoon';
+  const fieldHeal = conditions.includes('grassyterrain') && grounded ? FIELD_TICK : 0;
+  const sandProof = ['Rock', 'Ground', 'Steel'].some(t => types.includes(t)) || SAND_PROOF.has(ability) || item === 'safetygoggles';
+  const fieldLoss = conditions.includes('sand') && !sandProof && !magicGuard ? FIELD_TICK : 0;
+  const total = gross + fieldHeal;
+  return {
+    sources: fieldHeal ? [...sources, 'Grassy Terrain'] : sources, recovery: halved ? total / 2 : total, halved, rocks, rocksHalvedBy,
+    itemLoss: itemLoss + fieldLoss, itemLossFrom: itemLoss ? set.item : fieldLoss ? 'Sandstorm' : null,
+  };
 }
 
 /**
