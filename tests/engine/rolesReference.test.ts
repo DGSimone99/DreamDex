@@ -38,6 +38,10 @@ const KNOWN_MISMATCHES = new Set([
   'uu Amoonguss debuff present',
   'gen9ou Dragapult dot present',
   'gen9ag Groudon hazards has',
+  // Poison Heal con Toxic Orb conta come Recupero (2026-11-06): la tabella era stata scritta prima
+  'ou Gliscor recovery not',
+  'gen9ou Gliscor recovery not',
+  'gen9ag Gliscor recovery not',
 ]);
 const REPORT = join('.superpowers', 'sdd', '2026-10-24-rating-roles', 'reference-mismatches.md');
 const TOLERANCE = 0.1;
