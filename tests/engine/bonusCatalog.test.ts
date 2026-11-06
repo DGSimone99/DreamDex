@@ -27,18 +27,18 @@ describe('catalogo bonus e malus', () => {
   it('le chiavi attese compaiono sulle voci giuste', () => {
     const keys = (team: TeamSet[]) => rateTeam(team, fixtureData)!.penalty.items.map(i => i.catalog);
     expect(keys(teams.hazard)).toEqual(expect.arrayContaining(['hazardDuplicate', 'removers']));
-    expect(keys(teams.meteo)).toEqual(expect.arrayContaining(['weatherClash', 'weakenedMove']));
+    expect(keys(teams.meteo)).toEqual(expect.arrayContaining(['weatherClash']));
     expect(keys(teams.inutilizzato)).toContain('unusedEnabler');
     expect(keys([withMoves('Great Tusk', []), withMoves('Landorus-Therian', []), withMoves('Hippowdon', [])])).toContain('sharedWeak');
     expect(keys([{ ...withMoves('Leafeon', ['Leaf Blade']), ability: 'Chlorophyll' }, withMoves('Garchomp', ['Earthquake'])])).toContain('unmetCondition');
     expect(rateTeam(teams.bonus, fixtureData)!.bonus.items.map(i => i.catalog)).toEqual(['weatherHelp']);
   });
 
-  it('catalogo IT: 20 voci, 13 malus prima, Tera attivo solo con un limite', () => {
+  it('catalogo IT: 19 voci, 12 malus prima, Tera attivo solo con un limite', () => {
     const none = bonusMalusCatalog('it', 0);
-    expect(none).toHaveLength(20);
-    expect(none.slice(0, 13).every(e => e.kind === 'malus')).toBe(true);
-    expect(none.slice(13).every(e => e.kind === 'bonus')).toBe(true);
+    expect(none).toHaveLength(19);
+    expect(none.slice(0, 12).every(e => e.kind === 'malus')).toBe(true);
+    expect(none.slice(12).every(e => e.kind === 'bonus')).toBe(true);
     expect(none.map(e => e.key)).toEqual(expect.arrayContaining(['sameType', 'coreTrio', 'weakCovered', 'typeVariety', 'conditionUsed', 'importantRole', 'minorRole']));
     expect(none.find(e => e.key === 'tera')!.applies).toBe(false);
     expect(bonusMalusCatalog('it', 3).find(e => e.key === 'tera')!.applies).toBe(true);

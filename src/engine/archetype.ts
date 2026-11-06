@@ -1,4 +1,5 @@
 import { battleAbility, battleSpecies, getMove, toID } from './dex';
+import { orbStatus } from './damage';
 import { memberPower } from './power';
 import { detectRoles, hasSetup, isFast, isPassive, isStall, legacyRoles } from './roles';
 import { ATTACKER_ROLES, FAMILIES, primaryFamily, rolesList, setSubRoles, type SubRole, type SubRoleValues } from './subRoles';
@@ -32,6 +33,7 @@ const HEAL_MOVES = new Set([
 const HEAL_ABILITIES = new Set(['regenerator', 'poisonheal']);
 const CONDITION_STYLES: [Condition, TeamStyle][] = [['rain', 'rain'], ['sun', 'sun'], ['sand', 'sand'], ['snow', 'snow'], ['trickroom', 'trickroom']];
 
+const poisonHealer = (set: TeamSet) => toID(battleAbility(set)) === 'poisonheal' && orbStatus(set) === 'tox';
 const heals = (set: TeamSet) => set.moves.some(m => HEAL_MOVES.has(toID(m))) || HEAL_ABILITIES.has(toID(battleAbility(set)));
 /** Veloce di suo (statistica, Scarf, abilità) o con una mossa che gli alza la velocità (Dragon Dance, Quiver Dance…). */
 const fastOrSpeedSetup = (set: TeamSet) => isFast(set)
@@ -39,7 +41,7 @@ const fastOrSpeedSetup = (set: TeamSet) => isFast(set)
 
 /**
  * Soglie della regola di National Dex OU (typeRule 'recoverySpeed'), sul punteggio
- * membri con una mossa di recupero − velocità base media / 15 − Focus Sash: sotto la prima Hyper Offense, poi Bulky Offense,
+ * membri con una mossa di recupero (o Poison Heal con Toxic Orb) − velocità base media / 15 − Focus Sash: sotto la prima Hyper Offense, poi Bulky Offense,
  * Balance e Semi-stall. Tarate il 2026-11-05 sui 102 team di National Dex OU del banco di cui l'autore ha scritto il tipo:
  * 83% di giusti (80% su team lasciati fuori dalla taratura), contro il 74% della regola dei muri. Il recupero spinge verso
  * la difesa; la velocità e la Focus Sash verso l'attacco. La robustezza media delle statistiche separava peggio di tutte:
@@ -62,7 +64,8 @@ const RECOVERY_SPEED_SCALE = 15;
 /** National Dex OU: il tipo dal recupero, dalla velocità base media e dalle Focus Sash; lo stall resta tutti e 6 passivi. */
 function recoverySpeedArchetype(team: TeamSet[], rules: FormatRules): Archetype {
   if (isStall(team, rules)) return 'stall';
-  const healing = team.filter(set => set.moves.some(m => HEAL_MOVES.has(toID(m))));
+  // Recupero: una mossa, o Poison Heal col veleno di Toxic Orb (Gliscor si cura ogni turno come con una mossa)
+  const healing = team.filter(set => set.moves.some(m => HEAL_MOVES.has(toID(m))) || poisonHealer(set));
   const recovery = healing.length;
   const speed = team.reduce((acc, set) => acc + (battleSpecies(set)?.baseStats.spe ?? 0), 0) / team.length;
   const sashes = team.filter(set => toID(set.item) === 'focussash').length;
