@@ -199,14 +199,12 @@ describe('tabella dei livelli per archetipo', () => {
     const needs = teamNeeds(physical, fixtureData, undefined, 'hyperOffense');
     expect(needs.values.anySpecial).toBe(0);
     expect(needs.essentialMissing).toEqual(['anySpecial']);
-    expect(needs.needStyle).toBeNull();
     const area = teamRolesArea(physical, fixtureData, 'it', needs);
-    // Un solo malus essenziale (le importanti mancanti hanno il loro), niente "un solo stile" in più
+    // Un solo malus essenziale (le importanti mancanti hanno il loro): lo squilibrio lo dice la riga, nessun malus in più
     const essential = area.failures.filter(f => f.catalog === 'essentialRole');
     expect(essential).toHaveLength(1);
     expect(essential[0]).toMatchObject({ points: ESSENTIAL_POINTS });
     expect(essential[0].text).toContain('Attaccante speciale');
-    expect(area.failures.some(f => f.catalog === 'oneStyle')).toBe(false);
     expect(area.failures.filter(f => f.catalog === 'importantRole')).toHaveLength(needs.importantMissing.length);
   });
 
@@ -306,11 +304,6 @@ describe('bisogni del team dai sotto-ruoli', () => {
     expect(needLabel('physicalWall', 'en')).toBe('Physical Wall');
   });
 
-  it('squilibrio: almeno 4 attaccanti tutti dello stesso tipo, non nello stall', () => {
-    const physical = ['Great Tusk', 'Kingambit', 'Dragonite', 'Garchomp'].map(n => set(n, '', '', ['Earthquake', 'Close Combat']));
-    expect(teamNeeds(physical, fixtureData).needStyle).toBe('special');
-    expect(teamNeeds(physical.slice(0, 2), fixtureData).needStyle).toBeNull();
-  });
 });
 
 describe('voto e coach seguono i livelli dell\'archetipo', () => {

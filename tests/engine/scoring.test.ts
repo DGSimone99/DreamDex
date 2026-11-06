@@ -16,7 +16,7 @@ function factBehind(s: Suggestion, component: ComponentKey): boolean {
     defense: f.defense.immune.length + f.defense.covered.length > 0,
     threats: f.threats.checked.length > 0,
     coverage: f.coverage.types.length > 0,
-    roles: f.roles.filled.length > 0 || f.roles.style !== null,
+    roles: f.roles.filled.length > 0,
     synergy: (!!f.synergy && f.synergy.pct >= 0.05) || f.mechanical.length > 0 || f.clashes.length > 0,
     strength: f.strength.usage > 0,
   }[component];

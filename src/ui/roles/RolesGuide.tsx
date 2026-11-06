@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import type { Archetype } from '../../engine/archetype';
 import { MISSING_BELOW } from '../../engine/needs';
-import { ESSENTIAL_POINTS, IMPORTANT_POINTS, MINOR_POINTS, ONE_STYLE_POINTS } from '../../engine/rolesArea';
+import { ESSENTIAL_POINTS, IMPORTANT_POINTS, MINOR_POINTS } from '../../engine/rolesArea';
 import { LEVEL_KEYS, levelOf, type Level, type LevelKey } from '../../engine/roleLevels';
 import { BREAKER_WALLBREAKING, SWEEPER_OFFENSE, SWEEPER_SPEED } from '../../engine/subRoles';
 import { useLang, useT } from '../../i18n/react';
@@ -91,7 +91,6 @@ export function RolesGuideSection({ section, archetype, meta }: { section: Roles
         <p className="guide-foot">{g('levels.foot')}</p>
         <h5>{g('extra')}</h5>
         <ul className="guide-lines">
-          <li>{g('extra.style', { n: ONE_STYLE_POINTS })}</li>
           <li>{g('extra.secondary')}</li>
         </ul>
       </>
