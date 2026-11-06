@@ -135,7 +135,7 @@ export function sustainability(set: TeamSet, holdShare: number, remover: string 
 
 /** Mosse di potenziamento difensivo e gli aumenti che i dati non descrivono (Stockpile, Curse). */
 const DEFENSIVE_SETUP = new Set(['irondefense', 'acidarmor', 'barrier', 'cottonguard', 'cosmicpower', 'stockpile', 'defendorder', 'bulkup', 'coil', 'curse',
-  'calmmind', 'amnesia', 'quiverdance', 'geomancy', 'shelter', 'victorydance', 'noretreat'].map(toID));
+  'calmmind', 'amnesia', 'quiverdance', 'geomancy', 'shelter', 'victorydance', 'noretreat', 'clangoroussoul', 'takeheart'].map(toID));
 const DEFENSIVE_EXTRA: Record<string, { def?: number; spd?: number }> = { stockpile: { def: 1, spd: 1 }, curse: { def: 1 } };
 
 /** La mossa di potenziamento difensivo più forte del set (per Dif. + Dif. Speciale), dopo un uso. */

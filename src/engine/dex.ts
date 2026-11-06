@@ -100,6 +100,23 @@ export function battleAbility(set: { species: string; item: string; ability: str
   return forme && forme.name !== getSpecies(set.species)?.name ? forme.abilities[0] : set.ability;
 }
 
+/**
+ * Priorità della mossa col set: quella della mossa più quella dell'abilità. Gale Wings +1 alle mosse Volante (a PS pieni:
+ * conta come sempre, come le altre priorità), Triage +3 alle mosse che curano o assorbono (Draining Kiss, Drain Punch).
+ * Prankster vale solo per le mosse di stato, che non attaccano.
+ */
+export function movePriority(set: { species: string; item: string; ability: string }, move: Move): number {
+  const ability = toID(battleAbility(set));
+  if (ability === 'galewings' && move.type === 'Flying') return move.priority + 1;
+  if (ability === 'triage' && (move.flags.heal || move.drain)) return move.priority + 3;
+  return move.priority;
+}
+
+/** Il set ha una mossa d'attacco con priorità (anche dall'abilità: Gale Wings, Triage). */
+export function hasPriorityAttack(set: { species: string; item: string; ability: string; moves: string[] }): boolean {
+  return set.moves.some(m => { const move = getMove(m); return !!move && move.category !== 'Status' && movePriority(set, move) > 0; });
+}
+
 /** Abilità che cambiano sempre una statistica (in battaglia): Huge Power raddoppia l'Attacco, Fur Coat la Difesa… */
 export const STAT_ABILITIES: Record<string, Partial<Record<'atk' | 'def' | 'spa' | 'spd', number>>> = {
   hugepower: { atk: 2 }, purepower: { atk: 2 }, gorillatactics: { atk: 1.5 }, hustle: { atk: 1.5 },

@@ -1,5 +1,5 @@
 import { calculate, Field, Generations, Move as CalcMove, Pokemon } from '@smogon/calc';
-import { battleAbility, battleSpecies, dex, getMove, toID } from './dex';
+import { battleAbility, battleSpecies, dex, getMove, movePriority, toID } from './dex';
 import type { TeamSet } from './sets';
 import type { Condition } from './synergy';
 
@@ -15,7 +15,7 @@ export interface HitOptions {
   tera?: boolean;
   /** L'attaccante usa la mossa Z del suo cristallo (se è del tipo della mossa). */
   z?: boolean;
-  boosts?: Partial<Record<'atk' | 'spa' | 'def' | 'spd', number>>;
+  boosts?: Partial<Record<'atk' | 'spa' | 'def' | 'spd' | 'spe', number>>;
   /** Aumenti di Difesa e Dif. Speciale del bersaglio (setup difensivo); un attaccante Unaware li ignora. */
   targetBoosts?: Partial<Record<'def' | 'spd', number>>;
   /** Tipo del colpo standard (`standardHit`); senza, un colpo senza tipo. */
@@ -260,7 +260,7 @@ function bestHitOn(attacker: TeamSet, defender: Target, options: HitOptions): Hi
     const data = getMove(name);
     if (!data || data.category === 'Status') continue;
     const grassyGlide = data.id === 'grassyglide' && (options.conditions ?? []).includes('grassyterrain');
-    if (options.priorityOnly && !(data.priority > 0 || grassyGlide)) continue;
+    if (options.priorityOnly && !(movePriority(attacker, data) > 0 || grassyGlide)) continue;
     const accuracy = data.accuracy === true ? 1 : data.accuracy / 100;
     // Mosse OHKO (Sheer Cold, Fissure): la libreria non le calcola; KO se colpiscono, salvo immunità
     if (data.ohko) {
