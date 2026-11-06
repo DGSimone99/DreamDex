@@ -242,7 +242,8 @@ export const TRICK_ROOM_MAX = 3;
 export const WEAK_POWER = 30;
 /** Valore minimo di un sotto-ruolo di Campo o Disturbo perché un Pokémon debole porti un'utilità chiave. */
 export const UTILITY_MIN = 0.5;
-const UTILITY_ROLES = [...FAMILIES.support, ...FAMILIES.utility];
+// Il Pivot da solo non salva un membro debole (Raticate con solo Teleport): cambia ma non porta niente al team
+const UTILITY_ROLES = [...FAMILIES.support, ...FAMILIES.utility].filter(role => role !== 'pivot');
 
 /**
  * Il membro porta un'utilità chiave: un sotto-ruolo di Campo o Disturbo (Delibird con Spikes), il controllo velocità
@@ -372,8 +373,10 @@ export function teraBonus(team: TeamSet[], analysis: TeamAnalysis, cap: number, 
   if (cap <= 0) return [];
   const items: Redundancy[] = [];
   for (const row of analysis.weakness.filter(r => r.weak > r.resist)) {
+    // Il Tera conta solo se cambia qualcosa: il membro col suo tipo non resiste già (Kingambit Tera Dark sullo Spettro no)
     const member = team.find(set => (TYPES as readonly string[]).includes(set.teraType ?? '')
-      && effectiveness(row.type, [set.teraType!]) < 1);
+      && effectiveness(row.type, [set.teraType!]) < 1
+      && effectiveness(row.type, (battleSpecies(set)?.types ?? []) as never) >= 1);
     if (!member) continue;
     items.push({ text: t(lang, 'rating.bonus.tera', { tera: typeName(member.teraType!, lang), member: battleName(member), type: typeName(row.type, lang) }), points: 1, catalog: 'tera' });
     if (items.length === cap) break;
