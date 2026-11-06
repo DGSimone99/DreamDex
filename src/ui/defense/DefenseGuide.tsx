@@ -131,6 +131,7 @@ export function DefenseGuideSection({ section, defense, meta, formatId = DEFAULT
           [g('types.hits'), g('types.hits.rule')],
           [g('types.setup'), g('types.setup.rule')],
           [g('types.weather'), g('types.weather.rule')],
+          [g('types.firstHit'), g('types.firstHit.rule')],
         ]} />
         <TypeAttackers formatId={formatId} />
 

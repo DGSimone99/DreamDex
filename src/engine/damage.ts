@@ -29,7 +29,22 @@ export interface HitOptions {
    * chi attacca, non toglie danno a chi lo prende.
    */
   incoming?: boolean;
+  /**
+   * Quanto conta l'effetto del primo colpo del difensore (Multiscale, Shadow Shield, Tera Shell): FIRST_HIT_SHARE,
+   * o FIRST_HIT_SHARE_RECOVERY se il difensore torna a PS pieni (`firstHitShare` in defense.ts). Air Balloon sempre un quarto.
+   */
+  firstHitShare?: number;
 }
+
+/**
+ * Effetti che valgono solo a PS pieni o fino al primo colpo: Multiscale e Shadow Shield dimezzano il danno, Tera Shell lo
+ * rende poco efficace, Air Balloon dà l'immunità alla Terra finché non scoppia. Il voto misura colpi ripetuti: contano un
+ * quarto del loro effetto, metà se il Pokémon si cura (torna a PS pieni e l'abilità si riaccende); Air Balloon non torna.
+ * Scelta dell'utente 2026-11-06.
+ */
+export const FIRST_HIT_SHARE = 0.25;
+export const FIRST_HIT_SHARE_RECOVERY = 0.5;
+const FIRST_HIT_ABILITIES = new Set(['multiscale', 'shadowshield', 'terashell']);
 
 export interface Hit {
   move: string;
@@ -68,11 +83,15 @@ function instantCharge(id: string, conditions: FieldCondition[], item: string): 
  * Un bersaglio può avere tipi e difese base sovrascritti: il manichino della Coverage di tipi e della Potenza è un
  * Pokémon di un solo tipo con le difese medie di quel tipo.
  */
-export type Target = TeamSet & { types?: string[]; baseStats?: Partial<Record<'hp' | 'atk' | 'def' | 'spa' | 'spd', number>> };
+export type Target = TeamSet & {
+  types?: string[]; baseStats?: Partial<Record<'hp' | 'atk' | 'def' | 'spa' | 'spd', number>>;
+  /** Il difensore senza gli effetti del primo colpo (abilità neutra, niente Air Balloon): per la quota di `firstHitShare`. */
+  noFirstHit?: boolean;
+};
 
 /** Chiave del set per il contenuto: le proposte creano set sempre nuovi, uguali a quelli già calcolati. */
 export const setKey = (set: Target): string =>
-  JSON.stringify([set.species, set.item, set.ability, set.moves, set.nature, set.evs, set.ivs ?? null, set.teraType ?? null, set.types ?? null, set.baseStats ?? null]);
+  JSON.stringify([set.species, set.item, set.ability, set.moves, set.nature, set.evs, set.ivs ?? null, set.teraType ?? null, set.types ?? null, set.baseStats ?? null, !!set.noFirstHit]);
 
 /** Cache limitate: oltre il limite si svuotano (i Pokémon e le mosse della libreria si riusano, il calcolo li copia). */
 const LIMIT = 20000;
@@ -131,13 +150,28 @@ function buildPokemon(set: Target, options: HitOptions, role: 'attacker' | 'defe
   return null;
 }
 
-/**
- * L'abilità per la libreria. Tera Shell (Terapagos-Terastal) rende poco efficace ogni colpo solo a PS pieni: Offesa e
- * Difesa misurano colpi ripetuti, quindi conta come un'abilità senza effetto sul danno.
- */
+/** L'abilità per la libreria; senza gli effetti del primo colpo (`noFirstHit`) una neutra al posto di Multiscale & co. */
 function calcAbility(set: Target): string | undefined {
   const ability = battleAbility(set);
-  return toID(ability) === 'terashell' ? 'Pressure' : ability || undefined;
+  return set.noFirstHit && FIRST_HIT_ABILITIES.has(toID(ability)) ? 'Pressure' : ability || undefined;
+}
+
+/** La quota dell'effetto del primo colpo del difensore, o null se non ne ha. Air Balloon sempre un quarto. */
+function firstHitOf(defender: Target, options: HitOptions): number | null {
+  if (defender.noFirstHit) return null;
+  if (toID(defender.item) === 'airballoon') return FIRST_HIT_SHARE;
+  return FIRST_HIT_ABILITIES.has(toID(battleAbility(defender))) ? options.firstHitShare ?? FIRST_HIT_SHARE : null;
+}
+
+/** Il colpo col difensore con e senza l'effetto del primo colpo, mescolati secondo la quota. */
+function withFirstHit(defender: Target, options: HitOptions, hit: (target: Target) => Hit | null): Hit | null {
+  const share = firstHitOf(defender, options);
+  if (share === null) return hit(defender);
+  const on = hit(defender);
+  const off = hit({ ...defender, noFirstHit: true });
+  if (!on || !off) return on ?? off;
+  const mix = (a: number, b: number) => b + share * (a - b);
+  return { move: off.move, expected: mix(on.expected, off.expected), min: mix(on.min, off.min), max: mix(on.max, off.max) };
 }
 
 /** Il nome dello strumento come lo vuole la libreria ("choice band" → "Choice Band"); niente se sconosciuto. */
@@ -151,7 +185,7 @@ function tryPokemon(name: string, set: Target, options: HitOptions): Pokemon | n
     return new Pokemon(gen, name, {
       ability: calcAbility(set),
       // Strumento e natura sconosciuti non fanno fallire il calcolo (il Pokémon sparirebbe): niente strumento, natura neutra
-      item: knownItem(set.item),
+      item: set.noFirstHit && toID(set.item) === 'airballoon' ? undefined : knownItem(set.item),
       nature: set.nature && dex.natures.get(set.nature).exists ? dex.natures.get(set.nature).name : undefined,
       evs: set.evs,
       ivs: set.ivs,
@@ -208,6 +242,10 @@ function diceHits(move: NonNullable<ReturnType<typeof getMove>>, item: string, a
 
 /** Il colpo migliore del set contro il difensore (mai terastallizzato); null senza mosse d'attacco o se la libreria non conosce i Pokémon. */
 export function bestHit(attacker: TeamSet, defender: Target, options: HitOptions = {}): Hit | null {
+  return withFirstHit(defender, options, target => bestHitOn(attacker, target, options));
+}
+
+function bestHitOn(attacker: TeamSet, defender: Target, options: HitOptions): Hit | null {
   const own = toPokemon(attacker, options);
   const target = toPokemon(defender, {}, 'defender');
   if (!own || !target) return null;
@@ -281,6 +319,10 @@ function rollSums(result: unknown): { avg: number; low: number; high: number } |
 }
 
 export function standardHit(attacker: Target, defender: Target, category: 'Physical' | 'Special', options: HitOptions = {}): Hit | null {
+  return withFirstHit(defender, options, target => standardHitOn(attacker, target, category, options));
+}
+
+function standardHitOn(attacker: Target, defender: Target, category: 'Physical' | 'Special', options: HitOptions): Hit | null {
   const own = toPokemon(attacker, options);
   // Unaware ignora gli aumenti del bersaglio; la chiave della cache li contiene
   const targetBoosts = toID(battleAbility(attacker)) === 'unaware' ? undefined : options.targetBoosts;

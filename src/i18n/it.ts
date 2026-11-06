@@ -812,6 +812,8 @@ export const it: Record<keyof typeof en, string> = {
   'guide.def.types.setup.rule': "I buff difensivi contano per tre quarti del guadagno",
   'guide.def.types.weather': "Meteo",
   'guide.def.types.weather.rule': "Il meteo e i terreni del team cambiano i colpi (Fuoco e Acqua col sole e la pioggia, Dif. Sp. ×1,5 alle Roccia con la sabbia, Difesa ×1,5 alle Ghiaccio con la neve). Se li porta un compagno contano a metà; se li porta il membro con la sua abilità, interi",
+  'guide.def.types.firstHit': "Primo colpo",
+  'guide.def.types.firstHit.rule': "Multiscale, Shadow Shield, Tera Shell e Air Balloon valgono solo al primo colpo: contano un quarto del loro effetto, metà se il membro si cura (Sostenibilità almeno 50); Air Balloon sempre un quarto, scoppiato non torna",
   'guide.def.meta.weather.rule': "Come nei colpi di tipo: il meteo del team conta a metà se lo porta un compagno, intero se lo porta il membro; il meteo della minaccia vale sempre",
   'guide.def.types.points': "Quanto regge ogni colpo (danno medio)",
   'guide.def.types.ohko': "KO in un colpo",
