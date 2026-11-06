@@ -1,4 +1,4 @@
-import { battleAbility, battleSpecies, getMove, getSpecies, isDefined, STAT_ABILITIES, toID } from './dex';
+import { battleAbility, battleSpecies, getMove, getSpecies, hasPriorityAttack, isDefined, STAT_ABILITIES, toID } from './dex';
 import { rulesOf, type FormatRules } from './formatRules';
 import { mostCommonSet, type TeamSet } from './sets';
 import { statLines } from './statCalc';
@@ -257,12 +257,16 @@ const BLOCKING_ABILITIES: Record<StatusSource['status'], string[]> = {
 };
 const IMMUNE_TYPE: Partial<Record<StatusSource['status'], string>> = { brn: 'Fire', par: 'Electric', seed: 'Grass' };
 
-/** Il rivale può subire lo stato di questa fonte? `corrosion`: chi avvelena ignora Acciaio e Veleno. */
-function affects(src: StatusSource, rival: StatusRival, corrosion: boolean): boolean {
+/**
+ * Il rivale può subire lo stato di questa fonte? `corrosion`: chi avvelena ignora Acciaio e Veleno. `prankster`: le mosse
+ * di stato con priorità di Prankster falliscono sui tipi Buio.
+ */
+function affects(src: StatusSource, rival: StatusRival, corrosion: boolean, prankster = false): boolean {
   const move = getMove(src.move);
   const ability = toID(rival.ability);
   const types = rival.types;
   const isStatusMove = move?.category === 'Status';
+  if (prankster && isStatusMove && types.includes('Dark')) return false;
   if (BLOCKING_ABILITIES[src.status].includes(ability)) return false;
   if (isStatusMove && (ability === 'magicbounce' || ability === 'goodasgold')) return false;
   if (!isStatusMove && ability === 'shielddust' && src.status !== 'salt') return false;
@@ -350,7 +354,7 @@ const PIVOT_ATTACKS = new Set(['uturn', 'voltswitch', 'flipturn']);
 /** Attacchi di un lato (senza i pivot) che fanno di un membro un "Attaccante fisico/speciale", con Offesa almeno SWEEPER_OFFENSE. */
 const ATTACKER_MOVES = 2;
 
-const isPriorityAttack = (set: TeamSet) => set.moves.map(getMove).filter(isDefined).some(m => m.category !== 'Status' && m.priority > 0);
+const isPriorityAttack = (set: TeamSet) => hasPriorityAttack(set);
 
 /** Calcolo con i gruppi dati (i test li passano a mano); restituisce valori e motivi per la scheda. */
 export function measureWith(set: TeamSet, team: TeamSet[], data: EngineData, pool: StatusRival[], speeds: SpeedRival[]): { values: SubRoleValues; reasons: SubRoleReason[] } {
@@ -431,7 +435,7 @@ export function measureWith(set: TeamSet, team: TeamSet[], data: EngineData, poo
   // Stati: valore x quota del gruppo che li può subire
   const corrosion = ability === 'corrosion';
   for (const src of statusSources(set)) {
-    const s = share(r => affects(src, r, corrosion));
+    const s = share(r => affects(src, r, corrosion, ability === 'prankster'));
     put('dot', Math.min(1, src.dot * s), src.move, s);
     put('debuff', Math.min(1, src.debuff * s), src.move, s);
   }

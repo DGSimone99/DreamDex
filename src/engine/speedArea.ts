@@ -1,5 +1,5 @@
 import type { EngineData } from './data';
-import { battleAbility, battleSpecies, dex, getMove, toID } from './dex';
+import { battleAbility, battleSpecies, dex, getMove, movePriority, toID } from './dex';
 import { softScore } from './scale';
 import { bestHit, setKey } from './damage';
 import { ownConditions } from './coverage';
@@ -94,8 +94,8 @@ export interface MemberSpeed {
 }
 
 /** Mosse che alzano la Velocità di uno stadio (×1,5) o di due (×2; Shift Gear ne dà due, Geomancy con la Power Herb). */
-export const SETUP_PLUS_ONE = new Set(['dragondance', 'quiverdance', 'victorydance', 'tidyup', 'trailblaze', 'flamecharge', 'rapidspin', 'aquastep', 'esperwing', 'scaleshot']);
-export const SETUP_PLUS_TWO = new Set(['shellsmash', 'agility', 'rockpolish', 'autotomize', 'shiftgear', 'geomancy']);
+export const SETUP_PLUS_ONE = new Set(['dragondance', 'quiverdance', 'victorydance', 'tidyup', 'trailblaze', 'flamecharge', 'rapidspin', 'aquastep', 'esperwing', 'scaleshot', 'clangoroussoul', 'noretreat']);
+export const SETUP_PLUS_TWO = new Set(['shellsmash', 'agility', 'rockpolish', 'autotomize', 'shiftgear', 'geomancy', 'filletaway']);
 /** Abilità che raddoppiano la velocità col meteo o il campo giusto. */
 export const WEATHER_SPEED: Record<string, { weather?: string; terrain?: string }> = {
   swiftswim: { weather: 'rain' }, chlorophyll: { weather: 'sun' }, sandrush: { weather: 'sand' }, slushrush: { weather: 'snow' },
@@ -174,7 +174,8 @@ export function speedOptions(set: TeamSet, team: TeamSet[]): SpeedOption[] {
   const weathers = fields.map(f => f.weather).filter(Boolean) as string[];
   const terrains = fields.map(f => f.terrain).filter(Boolean) as string[];
   const ability = toID(battleAbility(set));
-  const plusTwo = moveName(set, SETUP_PLUS_TWO);
+  // Geomancy carica un turno: conta solo con la Power Herb
+  const plusTwo = moveName({ ...set, moves: set.moves.filter(m => toID(m) !== 'geomancy' || toID(set.item) === 'powerherb') }, SETUP_PLUS_TWO);
   const plusOne = moveName(set, SETUP_PLUS_ONE) ?? (ability === 'speedboost' ? battleAbility(set) : null);
   if (plusTwo) options.push({ condition: 'setup', source: getMove(plusTwo)?.name ?? plusTwo, memberFactor: 2 });
   else if (plusOne) options.push({ condition: 'setup', source: getMove(plusOne)?.name ?? plusOne, memberFactor: 1.5 });
@@ -290,7 +291,7 @@ function measure(set: TeamSet, data: EngineData, team: TeamConditions): MemberSp
   const terrain = grassy ? ['grassyterrain' as const] : ownTerrain.length ? [] : team.terrains.slice(0, 1).map(tr => TERRAIN_TO_CONDITION[tr]).filter(Boolean);
   const conditions = [...own.filter(c => WEATHER_CONDITIONS.has(c) || !grassy), ...teamWeather, ...terrain] as typeof own;
   // Senza mosse che qui sono prioritarie (Grassy Glide senza campo erboso) niente calcoli
-  const hasPriority = set.moves.some(m => { const d = getMove(m); return !!d && d.category !== 'Status' && (d.priority > 0 || (d.id === 'grassyglide' && grassy)); });
+  const hasPriority = set.moves.some(m => { const d = getMove(m); return !!d && d.category !== 'Status' && (movePriority(set, d) > 0 || (d.id === 'grassyglide' && grassy)); });
   const byMove = new Map<string, number>();
   const priorityExtra = pool.map(() => 0);
   if (totalWeight && hasPriority) {

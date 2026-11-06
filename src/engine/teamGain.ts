@@ -45,8 +45,8 @@ export function areaDrops(before: TeamRating, after: TeamRating): { key: string;
     .sort((a, b) => a.change - b.change);
 }
 
-/** Variazione di ogni area per il suo peso nel voto (i pesi sommano a 1), arrotondata a un decimale. */
-function areaPointsOf(before: TeamRating, after: TeamRating): Partial<Record<ScoredArea, number>> {
+/** Variazione di ogni area per il suo peso nel voto (i pesi sommano a 1), arrotondata a un decimale; i Ruoli coi loro punti. */
+export function areaPointsOf(before: TeamRating, after: TeamRating): Partial<Record<ScoredArea, number>> {
   const value = (rating: TeamRating, key: ScoredArea) => rating.areas.find(a => a.key === key)?.value ?? null;
   const points: Partial<Record<ScoredArea, number>> = {};
   for (const key of SCORED_AREAS) {
@@ -55,6 +55,10 @@ function areaPointsOf(before: TeamRating, after: TeamRating): Partial<Record<Sco
     if (was === null || now === null) continue;
     points[key] = Math.round((now - was) * (after.weights[key] ?? 0) * 10) / 10;
   }
+  // I Ruoli non sono più un'area del voto: i loro punti sono i malus e i bonus dei ruoli (mancanze e minori coperti)
+  const rolesNet = (rating: TeamRating) =>
+    rating.roles.bonuses.reduce((a, i) => a + i.points, 0) - rating.roles.failures.reduce((a, i) => a + i.points, 0);
+  points.roles = rolesNet(after) - rolesNet(before);
   return points;
 }
 

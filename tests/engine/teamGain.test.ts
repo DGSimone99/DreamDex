@@ -79,7 +79,8 @@ describe('punti per area', () => {
     const before = rateTeam(team, fixtureData)!.base;
     expect(ranked.length).toBeGreaterThan(0);
     for (const r of ranked) {
-      const points = Object.values(r.teamGain!.areaPoints ?? {}).reduce((a, b) => a + b, 0);
+      // I Ruoli stanno nei malus e bonus, non nel voto base
+      const points = Object.entries(r.teamGain!.areaPoints ?? {}).filter(([k]) => k !== 'roles').reduce((a, [, b]) => a + b, 0);
       expect(Math.abs(points - (rateTeam([...team, r.set], fixtureData)!.base - before))).toBeLessThanOrEqual(1);
     }
   });
