@@ -217,9 +217,14 @@ export function SummarySection({ summary, members, density, rich = false, onView
             {members >= 2 && (
               <div className="sum-type">
                 {archetype
-                  ? <strong className="sum-arch" title={t(`archetype.${archetype}.note`)}>{t(`archetype.${archetype}`)}</strong>
+                  ? (
+                    <span className="sum-arch-box">
+                      <strong className="sum-arch" title={t(`archetype.${archetype}.note`)}>{t(`archetype.${archetype}`)}</strong>
+                      {/* Sul confine col tipo accanto: una riga piccola sotto il nome, che non lo accorcia */}
+                      {nearType && <span className="sum-near" title={t('catalog.typeBlend.when')}>{t('sum.nearType', { type: t(`archetype.${nearType}`) })}</span>}
+                    </span>
+                  )
                   : <span className="sum-arch">—</span>}
-                {archetype && nearType && <span className="sum-near" title={t('catalog.typeBlend.when')}>{t('sum.nearType', { type: t(`archetype.${nearType}`) })}</span>}
                 {styles.map(style => (
                   <span key={style} className="sum-style" title={t(`teamStyle.${style}.note`)} style={{ '--c': conditionColor(style) } as CSSProperties}>
                     {t(`teamStyle.${style}`)}
