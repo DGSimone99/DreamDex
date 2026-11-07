@@ -56,7 +56,7 @@ export const areaValue = (rating: TeamRating, area: AreaKey): number | string | 
 
 /** Catalogo di bonus e malus: due schede, ogni voce con quando scatta e quanto vale; quelle attive ora sono evidenziate. */
 function catalogueTabs(rating: TeamRating, t: T, lang: Lang): DetailTab[] {
-  const catalog = bonusMalusCatalog(lang, rating.teraCap);
+  const catalog = bonusMalusCatalog(lang);
   const panelOf = (kind: CatalogEntry['kind']) => {
     const items = kind === 'malus' ? rating.penalty.items : rating.bonus.items;
     // Punti attuali di una voce del catalogo: somma delle voci del voto con la sua chiave
@@ -76,13 +76,12 @@ function catalogueTabs(rating: TeamRating, t: T, lang: Lang): DetailTab[] {
             </thead>
             <tbody>
               {catalog.filter(e => e.kind === kind).map(entry => {
-                const now = entry.applies ? nowOf(entry) : 0;
+                const now = nowOf(entry);
                 const active = now > 0;
                 return (
-                  <tr key={entry.key} className={active ? 'active' : entry.applies ? undefined : 'na'} aria-current={active ? 'true' : undefined}>
+                  <tr key={entry.key} className={active ? 'active' : undefined} aria-current={active ? 'true' : undefined}>
                     <th scope="row" className="left">
                       {entry.name}
-                      {!entry.applies && <small className="ad-src" title={t('catalogue.naTip')}> {t('catalogue.na')}</small>}
                     </th>
                     <td className="left">{entry.when}</td>
                     <td className="left">{entry.points}</td>
