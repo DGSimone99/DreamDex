@@ -342,7 +342,7 @@ describe('Riassunto', () => {
     mount({ summary: summaryOf({ styles: ['rain'] }) });
     const arch = region().querySelector('.sum-arch')!;
     expect(arch).toHaveTextContent('Hyper Offense');
-    expect(arch).toHaveAttribute('title', 'Tutto attacco, pochi o nessun muro');
+    expect(arch).toHaveAttribute('title', 'Tutto attacco');
     expect(region().querySelector('.sum-style')).toHaveTextContent('Pioggia');
     await user.click(within(region()).getByRole('button', { name: 'Tipi di team: come si riconoscono' }));
     const dialog = screen.getByRole('dialog', { name: 'Tipi di team' });

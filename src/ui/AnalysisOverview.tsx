@@ -8,7 +8,6 @@ import type { TeamSet } from '../engine/sets';
 import { teamSummary } from '../engine/teamSummary';
 import { useLang, useT } from '../i18n/react';
 import type { AnalysisView } from './analysisView';
-import { AlertMark } from './AlertMark';
 import { OverviewDashboard } from './OverviewDashboard';
 
 /** La Panoramica: il giudizio in cima, poi il cruscotto (Riassunto, Copertura, Ruoli, Velocità) che riempie lo spazio. */
@@ -27,11 +26,6 @@ export function AnalysisOverview({ team, analysis, rating, coaching, data, onVie
 }) {
   const t = useT();
   const lang = useLang();
-  const metaMonth = data.stats?.meta?.month;
-  const notes = [
-    ...(rating && metaMonth ? [rating.meta ? t('rating.metaOn', { month: metaMonth }) : t('rating.metaOff')] : []),
-    ...(rating?.archetype === 'stall' ? [t('rating.stall')] : []),
-  ];
   const problems = coaching?.problems;
   const dash = useMemo(() => (rating ? dashboardData(team, analysis, rating, problems ?? [], data, lang) : null), [team, analysis, rating, problems, data, lang]);
   const summary = useMemo(() => (rating && coaching && dash ? teamSummary(team, rating, coaching, dash, data, lang) : null), [team, rating, coaching, dash, data, lang]);
@@ -45,10 +39,9 @@ export function AnalysisOverview({ team, analysis, rating, coaching, data, onVie
   }
   return (
     <div className="overview">
-      {/* Una riga: giudizio e come è calcolato il voto (nel segno); il tipo di team è nel Riassunto */}
+      {/* Una riga: il giudizio; il tipo di team è nel Riassunto */}
       <div className="overview-headline">
         {coaching && <strong>{coaching.verdict}</strong>}
-        {notes.length > 0 && <AlertMark alerts={notes.map(text => ({ level: 'info' as const, text }))} />}
       </div>
       {dash && summary && <OverviewDashboard data={dash} summary={summary} members={team.length} onView={onView} teamCollapsed={teamCollapsed} />}
     </div>
