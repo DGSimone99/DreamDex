@@ -71,7 +71,10 @@ export const NATDEX_OU_WEIGHTS: AreaWeightTable = {
   hyperOffense: { defense: 20, strength: 50, speed: 30 },
   bulkyOffense: { defense: 30, strength: 45, speed: 25 },
   balance: { defense: 45, strength: 40, speed: 15 },
-  semiStall: { defense: 55, strength: 35, speed: 10 },
+  // 2026-11-07: semi-stall come lo stall (era 55/35/10). Nelle partite il semi-stall vince più di tutti (55%) ma col
+  // 35 all'Offesa 5 team da torneo su 13 prendevano C; a 65/25 ne resta 1, il resto del banco non si muove e il salto
+  // fra stall e semi-stall si accorcia (stessi pesi, restano i Ruoli diversi).
+  semiStall: { defense: 65, strength: 25, speed: 10 },
   stall: { defense: 65, strength: 25, speed: 10 },
 };
 
@@ -109,7 +112,7 @@ export interface RatingArea {
 
 /** Chiave della voce del catalogo bonus/malus a cui appartiene una voce del voto. */
 export type CatalogKey = 'sharedWeak' | 'sameType' | 'hazardDuplicate' | 'removers' | 'weatherClash' | 'unmetCondition' | 'unusedEnabler'
-  | 'weakMember' | 'lockedStatus' | 'essentialRole' | 'importantRole' | 'trickRoomFast'
+  | 'weakMember' | 'lockedStatus' | 'essentialRole' | 'importantRole' | 'trickRoomFast' | 'defenseHole'
   | 'coreTrio' | 'minorRole' | 'weakCovered' | 'typeVariety' | 'conditionUsed' | 'weatherHelp' | 'tera';
 
 export interface Redundancy {
@@ -307,6 +310,13 @@ export function lockedStatusIssues(team: TeamSet[], lang: Lang): Redundancy[] {
  * (separazione nello stesso tipo 1,31 → 1,38).
  */
 export const SHARED_WEAK_POINTS = 1;
+/**
+ * Buco in Difesa (2026-11-07): −2 per ogni tipo che nessun membro regge nella Coverage di tipi (sul lato peggiore tutti
+ * perdono metà vita o più), solo nei team di 6. Sui dati delle partite National Dex è la parte della Difesa che indovina
+ * di più chi vince (55%); il 35% dei team ladder ha almeno un buco, contro il 14% dei team da torneo.
+ * Si somma a "Debolezza condivisa" (tabella dei tipi): provato al suo posto, prevede peggio.
+ */
+export const DEFENSE_HOLE_POINTS = 2;
 /** Punto fisso per ogni membro del team nel voto finale (non mostrato): un team completo prende +6. */
 export const MEMBER_POINT = 1;
 /** Un membro che ha bisogno di una condizione (meteo, campo, Trick Room) che il team non porta: −3. */
@@ -525,7 +535,11 @@ export function rateTeam(input: TeamSet[], data: EngineData, lang: Lang = 'it', 
     ? [{ text: t(lang, fastMembers.length === 1 ? 'rating.redundancy.trickRoomFastOne' : 'rating.redundancy.trickRoomFast', { setter: battleName(roomSetter!), n: fastMembers.length, list: fastMembers.map(m => m.species).join(', ') }), points: Math.min(TRICK_ROOM_MAX, fastMembers.length * TRICK_ROOM_FAST_POINTS), catalog: 'trickRoomFast' as const }]
     : [];
   // Le mancanze dei Ruoli (essenziali e importanti, solo team di 6) si sommano alle altre penalità
-  const extraItems = [...roles.failures, ...roomItems, ...lockedStatusIssues(input, lang)];
+  const complete = team.filter(set => !!battleSpecies(set)).length >= 6;
+  const holeItems = complete
+    ? defense.coverageTypes.weak.map(type => ({ text: t(lang, 'rating.redundancy.defenseHole', { type: typeName(type, lang) }), points: DEFENSE_HOLE_POINTS, catalog: 'defenseHole' as const, key: `defenseHole:${type}` }))
+    : [];
+  const extraItems = [...roles.failures, ...roomItems, ...holeItems, ...lockedStatusIssues(input, lang)];
   const penalty = extraItems.length
     ? { total: redundant.total + sum(extraItems.map(i => i.points)), items: [...redundant.items, ...extraItems] }
     : redundant;
@@ -558,7 +572,7 @@ export interface CatalogEntry {
 }
 
 const CATALOG_ORDER: { key: CatalogKey; kind: 'malus' | 'bonus' }[] = [
-  ...(['sharedWeak', 'sameType', 'hazardDuplicate', 'removers', 'weatherClash', 'unmetCondition', 'unusedEnabler', 'weakMember', 'lockedStatus', 'essentialRole', 'importantRole', 'trickRoomFast'] as const)
+  ...(['sharedWeak', 'sameType', 'hazardDuplicate', 'removers', 'weatherClash', 'unmetCondition', 'unusedEnabler', 'weakMember', 'lockedStatus', 'essentialRole', 'importantRole', 'trickRoomFast', 'defenseHole'] as const)
     .map(key => ({ key, kind: 'malus' as const })),
   ...(['coreTrio', 'weakCovered', 'typeVariety', 'conditionUsed', 'weatherHelp', 'tera', 'minorRole'] as const).map(key => ({ key, kind: 'bonus' as const })),
 ];
@@ -566,7 +580,7 @@ const CATALOG_ORDER: { key: CatalogKey; kind: 'malus' | 'bonus' }[] = [
 /** Tutti i bonus e malus possibili, con il testo per il modale; i punti nei testi vengono dalle costanti. */
 export function bonusMalusCatalog(lang: Lang, teraCap: number): CatalogEntry[] {
   const values = {
-    shared: SHARED_WEAK_POINTS, unmet: UNMET_POINTS, hazard: HAZARD_DUPLICATE, member: WEAK_MEMBER_POINTS, memberMax: WEAK_MEMBER_MAX, locked: LOCKED_STATUS_POINTS,
+    shared: SHARED_WEAK_POINTS, hole: DEFENSE_HOLE_POINTS, unmet: UNMET_POINTS, hazard: HAZARD_DUPLICATE, member: WEAK_MEMBER_POINTS, memberMax: WEAK_MEMBER_MAX, locked: LOCKED_STATUS_POINTS,
     essential: ESSENTIAL_POINTS, important: IMPORTANT_POINTS, minor: MINOR_POINTS, room: TRICK_ROOM_MAX, roomEach: TRICK_ROOM_FAST_POINTS, remover: REMOVER_EXTRA_POINTS, clash: WEATHER_CLASH_POINTS, unused: UNUSED_ENABLER_POINTS,
     help: WEATHER_HELP, cap: teraCap,
     same: SAME_TYPE_POINTS, trio: CORE_TRIO_POINTS, covered: WEAK_COVERED_POINTS, variety: TYPE_VARIETY_POINTS, varietyMin: TYPE_VARIETY_MIN,
