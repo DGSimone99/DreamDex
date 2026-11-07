@@ -640,6 +640,7 @@ export const it: Record<keyof typeof en, string> = {
   'archetype.bulkyOffense.note': "Attaccanti robusti, spesso con pivot",
   'archetype.balance': "Balance",
   'sum.nearType': "quasi {type}",
+  'sum.nearTypeTip': "Il team sta vicino al confine col tipo accanto: una parte del voto viene da quel tipo",
   'archetype.balance.note': "Muri e attaccanti in equilibrio",
   'archetype.semiStall': "Semi-stall",
   'archetype.semiStall.note': "Quasi stall, con una o due minacce offensive",

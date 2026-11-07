@@ -349,6 +349,7 @@ describe('Riassunto', () => {
     cleanup();
     mount({ summary: summaryOf({ nearType: 'bulkyOffense' }) });
     expect(region().querySelector('.sum-near')).toHaveTextContent('quasi Bulky Offense');
+    expect(region().querySelector('.sum-near')).toHaveAttribute('title', 'Il team sta vicino al confine col tipo accanto: una parte del voto viene da quel tipo');
     await user.click(within(region()).getByRole('button', { name: 'Tipi di team: come si riconoscono' }));
     const dialog = screen.getByRole('dialog', { name: 'Tipi di team' });
     // National Dex OU: come si riconosce il tipo (recupero, velocità, Focus Sash)

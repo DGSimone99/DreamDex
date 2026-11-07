@@ -638,6 +638,7 @@ export const en = {
   'archetype.bulkyOffense.note': "Bulky attackers, often with pivots",
   'archetype.balance': "Balance",
   'sum.nearType': "almost {type}",
+  'sum.nearTypeTip': "The team sits near the border with the next type: part of the grade comes from that type",
   'archetype.balance.note': "Walls and attackers in balance",
   'archetype.semiStall': "Semi-stall",
   'archetype.semiStall.note': "Nearly stall, with one or two offensive threats",
