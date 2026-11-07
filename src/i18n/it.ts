@@ -1159,6 +1159,7 @@ export const it: Record<keyof typeof en, string> = {
   'suggest.next': "Pagina successiva",
   'detail.region': "Dettaglio di {species}",
   'detail.gradeChange': "voto del team {from} → {to}",
+  'detail.typeChange': "il team diventa {to} (era {from})",
   'detail.usage': "uso nel meta",
   'detail.alternatives': "Anche al posto di",
   'detail.team': "Effetto sul team",

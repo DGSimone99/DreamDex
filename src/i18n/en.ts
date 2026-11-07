@@ -1157,6 +1157,7 @@ export const en = {
   'suggest.next': "Next page",
   'detail.region': "{species} details",
   'detail.gradeChange': "team grade {from} → {to}",
+  'detail.typeChange': "the team becomes {to} (was {from})",
   'detail.usage': "meta usage",
   'detail.alternatives': "Also instead of",
   'detail.team': "Effect on the team",
