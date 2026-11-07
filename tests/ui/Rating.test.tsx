@@ -197,9 +197,8 @@ const fakeRating = (penalty: [string, number][], bonus: [string, number][], pena
   bonus: { total: bonus.reduce((n, [, p]) => n + p, 0), items: bonus.map(([text, points]) => ({ text, points })) },
 }) as unknown as TeamRating;
 /** Valutazione con le voci del catalogo, per il modale Bonus/Malus. */
-const catalogRating = (teraCap: number) => ({
+const catalogRating = () => ({
   ...fakeRating([], []),
-  teraCap,
   penalty: { total: 8, items: [
     { text: 'Due setter di Stealth Rock', points: 1, catalog: 'hazardDuplicate' },
     { text: 'Due setter di Spikes', points: 2, catalog: 'hazardDuplicate' },
@@ -208,9 +207,9 @@ const catalogRating = (teraCap: number) => ({
   bonus: { total: 2, items: [{ text: 'Sole aiuta', points: 2, catalog: 'weatherHelp' }] },
 }) as unknown as TeamRating;
 
-async function openCatalog(teraCap = 0) {
+async function openCatalog() {
   const user = userEvent.setup();
-  render(<LangProvider lang="it"><AreaView rating={catalogRating(teraCap)} area="bonusMalus" team={[]} analysis={analyzeTeam([], fixtureData)} problems={[]} /></LangProvider>);
+  render(<LangProvider lang="it"><AreaView rating={catalogRating()} area="bonusMalus" team={[]} analysis={analyzeTeam([], fixtureData)} problems={[]} /></LangProvider>);
   return { user, dialog: screen.getByRole('region', { name: 'Bonus/Malus' }) };
 }
 
@@ -220,10 +219,10 @@ describe('Catalogo Bonus/Malus', () => {
     expect(within(dialog).getAllByRole('tab').map(tab => tab.textContent)).toEqual(['Malus −8', 'Bonus +2']);
   });
 
-  it('Malus: i 12 malus con nome, quando e punti; gli attivi evidenziati col punteggio attuale', async () => {
+  it('Malus: i 13 malus con nome, quando e punti; gli attivi evidenziati col punteggio attuale', async () => {
     const { dialog } = await openCatalog();
     const rows = within(within(dialog).getByRole('tabpanel')).getAllByRole('row').slice(1);
-    expect(rows).toHaveLength(12);
+    expect(rows).toHaveLength(13);
     const hazard = rows.find(r => within(r).queryByText('Hazard ripetuto'))!;
     expect(hazard).toHaveClass('active');
     expect(hazard).toHaveAttribute('aria-current', 'true');
@@ -238,7 +237,7 @@ describe('Catalogo Bonus/Malus', () => {
   });
 
   it('niente tetti: nessuna riga "Totale massimo" né "limitato", anche con una somma alta', async () => {
-    const r = { ...catalogRating(0), penalty: { total: 18, items: [{ text: 'A', points: 10, catalog: 'removers' }, { text: 'B', points: 8, catalog: 'hazardDuplicate' }] } } as unknown as TeamRating;
+    const r = { ...catalogRating(), penalty: { total: 18, items: [{ text: 'A', points: 10, catalog: 'removers' }, { text: 'B', points: 8, catalog: 'hazardDuplicate' }] } } as unknown as TeamRating;
     render(<LangProvider lang="it"><AreaView rating={r} area="bonusMalus" team={[]} analysis={analyzeTeam([], fixtureData)} problems={[]} /></LangProvider>);
     const panel = screen.getByRole('tabpanel');
     expect(panel).not.toHaveTextContent('Totale massimo');
@@ -246,25 +245,16 @@ describe('Catalogo Bonus/Malus', () => {
     expect(within(screen.getByRole('region', { name: 'Bonus/Malus' })).getByRole('tab', { name: /^Malus/ })).toHaveTextContent('−18');
   });
 
-  it('Bonus: Tera non applicabile fuori dalla Gen 9, mai attivo', async () => {
-    const { user, dialog } = await openCatalog(0);
+  it('Bonus: le 6 voci, la sola attiva evidenziata; niente Tera', async () => {
+    const { user, dialog } = await openCatalog();
     await user.click(within(dialog).getByRole('tab', { name: /^Bonus/ }));
     const rows = within(within(dialog).getByRole('tabpanel')).getAllByRole('row').slice(1);
-    expect(rows).toHaveLength(7);
+    expect(rows).toHaveLength(6);
     const weather = rows.find(r => within(r).queryByText('Meteo che protegge'))!;
     expect(weather).toHaveClass('active');
     expect(weather).toHaveTextContent('+2');
-    const tera = rows.find(r => r.textContent!.includes('Tera'))!;
-    expect(tera).toHaveClass('na');
-    expect(tera).toHaveTextContent('Solo Gen 9');
-    expect(tera).not.toHaveAttribute('aria-current');
+    expect(rows.some(r => r.textContent!.includes('Tera'))).toBe(false);
     expect(rows.filter(r => r.classList.contains('active'))).toHaveLength(1);
-  });
-
-  it('Bonus con Tera applicabile: nessuna nota', async () => {
-    const { user, dialog } = await openCatalog(3);
-    await user.click(within(dialog).getByRole('tab', { name: /^Bonus/ }));
-    expect(within(dialog).getByRole('tabpanel')).not.toHaveTextContent('Solo Gen 9');
   });
 
 });

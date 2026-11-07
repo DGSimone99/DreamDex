@@ -15,8 +15,6 @@ export interface FormatRules {
    * In UU i Pokémon sono più deboli di quelli di OU: confrontati con tutti, un ottimo team UU non arriverebbe mai ad S.
    */
   strengthPool: FormatId | null;
-  /** Punti massimi del bonus Tera (Gen 9): +1 per ogni debolezza del team che un Tera dichiarato fa resistere; 0 = niente. */
-  teraBonusCap: number;
   /** Soglie dell'indice di muro (PS x Dif / PS x DifSp sulle statistiche reali): sotto non è un muro fisico/speciale. */
   wallIndex: { physical: number; special: number };
   /**
@@ -28,7 +26,7 @@ export interface FormatRules {
   typeRule: 'walls' | 'recoverySpeed';
 }
 
-export const DEFAULT_RULES: FormatRules = { offensiveWallBulk: 0, keepArchetype: false, strengthPool: null, teraBonusCap: 0, wallIndex: { physical: 100000, special: 95000 }, typeRule: 'walls' };
+export const DEFAULT_RULES: FormatRules = { offensiveWallBulk: 0, keepArchetype: false, strengthPool: null, wallIndex: { physical: 100000, special: 95000 }, typeRule: 'walls' };
 
 /** National Dex OU: il tipo di team dal recupero e dalla velocità, coi suoi pesi. Gli altri formati per ora no (in Ubers sono tutti molto robusti: serviranno soglie loro). */
 export const NATDEX_OU_RULES: FormatRules = { ...DEFAULT_RULES, typeRule: 'recoverySpeed' };
@@ -39,12 +37,12 @@ export const UBERS_RULES: FormatRules = { ...DEFAULT_RULES, offensiveWallBulk: 1
 /** UU: statistiche confrontate coi Pokémon legali in UU. */
 export const UU_RULES: FormatRules = { ...DEFAULT_RULES, strengthPool: 'uu' };
 
-/** Gen 9: il Tera è una via d'uscita da una debolezza (una volta per partita): piccolo bonus, come il meteo. */
-export const GEN9_RULES: FormatRules = { ...DEFAULT_RULES, teraBonusCap: 3 };
+/** Gen 9: le regole di sempre (il bonus Tera è stato tolto il 2026-11-07). */
+export const GEN9_RULES: FormatRules = { ...DEFAULT_RULES };
 
-/** Gen 9 Ubers e UU: le regole di National Dex Ubers e UU, più il bonus Tera di Gen 9. */
-export const GEN9_UBERS_RULES: FormatRules = { ...UBERS_RULES, teraBonusCap: GEN9_RULES.teraBonusCap };
-export const GEN9_UU_RULES: FormatRules = { ...UU_RULES, strengthPool: 'gen9uu', teraBonusCap: GEN9_RULES.teraBonusCap };
+/** Gen 9 Ubers e UU: le regole di National Dex Ubers e UU (UU confrontato coi Pokémon di Gen 9 UU). */
+export const GEN9_UBERS_RULES: FormatRules = { ...UBERS_RULES };
+export const GEN9_UU_RULES: FormatRules = { ...UU_RULES, strengthPool: 'gen9uu' };
 
 /** Gen 9 AG: le soglie di muro di Ubers (Arceus e Kingambit hanno bulk naturale da muro senza esserlo); il resto come Gen 9. */
 export const GEN9_AG_RULES: FormatRules = { ...GEN9_RULES, wallIndex: UBERS_RULES.wallIndex };

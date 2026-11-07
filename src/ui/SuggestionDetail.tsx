@@ -89,7 +89,7 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
   const loses = [...(changes?.cons.map(c => c.text) ?? []), ...(item.facts.clashes ?? []).map(text => text.replace(/^⚠\s*/, ''))];
   // Senza perdite da elencare ma con aree in calo, Toglie dice quali (mai "niente" accanto a pillole rosse)
   if (replacing && !loses.length && before && after) loses.push(...areaDrops(before, after).map(drop => `${drop.label} ${delta(drop.change)}`));
-  // Problemi risolti o nuovi, meteo e Tera: la parte del voto che le aree non spiegano, con la sua pillola
+  // Problemi risolti o nuovi e meteo: la parte del voto che le aree non spiegano, con la sua pillola
   const extras = before && after ? extrasDelta(before, after) : 0;
   // Aggiungendo non si perde nessuno: Toglie compare solo se c'è un avviso
   const showLoses = replacing || loses.length > 0;

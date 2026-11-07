@@ -40,7 +40,6 @@ describe('subRoles', () => {
     expect(DEFAULT_RULES.wallIndex).toEqual({ physical: 100000, special: 95000 });
     // Gen 9 AG: soglie di Ubers, il resto delle regole di Gen 9
     expect(formatRules('gen9ag').wallIndex).toEqual(UBERS_RULES.wallIndex);
-    expect(formatRules('gen9ag').teraBonusCap).toBe(formatRules('gen9ou').teraBonusCap);
   });
 
   it('Toxic Spikes 0.75, Sticky Web è hazard (2026-11-03)', () => {

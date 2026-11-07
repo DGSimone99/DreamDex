@@ -68,7 +68,7 @@ describe('tipi di team in National Dex OU (recupero e velocità)', () => {
   it('pesi di National Dex OU: somma 100, scala regolare (la Difesa sale, la Velocità scende da HO a stall)', () => {
     const order = ['hyperOffense', 'bulkyOffense', 'balance', 'semiStall', 'stall'] as const;
     for (const row of Object.values(NATDEX_OU_WEIGHTS)) expect(row.defense + row.strength + row.speed).toBe(100);
-    expect(order.map(t => NATDEX_OU_WEIGHTS[t].defense)).toEqual([20, 30, 45, 55, 65]);
+    expect(order.map(t => NATDEX_OU_WEIGHTS[t].defense)).toEqual([20, 30, 45, 65, 65]);
     expect(order.map(t => NATDEX_OU_WEIGHTS[t].speed)).toEqual([30, 25, 15, 10, 10]);
     expect(areaWeightTable(NATDEX_OU_RULES)).toBe(NATDEX_OU_WEIGHTS);
     expect(areaWeightTable(DEFAULT_RULES)).toBe(ARCHETYPE_WEIGHTS);

@@ -34,18 +34,17 @@ describe('catalogo bonus e malus', () => {
     expect(rateTeam(teams.bonus, fixtureData)!.bonus.items.map(i => i.catalog)).toEqual(['weatherHelp']);
   });
 
-  it('catalogo IT: 19 voci, 12 malus prima, Tera attivo solo con un limite', () => {
-    const none = bonusMalusCatalog('it', 0);
+  it('catalogo IT: 19 voci, 13 malus prima, niente Tera', () => {
+    const none = bonusMalusCatalog('it');
     expect(none).toHaveLength(19);
-    expect(none.slice(0, 12).every(e => e.kind === 'malus')).toBe(true);
-    expect(none.slice(12).every(e => e.kind === 'bonus')).toBe(true);
+    expect(none.slice(0, 13).every(e => e.kind === 'malus')).toBe(true);
+    expect(none.slice(13).every(e => e.kind === 'bonus')).toBe(true);
     expect(none.map(e => e.key)).toEqual(expect.arrayContaining(['sameType', 'coreTrio', 'weakCovered', 'typeVariety', 'conditionUsed', 'importantRole', 'minorRole']));
-    expect(none.find(e => e.key === 'tera')!.applies).toBe(false);
-    expect(bonusMalusCatalog('it', 3).find(e => e.key === 'tera')!.applies).toBe(true);
+    expect(none.map(e => e.key as string)).not.toContain('tera');
   });
 
   it('il testo dei punti usa le costanti', () => {
-    const c = bonusMalusCatalog('it', 3);
+    const c = bonusMalusCatalog('it');
     expect(c.find(e => e.key === 'hazardDuplicate')!.points).toContain('1');
     const weak = c.find(e => e.key === 'weakMember')!.points;
     expect(weak).toContain('4');
@@ -61,8 +60,8 @@ describe('catalogo bonus e malus', () => {
   });
 
   it('catalogo EN: stesse chiavi, testi non vuoti', () => {
-    const it = bonusMalusCatalog('it', 3);
-    const en = bonusMalusCatalog('en', 3);
+    const it = bonusMalusCatalog('it');
+    const en = bonusMalusCatalog('en');
     expect(en.map(e => e.key)).toEqual(it.map(e => e.key));
     for (const e of en) for (const s of [e.name, e.when, e.points]) expect(s.length).toBeGreaterThan(0);
   });

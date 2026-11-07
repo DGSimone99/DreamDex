@@ -3,10 +3,8 @@ import type { EngineData } from '../../src/engine/data';
 import { getSpecies } from '../../src/engine/dex';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
 import { dexOf, isLegalIn, pokedexOf, teraAllowed, tierIn } from '../../src/engine/formats';
-import { formatRules, GEN9_RULES } from '../../src/engine/formatRules';
-import { analyzeTeam } from '../../src/engine/analysis';
 import { illegalParts, initLearnsets } from '../../src/engine/learnsets';
-import { teraBonus } from '../../src/engine/rating';
+import { rateTeam } from '../../src/engine/rating';
 import { DEFAULT_RULES } from '../../src/engine/formatRules';
 import { hasSetup, isPassive } from '../../src/engine/roles';
 import { defaultSet, emptySet, type TeamSet } from '../../src/engine/sets';
@@ -52,30 +50,17 @@ describe('Gen 9 OU: Pokédex di Scarlatto/Violetto', () => {
   });
 });
 
-describe('Tera come via d\'uscita (Gen 9)', () => {
-  // Tre membri deboli a Ground, nessuno resiste: Tera Flying su Heatran copre la debolezza
-  const team = [
-    set('Heatran', 'Leftovers', 'Flash Fire', ['Magma Storm', 'Earth Power', 'Stealth Rock', 'Taunt'], 'Flying'),
-    set('Iron Valiant', 'Booster Energy', 'Quark Drive', ['Moonblast', 'Close Combat', 'Knock Off', 'Encore'], 'Ghost'),
-    set('Kingambit', 'Black Glasses', 'Supreme Overlord', ['Swords Dance', 'Kowtow Cleave', 'Sucker Punch', 'Iron Head'], 'Dark'),
-  ];
-
-  it('+1 per ogni debolezza che un Tera dichiarato fa resistere, fino al limite', () => {
-    const analysis = analyzeTeam(team, { ...fixtureData, formatId: 'gen9ou' });
-    const items = teraBonus(team, analysis, GEN9_RULES.teraBonusCap, 'it');
-    // Senza i nomi italiani scaricati, i tipi restano in inglese
-    expect(items.map(i => i.text)).toContain('Tera Flying di Heatran copre la debolezza a Ground');
-    expect(items.length).toBeLessThanOrEqual(GEN9_RULES.teraBonusCap);
-    expect(items.every(i => i.points === 1)).toBe(true);
-  });
-
-  it('solo in Gen 9: National Dex OU non conta il Tera', () => {
-    expect(formatRules('gen9ou').teraBonusCap).toBeGreaterThan(0);
-    expect(formatRules('ou').teraBonusCap).toBe(0);
-    expect(teraBonus(team, analyzeTeam(team, fixtureData), DEFAULT_RULES.teraBonusCap)).toEqual([]);
+describe('niente bonus Tera (tolto il 2026-11-07)', () => {
+  it('un Tera che copre una debolezza non dà punti nel voto', () => {
+    const team = [
+      set('Heatran', 'Leftovers', 'Flash Fire', ['Magma Storm', 'Earth Power', 'Stealth Rock', 'Taunt'], 'Flying'),
+      set('Iron Valiant', 'Booster Energy', 'Quark Drive', ['Moonblast', 'Close Combat', 'Knock Off', 'Encore'], 'Ghost'),
+      set('Kingambit', 'Black Glasses', 'Supreme Overlord', ['Swords Dance', 'Kowtow Cleave', 'Sucker Punch', 'Iron Head'], 'Dark'),
+    ];
+    const r = rateTeam(team, { ...fixtureData, formatId: 'gen9ou' })!;
+    expect(r.bonus.items.some(i => i.text.includes('Tera'))).toBe(false);
   });
 });
-
 describe('Iron Defense con Body Press', () => {
   it('è un setup: Zamazenta veloce è uno sweeper, non un muro passivo; Corviknight lento resta un muro', () => {
     const zamazenta = set('Zamazenta', 'Leftovers', 'Dauntless Shield', ['Iron Defense', 'Body Press', 'Crunch', 'Roar']);

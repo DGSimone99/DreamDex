@@ -2,4 +2,3 @@
 .ad-t.ad-catalog td.left, .ad-t.ad-catalog th.left { white-space: normal; }
 .ad-t.ad-catalog tr.active { background: var(--line-soft); }
 .ad-t.ad-catalog tr.active th, .ad-t.ad-catalog tr.active td.total { color: var(--text); font-weight: 700; }
-.ad-t.ad-catalog tr.na td:nth-child(n+3) { opacity: 0.55; }
