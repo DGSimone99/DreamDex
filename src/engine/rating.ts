@@ -7,7 +7,7 @@ import { teamDefense, type TeamDefense } from './defense';
 import { BALANCE_SPAN, resistPoints, typeSafety } from './typeSafety';
 
 export { BALANCE_SPAN, resistPoints, typeSafety };
-import type { Archetype } from './archetype';
+import { typeMix, type Archetype, type TypeMix } from './archetype';
 import { hasSpeedControl, isPassive, isStall } from './roles';
 import { rulesOf, type FormatRules } from './formatRules';
 import type { TeamNeeds } from './needs';
@@ -112,7 +112,7 @@ export interface RatingArea {
 
 /** Chiave della voce del catalogo bonus/malus a cui appartiene una voce del voto. */
 export type CatalogKey = 'sharedWeak' | 'sameType' | 'hazardDuplicate' | 'removers' | 'weatherClash' | 'unmetCondition' | 'unusedEnabler'
-  | 'weakMember' | 'lockedStatus' | 'essentialRole' | 'importantRole' | 'trickRoomFast' | 'defenseHole'
+  | 'weakMember' | 'lockedStatus' | 'essentialRole' | 'importantRole' | 'trickRoomFast' | 'defenseHole' | 'typeBlend'
   | 'coreTrio' | 'minorRole' | 'weakCovered' | 'typeVariety' | 'conditionUsed' | 'weatherHelp';
 
 export interface Redundancy {
@@ -153,6 +153,8 @@ export interface TeamRating {
   archetype: 'stall' | null;
   /** Tipo di team con cui si sono scelti i pesi delle aree (balance per un team incompleto). */
   teamType: Archetype;
+  /** Vicino a una soglia (solo National Dex OU): il tipo accanto e la sua quota nel voto (riga "Vicino a…"), altrimenti null. */
+  typeMix: TypeMix | null;
   /** Il team usa Trick Room (premia i membri lenti nella Velocità; in un team veloce è un malus). */
   trickRoom: boolean;
   /** Dettaglio dell'area Meta, o null se il voto è senza meta. */
@@ -442,7 +444,30 @@ export interface RateOptions {
   archetype?: Archetype;
 }
 
+/**
+ * Il voto del team. Vicino a una soglia fra due tipi (typeMix, archetype.ts) è una miscela col voto del tipo accanto
+ * (fino a metà proprio sulla soglia): la differenza si vede come una riga "Vicino a…" fra i bonus o i malus, così base,
+ * malus e bonus tornano col voto. Con `opts.archetype` (tipo scelto a mano) niente miscela.
+ */
 export function rateTeam(input: TeamSet[], data: EngineData, lang: Lang = 'it', opts: RateOptions = {}): TeamRating | null {
+  const own = rateTeamAs(input, data, lang, opts);
+  if (!own || opts.archetype) return own;
+  const mix = typeMix(input.map(withUsableMoves), rulesOf(data));
+  if (!mix) return own;
+  const near = rateTeamAs(input, data, lang, { archetype: mix.near })!;
+  const overall = Math.round((1 - mix.share) * own.overall + mix.share * near.overall);
+  const shift = overall - own.overall;
+  const item: Redundancy = {
+    text: t(lang, 'rating.typeBlend', { type: t(lang, `archetype.${mix.near}`), share: Math.round(100 * mix.share), vote: near.overall }),
+    points: Math.abs(shift), catalog: 'typeBlend', key: 'typeBlend',
+  };
+  const penalty = shift < 0 ? { total: own.penalty.total + item.points, items: [...own.penalty.items, item] } : own.penalty;
+  const bonus = shift > 0 ? { total: own.bonus.total + item.points, items: [...own.bonus.items, item] } : own.bonus;
+  return { ...own, overall, ...gradeFor(overall, lang), penalty, bonus, typeMix: mix };
+}
+
+/** Il voto con un solo tipo: quello riconosciuto, o `opts.archetype`. */
+function rateTeamAs(input: TeamSet[], data: EngineData, lang: Lang = 'it', opts: RateOptions = {}): TeamRating | null {
   if (input.length === 0) return null;
   // Le mosse di stato che con la Choice o l'Assault Vest non servono valgono come se non ci fossero (lockedMoves.ts)
   const team = input.map(withUsableMoves);
@@ -535,7 +560,7 @@ export function rateTeam(input: TeamSet[], data: EngineData, lang: Lang = 'it', 
   const overall = Math.min(100, Math.max(0, base - penalty.total + bonus.total + memberPoints));
   return {
     base, penalty, bonus, memberPoints, power: power.members, overall, ...gradeFor(overall, lang), provisional: team.filter(set => !!battleSpecies(set)).length < 6, areas, archetype, meta,
-    teamType: analysis.needs.archetype, trickRoom, needs: analysis.needs,
+    teamType: analysis.needs.archetype, typeMix: null, trickRoom, needs: analysis.needs,
     weights: areaWeights, weightTable, offense, defense, speed, roles,
   };
 }
@@ -550,9 +575,9 @@ export interface CatalogEntry {
 }
 
 const CATALOG_ORDER: { key: CatalogKey; kind: 'malus' | 'bonus' }[] = [
-  ...(['sharedWeak', 'sameType', 'hazardDuplicate', 'removers', 'weatherClash', 'unmetCondition', 'unusedEnabler', 'weakMember', 'lockedStatus', 'essentialRole', 'importantRole', 'trickRoomFast', 'defenseHole'] as const)
+  ...(['sharedWeak', 'sameType', 'hazardDuplicate', 'removers', 'weatherClash', 'unmetCondition', 'unusedEnabler', 'weakMember', 'lockedStatus', 'essentialRole', 'importantRole', 'trickRoomFast', 'defenseHole', 'typeBlend'] as const)
     .map(key => ({ key, kind: 'malus' as const })),
-  ...(['coreTrio', 'weakCovered', 'typeVariety', 'conditionUsed', 'weatherHelp', 'minorRole'] as const).map(key => ({ key, kind: 'bonus' as const })),
+  ...(['coreTrio', 'weakCovered', 'typeVariety', 'conditionUsed', 'weatherHelp', 'minorRole', 'typeBlend'] as const).map(key => ({ key, kind: 'bonus' as const })),
 ];
 
 /** Tutti i bonus e malus possibili, con il testo per il modale; i punti nei testi vengono dalle costanti. */

@@ -175,7 +175,7 @@ export function SummarySection({ summary, members, density, rich = false, onView
 }) {
   const t = useT();
   const lang = useLang();
-  const { archetype, styles, attackers, walls, offenseOf, defenseOf, conditions, hazards, cores, links } = summary;
+  const { archetype, nearType, styles, attackers, walls, offenseOf, defenseOf, conditions, hazards, cores, links } = summary;
   const count = (key: 'sum.moreMons' | 'sum.moreField' | 'sum.moreHazards' | 'sum.moreSyn', n: number) => t(`${key}${n === 1 ? 'One' : 'Many'}`, { n });
   const synergyView = useSynergyView();
   // Solo i core da 3; quelli da 2 solo se il team non ne ha da 3. Poi i legami, senza i pivot
@@ -219,6 +219,7 @@ export function SummarySection({ summary, members, density, rich = false, onView
                 {archetype
                   ? <strong className="sum-arch" title={t(`archetype.${archetype}.note`)}>{t(`archetype.${archetype}`)}</strong>
                   : <span className="sum-arch">—</span>}
+                {archetype && nearType && <span className="sum-near" title={t('catalog.typeBlend.when')}>{t('sum.nearType', { type: t(`archetype.${nearType}`) })}</span>}
                 {styles.map(style => (
                   <span key={style} className="sum-style" title={t(`teamStyle.${style}.note`)} style={{ '--c': conditionColor(style) } as CSSProperties}>
                     {t(`teamStyle.${style}`)}

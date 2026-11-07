@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { teamArchetype } from '../../src/engine/archetype';
+import { teamArchetype, typeMix, TYPE_BLEND_ZONE } from '../../src/engine/archetype';
 import { DEFAULT_RULES, formatRules, NATDEX_OU_RULES } from '../../src/engine/formatRules';
 import { ARCHETYPE_WEIGHTS, NATDEX_OU_WEIGHTS, areaWeightTable, rateTeam } from '../../src/engine/rating';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
@@ -63,6 +63,46 @@ describe('tipi di team in National Dex OU (recupero e velocità)', () => {
     const slower = sunHO.map((s, i) => (i === 0 ? { ...s, item: 'Leftovers', moves: ['Swords Dance', 'Earthquake', 'Outrage', 'Roost'] } : s));
     expect(teamArchetype(slower, NATDEX_OU_RULES)?.archetype).toBe('bulkyOffense');
     expect(teamArchetype(slower.map((s, i) => (i === 1 ? { ...s, item: 'Focus Sash' } : s)), NATDEX_OU_RULES)?.archetype).toBe('hyperOffense');
+  });
+
+  it('la Focus Sash su un muro non sposta il tipo', () => {
+    const slower = sunHO.map((s, i) => (i === 0 ? { ...s, item: 'Leftovers', moves: ['Swords Dance', 'Earthquake', 'Outrage', 'Roost'] } : s));
+    const wallSash = slower.map((s, i) => (i === 4 ? { ...s, item: 'Focus Sash', moves: ['Roost', 'Defog', 'Iron Defense', 'Brave Bird'] } : s));
+    const wall = slower.map((s, i) => (i === 4 ? { ...s, moves: ['Roost', 'Defog', 'Iron Defense', 'Brave Bird'] } : s));
+    expect(teamArchetype(wallSash, NATDEX_OU_RULES)?.archetype).toBe(teamArchetype(wall, NATDEX_OU_RULES)?.archetype);
+    expect(typeMix(wallSash, NATDEX_OU_RULES)).toEqual(typeMix(wall, NATDEX_OU_RULES));
+  });
+
+  it('vicino a una soglia il tipo accanto ha una quota (fino a metà), lontano niente; stall e altri formati niente', () => {
+    const slower = sunHO.map((s, i) => (i === 0 ? { ...s, item: 'Leftovers', moves: ['Swords Dance', 'Earthquake', 'Outrage', 'Roost'] } : s));
+    // Una Sash in più lo porta oltre la soglia di Hyper Offense: senza è vicino
+    const mix = typeMix(slower, NATDEX_OU_RULES)!;
+    expect(mix.archetype).toBe('bulkyOffense');
+    expect(mix.near).toBe('hyperOffense');
+    expect(mix.share).toBeGreaterThan(0);
+    expect(mix.share).toBeLessThanOrEqual(0.5);
+    expect(TYPE_BLEND_ZONE).toBe(1.5);
+    // Con la Sash è HO, e Bulky Offense è il vicino: le due quote si specchiano attorno alla soglia
+    const sash = typeMix(slower.map((s, i) => (i === 1 ? { ...s, item: 'Focus Sash' } : s)), NATDEX_OU_RULES)!;
+    expect(sash.near).toBe('bulkyOffense');
+    expect(typeMix(stall, NATDEX_OU_RULES)).toBeNull();
+    expect(typeMix(slower, DEFAULT_RULES)).toBeNull();
+    expect(typeMix(slower.slice(0, 5), NATDEX_OU_RULES)).toBeNull();
+  });
+
+  it('il voto miscelato: riga "Vicino a…" fra bonus o malus, i conti tornano, col tipo scelto a mano niente miscela', () => {
+    const slower = sunHO.map((s, i) => (i === 0 ? { ...s, item: 'Leftovers', moves: ['Swords Dance', 'Earthquake', 'Outrage', 'Roost'] } : s));
+    const data = { ...fixtureData, formatId: 'ou' as const };
+    const r = rateTeam(slower, data)!;
+    const own = rateTeam(slower, data, 'it', { archetype: 'bulkyOffense' })!;
+    const near = rateTeam(slower, data, 'it', { archetype: 'hyperOffense' })!;
+    expect(r.typeMix?.near).toBe('hyperOffense');
+    expect(own.typeMix).toBeNull();
+    expect(r.overall).toBe(Math.round((1 - r.typeMix!.share) * own.overall + r.typeMix!.share * near.overall));
+    const item = [...r.penalty.items, ...r.bonus.items].find(i => i.catalog === 'typeBlend');
+    if (r.overall === own.overall) expect(item).toBeUndefined();
+    else expect(item!.text).toMatch(/^Vicino a Hyper Offense: il voto è per il \d+% quello da Hyper Offense/);
+    expect(r.overall).toBe(Math.min(100, Math.max(0, r.base - r.penalty.total + r.bonus.total + r.memberPoints)));
   });
 
   it('pesi di National Dex OU: somma 100, scala regolare (la Difesa sale, la Velocità scende da HO a stall)', () => {
