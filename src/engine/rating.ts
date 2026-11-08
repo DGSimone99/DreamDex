@@ -8,7 +8,7 @@ import { BALANCE_SPAN, resistPoints, typeSafety } from './typeSafety';
 
 export { BALANCE_SPAN, resistPoints, typeSafety };
 import { typeMix, type Archetype, type TypeMix } from './archetype';
-import { hasSpeedControl, isPassive, isStall } from './roles';
+import { isPassive, isStall } from './roles';
 import { rulesOf, type FormatRules } from './formatRules';
 import type { TeamNeeds } from './needs';
 import { FAMILIES, type SubRoleValues } from './subRoles';
@@ -241,11 +241,14 @@ export const UTILITY_MIN = 0.5;
 const UTILITY_ROLES = [...FAMILIES.support, ...FAMILIES.utility].filter(role => role !== 'pivot');
 
 /**
- * Il membro porta un'utilità chiave: un sotto-ruolo di Campo o Disturbo (Delibird con Spikes), il controllo velocità
- * (Sticky Web, Thunder Wave, Tailwind…: lo misura la Velocità, ma giustifica un membro debole), o meteo, campo, Trick Room.
+ * Il membro porta un'utilità chiave: un sotto-ruolo di Campo o Disturbo giudicato davvero (Delibird con Spikes; Sticky Web e
+ * Trick Room sono Controllo velocità pieno), o il meteo o il campo dalla sua abilità (Pelipper con Drizzle).
+ * 2026-11-08: una mossa da sola non basta più (Raticate con Thunder Wave o Sunny Day saliva sopra il team con Corviknight):
+ * Thunder Wave, Electroweb, Tailwind o una mossa meteo contano solo se fanno un sotto-ruolo.
  */
 function bringsUtility(set: TeamSet, values: SubRoleValues): boolean {
-  return UTILITY_ROLES.some(role => (values[role] ?? 0) >= UTILITY_MIN) || hasSpeedControl(set) || enables(set).length > 0;
+  const ability = toID(battleAbility(set));
+  return UTILITY_ROLES.some(role => (values[role] ?? 0) >= UTILITY_MIN) || enables(set).some(link => toID(link.via) === ability);
 }
 
 /**

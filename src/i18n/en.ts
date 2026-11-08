@@ -188,7 +188,7 @@ export const en = {
   'catalog.unusedEnabler.when': "A member brings a weather, terrain or Trick Room that no teammate uses (nor the member itself)",
   'catalog.unusedEnabler.points': "−{unused}",
   'catalog.weakMember.name': "Weak member",
-  'catalog.weakMember.when': "A member has little strength compared to the format's Pokémon and brings no support that makes up for it (hazards, weather, speed control…; pivoting alone isn't enough)",
+  'catalog.weakMember.when': "A member has little strength compared to the format's Pokémon and brings no support that makes up for it (hazards, weather or terrain from its ability, Sticky Web, Trick Room…; a single move like Thunder Wave or Sunny Day, or pivoting alone, isn't enough)",
   'catalog.weakMember.points': "−{member} each, at most −{memberMax}",
   'catalog.lockedStatus.name': "Useless moves with Choice or Assault Vest",
   'catalog.lockedStatus.when': "With Assault Vest every status move (it can't be used); with a Choice item, unless the set has Trick or Switcheroo, boosting moves and Protect/Detect. Those moves don't count",
