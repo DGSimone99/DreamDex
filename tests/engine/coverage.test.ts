@@ -49,6 +49,17 @@ describe('manichini per tipo', () => {
     expect(Math.abs(steel.spd - 90)).toBeLessThanOrEqual(3);
   });
 
+  it('il manichino ha il peso tipico del tipo: Low Kick e Heavy Slam non sono più 20 e 120 fissi', () => {
+    const targets = coverageTargets(noMeta);
+    const of = (type: string) => targets.find(t => t.label === type)!.set;
+    expect(of('Steel').weightkg).toBeGreaterThan(100);
+    expect(of('Fairy').weightkg).toBeLessThan(25);
+    // Grass Knot su un Acqua medio (55 kg: 80 di potenza; con Mew da 4 kg era 20)
+    const gholdengo = set('Gholdengo', '', 'Good as Gold', ['Grass Knot'], 'Modest', { spa: 252 });
+    const water = bestHit(gholdengo, of('Water'))!.expected;
+    expect(water).toBeGreaterThan(0.5);
+  });
+
   it("in Gen 9 niente Mega: l'Acciaio medio ha meno Difesa", () => {
     const natdex = typeAverage('Steel', { stats: null, sets: null, formatId: 'ou' });
     const gen9 = typeAverage('Steel', { stats: null, sets: null, formatId: 'gen9ou' });
