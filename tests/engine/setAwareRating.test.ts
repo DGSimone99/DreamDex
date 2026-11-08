@@ -26,7 +26,7 @@ describe('membri deboli senza utilità (indipendente dal meta)', () => {
 
   it('debole e senza utilità: −4, anche senza statistiche Smogon', () => {
     expect(penalties([raticate, tusk], { stats: null, sets: null }))
-      .toContainEqual(expect.objectContaining({ text: 'Raticate è debole e non porta utilità al team', points: 4 }));
+      .toContainEqual(expect.objectContaining({ text: 'Raticate è debole: ha poca forza rispetto ai Pokémon del formato', points: 4 }));
   });
 
   it("debole ma con un'utilità chiave (meteo, hazard): nessuna penalità", () => {
@@ -40,12 +40,12 @@ describe('membri deboli senza utilità (indipendente dal meta)', () => {
     const shuckle = withMoves('Shuckle', ['Toxic', 'Protect', 'Rest', 'Encore']);
     const texts = penalties([sableye, shuckle, tusk]).map(i => i.text);
     expect(texts.join(' | ')).not.toMatch(/Sableye.*debole/);
-    expect(texts).toContain('Shuckle è debole e non porta utilità al team');
+    expect(texts).toContain('Shuckle è debole: ha poca forza rispetto ai Pokémon del formato');
   });
 
   it('il coaching lo segnala', () => {
     const problems = coachTeam([raticate, tusk], DEFAULT_FORMAT, fixtureData).problems;
-    expect(problems).toContainEqual(expect.objectContaining({ severity: 'minor', category: 'roles', text: 'Raticate è debole e non porta utilità al team' }));
+    expect(problems).toContainEqual(expect.objectContaining({ severity: 'minor', category: 'roles', text: 'Raticate è debole: ha poca forza rispetto ai Pokémon del formato' }));
   });
 });
 
