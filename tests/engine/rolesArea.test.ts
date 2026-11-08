@@ -75,8 +75,8 @@ describe('Ruoli come lista: coperti, malus e bonus', () => {
     expect(hazards.level).toBe('essential');
     expect(hazards.value).toBe(1);
     expect(hazards.by.map(b => b.species)).toEqual(expect.arrayContaining(['Garchomp', 'Skarmory']));
-    // Le voci ignorate dall'archetipo (gli schermi nel Balance) non hanno una riga
-    expect(roles.rows.find(r => r.key === 'screens')).toBeUndefined();
+    // Le voci ignorate dall'archetipo (lo Speed Control nel Balance) non hanno una riga
+    expect(roles.rows.find(r => r.key === 'speedControl')).toBeUndefined();
     expect(roles.rows.every(r => r.level !== 'ignored')).toBe(true);
     expect(roles.members.map(m => m.species)).toEqual(physical.map(m => m.species));
   });
