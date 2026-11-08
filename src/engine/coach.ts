@@ -14,7 +14,7 @@ import { keyRoles, needLabel } from './needs';
 import { LEVEL_KEYS } from './roleLevels';
 import { bannedInPool, scoreCandidates, type Suggestion } from './scoring';
 import { memberIssues, rateTeam, ratingThreats, roleAndTypeRedundancies, weakenedMoveNotes, weatherClashes, type TeamRating } from './rating';
-import { benefits, conditionLabel, viaName, enables, teamSynergies, unmetBeneficiaries, unusedEnablers } from './synergy';
+import { benefits, conditionLabel, viaName, enables, teamSynergies, unmetBeneficiaries, unusedEnablers, usesCondition } from './synergy';
 import type { TeamSet } from './sets';
 import { coachFixes, type CoachFix } from './coachFixes';
 import { buildSteps, type CoachStep } from './coachSteps';
@@ -23,14 +23,14 @@ import type { ScoredArea } from './teamGain';
 import { teamOffense } from './offense';
 import { defensiveMultiplier, superEffectiveMove, type TypeName } from './types';
 import { withUsableMoves } from './lockedMoves';
-import { duplicateSpecies, missingFormeItem } from './legalTeam';
+import { duplicateSpecies, missingFormeItem, voteTeam } from './legalTeam';
 import { EV_TOTAL, evTotal } from './statCalc';
 
 export const SIMILAR_THRESHOLD = 0.6;
 export const MIN_COVERAGE_WEIGHT = 0.05;
 export const STRONG_COVERAGE = 15;
 /**
- * Un tipo del pacchetto dell'Offesa è coperto dal livello 40: uno che lo manda KO, o due membri al 75% circa
+ * Un tipo del pacchetto dell'Offesa è coperto dal livello 40: un membro all'87% circa, o due al 67% circa (il KO di uno solo fa 50)
  * (era 50 fino al 2026-11-08: solo metà dei team veri arrivava a 15 tipi coperti, scelta dell'utente).
  * Sotto è un problema; scoperto (grave se il tipo pesa) se nessuno lo manda KO in due colpi (HOLE_HIT, 50%).
  */
@@ -179,24 +179,28 @@ export function findProblems(team: TeamSet[], format: Format, data: EngineData, 
       fixesFor(candidates, s => important.filter(need => keyRoles(need).some(role => s.facts.roles.filled.includes(role))).length), 'roles:important', important.length, [...important]);
   }
 
-  for (const item of memberIssues(team, lang, analysis.needs)) add('roles', false, item.text, [], `roles:member:${item.text}`);
+  // Lo stesso team del voto: le mosse che non si possono usare (Choice, Assault Vest) non contano (2026-11-08)
+  const usable = voteTeam(team, data.allowMultipleMegas).map(withUsableMoves);
+  for (const item of memberIssues(usable, lang, analysis.needs)) add('roles', false, item.text, [], `roles:member:${item.text}`);
+  // Choice o Assault Vest con mosse di stato: lo stesso testo e gli stessi punti del malus del voto
+  for (const item of rating?.penalty.items.filter(i => i.catalog === 'lockedStatus') ?? []) add('redundancy', false, item.text, [], undefined, item.points);
   // Squilibrio degli attaccanti: nel voto lo dicono le voci Attaccante fisico / speciale dei Ruoli, solo a team finito
   // I punti crescono col conteggio: meno doppioni, problema ridotto
-  for (const item of roleAndTypeRedundancies(team, lang)) add('redundancy', false, item.text, [], undefined, item.points);
+  for (const item of roleAndTypeRedundancies(usable, lang)) add('redundancy', false, item.text, [], undefined, item.points);
   // Conflitti e mosse indebolite si riconoscono dalla condizione, non da chi la porta
-  for (const item of [...weatherClashes(team, lang), ...weakenedMoveNotes(team, lang)]) add('conditions', false, item.text, [], item.key && `conditions:${item.key}`);
+  for (const item of [...weatherClashes(usable, lang), ...weakenedMoveNotes(usable, lang)]) add('conditions', false, item.text, [], item.key && `conditions:${item.key}`);
 
   // Trick Room in un team veloce: lo stesso testo del malus del voto, e la stessa Trick Room non è anche "inutilizzata"
   const room = rating?.penalty.items.find(item => item.catalog === 'trickRoomFast');
-  const roomSetter = room && team.find(set => set.moves.some(move => toID(move) === 'trickroom'));
+  const roomSetter = room && usable.find(set => set.moves.some(move => toID(move) === 'trickroom'));
   if (room) add('conditions', false, room.text, [], 'conditions:trickRoomFast', room.points);
-  for (const issue of unusedEnablers(team)) {
+  for (const issue of unusedEnablers(usable)) {
     if (roomSetter && issue.condition === 'trickroom' && issue.member === battleName(roomSetter)) continue;
     add('conditions', false, t(lang, 'coach.problem.unused', { via: viaName(issue.via, lang), member: issue.member }),
-      fixesFor(candidates, s => Number(benefits(s.set).some(b => b.condition === issue.condition && !['Weather Ball', 'Terrain Pulse'].includes(b.via)))),
+      fixesFor(candidates, s => Number(usesCondition(s.set, issue.condition))),
       `conditions:unused:${issue.member}:${issue.via}`);
   }
-  for (const issue of unmetBeneficiaries(team)) {
+  for (const issue of unmetBeneficiaries(usable)) {
     add('conditions', false, t(lang, 'coach.problem.unmet', { member: issue.member, via: viaName(issue.via, lang), condition: conditionLabel(issue.condition, lang) }),
       fixesFor(candidates, s => Number(enables(s.set).some(e => e.condition === issue.condition))),
       `conditions:unmet:${issue.member}:${issue.via}`);

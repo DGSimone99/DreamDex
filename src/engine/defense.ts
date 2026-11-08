@@ -299,7 +299,7 @@ const teamConditions = (team: TeamSet[]): FieldCondition[] => [...new Set(team.f
 
 /**
  * Difesa di un membro, solo informazione (il voto è del team): quanti dei 36 colpi di tipo regge per lato, la
- * Sostenibilità, e il valore 40/30/30. La danza difensiva conta per metà; `setupGain` è quanto alza il valore.
+ * Sostenibilità, e il valore 40/30/30. La danza difensiva conta per tre quarti (DEFENSE_SETUP_SHARE); `setupGain` è quanto alza il valore.
  */
 export function memberDefense(set: TeamSet, team: TeamSet[], data: EngineData): MemberDefense | null {
   const species = battleSpecies(set);
