@@ -28,6 +28,8 @@ describe('giro dei punti piccoli', () => {
     expect(speedOptions(xern('Power Herb'), [xern('Power Herb')]).some(o => o.condition === 'setup')).toBe(true);
     expect(speedOptions(xern('Leftovers'), [xern('Leftovers')]).some(o => o.condition === 'setup')).toBe(false);
     expect(setupBoosts(set('Espeon', 'Leftovers', 'Magic Bounce', ['Calm Mind', 'Stored Power']))?.boosts).toMatchObject({ spa: 1, spd: 1 });
+    // Calm Mind (+1 +1) batte Iron Defense (+2): fa salire anche le altre mosse speciali
+    expect(setupBoosts(set('Iron Crown', 'Leftovers', 'Quark Drive', ['Calm Mind', 'Stored Power', 'Tachyon Cutter', 'Iron Defense']))?.move).toBe('Calm Mind');
   });
 
   it('1.25: un team di 6 con una specie sconosciuta è provvisorio', () => {
