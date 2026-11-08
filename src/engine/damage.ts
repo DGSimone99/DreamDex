@@ -240,6 +240,23 @@ function diceHits(move: NonNullable<ReturnType<typeof getMove>>, item: string, a
   return [undefined];
 }
 
+/** Mosse che con la pioggia non mancano mai (Thunder e Hurricane col sole scendono al 50%). */
+const RAIN_SURE = new Set(['thunder', 'hurricane', 'bleakwindstorm', 'wildboltstorm', 'sandsearstorm']);
+const SUN_HALF = new Set(['thunder', 'hurricane']);
+
+/**
+ * La precisione della mossa col meteo (2026-11-08): con la pioggia Thunder, Hurricane e le tempeste di Enamorus,
+ * Thundurus e Landorus non mancano, col sole Thunder e Hurricane fanno 50%, con la neve Blizzard non manca.
+ * Come in partita, per pioggia e sole conta il meteo del bersaglio: con l'Utility Umbrella resta la precisione normale.
+ */
+export function weatherAccuracy(moveId: string, base: number, conditions: FieldCondition[], defenderItem = ''): number {
+  if (conditions.includes('snow') && moveId === 'blizzard') return 1;
+  const umbrella = toID(defenderItem) === 'utilityumbrella';
+  if (conditions.includes('rain') && RAIN_SURE.has(moveId) && !umbrella) return 1;
+  if (conditions.includes('sun') && SUN_HALF.has(moveId) && !umbrella) return 0.5;
+  return base;
+}
+
 /**
  * La mossa diventa una mossa Z col cristallo del set: un cristallo di tipo (Firium Z) per le mosse d'attacco di quel tipo,
  * o un cristallo unico (Kommonium Z) per la sua mossa (Clanging Scales) sul suo Pokémon (Kommo-o). La libreria non
@@ -283,7 +300,8 @@ function bestHitOn(attacker: TeamSet, defender: Target, options: HitOptions): Hi
     if (options.priorityOnly && !(movePriority(attacker, data) > 0 || grassyGlide)) continue;
     // Una mossa Z non manca mai (2026-11-08: prima teneva la precisione della mossa di base)
     const useZ = !!options.z && !data.ohko && zPowered(attacker, data);
-    const accuracy = useZ || data.accuracy === true ? 1 : data.accuracy / 100;
+    const accuracy = useZ || data.accuracy === true ? 1
+      : weatherAccuracy(data.id, data.accuracy / 100, options.conditions ?? [], defender.item);
     // Mosse OHKO (Sheer Cold, Fissure): la libreria non le calcola; KO se colpiscono, salvo immunità
     if (data.ohko) {
       if (options.superEffectiveOnly && !superEffective(data.type, data.id, types)) continue;

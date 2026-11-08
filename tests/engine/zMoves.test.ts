@@ -43,3 +43,18 @@ describe('mosse Z', () => {
     expect(hasZMove(set('Darkrai', 'Fightinium Z', 'Bad Dreams', ['Focus Blast'], 'Timid', {}))).toBe(true);
   });
 });
+
+describe('precisione col meteo', () => {
+  const pelipper = set('Pelipper', 'Damp Rock', 'Drizzle', ['Hurricane'], 'Modest', { spa: 252, hp: 252 });
+  const target = set('Ogerpon-Wellspring', 'Wellspring Mask', 'Water Absorb', ['Ivy Cudgel'], 'Jolly', { hp: 252 });
+  it('Hurricane con la pioggia non manca, col sole fa 50%, con l\'Umbrella del bersaglio resta 70%', () => {
+    const plain = bestHit(pelipper, target)!.expected;
+    expect(bestHit(pelipper, target, { conditions: ['rain'] })!.expected).toBeCloseTo(plain / 0.7, 3);
+    expect(bestHit(pelipper, target, { conditions: ['sun'] })!.expected).toBeCloseTo(plain / 0.7 * 0.5, 3);
+    expect(bestHit(pelipper, { ...target, item: 'Utility Umbrella' }, { conditions: ['rain'] })!.expected).toBeCloseTo(plain, 3);
+  });
+  it('Blizzard con la neve non manca', () => {
+    const ninetales = set('Ninetales-Alola', 'Light Clay', 'Snow Warning', ['Blizzard'], 'Timid', { spa: 252, spe: 252 });
+    expect(bestHit(ninetales, swampert, { conditions: ['snow'] })!.expected / bestHit(ninetales, swampert)!.expected).toBeCloseTo(1 / 0.7, 2);
+  });
+});
