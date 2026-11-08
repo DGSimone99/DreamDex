@@ -20,7 +20,7 @@ import { lockedStatusMoves, withUsableMoves } from './lockedMoves';
 import { t, type Lang } from '../i18n';
 import { gameName, typeName } from '../i18n/game';
 import { effectiveness, superEffectiveMoves, teamField, TYPES } from './types';
-import { benefits, conditionConflicts, conditionLabel, enables, viaName, unmetBeneficiaries, unusedEnablers, weakenedMoves, weatherMitigations, type Condition } from './synergy';
+import { benefits, conditionConflicts, conditionLabel, enables, teamEnabler, usesCondition, viaName, unmetBeneficiaries, unusedEnablers, weakenedMoves, weatherMitigations, type Condition } from './synergy';
 import { teamCores } from './cores';
 import { blockedReason, voteTeam } from './legalTeam';
 
@@ -414,9 +414,10 @@ export function conditionUsedBonus(team: TeamSet[], lang: Lang = 'it'): Redundan
   const items: Redundancy[] = [];
   const seen = new Set<Condition>();
   for (const [i, set] of team.entries()) {
-    for (const link of enables(set)) {
+    for (const link of enables(set).filter(teamEnabler)) {
       if (seen.has(link.condition)) continue;
-      const users = team.filter((other, j) => j !== i && benefits(other).some(b => b.condition === link.condition));
+      // Gli stessi utenti del malus "non usata" (synergy.ts usesCondition): i due non scattano mai insieme
+      const users = team.filter((other, j) => j !== i && usesCondition(other, link.condition));
       if (users.length < CONDITION_USERS_MIN) continue;
       seen.add(link.condition);
       items.push({

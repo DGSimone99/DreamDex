@@ -223,13 +223,26 @@ function boostsItself(set: TeamSet, condition: Condition): boolean {
   return !!boosted && attackingMoves(set).some(m => m.type === boosted);
 }
 
+/**
+ * Chi sfrutta davvero una condizione: lo stesso criterio per il malus "non usata" e il bonus "usata" (2026-11-08: prima il
+ * bonus contava anche Weather Ball e le abilità Paradox, e i due potevano scattare insieme sullo stesso meteo). Non contano
+ * Weather Ball e Terrain Pulse (vanno con qualunque meteo o campo) né un Paradox con la Booster Energy (non gli serve).
+ */
+export function usesCondition(set: TeamSet, condition: Condition): boolean {
+  // Con la Booster l'abilità Paradox non conta, le mosse sì (Walking Wake con Hydro Steam sfrutta il sole)
+  const booster = toID(set.item) === 'boosterenergy' && PARADOX.has(toID(battleAbility(set)));
+  return benefits(booster ? { ...set, ability: '' } : set).some(b => b.condition === condition && !GENERIC_MOVES.has(toID(b.via)));
+}
+
+/** Il membro porta la condizione per il team (non Chilly Reception, che serve a cambiare, né un meteo primordiale). */
+export const teamEnabler = (link: ConditionLink): boolean => !isPrimal(link) && !isIncidental(link);
+
 /** Membri che portano un meteo/campo/Trick Room che nessuno sfrutta, nemmeno loro stessi. */
 export function unusedEnablers(team: TeamSet[]): TeamConditionIssue[] {
-  const specific = (set: TeamSet) => benefits(set).filter(b => !GENERIC_MOVES.has(toID(b.via)));
   return team.flatMap(member => {
-    const usedByOthers = new Set(team.filter(o => o !== member).flatMap(specific).map(b => b.condition));
+    const usedByOthers = new Set(CONDITIONS.filter(c => team.some(o => o !== member && usesCondition(o, c))));
     return enables(member)
-      .filter(e => !isPrimal(e) && !isIncidental(e) && !isTerrainAbility(e))
+      .filter(e => teamEnabler(e) && !isTerrainAbility(e))
       .filter(e => !usedByOthers.has(e.condition) && !CHIP.includes(e.condition) && !boostsItself(member, e.condition))
       .map(e => ({ member: battleName(member), ...e }));
   });
