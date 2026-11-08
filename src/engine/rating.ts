@@ -1,4 +1,4 @@
-import { analyzeTeam, threatScore, UNIFORM_TYPE_WEIGHTS, usesMeta, type TeamAnalysis } from './analysis';
+import { analyzeTeam, UNIFORM_TYPE_WEIGHTS, usesMeta, type TeamAnalysis, type ThreatRow } from './analysis';
 import type { EngineData } from './data';
 import { battleAbility, battleName, battleSpecies, toID } from './dex';
 import { hitQuality, memberPower, teamPower, type MemberPower } from './power';
@@ -14,7 +14,6 @@ import type { TeamNeeds } from './needs';
 import { FAMILIES, type SubRoleValues } from './subRoles';
 import { ESSENTIAL_POINTS, IMPORTANT_POINTS, MINOR_POINTS, teamRolesArea, type TeamRoles } from './rolesArea';
 import { teamSpeedArea, type TeamSpeed } from './speedArea';
-import { strengthComponent } from './scoring';
 import { usageOf } from './stats';
 import type { TeamSet } from './sets';
 import { lockedStatusMoves, withUsableMoves } from './lockedMoves';
@@ -85,8 +84,6 @@ export const areaWeightTable = (rules: FormatRules): AreaWeightTable =>
 
 
 
-/** Nelle minacce gestite: quota delle 3 più usate (il resto: tutte, pesate per uso). */
-export const TOP_THREATS = 0.5;
 
 /**
  * Soglie tarate sul banco col meta (2026-10-31, scripts/bench): team da torneo mediana 80 (S il 5%, A il 57%),
@@ -129,11 +126,6 @@ export interface Redundancies {
   items: Redundancy[];
 }
 
-/** L'area Meta scomposta: minacce gestite e uso dei membri nel formato (0–100). */
-export interface MetaScore {
-  threats: number;
-  usage: number;
-}
 
 export interface TeamRating {
   /** Voto pesato delle aree, prima della penalità. */
@@ -157,8 +149,8 @@ export interface TeamRating {
   typeMix: TypeMix | null;
   /** Il team usa Trick Room (premia i membri lenti nella Velocità; in un team veloce è un malus). */
   trickRoom: boolean;
-  /** Dettaglio dell'area Meta, o null se il voto è senza meta. */
-  meta: MetaScore | null;
+  /** Il voto usa il meta (statistiche presenti e modalità senza meta non scelta). */
+  meta: boolean;
   /** Peso di ogni area nel voto (somma 1); il Meta non pesa, è una penalità. */
   weights: Partial<Record<AreaKey, number>>;
   /** La tabella dei pesi per tipo usata dal formato (per la guida del voto). */
@@ -506,16 +498,6 @@ function rateTeamAs(input: TeamSet[], data: EngineData, lang: Lang = 'it', opts:
   const totalWeight = sum(available.map(key => effective[key]));
   const areaWeights = Object.fromEntries(available.map(key => [key, effective[key] / totalWeight])) as Partial<Record<AreaKey, number>>;
   let score = sum(available.map(key => areaWeights[key]! * raw[key]!));
-  // Col meta: minacce gestite (metà dalle 3 più usate) e uso dei membri contano per il 30%, il resto è il voto senza meta
-  let meta: MetaScore | null = null;
-  if (usesMeta(data)) {
-    const top = analysis.threats.slice(0, 3);
-    const topHandled = top.length ? top.filter(x => x.handledBy.length > 0).length / top.length : 0.5;
-    const threats = (1 - TOP_THREATS) * ((threatScore(analysis) ?? 50) / 100) + TOP_THREATS * topHandled;
-    const usage = sum(team.map(set => strengthComponent(usageOf(data.stats, battleName(set))))) / team.length;
-    meta = { threats: Math.round(100 * threats), usage: Math.round(100 * usage) };
-    // Informazione per l'Analisi: nel voto le minacce stanno nella Coverage meta della Difesa
-  }
   const areas = (Object.keys(raw) as (keyof typeof raw)[])
     // Con uno stall la Velocità non conta nel voto ma resta visibile (inattiva); senza dati l'area non c'è
     .filter(key => raw[key] !== null)
@@ -559,7 +541,7 @@ function rateTeamAs(input: TeamSet[], data: EngineData, lang: Lang = 'it', opts:
   const memberPoints = MEMBER_POINT * team.filter(set => !!battleSpecies(set)).length;
   const overall = Math.min(100, Math.max(0, base - penalty.total + bonus.total + memberPoints));
   return {
-    base, penalty, bonus, memberPoints, power: power.members, overall, ...gradeFor(overall, lang), provisional: team.filter(set => !!battleSpecies(set)).length < 6, areas, archetype, meta,
+    base, penalty, bonus, memberPoints, power: power.members, overall, ...gradeFor(overall, lang), provisional: team.filter(set => !!battleSpecies(set)).length < 6, areas, archetype, meta: usesMeta(data),
     teamType: analysis.needs.archetype, typeMix: null, trickRoom, needs: analysis.needs,
     weights: areaWeights, weightTable, offense, defense, speed, roles,
   };
@@ -594,5 +576,18 @@ export function bonusMalusCatalog(lang: Lang): CatalogEntry[] {
     name: t(lang, `catalog.${key}.name`, values),
     when: t(lang, `catalog.${key}.when`, values),
     points: t(lang, `catalog.${key}.points`, values),
+  }));
+}
+
+/**
+ * Le minacce del meta come le giudica il voto (Coverage meta della Difesa), per coach, Panoramica e scheda Meta:
+ * gestita = almeno un membro regge del tutto il suo colpo migliore. Vuota senza meta.
+ */
+export function ratingThreats(rating: TeamRating | null, data: EngineData): ThreatRow[] {
+  const rows = rating?.defense.coverageMeta?.rows ?? [];
+  return rows.map(row => ({
+    name: row.species,
+    usage: usageOf(data.stats, row.species),
+    handledBy: row.heldBy.filter(h => !h.partial).map(h => h.species),
   }));
 }

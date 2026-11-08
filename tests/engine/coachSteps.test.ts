@@ -22,14 +22,15 @@ describe('columnOf', () => {
 });
 
 describe('buildSteps', () => {
-  it('una debolezza di tipo sopra il 25% di Sicurezza (pressione sotto 1) non diventa tappa; dal 25% in giù sì', () => {
-    const mild = { ...problem('defense:Ice'), size: 0.5 };
-    const real = { ...problem('defense:Flying'), size: 1 };
+  it("ogni problema di difesa può guidare una tappa, anche un minore (c'è solo sotto il livello 50 della Coverage tipi)", () => {
+    const mild = { ...problem('defense:Ice'), size: 10 };
+    const real = { ...problem('defense:Flying', 'serious'), size: 100 };
     const steps = buildSteps([mild, real], [swap('A', 5, ['defense:Ice']), swap('B', 3, ['defense:Flying'])], []);
-    expect(steps.map(s => s.problem.key)).toEqual(['defense:Flying']);
-    // Se lo stesso cambio risolve anche la debolezza lieve, sta in "risolve anche" ma non nel titolo
+    expect(steps.map(s => s.problem.key).sort()).toEqual(['defense:Flying', 'defense:Ice']);
+    // Un cambio che li risolve entrambi: una tappa, guidata dal grave, col minore anche nel titolo
     const both = buildSteps([mild, real], [swap('C', 4, ['defense:Flying', 'defense:Ice'])], []);
-    expect(both[0].group).toEqual(['defense:Flying']);
+    expect(both).toHaveLength(1);
+    expect(both[0].group).toEqual(['defense:Flying', 'defense:Ice']);
     expect(both[0].alsoSolves).toEqual(['defense:Ice']);
   });
 

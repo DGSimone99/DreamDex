@@ -2,11 +2,6 @@ import type { CoachProblem, ProblemCategory } from './coach';
 import type { CoachFix } from './coachFixes';
 import type { MoveFix } from './moveFixes';
 
-/**
- * Una debolezza di tipo diventa tappa (un cambio consigliato) solo da questa pressione in su: Sicurezza del tipo al 25% o meno
- * (saldo −1 o peggio). Fra 25% e 50% resta un problema minore, ma non basta da solo a consigliare un cambio.
- */
-export const STEP_MIN_DEFENSE_PRESSURE = 1;
 
 /**
  * Un buco di coverage diventa tappa solo se il tipo è scoperto del tutto (taglia 2: nessun colpo super efficace al 33%)
@@ -15,9 +10,11 @@ export const STEP_MIN_DEFENSE_PRESSURE = 1;
  */
 export const STEP_MIN_COVERAGE_SIZE = 2;
 
-/** Un problema che può guidare una tappa o comparire nel suo titolo (debolezze lievi e coverage minore finiscono solo in "risolve anche"). */
+/**
+ * Un problema che può guidare una tappa o comparire nel suo titolo (la coverage minore finisce solo in "risolve anche").
+ * Ogni problema di difesa può guidare: c'è solo sotto il livello 50 della Coverage tipi.
+ */
 const leads = (p: CoachProblem) => {
-  if (p.category === 'defense') return !(p.size !== undefined && p.size < STEP_MIN_DEFENSE_PRESSURE);
   if (p.category === 'coverage') return p.severity === 'serious' && (p.size ?? 0) >= STEP_MIN_COVERAGE_SIZE;
   return true;
 };

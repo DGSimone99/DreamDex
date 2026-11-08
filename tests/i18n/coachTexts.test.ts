@@ -10,7 +10,10 @@ describe('coaching e valutazione in inglese', () => {
     const coaching = coachTeam([tusk, gholdengo, { ...emptySet('Mewtwo'), item: 'Mewtwonite Y' }], DEFAULT_FORMAT, fixtureData, 'en');
     expect(coaching.verdict).toBe('Incomplete team');
     expect(coaching.problems).toContainEqual({ severity: 'serious', category: 'rules', text: 'Mewtwo-Mega-Y is not legal in National Dex OU', fixes: [], key: 'rules:Mewtwo-Mega-Y is not legal in National Dex OU', subjects: ['Mewtwo-Mega-Y'] });
-    expect(coaching.problems.some(p => /^Weak to \w+: \d+ weak, \d+ resist/.test(p.text))).toBe(true);
+    // Difesa: grave se nessuno regge il tipo, minore se lo regge poco
+    expect(coaching.problems.some(p => p.category === 'defense' && p.severity === 'serious' && /^Nobody takes \w+$/.test(p.text))).toBe(true);
+    expect(coaching.problems.some(p => p.category === 'defense' && p.severity === 'minor' && /^\w+ barely taken: few members take its hits$/.test(p.text))).toBe(true);
+    expect(coaching.problems.some(p => p.category === 'meta' && /^Nobody takes [\w-]+( [\w-]+)? from the meta$/.test(p.text))).toBe(true);
   });
 
   it('meno di due membri', () => {

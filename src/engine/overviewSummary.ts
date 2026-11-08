@@ -1,7 +1,7 @@
-import { threatScore, type TeamAnalysis } from './analysis';
-import { weaknessSeverity, type CoachProblem } from './coach';
+import type { TeamAnalysis } from './analysis';
+import { COVERED_LEVEL, holdSeverity, type CoachProblem } from './coach';
 import type { EngineData } from './data';
-import type { TeamRating } from './rating';
+import { ratingThreats, type TeamRating } from './rating';
 import { LEVEL_KEYS, type LevelKey } from './roleLevels';
 import { poolMedian } from './speed';
 
@@ -27,21 +27,23 @@ const byValue = (v: number): TileStatus => (v >= 70 ? 'good' : v >= 50 ? 'mid' :
 
 /** I dati delle sei tessere del Riassunto, nell'ordine di TileKey. */
 export function summarizeTeam(analysis: TeamAnalysis, rating: TeamRating, problems: CoachProblem[], data: EngineData): SummaryTile[] {
-  // Difesa: tipi senza debolezza da correggere
-  const exposed = analysis.weakness.filter(r => weaknessSeverity(r) !== null);
+  // Difesa: tipi retti (Coverage tipi della Difesa, come il coach)
+  const held = rating.defense.coverageTypes.rows;
+  const exposed = held.filter(r => holdSeverity(rating, r.type) !== null);
   const defense: SummaryTile = {
     key: 'defense',
-    value: `${analysis.weakness.length - exposed.length}/${analysis.weakness.length}`,
+    value: `${held.length - exposed.length}/${held.length}`,
     missing: exposed.map(r => ({ kind: 'type', type: r.type })),
     status: problems.some(p => p.category === 'defense' && p.severity === 'serious') ? 'bad' : exposed.length ? 'mid' : 'good',
   };
 
-  // Offesa: tipi colpiti super efficace
-  const unhit = analysis.coverage.filter(r => r.hitters.length === 0);
+  // Offesa: tipi coperti nel pacchetto dell'Offesa (livello 40, come il coach)
+  const typeRows = rating.offense.types.rows;
+  const unhit = typeRows.filter(r => r.level < COVERED_LEVEL);
   const strength: SummaryTile = {
     key: 'strength',
-    value: `${analysis.coverage.length - unhit.length}/${analysis.coverage.length}`,
-    missing: unhit.map(r => ({ kind: 'type', type: r.type })),
+    value: `${typeRows.length - unhit.length}/${typeRows.length}`,
+    missing: unhit.map(r => ({ kind: 'type', type: r.label })),
     status: unhit.length ? 'mid' : 'good',
   };
 
@@ -70,9 +72,9 @@ export function summarizeTeam(analysis: TeamAnalysis, rating: TeamRating, proble
     },
   };
 
-  // Meta: minacce con almeno un check
-  const threats = analysis.threats;
-  const score = threatScore(analysis);
+  // Meta: minacce che qualcuno regge (Coverage meta della Difesa)
+  const threats = ratingThreats(rating, data);
+  const score = rating.defense.coverageMeta?.value ?? null;
   const meta: SummaryTile = threats.length && score !== null
     ? {
       key: 'meta',

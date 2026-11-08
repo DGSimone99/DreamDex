@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { coachTeam, describeDiff } from '../../src/engine/coach';
+import { coachTeam, describeDiff, HELD_LEVEL } from '../../src/engine/coach';
+import { rateTeam } from '../../src/engine/rating';
 import type { EngineData } from '../../src/engine/data';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
 import { scoreCandidates } from '../../src/engine/scoring';
@@ -39,8 +40,8 @@ describe('Mega scritta in due modi: stesso punteggio', () => {
   });
 });
 
-describe('debolezza seria anche con una resistenza: i rimedi ci sono', () => {
-  it('Fairy: 3 deboli, 1 resiste, Corviknight proposto', () => {
+describe('difesa retta poco anche se qualcuno regge in parte: i rimedi ci sono', () => {
+  it('Psychic: livello sotto 50 nella Coverage tipi, Corviknight proposto', () => {
     const data: EngineData = {
       stats: {
         meta: { month: '2026-09', cutoff: 1630, battles: 1 },
@@ -49,9 +50,12 @@ describe('debolezza seria anche con una resistenza: i rimedi ci sono', () => {
       sets: {},
     };
     const team = ['Great Tusk', 'Dragapult', 'Garchomp', 'Gholdengo', 'Blissey', 'Rotom-Wash'].map(emptySet);
-    const fairy = coachTeam(team, DEFAULT_FORMAT, data).problems.find(p => p.text.startsWith('Debole a Fairy'))!;
-    expect(fairy.severity).toBe('serious');
-    expect(fairy.fixes).toEqual(['Corviknight']);
+    const row = rateTeam(team, data, 'it')!.defense.coverageTypes.rows.find(r => r.type === 'Psychic')!;
+    expect(row.level).toBeLessThan(HELD_LEVEL);
+    expect(row.level).toBeGreaterThan(0);
+    const psychic = coachTeam(team, DEFAULT_FORMAT, data).problems.find(p => p.key === 'defense:Psychic')!;
+    expect(psychic).toMatchObject({ severity: 'minor', text: 'Psychic retto poco: pochi membri reggono i suoi colpi' });
+    expect(psychic.fixes).toEqual(['Corviknight']);
   });
 });
 

@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { threatScore, type TeamAnalysis } from '../engine/analysis';
+import type { TeamAnalysis } from '../engine/analysis';
 import type { CoachAdvice, Coaching, CoachProblem, ProblemCategory } from '../engine/coach';
 import type { CoachFix } from '../engine/coachFixes';
 import type { EngineData } from '../engine/data';
 import type { MoveFix } from '../engine/moveFixes';
-import type { TeamRating } from '../engine/rating';
+import { rateTeam, ratingThreats, type TeamRating } from '../engine/rating';
 import type { TeamSet } from '../engine/sets';
 import { formatPercent } from '../i18n';
 import { useLang, useT } from '../i18n/react';
@@ -71,7 +71,7 @@ export function AnalysisPanel({ team, analysis, rating, coaching, advice = null,
   } else if (showCoaching && coaching) {
     // Il Coaching vince sul profilo di un membro, come le aree
     body = <CoachingView coaching={coaching} advice={advice} members={team.length} rating={rating} metaOn={!data.ignoreMeta && !!data.stats}
-      threatUsage={Object.fromEntries(analysis.threats.map(th => [th.name, th.usage]))}
+      threatUsage={Object.fromEntries(ratingThreats(rating, data).map(th => [th.name, th.usage]))}
       onFix={fix => onFix?.(fix)} onMoveFix={fix => onMoveFix?.(fix)}
       onApplyFix={fix => onApplyFix?.(fix)} onApplyMove={fix => onApplyMove?.(fix)} />;
   } else if (open !== null) {
@@ -91,11 +91,14 @@ export function AnalysisPanel({ team, analysis, rating, coaching, advice = null,
 }
 
 /** Uso nel meta dei membri e minacce del meta; senza meta, niente. */
-function MetaPanelBody({ team, analysis, data, coaching, expanded = false }: { team: TeamSet[]; analysis: TeamAnalysis; data?: EngineData; coaching?: Coaching; expanded?: boolean }) {
+function MetaPanelBody({ team, rating, data, coaching, expanded = false }: { team: TeamSet[]; analysis: TeamAnalysis; rating?: TeamRating | null; data?: EngineData; coaching?: Coaching; expanded?: boolean }) {
   const tr = useT();
   const lang = useLang();
-  const open = analysis.threats.filter(t => t.handledBy.length === 0);
-  const score = threatScore(analysis);
+  // Le minacce come le giudica il voto (Coverage meta della Difesa), come il coach e la Panoramica
+  const judged = rating !== undefined ? rating : data ? rateTeam(team, data, lang) : null;
+  const threats = data ? ratingThreats(judged, data) : [];
+  const open = threats.filter(t => t.handledBy.length === 0);
+  const score = threats.length ? judged?.defense.coverageMeta?.value ?? null : null;
   const threatSummary = score === null
     ? tr('analysis.threatsNoData')
     : open.length === 0 ? tr('analysis.threatsAll') : tr('analysis.threatsOpen', { n: open.length });
@@ -108,12 +111,12 @@ function MetaPanelBody({ team, analysis, data, coaching, expanded = false }: { t
         <summary><span>{tr('analysis.threats')}</span><span>{threatSummary}</span></summary>
         {score !== null && (
           <p className="note">
-            {tr('analysis.threatScore', { n: analysis.threats.length })} <strong>{Math.round(score)}%</strong>
+            {tr('analysis.threatScore', { n: threats.length })} <strong>{Math.round(score)}%</strong>
             <meter min={0} max={100} value={score} />
           </p>
         )}
         <ul className="mon-rows">
-          {analysis.threats.map(t => {
+          {threats.map(t => {
             const fixes = coaching?.threatFixes[t.name] ?? [];
             return (
               <li key={t.name} className={t.handledBy.length ? '' : 'bad'}>
@@ -138,7 +141,7 @@ function MetaPanelBody({ team, analysis, data, coaching, expanded = false }: { t
 }
 
 /** Scheda Meta: uso nel meta a sinistra, minacce a destra. */
-export function MetaPanel(props: { team: TeamSet[]; analysis: TeamAnalysis; data?: EngineData; coaching?: Coaching }) {
+export function MetaPanel(props: { team: TeamSet[]; analysis: TeamAnalysis; rating?: TeamRating | null; data?: EngineData; coaching?: Coaching }) {
   const tr = useT();
   return (
     <section aria-label={tr('tabs.meta')} className="meta-panel">
