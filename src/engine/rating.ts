@@ -109,7 +109,7 @@ export interface RatingArea {
 }
 
 /** Chiave della voce del catalogo bonus/malus a cui appartiene una voce del voto. */
-export type CatalogKey = 'sharedWeak' | 'sameType' | 'hazardDuplicate' | 'removers' | 'weatherClash' | 'unmetCondition' | 'unusedEnabler'
+export type CatalogKey = 'sharedWeak' | 'sameType' | 'hazardDuplicate' | 'weatherClash' | 'unmetCondition' | 'unusedEnabler'
   | 'weakMember' | 'lockedStatus' | 'essentialRole' | 'importantRole' | 'trickRoomFast' | 'defenseHole' | 'typeBlend'
   | 'coreTrio' | 'minorRole' | 'weakCovered' | 'typeVariety' | 'conditionUsed' | 'weatherHelp';
 
@@ -179,12 +179,9 @@ const HAZARDS: Record<string, string> = {
   toxicspikes: 'Toxic Spikes',
   stickyweb: 'Sticky Web',
 };
-const REMOVAL = new Set(['defog', 'rapidspin', 'mortalspin', 'tidyup', 'courtchange']);
 
 /** Un setter in più dello stesso hazard costa 1 punto. */
 export const HAZARD_DUPLICATE = 1;
-/** Ogni rimuovitore di hazard oltre il primo costa 1 punto. */
-export const REMOVER_EXTRA_POINTS = 1;
 /** Meteo o campi in conflitto costano 3 punti. */
 export const WEATHER_CLASH_POINTS = 3;
 /** Un attivatore (meteo, campo, Trick Room) che nessun compagno usa costa 2 punti. */
@@ -192,7 +189,10 @@ export const UNUSED_ENABLER_POINTS = 2;
 /** Ogni membro oltre il secondo dello stesso tipo costa 1 punto (3% dei team da torneo, 20% della ladder). */
 export const SAME_TYPE_POINTS = 1;
 
-/** Ruoli ripetuti senza bisogno: stesso hazard, più rimozioni, e i 3+ membri dello stesso tipo (−1 per ogni membro oltre il secondo). */
+/**
+ * Ruoli ripetuti senza bisogno: stesso hazard e i 3+ membri dello stesso tipo (−1 per ogni membro oltre il secondo).
+ * Le rimozioni doppie non costano più (2026-11-08): chi le ha vince come gli altri, e togliere la seconda alzava il voto.
+ */
 export function roleAndTypeRedundancies(team: TeamSet[], lang: Lang = 'it'): Redundancy[] {
   const items: Redundancy[] = [];
   const setters = new Map<string, number>();
@@ -202,8 +202,6 @@ export function roleAndTypeRedundancies(team: TeamSet[], lang: Lang = 'it'): Red
     }
   }
   for (const [hazard, n] of setters) if (n > 1) items.push({ text: t(lang, 'rating.redundancy.setters', { n, hazard: gameName('move', hazard, lang) }), points: HAZARD_DUPLICATE * (n - 1), catalog: 'hazardDuplicate' });
-  const removers = team.filter(set => set.moves.some(m => REMOVAL.has(toID(m)))).length;
-  if (removers > 1) items.push({ text: t(lang, 'rating.redundancy.removers', { n: removers }), points: (removers - 1) * REMOVER_EXTRA_POINTS, catalog: 'removers' });
   for (const type of TYPES) {
     const n = team.filter(set => (battleSpecies(set)?.types as readonly string[] | undefined)?.includes(type)).length;
     if (n >= 3) items.push({ text: t(lang, 'rating.redundancy.sameType', { n, type: typeName(type, lang) }), points: (n - 2) * SAME_TYPE_POINTS, catalog: 'sameType' });
@@ -561,7 +559,7 @@ export interface CatalogEntry {
 }
 
 const CATALOG_ORDER: { key: CatalogKey; kind: 'malus' | 'bonus' }[] = [
-  ...(['sharedWeak', 'sameType', 'hazardDuplicate', 'removers', 'weatherClash', 'unmetCondition', 'unusedEnabler', 'weakMember', 'lockedStatus', 'essentialRole', 'importantRole', 'trickRoomFast', 'defenseHole', 'typeBlend'] as const)
+  ...(['sharedWeak', 'sameType', 'hazardDuplicate', 'weatherClash', 'unmetCondition', 'unusedEnabler', 'weakMember', 'lockedStatus', 'essentialRole', 'importantRole', 'trickRoomFast', 'defenseHole', 'typeBlend'] as const)
     .map(key => ({ key, kind: 'malus' as const })),
   ...(['coreTrio', 'weakCovered', 'typeVariety', 'conditionUsed', 'weatherHelp', 'minorRole', 'typeBlend'] as const).map(key => ({ key, kind: 'bonus' as const })),
 ];
@@ -570,7 +568,7 @@ const CATALOG_ORDER: { key: CatalogKey; kind: 'malus' | 'bonus' }[] = [
 export function bonusMalusCatalog(lang: Lang): CatalogEntry[] {
   const values = {
     shared: SHARED_WEAK_POINTS, hole: DEFENSE_HOLE_POINTS, unmet: UNMET_POINTS, hazard: HAZARD_DUPLICATE, member: WEAK_MEMBER_POINTS, memberMax: WEAK_MEMBER_MAX, locked: LOCKED_STATUS_POINTS,
-    essential: ESSENTIAL_POINTS, important: IMPORTANT_POINTS, minor: MINOR_POINTS, room: TRICK_ROOM_MAX, roomEach: TRICK_ROOM_FAST_POINTS, remover: REMOVER_EXTRA_POINTS, clash: WEATHER_CLASH_POINTS, unused: UNUSED_ENABLER_POINTS,
+    essential: ESSENTIAL_POINTS, important: IMPORTANT_POINTS, minor: MINOR_POINTS, room: TRICK_ROOM_MAX, roomEach: TRICK_ROOM_FAST_POINTS, clash: WEATHER_CLASH_POINTS, unused: UNUSED_ENABLER_POINTS,
     help: WEATHER_HELP,
     same: SAME_TYPE_POINTS, trio: CORE_TRIO_POINTS, covered: WEAK_COVERED_POINTS, variety: TYPE_VARIETY_POINTS, varietyMin: TYPE_VARIETY_MIN,
     used: CONDITION_USED_POINTS, users: CONDITION_USERS_MIN,
