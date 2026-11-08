@@ -97,7 +97,8 @@ export function DefenseGuideSection({ section, defense, meta, formatId = DEFAULT
             <Keys items={[
               { label: g('sus.k.recover'), value: '+50%' }, { label: 'Regenerator', value: '+33%' }, { label: 'Rest', value: '+33%' },
               { label: 'Wish', value: '+25%' }, { label: 'Pain Split', value: '+25%' }, { label: g('sus.k.drain'), value: dec('+12,5%') },
-              { label: 'Poison Heal', value: dec('+12,5%') }, { label: 'Leftovers', value: '+6%' }, { label: g('sus.k.weather'), value: '+6%' },
+              { label: 'Poison Heal', value: dec('+12,5%'), title: g('sus.k.poisonHeal') }, { label: 'Leftovers', value: '+6%' },
+              { label: g('sus.k.weather'), value: '+6%', title: g('sus.k.weather.rule') }, { label: 'Dry Skin', value: dec('+12,5%'), title: g('sus.k.dryskin') },
               { label: 'Grassy Terrain', value: '+6%', title: g('sus.k.grassy') },
             ]} />
           </div>
@@ -117,6 +118,7 @@ export function DefenseGuideSection({ section, defense, meta, formatId = DEFAULT
         <Rows compact rows={[
           ['Heavy-Duty Boots', g('sus.x.boots')],
           [g('sus.x.removal'), g('sus.x.removal.rule')],
+          [g('sus.x.half'), g('sus.x.half.rule')],
           ['Magic Guard', g('sus.x.guard')],
           [g('sus.x.status'), g('sus.x.status.rule')],
         ]} />

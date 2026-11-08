@@ -111,7 +111,7 @@ export function coverageTargets(data: EngineData, kind: CoverageKind = usesMeta(
 }
 
 export interface TeamCoverage {
-  /** 0–100: quota pesata dei bersagli coperti, con la profondità 70/20/10. */
+  /** 0–100: quota pesata dei bersagli coperti, con la profondità 70/20/10 nei tipi e 50/30/20 nel meta. */
   value: number;
   /** Bersagli che nessuno porta al 33%. */
   holes: string[];

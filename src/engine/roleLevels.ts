@@ -1,7 +1,7 @@
 import type { Archetype } from './archetype';
 import type { SubRole } from './subRoles';
 
-/** Livello di un sotto-ruolo per l'archetipo: essenziale (solo malus), importante (±), minore (solo +), ignorato. */
+/** Livello di un sotto-ruolo per l'archetipo: essenziale e importante (solo malus, di peso diverso), minore (solo +), ignorato. */
 export type Level = 'essential' | 'important' | 'minor' | 'ignored';
 /**
  * Una voce della tabella: un sotto-ruolo, o un gruppo di attaccanti: "anySweeper" = uno sweeper fisico o speciale,
@@ -33,7 +33,7 @@ export const LEVEL_KEYS: LevelKey[] = [
 
 /**
  * Interruttore: i sotto-ruoli misurati anche da altre aree (Attacco, muri, Recupero) contano anche nei Ruoli.
- * Spento, le loro voci minori diventano ignorate e il Recupero è essenziale in semi-stall e stall, ignorato altrove.
+ * Spento, le loro voci minori diventano ignorate e il Recupero conta solo dove è essenziale (Balance, semi-stall, stall).
  * Spento per scelta (utente, 2026-10-25): un effetto, un posto; distacco torneo − medio 7,7 → 8,4, replay nel rumore.
  * Non va cambiato a runtime nell'interfaccia (le cache non dipendono da lui): solo test e bench.
  */
