@@ -88,7 +88,6 @@ export function RolesGuideSection({ section, archetype, meta, typeRule }: { sect
             </li>
           ))}
         </ul>
-        <p className="guide-foot">{g('levels.foot')}</p>
         <h5>{g('extra')}</h5>
         <ul className="guide-lines">
           <li>{g('extra.secondary')}</li>
