@@ -240,6 +240,27 @@ function diceHits(move: NonNullable<ReturnType<typeof getMove>>, item: string, a
   return [undefined];
 }
 
+/**
+ * La mossa diventa una mossa Z col cristallo del set: un cristallo di tipo (Firium Z) per le mosse d'attacco di quel tipo,
+ * o un cristallo unico (Kommonium Z) per la sua mossa (Clanging Scales) sul suo Pokémon (Kommo-o). La libreria non
+ * controlla il cristallo: lo fa questa funzione.
+ */
+export function zPowered(set: TeamSet, move: NonNullable<ReturnType<typeof getMove>>): boolean {
+  if (move.category === 'Status') return false;
+  const item = dex.items.get(set.item ?? '');
+  if (!item.exists) return false;
+  if (item.zMoveType) return item.zMoveType === move.type;
+  if (!item.zMove || !item.zMoveFrom || toID(item.zMoveFrom) !== move.id) return false;
+  const species = battleSpecies(set);
+  return !!species && (item.itemUser ?? []).some(user => user === species.name || user === species.baseSpecies);
+}
+
+/** Il set ha una mossa Z (Tera e mossa Z valgono un quarto: offense.ts, coverage.ts, defense.ts). */
+export const hasZMove = (set: TeamSet): boolean => set.moves.some(name => {
+  const move = getMove(name);
+  return !!move && zPowered(set, move);
+});
+
 /** Il colpo migliore del set contro il difensore (mai terastallizzato); null senza mosse d'attacco o se la libreria non conosce i Pokémon. */
 export function bestHit(attacker: TeamSet, defender: Target, options: HitOptions = {}): Hit | null {
   return withFirstHit(defender, options, target => bestHitOn(attacker, target, options));
@@ -250,7 +271,6 @@ function bestHitOn(attacker: TeamSet, defender: Target, options: HitOptions): Hi
   const target = toPokemon(defender, {}, 'defender');
   if (!own || !target) return null;
   const field = toField(options.conditions);
-  const zType = options.z ? dex.items.get(attacker.item).zMoveType : undefined;
   // Lo sconto di Band e Specs si applica come PS del difensore più alti di un nono: danno ×0,9 su tutte le misure
   // (solo quando attacca un membro del team: chi riceve il colpo prende il danno pieno)
   const hp = target.maxHP() / (LOCKING.has(toID(attacker.item)) && !options.incoming ? CHOICE_LOCK : 1);
@@ -261,7 +281,9 @@ function bestHitOn(attacker: TeamSet, defender: Target, options: HitOptions): Hi
     if (!data || data.category === 'Status') continue;
     const grassyGlide = data.id === 'grassyglide' && (options.conditions ?? []).includes('grassyterrain');
     if (options.priorityOnly && !(movePriority(attacker, data) > 0 || grassyGlide)) continue;
-    const accuracy = data.accuracy === true ? 1 : data.accuracy / 100;
+    // Una mossa Z non manca mai (2026-11-08: prima teneva la precisione della mossa di base)
+    const useZ = !!options.z && !data.ohko && zPowered(attacker, data);
+    const accuracy = useZ || data.accuracy === true ? 1 : data.accuracy / 100;
     // Mosse OHKO (Sheer Cold, Fissure): la libreria non le calcola; KO se colpiscono, salvo immunità
     if (data.ohko) {
       if (options.superEffectiveOnly && !superEffective(data.type, data.id, types)) continue;
@@ -270,7 +292,6 @@ function bestHitOn(attacker: TeamSet, defender: Target, options: HitOptions): Hi
       if (!best || hit.expected > best.expected) best = hit;
       continue;
     }
-    const useZ = !!zType && zType === data.type;
     // Loaded Dice: la media dei colpi possibili, ognuno col suo calcolo (la libreria ne conterebbe sempre quelli di base)
     const hitCounts = useZ ? [undefined] : diceHits(data, attacker.item, battleAbility(attacker));
     const calcMoves = hitCounts.map(hits => toMove(data.name, useZ, battleAbility(attacker), knownItem(attacker.item) ?? '', hits));
@@ -293,7 +314,8 @@ function bestHitOn(attacker: TeamSet, defender: Target, options: HitOptions): Hi
       const twoTurn = data.flags.charge && !instantCharge(data.id, options.conditions ?? [], attacker.item) ? 0.5 : 1;
       // Ricarica (Hyper Beam, Giga Impact): un colpo ogni due turni, metà. KO di chi la usa (Explosion, Final Gambit):
       // una volta a partita, un quarto come Tera e mosse Z
-      const charge = twoTurn * (data.flags.recharge ? RECHARGE_SHARE : 1) * (data.selfdestruct ? SELF_KO_SHARE : 1);
+      // La mossa Z non carica, non ricarica e non manda KO chi la usa (Bloom Doom da Solar Beam, Breakneck Blitz da Explosion)
+      const charge = useZ ? 1 : twoTurn * (data.flags.recharge ? RECHARGE_SHARE : 1) * (data.selfdestruct ? SELF_KO_SHARE : 1);
       const firstTurn = !options.priorityOnly ? 1 : FIRST_TURN.has(data.id) ? 0.5 : IF_ATTACKED.has(data.id) ? 0.75 : 1;
       const hit = { move: data.name, expected: (avg / hp) * accuracy * charge * firstTurn, min: (low / hp) * charge, max: (high / hp) * charge };
       if (!best || hit.expected > best.expected) best = hit;
