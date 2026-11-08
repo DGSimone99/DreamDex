@@ -76,3 +76,15 @@ describe('precisione con abilità e strumenti', () => {
     expect(bestHit(durant('Hustle'), clefable)!.expected / bestHit(durant('Swarm'), clefable)!.expected).toBeCloseTo(1.5 * 0.8, 1);
   });
 });
+
+describe('blocco su una mossa', () => {
+  it('Gorilla Tactics blocca come la Band: il 10% in meno una volta sola', () => {
+    const toxapex = set('Toxapex', 'Black Sludge', 'Regenerator', ['Recover'], 'Bold', { hp: 252, def: 252 });
+    const darm = (item: string, ability: string) => set('Darmanitan-Galar', item, ability, ['Icicle Crash'], 'Jolly', { atk: 252, spe: 252 });
+    const boots = bestHit(darm('Heavy-Duty Boots', 'Gorilla Tactics'), toxapex)!.expected;
+    const plain = bestHit(darm('Heavy-Duty Boots', 'Zen Mode'), toxapex)!.expected;
+    expect(boots / plain).toBeCloseTo(1.5 * 0.9, 1);
+    const band = bestHit(darm('Choice Band', 'Gorilla Tactics'), toxapex)!.expected;
+    expect(band / boots).toBeCloseTo(1.5, 1);
+  });
+});
