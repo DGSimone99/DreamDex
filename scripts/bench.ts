@@ -105,11 +105,19 @@ const gameTeam = (formatId: FormatId, names: string[]): TeamSet[] | null => {
   const team = names.map(name => defaultSet(DATA[formatId], name, 9)).filter((s): s is TeamSet => !!s);
   return team.length === 6 ? team : null;
 };
+/**
+ * Nei formati National Dex conta solo la partita dove tutti e due i lati mostrano la Mega (come in --games, 2026-11-08):
+ * chi non la manda in campo sembrerebbe senza, e succede più a chi perde (Mega vista in 203 lati perdenti, 174 vincenti).
+ */
+const NATDEX_REPLAY = new Set<FormatId>(['ou', 'ubers', 'uu']);
+const bothShowMega = (game: Game) => !NATDEX_REPLAY.has(REPLAY_FORMAT[game.format])
+  || [game.p1, game.p2].every(names => names.some(name => /-Mega(-[XY])?$/.test(name)));
+
 /** I team del ladder medio, uno per combinazione di Pokémon, col formato. */
 const ladderTeams = (): { fmt: FormatId; team: TeamSet[] }[] => {
   const out: { fmt: FormatId; team: TeamSet[] }[] = [];
   const seenTeams = new Set<string>();
-  for (const game of readGames('ladder.json')) {
+  for (const game of readGames('ladder.json').filter(bothShowMega)) {
     const fmt = REPLAY_FORMAT[game.format];
     for (const names of [game.p1, game.p2]) {
       const key = `${fmt} ${[...names].sort().join('/')}`;
@@ -231,7 +239,7 @@ function replayFile(name: string, games: Game[]) {
     const bins = [[1, 4], [5, 9], [10, 100]] as const;
     const stats = bins.map(() => ({ right: 0, total: 0 }));
     let skipped = 0;
-    for (const game of games) {
+    for (const game of games.filter(bothShowMega)) {
       const formatId = REPLAY_FORMAT[game.format];
       const data = withMeta ? DATA[formatId] : { ...DATA[formatId], ignoreMeta: true };
       const [a, b] = [gameTeam(formatId, game.p1), gameTeam(formatId, game.p2)];
@@ -245,7 +253,7 @@ function replayFile(name: string, games: Game[]) {
     const all = stats.reduce((acc, s) => ({ right: acc.right + s.right, total: acc.total + s.total }), { right: 0, total: 0 });
     const pct = (s: { right: number; total: number }) => (s.total ? `${(100 * s.right / s.total).toFixed(1)}% su ${s.total}` : '–');
     console.log(`
-[${withMeta ? 'col meta' : 'senza meta'}] ${games.length} partite (${skipped} saltate: Pokémon senza set)`);
+[${withMeta ? 'col meta' : 'senza meta'}] ${games.filter(bothShowMega).length} partite su ${games.length} (in National Dex solo con la Mega vista da tutti e due i lati; ${skipped} saltate: Pokémon senza set)`);
     console.log(`  vince il voto più alto: ${pct(all)}`);
     bins.forEach(([lo, hi], i) => console.log(`  differenza ${lo}–${hi === 100 ? '…' : hi}: ${pct(stats[i])}`));
   }
