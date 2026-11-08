@@ -96,3 +96,12 @@ describe('Ruoli come lista: coperti, malus e bonus', () => {
     expect(rateTeam([], fixtureData)).toBeNull();
   });
 });
+
+describe('team provvisorio', () => {
+  it('con una specie sconosciuta fra i 6 i ruoli mancanti non costano (come per il team di 5)', () => {
+    const team = [...physical.slice(0, 5), { species: 'Fakemon', item: '', ability: '', moves: ['Tackle'], nature: 'Serious', evs: {} } as TeamSet];
+    const rating = rateTeam(team, fixtureData)!;
+    expect(rating.provisional).toBe(true);
+    expect(rating.penalty.items.filter(i => i.catalog === 'essentialRole' || i.catalog === 'importantRole')).toEqual([]);
+  });
+});

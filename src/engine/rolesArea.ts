@@ -1,5 +1,5 @@
 import type { EngineData } from './data';
-import { battleName } from './dex';
+import { battleName, battleSpecies } from './dex';
 import { keyRoles, keyValue, MISSING_BELOW, needLabel, teamNeeds, type TeamNeeds } from './needs';
 import { LEVEL_KEYS, type Level, type LevelKey } from './roleLevels';
 import type { Redundancy } from './rating';
@@ -37,7 +37,7 @@ export interface TeamRoles {
   total: number;
   /** Voci dell'archetipo non ignorate, nell'ordine della tabella. */
   rows: RoleRow[];
-  /** Mancanze essenziali e importanti come malus (solo team di 6), più lo squilibrio degli attaccanti. */
+  /** Mancanze essenziali e importanti come malus (solo team di 6 specie riconosciute). */
   failures: Redundancy[];
   /** Voci minori coperte come bonus. */
   bonuses: Redundancy[];
@@ -48,9 +48,12 @@ export interface TeamRoles {
   members: { species: string; values: SubRoleValues; reasons: SubRoleReason[]; primary: PrimaryFamily | null; credited?: SubRoleValues }[];
 }
 
-/** Malus di un team di 6: −4 per ogni essenziale mancante, −2 per ogni importante mancante, lo squilibrio degli attaccanti (−3). */
+/**
+ * Malus di un team di 6: −4 per ogni essenziale mancante, −2 per ogni importante mancante. Contano 6 specie riconosciute,
+ * come nel resto del voto: con una specie sconosciuta il team è provvisorio e i ruoli mancanti non costano (2026-11-08).
+ */
 function roleFailures(team: TeamSet[], needs: TeamNeeds, lang: Lang): Redundancy[] {
-  if (team.length !== 6) return [];
+  if (team.filter(set => !!battleSpecies(set)).length !== 6) return [];
   const archetype = t(lang, `archetype.${needs.archetype}`);
   const missing = (keys: LevelKey[], text: 'rating.failure.missing' | 'rating.failure.missingImportant', points: number, catalog: 'essentialRole' | 'importantRole') =>
     keys.map(key => ({ text: t(lang, text, { archetype, role: needLabel(key, lang) }), points, catalog }));
