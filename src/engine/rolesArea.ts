@@ -12,11 +12,11 @@ import { t, type Lang } from '../i18n';
  * MISSING_BELOW) o manca. Nel voto entrano solo i malus delle mancanze (team di 6) e il bonus dei minori coperti.
  * Calibrazione 2026-11-02 (banco): partite vere 50,4% → 52,4% (alto livello) e 53,1% → 55,8% (ladder).
  */
-/** Malus di ogni voce essenziale mancante (solo team di 6). */
+/** Malus di ogni voce essenziale mancante (solo team di 6 specie riconosciute). */
 export const ESSENTIAL_POINTS = 4;
-/** Malus di ogni voce importante mancante (solo team di 6). */
+/** Malus di ogni voce importante mancante (solo team di 6 specie riconosciute). */
 export const IMPORTANT_POINTS = 2;
-/** Bonus di ogni voce minore coperta, senza tetto (ogni tipo di team ne ha una o due). */
+/** Bonus di ogni voce minore coperta, senza tetto (le minori per tipo: HO 3, BO 4, Balance 5, Semi-stall 5, Stall 2). */
 export const MINOR_POINTS = 1;
 
 export interface RoleRow {

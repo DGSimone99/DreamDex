@@ -47,13 +47,8 @@ const E = 'essential' as const, I = 'important' as const, M = 'minor' as const, 
 /**
  * Colonne della tabella della specifica: HO, BO, Balance, Semi-stall, Stall.
  * Calibrazione (Task 9): pivot minore in HO (i team HO da torneo spesso hanno lead con hazard e sweeper, senza pivot).
- * Per scelta (calibrazione 2026-10-24) l'unica voce importante dell'HO è il setup del campo (hazard, schermi o
- * Sticky Web a metà, gruppo "fieldSetup"; i singoli hazard e schermi restano minori): un HO senza nulla di tutto
- * questo ha base 0 e Ruoli bassi (restano le minori), ma nessuna penalità essenziale. Pavimento e media con le
- * minori sono stati provati e scartati: abbassavano il distacco torneo − medio sotto 6,5.
- * Calibrazione 2026-10-25: il setup del campo è importante anche nel Bulky Offense (team con Sticky Web), dove gli
- * hazard da soli diventano minori; allora nella base pesavano il doppio;
- * dal 2026-11-02 i Ruoli sono una lista con malus e bonus (rolesArea.ts).
+ * Oggi le voci importanti dell'HO e del Bulky Offense sono Hazard e Controllo Hazard (il vecchio gruppo "fieldSetup"
+ * del 2026-10-24 non c'è più); dal 2026-11-02 i Ruoli sono una lista con malus e bonus (rolesArea.ts).
  * Il Debuff è minore anche in semi-stall e stall: paralisi o sonno aiutano, ma uno stall non ne ha bisogno (utente).
  */
 /**

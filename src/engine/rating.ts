@@ -19,7 +19,7 @@ import type { TeamSet } from './sets';
 import { lockedStatusMoves, withUsableMoves } from './lockedMoves';
 import { t, type Lang } from '../i18n';
 import { gameName, typeName } from '../i18n/game';
-import { effectiveness, superEffectiveMoves, teamField, TYPES } from './types';
+import { teamField, TYPES } from './types';
 import { benefits, conditionConflicts, conditionLabel, enables, teamEnabler, usesCondition, viaName, unmetBeneficiaries, unusedEnablers, weakenedMoves, weatherMitigations, type Condition } from './synergy';
 import { teamCores } from './cores';
 import { blockedReason, voteTeam } from './legalTeam';
@@ -348,7 +348,7 @@ export const WEATHER_HELP = 1;
 
 /**
  * +1 una volta sola se il meteo o il campo che il team porta smorza una debolezza di un compagno
- * (da 2× a neutro o da 4× a 1×, mai da 4× a 2×). Il setter non conta e abilitare un'abilità o una
+ * (da 2× a neutro: il meteo dimezza, e da 4× resterebbe 2×). Il setter non conta e abilitare un'abilità o una
  * mossa non dà bonus: il meteo non è sempre attivo, quindi non conta quanti ne godono.
  */
 export function weatherBonus(team: TeamSet[], lang: Lang = 'it'): Redundancies {
