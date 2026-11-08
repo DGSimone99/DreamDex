@@ -1,6 +1,6 @@
 import { usesMeta } from './analysis';
 import { coverageTargets, META_DEPTH, teamCoverage, type CoverageRow } from './coverage';
-import { bestHit, setKey, type FieldCondition, type Hit, type HitOptions, type Target } from './damage';
+import { bestHit, hasZMove, setKey, type FieldCondition, type Hit, type HitOptions, type Target } from './damage';
 import type { EngineData } from './data';
 import { defenderPanel, isDefensiveSet } from './defenders';
 // Import circolare con defense.ts: si usano solo funzioni, chiamate dopo il caricamento
@@ -253,7 +253,7 @@ function measureSet(set: TeamSet, team: TeamSet[], data: EngineData, measure: Me
   // Poteri da una volta a partita (Tera, mossa Z): il valore base è senza, a parte la variante con
   const teraOk = teraAllowed({ ...DEFAULT_FORMAT, formatId: data.formatId ?? 'ou' }) && !!set.teraType;
   const zItem = dex.items.get(set.item);
-  const zOk = !!zItem.zMoveType && set.moves.some(m => getMove(m)?.type === zItem.zMoveType);
+  const zOk = hasZMove(set);
   const oneUseVariants = [...(teraOk ? [{ tera: true, z: false }] : []), ...(zOk ? [{ tera: false, z: true }] : [])];
   let known = false;
 

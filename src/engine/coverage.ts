@@ -1,5 +1,5 @@
 import { usesMeta } from './analysis';
-import { bestHit, setKey, type FieldCondition, type Target } from './damage';
+import { bestHit, hasZMove, setKey, type FieldCondition, type Target } from './damage';
 import type { EngineData } from './data';
 import type { Species } from '@pkmn/dex';
 import { battleAbility, battleSpecies, dex, getMove, isSelectable, toID } from './dex';
@@ -149,8 +149,7 @@ function hitsOf(set: TeamSet, data: EngineData, targets: CoverageTarget[], kind:
   // Come nel resto dell'Offesa: il meteo che il membro porta con la sua abilità è sempre attivo, Tera e mosse Z contano un quarto
   const conditions = ownConditions(set);
   const teraOk = teraAllowed({ ...DEFAULT_FORMAT, formatId: data.formatId ?? 'ou' }) && !!set.teraType;
-  const zType = dex.items.get(set.item).zMoveType;
-  const zOk = !!zType && set.moves.some(m => getMove(m)?.type === zType);
+  const zOk = hasZMove(set);
   const superEffectiveOnly = kind !== 'meta';
   // La danza si mostra solo nella tabella del meta: non entra nel credito
   const setup = kind === 'meta' ? setupBoosts(set) : null;
