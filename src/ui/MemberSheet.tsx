@@ -50,7 +50,7 @@ export function MemberCards({ team, data, onOpen, onAdd }: { team: TeamSet[]; da
                 aria-label={t('analysis.openMember', { name: row.species, role: t(`sheet.role.${row.role}`), grade: row.grade })}>
                 <Sprite species={row.species} item={row.item} size={40} />
                 <span className="who"><strong>{row.species}</strong><small>{t(`sheet.role.${row.role}`)}</small></span>
-                <b className="grade" title={t('sheet.gradeTip')}>{row.grade}</b>
+                <b className="grade">{row.grade}</b>
               </button>
             </li>
           );
@@ -98,7 +98,7 @@ export function MemberProfile({ team, data, index, onIndex, onBack }: {
           <span className="types">{(getSpecies(row.species)?.types ?? []).map(type => <TypeChip key={type} type={type} />)}</span>
           <small>{row.item ? gameName('item', row.item, lang) : '—'}</small>
         </div>
-        <div className="member-grade" title={t('sheet.gradeTip')}>
+        <div className="member-grade">
           <strong>{row.grade}</strong>
           <span>{t('sheet.grade')} · {t(`sheet.role.${row.role}`)}</span>
         </div>

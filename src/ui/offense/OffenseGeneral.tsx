@@ -36,7 +36,7 @@ export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; m
     m.setupMove && m.setupGain > 0 ? t('detail.setupExtra', { move: gameName('move', m.setupMove, lang), n: m.setupGain }) : null,
     m.oneUse && m.oneUseGain > 0 ? `${m.oneUse.kind === 'tera' ? t('detail.withTera', { type: typeName(m.oneUse.name, lang) }) : t('detail.withZ', { item: gameName('item', m.oneUse.name, lang) })}: +${m.oneUseGain}` : null,
   ].filter(Boolean) as string[];
-  const typesTitle = (m: MemberOffense) => [t('odetail.gen.typesTitle', { n: m.value }), ...extras(m)].join(' · ');
+  const typesTitle = (m: MemberOffense) => [t('odetail.gen.typesTitle'), ...extras(m)].join(' · ');
   const pointsTitle = (m: MemberOffense, s: MemberShare) => [t('odetail.gen.pointsTitle', { n: s.points }), ...extras(m)].join(' · ');
 
   return (
@@ -69,7 +69,7 @@ export function OffenseGeneral({ offense, meta, ctx }: { offense: TeamOffense; m
                       </td>
                       {meta && (
                         <td>
-                          <span className="og-stack" title={t('odetail.gen.metaTitle', { n: s.meta?.covered ?? 0, total: s.meta?.total ?? 0, score: m.coverMeta ?? 0 })}><Bar value={m.coverMeta ?? 0} unit="%" /></span>
+                          <span className="og-stack" title={t('odetail.gen.metaTitle', { n: s.meta?.covered ?? 0, total: s.meta?.total ?? 0 })}><Bar value={m.coverMeta ?? 0} unit="%" /></span>
                           {roomy && <span className="og-detail og-meta">{t('odetail.gen.metaCount', { n: s.meta?.covered ?? 0, total: s.meta?.total ?? 0 })}</span>}
                         </td>
                       )}
