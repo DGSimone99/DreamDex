@@ -16,9 +16,9 @@ const isDetailArea = (key: string): key is DetailArea => key === 'strength' || k
 /** Voto grande accanto alla fila del team: lettera, punteggio, le tre aree, i Ruoli e Bonus/Malus, che portano alle schede di Analisi. */
 /**
  * `onOpen`: le righe delle aree e di Bonus/Malus portano alla scheda di quell'area in Analisi.
- * `ruleIssues`: problemi di regole, triangolo rosso nella testa. `blocked`: il team ha membri ma il voto non si dà (EV oltre 510).
+ * `ruleIssues`: problemi di regole, triangolo rosso nella testa. `blocked`: il team ha membri ma il voto non si dà (EV oltre 510, specie doppia): il perché.
  */
-export function GradeBadge({ rating, ruleIssues = [], blocked = false, onOpen }: { rating: TeamRating | null; ruleIssues?: string[]; blocked?: boolean; onOpen?: (area: AreaKey) => void }) {
+export function GradeBadge({ rating, ruleIssues = [], blocked = null, onOpen }: { rating: TeamRating | null; ruleIssues?: string[]; blocked?: 'ev' | 'species' | null; onOpen?: (area: AreaKey) => void }) {
   const t = useT();
   // Voto quando si è aperto il membro nell'editor: il badge mostra di quanto è cambiato
   const editing = useEditing();
@@ -36,7 +36,7 @@ export function GradeBadge({ rating, ruleIssues = [], blocked = false, onOpen }:
       <span className="grade-head">{t('rating.badgeHead')}</span>
       {rating && <span className="letter">{rating.grade}</span>}
       <span className="overall">{rating ? `${rating.overall} / 100` : t('rating.noGrade')}</span>
-      <span className="label">{rating ? rating.label : t(blocked ? 'rating.evBlocked' : 'rating.addPokemon')}</span>
+      <span className="label">{rating ? rating.label : t(blocked === 'ev' ? 'rating.evBlocked' : blocked === 'species' ? 'rating.speciesBlocked' : 'rating.addPokemon')}</span>
       {rating && since !== null && delta !== 0 && (
         <span className={`grade-delta ${delta > 0 ? 'up' : 'down'}`}>
           {t('rating.since', { from: since, delta: `${delta > 0 ? '+' : '−'}${Math.abs(delta)}` })}

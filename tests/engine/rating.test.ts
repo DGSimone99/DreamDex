@@ -171,11 +171,11 @@ describe('Ruoli nel voto', () => {
 });
 
 describe('membro debole e controllo velocità', () => {
-  it('un membro debole con solo Sticky Web o Thunder Wave è esente (utilità chiave)', () => {
+  it('un membro debole con Sticky Web è esente (utilità chiave), con solo Thunder Wave no', () => {
     const weak = (moves: string[]): TeamSet => ({ species: 'Delibird', ability: 'Hustle', item: '', moves, nature: 'Serious', evs: {} });
     const issues = (moves: string[]) => memberIssues([weak(moves)], 'it', teamNeeds([weak(moves)], fixtureData));
     expect(issues(['Sticky Web', 'Present'])).toEqual([]);
-    expect(issues(['Thunder Wave', 'Present'])).toEqual([]);
+    expect(issues(['Thunder Wave', 'Present'])).toHaveLength(1);
     expect(issues(['Present', 'Drill Peck'])).toHaveLength(1);
   });
 

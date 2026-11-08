@@ -12,7 +12,7 @@ import { takeSharedTeam } from './share';
 import type { TeamSet } from './engine/sets';
 import { AnalysisPanel, MetaPanel } from './ui/AnalysisPanel';
 import { GradeBadge } from './ui/RatingPanel';
-import { overEvMembers } from './engine/legalTeam';
+import { blockedReason } from './engine/legalTeam';
 import type { AnalysisView } from './ui/analysisView';
 import { SavedTeams } from './ui/SavedTeams';
 import { ShowdownPanel } from './ui/ShowdownPanel';
@@ -339,7 +339,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
           onOpenChange={index => { setEditingIndex(index); setMoveProposal(p => (p && p.index === index ? p : null)); }}
           proposal={moveProposal} onProposalDone={finishProposal} closeSignal={closeSignal} collapsed={collapsed}
           onAllowMultipleMegas={() => setFormat(f => ({ ...f, allowMultipleMegas: true }))} />
-        <GradeBadge rating={rating} blocked={overEvMembers(team).length > 0} ruleIssues={coaching?.problems.filter(p => p.category === 'rules').map(p => p.text)}
+        <GradeBadge rating={rating} blocked={blockedReason(team, format.formatId)} ruleIssues={coaching?.problems.filter(p => p.category === 'rules').map(p => p.text)}
           onOpen={area => { openTab('analysis'); setAnalysisView(area); }} />
         <button type="button" className="band-toggle" aria-expanded={!collapsed} onClick={toggleCollapsed}
           aria-label={t(lang, collapsed ? 'team.expand' : 'team.collapse')} title={t(lang, collapsed ? 'team.expand' : 'team.collapse')}>

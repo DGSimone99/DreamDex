@@ -141,7 +141,9 @@ describe('Velocità: una scheda a barre', () => {
     const user = userEvent.setup();
     const plain = set('Dragonite', 'Choice Band', 'Multiscale', ['Outrage', 'Extreme Speed', 'Earthquake', 'Fire Punch'], 'Adamant', { atk: 252, spe: 4 });
     const t = [dnite, plain, pex];
-    view(t, withMeta(t));
+    // Due della stessa specie solo dove la Species Clause non c'è (Anything Goes): altrove il voto è bloccato
+    const ag = { ...fixtureData, formatId: 'gen9ag' as const };
+    view(t, rateTeam(t, ag, 'it')!, ag);
     const bars = screen.getAllByRole('button', { name: 'Velocità di Dragonite: apri i rivali' });
     expect(bars).toHaveLength(2);
     // Il primo (dal più veloce) è quello con Dragon Dance, il secondo no
