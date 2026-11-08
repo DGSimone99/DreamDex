@@ -37,7 +37,7 @@ export function summarizeTeam(analysis: TeamAnalysis, rating: TeamRating, proble
     status: problems.some(p => p.category === 'defense' && p.severity === 'serious') ? 'bad' : exposed.length ? 'mid' : 'good',
   };
 
-  // Offesa: tipi coperti nel pacchetto dell'Offesa (livello 50, come il coach)
+  // Offesa: tipi coperti nel pacchetto dell'Offesa (livello 40, come il coach)
   const typeRows = rating.offense.types.rows;
   const unhit = typeRows.filter(r => r.level < COVERED_LEVEL);
   const strength: SummaryTile = {

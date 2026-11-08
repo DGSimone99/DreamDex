@@ -53,8 +53,13 @@ describe('summarizeTeam', () => {
     expect(defense.status).toBe('bad');
   });
 
-  it("Offesa: coperti/18 e tipi sotto il livello 50 nel pacchetto dell'Offesa, come il coach", () => {
-    const { rating, tile, problems } = build();
+  it("Offesa: coperti/18 e tipi sotto il livello 40 nel pacchetto dell'Offesa, come il coach", () => {
+    // Due membri: qualche tipo resta sotto 40
+    const two = team.slice(0, 2);
+    const analysis = analyzeTeam(two, fixtureData);
+    const rating = rateTeam(two, fixtureData)!;
+    const problems = findProblems(two, DEFAULT_FORMAT, fixtureData, analysis, [], 'it', rating);
+    const tile = (key: string) => summarizeTeam(analysis, rating, problems, fixtureData).find(t => t.key === key)!;
     const rows = rating.offense.types.rows;
     const unhit = rows.filter(r => r.level < COVERED_LEVEL);
     expect(unhit.length).toBeGreaterThan(0);

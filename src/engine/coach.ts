@@ -28,12 +28,13 @@ export const SIMILAR_THRESHOLD = 0.6;
 export const MIN_COVERAGE_WEIGHT = 0.05;
 export const STRONG_COVERAGE = 15;
 /**
- * Un tipo del pacchetto dell'Offesa è coperto dal livello 50: tre membri al 66%, o uno che lo manda KO e uno al 66%.
+ * Un tipo del pacchetto dell'Offesa è coperto dal livello 40: uno che lo manda KO, o due membri al 75% circa
+ * (era 50 fino al 2026-11-08: solo metà dei team veri arrivava a 15 tipi coperti, scelta dell'utente).
  * Sotto è un problema; scoperto (grave se il tipo pesa) se nessuno lo manda KO in due colpi (HOLE_HIT, 50%).
  */
-export const COVERED_LEVEL = 50;
+export const COVERED_LEVEL = 40;
 /**
- * Un tipo della Coverage tipi della Difesa è retto dal livello 50, come per l'Offesa. Sotto è un problema minore;
+ * Un tipo della Coverage tipi della Difesa è retto dal livello 50. Sotto è un problema minore;
  * grave se nessuno ha credito sul lato peggiore (lo stesso tipo prende il malus "nessuno regge" nel voto).
  */
 export const HELD_LEVEL = 50;
@@ -193,7 +194,7 @@ export function findProblems(team: TeamSet[], format: Format, data: EngineData, 
       `conditions:unmet:${issue.member}:${issue.via}`);
   }
 
-  // Coverage: lo stesso pacchetto dei tipi del voto, un problema per tipo sotto il livello 50 (COVERED_LEVEL).
+  // Coverage: lo stesso pacchetto dei tipi del voto, un problema per tipo sotto il livello 40 (COVERED_LEVEL).
   // Scoperto (nessuno lo manda KO in due colpi): grave se il tipo pesa; coperto poco (nessuno lo manda KO in un colpo, pochi lo colpiscono forte): minore.
   // Rimedi: i candidati col proprio set che ha una mossa super efficace contro il tipo (un'approssimazione, senza calcolo dei danni).
   // Cosa si risolve davvero lo dicono le tappe, con problemChanges.
