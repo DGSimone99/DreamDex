@@ -262,6 +262,19 @@ export function weatherAccuracy(moveId: string, base: number, conditions: FieldC
 }
 
 /**
+ * La precisione con abilità e strumenti (2026-11-08): No Guard (di chi attacca o di chi difende) non fa mancare,
+ * Compound Eyes ×1,3, Victory Star ×1,1, Wide Lens ×1,1, Hustle ×0,8 sulle mosse fisiche; mai sopra il 100%.
+ */
+export function modifiedAccuracy(accuracy: number, attacker: TeamSet, defender: TeamSet, category: string): number {
+  const ability = toID(battleAbility(attacker));
+  if (ability === 'noguard' || toID(battleAbility(defender)) === 'noguard') return 1;
+  let mult = ability === 'compoundeyes' ? 1.3 : ability === 'victorystar' ? 1.1 : 1;
+  if (toID(attacker.item) === 'widelens') mult *= 1.1;
+  if (ability === 'hustle' && category === 'Physical') mult *= 0.8;
+  return Math.min(1, accuracy * mult);
+}
+
+/**
  * La mossa diventa una mossa Z col cristallo del set: un cristallo di tipo (Firium Z) per le mosse d'attacco di quel tipo,
  * o un cristallo unico (Kommonium Z) per la sua mossa (Clanging Scales) sul suo Pokémon (Kommo-o). La libreria non
  * controlla il cristallo: lo fa questa funzione.
@@ -304,8 +317,9 @@ function bestHitOn(attacker: TeamSet, defender: Target, options: HitOptions): Hi
     if (options.priorityOnly && !(movePriority(attacker, data) > 0 || grassyGlide)) continue;
     // Una mossa Z non manca mai (2026-11-08: prima teneva la precisione della mossa di base)
     const useZ = !!options.z && !data.ohko && zPowered(attacker, data);
-    const accuracy = useZ || data.accuracy === true ? 1
-      : weatherAccuracy(data.id, data.accuracy / 100, options.conditions ?? [], defender.item);
+    const accuracy = useZ || data.accuracy === true ? 1 : data.ohko
+      ? (toID(battleAbility(attacker)) === 'noguard' ? 1 : data.accuracy / 100)
+      : modifiedAccuracy(weatherAccuracy(data.id, data.accuracy / 100, options.conditions ?? [], defender.item), attacker, defender, data.category);
     // Mosse OHKO (Sheer Cold, Fissure): la libreria non le calcola; KO se colpiscono, salvo immunità
     if (data.ohko) {
       if (options.superEffectiveOnly && !superEffective(data.type, data.id, types)) continue;

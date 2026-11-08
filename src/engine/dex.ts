@@ -119,7 +119,9 @@ export function hasPriorityAttack(set: { species: string; item: string; ability:
 
 /** Abilità che cambiano sempre una statistica (in battaglia): Huge Power raddoppia l'Attacco, Fur Coat la Difesa… */
 export const STAT_ABILITIES: Record<string, Partial<Record<'atk' | 'def' | 'spa' | 'spd', number>>> = {
-  hugepower: { atk: 2 }, purepower: { atk: 2 }, gorillatactics: { atk: 1.5 }, hustle: { atk: 1.5 },
+  hugepower: { atk: 2 }, purepower: { atk: 2 }, gorillatactics: { atk: 1.5 },
+  // Hustle: Attacco ×1,5 ma le mosse fisiche mirano all'80%: in tutto ×1,2
+  hustle: { atk: 1.2 },
   furcoat: { def: 2 }, icescales: { spd: 2 }, parentalbond: { atk: 1.25, spa: 1.25 },
 };
 

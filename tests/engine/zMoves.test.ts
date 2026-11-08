@@ -58,3 +58,21 @@ describe('precisione col meteo', () => {
     expect(bestHit(ninetales, swampert, { conditions: ['snow'] })!.expected / bestHit(ninetales, swampert)!.expected).toBeCloseTo(1 / 0.7, 2);
   });
 });
+
+describe('precisione con abilità e strumenti', () => {
+  const butterfree = (ability: string, item = '') => set('Butterfree', item, ability, ['Hurricane'], 'Timid', { spa: 252, spe: 252 });
+  it('Compound Eyes ×1,3, Wide Lens ×1,1, No Guard 100%, mai oltre il 100%', () => {
+    const plain = bestHit(butterfree('Tinted Lens'), swampert)!.expected;
+    // Tinted Lens non cambia il danno su Swampert (Volante neutro): 70% → 91% con Compound Eyes
+    expect(bestHit(butterfree('Compound Eyes'), swampert)!.expected).toBeCloseTo(plain * 1.3, 3);
+    expect(bestHit(butterfree('Tinted Lens', 'Wide Lens'), swampert)!.expected).toBeCloseTo(plain * 1.1, 3);
+    expect(bestHit(butterfree('Compound Eyes', 'Wide Lens'), swampert)!.expected).toBeCloseTo(plain / 0.7, 3);
+    const machamp = set('Machamp', 'Leftovers', 'No Guard', ['Dynamic Punch'], 'Adamant', { atk: 252 });
+    const guts = { ...machamp, ability: 'Guts' };
+    expect(bestHit(machamp, swampert)!.expected).toBeCloseTo(bestHit(guts, swampert)!.expected * 2, 3);
+  });
+  it('Hustle: le mosse fisiche mirano all\'80%', () => {
+    const durant = (ability: string) => set('Durant', 'Leftovers', ability, ['Iron Head'], 'Jolly', { atk: 252 });
+    expect(bestHit(durant('Hustle'), clefable)!.expected / bestHit(durant('Swarm'), clefable)!.expected).toBeCloseTo(1.5 * 0.8, 1);
+  });
+});
