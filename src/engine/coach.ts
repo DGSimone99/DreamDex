@@ -23,6 +23,8 @@ import type { ScoredArea } from './teamGain';
 import { teamOffense } from './offense';
 import { defensiveMultiplier, superEffectiveMove, type TypeName } from './types';
 import { withUsableMoves } from './lockedMoves';
+import { missingFormeItem } from './legalTeam';
+import { EV_TOTAL, evTotal } from './statCalc';
 
 export const SIMILAR_THRESHOLD = 0.6;
 export const MIN_COVERAGE_WEIGHT = 0.05;
@@ -141,6 +143,10 @@ export function findProblems(team: TeamSet[], format: Format, data: EngineData, 
     const forme = battleSpecies(set) ?? species;
     // Problema di regole di questo membro (la chiave resta quella dal testo)
     const rule = (text: string) => add('rules', true, text, [], undefined, undefined, [battleName(set)]);
+    // Cose che il voto non accetta così: EV oltre il massimo (voto bloccato), forma senza il suo strumento (contata base)
+    if (evTotal(set.evs) > EV_TOTAL) rule(t(lang, 'coach.problem.evOver', { name: battleName(set), n: evTotal(set.evs) }));
+    const missing = missingFormeItem(set);
+    if (missing) rule(t(lang, 'coach.problem.formeItem', { name: missing.forme.name, item: gameName('item', missing.item, lang), base: missing.base.name }));
     if (!isSelectable(species) || !isLegalIn(forme, format)) rule(t(lang, 'coach.problem.illegal', { species: battleName(set), format: formatLabel(format, lang) }));
     else if (!withinGen(species, format)) rule(t(lang, 'coach.problem.gen', { species: battleName(set), gen: format.genLimit }));
     // Mosse e abilità che il Pokémon non può avere (senza Custom Skillset)
@@ -153,9 +159,9 @@ export function findProblems(team: TeamSet[], format: Format, data: EngineData, 
     for (const text of bannedTexts(set, format, lang)) rule(`${battleName(set)}: ${text}`);
   }
 
-  const megas = team.filter(isMega);
+  const megas = team.filter(set => !missingFormeItem(set) && isMega(set));
   if (!format.allowMultipleMegas && megas.length > 1) {
-    add('rules', true, t(lang, 'coach.problem.megas', { list: list(megas.map(battleName)) }), [], 'rules:megas');
+    add('rules', true, t(lang, 'coach.problem.megas', { list: list(megas.map(battleName)), first: battleName(megas[0]) }), [], 'rules:megas');
   }
 
   // Si chiedono solo le voci essenziali per l'archetipo del team (uno stall non ha bisogno di attaccanti)

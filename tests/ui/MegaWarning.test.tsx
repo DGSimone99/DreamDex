@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { App } from '../../src/App';
 import { fixtureData } from '../fixtures/data';
 
-const WARNING = 'Seconda Mega: in National Dex ne è ammessa una sola';
+const WARNING = 'Seconda Mega: in National Dex se ne può usare una sola, il voto la conta senza pietra';
 const team = () => screen.getByRole('region', { name: 'Team' });
 
 async function setup(...names: string[]) {

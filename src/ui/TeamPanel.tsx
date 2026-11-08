@@ -23,6 +23,8 @@ import { speedTier, type SpeedTier } from '../engine/speed';
 import { ItemIcon } from './ItemIcon';
 import { AlertMark, type Alert } from './AlertMark';
 import { lockedStatusMoves } from '../engine/lockedMoves';
+import { missingFormeItem } from '../engine/legalTeam';
+import { EV_TOTAL, evTotal } from '../engine/statCalc';
 import { Sprite, TypeChip, typeColor } from './Sprite';
 import { gainText } from './CoachingView';
 import { Icon } from './icons';
@@ -78,6 +80,8 @@ function slotProblems(set: TeamSet, format: Format, lang: Lang): string[] {
     !withinGen(species, format) ? t(lang, 'team.beyondGen', { gen: format.genLimit }) : null,
     // Mosse, abilità e strumenti vietati dal formato
     ...bannedTexts(set, format, lang),
+    // EV oltre il massimo: il voto è bloccato
+    evTotal(set.evs) > EV_TOTAL ? t(lang, 'team.evOver', { n: evTotal(set.evs) }) : null,
   ].filter((p): p is string => !!p);
 }
 
@@ -226,8 +230,11 @@ function TeamSlot({ index, set, subRoles, proposal, onProposalDone, data, format
   const illegal = illegalParts(set, format.genLimit, pokedexOf(format));
   // Choice o Assault Vest con mosse di stato: non si usano (anche un malus nel voto)
   const locked = lockedStatusMoves(set);
+  const missing = missingFormeItem(set);
   const warnings = [
     megaWarning,
+    // Forma senza il suo strumento (Zacian-Crowned senza Rusted Sword): il voto la conta come la forma base
+    missing ? tr('team.formeItem', { item: gameName('item', missing.item, lang), base: missing.base.name }) : null,
     illegal.moves.length ? tr('team.illegalMoves', { list: illegal.moves.map(m => gameName('move', m, lang)).join(', ') }) : null,
     illegal.ability ? tr('team.illegalAbility', { name: gameName('ability', illegal.ability, lang) }) : null,
     locked.length ? tr('team.lockedStatus', { item: gameName('item', set.item, lang), moves: locked.map(m => gameName('move', m, lang)).join(', ') }) : null,
@@ -510,9 +517,10 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
   useEffect(() => { if (!canFill) setFilling(false); }, [canFill]);
   // Chiave stabile per specie (e occorrenza): riordinando, le card non si ricreano
   const keys = team.map((set, i) => `${set.species}#${team.slice(0, i).filter(s => s.species === set.species).length}`);
-  const firstMega = team.findIndex(isMega);
+  // Una forma senza il suo strumento non è Mega (legalTeam.ts)
+  const firstMega = team.findIndex(set => !missingFormeItem(set) && isMega(set));
   const warningFor = (set: TeamSet, i: number) =>
-    !format.allowMultipleMegas && firstMega !== -1 && i > firstMega && isMega(set) ? t(lang, 'team.secondMega') : null;
+    !format.allowMultipleMegas && firstMega !== -1 && i > firstMega && !missingFormeItem(set) && isMega(set) ? t(lang, 'team.secondMega') : null;
   return (
     <section aria-label={t(lang, 'team.region')} className={`team${collapsed ? ' collapsed' : ''}`}>
       <div className="team-head">
