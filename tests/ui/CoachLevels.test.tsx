@@ -5,7 +5,7 @@ import { App } from '../../src/App';
 import { fixtureData } from '../fixtures/data';
 
 describe('interruttore "Più Mega ammesse"', () => {
-  const WARNING = 'Seconda Mega: in National Dex ne è ammessa una sola';
+  const WARNING = 'Seconda Mega: in National Dex se ne può usare una sola, il voto la conta senza pietra';
 
   it('si attiva e si disattiva dalla barra in alto', async () => {
     const user = userEvent.setup();

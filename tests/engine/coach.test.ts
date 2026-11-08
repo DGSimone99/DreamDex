@@ -126,7 +126,7 @@ describe('coachTeam', () => {
       { ...emptySet('Lopunny'), item: 'Lopunnite' },
       { ...emptySet('Charizard-Mega-Y') },
     ];
-    const text = 'Più Mega nel team (Lopunny-Mega, Charizard-Mega-Y): in National Dex ne è ammessa una sola';
+    const text = 'Più Mega nel team (Lopunny-Mega, Charizard-Mega-Y): in National Dex se ne può usare una sola, il voto conta come Mega solo Lopunny-Mega';
     const strict = coachTeam(megas, DEFAULT_FORMAT, megaData).problems;
     expect(strict).toContainEqual({ severity: 'serious', category: 'rules', text, fixes: [], key: 'rules:megas' });
     const relaxed = coachTeam(megas, { ...DEFAULT_FORMAT, allowMultipleMegas: true }, megaData).problems;
