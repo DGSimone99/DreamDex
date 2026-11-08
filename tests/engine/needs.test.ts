@@ -307,11 +307,16 @@ describe('bisogni del team dai sotto-ruoli', () => {
 });
 
 describe('voto e coach seguono i livelli dell\'archetipo', () => {
-  it('lo stall non riceve "Ruoli mancanti" per gli attaccanti', () => {
-    const texts = coachTeam(stall, DEFAULT_FORMAT, fixtureData).problems.map(p => p.text).join(' | ');
+  it('lo stall non riceve "Ruoli mancanti" per gli attaccanti (formati con la regola dei muri)', () => {
+    const texts = coachTeam(stall, { ...DEFAULT_FORMAT, formatId: 'gen9ou' }, { ...fixtureData, formatId: 'gen9ou' }).problems.map(p => p.text).join(' | ');
     expect(texts).not.toMatch(/Ruoli mancanti:[^|]*(Sweeper|Wallbreaker|attaccante)/);
     // L'unico essenziale da stall che manca a questo team è il Danno nel Tempo (vedi "senza valori dei membri li misura")
     expect(texts).toMatch(/Ruoli mancanti: Danno nel Tempo( \||$)/);
+  });
+
+  it('in National Dex OU lo stall chiede i ruoli del Semi-stall: gli attaccanti mancano', () => {
+    const texts = coachTeam(stall, DEFAULT_FORMAT, fixtureData).problems.map(p => p.text).join(' | ');
+    expect(texts).toMatch(/Ruoli importanti mancanti:[^|]*Wallbreaker/);
   });
 
   it('un team senza attaccanti né muro speciale li riceve come ruoli mancanti', () => {

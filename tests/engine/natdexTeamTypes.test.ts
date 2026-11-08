@@ -3,6 +3,7 @@ import { teamArchetype, typeMix, TYPE_BLEND_ZONE } from '../../src/engine/archet
 import { DEFAULT_RULES, formatRules, NATDEX_OU_RULES } from '../../src/engine/formatRules';
 import { ARCHETYPE_WEIGHTS, NATDEX_OU_WEIGHTS, areaWeightTable, rateTeam } from '../../src/engine/rating';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
+import { rolesTypeOf } from '../../src/engine/roleLevels';
 import { fixtureData } from '../fixtures/data';
 
 const mk = (species: string, item: string, ability: string, moves: string[], nature = 'Jolly', evs: TeamSet['evs'] = { atk: 252, spe: 252, spd: 4 }): TeamSet =>
@@ -103,6 +104,17 @@ describe('tipi di team in National Dex OU (recupero e velocità)', () => {
     if (r.overall === own.overall) expect(item).toBeUndefined();
     else expect(item!.text).toMatch(/^Vicino a Hyper Offense: il voto è per il \d+% quello da Hyper Offense/);
     expect(r.overall).toBe(Math.min(100, Math.max(0, r.base - r.penalty.total + r.bonus.total + r.memberPoints)));
+  });
+
+  it('in National Dex OU lo Stall chiede i ruoli del Semi-stall; negli altri formati i suoi', () => {
+    const ou = rateTeam(stall, { ...fixtureData, formatId: 'ou' })!;
+    const asSemi = rateTeam(stall, { ...fixtureData, formatId: 'ou' }, 'it', { archetype: 'semiStall' })!;
+    expect(ou.teamType).toBe('stall');
+    expect(ou.needs.levels).toEqual(asSemi.needs.levels);
+    expect(ou.overall).toBe(asSemi.overall);
+    expect(rolesTypeOf('stall', 'recoverySpeed')).toBe('semiStall');
+    expect(rolesTypeOf('stall', 'walls')).toBe('stall');
+    expect(rolesTypeOf('balance', 'recoverySpeed')).toBe('balance');
   });
 
   it('pesi di National Dex OU: somma 100, scala regolare (la Difesa sale, la Velocità scende da HO a stall)', () => {

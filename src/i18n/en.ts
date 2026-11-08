@@ -723,6 +723,7 @@ export const en = {
   'help.type.stall': "Defense weighs almost two thirds of the grade. Speed counts little and not even an attacker is needed. Asks for walls, Recovery, Hazards, a Cleric, damage over time and Anti-setup; then Hazard Control. Item Removal is an extra.",
   'help.type.weights': "Area weights",
   'help.general.rolesNote': "Roles have no weight: they count as malus (essential −{essential}, important −{important}) and bonus (minor +{minor}).",
+  'help.type.stallAsSemi': "In National Dex OU Stall asks for the same roles as Semi-stall",
   'help.type.levels': "Entries by level: a missing essential one takes {essential} points off and a missing important one {important} (team of 6); a covered minor one adds {minor}. The others don't count.",
   'detail.member': "Pokémon",
   'detail.coverage': "Coverage",

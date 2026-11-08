@@ -725,6 +725,7 @@ export const it: Record<keyof typeof en, string> = {
   'help.type.stall': "La Difesa pesa quasi due terzi del voto. La Velocità conta poco e non serve nemmeno un attaccante. Chiede muri, Recupero, Hazard, Cleric, danno nel tempo e Anti-setup; poi Controllo Hazard. La Rimozione Strumenti è un extra.",
   'help.type.weights': "Pesi delle aree",
   'help.general.rolesNote': "I Ruoli non hanno un peso: contano come malus (essenziale −{essential}, importante −{important}) e bonus (minore +{minor}).",
+  'help.type.stallAsSemi': "In National Dex OU lo Stall chiede gli stessi ruoli del Semi-stall",
   'help.type.levels': "Voci per livello: un'essenziale che manca toglie {essential} punti e un'importante che manca {important} (team di 6); una minore coperta aggiunge {minor}. Le altre non contano.",
   'detail.member': "Pokémon",
   'detail.coverage': "Coverage",
