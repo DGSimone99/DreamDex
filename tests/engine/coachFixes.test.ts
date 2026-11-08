@@ -111,13 +111,16 @@ describe('candidati del Coaching dalla classifica di Migliora team', () => {
     for (const { f, type } of list) expect(level(withCandidate(three, f.set, f.index), type)).toBeGreaterThan(level(three, type));
   });
 
-  it('debolezza da grave a minore: il candidato è sotto il problema ma non fra quelli che lo risolvono', () => {
-    const key = 'defense:Ground';
-    expect(problemsOf(three).find(p => p.key === key)?.severity).toBe('serious');
+  it('difesa grave che il candidato alza senza risolverla: è fra quelli che la riducono, non fra quelli che la risolvono', () => {
+    const key = 'defense:Ghost';
+    const was = problemsOf(three).find(p => p.key === key)!;
+    expect(was.severity).toBe('serious');
     const fix = fixesThree.find(f => f.reduces.includes(key) && !f.solves.includes(key))!;
     expect(fix).toBeTruthy();
-    expect(fix.reduces).toContain(key);
-    expect(problemsOf(withCandidate(three, fix.set, fix.index)).find(p => p.key === key)?.severity).toBe('minor');
+    // Il problema resta, ma più vicino al livello 50 della Coverage tipi della Difesa (size = 100 − livello)
+    const is = problemsOf(withCandidate(three, fix.set, fix.index)).find(p => p.key === key)!;
+    expect(is).toBeTruthy();
+    expect(is.severity === 'minor' || is.size! < was.size!).toBe(true);
   });
 
   it('tempo ragionevole', () => {

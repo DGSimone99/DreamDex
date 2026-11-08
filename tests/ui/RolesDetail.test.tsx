@@ -5,7 +5,8 @@ import { App } from '../../src/App';
 import { analyzeTeam } from '../../src/engine/analysis';
 import { AreaView } from '../../src/ui/AreaView';
 import { rateTeam } from '../../src/engine/rating';
-import { emptySet, type TeamSet } from '../../src/engine/sets';
+import { emptySet, importShowdown, type TeamSet } from '../../src/engine/sets';
+import { GradeBadge } from '../../src/ui/RatingPanel';
 import { IMPORTANT_POINTS, MINOR_POINTS, type TeamRoles } from '../../src/engine/rolesArea';
 import { fixtureData, gholdengo, tusk } from '../fixtures/data';
 import { renderIt } from '../helpers/italian';
@@ -71,12 +72,23 @@ describe('Ruoli a schede: Generale e una per livello', () => {
     expect(view.querySelector('.area-panel')).toHaveTextContent(/Toxic: \d+% del (meta|tier) non immune/);
   });
 
-  it('la riga Ruoli del voto: coperti/totale e quanti mancano in rosso, senza barra', async () => {
+  it('la riga Ruoli del voto: coperti/totale e quanti mancano, senza barra; con meno di 6 membri non in rosso', async () => {
     const { bar } = await openRoles();
     expect(bar).toHaveClass('grade-roles');
     expect(bar.querySelector('.meter')).toBeNull();
     expect(bar).toHaveTextContent(/^Ruoli\d+\/\d+ · (\d+ mancano|1 manca)$/);
-    expect(bar.querySelector('em')).toHaveClass('bad');
+    // Tre membri: il voto è provvisorio, le mancanze non tolgono punti
+    expect(bar.querySelector('em')).toHaveClass('soft');
+    expect(bar.querySelector('em')).not.toHaveClass('bad');
+  });
+
+  it('la riga Ruoli del voto: con il team completo le mancanze sono in rosso', () => {
+    const rating = rateTeam(importShowdown(ROLES_TEAM).sets, fixtureData)!;
+    expect(rating.provisional).toBe(true);
+    renderIt(<GradeBadge rating={{ ...rating, provisional: false }} />);
+    const em = document.querySelector('.grade-roles em')!;
+    expect(em).toHaveTextContent(/^(\d+ mancano|1 manca)$/);
+    expect(em).toHaveClass('bad');
   });
 
   it('in inglese', async () => {

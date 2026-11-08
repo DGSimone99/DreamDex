@@ -85,19 +85,19 @@ describe('schede interne di Analisi', () => {
   });
 
   it('Coaching: badge coi problemi gravi, il nome resta "Coaching"', async () => {
-    // Kingambit e Gholdengo sono entrambi deboli a Fire e Ground: due problemi gravi (su ogni tipo qualcuno arriva al 50%, nessuno scoperto)
+    // Nessuno regge Fire, Water e Ground (nella Coverage tipi della Difesa): tre problemi gravi (in attacco nessun tipo scoperto)
     await setup(['Great Tusk', 'Gholdengo', 'Kingambit']);
     const tab = within(views()).getByRole('tab', { name: 'Coaching' });
     const badge = tab.querySelector('.tab-badge');
     expect(badge).toHaveTextContent(/^\d+$/);
     expect(badge).toHaveAttribute('aria-hidden', 'true');
-    expect(badge).toHaveTextContent('2');
-    expect(tab).toHaveAttribute('title', '2 problemi gravi');
+    expect(badge).toHaveTextContent('3');
+    expect(tab).toHaveAttribute('title', '3 problemi gravi');
   });
 
   it('Coaching senza problemi gravi: nessun badge', async () => {
-    // Nessun tipo scoperto che pesa, nessuna debolezza grave
-    await setup(['Great Tusk', 'Gholdengo', 'Corviknight', 'Rotom-Wash']);
+    // Nessun tipo scoperto che pesa, ogni tipo retto da qualcuno (con 4 membri nessuno reggeva Ghost: Kingambit lo regge)
+    await setup(['Great Tusk', 'Gholdengo', 'Corviknight', 'Rotom-Wash', 'Toxapex', 'Kingambit']);
     expect(within(views()).getByRole('tab', { name: 'Coaching' }).querySelector('.tab-badge')).toBeNull();
   });
 
@@ -106,7 +106,7 @@ describe('schede interne di Analisi', () => {
     await user.click(within(views()).getByRole('tab', { name: 'Coaching' }));
     expect(within(views()).getByRole('tab', { name: 'Coaching' })).toHaveAttribute('aria-selected', 'true');
     expect(within(panel()).getByRole('tabpanel')).toHaveAttribute('aria-labelledby', 'analysis-view-coaching');
-    expect(within(panel()).getByRole('tabpanel')).toHaveTextContent(/Debole a/);
+    expect(within(panel()).getByRole('tabpanel')).toHaveTextContent(/Nessuno regge/);
   });
 
   it('Bonus/Malus apre la scheda col catalogo', async () => {

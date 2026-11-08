@@ -1,10 +1,10 @@
 import { usesMeta, type TeamAnalysis } from './analysis';
-import { weaknessSeverity, type CoachProblem } from './coach';
+import { COVERED_LEVEL, holdSeverity, type CoachProblem } from './coach';
 import type { EngineData } from './data';
 import { battleName } from './dex';
 import { ownersOf } from './needs';
 import { summarizeTeam } from './overviewSummary';
-import type { TeamRating } from './rating';
+import { ratingThreats, type TeamRating } from './rating';
 import { LEVEL_KEYS, type LevelKey } from './roleLevels';
 import type { TeamSet } from './sets';
 import { poolMedian } from './speed';
@@ -12,9 +12,10 @@ import type { SpeedCondition } from './speedArea';
 import { t, type Lang } from '../i18n';
 
 export type CellState = 'ok' | 'minor' | 'bad';
-/** resist: quanti membri resistono al tipo (o ne sono immuni). */
+/** resist: quanti membri reggono del tutto il tipo (Coverage tipi della Difesa). */
 export interface TypeCell { type: string; defense: CellState; offense: CellState; defenseNote: string; offenseNote: string; resist: number }
-export interface RoleChip { need: LevelKey; level: 'essential' | 'important' | 'minor'; covered: boolean; owners: string[] }
+/** soft: una mancanza che non toglie punti (voce minore, o team con meno di 6 membri). */
+export interface RoleChip { need: LevelKey; level: 'essential' | 'important' | 'minor'; covered: boolean; owners: string[]; soft: boolean }
 export interface SpeedLane { species: string; speed: number; share: number; above: boolean }
 export interface ThreatPod { species: string; usage: number }
 export interface DashboardData {
@@ -31,17 +32,20 @@ export function dashboardData(team: TeamSet[], analysis: TeamAnalysis, rating: T
   const tiles = summarizeTeam(analysis, rating, problems, data);
   const tile = (key: string) => tiles.find(x => x.key === key)!;
 
-  // Copertura: una cella per tipo, difesa e offesa
-  const cells: TypeCell[] = analysis.weakness.map((row, i) => {
-    const severity = weaknessSeverity(row);
-    const hitters = analysis.coverage[i]?.hitters.length ?? 0;
+  // Copertura: una cella per tipo, coi conti del voto (Coverage tipi della Difesa, pacchetto dell'Offesa) come il coach
+  const offense = rating.offense.types;
+  const cells: TypeCell[] = rating.defense.coverageTypes.rows.map(row => {
+    const severity = holdSeverity(rating, row.type);
+    const off = offense.rows.find(r => r.label === row.type);
+    const hole = offense.holes.includes(row.type);
+    const hitters = (off?.best ?? []).filter(b => b.credit > 0).map(b => b.species);
     return {
       type: row.type,
       defense: severity === 'serious' ? 'bad' : severity === 'minor' ? 'minor' : 'ok',
-      offense: hitters ? 'ok' : 'bad',
-      defenseNote: `${t(lang, row.weak === 1 ? 'dash.weak1' : 'dash.weakN', { n: row.weak })}, ${t(lang, row.resist === 1 ? 'dash.resist1' : 'dash.resistN', { n: row.resist })}`,
-      offenseNote: hitters ? t(lang, 'dash.offenseHit', { n: hitters }) : t(lang, 'dash.offenseNone'),
-      resist: row.resist,
+      offense: hole ? 'bad' : (off?.level ?? 0) < COVERED_LEVEL ? 'minor' : 'ok',
+      defenseNote: row.heldBy.length ? t(lang, 'dash.heldBy', { list: row.heldBy.join(', ') }) : t(lang, 'dash.heldNone'),
+      offenseNote: hole || !hitters.length ? t(lang, 'dash.offenseNone') : t(lang, 'dash.offenseBy', { list: hitters.join(', ') }),
+      resist: row.heldBy.length,
     };
   });
 
@@ -51,7 +55,7 @@ export function dashboardData(team: TeamSet[], analysis: TeamAnalysis, rating: T
     const level = analysis.needs.levels[need];
     if (level === 'ignored') continue;
     const owners = ownersOf(team, analysis.needs, need);
-    chips.push({ need, level, covered: owners.length > 0, owners });
+    chips.push({ need, level, covered: owners.length > 0, owners, soft: level === 'minor' || rating.provisional });
   }
 
   // Velocità: corsie dal più veloce
@@ -60,6 +64,7 @@ export function dashboardData(team: TeamSet[], analysis: TeamAnalysis, rating: T
     .sort((a, b) => b.speed - a.speed);
 
   const available = !tile('meta').unavailable;
+  const threats = ratingThreats(rating, data);
   return {
     coverage: { cells, defense: tile('defense').value, offense: tile('strength').value },
     // Ruoli: voci coperte sul totale (essenziali, importanti e minori), come nel pannello del voto
@@ -70,8 +75,8 @@ export function dashboardData(team: TeamSet[], analysis: TeamAnalysis, rating: T
       value: tile('speed').value,
     },
     threats: {
-      pods: analysis.threats.filter(x => !x.handledBy.length).sort((a, b) => b.usage - a.usage).map(x => ({ species: x.name, usage: x.usage })),
-      total: analysis.threats.length,
+      pods: threats.filter(x => !x.handledBy.length).sort((a, b) => b.usage - a.usage).map(x => ({ species: x.name, usage: x.usage })),
+      total: threats.length,
       available,
       metaOff: !!data.ignoreMeta,
     },

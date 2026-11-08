@@ -11,6 +11,8 @@ import {
 export const CHECK_THRESHOLD = 0.5;
 export const THREAT_COUNT = 20;
 
+/** Una minaccia del meta. In `analyzeTeam` i check vengono dalle statistiche Smogon (servono solo a classificare i candidati);
+ * quello che si mostra viene dal voto: `ratingThreats`. */
 export interface ThreatRow {
   name: string;
   usage: number;
@@ -58,12 +60,4 @@ export function analyzeTeam(team: TeamSet[], data: EngineData, forced?: Archetyp
     })),
     typeWeights: meta ? metaTypeWeights(data.stats) : UNIFORM_TYPE_WEIGHTS,
   };
-}
-
-/** Quota (0–100) delle minacce del meta gestite dal team, pesata per uso. null senza dati Smogon. */
-export function threatScore(analysis: TeamAnalysis): number | null {
-  const total = analysis.threats.reduce((acc, t) => acc + t.usage, 0);
-  if (total === 0) return null;
-  const handled = analysis.threats.filter(t => t.handledBy.length > 0).reduce((acc, t) => acc + t.usage, 0);
-  return Math.round((100 * handled) / total);
 }

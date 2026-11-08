@@ -2,7 +2,7 @@ import { useCallback, useDeferredValue, useEffect, useLayoutEffect, useMemo, use
 import { analyzeTeam } from './engine/analysis';
 import { coachAdvice, coachTeam } from './engine/coach';
 import type { CoachFix } from './engine/coachFixes';
-import { rateTeam } from './engine/rating';
+import { rateTeam, ratingThreats } from './engine/rating';
 import type { EngineData } from './engine/data';
 import { DEFAULT_FORMAT, type Format } from './engine/format';
 import { dataSource, formatLabel, teraAllowed } from './engine/formats';
@@ -243,10 +243,10 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   useEffect(() => { if (team.length === 0) setAnalysisView('overview'); }, [team.length]);
   const coaching = useMemo(() => coachTeam(coachSource.team, coachSource.format, coachSource.data, coachSource.lang), [coachSource]);
 
-  // Contatori delle schede: problemi del coach e minacce del meta senza check
+  // Contatori delle schede: problemi del coach e minacce del meta che nessuno regge (come nel voto)
   const problems = coaching.problems;
   const metaOn = !data.ignoreMeta && !!data.stats;
-  const openThreats = analysis.threats.filter(threat => threat.handledBy.length === 0).length;
+  const openThreats = ratingThreats(rating, rated).filter(threat => threat.handledBy.length === 0).length;
   // Senza meta la scheda Meta è spenta: si resta sull'Analisi
   const shownTab: TabId = tab === 'meta' && !metaOn ? 'analysis' : tab;
   if (shownTab === 'lists' && !listsOpened) setListsOpened(true);
@@ -372,7 +372,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
             teamCollapsed={collapsed} />
         </TabPanel>
         <TabPanel id="meta" active={shownTab}>
-          <MetaPanel team={team} analysis={analysis} data={data} coaching={coaching} />
+          <MetaPanel team={team} analysis={analysis} rating={rating} data={rated} coaching={coaching} />
         </TabPanel>
         <TabPanel id="lists" active={shownTab}>
           {listsOpened && <ListsPanel lists={lists} format={format} data={data} onChange={changeLists} />}

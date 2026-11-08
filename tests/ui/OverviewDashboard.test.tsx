@@ -23,18 +23,18 @@ function sample(overrides: Partial<DashboardData> = {}): DashboardData {
         type,
         defense: type === 'Ground' ? 'bad' : type === 'Grass' ? 'minor' : 'ok',
         offense: type === 'Normal' ? 'bad' : 'ok',
-        defenseNote: type === 'Ground' ? '3 deboli, 1 resiste' : '1 debole, 2 resistono',
-        offenseNote: type === 'Normal' ? 'Nessuno lo colpisce super efficace' : 'Colpito super efficace da 2',
-        resist: type === 'Ground' ? 1 : 2,
+        defenseNote: type === 'Ground' ? 'Nessuno lo regge' : 'Retto da Corviknight, Toxapex',
+        offenseNote: type === 'Normal' ? 'Nessuno lo colpisce forte' : 'Colpito forte da Great Tusk, Dragapult',
+        resist: type === 'Ground' ? 0 : 2,
       })),
       defense: '17/18', offense: '17/18',
     },
     roles: {
       chips: [
-        { need: 'hazards', level: 'essential', covered: true, owners: ['Great Tusk'] },
-        { need: 'removal', level: 'essential', covered: true, owners: ['Great Tusk', 'Corviknight', 'Toxapex'] },
-        { need: 'pivot', level: 'important', covered: false, owners: [] },
-        { need: 'screens', level: 'minor', covered: false, owners: [] },
+        { need: 'hazards', level: 'essential', covered: true, owners: ['Great Tusk'], soft: false },
+        { need: 'removal', level: 'essential', covered: true, owners: ['Great Tusk', 'Corviknight', 'Toxapex'], soft: false },
+        { need: 'pivot', level: 'important', covered: false, owners: [], soft: false },
+        { need: 'screens', level: 'minor', covered: false, owners: [], soft: true },
       ],
       members: ['Great Tusk', 'Corviknight', 'Toxapex', 'Dragapult'],
       value: '2/3',
@@ -108,9 +108,9 @@ function roleBand(roles: HTMLElement, title: string) {
 /** Quattro essenziali, due importanti, un minore: per il "+N" per fascia. */
 const manyRoles: DashboardData['roles'] = {
   chips: [
-    ...(['hazards', 'removal', 'pivot', 'recovery'] as const).map(need => ({ need, level: 'essential' as const, covered: true, owners: ['Great Tusk'] })),
-    ...(['screens', 'phazer'] as const).map(need => ({ need, level: 'important' as const, covered: false, owners: [] })),
-    { need: 'taunt', level: 'minor', covered: false, owners: [] },
+    ...(['hazards', 'removal', 'pivot', 'recovery'] as const).map(need => ({ need, level: 'essential' as const, covered: true, owners: ['Great Tusk'], soft: false })),
+    ...(['screens', 'phazer'] as const).map(need => ({ need, level: 'important' as const, covered: false, owners: [], soft: false })),
+    { need: 'taunt', level: 'minor', covered: false, owners: [], soft: true },
   ],
   members: ['Great Tusk'],
   value: '4/6',
@@ -139,9 +139,9 @@ describe('Cruscotto della Panoramica', () => {
     mount();
     const table = screen.getByRole('table', { name: 'Copertura' });
     expect(within(table).getAllByRole('columnheader')).toHaveLength(18);
-    expect(within(table).getByRole('cell', { name: /^(Terra|Ground), difesa: 3 deboli, 1 resiste$/ })).toHaveClass('bad');
-    expect(within(table).getByRole('cell', { name: /^(Erba|Grass), difesa: 1 debole, 2 resistono$/ })).toHaveClass('minor');
-    expect(within(table).getByRole('cell', { name: /^(Normale|Normal), offesa: nessuno lo colpisce super efficace$/ })).toHaveClass('bad');
+    expect(within(table).getByRole('cell', { name: /^(Terra|Ground), difesa: Nessuno lo regge$/i })).toHaveClass('bad');
+    expect(within(table).getByRole('cell', { name: /^(Erba|Grass), difesa: Retto da Corviknight, Toxapex$/i })).toHaveClass('minor');
+    expect(within(table).getByRole('cell', { name: /^(Normale|Normal), offesa: Nessuno lo colpisce forte$/i })).toHaveClass('bad');
     expect(within(table).getByRole('rowheader', { name: 'Difesa' })).toBeInTheDocument();
     expect(within(table).getByRole('rowheader', { name: 'Offesa' })).toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'Copertura' }).querySelector('.dash-meta')).toHaveTextContent('offesa 17/18 · difesa 17/18');
@@ -260,12 +260,31 @@ describe('Cruscotto della Panoramica', () => {
     }
   });
 
+  it('Ruoli: una mancanza "soft" (team con meno di 6 membri) è tenue anche se essenziale o importante', () => {
+    const chips: DashboardData['roles']['chips'] = [
+      { need: 'hazards', level: 'essential', covered: false, owners: [], soft: true },
+      { need: 'pivot', level: 'important', covered: false, owners: [], soft: true },
+      { need: 'screens', level: 'minor', covered: false, owners: [], soft: true },
+    ];
+    for (const density of ['normal', 'roomy'] as const) {
+      const { unmount } = mount({ density, data: sample({ roles: { chips, members: ['Great Tusk'], value: '0/3' } }) });
+      const roles = screen.getByRole('region', { name: 'Ruoli' });
+      const items = density === 'roomy' ? roleRows(roles) : within(roles).getAllByRole('listitem');
+      expect(items).toHaveLength(3);
+      for (const item of items) {
+        expect(item).toHaveClass('soft');
+        expect(item).not.toHaveClass('bad');
+      }
+      unmount();
+    }
+  });
+
   it('Ruoli: in ogni fascia prima i mancanti, così il "+N" non nasconde mai un problema', () => {
     stubLayout({ 'dash-roles': { box: 75, item: 30 } });
     const chips = [
-      { need: 'hazards', level: 'essential', covered: true, owners: ['Great Tusk'] },
-      { need: 'pivot', level: 'essential', covered: true, owners: ['Corviknight'] },
-      { need: 'removal', level: 'essential', covered: false, owners: [] },
+      { need: 'hazards', level: 'essential', covered: true, owners: ['Great Tusk'], soft: false },
+      { need: 'pivot', level: 'essential', covered: true, owners: ['Corviknight'], soft: false },
+      { need: 'removal', level: 'essential', covered: false, owners: [], soft: false },
     ] as const;
     mount({ density: 'tight', data: sample({ roles: { chips: chips.map(c => ({ ...c, owners: [...c.owners] })), members: ['Great Tusk', 'Corviknight'], value: '2/3' } }) });
     const rows = within(roleBand(screen.getByRole('region', { name: 'Ruoli' }), 'Essenziali')).getAllByRole('listitem');
@@ -655,10 +674,10 @@ describe('Cruscotto: misure', () => {
     // Una voce essenziale, una importante, sette minori: 9 righe in una card da 9 righe stanno tutte.
     // Con le fasce alte un terzo ciascuna i minori finivano in un "+N" accanto a fasce vuote.
     stubLayout({ 'dash-roles': { box: 270, item: 30 } });
-    const minors = (['screens', 'dot', 'debuff', 'phazer', 'taunt', 'encore', 'itemRemoval'] as const).map(need => ({ need, level: 'minor' as const, covered: false, owners: [] }));
+    const minors = (['screens', 'dot', 'debuff', 'phazer', 'taunt', 'encore', 'itemRemoval'] as const).map(need => ({ need, level: 'minor' as const, covered: false, owners: [], soft: true }));
     const chips: DashboardData['roles']['chips'] = [
-      { need: 'hazards', level: 'essential', covered: true, owners: ['Great Tusk'] },
-      { need: 'pivot', level: 'important', covered: true, owners: ['Corviknight'] },
+      { need: 'hazards', level: 'essential', covered: true, owners: ['Great Tusk'], soft: false },
+      { need: 'pivot', level: 'important', covered: true, owners: ['Corviknight'], soft: false },
       ...minors,
     ];
     mount({ density: 'normal', data: sample({ roles: { chips, members: ['Great Tusk', 'Corviknight'], value: '2/2' } }) });

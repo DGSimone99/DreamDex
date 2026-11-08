@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { analyzeTeam } from '../../src/engine/analysis';
-import { findProblems, weaknessSeverity } from '../../src/engine/coach';
+import { COVERED_LEVEL, findProblems, holdSeverity } from '../../src/engine/coach';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
 import { dashboardData } from '../../src/engine/overviewDashboard';
 import { summarizeTeam } from '../../src/engine/overviewSummary';
-import { rateTeam } from '../../src/engine/rating';
+import { rateTeam, ratingThreats } from '../../src/engine/rating';
 import { LEVEL_KEYS } from '../../src/engine/roleLevels';
 import { mostCommonSet } from '../../src/engine/sets';
 import { fixtureData, fixtureStats } from '../fixtures/data';
@@ -15,22 +15,33 @@ const build = (data = fixtureData) => {
   const rating = rateTeam(team, data)!;
   const problems = findProblems(team, DEFAULT_FORMAT, data, analysis, [], 'it');
   const tiles = summarizeTeam(analysis, rating, problems, data);
-  return { analysis, tile: (key: string) => tiles.find(t => t.key === key)!, dash: dashboardData(team, analysis, rating, problems, data, 'it') };
+  return { analysis, rating, tile: (key: string) => tiles.find(t => t.key === key)!, dash: dashboardData(team, analysis, rating, problems, data, 'it') };
 };
 
 describe('dashboardData', () => {
-  it('18 tipi in ordine, stati coerenti con summarizeTeam', () => {
-    const { analysis, tile, dash } = build();
+  it('18 tipi in ordine, stati dal voto (come il coach) e coerenti con summarizeTeam', () => {
+    const { analysis, rating, tile, dash } = build();
     const { cells } = dash.coverage;
     expect(cells.length).toBe(18);
     expect(cells.map(c => c.type)).toEqual(analysis.weakness.map(r => r.type));
-    const sev = (s: 'serious' | 'minor') => analysis.weakness.filter(r => weaknessSeverity(r) === s).map(r => r.type);
+    // Difesa: grave (bad) i tipi che nessuno regge, minore sotto il livello 50 della Coverage tipi
+    const rows = rating.defense.coverageTypes.rows;
+    const sev = (s: 'serious' | 'minor') => rows.filter(r => holdSeverity(rating, r.type) === s).map(r => r.type);
     expect(cells.filter(c => c.defense === 'bad').map(c => c.type)).toEqual(sev('serious'));
     expect(cells.filter(c => c.defense === 'minor').map(c => c.type)).toEqual(sev('minor'));
+    // Offesa: bad i buchi del pacchetto, minore sotto il livello 50; i non ok sono i tipi mancanti della tessera
+    const offense = rating.offense.types;
+    expect(cells.filter(c => c.offense === 'bad').map(c => c.type)).toEqual(offense.holes);
+    expect(cells.filter(c => c.offense === 'minor').map(c => c.type))
+      .toEqual(offense.rows.filter(r => r.level < COVERED_LEVEL && !offense.holes.includes(r.label)).map(r => r.label));
     const missing = tile('strength').missing.map(m => (m as { type: string }).type);
-    expect(cells.filter(c => c.offense === 'bad').map(c => c.type)).toEqual(missing);
-    // Quanti membri resistono a ogni tipo (la vista ampia del Riassunto segna "nessuno resiste")
-    expect(cells.map(c => c.resist)).toEqual(analysis.weakness.map(r => r.resist));
+    expect(cells.filter(c => c.offense !== 'ok').map(c => c.type)).toEqual(missing);
+    // Quanti membri reggono del tutto ogni tipo (la vista ampia del Riassunto segna "nessuno lo regge")
+    expect(cells.map(c => c.resist)).toEqual(rows.map(r => r.heldBy.length));
+    for (const c of cells) {
+      const held = rows.find(r => r.type === c.type)!.heldBy;
+      expect(c.defenseNote).toBe(held.length ? `Retto da ${held.join(', ')}` : 'Nessuno lo regge');
+    }
     expect(dash.coverage.defense).toBe(tile('defense').value);
     expect(dash.coverage.offense).toBe(tile('strength').value);
   });
@@ -47,6 +58,19 @@ describe('dashboardData', () => {
     // Le colonne della tabella: i membri in ordine, scritti come chi copre i ruoli
     expect(dash.roles.members).toHaveLength(team.length);
     for (const chip of dash.roles.chips) for (const owner of chip.owners) expect(dash.roles.members).toContain(owner);
+    // soft: con 6 membri solo le voci minori (una mancanza che non toglie punti)
+    for (const chip of dash.roles.chips) expect(chip.soft).toBe(chip.level === 'minor');
+  });
+
+  it('ruoli con meno di 6 membri: ogni voce è soft (il voto è provvisorio, le mancanze non tolgono punti)', () => {
+    const two = team.slice(0, 2);
+    const analysis = analyzeTeam(two, fixtureData);
+    const rating = rateTeam(two, fixtureData)!;
+    expect(rating.provisional).toBe(true);
+    const problems = findProblems(two, DEFAULT_FORMAT, fixtureData, analysis, [], 'it', rating);
+    const { chips } = dashboardData(two, analysis, rating, problems, fixtureData, 'it').roles;
+    expect(chips.some(c => c.level !== 'minor' && !c.covered)).toBe(true);
+    expect(chips.every(c => c.soft)).toBe(true);
   });
 
   it('velocità: corsie dal più veloce, above = share > 0.5', () => {
@@ -59,13 +83,14 @@ describe('dashboardData', () => {
     expect(dash.speed.value).toBe(tile('speed').value);
   });
 
-  it('minacce: solo le non gestite, dalla più usata', () => {
-    const { analysis, dash } = build();
-    const unhandled = analysis.threats.filter(t => !t.handledBy.length);
+  it('minacce: solo quelle che nessuno regge (Coverage meta della Difesa), dalla più usata', () => {
+    const { rating, dash } = build();
+    const threats = ratingThreats(rating, fixtureData);
+    const unhandled = threats.filter(t => !t.handledBy.length);
     expect(dash.threats.available).toBe(true);
     expect(dash.threats.metaOff).toBe(false);
-    expect(dash.threats.total).toBe(analysis.threats.length);
-    expect(dash.threats.pods.length).toBe(unhandled.length);
+    expect(dash.threats.total).toBe(threats.length);
+    expect(dash.threats.pods.map(p => p.species).sort()).toEqual(unhandled.map(t => t.name).sort());
     for (let i = 1; i < dash.threats.pods.length; i++) expect(dash.threats.pods[i - 1].usage).toBeGreaterThanOrEqual(dash.threats.pods[i].usage);
   });
 

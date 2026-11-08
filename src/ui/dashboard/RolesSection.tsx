@@ -15,7 +15,7 @@ const LEVELS = ['essential', 'important', 'minor'] as const;
 const missingFirst = (chips: RoleChip[]) => [...chips].sort((a, b) => Number(a.covered) - Number(b.covered));
 
 /** ✓ tenue se coperto, ✕ rosso pieno se manca (essenziali e importanti), tratteggiato se è un minore. */
-const stateOf = (chip: RoleChip) => (chip.covered ? 'ok' : chip.level === 'minor' ? 'soft' : 'bad');
+const stateOf = (chip: RoleChip) => (chip.covered ? 'ok' : chip.soft ? 'soft' : 'bad');
 
 /** Il nome accessibile di un ruolo: "Hazard, coperto da Garchomp" / "Rimozione Strumenti, mancante". */
 function useRoleText(chip: RoleChip) {

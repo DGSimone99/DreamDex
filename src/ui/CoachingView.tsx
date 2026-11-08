@@ -21,28 +21,9 @@ const CATEGORY: Record<ProblemCategory, MessageKey> = {
   conditions: 'coach.category.conditions', redundancy: 'coach.category.redundancy', meta: 'coach.category.meta',
 };
 
-// "3 Deboli" in rosso e "0 Resistono" in verde (parole del dizionario della lingua attiva), il resto con i tipi colorati;
-// `plain`: i tipi senza colore (nella mappa l'icona del tipo è già davanti)
+// I tipi colorati; `plain`: senza colore (nella mappa l'icona del tipo è già davanti)
 function ProblemText({ text, plain = false }: { text: string; plain?: boolean }) {
-  const lang = useLang();
-  const weak = [t(lang, 'coach.word.weakOne'), t(lang, 'coach.word.weakMany')];
-  const resist = [t(lang, 'coach.word.resistOne'), t(lang, 'coach.word.resistMany')];
-  const words = [...new Set([...weak, ...resist])].sort((x, y) => y.length - x.length);
-  const count = new RegExp(`(\\d+ (?:${words.join('|')}))(?![\\w])`);
-  const parts = text.split(count);
-  const render = (part: string, i: number) => (i % 2 === 1
-    ? <span key={i} className={resist.some(w => part.endsWith(` ${w}`)) ? 'count-resist' : 'count-weak'}>{part}</span>
-    : plain ? <Fragment key={i}>{part}</Fragment> : <Typed key={i} text={part} />);
-  // "3 Deboli – 2 Resistono" non si spezza (un trattino a fine riga si legge male)
-  const last = parts.length - 2;
-  if (last < 1) return <>{parts.map(render)}</>;
-  return (
-    <>
-      {render(parts[0], 0)}
-      <span className="coach-counts">{parts.slice(1, last + 1).map((part, i) => render(part, i + 1))}</span>
-      {parts.slice(last + 1).map((part, i) => render(part, i + last + 1))}
-    </>
-  );
+  return plain ? <>{text}</> : <Typed text={text} />;
 }
 
 /** Un testo del dizionario con dei pezzi al posto dei segnaposto ({member}, {species}…). */
@@ -311,7 +292,7 @@ function MapProblem({ problem, step, preview, usage, dim = false, role }: {
       ) : counts ? (
         <span className="coach-prob-text">
           <TypeIcons types={subjects} /><span aria-hidden="true">{typeName(subjects[0], lang)}{' '}
-            <span className="coach-counts"><span className="count-weak">{counts.weak}↓</span> <span className="count-resist">{counts.resist}↑</span></span>
+            <span className="coach-counts"><span className={counts.held ? 'count-resist' : 'count-weak'}>{tr(counts.held === 1 ? 'coach.pill.held1' : 'coach.pill.heldN', { n: counts.held })}</span></span>
           </span><span className="visually-hidden">{problem.text}</span>
         </span>
       ) : (
