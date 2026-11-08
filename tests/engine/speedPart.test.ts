@@ -177,6 +177,16 @@ describe('Velocità: casi particolari', () => {
     expect(slowFactor('stunspore', 'Venusaur')).toBe(1);
     expect(slowFactor('bulldoze', 'Corviknight')).toBe(1);
     expect(slowFactor('icywind', 'Toxapex')).toBeCloseTo(2 / 3);
+    // Abilità e strumenti (2026-11-08)
+    expect(slowFactor('thunderwave', 'Hatterene', 'Magic Bounce')).toBe(1);
+    expect(slowFactor('nuzzle', 'Hatterene', 'Magic Bounce')).toBe(0.5);
+    expect(slowFactor('thunderwave', 'Gastrodon', 'Storm Drain')).toBe(1);
+    expect(slowFactor('thunderwave', 'Seaking', 'Lightning Rod')).toBe(1);
+    expect(slowFactor('glare', 'Hawlucha', 'Limber')).toBe(1);
+    expect(slowFactor('stunspore', 'Toxapex', 'Regenerator', 'Safety Goggles')).toBe(1);
+    expect(slowFactor('icywind', 'Metagross', 'Clear Body')).toBe(1);
+    expect(slowFactor('icywind', 'Toxapex', 'Regenerator', 'Covert Cloak')).toBe(1);
+    expect(slowFactor('bulldoze', 'Latios', 'Levitate')).toBe(1);
   });
 
 });
