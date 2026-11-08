@@ -26,7 +26,10 @@ export function setupBoosts(set: TeamSet): { move: string; boosts: NonNullable<H
       atk: Math.max(0, own.atk ?? 0), spa: Math.max(0, own.spa ?? 0), def: bodyPress || allBoosts ? Math.max(0, own.def ?? 0) : 0,
       ...(allBoosts ? { spd: Math.max(0, (own as { spd?: number }).spd ?? 0), spe: Math.max(0, (own as { spe?: number }).spe ?? 0) } : {}),
     };
-    const sum = boosts.atk + boosts.spa + boosts.def;
+    // Con Stored Power conta ogni aumento; a parità vince chi alza anche l'attacco (Calm Mind batte Iron Defense:
+    // potenzia anche le altre mosse speciali). 2026-11-08: prima Dif. Speciale e Velocità restavano fuori dal confronto
+    const all = boosts.atk + boosts.spa + boosts.def + (allBoosts ? (boosts.spd ?? 0) + (boosts.spe ?? 0) : 0);
+    const sum = all + (allBoosts ? 0.1 * (boosts.atk + boosts.spa) : 0);
     if (sum > bestSum) { best = { move: move.name, boosts }; bestSum = sum; }
   }
   return best;
