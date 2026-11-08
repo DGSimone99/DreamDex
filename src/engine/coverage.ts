@@ -66,13 +66,30 @@ export function typeAverage(type: string, data: EngineData): { hp: number; def: 
   return average;
 }
 
+const typeWeights = new Map<string, number>();
+
+/**
+ * Peso tipico del tipo: la mediana (non la media: Celesteela pesa 999 kg) dei completamente evoluti del Pokédex del formato
+ * con quel tipo. Serve al manichino: prima era Mew, 4 kg, e Low Kick e Grass Knot facevano sempre 20 di potenza (2026-11-08).
+ */
+export function typeWeight(type: string, data: EngineData): number {
+  const format = { ...DEFAULT_FORMAT, formatId: data.formatId ?? 'ou' };
+  const key = `${pokedexOf(format)}|${type}`;
+  let weight = typeWeights.get(key);
+  if (weight) return weight;
+  const weights = dexPool(format).filter(s => (s.types as string[]).includes(type)).map(s => s.weightkg).sort((a, b) => a - b);
+  weight = weights.length ? weights[Math.floor(weights.length / 2)] : 50;
+  typeWeights.set(key, weight);
+  return weight;
+}
+
 /**
  * Il Pokémon medio di un tipo: un solo tipo, le difese medie del tipo, 252 PS e il resto diviso fra le difese. Tiene
- * uno strumento che non cambia il danno (Leftovers), come quasi tutti i Pokémon veri: Knock Off ×1,5 e Poltergeist
+ * il peso tipico del tipo e uno strumento che non cambia il danno (Leftovers), come quasi tutti i Pokémon veri: Knock Off ×1,5 e Poltergeist
  * contano come in partita.
  */
 function typeDummy(type: string, data: EngineData): Target {
-  return { species: 'Mew', item: 'Leftovers', ability: 'Synchronize', moves: [], nature: 'Hardy', evs: { hp: 252, def: 128, spd: 128 }, types: [type], baseStats: typeAverage(type, data) };
+  return { species: 'Mew', item: 'Leftovers', ability: 'Synchronize', moves: [], nature: 'Hardy', evs: { hp: 252, def: 128, spd: 128 }, types: [type], baseStats: typeAverage(type, data), weightkg: typeWeight(type, data) };
 }
 
 const targetsCache = new Map<string, CoverageTarget[]>();
