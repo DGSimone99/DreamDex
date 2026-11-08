@@ -1,7 +1,7 @@
 import { usesMeta } from './analysis';
 import { metaThreats } from './attackers';
 import { dexPool, ownConditions } from './coverage';
-import { bestHit, FIRST_HIT_SHARE, FIRST_HIT_SHARE_RECOVERY, orbStatus, setKey, standardHit, type FieldCondition, type Hit, type Target } from './damage';
+import { bestHit, FIRST_HIT_SHARE, hasZMove, FIRST_HIT_SHARE_RECOVERY, orbStatus, setKey, standardHit, type FieldCondition, type Hit, type Target } from './damage';
 import { conditionsOf, fieldCombos, ONE_USE_SHARE, rankWeighted } from './offense';
 import { DEFAULT_FORMAT } from './format';
 import { pokedexOf, teraAllowed } from './formats';
@@ -379,8 +379,7 @@ function threatHit(threat: TeamSet, member: TeamSet, data: EngineData, teamField
   const incoming = { incoming: true, firstHitShare: firstHit };
   const base = bestHit(threat, member, { conditions, ...incoming });
   const teraOk = teraAllowed({ ...DEFAULT_FORMAT, formatId: data.formatId ?? 'ou' }) && !!threat.teraType;
-  const zType = dex.items.get(threat.item).zMoveType;
-  const zOk = !!zType && threat.moves.some(m => getMove(m)?.type === zType);
+  const zOk = hasZMove(threat);
   const once = [teraOk && bestHit(threat, member, { conditions, tera: true, ...incoming }), zOk && bestHit(threat, member, { conditions, z: true, ...incoming })]
     .filter((h): h is Hit => !!h);
   // Tera e mossa Z: il guadagno sul campo della minaccia, uguale anche col meteo del team (un calcolo in meno per campo)
