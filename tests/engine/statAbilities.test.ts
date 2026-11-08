@@ -15,8 +15,9 @@ describe('abilità che cambiano le statistiche', () => {
     expect(effectiveStats(set('Medicham', 'Medichamite', 'Telepathy', ['Close Combat'])).atk).toBe(200);
   });
 
-  it('Gorilla Tactics e Hustle ×1,5 sull\'Attacco, Fur Coat ×2 Difesa, Ice Scales ×2 Difesa Speciale', () => {
+  it("Gorilla Tactics ×1,5 sull'Attacco (Hustle ×1,2: mira all'80%), Fur Coat ×2 Difesa, Ice Scales ×2 Difesa Speciale", () => {
     expect(effectiveStats(set('Darmanitan-Galar', 'Choice Scarf', 'Gorilla Tactics', ['Icicle Crash'])).atk).toBe(210);
+    expect(effectiveStats(set('Durant', 'Choice Scarf', 'Hustle', ['Iron Head'])).atk).toBe(131);
     expect(effectiveStats(set('Persian-Alola', 'Leftovers', 'Fur Coat', ['Foul Play'])).def).toBe(120);
     expect(effectiveStats(set('Frosmoth', 'Heavy-Duty Boots', 'Ice Scales', ['Quiver Dance'])).spd).toBe(180);
   });
