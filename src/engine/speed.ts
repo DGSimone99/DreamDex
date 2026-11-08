@@ -48,6 +48,9 @@ export interface SpeedRival extends Speed {
   species: string;
   /** Sticky Web non lo rallenta: Volante, Levitate o Heavy-Duty Boots (senza meta: solo dal tipo e dall'abilità). */
   webImmune?: boolean;
+  /** Abilità e strumento più comuni (col meta): servono per chi non si paralizza o non si rallenta (Magic Bounce, Limber…). */
+  ability?: string;
+  item?: string;
   /** Protosynthesis o Quark Drive con la Booster Energy: Velocità ×1,5 (vedi paradoxSpeedBoost). */
   booster?: boolean;
   /** Quanto pesa questa versione della specie (le versioni di una specie sommano 1: la specie vale sempre 1 nel gruppo). */
@@ -110,7 +113,7 @@ export function speedPool(data: EngineData): SpeedRival[] {
       .flatMap(([name, entry]) => rivalVersions(name, entry))
     : tierSpecies(formatId).map(s => ({
       species: s.name, value: Math.floor((2 * s.baseStats.spe + 31 + 63 + 5) * 1.1), scarf: false, weight: 1,
-      webImmune: isWebImmune(s.name, s.abilities[0], ''),
+      webImmune: isWebImmune(s.name, s.abilities[0], ''), ability: s.abilities[0],
     }));
   pools.set(key, pool);
   return pool;
@@ -129,13 +132,13 @@ function rivalVersions(name: string, entry: SpeciesStats): SpeedRival[] {
   const plainId = Object.entries(items).filter(([id]) => !SPEED_ITEMS.has(id)).sort((a, b) => b[1] - a[1])[0]?.[0] ?? '';
   const plainItem = dex.items.get(plainId).name ?? '';
   const webImmune = isWebImmune(name, ability, plainItem);
-  const plain: SpeedRival = { species: name, ...speedStat({ species: name, item: plainItem, nature, evs }), webImmune, weight: 1 };
+  const plain: SpeedRival = { species: name, ...speedStat({ species: name, item: plainItem, nature, evs }), webImmune, ability, item: plainItem, weight: 1 };
   const scarfShare = items.choicescarf ?? 0;
   const boosterShare = paradoxSpeedBoost({ species: name, ability, item: '', nature, evs }) ? items.boosterenergy ?? 0 : 0;
   const share = Math.max(scarfShare, boosterShare);
   if (share < SPEED_ITEM_SPLIT) return [plain];
   const boosted: SpeedRival = scarfShare >= boosterShare
-    ? { ...plain, ...speedStat({ species: name, item: 'Choice Scarf', nature, evs }), webImmune: isWebImmune(name, ability, 'Choice Scarf'), itemShare: share }
+    ? { ...plain, ...speedStat({ species: name, item: 'Choice Scarf', nature, evs }), webImmune: isWebImmune(name, ability, 'Choice Scarf'), item: 'Choice Scarf', itemShare: share }
     : { ...plain, value: Math.floor(plain.value * 1.5), booster: true, itemShare: share };
   if (share >= SPEED_ITEM_ONLY) return [boosted];
   return [{ ...plain, weight: 1 - share }, { ...boosted, weight: share }];
