@@ -97,7 +97,8 @@ const ROWS: [LevelKey, Level, Level, Level, Level, Level][] = [
   // Support
   ['support', X, X, X, M, E],
   ['removal', I, I, I, I, I],
-  ['screens', X, X, X, X, X],
+  // Screens minori ovunque (utente 2026-11-08): un lavoro vero, +1 a chi li ha; le partite non dicono di più (vince ~48%)
+  ['screens', M, M, M, M, M],
   ['speedControl', X, X, X, X, X],
   ['debuff', X, X, X, X, X],
   ['phazer', X, X, M, I, E],
