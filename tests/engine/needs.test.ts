@@ -64,9 +64,10 @@ describe('tabella dei livelli per archetipo', () => {
     // 2026-11-03: Pivot e Rimozione Strumenti minori ovunque (il censimento dice che non distinguono i team da torneo dal ladder)
     expect(levelOf('semiStall', 'pivot')).toBe('minor');
     expect(levelOf('stall', 'pivot')).toBe('ignored');
-    // Gli hazard: importanti negli offensivi (90–92%), essenziali da balance in giù (99–100%); schermi e Speed Control sono ignorati ovunque
+    // Gli hazard: importanti negli offensivi (90–92%), essenziali da balance in giù (99–100%); Speed Control ignorato
+    // ovunque, gli schermi minori ovunque (2026-11-08)
     for (const a of Object.keys(ROLE_LEVELS) as (keyof typeof ROLE_LEVELS)[]) {
-      expect(levelOf(a, 'screens')).toBe('ignored');
+      expect(levelOf(a, 'screens')).toBe('minor');
       expect(levelOf(a, 'speedControl')).toBe('ignored');
     }
     expect(levelOf('hyperOffense', 'hazards')).toBe('important');
@@ -101,7 +102,7 @@ describe('tabella dei livelli per archetipo', () => {
     const needs = teamNeeds(hyperOffense, fixtureData);
     expect(needs.archetype).toBe('hyperOffense');
     expect(needs.levels.hazards).toBe('important');
-    expect(needs.levels.screens).toBe('ignored');
+    expect(needs.levels.screens).toBe('minor');
     expect(needs.values.hazards).toBe(1);
     expect(needs.importantMissing).not.toContain('hazards');
   });
@@ -121,7 +122,7 @@ describe('tabella dei livelli per archetipo', () => {
     const needs = teamNeeds(veil, fixtureData);
     expect(needs.values.hazards).toBe(0);
     expect(needs.values.screens).toBe(1);
-    expect(needs.levels.screens).toBe('ignored');
+    expect(needs.levels.screens).toBe('minor');
     expect(needs.importantMissing).toContain('hazards');
   });
 
