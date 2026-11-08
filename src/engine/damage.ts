@@ -420,7 +420,7 @@ function standardHitOn(attacker: Target, defender: Target, category: 'Physical' 
     overrides: { type: type as never, basePower: 100, category, flags: { contact: category === 'Physical' ? 1 : 0 } },
   }));
   if (!move) return null;
-  const hp = target.maxHP() / (locks(attacker) ? CHOICE_LOCK : 1);
+  const hp = target.maxHP() / (locks(attacker) && !options.incoming ? CHOICE_LOCK : 1);
   try {
     const result = calculate(gen, own, target, move, toField(options.conditions));
     const sums = rollSums(result.damage);
