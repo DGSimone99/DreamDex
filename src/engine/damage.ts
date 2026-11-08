@@ -56,9 +56,13 @@ export interface Hit {
   max: number;
 }
 
-/** Band e Specs bloccano su una mossa: il loro ×1,5 conta come ×1,35 (un decimo in meno di danno). */
+/**
+ * Band, Specs e Gorilla Tactics bloccano su una mossa: il loro ×1,5 conta come ×1,35 (un decimo in meno di danno), una
+ * volta sola anche con tutti e due (2026-11-08: Gorilla Tactics + Band pagava il blocco, Gorilla Tactics da solo no).
+ */
 export const CHOICE_LOCK = 0.9;
 const LOCKING = new Set(['choiceband', 'choicespecs']);
+const locks = (set: TeamSet) => LOCKING.has(toID(set.item)) || toID(battleAbility(set)) === 'gorillatactics';
 
 const WEATHER: Partial<Record<FieldCondition, 'Sun' | 'Rain' | 'Sand' | 'Snow'>> = { sun: 'Sun', rain: 'Rain', sand: 'Sand', snow: 'Snow' };
 const TERRAIN: Partial<Record<FieldCondition, 'Electric' | 'Psychic' | 'Grassy' | 'Misty'>> = {
@@ -307,7 +311,7 @@ function bestHitOn(attacker: TeamSet, defender: Target, options: HitOptions): Hi
   const field = toField(options.conditions);
   // Lo sconto di Band e Specs si applica come PS del difensore più alti di un nono: danno ×0,9 su tutte le misure
   // (solo quando attacca un membro del team: chi riceve il colpo prende il danno pieno)
-  const hp = target.maxHP() / (LOCKING.has(toID(attacker.item)) && !options.incoming ? CHOICE_LOCK : 1);
+  const hp = target.maxHP() / (locks(attacker) && !options.incoming ? CHOICE_LOCK : 1);
   const types = target.types as string[];
   let best: Hit | null = null;
   for (const name of attacker.moves) {
@@ -416,7 +420,7 @@ function standardHitOn(attacker: Target, defender: Target, category: 'Physical' 
     overrides: { type: type as never, basePower: 100, category, flags: { contact: category === 'Physical' ? 1 : 0 } },
   }));
   if (!move) return null;
-  const hp = target.maxHP() / (LOCKING.has(toID(attacker.item)) ? CHOICE_LOCK : 1);
+  const hp = target.maxHP() / (locks(attacker) ? CHOICE_LOCK : 1);
   try {
     const result = calculate(gen, own, target, move, toField(options.conditions));
     const sums = rollSums(result.damage);
