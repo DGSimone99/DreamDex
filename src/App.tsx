@@ -12,6 +12,7 @@ import { takeSharedTeam } from './share';
 import type { TeamSet } from './engine/sets';
 import { AnalysisPanel, MetaPanel } from './ui/AnalysisPanel';
 import { GradeBadge } from './ui/RatingPanel';
+import { overEvMembers } from './engine/legalTeam';
 import type { AnalysisView } from './ui/analysisView';
 import { SavedTeams } from './ui/SavedTeams';
 import { ShowdownPanel } from './ui/ShowdownPanel';
@@ -129,8 +130,9 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   // Senza meta (single player): voto, analisi, coach e suggerimenti ignorano l'uso nel formato
   // Il formato scelto entra nei dati: alcune regole del voto cambiano col formato (Ubers)
   // Il voto e l'analisi non dipendono dalle liste: cambiandole non si ricalcolano (solo i suggerimenti le usano)
-  const rated = useMemo(() => ({ ...loaded, formatId: format.formatId, ...(format.meta ? {} : { ignoreMeta: true }) }),
-    [loaded, format.formatId, format.meta]);
+  const rated = useMemo(() => ({ ...loaded, formatId: format.formatId, ...(format.meta ? {} : { ignoreMeta: true }),
+    ...(format.allowMultipleMegas ? { allowMultipleMegas: true } : {}) }),
+    [loaded, format.formatId, format.meta, format.allowMultipleMegas]);
   const data = useMemo(() => ({ ...rated, userLists }), [rated, userLists]);
   const [initialTeam] = useState<TeamSet[]>(() => shared?.team ?? session?.team ?? []);
   const [team, setTeam] = useState<TeamSet[]>(initialTeam);
@@ -337,7 +339,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
           onOpenChange={index => { setEditingIndex(index); setMoveProposal(p => (p && p.index === index ? p : null)); }}
           proposal={moveProposal} onProposalDone={finishProposal} closeSignal={closeSignal} collapsed={collapsed}
           onAllowMultipleMegas={() => setFormat(f => ({ ...f, allowMultipleMegas: true }))} />
-        <GradeBadge rating={rating} ruleIssues={coaching?.problems.filter(p => p.category === 'rules').map(p => p.text)}
+        <GradeBadge rating={rating} blocked={overEvMembers(team).length > 0} ruleIssues={coaching?.problems.filter(p => p.category === 'rules').map(p => p.text)}
           onOpen={area => { openTab('analysis'); setAnalysisView(area); }} />
         <button type="button" className="band-toggle" aria-expanded={!collapsed} onClick={toggleCollapsed}
           aria-label={t(lang, collapsed ? 'team.expand' : 'team.collapse')} title={t(lang, collapsed ? 'team.expand' : 'team.collapse')}>

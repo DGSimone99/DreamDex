@@ -49,6 +49,6 @@ describe('la megapietra rende il membro una Mega', () => {
   it('i testi del coaching nominano la Mega', () => {
     const megas = [{ ...emptySet('Lopunny'), item: 'Lopunnite' }, { ...emptySet('Charizard'), item: 'Charizardite Y' }];
     const problems = coachTeam(megas, DEFAULT_FORMAT, megaData).problems.map(p => p.text);
-    expect(problems).toContain('Più Mega nel team (Lopunny-Mega, Charizard-Mega-Y): in National Dex ne è ammessa una sola');
+    expect(problems).toContain('Più Mega nel team (Lopunny-Mega, Charizard-Mega-Y): in National Dex se ne può usare una sola, il voto conta come Mega solo Lopunny-Mega');
   });
 });

@@ -43,7 +43,8 @@ export function emptySet(speciesName: string): TeamSet {
   const species = getSpecies(speciesName);
   return {
     species: species?.name ?? speciesName,
-    item: '',
+    // Una forma che esiste solo col suo strumento (Mega, Zacian-Crowned, Ogerpon con la maschera) nasce con quello
+    item: species?.requiredItem ?? species?.requiredItems?.[0] ?? '',
     ability: species?.abilities[0] ?? '',
     moves: [],
     nature: 'Serious',

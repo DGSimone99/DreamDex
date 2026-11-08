@@ -16,6 +16,8 @@ export interface EngineData {
   fallbackStats?: FallbackStats | null;
   /** Valutazione senza meta: tipi tutti uguali, niente minacce né uso dei membri (giochi in single player). */
   ignoreMeta?: boolean;
+  /** "Più Mega ammesse": senza, nel voto è Mega solo la prima del team (legalTeam.ts). */
+  allowMultipleMegas?: boolean;
   /** Formato scelto, per le regole che cambiano col formato (vedi formatRules). */
   formatId?: FormatId;
   /** Preferiti e bannati dell'utente nel formato: i bannati non diventano mai candidati (il voto non cambia). */
