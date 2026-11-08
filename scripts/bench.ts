@@ -6,7 +6,8 @@
  *                            "ladder": team veri di giocatori medi (rating 1100–1400), il "medio" non costruito a mano
  *   npm run bench -- --climb  la "salita": da alcuni team si applica sempre lo scambio libero migliore finché il voto sale
  *   npm run bench -- --games   partite coi set veri (scripts/bench/games.json): quante ne vince il voto più alto
- *                            (nei formati con le Mega solo le partite dove tutti e due i lati la mostrano)
+ *                            (nei formati con le Mega solo le partite dove tutti e due i lati la mostrano), col margine
+ *                            a gruppi di team e il conto con ogni team al massimo 3 volte (pochi team giocano centinaia di partite)
  *   npm run bench -- --replays partite vere (scripts/bench/replays.json di alto livello e, se c'è, ladder.json dei medi):
  *                            quante ne vince il team col voto più alto
  *   ROLES_MEASURED=1 npm run bench   con l'interruttore dei Ruoli acceso (Attacco, muri e Recupero contano anche nei Ruoli)
@@ -28,7 +29,7 @@ import { rateTeam as rateTeamV1 } from '../legacy/voto-v1/engine/rating';
 import { setRolesCountMeasured } from '../src/engine/roleLevels';
 import { improveReplacements } from '../src/engine/replace';
 import { defaultSet, type TeamSet } from '../src/engine/sets';
-import { getMove, toID } from '../src/engine/dex';
+import { dex, getMove, toID } from '../src/engine/dex';
 import { lockedStatusMoves } from '../src/engine/lockedMoves';
 import { statsEntry } from '../src/engine/stats';
 import type { Game as RealGame, Revealed } from './fetch-games';
@@ -104,11 +105,19 @@ const gameTeam = (formatId: FormatId, names: string[]): TeamSet[] | null => {
   const team = names.map(name => defaultSet(DATA[formatId], name, 9)).filter((s): s is TeamSet => !!s);
   return team.length === 6 ? team : null;
 };
+/**
+ * Nei formati National Dex conta solo la partita dove tutti e due i lati mostrano la Mega (come in --games, 2026-11-08):
+ * chi non la manda in campo sembrerebbe senza, e succede più a chi perde (Mega vista in 203 lati perdenti, 174 vincenti).
+ */
+const NATDEX_REPLAY = new Set<FormatId>(['ou', 'ubers', 'uu']);
+const bothShowMega = (game: Game) => !NATDEX_REPLAY.has(REPLAY_FORMAT[game.format])
+  || [game.p1, game.p2].every(names => names.some(name => /-Mega(-[XY])?$/.test(name)));
+
 /** I team del ladder medio, uno per combinazione di Pokémon, col formato. */
 const ladderTeams = (): { fmt: FormatId; team: TeamSet[] }[] => {
   const out: { fmt: FormatId; team: TeamSet[] }[] = [];
   const seenTeams = new Set<string>();
-  for (const game of readGames('ladder.json')) {
+  for (const game of readGames('ladder.json').filter(bothShowMega)) {
     const fmt = REPLAY_FORMAT[game.format];
     for (const names of [game.p1, game.p2]) {
       const key = `${fmt} ${[...names].sort().join('/')}`;
@@ -230,7 +239,7 @@ function replayFile(name: string, games: Game[]) {
     const bins = [[1, 4], [5, 9], [10, 100]] as const;
     const stats = bins.map(() => ({ right: 0, total: 0 }));
     let skipped = 0;
-    for (const game of games) {
+    for (const game of games.filter(bothShowMega)) {
       const formatId = REPLAY_FORMAT[game.format];
       const data = withMeta ? DATA[formatId] : { ...DATA[formatId], ignoreMeta: true };
       const [a, b] = [gameTeam(formatId, game.p1), gameTeam(formatId, game.p2)];
@@ -244,10 +253,28 @@ function replayFile(name: string, games: Game[]) {
     const all = stats.reduce((acc, s) => ({ right: acc.right + s.right, total: acc.total + s.total }), { right: 0, total: 0 });
     const pct = (s: { right: number; total: number }) => (s.total ? `${(100 * s.right / s.total).toFixed(1)}% su ${s.total}` : '–');
     console.log(`
-[${withMeta ? 'col meta' : 'senza meta'}] ${games.length} partite (${skipped} saltate: Pokémon senza set)`);
+[${withMeta ? 'col meta' : 'senza meta'}] ${games.filter(bothShowMega).length} partite su ${games.length} (in National Dex solo con la Mega vista da tutti e due i lati; ${skipped} saltate: Pokémon senza set)`);
     console.log(`  vince il voto più alto: ${pct(all)}`);
     bins.forEach(([lo, hi], i) => console.log(`  differenza ${lo}–${hi === 100 ? '…' : hi}: ${pct(stats[i])}`));
   }
+}
+
+/**
+ * Il cristallo Z di una mossa Z vista in partita: quello unico (Clangorous Soulblaze → Kommonium Z, con Clanging Scales)
+ * o quello del tipo (Tectonic Rage → Groundium Z, con la mossa Terra più usata dal Pokémon se nessuna si è vista).
+ */
+function zFromGame(fmt: FormatId, r: Revealed): { item: string; move?: string } | null {
+  const zMove = r.moves.map(m => getMove(m)).find(d => !!d?.isZ);
+  if (!zMove) return null;
+  const items = dex.items.all();
+  const signature = items.find(i => i.zMove === zMove.name && !!i.zMoveFrom);
+  if (signature) return { item: signature.name, move: signature.zMoveFrom };
+  const typed = items.find(i => i.zMoveType === zMove.type && !i.zMove);
+  if (!typed) return null;
+  if (r.moves.some(m => { const d = getMove(m); return !!d && !d.isZ && d.category !== 'Status' && d.type === zMove.type; })) return { item: typed.name };
+  const ranking = Object.entries(statsEntry(DATA[fmt].stats, r.species)?.moves ?? {}).sort((a, b) => b[1] - a[1]);
+  const move = ranking.map(([id]) => getMove(id)).find(d => !!d && d.category !== 'Status' && d.type === zMove.type);
+  return { item: typed.name, move: move?.name };
 }
 
 /**
@@ -258,8 +285,12 @@ export function realSet(fmt: FormatId, r: Revealed): TeamSet | null {
   const base = defaultSet(DATA[fmt], r.species, 9);
   if (!base) return null;
   const used = [...new Set(r.moves)].filter(m => { const d = getMove(m); return !!d && !d.isZ && !d.isMax; }).slice(0, 4);
+  // Una mossa Z vista vuol dire il cristallo (la partita lo mostra solo 10 volte su 1659) e la mossa da cui nasce
+  // (2026-11-08: prima restava lo strumento di default, Boots o Rocky Helmet, e chi usava la Z era sottovalutato)
+  const z = zFromGame(fmt, r);
+  if (z?.move && !used.some(u => toID(u) === toID(z.move!))) used.splice(Math.min(used.length, 3), used.length >= 4 ? 1 : 0, z.move);
   // Una Mega tiene la sua pietra anche se la partita non la mostra
-  const item = /-Mega(-[XY])?$/.test(r.species) ? base.item : r.item ?? base.item;
+  const item = /-Mega(-[XY])?$/.test(r.species) ? base.item : r.item ?? z?.item ?? base.item;
   // Le mosse che mancano: dal set di default, poi le più usate; mai una che con lo strumento vero non si usa
   // (Choice Scarf vista in partita, Swords Dance dal set di default)
   const ranking = Object.entries(statsEntry(DATA[fmt].stats, r.species)?.moves ?? {}).sort((a, b) => b[1] - a[1])
@@ -287,6 +318,37 @@ export const realTeam = (fmt: FormatId, side: Revealed[]): TeamSet[] | null => {
 const MEGA_FORMATS = new Set<FormatId>(['ou', 'ubers', 'uu']);
 const showsMega = (side: Revealed[]) => side.some(r => /-Mega(-[XY])?$/.test(r.species));
 
+/** Lo stesso team in partite diverse: le specie, in ordine. */
+const sideKey = (side: Revealed[]) => side.map(r => r.species).sort().join('/');
+/** Nel conto "senza ripetizioni" ogni team entra al massimo in tante partite. */
+const REPEAT_CAP = 3;
+
+/**
+ * Margine al 95% della quota di partite indovinate, ricampionando i team e non le partite (bootstrap a gruppi): le partite
+ * dello stesso team non sono indipendenti, e il margine semplice (±1,96·√(p(1−p)/n)) verrebbe troppo stretto.
+ */
+function clusterInterval(counted: { keys: [string, string]; right: boolean }[], rounds = 400): string {
+  if (counted.length < 20) return '–';
+  const byTeam = new Map<string, { right: boolean }[]>();
+  for (const c of counted) { const k = c.keys[0]; byTeam.set(k, [...(byTeam.get(k) ?? []), c]); }
+  const teams = [...byTeam.values()];
+  // Generatore fisso: lo stesso risultato a ogni giro del banco
+  let seed = 12345;
+  const rand = () => ((seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648);
+  const shares: number[] = [];
+  for (let r = 0; r < rounds; r++) {
+    let right = 0, total = 0;
+    for (let i = 0; i < teams.length; i++) {
+      const pick = teams[Math.floor(rand() * teams.length)];
+      total += pick.length; right += pick.filter(c => c.right).length;
+    }
+    shares.push(right / total);
+  }
+  shares.sort((a, b) => a - b);
+  const at = (q: number) => (100 * shares[Math.floor(q * (shares.length - 1))]).toFixed(1);
+  return `${at(0.025)}–${at(0.975)}%`;
+}
+
 /** --games: le partite coi set veri (scripts/bench/games.json, da scripts/fetch-games.ts): quante ne vince il voto più alto.
  *  Nei formati con le Mega contano solo le partite dove tutti e due i lati mostrano la Mega: chi vince spesso non manda
  *  in campo la sua, e il team che perde sembrerebbe più forte (Mega vista in 2179 team che perdono, 1986 che vincono). */
@@ -298,6 +360,8 @@ function realGames() {
     const stats = bins.map(() => ({ right: 0, total: 0 }));
     let skipped = 0, noMega = 0;
     const list = games.filter(g => GAMES_FORMAT[g.format] === fmt);
+    // Partite contate, coi due team: per il conto "ogni team al massimo REPEAT_CAP volte" e per il margine a gruppi di team
+    const counted: { keys: [string, string]; right: boolean }[] = [];
     for (const g of list) {
       if (MEGA_FORMATS.has(fmt) && !(showsMega(g.p1) && showsMega(g.p2))) { noMega++; continue; }
       const [a, b] = [realTeam(fmt, g.p1), realTeam(fmt, g.p2)];
@@ -306,13 +370,23 @@ function realGames() {
       const bin = bins.findIndex(([lo, hi]) => Math.abs(diff) >= lo && Math.abs(diff) <= hi);
       if (bin < 0) continue;
       stats[bin].total++;
-      if ((diff > 0 && g.winner === 1) || (diff < 0 && g.winner === 2)) stats[bin].right++;
+      const right = (diff > 0 && g.winner === 1) || (diff < 0 && g.winner === 2);
+      if (right) stats[bin].right++;
+      counted.push({ keys: [sideKey(g.p1), sideKey(g.p2)], right });
     }
     const all = stats.reduce((acc, x) => ({ right: acc.right + x.right, total: acc.total + x.total }), { right: 0, total: 0 });
     const pct = (x: { right: number; total: number }) => (x.total ? `${(100 * x.right / x.total).toFixed(1)}% su ${x.total}` : '–');
     console.log(`
 == ${fmt}: ${list.length} partite coi set veri (${skipped} saltate${noMega ? `, ${noMega} senza la Mega vista da tutti e due i lati` : ''})`);
-    console.log(`  vince il voto più alto: ${pct(all)}`);
+    console.log(`  vince il voto più alto: ${pct(all)}  (margine vero, a gruppi di team: ${clusterInterval(counted)})`);
+    // Pochi team giocano centinaia di partite (uno solo il 10% dei lati): contati al massimo REPEAT_CAP volte ciascuno
+    const seen = new Map<string, number>();
+    const capped = counted.filter(c => {
+      if (c.keys.some(k => (seen.get(k) ?? 0) >= REPEAT_CAP)) return false;
+      for (const k of c.keys) seen.set(k, (seen.get(k) ?? 0) + 1);
+      return true;
+    });
+    console.log(`  ogni team al massimo ${REPEAT_CAP} volte: ${pct({ right: capped.filter(c => c.right).length, total: capped.length })}  (${new Set(counted.flatMap(c => c.keys)).size} team diversi)`);
     bins.forEach(([lo, hi], i) => console.log(`  differenza ${lo}–${hi === 100 ? '…' : hi}: ${pct(stats[i])}`));
   }
 }
