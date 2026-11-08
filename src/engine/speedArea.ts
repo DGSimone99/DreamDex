@@ -116,22 +116,42 @@ function consumable(item: string): boolean {
   return !!data.isBerry || !!data.isGem || id.endsWith('seed') || CONSUMED.has(id);
 }
 
+/** Chi non si paralizza o non si rallenta per l'abilità o lo strumento (2026-11-08). */
+const STATUS_BOUNCE = new Set(['thunderwave', 'glare', 'stunspore']);
+const ELECTRIC_ABSORB = new Set(['voltabsorb', 'lightningrod', 'motordrive']);
+const NO_PARALYSIS = new Set(['limber', 'purifyingsalt', 'comatose']);
+const NO_DROP = new Set(['clearbody', 'whitesmoke', 'fullmetalbody', 'mirrorarmor', 'defiant', 'competitive']);
+const NO_SECONDARY = new Set(['shielddust']);
+
 /**
- * Quanto una mossa rallenta un avversario: paralisi a metà, un calo di Velocità a due terzi; 1 se il tipo ne è immune
- * (Elettro non si paralizza, Terra non prende Thunder Wave, Erba non prende le polveri, Volante non prende Bulldoze…).
+ * Quanto una mossa rallenta un avversario: paralisi a metà, un calo di Velocità a due terzi; 1 se ne è immune: per il
+ * tipo (Elettro non si paralizza, Terra non prende Thunder Wave, Erba non prende le polveri, Volante non prende Bulldoze…),
+ * per l'abilità (Magic Bounce rimanda le mosse di stato, Volt Absorb/Lightning Rod/Motor Drive assorbono le mosse Elettro,
+ * Limber, Clear Body, Defiant…) o per lo strumento (Safety Goggles contro Stun Spore, Covert Cloak contro gli effetti
+ * delle mosse d'attacco, Air Balloon contro Bulldoze).
  */
-export function slowFactor(move: string, species: string): number {
+export function slowFactor(move: string, species: string, ability = '', item = ''): number {
   const id = toID(move);
   const types = getSpecies(species)?.types ?? [];
   const has = (type: string) => types.includes(type as never);
+  const ab = toID(ability);
+  const it = toID(item);
+  const data = getMove(id);
+  if (data?.type === 'Electric' && ELECTRIC_ABSORB.has(ab)) return 1;
+  // Effetto secondario di una mossa d'attacco (Nuzzle, Icy Wind, Electroweb…): Covert Cloak e Shield Dust lo tolgono
+  if (data && data.category !== 'Status' && (it === 'covertcloak' || NO_SECONDARY.has(ab))) return 1;
   if (PARALYSIS.has(id)) {
+    if (STATUS_BOUNCE.has(id) && ab === 'magicbounce') return 1;
+    if (NO_PARALYSIS.has(ab)) return 1;
+    if (id === 'stunspore' && (ab === 'overcoat' || it === 'safetygoggles')) return 1;
     if (has('Electric')) return 1;
     if ((id === 'thunderwave' || id === 'nuzzle') && has('Ground')) return 1;
     if (id === 'stunspore' && has('Grass')) return 1;
     return 0.5;
   }
   if (SPEED_DROP.has(id)) {
-    if (id === 'bulldoze' && has('Flying')) return 1;
+    if (NO_DROP.has(ab)) return 1;
+    if (id === 'bulldoze' && (has('Flying') || ab === 'levitate' || ab === 'eartheater' || it === 'airballoon')) return 1;
     if (id === 'electroweb' && has('Ground')) return 1;
     if (id === 'lowsweep' && has('Ghost')) return 1;
     return 2 / 3;
@@ -198,7 +218,7 @@ export function speedOptions(set: TeamSet, team: TeamSet[]): SpeedOption[] {
   if (tailwind) options.push({ condition: 'tailwind', source: tailwind, by: holders(team, tailwind), memberFactor: 2 });
   // Tutte le mosse che rallentano del team (immunità diverse): il voto conta poi la migliore
   const slowing = [...new Set(team.flatMap(member => member.moves.map(m => getMove(m)).filter(m => !!m && (PARALYSIS.has(m.id) || SPEED_DROP.has(m.id))).map(m => m!.name)))].sort();
-  for (const move of slowing) options.push({ condition: 'slow', source: move, by: holders(team, move), memberFactor: 1, rivalFactor: r => slowFactor(move, r.species) });
+  for (const move of slowing) options.push({ condition: 'slow', source: move, by: holders(team, move), memberFactor: 1, rivalFactor: r => slowFactor(move, r.species, r.ability, r.item) });
   return options;
 }
 
