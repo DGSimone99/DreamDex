@@ -152,9 +152,10 @@ describe('Loaded Dice', () => {
     const maus = (item: string) => set('Maushold', item, 'Technician', ['Population Bomb'], 'Jolly', { atk: 252, spe: 252 });
     expect(new Move(Generations.get(9), 'Population Bomb').hits).toBe(10);
     const dice = bestHit(maus('Loaded Dice'), target)!.expected;
-    // 10 colpi al 90%: 0,9 + 0,9² + … + 0,9¹⁰ ≈ 5,86 colpi a segno invece di 9 (con Loaded Dice la precisione si tira una volta)
+    // 10 colpi al 90%: 0,9 + 0,9² + … + 0,9¹⁰ ≈ 5,86 colpi a segno. Con Loaded Dice da 4 a 10 colpi (7 in media) e la
+    // precisione tirata una volta: 0,9 × 7 = 6,3
     const sum = Array.from({ length: 10 }, (_, k) => 0.9 ** (k + 1)).reduce((a, b) => a + b, 0);
-    expect(bestHit(maus(''), target)!.expected).toBeCloseTo(dice * sum / 9, 2);
+    expect(bestHit(maus(''), target)!.expected).toBeCloseTo(dice * sum / 6.3, 2);
   });
   it('Triple Axel: il colpo k vale con probabilità 0,9^k; con Skill Link la precisione si tira una volta', () => {
     const weavile = (ability: string) => set('Weavile', 'Life Orb', ability, ['Triple Axel'], 'Jolly', { atk: 252, spe: 252 });

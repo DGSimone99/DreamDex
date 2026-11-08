@@ -232,14 +232,15 @@ function toMove(name: string, useZ: boolean, ability: string, item: string, hits
 }
 
 /**
- * Quanti colpi fa una multicolpo con Loaded Dice: 4 o 5 per quelle da 2-5 colpi. Population Bomb resta ai 10 colpi
- * della libreria (che conta già tutti i colpi a segno: Loaded Dice non deve valere meno di nessuno strumento).
+ * Quanti colpi fa una multicolpo con Loaded Dice: 4 o 5 per quelle da 2-5 colpi; Population Bomb da 4 a 10 (come su
+ * Showdown, con la precisione tirata una volta sola; 2026-11-08: prima restava ai 10 della libreria, +43%).
  * Senza Loaded Dice, con Skill Link (già 5 colpi) o per le altre mosse, quelli che decide la libreria (un solo calcolo).
  */
 function diceHits(move: NonNullable<ReturnType<typeof getMove>>, item: string, ability: string): (number | undefined)[] {
   if (toID(item) !== 'loadeddice' || toID(ability) === 'skilllink') return [undefined];
   const range = move.multihit;
   if (Array.isArray(range) && range[0] === 2 && range[1] === 5) return [4, 5];
+  if (range === 10 && move.multiaccuracy) return [4, 5, 6, 7, 8, 9, 10];
   return [undefined];
 }
 
