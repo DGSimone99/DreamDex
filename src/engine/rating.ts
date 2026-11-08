@@ -71,9 +71,10 @@ export const NATDEX_OU_WEIGHTS: AreaWeightTable = {
   hyperOffense: { defense: 20, strength: 50, speed: 30 },
   bulkyOffense: { defense: 30, strength: 45, speed: 25 },
   balance: { defense: 45, strength: 40, speed: 15 },
-  // 2026-11-07: semi-stall come lo stall (era 55/35/10). Nelle partite il semi-stall vince più di tutti (55%) ma col
-  // 35 all'Offesa 5 team da torneo su 13 prendevano C; a 65/25 ne resta 1, il resto del banco non si muove e il salto
-  // fra stall e semi-stall si accorcia (stessi pesi, restano i Ruoli diversi).
+  // 2026-11-07: semi-stall come lo stall (era 55/35/10). Col 35 all'Offesa 5 team da torneo su 13 prendevano C; a 65/25
+  // ne resta 1, il resto del banco non si muove e il salto fra stall e semi-stall si accorcia (stessi pesi, restano i
+  // Ruoli diversi). Il 55% di vittorie nelle partite visto allora veniva da un solo team ripetuto (letto Semi-stall quando
+  // vince, Stall quando perde): contando ogni team una volta il semi-stall vince circa il 50% (controllo 2026-11-08).
   semiStall: { defense: 65, strength: 25, speed: 10 },
   stall: { defense: 65, strength: 25, speed: 10 },
 };
