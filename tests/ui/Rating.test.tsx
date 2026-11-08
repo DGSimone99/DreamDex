@@ -202,7 +202,7 @@ const catalogRating = () => ({
   penalty: { total: 8, items: [
     { text: 'Due setter di Stealth Rock', points: 1, catalog: 'hazardDuplicate' },
     { text: 'Due setter di Spikes', points: 2, catalog: 'hazardDuplicate' },
-    { text: 'Troppi rimuovitori', points: 5, catalog: 'removers' },
+    { text: 'Tre Acciaio', points: 5, catalog: 'sameType' },
   ] },
   bonus: { total: 2, items: [{ text: 'Sole aiuta', points: 2, catalog: 'weatherHelp' }] },
 }) as unknown as TeamRating;
@@ -219,16 +219,16 @@ describe('Catalogo Bonus/Malus', () => {
     expect(within(dialog).getAllByRole('tab').map(tab => tab.textContent)).toEqual(['Malus −8', 'Bonus +2']);
   });
 
-  it('Malus: i 14 malus con nome, quando e punti; gli attivi evidenziati col punteggio attuale', async () => {
+  it('Malus: i 13 malus con nome, quando e punti; gli attivi evidenziati col punteggio attuale', async () => {
     const { dialog } = await openCatalog();
     const rows = within(within(dialog).getByRole('tabpanel')).getAllByRole('row').slice(1);
-    expect(rows).toHaveLength(14);
+    expect(rows).toHaveLength(13);
     const hazard = rows.find(r => within(r).queryByText('Hazard ripetuto'))!;
     expect(hazard).toHaveClass('active');
     expect(hazard).toHaveAttribute('aria-current', 'true');
     expect(within(hazard).getAllByRole('cell').at(-1)).toHaveTextContent('−3');
-    const removers = rows.find(r => r.className.includes('active') && r !== hazard)!;
-    expect(removers).toHaveTextContent('−5');
+    const sameType = rows.find(r => r.className.includes('active') && r !== hazard)!;
+    expect(sameType).toHaveTextContent('−5');
     // Un team di 3: il ruolo essenziale mancante non è attivo
     const essential = rows.find(r => r.textContent!.includes('essenzial'))!;
     expect(essential).not.toHaveClass('active');
@@ -237,7 +237,7 @@ describe('Catalogo Bonus/Malus', () => {
   });
 
   it('niente tetti: nessuna riga "Totale massimo" né "limitato", anche con una somma alta', async () => {
-    const r = { ...catalogRating(), penalty: { total: 18, items: [{ text: 'A', points: 10, catalog: 'removers' }, { text: 'B', points: 8, catalog: 'hazardDuplicate' }] } } as unknown as TeamRating;
+    const r = { ...catalogRating(), penalty: { total: 18, items: [{ text: 'A', points: 10, catalog: 'sameType' }, { text: 'B', points: 8, catalog: 'hazardDuplicate' }] } } as unknown as TeamRating;
     render(<LangProvider lang="it"><AreaView rating={r} area="bonusMalus" team={[]} analysis={analyzeTeam([], fixtureData)} problems={[]} /></LangProvider>);
     const panel = screen.getByRole('tabpanel');
     expect(panel).not.toHaveTextContent('Totale massimo');
