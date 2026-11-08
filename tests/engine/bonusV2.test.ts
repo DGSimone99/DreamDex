@@ -65,6 +65,10 @@ describe('bonus debolezze coperte', () => {
     const five = covered.slice(0, 5);
     expect(weakCoveredBonus(five, analyzeTeam(five, fixtureData))).toEqual([]);
   });
+  it('non con specie sconosciute: senza tipi non ci sono debolezze da coprire', () => {
+    const unknown = Array.from({ length: 6 }, (_, i) => ({ ...emptySet(`Fakemon${i}`), species: `Fakemon${i}` }));
+    expect(weakCoveredBonus(unknown, analyzeTeam(unknown, fixtureData))).toEqual([]);
+  });
 });
 
 describe('bonus condizione sfruttata', () => {
