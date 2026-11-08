@@ -190,7 +190,7 @@ export const it: Record<keyof typeof en, string> = {
   'catalog.unusedEnabler.when': "Un membro porta un meteo, un campo o Trick Room che non sfrutta nessuno, né lui né i compagni",
   'catalog.unusedEnabler.points': "−{unused}",
   'catalog.weakMember.name': "Membro debole",
-  'catalog.weakMember.when': "Un membro ha poca forza rispetto ai Pokémon del formato e non porta un supporto che lo giustifichi (hazard, meteo, controllo della velocità…; fare solo da pivot non basta)",
+  'catalog.weakMember.when': "Un membro ha poca forza rispetto ai Pokémon del formato e non porta un supporto che lo giustifichi (hazard, meteo o campo dalla sua abilità, Sticky Web, Trick Room…; una mossa come Thunder Wave o Sunny Day da sola, o fare solo da pivot, non basta)",
   'catalog.weakMember.points': "−{member} ciascuno, al massimo −{memberMax}",
   'catalog.lockedStatus.name': "Mosse inutili con Choice o Assault Vest",
   'catalog.lockedStatus.when': "Con l'Assault Vest ogni mossa di stato (non si può usare); con la Choice, se il set non ha Trick o Switcheroo, le mosse di potenziamento e Protect/Detect. Quelle mosse non contano",

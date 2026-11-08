@@ -16,6 +16,15 @@ describe('Membro debole, condizioni', () => {
     expect(issues.some(i => i.catalog === 'weakMember')).toBe(true);
   });
 
+  it("una mossa che rallenta o una mossa meteo da sola non salva un membro debole; il meteo dall'abilità sì", () => {
+    const weak = (member: TeamSet) => memberIssues([member], 'it', analyzeTeam([member], fixtureData).needs).some(i => i.catalog === 'weakMember');
+    expect(weak(set('Raticate', '', 'Guts', ['Body Slam', 'Crunch', 'Quick Attack', 'Thunder Wave']))).toBe(true);
+    expect(weak(set('Raticate', '', 'Guts', ['Body Slam', 'Crunch', 'Flame Wheel', 'Sunny Day']))).toBe(true);
+    expect(weak(set('Caterpie', 'Eviolite', 'Shield Dust', ['Tackle', 'String Shot', 'Bug Bite', 'Electroweb']))).toBe(true);
+    // Trick Room è Controllo velocità pieno: salva ancora
+    expect(weak(set('Raticate', '', 'Guts', ['Body Slam', 'Crunch', 'Flame Wheel', 'Trick Room']))).toBe(false);
+  });
+
   it('Solar Beam con Power Herb e Dry Skin non "hanno bisogno" del meteo', () => {
     expect(unmetBeneficiaries([set('Venusaur', 'Power Herb', 'Overgrow', ['Solar Beam'])])).toEqual([]);
     expect(unmetBeneficiaries([set('Toxicroak', 'Life Orb', 'Dry Skin', ['Gunk Shot'])])).toEqual([]);
