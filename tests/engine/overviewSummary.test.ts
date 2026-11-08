@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { analyzeTeam, threatScore } from '../../src/engine/analysis';
-import { findProblems, weaknessSeverity } from '../../src/engine/coach';
+import { analyzeTeam } from '../../src/engine/analysis';
+import { COVERED_LEVEL, findProblems, holdSeverity } from '../../src/engine/coach';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
 import { summarizeTeam } from '../../src/engine/overviewSummary';
-import { rateTeam } from '../../src/engine/rating';
+import { rateTeam, ratingThreats } from '../../src/engine/rating';
 import { LEVEL_KEYS } from '../../src/engine/roleLevels';
 import { mostCommonSet } from '../../src/engine/sets';
 import { poolMedian, speedPool } from '../../src/engine/speed';
@@ -23,20 +23,44 @@ describe('summarizeTeam', () => {
     expect(build().tiles.map(t => t.key)).toEqual(['defense', 'strength', 'roles', 'speed', 'meta', 'bonusMalus']);
   });
 
-  it('Difesa: coperti/18 e tipi scoperti', () => {
-    const { analysis, tile, problems } = build();
-    const exposed = analysis.weakness.filter(r => weaknessSeverity(r) !== null);
-    expect(tile('defense').value).toBe(`${analysis.weakness.length - exposed.length}/${analysis.weakness.length}`);
+  it('Difesa: retti/18 e tipi da sistemare, dalla Coverage tipi della Difesa come il coach', () => {
+    const { rating, tile, problems } = build();
+    const rows = rating.defense.coverageTypes.rows;
+    expect(rows).toHaveLength(18);
+    const exposed = rows.filter(r => holdSeverity(rating, r.type) !== null);
+    // Questo team regge tutti i tipi dal livello 50: 18/18
+    expect(tile('defense').value).toBe(`${18 - exposed.length}/18`);
+    expect(exposed).toEqual([]);
+    expect(tile('defense').value).toBe('18/18');
+    // Gli stessi tipi dei problemi di difesa del coach
+    expect(exposed.map(r => `defense:${r.type}`)).toEqual(problems.filter(p => p.category === 'defense').map(p => p.key));
     expect(tile('defense').missing).toEqual(exposed.map(r => ({ kind: 'type', type: r.type })));
     const serious = problems.some(p => p.category === 'defense' && p.severity === 'serious');
     expect(tile('defense').status).toBe(serious ? 'bad' : exposed.length ? 'mid' : 'good');
   });
 
-  it('Offesa: colpiti/18 e tipi senza hitter', () => {
-    const { analysis, tile } = build();
-    const unhit = analysis.coverage.filter(r => !r.hitters.length);
-    expect(tile('strength').value).toBe(`${analysis.coverage.length - unhit.length}/${analysis.coverage.length}`);
-    expect(tile('strength').missing).toEqual(unhit.map(r => ({ kind: 'type', type: r.type })));
+  it('Difesa con dei tipi scoperti: mancano i gravi (nessuno regge) e i minori (sotto il livello 50), tessera rossa', () => {
+    const two = team.slice(0, 2);
+    const analysis = analyzeTeam(two, fixtureData);
+    const rating = rateTeam(two, fixtureData)!;
+    const problems = findProblems(two, DEFAULT_FORMAT, fixtureData, analysis, [], 'it');
+    const defense = summarizeTeam(analysis, rating, problems, fixtureData).find(t => t.key === 'defense')!;
+    const { rows, weak } = rating.defense.coverageTypes;
+    const exposed = rows.filter(r => weak.includes(r.type) || r.level < 50).map(r => r.type);
+    expect(weak.length).toBeGreaterThan(0);
+    expect(defense.value).toBe(`${18 - exposed.length}/18`);
+    expect(defense.missing).toEqual(exposed.map(type => ({ kind: 'type', type })));
+    expect(defense.status).toBe('bad');
+  });
+
+  it("Offesa: coperti/18 e tipi sotto il livello 50 nel pacchetto dell'Offesa, come il coach", () => {
+    const { rating, tile, problems } = build();
+    const rows = rating.offense.types.rows;
+    const unhit = rows.filter(r => r.level < COVERED_LEVEL);
+    expect(unhit.length).toBeGreaterThan(0);
+    expect(tile('strength').value).toBe(`${18 - unhit.length}/18`);
+    expect(tile('strength').missing).toEqual(unhit.map(r => ({ kind: 'type', type: r.label })));
+    expect(unhit.map(r => `coverage:${r.label}`)).toEqual(problems.filter(p => p.category === 'coverage').map(p => p.key));
     expect(tile('strength').status).toBe(unhit.length ? 'mid' : 'good');
   });
 
@@ -61,13 +85,14 @@ describe('summarizeTeam', () => {
     expect(s.status).toBe(v >= 70 ? 'good' : v >= 50 ? 'mid' : 'bad');
   });
 
-  it('Meta: gestite/considerate e specie senza check', () => {
-    const { analysis, tile } = build();
-    const t = analysis.threats;
+  it('Meta: rette/considerate e specie che nessuno regge, dalla Coverage meta della Difesa', () => {
+    const { rating, tile } = build();
+    const t = ratingThreats(rating, fixtureData);
+    expect(t.map(x => x.name)).toEqual(rating.defense.coverageMeta!.rows.map(r => r.species));
     expect(t.length).toBeGreaterThan(0);
     expect(tile('meta').value).toBe(`${t.filter(x => x.handledBy.length).length}/${t.length}`);
     expect(tile('meta').missing).toEqual(t.filter(x => !x.handledBy.length).map(x => ({ kind: 'mon', species: x.name })));
-    const score = threatScore(analysis)!;
+    const score = rating.defense.coverageMeta!.value;
     expect(tile('meta').status).toBe(score >= 70 ? 'good' : score >= 50 ? 'mid' : 'bad');
   });
 

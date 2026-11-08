@@ -2,7 +2,7 @@ import { analyzeTeam, type TeamAnalysis } from './analysis';
 import { teamArchetype, type Archetype, type TeamArchetype } from './archetype';
 import type { EngineData } from './data';
 import type { FormatRules } from './formatRules';
-import { battleName, battleSpecies, getSpecies, isMega, isSelectable, withinGen } from './dex';
+import { battleName, battleSpecies, getSpecies, isMega, isSelectable, toID, withinGen } from './dex';
 import { bannedParts, formatLabel, isLegalIn, pokedexOf } from './formats';
 import type { Format } from './format';
 import type { Contribution, Diff } from './replace';
@@ -13,7 +13,7 @@ import { roleLabel } from './roles';
 import { keyRoles, needLabel } from './needs';
 import { LEVEL_KEYS } from './roleLevels';
 import { bannedInPool, scoreCandidates, type Suggestion } from './scoring';
-import { memberIssues, rateTeam, roleAndTypeRedundancies, weakenedMoveNotes, weatherClashes } from './rating';
+import { memberIssues, rateTeam, ratingThreats, roleAndTypeRedundancies, weakenedMoveNotes, weatherClashes, type TeamRating } from './rating';
 import { benefits, conditionLabel, viaName, enables, teamSynergies, unmetBeneficiaries, unusedEnablers } from './synergy';
 import type { TeamSet } from './sets';
 import { coachFixes, type CoachFix } from './coachFixes';
@@ -32,6 +32,11 @@ export const STRONG_COVERAGE = 15;
  * Sotto è un problema; scoperto (grave se il tipo pesa) se nessuno lo manda KO in due colpi (HOLE_HIT, 50%).
  */
 export const COVERED_LEVEL = 50;
+/**
+ * Un tipo della Coverage tipi della Difesa è retto dal livello 50, come per l'Offesa. Sotto è un problema minore;
+ * grave se nessuno ha credito sul lato peggiore (lo stesso tipo prende il malus "nessuno regge" nel voto).
+ */
+export const HELD_LEVEL = 50;
 
 /** Categorie dei problemi, nell'ordine in cui si mostrano. */
 export const PROBLEM_CATEGORIES = ['rules', 'defense', 'coverage', 'roles', 'conditions', 'redundancy', 'meta'] as const;
@@ -51,8 +56,8 @@ export interface CoachProblem {
    * il membro (nome in battaglia) per i problemi di regole di un membro, le voci per roles:essential / roles:important.
    */
   subjects?: string[];
-  /** Solo per le debolezze (defense): quanti membri sono deboli e quanti resistono, per le pillole corte "Terra 3↓ 1↑". */
-  counts?: { weak: number; resist: number };
+  /** Solo per la difesa: quanti membri reggono del tutto il tipo (come nella Coverage tipi della Difesa), per le pillole corte. */
+  counts?: { held: number };
 }
 
 /** I consigli del Coaching: a parte perché lenti, si calcolano solo con la scheda Coaching aperta. */
@@ -86,9 +91,10 @@ function fixesFor(candidates: Suggestion[], rank: (s: Suggestion) => number): st
     .map(x => x.s.species);
 }
 
-function findStrengths(team: TeamSet[], analysis: TeamAnalysis, lang: Lang): string[] {
+function findStrengths(team: TeamSet[], analysis: TeamAnalysis, rating: TeamRating | null, lang: Lang): string[] {
   const strengths: string[] = [];
-  const solid = analysis.weakness.filter(r => r.resist >= 2 && r.weak === 0).map(r => r.type);
+  // Tipi retti da almeno due membri (Coverage tipi della Difesa)
+  const solid = (rating?.defense.coverageTypes.rows ?? []).filter(r => r.heldBy.length >= 2).map(r => r.type);
   if (solid.length) strengths.push(t(lang, 'coach.strength.handles', { types: list(solid.map(type => typeName(type, lang))) }));
   // Ruoli essenziali per l'archetipo del team, coperti
   const { levels, essentialMissing } = analysis.needs;
@@ -96,35 +102,36 @@ function findStrengths(team: TeamSet[], analysis: TeamAnalysis, lang: Lang): str
   if (roles.length) strengths.push(t(lang, 'coach.strength.roles', { roles: list(roles) }));
   const synergies = teamSynergies(team, lang);
   if (synergies.length) strengths.push(t(lang, 'coach.strength.synergies', { list: synergies.join('; ') }));
-  const covered = analysis.coverage.filter(r => r.hitters.length > 0).length;
+  // Tipi coperti nel pacchetto dell'Offesa
+  const covered = (rating?.offense.types.rows ?? []).filter(r => r.level >= COVERED_LEVEL).length;
   if (covered >= STRONG_COVERAGE) strengths.push(t(lang, 'coach.strength.coverage', { n: covered }));
   return strengths;
 }
 
-/** Gravità di una debolezza difensiva, dalla Sicurezza del tipo: grave a 0% (saldo −2 o peggio), minore sotto il 50%. */
-export function weaknessSeverity(row: TeamAnalysis['weakness'][number]): 'serious' | 'minor' | null {
-  if (row.pressure >= 2) return 'serious';
-  return row.pressure > 0 ? 'minor' : null;
+/** Gravità di un tipo in difesa, dalla Coverage tipi del voto: grave se nessuno ha credito, minore sotto il livello 50. */
+export function holdSeverity(rating: TeamRating, type: string): 'serious' | 'minor' | null {
+  const { rows, weak } = rating.defense.coverageTypes;
+  if (weak.includes(type)) return 'serious';
+  const row = rows.find(r => r.type === type);
+  return row && row.level < HELD_LEVEL ? 'minor' : null;
 }
 
-export function findProblems(team: TeamSet[], format: Format, data: EngineData, analysis: TeamAnalysis, candidates: Suggestion[], lang: Lang): CoachProblem[] {
+/** `rating`: il voto del team (null se non si può dare): difesa, minacce e Trick Room si leggono da lì. */
+export function findProblems(team: TeamSet[], format: Format, data: EngineData, analysis: TeamAnalysis, candidates: Suggestion[], lang: Lang, rating: TeamRating | null = rateTeam(team, data, lang)): CoachProblem[] {
   const serious: CoachProblem[] = [];
   const minor: CoachProblem[] = [];
   // Chiave predefinita dal testo, senza numeri: un cambio che sposta solo un conteggio non "risolve" il problema
   const add = (category: ProblemCategory, isSerious: boolean, text: string, fixes: string[], key = `${category}:${text.replace(/\d+/g, '#')}`, size?: number, subjects?: string[], counts?: CoachProblem['counts']) =>
     (isSerious ? serious : minor).push({ severity: isSerious ? 'serious' : 'minor', category, text, fixes, key, ...(size === undefined ? {} : { size }), ...(subjects ? { subjects } : {}), ...(counts ? { counts } : {}) });
 
-  for (const row of analysis.weakness) {
-    const severity = weaknessSeverity(row);
+  // Difesa: la Coverage tipi del voto (chi regge il colpo più forte di quel tipo, coi danni veri)
+  for (const row of rating?.defense.coverageTypes.rows ?? []) {
+    const severity = holdSeverity(rating!, row.type);
     if (!severity) continue;
     const isSerious = severity === 'serious';
-    const text = t(lang, 'coach.problem.weak', {
-      type: typeName(row.type, lang), weak: row.weak, resist: row.resist,
-      weakWord: t(lang, row.weak === 1 ? 'coach.word.weakOne' : 'coach.word.weakMany'),
-      resistWord: t(lang, row.resist === 1 ? 'coach.word.resistOne' : 'coach.word.resistMany'),
-    });
-    const fixes = fixesFor(candidates, s => Number(defensiveMultiplier(row.type, s.set) < 1));
-    add('defense', isSerious, text, fixes, `defense:${row.type}`, row.pressure, [row.type], { weak: row.weak, resist: row.resist });
+    const text = t(lang, isSerious ? 'coach.problem.notHeld' : 'coach.problem.halfHeld', { type: typeName(row.type, lang) });
+    const fixes = fixesFor(candidates, s => Number(defensiveMultiplier(row.type as TypeName, s.set) < 1));
+    add('defense', isSerious, text, fixes, `defense:${row.type}`, 100 - row.level, [row.type], { held: row.heldBy.length });
   }
 
   for (const set of team) {
@@ -170,7 +177,12 @@ export function findProblems(team: TeamSet[], format: Format, data: EngineData, 
   // Conflitti e mosse indebolite si riconoscono dalla condizione, non da chi la porta
   for (const item of [...weatherClashes(team, lang), ...weakenedMoveNotes(team, lang)]) add('conditions', false, item.text, [], item.key && `conditions:${item.key}`);
 
+  // Trick Room in un team veloce: lo stesso testo del malus del voto, e la stessa Trick Room non è anche "inutilizzata"
+  const room = rating?.penalty.items.find(item => item.catalog === 'trickRoomFast');
+  const roomSetter = room && team.find(set => set.moves.some(move => toID(move) === 'trickroom'));
+  if (room) add('conditions', false, room.text, [], 'conditions:trickRoomFast', room.points);
   for (const issue of unusedEnablers(team)) {
+    if (roomSetter && issue.condition === 'trickroom' && issue.member === battleName(roomSetter)) continue;
     add('conditions', false, t(lang, 'coach.problem.unused', { via: viaName(issue.via, lang), member: issue.member }),
       fixesFor(candidates, s => Number(benefits(s.set).some(b => b.condition === issue.condition && !['Weather Ball', 'Terrain Pulse'].includes(b.via)))),
       `conditions:unused:${issue.member}:${issue.via}`);
@@ -197,8 +209,8 @@ export function findProblems(team: TeamSet[], format: Format, data: EngineData, 
       fixesFor(candidates, s => Number(superEffectiveMove(s.set, type as TypeName) !== null)), `coverage:${type}`, hole ? 2 : 1, [type]);
   }
 
-  // Minacce del meta senza check (la lista è vuota senza meta)
-  for (const threat of analysis.threats) {
+  // Minacce del meta che nessuno regge, come nella Coverage meta della Difesa (la lista è vuota senza meta)
+  for (const threat of ratingThreats(rating, data)) {
     if (threat.handledBy.length) continue;
     add('meta', false, t(lang, 'coach.problem.threat', { species: threat.name }),
       fixesFor(candidates, s => Number(s.facts.threats.checked.includes(threat.name))), `meta:${threat.name}`, undefined, [threat.name]);
@@ -309,15 +321,16 @@ export function coachTeam(team: TeamSet[], format: Format, data: EngineData, lan
   // Le regole del formato vengono dai dati: allineati al formato scelto
   if (data.formatId !== format.formatId) data = { ...data, formatId: format.formatId };
   const analysis = analyzeTeam(team, data);
+  const rating = rateTeam(team, data, lang);
   const candidates = data.stats ? scoreCandidates(team, format, data) : [];
-  const problems = findProblems(team, format, data, analysis, candidates, lang);
+  const problems = findProblems(team, format, data, analysis, candidates, lang, rating);
   return {
-    verdict: verdictFor(team, problems.filter(p => p.category !== 'meta'), rateTeam(team, data, lang)?.grade ?? 'D', lang),
+    verdict: verdictFor(team, problems.filter(p => p.category !== 'meta'), rating?.grade ?? 'D', lang),
     teamType: teamArchetype(team, analysis.needs.rules),
-    strengths: findStrengths(team, analysis, lang),
+    strengths: findStrengths(team, analysis, rating, lang),
     problems,
     bannedCount: data.stats ? bannedInPool(team, format, data) : 0,
-    threatFixes: Object.fromEntries(analysis.threats
+    threatFixes: Object.fromEntries(ratingThreats(rating, data)
       .filter(t => t.handledBy.length === 0)
       .map(t => [t.name, fixesFor(candidates, s => Number(s.facts.threats.checked.includes(t.name)))])),
   };

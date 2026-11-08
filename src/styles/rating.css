@@ -77,3 +77,4 @@
 .grade-roles-val em { font-style: normal; font-weight: 600; }
 .grade-roles-val em.bad { color: var(--bad); }
 .grade-roles-val em.good { color: var(--good); }
+.grade-roles-val em.soft { color: var(--muted); }

@@ -63,7 +63,7 @@ describe('scheda Coaching', () => {
   it('la mappa mette i gravi prima dei minori, nella colonna della loro area', async () => {
     await openCoaching(six);
     expect(within(analysis()).getByRole('group', { name: 'Regole · Meta' })).toHaveTextContent('Mosse non legali');
-    expect(within(analysis()).getByRole('group', { name: 'Difesa' })).toHaveTextContent('Debole a');
+    expect(within(analysis()).getByRole('group', { name: 'Difesa' })).toHaveTextContent('Nessuno regge');
   });
 
   it('clic su un sostituto: scheda Pokémon, quel membro da sostituire, il candidato aperto, stesso +N', async () => {
@@ -172,10 +172,11 @@ describe('CoachingView', () => {
     expect(items).toHaveLength(shown.length);
     items.forEach((item, i) => {
       expect(item.querySelector('.coach-step-num')).toHaveTextContent(String(i + 1));
-      // I ruoli mancanti dicono "Manca …" al posto della frase del problema
+      // I ruoli mancanti dicono "Manca …" e la difesa "Difesa debole contro …" al posto della frase del problema
       const { problem } = shown[i];
       const missing = (problem.key === 'roles:important' || problem.key === 'roles:essential') && (problem.subjects?.length ?? 0) > 0;
-      expect(item.querySelector('.coach-step-problem')).toHaveTextContent(missing ? 'Manca' : problem.text.replace(/\s+/g, ' ').slice(0, 10));
+      const title = missing ? 'Manca' : problem.category === 'defense' ? `Difesa debole contro ${problem.subjects![0]}` : problem.text.replace(/\s+/g, ' ').slice(0, 10);
+      expect(item.querySelector('.coach-step-problem')).toHaveTextContent(title);
     });
   });
 
@@ -436,16 +437,25 @@ describe('CoachingView', () => {
     expect(map.compareDocumentPosition(stepsRegion()) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
-  it('pillola di difesa: icona, tipo e conteggi brevi, testo intero nel title', () => {
-    const text = 'Debole a Ground: 3 Deboli – 1 Resiste';
+  it('pillola di difesa: icona, tipo e quanti lo reggono, testo intero nel title', () => {
+    const text = 'Ground retto poco: pochi membri reggono i suoi colpi';
     const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], threatFixes: {},
-      problems: [{ severity: 'serious', category: 'defense', text, fixes: [], key: 'defense:Ground', subjects: ['Ground'], counts: { weak: 3, resist: 1 } }] };
+      problems: [
+        { severity: 'minor', category: 'defense', text, fixes: [], key: 'defense:Ground', subjects: ['Ground'], counts: { held: 1 } },
+        { severity: 'serious', category: 'defense', text: 'Nessuno regge Ice', fixes: [], key: 'defense:Ice', subjects: ['Ice'], counts: { held: 0 } },
+      ] };
     renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [] }} members={3} rating={rating(three)} metaOn {...noop} />);
-    const pill = screen.getByRole('group', { name: 'Difesa' }).querySelector<HTMLElement>('li[data-key="defense:Ground"]')!;
+    const group = screen.getByRole('group', { name: 'Difesa' });
+    const pill = group.querySelector<HTMLElement>('li[data-key="defense:Ground"]')!;
     expect(pill.querySelectorAll('.type-icons img')).toHaveLength(1);
-    expect(pill).toHaveTextContent('3↓');
-    expect(pill).toHaveTextContent('1↑');
+    // Uno che regge: verde, al singolare
+    expect(pill.querySelector('.coach-counts')).toHaveTextContent(/^1 regge$/);
+    expect(pill.querySelector('.count-resist')).not.toBeNull();
     expect(pill).toHaveAttribute('title', text);
+    // Nessuno: rosso, al plurale
+    const ice = group.querySelector<HTMLElement>('li[data-key="defense:Ice"]')!;
+    expect(ice.querySelector('.coach-counts')).toHaveTextContent(/^0 reggono$/);
+    expect(ice.querySelector('.count-weak')).not.toBeNull();
   });
 
   it('ruoli mancanti nella tessera: una pillola per ruolo con la ×, senza "Ruoli importanti mancanti"', () => {
@@ -479,7 +489,7 @@ describe('CoachingView', () => {
     });
     try {
       const p = (type: string, severity: CoachProblem['severity'], fixes: string[] = []): CoachProblem =>
-        ({ severity, category: 'defense', text: `Debole a ${type}`, fixes, key: `defense:${type}`, subjects: [type] });
+        ({ severity, category: 'defense', text: `Nessuno regge ${type}`, fixes, key: `defense:${type}`, subjects: [type] });
       const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], threatFixes: {},
         problems: [p('Fire', 'minor'), p('Ice', 'serious'), p('Water', 'minor', ['Rotom-Wash']), p('Ground', 'minor')] };
       renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [] }} members={3} rating={rating(three)} metaOn {...noop} />);
@@ -487,8 +497,8 @@ describe('CoachingView', () => {
       expect([...tile.querySelectorAll('li.coach-prob')].map(li => li.getAttribute('data-key'))).toEqual(['defense:Ice', 'defense:Water']);
       const more = tile.querySelector('.coach-more')!;
       expect(more).toHaveTextContent(/^\+2/);
-      expect(more).toHaveAttribute('title', 'Debole a Fire\nDebole a Ground');
-      expect(more.querySelector('.visually-hidden')).toHaveTextContent('Altri 2 problemi: Debole a Fire; Debole a Ground');
+      expect(more).toHaveAttribute('title', 'Nessuno regge Fire\nNessuno regge Ground');
+      expect(more.querySelector('.visually-hidden')).toHaveTextContent('Altri 2 problemi: Nessuno regge Fire; Nessuno regge Ground');
     } finally {
       tall.mockRestore();
       scroll.mockRestore();
@@ -588,7 +598,7 @@ describe('CoachingView', () => {
     renderIt(<CoachingView coaching={coaching} advice={null} members={3} rating={rating(three)} metaOn {...noop} />);
     expect(stepsRegion().querySelector('[aria-busy="true"]')).not.toBeNull();
     expect(screen.queryByRole('button')).toBeNull();
-    expect(screen.getByRole('group', { name: 'Difesa' })).toHaveTextContent('Debole a');
+    expect(screen.getByRole('group', { name: 'Difesa' })).toHaveTextContent('Nessuno regge');
   });
 
   it('team di 3: la proposta di Pokémon è "Aggiungi …"', () => {
@@ -611,10 +621,18 @@ describe('CoachingView', () => {
     expect(screen.queryByRole('region')).toBeNull();
   });
 
-  it('senza meta nessun problema "senza un check"', () => {
+  it('senza meta nessun problema "nessuno regge … del meta"', () => {
     const coaching = coachTeam(three, { ...DEFAULT_FORMAT, meta: false }, { ...data, ignoreMeta: true });
     renderIt(<CoachingView coaching={coaching} advice={null} members={3} rating={rating(three)} metaOn={false} {...noop} />);
-    expect(screen.queryByText(/senza un check/)).toBeNull();
+    expect(screen.queryByText(/del meta$/)).toBeNull();
+  });
+
+  it('col meta le minacce che nessuno regge stanno nella colonna Regole · Meta', () => {
+    const coaching = coachTeam(three, DEFAULT_FORMAT, data);
+    renderIt(<CoachingView coaching={coaching} advice={null} members={3} rating={rating(three)} metaOn {...noop} />);
+    const open = coaching.problems.filter(p => p.category === 'meta');
+    expect(open.length).toBeGreaterThan(0);
+    for (const p of open) expect(screen.getByRole('group', { name: 'Regole · Meta' })).toHaveTextContent(p.text);
   });
 
   it('nessun problema: un messaggio positivo', () => {
@@ -624,10 +642,10 @@ describe('CoachingView', () => {
   });
 
   describe('tappa con debolezze raggruppate e anteprima nella mappa', () => {
-    const weak = (type: string): CoachProblem => ({ severity: 'minor', category: 'defense', text: `Debole a ${type}: 1 Debole – 0 Resistono`,
-      fixes: [], key: `defense:${type}`, subjects: [type], size: 1 });
+    const weak = (type: string): CoachProblem => ({ severity: 'minor', category: 'defense', text: `${type} retto poco: pochi membri reggono i suoi colpi`,
+      fixes: [], key: `defense:${type}`, subjects: [type], size: 1, counts: { held: 0 } });
     const problems: CoachProblem[] = [weak('Water'), weak('Ice'), weak('Ghost'),
-      { severity: 'minor', category: 'meta', text: 'Zapdos del meta senza un check', fixes: [], key: 'meta:Zapdos', subjects: ['Zapdos'] }];
+      { severity: 'minor', category: 'meta', text: 'Nessuno regge Zapdos del meta', fixes: [], key: 'meta:Zapdos', subjects: ['Zapdos'] }];
     const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], threatFixes: {}, problems };
     const setup = () => {
       const base = adviceOf(three, DEFAULT_FORMAT, data).fixes[0];
@@ -640,18 +658,17 @@ describe('CoachingView', () => {
     };
     const previewed = () => [...document.querySelectorAll<HTMLElement>('li.coach-prob.is-solved-preview')].map(li => li.dataset.key);
 
-    it('titolo: "Debole a" coi tipi raggruppati, senza conteggi; i raggruppati non sono in "risolve anche"', () => {
+    it('titolo: "Difesa debole contro" coi tipi raggruppati, senza conteggi; i raggruppati non sono in "risolve anche"', () => {
       setup();
       const [first, second] = within(stepsRegion()).getAllByRole('listitem');
       const title = first.querySelector('.coach-step-problem')!;
-      expect(title).toHaveTextContent('Debole a Water, Ice');
-      expect(title).not.toHaveTextContent('Deboli');
-      expect(title).not.toHaveTextContent('Resistono');
+      expect(title).toHaveTextContent('Difesa debole contro Water, Ice');
+      expect(title).not.toHaveTextContent('regg');
       expect(title.querySelectorAll('.type-icons img')).toHaveLength(2);
       const also = first.querySelector('.coach-also')!;
       expect(also.querySelectorAll('.type-icons img')).toHaveLength(0);
       expect(also).toHaveTextContent('Check per Zapdos');
-      expect(second.querySelector('.coach-step-problem')).toHaveTextContent('Debole a Ghost');
+      expect(second.querySelector('.coach-step-problem')).toHaveTextContent('Difesa debole contro Ghost');
       expect(second.querySelector('.coach-also')).toBeNull();
     });
 

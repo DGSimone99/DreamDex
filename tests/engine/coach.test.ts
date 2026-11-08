@@ -2,13 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { analyzeTeam } from '../../src/engine/analysis';
-import { coachTeam, COVERED_LEVEL, describeDiff, MIN_COVERAGE_WEIGHT, rankedChanges, verdictFor } from '../../src/engine/coach';
+import { coachTeam, COVERED_LEVEL, HELD_LEVEL, describeDiff, MIN_COVERAGE_WEIGHT, rankedChanges, verdictFor } from '../../src/engine/coach';
 import { teamOffense } from '../../src/engine/offense';
 import { superEffectiveMoves, type TypeName } from '../../src/engine/types';
 import { topReason } from '../../src/engine/explain';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
 import { emptySet, importShowdown, mostCommonSet, type TeamSet } from '../../src/engine/sets';
-import { rateTeam } from '../../src/engine/rating';
+import { rateTeam, ratingThreats } from '../../src/engine/rating';
 import { fixtureData, fixtureStats, gholdengo, tusk } from '../fixtures/data';
 import { megaData } from '../fixtures/megaData';
 import { adviceOf } from '../helpers/coach';
@@ -20,35 +20,56 @@ describe('coachTeam', () => {
 
   it('verdetto con conteggi', () => {
     expect(coaching.verdict).toBe('Team incompleto');
-    // Gravi solo i tipi che nessuno manda KO in due colpi e che pesano: Great Tusk e Gholdengo arrivano al 50% su tutti
-    expect(coaching.problems.filter(p => p.severity === 'serious').map(p => p.key)).toEqual([]);
-    // Pivot e Rimozione Strumenti sono voci minori: nessun problema "Ruoli importanti mancanti"
-    expect(coaching.problems.filter(p => p.category !== 'meta')).toHaveLength(11);
+    // Gravi solo i tipi che nessuno regge sul lato peggiore (weak della Coverage tipi della Difesa)
+    const { weak } = rateTeam([tusk, gholdengo], fixtureData, 'it')!.defense.coverageTypes;
+    expect(weak).toEqual(['Fire', 'Water', 'Ground', 'Ghost']);
+    expect(coaching.problems.filter(p => p.severity === 'serious').map(p => p.key)).toEqual(weak.map(type => `defense:${type}`));
+    // 4 gravi e 6 minori in difesa, una riga di ruoli, 6 tipi coperti poco; Pivot e Rimozione Strumenti sono voci minori:
+    // nessun problema "Ruoli importanti mancanti"
+    expect(coaching.problems.filter(p => p.category !== 'meta')).toHaveLength(17);
   });
 
   it('punti di forza', () => {
+    // Nessun tipo retto da due membri e solo 11 tipi coperti in attacco (sotto 15): resta la riga dei ruoli
     expect(coaching.strengths).toEqual([
-      'Gestisce bene Poison, Bug, Rock',
       // Solo le voci essenziali dell'archetipo (balance: i gruppi degli attaccanti, i muri, Recupero e Hazard); la rimozione è importante
       'Ruoli coperti: Sweeper, Wallbreaker, Attaccante fisico, Muro Fisico, Recupero',
-      'Colpisce super efficace 15/18 tipi',
     ]);
+  });
+
+  it('punti di forza: "regge bene" i tipi retti da almeno due membri nella Coverage tipi della Difesa', () => {
+    const team = ['Great Tusk', 'Garchomp', 'Dragapult'].map(n => mostCommonSet(fixtureStats, n)!);
+    const rows = rateTeam(team, fixtureData, 'it')!.defense.coverageTypes.rows;
+    const solid = rows.filter(r => r.heldBy.length >= 2).map(r => r.type);
+    expect(solid).toEqual(['Electric', 'Rock']);
+    expect(coachTeam(team, DEFAULT_FORMAT, fixtureData).strengths[0]).toBe('Regge bene Electric, Rock');
+  });
+
+  it("punti di forza: \"copre n/18\" conta i tipi del pacchetto dell'Offesa dal livello 50, da 15 in su", () => {
+    const team = ['Great Tusk', 'Garchomp', 'Dragapult'].map(n => mostCommonSet(fixtureStats, n)!);
+    for (const members of [[tusk, gholdengo], team]) {
+      const covered = rateTeam(members, fixtureData, 'it')!.offense.types.rows.filter(r => r.level >= COVERED_LEVEL).length;
+      const line = coachTeam(members, DEFAULT_FORMAT, fixtureData).strengths.find(x => x.startsWith('Copre '));
+      expect(line).toBe(covered >= 15 ? `Copre ${covered}/18 tipi in attacco` : undefined);
+    }
   });
 
   it('i check contro i Pokémon più usati non sono tra i problemi, ma hanno i loro rimedi', () => {
     expect(coaching.problems.filter(p => p.category !== 'meta').some(p => p.text.includes('check') || p.text.includes('Minacce'))).toBe(false);
-    expect(coaching.threatFixes.Dragapult).toContain('Kingambit');
-    expect(coaching.threatFixes.Corviknight).toContain('Rotom-Wash');
+    // I rimedi solo per le minacce che nessuno regge del tutto nella Coverage meta della Difesa
+    const open = ratingThreats(rateTeam([tusk, gholdengo], fixtureData, 'it'), fixtureData).filter(t => !t.handledBy.length).map(t => t.name);
+    expect(open).toEqual(['Great Tusk', 'Gholdengo']);
+    expect(Object.keys(coaching.threatFixes)).toEqual(open);
+    // Kingambit e Dragapult li regge Great Tusk: niente rimedi
     expect(coaching.threatFixes.Kingambit).toBeUndefined();
+    expect(coaching.threatFixes.Dragapult).toBeUndefined();
   });
 
   it('problemi minori: debolezze, ruoli, coverage', () => {
     const minor = coaching.problems.filter(p => p.severity === 'minor' && p.category !== 'meta').map(p => p.text);
     expect(minor).toEqual([
-      'Debole a Fire: 1 Debole, 0 Resistono',
-      'Debole a Water: 1 Debole, 0 Resistono',
-      'Debole a Ground: 1 Debole, 0 Resistono',
-      'Debole a Ghost: 1 Debole, 0 Resistono',
+      // In difesa: i tipi sotto il livello 50 della Coverage tipi che qualcuno regge almeno in parte
+      ...['Ice', 'Psychic', 'Dragon', 'Dark', 'Steel', 'Fairy'].map(type => `${type} retto poco: pochi membri reggono i suoi colpi`),
       // Le voci essenziali mancanti (nel Balance gli Hazard sono essenziali); Pivot e Rimozione Strumenti sono minori,
       // quindi non c'è la riga delle importanti
       'Ruoli mancanti: Muro Speciale, Hazard',
@@ -56,14 +77,27 @@ describe('coachTeam', () => {
       // Great Tusk con la Booster Energy (Attacco ×1,3) copre Flying e Psychic
       ...['Water', 'Grass', 'Fighting', 'Ground', 'Bug', 'Dragon'].map(type => `Coperto poco ${type}: nessuno lo manda KO in un colpo e pochi lo colpiscono forte`),
     ]);
-    const fire = coaching.problems.find(p => p.text.startsWith('Debole a Fire'))!;
+    const rows = rateTeam([tusk, gholdengo], fixtureData, 'it')!.defense.coverageTypes.rows;
+    const minorTypes = coaching.problems.filter(p => p.category === 'defense' && p.severity === 'minor').map(p => p.subjects![0]);
+    expect(minorTypes.every(type => rows.find(r => r.type === type)!.level < HELD_LEVEL)).toBe(true);
+    const fire = coaching.problems.find(p => p.key === 'defense:Fire')!;
+    expect(fire).toMatchObject({ severity: 'serious', text: 'Nessuno regge Fire' });
     expect([...fire.fixes].sort()).toEqual(['Rotom-Wash', 'Toxapex']);
   });
 
-  it('debolezza seria: 3 membri deboli a Ice', () => {
+  it('difesa grave: 3 membri deboli a Ice, nessuno lo regge', () => {
     const team = ['Great Tusk', 'Garchomp', 'Dragapult'].map(n => mostCommonSet(fixtureStats, n)!);
-    const ice = coachTeam(team, DEFAULT_FORMAT, fixtureData).problems.find(p => p.text.startsWith('Debole a Ice'));
-    expect(ice).toMatchObject({ severity: 'serious', text: 'Debole a Ice: 3 Deboli, 0 Resistono' });
+    expect(rateTeam(team, fixtureData, 'it')!.defense.coverageTypes.weak).toContain('Ice');
+    const ice = coachTeam(team, DEFAULT_FORMAT, fixtureData).problems.find(p => p.key === 'defense:Ice');
+    expect(ice).toMatchObject({ severity: 'serious', text: 'Nessuno regge Ice', counts: { held: 0 } });
+  });
+
+  it('difesa: un tipo retto dal livello 50 in su non è un problema', () => {
+    const team = ['Great Tusk', 'Garchomp', 'Dragapult'].map(n => mostCommonSet(fixtureStats, n)!);
+    const rows = rateTeam(team, fixtureData, 'it')!.defense.coverageTypes.rows;
+    const keys = coachTeam(team, DEFAULT_FORMAT, fixtureData).problems.filter(p => p.category === 'defense').map(p => p.key);
+    for (const row of rows.filter(r => r.level >= HELD_LEVEL)) expect(keys).not.toContain(`defense:${row.type}`);
+    expect(keys).not.toContain('defense:Electric');
   });
 
   it('i preferiti non ricevono mai suggerimenti di sostituzione', () => {
@@ -163,22 +197,25 @@ describe('chiavi dei problemi e minacce del meta', () => {
     expect(weak.map(p => p.key)).toContain('defense:Fighting');
   });
 
-  it('le debolezze portano i conteggi (deboli, resistono) della riga di analisi; gli altri problemi no', () => {
+  it('i problemi di difesa portano quanti reggono il tipo (Coverage tipi della Difesa); gli altri problemi no', () => {
     const { problems } = coachTeam(team, DEFAULT_FORMAT, fixtureData);
-    const rows = analyzeTeam(team, fixtureData).weakness;
+    const rows = rateTeam(team, fixtureData, 'it')!.defense.coverageTypes.rows;
     const defense = problems.filter(p => p.category === 'defense');
     expect(defense.length).toBeGreaterThan(0);
     for (const p of defense) {
       const row = rows.find(r => `defense:${r.type}` === p.key)!;
-      expect(p.counts).toEqual({ weak: row.weak, resist: row.resist });
+      expect(p.counts).toEqual({ held: row.heldBy.length });
     }
     expect(problems.filter(p => p.category !== 'defense').every(p => p.counts === undefined)).toBe(true);
   });
 
-  it('col meta, una minaccia senza check è un problema minore', () => {
+  it('col meta, una minaccia che nessuno regge (Coverage meta della Difesa) è un problema minore', () => {
     const coaching = coachTeam(team, DEFAULT_FORMAT, fixtureData);
-    const open = analyzeTeam(team, fixtureData).threats.filter(t => !t.handledBy.length);
+    const threats = ratingThreats(rateTeam(team, fixtureData, 'it'), fixtureData);
+    const open = threats.filter(t => !t.handledBy.length);
     expect(open.length).toBeGreaterThan(0);
+    // Chi qualcuno regge del tutto non è un problema
+    for (const threat of threats.filter(t => t.handledBy.length)) expect(coaching.problems.some(p => p.key === `meta:${threat.name}`)).toBe(false);
     for (const threat of open) {
       const problem = coaching.problems.find(p => p.key === `meta:${threat.name}`)!;
       expect(problem).toMatchObject({ category: 'meta', severity: 'minor' });

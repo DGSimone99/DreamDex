@@ -5,7 +5,7 @@ import { App } from '../../src/App';
 import { analyzeTeam, UNIFORM_TYPE_WEIGHTS } from '../../src/engine/analysis';
 import { coachTeam } from '../../src/engine/coach';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
-import { rateTeam } from '../../src/engine/rating';
+import { rateTeam, ratingThreats } from '../../src/engine/rating';
 import { emptySet, mostCommonSet } from '../../src/engine/sets';
 import { encodeShare } from '../../src/share';
 import { loadSession, sanitizeFormat } from '../../src/storage';
@@ -35,7 +35,9 @@ describe('voto col meta e senza', () => {
 
   it('senza meta: niente area Meta, tipi tutti uguali, nessuna minaccia', () => {
     const rating = rateTeam([tusk, gholdengo], noMeta)!;
-    expect(rating.meta).toBeNull();
+    expect(rating.meta).toBe(false);
+    expect(rateTeam([tusk, gholdengo], fixtureData)!.meta).toBe(true);
+    expect(ratingThreats(rating, noMeta)).toEqual([]);
     expect(rating.areas.map(a => a.key)).toEqual(['defense', 'strength', 'speed']);
     const analysis = analyzeTeam([tusk, gholdengo], noMeta);
     expect(analysis.typeWeights).toEqual(UNIFORM_TYPE_WEIGHTS);
@@ -43,7 +45,7 @@ describe('voto col meta e senza', () => {
   });
 
   it('senza statistiche il voto è sempre senza meta', () => {
-    expect(rateTeam([tusk, gholdengo], { stats: null, sets: null })!.meta).toBeNull();
+    expect(rateTeam([tusk, gholdengo], { stats: null, sets: null })!.meta).toBe(false);
   });
 
   it('il coach non parla di minacce senza meta', () => {

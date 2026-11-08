@@ -73,7 +73,8 @@ export function GradeBadge({ rating, ruleIssues = [], onOpen }: { rating: TeamRa
             );
           })}
           {/* Ruoli: una lista, non un'area col peso; senza barra, coperti/totale e quanti mancano fra quelli che tolgono punti
-              (essenziali e importanti): un minore scoperto non è un difetto, quindi non si conta in rosso */}
+              (essenziali e importanti): un minore scoperto non è un difetto, quindi non si conta in rosso; con meno di 6 membri
+              le mancanze non tolgono punti: si contano senza rosso */}
           {rating.roles.total > 0 && (() => {
             const { covered, total } = rating.roles;
             const missing = rating.roles.rows.filter(r => r.level !== 'minor' && r.value < MISSING_BELOW).length;
@@ -83,7 +84,7 @@ export function GradeBadge({ rating, ruleIssues = [], onOpen }: { rating: TeamRa
                 aria-label={t('rating.openArea', { area: t('area.roles'), value: state ? `${covered}/${total}, ${state}` : `${covered}/${total}` })}
                 onClick={() => onOpen?.('roles')}>
                 <span>{t('area.roles')}</span>
-                <span className="grade-roles-val"><b>{covered}/{total}</b>{state && <> · <em className={missing ? 'bad' : 'good'}>{state}</em></>}</span>
+                <span className="grade-roles-val"><b>{covered}/{total}</b>{state && <> · <em className={missing ? (rating.provisional ? 'soft' : 'bad') : 'good'}>{state}</em></>}</span>
                 <Icon name="next" />
               </button>
             );
