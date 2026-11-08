@@ -41,7 +41,7 @@ const fastOrSpeedSetup = (set: TeamSet) => isFast(set)
 
 /**
  * Soglie della regola di National Dex OU (typeRule 'recoverySpeed'), sul punteggio
- * membri con una mossa di recupero (o Poison Heal con Toxic Orb) − velocità base media / 15 − Focus Sash: sotto la prima Hyper Offense, poi Bulky Offense,
+ * membri con una mossa di recupero (o Poison Heal con Toxic Orb) − velocità base media / 15 − Focus Sash degli attaccanti: sotto la prima Hyper Offense, poi Bulky Offense,
  * Balance e Semi-stall. Tarate il 2026-11-05 sui 102 team di National Dex OU del banco di cui l'autore ha scritto il tipo:
  * 83% di giusti (80% su team lasciati fuori dalla taratura), contro il 74% della regola dei muri. Il recupero spinge verso
  * la difesa; la velocità e la Focus Sash verso l'attacco. La robustezza media delle statistiche separava peggio di tutte:
@@ -61,22 +61,74 @@ function attacks(set: TeamSet, rules: FormatRules): boolean {
 /** Velocità base che vale un recupero nel punteggio. */
 const RECOVERY_SPEED_SCALE = 15;
 
-/** National Dex OU: il tipo dal recupero, dalla velocità base media e dalle Focus Sash; lo stall resta tutti e 6 passivi. */
-function recoverySpeedArchetype(team: TeamSet[], rules: FormatRules): Archetype {
-  if (isStall(team, rules)) return 'stall';
+/**
+ * I due punteggi della regola di National Dex OU: `score` (tutto il recupero) separa HO, BO e il resto; `wallScore` (solo
+ * il recupero di chi non attacca) separa Balance e Semi-stall.
+ * La Focus Sash conta solo su chi attacca (2026-11-07): su Chansey, Toxapex o Skarmory non dice che il team attacca, e
+ * spostava il tipo (una Sash su un muro di un Semi-stall da torneo: 74 → 59). Sul banco gli stessi tipi giusti (138 su 183).
+ */
+function recoverySpeedScores(team: TeamSet[], rules: FormatRules): { score: number; wallScore: number } {
   // Recupero: una mossa, o Poison Heal col veleno di Toxic Orb (Gliscor si cura ogni turno come con una mossa)
   const healing = team.filter(set => set.moves.some(m => HEAL_MOVES.has(toID(m))) || poisonHealer(set));
-  const recovery = healing.length;
   const speed = team.reduce((acc, set) => acc + (battleSpecies(set)?.baseStats.spe ?? 0), 0) / team.length;
-  const sashes = team.filter(set => toID(set.item) === 'focussash').length;
+  const sashes = team.filter(set => toID(set.item) === 'focussash' && attacks(set, rules)).length;
   const speedPart = speed / RECOVERY_SPEED_SCALE + sashes;
-  const score = recovery - speedPart;
+  return { score: healing.length - speedPart, wallScore: healing.filter(set => !attacks(set, rules)).length - speedPart };
+}
+
+function pickRecoverySpeed({ score, wallScore }: { score: number; wallScore: number }): Archetype {
   if (score < RECOVERY_SPEED_CUTS.hyperOffense) return 'hyperOffense';
   if (score < RECOVERY_SPEED_CUTS.bulkyOffense) return 'bulkyOffense';
   // Fra Balance e Semi-stall: solo il recupero di chi non attacca
-  const wallRecovery = healing.filter(set => !attacks(set, rules)).length;
-  if (wallRecovery - speedPart < RECOVERY_SPEED_CUTS.balance) return 'balance';
+  if (wallScore < RECOVERY_SPEED_CUTS.balance) return 'balance';
   return 'semiStall';
+}
+
+/** National Dex OU: il tipo dal recupero, dalla velocità base media e dalle Focus Sash; lo stall resta tutti e 6 passivi. */
+function recoverySpeedArchetype(team: TeamSet[], rules: FormatRules): Archetype {
+  if (isStall(team, rules)) return 'stall';
+  return pickRecoverySpeed(recoverySpeedScores(team, rules));
+}
+
+/**
+ * Mezza larghezza della zona di passaggio fra due tipi vicini, in unità del punteggio (1 = una mossa di recupero).
+ * Provate il 2026-11-07 sui 541 team National Dex OU del banco: 0,5 / 1 / 1,5 tolgono un quarto, metà e due terzi dei
+ * salti di 4 o più punti quando cambia il tipo (587 → 452 / 301 / 211); partite vere 54,6% uguale, distacco torneo −
+ * ladder uguale. Anche i pesi delle aree a passi uguali sono stati provati: 587 → 494 da soli, e il Magikarp come
+ * sesto alzava il voto più spesso; scartati.
+ */
+export const TYPE_BLEND_ZONE = 1.5;
+
+/** Il tipo vicino e la sua quota nel voto (da 0 a 0,5: metà proprio sulla soglia). */
+export interface TypeMix { archetype: Archetype; near: Archetype; share: number }
+
+/**
+ * Vicino a una soglia della regola di National Dex OU il team è anche un po' del tipo accanto: una Sash o una mossa di
+ * recupero in più non fanno più saltare il voto di colpo. Lo Stall (6 passivi) resta un tipo a parte: una quota di Stall
+ * con 5 passivi faceva salire il voto aggiungendo un sesto membro inutile (Magikarp con Splash è passivo).
+ */
+export function typeMix(team: TeamSet[], rules: FormatRules): TypeMix | null {
+  if (rules.typeRule !== 'recoverySpeed' || team.length < 6 || team.some(set => !battleSpecies(set))) return null;
+  if (isStall(team, rules)) return null;
+  const scores = recoverySpeedScores(team, rules);
+  const { score, wallScore } = scores;
+  const archetype = pickRecoverySpeed(scores);
+  const C = RECOVERY_SPEED_CUTS;
+  // Le soglie vicine: tipo dall'altra parte e distanza
+  const sides: { near: Archetype; distance: number }[] =
+    archetype === 'hyperOffense' ? [{ near: 'bulkyOffense', distance: C.hyperOffense - score }]
+      : archetype === 'bulkyOffense' ? [
+        { near: 'hyperOffense', distance: score - C.hyperOffense },
+        { near: pickRecoverySpeed({ score: C.bulkyOffense, wallScore }), distance: C.bulkyOffense - score },
+      ]
+        : [
+          { near: archetype === 'balance' ? 'semiStall' : 'balance', distance: Math.abs(wallScore - C.balance) },
+          { near: 'bulkyOffense', distance: score - C.bulkyOffense },
+        ];
+  const closest = sides.filter(side => side.near !== archetype).sort((a, b) => a.distance - b.distance)[0];
+  if (!closest) return null;
+  const share = 0.5 * (1 - closest.distance / TYPE_BLEND_ZONE);
+  return share > 0 ? { archetype, near: closest.near, share } : null;
 }
 
 /** Archetipo dal numero di muri passivi (e dal recupero e dalla robustezza per distinguere i team offensivi). */

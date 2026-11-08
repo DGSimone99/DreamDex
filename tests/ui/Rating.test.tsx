@@ -219,10 +219,10 @@ describe('Catalogo Bonus/Malus', () => {
     expect(within(dialog).getAllByRole('tab').map(tab => tab.textContent)).toEqual(['Malus −8', 'Bonus +2']);
   });
 
-  it('Malus: i 13 malus con nome, quando e punti; gli attivi evidenziati col punteggio attuale', async () => {
+  it('Malus: i 14 malus con nome, quando e punti; gli attivi evidenziati col punteggio attuale', async () => {
     const { dialog } = await openCatalog();
     const rows = within(within(dialog).getByRole('tabpanel')).getAllByRole('row').slice(1);
-    expect(rows).toHaveLength(13);
+    expect(rows).toHaveLength(14);
     const hazard = rows.find(r => within(r).queryByText('Hazard ripetuto'))!;
     expect(hazard).toHaveClass('active');
     expect(hazard).toHaveAttribute('aria-current', 'true');
@@ -245,11 +245,11 @@ describe('Catalogo Bonus/Malus', () => {
     expect(within(screen.getByRole('region', { name: 'Bonus/Malus' })).getByRole('tab', { name: /^Malus/ })).toHaveTextContent('−18');
   });
 
-  it('Bonus: le 6 voci, la sola attiva evidenziata; niente Tera', async () => {
+  it('Bonus: le 7 voci, la sola attiva evidenziata; niente Tera', async () => {
     const { user, dialog } = await openCatalog();
     await user.click(within(dialog).getByRole('tab', { name: /^Bonus/ }));
     const rows = within(within(dialog).getByRole('tabpanel')).getAllByRole('row').slice(1);
-    expect(rows).toHaveLength(6);
+    expect(rows).toHaveLength(7);
     const weather = rows.find(r => within(r).queryByText('Meteo che protegge'))!;
     expect(weather).toHaveClass('active');
     expect(weather).toHaveTextContent('+2');

@@ -58,7 +58,7 @@ function sample(overrides: Partial<DashboardData> = {}): DashboardData {
 /** Il Riassunto costruito: Hyper Offense, due attaccanti, un muro, nessun meteo, Stealth Rock. */
 function summaryOf(overrides: Partial<TeamSummary> = {}): TeamSummary {
   return {
-    archetype: 'hyperOffense', typeRule: 'recoverySpeed', styles: [],
+    archetype: 'hyperOffense', nearType: null, typeRule: 'recoverySpeed', styles: [],
     attackers: ['Garchomp', 'Zapdos'], walls: ['Toxapex'],
     offenseOf: { Garchomp: 92, Zapdos: 86 },
     defenseOf: { Toxapex: 88 },
@@ -344,11 +344,17 @@ describe('Riassunto', () => {
     expect(arch).toHaveTextContent('Hyper Offense');
     expect(arch).toHaveAttribute('title', 'Tutto attacco, pochi o nessun muro');
     expect(region().querySelector('.sum-style')).toHaveTextContent('Pioggia');
+    // Lontano dai confini niente "quasi…"
+    expect(region().querySelector('.sum-near')).toBeNull();
+    cleanup();
+    mount({ summary: summaryOf({ nearType: 'bulkyOffense' }) });
+    expect(region().querySelector('.sum-near')).toHaveTextContent('quasi Bulky Offense');
+    expect(region().querySelector('.sum-near')).toHaveAttribute('title', 'Il team sta vicino al confine col tipo accanto: una parte del voto viene da quel tipo');
     await user.click(within(region()).getByRole('button', { name: 'Tipi di team: come si riconoscono' }));
     const dialog = screen.getByRole('dialog', { name: 'Tipi di team' });
     // National Dex OU: come si riconosce il tipo (recupero, velocità, Focus Sash)
     expect(within(dialog).getByRole('heading', { name: 'Come si riconosce in National Dex OU' })).toBeInTheDocument();
-    expect(dialog).toHaveTextContent('Ogni Focus Sash spinge verso Hyper Offense');
+    expect(dialog).toHaveTextContent('Ogni Focus Sash su un attaccante spinge verso Hyper Offense (su un muro non conta)');
     await user.keyboard('{Escape}');
     cleanup();
     // Gli altri formati riconoscono il tipo dai muri: la sezione non c'è
