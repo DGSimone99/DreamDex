@@ -22,7 +22,7 @@ import { gameName, typeName } from '../i18n/game';
 import { effectiveness, superEffectiveMoves, teamField, TYPES } from './types';
 import { benefits, conditionConflicts, conditionLabel, enables, viaName, unmetBeneficiaries, unusedEnablers, weakenedMoves, weatherMitigations, type Condition } from './synergy';
 import { teamCores } from './cores';
-import { overEvMembers, voteTeam } from './legalTeam';
+import { blockedReason, voteTeam } from './legalTeam';
 
 export type AreaKey = 'coverage' | 'defense' | 'strength' | 'bulk' | 'roles' | 'speed' | 'meta';
 /** Le aree del voto senza meta. */
@@ -445,8 +445,8 @@ export interface RateOptions {
  * malus e bonus tornano col voto. Con `opts.archetype` (tipo scelto a mano) niente miscela.
  */
 export function rateTeam(given: TeamSet[], data: EngineData, lang: Lang = 'it', opts: RateOptions = {}): TeamRating | null {
-  // Con EV oltre il massimo niente voto (l'app lo dice); il resto si giudica come in partita (legalTeam.ts)
-  if (overEvMembers(given).length) return null;
+  // Con EV oltre il massimo o una specie doppia niente voto (l'app lo dice); il resto si giudica come in partita (legalTeam.ts)
+  if (blockedReason(given, data.formatId)) return null;
   const input = voteTeam(given, data.allowMultipleMegas);
   const own = rateTeamAs(input, data, lang, opts);
   if (!own || opts.archetype) return own;

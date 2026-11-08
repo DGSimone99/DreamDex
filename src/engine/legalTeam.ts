@@ -1,6 +1,7 @@
 import type { Species } from '@pkmn/dex';
 import { battleSpecies, getSpecies, isMega, toID } from './dex';
 import { EV_TOTAL, evTotal } from './statCalc';
+import type { FormatId } from './format';
 import type { TeamSet } from './sets';
 
 /** Lo strumento che manca a una forma che esiste solo con quello (Zacian-Crowned senza Rusted Sword), o null. */
@@ -23,6 +24,34 @@ function asForme(set: TeamSet, forme: Species): TeamSet {
 
 /** I membri con più EV del massimo (510): il voto non si dà finché non si sistemano. */
 export const overEvMembers = (team: TeamSet[]): TeamSet[] => team.filter(set => evTotal(set.evs ?? {}) > EV_TOTAL);
+
+/** Formati senza Species Clause: Anything Goes e "Tutti i Pokémon (senza limiti)". */
+const NO_SPECIES_CLAUSE = new Set<FormatId>(['gen9ag', 'all']);
+
+/**
+ * Species Clause (2026-11-08): come su Showdown, due membri con lo stesso numero di Pokédex non si possono avere (due
+ * Clodsire, ma anche Rotom-Wash e Rotom-Heat, Arceus-Fire e Arceus-Water; la Mega è la stessa specie della base).
+ * Gli indici dei membri che ripetono una specie già vista prima nel team; il voto non si dà finché non si sistemano.
+ */
+export function duplicateSpecies(team: TeamSet[], formatId: FormatId | undefined): number[] {
+  if (formatId && NO_SPECIES_CLAUSE.has(formatId)) return [];
+  const seen = new Set<number>();
+  const repeated: number[] = [];
+  team.slice(0, 6).forEach((set, i) => {
+    const num = getSpecies(set.species)?.num;
+    if (!num) return;
+    if (seen.has(num)) repeated.push(i);
+    else seen.add(num);
+  });
+  return repeated;
+}
+
+/** Perché il voto non si dà: EV oltre 510 o una specie doppia; null se si dà. */
+export function blockedReason(team: TeamSet[], formatId: FormatId | undefined): 'ev' | 'species' | null {
+  if (overEvMembers(team).length) return 'ev';
+  if (duplicateSpecies(team, formatId).length) return 'species';
+  return null;
+}
 
 /**
  * Il team come combatterebbe davvero, per il voto: al massimo 6 membri; una forma senza il suo strumento torna la forma

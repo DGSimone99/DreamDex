@@ -23,7 +23,7 @@ import type { ScoredArea } from './teamGain';
 import { teamOffense } from './offense';
 import { defensiveMultiplier, superEffectiveMove, type TypeName } from './types';
 import { withUsableMoves } from './lockedMoves';
-import { missingFormeItem } from './legalTeam';
+import { duplicateSpecies, missingFormeItem } from './legalTeam';
 import { EV_TOTAL, evTotal } from './statCalc';
 
 export const SIMILAR_THRESHOLD = 0.6;
@@ -137,7 +137,8 @@ export function findProblems(team: TeamSet[], format: Format, data: EngineData, 
     add('defense', isSerious, text, fixes, `defense:${row.type}`, 100 - row.level, [row.type], { held: row.heldBy.length });
   }
 
-  for (const set of team) {
+  const repeated = duplicateSpecies(team, format.formatId);
+  for (const [index, set] of team.entries()) {
     const species = getSpecies(set.species);
     if (!species) continue;
     const forme = battleSpecies(set) ?? species;
@@ -145,6 +146,7 @@ export function findProblems(team: TeamSet[], format: Format, data: EngineData, 
     const rule = (text: string) => add('rules', true, text, [], undefined, undefined, [battleName(set)]);
     // Cose che il voto non accetta così: EV oltre il massimo (voto bloccato), forma senza il suo strumento (contata base)
     if (evTotal(set.evs) > EV_TOTAL) rule(t(lang, 'coach.problem.evOver', { name: battleName(set), n: evTotal(set.evs) }));
+    if (repeated.includes(index)) rule(t(lang, 'coach.problem.duplicateSpecies', { name: battleName(set) }));
     const missing = missingFormeItem(set);
     if (missing) rule(t(lang, 'coach.problem.formeItem', { name: missing.forme.name, item: gameName('item', missing.item, lang), base: missing.base.name }));
     if (!isSelectable(species) || !isLegalIn(forme, format)) rule(t(lang, 'coach.problem.illegal', { species: battleName(set), format: formatLabel(format, lang) }));

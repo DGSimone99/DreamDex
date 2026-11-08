@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { battleName } from '../../src/engine/dex';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
 import { coachTeam } from '../../src/engine/coach';
-import { missingFormeItem, overEvMembers, voteTeam } from '../../src/engine/legalTeam';
+import { duplicateSpecies, missingFormeItem, overEvMembers, voteTeam } from '../../src/engine/legalTeam';
 import { rateTeam } from '../../src/engine/rating';
 import { emptySet, mostCommonSet, type TeamSet } from '../../src/engine/sets';
 import { megaData } from '../fixtures/megaData';
@@ -45,12 +45,26 @@ describe('il team come in partita, per il voto', () => {
 
   it('EV oltre 510: niente voto, e il coach lo dice', () => {
     const tusk = mostCommonSet(megaData.stats, 'Great Tusk')!;
-    const chomp = { ...tusk, evs: { hp: 252, atk: 252, spe: 252 } };
+    const chomp = { ...mostCommonSet(megaData.stats, 'Charizard-Mega-Y')!, evs: { hp: 252, atk: 252, spe: 252 } };
     expect(overEvMembers([tusk, chomp])).toEqual([chomp]);
     expect(rateTeam([tusk, chomp], megaData)).toBeNull();
     expect(rateTeam([tusk, { ...chomp, evs: { atk: 252, spe: 252, hp: 4 } }], megaData)).not.toBeNull();
     const texts = coachTeam([tusk, chomp], DEFAULT_FORMAT, megaData).problems.map(p => p.text);
-    expect(texts).toContain('Great Tusk: 756 EV, più del massimo di 510. Il voto è bloccato finché non li sistemi');
+    expect(texts).toContain('Charizard-Mega-Y: 756 EV, più del massimo di 510. Il voto è bloccato finché non li sistemi');
+  });
+
+  it('specie doppia (Species Clause): niente voto, il coach lo dice; non in Anything Goes', () => {
+    const tusk = mostCommonSet(megaData.stats, 'Great Tusk')!;
+    const zard = mostCommonSet(megaData.stats, 'Charizard-Mega-Y')!;
+    expect(duplicateSpecies([tusk, zard, tusk], 'ou')).toEqual([2]);
+    // Forme diverse della stessa specie e la Mega con la base: stessa specie
+    expect(duplicateSpecies([set('Rotom-Wash', 'Leftovers'), set('Rotom-Heat', 'Leftovers')], 'ou')).toEqual([1]);
+    expect(duplicateSpecies([set('Charizard', ''), zard], 'ou')).toEqual([1]);
+    expect(duplicateSpecies([tusk, tusk], 'gen9ag')).toEqual([]);
+    expect(rateTeam([tusk, zard, tusk], megaData)).toBeNull();
+    expect(rateTeam([tusk, zard], megaData)).not.toBeNull();
+    const texts = coachTeam([tusk, zard, tusk], DEFAULT_FORMAT, megaData).problems.map(p => p.text);
+    expect(texts).toContain('Great Tusk: questa specie è già nel team (Species Clause). Il voto è bloccato finché non la cambi');
   });
 
   it('una seconda Mega non alza il voto oltre quello della forma base', () => {

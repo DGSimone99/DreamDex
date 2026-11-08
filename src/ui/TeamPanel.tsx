@@ -23,7 +23,7 @@ import { speedTier, type SpeedTier } from '../engine/speed';
 import { ItemIcon } from './ItemIcon';
 import { AlertMark, type Alert } from './AlertMark';
 import { lockedStatusMoves } from '../engine/lockedMoves';
-import { missingFormeItem } from '../engine/legalTeam';
+import { duplicateSpecies, missingFormeItem } from '../engine/legalTeam';
 import { EV_TOTAL, evTotal } from '../engine/statCalc';
 import { Sprite, TypeChip, typeColor } from './Sprite';
 import { gainText } from './CoachingView';
@@ -123,7 +123,7 @@ const IdleSetEditor = memo(
     && a.speed === b.speed && a.genLimit === b.genLimit && a.pokedex === b.pokedex && a.teraBannedIn === b.teraBannedIn,
 );
 
-function TeamSlot({ index, set, subRoles, proposal, onProposalDone, data, format, warning: megaWarning, open, dragging, dropTarget, onToggle, onStep, onMove, onDrag, onPaste, onBest, onIgnoreWarning, onChange, onRemove, onReplace }: {
+function TeamSlot({ index, set, subRoles, proposal, onProposalDone, data, format, warning: megaWarning, repeated = false, open, dragging, dropTarget, onToggle, onStep, onMove, onDrag, onPaste, onBest, onIgnoreWarning, onChange, onRemove, onReplace }: {
   index: number;
   /** Proposta di mossa per questo membro (si mostra solo con il suo editor aperto). */
   proposal?: MoveProposal | null;
@@ -147,6 +147,8 @@ function TeamSlot({ index, set, subRoles, proposal, onProposalDone, data, format
   onStep: (delta: number) => void;
   format: Format;
   warning: string | null;
+  /** La specie c'è già prima nel team (Species Clause): problema rosso, voto bloccato. */
+  repeated?: boolean;
   onIgnoreWarning: () => void;
   onChange: (set: TeamSet) => void;
   onRemove: () => void;
@@ -215,7 +217,7 @@ function TeamSlot({ index, set, subRoles, proposal, onProposalDone, data, format
     setPaste(null);
     stable.onPaste({ ...next, favorite: set.favorite });
   };
-  const problems = slotProblems(set, format, lang);
+  const problems = [...slotProblems(set, format, lang), ...(repeated ? [tr('team.duplicateSpecies')] : [])];
   // Ruolo principale e un supporto, affiancati con il nome breve (il completo nel tooltip); il meteo solo qui
   const rules = formatRules(format.formatId);
   const shownRoles = cardRoles(set, rules, subRoles);
@@ -518,6 +520,7 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
   // Chiave stabile per specie (e occorrenza): riordinando, le card non si ricreano
   const keys = team.map((set, i) => `${set.species}#${team.slice(0, i).filter(s => s.species === set.species).length}`);
   // Una forma senza il suo strumento non è Mega (legalTeam.ts)
+  const repeated = duplicateSpecies(team, format.formatId);
   const firstMega = team.findIndex(set => !missingFormeItem(set) && isMega(set));
   const warningFor = (set: TeamSet, i: number) =>
     !format.allowMultipleMegas && firstMega !== -1 && i > firstMega && !missingFormeItem(set) && isMega(set) ? t(lang, 'team.secondMega') : null;
@@ -578,6 +581,7 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
             data={data}
             format={format}
             warning={warningFor(set, i)}
+            repeated={repeated.includes(i)}
             open={openIndex === i}
             onToggle={open => animated(() => setOpenIndex(current => (open ? i : current === i ? null : current)))}
             onStep={delta => step(i, delta)}
