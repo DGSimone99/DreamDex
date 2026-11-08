@@ -85,13 +85,15 @@ function instantCharge(id: string, conditions: FieldCondition[], item: string): 
  */
 export type Target = TeamSet & {
   types?: string[]; baseStats?: Partial<Record<'hp' | 'atk' | 'def' | 'spa' | 'spd', number>>;
+  /** Il peso del manichino (il peso tipico del tipo): Low Kick, Grass Knot, Heavy Slam e Heat Crash dipendono da questo. */
+  weightkg?: number;
   /** Il difensore senza gli effetti del primo colpo (abilità neutra, niente Air Balloon): per la quota di `firstHitShare`. */
   noFirstHit?: boolean;
 };
 
 /** Chiave del set per il contenuto: le proposte creano set sempre nuovi, uguali a quelli già calcolati. */
 export const setKey = (set: Target): string =>
-  JSON.stringify([set.species, set.item, set.ability, set.moves, set.nature, set.evs, set.ivs ?? null, set.teraType ?? null, set.types ?? null, set.baseStats ?? null, !!set.noFirstHit]);
+  JSON.stringify([set.species, set.item, set.ability, set.moves, set.nature, set.evs, set.ivs ?? null, set.teraType ?? null, set.types ?? null, set.baseStats ?? null, set.weightkg ?? null, !!set.noFirstHit]);
 
 /** Cache limitate: oltre il limite si svuotano (i Pokémon e le mosse della libreria si riusano, il calcolo li copia). */
 const LIMIT = 20000;
@@ -195,7 +197,8 @@ function tryPokemon(name: string, set: Target, options: HitOptions): Pokemon | n
       boostedStat: 'auto',
       status: orbStatus(set) ?? undefined,
       teraType: options.tera && set.teraType ? set.teraType as Pokemon['teraType'] : undefined,
-      overrides: set.types || set.baseStats ? {
+      overrides: set.types || set.baseStats || set.weightkg ? {
+        ...(set.weightkg ? { weightkg: set.weightkg } : {}),
         ...(set.types ? { types: set.types as [Pokemon['types'][0]] } : {}),
         // Il manichino: le difese medie del tipo, il resto 100 (non conta per chi riceve il colpo)
         ...(set.baseStats ? { baseStats: { hp: 100, atk: 100, def: 100, spa: 100, spd: 100, spe: 100, ...set.baseStats } } : {}),
