@@ -31,9 +31,9 @@ describe('ridondanze', () => {
     expect(items(team)).toContainEqual(expect.objectContaining({ text: '3 setter di Stealth Rock', points: 2 }));
   });
 
-  it('più rimozioni hazard', () => {
+  it('più rimozioni hazard: nessun malus (2026-11-08)', () => {
     const team = [withMoves('Great Tusk', ['Rapid Spin']), withMoves('Corviknight', ['Defog'])];
-    expect(items(team)).toContainEqual(expect.objectContaining({ text: '2 rimozioni hazard', points: 1 }));
+    expect(items(team)).toEqual([]);
   });
 
   it('tre o più membri dello stesso tipo: −1 nel voto e nel coach', () => {

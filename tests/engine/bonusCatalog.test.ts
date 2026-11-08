@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { REMOVER_EXTRA_POINTS, TRICK_ROOM_FAST_POINTS, UNUSED_ENABLER_POINTS, WEATHER_CLASH_POINTS, bonusMalusCatalog, rateTeam } from '../../src/engine/rating';
+import { TRICK_ROOM_FAST_POINTS, UNUSED_ENABLER_POINTS, WEATHER_CLASH_POINTS, bonusMalusCatalog, rateTeam } from '../../src/engine/rating';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
 import { fixtureData } from '../fixtures/data';
 
@@ -26,7 +26,7 @@ describe('catalogo bonus e malus', () => {
 
   it('le chiavi attese compaiono sulle voci giuste', () => {
     const keys = (team: TeamSet[]) => rateTeam(team, fixtureData)!.penalty.items.map(i => i.catalog);
-    expect(keys(teams.hazard)).toEqual(expect.arrayContaining(['hazardDuplicate', 'removers']));
+    expect(keys(teams.hazard)).toEqual(expect.arrayContaining(['hazardDuplicate']));
     expect(keys(teams.meteo)).toEqual(expect.arrayContaining(['weatherClash']));
     expect(keys(teams.inutilizzato)).toContain('unusedEnabler');
     expect(keys([withMoves('Great Tusk', []), withMoves('Landorus-Therian', []), withMoves('Hippowdon', [])])).toContain('sharedWeak');
@@ -34,14 +34,15 @@ describe('catalogo bonus e malus', () => {
     expect(rateTeam(teams.bonus, fixtureData)!.bonus.items.map(i => i.catalog)).toEqual(['weatherHelp']);
   });
 
-  it('catalogo IT: 21 voci, 14 malus prima, niente Tera; "Vicino a un altro tipo" in tutte e due', () => {
+  it('catalogo IT: 20 voci, 13 malus prima, niente Tera; "Vicino a un altro tipo" in tutte e due', () => {
     const none = bonusMalusCatalog('it');
-    expect(none).toHaveLength(21);
-    expect(none.slice(0, 14).every(e => e.kind === 'malus')).toBe(true);
-    expect(none.slice(14).every(e => e.kind === 'bonus')).toBe(true);
+    expect(none).toHaveLength(20);
+    expect(none.slice(0, 13).every(e => e.kind === 'malus')).toBe(true);
+    expect(none.slice(13).every(e => e.kind === 'bonus')).toBe(true);
     expect(none.filter(e => e.key === 'typeBlend').map(e => e.kind)).toEqual(['malus', 'bonus']);
     expect(none.map(e => e.key)).toEqual(expect.arrayContaining(['sameType', 'coreTrio', 'weakCovered', 'typeVariety', 'conditionUsed', 'importantRole', 'minorRole']));
     expect(none.map(e => e.key as string)).not.toContain('tera');
+    expect(none.map(e => e.key as string)).not.toContain('removers');
   });
 
   it('il testo dei punti usa le costanti', () => {
@@ -52,7 +53,6 @@ describe('catalogo bonus e malus', () => {
     expect(weak).toContain('12');
     expect(c.find(e => e.key === 'sharedWeak')!.points).toContain('1');
     expect(c.find(e => e.key === 'unmetCondition')!.points).toContain('3');
-    expect(c.find(e => e.key === 'removers')!.points).toBe(`−${REMOVER_EXTRA_POINTS} per ogni rimozione in più`);
     expect(c.find(e => e.key === 'weatherClash')!.points).toBe(`−${WEATHER_CLASH_POINTS}`);
     expect(c.find(e => e.key === 'unusedEnabler')!.points).toBe(`−${UNUSED_ENABLER_POINTS}`);
     expect(c.find(e => e.key === 'trickRoomFast')!.points).toContain(`−${TRICK_ROOM_FAST_POINTS} per membro`);
