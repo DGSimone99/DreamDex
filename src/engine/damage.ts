@@ -281,7 +281,12 @@ function bestHitOn(attacker: TeamSet, defender: Target, options: HitOptions): Hi
       if (options.superEffectiveOnly && !superEffective(results[0].move.type, data.id, types)) continue;
       const all = results.map(r => rollSums(r.damage));
       if (all.some(x => !x)) continue;
-      const avg = all.reduce((acc, x) => acc + x!.avg, 0) / all.length;
+      // Triple Axel, Population Bomb…: ogni colpo tira la precisione e la mossa si ferma al primo che manca (salvo Loaded
+      // Dice o Skill Link, che la tirano una volta sola): il colpo k vale con probabilità precisione^k
+      const perHit = data.multiaccuracy && accuracy < 1 && !diceOrLink(attacker) ? hitAverages(results[0].damage) : null;
+      const avg = perHit
+        ? perHit.reduce((acc, x, k) => acc + x * accuracy ** k, 0)
+        : all.reduce((acc, x) => acc + x!.avg, 0) / all.length;
       const low = Math.min(...all.map(x => x!.low));
       const high = Math.max(...all.map(x => x!.high));
       // Mosse a due turni (Solar Blade, Meteor Beam…): un colpo ogni due turni, salvo sole/pioggia giusti o Power Herb
@@ -312,6 +317,16 @@ export const SELF_KO_SHARE = 0.25;
 const FIRST_TURN = new Set(['fakeout', 'firstimpression']);
 /** Mosse prioritarie che falliscono se l'avversario non attacca (setup, mosse di stato): tre quarti. */
 const IF_ATTACKED = new Set(['suckerpunch', 'thunderclap']);
+
+/** Loaded Dice o Skill Link: le mosse che tirano la precisione a ogni colpo la tirano una volta sola. */
+const diceOrLink = (set: TeamSet) => toID(set.item) === 'loadeddice' || toID(battleAbility(set)) === 'skilllink';
+
+/** Il danno medio di ogni colpo di una multicolpo, in ordine. */
+function hitAverages(result: unknown): number[] {
+  const damage = result as number | number[] | number[][];
+  const hits = (Array.isArray(damage) ? (Array.isArray(damage[0]) ? damage : [damage]) : [[damage]]) as number[][];
+  return hits.map(rolls => rolls.reduce((a, b) => a + b, 0) / rolls.length);
+}
 
 /** Mosse multicolpo e Parental Bond: la libreria dà un elenco di tiri per ogni colpo, da sommare. */
 function rollSums(result: unknown): { avg: number; low: number; high: number } | null {
