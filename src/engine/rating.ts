@@ -35,7 +35,7 @@ const BASE_AREAS: BaseArea[] = ['defense', 'strength', 'speed'];
 
 /**
  * Peso di ogni area secondo il tipo di team (somma 100): ognuno si giudica su quello con cui vince.
- * Un hyper offense su Offesa e Velocità, uno stall su Difesa e Ruoli (hazard, rimozione, recupero);
+ * Un hyper offense su Offesa e Velocità, uno stall soprattutto sulla Difesa (i Ruoli non hanno peso: contano come malus e bonus);
  * il balance tiene tutto quasi alla pari.
  * Un team incompleto si giudica come balance. Trick Room è una condizione della Velocità (speedArea.ts).
  */
@@ -115,7 +115,7 @@ export type CatalogKey = 'sharedWeak' | 'sameType' | 'hazardDuplicate' | 'remove
 export interface Redundancy {
   text: string;
   points: number;
-  /** Assente nelle voci solo-coach (stesso tipo): non fanno parte del voto. */
+  /** Assente nelle voci solo-coach: non fanno parte del voto. */
   catalog?: CatalogKey;
   /** Identità della voce senza nomi né conteggi (chiave del problema nel coaching), dove il testo non basta. */
   key?: string;
@@ -141,7 +141,7 @@ export interface TeamRating {
   label: string;
   provisional: boolean;
   areas: RatingArea[];
-  /** Archetipo riconosciuto che cambia il calcolo dei ruoli (per ora solo lo stall). */
+  /** Stall riconosciuto: i membri passivi si giudicano dalla robustezza nella forza mostrata (non cambia i pesi né i ruoli). */
   archetype: 'stall' | null;
   /** Tipo di team con cui si sono scelti i pesi delle aree (balance per un team incompleto). */
   teamType: Archetype;
@@ -259,7 +259,7 @@ export const WEAK_MEMBER_MAX = 12;
 /**
  * Membri deboli senza utilità chiave (−4 ciascuno, al massimo −12; non dipende dal meta: Pelipper che porta la pioggia è esente).
  * Ditto con Imposter è esente: copia l'avversario, le sue statistiche base non dicono nulla.
- * Lo squilibrio degli attaccanti è una mancanza essenziale dei Ruoli (rolesArea.ts).
+ * Lo squilibrio degli attaccanti si vede nei Ruoli: le voci Attaccante fisico e Attaccante speciale (rolesArea.ts).
  */
 export function memberIssues(team: TeamSet[], lang: Lang, needs: TeamNeeds): Redundancy[] {
   const { rules } = needs;
@@ -319,7 +319,7 @@ export const UNMET_POINTS = 3;
  * anche "attivatore inutilizzato" (stessa mossa, un malus solo). Meteo e campi inutilizzati restano.
  */
 export function redundancies(team: TeamSet[], analysis: TeamAnalysis, lang: Lang = 'it', roomFast?: string): Redundancies {
-  // Il meta conta solo nell'area Meta: le debolezze si contano su tutti i tipi
+  // Le debolezze si contano su tutti i 18 tipi, senza il meta
   const weaknesses = analysis.weakness
     .filter(row => row.resist === 0 && row.weak >= 2)
     .map(row => ({
@@ -468,7 +468,7 @@ function rateTeamAs(input: TeamSet[], data: EngineData, lang: Lang = 'it', opts:
   const weights = UNIFORM_TYPE_WEIGHTS;
 
   const rules = rulesOf(data);
-  // Stall riconosciuto "senza esagerare": a metà tra la valutazione normale e quella da stall
+  // Stall riconosciuto: cambia solo la forza mostrata dei membri passivi (sotto), non i pesi né i ruoli
   const stallMode = opts.archetype ? opts.archetype === 'stall' : isStall(team, rules);
   const archetype = stallMode ? 'stall' as const : null;
   // Nello stall un muro passivo non deve fare danni: conta la sua robustezza, e i suoi colpi valgono pieni
@@ -499,7 +499,7 @@ function rateTeamAs(input: TeamSet[], data: EngineData, lang: Lang = 'it', opts:
   const areaWeights = Object.fromEntries(available.map(key => [key, effective[key] / totalWeight])) as Partial<Record<AreaKey, number>>;
   let score = sum(available.map(key => areaWeights[key]! * raw[key]!));
   const areas = (Object.keys(raw) as (keyof typeof raw)[])
-    // Con uno stall la Velocità non conta nel voto ma resta visibile (inattiva); senza dati l'area non c'è
+    // Un'area con peso 0 resterebbe visibile (inattiva); senza dati l'area non c'è
     .filter(key => raw[key] !== null)
     .map(key => ({
       key,
