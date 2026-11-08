@@ -148,10 +148,19 @@ describe('Loaded Dice', () => {
     expect(bestHit(chomp('Loaded Dice', ['Earthquake']), target)!.expected)
       .toBeCloseTo(bestHit(chomp('', ['Earthquake']), target)!.expected, 5);
   });
-  it('Population Bomb resta ai colpi della libreria (già tutti a segno)', () => {
+  it('Population Bomb: senza Loaded Dice ogni colpo tira la precisione e la mossa si ferma al primo mancato', () => {
     const maus = (item: string) => set('Maushold', item, 'Technician', ['Population Bomb'], 'Jolly', { atk: 252, spe: 252 });
     expect(new Move(Generations.get(9), 'Population Bomb').hits).toBe(10);
-    expect(bestHit(maus('Loaded Dice'), target)!.expected).toBeCloseTo(bestHit(maus(''), target)!.expected, 5);
+    const dice = bestHit(maus('Loaded Dice'), target)!.expected;
+    // 10 colpi al 90%: 0,9 + 0,9² + … + 0,9¹⁰ ≈ 5,86 colpi a segno invece di 9 (con Loaded Dice la precisione si tira una volta)
+    const sum = Array.from({ length: 10 }, (_, k) => 0.9 ** (k + 1)).reduce((a, b) => a + b, 0);
+    expect(bestHit(maus(''), target)!.expected).toBeCloseTo(dice * sum / 9, 2);
+  });
+  it('Triple Axel: il colpo k vale con probabilità 0,9^k; con Skill Link la precisione si tira una volta', () => {
+    const weavile = (ability: string) => set('Weavile', 'Life Orb', ability, ['Triple Axel'], 'Jolly', { atk: 252, spe: 252 });
+    const hit = bestHit(weavile('Pressure'), target)!;
+    // Potenze 20 / 40 / 60: 0,9·20 + 0,81·40 + 0,729·60 ≈ 94 contro 0,9·120 = 108
+    expect(hit.expected / hit.max).toBeLessThan(0.9 * 0.9);
   });
   it('con Skill Link Loaded Dice non cambia niente (sempre 5 colpi)', () => {
     const cinccino = (item: string) => set('Cinccino', item, 'Skill Link', ['Tail Slap'], 'Jolly', { atk: 252, spe: 252 });
