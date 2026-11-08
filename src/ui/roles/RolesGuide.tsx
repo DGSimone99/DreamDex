@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import type { Archetype } from '../../engine/archetype';
 import { MISSING_BELOW } from '../../engine/needs';
 import { ESSENTIAL_POINTS, IMPORTANT_POINTS, MINOR_POINTS } from '../../engine/rolesArea';
-import { LEVEL_KEYS, levelOf, type Level, type LevelKey } from '../../engine/roleLevels';
+import { LEVEL_KEYS, levelOf, rolesTypeOf, type Level, type LevelKey } from '../../engine/roleLevels';
 import { BREAKER_WALLBREAKING, SWEEPER_OFFENSE, SWEEPER_SPEED } from '../../engine/subRoles';
 import { useLang, useT } from '../../i18n/react';
 import { keyLabel, LevelTag } from './RoleParts';
@@ -56,7 +56,7 @@ const HOW: Record<'earnA' | 'earnB' | 'earnC', { role: LevelKey; chips: Chip[]; 
  * La guida dei Ruoli (schematica, senza i valori del team): come funziona l'area, i livelli di ogni voce per tipo di
  * team (la colonna del team in evidenza) e come si ottiene ogni ruolo, in tre pagine (attacco e difesa, support, utility).
  */
-export function RolesGuideSection({ section, archetype, meta }: { section: RolesSection; archetype: Archetype; meta: boolean }) {
+export function RolesGuideSection({ section, archetype, meta, typeRule }: { section: RolesSection; archetype: Archetype; meta: boolean; typeRule?: 'walls' | 'recoverySpeed' }) {
   const t = useT();
   const lang = useLang();
   // Decimali alla maniera della lingua (0,5 in italiano, 0.5 in inglese)
@@ -99,7 +99,7 @@ export function RolesGuideSection({ section, archetype, meta }: { section: Roles
 
   if (section === 'types') {
     // Le voci che contano almeno in un tipo di team, per famiglia; quelle che non contano mai in una riga sotto
-    const counts = LEVEL_KEYS.filter(key => ARCHETYPES.some(a => levelOf(a.key, key) !== 'ignored'));
+    const counts = LEVEL_KEYS.filter(key => ARCHETYPES.some(a => levelOf(rolesTypeOf(a.key, typeRule), key) !== 'ignored'));
     const never = LEVEL_KEYS.filter(key => !counts.includes(key));
     return (
       <>
@@ -122,7 +122,7 @@ export function RolesGuideSection({ section, archetype, meta }: { section: Roles
                   <tr key={key}>
                     <th scope="row">{keyLabel(key, t)}</th>
                     {ARCHETYPES.map(a => {
-                      const level = levelOf(a.key, key);
+                      const level = levelOf(rolesTypeOf(a.key, typeRule), key);
                       return (
                         <td key={a.key} className={a.key === archetype ? 'now' : undefined}>
                           {level === 'ignored' ? <span className="rl-dash" aria-label={t('rdetail.level.ignored')}>—</span> : <LevelTag level={level} t={t} />}
@@ -165,9 +165,9 @@ export function RolesGuideSection({ section, archetype, meta }: { section: Roles
 }
 
 /** Le pagine della guida dei Ruoli dopo Come funziona: tipi di team e come si ottiene un ruolo. */
-export function rolesGuidePages(archetype: Archetype, meta: boolean, t: ReturnType<typeof useT>): { key: string; label: string; content: ReactNode }[] {
+export function rolesGuidePages(archetype: Archetype, meta: boolean, t: ReturnType<typeof useT>, typeRule?: 'walls' | 'recoverySpeed'): { key: string; label: string; content: ReactNode }[] {
   const page = (key: Exclude<RolesSection, 'general'>) => ({
-    key, label: t(`guide.roles.page.${key}` as Key), content: <RolesGuideSection section={key} archetype={archetype} meta={meta} />,
+    key, label: t(`guide.roles.page.${key}` as Key), content: <RolesGuideSection section={key} archetype={archetype} meta={meta} typeRule={typeRule} />,
   });
   return [page('types'), page('earnA'), page('earnB'), page('earnC')];
 }

@@ -121,6 +121,16 @@ export const ROLE_LEVELS: Record<Archetype, Partial<Record<LevelKey, Level>>> = 
 /** Righe toccate dall'interruttore: Attacco e muri (il gruppo degli attaccanti resta). */
 const SWITCHED = new Set<LevelKey>(['physicalSweeper', 'specialSweeper', 'physicalBreaker', 'specialBreaker', 'physicalWall', 'specialWall']);
 
+/**
+ * Il tipo di team di cui si chiedono i ruoli. In National Dex OU (regola 'recoverySpeed') lo Stall chiede quelli del
+ * Semi-stall (2026-11-08): i due tipi hanno già gli stessi pesi, e il salto fra loro veniva tutto dai ruoli (il Semi-stall
+ * chiede Sweeper, Wallbreaker e Attaccante fisico come importanti). Una mossa d'attacco al posto di un recupero toglieva
+ * fino a 8 punti (Mega Sableye Recover → Foul Play 77 → 69); così 4 al massimo. I team Stall perdono in media 2,6 punti,
+ * in linea con le partite vere (lo Stall vince il 32,5%, il peggiore); il resto del banco e le partite non cambiano.
+ */
+export const rolesTypeOf = (archetype: Archetype, typeRule?: 'walls' | 'recoverySpeed'): Archetype =>
+  typeRule === 'recoverySpeed' && archetype === 'stall' ? 'semiStall' : archetype;
+
 /** Livello della voce per l'archetipo, con l'interruttore applicato. */
 export function levelOf(archetype: Archetype, key: LevelKey): Level {
   const level = ROLE_LEVELS[archetype][key] ?? 'ignored';

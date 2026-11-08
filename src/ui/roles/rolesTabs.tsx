@@ -28,8 +28,8 @@ export function rolesTabs(rating: TeamRating, value: string, t: T, ctx: AreaCont
   return [
     {
       key: 'general', label: t('detail.tab.general'), value, panel: <RolesGeneral rating={rating} ctx={ctx} />,
-      help: <RolesGuideSection section="general" archetype={archetype} meta={meta} />,
-      guidePages: rolesGuidePages(archetype, meta, t),
+      help: <RolesGuideSection section="general" archetype={archetype} meta={meta} typeRule={rating.needs.rules.typeRule} />,
+      guidePages: rolesGuidePages(archetype, meta, t, rating.needs.rules.typeRule),
     },
     ...LEVEL_ORDER.map(levelTab).filter((tab): tab is DetailTab => tab !== null),
   ];

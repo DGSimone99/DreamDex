@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
 import { createPortal } from 'react-dom';
 import type { Archetype } from '../engine/archetype';
 import { ARCHETYPE_WEIGHTS, GRADES, TRICK_ROOM_MAX, type AreaWeightTable } from '../engine/rating';
-import { isGroupKey, LEVEL_KEYS, levelOf, type Level, type LevelKey } from '../engine/roleLevels';
+import { isGroupKey, LEVEL_KEYS, levelOf, rolesTypeOf, type Level, type LevelKey } from '../engine/roleLevels';
 import { ESSENTIAL_POINTS, IMPORTANT_POINTS, MINOR_POINTS } from '../engine/rolesArea';
 import type { MessageKey } from '../i18n';
 import { useT } from '../i18n/react';
@@ -25,7 +25,7 @@ const keyLabel = (key: LevelKey): MessageKey => (isGroupKey(key) ? `need.${key}`
  * di team) e la spiegazione a destra. Le spiegazioni di ogni area stanno nel suo modale, di bonus e malus nel catalogo.
  */
 /** `weights`: la tabella dei pesi del formato del team (rating.weightTable); senza, quella di sempre. */
-export function RatingHelp({ teamType, trickRoom, meta = true, weights = ARCHETYPE_WEIGHTS }: { teamType: Archetype; trickRoom: boolean; meta?: boolean; weights?: AreaWeightTable }) {
+export function RatingHelp({ teamType, trickRoom, meta = true, weights = ARCHETYPE_WEIGHTS, typeRule }: { teamType: Archetype; trickRoom: boolean; meta?: boolean; weights?: AreaWeightTable; typeRule?: 'walls' | 'recoverySpeed' }) {
   const t = useT();
   const [open, setOpen] = useState(false);
   // Si apre sul tipo del team: quello che si sta guardando di solito
@@ -83,7 +83,7 @@ export function RatingHelp({ teamType, trickRoom, meta = true, weights = ARCHETY
               </nav>
               <section className="help-panel" id="help-panel" role="tabpanel" aria-labelledby={`help-tab-${topic}`}>
                 <h4>{t(topicLabel(topic))}</h4>
-                {topic === 'general' ? <GeneralTopic teamType={teamType} trickRoom={trickRoom} meta={meta} weights={weights} /> : <TypeTopic type={topic} current={topic === teamType} trickRoom={trickRoom} weights={weights} />}
+                {topic === 'general' ? <GeneralTopic teamType={teamType} trickRoom={trickRoom} meta={meta} weights={weights} /> : <TypeTopic type={topic} current={topic === teamType} trickRoom={trickRoom} weights={weights} typeRule={typeRule} />}
               </section>
             </div>
           </div>
@@ -126,7 +126,7 @@ function GeneralTopic({ teamType, trickRoom, meta, weights }: { teamType: Archet
 }
 
 /** Un tipo di team: come vince, i pesi delle aree e le voci dei Ruoli per livello, letti dalle tabelle del motore. */
-function TypeTopic({ type, current, trickRoom, weights }: { type: Archetype; current: boolean; trickRoom: boolean; weights: AreaWeightTable }) {
+function TypeTopic({ type, current, trickRoom, weights, typeRule }: { type: Archetype; current: boolean; trickRoom: boolean; weights: AreaWeightTable; typeRule?: 'walls' | 'recoverySpeed' }) {
   const t = useT();
   return (
     <>
@@ -150,8 +150,9 @@ function TypeTopic({ type, current, trickRoom, weights }: { type: Archetype; cur
       </dl>
       <h5>{t('area.roles')}</h5>
       <p>{t('help.type.levels', ROLE_POINTS)}</p>
+      {rolesTypeOf(type, typeRule) !== type && <p className="help-note">{t('help.type.stallAsSemi')}</p>}
       {LEVELS.map(level => {
-        const keys = LEVEL_KEYS.filter(key => levelOf(type, key) === level);
+        const keys = LEVEL_KEYS.filter(key => levelOf(rolesTypeOf(type, typeRule), key) === level);
         if (keys.length === 0) return null;
         return (
           <div key={level} className="help-levels">
