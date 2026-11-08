@@ -394,7 +394,8 @@ export const WEAK_COVERED_POINTS = 1;
  * malus "debolezza condivisa" (86% dei team da torneo, 58% della ladder, 24% dei brutti).
  */
 export function weakCoveredBonus(team: TeamSet[], analysis: TeamAnalysis, lang: Lang = 'it'): Redundancy[] {
-  if (team.length < 6) return [];
+  // Servono 6 specie riconosciute: senza tipi non ci sono debolezze, e "tutte coperte" sarebbe vero per niente
+  if (team.filter(set => !!battleSpecies(set)).length < 6) return [];
   const shared = analysis.weakness.filter(row => row.weak >= 2);
   return shared.every(row => row.resist >= 1)
     ? [{ text: t(lang, 'rating.bonus.weakCovered', { n: shared.length }), points: WEAK_COVERED_POINTS, catalog: 'weakCovered' }]
