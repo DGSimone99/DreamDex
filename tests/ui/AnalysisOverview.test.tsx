@@ -102,9 +102,10 @@ describe('Panoramica di Analisi', () => {
     expect(panel().querySelector('.problem-group')).toBeNull();
   });
 
-  it('la nota del meta sta nella Panoramica', async () => {
+  it('niente segno con le note sul voto nella Panoramica (meta e stall)', async () => {
     await setup();
-    expect(within(panel()).getByText(/Col meta del formato \(statistiche 2026-09\)/)).toBeInTheDocument();
+    expect(within(panel()).queryByText(/Col meta del formato/)).toBeNull();
+    expect(panel().querySelector('.overview-headline .alert-mark')).toBeNull();
   });
 
   it('regole per prime tra i problemi del Coaching', async () => {
@@ -115,7 +116,7 @@ describe('Panoramica di Analisi', () => {
     expect(rows[0].getAttribute('data-key')).toMatch(/^rules:/);
   });
 
-  it('team stall: la nota "valutato come stall"', async () => {
+  it('team stall: niente più la nota "valutato come stall"', async () => {
     await importTeam([
       'Dondozo @ Leftovers\nAbility: Unaware\nEVs: 252 HP / 252 Def / 4 SpD\nImpish Nature\n- Body Press\n- Liquidation\n- Rest\n- Sleep Talk',
       'Blissey @ Leftovers\nAbility: Natural Cure\nEVs: 4 HP / 252 Def / 252 SpD\nBold Nature\n- Protect\n- Seismic Toss\n- Toxic\n- Wish',
@@ -124,7 +125,7 @@ describe('Panoramica di Analisi', () => {
       'Gliscor @ Toxic Orb\nAbility: Poison Heal\nEVs: 244 HP / 248 Def / 16 Spe\nImpish Nature\n- Earthquake\n- Protect\n- Stealth Rock\n- Toxic',
       'Toxapex @ Rocky Helmet\nAbility: Regenerator\nEVs: 252 HP / 252 Def / 4 SpD\nBold Nature\n- Knock Off\n- Recover\n- Scald\n- Toxic Spikes',
     ].join('\n\n'));
-    expect(within(panel()).getByText(/Valutato come stall/)).toBeInTheDocument();
+    expect(within(panel()).queryByText(/Valutato come stall/)).toBeNull();
   });
 
   // Riga Membri messa da parte: il test torna quando trova posto

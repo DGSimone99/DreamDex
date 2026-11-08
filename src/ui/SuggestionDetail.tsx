@@ -173,7 +173,7 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
                 );
               })}
               {extras !== 0 && (
-                <div className="extras" title={tr('detail.extrasNote')}>
+                <div className="extras">
                   <dt>{tr('detail.extras')}</dt>
                   <dd className={`change${extras < 0 ? ' worse' : ''}`}>{delta(extras)}</dd>
                 </div>

@@ -36,7 +36,7 @@ describe('tooltip della card', () => {
     await user.click(screen.getByRole('button', { name: 'Importa' }));
     const slot = screen.getByRole('region', { name: 'Team' }).querySelector('.slot')!;
     // Lo strumento sulla carta è solo l'icona: nome e descrizione nel tooltip
-    expect(slot.querySelector('.held')!.getAttribute('title')).toMatch(/^\S.* — Danneggia chi attacca con un contatto\.$/);
+    expect(slot.querySelector('.held')!.getAttribute('title')).toMatch(/^\S.*: Danneggia chi attacca con un contatto\.$/);
     expect(slot.querySelector('.ability')).toHaveAttribute('title', 'Ferisce chi attacca con un contatto.');
   });
 });
