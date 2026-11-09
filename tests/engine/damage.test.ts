@@ -22,6 +22,21 @@ describe('bestHit', () => {
     expect(bestHit(corv, toxapex, { boosts: { def: 2 } })!.expected).toBeGreaterThan(bestHit(corv, toxapex)!.expected);
   });
 
+  it('Eruption, Water Spout, Dragon Energy: ×0,625 sul danno medio e sul minimo (piene solo a PS pieni), il massimo pieno', () => {
+    const heatran = set('Heatran', 'Leftovers', 'Flash Fire', ['Eruption'], 'Modest', { hp: 252, spa: 252 });
+    const eruption = bestHit(heatran, toxapex)!;
+    const flamethrower = bestHit({ ...heatran, moves: ['Flamethrower'] }, toxapex)!;
+    // Flamethrower: la media sta poco sotto il massimo (tiri 85–100%); Eruption scende a circa 0,625 di quel rapporto
+    expect(flamethrower.expected / flamethrower.max).toBeGreaterThan(0.85);
+    expect(eruption.expected / eruption.max).toBeGreaterThan(0.5);
+    expect(eruption.expected / eruption.max).toBeLessThan(0.62);
+    // Il massimo resta quello di 150 contro 90 di potenza
+    expect(eruption.max / flamethrower.max).toBeGreaterThan(1.5);
+    const kyogre = set('Kyogre', 'Choice Specs', 'Drizzle', ['Water Spout'], 'Modest', { spa: 252, spe: 252 });
+    const spout = bestHit(kyogre, lopunny)!;
+    expect(spout.expected / spout.max).toBeLessThan(0.62);
+  });
+
   it('solo mosse di stato: nessun colpo', () => {
     expect(bestHit(set('Blissey', 'Heavy-Duty Boots', 'Natural Cure', ['Soft-Boiled', 'Toxic'], 'Bold', { hp: 252, def: 252 }), toxapex)).toBeNull();
   });
