@@ -144,45 +144,11 @@
 .overview { display: flex; flex-direction: column; gap: 10px; height: 100%; min-height: 0; padding-bottom: 14px; overflow: auto; overscroll-behavior: contain; }
 .overview-empty { margin: 24px 0; color: var(--muted); }
 
-/* Membri: sei schede compatte; il profilo di uno alla volta al posto della Panoramica */
-.member-cards .overview-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 8px; padding: 6px 0; font: 700 14px/1.2 var(--display); font-style: italic; color: var(--text); }
-.member-cards .overview-head .box-head { position: static; margin: 0; }
-.member-cards ul { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
-.member-card { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 6px; width: 100%; padding: 6px 8px; border: 1px solid var(--line-soft); border-radius: 0; background: var(--panel); text-align: left; }
-button.member-card:hover { border-color: var(--accent); }
-.member-card .who { display: flex; flex-direction: column; min-width: 0; }
-.member-card .who strong { font: 700 13px/1.1 var(--display); font-style: italic; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.member-card .who small { font-size: 11px; color: var(--muted); }
-.member-card .grade { font: 700 18px/1 var(--display); font-style: italic; color: var(--accent); }
-.member-card.empty { display: grid; place-items: center; min-height: 54px; border-style: dashed; color: var(--faint); font-size: 12px; }
-.member-profile { display: flex; flex-direction: column; gap: 14px; height: 100%; min-height: 0; overflow: auto; }
-.member-nav { display: flex; justify-content: space-between; align-items: center; }
-.member-nav button { gap: 6px; }
-.member-steps { display: flex; align-items: center; gap: 8px; color: var(--muted); font-variant-numeric: tabular-nums; }
-.member-hero { display: grid; grid-template-columns: 96px minmax(0, 1fr) auto; align-items: center; gap: 16px; padding: 12px 16px; background: var(--stripes), var(--band); border: 1px solid var(--line-soft); }
-.member-hero h3 { margin: 0 0 6px; font: 800 24px/1 var(--display); font-style: italic; }
-.member-hero .types { display: flex; gap: 6px; margin-bottom: 4px; }
-.member-hero small { color: var(--muted); }
-.member-grade { text-align: right; }
-.member-grade strong { display: block; font: 800 44px/0.9 var(--display); font-style: italic; color: var(--accent); }
-.member-grade span { font-size: 12px; color: var(--muted); }
-.member-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 24px; margin: 0; padding: 12px 16px; background: var(--panel); border: 1px solid var(--line-soft); }
-.member-stats > div { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 10px; align-items: baseline; padding-bottom: 8px; border-bottom: 1px solid var(--line-soft); }
-.member-stats dt { font: 600 11px/1 var(--ui); text-transform: uppercase; letter-spacing: 0.08em; color: var(--faint); }
-.member-stats dd { margin: 0; font-size: 13px; }
-.member-stats dd small { color: var(--muted); }
-.member-stats .sheet-meter { display: block; margin-top: 4px; }
-.member-hero .member-sprite { width: 96px; height: 96px; }
-.member-hero .member-sprite .sprite-ani { transform: translate(-50%, -50%); }
-.member-stats .tags { display: flex; flex-wrap: wrap; gap: 4px; }
-.member-stats .sheet-tag { padding: 1px 7px; border-radius: 3px; background: var(--raised); color: var(--text); font-size: 12px; }
 
 /* Panoramica: in testa giudizio e tipo di team */
 .overview-headline { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; }
 .overview-headline > strong { font: 800 22px/1.1 var(--display); font-style: italic; }
 .overview-empty { display: grid; justify-items: start; gap: 12px; }
-.member-card.empty { width: 100%; cursor: pointer; }
-.member-card.empty:hover { border-color: var(--accent); color: var(--accent-ink); }
 .analysis-tabs [role='tab'][aria-disabled='true'] { opacity: 0.45; cursor: not-allowed; }
 
 /* Schede interne a larghezza uguale su tutta la riga; quella aperta come le teste (magenta a righe, inclinata) */
