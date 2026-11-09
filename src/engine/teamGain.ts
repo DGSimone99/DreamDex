@@ -24,6 +24,30 @@ export interface TeamGain {
   reaches?: boolean;
   /** Punti di voto per area: variazione dell'area per il suo peso nel voto (servono a pesare pro e contro). */
   areaPoints?: Partial<Record<ScoredArea, number>>;
+  /** Come cambia il voto tipo per tipo (Offesa e Difesa): le righe "Forte contro / Resiste a" restano solo se il voto è d'accordo. */
+  typeShift?: TypeShift;
+}
+
+/** Variazione per tipo delle righe di Offesa e Difesa del voto, e la Difesa dopo il cambio (per "Nessuno resiste più a X"). */
+export interface TypeShift {
+  offense: Record<string, number>;
+  defense: Record<string, number>;
+  defenseAfter: Record<string, number>;
+  /** Tipi che dopo il cambio nessuno regge (buco in Difesa). */
+  weakAfter: string[];
+}
+
+export function typeShiftOf(before: TeamRating, after: TeamRating): TypeShift {
+  const delta = (was: { key: string; level: number }[], now: { key: string; level: number }[]) =>
+    Object.fromEntries(now.map(row => [row.key, row.level - (was.find(r => r.key === row.key)?.level ?? row.level)]));
+  const off = (r: TeamRating) => r.offense.types.rows.map(row => ({ key: row.label, level: row.level }));
+  const def = (r: TeamRating) => r.defense.coverageTypes.rows.map(row => ({ key: row.type, level: row.level }));
+  return {
+    offense: delta(off(before), off(after)),
+    defense: delta(def(before), def(after)),
+    defenseAfter: Object.fromEntries(def(after).map(row => [row.key, row.level])),
+    weakAfter: after.defense.coverageTypes.weak,
+  };
 }
 
 export type ScoredArea = 'defense' | 'strength' | 'roles' | 'speed';
@@ -97,6 +121,7 @@ function swapEvaluator(team: TeamSet[], data: EngineData, lang: Lang, archetype:
         grade: rating.grade, overall: rating.overall, gain: rating.overall - before.overall,
         lostResists: lostResistances(team, after),
         areaPoints: areaPointsOf(before, rating),
+        typeShift: typeShiftOf(before, rating),
       },
     };
   };

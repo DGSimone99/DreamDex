@@ -66,7 +66,7 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
   const full = (members: TeamSet[]) => members.length >= 6;
   const typeChange = before && after && full(team) && full(withCandidate(team, set, replaceIndex)) && before.teamType !== after.teamType
     ? { from: before.teamType, to: after.teamType } : null;
-  const changes = 'diff' in item && item.diff ? rankedChanges(item.diff, item.teamGain?.areaPoints, lang) : null;
+  const changes = 'diff' in item && item.diff ? rankedChanges(item.diff, item.teamGain, lang) : null;
   const types = getSpecies(item.species)?.types ?? [];
   const evs = STAT_IDS.filter(stat => (set.evs[stat] ?? 0) > 0).map(stat => `${set.evs[stat]} ${statShort(stat, lang)}`).join(' / ');
   const delta = (value: number) => (value > 0 ? `+${value}` : value < 0 ? `−${-value}` : '');
