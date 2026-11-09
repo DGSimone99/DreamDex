@@ -184,6 +184,13 @@ export function findProblems(team: TeamSet[], format: Format, data: EngineData, 
   for (const item of memberIssues(usable, lang, analysis.needs)) add('roles', false, item.text, [], `roles:member:${item.text}`);
   // Choice o Assault Vest con mosse di stato: lo stesso testo e gli stessi punti del malus del voto
   for (const item of rating?.penalty.items.filter(i => i.catalog === 'lockedStatus') ?? []) add('redundancy', false, item.text, [], undefined, item.points);
+  // Debolezza comune (più membri deboli a un tipo che nessuno resiste, dalla tabella dei tipi): lo stesso testo e gli
+  // stessi punti del malus del voto, anche quando coi danni veri qualcuno regge il tipo (2026-11-09, controllo 2 punto 3.9).
+  // Rimedi: i candidati che resistono al tipo
+  for (const item of rating?.penalty.items.filter(i => i.catalog === 'sharedWeak') ?? []) {
+    const type = item.key!.slice('sharedWeak:'.length) as TypeName;
+    add('redundancy', false, item.text, fixesFor(candidates, s => Number(defensiveMultiplier(type, s.set) < 1)), `redundancy:${item.key}`, item.points);
+  }
   // Squilibrio degli attaccanti: nel voto lo dicono le voci Attaccante fisico / speciale dei Ruoli, solo a team finito
   // I punti crescono col conteggio: meno doppioni, problema ridotto
   for (const item of roleAndTypeRedundancies(usable, lang)) add('redundancy', false, item.text, [], undefined, item.points);
