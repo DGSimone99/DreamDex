@@ -357,7 +357,9 @@ function bestHitOn(attacker: TeamSet, defender: Target, options: HitOptions): Hi
       // La mossa Z non carica, non ricarica e non manda KO chi la usa (Bloom Doom da Solar Beam, Breakneck Blitz da Explosion)
       const charge = useZ ? 1 : twoTurn * (data.flags.recharge ? RECHARGE_SHARE : 1) * (data.selfdestruct ? SELF_KO_SHARE : 1);
       const firstTurn = !options.priorityOnly ? 1 : FIRST_TURN.has(data.id) ? 0.5 : IF_ATTACKED.has(data.id) ? 0.75 : 1;
-      const hit = { move: data.name, expected: (avg / hp) * accuracy * charge * firstTurn, min: (low / hp) * charge, max: (high / hp) * charge };
+      // Eruption, Water Spout, Dragon Energy: piene solo a PS pieni (la libreria le calcola così); il massimo resta pieno
+      const hpScaled = !useZ && HP_SCALED.has(data.id) ? HP_SCALED_SHARE : 1;
+      const hit = { move: data.name, expected: (avg / hp) * accuracy * charge * firstTurn * hpScaled, min: (low / hp) * charge * hpScaled, max: (high / hp) * charge };
       if (!best || hit.expected > best.expected) best = hit;
     } catch {
       // Una mossa che la libreria non sa calcolare non conta
@@ -375,6 +377,14 @@ function bestHitOn(attacker: TeamSet, defender: Target, options: HitOptions): Hi
 export const RECHARGE_SHARE = 0.5;
 /** Mosse che mandano KO chi le usa: un quarto (una volta a partita, come Tera e mosse Z). */
 export const SELF_KO_SHARE = 0.25;
+/**
+ * Mosse che perdono potenza coi PS di chi le usa (Eruption, Water Spout, Dragon Energy: 150 a PS pieni, 75 a metà).
+ * Come gli effetti del primo colpo (FIRST_HIT_SHARE): piene per un quarto, a metà potenza per il resto, ×0,625 sul danno
+ * medio e sul minimo (2026-11-09, controllo 2 punto 3.5: prima contavano sempre 150, e la salita sceglieva Heatran con
+ * Eruption). Il massimo resta pieno: la Difesa guarda il caso peggiore, un colpo a PS pieni.
+ */
+const HP_SCALED = new Set(['eruption', 'waterspout', 'dragonenergy']);
+export const HP_SCALED_SHARE = FIRST_HIT_SHARE + (1 - FIRST_HIT_SHARE) * 0.5;
 /** Mosse prioritarie che funzionano solo al primo turno in campo: metà. */
 const FIRST_TURN = new Set(['fakeout', 'firstimpression']);
 /** Mosse prioritarie che falliscono se l'avversario non attacca (setup, mosse di stato): tre quarti. */
