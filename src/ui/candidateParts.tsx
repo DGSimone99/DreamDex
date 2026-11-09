@@ -76,7 +76,7 @@ export interface Bring { text: string; short: string; usedWith?: true }
  */
 export function bringsOf(item: Item, lang: Lang, rules: FormatRules): Bring[] {
   const diff = 'diff' in item ? item.diff : null;
-  const changes = diff ? rankedChanges(diff, item.teamGain?.areaPoints, lang) : null;
+  const changes = diff ? rankedChanges(diff, item.teamGain, lang) : null;
   // Una ragione che ripete un guadagno della stessa area ("Resiste a Volante" e "Resistente a Volante") si salta
   const covered = new Set(changes?.pros.map(p => p.area));
   const reasons = item.reasons

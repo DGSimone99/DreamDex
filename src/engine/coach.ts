@@ -19,7 +19,7 @@ import type { TeamSet } from './sets';
 import { coachFixes, type CoachFix } from './coachFixes';
 import { buildSteps, type CoachStep } from './coachSteps';
 import { moveFixes } from './moveFixes';
-import type { ScoredArea } from './teamGain';
+import type { ScoredArea, TeamGain, TypeShift } from './teamGain';
 import { teamOffense } from './offense';
 import { defensiveMultiplier, superEffectiveMove, type TypeName } from './types';
 import { withUsableMoves } from './lockedMoves';
@@ -309,7 +309,29 @@ export interface WeightedChange {
  * divisi fra le voci di quell'area dallo stesso lato; un pro in un'area che scende vale 0 (e un contro in una che sale).
  * Ordinati dal più pesante; a parità resta l'ordine di describeDiff.
  */
-export function rankedChanges(diff: Diff, areaPoints: Partial<Record<ScoredArea, number>> | undefined, lang: Lang = 'it'): { pros: WeightedChange[]; cons: WeightedChange[] } {
+/** Di quanto deve muoversi la riga di un tipo nel voto perché "Forte contro X" o "Resiste a X" restino fra pro e contro. */
+export const TYPE_LINE_MIN = 5;
+
+/**
+ * Le voci di tipo del cambio (dalla tabella dei tipi) che il voto conferma coi danni veri: "Forte contro X" se l'Offesa
+ * su X sale di almeno TYPE_LINE_MIN (scende, fra i contro), "Resiste a X" lo stesso con la Difesa, "Nessuno resiste più
+ * a X" se dopo il cambio il voto dice che X non è retto. Senza voto le voci restano tutte (2026-11-09, controllo 2 punto 3.10).
+ */
+export function voteDiff(diff: Diff, shift: TypeShift | undefined): Diff {
+  if (!shift) return diff;
+  const up = (map: Record<string, number>) => (type: string) => (map[type] ?? 0) >= TYPE_LINE_MIN;
+  const down = (map: Record<string, number>) => (type: string) => (map[type] ?? 0) <= -TYPE_LINE_MIN;
+  const unheld = (type: string) => shift.weakAfter.includes(type) || (shift.defenseAfter[type] ?? 0) < HELD_LEVEL;
+  return {
+    gains: { ...diff.gains, covers: diff.gains.covers.filter(up(shift.offense)), resists: diff.gains.resists.filter(up(shift.defense)) },
+    losses: { ...diff.losses, covers: diff.losses.covers.filter(down(shift.offense)), resists: diff.losses.resists.filter(down(shift.defense)) },
+    lostResists: diff.lostResists.filter(unheld),
+  };
+}
+
+export function rankedChanges(given: Diff, gain: TeamGain | undefined, lang: Lang = 'it'): { pros: WeightedChange[]; cons: WeightedChange[] } {
+  const diff = voteDiff(given, gain?.typeShift);
+  const areaPoints = gain?.areaPoints;
   const side = (change: Contribution, gain: boolean, extra: { text: string; area: ScoredArea }[] = []) => {
     const items = [
       ...change.roles.map(role => ({ text: roleLabel(role, lang), area: 'roles' as const })),
