@@ -6,6 +6,7 @@ import { ATTACKER_ROLES, FAMILIES, primaryFamily, rolesList, setSubRoles, type S
 import type { FormatRules } from './formatRules';
 import type { TeamSet } from './sets';
 import { benefits, enables, type Condition } from './synergy';
+import { isTank, TANK_BRAKE } from './tank';
 
 /** Archetipi di Smogon, dal più offensivo al più difensivo. */
 export type Archetype = 'hyperOffense' | 'bulkyOffense' | 'balance' | 'semiStall' | 'stall';
@@ -51,6 +52,8 @@ const fastOrSpeedSetup = (set: TeamSet) => isFast(set)
  * Corviknight, Dragonite, Kingambit tornava Semi-stall). Per HO e BO conta tutto il recupero: tolto anche lì, peggio.
  */
 const RECOVERY_SPEED_CUTS = { hyperOffense: -5.11, bulkyOffense: -3.69, balance: -1.31 };
+/** Dove il freno dei tank porta un team che sarebbe Hyper Offense: a metà della fascia Bulky Offense. */
+const TANK_BRAKE_SCORE = (RECOVERY_SPEED_CUTS.hyperOffense + RECOVERY_SPEED_CUTS.bulkyOffense) / 2;
 /** Il membro attacca (famiglia principale Attacco, o un sotto-ruolo d'attacco da almeno 0,5): il suo recupero non fa un muro. */
 function attacks(set: TeamSet, rules: FormatRules): boolean {
   const values = setSubRoles(set, rules);
@@ -60,6 +63,7 @@ function attacks(set: TeamSet, rules: FormatRules): boolean {
 
 /** Velocità base che vale un recupero nel punteggio. */
 const RECOVERY_SPEED_SCALE = 15;
+
 
 /**
  * I due punteggi della regola di National Dex OU: `score` (tutto il recupero) separa HO, BO e il resto; `wallScore` (solo
@@ -74,7 +78,10 @@ function recoverySpeedScores(team: TeamSet[], rules: FormatRules): { score: numb
   const healing = team.filter(set => set.moves.some(m => HEAL_MOVES.has(toID(m))) || poisonHealer(set));
   const speed = team.reduce((acc, set) => acc + (battleSpecies(set)?.baseStats.spe ?? 0), 0) / team.length;
   const speedPart = speed / RECOVERY_SPEED_SCALE;
-  return { score: healing.length - speedPart, wallScore: healing.filter(set => !attacks(set, rules)).length - speedPart };
+  const raw = healing.length - speedPart;
+  // Freno dei tank: con almeno 2 tank il team non è Hyper Offense e va a metà della fascia Bulky Offense
+  const score = team.filter(isTank).length >= TANK_BRAKE ? Math.max(raw, TANK_BRAKE_SCORE) : raw;
+  return { score, wallScore: healing.filter(set => !attacks(set, rules)).length - speedPart };
 }
 
 function pickRecoverySpeed({ score, wallScore }: { score: number; wallScore: number }): Archetype {
