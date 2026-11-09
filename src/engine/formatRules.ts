@@ -20,8 +20,8 @@ export interface FormatRules {
   /**
    * Come si riconosce il tipo di team e quali pesi delle aree usa (archetype.ts, rating.ts).
    * 'walls': la regola di sempre, dai muri passivi, dal recupero e dalla robustezza.
-   * 'recoverySpeed': National Dex OU (2026-11-05), dai membri con una mossa di recupero, dalla velocità base media e dalle
-   * Focus Sash (degli attaccanti); tarata sui team del banco di cui l'autore ha scritto il tipo (dal 74% all'80% di giusti), coi suoi pesi.
+   * 'recoverySpeed': National Dex OU (2026-11-05), dai membri con una mossa di recupero e dalla velocità base media (la
+   * Focus Sash tolta il 2026-11-09); tarata sui team del banco di cui l'autore ha scritto il tipo (dal 74% all'80% di giusti), coi suoi pesi.
    */
   typeRule: 'walls' | 'recoverySpeed';
 }
