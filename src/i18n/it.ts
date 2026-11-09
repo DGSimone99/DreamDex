@@ -227,7 +227,7 @@ export const it: Record<keyof typeof en, string> = {
   'catalog.conditionUsed.when': "Un membro porta un meteo, un campo o Trick Room e almeno {users} compagni lo sfruttano",
   'catalog.conditionUsed.points': "+{used} per condizione",
   'catalog.weatherHelp.name': "Meteo che protegge",
-  'catalog.weatherHelp.when': "Il meteo o il campo del team toglie una debolezza a un compagno (non conta chi lo porta)",
+  'catalog.weatherHelp.when': "Il meteo o il campo del team toglie una debolezza a un compagno e un compagno lo sfrutta (non conta chi lo porta)",
   'catalog.weatherHelp.points': "+{help} una volta sola",
   'rating.bonus.helps': "{condition} di {setter} aiuta il team: {list}",
   'rating.bonus.coreTrio': "Core a tre: {list} si parano le debolezze a giro",

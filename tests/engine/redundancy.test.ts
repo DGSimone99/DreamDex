@@ -138,6 +138,13 @@ describe('penalità e bonus del meteo', () => {
     expect(bonus.items).toContainEqual(expect.objectContaining({ catalog: 'conditionUsed', points: 1 }));
   });
 
+  it('bonus: il meteo che nessun compagno usa non protegge (una mossa meteo non regala il +1)', () => {
+    // Heatran con Earth Power non usa il sole: niente +1 anche se il sole gli toglie la debolezza all'Acqua
+    expect(bonusOf([ninetales, withMoves('Heatran', ['Earth Power'])]).items.filter(i => i.catalog === 'weatherHelp')).toEqual([]);
+    // Con Solar Beam lo usa (le mosse Fire da sole non contano, come nel malus "non usata"): il +1 torna
+    expect(bonusOf([ninetales, withMoves('Heatran', ['Solar Beam'])]).items).toContainEqual(expect.objectContaining({ catalog: 'weatherHelp', points: 1 }));
+  });
+
   it('bonus: il meteo primordiale da solo con un compagno debole non dà bonus', () => {
     const groudon = { ...withMoves('Groudon-Primal', ['Precipice Blades']), ability: 'Desolate Land' };
     expect(bonusOf([groudon, withMoves('Great Tusk', ['Headlong Rush'])]).total).toBe(0);

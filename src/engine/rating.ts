@@ -351,11 +351,14 @@ export const WEATHER_HELP = 1;
  * +1 una volta sola se il meteo o il campo che il team porta smorza una debolezza di un compagno
  * (da 2× a neutro: il meteo dimezza, e da 4× resterebbe 2×). Il setter non conta e abilitare un'abilità o una
  * mossa non dà bonus: il meteo non è sempre attivo, quindi non conta quanti ne godono.
+ * Serve un compagno che usi davvero il meteo (stessi utenti di "condizione usata", synergy.ts usesCondition): prima
+ * bastava mettere Sunny Day a chiunque per prendere il +1 (2026-11-08, controllo 2 punto 3.1).
  */
 export function weatherBonus(team: TeamSet[], lang: Lang = 'it'): Redundancies {
   const items: Redundancy[] = [];
   for (const m of weatherMitigations(team)) {
     const setter = m.source.split(' (')[0];
+    if (!team.some(o => battleName(o) !== setter && usesCondition(o, m.condition as Condition))) continue;
     const members = m.members.filter(x => x.to <= 1 && x.species !== setter).map(x => x.species);
     if (!members.length) continue;
     items.push({
