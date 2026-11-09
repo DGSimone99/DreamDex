@@ -914,7 +914,7 @@ export const it: Record<keyof typeof en, string> = {
   'guide.off.power.locked': "Band, Specs e Gorilla Tactics",
   'guide.off.power.locked.rule': "Il danno conta il 10% in meno (una volta sola, anche con tutti e due), perché bloccano il membro su una mossa",
   'guide.off.power.weather': "Meteo",
-  'guide.off.power.weather.rule': "Se il meteo o il terreno lo porta un compagno, il membro riceve metà del bonus; se lo porta lui con la sua abilità, il bonus è intero",
+  'guide.off.power.weather.rule': "Se il meteo o il terreno lo porta un compagno con la sua abilità, il membro riceve metà del bonus; se arriva solo da una mossa (Sunny Day, Rain Dance…), un quarto; se lo porta lui con la sua abilità, il bonus è intero",
   'guide.off.power.setup': "Setup",
   'guide.off.power.oneuse': "Tera e mosse Z",
   'guide.off.power.tera': "Tera",

@@ -103,6 +103,19 @@ describe('memberOffense', () => {
     expect(damage(memberOffense(pelipper, [pelipper], fixtureData)!)).toBeGreaterThanOrEqual(damage(memberOffense(keenEye, [keenEye, politoed], fixtureData)!));
   });
 
+  it('il sole che arriva solo da una mossa vale un quarto: meno di Drought, più di niente', () => {
+    const fire = set('Arcanine', 'Leftovers', 'Intimidate', ['Flamethrower'], 'Bold', { hp: 252, def: 252 });
+    const torkoal = set('Torkoal', 'Heat Rock', 'Drought', ['Lava Plume'], 'Bold', { hp: 252, def: 252 });
+    const sunnyDay = set('Torkoal', 'Heat Rock', 'White Smoke', ['Lava Plume', 'Sunny Day'], 'Bold', { hp: 252, def: 252 });
+    const none = damage(memberOffense(fire, [fire], noStats)!);
+    const byMove = damage(memberOffense(fire, [fire, sunnyDay], noStats)!);
+    const byAbility = damage(memberOffense(fire, [fire, torkoal], noStats)!);
+    expect(byMove).toBeGreaterThan(none);
+    expect(byAbility).toBeGreaterThan(byMove);
+    // Se il sole c'è anche da abilità, la mossa non lo dimezza
+    expect(damage(memberOffense(fire, [fire, sunnyDay, torkoal], noStats)!)).toBe(byAbility);
+  });
+
   it('il sole non abbassa mai il danno', () => {
     const water = set('Kingdra', 'Choice Specs', 'Sniper', ['Hydro Pump', 'Draco Meteor'], 'Modest', { spa: 252, spe: 252 });
     const torkoal = set('Torkoal', 'Heat Rock', 'Drought', ['Lava Plume'], 'Bold', { hp: 252, def: 252 });

@@ -200,10 +200,20 @@ export function conditionsOf(set: TeamSet, team: TeamSet[]) {
   const field = (links: ReturnType<typeof enables>) => links.map(l => l.condition).filter((c): c is FieldCondition => c !== 'trickroom');
   const own = field(enables(set).filter(l => toID(l.via) === toID(battleAbility(set))));
   const all = [...new Set([...own, ...team.flatMap(member => field(enables(member)))])].sort();
-  return { own: [...new Set(own)], all };
+  // Quelle che nel team arrivano solo da una mossa (Sunny Day, Rain Dance…): costano un turno, valgono meno (MOVE_FIELD_SHARE)
+  const fromAbility = new Set(team.flatMap(member => field(enables(member).filter(l => toID(l.via) === toID(battleAbility(member))))));
+  return { own: [...new Set(own)], all, moveOnly: all.filter(c => !fromAbility.has(c)) };
 }
 
 const WEATHERS: FieldCondition[] = ['sun', 'rain', 'sand', 'snow'];
+
+/** Il meteo o il campo del team vale metà del colpo (non è sempre attivo); il resto è il colpo senza. */
+export const FIELD_SHARE = 0.5;
+/**
+ * Un quarto se nel team arriva solo da una mossa (Sunny Day, Rain Dance, Electric Terrain…): costa un turno e dura
+ * poco. Prima valeva metà come quello da abilità e una mossa meteo alzava l'Offesa di 1–4 punti (2026-11-09, controllo 2 punto 3.1).
+ */
+export const MOVE_FIELD_SHARE = 0.25;
 
 /**
  * Le combinazioni di campo che il team può dare al membro, oltre alle sue: un meteo e un terreno alla volta
@@ -248,8 +258,10 @@ function measureSet(set: TeamSet, team: TeamSet[], data: EngineData, measure: Me
   const species = battleSpecies(set);
   if (!species) return null;
   const attacks = set.moves.some(m => (getMove(m)?.category ?? 'Status') !== 'Status');
-  const { own, all } = conditionsOf(set, team);
+  const conditions = conditionsOf(set, team);
+  const { own, all } = conditions;
   const combos = fieldCombos(own, all);
+  const moveOnly = new Set(conditions.moveOnly);
   // Poteri da una volta a partita (Tera, mossa Z): il valore base è senza, a parte la variante con
   const teraOk = teraAllowed({ ...DEFAULT_FORMAT, formatId: data.formatId ?? 'ou' }) && !!set.teraType;
   const zItem = dex.items.get(set.item);
@@ -257,7 +269,8 @@ function measureSet(set: TeamSet, team: TeamSet[], data: EngineData, measure: Me
   const oneUseVariants = [...(teraOk ? [{ tera: true, z: false }] : []), ...(zOk ? [{ tera: false, z: true }] : [])];
   let known = false;
 
-  // Contro un bersaglio: il meteo del team vale metà (mai sotto il danno senza); `oneUse` prova Tera/Z e tiene il meglio
+  // Contro un bersaglio: il meteo del team vale metà, un quarto se arriva solo da una mossa (mai sotto il danno senza);
+  // `oneUse` prova Tera/Z e tiene il meglio
   const against = (target: Target, boosts?: HitOptions['boosts'], oneUse = false) => {
     const expected: number[] = [];
     const steps: number[] = [];
@@ -268,16 +281,23 @@ function measureSet(set: TeamSet, team: TeamSet[], data: EngineData, measure: Me
       const base = { ...variant, boosts, firstHitShare: firstHit };
       const off = bestHit(set, target, { ...base, conditions: own });
       // Col meteo del team: ogni combinazione possibile (un meteo e un terreno alla volta), quella che conviene di più
-      const on = combos.reduce<Hit | null>((best, conditions) => {
+      // Un KO è un KO: oltre il 100% dei PS il danno non conta di più. Il meteo vale `share` del colpo, il resto è senza
+      const mix = (hit: Hit | null, share: number) => ({
+        expected: (1 - share) * Math.min(1, off?.expected ?? 0) + share * Math.min(1, hit?.expected ?? 0),
+        step: (1 - share) * stepValue(off) + share * stepValue(hit),
+      });
+      let pick = mix(off, FIELD_SHARE);
+      let on: Hit | null = null;
+      for (const conditions of combos) {
         const hit = bestHit(set, target, { ...base, conditions });
-        return (hit?.expected ?? 0) > (best?.expected ?? 0) ? hit : best;
-      }, off);
+        if ((hit?.expected ?? 0) > (on?.expected ?? 0)) on = hit;
+        const value = mix(hit, conditions.some(c => moveOnly.has(c)) ? MOVE_FIELD_SHARE : FIELD_SHARE);
+        if (value.expected > pick.expected) pick = value;
+      }
       if (off || on) known = true;
       move ??= off?.move ?? on?.move ?? null;
-      const better = (on?.expected ?? 0) >= (off?.expected ?? 0) ? on : off;
-      // Un KO è un KO: oltre il 100% dei PS il danno non conta di più
-      expected.push((Math.min(1, off?.expected ?? 0) + Math.min(1, better?.expected ?? 0)) / 2);
-      steps.push((stepValue(off) + stepValue(better)) / 2);
+      expected.push(pick.expected);
+      steps.push(pick.step);
     }
     const best = expected.indexOf(Math.max(...expected));
     return { expected: expected[best] ?? 0, step: steps[best] ?? 0, move };
@@ -318,10 +338,12 @@ function measureSet(set: TeamSet, team: TeamSet[], data: EngineData, measure: Me
 
 /** Per misura, contenuto del set, formato, meta e condizioni del team: le proposte rifanno set uguali con oggetti nuovi. */
 const raws = new Map<string, Raw | null>();
+/** Le condizioni del team, segnando con * quelle che arrivano solo da una mossa (valgono un quarto, non metà). */
+const conditionKey = ({ all, moveOnly }: ReturnType<typeof conditionsOf>) => all.map(c => (moveOnly.includes(c) ? `${c}*` : c)).join(',');
 const RAW_LIMIT = 5000;
 
 function rawOf(set: TeamSet, team: TeamSet[], data: EngineData, measure: Measure = 'power'): Raw | null {
-  const key = `${measure}|${setKey(set)}|${data.formatId ?? 'ou'}|${usesMeta(data)}|${conditionsOf(set, team).all.join(',')}`;
+  const key = `${measure}|${setKey(set)}|${data.formatId ?? 'ou'}|${usesMeta(data)}|${conditionKey(conditionsOf(set, team))}`;
   if (raws.has(key)) return raws.get(key)!;
   if (raws.size >= RAW_LIMIT) raws.clear();
   const value = measureSet(set, team, data, measure);
