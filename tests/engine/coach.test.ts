@@ -2,11 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { analyzeTeam } from '../../src/engine/analysis';
-import { coachTeam, COVERED_LEVEL, HELD_LEVEL, describeDiff, MIN_COVERAGE_WEIGHT, rankedChanges, verdictFor } from '../../src/engine/coach';
+import { coachTeam, voteDiff, COVERED_LEVEL, HELD_LEVEL, describeDiff, MIN_COVERAGE_WEIGHT, rankedChanges, verdictFor } from '../../src/engine/coach';
 import { teamOffense } from '../../src/engine/offense';
 import { superEffectiveMoves, type TypeName } from '../../src/engine/types';
 import { topReason } from '../../src/engine/explain';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
+import type { TeamGain } from '../../src/engine/teamGain';
 import { emptySet, importShowdown, mostCommonSet, type TeamSet } from '../../src/engine/sets';
 import { rateTeam, ratingThreats } from '../../src/engine/rating';
 import { fixtureData, fixtureStats, gholdengo, tusk } from '../fixtures/data';
@@ -163,7 +164,7 @@ describe('pro e contro pesati', () => {
     lostResists: [],
   };
   it("il bonus principale è quello dell'area che sale di più", () => {
-    const { pros } = rankedChanges(diff, { roles: 1, defense: 5 }, 'it');
+    const { pros } = rankedChanges(diff, { areaPoints: { roles: 1, defense: 5 } } as TeamGain, 'it');
     expect(pros[0].text).toMatch(/Folletto|Fairy/);
     expect(pros[0].points).toBe(5);
     expect(pros[0].area).toBe('defense');
@@ -171,13 +172,27 @@ describe('pro e contro pesati', () => {
     expect(pros[1].points).toBe(1);
   });
   it("il malus principale è quello dell'area che scende di più", () => {
-    const { cons } = rankedChanges(diff, { roles: -1, strength: -4 }, 'it');
+    const { cons } = rankedChanges(diff, { areaPoints: { roles: -1, strength: -4 } } as TeamGain, 'it');
     expect(cons[0].points).toBe(-4);
     expect(cons[1].points).toBe(-1);
   });
   it('un pro in un\'area che scende vale 0', () => {
-    const { pros } = rankedChanges(diff, { roles: -2, defense: 3 }, 'it');
+    const { pros } = rankedChanges(diff, { areaPoints: { roles: -2, defense: 3 } } as TeamGain, 'it');
     expect(pros.find(p => !/Folletto|Fairy/.test(p.text))?.points).toBe(0);
+  });
+  it("le voci di tipo restano solo se il voto è d'accordo", () => {
+    const typeDiff = {
+      gains: { roles: [], covers: ['Normal' as const, 'Ice' as const], resists: ['Fire' as const, 'Water' as const] },
+      losses: { roles: [], covers: [], resists: [] },
+      lostResists: ['Ground' as const, 'Rock' as const],
+    };
+    const shift = { offense: { Normal: -16, Ice: 8 }, defense: { Fire: 2, Water: 6 }, defenseAfter: { Ground: 75, Rock: 30 }, weakAfter: [] };
+    const kept = voteDiff(typeDiff, shift);
+    expect(kept.gains.covers).toEqual(['Ice']);
+    expect(kept.gains.resists).toEqual(['Water']);
+    expect(kept.lostResists).toEqual(['Rock']);
+    // Senza voto restano tutte
+    expect(voteDiff(typeDiff, undefined)).toBe(typeDiff);
   });
   it('topReason prende il peso più alto', () => {
     expect(topReason([{ component: 'defense', weight: 1, text: 'a' }, { component: 'offense', weight: 3, text: 'b' }] as never)?.text).toBe('b');
