@@ -41,10 +41,10 @@ const fastOrSpeedSetup = (set: TeamSet) => isFast(set)
 
 /**
  * Soglie della regola di National Dex OU (typeRule 'recoverySpeed'), sul punteggio
- * membri con una mossa di recupero (o Poison Heal con Toxic Orb) − velocità base media / 15 − Focus Sash degli attaccanti: sotto la prima Hyper Offense, poi Bulky Offense,
+ * membri con una mossa di recupero (o Poison Heal con Toxic Orb) − velocità base media / 15: sotto la prima Hyper Offense, poi Bulky Offense,
  * Balance e Semi-stall. Tarate il 2026-11-05 sui 102 team di National Dex OU del banco di cui l'autore ha scritto il tipo:
  * 83% di giusti (80% su team lasciati fuori dalla taratura), contro il 74% della regola dei muri. Il recupero spinge verso
- * la difesa; la velocità e la Focus Sash verso l'attacco. La robustezza media delle statistiche separava peggio di tutte:
+ * la difesa; la velocità verso l'attacco. La robustezza media delle statistiche separava peggio di tutte:
  * Garchomp e Mega Gardevoir sono robusti di natura ma attaccano. La Scarf e il meteo provati: peggio.
  * Fra Balance e Semi-stall conta solo il recupero di chi non attacca: Dragonite con Dragon Dance e Roost o Gholdengo con
  * Recover non rendono un Balance un Semi-stall (sul banco gli stessi giusti; il Balance Tusk, Gholdengo, Toxapex,
@@ -64,15 +64,16 @@ const RECOVERY_SPEED_SCALE = 15;
 /**
  * I due punteggi della regola di National Dex OU: `score` (tutto il recupero) separa HO, BO e il resto; `wallScore` (solo
  * il recupero di chi non attacca) separa Balance e Semi-stall.
- * La Focus Sash conta solo su chi attacca (2026-11-07): su Chansey, Toxapex o Skarmory non dice che il team attacca, e
- * spostava il tipo (una Sash su un muro di un Semi-stall da torneo: 74 → 59). Sul banco gli stessi tipi giusti (138 su 183).
+ * La Focus Sash non conta più (2026-11-09, controllo 2 punto 3.4): degli attaccanti valeva una mossa di recupero in meno,
+ * ma sul banco riconosceva un solo team in più (118 contro 117 su 137) e cambiare uno strumento cambiava il tipo
+ * (Metagross Choice Band → Focus Sash in un Semi-stall: 85 → 77, di cui 3 dal tipo); salti di 4+ punti scambiando
+ * Sash e altri strumenti nei team da torneo 49 → 16.
  */
 function recoverySpeedScores(team: TeamSet[], rules: FormatRules): { score: number; wallScore: number } {
   // Recupero: una mossa, o Poison Heal col veleno di Toxic Orb (Gliscor si cura ogni turno come con una mossa)
   const healing = team.filter(set => set.moves.some(m => HEAL_MOVES.has(toID(m))) || poisonHealer(set));
   const speed = team.reduce((acc, set) => acc + (battleSpecies(set)?.baseStats.spe ?? 0), 0) / team.length;
-  const sashes = team.filter(set => toID(set.item) === 'focussash' && attacks(set, rules)).length;
-  const speedPart = speed / RECOVERY_SPEED_SCALE + sashes;
+  const speedPart = speed / RECOVERY_SPEED_SCALE;
   return { score: healing.length - speedPart, wallScore: healing.filter(set => !attacks(set, rules)).length - speedPart };
 }
 
@@ -84,7 +85,7 @@ function pickRecoverySpeed({ score, wallScore }: { score: number; wallScore: num
   return 'semiStall';
 }
 
-/** National Dex OU: il tipo dal recupero, dalla velocità base media e dalle Focus Sash; lo stall resta tutti e 6 passivi. */
+/** National Dex OU: il tipo dal recupero e dalla velocità base media; lo stall resta tutti e 6 passivi. */
 function recoverySpeedArchetype(team: TeamSet[], rules: FormatRules): Archetype {
   if (isStall(team, rules)) return 'stall';
   return pickRecoverySpeed(recoverySpeedScores(team, rules));
@@ -109,7 +110,7 @@ export interface TypeBlend { near: Archetype; share: number }
 export interface TypeMix { archetype: Archetype; near: Archetype; share: number; blends: TypeBlend[]; shown: Archetype[] }
 
 /**
- * Vicino a una soglia della regola di National Dex OU il team è anche un po' dei tipi accanto: una Sash o una mossa di
+ * Vicino a una soglia della regola di National Dex OU il team è anche un po' dei tipi accanto: un po' di velocità o una mossa di
  * recupero in più non fanno più saltare il voto di colpo. Lo Stall (6 passivi) resta un tipo a parte: una quota di Stall
  * con 5 passivi faceva salire il voto aggiungendo un sesto membro inutile (Magikarp con Splash è passivo).
  */
