@@ -1,3 +1,9 @@
+/* Schermi stretti: l'etichetta dei preset resta solo come nome accessibile del menu */
+@media (max-width: 1400px) {
+  /* Copia set e Sostituisci solo con l'icona (il nome resta nel tooltip e per i lettori di schermo) */
+  .editor-actions .btn-label { display: none; }
+}
+/* Portate in cima (clic su una scheda o su Sostituisci): restano sotto la barra in alto, che è fissa */
 /* Scheda Liste: Pokédex a sinistra, Preferiti e Bannati a destra (metà ciascuno) */
 .lists-panel h2 {
   align-self: flex-start;
