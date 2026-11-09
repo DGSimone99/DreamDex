@@ -898,6 +898,7 @@ export const it: Record<keyof typeof en, string> = {
   'guide.speed.rank': "{n}°",
   'guide.speed.rank.best': "il più veloce",
   'guide.speed.rank.worst': "il più lento",
+  'guide.speed.tank': "Un tank (350+ EV fra HP, Difesa e Difesa Speciale, e robusto di suo) pesa metà degli altri: la robustezza regge la lentezza.",
   'guide.speed.scale': "Il voto è la quota media di rivali superati: superarne il 74% vale 74.",
   'guide.off.what': "Cosa misura",
   'guide.off.what.types': "Quanto forte i membri colpiscono il Pokémon medio di ognuno dei 18 tipi. Non è la percentuale di tipi battuti: è quanto, in media, il colpo migliore si avvicina all'OHKO (sotto il 33% vale 0, con l'OHKO 100)",

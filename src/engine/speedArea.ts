@@ -8,6 +8,17 @@ import { mostCommonSet, type TeamSet } from './sets';
 import { isWebImmune, outspeedShare, paradoxSpeedBoost, sameSelf, speedPool, speedStat, statsKey, type SpeedRival } from './speed';
 import { ownField } from './types';
 import { getSpecies } from './dex';
+import { isTank } from './tank';
+
+/**
+ * Peso di un tank (350+ EV fra HP e difese e robusto di suo, `isTank`) nella media della Velocità: metà degli altri
+ * membri, la sua robustezza regge la lentezza (2026-11-09, controllo 2 dopo il punto 3.5b). Provato su National Dex OU
+ * (428 team da torneo, 183 di ladder) con pesi 1 / ½ / ¼ / 0: separazione torneo − ladder 0,963 / 0,990 / 1,013 / 1,029,
+ * partite vere NatDex 54,2 / 54,4 / 54,4 / 54,1% (ogni team al massimo 3 volte 55,8 / 56,4 / 56,0 / 55,6%), Gen 9 OU
+ * 50,2 / 50,1 / 50,1 / 50,0%; voti +1 circa con metà. Con 0 la Velocità media dei Balance da torneo arrivava a quella
+ * degli HO (74): troppo. Un team di soli tank torna alla media normale.
+ */
+export const TANK_SPEED_WEIGHT = 0.5;
 
 export { isWebImmune };
 
@@ -31,7 +42,7 @@ export const SPEED_FULL = 1;
 /**
  * Peso di ogni membro nella Velocità del team: tutti uguali, una media semplice (scelta dell'utente 2026-11-03,
  * confermata il 2026-11-04: coi pesi dal più veloce 30/30/20/10/5/5 separazione torneo-ladder e partite restano uguali,
- * i voti salgono solo di livello). Un membro lento conta come gli altri.
+ * i voti salgono solo di livello). Un membro lento conta come gli altri, tranne i tank (TANK_SPEED_WEIGHT).
  */
 export const SPEED_RANK_WEIGHTS = [1, 1, 1, 1, 1, 1];
 /** I pesi per posizione (dal più veloce al più lento), per la guida. */
@@ -79,6 +90,8 @@ export interface SpeedCell {
 
 export interface MemberSpeed {
   species: string;
+  /** Tank (`isTank`): pesa TANK_SPEED_WEIGHT nella media del team. Lo segna `teamSpeedArea`, non `memberSpeed`. */
+  tank?: boolean;
   speed: number;
   /** Quota del gruppo superata senza condizioni (pareggio a metà). */
   raw: number;
@@ -358,7 +371,7 @@ function measure(set: TeamSet, data: EngineData, team: TeamConditions): MemberSp
   return { species: species.name, speed, raw, gains, own: ownTotal, total, controlOptions, cells };
 }
 
-/** La parte Velocità del team: la media semplice dei membri, poi la scala lineare (il riferimento vale 100). */
+/** La parte Velocità del team: la media dei membri (i tank a metà), poi la scala lineare (il riferimento vale 100). */
 export function speedPart(list: MemberSpeed[]): number {
   return softScore(weightedMean(list, m => m.total) / SPEED_FULL);
 }
@@ -372,7 +385,7 @@ function weightedMean(list: MemberSpeed[], pick: (m: MemberSpeed) => number): nu
   // A pari velocità le posizioni si dividono il peso: il risultato non dipende dall'ordine dei membri
   const weights = sorted.map(m => {
     const tied = sorted.map((o, i) => (o.speed === m.speed ? rankWeight(i) : null)).filter((w): w is number => w !== null);
-    return tied.reduce((a, b) => a + b, 0) / tied.length;
+    return (tied.reduce((a, b) => a + b, 0) / tied.length) * (m.tank ? TANK_SPEED_WEIGHT : 1);
   });
   const total = weights.reduce((a, b) => a + b, 0);
   return sorted.reduce((acc, m, i) => acc + weights[i] * pick(m), 0) / total;
@@ -446,7 +459,7 @@ export interface ControlSource {
 
 /** Velocità del team: quanti Pokémon supera ogni membro da solo, e quanti in più grazie al controllo del team. */
 export function teamSpeedArea(team: TeamSet[], data: EngineData): TeamSpeed {
-  const list = team.map(set => memberSpeed(set, team, data)).filter((m): m is MemberSpeed => m !== null);
+  const list = team.map(set => { const m = memberSpeed(set, team, data); return m && (isTank(set) ? { ...m, tank: true } : m); }).filter((m): m is MemberSpeed => m !== null);
   if (!list.length) return { value: 0, speed: 0, control: 0, sources: [], members: [], threats: [] };
   const value = softScore(weightedMean(list, m => m.total) / SPEED_FULL);
   const speed = softScore(weightedMean(list, m => m.own) / SPEED_FULL);

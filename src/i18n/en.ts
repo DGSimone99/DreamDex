@@ -896,6 +896,7 @@ export const en = {
   'guide.speed.rank': "{n}th",
   'guide.speed.rank.best': "the fastest",
   'guide.speed.rank.worst': "the slowest",
+  'guide.speed.tank': "A tank (350+ EVs across HP, Defense and Sp. Def, and naturally bulky) weighs half as much as the others: its bulk makes up for being slow.",
   'guide.speed.scale': "The score is the average share of rivals outsped: outspeeding 74% scores 74.",
   'guide.off.what': "What it measures",
   'guide.off.what.types': "How hard the members hit the average Pokémon of each of the 18 types. It is not the share of types beaten: it is how close, on average, the best hit gets to an OHKO (under 33% it is 0, an OHKO is 100)",
