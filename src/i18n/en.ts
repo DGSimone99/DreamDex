@@ -225,7 +225,7 @@ export const en = {
   'catalog.conditionUsed.when': "A member sets a weather, terrain or Trick Room and at least {users} teammates use it",
   'catalog.conditionUsed.points': "+{used} per condition",
   'catalog.weatherHelp.name': "Weather that protects",
-  'catalog.weatherHelp.when': "The team's weather or terrain removes a teammate's weakness (the setter doesn't count)",
+  'catalog.weatherHelp.when': "The team's weather or terrain removes a teammate's weakness and a teammate makes use of it (the setter doesn't count)",
   'catalog.weatherHelp.points': "+{help} once",
   'rating.bonus.helps': "{condition} from {setter} helps the team: {list}",
   'rating.bonus.coreTrio': "Three-member core: {list} cover each other's weaknesses in a cycle",
