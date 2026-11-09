@@ -72,10 +72,23 @@ const RECOVERY_SPEED_SCALE = 15;
  * vero; con 3 il team dell'esempio resta HO. Contare solo i tank al posto della regola (0 HO, 1–2 BO, 3 Balance…) era
  * molto peggio (34–61 giusti): Bulky Offense e Balance hanno lo stesso numero di tank. Gli EV e non le statistiche:
  * Great Tusk o Zamazenta con 252 Spe sono robusti di natura ma negli HO fanno gli attaccanti.
+ * In più serve un minimo di robustezza di suo: HP × Difesa o HP × Difesa Speciale, statistiche a livello 100 senza EV
+ * (IV 31, natura neutra; Eviolite × 1,5), almeno TANK_MIN_BULK: Ditto con 350 EV difensivi non è un tank. Le statistiche
+ * base moltiplicate e basta penalizzavano chi ha pochi HP (Toxapex sotto Landorus-T, Shuckle e Rotom-Wash sotto
+ * Pelipper). Sul banco i più fragili sono Ditto 31 mila, Wartortle 51, Rotom-Wash 60, Pelipper 62, Toxapex e Lando ~69;
+ * i tipi giusti non cambiano. Pelipper difensivo resta un tank: è robusto quanto Rotom-Wash.
  */
 const TANK_EVS = 350;
+const TANK_MIN_BULK = 50_000;
 const TANK_BRAKE = 2;
-const isTank = (set: TeamSet) => (set.evs?.hp ?? 0) + (set.evs?.def ?? 0) + (set.evs?.spd ?? 0) >= TANK_EVS;
+function isTank(set: TeamSet): boolean {
+  if ((set.evs?.hp ?? 0) + (set.evs?.def ?? 0) + (set.evs?.spd ?? 0) < TANK_EVS) return false;
+  const base = battleSpecies(set)?.baseStats;
+  if (!base) return false;
+  const hp = 2 * base.hp + 141;
+  const eviolite = toID(set.item) === 'eviolite' ? 1.5 : 1;
+  return hp * (2 * Math.max(base.def, base.spd) + 36) * eviolite >= TANK_MIN_BULK;
+}
 
 /**
  * I due punteggi della regola di National Dex OU: `score` (tutto il recupero) separa HO, BO e il resto; `wallScore` (solo

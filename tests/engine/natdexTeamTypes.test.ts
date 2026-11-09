@@ -171,3 +171,19 @@ describe('freno dei tank (controllo 2 punto 3.5b)', () => {
     expect(mix.shown.sort()).toEqual(['balance', 'hyperOffense']);
   });
 });
+
+describe('il tank deve essere robusto di suo', () => {
+  it('Ditto con 350+ EV difensivi non conta come tank', () => {
+    const base: TeamSet[] = [
+      mk('Zamazenta', 'Fightinium Z', 'Dauntless Shield', ['Close Combat', 'Stone Edge', 'Crunch', 'Ice Fang']),
+      mk('Kingambit', 'Leftovers', 'Supreme Overlord', ['Swords Dance', 'Knock Off', 'Sucker Punch', 'Iron Head'], 'Adamant'),
+      mk('Zapdos', 'Choice Specs', 'Static', ['Hurricane', 'Thunderbolt', 'Volt Switch', 'Heat Wave'], 'Timid', special),
+      mk('Alomomola', 'Assault Vest', 'Regenerator', ['Flip Turn', 'Knock Off', 'Mirror Coat', 'Aqua Jet'], 'Sassy', { hp: 20, def: 236, spd: 252 }),
+      mk('Great Tusk', 'Rocky Helmet', 'Protosynthesis', ['Stealth Rock', 'Headlong Rush', 'Ice Spinner', 'Rapid Spin']),
+    ];
+    const ditto = mk('Ditto', 'Choice Scarf', 'Imposter', ['Transform'], 'Relaxed', { hp: 252, def: 252, spd: 4 });
+    const slowking = mk('Slowking-Galar', 'Heavy-Duty Boots', 'Regenerator', ['Future Sight', 'Sludge Bomb', 'Ice Beam', 'Chilly Reception'], 'Relaxed', { hp: 252, def: 252, spd: 4 });
+    expect(teamArchetype([...base, slowking], NATDEX_OU_RULES)?.archetype).toBe('bulkyOffense');
+    expect(teamArchetype([...base, ditto], NATDEX_OU_RULES)?.archetype).toBe('hyperOffense');
+  });
+});

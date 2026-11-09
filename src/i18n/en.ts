@@ -488,7 +488,7 @@ export const en = {
   'teamTypes.how.speed': "Speed",
   'teamTypes.how.speed.text': "The faster the team (average base Speed), the more offensive it is",
   'teamTypes.how.tank': "Tanks",
-  'teamTypes.how.tank.text': "With at least 2 Pokémon with 350+ EVs across HP, Defense and Sp. Def (even without recovery) the team is not Hyper Offense",
+  'teamTypes.how.tank.text': "With at least 2 naturally bulky Pokémon with 350+ EVs across HP, Defense and Sp. Def (even without recovery) the team is not Hyper Offense",
   'teamTypes.how.note': "Between Balance and Semi-stall only healers that don't attack count. Stall: all 6 are walls. Near the border between two types the vote is partly the one of the next type. The six slots above show a typical team, not the rule.",
   'help.view.bonusMalus': "Bonuses and maluses add to the grade: here are the active ones and the full catalogue.",
   'summary.control': "Control:",

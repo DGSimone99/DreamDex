@@ -490,7 +490,7 @@ export const it: Record<keyof typeof en, string> = {
   'teamTypes.how.speed': "Velocità",
   'teamTypes.how.speed.text': "Più è veloce la squadra (velocità base media), più è offensiva",
   'teamTypes.how.tank': "Tank",
-  'teamTypes.how.tank.text': "Con almeno 2 Pokémon da 350+ EV fra HP, Difesa e Difesa Speciale (anche senza recupero) il team non è Hyper Offense",
+  'teamTypes.how.tank.text': "Con almeno 2 Pokémon robusti di loro e con 350+ EV fra HP, Difesa e Difesa Speciale (anche senza recupero) il team non è Hyper Offense",
   'teamTypes.how.note': "Fra Balance e Semi-stall conta solo chi si cura senza attaccare. Stall: tutti e 6 muri. Vicino al confine fra due tipi il voto è in parte quello del tipo accanto. I sei posti qui sopra sono un team tipico, non la regola.",
   'help.view.bonusMalus': "Bonus e malus si sommano al voto: qui ci sono quelli attivi e il catalogo completo.",
   'summary.control': "Controllo:",
