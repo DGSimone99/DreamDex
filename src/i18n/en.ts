@@ -912,7 +912,7 @@ export const en = {
   'guide.off.power.locked': "Band, Specs and Gorilla Tactics",
   'guide.off.power.locked.rule': "Damage counts 10% less (only once, even with both), because they lock the member into one move",
   'guide.off.power.weather': "Weather",
-  'guide.off.power.weather.rule': "If a teammate sets the weather or terrain, the member gets half the bonus; if its own ability sets it, the full bonus",
+  'guide.off.power.weather.rule': "If a teammate's ability sets the weather or terrain, the member gets half the bonus; if it only comes from a move (Sunny Day, Rain Dance…), a quarter; if its own ability sets it, the full bonus",
   'guide.off.power.setup': "Setup",
   'guide.off.power.oneuse': "Tera and Z-moves",
   'guide.off.power.tera': "Tera",
