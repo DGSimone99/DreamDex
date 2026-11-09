@@ -719,15 +719,6 @@ describe('CoachingView', () => {
   });
 });
 
-describe('AnalysisPanel: Coaching e profilo di un membro', () => {
-  it('la vista Coaching vince sul membro aperto', () => {
-    const coaching = coachTeam(three, DEFAULT_FORMAT, data);
-    renderIt(<AnalysisPanel team={three} analysis={analyzeTeam(three, data)} rating={rateTeam(three, data, 'it')} data={data} coaching={coaching}
-      view="coaching" onView={() => {}} member={0} onMember={() => {}} />);
-    expect(screen.getByRole('group', { name: 'Difesa' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /Panoramica/ })).toBeNull();
-  });
-});
 
 describe('proposta di mossa nell\'editor', () => {
   const moveButton = () => within(analysis()).getAllByRole('button', { name: /^Dai .+ a .+, (?:\+\d+|±0)$/ })[0];

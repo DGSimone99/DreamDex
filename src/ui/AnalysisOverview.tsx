@@ -21,8 +21,6 @@ export function AnalysisOverview({ team, analysis, rating, coaching, data, onVie
   coaching?: Coaching;
   data: EngineData;
   onView: (view: AnalysisView) => void;
-  /** Messo da parte con la riga Membri: torna quando la riga trova posto. */
-  onMember?: (index: number) => void;
 }) {
   const t = useT();
   const lang = useLang();

@@ -15,7 +15,6 @@ import { rolesValue, type AreaKey } from './AreaDetail';
 import { AreaView } from './AreaView';
 import { CoachingView } from './CoachingView';
 import { Icon } from './icons';
-import { MemberProfile } from './MemberSheet';
 import { MetaUsePanel } from './MetaUsePanel';
 import { PokemonList } from './PokemonName';
 import { Sprite } from './Sprite';
@@ -28,7 +27,7 @@ export const problemsOf = (problems: CoachProblem[] | undefined, area: AreaKey) 
  * La scheda Analisi: le schede interne (Panoramica e le aree del voto) e il loro contenuto. La Panoramica dice cosa fare;
  * al posto della Panoramica può esserci il profilo di un membro; le aree mostrano sulla pagina sottostatistiche e tabelle complete.
  */
-export function AnalysisPanel({ team, analysis, rating, coaching, advice = null, data, view, onView, member = null, onMember, onAdd, onFix, onMoveFix, onApplyFix, onApplyMove, teamCollapsed = false }: {
+export function AnalysisPanel({ team, analysis, rating, coaching, advice = null, data, view, onView, onAdd, onFix, onMoveFix, onApplyFix, onApplyMove, teamCollapsed = false }: {
   /** Team ridotto: la Panoramica usa la densità ampia. */
   teamCollapsed?: boolean;
   /** Un candidato del Coaching: apre la scheda Pokémon su di lui. */
@@ -51,8 +50,6 @@ export function AnalysisPanel({ team, analysis, rating, coaching, advice = null,
   view: AnalysisView;
   onView: (view: AnalysisView) => void;
   /** Membro aperto nella Panoramica (null: nessuno) e come cambiarlo. */
-  member?: number | null;
-  onMember: (index: number | null) => void;
 }) {
   const tr = useT();
   // La sottoscheda scelta in ogni area, solo in memoria: tornando su un'area si ritrova (Generale se non c'è più)
@@ -60,7 +57,6 @@ export function AnalysisPanel({ team, analysis, rating, coaching, advice = null,
   const area = view !== 'overview' && view !== 'coaching' && rating ? view : null;
   const showCoaching = view === 'coaching' && !!rating;
   const serious = (coaching?.problems ?? []).filter(p => p.severity === 'serious').length;
-  const open = member !== null && member < team.length ? member : null;
   const tabView: AnalysisView = area ?? (showCoaching ? 'coaching' : 'overview');
   let body;
   if (area && rating) {
@@ -74,11 +70,9 @@ export function AnalysisPanel({ team, analysis, rating, coaching, advice = null,
       threatUsage={Object.fromEntries(ratingThreats(rating, data).map(th => [th.name, th.usage]))}
       onFix={fix => onFix?.(fix)} onMoveFix={fix => onMoveFix?.(fix)}
       onApplyFix={fix => onApplyFix?.(fix)} onApplyMove={fix => onApplyMove?.(fix)} />;
-  } else if (open !== null) {
-    body = <MemberProfile team={team} data={data} index={open} onIndex={onMember} onBack={() => onMember(null)} />;
   } else {
     body = <AnalysisOverview team={team} analysis={analysis} rating={rating} coaching={coaching} data={data}
-      onView={onView} onMember={onMember} onAdd={onAdd} teamCollapsed={teamCollapsed} />;
+      onView={onView} onAdd={onAdd} teamCollapsed={teamCollapsed} />;
   }
   return (
     <section aria-label={tr('analysis.region')} className="analysis">
