@@ -1,6 +1,6 @@
 import { analyzeTeam, UNIFORM_TYPE_WEIGHTS, usesMeta, type TeamAnalysis, type ThreatRow } from './analysis';
 import type { EngineData } from './data';
-import { battleAbility, battleName, battleSpecies, toID } from './dex';
+import { battleAbility, battleName, battleSpecies, dex, getMove, toID } from './dex';
 import { hitQuality, memberPower, teamPower, type MemberPower } from './power';
 import { teamOffense, type TeamOffense } from './offense';
 import { teamDefense, type TeamDefense } from './defense';
@@ -141,7 +141,10 @@ export interface TeamRating {
   memberPoints: number;
   grade: string;
   label: string;
+  /** Meno di 6 specie riconosciute: i ruoli mancanti non tolgono punti (si mostrano senza rosso). */
   provisional: boolean;
+  /** Avviso "Voto provvisorio" (giallo): specie, mosse o strumenti sconosciuti, membri senza mosse. Il voto non cambia. */
+  notes: string[];
   areas: RatingArea[];
   /** Stall riconosciuto: i membri passivi si giudicano dalla robustezza nella forza mostrata (non cambia i pesi né i ruoli). */
   archetype: 'stall' | null;
@@ -434,6 +437,25 @@ export function conditionUsedBonus(team: TeamSet[], lang: Lang = 'it'): Redundan
   return items;
 }
 
+/**
+ * Cosa rende il voto provvisorio in un team di 6: una specie che non si riconosce, un membro senza mosse, mosse o strumento
+ * sconosciuti (es. un errore di battitura nell'import). Il voto non cambia: lo si dice soltanto (scelta dell'utente 2026-11-09).
+ */
+export function provisionalNotes(team: TeamSet[], lang: Lang = 'it'): string[] {
+  return team.flatMap(set => {
+    if (!set.species) return [];
+    if (!battleSpecies(set)) return [t(lang, 'rating.note.species', { name: set.species })];
+    const name = set.name || battleName(set);
+    const moves = set.moves.filter(Boolean);
+    const unknown = moves.filter(m => !getMove(m));
+    const notes: string[] = [];
+    if (moves.length === unknown.length) notes.push(t(lang, 'rating.note.noMoves', { name }));
+    if (unknown.length) notes.push(t(lang, unknown.length === 1 ? 'rating.note.move' : 'rating.note.moves', { name, list: unknown.join(', ') }));
+    if (set.item && !dex.items.get(set.item)?.exists) notes.push(t(lang, 'rating.note.item', { name, item: set.item }));
+    return notes;
+  });
+}
+
 export function gradeFor(score: number, lang: Lang = 'it'): { grade: string; label: string } {
   const { grade } = GRADES.find(g => score >= g.min)!;
   return { grade, label: t(lang, `grade.${grade}`) };
@@ -556,8 +578,10 @@ function rateTeamAs(input: TeamSet[], data: EngineData, lang: Lang = 'it', opts:
   // ha sei membri perfetti, e il voto si fermava qualche punto sotto (scelta dell'utente 2026-11-04). Non si mostra.
   const memberPoints = MEMBER_POINT * team.filter(set => !!battleSpecies(set)).length;
   const overall = Math.min(100, Math.max(0, base - penalty.total + bonus.total + memberPoints));
+  // Sulle mosse scritte (input), non su quelle usabili: una Choice con sole mosse di stato ha già il suo avviso
+  const notes = provisionalNotes(input, lang);
   return {
-    base, penalty, bonus, memberPoints, power: power.members, overall, ...gradeFor(overall, lang), provisional: team.filter(set => !!battleSpecies(set)).length < 6, areas, archetype, meta: usesMeta(data),
+    base, penalty, bonus, memberPoints, power: power.members, overall, ...gradeFor(overall, lang), provisional: !complete, notes, areas, archetype, meta: usesMeta(data),
     teamType: analysis.needs.archetype, typeMix: null, trickRoom, needs: analysis.needs,
     weights: areaWeights, weightTable, offense, defense, speed, roles,
   };

@@ -30,7 +30,7 @@ export function GradeBadge({ rating, ruleIssues = [], blocked = null, onOpen }: 
     <div className={`grade-badge${rating ? ` grade-${rating.grade}` : ' none'}`}>
       {/* Per i lettori di schermo una frase sola; il disegno qui sotto è solo visivo */}
       <span className="visually-hidden">
-        {rating ? t('rating.badgeSr', { grade: rating.grade, overall: rating.overall, label: rating.label }) : `${t('rating.badgeHead')}: ${t('rating.noGrade')}`}
+        {rating ? t('rating.badgeSr', { grade: rating.grade, overall: rating.overall, label: rating.label }) + (rating.notes.length ? `, ${t('rating.provisional')}` : '') : `${t('rating.badgeHead')}: ${t('rating.noGrade')}`}
       </span>
       <span className="grade-visual" aria-hidden="true">
       <span className="grade-head">{t('rating.badgeHead')}</span>
@@ -46,9 +46,12 @@ export function GradeBadge({ rating, ruleIssues = [], blocked = null, onOpen }: 
       {/* Testa: l'aiuto sul voto e il triangolo delle regole, fuori dal disegno perché si usano */}
       {(rating || blocked) && (
         <span className="grade-tools">
-          {ruleIssues.length > 0 && <AlertMark alerts={[
-            { level: 'danger', text: t('rating.rulesBroken') },
+          {/* Regole in rosso; in giallo il voto provvisorio (membro senza mosse, specie, mossa o strumento sconosciuti) */}
+          {(ruleIssues.length > 0 || !!rating?.notes.length) && <AlertMark alerts={[
+            ...(ruleIssues.length ? [{ level: 'danger' as const, text: t('rating.rulesBroken') }] : []),
             ...ruleIssues.map(text => ({ level: 'danger' as const, text })),
+            ...(rating?.notes.length ? [{ level: 'warn' as const, text: t('rating.provisional') }] : []),
+            ...(rating?.notes ?? []).map(text => ({ level: 'warn' as const, text })),
           ]} />}
           {rating && <RatingHelp teamType={rating.teamType} trickRoom={rating.trickRoom} meta={rating.offense.coverageMeta !== null} weights={rating.weightTable} typeRule={rating.needs.rules.typeRule} />}
         </span>
