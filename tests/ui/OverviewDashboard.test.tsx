@@ -371,9 +371,10 @@ describe('Riassunto', () => {
     expect(region().querySelector('.sum-near')).toHaveAttribute('title', 'Il team sta vicino al confine col tipo accanto: una parte del voto viene da quel tipo');
     await user.click(within(region()).getByRole('button', { name: 'Tipi di team: come si riconoscono' }));
     const dialog = screen.getByRole('dialog', { name: 'Tipi di team' });
-    // National Dex OU: come si riconosce il tipo (recupero, velocità, Focus Sash)
+    // National Dex OU: come si riconosce il tipo (recupero e velocità; la Focus Sash non conta più)
     expect(within(dialog).getByRole('heading', { name: 'Come si riconosce in National Dex OU' })).toBeInTheDocument();
-    expect(dialog).toHaveTextContent('Ogni Focus Sash su un attaccante spinge verso Hyper Offense (su un muro non conta)');
+    expect(dialog).toHaveTextContent('Più è veloce la squadra (velocità base media), più è offensiva');
+    expect(dialog).not.toHaveTextContent('Focus Sash');
     await user.keyboard('{Escape}');
     cleanup();
     // Gli altri formati riconoscono il tipo dai muri: la sezione non c'è

@@ -50,7 +50,6 @@ function TeamTypesGuide({ rule }: { rule: FormatRules['typeRule'] }) {
           <ul className="tt-styles tt-how">
             <li><strong><Icon name="heart" />{t('teamTypes.how.recovery')}</strong><span className="tt-caption">{t('teamTypes.how.recovery.text')}</span></li>
             <li><strong><Icon name="speed" />{t('teamTypes.how.speed')}</strong><span className="tt-caption">{t('teamTypes.how.speed.text')}</span></li>
-            <li><strong><Icon name="spark" />{t('teamTypes.how.sash')}</strong><span className="tt-caption">{t('teamTypes.how.sash.text')}</span></li>
           </ul>
           <p className="tt-note tt-how-note">{t('teamTypes.how.note')}</p>
         </>
