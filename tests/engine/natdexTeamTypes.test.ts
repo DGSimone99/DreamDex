@@ -87,6 +87,13 @@ describe('tipi di team in National Dex OU (recupero e velocità)', () => {
     const sash = typeMix(slower.map((s, i) => (i === 1 ? { ...s, item: 'Focus Sash' } : s)), NATDEX_OU_RULES)!;
     expect(sash.near).toBe('bulkyOffense');
     expect(typeMix(stall, NATDEX_OU_RULES)).toBeNull();
+    // La fascia Bulky Offense è più stretta di due zone: col recupero a metà fascia contano tutti e due i vicini
+    // (prima solo il più vicino, e un Roost tolto faceva saltare il voto); nella riga si mostra il più vicino
+    // Punteggio −4,51 (2 recuperi − velocità media 97,7 / 15): 0,60 dalla soglia HO, 0,82 da quella Balance
+    expect(mix.blends.map(b => b.near)).toEqual(['hyperOffense', 'balance']);
+    expect(mix.blends[0].share).toBeGreaterThan(mix.blends[1].share);
+    expect(mix.blends[1].share).toBeGreaterThan(0);
+    expect(mix.shown).toEqual(['hyperOffense']);
     expect(typeMix(slower, DEFAULT_RULES)).toBeNull();
     expect(typeMix(slower.slice(0, 5), NATDEX_OU_RULES)).toBeNull();
   });
@@ -99,7 +106,11 @@ describe('tipi di team in National Dex OU (recupero e velocità)', () => {
     const near = rateTeam(slower, data, 'it', { archetype: 'hyperOffense' })!;
     expect(r.typeMix?.near).toBe('hyperOffense');
     expect(own.typeMix).toBeNull();
-    expect(r.overall).toBe(Math.round((1 - r.typeMix!.share) * own.overall + r.typeMix!.share * near.overall));
+    // Ogni vicino a portata pesa per la sua quota (nella fascia Bulky Offense anche tutti e due)
+    const votes = r.typeMix!.blends.map(b => ({ share: b.share, vote: rateTeam(slower, data, 'it', { archetype: b.near })!.overall }));
+    const rest = 1 - votes.reduce((a, v) => a + v.share, 0);
+    expect(r.overall).toBe(Math.round(rest * own.overall + votes.reduce((a, v) => a + v.share * v.vote, 0)));
+    expect(near.overall).toBe(votes[0].vote);
     const item = [...r.penalty.items, ...r.bonus.items].find(i => i.catalog === 'typeBlend');
     if (r.overall === own.overall) expect(item).toBeUndefined();
     else expect(item!.text).toMatch(/^Vicino a Hyper Offense: il voto è per il \d+% quello da Hyper Offense/);

@@ -445,8 +445,8 @@ export interface RateOptions {
 }
 
 /**
- * Il voto del team. Vicino a una soglia fra due tipi (typeMix, archetype.ts) è una miscela col voto del tipo accanto
- * (fino a metà proprio sulla soglia): la differenza si vede come una riga "Vicino a…" fra i bonus o i malus, così base,
+ * Il voto del team. Vicino a una soglia fra due tipi (typeMix, archetype.ts) è una miscela col voto dei tipi accanto
+ * (fino a metà proprio sulla soglia; nella fascia Bulky Offense anche con tutti e due i vicini): la differenza si vede come una riga "Vicino a…" fra i bonus o i malus, così base,
  * malus e bonus tornano col voto. Con `opts.archetype` (tipo scelto a mano) niente miscela.
  */
 export function rateTeam(given: TeamSet[], data: EngineData, lang: Lang = 'it', opts: RateOptions = {}): TeamRating | null {
@@ -457,13 +457,18 @@ export function rateTeam(given: TeamSet[], data: EngineData, lang: Lang = 'it', 
   if (!own || opts.archetype) return own;
   const mix = typeMix(input.map(withUsableMoves), rulesOf(data));
   if (!mix) return own;
-  const near = rateTeamAs(input, data, lang, { archetype: mix.near })!;
-  const overall = Math.round((1 - mix.share) * own.overall + mix.share * near.overall);
+  // Ogni tipo vicino a portata pesa per la sua quota (nella fascia Bulky Offense possono essere due)
+  const near = mix.blends.map(blend => ({ ...blend, vote: rateTeamAs(input, data, lang, { archetype: blend.near })!.overall }));
+  const rest = 1 - sum(near.map(n => n.share));
+  const overall = Math.round(rest * own.overall + sum(near.map(n => n.share * n.vote)));
   const shift = overall - own.overall;
-  const item: Redundancy = {
-    text: t(lang, 'rating.typeBlend', { type: t(lang, `archetype.${mix.near}`), share: Math.round(100 * mix.share), vote: near.overall }),
-    points: Math.abs(shift), catalog: 'typeBlend', key: 'typeBlend',
-  };
+  // Nella riga solo il tipo più vicino, tutti e due se sono alla stessa distanza
+  const part = (n: (typeof near)[number]) => ({ type: t(lang, `archetype.${n.near}`), share: Math.round(100 * n.share), vote: n.vote });
+  const shown = near.filter(n => mix.shown.includes(n.near));
+  const text = shown.length > 1
+    ? t(lang, 'rating.typeBlend2', { type: part(shown[0]).type, share: part(shown[0]).share, vote: shown[0].vote, type2: part(shown[1]).type, share2: part(shown[1]).share, vote2: shown[1].vote })
+    : t(lang, 'rating.typeBlend', part(shown[0]));
+  const item: Redundancy = { text, points: Math.abs(shift), catalog: 'typeBlend', key: 'typeBlend' };
   const penalty = shift < 0 ? { total: own.penalty.total + item.points, items: [...own.penalty.items, item] } : own.penalty;
   const bonus = shift > 0 ? { total: own.bonus.total + item.points, items: [...own.bonus.items, item] } : own.bonus;
   return { ...own, overall, ...gradeFor(overall, lang), penalty, bonus, typeMix: mix };
