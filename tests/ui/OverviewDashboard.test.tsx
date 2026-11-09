@@ -58,7 +58,7 @@ function sample(overrides: Partial<DashboardData> = {}): DashboardData {
 /** Il Riassunto costruito: Hyper Offense, due attaccanti, un muro, nessun meteo, Stealth Rock. */
 function summaryOf(overrides: Partial<TeamSummary> = {}): TeamSummary {
   return {
-    archetype: 'hyperOffense', nearType: null, typeRule: 'recoverySpeed', styles: [],
+    archetype: 'hyperOffense', nearTypes: [], typeRule: 'recoverySpeed', styles: [],
     attackers: ['Garchomp', 'Zapdos'], walls: ['Toxapex'],
     offenseOf: { Garchomp: 92, Zapdos: 86 },
     defenseOf: { Toxapex: 88 },
@@ -366,7 +366,7 @@ describe('Riassunto', () => {
     // Lontano dai confini niente "quasi…"
     expect(region().querySelector('.sum-near')).toBeNull();
     cleanup();
-    mount({ summary: summaryOf({ nearType: 'bulkyOffense' }) });
+    mount({ summary: summaryOf({ nearTypes: ['bulkyOffense'] }) });
     expect(region().querySelector('.sum-near')).toHaveTextContent('quasi Bulky Offense');
     expect(region().querySelector('.sum-near')).toHaveAttribute('title', 'Il team sta vicino al confine col tipo accanto: una parte del voto viene da quel tipo');
     await user.click(within(region()).getByRole('button', { name: 'Tipi di team: come si riconoscono' }));

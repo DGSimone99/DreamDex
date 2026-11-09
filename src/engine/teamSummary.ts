@@ -28,7 +28,8 @@ export interface HazardRow { member: string; moves: string[] }
 export interface TeamSummary {
   archetype: Archetype | null;
   /** Il tipo accanto quando il team è vicino al confine (il voto ne tiene conto in parte), altrimenti null. */
-  nearType: Archetype | null;
+  /** I tipi vicini da mostrare ("quasi …"): il più vicino, tutti e due se alla stessa distanza; vuoto se nessuno. */
+  nearTypes: Archetype[];
   /** Come il formato riconosce il tipo di team (la guida "Tipi di team" spiega la regola di National Dex OU). */
   typeRule: FormatRules['typeRule'];
   styles: TeamStyle[];
@@ -77,7 +78,7 @@ export function teamSummary(team: TeamSet[], rating: TeamRating, coaching: Coach
 
   return {
     archetype: coaching.teamType?.archetype ?? null,
-    nearType: rating.typeMix?.near ?? null,
+    nearTypes: rating.typeMix?.shown ?? [],
     typeRule: rules.typeRule,
     styles: coaching.teamType?.styles ?? [],
     attackers,
