@@ -99,11 +99,17 @@ function recoverySpeedArchetype(team: TeamSet[], rules: FormatRules): Archetype 
  */
 export const TYPE_BLEND_ZONE = 1.5;
 
-/** Il tipo vicino e la sua quota nel voto (da 0 a 0,5: metà proprio sulla soglia). */
-export interface TypeMix { archetype: Archetype; near: Archetype; share: number }
+/** Un tipo vicino e la sua quota nel voto (da 0 a 0,5: metà proprio sulla soglia). */
+export interface TypeBlend { near: Archetype; share: number }
 
 /**
- * Vicino a una soglia della regola di National Dex OU il team è anche un po' del tipo accanto: una Sash o una mossa di
+ * I tipi vicini con la loro quota (`blends`, dal più vicino). `near` e `share` sono il più vicino; `shown` i tipi da
+ * mostrare nella riga "Vicino a…": il più vicino, tutti e due se sono alla stessa distanza.
+ */
+export interface TypeMix { archetype: Archetype; near: Archetype; share: number; blends: TypeBlend[]; shown: Archetype[] }
+
+/**
+ * Vicino a una soglia della regola di National Dex OU il team è anche un po' dei tipi accanto: una Sash o una mossa di
  * recupero in più non fanno più saltare il voto di colpo. Lo Stall (6 passivi) resta un tipo a parte: una quota di Stall
  * con 5 passivi faceva salire il voto aggiungendo un sesto membro inutile (Magikarp con Splash è passivo).
  */
@@ -125,10 +131,18 @@ export function typeMix(team: TeamSet[], rules: FormatRules): TypeMix | null {
           { near: archetype === 'balance' ? 'semiStall' : 'balance', distance: Math.abs(wallScore - C.balance) },
           { near: 'bulkyOffense', distance: score - C.bulkyOffense },
         ];
-  const closest = sides.filter(side => side.near !== archetype).sort((a, b) => a.distance - b.distance)[0];
-  if (!closest) return null;
-  const share = 0.5 * (1 - closest.distance / TYPE_BLEND_ZONE);
-  return share > 0 ? { archetype, near: closest.near, share } : null;
+  // Tutti i vicini a portata, non solo il più vicino (2026-11-09, controllo 2 punto 3.3): la fascia Bulky Offense è larga
+  // 1,42, meno di due zone, e col solo vicino più vicino a metà fascia il voto saltava da "quasi Balance" a "quasi HO"
+  // togliendo un Roost (Charizard-Mega-Y: 75 → 79 con aree identiche)
+  const blends = sides
+    .filter(side => side.near !== archetype)
+    .map(side => ({ near: side.near, share: 0.5 * (1 - side.distance / TYPE_BLEND_ZONE) }))
+    .filter(blend => blend.share > 0)
+    .sort((a, b) => b.share - a.share);
+  if (!blends.length) return null;
+  const [closest] = blends;
+  const shown = blends.filter(blend => Math.round(100 * blend.share) === Math.round(100 * closest.share)).map(blend => blend.near);
+  return { archetype, near: closest.near, share: closest.share, blends, shown };
 }
 
 /** Archetipo dal numero di muri passivi (e dal recupero e dalla robustezza per distinguere i team offensivi). */
