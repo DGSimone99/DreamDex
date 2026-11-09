@@ -167,6 +167,7 @@ export function SpeedGuideSection({ speed, meta }: { speed: TeamSpeed; meta: boo
 
       <h5>{g('toteam')}</h5>
       <Bar label={g('rank.weights')} weights={percentWeights(speedRankWeights())} rank={n => g('rank', { n })} from={g('rank.best')} to={g('rank.worst')} />
+      <p className="guide-foot guide-scale">{g('tank')}</p>
       <p className="guide-foot guide-scale">{g('scale')}</p>
     </>
   );

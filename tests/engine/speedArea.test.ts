@@ -159,3 +159,22 @@ describe('controllo e malus: casi limite', () => {
   });
 });
 
+
+describe('i tank pesano metà nella Velocità', () => {
+  const tankApex: TeamSet = { ...toxapex, evs: { hp: 252, def: 252, spd: 4 } };
+  it('un Toxapex con 350+ EV difensivi pesa metà degli altri; senza EV difensivi pesa pieno', () => {
+    const tanked = teamSpeedArea([dragapult, valiant, tankApex], noMeta);
+    const [d, v, t] = ['Dragapult', 'Iron Valiant', 'Toxapex'].map(name => tanked.members.find(m => m.species === name)!);
+    expect(t.tank).toBe(true);
+    expect(tanked.value).toBe(softScore((d.total + v.total + 0.5 * t.total) / 2.5));
+    const plain = teamSpeedArea([dragapult, valiant, toxapex], noMeta);
+    expect(plain.members.some(m => m.tank)).toBe(false);
+    expect(plain.value).toBe(softScore(plain.members.reduce((a, m) => a + m.total, 0) / 3));
+    expect(tanked.value).toBeGreaterThan(plain.value);
+  });
+
+  it('un team di soli tank torna alla media normale', () => {
+    const area = teamSpeedArea([tankApex], noMeta);
+    expect(area.value).toBe(softScore(area.members[0].total));
+  });
+});
