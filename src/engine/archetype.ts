@@ -51,6 +51,8 @@ const fastOrSpeedSetup = (set: TeamSet) => isFast(set)
  * Corviknight, Dragonite, Kingambit tornava Semi-stall). Per HO e BO conta tutto il recupero: tolto anche lì, peggio.
  */
 const RECOVERY_SPEED_CUTS = { hyperOffense: -5.11, bulkyOffense: -3.69, balance: -1.31 };
+/** Dove il freno dei tank porta un team che sarebbe Hyper Offense: a metà della fascia Bulky Offense. */
+const TANK_BRAKE_SCORE = (RECOVERY_SPEED_CUTS.hyperOffense + RECOVERY_SPEED_CUTS.bulkyOffense) / 2;
 /** Il membro attacca (famiglia principale Attacco, o un sotto-ruolo d'attacco da almeno 0,5): il suo recupero non fa un muro. */
 function attacks(set: TeamSet, rules: FormatRules): boolean {
   const values = setSubRoles(set, rules);
@@ -60,6 +62,20 @@ function attacks(set: TeamSet, rules: FormatRules): boolean {
 
 /** Velocità base che vale un recupero nel punteggio. */
 const RECOVERY_SPEED_SCALE = 15;
+
+/**
+ * Tank: almeno TANK_EVS EV fra HP, Difesa e Difesa Speciale, che si curi o no (Alomomola Assault Vest, Slowking-Galar
+ * col solo Regenerator). Con almeno TANK_BRAKE tank il team non può essere Hyper Offense (2026-11-09, controllo 2 punto
+ * 3.5b): un team Zamazenta, Kingambit, Zapdos, Slowking-Galar, Alomomola, Great Tusk senza mosse di recupero era HO.
+ * Provato sugli 84 team National Dex OU del banco col tipo dell'autore e EV veri: 68 giusti come prima con 2 tank e
+ * qualsiasi soglia da 300 a 500 EV (HO veri 17 su 18), team chiamati HO 146 → 102 su 543. Con 1 tank si perde un HO
+ * vero; con 3 il team dell'esempio resta HO. Contare solo i tank al posto della regola (0 HO, 1–2 BO, 3 Balance…) era
+ * molto peggio (34–61 giusti): Bulky Offense e Balance hanno lo stesso numero di tank. Gli EV e non le statistiche:
+ * Great Tusk o Zamazenta con 252 Spe sono robusti di natura ma negli HO fanno gli attaccanti.
+ */
+const TANK_EVS = 350;
+const TANK_BRAKE = 2;
+const isTank = (set: TeamSet) => (set.evs?.hp ?? 0) + (set.evs?.def ?? 0) + (set.evs?.spd ?? 0) >= TANK_EVS;
 
 /**
  * I due punteggi della regola di National Dex OU: `score` (tutto il recupero) separa HO, BO e il resto; `wallScore` (solo
@@ -74,7 +90,10 @@ function recoverySpeedScores(team: TeamSet[], rules: FormatRules): { score: numb
   const healing = team.filter(set => set.moves.some(m => HEAL_MOVES.has(toID(m))) || poisonHealer(set));
   const speed = team.reduce((acc, set) => acc + (battleSpecies(set)?.baseStats.spe ?? 0), 0) / team.length;
   const speedPart = speed / RECOVERY_SPEED_SCALE;
-  return { score: healing.length - speedPart, wallScore: healing.filter(set => !attacks(set, rules)).length - speedPart };
+  const raw = healing.length - speedPart;
+  // Freno dei tank: con almeno 2 tank il team non è Hyper Offense e va a metà della fascia Bulky Offense
+  const score = team.filter(isTank).length >= TANK_BRAKE ? Math.max(raw, TANK_BRAKE_SCORE) : raw;
+  return { score, wallScore: healing.filter(set => !attacks(set, rules)).length - speedPart };
 }
 
 function pickRecoverySpeed({ score, wallScore }: { score: number; wallScore: number }): Archetype {
