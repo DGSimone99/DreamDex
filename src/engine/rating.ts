@@ -332,6 +332,7 @@ export function redundancies(team: TeamSet[], analysis: TeamAnalysis, lang: Lang
       text: t(lang, 'rating.redundancy.sharedWeak', { n: row.weak, type: typeName(row.type, lang), resistText: t(lang, 'rating.redundancy.noneResist') }),
       points: (row.weak - 1) * SHARED_WEAK_POINTS,
       catalog: 'sharedWeak' as const,
+      key: `sharedWeak:${row.type}`,
     }));
   const dependencies = [
     ...unmetBeneficiaries(team).map(i => ({ text: t(lang, 'rating.redundancy.unmet', { member: i.member, via: viaName(i.via, lang), condition: conditionLabel(i.condition, lang) }), points: UNMET_POINTS, catalog: 'unmetCondition' as const })),
