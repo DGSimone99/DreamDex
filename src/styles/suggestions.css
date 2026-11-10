@@ -264,8 +264,8 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
   align-self: flex-start;
   font: 700 14px/1.2 var(--display);
   font-style: italic;
-  color: var(--on-accent-2);
-  background: var(--stripes), var(--accent-2);
+  color: var(--on-plate);
+  background: var(--stripes), var(--plate);
   clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%);
 }
 .suggestions { border-radius: 0; }
@@ -350,8 +350,8 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
   font-style: italic;
   letter-spacing: 0.02em;
   text-transform: none;
-  color: var(--on-accent-2);
-  background: var(--accent-2);
+  color: var(--on-plate);
+  background: var(--plate);
   clip-path: polygon(0 0, 100% 0, calc(100% - 9px) 100%, 0 100%);
 }
 .detail-reasons li::before { background: var(--accent); }
