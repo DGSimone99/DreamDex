@@ -59,7 +59,9 @@
 .role-rows .owners { display: flex; flex-wrap: wrap; gap: 4px 6px; color: var(--muted); font-size: 13px; }
 .role-rows .owner { padding: 1px 7px; border-radius: 2px; background: var(--raised); color: var(--text); }
 .role-rows li.bad .icon, .role-rows li.bad .owners { color: var(--bad); font-weight: 500; }
-.role-rows li.soft { opacity: 0.55; }
+/* Minore mancante: grigio tenue col colore del testo, non con la trasparenza (si legge ancora: 4,7:1) */
+.role-rows li.soft, .role-rows li.soft .owners, .role-rows li.soft .owner { color: var(--faint); }
+.role-rows li.soft .owner { background: color-mix(in srgb, var(--raised) 55%, transparent); }
 /* Importante mancante: un avviso tenue, né il rosso degli essenziali né il grigio dei minori */
 .role-rows li.warn .owners { color: color-mix(in srgb, var(--warn) 80%, var(--muted)); font-weight: 500; }
 

@@ -248,11 +248,12 @@ A dark, cool ground with two saturated version colours that swap per game, plus 
 - **Panel** (#1a1d2a): rail, blocks, Box list, summary screen, editor, grade card, team card base.
 - **Raised** (#272b3d): buttons, hovered rows, active options, the selected Box row.
 - **Field** (#0c0e15): inputs, code, set text, meter tracks.
-- **Line** (#363b52) and **Line Soft** (#262a3b): control borders and panel/row dividers.
+- **Line** (#363b52) and **Line Soft** (#262a3b): button borders and panel/row dividers. **Control Line** (`--control-line`, #646b90): borders of fields (selects, text inputs), 3.7:1 on Field so they read as places to type or choose.
+- Information is never dimmed with opacity (it drops below 4.5:1): muted or faint text colours instead; opacity is only for disabled controls and sprites.
 - **Text** (#f2f4ff), **Muted** (#aeb3cc), **Faint** (#9095b0): primary, secondary and tertiary text; Faint is still at least 4.6:1 on Raised.
 
 ### Type colours
-The 18 classic type colours (Normal #A8A878, Fire #F08030, Water #6890F0, and the rest, defined in `src/ui/Sprite.tsx`) fill type chips with a computed dark or white ink, colour card gradients and bottom stripes, type dots and type filter buttons, and are lightened toward white for type and move names in text.
+The 18 classic type colours (Normal #A8A878, Fire #F08030, Water #6890F0, and the rest, defined in `src/ui/Sprite.tsx`) fill type chips with whichever ink (dark #10142b or white) has the higher contrast (every type ≥5.6:1; Water and Psychic take the dark ink), colour card gradients and bottom stripes, type dots and type filter buttons, and are lightened toward white for type and move names in text.
 
 ### Per-game palettes
 The two version colours follow the game. `:root` is Sword and Shield (cyan #00d1ff, magenta #ff2d8a); `:root[data-palette='sv']` is Scarlet and Violet (orange #ff7a1a, violet #a35cff), each with its own ink, soft, wash and on-colour steps (the `sv-*` tokens). Only the accent tokens change: ground, panels, lines, text, status and type colours are identical in both. "Segue il gioco" (the default) picks Scarlet and Violet for the Gen 9 Pokédex and Sword and Shield otherwise; the Settings dialog can pin one. Every pair is contrast-checked in `tokens.css` (on-accent text at least 5.2:1, ink at least 4.8:1 on Raised).
