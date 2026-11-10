@@ -86,7 +86,7 @@
   .rail { gap: 10px; padding-top: 12px; }
   .rail-logo { padding: 0 14px; }
   .format-card { margin: 0 14px; }
-  .popover.format-card > summary { padding: 8px 28px 8px 10px; }
+  .popover.format-card > summary { padding: 8px 8px 8px 10px; }
   .format-name { font-size: 17px; }
   .tabs.vertical { gap: 4px; }
   .tabs.vertical [role='tab'] { grid-template-columns: 32px minmax(0, 1fr) auto; gap: 9px; padding: 6px 10px 6px 14px; }

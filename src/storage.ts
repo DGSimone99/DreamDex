@@ -87,7 +87,8 @@ export function sanitizeFormat(raw: unknown): Format {
   return {
     formatId: formatOptions().some(o => o.id === f.formatId) ? f.formatId! : DEFAULT_FORMAT.formatId,
     genLimit: typeof f.genLimit === 'number' && f.genLimit >= 1 && f.genLimit <= 9 ? f.genLimit : DEFAULT_FORMAT.genLimit,
-    minUsage: typeof f.minUsage === 'number' && f.minUsage >= 0 ? f.minUsage : DEFAULT_FORMAT.minUsage,
+    // L'uso minimo dei suggerimenti non si sceglie più: vale sempre quello di default (anche nei salvataggi vecchi)
+    minUsage: DEFAULT_FORMAT.minUsage,
     allowMultipleMegas: f.allowMultipleMegas === true,
     ignoreBans: f.ignoreBans === true,
     meta: f.meta !== false,

@@ -25,14 +25,16 @@
 .rail-field { display: grid; gap: 4px; }
 .rail-label { margin: 0; font: 600 11px/1 var(--ui); letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); }
 .rail-field select { width: 100%; font-weight: 500; }
-/* Carta del formato: Pokédex e tier in grande, le regole sotto; il clic apre tutto il menu del formato */
+/* Carta del formato: il Pokédex in grande, il tier in una fascia azzurra, le regole come pastiglie; il clic apre il menu */
 .format-card { margin: 0 16px; }
 .popover.format-card > summary {
-  position: relative;
   display: grid;
-  gap: 4px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: 'key tier' 'name name' 'pills pills';
+  align-items: center;
+  gap: 4px 8px;
   width: 100%;
-  padding: 10px 30px 10px 12px;
+  padding: 10px 10px 10px 12px;
   border: 1px solid var(--line);
   border-left: 3px solid var(--accent);
   border-radius: 4px;
@@ -40,13 +42,60 @@
   text-align: left;
   cursor: pointer;
 }
-.popover.format-card > summary .icon { position: absolute; top: 9px; right: 9px; color: var(--muted); }
-.format-card > summary:hover .icon, .format-card[open] > summary .icon { color: var(--accent); }
-.format-key { font: 600 11px/1 var(--ui); letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); }
-.format-name { font: 800 19px/1.05 var(--display); font-style: italic; color: var(--text); }
-.format-name b { font-weight: 800; color: var(--accent); }
-.format-rules { color: var(--muted); font: 400 12px/1.3 var(--ui); }
-.format-card[open] > .format-menu { display: flex; flex-direction: column; gap: 10px; width: 300px; }
+.format-key { grid-area: key; display: flex; align-items: center; gap: 6px; font: 600 11px/1 var(--ui); letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); }
+.format-key .icon { width: 13px; height: 13px; color: var(--muted); }
+.format-card > summary:hover .format-key .icon, .format-card[open] .format-key .icon { color: var(--accent); }
+.format-tier { grid-area: tier; padding: 2px 12px 2px 8px; font: 800 15px/1.2 var(--display); font-style: italic; color: var(--on-accent); background: var(--accent); clip-path: polygon(0 0, 100% 0, calc(100% - 8px) 100%, 0 100%); }
+.format-name { grid-area: name; overflow: hidden; font: 800 19px/1.1 var(--display); font-style: italic; color: var(--text); white-space: nowrap; text-overflow: ellipsis; }
+.format-pills { grid-area: pills; display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
+.format-pills span { padding: 1px 7px; border-radius: 3px; background: var(--panel); color: var(--muted); font: 600 11px/1.5 var(--ui); }
+/* Il menu del formato: testata inclinata come i pannelli, poi le scelte come schede, pulsanti e interruttori */
+.popover.format-card[open] > .format-menu { width: 340px; padding: 0; overflow: hidden; }
+.format-menu-head { margin: 0 120px 0 0; padding: 7px 26px 7px 14px; font: 700 15px/1.2 var(--display); font-style: italic; color: var(--on-accent-2); background: var(--stripes), var(--accent-2); clip-path: polygon(0 0, 100% 0, calc(100% - 14px) 100%, 0 100%); }
+.format-menu-body { display: grid; gap: 14px; padding: 12px 14px 14px; }
+.format-sec > .rail-label { margin-bottom: 6px; }
+.format-dex { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.format-dex-opt { display: grid; align-content: start; gap: 3px; padding: 8px; border: 1px solid var(--line); border-radius: 4px; background: var(--panel); cursor: pointer; }
+.format-dex-opt b { font: 700 14px/1.1 var(--display); font-style: italic; color: var(--text); }
+.format-dex-opt small { color: var(--muted); font-size: 11px; line-height: 1.25; }
+.format-dex-opt.on { border-color: var(--accent); background: var(--accent-wash); box-shadow: inset 0 0 0 1px var(--accent); }
+.format-dex-opt.soon { opacity: 0.5; cursor: not-allowed; }
+.format-dex-opt:hover:not(.on, .soon), .format-chips label:hover:not(.on), .format-gens label:hover:not(.on) { border-color: var(--accent); }
+.format-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.format-chips label { min-width: 44px; padding: 5px 10px; border: 1px solid var(--line); border-radius: 4px; background: var(--panel); color: var(--muted); font: 700 14px/1.2 var(--display); font-style: italic; text-align: center; cursor: pointer; }
+.format-chips label.on { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
+.format-gens { display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 4px; }
+.format-gens label { padding: 5px 0; border: 1px solid var(--line); border-radius: 3px; background: var(--panel); color: var(--faint); font: 700 13px/1.2 var(--ui); text-align: center; cursor: pointer; }
+.format-gens label.in { border-color: var(--accent-soft); background: var(--accent-wash); color: var(--text); }
+.format-gens label.on { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
+/* Il fuoco della tastiera sulle scelte (i pulsanti radio veri sono nascosti) */
+.format-menu label:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+.format-sec .segmented { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
+.format-sec .segmented button { padding: 7px 8px; font-weight: 600; }
+.format-sec .segmented button:disabled { cursor: not-allowed; opacity: 0.6; }
+.format-note { margin: 6px 0 0; color: var(--muted); font-size: 12px; line-height: 1.35; }
+.format-toggle { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 2px 12px; padding: 8px 0; border-top: 1px solid var(--line-soft); cursor: pointer; }
+.format-sec > .rail-label + .format-toggle { padding-top: 0; border-top: 0; }
+.format-toggle b { font: 600 13px var(--ui); color: var(--text); }
+.format-toggle small { grid-column: 1; color: var(--muted); font-size: 12px; line-height: 1.3; }
+/* Interruttore: la casella vera, disegnata come una levetta */
+.format-toggle input.switch {
+  grid-row: 1 / span 2;
+  grid-column: 2;
+  position: relative;
+  width: 36px;
+  height: 20px;
+  margin: 0;
+  border-radius: 10px;
+  background: var(--line);
+  appearance: none;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+.format-toggle input.switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; border-radius: 50%; background: var(--muted); transition: transform 0.15s, background-color 0.15s; }
+.format-toggle input.switch:checked { background: var(--accent); }
+.format-toggle input.switch:checked::after { transform: translateX(16px); background: var(--on-accent); }
+.format-toggle input.switch:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 @media (min-width: 1100px) {
   .rail .popover[open] > :not(summary) { left: calc(100% + 10px); top: 0; }
 }
@@ -58,13 +107,6 @@
 .rail-settings { display: grid; place-items: center; width: 32px; height: 30px; margin-left: auto; padding: 0; }
 .rail-settings .icon { width: 17px; height: 17px; }
 .rail-foot .meta { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.35; }
-.format-menu .rules { display: flex; flex-direction: column; gap: 10px; padding-top: 10px; border-top: 1px solid var(--line-soft); }
-.rules label { display: flex; align-items: center; gap: 8px; }
-.rules label select { margin-left: auto; }
-.rules .rating-mode { display: flex; flex-direction: column; gap: 6px; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
-.rules .rating-mode .segmented { text-transform: none; letter-spacing: 0; }
-.rules .rating-mode button { padding: 6px 10px; font-weight: 500; }
-.rules .rating-mode button:disabled { cursor: not-allowed; opacity: .6; }
 
 .popover { position: relative; }
 .popover > summary {
