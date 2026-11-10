@@ -223,7 +223,10 @@ export function SummarySection({ summary, members, density, rich = false, onView
                       {/* Sul confine col tipo accanto: una riga piccola sotto il nome, che non lo accorcia */}
                     </span>
                   )
-                  : <span className="sum-arch">—</span>}
+                  // Senza tipo riconosciuto: a team incompleto "In costruzione", a team completo "Misto" (non somiglia a nessun tipo)
+                  : <strong className="sum-arch pending" title={t(members < 6 ? 'sum.archBuildingNote' : 'sum.archMixedNote')}>
+                    {t(members < 6 ? 'sum.archBuilding' : 'sum.archMixed')}
+                  </strong>}
                 {styles.map(style => (
                   <span key={style} className="sum-style" title={t(`teamStyle.${style}.note`)} style={{ '--c': conditionColor(style) } as CSSProperties}>
                     {t(`teamStyle.${style}`)}
