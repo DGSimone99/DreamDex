@@ -718,3 +718,13 @@ describe('tipi del candidato per gli screen reader', () => {
     }
   });
 });
+
+describe('nome dei candidati con la forma', () => {
+  it('la specie base e la forma come etichetta; il nome intero resta per i lettori di schermo', async () => {
+    const { formeParts } = await import('../../src/ui/candidateParts');
+    expect(formeParts('Charizard-Mega-Y')).toEqual({ base: 'Charizard', forme: 'Mega Y' });
+    expect(formeParts('Ogerpon-Wellspring')).toEqual({ base: 'Ogerpon', forme: 'Wellspring' });
+    expect(formeParts('Urshifu-Rapid-Strike')).toEqual({ base: 'Urshifu', forme: 'Rapid Strike' });
+    expect(formeParts('Great Tusk')).toBeNull();
+  });
+});
