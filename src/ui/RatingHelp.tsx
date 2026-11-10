@@ -119,7 +119,7 @@ function GeneralTopic({ teamType, trickRoom, meta, weights }: { teamType: Archet
             {ARCHETYPES.map(arch => (
               <tr key={arch} className={arch === teamType ? 'current' : undefined} aria-current={arch === teamType || undefined}>
                 <th scope="row">{t(`archetype.${arch}`)}</th>
-                {WEIGHT_AREAS.map(area => <td key={area}>{weights[arch][area]}%</td>)}
+                {WEIGHT_AREAS.map(area => <td key={area}><WeightBar value={weights[arch][area]} /></td>)}
               </tr>
             ))}
           </tbody>
@@ -127,6 +127,21 @@ function GeneralTopic({ teamType, trickRoom, meta, weights }: { teamType: Archet
       </div>
       <p className="help-roles-note">{t('help.general.rolesNote', ROLE_POINTS)}</p>
     </>
+  );
+}
+
+/**
+ * Il peso di un'area come barra, senza numeri (né a vista né al passaggio del mouse: è una scelta): lunga in
+ * proporzione al peso, il più grande dei pesi (65) quasi pieno. Ai lettori di schermo una parola (molto, abbastanza, poco).
+ */
+function WeightBar({ value }: { value: number }) {
+  const t = useT();
+  const word = value === 0 ? 'help.weight.none' : value >= 40 ? 'help.weight.high' : value >= 20 ? 'help.weight.mid' : 'help.weight.low';
+  return (
+    <span className="help-wbar">
+      <i style={{ width: `${Math.min(100, Math.round((value / 70) * 100))}%` }} />
+      <span className="visually-hidden">{t(word)}</span>
+    </span>
   );
 }
 
@@ -147,7 +162,7 @@ function TypeTopic({ type, current, trickRoom, weights, typeRule }: { type: Arch
           return (
             <div key={area} className={inactive ? 'inactive' : undefined}>
               <dt>{t(`area.${area}`)}</dt>
-              <dd>{weights[type][area]}%</dd>
+              <dd><WeightBar value={weights[type][area]} /></dd>
               {inactive && <dd className="help-inactive-note">{t('rating.notCounted')}</dd>}
             </div>
           );

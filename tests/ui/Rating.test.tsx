@@ -106,8 +106,11 @@ describe('Riquadro Voto', () => {
     // Stall: Difesa 65, Offesa 25, Velocità 10 (conta poco ma conta: niente nota grigia); Recupero essenziale
     await user.click(within(dialog).getByRole('tab', { name: 'Stall' }));
     const stall = within(dialog).getByRole('tabpanel');
-    expect(stall).toHaveTextContent('Difesa65%');
-    expect(stall).toHaveTextContent('Velocità10%');
+    expect(stall).toHaveTextContent('Difesamolto');
+    // I pesi sono solo barre: nessun numero né a vista né nel suggerimento
+    expect(stall.querySelector('.help-weights-row')!.textContent).not.toMatch(/\d/);
+    expect(stall.querySelector('.help-wbar[title]')).toBeNull();
+    expect(stall).toHaveTextContent('Velocitàpoco');
     expect(stall).not.toHaveTextContent('Non conta nello Stall');
     expect(stall).toHaveTextContent(/Essenziali.*Recupero.*Importanti/);
     expect(stall).not.toHaveTextContent('Il tuo team è giudicato come');
