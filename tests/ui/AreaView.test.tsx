@@ -37,10 +37,11 @@ describe('vista di un\'area sulla pagina', () => {
     expect(screen.getByRole('tabpanel')).toBeInTheDocument();
   });
 
-  it('Bonus/Malus mostra il catalogo con le voci attive', () => {
+  it('Bonus/Malus: una scheda sola col netto sul voto, dentro le voci del team e le altre', () => {
     renderIt(<AreaView rating={withMeta()} area="bonusMalus" team={team} analysis={analysis} problems={[]} />);
-    expect(screen.getAllByRole('tab').length).toBeGreaterThanOrEqual(2);
-    expect(screen.getByRole('tabpanel').textContent!.length).toBeGreaterThan(0);
+    expect(screen.getAllByRole('tab').map(tab => tab.querySelector('span')!.textContent)).toEqual(['Sul voto']);
+    expect(screen.getByRole('region', { name: 'Cosa toglie' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Cosa aggiunge' })).toBeInTheDocument();
   });
 
   it('sottoschede in orizzontale; i problemi in una riga sotto la striscia, fuori dal pannello', () => {

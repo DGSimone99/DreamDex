@@ -218,48 +218,41 @@ async function openCatalog() {
   return { user, dialog: screen.getByRole('region', { name: 'Bonus/Malus' }) };
 }
 
-describe('Catalogo Bonus/Malus', () => {
-  it('due schede Malus e Bonus col loro netto (il titolo col totale sta fuori, nel Coaching)', async () => {
+describe('Bonus/Malus', () => {
+  it('una scheda sola col netto sul voto, e le barre di malus e bonus', async () => {
     const { dialog } = await openCatalog();
-    expect(within(dialog).getAllByRole('tab').map(tab => tab.textContent)).toEqual(['Malus −8', 'Bonus +2']);
+    expect(within(dialog).getAllByRole('tab').map(tab => tab.textContent)).toEqual(['Sul voto −6']);
+    expect(within(dialog).getByText('−8')).toBeInTheDocument();
+    expect(within(dialog).getAllByText('+2').length).toBeGreaterThan(0);
   });
 
-  it('Malus: i 12 malus con nome, quando e punti; gli attivi evidenziati col punteggio attuale', async () => {
+  it('cosa toglie: una carta per voce attiva coi suoi casi e i punti in tutto; niente regole a punti', async () => {
     const { dialog } = await openCatalog();
-    const rows = within(within(dialog).getByRole('tabpanel')).getAllByRole('row').slice(1);
-    expect(rows).toHaveLength(12);
-    const hazard = rows.find(r => within(r).queryByText('Hazard ripetuto'))!;
-    expect(hazard).toHaveClass('active');
-    expect(hazard).toHaveAttribute('aria-current', 'true');
-    expect(within(hazard).getAllByRole('cell').at(-1)).toHaveTextContent('−3');
-    const sameType = rows.find(r => r.className.includes('active') && r !== hazard)!;
-    expect(sameType).toHaveTextContent('−5');
-    // Un team di 3: il ruolo essenziale mancante non è attivo
-    const essential = rows.find(r => r.textContent!.includes('essenzial'))!;
-    expect(essential).not.toHaveClass('active');
-    expect(essential).not.toHaveAttribute('aria-current');
-    expect(rows.filter(r => r.classList.contains('active'))).toHaveLength(2);
+    const takes = within(dialog).getByRole('region', { name: 'Cosa toglie' });
+    const cards = within(takes).getAllByRole('listitem');
+    expect(cards).toHaveLength(2);
+    const hazard = cards.find(c => within(c).queryByText('Hazard ripetuto'))!;
+    expect(hazard).toHaveTextContent('−3');
+    expect(hazard).toHaveTextContent('Due setter di Stealth Rock · Due setter di Spikes');
+    expect(cards.find(c => within(c).queryByText('Stesso tipo'))).toHaveTextContent('−5');
+    expect(dialog).not.toHaveTextContent('per ogni');
   });
 
-  it('niente tetti: nessuna riga "Totale massimo" né "limitato", anche con una somma alta', async () => {
-    const r = { ...catalogRating(), penalty: { total: 18, items: [{ text: 'A', points: 10, catalog: 'sameType' }, { text: 'B', points: 8, catalog: 'hazardDuplicate' }] } } as unknown as TeamRating;
+  it('cosa aggiunge: la sola voce attiva; le altre 15 voci come tessere spente con la frase breve; niente Tera', async () => {
+    const { dialog } = await openCatalog();
+    const adds = within(dialog).getByRole('region', { name: 'Cosa aggiunge' });
+    expect(within(adds).getAllByRole('listitem')).toHaveLength(1);
+    expect(within(adds).getByText('Meteo che protegge').closest('li')).toHaveTextContent('+2');
+    const rest = within(dialog).getByRole('region', { name: 'Le altre voci, per ora a zero' });
+    expect(within(rest).getAllByRole('listitem')).toHaveLength(15);
+    expect(within(rest).getByText('Core a tre').closest('li')).toHaveTextContent('Tre membri che si coprono le debolezze a vicenda');
+    expect(dialog).not.toHaveTextContent('Tera');
+  });
+
+  it('senza malus la colonna lo dice; niente tetti né "Totale massimo"', async () => {
+    const r = { ...catalogRating(), penalty: { total: 0, items: [] } } as unknown as TeamRating;
     render(<LangProvider lang="it"><AreaView rating={r} area="bonusMalus" team={[]} analysis={analyzeTeam([], fixtureData)} problems={[]} /></LangProvider>);
-    const panel = screen.getByRole('tabpanel');
-    expect(panel).not.toHaveTextContent('Totale massimo');
-    expect(panel).not.toHaveTextContent('limitato');
-    expect(within(screen.getByRole('region', { name: 'Bonus/Malus' })).getByRole('tab', { name: /^Malus/ })).toHaveTextContent('−18');
+    expect(screen.getByRole('region', { name: 'Cosa toglie' })).toHaveTextContent('Niente: nessun malus');
+    expect(screen.getByRole('tabpanel')).not.toHaveTextContent('Totale massimo');
   });
-
-  it('Bonus: le 6 voci, la sola attiva evidenziata; niente Tera', async () => {
-    const { user, dialog } = await openCatalog();
-    await user.click(within(dialog).getByRole('tab', { name: /^Bonus/ }));
-    const rows = within(within(dialog).getByRole('tabpanel')).getAllByRole('row').slice(1);
-    expect(rows).toHaveLength(6);
-    const weather = rows.find(r => within(r).queryByText('Meteo che protegge'))!;
-    expect(weather).toHaveClass('active');
-    expect(weather).toHaveTextContent('+2');
-    expect(rows.some(r => r.textContent!.includes('Tera'))).toBe(false);
-    expect(rows.filter(r => r.classList.contains('active'))).toHaveLength(1);
-  });
-
 });
