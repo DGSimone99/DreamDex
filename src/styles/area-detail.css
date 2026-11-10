@@ -148,8 +148,7 @@
   .bm-points { font-size: 21px; }
 }
 
-/* Peso di un'area come barra a 6 gradini, senza numeri (RatingHelp) */
-.help-wbar { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 3px; min-width: 96px; }
-.help-wbar > i { height: 9px; border-radius: 2px; background: var(--field); }
-.help-wbar > i.on { background: var(--accent); }
-.help-weights tr.current .help-wbar > i:not(.on) { background: color-mix(in srgb, var(--field) 70%, var(--accent-soft)); }
+/* Peso di un'area come barra continua riempita a sesti, senza numeri (RatingHelp) */
+.help-wbar { display: block; min-width: 96px; height: 9px; background: var(--field); border-radius: 2px; overflow: hidden; }
+.help-wbar > i { display: block; height: 100%; background: var(--accent); }
+.help-weights tr.current .help-wbar { background: color-mix(in srgb, var(--field) 70%, var(--accent-soft)); }

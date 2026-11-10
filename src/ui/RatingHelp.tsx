@@ -131,7 +131,7 @@ function GeneralTopic({ teamType, trickRoom, meta, weights }: { teamType: Archet
 }
 
 /**
- * Il peso di un'area come barra a gradini (6), senza numeri: scelta dell'utente 2026-11-10, i gradini non sono le
+ * Il peso di un'area come barra continua riempita a gradini (sesti), senza numeri: scelta dell'utente 2026-11-10, i gradini non sono le
  * percentuali vere ma una scala regolare fra i tipi (la Difesa sale di un gradino dall'Hyper Offense allo Stall,
  * l'Offesa scende; Semi-stall e Stall diversi di un gradino anche dove i pesi coincidono). Ai lettori di schermo una parola.
  */
@@ -149,7 +149,7 @@ function WeightBar({ type, area, weight }: { type: Archetype; area: (typeof WEIG
   const word = steps === 0 ? 'help.weight.none' : steps >= 5 ? 'help.weight.high' : steps >= 3 ? 'help.weight.mid' : 'help.weight.low';
   return (
     <span className="help-wbar">
-      {Array.from({ length: STEPS }, (_, i) => <i key={i} className={i < steps ? 'on' : undefined} />)}
+      <i style={{ width: `${(100 * steps) / STEPS}%` }} />
       <span className="visually-hidden">{t(word)}</span>
     </span>
   );
