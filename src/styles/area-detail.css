@@ -61,7 +61,8 @@
 /* Gruppo di un sotto-ruolo: nome, poi livello e valore di squadra più tenui; le voci che non contano si attenuano */
 .ad-t .ad-group .ad-level { margin-left: 6px; font-weight: 500; color: var(--faint); text-transform: none; letter-spacing: 0; }
 .ad-t .ad-group .ad-level.important { color: var(--muted); }
-.ad-t tbody.ad-ignored { opacity: 0.55; }
+.ad-t tbody.ad-ignored, .ad-t tbody.ad-ignored :is(th, td, b, span) { color: var(--faint); }
+.ad-t tbody.ad-ignored img { opacity: 0.55; }
 /* Copre a metà (superefficace ma solo da 3HKO): sprite più tenue */
 @media (max-width: 560px) {
   .ad-body { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr); }
