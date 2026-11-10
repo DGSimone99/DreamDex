@@ -2,6 +2,7 @@ import { useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent
 import { createPortal } from 'react-dom';
 import { useT } from '../i18n/react';
 import type { AnalysisView } from './analysisView';
+import { ModalLock } from './ModalLock';
 import { Icon } from './icons';
 
 /** Le schede interne di Analisi, nell'ordine: Panoramica e Coaching, poi Offesa, Difesa, Velocità e Ruoli, con Bonus/Malus in fondo. */
@@ -33,6 +34,7 @@ export function HelpButton({ title, label = title, className, children }: { titl
       </button>
       {open && createPortal(
         <div className="help-backdrop" onClick={close}>
+          <ModalLock />
           <div className={`help-dialog view-help${className ? ` ${className}` : ''}`} role="dialog" aria-modal="true" aria-labelledby={titleId} onClick={e => e.stopPropagation()}>
             <header className="help-head">
               <h3 id={titleId}>{title}</h3>
