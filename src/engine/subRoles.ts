@@ -154,7 +154,7 @@ function computeSetSubRoles(set: TeamSet, rules: FormatRules): SubRoleValues {
   const stat = (id: string) => lines.find(l => l.stat === id)?.value ?? 0;
   const style = attackStyle(set);
   const selfBoost = (s: 'atk' | 'spa' | 'spe') => moves.some(m => m.category === 'Status' && m.target === 'self' && (m.boosts?.[s] ?? 0) > 0);
-  const priority = moves.some(m => m.category !== 'Status' && m.priority > 0);
+  const priority = moves.some(m => m.category !== 'Status' && m.priority > 0 && m.id !== 'upperhand');
   // Abilità che moltiplicano Att/AttSp (Huge Power, Pure Power…) e che raddoppiano la Velocità (Swift Swim, Sand Rush…), come la regola di prima
   const boost = STAT_ABILITIES[ability] ?? {};
   const attackStat = (id: 'atk' | 'spa') => stat(id) * (boost[id] ?? 1);

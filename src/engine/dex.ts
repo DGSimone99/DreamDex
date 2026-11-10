@@ -114,7 +114,8 @@ export function movePriority(set: { species: string; item: string; ability: stri
 
 /** Il set ha una mossa d'attacco con priorità (anche dall'abilità: Gale Wings, Triage). */
 export function hasPriorityAttack(set: { species: string; item: string; ability: string; moves: string[] }): boolean {
-  return set.moves.some(m => { const move = getMove(m); return !!move && move.category !== 'Status' && movePriority(set, move) > 0; });
+  // Upper Hand funziona solo contro una mossa con priorità: non è una priorità su cui contare
+  return set.moves.some(m => { const move = getMove(m); return !!move && move.category !== 'Status' && move.id !== 'upperhand' && movePriority(set, move) > 0; });
 }
 
 /** Abilità che cambiano sempre una statistica (in battaglia): Huge Power raddoppia l'Attacco, Fur Coat la Difesa… */
