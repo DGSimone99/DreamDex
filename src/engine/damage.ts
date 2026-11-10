@@ -316,7 +316,7 @@ function bestHitOn(attacker: TeamSet, defender: Target, options: HitOptions): Hi
   let best: Hit | null = null;
   for (const name of attacker.moves) {
     const data = getMove(name);
-    if (!data || data.category === 'Status') continue;
+    if (!data || data.category === 'Status' || IF_TARGET_PRIORITY.has(data.id)) continue;
     const grassyGlide = data.id === 'grassyglide' && (options.conditions ?? []).includes('grassyterrain');
     if (options.priorityOnly && !(movePriority(attacker, data) > 0 || grassyGlide)) continue;
     // Una mossa Z non manca mai (2026-11-08: prima teneva la precisione della mossa di base)
@@ -359,7 +359,9 @@ function bestHitOn(attacker: TeamSet, defender: Target, options: HitOptions): Hi
       const firstTurn = !options.priorityOnly ? 1 : FIRST_TURN.has(data.id) ? 0.5 : IF_ATTACKED.has(data.id) ? 0.75 : 1;
       // Eruption, Water Spout, Dragon Energy: piene solo a PS pieni (la libreria le calcola così); il massimo resta pieno
       const hpScaled = !useZ && HP_SCALED.has(data.id) ? HP_SCALED_SHARE : 1;
-      const hit = { move: data.name, expected: (avg / hp) * accuracy * charge * firstTurn * hpScaled, min: (low / hp) * charge * hpScaled, max: (high / hp) * charge };
+      // Supreme Overlord a metà partita, Protean/Libero con lo STAB in più a metà (vedi OVERLORD_SHARE, PROTEAN_STAB)
+      const ability = overlordScale(attacker) * proteanScale(attacker, results[0].move.type, !!options.tera && !!attacker.teraType);
+      const hit = { move: data.name, expected: (avg / hp) * accuracy * charge * firstTurn * hpScaled * ability, min: (low / hp) * charge * hpScaled * ability, max: (high / hp) * charge * ability };
       if (!best || hit.expected > best.expected) best = hit;
     } catch {
       // Una mossa che la libreria non sa calcolare non conta
@@ -385,6 +387,28 @@ export const SELF_KO_SHARE = 0.25;
  */
 const HP_SCALED = new Set(['eruption', 'waterspout', 'dragonenergy']);
 export const HP_SCALED_SHARE = FIRST_HIT_SHARE + (1 - FIRST_HIT_SHARE) * 0.5;
+/**
+ * Supreme Overlord: +10% per ogni compagno KO (fino a 5, ×1,5). Il calcolo partirebbe sempre da 0 KO: si conta il danno
+ * di mezzo, ×1,25 (scelta dell'utente 2026-11-10, controllo 2 punto 3.13).
+ */
+export const OVERLORD_SHARE = 1.25;
+/**
+ * Protean e Libero: in Gen 9 (e in National Dex, con le stesse meccaniche) il tipo cambia solo alla prima mossa dopo
+ * ogni entrata; la libreria dà lo STAB a ogni mossa. Lo STAB in più si conta a metà: ×1,25 invece di ×1,5 (2026-11-10).
+ */
+export const PROTEAN_STAB = 1.25;
+const isProtean = (set: Target) => ['protean', 'libero'].includes(toID(battleAbility(set)));
+/** Quanto togliere al danno della libreria per Protean e Libero: il tipo della mossa non è del Pokémon e non c'è Tera. */
+function proteanScale(attacker: Target, moveType: string, tera: boolean): number {
+  if (!isProtean(attacker) || tera) return 1;
+  const types: string[] = attacker.types ?? battleSpecies(attacker)?.types ?? [];
+  if (types.includes(moveType)) return 1;
+  // Il colpo senza tipo della Difesa non ha mai STAB
+  return moveType === '???' ? 1 / 1.5 : PROTEAN_STAB / 1.5;
+}
+const overlordScale = (attacker: Target) => (toID(battleAbility(attacker)) === 'supremeoverlord' ? OVERLORD_SHARE : 1);
+/** Mosse che funzionano solo se l'avversario usa una mossa con priorità (Upper Hand): non si contano. */
+const IF_TARGET_PRIORITY = new Set(['upperhand']);
 /** Mosse prioritarie che funzionano solo al primo turno in campo: metà. */
 const FIRST_TURN = new Set(['fakeout', 'firstimpression']);
 /** Mosse prioritarie che falliscono se l'avversario non attacca (setup, mosse di stato): tre quarti. */
@@ -435,7 +459,8 @@ function standardHitOn(attacker: Target, defender: Target, category: 'Physical' 
     const result = calculate(gen, own, target, move, toField(options.conditions));
     const sums = rollSums(result.damage);
     if (!sums) return null;
-    return { move: category, expected: sums.avg / hp, min: sums.low / hp, max: sums.high / hp };
+    const ability = overlordScale(attacker) * proteanScale(attacker, type, !!options.tera && !!attacker.teraType);
+    return { move: category, expected: sums.avg / hp * ability, min: sums.low / hp * ability, max: sums.high / hp * ability };
   } catch {
     return null;
   }

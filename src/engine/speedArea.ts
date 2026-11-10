@@ -115,7 +115,10 @@ export const WEATHER_SPEED: Record<string, { weather?: string; terrain?: string 
   surgesurfer: { terrain: 'electric' },
 };
 export const PARALYSIS = new Set(['thunderwave', 'glare', 'stunspore', 'nuzzle']);
-export const SPEED_DROP = new Set(['icywind', 'electroweb', 'bulldoze', 'rocktomb', 'lowsweep']);
+/** Mosse che abbassano la Velocità (Scary Face e Cotton Spore di due stadi; aggiunte Mud Shot, Pounce, Scary Face, Cotton Spore il 2026-11-10). */
+export const SPEED_DROP = new Set(['icywind', 'electroweb', 'bulldoze', 'rocktomb', 'lowsweep', 'mudshot', 'pounce', 'scaryface', 'cottonspore']);
+/** Cali di due stadi: Velocità a metà. */
+const SPEED_DROP_TWO = new Set(['scaryface', 'cottonspore']);
 
 /** Strumenti che si consumano e attivano Unburden (oltre a bacche, gemme e semi). */
 const CONSUMED = new Set([
@@ -137,7 +140,7 @@ const NO_DROP = new Set(['clearbody', 'whitesmoke', 'fullmetalbody', 'mirrorarmo
 const NO_SECONDARY = new Set(['shielddust']);
 
 /**
- * Quanto una mossa rallenta un avversario: paralisi a metà, un calo di Velocità a due terzi; 1 se ne è immune: per il
+ * Quanto una mossa rallenta un avversario: paralisi a metà, un calo di Velocità a due terzi (di due stadi a metà); 1 se ne è immune: per il
  * tipo (Elettro non si paralizza, Terra non prende Thunder Wave, Erba non prende le polveri, Volante non prende Bulldoze…),
  * per l'abilità (Magic Bounce rimanda le mosse di stato, Volt Absorb/Lightning Rod/Motor Drive assorbono le mosse Elettro,
  * Limber, Clear Body, Defiant…) o per lo strumento (Safety Goggles contro Stun Spore, Covert Cloak contro gli effetti
@@ -164,7 +167,11 @@ export function slowFactor(move: string, species: string, ability = '', item = '
   }
   if (SPEED_DROP.has(id)) {
     if (NO_DROP.has(ab)) return 1;
-    if (id === 'bulldoze' && (has('Flying') || ab === 'levitate' || ab === 'eartheater' || it === 'airballoon')) return 1;
+    if ((id === 'bulldoze' || id === 'mudshot') && (has('Flying') || ab === 'levitate' || ab === 'eartheater' || it === 'airballoon')) return 1;
+    // Mosse di stato: Magic Bounce le rimanda; Cotton Spore è una polvere (Erba, Overcoat, Safety Goggles)
+    if ((id === 'scaryface' || id === 'cottonspore') && ab === 'magicbounce') return 1;
+    if (id === 'cottonspore' && (has('Grass') || ab === 'overcoat' || it === 'safetygoggles')) return 1;
+    if (SPEED_DROP_TWO.has(id)) return 0.5;
     if (id === 'electroweb' && has('Ground')) return 1;
     if (id === 'lowsweep' && has('Ghost')) return 1;
     return 2 / 3;
@@ -324,7 +331,7 @@ function measure(set: TeamSet, data: EngineData, team: TeamConditions): MemberSp
   const terrain = grassy ? ['grassyterrain' as const] : ownTerrain.length ? [] : team.terrains.slice(0, 1).map(tr => TERRAIN_TO_CONDITION[tr]).filter(Boolean);
   const conditions = [...own.filter(c => WEATHER_CONDITIONS.has(c) || !grassy), ...teamWeather, ...terrain] as typeof own;
   // Senza mosse che qui sono prioritarie (Grassy Glide senza campo erboso) niente calcoli
-  const hasPriority = set.moves.some(m => { const d = getMove(m); return !!d && d.category !== 'Status' && (movePriority(set, d) > 0 || (d.id === 'grassyglide' && grassy)); });
+  const hasPriority = set.moves.some(m => { const d = getMove(m); return !!d && d.category !== 'Status' && d.id !== 'upperhand' && (movePriority(set, d) > 0 || (d.id === 'grassyglide' && grassy)); });
   const byMove = new Map<string, number>();
   const priorityExtra = pool.map(() => 0);
   if (totalWeight && hasPriority) {
