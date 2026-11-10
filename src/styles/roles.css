@@ -53,10 +53,10 @@
 .rl-mon { position: relative; display: inline-grid; justify-items: center; width: 44px; cursor: help; }
 .rl-box { display: grid; place-items: center; width: 40px; height: 28px; }
 .rl-box .mon-icon { image-rendering: pixelated; }
-.rl-val { margin-top: -3px; font: 600 10px/1 var(--ui); color: var(--muted); font-variant-numeric: tabular-nums; }
+.rl-val { margin-top: -3px; font: 600 11px/1 var(--ui); color: var(--muted); font-variant-numeric: tabular-nums; }
 .rl-mon.weak .rl-box { opacity: 0.45; filter: grayscale(0.6); }
 .rl-mon.weak .rl-val { color: var(--faint); }
-.rl-sec { position: absolute; top: -2px; right: -2px; padding: 0 3px; border-radius: 2px; font: 700 9px/1.3 var(--ui); color: var(--muted); background: var(--raised); }
+.rl-sec { position: absolute; top: -2px; right: -2px; padding: 0 3px; border-radius: 2px; font: 700 11px/1.3 var(--ui); color: var(--muted); background: var(--raised); }
 
 /* Sottoschede per livello: la tabella scorre dentro la sua cornice */
 .rl-scroll { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
@@ -96,7 +96,7 @@
 .rl-types tbody th[scope='row'] { border-bottom: 1px solid var(--line-soft); }
 .rl-types .now { background: color-mix(in srgb, var(--accent) 9%, transparent); }
 .rl-types thead th.now { box-shadow: inset 0 -2px 0 var(--accent); }
-.rl-types .rl-tag { padding: 0 6px; font-size: 10.5px; }
+.rl-types .rl-tag { padding: 0 6px; font-size: 11px; }
 .rl-dash { color: var(--faint); }
 
 .rl-how { display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }

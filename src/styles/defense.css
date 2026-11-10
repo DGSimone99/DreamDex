@@ -124,7 +124,7 @@
 @container (max-width: 1100px) {
   .def-frame .rob-atk .def-box { --bs: 0.65; }
   .rob-matrix .rob-col-side { width: 52px; }
-  .rob-grp .rob-side-h { font-size: 10px; letter-spacing: 0; }
+  .rob-grp .rob-side-h { font-size: 11px; letter-spacing: 0; }
   .def-frame .rob-cell { font-size: 11px; letter-spacing: -0.02em; }
   .rob-side .ct-pill { min-width: 0; padding: 1px 4px; font-size: 11px; }
 }
@@ -138,7 +138,7 @@
 .sus-table thead .sus-h { vertical-align: bottom; text-align: left; padding: 0 12px 6px; }
 .sus-table thead .sus-c { text-align: center; }
 .sus-table thead .sus-r { text-align: right; padding-right: 0; }
-.sus-table thead .sus-sub th { padding: 0 0 6px; text-align: center; font-size: 10px; letter-spacing: 0.04em; color: var(--muted); line-height: 1; }
+.sus-table thead .sus-sub th { padding: 0 0 6px; text-align: center; font-size: 11px; letter-spacing: 0.04em; color: var(--muted); line-height: 1; }
 .sus-table td { padding: 0 12px; border-bottom: 1px solid var(--line-soft); }
 .sus-table td.sus-loss { text-align: center; padding: 0; }
 .sus-table td.sus-loss + td.sus-loss { border-right: 1px solid var(--line); }
@@ -306,7 +306,9 @@
   .sus-table .sus-col-loss { width: 92px; }
   .sus-table .sus-col-gain { width: 220px; }
   .sus-table .sus-col-val { width: 92px; }
-  .sus-table thead .sus-r { font-size: 10px; letter-spacing: 0; }
+  .sus-table thead .sus-r { font-size: 11px; letter-spacing: 0; }
+  /* Intestazioni delle perdite su due righe se non ci stanno ("Strumenti e mosse"), invece di tagliarle */
+  .sus-table thead .sus-sub th { white-space: normal; text-wrap: balance; line-height: 1.15; vertical-align: bottom; }
   .sus-net-wrap { gap: 8px; }
   .sus-net-num { min-width: 40px; font-size: 13px; }
 }
@@ -335,7 +337,7 @@
 /* Righe troppo basse per due righe di testo (sotto ~35px, es. 1366 a squadra aperta): niente statistiche sotto il nome,
    così le righe restano alte quanto nelle altre schede. Soglia sull altezza della cornice (righe = (h − 202) / 6 − 3) */
 @container (max-height: 440px) { .def-frame .def-mon-stats { display: none; } }
-.def-mon-stats .def-weak { padding: 0 5px; font-size: 9.5px; line-height: 1.5; }
+.def-mon-stats .def-weak { padding: 0 5px; font-size: 11px; line-height: 1.5; }
 /* "Anello debole": accanto alle statistiche quando ci sono, accanto al nome quando le righe sono troppo basse */
 .def-mon-tag { display: inline-flex; }
 .def-mon-tag.line { display: none; }

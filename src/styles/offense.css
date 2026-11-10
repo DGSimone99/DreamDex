@@ -30,7 +30,7 @@
 .def-walls .rob-cell.ko-two { border-color: color-mix(in srgb, var(--good) 55%, transparent); }
 .def-walls .rob-cell.ko-three { border-color: color-mix(in srgb, var(--warn) 60%, transparent); }
 .def-walls .wall-pct { display: block; }
-.def-walls .wall-setup { display: block; margin-top: 1px; font: 600 clamp(9px, calc(var(--def-row) * 0.15), 12px)/1.05 var(--ui); white-space: nowrap; opacity: 0.9; }
+.def-walls .wall-setup { display: block; margin-top: 1px; font: 600 clamp(11px, calc(var(--def-row) * 0.15), 12px)/1.05 var(--ui); white-space: nowrap; opacity: 0.9; }
 /* Righe basse (squadra aperta): il "setup N%" resta solo nel title e nel testo nascosto, come le statistiche nella Difesa */
 .def-walls:not(.roomy) .wall-setup { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .def-walls .wall-side-h { width: auto; }
