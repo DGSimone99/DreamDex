@@ -34,12 +34,12 @@ describe('catalogo bonus e malus', () => {
     expect(rateTeam(teams.bonus, fixtureData)!.bonus.items.map(i => i.catalog)).toEqual(['weatherHelp']);
   });
 
-  it('catalogo IT: 20 voci, 13 malus prima, niente Tera; "Vicino a un altro tipo" in tutte e due', () => {
+  it('catalogo IT: 18 voci, 12 malus prima, niente Tera né "Vicino a un altro tipo"', () => {
     const none = bonusMalusCatalog('it');
-    expect(none).toHaveLength(20);
-    expect(none.slice(0, 13).every(e => e.kind === 'malus')).toBe(true);
-    expect(none.slice(13).every(e => e.kind === 'bonus')).toBe(true);
-    expect(none.filter(e => e.key === 'typeBlend').map(e => e.kind)).toEqual(['malus', 'bonus']);
+    expect(none).toHaveLength(18);
+    expect(none.slice(0, 12).every(e => e.kind === 'malus')).toBe(true);
+    expect(none.slice(12).every(e => e.kind === 'bonus')).toBe(true);
+    expect(none.map(e => e.key as string)).not.toContain('typeBlend');
     expect(none.map(e => e.key)).toEqual(expect.arrayContaining(['sameType', 'coreTrio', 'weakCovered', 'typeVariety', 'conditionUsed', 'importantRole', 'minorRole']));
     expect(none.map(e => e.key as string)).not.toContain('tera');
     expect(none.map(e => e.key as string)).not.toContain('removers');
