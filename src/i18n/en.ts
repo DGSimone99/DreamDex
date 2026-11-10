@@ -214,7 +214,7 @@ export const en = {
   'catalog.typeBlend.when': "The team sits near the border with the next type (one recovery move or a bit of speed more or less): the vote is partly the one of that type, up to half right on the border. Bulky Offense sits between two close borders: there the vote can be partly both neighbouring types. National Dex OU only",
   'catalog.typeBlend.points': "The gap between the two votes, times the share",
   'catalog.coreTrio.name': "Three-member core",
-  'catalog.coreTrio.when': "Three members cover each other's weaknesses",
+  'catalog.coreTrio.when': "Three members cover each other's weaknesses, and the one covering really takes the hit",
   'catalog.coreTrio.points': "+{trio} per trio, at most 2",
   'catalog.weakCovered.name': "Weaknesses covered",
   'catalog.weakCovered.when': "Team of 6: every type two or more members are weak to has at least one member that resists it",
