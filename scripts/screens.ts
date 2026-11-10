@@ -782,7 +782,7 @@ for (const [w, h] of sizes) {
       const whoOver = items.filter(li => { const b = li.getBoundingClientRect(); const w = li.querySelector('.who')?.getBoundingClientRect(); return !!w && (w.bottom - b.bottom > 0.5 || b.top - w.top > 0.5); }).length;
       // Testo tagliato in larghezza oltre al nome (motivi, voto, segni)
       const wideCut = items.filter(li => [...li.querySelectorAll<HTMLElement>('.who small, .reason, .result, .pill-end, .tag')].some(e => e.scrollWidth - e.clientWidth > 1)).length;
-      const nameCut = items.filter(li => { const e = li.querySelector<HTMLElement>('.pick strong'); return !!e && e.scrollWidth - e.clientWidth > 1; }).length;
+      const nameCut = items.filter(li => { const e = li.querySelector<HTMLElement>('.pick strong:not(.visually-hidden), .pick-name b, .pick-name .forme'); return !!e && e.scrollWidth - e.clientWidth > 1; }).length;
       // Dettaglio: quanto scorrono il corpo (Porta/Toglie...) e la scheda; suggerimento del doppio clic tagliato; preferiti
       const body = document.querySelector<HTMLElement>('.detail .detail-body');
       const aside = document.querySelector<HTMLElement>('aside.detail');
