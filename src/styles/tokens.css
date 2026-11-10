@@ -33,6 +33,10 @@
   --display: 'Kanit', system-ui, sans-serif;
   --ui: 'Kanit', system-ui, sans-serif;
   --stripes: repeating-linear-gradient(-60deg, #ffffff0d 0 4px, transparent 4px 10px);
+  /* Targhette dei titoli (Team, Voto, Candidati, Porta, sezioni…): neutre. Il magenta (--accent-2) resta per "sei qui"
+     (sezione e scheda aperta) e "fai questo" (il pulsante principale, il candidato migliore) */
+  --plate: var(--line);
+  --on-plate: var(--text);
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
   /* Stile Menu della lista: pillole scure come le Carte (un tema futuro le ridefinisce qui) */
   --pill-bg: var(--raised);
