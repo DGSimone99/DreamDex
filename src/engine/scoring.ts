@@ -14,7 +14,8 @@ import { defaultSet, type TeamSet } from './sets';
 import { teammatePct, usageOf } from './stats';
 import { clashesWith, conditionLabel, mechanicalLinks, weakenedMoves } from './synergy';
 import { defensiveMultiplier, superEffectiveMove, teamField } from './types';
-import { COMPONENT_KEYS, WEIGHTS } from './weights';
+import { SCORE_WEIGHTS } from './weights';
+import { memberPower } from './power';
 
 export type { Components, Facts, Reason };
 
@@ -261,7 +262,10 @@ export function scoreCandidates(team: TeamSet[], format: Format, data: EngineDat
         strength: { usage: p.usage },
       };
       const penalty = p.clash.penalty;
-      const score = Math.max(0, Math.round(100 * sum(COMPONENT_KEYS.map(key => WEIGHTS[key] * components[key]))) - penalty);
+      const w = SCORE_WEIGHTS;
+      const power = (memberPower(p.set)?.power ?? 0) / 100;
+      const raw = w.defense * components.defense + w.threats * components.threats + w.roles * components.roles + w.power * power;
+      const score = Math.max(0, Math.round(100 * raw) - penalty);
       return { species: p.species, set: p.set, score, components, facts, reasons: explain(facts, components, lang), tags: tagsFor(facts, lang), penalty };
     })
     .sort((a, b) => b.score - a.score || usageOf(data.stats, battleName(b.set)) - usageOf(data.stats, battleName(a.set)));
