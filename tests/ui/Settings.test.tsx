@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { App } from '../../src/App';
 import { loadListSprite, loadListStyle, loadPalette, saveListSprite, saveListStyle, savePalette } from '../../src/storage';
+import { chooseDex } from '../helpers/format';
 import { fixtureData } from '../fixtures/data';
 
 const memory = (initial: Record<string, string> = {}) => {
@@ -54,12 +55,12 @@ describe('Impostazioni', () => {
   it('"Segue il gioco" usa la palette del formato', async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} storage={memory({ 'dreamdex.palette': '"swsh"' })} />);
-    await user.selectOptions(screen.getByLabelText('Pokédex'), 'gen9');
+    await chooseDex(user, 'gen9');
     expect(palette()).toBe('swsh');
     await user.click(screen.getByRole('button', { name: 'Impostazioni' }));
     await user.click(screen.getByRole('radio', { name: 'Segue il gioco' }));
     expect(palette()).toBe('sv');
-    await user.selectOptions(screen.getByLabelText('Pokédex'), 'natdex');
+    await chooseDex(user, 'natdex');
     expect(palette()).toBe('swsh');
   });
 });

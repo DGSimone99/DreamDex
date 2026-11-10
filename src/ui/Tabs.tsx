@@ -1,5 +1,6 @@
 import { useRef, type KeyboardEvent, type ReactNode } from 'react';
 import { useT } from '../i18n/react';
+import { Icon, type IconName } from './icons';
 
 export type TabId = 'pokemon' | 'analysis' | 'meta' | 'lists';
 
@@ -11,6 +12,9 @@ export interface TabInfo {
   disabled?: boolean;
   /** Perché la scheda è disattivata. */
   note?: string;
+  /** Nella barra laterale: l'icona della sezione e una riga di stato sotto il nome (tessere del menu del gioco). */
+  icon?: IconName;
+  status?: ReactNode;
 }
 
 /** Sezioni dell'app: frecce per spostarsi come le schede native (in verticale anche su e giù). */
@@ -48,10 +52,19 @@ export function Tabs({ tabs, active, onChange, orientation = 'horizontal' }: {
             aria-disabled={tab.disabled || undefined}
             tabIndex={selected ? 0 : -1}
             title={tab.note}
+            // Tessere: il nome della scheda è solo il nome, la riga di stato ne è la descrizione
+            aria-labelledby={tab.icon ? `tab-${tab.id}-name` : undefined}
+            aria-describedby={tab.icon && tab.status ? `tab-${tab.id}-status` : undefined}
             onClick={() => { if (!tab.disabled) onChange(tab.id as TabId); }}
             onKeyDown={e => onKey(e, i)}
           >
-            <span>{tab.label}</span>
+            {tab.icon ? <>
+              <span className="tab-icon" aria-hidden="true"><Icon name={tab.icon} /></span>
+              <span className="tab-text">
+                <span className="tab-name" id={`tab-${tab.id}-name`}>{tab.label}</span>
+                {tab.status && <span className="tab-status" id={`tab-${tab.id}-status`}>{tab.status}</span>}
+              </span>
+            </> : <span>{tab.label}</span>}
             {tab.count && <span className={`tab-count ${tab.count.level}`}>{tab.count.text}</span>}
           </button>
         );

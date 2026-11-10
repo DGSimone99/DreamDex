@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { App } from '../../src/App';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
 import { loadSession, saveSession } from '../../src/storage';
+import { chooseTier, chosen } from '../helpers/format';
 import { fixtureData } from '../fixtures/data';
 
 const memory = (initial: Record<string, string> = {}) => {
@@ -37,12 +38,12 @@ describe('sessione salvata', () => {
     const { unmount } = render(<App initialLang="it" data={fixtureData} storage={storage} />);
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Great Tusk{Enter}');
     await user.click(screen.getByRole('button', { name: 'Preferito Great Tusk' }));
-    await user.selectOptions(screen.getByLabelText('Tier del formato'), 'uu');
+    await chooseTier(user, 'uu');
     unmount();
     render(<App initialLang="it" data={fixtureData} storage={storage} />);
     expect(within(team()).getByText('Great Tusk')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Preferito Great Tusk' })).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByLabelText('Tier del formato')).toHaveValue('uu');
+    expect(chosen('format-tier')).toBe('uu');
   });
 
   it('senza storage (test, browser bloccato) si parte da zero', () => {
@@ -54,11 +55,11 @@ describe('sessione salvata', () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} />);
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Great Tusk{Enter}');
-    await user.selectOptions(screen.getByLabelText('Tier del formato'), 'ubers');
+    await chooseTier(user, 'ubers');
     await user.type(screen.getByLabelText('Nome team'), 'Ubers team');
     await user.click(screen.getByRole('button', { name: 'Salva team' }));
-    await user.selectOptions(screen.getByLabelText('Tier del formato'), 'ou');
+    await chooseTier(user, 'ou');
     await user.click(screen.getByRole('button', { name: 'Ubers team' }));
-    expect(screen.getByLabelText('Tier del formato')).toHaveValue('ubers');
+    expect(chosen('format-tier')).toBe('ubers');
   });
 });

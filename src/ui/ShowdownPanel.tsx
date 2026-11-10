@@ -3,6 +3,7 @@ import type { Format } from '../engine/format';
 import { shareUrl } from '../share';
 import { exportShowdown, importShowdown, type TeamSet } from '../engine/sets';
 import { copyText } from './clipboard';
+import { Icon } from './icons';
 import { useLang, useT } from '../i18n/react';
 
 export function ShowdownPanel({ team, format, tera = true, onImport }: { team: TeamSet[]; format: Format; /** Tera ammesso nel formato */ tera?: boolean; onImport: (team: TeamSet[]) => void }) {
@@ -26,7 +27,7 @@ export function ShowdownPanel({ team, format, tera = true, onImport }: { team: T
 
   return (
     <details className="popover">
-      <summary>{t('showdown.title')}</summary>
+      <summary><Icon name="paste" />{t('showdown.title')}</summary>
       <div>
         <textarea aria-label={t('showdown.text')} rows={12} value={text} onChange={e => setText(e.target.value)} />
         <div className="actions">

@@ -22,6 +22,12 @@
 }
 .team-head .team-action { height: 30px; padding: 0 10px; font-size: 13px; }
 .team-head .clear-team { margin-left: auto; }
+/* Importa / Esporta e Team salvati: al centro della fila, fra le azioni sulla squadra e Svuota team */
+.team-head .team-io { display: flex; gap: 8px; margin-left: auto; }
+/* Menu aperto: sopra la freccia che riduce la squadra */
+.team-head:has(.popover[open]) { z-index: 8; }
+.team-head .team-io .popover > summary { height: 30px; padding: 0 10px; font-size: 13px; }
+.team-head .team-io .popover > summary .icon { width: 15px; height: 15px; }
 .team-head .clear-team:hover { border-color: var(--bad); color: var(--bad); }
 .set-editor .best-preset { height: 36px; white-space: nowrap; flex-shrink: 0; }
 .slots { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; }

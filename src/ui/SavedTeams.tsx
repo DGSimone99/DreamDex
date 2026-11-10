@@ -31,7 +31,7 @@ export function SavedTeams({ team, format, onLoad }: {
 
   return (
     <details className="popover">
-      <summary>{t('saved.title', { n: saved.length })}</summary>
+      <summary><Icon name="save" />{t('saved.title', { n: saved.length })}</summary>
       <div>
         <div className="actions">
           <input aria-label={t('saved.name')} value={name} placeholder={t('saved.namePlaceholder')} onChange={e => setName(e.target.value)} />

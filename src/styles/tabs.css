@@ -7,28 +7,49 @@
 .tab-count.serious { background: var(--bad-bg); color: var(--bad); }
 .tab-count.minor, .tab-count.info { background: var(--accent-soft); color: var(--text); }
 .tab-count.warn { background: var(--warn-bg); color: var(--warn); }
-/* Sezioni nella barra laterale: una per riga, quella aperta è una linguetta inclinata nel colore 2 */
-.tabs.vertical { flex-direction: column; gap: 2px; padding: 0; margin: 0; border: 0; }
+/*
+ * Sezioni nella barra laterale: tessere del menu del gioco, icona in un quadratino, nome e una riga di stato.
+ * Quella aperta è una linguetta inclinata nel colore 2 che sporge dalla barra: l'angolo basso della diagonale tocca
+ * il bordo, la parte alta esce di 13 px verso il contenuto.
+ */
+.tabs.vertical { flex-direction: column; gap: 6px; padding: 0; margin: 0; border: 0; }
 .tabs.vertical [role='tab'] {
-  justify-content: space-between;
-  width: 100%;
-  padding: 9px 16px;
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  width: calc(100% - 12px);
+  padding: 8px 12px 8px 16px;
   margin: 0;
   border: 0;
-  font: 600 17px/1.1 var(--display);
-  font-style: italic;
-  letter-spacing: 0.01em;
+  text-align: left;
   text-transform: none;
-  color: var(--muted);
+  color: var(--text);
 }
-.tabs.vertical [role='tab']:hover { color: var(--text); background: var(--raised); }
+.tabs.vertical .tab-icon { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 4px; background: var(--raised); color: var(--accent); }
+.tabs.vertical .tab-icon .icon { width: 20px; height: 20px; }
+.tabs.vertical .tab-text { min-width: 0; display: grid; gap: 3px; }
+.tabs.vertical .tab-name { font: 700 18px/1.05 var(--display); font-style: italic; letter-spacing: 0.01em; }
+.tabs.vertical .tab-status { overflow: hidden; color: var(--muted); font: 500 12px/1.2 var(--ui); white-space: nowrap; text-overflow: ellipsis; }
+.tabs.vertical .tab-status .serious { color: var(--bad); font-weight: 700; }
+.tabs.vertical .tab-status .minor, .tabs.vertical .tab-status .info { color: var(--text); font-weight: 600; }
+.tabs.vertical .tab-status .warn { color: var(--warn); font-weight: 700; }
+.tabs.vertical .tab-status .grade { color: var(--good); font-weight: 800; }
+.tabs.vertical .tab-status .grade-C { color: var(--warn); }
+.tabs.vertical .tab-status .grade-D { color: var(--bad); }
+.tabs.vertical [role='tab']:hover:not([aria-selected='true']) .tab-icon { background: var(--accent-soft); }
+.tabs.vertical [role='tab']:hover:not([aria-selected='true']) { background: color-mix(in srgb, var(--raised) 45%, transparent); }
 .tabs.vertical [role='tab'][aria-selected='true'] {
+  width: calc(100% + 13px);
   color: var(--on-accent-2);
   background: var(--stripes), var(--accent-2);
-  clip-path: polygon(0 0, 100% 0, calc(100% - 14px) 100%, 0 100%);
+  clip-path: polygon(0 0, 100% 0, calc(100% - 13px) 100%, 0 100%);
 }
+.tabs.vertical [role='tab'][aria-selected='true'] .tab-icon { background: var(--on-accent-2); color: var(--accent-2-ink); }
+.tabs.vertical [role='tab'][aria-selected='true'] .tab-status,
+.tabs.vertical [role='tab'][aria-selected='true'] .tab-status * { color: var(--on-accent-2); }
+.tabs.vertical [role='tab'][aria-disabled='true'] { background: none; opacity: 0.5; }
 .tabs.vertical [role='tab'][aria-selected='true'] .tab-count { background: var(--on-accent-2); color: var(--accent-2-ink); }
-.tabs.vertical [role='tab'][aria-disabled='true'] { background: none; }
 .tabs.vertical .tab-count { font-style: normal; margin-right: 10px; }
 .tab-body { padding: 26px 22px 0; }
 .tab-panel:not(.active) { display: none; }

@@ -2,6 +2,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { App } from '../../src/App';
+import { chooseGen } from '../helpers/format';
 import { fixtureData } from '../fixtures/data';
 
 const team = () => screen.getByRole('region', { name: 'Team' });
@@ -62,7 +63,7 @@ describe('mosse e abilità legali nel team', () => {
 
   it('abilità: solo quelle legali fino alla gen scelta, libere con Custom Skillset', async () => {
     const user = await importTeam('Ninetales\nAbility: Drought\n- Flamethrower');
-    await user.selectOptions(screen.getByLabelText('Generazione massima'), '4');
+    await chooseGen(user, '4');
     expect(within(team()).getByText('Abilità non legale: Drought')).toBeInTheDocument();
     expect(within(team()).getByLabelText('Abilità')).toHaveAttribute('readonly');
     expect(await optionsOf(user, 'Abilità')).toEqual(['Drought', 'Flash Fire']);

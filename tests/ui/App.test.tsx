@@ -2,13 +2,14 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { App } from '../../src/App';
+import { chooseDex, chooseGen, chosen } from '../helpers/format';
 import { fixtureData } from '../fixtures/data';
 
 describe('App: struttura', () => {
   it('titolo e mese dei dati', () => {
     render(<App initialLang="it" data={fixtureData} />);
     expect(screen.getByRole('heading', { name: 'DreamDex' })).toBeInTheDocument();
-    expect(screen.getByText('Statistiche: 2026-09 (rating 1695+)')).toBeInTheDocument();
+    expect(screen.getByText('Dati Smogon: settembre 2026 · giocatori sopra 1695')).toBeInTheDocument();
   });
 
   it('avviso se mancano i dati', () => {
@@ -19,15 +20,15 @@ describe('App: struttura', () => {
   it('il selettore di generazione cambia valore', async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} />);
-    await user.selectOptions(screen.getByLabelText('Generazione massima'), '4');
-    expect(screen.getByLabelText('Generazione massima')).toHaveValue('4');
+    await chooseGen(user, '4');
+    expect(chosen('format-gen')).toBe('4');
   });
 
   it('la palette segue il gioco del formato', async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} />);
     expect(document.documentElement.dataset.palette).toBe('swsh');
-    await user.selectOptions(screen.getByLabelText('Pokédex'), 'gen9');
+    await chooseDex(user, 'gen9');
     expect(document.documentElement.dataset.palette).toBe('sv');
   });
 });

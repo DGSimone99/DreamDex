@@ -5,6 +5,7 @@ import { DEFAULT_FORMAT } from '../../src/engine/format';
 import { emptySet } from '../../src/engine/sets';
 import { encodeShare } from '../../src/share';
 import { App } from '../../src/App';
+import { chooseGen } from '../helpers/format';
 import { fixtureData } from '../fixtures/data';
 
 const teamRegion = () => screen.getByRole('region', { name: 'Team' });
@@ -113,7 +114,7 @@ describe('TeamPanel', () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} />);
     await addPokemon(user, 'Great Tusk');
-    await user.selectOptions(screen.getByLabelText('Generazione massima'), '4');
+    await chooseGen(user, '4');
     expect(within(teamRegion()).getByText('Oltre la Gen 4')).toBeInTheDocument();
     expect(within(teamRegion()).getByText('Great Tusk')).toBeInTheDocument();
   });

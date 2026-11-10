@@ -23,7 +23,6 @@ const data = (withTorkoal: boolean): EngineData => ({
 async function replaceNinetales(withTorkoal: boolean) {
   const user = userEvent.setup();
   render(<App initialLang="it" data={data(withTorkoal)} />);
-  await user.selectOptions(screen.getByLabelText('Uso minimo'), '0');
   await user.click(screen.getByLabelText('Testo Showdown'));
   await user.paste('Ninetales\nAbility: Drought\n- Flamethrower\n\nLeafeon\nAbility: Chlorophyll\n- Leaf Blade');
   await user.click(screen.getByRole('button', { name: 'Importa' }));
