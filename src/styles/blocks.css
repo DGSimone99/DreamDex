@@ -58,6 +58,24 @@
 /* Come funziona il voto: altezza fissa, non cambia fra un argomento e l'altro (il testo scorre dentro) */
 .help-dialog.rating-help { height: min(620px, calc(100vh - 48px)); }
 /*
+ * Eevee nei momenti speciali (EeveeMoment): solo dove la pagina sarebbe vuota. Piccolo, accanto alla scritta e non al
+ * suo posto; spunta dal basso una volta sola e poi resta fermo (niente movimento se il sistema lo chiede).
+ */
+.eevee-moment { display: block; height: auto; pointer-events: none; user-select: none; }
+.grade-badge .eevee-moment { width: 84px; margin: auto auto 4px; }
+.grade-badge .eevee-moment + .overall { margin-top: 0; }
+/* Mai due Eevee insieme: con l'avviso dei dati mancanti resta solo quello dell'avviso */
+.main:has(> .banner.with-eevee) .grade-badge .eevee-moment { display: none; }
+.main:has(> .banner.with-eevee) .grade-badge.none .overall { margin-top: auto; }
+.list-empty .eevee-moment { width: 88px; }
+.coach-empty .eevee-moment { width: 78px; flex: none; }
+.banner .eevee-moment { width: 76px; flex: none; }
+@media (prefers-reduced-motion: no-preference) {
+  .eevee-moment { animation: eevee-pop 0.36s cubic-bezier(0.22, 1, 0.36, 1) both; }
+}
+@keyframes eevee-pop { from { opacity: 0; transform: translateY(10px) scale(0.94); } }
+
+/*
  * Eevee che sbircia (EeveePeek): la finestra sta in una cornice che le lascia spazio sopra; testa e coda dietro la
  * finestra (sotto nell'ordine), le zampe davanti, sul bordo alto. Le misure seguono la larghezza della testa (--peek).
  */

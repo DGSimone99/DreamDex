@@ -137,6 +137,8 @@
 
 .banner { margin: 12px 22px 0; padding: 10px 14px; border-radius: 4px; background: var(--bad-bg); color: var(--bad); }
 .banner.info { background: var(--accent-soft); color: var(--text); }
+.banner.with-eevee { display: flex; align-items: center; gap: 14px; padding-block: 6px; }
+.banner.with-eevee p { margin: 0; }
 
 /* "Vai al contenuto": nascosto finché non ha il fuoco (primo Tab della pagina), poi in alto a sinistra sopra tutto */
 .skip-link { position: fixed; z-index: 200; top: 8px; left: 8px; padding: 8px 14px; border-radius: 4px; background: var(--accent); color: var(--on-accent); font: 700 14px var(--ui); text-decoration: none; transform: translateY(-150%); }

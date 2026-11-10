@@ -20,6 +20,7 @@ import { FilterBar } from './FilterBar';
 import { conditionLabel, neededConditions, providesAll, viaName } from '../engine/synergy';
 import { Sprite } from './Sprite';
 import { Icon } from './icons';
+import { EeveeMoment } from './EeveeMoment';
 import { SuggestionDetail } from './SuggestionDetail';
 import { CandidateCard } from './CandidateCard';
 import { CandidatePill } from './CandidatePill';
@@ -379,7 +380,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   } else if (filtering && items.length === 0) {
     body = (
       <div className="list-empty">
-        <Icon name="search" />
+        <EeveeMoment pose="thinking" />
         <p>{tr('suggest.noMatch')}</p>
         {typeEmpty}
         {filters.query && <button type="button" onClick={() => setFilters({ ...filters, query: '' })}>{tr('suggest.clear')}</button>}

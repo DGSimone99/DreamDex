@@ -9,6 +9,7 @@ import { formatPercent, t, type MessageKey } from '../i18n';
 import { gameName, typeName } from '../i18n/game';
 import { useLang, useT } from '../i18n/react';
 import { Icon } from './icons';
+import { EeveeMoment } from './EeveeMoment';
 import { PokemonIcon } from './PokemonName';
 import { Sprite } from './Sprite';
 import { TypeIcons } from './typeIcons';
@@ -413,7 +414,12 @@ export function CoachingView({ coaching, advice, members, rating, metaOn, threat
   };
   return (
     <div className="coaching" ref={root}>
-      {problems.length === 0 && <p className="coach-empty"><Icon name="check" />{tr('coach.noProblems')}</p>}
+      {problems.length === 0 && (
+        <div className="coach-empty with-eevee">
+          <EeveeMoment pose="happy" />
+          <p><strong><Icon name="check" />{tr('coach.noProblems')}</strong><span>{tr('coach.noProblemsSub')}</span></p>
+        </div>
+      )}
       {problems.length > 0 && (
         <section aria-labelledby={`${id}-map`} className="coach-map-region">
           <h3 id={`${id}-map`} className="coach-sec muted">{tr('coach.map.title')}</h3>
