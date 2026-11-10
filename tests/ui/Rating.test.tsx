@@ -111,10 +111,10 @@ describe('Riquadro Voto', () => {
     expect(stall).not.toHaveTextContent('Non conta nello Stall');
     expect(stall).toHaveTextContent(/Essenziali.*Recupero.*Importanti/);
     expect(stall).not.toHaveTextContent('Il tuo team è giudicato come');
-    // Trick Room: la regola intera su ogni tab di tipo
+    // Trick Room: la regola su ogni tab di tipo, senza i punti
     for (const name of ['Hyper Offense', 'Bulky Offense', 'Balance', 'Semi-stall', 'Stall']) {
       await user.click(within(dialog).getByRole('tab', { name }));
-      expect(within(dialog).getByRole('tabpanel')).toHaveTextContent('un team veloce che la porta perde punti (−1 per membro veloce, al massimo −3)');
+      expect(within(dialog).getByRole('tabpanel')).toHaveTextContent('portarla in un team veloce è un controsenso e costa punti');
     }
     // Come funziona: Bonus/Malus, lettere dalle soglie, nessun testo delle vecchie aree
     await user.click(within(dialog).getByRole('tab', { name: 'Come funziona' }));

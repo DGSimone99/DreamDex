@@ -46,10 +46,10 @@ describe('Offesa: navigazione e guida', () => {
     expect(within(dialog).getByRole('tab', { name: 'Coverage tipi' })).toHaveAttribute('aria-selected', 'true');
     const panel = within(dialog).getByRole('tabpanel');
     expect(panel).toHaveTextContent('Pokémon medio');
-    // La regola del credito e il setup a un terzo
-    expect(panel).toHaveTextContent('Oltre il 33%');
+    // La regola del credito (soglie semplici) e il setup che conta solo in parte
+    expect(panel).toHaveTextContent("Oltre il 33%: conta un po'");
     expect(panel).toHaveTextContent('Un tipo che nessuno manda KO in due colpi (al 50%) è scoperto');
-    expect(panel).toHaveTextContent('un terzo del guadagno');
+    expect(panel).toHaveTextContent('quindi conta solo in parte');
     // Le difese medie dei 18 bersagli stanno qui, sotto il Colpo (chiuse sotto una freccina)
     expect(within(panel).getByText('Statistiche medie dei 18 bersagli').closest('details')).not.toHaveAttribute('open');
     await user.keyboard('{Escape}');
@@ -154,7 +154,7 @@ describe('Offesa: Generale', () => {
       expect(cells[1]).toHaveTextContent(new RegExp(`^${m.coverMeta}%$`));
       expect(cells[2]).toHaveTextContent(new RegExp(`^${m.total}$`));
       cells.forEach(c => expect(c.querySelector('.def-bar')).not.toBeNull());
-      expect(cells[2].querySelector('.og-own')!.getAttribute('title')).toContain(`70% di ${m.value} + 30% di ${m.coverMeta} = ${m.total}`);
+      expect(cells[2].querySelector('.og-own')!.getAttribute('title')).toBe(`Offesa del membro da solo: ${m.total} (soprattutto contro i tipi, un po' contro il meta)`);
     });
     expect(document.querySelector('.og-detail')).toBeNull();
   });

@@ -88,10 +88,6 @@ export function RolesGuideSection({ section, archetype, meta, typeRule }: { sect
             </li>
           ))}
         </ul>
-        <h5>{g('extra')}</h5>
-        <ul className="guide-lines">
-          <li>{g('extra.secondary')}</li>
-        </ul>
       </>
     );
   }
@@ -153,7 +149,6 @@ export function RolesGuideSection({ section, archetype, meta, typeRule }: { sect
                   {label(c)}{c.value && <b>{dec(c.value)}</b>}
                 </span>
               ))}
-              {item.share && <span className="rl-chip share">{g(`share.${item.share}`, { pool })}</span>}
             </span>
           </li>
         ))}

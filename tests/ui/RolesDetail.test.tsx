@@ -306,7 +306,7 @@ describe('note e secondario nelle sottoschede', () => {
     await user.click(screen.getByRole('tab', { name: /^Essenziali/ }));
     const row = levelRow('Muro Fisico');
     expect(row.querySelector('.rl-sec')).toHaveTextContent('sec.');
-    expect(row.querySelector('.rl-reason')).toHaveTextContent('PS×Dif 111k (soglia 100k)');
+    expect(row.querySelector('.rl-reason')).toHaveTextContent('Regge bene i colpi fisici');
   });
 
   it('sotto l\'icona il valore compare solo quando non è pieno (sotto 100)', () => {
