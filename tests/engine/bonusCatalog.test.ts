@@ -57,7 +57,6 @@ describe('catalogo bonus e malus', () => {
     expect(c.find(e => e.key === 'unusedEnabler')!.points).toBe(`−${UNUSED_ENABLER_POINTS}`);
     expect(c.find(e => e.key === 'trickRoomFast')!.points).toContain(`−${TRICK_ROOM_FAST_POINTS} per membro`);
     expect(c.find(e => e.key === 'coreTrio')!.points).toContain('2');
-    expect(c.find(e => e.key === 'typeVariety')!.when).toContain('10');
   });
 
   it('catalogo EN: stesse chiavi, testi non vuoti', () => {

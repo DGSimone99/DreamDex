@@ -2,7 +2,8 @@ import type { ReactElement, ReactNode } from 'react';
 import type { TeamAnalysis } from '../engine/analysis';
 import type { FormatId } from '../engine/format';
 import type { TeamSet } from '../engine/sets';
-import { bonusMalusCatalog, type CatalogEntry, type TeamRating } from '../engine/rating';
+import type { TeamRating } from '../engine/rating';
+import { BonusMalusView } from './BonusMalusView';
 import { useT } from '../i18n/react';
 import type { Lang } from '../i18n';
 import { defenseTabs } from './defense/defenseTabs';
@@ -54,49 +55,10 @@ export const areaValue = (rating: TeamRating, area: AreaKey): number | string | 
   (area === 'bonusMalus' ? signed(rating.bonus.total - rating.penalty.total)
     : area === 'roles' ? rolesValue(rating) : rating.areas.find(a => a.key === area)?.value ?? null);
 
-/** Catalogo di bonus e malus: due schede, ogni voce con quando scatta e quanto vale; quelle attive ora sono evidenziate. */
+/** Bonus e malus: una scheda sola col netto sul voto; dentro le voci del team e le altre possibili (BonusMalusView). */
 function catalogueTabs(rating: TeamRating, t: T, lang: Lang): DetailTab[] {
-  const catalog = bonusMalusCatalog(lang);
-  const panelOf = (kind: CatalogEntry['kind']) => {
-    const items = kind === 'malus' ? rating.penalty.items : rating.bonus.items;
-    // Punti attuali di una voce del catalogo: somma delle voci del voto con la sua chiave
-    const nowOf = (entry: CatalogEntry) => items.filter(i => i.catalog === entry.key).reduce((n, i) => n + i.points, 0);
-    return (
-      <>
-        <h4>{t(`catalogue.${kind}`)}</h4>
-        <div className="ad-scroll">
-          <table className="ad-t ad-catalog">
-            <thead>
-              <tr>
-                <th scope="col" className="left">{t('catalogue.col.name')}</th>
-                <th scope="col" className="left">{t('catalogue.col.when')}</th>
-                <th scope="col" className="left">{t('catalogue.col.points')}</th>
-                <th scope="col">{t('catalogue.col.now')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {catalog.filter(e => e.kind === kind).map(entry => {
-                const now = nowOf(entry);
-                const active = now > 0;
-                return (
-                  <tr key={entry.key} className={active ? 'active' : undefined} aria-current={active ? 'true' : undefined}>
-                    <th scope="row" className="left">
-                      {entry.name}
-                    </th>
-                    <td className="left">{entry.when}</td>
-                    <td className="left">{entry.points}</td>
-                    <td className="total">{active ? (kind === 'malus' ? `−${now}` : `+${now}`) : '—'}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </>
-    );
-  };
-  return [
-    { key: 'malus', label: t('catalogue.malus'), value: signed(-rating.penalty.total), panel: panelOf('malus') },
-    { key: 'bonus', label: t('catalogue.bonus'), value: signed(rating.bonus.total), panel: panelOf('bonus') },
-  ];
+  return [{
+    key: 'all', label: t('catalogue.onGrade'), value: signed(rating.bonus.total - rating.penalty.total),
+    panel: <BonusMalusView rating={rating} lang={lang} t={t} />,
+  }];
 }
