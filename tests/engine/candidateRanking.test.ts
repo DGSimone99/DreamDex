@@ -41,3 +41,20 @@ describe('lista dei candidati in parti (calcolo in parallelo)', () => {
     expect(parts.result).toEqual(direct);
   });
 });
+
+describe('consigli del Coaching in parti (calcolo in parallelo)', () => {
+  it('stessi consigli del calcolo diretto', async () => {
+    const { coachAdvice, coachTeam } = await import('../../src/engine/coach');
+    const make = () => team('Great Tusk', 'Kingambit', 'Toxapex', 'Dragapult');
+    const direct = (() => { const t = make(); return coachAdvice(t, DEFAULT_FORMAT, fixtureData, coachTeam(t, DEFAULT_FORMAT, fixtureData).problems, 'it'); })();
+    const t = make();
+    const problems = coachTeam(t, DEFAULT_FORMAT, fixtureData).problems;
+    // Come il client: i dati col formato scelto per tutti i passi (coachAdvice lo aggiunge da sé se manca)
+    const data = { ...fixtureData, formatId: DEFAULT_FORMAT.formatId };
+    const jobs = collectGainJobs(() => { coachAdvice(t, DEFAULT_FORMAT, data, problems, 'it'); });
+    const values = computeGains(JSON.parse(JSON.stringify(jobs)), data, 'it', undefined);
+    primeGains(jobs.map((job, i) => [job.key, values[i]]));
+    expect(jobs.length).toBeGreaterThan(0);
+    expect(coachAdvice(t, DEFAULT_FORMAT, fixtureData, problems, 'it')).toEqual(direct);
+  });
+});
