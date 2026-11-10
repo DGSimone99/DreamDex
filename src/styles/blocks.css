@@ -78,7 +78,8 @@
   .eevee-peek { animation: peek-wait 0.34s step-end both; }
   .eevee-peek .peek-head { animation: peek-rise 0.42s 0.34s cubic-bezier(0.22, 1, 0.36, 1) both; }
   .eevee-peek .peek-tail { animation: peek-rise-tail 0.5s 0.42s cubic-bezier(0.22, 1, 0.36, 1) both; }
-  .eevee-peek .peek-paw { animation: peek-paw 0.24s 0.64s ease-out both; }
+  /* Le zampe cadono sul bordo di colpo e in fretta (niente dissolvenza: con la dissolvenza lenta facevano la scia) */
+  .eevee-peek .peek-paw { animation: peek-paw 0.1s 0.62s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
 }
 /*
  * Finestre di aiuto: si accendono come lo schermo di un dispositivo. Una linea luminosa al centro si allunga, poi la
@@ -90,6 +91,26 @@
   .help-backdrop .help-dialog { animation: screen-on 0.34s linear both; }
 }
 @keyframes backdrop-in { from { background-color: transparent; } }
+/*
+ * Chiusura al contrario (la copia ferma della finestra, ModalLock): le zampe spariscono, Eevee scende dietro il bordo,
+ * poi la finestra si richiude a scatti in una linea al centro che si spegne; lo sfondo sfuma. 0,52 s in tutto.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  .help-backdrop.closing { pointer-events: none; animation: backdrop-out 0.52s ease-in both; }
+  .help-backdrop.closing .help-dialog { animation: screen-off 0.3s 0.2s linear both; }
+  .help-backdrop.closing .eevee-peek { animation: none; }
+  .help-backdrop.closing .eevee-peek .peek-paw { animation: none; visibility: hidden; }
+  .help-backdrop.closing .eevee-peek .peek-head { animation: peek-sink 0.2s cubic-bezier(0.4, 0, 1, 1) both; }
+  .help-backdrop.closing .eevee-peek .peek-tail { animation: peek-sink-tail 0.2s cubic-bezier(0.4, 0, 1, 1) both; }
+}
+@keyframes backdrop-out { 0%, 60% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes peek-sink { to { transform: translateY(75%); visibility: hidden; } }
+@keyframes peek-sink-tail { from { transform: rotate(14deg); } to { transform: translateY(85%) rotate(14deg); visibility: hidden; } }
+@keyframes screen-off {
+  0% { clip-path: inset(0); filter: brightness(1.2); animation-timing-function: steps(5, end); }
+  70% { clip-path: inset(calc(50% - 1px) 0 calc(50% - 1px) 0); filter: brightness(2.2); animation-timing-function: cubic-bezier(0.6, 0, 0.8, 0.2); }
+  100% { clip-path: inset(calc(50% - 1px) 50% calc(50% - 1px) 50%); filter: brightness(3); }
+}
 @keyframes screen-on {
   0% { clip-path: inset(calc(50% - 1px) 48% calc(50% - 1px) 48%); filter: brightness(3); animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1); }
   30% { clip-path: inset(calc(50% - 1px) 0 calc(50% - 1px) 0); filter: brightness(2.2); animation-timing-function: steps(6, end); }
@@ -100,7 +121,7 @@
 @keyframes peek-wait { from { visibility: hidden; } to { visibility: visible; } }
 @keyframes peek-rise { from { transform: translateY(70%); } to { transform: none; } }
 @keyframes peek-rise-tail { from { transform: translateY(80%) rotate(14deg); } to { transform: rotate(14deg); } }
-@keyframes peek-paw { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+@keyframes peek-paw { 0% { visibility: hidden; transform: translateY(-6px); } 1% { visibility: visible; } 100% { visibility: visible; transform: none; } }
 .tt-types { display: grid; grid-template-columns: max-content max-content minmax(0, 1fr); align-items: center; gap: 0 16px; margin: 0; padding: 0; list-style: none; }
 .tt-types li { display: contents; }
 .tt-types li > * { padding: 9px 0; border-bottom: 1px solid var(--line-soft); }
