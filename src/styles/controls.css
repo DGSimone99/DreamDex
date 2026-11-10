@@ -7,6 +7,9 @@ button, input, select, textarea {
   border-radius: 4px;
   padding: 6px 10px;
 }
+/* I campi hanno un bordo più visibile dei pulsanti: si riconoscono come posti dove scrivere o scegliere (stessa forza
+   della regola sopra, così i componenti che tolgono o cambiano il bordo continuano a farlo) */
+input, select, textarea { border-color: var(--control-line); }
 button {
   cursor: pointer;
   background: var(--raised);

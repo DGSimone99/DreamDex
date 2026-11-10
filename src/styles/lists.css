@@ -30,7 +30,10 @@
 .dex-actions .dex-fav[aria-pressed='true'] { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
 .dex-actions .dex-ban[aria-pressed='true'] { color: var(--bad); border-color: var(--bad); background: var(--bad-bg); }
 .dex-cell.fav { border-color: var(--accent); }
-.dex-cell.ban > :not(.dex-actions) { opacity: 0.4; }
+/* Bannato: sprite spento, nome in grigio leggibile (prima tutto trasparente al 40%, il nome a 3,5:1) */
+.dex-cell.ban > :not(.dex-actions) { color: var(--faint); }
+.dex-cell.ban .sprite { opacity: 0.4; filter: grayscale(0.7); }
+.dex-cell.ban .dex-name, .dex-cell.ban .dex-no { color: var(--faint); }
 .dex-cell.target { outline: 2px solid var(--accent); outline-offset: 1px; }
 .lists-side { display: grid; gap: 14px; position: sticky; top: 76px; }
 .user-list { background: var(--panel); border: 1px solid var(--line-soft); border-radius: 6px; padding: 12px 14px; }

@@ -12,11 +12,21 @@ export const TYPE_COLORS: Record<TypeName, string> = {
   Rock: '#B8A038', Ghost: '#705898', Dragon: '#7038F8', Dark: '#705848', Steel: '#B8B8D0', Fairy: '#EE99AC',
 };
 
-/** Testo scuro sui tipi chiari, bianco su quelli scuri. */
-export function inkFor(hex: string): string {
+const DARK_INK = '#10142b';
+const luminance = (hex: string) => {
   const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255)
     .map(c => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.3 ? '#10142b' : '#ffffff';
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+};
+/**
+ * Il testo sul colore del tipo: bianco o scuro, quello che si legge meglio (contrasto più alto). Prima si sceglieva con
+ * una soglia fissa e Acqua e Psico restavano col bianco a 3,1:1; ora hanno il testo scuro (oltre 5,5:1).
+ */
+export function inkFor(hex: string): string {
+  const l = luminance(hex);
+  const onWhite = 1.05 / (l + 0.05);
+  const onDark = (l + 0.05) / (luminance(DARK_INK) + 0.05);
+  return onDark > onWhite ? DARK_INK : '#ffffff';
 }
 
 export const typeColor = (type: string): string => TYPE_COLORS[type as TypeName] ?? '#8890b0';
