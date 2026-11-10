@@ -1,6 +1,6 @@
 import { useCallback, useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { analyzeTeam } from './engine/analysis';
-import { coachAdvice, coachTeam } from './engine/coach';
+import { coachTeam } from './engine/coach';
 import type { CoachFix } from './engine/coachFixes';
 import { rateTeam, ratingThreats } from './engine/rating';
 import type { EngineData } from './engine/data';
@@ -30,6 +30,7 @@ import { t, type Lang } from './i18n';
 import { LangProvider } from './i18n/react';
 import { gameName, hasItalianNames } from './i18n/game';
 import { useDismissMenus } from './ui/useDismissMenus';
+import { useAdvice } from './ui/useRanking';
 import { paletteFor, type ListSprite, type ListStyle, type PaletteSetting } from './ui/theme';
 
 const NO_DATA: EngineData = { stats: null, sets: null };
@@ -253,11 +254,9 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   // I consigli (candidati e prima mossa) sono lenti: solo con la scheda Coaching aperta, e dopo che la scheda si è disegnata
   const coachingOpen = shownTab === 'analysis' && analysisView === 'coaching';
   const adviceInput = useMemo(() => (coachingOpen ? { source: coachSource, problems: coaching.problems } : null), [coachingOpen, coachSource, coaching]);
-  const adviceSource = useDeferredValue(adviceInput);
-  const computedAdvice = useMemo(() => adviceSource && coachAdvice(adviceSource.source.team, adviceSource.source.format, adviceSource.source.data, adviceSource.problems, adviceSource.source.lang),
-    [adviceSource]);
+  // In sottofondo (useAdvice): aprire il Coaching non blocca più l'app
   // Consigli di un team precedente: non si mostrano, si dice che si stanno calcolando
-  const advice = adviceSource === adviceInput ? computedAdvice : null;
+  const advice = useAdvice(adviceInput);
 
   // Proposta di mossa del coach, aperta nell'editor del membro: ogni modifica del team o chiusura dell'editor la toglie
   const [moveProposal, setMoveProposal] = useState<MoveProposal | null>(null);
