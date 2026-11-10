@@ -111,6 +111,12 @@ function cached<V>(cache: Map<string, V>, key: string, make: () => V): V {
 const pokemon = new Map<string, Pokemon | null>();
 const moves = new Map<string, CalcMove | null>();
 const fields = new Map<string, Field>();
+/**
+ * Colpi già calcolati (attaccante, difensore e opzioni per contenuto): i voti dei candidati rifanno quasi tutti gli stessi
+ * colpi fra i membri del team, le minacce del meta e i manichini, e cambiano solo quelli del candidato. Stesso risultato,
+ * calcolato una volta.
+ */
+const hits = new Map<string, Hit | null>();
 
 /** Abilità che impediscono lo stato dello strumento: bruciore (Water Veil, Water Bubble, Thermal Exchange) o tutti e due. */
 const NO_BURN = new Set(['waterveil', 'waterbubble', 'thermalexchange']);
@@ -301,7 +307,8 @@ export const hasZMove = (set: TeamSet): boolean => set.moves.some(name => {
 
 /** Il colpo migliore del set contro il difensore (mai terastallizzato); null senza mosse d'attacco o se la libreria non conosce i Pokémon. */
 export function bestHit(attacker: TeamSet, defender: Target, options: HitOptions = {}): Hit | null {
-  return withFirstHit(defender, options, target => bestHitOn(attacker, target, options));
+  return cached(hits, `best|${setKey(attacker)}|${setKey(defender)}|${JSON.stringify(options)}`,
+    () => withFirstHit(defender, options, target => bestHitOn(attacker, target, options)));
 }
 
 function bestHitOn(attacker: TeamSet, defender: Target, options: HitOptions): Hit | null {
@@ -437,7 +444,8 @@ function rollSums(result: unknown): { avg: number; low: number; high: number } |
 }
 
 export function standardHit(attacker: Target, defender: Target, category: 'Physical' | 'Special', options: HitOptions = {}): Hit | null {
-  return withFirstHit(defender, options, target => standardHitOn(attacker, target, category, options));
+  return cached(hits, `standard|${category}|${setKey(attacker)}|${setKey(defender)}|${JSON.stringify(options)}`,
+    () => withFirstHit(defender, options, target => standardHitOn(attacker, target, category, options)));
 }
 
 function standardHitOn(attacker: Target, defender: Target, category: 'Physical' | 'Special', options: HitOptions): Hit | null {
