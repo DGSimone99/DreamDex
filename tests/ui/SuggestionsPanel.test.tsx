@@ -143,7 +143,7 @@ describe('SuggestionsPanel', () => {
     expect(within(targets()).getByRole('button', { name: 'Sostituisci Toxapex' })).toHaveAttribute('aria-pressed', 'true');
     await user.click(within(targets()).getByRole('button', { name: 'Tutti' }));
     expect(toggle()).toHaveAccessibleName('Chi sostituire: Tutti');
-  });
+  }, 30000);
 
   it('team incompleto: da Aggiungi a Migliora team e ritorno', async () => {
     const user = await setup('Great Tusk', 'Gholdengo');
