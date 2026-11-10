@@ -95,7 +95,7 @@ describe('tipi di team in National Dex OU (recupero e velocità)', () => {
     expect(typeMix(slower.slice(0, 5), NATDEX_OU_RULES)).toBeNull();
   });
 
-  it('il voto miscelato: riga "Vicino a…" fra bonus o malus, i conti tornano, col tipo scelto a mano niente miscela', () => {
+  it('il voto miscelato: niente riga "Vicino a…" fra bonus e malus, col tipo scelto a mano niente miscela', () => {
     const slower = sunHO.map((s, i) => (i === 0 ? { ...s, item: 'Leftovers', moves: ['Swords Dance', 'Earthquake', 'Outrage', 'Roost'] } : s));
     const data = { ...fixtureData, formatId: 'ou' as const };
     const r = rateTeam(slower, data)!;
@@ -108,10 +108,10 @@ describe('tipi di team in National Dex OU (recupero e velocità)', () => {
     const rest = 1 - votes.reduce((a, v) => a + v.share, 0);
     expect(r.overall).toBe(Math.round(rest * own.overall + votes.reduce((a, v) => a + v.share * v.vote, 0)));
     expect(near.overall).toBe(votes[0].vote);
-    const item = [...r.penalty.items, ...r.bonus.items].find(i => i.catalog === 'typeBlend');
-    if (r.overall === own.overall) expect(item).toBeUndefined();
-    else expect(item!.text).toMatch(/^Vicino a Hyper Offense: il voto è per il \d+% quello da Hyper Offense/);
-    expect(r.overall).toBe(Math.min(100, Math.max(0, r.base - r.penalty.total + r.bonus.total + r.memberPoints)));
+    // Bonus e malus sono quelli del tipo riconosciuto: la miscela non aggiunge righe
+    expect(r.penalty).toEqual(own.penalty);
+    expect(r.bonus).toEqual(own.bonus);
+    expect([...r.penalty.items, ...r.bonus.items].some(i => i.text.startsWith('Vicino a'))).toBe(false);
   });
 
   it('in National Dex OU lo Stall chiede i ruoli del Semi-stall; negli altri formati i suoi', () => {

@@ -111,7 +111,7 @@ export interface RatingArea {
 
 /** Chiave della voce del catalogo bonus/malus a cui appartiene una voce del voto. */
 export type CatalogKey = 'sharedWeak' | 'sameType' | 'hazardDuplicate' | 'weatherClash' | 'unmetCondition' | 'unusedEnabler'
-  | 'weakMember' | 'lockedStatus' | 'essentialRole' | 'importantRole' | 'trickRoomFast' | 'defenseHole' | 'typeBlend'
+  | 'weakMember' | 'lockedStatus' | 'essentialRole' | 'importantRole' | 'trickRoomFast' | 'defenseHole'
   | 'coreTrio' | 'minorRole' | 'weakCovered' | 'typeVariety' | 'conditionUsed' | 'weatherHelp';
 
 export interface Redundancy {
@@ -470,8 +470,8 @@ export interface RateOptions {
 
 /**
  * Il voto del team. Vicino a una soglia fra due tipi (typeMix, archetype.ts) è una miscela col voto dei tipi accanto
- * (fino a metà proprio sulla soglia; nella fascia Bulky Offense anche con tutti e due i vicini): la differenza si vede come una riga "Vicino a…" fra i bonus o i malus, così base,
- * malus e bonus tornano col voto. Con `opts.archetype` (tipo scelto a mano) niente miscela.
+ * (fino a metà proprio sulla soglia; nella fascia Bulky Offense anche con tutti e due i vicini). La differenza non si mostra
+ * (prima era una riga "Vicino a…" fra bonus e malus). Con `opts.archetype` (tipo scelto a mano) niente miscela.
  */
 export function rateTeam(given: TeamSet[], data: EngineData, lang: Lang = 'it', opts: RateOptions = {}): TeamRating | null {
   // Con EV oltre il massimo o una specie doppia niente voto (l'app lo dice); il resto si giudica come in partita (legalTeam.ts)
@@ -485,17 +485,9 @@ export function rateTeam(given: TeamSet[], data: EngineData, lang: Lang = 'it', 
   const near = mix.blends.map(blend => ({ ...blend, vote: rateTeamAs(input, data, lang, { archetype: blend.near })!.overall }));
   const rest = 1 - sum(near.map(n => n.share));
   const overall = Math.round(rest * own.overall + sum(near.map(n => n.share * n.vote)));
-  const shift = overall - own.overall;
-  // Nella riga solo il tipo più vicino, tutti e due se sono alla stessa distanza
-  const part = (n: (typeof near)[number]) => ({ type: t(lang, `archetype.${n.near}`), share: Math.round(100 * n.share), vote: n.vote });
-  const shown = near.filter(n => mix.shown.includes(n.near));
-  const text = shown.length > 1
-    ? t(lang, 'rating.typeBlend2', { type: part(shown[0]).type, share: part(shown[0]).share, vote: shown[0].vote, type2: part(shown[1]).type, share2: part(shown[1]).share, vote2: shown[1].vote })
-    : t(lang, 'rating.typeBlend', part(shown[0]));
-  const item: Redundancy = { text, points: Math.abs(shift), catalog: 'typeBlend', key: 'typeBlend' };
-  const penalty = shift < 0 ? { total: own.penalty.total + item.points, items: [...own.penalty.items, item] } : own.penalty;
-  const bonus = shift > 0 ? { total: own.bonus.total + item.points, items: [...own.bonus.items, item] } : own.bonus;
-  return { ...own, overall, ...gradeFor(overall, lang), penalty, bonus, typeMix: mix };
+  // La miscela non si mostra più come riga "Vicino a…" fra bonus e malus (compariva troppo spesso; scelta dell'utente
+  // 2026-11-10): il voto resta miscelato, e bonus e malus mostrati non contano questa differenza
+  return { ...own, overall, ...gradeFor(overall, lang), typeMix: mix };
 }
 
 /** Il voto con un solo tipo: quello riconosciuto, o `opts.archetype`. */
@@ -599,9 +591,9 @@ export interface CatalogEntry {
 }
 
 const CATALOG_ORDER: { key: CatalogKey; kind: 'malus' | 'bonus' }[] = [
-  ...(['sharedWeak', 'sameType', 'hazardDuplicate', 'weatherClash', 'unmetCondition', 'unusedEnabler', 'weakMember', 'lockedStatus', 'essentialRole', 'importantRole', 'trickRoomFast', 'defenseHole', 'typeBlend'] as const)
+  ...(['sharedWeak', 'sameType', 'hazardDuplicate', 'weatherClash', 'unmetCondition', 'unusedEnabler', 'weakMember', 'lockedStatus', 'essentialRole', 'importantRole', 'trickRoomFast', 'defenseHole'] as const)
     .map(key => ({ key, kind: 'malus' as const })),
-  ...(['coreTrio', 'weakCovered', 'typeVariety', 'conditionUsed', 'weatherHelp', 'minorRole', 'typeBlend'] as const).map(key => ({ key, kind: 'bonus' as const })),
+  ...(['coreTrio', 'weakCovered', 'typeVariety', 'conditionUsed', 'weatherHelp', 'minorRole'] as const).map(key => ({ key, kind: 'bonus' as const })),
 ];
 
 /** Tutti i bonus e malus possibili, con il testo per il modale; i punti nei testi vengono dalle costanti. */
