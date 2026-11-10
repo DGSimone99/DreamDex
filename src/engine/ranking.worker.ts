@@ -15,6 +15,7 @@ import { initLearnsets } from './learnsets';
 import type { WorkerData, WorkerRequest, WorkerResponse } from './rankingProtocol';
 import type { TeamSet } from './sets';
 import { collectGainJobs, computeGains, primeGains } from './teamGain';
+import { coachAdvice } from './coach';
 
 const ready = Promise.all([loadTiers().then(initTiers), loadBans().then(initBans)]);
 // I learnset (tanta memoria) servono solo a fare i set dei candidati, cioè a chi decide i voti e fa la lista: chi
@@ -64,6 +65,14 @@ function handle(message: Exclude<WorkerRequest, { kind: 'parts' | 'names' }>): W
   }
   if (message.kind === 'gains') {
     return { id: message.id, ok: true, kind: 'gains', values: computeGains(message.jobs, engineData(message.data), message.lang, message.archetype) };
+  }
+  if (message.kind === 'advicePlan' || message.kind === 'advice') {
+    // I consigli del Coaching: stesso schema della lista (voti raccolti, calcolati in parallelo, messi in cache)
+    const { team, format, problems, lang } = message.params;
+    const run = () => coachAdvice(sameTeam(team), format, engineData(message.data), problems, lang);
+    if (message.kind === 'advicePlan') return { id: message.id, ok: true, kind: 'advicePlan', jobs: collectGainJobs(() => { run(); }) };
+    primeGains(message.primed);
+    return { id: message.id, ok: true, kind: 'advice', advice: run() };
   }
   primeGains(message.primed);
   return { id: message.id, ok: true, kind: 'rank', result: rankCandidates(withTeam(message.params), engineData(message.data)) };

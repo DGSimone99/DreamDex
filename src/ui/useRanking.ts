@@ -1,7 +1,8 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { rankCandidates, type RankingParams, type RankingResult } from '../engine/candidateRanking';
 import type { EngineData } from '../engine/data';
-import type { GainValue, WorkerData, WorkerRequest, WorkerResponse } from '../engine/rankingProtocol';
+import type { AdviceParams, GainValue, WorkerData, WorkerRequest, WorkerResponse } from '../engine/rankingProtocol';
+import { coachAdvice, type CoachAdvice } from '../engine/coach';
 import type { GainJob } from '../engine/teamGain';
 import { currentGameNames, gameNamesVersion } from '../i18n/game';
 
@@ -124,17 +125,44 @@ class RankingClient {
       let primed: [string, GainValue][] = [];
       if (this.workers.length > 1) {
         const { jobs } = await first.call<'plan'>({ kind: 'plan', params, data });
-        const groups = splitJobs(jobs, this.workers.length);
-        const answers = await Promise.all(groups.map((group, i) => (group.length
-          ? this.workers[i].call<'gains'>({ kind: 'gains', jobs: group, lang: params.lang, archetype: params.archetype, data })
-          : Promise.resolve({ values: [] as GainValue[] }))));
-        primed = groups.flatMap((group, i) => group.map((job, j) => [job.key, answers[i].values[j]] as [string, GainValue]));
+        primed = await this.gains(jobs, params.lang, params.archetype, data);
       }
       const { result } = await first.call<'rank'>({ kind: 'rank', params, data, primed });
       return result;
     } catch {
       this.broken = true;
       return rank(input);
+    }
+  }
+
+  /** I voti richiesti, divisi fra i calcoli in parallelo, come coppie chiave → voto da mettere in cache. */
+  private async gains(jobs: GainJob[], lang: RankingParams['lang'], archetype: RankingParams['archetype'], data: WorkerData): Promise<[string, GainValue][]> {
+    const groups = splitJobs(jobs, this.workers.length);
+    const answers = await Promise.all(groups.map((group, i) => (group.length
+      ? this.workers[i].call<'gains'>({ kind: 'gains', jobs: group, lang, archetype, data })
+      : Promise.resolve({ values: [] as GainValue[] }))));
+    return groups.flatMap((group, i) => group.map((job, j) => [job.key, answers[i].values[j]] as [string, GainValue]));
+  }
+
+  /** I consigli del Coaching in sottofondo: stessi tre passi della lista (voti raccolti, in parallelo, poi i consigli). */
+  async advise(params: AdviceParams, given: EngineData): Promise<CoachAdvice> {
+    // I dati col formato scelto (come fa coachAdvice): così i voti calcolati a parte usano le stesse regole del formato
+    const engine = given.formatId === params.format.formatId ? given : { ...given, formatId: params.format.formatId };
+    const direct = () => coachAdvice(params.team, params.format, engine, params.problems, params.lang);
+    if (this.broken) return direct();
+    try {
+      const data = this.wire(engine);
+      const [first] = this.workers;
+      let primed: [string, GainValue][] = [];
+      if (this.workers.length > 1) {
+        const { jobs } = await first.call<'advicePlan'>({ kind: 'advicePlan', params, data });
+        primed = await this.gains(jobs, params.lang, undefined, data);
+      }
+      const { advice } = await first.call<'advice'>({ kind: 'advice', params, data, primed });
+      return advice;
+    } catch {
+      this.broken = true;
+      return direct();
     }
   }
 }
@@ -220,3 +248,33 @@ function useSyncRanking(input: RankingInput): Ranking {
 }
 
 export const useRanking: (input: RankingInput) => Ranking = rankingClient() ? useWorkerRanking : useSyncRanking;
+
+/** Cosa decide i consigli del Coaching: il team (col formato e i dati) e i suoi problemi. */
+export interface AdviceInput { source: { team: AdviceParams['team']; format: AdviceParams['format']; data: EngineData; lang: AdviceParams['lang'] }; problems: AdviceParams['problems'] }
+
+/**
+ * I consigli del Coaching per l'input dato (null: Coaching chiuso). Col worker si calcolano in sottofondo e finché non
+ * arrivano si mostra null ("si stanno calcolando"); senza, come prima, dopo il resto della pagina.
+ */
+function useWorkerAdvice(input: AdviceInput | null): CoachAdvice | null {
+  const worker = rankingClient()!;
+  const [shown, setShown] = useState<{ input: AdviceInput; advice: CoachAdvice } | null>(null);
+  useEffect(() => {
+    if (!input) return;
+    let live = true;
+    const { source, problems } = input;
+    void worker.advise({ team: source.team, format: source.format, problems, lang: source.lang }, source.data).then(advice => {
+      if (live) setShown({ input, advice });
+    });
+    return () => { live = false; };
+  }, [input, worker]);
+  return shown && shown.input === input ? shown.advice : null;
+}
+
+function useSyncAdvice(input: AdviceInput | null): CoachAdvice | null {
+  const deferred = useDeferredValue(input);
+  const advice = useMemo(() => deferred && coachAdvice(deferred.source.team, deferred.source.format, deferred.source.data, deferred.problems, deferred.source.lang), [deferred]);
+  return deferred === input ? advice : null;
+}
+
+export const useAdvice: (input: AdviceInput | null) => CoachAdvice | null = rankingClient() ? useWorkerAdvice : useSyncAdvice;
