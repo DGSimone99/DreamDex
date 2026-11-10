@@ -1,21 +1,20 @@
-import { useDeferredValue, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import type { EngineData } from '../engine/data';
 import type { Format } from '../engine/format';
 import type { Archetype } from '../engine/archetype';
-import { improveReplacements, keepersFirst, type Replacement } from '../engine/replace';
-import { rankedAdditions, rankedReplacements } from '../engine/coachFixes';
 import { ActiveFilters } from './ActiveFilters';
-import type { Suggestion } from '../engine/scoring';
 import type { TeamSet } from '../engine/sets';
 import type { TeamRating } from '../engine/rating';
-import { bestSwaps, rankByTeamGain, rankKey, SWAPS_PER_MEMBER, type SwapReport } from '../engine/teamGain';
+import { rankKey } from '../engine/teamGain';
+import { MAX } from '../engine/candidateRanking';
+import { useRanking } from './useRanking';
 import { battleName } from '../engine/dex';
 import { PokemonIcon } from './PokemonName';
 import { statsEntry } from '../engine/stats';
 import { getSpecies } from '../engine/dex';
 import { applyFavorites, isUserBanned, isUserFavorite } from '../engine/lists';
 import { bannedNames } from '../engine/scoring';
-import { activeFilterCount, EMPTY_FILTERS, isFiltering, searchCandidates, searchPool, type CandidateFilters } from '../engine/filters';
+import { activeFilterCount, EMPTY_FILTERS, isFiltering, searchPool, type CandidateFilters } from '../engine/filters';
 import { defaultSet } from '../engine/sets';
 import { FilterBar } from './FilterBar';
 import { conditionLabel, neededConditions, providesAll, viaName } from '../engine/synergy';
@@ -31,9 +30,8 @@ import { usePerPage } from './usePerPage';
 import { ListViewMenu } from './ListViewMenu';
 import { ModeSwitch } from './ModeSwitch';
 
-/** Candidati in tutto; il voto del team si calcola sui primi POOL per punteggio. Per pagina: misurato (PAGE senza misura). */
-export const MAX = 50;
-const POOL = 100;
+/** Candidati in tutto: MAX (candidateRanking.ts). Per pagina: misurato (PAGE senza misura). */
+export { MAX };
 
 /** Cosa mostra la lista: aggiunte, scambi liberi con tutto il team, o sostituti di un membro. */
 type View = 'add' | 'all' | 'member';
@@ -131,35 +129,17 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
     return { ...data, userLists: { ...lists, allow } };
   }, [data, exactQuery, revealed]);
 
-  // Il voto del team per ogni candidato richiede un attimo: la lista si ricalcola senza bloccare il resto
-  // (il team si aggiorna subito, la lista resta attenuata finché non è pronta)
+  // Il voto del team per ogni candidato richiede un attimo: la lista si calcola in sottofondo (useRanking), così il
+  // team si aggiorna subito e la lista resta attenuata finché non è pronta
   const source = useMemo(() => ({ team, replaceIndex, format, data: ranking, scope, archetype }), [team, replaceIndex, format, ranking, scope, archetype]);
-  const deferred = useDeferredValue(source);
-  const stale = deferred !== source;
+  const listQuery = useMemo(() => ({ applied, filtering, lang }), [applied, filtering, lang]);
+  const rankingInput = useMemo(() => ({ source, query: listQuery }), [source, listQuery]);
+  const { result: rankingResult, pending: stale, input: shownInput } = useRanking(rankingInput);
+  // Gli input della lista mostrata (con la lista ancora in calcolo, quelli di prima)
+  const deferred = shownInput.source;
   // Quanti cambi ha escluso il tipo di team scelto nell'ultimo calcolo della lista
-  const report = useMemo<SwapReport>(() => ({ excluded: 0 }), [deferred, applied, filtering, lang]);
-  const ranked: Item[] = useMemo(() => {
-    const { team, format, data, archetype } = deferred;
-    const replaceIndex = deferred.replaceIndex !== null && deferred.replaceIndex < team.length ? deferred.replaceIndex : null;
-    // Prima i candidati migliori per punteggio, poi ordinati per il voto che darebbero al team
-    const rank = (list: (Suggestion | Replacement)[], sort = true) => rankByTeamGain(list, team, replaceIndex, data, lang, sort, archetype, report).slice(0, MAX);
-    if (replaceIndex === null && team.length >= 2 && (deferred.scope === 'all' || team.length >= 6)) {
-      // Raccomandazioni libere: per ogni candidato, il membro che conviene di più sostituire
-      const pool = filtering ? searchPool(team, format, data, applied) : undefined;
-      if (!pool && !data.stats) return [];
-      return bestSwaps(team, data, lang, index => improveReplacements(team, index, format, data, SWAPS_PER_MEMBER, pool, lang, archetype), { archetype, report }).slice(0, MAX);
-    }
-    if (replaceIndex !== null) {
-      // Con ricerca o filtri i sostituti vengono da tutto il Pokédex, non solo dalle statistiche
-      const pool = filtering ? searchPool(team.filter((_, i) => i !== replaceIndex), format, data, applied) : undefined;
-      if (!pool && !data.stats) return [];
-      // Senza filtri: la classifica condivisa col Coaching. Chi porta il meteo/campo necessario resta in cima
-      return keepersFirst(pool ? rank(improveReplacements(team, replaceIndex, format, data, POOL, pool, lang, archetype))
-        : rankedReplacements(team, replaceIndex, format, data, POOL, lang, archetype, report).slice(0, MAX));
-    }
-    if (filtering) return rank(searchCandidates(team, format, data, applied, POOL, lang));
-    return data.stats ? rankedAdditions(team, format, data, POOL, lang, archetype, report).slice(0, MAX) : [];
-  }, [deferred, applied, filtering, lang, report]);
+  const report = { excluded: rankingResult.excluded };
+  const ranked: Item[] = rankingResult.items;
   // Preferiti dell'utente: a voto quasi pari passano davanti
   const items: Item[] = useMemo(() => {
     const lists = deferred.data.userLists;
