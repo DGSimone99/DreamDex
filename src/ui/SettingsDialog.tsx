@@ -2,6 +2,7 @@ import { useEffect, useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useT } from '../i18n/react';
 import { Icon } from './icons';
+import { ModalLock } from './ModalLock';
 import { PALETTES, type ListSprite, type ListStyle, type PaletteSetting } from './theme';
 
 const CHOICES: PaletteSetting[] = ['auto', ...PALETTES];
@@ -33,6 +34,7 @@ export function SettingsDialog({ palette, onPaletteChange, listStyle, onListStyl
   const label = (choice: PaletteSetting) => (choice === 'auto' ? t('settings.paletteAuto') : t(`settings.palette.${choice}`));
   return createPortal(
     <div className="help-backdrop" onClick={onClose}>
+          <ModalLock />
       <div className="help-dialog settings-dialog" role="dialog" aria-modal="true" aria-labelledby={titleId} onClick={e => e.stopPropagation()}>
         <header className="help-head">
           <h3 id={titleId}>{t('settings.title')}</h3>

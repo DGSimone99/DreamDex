@@ -308,6 +308,16 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   return (
     <LangProvider lang={lang}>
     <div className="app">
+      {/* Per chi usa la tastiera: il primo Tab mostra questo link, che salta la barra laterale */}
+      <a className="skip-link" href="#main-content" onClick={e => {
+        e.preventDefault();
+        // La colonna prende il fuoco solo per il salto (sempre focalizzabile, un clic nel vuoto chiuderebbe l'editor)
+        const main = mainRef.current;
+        if (!main) return;
+        main.tabIndex = -1;
+        main.focus();
+        main.addEventListener('blur', () => main.removeAttribute('tabindex'), { once: true });
+      }}>{t(lang, 'app.skipToContent')}</a>
       <Rail format={format} onFormatChange={setFormat} meta={data.stats?.meta ?? null} lang={lang} onLangChange={changeLang}
         onSettings={() => setSettingsOpen(true)}
         tabs={<Tabs orientation="vertical" active={shownTab} onChange={openTab} tabs={[
@@ -334,7 +344,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
           ].filter(Boolean).join(' · ') : t(lang, 'rail.listsEmpty') },
         { id: 'compare', label: t(lang, 'tabs.compare'), icon: 'search', disabled: true, note: t(lang, 'tabs.soon'), status: t(lang, 'rail.soon') },
       ]} />} />
-      <div className="main" ref={mainRef}>
+      <div className="main" ref={mainRef} id="main-content">
       {loading && <p className="banner info">{t(lang, 'app.loading')}</p>}
       {!loading && !data.stats && (
         <p className="banner" role="alert">

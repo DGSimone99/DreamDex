@@ -89,14 +89,16 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 /* Titolo e suggerimento tengono la loro larghezza: se manca spazio si stringono prima i trattini del pager */
 .list-head .dbl-hint { flex: none; font-size: 12px; color: var(--faint); white-space: nowrap; }
 .pager { flex: 0 1 auto; min-width: 0; margin-left: auto; display: flex; align-items: center; gap: 2px; height: var(--pager-h); }
-.pager .step { flex: none; display: grid; place-items: center; width: 20px; height: 24px; padding: 0; border: 0; background: none; color: var(--muted); }
+.pager .step { flex: none; display: grid; place-items: center; width: 24px; height: 24px; padding: 0; border: 0; background: none; color: var(--muted); }
 .pager .step:hover:not(:disabled) { color: var(--text); }
 .pager .step:disabled { opacity: 0.35; }
 .pager .step .icon { width: 14px; height: 14px; }
 .pager-dashes { display: flex; gap: 2px; min-width: 0; }
 /* Trattino sottile, ma con un'area cliccabile più alta */
 /* Stretto (8px), e si stringe fino a 3px quando la fascia non basta (molte pagine, finestra stretta) */
-.pager .pager-dash { flex: 0 1 8px; width: 8px; height: 16px; min-width: 3px; padding: 6px 0; border: 0; border-radius: 0; background: var(--line); background-clip: content-box; }
+/* Ogni trattino è un bersaglio alto 24 px e largo il doppio di prima (la barretta che si vede resta sottile); le frecce
+   accanto, 24×24, fanno la stessa cosa per chi preferisce un bersaglio più grande */
+.pager .pager-dash { flex: 0 1 16px; width: 16px; height: 24px; min-width: 7px; padding: 10px 2px; border: 0; border-radius: 0; background: var(--line); background-clip: content-box; }
 .pager .pager-dash:hover { background-color: var(--muted); }
 .pager .pager-dash[aria-current='page'] { background-color: var(--accent); }
 /* Vista della lista: in fondo alla fascia, dopo la paginazione; il riquadro scende sopra la lista */

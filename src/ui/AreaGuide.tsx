@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, type KeyboardEvent, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useT } from '../i18n/react';
+import { ModalLock } from './ModalLock';
 import { Icon } from './icons';
 
 /**
@@ -44,6 +45,7 @@ export function AreaGuide({ title, sections, current, onCurrent, onClose, classN
 
   return createPortal(
     <div className="help-backdrop" onClick={onClose}>
+          <ModalLock />
       <div className={`help-dialog area-guide${className ? ` ${className}` : ''}`} role="dialog" aria-modal="true" aria-labelledby={`${id}-title`} onClick={e => e.stopPropagation()}>
         <header className="help-head">
           <h3 id={`${id}-title`}>{title}</h3>
