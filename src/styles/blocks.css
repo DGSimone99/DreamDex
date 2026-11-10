@@ -74,10 +74,30 @@
 .eevee-peek .peek-paw.right { left: calc(var(--peek) * 0.415); }
 /* All'apertura testa e coda salgono da dietro il bordo, poi arrivano le zampe; niente movimento se chiesto dal sistema */
 @media (prefers-reduced-motion: no-preference) {
-  .eevee-peek .peek-head { animation: peek-rise 0.42s cubic-bezier(0.22, 1, 0.36, 1) both; }
-  .eevee-peek .peek-tail { animation: peek-rise-tail 0.5s 0.08s cubic-bezier(0.22, 1, 0.36, 1) both; }
-  .eevee-peek .peek-paw { animation: peek-paw 0.24s 0.3s ease-out both; }
+  /* Eevee arriva dopo che la finestra si è accesa (screen-on, 0,34 s) */
+  .eevee-peek { animation: peek-wait 0.34s step-end both; }
+  .eevee-peek .peek-head { animation: peek-rise 0.42s 0.34s cubic-bezier(0.22, 1, 0.36, 1) both; }
+  .eevee-peek .peek-tail { animation: peek-rise-tail 0.5s 0.42s cubic-bezier(0.22, 1, 0.36, 1) both; }
+  .eevee-peek .peek-paw { animation: peek-paw 0.24s 0.64s ease-out both; }
 }
+/*
+ * Finestre di aiuto: si accendono come lo schermo di un dispositivo. Una linea luminosa al centro si allunga, poi la
+ * finestra si apre verso l'alto e verso il basso insieme, a scatti (passi, non un movimento morbido); lo sfondo sfuma.
+ * Tutto in 0,34 s: solo ritaglio (clip-path), luminosità e opacità, leggeri per il browser.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  .help-backdrop { animation: backdrop-in 0.16s ease-out both; }
+  .help-backdrop .help-dialog { animation: screen-on 0.34s linear both; }
+}
+@keyframes backdrop-in { from { background-color: transparent; } }
+@keyframes screen-on {
+  0% { clip-path: inset(calc(50% - 1px) 48% calc(50% - 1px) 48%); filter: brightness(3); animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1); }
+  30% { clip-path: inset(calc(50% - 1px) 0 calc(50% - 1px) 0); filter: brightness(2.2); animation-timing-function: steps(6, end); }
+  92% { clip-path: inset(0); filter: brightness(1.25); }
+  100% { clip-path: inset(0); filter: none; }
+}
+/* Nascosto finché la finestra si accende (senza la finestra davanti, la testa resterebbe sospesa nel vuoto) */
+@keyframes peek-wait { from { visibility: hidden; } to { visibility: visible; } }
 @keyframes peek-rise { from { transform: translateY(70%); } to { transform: none; } }
 @keyframes peek-rise-tail { from { transform: translateY(80%) rotate(14deg); } to { transform: rotate(14deg); } }
 @keyframes peek-paw { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
