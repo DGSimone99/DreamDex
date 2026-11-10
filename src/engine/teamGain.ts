@@ -152,6 +152,57 @@ let evaluationMisses = 0;
 /** Quante valutazioni si sono calcolate davvero (per i test della cache). */
 export const teamGainMisses = () => evaluationMisses;
 
+type GainValue = TeamGain | 'excluded' | null;
+
+/** Un voto da calcolare: il team, il membro sostituito (null: aggiunta) e il candidato; `key` è la sua chiave in cache. */
+export interface GainJob {
+  key: string;
+  team: TeamSet[];
+  replaceIndex: number | null;
+  set: TeamSet;
+}
+
+/**
+ * Raccolta dei voti da calcolare (per dividerli fra più calcoli in parallelo, rankingPool.ts): mentre è attiva le
+ * classifiche girano senza calcolare i voti dei candidati (ne segnano solo la richiesta) e senza salvare niente in
+ * cache; dopo si calcolano i voti altrove, si mettono in cache con `primeGains` e la classifica vera li trova tutti.
+ */
+let recording: GainJob[] | null = null;
+export const isCollectingGains = () => recording !== null;
+export function collectGainJobs(run: () => void): GainJob[] {
+  const jobs: GainJob[] = [];
+  recording = jobs;
+  try {
+    run();
+  } finally {
+    recording = null;
+  }
+  // Lo stesso voto chiesto due volte si calcola una volta
+  return [...new Map(jobs.map(job => [job.key, job])).values()];
+}
+
+const storeGain = (key: string, value: GainValue) => {
+  if (evaluations.size >= EVALUATION_LIMIT) evaluations.clear();
+  evaluations.set(key, value);
+};
+
+/** I voti calcolati altrove, nella cache: la classifica che li chiede non li ricalcola. */
+export function primeGains(results: [string, GainValue][]): void {
+  for (const [key, value] of results) storeGain(key, value);
+}
+
+/** I voti di una lista di richieste (lo stesso calcolo della classifica), nell'ordine. */
+export function computeGains(jobs: GainJob[], data: EngineData, lang: Lang, archetype: Archetype | undefined): GainValue[] {
+  const evaluators = new Map<string, ReturnType<typeof swapEvaluator>>();
+  return jobs.map(job => {
+    const teamKey = JSON.stringify(job.team);
+    let evaluator = evaluators.get(teamKey);
+    if (!evaluator) evaluators.set(teamKey, (evaluator = swapEvaluator(job.team, data, lang, archetype)));
+    const result = evaluator.evaluate(withCandidate(job.team, job.set, job.replaceIndex), job.set, job.replaceIndex === null ? null : job.team[job.replaceIndex]);
+    return result && result !== 'excluded' ? result.gain : result;
+  });
+}
+
 /** Conta i cambi esclusi dal tipo di team scelto (per dire all'utente perché la lista è vuota). */
 export interface SwapReport {
   excluded: number;
@@ -192,11 +243,14 @@ export function rankByTeamGain<T extends { set: TeamSet; score: number }>(
   const gainOf = (set: TeamSet) => {
     const key = prefix + JSON.stringify(set);
     if (evaluations.has(key)) return evaluations.get(key)!;
+    if (recording) {
+      recording.push({ key, team, replaceIndex, set });
+      return null;
+    }
     evaluationMisses += 1;
     const result = evaluate(withCandidate(team, set, replaceIndex), set, replaceIndex === null ? null : team[replaceIndex]);
     const value = result && result !== 'excluded' ? result.gain : result;
-    if (evaluations.size >= EVALUATION_LIMIT) evaluations.clear();
-    evaluations.set(key, value);
+    storeGain(key, value);
     return value;
   };
   const rated: (T & { teamGain?: TeamGain })[] = items.flatMap(item => {
@@ -238,6 +292,20 @@ export function bestSwaps<T extends { species: string; set: TeamSet; score: numb
   const best = new Map<string, T & { teamGain: TeamGain; replaces: number; alternatives: SwapOption[] }>();
   const base = (set: TeamSet) => battleSpecies(set)?.baseSpecies ?? set.species;
   const forme = (set: TeamSet) => battleSpecies(set)?.name ?? set.species;
+  // Lo stesso voto di rankByTeamGain (stessa chiave): così si può calcolare in parallelo e riusare
+  const prefix = `${idOf(team)}|${dataKey(data)}|${lang}|${archetype ?? ''}|swap|`;
+  const gainOf = (index: number, set: TeamSet): GainValue | undefined => {
+    const key = `${prefix}${index}|${JSON.stringify(set)}`;
+    if (evaluations.has(key)) return evaluations.get(key)!;
+    if (recording) {
+      recording.push({ key, team, replaceIndex: index, set });
+      return undefined;
+    }
+    const result = evaluate(withCandidate(team, set, index), set, team[index]);
+    const value = result && result !== 'excluded' ? result.gain : result;
+    storeGain(key, value);
+    return value;
+  };
   team.forEach((member, index) => {
     if (member.favorite) return;
     const others = new Set(team.filter((_, i) => i !== index).map(base));
@@ -246,15 +314,15 @@ export function bestSwaps<T extends { species: string; set: TeamSet; score: numb
       .filter(c => !similar || (c.similarity ?? 0) >= threshold)
       .slice(0, SWAPS_PER_MEMBER);
     for (const candidate of candidates) {
-      const result = evaluate(withCandidate(team, candidate.set, index), candidate.set, member);
-      if (result === 'excluded' && report) report.excluded += 1;
-      if (!result || result === 'excluded') continue;
-      const option = { index, gain: result.gain.gain };
+      const gain = gainOf(index, candidate.set);
+      if (gain === 'excluded' && report) report.excluded += 1;
+      if (!gain || gain === 'excluded') continue;
+      const option = { index, gain: gain.gain };
       const current = best.get(candidate.species);
       // Fra gli slot possibili vince quello con la chiave d'ordine più alta (voto meno penalità)
-      if (!current || compareGains(result.gain, current.teamGain) < 0) {
+      if (!current || compareGains(gain, current.teamGain) < 0) {
         const alternatives = current ? [{ index: current.replaces, gain: current.teamGain.gain }, ...current.alternatives] : [];
-        best.set(candidate.species, { ...candidate, teamGain: result.gain, replaces: index, alternatives });
+        best.set(candidate.species, { ...candidate, teamGain: gain, replaces: index, alternatives });
       } else {
         current.alternatives.push(option);
       }

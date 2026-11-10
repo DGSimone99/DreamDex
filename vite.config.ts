@@ -3,6 +3,8 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
+  // Il calcolo in sottofondo (src/engine/ranking.worker.ts) come modulo: i dati dei formati restano file separati, caricati solo se servono
+  worker: { format: 'es' },
   // Su Windows il watcher di sistema perdeva alcune modifiche: si controllano i file a intervalli
   server: { watch: { usePolling: true, interval: 300 } },
   test: {

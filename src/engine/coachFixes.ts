@@ -8,7 +8,7 @@ import type { Format } from './format';
 import { improveReplacements, type Replacement } from './replace';
 import { suggest, type Suggestion } from './scoring';
 import type { TeamSet } from './sets';
-import { dataKey, idOf, rankByTeamGain, SWAPS_PER_MEMBER, withCandidate, type SwapReport, type TeamGain } from './teamGain';
+import { dataKey, idOf, isCollectingGains, rankByTeamGain, SWAPS_PER_MEMBER, withCandidate, type SwapReport, type TeamGain } from './teamGain';
 
 /** Un cambio proposto dal Coaching: sostituzione di un membro o aggiunta a un team incompleto. */
 export interface CoachFix {
@@ -39,6 +39,11 @@ export const rankingMisses = () => misses;
 
 function cachedRanking<T>(key: string, make: (report: SwapReport) => T[], report?: SwapReport): T[] {
   let entry = rankings.get(key);
+  // Mentre si raccolgono i voti da calcolare (collectGainJobs) la classifica è incompleta: non si salva
+  if (!entry && isCollectingGains()) {
+    const own: SwapReport = { excluded: 0 };
+    return make(own);
+  }
   if (!entry) {
     misses += 1;
     const own: SwapReport = { excluded: 0 };

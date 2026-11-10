@@ -25,6 +25,8 @@ export function initGameNames(data: GameNames | null): void {
 /** Cambia a ogni initGameNames: per invalidare ciò che dipende dai nomi. */
 export const gameNamesVersion = (): number => version;
 export const hasItalianNames = (): boolean => italian !== null;
+/** I nomi italiani caricati (per passarli al calcolo in sottofondo), o null. */
+export const currentGameNames = (): GameNames | null => italian;
 
 const table = (kind: GameKind) => (kind === 'move' ? italian?.moves : kind === 'ability' ? italian?.abilities : italian?.items);
 
