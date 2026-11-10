@@ -613,7 +613,7 @@ const STATES: Record<string, State> = {
   fill: { run: async p => clickText(p, 'button', /^\s*Completa team/) },
   saved: { run: async p => clickText(p, 'details.popover > summary', /Team salvati/) },
   import: { run: async p => clickText(p, 'details.popover > summary', /Import/) },
-  rules: { run: async p => clickText(p, 'details.popover > summary', /Regole|Avanzate/) },
+  rules: { run: async p => { await p.click('.format-card > summary'); return true; } },
   filters: { run: async p => { await tab(p, 'pokemon'); return clickText(p, 'details.filters > summary', /./); } },
   combobox: { run: async p => {
     if (!await clickText(p, '.slot.filled > summary', /./)) return 'no card';
@@ -656,7 +656,7 @@ const STATES: Record<string, State> = {
   'en-compact': { lang: 'en' },
   'long-names': { hash: hash(LONG) },
   nodata: { run: async () => 'every bundled format has data; the no-data banner is covered by the App test' },
-  settings: { run: async p => (await clickText(p, 'button', /^Impostazioni$/)) || 'no settings button yet' },
+  settings: { run: async p => { await p.click('.rail-settings'); return true; } },
 };
 const chosen = (arg('states') ?? Object.keys(STATES).join(',')).split(',');
 

@@ -307,20 +307,29 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
     <div className="app">
       <Rail format={format} onFormatChange={setFormat} meta={data.stats?.meta ?? null} lang={lang} onLangChange={changeLang}
         onSettings={() => setSettingsOpen(true)}
-        actions={<>
-          <ShowdownPanel team={team} format={format} tera={teraAllowed(format)} onImport={changeTeam} />
-          <SavedTeams team={team} format={format} onLoad={(saved, savedFormat) => { changeTeam(saved); if (savedFormat) setFormat({ ...savedFormat, meta: format.meta }); }} />
-        </>}
         tabs={<Tabs orientation="vertical" active={shownTab} onChange={openTab} tabs={[
-        { id: 'pokemon', label: t(lang, 'tabs.pokemon'),
-          count: replaceIndex !== null && team[replaceIndex] ? { text: t(lang, 'suggest.replaceTitle', { species: team[replaceIndex].species }), level: 'info' } : null },
-        { id: 'analysis', label: t(lang, 'tabs.analysis'),
-          count: problems.length ? { text: t(lang, problems.length === 1 ? 'tabs.problemsOne' : 'tabs.problemsMany', { n: problems.length }),
-            level: problems.some(p => p.severity === 'serious') ? 'serious' : 'minor' } : null },
-        { id: 'meta', label: t(lang, 'tabs.meta'), disabled: !metaOn, note: metaOn ? undefined : t(lang, 'tabs.metaOff'),
-          count: metaOn && team.length > 0 && openThreats ? { text: t(lang, openThreats === 1 ? 'tabs.threatsOne' : 'tabs.threatsMany', { n: openThreats }), level: 'warn' } : null },
-        { id: 'lists', label: t(lang, 'tabs.lists') },
-        { id: 'compare', label: t(lang, 'tabs.compare'), disabled: true, note: t(lang, 'tabs.soon') },
+        // Tessere del menu: sotto il nome lo stato della sezione, leggibile senza aprirla
+        { id: 'pokemon', label: t(lang, 'tabs.pokemon'), icon: 'team',
+          status: replaceIndex !== null && team[replaceIndex]
+            ? <span className="info">{t(lang, 'suggest.replaceTitle', { species: team[replaceIndex].species })}</span>
+            : t(lang, team.length ? 'rail.teamCount' : 'rail.teamEmpty', { n: team.length }) },
+        { id: 'analysis', label: t(lang, 'tabs.analysis'), icon: 'roles',
+          status: rating ? <>
+            <b className={`grade grade-${rating.grade}`}>{rating.grade} {rating.overall}</b>
+            {problems.length > 0 && <>{' · '}<span className={problems.some(p => p.severity === 'serious') ? 'serious' : 'minor'}>
+              {t(lang, problems.length === 1 ? 'tabs.problemsOne' : 'tabs.problemsMany', { n: problems.length })}</span></>}
+          </> : t(lang, 'rail.noGrade') },
+        { id: 'meta', label: t(lang, 'tabs.meta'), icon: 'globe', disabled: !metaOn, note: metaOn ? undefined : t(lang, 'tabs.metaOff'),
+          status: !metaOn ? t(lang, 'rail.metaOff')
+            : team.length === 0 ? t(lang, 'rail.metaUsage')
+            : openThreats ? <span className="warn">{t(lang, openThreats === 1 ? 'rail.threatsOne' : 'rail.threatsMany', { n: openThreats })}</span>
+            : t(lang, 'rail.noThreats') },
+        { id: 'lists', label: t(lang, 'tabs.lists'), icon: 'star',
+          status: userLists.favorites.size || userLists.bans.size ? [
+            userLists.favorites.size ? t(lang, userLists.favorites.size === 1 ? 'rail.favOne' : 'rail.favMany', { n: userLists.favorites.size }) : null,
+            userLists.bans.size ? t(lang, userLists.bans.size === 1 ? 'rail.banOne' : 'rail.banMany', { n: userLists.bans.size }) : null,
+          ].filter(Boolean).join(' · ') : t(lang, 'rail.listsEmpty') },
+        { id: 'compare', label: t(lang, 'tabs.compare'), icon: 'search', disabled: true, note: t(lang, 'tabs.soon'), status: t(lang, 'rail.soon') },
       ]} />} />
       <div className="main" ref={mainRef}>
       {loading && <p className="banner info">{t(lang, 'app.loading')}</p>}
@@ -330,7 +339,12 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
         </p>
       )}
       <div className={`band${collapsed ? ' collapsed' : ''}`}>
-        <TeamPanel team={team} format={format} data={data} onChange={changeTeam} onAdd={addSet} onReplace={startReplace} onRemove={removeAt} onPaste={pasteAt} onBulk={bulk} onAddClick={startAdd}
+        <TeamPanel team={team} format={format} data={data}
+          io={<>
+            <ShowdownPanel team={team} format={format} tera={teraAllowed(format)} onImport={changeTeam} />
+            <SavedTeams team={team} format={format} onLoad={(saved, savedFormat) => { changeTeam(saved); if (savedFormat) setFormat({ ...savedFormat, meta: format.meta }); }} />
+          </>}
+          onChange={changeTeam} onAdd={addSet} onReplace={startReplace} onRemove={removeAt} onPaste={pasteAt} onBulk={bulk} onAddClick={startAdd}
           onOpenChange={index => { setEditingIndex(index); setMoveProposal(p => (p && p.index === index ? p : null)); }}
           proposal={moveProposal} onProposalDone={finishProposal} closeSignal={closeSignal} collapsed={collapsed}
           onAllowMultipleMegas={() => setFormat(f => ({ ...f, allowMultipleMegas: true }))} />

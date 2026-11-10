@@ -9,7 +9,7 @@ import { cardRoles, weatherOf } from '../engine/archetype';
 import { measuredSubRoles, rolesList, type SubRoleValues } from '../engine/subRoles';
 import { conditionLabel, viaName } from '../engine/synergy';
 import { exportShowdown, importShowdown, presetsForSet, type Preset, type TeamSet } from '../engine/sets';
-import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ComponentProps } from 'react';
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ComponentProps, type ReactNode } from 'react';
 import { flushSync } from 'react-dom';
 import { copyText } from './clipboard';
 import { setEditing } from './editing';
@@ -56,6 +56,8 @@ interface Props {
   onBulk?: (kind: 'presets' | 'fill' | 'clear', team: TeamSet[]) => void;
   /** Clic su uno slot vuoto: porta alla ricerca dei Pokémon. */
   onAddClick?: () => void;
+  /** Importa / Esporta e Team salvati: al centro della fila sopra la squadra. */
+  io?: ReactNode;
   /** Proposta di mossa del coach: a ogni nonce nuovo apre l'editor del membro e la mostra con Applica / Annulla. */
   proposal?: MoveProposal | null;
   /** Proposta chiusa: applicata (true) o annullata (false). */
@@ -457,7 +459,7 @@ function EmptySlot({ onClick }: { onClick: () => void }) {
   );
 }
 
-export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRemove, onAllowMultipleMegas, onOpenChange, closeSignal, collapsed = false, onPaste, onBulk, onAddClick, proposal, onProposalDone }: Props) {
+export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRemove, onAllowMultipleMegas, onOpenChange, closeSignal, collapsed = false, onPaste, onBulk, onAddClick, proposal, onProposalDone, io }: Props) {
   const lang = useLang();
   // Sotto-ruoli misurati di ogni membro: la carta dice quello che dice il voto (stessa cache dell'area Ruoli)
   const subRoles = useMemo(() => team.map(set => measuredSubRoles(set, team, data)), [team, data]);
@@ -550,6 +552,7 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
             )}
           </span>
         )}
+        {io && <div className="team-io">{io}</div>}
         {team.length > 0 && <>
           {/* In fondo a destra, dove finisce l'ultima card */}
           <button type="button" className="team-action clear-team" onClick={() => {
