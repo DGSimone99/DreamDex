@@ -4,7 +4,17 @@ import type { Format } from './format';
 
 export const dex = Dex.forGen(9);
 
-export const toID = (text: string): string => text.toLowerCase().replace(/[^a-z0-9]/g, '');
+// Il voto la chiede milioni di volte sugli stessi nomi (mosse, abilità, strumenti): si ricorda il risultato
+const ids = new Map<string, string>();
+export const toID = (text: string): string => {
+  let id = ids.get(text);
+  if (id === undefined) {
+    id = text.toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (ids.size >= 50000) ids.clear();
+    ids.set(text, id);
+  }
+  return id;
+};
 
 export const isDefined = <T,>(value: T | null | undefined): value is T =>
   value !== null && value !== undefined;
@@ -44,13 +54,14 @@ export function teamFormeOf(speciesName: string, evs: Partial<Record<'atk' | 'sp
  * (es. "Lopunny @ Lopunnite"), ma tipi, statistiche e dati Smogon sono della forma Mega.
  */
 // Dipende solo da specie e strumento: si calcola una volta per coppia (il voto la chiede migliaia di volte)
-const battleSpeciesCache = new Map<string, Species | null>();
+const battleSpeciesCache = new Map<string, Map<string, Species | null>>();
 export function battleSpecies(set: { species: string; item: string }): Species | null {
-  const key = `${set.species}|${set.item}`;
-  let cached = battleSpeciesCache.get(key);
+  let byItem = battleSpeciesCache.get(set.species);
+  if (!byItem) battleSpeciesCache.set(set.species, (byItem = new Map()));
+  let cached = byItem.get(set.item);
   if (cached === undefined) {
     cached = findBattleSpecies(set);
-    battleSpeciesCache.set(key, cached);
+    byItem.set(set.item, cached);
   }
   return cached;
 }

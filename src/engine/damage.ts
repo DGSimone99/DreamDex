@@ -96,8 +96,16 @@ export type Target = TeamSet & {
 };
 
 /** Chiave del set per il contenuto: le proposte creano set sempre nuovi, uguali a quelli già calcolati. */
-export const setKey = (set: Target): string =>
-  JSON.stringify([set.species, set.item, set.ability, set.moves, set.nature, set.evs, set.ivs ?? null, set.teraType ?? null, set.types ?? null, set.baseStats ?? null, set.weightkg ?? null, !!set.noFirstHit]);
+// I set non si modificano mai (ogni cambio ne crea uno nuovo): la chiave si calcola una volta per oggetto
+const setKeys = new WeakMap<object, string>();
+export const setKey = (set: Target): string => {
+  let key = setKeys.get(set);
+  if (key === undefined) {
+    key = JSON.stringify([set.species, set.item, set.ability, set.moves, set.nature, set.evs, set.ivs ?? null, set.teraType ?? null, set.types ?? null, set.baseStats ?? null, set.weightkg ?? null, !!set.noFirstHit]);
+    setKeys.set(set, key);
+  }
+  return key;
+};
 
 /** Cache limitate: oltre il limite si svuotano (i Pokémon e le mosse della libreria si riusano, il calcolo li copia). */
 const LIMIT = 20000;

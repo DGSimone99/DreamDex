@@ -1,7 +1,8 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { rankCandidates, type RankingParams, type RankingResult } from '../engine/candidateRanking';
 import type { EngineData } from '../engine/data';
-import type { WorkerData, WorkerRequest, WorkerResponse } from '../engine/rankingProtocol';
+import type { GainValue, WorkerData, WorkerRequest, WorkerResponse } from '../engine/rankingProtocol';
+import type { GainJob } from '../engine/teamGain';
 import { currentGameNames, gameNamesVersion } from '../i18n/game';
 
 /**
@@ -24,89 +25,156 @@ export interface Ranking {
   input: RankingInput;
 }
 
-/**
- * Il calcolo in sottofondo (ranking.worker.ts): un solo worker per l'app. Le parti grandi dei dati si mandano una
- * volta (per identità), i nomi italiani quando cambiano. Senza worker (test, browser vecchi) o se il worker si rompe,
- * il calcolo si fa qui come prima.
- */
-class RankingClient {
-  private worker: Worker;
-  private broken = false;
-  private ids = new WeakMap<object, number>();
-  private nextPart = 0;
-  private sentLists = 0;
-  private namesSent = -1;
-  private nextRequest = 0;
-  private waiting = new Map<number, { resolve: (r: RankingResult) => void; input: RankingInput }>();
+type Call = Exclude<WorkerRequest, { kind: 'parts' | 'names' }>;
+type Answer<K extends Call['kind']> = Extract<WorkerResponse, { kind: K }>;
 
-  constructor(worker: Worker) {
-    this.worker = worker;
+/** Un calcolo in sottofondo (ranking.worker.ts), con le parti dei dati che ha già ricevuto. */
+class EngineWorker {
+  readonly sent = new Set<number>();
+  namesSent = -1;
+  private next = 0;
+  private waiting = new Map<number, { resolve: (r: WorkerResponse) => void; reject: (e: unknown) => void }>();
+  constructor(private worker: Worker, onBroken: () => void) {
     worker.onmessage = (event: MessageEvent<WorkerResponse>) => {
-      const response = event.data;
-      const entry = this.waiting.get(response.id);
+      const entry = this.waiting.get(event.data.id);
       if (!entry) return;
-      this.waiting.delete(response.id);
-      entry.resolve(response.ok ? response.result : rank(entry.input));
+      this.waiting.delete(event.data.id);
+      if (event.data.ok) entry.resolve(event.data);
+      else entry.reject(new Error(event.data.error));
     };
     worker.onerror = () => {
-      // Worker che non parte o si rompe: le richieste in attesa (e le prossime) si calcolano qui
-      this.broken = true;
-      for (const entry of this.waiting.values()) entry.resolve(rank(entry.input));
+      onBroken();
+      for (const entry of this.waiting.values()) entry.reject(new Error('worker'));
       this.waiting.clear();
     };
   }
+  post(message: WorkerRequest) {
+    this.worker.postMessage(message);
+  }
+  call<K extends Call['kind']>(message: Omit<Extract<Call, { kind: K }>, 'id'>): Promise<Answer<K>> {
+    const id = ++this.next;
+    return new Promise((resolve, reject) => {
+      this.waiting.set(id, { resolve: resolve as (r: WorkerResponse) => void, reject });
+      this.post({ ...message, id } as unknown as Call);
+    });
+  }
+}
 
-  private idOf(value: object | null | undefined, fresh: [number, unknown][]): number {
+/**
+ * I calcoli in sottofondo: uno ogni due core (fino a 6: ognuno ha i suoi dati in memoria). Il primo decide quali voti servono
+ * e fa la lista, i voti si dividono fra tutti; lo stesso candidato va sempre allo stesso calcolo, che lo ha già in
+ * cache. Le parti grandi dei dati si mandano una volta (per identità), i nomi italiani quando cambiano. Senza worker
+ * (test, browser vecchi) o se uno si rompe, il calcolo si fa qui come prima.
+ */
+class RankingClient {
+  private workers: EngineWorker[];
+  private broken = false;
+  private ids = new WeakMap<object, number>();
+  private values = new Map<number, unknown>();
+  private nextPart = 0;
+  private lists = 0;
+
+  constructor(make: (lead: boolean) => Worker, count: number) {
+    this.workers = Array.from({ length: count }, (_, i) => new EngineWorker(make(i === 0), () => { this.broken = true; }));
+  }
+
+  private idOf(value: object | null | undefined): number {
     if (!value) return 0;
     let id = this.ids.get(value);
     if (id === undefined) {
       id = ++this.nextPart;
       this.ids.set(value, id);
-      fresh.push([id, value]);
+      this.values.set(id, value);
     }
     return id;
   }
 
-  request(input: RankingInput): Promise<RankingResult> {
-    if (this.broken) return Promise.resolve(rank(input));
-    const { data } = input.source;
-    const fresh: [number, unknown][] = [];
+  /** I dati come numeri; a ogni calcolo le parti che non ha ancora (e i nomi italiani nuovi). */
+  private wire(data: EngineData): WorkerData {
     const wire: WorkerData = {
-      stats: this.idOf(data.stats, fresh), sets: this.idOf(data.sets, fresh), fallback: this.idOf(data.fallback, fresh),
-      presets: this.idOf(data.presets, fresh), fallbackPresets: this.idOf(data.fallbackPresets, fresh),
-      fallbackStats: this.idOf(data.fallbackStats, fresh), userLists: this.idOf(data.userLists, fresh),
+      stats: this.idOf(data.stats), sets: this.idOf(data.sets), fallback: this.idOf(data.fallback),
+      presets: this.idOf(data.presets), fallbackPresets: this.idOf(data.fallbackPresets),
+      fallbackStats: this.idOf(data.fallbackStats), userLists: this.idOf(data.userLists),
       ignoreMeta: data.ignoreMeta, allowMultipleMegas: data.allowMultipleMegas, formatId: data.formatId,
     };
-    // Le liste dell'utente cambiano spesso (preferiti, bannati): quelle vecchie nel worker non servono più
-    const drop = this.sentLists && this.sentLists !== wire.userLists ? [this.sentLists] : [];
-    this.sentLists = wire.userLists;
-    if (fresh.length || drop.length) this.post({ kind: 'parts', parts: fresh, drop });
-    if (this.namesSent !== gameNamesVersion()) {
-      this.namesSent = gameNamesVersion();
-      this.post({ kind: 'names', names: currentGameNames() });
+    // Le liste dell'utente cambiano spesso (preferiti, bannati): quelle vecchie non servono più
+    const drop = this.lists && this.lists !== wire.userLists ? [this.lists] : [];
+    if (drop.length) this.values.delete(this.lists);
+    this.lists = wire.userLists;
+    const needed = [wire.stats, wire.sets, wire.fallback, wire.presets, wire.fallbackPresets, wire.fallbackStats, wire.userLists].filter(Boolean);
+    for (const worker of this.workers) {
+      const parts = needed.filter(id => !worker.sent.has(id)).map(id => [id, this.values.get(id)] as [number, unknown]);
+      for (const [id] of parts) worker.sent.add(id);
+      for (const id of drop) worker.sent.delete(id);
+      if (parts.length || drop.length) worker.post({ kind: 'parts', parts, drop });
+      if (worker.namesSent !== gameNamesVersion()) {
+        worker.namesSent = gameNamesVersion();
+        worker.post({ kind: 'names', names: currentGameNames() });
+      }
     }
-    const id = ++this.nextRequest;
-    return new Promise(resolve => {
-      this.waiting.set(id, { resolve, input });
-      this.post({ kind: 'rank', id, params: paramsOf(input), data: wire });
-    });
+    return wire;
   }
 
-  private post(message: WorkerRequest) {
+  async request(input: RankingInput): Promise<RankingResult> {
+    if (this.broken) return rank(input);
     try {
-      this.worker.postMessage(message);
+      const params = paramsOf(input);
+      const data = this.wire(input.source.data);
+      const [first] = this.workers;
+      let primed: [string, GainValue][] = [];
+      if (this.workers.length > 1) {
+        const { jobs } = await first.call<'plan'>({ kind: 'plan', params, data });
+        const groups = splitJobs(jobs, this.workers.length);
+        const answers = await Promise.all(groups.map((group, i) => (group.length
+          ? this.workers[i].call<'gains'>({ kind: 'gains', jobs: group, lang: params.lang, archetype: params.archetype, data })
+          : Promise.resolve({ values: [] as GainValue[] }))));
+        primed = groups.flatMap((group, i) => group.map((job, j) => [job.key, answers[i].values[j]] as [string, GainValue]));
+      }
+      const { result } = await first.call<'rank'>({ kind: 'rank', params, data, primed });
+      return result;
     } catch {
       this.broken = true;
+      return rank(input);
     }
   }
+}
+
+/**
+ * I voti divisi fra i calcoli: i voti dello stesso candidato insieme, di solito al calcolo "suo" (che lo ha già in
+ * cache dalle liste precedenti); se quello è già pieno, al calcolo più scarico. Così nessuno resta indietro.
+ */
+function splitJobs(jobs: GainJob[], count: number): GainJob[][] {
+  const bySpecies = new Map<string, GainJob[]>();
+  for (const job of jobs) {
+    const list = bySpecies.get(job.set.species);
+    if (list) list.push(job);
+    else bySpecies.set(job.set.species, [job]);
+  }
+  const groups = Array.from({ length: count }, () => [] as GainJob[]);
+  const share = Math.ceil(jobs.length / count);
+  for (const [species, list] of [...bySpecies].sort((a, b) => b[1].length - a[1].length)) {
+    const own = affinity(species) % count;
+    const target = groups[own].length + list.length <= share ? own
+      : groups.reduce((best, group, i) => (group.length < groups[best].length ? i : best), 0);
+    groups[target].push(...list);
+  }
+  return groups;
+}
+
+/** Un numero per specie (sempre lo stesso): decide quale calcolo fa i voti di quel candidato. */
+function affinity(name: string): number {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) | 0;
+  return Math.abs(hash);
 }
 
 let client: RankingClient | null | undefined;
 function rankingClient(): RankingClient | null {
   if (client !== undefined) return client;
   try {
+    const cores = typeof navigator !== 'undefined' ? navigator.hardwareConcurrency || 2 : 2;
     client = typeof Worker === 'undefined' ? null
-      : new RankingClient(new Worker(new URL('../engine/ranking.worker.ts', import.meta.url), { type: 'module' }));
+      : new RankingClient(lead => new Worker(new URL('../engine/ranking.worker.ts', import.meta.url), { type: 'module', name: lead ? 'lead' : 'gains' }), Math.max(1, Math.min(6, Math.floor(cores / 2))));
   } catch {
     client = null;
   }

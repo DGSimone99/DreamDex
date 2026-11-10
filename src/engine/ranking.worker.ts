@@ -1,9 +1,9 @@
 /// <reference lib="webworker" />
 /**
- * Il calcolo della lista dei candidati in sottofondo (vedi candidateRanking.ts). Ha un motore tutto suo, con le sue
- * cache: tier, ban e learnset li carica da sé all'avvio, i dati del formato e i nomi italiani arrivano dall'app.
- * Le parti dei dati arrivano una volta sola (per numero): restano gli stessi oggetti, così le cache del motore valgono
- * da una richiesta all'altra.
+ * Il calcolo della lista dei candidati in sottofondo (vedi candidateRanking.ts e ui/useRanking.ts). Ogni worker ha un
+ * motore tutto suo, con le sue cache: tier, ban e learnset li carica da sé all'avvio, i dati del formato e i nomi
+ * italiani arrivano dall'app. Le parti dei dati arrivano una volta sola (per numero) e i team uguali diventano lo
+ * stesso oggetto: così le cache del motore (che guardano l'identità) valgono da una richiesta all'altra.
  */
 import { loadBans, loadTiers } from '../data/load';
 import { initGameNames, type GameNames } from '../i18n/game';
@@ -13,18 +13,60 @@ import { initTiers } from './dex';
 import { initBans } from './formats';
 import { initLearnsets } from './learnsets';
 import type { WorkerData, WorkerRequest, WorkerResponse } from './rankingProtocol';
+import type { TeamSet } from './sets';
+import { collectGainJobs, computeGains, primeGains } from './teamGain';
 
-const ready = Promise.all([loadTiers().then(initTiers), loadBans().then(initBans), initLearnsets()]);
+const ready = Promise.all([loadTiers().then(initTiers), loadBans().then(initBans)]);
+// I learnset (tanta memoria) servono solo a fare i set dei candidati, cioè a chi decide i voti e fa la lista: chi
+// calcola solo voti non li carica (il voto non li usa: voti identici con e senza, controllato su 784 voti)
+// Il primo calcolo ("lead", quello che fa la lista) li carica subito, così la prima lista non li aspetta
+let learnsets: Promise<void> | null = self.name === 'lead' ? initLearnsets() : null;
 
 const parts = new Map<number, unknown>();
 const part = <T,>(id: number): T => (id ? (parts.get(id) as T) : null as T);
 
+/** Gli stessi dati per le stesse parti: un solo oggetto (le cache guardano anche l'identità delle parti). */
+const datas = new Map<string, EngineData>();
 function engineData(d: WorkerData): EngineData {
-  return {
-    stats: part(d.stats), sets: part(d.sets), fallback: part(d.fallback), presets: part(d.presets),
-    fallbackPresets: part(d.fallbackPresets), fallbackStats: part(d.fallbackStats), userLists: part(d.userLists) ?? undefined,
-    ignoreMeta: d.ignoreMeta, allowMultipleMegas: d.allowMultipleMegas, formatId: d.formatId,
-  };
+  const key = JSON.stringify(d);
+  let data = datas.get(key);
+  if (!data) {
+    data = {
+      stats: part(d.stats), sets: part(d.sets), fallback: part(d.fallback), presets: part(d.presets),
+      fallbackPresets: part(d.fallbackPresets), fallbackStats: part(d.fallbackStats), userLists: part(d.userLists) ?? undefined,
+      ignoreMeta: d.ignoreMeta, allowMultipleMegas: d.allowMultipleMegas, formatId: d.formatId,
+    };
+    if (datas.size >= 20) datas.clear();
+    datas.set(key, data);
+  }
+  return data;
+}
+
+/** Un team uguale a uno già visto è lo stesso oggetto (e anche i suoi membri). */
+const teams = new Map<string, TeamSet[]>();
+function sameTeam(team: TeamSet[]): TeamSet[] {
+  const key = JSON.stringify(team);
+  let known = teams.get(key);
+  if (!known) {
+    if (teams.size >= 50) teams.clear();
+    teams.set(key, (known = team));
+  }
+  return known;
+}
+const withTeam = (params: RankingParams): RankingParams => ({ ...params, team: sameTeam(params.team) });
+
+function handle(message: Exclude<WorkerRequest, { kind: 'parts' | 'names' }>): WorkerResponse {
+  if (message.kind === 'plan') {
+    const params = withTeam(message.params);
+    const data = engineData(message.data);
+    const jobs = collectGainJobs(() => rankCandidates(params, data));
+    return { id: message.id, ok: true, kind: 'plan', jobs };
+  }
+  if (message.kind === 'gains') {
+    return { id: message.id, ok: true, kind: 'gains', values: computeGains(message.jobs, engineData(message.data), message.lang, message.archetype) };
+  }
+  primeGains(message.primed);
+  return { id: message.id, ok: true, kind: 'rank', result: rankCandidates(withTeam(message.params), engineData(message.data)) };
 }
 
 self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
@@ -39,10 +81,10 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
     return;
   }
   await ready;
+  if (message.kind !== 'gains') await (learnsets ??= initLearnsets());
   let response: WorkerResponse;
   try {
-    const result = rankCandidates(message.params as RankingParams, engineData(message.data));
-    response = { id: message.id, ok: true, result };
+    response = handle(message);
   } catch (error) {
     response = { id: message.id, ok: false, error: String(error) };
   }
