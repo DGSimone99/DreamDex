@@ -11,7 +11,7 @@ import type { TeamSet } from '../engine/sets';
 import { isUserBanned, isUserFavorite, type EffectiveLists } from '../engine/lists';
 import { formatLabel } from '../engine/formats';
 import { tierLabel } from '../engine/filters';
-import { battleName } from '../engine/dex';
+import { battleName, getSpecies } from '../engine/dex';
 import { PokemonIcon } from './PokemonName';
 import { AlertMark } from './AlertMark';
 import { Typed } from './TypeText';
@@ -190,10 +190,23 @@ export function Reasons({ reasons }: { reasons: ReasonSummary }) {
 }
 
 /** Il nome: apre il candidato nel dettaglio (via da tastiera); il posto in classifica solo per gli screen reader. */
+/**
+ * Il nome diviso in specie base e forma ("Charizard-Mega-Y" → "Charizard" + "Mega Y"), o null se non ha una forma:
+ * sulla carta il nome base non si taglia mai e la forma è un'etichetta che distingue Mega X da Mega Y, le maschere…
+ */
+export function formeParts(species: string): { base: string; forme: string } | null {
+  const found = getSpecies(species);
+  if (!found || !found.forme || found.baseSpecies === found.name) return null;
+  return { base: found.baseSpecies, forme: found.forme.replace(/-/g, ' ') };
+}
+
 export function PickButton({ rank, species, selected, onSelect }: { rank: number; species: string; selected: boolean; onSelect: () => void }) {
+  const parts = formeParts(species);
   return (
-    <button type="button" className="pick" aria-pressed={selected} onClick={e => { e.stopPropagation(); onSelect(); }}>
-      <strong><span className="visually-hidden">{rank}. </span>{species}</strong>
+    <button type="button" className="pick" aria-pressed={selected} title={parts ? species : undefined} onClick={e => { e.stopPropagation(); onSelect(); }}>
+      {/* Il nome intero per lettori di schermo (e test); a vista la specie base e la forma come etichetta */}
+      <strong className={parts ? 'visually-hidden' : undefined}><span className="visually-hidden">{rank}. </span>{species}</strong>
+      {parts && <span className="pick-name" aria-hidden="true"><b>{parts.base}</b><i className="forme">{parts.forme}</i></span>}
     </button>
   );
 }
