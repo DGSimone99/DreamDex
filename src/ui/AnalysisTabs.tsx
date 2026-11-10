@@ -66,7 +66,14 @@ export function ViewHelp({ view }: { view: HelpView }) {
 /** Le schede interne: tablist orizzontale (frecce, Home/End), col "?" accanto a quella aperta. */
 /** `areasDisabled`: senza voto (team vuoto) le aree non hanno niente da mostrare: restano visibili ma spente. */
 /** `scores`: il voto di ogni area, scritto nella sua scheda (la Panoramica non ne ha). */
-export function AnalysisTabs({ view, onView, panelId, areasDisabled = false, scores = {}, badges = {} }: { view: AnalysisView; onView: (view: AnalysisView) => void; panelId: string; areasDisabled?: boolean; scores?: Partial<Record<AnalysisView, number | string | null>>; badges?: Partial<Record<AnalysisView, number>> }) {
+/** Il numero sulla scheda: tutti i problemi, quanti gravi e quanti minori (per il suggerimento al passaggio del mouse). */
+export interface TabBadge { n: number; serious: number; minor: number }
+const badgeTitle = ({ serious, minor }: TabBadge, t: ReturnType<typeof useT>) => [
+  serious ? t(serious === 1 ? 'analysis.seriousOne' : 'analysis.seriousMany', { n: serious }) : null,
+  minor ? t(minor === 1 ? 'analysis.minorOne' : 'analysis.minorMany', { n: minor }) : null,
+].filter(Boolean).join(' · ');
+
+export function AnalysisTabs({ view, onView, panelId, areasDisabled = false, scores = {}, badges = {} }: { view: AnalysisView; onView: (view: AnalysisView) => void; panelId: string; areasDisabled?: boolean; scores?: Partial<Record<AnalysisView, number | string | null>>; badges?: Partial<Record<AnalysisView, TabBadge>> }) {
 
   const t = useT();
   const buttons = useRef<(HTMLButtonElement | null)[]>([]);
@@ -103,12 +110,12 @@ export function AnalysisTabs({ view, onView, panelId, areasDisabled = false, sco
           <button key={item} ref={el => { buttons.current[i] = el; }} type="button" role="tab" id={`analysis-view-${item}`}
             aria-selected={item === view} aria-controls={panelId} tabIndex={item === view ? 0 : -1}
             aria-disabled={areasDisabled && item !== 'overview' ? true : undefined}
-            title={badges[item] ? t('analysis.seriousCount', { n: badges[item]! }) : undefined}
+            title={badges[item] ? badgeTitle(badges[item]!, t) : undefined}
             onClick={() => { if (!(areasDisabled && item !== 'overview')) onView(item); }} onKeyDown={e => onKey(e, i)}>
             <span>{t(viewLabelKey(item))}</span>
             {/* Il voto dell'area si vede ma non entra nel nome della scheda */}
-            {/* Problemi gravi: numero fuori dal nome della scheda */}
-            {!!badges[item] && <span className="tab-badge" aria-hidden="true">{badges[item]}</span>}
+            {/* Problemi: numero fuori dal nome della scheda, rosso con almeno un grave */}
+            {!!badges[item] && <span className={`tab-badge${badges[item]!.serious ? '' : ' minor'}`} aria-hidden="true">{badges[item]!.n}</span>}
             {scores[item] != null && <span className="tab-score" aria-hidden="true">{scores[item]}</span>}
           </button>
         ))}

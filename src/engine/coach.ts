@@ -3,7 +3,7 @@ import { teamArchetype, type Archetype, type TeamArchetype } from './archetype';
 import type { EngineData } from './data';
 import type { FormatRules } from './formatRules';
 import { battleName, battleSpecies, getSpecies, isMega, isSelectable, toID, withinGen } from './dex';
-import { bannedParts, formatLabel, isLegalIn, pokedexOf } from './formats';
+import { bannedParts, formatLabel, illegalReason, isLegalIn, pokedexOf } from './formats';
 import type { Format } from './format';
 import type { Contribution, Diff } from './replace';
 import { t, type Lang } from '../i18n';
@@ -149,7 +149,13 @@ export function findProblems(team: TeamSet[], format: Format, data: EngineData, 
     if (repeated.includes(index)) rule(t(lang, 'coach.problem.duplicateSpecies', { name: battleName(set) }));
     const missing = missingFormeItem(set);
     if (missing) rule(t(lang, 'coach.problem.formeItem', { name: missing.forme.name, item: gameName('item', missing.item, lang), base: missing.base.name }));
-    if (!isSelectable(species) || !isLegalIn(forme, format)) rule(t(lang, 'coach.problem.illegal', { species: battleName(set), format: formatLabel(format, lang) }));
+    if (!isSelectable(species) || !isLegalIn(forme, format)) {
+      // Col motivo, come sulla carta del membro: tier troppo alto, bannato per nome o fuori dal Pokédex del formato
+      const reason = isSelectable(species) ? illegalReason(forme, format) : null;
+      const key = reason?.kind === 'tier' ? 'coach.problem.illegalTier' : reason?.kind === 'banned' ? 'coach.problem.illegalBanned'
+        : reason?.kind === 'notInPokedex' ? 'coach.problem.illegalPokedex' : 'coach.problem.illegal';
+      rule(t(lang, key, { species: battleName(set), format: formatLabel(format, lang) }));
+    }
     else if (!withinGen(species, format)) rule(t(lang, 'coach.problem.gen', { species: battleName(set), gen: format.genLimit }));
     // Mosse e abilità che il Pokémon non può avere (senza Custom Skillset)
     const illegal = illegalParts(set, format.genLimit, pokedexOf(format));

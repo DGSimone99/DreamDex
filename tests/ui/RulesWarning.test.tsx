@@ -21,18 +21,22 @@ async function importTeam(text: string) {
 }
 
 describe('voto con membri fuori regola', () => {
-  it('triangolo rosso nel riquadro Voto, col motivo nel tooltip', async () => {
+  it('scritta "1 non legale" sotto il giudizio, col motivo al passaggio; lettera spenta, niente triangolo', async () => {
     await importTeam('Great Tusk @ Leftovers\nAbility: Protosynthesis\n- Rapid Spin\n\nMewtwo @ Life Orb\nAbility: Pressure\n- Psystrike');
-    const mark = rating().querySelector('.grade-tools .alert-mark.danger') as HTMLElement;
-    expect(mark).not.toBeNull();
-    const tip = within(mark).getByRole('tooltip');
-    expect(tip).toHaveTextContent('Uno o più membri del team non rispettano le regole del formato');
-    expect(tip).toHaveTextContent('Mewtwo non è legale in National Dex OU');
+    const note = rating().querySelector('.grade-badge .grade-rules') as HTMLElement;
+    expect(note).toHaveTextContent('1 non legale');
+    expect(note.title).toContain('Mewtwo non è legale in National Dex OU: tier troppo alto');
+    expect(rating().querySelector('.grade-badge')).toHaveClass('rules-broken');
+    expect(rating().querySelector('.grade-tools .alert-mark.danger')).toBeNull();
+    // Per i lettori di schermo nella frase del voto
+    expect(rating().querySelector('.grade-badge .visually-hidden')).toHaveTextContent(/1 non legale: Mewtwo non è legale in National Dex OU/);
   });
 
-  it('team in regola: nessun triangolo', async () => {
+  it('team in regola: niente scritta né triangolo', async () => {
     await importTeam('Great Tusk @ Leftovers\nAbility: Protosynthesis\n- Rapid Spin');
     expect(rating().querySelector('.grade-tools .alert-mark')).toBeNull();
+    expect(rating().querySelector('.grade-rules')).toBeNull();
+    expect(rating().querySelector('.grade-badge')).not.toHaveClass('rules-broken');
   });
 });
 

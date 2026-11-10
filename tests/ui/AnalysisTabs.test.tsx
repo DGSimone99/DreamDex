@@ -84,21 +84,27 @@ describe('schede interne di Analisi', () => {
     expect(within(panel()).getByRole('region', { name: 'Offesa' })).toBeInTheDocument();
   });
 
-  it('Coaching: badge coi problemi gravi, il nome resta "Coaching"', async () => {
+  it('Coaching: badge con tutti i problemi (lo stesso numero della barra laterale), rosso coi gravi; il nome resta "Coaching"', async () => {
     // Nessuno regge Fire, Water e Ground (nella Coverage tipi della Difesa): tre problemi gravi (in attacco nessun tipo scoperto)
     await setup(['Great Tusk', 'Gholdengo', 'Kingambit']);
     const tab = within(views()).getByRole('tab', { name: 'Coaching' });
-    const badge = tab.querySelector('.tab-badge');
-    expect(badge).toHaveTextContent(/^\d+$/);
+    const badge = tab.querySelector('.tab-badge')!;
     expect(badge).toHaveAttribute('aria-hidden', 'true');
-    expect(badge).toHaveTextContent('3');
-    expect(tab).toHaveAttribute('title', '3 problemi gravi');
+    expect(badge).not.toHaveClass('minor');
+    const total = Number(badge.textContent);
+    expect(screen.getByRole('tab', { name: new RegExp(`^Analisi.*${total} problemi`) })).toBeInTheDocument();
+    expect(tab.getAttribute('title')).toMatch(/^3 gravi( · \d+ minor[ei])?$/);
   });
 
-  it('Coaching senza problemi gravi: nessun badge', async () => {
+  it('Coaching senza problemi gravi: badge dei minori, non rosso', async () => {
     // Nessun tipo scoperto che pesa, ogni tipo retto da qualcuno (con 4 membri nessuno reggeva Ghost: Kingambit lo regge)
     await setup(['Great Tusk', 'Gholdengo', 'Corviknight', 'Rotom-Wash', 'Toxapex', 'Kingambit']);
-    expect(within(views()).getByRole('tab', { name: 'Coaching' }).querySelector('.tab-badge')).toBeNull();
+    const tab = within(views()).getByRole('tab', { name: 'Coaching' });
+    const badge = tab.querySelector('.tab-badge');
+    if (badge) {
+      expect(badge).toHaveClass('minor');
+      expect(tab.getAttribute('title')).toMatch(/^\d+ minor[ei]$/);
+    }
   });
 
   it('la scheda Coaching mostra i problemi', async () => {
