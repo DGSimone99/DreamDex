@@ -118,7 +118,7 @@ describe('coachTeam', () => {
   it('un membro non legale nel formato è un problema serio (Regole)', () => {
     const team = [tusk, gholdengo, { ...emptySet('Mewtwo'), item: 'Mewtwonite Y' }];
     const problems = coachTeam(team, DEFAULT_FORMAT, fixtureData).problems;
-    expect(problems).toContainEqual({ severity: 'serious', category: 'rules', text: 'Mewtwo-Mega-Y non è legale in National Dex OU', fixes: [], key: 'rules:Mewtwo-Mega-Y non è legale in National Dex OU', subjects: ['Mewtwo-Mega-Y'] });
+    expect(problems).toContainEqual({ severity: 'serious', category: 'rules', text: 'Mewtwo-Mega-Y non è legale in National Dex OU: tier troppo alto', fixes: [], key: 'rules:Mewtwo-Mega-Y non è legale in National Dex OU: tier troppo alto', subjects: ['Mewtwo-Mega-Y'] });
     expect(problems.filter(p => p.category === 'rules')).toHaveLength(1);
   });
 

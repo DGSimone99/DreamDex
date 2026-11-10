@@ -56,7 +56,9 @@ export function AnalysisPanel({ team, analysis, rating, coaching, advice = null,
   const [subTabs, setSubTabs] = useState<Partial<Record<AreaKey, string>>>({});
   const area = view !== 'overview' && view !== 'coaching' && rating ? view : null;
   const showCoaching = view === 'coaching' && !!rating;
-  const serious = (coaching?.problems ?? []).filter(p => p.severity === 'serious').length;
+  // Lo stesso numero della barra laterale (tutti i problemi), rosso se almeno uno è grave
+  const problems = coaching?.problems ?? [];
+  const serious = problems.filter(p => p.severity === 'serious').length;
   const tabView: AnalysisView = area ?? (showCoaching ? 'coaching' : 'overview');
   let body;
   if (area && rating) {
@@ -77,7 +79,7 @@ export function AnalysisPanel({ team, analysis, rating, coaching, advice = null,
   return (
     <section aria-label={tr('analysis.region')} className="analysis">
       <h2>{tr('analysis.region')}</h2>
-      <AnalysisTabs view={tabView} onView={onView} panelId="analysis-view" areasDisabled={!rating} badges={{ coaching: serious }}
+      <AnalysisTabs view={tabView} onView={onView} panelId="analysis-view" areasDisabled={!rating} badges={problems.length ? { coaching: { n: problems.length, serious, minor: problems.length - serious } } : {}}
         scores={{ ...Object.fromEntries((rating?.areas ?? []).map(a => [a.key, a.value])), ...(rating ? { roles: rolesValue(rating) } : {}) }} />
       <div id="analysis-view" role="tabpanel" aria-labelledby={`analysis-view-${tabView}`} className="analysis-view">{body}</div>
     </section>
