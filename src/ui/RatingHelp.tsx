@@ -119,7 +119,7 @@ function GeneralTopic({ teamType, trickRoom, meta, weights }: { teamType: Archet
             {ARCHETYPES.map(arch => (
               <tr key={arch} className={arch === teamType ? 'current' : undefined} aria-current={arch === teamType || undefined}>
                 <th scope="row">{t(`archetype.${arch}`)}</th>
-                {WEIGHT_AREAS.map(area => <td key={area}>{weights[arch][area]}%</td>)}
+                {WEIGHT_AREAS.map(area => <td key={area}><WeightBar type={arch} area={area} weight={weights[arch][area]} /></td>)}
               </tr>
             ))}
           </tbody>
@@ -127,6 +127,31 @@ function GeneralTopic({ teamType, trickRoom, meta, weights }: { teamType: Archet
       </div>
       <p className="help-roles-note">{t('help.general.rolesNote', ROLE_POINTS)}</p>
     </>
+  );
+}
+
+/**
+ * Il peso di un'area come barra continua riempita a gradini (sesti), senza numeri: scelta dell'utente 2026-11-10, i gradini non sono le
+ * percentuali vere ma una scala regolare fra i tipi (la Difesa sale di un gradino dall'Hyper Offense allo Stall,
+ * l'Offesa scende; Semi-stall e Stall diversi di un gradino anche dove i pesi coincidono). Ai lettori di schermo una parola.
+ */
+const WEIGHT_STEPS: Record<Archetype, Record<(typeof WEIGHT_AREAS)[number], number>> = {
+  hyperOffense: { defense: 2, strength: 6, speed: 4 },
+  bulkyOffense: { defense: 3, strength: 5, speed: 3 },
+  balance: { defense: 4, strength: 4, speed: 2 },
+  semiStall: { defense: 5, strength: 3, speed: 1 },
+  stall: { defense: 6, strength: 2, speed: 1 },
+};
+const STEPS = 6;
+function WeightBar({ type, area, weight }: { type: Archetype; area: (typeof WEIGHT_AREAS)[number]; weight: number }) {
+  const t = useT();
+  const steps = weight === 0 ? 0 : WEIGHT_STEPS[type][area];
+  const word = steps === 0 ? 'help.weight.none' : steps >= 5 ? 'help.weight.high' : steps >= 3 ? 'help.weight.mid' : 'help.weight.low';
+  return (
+    <span className="help-wbar">
+      <i style={{ width: `${(100 * steps) / STEPS}%` }} />
+      <span className="visually-hidden">{t(word)}</span>
+    </span>
   );
 }
 
@@ -147,7 +172,7 @@ function TypeTopic({ type, current, trickRoom, weights, typeRule }: { type: Arch
           return (
             <div key={area} className={inactive ? 'inactive' : undefined}>
               <dt>{t(`area.${area}`)}</dt>
-              <dd>{weights[type][area]}%</dd>
+              <dd><WeightBar type={type} area={area} weight={weights[type][area]} /></dd>
               {inactive && <dd className="help-inactive-note">{t('rating.notCounted')}</dd>}
             </div>
           );

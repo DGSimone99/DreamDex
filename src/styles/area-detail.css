@@ -69,7 +69,7 @@
 }
 
 .help-weights { border-collapse: collapse; width: 100%; font-size: 13px; font-variant-numeric: tabular-nums; }
-.help-weights th, .help-weights td { padding: 5px 6px; border-bottom: 1px solid var(--line-soft); text-align: right; white-space: nowrap; }
+.help-weights th, .help-weights td { padding: 7px 8px; border-bottom: 1px solid var(--line-soft); text-align: left; white-space: nowrap; }
 .help-weights thead th { font-size: 11px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: 0.04em; white-space: normal; vertical-align: bottom; }
 .help-weights th[scope='row'], .help-weights thead th:first-child { text-align: left; color: var(--muted); font-weight: 600; }
 .help-weights tr.current { background: var(--accent-soft); }
@@ -82,7 +82,7 @@
 .help-panel h5 { margin: 14px 0 6px; font-size: 11px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: 0.04em; }
 .help-panel h6 { margin: 8px 0 4px; font-size: 13px; font-weight: 600; color: var(--text); }
 .help-weights-row { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 12px; }
-.help-weights-row > div { display: grid; gap: 2px; padding: 6px 12px; background: var(--panel); border: 1px solid var(--line-soft); border-radius: 4px; }
+.help-weights-row > div { display: grid; gap: 6px; min-width: 150px; padding: 8px 12px 10px; background: var(--panel); border: 1px solid var(--line-soft); border-radius: 4px; }
 .help-weights-row dt { font-size: 11px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: 0.04em; }
 .help-weights-row dd { margin: 0; font-size: 16px; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; }
 .help-weights-row .inactive dt { color: var(--faint); }
@@ -147,3 +147,8 @@
   .bm-card { padding: 6px 12px; }
   .bm-points { font-size: 21px; }
 }
+
+/* Peso di un'area come barra continua riempita a sesti, senza numeri (RatingHelp) */
+.help-wbar { display: block; min-width: 96px; height: 9px; background: var(--field); border-radius: 2px; overflow: hidden; }
+.help-wbar > i { display: block; height: 100%; background: var(--accent); }
+.help-weights tr.current .help-wbar { background: color-mix(in srgb, var(--field) 70%, var(--accent-soft)); }
