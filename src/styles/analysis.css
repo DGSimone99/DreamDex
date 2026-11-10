@@ -654,6 +654,11 @@
 }
 .coach-empty { display: flex; align-items: center; gap: 8px; margin: 0; padding: 8px 12px; color: var(--good); background: color-mix(in srgb, var(--good-bg) 55%, var(--panel)); border: 1px solid color-mix(in srgb, var(--good) 25%, var(--line-soft)); }
 .coach-empty .icon { width: 14px; height: 14px; }
+/* Con Eevee: un riquadro più arioso, Eevee a sinistra, la frase in grande e una riga sotto */
+.coach-empty.with-eevee { gap: 18px; padding: 14px 20px; }
+.coach-empty.with-eevee p { display: grid; gap: 2px; margin: 0; }
+.coach-empty.with-eevee strong { display: flex; align-items: center; gap: 8px; font: 600 17px var(--ui); }
+.coach-empty.with-eevee span { color: var(--muted); font-size: 14px; }
 .coach-note { margin: 6px 0 0; font-size: 12px; color: var(--faint); }
 .coach-note.coach-top { margin: 0 0 4px; }
 

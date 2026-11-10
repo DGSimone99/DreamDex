@@ -657,6 +657,7 @@ export const en = {
   'coach.map.coveredBy': "Covered by step {n}",
   'coach.computing': "Working out suggestions…",
   'coach.noProblems': "No problems: the team is in good shape.",
+  'coach.noProblemsSub': "Coaching has nothing to suggest.",
   'archetype.hyperOffense': "Hyper Offense",
   'archetype.hyperOffense.note': "All-out attack",
   'archetype.bulkyOffense': "Bulky Offense",
