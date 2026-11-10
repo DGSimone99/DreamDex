@@ -38,12 +38,17 @@ export function ModalLock() {
       ghost.setAttribute('inert', '');
       // Niente nella copia prende il fuoco (anche dove 'inert' non è conosciuto)
       ghost.querySelectorAll<HTMLElement>('a, button, input, select, textarea, summary, [tabindex]').forEach(el => el.setAttribute('tabindex', '-1'));
-      document.body.appendChild(ghost);
-      [...ghost.querySelectorAll<HTMLElement>('*')].forEach((el, i) => { if (scrolled[i]) el.scrollTop = scrolled[i]; });
-      // Via a fine animazione (quella dello sfondo è l'ultima); un timer di sicurezza se l'evento non arriva
-      const remove = () => ghost.remove();
-      ghost.addEventListener('animationend', e => { if (e.target === ghost) remove(); });
-      window.setTimeout(remove, CLOSING_MS * 4);
+      // La copia solo se la finestra è sparita davvero: React (in sviluppo) smonta e rimonta per prova appena aperta, e
+      // lì la finestra resta sulla pagina; si controlla appena React ha finito di aggiornare la pagina
+      queueMicrotask(() => {
+        if (backdrop.isConnected) return;
+        document.body.appendChild(ghost);
+        [...ghost.querySelectorAll<HTMLElement>('*')].forEach((el, i) => { if (scrolled[i]) el.scrollTop = scrolled[i]; });
+        // Via a fine animazione (quella dello sfondo è l'ultima); un timer di sicurezza se l'evento non arriva
+        const remove = () => ghost.remove();
+        ghost.addEventListener('animationend', e => { if (e.target === ghost) remove(); });
+        window.setTimeout(remove, CLOSING_MS * 4);
+      });
     };
   }, []);
   return <span ref={mark} hidden />;
