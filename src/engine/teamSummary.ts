@@ -1,6 +1,6 @@
 import { cardRoles, type Archetype, type TeamStyle } from './archetype';
 import type { Coaching } from './coach';
-import { teamCores, type Core } from './cores';
+import { heldByOf, teamCores, type Core } from './cores';
 import type { EngineData } from './data';
 import { battleName, getMove, toID } from './dex';
 import { rulesOf, type FormatRules } from './formatRules';
@@ -87,7 +87,8 @@ export function teamSummary(team: TeamSet[], rating: TeamRating, coaching: Coach
     defenseOf: Object.fromEntries(rating.defense.members.map(m => [m.species, m.value])),
     conditions,
     hazards,
-    cores: teamCores(team),
+    // Gli stessi trii del bonus del voto: chi para deve reggere davvero il colpo
+    cores: teamCores(team, 2, heldByOf(rating.defense.coverageTypes.rows)),
     links: teamLinks(team, attackers),
   };
 }

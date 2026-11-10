@@ -21,7 +21,7 @@ import { t, type Lang } from '../i18n';
 import { gameName, typeName } from '../i18n/game';
 import { teamField, TYPES } from './types';
 import { benefits, conditionConflicts, conditionLabel, enables, teamEnabler, usesCondition, viaName, unmetBeneficiaries, unusedEnablers, weakenedMoves, weatherMitigations, type Condition } from './synergy';
-import { teamCores } from './cores';
+import { heldByOf, teamCores, type HeldBy } from './cores';
 import { blockedReason, voteTeam } from './legalTeam';
 
 export type AreaKey = 'coverage' | 'defense' | 'strength' | 'bulk' | 'roles' | 'speed' | 'meta';
@@ -377,11 +377,12 @@ export function weatherBonus(team: TeamSet[], lang: Lang = 'it'): Redundancies {
 }
 
 /** Un core a tre dell'Analisi (tre membri che si parano le debolezze a giro) vale 2 punti; le coppie non danno punti. */
-export const CORE_TRIO_POINTS = 2;
+/** Un trio vale +3 (era +2 quando bastava la tabella dei tipi; ora chi para deve reggere davvero: 2026-11-10). */
+export const CORE_TRIO_POINTS = 3;
 
 /** +2 per ogni trio fra i core dell'Analisi (al massimo due). I trii sono nel 100% dei team da torneo e nel 61% dei brutti. */
-export function coreTrioBonus(team: TeamSet[], lang: Lang = 'it'): Redundancy[] {
-  return teamCores(team)
+export function coreTrioBonus(team: TeamSet[], lang: Lang = 'it', held?: HeldBy): Redundancy[] {
+  return teamCores(team, 2, held)
     .filter(core => core.members.length === 3)
     .map(core => ({ text: t(lang, 'rating.bonus.coreTrio', { list: core.members.join(', ') }), points: CORE_TRIO_POINTS, catalog: 'coreTrio' as const }));
 }
@@ -571,7 +572,7 @@ function rateTeamAs(input: TeamSet[], data: EngineData, lang: Lang = 'it', opts:
   // 2026-11-07: tolto il bonus Tera (+1 per debolezza coperta da un Tera, fino a +3): lo prendevano quasi tutti allo
   // stesso modo (torneo 2,1, ladder 2,2) e il Tera si usa una volta sola, scelto in partita: troppe variabili
   const bonusItems = [
-    ...coreTrioBonus(team, lang), ...weakCoveredBonus(team, analysis, lang), ...typeVarietyBonus(team, lang), ...conditionUsedBonus(team, lang),
+    ...coreTrioBonus(team, lang, heldByOf(defense.coverageTypes.rows)), ...weakCoveredBonus(team, analysis, lang), ...typeVarietyBonus(team, lang), ...conditionUsedBonus(team, lang),
     ...weatherBonus(team, lang).items, ...roles.bonuses,
   ];
   const bonus = { total: sum(bonusItems.map(i => i.points)), items: bonusItems };
