@@ -6,6 +6,7 @@ import { isGroupKey, LEVEL_KEYS, levelOf, rolesTypeOf, type Level, type LevelKey
 import { ESSENTIAL_POINTS, IMPORTANT_POINTS, MINOR_POINTS } from '../engine/rolesArea';
 import type { MessageKey } from '../i18n';
 import { useT } from '../i18n/react';
+import { EeveePeek } from './EeveePeek';
 import { Icon } from './icons';
 
 type Topic = 'general' | Archetype;
@@ -66,6 +67,9 @@ export function RatingHelp({ teamType, trickRoom, meta = true, weights = ARCHETY
       {/* Nel body della pagina: sopra tutto, senza ereditare gli stili del pannello in cui sta il "?" */}
       {open && createPortal(
         <div className="help-backdrop" onClick={close}>
+          {/* Eevee sbircia da dietro la finestra: testa e coda dietro, zampe davanti (EeveePeek) */}
+          <div className="help-frame with-peek">
+          <EeveePeek />
           <div className="help-dialog rating-help" role="dialog" aria-modal="true" aria-labelledby={titleId} onClick={e => e.stopPropagation()}>
             <header className="help-head">
               <h3 id={titleId}>{t('help.title')}</h3>
@@ -86,6 +90,7 @@ export function RatingHelp({ teamType, trickRoom, meta = true, weights = ARCHETY
                 {topic === 'general' ? <GeneralTopic teamType={teamType} trickRoom={trickRoom} meta={meta} weights={weights} /> : <TypeTopic type={topic} current={topic === teamType} trickRoom={trickRoom} weights={weights} typeRule={typeRule} />}
               </section>
             </div>
+          </div>
           </div>
         </div>,
         document.body,

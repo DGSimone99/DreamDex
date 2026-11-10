@@ -57,6 +57,30 @@
 .help-dialog.tt-dialog { width: min(600px, 100%); }
 /* Come funziona il voto: altezza fissa, non cambia fra un argomento e l'altro (il testo scorre dentro) */
 .help-dialog.rating-help { height: min(620px, calc(100vh - 48px)); }
+/*
+ * Eevee che sbircia (EeveePeek): la finestra sta in una cornice che le lascia spazio sopra; testa e coda dietro la
+ * finestra (sotto nell'ordine), le zampe davanti, sul bordo alto. Le misure seguono la larghezza della testa (--peek).
+ */
+.help-frame { position: relative; width: min(780px, 100%); }
+.help-frame > .help-dialog { position: relative; z-index: 1; width: 100%; }
+.help-frame.with-peek { --peek: 175px; --peek-room: calc(var(--peek) * 0.9); margin-top: var(--peek-room); }
+.help-frame.with-peek > .help-dialog.rating-help { height: min(620px, calc(100vh - 48px - var(--peek-room))); }
+.eevee-peek { position: absolute; top: 0; left: 40px; width: var(--peek); pointer-events: none; user-select: none; }
+.eevee-peek img { position: absolute; display: block; }
+.eevee-peek .peek-head { left: 0; top: calc(var(--peek) * -0.914); width: var(--peek); z-index: 0; }
+.eevee-peek .peek-tail { left: calc(var(--peek) * 0.8); top: calc(var(--peek) * -0.369); width: calc(var(--peek) * 0.42); z-index: 0; transform: rotate(14deg); transform-origin: 50% 100%; }
+.eevee-peek .peek-paw { top: calc(var(--peek) * -0.093); width: calc(var(--peek) * 0.17); z-index: 2; }
+.eevee-peek .peek-paw.left { left: calc(var(--peek) * 0.045); }
+.eevee-peek .peek-paw.right { left: calc(var(--peek) * 0.415); }
+/* All'apertura testa e coda salgono da dietro il bordo, poi arrivano le zampe; niente movimento se chiesto dal sistema */
+@media (prefers-reduced-motion: no-preference) {
+  .eevee-peek .peek-head { animation: peek-rise 0.42s cubic-bezier(0.22, 1, 0.36, 1) both; }
+  .eevee-peek .peek-tail { animation: peek-rise-tail 0.5s 0.08s cubic-bezier(0.22, 1, 0.36, 1) both; }
+  .eevee-peek .peek-paw { animation: peek-paw 0.24s 0.3s ease-out both; }
+}
+@keyframes peek-rise { from { transform: translateY(70%); } to { transform: none; } }
+@keyframes peek-rise-tail { from { transform: translateY(80%) rotate(14deg); } to { transform: rotate(14deg); } }
+@keyframes peek-paw { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
 .tt-types { display: grid; grid-template-columns: max-content max-content minmax(0, 1fr); align-items: center; gap: 0 16px; margin: 0; padding: 0; list-style: none; }
 .tt-types li { display: contents; }
 .tt-types li > * { padding: 9px 0; border-bottom: 1px solid var(--line-soft); }
