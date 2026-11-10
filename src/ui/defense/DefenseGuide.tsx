@@ -96,7 +96,8 @@ export function DefenseGuideSection({ section, defense, meta, formatId = DEFAULT
             <h6>{t('ddetail.sus.gain')}</h6>
             <Keys items={[
               { label: g('sus.k.recover'), value: '+50%' }, { label: 'Regenerator', value: '+33%' }, { label: 'Rest', value: '+33%' },
-              { label: 'Wish', value: '+25%' }, { label: 'Pain Split', value: '+25%' }, { label: g('sus.k.drain'), value: dec('+12,5%') },
+              { label: g('sus.k.sunMoves'), value: '+50%', title: g('sus.k.sunMoves.rule') },
+              { label: 'Wish · Life Dew', value: '+25%' }, { label: 'Pain Split', value: '+25%' }, { label: g('sus.k.drain'), value: dec('+12,5%') },
               { label: 'Poison Heal', value: dec('+12,5%'), title: g('sus.k.poisonHeal') }, { label: 'Leftovers', value: '+6%' },
               { label: g('sus.k.weather'), value: '+6%', title: g('sus.k.weather.rule') }, { label: 'Dry Skin', value: dec('+12,5%'), title: g('sus.k.dryskin') },
               { label: 'Grassy Terrain', value: '+6%', title: g('sus.k.grassy') },
@@ -109,6 +110,8 @@ export function DefenseGuideSection({ section, defense, meta, formatId = DEFAULT
               { label: 'Toxic Orb', value: dec('−12,5%') }, { label: 'Black Sludge', value: dec('−12,5%'), title: g('sus.k.sludge') },
               { label: 'Flame Orb', value: '−6%' }, { label: 'Sticky Barb', value: '−6%' },
               { label: g('sus.k.sand'), value: '−6%', title: g('sus.k.sand.rule') },
+              { label: g('sus.k.recoil'), value: '−10%', title: g('sus.k.recoil.rule') },
+              { label: 'Steel Beam · Mind Blown', value: '−50%', title: g('sus.k.halfHp.rule') },
             ]} />
           </div>
         </div>

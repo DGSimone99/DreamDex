@@ -21,9 +21,45 @@ export function holdStep(hit: Hit | null): number {
 /** Recupero per turno delle mosse (la migliore del set). */
 const RECOVERY_MOVES: Record<string, number> = {
   recover: 0.5, roost: 0.5, slackoff: 0.5, softboiled: 0.5, milkdrink: 0.5, moonlight: 0.5, synthesis: 0.5,
-  morningsun: 0.5, shoreup: 0.5, strengthsap: 0.5, wish: 0.25, rest: 0.33,
-  leechseed: 0.125, painsplit: 0.25, junglehealing: 0.25, lunarblessing: 0.25,
+  morningsun: 0.5, shoreup: 0.5, strengthsap: 0.5, healorder: 0.5, wish: 0.25, rest: 0.33,
+  leechseed: 0.125, painsplit: 0.25, junglehealing: 0.25, lunarblessing: 0.25, lifedew: 0.25,
 };
+/** Moonlight, Synthesis, Morning Sun: due terzi col sole del team, un quarto con pioggia, sabbia o neve (2026-11-10). */
+const SUN_HEAL = new Set(['moonlight', 'synthesis', 'morningsun']);
+/** Recupero di Moonlight & co. e di Shore Up col meteo del team; senza meteo (o con sole e un altro meteo insieme) metà. */
+export function weatherRecovery(id: string, conditions: FieldCondition[]): number | null {
+  if (SUN_HEAL.has(id)) {
+    const sun = conditions.includes('sun');
+    const other = conditions.some(c => c === 'rain' || c === 'sand' || c === 'snow');
+    return sun && !other ? 2 / 3 : other && !sun ? 0.25 : 0.5;
+  }
+  if (id === 'shoreup') return conditions.includes('sand') ? 2 / 3 : 0.5;
+  return null;
+}
+/**
+ * Perdita per turno delle mosse che costano PS a chi le usa, per la quota degli attacchi del set che le hanno (2026-11-10):
+ * il contraccolpo (1/3 del danno fatto, come Life Orb: −10%; 1/2 −15%; 1/4 −7,5%) e le mosse che tolgono metà dei PS
+ * (Steel Beam, Mind Blown, Chloroblast: −50%). Rock Head toglie il contraccolpo, Magic Guard tutto.
+ */
+export const RECOIL_LOSS_PER_SHARE = 0.3;
+export const HALF_HP_LOSS = 0.5;
+const HALF_HP_MOVES = new Set(['steelbeam', 'mindblown', 'chloroblast']);
+function selfDamage(set: TeamSet, ability: string): number {
+  if (ability === 'magicguard') return 0;
+  const attacks = set.moves.map(getMove).filter(m => !!m && m.category !== 'Status');
+  if (!attacks.length) return 0;
+  const cost = (m: NonNullable<ReturnType<typeof getMove>>) => {
+    if (HALF_HP_MOVES.has(m.id) || m.mindBlownRecoil) return HALF_HP_LOSS;
+    if (m.recoil && ability !== 'rockhead') return RECOIL_LOSS_PER_SHARE * m.recoil[0] / m.recoil[1];
+    return 0;
+  };
+  return attacks.reduce((acc, m) => acc + cost(m!), 0) / attacks.length;
+}
+/** La mossa che costa PS al set (per la colonna delle perdite), o null. */
+function selfDamageMove(set: TeamSet, ability: string): string | null {
+  const found = set.moves.map(getMove).find(m => !!m && m.category !== 'Status' && (HALF_HP_MOVES.has(m.id) || !!m.mindBlownRecoil || (!!m.recoil && ability !== 'rockhead')));
+  return found?.name ?? null;
+}
 /** Le mosse d'attacco che assorbono (Drain Punch, Giga Drain, Horn Leech, Draining Kiss…): circa un ottavo per turno. */
 const DRAIN_RECOVERY = 0.125;
 /** Abilità che curano solo col meteo del team: Rain Dish e Dry Skin con la pioggia, Ice Body con la neve. */
@@ -82,14 +118,14 @@ export function hazardRemover(team: TeamSet[]): string | null {
 
 /**
  * Le voci della Sostenibilità del membro. `holdShare` è la quota (0–1) dei 36 colpi di tipo che regge (pieno 1, a metà 0,5);
- * `conditions` il meteo che il team porta (per Rain Dish, Dry Skin, Ice Body).
+ * `conditions` il meteo che il team porta (per Rain Dish, Dry Skin, Ice Body, Moonlight & co., Shore Up).
  */
 export function sustainParts(set: TeamSet, holdShare: number, remover: string | null = null, conditions: FieldCondition[] = []): SustainParts {
   const ability = toID(battleAbility(set));
   const item = toID(set.item);
   const moveHeal = (m: string) => {
     const move = getMove(m);
-    return RECOVERY_MOVES[toID(m)] ?? (move && move.category !== 'Status' && move.drain ? DRAIN_RECOVERY : 0);
+    return weatherRecovery(toID(m), conditions) ?? RECOVERY_MOVES[toID(m)] ?? (move && move.category !== 'Status' && move.drain ? DRAIN_RECOVERY : 0);
   };
   const best = set.moves.reduce<string | null>((acc, m) => (moveHeal(m) > (acc ? moveHeal(acc) : 0) ? m : acc), null);
   // Poison Heal cura solo da avvelenato: lo garantisce Toxic Orb; Rain Dish, Dry Skin e Ice Body solo col loro meteo
@@ -129,9 +165,12 @@ export function sustainParts(set: TeamSet, holdShare: number, remover: string | 
   const sandProof = ['Rock', 'Ground', 'Steel'].some(t => types.includes(t)) || SAND_PROOF.has(ability) || item === 'safetygoggles';
   const fieldLoss = conditions.includes('sand') && !sandProof && !magicGuard ? FIELD_TICK : 0;
   const total = gross + fieldHeal;
+  // Contraccolpo e mosse che tolgono metà dei PS (nella stessa colonna degli strumenti)
+  const moveLoss = selfDamage(set, ability);
   return {
     sources: fieldHeal ? [...sources, 'Grassy Terrain'] : sources, recovery: halved ? total / 2 : total, halved, rocks, rocksHalvedBy,
-    itemLoss: itemLoss + fieldLoss, itemLossFrom: itemLoss ? set.item : fieldLoss ? 'Sandstorm' : null,
+    itemLoss: itemLoss + fieldLoss + moveLoss,
+    itemLossFrom: [itemLoss ? set.item : null, fieldLoss ? 'Sandstorm' : null, moveLoss ? selfDamageMove(set, ability) : null].filter(Boolean).join(' + ') || null,
   };
 }
 
