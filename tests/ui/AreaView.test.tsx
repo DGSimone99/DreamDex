@@ -51,13 +51,13 @@ describe('vista di un\'area sulla pagina', () => {
     expect(within(screen.getByRole('tabpanel')).queryByText('Debole a Fuoco')).toBeNull();
   });
 
-  it('senza problemi la riga resta, con "Nessun problema" (anche in Velocità, che non ha categorie)', () => {
+  it('senza problemi la riga resta, con "Nessun problema in quest’area" (anche in Velocità, che non ha categorie)', () => {
     for (const area of ['defense', 'speed'] as const) {
       const { container, unmount } = renderIt(<AreaView rating={withMeta()} area={area} team={team} analysis={analysis} problems={[]} />);
       const row = container.querySelector('.area-problems-row')!;
       expect(row).toHaveClass('is-clear');
-      expect(within(row as HTMLElement).getByText('Nessun problema')).toBeInTheDocument();
-      expect(screen.getByRole('note', { name: /^Problemi in / })).toHaveTextContent('Nessun problema');
+      expect(within(row as HTMLElement).getByText("Nessun problema in quest'area")).toBeInTheDocument();
+      expect(screen.getByRole('note', { name: /^Problemi in / })).toHaveTextContent("Nessun problema in quest'area");
       expect(screen.queryByRole('list', { name: /Problemi/ })).toBeNull();
       unmount();
     }
