@@ -92,7 +92,7 @@ describe('schede interne di Analisi', () => {
     expect(badge).toHaveAttribute('aria-hidden', 'true');
     expect(badge).not.toHaveClass('minor');
     const total = Number(badge.textContent);
-    expect(screen.getByRole('tab', { name: new RegExp(`^Analisi.*${total} problemi`) })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Analisi' })).toHaveAccessibleDescription(new RegExp(`${total} problemi`));
     expect(tab.getAttribute('title')).toMatch(/^3 gravi( · \d+ minor[ei])?$/);
   });
 

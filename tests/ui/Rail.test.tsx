@@ -8,9 +8,13 @@ describe('Barra laterale', () => {
   it('contiene formato, regole e sezioni', () => {
     render(<App initialLang="it" data={fixtureData} />);
     const rail = within(screen.getByRole('complementary', { name: 'Barra laterale' }));
-    expect(rail.getByLabelText('Pokédex')).toBeInTheDocument();
-    expect(rail.getByLabelText('Tier del formato')).toBeInTheDocument();
-    expect(rail.getByLabelText('Generazione massima')).toBeInTheDocument();
+    expect(rail.getByRole('radiogroup', { name: 'Pokédex' })).toBeInTheDocument();
+    expect(rail.getByRole('radiogroup', { name: 'Tier del formato' })).toBeInTheDocument();
+    expect(rail.getByRole('radiogroup', { name: 'Generazione massima' })).toBeInTheDocument();
+    // La carta del formato riassume tutto: Pokédex, tier e le regole come pastiglie
+    expect(document.querySelector('.format-card > summary')).toHaveTextContent('National Dex');
+    expect(document.querySelector('.format-tier')).toHaveTextContent('OU');
+    expect(document.querySelector('.format-pills')).toHaveTextContent('MetaGen 9');
     expect(rail.getByRole('button', { name: 'Col meta' })).toBeInTheDocument();
     expect(rail.getByRole('button', { name: 'Senza meta' })).toBeInTheDocument();
     expect(rail.getByRole('checkbox', { name: 'Ignora ban' })).toBeInTheDocument();

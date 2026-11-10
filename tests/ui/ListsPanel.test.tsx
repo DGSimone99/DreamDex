@@ -36,7 +36,7 @@ async function enter(user: ReturnType<typeof userEvent.setup>, name: string, key
 async function open(storage: Storage) {
   const user = userEvent.setup();
   render(<App initialLang="it" data={fixtureData} storage={storage} />);
-  const tabs = screen.getAllByRole('tab').map(tab => tab.textContent);
+  const tabs = screen.getAllByRole('tab').map(tab => tab.querySelector('.tab-name')?.textContent ?? tab.textContent);
   expect(tabs.indexOf('Liste')).toBe(tabs.indexOf('Meta') + 1);
   await user.click(screen.getByRole('tab', { name: 'Liste' }));
   return user;

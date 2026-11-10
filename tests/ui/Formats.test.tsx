@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/App';
 import type { EngineData } from '../../src/engine/data';
+import { chooseDex, chooseTier, chosen, tierNames } from '../helpers/format';
 import { fixtureData } from '../fixtures/data';
 
 const NO_DATA: EngineData = { stats: null, sets: null };
@@ -13,28 +14,28 @@ describe('dati per formato', () => {
     const loadSource = vi.fn(() => new Promise<EngineData>(r => { resolve = r; }));
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} loadSource={loadSource} />);
-    await user.selectOptions(screen.getByLabelText('Tier del formato'), 'ubers');
+    await chooseTier(user, 'ubers');
     expect(loadSource).toHaveBeenCalledWith('gen9nationaldexubers');
     expect(screen.getByText('Caricamento statistiche…')).toBeInTheDocument();
     await act(async () => resolve(fixtureData));
     expect(screen.queryByText('Caricamento statistiche…')).toBeNull();
-    expect(screen.getByText(/Statistiche: 2026-09/)).toBeInTheDocument();
+    expect(screen.getByText(/Dati Smogon: settembre 2026/)).toBeInTheDocument();
   });
 
   it('i dati già caricati restano in memoria', async () => {
     const loadSource = vi.fn(async () => fixtureData);
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} loadSource={loadSource} />);
-    await user.selectOptions(screen.getByLabelText('Tier del formato'), 'ubers');
-    await user.selectOptions(screen.getByLabelText('Tier del formato'), 'ou');
-    await user.selectOptions(screen.getByLabelText('Tier del formato'), 'ubers');
+    await chooseTier(user, 'ubers');
+    await chooseTier(user, 'ou');
+    await chooseTier(user, 'ubers');
     expect(loadSource).toHaveBeenCalledTimes(1);
   });
 
   it('fonte non scaricata: banner con il nome del formato', async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} loadSource={async () => NO_DATA} />);
-    await user.selectOptions(screen.getByLabelText('Tier del formato'), 'uu');
+    await chooseTier(user, 'uu');
     expect(await screen.findByRole('alert')).toHaveTextContent('Statistiche National Dex UU non scaricate');
   });
 
@@ -43,34 +44,34 @@ describe('dati per formato', () => {
     const loadSource = vi.fn((source: string) => new Promise<EngineData>(r => { pending[source] = r; }));
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} loadSource={loadSource} />);
-    await user.selectOptions(screen.getByLabelText('Tier del formato'), 'ubers');
-    await user.selectOptions(screen.getByLabelText('Tier del formato'), 'uu');
+    await chooseTier(user, 'ubers');
+    await chooseTier(user, 'uu');
     await act(async () => pending.gen9nationaldexuu(fixtureData));
     await act(async () => pending.gen9nationaldexubers(NO_DATA));
     expect(screen.queryByRole('alert')).toBeNull();
     expect(screen.queryByText('Caricamento statistiche…')).toBeNull();
-    expect(screen.getByText(/Statistiche: 2026-09/)).toBeInTheDocument();
+    expect(screen.getByText(/Dati Smogon: settembre 2026/)).toBeInTheDocument();
   });
 
   it('menu Pokédex e Tier: Gen 9 con OU, Ubers, UU e AG; Senza limiti senza tier', async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} loadSource={async () => fixtureData} />);
-    expect(screen.getByLabelText('Pokédex')).toHaveValue('natdex');
-    expect(screen.getByLabelText('Tier del formato')).toHaveValue('ou');
-    expect(within(screen.getByLabelText('Tier del formato')).getAllByRole('option').map(o => o.textContent)).toEqual(['OU', 'Ubers', 'UU']);
-    await user.selectOptions(screen.getByLabelText('Pokédex'), 'gen9');
-    expect(screen.getByLabelText('Tier del formato')).toHaveValue('gen9ou');
-    expect(within(screen.getByLabelText('Tier del formato')).getAllByRole('option').map(o => o.textContent)).toEqual(['OU', 'Ubers', 'UU', 'Anything Goes']);
-    await user.selectOptions(screen.getByLabelText('Pokédex'), 'nolimits');
+    expect(chosen('format-dex')).toBe('natdex');
+    expect(chosen('format-tier')).toBe('ou');
+    expect(tierNames()).toEqual(['OU', 'Ubers', 'UU']);
+    await chooseDex(user, 'gen9');
+    expect(chosen('format-tier')).toBe('gen9ou');
+    expect(tierNames()).toEqual(['OU', 'Ubers', 'UU', 'Anything Goes']);
+    await chooseDex(user, 'nolimits');
     expect(screen.queryByLabelText('Tier del formato')).toBeNull();
     // Tornando a National Dex si riparte da OU
-    await user.selectOptions(screen.getByLabelText('Pokédex'), 'natdex');
-    expect(screen.getByLabelText('Tier del formato')).toHaveValue('ou');
+    await chooseDex(user, 'natdex');
+    expect(chosen('format-tier')).toBe('ou');
   });
 
-  it('l\'uso minimo dei suggerimenti sta in Avanzate', () => {
+  it("l'uso minimo dei suggerimenti non si sceglie più", () => {
     render(<App initialLang="it" data={fixtureData} />);
-    expect(screen.getByLabelText('Uso minimo').closest('details')).toHaveTextContent('Avanzate');
+    expect(screen.queryByLabelText('Uso minimo')).toBeNull();
   });
 });
 
@@ -81,21 +82,22 @@ describe('pannello Avanzate', () => {
   const add = async (user: ReturnType<typeof userEvent.setup>, name: string) =>
     user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
 
-  it('contatore delle opzioni attive, senza Monotype', async () => {
+  it('le opzioni avanzate accese compaiono come pastiglie sulla carta del formato; niente Monotype', async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} loadSource={async () => fixtureData} />);
     expect(screen.getByText('Avanzate')).toBeInTheDocument();
     expect(screen.queryByRole('checkbox', { name: 'Monotype' })).toBeNull();
+    expect(document.querySelector('.format-pills')).toHaveTextContent(/^MetaGen 9$/);
     await user.click(screen.getByRole('checkbox', { name: 'Ignora ban' }));
     await user.click(screen.getByRole('checkbox', { name: 'Più Mega ammesse' }));
-    expect(screen.getByText('Avanzate (2)')).toBeInTheDocument();
+    expect(document.querySelector('.format-pills')).toHaveTextContent(/^MetaGen 9Ban ignoratiPiù Mega$/);
   });
 
   it('cambiando formato i membri illegali vengono segnalati, non rimossi', async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} loadSource={async () => fixtureData} />);
     await add(user, 'Great Tusk');
-    await user.selectOptions(screen.getByLabelText('Tier del formato'), 'uu');
+    await chooseTier(user, 'uu');
     expect(await within(team()).findByText(/^Tier troppo alto per National Dex UU$/)).toBeInTheDocument();
     expect(within(team()).getByText('Great Tusk')).toBeInTheDocument();
   });
