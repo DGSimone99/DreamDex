@@ -239,9 +239,9 @@
 .dash-speed { grid-column: 3; }
 .dash-card { display: flex; flex-direction: column; min-width: 0; min-height: 0; padding: 0 12px 10px; background: var(--panel); border: 1px solid var(--line-soft); }
 .dash-head { display: flex; align-items: center; gap: 10px; min-width: 0; margin: 0 -12px 8px; padding-right: 6px; background: var(--stripes), var(--band); }
-.dash-plate { flex: none; margin: 0; padding: 4px 22px 4px 12px; font: 700 13px/1.2 var(--display); font-style: italic; color: var(--on-accent-2); background: var(--stripes), var(--accent-2); clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%); }
+.dash-plate { flex: none; margin: 0; padding: 4px 22px 4px 12px; font: 700 13px/1.2 var(--display); font-style: italic; color: var(--on-plate); background: var(--stripes), var(--plate); clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%); }
 /* Un h4 usato come targhetta (colonne del Coaching): la targhetta vince sullo stile degli h4 di Analisi */
-.analysis h4.dash-plate { display: block; margin: 0; font: 700 13px/1.2 var(--display); font-style: italic; text-transform: none; letter-spacing: normal; color: var(--on-accent-2); }
+.analysis h4.dash-plate { display: block; margin: 0; font: 700 13px/1.2 var(--display); font-style: italic; text-transform: none; letter-spacing: normal; color: var(--on-plate); }
 .dash-meta { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: var(--muted); }
 .dash-meta b { font: 700 14px/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums; color: var(--text); }
 .dash-meta b.bad { color: var(--bad); }

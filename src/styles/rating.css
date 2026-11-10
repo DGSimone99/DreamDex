@@ -20,8 +20,8 @@
   padding: 4px 24px 4px 12px;
   font: 700 14px/1.2 var(--display);
   font-style: italic;
-  color: var(--on-accent-2);
-  background: var(--stripes), var(--accent-2);
+  color: var(--on-plate);
+  background: var(--stripes), var(--plate);
   clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%);
 }
 .grade-badge .letter { font: 800 76px/0.85 var(--display); font-style: italic; color: var(--accent); }
@@ -63,7 +63,7 @@
 .grade-badge button.grade-area:hover .icon { color: var(--accent); }
 /* Aiuto e triangolo delle regole nella testa magenta, a destra */
 .grade-tools { position: absolute; top: 2px; right: 22px; display: flex; align-items: center; gap: 4px; }
-.grade-tools .help-button { width: 20px; height: 20px; color: var(--on-accent-2); border-color: color-mix(in srgb, var(--on-accent-2) 40%, transparent); background: transparent; }
+.grade-tools .help-button { width: 20px; height: 20px; color: var(--on-plate); border-color: color-mix(in srgb, var(--on-plate) 40%, transparent); background: transparent; }
 .band.collapsed .grade-badge .grade-areas, .band.collapsed .grade-badge .grade-tools { display: none; }
 .grade-badge button.grade-area.inactive { color: var(--faint); }
 .grade-badge button.grade-area.inactive b { color: var(--faint); }
