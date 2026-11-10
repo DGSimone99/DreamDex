@@ -6,23 +6,11 @@ import type { TeamSet } from './sets';
 let raw: Map<string, Map<string, number>> | null = null;
 const resolved = new Map<string, Map<string, number>>();
 
-/** Carica una volta i learnset di tutte le specie (circa 0,2 s). */
+/** Carica una volta i learnset di tutte le specie: una tabella compatta preparata da Vite (vite.config.ts). */
 export async function initLearnsets(): Promise<void> {
   if (raw) return;
-  const species = dex.species.all().filter(s => s.exists);
-  const entries = await Promise.all(species.map(async s => [s.id, await dex.learnsets.get(s.id)] as const));
-  const map = new Map<string, Map<string, number>>();
-  for (const [id, data] of entries) {
-    if (!data?.learnset) continue;
-    const moves = new Map<string, number>();
-    for (const [move, sources] of Object.entries(data.learnset)) {
-      // Le fonti iniziano con la generazione: "9M", "8L50", "7S0"…
-      const gens = (sources as string[]).map(source => Number(source[0])).filter(Number.isFinite);
-      if (gens.length) moves.set(move, Math.min(...gens));
-    }
-    map.set(id, moves);
-  }
-  raw = map;
+  const { default: table } = await import('virtual:learnsets');
+  raw = new Map(Object.entries(table).map(([id, moves]) => [id, new Map(Object.entries(moves))]));
   resolved.clear();
 }
 
