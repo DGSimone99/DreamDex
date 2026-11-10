@@ -32,6 +32,7 @@ import { gameName, hasItalianNames } from './i18n/game';
 import { useDismissMenus } from './ui/useDismissMenus';
 import { useAdvice } from './ui/useRanking';
 import { paletteFor, type ListSprite, type ListStyle, type PaletteSetting } from './ui/theme';
+import { EeveeMoment } from './ui/EeveeMoment';
 
 const NO_DATA: EngineData = { stats: null, sets: null };
 
@@ -346,9 +347,10 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
       <div className="main" ref={mainRef} id="main-content">
       {loading && <p className="banner info">{t(lang, 'app.loading')}</p>}
       {!loading && !data.stats && (
-        <p className="banner" role="alert">
-          {t(lang, 'app.noData', { format: formatLabel(format, lang) })} <code>npm run fetch-data</code> {t(lang, 'app.noDataAfter')}
-        </p>
+        <div className="banner with-eevee" role="alert">
+          <EeveeMoment pose="down" />
+          <p>{t(lang, 'app.noData', { format: formatLabel(format, lang) })} <code>npm run fetch-data</code> {t(lang, 'app.noDataAfter')}</p>
+        </div>
       )}
       <div className={`band${collapsed ? ' collapsed' : ''}`}>
         <TeamPanel team={team} format={format} data={data}

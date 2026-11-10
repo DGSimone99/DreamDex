@@ -659,6 +659,7 @@ export const it: Record<keyof typeof en, string> = {
   'coach.map.coveredBy': "Coperto dalla tappa {n}",
   'coach.computing': "Calcolo dei consigli…",
   'coach.noProblems': "Nessun problema: il team è a posto.",
+  'coach.noProblemsSub': "Il Coaching non ha niente da suggerire.",
   'archetype.hyperOffense': "Hyper Offense",
   'archetype.hyperOffense.note': "Tutto attacco",
   'archetype.bulkyOffense': "Bulky Offense",

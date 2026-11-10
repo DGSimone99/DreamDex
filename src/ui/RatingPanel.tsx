@@ -9,6 +9,7 @@ import { Icon } from './icons';
 import { useT } from '../i18n/react';
 import { ANALYSIS_VIEWS } from './AnalysisTabs';
 import type { AnalysisView } from './analysisView';
+import { EeveeMoment } from './EeveeMoment';
 
 const isDetailArea = (key: string): key is DetailArea => key === 'strength' || key === 'defense' || key === 'speed' || key === 'roles' || key === 'bonusMalus';
 
@@ -39,6 +40,7 @@ export function GradeBadge({ rating, ruleIssues = [], illegalCount = 0, blocked 
       <span className="grade-visual" aria-hidden="true">
       <span className="grade-head">{t('rating.badgeHead')}</span>
       {rating && <span className="letter">{rating.grade}</span>}
+      {!rating && !blocked && <EeveeMoment pose="wave" />}
       <span className="overall">{rating ? `${rating.overall} / 100` : t('rating.noGrade')}</span>
       <span className="label">{rating ? rating.label : t(blocked === 'ev' ? 'rating.evBlocked' : blocked === 'species' ? 'rating.speciesBlocked' : 'rating.addPokemon')}</span>
       {rating && broken && <span className="grade-rules" title={ruleIssues.join(' · ')}><Icon name="warning" />{notLegal}</span>}
