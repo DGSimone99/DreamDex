@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { cardRoles } from '../../src/engine/archetype';
 import { analyzeTeam } from '../../src/engine/analysis';
 import { coachTeam, type Coaching } from '../../src/engine/coach';
-import { teamCores } from '../../src/engine/cores';
+import { heldByOf, teamCores } from '../../src/engine/cores';
 import { battleName, toID } from '../../src/engine/dex';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
 import { rulesOf } from '../../src/engine/formatRules';
@@ -111,9 +111,9 @@ describe('teamSummary', () => {
     expect(rows.map(r => r.member)).toContain(battleName(setter));
   });
 
-  it('cores e legami: esattamente teamCores e teamLinks', () => {
-    const { summary } = build();
-    expect(summary.cores).toEqual(teamCores(base));
+  it('cores e legami: esattamente teamCores (chi para regge davvero, come nel voto) e teamLinks', () => {
+    const { summary, rating } = build();
+    expect(summary.cores).toEqual(teamCores(base, 2, heldByOf(rating.defense.coverageTypes.rows)));
     expect(summary.links).toEqual(teamLinks(base, summary.attackers));
   });
 

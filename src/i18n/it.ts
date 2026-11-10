@@ -216,7 +216,7 @@ export const it: Record<keyof typeof en, string> = {
   'catalog.typeBlend.when': "Il team sta vicino al confine col tipo accanto (una mossa di recupero o un po' di velocità in più o in meno): il voto è in parte quello di quel tipo, fino a metà proprio sul confine. Bulky Offense sta fra due confini vicini: lì il voto può essere in parte dei due tipi accanto. Solo National Dex OU",
   'catalog.typeBlend.points': "La differenza fra i due voti, per la quota",
   'catalog.coreTrio.name': "Core a tre",
-  'catalog.coreTrio.when': "Tre membri si coprono le debolezze a vicenda",
+  'catalog.coreTrio.when': "Tre membri si coprono le debolezze a vicenda, e chi para regge davvero il colpo",
   'catalog.coreTrio.points': "+{trio} per ogni trio, al massimo 2",
   'catalog.weakCovered.name': "Debolezze coperte",
   'catalog.weakCovered.when': "Team da 6: ogni tipo a cui due o più membri sono deboli ha almeno un membro che lo resiste",

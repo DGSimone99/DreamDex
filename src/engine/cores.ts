@@ -33,8 +33,16 @@ function sortedTypes(covered: TeamSet, types: TypeName[]): TypeName[] {
 
 interface Side { from: number; to: number; types: TypeName[]; type: TypeName; weight: number }
 
-function makeSide(team: TeamSet[], from: number, to: number): Side {
-  const types = parries(team[from], team[to]);
+/** Per tipo, chi lo regge davvero coi danni (la Coverage tipi della Difesa del voto, `heldBy`). */
+export type HeldBy = Map<string, Set<string>>;
+export const heldByOf = (rows: { type: string; heldBy: string[] }[]): HeldBy => new Map(rows.map(row => [row.type, new Set(row.heldBy)]));
+
+/**
+ * `held`: se c'è, un tipo parato conta solo se chi para lo regge davvero coi danni (2026-11-10, controllo 2: prima bastava
+ * la tabella dei tipi e il trio lo avevano quasi tutti i team, torneo 88% con due trii, ladder 67%; così 40% e 20%).
+ */
+function makeSide(team: TeamSet[], from: number, to: number, held?: HeldBy): Side {
+  const types = parries(team[from], team[to]).filter(t => !held || !!held.get(t)?.has(battleName(team[from])));
   let type = types[0];
   let best = 0;
   let weight = 0;
@@ -51,14 +59,14 @@ interface Candidate { order: number[]; sides: Side[]; strength: number }
 
 const strengthOf = (sides: Side[]) => sides.reduce((sum, s) => sum + s.weight, 0);
 
-export function teamCores(team: TeamSet[], max = 2): Core[] {
+export function teamCores(team: TeamSet[], max = 2, held?: HeldBy): Core[] {
   const present = team.map((_, i) => i).filter((i) => battleSpecies(team[i]) !== null);
   const sideCache = new Map<string, Side>();
   const side = (from: number, to: number): Side => {
     const key = `${from}>${to}`;
     let cached = sideCache.get(key);
     if (!cached) {
-      cached = makeSide(team, from, to);
+      cached = makeSide(team, from, to, held);
       sideCache.set(key, cached);
     }
     return cached;
