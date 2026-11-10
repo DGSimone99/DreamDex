@@ -29,6 +29,7 @@ import { EMPTY_LISTS, effectiveLists, type UserLists } from './engine/lists';
 import { t, type Lang } from './i18n';
 import { LangProvider } from './i18n/react';
 import { gameName, hasItalianNames } from './i18n/game';
+import { useDismissMenus } from './ui/useDismissMenus';
 import { paletteFor, type ListSprite, type ListStyle, type PaletteSetting } from './ui/theme';
 
 const NO_DATA: EngineData = { stats: null, sets: null };
@@ -48,6 +49,8 @@ interface AppProps {
 
 export function App({ data: initialData, loadSource, storage, initialLang, loadNames }: AppProps) {
   const [lang, setLang] = useState<Lang>(() => initialLang ?? (storage ? loadLang(storage) : null) ?? 'en');
+  // I menu a tendina aperti si chiudono con un clic fuori o con Esc
+  useDismissMenus();
   useEffect(() => {
     document.documentElement.lang = lang;
     if (storage) saveLang(lang, storage);
