@@ -7,6 +7,7 @@ import { ESSENTIAL_POINTS, IMPORTANT_POINTS, MINOR_POINTS } from '../engine/role
 import type { MessageKey } from '../i18n';
 import { useT } from '../i18n/react';
 import { EeveePeek } from './EeveePeek';
+import { ModalLock } from './ModalLock';
 import { Icon } from './icons';
 
 type Topic = 'general' | Archetype;
@@ -67,6 +68,7 @@ export function RatingHelp({ teamType, trickRoom, meta = true, weights = ARCHETY
       {/* Nel body della pagina: sopra tutto, senza ereditare gli stili del pannello in cui sta il "?" */}
       {open && createPortal(
         <div className="help-backdrop" onClick={close}>
+          <ModalLock />
           {/* Eevee sbircia da dietro la finestra: testa e coda dietro, zampe davanti (EeveePeek) */}
           <div className="help-frame with-peek">
           <EeveePeek />

@@ -7,6 +7,7 @@ import { formatPercent } from '../../i18n';
 import { useLang, useT } from '../../i18n/react';
 import { Icon } from '../icons';
 import { ItemIcon } from '../ItemIcon';
+import { ModalLock } from '../ModalLock';
 import { PokemonIcon } from '../PokemonName';
 
 /**
@@ -95,6 +96,7 @@ export function SpeedMemberDialog({ member, set, team, meta, onClose }: { member
 
   return createPortal(
     <div className="help-backdrop" onClick={onClose}>
+          <ModalLock />
       <div className="help-dialog sp-dialog" role="dialog" aria-modal="true" aria-labelledby={`${id}-title`} onClick={e => e.stopPropagation()}>
         <header className="help-head">
           <h3 id={`${id}-title`}><span className="def-box"><PokemonIcon name={member.species} /></span>{t('sdetail.dlg.title', { name: member.species })}</h3>

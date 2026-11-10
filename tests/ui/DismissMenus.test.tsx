@@ -29,3 +29,29 @@ describe('menu a tendina', () => {
     expect(menu('Team salvati (0)')).not.toHaveAttribute('open');
   });
 });
+
+describe('tastiera: finestre e salto al contenuto', () => {
+  it('con una finestra aperta la pagina sotto è inerte; chiusa torna attiva', async () => {
+    const user = userEvent.setup();
+    const { container } = render(<div id="root" />);
+    const root = container.querySelector('#root')!;
+    const { unmount } = render(<App initialLang="it" data={fixtureData} />, { container: root as HTMLElement });
+    await user.click(screen.getByRole('button', { name: 'Impostazioni' }));
+    expect(screen.getByRole('dialog', { name: 'Impostazioni' })).toBeInTheDocument();
+    expect(root).toHaveAttribute('inert');
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(root).not.toHaveAttribute('inert');
+    unmount();
+  });
+
+  it('"Vai al contenuto" è il primo elemento e porta il fuoco alla colonna principale', async () => {
+    const user = userEvent.setup();
+    render(<App initialLang="it" data={fixtureData} />);
+    await user.tab();
+    const skip = screen.getByRole('link', { name: 'Vai al contenuto' });
+    expect(skip).toHaveFocus();
+    await user.keyboard('{Enter}');
+    expect(document.getElementById('main-content')).toHaveFocus();
+  });
+});
