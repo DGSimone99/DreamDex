@@ -12,11 +12,13 @@ const LIST_SPRITES: ListSprite[] = ['normal', 'box'];
  * Impostazioni: la palette (segue il gioco o fissa) e gli sprite della lista candidati,
  * salvati nel browser. Quando ci saranno gli account passeranno lì.
  */
-export function SettingsDialog({ palette, onPaletteChange, listSprite, onListSpriteChange, onClose }: {
+export function SettingsDialog({ palette, onPaletteChange, listSprite, onListSpriteChange, onCredits, onClose }: {
   palette: PaletteSetting;
   onPaletteChange: (palette: PaletteSetting) => void;
   listSprite: ListSprite;
   onListSpriteChange: (sprite: ListSprite) => void;
+  /** Crediti e note legali (sul telefono la barra in fondo non c'è). */
+  onCredits?: () => void;
   onClose: () => void;
 }) {
   const t = useT();
@@ -60,6 +62,7 @@ export function SettingsDialog({ palette, onPaletteChange, listSprite, onListSpr
             ))}
           </fieldset>
           <p className="note">{t('settings.local')}</p>
+          {onCredits && <button type="button" className="settings-credits" onClick={onCredits}>{t('credits.openLong')}<Icon name="next" /></button>}
         </div>
       </div>
     </div>,

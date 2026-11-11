@@ -19,13 +19,15 @@ interface Props {
   tabs: ReactNode;
   /** Apre le impostazioni; senza, il pulsante non c'è. */
   onSettings?: () => void;
+  /** Apre Crediti e note legali. */
+  onCredits?: () => void;
 }
 
-/** Il mese delle statistiche ("2026-09") scritto per esteso nella lingua scelta: "settembre 2026". */
-function monthLabel(month: string, lang: Lang): string {
-  const [year, m] = month.split('-').map(Number);
+/** Il mese delle statistiche ("2026-09") in numeri, uguale in ogni lingua: "09/2026" (sta su una riga). */
+function monthLabel(month: string): string {
+  const [year, m] = month.split('-');
   if (!year || !m) return month;
-  return new Intl.DateTimeFormat(lang === 'it' ? 'it-IT' : 'en-GB', { month: 'long', year: 'numeric' }).format(new Date(year, m - 1, 1));
+  return `${m.padStart(2, '0')}/${year}`;
 }
 
 /**
@@ -33,7 +35,7 @@ function monthLabel(month: string, lang: Lang): string {
  * tessere del menu del gioco con una riga di stato, e in fondo lingua, impostazioni e mese dei dati Smogon.
  * Importa/Esporta e Team salvati stanno sopra la squadra (TeamPanel).
  */
-export function Rail({ format, onFormatChange, meta, lang, onLangChange, tabs, onSettings }: Props) {
+export function Rail({ format, onFormatChange, meta, lang, onLangChange, tabs, onSettings, onCredits }: Props) {
   const t = useT();
   const dex = dexOf(format.formatId);
   const tiers = tiersOf(dex);
@@ -153,11 +155,9 @@ export function Rail({ format, onFormatChange, meta, lang, onLangChange, tabs, o
           )}
         </div>
         <p className="meta">
-          {/* Mese e soglia su due righe intere: la riga non si spezza a metà */}
-          {meta
-            ? <><span>{t('top.statsMonth', { month: monthLabel(meta.month, lang) })}</span><span>{t('top.statsCutoff', { cutoff: meta.cutoff })}</span></>
-            : t('top.statsMissing')}
+          {meta ? t('top.statsMonth', { month: monthLabel(meta.month) }) : t('top.statsMissing')}
         </p>
+        {onCredits && <button type="button" className="rail-credits" onClick={onCredits}>{t('credits.openLong')}</button>}
       </div>
     </aside>
   );

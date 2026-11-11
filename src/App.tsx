@@ -25,6 +25,7 @@ import { Icon } from './ui/icons';
 import { TabPanel, Tabs, type TabId } from './ui/Tabs';
 import { loadLang, loadListSprite, loadLists, loadPalette, loadSession, loadTab, loadTeamCollapsed, saveLang, saveListSprite, saveLists, savePalette, saveSession, saveTab, saveTeamCollapsed } from './storage';
 import { SettingsDialog } from './ui/SettingsDialog';
+import { CreditsDialog } from './ui/CreditsDialog';
 import { EMPTY_LISTS, effectiveLists, type UserLists } from './engine/lists';
 import { t, type Lang } from './i18n';
 import { LangProvider } from './i18n/react';
@@ -82,6 +83,8 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
     if (storage) saveListSprite(next, storage);
   };
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [creditsOpen, setCreditsOpen] = useState(false);
+  const closeCredits = useCallback(() => setCreditsOpen(false), []);
   // Team compresso in una barra sottile: più spazio alla sezione sotto (la scelta resta salvata)
   const [savedCollapsed, setCollapsed] = useState(() => (storage ? loadTeamCollapsed(storage) : null) ?? false);
   // Schermo basso (portatili): con l'editor aperto il team si comprime da solo, così l'editor sta in una schermata
@@ -331,6 +334,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
       }}>{t(lang, 'app.skipToContent')}</a>
       <Rail format={format} onFormatChange={setFormat} meta={data.stats?.meta ?? null} lang={lang} onLangChange={changeLang}
         onSettings={() => setSettingsOpen(true)}
+        onCredits={() => setCreditsOpen(true)}
         tabs={<Tabs orientation="vertical" active={shownTab} onChange={openTab} tabs={withEditing([
         // Tessere del menu: sotto il nome lo stato della sezione, leggibile senza aprirla
         { id: 'pokemon', label: t(lang, 'tabs.pokemon'), icon: 'team',
@@ -416,7 +420,9 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
       </main>
       </div>
       </div>
-      {settingsOpen && <SettingsDialog palette={palette} onPaletteChange={changePalette} listSprite={listSprite} onListSpriteChange={changeListSprite} onClose={closeSettings} />}
+      {settingsOpen && <SettingsDialog palette={palette} onPaletteChange={changePalette} listSprite={listSprite} onListSpriteChange={changeListSprite}
+        onCredits={() => { setSettingsOpen(false); setCreditsOpen(true); }} onClose={closeSettings} />}
+      {creditsOpen && <CreditsDialog onClose={closeCredits} />}
       {listUndo && listUndo.after === lists && (
         <UndoToast action={{ id: listUndo.id, kind: 'clearList', from: listUndo.from }} onClose={() => setListUndo(null)}
           onUndo={() => { setLists(listUndo.before); setListUndo(null); }} />

@@ -19,7 +19,7 @@ describe('dati per formato', () => {
     expect(screen.getByText('Caricamento statistiche…')).toBeInTheDocument();
     await act(async () => resolve(fixtureData));
     expect(screen.queryByText('Caricamento statistiche…')).toBeNull();
-    expect(screen.getByText(/Dati Smogon: settembre 2026/)).toBeInTheDocument();
+    expect(screen.getByText('Dati Smogon: 09/2026')).toBeInTheDocument();
   });
 
   it('i dati già caricati restano in memoria', async () => {
@@ -50,7 +50,7 @@ describe('dati per formato', () => {
     await act(async () => pending.gen9nationaldexubers(NO_DATA));
     expect(screen.queryByRole('alert')).toBeNull();
     expect(screen.queryByText('Caricamento statistiche…')).toBeNull();
-    expect(screen.getByText(/Dati Smogon: settembre 2026/)).toBeInTheDocument();
+    expect(screen.getByText('Dati Smogon: 09/2026')).toBeInTheDocument();
   });
 
   it('menu Pokédex e Tier: Gen 9 con OU, Ubers, UU e AG; Senza limiti senza tier', async () => {
