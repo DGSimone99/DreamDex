@@ -29,7 +29,7 @@ export function CreditsDialog({ onClose }: { onClose: () => void }) {
     { name: 'PokeAPI', url: 'https://pokeapi.co', what: t('credits.pokeapi') },
   ];
   const libs: Source[] = [
-    { name: '@pkmn/dex · @pkmn/sets · @pkmn/img', url: 'https://github.com/pkmn/ps', what: t('credits.pkmnLibs') },
+    { name: '@pkmn', url: 'https://github.com/pkmn/ps', what: t('credits.pkmnLibs') },
     { name: '@smogon/calc', url: 'https://github.com/smogon/damage-calc', what: t('credits.calc') },
   ];
   const list = (sources: Source[]) => (
@@ -57,16 +57,19 @@ export function CreditsDialog({ onClose }: { onClose: () => void }) {
         <div className="credits-body">
           <p className="credits-lead">{t('credits.fan')}</p>
           <p className="credits-legal">{t('credits.trademark')}</p>
-          <h4>{t('credits.data')}</h4>
-          {list(data)}
-          <h4>{t('credits.art')}</h4>
-          <dl className="credits-list">
-            <div><dt>{t('credits.sprites')}</dt><dd>{t('credits.spritesWhat')}</dd></div>
-            <div><dt>{t('credits.typeIcons')}</dt><dd>{t('credits.typeIconsWhat')}</dd></div>
-            <div><dt><a href="https://x.com/dreamworldsvg" target="_blank" rel="noreferrer">Eevee · dreamworld.svg</a></dt><dd>{t('credits.eevee')}</dd></div>
-          </dl>
-          <h4>{t('credits.libs')}</h4>
-          {list(libs)}
+          {/* Tre colonne affiancate: tutto in vista senza scorrere, anche sui portatili bassi */}
+          <div className="credits-cols">
+            <section><h4>{t('credits.data')}</h4>{list(data)}</section>
+            <section>
+              <h4>{t('credits.art')}</h4>
+              <dl className="credits-list">
+                <div><dt>{t('credits.sprites')}</dt><dd>{t('credits.spritesWhat')}</dd></div>
+                <div><dt>{t('credits.typeIcons')}</dt><dd>{t('credits.typeIconsWhat')}</dd></div>
+                <div><dt><a href="https://x.com/dreamworldsvg" target="_blank" rel="noreferrer">Eevee · dreamworld.svg</a></dt><dd>{t('credits.eevee')}</dd></div>
+              </dl>
+            </section>
+            <section><h4>{t('credits.libs')}</h4>{list(libs)}</section>
+          </div>
           <p className="note">{t('credits.thanks')}</p>
         </div>
       </div>
