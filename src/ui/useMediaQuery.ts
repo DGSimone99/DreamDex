@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
 
-/** Schermo da computer basso (portatili 1366×657, 1280×620): l'editor ha bisogno dello spazio del team. */
-export const SHORT_SCREEN = '(min-width: 1100px) and (max-height: 799px)';
+/**
+ * Schermo da computer basso (portatili 1366×657, 1280×620): l'editor ha bisogno dello spazio del team. Dai 760 px di
+ * altezza in su (es. 2K col ridimensionamento al 150%, 1707×780) team compatto ed editor stanno insieme: niente chiusura.
+ */
+export const SHORT_SCREEN = '(min-width: 1100px) and (max-height: 759px)';
 
 const matches = (query: string) => typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia(query).matches;
 
