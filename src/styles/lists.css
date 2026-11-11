@@ -278,7 +278,9 @@
 /* Nome nell'editor: grande in corsivo, cliccabile per il soprannome; con un soprannome la specie sta sopra come piccola etichetta */
 .drawer { padding-top: 24px; padding-bottom: 12px; }
 .editor-title { position: relative; gap: 8px; }
-.editor-title .nickname { height: auto; padding: 0; border: 0; background: none; color: var(--text); cursor: text; }
+.editor-title .nickname { height: auto; padding: 0; border: 0; background: none; color: var(--text); cursor: text; min-width: 0; max-width: 100%; }
+/* Un soprannome lunghissimo (da un import) si taglia con i puntini invece di spingere fuori i pulsanti */
+.editor-title .nickname strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; padding: 0.2em 0.15em 0.25em 0; margin: -0.2em -0.15em -0.25em 0; }
 .editor-title .nickname strong { font: 800 26px/1 var(--display); font-style: italic; letter-spacing: 0.01em; }
 .editor-title .nickname strong::before { content: attr(data-name); }
 .editor-title .nickname:hover strong, .editor-title .nickname:focus-visible strong { text-decoration: underline dotted var(--faint); text-underline-offset: 4px; }

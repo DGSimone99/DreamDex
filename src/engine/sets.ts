@@ -407,7 +407,9 @@ function fromPkmn(parsed: Partial<PkmnSet>): TeamSet {
     const value = (parsed.ivs as Partial<Record<StatID, number>> | undefined)?.[stat];
     if (typeof value === 'number' && value >= 0 && value < 31) ivs[stat] = value;
   }
-  const teraType = (parsed as { teraType?: string }).teraType;
+  // Il tipo Tera col nome giusto ("fire" → "Fire"); uno sconosciuto resta com'era (segnalato all'import)
+  const rawTera = String((parsed as { teraType?: string }).teraType ?? '').trim();
+  const teraType = rawTera ? (dex.types.get(rawTera).exists ? dex.types.get(rawTera).name : rawTera) : undefined;
   const name = String(parsed.name ?? '').trim();
   const speciesName = species?.name ?? String(parsed.species ?? '');
   // I nomi come li scrive il gioco ("choice band" → "Choice Band"); quelli sconosciuti restano com'erano (segnalati all'import)
@@ -459,6 +461,14 @@ export function importShowdown(text: string, lang: Lang = 'it'): ImportResult {
     }
     const set = fromPkmn(parsed);
     if (!getSpecies(set.species)) errors.push(t(lang, 'import.unknown', { name: set.species }));
+    // Più di 4 mosse: l'editor ne mostra 4, le altre conterebbero senza vedersi
+    if (set.moves.length > 4) {
+      errors.push(t(lang, 'import.tooManyMoves', { name: set.species }));
+      set.moves = set.moves.slice(0, 4);
+    }
+    for (const move of set.moves) if (move && !getMove(move)) errors.push(t(lang, 'import.unknownMove', { name: set.species, move }));
+    if (set.ability && !dex.abilities.get(set.ability).exists) errors.push(t(lang, 'import.unknownAbility', { name: set.species, ability: set.ability }));
+    if (set.teraType && !dex.types.get(set.teraType).exists) errors.push(t(lang, 'import.unknownTera', { name: set.species, type: set.teraType }));
     const nature = String(parsed.nature ?? '');
     if (nature && !dex.natures.get(nature).exists) errors.push(t(lang, 'import.unknownNature', { name: set.species, nature }));
     if (set.item && !dex.items.get(set.item).exists) errors.push(t(lang, 'import.unknownItem', { name: set.species, item: set.item }));

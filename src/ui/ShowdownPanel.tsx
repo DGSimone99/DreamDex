@@ -38,7 +38,7 @@ export function ShowdownPanel({ team, format, tera = true, onImport }: { team: T
           {linkCopied && <span className="copied" role="status">{t('showdown.linkCopied')}</span>}
         </div>
         {errors.length > 0 && (
-          <ul className="errors">{errors.map(error => <li key={error}>{error}</li>)}</ul>
+          <ul className="errors">{errors.map((error, i) => <li key={i}>{error}</li>)}</ul>
         )}
       </div>
     </details>

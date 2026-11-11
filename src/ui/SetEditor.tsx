@@ -120,7 +120,8 @@ const baseColor = (base: number) => `hsl(${Math.min(180, Math.max(0, (base - 30)
 /** Passo degli EV nei campi e nel cursore. */
 const EV_STEP = 2;
 
-const clampEv = (value: number) => Math.min(252, Math.max(0, Number.isFinite(value) ? value : 0));
+// EV interi tra 0 e 252: un numero con la virgola o fuori scala scritto a mano non entra nel set
+const clampEv = (value: number) => Math.min(252, Math.max(0, Number.isFinite(value) ? Math.floor(value) : 0));
 
 interface Props {
   set: TeamSet;
