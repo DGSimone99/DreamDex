@@ -19,7 +19,7 @@ const isDetailArea = (key: string): key is DetailArea => key === 'strength' || k
  * `onOpen`: le righe delle aree e di Bonus/Malus portano alla scheda di quell'area in Analisi.
  * `ruleIssues`: problemi di regole, triangolo rosso nella testa. `blocked`: il team ha membri ma il voto non si dà (EV oltre 510, specie doppia): il perché.
  */
-export function GradeBadge({ rating, ruleIssues = [], illegalCount = 0, blocked = null, onOpen }: { rating: TeamRating | null; ruleIssues?: string[]; illegalCount?: number; blocked?: 'ev' | 'species' | null; onOpen?: (area: AreaKey) => void }) {
+export function GradeBadge({ rating, ruleIssues = [], illegalCount = 0, illegalNames = [], blocked = null, onOpen }: { rating: TeamRating | null; ruleIssues?: string[]; illegalCount?: number; illegalNames?: string[]; blocked?: 'ev' | 'species' | null; onOpen?: (area: AreaKey) => void }) {
   const t = useT();
   // Voto quando si è aperto il membro nell'editor: il badge mostra di quanto è cambiato
   const editing = useEditing();
@@ -27,15 +27,16 @@ export function GradeBadge({ rating, ruleIssues = [], illegalCount = 0, blocked 
   const overall = rating?.overall ?? null;
   useEffect(() => { setSince(editing === null ? null : overall); }, [editing]);
   const delta = rating && since !== null ? rating.overall - since : 0;
-  // Regole infrante: una scritta sotto il giudizio (quanti membri non sono legali) e la lettera spenta. Il voto resta,
-  // ma si vede subito che il team così non si può usare
+  // Regole infrante: una scritta sotto il giudizio (quanti membri non sono legali, e chi nel tooltip). Il voto resta a
+  // piena forza: la scritta rossa basta a dire che il team così non si può usare
   const broken = ruleIssues.length > 0;
   const notLegal = broken ? t(Math.max(1, illegalCount) === 1 ? 'rating.notLegalOne' : 'rating.notLegalMany', { n: Math.max(1, illegalCount) }) : '';
+  const who = illegalNames.length ? t('rating.notLegalWho', { list: illegalNames.join(', ') }) : '';
   return (
     <div className={`grade-badge${rating ? ` grade-${rating.grade}` : ' none'}${broken ? ' rules-broken' : ''}`}>
       {/* Per i lettori di schermo una frase sola; il disegno qui sotto è solo visivo */}
       <span className="visually-hidden">
-        {rating ? t('rating.badgeSr', { grade: rating.grade, overall: rating.overall, label: rating.label }) + (broken ? `, ${notLegal}: ${ruleIssues.join('; ')}` : '') + (rating.notes.length ? `, ${t('rating.provisional')}` : '') : `${t('rating.badgeHead')}: ${t('rating.noGrade')}`}
+        {rating ? t('rating.badgeSr', { grade: rating.grade, overall: rating.overall, label: rating.label }) + (broken ? `, ${notLegal}${illegalNames.length ? ` (${illegalNames.join(', ')})` : ''}: ${ruleIssues.join('; ')}` : '') + (rating.notes.length ? `, ${t('rating.provisional')}` : '') : `${t('rating.badgeHead')}: ${t('rating.noGrade')}`}
       </span>
       <span className="grade-visual" aria-hidden="true">
       <span className="grade-head">{t('rating.badgeHead')}</span>
@@ -43,7 +44,7 @@ export function GradeBadge({ rating, ruleIssues = [], illegalCount = 0, blocked 
       {!rating && !blocked && <EeveeMoment pose="wave" />}
       <span className="overall">{rating ? `${rating.overall} / 100` : t('rating.noGrade')}</span>
       <span className="label">{rating ? rating.label : t(blocked === 'ev' ? 'rating.evBlocked' : blocked === 'species' ? 'rating.speciesBlocked' : 'rating.addPokemon')}</span>
-      {rating && broken && <span className="grade-rules" title={ruleIssues.join(' · ')}><Icon name="warning" />{notLegal}</span>}
+      {rating && broken && <span className="grade-rules" title={[who, ...ruleIssues].filter(Boolean).join(' · ')}><Icon name="warning" />{notLegal}</span>}
       {rating && since !== null && delta !== 0 && (
         <span className={`grade-delta ${delta > 0 ? 'up' : 'down'}`}>
           {t('rating.since', { from: since, delta: `${delta > 0 ? '+' : '−'}${Math.abs(delta)}` })}

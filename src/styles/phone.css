@@ -122,7 +122,7 @@
   .band .slot .name { --name-fs: 14px; }
   .band .slot .name-line { gap: 4px; margin-top: 2px; }
   .band .slot .name-line .held, .band .slot .name-line .held .item-icon { width: 18px; height: 18px; }
-  .band .slot .slot-lead { left: 8px; top: 8px; font-size: 11px; }
+  .band .slot .slot-lead { left: 5px; top: 5px; font-size: 11px; }
   .band .slot .favorite { right: 30px; }
   .band .slot :is(.favorite, .remove) { top: 0; width: 30px; height: 30px; }
   .band .slot.empty { gap: 6px; }

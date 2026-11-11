@@ -15,7 +15,7 @@ import { statsEntry } from '../engine/stats';
 import { getSpecies } from '../engine/dex';
 import { applyFavorites, isUserBanned, isUserFavorite } from '../engine/lists';
 import { bannedNames } from '../engine/scoring';
-import { activeFilterCount, EMPTY_FILTERS, isFiltering, searchPool, type CandidateFilters } from '../engine/filters';
+import { EMPTY_FILTERS, isFiltering, searchPool, type CandidateFilters } from '../engine/filters';
 import { defaultSet } from '../engine/sets';
 import { FilterBar } from './FilterBar';
 import { conditionLabel, neededConditions, providesAll, viaName } from '../engine/synergy';
@@ -258,9 +258,15 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   const lastPage = useRef(page);
   const roll = page < lastPage.current ? 'roll-back' : 'roll-on';
   useEffect(() => { lastPage.current = page; }, [page]);
-  // Menu: la rotella sulla lista sfoglia le pagine (una per gesto: le altre tacche dello stesso gesto si ignorano)
+  // Menu: la rotella sulla lista sfoglia le pagine (una per gesto: le altre tacche dello stesso gesto si ignorano).
+  // Solo quando la lista non può scorrere da sola in quella direzione (altrimenti la rotella scorre, come ovunque) e il
+  // gesto è chiaramente verticale: Ctrl (zoom), Maiusc e i gesti di lato del touchpad restano al browser
   const wheelAt = useRef(0);
-  const wheel = (e: React.WheelEvent) => {
+  const wheel = (e: React.WheelEvent<HTMLOListElement>) => {
+    if (e.ctrlKey || e.shiftKey || e.altKey || Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+    const list = e.currentTarget;
+    const canScroll = e.deltaY > 0 ? list.scrollTop + list.clientHeight < list.scrollHeight - 1 : list.scrollTop > 0;
+    if (canScroll) return;
     if (Math.abs(e.deltaY) < 4 || e.timeStamp - wheelAt.current < 350) return;
     const next = page + (e.deltaY > 0 ? 1 : -1);
     if (next < 0 || next >= pages) return;
@@ -406,8 +412,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
         {emptyTeam && (
           <p className="note">{tr('suggest.emptyTeam')}</p>
         )}
-        {/* Con filtri attivi il numero sta sulla riga dei chip; con la sola ricerca qui */}
-        {filtering && activeFilterCount(filters) === 0 && <p className="list-count">{countText}</p>}
+        {/* Il numero dei risultati si vede una volta sola, nella fascia "Candidati (N)"; qui solo per i lettori di schermo */}
         {hiddenCount > 0 && (
           <p className="note hidden-note">
             {tr(hiddenCount === 1 ? 'lists.hiddenOne' : 'lists.hidden', { n: hiddenCount })}{' '}
@@ -479,7 +484,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
           onAll={() => { setScope('all'); onCancelReplace(); }} onTarget={index => onTarget?.(index)} />
         {search}
       </div>
-      {!full && <ActiveFilters filters={filters} onChange={setFilters} count={filtering && items.length > 0 ? countText : undefined} />}
+      {!full && <ActiveFilters filters={filters} onChange={setFilters} />}
       {notes}
       <div className={`picker${!full ? ' has-detail' : ''}${sheetOpen && selected ? ' sheet-open' : ''}`}>
         <div className="picker-list" ref={pickerListRef}>

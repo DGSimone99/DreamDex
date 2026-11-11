@@ -26,7 +26,7 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .filters-reset .icon { width: 14px; height: 14px; }
 .filters-reset:hover { color: var(--text); }
 .filters[open] .filters-reset { display: none; }
-.filters h4, .filters .control-label { font: 600 12px/1 var(--ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--faint); margin: 0 0 8px; }
+.filters h3, .filters .control-label { font: 600 12px/1 var(--ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--faint); margin: 0 0 8px; }
 .filters[open] > summary { margin-bottom: 14px; }
 
 /* Tre griglie di tipi affiancate */
@@ -71,7 +71,6 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .detail-empty { display: grid; place-content: center; justify-items: center; gap: 10px; min-height: 320px; padding: 24px; background: transparent; border: 1px dashed var(--line); color: var(--faint); text-align: center; }
 .detail-empty .icon { width: 28px; height: 28px; }
 .detail-empty p { margin: 0; max-width: 32ch; font-size: 14px; }
-.list-count { margin: 0 0 6px; font-size: 13px; color: var(--muted); }
 .suggestions { list-style: none; padding: 0; margin: 0; background: var(--panel); border: 1px solid var(--line-soft); border-radius: 6px; overflow: hidden; }
 .suggestions > li + li { border-top: 1px solid var(--line-soft); }
 /* Lista in ricalcolo dopo un cambio del team */
@@ -95,12 +94,12 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .pager .step:hover:not(:disabled) { color: var(--text); }
 .pager .step:disabled { opacity: 0.35; }
 .pager .step .icon { width: 14px; height: 14px; }
-.pager-dashes { display: flex; gap: 2px; }
+.pager-dashes { display: flex; gap: 0; }
 /* Trattino sottile, ma con un'area cliccabile più alta */
 /* Stretto (8px), e si stringe fino a 3px quando la fascia non basta (molte pagine, finestra stretta) */
-/* Ogni trattino è un bersaglio alto 24 px e largo il doppio di prima (la barretta che si vede resta sottile); le frecce
-   accanto, 24×24, fanno la stessa cosa per chi preferisce un bersaglio più grande */
-.pager .pager-dash { flex: 0 1 16px; width: auto; height: 24px; min-width: 7px; padding: 10px 2px; border: 0; border-radius: 0; background: var(--line); background-clip: content-box; }
+/* Ogni trattino è un bersaglio di 24×24 px attaccato al vicino (la barretta che si vede resta 12×4); se non entrano
+   tutti, la pagina diventa un numero ("3/9") */
+.pager .pager-dash { flex: none; width: 24px; height: 24px; min-width: 0; padding: 10px 6px; border: 0; border-radius: 0; background: var(--line); background-clip: content-box; }
 .pager .pager-dash:hover { background-color: var(--muted); }
 .pager .pager-dash[aria-current='page'] { background-color: var(--accent); }
 /* Troppe pagine per i trattini (lista stretta): la pagina come numero, "3/9" */
@@ -148,6 +147,9 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .detail-id { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
 .detail-id h3 { display: flex; align-items: center; gap: 10px; font-size: 26px; line-height: 1; letter-spacing: 0.02em; }
 .detail-id h3 > span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Nome con la forma, come sulle carte: la specie base e la forma come etichetta accanto (va a capo intera se non entra) */
+.detail-id .detail-name { display: inline-flex; flex-wrap: wrap; align-items: center; column-gap: 8px; row-gap: 4px; }
+.detail-id .detail-name .forme { padding: 2px 6px; border-radius: 3px; background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent-ink); font: 700 12px/1.3 var(--ui); font-style: normal; letter-spacing: 0.03em; text-transform: uppercase; white-space: nowrap; }
 .detail-id .types { display: flex; gap: 6px; }
 .detail-id .tags { margin: 0; }
 .detail-score { text-align: right; }
@@ -408,7 +410,6 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .filter-chip { gap: 6px; padding: 2px 6px 2px 10px; border-radius: 14px; border-color: var(--accent); background: var(--accent-soft); font-size: 13px; color: var(--text); }
 .filter-chip .icon { width: 12px; height: 12px; color: var(--muted); }
 .filter-chip:hover .icon { color: var(--text); }
-.active-filters .list-count { margin: 0 0 0 auto; }
 .active-filters .link { padding: 2px 4px; border: 0; background: none; color: var(--accent-ink); text-decoration: underline; text-underline-offset: 3px; font-size: 13px; }
 
 /* Nel pannello dei suggerimenti: tendine in una riga, due griglie di tipi affiancate, poi ruoli e scelte */

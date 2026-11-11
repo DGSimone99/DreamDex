@@ -146,7 +146,8 @@
 .slot.empty:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .sprite.missing { display: block; width: 96px; height: 96px; }
 /* Lead: il primo membro, in alto a sinistra (il lucchetto del Custom Skillset gli passa accanto) */
-.slot-lead { position: absolute; left: 12px; top: 10px; font: 700 12px/1 var(--display); font-style: italic; letter-spacing: 0.06em; color: var(--accent-ink); }
+/* Piastrina scura dietro la scritta: il ciano resta leggibile (>=4.5:1) su ogni colore di tipo */
+.slot-lead { position: absolute; left: 8px; top: 7px; padding: 3px 5px 3px 4px; border-radius: 3px; background: color-mix(in srgb, var(--ground) 88%, transparent); font: 700 12px/1 var(--display); font-style: italic; letter-spacing: 0.06em; color: var(--accent-ink); }
 
 /* Riordino trascinando */
 .slot.dragging > summary { opacity: 0.45; }

@@ -77,8 +77,10 @@
 .help-weights tr.current th, .help-weights tr.current td { color: var(--text); }
 /* Sotto la tabella dei pesi: i Ruoli non hanno peso, contano come malus e bonus */
 .help-panel .help-roles-note { margin: 6px 0 0; font-size: 12px; line-height: 1.4; color: var(--muted); max-width: none; }
-.help-points { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
-.help-points li { display: flex; align-items: baseline; gap: 8px; padding: 5px 10px; background: var(--panel); border: 1px solid var(--line-soft); border-radius: 4px; font-size: 14px; color: var(--muted); }
+/* Le voci di un livello sono testo da leggere, non pulsanti: una riga che va a capo, separate da un punto, senza bordo né fondo */
+.help-points { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-wrap: wrap; row-gap: 2px; font-size: 14px; line-height: 1.45; color: var(--muted); }
+.help-points li { display: inline; white-space: nowrap; }
+.help-points li + li::before { content: '·'; margin: 0 8px; color: var(--faint); }
 .help-panel .help-note { color: var(--text); }
 .help-panel h5 { margin: 14px 0 6px; font-size: 11px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: 0.04em; }
 .help-panel h6 { margin: 8px 0 4px; font-size: 13px; font-weight: 600; color: var(--text); }
@@ -89,7 +91,8 @@
 .help-weights-row .inactive dt { color: var(--faint); }
 .help-weights-row .inactive dd:not(.help-inactive-note) { opacity: 0.5; }
 .help-weights-row .help-inactive-note { font-size: 12px; font-weight: 400; color: var(--muted); }
-.help-nav [role='tab'][aria-current='true']::after { content: ''; width: 6px; height: 6px; margin-left: 8px; border-radius: 50%; background: var(--accent); flex: none; }
+/* Il tipo del team nella lista degli argomenti: una piccola scritta "il tuo team" in ciano, non un pallino da indovinare */
+.help-nav .help-yours-tag { margin-left: 8px; font: 600 11px/1 var(--ui); letter-spacing: 0.02em; color: var(--accent-ink); white-space: nowrap; }
 .rating .grade .grade-alert { position: absolute; left: -1.5px; bottom: 100%; margin-bottom: 1px; padding: 0; } /* -1.5px: margine interno del disegno */
 .rating .grade .grade-alert .icon { width: 18px; height: 18px; }
 .rating .grade .grade-alert .alert-pop { font: 400 13px/1.45 var(--ui); color: var(--text); text-transform: none; letter-spacing: 0; }

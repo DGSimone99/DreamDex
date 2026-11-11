@@ -91,13 +91,18 @@ describe('Riquadro Voto', () => {
     expect(peek.querySelectorAll('img')).toHaveLength(4);
     expect(dialog.querySelector('.eevee-peek')).toBeNull();
     // A sinistra gli argomenti: come funziona e un tab per tipo di team
-    const topics = within(dialog).getAllByRole('tab').map(tab => tab.textContent);
-    expect(topics).toEqual(['Come funziona', 'Hyper Offense', 'Bulky Offense', 'Balance', 'Semi-stall', 'Stall']);
-    // Un team incompleto si giudica come Balance: il suo tab è aperto per primo e segnato come il tipo attuale
+    const topics = within(dialog).getAllByRole('tab').map(tab => tab.getAttribute('id'));
+    expect(topics).toEqual(['help-tab-general', 'help-tab-hyperOffense', 'help-tab-bulkyOffense', 'help-tab-balance', 'help-tab-semiStall', 'help-tab-stall']);
+    expect(within(dialog).getAllByRole('tab').map(tab => tab.textContent)).toEqual(['Come funziona', 'Hyper Offense', 'Bulky Offense', 'Balanceil tuo team', 'Semi-stall', 'Stall']);
+    // Si apre sempre su come funziona in generale
+    expect(within(dialog).getByRole('tab', { name: 'Come funziona' })).toHaveAttribute('aria-selected', 'true');
+    // Un team incompleto si giudica come Balance: il suo tab è segnato come il tipo attuale, con una scritta che si legge
     const balanceTab = within(dialog).getByRole('tab', { name: 'Balance' });
-    expect(balanceTab).toHaveAttribute('aria-selected', 'true');
+    expect(balanceTab).toHaveAttribute('aria-selected', 'false');
     expect(balanceTab).toHaveAttribute('aria-current', 'true');
+    expect(balanceTab).toHaveAttribute('title', 'Il tuo team è giudicato come Balance');
     expect(within(dialog).getAllByRole('tab').filter(tab => tab.getAttribute('aria-current') === 'true')).toHaveLength(1);
+    await user.click(balanceTab);
     const balance = within(dialog).getByRole('tabpanel');
     expect(balance).toHaveTextContent('Il tuo team è giudicato come Balance');
     expect(balance).toHaveTextContent('Un team incompleto si giudica come Balance');
