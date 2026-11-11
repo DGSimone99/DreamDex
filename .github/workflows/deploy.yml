@@ -2,7 +2,7 @@
 # - a ogni modifica su master;
 # - ogni lunedì (statistiche Smogon del mese, tier e ban di Showdown, nomi italiani);
 # - a mano dalla scheda Actions ("Run workflow").
-# Se un dato non si scarica (--strict) o un test fallisce, non si pubblica niente: resta online la versione di prima.
+# Se un test fallisce o un dato non si scarica (--strict), non si pubblica niente: resta online la versione di prima.
 name: Pubblica
 
 on:
@@ -28,9 +28,11 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      # I test controllano il codice e vanno prima dei dati: quelli tarati sui dati di un mese (es. la tabella dei
+      # ruoli) senza dati si saltano, altrimenti ogni mese nuovo bloccherebbe la pubblicazione
+      - run: npm test
       - name: Scarica i dati (Smogon, Showdown, nomi italiani)
         run: npm run fetch-data -- --strict
-      - run: npm test
       - run: npm run build
       - name: Pubblica su Cloudflare Pages
         if: env.HAS_CLOUDFLARE == 'true'
