@@ -166,6 +166,8 @@
   .toolbar .team-type { flex: 1; width: auto; min-width: 0; }
   .toolbar .filters[open]::details-content { left: 0; }
   .search-hint { display: none; }
+  /* Senza suggerimento il campo non tiene il suo spazio: la x per cancellare resta dentro lo schermo */
+  .search-field.has-hint input { padding-right: 36px; }
   .dbl-hint { display: none; }
 
   /* ── Editor del membro: a tutto schermo ───────────────────────── */
