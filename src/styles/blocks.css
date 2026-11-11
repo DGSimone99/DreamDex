@@ -83,12 +83,12 @@
 @keyframes eevee-pop { from { opacity: 0; transform: translateY(10px) scale(0.94); } }
 
 /*
- * Eevee che sbircia (EeveePeek): la finestra sta in una cornice che le lascia spazio sopra; testa e coda dietro la
+ * Eevee che sbircia (EeveePeek): la finestra sta in una cornice che le lascia spazio sopra (e, se c'è posto, uguale sotto); testa e coda dietro la
  * finestra (sotto nell'ordine), le zampe davanti, sul bordo alto. Le misure seguono la larghezza della testa (--peek).
  */
 .help-frame { position: relative; width: min(780px, 100%); }
 .help-frame > .help-dialog { position: relative; z-index: 1; width: 100%; }
-.help-frame.with-peek { --peek: 175px; --peek-room: calc(var(--peek) * 0.9); margin-top: var(--peek-room); }
+.help-frame.with-peek { --peek: 155px; --peek-room: calc(var(--peek) * 0.9); margin-top: var(--peek-room); }
 .help-frame.with-peek > .help-dialog.rating-help { height: min(620px, calc(100vh - 48px - var(--peek-room))); }
 /* Tutte le guide "Come funziona": la cornice è larga quanto la sua finestra, e la finestra si accorcia dello spazio di Eevee */
 .help-frame.with-peek { width: min(var(--frame-w, 780px), 100%); }
@@ -98,11 +98,35 @@
 .help-frame.with-peek > .help-dialog.area-guide-strength,
 .help-frame.with-peek > .help-dialog.area-guide-speed { height: min(560px, calc(100vh - 48px - var(--peek-room))); }
 .help-frame.with-peek > .help-dialog.area-guide-defense { height: min(672px, calc(100vh - 48px - var(--peek-room))); max-height: min(672px, calc(100vh - 48px - var(--peek-room))); }
+/*
+ * La finestra al centro dello schermo, Eevee in più: sotto la cornice lo stesso spazio che c'è sopra per Eevee, finché lo
+ * schermo ha posto (altrimenti meno, fino a niente: la finestra non si accorcia per questo). --dlg-h è l'altezza piena
+ * della finestra di quella guida.
+ */
+.help-frame.with-peek { --dlg-h: 620px; margin-bottom: clamp(0px, calc(100vh - 48px - var(--peek-room) - var(--dlg-h)), var(--peek-room)); }
+/* Sul computer, sopra le guide con Eevee, il margine in alto è quasi niente (6 px): Eevee arriva quasi al bordo dello schermo e la finestra sale con lui */
+@media (min-width: 1100px) {
+  .help-backdrop:has(> .help-frame.with-peek) { padding-top: 6px; }
+  .help-frame.with-peek { margin-bottom: clamp(0px, calc(100vh - 30px - var(--peek-room) - var(--dlg-h)), var(--peek-room)); }
+}
+.help-frame.with-peek:has(> .area-guide-strength, > .area-guide-speed) { --dlg-h: 560px; }
+.help-frame.with-peek:has(> .area-guide-defense) { --dlg-h: 672px; }
 /* Schermi piccoli: Eevee più piccolo, la finestra resta grande */
-@media (max-width: 599px), (max-height: 700px) { .help-frame.with-peek { --peek: 120px; } }
+@media (max-width: 599px), (max-height: 700px) { .help-frame.with-peek { --peek: 110px; } }
 .eevee-peek { position: absolute; top: 0; left: 40px; width: var(--peek); pointer-events: none; user-select: none; }
 .eevee-peek img { position: absolute; display: block; }
-.eevee-peek .peek-head { left: 0; top: calc(var(--peek) * -0.914); width: var(--peek); z-index: 0; }
+.eevee-peek .peek-head { position: absolute; left: 0; top: calc(var(--peek) * -0.914); width: var(--peek); z-index: 0; transform-origin: 50% 100%; }
+/* La testa si può cliccare (fa saltare Eevee); il resto di Eevee lascia passare i clic */
+.eevee-peek .peek-head { pointer-events: auto; cursor: pointer; }
+/* I pezzi della testa stanno uno sopra l'altro, nello stesso riquadro; la faccia dà la misura */
+.eevee-peek .peek-head img { left: 0; top: 0; width: 100%; }
+/* La faccia resta nel flusso (dà l'altezza) ma è posizionata anche lei: così i pezzi si dipingono nell'ordine della pagina (orecchi e collare dietro, faccia, poi le facce del battito e del colpo) e il collare non passa mai davanti al mento */
+.eevee-peek .peek-head .peek-face { position: relative; }
+/* Ogni orecchio ruota dalla sua base, che sta dietro la faccia */
+.eevee-peek .peek-ear.up { transform-origin: 17.5% 56.4%; }
+.eevee-peek .peek-ear.side { transform-origin: 51.25% 57.2%; }
+/* La faccia con gli occhi chiusi sta esattamente sopra l'altra, invisibile: compare solo per il battito di ciglia */
+.eevee-peek .peek-head .peek-blink, .eevee-peek .peek-head .peek-happy, .eevee-peek .peek-head .peek-hit, .eevee-peek .peek-head .peek-giggle { opacity: 0; }
 .eevee-peek .peek-tail { left: calc(var(--peek) * 0.8); top: calc(var(--peek) * -0.369); width: calc(var(--peek) * 0.42); z-index: 0; transform: rotate(14deg); transform-origin: 50% 100%; }
 .eevee-peek .peek-paw { top: calc(var(--peek) * -0.093); width: calc(var(--peek) * 0.17); z-index: 2; }
 .eevee-peek .peek-paw.left { left: calc(var(--peek) * 0.045); }
@@ -111,10 +135,53 @@
 @media (prefers-reduced-motion: no-preference) {
   /* Eevee arriva dopo che la finestra si è accesa (screen-on, 0,34 s) */
   .eevee-peek { animation: peek-wait 0.34s step-end both; }
-  .eevee-peek .peek-head { animation: peek-rise 0.42s 0.34s cubic-bezier(0.22, 1, 0.36, 1) both; }
-  .eevee-peek .peek-tail { animation: peek-rise-tail 0.5s 0.42s cubic-bezier(0.22, 1, 0.36, 1) both; }
+  /*
+   * Poi resta vivo, con calma: respira (la testa si gonfia appena, dal bordo in su), chiude gli occhi ogni tanto
+   * (una volta, poi due di fila), muove le orecchie (prima quella dritta, poi quella di lato, sempre verso l'esterno:
+   * così la base resta nascosta dietro la faccia) e scodinzola. Respiro, orecchie e coda usano scale/rotate,
+   * separati dal transform dell'entrata, così le animazioni si sommano senza pestarsi.
+   */
+  .eevee-peek .peek-head { animation: peek-rise 0.42s 0.34s cubic-bezier(0.22, 1, 0.36, 1) both, peek-breathe 1.9s 0.9s ease-in-out infinite alternate; }
+  .eevee-peek .peek-head .peek-blink { animation: peek-blink 7s 1.6s step-end infinite; }
+  /* Sorride a bocca aperta solo mentre sale (0,42 s come peek-rise): quando la testa si ferma la bocca è già chiusa */
+  .eevee-peek .peek-head .peek-happy { animation: peek-happy-in 0.42s 0.34s step-end both; }
+  /* Mentre sale, Eevee drizza di scatto le orecchie verso l'alto (attento) e subito le rilassa con un piccolo rimbalzo; poi, senza pause, il movimento da fermo */
+  .eevee-peek .peek-ear.up { animation: peek-ear-up-in 0.75s 0.34s ease-out both, peek-ear-up 4.6s 1.15s ease-in-out infinite; }
+  .eevee-peek .peek-ear.side { animation: peek-ear-side-in 0.75s 0.34s ease-out both, peek-ear-side 4.6s 1.15s ease-in-out infinite; }
+  .eevee-peek .peek-tail { transform-origin: 50% 100%; animation: peek-rise-tail 0.5s 0.42s cubic-bezier(0.22, 1, 0.36, 1) both, peek-wag 3.4s 1.2s ease-in-out infinite; }
   /* Le zampe cadono sul bordo di colpo e in fretta (niente dissolvenza: con la dissolvenza lenta facevano la scia) */
   .eevee-peek .peek-paw { animation: peek-paw 0.1s 0.62s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+}
+@keyframes peek-happy-in { 0% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes peek-breathe { from { scale: 1; } to { scale: 1.012 1.025; } }
+/* Ogni battito dura circa 0,15 s (2,1% di 7 s) */
+@keyframes peek-blink {
+  0% { opacity: 0; }
+  42% { opacity: 1; } 44.1% { opacity: 0; }
+  89% { opacity: 1; } 91.1% { opacity: 0; }
+  94% { opacity: 1; } 96.1% { opacity: 0; }
+}
+/* Orecchie dritte verso l'alto: entrando (su in fretta mentre la testa sale, poi giù) e uscendo (su di scatto mentre scende) */
+@keyframes peek-ear-up-in { 0% { rotate: 0deg; } 25%, 35% { rotate: 15deg; animation-timing-function: ease-in-out; } 75% { rotate: -2deg; } 100% { rotate: 0deg; } }
+@keyframes peek-ear-side-in { 0% { rotate: 0deg; } 25%, 35% { rotate: -35deg; animation-timing-function: ease-in-out; } 75% { rotate: 4deg; } 100% { rotate: 0deg; } }
+@keyframes peek-ear-up-out { to { rotate: 15deg; } }
+@keyframes peek-ear-side-out { to { rotate: -35deg; } }
+/* Da fermo: uno scatto rapido verso l'esterno e un piccolo rimbalzo, poi fermo */
+@keyframes peek-ear-up {
+  0%, 16%, 100% { rotate: 0deg; }
+  4% { rotate: -7deg; }
+  9% { rotate: 1.5deg; }
+}
+@keyframes peek-ear-side {
+  0%, 52%, 70%, 100% { rotate: 0deg; }
+  56% { rotate: 7deg; }
+  62% { rotate: -1.5deg; }
+}
+@keyframes peek-wag {
+  0%, 36%, 100% { rotate: 0deg; }
+  9% { rotate: -9deg; }
+  18% { rotate: 6deg; }
+  27% { rotate: -5deg; }
 }
 /*
  * Finestre di aiuto: si accendono come lo schermo di un dispositivo. Una linea luminosa al centro si allunga, poi la
@@ -137,6 +204,11 @@
   .help-backdrop.closing .eevee-peek .peek-paw { animation: none; visibility: hidden; }
   .help-backdrop.closing .eevee-peek .peek-head { animation: peek-sink 0.2s cubic-bezier(0.4, 0, 1, 1) both; }
   .help-backdrop.closing .eevee-peek .peek-tail { animation: peek-sink-tail 0.2s cubic-bezier(0.4, 0, 1, 1) both; }
+  .help-backdrop.closing .eevee-peek .peek-ear.up { animation: peek-ear-up-out 0.12s ease-out both; }
+  .help-backdrop.closing .eevee-peek .peek-ear.side { animation: peek-ear-side-out 0.12s ease-out both; }
+  /* Va via sorridendo a bocca aperta */
+  .help-backdrop.closing .eevee-peek .peek-blink, .help-backdrop.closing .eevee-peek .peek-happy { animation: none; }
+  .help-backdrop.closing .eevee-peek .peek-happy { opacity: 1; }
 }
 @keyframes backdrop-out { 0%, 60% { opacity: 1; } 100% { opacity: 0; } }
 @keyframes peek-sink { to { transform: translateY(75%); visibility: hidden; } }
@@ -158,6 +230,83 @@
 @keyframes peek-rise { from { transform: translateY(70%); } to { transform: none; } }
 @keyframes peek-rise-tail { from { transform: translateY(80%) rotate(14deg); } to { transform: rotate(14deg); } }
 @keyframes peek-paw { 0% { visibility: hidden; transform: translateY(-6px); } 1% { visibility: visible; } 100% { visibility: visible; transform: none; } }
+/*
+ * Clic su Eevee: come colpito, fa un saltello in alto (poco: il fondo del collare resta dietro il bordo, così non si vede che sotto non c'è un corpo) (occhi stretti a > <, bocca a O, orecchie dritte, quella di lato
+ * ancora più su che nell'uscita normale) e ricade in fretta dietro il bordo; 0,42 s, come HOP_MS in EeveePeek.tsx.
+ * Le zampe spariscono subito, la coda salta con lui. La finestra resta aperta.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  .eevee-peek.hop .peek-head { animation: peek-hop 0.42s both; }
+  .eevee-peek.hop .peek-head .peek-blink, .eevee-peek.hop .peek-head .peek-happy { animation: none; }
+  .eevee-peek.hop .peek-head .peek-hit { opacity: 1; }
+  .eevee-peek.hop .peek-ear.up { animation: peek-ear-up-out 0.08s ease-out both; }
+  .eevee-peek.hop .peek-ear.side { animation: peek-ear-side-hit 0.08s ease-out both; }
+  .eevee-peek.hop .peek-paw { animation: peek-paw-off 0.08s ease-out both; }
+  .eevee-peek.hop .peek-tail { animation: peek-hop-tail 0.42s both; }
+}
+@keyframes peek-ear-side-hit { to { rotate: -50deg; } }
+/* Su veloce (frenando in cima), giù accelerando */
+@keyframes peek-hop {
+  0% { transform: none; animation-timing-function: cubic-bezier(0.2, 0.7, 0.4, 1); }
+  34% { transform: translateY(calc(var(--peek) * -0.13)) scale(0.96, 1.06); animation-timing-function: cubic-bezier(0.6, 0, 0.9, 0.6); }
+  100% { transform: translateY(var(--peek)) scale(1, 0.95); visibility: hidden; }
+}
+@keyframes peek-hop-tail {
+  0% { transform: rotate(14deg); animation-timing-function: cubic-bezier(0.2, 0.7, 0.4, 1); }
+  34% { transform: translateY(calc(var(--peek) * -0.12)) rotate(-4deg); animation-timing-function: cubic-bezier(0.6, 0, 0.9, 0.6); }
+  100% { transform: translateY(var(--peek)) rotate(14deg); visibility: hidden; }
+}
+@keyframes peek-paw-off { to { transform: translateY(-8px); opacity: 0; visibility: hidden; } }
+/*
+ * Nascondino (EeveePeek): a volte spunta solo la coda, da dietro un lato della finestra, e scodinzola piegandosi
+ * (peek-tail-wag.svg). Il riquadro .eevee-tail-peek è un punto sul bordo, un po' dentro la finestra: lì sta la base della
+ * coda (37,9% / 81,7% del disegno), e la rotazione la fa uscire verso fuori (in basso, a destra, a sinistra).
+ * --along: dove sta lungo il lato. Cliccata, si ritira di scatto.
+ */
+.eevee-tail-peek { --tail-in: 14px; position: absolute; width: 0; height: 0; z-index: 0; pointer-events: none; }
+.eevee-tail-peek img { position: absolute; left: 0; top: 0; display: block; width: calc(var(--peek) * 0.77); transform: translate(-37.9%, -81.7%); pointer-events: auto; cursor: pointer; user-select: none; }
+.eevee-tail-peek.at-bottom { top: calc(100% - var(--tail-in)); left: var(--along); rotate: 192deg; }
+/* Sui fianchi la punta deve piegarsi verso l'alto (verso il basso sembra moscia): a destra la coda è specchiata */
+.eevee-tail-peek.at-right { top: var(--along); left: calc(100% - var(--tail-in)); rotate: 102deg; scale: -1 1; }
+.eevee-tail-peek.at-left { top: var(--along); left: var(--tail-in); rotate: -102deg; }
+@media (prefers-reduced-motion: no-preference) {
+  /* Esce da dietro il bordo con un piccolo rimbalzo; trovata, rientra di colpo (0,2 s, TAIL_OUT_MS) */
+  .eevee-tail-peek img { animation: tail-peek-out 0.38s cubic-bezier(0.3, 1.4, 0.5, 1) both; }
+  .eevee-tail-peek.found img { animation: tail-peek-in 0.2s cubic-bezier(0.5, 0, 1, 0.6) both; }
+}
+@keyframes tail-peek-out { from { transform: translate(-37.9%, 5%); } }
+@keyframes tail-peek-in { to { transform: translate(-37.9%, 5%); visibility: hidden; } }
+/*
+ * Nascondino: a volte la faccia di lato. La stessa testa (col corpo, nascosto dietro la finestra) oltre un fianco, girata con
+ * l'orecchio dritto fuori e molto inclinata verso fuori (35°, dal mento): escono occhi, bocca, orecchio e un po' di collare.
+ * --along: altezza sul fianco; --dir: 1 a destra, -1 a sinistra (verso cui escono e rientrano spostamenti e rotazioni).
+ * A destra la testa è girata (scaleX -1) perché l'orecchio dritto stia fuori; a sinistra lo è già.
+ */
+.eevee-peek.at-side { top: calc(var(--along) + var(--peek) * 0.914); transform-origin: 50% 100%; }
+.eevee-peek.at-side.at-right { --dir: 1; left: calc(100% - var(--peek) * 0.62); transform: rotate(35deg) scaleX(-1); }
+.eevee-peek.at-side.at-left { --dir: -1; left: calc(var(--peek) * -0.38); transform: rotate(-35deg); }
+@media (prefers-reduced-motion: no-preference) {
+  /* Non sale dal bordo: spunta di fianco */
+  .eevee-peek.at-side { animation: peek-side-in 0.42s 0.34s cubic-bezier(0.22, 1, 0.36, 1) both; }
+  .eevee-peek.at-side .peek-head { animation: peek-breathe 1.9s 0.9s ease-in-out infinite alternate; }
+  /*
+   * Cliccata ride (occhi a > <, bocca aperta) con le orecchie dritte, fa un piccolo scatto fuori e rientra di lato dietro
+   * la finestra raddrizzandosi; 0,4 s come RETREAT_MS in EeveePeek.tsx.
+   */
+  .eevee-peek.at-side.retreat { animation: peek-side-out 0.4s both; }
+  .eevee-peek.at-side.retreat .peek-head { animation: none; }
+  .eevee-peek.at-side.retreat .peek-head .peek-blink, .eevee-peek.at-side.retreat .peek-head .peek-happy { animation: none; }
+  .eevee-peek.at-side.retreat .peek-head .peek-giggle { opacity: 1; }
+  .eevee-peek.at-side.retreat .peek-ear.up { animation: peek-ear-up-out 0.08s ease-out both; }
+  .eevee-peek.at-side.retreat .peek-ear.side { animation: peek-ear-side-hit 0.08s ease-out both; }
+}
+@keyframes peek-side-in { from { translate: calc(var(--peek) * -0.35 * var(--dir)) 0; } }
+/* Mentre rientra si raddrizza: rotate (dal mento, come l'inclinazione) toglie man mano i 35° */
+@keyframes peek-side-out {
+  0% { translate: 0 0; rotate: 0deg; animation-timing-function: cubic-bezier(0.2, 0.7, 0.4, 1); }
+  28% { translate: calc(var(--peek) * 0.04 * var(--dir)) calc(var(--peek) * -0.03); rotate: calc(-8deg * var(--dir)); animation-timing-function: cubic-bezier(0.6, 0, 0.9, 0.6); }
+  100% { translate: calc(var(--peek) * -0.6 * var(--dir)) 0; rotate: calc(-35deg * var(--dir)); visibility: hidden; }
+}
 .tt-types { display: grid; grid-template-columns: max-content max-content minmax(0, 1fr); align-items: center; gap: 0 16px; margin: 0; padding: 0; list-style: none; }
 .tt-types li { display: contents; }
 .tt-types li > * { padding: 9px 0; border-bottom: 1px solid var(--line-soft); }

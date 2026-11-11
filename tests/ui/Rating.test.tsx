@@ -85,10 +85,10 @@ describe('Riquadro Voto', () => {
     const help = within(band()).getByRole('button', { name: 'Come funziona il voto' });
     await user.click(help);
     const dialog = screen.getByRole('dialog', { name: 'Come funziona il voto' });
-    // Eevee sbircia da dietro la finestra: fuori dalla finestra, solo decorazione (testa, coda, due zampe)
+    // Eevee sbircia da dietro la finestra: fuori dalla finestra, solo decorazione (orecchi, collare, faccia, facce a occhi chiusi, sorridente, colpita e che ride, coda, due zampe)
     const peek = dialog.parentElement!.querySelector('.eevee-peek')!;
     expect(peek).toHaveAttribute('aria-hidden', 'true');
-    expect(peek.querySelectorAll('img')).toHaveLength(4);
+    expect(peek.querySelectorAll('img')).toHaveLength(11);
     expect(dialog.querySelector('.eevee-peek')).toBeNull();
     // A sinistra gli argomenti: come funziona e un tab per tipo di team
     const topics = within(dialog).getAllByRole('tab').map(tab => tab.getAttribute('id'));
