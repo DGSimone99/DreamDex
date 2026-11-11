@@ -27,6 +27,6 @@ describe('coaching e valutazione in inglese', () => {
   });
 
   it('errori di import in inglese', () => {
-    expect(importShowdown('Notapokemon\n- Tackle', 'en').errors).toContain('Unknown Pokémon: Notapokemon');
+    expect(importShowdown('Notapokemon\n- Tackle', 'en').errors).toContain('Pokémon "Notapokemon" not found: check the name (in English, as on Showdown)');
   });
 });

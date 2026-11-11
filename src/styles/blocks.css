@@ -62,6 +62,11 @@
 .confirm-actions button { height: 36px; padding: 0 16px; }
 .confirm-actions .apply { background: var(--accent-soft); border-color: var(--accent); color: var(--text); font-weight: 700; }
 .confirm-actions .apply:hover { background: color-mix(in srgb, var(--accent) 30%, var(--raised)); }
+/* Esito dell'import Showdown: frasi brevi e un elenco per Pokémon */
+.import-dialog .confirm-text p { margin: 0 0 8px; }
+.import-list { margin: 0 0 12px; padding-left: 20px; font-size: 14px; color: var(--text); }
+.import-list li + li { margin-top: 4px; }
+.import-dialog .confirm-text .import-question { margin: 4px 0 0; font-weight: 600; }
 /* Come funziona il voto: altezza fissa, non cambia fra un argomento e l'altro (il testo scorre dentro) */
 .help-dialog.rating-help { height: min(620px, calc(100vh - 48px)); }
 /*

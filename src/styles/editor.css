@@ -52,7 +52,6 @@
 }
 .paste-panel textarea { width: 100%; font: 13px/1.45 var(--ui); resize: vertical; }
 .paste-hint { margin: 0; font-size: 12px; color: var(--muted); }
-.paste-error { margin: 0; font-size: 13px; color: var(--bad); }
 .paste-actions { display: flex; gap: 8px; justify-content: flex-end; }
 .paste-actions .apply { background: var(--accent-soft); border-color: var(--accent); color: var(--text); }
 .paste-actions .apply:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 30%, var(--raised)); }

@@ -10,15 +10,17 @@ const clefable = set('Clefable', 'Leftovers', 'Magic Guard', ['Moonblast'], 'Bol
 
 describe('nomi scritti male', () => {
   it("all'import: strumento, abilità e mosse col nome giusto; natura sconosciuta neutra e segnalata", () => {
-    const { sets, errors } = importShowdown('Rillaboom @ choice band\nAbility: grassy surge\nEVs: 252 Atk / 252 Spe\nGrumpy Nature\n- grassy glide\n- wood hammer', 'it');
+    const { sets, errors, missing } = importShowdown('Rillaboom @ choice band\nAbility: grassy surge\nEVs: 252 Atk / 252 Spe\nGrumpy Nature\n- grassy glide\n- wood hammer', 'it');
     expect(sets[0]).toMatchObject({ item: 'Choice Band', ability: 'Grassy Surge', nature: 'Serious', moves: ['Grassy Glide', 'Wood Hammer'] });
-    expect(errors).toEqual(['Rillaboom: natura sconosciuta "Grumpy", usata una neutra']);
+    expect(errors).toEqual([]);
+    expect(missing).toEqual([{ set: 0, part: 'nature', name: 'Grumpy' }]);
   });
 
   it("all'import uno strumento sconosciuto resta ma è segnalato", () => {
-    const { sets, errors } = importShowdown('Clefable @ Magic Wand\nBold Nature\n- Moonblast', 'it');
+    const { sets, errors, missing } = importShowdown('Clefable @ Magic Wand\nBold Nature\n- Moonblast', 'it');
     expect(sets[0].item).toBe('Magic Wand');
-    expect(errors).toEqual(['Clefable: strumento sconosciuto "Magic Wand", non conta']);
+    expect(errors).toEqual([]);
+    expect(missing).toEqual([{ set: 0, part: 'item', name: 'Magic Wand' }]);
   });
 
   it('nel calcolo: natura sconosciuta = neutra, il membro prende e fa danni; strumento in minuscolo vale', () => {

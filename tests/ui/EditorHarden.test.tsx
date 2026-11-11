@@ -55,19 +55,19 @@ describe('import Showdown: testo sporco', () => {
     expect(sets[0]).toMatchObject({ item: 'Choice Scarf', ability: 'Rough Skin', moves: ['Earthquake', 'Outrage'] });
   });
 
-  it('più di 4 mosse: tenute le prime 4, con l’avviso', () => {
-    const { sets, errors } = importShowdown('Garchomp\n- Earthquake\n- Outrage\n- Swords Dance\n- Scale Shot\n- Fire Fang', 'it');
-    expect(sets[0].moves).toEqual(['Earthquake', 'Outrage', 'Swords Dance', 'Scale Shot']);
-    expect(errors).toEqual(['Garchomp: più di 4 mosse, tenute le prime 4']);
+  it('più di 4 mosse: il problema che ferma l’import', () => {
+    const { errors } = importShowdown('Garchomp\n- Earthquake\n- Outrage\n- Swords Dance\n- Scale Shot\n- Fire Fang', 'it');
+    expect(errors).toEqual(['Garchomp: più di 4 mosse, lasciane al massimo 4']);
   });
 
-  it('mossa, abilità e tipo Tera sconosciuti (hackrom): restano nel set, segnalati', () => {
-    const { sets, errors } = importShowdown('Garchomp\nAbility: Sand Lord\nTera Type: Cosmic\n- Laser Blast\n- Earthquake', 'it');
+  it('mossa, abilità e tipo Tera che non esistono (hackrom): restano nel set, elencati a parte', () => {
+    const { sets, errors, missing } = importShowdown('Garchomp\nAbility: Sand Lord\nTera Type: Cosmic\n- Laser Blast\n- Earthquake', 'it');
     expect(sets[0]).toMatchObject({ ability: 'Sand Lord', teraType: 'Cosmic', moves: ['Laser Blast', 'Earthquake'] });
-    expect(errors).toEqual([
-      'Garchomp: mossa sconosciuta "Laser Blast", non conta',
-      'Garchomp: abilità sconosciuta "Sand Lord", non conta',
-      'Garchomp: tipo Tera sconosciuto "Cosmic", non conta',
+    expect(errors).toEqual([]);
+    expect(missing).toEqual([
+      { set: 0, part: 'move', name: 'Laser Blast' },
+      { set: 0, part: 'ability', name: 'Sand Lord' },
+      { set: 0, part: 'tera', name: 'Cosmic' },
     ]);
   });
 
@@ -76,6 +76,6 @@ describe('import Showdown: testo sporco', () => {
   });
 
   it('testo vuoto o solo spazi: nessun membro e nessun errore', () => {
-    expect(importShowdown('   \n\n \t ', 'it')).toEqual({ sets: [], errors: [] });
+    expect(importShowdown('   \n\n \t ', 'it')).toEqual({ sets: [], errors: [], missing: [] });
   });
 });

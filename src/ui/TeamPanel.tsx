@@ -15,6 +15,8 @@ import { copyText } from './clipboard';
 import { setEditing } from './editing';
 import { bestPreset, bestPresets } from '../engine/bestPreset';
 import { ConfirmDialog } from './ConfirmDialog';
+import { ImportDialog } from './ImportDialog';
+import { reviewImport, type ImportReview } from './importReview';
 import { FillPanel } from './FillPanel';
 import { SetEditor } from './SetEditor';
 import { PokemonIcon } from './PokemonName';
@@ -141,7 +143,8 @@ interface SlotActions {
   move: (index: number, delta: number) => void;
   /** Trascinamento: inizio, passaggio sopra, rilascio, fine. */
   drag: (index: number, phase: 'start' | 'over' | 'drop' | 'end') => void;
-  paste: (index: number, set: TeamSet) => void;
+  /** Set incollato; `review`: mosse non imparabili o nomi non trovati, da chiedere/dire dopo averlo applicato. */
+  paste: (index: number, set: TeamSet, review?: ImportReview) => void;
   /** Preset con il voto del team più alto per questo membro (null se il membro non ne ha). */
   best: (index: number) => TeamSet | null;
   ignoreWarning: () => void;
@@ -174,7 +177,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
   const onStep = (delta: number) => actions.step(index, delta);
   const onMove = (delta: number) => actions.move(index, delta);
   const onDrag = (phase: 'start' | 'over' | 'drop' | 'end') => actions.drag(index, phase);
-  const onPaste = (next: TeamSet) => actions.paste(index, next);
+  const onPaste = (next: TeamSet, review?: ImportReview) => actions.paste(index, next, review);
   const onBest = () => actions.best(index);
   const onIgnoreWarning = actions.ignoreWarning;
   const onChange = (next: TeamSet) => actions.change(index, next);
@@ -198,7 +201,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
   const stable = useMemo(() => ({
     onChange: (next: TeamSet) => live.current.onChange(next),
     onReplace: () => live.current.onReplace(),
-    onPaste: (next: TeamSet) => live.current.onPaste(next),
+    onPaste: (next: TeamSet, review?: ImportReview) => live.current.onPaste(next, review),
     onIgnoreWarning: () => live.current.onIgnoreWarning(),
     onBest: () => live.current.onBest(),
   }), []);
@@ -232,7 +235,9 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
     if (next !== (set.name ?? '')) stable.onChange({ ...set, name: next || undefined });
   };
   // Incolla set: testo Showdown di un solo membro, applicato per intero
-  const [paste, setPaste] = useState<{ text: string; original: string; error: string | null } | null>(null);
+  // `blocked`: cosa ferma l'incolla (detto in una finestra); il testo resta nel riquadro da correggere
+  const [paste, setPaste] = useState<{ text: string; original: string; blocked: ImportReview | null } | null>(null);
+  const pasteArea = useRef<HTMLTextAreaElement>(null);
   // Importa / Esporta: il riquadro si apre sotto il pulsante e si chiude cliccando fuori
   const ioRef = useRef<HTMLSpanElement>(null);
   const ioOpen = !!paste;
@@ -246,10 +251,10 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
   const applyPaste = () => {
     if (!paste) return;
     const result = importShowdown(paste.text, lang);
-    const next = result.sets[0];
-    if (!next) { setPaste({ ...paste, error: result.errors[0] ?? tr('team.pasteEmpty') }); return; }
+    const review = reviewImport(result, format, lang, { single: true });
+    if (review.blocking.length) { setPaste({ ...paste, blocked: review }); return; }
     setPaste(null);
-    stable.onPaste({ ...next, favorite: set.favorite });
+    stable.onPaste({ ...result.sets[0], favorite: set.favorite }, review.skill.length || review.info.length ? review : undefined);
   };
   const problems = [...slotProblems(set, format, lang), ...(repeated ? [tr('team.duplicateSpecies')] : [])];
   // Ruolo principale e un supporto, affiancati con il nome breve (il completo nel tooltip); il meteo solo qui
@@ -460,7 +465,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
               onClick={() => setPaste(p => {
                 if (p) return null;
                 const text = exportShowdown([set], { tera: teraAllowed(format) });
-                return { text, original: text, error: null };
+                return { text, original: text, blocked: null };
               })}>
               <Icon name="paste" /> <span className="btn-label">{tr('team.memberIO')}</span>
             </button>
@@ -470,10 +475,11 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
               }}><Icon name={copied ? 'check' : 'copy'} /></button>
   {paste && (
     <div className="paste-panel" onKeyDown={e => { if (e.key === 'Escape') { e.stopPropagation(); setPaste(null); } }}>
-      <textarea aria-label={tr('team.pasteText')} rows={12} autoFocus value={paste.text} placeholder={tr('team.pastePlaceholder')}
-        onChange={e => setPaste({ text: e.target.value, original: paste.original, error: null })} />
+      <textarea aria-label={tr('team.pasteText')} rows={12} autoFocus ref={pasteArea} value={paste.text} placeholder={tr('team.pastePlaceholder')}
+        onChange={e => setPaste({ text: e.target.value, original: paste.original, blocked: null })} />
       <p className="paste-hint">{tr('team.pasteHint')}</p>
-      {paste.error && <p className="paste-error" role="alert">{paste.error}</p>}
+      {paste.blocked && <ImportDialog review={paste.blocked} onYes={() => {}}
+        onClose={() => { setPaste(p => (p ? { ...p, blocked: null } : p)); pasteArea.current?.focus(); }} />}
       <div className="paste-actions">
         <button type="button" className="apply" disabled={!paste.text.trim()} onClick={applyPaste}>{tr('team.pasteApply')}</button>
         <button type="button" onClick={() => setPaste(null)}>{tr('team.pasteCancel')}</button>
@@ -555,6 +561,8 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
   const [busy, setBusy] = useState(false);
   // Cambia tutti i membri insieme: prima una conferma che dice cosa fa
   const [confirmPresets, setConfirmPresets] = useState(false);
+  // Dopo un Incolla set: mosse non imparabili (Custom Skillset?) o nomi non trovati del membro incollato
+  const [ask, setAsk] = useState<{ index: number; review: ImportReview } | null>(null);
   const presetsButton = useRef<HTMLButtonElement>(null);
   const closeConfirm = () => { setConfirmPresets(false); presetsButton.current?.focus(); };
   const runPresets = () => {
@@ -593,7 +601,10 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
       else if (phase === 'drop') { if (drag) move(drag.from, i); setDrag(null); }
       else setDrag(null);
     },
-    paste: (i, next) => (onPaste ? onPaste(i, next) : onChange(team.map((s, j) => (j === i ? next : s)))),
+    paste: (i, next, review) => {
+      if (onPaste) onPaste(i, next); else onChange(team.map((s, j) => (j === i ? next : s)));
+      if (review) setAsk({ index: i, review });
+    },
     best: i => { const found = bestPreset(team, i, data, format.genLimit); return found.index === null ? null : found.set; },
     ignoreWarning: onAllowMultipleMegas,
     change: (i, next) => onChange(team.map((s, j) => (j === i ? next : s))),
@@ -614,7 +625,7 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
     step: (i, delta) => live.current.step(i, delta),
     move: (i, delta) => live.current.move(i, delta),
     drag: (i, phase) => live.current.drag(i, phase),
-    paste: (i, next) => live.current.paste(i, next),
+    paste: (i, next, review) => live.current.paste(i, next, review),
     best: i => live.current.best(i),
     ignoreWarning: () => live.current.ignoreWarning(),
     change: (i, next) => live.current.change(i, next),
@@ -635,6 +646,13 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
         {confirmPresets && (
           <ConfirmDialog title={t(lang, 'team.bestPresets')} text={t(lang, 'team.bestPresetsConfirm')} confirm={t(lang, 'team.bestPresetsApply')}
             onConfirm={() => { runPresets(); presetsButton.current?.focus(); }} onCancel={closeConfirm} />
+        )}
+        {ask && (
+          <ImportDialog review={ask.review} onClose={() => setAsk(null)} onYes={() => {
+            const member = team[ask.index];
+            if (member) onChange(team.map((s, j) => (j === ask.index ? { ...member, customSkillset: true } : s)));
+            setAsk(null);
+          }} />
         )}
         {canFill && (
           // Anche a team vuoto: propone team interi del tipo scelto; il pannello si apre sotto il pulsante
