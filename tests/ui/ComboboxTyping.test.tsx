@@ -6,8 +6,8 @@ import { Combobox, type ComboOption } from '../../src/ui/Combobox';
 import { renderIt } from '../helpers/italian';
 
 /** Campo con stato vero: ogni modifica aggiorna il valore, come nell'editor. */
-function Field({ options, onChange }: { options: ComboOption[]; onChange: (value: string) => void }) {
-  const [value, setValue] = useState('');
+function Field({ options, onChange, start = '' }: { options: ComboOption[]; onChange: (value: string) => void; start?: string }) {
+  const [value, setValue] = useState(start);
   return <Combobox label="Mossa 1" value={value} options={options} onChange={next => { setValue(next); onChange(next); }} />;
 }
 
@@ -23,6 +23,7 @@ describe('scrivere nei menu a testo libero', () => {
     const onChange = vi.fn();
     renderIt(<Field options={moves} onChange={onChange} />);
     await user.type(screen.getByLabelText('Mossa 1'), 'Psychic Fangs');
+    await user.tab();
     expect(screen.getByLabelText('Mossa 1')).toHaveValue('Psychic Fangs');
     expect(onChange).toHaveBeenLastCalledWith('Psychic Fangs');
   });
@@ -32,6 +33,7 @@ describe('scrivere nei menu a testo libero', () => {
     const onChange = vi.fn();
     renderIt(<Field options={moves} onChange={onChange} />);
     await user.type(screen.getByLabelText('Mossa 1'), 'Psychic Blast');
+    await user.tab();
     expect(onChange).toHaveBeenLastCalledWith('Psychic Blast');
   });
 
@@ -40,6 +42,7 @@ describe('scrivere nei menu a testo libero', () => {
     const onChange = vi.fn();
     renderIt(<Field options={moves} onChange={onChange} />);
     await user.type(screen.getByLabelText('Mossa 1'), 'Thunderbolt');
+    await user.tab();
     expect(screen.getByLabelText('Mossa 1')).toHaveValue('Thunderbolt');
     expect(onChange).toHaveBeenLastCalledWith('Thunderbolt');
   });
@@ -49,6 +52,39 @@ describe('scrivere nei menu a testo libero', () => {
     const onChange = vi.fn();
     renderIt(<Field options={moves} onChange={onChange} />);
     await user.type(screen.getByLabelText('Mossa 1'), 'Tuono');
+    await user.tab();
     expect(onChange).toHaveBeenLastCalledWith('Thunder');
+  });
+
+  it('mentre scrivi il set non cambia: si salva uscendo dal campo', async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    renderIt(<Field options={moves} onChange={onChange} />);
+    await user.type(screen.getByLabelText('Mossa 1'), 'Psy');
+    expect(onChange).not.toHaveBeenCalled();
+    await user.tab();
+    expect(onChange).toHaveBeenLastCalledWith('Psy');
+  });
+
+  it('cliccando su una mossa già scelta il testo si seleziona: scrivere la sostituisce, non si aggiunge in coda', async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    renderIt(<Field options={moves} onChange={onChange} start="Psychic" />);
+    await user.click(screen.getByLabelText('Mossa 1'));
+    await user.keyboard('Tuono');
+    await user.tab();
+    expect(onChange).toHaveBeenLastCalledWith('Thunder');
+    expect(onChange).not.toHaveBeenCalledWith(expect.stringContaining('PsychicT'));
+  });
+
+  it('Esc butta quello che hai scritto e torna la mossa di prima', async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    renderIt(<Field options={moves} onChange={onChange} start="Psychic" />);
+    await user.click(screen.getByLabelText('Mossa 1'));
+    await user.keyboard('ea{Escape}');
+    expect(screen.getByLabelText('Mossa 1')).toHaveValue('Psychic');
+    await user.tab();
+    expect(onChange).not.toHaveBeenCalled();
   });
 });

@@ -73,15 +73,17 @@ describe('editor del set', () => {
     await user.click(within(slot).getByRole('button', { name: 'Mostra i miei set' }));
     await user.click(within(screen.getByRole('list', { name: 'I miei set: opzioni' })).getByRole('button', { name: /^Set 1/ }));
     expect(within(slot).getByLabelText('Mossa 1')).toHaveValue(tusk.moves[0]);
+    // Mosse che il set non ha già negli altri slot (quelle sono bloccate nel menu)
+    const fresh = ['Earthquake', 'Stone Edge', 'Close Combat', 'Knock Off', 'Ice Spinner', 'Stealth Rock', 'Bulk Up', 'Rock Slide', 'Taunt', 'Body Press'].filter(m => !tusk.moves.includes(m));
     for (let i = 0; i < 4; i++) {
       await user.clear(within(slot).getByLabelText('Mossa 1'));
-      await user.type(within(slot).getByLabelText('Mossa 1'), `${['Earthquake', 'Stone Edge', 'Close Combat', 'Knock Off'][i]}{Enter}`);
+      await user.type(within(slot).getByLabelText('Mossa 1'), `${fresh[i]}{Enter}`);
       await user.click(within(slot).getByRole('button', { name: 'Salva set' }));
     }
     expect(loadMySets()['Great Tusk']).toHaveLength(5);
     // Pieno: un set nuovo (senza nome già usato) non si può salvare
     await user.clear(within(slot).getByLabelText('Mossa 1'));
-    await user.type(within(slot).getByLabelText('Mossa 1'), 'Rapid Spin{Enter}');
+    await user.type(within(slot).getByLabelText('Mossa 1'), `${fresh[4]}{Enter}`);
     expect(within(slot).getByRole('button', { name: 'Salva set' })).toBeDisabled();
   }, 30000);
 

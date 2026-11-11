@@ -114,12 +114,14 @@ describe('preset Smogon nell\'editor', () => {
 
     await user.clear(screen.getByLabelText('Mossa 2'));
     await user.type(screen.getByLabelText('Mossa 2'), 'Flamethrower');
+    await user.tab();
     // Il set non è più un preset: il campo resta vuoto
     expect(field()).not.toHaveTextContent('Sun Sweeper');
     expect(field()).not.toHaveTextContent('Custom');
 
     await user.clear(screen.getByLabelText('Mossa 2'));
     await user.type(screen.getByLabelText('Mossa 2'), 'Solar Beam');
+    await user.tab();
     expect(field()).toHaveTextContent('Sun Sweeper');
   });
 });
