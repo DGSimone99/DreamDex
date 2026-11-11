@@ -16,7 +16,8 @@
 .grade-badge .label { align-self: start; }
 .grade-head {
   align-self: stretch;
-  margin: 0 -14px 4px;
+  /* Spazio sotto la barra: la lettera grande non la tocca */
+  margin: 0 -14px 12px;
   padding: 4px 24px 4px 12px;
   font: 700 14px/1.2 var(--display);
   font-style: italic;

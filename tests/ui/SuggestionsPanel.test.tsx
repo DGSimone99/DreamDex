@@ -312,9 +312,11 @@ describe('SuggestionsPanel', () => {
     expect(shorts(1).items.map(b => b.short)).toEqual(['Resiste ad Acqua']);
     // "Usato con" mai nelle caselle (lo dice il segno ciano), "Abilita" sì
     expect(shorts(3).items.map(b => b.short)).toEqual(['Resiste ad Acqua', 'Pivot', 'Abilita Venusaur']);
-    // Il "+" verde c'è in Aggiungi; col team vuoto la riga dei ruoli resta senza
+    // Col team vuoto i ruoli, uno per riga col "+" verde come i bonus (quanti ne entrano)
     const roles = reasonsOf({ ...(item as object), set: { species: 'Rotom-Wash', moves: ['Volt Switch'], ability: 'Levitate', item: 'Leftovers', nature: 'Bold', evs: {}, ivs: {} } } as never, 1, 0.2, DEFAULT_FORMAT, 'it');
-    expect(roles.pros).toBe(false);
+    expect(roles.pros).toBe(true);
+    expect(roles.items).toHaveLength(1);
+    expect(roles.items[0].short).not.toContain(',');
   });
 
   it('Porta: il dettaglio mostra tutte le voci, le caselle le prime nello stesso ordine (senza "Usato con")', async () => {

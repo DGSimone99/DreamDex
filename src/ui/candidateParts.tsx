@@ -112,8 +112,11 @@ const plain = (text: string): Bring => ({ text, short: text });
  */
 export function reasonsOf(item: Item, n: number, usage: number | null, format: Format, lang: Lang): ReasonSummary {
   const rules = formatRules(format.formatId);
-  // Col team vuoto l'uso sta già a destra: qui i ruoli principali del Pokémon, in una riga
-  if (usage !== null) return { pros: false, items: [plain(detectRoles(item.set, rules).slice(0, 3).map(role => t(lang, `role.${role}`)).join(', '))] };
+  // Col team vuoto l'uso sta già a destra: qui i ruoli principali del Pokémon, col "+" come i bonus
+  if (usage !== null) {
+    const roles = detectRoles(item.set, rules).slice(0, n).map(role => plain(t(lang, `role.${role}`)));
+    return { pros: roles.length > 0, items: roles };
+  }
   const items = bringsOf(item, lang, rules).filter(b => !b.usedWith).slice(0, n);
   if (items.length) return { pros: true, items };
   const gain = item.teamGain;

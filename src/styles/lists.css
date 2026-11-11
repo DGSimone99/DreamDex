@@ -389,7 +389,7 @@
 .grade-badge.none { --grade: var(--line); }
 .grade-badge .letter, .grade-badge.grade-C .letter, .grade-badge.grade-D .letter { color: var(--grade); }
 .grade-badge .label { color: var(--grade); font-weight: 600; }
-.grade-badge .grade-areas { align-self: stretch; align-content: space-evenly; gap: 3px; margin-top: 4px; padding-top: 6px; border-top: 1px solid var(--line-soft); }
+.grade-badge .grade-areas { align-self: stretch; align-content: space-evenly; gap: 1px; margin-top: 4px; padding-top: 6px; border-top: 1px solid var(--line-soft); }
 .grade-area { font-size: 12.5px; }
 .grade-area .meter { height: 7px; }
 .grade-area.band-S .meter > span { background: var(--accent-2); }
@@ -476,7 +476,7 @@
   .band:not(.collapsed) .slot > summary > .ability { display: none; }
   .slot .name-line { margin-top: 2px; }
   .grade-badge { row-gap: 0; padding-bottom: 6px; }
-  .grade-head { margin-bottom: 2px; padding-top: 3px; padding-bottom: 3px; }
+  .grade-head { margin-bottom: 6px; padding-top: 3px; padding-bottom: 3px; }
   .grade-badge .letter { font-size: 46px; }
   .grade-badge .overall { font-size: 17px; }
   .grade-badge .label { font-size: 12px; }
