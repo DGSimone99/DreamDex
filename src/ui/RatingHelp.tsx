@@ -155,23 +155,17 @@ const shownWeights = (weights: AreaWeightTable): AreaWeightTable => {
 };
 
 /**
- * La barra in sesti (scelta dell'utente, 2026-11-11): il peso vero rispetto al più alto della colonna, arrotondato a
- * sesti. Semi-stall e Stall restano a un sesto di distanza in Difesa (uno in meno) e in Offesa (uno in più) anche
- * quando l'arrotondamento li mette alla pari.
+ * La barra in sesti, a scala fissa (scelta dell'utente, 2026-11-11): il Balance a metà (3/6) in tutte le aree, e da lì
+ * un gradino per tipo di team. Difesa sale verso lo Stall (1 → 5), Offesa e Velocità scendono (5 → 1). Solo a vista:
+ * il voto usa i pesi veri; un'area che non conta (peso 0) resta vuota.
  */
-const sixths = (weights: AreaWeightTable, arch: Archetype, area: (typeof WEIGHT_AREAS)[number]): number => {
-  const weight = weights[arch][area];
-  if (weight <= 0) return 0;
-  return Math.max(1, Math.round((6 * weight) / Math.max(...ARCHETYPES.map(a => weights[a][area]))));
+const LADDER: Record<(typeof WEIGHT_AREAS)[number], Record<Archetype, number>> = {
+  defense: { hyperOffense: 1, bulkyOffense: 2, balance: 3, semiStall: 4, stall: 5 },
+  strength: { hyperOffense: 5, bulkyOffense: 4, balance: 3, semiStall: 2, stall: 1 },
+  speed: { hyperOffense: 5, bulkyOffense: 4, balance: 3, semiStall: 2, stall: 1 },
 };
-const stepOf = (weights: AreaWeightTable, arch: Archetype, area: (typeof WEIGHT_AREAS)[number]): number => {
-  let step = sixths(weights, arch, area);
-  if (arch === 'semiStall' && area !== 'speed') {
-    const stall = sixths(weights, 'stall', area);
-    if (step === stall) step = Math.min(6, Math.max(1, area === 'defense' ? stall - 1 : stall + 1));
-  }
-  return step / 6;
-};
+const stepOf = (weights: AreaWeightTable, arch: Archetype, area: (typeof WEIGHT_AREAS)[number]): number =>
+  weights[arch][area] <= 0 ? 0 : LADDER[area][arch] / 6;
 /**
  * Il peso di un'area come barra in sesti, senza numeri (stepOf). Ai lettori di schermo una parola dal peso vero:
  * molto dalla metà del voto in su, abbastanza da un quarto, poco sotto.
