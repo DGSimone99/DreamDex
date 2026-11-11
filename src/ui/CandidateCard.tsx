@@ -1,10 +1,19 @@
-import { useState, type CSSProperties } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type FocusEvent } from 'react';
 import { getSpecies } from '../engine/dex';
 import { typeName } from '../i18n/game';
 import { useLang } from '../i18n/react';
 import { typeColor } from './Sprite';
 import { TypeIcons } from './typeIcons';
 import { CandidateMarks, OutMark, PickButton, Reasons, ResultCell, candidateHandlers, isFavoriteCandidate, isLead, stateClasses, type CandidateProps } from './candidateParts';
+
+/** Quanto il mouse deve restare sulla carta prima che lo sprite esca e parta la GIF (ms): passando sopra la griglia di corsa
+ *  non si accende niente e non si scarica nessuna GIF. Lo stesso ritardo nel CSS (--wake) per luce e salto dell'icona. */
+export const CARD_WAKE_MS = 120;
+
+/** Fuoco da tastiera (non dal clic): jsdom e i browser vecchi senza :focus-visible contano come tastiera. */
+const keyboardFocus = (el: Element): boolean => {
+  try { return el.matches(':focus-visible'); } catch { return true; }
+};
 
 /**
  * Stile "Carte": una casella a forma di carta Masters. Targhetta col +N in alto a sinistra (#1 su magenta),
@@ -14,19 +23,31 @@ import { CandidateMarks, OutMark, PickButton, Reasons, ResultCell, candidateHand
 export function CandidateCard(props: CandidateProps) {
   const { rank, item, reasons, sprite, usage, out, format, lists, selected, onSelect } = props;
   const lang = useLang();
-  // Lo sprite animato solo sulla carta sotto il mouse e sulla selezionata (sempre). Sotto il mouse lo sprite esce dalla carta
-  // ritagliata (sta sopra la cornice, così la testa sfonda il bordo alto); a riposo resta dentro, sotto targhetta e icone.
-  // Luce e ombra nel CSS
+  // Lo sprite animato solo sulla carta sotto il mouse e sulla selezionata (sempre). Sotto il mouse, dopo CARD_WAKE_MS ms
+  // fermi sulla carta, lo sprite esce dalla carta ritagliata (sta sopra la cornice, così la testa sfonda il bordo alto);
+  // a riposo resta dentro, sotto targhetta e icone. Col fuoco da tastiera esce subito. Luce e ombra nel CSS
   const [hover, setHover] = useState(false);
+  const [focused, setFocused] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const stop = () => { if (timer.current !== null) { clearTimeout(timer.current); timer.current = null; } };
+  useEffect(() => stop, []);
+  const enter = () => {
+    stop();
+    timer.current = setTimeout(() => { timer.current = null; setHover(true); }, CARD_WAKE_MS);
+  };
+  const leave = () => { stop(); setHover(false); };
+  const popped = hover || focused;
   const types = getSpecies(item.species)?.types ?? [];
   const typeNames = types.map(type => typeName(type, lang)).join(' / ');
   const className = ['card', isLead(rank, item) && 'first', stateClasses(props)].filter(Boolean).join(' ');
   return (
     // Bordo inferiore nel colore del tipo primario
     <li className={className} style={{ '--t1': typeColor(types[0] ?? '') } as CSSProperties} {...candidateHandlers(props)}
-      onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
+      onMouseEnter={enter} onMouseLeave={leave}
+      onFocus={(e: FocusEvent<HTMLLIElement>) => setFocused(keyboardFocus(e.target))}
+      onBlur={(e: FocusEvent<HTMLLIElement>) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setFocused(false); }}>
       <div className="card-face">
-        {!hover && <span className="card-sprite" aria-hidden="true">{sprite(selected)}</span>}
+        {!popped && <span className="card-sprite" aria-hidden="true">{sprite(selected)}</span>}
         <ResultCell item={item} usage={usage} favorite={isFavoriteCandidate(item.set, lists)} className="tag" />
         <TypeIcons types={types} className="card-types" title={typeNames} />
         {/* Le icone sono decorative: i tipi agli screen reader come testo */}
@@ -40,7 +61,7 @@ export function CandidateCard(props: CandidateProps) {
           <Reasons reasons={reasons} />
         </span>
       </div>
-      {hover && <span className="card-sprite popped" aria-hidden="true">{sprite(true)}</span>}
+      {popped && <span className="card-sprite popped" aria-hidden="true">{sprite(true)}</span>}
     </li>
   );
 }

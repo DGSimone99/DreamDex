@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
 import { encodeShare } from '../../src/share';
 import { App } from '../../src/App';
@@ -62,5 +62,33 @@ describe('team compresso', () => {
     const cards = [...container.querySelectorAll<HTMLElement>('.slot > summary')];
     expect(cards[0].querySelector('.mini-alert')).toBeNull();
     expect(cards[1].querySelector('.mini-alert.danger')).not.toBeNull();
+  });
+
+  it("su uno schermo basso l'editor aperto comprime il team da solo; la freccia lo riapre senza salvarlo; chiuso l'editor torna com'era", async () => {
+    // jsdom non ha matchMedia: lo finge uno schermo basso
+    const short = vi.fn((query: string) => ({
+      matches: query.includes('max-height: 799px'), media: query, onchange: null,
+      addEventListener: () => undefined, removeEventListener: () => undefined, addListener: () => undefined, removeListener: () => undefined, dispatchEvent: () => false,
+    }) as MediaQueryList);
+    vi.stubGlobal('matchMedia', short);
+    try {
+      const user = userEvent.setup();
+      const storage = memory();
+      const { container } = renderTeam(storage);
+      const band = () => container.querySelector('.band')!;
+      expect(band()).not.toHaveClass('collapsed');
+      await user.click(container.querySelector<HTMLElement>('.slot > summary')!);
+      expect(band()).toHaveClass('collapsed');
+      await user.click(screen.getByRole('button', { name: 'Espandi team' }));
+      expect(band()).not.toHaveClass('collapsed');
+      expect(loadTeamCollapsed(storage)).toBeNull();
+      await user.click(container.querySelector<HTMLElement>('.slot[open] .editor-close')!);
+      expect(band()).not.toHaveClass('collapsed');
+      // Riaprendo l'editor si comprime di nuovo
+      await user.click(container.querySelector<HTMLElement>('.slot > summary')!);
+      expect(band()).toHaveClass('collapsed');
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });

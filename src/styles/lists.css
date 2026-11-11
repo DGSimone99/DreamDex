@@ -229,8 +229,8 @@
 .set-editor .editor-top .member-replace { height: 32px; white-space: nowrap; }
 .set-editor .editor-head { align-items: flex-end; row-gap: 10px; }
 .set-editor .preset-field, .set-editor .my-sets-field { flex-direction: column; align-items: stretch; gap: 4px; }
-.set-editor .preset-field { width: 340px; }
-.set-editor .my-sets-field { position: relative; width: 280px; }
+.set-editor .preset-field { width: 300px; }
+.set-editor .my-sets-field { position: relative; width: 240px; }
 .set-editor .preset-field .field-head, .set-editor .my-sets-field .field-head { white-space: nowrap; }
 .joined { display: flex; align-items: stretch; min-width: 0; }
 .joined > .combobox, .joined > .my-sets-input { flex: 1; min-width: 0; }

@@ -1,20 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
-import type { ListSprite, ListStyle } from './theme';
+import type { ListSprite } from './theme';
 import { useT } from '../i18n/react';
 import { Icon } from './icons';
 
-const STYLES: ListStyle[] = ['cards', 'menu'];
 const SPRITES: ListSprite[] = ['normal', 'box'];
 
 /**
- * Vista della lista, in fondo alla fascia "Candidati": stile (Carte / Menu) e sprite (Normale / Icona box).
- * Le stesse impostazioni del dialogo Impostazioni (stesso salvataggio): cambiarle qui le cambia anche lì.
+ * Vista della lista, in fondo alla fascia "Candidati": lo sprite (Normale / Icona box).
+ * La stessa impostazione del dialogo Impostazioni (stesso salvataggio): cambiarla qui la cambia anche lì.
  * Si chiude cliccando fuori o con Esc (il focus torna al pulsante).
  */
-export function ListViewMenu({ listStyle, listSprite, onListStyleChange, onListSpriteChange }: {
-  listStyle: ListStyle;
+export function ListViewMenu({ listSprite, onListSpriteChange }: {
   listSprite: ListSprite;
-  onListStyleChange: (style: ListStyle) => void;
   onListSpriteChange: (sprite: ListSprite) => void;
 }) {
   const tr = useT();
@@ -44,15 +41,6 @@ export function ListViewMenu({ listStyle, listSprite, onListStyleChange, onListS
       </button>
       {open && (
         <div className="list-view-pop" role="group" aria-label={tr('suggest.view')}>
-          <fieldset>
-            <legend>{tr('suggest.view.style')}</legend>
-            {STYLES.map(choice => (
-              <label key={choice}>
-                <input type="radio" name="list-view-style" value={choice} checked={listStyle === choice} onChange={() => onListStyleChange(choice)} />
-                <span>{tr(`settings.listStyle.${choice}`)}</span>
-              </label>
-            ))}
-          </fieldset>
           <fieldset>
             <legend>{tr('suggest.view.sprite')}</legend>
             {SPRITES.map(choice => (

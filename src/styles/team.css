@@ -69,6 +69,24 @@
 .slot > summary:hover { box-shadow: inset 0 0 0 1px var(--line); }
 .slot[open] > summary { transform: translateY(-4px); box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4); }
 .slot[open] > summary::after { background: var(--accent); }
+/* Carta chiusa sotto il mouse: un assaggio dell'aperta, più leggero (sale 2px e non 4, ombra morbida, sprite a 1.05 e
+   fermo, niente GIF), così sotto il mouse e aperta non si confondono. Solo il team aperto: le carte compresse hanno il loro */
+.slot > summary::after { transition: filter 0.15s ease-out, height 0.15s ease-out; }
+/* Solo con un mouse: sul telefono il tocco lascerebbe la carta "sotto il mouse" */
+@media (hover: hover) {
+  .band:not(.collapsed) .slot.filled:not([open]) > summary:hover {
+    transform: translateY(-2px);
+    box-shadow: inset 0 0 0 1px var(--line), 0 6px 14px rgba(0, 0, 0, 0.35);
+    transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
+  }
+  .band:not(.collapsed) .slot.filled:not([open]) > summary:hover::after { height: 4px; filter: brightness(1.25); }
+  .band:not(.collapsed) .slot.filled:not([open]) > summary:hover .sprite { transform-origin: 50% 92%; transform: scale(1.05); transition: transform 0.15s ease-out; }
+}
+@media (hover: hover) and (prefers-reduced-motion: reduce) {
+  /* Niente movimento: resta solo la striscia dei tipi più accesa */
+  .band:not(.collapsed) .slot.filled:not([open]) > summary:hover { transform: none; box-shadow: inset 0 0 0 1px var(--line); }
+  .band:not(.collapsed) .slot.filled:not([open]) > summary:hover .sprite { transform: none; }
+}
 .slot > summary .sprite-wrap { position: relative; align-self: center; }
 /* Le righe della card non si schiacciano: nome e strumento hanno al massimo due righe, l'altezza resta fissa */
 .slot > summary > * { flex-shrink: 0; }

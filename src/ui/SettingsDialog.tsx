@@ -3,21 +3,18 @@ import { createPortal } from 'react-dom';
 import { useT } from '../i18n/react';
 import { Icon } from './icons';
 import { ModalLock } from './ModalLock';
-import { PALETTES, type ListSprite, type ListStyle, type PaletteSetting } from './theme';
+import { PALETTES, type ListSprite, type PaletteSetting } from './theme';
 
 const CHOICES: PaletteSetting[] = ['auto', ...PALETTES];
-const LIST_STYLES: ListStyle[] = ['cards', 'menu'];
 const LIST_SPRITES: ListSprite[] = ['normal', 'box'];
 
 /**
- * Impostazioni: la palette (segue il gioco o fissa), lo stile della lista candidati e i suoi sprite,
+ * Impostazioni: la palette (segue il gioco o fissa) e gli sprite della lista candidati,
  * salvati nel browser. Quando ci saranno gli account passeranno lì.
  */
-export function SettingsDialog({ palette, onPaletteChange, listStyle, onListStyleChange, listSprite, onListSpriteChange, onClose }: {
+export function SettingsDialog({ palette, onPaletteChange, listSprite, onListSpriteChange, onClose }: {
   palette: PaletteSetting;
   onPaletteChange: (palette: PaletteSetting) => void;
-  listStyle: ListStyle;
-  onListStyleChange: (style: ListStyle) => void;
   listSprite: ListSprite;
   onListSpriteChange: (sprite: ListSprite) => void;
   onClose: () => void;
@@ -49,16 +46,6 @@ export function SettingsDialog({ palette, onPaletteChange, listStyle, onListStyl
                   checked={palette === choice} onChange={() => onPaletteChange(choice)} />
                 <span className="swatches" aria-hidden="true"><i /><i /></span>
                 <span>{label(choice)}</span>
-              </label>
-            ))}
-          </fieldset>
-          <fieldset className="settings-palette settings-pair">
-            <legend>{t('settings.listStyle')}</legend>
-            {LIST_STYLES.map(choice => (
-              <label key={choice} className="palette-choice">
-                <input type="radio" name="listStyle" value={choice}
-                  checked={listStyle === choice} onChange={() => onListStyleChange(choice)} />
-                <span>{t(`settings.listStyle.${choice}`)}</span>
               </label>
             ))}
           </fieldset>

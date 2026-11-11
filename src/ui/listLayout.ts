@@ -1,4 +1,4 @@
-// Calcolo puro del layout della lista candidati (stili Carte e Menu).
+// Calcolo puro del layout della lista candidati (le carte).
 // Gli input sono altezze/larghezze in px del contenitore; valori non validi
 // (0, negativi, NaN) sono portati a 0 cosi nulla diventa NaN/Infinity.
 
@@ -52,34 +52,4 @@ export function cardsLayout(height: number, teamCollapsed: boolean, width = 0): 
   const rows = !h || fit(CARDS_ROWS) >= cardsMinTile(reasons) ? CARDS_ROWS : 1;
   const tileHeight = clamp(fit(rows), 0, CARDS_MAX_TILE);
   return { columns, rows, perPage: columns * rows, tileHeight, reasons };
-}
-
-export interface MenuLayout {
-  perPage: number;
-  rowHeight: number;
-  /** Spazio tra le righe (CSS --menu-gap): 10, 6 nelle liste basse perché le righe non si schiaccino. */
-  gap: number;
-  reasons: number;
-}
-
-/** Righe del Menu per pagina: al massimo 6, come le Carte (una pagina = un team possibile); meno se non entrano alte almeno
- *  MENU_MIN_ROW px (nome e un motivo dentro la pillola, il tondo dello sprite che non tocca la riga vicina). */
-export const MENU_ROWS = 6;
-export const MENU_MIN_ROW = 40;
-/** Spazio tra le righe del Menu (CSS --menu-gap): ci sta lo sprite che sporge dal tondo; 6 sotto MENU_TIGHT px. */
-export const MENU_GAP = 10;
-export const MENU_TIGHT = 450;
-/** Altezza massima di una riga del Menu: oltre, la colonna resta a questa misura e si centra in verticale. */
-export const MENU_MAX_ROW = 84;
-
-// Menu: fino a 6 righe che riempiono l'altezza attuale della lista (margine 10 sopra e sotto), al massimo 84 px; nelle liste
-// basse lo spazio tra le righe scende a 6 e, se 6 righe sarebbero più basse di 40 px, le righe sono meno.
-// Motivi: 2 se la riga è alta almeno 56 px (sennò 1), 3 col team nascosto da 76.
-export function menuLayout(height: number, teamCollapsed: boolean): MenuLayout {
-  const h = num(height);
-  const gap = h < MENU_TIGHT ? 6 : MENU_GAP;
-  const rows = h ? clamp(Math.floor((h - 20 + gap) / (MENU_MIN_ROW + gap)), 1, MENU_ROWS) : MENU_ROWS;
-  const rowHeight = clamp(Math.floor((h - 20 + gap) / rows) - gap, 0, MENU_MAX_ROW);
-  const reasons = rowHeight >= 76 && teamCollapsed ? 3 : rowHeight >= 56 ? 2 : 1;
-  return { perPage: rows, rowHeight, gap, reasons };
 }

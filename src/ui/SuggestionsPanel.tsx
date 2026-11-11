@@ -24,9 +24,8 @@ import { Icon } from './icons';
 import { EeveeMoment } from './EeveeMoment';
 import { SuggestionDetail } from './SuggestionDetail';
 import { CandidateCard } from './CandidateCard';
-import { CandidatePill } from './CandidatePill';
 import { BanMark, BoxIcon, reasonsOf, type CandidateProps, type Item } from './candidateParts';
-import type { ListSprite, ListStyle } from './theme';
+import type { ListSprite } from './theme';
 import { useLang, useT } from '../i18n/react';
 import { usePerPage } from './usePerPage';
 import { useFitCount } from './useFit';
@@ -56,12 +55,9 @@ interface Props {
   focusSearch?: number;
   /** Candidato da mostrare (dal Coaching): a ogni `nonce` nuovo si va alla sua pagina e lo si apre nel dettaglio. */
   focus?: CandidateFocus;
-  /** Stile della lista (impostazioni): carte o menu. */
-  listStyle?: ListStyle;
   /** Sprite della lista (impostazioni): normale o icona box. */
   listSprite?: ListSprite;
-  /** Cambiano stile e sprite dalla fascia "Candidati" (le stesse impostazioni del dialogo). */
-  onListStyleChange?: (style: ListStyle) => void;
+  /** Cambia lo sprite dalla fascia "Candidati" (la stessa impostazione del dialogo). */
   onListSpriteChange?: (sprite: ListSprite) => void;
   /** Team nascosto: la lista ha più spazio, il numero per pagina resta quello a team aperto. */
   teamCollapsed?: boolean;
@@ -89,13 +85,13 @@ export const SEARCH_DELAY = 200;
 /** I tipi di team che si possono scegliere per giudicare i cambi, dopo Nessuno. */
 const TEAM_TYPES: Archetype[] = ['hyperOffense', 'bulkyOffense', 'balance', 'semiStall', 'stall'];
 
-export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onReplaceWith, onCancelReplace, rating = null, onTarget, focusSearch, focus, listStyle = 'cards', listSprite = 'normal', onListStyleChange, onListSpriteChange, teamCollapsed = false }: Props) {
+export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onReplaceWith, onCancelReplace, rating = null, onTarget, focusSearch, focus, listSprite = 'normal', onListSpriteChange, teamCollapsed = false }: Props) {
   const tr = useT();
   const lang = useLang();
   const [pageState, setPage] = useState(0);
   // Quanti per pagina: dallo spazio della lista, come se il team fosse aperto
   const listRef = useRef<HTMLOListElement>(null);
-  const { perPage, columns, tileHeight, rowHeight, gap, reasons } = usePerPage(listRef, listStyle, teamCollapsed);
+  const { perPage, columns, tileHeight, reasons } = usePerPage(listRef, teamCollapsed);
   const [filters, setFilters] = useState<CandidateFilters>(EMPTY_FILTERS);
   // La lista si ricalcola sui filtri "stabili"; l'input mostra subito quello che scrivi
   const applied = useDebounced(filters, SEARCH_DELAY);
@@ -254,25 +250,6 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
     setCursor(null);
     setSelectedName(null);
   };
-  // Menu: le righe di una pagina nuova entrano scivolando, da destra andando avanti e da sinistra tornando indietro
-  const lastPage = useRef(page);
-  const roll = page < lastPage.current ? 'roll-back' : 'roll-on';
-  useEffect(() => { lastPage.current = page; }, [page]);
-  // Menu: la rotella sulla lista sfoglia le pagine (una per gesto: le altre tacche dello stesso gesto si ignorano).
-  // Solo quando la lista non può scorrere da sola in quella direzione (altrimenti la rotella scorre, come ovunque) e il
-  // gesto è chiaramente verticale: Ctrl (zoom), Maiusc e i gesti di lato del touchpad restano al browser
-  const wheelAt = useRef(0);
-  const wheel = (e: React.WheelEvent<HTMLOListElement>) => {
-    if (e.ctrlKey || e.shiftKey || e.altKey || Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
-    const list = e.currentTarget;
-    const canScroll = e.deltaY > 0 ? list.scrollTop + list.clientHeight < list.scrollHeight - 1 : list.scrollTop > 0;
-    if (canScroll) return;
-    if (Math.abs(e.deltaY) < 4 || e.timeStamp - wheelAt.current < 350) return;
-    const next = page + (e.deltaY > 0 ? 1 : -1);
-    if (next < 0 || next >= pages) return;
-    wheelAt.current = e.timeStamp;
-    goToPage(next);
-  };
   const selected = pageItems.find(item => item.species === selectedName)
     ?? (pickedIndex >= page * perPage && pickedIndex < (page + 1) * perPage ? items[pickedIndex] : undefined)
     ?? pageItems[0];
@@ -371,12 +348,9 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
     </>
   );
 
-  const cards = listStyle === 'cards';
   const listVars = {
     '--cols': columns,
     '--tile-h': tileHeight !== undefined ? `${tileHeight}px` : undefined,
-    '--row-h': rowHeight !== undefined ? `${rowHeight}px` : undefined,
-    '--menu-gap': gap !== undefined ? `${gap}px` : undefined,
     '--reasons': reasons,
   } as CSSProperties;
 
@@ -423,9 +397,8 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
     );
     body = (
       <>
-        {/* Le misure per le caselle (Carte: colonne e altezza; Menu: altezza della riga) */}
-        <ol className={`suggestions ${cards ? 'cards' : `menu ${roll}`}${stale ? ' stale' : ''}`} ref={listRef} aria-busy={stale || undefined} style={listVars}
-          onWheel={cards ? undefined : wheel}>
+        {/* Le misure per le carte: colonne e altezza */}
+        <ol className={`suggestions cards${stale ? ' stale' : ''}`} ref={listRef} aria-busy={stale || undefined} style={listVars}>
           {pageItems.map((item, i) => {
             const usage = emptyTeam ? usageOf(item.species) : null;
             const candidate: CandidateProps = {
@@ -446,7 +419,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
               format,
               lists: data.userLists,
             };
-            return cards ? <CandidateCard key={item.species} {...candidate} /> : <CandidatePill key={item.species} {...candidate} />;
+            return <CandidateCard key={item.species} {...candidate} />;
           })}
         </ol>
       </>
@@ -484,9 +457,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
               <h2 className="box-head">{tr('suggest.listHead', { n: items.length })}</h2>
               {headFit > 0 && <span className="dbl-hint">{tr(view === 'add' ? 'suggest.dblHint.add' : 'suggest.dblHint.replace')}</span>}
               {pager}
-              {onListStyleChange && onListSpriteChange && (
-                <ListViewMenu listStyle={listStyle} listSprite={listSprite} onListStyleChange={onListStyleChange} onListSpriteChange={onListSpriteChange} />
-              )}
+              {onListSpriteChange && <ListViewMenu listSprite={listSprite} onListSpriteChange={onListSpriteChange} />}
             </div>
           )}
           {body}

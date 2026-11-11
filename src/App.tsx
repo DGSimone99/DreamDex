@@ -23,7 +23,7 @@ import type { MoveFix } from './engine/moveFixes';
 import { Rail } from './ui/Rail';
 import { Icon } from './ui/icons';
 import { TabPanel, Tabs, type TabId } from './ui/Tabs';
-import { loadLang, loadListSprite, loadListStyle, loadLists, loadPalette, loadSession, loadTab, loadTeamCollapsed, saveLang, saveListSprite, saveListStyle, saveLists, savePalette, saveSession, saveTab, saveTeamCollapsed } from './storage';
+import { loadLang, loadListSprite, loadLists, loadPalette, loadSession, loadTab, loadTeamCollapsed, saveLang, saveListSprite, saveLists, savePalette, saveSession, saveTab, saveTeamCollapsed } from './storage';
 import { SettingsDialog } from './ui/SettingsDialog';
 import { EMPTY_LISTS, effectiveLists, type UserLists } from './engine/lists';
 import { t, type Lang } from './i18n';
@@ -31,8 +31,9 @@ import { LangProvider } from './i18n/react';
 import { gameName, hasItalianNames } from './i18n/game';
 import { useDismissMenus } from './ui/useDismissMenus';
 import { useAdvice } from './ui/useRanking';
-import { paletteFor, type ListSprite, type ListStyle, type PaletteSetting } from './ui/theme';
+import { paletteFor, type ListSprite, type PaletteSetting } from './ui/theme';
 import { EeveeMoment } from './ui/EeveeMoment';
+import { SHORT_SCREEN, useMediaQuery } from './ui/useMediaQuery';
 
 const NO_DATA: EngineData = { stats: null, sets: null };
 
@@ -74,12 +75,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
     setPalette(next);
     if (storage) savePalette(next, storage);
   };
-  // Lista candidati: stile (carte/menu) e sprite (normale/icona box), salvati come la palette
-  const [listStyle, setListStyle] = useState<ListStyle>(() => (storage ? loadListStyle(storage) : null) ?? 'cards');
-  const changeListStyle = (next: ListStyle) => {
-    setListStyle(next);
-    if (storage) saveListStyle(next, storage);
-  };
+  // Lista candidati: sprite (normale/icona box), salvato come la palette
   const [listSprite, setListSprite] = useState<ListSprite>(() => (storage ? loadListSprite(storage) : null) ?? 'normal');
   const changeListSprite = (next: ListSprite) => {
     setListSprite(next);
@@ -87,11 +83,11 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   };
   const [settingsOpen, setSettingsOpen] = useState(false);
   // Team compresso in una barra sottile: più spazio alla sezione sotto (la scelta resta salvata)
-  const [collapsed, setCollapsed] = useState(() => (storage ? loadTeamCollapsed(storage) : null) ?? false);
-  const toggleCollapsed = () => setCollapsed(c => {
-    if (storage) saveTeamCollapsed(!c, storage);
-    return !c;
-  });
+  const [savedCollapsed, setCollapsed] = useState(() => (storage ? loadTeamCollapsed(storage) : null) ?? false);
+  // Schermo basso (portatili): con l'editor aperto il team si comprime da solo, così l'editor sta in una schermata
+  const short = useMediaQuery(SHORT_SCREEN);
+  // La freccina durante la compressione automatica riapre il team solo per questo editor (non si salva)
+  const [keepTeamOpen, setKeepTeamOpen] = useState(false);
   const closeSettings = useCallback(() => {
     setSettingsOpen(false);
     document.querySelector<HTMLElement>('.rail-settings')?.focus();
@@ -156,6 +152,16 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   const [replaceIndex, setReplaceIndex] = useState<number | null>(null);
   // Il membro aperto nell'editor: l'editor prende il posto della sezione finché resta aperto
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  useEffect(() => { if (editingIndex === null) setKeepTeamOpen(false); }, [editingIndex]);
+  const autoCollapsed = short && editingIndex !== null && !savedCollapsed && !keepTeamOpen;
+  const collapsed = savedCollapsed || autoCollapsed;
+  const toggleCollapsed = () => {
+    if (autoCollapsed) { setKeepTeamOpen(true); return; }
+    setCollapsed(c => {
+      if (storage) saveTeamCollapsed(!c, storage);
+      return !c;
+    });
+  };
   const [closeSignal, setCloseSignal] = useState(0);
   // La pagina non scorre: aprire una sezione basta a mostrarla (e chiude l'editor)
   const openTab = (next: TabId) => { setTab(next); setCloseSignal(n => n + 1); };
@@ -305,6 +311,11 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
     remember({ kind: 'remove', from: battleName(team[index]) }, after);
   };
 
+  // Con l'editor aperto la sezione sotto non si vede: la sua riga di stato dice chi stai modificando (chiudendo l'editor torna la sezione)
+  const editing = editingIndex !== null ? team[editingIndex] : undefined;
+  const withEditing = <T extends { id: string; status?: React.ReactNode }>(tabs: T[]): T[] => editing
+    ? tabs.map(tab => (tab.id === shownTab ? { ...tab, status: <span className="info">{t(lang, 'rail.editing', { species: editing.species })}</span> } : tab))
+    : tabs;
   return (
     <LangProvider lang={lang}>
     <div className="app">
@@ -320,7 +331,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
       }}>{t(lang, 'app.skipToContent')}</a>
       <Rail format={format} onFormatChange={setFormat} meta={data.stats?.meta ?? null} lang={lang} onLangChange={changeLang}
         onSettings={() => setSettingsOpen(true)}
-        tabs={<Tabs orientation="vertical" active={shownTab} onChange={openTab} tabs={[
+        tabs={<Tabs orientation="vertical" active={shownTab} onChange={openTab} tabs={withEditing([
         // Tessere del menu: sotto il nome lo stato della sezione, leggibile senza aprirla
         { id: 'pokemon', label: t(lang, 'tabs.pokemon'), icon: 'team',
           status: replaceIndex !== null && team[replaceIndex]
@@ -343,7 +354,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
             userLists.bans.size ? t(lang, userLists.bans.size === 1 ? 'rail.banOne' : 'rail.banMany', { n: userLists.bans.size }) : null,
           ].filter(Boolean).join(' · ') : t(lang, 'rail.listsEmpty') },
         { id: 'compare', label: t(lang, 'tabs.compare'), icon: 'search', disabled: true, note: t(lang, 'tabs.soon'), status: t(lang, 'rail.soon') },
-      ]} />} />
+      ])} />} />
       <div className="main" ref={mainRef} id="main-content">
       {loading && <p className="banner info">{t(lang, 'app.loading')}</p>}
       {!loading && !data.stats && (
@@ -386,9 +397,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
             focus={candidateFocus}
             onTarget={setReplaceIndex}
             focusSearch={searchRequest}
-            listStyle={listStyle}
             listSprite={listSprite}
-            onListStyleChange={changeListStyle}
             onListSpriteChange={changeListSprite}
             teamCollapsed={collapsed}
           />
@@ -407,7 +416,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
       </main>
       </div>
       </div>
-      {settingsOpen && <SettingsDialog palette={palette} onPaletteChange={changePalette} listStyle={listStyle} onListStyleChange={changeListStyle} listSprite={listSprite} onListSpriteChange={changeListSprite} onClose={closeSettings} />}
+      {settingsOpen && <SettingsDialog palette={palette} onPaletteChange={changePalette} listSprite={listSprite} onListSpriteChange={changeListSprite} onClose={closeSettings} />}
       {listUndo && listUndo.after === lists && (
         <UndoToast action={{ id: listUndo.id, kind: 'clearList', from: listUndo.from }} onClose={() => setListUndo(null)}
           onUndo={() => { setLists(listUndo.before); setListUndo(null); }} />

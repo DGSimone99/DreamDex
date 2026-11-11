@@ -44,7 +44,7 @@ describe('testata dell\'editor', () => {
     // Sulla carta il soprannome, con la specie nel tooltip
     expect(slot().querySelector('summary .name')).toHaveTextContent('Tusky');
     expect(slot().querySelector('summary .name')).toHaveAttribute('title', 'Tusky (Great Tusk)');
-    await user.click(within(slot()).getByRole('button', { name: 'Importa set' }));
+    await user.click(within(slot()).getByRole('button', { name: 'Showdown: importa o esporta il set' }));
     expect((within(slot()).getByLabelText('Set da incollare (testo Showdown)') as HTMLTextAreaElement).value).toMatch(/^Tusky \(Great Tusk\)/);
   });
 
@@ -66,7 +66,7 @@ describe('testata dell\'editor', () => {
 
   it('Importa / Esporta si apre sotto il suo pulsante e si chiude cliccando fuori', async () => {
     const { user, slot } = await openEditor();
-    await user.click(within(slot()).getByRole('button', { name: 'Importa set' }));
+    await user.click(within(slot()).getByRole('button', { name: 'Showdown: importa o esporta il set' }));
     expect(within(slot()).getByLabelText('Set da incollare (testo Showdown)').closest('.io-anchor')).not.toBeNull();
     fireEvent.pointerDown(document.body);
     expect(within(slot()).queryByLabelText('Set da incollare (testo Showdown)')).toBeNull();
@@ -74,7 +74,7 @@ describe('testata dell\'editor', () => {
 
   it('Importa / Esporta: se il testo è stato modificato, un clic fuori non lo butta', async () => {
     const { user, slot } = await openEditor();
-    await user.click(within(slot()).getByRole('button', { name: 'Importa set' }));
+    await user.click(within(slot()).getByRole('button', { name: 'Showdown: importa o esporta il set' }));
     const text = within(slot()).getByLabelText('Set da incollare (testo Showdown)');
     await user.clear(text);
     await user.type(text, 'Garchomp');
@@ -88,10 +88,13 @@ describe('testata dell\'editor', () => {
     expect(within(slot()).queryByLabelText('Set da incollare (testo Showdown)')).toBeNull();
   });
 
-  it('Custom Skillset: la casella viene dopo il testo', async () => {
-    const { slot } = await openEditor();
+  it('Custom Skillset: la levetta viene dopo il testo, che dice cosa fa adesso', async () => {
+    const { user, slot } = await openEditor();
     const label = slot().querySelector('.custom-toggle')!;
-    expect(label.firstChild?.nodeType).toBe(Node.TEXT_NODE);
-    expect(label.lastChild).toBe(label.querySelector('input'));
+    expect(label.firstElementChild).toHaveClass('custom-text');
+    expect(label.lastChild).toBe(label.querySelector('input.switch'));
+    expect(label).toHaveTextContent('Solo mosse imparabili');
+    await user.click(label.querySelector('input')!);
+    expect(label).toHaveTextContent('Mosse e abilità libere');
   });
 });

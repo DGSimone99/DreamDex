@@ -55,6 +55,13 @@
  * tratteggiato = l'uno o l'altro) e una frase corta; gli stili come formula "chi lo porta + chi lo sfrutta".
  */
 .help-dialog.tt-dialog { width: min(600px, 100%); }
+/* Conferma di un'azione che cambia tutto il team: piccola, una frase e due pulsanti in fondo a destra */
+.help-dialog.confirm-dialog { width: min(460px, 100%); }
+.confirm-text { margin: 0; padding: 16px 18px 4px; color: var(--text); font-size: 15px; line-height: 1.45; }
+.confirm-actions { display: flex; justify-content: flex-end; gap: 8px; padding: 14px 18px 16px; }
+.confirm-actions button { height: 36px; padding: 0 16px; }
+.confirm-actions .apply { background: var(--accent-soft); border-color: var(--accent); color: var(--text); font-weight: 700; }
+.confirm-actions .apply:hover { background: color-mix(in srgb, var(--accent) 30%, var(--raised)); }
 /* Come funziona il voto: altezza fissa, non cambia fra un argomento e l'altro (il testo scorre dentro) */
 .help-dialog.rating-help { height: min(620px, calc(100vh - 48px)); }
 /*

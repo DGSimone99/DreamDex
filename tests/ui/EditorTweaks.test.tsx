@@ -21,6 +21,32 @@ const openFirst = async (user: ReturnType<typeof userEvent.setup>, container: HT
 };
 
 describe('editor del set', () => {
+  it("con l'editor aperto la sezione accesa nella barra laterale dice chi stai modificando; chiuso, torna il suo stato", async () => {
+    const user = userEvent.setup();
+    const { container } = renderTeam();
+    const status = () => container.querySelector('#tab-pokemon-status')!;
+    const before = status().textContent;
+    await openFirst(user, container);
+    expect(status()).toHaveTextContent(`Modifica: ${tusk.species}`);
+    await user.click(container.querySelector<HTMLElement>('.slot[open] .editor-close')!);
+    expect(status().textContent).toBe(before);
+  });
+
+  it('col Tab i cursori degli EV si saltano: dal numero degli EV si passa agli IV e poi al numero della statistica dopo', async () => {
+    const user = userEvent.setup();
+    const { container } = renderTeam();
+    const slot = await openFirst(user, container);
+    const sliders = slot.querySelectorAll<HTMLInputElement>('.ev-slider');
+    expect(sliders).toHaveLength(6);
+    sliders.forEach(slider => expect(slider).toHaveAttribute('tabindex', '-1'));
+    const evs = slot.querySelectorAll<HTMLInputElement>('.ev-input');
+    evs[0].focus();
+    await user.tab();
+    expect(document.activeElement).toHaveClass('iv-input');
+    await user.tab();
+    expect(document.activeElement).toBe(evs[1]);
+  });
+
   it('la X chiude l\'editor e il focus torna sulla carta', async () => {
     const user = userEvent.setup();
     const { container } = renderTeam();
@@ -73,15 +99,17 @@ describe('editor del set', () => {
     await user.click(within(slot).getByRole('button', { name: 'Mostra i miei set' }));
     await user.click(within(screen.getByRole('list', { name: 'I miei set: opzioni' })).getByRole('button', { name: /^Set 1/ }));
     expect(within(slot).getByLabelText('Mossa 1')).toHaveValue(tusk.moves[0]);
+    // Mosse che il set non ha già negli altri slot (quelle sono bloccate nel menu)
+    const fresh = ['Earthquake', 'Stone Edge', 'Close Combat', 'Knock Off', 'Ice Spinner', 'Stealth Rock', 'Bulk Up', 'Rock Slide', 'Taunt', 'Body Press'].filter(m => !tusk.moves.includes(m));
     for (let i = 0; i < 4; i++) {
       await user.clear(within(slot).getByLabelText('Mossa 1'));
-      await user.type(within(slot).getByLabelText('Mossa 1'), `${['Earthquake', 'Stone Edge', 'Close Combat', 'Knock Off'][i]}{Enter}`);
+      await user.type(within(slot).getByLabelText('Mossa 1'), `${fresh[i]}{Enter}`);
       await user.click(within(slot).getByRole('button', { name: 'Salva set' }));
     }
     expect(loadMySets()['Great Tusk']).toHaveLength(5);
     // Pieno: un set nuovo (senza nome già usato) non si può salvare
     await user.clear(within(slot).getByLabelText('Mossa 1'));
-    await user.type(within(slot).getByLabelText('Mossa 1'), 'Rapid Spin{Enter}');
+    await user.type(within(slot).getByLabelText('Mossa 1'), `${fresh[4]}{Enter}`);
     expect(within(slot).getByRole('button', { name: 'Salva set' })).toBeDisabled();
   }, 30000);
 

@@ -421,7 +421,7 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
   .list-head .box-head { position: static; margin: 0; }
   /* Carte: lo sprite che esce dalla carta sotto il mouse passa sopra la fascia "Candidati" (la lista non lo ritaglia e,
      solo mentre c'è una carta sotto il mouse, sta sopra la fascia; a riposo il menu della vista resta sopra la lista) */
-  .picker-list > .suggestions.cards, .picker-list > .suggestions.menu { overflow: visible; position: relative; }
+  .picker-list > .suggestions.cards { overflow: visible; position: relative; }
   /* Lo sprite ingrandito può uscire dalla lista e dal pannello e passare sopra la barra laterale invece di essere
      tagliato: la lista non ritaglia e la scheda ritaglia solo oltre 48px dal bordo (senza diventare scorrevole) */
   .picker-list { overflow: visible; }
@@ -489,19 +489,22 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .card-sprite { position: absolute; left: 50%; top: 4px; width: var(--sprite-w); transform: translateX(-50%); pointer-events: none; }
 .card-sprite .box-icon { display: grid; place-items: center; width: 100%; aspect-ratio: 1; }
 .card-sprite .box-icon .mon-icon { margin: 0; transform: scale(2.1); }
-.card-sprite .box-icon.big .mon-icon, .pill-sprite .box-icon.big .mon-icon { transform: scale(2.4); }
+.card-sprite .box-icon.big .mon-icon { transform: scale(2.4); }
 .card-sprite .sprite { display: block; width: 100%; height: auto; image-rendering: pixelated; }
 /* Sotto il mouse lo sprite animato di Showdown, grande quanto lo statico: la GIF è il riquadro di 96px ritagliato
    sul Pokémon, quindi alta --ani-h/96 della casella; appoggiata in basso come i piedi dello statico */
 .card-sprite .sprite.covered { visibility: hidden; }
 .card-sprite .sprite-ani { position: absolute; left: 50%; bottom: calc(var(--sprite-w) / 24); width: auto; max-width: none; height: calc(var(--ani-h, 96) / 96 * var(--sprite-w)); image-rendering: pixelated; transform: translateX(-50%); pointer-events: none; }
-/* Carta "sollevata": sotto il mouse sale di 4px con un'ombra (drop-shadow sul li, che non è ritagliato, così segue l'angolo
-   tagliato), dietro il Pokémon si accende una luce nel colore del tipo, il bordo del tipo si ispessisce da 3 a 5px e lo
-   sprite esce dalla carta: cresce e sale finché la testa sfonda il bordo alto. Le vicine non si muovono.
-   La selezionata resta sollevata e con la luce accesa anche a riposo, con la sua cornice */
+/* Carta "sollevata": sotto il mouse sale subito di 4px con un'ombra (drop-shadow sul li, che non è ritagliato, così segue
+   l'angolo tagliato) e il fondo si tinge un po' di più: dice su che carta sei, e costa poco. Il resto aspetta che il mouse
+   resti fermo sulla carta --wake (lo stesso ritardo di CARD_WAKE_MS in CandidateCard): la luce nel colore del tipo dietro
+   il Pokémon, lo sprite che esce dalla carta (cresce e sale finché la testa sfonda il bordo alto) con la GIF, il salto
+   dell'icona del box. Passando di corsa sulla griglia non si accende niente. Le vicine non si muovono.
+   La selezionata e quella col fuoco da tastiera mostrano tutto subito, con la loro cornice */
+.suggestions.cards { --wake: 120ms; }
 .card { transition: transform 0.18s ease-out, filter 0.18s ease-out; }
-.card:hover { z-index: 5; }
-.card:hover, .card.selected { transform: translateY(-4px); filter: drop-shadow(0 6px 8px rgb(0 0 0 / 0.45)); }
+.card:hover, .card:has(:focus-visible) { z-index: 5; }
+.card:hover, .card.selected, .card:has(:focus-visible) { transform: translateY(-4px); filter: drop-shadow(0 6px 8px rgb(0 0 0 / 0.45)); }
 .card.selected { z-index: 4; }
 /* Riflettore dall'alto: un cono di luce (bianca appena tinta del tipo) che scende dal centro del bordo alto e si apre sul
    Pokémon, e la pozza di luce ai suoi piedi; sfuma verso la targhetta */
@@ -513,20 +516,23 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
     conic-gradient(from 156deg at 50% -56px, transparent 0deg, color-mix(in srgb, var(--spot) 20%, transparent) 11deg,
       color-mix(in srgb, var(--spot) 30%, transparent) 24deg, color-mix(in srgb, var(--spot) 20%, transparent) 37deg, transparent 48deg);
   -webkit-mask-image: linear-gradient(#000 60%, transparent 90%); mask-image: linear-gradient(#000 60%, transparent 90%); }
+/* La riga del tipo sotto la targhetta (il bordo del tipo più spesso) solo sulla selezionata, non sotto il mouse */
 .card .who::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: var(--t1); opacity: 0; transition: opacity 0.18s ease-out; pointer-events: none; }
-.card:hover .card-face::before, .card.selected .card-face::before,
-.card:hover .who::after, .card.selected .who::after { opacity: 1; }
+.card.selected .who::after { opacity: 1; }
+.card:hover .card-face::before { opacity: 1; transition-delay: var(--wake); }
+.card.selected .card-face::before, .card:has(:focus-visible) .card-face::before { opacity: 1; transition-delay: 0s; }
 .card-sprite.popped { z-index: 1; transform-origin: 50% 100%; animation: sprite-pop 0.22s cubic-bezier(0.3, 1.4, 0.5, 1) both; }
 @keyframes sprite-pop {
   from { transform: translateX(-50%); }
   to { transform: translateX(-50%) translateY(-10px) scale(1.15); }
 }
-/* Icona del box: sotto il mouse e sulla selezionata saltella come il membro aperto del team compresso (sul riquadro: l'icona ha già la sua scala) */
-.card:hover .card-sprite .box-icon, .card.selected .card-sprite .box-icon { animation: box-hop 0.7s ease-in-out infinite; }
+/* Icona del box: quando esce dalla carta (dopo l'attesa sotto il mouse, subito col fuoco) e sulla selezionata saltella
+   come il membro aperto del team compresso (sul riquadro: l'icona ha già la sua scala) */
+.card-sprite.popped .box-icon, .card.selected .card-sprite .box-icon { animation: box-hop 0.7s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) {
   .card, .card-face::before, .card .who::after { transition: none; }
   .card-sprite.popped { animation: none; }
-  .card:hover .card-sprite .box-icon, .card.selected .card-sprite .box-icon { animation: none; }
+  .card-sprite.popped .box-icon, .card.selected .card-sprite .box-icon { animation: none; }
 }
 /* Targhetta in alto a sinistra: +N (#1 su magenta), −N e ±0 nei loro colori, col team vuoto l'uso nel meta */
 .card .tag { --tag-bg: var(--ground); position: absolute; top: 0; left: 0; z-index: 1; display: flex; align-items: center; gap: 4px; margin: 0; padding: 5px 16px 5px 8px; border-radius: 0; background: var(--tag-bg); color: var(--text);
@@ -569,103 +575,21 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .pick-name { display: flex; align-items: center; gap: 5px; min-width: 0; }
 .pick-name b { flex: none; font: 800 15px/1.15 var(--display); font-style: italic; white-space: nowrap; }
 .pick-name .forme { flex: 0 1 auto; min-width: 0; overflow: hidden; padding: 1px 5px; border-radius: 3px; background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent-ink); font: 700 11px/1.3 var(--ui); font-style: normal; letter-spacing: 0.03em; text-transform: uppercase; white-space: nowrap; text-overflow: ellipsis; }
-.card.first .pick-name .forme, .pill.first .pick-name .forme { background: color-mix(in srgb, var(--accent) 22%, transparent); }
+.card.first .pick-name .forme { background: color-mix(in srgb, var(--accent) 22%, transparent); }
 /* Sulle carte la forma sta sul bordo alto della targhetta del nome, a destra (spazio libero sotto lo sprite): il nome e
    le icone tengono la loro riga e la forma si legge sempre intera */
 .card .pick-name .forme { position: absolute; z-index: 1; top: -10px; right: 8px; max-width: calc(100% - 16px); padding: 1px 6px; background: var(--ground); border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); }
 .card.first .pick-name .forme { background: var(--ground); }
-/* Pillola selezionata (fondo nel colore del lavoro): l'etichetta della forma nei colori scuri */
-.pill.selected .pick-name .forme { background: color-mix(in srgb, var(--on-accent) 14%, transparent); color: var(--on-accent); }
 .card .who small { display: flex; flex-direction: column; min-width: 0; }
 .card .reason { display: block; min-width: 0; font: 500 12px/16px var(--ui); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .card .reason b { margin-right: 3px; font-weight: 700; color: var(--good); }
 
-/* Stile "Menu": una colonna di 6 pillole scure (altezza della riga e spazio da usePerPage: --row-h, --menu-gap).
-   A sinistra 30px per il cursore ▶ della selezionata; colori da tokens.css (--pill-*), così un tema li ridefinisce */
-.suggestions.menu { display: flex; flex-direction: column; justify-content: center; gap: var(--menu-gap, 10px); padding: 10px 14px 10px 30px; }
-.suggestions.menu > li + li { border-top: 0; }
-.pill {
-  --rh: var(--row-h, 48px);
-  position: relative;
-  height: var(--rh);
-  flex: none;
-  min-width: 0;
-  margin: 0;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 10px;
-  padding: 0 18px 0 calc(var(--rh) * 0.95);
-  border-radius: 999px;
-  background: var(--pill-bg);
-  color: var(--pill-ink);
-  cursor: pointer;
-  user-select: none;
-  /* La pillola resta 14px più corta della fila: sotto il mouse e selezionata esce verso destra in quello spazio, con un
-     rimbalzo e un'ombra (come la voce scelta nei menu dei giochi); le altre restano ferme */
-  margin-right: 14px;
-  transition: background 0.15s, transform 0.3s cubic-bezier(0.34, 1.5, 0.5, 1), filter 0.2s;
-}
-.pill:hover { z-index: 2; background: var(--pill-bg-hover); }
-.pill.selected { z-index: 1; }
-.pill:hover, .pill.selected { transform: translateX(14px); filter: drop-shadow(0 4px 6px rgb(0 0 0 / 0.4)); }
-/* Il Pokémon esce dal tondo: cresce e sale un poco (sotto il mouse; sulla selezionata resta animato ma fermo) */
-.pill-sprite .sprite, .pill-sprite .sprite-ani, .pill-sprite .box-icon { transition: transform 0.3s cubic-bezier(0.34, 1.5, 0.5, 1); }
-.pill:hover .pill-sprite .sprite, .pill:hover .pill-sprite .sprite-ani { transform: translateX(-50%) translateY(-6%) scale(1.15); }
-.pill:hover .pill-sprite .box-icon, .pill.selected .pill-sprite .box-icon { animation: box-hop 0.7s ease-in-out infinite; }
-/* Pagina nuova: le righe entrano scivolando una dopo l'altra (avanti da destra, indietro da sinistra) */
-.suggestions.menu > .pill { animation: pill-slide-on 0.38s cubic-bezier(0.3, 1.3, 0.5, 1) backwards; animation-delay: calc(var(--i, 0) * 35ms); }
-.suggestions.menu.roll-back > .pill { animation-name: pill-slide-back; }
-@keyframes pill-slide-on { from { opacity: 0; transform: translateX(48px); } }
-@keyframes pill-slide-back { from { opacity: 0; transform: translateX(-48px); } }
-@media (prefers-reduced-motion: reduce) {
-  .pill, .pill-sprite .sprite, .pill-sprite .sprite-ani { transition: background 0.15s; }
-  .pill:hover, .pill.selected { transform: none; }
-  .pill:hover .pill-sprite .sprite, .pill:hover .pill-sprite .sprite-ani { transform: translateX(-50%); }
-  .pill:hover .pill-sprite .box-icon, .pill.selected .pill-sprite .box-icon { animation: none; }
-  .suggestions.menu > .pill { animation: none; }
-}
-.pill.picked { box-shadow: inset 0 0 0 2px var(--accent); }
-.pill.selected { background: var(--accent); color: var(--on-accent); }
-/* Il cursore ▶ fuori dalla pillola, nel margine sinistro della lista */
-.pill.selected::after { content: '▶' / ''; position: absolute; left: -26px; top: 50%; transform: translateY(-50%); color: var(--accent); font-size: 14px; pointer-events: none;
-  /* Alone del colore del pannello: resta leggibile dove tocca il tondo chiaro dello sprite */
-  filter: drop-shadow(0 0 1.5px var(--panel)) drop-shadow(0 0 1.5px var(--panel)); }
-/* Tondo dello sprite: sporge a sinistra, sfumatura scura nel colore del tipo, anello del colore del pannello.
-   Il tondo è lo sfondo (::before): lo sprite non è ritagliato e ne esce sopra */
-.pill-sprite {
-  position: absolute;
-  left: calc(var(--rh) * -0.32);
-  top: 50%;
-  width: calc(var(--rh) * 1.12);
-  height: calc(var(--rh) * 1.12);
-  transform: translateY(-50%);
-  pointer-events: none;
-}
-.pill-sprite::before { content: ''; position: absolute; inset: 0; border-radius: 50%; box-shadow: 0 0 0 3px var(--panel);
-  background: radial-gradient(circle, color-mix(in srgb, var(--t1) 55%, var(--raised)), color-mix(in srgb, var(--t1) 28%, var(--ground))); }
-.pill-sprite .box-icon { position: absolute; inset: 0; display: grid; place-items: center; }
-.pill-sprite .box-icon .mon-icon { margin: 0; transform: scale(2.1); }
-.pill-sprite .sprite { position: absolute; left: 50%; bottom: 4%; width: calc(var(--rh) * 1.4); height: auto; max-width: none; transform: translateX(-50%); transform-origin: 50% 100%; image-rendering: pixelated; }
-/* Sprite animato (riga sotto il mouse e selezionata): la GIF ritagliata, grande quanto lo statico e coi piedi allo stesso punto */
-.pill-sprite .sprite.covered { visibility: hidden; }
-.pill-sprite .sprite-ani { position: absolute; left: 50%; bottom: calc(4% + var(--rh) * 1.4 / 24); width: auto; max-width: none; height: calc(var(--ani-h, 96) / 96 * var(--rh) * 1.4);
-  transform: translateX(-50%); transform-origin: 50% 100%; image-rendering: pixelated; pointer-events: none; }
-.pill .who { position: relative; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
-.pill .name-line { display: flex; min-width: 0; }
-.pill .pick { min-width: 0; overflow: hidden; padding: 0; border: 0; background: none; color: inherit; text-align: left; }
-.pill .pick[aria-pressed='true'] { background: none; }
-.pill .pick strong { display: block; font: 800 15px/1.15 var(--display); font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-/* Motivi in fila (1, fino a 3 quando la riga è alta), il "+" verde scuro */
-.pill .who small { display: flex; flex-wrap: wrap; gap: 0 14px; min-width: 0; }
-.pill .reason { min-width: 0; max-width: 100%; font: 500 12px/1.3 var(--ui); color: var(--pill-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.pill .reason b { margin-right: 3px; font-weight: 700; color: var(--pill-gain); }
-/* Motivi a segni (carte e Menu): ⚔️ chip dei tipi colpiti, 🛡️ chip dei tipi retti (gli immuni con la parola), "vs" chi
+/* Motivi a segni: ⚔️ chip dei tipi colpiti, 🛡️ chip dei tipi retti (gli immuni con la parola), "vs" chi
    ferma, 🔗 il membro legato. Le mini icone (40×30) sporgono dalla riga da 16px: la riga non le taglia. I chip che non
    entrano vanno su una seconda riga nascosta e diventano "+N" (candidateParts); il nome di un Pokémon solo se entra intero */
-/* Parole o segni, per tutta la lista: le carte (e le pillole) di una lista sono larghe uguali, quindi la larghezza della
-   carta decide per tutte. Da 560 px le parole brevi entrano quasi sempre (Menu sugli schermi grandi): restano le parole; le carte (al massimo
-   ~280 px) tagliano ancora le liste di Pokémon fermati, quindi restano a segni */
+/* Parole o segni, per tutta la lista: le carte di una lista sono larghe uguali, quindi la larghezza della carta decide
+   per tutte. Da 560 px le parole brevi entrano quasi sempre: restano le parole; le carte (al massimo ~280 px) tagliano
+   ancora le liste di Pokémon fermati, quindi restano a segni */
 .suggestions > li { container: cand / inline-size; }
 .reason.has-sym .words { display: none; }
 .reason.has-sym { display: flex; align-items: center; overflow: visible; text-overflow: clip; }
@@ -691,39 +615,3 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .reason .sym-mon strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* "+N" piccolo e grigio subito dopo l'ultimo elemento: non si confonde col voto */
 .reason .sym-more { flex: none; margin-left: 4px; font: 500 10px/1 var(--ui); color: var(--faint); }
-.pill .reason .sym-mon strong { color: var(--pill-ink); }
-.pill.selected .reason .sym-mon strong, .pill.selected .reason .sym-vs { color: var(--on-accent); }
-/* Destra: segni, icone dei tipi 18px, voto */
-.pill-end { display: flex; align-items: center; gap: 8px; }
-.pill .pill-types { gap: 4px; }
-.pill .pill-types img { width: 18px; height: 18px; box-shadow: none; }
-.pill .pill-types img + img { margin: 0; }
-.pill .score { margin: 0; font: 800 19px/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums; color: var(--pill-ink); }
-.pill .score strong { font: inherit; }
-.pill .score strong.worse { color: var(--pill-bad); }
-.pill .score strong.same { color: var(--pill-muted); }
-.pill .score small { margin-left: 3px; font: 600 11px/1 var(--ui); font-style: normal; color: var(--pill-muted); }
-/* #1: il +N in una pillola magenta */
-.pill.first .score { padding: 3px 9px; border-radius: 99px; background: var(--accent-2); color: var(--on-accent-2); }
-.pill.first .score small { color: inherit; }
-/* Preferito: ♥ e bordo di 2px nel colore dei Preferiti sul +N */
-.pill .score.fav { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 99px; box-shadow: inset 0 0 0 2px var(--pill-info); }
-.pill .score .fav-heart { color: var(--pill-info); }
-.pill.selected .score.fav { box-shadow: inset 0 0 0 2px var(--on-accent); }
-.pill.selected .score .fav-heart { color: var(--on-accent); }
-.pill.selected.first .score .fav-heart { color: var(--on-accent-2); }
-/* Selezionata: tutto il testo in --on-accent, anche i tipi e i segni */
-/* Segni sulla pillola: i colori di stato del tema (solo l'icona: il tooltip ha i suoi colori) */
-.pill .alert-mark.danger .icon, .pill .list-mark.ban { color: var(--pill-bad); }
-.pill .alert-mark.warn .icon { color: var(--pill-warn); }
-.pill .alert-mark.info .icon, .pill .list-mark.fav { color: var(--pill-info); }
-/* Selezionata: tutto il testo e i segni in --on-accent (sul ciano i colori dei tipi e degli stati non si leggono) */
-.pill.selected .reason, .pill.selected .reason b, .pill.selected .score, .pill.selected .score strong,
-.pill.selected .score small, .pill.selected .alert-mark .icon, .pill.selected .list-mark { color: var(--on-accent); }
-.pill.selected .type-name { --type-color: var(--on-accent); }
-/* Il #1 selezionato: il voto resta sulla sua pillola magenta */
-.pill.selected.first .score, .pill.selected.first .score strong, .pill.selected.first .score small { color: var(--on-accent-2); }
-/* Chi esce (Migliora · Tutti): tondino in alto sul tondo dello sprite */
-.pill .out { position: absolute; left: calc(var(--rh) * -0.32 - 4px); top: -4px; z-index: 2; width: 24px; height: 24px; border-radius: 50%; overflow: hidden; background: var(--ground); border: 1px solid var(--line); }
-.pill .out .mon-icon { margin: -6px 0 0 -9px; }
-.pill .out .icon { display: none; }

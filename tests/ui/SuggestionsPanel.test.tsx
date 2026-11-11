@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/App';
 import { fixtureData } from '../fixtures/data';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
+import { CARD_WAKE_MS } from '../../src/ui/CandidateCard';
 
 const suggestions = () => screen.getByRole('region', { name: 'Suggerimenti' });
 const team = () => screen.getByRole('region', { name: 'Team' });
@@ -587,7 +588,7 @@ describe('stile Carte', () => {
     const { SuggestionsPanel } = await import('../../src/ui/SuggestionsPanel');
     const { renderIt } = await import('../helpers/italian');
     renderIt(<SuggestionsPanel team={team as never} format={DEFAULT_FORMAT} data={fixtureData} replaceIndex={null}
-      onAdd={() => {}} onReplaceWith={() => {}} onCancelReplace={() => {}} listStyle="cards" />);
+      onAdd={() => {}} onReplaceWith={() => {}} onCancelReplace={() => {}} />);
   }
 
   it('Carte: tipi come icone e +N sulla targhetta', async () => {
@@ -637,54 +638,18 @@ describe('stile Carte', () => {
   });
 });
 
-describe('stile Menu', () => {
-  it('Menu: una colonna di pillole, la selezionata ha aria-pressed', async () => {
-    const { SuggestionsPanel } = await import('../../src/ui/SuggestionsPanel');
-    const { renderIt } = await import('../helpers/italian');
-    const { tusk } = await import('../fixtures/data');
-    const user = userEvent.setup();
-    renderIt(<SuggestionsPanel team={[tusk] as never} format={DEFAULT_FORMAT} data={fixtureData} replaceIndex={null}
-      onAdd={() => {}} onReplaceWith={() => {}} onCancelReplace={() => {}} listStyle="menu" />);
-    expect(list()).toHaveClass('menu');
-    expect(list()).not.toHaveClass('cards');
-    const rows = [...list().querySelectorAll<HTMLElement>(':scope > li')];
-    expect(rows.every(row => row.classList.contains('pill'))).toBe(true);
-    // Tipi come icone a destra, niente chip
-    expect(rows[0].querySelector('.type-icons')).not.toBeNull();
-    expect([...rows[0].querySelectorAll('.type-chip')].filter(c => !c.closest('.reason'))).toHaveLength(0);
-    await user.click(rows[1]);
-    expect(rows[1].querySelector('button.pick')).toHaveAttribute('aria-pressed', 'true');
-    expect(rows[1]).toHaveClass('selected');
-    expect(rows[0].querySelector('button.pick')).toHaveAttribute('aria-pressed', 'false');
-  });
-
-  it('Menu: pillole scure coi colori del tema (fondo, testo e segni)', () => {
-    // jsdom non carica i fogli di stile: si legge tokens.css come testo
-    const css = readFileSync(resolve(__dirname, '../../src/styles/tokens.css'), 'utf8');
-    const token = (name: string) => css.match(new RegExp(`${name}:\s*([^;]+);`))?.[1].trim();
-    expect(token('--pill-bg')).toBe('var(--raised)');
-    expect(token('--pill-ink')).toBe('var(--text)');
-    expect(token('--pill-muted')).toBe('var(--muted)');
-    expect(token('--pill-gain')).toBe('var(--good)');
-    expect(token('--pill-bad')).toBe('var(--bad)');
-  });
-});
-
 describe('sprite Icona box', () => {
   it('Icona box: la lista usa le icone del box', async () => {
     const { SuggestionsPanel } = await import('../../src/ui/SuggestionsPanel');
     const { renderIt } = await import('../helpers/italian');
     const { tusk } = await import('../fixtures/data');
-    for (const listStyle of ['cards', 'menu'] as const) {
-      const { unmount } = renderIt(<SuggestionsPanel team={[tusk] as never} format={DEFAULT_FORMAT} data={fixtureData} replaceIndex={null}
-        onAdd={() => {}} onReplaceWith={() => {}} onCancelReplace={() => {}} listStyle={listStyle} listSprite="box" />);
-      const tiles = list().querySelectorAll(listStyle === 'cards' ? '.card' : '.pill');
-      expect(tiles.length).toBeGreaterThan(0);
-      for (const tile of tiles) {
-        expect(tile.querySelector('.box-icon .mon-icon')).not.toBeNull();
-        expect(tile.querySelector('img.sprite')).toBeNull();
-      }
-      unmount();
+    renderIt(<SuggestionsPanel team={[tusk] as never} format={DEFAULT_FORMAT} data={fixtureData} replaceIndex={null}
+      onAdd={() => {}} onReplaceWith={() => {}} onCancelReplace={() => {}} listSprite="box" />);
+    const tiles = list().querySelectorAll('.card');
+    expect(tiles.length).toBeGreaterThan(0);
+    for (const tile of tiles) {
+      expect(tile.querySelector('.box-icon .mon-icon')).not.toBeNull();
+      expect(tile.querySelector('img.sprite')).toBeNull();
     }
   });
 
@@ -695,18 +660,55 @@ describe('sprite Icona box', () => {
     const { fireEvent } = await import('@testing-library/react');
     for (const listSprite of ['normal', 'box'] as const) {
       const { unmount } = renderIt(<SuggestionsPanel team={[tusk] as never} format={DEFAULT_FORMAT} data={fixtureData} replaceIndex={null}
-        onAdd={() => {}} onReplaceWith={() => {}} onCancelReplace={() => {}} listStyle="cards" listSprite={listSprite} />);
+        onAdd={() => {}} onReplaceWith={() => {}} onCancelReplace={() => {}} listSprite={listSprite} />);
       const cards = [...list().querySelectorAll<HTMLElement>('.card')];
       expect(cards.length).toBeGreaterThan(1);
       const animated = () => [...list().querySelectorAll('.card')].filter(card => card.querySelector('.sprite-ani'));
       // A riposo solo la selezionata (la prima)
       expect(cards[0].classList.contains('selected')).toBe(true);
       expect(animated()).toEqual(listSprite === 'normal' ? [cards[0]] : []);
-      fireEvent.mouseEnter(cards[1]);
-      expect(animated()).toEqual(listSprite === 'normal' ? [cards[0], cards[1]] : []);
-      fireEvent.mouseLeave(cards[1]);
-      expect(animated()).toEqual(listSprite === 'normal' ? [cards[0]] : []);
+      vi.useFakeTimers();
+      try {
+        // Sotto il mouse lo sprite esce (e parte la GIF) solo dopo CARD_WAKE_MS fermi sulla carta
+        fireEvent.mouseEnter(cards[1]);
+        expect(animated()).toEqual(listSprite === 'normal' ? [cards[0]] : []);
+        expect(cards[1].querySelector('.card-sprite.popped')).toBeNull();
+        act(() => { vi.advanceTimersByTime(CARD_WAKE_MS); });
+        expect(animated()).toEqual(listSprite === 'normal' ? [cards[0], cards[1]] : []);
+        expect(cards[1].querySelector('.card-sprite.popped')).not.toBeNull();
+        fireEvent.mouseLeave(cards[1]);
+        expect(animated()).toEqual(listSprite === 'normal' ? [cards[0]] : []);
+        expect(cards[1].querySelector('.card-sprite.popped')).toBeNull();
+      } finally {
+        vi.useRealTimers();
+      }
       unmount();
+    }
+  });
+
+  it('Carte: passando di corsa sopra una carta lo sprite non esce e la GIF non si chiede', async () => {
+    const { SuggestionsPanel } = await import('../../src/ui/SuggestionsPanel');
+    const { renderIt } = await import('../helpers/italian');
+    const { tusk } = await import('../fixtures/data');
+    const { fireEvent } = await import('@testing-library/react');
+    renderIt(<SuggestionsPanel team={[tusk] as never} format={DEFAULT_FORMAT} data={fixtureData} replaceIndex={null}
+      onAdd={() => {}} onReplaceWith={() => {}} onCancelReplace={() => {}} />);
+    const cards = [...list().querySelectorAll<HTMLElement>('.card')];
+    vi.useFakeTimers();
+    try {
+      fireEvent.mouseEnter(cards[1]);
+      act(() => { vi.advanceTimersByTime(CARD_WAKE_MS - 20); });
+      fireEvent.mouseLeave(cards[1]);
+      fireEvent.mouseEnter(cards[2]);
+      act(() => { vi.advanceTimersByTime(CARD_WAKE_MS - 20); });
+      fireEvent.mouseLeave(cards[2]);
+      act(() => { vi.advanceTimersByTime(1000); });
+      for (const card of cards.slice(1)) {
+        expect(card.querySelector('.sprite-ani')).toBeNull();
+        expect(card.querySelector('.card-sprite.popped')).toBeNull();
+      }
+    } finally {
+      vi.useRealTimers();
     }
   });
 
@@ -715,7 +717,7 @@ describe('sprite Icona box', () => {
     const { renderIt } = await import('../helpers/italian');
     const { tusk } = await import('../fixtures/data');
     renderIt(<SuggestionsPanel team={[tusk] as never} format={DEFAULT_FORMAT} data={fixtureData} replaceIndex={null}
-      onAdd={() => {}} onReplaceWith={() => {}} onCancelReplace={() => {}} listStyle="cards" listSprite="normal" />);
+      onAdd={() => {}} onReplaceWith={() => {}} onCancelReplace={() => {}} listSprite="normal" />);
     const roles = [...screen.getByRole('list', { name: 'Ruoli del set' }).querySelectorAll('li')];
     expect(roles.length).toBeGreaterThan(0);
     expect(roles[0].classList.contains('main')).toBe(true);
@@ -727,7 +729,7 @@ describe('sprite Icona box', () => {
     const { renderIt } = await import('../helpers/italian');
     const { tusk } = await import('../fixtures/data');
     const props = { team: [tusk] as never, format: DEFAULT_FORMAT, data: fixtureData, replaceIndex: null,
-      onAdd: () => {}, onReplaceWith: () => {}, onCancelReplace: () => {}, listStyle: 'cards' as const };
+      onAdd: () => {}, onReplaceWith: () => {}, onCancelReplace: () => {} };
     const { rerender } = renderIt(<SuggestionsPanel {...props} />);
     const detail = () => screen.getByRole('complementary', { name: /^Dettaglio di / });
     expect(within(detail()).queryByRole('heading', { name: 'Meta' })).toBeNull();
@@ -752,20 +754,17 @@ describe('sprite Icona box', () => {
 });
 
 describe('tipi del candidato per gli screen reader', () => {
-  it('Carte e Menu: i nomi dei tipi come testo nascosto, le icone restano decorative', async () => {
+  it('Carte: i nomi dei tipi come testo nascosto, le icone restano decorative', async () => {
     const { SuggestionsPanel } = await import('../../src/ui/SuggestionsPanel');
     const { renderIt } = await import('../helpers/italian');
     const { tusk } = await import('../fixtures/data');
     const { typeName } = await import('../../src/i18n/game');
-    for (const listStyle of ['cards', 'menu'] as const) {
-      const { unmount } = renderIt(<SuggestionsPanel team={[tusk] as never} format={DEFAULT_FORMAT} data={fixtureData} replaceIndex={null}
-        onAdd={() => {}} onReplaceWith={() => {}} onCancelReplace={() => {}} listStyle={listStyle} />);
-      const corviknight = [...list().children].find(li => li.querySelector('.name-line strong')!.textContent!.endsWith('Corviknight'))!;
-      expect(corviknight.querySelector('.type-icons')).toHaveAttribute('aria-hidden', 'true');
-      const names = ['Flying', 'Steel'].map(type => typeName(type, 'it')).join(' / ');
-      expect(corviknight.querySelector('.type-icons + .visually-hidden')?.textContent).toBe(names);
-      unmount();
-    }
+    renderIt(<SuggestionsPanel team={[tusk] as never} format={DEFAULT_FORMAT} data={fixtureData} replaceIndex={null}
+      onAdd={() => {}} onReplaceWith={() => {}} onCancelReplace={() => {}} />);
+    const corviknight = [...list().children].find(li => li.querySelector('.name-line strong')!.textContent!.endsWith('Corviknight'))!;
+    expect(corviknight.querySelector('.type-icons')).toHaveAttribute('aria-hidden', 'true');
+    const names = ['Flying', 'Steel'].map(type => typeName(type, 'it')).join(' / ');
+    expect(corviknight.querySelector('.type-icons + .visually-hidden')?.textContent).toBe(names);
   });
 });
 

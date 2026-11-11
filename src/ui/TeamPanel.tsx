@@ -14,6 +14,7 @@ import { flushSync } from 'react-dom';
 import { copyText } from './clipboard';
 import { setEditing } from './editing';
 import { bestPreset, bestPresets } from '../engine/bestPreset';
+import { ConfirmDialog } from './ConfirmDialog';
 import { FillPanel } from './FillPanel';
 import { SetEditor } from './SetEditor';
 import { PokemonIcon } from './PokemonName';
@@ -428,7 +429,7 @@ function TeamSlot({ index, set, subRoles, proposal, onProposalDone, data, format
         smogonAction={<SmogonLink species={name} format={format} presets={presets} iconOnly />}
         ioAction={
           <span className="io-anchor" ref={ioRef}>
-            <button type="button" className="member-io" aria-expanded={!!paste} title={tr('team.memberIO')} aria-label={tr('team.memberIO')}
+            <button type="button" className="member-io" aria-expanded={!!paste} title={tr('team.memberIOTitle')} aria-label={tr('team.memberIOName')}
               onClick={() => setPaste(p => {
                 if (p) return null;
                 const text = exportShowdown([set], { tera: teraAllowed(format) });
@@ -522,7 +523,12 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
   };
   // Preset migliori: qualche decimo di secondo, il pulsante dice che sta calcolando
   const [busy, setBusy] = useState(false);
+  // Cambia tutti i membri insieme: prima una conferma che dice cosa fa
+  const [confirmPresets, setConfirmPresets] = useState(false);
+  const presetsButton = useRef<HTMLButtonElement>(null);
+  const closeConfirm = () => { setConfirmPresets(false); presetsButton.current?.focus(); };
   const runPresets = () => {
+    setConfirmPresets(false);
     setBusy(true);
     setTimeout(() => {
       const next = bestPresets(team, data, format.genLimit);
@@ -550,10 +556,14 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
       <div className="team-head">
         <h2>{t(lang, 'team.title', { n: team.length })}</h2>
         {team.length > 0 && (
-          <button type="button" className="team-action" disabled={busy} aria-busy={busy || undefined}
-            title={t(lang, 'team.bestPresetsTitle')} onClick={runPresets}>
+          <button type="button" className="team-action" disabled={busy} aria-busy={busy || undefined} ref={presetsButton}
+            aria-haspopup="dialog" title={t(lang, 'team.bestPresetsTitle')} onClick={() => setConfirmPresets(true)}>
             <Icon name="spark" /> <span className="btn-label">{t(lang, busy ? 'team.bestPresetsBusy' : 'team.bestPresets')}</span>
           </button>
+        )}
+        {confirmPresets && (
+          <ConfirmDialog title={t(lang, 'team.bestPresets')} text={t(lang, 'team.bestPresetsConfirm')} confirm={t(lang, 'team.bestPresetsApply')}
+            onConfirm={() => { runPresets(); presetsButton.current?.focus(); }} onCancel={closeConfirm} />
         )}
         {canFill && (
           // Anche a team vuoto: propone team interi del tipo scelto; il pannello si apre sotto il pulsante
