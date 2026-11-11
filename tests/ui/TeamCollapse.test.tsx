@@ -67,7 +67,7 @@ describe('team compresso', () => {
   it("su uno schermo basso l'editor aperto comprime il team da solo; la freccia lo riapre senza salvarlo; chiuso l'editor torna com'era", async () => {
     // jsdom non ha matchMedia: lo finge uno schermo basso
     const short = vi.fn((query: string) => ({
-      matches: query.includes('max-height: 799px'), media: query, onchange: null,
+      matches: query.includes('max-height: 759px'), media: query, onchange: null,
       addEventListener: () => undefined, removeEventListener: () => undefined, addListener: () => undefined, removeListener: () => undefined, dispatchEvent: () => false,
     }) as MediaQueryList);
     vi.stubGlobal('matchMedia', short);

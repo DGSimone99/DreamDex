@@ -1042,6 +1042,8 @@ export const en = {
   'rating.rolesMissing': "{n} missing",
   'rating.rolesMissingOne': "1 missing",
   'rating.rolesAll': "all",
+  'rating.rolesMissingEssential': "Essential missing: {n}",
+  'rating.rolesMissingImportant': "Important missing: {n}",
   'area.bonusMalus': "Bonus/Malus",
   'catalogue.onGrade': "On the grade",
   'catalogue.takes': "What takes away",

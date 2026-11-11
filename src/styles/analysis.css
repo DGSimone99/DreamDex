@@ -435,8 +435,8 @@
 .sum-tags .sum-tag { padding: 2px 6px; gap: 4px; }
 .sum-to { flex: none; color: var(--faint); }
 /* Chi ne approfitta: mini-sprite accostati; vanno a capo invece di essere tagliati */
-.sum-users { min-width: 0; display: flex; flex-wrap: wrap; }
-.sum-user { flex: none; display: flex; margin: calc(var(--sum-mini) * -0.1) calc(var(--sum-mini) * -0.16); }
+.sum-users { min-width: 0; display: flex; flex-wrap: wrap; gap: 2px 6px; }
+.sum-user { flex: none; display: flex; margin: calc(var(--sum-mini) * -0.1) calc(var(--sum-mini) * -0.08); }
 
 /*
  * Sinergie: l'ultima sezione prende lo spazio che resta (le altre restano alte quanto il contenuto); le righe che non
