@@ -83,6 +83,16 @@
 .help-frame > .help-dialog { position: relative; z-index: 1; width: 100%; }
 .help-frame.with-peek { --peek: 175px; --peek-room: calc(var(--peek) * 0.9); margin-top: var(--peek-room); }
 .help-frame.with-peek > .help-dialog.rating-help { height: min(620px, calc(100vh - 48px - var(--peek-room))); }
+/* Tutte le guide "Come funziona": la cornice è larga quanto la sua finestra, e la finestra si accorcia dello spazio di Eevee */
+.help-frame.with-peek { width: min(var(--frame-w, 780px), 100%); }
+.help-frame.with-peek:has(> .area-guide) { --frame-w: 980px; }
+.help-frame.with-peek:has(> .tt-dialog) { --frame-w: 600px; }
+.help-frame.with-peek > .help-dialog { max-height: min(620px, calc(100vh - 48px - var(--peek-room))); }
+.help-frame.with-peek > .help-dialog.area-guide-strength,
+.help-frame.with-peek > .help-dialog.area-guide-speed { height: min(560px, calc(100vh - 48px - var(--peek-room))); }
+.help-frame.with-peek > .help-dialog.area-guide-defense { height: min(672px, calc(100vh - 48px - var(--peek-room))); max-height: min(672px, calc(100vh - 48px - var(--peek-room))); }
+/* Schermi piccoli: Eevee più piccolo, la finestra resta grande */
+@media (max-width: 599px), (max-height: 700px) { .help-frame.with-peek { --peek: 120px; } }
 .eevee-peek { position: absolute; top: 0; left: 40px; width: var(--peek); pointer-events: none; user-select: none; }
 .eevee-peek img { position: absolute; display: block; }
 .eevee-peek .peek-head { left: 0; top: calc(var(--peek) * -0.914); width: var(--peek); z-index: 0; }
