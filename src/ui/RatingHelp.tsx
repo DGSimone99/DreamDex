@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
 import { createPortal } from 'react-dom';
 import type { Archetype } from '../engine/archetype';
 import { ARCHETYPE_WEIGHTS, GRADES, type AreaWeightTable } from '../engine/rating';
-import { isGroupKey, LEVEL_KEYS, levelOf, rolesTypeOf, type Level, type LevelKey } from '../engine/roleLevels';
+import { isGroupKey, LEVEL_KEYS, levelFor, type Level, type LevelKey } from '../engine/roleLevels';
 import type { MessageKey } from '../i18n';
 import { useT } from '../i18n/react';
 import { EeveePeek } from './EeveePeek';
@@ -209,7 +209,7 @@ function TypeTopic({ type, weights, typeRule }: { type: Archetype; weights: Area
       </dl>
       <h5>{t('area.roles')}</h5>
       {LEVELS.map(level => {
-        const keys = LEVEL_KEYS.filter(key => levelOf(rolesTypeOf(type, typeRule), key) === level);
+        const keys = LEVEL_KEYS.filter(key => levelFor(type, key, typeRule) === level);
         if (keys.length === 0) return null;
         return (
           <div key={level} className="help-levels">

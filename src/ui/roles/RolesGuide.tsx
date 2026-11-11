@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import type { Archetype } from '../../engine/archetype';
 import { MISSING_BELOW } from '../../engine/needs';
 import { ESSENTIAL_POINTS, IMPORTANT_POINTS, MINOR_POINTS } from '../../engine/rolesArea';
-import { LEVEL_KEYS, levelOf, rolesTypeOf, type Level, type LevelKey } from '../../engine/roleLevels';
+import { LEVEL_KEYS, levelFor, type Level, type LevelKey } from '../../engine/roleLevels';
 import { BREAKER_WALLBREAKING, SWEEPER_OFFENSE, SWEEPER_SPEED } from '../../engine/subRoles';
 import { useLang, useT } from '../../i18n/react';
 import { keyLabel, LevelTag } from './RoleParts';
@@ -30,6 +30,8 @@ const HOW: Record<'earnA' | 'earnB' | 'earnC', { role: LevelKey; chips: Chip[]; 
     { role: 'anyBreaker', chips: [{ label: 'c.wallbreaking', key: true, value: `≥ ${BREAKER_WALLBREAKING}` }, { label: 'c.withSetup', key: true }] },
     { role: 'anyPhysical', chips: [{ label: 'c.physical', key: true }] },
     { role: 'anySpecial', chips: [{ label: 'c.special', key: true }] },
+    { role: 'anyAttacker', chips: [{ label: 'c.physical', key: true }, { label: 'c.special', key: true }] },
+    { role: 'secondAttacker', chips: [{ label: 'c.secondAttacker', key: true }] },
     { role: 'physicalWall', chips: [{ label: 'c.wallPhys', key: true }, { label: 'Eviolite · Fur Coat · Marvel Scale' }] },
     { role: 'specialWall', chips: [{ label: 'c.wallSpec', key: true }, { label: 'Assault Vest · Eviolite · Ice Scales' }] },
     { role: 'recovery', chips: [{ label: 'Recover · Roost · Slack Off · Wish · Regenerator…', value: '1' }, { label: 'Rest · Pain Split', value: '0,5' }, { label: 'Leech Seed', value: '0,25' }] },
@@ -94,7 +96,7 @@ export function RolesGuideSection({ section, archetype, meta, typeRule }: { sect
 
   if (section === 'types') {
     // Le voci che contano almeno in un tipo di team, per famiglia; quelle che non contano mai in una riga sotto
-    const counts = LEVEL_KEYS.filter(key => ARCHETYPES.some(a => levelOf(rolesTypeOf(a.key, typeRule), key) !== 'ignored'));
+    const counts = LEVEL_KEYS.filter(key => ARCHETYPES.some(a => levelFor(a.key, key, typeRule) !== 'ignored'));
     const never = LEVEL_KEYS.filter(key => !counts.includes(key));
     return (
       <>
@@ -117,7 +119,7 @@ export function RolesGuideSection({ section, archetype, meta, typeRule }: { sect
                   <tr key={key}>
                     <th scope="row">{keyLabel(key, t)}</th>
                     {ARCHETYPES.map(a => {
-                      const level = levelOf(rolesTypeOf(a.key, typeRule), key);
+                      const level = levelFor(a.key, key, typeRule);
                       return (
                         <td key={a.key} className={a.key === archetype ? 'now' : undefined}>
                           {level === 'ignored' ? <span className="rl-dash" aria-label={t('rdetail.level.ignored')}>—</span> : <LevelTag level={level} t={t} />}

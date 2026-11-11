@@ -28,10 +28,10 @@ describe('malus corretti', () => {
     expect(texts(team)).not.toMatch(/Ditto è debole/);
   });
 
-  it('un semi-stall senza attaccanti non perde punti: i gruppi degli attaccanti sono importanti (±), non essenziali; nello stall ignorati', () => {
+  it('un semi-stall senza attaccanti non perde punti: i gruppi degli attaccanti sono importanti (±), non essenziali; nello stall minori', () => {
     for (const key of ['anySweeper', 'anyBreaker'] as const) {
       expect(levelOf('semiStall', key)).toBe('important');
-      expect(levelOf('stall', key)).toBe('ignored');
+      expect(levelOf('stall', key)).toBe('minor');
       expect(levelOf('balance', key)).toBe('essential');
     }
   });

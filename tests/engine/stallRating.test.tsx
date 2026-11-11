@@ -31,13 +31,14 @@ describe('team stall', () => {
   it('riconosciuto: ruoli giudicati come stall (niente sweeper né velocità richiesti)', () => {
     const rating = rateTeam(stall, fixtureData)!;
     expect(rating.archetype).toBe('stall');
-    // da stall: muri, Recupero, Cleric, Anti-setup e Hazard essenziali ci sono, gli attaccanti non sono richiesti;
+    // da stall: muri, Recupero, Cleric, Anti-setup e Hazard essenziali ci sono, gli attaccanti non sono richiesti (solo minori);
     // fra gli essenziali manca il Danno nel Tempo (il gruppo del fixture è pieno di Acciaio e Veleno, immuni a Toxic);
     // il Controllo Hazard (importante) c'è; il Debuff è ignorato
     const needs = teamNeeds(stall, fixtureData);
     expect(needs.essentialMissing).toEqual(['dot']);
-    expect(needs.levels.anySweeper).toBe('ignored');
-    expect(needs.levels.anyBreaker).toBe('ignored');
+    // gli attaccanti sono solo minori (2026-11-11)
+    expect(needs.levels.anySweeper).toBe('minor');
+    expect(needs.levels.anyBreaker).toBe('minor');
     expect(needs.importantMissing).toEqual([]);
     expect(needs.levels.debuff).toBe('ignored');
     // Ruoli: una lista delle voci da stall; il Danno nel Tempo che manca è un malus essenziale (rolesArea.ts)
