@@ -1,0 +1,437 @@
+/*
+ * Telefono e tablet (sotto i 1100 px): niente barra laterale.
+ *  - in alto una barra sottile e ferma: il simbolo del logo, il formato (si apre dal basso), lingua e impostazioni;
+ *  - in basso le sezioni, a portata di pollice, con la loro riga di stato;
+ *  - il team come una fila di carte piccole che scorre col dito (sul tablet ci stanno tutte e sei), il voto sopra;
+ *  - l'editor del membro, la scheda del candidato e i menu a tutto schermo o dal basso.
+ * La pagina scorre (sul telefono è naturale): solo le barre restano ferme.
+ */
+@media (max-width: 1099px) {
+  :root { --top-h: 56px; --bottom-h: 64px; --safe-b: env(safe-area-inset-bottom, 0px); }
+  body { padding-bottom: calc(var(--bottom-h) + var(--safe-b)); overflow-x: clip; }
+  .app { display: block; min-height: 100dvh; }
+
+  /* ── Barra in alto ─────────────────────────────────────────────── */
+  .rail {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    height: var(--top-h);
+    padding: 0 12px 0 14px;
+    padding-left: max(14px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
+    border-right: 0;
+    border-bottom: 1px solid var(--line-soft);
+    background: var(--panel);
+  }
+  .rail-logo { flex: none; padding: 0; }
+  .rail-logo-art { display: block; width: 125px; height: 28px; overflow: hidden; }
+  .rail-logo-art svg { width: auto; height: 28px; }
+  .format-card { flex: 1; min-width: 0; margin: 0; }
+  .popover.format-card > summary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 40px;
+    padding: 0 10px 0 0;
+    border-left-width: 1px;
+    overflow: hidden;
+  }
+  .format-card .format-key, .format-card .format-pills { display: none; }
+  .format-card .format-tier { flex: none; align-self: stretch; display: grid; place-items: center; padding: 0 14px 0 10px; font-size: 14px; }
+  .format-card .format-name { flex: 1; min-width: 0; font-size: 15px; }
+  .format-card > summary::after { content: ''; flex: none; width: 7px; height: 7px; margin: -3px 2px 0 0; border: solid var(--muted); border-width: 0 2px 2px 0; rotate: 45deg; }
+  .rail-foot { flex: none; padding: 0; }
+  .rail-foot .meta { display: none; }
+  .rail-foot .lang-switch button { height: 36px; padding: 0 10px; }
+  .rail-settings { width: 40px; height: 36px; }
+
+  /* ── Sezioni in basso ──────────────────────────────────────────── */
+  .rail-sections {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 45;
+    padding: 6px max(8px, env(safe-area-inset-right)) calc(6px + var(--safe-b)) max(8px, env(safe-area-inset-left));
+    background: var(--panel);
+    border-top: 1px solid var(--line);
+    box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.35);
+  }
+  .tabs.vertical { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 4px; }
+  /* Confronto non c'è ancora: sul telefono non ruba spazio ai tasti veri */
+  .tabs.vertical #tab-compare { display: none; }
+  .tabs.vertical [role='tab'] {
+    width: auto;
+    height: 52px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 4px 6px;
+    text-align: center;
+    clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+  }
+  .tabs.vertical .tab-icon { width: auto; height: auto; background: none; }
+  .tabs.vertical .tab-icon .icon { width: 20px; height: 20px; }
+  .tabs.vertical .tab-text { justify-items: center; gap: 1px; width: 100%; }
+  .tabs.vertical .tab-name { font-size: 14px; }
+  .tabs.vertical .tab-status { max-width: 100%; font-size: 11px; }
+  .tabs.vertical [role='tab'][aria-selected='true'] { width: auto; clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%); }
+  .tabs.vertical [role='tab'][aria-selected='true'] .tab-icon { background: none; color: var(--on-accent-2); }
+  .tabs.vertical [role='tab']:hover:not([aria-selected='true']) { background: none; }
+  .tabs.vertical [role='tab']:hover:not([aria-selected='true']) .tab-icon { background: none; }
+  .tabs.vertical .tab-count { position: absolute; top: 2px; right: 12px; margin: 0; }
+
+  /* ── Team ─────────────────────────────────────────────────────── */
+  .band { display: flex; flex-direction: column; gap: 10px; padding: 12px 0 16px; }
+  .band > .team { order: 2; }
+  .band > .grade-badge { order: 1; margin: 0 14px; }
+  .team-head { flex-wrap: nowrap; gap: 8px; margin: 0 0 10px; padding: 0 14px; overflow-x: auto; scrollbar-width: none; }
+  .team-head::-webkit-scrollbar { display: none; }
+  .team-head h2 { flex: none; }
+  .team-head .team-action, .team-head .team-io .popover > summary { flex: none; height: 36px; white-space: nowrap; }
+  .team-head .team-io { margin-left: 0; }
+  .team-head .clear-team { margin-left: 0; }
+  /* La fila delle carte scorre col dito e si ferma su una carta; i margini laterali restano nella fila */
+  .band .slots {
+    display: grid;
+    grid-auto-flow: column;
+    grid-template-columns: none;
+    grid-auto-columns: 124px;
+    grid-template-rows: auto;
+    gap: 8px;
+    padding: 6px 14px 4px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: 14px;
+    scrollbar-width: none;
+  }
+  .band .slots::-webkit-scrollbar { display: none; }
+  .band .slot > summary, .band .slot.empty { scroll-snap-align: start; }
+  .band:not(.collapsed) .slot > summary, .band:not(.collapsed) .slot.empty { min-height: 0; height: 164px; padding: 6px 8px 10px; }
+  .band:not(.collapsed) .slot > summary .sprite-wrap { flex: 1 1 0; min-height: 0; }
+  .band:not(.collapsed) .slot > summary .sprite { width: min(100cqh, 100cqw, 80px); height: min(100cqh, 100cqw, 80px); }
+  .band:not(.collapsed) .slot > summary > :is(.ability, .types, .roles, .stats-badge) { display: none; }
+  .band .slot .name { font-size: 14px; }
+  .band .slot .name-line { gap: 4px; margin-top: 2px; }
+  .band .slot .name-line .held, .band .slot .name-line .held .item-icon { width: 18px; height: 18px; }
+  .band .slot .slot-lead { left: 8px; top: 8px; font-size: 11px; }
+  .band .slot .favorite { right: 30px; }
+  .band .slot :is(.favorite, .remove) { top: 0; width: 30px; height: 30px; }
+  .band .slot.empty { gap: 6px; }
+  .band .slot.empty .empty-ring { width: 44px; height: 44px; }
+  .band .slot.empty .empty-label { font-size: 13px; }
+  .slot[open] > summary { transform: none; box-shadow: inset 0 0 0 2px var(--accent); }
+  /* Team ridotto: sei icone in fila, il voto accanto */
+  .band.collapsed { flex-direction: row; align-items: center; padding: 8px 14px 18px 0; }
+  .band.collapsed > .team { order: 1; flex: 1; min-width: 0; }
+  .band.collapsed > .grade-badge { order: 2; margin: 0; }
+  .band.collapsed .slots { grid-auto-columns: 52px; padding: 2px 8px 2px 14px; gap: 6px; }
+  .band.collapsed .slot > summary, .band.collapsed .slot.empty { height: 48px; padding: 0; justify-content: center; }
+  .band.collapsed .slot > summary > .name-line, .band.collapsed .slot .remove { display: none; }
+
+  /* Il voto: una fila bassa sopra le carte. A sinistra lettera, punteggio e giudizio; a destra le aree, fitte */
+  .band:not(.collapsed) .grade-badge {
+    display: grid;
+    grid-template-columns: auto auto minmax(0, 1fr);
+    grid-template-rows: auto auto auto 1fr;
+    align-items: start;
+    gap: 0 10px;
+    padding: 0 12px 10px;
+  }
+  .band:not(.collapsed) .grade-badge .grade-visual { display: contents; }
+  .band:not(.collapsed) .grade-badge .grade-head { grid-column: 1 / -1; grid-row: 1; margin: 0 -12px 8px; }
+  .band:not(.collapsed) .grade-badge .letter { grid-column: 1; grid-row: 2 / span 3; align-self: start; font-size: 50px; }
+  .band:not(.collapsed) .grade-badge .overall { grid-column: 2; grid-row: 2; align-self: end; font-size: 18px; white-space: nowrap; }
+  .band:not(.collapsed) .grade-badge .label { grid-column: 2; grid-row: 3; font-size: 12px; }
+  .band:not(.collapsed) .grade-badge .grade-rules { grid-column: 2; grid-row: 4; align-self: start; margin-top: 4px; }
+  .band:not(.collapsed) .grade-badge .grade-delta { grid-column: 1 / 3; grid-row: 5; justify-self: start; }
+  .band:not(.collapsed) .grade-badge .grade-areas { grid-column: 3; grid-row: 2 / span 4; gap: 1px; margin: 0; }
+  .band:not(.collapsed) .grade-badge button.grade-area { grid-template-columns: 60px minmax(0, 1fr) 28px 10px; box-sizing: border-box; min-height: 22px; margin: 0; }
+
+  /* ── Sezione Pokémon: barra degli strumenti su più righe, carte dei candidati a due colonne ── */
+  .toolbar { flex-wrap: wrap; }
+  .toolbar .mode-switch { flex: 1 1 100%; }
+  .toolbar .mode-switch > .segmented { display: flex; width: 100%; }
+  .toolbar .mode-switch > .segmented > button:not(.target-toggle) { flex: 1; justify-content: center; }
+  .toolbar .search { flex: 1 1 100%; flex-wrap: wrap; }
+  .toolbar .search .search-field { flex: 1 1 100%; }
+  .toolbar .team-type { flex: 1; width: auto; min-width: 0; }
+  .toolbar .filters[open]::details-content { left: 0; }
+  .search-hint { display: none; }
+  .dbl-hint { display: none; }
+
+  /* ── Editor del membro: a tutto schermo ───────────────────────── */
+  .band:has(.slot[open]) { z-index: 50; }
+  html:has(.band .slot[open]) { overflow: hidden; }
+  .drawer {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    grid-row: auto;
+    padding: 12px max(14px, env(safe-area-inset-right)) calc(20px + var(--safe-b)) max(14px, env(safe-area-inset-left));
+    overflow: auto;
+    overscroll-behavior: contain;
+    border-top: 3px solid var(--accent);
+  }
+  .set-editor { grid-template-columns: minmax(0, 1fr); }
+  .editor-top { flex-wrap: wrap; gap: 10px; }
+  .editor-title strong { font-size: 22px; }
+
+  /* ── Menu a tendina: salgono dal basso, con lo sfondo scuro ───── */
+  :is(details.popover, details.filters, details.spread-panel)[open]::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    background: rgba(6, 7, 12, 0.6);
+  }
+  .rail .popover[open] > :not(summary),
+  .popover[open] > :not(summary),
+  .popover.format-card[open] > .format-menu {
+    position: fixed;
+    z-index: 61;
+    left: 0;
+    right: 0;
+    top: auto;
+    bottom: 0;
+    width: auto;
+    max-height: 85dvh;
+    overflow: auto;
+    overscroll-behavior: contain;
+    padding-bottom: calc(14px + var(--safe-b));
+    border-radius: 8px 8px 0 0;
+    border-bottom: 0;
+    animation: sheet-up 0.22s var(--ease);
+  }
+  .popover.format-card[open] > .format-menu { padding: 0 0 var(--safe-b); }
+  /* Il team è un livello a sé: con un suo menu aperto passa sopra le sezioni in basso */
+  .band:has(details[open], .fill-panel) { z-index: 50; }
+  .toolbar .filters[open]::details-content {
+    position: fixed;
+    z-index: 61;
+    left: 0;
+    right: 0;
+    top: auto;
+    bottom: 0;
+    max-height: 85dvh;
+    padding-bottom: calc(14px + var(--safe-b));
+    border-radius: 8px 8px 0 0;
+    animation: sheet-up 0.22s var(--ease);
+  }
+  .toolbar .filters .filter-controls, .toolbar .filters .type-filters, .filters .filter-switches { grid-template-columns: minmax(0, 1fr); }
+  .format-menu-head { margin-right: 40%; }
+  .format-dex { grid-template-columns: minmax(0, 1fr); }
+  .format-gens label, .format-chips label { padding-block: 10px; }
+
+  /* ── Finestre: quasi a tutto schermo ──────────────────────────── */
+  .help-backdrop { padding: 12px; place-items: end center; }
+  .help-dialog, .help-frame { width: 100% !important; max-height: calc(100dvh - 24px); }
+  .help-dialog.rating-help, .help-frame.with-peek > .help-dialog.rating-help { height: calc(100dvh - 24px); }
+
+  /* L'avviso con Annulla sta sopra le sezioni */
+  .undo-toast { bottom: calc(var(--bottom-h) + var(--safe-b) + 12px); min-width: 0; width: calc(100vw - 24px); }
+
+  /* Il nome per le transizioni fa della colonna un livello a sé: la scheda del candidato resterebbe sotto le barre */
+  .tab-body { padding: 16px 14px 24px; view-transition-name: none; }
+  .banner { margin-inline: 14px; }
+}
+@keyframes sheet-up { from { transform: translateY(24px); opacity: 0; } }
+
+/* Tablet e finestre medie: le sei carte stanno tutte in fila, un po' più grandi */
+@media (min-width: 600px) and (max-width: 1099px) {
+  .band .slots { grid-auto-flow: row; grid-template-columns: repeat(6, minmax(0, 1fr)); grid-auto-columns: auto; overflow: visible; padding-inline: 18px; }
+  .band:not(.collapsed) .slot > summary, .band:not(.collapsed) .slot.empty { height: 176px; }
+  .band:not(.collapsed) .slot > summary .sprite { width: min(100cqh, 100cqw, 96px); height: min(100cqh, 100cqw, 96px); }
+  .band .slots { padding-inline: 18px; }
+  .team-head { padding-inline: 18px; }
+  .band > .grade-badge { margin-left: 18px; }
+  .tab-body { padding-inline: 18px; }
+  .tabs.vertical { max-width: 640px; margin: 0 auto; }
+  /* Menu e finestre dal basso, ma non più larghi di una colonna comoda */
+  .popover[open] > :not(summary), .popover.format-card[open] > .format-menu, .rail .popover[open] > :not(summary) { left: 50%; right: auto; width: min(560px, 100vw); translate: -50% 0; }
+  .help-backdrop { place-items: center; padding: 24px; }
+  .help-dialog, .help-frame { width: min(720px, 100%) !important; }
+}
+/* Telefono girato: poca altezza, le barre si fanno più basse */
+@media (max-width: 1099px) and (max-height: 500px) {
+  :root { --top-h: 48px; --bottom-h: 52px; }
+  .tabs.vertical [role='tab'] { height: 42px; flex-direction: row; gap: 8px; }
+  .tabs.vertical .tab-status { display: none; }
+}
+/* Dita, non mouse: ogni tasto almeno 44 px */
+@media (pointer: coarse) {
+  .band .slot :is(.favorite, .remove) { width: 36px; height: 36px; }
+  .band .slot .favorite { right: 34px; }
+}
+
+@media (max-width: 599px) {
+  /* Solo il simbolo del logo: lo spazio va al formato */
+  .rail-logo-art { width: 33px; }
+  .suggestions.cards { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 10px; }
+}
+/* Tablet: le aree del voto in due colonne */
+@media (min-width: 600px) and (max-width: 1099px) {
+  .band:not(.collapsed) .grade-badge .grade-areas { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 24px; }
+}
+
+/* ── Scheda del candidato sul telefono (e sul tablet stretto): sale sopra la lista, Indietro in alto, l'azione in fondo ── */
+.sheet-back { display: none; }
+@media (max-width: 759px) {
+  .picker.has-detail > .detail { display: none; }
+  html:has(.picker.sheet-open) { overflow: hidden; }
+  .picker.sheet-open > .detail {
+    position: fixed;
+    inset: 0;
+    z-index: 55;
+    display: flex;
+    flex-direction: column;
+    max-height: none;
+    margin: 0;
+    padding-top: 52px;
+    overflow: auto;
+    overscroll-behavior: contain;
+    border: 0;
+    animation: sheet-up 0.24s var(--ease);
+  }
+  .picker.sheet-open > .sheet-back {
+    position: fixed;
+    z-index: 56;
+    top: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 52px;
+    padding: 0 16px;
+    border: 0;
+    border-bottom: 1px solid var(--line-soft);
+    border-radius: 0;
+    background: var(--panel);
+    color: var(--accent-ink);
+    font: 600 15px var(--ui);
+    text-align: left;
+  }
+  .picker.sheet-open > .sheet-back .icon { width: 20px; height: 20px; }
+  .picker.sheet-open > .detail .detail-actions {
+    position: sticky;
+    bottom: 0;
+    margin-top: auto;
+    padding: 10px 14px calc(10px + var(--safe-b));
+    background: var(--panel);
+    border-top: 1px solid var(--line-soft);
+  }
+}
+@media (max-width: 759px) {
+  /* Scheda: il set su una colonna, l'azione principale larga e le altre accanto */
+  .detail-sec.set-sec { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .picker.sheet-open > .detail .detail-actions { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; }
+  .picker.sheet-open > .detail .detail-actions > * { min-height: 44px; margin: 0; white-space: nowrap; }
+  .picker.sheet-open > .detail .detail-actions .go { font-size: 15px; }
+}
+
+/* ── Editor del membro sul telefono e sul tablet ──────────────────── */
+@media (max-width: 1099px) {
+  /* Nome, tipi e chiudi restano in vista mentre scorri l'editor */
+  .drawer .set-editor .editor-head { position: sticky; top: -12px; z-index: 5; margin: -12px -14px 0; padding: 12px 14px 10px; background: var(--panel); border-bottom: 1px solid var(--line-soft); }
+  .editor-foot { flex-direction: column; align-items: stretch; }
+  .editor-roles ul { flex-wrap: wrap; }
+  .editor-foot .member-replace { height: 44px; }
+}
+@media (max-width: 599px) {
+  .set-editor .editor-group { grid-template-columns: minmax(0, 1fr); }
+  .editor-group > .field:nth-child(odd) .combobox [role='listbox'] { left: 0; right: auto; }
+  .editor-actions { margin-left: 0; flex-wrap: wrap; }
+}
+
+/* ── Meta sul telefono: chi regge la minaccia va sotto il nome, su tutta la riga ── */
+@media (max-width: 599px) {
+  #panel-meta .mon-rows li { grid-template-columns: 40px minmax(0, 1fr); row-gap: 0; padding: 6px 0; }
+  #panel-meta .mon-rows .status { grid-column: 2; }
+  #panel-meta .mon-rows .who strong { font-size: 15px; }
+}
+
+/* ── Liste sul telefono e sul tablet: prima le tue liste, poi il Pokédex da cui sceglierle ── */
+@media (max-width: 1099px) {
+  .lists-main { display: flex; flex-direction: column; }
+  .lists-side { order: -1; }
+  .lists-bar { flex-wrap: wrap; }
+  .lists-bar .search-field { flex: 1 1 100%; }
+  .lists-bar .search-hint { display: none; }
+}
+@media (max-width: 1099px) {
+  .lists-main > * { width: 100%; }
+  .dex-grid { max-height: 70dvh; overscroll-behavior: contain; }
+}
+/* Senza mouse non c'è il passaggio sopra: cuore e divieto sempre in vista, grandi abbastanza per il dito */
+@media (hover: none) {
+  .dex-actions { opacity: 1; }
+}
+@media (pointer: coarse) {
+  .dex-actions button { min-width: 44px; min-height: 36px; }
+  .dex-grid { grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); }
+}
+
+/* Tablet largo: lista e scheda affiancate; la scheda resta in vista mentre la pagina scorre */
+@media (min-width: 760px) and (max-width: 1099px) {
+  .picker.has-detail { grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 14px; align-items: start; }
+  .picker.has-detail > .detail { position: sticky; top: calc(var(--top-h) + 10px); max-height: calc(100dvh - var(--top-h) - var(--bottom-h) - var(--safe-b) - 20px); overflow: auto; overscroll-behavior: contain; }
+  .suggestions.cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (min-width: 600px) and (max-width: 1099px) {
+  .toolbar .mode-switch { flex: none; }
+  .toolbar .search { flex: 1 1 320px; }
+  .toolbar .team-type { flex: none; width: 210px; }
+}
+/* Telefono girato: la barra in alto scorre via con la pagina, resta più spazio */
+@media (max-width: 1099px) and (max-height: 500px) {
+  .rail { position: relative; }
+}
+/* Completa team: anche lui sale dal basso (nella fila delle azioni, che scorre, verrebbe tagliato) */
+@media (max-width: 1099px) {
+  .fill-panel {
+    position: fixed;
+    z-index: 61;
+    left: 0;
+    right: 0;
+    top: auto;
+    bottom: 0;
+    width: auto;
+    max-height: 85dvh;
+    overflow: auto;
+    overscroll-behavior: contain;
+    padding-bottom: calc(14px + var(--safe-b));
+    border-radius: 8px 8px 0 0;
+    box-shadow: 0 0 0 100vmax rgba(6, 7, 12, 0.6);
+    animation: sheet-up 0.22s var(--ease);
+  }
+}
+@media (min-width: 600px) and (max-width: 1099px) {
+  .fill-panel { left: 50%; right: auto; width: min(640px, 100vw); translate: -50% 0; }
+}
+@media (max-width: 1099px) {
+  .fill-panel { grid-template-columns: minmax(0, 1fr); }
+  /* I tipi di team in una fila che scorre: le proposte prendono tutta la larghezza */
+  .fill-types { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin: 0 -12px; padding: 0 12px; }
+  .fill-types .fill-option { flex: none; width: auto; max-width: 200px; }
+  .fill-types .fill-option small { display: none; }
+  .spread-presets { min-width: 0; max-width: calc(100vw - 28px); }
+}
+@media (max-width: 599px) {
+  .fill-proposal { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: 'mons mons' 'result action'; gap: 6px 10px; }
+  .fill-mons { grid-area: mons; grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .fill-mon-name { display: none; }
+  .fill-result { grid-area: result; justify-items: start; text-align: left; }
+}
+@media (max-width: 1099px) {
+  .band:has(.fill-panel, .team-head details[open]) .band-toggle { visibility: hidden; }
+  .fill-result { grid-auto-flow: column; align-items: baseline; gap: 8px; }
+}

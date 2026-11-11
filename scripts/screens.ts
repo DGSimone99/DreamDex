@@ -364,6 +364,8 @@ const ROLES_STATES: Record<string, State> = {
 interface State { hash?: string; lang?: 'it' | 'en'; storage?: Record<string, string>; run?: (page: Page) => Promise<boolean | string> }
 const STATES: Record<string, State> = {
   pokemon: { run: async p => { await tab(p, 'pokemon'); return true; } },
+  // Telefono: tocca il secondo candidato, la scheda sale sopra la lista
+  'pokemon-sheet': { run: async p => { await tab(p, 'pokemon'); await wait(1500); const picks = await p.$$('.suggestions .pick'); await picks[1]?.evaluate(el => (el as HTMLElement).click()); await wait(500); return picks.length > 1; } },
   // Carta sotto il mouse (la prima è selezionata: la seconda in alto, la prima in basso, l'ultima): stampa quanto esce dalla lista (cut = px tagliati)
   'pokemon-hover': { run: async p => hoverCard(p, 1) },
   'pokemon-hover-bl': { run: async p => hoverCard(p, 3) },
@@ -657,6 +659,10 @@ const STATES: Record<string, State> = {
   'long-names': { hash: hash(LONG) },
   nodata: { run: async () => 'every bundled format has data; the no-data banner is covered by the App test' },
   settings: { run: async p => { await p.click('.rail-settings'); return true; } },
+  'fill-open': { run: async p => { await p.evaluate(() => (document.querySelector('[data-fill-toggle]') as HTMLElement | null)?.click()); await wait(1500); return true; } },
+  'filters-open': { run: async p => { await tab(p, 'pokemon'); await p.evaluate(() => (document.querySelector('.toolbar .filters > summary') as HTMLElement | null)?.click()); await wait(400); return true; } },
+  'format-menu': { run: async p => { await p.click('.format-card > summary'); await wait(400); return true; } },
+  'io-menu': { run: async p => { await p.evaluate(() => (document.querySelector('.team-io details.popover > summary') as HTMLElement | null)?.click()); await wait(400); return true; } },
 };
 const chosen = (arg('states') ?? Object.keys(STATES).join(',')).split(',');
 

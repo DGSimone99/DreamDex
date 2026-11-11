@@ -1068,6 +1068,7 @@ export const it: Record<keyof typeof en, string> = {
   'rating.note.move': "{name}: mossa sconosciuta ({list})",
   'rating.note.moves': "{name}: mosse sconosciute ({list})",
   'rating.note.item': "{name}: strumento sconosciuto ({item})",
+  'suggest.backToList': "Torna alla lista",
   'suggest.title': "Suggerimenti",
   'suggest.replaceTitle': "Sostituisci {species}",
   'suggest.search': "Aggiungi Pokémon",
