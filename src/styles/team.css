@@ -11,10 +11,12 @@
 }
 .team-head { position: relative; z-index: 6; display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
 .fill-anchor { position: relative; }
+/* Stessa targa della fascia "Voto" (misura, spazi, altezza), in alto come lei: le due targhe partono sulla stessa linea */
 .team-head h2 {
+  align-self: flex-start;
   margin: 0;
   padding: 4px 24px 4px 12px;
-  font: 700 15px/1.2 var(--display);
+  font: 700 14px/1.2 var(--display);
   font-style: italic;
   color: var(--on-plate);
   background: var(--stripes), var(--plate);

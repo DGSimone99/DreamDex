@@ -480,7 +480,8 @@
   .band:not(.collapsed) .slot > summary > .ability { display: none; }
   .slot .name-line { margin-top: 2px; }
   .grade-badge { row-gap: 0; padding-bottom: 6px; }
-  .grade-head { margin-bottom: 6px; padding-top: 3px; padding-bottom: 3px; }
+  .grade-head, .team-head h2 { padding-top: 3px; padding-bottom: 3px; }
+  .grade-head { margin-bottom: 6px; }
   .grade-badge .letter { font-size: 46px; }
   .grade-badge .overall { font-size: 17px; }
   .grade-badge .label { font-size: 12px; }
