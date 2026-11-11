@@ -108,6 +108,8 @@
 .rail-settings .icon { width: 17px; height: 17px; }
 .rail-foot .meta { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.35; }
 .rail-foot .meta > span { display: block; }
+.rail-credits { justify-self: start; align-self: flex-start; margin-top: -4px; padding: 0; border: 0; background: none; font: 400 12px/1.35 var(--ui); color: var(--muted); text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 2px; cursor: pointer; }
+.rail-credits:hover { color: var(--text); }
 
 .popover { position: relative; }
 .popover > summary {

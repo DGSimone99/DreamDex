@@ -46,7 +46,7 @@
   .format-card .format-name { flex: 1; min-width: 0; font-size: 15px; }
   .format-card > summary::after { content: ''; flex: none; width: 7px; height: 7px; margin: -3px 2px 0 0; border: solid var(--muted); border-width: 0 2px 2px 0; rotate: 45deg; }
   .rail-foot { flex: none; padding: 0; }
-  .rail-foot .meta { display: none; }
+  .rail-foot .meta, .rail-credits { display: none; }
   .rail-foot .lang-switch button { height: 36px; padding: 0 10px; }
   .rail-settings { width: 40px; height: 36px; }
 

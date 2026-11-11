@@ -19,6 +19,8 @@ interface Props {
   tabs: ReactNode;
   /** Apre le impostazioni; senza, il pulsante non c'è. */
   onSettings?: () => void;
+  /** Apre Crediti e note legali. */
+  onCredits?: () => void;
 }
 
 /** Il mese delle statistiche ("2026-09") scritto per esteso nella lingua scelta: "settembre 2026". */
@@ -33,7 +35,7 @@ function monthLabel(month: string, lang: Lang): string {
  * tessere del menu del gioco con una riga di stato, e in fondo lingua, impostazioni e mese dei dati Smogon.
  * Importa/Esporta e Team salvati stanno sopra la squadra (TeamPanel).
  */
-export function Rail({ format, onFormatChange, meta, lang, onLangChange, tabs, onSettings }: Props) {
+export function Rail({ format, onFormatChange, meta, lang, onLangChange, tabs, onSettings, onCredits }: Props) {
   const t = useT();
   const dex = dexOf(format.formatId);
   const tiers = tiersOf(dex);
@@ -158,6 +160,7 @@ export function Rail({ format, onFormatChange, meta, lang, onLangChange, tabs, o
             ? <><span>{t('top.statsMonth', { month: monthLabel(meta.month, lang) })}</span><span>{t('top.statsCutoff', { cutoff: meta.cutoff })}</span></>
             : t('top.statsMissing')}
         </p>
+        {onCredits && <button type="button" className="rail-credits" onClick={onCredits}>{t('credits.openLong')}</button>}
       </div>
     </aside>
   );
