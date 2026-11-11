@@ -155,20 +155,25 @@ const shownWeights = (weights: AreaWeightTable): AreaWeightTable => {
 };
 
 /**
- * La barra a scalini (scelta dell'utente, 2026-11-11): in ogni colonna il tipo che pesa di più ha la barra piena e ogni
- * peso più basso scende di un sesto (pesi uguali, stesso scalino), ma non va oltre il peso vero arrotondato a sesti: così
- * la Velocità di Balance (15 su 30) resta a metà e quella di Semi-stall e Stall (10 su 30) a un terzo.
+ * La barra in sesti (scelta dell'utente, 2026-11-11): il peso vero rispetto al più alto della colonna, arrotondato a
+ * sesti. Semi-stall e Stall restano a un sesto di distanza in Difesa (uno in meno) e in Offesa (uno in più) anche
+ * quando l'arrotondamento li mette alla pari.
  */
-const stepOf = (weights: AreaWeightTable, arch: Archetype, area: (typeof WEIGHT_AREAS)[number]): number => {
+const sixths = (weights: AreaWeightTable, arch: Archetype, area: (typeof WEIGHT_AREAS)[number]): number => {
   const weight = weights[arch][area];
   if (weight <= 0) return 0;
-  const column = ARCHETYPES.map(a => weights[a][area]);
-  const higher = new Set(column.filter(w => w > weight)).size;
-  const real = Math.round((6 * weight) / Math.max(...column));
-  return Math.max(1, Math.min(6 - higher, real)) / 6;
+  return Math.max(1, Math.round((6 * weight) / Math.max(...ARCHETYPES.map(a => weights[a][area]))));
+};
+const stepOf = (weights: AreaWeightTable, arch: Archetype, area: (typeof WEIGHT_AREAS)[number]): number => {
+  let step = sixths(weights, arch, area);
+  if (arch === 'semiStall' && area !== 'speed') {
+    const stall = sixths(weights, 'stall', area);
+    if (step === stall) step = Math.min(6, Math.max(1, area === 'defense' ? stall - 1 : stall + 1));
+  }
+  return step / 6;
 };
 /**
- * Il peso di un'area come barra a scalini, senza numeri (stepOf). Ai lettori di schermo una parola dal peso vero:
+ * Il peso di un'area come barra in sesti, senza numeri (stepOf). Ai lettori di schermo una parola dal peso vero:
  * molto dalla metà del voto in su, abbastanza da un quarto, poco sotto.
  */
 function WeightBar({ weight, step }: { weight: number; step: number }) {
