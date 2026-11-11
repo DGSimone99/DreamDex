@@ -9,7 +9,8 @@ describe('App: struttura', () => {
   it('titolo e mese dei dati', () => {
     render(<App initialLang="it" data={fixtureData} />);
     expect(screen.getByRole('heading', { name: 'DreamDex' })).toBeInTheDocument();
-    expect(screen.getByText('Dati Smogon: settembre 2026 · giocatori sopra 1695')).toBeInTheDocument();
+    expect(screen.getByText('Dati Smogon: settembre 2026')).toBeInTheDocument();
+    expect(screen.getByText('giocatori sopra 1695')).toBeInTheDocument();
   });
 
   it('avviso se mancano i dati', () => {

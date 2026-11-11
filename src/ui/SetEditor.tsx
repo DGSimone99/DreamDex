@@ -64,14 +64,19 @@ function MoveDetail({ name }: { name: string }) {
     <span className="move-meta">
       <span className={`move-stat cat-${move.category.toLowerCase()}`} title={category}>
         <Icon name={CATEGORY_ICONS[move.category]} filled={move.category === 'Physical'} />
-        <span className="visually-hidden">{category}, {t('editor.power')} </span>
-        {move.basePower || '—'}
+        {/* Mosse di stato (e a potenza variabile): solo l'icona della categoria, niente "—" */}
+        {move.basePower > 0
+          ? <><span className="visually-hidden">{category}, {t('editor.power')} </span>{move.basePower}</>
+          : <span className="visually-hidden">{category}</span>}
       </span>
-      <span className="move-stat accuracy" title={t('editor.accuracy')}>
-        <Icon name="target" />
-        <span className="visually-hidden">{t('editor.accuracyShort')} </span>
-        {accuracy === null ? '—' : `${accuracy}%`}
-      </span>
+      {/* Mosse che non mancano mai: niente precisione invece di "—" */}
+      {accuracy !== null && (
+        <span className="move-stat accuracy" title={t('editor.accuracy')}>
+          <Icon name="target" />
+          <span className="visually-hidden">{t('editor.accuracyShort')} </span>
+          {`${accuracy}%`}
+        </span>
+      )}
       <TypeChip type={move.type} />
     </span>
   );
@@ -389,7 +394,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
         <p className={`ev-total${used > EV_TOTAL ? ' over' : ''}`}>
           <span>{t('editor.evTotal')}</span>
           <span className="ev-meter" aria-hidden="true"><span style={{ width: `${Math.min(100, (used / EV_TOTAL) * 100)}%` }} /></span>
-          <strong>{used}</strong><span className="ev-of">/ {EV_TOTAL}</span>
+          <span className="ev-used"><strong>{used}</strong><span className="ev-of">/ {EV_TOTAL}</span></span>
           <span className="ev-left">{used > EV_TOTAL ? t('editor.evOver', { n: used - EV_TOTAL }) : t('editor.evLeft', { n: EV_TOTAL - used })}</span>
         </p>
         {speed && <SpeedLine name={battleSpecies(set)?.name ?? set.species} tier={speed} scarf={speedStat(set).scarf} />}
