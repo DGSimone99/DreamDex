@@ -23,11 +23,11 @@ interface Props {
   onCredits?: () => void;
 }
 
-/** Il mese delle statistiche ("2026-09") scritto per esteso nella lingua scelta: "settembre 2026". */
-function monthLabel(month: string, lang: Lang): string {
-  const [year, m] = month.split('-').map(Number);
+/** Il mese delle statistiche ("2026-09") in numeri, uguale in ogni lingua: "09/2026" (sta su una riga). */
+function monthLabel(month: string): string {
+  const [year, m] = month.split('-');
   if (!year || !m) return month;
-  return new Intl.DateTimeFormat(lang === 'it' ? 'it-IT' : 'en-GB', { month: 'long', year: 'numeric' }).format(new Date(year, m - 1, 1));
+  return `${m.padStart(2, '0')}/${year}`;
 }
 
 /**
@@ -155,10 +155,7 @@ export function Rail({ format, onFormatChange, meta, lang, onLangChange, tabs, o
           )}
         </div>
         <p className="meta">
-          {/* Mese e soglia su due righe intere: la riga non si spezza a metà */}
-          {meta
-            ? <><span>{t('top.statsMonth', { month: monthLabel(meta.month, lang) })}</span><span>{t('top.statsCutoff', { cutoff: meta.cutoff })}</span></>
-            : t('top.statsMissing')}
+          {meta ? t('top.statsMonth', { month: monthLabel(meta.month) }) : t('top.statsMissing')}
         </p>
         {onCredits && <button type="button" className="rail-credits" onClick={onCredits}>{t('credits.openLong')}</button>}
       </div>

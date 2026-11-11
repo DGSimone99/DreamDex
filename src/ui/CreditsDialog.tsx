@@ -31,8 +31,6 @@ export function CreditsDialog({ onClose }: { onClose: () => void }) {
   const libs: Source[] = [
     { name: '@pkmn/dex · @pkmn/sets · @pkmn/img', url: 'https://github.com/pkmn/ps', what: t('credits.pkmnLibs') },
     { name: '@smogon/calc', url: 'https://github.com/smogon/damage-calc', what: t('credits.calc') },
-    { name: 'React · Vite', url: 'https://react.dev', what: t('credits.react') },
-    { name: 'Kanit', url: 'https://fonts.google.com/specimen/Kanit', what: t('credits.kanit') },
   ];
   const list = (sources: Source[]) => (
     <dl className="credits-list">
