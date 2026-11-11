@@ -96,11 +96,11 @@ describe('Riquadro Voto', () => {
     expect(within(dialog).getAllByRole('tab').map(tab => tab.textContent)).toEqual(['Come funziona', 'Hyper Offense', 'Bulky Offense', 'Balance', 'Semi-stall', 'Stall']);
     // Si apre sempre su come funziona in generale
     expect(within(dialog).getByRole('tab', { name: 'Come funziona' })).toHaveAttribute('aria-selected', 'true');
-    // Un team incompleto è "in analisi": nessun tab segnato come il tuo team, e lo dice la pagina generale
+    // Un team incompleto: nessun tab segnato come il tuo team (e nessuna frase "in analisi")
     const balanceTab = within(dialog).getByRole('tab', { name: 'Balance' });
     expect(balanceTab).toHaveAttribute('aria-selected', 'false');
     expect(within(dialog).getAllByRole('tab').filter(tab => tab.getAttribute('aria-current') === 'true')).toHaveLength(0);
-    expect(within(dialog).getByRole('tabpanel')).toHaveTextContent('Il tuo team è in analisi: è incompleto');
+    expect(within(dialog).getByRole('tabpanel')).not.toHaveTextContent('in analisi');
     await user.click(balanceTab);
     const balance = within(dialog).getByRole('tabpanel');
     // Il tipo del team lo dice già "il tuo team" nella lista: niente frase ripetuta nella scheda

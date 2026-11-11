@@ -5,7 +5,7 @@ import { rulesOf, type FormatRules } from './formatRules';
 import type { EngineData } from './data';
 import type { TeamSet } from './sets';
 import { creditedValues, FAMILIES, measuredSubRoles, primaryFamily, type PrimaryFamily, type SubRole, type SubRoleValues } from './subRoles';
-import { GROUP_ROLES, isGroupKey, LEVEL_KEYS, levelOf, rolesTypeOf, type Level, type LevelKey } from './roleLevels';
+import { GROUP_ROLES, isGroupKey, LEVEL_KEYS, levelFor, rolesTypeOf, type Level, type LevelKey } from './roleLevels';
 import { t, type Lang } from '../i18n';
 
 /**
@@ -58,21 +58,30 @@ export const keyRoles = (key: LevelKey): SubRole[] => (isGroupKey(key) ? GROUP_R
 export const keyValue = (v: SubRoleValues, key: LevelKey): number => Math.max(0, ...keyRoles(key).map(r => v[r] ?? 0));
 
 /** Chi copre una voce: i membri col valore misurato (col credito del secondario) almeno MISSING_BELOW, come i bisogni. */
-export const ownersOf = (team: TeamSet[], needs: Pick<TeamNeeds, 'credited' | 'members'>, need: Need): string[] =>
-  team.filter((_, i) => keyValue(needs.credited[i] ?? needs.members[i] ?? {}, need) >= MISSING_BELOW).map(set => battleName(set));
+export const ownersOf = (team: TeamSet[], needs: Pick<TeamNeeds, 'credited' | 'members'>, need: Need): string[] => {
+  const owners = team.filter((_, i) => keyValue(needs.credited[i] ?? needs.members[i] ?? {}, need) >= MISSING_BELOW).map(set => battleName(set));
+  // Il secondo attaccante c'è solo con almeno due attaccanti
+  return need === 'secondAttacker' && owners.length < 2 ? [] : owners;
+};
+
+/** Valore di team di una voce: il migliore dei membri; per il secondo attaccante il secondo migliore. */
+const teamValue = (credited: SubRoleValues[], key: LevelKey): number => {
+  const all = credited.map(m => keyValue(m, key)).sort((a, b) => b - a);
+  return Math.max(0, (key === 'secondAttacker' ? all[1] : all[0]) ?? 0);
+};
 
 /** `forced`: livelli e credito dei ruoli secondo quel tipo di team invece di quello riconosciuto. */
 export function teamNeeds(team: TeamSet[], data: EngineData, members?: SubRoleValues[], forced?: Archetype): TeamNeeds {
   const rules = rulesOf(data);
   const archetype = forced ?? needsArchetype(team, rules);
   const measured = members ?? team.map(set => measuredSubRoles(set, team, data));
-  // I ruoli chiesti: in National Dex OU lo Stall chiede quelli del Semi-stall (rolesTypeOf)
+  // I ruoli chiesti: in National Dex OU lo Stall chiede quelli del Semi-stall (rolesTypeOf), tranne gli attaccanti (levelFor)
   const judged = rolesTypeOf(archetype, rules.typeRule);
-  const levels = Object.fromEntries(LEVEL_KEYS.map(k => [k, levelOf(judged, k)])) as Record<LevelKey, Level>;
+  const levels = Object.fromEntries(LEVEL_KEYS.map(k => [k, levelFor(archetype, k, rules.typeRule)])) as Record<LevelKey, Level>;
   // Il secondario conta secondo l'archetipo (stall 0, semi-stall metà, altrimenti pieno); i grezzi restano in `members`
   const primary = team.map((set, i) => primaryFamily(set, measured[i] ?? {}));
   const credited = team.map((_, i) => creditedValues(measured[i] ?? {}, primary[i], judged));
-  const values = Object.fromEntries(LEVEL_KEYS.map(k => [k, Math.max(0, ...credited.map(m => keyValue(m, k)))])) as Record<LevelKey, number>;
+  const values = Object.fromEntries(LEVEL_KEYS.map(k => [k, teamValue(credited, k)])) as Record<LevelKey, number>;
   const missing = (level: Level) => LEVEL_KEYS.filter(k => levels[k] === level && values[k] < MISSING_BELOW);
   const essentialMissing = missing('essential');
   const importantMissing = missing('important');

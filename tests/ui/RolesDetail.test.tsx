@@ -49,8 +49,8 @@ describe('Ruoli a schede: Generale e una per livello', () => {
     expect(tabs[0]).toHaveAttribute('aria-selected', 'true');
     for (const tab of tabs.slice(1, 4)) expect(tab.querySelector('b')!.textContent).toMatch(/^\d+\/\d+$/);
     expect(tabs[4].querySelector('b')!.textContent).toMatch(/^\d+$/);
-    // Il team incompleto si giudica come Balance: sette essenziali
-    expect(tabs[1].querySelector('b')!.textContent).toMatch(/\/7$/);
+    // Il team incompleto si giudica come Balance: sei essenziali (fisico e speciale importanti dal 2026-11-11)
+    expect(tabs[1].querySelector('b')!.textContent).toMatch(/\/6$/);
     // Il Generale porta i Ruoli coperti sul totale, come la riga del voto
     expect(tabs[0].querySelector('b')!.textContent).toMatch(/^\d+\/\d+$/);
   });
@@ -231,10 +231,10 @@ describe('Generale dei Ruoli', () => {
     const covered = within(panel).getByRole('region', { name: 'Ruoli che contano, coperti' });
     const breaker = within(covered).getAllByRole('listitem').find(li => li.querySelector('.rl-name')!.textContent!.startsWith('Wallbreaker'))!;
     expect(monsOf(breaker)).toContain('Great Tusk');
-    expect(screen.getByRole('tab', { name: /^Essenziali/ }).querySelector('b')).toHaveTextContent('5/7');
+    expect(screen.getByRole('tab', { name: /^Essenziali/ }).querySelector('b')).toHaveTextContent('4/6');
   });
 
-  it("per uno stall i gruppi degli attaccanti non contano; velocità e priorità non sono ruoli", async () => {
+  it("per uno stall i gruppi degli attaccanti sono minori; velocità e priorità non sono ruoli", async () => {
     const stall = [
       { ...tusk, species: 'Toxapex', item: 'Black Sludge', ability: 'Regenerator', moves: ['Scald', 'Toxic', 'Recover', 'Haze'] },
       { ...tusk, species: 'Blissey', item: 'Leftovers', ability: 'Natural Cure', moves: ['Seismic Toss', 'Soft-Boiled', 'Toxic', 'Wish'] },
@@ -250,8 +250,9 @@ describe('Generale dei Ruoli', () => {
     // Essenziali dello stall: i due muri, Recupero, Cleric, Anti-setup, Hazard e Danno nel Tempo (qui mancante: il meta
     // del fixture è pieno di Acciaio e Veleno, immuni a Toxic)
     expect(screen.getByRole('tab', { name: /^Essenziali/ }).querySelector('b')).toHaveTextContent('6/7');
-    await user.click(screen.getByRole('tab', { name: /^Non contano/ }));
+    await user.click(screen.getByRole('tab', { name: /^Minori/ }));
     expect(levelRow('Sweeper')).toBeInTheDocument();
+    await user.click(screen.getByRole('tab', { name: /^Non contano/ }));
     for (const name of ['Velocità', 'Priorità']) expect(levelRow(name)).toBeUndefined();
   });
 });

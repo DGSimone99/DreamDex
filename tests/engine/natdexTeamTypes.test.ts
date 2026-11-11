@@ -4,6 +4,7 @@ import { DEFAULT_RULES, formatRules, NATDEX_OU_RULES } from '../../src/engine/fo
 import { ARCHETYPE_WEIGHTS, NATDEX_OU_WEIGHTS, areaWeightTable, rateTeam } from '../../src/engine/rating';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
 import { rolesTypeOf } from '../../src/engine/roleLevels';
+import { FAMILIES } from '../../src/engine/subRoles';
 import { fixtureData } from '../fixtures/data';
 
 const mk = (species: string, item: string, ability: string, moves: string[], nature = 'Jolly', evs: TeamSet['evs'] = { atk: 252, spe: 252, spd: 4 }): TeamSet =>
@@ -114,12 +115,17 @@ describe('tipi di team in National Dex OU (recupero e velocità)', () => {
     expect([...r.penalty.items, ...r.bonus.items].some(i => i.text.startsWith('Vicino a'))).toBe(false);
   });
 
-  it('in National Dex OU lo Stall chiede i ruoli del Semi-stall; negli altri formati i suoi', () => {
+  it('in National Dex OU lo Stall chiede i ruoli del Semi-stall tranne gli attaccanti (tutti minori); negli altri formati i suoi', () => {
     const ou = rateTeam(stall, { ...fixtureData, formatId: 'ou' })!;
     const asSemi = rateTeam(stall, { ...fixtureData, formatId: 'ou' }, 'it', { archetype: 'semiStall' })!;
     expect(ou.teamType).toBe('stall');
-    expect(ou.needs.levels).toEqual(asSemi.needs.levels);
-    expect(ou.overall).toBe(asSemi.overall);
+    const attack = new Set(['anySweeper', 'anyBreaker', 'anyPhysical', 'anySpecial', 'anyAttacker', 'secondAttacker', ...FAMILIES.attack]);
+    for (const [key, level] of Object.entries(ou.needs.levels)) {
+      if (attack.has(key)) expect(level === 'minor' || level === 'ignored').toBe(true);
+      else expect(level).toBe((asSemi.needs.levels as Record<string, string>)[key]);
+    }
+    expect(ou.needs.levels.anyAttacker).toBe('minor');
+    expect(asSemi.needs.levels.anyAttacker).toBe('important');
     expect(rolesTypeOf('stall', 'recoverySpeed')).toBe('semiStall');
     expect(rolesTypeOf('stall', 'walls')).toBe('stall');
     expect(rolesTypeOf('balance', 'recoverySpeed')).toBe('balance');

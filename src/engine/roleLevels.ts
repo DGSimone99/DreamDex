@@ -6,9 +6,12 @@ export type Level = 'essential' | 'important' | 'minor' | 'ignored';
 /**
  * Una voce della tabella: un sotto-ruolo, o un gruppo di attaccanti: "anySweeper" = uno sweeper fisico o speciale,
  * "anyBreaker" = un wallbreaker fisico o speciale, "anyPhysical" / "anySpecial" = un attaccante da quel lato (sweeper,
- * wallbreaker, o chi ha almeno 2 attacchi di quel lato con Offesa almeno 40: physicalAttacker / specialAttacker).
+ * wallbreaker, o chi ha almeno 2 attacchi di quel lato con Offesa almeno 40: physicalAttacker / specialAttacker),
+ * "anyAttacker" = un attaccante fisico o speciale, "secondAttacker" = un secondo membro, diverso, che attacca anche lui
+ * (fisico o speciale: il suo valore è il secondo migliore del team, needs.ts).
  */
-export type GroupKey = 'anySweeper' | 'anyBreaker' | 'anyPhysical' | 'anySpecial';
+export type GroupKey = 'anySweeper' | 'anyBreaker' | 'anyPhysical' | 'anySpecial' | 'anyAttacker' | 'secondAttacker';
+const ATTACKERS: SubRole[] = ['physicalSweeper', 'specialSweeper', 'physicalBreaker', 'specialBreaker', 'physicalAttacker', 'specialAttacker'];
 export type LevelKey = SubRole | GroupKey;
 /** I sotto-ruoli dietro ogni gruppo (scritti per esteso: subRoles.ts è in un ciclo di import). */
 export const GROUP_ROLES: Record<GroupKey, SubRole[]> = {
@@ -17,6 +20,8 @@ export const GROUP_ROLES: Record<GroupKey, SubRole[]> = {
   // Gli attaccanti di un lato per ultimi: a pari valore la fonte mostrata resta quella dello sweeper o del breaker
   anyPhysical: ['physicalSweeper', 'physicalBreaker', 'physicalAttacker'],
   anySpecial: ['specialSweeper', 'specialBreaker', 'specialAttacker'],
+  anyAttacker: ATTACKERS,
+  secondAttacker: ATTACKERS,
 };
 export const isGroupKey = (key: LevelKey): key is GroupKey => key in GROUP_ROLES;
 
@@ -25,7 +30,7 @@ export const isGroupKey = (key: LevelKey): key is GroupKey => key in GROUP_ROLES
  * Scritte per esteso: subRoles.ts è in un ciclo di import e qui servono già al caricamento del modulo.
  */
 export const LEVEL_KEYS: LevelKey[] = [
-  'anySweeper', 'anyBreaker', 'anyPhysical', 'anySpecial', 'physicalSweeper', 'specialSweeper', 'physicalBreaker', 'specialBreaker',
+  'anySweeper', 'anyBreaker', 'anyPhysical', 'anySpecial', 'anyAttacker', 'secondAttacker', 'physicalSweeper', 'specialSweeper', 'physicalBreaker', 'specialBreaker',
   'physicalWall', 'specialWall', 'recovery',
   'support', 'removal', 'screens', 'speedControl', 'debuff', 'phazer',
   'hazards', 'pivot', 'dot', 'taunt', 'encore', 'itemRemoval',
@@ -75,16 +80,25 @@ const E = 'essential' as const, I = 'important' as const, M = 'minor' as const, 
  * 39% contro 10%), Knock Off manca al 30% dei BO da torneo e al 33% del ladder. Costavano 2 punti a team da torneo
  * senza separare; come minori danno +1 a chi li ha. Hazard, Rimozione e l'attaccante fisico del semi-stall separano e restano.
  */
+/*
+ * 2026-11-11 (utente): gli attaccanti per lato restano in HO e BO (essenziali tutti e due: un team di un solo lato si
+ * ferma su un muro); nel Balance fisico e speciale importanti alla pari (prima fisico essenziale e speciale importante);
+ * nel Semi-stall un attaccante qualunque importante e un secondo minore (prima fisico importante e speciale minore, solo
+ * per la soglia: 83% contro 68% dei team da torneo); nello Stall tutti gli attaccanti minori (prima ignorati, e in
+ * National Dex OU quelli del Semi-stall).
+ */
 const ROWS: [LevelKey, Level, Level, Level, Level, Level][] = [
   // Attaccanti: i gruppi (le righe singole restano minori o ignorate)
-  ['anySweeper', E, E, E, I, X],
-  ['anyBreaker', E, E, E, I, X],
-  ['anyPhysical', E, E, E, I, X],
-  ['anySpecial', E, E, I, M, X],
-  ['physicalSweeper', M, M, M, M, X],
-  ['specialSweeper', M, M, M, M, X],
-  ['physicalBreaker', M, M, M, M, X],
-  ['specialBreaker', M, M, M, M, X],
+  ['anySweeper', E, E, E, I, M],
+  ['anyBreaker', E, E, E, I, M],
+  ['anyPhysical', E, E, I, X, X],
+  ['anySpecial', E, E, I, X, X],
+  ['anyAttacker', X, X, X, I, M],
+  ['secondAttacker', X, X, X, M, M],
+  ['physicalSweeper', M, M, M, M, M],
+  ['specialSweeper', M, M, M, M, M],
+  ['physicalBreaker', M, M, M, M, M],
+  ['specialBreaker', M, M, M, M, M],
   // Difensori
   ['physicalWall', M, M, E, E, E],
   ['specialWall', M, M, E, E, E],
@@ -119,13 +133,21 @@ const SWITCHED = new Set<LevelKey>(['physicalSweeper', 'specialSweeper', 'physic
 
 /**
  * Il tipo di team di cui si chiedono i ruoli. In National Dex OU (regola 'recoverySpeed') lo Stall chiede quelli del
- * Semi-stall (2026-11-08): i due tipi hanno già gli stessi pesi, e il salto fra loro veniva tutto dai ruoli (il Semi-stall
+ * Semi-stall, tranne gli attaccanti che prende dalla sua colonna (levelFor, 2026-11-11). Prima, dal 2026-11-08, tutti:
+ * i due tipi hanno già gli stessi pesi, e il salto fra loro veniva tutto dai ruoli (il Semi-stall
  * chiede Sweeper, Wallbreaker e Attaccante fisico come importanti). Una mossa d'attacco al posto di un recupero toglieva
  * fino a 8 punti (Mega Sableye Recover → Foul Play 77 → 69); così 4 al massimo. I team Stall perdono in media 2,6 punti,
  * in linea con le partite vere (lo Stall vince il 32,5%, il peggiore); il resto del banco e le partite non cambiano.
  */
 export const rolesTypeOf = (archetype: Archetype, typeRule?: 'walls' | 'recoverySpeed'): Archetype =>
   typeRule === 'recoverySpeed' && archetype === 'stall' ? 'semiStall' : archetype;
+
+/** Le voci degli attaccanti: in National Dex OU lo Stall le prende dalla sua colonna (tutte minori), il resto dal Semi-stall. */
+const ATTACK_ROWS = new Set<LevelKey>(['anySweeper', 'anyBreaker', 'anyPhysical', 'anySpecial', 'anyAttacker', 'secondAttacker', ...ATTACKERS]);
+
+/** Livello della voce per il tipo di team nel formato: rolesTypeOf, tranne gli attaccanti dello Stall (2026-11-11). */
+export const levelFor = (archetype: Archetype, key: LevelKey, typeRule?: 'walls' | 'recoverySpeed'): Level =>
+  levelOf(archetype === 'stall' && ATTACK_ROWS.has(key) ? 'stall' : rolesTypeOf(archetype, typeRule), key);
 
 /** Livello della voce per l'archetipo, con l'interruttore applicato. */
 export function levelOf(archetype: Archetype, key: LevelKey): Level {
