@@ -281,10 +281,11 @@ describe('SuggestionsPanel', () => {
     // 🛡️: l'immune col suo chip e la parola "immune", poi la resistenza
     expect([...reasons[1].querySelectorAll('.sym-chip')].map(c => c.querySelector('.sym-immune')?.textContent ?? '')).toEqual(['immune', '']);
     expect(reasons[1].querySelectorAll('.sym .type-chip')).toHaveLength(2);
-    // vs: con uno solo anche il nome, con più solo le icone
+    // vs: il primo col pallino del tipo e il nome, come nel dettaglio; gli altri "+N" (niente mini sprite)
     expect(reasons[2].querySelector('.sym')!.textContent).toBe('vsZapdos');
-    expect(reasons[3].querySelector('.sym')!.textContent).toBe('vs');
-    expect(reasons[3].querySelectorAll('.sym .mon-icon')).toHaveLength(2);
+    expect(reasons[3].querySelector('.sym')!.textContent).toBe('vsZapdos+1');
+    expect(reasons[3].querySelectorAll('.sym .mon-icon')).toHaveLength(0);
+    expect(reasons[3].querySelectorAll('.sym .type-dot')).toHaveLength(1);
     expect(reasons[4].querySelector('.sym')!.textContent).toBe('🔗Venusaur');
     // I ruoli restano parole, senza tooltip
     expect(reasons[5].textContent).toBe('++Pivot');

@@ -12,7 +12,7 @@ import { isUserBanned, isUserFavorite, type EffectiveLists } from '../engine/lis
 import { formatLabel } from '../engine/formats';
 import { tierLabel } from '../engine/filters';
 import { battleName, getSpecies } from '../engine/dex';
-import { PokemonIcon } from './PokemonName';
+import { PokemonIcon, TypeDot } from './PokemonName';
 import { TypeChip } from './Sprite';
 import type { ReasonSymbol } from '../engine/explain';
 import { AlertMark } from './AlertMark';
@@ -193,85 +193,67 @@ export function ResultCell({ item, usage, favorite = false, className = '' }: { 
   );
 }
 
-/** Quante mini icone entrano in un segno; le altre diventano "+N" (la frase intera resta nel tooltip). */
-const MAX_MONS = 3;
-
 function More({ total, shown }: { total: number; shown: number }) {
   return total > shown ? <span className="sym-more">+{total - shown}</span> : null;
 }
 
 /**
- * I chip dei tipi (gli stessi del team, in versione compatta), su una riga sola: quelli che non entrano vanno a capo
- * su una seconda riga nascosta e diventano "+N" (mai un chip tagliato a metà; la lista intera è nel tooltip).
- * Gli immuni per primi, con la parola "immune" attaccata all'ultimo.
+ * Quanti elementi di una riga entrano: si parte da tutti e si toglie l'ultimo finché la riga non sborda più
+ * (gli altri diventano "+N", subito dopo l'ultimo visibile). Si riparte da capo quando cambia la larghezza o arriva il carattere.
  */
-function ChipRow({ types, immune = [] }: { types: readonly string[]; immune?: readonly string[] }) {
-  const tr = useT();
+function useFitLimit(count: number, key: string) {
   const row = useRef<HTMLSpanElement>(null);
-  const [hidden, setHidden] = useState(0);
-  const key = `${immune.join()}|${types.join()}`;
-  useLayoutEffect(() => {
-    const el = row.current;
-    if (!el) return;
-    const measure = () => {
-      const items = [...el.children] as HTMLElement[];
-      const top = items[0]?.offsetTop ?? 0;
-      setHidden(items.filter(item => item.offsetTop > top).length);
-    };
-    measure();
-    // Col carattere dell'app caricato i chip cambiano larghezza: si rimisura
-    void document.fonts?.ready.then(measure);
-    if (typeof ResizeObserver === 'undefined') return;
-    const observer = new ResizeObserver(measure);
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [key]);
-  const all = [...immune, ...types];
-  return (
-    <>
-      <span className="sym-chips" ref={row}>
-        {all.map((type, i) => (
-          <span key={type} className="sym-chip">
-            <TypeChip type={type} />
-            {i === immune.length - 1 && <span className="sym-immune">{tr('reason.immune')}</span>}
-          </span>
-        ))}
-      </span>
-      <More total={all.length} shown={all.length - hidden} />
-    </>
-  );
-}
-
-/**
- * Mini sprite dei Pokémon; con uno solo anche il nome, se entra intero. Con più, quante icone entrano
- * nella riga (al massimo MAX_MONS), le altre "+N": le icone sporgono in alto e in basso, quindi si contano, non si nascondono.
- */
-function MonRow({ species }: { species: readonly string[] }) {
-  const row = useRef<HTMLSpanElement>(null);
-  const [limit, setLimit] = useState(MAX_MONS);
-  const key = species.join();
+  const [limit, setLimit] = useState(count);
   useEffect(() => {
+    setLimit(count);
     const el = row.current;
     if (!el || typeof ResizeObserver === 'undefined') return;
-    // Cambia la larghezza, la lista appare o arriva il carattere dell'app: si riparte da tutte e si toglie finché entrano
-    const reset = () => setLimit(MAX_MONS);
+    const reset = () => setLimit(count);
     void document.fonts?.ready.then(reset);
     const observer = new ResizeObserver(reset);
     observer.observe(el.parentElement ?? el);
     return () => observer.disconnect();
-  }, [key]);
+  }, [key, count]);
   useLayoutEffect(() => {
     const el = row.current;
     if (!el || el.clientWidth === 0) return;
     if (limit > 1 && el.scrollWidth - el.clientWidth > 1) setLimit(limit - 1);
   });
-  const shown = species.slice(0, species.length === 1 ? 1 : limit);
+  return { row, limit: Math.min(limit, count) };
+}
+
+/**
+ * I chip dei tipi (gli stessi del team, in versione compatta), su una riga sola: quelli che non entrano diventano "+N"
+ * subito dopo l'ultimo chip (mai un chip tagliato a metà; la lista intera è nel tooltip).
+ * Gli immuni per primi, con la parola "immune" attaccata all'ultimo.
+ */
+function ChipRow({ types, immune = [] }: { types: readonly string[]; immune?: readonly string[] }) {
+  const tr = useT();
+  const all = [...immune, ...types];
+  const { row, limit } = useFitLimit(all.length, all.join());
   return (
-    <span className="sym-mons" ref={row}>
-      {shown.map(name => <PokemonIcon key={name} name={name} />)}
-      {/* Il nome solo se entra intero: se no va a capo su una riga nascosta e resta l'icona (il nome è nel tooltip) */}
-      {species.length === 1 && <span className="sym-name-box"><i /><strong className="sym-name">{species[0]}</strong></span>}
-      <More total={species.length} shown={shown.length} />
+    <span className="sym-chips" ref={row}>
+      {all.slice(0, limit).map((type, i) => (
+        <span key={type} className="sym-chip">
+          <TypeChip type={type} />
+          {i === immune.length - 1 && <span className="sym-immune">{tr('reason.immune')}</span>}
+        </span>
+      ))}
+      <More total={all.length} shown={limit} />
+    </span>
+  );
+}
+
+/**
+ * Il primo Pokémon come nel dettaglio (pallino del tipo + nome), gli altri "+N" subito dopo (la lista intera è nel tooltip).
+ * Se il nome non entra intero si accorcia coi puntini, ma il "+N" resta sempre visibile.
+ */
+function MonRow({ species }: { species: readonly string[] }) {
+  const [first] = species;
+  return (
+    <span className="sym-mons">
+      <span className="mon-ref sym-mon"><TypeDot name={first} /><strong>{first}</strong></span>
+      <More total={species.length} shown={1} />
     </span>
   );
 }

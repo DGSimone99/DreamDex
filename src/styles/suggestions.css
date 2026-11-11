@@ -686,22 +686,20 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .reason .sym { display: flex; align-items: center; gap: 4px; min-width: 0; }
 .reason .sym-emoji { flex: none; font: 13px/1 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif; }
 .reason .sym-vs { flex: none; font: 700 11px/1 var(--ui); letter-spacing: 0.02em; }
-.reason .sym-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 0 3px; min-width: 0; height: 16px; overflow: hidden; }
+.reason .sym-chips { display: flex; align-items: center; gap: 0 3px; min-width: 0; height: 16px; overflow: hidden; }
 .reason .sym-chip { display: inline-flex; flex: none; align-items: center; height: 16px; }
 /* Chip compatti: larghi quanto il nome (mai tagliati), più bassi e col testo più piccolo di quelli del team */
 .reason .type-chip, .reason .type-chip.long { width: auto; min-width: 0; padding: 0 4px; font-size: 10px; line-height: 14px; letter-spacing: 0.02em; }
 .reason .sym-immune { margin-left: 3px; font: 500 11px/1 var(--ui); }
+/* "vs" + pallino del tipo + nome, come nel dettaglio; il nome si accorcia, il "+N" resta */
 .reason .sym-mons { display: flex; align-items: center; min-width: 0; }
-.reason .sym-mons .mon-icon { margin: -9px -5px -9px -5px; }
-.reason .sym-mons .mon-icon + .mon-icon { margin-left: -9px; }
-/* L'ultima icona non sporge a destra: la riga resta larga quanto quello che si vede */
-.reason .sym-mons .mon-icon:last-child { margin-right: 0; }
-.reason .sym-name-box { display: flex; flex-wrap: wrap; min-width: 0; height: 16px; overflow: hidden; }
-.reason .sym-name-box > i { width: 0; height: 16px; }
-.reason .sym-name { flex: none; margin-left: 4px; white-space: nowrap; font-weight: 700; line-height: 16px; color: var(--text); }
-.reason .sym-more { flex: none; margin-left: 3px; font: 700 11px/1 var(--ui); }
-.pill .reason .sym-name { color: var(--pill-ink); }
-.pill.selected .reason .sym-name, .pill.selected .reason .sym-vs { color: var(--on-accent); }
+.reason .sym-mon { display: flex; align-items: center; min-width: 0; }
+.reason .sym-mon .type-dot { flex: none; margin-right: 4px; vertical-align: 0; }
+.reason .sym-mon strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* "+N" piccolo e grigio subito dopo l'ultimo elemento: non si confonde col voto */
+.reason .sym-more { flex: none; margin-left: 4px; font: 500 10px/1 var(--ui); color: var(--faint); }
+.pill .reason .sym-mon strong { color: var(--pill-ink); }
+.pill.selected .reason .sym-mon strong, .pill.selected .reason .sym-vs { color: var(--on-accent); }
 /* Destra: segni, icone dei tipi 18px, voto */
 .pill-end { display: flex; align-items: center; gap: 8px; }
 .pill .pill-types { gap: 4px; }
