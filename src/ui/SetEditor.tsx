@@ -41,6 +41,7 @@ function IvInput({ value, label, onChange }: { value: number; label: string; onC
   return (
     <input
       type="number"
+      inputMode="numeric"
       className="iv-input"
       min={0}
       max={31}
@@ -369,6 +370,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
               <input
                 id={`ev-${uid}-${line.stat}`}
                 type="number"
+                inputMode="numeric"
                 className="ev-input"
                 min={0}
                 max={252}

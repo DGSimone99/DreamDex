@@ -356,10 +356,11 @@
   .editor-foot .member-replace { height: 44px; }
 }
 @media (max-width: 599px) {
-  /* Statistiche: senza la barra della base (resta il numero) il cursore degli EV ha spazio vero per il pollice */
-  .stat-row { grid-template-columns: 46px 26px minmax(0, 1fr) 54px 36px 38px; gap: 6px; padding: 2px 0; }
+  /* Statistiche senza cursori: col pollice sono imprecisi (~3 EV per pixel) e scorrendo l'editor li sposti senza volere.
+     Gli EV si scrivono nel numero (tastierino numerico) o si prendono da Spread più usati; la barra della base ha di nuovo posto */
+  .stat-row { grid-template-columns: 46px minmax(0, 1fr) 56px 40px 40px; gap: 8px; padding: 2px 0; }
+  .stat-row .ev-slider, .stat-row.stat-head > span:nth-child(3) { display: none; }
   .set-editor .stat-row .ev-input { padding-left: 2px; padding-right: 2px; }
-  .stat-row .stat-base-bar { display: none; }
   .set-editor .editor-group { grid-template-columns: minmax(0, 1fr); }
   .editor-group > .field:nth-child(odd) .combobox [role='listbox'] { left: 0; right: auto; }
   .editor-actions { margin-left: 0; flex-wrap: wrap; }
