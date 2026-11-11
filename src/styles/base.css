@@ -19,3 +19,7 @@ li { margin: 3px 0; }
 p { margin: 6px 0; }
 code { font-size: 13px; background: var(--field); padding: 1px 5px; border-radius: 3px; }
 .icon { flex: none; vertical-align: -3px; }
+/* Movimento ridotto: niente transizioni né animazioni in tutta l'app (le aree con un'alternativa più calma la danno nei loro fogli) */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before { transition: none !important; animation: none !important; }
+}
