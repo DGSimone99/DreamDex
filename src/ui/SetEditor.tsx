@@ -92,6 +92,7 @@ function moveOption(name: string, lang: Lang): ComboOption {
     option = {
       value: name,
       label: gameName('move', name, lang),
+      alias: name,
       detail: <MoveDetail name={name} />,
       description: describe.move(name, lang),
       color: move ? typeTextColor(move.type) : undefined,
@@ -104,7 +105,7 @@ const ALL_MOVES = moveNames();
 const ITEMS = itemNames();
 const ALL_ABILITIES = dex.abilities.all().filter(a => a.exists && !a.isNonstandard).map(a => a.name).sort();
 const abilityOption = (name: string, lang: Lang): ComboOption =>
-  ({ value: name, label: gameName('ability', name, lang), description: describe.ability(name, lang) });
+  ({ value: name, label: gameName('ability', name, lang), alias: name, description: describe.ability(name, lang) });
 
 /** Natura ed EV come chiave, per riconoscere lo spread attuale. */
 const spreadKey = (s: Pick<CommonSpread, 'nature' | 'evs'>) => `${s.nature}:${STAT_IDS.map(stat => s.evs[stat] ?? 0).join('/')}`;
@@ -201,7 +202,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
   const itemOptions = useMemo<ComboOption[]>(() => withCommon(ITEMS
     .filter(name => pokedex !== 'sv' || !dex.items.get(name).isNonstandard)
     .map(name => ({
-      value: name, label: gameName('item', name, lang), description: describe.item(name, lang), icon: <ItemIcon item={name} />,
+      value: name, label: gameName('item', name, lang), alias: name, description: describe.item(name, lang), icon: <ItemIcon item={name} />,
     })), common?.items), [pokedex, lang, commonKey]);
   const natureOptions = useMemo<ComboOption[]>(() => withCommon(natureNames().map(name => {
     const { plus, minus } = dex.natures.get(name);
@@ -209,6 +210,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
     return {
       value: name,
       label,
+      alias: name,
       detail: <NatureEffect name={name} />,
       ariaLabel: plus && minus
         ? `${label} (+${statShort(plus as StatID, lang)}, −${statShort(minus as StatID, lang)})`
@@ -217,7 +219,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
   }), common?.natures), [lang, t, commonKey]);
   const teraOptions = useMemo<ComboOption[]>(() => withCommon([
     { value: '', label: t('editor.none'), ariaLabel: t('editor.none') },
-    ...TYPES.map(type => ({ value: type, label: typeName(type, lang), content: <TypeChip type={type} />, ariaLabel: typeName(type, lang) })),
+    ...TYPES.map(type => ({ value: type, label: typeName(type, lang), alias: type, content: <TypeChip type={type} />, ariaLabel: typeName(type, lang) })),
   ], common?.teraTypes), [lang, t, commonKey]);
   const moves = [0, 1, 2, 3].map(i => set.moves[i] ?? '');
   // Una mossa già scelta in un altro slot resta nel menu, grigia e non selezionabile

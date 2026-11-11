@@ -145,3 +145,21 @@ describe('scelte in cima che vengono dai preset (senza statistiche)', () => {
     expect(within(list).getByText('Alt')).toHaveAttribute('title', 'Da un preset Smogon');
   });
 });
+
+describe('ricerca senza accenti e col secondo nome', () => {
+  it('"velocita" trova "Velocità"; il nome inglese (alias) trova la voce', async () => {
+    const user = userEvent.setup();
+    const choices = [
+      { value: 'Speed', label: 'Velocità' },
+      { value: 'Earthquake', label: 'Terremoto', alias: 'Earthquake' },
+      { value: 'Surf', label: 'Surf', alias: 'Surf' },
+    ];
+    renderIt(<Combobox label="Voce" value="" options={choices} onChange={() => undefined} />);
+    const field = screen.getByLabelText('Voce');
+    await user.type(field, 'velocita');
+    expect(within(screen.getByRole('listbox')).getAllByRole('option').map(o => o.textContent)).toEqual(['Velocità']);
+    await user.clear(field);
+    await user.type(field, 'earthq');
+    expect(within(screen.getByRole('listbox')).getAllByRole('option').map(o => o.textContent)).toEqual(['Terremoto']);
+  });
+});

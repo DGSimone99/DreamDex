@@ -18,6 +18,8 @@ export interface ComboOption {
   color?: string;
   /** Icona prima del nome (es. lo strumento). */
   icon?: ReactNode;
+  /** Altro nome cercato (il nome inglese con l'interfaccia in italiano): "Earthquake" trova Terremoto. */
+  alias?: string;
   /** Scelta tra le più usate: va in cima, con questa etichetta (la quota d'uso, o "Alt" se viene da un preset). */
   common?: string;
   /** Tooltip dell'etichetta (es. "Da un preset Smogon" per "Alt"). */
@@ -25,6 +27,17 @@ export interface ComboOption {
   /** Voce visibile ma non selezionabile (es. una mossa già scelta in un altro slot). */
   disabled?: boolean;
 }
+
+/** Testo da confrontare nella ricerca: minuscolo, senza accenti, spazi e segni. */
+const searchCache = new Map<string, string>();
+const searchID = (text: string): string => {
+  let id = searchCache.get(text);
+  if (id === undefined) {
+    id = toID(text.normalize('NFD').replace(/[\u0300-\u036f]/g, ''));
+    searchCache.set(text, id);
+  }
+  return id;
+};
 
 /** Oltre questo numero di voci la lista chiede di affinare la ricerca (tutte le mosse ci stanno). */
 const MAX_SHOWN = 1000;
@@ -62,10 +75,11 @@ export function Combobox({ label, value, options, onChange, restricted = false, 
   const hasCommon = ordered.length > 0 && !!ordered[0].common;
   const matches = useMemo(() => {
     if (!query) return ordered;
-    const q = toID(query);
-    const name = (o: ComboOption) => toID(o.label ?? o.value);
-    const starts = ordered.filter(o => name(o).startsWith(q));
-    const contains = ordered.filter(o => !name(o).startsWith(q) && name(o).includes(q));
+    const q = searchID(query);
+    // Nome mostrato e nome inglese, senza accenti ("velocita" trova "Velocità")
+    const names = (o: ComboOption) => [searchID(o.label ?? o.value), ...(o.alias ? [searchID(o.alias)] : [])];
+    const starts = ordered.filter(o => names(o).some(n => n.startsWith(q)));
+    const contains = ordered.filter(o => !starts.includes(o) && names(o).some(n => n.includes(q)));
     const found = [...starts, ...contains];
     return [...found.filter(o => o.common), ...found.filter(o => !o.common)];
   }, [ordered, query]);

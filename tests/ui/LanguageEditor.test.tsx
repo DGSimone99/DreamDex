@@ -43,3 +43,23 @@ describe('editor in italiano con i nomi del gioco', () => {
     expect((screen.getByLabelText('Showdown text') as HTMLTextAreaElement).value).toMatch(/^Great Tusk/);
   });
 });
+
+describe('ricerca nei menu in due lingue', () => {
+  it('in italiano si trova anche col nome inglese: "Earthquake" trova Terremoto, "Lefto" trova Avanzi', async () => {
+    initGameNames(italian);
+    const user = userEvent.setup();
+    render(<App data={fixtureData} initialLang="it" />);
+    await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Great Tusk{Enter}');
+    const team = screen.getByRole('region', { name: 'Team' });
+    await user.click(within(team).getByText('Great Tusk'));
+    const move = within(team).getByLabelText('Mossa 4');
+    await user.clear(move);
+    await user.type(move, 'Earthquake');
+    expect(within(screen.getByRole('listbox', { name: 'Mossa 4: opzioni' })).getAllByRole('option')[0]).toHaveTextContent('Terremoto');
+    await user.keyboard('{Escape}');
+    const item = within(team).getByLabelText('Strumento');
+    await user.clear(item);
+    await user.type(item, 'Lefto');
+    expect(within(screen.getByRole('listbox', { name: 'Strumento: opzioni' })).getAllByRole('option')[0]).toHaveTextContent('Avanzi');
+  });
+});
