@@ -234,6 +234,8 @@
   /* ── Finestre: quasi a tutto schermo ──────────────────────────── */
   .help-backdrop { padding: 12px; place-items: end center; }
   .help-dialog, .help-frame { width: 100% !important; max-height: calc(100dvh - 24px); }
+  /* Qui la finestra sta in fondo allo schermo: niente spazio sotto per centrarla */
+  .help-frame.with-peek { margin-bottom: 0; }
   .help-dialog.rating-help, .help-frame.with-peek > .help-dialog.rating-help { height: calc(100dvh - 24px); }
 
   /* L'avviso con Annulla sta sopra le sezioni */
