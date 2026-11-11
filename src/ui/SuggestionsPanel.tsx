@@ -15,7 +15,7 @@ import { statsEntry } from '../engine/stats';
 import { getSpecies } from '../engine/dex';
 import { applyFavorites, isUserBanned, isUserFavorite } from '../engine/lists';
 import { bannedNames } from '../engine/scoring';
-import { activeFilterCount, EMPTY_FILTERS, isFiltering, searchPool, type CandidateFilters } from '../engine/filters';
+import { EMPTY_FILTERS, isFiltering, searchPool, type CandidateFilters } from '../engine/filters';
 import { defaultSet } from '../engine/sets';
 import { FilterBar } from './FilterBar';
 import { conditionLabel, neededConditions, providesAll, viaName } from '../engine/synergy';
@@ -29,6 +29,7 @@ import { BanMark, BoxIcon, reasonsOf, type CandidateProps, type Item } from './c
 import type { ListSprite, ListStyle } from './theme';
 import { useLang, useT } from '../i18n/react';
 import { usePerPage } from './usePerPage';
+import { useFitCount } from './useFit';
 import { ListViewMenu } from './ListViewMenu';
 import { ModeSwitch } from './ModeSwitch';
 
@@ -213,6 +214,11 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   // Il numero per pagina può cambiare (finestra): la pagina resta fra quelle che ci sono
   const page = Math.max(0, Math.min(pageState, pages - 1));
   const pageItems = items.slice(page * perPage, (page + 1) * perPage);
+  // Fascia "Candidati": la pagina è sempre un numero ("3/9"); se titolo, suggerimento e paginazione non entrano su una riga
+  // si toglie il suggerimento del doppio clic (1 = tutto, 0 = senza suggerimento)
+  const headRef = useRef<HTMLDivElement>(null);
+  const pickerListRef = useRef<HTMLDivElement>(null);
+  const headFit = useFitCount(headRef, 1, `${lang}|${view}|${pages}`, pickerListRef, true);
   const chosen = fresh && cursor !== null ? items[cursor] : undefined;
   const fallback = fresh ? items[0] : undefined;
   const pickedIndex = !fresh ? -1
@@ -252,9 +258,15 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   const lastPage = useRef(page);
   const roll = page < lastPage.current ? 'roll-back' : 'roll-on';
   useEffect(() => { lastPage.current = page; }, [page]);
-  // Menu: la rotella sulla lista sfoglia le pagine (una per gesto: le altre tacche dello stesso gesto si ignorano)
+  // Menu: la rotella sulla lista sfoglia le pagine (una per gesto: le altre tacche dello stesso gesto si ignorano).
+  // Solo quando la lista non può scorrere da sola in quella direzione (altrimenti la rotella scorre, come ovunque) e il
+  // gesto è chiaramente verticale: Ctrl (zoom), Maiusc e i gesti di lato del touchpad restano al browser
   const wheelAt = useRef(0);
-  const wheel = (e: React.WheelEvent) => {
+  const wheel = (e: React.WheelEvent<HTMLOListElement>) => {
+    if (e.ctrlKey || e.shiftKey || e.altKey || Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+    const list = e.currentTarget;
+    const canScroll = e.deltaY > 0 ? list.scrollTop + list.clientHeight < list.scrollHeight - 1 : list.scrollTop > 0;
+    if (canScroll) return;
     if (Math.abs(e.deltaY) < 4 || e.timeStamp - wheelAt.current < 350) return;
     const next = page + (e.deltaY > 0 ? 1 : -1);
     if (next < 0 || next >= pages) return;
@@ -400,8 +412,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
         {emptyTeam && (
           <p className="note">{tr('suggest.emptyTeam')}</p>
         )}
-        {/* Con filtri attivi il numero sta sulla riga dei chip; con la sola ricerca qui */}
-        {filtering && activeFilterCount(filters) === 0 && <p className="list-count">{countText}</p>}
+        {/* Il numero dei risultati si vede una volta sola, nella fascia "Candidati (N)"; qui solo per i lettori di schermo */}
         {hiddenCount > 0 && (
           <p className="note hidden-note">
             {tr(hiddenCount === 1 ? 'lists.hiddenOne' : 'lists.hidden', { n: hiddenCount })}{' '}
@@ -448,12 +459,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
       <button type="button" className="step" aria-label={tr('suggest.prev')} disabled={page === 0} onClick={() => goToPage(page - 1)}>
         <Icon name="prev" />
       </button>
-      <span className="pager-dashes">
-        {Array.from({ length: pages }, (_, n) => (
-          <button key={n} type="button" className="pager-dash" aria-label={tr('suggest.page', { n: n + 1 })} aria-current={n === page ? 'page' : undefined}
-            onClick={() => goToPage(n)} />
-        ))}
-      </span>
+      <span className="pager-count" role="status" aria-label={tr('suggest.page', { n: page + 1 })}>{page + 1}/{pages}</span>
       <button type="button" className="step" aria-label={tr('suggest.next')} disabled={page === pages - 1} onClick={() => goToPage(page + 1)}>
         <Icon name="next" />
       </button>
@@ -469,14 +475,14 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
           onAll={() => { setScope('all'); onCancelReplace(); }} onTarget={index => onTarget?.(index)} />
         {search}
       </div>
-      {!full && <ActiveFilters filters={filters} onChange={setFilters} count={filtering && items.length > 0 ? countText : undefined} />}
+      {!full && <ActiveFilters filters={filters} onChange={setFilters} />}
       {notes}
       <div className={`picker${!full ? ' has-detail' : ''}${sheetOpen && selected ? ' sheet-open' : ''}`}>
-        <div className="picker-list">
+        <div className="picker-list" ref={pickerListRef}>
           {!full && items.length > 0 && (
-            <div className="list-head">
+            <div className="list-head" ref={headRef}>
               <h2 className="box-head">{tr('suggest.listHead', { n: items.length })}</h2>
-              <span className="dbl-hint">{tr(view === 'add' ? 'suggest.dblHint.add' : 'suggest.dblHint.replace')}</span>
+              {headFit > 0 && <span className="dbl-hint">{tr(view === 'add' ? 'suggest.dblHint.add' : 'suggest.dblHint.replace')}</span>}
               {pager}
               {onListStyleChange && onListSpriteChange && (
                 <ListViewMenu listStyle={listStyle} listSprite={listSprite} onListStyleChange={onListStyleChange} onListSpriteChange={onListSpriteChange} />

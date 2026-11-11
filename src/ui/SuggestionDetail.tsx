@@ -19,7 +19,7 @@ import { copyText } from './clipboard';
 import type { ListSprite } from './theme';
 import { Icon } from './icons';
 import { ItemIcon } from './ItemIcon';
-import { BoxIcon, bringsOf } from './candidateParts';
+import { BoxIcon, bringsOf, formeParts } from './candidateParts';
 import { PokemonIcon, PokemonName } from './PokemonName';
 import { battleAbility, battleName, toID } from '../engine/dex';
 import { statsEntry } from '../engine/stats';
@@ -68,6 +68,7 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
     ? { from: before.teamType, to: after.teamType } : null;
   const changes = 'diff' in item && item.diff ? rankedChanges(item.diff, item.teamGain, lang) : null;
   const types = getSpecies(item.species)?.types ?? [];
+  const forme = formeParts(item.species);
   const evs = STAT_IDS.filter(stat => (set.evs[stat] ?? 0) > 0).map(stat => `${set.evs[stat]} ${statShort(stat, lang)}`).join(' / ');
   const delta = (value: number) => (value > 0 ? `+${value}` : value < 0 ? `−${-value}` : '');
   const result = item.teamGain;
@@ -107,7 +108,15 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
         </span>
         <div className="detail-id">
           <h3>
-            <span>{item.species}</span>
+            {/* Come sulle carte: la specie base e la forma come etichetta ("Charizard" + MEGA Y); il nome intero ufficiale
+                per i lettori di schermo e nel tooltip */}
+            {forme ? (
+              <span className="detail-name" title={item.species}>
+                <span className="visually-hidden">{item.species}</span>
+                <span aria-hidden="true">{forme.base}</span>
+                <i className="forme" aria-hidden="true">{forme.forme}</i>
+              </span>
+            ) : <span>{item.species}</span>}
             {banMark}
             <StatsBadge species={item.species} item={set.item} compare={replacing ? team[replaceIndex] : undefined} />
           </h3>

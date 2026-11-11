@@ -1,5 +1,5 @@
 // I pezzi comuni a ogni candidato della lista (Carte e Menu): voto o uso, segni, motivi, chi esce
-import type { MouseEvent, ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react';
 import type { Format } from '../engine/format';
 import { formatRules, type FormatRules } from '../engine/formatRules';
 import type { Replacement } from '../engine/replace';
@@ -12,7 +12,9 @@ import { isUserBanned, isUserFavorite, type EffectiveLists } from '../engine/lis
 import { formatLabel } from '../engine/formats';
 import { tierLabel } from '../engine/filters';
 import { battleName, getSpecies } from '../engine/dex';
-import { PokemonIcon } from './PokemonName';
+import { PokemonIcon, TypeDot } from './PokemonName';
+import { TypeChip } from './Sprite';
+import type { ReasonSymbol } from '../engine/explain';
 import { AlertMark } from './AlertMark';
 import { Typed } from './TypeText';
 import { Icon } from './icons';
@@ -31,7 +33,7 @@ export function BoxIcon({ set, big = false }: { set: TeamSet; big?: boolean }) {
 }
 
 /** I motivi sotto il nome: bonus (col "+" verde) o, senza bonus, una frase sola. */
-export interface ReasonSummary { pros: boolean; texts: string[] }
+export interface ReasonSummary { pros: boolean; items: Bring[] }
 
 /** Quello che serve a ogni candidato della lista, in qualunque stile. */
 export interface CandidateProps {
@@ -66,8 +68,8 @@ export const signed = (n: number) => (n > 0 ? `+${n}` : n < 0 ? `−${-n}` : '±
 /** L'area del voto di cui parla una ragione, per non ripetere i guadagni del cambio. */
 const REASON_AREA: Partial<Record<string, ScoredArea>> = { defense: 'defense', coverage: 'strength', roles: 'roles' };
 
-/** Una voce di "Porta": il testo lungo (dettaglio) e quello breve (caselle). */
-export interface Bring { text: string; short: string; usedWith?: true }
+/** Una voce di "Porta": il testo lungo (dettaglio) e quello breve (caselle), o a segni (caselle, col testo lungo nascosto). */
+export interface Bring { text: string; short: string; symbol?: ReasonSymbol; usedWith?: true }
 
 /**
  * Tutto quello che il candidato porta, in un solo ordine per dettaglio e caselle: i guadagni del cambio (dal più pesante),
@@ -84,11 +86,14 @@ export function bringsOf(item: Item, lang: Lang, rules: FormatRules): Bring[] {
     .filter(reason => reason.weight >= 0 && reason.component !== 'strength' && !covered.has(REASON_AREA[reason.component] as ScoredArea))
     .map((reason, i) => ({ reason, i }))
     .sort((a, b) => b.reason.weight - a.reason.weight || a.i - b.i)
-    .map(({ reason }): Bring => ({ text: reason.text, short: reason.short ?? reason.text, ...(reason.usedWith && { usedWith: true as const }) }));
+    .map(({ reason }): Bring => ({
+      text: reason.text, short: reason.short ?? reason.text,
+      ...(reason.symbol && { symbol: reason.symbol }), ...(reason.usedWith && { usedWith: true as const }),
+    }));
   // Col team vuoto non c'è niente da confrontare: Porta dice cosa sa fare il Pokémon (i suoi ruoli)
   const roles = !item.teamGain && !changes ? detectRoles(item.set, rules).map(role => t(lang, `role.${role}`)) : [];
   const all: Bring[] = [
-    ...(changes?.pros.map(p => ({ text: p.text, short: p.text })) ?? []),
+    ...(changes?.pros.map((p): Bring => ({ text: p.text, short: p.text, ...(p.symbol && { symbol: p.symbol }) })) ?? []),
     ...reasons,
     ...roles.map(text => ({ text, short: text })),
   ];
@@ -98,16 +103,26 @@ export function bringsOf(item: Item, lang: Lang, rules: FormatRules): Bring[] {
   return [...unique.filter(b => !b.usedWith), ...unique.filter(b => b.usedWith)];
 }
 
+const plain = (text: string): Bring => ({ text, short: text });
+
 /**
  * I motivi sotto il nome: le prime `n` voci di Porta del dettaglio, in forma breve (stesso ordine, mai una voce che il
- * dettaglio non ha). Il malus resta nel dettaglio. Col team vuoto i ruoli principali; senza bonus "nessuna differenza".
+ * dettaglio non ha). Il malus resta nel dettaglio. Col team vuoto i ruoli principali. Senza voci, se il voto sale,
+ * l'area che sale di più come la riga del dettaglio ("Offesa +13"); "nessuna differenza" solo se non cambia niente.
  */
 export function reasonsOf(item: Item, n: number, usage: number | null, format: Format, lang: Lang): ReasonSummary {
   const rules = formatRules(format.formatId);
   // Col team vuoto l'uso sta già a destra: qui i ruoli principali del Pokémon, in una riga
-  if (usage !== null) return { pros: false, texts: [detectRoles(item.set, rules).slice(0, 3).map(role => t(lang, `role.${role}`)).join(', ')] };
-  const texts = bringsOf(item, lang, rules).filter(b => !b.usedWith).slice(0, n).map(b => b.short);
-  return texts.length ? { pros: true, texts } : { pros: false, texts: [t(lang, 'suggest.noDifference')] };
+  if (usage !== null) return { pros: false, items: [plain(detectRoles(item.set, rules).slice(0, 3).map(role => t(lang, `role.${role}`)).join(', '))] };
+  const items = bringsOf(item, lang, rules).filter(b => !b.usedWith).slice(0, n);
+  if (items.length) return { pros: true, items };
+  const gain = item.teamGain;
+  if (gain && gain.gain > 0) {
+    const best = gain.areaGains?.[0];
+    if (best) return { pros: false, items: [plain(`${best.label} +${best.change}`)] };
+    if ((gain.extras ?? 0) > 0) return { pros: false, items: [plain(`${t(lang, 'detail.extras')} +${gain.extras}`)] };
+  }
+  return { pros: false, items: [plain(t(lang, 'suggest.noDifference'))] };
 }
 
 /** Solo se il Pokémon è bannato nel formato: triangolo rosso con il tier nel tooltip. */
@@ -178,13 +193,112 @@ export function ResultCell({ item, usage, favorite = false, className = '' }: { 
   );
 }
 
-/** I motivi: "+" verde davanti ai bonus (letto anche dagli screen reader), il resto in grigio. */
+function More({ total, shown }: { total: number; shown: number }) {
+  return total > shown ? <span className="sym-more">+{total - shown}</span> : null;
+}
+
+/**
+ * Quanti elementi di una riga entrano: si parte da tutti e si toglie l'ultimo finché la riga non sborda più
+ * (gli altri diventano "+N", subito dopo l'ultimo visibile). Si riparte da capo quando cambia la larghezza o arriva il carattere.
+ */
+function useFitLimit(count: number, key: string) {
+  const row = useRef<HTMLSpanElement>(null);
+  const [limit, setLimit] = useState(count);
+  useEffect(() => {
+    setLimit(count);
+    const el = row.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const reset = () => setLimit(count);
+    void document.fonts?.ready.then(reset);
+    const observer = new ResizeObserver(reset);
+    observer.observe(el.parentElement ?? el);
+    return () => observer.disconnect();
+  }, [key, count]);
+  useLayoutEffect(() => {
+    const el = row.current;
+    if (!el || el.clientWidth === 0) return;
+    if (limit > 1 && el.scrollWidth - el.clientWidth > 1) setLimit(limit - 1);
+  });
+  return { row, limit: Math.min(limit, count) };
+}
+
+/**
+ * I chip dei tipi (gli stessi del team, in versione compatta), su una riga sola: quelli che non entrano diventano "+N"
+ * subito dopo l'ultimo chip (mai un chip tagliato a metà; la lista intera è nel tooltip).
+ * Gli immuni per primi, con la parola "immune" attaccata all'ultimo.
+ */
+function ChipRow({ types, immune = [] }: { types: readonly string[]; immune?: readonly string[] }) {
+  const tr = useT();
+  const all = [...immune, ...types];
+  const { row, limit } = useFitLimit(all.length, all.join());
+  return (
+    <span className="sym-chips" ref={row}>
+      {all.slice(0, limit).map((type, i) => (
+        <span key={type} className="sym-chip">
+          <TypeChip type={type} />
+          {i === immune.length - 1 && <span className="sym-immune">{tr('reason.immune')}</span>}
+        </span>
+      ))}
+      <More total={all.length} shown={limit} />
+    </span>
+  );
+}
+
+/**
+ * Il primo Pokémon come nel dettaglio (pallino del tipo + nome), gli altri "+N" subito dopo (la lista intera è nel tooltip).
+ * Se il nome non entra intero si accorcia coi puntini, ma il "+N" resta sempre visibile.
+ */
+function MonRow({ species }: { species: readonly string[] }) {
+  const [first] = species;
+  return (
+    <span className="sym-mons">
+      <span className="mon-ref sym-mon"><TypeDot name={first} /><strong>{first}</strong></span>
+      <More total={species.length} shown={1} />
+    </span>
+  );
+}
+
+/** Il disegno di un segno (decorativo: la frase intera la legge lo screen reader e la mostra il tooltip). */
+function SymbolView({ symbol }: { symbol: ReasonSymbol }) {
+  switch (symbol.kind) {
+    case 'coverage':
+      return <><span className="sym-emoji">⚔️</span><ChipRow types={symbol.types} /></>;
+    case 'defense':
+      return <><span className="sym-emoji">🛡️</span><ChipRow types={symbol.resists} immune={symbol.immune} /></>;
+    case 'threats':
+      return <><span className="sym-vs">vs</span><MonRow species={symbol.species} /></>;
+    case 'link':
+      return <><span className="sym-emoji">🔗</span><MonRow species={[symbol.species]} /></>;
+  }
+}
+
+/** Un motivo: a segni (con la frase intera nascosta e nel tooltip) o la forma breve a parole. */
+function ReasonBody({ bring }: { bring: Bring }) {
+  if (!bring.symbol) return <Typed text={bring.short} />;
+  // Le due forme: le parole sulle carte larghe (schermi grandi), i segni sulle altre; il CSS ne mostra una sola,
+  // per tutta la lista (le carte e le pillole di una lista hanno la stessa larghezza)
+  return (
+    <>
+      <span className="words"><Typed text={bring.short} /></span>
+      <span className="syms">
+        <span className="visually-hidden">{bring.text}</span>
+        <span className="sym" aria-hidden="true"><SymbolView symbol={bring.symbol} /></span>
+      </span>
+    </>
+  );
+}
+
+/** I motivi: "+" verde davanti ai bonus (letto anche dagli screen reader), il resto in grigio; i segni col tooltip. */
 export function Reasons({ reasons }: { reasons: ReasonSummary }) {
   return (
     <small>
-      {reasons.texts.map((text, i) => (reasons.pros
-        ? <span key={i} className="reason gain"><b aria-hidden="true">+</b><span className="visually-hidden">+</span><Typed text={text} /></span>
-        : <span key={i} className="reason plain"><Typed text={text} /></span>))}
+      {reasons.items.map((bring, i) => {
+        const title = bring.symbol ? bring.text : undefined;
+        const cls = `reason ${reasons.pros ? 'gain' : 'plain'}${bring.symbol ? ' has-sym' : ''}`;
+        return reasons.pros
+          ? <span key={i} className={cls} title={title}><b aria-hidden="true">+</b><span className="visually-hidden">+</span><ReasonBody bring={bring} /></span>
+          : <span key={i} className={cls} title={title}><ReasonBody bring={bring} /></span>;
+      })}
     </small>
   );
 }

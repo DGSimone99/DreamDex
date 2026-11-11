@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
 
 /** Il contenuto sborda dal contenitore (in larghezza o in altezza); a 0×0 (scheda nascosta, jsdom) no. */
-const overflows = (el: HTMLElement) => el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1;
+const overflows = (el: HTMLElement, onlyX = false) => el.scrollWidth > el.clientWidth + 1 || (!onlyX && el.scrollHeight > el.clientHeight + 1);
 
 /**
  * Quanti dei `total` elementi stanno in `ref` senza sbordare: si parte da tutti e, prima del disegno, se ne toglie uno
@@ -9,15 +9,16 @@ const overflows = (el: HTMLElement) => el.scrollWidth > el.clientWidth + 1 || el
  * Si rimisura da capo quando cambia `key` (gli elementi, la lingua), quando cambia la misura di `watch` (o di `ref`)
  * e quando arrivano i caratteri. `watch`: un contenitore la cui misura non dipende dagli elementi mostrati
  * (se `ref` si stringe col contenuto, osservarlo farebbe ripartire la misura all'infinito).
+ * `onlyX`: conta solo la larghezza (una fila con menu che si aprono sotto, che non sono contenuto che sborda).
  */
-export function useFitCount(ref: RefObject<HTMLElement | null>, total: number, key: string, watch?: RefObject<HTMLElement | null>): number {
+export function useFitCount(ref: RefObject<HTMLElement | null>, total: number, key: string, watch?: RefObject<HTMLElement | null>, onlyX = false): number {
   const [fit, setFit] = useState({ key, n: total });
   const n = fit.key === key ? Math.min(fit.n, total) : total;
   if (fit.key !== key) setFit({ key, n: total });
 
   useLayoutEffect(() => {
     const el = ref.current;
-    if (!el || n === 0 || !overflows(el)) return;
+    if (!el || n === 0 || !overflows(el, onlyX)) return;
     setFit(f => ({ ...f, key, n: n - 1 }));
   });
 

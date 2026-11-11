@@ -119,10 +119,10 @@
   .band:not(.collapsed) .slot > summary .sprite-wrap { flex: 1 1 0; min-height: 0; }
   .band:not(.collapsed) .slot > summary .sprite { width: min(100cqh, 100cqw, 80px); height: min(100cqh, 100cqw, 80px); }
   .band:not(.collapsed) .slot > summary > :is(.ability, .types, .roles, .stats-badge) { display: none; }
-  .band .slot .name { font-size: 14px; }
+  .band .slot .name { --name-fs: 14px; }
   .band .slot .name-line { gap: 4px; margin-top: 2px; }
   .band .slot .name-line .held, .band .slot .name-line .held .item-icon { width: 18px; height: 18px; }
-  .band .slot .slot-lead { left: 8px; top: 8px; font-size: 11px; }
+  .band .slot .slot-lead { left: 5px; top: 5px; font-size: 11px; }
   .band .slot .favorite { right: 30px; }
   .band .slot :is(.favorite, .remove) { top: 0; width: 30px; height: 30px; }
   .band .slot.empty { gap: 6px; }

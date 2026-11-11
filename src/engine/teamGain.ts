@@ -24,6 +24,12 @@ export interface TeamGain {
   reaches?: boolean;
   /** Punti di voto per area: variazione dell'area per il suo peso nel voto (servono a pesare pro e contro). */
   areaPoints?: Partial<Record<ScoredArea, number>>;
+  /**
+   * Le aree che salgono col cambio, dalla più grande, come le righe del dettaglio ("Offesa +13"), e quanto cambiano
+   * problemi e bonus: dicono cosa porta un candidato che migliora il voto senza una ragione da mostrare.
+   */
+  areaGains?: { label: string; change: number }[];
+  extras?: number;
   /** Come cambia il voto tipo per tipo (Offesa e Difesa): le righe "Forte contro / Resiste a" restano solo se il voto è d'accordo. */
   typeShift?: TypeShift;
 }
@@ -67,6 +73,18 @@ export function areaDrops(before: TeamRating, after: TeamRating): { key: string;
       return change < 0 ? [{ key: area.key, label: area.label, change }] : [];
     })
     .sort((a, b) => a.change - b.change);
+}
+
+/** Le aree che salgono col cambio, dalla più grande (stessi conti delle righe del dettaglio). */
+export function areaGains(before: TeamRating, after: TeamRating): { label: string; change: number }[] {
+  return after.areas
+    .flatMap(area => {
+      const prev = before.areas.find(a => a.key === area.key);
+      if (area.value === null || prev?.value == null || area.inactive || prev.inactive) return [];
+      const change = area.value - prev.value;
+      return change > 0 ? [{ label: area.label, change }] : [];
+    })
+    .sort((a, b) => b.change - a.change);
 }
 
 /** Variazione di ogni area per il suo peso nel voto (i pesi sommano a 1), arrotondata a un decimale; i Ruoli coi loro punti. */
@@ -121,6 +139,8 @@ function swapEvaluator(team: TeamSet[], data: EngineData, lang: Lang, archetype:
         grade: rating.grade, overall: rating.overall, gain: rating.overall - before.overall,
         lostResists: lostResistances(team, after),
         areaPoints: areaPointsOf(before, rating),
+        areaGains: areaGains(before, rating),
+        extras: extrasDelta(before, rating),
         typeShift: typeShiftOf(before, rating),
       },
     };

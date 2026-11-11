@@ -27,7 +27,9 @@ describe('ricerca e filtri nei suggerimenti', () => {
     const user = await setup('Great Tusk');
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'kinga');
     await waitFor(() => expect(cardNames()).toEqual(['Kingambit']));
-    expect(within(suggestions()).getByText('1 risultato')).toBeInTheDocument();
+    // Il numero una volta sola, nella fascia della lista (e per i lettori di schermo)
+    expect(within(suggestions()).getByRole('heading', { name: 'Candidati (1)' })).toBeInTheDocument();
+    expect(within(suggestions()).getByText('Risultati: 1 risultato')).toBeInTheDocument();
   });
 
   it('nessun risultato', async () => {
@@ -104,11 +106,11 @@ describe('ricerca e filtri nei suggerimenti', () => {
     expect(within(suggestions()).queryByRole('button', { name: /^Rimuovi filtro/ })).toBeNull();
   });
 
-  it('con filtri attivi il numero di risultati sta sulla riga dei chip', async () => {
+  it('con filtri attivi il numero di risultati si vede una volta sola, nella fascia "Candidati (N)"', async () => {
     const user = await setup('Great Tusk');
     await user.selectOptions(screen.getByLabelText('Uso nel meta'), 'common');
-    await waitFor(() => expect(suggestions().querySelector('.active-filters .list-count')).toHaveTextContent(/\d+ risultat[oi]/));
-    expect(suggestions().querySelectorAll('.list-count')).toHaveLength(1);
+    await waitFor(() => expect(within(suggestions()).getByRole('heading', { name: /^Candidati \(\d+\)$/ })).toBeInTheDocument());
+    expect(suggestions().querySelector('.active-filters')).not.toHaveTextContent(/risultat[oi]/);
   });
 
   it('chip e Azzera con lista vuota', async () => {

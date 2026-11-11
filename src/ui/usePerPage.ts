@@ -32,8 +32,8 @@ const wide = () => typeof matchMedia !== 'function' || matchMedia(WIDE).matches;
 
 /**
  * Quanti candidati per pagina, dallo spazio del contenitore della lista (ResizeObserver).
- * Carte: sempre 6 (3 × 2), la carta segue l'altezza. Menu: sempre 6 righe, la riga segue l'altezza (chiudendo
- * il team le righe crescono e mostrano più motivi).
+ * Carte: fino a 6 (3 × 2), la carta segue l'altezza; colonne dalla larghezza, una riga sola se due farebbero carte troppo
+ * basse. Menu: fino a 6 righe, la riga segue l'altezza (chiudendo il team le righe crescono e mostrano più motivi).
  */
 export function usePerPage(ref: RefObject<HTMLElement | null>, style: ListStyle, teamCollapsed: boolean): PerPage {
   const [measure, setMeasure] = useState<Measure | null>(null);
@@ -70,7 +70,7 @@ export function usePerPage(ref: RefObject<HTMLElement | null>, style: ListStyle,
     if (style === 'cards') {
       // Senza misura (jsdom, layout stretto) l'altezza della carta resta quella del CSS
       if (!measure) return { perPage: CARDS_COLUMNS * CARDS_ROWS, columns: CARDS_COLUMNS, reasons: cardsReasons(teamCollapsed) };
-      const { perPage, columns, tileHeight, reasons } = cardsLayout(measure.height, teamCollapsed);
+      const { perPage, columns, tileHeight, reasons } = cardsLayout(measure.height, teamCollapsed, measure.width);
       return { perPage, columns, tileHeight, reasons };
     }
     if (!measure) return { perPage: PAGE, reasons: 1 };
