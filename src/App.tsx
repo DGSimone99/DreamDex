@@ -23,7 +23,7 @@ import type { MoveFix } from './engine/moveFixes';
 import { Rail } from './ui/Rail';
 import { Icon } from './ui/icons';
 import { TabPanel, Tabs, type TabId } from './ui/Tabs';
-import { loadLang, loadListSprite, loadListStyle, loadLists, loadPalette, loadSession, loadTab, loadTeamCollapsed, saveLang, saveListSprite, saveListStyle, saveLists, savePalette, saveSession, saveTab, saveTeamCollapsed } from './storage';
+import { loadLang, loadListSprite, loadLists, loadPalette, loadSession, loadTab, loadTeamCollapsed, saveLang, saveListSprite, saveLists, savePalette, saveSession, saveTab, saveTeamCollapsed } from './storage';
 import { SettingsDialog } from './ui/SettingsDialog';
 import { EMPTY_LISTS, effectiveLists, type UserLists } from './engine/lists';
 import { t, type Lang } from './i18n';
@@ -31,7 +31,7 @@ import { LangProvider } from './i18n/react';
 import { gameName, hasItalianNames } from './i18n/game';
 import { useDismissMenus } from './ui/useDismissMenus';
 import { useAdvice } from './ui/useRanking';
-import { paletteFor, type ListSprite, type ListStyle, type PaletteSetting } from './ui/theme';
+import { paletteFor, type ListSprite, type PaletteSetting } from './ui/theme';
 import { EeveeMoment } from './ui/EeveeMoment';
 import { SHORT_SCREEN, useMediaQuery } from './ui/useMediaQuery';
 
@@ -75,12 +75,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
     setPalette(next);
     if (storage) savePalette(next, storage);
   };
-  // Lista candidati: stile (carte/menu) e sprite (normale/icona box), salvati come la palette
-  const [listStyle, setListStyle] = useState<ListStyle>(() => (storage ? loadListStyle(storage) : null) ?? 'cards');
-  const changeListStyle = (next: ListStyle) => {
-    setListStyle(next);
-    if (storage) saveListStyle(next, storage);
-  };
+  // Lista candidati: sprite (normale/icona box), salvato come la palette
   const [listSprite, setListSprite] = useState<ListSprite>(() => (storage ? loadListSprite(storage) : null) ?? 'normal');
   const changeListSprite = (next: ListSprite) => {
     setListSprite(next);
@@ -402,9 +397,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
             focus={candidateFocus}
             onTarget={setReplaceIndex}
             focusSearch={searchRequest}
-            listStyle={listStyle}
             listSprite={listSprite}
-            onListStyleChange={changeListStyle}
             onListSpriteChange={changeListSprite}
             teamCollapsed={collapsed}
           />
@@ -423,7 +416,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
       </main>
       </div>
       </div>
-      {settingsOpen && <SettingsDialog palette={palette} onPaletteChange={changePalette} listStyle={listStyle} onListStyleChange={changeListStyle} listSprite={listSprite} onListSpriteChange={changeListSprite} onClose={closeSettings} />}
+      {settingsOpen && <SettingsDialog palette={palette} onPaletteChange={changePalette} listSprite={listSprite} onListSpriteChange={changeListSprite} onClose={closeSettings} />}
       {listUndo && listUndo.after === lists && (
         <UndoToast action={{ id: listUndo.id, kind: 'clearList', from: listUndo.from }} onClose={() => setListUndo(null)}
           onUndo={() => { setLists(listUndo.before); setListUndo(null); }} />

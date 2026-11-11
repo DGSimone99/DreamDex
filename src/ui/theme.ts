@@ -6,8 +6,6 @@ export type PaletteId = 'swsh' | 'sv';
 /** "auto" segue il gioco del formato; altrimenti una palette fissa scelta nelle impostazioni. */
 export type PaletteSetting = 'auto' | PaletteId;
 
-/** Stile della lista candidati: carte o menu compatto. */
-export type ListStyle = 'cards' | 'menu';
 /** Sprite nella lista candidati: normale o icona box. */
 export type ListSprite = 'normal' | 'box';
 

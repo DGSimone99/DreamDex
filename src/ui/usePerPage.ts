@@ -1,21 +1,17 @@
 import { useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react';
-import { CARDS_COLUMNS, CARDS_ROWS, MENU_ROWS, cardsLayout, cardsReasons, menuLayout } from './listLayout';
-import type { ListStyle } from './theme';
+import { CARDS_COLUMNS, CARDS_ROWS, cardsLayout, cardsReasons } from './listLayout';
 
-/** Candidati per pagina senza misura (jsdom, layout stretto): come con la misura, 6 in entrambi gli stili. */
-export const PAGE = MENU_ROWS;
+/** Candidati per pagina senza misura (jsdom, layout stretto): 6 (3 × 2), come con la misura. */
+export const PAGE = CARDS_COLUMNS * CARDS_ROWS;
 
 /** Solo con lista e scheda affiancate la lista ha un'altezza sua: sotto, crescerebbe col contenuto. */
 const WIDE = '(min-width: 1100px)';
 
 export interface PerPage {
   perPage: number;
-  /** Carte: colonne e altezza di ogni casella. */
+  /** Colonne e altezza di ogni carta. */
   columns?: number;
   tileHeight?: number;
-  /** Menu: altezza di ogni riga e spazio tra le righe. */
-  rowHeight?: number;
-  gap?: number;
   /** Quanti motivi entrano sotto il nome. */
   reasons: number;
 }
@@ -32,10 +28,10 @@ const wide = () => typeof matchMedia !== 'function' || matchMedia(WIDE).matches;
 
 /**
  * Quanti candidati per pagina, dallo spazio del contenitore della lista (ResizeObserver).
- * Carte: fino a 6 (3 × 2), la carta segue l'altezza; colonne dalla larghezza, una riga sola se due farebbero carte troppo
- * basse. Menu: fino a 6 righe, la riga segue l'altezza (chiudendo il team le righe crescono e mostrano più motivi).
+ * Fino a 6 carte (3 × 2), la carta segue l'altezza; colonne dalla larghezza, una riga sola se due farebbero carte troppo
+ * basse.
  */
-export function usePerPage(ref: RefObject<HTMLElement | null>, style: ListStyle, teamCollapsed: boolean): PerPage {
+export function usePerPage(ref: RefObject<HTMLElement | null>, teamCollapsed: boolean): PerPage {
   const [measure, setMeasure] = useState<Measure | null>(null);
   // Letto dalla callback: dopo un cambio, la misura nuova arriva quando il prop è già aggiornato
   const collapsedRef = useRef(teamCollapsed);
@@ -67,13 +63,9 @@ export function usePerPage(ref: RefObject<HTMLElement | null>, style: ListStyle,
   useLayoutEffect(() => () => { observed.current?.observer.disconnect(); observed.current = null; }, []);
 
   return useMemo<PerPage>(() => {
-    if (style === 'cards') {
-      // Senza misura (jsdom, layout stretto) l'altezza della carta resta quella del CSS
-      if (!measure) return { perPage: CARDS_COLUMNS * CARDS_ROWS, columns: CARDS_COLUMNS, reasons: cardsReasons(teamCollapsed) };
-      const { perPage, columns, tileHeight, reasons } = cardsLayout(measure.height, teamCollapsed, measure.width);
-      return { perPage, columns, tileHeight, reasons };
-    }
-    if (!measure) return { perPage: PAGE, reasons: 1 };
-    return menuLayout(measure.height, teamCollapsed);
-  }, [measure, style, teamCollapsed]);
+    // Senza misura (jsdom, layout stretto) l'altezza della carta resta quella del CSS
+    if (!measure) return { perPage: PAGE, columns: CARDS_COLUMNS, reasons: cardsReasons(teamCollapsed) };
+    const { perPage, columns, tileHeight, reasons } = cardsLayout(measure.height, teamCollapsed, measure.width);
+    return { perPage, columns, tileHeight, reasons };
+  }, [measure, teamCollapsed]);
 }

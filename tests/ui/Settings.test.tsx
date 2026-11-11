@@ -2,7 +2,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { App } from '../../src/App';
-import { loadListSprite, loadListStyle, loadPalette, saveListSprite, saveListStyle, savePalette } from '../../src/storage';
+import { loadListSprite, loadPalette, saveListSprite, savePalette } from '../../src/storage';
 import { chooseDex } from '../helpers/format';
 import { fixtureData } from '../fixtures/data';
 
@@ -65,38 +65,41 @@ describe('Impostazioni', () => {
   });
 });
 
-describe('stile e sprite della lista', () => {
-  it('stile e sprite della lista: round-trip e dati non validi', () => {
+describe('sprite della lista', () => {
+  it('sprite della lista: round-trip e dati non validi', () => {
     const storage = memory();
-    saveListStyle('menu', storage);
-    expect(loadListStyle(storage)).toBe('menu');
-    expect(loadListStyle(memory({ 'dreamdex.listStyle': '"rosa"' }))).toBeNull();
-    expect(loadListStyle(memory({ 'dreamdex.listStyle': '{' }))).toBeNull();
     saveListSprite('box', storage);
     expect(loadListSprite(storage)).toBe('box');
     expect(loadListSprite(memory({ 'dreamdex.listSprite': '"rosa"' }))).toBeNull();
     expect(loadListSprite(memory({ 'dreamdex.listSprite': '{' }))).toBeNull();
   });
 
-  it('Menu e Icona box si scelgono nelle Impostazioni e restano dopo il riavvio', async () => {
+  it('Icona box si sceglie nelle Impostazioni e resta dopo il riavvio; niente più stile Menu', async () => {
     const user = userEvent.setup();
     const storage = memory();
     const { unmount } = render(<App initialLang="it" data={fixtureData} storage={storage} />);
     await user.click(screen.getByRole('button', { name: 'Impostazioni' }));
-    expect(screen.getByRole('radio', { name: 'Carte' })).toBeChecked();
     expect(screen.getByRole('radio', { name: 'Normale' })).toBeChecked();
-    await user.click(screen.getByRole('radio', { name: 'Menu' }));
+    expect(screen.queryByRole('radio', { name: 'Menu' })).toBeNull();
+    expect(screen.queryByRole('radio', { name: 'Carte' })).toBeNull();
     await user.click(screen.getByRole('radio', { name: 'Icona box' }));
-    expect(loadListStyle(storage)).toBe('menu');
     expect(loadListSprite(storage)).toBe('box');
     unmount();
     render(<App initialLang="it" data={fixtureData} storage={storage} />);
     await user.click(screen.getByRole('button', { name: 'Impostazioni' }));
-    expect(screen.getByRole('radio', { name: 'Menu' })).toBeChecked();
     expect(screen.getByRole('radio', { name: 'Icona box' })).toBeChecked();
   });
 
-  it('Vista della lista nella fascia Candidati: stile e sprite, le stesse impostazioni del dialogo', async () => {
+  it('uno stile Menu salvato da una versione vecchia si ignora: la lista resta a carte', async () => {
+    const user = userEvent.setup();
+    render(<App initialLang="it" data={fixtureData} storage={memory({ 'dreamdex.listStyle': '"menu"' })} />);
+    await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Great Tusk{Enter}');
+    const panel = screen.getByRole('region', { name: 'Suggerimenti' });
+    expect(panel.querySelector('.suggestions.cards')).not.toBeNull();
+    expect(panel.querySelector('.suggestions.menu')).toBeNull();
+  });
+
+  it('Vista della lista nella fascia Candidati: lo sprite, la stessa impostazione del dialogo', async () => {
     const user = userEvent.setup();
     const storage = memory();
     render(<App initialLang="it" data={fixtureData} storage={storage} />);
@@ -106,12 +109,11 @@ describe('stile e sprite della lista', () => {
     expect(toggle).toHaveAttribute('aria-expanded', 'false');
     await user.click(toggle);
     const pop = within(panel).getByRole('group', { name: 'Vista della lista' });
-    expect(within(pop).getByRole('radio', { name: 'Carte' })).toBeChecked();
-    await user.click(within(pop).getByRole('radio', { name: 'Menu' }));
+    expect(within(pop).queryByRole('radio', { name: 'Menu' })).toBeNull();
+    expect(within(pop).getByRole('radio', { name: 'Normale' })).toBeChecked();
     await user.click(within(pop).getByRole('radio', { name: 'Icona box' }));
-    expect(loadListStyle(storage)).toBe('menu');
     expect(loadListSprite(storage)).toBe('box');
-    expect(panel.querySelector('.suggestions.menu')).not.toBeNull();
+    expect(panel.querySelector('.suggestions .box-icon')).not.toBeNull();
     // Esc chiude e riporta il focus al pulsante
     await user.keyboard('{Escape}');
     expect(within(panel).queryByRole('group', { name: 'Vista della lista' })).toBeNull();
@@ -119,12 +121,11 @@ describe('stile e sprite della lista', () => {
     // Il dialogo Impostazioni mostra le stesse scelte; cambiarle lì aggiorna la vista
     await user.click(screen.getByRole('button', { name: 'Impostazioni' }));
     const dialog = screen.getByRole('dialog', { name: 'Impostazioni' });
-    expect(within(dialog).getByRole('radio', { name: 'Menu' })).toBeChecked();
     expect(within(dialog).getByRole('radio', { name: 'Icona box' })).toBeChecked();
-    await user.click(within(dialog).getByRole('radio', { name: 'Carte' }));
+    await user.click(within(dialog).getByRole('radio', { name: 'Normale' }));
     await user.keyboard('{Escape}');
     await user.click(toggle);
-    expect(within(within(panel).getByRole('group', { name: 'Vista della lista' })).getByRole('radio', { name: 'Carte' })).toBeChecked();
+    expect(within(within(panel).getByRole('group', { name: 'Vista della lista' })).getByRole('radio', { name: 'Normale' })).toBeChecked();
     // Un clic fuori lo chiude
     await user.click(document.body);
     expect(within(panel).queryByRole('group', { name: 'Vista della lista' })).toBeNull();

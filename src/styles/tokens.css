@@ -40,35 +40,6 @@
   --plate: var(--line);
   --on-plate: var(--text);
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
-  /* Stile Menu della lista: pillole scure come le Carte (un tema futuro le ridefinisce qui) */
-  --pill-bg: var(--raised);
-  --pill-bg-hover: color-mix(in srgb, var(--raised) 86%, #fff);
-  --pill-ink: var(--text);
-  --pill-muted: var(--muted);
-  /* Segni e testo sulla pillola: i colori di stato del tema (fondo scuro) */
-  --pill-gain: var(--good);
-  --pill-bad: var(--bad);
-  --pill-warn: var(--warn);
-  --pill-info: var(--accent);
-  /* Nomi dei tipi sulle pillole: varianti scure dei colori dei tipi, contrasto ≥ 4.8 su --pill-bg */
-  --type-normal-ink: #666649;
-  --type-fire-ink: #9a521f;
-  --type-water-ink: #4863a6;
-  --type-electric-ink: #776417;
-  --type-grass-ink: #43702d;
-  --type-ice-ink: #4a6a6a;
-  --type-fighting-ink: #bc2f27;
-  --type-poison-ink: #9d3f9d;
-  --type-ground-ink: #746436;
-  --type-flying-ink: #6c5c9a;
-  --type-psychic-ink: #ab3d5e;
-  --type-bug-ink: #616b13;
-  --type-rock-ink: #746523;
-  --type-ghost-ink: #705898;
-  --type-dragon-ink: #7038f8;
-  --type-dark-ink: #705848;
-  --type-steel-ink: #636370;
-  --type-fairy-ink: #885762;
 }
 /*
  * Contrasto (WCAG), su --panel / --raised / --ground:
