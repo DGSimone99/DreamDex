@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
 import { createPortal } from 'react-dom';
 import type { Archetype } from '../engine/archetype';
 import { ARCHETYPE_WEIGHTS, GRADES, type AreaWeightTable } from '../engine/rating';
-import { isGroupKey, LEVEL_KEYS, levelOf, rolesTypeOf, type Level, type LevelKey } from '../engine/roleLevels';
+import { isGroupKey, LEVEL_KEYS, levelFor, type Level, type LevelKey } from '../engine/roleLevels';
 import type { MessageKey } from '../i18n';
 import { useT } from '../i18n/react';
 import { EeveePeek } from './EeveePeek';
@@ -26,10 +26,11 @@ const keyLabel = (key: LevelKey): MessageKey => (isGroupKey(key) ? `need.${key}`
  */
 /** `weights`: la tabella dei pesi del formato del team (rating.weightTable); senza, quella di sempre. */
 /** `incomplete`: meno di sei membri, il tipo non è ancora deciso ("in analisi"): nessuna scheda è segnata come il tuo team. */
-export function RatingHelp({ teamType: judgedAs, trickRoom, weights = ARCHETYPE_WEIGHTS, typeRule, incomplete = false }: { teamType: Archetype; trickRoom: boolean; incomplete?: boolean; meta?: boolean; weights?: AreaWeightTable; typeRule?: 'walls' | 'recoverySpeed' }) {
+export function RatingHelp({ teamType: judgedAs, weights: realWeights = ARCHETYPE_WEIGHTS, typeRule, incomplete = false }: { teamType: Archetype; trickRoom?: boolean; incomplete?: boolean; meta?: boolean; weights?: AreaWeightTable; typeRule?: 'walls' | 'recoverySpeed' }) {
   const t = useT();
   // Col team incompleto il tipo è ancora "in analisi": nessuna scheda è "il tuo team"
   const teamType: Archetype | null = incomplete ? null : judgedAs;
+  const weights = shownWeights(realWeights);
   const [open, setOpen] = useState(false);
   // Si apre sempre su come funziona in generale; il tipo del team ha la sua scritta "il tuo team" nella lista a sinistra
   const [topic, setTopic] = useState<Topic>('general');
@@ -93,7 +94,7 @@ export function RatingHelp({ teamType: judgedAs, trickRoom, weights = ARCHETYPE_
               </nav>
               <section className="help-panel" id="help-panel" role="tabpanel" aria-labelledby={`help-tab-${topic}`}>
                 <h4>{t(topicLabel(topic))}</h4>
-                {topic === 'general' ? <GeneralTopic teamType={teamType} trickRoom={trickRoom} weights={weights} /> : <TypeTopic type={topic} weights={weights} typeRule={typeRule} />}
+                {topic === 'general' ? <GeneralTopic teamType={teamType} weights={weights} /> : <TypeTopic type={topic} weights={weights} typeRule={typeRule} />}
               </section>
             </div>
           </div>
@@ -106,7 +107,7 @@ export function RatingHelp({ teamType: judgedAs, trickRoom, weights = ARCHETYPE_
 }
 
 /** Come funziona in generale: la formula del voto, le lettere dalle soglie e i pesi di tutti i tipi. */
-function GeneralTopic({ teamType, trickRoom, weights }: { teamType: Archetype | null; trickRoom: boolean; weights: AreaWeightTable }) {
+function GeneralTopic({ teamType, weights }: { teamType: Archetype | null; weights: AreaWeightTable }) {
   const t = useT();
   const letters = Object.fromEntries(GRADES.filter(g => g.grade !== 'D').map(g => [g.grade, g.min]));
   return (
@@ -123,7 +124,6 @@ function GeneralTopic({ teamType, trickRoom, weights }: { teamType: Archetype | 
       <p>{t('help.general.1')}</p>
       <p>{t('help.general.2')}</p>
       <p>{t('help.type.trickRoom')}</p>
-      <p className="help-yours">{teamType ? t('help.general.yours', { type: t(`archetype.${teamType}`) }) : t('help.general.analyzing')}{trickRoom ? ` · ${t('help.general.trickRoom')}` : ''}</p>
       <div className="help-table-wrap">
         <table className="help-weights">
           <thead>
@@ -133,7 +133,7 @@ function GeneralTopic({ teamType, trickRoom, weights }: { teamType: Archetype | 
             {ARCHETYPES.map(arch => (
               <tr key={arch} className={arch === teamType ? 'current' : undefined} aria-current={arch === teamType || undefined}>
                 <th scope="row">{t(`archetype.${arch}`)}</th>
-                {WEIGHT_AREAS.map(area => <td key={area}><WeightBar weight={weights[arch][area]} max={tableMax(weights)} /></td>)}
+                {WEIGHT_AREAS.map(area => <td key={area}><WeightBar weight={weights[arch][area]} step={stepOf(weights, arch, area)} /></td>)}
               </tr>
             ))}
           </tbody>
@@ -143,19 +143,45 @@ function GeneralTopic({ teamType, trickRoom, weights }: { teamType: Archetype | 
   );
 }
 
-/** Il peso più alto della tabella: la sua barra è piena, le altre in proporzione. */
-const tableMax = (weights: AreaWeightTable) => Math.max(1, ...ARCHETYPES.flatMap(arch => WEIGHT_AREAS.map(area => weights[arch][area])));
 /**
- * Il peso di un'area come barra, senza numeri: segue i pesi veri del formato e del tipo di team (in National Dex OU i suoi,
- * NATDEX_OU_WEIGHTS), in proporzione al peso più alto della tabella. Ai lettori di schermo una parola: molto dalla metà
- * del voto in su, abbastanza da un quarto, poco sotto.
+ * I pesi come li mostra la guida: quelli veri, tranne il Semi-stall quando pesa come lo Stall (National Dex OU). Lì la
+ * guida gli dà un gradino di Offesa in più e uno di Difesa in meno dello Stall, così l'Offesa scende un passo alla volta
+ * da Hyper Offense a Stall (scelta dell'utente, 2026-11-11). Solo a vista: il voto usa i pesi veri.
  */
-function WeightBar({ weight, max }: { weight: number; max: number }) {
+const shownWeights = (weights: AreaWeightTable): AreaWeightTable => {
+  const { semiStall, stall } = weights;
+  if (semiStall.defense < stall.defense) return weights;
+  return { ...weights, semiStall: { ...semiStall, defense: stall.defense - 5, strength: stall.strength + 5 } };
+};
+
+/**
+ * La barra in sesti (scelta dell'utente, 2026-11-11): il peso vero rispetto al più alto della colonna, arrotondato a
+ * sesti. Semi-stall e Stall restano a un sesto di distanza in Difesa (uno in meno) e in Offesa (uno in più) anche
+ * quando l'arrotondamento li mette alla pari.
+ */
+const sixths = (weights: AreaWeightTable, arch: Archetype, area: (typeof WEIGHT_AREAS)[number]): number => {
+  const weight = weights[arch][area];
+  if (weight <= 0) return 0;
+  return Math.max(1, Math.round((6 * weight) / Math.max(...ARCHETYPES.map(a => weights[a][area]))));
+};
+const stepOf = (weights: AreaWeightTable, arch: Archetype, area: (typeof WEIGHT_AREAS)[number]): number => {
+  let step = sixths(weights, arch, area);
+  if (arch === 'semiStall' && area !== 'speed') {
+    const stall = sixths(weights, 'stall', area);
+    if (step === stall) step = Math.min(6, Math.max(1, area === 'defense' ? stall - 1 : stall + 1));
+  }
+  return step / 6;
+};
+/**
+ * Il peso di un'area come barra in sesti, senza numeri (stepOf). Ai lettori di schermo una parola dal peso vero:
+ * molto dalla metà del voto in su, abbastanza da un quarto, poco sotto.
+ */
+function WeightBar({ weight, step }: { weight: number; step: number }) {
   const t = useT();
   const word = weight <= 0 ? 'help.weight.none' : weight >= 50 ? 'help.weight.high' : weight >= 25 ? 'help.weight.mid' : 'help.weight.low';
   return (
     <span className="help-wbar">
-      <i style={{ width: `${(100 * Math.max(0, weight)) / max}%` }} />
+      <i style={{ width: `${(100 * step).toFixed(2)}%` }} />
       <span className="visually-hidden">{t(word)}</span>
     </span>
   );
@@ -175,16 +201,15 @@ function TypeTopic({ type, weights, typeRule }: { type: Archetype; weights: Area
           return (
             <div key={area} className={inactive ? 'inactive' : undefined}>
               <dt>{t(`area.${area}`)}</dt>
-              <dd><WeightBar weight={weights[type][area]} max={tableMax(weights)} /></dd>
+              <dd><WeightBar weight={weights[type][area]} step={stepOf(weights, type, area)} /></dd>
               {inactive && <dd className="help-inactive-note">{t('rating.notCounted')}</dd>}
             </div>
           );
         })}
       </dl>
       <h5>{t('area.roles')}</h5>
-      {rolesTypeOf(type, typeRule) !== type && <p className="help-note">{t('help.type.stallAsSemi')}</p>}
       {LEVELS.map(level => {
-        const keys = LEVEL_KEYS.filter(key => levelOf(rolesTypeOf(type, typeRule), key) === level);
+        const keys = LEVEL_KEYS.filter(key => levelFor(type, key, typeRule) === level);
         if (keys.length === 0) return null;
         return (
           <div key={level} className="help-levels">

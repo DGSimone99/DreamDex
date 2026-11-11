@@ -55,7 +55,8 @@ describe('team tutto fisico o tutto speciale', () => {
 
   // 2026-11-05: niente malus a parte "un solo stile" (contava due volte la stessa mancanza): lo dice la riga dei Ruoli
   it('nessun attaccante fisico: la riga "Attaccante fisico" dei Ruoli, una volta sola', () => {
-    const items = penalties([...special, ...walls]);
+    // Da balance (2026-11-11: lo leggerebbe Semi-stall, dove basta un Attaccante di qualunque lato)
+    const items = rateTeam([...special, ...walls], fixtureData, 'it', { archetype: 'balance' })!.penalty.items;
     expect(items.filter(i => i.text.includes('Attaccante fisico'))).toHaveLength(1);
     expect(items.map(i => i.text)).not.toContain('Nessun attaccante fisico');
   });

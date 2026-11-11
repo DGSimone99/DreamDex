@@ -335,7 +335,6 @@
 .help-panel .tt-how-note { margin: 8px 0 0; }
 .help-panel h4 { margin: 0 0 10px; font: 700 18px/1.1 var(--display); font-style: italic; letter-spacing: 0.01em; }
 .help-panel p { margin: 0 0 10px; font-size: 14px; line-height: 1.55; color: var(--muted); max-width: 62ch; }
-.help-panel .help-yours { color: var(--text); font-weight: 600; }
 .help-table-wrap { overflow-x: auto; }
 /* Impostazioni: un modale piccolo con la palette e la lista candidati (i campioni mostrano i due colori di versione) */
 .settings-dialog { width: min(440px, calc(100vw - 32px)); }
