@@ -24,6 +24,7 @@ import { describe } from './describe';
 import { commonChoices, type CommonChoices } from '../engine/common';
 import { speedTier, type SpeedTier } from '../engine/speed';
 import { ItemIcon } from './ItemIcon';
+import { useNameEm } from './nameWidth';
 import { AlertMark, type Alert } from './AlertMark';
 import { lockedStatusMoves } from '../engine/lockedMoves';
 import { duplicateSpecies, missingFormeItem } from '../engine/legalTeam';
@@ -222,9 +223,10 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
   const typeList = species?.types ?? ['?'];
   const typesRef = useRef<HTMLSpanElement>(null);
   const typeText = useFitCount(typesRef, 1, `${lang}|${typeList.join('/')}`, undefined, true) > 0;
-  // Nome: va a capo solo agli spazi e ai trattini; la parte più lunga decide quanto si rimpicciolisce (CSS --name-len)
+  // Nome: va a capo solo agli spazi e ai trattini; la larghezza vera della parte più lunga (in em) decide se e quanto si
+  // rimpicciolisce (CSS --name-em)
   const shownName = set.name || name;
-  const nameLen = Math.max(...shownName.split(/\s+|(?<=-)/).map(part => part.length));
+  const nameEm = useNameEm(shownName);
   const ability = battleAbility(set);
   const [copied, setCopied] = useState(false);
   // Soprannome: si scrive cliccando il nome nell'editor; vuoto = il nome della specie
@@ -385,7 +387,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
           </small>
           {/* Il soprannome, se c'è (la specie nel tooltip) */}
         {/* Il nome intero nel tooltip: nella barra compressa si taglia con i puntini */}
-        <strong className="name" title={set.name ? `${set.name} (${name})` : name} style={{ '--name-len': nameLen } as CSSProperties}>{shownName}</strong>
+        <strong className="name" title={set.name ? `${set.name} (${name})` : name} style={{ '--name-em': nameEm.toFixed(3) } as CSSProperties}>{shownName}</strong>
         </span>
         <small className="ability" title={describe.ability(ability, lang)}>{ability ? gameName('ability', ability, lang) : '—'}</small>
         <span className={`types${typeText ? '' : ' as-icons'}`} ref={typesRef}>
