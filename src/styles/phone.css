@@ -303,6 +303,8 @@
     border: 0;
     animation: sheet-up 0.24s var(--ease);
   }
+  /* Il fuoco entra nella scheda aperta: niente anello attorno a tutto lo schermo */
+  .picker.sheet-open > .detail:focus { outline: none; }
   .picker.sheet-open > .sheet-back {
     position: fixed;
     z-index: 56;

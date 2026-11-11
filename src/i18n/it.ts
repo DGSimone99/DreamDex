@@ -1188,6 +1188,7 @@ export const it: Record<keyof typeof en, string> = {
   'suggest.resultsMany': "{n} risultati",
   'suggest.best': " (i migliori per il team)",
   'suggest.resultsAria': "Risultati: {text}",
+  'suggest.resultsNone': "Nessun risultato",
   'suggest.teamGrade': "Voto del team: {grade} {n} ({gain})",
   'suggest.usageAria': "Uso nel meta {pct}",
   'suggest.usageShort': "uso",

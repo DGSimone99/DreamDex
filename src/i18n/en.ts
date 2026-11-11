@@ -1186,6 +1186,7 @@ export const en = {
   'suggest.resultsMany': "{n} results",
   'suggest.best': " (the best for the team)",
   'suggest.resultsAria': "Results: {text}",
+  'suggest.resultsNone': "No results",
   'suggest.teamGrade': "Team grade: {grade} {n} ({gain})",
   'suggest.usageAria': "Meta usage {pct}",
   'suggest.usageShort': "usage",
