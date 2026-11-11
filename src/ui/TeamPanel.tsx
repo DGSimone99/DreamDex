@@ -129,39 +129,58 @@ const IdleSetEditor = memo(
     && a.speed === b.speed && a.genLimit === b.genLimit && a.pokedex === b.pokedex && a.teraBannedIn === b.teraBannedIn,
 );
 
-function TeamSlot({ index, total, set, subRoles, proposal, onProposalDone, data, format, warning: megaWarning, repeated = false, open, dragging, dropTarget, onToggle, onStep, onMove, onDrag, onPaste, onBest, onIgnoreWarning, onChange, onRemove, onReplace }: {
+/**
+ * Azioni delle carte, una volta sola per tutto il team (prendono la posizione del membro): restano le stesse
+ * a ogni disegno, così una carta si ridisegna solo quando cambia qualcosa di suo (memo).
+ */
+interface SlotActions {
+  toggle: (index: number, open: boolean) => void;
+  /** Frecce sulla card: apre il membro accanto. */
+  step: (index: number, delta: number) => void;
+  /** Alt + frecce: sposta il membro di una posizione. */
+  move: (index: number, delta: number) => void;
+  /** Trascinamento: inizio, passaggio sopra, rilascio, fine. */
+  drag: (index: number, phase: 'start' | 'over' | 'drop' | 'end') => void;
+  paste: (index: number, set: TeamSet) => void;
+  /** Preset con il voto del team più alto per questo membro (null se il membro non ne ha). */
+  best: (index: number) => TeamSet | null;
+  ignoreWarning: () => void;
+  change: (index: number, set: TeamSet) => void;
+  remove: (index: number) => void;
+  replace: (index: number) => void;
+  proposalDone: (applied: boolean) => void;
+}
+
+const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal, data, format, warning: megaWarning, repeated = false, open, dragging, dropTarget, actions }: {
   index: number;
   /** Membri nel team: la carta dice la sua posizione ("posizione 2 di 6"). */
   total: number;
   /** Proposta di mossa per questo membro (si mostra solo con il suo editor aperto). */
   proposal?: MoveProposal | null;
-  onProposalDone?: (applied: boolean) => void;
   /** Sotto-ruoli misurati del membro nel team (gli stessi del voto, già in cache): la carta li mostra. */
   subRoles?: SubRoleValues;
   dragging: boolean;
   dropTarget: boolean;
-  /** Alt + frecce: sposta il membro di una posizione. */
-  onMove: (delta: number) => void;
-  /** Trascinamento: inizio, passaggio sopra, rilascio, fine. */
-  onDrag: (phase: 'start' | 'over' | 'drop' | 'end') => void;
-  onPaste: (set: TeamSet) => void;
-  /** Preset con il voto del team più alto per questo membro (null se il membro non ne ha). */
-  onBest: () => TeamSet | null;
   data: EngineData;
   set: TeamSet;
   open: boolean;
-  onToggle: (open: boolean) => void;
-  /** Frecce sulla card: apre il membro accanto. */
-  onStep: (delta: number) => void;
   format: Format;
   warning: string | null;
   /** La specie c'è già prima nel team (Species Clause): problema rosso, voto bloccato. */
   repeated?: boolean;
-  onIgnoreWarning: () => void;
-  onChange: (set: TeamSet) => void;
-  onRemove: () => void;
-  onReplace: () => void;
+  actions: SlotActions;
 }) {
+  const onToggle = (next: boolean) => actions.toggle(index, next);
+  const onStep = (delta: number) => actions.step(index, delta);
+  const onMove = (delta: number) => actions.move(index, delta);
+  const onDrag = (phase: 'start' | 'over' | 'drop' | 'end') => actions.drag(index, phase);
+  const onPaste = (next: TeamSet) => actions.paste(index, next);
+  const onBest = () => actions.best(index);
+  const onIgnoreWarning = actions.ignoreWarning;
+  const onChange = (next: TeamSet) => actions.change(index, next);
+  const onRemove = () => actions.remove(index);
+  const onReplace = () => actions.replace(index);
+  const onProposalDone = actions.proposalDone;
   const lang = useLang();
   const tr = useT();
   const card = useRef<HTMLElement>(null);
@@ -467,7 +486,7 @@ function TeamSlot({ index, total, set, subRoles, proposal, onProposalDone, data,
       </div>
     </details>
   );
-}
+});
 
 /** Slot libero: cerchio tratteggiato al posto dello sprite; il clic porta alla ricerca, col cursore già dentro. */
 function EmptySlot({ onClick }: { onClick: () => void }) {
@@ -558,6 +577,47 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
   const firstMega = team.findIndex(set => !missingFormeItem(set) && isMega(set));
   const warningFor = (set: TeamSet, i: number) =>
     !format.allowMultipleMegas && firstMega !== -1 && i > firstMega && !missingFormeItem(set) && isMega(set) ? t(lang, 'team.secondMega') : null;
+  // Azioni delle carte: chiamano sempre la versione aggiornata (live), ma l'oggetto resta lo stesso (memo delle carte)
+  const live = useRef<SlotActions>(null!);
+  live.current = {
+    toggle: (i, open) => animated(() => setOpenIndex(current => (open ? i : current === i ? null : current))),
+    step,
+    move: (i, delta) => move(i, i + delta),
+    drag: (i, phase) => {
+      if (phase === 'start') setDrag({ from: i, over: null });
+      else if (phase === 'over') setDrag(d => (d && d.over !== i ? { ...d, over: i } : d));
+      else if (phase === 'drop') { if (drag) move(drag.from, i); setDrag(null); }
+      else setDrag(null);
+    },
+    paste: (i, next) => (onPaste ? onPaste(i, next) : onChange(team.map((s, j) => (j === i ? next : s)))),
+    best: i => { const found = bestPreset(team, i, data, format.genLimit); return found.index === null ? null : found.set; },
+    ignoreWarning: onAllowMultipleMegas,
+    change: (i, next) => onChange(team.map((s, j) => (j === i ? next : s))),
+    remove: i => {
+      setOpenIndex(null);
+      if (onRemove) onRemove(i); else onChange(team.filter((_, j) => j !== i));
+      // Il focus non si perde: va alla carta che prende il posto (o all'ultima, o al primo slot vuoto)
+      requestAnimationFrame(() => {
+        const cards = slotsRef.current?.querySelectorAll<HTMLElement>('.slot > summary');
+        (cards?.[Math.min(i, cards.length - 1)] ?? slotsRef.current?.querySelector<HTMLElement>('.slot.empty'))?.focus();
+      });
+    },
+    replace: i => onReplace(i),
+    proposalDone: applied => onProposalDone?.(applied),
+  };
+  const actions = useMemo<SlotActions>(() => ({
+    toggle: (i, open) => live.current.toggle(i, open),
+    step: (i, delta) => live.current.step(i, delta),
+    move: (i, delta) => live.current.move(i, delta),
+    drag: (i, phase) => live.current.drag(i, phase),
+    paste: (i, next) => live.current.paste(i, next),
+    best: i => live.current.best(i),
+    ignoreWarning: () => live.current.ignoreWarning(),
+    change: (i, next) => live.current.change(i, next),
+    remove: i => live.current.remove(i),
+    replace: i => live.current.replace(i),
+    proposalDone: applied => live.current.proposalDone(applied),
+  }), []);
   return (
     <section aria-label={t(lang, 'team.region')} className={`team${collapsed ? ' collapsed' : ''}`}>
       <div className="team-head">
@@ -606,38 +666,15 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
             total={team.length}
             set={set}
             proposal={proposal?.index === i ? proposal : null}
-            onProposalDone={onProposalDone}
             subRoles={subRoles[i]}
             dragging={drag?.from === i}
             dropTarget={drag !== null && drag.over === i && drag.from !== i}
-            onMove={delta => move(i, i + delta)}
-            onPaste={next => (onPaste ? onPaste(i, next) : onChange(team.map((s, j) => (j === i ? next : s))))}
-            onBest={() => { const found = bestPreset(team, i, data, format.genLimit); return found.index === null ? null : found.set; }}
-            onDrag={phase => {
-              if (phase === 'start') setDrag({ from: i, over: null });
-              else if (phase === 'over') setDrag(d => (d && d.over !== i ? { ...d, over: i } : d));
-              else if (phase === 'drop') { if (drag) move(drag.from, i); setDrag(null); }
-              else setDrag(null);
-            }}
             data={data}
             format={format}
             warning={warningFor(set, i)}
             repeated={repeated.includes(i)}
             open={openIndex === i}
-            onToggle={open => animated(() => setOpenIndex(current => (open ? i : current === i ? null : current)))}
-            onStep={delta => step(i, delta)}
-            onIgnoreWarning={onAllowMultipleMegas}
-            onChange={next => onChange(team.map((s, j) => (j === i ? next : s)))}
-            onRemove={() => {
-              setOpenIndex(null);
-              if (onRemove) onRemove(i); else onChange(team.filter((_, j) => j !== i));
-              // Il focus non si perde: va alla carta che prende il posto (o all'ultima, o al primo slot vuoto)
-              requestAnimationFrame(() => {
-                const cards = slotsRef.current?.querySelectorAll<HTMLElement>('.slot > summary');
-                (cards?.[Math.min(i, cards.length - 1)] ?? slotsRef.current?.querySelector<HTMLElement>('.slot.empty'))?.focus();
-              });
-            }}
-            onReplace={() => onReplace(i)}
+            actions={actions}
           />
         ))}
         {Array.from({ length: 6 - team.length }, (_, i) => (
