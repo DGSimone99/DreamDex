@@ -152,6 +152,7 @@
   color: var(--muted);
   cursor: help;
 }
+.stats-badge::after { content: ''; position: absolute; left: 50%; top: 50%; width: max(100%, 24px); height: max(100%, 24px); translate: -50% -50%; }
 .stats-badge:hover, .stats-badge:focus-visible { color: var(--text); border-color: var(--accent); outline: none; }
 .stats-pop {
   position: absolute;

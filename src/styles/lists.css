@@ -51,7 +51,7 @@
 .user-list .list-remove:hover { color: var(--bad); }
 .list-none { margin: 0; color: var(--muted); font-size: 13px; }
 .lists-copy select { font-size: 14px; }
-@media (max-width: 1100px) { .lists-main { grid-template-columns: 1fr; } .lists-side { position: static; } }
+@media (max-width: 1099px) { .lists-main { grid-template-columns: 1fr; } .lists-side { position: static; } }
 .lists-bar .search-hint { max-width: 360px; }
 
 /* Blocchi come pannelli del riepilogo: il titolo è una linguetta inclinata, riassunto e freccia a destra */
@@ -104,7 +104,7 @@
   .slot > summary .sprite { width: 56px; height: 56px; }
   .slot > summary { --sprite-scale: 0.5833; }
   .slot .roles { font-size: 11px; }
-  .slot .name { font-size: 15px; line-height: 1.1; }
+  .slot .name { --name-fs: 15px; line-height: 1.1; }
   .slot .held, .slot .ability { font-size: 12px; }
   /* Tipi lunghi (Coleottero, Folletto): il chip si allarga invece di schiacciare il testo */
   .slot .type-chip { width: auto; min-width: 52px; padding-inline: 6px; }
@@ -377,7 +377,8 @@
 .grade-badge.none .overall { margin-top: auto; }
 .grade-badge.none .label { margin-bottom: auto; }
 
-/* Carta del voto: il colore della lettera (S magenta, A verde, B ciano, C giallo, D rosso) tinge anche il fondo;
+/* Carta del voto: il colore della lettera (S magenta, la lettera speciale; A verde, B ciano, C giallo, D rosso; per il resto il magenta è solo per l'azione
+   migliore e per "sei qui") tinge anche il fondo;
    le aree riempiono l'altezza, ogni barra nel colore del suo voto */
 .grade-badge { --grade: var(--accent); grid-template-rows: auto auto auto 1fr; background: radial-gradient(120% 70% at 0% 25%, color-mix(in srgb, var(--grade) 16%, transparent), transparent 70%), var(--panel); }
 .grade-badge.grade-S { --grade: var(--accent-2); }
@@ -419,6 +420,12 @@
   .set-editor .editor-head .btn-label { display: none; }
   .set-editor .editor-head .best-preset, .set-editor .editor-head .member-io { width: 38px; padding: 0; justify-content: center; }
 }
+/* Testata del team sotto i 1280 px: i pulsanti a sola icona (prima il testo andava su due righe); il nome resta per i
+   lettori di schermo e nel tooltip */
+@media (min-width: 1100px) and (max-width: 1279px) {
+  .team-head .btn-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .team-head .team-action, .team-head .team-io .popover > summary { width: 34px; padding: 0; justify-content: center; }
+}
 /* Il tooltip di un avviso sulla carta passa sopra la freccia che comprime il team */
 .band:has(.slot .alert-mark:hover, .slot .alert-mark:focus-visible) .band-toggle { z-index: 1; }
 /* Statistiche e Set un paio di px più giù: le loro etichette non toccano la testata */
@@ -459,3 +466,26 @@
 .move-proposal .apply { background: var(--accent-soft); border-color: var(--accent); color: var(--text); }
 .move-proposal .apply:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 30%, var(--raised)); }
 .editor-group.moves .field.is-proposed { outline: 2px solid var(--accent-2); outline-offset: 3px; }
+/* Schermi bassi (un portatile 1366×768 con Chrome massimizzato lascia circa 1366×657): la fascia del team si abbassa,
+   carte alte 160 px (prima ~214) e carta del voto più compatta, così la lista dei candidati ha l'altezza per sprite ben
+   visibili. Sulla carta restano sprite, strumento, nome, tipi e ruolo (l'abilità è nell'editor) */
+@media (min-width: 1100px) and (max-height: 799px) {
+  .band { padding-top: 8px; padding-bottom: 18px; }
+  .team-head { margin-bottom: 6px; }
+  .slot > summary, .slot.empty { min-height: 160px; }
+  .band:not(.collapsed) .slot > summary > .ability { display: none; }
+  .slot .name-line { margin-top: 2px; }
+  .grade-badge { row-gap: 0; padding-bottom: 6px; }
+  .grade-head { margin-bottom: 2px; padding-top: 3px; padding-bottom: 3px; }
+  .grade-badge .letter { font-size: 46px; }
+  .grade-badge .overall { font-size: 17px; }
+  .grade-badge .label { font-size: 12px; }
+  .grade-badge .grade-rules { margin-top: 2px; }
+  .grade-badge .grade-areas { gap: 0; margin-top: 2px; padding-top: 2px; }
+  .grade-badge button.grade-area { padding-top: 1px; padding-bottom: 1px; }
+  .grade-badge .grade-delta { top: 2px; }
+  /* Meno margini sopra e sotto la sezione: l'altezza va alla lista */
+  .tab-body { padding-top: 12px; }
+  .suggestions-panel { gap: 8px; padding-bottom: 8px; }
+  .list-head { padding-top: 3px; padding-bottom: 3px; }
+}

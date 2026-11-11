@@ -6,8 +6,8 @@ import { useLang, useT } from '../i18n/react';
 import { Icon } from './icons';
 
 /** Un chip per ogni filtro attivo, sotto la barra: si vede cosa restringe la lista e lo si toglie senza aprire i filtri. */
-/** `count`: il numero di risultati, in coda alla riga (così non occupa una riga sua). */
-export function ActiveFilters({ filters, onChange, count }: { filters: CandidateFilters; onChange: (filters: CandidateFilters) => void; count?: string }) {
+/** Il numero di risultati non sta qui: lo dice già la fascia "Candidati (N)" sopra la lista. */
+export function ActiveFilters({ filters, onChange }: { filters: CandidateFilters; onChange: (filters: CandidateFilters) => void }) {
   const t = useT();
   const lang = useLang();
   if (activeFilterCount(filters) === 0) return null;
@@ -40,7 +40,6 @@ export function ActiveFilters({ filters, onChange, count }: { filters: Candidate
         </button>
       ))}
       <button type="button" className="link" onClick={() => onChange({ ...EMPTY_FILTERS, query: filters.query })}>{t('filters.reset')}</button>
-      {count && <p className="list-count">{count}</p>}
     </div>
   );
 }

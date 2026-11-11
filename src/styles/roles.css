@@ -108,7 +108,7 @@
 .rl-chip.cond { padding-right: 8px; background: none; border-style: dashed; }
 .rl-chip.share { padding-right: 8px; background: none; border-color: transparent; color: var(--faint); font-style: italic; }
 
-@media (max-width: 1100px) {
+@media (max-width: 1099px) {
   .rl-table .rl-col-role { width: 170px; }
   .rl-how li { grid-template-columns: 120px minmax(0, 1fr); }
 }

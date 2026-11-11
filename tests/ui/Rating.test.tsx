@@ -91,16 +91,21 @@ describe('Riquadro Voto', () => {
     expect(peek.querySelectorAll('img')).toHaveLength(4);
     expect(dialog.querySelector('.eevee-peek')).toBeNull();
     // A sinistra gli argomenti: come funziona e un tab per tipo di team
-    const topics = within(dialog).getAllByRole('tab').map(tab => tab.textContent);
-    expect(topics).toEqual(['Come funziona', 'Hyper Offense', 'Bulky Offense', 'Balance', 'Semi-stall', 'Stall']);
-    // Un team incompleto si giudica come Balance: il suo tab è aperto per primo e segnato come il tipo attuale
+    const topics = within(dialog).getAllByRole('tab').map(tab => tab.getAttribute('id'));
+    expect(topics).toEqual(['help-tab-general', 'help-tab-hyperOffense', 'help-tab-bulkyOffense', 'help-tab-balance', 'help-tab-semiStall', 'help-tab-stall']);
+    expect(within(dialog).getAllByRole('tab').map(tab => tab.textContent)).toEqual(['Come funziona', 'Hyper Offense', 'Bulky Offense', 'Balance', 'Semi-stall', 'Stall']);
+    // Si apre sempre su come funziona in generale
+    expect(within(dialog).getByRole('tab', { name: 'Come funziona' })).toHaveAttribute('aria-selected', 'true');
+    // Un team incompleto è "in analisi": nessun tab segnato come il tuo team, e lo dice la pagina generale
     const balanceTab = within(dialog).getByRole('tab', { name: 'Balance' });
-    expect(balanceTab).toHaveAttribute('aria-selected', 'true');
-    expect(balanceTab).toHaveAttribute('aria-current', 'true');
-    expect(within(dialog).getAllByRole('tab').filter(tab => tab.getAttribute('aria-current') === 'true')).toHaveLength(1);
+    expect(balanceTab).toHaveAttribute('aria-selected', 'false');
+    expect(within(dialog).getAllByRole('tab').filter(tab => tab.getAttribute('aria-current') === 'true')).toHaveLength(0);
+    expect(within(dialog).getByRole('tabpanel')).toHaveTextContent('Il tuo team è in analisi: è incompleto');
+    await user.click(balanceTab);
     const balance = within(dialog).getByRole('tabpanel');
-    expect(balance).toHaveTextContent('Il tuo team è giudicato come Balance');
-    expect(balance).toHaveTextContent('Un team incompleto si giudica come Balance');
+    // Il tipo del team lo dice già "il tuo team" nella lista: niente frase ripetuta nella scheda
+    expect(balance).not.toHaveTextContent('Il tuo team è giudicato come');
+    expect(balance).not.toHaveTextContent('Un team incompleto');
     // I livelli vengono dalla tabella del codice, non dai testi
     expect(balance).toHaveTextContent(/Essenziali.*Muro Fisico/);
     // Stall: Difesa 65, Offesa 25, Velocità 10 (conta poco ma conta: niente nota grigia); Recupero essenziale
@@ -114,16 +119,21 @@ describe('Riquadro Voto', () => {
     expect(stall).not.toHaveTextContent('Non conta nello Stall');
     expect(stall).toHaveTextContent(/Essenziali.*Recupero.*Importanti/);
     expect(stall).not.toHaveTextContent('Il tuo team è giudicato come');
-    // Trick Room: la regola su ogni tab di tipo, senza i punti
+    // Trick Room: la regola sta solo in Come funziona, non più in ogni tab di tipo; niente frase sui livelli
     for (const name of ['Hyper Offense', 'Bulky Offense', 'Balance', 'Semi-stall', 'Stall']) {
       await user.click(within(dialog).getByRole('tab', { name }));
-      expect(within(dialog).getByRole('tabpanel')).toHaveTextContent('portarla in un team veloce è un controsenso e costa punti');
+      expect(within(dialog).getByRole('tabpanel')).not.toHaveTextContent('portarla in un team veloce');
+      expect(within(dialog).getByRole('tabpanel')).not.toHaveTextContent('tre livelli');
     }
     // Come funziona: Bonus/Malus, lettere dalle soglie, nessun testo delle vecchie aree
     await user.click(within(dialog).getByRole('tab', { name: 'Come funziona' }));
     const general = within(dialog).getByRole('tabpanel');
     expect(general).toHaveTextContent('Bonus/Malus');
-    expect(general).toHaveTextContent('S da 90, A da 80, B da 70, C da 60');
+    // Le lettere in cima, grandi: la frase intera per gli screen reader
+    expect(within(general).getByRole('list', { name: 'Le lettere: S da 90, A da 80, B da 70, C da 60, sotto è D.' })).toHaveTextContent(/S90\+A80\+B70\+C60\+D< 60/);
+    expect(general).toHaveTextContent('portarla in un team veloce è un controsenso e costa punti');
+    expect(general).not.toHaveTextContent('Pokémon più usati del mese');
+    expect(general).not.toHaveTextContent('non hanno un peso proprio');
     for (const tab of within(dialog).getAllByRole('tab')) {
       await user.click(tab);
       expect(within(dialog).getByRole('tabpanel')).not.toHaveTextContent('Debolezze condivise');

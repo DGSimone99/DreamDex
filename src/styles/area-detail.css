@@ -75,10 +75,20 @@
 .help-weights th[scope='row'], .help-weights thead th:first-child { text-align: left; color: var(--muted); font-weight: 600; }
 .help-weights tr.current { background: var(--accent-soft); }
 .help-weights tr.current th, .help-weights tr.current td { color: var(--text); }
-/* Sotto la tabella dei pesi: i Ruoli non hanno peso, contano come malus e bonus */
-.help-panel .help-roles-note { margin: 6px 0 0; font-size: 12px; line-height: 1.4; color: var(--muted); max-width: none; }
-.help-points { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
-.help-points li { display: flex; align-items: baseline; gap: 8px; padding: 5px 10px; background: var(--panel); border: 1px solid var(--line-soft); border-radius: 4px; font-size: 14px; color: var(--muted); }
+/* Le lettere del voto in cima a "Come funziona": grandi, nel colore della carta del voto (S magenta, A verde, B ciano, C giallo, D rosso) */
+.help-grades { list-style: none; display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 14px; padding: 0; }
+.help-grades li { --grade: var(--accent); display: grid; justify-items: center; gap: 2px; min-width: 58px; padding: 8px 10px 7px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--grade) 16%, transparent), transparent), var(--panel);
+  border: 1px solid color-mix(in srgb, var(--grade) 45%, var(--line-soft)); border-radius: 4px; }
+.help-grades .grade-S { --grade: var(--accent-2); }
+.help-grades .grade-A { --grade: var(--good); }
+.help-grades .grade-C { --grade: var(--warn); }
+.help-grades .grade-D { --grade: var(--bad); }
+.help-grades strong { font: 800 30px/0.95 var(--display); color: var(--grade); }
+.help-grades span { font: 600 12px/1 var(--ui); color: var(--muted); font-variant-numeric: tabular-nums; }
+/* Le voci di un livello come i soliti badge dei ruoli (gli stessi della scheda Ruoli, .rl-chip): scelta dell'utente */
+.help-points { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-wrap: wrap; gap: 4px; }
+.help-points li { display: inline-flex; align-items: center; padding: 2px 8px; border: 1px solid var(--line); border-radius: 3px; background: var(--raised); font-size: 12px; line-height: 1.35; color: var(--muted); white-space: nowrap; }
 .help-panel .help-note { color: var(--text); }
 .help-panel h5 { margin: 14px 0 6px; font-size: 11px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: 0.04em; }
 .help-panel h6 { margin: 8px 0 4px; font-size: 13px; font-weight: 600; color: var(--text); }
@@ -89,7 +99,8 @@
 .help-weights-row .inactive dt { color: var(--faint); }
 .help-weights-row .inactive dd:not(.help-inactive-note) { opacity: 0.5; }
 .help-weights-row .help-inactive-note { font-size: 12px; font-weight: 400; color: var(--muted); }
-.help-nav [role='tab'][aria-current='true']::after { content: ''; width: 6px; height: 6px; margin-left: 8px; border-radius: 50%; background: var(--accent); flex: none; }
+/* Il tipo del team nella lista degli argomenti: una piccola scritta "il tuo team" in ciano, non un pallino da indovinare */
+.help-nav .help-yours-tag { margin-left: 8px; font: 600 11px/1 var(--ui); letter-spacing: 0.02em; color: var(--accent-ink); white-space: nowrap; }
 .rating .grade .grade-alert { position: absolute; left: -1.5px; bottom: 100%; margin-bottom: 1px; padding: 0; } /* -1.5px: margine interno del disegno */
 .rating .grade .grade-alert .icon { width: 18px; height: 18px; }
 .rating .grade .grade-alert .alert-pop { font: 400 13px/1.45 var(--ui); color: var(--text); text-transform: none; letter-spacing: 0; }

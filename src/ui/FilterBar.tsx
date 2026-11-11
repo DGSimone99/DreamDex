@@ -22,7 +22,7 @@ function TypeGrid({ label, selected, onChange }: {
   const lang = useLang();
   return (
     <div className="type-filter">
-      <h4>{label}</h4>
+      <h3>{label}</h3>
       <div role="group" aria-label={label} className="type-grid">
         {TYPES.map(type => {
           const on = selected.includes(type);
@@ -166,7 +166,7 @@ export function FilterBar({ filters, onChange, context = 'suggestions' }: Props)
       </div>
 
       <div className="filter-section">
-        <h4>{t('filters.role')}</h4>
+        <h3>{t('filters.role')}</h3>
         <div role="group" aria-label={t('filters.role')} className="chips">
           {ROLES.map(role => (
             <button key={role} type="button" aria-pressed={filters.roles.includes(role)} onClick={() => set({ roles: toggle(filters.roles, role) })}>

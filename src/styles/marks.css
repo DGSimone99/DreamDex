@@ -5,6 +5,8 @@
 .alert-mark.warn { color: var(--warn); }
 .alert-mark.info { color: var(--accent); }
 .alert-mark:focus-visible { outline: 2px solid currentColor; outline-offset: 1px; }
+/* Area da almeno 24×24 per mouse e dita, oltre il disegno (il segno resta piccolo) */
+.alert-mark::after { content: ''; position: absolute; left: 50%; top: 50%; width: max(100%, 24px); height: max(100%, 24px); translate: -50% -50%; }
 .sprite-alerts { position: absolute; right: -6px; bottom: 2px; display: flex; gap: 4px; }
 .alert-mark.on-sprite {
   padding: 3px;

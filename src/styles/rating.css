@@ -63,7 +63,10 @@
 .grade-badge button.grade-area:hover .icon { color: var(--accent); }
 /* Aiuto e triangolo delle regole nella testa magenta, a destra */
 .grade-tools { position: absolute; top: 2px; right: 22px; display: flex; align-items: center; gap: 4px; }
-.grade-tools .help-button { width: 20px; height: 20px; color: var(--on-plate); border-color: color-mix(in srgb, var(--on-plate) 40%, transparent); background: transparent; }
+/* Bersagli da almeno 24×24: l'area cliccabile va oltre il disegno (pseudo-elemento), il disegno e la misura restano */
+.grade-tools .help-button::after, .grade-badge button.grade-area::after { content: ''; position: absolute; left: 50%; top: 50%; width: max(100%, 24px); height: max(100%, 24px); translate: -50% -50%; }
+.grade-badge button.grade-area { position: relative; }
+.grade-tools .help-button { position: relative; width: 20px; height: 20px; color: var(--on-plate); border-color: color-mix(in srgb, var(--on-plate) 40%, transparent); background: transparent; }
 .band.collapsed .grade-badge .grade-areas, .band.collapsed .grade-badge .grade-tools { display: none; }
 .grade-badge button.grade-area.inactive { color: var(--faint); }
 .grade-badge button.grade-area.inactive b { color: var(--faint); }
@@ -72,13 +75,16 @@
 .grade-badge button.grade-area.grade-bm.pos b { color: var(--good); }
 .grade-badge button.grade-area.grade-bm.neg b { color: var(--bad); }
 /* Ruoli: coperti/totale e quanti mancano al posto di barra e numero (stessa altezza delle altre righe) */
-.grade-badge button.grade-area.grade-roles { grid-template-columns: 58px 1fr 10px; }
-.grade-roles-val { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+/* L'etichetta corta ("Ruoli") lascia al valore tutto il resto della riga: "5/14 · 4 mancano" entra nella carta del voto */
+.grade-badge button.grade-area.grade-roles { grid-template-columns: auto minmax(0, 1fr) 10px; column-gap: 4px; }
+.grade-roles-val { min-width: 0; overflow: hidden; text-overflow: ellipsis; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+/* Le righe non allargano la carta: una colonna sola, larga quanto la carta */
+.grade-areas { grid-template-columns: minmax(0, 1fr); }
 .grade-roles-val em { font-style: normal; font-weight: 600; }
 .grade-roles-val em.bad { color: var(--bad); }
 .grade-roles-val em.good { color: var(--good); }
 .grade-roles-val em.soft { color: var(--muted); }
-/* Regole infrante: la scritta sotto il giudizio e la lettera spenta (il voto resta, ma il team così non si può usare) */
+/* Regole infrante: la scritta sotto il giudizio, con chi nel tooltip; la lettera resta a piena forza (mai informazioni
+   spente con l'opacità) */
 .grade-badge .grade-rules { grid-column: 1 / -1; justify-self: start; display: inline-flex; align-items: center; gap: 4px; margin-top: 6px; padding: 1px 7px; border-radius: 3px; background: var(--bad-bg); color: var(--bad); font: 700 12px/1.5 var(--display); letter-spacing: 0.02em; white-space: nowrap; }
 .grade-badge .grade-rules svg { width: 13px; height: 13px; }
-.grade-badge.rules-broken .letter { opacity: 0.4; filter: saturate(0.3); }
