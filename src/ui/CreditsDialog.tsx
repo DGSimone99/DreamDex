@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useT } from '../i18n/react';
 import { Icon } from './icons';
 import { ModalLock } from './ModalLock';
+import { EeveePeek } from './EeveePeek';
 
 /** Una fonte: nome (col link) e cosa ci dà. */
 interface Source { name: string; url: string; what: string }
@@ -24,7 +25,6 @@ export function CreditsDialog({ onClose }: { onClose: () => void }) {
 
   const data: Source[] = [
     { name: 'Smogon', url: 'https://www.smogon.com/stats/', what: t('credits.smogon') },
-    { name: 'pkmn (data.pkmn.cc)', url: 'https://github.com/pkmn', what: t('credits.pkmn') },
     { name: 'Pokémon Showdown', url: 'https://pokemonshowdown.com', what: t('credits.showdown') },
     { name: 'PokeAPI', url: 'https://pokeapi.co', what: t('credits.pokeapi') },
   ];
@@ -48,6 +48,9 @@ export function CreditsDialog({ onClose }: { onClose: () => void }) {
   return createPortal(
     <div className="help-backdrop" onClick={onClose}>
       <ModalLock />
+      {/* Eevee sbircia da dietro la finestra, come nelle guide */}
+      <div className="help-frame with-peek">
+      <EeveePeek />
       <div className="help-dialog credits-dialog" role="dialog" aria-modal="true" aria-labelledby={titleId} onClick={e => e.stopPropagation()}>
         <header className="help-head">
           <h3 id={titleId}>{t('credits.title')}</h3>
@@ -68,6 +71,7 @@ export function CreditsDialog({ onClose }: { onClose: () => void }) {
           {list(libs)}
           <p className="note">{t('credits.thanks')}</p>
         </div>
+      </div>
       </div>
     </div>,
     document.body,

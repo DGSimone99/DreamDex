@@ -93,7 +93,7 @@
 /* Tutte le guide "Come funziona": la cornice è larga quanto la sua finestra, e la finestra si accorcia dello spazio di Eevee */
 .help-frame.with-peek { width: min(var(--frame-w, 780px), 100%); }
 .help-frame.with-peek:has(> .area-guide) { --frame-w: 980px; }
-.help-frame.with-peek:has(> .tt-dialog) { --frame-w: 600px; }
+.help-frame.with-peek:has(> .tt-dialog), .help-frame.with-peek:has(> .credits-dialog) { --frame-w: 600px; }
 .help-frame.with-peek > .help-dialog { max-height: min(620px, calc(100vh - 48px - var(--peek-room))); }
 .help-frame.with-peek > .help-dialog.area-guide-strength,
 .help-frame.with-peek > .help-dialog.area-guide-speed { height: min(560px, calc(100vh - 48px - var(--peek-room))); }
@@ -357,6 +357,7 @@
 
 /* Crediti: dialog da lettura, righe nome → cosa ci dà */
 .credits-dialog { width: min(600px, calc(100vw - 32px)); }
+.help-frame > .credits-dialog { width: 100%; }
 .credits-body { overflow-y: auto; padding: 16px 20px 20px; display: grid; gap: 10px; }
 .credits-body h4 { margin: 8px 0 0; font: 600 11px/1 var(--ui); letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); }
 .credits-body p { margin: 0; font-size: 14px; line-height: 1.5; }

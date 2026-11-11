@@ -306,7 +306,6 @@ export const en = {
   'credits.trademark': "Pokémon and character names are trademarks of Nintendo, Creatures Inc. and GAME FREAK inc. © Nintendo, Creatures Inc., GAME FREAK inc., The Pokémon Company.",
   'credits.data': "Data",
   'credits.smogon': "Meta usage statistics and recommended sets",
-  'credits.pkmn': "Smogon statistics and sets, ready to use",
   'credits.showdown': "Formats, tiers and bans; Pokémon sprites",
   'credits.pokeapi': "Italian names and descriptions",
   'credits.art': "Art",
