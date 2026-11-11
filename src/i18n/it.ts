@@ -316,7 +316,7 @@ export const it: Record<keyof typeof en, string> = {
   'credits.spritesWhat': "Sprite e icone dei Pokémon da Pokémon Showdown",
   'credits.typeIcons': "Icone dei tipi",
   'credits.typeIconsWhat': "Dai giochi Pokémon Scarlatto e Violetto",
-  'credits.eevee': "Disegno vettoriale ricalcato dall'artwork ufficiale Dream World",
+  'credits.eevee': "Disegni vettoriali di dreamworld.svg (Twitter/X), dall'artwork ufficiale Dream World",
   'credits.libs': "Librerie",
   'credits.pkmnLibs': "Pokédex, mosse, testo dei set di Showdown e sprite",
   'credits.calc': "Calcolo dei danni",
