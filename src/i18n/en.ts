@@ -1151,6 +1151,8 @@ export const en = {
   'team.cardWarning': "1 warning",
   'team.cardWarnings': "{n} warnings",
   'team.lead': "Lead",
+  'team.position': "position {n} of {total}",
+  'team.moved': "{name} moved to position {n} of {total}",
   'team.leadTitle': "The Pokémon you send out first",
   'team.emptyAdd': "Add a Pokémon",
   'team.emptyAddTitle': "Search for a Pokémon to add",

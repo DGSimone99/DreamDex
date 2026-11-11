@@ -129,8 +129,10 @@ const IdleSetEditor = memo(
     && a.speed === b.speed && a.genLimit === b.genLimit && a.pokedex === b.pokedex && a.teraBannedIn === b.teraBannedIn,
 );
 
-function TeamSlot({ index, set, subRoles, proposal, onProposalDone, data, format, warning: megaWarning, repeated = false, open, dragging, dropTarget, onToggle, onStep, onMove, onDrag, onPaste, onBest, onIgnoreWarning, onChange, onRemove, onReplace }: {
+function TeamSlot({ index, total, set, subRoles, proposal, onProposalDone, data, format, warning: megaWarning, repeated = false, open, dragging, dropTarget, onToggle, onStep, onMove, onDrag, onPaste, onBest, onIgnoreWarning, onChange, onRemove, onReplace }: {
   index: number;
+  /** Membri nel team: la carta dice la sua posizione ("posizione 2 di 6"). */
+  total: number;
   /** Proposta di mossa per questo membro (si mostra solo con il suo editor aperto). */
   proposal?: MoveProposal | null;
   onProposalDone?: (applied: boolean) => void;
@@ -284,7 +286,9 @@ function TeamSlot({ index, set, subRoles, proposal, onProposalDone, data, format
           set.item ? gameName('item', set.item, lang) : tr('team.noItem'),
           problems.length ? tr(problems.length === 1 ? 'team.cardProblem' : 'team.cardProblems', { n: problems.length }) : null,
           warnings.length ? tr(warnings.length === 1 ? 'team.cardWarning' : 'team.cardWarnings', { n: warnings.length }) : null,
+          tr('team.position', { n: index + 1, total }),
         ].filter(Boolean).join(', ')}
+        aria-keyshortcuts="Alt+ArrowLeft Alt+ArrowRight"
         draggable
         title={tr('team.dragTitle')}
         // Apertura e chiusura passano dall'animazione: il clic non apre da solo il details
@@ -512,6 +516,8 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
   };
   // Riordino: trascinando o con Alt + frecce; il membro aperto resta aperto nella nuova posizione
   const [drag, setDrag] = useState<{ from: number; over: number | null } | null>(null);
+  // Per i lettori di schermo: dove è finito il membro spostato
+  const [moveNote, setMoveNote] = useState('');
   const move = (from: number, to: number) => {
     if (to < 0 || to >= team.length || to === from) return;
     const next = [...team];
@@ -519,6 +525,7 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
     next.splice(to, 0, moved);
     const follow = (i: number | null) => (i === null ? null : i === from ? to : from < i && i <= to ? i - 1 : to <= i && i < from ? i + 1 : i);
     animated(() => { onChange(next); setOpenIndex(follow); });
+    setMoveNote(t(lang, 'team.moved', { name: moved.name ? `${moved.name} (${battleName(moved)})` : battleName(moved), n: to + 1, total: team.length }));
     focusCard(to);
   };
   // Preset migliori: qualche decimo di secondo, il pulsante dice che sta calcolando
@@ -590,11 +597,13 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
           }}><Icon name="close" /> <span className="btn-label">{t(lang, 'team.clear')}</span></button>
         </>}
       </div>
+      <p className="visually-hidden" aria-live="polite">{moveNote}</p>
       <div className={`slots${openIndex !== null ? ' editing' : ''}`} ref={slotsRef}>
         {team.map((set, i) => (
           <TeamSlot
             key={keys[i]}
             index={i}
+            total={team.length}
             set={set}
             proposal={proposal?.index === i ? proposal : null}
             onProposalDone={onProposalDone}

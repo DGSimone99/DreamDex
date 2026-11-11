@@ -1153,6 +1153,8 @@ export const it: Record<keyof typeof en, string> = {
   'team.cardWarning': "1 avviso",
   'team.cardWarnings': "{n} avvisi",
   'team.lead': "Lead",
+  'team.position': "posizione {n} di {total}",
+  'team.moved': "{name} spostato in posizione {n} di {total}",
   'team.leadTitle': "Il Pokémon che mandi in campo per primo",
   'team.emptyAdd': "Aggiungi un Pokémon",
   'team.emptyAddTitle': "Cerca un Pokémon da aggiungere",

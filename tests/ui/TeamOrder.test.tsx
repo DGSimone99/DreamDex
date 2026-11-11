@@ -27,6 +27,18 @@ describe('ordine del team e editor', () => {
     expect(team.querySelector('.slot[open]')).toBeNull();
   });
 
+  it('Alt + freccia: la carta dice la posizione e lo spostamento si annuncia', async () => {
+    const user = userEvent.setup();
+    const team = await importTeam(user, 'Garchomp\n- Earthquake\n\nCorviknight\n- Roost\n\nGreninja\n- Surf');
+    const card = within(team).getByText('Garchomp', { selector: '.name' }).closest('summary') as HTMLElement;
+    expect(card.getAttribute('aria-label')).toMatch(/, posizione 1 di 3$/);
+    expect(card).toHaveAttribute('aria-keyshortcuts', 'Alt+ArrowLeft Alt+ArrowRight');
+    fireEvent.keyDown(card, { key: 'ArrowRight', altKey: true });
+    expect(team.querySelector('[aria-live="polite"]')).toHaveTextContent('Garchomp spostato in posizione 2 di 3');
+    const moved = within(team).getByText('Garchomp', { selector: '.name' }).closest('summary') as HTMLElement;
+    expect(moved.getAttribute('aria-label')).toMatch(/, posizione 2 di 3$/);
+  });
+
   it('gli EV vanno di 2 in 2 e il totale dice quanti ne restano', async () => {
     const user = userEvent.setup();
     const team = await importTeam(user, 'Garchomp @ Rocky Helmet\nEVs: 252 Atk / 252 Spe\nJolly Nature\n- Earthquake');
