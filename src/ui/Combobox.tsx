@@ -18,8 +18,10 @@ export interface ComboOption {
   color?: string;
   /** Icona prima del nome (es. lo strumento). */
   icon?: ReactNode;
-  /** Scelta tra le più usate: va in cima, con questa etichetta (la quota d'uso, o "Preset"). */
+  /** Scelta tra le più usate: va in cima, con questa etichetta (la quota d'uso, o "Alt" se viene da un preset). */
   common?: string;
+  /** Tooltip dell'etichetta (es. "Da un preset Smogon" per "Alt"). */
+  commonTitle?: string;
   /** Voce visibile ma non selezionabile (es. una mossa già scelta in un altro slot). */
   disabled?: boolean;
 }
@@ -188,7 +190,7 @@ export function Combobox({ label, value, options, onChange, restricted = false, 
                 {option.icon}
                 {option.content ?? <strong style={option.color ? { color: option.color } : undefined}>{option.label ?? option.value}</strong>}
                 {option.detail && <span className="option-detail">{option.detail}</span>}
-                {option.common && <span className="common-share">{option.common}</span>}
+                {option.common && <span className="common-share" title={option.commonTitle}>{option.common}</span>}
               </span>
               {option.description && <small>{option.description}</small>}
             </li>,

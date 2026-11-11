@@ -267,17 +267,21 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
   // Choice o Assault Vest con mosse di stato: non si usano (anche un malus nel voto)
   const locked = lockedStatusMoves(set);
   const missing = missingFormeItem(set);
+  const illegalMovesText = illegal.moves.length ? tr('team.illegalMoves', { list: illegal.moves.map(m => gameName('move', m, lang)).join(', ') }) : null;
+  const illegalAbilityText = illegal.ability ? tr('team.illegalAbility', { name: gameName('ability', illegal.ability, lang) }) : null;
   const warnings = [
     megaWarning,
     // Forma senza il suo strumento (Zacian-Crowned senza Rusted Sword): il voto la conta come la forma base
     missing ? tr('team.formeItem', { item: gameName('item', missing.item, lang), base: missing.base.name }) : null,
-    illegal.moves.length ? tr('team.illegalMoves', { list: illegal.moves.map(m => gameName('move', m, lang)).join(', ') }) : null,
-    illegal.ability ? tr('team.illegalAbility', { name: gameName('ability', illegal.ability, lang) }) : null,
+    illegalMovesText,
+    illegalAbilityText,
     locked.length ? tr('team.lockedStatus', { item: gameName('item', set.item, lang), moves: locked.map(m => gameName('move', m, lang)).join(', ') }) : null,
   ].filter((w): w is string => !!w);
   // Problemi di legalità in rosso, avvisi in giallo: due triangoli distinti sullo sprite, il dettaglio nei tooltip
   const dangers: Alert[] = problems.map(text => ({ level: 'danger', text }));
-  const warns: Alert[] = warnings.map(text => ({ level: 'warn', text }));
+  // Mosse o abilità non legali: come risolvere sta nel tooltip della riga, non nel testo
+  const hint = (text: string) => (text === illegalMovesText ? tr('team.illegalMovesHint') : text === illegalAbilityText ? tr('team.illegalAbilityHint') : undefined);
+  const warns: Alert[] = warnings.map(text => ({ level: 'warn', text, title: hint(text) }));
   return (
     <details
       className={`slot filled${problems.length ? ' invalid' : warnings.length ? ' warn' : ''}${dragging ? ' dragging' : ''}${dropTarget ? ' drop-target' : ''}`}

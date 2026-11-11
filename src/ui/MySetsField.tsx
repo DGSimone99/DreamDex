@@ -68,7 +68,7 @@ export function MySetsField({ set, onApply }: { set: TeamSet; onApply: (saved: T
             onKeyDown={e => { if (e.key === 'Enter' && canSave) { e.preventDefault(); save(); } else if (e.key === 'Escape') setOpen(false); }}
           />
           <button type="button" className="my-sets-toggle" aria-label={t('editor.mySetsShow')} aria-expanded={open} aria-controls={listId}
-            disabled={mine.length === 0} onClick={() => setOpen(o => !o)}>
+            disabled={mine.length === 0} title={mine.length === 0 ? t('editor.mySetsEmpty') : undefined} onClick={() => setOpen(o => !o)}>
             <Icon name="next" />
           </button>
         </span>

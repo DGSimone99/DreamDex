@@ -130,3 +130,18 @@ describe('più usati da un altro formato', () => {
     expect(screen.getByRole('listbox')).toHaveTextContent('Più usati · NatDex Ubers');
   });
 });
+
+describe('scelte in cima che vengono dai preset (senza statistiche)', () => {
+  it('l’intestazione dice "Dai preset Smogon" e "Alt" spiega da dove viene', async () => {
+    const { SetEditor } = await import('../../src/ui/SetEditor');
+    const { emptySet } = await import('../../src/engine/sets');
+    const common = { source: null, items: [{ name: 'Life Orb', share: null }], abilities: [], natures: [], moves: [], spreads: [], teraTypes: [] };
+    const user = userEvent.setup();
+    renderIt(<SetEditor set={emptySet('Garchomp')} common={common} genLimit={9} onChange={() => undefined} />);
+    await user.click(screen.getByLabelText('Strumento'));
+    const list = screen.getByRole('listbox');
+    expect(list).toHaveTextContent('Dai preset Smogon');
+    expect(list).not.toHaveTextContent('Più usati');
+    expect(within(list).getByText('Alt')).toHaveAttribute('title', 'Da un preset Smogon');
+  });
+});

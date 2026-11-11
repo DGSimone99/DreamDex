@@ -34,6 +34,6 @@ describe('Velocità nell\u2019editor', () => {
     const team = screen.getByRole('region', { name: 'Team' });
     await user.click(within(team).getByText('Garchomp', { selector: '.name' }));
     const line = within(team).getByText(/^Velocità/).closest('.speed-line') as HTMLElement;
-    expect(line).toHaveTextContent(/più veloce del \d+% dei \d+ Pokémon del tier al massimo/);
+    expect(line).toHaveTextContent(/più veloce del \d+% dei \d+ Pokémon del tier, con Velocità al massimo/);
   });
 });
