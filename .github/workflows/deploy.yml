@@ -43,4 +43,4 @@ jobs:
           command: pages deploy dist --project-name=dreamdex --branch=master
       - name: Cloudflare non ancora collegato
         if: env.HAS_CLOUDFLARE != 'true'
-        run: echo "::notice::Build pronta, ma mancano i segreti CLOUDFLARE_API_TOKEN e CLOUDFLARE_ACCOUNT_ID: niente pubblicazione."
+        run: 'echo "::notice::Build pronta, ma mancano i segreti CLOUDFLARE_API_TOKEN e CLOUDFLARE_ACCOUNT_ID, niente pubblicazione."'
