@@ -361,7 +361,21 @@
  * l'altezza che resta e le loro righe crescono fino a un tetto, così sotto non resta un vuoto.
  */
 .dash-summary { --sum-big: 40px; --sum-small: 34px; --sum-mini: 28px; --sum-line: 36px; --sum-arch: 24px; }
-.dash.tight .dash-summary { --sum-line: 32px; --sum-arch: 20px; }
+.dash.tight .dash-summary { --sum-big: 32px; --sum-small: 30px; --sum-mini: 24px; --sum-line: 32px; --sum-arch: 20px; }
+/* Cruscotto basso (portatili): sezioni più vicine e il triangolo delle sinergie più basso, così il Riassunto ci sta */
+.dash.tight .sum-sec { padding-top: 5px; }
+.dash.tight .sum-none, .dash.tight .sum-sec-more { top: 4px; }
+.dash.tight .sum-syn-sec:has(.sum-syn.trio) { min-height: 96px; }
+/* Portatili bassissimi (1280×620): il core a triangolo più piccolo e le righe dei tipi parati più fitte */
+@media (max-height: 639px) {
+  .dash.tight .sum-syn-sec:has(.sum-syn.trio) { min-height: 84px; }
+  .dash.tight .sum-tri { --tri-w: clamp(68px, calc((100cqh - 12px) * 150 / 128), 118px); --tri-badge: 18px; }
+  .dash.tight .sum-syn.trio { padding-block: 0; }
+  .dash.tight .sum-cover { margin-top: 2px; gap: 1px; }
+  .dash.tight .sum-cover > span { font-size: 11px; line-height: 1.1; }
+  .dash.tight .sum-cover img { width: 12px; height: 12px; }
+  .dash.tight .sum-sec-h { padding-bottom: 3px; }
+}
 .dash.rich .dash-summary { --sum-big: 56px; --sum-small: 44px; --sum-mini: 38px; --sum-line: 48px; --sum-arch: 30px; }
 .sum-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 
@@ -406,11 +420,14 @@
 .sum-plinth::before { content: ""; position: absolute; left: 50%; bottom: 10%; width: 76%; height: 20%; transform: translateX(-50%); border-radius: 50%; background: radial-gradient(ellipse, var(--glow, color-mix(in srgb, var(--accent) 30%, transparent)), transparent 70%); }
 .sum-plinth .sprite, .sum-user .sprite { position: relative; display: block; image-rendering: pixelated; }
 
-/* Sezioni: intestazione in maiuscoletto, righe separate; alte quanto il contenuto, e si stringono (useFit) se manca spazio */
-.sum-sec { position: relative; flex: 0 1 auto; min-height: 0; display: flex; flex-direction: column; padding-top: 8px; }
+/* Sezioni: intestazione in maiuscoletto, righe separate; alte quanto il contenuto, e si stringono (useFit) se manca spazio,
+   ma mai sotto titolo e una riga (sotto si accavallerebbero con la sezione dopo) */
+.sum-sec { position: relative; flex: 0 1 auto; min-height: auto; display: flex; flex-direction: column; padding-top: 8px; }
 .dash.rich .sum-sec { padding-top: 12px; }
 .sum-sec-h, .analysis h4.sum-sec-h { flex: none; display: block; margin: 0; padding-bottom: 5px; font: 700 11px/1.2 var(--display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); border-bottom: 1px solid var(--line-soft); }
-.sum-none { margin: 0; padding: 7px 0 3px; font-size: 12px; color: var(--faint); }
+/* Sezione vuota: "Nessuno" sulla riga del titolo, a destra (come il +N), così non occupa una riga sua */
+.sum-none { position: absolute; right: 4px; top: 8px; margin: 0; font-size: 12px; line-height: 1.2; color: var(--faint); }
+.dash.rich .sum-none { top: 12px; }
 .sum-lines { flex: 0 1 auto; min-height: var(--sum-line); margin: 0; padding: 0; list-style: none; overflow: hidden; }
 .sum-lines > li { border-bottom: 1px solid var(--line-soft); }
 .sum-lines > li:last-child { border-bottom: 0; }
