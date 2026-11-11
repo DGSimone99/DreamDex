@@ -317,11 +317,11 @@ Flat and tonal. Depth goes Field, Ground, Band, Panel, Raised, separated by 1px 
 - **Float** (`box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55)`): menus, select pickers, Filtri panel, Stats pop, alert tooltips, dialogs, undo toast, fill and speed popovers; rail and toolbar popovers use 0.5 alpha.
 - **Paste** (`box-shadow: 0 14px 34px rgba(0, 0, 0, 0.5)`): the "Incolla set" panel.
 - **Tip** (`box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5)`): description tooltips on items, abilities and moves.
-- **Lift** (`box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4)`): the open team card, which also rises 4px.
+- **Lift** (`box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4)`): the open team card, which also rises 4px. A closed team card under the mouse gets a lighter taste of it: it rises 2px with a soft `0 6px 14px rgba(0, 0, 0, 0.35)`, the sprite grows to 1.05 (still, no GIF) and the type stripe brightens (4px); 0.15s ease-out, mouse only, no movement with reduced motion.
 - **Badge** (`box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5)`): round alert marks sitting on a sprite.
 
 ### Named Rules
-**The Only Floaters Cast Shadows Rule.** Panels, blocks, rows and team cards at rest never carry a shadow. A shadow means a menu, a tooltip, a dialog, the toast, or the one open card.
+**The Only Floaters Cast Shadows Rule.** Panels, blocks, rows and team cards at rest never carry a shadow. A shadow means a menu, a tooltip, a dialog, the toast, the one open card, or the card under the mouse.
 
 ## Shapes
 
