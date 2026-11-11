@@ -133,7 +133,7 @@ function GeneralTopic({ teamType, weights }: { teamType: Archetype | null; weigh
             {ARCHETYPES.map(arch => (
               <tr key={arch} className={arch === teamType ? 'current' : undefined} aria-current={arch === teamType || undefined}>
                 <th scope="row">{t(`archetype.${arch}`)}</th>
-                {WEIGHT_AREAS.map(area => <td key={area}><WeightBar weight={weights[arch][area]} max={tableMax(weights)} /></td>)}
+                {WEIGHT_AREAS.map(area => <td key={area}><WeightBar weight={weights[arch][area]} step={stepOf(weights, arch, area)} /></td>)}
               </tr>
             ))}
           </tbody>
@@ -154,19 +154,26 @@ const shownWeights = (weights: AreaWeightTable): AreaWeightTable => {
   return { ...weights, semiStall: { ...semiStall, defense: stall.defense - 5, strength: stall.strength + 5 } };
 };
 
-/** Il peso più alto della tabella: la sua barra è piena, le altre in proporzione. */
-const tableMax = (weights: AreaWeightTable) => Math.max(1, ...ARCHETYPES.flatMap(arch => WEIGHT_AREAS.map(area => weights[arch][area])));
 /**
- * Il peso di un'area come barra, senza numeri: segue i pesi veri del formato e del tipo di team (in National Dex OU i suoi,
- * NATDEX_OU_WEIGHTS), in proporzione al peso più alto della tabella. Ai lettori di schermo una parola: molto dalla metà
- * del voto in su, abbastanza da un quarto, poco sotto.
+ * La barra a scalini (scelta dell'utente, 2026-11-11): in ogni colonna il tipo che pesa di più ha la barra piena e ogni
+ * peso più basso scende di un sesto (pesi uguali, stesso scalino). Si vede chi conta di più, non quanto.
  */
-function WeightBar({ weight, max }: { weight: number; max: number }) {
+const stepOf = (weights: AreaWeightTable, arch: Archetype, area: (typeof WEIGHT_AREAS)[number]): number => {
+  const weight = weights[arch][area];
+  if (weight <= 0) return 0;
+  const higher = new Set(ARCHETYPES.map(a => weights[a][area]).filter(w => w > weight)).size;
+  return Math.max(1, 6 - higher) / 6;
+};
+/**
+ * Il peso di un'area come barra a scalini, senza numeri (stepOf). Ai lettori di schermo una parola dal peso vero:
+ * molto dalla metà del voto in su, abbastanza da un quarto, poco sotto.
+ */
+function WeightBar({ weight, step }: { weight: number; step: number }) {
   const t = useT();
   const word = weight <= 0 ? 'help.weight.none' : weight >= 50 ? 'help.weight.high' : weight >= 25 ? 'help.weight.mid' : 'help.weight.low';
   return (
     <span className="help-wbar">
-      <i style={{ width: `${(100 * Math.max(0, weight)) / max}%` }} />
+      <i style={{ width: `${(100 * step).toFixed(2)}%` }} />
       <span className="visually-hidden">{t(word)}</span>
     </span>
   );
@@ -186,7 +193,7 @@ function TypeTopic({ type, weights, typeRule }: { type: Archetype; weights: Area
           return (
             <div key={area} className={inactive ? 'inactive' : undefined}>
               <dt>{t(`area.${area}`)}</dt>
-              <dd><WeightBar weight={weights[type][area]} max={tableMax(weights)} /></dd>
+              <dd><WeightBar weight={weights[type][area]} step={stepOf(weights, type, area)} /></dd>
               {inactive && <dd className="help-inactive-note">{t('rating.notCounted')}</dd>}
             </div>
           );
