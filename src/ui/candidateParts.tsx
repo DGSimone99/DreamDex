@@ -20,6 +20,7 @@ import { Typed } from './TypeText';
 import { Icon } from './icons';
 import { formatPercent, t, type Lang } from '../i18n';
 import { useLang, useT } from '../i18n/react';
+import { typeName } from '../i18n/game';
 
 /**
  * Candidato in lista, col voto che darebbe al team (assente col primo Pokémon).
@@ -239,21 +240,25 @@ function useFitLimit(count: number, key: string) {
 /**
  * I chip dei tipi (gli stessi del team, in versione compatta), su una riga sola: quelli che non entrano diventano "+N"
  * subito dopo l'ultimo chip (mai un chip tagliato a metà; la lista intera è nel tooltip).
- * Gli immuni per primi, con la parola "immune" attaccata all'ultimo.
+ * Gli immuni per primi, ognuno con una "×" davanti (× Spettro): accanto al "+" si legge come immune in difesa;
+ * a parole nel tooltip del chip.
  */
 function ChipRow({ types, immune = [] }: { types: readonly string[]; immune?: readonly string[] }) {
   const tr = useT();
   const lang = useLang();
   const all = [...immune, ...types];
-  // Nella chiave tutto quello che cambia la larghezza: i tipi, dove cade "immune" e la lingua
+  // Nella chiave tutto quello che cambia la larghezza: i tipi, quanti hanno la "×" e la lingua
   const { row, limit } = useFitLimit(all.length, `${lang}|${immune.length}|${all.join()}`);
   return (
     <span className="sym-chips" ref={row}>
       {all.slice(0, limit).map((type, i) => (
-        <span key={type} className="sym-chip">
-          <TypeChip type={type} />
-          {i === immune.length - 1 && <span className="sym-immune">{tr('reason.immune')}</span>}
-        </span>
+        i < immune.length ? (
+          <span key={type} className="sym-chip immune" title={tr('reason.immuneTo', { type: typeName(type, lang) })}>
+            <span className="sym-immune">×</span><TypeChip type={type} />
+          </span>
+        ) : (
+          <span key={type} className="sym-chip"><TypeChip type={type} /></span>
+        )
       ))}
       <More total={all.length} shown={limit} />
     </span>

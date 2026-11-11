@@ -607,7 +607,8 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .reason .sym-chip { display: inline-flex; flex: none; align-items: center; height: 16px; }
 /* Chip compatti: larghi quanto il nome (mai tagliati), più bassi e col testo più piccolo di quelli del team */
 .reason .type-chip, .reason .type-chip.long { width: auto; min-width: 0; padding: 0 4px; font-size: 11px; line-height: 14px; letter-spacing: 0.02em; }
-.reason .sym-immune { margin-left: 3px; font: 500 11px/1 var(--ui); }
+/* La "×" davanti a un tipo a cui il candidato è immune */
+.reason .sym-immune { margin-right: 2px; font: 700 12px/1 var(--ui); }
 /* "vs" + pallino del tipo + nome, come nel dettaglio; il nome si accorcia, il "+N" resta */
 .reason .sym-mons { display: flex; align-items: center; min-width: 0; }
 .reason .sym-mon { display: flex; align-items: center; min-width: 0; }

@@ -279,8 +279,12 @@ describe('SuggestionsPanel', () => {
     // ⚔️ + i chip dei due tipi
     expect(reasons[0].querySelector('.sym-emoji')!.textContent).toBe('⚔️');
     expect(reasons[0].querySelectorAll('.sym .type-chip')).toHaveLength(2);
-    // 🛡️: l'immune col suo chip e la parola "immune", poi la resistenza
-    expect([...reasons[1].querySelectorAll('.sym-chip')].map(c => c.querySelector('.sym-immune')?.textContent ?? '')).toEqual(['immune', '']);
+    // 🛡️: l'immune con la "×" davanti al chip (a parole nel tooltip), poi la resistenza
+    const chips = [...reasons[1].querySelectorAll('.sym-chip')];
+    expect(chips.map(c => c.querySelector('.sym-immune')?.textContent ?? '')).toEqual(['×', '']);
+    expect(chips[0].firstElementChild).toHaveClass('sym-immune');
+    expect(chips[0]).toHaveAttribute('title', expect.stringMatching(/^Immune a /));
+    expect(chips[1]).not.toHaveAttribute('title');
     expect(reasons[1].querySelectorAll('.sym .type-chip')).toHaveLength(2);
     // vs: il primo col pallino del tipo e il nome, come nel dettaglio; gli altri "+N" (niente mini sprite)
     expect(reasons[2].querySelector('.sym')!.textContent).toBe('vsZapdos');

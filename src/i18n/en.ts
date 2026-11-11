@@ -1214,7 +1214,7 @@ export const en = {
   'suggest.add': "Add to team",
   'suggest.replaceWith': "Replace with this",
   'suggest.copySet': "Copy set",
-  'reason.immune': "immune",
+  'reason.immuneTo': "Immune to {type}",
   'suggest.noDifference': "No relevant difference",
   'suggest.banned': "{tier} · banned in {format}",
   'suggest.mode': "Replace mode",

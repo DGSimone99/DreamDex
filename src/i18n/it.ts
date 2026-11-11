@@ -1216,7 +1216,7 @@ export const it: Record<keyof typeof en, string> = {
   'suggest.add': "Aggiungi al team",
   'suggest.replaceWith': "Sostituisci con questo",
   'suggest.copySet': "Copia set",
-  'reason.immune': "immune",
+  'reason.immuneTo': "Immune a {type}",
   'suggest.noDifference': "Nessuna differenza rilevante",
   'suggest.banned': "{tier} · bannato in {format}",
   'suggest.mode': "Modalità sostituzione",
