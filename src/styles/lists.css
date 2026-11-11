@@ -389,6 +389,8 @@
 .grade-badge.none { --grade: var(--line); }
 .grade-badge .letter, .grade-badge.grade-C .letter, .grade-badge.grade-D .letter { color: var(--grade); }
 .grade-badge .label { color: var(--grade); font-weight: 600; }
+/* "Eccellente" è testo piccolo: il magenta più chiaro, leggibile sul fondo tinto (la lettera grande resta magenta pieno) */
+.grade-badge.grade-S .label { color: var(--accent-2-ink); }
 .grade-badge .grade-areas { align-self: stretch; align-content: space-evenly; gap: 1px; margin-top: 4px; padding-top: 6px; border-top: 1px solid var(--line-soft); }
 .grade-area { font-size: 12.5px; }
 .grade-area .meter { height: 7px; }
