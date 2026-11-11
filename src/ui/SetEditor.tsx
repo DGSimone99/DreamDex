@@ -255,16 +255,10 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
   return (
     <div className="set-editor">
       <div className="editor-head">
-        {(title || actions || memberAction) && (
+        {(title || actions) && (
           <div className="editor-top">
             {title}
-            {/* Ruoli accanto al nome (tag di sola lettura, il principale per primo); Sostituisci accanto alla X */}
-            {!!roles?.length && (
-              <ul className="editor-roles" aria-label={t('editor.roles')}>
-                {roles.map((role, i) => <li key={role} className={i === 0 ? 'main' : undefined}>{role}</li>)}
-              </ul>
-            )}
-            {(actions || memberAction) && <div className="editor-actions">{memberAction}{actions}</div>}
+            {actions && <div className="editor-actions">{actions}</div>}
           </div>
         )}
         <div className="head-group">
@@ -293,10 +287,14 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
         {ioAction}
         </div>
         {/* Fuori dai riquadri: cambia le scelte sia del Set sia delle Mosse */}
-        <label className="custom-toggle" title={t('editor.customTooltip')}>
-          {t('editor.customLabel')}
+        <label className={`custom-toggle${custom ? ' on' : ''}`} title={t('editor.customTooltip')}>
+          <span className="custom-text">
+            <b>{t('editor.customLabel')}</b>
+            <small>{custom ? t('editor.customOn') : t('editor.customOff')}</small>
+          </span>
           <input
             type="checkbox"
+            className="switch"
             aria-label={t('editor.custom', { species: set.species })}
             checked={custom}
             onChange={e => update({ customSkillset: e.target.checked || undefined })}
@@ -456,6 +454,20 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
         ))}
       </fieldset>
       </div>
+      {(!!roles?.length || memberAction) && (
+        // Ruoli e, fuori dal riquadro in basso a destra, l'azione sul membro (Sostituisci)
+        <div className="editor-foot">
+          {!!roles?.length && (
+            <fieldset className="editor-roles">
+              <legend>{t('editor.roles')}</legend>
+              <ul>
+                {roles.map((role, i) => <li key={role} className={i === 0 ? 'main' : undefined}>{role}</li>)}
+              </ul>
+            </fieldset>
+          )}
+          {memberAction}
+        </div>
+      )}
     </div>
   );
 }
