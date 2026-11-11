@@ -429,6 +429,11 @@ const STATES: Record<string, State> = {
     await wait(300);
     return clickText(p, '.help-nav [role="tab"]', /^(Come funziona|How it works)$/);
   } },
+  'rating-help-balance': { hash: hash(SIX), run: async p => {
+    if (!await clickText(p, '.band .grade-tools button.help-button', /./)) return 'no help button';
+    await wait(300);
+    return clickText(p, '.help-nav [role="tab"]', /^Balance/);
+  } },
   'analysis-help': { run: async p => {
     if (!await clickText(p, '.band button.grade-area', /^Difesa/)) return 'no row';
     await wait(300);

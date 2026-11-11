@@ -25,8 +25,11 @@ const keyLabel = (key: LevelKey): MessageKey => (isGroupKey(key) ? `need.${key}`
  * di team) e la spiegazione a destra. Le spiegazioni di ogni area stanno nel suo modale, di bonus e malus nel catalogo.
  */
 /** `weights`: la tabella dei pesi del formato del team (rating.weightTable); senza, quella di sempre. */
-export function RatingHelp({ teamType, trickRoom, weights = ARCHETYPE_WEIGHTS, typeRule }: { teamType: Archetype; trickRoom: boolean; meta?: boolean; weights?: AreaWeightTable; typeRule?: 'walls' | 'recoverySpeed' }) {
+/** `incomplete`: meno di sei membri, il tipo non è ancora deciso ("in analisi"): nessuna scheda è segnata come il tuo team. */
+export function RatingHelp({ teamType: judgedAs, trickRoom, weights = ARCHETYPE_WEIGHTS, typeRule, incomplete = false }: { teamType: Archetype; trickRoom: boolean; incomplete?: boolean; meta?: boolean; weights?: AreaWeightTable; typeRule?: 'walls' | 'recoverySpeed' }) {
   const t = useT();
+  // Col team incompleto il tipo è ancora "in analisi": nessuna scheda è "il tuo team"
+  const teamType: Archetype | null = incomplete ? null : judgedAs;
   const [open, setOpen] = useState(false);
   // Si apre sempre su come funziona in generale; il tipo del team ha la sua scritta "il tuo team" nella lista a sinistra
   const [topic, setTopic] = useState<Topic>('general');
@@ -103,7 +106,7 @@ export function RatingHelp({ teamType, trickRoom, weights = ARCHETYPE_WEIGHTS, t
 }
 
 /** Come funziona in generale: la formula del voto, le lettere dalle soglie e i pesi di tutti i tipi. */
-function GeneralTopic({ teamType, trickRoom, weights }: { teamType: Archetype; trickRoom: boolean; weights: AreaWeightTable }) {
+function GeneralTopic({ teamType, trickRoom, weights }: { teamType: Archetype | null; trickRoom: boolean; weights: AreaWeightTable }) {
   const t = useT();
   const letters = Object.fromEntries(GRADES.filter(g => g.grade !== 'D').map(g => [g.grade, g.min]));
   return (
@@ -120,7 +123,7 @@ function GeneralTopic({ teamType, trickRoom, weights }: { teamType: Archetype; t
       <p>{t('help.general.1')}</p>
       <p>{t('help.general.2')}</p>
       <p>{t('help.type.trickRoom')}</p>
-      <p className="help-yours">{t('help.general.yours', { type: t(`archetype.${teamType}`) })}{trickRoom ? ` · ${t('help.general.trickRoom')}` : ''}</p>
+      <p className="help-yours">{teamType ? t('help.general.yours', { type: t(`archetype.${teamType}`) }) : t('help.general.analyzing')}{trickRoom ? ` · ${t('help.general.trickRoom')}` : ''}</p>
       <div className="help-table-wrap">
         <table className="help-weights">
           <thead>
@@ -165,7 +168,6 @@ function TypeTopic({ type, weights, typeRule }: { type: Archetype; weights: Area
     <>
       <p className="help-note">{t(`archetype.${type}.note`)}</p>
       <p>{t(`help.type.${type}`)}</p>
-      {type === 'balance' && <p>{t('help.type.balance.incomplete')}</p>}
       <h5>{t('help.type.weights')}</h5>
       <dl className="help-weights-row">
         {WEIGHT_AREAS.map(area => {

@@ -93,8 +93,8 @@ describe('SuggestionsPanel', () => {
     const pager = await screen.findByRole('navigation', { name: 'Pagine dei suggerimenti' });
     expect(rowNames()).toHaveLength(6);
     expect(within(pager).getByRole('button', { name: 'Pagina precedente' })).toBeDisabled();
-    await user.click(within(pager).getByRole('button', { name: 'Pagina 2' }));
-    expect(within(pager).getByRole('button', { name: 'Pagina 2' })).toHaveAttribute('aria-current', 'page');
+    await user.click(within(pager).getByRole('button', { name: 'Pagina successiva' }));
+    expect(within(pager).getByRole('status', { name: 'Pagina 2' })).toBeInTheDocument();
     expect(rankOf(list().querySelector('li')!)).toBe(7);
   });
 
@@ -185,7 +185,7 @@ describe('SuggestionsPanel', () => {
     expect(buttons[0]).toHaveAccessibleName('Pagina precedente');
     expect(buttons[buttons.length - 1]).toHaveAccessibleName('Pagina successiva');
     await user.click(within(pager).getByRole('button', { name: 'Pagina successiva' }));
-    expect(within(pager).getByRole('button', { name: 'Pagina 2' })).toHaveAttribute('aria-current', 'page');
+    expect(within(pager).getByRole('status', { name: 'Pagina 2' })).toBeInTheDocument();
   });
 
   it('chi esce è una tendina attaccata a Migliora team, nella barra comandi', async () => {
@@ -225,11 +225,11 @@ describe('SuggestionsPanel', () => {
     await user.type(search, 'a');
     const pager = await screen.findByRole('navigation', { name: 'Pagine dei suggerimenti' });
     for (let i = 0; i < 6; i++) await user.keyboard('{ArrowDown}');
-    expect(within(pager).getByRole('button', { name: 'Pagina 2' })).toHaveAttribute('aria-current', 'page');
+    expect(within(pager).getByRole('status', { name: 'Pagina 2' })).toBeInTheDocument();
     expect(rankOf(list().querySelector('.picked')!)).toBe(7);
     // E indietro, prima della prima, alla precedente
     await user.keyboard('{ArrowUp}');
-    expect(within(pager).getByRole('button', { name: 'Pagina 1' })).toHaveAttribute('aria-current', 'page');
+    expect(within(pager).getByRole('status', { name: 'Pagina 1' })).toBeInTheDocument();
     expect(rankOf(list().querySelector('.picked')!)).toBe(6);
   });
 
@@ -529,16 +529,16 @@ describe('riga della lista', () => {
     const props = { team: [tusk], format: DEFAULT_FORMAT, data, replaceIndex: null, onAdd: () => {}, onReplaceWith: () => {}, onCancelReplace: () => {} };
     const { rerender } = renderIt(<SuggestionsPanel {...props} />);
     const pager = await screen.findByRole('navigation', { name: 'Pagine dei suggerimenti' });
-    await user.click(within(pager).getByRole('button', { name: 'Pagina 2' }));
+    await user.click(within(pager).getByRole('button', { name: 'Pagina successiva' }));
     const eleventh = rowNames()[0];
-    await user.click(within(pager).getByRole('button', { name: 'Pagina 1' }));
+    await user.click(within(pager).getByRole('button', { name: 'Pagina precedente' }));
     expect(rowNames()).not.toContain(eleventh);
     // Una ricerca rimasta nel campo non deve nascondere il candidato
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Gho');
     rerender(<SuggestionsPanel {...props} focus={{ species: eleventh, mode: 'add', nonce: 1 }} />);
     expect(await screen.findByRole('complementary', { name: `Dettaglio di ${eleventh}` }, { timeout: 3000 })).toBeInTheDocument();
     expect(screen.getByLabelText('Aggiungi Pokémon')).toHaveValue('');
-    expect(within(screen.getByRole('navigation', { name: 'Pagine dei suggerimenti' })).getByRole('button', { name: 'Pagina 2' })).toHaveAttribute('aria-current', 'page');
+    expect(within(screen.getByRole('navigation', { name: 'Pagine dei suggerimenti' })).getByRole('status', { name: 'Pagina 2' })).toBeInTheDocument();
     expect(rowNames()).toContain(eleventh);
   });
 

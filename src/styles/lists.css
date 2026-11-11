@@ -377,11 +377,11 @@
 .grade-badge.none .overall { margin-top: auto; }
 .grade-badge.none .label { margin-bottom: auto; }
 
-/* Carta del voto: il colore della lettera (S e B ciano, A verde, C giallo, D rosso; il magenta è solo per l'azione
+/* Carta del voto: il colore della lettera (S magenta, la lettera speciale; A verde, B ciano, C giallo, D rosso; per il resto il magenta è solo per l'azione
    migliore e per "sei qui") tinge anche il fondo;
    le aree riempiono l'altezza, ogni barra nel colore del suo voto */
 .grade-badge { --grade: var(--accent); grid-template-rows: auto auto auto 1fr; background: radial-gradient(120% 70% at 0% 25%, color-mix(in srgb, var(--grade) 16%, transparent), transparent 70%), var(--panel); }
-.grade-badge.grade-S { --grade: var(--accent); }
+.grade-badge.grade-S { --grade: var(--accent-2); }
 .grade-badge.grade-A { --grade: var(--good); }
 .grade-badge.grade-B { --grade: var(--accent); }
 .grade-badge.grade-C { --grade: var(--warn); }
@@ -392,7 +392,7 @@
 .grade-badge .grade-areas { align-self: stretch; align-content: space-evenly; gap: 3px; margin-top: 4px; padding-top: 6px; border-top: 1px solid var(--line-soft); }
 .grade-area { font-size: 12.5px; }
 .grade-area .meter { height: 7px; }
-.grade-area.band-S .meter > span { background: var(--accent); }
+.grade-area.band-S .meter > span { background: var(--accent-2); }
 .grade-area.band-A .meter > span { background: var(--good); }
 .grade-area.band-B .meter > span { background: var(--accent); }
 .grade-area.band-C .meter > span { background: var(--warn); }

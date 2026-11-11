@@ -94,15 +94,7 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .pager .step:hover:not(:disabled) { color: var(--text); }
 .pager .step:disabled { opacity: 0.35; }
 .pager .step .icon { width: 14px; height: 14px; }
-.pager-dashes { display: flex; gap: 0; }
-/* Trattino sottile, ma con un'area cliccabile più alta */
-/* Stretto (8px), e si stringe fino a 3px quando la fascia non basta (molte pagine, finestra stretta) */
-/* Ogni trattino è un bersaglio di 24×24 px attaccato al vicino (la barretta che si vede resta 12×4); se non entrano
-   tutti, la pagina diventa un numero ("3/9") */
-.pager .pager-dash { flex: none; width: 24px; height: 24px; min-width: 0; padding: 10px 6px; border: 0; border-radius: 0; background: var(--line); background-clip: content-box; }
-.pager .pager-dash:hover { background-color: var(--muted); }
-.pager .pager-dash[aria-current='page'] { background-color: var(--accent); }
-/* Troppe pagine per i trattini (lista stretta): la pagina come numero, "3/9" */
+/* La pagina come numero, "3/9", a ogni misura (scelta dell'utente: niente trattini) */
 .pager-count { min-width: 34px; padding: 0 2px; font: 600 12px/1 var(--ui); font-variant-numeric: tabular-nums; color: var(--muted); text-align: center; white-space: nowrap; }
 /* Vista della lista: in fondo alla fascia, dopo la paginazione; il riquadro scende sopra la lista */
 .list-view { position: relative; flex: none; margin-left: auto; }

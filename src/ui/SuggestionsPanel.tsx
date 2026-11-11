@@ -214,11 +214,11 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   // Il numero per pagina può cambiare (finestra): la pagina resta fra quelle che ci sono
   const page = Math.max(0, Math.min(pageState, pages - 1));
   const pageItems = items.slice(page * perPage, (page + 1) * perPage);
-  // Fascia "Candidati": se titolo, suggerimento e paginazione non entrano su una riga si toglie prima il suggerimento del
-  // doppio clic, poi i trattini diventano "3 / 9" (2 = tutto, 1 = senza suggerimento, 0 = pagine come numero)
+  // Fascia "Candidati": la pagina è sempre un numero ("3/9"); se titolo, suggerimento e paginazione non entrano su una riga
+  // si toglie il suggerimento del doppio clic (1 = tutto, 0 = senza suggerimento)
   const headRef = useRef<HTMLDivElement>(null);
   const pickerListRef = useRef<HTMLDivElement>(null);
-  const headFit = useFitCount(headRef, 2, `${lang}|${view}|${pages}`, pickerListRef, true);
+  const headFit = useFitCount(headRef, 1, `${lang}|${view}|${pages}`, pickerListRef, true);
   const chosen = fresh && cursor !== null ? items[cursor] : undefined;
   const fallback = fresh ? items[0] : undefined;
   const pickedIndex = !fresh ? -1
@@ -459,16 +459,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
       <button type="button" className="step" aria-label={tr('suggest.prev')} disabled={page === 0} onClick={() => goToPage(page - 1)}>
         <Icon name="prev" />
       </button>
-      {headFit > 0 ? (
-        <span className="pager-dashes">
-          {Array.from({ length: pages }, (_, n) => (
-            <button key={n} type="button" className="pager-dash" aria-label={tr('suggest.page', { n: n + 1 })} aria-current={n === page ? 'page' : undefined}
-              onClick={() => goToPage(n)} />
-          ))}
-        </span>
-      ) : (
-        <span className="pager-count" aria-label={tr('suggest.page', { n: page + 1 })}>{page + 1}/{pages}</span>
-      )}
+      <span className="pager-count" role="status" aria-label={tr('suggest.page', { n: page + 1 })}>{page + 1}/{pages}</span>
       <button type="button" className="step" aria-label={tr('suggest.next')} disabled={page === pages - 1} onClick={() => goToPage(page + 1)}>
         <Icon name="next" />
       </button>
@@ -491,7 +482,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
           {!full && items.length > 0 && (
             <div className="list-head" ref={headRef}>
               <h2 className="box-head">{tr('suggest.listHead', { n: items.length })}</h2>
-              {headFit > 1 && <span className="dbl-hint">{tr(view === 'add' ? 'suggest.dblHint.add' : 'suggest.dblHint.replace')}</span>}
+              {headFit > 0 && <span className="dbl-hint">{tr(view === 'add' ? 'suggest.dblHint.add' : 'suggest.dblHint.replace')}</span>}
               {pager}
               {onListStyleChange && onListSpriteChange && (
                 <ListViewMenu listStyle={listStyle} listSprite={listSprite} onListStyleChange={onListStyleChange} onListSpriteChange={onListSpriteChange} />

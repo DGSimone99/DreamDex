@@ -19,7 +19,7 @@ const isDetailArea = (key: string): key is DetailArea => key === 'strength' || k
  * `onOpen`: le righe delle aree e di Bonus/Malus portano alla scheda di quell'area in Analisi.
  * `ruleIssues`: problemi di regole, triangolo rosso nella testa. `blocked`: il team ha membri ma il voto non si dà (EV oltre 510, specie doppia): il perché.
  */
-export function GradeBadge({ rating, ruleIssues = [], illegalCount = 0, illegalNames = [], blocked = null, onOpen }: { rating: TeamRating | null; ruleIssues?: string[]; illegalCount?: number; illegalNames?: string[]; blocked?: 'ev' | 'species' | null; onOpen?: (area: AreaKey) => void }) {
+export function GradeBadge({ rating, ruleIssues = [], illegalCount = 0, illegalNames = [], blocked = null, incomplete = false, onOpen }: { rating: TeamRating | null; ruleIssues?: string[]; illegalCount?: number; illegalNames?: string[]; blocked?: 'ev' | 'species' | null; incomplete?: boolean; onOpen?: (area: AreaKey) => void }) {
   const t = useT();
   // Voto quando si è aperto il membro nell'editor: il badge mostra di quanto è cambiato
   const editing = useEditing();
@@ -61,7 +61,7 @@ export function GradeBadge({ rating, ruleIssues = [], illegalCount = 0, illegalN
             ...(rating?.notes.length ? [{ level: 'warn' as const, text: t('rating.provisional') }] : []),
             ...(rating?.notes ?? []).map(text => ({ level: 'warn' as const, text })),
           ]} />}
-          {rating && <RatingHelp teamType={rating.teamType} trickRoom={rating.trickRoom} meta={rating.offense.coverageMeta !== null} weights={rating.weightTable} typeRule={rating.needs.rules.typeRule} />}
+          {rating && <RatingHelp incomplete={incomplete} teamType={rating.teamType} trickRoom={rating.trickRoom} meta={rating.offense.coverageMeta !== null} weights={rating.weightTable} typeRule={rating.needs.rules.typeRule} />}
         </span>
       )}
       {/* Le tre aree, i Ruoli e Bonus/Malus: ogni riga porta alla sua scheda in Analisi */}
