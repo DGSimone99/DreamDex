@@ -455,9 +455,9 @@
 @media (min-width: 1600px) and (min-height: 1000px) {
   .slot[open] > summary { --fit: 214; }
 }
-/* La variazione del voto (+1/−1) è una piccola pillola nella fascia "Voto": non occupa una riga, non sposta niente */
-.grade-badge { position: relative; }
-.grade-badge .grade-delta { position: absolute; top: 3px; right: 22px; margin: 0; padding: 0 6px; font-size: 12px; line-height: 18px; background: var(--panel); }
+/* La variazione del voto (+1/−1) è una piccola pillola nella fascia "Voto", nella stessa fila dell'aiuto e del segno
+   giallo (.grade-tools, prima di loro): non occupa una riga, non sposta niente e non finisce sotto i segni */
+.grade-badge .grade-delta { flex: none; margin: 0; padding: 0 6px; font-size: 12px; line-height: 18px; background: var(--panel); }
 .grade-badge .grade-delta.up { background: color-mix(in srgb, var(--good) 22%, var(--panel)); }
 .grade-badge .grade-delta.down { background: color-mix(in srgb, var(--bad) 22%, var(--panel)); }
 
@@ -487,7 +487,6 @@
   .grade-badge .grade-rules { margin-top: 2px; }
   .grade-badge .grade-areas { gap: 0; margin-top: 2px; padding-top: 2px; }
   .grade-badge button.grade-area { padding-top: 1px; padding-bottom: 1px; }
-  .grade-badge .grade-delta { top: 2px; }
   /* Meno margini sopra e sotto la sezione: l'altezza va alla lista */
   .tab-body { padding-top: 12px; }
   .suggestions-panel { gap: 8px; padding-bottom: 8px; }
