@@ -84,18 +84,25 @@ export function GradeBadge({ rating, ruleIssues = [], illegalCount = 0, illegalN
             );
           })}
           {/* Ruoli: una lista, non un'area col peso; senza barra, coperti/totale e quanti mancano fra quelli che tolgono punti
-              (essenziali e importanti): un minore scoperto non è un difetto, quindi non si conta in rosso; con meno di 6 membri
-              le mancanze non tolgono punti: si contano senza rosso */}
+              (essenziali e importanti), a segni: un minore scoperto non è un difetto, quindi non si conta */}
           {rating.roles.total > 0 && (() => {
             const { covered, total } = rating.roles;
-            const missing = rating.roles.rows.filter(r => r.level !== 'minor' && r.value < MISSING_BELOW).length;
+            const holes = (level: string) => rating.roles.rows.filter(r => r.level === level && r.value < MISSING_BELOW).length;
+            const essential = holes('essential');
+            const important = holes('important');
+            const missing = essential + important;
             const state = missing > 1 ? t('rating.rolesMissing', { n: missing }) : missing === 1 ? t('rating.rolesMissingOne') : covered === total ? t('rating.rolesAll') : '';
+            // Le mancanze a segni: il numero col triangolo rosso (essenziali) o giallo (importanti), quello degli avvisi
+            const marks = [
+              essential > 0 && <span key="e" className="grade-roles-miss bad" title={t('rating.rolesMissingEssential', { n: essential })}>{essential}<Icon name="warning" /></span>,
+              important > 0 && <span key="i" className="grade-roles-miss warn" title={t('rating.rolesMissingImportant', { n: important })}>{important}<Icon name="warning" /></span>,
+            ];
             return (
               <button type="button" className="grade-area grade-roles"
                 aria-label={t('rating.openArea', { area: t('area.roles'), value: state ? `${covered}/${total}, ${state}` : `${covered}/${total}` })}
                 onClick={() => onOpen?.('roles')}>
                 <span>{t('area.roles')}</span>
-                <span className="grade-roles-val"><b>{covered}/{total}</b>{state && <> · <em className={missing ? (rating.provisional ? 'soft' : 'bad') : 'good'}>{state}</em></>}</span>
+                <span className="grade-roles-val"><b>{covered}/{total}</b>{missing > 0 ? marks : state && <> · <em className="good">{state}</em></>}</span>
                 <Icon name="next" />
               </button>
             );

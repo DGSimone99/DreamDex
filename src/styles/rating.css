@@ -16,7 +16,8 @@
 .grade-badge .label { align-self: start; }
 .grade-head {
   align-self: stretch;
-  margin: 0 -14px 4px;
+  /* Spazio sotto la barra: la lettera grande non la tocca */
+  margin: 0 -14px 12px;
   padding: 4px 24px 4px 12px;
   font: 700 14px/1.2 var(--display);
   font-style: italic;
@@ -84,6 +85,11 @@
 .grade-roles-val em.bad { color: var(--bad); }
 .grade-roles-val em.good { color: var(--good); }
 .grade-roles-val em.soft { color: var(--muted); }
+/* Le mancanze dei Ruoli a segni: il numero e il triangolo, rosso per gli essenziali e giallo per gli importanti */
+.grade-roles-miss { display: inline-flex; align-items: center; gap: 1px; margin-left: 6px; font-weight: 700; }
+.grade-roles-miss svg { width: 13px; height: 13px; }
+.grade-roles-miss.bad { color: var(--bad); }
+.grade-roles-miss.warn { color: var(--warn); }
 /* Regole infrante: la scritta sotto il giudizio, con chi nel tooltip; la lettera resta a piena forza (mai informazioni
    spente con l'opacità) */
 .grade-badge .grade-rules { grid-column: 1 / -1; justify-self: start; display: inline-flex; align-items: center; gap: 4px; margin-top: 6px; padding: 1px 7px; border-radius: 3px; background: var(--bad-bg); color: var(--bad); font: 700 12px/1.5 var(--display); letter-spacing: 0.02em; white-space: nowrap; }

@@ -1044,6 +1044,8 @@ export const it: Record<keyof typeof en, string> = {
   'rating.rolesMissing': "{n} mancano",
   'rating.rolesMissingOne': "1 manca",
   'rating.rolesAll': "tutti",
+  'rating.rolesMissingEssential': "Essenziali che mancano: {n}",
+  'rating.rolesMissingImportant': "Importanti che mancano: {n}",
   'area.bonusMalus': "Bonus/Malus",
   'catalogue.onGrade': "Sul voto",
   'catalogue.takes': "Cosa toglie",

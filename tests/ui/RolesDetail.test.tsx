@@ -1,3 +1,4 @@
+import { MISSING_BELOW } from '../../src/engine/needs';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
@@ -72,23 +73,25 @@ describe('Ruoli a schede: Generale e una per livello', () => {
     expect(view.querySelector('.area-panel')).toHaveTextContent(/Toxic: \d+% del (meta|tier) non immune/);
   });
 
-  it('la riga Ruoli del voto: coperti/totale e quanti mancano, senza barra; con meno di 6 membri non in rosso', async () => {
+  it('la riga Ruoli del voto: coperti/totale e le mancanze a segni (numero e triangolo), senza barra', async () => {
     const { bar } = await openRoles();
     expect(bar).toHaveClass('grade-roles');
     expect(bar.querySelector('.meter')).toBeNull();
-    expect(bar).toHaveTextContent(/^Ruoli\d+\/\d+ · (\d+ mancano|1 manca)$/);
-    // Tre membri: il voto è provvisorio, le mancanze non tolgono punti
-    expect(bar.querySelector('em')).toHaveClass('soft');
-    expect(bar.querySelector('em')).not.toHaveClass('bad');
+    expect(bar).toHaveTextContent(/^Ruoli\d+\/\d+(\d+)+$/);
+    expect(bar.querySelector('.grade-roles-miss svg')).not.toBeNull();
+    // A parole nel nome del pulsante
+    expect(bar).toHaveAccessibleName(/(\d+ mancano|1 manca)/);
   });
 
-  it('la riga Ruoli del voto: con il team completo le mancanze sono in rosso', () => {
+  it('la riga Ruoli del voto: triangolo rosso per gli essenziali che mancano, giallo per gli importanti', () => {
     const rating = rateTeam(importShowdown(ROLES_TEAM).sets, fixtureData)!;
-    expect(rating.provisional).toBe(true);
-    renderIt(<GradeBadge rating={{ ...rating, provisional: false }} />);
-    const em = document.querySelector('.grade-roles em')!;
-    expect(em).toHaveTextContent(/^(\d+ mancano|1 manca)$/);
-    expect(em).toHaveClass('bad');
+    renderIt(<GradeBadge rating={rating} />);
+    const missing = (level: string) => rating.roles.rows.filter(r => r.level === level && r.value < MISSING_BELOW).length;
+    const bad = document.querySelector('.grade-roles-miss.bad');
+    const warn = document.querySelector('.grade-roles-miss.warn');
+    expect(missing('essential') + missing('important')).toBeGreaterThan(0);
+    if (missing('essential')) expect(bad).toHaveTextContent(String(missing('essential'))); else expect(bad).toBeNull();
+    if (missing('important')) expect(warn).toHaveTextContent(String(missing('important'))); else expect(warn).toBeNull();
   });
 
   it('in inglese', async () => {
