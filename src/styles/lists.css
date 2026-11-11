@@ -159,9 +159,10 @@
 .band.collapsed { grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px; padding-top: 8px; padding-bottom: 20px; }
 .band.collapsed .team-head { display: none; }
 .band.collapsed .slots { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
-.band.collapsed .slot > summary { min-height: 0; height: 48px; padding: 0 10px 0 6px; flex-direction: row; align-items: center; justify-content: flex-start; gap: 6px; }
-/* Pillola: icona del box, nome e icona dello strumento; il membro aperto nell'editor ha il contorno ciano */
-.band.collapsed .slot > summary > .name-line { display: flex; flex-direction: row-reverse; justify-content: flex-end; align-items: center; flex: 1; min-width: 0; margin: 0; }
+.band.collapsed .slot > summary { min-height: 0; height: 48px; padding: 0 6px 0 4px; flex-direction: row; align-items: center; justify-content: flex-start; gap: 4px; }
+/* Pillola: icona del box, nome e icona dello strumento; il membro aperto nell'editor ha il contorno ciano. Margini e spazi
+   stretti: anche a 1280 px nomi come Great Tusk e Corviknight entrano interi */
+.band.collapsed .slot > summary > .name-line { display: flex; flex-direction: row-reverse; justify-content: flex-end; align-items: center; gap: 4px; flex: 1; min-width: 0; margin: 0; }
 .band.collapsed .slot .name-line .name { flex: 1; min-width: 0; font-size: 13px; line-height: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* Nella barra il problema lo dice il puntino: niente bordo colorato attorno alla pillola */
 .band.collapsed .slot.invalid > summary, .band.collapsed .slot.warn > summary { outline: none; }
