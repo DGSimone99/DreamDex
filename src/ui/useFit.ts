@@ -22,9 +22,10 @@ export function useFitCount(ref: RefObject<HTMLElement | null>, total: number, k
     setFit(f => ({ ...f, key, n: n - 1 }));
   });
 
-  // Misura nuova: si riparte da tutti (solo se la misura cambia davvero, e mai a 0×0)
+  // Misura nuova: si riparte da tutti (solo se la misura cambia davvero, e mai a 0×0). Un oggetto nuovo
+  // anche se si era già a "tutti": così la misura si rifà (la carta si è stretta e ora sborda)
   const last = useRef('');
-  const restart = () => setFit(f => (f.n === Number.MAX_SAFE_INTEGER ? f : { key: f.key, n: Number.MAX_SAFE_INTEGER }));
+  const restart = () => setFit(f => ({ key: f.key, n: Number.MAX_SAFE_INTEGER }));
   useEffect(() => {
     const el = watch?.current ?? ref.current;
     if (!el || typeof ResizeObserver === 'undefined') return;
