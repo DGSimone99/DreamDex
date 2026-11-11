@@ -164,8 +164,10 @@ export function benefits(set: TeamSet): ConditionLink[] {
 
 export interface MechanicalLink {
   text: string;
-  /** "Abilita Venusaur", "Abilitato da Ninetales": per le caselle della lista. */
+  /** "Abilita Venusaur", "Abilitato da Ninetales": la forma breve. */
   short: string;
+  /** Per le caselle della lista: 🔗 + il membro legato. */
+  symbol: { kind: 'link'; species: string };
 }
 
 /** Legami meccanici tra un candidato e i membri: chi lo abilita e chi abilita lui. */
@@ -181,6 +183,7 @@ export function mechanicalLinks(candidate: TeamSet, team: TeamSet[], lang: Lang 
       links.push({
         text: t(lang, 'synergy.enabledBy', { member: battleName(member), via: viaName(enabler.via, lang), benefit: viaName(benefit.via, lang) }),
         short: t(lang, 'synergy.enabledBy.short', { member: battleName(member) }),
+        symbol: { kind: 'link', species: battleName(member) },
       });
     }
   }
@@ -193,6 +196,7 @@ export function mechanicalLinks(candidate: TeamSet, team: TeamSet[], lang: Lang 
       links.push({
         text: t(lang, 'synergy.enables', { member: battleName(member), via: viaName(enabler.via, lang), benefit: viaName(benefit.via, lang) }),
         short: t(lang, 'synergy.enables.short', { member: battleName(member) }),
+        symbol: { kind: 'link', species: battleName(member) },
       });
     }
   }

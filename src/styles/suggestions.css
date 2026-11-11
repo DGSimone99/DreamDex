@@ -667,6 +667,41 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .pill .who small { display: flex; flex-wrap: wrap; gap: 0 14px; min-width: 0; }
 .pill .reason { min-width: 0; max-width: 100%; font: 500 12px/1.3 var(--ui); color: var(--pill-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pill .reason b { margin-right: 3px; font-weight: 700; color: var(--pill-gain); }
+/* Motivi a segni (carte e Menu): ⚔️ chip dei tipi colpiti, 🛡️ chip dei tipi retti (gli immuni con la parola), "vs" chi
+   ferma, 🔗 il membro legato. Le mini icone (40×30) sporgono dalla riga da 16px: la riga non le taglia. I chip che non
+   entrano vanno su una seconda riga nascosta e diventano "+N" (candidateParts); il nome di un Pokémon solo se entra intero */
+/* Parole o segni, per tutta la lista: le carte (e le pillole) di una lista sono larghe uguali, quindi la larghezza della
+   carta decide per tutte. Da 560 px le parole brevi entrano quasi sempre (Menu sugli schermi grandi): restano le parole; le carte (al massimo
+   ~280 px) tagliano ancora le liste di Pokémon fermati, quindi restano a segni */
+.suggestions > li { container: cand / inline-size; }
+.reason.has-sym .words { display: none; }
+.reason.has-sym { display: flex; align-items: center; overflow: visible; text-overflow: clip; }
+.reason.has-sym > b { flex: none; }
+.reason .syms { display: contents; }
+@container cand (min-width: 560px) {
+  .reason.has-sym .words { display: inline; }
+  .reason.has-sym .syms { display: none; }
+  .reason.has-sym { display: block; overflow: hidden; text-overflow: ellipsis; }
+}
+.reason .sym { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.reason .sym-emoji { flex: none; font: 13px/1 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif; }
+.reason .sym-vs { flex: none; font: 700 11px/1 var(--ui); letter-spacing: 0.02em; }
+.reason .sym-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 0 3px; min-width: 0; height: 16px; overflow: hidden; }
+.reason .sym-chip { display: inline-flex; flex: none; align-items: center; height: 16px; }
+/* Chip compatti: larghi quanto il nome (mai tagliati), più bassi e col testo più piccolo di quelli del team */
+.reason .type-chip, .reason .type-chip.long { width: auto; min-width: 0; padding: 0 4px; font-size: 10px; line-height: 14px; letter-spacing: 0.02em; }
+.reason .sym-immune { margin-left: 3px; font: 500 11px/1 var(--ui); }
+.reason .sym-mons { display: flex; align-items: center; min-width: 0; }
+.reason .sym-mons .mon-icon { margin: -9px -5px -9px -5px; }
+.reason .sym-mons .mon-icon + .mon-icon { margin-left: -9px; }
+/* L'ultima icona non sporge a destra: la riga resta larga quanto quello che si vede */
+.reason .sym-mons .mon-icon:last-child { margin-right: 0; }
+.reason .sym-name-box { display: flex; flex-wrap: wrap; min-width: 0; height: 16px; overflow: hidden; }
+.reason .sym-name-box > i { width: 0; height: 16px; }
+.reason .sym-name { flex: none; margin-left: 4px; white-space: nowrap; font-weight: 700; line-height: 16px; color: var(--text); }
+.reason .sym-more { flex: none; margin-left: 3px; font: 700 11px/1 var(--ui); }
+.pill .reason .sym-name { color: var(--pill-ink); }
+.pill.selected .reason .sym-name, .pill.selected .reason .sym-vs { color: var(--on-accent); }
 /* Destra: segni, icone dei tipi 18px, voto */
 .pill-end { display: flex; align-items: center; gap: 8px; }
 .pill .pill-types { gap: 4px; }

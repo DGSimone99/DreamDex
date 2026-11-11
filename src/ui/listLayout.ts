@@ -22,7 +22,7 @@ export const CARDS_MAX_TILE = 260;
 export const CARDS_MIN_WIDTH = 130;
 export const CARDS_GAP = 8;
 /** Lo sprite più piccolo che si accetta sulla carta: sotto, la targhetta lo coprirebbe e non si leggerebbe bene. */
-export const CARDS_MIN_SPRITE = 64;
+export const CARDS_MIN_SPRITE = 60;
 
 /** Motivi sotto il nome delle carte: 2 col team aperto, 3 col team nascosto. */
 export const cardsReasons = (teamCollapsed: boolean): number => (teamCollapsed ? 3 : 2);
@@ -31,7 +31,7 @@ export const cardsReasons = (teamCollapsed: boolean): number => (teamCollapsed ?
 export const CARDS_PAD = 14;
 
 /** Altezza minima di una carta: bordo e margini (11) + targhetta (CSS --plate-h: 37 + 16 per motivo) + sprite minimo.
- *  Con 2 motivi 144 px. */
+ *  Con 2 motivi 140 px. */
 export const cardsMinTile = (reasons: number): number => 11 + 37 + 16 * reasons + CARDS_MIN_SPRITE;
 
 /** Colonne che entrano nella larghezza della lista (padding compreso), da 1 a 3; senza misura 3. */

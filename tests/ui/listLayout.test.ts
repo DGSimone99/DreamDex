@@ -12,14 +12,14 @@ describe('cardsLayout', () => {
     expect(cardsLayout(556, false).tileHeight).toBe(260);
     expect(cardsLayout(900, true).tileHeight).toBe(260);
   });
-  it('carta minima: sprite di almeno 64 px sopra la targhetta (144 px con 2 motivi, 160 con 3)', () => {
-    expect(cardsMinTile(2)).toBe(144);
-    expect(cardsMinTile(3)).toBe(160);
+  it('carta minima: sprite di almeno 60 px sopra la targhetta (140 px con 2 motivi, 156 con 3)', () => {
+    expect(cardsMinTile(2)).toBe(140);
+    expect(cardsMinTile(3)).toBe(156);
   });
   it('lista bassa: se due righe sarebbero sotto il minimo, una riga sola (3 per pagina)', () => {
-    // 2 righe: floor((329 − 20) / 2) − 8 = 146 ≥ 144
+    // 2 righe: floor((329 − 20) / 2) − 8 = 146 ≥ 140
     expect(cardsLayout(329, false)).toMatchObject({ rows: 2, perPage: 6, tileHeight: 146 });
-    // 2 righe: floor((300 − 20) / 2) − 8 = 132 < 144 → 1 riga alta 272, al massimo 260
+    // 2 righe: floor((300 − 20) / 2) − 8 = 132 < 140 → 1 riga alta 272, al massimo 260
     expect(cardsLayout(300, false)).toMatchObject({ rows: 1, perPage: 3, tileHeight: 260 });
     expect(cardsLayout(250, false)).toMatchObject({ rows: 1, perPage: 3, tileHeight: 222 });
     // Col team nascosto i motivi sono 3: serve una carta più alta

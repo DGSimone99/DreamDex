@@ -6,6 +6,7 @@ import { battleName, battleSpecies, getSpecies, isMega, isSelectable, toID, with
 import { bannedParts, formatLabel, illegalReason, isLegalIn, pokedexOf } from './formats';
 import type { Format } from './format';
 import type { Contribution, Diff } from './replace';
+import type { ReasonSymbol } from './explain';
 import { t, type Lang } from '../i18n';
 import { gameName, typeName } from '../i18n/game';
 import { illegalParts } from './learnsets';
@@ -308,6 +309,8 @@ export interface WeightedChange {
   points: number;
   /** L'area del voto che la voce muove. */
   area: ScoredArea;
+  /** Solo fra i pro: la forma a segni per le caselle della lista (⚔️ tipi colpiti, 🛡️ tipi retti). */
+  symbol?: ReasonSymbol;
 }
 
 /**
@@ -339,10 +342,16 @@ export function rankedChanges(given: Diff, gain: TeamGain | undefined, lang: Lan
   const diff = voteDiff(given, gain?.typeShift);
   const areaPoints = gain?.areaPoints;
   const side = (change: Contribution, gain: boolean, extra: { text: string; area: ScoredArea }[] = []) => {
-    const items = [
+    const items: { text: string; area: ScoredArea; symbol?: ReasonSymbol }[] = [
       ...change.roles.map(role => ({ text: roleLabel(role, lang), area: 'roles' as const })),
-      ...(change.covers.length ? [{ text: groupChanges({ roles: [], covers: change.covers, resists: [] }, gain, lang)[0], area: 'strength' as const }] : []),
-      ...(change.resists.length ? [{ text: groupChanges({ roles: [], covers: [], resists: change.resists }, gain, lang)[0], area: 'defense' as const }] : []),
+      ...(change.covers.length ? [{
+        text: groupChanges({ roles: [], covers: change.covers, resists: [] }, gain, lang)[0], area: 'strength' as const,
+        ...(gain && { symbol: { kind: 'coverage' as const, types: change.covers } }),
+      }] : []),
+      ...(change.resists.length ? [{
+        text: groupChanges({ roles: [], covers: [], resists: change.resists }, gain, lang)[0], area: 'defense' as const,
+        ...(gain && { symbol: { kind: 'defense' as const, immune: [], resists: change.resists } }),
+      }] : []),
       ...extra,
     ];
     const count = (area: ScoredArea) => items.filter(i => i.area === area).length;
@@ -350,7 +359,7 @@ export function rankedChanges(given: Diff, gain: TeamGain | undefined, lang: Lan
       .map(item => {
         const total = areaPoints?.[item.area] ?? 0;
         const share = (gain ? Math.max(0, total) : Math.min(0, total)) / count(item.area);
-        return { text: item.text, points: Math.round(share * 10) / 10 + 0, area: item.area };
+        return { text: item.text, points: Math.round(share * 10) / 10 + 0, area: item.area, ...(item.symbol && { symbol: item.symbol }) };
       })
       .map((item, i) => ({ item, i }))
       .sort((a, b) => Math.abs(b.item.points) - Math.abs(a.item.points) || a.i - b.i)

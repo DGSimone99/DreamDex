@@ -241,7 +241,54 @@ describe('SuggestionsPanel', () => {
       diff: { gains: none, losses: none, lostResists: [] },
       reasons: [{ component: 'synergy', weight: -1, text: 'La pioggia si scontra con il sole' }],
     } as never;
-    expect(reasonsOf(item, 2, null, DEFAULT_FORMAT, 'it')).toEqual({ pros: false, texts: ['Nessuna differenza rilevante'] });
+    expect(reasonsOf(item, 2, null, DEFAULT_FORMAT, 'it')).toEqual({ pros: false, items: [{ text: 'Nessuna differenza rilevante', short: 'Nessuna differenza rilevante' }] });
+  });
+
+  it('il voto sale senza un motivo da mostrare: l\'area che sale di più, non "nessuna differenza"', async () => {
+    const { reasonsOf } = await import('../../src/ui/candidateParts');
+    const none = { roles: [], covers: [], resists: [] };
+    const base = {
+      species: 'Pelipper', set: { species: 'Pelipper', moves: [] }, score: 0, components: {}, tags: [], penalty: 0, facts: {},
+      diff: { gains: none, losses: none, lostResists: [] }, reasons: [],
+    };
+    const shorts = (teamGain: object) => reasonsOf({ ...base, teamGain } as never, 2, null, DEFAULT_FORMAT, 'it').items.map(b => b.short);
+    expect(shorts({ gain: 9, grade: 'B', overall: 70, areaGains: [{ label: 'Offesa', change: 13 }, { label: 'Difesa', change: 2 }], extras: 0 })).toEqual(['Offesa +13']);
+    expect(shorts({ gain: 3, grade: 'B', overall: 70, areaGains: [], extras: 3 })).toEqual(['Problemi e bonus +3']);
+    expect(shorts({ gain: 0, grade: 'B', overall: 70, areaGains: [{ label: 'Offesa', change: 4 }], extras: -4 })).toEqual(['Nessuna differenza rilevante']);
+  });
+
+  it('caselle a segni: icone al posto delle parole, la frase intera per screen reader e tooltip', async () => {
+    const { Reasons } = await import('../../src/ui/candidateParts');
+    const { renderIt } = await import('../helpers/italian');
+    const items = [
+      { text: 'Colpisce super efficace Acqua, Erba, scoperti dal team', short: 'Colpisce Acqua, Erba', symbol: { kind: 'coverage', types: ['Water', 'Grass'] } },
+      { text: 'Immune a Terra e resiste a Volante: debolezze del team', short: 'Immune a Terra e resiste a Volante', symbol: { kind: 'defense', immune: ['Ground'], resists: ['Flying'] } },
+      { text: 'Ferma Zapdos', short: 'Ferma Zapdos', symbol: { kind: 'threats', species: ['Zapdos'] } },
+      { text: 'Ferma Zapdos, Kingambit', short: 'Ferma Zapdos, Kingambit', symbol: { kind: 'threats', species: ['Zapdos', 'Kingambit'] } },
+      { text: 'Abilita Venusaur: Siccità → Clorofilla', short: 'Abilita Venusaur', symbol: { kind: 'link', species: 'Venusaur' } },
+      { text: 'Pivot', short: 'Pivot' },
+    ] as never[];
+    const { container } = renderIt(<Reasons reasons={{ pros: true, items }} />);
+    const reasons = [...container.querySelectorAll<HTMLElement>('.reason')];
+    // Testo letto: "+" e la frase intera (le icone sono decorative)
+    const spoken = (el: HTMLElement) => [...el.querySelectorAll('.visually-hidden')].map(e => e.textContent).join(' ');
+    expect(spoken(reasons[0])).toBe('+ Colpisce super efficace Acqua, Erba, scoperti dal team');
+    expect(reasons[0]).toHaveAttribute('title', 'Colpisce super efficace Acqua, Erba, scoperti dal team');
+    expect(reasons[0].querySelector('.sym')).toHaveAttribute('aria-hidden', 'true');
+    // ⚔️ + i chip dei due tipi
+    expect(reasons[0].querySelector('.sym-emoji')!.textContent).toBe('⚔️');
+    expect(reasons[0].querySelectorAll('.sym .type-chip')).toHaveLength(2);
+    // 🛡️: l'immune col suo chip e la parola "immune", poi la resistenza
+    expect([...reasons[1].querySelectorAll('.sym-chip')].map(c => c.querySelector('.sym-immune')?.textContent ?? '')).toEqual(['immune', '']);
+    expect(reasons[1].querySelectorAll('.sym .type-chip')).toHaveLength(2);
+    // vs: con uno solo anche il nome, con più solo le icone
+    expect(reasons[2].querySelector('.sym')!.textContent).toBe('vsZapdos');
+    expect(reasons[3].querySelector('.sym')!.textContent).toBe('vs');
+    expect(reasons[3].querySelectorAll('.sym .mon-icon')).toHaveLength(2);
+    expect(reasons[4].querySelector('.sym')!.textContent).toBe('🔗Venusaur');
+    // I ruoli restano parole, senza tooltip
+    expect(reasons[5].textContent).toBe('++Pivot');
+    expect(reasons[5]).not.toHaveAttribute('title');
   });
 
   it("Aggiungi: le ragioni che pesano di più in forma breve, quante ne entrano (senza l'uso nel meta)", async () => {
@@ -258,9 +305,11 @@ describe('SuggestionsPanel', () => {
         reason('coverage', 1, 'Colpisce super efficace Fuoco, scoperti dal team', 'Colpisce Fuoco'),
       ],
     } as never;
-    expect(reasonsOf(item, 1, null, DEFAULT_FORMAT, 'it')).toEqual({ pros: true, texts: ['Resiste ad Acqua'] });
+    const shorts = (n: number) => reasonsOf(item, n, null, DEFAULT_FORMAT, 'it');
+    expect(shorts(1).pros).toBe(true);
+    expect(shorts(1).items.map(b => b.short)).toEqual(['Resiste ad Acqua']);
     // "Usato con" mai nelle caselle (lo dice il segno ciano), "Abilita" sì
-    expect(reasonsOf(item, 3, null, DEFAULT_FORMAT, 'it')).toEqual({ pros: true, texts: ['Resiste ad Acqua', 'Pivot', 'Abilita Venusaur'] });
+    expect(shorts(3).items.map(b => b.short)).toEqual(['Resiste ad Acqua', 'Pivot', 'Abilita Venusaur']);
     // Il "+" verde c'è in Aggiungi; col team vuoto la riga dei ruoli resta senza
     const roles = reasonsOf({ ...(item as object), set: { species: 'Rotom-Wash', moves: ['Volt Switch'], ability: 'Levitate', item: 'Leftovers', nature: 'Bold', evs: {}, ivs: {} } } as never, 1, 0.2, DEFAULT_FORMAT, 'it');
     expect(roles.pros).toBe(false);
@@ -293,9 +342,9 @@ describe('SuggestionsPanel', () => {
     const brings = bringsOf(item, 'it', formatRules(DEFAULT_FORMAT.formatId));
     expect(brings.map(b => b.text)).toEqual(points);
     for (const n of [1, 2, 3]) {
-      const { texts } = reasonsOf(item, n, null, DEFAULT_FORMAT, 'it');
-      expect(texts).toEqual(brings.slice(0, n).map(b => b.short));
-      expect(texts.map(short => brings.find(b => b.short === short)!.text)).toEqual(points.slice(0, n));
+      const { items } = reasonsOf(item, n, null, DEFAULT_FORMAT, 'it');
+      expect(items.map(b => b.short)).toEqual(brings.slice(0, n).map(b => b.short));
+      expect(items.map(b => b.text)).toEqual(points.slice(0, n));
     }
   });
 
@@ -553,7 +602,7 @@ describe('stile Carte', () => {
     const icons = first.querySelector('.type-icons')!;
     expect(icons.querySelectorAll('img')).toHaveLength(types.length);
     expect(icons).toHaveAttribute('title', types.map(type => typeName(type, 'it')).join(' / '));
-    expect(first.querySelector('.type-chip')).toBeNull();
+    expect([...first.querySelectorAll('.type-chip')].filter(c => !c.closest('.reason'))).toHaveLength(0);
     // Quanto sale il voto, sulla targhetta in alto a sinistra
     expect(first.querySelector('.tag')!.textContent).toMatch(/^(\+\d+|−\d+|±0)$/);
   });
@@ -574,7 +623,7 @@ describe('stile Carte', () => {
       const item = { species: 'Great Tusk', set: tusk, score: 0, components: {}, tags: [], penalty: 0, reasons: [],
         facts: { clashes: [] }, teamGain: { gain, grade: 'B', overall: 70 } } as never;
       const { container, unmount } = renderIt(
-        <ol><CandidateCard rank={1} item={item} reasons={{ pros: false, texts: ['x'] }} sprite={() => null} usage={null} actionLabel="a"
+        <ol><CandidateCard rank={1} item={item} reasons={{ pros: false, items: [{ text: 'x', short: 'x' }] }} sprite={() => null} usage={null} actionLabel="a"
           selected={false} onSelect={() => {}} onAction={() => {}} format={DEFAULT_FORMAT} /></ol>);
       const li = container.querySelector('li.card')!;
       const result = { first: li.classList.contains('first'), strong: li.querySelector('.tag strong')!.className, text: li.querySelector('.tag')!.textContent };
@@ -601,7 +650,7 @@ describe('stile Menu', () => {
     expect(rows.every(row => row.classList.contains('pill'))).toBe(true);
     // Tipi come icone a destra, niente chip
     expect(rows[0].querySelector('.type-icons')).not.toBeNull();
-    expect(rows[0].querySelector('.type-chip')).toBeNull();
+    expect([...rows[0].querySelectorAll('.type-chip')].filter(c => !c.closest('.reason'))).toHaveLength(0);
     await user.click(rows[1]);
     expect(rows[1].querySelector('button.pick')).toHaveAttribute('aria-pressed', 'true');
     expect(rows[1]).toHaveClass('selected');

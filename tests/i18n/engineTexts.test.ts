@@ -34,6 +34,12 @@ describe('testi del motore', () => {
     expect(texts).toContain('Meta usage: 12.3%');
     const shorts = explain(facts, components, 'en').map(r => r.short);
     expect(shorts).toEqual(expect.arrayContaining(['Immune to Ground', 'Checks Dragapult', 'Hits Fairy', 'Pivot']));
+    // La forma a segni per le caselle: tipi e nomi senza lingua (i ruoli restano parole)
+    const symbols = Object.fromEntries(explain(facts, components, 'en').map(r => [r.component, r.symbol]));
+    expect(symbols.defense).toEqual({ kind: 'defense', immune: facts.defense.immune, resists: facts.defense.covered });
+    expect(symbols.threats).toEqual({ kind: 'threats', species: ['Dragapult'] });
+    expect(symbols.coverage).toEqual({ kind: 'coverage', types: ['Fairy'] });
+    expect(symbols.roles).toBeUndefined();
     // "Used with": niente forma breve (nelle caselle non compare), segnata per il dettaglio
     expect(explain(facts, components, 'en').filter(r => r.usedWith).map(r => r.text)).toEqual(['Used with Great Tusk in 30% of teams']);
   });
