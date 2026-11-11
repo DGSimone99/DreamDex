@@ -12,7 +12,8 @@ export function useDismissMenus(): void {
     const onPointerDown = (event: PointerEvent) => {
       const target = event.target as Node | null;
       for (const menu of document.querySelectorAll<HTMLDetailsElement>(MENUS)) {
-        if (target && menu.contains(target)) continue;
+        // Sul telefono il menu ha uno sfondo scuro (il ::before del menu stesso): toccarlo chiude il menu
+        if (target && target !== menu && menu.contains(target)) continue;
         menu.open = false;
       }
     };

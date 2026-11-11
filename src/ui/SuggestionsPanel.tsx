@@ -8,6 +8,7 @@ import type { TeamRating } from '../engine/rating';
 import { rankKey } from '../engine/teamGain';
 import { MAX } from '../engine/candidateRanking';
 import { useRanking } from './useRanking';
+import { PHONE, useBackClose } from './useBackClose';
 import { battleName } from '../engine/dex';
 import { PokemonIcon } from './PokemonName';
 import { statsEntry } from '../engine/stats';
@@ -269,6 +270,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
     if (item.replaces !== undefined) onReplaceWith(item.replaces, item.set);
     else if (replacing) onReplaceWith(replaceIndex, item.set);
     else onAdd(item.set);
+    setSheetOpen(false);
     // Il nome cercato ha fatto il suo lavoro: la ricerca riparte vuota (i filtri restano)
     setFilters(f => ({ ...f, query: '' }));
   };
@@ -288,8 +290,11 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
     }
     if (view === 'add') setScope('all');
   };
+  // Telefono: la scheda copre la lista e si apre solo toccando un candidato; Indietro (o il gesto) la chiude
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const closeSheet = useBackClose(sheetOpen, () => setSheetOpen(false), PHONE);
   /** Apre il candidato nel dettaglio. */
-  const select = (item: Item) => setSelectedName(item.species);
+  const select = (item: Item) => { setSelectedName(item.species); setSheetOpen(true); };
 
   // Sostituendo un setter di cui altri membri hanno bisogno, si mostrano solo setter della stessa condizione
   let setterNote: string | null = null;
@@ -466,7 +471,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
       </div>
       {!full && <ActiveFilters filters={filters} onChange={setFilters} count={filtering && items.length > 0 ? countText : undefined} />}
       {notes}
-      <div className={`picker${!full ? ' has-detail' : ''}`}>
+      <div className={`picker${!full ? ' has-detail' : ''}${sheetOpen && selected ? ' sheet-open' : ''}`}>
         <div className="picker-list">
           {!full && items.length > 0 && (
             <div className="list-head">
@@ -486,6 +491,12 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
             <Icon name="search" />
             <p>{tr('suggest.detailEmpty')}</p>
           </aside>
+        )}
+        {selected && !full && sheetOpen && (
+          // Solo sul telefono (il CSS la nasconde altrove): torna alla lista
+          <button type="button" className="sheet-back" onClick={closeSheet}>
+            <Icon name="prev" /> {tr('suggest.backToList')}
+          </button>
         )}
         {selected && !full && (
           <SuggestionDetail

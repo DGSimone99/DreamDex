@@ -93,6 +93,16 @@ export function AnalysisTabs({ view, onView, panelId, areasDisabled = false, sco
     observer.observe(tab);
     return () => observer.disconnect();
   }, [view, t]);
+  // Telefono: la fila delle schede scorre col dito; la scheda aperta si porta in vista (sul desktop non scorre: niente)
+  useLayoutEffect(() => {
+    const tab = buttons.current[ANALYSIS_VIEWS.indexOf(view)];
+    const strip = tab?.closest<HTMLElement>('.analysis-tabs');
+    if (!tab || !strip || strip.scrollWidth <= strip.clientWidth) return;
+    const left = tab.offsetLeft;
+    if (left < strip.scrollLeft || left + tab.offsetWidth > strip.scrollLeft + strip.clientWidth) {
+      strip.scrollLeft = Math.max(0, left - (strip.clientWidth - tab.offsetWidth) / 2);
+    }
+  }, [view]);
   const go = (index: number) => {
     if (areasDisabled) return;
     const next = ANALYSIS_VIEWS[(index + ANALYSIS_VIEWS.length) % ANALYSIS_VIEWS.length];

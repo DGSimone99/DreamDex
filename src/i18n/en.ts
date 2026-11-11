@@ -1066,6 +1066,7 @@ export const en = {
   'rating.note.move': "{name}: unknown move ({list})",
   'rating.note.moves': "{name}: unknown moves ({list})",
   'rating.note.item': "{name}: unknown item ({item})",
+  'suggest.backToList': "Back to the list",
   'suggest.title': "Suggestions",
   'suggest.replaceTitle': "Replace {species}",
   'suggest.search': "Add Pokémon",

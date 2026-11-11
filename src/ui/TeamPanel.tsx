@@ -27,6 +27,7 @@ import { duplicateSpecies, missingFormeItem } from '../engine/legalTeam';
 import { EV_TOTAL, evTotal } from '../engine/statCalc';
 import { Sprite, TypeChip, typeColor } from './Sprite';
 import { gainText } from './CoachingView';
+import { SMALL, useBackClose } from './useBackClose';
 import { Icon } from './icons';
 import { SmogonLink } from './SmogonLink';
 import { illegalParts } from '../engine/learnsets';
@@ -469,6 +470,8 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
   useEffect(() => () => setEditing(null), []);
   // Il team si accorcia da fuori (import, Annulla, team salvato): un membro aperto che non c'è più si chiude
   useEffect(() => { if (openIndex !== null && openIndex >= team.length) setOpenIndex(null); }, [team.length, openIndex]);
+  // Telefono e tablet: l'editor copre lo schermo, il tasto o il gesto "indietro" lo chiude
+  useBackClose(openIndex !== null, () => setOpenIndex(null), SMALL);
   const lastClose = useRef(closeSignal);
   useEffect(() => {
     if (closeSignal === lastClose.current) return;
