@@ -272,8 +272,12 @@
 }
 /* Dita, non mouse: ogni tasto almeno 44 px */
 @media (pointer: coarse) {
-  .band .slot :is(.favorite, .remove) { width: 36px; height: 36px; }
-  .band .slot .favorite { right: 34px; }
+  /* L'icona resta della sua misura: cresce solo la zona che si tocca */
+  .band .slot :is(.favorite, .remove) { width: 44px; height: 44px; }
+  .band .slot .favorite { right: 44px; }
+  .list-head { --pager-h: 44px; }
+  .pager .step, .list-view-toggle { width: 44px; height: 44px; }
+  .search-field .clear { right: 0; display: grid; place-items: center; width: 44px; height: 44px; padding: 0; }
 }
 
 @media (max-width: 599px) {
