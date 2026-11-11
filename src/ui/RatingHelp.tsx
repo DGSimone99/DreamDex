@@ -156,13 +156,16 @@ const shownWeights = (weights: AreaWeightTable): AreaWeightTable => {
 
 /**
  * La barra a scalini (scelta dell'utente, 2026-11-11): in ogni colonna il tipo che pesa di più ha la barra piena e ogni
- * peso più basso scende di un sesto (pesi uguali, stesso scalino). Si vede chi conta di più, non quanto.
+ * peso più basso scende di un sesto (pesi uguali, stesso scalino), ma non va oltre il peso vero arrotondato a sesti: così
+ * la Velocità di Balance (15 su 30) resta a metà e quella di Semi-stall e Stall (10 su 30) a un terzo.
  */
 const stepOf = (weights: AreaWeightTable, arch: Archetype, area: (typeof WEIGHT_AREAS)[number]): number => {
   const weight = weights[arch][area];
   if (weight <= 0) return 0;
-  const higher = new Set(ARCHETYPES.map(a => weights[a][area]).filter(w => w > weight)).size;
-  return Math.max(1, 6 - higher) / 6;
+  const column = ARCHETYPES.map(a => weights[a][area]);
+  const higher = new Set(column.filter(w => w > weight)).size;
+  const real = Math.round((6 * weight) / Math.max(...column));
+  return Math.max(1, Math.min(6 - higher, real)) / 6;
 };
 /**
  * Il peso di un'area come barra a scalini, senza numeri (stepOf). Ai lettori di schermo una parola dal peso vero:
