@@ -52,11 +52,12 @@ export function CoverageSection({ coverage, onView }: { coverage: DashboardData[
           </tr>
         </thead>
         <tbody>
-          <tr>
+          {/* data-label: sul telefono la tabella va su due file da 9 tipi e la seconda ripete il nome della riga */}
+          <tr data-label={offense}>
             <th scope="row">{offense}</th>
             {coverage.cells.map((cell, i) => <Cell key={cell.type} state={cell.offense} label={`${names[i]}, ${offense.toLocaleLowerCase()}: ${lower(cell.offenseNote)}`} />)}
           </tr>
-          <tr>
+          <tr data-label={defense}>
             <th scope="row">{defense}</th>
             {coverage.cells.map((cell, i) => <Cell key={cell.type} state={cell.defense} label={`${names[i]}, ${defense.toLocaleLowerCase()}: ${lower(cell.defenseNote)}`} />)}
           </tr>

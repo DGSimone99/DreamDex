@@ -74,8 +74,15 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
       const base = strip.getBoundingClientRect();
       const v = value.getBoundingClientRect();
       const r = room.getBoundingClientRect();
-      setHelpPlace({ left: r.right - base.left - HELP_SIZE, top: v.top + v.height / 2 - base.top - HELP_SIZE / 2 });
+      // + scrollLeft: sul telefono la striscia scorre col dito e il "?" (assoluto) si misura dal suo inizio (sul desktop è 0)
+      setHelpPlace({ left: r.right - base.left + strip.scrollLeft - HELP_SIZE, top: v.top + v.height / 2 - base.top - HELP_SIZE / 2 });
     };
+    // Telefono: la sottoscheda aperta si porta in vista nella striscia (sul desktop la striscia non scorre: niente)
+    const strip = tab.parentElement?.parentElement;
+    if (strip && strip.scrollWidth > strip.clientWidth
+      && (tab.offsetLeft < strip.scrollLeft || tab.offsetLeft + tab.offsetWidth > strip.scrollLeft + strip.clientWidth)) {
+      strip.scrollLeft = Math.max(0, tab.offsetLeft - (strip.clientWidth - tab.offsetWidth) / 2);
+    }
     place();
     // La scheda può essere nascosta al primo disegno (misure a 0): si riposiziona quando prende le sue dimensioni
     if (typeof ResizeObserver === 'undefined') return;
