@@ -135,14 +135,15 @@
 @keyframes peek-sink { to { transform: translateY(75%); visibility: hidden; } }
 @keyframes peek-sink-tail { from { transform: rotate(14deg); } to { transform: translateY(85%) rotate(14deg); visibility: hidden; } }
 @keyframes screen-off {
-  0% { clip-path: inset(0); filter: brightness(1.2); animation-timing-function: steps(5, end); }
+  /* Parte dalla luminosità normale: uno scatto di luce subito farebbe sembrare più scura la finestra aperta */
+  0% { clip-path: inset(0); filter: none; animation-timing-function: steps(5, end); }
   70% { clip-path: inset(calc(50% - 1px) 0 calc(50% - 1px) 0); filter: brightness(2.2); animation-timing-function: cubic-bezier(0.6, 0, 0.8, 0.2); }
   100% { clip-path: inset(calc(50% - 1px) 50% calc(50% - 1px) 50%); filter: brightness(3); }
 }
 @keyframes screen-on {
   0% { clip-path: inset(calc(50% - 1px) 48% calc(50% - 1px) 48%); filter: brightness(3); animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1); }
   30% { clip-path: inset(calc(50% - 1px) 0 calc(50% - 1px) 0); filter: brightness(2.2); animation-timing-function: steps(6, end); }
-  92% { clip-path: inset(0); filter: brightness(1.25); }
+  92% { clip-path: inset(0); filter: brightness(1.08); }
   100% { clip-path: inset(0); filter: none; }
 }
 /* Nascosto finché la finestra si accende (senza la finestra davanti, la testa resterebbe sospesa nel vuoto) */
