@@ -1,0 +1,17 @@
+# Aggiornamento delle librerie: ogni lunedì una richiesta sola con tutti gli aggiornamenti minori;
+# le versioni nuove "grandi" (major) arrivano a parte, da guardare a mano.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      librerie:
+        update-types: [minor, patch]
+    open-pull-requests-limit: 5
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
