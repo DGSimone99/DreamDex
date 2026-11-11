@@ -66,7 +66,12 @@
 .preset-format { flex: none; font-size: 11px; font-weight: 600; text-transform: none; letter-spacing: 0; color: var(--faint); padding: 1px 6px; border: 1px solid var(--line); border-radius: 3px; }
 .combobox input:disabled { opacity: 0.55; cursor: not-allowed; }
 .set-editor .custom-toggle { flex-direction: row; align-items: center; height: 36px; gap: 8px; width: fit-content; text-transform: none; letter-spacing: 0; font-size: 14px; color: var(--text); cursor: help; }
-.set-editor .custom-toggle input { width: 16px; }
+/* Custom Skillset: levetta con sopra il nome e sotto cosa fa adesso (si legge senza tooltip) */
+.set-editor .custom-toggle { cursor: pointer; gap: 10px; }
+.set-editor .custom-toggle .custom-text { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; line-height: 1.15; }
+.set-editor .custom-toggle .custom-text b { font: 600 13px var(--ui); color: var(--text); }
+.set-editor .custom-toggle .custom-text small { font-size: 11px; font-weight: 400; color: var(--muted); }
+.set-editor .custom-toggle.on .custom-text small { color: var(--accent-ink); }
 .set-editor fieldset { margin: 0; padding: 6px 14px 12px; border: 1px solid var(--line); border-radius: 4px; background: var(--panel); }
 .set-editor legend { font: 700 13px/1.2 var(--display); font-style: italic; letter-spacing: 0.01em; color: var(--on-plate); background: var(--stripes), var(--plate); padding: 3px 20px 3px 9px; clip-path: polygon(0 0, 100% 0, calc(100% - 9px) 100%, 0 100%); }
 .editor-group { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 14px; }

@@ -24,6 +24,7 @@ describe('la megapietra rende il membro una Mega', () => {
     const item = within(team()).getByLabelText('Strumento');
     await user.clear(item);
     await user.type(item, 'Garchompite');
+    await user.tab();
     expect(slot().querySelector('.name')).toHaveTextContent('Garchomp-Mega');
     expect(slot().querySelector('.ability')).toHaveTextContent('Sand Force');
     const ability = within(team()).getByLabelText('Abilità');
@@ -32,6 +33,7 @@ describe('la megapietra rende il membro una Mega', () => {
 
     await user.clear(item);
     await user.type(item, 'Leftovers');
+    await user.tab();
     expect(slot().querySelector('.name')).toHaveTextContent(/^Garchomp$/);
     expect(within(team()).getByLabelText('Abilità')).toHaveValue('Rough Skin');
   });

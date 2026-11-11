@@ -41,6 +41,7 @@ function IvInput({ value, label, onChange }: { value: number; label: string; onC
   return (
     <input
       type="number"
+      inputMode="numeric"
       className="iv-input"
       min={0}
       max={31}
@@ -287,10 +288,14 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
         {ioAction}
         </div>
         {/* Fuori dai riquadri: cambia le scelte sia del Set sia delle Mosse */}
-        <label className="custom-toggle" title={t('editor.customTooltip')}>
-          {t('editor.customLabel')}
+        <label className={`custom-toggle${custom ? ' on' : ''}`} title={t('editor.customTooltip')}>
+          <span className="custom-text">
+            <b>{t('editor.customLabel')}</b>
+            <small>{custom ? t('editor.customOn') : t('editor.customOff')}</small>
+          </span>
           <input
             type="checkbox"
+            className="switch"
             aria-label={t('editor.custom', { species: set.species })}
             checked={custom}
             onChange={e => update({ customSkillset: e.target.checked || undefined })}
@@ -354,6 +359,8 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
               <input
                 type="range"
                 className="ev-slider"
+                // Fuori dal giro del Tab: è un doppione del numero accanto (che con le frecce fa lo stesso); col mouse funziona come sempre
+                tabIndex={-1}
                 min={0}
                 max={252}
                 step={EV_STEP}
@@ -365,6 +372,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
               <input
                 id={`ev-${uid}-${line.stat}`}
                 type="number"
+                inputMode="numeric"
                 className="ev-input"
                 min={0}
                 max={252}

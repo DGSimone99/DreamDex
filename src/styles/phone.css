@@ -340,13 +340,27 @@
 
 /* ── Editor del membro sul telefono e sul tablet ──────────────────── */
 @media (max-width: 1099px) {
-  /* Nome, tipi e chiudi restano in vista mentre scorri l'editor */
-  .drawer .set-editor .editor-head { position: sticky; top: -12px; z-index: 5; margin: -12px -14px 0; padding: 12px 14px 10px; background: var(--panel); border-bottom: 1px solid var(--line-soft); }
+  /* Solo la riga del nome (nome, tipi, shiny e chiudi) resta in vista mentre scorri; preset e I miei set scorrono via.
+     La testata si scioglie (display: contents) così la riga del nome è figlia diretta dell'editor e resta ferma per tutta la sua altezza */
+  .drawer .set-editor .editor-head { display: contents; }
+  .drawer .set-editor .editor-top { position: sticky; top: -12px; z-index: 5; margin: -12px -14px 0; padding: 12px 14px 10px; background: var(--panel); border-bottom: 1px solid var(--line-soft); }
+  /* Preset e I miei set: ognuno su una riga intera, senza il rientro e la linea che li separano sul computer */
+  .set-editor .editor-head .head-group { width: 100%; }
+  .set-editor .editor-head .head-group + .head-group { margin-left: 0; padding-left: 0; border-left: 0; }
+  .set-editor .editor-head .preset-field, .set-editor .editor-head .my-sets-field { flex: 1; width: auto; }
+  /* Custom Skillset su tutta la riga: testo a sinistra, levetta a destra */
+  .set-editor .editor-head > .custom-toggle { width: 100%; margin-left: 0; justify-content: space-between; }
+  .set-editor .custom-toggle .custom-text { align-items: flex-start; }
   .editor-foot { flex-direction: column; align-items: stretch; }
   .editor-roles ul { flex-wrap: wrap; }
   .editor-foot .member-replace { height: 44px; }
 }
 @media (max-width: 599px) {
+  /* Statistiche senza cursori: col pollice sono imprecisi (~3 EV per pixel) e scorrendo l'editor li sposti senza volere.
+     Gli EV si scrivono nel numero (tastierino numerico) o si prendono da Spread più usati; la barra della base ha di nuovo posto */
+  .stat-row { grid-template-columns: 46px minmax(0, 1fr) 56px 40px 40px; gap: 8px; padding: 2px 0; }
+  .stat-row .ev-slider, .stat-row.stat-head > span:nth-child(3) { display: none; }
+  .set-editor .stat-row .ev-input { padding-left: 2px; padding-right: 2px; }
   .set-editor .editor-group { grid-template-columns: minmax(0, 1fr); }
   .editor-group > .field:nth-child(odd) .combobox [role='listbox'] { left: 0; right: auto; }
   .editor-actions { margin-left: 0; flex-wrap: wrap; }

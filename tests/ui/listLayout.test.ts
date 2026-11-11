@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { cardsColumns, cardsLayout, cardsMinTile, menuLayout } from '../../src/ui/listLayout';
+import { cardsColumns, cardsLayout, cardsMinTile } from '../../src/ui/listLayout';
 
 describe('cardsLayout', () => {
   it('6 per pagina (3 × 2) quando due righe entrano, carta dall’altezza della lista', () => {
@@ -43,37 +43,6 @@ describe('cardsLayout', () => {
       expect(Object.values(l).every(Number.isFinite)).toBe(true);
       expect(l.perPage).toBe(6);
       expect(l.tileHeight).toBe(0);
-    }
-  });
-});
-
-describe('menuLayout', () => {
-  it('6 per pagina quando entrano, la riga riempie l’altezza fino a 84', () => {
-    expect(menuLayout(500, false).perPage).toBe(6);
-    expect(menuLayout(500, false).rowHeight).toBe(Math.floor((500 - 20 + 10) / 6) - 10);
-    expect(menuLayout(2000, false).rowHeight).toBe(84);
-  });
-  it('liste basse: spazio tra le righe 6 invece di 10, righe più alte', () => {
-    expect(menuLayout(400, false)).toMatchObject({ gap: 6, rowHeight: Math.floor((400 - 20 + 6) / 6) - 6 });
-    expect(menuLayout(500, false).gap).toBe(10);
-  });
-  it('righe mai sotto 40 px: nelle liste molto basse meno righe per pagina', () => {
-    // 6 righe in 249 px sarebbero alte 33: ne entrano 5 da 40 (floor(235 / 46) = 5)
-    expect(menuLayout(249, false)).toMatchObject({ perPage: 5, rowHeight: Math.floor((249 - 20 + 6) / 5) - 6 });
-    expect(menuLayout(212, false).perPage).toBe(4);
-    for (const h of [120, 212, 249, 300, 340]) expect(menuLayout(h, false).rowHeight).toBeGreaterThanOrEqual(40);
-  });
-  it('motivi: 1 nelle righe basse, 2 da 56 px, 3 solo col team nascosto e righe da 76', () => {
-    expect(menuLayout(340, false).reasons).toBe(1);
-    expect(menuLayout(500, false).reasons).toBe(2);
-    expect(menuLayout(600, false).reasons).toBe(2);
-    expect(menuLayout(600, true).reasons).toBe(3);
-  });
-  it('input degeneri restano finiti con perPage >= 1', () => {
-    for (const a of [0, -50, NaN]) {
-      const l = menuLayout(a, false);
-      expect(Object.values(l).every(Number.isFinite)).toBe(true);
-      expect(l.perPage).toBeGreaterThanOrEqual(1);
     }
   });
 });

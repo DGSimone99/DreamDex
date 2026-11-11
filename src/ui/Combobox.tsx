@@ -98,6 +98,16 @@ export function Combobox({ label, value, options, onChange, restricted = false, 
     setOpen(false);
     setQuery(null);
   };
+  /** Salva la bozza scritta: il nome di una voce salva il valore della voce, altrimenti il testo libero (hackrom). */
+  const commit = () => {
+    if (query === null) return;
+    const typed = toID(query);
+    const exact = typed ? options.find(o => toID(o.label ?? o.value) === typed) : undefined;
+    // Scrivere il nome di una voce bloccata non la sceglie
+    if (exact?.disabled) return;
+    const next = exact ? exact.value : query.trim();
+    if (next !== value) onChange(next);
+  };
   const move = (delta: number) => {
     if (!open) return show();
     const next = Math.min(shown.length - 1, Math.max(0, active + delta));
@@ -122,14 +132,20 @@ export function Combobox({ label, value, options, onChange, restricted = false, 
         placeholder={placeholder}
         // Mentre scrivi si vede il testo digitato; l'etichetta del valore torna quando esci dal campo
         value={query ?? shownValue}
+        // Entrando nel campo il testo si seleziona tutto: scrivere sostituisce il valore invece di aggiungersi in coda
+        // (anche col clic, finché non stai già scrivendo una bozza)
+        onFocus={e => { if (!restricted) e.currentTarget.select(); }}
+        // Sul rilascio del mouse (dopo che il clic ha messo il cursore): il browser non toglie più la selezione
+        onMouseUp={e => {
+          if (restricted || query !== null) return;
+          e.preventDefault();
+          e.currentTarget.select();
+        }}
         onClick={() => (open ? setOpen(false) : show())}
-        onBlur={() => { setOpen(false); setQuery(null); }}
+        // Uscendo dal campo si salva quello che hai scritto (se hai scritto qualcosa)
+        onBlur={() => { commit(); setOpen(false); setQuery(null); }}
         onChange={e => {
-          // Testo uguale all'etichetta di una voce: si salva il valore della voce; altrimenti il testo libero
-          const typed = toID(e.target.value);
-          const exact = typed ? options.find(o => o.label !== undefined && toID(o.label) === typed) : undefined;
-          // Scrivere il nome di una voce bloccata non la sceglie
-          if (!exact?.disabled) onChange(exact ? exact.value : e.target.value);
+          // Mentre scrivi è solo una bozza: il set cambia con Invio, con una voce scelta o uscendo dal campo
           setQuery(e.target.value);
           setActive(0);
           setOpen(true);
@@ -138,7 +154,15 @@ export function Combobox({ label, value, options, onChange, restricted = false, 
           if (e.key === 'ArrowDown') { e.preventDefault(); move(1); }
           else if (e.key === 'ArrowUp') { e.preventDefault(); move(-1); }
           else if (e.key === 'Enter' && open && shown[active]) { e.preventDefault(); pick(shown[active]); }
-          else if (e.key === 'Escape' && open) { e.stopPropagation(); setOpen(false); }
+          // Invio senza voci da scegliere: si salva il testo libero
+          else if (e.key === 'Enter' && query !== null) { e.preventDefault(); commit(); setOpen(false); setQuery(null); }
+          // Esc butta la bozza: torna il valore di prima
+          // (il testo torna selezionato: scrivere di nuovo lo sostituisce)
+          else if (e.key === 'Escape' && (open || query !== null)) {
+            e.stopPropagation(); setOpen(false); setQuery(null);
+            const input = e.currentTarget;
+            if (!restricted) requestAnimationFrame(() => input.select());
+          }
         }}
       />
       {open && (

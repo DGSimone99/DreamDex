@@ -3,7 +3,7 @@ import { formatOptions } from './engine/formats';
 import type { TeamSet } from './engine/sets';
 import { isLang, type Lang } from './i18n';
 import { EMPTY_LISTS, sanitizeLists, type UserLists } from './engine/lists';
-import { PALETTES, type ListSprite, type ListStyle, type PaletteSetting } from './ui/theme';
+import { PALETTES, type ListSprite, type PaletteSetting } from './ui/theme';
 
 export interface SavedTeam {
   name: string;
@@ -240,28 +240,6 @@ export function saveMySets(sets: MySets, storage: Storage | undefined = defaultS
     return true;
   } catch {
     return false;
-  }
-}
-
-const LIST_STYLE_KEY = 'dreamdex.listStyle';
-const LIST_STYLES: readonly ListStyle[] = ['cards', 'menu'];
-
-/** Stile della lista candidati scelto nelle impostazioni, o null. */
-export function loadListStyle(storage: Storage | undefined = defaultStorage()): ListStyle | null {
-  try {
-    const raw = storage?.getItem(LIST_STYLE_KEY);
-    const parsed: unknown = raw ? JSON.parse(raw) : null;
-    return LIST_STYLES.includes(parsed as ListStyle) ? parsed as ListStyle : null;
-  } catch {
-    return null;
-  }
-}
-
-export function saveListStyle(style: ListStyle, storage: Storage | undefined = defaultStorage()): void {
-  try {
-    storage?.setItem(LIST_STYLE_KEY, JSON.stringify(style));
-  } catch {
-    // Archivio non disponibile: la scelta vale solo per questa sessione
   }
 }
 

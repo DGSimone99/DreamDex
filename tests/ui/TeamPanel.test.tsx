@@ -97,6 +97,7 @@ describe('TeamPanel', () => {
     const move = within(teamRegion()).getByLabelText('Mossa 4');
     await user.clear(move);
     await user.type(move, 'Stealth Rock');
+    await user.tab();
     expect(within(teamRegion()).getByLabelText('Mossa 4')).toHaveValue('Stealth Rock');
   });
 
@@ -107,6 +108,7 @@ describe('TeamPanel', () => {
     const item = within(teamRegion()).getByLabelText('Strumento');
     await user.clear(item);
     await user.type(item, 'Lopunnite');
+    await user.tab();
     expect([...teamRegion().querySelectorAll('.slot summary .types .type-chip')].map(chip => chip.textContent)).toEqual(['Normal', 'Fighting']);
   });
 
