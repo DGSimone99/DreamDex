@@ -38,6 +38,8 @@ export function ModalLock() {
       ghost.setAttribute('inert', '');
       // Niente nella copia prende il fuoco (anche dove 'inert' non è conosciuto)
       ghost.querySelectorAll<HTMLElement>('a, button, input, select, textarea, summary, [tabindex]').forEach(el => el.setAttribute('tabindex', '-1'));
+      // Senza nome: radio con lo stesso nome della finestra vera (riaperta subito) confonderebbero React e il browser
+      ghost.querySelectorAll('input[name]').forEach(el => el.removeAttribute('name'));
       // La copia solo se la finestra è sparita davvero: React (in sviluppo) smonta e rimonta per prova appena aperta, e
       // lì la finestra resta sulla pagina; si controlla appena React ha finito di aggiornare la pagina
       queueMicrotask(() => {
