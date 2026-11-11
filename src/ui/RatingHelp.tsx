@@ -26,10 +26,11 @@ const keyLabel = (key: LevelKey): MessageKey => (isGroupKey(key) ? `need.${key}`
  */
 /** `weights`: la tabella dei pesi del formato del team (rating.weightTable); senza, quella di sempre. */
 /** `incomplete`: meno di sei membri, il tipo non è ancora deciso ("in analisi"): nessuna scheda è segnata come il tuo team. */
-export function RatingHelp({ teamType: judgedAs, trickRoom, weights = ARCHETYPE_WEIGHTS, typeRule, incomplete = false }: { teamType: Archetype; trickRoom: boolean; incomplete?: boolean; meta?: boolean; weights?: AreaWeightTable; typeRule?: 'walls' | 'recoverySpeed' }) {
+export function RatingHelp({ teamType: judgedAs, weights: realWeights = ARCHETYPE_WEIGHTS, typeRule, incomplete = false }: { teamType: Archetype; trickRoom?: boolean; incomplete?: boolean; meta?: boolean; weights?: AreaWeightTable; typeRule?: 'walls' | 'recoverySpeed' }) {
   const t = useT();
   // Col team incompleto il tipo è ancora "in analisi": nessuna scheda è "il tuo team"
   const teamType: Archetype | null = incomplete ? null : judgedAs;
+  const weights = shownWeights(realWeights);
   const [open, setOpen] = useState(false);
   // Si apre sempre su come funziona in generale; il tipo del team ha la sua scritta "il tuo team" nella lista a sinistra
   const [topic, setTopic] = useState<Topic>('general');
@@ -93,7 +94,7 @@ export function RatingHelp({ teamType: judgedAs, trickRoom, weights = ARCHETYPE_
               </nav>
               <section className="help-panel" id="help-panel" role="tabpanel" aria-labelledby={`help-tab-${topic}`}>
                 <h4>{t(topicLabel(topic))}</h4>
-                {topic === 'general' ? <GeneralTopic teamType={teamType} trickRoom={trickRoom} weights={weights} /> : <TypeTopic type={topic} weights={weights} typeRule={typeRule} />}
+                {topic === 'general' ? <GeneralTopic teamType={teamType} weights={weights} /> : <TypeTopic type={topic} weights={weights} typeRule={typeRule} />}
               </section>
             </div>
           </div>
@@ -106,7 +107,7 @@ export function RatingHelp({ teamType: judgedAs, trickRoom, weights = ARCHETYPE_
 }
 
 /** Come funziona in generale: la formula del voto, le lettere dalle soglie e i pesi di tutti i tipi. */
-function GeneralTopic({ teamType, trickRoom, weights }: { teamType: Archetype | null; trickRoom: boolean; weights: AreaWeightTable }) {
+function GeneralTopic({ teamType, weights }: { teamType: Archetype | null; weights: AreaWeightTable }) {
   const t = useT();
   const letters = Object.fromEntries(GRADES.filter(g => g.grade !== 'D').map(g => [g.grade, g.min]));
   return (
@@ -123,7 +124,6 @@ function GeneralTopic({ teamType, trickRoom, weights }: { teamType: Archetype | 
       <p>{t('help.general.1')}</p>
       <p>{t('help.general.2')}</p>
       <p>{t('help.type.trickRoom')}</p>
-      <p className="help-yours">{teamType ? t('help.general.yours', { type: t(`archetype.${teamType}`) }) : t('help.general.analyzing')}{trickRoom ? ` · ${t('help.general.trickRoom')}` : ''}</p>
       <div className="help-table-wrap">
         <table className="help-weights">
           <thead>
@@ -142,6 +142,17 @@ function GeneralTopic({ teamType, trickRoom, weights }: { teamType: Archetype | 
     </>
   );
 }
+
+/**
+ * I pesi come li mostra la guida: quelli veri, tranne il Semi-stall quando pesa come lo Stall (National Dex OU). Lì la
+ * guida gli dà un gradino di Offesa in più e uno di Difesa in meno dello Stall, così l'Offesa scende un passo alla volta
+ * da Hyper Offense a Stall (scelta dell'utente, 2026-11-11). Solo a vista: il voto usa i pesi veri.
+ */
+const shownWeights = (weights: AreaWeightTable): AreaWeightTable => {
+  const { semiStall, stall } = weights;
+  if (semiStall.defense < stall.defense) return weights;
+  return { ...weights, semiStall: { ...semiStall, defense: stall.defense - 5, strength: stall.strength + 5 } };
+};
 
 /** Il peso più alto della tabella: la sua barra è piena, le altre in proporzione. */
 const tableMax = (weights: AreaWeightTable) => Math.max(1, ...ARCHETYPES.flatMap(arch => WEIGHT_AREAS.map(area => weights[arch][area])));
@@ -182,7 +193,6 @@ function TypeTopic({ type, weights, typeRule }: { type: Archetype; weights: Area
         })}
       </dl>
       <h5>{t('area.roles')}</h5>
-      {rolesTypeOf(type, typeRule) !== type && <p className="help-note">{t('help.type.stallAsSemi')}</p>}
       {LEVELS.map(level => {
         const keys = LEVEL_KEYS.filter(key => levelOf(rolesTypeOf(type, typeRule), key) === level);
         if (keys.length === 0) return null;
