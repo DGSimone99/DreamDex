@@ -153,7 +153,10 @@ export function Rail({ format, onFormatChange, meta, lang, onLangChange, tabs, o
           )}
         </div>
         <p className="meta">
-          {meta ? t('top.stats', { month: monthLabel(meta.month, lang), cutoff: meta.cutoff }) : t('top.statsMissing')}
+          {/* Mese e soglia su due righe intere: la riga non si spezza a metà */}
+          {meta
+            ? <><span>{t('top.statsMonth', { month: monthLabel(meta.month, lang) })}</span><span>{t('top.statsCutoff', { cutoff: meta.cutoff })}</span></>
+            : t('top.statsMissing')}
         </p>
       </div>
     </aside>

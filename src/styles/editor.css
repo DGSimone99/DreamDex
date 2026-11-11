@@ -25,13 +25,12 @@
 .set-editor .editor-side { display: grid; gap: 10px; }
 .set-editor label, .set-editor .field { display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
 .set-editor label input, .set-editor label select, .set-editor .field input { font-size: 14px; color: var(--text); text-transform: none; letter-spacing: 0; font-weight: 400; width: 100%; }
-.set-editor .editor-head { grid-column: 1 / -1; display: flex; align-items: center; gap: 18px; }
+.set-editor .editor-head { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; }
 /* Nome e tipi del membro aperto: la card sopra mostra solo lo sprite */
 .editor-title { display: flex; align-items: center; gap: 10px; min-width: 0; margin-right: 6px; }
 .editor-title strong { font: 800 26px/1 var(--display); font-style: italic; letter-spacing: 0.01em; white-space: nowrap; }
 .editor-title strong::before { content: attr(data-name); }
 .editor-title .types { display: flex; flex-wrap: nowrap; gap: 4px; }
-.set-editor .editor-head { flex-wrap: wrap; row-gap: 8px; }
 .editor-top { flex: 1 0 100%; display: flex; align-items: center; gap: 18px; min-width: 0; }
 .editor-actions { display: flex; gap: 8px; margin-left: auto; }
 /* Incolla set: riquadro sotto i pulsanti, sopra l'editor */
@@ -58,16 +57,13 @@
 .paste-actions .apply { background: var(--accent-soft); border-color: var(--accent); color: var(--text); }
 .paste-actions .apply:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 30%, var(--raised)); }
 .editor-actions button { height: 36px; white-space: nowrap; }
-.set-editor .custom-toggle { white-space: nowrap; flex-shrink: 0; }
-.set-editor .preset-field { flex-direction: row; align-items: center; gap: 12px; }
+.set-editor .preset-field { flex-direction: row; align-items: center; gap: 12px; width: 400px; flex-shrink: 1; min-width: 0; }
 .set-editor .preset-field .field-head { white-space: nowrap; }
 .set-editor .preset-field .combobox { flex: 1; }
-.set-editor .preset-field { width: 400px; flex-shrink: 1; min-width: 0; }
 .preset-format { flex: none; font-size: 11px; font-weight: 600; text-transform: none; letter-spacing: 0; color: var(--faint); padding: 1px 6px; border: 1px solid var(--line); border-radius: 3px; }
 .combobox input:disabled { opacity: 0.55; cursor: not-allowed; }
-.set-editor .custom-toggle { flex-direction: row; align-items: center; height: 36px; gap: 8px; width: fit-content; text-transform: none; letter-spacing: 0; font-size: 14px; color: var(--text); cursor: help; }
 /* Custom Skillset: levetta con sopra il nome e sotto cosa fa adesso (si legge senza tooltip) */
-.set-editor .custom-toggle { cursor: pointer; gap: 10px; }
+.set-editor .custom-toggle { flex-direction: row; align-items: center; flex-shrink: 0; height: 36px; gap: 10px; width: fit-content; white-space: nowrap; text-transform: none; letter-spacing: 0; font-size: 14px; color: var(--text); cursor: pointer; }
 .set-editor .custom-toggle .custom-text { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; line-height: 1.15; }
 .set-editor .custom-toggle .custom-text b { font: 600 13px var(--ui); color: var(--text); }
 .set-editor .custom-toggle .custom-text small { font-size: 11px; font-weight: 400; color: var(--muted); }
@@ -120,7 +116,7 @@
 .stat-row.nature-down .stat-final { color: var(--bad); }
 .ev-total { display: flex; align-items: center; gap: 8px; margin: 2px 6px 0; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .ev-total strong { font: 700 16px/1 var(--display); color: var(--text); }
-.ev-total .ev-of { margin-left: -6px; }
+.ev-total .ev-used { display: inline-flex; align-items: baseline; gap: 2px; }
 .ev-meter { width: 120px; height: 4px; border-radius: 2px; background: var(--line); overflow: hidden; }
 .ev-meter > span { display: block; height: 100%; background: var(--accent); }
 .ev-total .ev-left { margin-left: auto; color: var(--faint); }
