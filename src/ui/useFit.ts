@@ -12,20 +12,21 @@ const overflows = (el: HTMLElement, onlyX = false) => el.scrollWidth > el.client
  * `onlyX`: conta solo la larghezza (una fila con menu che si aprono sotto, che non sono contenuto che sborda).
  */
 export function useFitCount(ref: RefObject<HTMLElement | null>, total: number, key: string, watch?: RefObject<HTMLElement | null>, onlyX = false): number {
-  const [fit, setFit] = useState({ key, n: total });
+  // v conta le ripartenze: un passo misurato prima di una ripartenza non la cancella
+  const [fit, setFit] = useState({ key, n: total, v: 0 });
   const n = fit.key === key ? Math.min(fit.n, total) : total;
-  if (fit.key !== key) setFit({ key, n: total });
+  if (fit.key !== key) setFit(f => ({ key, n: total, v: f.v + 1 }));
 
   useLayoutEffect(() => {
     const el = ref.current;
-    if (!el || n === 0 || !overflows(el, onlyX)) return;
-    setFit(f => ({ ...f, key, n: n - 1 }));
+    if (!el || n === 0 || fit.key !== key || !overflows(el, onlyX)) return;
+    setFit(f => (f.v === fit.v ? { ...f, n: n - 1 } : f));
   });
 
   // Misura nuova: si riparte da tutti (solo se la misura cambia davvero, e mai a 0×0). Un oggetto nuovo
   // anche se si era già a "tutti": così la misura si rifà (la carta si è stretta e ora sborda)
   const last = useRef('');
-  const restart = () => setFit(f => ({ key: f.key, n: Number.MAX_SAFE_INTEGER }));
+  const restart = () => setFit(f => ({ key: f.key, n: Number.MAX_SAFE_INTEGER, v: f.v + 1 }));
   useEffect(() => {
     const el = watch?.current ?? ref.current;
     if (!el || typeof ResizeObserver === 'undefined') return;

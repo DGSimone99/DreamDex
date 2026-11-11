@@ -202,27 +202,38 @@ function More({ total, shown }: { total: number; shown: number }) {
 
 /**
  * Quanti elementi di una riga entrano: si parte da tutti e si toglie l'ultimo finché la riga non sborda più
- * (gli altri diventano "+N", subito dopo l'ultimo visibile). Si riparte da capo quando cambia la larghezza o arriva il carattere.
+ * (gli altri diventano "+N", subito dopo l'ultimo visibile). Si riparte da capo quando cambiano gli elementi (`key`),
+ * quando cambia davvero la misura della riga o arriva il carattere. Si misura solo allora, non a ogni disegno della carta.
+ * `v` conta le ripartenze: un passo vecchio (misurato prima di una ripartenza) non la cancella.
  */
 function useFitLimit(count: number, key: string) {
   const row = useRef<HTMLSpanElement>(null);
-  const [limit, setLimit] = useState(count);
-  useEffect(() => {
-    setLimit(count);
-    const el = row.current;
-    if (!el || typeof ResizeObserver === 'undefined') return;
-    const reset = () => setLimit(count);
-    void document.fonts?.ready.then(reset);
-    const observer = new ResizeObserver(reset);
-    observer.observe(el.parentElement ?? el);
-    return () => observer.disconnect();
-  }, [key, count]);
+  const [fit, setFit] = useState({ key, limit: count, v: 0 });
+  if (fit.key !== key) setFit(f => ({ key, limit: count, v: f.v + 1 }));
+  const limit = fit.key === key ? Math.min(fit.limit, count) : count;
   useLayoutEffect(() => {
     const el = row.current;
-    if (!el || el.clientWidth === 0) return;
-    if (limit > 1 && el.scrollWidth - el.clientWidth > 1) setLimit(limit - 1);
-  });
-  return { row, limit: Math.min(limit, count) };
+    if (!el || el.clientWidth === 0 || fit.key !== key) return;
+    if (limit > 1 && el.scrollWidth - el.clientWidth > 1) setFit(f => (f.v === fit.v ? { ...f, limit: limit - 1 } : f));
+  }, [fit, key, limit]);
+  useEffect(() => {
+    const box = row.current?.parentElement ?? row.current;
+    if (!box || typeof ResizeObserver === 'undefined') return;
+    const restart = () => setFit(f => ({ key: f.key, limit: Number.MAX_SAFE_INTEGER, v: f.v + 1 }));
+    // La misura di adesso è già quella misurata: si riparte solo se cambia (anche da nascosta a visibile)
+    let last = `${box.clientWidth}x${box.clientHeight}`;
+    const observer = new ResizeObserver(() => {
+      const size = `${box.clientWidth}x${box.clientHeight}`;
+      if (size === last) return;
+      last = size;
+      restart();
+    });
+    observer.observe(box);
+    let alive = true;
+    if (document.fonts && document.fonts.status !== 'loaded') void document.fonts.ready.then(() => { if (alive) restart(); });
+    return () => { alive = false; observer.disconnect(); };
+  }, []);
+  return { row, limit };
 }
 
 /**
@@ -232,8 +243,10 @@ function useFitLimit(count: number, key: string) {
  */
 function ChipRow({ types, immune = [] }: { types: readonly string[]; immune?: readonly string[] }) {
   const tr = useT();
+  const lang = useLang();
   const all = [...immune, ...types];
-  const { row, limit } = useFitLimit(all.length, all.join());
+  // Nella chiave tutto quello che cambia la larghezza: i tipi, dove cade "immune" e la lingua
+  const { row, limit } = useFitLimit(all.length, `${lang}|${immune.length}|${all.join()}`);
   return (
     <span className="sym-chips" ref={row}>
       {all.slice(0, limit).map((type, i) => (
