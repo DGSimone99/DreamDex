@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/App';
 import { fixtureData } from '../fixtures/data';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
+import { CARD_WAKE_MS } from '../../src/ui/CandidateCard';
 
 const suggestions = () => screen.getByRole('region', { name: 'Suggerimenti' });
 const team = () => screen.getByRole('region', { name: 'Team' });
@@ -666,11 +667,48 @@ describe('sprite Icona box', () => {
       // A riposo solo la selezionata (la prima)
       expect(cards[0].classList.contains('selected')).toBe(true);
       expect(animated()).toEqual(listSprite === 'normal' ? [cards[0]] : []);
-      fireEvent.mouseEnter(cards[1]);
-      expect(animated()).toEqual(listSprite === 'normal' ? [cards[0], cards[1]] : []);
-      fireEvent.mouseLeave(cards[1]);
-      expect(animated()).toEqual(listSprite === 'normal' ? [cards[0]] : []);
+      vi.useFakeTimers();
+      try {
+        // Sotto il mouse lo sprite esce (e parte la GIF) solo dopo CARD_WAKE_MS fermi sulla carta
+        fireEvent.mouseEnter(cards[1]);
+        expect(animated()).toEqual(listSprite === 'normal' ? [cards[0]] : []);
+        expect(cards[1].querySelector('.card-sprite.popped')).toBeNull();
+        act(() => { vi.advanceTimersByTime(CARD_WAKE_MS); });
+        expect(animated()).toEqual(listSprite === 'normal' ? [cards[0], cards[1]] : []);
+        expect(cards[1].querySelector('.card-sprite.popped')).not.toBeNull();
+        fireEvent.mouseLeave(cards[1]);
+        expect(animated()).toEqual(listSprite === 'normal' ? [cards[0]] : []);
+        expect(cards[1].querySelector('.card-sprite.popped')).toBeNull();
+      } finally {
+        vi.useRealTimers();
+      }
       unmount();
+    }
+  });
+
+  it('Carte: passando di corsa sopra una carta lo sprite non esce e la GIF non si chiede', async () => {
+    const { SuggestionsPanel } = await import('../../src/ui/SuggestionsPanel');
+    const { renderIt } = await import('../helpers/italian');
+    const { tusk } = await import('../fixtures/data');
+    const { fireEvent } = await import('@testing-library/react');
+    renderIt(<SuggestionsPanel team={[tusk] as never} format={DEFAULT_FORMAT} data={fixtureData} replaceIndex={null}
+      onAdd={() => {}} onReplaceWith={() => {}} onCancelReplace={() => {}} />);
+    const cards = [...list().querySelectorAll<HTMLElement>('.card')];
+    vi.useFakeTimers();
+    try {
+      fireEvent.mouseEnter(cards[1]);
+      act(() => { vi.advanceTimersByTime(CARD_WAKE_MS - 20); });
+      fireEvent.mouseLeave(cards[1]);
+      fireEvent.mouseEnter(cards[2]);
+      act(() => { vi.advanceTimersByTime(CARD_WAKE_MS - 20); });
+      fireEvent.mouseLeave(cards[2]);
+      act(() => { vi.advanceTimersByTime(1000); });
+      for (const card of cards.slice(1)) {
+        expect(card.querySelector('.sprite-ani')).toBeNull();
+        expect(card.querySelector('.card-sprite.popped')).toBeNull();
+      }
+    } finally {
+      vi.useRealTimers();
     }
   });
 
