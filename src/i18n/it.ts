@@ -291,6 +291,7 @@ export const it: Record<keyof typeof en, string> = {
   'rail.banOne': "1 bannato",
   'rail.banMany': "{n} bannati",
   'rail.listsEmpty': "Preferiti e bannati",
+  'rail.editing': "Modifica: {species}",
   'rail.soon': "Presto",
   'rail.rules': "Regole: {summary}",
   'rail.rulesMeta': "col meta",

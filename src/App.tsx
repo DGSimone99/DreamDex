@@ -316,6 +316,11 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
     remember({ kind: 'remove', from: battleName(team[index]) }, after);
   };
 
+  // Con l'editor aperto la sezione sotto non si vede: la sua riga di stato dice chi stai modificando (chiudendo l'editor torna la sezione)
+  const editing = editingIndex !== null ? team[editingIndex] : undefined;
+  const withEditing = <T extends { id: string; status?: React.ReactNode }>(tabs: T[]): T[] => editing
+    ? tabs.map(tab => (tab.id === shownTab ? { ...tab, status: <span className="info">{t(lang, 'rail.editing', { species: editing.species })}</span> } : tab))
+    : tabs;
   return (
     <LangProvider lang={lang}>
     <div className="app">
@@ -331,7 +336,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
       }}>{t(lang, 'app.skipToContent')}</a>
       <Rail format={format} onFormatChange={setFormat} meta={data.stats?.meta ?? null} lang={lang} onLangChange={changeLang}
         onSettings={() => setSettingsOpen(true)}
-        tabs={<Tabs orientation="vertical" active={shownTab} onChange={openTab} tabs={[
+        tabs={<Tabs orientation="vertical" active={shownTab} onChange={openTab} tabs={withEditing([
         // Tessere del menu: sotto il nome lo stato della sezione, leggibile senza aprirla
         { id: 'pokemon', label: t(lang, 'tabs.pokemon'), icon: 'team',
           status: replaceIndex !== null && team[replaceIndex]
@@ -354,7 +359,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
             userLists.bans.size ? t(lang, userLists.bans.size === 1 ? 'rail.banOne' : 'rail.banMany', { n: userLists.bans.size }) : null,
           ].filter(Boolean).join(' · ') : t(lang, 'rail.listsEmpty') },
         { id: 'compare', label: t(lang, 'tabs.compare'), icon: 'search', disabled: true, note: t(lang, 'tabs.soon'), status: t(lang, 'rail.soon') },
-      ]} />} />
+      ])} />} />
       <div className="main" ref={mainRef} id="main-content">
       {loading && <p className="banner info">{t(lang, 'app.loading')}</p>}
       {!loading && !data.stats && (

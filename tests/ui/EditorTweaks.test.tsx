@@ -21,6 +21,17 @@ const openFirst = async (user: ReturnType<typeof userEvent.setup>, container: HT
 };
 
 describe('editor del set', () => {
+  it("con l'editor aperto la sezione accesa nella barra laterale dice chi stai modificando; chiuso, torna il suo stato", async () => {
+    const user = userEvent.setup();
+    const { container } = renderTeam();
+    const status = () => container.querySelector('#tab-pokemon-status')!;
+    const before = status().textContent;
+    await openFirst(user, container);
+    expect(status()).toHaveTextContent(`Modifica: ${tusk.species}`);
+    await user.click(container.querySelector<HTMLElement>('.slot[open] .editor-close')!);
+    expect(status().textContent).toBe(before);
+  });
+
   it('col Tab i cursori degli EV si saltano: dal numero degli EV si passa agli IV e poi al numero della statistica dopo', async () => {
     const user = userEvent.setup();
     const { container } = renderTeam();

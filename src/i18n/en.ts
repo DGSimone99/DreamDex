@@ -287,6 +287,7 @@ export const en = {
   'rail.banOne': "1 banned",
   'rail.banMany': "{n} banned",
   'rail.listsEmpty': "Favourites and bans",
+  'rail.editing': "Editing: {species}",
   'rail.soon': "Soon",
   'app.skipToContent': "Skip to content",
   'rail.label': "Sidebar",
