@@ -88,19 +88,23 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .list-head { --pager-h: 26px; display: flex; align-items: center; gap: 6px; box-sizing: content-box; min-height: var(--pager-h); }
 /* Titolo e suggerimento tengono la loro larghezza: se manca spazio si stringono prima i trattini del pager */
 .list-head .dbl-hint { flex: none; font-size: 12px; color: var(--faint); white-space: nowrap; }
-.pager { flex: 0 1 auto; min-width: 0; margin-left: auto; display: flex; align-items: center; gap: 2px; height: var(--pager-h); }
+/* Niente min-width 0: se i trattini al minimo non entrano la fascia sborda, e SuggestionsPanel lo vede (toglie il
+   suggerimento, poi mostra la pagina come numero) */
+.pager { flex: 0 1 auto; margin-left: auto; display: flex; align-items: center; gap: 2px; height: var(--pager-h); }
 .pager .step { flex: none; display: grid; place-items: center; width: 24px; height: 24px; padding: 0; border: 0; background: none; color: var(--muted); }
 .pager .step:hover:not(:disabled) { color: var(--text); }
 .pager .step:disabled { opacity: 0.35; }
 .pager .step .icon { width: 14px; height: 14px; }
-.pager-dashes { display: flex; gap: 2px; min-width: 0; }
+.pager-dashes { display: flex; gap: 2px; }
 /* Trattino sottile, ma con un'area cliccabile più alta */
 /* Stretto (8px), e si stringe fino a 3px quando la fascia non basta (molte pagine, finestra stretta) */
 /* Ogni trattino è un bersaglio alto 24 px e largo il doppio di prima (la barretta che si vede resta sottile); le frecce
    accanto, 24×24, fanno la stessa cosa per chi preferisce un bersaglio più grande */
-.pager .pager-dash { flex: 0 1 16px; width: 16px; height: 24px; min-width: 7px; padding: 10px 2px; border: 0; border-radius: 0; background: var(--line); background-clip: content-box; }
+.pager .pager-dash { flex: 0 1 16px; width: auto; height: 24px; min-width: 7px; padding: 10px 2px; border: 0; border-radius: 0; background: var(--line); background-clip: content-box; }
 .pager .pager-dash:hover { background-color: var(--muted); }
 .pager .pager-dash[aria-current='page'] { background-color: var(--accent); }
+/* Troppe pagine per i trattini (lista stretta): la pagina come numero, "3/9" */
+.pager-count { min-width: 34px; padding: 0 2px; font: 600 12px/1 var(--ui); font-variant-numeric: tabular-nums; color: var(--muted); text-align: center; white-space: nowrap; }
 /* Vista della lista: in fondo alla fascia, dopo la paginazione; il riquadro scende sopra la lista */
 .list-view { position: relative; flex: none; margin-left: auto; }
 .pager ~ .list-view { margin-left: 2px; }
@@ -370,15 +374,16 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
   #panel-pokemon.active { overflow: hidden; }
   .suggestions-panel { height: 100%; min-height: 0; padding-bottom: 12px; }
   .picker { flex: 1; min-height: 0; }
-  /* Lista circa 2/5, scheda del candidato 3/5 */
-  .picker.has-detail { grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 16px; align-items: stretch; height: 100%; }
+  /* Lista circa 2/5, scheda del candidato 3/5. La lista non scende sotto i 436 px in cui stanno 3 carte da 130 (3 × 130 +
+     spazi 2 × 8 + margini 2 × 14 + bordo 2), finché alla scheda restano almeno 520 px: sotto, le carte vanno su 2 colonne */
+  .picker.has-detail { grid-template-columns: minmax(min(436px, calc(100% - 532px)), 2fr) minmax(0, 3fr); gap: 16px; align-items: stretch; height: 100%; }
   .picker-list { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
   /* La lista prende lo spazio che resta: la sua altezza dice quanti candidati per pagina (niente scrollbar) */
   .picker-list > .suggestions { flex: 1 1 0; min-height: 0; overflow: hidden; }
   .detail { position: static; top: auto; max-height: none; min-height: 0; overflow: auto; overscroll-behavior: contain; }
 }
 
-@media (max-width: 1100px) {
+@media (max-width: 1099px) {
   .band { grid-template-columns: 1fr; }
   .slots { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .analysis-cols, .meta-panel, .picker.has-detail { grid-template-columns: 1fr; }
@@ -548,11 +553,13 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .card .card-types { position: absolute; top: 22px; right: 8px; flex-direction: column; gap: 4px; }
 .card .card-types img { width: 20px; height: 20px; box-shadow: none; }
 .card .card-types img + img { margin: 0; }
-/* Chi esce (Migliora · Tutti): pillola in basso a destra della zona immagine, sopra la targhetta: ⇄ e l'icona intera */
-.card .out { position: absolute; right: 6px; bottom: calc(var(--plate-h) + 6px); z-index: 2; display: flex; align-items: center; gap: 1px;
-  height: 22px; padding: 0 2px 0 7px; border-radius: 11px; background: color-mix(in srgb, var(--ground) 82%, transparent); border: 1px solid var(--line); }
-.card .out .icon { width: 12px; height: 12px; color: var(--muted); }
-.card .out .mon-icon { margin: -5px -4px -3px; }
+/* Chi esce (Migliora · Tutti): tondino in basso a destra della zona immagine, sopra la targhetta, con l'icona del membro
+   e un piccolo ⇄ sul bordo. Stretto (28px) perché stia nella fascia libera accanto allo sprite anche nelle carte basse */
+.card .out { position: absolute; right: 6px; bottom: calc(var(--plate-h) + 6px); z-index: 2; display: grid; place-items: center;
+  width: 28px; height: 28px; padding: 0; border-radius: 50%; background: color-mix(in srgb, var(--ground) 82%, transparent); border: 1px solid var(--line); }
+.card .out .icon { position: absolute; left: -6px; top: -5px; width: 15px; height: 15px; padding: 2px; box-sizing: border-box; border-radius: 50%;
+  background: var(--ground); border: 1px solid var(--line); color: var(--muted); }
+.card .out .mon-icon { margin: 0; clip-path: circle(13px at 50% 50%); }
 /* Targhetta in basso a tutta larghezza: nome e motivi. Il nome sta allo stesso punto in ogni carta: la targhetta è alta
    quanto i motivi che entrano (--reasons), anche se la carta ne ha meno; lo spazio avanzato resta vuoto in fondo */
 .card .who { position: relative; flex: none; min-width: 0; display: flex; flex-direction: column; justify-content: flex-start; gap: 2px;

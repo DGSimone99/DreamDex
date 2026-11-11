@@ -72,8 +72,11 @@
 .grade-badge button.grade-area.grade-bm.pos b { color: var(--good); }
 .grade-badge button.grade-area.grade-bm.neg b { color: var(--bad); }
 /* Ruoli: coperti/totale e quanti mancano al posto di barra e numero (stessa altezza delle altre righe) */
-.grade-badge button.grade-area.grade-roles { grid-template-columns: 58px 1fr 10px; }
-.grade-roles-val { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+/* L'etichetta corta ("Ruoli") lascia al valore tutto il resto della riga: "5/14 · 4 mancano" entra nella carta del voto */
+.grade-badge button.grade-area.grade-roles { grid-template-columns: auto minmax(0, 1fr) 10px; column-gap: 4px; }
+.grade-roles-val { min-width: 0; overflow: hidden; text-overflow: ellipsis; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+/* Le righe non allargano la carta: una colonna sola, larga quanto la carta */
+.grade-areas { grid-template-columns: minmax(0, 1fr); }
 .grade-roles-val em { font-style: normal; font-weight: 600; }
 .grade-roles-val em.bad { color: var(--bad); }
 .grade-roles-val em.good { color: var(--good); }

@@ -27,7 +27,7 @@ export function ShowdownPanel({ team, format, tera = true, onImport }: { team: T
 
   return (
     <details className="popover">
-      <summary><Icon name="paste" />{t('showdown.title')}</summary>
+      <summary title={t('showdown.title')}><Icon name="paste" /><span className="btn-label">{t('showdown.title')}</span></summary>
       <div>
         <textarea aria-label={t('showdown.text')} rows={12} value={text} onChange={e => setText(e.target.value)} />
         <div className="actions">

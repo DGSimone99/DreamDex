@@ -9,7 +9,7 @@ import { cardRoles, weatherOf } from '../engine/archetype';
 import { measuredSubRoles, rolesList, type SubRoleValues } from '../engine/subRoles';
 import { conditionLabel, viaName } from '../engine/synergy';
 import { exportShowdown, importShowdown, presetsForSet, type Preset, type TeamSet } from '../engine/sets';
-import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ComponentProps, type ReactNode } from 'react';
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ComponentProps, type CSSProperties, type ReactNode } from 'react';
 import { flushSync } from 'react-dom';
 import { copyText } from './clipboard';
 import { setEditing } from './editing';
@@ -29,6 +29,8 @@ import { Sprite, TypeChip, typeColor } from './Sprite';
 import { gainText } from './CoachingView';
 import { SMALL, useBackClose } from './useBackClose';
 import { Icon } from './icons';
+import { useFitCount } from './useFit';
+import { typeIconUrl } from './typeIcons';
 import { SmogonLink } from './SmogonLink';
 import { illegalParts } from '../engine/learnsets';
 import { t, type Lang } from '../i18n';
@@ -191,6 +193,13 @@ function TeamSlot({ index, set, subRoles, proposal, onProposalDone, data, format
   const species = battleSpecies(set);
   // Con la megapietra il membro è la Mega: nome e abilità della forma in battaglia (il set resta quello di Showdown)
   const name = battleName(set);
+  // Tipi: due chip col nome se entrano nella carta, sennò le icone tonde dei tipi (il nome nel tooltip e per i lettori)
+  const typeList = species?.types ?? ['?'];
+  const typesRef = useRef<HTMLSpanElement>(null);
+  const typeText = useFitCount(typesRef, 1, `${lang}|${typeList.join('/')}`, undefined, true) > 0;
+  // Nome: va a capo solo agli spazi e ai trattini; la parte più lunga decide quanto si rimpicciolisce (CSS --name-len)
+  const shownName = set.name || name;
+  const nameLen = Math.max(...shownName.split(/\s+|(?<=-)/).map(part => part.length));
   const ability = battleAbility(set);
   const [copied, setCopied] = useState(false);
   // Soprannome: si scrive cliccando il nome nell'editor; vuoto = il nome della specie
@@ -343,10 +352,17 @@ function TeamSlot({ index, set, subRoles, proposal, onProposalDone, data, format
           </small>
           {/* Il soprannome, se c'è (la specie nel tooltip) */}
         {/* Il nome intero nel tooltip: nella barra compressa si taglia con i puntini */}
-        <strong className="name" title={set.name ? `${set.name} (${name})` : name}>{set.name || name}</strong>
+        <strong className="name" title={set.name ? `${set.name} (${name})` : name} style={{ '--name-len': nameLen } as CSSProperties}>{shownName}</strong>
         </span>
         <small className="ability" title={describe.ability(ability, lang)}>{ability ? gameName('ability', ability, lang) : '—'}</small>
-        <span className="types">{species?.types.map(type => <TypeChip key={type} type={type} />) ?? <TypeChip type="?" />}</span>
+        <span className={`types${typeText ? '' : ' as-icons'}`} ref={typesRef}>
+          {typeText || !species ? typeList.map(type => <TypeChip key={type} type={type} />) : typeList.map(type => (
+            <span key={type} className="type-dot" title={typeName(type, lang)}>
+              <img src={typeIconUrl(type)} alt="" draggable={false} />
+              <span className="visually-hidden">{typeName(type, lang)}</span>
+            </span>
+          ))}
+        </span>
         {/* Solo il ruolo principale; tutti i ruoli (e il meteo) nel tooltip */}
         {roles.length > 0 && <small className="roles" title={rolesTitle}>{roles[0]}</small>}
       </summary>
@@ -536,7 +552,7 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
         {team.length > 0 && (
           <button type="button" className="team-action" disabled={busy} aria-busy={busy || undefined}
             title={t(lang, 'team.bestPresetsTitle')} onClick={runPresets}>
-            <Icon name="spark" /> {t(lang, busy ? 'team.bestPresetsBusy' : 'team.bestPresets')}
+            <Icon name="spark" /> <span className="btn-label">{t(lang, busy ? 'team.bestPresetsBusy' : 'team.bestPresets')}</span>
           </button>
         )}
         {canFill && (
@@ -544,7 +560,7 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
           <span className="fill-anchor">
             <button type="button" className="team-action" data-fill-toggle aria-expanded={filling} aria-haspopup="dialog" ref={fillToggle}
               title={t(lang, 'team.fillTitle')} onClick={() => setFilling(open => !open)}>
-              <Icon name="plus" /> {t(lang, 'team.fill')}
+              <Icon name="plus" /> <span className="btn-label">{t(lang, 'team.fill')}</span>
             </button>
             {filling && (
               <FillPanel team={team} format={format} data={data} onClose={closeFill} onApply={proposal => {
@@ -558,10 +574,10 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
         {io && <div className="team-io">{io}</div>}
         {team.length > 0 && <>
           {/* In fondo a destra, dove finisce l'ultima card */}
-          <button type="button" className="team-action clear-team" onClick={() => {
+          <button type="button" className="team-action clear-team" title={t(lang, 'team.clear')} onClick={() => {
             setOpenIndex(null);
             if (onBulk) onBulk('clear', []); else onChange([]);
-          }}><Icon name="close" /> {t(lang, 'team.clear')}</button>
+          }}><Icon name="close" /> <span className="btn-label">{t(lang, 'team.clear')}</span></button>
         </>}
       </div>
       <div className={`slots${openIndex !== null ? ' editing' : ''}`} ref={slotsRef}>

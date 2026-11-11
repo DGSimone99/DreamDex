@@ -1,7 +1,7 @@
 /**
  * Foto della pagina negli stati del restyle (sezioni, editor, modali, popover, tooltip), a più dimensioni.
  * Serve il server di sviluppo su http://localhost:5173 (npx vite).
- *   npm run screens -- --out <cartella> [--states a,b] [--sizes 1440x900,1280x800,1366x768]
+ *   npm run screens -- --out <cartella> [--states a,b] [--sizes 1440x900,1366x657,1280x620,1536x730]
  * Per ogni foto stampa pageScroll = quanto la pagina scorre oltre la finestra (0 = una schermata).
  */
 import { mkdirSync } from 'node:fs';
@@ -16,7 +16,7 @@ const arg = (name: string) => {
   return i >= 0 ? process.argv[i + 1] : undefined;
 };
 const out = arg('out') ?? 'shots';
-const sizes = (arg('sizes') ?? '1440x900,1280x800,1366x768').split(',').map(s => s.split('x').map(Number) as [number, number]);
+const sizes = (arg('sizes') ?? '1440x900,1366x657,1280x620,1536x730').split(',').map(s => s.split('x').map(Number) as [number, number]);
 
 const member = (species: string, item: string, ability: string, moves: string[], nature: string, evs: Record<string, number>) =>
   ({ species, item, ability, moves, nature, evs });
@@ -797,9 +797,80 @@ for (const [w, h] of sizes) {
       const extra = ` detailBodyScroll=${body ? body.scrollHeight - body.clientHeight : '-'} detailScroll=${aside ? aside.scrollHeight - aside.clientHeight : '-'} hintCut=${hint ? hint.scrollWidth - hint.clientWidth : '-'} hintW=${hint ? `${hint.clientWidth}/${document.querySelector<HTMLElement>('.list-head')?.clientWidth}` : '-'} dashes=${document.querySelectorAll('.pager-dash').length} favs=${favs}`;
       return `list: ${ol.className} items=${items.length} cols=${ol.style.getPropertyValue('--cols') || '-'} tileH=${ol.style.getPropertyValue('--tile-h') || '-'} reasons=${ol.style.getPropertyValue('--reasons') || '-'} rowH=${ol.style.getPropertyValue('--row-h') || '-'} first=${first ? `${Math.round(first.width)}x${Math.round(first.height)}` : '-'} listScroll=${ol.scrollHeight - ol.clientHeight} cutTiles=${cut} whoOver=${whoOver} wideCut=${wideCut} nameCut=${nameCut}${extra}`;
     });
+    // Fascia del team: altezza, carte, chip dei tipi fuori dalla carta, nomi spezzati a metà parola, pulsanti della testata
+    // su più righe, righe del voto che sbordano; lista: carte oltre il bordo della lista, testata della lista sovrapposta
+    const band = await page.evaluate(() => {
+      const el = document.querySelector<HTMLElement>('.band');
+      if (!el) return '';
+      const slots = [...el.querySelectorAll<HTMLElement>('.slot > summary, .slot.empty')];
+      const slotH = slots.length ? Math.round(slots[0].getBoundingClientRect().height) : 0;
+      const chipOver = slots.filter(s => { const r = s.getBoundingClientRect(); return [...s.querySelectorAll<HTMLElement>('.type-chip')].some(c => { const b = c.getBoundingClientRect(); return b.width > 0 && (b.right - r.right > 0.5 || c.scrollWidth - c.clientWidth > 1); }); }).length;
+      // Nome su due righe: la riga si spezza dove non c'è uno spazio o un trattino
+      const midBreak = [...el.querySelectorAll<HTMLElement>('.slot .name')].filter(n => {
+        const text = n.textContent ?? '';
+        const node = [...n.childNodes].find(c => c.nodeType === 3 && (c.textContent ?? '').length > 0);
+        if (!node || n.getClientRects().length === 0) return false;
+        const range = document.createRange();
+        let prevTop: number | null = null;
+        const t = node.textContent ?? '';
+        for (let i = 0; i < t.length; i++) {
+          range.setStart(node, i); range.setEnd(node, i + 1);
+          const r = range.getBoundingClientRect();
+          if (r.height === 0) continue;
+          if (prevTop !== null && r.top - prevTop > 4) return i > 0 && !/[\s-]/.test(t[i - 1]) && !/\s/.test(t[i]);
+          prevTop = r.top;
+        }
+        return text.length < 0;
+      }).length;
+      const nameCut = [...el.querySelectorAll<HTMLElement>('.slot .name')].filter(n => n.getClientRects().length && n.scrollWidth - n.clientWidth > 1).length;
+      // Pulsanti visibili della testata col testo su due righe (altezza del testo oltre una riga)
+      const headBtns = [...el.querySelectorAll<HTMLElement>('.team-head > button, .team-head > * > button, .team-head summary')].filter(b => b.getClientRects().length && b.getBoundingClientRect().height > 0);
+      const headWrap = headBtns.filter(b => {
+        const lab = b.querySelector<HTMLElement>('.btn-label') ?? b;
+        if (lab.getBoundingClientRect().width <= 1) return false;
+        const r = document.createRange(); r.selectNodeContents(lab);
+        return r.getBoundingClientRect().height > 24;
+      }).length;
+      const grade = el.querySelector<HTMLElement>('.grade-badge');
+      const gradeOver = grade ? [...grade.querySelectorAll<HTMLElement>('.grade-area')].filter(a => a.scrollWidth - a.clientWidth > 1 || a.getBoundingClientRect().right - grade.getBoundingClientRect().right > 0.5).length : 0;
+      const gradeScroll = grade ? grade.scrollHeight - grade.clientHeight : 0;
+      const sprite = el.querySelector<HTMLElement>('.slot > summary .sprite');
+      return `band: bandH=${Math.round(el.getBoundingClientRect().height)} slotH=${slotH} sprite=${sprite ? Math.round(sprite.getBoundingClientRect().height) : '-'} chipOver=${chipOver} midBreak=${midBreak} teamNameCut=${nameCut} headWrap=${headWrap} gradeOver=${gradeOver} gradeScroll=${gradeScroll}`;
+    });
+    const listMore = await page.evaluate(() => {
+      const ol = document.querySelector<HTMLElement>('ol.suggestions');
+      if (!ol) return '';
+      const r = ol.getBoundingClientRect();
+      const right = r.left + ol.clientLeft + ol.clientWidth;
+      const cardOver = Math.max(0, ...[...ol.querySelectorAll<HTMLElement>(':scope > li')].map(li => Math.round(li.getBoundingClientRect().right - right)));
+      // Testata: pager e pulsanti della vista sovrapposti (px), suggerimento nascosto
+      const head = document.querySelector<HTMLElement>('.list-head');
+      const pager = head?.querySelector<HTMLElement>('.pager');
+      const view = head?.querySelector<HTMLElement>('.list-view');
+      const hint = head?.querySelector<HTMLElement>('.dbl-hint');
+      const dashes = head ? [...head.querySelectorAll<HTMLElement>('.pager > *')] : [];
+      let headCollide = 0;
+      for (let i = 1; i < dashes.length; i++) headCollide = Math.max(headCollide, Math.round(dashes[i - 1].getBoundingClientRect().right - dashes[i].getBoundingClientRect().left));
+      if (pager && view) headCollide = Math.max(headCollide, Math.round(pager.getBoundingClientRect().right - view.getBoundingClientRect().left));
+      if (pager && hint && hint.getClientRects().length) headCollide = Math.max(headCollide, Math.round(hint.getBoundingClientRect().right - pager.getBoundingClientRect().left));
+      const headOver = head ? head.scrollWidth - head.clientWidth : 0;
+      const dashBox = head?.querySelector<HTMLElement>('.pager-dashes');
+      if (dashBox) headCollide = Math.max(headCollide, dashBox.scrollWidth - dashBox.clientWidth);
+      // Sprite delle carte coperto dalla targhetta o dalla pillola di chi esce
+      const covered = [...ol.querySelectorAll<HTMLElement>(':scope > li')].filter(li => {
+        const b = li.querySelector<HTMLElement>('.card-sprite, .pill-sprite')?.getBoundingClientRect();
+        const out = li.querySelector<HTMLElement>('.out')?.getBoundingClientRect();
+        if (!b || !out) return false;
+        // Il riquadro dello sprite ha i bordi vuoti: conta il 70% centrale, dove sta il Pokémon
+        const s = { left: b.left + b.width * 0.15, right: b.right - b.width * 0.15, top: b.top + b.height * 0.15, bottom: b.bottom - b.height * 0.15 };
+        return Math.min(s.right, out.right) - Math.max(s.left, out.left) > 2 && Math.min(s.bottom, out.bottom) - Math.max(s.top, out.top) > 2;
+      }).length;
+      const spr = ol.querySelector<HTMLElement>('.card-sprite, .pill-sprite');
+      return `list2: cardOver=${cardOver} headCollide=${headCollide} headOver=${headOver} hint=${hint && hint.getClientRects().length ? 'shown' : 'hidden'} outOverSprite=${covered} listSprite=${spr ? Math.round(spr.getBoundingClientRect().width) : '-'} listH=${Math.round(r.height)}`;
+    });
     const file = join(out, `${w}x${h}-${name}.png`);
     await page.screenshot({ path: file });
-    console.log(`${file} pageScroll=${scroll} clipped=${clipped}${panel} ${dash} ${coach} ${list}`);
+    console.log(`${file} pageScroll=${scroll} clipped=${clipped}${panel} ${dash} ${coach} ${list} ${listMore} ${band}`);
     await page.close();
   }
 }
