@@ -57,10 +57,11 @@ describe('testata dell\'editor', () => {
     expect(slot().querySelector('summary .sprite')!.getAttribute('src')).toContain('gen5-shiny/');
   });
 
-  it('Sostituisci sta in basso a destra, accanto al riquadro dei ruoli ma fuori', async () => {
+  it('Sostituisci sta in alto a destra, accanto alla X, fuori dalla riga dei ruoli', async () => {
     const { slot } = await openEditor();
     const replace = within(slot()).getByRole('button', { name: 'Sostituisci Great Tusk' });
-    expect(replace.closest('.editor-foot')).not.toBeNull();
+    expect(replace.closest('.editor-actions')).not.toBeNull();
+    expect(replace.nextElementSibling).toHaveClass('editor-close');
     expect(replace.closest('.editor-roles')).toBeNull();
   });
 

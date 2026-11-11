@@ -1,5 +1,5 @@
 /* Schermi stretti: l'etichetta dei preset resta solo come nome accessibile del menu */
-@media (max-width: 1400px) {
+@media (max-width: 1279px) {
   /* Copia set e Sostituisci solo con l'icona (il nome resta nel tooltip e per i lettori di schermo) */
   .editor-actions .btn-label { display: none; }
 }
@@ -211,7 +211,7 @@
 .level-toggle button:first-of-type { border-radius: 13px 0 0 13px; }
 .level-toggle button:last-of-type { border-radius: 0 13px 13px 0; margin-left: -1px; }
 .set-editor .evs .stats-toolbar .spread-panel .spread-presets { top: calc(100% + 6px); right: 0; }
-.editor-roles ul { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.editor-roles { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
 .editor-roles li { padding: 3px 10px; border: 1px solid var(--line); background: var(--raised); font-size: 13px; color: var(--text); }
 .editor-roles li.main { border-color: var(--accent); background: var(--accent-wash); font-weight: 600; }
 /* Carta aperta: solo lo sprite animato, grande quanto la carta (nome e set sono nell'editor) */
@@ -226,7 +226,6 @@
 @keyframes box-hop { 0%, 100% { transform: translateY(0); } 40% { transform: translateY(-5px); } 60% { transform: translateY(0); } }
 .band.collapsed .slot[open] .mini-icon .mon-icon { animation: box-hop 0.7s ease-in-out infinite; }
 /* Testata dell'editor: nome, tipi e Sostituisci; poi preset Smogon (col link attaccato), I miei set (col salvataggio attaccato), Importa / Esporta */
-.set-editor .editor-top .member-replace { height: 32px; white-space: nowrap; }
 .set-editor .editor-head { align-items: flex-end; row-gap: 10px; }
 .set-editor .preset-field, .set-editor .my-sets-field { flex-direction: column; align-items: stretch; gap: 4px; }
 .set-editor .preset-field { width: 340px; }
@@ -309,16 +308,10 @@
 .set-editor .ev-input, .set-editor .iv-input { height: 27px; }
 .set-editor .evs { gap: 8px; }
 .set-editor .evs .speed-line { padding-top: 8px; }
-/* Ruoli in un riquadro su una riga; Sostituisci fuori, in basso a destra */
-.editor-foot { grid-column: 1 / -1; display: flex; align-items: flex-end; gap: 14px; }
-.editor-foot .editor-roles { flex: 1; min-width: 0; }
-.editor-roles ul { flex-wrap: nowrap; overflow: hidden; }
-.editor-roles li { white-space: nowrap; }
-.editor-foot .member-replace { flex: none; height: 36px; white-space: nowrap; }
-/* Riquadro Ruoli basso: una riga di etichette compatte */
-.set-editor fieldset.editor-roles { padding: 2px 12px 8px; }
-.editor-roles ul { margin-top: 2px; }
-.editor-roles li { padding: 2px 9px; font-size: 12.5px; }
+/* Ruoli accanto al nome: una riga di tag piatti che si taglia se non c'è posto; Sostituisci accanto alla X */
+.editor-top .editor-roles { flex: 1 1 auto; min-width: 0; display: flex; gap: 6px; flex-wrap: nowrap; overflow: hidden; margin: 0; }
+.editor-roles li { white-space: nowrap; padding: 2px 9px; font-size: 12.5px; }
+.editor-actions .member-replace { height: 36px; white-space: nowrap; }
 .set-editor .editor-head { row-gap: 8px; }
 /* Schermi alti meno di 900px (1536×864 e simili): righe delle statistiche un pelo più strette */
 @media (min-width: 1100px) and (max-height: 899px) {
@@ -339,7 +332,6 @@
   .set-editor .evs .stats-toolbar { margin: 4px 0 0; }
   .set-editor .stat-rows { gap: 1px; }
   .set-editor fieldset { padding-bottom: 8px; }
-  .set-editor fieldset.editor-roles { padding: 0 10px 6px; }
   .set-editor .editor-group { gap: 6px 12px; }
   .set-editor .evs .speed-line { padding-top: 4px; }
   .editor-title .species-tag { bottom: calc(100% + 2px); }

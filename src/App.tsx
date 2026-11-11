@@ -33,6 +33,7 @@ import { useDismissMenus } from './ui/useDismissMenus';
 import { useAdvice } from './ui/useRanking';
 import { paletteFor, type ListSprite, type ListStyle, type PaletteSetting } from './ui/theme';
 import { EeveeMoment } from './ui/EeveeMoment';
+import { SHORT_SCREEN, useMediaQuery } from './ui/useMediaQuery';
 
 const NO_DATA: EngineData = { stats: null, sets: null };
 
@@ -87,11 +88,11 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   };
   const [settingsOpen, setSettingsOpen] = useState(false);
   // Team compresso in una barra sottile: più spazio alla sezione sotto (la scelta resta salvata)
-  const [collapsed, setCollapsed] = useState(() => (storage ? loadTeamCollapsed(storage) : null) ?? false);
-  const toggleCollapsed = () => setCollapsed(c => {
-    if (storage) saveTeamCollapsed(!c, storage);
-    return !c;
-  });
+  const [savedCollapsed, setCollapsed] = useState(() => (storage ? loadTeamCollapsed(storage) : null) ?? false);
+  // Schermo basso (portatili): con l'editor aperto il team si comprime da solo, così l'editor sta in una schermata
+  const short = useMediaQuery(SHORT_SCREEN);
+  // La freccina durante la compressione automatica riapre il team solo per questo editor (non si salva)
+  const [keepTeamOpen, setKeepTeamOpen] = useState(false);
   const closeSettings = useCallback(() => {
     setSettingsOpen(false);
     document.querySelector<HTMLElement>('.rail-settings')?.focus();
@@ -156,6 +157,16 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   const [replaceIndex, setReplaceIndex] = useState<number | null>(null);
   // Il membro aperto nell'editor: l'editor prende il posto della sezione finché resta aperto
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  useEffect(() => { if (editingIndex === null) setKeepTeamOpen(false); }, [editingIndex]);
+  const autoCollapsed = short && editingIndex !== null && !savedCollapsed && !keepTeamOpen;
+  const collapsed = savedCollapsed || autoCollapsed;
+  const toggleCollapsed = () => {
+    if (autoCollapsed) { setKeepTeamOpen(true); return; }
+    setCollapsed(c => {
+      if (storage) saveTeamCollapsed(!c, storage);
+      return !c;
+    });
+  };
   const [closeSignal, setCloseSignal] = useState(0);
   // La pagina non scorre: aprire una sezione basta a mostrarla (e chiude l'editor)
   const openTab = (next: TabId) => { setTab(next); setCloseSignal(n => n + 1); };

@@ -255,10 +255,16 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
   return (
     <div className="set-editor">
       <div className="editor-head">
-        {(title || actions) && (
+        {(title || actions || memberAction) && (
           <div className="editor-top">
             {title}
-            {actions && <div className="editor-actions">{actions}</div>}
+            {/* Ruoli accanto al nome (tag di sola lettura, il principale per primo); Sostituisci accanto alla X */}
+            {!!roles?.length && (
+              <ul className="editor-roles" aria-label={t('editor.roles')}>
+                {roles.map((role, i) => <li key={role} className={i === 0 ? 'main' : undefined}>{role}</li>)}
+              </ul>
+            )}
+            {(actions || memberAction) && <div className="editor-actions">{memberAction}{actions}</div>}
           </div>
         )}
         <div className="head-group">
@@ -450,20 +456,6 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
         ))}
       </fieldset>
       </div>
-      {(!!roles?.length || memberAction) && (
-        // Ruoli e, fuori dal riquadro in basso a destra, l'azione sul membro (Sostituisci)
-        <div className="editor-foot">
-          {!!roles?.length && (
-            <fieldset className="editor-roles">
-              <legend>{t('editor.roles')}</legend>
-              <ul>
-                {roles.map((role, i) => <li key={role} className={i === 0 ? 'main' : undefined}>{role}</li>)}
-              </ul>
-            </fieldset>
-          )}
-          {memberAction}
-        </div>
-      )}
     </div>
   );
 }

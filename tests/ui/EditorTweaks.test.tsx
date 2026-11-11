@@ -38,11 +38,12 @@ describe('editor del set', () => {
     expect(within(slot).getByRole('group', { name: 'Statistiche' })).toBeInTheDocument();
   });
 
-  it('in fondo un riquadro elenca tutti i ruoli del membro', async () => {
+  it('accanto al nome una riga elenca tutti i ruoli del membro', async () => {
     const user = userEvent.setup();
     const { container } = renderTeam();
     const slot = await openFirst(user, container);
-    const roles = within(slot).getByRole('group', { name: 'Ruoli' });
+    const roles = within(slot).getByRole('list', { name: 'Ruoli' });
+    expect(roles.closest('.editor-top')).not.toBeNull();
     const items = within(roles).getAllByRole('listitem').map(li => li.textContent);
     const all = container.querySelector('.slot .roles')!.getAttribute('title')!.split(' · ');
     expect(items).toEqual(all);

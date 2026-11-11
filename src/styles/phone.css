@@ -342,9 +342,11 @@
 @media (max-width: 1099px) {
   /* Nome, tipi e chiudi restano in vista mentre scorri l'editor */
   .drawer .set-editor .editor-head { position: sticky; top: -12px; z-index: 5; margin: -12px -14px 0; padding: 12px 14px 10px; background: var(--panel); border-bottom: 1px solid var(--line-soft); }
-  .editor-foot { flex-direction: column; align-items: stretch; }
-  .editor-roles ul { flex-wrap: wrap; }
-  .editor-foot .member-replace { height: 44px; }
+  /* Prima riga: nome e X; seconda: i ruoli (vanno a capo) con Sostituisci in fondo a destra */
+  .editor-top .editor-actions { display: contents; }
+  .editor-top .editor-close { order: 1; margin-left: auto; }
+  .editor-top .editor-roles { order: 2; flex: 1 0 calc(100% - 54px); flex-wrap: wrap; }
+  .editor-top .member-replace { order: 3; height: 44px; width: 44px; padding: 0; justify-content: center; align-self: flex-start; }
 }
 @media (max-width: 599px) {
   .set-editor .editor-group { grid-template-columns: minmax(0, 1fr); }
