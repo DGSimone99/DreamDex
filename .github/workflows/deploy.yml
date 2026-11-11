@@ -1,0 +1,44 @@
+# Pubblicazione su Cloudflare Pages, con i dati appena scaricati:
+# - a ogni modifica su master;
+# - ogni lunedì (statistiche Smogon del mese, tier e ban di Showdown, nomi italiani);
+# - a mano dalla scheda Actions ("Run workflow").
+# Se un dato non si scarica (--strict) o un test fallisce, non si pubblica niente: resta online la versione di prima.
+name: Pubblica
+
+on:
+  push:
+    branches: [master]
+  schedule:
+    - cron: '0 4 * * 1'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      HAS_CLOUDFLARE: ${{ secrets.CLOUDFLARE_API_TOKEN != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Scarica i dati (Smogon, Showdown, nomi italiani)
+        run: npm run fetch-data -- --strict
+      - run: npm test
+      - run: npm run build
+      - name: Pubblica su Cloudflare Pages
+        if: env.HAS_CLOUDFLARE == 'true'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist --project-name=dreamdex --branch=master
+      - name: Cloudflare non ancora collegato
+        if: env.HAS_CLOUDFLARE != 'true'
+        run: echo "::notice::Build pronta, ma mancano i segreti CLOUDFLARE_API_TOKEN e CLOUDFLARE_ACCOUNT_ID: niente pubblicazione."

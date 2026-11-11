@@ -67,10 +67,18 @@ async function fetchSource(source: string, months: string[]): Promise<EngineData
   return { stats: { meta, pokemon }, sets, presets };
 }
 
+/**
+ * `--strict` (pubblicazione automatica): qualunque pezzo che non si scarica fa fallire tutto, così non va online un sito
+ * con dati a metà (resta quello di prima). Senza, un errore salta solo quel pezzo (uso a mano).
+ */
+const STRICT = process.argv.includes('--strict');
+const failures: string[] = [];
+const soft = (what: string, error: unknown) => { failures.push(`${what}: ${(error as Error).message}`); };
+
 async function main() {
   const months = recentMonths(Statistics.latest(await (await get(Statistics.URL)).text()));
   // `npm run fetch-data -- gen9ou`: scarica solo le fonti indicate, senza ricostruire i dati di riserva
-  const only = process.argv.slice(2);
+  const only = process.argv.slice(2).filter(arg => !arg.startsWith('--'));
   if (only.length) {
     for (const source of only) await fetchSource(source, months);
     return;
@@ -84,6 +92,7 @@ async function main() {
       downloadedFormats.push(source);
     } catch (error) {
       console.error(`[${source}] Errore: ${(error as Error).message}`);
+      soft(source, error);
     }
   }
   if (downloaded.length === 0) process.exit(1);
@@ -99,6 +108,7 @@ async function main() {
       console.log(`[riserva] ${format}: ${Object.keys(pokemon).length} Pokémon`);
     } catch (error) {
       console.warn(`[riserva] ${format} non disponibile (${(error as Error).message})`);
+      soft(`riserva ${format}`, error);
     }
   }
   const analyses: SetsData[] = [];
@@ -134,6 +144,7 @@ async function main() {
     console.log(`Nomi italiani: ${Object.keys(italian.moves).length} mosse, ${Object.keys(italian.abilities).length} abilità, ${Object.keys(italian.items).length} strumenti.`);
   } catch (error) {
     console.warn(`Nomi italiani non disponibili (${(error as Error).message}): l'italiano userà i nomi inglesi.`);
+    soft('nomi italiani', error);
   }
   // Tier National Dex aggiornati da Showdown: un errore non blocca il resto (restano quelli della libreria)
   try {
@@ -143,6 +154,7 @@ async function main() {
     console.log(`Tier da Showdown: ${Object.keys(tiers.natdex).length} specie National Dex, ${Object.keys(tiers.gen9).length} di Gen 9.`);
   } catch (error) {
     console.warn(`Tier di Showdown non disponibili (${(error as Error).message}): restano quelli della libreria.`);
+    soft('tier di Showdown', error);
   }
   // Ban di mosse, abilità, strumenti e Pokémon per formato (Shed Tail, Moody, King's Rock…)
   try {
@@ -153,10 +165,16 @@ async function main() {
     console.log(`Ban per formato da Showdown: ${Object.entries(bans).map(([id, b]) => `${id} ${b.moves.length + b.abilities.length + b.items.length + b.species.length}`).join(', ')}.`);
   } catch (error) {
     console.warn(`Ban di Showdown non disponibili (${(error as Error).message}): si controllano solo i Pokémon vietati.`);
+    soft('ban di Showdown', error);
   }
   await mkdir(join('data', '_fallback'), { recursive: true });
   await writeFile(join('data', '_fallback', 'sets.json'), JSON.stringify(fallback));
   console.log(`Set di riserva: ${Object.keys(fallback).length} Pokémon.`);
+  if (STRICT && failures.length) {
+    console.error(`Modalità --strict: ${failures.length} pezzi non scaricati, niente pubblicazione.`);
+    for (const failure of failures) console.error(`- ${failure}`);
+    process.exit(1);
+  }
 }
 
 main().catch(error => {

@@ -1,0 +1,32 @@
+# Aggiornamenti delle librerie di Dependabot: se tipi, test e build passano, quelli minori entrano da soli.
+# I major (e tutto quello che non passa i test) restano aperti, da guardare a mano.
+name: Aggiornamenti automatici
+
+on: pull_request
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  automerge:
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npm test
+      - run: npx vite build
+      - id: meta
+        uses: dependabot/fetch-metadata@v2
+      - name: Unisci se è un aggiornamento minore
+        if: steps.meta.outputs.update-type != 'version-update:semver-major'
+        run: gh pr merge --squash --delete-branch "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
