@@ -314,7 +314,7 @@ export const en = {
   'credits.spritesWhat': "Pokémon sprites and icons from Pokémon Showdown",
   'credits.typeIcons': "Type icons",
   'credits.typeIconsWhat': "From Pokémon Scarlet and Violet",
-  'credits.eevee': "Vector drawings by dreamworld.svg (Twitter/X), from the official Dream World artwork",
+  'credits.eevee': "Vector drawings from the official Dream World artwork",
   'credits.libs': "Libraries",
   'credits.pkmnLibs': "Pokédex, moves, Showdown set text and sprites",
   'credits.calc': "Damage calculation",

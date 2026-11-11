@@ -12,7 +12,7 @@ describe('Crediti e note legali', () => {
     const dialog = screen.getByRole('dialog', { name: 'Crediti' });
     expect(dialog).toHaveTextContent('progetto non ufficiale');
     expect(dialog).toHaveTextContent('marchi di Nintendo, Creatures Inc. e GAME FREAK inc.');
-    for (const name of ['Smogon', 'Pokémon Showdown', 'PokeAPI', '@smogon/calc']) {
+    for (const name of ['Smogon', 'Pokémon Showdown', 'PokeAPI', '@smogon/calc', 'Eevee · dreamworld.svg']) {
       expect(within(dialog).getByRole('link', { name })).toHaveAttribute('target', '_blank');
     }
     await user.keyboard('{Escape}');

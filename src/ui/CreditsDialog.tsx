@@ -62,7 +62,7 @@ export function CreditsDialog({ onClose }: { onClose: () => void }) {
           <dl className="credits-list">
             <div><dt>{t('credits.sprites')}</dt><dd>{t('credits.spritesWhat')}</dd></div>
             <div><dt>{t('credits.typeIcons')}</dt><dd>{t('credits.typeIconsWhat')}</dd></div>
-            <div><dt>Eevee</dt><dd>{t('credits.eevee')}</dd></div>
+            <div><dt><a href="https://x.com/dreamworldsvg" target="_blank" rel="noreferrer">Eevee · dreamworld.svg</a></dt><dd>{t('credits.eevee')}</dd></div>
           </dl>
           <h4>{t('credits.libs')}</h4>
           {list(libs)}
