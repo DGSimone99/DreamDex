@@ -359,6 +359,8 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
               <input
                 type="range"
                 className="ev-slider"
+                // Fuori dal giro del Tab: è un doppione del numero accanto (che con le frecce fa lo stesso); col mouse funziona come sempre
+                tabIndex={-1}
                 min={0}
                 max={252}
                 step={EV_STEP}

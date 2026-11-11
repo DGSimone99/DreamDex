@@ -21,6 +21,21 @@ const openFirst = async (user: ReturnType<typeof userEvent.setup>, container: HT
 };
 
 describe('editor del set', () => {
+  it('col Tab i cursori degli EV si saltano: dal numero degli EV si passa agli IV e poi al numero della statistica dopo', async () => {
+    const user = userEvent.setup();
+    const { container } = renderTeam();
+    const slot = await openFirst(user, container);
+    const sliders = slot.querySelectorAll<HTMLInputElement>('.ev-slider');
+    expect(sliders).toHaveLength(6);
+    sliders.forEach(slider => expect(slider).toHaveAttribute('tabindex', '-1'));
+    const evs = slot.querySelectorAll<HTMLInputElement>('.ev-input');
+    evs[0].focus();
+    await user.tab();
+    expect(document.activeElement).toHaveClass('iv-input');
+    await user.tab();
+    expect(document.activeElement).toBe(evs[1]);
+  });
+
   it('la X chiude l\'editor e il focus torna sulla carta', async () => {
     const user = userEvent.setup();
     const { container } = renderTeam();
