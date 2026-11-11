@@ -373,3 +373,27 @@
 .settings-credits { justify-self: start; display: inline-flex; align-items: center; gap: 4px; padding: 0; border: 0; background: none; font: 600 13px var(--ui); color: var(--accent-ink); cursor: pointer; }
 .settings-credits .icon { width: 14px; height: 14px; }
 .settings-credits:hover { text-decoration: underline; }
+
+/* Segnala o suggerisci: modulo corto, tipo a pillole, invio a destra con GitHub come alternativa */
+.feedback-dialog { width: min(520px, calc(100vw - 32px)); }
+.feedback-body { overflow-y: auto; padding: 16px 20px 18px; display: grid; gap: 12px; }
+.feedback-body p { margin: 0; font-size: 14px; line-height: 1.5; }
+.feedback-kinds { margin: 0; padding: 0; border: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.feedback-kinds legend { margin-bottom: 6px; font: 600 11px/1 var(--ui); letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); }
+.feedback-kinds label { position: relative; }
+.feedback-kinds input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.feedback-kinds span { display: inline-block; padding: 5px 12px; border: 1px solid var(--control-line); border-radius: 999px; font-size: 13px; color: var(--muted); }
+.feedback-kinds input:checked + span { border-color: var(--accent); background: var(--accent-soft); color: var(--text); }
+.feedback-kinds input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+.feedback-field { display: grid; gap: 5px; }
+.feedback-field > span { font: 600 11px/1 var(--ui); letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); }
+.feedback-field textarea, .feedback-field input { width: 100%; font: 14px/1.45 var(--ui); }
+.feedback-field textarea { resize: vertical; min-height: 96px; }
+.feedback-attach { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); cursor: pointer; }
+.feedback-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.feedback-actions .apply { background: var(--accent-soft); border-color: var(--accent); color: var(--text); }
+.feedback-alt { font-size: 12px; color: var(--muted); }
+.feedback-body a { color: var(--accent-ink); }
+.feedback-error { color: var(--bad); font-size: 13px; }
+.feedback-done { justify-items: center; text-align: center; padding-block: 24px; }
+.feedback-done .eevee-moment { width: 96px; height: auto; }
