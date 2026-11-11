@@ -1,9 +1,8 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
 import { createPortal } from 'react-dom';
 import type { Archetype } from '../engine/archetype';
-import { ARCHETYPE_WEIGHTS, GRADES, TRICK_ROOM_MAX, type AreaWeightTable } from '../engine/rating';
+import { ARCHETYPE_WEIGHTS, GRADES, type AreaWeightTable } from '../engine/rating';
 import { isGroupKey, LEVEL_KEYS, levelOf, rolesTypeOf, type Level, type LevelKey } from '../engine/roleLevels';
-import { ESSENTIAL_POINTS, IMPORTANT_POINTS, MINOR_POINTS } from '../engine/rolesArea';
 import type { MessageKey } from '../i18n';
 import { useT } from '../i18n/react';
 import { EeveePeek } from './EeveePeek';
@@ -13,9 +12,8 @@ import { Icon } from './icons';
 type Topic = 'general' | Archetype;
 const ARCHETYPES: Archetype[] = ['hyperOffense', 'bulkyOffense', 'balance', 'semiStall', 'stall'];
 const TOPICS: Topic[] = ['general', ...ARCHETYPES];
-/** Le aree col peso: i Ruoli non ne hanno, contano come malus e bonus (ROLE_POINTS). */
+/** Le aree col peso: i Ruoli non ne hanno, contano come malus e bonus (spiegati nel loro modale). */
 const WEIGHT_AREAS = ['defense', 'strength', 'speed'] as const;
-const ROLE_POINTS = { essential: ESSENTIAL_POINTS, important: IMPORTANT_POINTS, minor: MINOR_POINTS };
 const LEVELS: Exclude<Level, 'ignored'>[] = ['essential', 'important', 'minor'];
 
 const topicLabel = (topic: Topic): MessageKey => (topic === 'general' ? 'help.general' : `archetype.${topic}`);
@@ -27,7 +25,7 @@ const keyLabel = (key: LevelKey): MessageKey => (isGroupKey(key) ? `need.${key}`
  * di team) e la spiegazione a destra. Le spiegazioni di ogni area stanno nel suo modale, di bonus e malus nel catalogo.
  */
 /** `weights`: la tabella dei pesi del formato del team (rating.weightTable); senza, quella di sempre. */
-export function RatingHelp({ teamType, trickRoom, meta = true, weights = ARCHETYPE_WEIGHTS, typeRule }: { teamType: Archetype; trickRoom: boolean; meta?: boolean; weights?: AreaWeightTable; typeRule?: 'walls' | 'recoverySpeed' }) {
+export function RatingHelp({ teamType, trickRoom, weights = ARCHETYPE_WEIGHTS, typeRule }: { teamType: Archetype; trickRoom: boolean; meta?: boolean; weights?: AreaWeightTable; typeRule?: 'walls' | 'recoverySpeed' }) {
   const t = useT();
   const [open, setOpen] = useState(false);
   // Si apre sempre su come funziona in generale; il tipo del team ha la sua scritta "il tuo team" nella lista a sinistra
@@ -92,7 +90,7 @@ export function RatingHelp({ teamType, trickRoom, meta = true, weights = ARCHETY
               </nav>
               <section className="help-panel" id="help-panel" role="tabpanel" aria-labelledby={`help-tab-${topic}`}>
                 <h4>{t(topicLabel(topic))}</h4>
-                {topic === 'general' ? <GeneralTopic teamType={teamType} trickRoom={trickRoom} meta={meta} weights={weights} /> : <TypeTopic type={topic} current={topic === teamType} trickRoom={trickRoom} weights={weights} typeRule={typeRule} />}
+                {topic === 'general' ? <GeneralTopic teamType={teamType} trickRoom={trickRoom} weights={weights} /> : <TypeTopic type={topic} weights={weights} typeRule={typeRule} />}
               </section>
             </div>
           </div>
@@ -105,15 +103,23 @@ export function RatingHelp({ teamType, trickRoom, meta = true, weights = ARCHETY
 }
 
 /** Come funziona in generale: la formula del voto, le lettere dalle soglie e i pesi di tutti i tipi. */
-function GeneralTopic({ teamType, trickRoom, meta, weights }: { teamType: Archetype; trickRoom: boolean; meta: boolean; weights: AreaWeightTable }) {
+function GeneralTopic({ teamType, trickRoom, weights }: { teamType: Archetype; trickRoom: boolean; weights: AreaWeightTable }) {
   const t = useT();
   const letters = Object.fromEntries(GRADES.filter(g => g.grade !== 'D').map(g => [g.grade, g.min]));
   return (
     <>
+      {/* Le lettere per prime, grandi e nel colore della carta del voto; ai lettori di schermo la frase intera */}
+      <ul className="help-grades" aria-label={t('help.general.letters', letters)}>
+        {GRADES.map(g => (
+          <li key={g.grade} className={`grade-${g.grade}`} aria-hidden="true">
+            <strong>{g.grade}</strong>
+            <span>{g.grade === 'D' ? `< ${letters.C}` : `${g.min}+`}</span>
+          </li>
+        ))}
+      </ul>
       <p>{t('help.general.1')}</p>
-      <p>{t('help.general.letters', letters)}</p>
       <p>{t('help.general.2')}</p>
-      <p>{t(meta ? 'help.general.3' : 'help.general.3.noMeta')}</p>
+      <p>{t('help.type.trickRoom')}</p>
       <p className="help-yours">{t('help.general.yours', { type: t(`archetype.${teamType}`) })}{trickRoom ? ` · ${t('help.general.trickRoom')}` : ''}</p>
       <div className="help-table-wrap">
         <table className="help-weights">
@@ -130,7 +136,6 @@ function GeneralTopic({ teamType, trickRoom, meta, weights }: { teamType: Archet
           </tbody>
         </table>
       </div>
-      <p className="help-roles-note">{t('help.general.rolesNote', ROLE_POINTS)}</p>
     </>
   );
 }
@@ -154,15 +159,13 @@ function WeightBar({ weight, max }: { weight: number; max: number }) {
 }
 
 /** Un tipo di team: come vince, i pesi delle aree e le voci dei Ruoli per livello, letti dalle tabelle del motore. */
-function TypeTopic({ type, current, trickRoom, weights, typeRule }: { type: Archetype; current: boolean; trickRoom: boolean; weights: AreaWeightTable; typeRule?: 'walls' | 'recoverySpeed' }) {
+function TypeTopic({ type, weights, typeRule }: { type: Archetype; weights: AreaWeightTable; typeRule?: 'walls' | 'recoverySpeed' }) {
   const t = useT();
   return (
     <>
       <p className="help-note">{t(`archetype.${type}.note`)}</p>
       <p>{t(`help.type.${type}`)}</p>
       {type === 'balance' && <p>{t('help.type.balance.incomplete')}</p>}
-      <p>{t('help.type.trickRoom', { max: TRICK_ROOM_MAX })}</p>
-      {current && <p className="help-yours">{t('help.general.yours', { type: t(`archetype.${type}`) })}{trickRoom ? ` · ${t('help.general.trickRoom')}` : ''}</p>}
       <h5>{t('help.type.weights')}</h5>
       <dl className="help-weights-row">
         {WEIGHT_AREAS.map(area => {
@@ -177,7 +180,6 @@ function TypeTopic({ type, current, trickRoom, weights, typeRule }: { type: Arch
         })}
       </dl>
       <h5>{t('area.roles')}</h5>
-      <p>{t('help.type.levels', ROLE_POINTS)}</p>
       {rolesTypeOf(type, typeRule) !== type && <p className="help-note">{t('help.type.stallAsSemi')}</p>}
       {LEVELS.map(level => {
         const keys = LEVEL_KEYS.filter(key => levelOf(rolesTypeOf(type, typeRule), key) === level);

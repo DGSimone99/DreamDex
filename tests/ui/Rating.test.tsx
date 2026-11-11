@@ -104,7 +104,8 @@ describe('Riquadro Voto', () => {
     expect(within(dialog).getAllByRole('tab').filter(tab => tab.getAttribute('aria-current') === 'true')).toHaveLength(1);
     await user.click(balanceTab);
     const balance = within(dialog).getByRole('tabpanel');
-    expect(balance).toHaveTextContent('Il tuo team è giudicato come Balance');
+    // Il tipo del team lo dice già "il tuo team" nella lista: niente frase ripetuta nella scheda
+    expect(balance).not.toHaveTextContent('Il tuo team è giudicato come');
     expect(balance).toHaveTextContent('Un team incompleto si giudica come Balance');
     // I livelli vengono dalla tabella del codice, non dai testi
     expect(balance).toHaveTextContent(/Essenziali.*Muro Fisico/);
@@ -119,16 +120,21 @@ describe('Riquadro Voto', () => {
     expect(stall).not.toHaveTextContent('Non conta nello Stall');
     expect(stall).toHaveTextContent(/Essenziali.*Recupero.*Importanti/);
     expect(stall).not.toHaveTextContent('Il tuo team è giudicato come');
-    // Trick Room: la regola su ogni tab di tipo, senza i punti
+    // Trick Room: la regola sta solo in Come funziona, non più in ogni tab di tipo; niente frase sui livelli
     for (const name of ['Hyper Offense', 'Bulky Offense', 'Balance', 'Semi-stall', 'Stall']) {
       await user.click(within(dialog).getByRole('tab', { name }));
-      expect(within(dialog).getByRole('tabpanel')).toHaveTextContent('portarla in un team veloce è un controsenso e costa punti');
+      expect(within(dialog).getByRole('tabpanel')).not.toHaveTextContent('portarla in un team veloce');
+      expect(within(dialog).getByRole('tabpanel')).not.toHaveTextContent('tre livelli');
     }
     // Come funziona: Bonus/Malus, lettere dalle soglie, nessun testo delle vecchie aree
     await user.click(within(dialog).getByRole('tab', { name: 'Come funziona' }));
     const general = within(dialog).getByRole('tabpanel');
     expect(general).toHaveTextContent('Bonus/Malus');
-    expect(general).toHaveTextContent('S da 90, A da 80, B da 70, C da 60');
+    // Le lettere in cima, grandi: la frase intera per gli screen reader
+    expect(within(general).getByRole('list', { name: 'Le lettere: S da 90, A da 80, B da 70, C da 60, sotto è D.' })).toHaveTextContent(/S90\+A80\+B70\+C60\+D< 60/);
+    expect(general).toHaveTextContent('portarla in un team veloce è un controsenso e costa punti');
+    expect(general).not.toHaveTextContent('Pokémon più usati del mese');
+    expect(general).not.toHaveTextContent('non hanno un peso proprio');
     for (const tab of within(dialog).getAllByRole('tab')) {
       await user.click(tab);
       expect(within(dialog).getByRole('tabpanel')).not.toHaveTextContent('Debolezze condivise');
