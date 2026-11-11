@@ -34,6 +34,9 @@ jobs:
       - name: Scarica i dati (Smogon, Showdown, nomi italiani)
         run: npm run fetch-data -- --strict
       - run: npm run build
+        env:
+          # Chiave pubblica del modulo Segnala (Web3Forms): senza, nell'app resta solo il link a GitHub
+          VITE_WEB3FORMS_KEY: ${{ secrets.WEB3FORMS_KEY }}
       - name: Pubblica su Cloudflare Pages
         if: env.HAS_CLOUDFLARE == 'true'
         uses: cloudflare/wrangler-action@v3

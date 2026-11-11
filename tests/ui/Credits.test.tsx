@@ -8,7 +8,7 @@ describe('Crediti e note legali', () => {
   it('dalla barra in fondo: progetto di fan, marchi Pokémon e fonti coi link; Esc chiude', async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} />);
-    await user.click(screen.getByRole('button', { name: 'Crediti e note legali' }));
+    await user.click(screen.getByRole('button', { name: 'Crediti' }));
     const dialog = screen.getByRole('dialog', { name: 'Crediti' });
     expect(dialog).toHaveTextContent('progetto non ufficiale');
     expect(dialog).toHaveTextContent('marchi di Nintendo, Creatures Inc. e GAME FREAK inc.');

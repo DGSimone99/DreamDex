@@ -21,6 +21,8 @@ interface Props {
   onSettings?: () => void;
   /** Apre Crediti e note legali. */
   onCredits?: () => void;
+  /** Apre Segnala o suggerisci. */
+  onFeedback?: () => void;
 }
 
 /** Il mese delle statistiche ("2026-09") in numeri, uguale in ogni lingua: "09/2026" (sta su una riga). */
@@ -35,7 +37,7 @@ function monthLabel(month: string): string {
  * tessere del menu del gioco con una riga di stato, e in fondo lingua, impostazioni e mese dei dati Smogon.
  * Importa/Esporta e Team salvati stanno sopra la squadra (TeamPanel).
  */
-export function Rail({ format, onFormatChange, meta, lang, onLangChange, tabs, onSettings, onCredits }: Props) {
+export function Rail({ format, onFormatChange, meta, lang, onLangChange, tabs, onSettings, onCredits, onFeedback }: Props) {
   const t = useT();
   const dex = dexOf(format.formatId);
   const tiers = tiersOf(dex);
@@ -157,7 +159,12 @@ export function Rail({ format, onFormatChange, meta, lang, onLangChange, tabs, o
         <p className="meta">
           {meta ? t('top.statsMonth', { month: monthLabel(meta.month) }) : t('top.statsMissing')}
         </p>
-        {onCredits && <button type="button" className="rail-credits" onClick={onCredits}>{t('credits.openLong')}</button>}
+        {(onFeedback || onCredits) && (
+          <p className="rail-links">
+            {onFeedback && <button type="button" className="rail-credits" onClick={onFeedback}>{t('feedback.open')}</button>}
+            {onCredits && <button type="button" className="rail-credits" onClick={onCredits}>{t('credits.open')}</button>}
+          </p>
+        )}
       </div>
     </aside>
   );
