@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useT } from '../i18n/react';
 import type { AnalysisView } from './analysisView';
 import { ModalLock } from './ModalLock';
+import { EeveePeek } from './EeveePeek';
 import { Icon } from './icons';
 
 /** Le schede interne di Analisi, nell'ordine: Panoramica e Coaching, poi Offesa, Difesa, Velocità e Ruoli, con Bonus/Malus in fondo. */
@@ -35,6 +36,9 @@ export function HelpButton({ title, label = title, className, children }: { titl
       {open && createPortal(
         <div className="help-backdrop" onClick={close}>
           <ModalLock />
+          {/* Eevee sbircia da dietro la finestra, come in "Come funziona il voto" */}
+          <div className="help-frame with-peek">
+          <EeveePeek />
           <div className={`help-dialog view-help${className ? ` ${className}` : ''}`} role="dialog" aria-modal="true" aria-labelledby={titleId} onClick={e => e.stopPropagation()}>
             <header className="help-head">
               <h3 id={titleId}>{title}</h3>
@@ -43,6 +47,7 @@ export function HelpButton({ title, label = title, className, children }: { titl
             <div className="help-panel">
               {children}
             </div>
+          </div>
           </div>
         </div>,
         document.body,

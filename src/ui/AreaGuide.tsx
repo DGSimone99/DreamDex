@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, type KeyboardEvent, type ReactNode } from 're
 import { createPortal } from 'react-dom';
 import { useT } from '../i18n/react';
 import { ModalLock } from './ModalLock';
+import { EeveePeek } from './EeveePeek';
 import { Icon } from './icons';
 
 /**
@@ -46,6 +47,9 @@ export function AreaGuide({ title, sections, current, onCurrent, onClose, classN
   return createPortal(
     <div className="help-backdrop" onClick={onClose}>
           <ModalLock />
+          {/* Eevee sbircia da dietro la finestra, come in "Come funziona il voto" */}
+          <div className="help-frame with-peek">
+          <EeveePeek />
       <div className={`help-dialog area-guide${className ? ` ${className}` : ''}`} role="dialog" aria-modal="true" aria-labelledby={`${id}-title`} onClick={e => e.stopPropagation()}>
         <header className="help-head">
           <h3 id={`${id}-title`}>{title}</h3>
@@ -80,6 +84,7 @@ export function AreaGuide({ title, sections, current, onCurrent, onClose, classN
           </div>
         </div>
       </div>
+          </div>
     </div>,
     document.body,
   );
