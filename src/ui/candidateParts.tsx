@@ -111,14 +111,16 @@ const plain = (text: string): Bring => ({ text, short: text });
  * dettaglio non ha). Il malus resta nel dettaglio. Col team vuoto i ruoli principali. Senza voci, se il voto sale,
  * l'area che sale di più come la riga del dettaglio ("Offesa +13"); "nessuna differenza" solo se non cambia niente.
  */
-export function reasonsOf(item: Item, n: number, usage: number | null, format: Format, lang: Lang): ReasonSummary {
+export function reasonsOf(item: Item, n: number, usage: number | null, format: Format, lang: Lang, out = false): ReasonSummary {
   const rules = formatRules(format.formatId);
+  // Con chi esce (Migliora · Tutti) la sua riga prende il posto di quella "vs": una riga in meno per i motivi
+  if (out) n = Math.max(1, n - 1);
   // Col team vuoto l'uso sta già a destra: qui i ruoli principali del Pokémon, col "+" come i bonus
   if (usage !== null) {
     const roles = detectRoles(item.set, rules).slice(0, n).map(role => plain(t(lang, `role.${role}`)));
     return { pros: roles.length > 0, items: roles };
   }
-  const items = bringsOf(item, lang, rules).filter(b => !b.usedWith).slice(0, n);
+  const items = bringsOf(item, lang, rules).filter(b => !b.usedWith && !(out && b.symbol?.kind === 'threats')).slice(0, n);
   if (items.length) return { pros: true, items };
   const gain = item.teamGain;
   if (gain && gain.gain > 0) {
@@ -309,8 +311,11 @@ function ReasonBody({ bring }: { bring: Bring }) {
   );
 }
 
-/** I motivi: "+" verde davanti ai bonus (letto anche dagli screen reader), il resto in grigio; i segni col tooltip. */
-export function Reasons({ reasons }: { reasons: ReasonSummary }) {
+/**
+ * I motivi: "+" verde davanti ai bonus (letto anche dagli screen reader), il resto in grigio; i segni col tooltip.
+ * Con `out` (Migliora · Tutti) l'ultima riga dice chi esce: ⇄ esce [icona] Kingambit.
+ */
+export function Reasons({ reasons, out }: { reasons: ReasonSummary; out?: string }) {
   return (
     <small>
       {reasons.items.map((bring, i) => {
@@ -320,6 +325,7 @@ export function Reasons({ reasons }: { reasons: ReasonSummary }) {
           ? <span key={i} className={cls} title={title}><b aria-hidden="true">+</b><span className="visually-hidden">+</span><ReasonBody bring={bring} /></span>
           : <span key={i} className={cls} title={title}><ReasonBody bring={bring} /></span>;
       })}
+      {out && <OutRow member={out} />}
     </small>
   );
 }
@@ -346,14 +352,16 @@ export function PickButton({ rank, species, selected, onSelect }: { rank: number
   );
 }
 
-/** Chi esce: solo la sua icona; il nome nel tooltip e per gli screen reader. */
-export function OutMark({ member }: { member: string }) {
+/** Chi esce, come riga dei motivi: ⇄ esce [icona] nome (il nome si accorcia coi puntini); agli screen reader "Al posto di X". */
+function OutRow({ member }: { member: string }) {
   const tr = useT();
+  const text = tr('suggest.outFor', { member });
   return (
-    <span className="out" title={tr('suggest.outFor', { member })}>
-      <Icon name="swap" />
-      <PokemonIcon name={member} />
-      <span className="visually-hidden">{tr('suggest.outFor', { member })}</span>
+    <span className="reason out-row" title={text}>
+      <span className="visually-hidden">{text}</span>
+      <span className="out-sym" aria-hidden="true">
+        <Icon name="swap" /><span className="out-word">{tr('suggest.outShort')}</span><PokemonIcon name={member} /><strong>{member}</strong>
+      </span>
     </span>
   );
 }

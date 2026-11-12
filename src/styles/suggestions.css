@@ -552,13 +552,6 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .card .card-types { position: absolute; top: 22px; right: 8px; flex-direction: column; gap: 4px; }
 .card .card-types img { width: 20px; height: 20px; box-shadow: none; }
 .card .card-types img + img { margin: 0; }
-/* Chi esce (Migliora · Tutti): tondino in basso a destra della zona immagine, sopra la targhetta, con l'icona del membro
-   e un piccolo ⇄ sul bordo. Stretto (28px) perché stia nella fascia libera accanto allo sprite anche nelle carte basse */
-.card .out { position: absolute; right: 6px; bottom: calc(var(--plate-h) + 6px); z-index: 2; display: grid; place-items: center;
-  width: 28px; height: 28px; padding: 0; border-radius: 50%; background: color-mix(in srgb, var(--ground) 82%, transparent); border: 1px solid var(--line); }
-.card .out .icon { position: absolute; left: -6px; top: -5px; width: 15px; height: 15px; padding: 2px; box-sizing: border-box; border-radius: 50%;
-  background: var(--ground); border: 1px solid var(--line); color: var(--muted); }
-.card .out .mon-icon { margin: 0; clip-path: circle(13px at 50% 50%); }
 /* Targhetta in basso a tutta larghezza: nome e motivi. Il nome sta allo stesso punto in ogni carta: la targhetta è alta
    quanto i motivi che entrano (--reasons), anche se la carta ne ha meno; lo spazio avanzato resta vuoto in fondo */
 .card .who { position: relative; flex: none; min-width: 0; display: flex; flex-direction: column; justify-content: flex-start; gap: 2px;
@@ -614,5 +607,13 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .reason .sym-mon { display: flex; align-items: center; min-width: 0; }
 .reason .sym-mon .type-dot { flex: none; margin-right: 4px; vertical-align: 0; }
 .reason .sym-mon strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Chi esce (Migliora · Tutti): l'ultima riga dei motivi, al posto di "vs": ⇄ esce [mini icona] nome. Stesso corpo e
+   colore delle altre righe; la ⇄ grigia come il testo (non è un bonus), il nome come nel "vs" e coi puntini se non entra */
+.reason.out-row { display: flex; align-items: center; overflow: visible; }
+.reason .out-sym { display: flex; align-items: center; gap: 3px; min-width: 0; }
+.reason .out-sym .icon { flex: none; width: 13px; height: 13px; color: var(--muted); }
+.reason .out-word { flex: none; }
+.reason .out-sym .mon-icon { margin: -4px -8px -10px -8px; }
+.reason .out-sym strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; color: var(--text); }
 /* "+N" piccolo e grigio subito dopo l'ultimo elemento: non si confonde col voto */
 .reason .sym-more { flex: none; margin-left: 4px; font: 500 11px/1 var(--ui); color: var(--faint); }
