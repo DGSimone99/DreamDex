@@ -48,15 +48,11 @@ export function ShowdownPanel({ team, format, tera = true, onImport }: { team: T
   return (
     <>
       <details className="popover">
-        <summary title={t('showdown.title')}><Icon name="swap" /><span className="btn-label">{t('showdown.title')}</span></summary>
+        <summary title={t('showdown.importTitle')}><Icon name="paste" /><span className="btn-label">{t('showdown.importTab')}</span></summary>
         <div>
           <textarea aria-label={t('showdown.text')} rows={12} value={text} onChange={e => setText(e.target.value)} />
           <div className="actions">
             <button type="button" onClick={doImport}>{t('showdown.import')}</button>
-            <button type="button" onClick={() => { setText(exportShowdown(team, { tera })); }}>{t('showdown.export')}</button>
-            <button type="button" onClick={() => copyText(text)}>{t('showdown.copy')}</button>
-            <button type="button" disabled={!team.length} onClick={copyLink}>{t('showdown.copyLink')}</button>
-            {linkCopied && <span className="copied" role="status">{t('showdown.linkCopied')}</span>}
           </div>
           {review && <ImportDialog review={review.review} onYes={unlock} onClose={() => setReview(null)} />}
         </div>
@@ -66,6 +62,13 @@ export function ShowdownPanel({ team, format, tera = true, onImport }: { team: T
           <Icon name={quickCopied ? 'check' : 'copy'} />
           <span className="btn-label">{t(quickCopied ? 'showdown.quickCopied' : 'showdown.quickCopy')}</span>
           {quickCopied && <span className="visually-hidden" role="status">{t('showdown.quickCopied')}</span>}
+        </button>
+      )}
+      {/* Il link da condividere: una linguetta corta attaccata a Copia team, solo icona (il nome nel tooltip) */}
+      {team.length > 0 && (
+        <button type="button" className={`team-action quick-link${linkCopied ? ' copied' : ''}`} title={t('showdown.copyLinkTitle')} aria-label={t('showdown.copyLink')} onClick={copyLink}>
+          <Icon name={linkCopied ? 'check' : 'link'} />
+          {linkCopied && <span className="visually-hidden" role="status">{t('showdown.linkCopied')}</span>}
         </button>
       )}
     </>

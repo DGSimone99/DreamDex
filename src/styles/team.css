@@ -49,7 +49,7 @@
 /* La guida: il pulsante principale della testata (magenta, inclinato come le azioni principali) */
 .team-head .team-guide {
   height: 28px;
-  padding: 0 18px 0 16px;
+  padding: 0 22px 0 20px;
   gap: 6px;
   background: var(--accent-2);
   border: 0;
@@ -59,7 +59,7 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   white-space: nowrap;
-  clip-path: polygon(7px 0, 100% 0, calc(100% - 7px) 100%, 0 100%);
+  clip-path: polygon(14px 0, 100% 0, calc(100% - 14px) 100%, 0 100%);
 }
 .team-head .team-guide .icon { width: 14px; height: 14px; }
 .team-head .team-guide:hover { background: var(--accent-2-ink); }
@@ -71,7 +71,7 @@
    in maiuscolo. Aperta, la linguetta si accende d'azzurro con la riga sotto (come la scheda attiva del riassunto) */
 .team-head .team-action, .team-head .popover > summary {
   height: 28px;
-  padding: 0 18px 0 16px;
+  padding: 0 22px 0 20px;
   gap: 7px;
   background-color: var(--raised);
   border: 0;
@@ -81,7 +81,7 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   white-space: nowrap;
-  clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+  clip-path: polygon(14px 0, 100% 0, calc(100% - 14px) 100%, 0 100%);
   transition: background-color 0.15s var(--ease), color 0.15s var(--ease);
 }
 /* La riga azzurra della linguetta aperta si allarga da sinistra */
@@ -101,18 +101,21 @@
 /* Le scorciatoie a destra; una riga sottile riempie lo spazio vuoto, come nelle testate dei menu del gioco */
 .team-quick { display: flex; flex: 1; align-items: center; justify-content: flex-end; gap: 16px; min-width: 0; }
 /* Team salvati e Showdown come un'unica barra di schede: linguette attaccate, separate da 2px */
-.team-tabs { display: flex; align-items: center; gap: 2px; }
+.team-tabs { display: flex; align-items: center; }
+.team-tabs > * + * { margin-left: -11px; }
+.team-tabs > details > summary { position: relative; }
 .team-quick::before { content: ''; flex: 1; height: 1px; margin: 0 4px; background: linear-gradient(90deg, transparent, var(--line)); }
 .team-sep { display: none; }
 /* Menu aperto: sopra la freccia che riduce la squadra */
 .team-head:has(.popover[open]) { z-index: 8; }
 /* Copiato: la linguetta diventa verde per un attimo, con la spunta */
-.team-head .quick-copy.copied, .team-head .quick-copy.copied:hover { background-color: var(--good-bg); color: var(--good); }
-.team-head .quick-copy.copied .icon { animation: pop 0.25s var(--ease); }
+.team-head .quick-link { width: 44px; padding: 0; justify-content: center; }
+.team-head :is(.quick-copy, .quick-link).copied, .team-head :is(.quick-copy, .quick-link).copied:hover { background-color: var(--good-bg); color: var(--good); }
+.team-head :is(.quick-copy, .quick-link).copied .icon { animation: pop 0.25s var(--ease); }
 @keyframes pop { from { transform: scale(0.4); } to { transform: scale(1); } }
-@media (prefers-reduced-motion: reduce) { .team-head .quick-copy.copied .icon { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .team-head :is(.quick-copy, .quick-link).copied .icon { animation: none; } }
 /* Svuota: più discreta, si accende di rosso solo sotto il mouse */
-.team-head .clear-team { width: 36px; padding: 0; justify-content: center; background-color: transparent; color: var(--faint); }
+.team-head .clear-team { width: 44px; padding: 0; justify-content: center; background-color: transparent; color: var(--faint); }
 /* Solo la ×: il nome resta nel tooltip e per i lettori di schermo */
 .team-head .clear-team > .btn-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .team-head .clear-team:hover { background-color: var(--bad-bg); color: var(--bad); }

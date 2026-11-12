@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { App } from '../../src/App';
 import { fixtureData } from '../fixtures/data';
+import { spyClipboard } from '../helpers/clipboard';
 
 const team = () => screen.getByRole('region', { name: 'Team' });
 
@@ -35,12 +36,14 @@ describe('import / export / salvataggio', () => {
     expect(screen.getByLabelText('Testo Showdown')).toHaveValue(text);
   });
 
-  it('esporta il team nel campo di testo', async () => {
+  it('Copia team mette negli appunti il testo Showdown del team', async () => {
     const user = userEvent.setup();
+    const copied = spyClipboard();
     render(<App initialLang="it" data={fixtureData} />);
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Great Tusk{Enter}');
-    await user.click(screen.getByRole('button', { name: 'Esporta team' }));
-    expect((screen.getByLabelText('Testo Showdown') as HTMLTextAreaElement).value).toContain('Great Tusk @ Booster Energy');
+    await user.click(screen.getByRole('button', { name: 'Copia team' }));
+    expect(copied()).toContain('Great Tusk @ Booster Energy');
+    expect(await screen.findByText('Copiato', { selector: '[role="status"]' })).toBeInTheDocument();
   });
 
   it('salva e ricarica un team', async () => {

@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { App } from '../../src/App';
 import { initGameNames } from '../../src/i18n/game';
 import { fixtureData } from '../fixtures/data';
+import { spyClipboard } from '../helpers/clipboard';
 
 const italian = {
   moves: { earthquake: { name: 'Terremoto', desc: 'Colpisce tutti i Pokémon vicini.' } },
@@ -27,9 +28,9 @@ describe('editor in italiano con i nomi del gioco', () => {
     expect(move).toHaveValue('Terremoto');
     expect(within(team).queryAllByText('Terra').length).toBeGreaterThan(0);
 
-    await user.click(screen.getByText('Import / Export'));
-    await user.click(screen.getByRole('button', { name: 'Esporta team' }));
-    expect((screen.getByLabelText('Testo Showdown') as HTMLTextAreaElement).value).toContain('- Earthquake');
+    const copied = spyClipboard();
+    await user.click(screen.getByRole('button', { name: 'Copia team' }));
+    expect(copied()).toContain('- Earthquake');
   });
 
   it('switching language keeps the team in English', async () => {
@@ -38,9 +39,9 @@ describe('editor in italiano con i nomi del gioco', () => {
     render(<App data={fixtureData} initialLang="it" />);
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Great Tusk{Enter}');
     await user.click(within(screen.getByRole('group', { name: 'Lingua' })).getByRole('button', { name: 'EN' }));
-    await user.click(screen.getByText('Import / Export'));
-    await user.click(screen.getByRole('button', { name: 'Export team' }));
-    expect((screen.getByLabelText('Showdown text') as HTMLTextAreaElement).value).toMatch(/^Great Tusk/);
+    const copied = spyClipboard();
+    await user.click(screen.getByRole('button', { name: 'Copy team' }));
+    expect(copied()).toMatch(/^Great Tusk/);
   });
 });
 
