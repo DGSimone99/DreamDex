@@ -3,6 +3,7 @@ import type { Format } from '../engine/format';
 import { exportShowdown, importShowdown, type TeamSet } from '../engine/sets';
 import { ConfirmDialog } from './ConfirmDialog';
 import { Icon } from './icons';
+import { Sprite } from './Sprite';
 import { UndoToast, type UndoAction } from './UndoToast';
 import { loadSavedTeams, saveTeams, type SavedTeam } from '../storage';
 import { useT } from '../i18n/react';
@@ -39,6 +40,8 @@ export function SavedTeams({ team, format, plate, onLoad }: {
   // Il nome resta finché nel team c'è qualcuno; il pallino dice che il team non è più quello salvato
   const shown = team.length > 0 ? current : null;
   const changed = !!shown && shown.text !== text;
+  // Per ogni team salvato i suoi Pokémon (gli sprite piccoli della riga), letti una volta sola
+  const members = useMemo(() => new Map(saved.map(entry => [entry.name, importShowdown(entry.text).sets.slice(0, 6)])), [saved]);
 
   const update = (next: SavedTeam[]) => {
     const ok = saveTeams(next);
@@ -79,6 +82,12 @@ export function SavedTeams({ team, format, plate, onLoad }: {
           <summary title={t('saved.title', { n: saved.length })}><Icon name="box" /><span className="btn-label">{t('saved.title', { n: saved.length })}</span></summary>
         )}
         <div className="saved-panel">
+          {/* Il team caricato è cambiato: si salvano le modifiche sotto lo stesso nome, senza riscriverlo */}
+          {changed && shown && (
+            <button type="button" className="saved-update" onClick={() => store(shown.name)}>
+              <Icon name="check" /><span>{t('saved.update', { name: shown.name })}</span>
+            </button>
+          )}
           {/* Salva: spento finché manca il nome o il team è vuoto */}
           <div className="saved-new">
             <input ref={nameRef} aria-label={t('saved.name')} value={name} placeholder={t('saved.namePlaceholder')} onChange={e => setName(e.target.value)}
@@ -93,8 +102,8 @@ export function SavedTeams({ team, format, plate, onLoad }: {
           {saved.length === 0 ? <p className="saved-empty">{t('saved.empty')}</p> : (
             <ul className="saved-list">
               {saved.map(entry => (
-                <li key={entry.name}>
-                  <button type="button" className="saved-load" title={entry.name} onClick={() => {
+                <li key={entry.name} className={shown?.name === entry.name ? 'current' : undefined}>
+                  <button type="button" className="saved-load" title={entry.name} aria-label={entry.name} onClick={() => {
                     const sets = importShowdown(entry.text).sets.map((set, i) => ({
                       ...set,
                       ...(entry.favorites?.includes(i) ? { favorite: true } : {}),
@@ -102,7 +111,18 @@ export function SavedTeams({ team, format, plate, onLoad }: {
                     }));
                     setCurrent({ name: entry.name, text: exportShowdown(sets) });
                     onLoad(sets, entry.format);
-                  }}>{entry.name}</button>
+                  }}>
+                    <span className="saved-sprites" aria-hidden="true">
+                      {Array.from({ length: 6 }, (_, i) => {
+                        const set = members.get(entry.name)?.[i];
+                        return set ? <Sprite key={i} species={set.species} item={set.item} size={40} /> : <span key={i} className="saved-gap" />;
+                      })}
+                    </span>
+                    <span className="saved-text">
+                      <span className="saved-name">{entry.name}</span>
+                      {entry.format && <span className="saved-format">{t(`format.${entry.format.formatId}`)}</span>}
+                    </span>
+                  </button>
                   <button type="button" className="saved-delete" aria-label={t('saved.delete', { name: entry.name })} title={t('saved.delete', { name: entry.name })}
                     onClick={() => remove(entry)}><Icon name="close" /></button>
                 </li>

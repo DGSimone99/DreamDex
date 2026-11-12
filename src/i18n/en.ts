@@ -383,6 +383,7 @@ export const en = {
   'undo.loaded': "Team loaded from the link",
   'saved.title': "Saved teams ({n})",
   'saved.changed': "changed since it was loaded",
+  'saved.update': "Save changes to {name}",
   'saved.name': "Team name",
   'saved.namePlaceholder': "Team name",
   'saved.save': "Save team",

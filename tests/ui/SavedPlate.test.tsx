@@ -32,3 +32,19 @@ describe('la targa del team apre i team salvati', () => {
     expect(plate().closest('details')).toHaveAttribute('open');
   });
 });
+
+describe('salvare le modifiche al team caricato', () => {
+  it('Salva le modifiche sovrascrive il team con lo stesso nome, senza chiedere il nome', async () => {
+    const user = userEvent.setup();
+    render(<App initialLang="it" data={fixtureData} />);
+    await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Great Tusk{Enter}');
+    await user.type(screen.getByLabelText('Nome team'), 'Prova{Enter}');
+    expect(screen.queryByRole('button', { name: 'Salva le modifiche a Prova' })).toBeNull();
+    await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Gholdengo{Enter}');
+    await user.click(screen.getByRole('button', { name: 'Salva le modifiche a Prova' }));
+    const { loadSavedTeams } = await import('../../src/storage');
+    expect(loadSavedTeams().map(t => t.name)).toEqual(['Prova']);
+    expect(loadSavedTeams()[0].text).toContain('Gholdengo');
+    expect(document.querySelector('.plate-dot')).toBeNull();
+  });
+});

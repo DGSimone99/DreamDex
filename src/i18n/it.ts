@@ -385,6 +385,7 @@ export const it: Record<keyof typeof en, string> = {
   'undo.loaded': "Team caricato dal link",
   'saved.title': "Team salvati ({n})",
   'saved.changed': "modificato dopo il caricamento",
+  'saved.update': "Salva le modifiche a {name}",
   'saved.name': "Nome team",
   'saved.namePlaceholder': "Nome del team",
   'saved.save': "Salva team",

@@ -382,27 +382,57 @@
 /* Lo sprite prende tutto lo spazio libero della carta (fino a 176 px): nome, tipi e ruolo restano vicini al bordo in basso */
 .band:not(.collapsed) .slot > .slot-card .sprite-wrap { flex: 1 1 0; min-height: 56px; width: 100%; display: flex; justify-content: center; align-items: flex-end; container-type: size; }
 .band:not(.collapsed) .slot > .slot-card .sprite { width: min(100cqh, 100cqw, 176px); height: min(100cqh, 100cqw, 176px); }
-/* Team salvati: il nome e Salva sulla stessa riga; ogni team è una riga (nome a sinistra, una riga sola, × a destra) */
+/* Team salvati, come un piccolo Box del PC: in cima (se il team caricato è cambiato) Salva le modifiche, poi nome e Salva
+   per un team nuovo; ogni team è una riga con i suoi sei sprite piccoli, il nome e il formato, × a destra. Il team in
+   uso ha il fondo azzurrino */
+.team-head .plate-menu[open] > .saved-panel { width: 440px; }
 .team-head .saved-panel { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+.saved-update {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 12px;
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--text);
+  font: 600 14px/1 var(--ui);
+  white-space: nowrap;
+  overflow: hidden;
+}
+.saved-update > span { overflow: hidden; text-overflow: ellipsis; }
+.saved-update .icon { flex: none; width: 15px; height: 15px; color: var(--accent-ink); }
+.saved-update:hover { background: color-mix(in srgb, var(--accent) 30%, var(--raised)); }
 .saved-new { display: flex; gap: 8px; }
 .saved-new input { flex: 1; min-width: 0; height: 34px; }
 .saved-new button { height: 34px; white-space: nowrap; }
+.saved-new button:disabled { opacity: 0.55; }
 .saved-empty { margin: 0; font-size: 13px; color: var(--muted); }
-.saved-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; margin: 0; max-height: 280px; overflow-y: auto; }
-.saved-list li { display: flex; align-items: center; gap: 4px; }
+.saved-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; margin: 0; max-height: 300px; overflow-y: auto; }
+.saved-list li { display: flex; align-items: center; gap: 4px; border-radius: 4px; }
+.saved-list li.current { background: var(--accent-wash); }
 .saved-list .saved-load {
   flex: 1;
   min-width: 0;
-  display: block;
-  height: 34px;
-  padding: 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 48px;
+  padding: 0 10px 0 4px;
   text-align: left;
   background: none;
   border-color: transparent;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
+.saved-sprites { flex: none; display: flex; }
+.saved-sprites > * { flex: none; width: 34px; height: 40px; object-fit: contain; object-position: center bottom; margin-right: -2px; transition: transform 0.12s var(--ease); }
+.saved-sprites .saved-gap, .saved-sprites .sprite.missing { width: 34px; }
+.saved-list .saved-load:hover .saved-sprites > * { transform: translateY(-2px); }
+.saved-list .saved-load:hover .saved-sprites > :nth-child(even) { transition-delay: 0.03s; }
+@media (prefers-reduced-motion: reduce) { .saved-sprites > * { transition: none; } .saved-list .saved-load:hover .saved-sprites > * { transform: none; } }
+.saved-text { display: grid; min-width: 0; gap: 2px; }
+.saved-name { font: 600 14px/1.2 var(--ui); color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.saved-format { font: 400 12px/1.2 var(--ui); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.saved-list li.current .saved-name { color: var(--accent-ink); }
 .saved-list .saved-load:hover { background: var(--raised); border-color: var(--accent); }
 .saved-list .saved-delete { flex: none; width: 34px; height: 34px; padding: 0; justify-content: center; background: none; border-color: transparent; color: var(--muted); }
 .saved-list .saved-delete:hover { border-color: var(--bad); color: var(--bad); }
