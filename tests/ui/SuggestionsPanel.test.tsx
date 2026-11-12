@@ -123,11 +123,16 @@ describe('SuggestionsPanel', () => {
     expect(grades).toEqual([...grades].sort((a, b) => b - a));
     const first = list().querySelector('li')!;
     const out = within(first).getAllByText(/^Al posto di /)[0].textContent!.replace('Al posto di ', '');
-    // Chi esce è l'ultima riga dei motivi sotto il nome (⇄ esce [icona] nome), al posto della riga "vs"
+    // Chi esce è l'ultima riga dei motivi sotto il nome (⇄ [icona] nome, senza la parola "esce"), al posto della riga "vs";
+    // "Esce X" nel tooltip
     for (const card of list().querySelectorAll(':scope > li')) {
       const rows = [...card.querySelectorAll('.who small > .reason')];
-      expect(rows.at(-1)).toHaveClass('out-row');
-      expect(rows.at(-1)!.querySelector('[aria-hidden="true"]')!.textContent).toMatch(/^esce\S/);
+      const row = rows.at(-1)!;
+      expect(row).toHaveClass('out-row');
+      const member = row.querySelector('strong')!.textContent!;
+      expect(row.querySelector('[aria-hidden="true"]')!.textContent).toBe(member);
+      expect(row).toHaveAttribute('title', `Esce ${member}`);
+      expect(row.querySelector('.out-mon .mon-icon')).not.toBeNull();
       expect(card.querySelector('.sym-vs')).toBeNull();
     }
     expect(first.querySelector('.out-row strong')).toHaveTextContent(out);
