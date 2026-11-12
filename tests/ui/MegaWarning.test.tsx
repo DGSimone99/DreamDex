@@ -18,7 +18,7 @@ describe('avviso seconda Mega', () => {
   it('solo sulla seconda Mega, come avviso e non come errore', async () => {
     await setup('Lopunny-Mega', 'Charizard-Mega-Y');
     expect(within(team()).getAllByText(WARNING)).toHaveLength(1);
-    const slot = within(team()).getByText('Charizard-Mega-Y').closest('details')!;
+    const slot = within(team()).getByText('Charizard-Mega-Y').closest('.slot')!;
     expect(slot).toHaveClass('warn');
     expect(slot).not.toHaveClass('invalid');
     // Triangolo giallo sullo sprite, con la spiegazione nel tooltip
@@ -47,7 +47,7 @@ describe('avviso seconda Mega', () => {
     await user.click(screen.getByLabelText('Testo Showdown'));
     await user.paste('Lopunny @ Lopunnite\nAbility: Limber\n- Fake Out\n\nMewtwo @ Mewtwonite Y\nAbility: Pressure\n- Psystrike');
     await user.click(screen.getByRole('button', { name: 'Importa' }));
-    const slot = within(team()).getByText('Mewtwo-Mega-Y', { selector: '.name' }).closest('details')!;
+    const slot = within(team()).getByText('Mewtwo-Mega-Y', { selector: '.name' }).closest('.slot')!;
     const danger = slot.querySelector('.sprite-alerts .alert-mark.danger') as HTMLElement;
     const warn = slot.querySelector('.sprite-alerts .alert-mark.warn') as HTMLElement;
     expect(within(danger).getByRole('tooltip')).toHaveTextContent(/Tier troppo alto per National Dex OU/);

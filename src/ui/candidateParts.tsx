@@ -171,8 +171,9 @@ export function CandidateMarks({ item, format, lists }: { item: Item; format: Fo
 /**
  * Il voto del team col candidato (+7); col primo Pokémon, il suo uso nel meta.
  * Un preferito ha il ♥ davanti e il bordo del colore dei Preferiti: è più in alto per quello (lo dice il tooltip).
+ * Con `out` (Migliora · Tutti) dopo il numero chi esce: ⇄ [mini icona].
  */
-export function ResultCell({ item, usage, favorite = false, className = '' }: { item: Item; usage: number | null; favorite?: boolean; className?: string }) {
+export function ResultCell({ item, usage, favorite = false, className = '', out }: { item: Item; usage: number | null; favorite?: boolean; className?: string; out?: string }) {
   const tr = useT();
   const lang = useLang();
   const result = item.teamGain;
@@ -193,6 +194,7 @@ export function ResultCell({ item, usage, favorite = false, className = '' }: { 
   return (
     <span className={cls} aria-label={label(tr('suggest.teamGrade', { grade: result.grade, n: result.overall, gain }))} title={boost}>
       {heart}<strong className={result.gain < 0 ? 'worse' : result.gain === 0 ? 'same' : undefined}>{gain}</strong>
+      {out && <OutMark member={out} />}
     </span>
   );
 }
@@ -346,14 +348,17 @@ export function PickButton({ rank, species, selected, onSelect }: { rank: number
   );
 }
 
-/** Chi esce: solo la sua icona; il nome nel tooltip e per gli screen reader. */
-export function OutMark({ member }: { member: string }) {
+/**
+ * Chi esce, nella targhetta del +N (Migliora · Tutti): ⇄ [mini icona], senza nome. "Esce X" nel tooltip,
+ * "Al posto di X" agli screen reader.
+ */
+function OutMark({ member }: { member: string }) {
   const tr = useT();
   return (
-    <span className="out" title={tr('suggest.outFor', { member })}>
-      <Icon name="swap" />
-      <PokemonIcon name={member} />
+    <span className="out" title={tr('suggest.outShort', { member })}>
       <span className="visually-hidden">{tr('suggest.outFor', { member })}</span>
+      <Icon name="swap" />
+      <span className="out-mon" aria-hidden="true"><PokemonIcon name={member} /></span>
     </span>
   );
 }

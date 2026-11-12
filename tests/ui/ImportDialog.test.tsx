@@ -25,8 +25,8 @@ async function pasteInMember(text: string) {
   const user = userEvent.setup();
   window.history.replaceState(null, '', `/#team=${encodeShare([tusk, gholdengo], DEFAULT_FORMAT)}`);
   const { container } = render(<App initialLang="it" data={fixtureData} />);
-  await user.click(container.querySelector<HTMLElement>('.slot > summary')!);
-  const slot = () => container.querySelector<HTMLElement>('.slot[open]')!;
+  await user.click(container.querySelector<HTMLElement>('.slot-toggle')!);
+  const slot = () => container.querySelector<HTMLElement>('.slot.open')!;
   await user.click(within(slot()).getByRole('button', { name: 'Showdown: importa o esporta il set' }));
   const area = within(slot()).getByLabelText('Set in testo Showdown');
   await user.clear(area);

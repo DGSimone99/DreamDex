@@ -123,11 +123,31 @@ describe('SuggestionsPanel', () => {
     expect(grades).toEqual([...grades].sort((a, b) => b - a));
     const first = list().querySelector('li')!;
     const out = within(first).getAllByText(/^Al posto di /)[0].textContent!.replace('Al posto di ', '');
+    // Chi esce sta nella targhetta del +N, subito dopo il numero: ⇄ e la mini icona, senza nome ("Esce X" nel tooltip,
+    // "Al posto di X" agli screen reader); sotto il nome la riga "vs" come nelle altre modalità
+    const cards = [...list().querySelectorAll(':scope > li')];
+    for (const card of cards) {
+      const mark = card.querySelector('.tag > .out')!;
+      expect(mark).not.toBeNull();
+      expect(mark.previousElementSibling!.tagName).toBe('STRONG');
+      const member = mark.querySelector('.visually-hidden')!.textContent!.replace('Al posto di ', '');
+      expect(mark).toHaveAttribute('title', `Esce ${member}`);
+      expect(mark.querySelector('.icon')).not.toBeNull();
+      expect(mark.querySelector('.out-mon .mon-icon')).not.toBeNull();
+      expect(mark.querySelector('.out-mon')).toHaveAttribute('aria-hidden', 'true');
+      expect(card.querySelector('.out-row')).toBeNull();
+    }
+    // I motivi tornano come nelle altre modalità: tutte le righe che entrano (--reasons), nessuna presa da chi esce
+    const rows = Number(list().style.getPropertyValue('--reasons'));
+    expect(rows).toBeGreaterThan(1);
+    expect(first.querySelectorAll('.who small > .reason')).toHaveLength(rows);
+    expect(first.querySelector('.tag .out')).toHaveAttribute('title', `Esce ${out}`);
     const name = rowNames()[0];
     await user.dblClick(first.querySelector<HTMLElement>('.result')!);
     expect(within(team()).getByText(name)).toBeInTheDocument();
     expect(within(team()).queryByText(out)).toBeNull();
-  });
+    // Sei Pokémon scritti a mano più il calcolo degli scambi: sotto il carico di tutta la suite servono più dei 15 s di base
+  }, 30000);
 
   it('team completo: scegliere un membro mostra solo i suoi sostituti; Tutti torna agli scambi liberi', async () => {
     const user = await setup('Great Tusk', 'Gholdengo', 'Kingambit', 'Dragapult', 'Corviknight', 'Toxapex');
@@ -491,7 +511,7 @@ describe('riga della lista', () => {
   it('Migliora: chi esce col nome, un bonus e al massimo un malus, niente voto sotto il +N', async () => {
     await setup(...FULL);
     const first = list().querySelector<HTMLElement>('li')!;
-    const out = first.querySelector<HTMLElement>('.out')!;
+    const out = first.querySelector<HTMLElement>('.tag .out')!;
     expect(FULL.some(name => out.textContent!.includes(name))).toBe(true);
     const summary = first.querySelector('.who small')!.textContent!;
     expect(summary.match(/(^|· )\+/g)?.length ?? 0).toBeLessThanOrEqual(1);

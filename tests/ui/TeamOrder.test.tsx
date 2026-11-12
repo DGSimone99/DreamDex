@@ -19,23 +19,23 @@ describe('ordine del team e editor', () => {
     const user = userEvent.setup();
     const team = await importTeam(user, 'Garchomp\n- Earthquake\n\nCorviknight\n- Roost\n\nGreninja\n- Surf');
     await user.click(within(team).getByText('Garchomp', { selector: '.name' }));
-    const card = within(team).getByText('Garchomp', { selector: '.name' }).closest('summary') as HTMLElement;
+    const card = within(team).getByText('Garchomp', { selector: '.name' }).closest('.slot')!.querySelector('.slot-toggle') as HTMLElement;
     fireEvent.keyDown(card, { key: 'ArrowRight', altKey: true });
     expect(names(team)).toEqual(['Corviknight', 'Garchomp', 'Greninja']);
-    expect(team.querySelector('.slot[open] .name')).toHaveTextContent('Garchomp');
-    fireEvent.keyDown(team.querySelector('.slot[open] input') as HTMLElement, { key: 'Escape' });
-    expect(team.querySelector('.slot[open]')).toBeNull();
+    expect(team.querySelector('.slot.open .name')).toHaveTextContent('Garchomp');
+    fireEvent.keyDown(team.querySelector('.slot.open input') as HTMLElement, { key: 'Escape' });
+    expect(team.querySelector('.slot.open')).toBeNull();
   });
 
   it('Alt + freccia: la carta dice la posizione e lo spostamento si annuncia', async () => {
     const user = userEvent.setup();
     const team = await importTeam(user, 'Garchomp\n- Earthquake\n\nCorviknight\n- Roost\n\nGreninja\n- Surf');
-    const card = within(team).getByText('Garchomp', { selector: '.name' }).closest('summary') as HTMLElement;
+    const card = within(team).getByText('Garchomp', { selector: '.name' }).closest('.slot')!.querySelector('.slot-toggle') as HTMLElement;
     expect(card.getAttribute('aria-label')).toMatch(/, posizione 1 di 3$/);
     expect(card).toHaveAttribute('aria-keyshortcuts', 'Alt+ArrowLeft Alt+ArrowRight');
     fireEvent.keyDown(card, { key: 'ArrowRight', altKey: true });
     expect(team.querySelector('[aria-live="polite"]')).toHaveTextContent('Garchomp spostato in posizione 2 di 3');
-    const moved = within(team).getByText('Garchomp', { selector: '.name' }).closest('summary') as HTMLElement;
+    const moved = within(team).getByText('Garchomp', { selector: '.name' }).closest('.slot')!.querySelector('.slot-toggle') as HTMLElement;
     expect(moved.getAttribute('aria-label')).toMatch(/, posizione 2 di 3$/);
   });
 
@@ -56,14 +56,14 @@ describe('ordine del team e editor', () => {
     const user = userEvent.setup();
     const team = await importTeam(user, 'Garchomp\n- Earthquake\n\nCorviknight\n- Roost');
     await user.click(within(team).getByText('Garchomp', { selector: '.name' }));
-    const open = () => team.querySelector('.slot[open]') as HTMLElement;
+    const open = () => team.querySelector('.slot.open') as HTMLElement;
     await user.click(within(open()).getByRole('button', { name: 'Showdown: importa o esporta il set' }));
     // Il campo parte col set attuale (da copiare): si sostituisce con quello da incollare
     await user.clear(within(open()).getByLabelText('Set in testo Showdown'));
     await user.paste('Great Tusk @ Booster Energy\nJolly Nature\n- Rapid Spin');
     await user.click(within(open()).getByRole('button', { name: 'Applica' }));
     expect(names(team)).toEqual(['Great Tusk', 'Corviknight']);
-    expect(team.querySelector('.slot[open] .name')).toHaveTextContent('Great Tusk');
+    expect(team.querySelector('.slot.open .name')).toHaveTextContent('Great Tusk');
     await user.click(screen.getByRole('button', { name: /Annulla/ }));
     expect(names(team)).toEqual(['Garchomp', 'Corviknight']);
   });
@@ -82,10 +82,10 @@ describe('ordine del team e editor', () => {
     const user = userEvent.setup();
     const team = await importTeam(user, 'Garchomp\n- Earthquake\n\nCorviknight\n- Roost\n\nGreninja\n- Surf');
     await user.click(within(team).getByRole('button', { name: /Corviknight/, pressed: false }));
-    expect(team.querySelector('.slot[open]')).toBeNull();
+    expect(team.querySelector('.slot.open')).toBeNull();
     await user.click(within(team).getByRole('button', { name: 'Rimuovi Corviknight' }));
     expect(names(team)).toEqual(['Garchomp', 'Greninja']);
-    expect(team.querySelector('.slot[open]')).toBeNull();
+    expect(team.querySelector('.slot.open')).toBeNull();
   });
 
   it('a team vuoto c’è Completa team; una proposta crea il team e si annulla', async () => {

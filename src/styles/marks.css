@@ -54,7 +54,7 @@
 .alert-line.danger { --c: var(--bad); }
 .alert-line.warn { --c: var(--warn); }
 .alert-line.info { --c: var(--accent); }
-.slot > summary:has(.alert-mark:hover, .alert-mark:focus-visible) { z-index: 5; }
+.slot > .slot-card:has(.alert-mark:hover, .alert-mark:focus-visible) { z-index: 5; }
 
 /* Icone degli strumenti (24px, dal foglio di Showdown) */
 .item-icon { display: inline-block; flex: none; vertical-align: middle; background-repeat: no-repeat; image-rendering: pixelated; }

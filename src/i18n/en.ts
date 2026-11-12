@@ -1233,6 +1233,7 @@ export const en = {
   'suggest.targetMember': "Replace {member}",
   'suggest.targetFavorite': "Favorite: never suggested for replacement",
   'suggest.outFor': "Instead of {member}",
+  'suggest.outShort': "Out: {member}",
   'suggest.swapAction': "Put in for {member}",
   'suggest.pages': "Suggestion pages",
   'suggest.dblHint.add': "double-click: add",
