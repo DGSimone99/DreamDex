@@ -375,6 +375,8 @@ export const en = {
   'showdown.copyLink': "Copy link",
   'showdown.linkCopied': "Link copied",
   'showdown.importTab': "Import",
+  'showdown.importHint': "Paste a team exported from Showdown: it takes the place of the current one.",
+  'showdown.importPlaceholder': "Great Tusk @ Booster Energy\nAbility: Protosynthesis\nEVs: 252 Atk / 4 SpD / 252 Spe\nJolly Nature\n- Headlong Rush\n\nGholdengo @ Choice Scarf\n...",
   'showdown.importTitle': "Paste a team written for Showdown",
   'showdown.copyLinkTitle': "Copy a link that opens DreamDex with this team",
   'showdown.quickCopy': "Export",

@@ -214,6 +214,15 @@
   animation: tip 0.14s var(--ease);
 }
 .team-quick .popover[open] > :not(summary) { left: auto; right: 0; width: 420px; }
+/* Importa: una riga di spiegazione, la scatola con l'esempio in grigio (si allunga se serve), Importa a destra in evidenza */
+.import-panel { display: grid; gap: 10px; }
+.import-hint { margin: 0; font: 400 13px/1.4 var(--ui); color: var(--muted); }
+.import-panel textarea { min-height: 150px; max-height: 50vh; font: 13px/1.45 var(--ui); }
+.import-panel textarea::placeholder { color: var(--faint); opacity: 0.8; }
+.import-panel .actions { justify-content: flex-end; }
+.import-panel .apply { display: inline-flex; align-items: center; gap: 7px; background: var(--accent-soft); border-color: var(--accent); color: var(--text); font-weight: 700; }
+.import-panel .apply .icon { width: 15px; height: 15px; color: var(--accent-ink); }
+.import-panel .apply:hover { background: color-mix(in srgb, var(--accent) 30%, var(--raised)); }
 .team-quick .popover[open] > .saved-panel { width: 380px; }
 @media (prefers-reduced-motion: reduce) { .team-head .popover[open] > :not(summary) { animation: none; } }
 .set-editor .best-preset { height: 36px; white-space: nowrap; flex-shrink: 0; }

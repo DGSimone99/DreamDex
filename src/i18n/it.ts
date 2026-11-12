@@ -377,6 +377,8 @@ export const it: Record<keyof typeof en, string> = {
   'showdown.copyLink': "Copia link",
   'showdown.linkCopied': "Link copiato",
   'showdown.importTab': "Importa",
+  'showdown.importHint': "Incolla il team esportato da Showdown: prende il posto di quello attuale.",
+  'showdown.importPlaceholder': "Great Tusk @ Booster Energy\nAbility: Protosynthesis\nEVs: 252 Atk / 4 SpD / 252 Spe\nJolly Nature\n- Headlong Rush\n\nGholdengo @ Choice Scarf\n...",
   'showdown.importTitle': "Incolla un team scritto per Showdown",
   'showdown.copyLinkTitle': "Copia il link che apre DreamDex con questo team",
   'showdown.quickCopy': "Esporta",

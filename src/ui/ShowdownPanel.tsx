@@ -46,10 +46,12 @@ export function ShowdownPanel({ team, format, tera = true, onImport }: { team: T
     <>
       <details className="popover">
         <summary title={t('showdown.importTitle')}><Icon name="paste" /><span className="btn-label">{t('showdown.importTab')}</span></summary>
-        <div>
-          <textarea aria-label={t('showdown.text')} rows={12} value={text} onChange={e => setText(e.target.value)} />
+        {/* Importa: una riga che dice cosa incollare, la scatola con un esempio in grigio, Importa in evidenza */}
+        <div className="import-panel">
+          <p className="import-hint">{t('showdown.importHint')}</p>
+          <textarea aria-label={t('showdown.text')} rows={8} value={text} placeholder={t('showdown.importPlaceholder')} onChange={e => setText(e.target.value)} />
           <div className="actions">
-            <button type="button" onClick={doImport}>{t('showdown.import')}</button>
+            <button type="button" className="apply" onClick={doImport}><Icon name="paste" />{t('showdown.import')}</button>
           </div>
           {review && <ImportDialog review={review.review} onYes={unlock} onClose={() => setReview(null)} />}
         </div>
