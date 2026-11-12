@@ -123,11 +123,20 @@ describe('SuggestionsPanel', () => {
     expect(grades).toEqual([...grades].sort((a, b) => b - a));
     const first = list().querySelector('li')!;
     const out = within(first).getAllByText(/^Al posto di /)[0].textContent!.replace('Al posto di ', '');
+    // Chi esce è l'ultima riga dei motivi sotto il nome (⇄ esce [icona] nome), al posto della riga "vs"
+    for (const card of list().querySelectorAll(':scope > li')) {
+      const rows = [...card.querySelectorAll('.who small > .reason')];
+      expect(rows.at(-1)).toHaveClass('out-row');
+      expect(rows.at(-1)!.querySelector('[aria-hidden="true"]')!.textContent).toMatch(/^esce\S/);
+      expect(card.querySelector('.sym-vs')).toBeNull();
+    }
+    expect(first.querySelector('.out-row strong')).toHaveTextContent(out);
     const name = rowNames()[0];
     await user.dblClick(first.querySelector<HTMLElement>('.result')!);
     expect(within(team()).getByText(name)).toBeInTheDocument();
     expect(within(team()).queryByText(out)).toBeNull();
-  });
+    // Sei Pokémon scritti a mano più il calcolo degli scambi: sotto il carico di tutta la suite servono più dei 15 s di base
+  }, 30000);
 
   it('team completo: scegliere un membro mostra solo i suoi sostituti; Tutti torna agli scambi liberi', async () => {
     const user = await setup('Great Tusk', 'Gholdengo', 'Kingambit', 'Dragapult', 'Corviknight', 'Toxapex');
@@ -491,7 +500,7 @@ describe('riga della lista', () => {
   it('Migliora: chi esce col nome, un bonus e al massimo un malus, niente voto sotto il +N', async () => {
     await setup(...FULL);
     const first = list().querySelector<HTMLElement>('li')!;
-    const out = first.querySelector<HTMLElement>('.out')!;
+    const out = first.querySelector<HTMLElement>('.who small .out-row')!;
     expect(FULL.some(name => out.textContent!.includes(name))).toBe(true);
     const summary = first.querySelector('.who small')!.textContent!;
     expect(summary.match(/(^|· )\+/g)?.length ?? 0).toBeLessThanOrEqual(1);
@@ -551,7 +560,7 @@ describe('riga della lista', () => {
 
   it('Aggiungi: niente "chi esce"', async () => {
     await setup('Great Tusk');
-    expect(list().querySelector('.out')).toBeNull();
+    expect(list().querySelector('.out-row')).toBeNull();
     expect(list().querySelector('li .who small')!.textContent).toMatch(/\S/);
   });
 });
