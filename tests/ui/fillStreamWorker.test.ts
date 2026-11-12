@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { defaultChoice, fillProposals, type Proposal } from '../../src/engine/fillProposals';
+import { defaultChoice, fillProposals, formeId, type Proposal } from '../../src/engine/fillProposals';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
 import type { WorkerRequest, WorkerResponse } from '../../src/engine/rankingProtocol';
 import { emptySet } from '../../src/engine/sets';
@@ -38,8 +38,8 @@ fake.handle = (worker, raw) => {
   if (message.kind !== 'fill') return;
   const reply = (response: WorkerResponse) => worker.reply(response);
   if (fake.fail) { setTimeout(() => reply({ id: message.id, ok: false, error: 'rotto' }), 0); return; }
-  const exclude = new Set(message.exclude);
-  const steps = fillProposals(message.team, message.choice, exclude, message.format, fillData);
+  const shown = message.shown.map(ids => [...ids]);
+  const steps = fillProposals(message.team, message.choice, shown, message.format, fillData);
   let found = 0;
   const step = () => {
     const next = cancelled.has(message.id) ? null : steps.next();
@@ -47,7 +47,7 @@ fake.handle = (worker, raw) => {
       if (next.value) reply({ id: message.id, ok: true, kind: 'fillProposal', proposal: next.value });
       if (!next.value || !message.max || ++found < message.max) { setTimeout(step, 0); return; }
     }
-    reply({ id: message.id, ok: true, kind: 'fillDone', exclude: [...exclude], exhausted: next?.done === true && next.value === 'exhausted' });
+    reply({ id: message.id, ok: true, kind: 'fillDone', shown, exhausted: next?.done === true && next.value === 'exhausted' });
   };
   setTimeout(step, 0);
 };
@@ -59,26 +59,35 @@ const cancels = () => (fake.sent as WorkerRequest[]).filter(m => m.kind === 'can
 describe('streamFill col calcolo in sottofondo', () => {
   it('le proposte arrivano dal worker una alla volta, poi la fine', async () => {
     const got: Proposal[] = [];
-    const result = await streamFill([], { archetype: 'stall', style: null }, new Set(), DEFAULT_FORMAT, fillData, p => got.push(p)).done;
+    const result = await streamFill([], { archetype: 'stall', style: null }, [], DEFAULT_FORMAT, fillData, p => got.push(p)).done;
     expect(fills()).toHaveLength(1);
     expect(got.length).toBeGreaterThan(0);
     expect(result.failed).toBe(false);
     // Fermato per i tentativi, non finiti; senza candidati (solo preferiti, nessun preferito) sì
     expect(result.exhausted).toBe(false);
     const team = [emptySet('Garchomp')];
-    const none = await streamFill(team, { ...defaultChoice(team), favorites: 'only' }, new Set(), DEFAULT_FORMAT, fillData, () => undefined).done;
+    const none = await streamFill(team, { ...defaultChoice(team), favorites: 'only' }, [], DEFAULT_FORMAT, fillData, () => undefined).done;
     expect(none.exhausted).toBe(true);
+  });
+
+  it('la storia delle proposte già mostrate arriva al worker e torna allungata con quelle del giro', async () => {
+    const shown = [['gholdengo', 'kingambit', 'greattusk', 'toxapex', 'dragapult', 'corviknight']];
+    const got: Proposal[] = [];
+    const result = await streamFill([], { archetype: 'balance', style: null }, shown, DEFAULT_FORMAT, fillData, p => got.push(p)).done;
+    expect(fills()[fills().length - 1].shown).toEqual(shown);
+    expect(got.length).toBeGreaterThan(0);
+    expect(result.shown).toEqual([...shown, ...got.map(p => p.added.map(formeId))]);
   });
 
   it('max arriva al worker; cancel gli chiede di fermarsi', async () => {
     const before = fills().length;
     const got: Proposal[] = [];
-    await streamFill([], { archetype: 'hyperOffense', style: null }, new Set(), DEFAULT_FORMAT, fillData, p => got.push(p), { max: 1 }).done;
+    await streamFill([], { archetype: 'hyperOffense', style: null }, [], DEFAULT_FORMAT, fillData, p => got.push(p), { max: 1 }).done;
     expect(fills()[before].max).toBe(1);
     expect(got).toHaveLength(1);
-    expect((await streamFill([], { archetype: 'hyperOffense', style: null }, new Set(), DEFAULT_FORMAT, fillData, () => undefined, { max: 1 }).done).exhausted).toBe(false);
+    expect((await streamFill([], { archetype: 'hyperOffense', style: null }, [], DEFAULT_FORMAT, fillData, () => undefined, { max: 1 }).done).exhausted).toBe(false);
 
-    const run = streamFill([], { archetype: 'balance', style: null }, new Set(), DEFAULT_FORMAT, fillData, () => undefined);
+    const run = streamFill([], { archetype: 'balance', style: null }, [], DEFAULT_FORMAT, fillData, () => undefined);
     run.cancel();
     const { id } = fills()[before + 1];
     expect(cancels()).toContainEqual({ kind: 'cancel', id });
@@ -88,7 +97,7 @@ describe('streamFill col calcolo in sottofondo', () => {
   it('una risposta non ok dice failed e non spegne il worker', async () => {
     const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     fake.fail = true;
-    const result = await streamFill([], { archetype: 'semiStall', style: null }, new Set(), DEFAULT_FORMAT, fillData, () => undefined).done;
+    const result = await streamFill([], { archetype: 'semiStall', style: null }, [], DEFAULT_FORMAT, fillData, () => undefined).done;
     fake.fail = false;
     expect(result.failed).toBe(true);
     expect(error).toHaveBeenCalled();
@@ -96,7 +105,7 @@ describe('streamFill col calcolo in sottofondo', () => {
     // La richiesta dopo va ancora al worker
     const before = fills().length;
     const got: Proposal[] = [];
-    await streamFill([], { archetype: 'stall', style: 'trickroom' }, new Set(), DEFAULT_FORMAT, fillData, p => got.push(p)).done;
+    await streamFill([], { archetype: 'stall', style: 'trickroom' }, [], DEFAULT_FORMAT, fillData, p => got.push(p)).done;
     expect(fills()).toHaveLength(before + 1);
   });
 
@@ -116,7 +125,7 @@ describe('streamFill col calcolo in sottofondo', () => {
 
     // Il pannello aperto sul team preparato non fa una richiesta nuova
     const got: Proposal[] = [];
-    const result = await streamFill(other, defaultChoice(other), new Set(), DEFAULT_FORMAT, fillData, p => got.push(p)).done;
+    const result = await streamFill(other, defaultChoice(other), [], DEFAULT_FORMAT, fillData, p => got.push(p)).done;
     expect(fills()).toHaveLength(before + 2);
     expect(result.failed).toBe(false);
     await tick();

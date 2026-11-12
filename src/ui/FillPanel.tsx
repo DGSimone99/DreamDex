@@ -47,7 +47,9 @@ const evsText = (set: TeamSet, lang: Lang) =>
 
 /**
  * Completa team: due schede. Proposte: tipo di team, condizione (meteo / Trick Room) e preferiti a scelta, i set dei
- * membri da tenere o lasciar cambiare, PROPOSALS_PER_ROUND completamenti per giro senza Pokémon nuovi in comune; i giri già
+ * membri da tenere o lasciar cambiare, PROPOSALS_PER_ROUND completamenti per giro (nel primo nessun Pokémon nuovo in
+ * comune; dopo i già mostrati possono tornare, ma ogni proposta cambia almeno metà dei nuovi rispetto a ognuna delle
+ * precedenti); i giri già
  * calcolati si sfogliano con le frecce (‹ 1/3 ›) senza ricalcolarli. Le proposte arrivano una alla
  * volta dal calcolo in sottofondo e ognuna entra al suo posto; cambiando scelta il calcolo riparte. I tipi senza
  * proposte (per le altre scelte) si oscurano, e se quello scelto è vuoto si passa al primo che ne ha.
@@ -77,14 +79,14 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
   const [busy, setBusy] = useState(true);
   const [failed, setFailed] = useState(false);
   // Il giro è arrivato in fondo e i Pokémon nuovi sono finiti: "Altre proposte" non troverebbe niente (un giro più
-  // corto fermato dai tentativi non conta: quello dopo, con più esclusi e tentativi nuovi, può trovarne altre)
+  // corto fermato dai tentativi non conta: quello dopo, con più proposte nella storia e tentativi nuovi, può trovarne altre)
   const [exhausted, setExhausted] = useState(false);
   // Tipi con almeno una proposta per le altre scelte (undefined: ancora da verificare, o calcolo rotto)
   const [available, setAvailable] = useState<Record<string, boolean>>({});
   // Il tipo l'ha scelto il giocatore: il pannello non lo cambia più da solo
   const chosenByHand = useRef(false);
-  // Pokémon nuovi già mostrati per questa scelta e questo team: "Altre proposte" non li ripete
-  const exclude = useRef(new Set<string>());
+  // Le proposte già mostrate per questa scelta e questo team (le forme dei nuovi di ognuna): "Altre proposte" ne tiene conto
+  const shownSoFar = useRef<string[][]>([]);
   const resetKey = useMemo(() => ({}), [team, format, data, choice]);
   const lastReset = useRef(resetKey);
   // Tutto quello che cambia i controlli dei tipi (non il tipo scelto): partono dopo la prima proposta del calcolo
@@ -113,7 +115,7 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
   useEffect(() => {
     if (lastReset.current !== resetKey) {
       lastReset.current = resetKey;
-      exclude.current = new Set();
+      shownSoFar.current = [];
     }
     // Un giro nuovo prende la pagina dopo le altre e la mostra; ripartendo (giro 0) le pagine di prima si buttano
     setPages(list => [...list.slice(0, round), []]);
@@ -125,7 +127,7 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
     let found = 0;
     const mode = choice.favorites ?? 'priority';
     const key = checksKey;
-    const call = streamFill(team, choice, exclude.current, format, data, proposal => {
+    const call = streamFill(team, choice, shownSoFar.current, format, data, proposal => {
       if (!live) return;
       found++;
       setPages(list => list.map((items, i) => (i === round ? insertSorted(items, proposal, mode) : items)));
@@ -134,7 +136,7 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
     void call.done.then(done => {
       if (!live) return;
       setChecksReady(key);
-      exclude.current = done.exclude;
+      shownSoFar.current = done.shown;
       setBusy(false);
       setFailed(done.failed);
       setExhausted(done.exhausted);
@@ -157,7 +159,7 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
       const archetype = TYPES[index++];
       if (!live || archetype === undefined) return;
       let found = false;
-      const call = streamFill(team, { ...choice, archetype }, new Set(), format, data, () => { found = true; }, { max: 1 });
+      const call = streamFill(team, { ...choice, archetype }, [], format, data, () => { found = true; }, { max: 1 });
       cancel = call.cancel;
       void call.done.then(done => {
         if (!live) return;

@@ -6,7 +6,7 @@ import type { EngineData } from '../../src/engine/data';
 import { battleAbility, battleName, isMega, toID } from '../../src/engine/dex';
 import { bestCoherentPreset } from '../../src/engine/bestPreset';
 import { coherenceGaps, contradictorySet } from '../../src/engine/coherence';
-import { defaultChoice, FILL_FAVORITE_MARGIN, fillProposals, matchesChoice, MAX_ATTEMPTS, MAX_MISSES, MIN_OVERALL, proposalOrder, PROPOSALS_PER_ROUND, type FillChoice, type Proposal } from '../../src/engine/fillProposals';
+import { defaultChoice, FILL_FAVORITE_MARGIN, fillProposals, matchesChoice, MAX_ATTEMPTS, maxShared, MAX_MISSES, MIN_OVERALL, proposalOrder, PROPOSALS_PER_ROUND, REPEAT_PENALTY, type FillChoice, type Proposal } from '../../src/engine/fillProposals';
 import { formatRules } from '../../src/engine/formatRules';
 import { DEFAULT_FORMAT, type Format } from '../../src/engine/format';
 import { rateTeam } from '../../src/engine/rating';
@@ -17,8 +17,8 @@ import { fillData } from '../fixtures/fillData';
 
 /** Le proposte di un giro (il generatore produce anche `null` come segnale di avanzamento). */
 // Il meta di prova è piccolo: le regole si verificano senza voto minimo, tranne nel test che lo riguarda
-const take = (team: TeamSet[], choice: FillChoice, exclude = new Set<string>(), format: Format = DEFAULT_FORMAT, data: EngineData = fillData, minOverall = 0) =>
-  [...fillProposals(team, choice, exclude, format, data, minOverall)].filter((p): p is Proposal => p !== null);
+const take = (team: TeamSet[], choice: FillChoice, shown: string[][] = [], format: Format = DEFAULT_FORMAT, data: EngineData = fillData, minOverall = 0) =>
+  [...fillProposals(team, choice, shown, format, data, minOverall)].filter((p): p is Proposal => p !== null);
 const any: FillChoice = { archetype: null, style: null };
 /** Un Pokémon si distingue per forma in battaglia: Charizard e Charizard-Mega-Y sono due Pokémon diversi. */
 const formes = (sets: TeamSet[]) => sets.map(s => toID(battleName(s)));
@@ -58,32 +58,37 @@ describe('proposte di Completa team', () => {
 
   it('nessuna proposta sotto il voto minimo', () => {
     for (const choice of [any, { archetype: null, style: 'rain' as const }, { archetype: 'balance' as const, style: null }]) {
-      for (const p of take([], choice, new Set(), DEFAULT_FORMAT, fillData, MIN_OVERALL)) expect(p.overall, JSON.stringify(choice)).toBeGreaterThanOrEqual(MIN_OVERALL);
+      for (const p of take([], choice, [], DEFAULT_FORMAT, fillData, MIN_OVERALL)) expect(p.overall, JSON.stringify(choice)).toBeGreaterThanOrEqual(MIN_OVERALL);
     }
   }, 60000);
 
   it('in "Altre proposte" i portatori già mostrati ruotano: non sempre lo stesso', () => {
     // Pioggia: Pelipper è l'unico del meta, gli altri arrivano dal Pokédex; finiti i nuovi, i già mostrati si alternano
-    const exclude = new Set<string>();
-    take([], { archetype: null, style: 'sun' }, exclude);
-    const again = take([], { archetype: null, style: 'sun' }, exclude);
+    const shown: string[][] = [];
+    take([], { archetype: null, style: 'sun' }, shown);
+    const again = take([], { archetype: null, style: 'sun' }, shown);
     const setters = again.map(p => toID(battleName(setterOf(p, 'sun')!)));
     if (setters.length >= 2) expect(new Set(setters).size).toBeGreaterThan(1);
   }, 60000);
 
-  it('chi porta lo stile si ripete solo se non ce n’è uno nuovo; gli altri mai', () => {
-    const exclude = new Set<string>();
-    const first = take([], { archetype: null, style: 'sun' }, exclude);
+  it('chi porta lo stile si ripete solo se non ce n’è uno nuovo; gli altri nel primo giro mai, dopo con la regola della metà', () => {
+    const first = take([], { archetype: null, style: 'sun' });
     expect(first.length).toBeGreaterThanOrEqual(2);
     // Due portatori del sole (Torkoal, Charizard-Mega-Y): le prime due proposte ne usano due diversi
     expect(toID(battleName(setterOf(first[0], 'sun')!))).not.toBe(toID(battleName(setterOf(first[1], 'sun')!)));
     // Pioggia: un solo portatore, che può tornare nel giro dopo; gli altri membri no
-    const rainExclude = new Set<string>();
-    const rain = take([], { archetype: null, style: 'rain' }, rainExclude);
-    const more = take([], { archetype: null, style: 'rain' }, rainExclude);
+    const shown: string[][] = [];
+    const rain = take([], { archetype: null, style: 'rain' }, shown);
+    const more = take([], { archetype: null, style: 'rain' }, shown);
     expect(rain.length + more.length).toBeGreaterThanOrEqual(2);
-    const others = [...rain, ...more].flatMap(p => p.added.filter(s => s !== setterOf(p, 'rain')).map(s => toID(battleName(s))));
-    expect(new Set(others).size).toBe(others.length);
+    const others = (p: Proposal) => p.added.filter(s => s !== setterOf(p, 'rain')).map(s => toID(battleName(s)));
+    const firstRound = rain.flatMap(others);
+    expect(new Set(firstRound).size).toBe(firstRound.length);
+    const all = [...rain, ...more];
+    for (let i = 0; i < all.length; i++) for (let j = 0; j < i; j++) {
+      const before = new Set(others(all[j]));
+      expect(others(all[i]).filter(id => before.has(id)).length).toBeLessThanOrEqual(maxShared(all[i].added.length));
+    }
   });
 
   it('i membri attuali restano primi e intatti', () => {
@@ -93,12 +98,11 @@ describe('proposte di Completa team', () => {
     for (const p of list) expect(p.team[0]).toBe(team[0]);
   });
 
-  it('esclusi: le forme in exclude non entrano, e exclude cresce con le proposte', () => {
-    const exclude = new Set(['gholdengo']);
-    const list = take([], any, exclude);
+  it('la storia cresce con le proposte: per ognuna, le forme dei nuovi', () => {
+    const shown: string[][] = [];
+    const list = take([], any, shown);
     expect(list.length).toBeGreaterThanOrEqual(1);
-    expect(list.flatMap(p => formes(p.added))).not.toContain('gholdengo');
-    for (const p of list) for (const id of formes(p.added)) expect(exclude.has(id)).toBe(true);
+    expect(shown).toEqual(list.map(p => formes(p.added)));
   });
 
   it('un solo slot: un Pokémon diverso per proposta', () => {
@@ -114,7 +118,7 @@ describe('proposte di Completa team', () => {
   it("con una Mega nel team non ne aggiunge un'altra, anche con allowMultipleMegas", () => {
     const team = [set('Gardevoir', ['Hyper Voice'], 'Gardevoirite')];
     for (const allowMultipleMegas of [false, true]) {
-      const list = take(team, any, new Set(), { ...DEFAULT_FORMAT, allowMultipleMegas });
+      const list = take(team, any, [], { ...DEFAULT_FORMAT, allowMultipleMegas });
       expect(list.length).toBeGreaterThanOrEqual(1);
       for (const p of list) expect(p.added.some(isMega)).toBe(false);
     }
@@ -128,12 +132,12 @@ describe('proposte di Completa team', () => {
   it('la Mega col set sulla specie base (Charizard @ Charizardite Y) si esclude per la sua forma', () => {
     const data: EngineData = { ...fillData, presets: { Charizard: [{ name: 'Mega Y', format: 'gen9nationaldex',
       set: { ...emptySet('Charizard'), item: 'Charizardite Y', ability: 'Blaze', moves: ['Flamethrower', 'Solar Beam'] } }] } };
-    const exclude = new Set<string>();
+    const shown: string[][] = [];
     // Senza stile: chi porta il sole non ha l'eccezione di poter tornare
-    const list = take([], any, exclude, DEFAULT_FORMAT, data).concat(take([], any, exclude, DEFAULT_FORMAT, data));
+    const list = take([], any, shown, DEFAULT_FORMAT, data);
     const zard = list.filter(p => p.added.some(s => toID(battleName(s)) === 'charizardmegay'));
     expect(zard.length).toBeLessThanOrEqual(1);
-    if (zard.length) expect(exclude.has('charizardmegay')).toBe(true);
+    if (zard.length) expect(shown.flat()).toContain('charizardmegay');
   });
 
   it('voto della proposta = rateTeam del team proposto', () => {
@@ -182,7 +186,7 @@ describe('proposte di Completa team', () => {
   it('senza proposte possibili produce solo segnali di avanzamento, poi si ferma', () => {
     // Stall con Trick Room e pioggia insieme non esiste: si chiede Stall + neve su un team già offensivo
     const team = ['Dragapult', 'Weavile', 'Cinderace', 'Iron Valiant', 'Gholdengo'].map(name => set(name, ['Protect']));
-    const steps = [...fillProposals(team, { archetype: 'stall', style: 'snow' }, new Set(), DEFAULT_FORMAT, fillData)];
+    const steps = [...fillProposals(team, { archetype: 'stall', style: 'snow' }, [], DEFAULT_FORMAT, fillData)];
     expect(steps.every(step => step === null)).toBe(true);
     expect(steps.length).toBeLessThanOrEqual(MAX_MISSES);
   });
@@ -190,7 +194,7 @@ describe('proposte di Completa team', () => {
   it('un giro difficile insiste oltre i vecchi 8 tentativi, ma mai più di MAX_MISSES di fila né MAX_ATTEMPTS in tutto', () => {
     // Garchomp + Hyper Offense nel meta di prova: la prima proposta arriva solo dopo più di 8 tentativi a vuoto (prima
     // il giro si arrendeva a 8 senza proposte)
-    const steps = [...fillProposals([set('Garchomp', ['Protect'])], { archetype: 'hyperOffense', style: null }, new Set(), DEFAULT_FORMAT, fillData, 0)];
+    const steps = [...fillProposals([set('Garchomp', ['Protect'])], { archetype: 'hyperOffense', style: null }, [], DEFAULT_FORMAT, fillData, 0)];
     const firstFound = steps.findIndex(step => step !== null);
     expect(firstFound).toBeGreaterThan(8);
     expect(steps.filter(step => step === null).length).toBeLessThanOrEqual(MAX_ATTEMPTS);
@@ -203,8 +207,8 @@ describe('proposte di Completa team', () => {
 
   it("come finisce il giro: fermato dai tentativi non vuol dire finiti, e il giro dopo ne trova altre", () => {
     /** Consuma il giro e dà le proposte e come è finito. */
-    const round = (team: TeamSet[], choice: FillChoice, exclude: Set<string>, data: EngineData = fillData) => {
-      const steps = fillProposals(team, choice, exclude, DEFAULT_FORMAT, data, 0);
+    const round = (team: TeamSet[], choice: FillChoice, shown: string[][], data: EngineData = fillData) => {
+      const steps = fillProposals(team, choice, shown, DEFAULT_FORMAT, data, 0);
       const list: Proposal[] = [];
       for (let next = steps.next(); ; next = steps.next()) {
         if (next.done) return { list, end: next.value };
@@ -214,35 +218,35 @@ describe('proposte di Completa team', () => {
     // Manca solo chi toglie le trappole: tanti tentativi finiscono su proposte con il buco, il giro si ferma prima di PROPOSALS_PER_ROUND
     const team = [set('Garchomp', ['Stealth Rock', 'Earthquake']), ...['Toxapex', 'Kingambit', 'Blissey'].map(name => set(name, ['Protect'])),
       set('Gardevoir', ['Hyper Voice'], 'Gardevoirite')];
-    const exclude = new Set<string>();
-    const first = round(team, any, exclude);
+    const shown: string[][] = [];
+    const first = round(team, any, shown);
     expect(first.list.length).toBeGreaterThanOrEqual(1);
     expect(first.list.length).toBeLessThan(PROPOSALS_PER_ROUND);
     expect(first.end).toBe('stopped');
-    const second = round(team, any, exclude);
+    const second = round(team, any, shown);
     expect(second.list.length).toBeGreaterThanOrEqual(1);
     expect(second.end).not.toBe('exhausted');
     // Un giro pieno è 'complete'
-    const full = round([set('Great Tusk', ['Rapid Spin', 'Stealth Rock']), ...['Gholdengo', 'Kingambit', 'Dragapult', 'Corviknight'].map(name => set(name, ['Protect']))], any, new Set());
+    const full = round([set('Great Tusk', ['Rapid Spin', 'Stealth Rock']), ...['Gholdengo', 'Kingambit', 'Dragapult', 'Corviknight'].map(name => set(name, ['Protect']))], any, []);
     expect(full.list).toHaveLength(PROPOSALS_PER_ROUND);
     expect(full.end).toBe('complete');
     // Nessun candidato (solo preferiti, e non ce ne sono): finiti
-    const none = round(team.slice(0, 3), { ...any, favorites: 'only' }, new Set());
+    const none = round(team.slice(0, 3), { ...any, favorites: 'only' }, []);
     expect(none).toEqual({ list: [], end: 'exhausted' });
     // Nessuna proposta: con gli stessi esclusi il giro dopo sarebbe identico, quindi anche questo è "finiti"
     expect(round(['Dragapult', 'Weavile', 'Cinderace', 'Iron Valiant', 'Gholdengo'].map(name => set(name, ['Protect'])),
-      { archetype: 'stall', style: 'snow' }, new Set()).end).toBe('exhausted');
-    expect(fillProposals([], any, new Set(), DEFAULT_FORMAT, { stats: null, sets: {} }).next()).toEqual({ done: true, value: 'exhausted' });
+      { archetype: 'stall', style: 'snow' }, []).end).toBe('exhausted');
+    expect(fillProposals([], any, [], DEFAULT_FORMAT, { stats: null, sets: {} }).next()).toEqual({ done: true, value: 'exhausted' });
   }, 60000);
 
   it('senza statistiche non produce nulla', () => {
-    expect(take([], any, new Set(), DEFAULT_FORMAT, { stats: null, sets: {} })).toEqual([]);
+    expect(take([], any, [], DEFAULT_FORMAT, { stats: null, sets: {} })).toEqual([]);
   });
 });
 
 describe('Completa team: preferiti dell\'utente', () => {
   const lists = (favorites: string[]) => effectiveLists({ ...EMPTY_LISTS, universal: { favorites, bans: [] } }, 'ou');
-  const firstPicks = (data: EngineData) => formes(take([], any, new Set(), DEFAULT_FORMAT, data)[0].added);
+  const firstPicks = (data: EngineData) => formes(take([], any, [], DEFAULT_FORMAT, data)[0].added);
 
   it('nessun preferito: proposte come prima', () => {
     expect(firstPicks({ ...fillData, userLists: lists([]) })).toEqual(firstPicks(fillData));
@@ -283,18 +287,18 @@ describe('Completa team 2.0: preferiti in tre modi, coerenza, set dei membri', (
   it('"solo preferiti": i nuovi sono tutti preferiti; senza preferiti nessuna proposta', () => {
     const team = ['Garchomp', 'Toxapex', 'Kingambit'].map(name => set(name, ['Protect']));
     const data = { ...fillData, userLists: lists(['Corviknight', 'Great Tusk', 'Iron Valiant', 'Blissey']) };
-    const list = take(team, { ...any, favorites: 'only' }, new Set(), DEFAULT_FORMAT, data);
+    const list = take(team, { ...any, favorites: 'only' }, [], DEFAULT_FORMAT, data);
     expect(list.length).toBeGreaterThanOrEqual(1);
     for (const p of list) {
       for (const s of p.added) expect(isUserFavorite(s, data.userLists), s.species).toBe(true);
       expect(p.favorites).toBe(p.added.length);
     }
-    expect(take(team, { ...any, favorites: 'only' }, new Set(), DEFAULT_FORMAT, { ...fillData, userLists: lists([]) })).toEqual([]);
+    expect(take(team, { ...any, favorites: 'only' }, [], DEFAULT_FORMAT, { ...fillData, userLists: lists([]) })).toEqual([]);
   });
 
   it('nessun set contraddittorio tra i nuovi (Gholdengo con Choice Scarf e Nasty Plot resta fuori)', () => {
-    const exclude = new Set<string>();
-    const list = [...take([], any, exclude), ...take([], any, exclude)];
+    const shown: string[][] = [];
+    const list = [...take([], any, shown), ...take([], any, shown)];
     expect(list.length).toBeGreaterThanOrEqual(1);
     for (const p of list) for (const s of p.added) expect(contradictorySet(s), s.species).toBe(false);
     expect(list.flatMap(p => formes(p.added))).not.toContain('gholdengo');
@@ -311,7 +315,7 @@ describe('Completa team 2.0: preferiti in tre modi, coerenza, set dei membri', (
     // Membri con la sola Protect: nessuno mette né toglie le trappole, e chi le toglie tra i candidati è bannato
     const team = ['Garchomp', 'Toxapex', 'Kingambit', 'Blissey', 'Dragapult'].map(name => set(name, ['Protect']));
     const data = { ...fillData, userLists: lists([], ['Corviknight', 'Great Tusk', 'Torkoal', 'Cinderace']) };
-    const list = take(team, any, new Set(), DEFAULT_FORMAT, data);
+    const list = take(team, any, [], DEFAULT_FORMAT, data);
     expect(list.length).toBeGreaterThanOrEqual(1);
     // Nessuno mette né toglie le trappole: chi porta uno dei due ruoli lascia l'altro scoperto, e la nota lo dice
     for (const p of list) expect(p.gaps.some(g => g.kind === 'removal' || g.kind === 'hazards'), formes(p.added).join()).toBe(true);
@@ -320,11 +324,11 @@ describe('Completa team 2.0: preferiti in tre modi, coerenza, set dei membri', (
 
   it("trappole e debolezze sono rigide: all'ultimo posto entra solo chi toglie le trappole, finché ce n'è uno", () => {
     // Con una Mega già nel team l'ultimo posto non deve per forza essere una Mega
-    // Garchomp mette le trappole: manca solo chi le toglie. Senza Corviknight restano Great Tusk, Torkoal e Cinderace:
+    // Garchomp mette le trappole: manca solo chi le toglie. Senza Corviknight (bannato) restano Great Tusk, Torkoal e Cinderace:
     // Skarmory vale qualche punto in più ma non le toglie, quindi non entra; finiti quelli il giro si ferma
     const team = [set('Garchomp', ['Stealth Rock', 'Earthquake']), ...['Toxapex', 'Kingambit', 'Blissey'].map(name => set(name, ['Protect'])),
       set('Gardevoir', ['Hyper Voice'], 'Gardevoirite')];
-    const list = take(team, any, new Set(['corviknight']));
+    const list = take(team, any, [], DEFAULT_FORMAT, { ...fillData, userLists: lists([], ['Corviknight']) });
     expect(list.length).toBeGreaterThanOrEqual(1);
     for (const p of list) expect(p.gaps, formes(p.added).join()).toEqual([]);
     expect(list.flatMap(p => formes(p.added))).not.toContain('skarmory');
@@ -353,7 +357,7 @@ describe('Completa team 2.0: preferiti in tre modi, coerenza, set dei membri', (
     const resists = Object.keys(fillData.stats!.pokemon).filter(name => !team.some(s => s.species === name)
       && coherenceGaps([...team, set(name, ['Protect'])], rules).every(g => g.kind !== 'weakness' || g.type !== 'Ice'));
     const data = { ...fillData, userLists: lists([], resists) };
-    const list = take(team, any, new Set(), DEFAULT_FORMAT, data);
+    const list = take(team, any, [], DEFAULT_FORMAT, data);
     expect(list.length).toBeGreaterThanOrEqual(1);
     for (const p of list) expect(p.gaps.some(g => g.kind === 'weakness' && g.type === 'Ice')).toBe(true);
   });
@@ -362,7 +366,7 @@ describe('Completa team 2.0: preferiti in tre modi, coerenza, set dei membri', (
     const strong = { ...emptySet('Garchomp'), item: 'Rocky Helmet', ability: 'Rough Skin', moves: ['Earthquake', 'Outrage', 'Stealth Rock', 'Swords Dance'] };
     const data: EngineData = { ...fillData, presets: { Garchomp: [{ name: 'Forte', format: 'gen9nationaldex', set: strong }] } };
     const team = [set('Garchomp', ['Protect']), set('Toxapex', ['Recover', 'Toxic', 'Haze', 'Toxic Spikes'], 'Black Sludge'), set('Kingambit', ['Kowtow Cleave'])];
-    const list = take(team, { ...any, keepSets: [false, true, true] }, new Set(), DEFAULT_FORMAT, data);
+    const list = take(team, { ...any, keepSets: [false, true, true] }, [], DEFAULT_FORMAT, data);
     expect(list.length).toBeGreaterThanOrEqual(1);
     for (const p of list) {
       expect(p.team[1]).toEqual(team[1]);
@@ -379,7 +383,7 @@ describe('Completa team 2.0: preferiti in tre modi, coerenza, set dei membri', (
     const strong = { ...set('Garchomp', ['Earthquake', 'Outrage', 'Stealth Rock', 'Swords Dance'], 'Rocky Helmet'), ability: 'Rough Skin' };
     const data: EngineData = { ...fillData, presets: { Garchomp: [{ name: 'Debole', format: 'gen9nationaldex', set: set('Garchomp', ['Splash']) }] } };
     const team = [strong, set('Kingambit', ['Kowtow Cleave'])];
-    const list = take(team, { ...any, keepSets: [false, true] }, new Set(), DEFAULT_FORMAT, data);
+    const list = take(team, { ...any, keepSets: [false, true] }, [], DEFAULT_FORMAT, data);
     expect(list.length).toBeGreaterThanOrEqual(1);
     for (const p of list) {
       expect(p.changed).toEqual([]);
@@ -394,7 +398,7 @@ describe('Completa team 2.0: preferiti in tre modi, coerenza, set dei membri', (
       presets: { 'Ting-Lu': [{ name: 'Senza trappole', format: 'gen9nationaldex',
         set: { ...set('Ting-Lu', ['Earthquake', 'Ruination', 'Payback', 'Heavy Slam'], 'Leftovers'), ability: 'Vessel of Ruin' } }] } };
     const team = [set('Ting-Lu', ['Stealth Rock', 'Tackle']), set('Kingambit', ['Kowtow Cleave'])];
-    const list = take(team, { ...any, keepSets: [false, true] }, new Set(), DEFAULT_FORMAT, data);
+    const list = take(team, { ...any, keepSets: [false, true] }, [], DEFAULT_FORMAT, data);
     expect(list.length).toBeGreaterThanOrEqual(1);
     for (const p of list) {
       expect(p.gaps).not.toContainEqual({ kind: 'hazards' });
@@ -412,6 +416,60 @@ describe('Completa team 2.0: preferiti in tre modi, coerenza, set dei membri', (
       expect(p.changed).toEqual([]);
       expect(p.team.slice(0, 2)).toEqual(team);
     }
+  });
+});
+
+describe('Completa team: dalla pagina 2 i già mostrati possono tornare', () => {
+  /** Tre pagine di fila con la stessa storia. */
+  const pages = (team: TeamSet[], choice: FillChoice = any, count = 3) => {
+    const shown: string[][] = [];
+    const result: Proposal[][] = [];
+    for (let i = 0; i < count; i++) result.push(take(team, choice, shown));
+    return { result, shown };
+  };
+  const two = [set('Kingambit', ['Kowtow Cleave', 'Sucker Punch']), set('Garchomp', ['Earthquake', 'Stealth Rock'])];
+
+  it('la pagina 2 può riprendere Pokémon della pagina 1', () => {
+    const { result: [first, second] } = pages([], any, 2);
+    expect(second.length).toBeGreaterThanOrEqual(1);
+    const before = new Set(first.flatMap(p => formes(p.added)));
+    expect(second.flatMap(p => formes(p.added)).some(id => before.has(id))).toBe(true);
+  });
+
+  it('ogni proposta ha in comune con ognuna delle precedenti al massimo metà dei nuovi (anche dentro la stessa pagina)', () => {
+    for (const team of [[], two]) {
+      const all = pages(team).result.flat();
+      expect(all.length).toBeGreaterThan(PROPOSALS_PER_ROUND);
+      for (let i = 0; i < all.length; i++) for (let j = 0; j < i; j++) {
+        const before = new Set(formes(all[j].added));
+        const shared = formes(all[i].added).filter(id => before.has(id)).length;
+        expect(shared, `${formes(all[i].added)} / ${formes(all[j].added)}`).toBeLessThanOrEqual(maxShared(all[i].added.length));
+      }
+    }
+  }, 60000);
+
+  it('con un solo posto libero nessun Pokémon si ripete, in nessuna pagina', () => {
+    const team = [set('Great Tusk', ['Rapid Spin', 'Stealth Rock']), ...['Gholdengo', 'Kingambit', 'Dragapult', 'Corviknight'].map(name => set(name, ['Protect']))];
+    const added = pages(team).result.flat().flatMap(p => formes(p.added));
+    expect(added.length).toBeGreaterThan(PROPOSALS_PER_ROUND);
+    expect(new Set(added).size).toBe(added.length);
+  });
+
+  it('precedenza a chi non è ancora comparso: con tanti mai mostrati, la prima proposta dopo ne ha almeno quanti i già mostrati', () => {
+    expect(REPEAT_PENALTY).toBeGreaterThan(0);
+    // Il meta di prova è piccolo (27 Pokémon): una sola proposta mostrata lascia tanti mai mostrati
+    for (const team of [[], two]) {
+      const shown = [formes(take(team, any)[0].added)];
+      const before = new Set(shown[0]);
+      const ids = formes(take(team, any, shown)[0].added);
+      const reused = ids.filter(id => before.has(id)).length;
+      expect(ids.length - reused, ids.join()).toBeGreaterThanOrEqual(reused);
+    }
+  });
+
+  it('la pagina 1 non cambia: nessun Pokémon nuovo si ripete fra le sue proposte', () => {
+    const added = take(two, any).flatMap(p => formes(p.added));
+    expect(new Set(added).size).toBe(added.length);
   });
 });
 
@@ -449,7 +507,7 @@ describe('Completa team coi dati veri', () => {
       presets: read(dir, 'presets'), fallback: read('_fallback', 'sets'), fallbackPresets: read('_fallback', 'presets'), fallbackStats: read('_fallback', 'stats') };
     initTiers(read('_tiers', 'tiers'));
     const mk = (name: string, item = '') => { const base = { ...emptySet(name), item }; return presetsForSet(real, base, 9)[0]?.set ?? base; };
-    const list = [...fillProposals([mk('Alomomola'), mk('Latios', 'Latiosite')], { archetype: 'bulkyOffense', style: null }, new Set(), DEFAULT_FORMAT, real)]
+    const list = [...fillProposals([mk('Alomomola'), mk('Latios', 'Latiosite')], { archetype: 'bulkyOffense', style: null }, [], DEFAULT_FORMAT, real)]
       .filter((p): p is Proposal => p !== null);
     expect(list.length).toBeGreaterThanOrEqual(5);
     for (const p of list) expect(p.gaps).toEqual([]);

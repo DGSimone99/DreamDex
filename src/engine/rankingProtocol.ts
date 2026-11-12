@@ -25,7 +25,8 @@ export type GainValue = TeamGain | 'excluded' | null;
  * divisi fra i calcoli in parallelo), `rank` (la lista coi voti già pronti). Con pochi voti basta `rank`.
  * `fill` (Completa team) risponde più volte con lo stesso id: una `fillProposal` per proposta trovata, poi `fillDone`
  * (anche dopo `cancel`, che lo ferma al passo dopo; con `max` si ferma dopo tante proposte), con `exhausted` true solo
- * se il giro è arrivato in fondo e i Pokémon nuovi sono finiti (vedi FillEnd).
+ * se il giro è arrivato in fondo e i Pokémon nuovi sono finiti (vedi FillEnd). `shown` è la storia delle proposte già
+ * mostrate (le forme dei nuovi di ognuna): `fillDone` la rimanda con quelle del giro.
  */
 export type WorkerRequest =
   | { kind: 'parts'; parts: [number, unknown][]; drop: number[] }
@@ -36,7 +37,7 @@ export type WorkerRequest =
   | { kind: 'advicePlan'; id: number; params: AdviceParams; data: WorkerData }
   | { kind: 'advice'; id: number; params: AdviceParams; data: WorkerData; primed: [string, GainValue][] }
   | { kind: 'improve'; id: number; team: TeamSet[]; genLimit: number; data: WorkerData }
-  | { kind: 'fill'; id: number; team: TeamSet[]; choice: FillChoice; exclude: string[]; format: Format; data: WorkerData; max?: number }
+  | { kind: 'fill'; id: number; team: TeamSet[]; choice: FillChoice; shown: string[][]; format: Format; data: WorkerData; max?: number }
   | { kind: 'cancel'; id: number };
 
 /** Le risposte intermedie: arrivano prima di quella finale (con lo stesso id) e non la chiudono. */
@@ -50,5 +51,5 @@ export type WorkerResponse =
   | { id: number; ok: true; kind: 'advice'; advice: CoachAdvice }
   | { id: number; ok: true; kind: 'improve'; changes: SetChange[] }
   | WorkerProgress
-  | { id: number; ok: true; kind: 'fillDone'; exclude: string[]; exhausted: boolean }
+  | { id: number; ok: true; kind: 'fillDone'; shown: string[][]; exhausted: boolean }
   | { id: number; ok: false; error: string };

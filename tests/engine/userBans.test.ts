@@ -56,7 +56,7 @@ describe('bannati dall\'utente: mai suggeriti', () => {
   });
 
   it('Completa team: il bannato non entra in nessuna proposta', () => {
-    const take = (d: EngineData) => [...fillProposals([], { archetype: null, style: null }, new Set(), DEFAULT_FORMAT, d, 0)]
+    const take = (d: EngineData) => [...fillProposals([], { archetype: null, style: null }, [], DEFAULT_FORMAT, d, 0)]
       .filter((p): p is Proposal => p !== null);
     const target = battleName(take(fillData)[0].added[0]);
     const proposals = take({ ...fillData, userLists: banning(target) });

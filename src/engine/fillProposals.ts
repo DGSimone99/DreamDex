@@ -97,6 +97,18 @@ export const COHERENCE_BONUS = 3;
 export const COHERENT_CHECKS = 50;
 /** Con 'priority', una proposta con preferiti passa davanti a una senza che ha fino a 5 punti di voto in più. */
 export const FILL_FAVORITE_MARGIN = 5;
+/**
+ * Dalla pagina 2, in ogni slot, chi è già comparso in una proposta mostrata parte con REPEAT_PENALTY punti di voto in
+ * meno: chi non è ancora comparso vince a voto quasi pari, un già mostrato torna solo se fa un team chiaramente migliore.
+ */
+export const REPEAT_PENALTY = 3;
+/** Dalla pagina 2, quanti già mostrati si valutano per slot oltre ai nuovi (i migliori per punteggio). */
+export const REPEAT_EXTRA = 4;
+/**
+ * Dalla pagina 2, quanti dei nuovi di una proposta possono essere gli stessi di una proposta già mostrata: al massimo
+ * metà, per difetto (4 nuovi: 2; 5: 2; 1: nessuno). Chi porta lo stile non conta (può tornare).
+ */
+export const maxShared = (added: number) => Math.floor(added / 2);
 
 /**
  * Ordine delle proposte: con 'priority' conta il voto più FILL_FAVORITE_MARGIN se c'è almeno un preferito (a pari
@@ -135,8 +147,11 @@ const sameSet = (a: TeamSet, b: TeamSet) => JSON.stringify(a) === JSON.stringify
 
 /**
  * Completamenti del team del tipo (e dello stile) chiesti, uno alla volta, al massimo PROPOSALS_PER_ROUND.
- * Nessun Pokémon si ripete: `exclude` (forme) parte con quelle già mostrate e cresce con ogni proposta; fa eccezione
- * chi porta lo stile, che torna solo quando non ce n'è uno nuovo. Se il formato ammette le Mega, ogni proposta ne ha
+ * `shown` è la storia delle proposte già mostrate (per ognuna, le forme dei nuovi) e cresce con ogni proposta. Al primo
+ * giro (`shown` vuoto) nessun Pokémon nuovo si ripete. Dalla pagina 2 i già mostrati possono tornare, ma ogni proposta
+ * ha in comune con ognuna delle precedenti al massimo `maxShared` dei nuovi, e chi non è ancora comparso ha la
+ * precedenza (REPEAT_PENALTY). Chi porta lo stile fa eccezione: torna solo quando non ce n'è uno nuovo, e non conta
+ * fra quelli in comune. Se il formato ammette le Mega, ogni proposta ne ha
  * una (mai una seconda). I nuovi non hanno mai set contraddittori. Trappole, chi le toglie e debolezze in comune
  * (`coherenceGaps`) sono rigide: una proposta con un buco esce solo se nessun candidato del giro lo può chiudere (es.
  * cinque membri e nessuno che toglie le trappole), oppure, se nessuna proposta del giro ci riesce, le migliori con la
@@ -146,18 +161,42 @@ const sameSet = (a: TeamSet, b: TeamSet) => JSON.stringify(a) === JSON.stringify
  * come è finito il giro (`FillEnd`).
  */
 export function* fillProposals(
-  team: TeamSet[], choice: FillChoice, exclude: Set<string>, format: Format, data: EngineData, minOverall = MIN_OVERALL,
+  team: TeamSet[], choice: FillChoice, shown: string[][], format: Format, data: EngineData, minOverall = MIN_OVERALL,
 ): Generator<Proposal | null, FillEnd, undefined> {
   if (!data.stats || team.length >= 6) return 'exhausted';
   const rules = formatRules(format.formatId);
-  // Già mostrati prima di questo giro: i candidati del giro sono tutti gli altri
-  const shownBefore = new Set(exclude);
+  // Primo giro: nessuna proposta mostrata, nessun Pokémon nuovo si ripete
+  const strict = shown.length === 0;
+  // Tutti i Pokémon nuovi già mostrati (anche in questo giro)
+  const exclude = new Set(shown.flat());
+  // Chi non può proprio entrare: al primo giro i già mostrati, dopo nessuno (decide la regola della metà)
+  const hard = strict ? exclude : new Set<string>();
+  const history = shown.map(ids => new Set(ids));
+  const limit = maxShared(6 - team.length);
   const megasAllowed = pokedexOf(format) === 'natdex';
   const passive = (set: TeamSet) => isPassive(set, rules);
   const favoriteMode = choice.favorites ?? 'priority';
   const favorite = (set: TeamSet) => isUserFavorite(set, data.userLists);
   // Con 'only' i nuovi arrivano solo dai preferiti
   const allowed = (set: TeamSet) => favoriteMode !== 'only' || favorite(set);
+  // Chi porta lo stile non conta fra i già mostrati: ha la sua eccezione
+  const counts = (set: TeamSet) => !(choice.style && setsUp(set, choice.style));
+  const repeated = (set: TeamSet) => counts(set) && exclude.has(formeId(set));
+  /** I nuovi `added` hanno in comune con ognuna delle proposte già mostrate al massimo `limit` Pokémon. */
+  const differs = (added: TeamSet[]) => strict || history.every(ids => added.filter(s => counts(s) && ids.has(formeId(s))).length <= limit);
+  /** Dalla pagina 2: i primi `size` mai mostrati, più i migliori già mostrati (almeno REPEAT_EXTRA, o fino a `size`). */
+  const preferFresh = (sets: TeamSet[], size: number) => {
+    if (strict) return sets.slice(0, size);
+    const fresh = sets.filter(s => !repeated(s)).slice(0, size);
+    return [...fresh, ...sets.filter(repeated).slice(0, Math.max(REPEAT_EXTRA, size - fresh.length))];
+  };
+  /** Una proposta mostrata entra nella storia. */
+  const record = (added: TeamSet[]) => {
+    const ids = added.map(formeId);
+    for (const id of ids) exclude.add(id);
+    shown.push(ids);
+    history.push(new Set(ids));
+  };
   /**
    * Il set (dopo `adapt`, se c'è) se non è contraddittorio; se lo è, il primo preset dello stesso Pokémon (stessa
    * forma) che non lo è; se nessuno va, null e il Pokémon si scarta.
@@ -209,9 +248,12 @@ export function* fillProposals(
     // Con un meteo, fuori chi ne porta un altro o ne dipende (Swampert-Mega con Swift Swim in un team neve)
     const style = choice.style;
     // Mai un set contraddittorio: si passa al preset successivo del Pokémon, o lo si scarta
+    // Dalla pagina 2, solo chi lascia la proposta abbastanza diversa da ognuna delle già mostrate
+    const added = current.slice(team.length);
     const all: Suggestion[] = sensibleAll(suggest(current, { ...format, allowMultipleMegas: true }, data, Infinity, 'en')
-      .filter(s => !taken.has(formeId(s.set)) && !deadEnds.has(formeId(s.set)) && !(style && opposesWeather(s.set, style)) && allowed(s.set)));
-    const pool = all.filter(s => !exclude.has(formeId(s.set)));
+      .filter(s => !taken.has(formeId(s.set)) && !deadEnds.has(formeId(s.set)) && !(style && opposesWeather(s.set, style)) && allowed(s.set)
+        && differs([...added, s.set])));
+    const pool = all.filter(s => !hard.has(formeId(s.set)));
     const narrow = (list: Suggestion[], keep: (set: TeamSet) => boolean) => {
       const kept = list.filter(s => keep(s.set));
       return kept.length ? kept : list;
@@ -250,10 +292,12 @@ export function* fillProposals(
         const inMeta = new Set(all.map(s => formeId(s.set)));
         const usable = stylePool(current, style, format, data)
           .filter(set => !inMeta.has(formeId(set)) && !taken.has(formeId(set)) && !deadEnds.has(formeId(set))
-            && !opposesWeather(set, style) && allowed(set) && adapt(set, style, format.genLimit) !== null);
+            && !opposesWeather(set, style) && allowed(set) && differs([...added, set]) && adapt(set, style, format.genLimit) !== null);
+        const seen = (set: TeamSet) => exclude.has(formeId(set));
+        // Per sfruttarlo, dalla pagina 2 anche i già mostrati, dopo i mai mostrati
         const wanted = [
-          ...usable.filter(set => !exclude.has(formeId(set))).slice(0, freeWeatherSlot ? 2 * WEATHER_EXTRA : STYLE_POOL),
-          ...(needSetter ? usable.filter(set => exclude.has(formeId(set))).slice(0, STYLE_POOL) : []),
+          ...[...usable.filter(set => !seen(set)), ...(needSetter || strict ? [] : usable.filter(seen))].slice(0, freeWeatherSlot ? 2 * WEATHER_EXTRA : STYLE_POOL),
+          ...(needSetter ? usable.filter(seen).slice(0, STYLE_POOL) : []),
         ];
         const extras = scoreSets(current, { ...format, allowMultipleMegas: true }, data, wanted, 'en');
         const adapted = (source: Suggestion[]) => {
@@ -262,7 +306,9 @@ export function* fillProposals(
             .filter(s => !seen.has(formeId(s.set)) && !!seen.add(formeId(s.set)))
             .sort((a, b) => b.score - a.score);
         };
-        const fresh = noSecondMega(adapted([...pool, ...extras.filter(s => !exclude.has(formeId(s.set)))]));
+        // Chi porta lo stile: solo i mai mostrati (gli altri tornano dopo, a rotazione); chi lo sfrutta: come negli altri slot
+        const unseen = (s: Suggestion) => !(needSetter ? exclude : hard).has(formeId(s.set));
+        const fresh = noSecondMega(adapted([...pool.filter(unseen), ...extras.filter(unseen)]));
         // Chi porta lo stile può tornare (con meno priorità) quando non ce n'è uno nuovo; gli altri no
         const again = needSetter ? noSecondMega(adapted([...all, ...extras])) : [];
         // Per portarlo: prima per abilità (Snow Warning, Drizzle…), nuovo o già mostrato, poi con una mossa
@@ -289,7 +335,7 @@ export function* fillProposals(
     const missing = ROLE_GAPS.filter(role => !current.some(s => rolesOf(s).includes(role)));
     const brings = (set: TeamSet) => missing.some(role => rolesOf(set).includes(role));
     if (!last && missing.length >= 6 - current.length) list = narrow(list, s => brings(s));
-    let top = list.slice(0, last ? CANDIDATES : RATE_TOP).map(s => s.set);
+    let top = preferFresh(list.map(s => s.set), last ? CANDIDATES : RATE_TOP);
     // Negli slot liberi si valutano anche i migliori tra chi sfrutta il meteo, così la precedenza può contare
     if (style && style !== 'trickroom') {
       const shown = new Set(top.map(formeId));
@@ -301,7 +347,9 @@ export function* fillProposals(
       // tra quelli scelti una Mega, se non c'è ancora e ce n'è una che va bene
       const fits = (set: TeamSet) => matchesChoice([...current, set], choice, format);
       const gapCount = (set: TeamSet) => coherenceGaps([...current, set], rules).length;
-      const counted = list.map(s => ({ set: s.set, gaps: gapCount(s.set) }));
+      // Dalla pagina 2 prima i mai mostrati, poi gli altri
+      const ordered = strict ? list : [...list.filter(s => !repeated(s.set)), ...list.filter(s => repeated(s.set))];
+      const counted = ordered.map(s => ({ set: s.set, gaps: gapCount(s.set) }));
       const fewest = Math.min(...counted.map(c => c.gaps));
       let chosen = counted.filter(c => c.gaps === fewest).slice(0, COHERENT_CHECKS).map(c => c.set).filter(fits);
       // Nessuno dei migliori per buchi completa il tipo: come prima i primi candidati, e tra loro chi lascia meno buchi
@@ -311,23 +359,26 @@ export function* fillProposals(
         chosen = fitting.filter(set => gapCount(set) === least);
       }
       const megas = !hasMega && megasAllowed ? chosen.filter(isMega) : [];
-      top = (megas.length ? megas : chosen).slice(0, RATE_TOP);
+      top = preferFresh(megas.length ? megas : chosen, RATE_TOP);
     }
     // Negli slot liberi chi sfrutta il meteo ha una piccola precedenza (vale WEATHER_BONUS punti di voto): coverage ed equilibrio restano prima
     const bonus = (set: TeamSet) => (style && style !== 'trickroom' && !setsUp(set, style) && uses(set, style) ? WEATHER_BONUS : 0);
     // Allo stesso modo, negli slot prima dell'ultimo, chi porta un ruolo che manca (COHERENCE_BONUS); all'ultimo i buchi
     // hanno già deciso chi resta
     const coherence = (set: TeamSet) => (!last && brings(set) ? COHERENCE_BONUS : 0);
-    const scored = top.map((set, i) => ({ set, i, rank: overallOf([...current, set]) + bonus(set) + coherence(set) }))
+    // Dalla pagina 2 chi è già comparso parte con REPEAT_PENALTY punti in meno
+    const penalty = (set: TeamSet) => (!strict && repeated(set) ? REPEAT_PENALTY : 0);
+    const scored = top.map((set, i) => ({ set, i, rank: overallOf([...current, set]) + bonus(set) + coherence(set) - penalty(set) }))
       .sort((a, b) => b.rank - a.rank || a.i - b.i);
     // Con 'priority', a voto quasi pari (FAVORITE_MARGIN) i preferiti dell'utente passano davanti
     return (favoriteMode === 'priority' ? applyFavorites(scored, s => favorite(s.set), s => s.rank) : scored).map(s => s.set);
   };
 
-  // Candidati del giro (senza i già mostrati prima), per capire se un buco si poteva chiudere: calcolati la prima volta che servono
+  // Candidati del giro, per capire se un buco si poteva chiudere: calcolati la prima volta che servono (al primo giro
+  // nessuno è già mostrato; dopo, i già mostrati possono tornare)
   let pool: TeamSet[] | null = null;
   const roundPool = () => (pool ??= sensibleAll(suggest(team, { ...format, allowMultipleMegas: true }, data, Infinity, 'en')
-    .filter(s => !shownBefore.has(formeId(s.set)) && !(choice.style && opposesWeather(s.set, choice.style)) && allowed(s.set)))
+    .filter(s => !(choice.style && opposesWeather(s.set, choice.style)) && allowed(s.set)))
     .map(s => s.set));
   const resists = (set: TeamSet, type: TypeName) => defensiveMultiplier(type, set) < 1;
   /**
@@ -432,7 +483,7 @@ export function* fillProposals(
       held.push(proposal);
       // Una Mega che chiuderebbe il buco non entra se il team ne ha già una
       const megaIn = final.some(isMega);
-      const left = roundPool().filter(set => !exclude.has(formeId(set)) && !deadEnds.has(formeId(set)) && !(megaIn && isMega(set)));
+      const left = roundPool().filter(set => !hard.has(formeId(set)) && !deadEnds.has(formeId(set)) && !(megaIn && isMega(set)));
       const closable = open.some(gap => (gap.kind === 'weakness' ? left.some(set => resists(set, gap.type))
         : left.some(set => rolesOf(set).includes(gap.kind))));
       if (!closable) break;
@@ -443,7 +494,7 @@ export function* fillProposals(
       yield null;
       continue;
     }
-    for (const set of added) exclude.add(formeId(set));
+    record(added);
     if (choice.style) for (const set of added) if (setsUp(set, choice.style)) setterUses.set(formeId(set), (setterUses.get(formeId(set)) ?? 0) + 1);
     produced++;
     misses = 0;
@@ -451,12 +502,12 @@ export function* fillProposals(
   }
   const end = (): FillEnd => (produced >= PROPOSALS_PER_ROUND ? 'complete' : empty || !produced ? 'exhausted' : 'stopped');
   if (produced) return end();
-  // Nessuna proposta senza buchi evitabili: le migliori con la nota, senza Pokémon nuovi in comune (chi porta lo stile può tornare)
+  // Nessuna proposta senza buchi evitabili: le migliori con la nota, con la stessa regola sui Pokémon nuovi in comune
+  // (al primo giro nessuno; chi porta lo stile può tornare)
   for (const proposal of held.sort((a, b) => b.overall - a.overall)) {
     if (produced >= PROPOSALS_PER_ROUND) break;
-    const fresh = (set: TeamSet) => !exclude.has(formeId(set)) || !!(choice.style && setsUp(set, choice.style));
-    if (!proposal.added.every(fresh)) continue;
-    for (const set of proposal.added) exclude.add(formeId(set));
+    if (strict ? proposal.added.some(repeated) : !differs(proposal.added)) continue;
+    record(proposal.added);
     produced++;
     yield proposal;
   }

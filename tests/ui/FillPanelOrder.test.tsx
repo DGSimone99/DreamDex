@@ -10,19 +10,23 @@ import { renderIt } from '../helpers/italian';
 
 /** streamFill finto: le richieste restano aperte finché il test non manda le proposte e la fine. */
 const calls = vi.hoisted(() => [] as {
-  choice: FillChoice; max?: number; cancelled: boolean;
+  choice: FillChoice; shown: string[][]; max?: number; cancelled: boolean;
   push: (p: Proposal) => void; end: (exhausted?: boolean) => void;
 }[]);
 vi.mock('../../src/ui/useRanking', () => ({
-  streamFill: (_team: unknown, choice: FillChoice, exclude: Set<string>, _format: unknown, _data: unknown,
+  streamFill: (_team: unknown, choice: FillChoice, shown: string[][], _format: unknown, _data: unknown,
     onProposal: (p: Proposal) => void, options: { max?: number } = {}) => {
-    type Done = { exclude: Set<string>; failed: boolean; exhausted: boolean };
+    type Done = { shown: string[][]; failed: boolean; exhausted: boolean };
     let resolve!: (done: Done) => void;
     const done = new Promise<Done>(r => { resolve = r; });
-    const call = { choice, max: options.max, cancelled: false, push: onProposal,
-      end: (exhausted = false) => resolve({ exclude, failed: false, exhausted }) };
+    // La storia dopo il giro: quella ricevuta più le forme dei nuovi di ogni proposta consegnata (come streamFill)
+    const delivered: string[][] = [];
+    const after = () => [...shown, ...delivered];
+    const call = { choice, shown: [...shown], max: options.max, cancelled: false,
+      push: (p: Proposal) => { delivered.push(p.added.map(s => s.species.toLowerCase())); onProposal(p); },
+      end: (exhausted = false) => resolve({ shown: after(), failed: false, exhausted }) };
     calls.push(call);
-    return { done, cancel: () => { call.cancelled = true; resolve({ exclude, failed: false, exhausted: false }); } };
+    return { done, cancel: () => { call.cancelled = true; resolve({ shown: after(), failed: false, exhausted: false }); } };
   },
 }));
 
@@ -127,6 +131,23 @@ describe('Completa team: ordine dei calcoli e proposta migliore', () => {
     expect(calls.length).toBe(before);
     expect(document.querySelectorAll('.fill-proposal')).toHaveLength(2);
     expect(next()).toBeDisabled();
+  });
+
+  it('Altre proposte passa la storia delle proposte già mostrate; cambiando scelta riparte vuota', async () => {
+    calls.length = 0;
+    const user = userEvent.setup();
+    renderIt(<FillPanel team={[]} format={DEFAULT_FORMAT} data={fillData} onApply={vi.fn()} onLoadTeam={vi.fn()} onClose={vi.fn()} />);
+    expect(main()[0].shown).toEqual([]);
+    await act(async () => { main()[0].push(proposal(0)); main()[0].push(proposal(1)); main()[0].end(); });
+    await user.click(screen.getByRole('button', { name: 'Altre proposte' }));
+    const second = main()[main().length - 1];
+    const ids = ['garchomp', 'toxapex', 'kingambit', 'blissey', 'dragapult', 'corviknight'];
+    expect(second.shown).toEqual([ids, ids]);
+    await act(async () => { second.push(proposal(2)); second.end(); });
+    await user.click(screen.getByRole('button', { name: 'Altre proposte' }));
+    expect(main()[main().length - 1].shown).toEqual([ids, ids, ids]);
+    await user.click(screen.getByRole('radio', { name: 'Balance' }));
+    expect(main()[main().length - 1].shown).toEqual([]);
   });
 
   it('cambiando scelta le pagine ripartono da 1', async () => {

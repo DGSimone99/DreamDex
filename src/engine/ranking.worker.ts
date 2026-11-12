@@ -94,12 +94,12 @@ const pause = () => new Promise<void>(resolve => {
 
 /**
  * Completa team un passo per volta: ogni proposta parte appena trovata; fra un passo e l'altro una pausa, così le altre
- * richieste (voti della lista, Migliora i set) non aspettano la fine e `cancel` può fermarla. Alla fine le forme escluse
+ * richieste (voti della lista, Migliora i set) non aspettano la fine e `cancel` può fermarla. Alla fine la storia delle proposte
  * e se i Pokémon nuovi sono finiti (solo arrivando in fondo: fermata da `cancel` o da `max` non lo sa).
  */
 async function fill(message: Extract<WorkerRequest, { kind: 'fill' }>): Promise<WorkerResponse> {
-  const exclude = new Set(message.exclude);
-  const steps = fillProposals(sameTeam(message.team), message.choice, exclude, message.format, engineData(message.data));
+  const shown = message.shown.map(ids => [...ids]);
+  const steps = fillProposals(sameTeam(message.team), message.choice, shown, message.format, engineData(message.data));
   let found = 0;
   let exhausted = false;
   while (!cancelled.has(message.id)) {
@@ -111,7 +111,7 @@ async function fill(message: Extract<WorkerRequest, { kind: 'fill' }>): Promise<
     }
     await pause();
   }
-  return { id: message.id, ok: true, kind: 'fillDone', exclude: [...exclude], exhausted };
+  return { id: message.id, ok: true, kind: 'fillDone', shown, exhausted };
 }
 
 self.onmessage = async (event: MessageEvent<WorkerRequest>) => {

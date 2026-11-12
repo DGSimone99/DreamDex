@@ -50,7 +50,7 @@ describe('pannello Completa team', () => {
     for (const row of rows) expect(row).toHaveTextContent('Hyper Offense');
   });
 
-  it('Altre proposte non ripete Pokémon già mostrati', async () => {
+  it('Altre proposte: ogni proposta nuova cambia almeno metà dei Pokémon nuovi rispetto a ognuna di prima', async () => {
     const user = userEvent.setup();
     panel();
     await addButtons();
@@ -62,8 +62,13 @@ describe('pannello Completa team', () => {
     expect(screen.queryByText('Non ci sono altri Pokémon nuovi per questa scelta')).toBeNull();
     await user.click(more);
     await vi.waitFor(idle, WAIT);
-    for (const name of shownNames()) expect(first).not.toContain(name);
-    // Il fixture ha poche specie: il giro dopo non trova più nessuno, e allora il pulsante si spegne e lo dice
+    // Pagina 1 senza ripetizioni; dalla pagina 2 al massimo metà dei nuovi (per difetto) in comune con ogni proposta di prima
+    expect(new Set(first).size).toBe(first.length);
+    const rows = (names: (string | null)[]) => Array.from({ length: names.length / 6 }, (_, i) => names.slice(6 * i, 6 * i + 6));
+    for (const row of rows(shownNames())) for (const earlier of rows(first)) {
+      expect(row.filter(name => earlier.includes(name)).length).toBeLessThanOrEqual(3);
+    }
+    // Se il giro dopo non trova più nessuno, il pulsante si spegne e lo dice
     if (!document.querySelector('.fill-proposal')) {
       expect(more).toBeDisabled();
       expect(screen.getByText('Non ci sono altri Pokémon nuovi per questa scelta')).toBeInTheDocument();

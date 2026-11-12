@@ -194,10 +194,10 @@ class RankingClient {
    * `cancel` al passo dopo; `done` dice se i Pokémon nuovi sono finiti. Un errore del calcolo (risposta non ok) non rompe
    * il worker: passa a chi chiama.
    */
-  fill(team: TeamSet[], choice: FillChoice, exclude: Set<string>, format: Format, given: EngineData, max: number | undefined,
+  fill(team: TeamSet[], choice: FillChoice, shown: string[][], format: Format, given: EngineData, max: number | undefined,
     onProposal: (p: Proposal) => void): { done: Promise<boolean>; cancel: () => void } {
     const { result, cancel } = this.workers[this.workers.length - 1].stream(
-      { kind: 'fill', team, choice, exclude: [...exclude], format, data: this.wire(given), max }, item => onProposal(item.proposal));
+      { kind: 'fill', team, choice, shown, format, data: this.wire(given), max }, item => onProposal(item.proposal));
     this.fills++;
     const settle = () => { this.fills--; };
     result.then(settle, settle);
@@ -366,8 +366,8 @@ export function prepareImproveSets(team: TeamSet[], data: EngineData, genLimit: 
 
 /** Come è finita una richiesta di Completa team. */
 export interface FillDone {
-  /** Le forme escluse dopo le proposte consegnate (per "Altre proposte"). */
-  exclude: Set<string>;
+  /** La storia delle proposte mostrate (le forme dei nuovi di ognuna), con quelle consegnate: per "Altre proposte". */
+  shown: string[][];
   /** true se il calcolo si è rotto (errore, già scritto in console): "nessuna proposta" non vuol dire "tipo vuoto". */
   failed: boolean;
   /**
@@ -411,11 +411,9 @@ function fillKey(team: TeamSet[], choice: FillChoice, format: Format, data: Engi
   return `${dataId}|${JSON.stringify([team, full, format])}`;
 }
 
-/** Le forme escluse dopo queste proposte: quelle di partenza più i nuovi di ognuna (come fa fillProposals). */
-function excludeAfter(start: Set<string>, proposals: Proposal[]): Set<string> {
-  const exclude = new Set(start);
-  for (const proposal of proposals) for (const set of proposal.added) exclude.add(formeId(set));
-  return exclude;
+/** La storia dopo queste proposte: quella di partenza più i nuovi di ognuna (come fa fillProposals). */
+function shownAfter(start: string[][], proposals: Proposal[]): string[][] {
+  return [...start, ...proposals.map(proposal => proposal.added.map(formeId))];
 }
 
 /** Un errore di chi riceve le proposte non deve fermare il calcolo né gli altri che aspettano. */
@@ -429,7 +427,7 @@ function safely(onProposal: (p: Proposal) => void, proposal: Proposal) {
  * Pokémon nuovi erano finiti.
  */
 function startFill(
-  team: TeamSet[], choice: FillChoice, exclude: Set<string>, format: Format, data: EngineData, max: number,
+  team: TeamSet[], choice: FillChoice, shown: string[][], format: Format, data: EngineData, max: number,
   onEnd: (complete: boolean) => void,
 ): FillRun {
   const run: FillRun = { proposals: [], listeners: new Set(), ended: false, exhausted: false, stop: () => undefined };
@@ -448,7 +446,7 @@ function startFill(
   };
   // Qui, saltando le proposte già consegnate dal worker (il calcolo dà sempre le stesse, nello stesso ordine)
   const local = (skip: number) => {
-    const steps = fillProposals(team, choice, new Set(exclude), format, data);
+    const steps = fillProposals(team, choice, shown.map(ids => [...ids]), format, data);
     let found = 0;
     let timer: ReturnType<typeof setTimeout>;
     const step = () => {
@@ -467,7 +465,7 @@ function startFill(
   };
   const client = rankingClient();
   if (!client || client.isBroken) { local(0); return run; }
-  const call = client.fill(team, choice, exclude, format, data, max || undefined, emit);
+  const call = client.fill(team, choice, shown, format, data, max || undefined, emit);
   run.stop = () => { call.cancel(); end(false, false); };
   call.done.then(exhausted => end(true, false, exhausted), error => {
     if (run.ended) return;
@@ -479,7 +477,7 @@ function startFill(
 }
 
 /** Chi chiama riceve le proposte del calcolo (anche quelle già arrivate, subito) fino a `max`, poi `done`. */
-function subscribe(run: FillRun, start: Set<string>, max: number, onProposal: (p: Proposal) => void) {
+function subscribe(run: FillRun, start: string[][], max: number, onProposal: (p: Proposal) => void) {
   const delivered: Proposal[] = [];
   let resolve!: (done: FillDone) => void;
   const done = new Promise<FillDone>(r => { resolve = r; });
@@ -488,7 +486,7 @@ function subscribe(run: FillRun, start: Set<string>, max: number, onProposal: (p
     if (!open) return;
     open = false;
     run.listeners.delete(listener);
-    resolve({ exclude: excludeAfter(start, delivered), failed, exhausted });
+    resolve({ shown: shownAfter(start, delivered), failed, exhausted });
     // Nessuno aspetta più: il calcolo si ferma (e non resta in cache)
     if (!run.ended && !run.listeners.size) run.stop();
   };
@@ -509,33 +507,33 @@ function subscribe(run: FillRun, start: Set<string>, max: number, onProposal: (p
 /**
  * Le proposte di Completa team una alla volta, senza fermare la pagina: col worker sull'ultimo calcolo; senza, qui un
  * passo per volta. `options.max` si ferma dopo tante proposte (il controllo "questo tipo ha proposte?" usa `max: 1`).
- * `done` dà le forme escluse dopo le proposte consegnate (per "Altre proposte": `exclude` resta com'è), `failed`
+ * `done` dà la storia dopo le proposte consegnate (per "Altre proposte": `shown` resta com'è), `failed`
  * se il calcolo si è rotto ed `exhausted` se i Pokémon nuovi sono finiti (anche ripetendo dalla cache o agganciandosi).
- * Dopo `cancel` non arriva più niente e `done` si chiude; se non aspetta più nessuno, il calcolo si ferma. Il primo giro (`exclude` vuoto, senza `max`) delle ultime FILL_CACHE richieste finite resta
+ * Dopo `cancel` non arriva più niente e `done` si chiude; se non aspetta più nessuno, il calcolo si ferma. Il primo giro (`shown` vuoto, senza `max`) delle ultime FILL_CACHE richieste finite resta
  * pronto: la stessa richiesta consegna le proposte già durante la chiamata, e se è ancora in corso ci si aggancia
  * (anche con `max`). Le richieste con `max` non vanno mai in cache.
  */
 export function streamFill(
-  team: TeamSet[], choice: FillChoice, exclude: Set<string>, format: Format, data: EngineData,
+  team: TeamSet[], choice: FillChoice, shown: string[][], format: Format, data: EngineData,
   onProposal: (p: Proposal) => void, options: { max?: number } = {},
 ): { done: Promise<FillDone>; cancel: () => void } {
   const max = options.max && options.max > 0 ? options.max : 0;
-  const key = exclude.size === 0 ? fillKey(team, choice, format, data) : null;
+  const key = shown.length === 0 ? fillKey(team, choice, format, data) : null;
   const cached = key ? fillCache.get(key) : undefined;
   if (key && cached) {
     // In fondo alla fila: è la più recente
     fillCache.delete(key);
     fillCache.set(key, cached);
-    const shown = max ? cached.proposals.slice(0, max) : cached.proposals;
-    for (const proposal of shown) safely(onProposal, proposal);
+    const given = max ? cached.proposals.slice(0, max) : cached.proposals;
+    for (const proposal of given) safely(onProposal, proposal);
     // Con max più corto della cache restano proposte: non finiti
-    const exhausted = cached.exhausted && shown.length === cached.proposals.length;
-    return { done: Promise.resolve({ exclude: excludeAfter(exclude, shown), failed: false, exhausted }), cancel: () => undefined };
+    const exhausted = cached.exhausted && given.length === cached.proposals.length;
+    return { done: Promise.resolve({ shown: shownAfter(shown, given), failed: false, exhausted }), cancel: () => undefined };
   }
   let run = key ? fillLive.get(key) : undefined;
   if (!run) {
     const shared = key !== null && !max;
-    const started: FillRun = startFill(team, choice, exclude, format, data, max, complete => {
+    const started: FillRun = startFill(team, choice, shown, format, data, max, complete => {
       if (!shared || fillLive.get(key) !== started) return;
       fillLive.delete(key);
       if (!complete) return;
@@ -545,7 +543,7 @@ export function streamFill(
     if (shared) fillLive.set(key, started);
     run = started;
   }
-  return subscribe(run, exclude, max || Infinity, onProposal);
+  return subscribe(run, shown, max || Infinity, onProposal);
 }
 
 /**
@@ -562,7 +560,7 @@ export function prepareFill(team: TeamSet[], format: Format, data: EngineData): 
   const key = fillKey(team, choice, format, data);
   if (prefetch?.key === key || fillCache.has(key)) return;
   cancelPrepareFill();
-  const call = streamFill(team, choice, new Set(), format, data, () => undefined);
+  const call = streamFill(team, choice, [], format, data, () => undefined);
   const entry = { key, cancel: call.cancel };
   prefetch = entry;
   void call.done.then(() => { if (prefetch === entry) prefetch = null; });
