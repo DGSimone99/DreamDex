@@ -9,9 +9,10 @@ import { formatRules } from './formatRules';
 import { pokedexOf } from './formats';
 import { rateTeam } from './rating';
 import { detectRoles, isPassive } from './roles';
+import { defensiveMultiplier, type TypeName } from './types';
 import { scoreSets, suggest, type Suggestion } from './scoring';
 import { asSetter, asUser, stylePool } from './styleSets';
-import { emptySet, presetsForSet, type TeamSet } from './sets';
+import { presetsForSet, type TeamSet } from './sets';
 import { benefits, enables, opposesWeather, type Condition } from './synergy';
 
 /** Stili che si possono chiedere a Completa team: meteo e Trick Room (il "motore" del team). */
@@ -47,7 +48,10 @@ export interface Proposal {
   grade: string;
   archetype: Archetype;
   styles: TeamStyle[];
-  /** Cosa manca al team proposto (trappole, chi le toglie, tre deboli allo stesso tipo): [] se niente. */
+  /**
+   * Cosa manca al team proposto (trappole, chi le toglie, tre deboli allo stesso tipo): [] se niente. Non vuoto solo
+   * quando nessun completamento del giro ci riesce (di solito per colpa dei membri attuali).
+   */
   gaps: Gap[];
   /** Posizioni dei membri attuali il cui set è cambiato (solo quelli senza "Tieni il set"). */
   changed: number[];
@@ -74,8 +78,10 @@ export const WEATHER_USERS = 2;
 export const WEATHER_BONUS = 3;
 /** Quanti tra chi sfrutta il meteo si aggiungono ai candidati valutati in uno slot libero. */
 export const WEATHER_EXTRA = 3;
-/** Precedenza, in punti di voto, per chi chiude un buco del team (trappole, chi le toglie, una debolezza in comune). */
+/** Negli slot prima dell'ultimo, precedenza in punti di voto per chi porta un ruolo che manca (trappole, chi le toglie). */
 export const COHERENCE_BONUS = 3;
+/** All'ultimo slot, quanti candidati senza buchi si controllano al massimo per tipo e stile prima di accettarne con buchi. */
+export const COHERENT_CHECKS = 50;
 /** Con 'priority', una proposta con preferiti passa davanti a una senza che ha fino a 5 punti di voto in più. */
 export const FILL_FAVORITE_MARGIN = 5;
 
@@ -110,18 +116,19 @@ const FIT: Partial<Record<Archetype, FitArchetype>> = { stall: 'stall', semiStal
 const PASSIVE_QUOTA: Record<Archetype, number> = { stall: 6, semiStall: 4, balance: 3, hyperOffense: 0, bulkyOffense: 0 };
 /** Un Pokémon si distingue per forma in battaglia: Charizard, Charizard-Mega-X e Charizard-Mega-Y sono tre Pokémon. */
 export const formeId = (set: TeamSet) => toID(battleName(set));
-/** Posto vuoto per contare i buchi di un team non ancora pieno: nessun ruolo, nessuna debolezza, nessuna resistenza. */
-const BLANK = emptySet('');
 const sameGap = (a: Gap, b: Gap) => a.kind === b.kind && (a.kind !== 'weakness' || (b.kind === 'weakness' && a.type === b.type));
+const ROLE_GAPS = ['hazards', 'removal'] as const;
 const sameSet = (a: TeamSet, b: TeamSet) => JSON.stringify(a) === JSON.stringify(b);
 
 /**
  * Completamenti del team del tipo (e dello stile) chiesti, uno alla volta, al massimo PROPOSALS_PER_ROUND.
  * Nessun Pokémon si ripete: `exclude` (forme) parte con quelle già mostrate e cresce con ogni proposta; fa eccezione
  * chi porta lo stile, che torna solo quando non ce n'è uno nuovo. Se il formato ammette le Mega, ogni proposta ne ha
- * una (mai una seconda). I nuovi non hanno mai set contraddittori; posto per posto ha precedenza chi chiude un buco
- * di coerenza, ma le proposte con buchi escono lo stesso (con `gaps`). I preferiti seguono `choice.favorites`; i membri
- * con `keepSets[i] === false` prendono il preset migliore e sensato (`changed`).
+ * una (mai una seconda). I nuovi non hanno mai set contraddittori. Trappole, chi le toglie e debolezze in comune
+ * (`coherenceGaps`) sono rigide: una proposta con un buco esce solo se nessun candidato del giro lo può chiudere (es.
+ * cinque membri e nessuno che toglie le trappole), oppure, se nessuna proposta del giro ci riesce, le migliori con la
+ * nota (`gaps`). I preferiti seguono `choice.favorites`; i membri con `keepSets[i] === false` prendono il preset
+ * migliore e sensato (`changed`).
  * Dopo ogni tentativo a vuoto produce `null`: chi consuma il generatore può rendere il controllo.
  */
 export function* fillProposals(
@@ -129,6 +136,8 @@ export function* fillProposals(
 ): Generator<Proposal | null, void, undefined> {
   if (!data.stats || team.length >= 6) return;
   const rules = formatRules(format.formatId);
+  // Già mostrati prima di questo giro: i candidati del giro sono tutti gli altri
+  const shownBefore = new Set(exclude);
   const megasAllowed = pokedexOf(format) === 'natdex';
   const passive = (set: TeamSet) => isPassive(set, rules);
   const favoriteMode = choice.favorites ?? 'priority';
@@ -258,6 +267,10 @@ export function* fillProposals(
       }
     }
     list = byType(list, true);
+    // Trappole e chi le toglie: se i ruoli che mancano sono tanti quanti i posti liberi, questo posto ne porta uno
+    const missing = ROLE_GAPS.filter(role => !current.some(s => rolesOf(s).includes(role)));
+    const brings = (set: TeamSet) => missing.some(role => rolesOf(set).includes(role));
+    if (!last && missing.length >= 6 - current.length) list = narrow(list, s => brings(s));
     let top = list.slice(0, last ? CANDIDATES : RATE_TOP).map(s => s.set);
     // Negli slot liberi si valutano anche i migliori tra chi sfrutta il meteo, così la precedenza può contare
     if (style && style !== 'trickroom') {
@@ -265,47 +278,91 @@ export function* fillProposals(
       top = [...top, ...list.filter(s => !shown.has(formeId(s.set)) && !setsUp(s.set, style) && uses(s.set, style)).slice(0, WEATHER_EXTRA).map(s => s.set)];
     }
     if (last) {
-      // Ultimo slot: solo chi completa il tipo e lo stile chiesti; tra questi una Mega, se non c'è ancora e ce n'è una che va bene
+      // Ultimo slot: solo chi completa il tipo e lo stile chiesti, e tra questi chi lascia meno buchi di coerenza (prima
+      // chi non ne lascia nessuno, cercato in tutta la lista: il controllo dei buchi è veloce, quello del tipo meno);
+      // tra quelli scelti una Mega, se non c'è ancora e ce n'è una che va bene
       const fits = (set: TeamSet) => matchesChoice([...current, set], choice, format);
-      const megas = !hasMega && megasAllowed ? list.filter(s => isMega(s.set)).slice(0, CANDIDATES).map(s => s.set).filter(fits) : [];
-      top = megas.length ? megas.slice(0, RATE_TOP) : top.filter(fits).slice(0, RATE_TOP);
+      const gapCount = (set: TeamSet) => coherenceGaps([...current, set], rules).length;
+      const counted = list.map(s => ({ set: s.set, gaps: gapCount(s.set) }));
+      const fewest = Math.min(...counted.map(c => c.gaps));
+      let chosen = counted.filter(c => c.gaps === fewest).slice(0, COHERENT_CHECKS).map(c => c.set).filter(fits);
+      // Nessuno dei migliori per buchi completa il tipo: come prima i primi candidati, e tra loro chi lascia meno buchi
+      if (!chosen.length) {
+        const fitting = [...new Set([...top, ...list.filter(s => isMega(s.set)).slice(0, CANDIDATES).map(s => s.set)])].filter(fits);
+        const least = Math.min(...fitting.map(gapCount));
+        chosen = fitting.filter(set => gapCount(set) === least);
+      }
+      const megas = !hasMega && megasAllowed ? chosen.filter(isMega) : [];
+      top = (megas.length ? megas : chosen).slice(0, RATE_TOP);
     }
     // Negli slot liberi chi sfrutta il meteo ha una piccola precedenza (vale WEATHER_BONUS punti di voto): coverage ed equilibrio restano prima
     const bonus = (set: TeamSet) => (style && style !== 'trickroom' && !setsUp(set, style) && uses(set, style) ? WEATHER_BONUS : 0);
-    // Allo stesso modo chi chiude un buco (COHERENCE_BONUS): all'ultimo slot si confrontano i buchi del team pieno con
-    // quelli di adesso (il posto libero contato vuoto); negli altri slot basta che porti un ruolo che manca
-    const open = last ? coherenceGaps([...current, BLANK], rules) : [];
-    const missing = (['hazards', 'removal'] as const).filter(role => !current.some(s => rolesOf(s).includes(role)));
-    const closes = (set: TeamSet) => {
-      if (!last) return missing.some(role => rolesOf(set).includes(role));
-      const after = coherenceGaps([...current, set], rules);
-      return open.some(gap => !after.some(other => sameGap(gap, other)));
-    };
-    const coherence = (set: TeamSet) => (closes(set) ? COHERENCE_BONUS : 0);
+    // Allo stesso modo, negli slot prima dell'ultimo, chi porta un ruolo che manca (COHERENCE_BONUS); all'ultimo i buchi
+    // hanno già deciso chi resta
+    const coherence = (set: TeamSet) => (!last && brings(set) ? COHERENCE_BONUS : 0);
     const scored = top.map((set, i) => ({ set, i, rank: overallOf([...current, set]) + bonus(set) + coherence(set) }))
       .sort((a, b) => b.rank - a.rank || a.i - b.i);
     // Con 'priority', a voto quasi pari (FAVORITE_MARGIN) i preferiti dell'utente passano davanti
     return (favoriteMode === 'priority' ? applyFavorites(scored, s => favorite(s.set), s => s.rank) : scored).map(s => s.set);
   };
 
-  /** Riempie gli slot che mancano; al penultimo slot prova qualche alternativa se l'ultimo non quadra. */
+  // Candidati del giro (senza i già mostrati prima), per capire se un buco si poteva chiudere: calcolati la prima volta che servono
+  let pool: TeamSet[] | null = null;
+  const roundPool = () => (pool ??= sensibleAll(suggest(team, { ...format, allowMultipleMegas: true }, data, Infinity, 'en')
+    .filter(s => !shownBefore.has(formeId(s.set)) && !(choice.style && opposesWeather(s.set, choice.style)) && allowed(s.set)))
+    .map(s => s.set));
+  const resists = (set: TeamSet, type: TypeName) => defensiveMultiplier(type, set) < 1;
+  /**
+   * Un buco che i membri attuali rendono inevitabile: nessun candidato del giro porta il ruolo che manca o resiste al
+   * tipo; con un solo posto libero, nessun candidato lo chiude da solo.
+   */
+  const forced = (gap: Gap): boolean => {
+    const source = roundPool();
+    if (team.length === 5) return !source.some(set => !coherenceGaps([...team, set], rules).some(other => sameGap(gap, other)));
+    if (gap.kind !== 'weakness') return !source.some(set => rolesOf(set).includes(gap.kind));
+    const weakNow = team.filter(s => defensiveMultiplier(gap.type, s) > 1).length;
+    return weakNow >= 3 && !team.some(s => resists(s, gap.type)) && !source.some(set => resists(set, gap.type));
+  };
+  /** Con un solo posto libero: il minimo di buchi che un candidato del giro può lasciare (sotto non si scende). */
+  let leastGaps: number | undefined;
+  const fewestPossible = () => (leastGaps ??= Math.min(...roundPool().map(set => coherenceGaps([...team, set], rules).length)));
+  /** I buchi del team che si potevano chiudere (vuoto: la proposta si può mostrare). */
+  const avoidable = (full: TeamSet[]): Gap[] => {
+    const gaps = coherenceGaps(full, rules);
+    if (!gaps.length || (team.length === 5 && gaps.length <= fewestPossible())) return [];
+    return gaps.filter(gap => !forced(gap));
+  };
+
+  /**
+   * Riempie gli slot che mancano; al penultimo slot prova qualche alternativa se l'ultimo non quadra o lascia buchi
+   * che si potevano chiudere (tra i team con buchi, quello con meno).
+   */
   const build = (current: TeamSet[], taken: Set<string>, first: TeamSet[]): TeamSet[] | null => {
     const left = 6 - current.length;
     const options = current.length === team.length ? first : candidates(current, taken, left === 1);
     if (left === 1) return options.length ? [...current, options[0]] : null;
     const tries = left === 2 ? 1 + BACKTRACK_ALTERNATIVES : 1;
+    let best: TeamSet[] | null = null;
     for (const set of options.slice(0, tries)) {
       const done = build([...current, set], new Set([...taken, formeId(set)]), first);
-      if (done) return done;
+      if (!done) continue;
+      if (!avoidable(done).length) return done;
+      if (!best || coherenceGaps(done, rules).length < coherenceGaps(best, rules).length) best = done;
     }
-    return null;
+    return best;
   };
 
+  /** Il membro nuovo da saltare nei tentativi dopo: il più debole (statistiche base) tra `among`, mai chi porta lo stile. */
+  const weakestOf = (among: TeamSet[], added: TeamSet[]) =>
+    [...among].filter(s => !(choice.style && setsUp(s, choice.style)))
+      .sort((a, b) => (battleSpecies(a)?.bst ?? 0) - (battleSpecies(b)?.bst ?? 0))[0] ?? added[added.length - 1];
+  // Proposte con buchi che si potevano chiudere: si mostrano solo se nessuna proposta del giro ci riesce
+  const held: Proposal[] = [];
   let produced = 0;
   let attempts = 0;
   while (produced < PROPOSALS_PER_ROUND && attempts < MAX_ATTEMPTS) {
     const first = candidates(team, new Set(), team.length === 5);
-    if (!first.length) return;
+    if (!first.length) break;
     const full = build(team, new Set(), first);
     if (!full) {
       // Cambia strada: il primo candidato di questo giro non porta a un team valido
@@ -336,10 +393,25 @@ export function* fillProposals(
     const rating = rateTeam(final, data, 'en');
     const found = teamArchetype(final, rules);
     if (!rating || !found || rating.overall < minOverall) {
-      // Sotto il voto minimo non si mostra: si scarta il membro più debole (statistiche base, mai chi porta lo stile) e si riprova
-      const weakest = [...added].filter(s => !(choice.style && setsUp(s, choice.style)))
-        .sort((a, b) => (battleSpecies(a)?.bst ?? 0) - (battleSpecies(b)?.bst ?? 0))[0] ?? added[added.length - 1];
-      deadEnds.add(formeId(weakest));
+      // Sotto il voto minimo non si mostra: si scarta il membro più debole e si riprova
+      deadEnds.add(formeId(weakestOf(added, added)));
+      attempts++;
+      yield null;
+      continue;
+    }
+    const proposal: Proposal = { added, team: final, overall: rating.overall, grade: rating.grade, archetype: found.archetype,
+      styles: found.styles, gaps: coherenceGaps(final, rules), changed, favorites: added.filter(favorite).length };
+    const open = avoidable(final);
+    if (open.length) {
+      // Un buco che un altro candidato poteva chiudere: la proposta resta da parte e si cambia strada; se tra i
+      // candidati rimasti nessuno lo chiude più, il giro finisce qui
+      held.push(proposal);
+      const left = roundPool().filter(set => !exclude.has(formeId(set)) && !deadEnds.has(formeId(set)));
+      const closable = open.some(gap => (gap.kind === 'weakness' ? left.some(set => resists(set, gap.type))
+        : left.some(set => rolesOf(set).includes(gap.kind))));
+      if (!closable) break;
+      const weak = open.flatMap(gap => (gap.kind === 'weakness' ? added.filter(s => defensiveMultiplier(gap.type, s) > 1) : []));
+      deadEnds.add(formeId(weakestOf(weak.length ? weak : added, added)));
       attempts++;
       yield null;
       continue;
@@ -347,7 +419,16 @@ export function* fillProposals(
     for (const set of added) exclude.add(formeId(set));
     if (choice.style) for (const set of added) if (setsUp(set, choice.style)) setterUses.set(formeId(set), (setterUses.get(formeId(set)) ?? 0) + 1);
     produced++;
-    yield { added, team: final, overall: rating.overall, grade: rating.grade, archetype: found.archetype, styles: found.styles,
-      gaps: coherenceGaps(final, rules), changed, favorites: added.filter(favorite).length };
+    yield proposal;
+  }
+  if (produced) return;
+  // Nessuna proposta senza buchi evitabili: le migliori con la nota, senza Pokémon nuovi in comune (chi porta lo stile può tornare)
+  for (const proposal of held.sort((a, b) => b.overall - a.overall)) {
+    if (produced >= PROPOSALS_PER_ROUND) break;
+    const fresh = (set: TeamSet) => !exclude.has(formeId(set)) || !!(choice.style && setsUp(set, choice.style));
+    if (!proposal.added.every(fresh)) continue;
+    for (const set of proposal.added) exclude.add(formeId(set));
+    produced++;
+    yield proposal;
   }
 }

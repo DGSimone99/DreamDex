@@ -100,7 +100,8 @@ describe('proposte di Completa team', () => {
   });
 
   it('un solo slot: un Pokémon diverso per proposta', () => {
-    const team = ['Great Tusk', 'Gholdengo', 'Kingambit', 'Dragapult', 'Corviknight'].map(name => set(name, ['Protect']));
+    // Great Tusk mette e toglie le trappole: l'ultimo posto è libero di scegliere fra tanti
+    const team = [set('Great Tusk', ['Rapid Spin', 'Stealth Rock']), ...['Gholdengo', 'Kingambit', 'Dragapult', 'Corviknight'].map(name => set(name, ['Protect']))];
     const list = take(team, any);
     expect(list.length).toBeGreaterThanOrEqual(2);
     for (const p of list) expect(p.added).toHaveLength(1);
@@ -256,23 +257,55 @@ describe('Completa team 2.0: preferiti in tre modi, coerenza, set dei membri', (
     }
   });
 
-  it("se l'ultimo posto non può togliere le trappole, le proposte escono lo stesso con la nota", () => {
+  it("se l'ultimo posto non può mettere e togliere le trappole, le proposte escono lo stesso con la nota", () => {
+    // Membri con la sola Protect: nessuno mette né toglie le trappole, e chi le toglie tra i candidati è bannato
     const team = ['Garchomp', 'Toxapex', 'Kingambit', 'Blissey', 'Dragapult'].map(name => set(name, ['Protect']));
     const data = { ...fillData, userLists: lists([], ['Corviknight', 'Great Tusk', 'Torkoal', 'Cinderace']) };
     const list = take(team, any, new Set(), DEFAULT_FORMAT, data);
     expect(list.length).toBeGreaterThanOrEqual(1);
-    for (const p of list) expect(p.gaps).toContainEqual({ kind: 'removal' });
+    // Nessuno mette né toglie le trappole: chi porta uno dei due ruoli lascia l'altro scoperto, e la nota lo dice
+    for (const p of list) expect(p.gaps.some(g => g.kind === 'removal' || g.kind === 'hazards'), formes(p.added).join()).toBe(true);
+    expect(list.some(p => p.gaps.some(g => g.kind === 'removal'))).toBe(true);
   });
 
-  it("chi chiude un buco ha la precedenza: all'ultimo posto arriva chi toglie le trappole", () => {
+  it("trappole e debolezze sono rigide: all'ultimo posto entra solo chi toglie le trappole, finché ce n'è uno", () => {
     // Con una Mega già nel team l'ultimo posto non deve per forza essere una Mega
-    // Garchomp mette le trappole: manca solo chi le toglie. Senza Corviknight, Great Tusk (le toglie) passa davanti a
-    // Skarmory, che vale qualche punto in più ma non le toglie
+    // Garchomp mette le trappole: manca solo chi le toglie. Senza Corviknight restano Great Tusk, Torkoal e Cinderace:
+    // Skarmory vale qualche punto in più ma non le toglie, quindi non entra; finiti quelli il giro si ferma
     const team = [set('Garchomp', ['Stealth Rock', 'Earthquake']), ...['Toxapex', 'Kingambit', 'Blissey'].map(name => set(name, ['Protect'])),
       set('Gardevoir', ['Hyper Voice'], 'Gardevoirite')];
-    const [first, ...rest] = take(team, any, new Set(['corviknight']));
-    expect(first.gaps.some(g => g.kind === 'removal')).toBe(false);
-    expect(rest.some(p => p.overall > first.overall && p.gaps.some(g => g.kind === 'removal'))).toBe(true);
+    const list = take(team, any, new Set(['corviknight']));
+    expect(list.length).toBeGreaterThanOrEqual(1);
+    for (const p of list) expect(p.gaps, formes(p.added).join()).toEqual([]);
+    expect(list.flatMap(p => formes(p.added))).not.toContain('skarmory');
+  });
+
+  it('se un completamento coerente esiste, nessuna proposta ha buchi (trappole, chi le toglie, debolezze)', () => {
+    const scenarios: [TeamSet[], FillChoice][] = [
+      [[], any],
+      [[], { archetype: 'hyperOffense', style: null }],
+      [[], { archetype: 'balance', style: null }],
+      [[set('Kingambit', ['Swords Dance', 'Sucker Punch']), set('Garchomp', ['Stealth Rock', 'Earthquake'])], any],
+      [[set('Kingambit', ['Swords Dance', 'Sucker Punch']), set('Garchomp', ['Stealth Rock', 'Earthquake'])], { archetype: 'hyperOffense', style: null }],
+      [['Great Tusk', 'Gholdengo', 'Kingambit', 'Dragapult', 'Corviknight'].map(name => set(name, ['Protect'])), any],
+    ];
+    for (const [team, choice] of scenarios) {
+      const list = take(team, choice);
+      const label = `${formes(team).join('+') || 'vuoto'} ${choice.archetype ?? 'migliore'}`;
+      expect(list.length, label).toBeGreaterThanOrEqual(1);
+      for (const p of list) expect(p.gaps, `${label}: ${formes(p.added).join()}`).toEqual([]);
+    }
+  }, 60000);
+
+  it('tre membri già deboli allo stesso tipo e nessuno che lo resista tra i candidati: proposte con la nota, mai vuote', () => {
+    // Cinque membri deboli al Ghiaccio senza resistenze; i candidati che resistono al Ghiaccio sono bannati
+    const team = ['Garchomp', 'Gliscor', 'Dragapult', 'Great Tusk', 'Clodsire'].map(name => set(name, ['Protect']));
+    const resists = Object.keys(fillData.stats!.pokemon).filter(name => !team.some(s => s.species === name)
+      && coherenceGaps([...team, set(name, ['Protect'])], rules).every(g => g.kind !== 'weakness' || g.type !== 'Ice'));
+    const data = { ...fillData, userLists: lists([], resists) };
+    const list = take(team, any, new Set(), DEFAULT_FORMAT, data);
+    expect(list.length).toBeGreaterThanOrEqual(1);
+    for (const p of list) expect(p.gaps.some(g => g.kind === 'weakness' && g.type === 'Ice')).toBe(true);
   });
 
   it('set sbloccato: cambia solo quel membro (mai la specie), gli altri restano identici', () => {
