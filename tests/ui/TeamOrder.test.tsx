@@ -2,6 +2,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { App } from '../../src/App';
+import { emptySet } from '../../src/engine/sets';
 import { fixtureData } from '../fixtures/data';
 
 async function importTeam(user: ReturnType<typeof userEvent.setup>, text: string) {
@@ -93,9 +94,23 @@ describe('ordine del team e editor', () => {
     render(<App data={fixtureData} initialLang="it" />);
     const team = screen.getByRole('region', { name: 'Team' });
     await user.click(within(team).getByRole('button', { name: 'Completa team' }));
-    await user.click((await screen.findAllByRole('button', { name: 'Aggiungi la proposta 1' }, { timeout: 5000 }))[0]);
+    await user.click((await screen.findAllByRole('button', { name: 'Usa la proposta 1' }, { timeout: 5000 }))[0]);
     expect(names(team)).toHaveLength(6);
     expect(screen.getByText(/^Team creato: \d+$/)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /Annulla/ }));
+    expect(names(team)).toEqual([]);
+  });
+
+  it('un team da torneo caricato prende il posto del team e si annulla', async () => {
+    const user = userEvent.setup();
+    const tournamentTeams = [{ name: 'Rain Offense', author: 'Lameflame', team: ['Pelipper', 'Greninja'].map(species => ({ ...emptySet(species), moves: ['Protect'] })) }];
+    render(<App data={{ ...fixtureData, tournamentTeams }} initialLang="it" />);
+    const team = screen.getByRole('region', { name: 'Team' });
+    await user.click(within(team).getByRole('button', { name: 'Completa team' }));
+    await user.click(screen.getByRole('tab', { name: /Team da torneo/ }));
+    await user.click(screen.getByRole('button', { name: 'Carica Rain Offense' }));
+    expect(names(team)).toEqual(['Pelipper', 'Greninja']);
+    expect(screen.getByText('Team da torneo caricato')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: /Annulla/ }));
     expect(names(team)).toEqual([]);
   });
@@ -104,7 +119,7 @@ describe('ordine del team e editor', () => {
     const user = userEvent.setup();
     const team = await importTeam(user, 'Garchomp\n- Earthquake');
     await user.click(within(team).getByRole('button', { name: 'Completa team' }));
-    await user.click((await screen.findAllByRole('button', { name: 'Aggiungi la proposta 1' }, { timeout: 5000 }))[0]);
+    await user.click((await screen.findAllByRole('button', { name: 'Usa la proposta 1' }, { timeout: 5000 }))[0]);
     expect(names(team)[0]).toBe('Garchomp');
     expect(names(team)).toHaveLength(6);
   });

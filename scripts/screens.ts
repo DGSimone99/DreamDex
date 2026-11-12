@@ -362,6 +362,7 @@ const ROLES_STATES: Record<string, State> = {
 
 // storage: chiavi in più nel localStorage prima del caricamento (es. lo stile della lista)
 interface State { hash?: string; lang?: 'it' | 'en'; storage?: Record<string, string>; run?: (page: Page) => Promise<boolean | string> }
+const openFill = async (p: Page) => { await p.evaluate(() => (document.querySelector('[data-fill-toggle]') as HTMLElement | null)?.click()); await p.waitForSelector('.fill-panel', { timeout: 10000 }); };
 const STATES: Record<string, State> = {
   pokemon: { run: async p => { await tab(p, 'pokemon'); return true; } },
   // Telefono: tocca il secondo candidato, la scheda sale sopra la lista
@@ -665,7 +666,9 @@ const STATES: Record<string, State> = {
   'long-names': { hash: hash(LONG) },
   nodata: { run: async () => 'every bundled format has data; the no-data banner is covered by the App test' },
   settings: { run: async p => { await p.click('.rail-settings'); return true; } },
-  'fill-open': { run: async p => { await p.evaluate(() => (document.querySelector('[data-fill-toggle]') as HTMLElement | null)?.click()); await wait(1500); return true; } },
+  'fill-open': { hash: hash(TEAM.slice(0, 3)), run: async p => { await openFill(p); await wait(2500); return true; } },
+  'fill-tournament': { hash: hash(TEAM.slice(0, 3)), run: async p => { await openFill(p); await clickText(p, '[role="tab"]', /Team da torneo/); await wait(800); return true; } },
+  'fill-unlocked': { hash: hash(TEAM.slice(0, 3)), run: async p => { await openFill(p); await p.evaluate(() => (document.querySelector('.fill-panel input[type="checkbox"]') as HTMLElement | null)?.click()); await wait(3500); return true; } },
   'filters-open': { run: async p => { await tab(p, 'pokemon'); await p.evaluate(() => (document.querySelector('.toolbar .filters > summary') as HTMLElement | null)?.click()); await wait(400); return true; } },
   'format-menu': { run: async p => { await p.click('.format-card > summary'); await wait(400); return true; } },
   'io-menu': { run: async p => { await p.evaluate(() => (document.querySelector('.team-quick details.popover > summary') as HTMLElement | null)?.click()); await wait(400); return true; } },

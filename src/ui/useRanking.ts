@@ -1,10 +1,12 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { rankCandidates, type RankingParams, type RankingResult } from '../engine/candidateRanking';
 import type { EngineData } from '../engine/data';
-import type { AdviceParams, GainValue, WorkerData, WorkerRequest, WorkerResponse } from '../engine/rankingProtocol';
+import type { AdviceParams, GainValue, WorkerData, WorkerProgress, WorkerRequest, WorkerResponse } from '../engine/rankingProtocol';
 import { coachAdvice, type CoachAdvice } from '../engine/coach';
 import { improveSets, type SetChange } from '../engine/bestPreset';
 import type { TeamSet } from '../engine/sets';
+import { defaultChoice, fillProposals, formeId, type FillChoice, type FillEnd, type Proposal } from '../engine/fillProposals';
+import type { Format } from '../engine/format';
 import type { GainJob } from '../engine/teamGain';
 import { currentGameNames, gameNamesVersion } from '../i18n/game';
 
@@ -36,11 +38,13 @@ class EngineWorker {
   readonly sent = new Set<number>();
   namesSent = -1;
   private next = 0;
-  private waiting = new Map<number, { resolve: (r: WorkerResponse) => void; reject: (e: unknown) => void }>();
+  private waiting = new Map<number, { resolve: (r: WorkerResponse) => void; reject: (e: unknown) => void; onItem?: (r: WorkerProgress) => void }>();
   constructor(private worker: Worker, onBroken: () => void) {
     worker.onmessage = (event: MessageEvent<WorkerResponse>) => {
       const entry = this.waiting.get(event.data.id);
       if (!entry) return;
+      // Una risposta intermedia (una proposta di Completa team): la richiesta resta aperta
+      if (event.data.ok && event.data.kind === 'fillProposal') { entry.onItem?.(event.data); return; }
       this.waiting.delete(event.data.id);
       if (event.data.ok) entry.resolve(event.data);
       else entry.reject(new Error(event.data.error));
@@ -61,6 +65,19 @@ class EngineWorker {
       this.post({ ...message, id } as unknown as Call);
     });
   }
+  /**
+   * Come `call`, ma prima della risposta finale ne arrivano altre (stesso id), passate una alla volta a `onItem`.
+   * `cancel` chiede al calcolo di fermarsi al passo dopo (la risposta finale arriva lo stesso).
+   */
+  stream(message: Omit<Extract<Call, { kind: 'fill' }>, 'id'>, onItem: (r: WorkerProgress) => void):
+    { result: Promise<Extract<WorkerResponse, { kind: 'fillDone' }>>; cancel: () => void } {
+    const id = ++this.next;
+    const result = new Promise<Extract<WorkerResponse, { kind: 'fillDone' }>>((resolve, reject) => {
+      this.waiting.set(id, { resolve: resolve as (r: WorkerResponse) => void, reject, onItem });
+      this.post({ ...message, id });
+    });
+    return { result, cancel: () => { if (this.waiting.has(id)) this.post({ kind: 'cancel', id }); } };
+  }
 }
 
 /**
@@ -76,6 +93,8 @@ class RankingClient {
   private values = new Map<number, unknown>();
   private nextPart = 0;
   private lists = 0;
+  /** Completa team in corso sull'ultimo calcolo: intanto i voti della lista vanno agli altri. */
+  private fills = 0;
 
   constructor(make: (lead: boolean) => Worker, count: number) {
     this.workers = Array.from({ length: count }, (_, i) => new EngineWorker(make(i === 0), () => { this.broken = true; }));
@@ -97,14 +116,14 @@ class RankingClient {
     const wire: WorkerData = {
       stats: this.idOf(data.stats), sets: this.idOf(data.sets), fallback: this.idOf(data.fallback),
       presets: this.idOf(data.presets), fallbackPresets: this.idOf(data.fallbackPresets),
-      fallbackStats: this.idOf(data.fallbackStats), userLists: this.idOf(data.userLists),
+      fallbackStats: this.idOf(data.fallbackStats), tournamentTeams: this.idOf(data.tournamentTeams), userLists: this.idOf(data.userLists),
       ignoreMeta: data.ignoreMeta, allowMultipleMegas: data.allowMultipleMegas, formatId: data.formatId,
     };
     // Le liste dell'utente cambiano spesso (preferiti, bannati): quelle vecchie non servono più
     const drop = this.lists && this.lists !== wire.userLists ? [this.lists] : [];
     if (drop.length) this.values.delete(this.lists);
     this.lists = wire.userLists;
-    const needed = [wire.stats, wire.sets, wire.fallback, wire.presets, wire.fallbackPresets, wire.fallbackStats, wire.userLists].filter(Boolean);
+    const needed = [wire.stats, wire.sets, wire.fallback, wire.presets, wire.fallbackPresets, wire.fallbackStats, wire.tournamentTeams, wire.userLists].filter(Boolean);
     for (const worker of this.workers) {
       const parts = needed.filter(id => !worker.sent.has(id)).map(id => [id, this.values.get(id)] as [number, unknown]);
       for (const [id] of parts) worker.sent.add(id);
@@ -137,9 +156,13 @@ class RankingClient {
     }
   }
 
-  /** I voti richiesti, divisi fra i calcoli in parallelo, come coppie chiave → voto da mettere in cache. */
+  /**
+   * I voti richiesti, divisi fra i calcoli in parallelo, come coppie chiave → voto da mettere in cache. Con Completa
+   * team in corso (e almeno tre calcoli) l'ultimo è occupato: i voti vanno agli altri, senza aspettare dietro di lui.
+   */
   private async gains(jobs: GainJob[], lang: RankingParams['lang'], archetype: RankingParams['archetype'], data: WorkerData): Promise<[string, GainValue][]> {
-    const groups = splitJobs(jobs, this.workers.length);
+    const last = this.workers.length - 1;
+    const groups = splitJobs(jobs, this.workers.length, this.fills > 0 && this.workers.length > 2 ? last : undefined);
     const answers = await Promise.all(groups.map((group, i) => (group.length
       ? this.workers[i].call<'gains'>({ kind: 'gains', jobs: group, lang, archetype, data })
       : Promise.resolve({ values: [] as GainValue[] }))));
@@ -159,6 +182,26 @@ class RankingClient {
       this.broken = true;
       return improveSets(team, given, genLimit);
     }
+  }
+
+  /** Un calcolo si è rotto (errore del worker): da qui in poi tutto si fa sulla pagina. */
+  get isBroken(): boolean { return this.broken; }
+
+  /**
+   * Completa team in sottofondo, sull'ultimo calcolo (come Migliora i set; anche i controlli "questo tipo ha proposte?":
+   * sugli altri caricherebbero i learnset, tanta memoria). Il worker fa un passo per volta, quindi le richieste in coda
+   * non aspettano la fine. Le proposte arrivano una alla volta a `onProposal`; `max` lo ferma dopo tante proposte,
+   * `cancel` al passo dopo; `done` dice se i Pokémon nuovi sono finiti. Un errore del calcolo (risposta non ok) non rompe
+   * il worker: passa a chi chiama.
+   */
+  fill(team: TeamSet[], choice: FillChoice, shown: string[][], format: Format, given: EngineData, max: number | undefined,
+    onProposal: (p: Proposal) => void): { done: Promise<boolean>; cancel: () => void } {
+    const { result, cancel } = this.workers[this.workers.length - 1].stream(
+      { kind: 'fill', team, choice, shown, format, data: this.wire(given), max }, item => onProposal(item.proposal));
+    this.fills++;
+    const settle = () => { this.fills--; };
+    result.then(settle, settle);
+    return { done: result.then(r => r.exhausted), cancel };
   }
 
   /** I consigli del Coaching in sottofondo: stessi tre passi della lista (voti raccolti, in parallelo, poi i consigli). */
@@ -187,8 +230,9 @@ class RankingClient {
 /**
  * I voti divisi fra i calcoli: i voti dello stesso candidato insieme, di solito al calcolo "suo" (che lo ha già in
  * cache dalle liste precedenti); se quello è già pieno, al calcolo più scarico. Così nessuno resta indietro.
+ * `busy` è un calcolo occupato (Completa team): non riceve niente, la sua parte va ai più scarichi.
  */
-function splitJobs(jobs: GainJob[], count: number): GainJob[][] {
+export function splitJobs(jobs: GainJob[], count: number, busy?: number): GainJob[][] {
   const bySpecies = new Map<string, GainJob[]>();
   for (const job of jobs) {
     const list = bySpecies.get(job.set.species);
@@ -196,11 +240,13 @@ function splitJobs(jobs: GainJob[], count: number): GainJob[][] {
     else bySpecies.set(job.set.species, [job]);
   }
   const groups = Array.from({ length: count }, () => [] as GainJob[]);
-  const share = Math.ceil(jobs.length / count);
+  const free = busy === undefined ? count : count - 1;
+  const share = Math.ceil(jobs.length / Math.max(1, free));
+  const start = busy === 0 && count > 1 ? 1 : 0;
   for (const [species, list] of [...bySpecies].sort((a, b) => b[1].length - a[1].length)) {
     const own = affinity(species) % count;
-    const target = groups[own].length + list.length <= share ? own
-      : groups.reduce((best, group, i) => (group.length < groups[best].length ? i : best), 0);
+    const target = own !== busy && groups[own].length + list.length <= share ? own
+      : groups.reduce((best, group, i) => (i !== busy && group.length < groups[best].length ? i : best), start);
     groups[target].push(...list);
   }
   return groups;
@@ -316,4 +362,215 @@ let lastImprove: { key: string; data: EngineData; result: Promise<SetChange[]> }
 /** Prepara Migliora i set in anticipo, solo se c'è il calcolo in sottofondo (senza, fermerebbe la pagina a ogni modifica). */
 export function prepareImproveSets(team: TeamSet[], data: EngineData, genLimit: number): void {
   if (rankingClient()) void improveSetsLater(team, data, genLimit).catch(() => undefined);
+}
+
+/** Come è finita una richiesta di Completa team. */
+export interface FillDone {
+  /** La storia delle proposte mostrate (le forme dei nuovi di ognuna), con quelle consegnate: per "Altre proposte". */
+  shown: string[][];
+  /** true se il calcolo si è rotto (errore, già scritto in console): "nessuna proposta" non vuol dire "tipo vuoto". */
+  failed: boolean;
+  /**
+   * true solo se il giro è arrivato in fondo e i Pokémon nuovi sono finiti: "Altre proposte" non troverebbe niente. Un
+   * giro più corto fermato dai tentativi, da `max` o da `cancel` dice false.
+   */
+  exhausted: boolean;
+}
+
+/** Chi aspetta le proposte di un calcolo: una alla volta, poi la fine (rotto o no). */
+interface FillListener { push: (p: Proposal) => void; end: (failed: boolean, exhausted: boolean) => void }
+
+/** Un calcolo di proposte in corso: quelle già arrivate e chi le aspetta. */
+interface FillRun {
+  proposals: Proposal[];
+  listeners: Set<FillListener>;
+  ended: boolean;
+  /** Arrivato in fondo con i Pokémon nuovi finiti. */
+  exhausted: boolean;
+  /** Ferma il calcolo (col worker al passo dopo): quando non lo aspetta più nessuno. */
+  stop: () => void;
+}
+
+/** Quante richieste finite (del primo giro) restano pronte da ripetere. */
+const FILL_CACHE = 8;
+/** Le proposte di una richiesta finita e se dopo di loro i Pokémon nuovi erano finiti. */
+const fillCache = new Map<string, { proposals: Proposal[]; exhausted: boolean }>();
+/** Le richieste del primo giro ancora in corso (senza `max`): una seconda uguale si aggancia invece di ripartire. */
+const fillLive = new Map<string, FillRun>();
+const dataIds = new WeakMap<EngineData, number>();
+let nextDataId = 0;
+
+/** Tutto quello che cambia le proposte: dati (per identità), team, scelta completa (coi valori di partenza), formato. */
+function fillKey(team: TeamSet[], choice: FillChoice, format: Format, data: EngineData): string {
+  let dataId = dataIds.get(data);
+  if (dataId === undefined) dataIds.set(data, (dataId = ++nextDataId));
+  const full = {
+    archetype: choice.archetype, style: choice.style, favorites: choice.favorites ?? 'priority',
+    keepSets: team.map((_, i) => choice.keepSets?.[i] ?? true),
+  };
+  return `${dataId}|${JSON.stringify([team, full, format])}`;
+}
+
+/** La storia dopo queste proposte: quella di partenza più i nuovi di ognuna (come fa fillProposals). */
+function shownAfter(start: string[][], proposals: Proposal[]): string[][] {
+  return [...start, ...proposals.map(proposal => proposal.added.map(formeId))];
+}
+
+/** Un errore di chi riceve le proposte non deve fermare il calcolo né gli altri che aspettano. */
+function safely(onProposal: (p: Proposal) => void, proposal: Proposal) {
+  try { onProposal(proposal); } catch (error) { console.error(error); }
+}
+
+/**
+ * Fa partire il calcolo (`max` 0 = tutte): col worker in sottofondo; senza, o se il worker si rompe, qui un passo per
+ * volta (setTimeout). `onEnd` dice se è arrivato in fondo (finito, non fermato né rotto); `run.exhausted` se lì i
+ * Pokémon nuovi erano finiti.
+ */
+function startFill(
+  team: TeamSet[], choice: FillChoice, shown: string[][], format: Format, data: EngineData, max: number,
+  onEnd: (complete: boolean) => void,
+): FillRun {
+  const run: FillRun = { proposals: [], listeners: new Set(), ended: false, exhausted: false, stop: () => undefined };
+  const emit = (proposal: Proposal) => {
+    if (run.ended) return;
+    run.proposals.push(proposal);
+    for (const listener of [...run.listeners]) listener.push(proposal);
+  };
+  const end = (complete: boolean, failed: boolean, exhausted = false) => {
+    if (run.ended) return;
+    run.ended = true;
+    run.exhausted = exhausted;
+    onEnd(complete);
+    for (const listener of [...run.listeners]) listener.end(failed, exhausted);
+    run.listeners.clear();
+  };
+  // Qui, saltando le proposte già consegnate dal worker (il calcolo dà sempre le stesse, nello stesso ordine)
+  const local = (skip: number) => {
+    const steps = fillProposals(team, choice, shown.map(ids => [...ids]), format, data);
+    let found = 0;
+    let timer: ReturnType<typeof setTimeout>;
+    const step = () => {
+      if (run.ended) return;
+      let next: IteratorResult<Proposal | null, FillEnd>;
+      try { next = steps.next(); } catch (error) { console.error(error); end(false, true); return; }
+      if (next.done) { end(true, false, next.value === 'exhausted'); return; }
+      if (next.value) {
+        if (++found > skip) emit(next.value);
+        if (max && found >= max) { end(true, false); return; }
+      }
+      timer = setTimeout(step, 0);
+    };
+    timer = setTimeout(step, 0);
+    run.stop = () => { clearTimeout(timer); end(false, false); };
+  };
+  const client = rankingClient();
+  if (!client || client.isBroken) { local(0); return run; }
+  const call = client.fill(team, choice, shown, format, data, max || undefined, emit);
+  run.stop = () => { call.cancel(); end(false, false); };
+  call.done.then(exhausted => end(true, false, exhausted), error => {
+    if (run.ended) return;
+    // Il worker si è rotto: si continua qui; un errore del calcolo invece si ripeterebbe uguale
+    if (client.isBroken) local(run.proposals.length);
+    else { console.error(error); end(false, true); }
+  });
+  return run;
+}
+
+/** Chi chiama riceve le proposte del calcolo (anche quelle già arrivate, subito) fino a `max`, poi `done`. */
+function subscribe(run: FillRun, start: string[][], max: number, onProposal: (p: Proposal) => void) {
+  const delivered: Proposal[] = [];
+  let resolve!: (done: FillDone) => void;
+  const done = new Promise<FillDone>(r => { resolve = r; });
+  let open = true;
+  const close = (failed: boolean, exhausted = false) => {
+    if (!open) return;
+    open = false;
+    run.listeners.delete(listener);
+    resolve({ shown: shownAfter(start, delivered), failed, exhausted });
+    // Nessuno aspetta più: il calcolo si ferma (e non resta in cache)
+    if (!run.ended && !run.listeners.size) run.stop();
+  };
+  const listener: FillListener = {
+    push: proposal => {
+      if (!open) return;
+      delivered.push(proposal);
+      safely(onProposal, proposal);
+      if (delivered.length >= max) close(false);
+    },
+    end: close,
+  };
+  run.listeners.add(listener);
+  for (const proposal of [...run.proposals]) listener.push(proposal);
+  return { done, cancel: () => close(false) };
+}
+
+/**
+ * Le proposte di Completa team una alla volta, senza fermare la pagina: col worker sull'ultimo calcolo; senza, qui un
+ * passo per volta. `options.max` si ferma dopo tante proposte (il controllo "questo tipo ha proposte?" usa `max: 1`).
+ * `done` dà la storia dopo le proposte consegnate (per "Altre proposte": `shown` resta com'è), `failed`
+ * se il calcolo si è rotto ed `exhausted` se i Pokémon nuovi sono finiti (anche ripetendo dalla cache o agganciandosi).
+ * Dopo `cancel` non arriva più niente e `done` si chiude; se non aspetta più nessuno, il calcolo si ferma. Il primo giro (`shown` vuoto, senza `max`) delle ultime FILL_CACHE richieste finite resta
+ * pronto: la stessa richiesta consegna le proposte già durante la chiamata, e se è ancora in corso ci si aggancia
+ * (anche con `max`). Le richieste con `max` non vanno mai in cache.
+ */
+export function streamFill(
+  team: TeamSet[], choice: FillChoice, shown: string[][], format: Format, data: EngineData,
+  onProposal: (p: Proposal) => void, options: { max?: number } = {},
+): { done: Promise<FillDone>; cancel: () => void } {
+  const max = options.max && options.max > 0 ? options.max : 0;
+  const key = shown.length === 0 ? fillKey(team, choice, format, data) : null;
+  const cached = key ? fillCache.get(key) : undefined;
+  if (key && cached) {
+    // In fondo alla fila: è la più recente
+    fillCache.delete(key);
+    fillCache.set(key, cached);
+    const given = max ? cached.proposals.slice(0, max) : cached.proposals;
+    for (const proposal of given) safely(onProposal, proposal);
+    // Con max più corto della cache restano proposte: non finiti
+    const exhausted = cached.exhausted && given.length === cached.proposals.length;
+    return { done: Promise.resolve({ shown: shownAfter(shown, given), failed: false, exhausted }), cancel: () => undefined };
+  }
+  let run = key ? fillLive.get(key) : undefined;
+  if (!run) {
+    const shared = key !== null && !max;
+    const started: FillRun = startFill(team, choice, shown, format, data, max, complete => {
+      if (!shared || fillLive.get(key) !== started) return;
+      fillLive.delete(key);
+      if (!complete) return;
+      fillCache.set(key, { proposals: started.proposals, exhausted: started.exhausted });
+      if (fillCache.size > FILL_CACHE) fillCache.delete(fillCache.keys().next().value!);
+    });
+    if (shared) fillLive.set(key, started);
+    run = started;
+  }
+  return subscribe(run, shown, max || Infinity, onProposal);
+}
+
+/**
+ * L'ultima preparazione in anticipo, finché è in corso: una sola alla volta, quella vecchia (di un team già cambiato)
+ * si ferma. Finita (o rotta) non conta più: se le proposte escono dalla cache, o il calcolo si è rotto, si rifà.
+ */
+let prefetch: { key: string; cancel: () => void } | null = null;
+
+/** Prepara le proposte di partenza di Completa team, solo col calcolo in sottofondo (come prepareImproveSets). */
+export function prepareFill(team: TeamSet[], format: Format, data: EngineData): void {
+  const client = rankingClient();
+  if (!client || client.isBroken || team.length >= 6 || !data.stats) return;
+  const choice = defaultChoice(team);
+  const key = fillKey(team, choice, format, data);
+  if (prefetch?.key === key || fillCache.has(key)) return;
+  cancelPrepareFill();
+  const call = streamFill(team, choice, [], format, data, () => undefined);
+  const entry = { key, cancel: call.cancel };
+  prefetch = entry;
+  void call.done.then(() => { if (prefetch === entry) prefetch = null; });
+}
+
+/**
+ * Ferma subito la preparazione in corso (il team è cambiato): non occupa il calcolo mentre la lista dei candidati
+ * aspetta. Se il pannello è aperto sulle stesse proposte, il calcolo continua per lui.
+ */
+export function cancelPrepareFill(): void {
+  prefetch?.cancel();
+  prefetch = null;
 }

@@ -13,7 +13,7 @@ describe('fonti dati', () => {
       '/data/a/meta.json': async () => ({ month: 'm', cutoff: 1, battles: 1 }),
     };
     expect((await readSource(files, 'a')).stats).not.toBeNull();
-    expect((await readSource(files, 'b'))).toEqual({ stats: null, sets: null, fallback: null, presets: null, fallbackPresets: null, fallbackStats: null });
+    expect((await readSource(files, 'b'))).toEqual({ stats: null, sets: null, fallback: null, presets: null, fallbackPresets: null, fallbackStats: null, tournamentTeams: null });
   });
 
   it('aggiunge i set di riserva a ogni fonte', async () => {
@@ -25,6 +25,12 @@ describe('fonti dati', () => {
     };
     expect((await readSource(files, 'a')).fallback).toEqual({ Dragapult: set });
     expect((await readSource(files, 'b')).fallback).toEqual({ Dragapult: set });
+  });
+
+  it('le squadre da torneo: assenti → null, rotte → []', async () => {
+    const base = { '/data/a/stats.json': async () => ({ X: { usage: 1 } }), '/data/a/meta.json': async () => ({ month: 'm', cutoff: 1, battles: 1 }) };
+    expect((await readSource(base, 'a')).tournamentTeams).toBeNull();
+    expect((await readSource({ ...base, '/data/a/teams.json': async () => ({ rotto: true }) }, 'a')).tournamentTeams).toEqual([]);
   });
 
   it('un file corrotto non blocca: statistiche nulle', async () => {
