@@ -442,6 +442,17 @@ const STATES: Record<string, State> = {
     await wait(300);
     return clickText(p, '.help-nav [role="tab"]', /^(Come funziona|How it works)$/);
   } },
+  'rating-help-general-en': { lang: 'en', run: async p => {
+    if (!await clickText(p, '.band .grade-tools button.help-button', /./)) return 'no help button';
+    await wait(300);
+    return clickText(p, '.help-nav [role="tab"]', /^How it works$/);
+  } },
+  // Hyper Offense: la frase su Trick Room e le voci dei Ruoli come etichette piatte
+  'rating-help-ho': { hash: hash(SIX), run: async p => {
+    if (!await clickText(p, '.band .grade-tools button.help-button', /./)) return 'no help button';
+    await wait(300);
+    return clickText(p, '.help-nav [role="tab"]', /^Hyper Offense/);
+  } },
   'rating-help-balance': { hash: hash(SIX), run: async p => {
     if (!await clickText(p, '.band .grade-tools button.help-button', /./)) return 'no help button';
     await wait(300);
@@ -902,9 +913,14 @@ for (const [w, h] of sizes) {
       const spr = ol.querySelector<HTMLElement>('.card-sprite, .pill-sprite');
       return `list2: cardOver=${cardOver} headCollide=${headCollide} headOver=${headOver} hint=${hint && hint.getClientRects().length ? 'shown' : 'hidden'} outOverSprite=${covered} listSprite=${spr ? Math.round(spr.getBoundingClientRect().width) : '-'} listH=${Math.round(r.height)}`;
     });
+    // Come funziona il voto: quanto scorre il pannello a destra (0 = sta tutto) e l'altezza della finestra
+    const ratingHelp = await page.evaluate(() => {
+      const gp = document.querySelector<HTMLElement>('.rating-help .help-panel');
+      return gp ? ` helpScroll=${gp.scrollHeight - gp.clientHeight} helpH=${Math.round(gp.closest('.help-dialog')!.getBoundingClientRect().height)}` : '';
+    });
     const file = join(out, `${w}x${h}-${name}.png`);
     await page.screenshot({ path: file });
-    console.log(`${file} pageScroll=${scroll} clipped=${clipped}${panel} ${dash} ${coach} ${list} ${listMore} ${band}`);
+    console.log(`${file} pageScroll=${scroll} clipped=${clipped}${panel}${ratingHelp} ${dash} ${coach} ${list} ${listMore} ${band}`);
     await page.close();
   }
 }

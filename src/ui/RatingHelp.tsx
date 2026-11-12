@@ -92,7 +92,7 @@ export function RatingHelp({ teamType: judgedAs, weights: realWeights = ARCHETYP
                   </button>
                 ))}
               </nav>
-              <section className="help-panel" id="help-panel" role="tabpanel" aria-labelledby={`help-tab-${topic}`}>
+              <section className={`help-panel${topic === 'general' ? ' help-general' : ''}`} id="help-panel" role="tabpanel" aria-labelledby={`help-tab-${topic}`}>
                 <h4>{t(topicLabel(topic))}</h4>
                 {topic === 'general' ? <GeneralTopic teamType={teamType} weights={weights} /> : <TypeTopic type={topic} weights={weights} typeRule={typeRule} />}
               </section>
@@ -123,7 +123,6 @@ function GeneralTopic({ teamType, weights }: { teamType: Archetype | null; weigh
       </ul>
       <p>{t('help.general.1')}</p>
       <p>{t('help.general.2')}</p>
-      <p>{t('help.type.trickRoom')}</p>
       <div className="help-table-wrap">
         <table className="help-weights">
           <thead>
@@ -139,7 +138,46 @@ function GeneralTopic({ teamType, weights }: { teamType: Archetype | null; weigh
           </tbody>
         </table>
       </div>
+      <ReadTheCard />
     </>
+  );
+}
+
+/**
+ * Come si legge il riquadro del voto: a sinistra un pezzetto del riquadro com'è (barra, Ruoli, segni dei ruoli che
+ * mancano, Bonus/Malus, lettera grigia), a destra una frase semplice. Solo disegno: le frasi dicono tutto da sole.
+ */
+function ReadTheCard() {
+  const t = useT();
+  return (
+    <section className="help-read" aria-labelledby="help-read-title">
+      <h5 id="help-read-title">{t('help.read.title')}</h5>
+      <dl>
+        <div>
+          <dt aria-hidden="true"><span>{t('area.strength')}</span><span className="help-read-meter"><i /></span></dt>
+          <dd>{t('help.read.areas')}</dd>
+        </div>
+        <div>
+          <dt aria-hidden="true"><span>{t('area.roles')}</span><b>11/14</b></dt>
+          <dd>{t('help.read.roles')}</dd>
+        </div>
+        <div>
+          <dt aria-hidden="true" className="help-read-marks">
+            <span className="grade-roles-miss bad">2<Icon name="warning" /></span>
+            <span className="grade-roles-miss warn">1<Icon name="warning" /></span>
+          </dt>
+          <dd>{t('help.read.missing')}</dd>
+        </div>
+        <div>
+          <dt aria-hidden="true"><span>{t('area.bonusMalus')}</span><b className="good">+5</b></dt>
+          <dd>{t('help.read.bonusMalus')}</dd>
+        </div>
+        <div>
+          <dt aria-hidden="true"><b className="help-read-grey">A</b><span className="help-read-rules"><Icon name="warning" />{t('help.read.notLegal')}</span></dt>
+          <dd>{t('help.read.grey')}</dd>
+        </div>
+      </dl>
+    </section>
   );
 }
 
@@ -167,16 +205,16 @@ const LADDER: Record<(typeof WEIGHT_AREAS)[number], Record<Archetype, number>> =
 const stepOf = (weights: AreaWeightTable, arch: Archetype, area: (typeof WEIGHT_AREAS)[number]): number =>
   weights[arch][area] <= 0 ? 0 : LADDER[area][arch] / 6;
 /**
- * Il peso di un'area come barra in sesti, senza numeri (stepOf). Ai lettori di schermo una parola dal peso vero:
+ * Il peso di un'area come barra in sesti, senza numeri (stepOf), e accanto una parola dal peso vero, a vista per tutti:
  * molto dalla metà del voto in su, abbastanza da un quarto, poco sotto.
  */
 function WeightBar({ weight, step }: { weight: number; step: number }) {
   const t = useT();
   const word = weight <= 0 ? 'help.weight.none' : weight >= 50 ? 'help.weight.high' : weight >= 25 ? 'help.weight.mid' : 'help.weight.low';
   return (
-    <span className="help-wbar">
-      <i style={{ width: `${(100 * step).toFixed(2)}%` }} />
-      <span className="visually-hidden">{t(word)}</span>
+    <span className="help-weight">
+      <span className="help-wbar" aria-hidden="true"><i style={{ width: `${(100 * step).toFixed(2)}%` }} /></span>
+      <span className="help-wword">{t(word)}</span>
     </span>
   );
 }
@@ -188,6 +226,8 @@ function TypeTopic({ type, weights, typeRule }: { type: Archetype; weights: Area
     <>
       <p className="help-note">{t(`archetype.${type}.note`)}</p>
       <p>{t(`help.type.${type}`)}</p>
+      {/* Trick Room è il contrario di un team veloce: la frase sta nella scheda del team più veloce */}
+      {type === 'hyperOffense' && <p>{t('help.type.trickRoom')}</p>}
       <h5>{t('help.type.weights')}</h5>
       <dl className="help-weights-row">
         {WEIGHT_AREAS.map(area => {
@@ -208,7 +248,7 @@ function TypeTopic({ type, weights, typeRule }: { type: Archetype; weights: Area
         return (
           <div key={level} className="help-levels">
             <h6>{t(`rdetail.group.${level}`)}</h6>
-            <ul className="help-points">{keys.map(key => <li key={key}><span>{t(keyLabel(key))}</span></li>)}</ul>
+            <ul className={`help-points ${level}`}>{keys.map(key => <li key={key} title={isGroupKey(key) ? undefined : t(`roleDesc.${key}`)}>{t(keyLabel(key))}</li>)}</ul>
           </div>
         );
       })}
