@@ -72,10 +72,12 @@ export function SavedTeams({ team, format, plate, onLoad }: {
     <>
       <details className={`popover${plate ? ' plate-menu' : ''}`}>
         {plate ? (
+          // Per i lettori di schermo il nome del menu viene prima ("Team salvati (2)"), poi il team caricato; il disegno della
+          // targa (la parola Team e quanti sono) è nascosto: il titolo vero sta fuori dal menu
           <summary className="team-plate" title={t('saved.title', { n: saved.length })}>
+            <span className="visually-hidden">{t('saved.title', { n: saved.length })}</span>
             {plate}
             {shown && <span className="plate-name">{shown.name}{changed && <span className="plate-dot" title={t('saved.changed')}><span className="visually-hidden">{t('saved.changed')}</span></span>}</span>}
-            <span className="visually-hidden">{t('saved.title', { n: saved.length })}</span>
             <span className="plate-arrow"><Icon name="down" /></span>
           </summary>
         ) : (

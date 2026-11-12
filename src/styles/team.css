@@ -200,11 +200,14 @@
 .export-note.done { background: var(--good-bg); color: var(--good); }
 .export-note .icon { width: 13px; height: 13px; }
 @media (prefers-reduced-motion: reduce) { .export-tab.copied .icon, .export-note { animation: none; } }
-/* Svuota: più discreta, si accende di rosso solo sotto il mouse */
+/* Svuota: il cestino, più discreto delle altre linguette, si accende di rosso solo sotto il mouse; una barretta lo stacca
+   da Importa ed Esporta (il gap della fila più la barretta) */
+.clear-wrap { position: relative; display: flex; align-items: center; padding-left: 12px; }
+.clear-wrap::before { content: ''; position: absolute; left: 0; top: 6px; bottom: 6px; width: 1px; background: var(--line); }
 .team-head .clear-team { width: 44px; padding: 0; justify-content: center; background-color: transparent; color: var(--faint); }
-/* Solo la ×: il nome resta nel tooltip e per i lettori di schermo */
+/* Solo il cestino: il nome resta nel fumetto e per i lettori di schermo */
 .team-head .clear-team > .btn-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-.team-head .clear-team:hover { background-color: var(--bad-bg); color: var(--bad); }
+.team-head .clear-team:hover, .team-head .clear-team:focus-visible { background-color: var(--bad-bg); color: var(--bad); }
 /* Menu della testata (Team salvati, Importa / Esporta) come il pannello di Completa team: fondo Ground, angoli 4px, ombra,
    apertura breve. Quello delle scorciatoie si apre allineato a destra, sotto il suo pulsante */
 .team-head .popover[open] > :not(summary) {

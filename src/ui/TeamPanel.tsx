@@ -576,6 +576,9 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
   const [confirmPresets, setConfirmPresets] = useState(false);
   // Dopo un Incolla set: mosse non imparabili (Custom Skillset?) o nomi non trovati del membro incollato
   const [ask, setAsk] = useState<{ index: number; review: ImportReview } | null>(null);
+  // Svuota: sotto il mouse o col fuoco un fumetto dice cosa fa (e che si può annullare)
+  const [clearHint, setClearHint] = useState(false);
+  const clearNote = useId();
   const presetsButton = useRef<HTMLButtonElement>(null);
   const closeConfirm = () => { setConfirmPresets(false); presetsButton.current?.focus(); };
   // Team pieno e fermo da un secondo e mezzo: Migliora i set si prepara in sottofondo, al clic la finestra è già pronta
@@ -651,19 +654,22 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
     replace: i => live.current.replace(i),
     proposalDone: applied => live.current.proposalDone(applied),
   }), []);
-  // Il titolo della targa: la parola Team e quanti sono (i lettori di schermo sentono "Team (n/6)")
-  const plateTitle = (
-    <h2>
+  // Il titolo della targa: la parola Team e quanti sono (i lettori di schermo sentono "Team (n/6)").
+  // Dentro il menu dei team salvati (un <summary>) un titolo non conta come titolo: lì il disegno resta uguale ma è nascosto
+  // ai lettori di schermo, e il titolo vero sta subito prima, fuori dal menu (solo per loro)
+  const title = t(lang, 'team.title', { n: team.length });
+  const plateTitle = (inMenu: boolean) => (
+    <h2 aria-hidden={inMenu || undefined}>
       <span aria-hidden="true">Team</span>
       <span className="team-count" aria-hidden="true"><b key={team.length}>{team.length}</b>/6</span>
-      <span className="visually-hidden">{t(lang, 'team.title', { n: team.length })}</span>
+      {!inMenu && <span className="visually-hidden">{title}</span>}
     </h2>
   );
   return (
     <section aria-label={t(lang, 'team.region')} className={`team${collapsed ? ' collapsed' : ''}`}>
       <div className="team-head">
         {/* La targa del team: la parola Team e quanti sono. Con i team salvati la targa è anche il loro menu (freccia ▾) */}
-        {saved ? saved(plateTitle) : <div className="team-plate">{plateTitle}</div>}
+        {saved ? <><h2 className="visually-hidden">{title}</h2>{saved(plateTitle(true))}</> : <div className="team-plate">{plateTitle(false)}</div>}
         {/* La guida, subito dopo la targa: Completa team finché mancano Pokémon, Migliora i set col team pieno */}
         <div className="team-guide-slot">
           {canFill ? (
@@ -715,12 +721,22 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
             <div className="team-tabs">
             {io}
           </div>
-          {team.length > 0 && <>
-            <button type="button" className="team-action clear-team" title={t(lang, 'team.clear')} onClick={() => {
-              setOpenIndex(null);
-              if (onBulk) onBulk('clear', []); else onChange([]);
-            }}><Icon name="close" /> <span className="btn-label">{t(lang, 'team.clear')}</span></button>
-          </>}
+          {/* Svuota: il cestino, staccato da Importa ed Esporta da una barretta; il fumetto come quello di Esporta */}
+          {team.length > 0 && (
+            <span className="clear-wrap">
+              <button type="button" className="team-action clear-team" aria-describedby={clearHint ? clearNote : undefined}
+                onPointerEnter={() => setClearHint(true)} onPointerLeave={() => setClearHint(false)}
+                onFocus={() => setClearHint(true)} onBlur={() => setClearHint(false)}
+                onClick={event => {
+                  setOpenIndex(null);
+                  setClearHint(false);
+                  if (onBulk) onBulk('clear', []); else onChange([]);
+                  // Da tastiera (clic senza puntatore) il pulsante sparisce: il fuoco va su Annulla dell'avviso, così si annulla subito
+                  if (event.detail === 0) requestAnimationFrame(() => document.querySelector<HTMLElement>('.undo-toast .undo-button')?.focus());
+                }}><Icon name="trash" /> <span className="btn-label">{t(lang, 'team.clear')}</span></button>
+              {clearHint && <span id={clearNote} className="export-note">{t(lang, 'team.clearTitle')}</span>}
+            </span>
+          )}
         </div>
       </div>
       <p className="visually-hidden" aria-live="polite">{moveNote}</p>
