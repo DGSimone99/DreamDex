@@ -482,9 +482,15 @@
 /* Ciò che cambia nel set nuovo: verde (testo su un velo verde) */
 .improve-set .is-new { color: var(--good); font-weight: 600; }
 .improve-moves li.is-new { color: var(--good); background: var(--good-bg); border-color: color-mix(in srgb, var(--good) 45%, transparent); font-weight: 600; }
-.improve-down { display: flex; align-items: center; justify-content: center; gap: 4px; height: 22px; color: var(--faint); border-block: 1px dashed var(--line-soft);
-  font: 700 11px/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; }
-.improve-down .icon { width: 14px; height: 14px; transform: rotate(90deg); }
+/* "↓ Dopo": una fascia verde che taglia la colonna, e sotto il set nuovo su un fondo appena più chiaro */
+.improve-down {
+  display: flex; align-items: center; justify-content: center; gap: 6px; height: 26px;
+  color: var(--good); background: var(--good-bg);
+  border-block: 1px solid color-mix(in srgb, var(--good) 40%, transparent);
+  font: 800 12px/1 var(--display); font-style: italic; letter-spacing: 0.08em; text-transform: uppercase;
+}
+.improve-down .icon { width: 16px; height: 16px; transform: rotate(90deg); }
+.improve-set.is-after { background: color-mix(in srgb, var(--raised) 30%, transparent); }
 .improve-same { display: flex; align-items: center; justify-content: center; gap: 6px; flex: 1; margin: 0; padding: 14px 10px; color: var(--muted); font-size: 13px; text-align: center; }
 .improve-same .icon { width: 15px; height: 15px; color: var(--good); }
 
@@ -526,5 +532,6 @@
 @media (max-height: 680px) {
   .improve-set { padding-block: 5px; gap: 1px; }
   .improve-moves li { line-height: 17px; }
+  .improve-down { height: 22px; }
   .improve-total { min-height: 44px; padding-block: 5px; }
 }
