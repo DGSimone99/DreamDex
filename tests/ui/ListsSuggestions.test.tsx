@@ -99,10 +99,10 @@ describe('liste nella scheda Pokémon', () => {
 });
 
 describe('liste: nascosti anche negli scambi', () => {
-  it('"Migliora team" e "Sostituto" dicono quanti bannati mancano', async () => {
+  it('"Sostituisci" e "Sostituto" dicono quanti bannati mancano', async () => {
     const { storage } = withLists(bans('Kingambit'));
     const user = await setup(storage, 'Great Tusk', 'Gholdengo');
-    await user.click(within(suggestions()).getByRole('button', { name: 'Migliora team' }));
+    await user.click(within(suggestions()).getByRole('button', { name: 'Sostituisci' }));
     expect(await within(suggestions()).findByText(/1 Pokémon nascost[oi] dalla tua lista Ban/)).toBeInTheDocument();
     await user.click(within(suggestions()).getByRole('button', { name: /^Chi sostituire/ }));
     await user.click(within(suggestions()).getByRole('button', { name: 'Sostituisci Gholdengo' }));

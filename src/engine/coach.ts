@@ -66,7 +66,7 @@ export interface CoachProblem {
 
 /** I consigli del Coaching: a parte perché lenti, si calcolano solo con la scheda Coaching aperta. */
 export interface CoachAdvice {
-  /** Cambi dalla classifica di Migliora team che alzano il voto (o a pari voto risolvono), coi problemi che risolvono o riducono. */
+  /** Cambi dalla classifica di Sostituisci che alzano il voto (o a pari voto risolvono), coi problemi che risolvono o riducono. */
   fixes: CoachFix[];
   /** Tutte le tappe, dalla più urgente: la UI ne mostra `MAX_STEPS`. */
   steps: CoachStep[];
@@ -393,7 +393,7 @@ export function coachTeam(team: TeamSet[], format: Format, data: EngineData, lan
   };
 }
 
-/** I cambi della classifica di Migliora team per i problemi di coachTeam, e le tappe. */
+/** I cambi della classifica di Sostituisci per i problemi di coachTeam, e le tappe. */
 export function coachAdvice(team: TeamSet[], format: Format, data: EngineData, problems: CoachProblem[], lang: Lang = 'it'): CoachAdvice {
   if (team.length < 2) return { fixes: [], steps: [] };
   if (data.formatId !== format.formatId) data = { ...data, formatId: format.formatId };

@@ -234,7 +234,7 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
   border-radius: 4px;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
 }
-/* Chi esce: la tendina attaccata a Migliora team (un terzo pezzo dello stesso pulsante, con ▾ e l'icona del membro scelto);
+/* Chi esce: la tendina attaccata a Sostituisci (un terzo pezzo dello stesso pulsante, con ▾ e l'icona del membro scelto);
    sotto, Tutti e i membri con icona e nome */
 .mode-switch { position: relative; flex: none; }
 .toolbar .mode-switch > .segmented button { gap: 6px; padding: 8px 14px; font-size: 14px; white-space: nowrap; }
@@ -434,7 +434,7 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
   @media (hover: hover) { .picker-list > .suggestions.cards:has(> .card:hover) { z-index: 3; } }
 }
 .list-head .box-head { display: inline-block; flex: none; white-space: nowrap; }
-/* Problemi e bonus: la pillola tratteggiata che spiega la parte del voto fuori dalle aree */
+/* Bonus/Malus: la pillola tratteggiata che spiega la parte del voto fuori dalle aree */
 .detail .effect .detail-areas .extras { border-style: dashed; }
 
 /* Stile "Carte": 6 carte verticali (3 × 2) a forma di carta Masters (misure da usePerPage: --cols, --tile-h, --reasons).

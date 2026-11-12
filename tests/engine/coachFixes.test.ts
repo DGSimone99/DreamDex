@@ -21,11 +21,11 @@ const three = six.slice(0, 3);
 const problemsOf = (team: TeamSet[]) => findProblems(team, format, data, analyzeTeam(team, data), [], 'it');
 const fixesOf = (team: TeamSet[]) => coachFixes(team, format, data, problemsOf(team), 'it');
 
-describe('candidati del Coaching dalla classifica di Migliora team', () => {
+describe('candidati del Coaching dalla classifica di Sostituisci', () => {
   const fixesSix = fixesOf(six);
   const fixesThree = fixesOf(three);
 
-  it('stesso voto in più di Migliora team per membro', () => {
+  it('stesso voto in più di Sostituisci per membro', () => {
     for (const team of [six, three]) {
       const archetype = undefined;
       const swaps = (team === six ? fixesSix : fixesThree).filter(f => f.kind === 'swap');
@@ -220,7 +220,7 @@ describe('conflitto di meteo: chiave senza i setter', () => {
   });
 });
 
-describe('classifiche condivise con Migliora team', () => {
+describe('classifiche condivise con Sostituisci', () => {
   it('una seconda chiamata sullo stesso team riusa le classifiche', async () => {
     const { rankingMisses } = await import('../../src/engine/coachFixes');
     const team = [...three];

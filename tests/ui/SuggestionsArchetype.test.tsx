@@ -44,7 +44,7 @@ describe('selettore del tipo di team nei suggerimenti', () => {
 
   it('team incompleto: Qualunque', async () => {
     const user = await importTeam(STALL.slice(0, 2));
-    await user.click(within(suggestions()).getByRole('button', { name: 'Migliora team' }));
+    await user.click(within(suggestions()).getByRole('button', { name: 'Sostituisci' }));
     expect(pressed()).toEqual(['Qualunque']);
   });
 
@@ -56,7 +56,7 @@ describe('selettore del tipo di team nei suggerimenti', () => {
 
   it('una scelta a mano resta quando il team cambia', async () => {
     const user = await importTeam(STALL.slice(0, 5));
-    await user.click(within(suggestions()).getByRole('button', { name: 'Migliora team' }));
+    await user.click(within(suggestions()).getByRole('button', { name: 'Sostituisci' }));
     expect(pressed()).toEqual(['Qualunque']);
     await user.selectOptions(types(), 'Balance');
     await user.click(within(suggestions()).getByRole('button', { name: 'Aggiungi' }));
