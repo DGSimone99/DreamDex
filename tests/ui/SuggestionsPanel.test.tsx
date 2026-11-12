@@ -81,6 +81,10 @@ describe('SuggestionsPanel', () => {
     expect(detail.querySelector('.detail-score')).toHaveTextContent(/uso nel meta$/);
     expect(within(detail).getByText('Voto con lui da solo')).toBeInTheDocument();
     expect(detail.querySelector('.detail-areas .change')!.textContent).toBe('');
+    // Un'area a zero col team vuoto non sembra un errore: si legge "—"
+    expect([...detail.querySelectorAll('.detail-areas .value')].map(v => v.textContent)).not.toContain('0');
+    // I ruoli del set hanno la spiegazione nel tooltip
+    for (const role of within(detail).getByRole('list', { name: 'Ruoli del set' }).querySelectorAll('li')) expect(role.getAttribute('title')).toBeTruthy();
   });
 
   it('mostra i tag sulle righe', async () => {

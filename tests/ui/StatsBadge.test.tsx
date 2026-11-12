@@ -7,10 +7,15 @@ describe('badge Stats', () => {
   it('tooltip con le 6 statistiche base e il totale', () => {
     renderIt(<StatsBadge species="Garchomp" />);
     const tip = screen.getByRole('tooltip');
-    expect(screen.getByText('Stats')).toHaveAttribute('aria-describedby', tip.id);
+    expect(screen.getByText('Stat')).toHaveAttribute('aria-describedby', tip.id);
     expect(tip).toHaveTextContent('PS108');
     expect(tip).toHaveTextContent('Vel102');
     expect(tip).toHaveTextContent('Totale600');
+  });
+
+  it('in inglese il badge dice Stats', () => {
+    render(<StatsBadge species="Garchomp" />);
+    expect(screen.getByText('Stats')).toHaveAttribute('aria-describedby', screen.getByRole('tooltip').id);
   });
 
   it('con la pietra mostra le statistiche della Mega', () => {

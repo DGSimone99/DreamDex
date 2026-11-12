@@ -916,7 +916,18 @@ for (const [w, h] of sizes) {
     // Come funziona il voto: quanto scorre il pannello a destra (0 = sta tutto) e l'altezza della finestra
     const ratingHelp = await page.evaluate(() => {
       const gp = document.querySelector<HTMLElement>('.rating-help .help-panel');
-      return gp ? ` helpScroll=${gp.scrollHeight - gp.clientHeight} helpH=${Math.round(gp.closest('.help-dialog')!.getBoundingClientRect().height)}` : '';
+      const help = gp ? ` helpScroll=${gp.scrollHeight - gp.clientHeight} helpH=${Math.round(gp.closest('.help-dialog')!.getBoundingClientRect().height)}` : '';
+      // Tipo di team nella barra dei candidati: spazio del testo della tendina contro il nome più lungo (negativo = tagliato) e se la barra sborda
+      const tt = document.querySelector<HTMLElement>('.toolbar .team-type');
+      const sel = tt?.querySelector('select');
+      if (!tt || !sel) return help;
+      const cs = getComputedStyle(sel);
+      const ctx = document.createElement('canvas').getContext('2d')!;
+      ctx.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+      const longest = Math.max(...[...sel.options].map(o => ctx.measureText(o.text).width));
+      const room = sel.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+      const bar = tt.parentElement!;
+      return `${help} teamType=w${Math.round(tt.getBoundingClientRect().width)} room${Math.round(room - longest)} barOver=${bar.scrollWidth - bar.clientWidth}`;
     });
     const file = join(out, `${w}x${h}-${name}.png`);
     await page.screenshot({ path: file });

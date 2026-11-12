@@ -4,7 +4,7 @@ import { rankedChanges } from '../engine/coach';
 import { getSpecies } from '../engine/dex';
 import { rateTeam, type TeamRating } from '../engine/rating';
 import { cardRoles, type Archetype } from '../engine/archetype';
-import { detectRoles, roleLabel } from '../engine/roles';
+import { detectRoles, roleDescription, roleLabel } from '../engine/roles';
 import { areaDrops, extrasDelta, withCandidate, type SwapOption, type TeamGain } from '../engine/teamGain';
 import { rulesOf } from '../engine/formatRules';
 import { formatPercent } from '../i18n';
@@ -183,7 +183,7 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
                     <dt aria-description={note}>{area.label}</dt>
                     {before
                       ? <dd className={`change${change < 0 ? ' worse' : change === 0 ? ' same' : ''}`}>{delta(change)}</dd>
-                      : <><dd className="value">{area.value ?? '–'}</dd><dd className="change" /></>}
+                      : <><dd className="value">{area.value || '—'}</dd><dd className="change" /></>}
                   </div>
                 );
               })}
@@ -224,7 +224,7 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
             <h4>{tr('detail.rolesTitle')}</h4>
             <ul className="detail-roles" aria-label={tr('detail.roles')}>
               {setRoles.map(role => (
-                <li key={role} className={role === mainRole ? 'main' : undefined}>
+                <li key={role} className={role === mainRole ? 'main' : undefined} title={role === 'weather' ? undefined : roleDescription(role, lang)}>
                   {role === 'weather' ? tr('card.weather') : roleLabel(role, lang)}
                 </li>
               ))}

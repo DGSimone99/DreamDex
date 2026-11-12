@@ -17,7 +17,7 @@ function band(value: number): string {
 const signed = (n: number) => (n > 0 ? `+${n}` : n < 0 ? `−${-n}` : '±0');
 
 /**
- * Badge "Stats": passandoci sopra (o col focus) mostra le statistiche base con barre e totale.
+ * Badge "Stat" ("Stats" in inglese): passandoci sopra (o col focus) mostra le statistiche base con barre e totale.
  * Con `compare` (il membro che esce in una sostituzione) ogni riga dice anche quanto si guadagna o si perde.
  */
 export function StatsBadge({ species, item = '', compare }: { species: string; item?: string; compare?: { species: string; item?: string } }) {
@@ -39,7 +39,7 @@ export function StatsBadge({ species, item = '', compare }: { species: string; i
       // Dentro un <summary>: il badge non deve aprire o chiudere la card
       onClick={e => { e.preventDefault(); e.stopPropagation(); }}
     >
-      Stats
+      {t('stats.badge')}
       <span id={id} role="tooltip" className="stats-pop">
         <span className="stats-title">
           {t('stats.title')}{forme.name !== species ? <small>{forme.name}</small> : null}

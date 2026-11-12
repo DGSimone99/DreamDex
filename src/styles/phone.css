@@ -413,7 +413,7 @@
 @media (min-width: 600px) and (max-width: 1099px) {
   .toolbar .mode-switch { flex: none; }
   .toolbar .search { flex: 1 1 320px; }
-  .toolbar .team-type { flex: none; width: 210px; }
+  .toolbar .team-type { flex: none; width: 232px; }
 }
 /* Telefono girato: la barra in alto scorre via con la pagina, resta più spazio */
 @media (max-width: 1099px) and (max-height: 500px) {

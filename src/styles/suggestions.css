@@ -399,7 +399,7 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .toolbar .team-type:hover, .toolbar .team-type:focus-within { border-color: var(--accent); }
 .toolbar .team-type > span { padding-left: 12px; font: 600 11px/1 var(--ui); text-transform: uppercase; letter-spacing: 0.08em; color: var(--faint); }
 /* Larghezza fissa: cambiare tipo non sposta la ricerca (i nomi lunghi finiscono coi puntini) */
-.toolbar .team-type { width: 220px; }
+.toolbar .team-type { width: 232px; }
 .toolbar .team-type select { flex: 1; min-width: 0; height: 100%; padding: 0 30px 0 8px; border: 0; background-color: transparent; font-size: 14px; text-overflow: ellipsis; }
 
 /* Filtri attivi come chip sotto la barra; la × toglie quel filtro */

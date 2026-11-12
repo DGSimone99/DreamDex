@@ -115,7 +115,7 @@ describe('tipo di team in Aggiungi', () => {
 
   it('la tendina ha la sua etichetta visibile', async () => {
     render(<App initialLang="it" data={fixtureData} />);
-    expect(types().closest('label')).toHaveTextContent(/^Team/);
+    expect(types().closest('label')).toHaveTextContent(/^Tipo di team/);
   });
 
   it('Aggiungi: se il tipo esclude tutti, il messaggio parla di costruire il team', async () => {
