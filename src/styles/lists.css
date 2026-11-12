@@ -120,8 +120,6 @@
   .suggestions-panel { --picker-gap: 12px; }
   .detail-hero .detail-id h3 { font-size: 18px; }
   .detail-hero { padding-top: 3px; padding-bottom: 3px; }
-  /* Chi esce lo dicono già la riga della lista e il pulsante principale */
-  .detail-hero .swap-head { display: none; }
   .detail-hero .detail-sprite { --box-scale: 1.4; width: 46px; height: 46px; }
   .detail-hero .detail-sprite .sprite-ani { transform: translate(-50%, -50%) scale(0.4792); }
   .detail:not(.detail-empty) .detail-sec { padding-top: 4px; padding-bottom: 5px; }
