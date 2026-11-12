@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-/** I menu a tendina fatti con <details>: Formato, Import / Export, Team salvati, Filtri, Spread più usati. */
+/** I menu a tendina fatti con <details>: Formato, Importa, Team salvati, Filtri, Spread più usati. */
 const MENUS = 'details.popover[open], details.filters[open], details.spread-panel[open]';
 
 /**

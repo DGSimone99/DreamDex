@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Format } from '../engine/format';
 import { shareUrl } from '../share';
 import { exportShowdown, importShowdown, type TeamSet } from '../engine/sets';
@@ -14,13 +14,18 @@ export function ShowdownPanel({ team, format, tera = true, onImport }: { team: T
   const [text, setText] = useState('');
   // Esito dell'import da dire in una finestra: cosa lo ferma, o le mosse non imparabili (con i set già importati)
   const [review, setReview] = useState<{ review: ImportReview; sets: TeamSet[] } | null>(null);
-  const [linkCopied, setLinkCopied] = useState(false);
-  const copyLink = async () => {
-    if (await copyText(shareUrl(team, format))) {
-      setLinkCopied(true);
-      setTimeout(() => setLinkCopied(false), 2000);
-    }
+  // Esporta: il testo Showdown o il link vanno negli appunti; sotto la linguetta un fumetto dice per un attimo cosa si è copiato
+  const [copied, setCopied] = useState<'text' | 'link' | null>(null);
+  // Sotto il mouse (o col fuoco) il fumetto dice prima cosa farà il clic
+  const [hint, setHint] = useState<'text' | 'link' | null>(null);
+  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const copy = async (kind: 'text' | 'link') => {
+    if (!await copyText(kind === 'text' ? exportShowdown(team, { tera }) : shareUrl(team, format))) return;
+    setCopied(kind);
+    clearTimeout(timer.current);
+    timer.current = setTimeout(() => setCopied(null), 1800);
   };
+  useEffect(() => () => clearTimeout(timer.current), []);
 
   const doImport = () => {
     const result = importShowdown(text, lang);
@@ -38,19 +43,36 @@ export function ShowdownPanel({ team, format, tera = true, onImport }: { team: T
   };
 
   return (
-    <details className="popover">
-      <summary title={t('showdown.title')}><Icon name="paste" /><span className="btn-label">{t('showdown.title')}</span></summary>
-      <div>
-        <textarea aria-label={t('showdown.text')} rows={12} value={text} onChange={e => setText(e.target.value)} />
-        <div className="actions">
-          <button type="button" onClick={doImport}>{t('showdown.import')}</button>
-          <button type="button" onClick={() => { setText(exportShowdown(team, { tera })); }}>{t('showdown.export')}</button>
-          <button type="button" onClick={() => copyText(text)}>{t('showdown.copy')}</button>
-          <button type="button" disabled={!team.length} onClick={copyLink}>{t('showdown.copyLink')}</button>
-          {linkCopied && <span className="copied" role="status">{t('showdown.linkCopied')}</span>}
+    <>
+      <details className="popover">
+        <summary title={t('showdown.importTitle')}><Icon name="paste" /><span className="btn-label">{t('showdown.importTab')}</span></summary>
+        {/* Importa: una riga che dice cosa incollare, la scatola con un esempio in grigio, Importa in evidenza */}
+        <div className="import-panel">
+          <p className="import-hint">{t('showdown.importHint')}</p>
+          <textarea aria-label={t('showdown.text')} rows={8} value={text} placeholder={t('showdown.importPlaceholder')} onChange={e => setText(e.target.value)} />
+          <div className="actions">
+            <button type="button" className="apply" onClick={doImport}><Icon name="paste" />{t('showdown.import')}</button>
+          </div>
+          {review && <ImportDialog review={review.review} onYes={unlock} onClose={() => setReview(null)} />}
         </div>
-        {review && <ImportDialog review={review.review} onYes={unlock} onClose={() => setReview(null)} />}
-      </div>
-    </details>
+      </details>
+      {/* Esporta: una linguetta sola in due parti, il testo per Showdown e (dopo la barretta) il link da condividere */}
+      {team.length > 0 && (
+        <div className="export-wrap">
+          <div className={`export-tab${copied ? ' copied' : ''}`}>
+            <button type="button" className="export-main" aria-describedby={hint === 'text' && !copied ? 'export-note' : undefined} onClick={() => copy('text')}
+              onPointerEnter={() => setHint('text')} onPointerLeave={() => setHint(null)} onFocus={() => setHint('text')} onBlur={() => setHint(null)}>
+              <Icon name={copied === 'text' ? 'check' : 'copy'} /><span className="btn-label">{t('showdown.quickCopy')}</span>
+            </button>
+            <button type="button" className="export-link" aria-label={t('showdown.copyLink')} aria-describedby={hint === 'link' && !copied ? 'export-note' : undefined} onClick={() => copy('link')}
+              onPointerEnter={() => setHint('link')} onPointerLeave={() => setHint(null)} onFocus={() => setHint('link')} onBlur={() => setHint(null)}>
+              <Icon name={copied === 'link' ? 'check' : 'link'} />
+            </button>
+          </div>
+          {copied ? <span key={copied} className="export-note done" role="status"><Icon name="check" />{t(copied === 'text' ? 'showdown.quickCopied' : 'showdown.linkCopied')}</span>
+            : hint && <span key={hint} id="export-note" className="export-note">{t(hint === 'text' ? 'showdown.quickCopyTitle' : 'showdown.copyLinkTitle')}</span>}
+        </div>
+      )}
+    </>
   );
 }

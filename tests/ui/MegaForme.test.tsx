@@ -6,6 +6,7 @@ import { coachTeam } from '../../src/engine/coach';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
 import { emptySet } from '../../src/engine/sets';
 import { fixtureData } from '../fixtures/data';
+import { spyClipboard } from '../helpers/clipboard';
 import { megaData } from '../fixtures/megaData';
 
 const team = () => screen.getByRole('region', { name: 'Team' });
@@ -44,8 +45,9 @@ describe('la megapietra rende il membro una Mega', () => {
     await user.click(screen.getByLabelText('Testo Showdown'));
     await user.paste('Garchomp @ Garchompite\nAbility: Rough Skin\n- Earthquake');
     await user.click(screen.getByRole('button', { name: 'Importa' }));
-    await user.click(screen.getByRole('button', { name: 'Esporta team' }));
-    expect((screen.getByLabelText('Testo Showdown') as HTMLTextAreaElement).value).toMatch(/^Garchomp @ Garchompite/);
+    const copied = spyClipboard();
+    await user.click(screen.getByRole('button', { name: 'Esporta' }));
+    expect(copied()).toMatch(/^Garchomp @ Garchompite/);
   });
 
   it('i testi del coaching nominano la Mega', () => {

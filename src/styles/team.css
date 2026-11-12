@@ -13,16 +13,59 @@
    di Pokémon: la targa cresce solo col proprio testo, le scorciatoie restano attaccate al bordo destro */
 .team-head { position: relative; z-index: 6; display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
 .fill-anchor { position: relative; display: flex; }
-/* La targa del team (stessa della fascia "Voto": righe, colore, taglio) con dentro il pulsante della guida. Il taglio è
-   disegnato da ::before, così il pannello di Completa team che si apre sotto il pulsante non viene tagliato */
+/* La targa del team (stessa della fascia "Voto": righe, colore, taglio): la parola Team e le sei tacche della squadra */
 .team-plate {
   position: relative;
   isolation: isolate;
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 2px 26px 2px 12px;
+  height: 28px;
+  padding: 0 30px 0 12px;
 }
+.team-plate, .team-guide-slot { flex: none; }
+/* La targa che apre i team salvati: tutta cliccabile, si schiarisce sotto il mouse, aperta prende l'azzurro; dopo il
+   numero il nome del team caricato (pallino giallo se è stato cambiato dopo) e la freccia, che si gira aperta */
+.team-head .plate-menu > summary.team-plate {
+  gap: 10px;
+  padding: 0 34px 0 12px;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  font-weight: inherit;
+  cursor: pointer;
+}
+.plate-menu > summary.team-plate::before { transition: filter 0.15s var(--ease), background 0.15s var(--ease); }
+.plate-menu > summary.team-plate:hover::before { filter: brightness(1.3); }
+.plate-menu[open] > summary.team-plate::before { background: var(--stripes), color-mix(in srgb, var(--accent) 22%, var(--plate)); }
+.plate-menu > summary.team-plate:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.plate-name {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 200px;
+  padding-left: 12px;
+  font: 600 13px/1 var(--ui);
+  color: color-mix(in srgb, var(--on-plate) 85%, transparent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.plate-name::before { content: ''; position: absolute; left: 2px; top: 50%; width: 1px; height: 14px; margin-top: -7px; background: color-mix(in srgb, var(--on-plate) 35%, transparent); transform: skewX(-27deg); }
+.plate-dot { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--warn); }
+.plate-arrow { display: inline-flex; color: color-mix(in srgb, var(--on-plate) 70%, transparent); transition: transform 0.2s var(--ease), color 0.15s var(--ease); }
+.plate-arrow .icon { width: 14px; height: 14px; }
+.plate-menu > summary.team-plate:hover .plate-arrow { color: var(--on-plate); transform: translateY(1px); }
+.plate-menu[open] > summary.team-plate .plate-arrow { color: var(--accent-ink); transform: rotate(180deg); }
+@media (prefers-reduced-motion: reduce) { .plate-arrow, .plate-menu > summary.team-plate::before { transition: none; } }
+.team-guide-slot { display: flex; }
+/* Quanti sono: il numero grande e pieno, il /6 piccolo e spento; il numero entra con un piccolo scatto quando cambia */
+.team-head h2 { display: flex; align-items: baseline; gap: 10px; }
+.team-count { font: 600 12px/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums; color: color-mix(in srgb, var(--on-plate) 55%, transparent); }
+.team-count b { display: inline-block; margin-right: 1px; font: 800 19px/1 var(--display); font-style: italic; color: var(--on-plate); animation: count-in 0.25s var(--ease); }
+@keyframes count-in { from { transform: translateY(-4px); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .team-count b { animation: none; } }
 .team-plate::before {
   content: '';
   position: absolute;
@@ -40,8 +83,8 @@
 }
 /* La guida: il pulsante principale della testata (magenta, inclinato come le azioni principali) */
 .team-head .team-guide {
-  height: 24px;
-  padding: 0 16px 0 14px;
+  height: 28px;
+  padding: 0 22px 0 20px;
   gap: 6px;
   background: var(--accent-2);
   border: 0;
@@ -51,7 +94,7 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   white-space: nowrap;
-  clip-path: polygon(7px 0, 100% 0, calc(100% - 7px) 100%, 0 100%);
+  clip-path: polygon(14px 0, 100% 0, calc(100% - 14px) 100%, 0 100%);
 }
 .team-head .team-guide .icon { width: 14px; height: 14px; }
 .team-head .team-guide:hover { background: var(--accent-2-ink); }
@@ -59,15 +102,109 @@
 .team-head .team-guide:disabled { opacity: 0.6; }
 /* Il taglio nasconderebbe l'anello del focus: lo si disegna dentro, scuro sul magenta */
 .team-head .team-guide:focus-visible { outline: 2px solid var(--on-accent-2); outline-offset: -4px; }
-/* Team salvati: più leggero (senza fondo), ma con il bordo, così si vede che è un pulsante */
-.team-head > .popover > summary { background: transparent; }
-.team-head .team-action, .team-head .popover > summary { height: 30px; padding: 0 10px; font-size: 13px; white-space: nowrap; }
-.team-head .popover > summary .icon { width: 16px; height: 16px; }
-.team-quick { display: flex; align-items: center; gap: 8px; margin-left: auto; }
-.team-sep { width: 1px; height: 20px; background: var(--line); }
+/* Le altre azioni della testata come linguette di Spada e Scudo: stesso taglio obliquo della guida, fondo Raised, scritte
+   in maiuscolo. Aperta, la linguetta si accende d'azzurro con la riga sotto (come la scheda attiva del riassunto) */
+.team-head .team-action, .team-quick .popover > summary {
+  height: 28px;
+  padding: 0 22px 0 20px;
+  gap: 7px;
+  background-color: var(--raised);
+  border: 0;
+  border-radius: 0;
+  color: var(--muted);
+  font: 700 12px/1 var(--display);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  clip-path: polygon(14px 0, 100% 0, calc(100% - 14px) 100%, 0 100%);
+  transition: background-color 0.15s var(--ease), color 0.15s var(--ease);
+}
+/* La riga azzurra della linguetta aperta si allarga da sinistra */
+.team-quick .popover > summary {
+  background-image: linear-gradient(var(--accent), var(--accent));
+  background-repeat: no-repeat;
+  background-position: left bottom;
+  background-size: 0 2px;
+  transition: background-color 0.15s var(--ease), color 0.15s var(--ease), background-size 0.2s var(--ease);
+}
+.team-head .team-action .icon, .team-quick .popover > summary .icon { width: 14px; height: 14px; }
+.team-head .team-action:hover, .team-quick .popover > summary:hover { background-color: color-mix(in srgb, var(--accent) 16%, var(--raised)); color: var(--text); }
+.team-quick .popover[open] > summary { background-color: var(--accent-soft); background-size: 100% 2px; color: var(--accent-ink); }
+@media (prefers-reduced-motion: reduce) { .team-quick .popover > summary { transition: none; } }
+/* Il taglio nasconderebbe l'anello del focus: lo si disegna dentro */
+.team-head .team-action:focus-visible, .team-quick .popover > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: -4px; }
+/* Le scorciatoie a destra; una riga sottile riempie lo spazio vuoto, come nelle testate dei menu del gioco */
+.team-quick { display: flex; flex: 1; align-items: center; justify-content: flex-end; gap: 16px; min-width: 0; }
+/* Team salvati e Showdown come un'unica barra di schede: linguette attaccate, separate da 2px */
+.team-tabs { display: flex; align-items: center; }
+.team-tabs > * + * { margin-left: -11px; }
+.team-tabs > details > summary { position: relative; }
+.team-quick::before { content: ''; flex: 1; height: 1px; margin: 0 4px; background: linear-gradient(90deg, transparent, var(--line)); }
+.team-sep { display: none; }
 /* Menu aperto: sopra la freccia che riduce la squadra */
 .team-head:has(.popover[open]) { z-index: 8; }
-.team-head .clear-team:hover { border-color: var(--bad); color: var(--bad); }
+/* Esporta: una linguetta sola (stesso taglio e fondo delle altre) con due pulsanti, il testo e il link, separati da una
+   barretta. Sotto, un fumetto: al passaggio dice cosa farà il clic, dopo il clic cosa si è copiato (verde) */
+.export-wrap { position: relative; display: flex; }
+.export-tab {
+  display: flex;
+  align-items: stretch;
+  height: 28px;
+  background-color: var(--raised);
+  clip-path: polygon(14px 0, 100% 0, calc(100% - 14px) 100%, 0 100%);
+  transition: background-color 0.15s var(--ease);
+}
+.export-tab > button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 100%;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--muted);
+  font: 700 12px/1 var(--display);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  transition: background-color 0.15s var(--ease), color 0.15s var(--ease);
+}
+.export-tab .export-main { padding: 0 12px 0 20px; }
+.export-tab .export-link { position: relative; padding: 0 22px 0 12px; }
+.export-tab .export-link::before { content: ''; position: absolute; left: 0; top: 7px; bottom: 7px; width: 1px; background: var(--line); }
+.export-tab .icon { width: 14px; height: 14px; }
+.export-tab > button:hover { background-color: color-mix(in srgb, var(--accent) 16%, var(--raised)); color: var(--text); }
+.export-tab > button:focus-visible { outline: 2px solid var(--accent); outline-offset: -4px; }
+.export-tab.copied, .export-tab.copied > button:hover { background-color: var(--good-bg); }
+.export-tab.copied > button { color: var(--good); }
+.export-tab.copied .icon { animation: pop 0.25s var(--ease); }
+@keyframes pop { from { transform: scale(0.4); } to { transform: scale(1); } }
+.export-note {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 6px);
+  right: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 4px;
+  background: var(--ground);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
+  color: var(--text);
+  font: 500 12px/1.2 var(--ui);
+  white-space: nowrap;
+  pointer-events: none;
+  animation: tip 0.14s var(--ease);
+}
+.export-note.done { background: var(--good-bg); color: var(--good); }
+.export-note .icon { width: 13px; height: 13px; }
+@media (prefers-reduced-motion: reduce) { .export-tab.copied .icon, .export-note { animation: none; } }
+/* Svuota: più discreta, si accende di rosso solo sotto il mouse */
+.team-head .clear-team { width: 44px; padding: 0; justify-content: center; background-color: transparent; color: var(--faint); }
+/* Solo la ×: il nome resta nel tooltip e per i lettori di schermo */
+.team-head .clear-team > .btn-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.team-head .clear-team:hover { background-color: var(--bad-bg); color: var(--bad); }
 /* Menu della testata (Team salvati, Importa / Esporta) come il pannello di Completa team: fondo Ground, angoli 4px, ombra,
    apertura breve. Quello delle scorciatoie si apre allineato a destra, sotto il suo pulsante */
 .team-head .popover[open] > :not(summary) {
@@ -77,6 +214,16 @@
   animation: tip 0.14s var(--ease);
 }
 .team-quick .popover[open] > :not(summary) { left: auto; right: 0; width: 420px; }
+/* Importa: una riga di spiegazione, la scatola con l'esempio in grigio (si allunga se serve), Importa a destra in evidenza */
+.import-panel { display: grid; gap: 10px; }
+.import-hint { margin: 0; font: 400 13px/1.4 var(--ui); color: var(--muted); }
+.import-panel textarea { min-height: 150px; max-height: 50vh; font: 13px/1.45 var(--ui); }
+.import-panel textarea::placeholder { color: var(--faint); opacity: 0.8; }
+.import-panel .actions { justify-content: flex-end; }
+.import-panel .apply { display: inline-flex; align-items: center; gap: 7px; background: var(--accent-soft); border-color: var(--accent); color: var(--text); font-weight: 700; }
+.import-panel .apply .icon { width: 15px; height: 15px; color: var(--accent-ink); }
+.import-panel .apply:hover { background: color-mix(in srgb, var(--accent) 30%, var(--raised)); }
+.team-quick .popover[open] > .saved-panel { width: 380px; }
 @media (prefers-reduced-motion: reduce) { .team-head .popover[open] > :not(summary) { animation: none; } }
 .set-editor .best-preset { height: 36px; white-space: nowrap; flex-shrink: 0; }
 .slots { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; }
@@ -244,27 +391,57 @@
 /* Lo sprite prende tutto lo spazio libero della carta (fino a 176 px): nome, tipi e ruolo restano vicini al bordo in basso */
 .band:not(.collapsed) .slot > .slot-card .sprite-wrap { flex: 1 1 0; min-height: 56px; width: 100%; display: flex; justify-content: center; align-items: flex-end; container-type: size; }
 .band:not(.collapsed) .slot > .slot-card .sprite { width: min(100cqh, 100cqw, 176px); height: min(100cqh, 100cqw, 176px); }
-/* Team salvati: il nome e Salva sulla stessa riga; ogni team è una riga (nome a sinistra, una riga sola, × a destra) */
+/* Team salvati, come un piccolo Box del PC: in cima (se il team caricato è cambiato) Salva le modifiche, poi nome e Salva
+   per un team nuovo; ogni team è una riga con i suoi sei sprite piccoli, il nome e il formato, × a destra. Il team in
+   uso ha il fondo azzurrino */
+.team-head .plate-menu[open] > .saved-panel { width: 440px; }
 .team-head .saved-panel { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+.saved-update {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 12px;
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--text);
+  font: 600 14px/1 var(--ui);
+  white-space: nowrap;
+  overflow: hidden;
+}
+.saved-update > span { overflow: hidden; text-overflow: ellipsis; }
+.saved-update .icon { flex: none; width: 15px; height: 15px; color: var(--accent-ink); }
+.saved-update:hover { background: color-mix(in srgb, var(--accent) 30%, var(--raised)); }
 .saved-new { display: flex; gap: 8px; }
 .saved-new input { flex: 1; min-width: 0; height: 34px; }
 .saved-new button { height: 34px; white-space: nowrap; }
+.saved-new button:disabled { opacity: 0.55; }
 .saved-empty { margin: 0; font-size: 13px; color: var(--muted); }
-.saved-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; margin: 0; max-height: 280px; overflow-y: auto; }
-.saved-list li { display: flex; align-items: center; gap: 4px; }
+.saved-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; margin: 0; max-height: 300px; overflow-y: auto; }
+.saved-list li { display: flex; align-items: center; gap: 4px; border-radius: 4px; }
+.saved-list li.current { background: var(--accent-wash); }
 .saved-list .saved-load {
   flex: 1;
   min-width: 0;
-  display: block;
-  height: 34px;
-  padding: 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 48px;
+  padding: 0 10px 0 4px;
   text-align: left;
   background: none;
   border-color: transparent;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
+.saved-sprites { flex: none; display: flex; }
+.saved-sprites > * { flex: none; width: 34px; height: 40px; object-fit: contain; object-position: center bottom; margin-right: -2px; transition: transform 0.12s var(--ease); }
+.saved-sprites .saved-gap, .saved-sprites .sprite.missing { width: 34px; }
+.saved-list .saved-load:hover .saved-sprites > * { transform: translateY(-2px); }
+.saved-list .saved-load:hover .saved-sprites > :nth-child(even) { transition-delay: 0.03s; }
+@media (prefers-reduced-motion: reduce) { .saved-sprites > * { transition: none; } .saved-list .saved-load:hover .saved-sprites > * { transform: none; } }
+.saved-text { display: grid; min-width: 0; gap: 2px; }
+.saved-name { font: 600 14px/1.2 var(--ui); color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.saved-format { font: 400 12px/1.2 var(--ui); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.saved-list li.current .saved-name { color: var(--accent-ink); }
 .saved-list .saved-load:hover { background: var(--raised); border-color: var(--accent); }
 .saved-list .saved-delete { flex: none; width: 34px; height: 34px; padding: 0; justify-content: center; background: none; border-color: transparent; color: var(--muted); }
 .saved-list .saved-delete:hover { border-color: var(--bad); color: var(--bad); }
