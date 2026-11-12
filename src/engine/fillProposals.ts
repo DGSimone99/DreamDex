@@ -59,7 +59,7 @@ export interface Proposal {
   favorites: number;
 }
 
-export const PROPOSALS_PER_ROUND = 7;
+export const PROPOSALS_PER_ROUND = 6;
 
 /**
  * Come finisce un giro: 'complete' con PROPOSALS_PER_ROUND proposte; 'stopped' con meno, fermato dai tentativi a vuoto
@@ -224,7 +224,11 @@ export function* fillProposals(
       const kept = source.filter(s => (walls < quota ? passive(s.set) : !passive(s.set)));
       let result = kept.length || !fallback ? kept : source;
       const fit = FIT[choice.archetype];
-      if (fit && quota === 0 && result.length) result = narrow(result, s => fitsArchetype(s, fit, rules));
+      // Chi porta un ruolo di coerenza che manca (trappole, chi le toglie) resta anche se da solo non "sembra" del tipo:
+      // il tipo lo decide il team intero (matchesChoice all'ultimo posto). Senza, finiti Great Tusk e Iron Treads un
+      // Bulky Offense non trovava più chi toglie le trappole e il giro si fermava a 2 proposte
+      const lacking = ROLE_GAPS.filter(role => !current.some(member => rolesOf(member).includes(role)));
+      if (fit && quota === 0 && result.length) result = narrow(result, set => fitsArchetype(set, fit, rules) || lacking.some(role => rolesOf(set).includes(role)));
       return result;
     };
     // Mai una seconda Mega; all'ultimo slot, una Mega se non c'è ancora

@@ -1,3 +1,5 @@
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { Archetype } from '../../src/engine/archetype';
 import type { EngineData } from '../../src/engine/data';
@@ -432,4 +434,24 @@ describe('preset migliore coerente', () => {
     const data: EngineData = { stats: null, sets: {}, presets: { Garchomp: [{ name: 'Scarf', format: 'gen9nationaldex', set: scarfSd }] } };
     expect(bestCoherentPreset(team, 0, data, 9)).toBe(team[0]);
   });
+});
+
+// Con i dati veri (se scaricati): un Bulky Offense deve trovare chi toglie le trappole anche dopo Great Tusk e Iron Treads.
+// Prima il filtro "sembra un Bulky Offense" scartava gli altri (Cinderace, Glimmora, Torkoal…) e il giro si fermava a 2
+describe('Completa team coi dati veri', () => {
+  const dir = 'gen9nationaldex';
+  const hasRealData = existsSync(join('data', dir, 'stats.json'));
+  it.skipIf(!hasRealData)('Alomomola + Latios-Mega, Bulky Offense: il primo giro si riempie con proposte coerenti', async () => {
+    const read = (d: string, name: string) => { const p = join('data', d, `${name}.json`); return existsSync(p) ? JSON.parse(readFileSync(p, 'utf8')) : null; };
+    const { initTiers } = await import('../../src/engine/dex');
+    const { presetsForSet } = await import('../../src/engine/sets');
+    const real: EngineData = { formatId: DEFAULT_FORMAT.formatId, stats: { meta: read(dir, 'meta'), pokemon: read(dir, 'stats') }, sets: read(dir, 'sets'),
+      presets: read(dir, 'presets'), fallback: read('_fallback', 'sets'), fallbackPresets: read('_fallback', 'presets'), fallbackStats: read('_fallback', 'stats') };
+    initTiers(read('_tiers', 'tiers'));
+    const mk = (name: string, item = '') => { const base = { ...emptySet(name), item }; return presetsForSet(real, base, 9)[0]?.set ?? base; };
+    const list = [...fillProposals([mk('Alomomola'), mk('Latios', 'Latiosite')], { archetype: 'bulkyOffense', style: null }, new Set(), DEFAULT_FORMAT, real)]
+      .filter((p): p is Proposal => p !== null);
+    expect(list.length).toBeGreaterThanOrEqual(5);
+    for (const p of list) expect(p.gaps).toEqual([]);
+  }, 120_000);
 });

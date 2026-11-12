@@ -81,7 +81,7 @@
 
 .fill-main { grid-area: main; display: grid; gap: 8px; align-content: start; min-width: 0; }
 .fill-proposals { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
-/* Senza il margine generico dei li: la distanza tra le righe è solo il gap, così sette righe stanno nel pannello */
+/* Senza il margine generico dei li: la distanza tra le righe è solo il gap, così sei righe stanno nel pannello senza barra di scorrimento */
 .fill-proposals > li { margin: 0; }
 /* Una riga della lista: proposta, scheletro e posto vuoto hanno le stesse parti, quindi la stessa altezza */
 .fill-row {
