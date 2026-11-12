@@ -64,4 +64,20 @@ describe('import / export / salvataggio', () => {
     await user.click(screen.getByRole('button', { name: 'Elimina Prova' }));
     expect(screen.queryByRole('button', { name: 'Prova' })).toBeNull();
   });
+
+  it('Salva team è spento senza nome o con il team vuoto; senza team salvati lo dice', async () => {
+    const user = userEvent.setup();
+    render(<App initialLang="it" data={fixtureData} />);
+    expect(screen.getByText(/^Nessun team salvato/)).toBeInTheDocument();
+    await user.type(screen.getByLabelText('Nome team'), 'Prova');
+    expect(screen.getByRole('button', { name: 'Salva team' })).toBeDisabled();
+    await user.clear(screen.getByLabelText('Nome team'));
+    await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Great Tusk{Enter}');
+    expect(screen.getByRole('button', { name: 'Salva team' })).toBeDisabled();
+    await user.type(screen.getByLabelText('Nome team'), '   ');
+    expect(screen.getByRole('button', { name: 'Salva team' })).toBeDisabled();
+    await user.type(screen.getByLabelText('Nome team'), 'Prova');
+    expect(screen.getByRole('button', { name: 'Salva team' })).toBeEnabled();
+  });
 });
+

@@ -95,9 +95,10 @@
   .team-head { flex-wrap: nowrap; gap: 8px; margin: 0 0 10px; padding: 0 14px; overflow-x: auto; scrollbar-width: none; }
   .team-head::-webkit-scrollbar { display: none; }
   .team-head h2 { flex: none; }
-  .team-head .team-action, .team-head .team-io .popover > summary { flex: none; height: 36px; white-space: nowrap; }
-  .team-head .team-io { margin-left: 0; }
-  .team-head .clear-team { margin-left: 0; }
+  .team-head .team-action, .team-head .popover > summary { flex: none; height: 36px; white-space: nowrap; }
+  .team-head { align-items: center; }
+  .team-plate, .team-quick { flex: none; }
+  .team-head .team-guide { height: 30px; }
   /* La fila delle carte scorre col dito e si ferma su una carta; i margini laterali restano nella fila */
   .band .slots {
     display: grid;

@@ -11,7 +11,7 @@ export interface UndoAction {
   kind: 'remove' | 'add' | 'replace' | 'paste' | 'presets' | 'clear' | 'load' | 'clearList' | 'mySetDelete' | 'mySetOverwrite' | 'move' | 'savedDelete';
   from: string;
   to?: string;
-  /** Preset migliori: Pokémon aggiunti negli slot vuoti. */
+  /** Completa team: Pokémon aggiunti negli slot vuoti. */
   added?: number;
   /** Completa team partito da un team vuoto. */
   created?: boolean;
