@@ -479,6 +479,7 @@ export const it: Record<keyof typeof en, string> = {
   'fill.teamBy': "Team di {author}",
   'fill.shared': "{n} dei tuoi Pokémon",
   'fill.sharedNone': "nessuno in comune",
+  'fill.otherTeams': "Gli altri team",
   'fill.load': "Carica",
   'fill.loadN': "Carica {name}",
   'undo.tournament': "Team da torneo caricato",

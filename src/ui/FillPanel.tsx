@@ -1,10 +1,11 @@
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react';
-import type { Archetype } from '../engine/archetype';
+import { teamArchetype, type Archetype } from '../engine/archetype';
 import type { Gap } from '../engine/coherence';
 import type { EngineData } from '../engine/data';
 import { battleAbility, battleName } from '../engine/dex';
 import { FILL_STYLES, PROPOSALS_PER_ROUND, proposalOrder, type FavoriteMode, type FillChoice, type FillStyle, type Proposal } from '../engine/fillProposals';
 import type { Format } from '../engine/format';
+import { formatRules } from '../engine/formatRules';
 import { isUserFavorite } from '../engine/lists';
 import { rateTeam } from '../engine/rating';
 import { bannedInPool } from '../engine/scoring';
@@ -89,6 +90,17 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
   const before = useMemo(() => (team.length ? rateTeam(team, data, lang)?.overall ?? null : null), [team, data, lang]);
   const tournament = useMemo(() => rankTournamentTeams(data.tournamentTeams ?? [], team), [data.tournamentTeams, team]);
   const root = useRef<HTMLDivElement>(null);
+  // Il tipo di ogni team da torneo: calcolato solo la prima volta che si apre la scheda (costa poco, ma sono 25 team)
+  const [tournamentSeen, setTournamentSeen] = useState(false);
+  if (tab === 'tournament' && !tournamentSeen) setTournamentSeen(true);
+  const tournamentKinds = useMemo(() => {
+    if (!tournamentSeen) return null;
+    const rules = formatRules(format.formatId);
+    return tournament.map(({ entry }) => {
+      const found = teamArchetype(entry.team, rules);
+      return found ? [t(`archetype.${found.archetype}`), ...found.styles.map(style => t(`teamStyle.${style}`))].join(' · ') : '';
+    });
+  }, [tournamentSeen, tournament, format.formatId, t]);
 
   // Le proposte del giro, dal calcolo in sottofondo: ognuna entra al suo posto nell'ordine finale
   useEffect(() => {
@@ -305,7 +317,7 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
         <div className="fill-main">
           <ol className="fill-proposals">
             {proposals.map((proposal, i) => (
-              <li key={proposal.added.map(s => `${s.species}@${s.item}`).join('|')} className={`fill-proposal${best(i) ? ' is-best' : ''}`}>
+              <li key={proposal.added.map(s => `${s.species}@${s.item}`).join('|')} className={`fill-row fill-proposal${best(i) ? ' is-best' : ''}`}>
                 <span className="fill-mons">
                   {proposal.team.map((set, j) => {
                     const mine = j < team.length;
@@ -315,10 +327,12 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
                     return (
                       <span key={`${set.species}#${j}`} title={title}
                         className={`fill-mon ${mine ? 'is-mine' : 'is-new'}${changed ? ' is-changed' : ''}${favorite ? ' is-favorite' : ''}`}>
-                        <span className="fill-mon-sprite"><Sprite species={set.species} item={set.item} size={48} /></span>
+                        <span className="fill-mon-sprite">
+                          <Sprite species={set.species} item={set.item} size={48} />
+                          {changed && <span className="fill-mon-mark is-edit" role="img" aria-label={title}><Icon name="edit" /></span>}
+                          {favorite && <span className="fill-mon-mark is-fav" role="img" aria-label={t('fill.favorite', { name: battleName(set) })}><Icon name="heart" /></span>}
+                        </span>
                         <span className="fill-mon-name">{battleName(set)}</span>
-                        {changed && <span className="fill-mon-mark is-edit" role="img" aria-label={title}><Icon name="edit" /></span>}
-                        {favorite && <span className="fill-mon-mark is-fav" role="img" aria-label={t('fill.favorite', { name: battleName(set) })}><Icon name="heart" /></span>}
                       </span>
                     );
                   })}
@@ -342,9 +356,26 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
                 )}
               </li>
             ))}
-            {/* Sempre 5 posti: la lista non cambia altezza; scheletri mentre calcola, righe vuote dopo */}
+            {/* Sempre 5 posti: la lista non cambia altezza. Lo scheletro ha le parti di una riga vera (il tuo team già al
+                suo posto, i nuovi ancora da arrivare) e ogni proposta che arriva ne prende il posto; finito il calcolo, righe vuote */}
             {Array.from({ length: Math.max(0, PROPOSALS_PER_ROUND - proposals.length) }, (_, i) => (
-              <li key={`slot-${i}`} aria-hidden="true" className={busy ? 'fill-skeleton' : 'fill-placeholder'} />
+              <li key={`slot-${i}`} aria-hidden="true" className={`fill-row ${busy ? 'fill-skeleton' : 'fill-placeholder'}`}>
+                <span className="fill-mons">
+                  {Array.from({ length: 6 }, (_, j) => (
+                    <span key={j} className={`fill-mon ${j < team.length ? 'is-mine' : 'is-new'}`}>
+                      <span className="fill-mon-sprite">
+                        {j < team.length ? <Sprite species={team[j].species} item={team[j].item} size={48} /> : <span className="fill-bone-mon" />}
+                      </span>
+                      <span className="fill-mon-name">{j < team.length ? battleName(team[j]) : <span className="fill-bone-text" />}</span>
+                    </span>
+                  ))}
+                </span>
+                <span className="fill-kind fill-bone">{'\u00a0'}</span>
+                <span className="fill-result">
+                  <span className="fill-grade"><strong className="fill-bone">{'\u00a0'}</strong></span>
+                </span>
+                <button type="button" className="fill-add fill-bone" tabIndex={-1} disabled>{'\u00a0'}</button>
+              </li>
             ))}
           </ol>
           <div className="fill-foot">
@@ -360,27 +391,41 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
           <p className="fill-note">{t('fill.tournamentNote')}</p>
           <ul className="fill-cards">
             {tournament.map(({ entry, shared }, i) => {
-              const names = entry.team.map(battleName);
+              const kind = tournamentKinds?.[i];
               // Senza nome: quello dell'autore; senza nessuno dei due, un trattino
               const title = entry.name || (entry.author ? t('fill.teamBy', { author: entry.author }) : '');
-              return (
-                <li key={`${entry.name}#${i}`} className="fill-card">
-                  <strong className="fill-card-name" title={title}>{title || '—'}</strong>
-                  <span className="fill-card-meta">
-                    {entry.author && <span>{t('fill.by', { author: entry.author })}</span>}
-                    <span className={shared.length ? 'is-shared' : undefined}>{shared.length ? t('fill.shared', { n: shared.length }) : t('fill.sharedNone')}</span>
+              // Prima dei team senza Pokémon in comune, una riga che li separa da quelli che ne hanno
+              const others = i > 0 && shared.length === 0 && tournament[i - 1].shared.length > 0;
+              return [
+                others && <li key="others" className="fill-cards-sep" aria-hidden="true"><span>{t('fill.otherTeams')}</span></li>,
+                <li key={`${entry.name}#${i}`} className={`fill-card${shared.length ? ' has-shared' : ''}`}>
+                  <span className="fill-card-head">
+                    <strong className="fill-card-name" title={title}>{title || '—'}</strong>
+                    {shared.length
+                      ? <span className="fill-card-shared">{t('fill.shared', { n: shared.length })}</span>
+                      : <span className="fill-card-none">{t('fill.sharedNone')}</span>}
                   </span>
-                  <span className="fill-card-row">
-                    <span className="fill-card-mons" role="img" aria-label={names.join(', ')}>
-                      {names.map((name, j) => (
-                        <span key={`${name}#${j}`} className={`fill-card-mon${shared.includes(j) ? ' is-shared' : ''}`} title={name}><PokemonIcon name={name} /></span>
-                      ))}
-                    </span>
+                  <span className="fill-card-mons">
+                    {entry.team.map((set, j) => {
+                      const name = battleName(set);
+                      const favorite = isUserFavorite(set, data.userLists);
+                      return (
+                        <span key={`${name}#${j}`} className={`fill-card-mon${shared.includes(j) ? ' is-shared' : ''}`} title={setTitle(set)}
+                          role="img" aria-label={favorite ? t('fill.favorite', { name }) : name}>
+                          <Sprite species={set.species} item={set.item} size={48} />
+                          {favorite && <span className="fill-mon-mark is-fav"><Icon name="heart" /></span>}
+                        </span>
+                      );
+                    })}
+                  </span>
+                  <span className="fill-card-foot">
+                    {kind && <span className="fill-kind">{kind}</span>}
+                    {entry.author && <span className="fill-card-by">{t('fill.by', { author: entry.author })}</span>}
                     <button type="button" className="fill-load" aria-label={title ? t('fill.loadN', { name: title }) : t('fill.load')}
                       onClick={() => onLoadTeam(entry.team)}>{t('fill.load')}</button>
                   </span>
-                </li>
-              );
+                </li>,
+              ];
             })}
           </ul>
         </>}

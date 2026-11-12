@@ -477,6 +477,7 @@ export const en = {
   'fill.teamBy': "Team by {author}",
   'fill.shared': "{n} of your Pokémon",
   'fill.sharedNone': "none in common",
+  'fill.otherTeams': "Other teams",
   'fill.load': "Load",
   'fill.loadN': "Load {name}",
   'undo.tournament': "Tournament team loaded",

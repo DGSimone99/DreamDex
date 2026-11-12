@@ -116,6 +116,28 @@ describe('pannello Completa team', () => {
     expect(document.querySelectorAll('.fill-proposals > li.fill-skeleton')).toHaveLength(0);
   }, 30000);
 
+  it('mentre calcola le righe restano 5: ogni proposta prende il posto di uno scheletro', async () => {
+    panel([{ ...emptySet('Garchomp'), moves: ['Earthquake'] }]);
+    const list = document.querySelector('.fill-proposals')!;
+    const kinds = () => [...list.children].map(row => row.matches('.fill-skeleton') ? 'skeleton' : row.matches('.fill-proposal') ? 'proposal' : 'other');
+    // Le proposte già arrivate stanno sopra, gli scheletri occupano il resto dei 5 posti
+    expect(list.children).toHaveLength(5);
+    expect(kinds()).not.toContain('other');
+    expect(kinds()).toContain('skeleton');
+    // Lo scheletro ha le parti di una riga vera: il tuo team già al suo posto, i nuovi come sagome
+    const skeleton = list.querySelector('.fill-skeleton')!;
+    expect(skeleton.querySelector('.fill-mon.is-mine')).toHaveTextContent('Garchomp');
+    expect(skeleton.querySelectorAll('.fill-mon.is-new')).toHaveLength(5);
+    const counts: number[] = [];
+    const observer = new MutationObserver(() => counts.push(list.children.length));
+    observer.observe(list, { childList: true });
+    await vi.waitFor(idle, WAIT);
+    observer.disconnect();
+    expect([...list.children].filter(row => row.matches('.fill-proposal')).length).toBeGreaterThan(0);
+    for (const n of counts) expect(n).toBe(5);
+    expect(list.children).toHaveLength(5);
+  });
+
   it('ogni proposta entra al suo posto: la lista è sempre in ordine di voto', async () => {
     // Senza preferiti l'ordine è solo il voto (proposalOrder)
     panel();
@@ -180,13 +202,16 @@ describe('Completa team: Tieni il set e preferiti', () => {
     expect(document.querySelectorAll('.fill-proposal')).toHaveLength(0);
   });
 
-  it('i preferiti nuovi di una proposta hanno il contorno', async () => {
+  it('i preferiti nuovi di una proposta hanno il cuore sullo sprite', async () => {
     panel([], vi.fn(), vi.fn(), favorites(['Garchomp']));
     await addButtons();
     await vi.waitFor(idle, WAIT);
     const marked = [...document.querySelectorAll('.fill-proposal .fill-mon.is-favorite')];
     expect(marked.length).toBeGreaterThan(0);
-    for (const mon of marked) expect(mon).toHaveTextContent('Garchomp');
+    for (const mon of marked) {
+      expect(mon).toHaveTextContent('Garchomp');
+      expect(within(mon as HTMLElement).getByRole('img', { name: 'Garchomp, nei tuoi preferiti' })).toBeInTheDocument();
+    }
   });
 });
 
@@ -215,6 +240,17 @@ describe('Completa team: Team da torneo', () => {
     expect(screen.getByText('nessuno in comune')).toBeInTheDocument();
     await user.click(load[0]);
     expect(onLoadTeam).toHaveBeenCalledWith(teams[1].team);
+  });
+
+  it('ogni scheda dice il tipo del team; un preferito ha il cuore', async () => {
+    const user = userEvent.setup();
+    panel([], vi.fn(), vi.fn(), { ...favorites(['Garchomp']), tournamentTeams: teams });
+    await user.click(screen.getByRole('tab', { name: /Team da torneo/ }));
+    const cards = document.querySelectorAll<HTMLElement>('.fill-card');
+    expect(cards).toHaveLength(2);
+    for (const card of cards) expect(within(card).getByText(/^(Hyper Offense|Bulky Offense|Balance|Semi-stall|Stall)( · .+)?$/)).toBeInTheDocument();
+    expect(within(cards[1]).getByRole('img', { name: 'Garchomp, nei tuoi preferiti' })).toBeInTheDocument();
+    expect(within(cards[0]).getByRole('img', { name: 'Pelipper' })).toBeInTheDocument();
   });
 
   it('un team senza nome prende quello del suo autore', async () => {

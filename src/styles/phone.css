@@ -429,6 +429,7 @@
     top: auto;
     bottom: 0;
     width: auto;
+    height: 85dvh;
     max-height: 85dvh;
     overflow: auto;
     overscroll-behavior: contain;
@@ -453,10 +454,10 @@
   .fill-types .fill-option small { display: none; }
   .fill-side { gap: 12px; }
   .spread-presets { min-width: 0; max-width: calc(100vw - 28px); }
-  .fill-cards { max-height: none; overflow: visible; grid-template-columns: minmax(0, 1fr); }
+  .fill-cards { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 599px) {
-  .fill-proposal { grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: 'mons mons mons' 'kind result action' 'gaps gaps gaps'; gap: 6px 10px; }
+  .fill-row { grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: 'mons mons mons' 'kind result action' 'gaps gaps gaps'; gap: 6px 10px; }
   .fill-mons { grid-template-columns: repeat(6, minmax(0, 1fr)); }
   .fill-mon-name { display: none; }
   .fill-kind { justify-self: start; }
