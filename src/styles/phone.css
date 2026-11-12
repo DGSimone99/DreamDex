@@ -114,11 +114,11 @@
     scrollbar-width: none;
   }
   .band .slots::-webkit-scrollbar { display: none; }
-  .band .slot > summary, .band .slot.empty { scroll-snap-align: start; }
-  .band:not(.collapsed) .slot > summary, .band:not(.collapsed) .slot.empty { min-height: 0; height: 164px; padding: 6px 8px 10px; }
-  .band:not(.collapsed) .slot > summary .sprite-wrap { flex: 1 1 0; min-height: 0; }
-  .band:not(.collapsed) .slot > summary .sprite { width: min(100cqh, 100cqw, 80px); height: min(100cqh, 100cqw, 80px); }
-  .band:not(.collapsed) .slot > summary > :is(.ability, .types, .roles, .stats-badge) { display: none; }
+  .band .slot > .slot-card, .band .slot.empty { scroll-snap-align: start; }
+  .band:not(.collapsed) .slot > .slot-card, .band:not(.collapsed) .slot.empty { min-height: 0; height: 164px; padding: 6px 8px 10px; }
+  .band:not(.collapsed) .slot > .slot-card .sprite-wrap { flex: 1 1 0; min-height: 0; }
+  .band:not(.collapsed) .slot > .slot-card .sprite { width: min(100cqh, 100cqw, 80px); height: min(100cqh, 100cqw, 80px); }
+  .band:not(.collapsed) .slot > .slot-card > :is(.ability, .types, .roles, .stats-badge) { display: none; }
   .band .slot .name { --name-fs: 14px; }
   .band .slot .name-line { gap: 4px; margin-top: 2px; }
   .band .slot .name-line .held, .band .slot .name-line .held .item-icon { width: 18px; height: 18px; }
@@ -128,14 +128,14 @@
   .band .slot.empty { gap: 6px; }
   .band .slot.empty .empty-ring { width: 44px; height: 44px; }
   .band .slot.empty .empty-label { font-size: 13px; }
-  .slot[open] > summary { transform: none; box-shadow: inset 0 0 0 2px var(--accent); }
+  .slot.open > .slot-card { transform: none; box-shadow: inset 0 0 0 2px var(--accent); }
   /* Team ridotto: sei icone in fila, il voto accanto */
   .band.collapsed { flex-direction: row; align-items: center; padding: 8px 14px 18px 0; }
   .band.collapsed > .team { order: 1; flex: 1; min-width: 0; }
   .band.collapsed > .grade-badge { order: 2; margin: 0; }
   .band.collapsed .slots { grid-auto-columns: 52px; padding: 2px 8px 2px 14px; gap: 6px; }
-  .band.collapsed .slot > summary, .band.collapsed .slot.empty { height: 48px; padding: 0; justify-content: center; }
-  .band.collapsed .slot > summary > .name-line, .band.collapsed .slot .remove { display: none; }
+  .band.collapsed .slot > .slot-card, .band.collapsed .slot.empty { height: 48px; padding: 0; justify-content: center; }
+  .band.collapsed .slot > .slot-card > .name-line, .band.collapsed .slot .remove { display: none; }
 
   /* Il voto: una fila bassa sopra le carte. A sinistra lettera, punteggio e giudizio; a destra le aree, fitte */
   .band:not(.collapsed) .grade-badge {
@@ -170,8 +170,8 @@
   .dbl-hint { display: none; }
 
   /* ── Editor del membro: a tutto schermo ───────────────────────── */
-  .band:has(.slot[open]) { z-index: 50; }
-  html:has(.band .slot[open]) { overflow: hidden; }
+  .band:has(.slot.open) { z-index: 50; }
+  html:has(.band .slot.open) { overflow: hidden; }
   .drawer {
     position: fixed;
     inset: 0;
@@ -214,7 +214,7 @@
   }
   .popover.format-card[open] > .format-menu { padding: 0 0 var(--safe-b); }
   /* Il team è un livello a sé: con un suo menu aperto passa sopra le sezioni in basso */
-  .band:has(details[open], .fill-panel) { z-index: 50; }
+  .band:has(details[open], .slot.open, .fill-panel) { z-index: 50; }
   .toolbar .filters[open]::details-content {
     position: fixed;
     z-index: 61;
@@ -251,8 +251,8 @@
 /* Tablet e finestre medie: le sei carte stanno tutte in fila, un po' più grandi */
 @media (min-width: 600px) and (max-width: 1099px) {
   .band .slots { grid-auto-flow: row; grid-template-columns: repeat(6, minmax(0, 1fr)); grid-auto-columns: auto; overflow: visible; padding-inline: 18px; }
-  .band:not(.collapsed) .slot > summary, .band:not(.collapsed) .slot.empty { height: 176px; }
-  .band:not(.collapsed) .slot > summary .sprite { width: min(100cqh, 100cqw, 96px); height: min(100cqh, 100cqw, 96px); }
+  .band:not(.collapsed) .slot > .slot-card, .band:not(.collapsed) .slot.empty { height: 176px; }
+  .band:not(.collapsed) .slot > .slot-card .sprite { width: min(100cqh, 100cqw, 96px); height: min(100cqh, 100cqw, 96px); }
   .band .slots { padding-inline: 18px; }
   .team-head { padding-inline: 18px; }
   .band > .grade-badge { margin-left: 18px; }

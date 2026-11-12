@@ -15,7 +15,7 @@ function renderTeam() {
   return render(<App initialLang="it" data={fixtureData} />);
 }
 const workspace = (container: HTMLElement) => container.querySelector('.workspace')!;
-const cards = (container: HTMLElement) => [...container.querySelectorAll<HTMLElement>('.slot > summary')];
+const cards = (container: HTMLElement) => [...container.querySelectorAll<HTMLElement>('.slot-toggle')];
 
 describe("L'editor del set prende il posto della sezione", () => {
   it('aprendo una carta la sezione diventa il suo editor', async () => {
@@ -43,7 +43,7 @@ describe("L'editor del set prende il posto della sezione", () => {
     await user.click(cards(container)[0]);
     await user.click(screen.getByRole('tab', { name: /^Analisi/ }));
     expect(workspace(container)).not.toHaveClass('editing');
-    expect(container.querySelector('.slot[open]')).toBeNull();
+    expect(container.querySelector('.slot.open')).toBeNull();
     expect(screen.getByRole('tab', { name: /^Analisi/ })).toHaveAttribute('aria-selected', 'true');
   });
 
@@ -52,7 +52,7 @@ describe("L'editor del set prende il posto della sezione", () => {
     const { container } = renderTeam();
     await user.click(screen.getByRole('tab', { name: /^Analisi/ }));
     await user.click(cards(container)[0]);
-    await user.click(within(container.querySelector('.slot[open]') as HTMLElement).getByRole('button', { name: 'Sostituisci Great Tusk' }));
+    await user.click(within(container.querySelector('.slot.open') as HTMLElement).getByRole('button', { name: 'Sostituisci Great Tusk' }));
     expect(workspace(container)).not.toHaveClass('editing');
     expect(screen.getByRole('tab', { name: /^Pokémon/ })).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByRole('button', { name: 'Chi sostituire: Great Tusk' })).toBeInTheDocument();
@@ -64,8 +64,8 @@ describe("L'editor del set prende il posto della sezione", () => {
     await user.click(cards(container)[0]);
     await user.click(cards(container)[1]);
     expect(workspace(container)).toHaveClass('editing');
-    expect(cards(container)[1].parentElement).toHaveAttribute('open');
-    expect(cards(container)[0].parentElement).not.toHaveAttribute('open');
+    expect(cards(container)[1].closest('.slot')).toHaveClass('open');
+    expect(cards(container)[0].closest('.slot')).not.toHaveClass('open');
   });
 
   it("se il team si accorcia sotto il membro aperto (import), l'editor si chiude e la sezione torna", async () => {

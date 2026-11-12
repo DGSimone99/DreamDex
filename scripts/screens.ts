@@ -399,7 +399,7 @@ const STATES: Record<string, State> = {
   'pokemon-long': { hash: hash(LONG), run: async p => { await tab(p, 'pokemon'); return true; } },
   'pokemon-long-en': { hash: hash(LONG), lang: 'en', run: async p => { await tab(p, 'pokemon'); return true; } },
   'pokemon-menu-long': { hash: hash(LONG), storage: { 'dreamdex.listStyle': '"menu"' }, run: async p => { await tab(p, 'pokemon'); return true; } },
-  editor: { run: async p => clickText(p, '.slot.filled > summary', /./) },
+  editor: { run: async p => clickText(p, '.slot.filled > .slot-card', /./) },
   analysis: { run: async p => { await tab(p, 'analysis'); return true; } },
   'analysis-defense': { run: async p => clickText(p, '.band button.grade-area', /^Difesa/) },
   'analysis-offense': { run: async p => clickText(p, '.band button.grade-area', /^Offesa/) },
@@ -624,21 +624,21 @@ const STATES: Record<string, State> = {
   rules: { run: async p => { await p.click('.format-card > summary'); return true; } },
   filters: { run: async p => { await tab(p, 'pokemon'); return clickText(p, 'details.filters > summary', /./); } },
   combobox: { run: async p => {
-    if (!await clickText(p, '.slot.filled > summary', /./)) return 'no card';
+    if (!await clickText(p, '.slot.filled > .slot-card', /./)) return 'no card';
     await wait(500);
     return clickText(p, '[role="combobox"]', /.*/);
   } },
   'stats-pop': { run: async p => focus(p, '.stats-badge') },
   alert: { run: async p => focus(p, '.alert-mark') },
   'grade-delta': { run: async p => {
-    if (!await clickText(p, '.slot.filled > summary', /Dragapult/)) return 'no card';
+    if (!await clickText(p, '.slot.filled > .slot-card', /Dragapult/)) return 'no card';
     await wait(600);
-    return clickText(p, '.slot[open] button.best-preset', /./);
+    return clickText(p, '.slot.open button.best-preset', /./);
   } },
   'editor-alert': { run: async p => {
-    if (!await clickText(p, '.slot.filled > summary', /Dragapult/)) return 'no card';
+    if (!await clickText(p, '.slot.filled > .slot-card', /Dragapult/)) return 'no card';
     await wait(600);
-    return focus(p, '.slot[open] .alert-mark');
+    return focus(p, '.slot.open .alert-mark');
   } },
   undo: { run: async p => clickText(p, 'button.remove', /Rimuovi/) },
   collapsed: { hash: hash(LONG), run: async p => clickText(p, 'button.band-toggle', /./) },
@@ -808,7 +808,7 @@ for (const [w, h] of sizes) {
     const band = await page.evaluate(() => {
       const el = document.querySelector<HTMLElement>('.band');
       if (!el) return '';
-      const slots = [...el.querySelectorAll<HTMLElement>('.slot > summary, .slot.empty')];
+      const slots = [...el.querySelectorAll<HTMLElement>('.slot > .slot-card, .slot.empty')];
       const slotH = slots.length ? Math.round(slots[0].getBoundingClientRect().height) : 0;
       const chipOver = slots.filter(s => { const r = s.getBoundingClientRect(); return [...s.querySelectorAll<HTMLElement>('.type-chip')].some(c => { const b = c.getBoundingClientRect(); return b.width > 0 && (b.right - r.right > 0.5 || c.scrollWidth - c.clientWidth > 1); }); }).length;
       // Nome su due righe: la riga si spezza dove non c'è uno spazio o un trattino
@@ -840,7 +840,7 @@ for (const [w, h] of sizes) {
       const grade = el.querySelector<HTMLElement>('.grade-badge');
       const gradeOver = grade ? [...grade.querySelectorAll<HTMLElement>('.grade-area')].filter(a => a.scrollWidth - a.clientWidth > 1 || a.getBoundingClientRect().right - grade.getBoundingClientRect().right > 0.5).length : 0;
       const gradeScroll = grade ? grade.scrollHeight - grade.clientHeight : 0;
-      const sprite = el.querySelector<HTMLElement>('.slot > summary .sprite');
+      const sprite = el.querySelector<HTMLElement>('.slot > .slot-card .sprite');
       return `band: bandH=${Math.round(el.getBoundingClientRect().height)} slotH=${slotH} sprite=${sprite ? Math.round(sprite.getBoundingClientRect().height) : '-'} chipOver=${chipOver} midBreak=${midBreak} teamNameCut=${nameCut} headWrap=${headWrap} gradeOver=${gradeOver} gradeScroll=${gradeScroll}`;
     });
     const listMore = await page.evaluate(() => {

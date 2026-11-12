@@ -41,7 +41,7 @@ export function AlertMark({ alerts, className = '', icon = 'warning', floating =
       className={`alert-mark ${level}${floating ? ' floating' : ''} ${className}`}
       tabIndex={0}
       aria-describedby={id}
-      // Dentro un <summary>: il triangolo non deve aprire o chiudere la card
+      // Dentro la carta del team: il triangolo non deve aprire o chiudere la card
       onClick={e => { e.preventDefault(); e.stopPropagation(); }}
       {...(floating && { onMouseEnter: show, onMouseLeave: hide, onFocus: show, onBlur: hide })}
     >

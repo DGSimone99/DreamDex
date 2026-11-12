@@ -9,7 +9,7 @@ import { cardRoles, weatherOf } from '../engine/archetype';
 import { measuredSubRoles, rolesList, type SubRoleValues } from '../engine/subRoles';
 import { conditionLabel, viaName } from '../engine/synergy';
 import { exportShowdown, importShowdown, presetsForSet, type Preset, type TeamSet } from '../engine/sets';
-import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ComponentProps, type CSSProperties, type ReactNode } from 'react';
+import { memo, useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type ComponentProps, type CSSProperties, type ReactNode } from 'react';
 import { flushSync } from 'react-dom';
 import { copyText } from './clipboard';
 import { setEditing } from './editing';
@@ -187,7 +187,8 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
   const onProposalDone = actions.proposalDone;
   const lang = useLang();
   const tr = useT();
-  const card = useRef<HTMLElement>(null);
+  const card = useRef<HTMLButtonElement>(null);
+  const drawerId = useId();
   // Una proposta del coach apre l'editor: il fuoco va su Applica (l'azione che si cerca)
   const applyRef = useRef<HTMLButtonElement>(null);
   useEffect(() => { if (open && proposal) applyRef.current?.focus(); }, [open, proposal?.nonce]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -290,12 +291,11 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
   const hint = (text: string) => (text === illegalMovesText ? tr('team.illegalMovesHint') : text === illegalAbilityText ? tr('team.illegalAbilityHint') : undefined);
   const warns: Alert[] = warnings.map(text => ({ level: 'warn', text, title: hint(text) }));
   return (
-    <details
-      className={`slot filled${problems.length ? ' invalid' : warnings.length ? ' warn' : ''}${dragging ? ' dragging' : ''}${dropTarget ? ' drop-target' : ''}`}
-      open={open}
+    // La carta non è un <details>: il clic apre l'editor (stato del team), e stella, × e avvisi stanno accanto al
+    // pulsante della carta, non dentro (niente controlli dentro un altro controllo)
+    <div
+      className={`slot filled${open ? ' open' : ''}${problems.length ? ' invalid' : warnings.length ? ' warn' : ''}${dragging ? ' dragging' : ''}${dropTarget ? ' drop-target' : ''}`}
       style={{ '--t1': typeColor(species?.types[0] ?? ''), '--t2': typeColor(species?.types[1] ?? species?.types[0] ?? ''), '--vt': `slot-${index}` } as React.CSSProperties}
-      // Solo se il details cambia da sé (es. ricerca nella pagina): le aperture normali sono già nello stato
-      onToggle={e => { if (e.currentTarget.open !== open) onToggle(e.currentTarget.open); }}
       onKeyDown={e => {
         // Esc chiude l'editor e torna sulla card; le frecce sulla card passano al membro accanto
         if (e.key === 'Escape' && open) { e.preventDefault(); onToggle(false); card.current?.focus(); }
@@ -306,35 +306,45 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
         }
       }}
     >
-      <summary
-        ref={card}
-        // Un nome breve per la carta: senza, il lettore leggerebbe tutto (anche i pulsanti dentro)
-        aria-label={[
-          set.name ? `${set.name} (${name})` : name,
-          index === 0 ? tr('team.lead') : null,
-          species?.types.map(type => typeName(type, lang)).join('/'),
-          set.item ? gameName('item', set.item, lang) : tr('team.noItem'),
-          problems.length ? tr(problems.length === 1 ? 'team.cardProblem' : 'team.cardProblems', { n: problems.length }) : null,
-          warnings.length ? tr(warnings.length === 1 ? 'team.cardWarning' : 'team.cardWarnings', { n: warnings.length }) : null,
-          tr('team.position', { n: index + 1, total }),
-        ].filter(Boolean).join(', ')}
-        aria-keyshortcuts="Alt+ArrowLeft Alt+ArrowRight"
+      <div
+        className="slot-card"
         draggable
         title={tr('team.dragTitle')}
-        // Apertura e chiusura passano dall'animazione: il clic non apre da solo il details
+        // Clic su tutta la carta (il pulsante della carta lo prende da tastiera e dai lettori di schermo)
         onClick={e => {
-          e.preventDefault();
-          // Stella, ×, Stats: i loro clic non aprono né chiudono l'editor
-          if ((e.target as HTMLElement).closest('button, a, [tabindex]:not(summary)') && e.target !== e.currentTarget) return;
+          // Stella, × e avvisi: i loro clic non aprono né chiudono l'editor
+          const hit = (e.target as HTMLElement).closest('button, a, input, [tabindex]');
+          if (hit && hit !== card.current) return;
           onToggle(!open);
+          // Come prima col <summary>: dopo il clic il fuoco è sulla carta (Esc e frecce partono da lì), senza anello
+          card.current?.focus({ preventScroll: true, focusVisible: false });
         }}
         onDragStart={e => { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', String(index)); onDrag('start'); }}
         onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; onDrag('over'); }}
         onDrop={e => { e.preventDefault(); onDrag('drop'); }}
         onDragEnd={() => onDrag('end')}
       >
+        <button
+          type="button"
+          className="slot-toggle"
+          ref={card}
+          aria-expanded={open}
+          aria-controls={drawerId}
+          // Un nome breve per la carta: nome, lead, tipi, strumento, problemi, posizione
+          aria-label={[
+            set.name ? `${set.name} (${name})` : name,
+            index === 0 ? tr('team.lead') : null,
+            species?.types.map(type => typeName(type, lang)).join('/'),
+            set.item ? gameName('item', set.item, lang) : tr('team.noItem'),
+            problems.length ? tr(problems.length === 1 ? 'team.cardProblem' : 'team.cardProblems', { n: problems.length }) : null,
+            warnings.length ? tr(warnings.length === 1 ? 'team.cardWarning' : 'team.cardWarnings', { n: warnings.length }) : null,
+            tr('team.position', { n: index + 1, total }),
+          ].filter(Boolean).join(', ')}
+          aria-keyshortcuts="Alt+ArrowLeft Alt+ArrowRight"
+          title={tr('team.dragTitle')}
+        />
         {/* Team compresso: solo l'icona del box, con un puntino se c'è un problema o un avviso */}
-        <span className="mini-icon">
+        <span className="mini-icon" aria-hidden="true">
           <PokemonIcon name={name} />
           {(dangers.length > 0 || warns.length > 0) && (
             <span className={`mini-alert ${dangers.length ? 'danger' : 'warn'}`} title={[...dangers, ...warns].map(a => a.text).join(' · ')}>
@@ -353,7 +363,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
         </span>
         {index === 0 && (
           // Il primo slot è quello che va in campo per primo
-          <small className="slot-lead" title={tr('team.leadTitle')}>{tr('team.lead')}</small>
+          <small className="slot-lead" title={tr('team.leadTitle')} aria-hidden="true">{tr('team.lead')}</small>
         )}
         {set.customSkillset && (
           // Non è un problema: piccolo, nell'angolo in alto a sinistra
@@ -366,7 +376,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
           aria-label={tr('team.favorite', { species: name })}
           aria-pressed={!!set.favorite}
           title={tr(set.favorite ? 'team.favoriteOn' : 'team.favoriteOff')}
-          onClick={e => { e.preventDefault(); onChange({ ...set, favorite: !set.favorite }); }}
+          onClick={() => onChange({ ...set, favorite: !set.favorite })}
         >
           <Icon name="star" filled={!!set.favorite} />
         </button>
@@ -375,12 +385,12 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
           className="remove"
           aria-label={tr('team.remove', { species: name })}
           title={tr('team.removeTitle')}
-          onClick={e => { e.preventDefault(); onRemove(); }}
+          onClick={onRemove}
         >
           <Icon name="close" />
         </button>
         {/* Lo strumento è la sua icona prima del nome: nome e descrizione nel tooltip (e per i lettori di schermo) */}
-        <span className="name-line">
+        <span className="name-line" aria-hidden="true">
           <small className="held" title={set.item ? `${gameName('item', set.item, lang)}: ${describe.item(set.item, lang)}` : tr('team.noItem')}>
             <ItemIcon item={set.item} size={20} />
             <span className="visually-hidden">{set.item ? gameName('item', set.item, lang) : tr('team.noItem')}</span>
@@ -389,8 +399,8 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
         {/* Il nome intero nel tooltip: nella barra compressa si taglia con i puntini */}
         <strong className="name" title={set.name ? `${set.name} (${name})` : name} style={{ '--name-em': nameEm.toFixed(3) } as CSSProperties}>{shownName}</strong>
         </span>
-        <small className="ability" title={describe.ability(ability, lang)}>{ability ? gameName('ability', ability, lang) : '—'}</small>
-        <span className={`types${typeText ? '' : ' as-icons'}`} ref={typesRef}>
+        <small className="ability" title={describe.ability(ability, lang)} aria-hidden="true">{ability ? gameName('ability', ability, lang) : '—'}</small>
+        <span className={`types${typeText ? '' : ' as-icons'}`} ref={typesRef} aria-hidden="true">
           {typeText || !species ? typeList.map(type => <TypeChip key={type} type={type} />) : typeList.map(type => (
             <span key={type} className="type-dot" title={typeName(type, lang)}>
               <img src={typeIconUrl(type)} alt="" draggable={false} />
@@ -399,9 +409,9 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
           ))}
         </span>
         {/* Solo il ruolo principale; tutti i ruoli (e il meteo) nel tooltip */}
-        {roles.length > 0 && <small className="roles" title={rolesTitle}>{roles[0]}</small>}
-      </summary>
-      <div className="drawer">
+        {roles.length > 0 && <small className="roles" title={rolesTitle} aria-hidden="true">{roles[0]}</small>}
+      </div>
+      <div className="drawer" id={drawerId}>
       <IdleSetEditor idle={!open} idleKey={`${lang}:${megaWarning ?? ''}`}
         set={set} presets={presets} common={common} genLimit={format.genLimit} pokedex={pokedexOf(format)} roles={roleLabels}
         teraBannedIn={teraAllowed(format) ? undefined : formatLabel(format, lang)} speed={speed} onChange={stable.onChange}
@@ -496,7 +506,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
             onClick={() => { onToggle(false); card.current?.focus(); }}><Icon name="close" /></button>
         </>} />
       </div>
-    </details>
+    </div>
   );
 });
 
@@ -539,7 +549,7 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
     // Conta solo il nonce: la proposta cambia a ogni modifica, ma si apre una volta per nonce (lastNonce)
   }, [proposal?.nonce]); // eslint-disable-line react-hooks/exhaustive-deps
   const slotsRef = useRef<HTMLDivElement>(null);
-  const focusCard = (i: number) => requestAnimationFrame(() => slotsRef.current?.querySelectorAll<HTMLElement>('.slot > summary')[i]?.focus());
+  const focusCard = (i: number) => requestAnimationFrame(() => slotsRef.current?.querySelectorAll<HTMLElement>('.slot > .slot-card > .slot-toggle')[i]?.focus());
   const step = (from: number, delta: number) => {
     const to = (from + delta + team.length) % team.length;
     if (openIndex !== null) animated(() => setOpenIndex(to));
@@ -615,7 +625,7 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
       if (onRemove) onRemove(i); else onChange(team.filter((_, j) => j !== i));
       // Il focus non si perde: va alla carta che prende il posto (o all'ultima, o al primo slot vuoto)
       requestAnimationFrame(() => {
-        const cards = slotsRef.current?.querySelectorAll<HTMLElement>('.slot > summary');
+        const cards = slotsRef.current?.querySelectorAll<HTMLElement>('.slot > .slot-card > .slot-toggle');
         (cards?.[Math.min(i, cards.length - 1)] ?? slotsRef.current?.querySelector<HTMLElement>('.slot.empty'))?.focus();
       });
     },

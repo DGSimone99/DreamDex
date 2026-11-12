@@ -15,8 +15,8 @@ async function openEditor() {
   const user = userEvent.setup();
   window.history.replaceState(null, '', `/#team=${encodeShare([tusk, gholdengo], DEFAULT_FORMAT)}`);
   const { container } = render(<App initialLang="it" data={fixtureData} />);
-  await user.click(container.querySelector<HTMLElement>('.slot > summary')!);
-  return { user, slot: container.querySelector<HTMLElement>('.slot[open]')! };
+  await user.click(container.querySelector<HTMLElement>('.slot-toggle')!);
+  return { user, slot: container.querySelector<HTMLElement>('.slot.open')! };
 }
 const setMove = async (user: ReturnType<typeof userEvent.setup>, slot: HTMLElement, move: string) => {
   await user.clear(within(slot).getByLabelText('Mossa 1'));

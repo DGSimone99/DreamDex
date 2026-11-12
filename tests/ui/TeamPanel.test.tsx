@@ -39,7 +39,7 @@ describe('TeamPanel', () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} />);
     await addPokemon(user, 'Great Tusk');
-    const card = teamRegion().querySelector('.slot > summary')!;
+    const card = teamRegion().querySelector('.slot > .slot-card')!;
     expect(card.querySelector('.stats-badge')).toBeNull();
     const held = card.querySelector('.name-line .held')!;
     expect(held.querySelector('.item-icon')).not.toBeNull();
@@ -109,7 +109,7 @@ describe('TeamPanel', () => {
     await user.clear(item);
     await user.type(item, 'Lopunnite');
     await user.tab();
-    expect([...teamRegion().querySelectorAll('.slot summary .types .type-chip')].map(chip => chip.textContent)).toEqual(['Normal', 'Fighting']);
+    expect([...teamRegion().querySelectorAll('.slot .slot-card .types .type-chip')].map(chip => chip.textContent)).toEqual(['Normal', 'Fighting']);
   });
 
   it('segnala un membro oltre il limite di generazione senza rimuoverlo', async () => {

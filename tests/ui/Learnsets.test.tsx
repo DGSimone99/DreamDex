@@ -39,7 +39,7 @@ describe('mosse e abilità legali nel team', () => {
   it('mosse non legali: avviso giallo, non cancellate', async () => {
     await importTeam('Drakloak\nAbility: Infiltrator\n- Dragon Darts\n- U-turn');
     expect(within(team()).getByText('Mosse non legali in questo formato: Dragon Darts')).toBeInTheDocument();
-    expect(within(team()).getByText('Drakloak').closest('details')).toHaveClass('warn');
+    expect(within(team()).getByText('Drakloak').closest('.slot')).toHaveClass('warn');
     expect(within(team()).getByLabelText('Mossa 1')).toHaveValue('Dragon Darts');
   });
 

@@ -1,6 +1,5 @@
 /* Editor del membro aperto: copre l'area della sezione sotto il team (il team resta fermo) */
-.slot:not([open])::details-content { display: none; }
-.slot[open]::details-content { display: contents; }
+.slot.filled:not(.open) > .drawer { display: none; }
 .drawer {
   padding: 14px 22px 16px;
   background: var(--panel);
