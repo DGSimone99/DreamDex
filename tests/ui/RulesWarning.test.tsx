@@ -21,16 +21,19 @@ async function importTeam(text: string) {
 }
 
 describe('voto con membri fuori regola', () => {
-  it('scritta "1 non legale" sotto il giudizio, con chi e il motivo al passaggio; lettera a piena forza, niente triangolo', async () => {
+  it('voto grigio con il perché sotto il giudizio ("Non legale: 1 Pokémon"), formato, chi e motivo al passaggio, niente triangolo', async () => {
     await importTeam('Great Tusk @ Leftovers\nAbility: Protosynthesis\n- Rapid Spin\n\nMewtwo @ Life Orb\nAbility: Pressure\n- Psystrike');
     const note = rating().querySelector('.grade-badge .grade-rules') as HTMLElement;
-    expect(note).toHaveTextContent('1 non legale');
+    expect(note).toHaveTextContent('Non legale: 1 Pokémon');
+    expect(note.title).toContain('Non legale in National Dex OU: 1 Pokémon');
+    // Il voto in grigio anche nella tessera Analisi del menu
+    expect(document.querySelector('#tab-analysis .grade')).toHaveClass('illegal');
     expect(note.title).toContain('Non legali: Mewtwo');
     expect(note.title).toContain('Mewtwo non è legale in National Dex OU: tier troppo alto');
     expect(rating().querySelector('.grade-badge')).toHaveClass('rules-broken');
     expect(rating().querySelector('.grade-tools .alert-mark.danger')).toBeNull();
     // Per i lettori di schermo nella frase del voto
-    expect(rating().querySelector('.grade-badge .visually-hidden')).toHaveTextContent(/1 non legale \(Mewtwo\): Mewtwo non è legale in National Dex OU/);
+    expect(rating().querySelector('.grade-badge .visually-hidden')).toHaveTextContent(/Non legale in National Dex OU: 1 Pokémon \(Mewtwo\): Mewtwo non è legale in National Dex OU/);
   });
 
   it('team in regola: niente scritta né triangolo', async () => {
@@ -38,6 +41,7 @@ describe('voto con membri fuori regola', () => {
     expect(rating().querySelector('.grade-tools .alert-mark')).toBeNull();
     expect(rating().querySelector('.grade-rules')).toBeNull();
     expect(rating().querySelector('.grade-badge')).not.toHaveClass('rules-broken');
+    expect(document.querySelector('#tab-analysis .grade')).not.toHaveClass('illegal');
   });
 });
 

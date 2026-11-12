@@ -37,6 +37,8 @@
 .tabs.vertical .tab-status .grade { color: var(--good); font-weight: 800; }
 .tabs.vertical .tab-status .grade-C { color: var(--warn); }
 .tabs.vertical .tab-status .grade-D { color: var(--bad); }
+/* Team non legale nel formato: il voto in grigio (come nella carta del voto) */
+.tabs.vertical .tab-status .grade.illegal { color: var(--faint); }
 .tabs.vertical [role='tab']:hover:not([aria-selected='true']) .tab-icon { background: var(--accent-soft); }
 .tabs.vertical [role='tab']:hover:not([aria-selected='true']) { background: color-mix(in srgb, var(--raised) 45%, transparent); }
 .tabs.vertical [role='tab'][aria-selected='true'] {

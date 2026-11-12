@@ -91,7 +91,10 @@
 .grade-roles-miss svg { width: 13px; height: 13px; }
 .grade-roles-miss.bad { color: var(--bad); }
 .grade-roles-miss.warn { color: var(--warn); }
-/* Regole infrante: la scritta sotto il giudizio, con chi nel tooltip; la lettera resta a piena forza (mai informazioni
-   spente con l'opacità) */
-.grade-badge .grade-rules { grid-column: 1 / -1; justify-self: start; display: inline-flex; align-items: center; gap: 4px; margin-top: 6px; padding: 1px 7px; border-radius: 3px; background: var(--bad-bg); color: var(--bad); font: 700 12px/1.5 var(--display); letter-spacing: 0.02em; white-space: nowrap; }
-.grade-badge .grade-rules svg { width: 13px; height: 13px; }
+/* Regole infrante: la lettera diventa grigia (lists.css) e sotto il giudizio si scrive perché, con chi nel tooltip;
+   la scritta va a capo se il nome del formato è lungo */
+.grade-badge .grade-rules { grid-column: 1 / -1; justify-self: start; display: inline-flex; align-items: flex-start; gap: 4px; margin-top: 6px; padding: 1px 7px; border-radius: 3px; background: var(--bad-bg); color: var(--bad); font: 700 12px/1.5 var(--display); letter-spacing: 0.01em; text-wrap: balance; }
+.grade-badge .grade-rules svg { flex: none; width: 13px; height: 13px; margin-top: 2px; }
+/* La scritta può andare su due righe: le aree salgono un po', così la carta del voto (e la fila del team) non cresce */
+.grade-badge.rules-broken .grade-rules { margin-top: 4px; line-height: 1.3; }
+.grade-badge.rules-broken .grade-areas { margin-top: 0; padding-top: 3px; }

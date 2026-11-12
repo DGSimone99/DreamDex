@@ -348,7 +348,8 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
             : t(lang, team.length ? 'rail.teamCount' : 'rail.teamEmpty', { n: team.length }) },
         { id: 'analysis', label: t(lang, 'tabs.analysis'), icon: 'roles',
           status: rating ? <>
-            <b className={`grade grade-${rating.grade}`}>{rating.grade} {rating.overall}</b>
+            {/* Team non legale nel formato: il voto in grigio, come nella carta del voto */}
+            <b className={`grade grade-${rating.grade}${problems.some(p => p.category === 'rules') ? ' illegal' : ''}`}>{rating.grade} {rating.overall}</b>
             {problems.length > 0 && <>{' · '}<span className={problems.some(p => p.severity === 'serious') ? 'serious' : 'minor'}>
               {t(lang, problems.length === 1 ? 'tabs.problemsOne' : 'tabs.problemsMany', { n: problems.length })}</span></>}
           </> : t(lang, 'rail.noGrade') },
@@ -382,7 +383,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
           onAllowMultipleMegas={() => setFormat(f => ({ ...f, allowMultipleMegas: true }))} />
         <GradeBadge rating={rating} blocked={blockedReason(team, format.formatId)} ruleIssues={coaching?.problems.filter(p => p.category === 'rules').map(p => p.text)}
           illegalCount={new Set(coaching?.problems.filter(p => p.category === 'rules').map(p => p.subjects?.[0] ?? p.key)).size}
-          illegalNames={[...new Set(coaching?.problems.filter(p => p.category === 'rules').flatMap(p => p.subjects ?? []))]}
+          illegalNames={[...new Set(coaching?.problems.filter(p => p.category === 'rules').flatMap(p => p.subjects ?? []))]} formatName={formatLabel(format, lang)}
           incomplete={team.length < 6} onOpen={area => { openTab('analysis'); setAnalysisView(area); }} />
         <button type="button" className="band-toggle" aria-expanded={!collapsed} onClick={toggleCollapsed}
           aria-label={t(lang, collapsed ? 'team.expand' : 'team.collapse')} title={t(lang, collapsed ? 'team.expand' : 'team.collapse')}>

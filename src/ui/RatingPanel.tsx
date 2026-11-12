@@ -17,9 +17,9 @@ const isDetailArea = (key: string): key is DetailArea => key === 'strength' || k
 /** Voto grande accanto alla fila del team: lettera, punteggio, le tre aree, i Ruoli e Bonus/Malus, che portano alle schede di Analisi. */
 /**
  * `onOpen`: le righe delle aree e di Bonus/Malus portano alla scheda di quell'area in Analisi.
- * `ruleIssues`: problemi di regole, triangolo rosso nella testa. `blocked`: il team ha membri ma il voto non si dà (EV oltre 510, specie doppia): il perché.
+ * `ruleIssues`: problemi di regole: la lettera diventa grigia e sotto si scrive perché (`formatName`: il formato). `blocked`: il team ha membri ma il voto non si dà (EV oltre 510, specie doppia): il perché.
  */
-export function GradeBadge({ rating, ruleIssues = [], illegalCount = 0, illegalNames = [], blocked = null, incomplete = false, onOpen }: { rating: TeamRating | null; ruleIssues?: string[]; illegalCount?: number; illegalNames?: string[]; blocked?: 'ev' | 'species' | null; incomplete?: boolean; onOpen?: (area: AreaKey) => void }) {
+export function GradeBadge({ rating, ruleIssues = [], illegalCount = 0, illegalNames = [], formatName = '', blocked = null, incomplete = false, onOpen }: { rating: TeamRating | null; ruleIssues?: string[]; illegalCount?: number; illegalNames?: string[]; formatName?: string; blocked?: 'ev' | 'species' | null; incomplete?: boolean; onOpen?: (area: AreaKey) => void }) {
   const t = useT();
   // Voto quando si è aperto il membro nell'editor: il badge mostra di quanto è cambiato
   const editing = useEditing();
@@ -27,10 +27,12 @@ export function GradeBadge({ rating, ruleIssues = [], illegalCount = 0, illegalN
   const overall = rating?.overall ?? null;
   useEffect(() => { setSince(editing === null ? null : overall); }, [editing]);
   const delta = rating && since !== null ? rating.overall - since : 0;
-  // Regole infrante: una scritta sotto il giudizio (quanti membri non sono legali, e chi nel tooltip). Il voto resta a
-  // piena forza: la scritta rossa basta a dire che il team così non si può usare
+  // Regole infrante: lettera, punteggio e giudizio in grigio finché il team non è legale (il voto si calcola uguale), e sotto
+  // il perché (in quale formato e quanti membri; chi e il motivo nel tooltip). Niente triangolo sul voto
   const broken = ruleIssues.length > 0;
-  const notLegal = broken ? t(Math.max(1, illegalCount) === 1 ? 'rating.notLegalOne' : 'rating.notLegalMany', { n: Math.max(1, illegalCount) }) : '';
+  // Nella carta (stretta) la scritta corta; il formato è nel tooltip e nella frase per i lettori di schermo
+  const notLegal = broken ? t('rating.notLegalIn', { format: formatName, n: Math.max(1, illegalCount) }) : '';
+  const notLegalShort = broken ? t('rating.notLegalShort', { n: Math.max(1, illegalCount) }) : '';
   const who = illegalNames.length ? t('rating.notLegalWho', { list: illegalNames.join(', ') }) : '';
   return (
     <div className={`grade-badge${rating ? ` grade-${rating.grade}` : ' none'}${broken ? ' rules-broken' : ''}`}>
@@ -44,7 +46,7 @@ export function GradeBadge({ rating, ruleIssues = [], illegalCount = 0, illegalN
       {!rating && !blocked && <EeveeMoment pose="wave" />}
       <span className="overall">{rating ? `${rating.overall} / 100` : t('rating.noGrade')}</span>
       <span className="label">{rating ? rating.label : t(blocked === 'ev' ? 'rating.evBlocked' : blocked === 'species' ? 'rating.speciesBlocked' : 'rating.addPokemon')}</span>
-      {rating && broken && <span className="grade-rules" title={[who, ...ruleIssues].filter(Boolean).join(' · ')}><Icon name="warning" />{notLegal}</span>}
+      {rating && broken && <span className="grade-rules" title={[notLegal, who, ...ruleIssues].filter(Boolean).join(' · ')}><Icon name="warning" />{notLegalShort}</span>}
       </span>
       {/* Testa: l'aiuto sul voto e il triangolo delle regole, fuori dal disegno perché si usano */}
       {(rating || blocked) && (

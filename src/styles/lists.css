@@ -86,6 +86,10 @@
 /* Schermi bassi o stretti (portatili 1366×768, 1280×720): tutto resta in una schermata, card e strumenti più compatti */
 @media (min-width: 1100px) and ((max-width: 1279px) or (max-height: 799px)) {
   .app { grid-template-columns: 190px minmax(0, 1fr); }
+  .undo-toast { --rail-w: 190px; }
+  /* Carta del voto stretta: "Non legale: n Pokémon" su una riga sola, senza il triangolo */
+  .grade-badge .grade-rules { padding-inline: 5px; }
+  .grade-badge .grade-rules svg { display: none; }
   .rail { gap: 10px; padding-top: 12px; }
   .rail-logo { padding: 0 14px; }
   .format-card { margin: 0 14px; }
@@ -388,10 +392,13 @@
 .grade-badge.grade-C { --grade: var(--warn); }
 .grade-badge.grade-D { --grade: var(--bad); }
 .grade-badge.none { --grade: var(--line); }
+/* Team non legale nel formato: lettera e giudizio grigi (il punteggio resta leggibile), finché non torna in regola */
+.grade-badge.rules-broken { --grade: var(--faint); }
+.grade-badge.rules-broken .overall { color: var(--muted); }
 .grade-badge .letter, .grade-badge.grade-C .letter, .grade-badge.grade-D .letter { color: var(--grade); }
 .grade-badge .label { color: var(--grade); font-weight: 600; }
 /* "Eccellente" è testo piccolo: il magenta più chiaro, leggibile sul fondo tinto (la lettera grande resta magenta pieno) */
-.grade-badge.grade-S .label { color: var(--accent-2-ink); }
+.grade-badge.grade-S:not(.rules-broken) .label { color: var(--accent-2-ink); }
 .grade-badge .grade-areas { align-self: stretch; align-content: space-evenly; gap: 1px; margin-top: 4px; padding-top: 6px; border-top: 1px solid var(--line-soft); }
 .grade-area { font-size: 12.5px; }
 .grade-area .meter { height: 7px; }
