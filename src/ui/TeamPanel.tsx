@@ -654,16 +654,14 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
   return (
     <section aria-label={t(lang, 'team.region')} className={`team${collapsed ? ' collapsed' : ''}`}>
       <div className="team-head">
-        {/* La targa del team: la parola Team e sei tacche, una per posto, colorate coi tipi di chi c'è (come la barra della
-            squadra nei giochi). Il numero resta per i lettori di schermo */}
+        {/* La targa del team: la parola Team e quanti sono, il numero grande e il /6 spento. Il numero cambia con un piccolo
+            scatto; i lettori di schermo sentono "Team (n/6)" */}
         <div className="team-plate">
-          <h2><span aria-hidden="true">Team</span><span className="visually-hidden">{t(lang, 'team.title', { n: team.length })}</span></h2>
-          <span className={`team-pips${team.length === 6 ? ' full' : ''}`} aria-hidden="true">
-            {Array.from({ length: 6 }, (_, i) => {
-              const types = team[i] ? battleSpecies(team[i])?.types ?? [] : [];
-              return <span key={i} className={`pip${team[i] ? ' on' : ''}`} style={{ '--i': i, ...(team[i] ? { '--t1': typeColor(types[0] ?? ''), '--t2': typeColor(types[1] ?? types[0] ?? '') } : {}) } as React.CSSProperties} />;
-            })}
-          </span>
+          <h2>
+            <span aria-hidden="true">Team</span>
+            <span className="team-count" aria-hidden="true"><b key={team.length}>{team.length}</b>/6</span>
+            <span className="visually-hidden">{t(lang, 'team.title', { n: team.length })}</span>
+          </h2>
         </div>
         {/* La guida, subito dopo la targa: Completa team finché mancano Pokémon, Migliora i set col team pieno */}
         <div className="team-guide-slot">
