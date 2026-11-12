@@ -242,21 +242,21 @@ function useFitLimit(count: number, key: string) {
 /**
  * I chip dei tipi (gli stessi del team, in versione compatta), su una riga sola: quelli che non entrano diventano "+N"
  * subito dopo l'ultimo chip (mai un chip tagliato a metà; la lista intera è nel tooltip).
- * Gli immuni per primi, ognuno con una "×" davanti (× Spettro): accanto al "+" si legge come immune in difesa;
+ * Gli immuni per primi, ognuno con lo scudo barrato davanti: accanto allo scudo dei resistenti si legge come immune;
  * a parole nel tooltip del chip.
  */
 function ChipRow({ types, immune = [] }: { types: readonly string[]; immune?: readonly string[] }) {
   const tr = useT();
   const lang = useLang();
   const all = [...immune, ...types];
-  // Nella chiave tutto quello che cambia la larghezza: i tipi, quanti hanno la "×" e la lingua
+  // Nella chiave tutto quello che cambia la larghezza: i tipi, quanti hanno lo scudo barrato e la lingua
   const { row, limit } = useFitLimit(all.length, `${lang}|${immune.length}|${all.join()}`);
   return (
     <span className="sym-chips" ref={row}>
       {all.slice(0, limit).map((type, i) => (
         i < immune.length ? (
           <span key={type} className="sym-chip immune" title={tr('reason.immuneTo', { type: typeName(type, lang) })}>
-            <span className="sym-immune">×</span><TypeChip type={type} />
+            <span className="sym-immune"><Icon name="shieldx" /></span><TypeChip type={type} />
           </span>
         ) : (
           <span key={type} className="sym-chip"><TypeChip type={type} /></span>
@@ -285,13 +285,13 @@ function MonRow({ species }: { species: readonly string[] }) {
 function SymbolView({ symbol }: { symbol: ReasonSymbol }) {
   switch (symbol.kind) {
     case 'coverage':
-      return <><span className="sym-emoji">⚔️</span><ChipRow types={symbol.types} /></>;
+      return <><span className="sym-icon"><Icon name="sword" /></span><ChipRow types={symbol.types} /></>;
     case 'defense':
-      return <><span className="sym-emoji">🛡️</span><ChipRow types={symbol.resists} immune={symbol.immune} /></>;
+      return <><span className="sym-icon"><Icon name="shield" /></span><ChipRow types={symbol.resists} immune={symbol.immune} /></>;
     case 'threats':
-      return <><span className="sym-vs">vs</span><MonRow species={symbol.species} /></>;
+      return <><span className="sym-vs">VS</span><MonRow species={symbol.species} /></>;
     case 'link':
-      return <><span className="sym-emoji">🔗</span><MonRow species={[symbol.species]} /></>;
+      return <><span className="sym-icon"><Icon name="chain" /></span><MonRow species={[symbol.species]} /></>;
   }
 }
 

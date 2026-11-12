@@ -296,22 +296,24 @@ describe('SuggestionsPanel', () => {
     expect(spoken(reasons[0])).toBe('+ Colpisce super efficace Acqua, Erba, scoperti dal team');
     expect(reasons[0]).toHaveAttribute('title', 'Colpisce super efficace Acqua, Erba, scoperti dal team');
     expect(reasons[0].querySelector('.sym')).toHaveAttribute('aria-hidden', 'true');
-    // ⚔️ + i chip dei due tipi
-    expect(reasons[0].querySelector('.sym-emoji')!.textContent).toBe('⚔️');
+    // La spada + i chip dei due tipi
+    expect(reasons[0].querySelector('.sym-icon .icon')).not.toBeNull();
     expect(reasons[0].querySelectorAll('.sym .type-chip')).toHaveLength(2);
-    // 🛡️: l'immune con la "×" davanti al chip (a parole nel tooltip), poi la resistenza
+    // Lo scudo: l'immune con lo scudo barrato davanti al chip (a parole nel tooltip), poi la resistenza
+    expect(reasons[1].querySelector('.sym-icon .icon')).not.toBeNull();
     const chips = [...reasons[1].querySelectorAll('.sym-chip')];
-    expect(chips.map(c => c.querySelector('.sym-immune')?.textContent ?? '')).toEqual(['×', '']);
+    expect(chips.map(c => !!c.querySelector('.sym-immune .icon'))).toEqual([true, false]);
     expect(chips[0].firstElementChild).toHaveClass('sym-immune');
     expect(chips[0]).toHaveAttribute('title', expect.stringMatching(/^Immune a /));
     expect(chips[1]).not.toHaveAttribute('title');
     expect(reasons[1].querySelectorAll('.sym .type-chip')).toHaveLength(2);
     // vs: il primo col pallino del tipo e il nome, come nel dettaglio; gli altri "+N" (niente mini sprite)
-    expect(reasons[2].querySelector('.sym')!.textContent).toBe('vsZapdos');
-    expect(reasons[3].querySelector('.sym')!.textContent).toBe('vsZapdos+1');
+    expect(reasons[2].querySelector('.sym')!.textContent).toBe('VSZapdos');
+    expect(reasons[3].querySelector('.sym')!.textContent).toBe('VSZapdos+1');
     expect(reasons[3].querySelectorAll('.sym .mon-icon')).toHaveLength(0);
     expect(reasons[3].querySelectorAll('.sym .type-dot')).toHaveLength(1);
-    expect(reasons[4].querySelector('.sym')!.textContent).toBe('🔗Venusaur');
+    expect(reasons[4].querySelector('.sym')!.textContent).toBe('Venusaur');
+    expect(reasons[4].querySelector('.sym-icon .icon')).not.toBeNull();
     // I ruoli restano parole, senza tooltip
     expect(reasons[5].textContent).toBe('++Pivot');
     expect(reasons[5]).not.toHaveAttribute('title');

@@ -34,15 +34,18 @@ const paths = {
   ban: 'M12 3a9 9 0 1 0 0 18 9 9 0 1 0 0-18zM5.6 5.6l12.8 12.8',
   target: 'M12 4a8 8 0 1 0 0 16 8 8 0 1 0 0-16zM12 2v5M12 17v5M2 12h5M17 12h5',
   // Aree dei problemi del Coaching: Difesa, Offesa, Ruoli, Regole, Meta, Condizioni (Ridondanza usa "copy")
-  shield: 'M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6z',
-  sword: 'M14 4h6v6L9 21l-3-3L17 7M5 19l-2 2M7 14l3 3',
+  // Scudo come quello di Zamazenta (largo in alto con le tacche, appuntito in basso, nervatura al centro)
+  shield: 'M4 4.5h4l1 1.5h6l1-1.5h4v5.5c0 5.2-3.6 8.8-8 11-4.4-2.2-8-5.8-8-11ZM12 7.5v11',
+  // Spada lunga come quella di Zacian, simmetrica sul suo asse e girata in diagonale (punta in alto a destra)
+  sword: 'M19.42 4.58L19.07 7.76L11.29 15.54L8.46 12.71L16.24 4.93ZM17.3 6.7L10.94 13.06M5.99 10.94L13.06 18.01M9.53 14.47L6.34 17.66M3.91 18.79a1.3 1.3 0 1 0 2.6 0a1.3 1.3 0 1 0 -2.6 0',
   gear: 'M12 9a3 3 0 1 0 0 6 3 3 0 1 0 0-6zM12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1',
   gavel: 'M13 4l7 7M10.5 6.5l7 7M8 9l5-5M15 16l5-5M11.7 11.7 4 19.5',
   globe: 'M12 3a9 9 0 1 0 0 18 9 9 0 1 0 0-18zM3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18',
   // Righe del Riassunto della Panoramica
   team: 'M12 3l8 4.5v9L12 21l-8-4.5v-9zM12 12l8-4.5M12 12v9M12 12 4 7.5',
   field: 'M3 19h18M5 19l3-8 3 5 3-9 3 12',
-  shieldx: 'M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6zM9.5 9.5l5 5M14.5 9.5l-5 5',
+  // Immune: lo stesso scudo, barrato
+  shieldx: 'M4 4.5h4l1 1.5h6l1-1.5h4v5.5c0 5.2-3.6 8.8-8 11-4.4-2.2-8-5.8-8-11ZM7.5 15.5L16.5 7.5',
   roles: 'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z',
   cloud: 'M7 18h10a4 4 0 0 0 .4-8A6 6 0 0 0 6 11.5 3.3 3.3 0 0 0 7 18z',
   // Legame tra due membri (Sinergie del Riassunto): due anelli di catena
