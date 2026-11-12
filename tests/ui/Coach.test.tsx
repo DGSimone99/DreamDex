@@ -111,7 +111,7 @@ describe('scheda Coaching', () => {
     const user = await openCoaching(six);
     const button = within(analysis()).getAllByRole('button', { name: /^Al posto di .+: .+, \+\d+$/ })[0];
     const [, member, species] = /^Al posto di (.+): (.+), \+\d+$/.exec(button.getAttribute('aria-label')!)!;
-    const cards = () => [...document.querySelectorAll('.slot.filled summary')].map(el => el.textContent ?? '');
+    const cards = () => [...document.querySelectorAll('.slot.filled .slot-card')].map(el => el.textContent ?? '');
     expect(cards().some(text => text.includes(member))).toBe(true);
     await user.click(button);
     // Resta su Analisi; il membro è sostituito
@@ -727,7 +727,7 @@ describe('proposta di mossa nell\'editor', () => {
     const user = await openCoaching(fixable);
     const [, to, member, gain] = /^Dai (.+) a (.+), (\+\d+|±0)$/.exec(moveButton().getAttribute('aria-label')!)!;
     await user.click(alternativesOf(moveButton()));
-    const card = document.querySelector<HTMLDetailsElement>('details.slot[open]')!;
+    const card = document.querySelector<HTMLElement>('.slot.open')!;
     expect(card).toBeTruthy();
     // Il fuoco va su Applica
     expect(document.activeElement).toBe(within(card).getByRole('button', { name: 'Applica' }));
@@ -753,7 +753,7 @@ describe('proposta di mossa nell\'editor', () => {
     const user = await openCoaching(fixable);
     const [, to, member] = /^Dai (.+) a (.+), (?:\+\d+|±0)$/.exec(moveButton().getAttribute('aria-label')!)!;
     await user.click(moveButton());
-    expect(document.querySelector('details.slot[open]')).toBeNull();
+    expect(document.querySelector('.slot.open')).toBeNull();
     const toast = screen.getByRole('status');
     expect(toast).toHaveTextContent(`${member}: `);
     expect(toast).toHaveTextContent(`→ ${to}`);
@@ -764,11 +764,11 @@ describe('proposta di mossa nell\'editor', () => {
   it('Annulla della proposta: nessun cambio, la proposta sparisce, l\'editor resta aperto', async () => {
     const user = await openCoaching(fixable);
     await user.click(alternativesOf(moveButton()));
-    const card = document.querySelector<HTMLDetailsElement>('details.slot[open]')!;
+    const card = document.querySelector<HTMLElement>('.slot.open')!;
     await user.click(within(card).getByRole('button', { name: 'Annulla' }));
     expect(card.querySelector('.move-proposal')).toBeNull();
     expect(card.querySelector('.is-proposed')).toBeNull();
-    expect(document.querySelector('details.slot[open]')).toBe(card);
+    expect(document.querySelector('.slot.open')).toBe(card);
     expect(screen.queryByRole('status')).toBeNull();
   });
 
@@ -776,7 +776,7 @@ describe('proposta di mossa nell\'editor', () => {
     const user = await openCoaching(fixable);
     await user.click(screen.getByRole('button', { name: 'Comprimi team' }));
     await user.click(alternativesOf(moveButton()));
-    const card = document.querySelector<HTMLDetailsElement>('details.slot[open]')!;
+    const card = document.querySelector<HTMLElement>('.slot.open')!;
     expect(card).toBeTruthy();
     expect(card.querySelector('.move-proposal')).not.toBeNull();
     expect(card.querySelector('.field.is-proposed')).not.toBeNull();

@@ -548,17 +548,17 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .fav-heart { display: inline-flex; color: var(--accent); }
 .fav-heart .icon { width: 12px; height: 12px; fill: currentColor; }
 .card.first .tag .fav-heart { color: inherit; }
+/* Chi esce (Migliora · Tutti) nella targhetta, subito dopo il numero: ⇄ [mini icona], centrati sul numero. La ⇄ nel
+   colore del testo della targhetta, un po' più tenue (grigia sullo scuro, scura sul magenta). La mini icona (40×30)
+   rimpicciolita dentro un riquadro 20×16: la targhetta cresce solo a destra quanto basta */
+.card .tag .out { display: flex; align-items: center; gap: 2px; height: 15px; margin-left: 1px; }
+.card .tag .out > .icon { width: 13px; height: 13px; vertical-align: 0; opacity: 0.72; }
+.card .tag .out-mon { position: relative; flex: none; width: 20px; height: 16px; overflow: hidden; }
+.card .tag .out-mon .mon-icon { position: absolute; left: 50%; top: 50%; margin: 0; transform: translate(-50%, -54%) scale(0.56); image-rendering: auto; }
 /* Tipi come icone, in colonna in alto a destra (sotto il taglio) */
 .card .card-types { position: absolute; top: 22px; right: 8px; flex-direction: column; gap: 4px; }
 .card .card-types img { width: 20px; height: 20px; box-shadow: none; }
 .card .card-types img + img { margin: 0; }
-/* Chi esce (Migliora · Tutti): tondino in basso a destra della zona immagine, sopra la targhetta, con l'icona del membro
-   e un piccolo ⇄ sul bordo. Stretto (28px) perché stia nella fascia libera accanto allo sprite anche nelle carte basse */
-.card .out { position: absolute; right: 6px; bottom: calc(var(--plate-h) + 6px); z-index: 2; display: grid; place-items: center;
-  width: 28px; height: 28px; padding: 0; border-radius: 50%; background: color-mix(in srgb, var(--ground) 82%, transparent); border: 1px solid var(--line); }
-.card .out .icon { position: absolute; left: -6px; top: -5px; width: 15px; height: 15px; padding: 2px; box-sizing: border-box; border-radius: 50%;
-  background: var(--ground); border: 1px solid var(--line); color: var(--muted); }
-.card .out .mon-icon { margin: 0; clip-path: circle(13px at 50% 50%); }
 /* Targhetta in basso a tutta larghezza: nome e motivi. Il nome sta allo stesso punto in ogni carta: la targhetta è alta
    quanto i motivi che entrano (--reasons), anche se la carta ne ha meno; lo spazio avanzato resta vuoto in fondo */
 .card .who { position: relative; flex: none; min-width: 0; display: flex; flex-direction: column; justify-content: flex-start; gap: 2px;

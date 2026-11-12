@@ -15,10 +15,10 @@ describe('membro non legale', () => {
     const kyogre = { ...emptySet('Kyogre'), ability: 'Drizzle', moves: ['Surf'] };
     window.history.replaceState(null, '', `/#team=${encodeShare([tusk, kyogre], DEFAULT_FORMAT)}`);
     const { container } = render(<App initialLang="it" data={fixtureData} />);
-    const card = container.querySelectorAll<HTMLElement>('.slot > summary')[1];
+    const card = container.querySelectorAll<HTMLElement>('.slot-card')[1];
     expect(card.querySelector('.alert-mark.danger')).toHaveTextContent('Tier troppo alto per National Dex OU');
     await user.click(card);
-    const slot = container.querySelector<HTMLElement>('.slot[open]')!;
+    const slot = container.querySelector<HTMLElement>('.slot.open')!;
     const note = slot.querySelector('.member-problems')!;
     expect(note).toHaveTextContent('Tier troppo alto per National Dex OU');
     await user.click(within(note as HTMLElement).getByRole('button', { name: 'Cerca un sostituto' }));

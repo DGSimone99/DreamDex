@@ -411,6 +411,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
         <ol className={`suggestions cards${stale ? ' stale' : ''}`} ref={listRef} aria-busy={stale || undefined} style={listVars}>
           {pageItems.map((item, i) => {
             const usage = emptyTeam ? usageOf(item.species) : null;
+            const out = item.replaces !== undefined ? memberName(item.replaces) : undefined;
             const candidate: CandidateProps = {
               rank: page * perPage + i + 1,
               item,
@@ -420,7 +421,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
                 ? <BoxIcon set={item.set} big={teamCollapsed} />
                 : <Sprite species={item.species} item={item.set.item} size={96} animated={animated} />,
               usage,
-              out: item.replaces !== undefined ? memberName(item.replaces) : undefined,
+              out,
               picked: page * perPage + i === pickedIndex,
               selected: item === selected,
               onSelect: () => select(item),

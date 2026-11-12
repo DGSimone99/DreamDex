@@ -1235,6 +1235,7 @@ export const it: Record<keyof typeof en, string> = {
   'suggest.targetMember': "Sostituisci {member}",
   'suggest.targetFavorite': "Preferito: non viene mai proposto per la sostituzione",
   'suggest.outFor': "Al posto di {member}",
+  'suggest.outShort': "Esce {member}",
   'suggest.swapAction': "Metti al posto di {member}",
   'suggest.pages': "Pagine dei suggerimenti",
   'suggest.dblHint.add': "doppio clic: aggiungi",

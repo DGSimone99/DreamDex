@@ -4,7 +4,7 @@ import { typeName } from '../i18n/game';
 import { useLang } from '../i18n/react';
 import { typeColor } from './Sprite';
 import { TypeIcons } from './typeIcons';
-import { CandidateMarks, OutMark, PickButton, Reasons, ResultCell, candidateHandlers, isFavoriteCandidate, isLead, stateClasses, type CandidateProps } from './candidateParts';
+import { CandidateMarks, PickButton, Reasons, ResultCell, candidateHandlers, isFavoriteCandidate, isLead, stateClasses, type CandidateProps } from './candidateParts';
 
 /** Quanto il mouse deve restare sulla carta prima che lo sprite esca e parta la GIF (ms): passando sopra la griglia di corsa
  *  non si accende niente e non si scarica nessuna GIF. Il CSS lo riceve da qui (--wake sulla carta) per la luce. */
@@ -17,7 +17,7 @@ const keyboardFocus = (el: Element): boolean => {
 
 /**
  * Stile "Carte": una casella a forma di carta Masters. Targhetta col +N in alto a sinistra (#1 su magenta),
- * icone dei tipi in colonna a destra, sprite in alto al centro, nome e motivi in basso; chi esce sotto le icone.
+ * icone dei tipi in colonna a destra, sprite in alto al centro, nome e motivi in basso; chi esce nella targhetta, dopo il +N.
  * La carta ritagliata è `.card-face`: la sua cornice (anche selezionata) segue l'angolo tagliato.
  */
 export function CandidateCard(props: CandidateProps) {
@@ -53,11 +53,10 @@ export function CandidateCard(props: CandidateProps) {
       onBlur={(e: FocusEvent<HTMLLIElement>) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setFocused(false); }}>
       <div className="card-face">
         {!popped && <span className="card-sprite" aria-hidden="true">{sprite(selected)}</span>}
-        <ResultCell item={item} usage={usage} favorite={isFavoriteCandidate(item.set, lists)} className="tag" />
+        <ResultCell item={item} usage={usage} favorite={isFavoriteCandidate(item.set, lists)} className="tag" out={out} />
         <TypeIcons types={types} className="card-types" title={typeNames} />
         {/* Le icone sono decorative: i tipi agli screen reader come testo */}
         <span className="visually-hidden">{typeNames}</span>
-        {out && <OutMark member={out} />}
         <span className="who">
           <span className="name-line">
             <PickButton rank={rank} species={item.species} selected={selected} onSelect={onSelect} />

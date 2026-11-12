@@ -46,7 +46,7 @@ describe('team compresso', () => {
     const user = userEvent.setup();
     const { container } = renderTeam();
     await user.click(screen.getByRole('button', { name: 'Comprimi team' }));
-    const cards = [...container.querySelectorAll<HTMLElement>('.slot > summary')];
+    const cards = [...container.querySelectorAll<HTMLElement>('.slot-card')];
     expect(cards.map(card => card.querySelector('.mini-icon .mon-icon'))).not.toContain(null);
     await user.click(cards[1]);
     expect(container.querySelector('.workspace')).toHaveClass('editing');
@@ -59,7 +59,7 @@ describe('team compresso', () => {
     window.history.replaceState(null, '', `/#team=${encodeShare([tusk, kyogre], DEFAULT_FORMAT)}`);
     const { container } = render(<App initialLang="it" data={fixtureData} />);
     await user.click(screen.getByRole('button', { name: 'Comprimi team' }));
-    const cards = [...container.querySelectorAll<HTMLElement>('.slot > summary')];
+    const cards = [...container.querySelectorAll<HTMLElement>('.slot-card')];
     expect(cards[0].querySelector('.mini-alert')).toBeNull();
     expect(cards[1].querySelector('.mini-alert.danger')).not.toBeNull();
   });
@@ -77,15 +77,15 @@ describe('team compresso', () => {
       const { container } = renderTeam(storage);
       const band = () => container.querySelector('.band')!;
       expect(band()).not.toHaveClass('collapsed');
-      await user.click(container.querySelector<HTMLElement>('.slot > summary')!);
+      await user.click(container.querySelector<HTMLElement>('.slot-toggle')!);
       expect(band()).toHaveClass('collapsed');
       await user.click(screen.getByRole('button', { name: 'Espandi team' }));
       expect(band()).not.toHaveClass('collapsed');
       expect(loadTeamCollapsed(storage)).toBeNull();
-      await user.click(container.querySelector<HTMLElement>('.slot[open] .editor-close')!);
+      await user.click(container.querySelector<HTMLElement>('.slot.open .editor-close')!);
       expect(band()).not.toHaveClass('collapsed');
       // Riaprendo l'editor si comprime di nuovo
-      await user.click(container.querySelector<HTMLElement>('.slot > summary')!);
+      await user.click(container.querySelector<HTMLElement>('.slot-toggle')!);
       expect(band()).toHaveClass('collapsed');
     } finally {
       vi.unstubAllGlobals();

@@ -15,8 +15,8 @@ async function openEditor() {
   const user = userEvent.setup();
   window.history.replaceState(null, '', `/#team=${encodeShare([tusk, gholdengo], DEFAULT_FORMAT)}`);
   const { container } = render(<App initialLang="it" data={fixtureData} />);
-  await user.click(container.querySelector<HTMLElement>('.slot > summary')!);
-  return { user, container, slot: () => container.querySelector<HTMLElement>('.slot[open]')! };
+  await user.click(container.querySelector<HTMLElement>('.slot-toggle')!);
+  return { user, container, slot: () => container.querySelector<HTMLElement>('.slot.open')! };
 }
 
 describe('soprannome e shiny nel testo Showdown', () => {
@@ -42,8 +42,8 @@ describe('testata dell\'editor', () => {
     // Nell'editor, sopra il soprannome, la specie come piccola etichetta (solo se c'è un soprannome)
     expect(slot().querySelector('.editor-title .species-tag')).toHaveTextContent('Great Tusk');
     // Sulla carta il soprannome, con la specie nel tooltip
-    expect(slot().querySelector('summary .name')).toHaveTextContent('Tusky');
-    expect(slot().querySelector('summary .name')).toHaveAttribute('title', 'Tusky (Great Tusk)');
+    expect(slot().querySelector('.slot-card .name')).toHaveTextContent('Tusky');
+    expect(slot().querySelector('.slot-card .name')).toHaveAttribute('title', 'Tusky (Great Tusk)');
     await user.click(within(slot()).getByRole('button', { name: 'Showdown: importa o esporta il set' }));
     expect((within(slot()).getByLabelText('Set in testo Showdown') as HTMLTextAreaElement).value).toMatch(/^Tusky \(Great Tusk\)/);
   });
@@ -54,7 +54,7 @@ describe('testata dell\'editor', () => {
     expect(shiny).toHaveAttribute('aria-pressed', 'false');
     await user.click(shiny);
     expect(within(slot()).getByRole('button', { name: 'Shiny' })).toHaveAttribute('aria-pressed', 'true');
-    expect(slot().querySelector('summary .sprite')!.getAttribute('src')).toContain('gen5-shiny/');
+    expect(slot().querySelector('.slot-card .sprite')!.getAttribute('src')).toContain('gen5-shiny/');
   });
 
   it('Sostituisci sta in basso a destra, accanto al riquadro dei ruoli ma fuori', async () => {

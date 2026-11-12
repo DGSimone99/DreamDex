@@ -16,8 +16,8 @@ function renderTeam() {
   return render(<App initialLang="it" data={fixtureData} />);
 }
 const openFirst = async (user: ReturnType<typeof userEvent.setup>, container: HTMLElement) => {
-  await user.click(container.querySelector<HTMLElement>('.slot > summary')!);
-  return container.querySelector<HTMLElement>('.slot[open]')!;
+  await user.click(container.querySelector<HTMLElement>('.slot-toggle')!);
+  return container.querySelector<HTMLElement>('.slot.open')!;
 };
 
 describe('editor del set', () => {
@@ -28,7 +28,7 @@ describe('editor del set', () => {
     const before = status().textContent;
     await openFirst(user, container);
     expect(status()).toHaveTextContent(`Modifica: ${tusk.species}`);
-    await user.click(container.querySelector<HTMLElement>('.slot[open] .editor-close')!);
+    await user.click(container.querySelector<HTMLElement>('.slot.open .editor-close')!);
     expect(status().textContent).toBe(before);
   });
 
@@ -52,9 +52,9 @@ describe('editor del set', () => {
     const { container } = renderTeam();
     const slot = await openFirst(user, container);
     await user.click(within(slot).getByRole('button', { name: 'Chiudi editor' }));
-    expect(container.querySelector('.slot[open]')).toBeNull();
+    expect(container.querySelector('.slot.open')).toBeNull();
     expect(container.querySelector('.workspace')).not.toHaveClass('editing');
-    expect(container.querySelector('.slot > summary')).toHaveFocus();
+    expect(container.querySelector('.slot-toggle')).toHaveFocus();
   });
 
   it('il riquadro delle statistiche si chiama Statistiche', async () => {
