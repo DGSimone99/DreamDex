@@ -1,4 +1,6 @@
 import { fitsArchetype, teamArchetype, type Archetype, type FitArchetype, type TeamStyle } from './archetype';
+import { alignMoves, bestCoherentPreset } from './bestPreset';
+import { coherenceGaps, contradictorySet, type Gap } from './coherence';
 import type { EngineData } from './data';
 import { applyFavorites, isUserFavorite } from './lists';
 import { battleAbility, battleName, battleSpecies, isMega, toID } from './dex';
@@ -6,21 +8,35 @@ import type { Format } from './format';
 import { formatRules } from './formatRules';
 import { pokedexOf } from './formats';
 import { rateTeam } from './rating';
-import { isPassive } from './roles';
+import { detectRoles, isPassive } from './roles';
 import { scoreSets, suggest, type Suggestion } from './scoring';
 import { asSetter, asUser, stylePool } from './styleSets';
-import type { TeamSet } from './sets';
+import { emptySet, presetsForSet, type TeamSet } from './sets';
 import { benefits, enables, opposesWeather, type Condition } from './synergy';
 
 /** Stili che si possono chiedere a Completa team: meteo e Trick Room (il "motore" del team). */
 export type FillStyle = 'rain' | 'sun' | 'sand' | 'snow' | 'trickroom';
 export const FILL_STYLES: FillStyle[] = ['rain', 'sun', 'sand', 'snow', 'trickroom'];
 
-/** Tipo e stile chiesti; null = qualsiasi. */
+/**
+ * Preferiti dell'utente tra i Pokémon nuovi: 'off' nessuna precedenza, 'priority' passano davanti a voto quasi pari,
+ * 'only' i nuovi arrivano solo dai preferiti.
+ */
+export type FavoriteMode = 'off' | 'priority' | 'only';
+
+/** Tipo e stile chiesti (null = qualsiasi), i preferiti e quali set dei membri attuali tenere. */
 export interface FillChoice {
   archetype: Archetype | null;
   style: FillStyle | null;
+  /** Senza, 'priority'. */
+  favorites?: FavoriteMode;
+  /** Uno per membro attuale, true = il set resta com'è; senza, si tengono tutti. */
+  keepSets?: boolean[];
 }
+
+/** La scelta di partenza: il migliore, nessuna condizione, priorità ai preferiti, tutti i set tenuti. */
+export const defaultChoice = (team: TeamSet[]): FillChoice =>
+  ({ archetype: null, style: null, favorites: 'priority', keepSets: team.map(() => true) });
 
 export interface Proposal {
   /** I Pokémon nuovi, nell'ordine in cui entrano. */
@@ -31,6 +47,12 @@ export interface Proposal {
   grade: string;
   archetype: Archetype;
   styles: TeamStyle[];
+  /** Cosa manca al team proposto (trappole, chi le toglie, tre deboli allo stesso tipo): [] se niente. */
+  gaps: Gap[];
+  /** Posizioni dei membri attuali il cui set è cambiato (solo quelli senza "Tieni il set"). */
+  changed: number[];
+  /** Quanti dei nuovi sono preferiti dell'utente. */
+  favorites: number;
 }
 
 export const PROPOSALS_PER_ROUND = 5;
@@ -52,6 +74,20 @@ export const WEATHER_USERS = 2;
 export const WEATHER_BONUS = 3;
 /** Quanti tra chi sfrutta il meteo si aggiungono ai candidati valutati in uno slot libero. */
 export const WEATHER_EXTRA = 3;
+/** Precedenza, in punti di voto, per chi chiude un buco del team (trappole, chi le toglie, una debolezza in comune). */
+export const COHERENCE_BONUS = 3;
+/** Con 'priority', una proposta con preferiti passa davanti a una senza che ha fino a 5 punti di voto in più. */
+export const FILL_FAVORITE_MARGIN = 5;
+
+/**
+ * Ordine delle proposte: con 'priority' conta il voto più FILL_FAVORITE_MARGIN se c'è almeno un preferito (a pari
+ * valore, più preferiti, poi il voto); negli altri modi solo il voto.
+ */
+export function proposalOrder(a: Proposal, b: Proposal, mode: FavoriteMode): number {
+  if (mode !== 'priority') return b.overall - a.overall;
+  const key = (p: Proposal) => p.overall + (p.favorites > 0 ? FILL_FAVORITE_MARGIN : 0);
+  return key(b) - key(a) || b.favorites - a.favorites || b.overall - a.overall;
+}
 
 /** Il team completo ha il tipo e lo stile chiesti (secondo teamArchetype). */
 export function matchesChoice(team: TeamSet[], choice: FillChoice, format: Format): boolean {
@@ -74,12 +110,19 @@ const FIT: Partial<Record<Archetype, FitArchetype>> = { stall: 'stall', semiStal
 const PASSIVE_QUOTA: Record<Archetype, number> = { stall: 6, semiStall: 4, balance: 3, hyperOffense: 0, bulkyOffense: 0 };
 /** Un Pokémon si distingue per forma in battaglia: Charizard, Charizard-Mega-X e Charizard-Mega-Y sono tre Pokémon. */
 const formeId = (set: TeamSet) => toID(battleName(set));
+/** Posto vuoto per contare i buchi di un team non ancora pieno: nessun ruolo, nessuna debolezza, nessuna resistenza. */
+const BLANK = emptySet('');
+const sameGap = (a: Gap, b: Gap) => a.kind === b.kind && (a.kind !== 'weakness' || (b.kind === 'weakness' && a.type === b.type));
+const sameSet = (a: TeamSet, b: TeamSet) => JSON.stringify(a) === JSON.stringify(b);
 
 /**
  * Completamenti del team del tipo (e dello stile) chiesti, uno alla volta, al massimo PROPOSALS_PER_ROUND.
  * Nessun Pokémon si ripete: `exclude` (forme) parte con quelle già mostrate e cresce con ogni proposta; fa eccezione
  * chi porta lo stile, che torna solo quando non ce n'è uno nuovo. Se il formato ammette le Mega, ogni proposta ne ha
- * una (mai una seconda). Dopo ogni tentativo a vuoto produce `null`: chi consuma il generatore può rendere il controllo.
+ * una (mai una seconda). I nuovi non hanno mai set contraddittori; posto per posto ha precedenza chi chiude un buco
+ * di coerenza, ma le proposte con buchi escono lo stesso (con `gaps`). I preferiti seguono `choice.favorites`; i membri
+ * con `keepSets[i] === false` prendono il preset migliore e sensato (`changed`).
+ * Dopo ogni tentativo a vuoto produce `null`: chi consuma il generatore può rendere il controllo.
  */
 export function* fillProposals(
   team: TeamSet[], choice: FillChoice, exclude: Set<string>, format: Format, data: EngineData, minOverall = MIN_OVERALL,
@@ -88,6 +131,34 @@ export function* fillProposals(
   const rules = formatRules(format.formatId);
   const megasAllowed = pokedexOf(format) === 'natdex';
   const passive = (set: TeamSet) => isPassive(set, rules);
+  const favoriteMode = choice.favorites ?? 'priority';
+  const favorite = (set: TeamSet) => isUserFavorite(set, data.userLists);
+  // Con 'only' i nuovi arrivano solo dai preferiti
+  const allowed = (set: TeamSet) => favoriteMode !== 'only' || favorite(set);
+  /**
+   * Il set (dopo `adapt`, se c'è) se non è contraddittorio; se lo è, il primo preset dello stesso Pokémon (stessa
+   * forma) che non lo è; se nessuno va, null e il Pokémon si scarta.
+   */
+  const sensible = (set: TeamSet, adapt: (set: TeamSet) => TeamSet | null = s => s): TeamSet | null => {
+    const first = adapt(set);
+    if (first && !contradictorySet(first)) return first;
+    for (const preset of presetsForSet(data, set, format.genLimit)) {
+      if (formeId(preset.set) !== formeId(set)) continue;
+      const next = adapt(preset.set);
+      if (next && !contradictorySet(next)) return next;
+    }
+    return null;
+  };
+  const sensibleAll = (source: Suggestion[], adapt?: (set: TeamSet) => TeamSet | null) =>
+    source.map(s => { const set = sensible(s.set, adapt); return set ? (set === s.set ? s : { ...s, set }) : null; })
+      .filter((s): s is Suggestion => !!s);
+  // Ruoli per set (gli stessi set tornano a ogni slot)
+  const roleSets = new Map<TeamSet, string[]>();
+  const rolesOf = (set: TeamSet) => {
+    let roles = roleSets.get(set);
+    if (!roles) roleSets.set(set, (roles = detectRoles(set, rules) as string[]));
+    return roles;
+  };
   // Strade che non hanno portato a nulla: si saltano nei tentativi successivi del giro (non diventano esclusioni mostrate)
   const deadEnds = new Set<string>();
   // Portatori dello stile già usati in questo giro: tornando, si alternano invece di ripetere sempre il primo
@@ -114,8 +185,9 @@ export function* fillProposals(
   const candidates = (current: TeamSet[], taken: Set<string>, last: boolean): TeamSet[] => {
     // Con un meteo, fuori chi ne porta un altro o ne dipende (Swampert-Mega con Swift Swim in un team neve)
     const style = choice.style;
-    const all: Suggestion[] = suggest(current, { ...format, allowMultipleMegas: true }, data, Infinity, 'en')
-      .filter(s => !taken.has(formeId(s.set)) && !deadEnds.has(formeId(s.set)) && !(style && opposesWeather(s.set, style)));
+    // Mai un set contraddittorio: si passa al preset successivo del Pokémon, o lo si scarta
+    const all: Suggestion[] = sensibleAll(suggest(current, { ...format, allowMultipleMegas: true }, data, Infinity, 'en')
+      .filter(s => !taken.has(formeId(s.set)) && !deadEnds.has(formeId(s.set)) && !(style && opposesWeather(s.set, style)) && allowed(s.set)));
     const pool = all.filter(s => !exclude.has(formeId(s.set)));
     const narrow = (list: Suggestion[], keep: (set: TeamSet) => boolean) => {
       const kept = list.filter(s => keep(s.set));
@@ -151,7 +223,7 @@ export function* fillProposals(
         const inMeta = new Set(all.map(s => formeId(s.set)));
         const usable = stylePool(current, style, format, data)
           .filter(set => !inMeta.has(formeId(set)) && !taken.has(formeId(set)) && !deadEnds.has(formeId(set))
-            && !opposesWeather(set, style) && adapt(set, style, format.genLimit) !== null);
+            && !opposesWeather(set, style) && allowed(set) && adapt(set, style, format.genLimit) !== null);
         const wanted = [
           ...usable.filter(set => !exclude.has(formeId(set))).slice(0, freeWeatherSlot ? 2 * WEATHER_EXTRA : STYLE_POOL),
           ...(needSetter ? usable.filter(set => exclude.has(formeId(set))).slice(0, STYLE_POOL) : []),
@@ -159,9 +231,8 @@ export function* fillProposals(
         const extras = scoreSets(current, { ...format, allowMultipleMegas: true }, data, wanted, 'en');
         const adapted = (source: Suggestion[]) => {
           const seen = new Set<string>();
-          return source
-            .map(s => { const set = adapt(s.set, style, format.genLimit); return set ? { ...s, set } : null; })
-            .filter((s): s is Suggestion => !!s && !seen.has(formeId(s.set)) && !!seen.add(formeId(s.set)))
+          return sensibleAll(source, set => adapt(set, style, format.genLimit))
+            .filter(s => !seen.has(formeId(s.set)) && !!seen.add(formeId(s.set)))
             .sort((a, b) => b.score - a.score);
         };
         const fresh = noSecondMega(adapted([...pool, ...extras.filter(s => !exclude.has(formeId(s.set)))]));
@@ -201,10 +272,20 @@ export function* fillProposals(
     }
     // Negli slot liberi chi sfrutta il meteo ha una piccola precedenza (vale WEATHER_BONUS punti di voto): coverage ed equilibrio restano prima
     const bonus = (set: TeamSet) => (style && style !== 'trickroom' && !setsUp(set, style) && uses(set, style) ? WEATHER_BONUS : 0);
-    const scored = top.map((set, i) => ({ set, i, rank: overallOf([...current, set]) + bonus(set) }));
-    // A voto quasi pari (FAVORITE_MARGIN) i preferiti dell'utente passano davanti
-    return applyFavorites(scored.sort((a, b) => b.rank - a.rank || a.i - b.i), s => isUserFavorite(s.set, data.userLists), s => s.rank)
-      .map(s => s.set);
+    // Allo stesso modo chi chiude un buco (COHERENCE_BONUS): all'ultimo slot si confrontano i buchi del team pieno con
+    // quelli di adesso (il posto libero contato vuoto); negli altri slot basta che porti un ruolo che manca
+    const open = last ? coherenceGaps([...current, BLANK], rules) : [];
+    const missing = (['hazards', 'removal'] as const).filter(role => !current.some(s => rolesOf(s).includes(role)));
+    const closes = (set: TeamSet) => {
+      if (!last) return missing.some(role => rolesOf(set).includes(role));
+      const after = coherenceGaps([...current, set], rules);
+      return open.some(gap => !after.some(other => sameGap(gap, other)));
+    };
+    const coherence = (set: TeamSet) => (closes(set) ? COHERENCE_BONUS : 0);
+    const scored = top.map((set, i) => ({ set, i, rank: overallOf([...current, set]) + bonus(set) + coherence(set) }))
+      .sort((a, b) => b.rank - a.rank || a.i - b.i);
+    // Con 'priority', a voto quasi pari (FAVORITE_MARGIN) i preferiti dell'utente passano davanti
+    return (favoriteMode === 'priority' ? applyFavorites(scored, s => favorite(s.set), s => s.rank) : scored).map(s => s.set);
   };
 
   /** Riempie gli slot che mancano; al penultimo slot prova qualche alternativa se l'ultimo non quadra. */
@@ -233,9 +314,23 @@ export function* fillProposals(
       yield null;
       continue;
     }
-    const added = full.slice(team.length);
-    const rating = rateTeam(full, data, 'en');
-    const found = teamArchetype(full, rules);
+    // Membri senza "Tieni il set": il preset migliore e sensato, uno dopo l'altro, mai a costo del tipo o dello stile chiesti
+    const changed: number[] = [];
+    let final = full;
+    team.forEach((member, i) => {
+      if (choice.keepSets?.[i] !== false) return;
+      const next = bestCoherentPreset(final, i, data, format.genLimit);
+      if (next === member) return;
+      const aligned = { ...next, moves: alignMoves(member.moves, next.moves) };
+      if (sameSet(aligned, member)) return;
+      const trial = final.map((s, j) => (j === i ? aligned : s));
+      if (!matchesChoice(trial, choice, format)) return;
+      final = trial;
+      changed.push(i);
+    });
+    const added = final.slice(team.length);
+    const rating = rateTeam(final, data, 'en');
+    const found = teamArchetype(final, rules);
     if (!rating || !found || rating.overall < minOverall) {
       // Sotto il voto minimo non si mostra: si scarta il membro più debole (statistiche base, mai chi porta lo stile) e si riprova
       const weakest = [...added].filter(s => !(choice.style && setsUp(s, choice.style)))
@@ -248,6 +343,7 @@ export function* fillProposals(
     for (const set of added) exclude.add(formeId(set));
     if (choice.style) for (const set of added) if (setsUp(set, choice.style)) setterUses.set(formeId(set), (setterUses.get(formeId(set)) ?? 0) + 1);
     produced++;
-    yield { added, team: full, overall: rating.overall, grade: rating.grade, archetype: found.archetype, styles: found.styles };
+    yield { added, team: final, overall: rating.overall, grade: rating.grade, archetype: found.archetype, styles: found.styles,
+      gaps: coherenceGaps(final, rules), changed, favorites: added.filter(favorite).length };
   }
 }
