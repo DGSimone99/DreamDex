@@ -299,11 +299,10 @@ describe('SuggestionsPanel', () => {
     // La spada + i chip dei due tipi
     expect(reasons[0].querySelector('.sym-icon .icon')).not.toBeNull();
     expect(reasons[0].querySelectorAll('.sym .type-chip')).toHaveLength(2);
-    // Lo scudo: l'immune con lo scudo barrato davanti al chip (a parole nel tooltip), poi la resistenza
+    // Lo scudo, poi l'immune (per primo, senza segni in più: a parole nel tooltip) e la resistenza
     expect(reasons[1].querySelector('.sym-icon .icon')).not.toBeNull();
     const chips = [...reasons[1].querySelectorAll('.sym-chip')];
-    expect(chips.map(c => !!c.querySelector('.sym-immune .icon'))).toEqual([true, false]);
-    expect(chips[0].firstElementChild).toHaveClass('sym-immune');
+    expect(chips.map(c => c.querySelectorAll('.icon').length)).toEqual([0, 0]);
     expect(chips[0]).toHaveAttribute('title', expect.stringMatching(/^Immune a /));
     expect(chips[1]).not.toHaveAttribute('title');
     expect(reasons[1].querySelectorAll('.sym .type-chip')).toHaveLength(2);

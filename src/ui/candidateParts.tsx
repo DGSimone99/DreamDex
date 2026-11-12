@@ -242,21 +242,21 @@ function useFitLimit(count: number, key: string) {
 /**
  * I chip dei tipi (gli stessi del team, in versione compatta), su una riga sola: quelli che non entrano diventano "+N"
  * subito dopo l'ultimo chip (mai un chip tagliato a metà; la lista intera è nel tooltip).
- * Gli immuni per primi, ognuno con lo scudo barrato davanti: accanto allo scudo dei resistenti si legge come immune;
+ * Gli immuni per primi, senza segni in più (lo scudo davanti alla riga basta a dire che li regge); immune o resiste
  * a parole nel tooltip del chip.
  */
 function ChipRow({ types, immune = [] }: { types: readonly string[]; immune?: readonly string[] }) {
   const tr = useT();
   const lang = useLang();
   const all = [...immune, ...types];
-  // Nella chiave tutto quello che cambia la larghezza: i tipi, quanti hanno lo scudo barrato e la lingua
+  // Nella chiave tutto quello che cambia la larghezza: i tipi, quanti sono immuni e la lingua
   const { row, limit } = useFitLimit(all.length, `${lang}|${immune.length}|${all.join()}`);
   return (
     <span className="sym-chips" ref={row}>
       {all.slice(0, limit).map((type, i) => (
         i < immune.length ? (
           <span key={type} className="sym-chip immune" title={tr('reason.immuneTo', { type: typeName(type, lang) })}>
-            <span className="sym-immune"><Icon name="shieldx" /></span><TypeChip type={type} />
+            <TypeChip type={type} />
           </span>
         ) : (
           <span key={type} className="sym-chip"><TypeChip type={type} /></span>
