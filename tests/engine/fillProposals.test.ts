@@ -4,7 +4,7 @@ import type { EngineData } from '../../src/engine/data';
 import { battleAbility, battleName, isMega, toID } from '../../src/engine/dex';
 import { bestCoherentPreset } from '../../src/engine/bestPreset';
 import { coherenceGaps, contradictorySet } from '../../src/engine/coherence';
-import { defaultChoice, FILL_FAVORITE_MARGIN, fillProposals, matchesChoice, MAX_ATTEMPTS, MIN_OVERALL, proposalOrder, PROPOSALS_PER_ROUND, type FillChoice, type Proposal } from '../../src/engine/fillProposals';
+import { defaultChoice, FILL_FAVORITE_MARGIN, fillProposals, matchesChoice, MAX_ATTEMPTS, MAX_MISSES, MIN_OVERALL, proposalOrder, PROPOSALS_PER_ROUND, type FillChoice, type Proposal } from '../../src/engine/fillProposals';
 import { formatRules } from '../../src/engine/formatRules';
 import { DEFAULT_FORMAT, type Format } from '../../src/engine/format';
 import { rateTeam } from '../../src/engine/rating';
@@ -182,8 +182,22 @@ describe('proposte di Completa team', () => {
     const team = ['Dragapult', 'Weavile', 'Cinderace', 'Iron Valiant', 'Gholdengo'].map(name => set(name, ['Protect']));
     const steps = [...fillProposals(team, { archetype: 'stall', style: 'snow' }, new Set(), DEFAULT_FORMAT, fillData)];
     expect(steps.every(step => step === null)).toBe(true);
-    expect(steps.length).toBeLessThanOrEqual(MAX_ATTEMPTS);
+    expect(steps.length).toBeLessThanOrEqual(MAX_MISSES);
   });
+
+  it('un giro difficile insiste oltre i vecchi 8 tentativi, ma mai più di MAX_MISSES di fila né MAX_ATTEMPTS in tutto', () => {
+    // Garchomp + Hyper Offense nel meta di prova: la prima proposta arriva solo dopo più di 8 tentativi a vuoto (prima
+    // il giro si arrendeva a 8 senza proposte)
+    const steps = [...fillProposals([set('Garchomp', ['Protect'])], { archetype: 'hyperOffense', style: null }, new Set(), DEFAULT_FORMAT, fillData, 0)];
+    const firstFound = steps.findIndex(step => step !== null);
+    expect(firstFound).toBeGreaterThan(8);
+    expect(steps.filter(step => step === null).length).toBeLessThanOrEqual(MAX_ATTEMPTS);
+    let run = 0;
+    for (const step of steps) {
+      run = step === null ? run + 1 : 0;
+      expect(run).toBeLessThanOrEqual(MAX_MISSES);
+    }
+  }, 30000);
 
   it("come finisce il giro: fermato dai tentativi non vuol dire finiti, e il giro dopo ne trova altre", () => {
     /** Consuma il giro e dà le proposte e come è finito. */
@@ -195,7 +209,7 @@ describe('proposte di Completa team', () => {
         if (next.value) list.push(next.value);
       }
     };
-    // Manca solo chi toglie le trappole: tanti tentativi finiscono su proposte con il buco, il giro si ferma prima di 5
+    // Manca solo chi toglie le trappole: tanti tentativi finiscono su proposte con il buco, il giro si ferma prima di PROPOSALS_PER_ROUND
     const team = [set('Garchomp', ['Stealth Rock', 'Earthquake']), ...['Toxapex', 'Kingambit', 'Blissey'].map(name => set(name, ['Protect'])),
       set('Gardevoir', ['Hyper Voice'], 'Gardevoirite')];
     const exclude = new Set<string>();

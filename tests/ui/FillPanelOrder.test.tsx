@@ -1,7 +1,7 @@
-import { act, screen } from '@testing-library/react';
+import { act, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-import type { FillChoice, Proposal } from '../../src/engine/fillProposals';
+import { PROPOSALS_PER_ROUND, type FillChoice, type Proposal } from '../../src/engine/fillProposals';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
 import { emptySet } from '../../src/engine/sets';
 import { FillPanel } from '../../src/ui/FillPanel';
@@ -49,7 +49,7 @@ describe('Completa team: ordine dei calcoli e proposta migliore', () => {
     const user = userEvent.setup();
     renderIt(<FillPanel team={[]} format={DEFAULT_FORMAT} data={fillData} onApply={vi.fn()} onLoadTeam={vi.fn()} onClose={vi.fn()} />);
     await act(async () => {
-      for (let i = 0; i < 5; i++) main()[0].push(proposal(i));
+      for (let i = 0; i < PROPOSALS_PER_ROUND; i++) main()[0].push(proposal(i));
       main()[0].end();
     });
     expect(document.querySelectorAll('.fill-proposal.is-best')).toHaveLength(1);
@@ -82,5 +82,75 @@ describe('Completa team: ordine dei calcoli e proposta migliore', () => {
     });
     expect(screen.getByRole('button', { name: 'Altre proposte' })).toBeDisabled();
     expect(screen.getByText('Non ci sono altri Pokémon nuovi per questa scelta')).toBeInTheDocument();
+  });
+
+  it('frecce dei giri: spente all’inizio, Altre proposte apre la pagina 2, ‹ torna alla 1 senza ricalcolare', async () => {
+    calls.length = 0;
+    const user = userEvent.setup();
+    const onApply = vi.fn();
+    renderIt(<FillPanel team={[]} format={DEFAULT_FORMAT} data={fillData} onApply={onApply} onLoadTeam={vi.fn()} onClose={vi.fn()} />);
+    const prev = () => screen.getByRole('button', { name: 'Proposte precedenti' });
+    const next = () => screen.getByRole('button', { name: 'Proposte successive' });
+    const pageText = () => screen.getByRole('navigation', { name: 'Giri di proposte' }).querySelector('[aria-live]')!;
+    expect(prev()).toBeDisabled();
+    expect(next()).toBeDisabled();
+    expect(pageText()).toHaveTextContent('Pagina 1 di 1');
+    await act(async () => {
+      for (let i = 0; i < PROPOSALS_PER_ROUND; i++) main()[0].push(proposal(i));
+      main()[0].end();
+    });
+    expect(document.querySelectorAll('.fill-proposal')).toHaveLength(PROPOSALS_PER_ROUND);
+    expect(prev()).toBeDisabled();
+    expect(next()).toBeDisabled();
+    await user.click(screen.getByRole('button', { name: 'Altre proposte' }));
+    const second = main()[main().length - 1];
+    await act(async () => { second.push(proposal(20)); second.push(proposal(21)); second.end(); });
+    expect(pageText()).toHaveTextContent('Pagina 2 di 2');
+    expect(document.querySelectorAll('.fill-proposal')).toHaveLength(2);
+    // Pagina 2: posti vuoti al posto degli scheletri, nessun magenta
+    expect(document.querySelectorAll('.fill-proposals > li')).toHaveLength(PROPOSALS_PER_ROUND);
+    expect(document.querySelectorAll('.fill-proposal.is-best')).toHaveLength(0);
+    expect(prev()).toBeEnabled();
+    expect(next()).toBeDisabled();
+    const before = calls.length;
+    await user.click(prev());
+    expect(calls.length).toBe(before);
+    expect(pageText()).toHaveTextContent('Pagina 1 di 2');
+    expect(document.querySelectorAll('.fill-proposal')).toHaveLength(PROPOSALS_PER_ROUND);
+    expect(document.querySelectorAll('.fill-proposal.is-best')).toHaveLength(1);
+    expect(document.querySelectorAll('.fill-skeleton')).toHaveLength(0);
+    // "Usa" funziona anche sulle pagine di prima
+    await user.click(screen.getByRole('button', { name: 'Usa la proposta 2' }));
+    expect((onApply.mock.calls[0][0] as Proposal).overall).toBe(89);
+    expect(next()).toBeEnabled();
+    await user.click(next());
+    expect(calls.length).toBe(before);
+    expect(document.querySelectorAll('.fill-proposal')).toHaveLength(2);
+    expect(next()).toBeDisabled();
+  });
+
+  it('cambiando scelta le pagine ripartono da 1', async () => {
+    calls.length = 0;
+    const user = userEvent.setup();
+    renderIt(<FillPanel team={[]} format={DEFAULT_FORMAT} data={fillData} onApply={vi.fn()} onLoadTeam={vi.fn()} onClose={vi.fn()} />);
+    await act(async () => { main()[0].push(proposal(0)); main()[0].end(); });
+    await user.click(screen.getByRole('button', { name: 'Altre proposte' }));
+    await act(async () => { const c = main()[main().length - 1]; c.push(proposal(5)); c.end(); });
+    expect(screen.getByRole('button', { name: 'Proposte precedenti' })).toBeEnabled();
+    await user.click(screen.getByRole('radio', { name: 'Balance' }));
+    expect(screen.getByRole('button', { name: 'Proposte precedenti' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Proposte successive' })).toBeDisabled();
+    expect(screen.getByRole('navigation', { name: 'Giri di proposte' })).toHaveTextContent('1/1');
+    expect(document.querySelectorAll('.fill-proposals > li')).toHaveLength(PROPOSALS_PER_ROUND);
+  });
+
+  it('la condizione "Qualsiasi" (nessun requisito) è la prima e parte scelta', () => {
+    calls.length = 0;
+    renderIt(<FillPanel team={[]} format={DEFAULT_FORMAT} data={fillData} onApply={vi.fn()} onLoadTeam={vi.fn()} onClose={vi.fn()} />);
+    const any = within(screen.getByRole('radiogroup', { name: 'Condizione' })).getAllByRole('radio')[0];
+    expect(any).toHaveAccessibleName('Qualsiasi');
+    expect(any).toHaveAttribute('aria-checked', 'true');
+    expect(any).toHaveAccessibleDescription('Va bene ogni condizione, anche nessuna');
+    expect(screen.queryByRole('radio', { name: 'Nessuna' })).toBeNull();
   });
 });

@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
 import type { EngineData } from '../../src/engine/data';
-import type { Proposal } from '../../src/engine/fillProposals';
+import { PROPOSALS_PER_ROUND, type Proposal } from '../../src/engine/fillProposals';
 import type { TournamentTeam } from '../../src/engine/tournamentTeams';
 import { emptySet, type TeamSet } from '../../src/engine/sets';
 import { FillPanel } from '../../src/ui/FillPanel';
@@ -22,12 +22,12 @@ const shownNames = () => [...document.querySelectorAll('.fill-proposal .fill-mon
 const idle = () => expect(screen.queryByText('Calcolo delle proposte…')).toBeNull();
 
 describe('pannello Completa team', () => {
-  it('all’apertura è scelto "Il migliore" e arrivano fino a 5 proposte', async () => {
+  it('all’apertura è scelto "Il migliore" e arrivano fino a PROPOSALS_PER_ROUND proposte', async () => {
     panel();
     expect(screen.getByRole('radio', { name: 'Il migliore' })).toHaveAttribute('aria-checked', 'true');
     const buttons = await addButtons();
     expect(buttons.length).toBeGreaterThanOrEqual(1);
-    expect(buttons.length).toBeLessThanOrEqual(5);
+    expect(buttons.length).toBeLessThanOrEqual(PROPOSALS_PER_ROUND);
   });
 
   it('Usa passa la proposta a onApply', async () => {
@@ -57,7 +57,7 @@ describe('pannello Completa team', () => {
     await vi.waitFor(idle, WAIT);
     const first = shownNames();
     const more = screen.getByRole('button', { name: 'Altre proposte' });
-    // Il primo giro del fixture si ferma prima di 5 per i tentativi, non perché i Pokémon sono finiti: si può chiedere ancora
+    // Il primo giro del fixture si ferma prima di PROPOSALS_PER_ROUND per i tentativi, non perché i Pokémon sono finiti: si può chiedere ancora
     expect(more).toBeEnabled();
     expect(screen.queryByText('Non ci sono altri Pokémon nuovi per questa scelta')).toBeNull();
     await user.click(more);
@@ -102,26 +102,26 @@ describe('pannello Completa team', () => {
     expect(screen.getByRole('radio', { name: 'Il migliore' })).toHaveAttribute('aria-checked', 'true');
   }, 40000);
 
-  it('la lista ha sempre 5 posti: scheletri durante il calcolo, righe vuote dopo', async () => {
+  it('la lista ha sempre PROPOSALS_PER_ROUND posti: scheletri durante il calcolo, righe vuote dopo', async () => {
     const user = userEvent.setup();
     panel();
     const rows = () => document.querySelectorAll('.fill-proposals > li');
-    expect(rows()).toHaveLength(5);
+    expect(rows()).toHaveLength(PROPOSALS_PER_ROUND);
     expect(document.querySelectorAll('.fill-proposals > li.fill-skeleton').length).toBeGreaterThan(0);
     await vi.waitFor(idle, WAIT);
-    expect(rows()).toHaveLength(5);
+    expect(rows()).toHaveLength(PROPOSALS_PER_ROUND);
     await user.click(within(screen.getByRole('radiogroup', { name: 'Condizione' })).getByRole('radio', { name: 'Neve' }));
     await vi.waitFor(idle, WAIT);
-    expect(rows()).toHaveLength(5);
+    expect(rows()).toHaveLength(PROPOSALS_PER_ROUND);
     expect(document.querySelectorAll('.fill-proposals > li.fill-skeleton')).toHaveLength(0);
   }, 30000);
 
-  it('mentre calcola le righe restano 5: ogni proposta prende il posto di uno scheletro', async () => {
+  it('mentre calcola le righe restano PROPOSALS_PER_ROUND: ogni proposta prende il posto di uno scheletro', async () => {
     panel([{ ...emptySet('Garchomp'), moves: ['Earthquake'] }]);
     const list = document.querySelector('.fill-proposals')!;
     const kinds = () => [...list.children].map(row => row.matches('.fill-skeleton') ? 'skeleton' : row.matches('.fill-proposal') ? 'proposal' : 'other');
-    // Le proposte già arrivate stanno sopra, gli scheletri occupano il resto dei 5 posti
-    expect(list.children).toHaveLength(5);
+    // Le proposte già arrivate stanno sopra, gli scheletri occupano il resto dei posti
+    expect(list.children).toHaveLength(PROPOSALS_PER_ROUND);
     expect(kinds()).not.toContain('other');
     expect(kinds()).toContain('skeleton');
     // Lo scheletro ha le parti di una riga vera: il tuo team già al suo posto, i nuovi come sagome
@@ -134,8 +134,8 @@ describe('pannello Completa team', () => {
     await vi.waitFor(idle, WAIT);
     observer.disconnect();
     expect([...list.children].filter(row => row.matches('.fill-proposal')).length).toBeGreaterThan(0);
-    for (const n of counts) expect(n).toBe(5);
-    expect(list.children).toHaveLength(5);
+    for (const n of counts) expect(n).toBe(PROPOSALS_PER_ROUND);
+    expect(list.children).toHaveLength(PROPOSALS_PER_ROUND);
   });
 
   it('ogni proposta entra al suo posto: la lista è sempre in ordine di voto', async () => {

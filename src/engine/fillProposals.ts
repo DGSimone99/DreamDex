@@ -59,12 +59,12 @@ export interface Proposal {
   favorites: number;
 }
 
-export const PROPOSALS_PER_ROUND = 5;
+export const PROPOSALS_PER_ROUND = 7;
 
 /**
  * Come finisce un giro: 'complete' con PROPOSALS_PER_ROUND proposte; 'stopped' con meno, fermato dai tentativi a vuoto
- * (MAX_ATTEMPTS) o da un buco che i candidati rimasti non chiudono: un altro giro, con più esclusi e tentativi nuovi,
- * può trovarne altre; 'exhausted' quando non c'è altro (nessun candidato per il primo posto, oppure nessuna proposta:
+ * (MAX_ATTEMPTS, o MAX_MISSES di fila) o da un buco che i candidati rimasti non chiudono: un altro giro, con più
+ * esclusi e tentativi nuovi, può trovarne altre; 'exhausted' quando non c'è altro (nessun candidato per il primo posto, oppure nessuna proposta:
  * con gli stessi esclusi il giro dopo sarebbe identico).
  */
 export type FillEnd = 'complete' | 'stopped' | 'exhausted';
@@ -76,8 +76,13 @@ export const CANDIDATES = 25;
 export const RATE_TOP = 10;
 /** Alternative provate al penultimo slot quando l'ultimo non trova un team del tipo chiesto. */
 export const BACKTRACK_ALTERNATIVES = 3;
-/** Tentativi a vuoto, in tutto il giro, prima di arrendersi. */
-export const MAX_ATTEMPTS = 8;
+/**
+ * Tentativi a vuoto, in tutto il giro, prima di arrendersi: ogni tentativo scarta una strada e ne prova un'altra, così
+ * un giro difficile (es. Hyper Offense da zero) arriva più spesso a PROPOSALS_PER_ROUND.
+ */
+export const MAX_ATTEMPTS = 32;
+/** Tentativi a vuoto di fila, dall'ultima proposta: un giro che non trova più strade si ferma prima di MAX_ATTEMPTS. */
+export const MAX_MISSES = 16;
 /** Pokémon fuori dal meta valutati per slot quando serve chi porta o sfrutta lo stile. */
 export const STYLE_POOL = 20;
 /** Membri che sfruttano il meteo, oltre a chi lo porta (se ce ne sono abbastanza). */
@@ -369,9 +374,11 @@ export function* fillProposals(
   const held: Proposal[] = [];
   let produced = 0;
   let attempts = 0;
+  // Tentativi a vuoto dall'ultima proposta
+  let misses = 0;
   // Nessun candidato per il primo posto senza strade scartate in questo giro: i Pokémon nuovi sono davvero finiti
   let empty = false;
-  while (produced < PROPOSALS_PER_ROUND && attempts < MAX_ATTEMPTS) {
+  while (produced < PROPOSALS_PER_ROUND && misses < MAX_MISSES && attempts < MAX_ATTEMPTS) {
     const first = candidates(team, new Set(), team.length === 5);
     if (!first.length) { empty = !deadEnds.size; break; }
     const full = build(team, new Set(), first);
@@ -379,6 +386,7 @@ export function* fillProposals(
       // Cambia strada: il primo candidato di questo giro non porta a un team valido
       deadEnds.add(formeId(first[0]));
       attempts++;
+      misses++;
       yield null;
       continue;
     }
@@ -407,6 +415,7 @@ export function* fillProposals(
       // Sotto il voto minimo non si mostra: si scarta il membro più debole e si riprova
       deadEnds.add(formeId(weakestOf(added, added)));
       attempts++;
+      misses++;
       yield null;
       continue;
     }
@@ -417,19 +426,23 @@ export function* fillProposals(
       // Un buco che un altro candidato poteva chiudere: la proposta resta da parte e si cambia strada; se tra i
       // candidati rimasti nessuno lo chiude più, il giro finisce qui
       held.push(proposal);
-      const left = roundPool().filter(set => !exclude.has(formeId(set)) && !deadEnds.has(formeId(set)));
+      // Una Mega che chiuderebbe il buco non entra se il team ne ha già una
+      const megaIn = final.some(isMega);
+      const left = roundPool().filter(set => !exclude.has(formeId(set)) && !deadEnds.has(formeId(set)) && !(megaIn && isMega(set)));
       const closable = open.some(gap => (gap.kind === 'weakness' ? left.some(set => resists(set, gap.type))
         : left.some(set => rolesOf(set).includes(gap.kind))));
       if (!closable) break;
       const weak = open.flatMap(gap => (gap.kind === 'weakness' ? added.filter(s => defensiveMultiplier(gap.type, s) > 1) : []));
       deadEnds.add(formeId(weakestOf(weak.length ? weak : added, added)));
       attempts++;
+      misses++;
       yield null;
       continue;
     }
     for (const set of added) exclude.add(formeId(set));
     if (choice.style) for (const set of added) if (setsUp(set, choice.style)) setterUses.set(formeId(set), (setterUses.get(formeId(set)) ?? 0) + 1);
     produced++;
+    misses = 0;
     yield proposal;
   }
   const end = (): FillEnd => (produced >= PROPOSALS_PER_ROUND ? 'complete' : empty || !produced ? 'exhausted' : 'stopped');

@@ -47,7 +47,8 @@ const evsText = (set: TeamSet, lang: Lang) =>
 
 /**
  * Completa team: due schede. Proposte: tipo di team, condizione (meteo / Trick Room) e preferiti a scelta, i set dei
- * membri da tenere o lasciar cambiare, 5 completamenti senza Pokémon nuovi in comune. Le proposte arrivano una alla
+ * membri da tenere o lasciar cambiare, PROPOSALS_PER_ROUND completamenti per giro senza Pokémon nuovi in comune; i giri già
+ * calcolati si sfogliano con le frecce (‹ 1/3 ›) senza ricalcolarli. Le proposte arrivano una alla
  * volta dal calcolo in sottofondo e ognuna entra al suo posto; cambiando scelta il calcolo riparte. I tipi senza
  * proposte (per le altre scelte) si oscurano, e se quello scelto è vuoto si passa al primo che ne ha.
  * Team da torneo: i team della fonte per il formato, prima quelli con più Pokémon in comune.
@@ -66,7 +67,13 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
   const choice = useMemo<FillChoice>(() => ({ ...pickState, favorites, keepSets: keep }),
     [pickState, favorites, keepKey]); // eslint-disable-line react-hooks/exhaustive-deps
   const [round, setRound] = useState(0);
-  const [proposals, setProposals] = useState<Proposal[]>([]);
+  // Le proposte di ogni giro già calcolato (l'ultimo può essere ancora in corso): le frecce le sfogliano senza ricalcolare
+  const [pages, setPages] = useState<Proposal[][]>([[]]);
+  const [page, setPage] = useState(0);
+  const proposals = pages[round] ?? [];
+  const shown = pages[page] ?? [];
+  // Si guarda il giro in calcolo: solo lì ci sono gli scheletri
+  const watching = page === round;
   const [busy, setBusy] = useState(true);
   const [failed, setFailed] = useState(false);
   // Il giro è arrivato in fondo e i Pokémon nuovi sono finiti: "Altre proposte" non troverebbe niente (un giro più
@@ -108,7 +115,9 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
       lastReset.current = resetKey;
       exclude.current = new Set();
     }
-    setProposals([]);
+    // Un giro nuovo prende la pagina dopo le altre e la mostra; ripartendo (giro 0) le pagine di prima si buttano
+    setPages(list => [...list.slice(0, round), []]);
+    setPage(round);
     setBusy(true);
     setFailed(false);
     setExhausted(false);
@@ -119,7 +128,7 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
     const call = streamFill(team, choice, exclude.current, format, data, proposal => {
       if (!live) return;
       found++;
-      setProposals(list => insertSorted(list, proposal, mode));
+      setPages(list => list.map((items, i) => (i === round ? insertSorted(items, proposal, mode) : items)));
       setChecksReady(key);
     });
     void call.done.then(done => {
@@ -200,7 +209,7 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
     setRound(0);
   };
   // Il magenta (riga e pulsante) solo sulla migliore in assoluto: la prima del primo giro
-  const best = (i: number) => round === 0 && i === 0;
+  const best = (i: number) => page === 0 && i === 0;
   const onlyFavorites = favorites === 'only';
   const setTitle = (set: TeamSet) => [
     battleName(set),
@@ -226,9 +235,10 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
   const gapText = (gap: Gap) => gap.kind === 'weakness'
     ? t(gap.count > 3 ? 'fill.gap.weaknessMany' : 'fill.gap.weakness', { n: gap.count, type: typeName(gap.type, lang) })
     : t(`fill.gap.${gap.kind}`);
-  const radio = (key: string, checked: boolean, label: string, onClick: () => void, note?: string, disabled = false) => (
+  // `tip`: spiegazione senza frase visibile (nel tooltip e per i lettori di schermo)
+  const radio = (key: string, checked: boolean, label: string, onClick: () => void, note?: string, disabled = false, tip?: string) => (
     <button key={key} type="button" role="radio" aria-checked={checked} disabled={disabled} aria-label={label}
-      aria-describedby={note ? `${ids}-${key}` : undefined}
+      aria-describedby={note ? `${ids}-${key}` : undefined} aria-description={tip} title={tip}
       className={`fill-option${disabled ? ' empty' : ''}`} onClick={onClick}>
       <strong>{label}</strong>
       {note && <small id={`${ids}-${key}`}>{note}</small>}
@@ -300,7 +310,7 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
           <div className="fill-group">
             <span className="fill-head" aria-hidden="true">{t('fill.style')}</span>
             <div className="fill-styles" role="radiogroup" aria-label={t('fill.style')}>
-              {radio('none', pickState.style === null, t('fill.noStyle'), () => pick({ ...pickState, style: null }))}
+              {radio('none', pickState.style === null, t('fill.noStyle'), () => pick({ ...pickState, style: null }), undefined, false, t('fill.noStyleNote'))}
               {FILL_STYLES.map((style: FillStyle) => radio(style, pickState.style === style, t(`teamStyle.${style}`), () => pick({ ...pickState, style })))}
             </div>
           </div>
@@ -316,7 +326,7 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
 
         <div className="fill-main">
           <ol className="fill-proposals">
-            {proposals.map((proposal, i) => (
+            {shown.map((proposal, i) => (
               <li key={proposal.added.map(s => `${s.species}@${s.item}`).join('|')} className={`fill-row fill-proposal${best(i) ? ' is-best' : ''}`}>
                 <span className="fill-mons">
                   {proposal.team.map((set, j) => {
@@ -356,10 +366,11 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
                 )}
               </li>
             ))}
-            {/* Sempre 5 posti: la lista non cambia altezza. Lo scheletro ha le parti di una riga vera (il tuo team già al
-                suo posto, i nuovi ancora da arrivare) e ogni proposta che arriva ne prende il posto; finito il calcolo, righe vuote */}
-            {Array.from({ length: Math.max(0, PROPOSALS_PER_ROUND - proposals.length) }, (_, i) => (
-              <li key={`slot-${i}`} aria-hidden="true" className={`fill-row ${busy ? 'fill-skeleton' : 'fill-placeholder'}`}>
+            {/* Sempre PROPOSALS_PER_ROUND posti: la lista non cambia altezza. Lo scheletro ha le parti di una riga vera (il
+                tuo team già al suo posto, i nuovi ancora da arrivare) e ogni proposta che arriva ne prende il posto; finito il
+                calcolo, e nelle pagine dei giri già finiti, righe vuote */}
+            {Array.from({ length: Math.max(0, PROPOSALS_PER_ROUND - shown.length) }, (_, i) => (
+              <li key={`slot-${i}`} aria-hidden="true" className={`fill-row ${busy && watching ? 'fill-skeleton' : 'fill-placeholder'}`}>
                 <span className="fill-mons">
                   {Array.from({ length: 6 }, (_, j) => (
                     <span key={j} className={`fill-mon ${j < team.length ? 'is-mine' : 'is-new'}`}>
@@ -381,6 +392,19 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
           <div className="fill-foot">
             <p className="fill-status" role="status" aria-live="polite">{status}</p>
             {banned > 0 && <p className="banned-note">{t(banned === 1 ? 'lists.bannedExcludedOne' : 'lists.bannedExcluded', { n: banned })}</p>}
+            {/* Giri già calcolati: ‹ 2/3 ›, come la paginazione dei candidati; le frecce non ricalcolano niente */}
+            <nav className="pager fill-pager" aria-label={t('fill.pages')}>
+              <button type="button" className="step" aria-label={t('fill.prev')} disabled={page === 0} onClick={() => setPage(p => p - 1)}>
+                <Icon name="prev" />
+              </button>
+              <span className="pager-count" aria-live="polite" aria-atomic="true">
+                <span className="visually-hidden">{t('fill.page', { n: page + 1, total: pages.length })}</span>
+                <span aria-hidden="true">{page + 1}/{pages.length}</span>
+              </span>
+              <button type="button" className="step" aria-label={t('fill.next')} disabled={page >= pages.length - 1} onClick={() => setPage(p => p + 1)}>
+                <Icon name="next" />
+              </button>
+            </nav>
             <button type="button" className="fill-more" disabled={busy || exhausted} onClick={() => setRound(r => r + 1)}>{t('fill.more')}</button>
           </div>
         </div>

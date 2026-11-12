@@ -81,6 +81,8 @@
 
 .fill-main { grid-area: main; display: grid; gap: 8px; align-content: start; min-width: 0; }
 .fill-proposals { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
+/* Senza il margine generico dei li: la distanza tra le righe è solo il gap, così sette righe stanno nel pannello */
+.fill-proposals > li { margin: 0; }
 /* Una riga della lista: proposta, scheletro e posto vuoto hanno le stesse parti, quindi la stessa altezza */
 .fill-row {
   min-height: 76px; box-sizing: border-box;
@@ -147,6 +149,12 @@
 .fill-status { flex: 1; margin: 0; font-size: 13px; line-height: 1.35; color: var(--muted); }
 .fill-foot .banned-note { margin: 0; }
 .fill-more { flex: none; }
+/* Frecce dei giri già calcolati, accanto ad "Altre proposte": la paginazione dei candidati, con bersagli più grandi */
+.fill-pager { flex: none; margin-left: 0; height: auto; gap: 0; }
+.fill-pager .step { width: 32px; height: 32px; border-radius: 3px; }
+.fill-pager .step:hover:not(:disabled) { background: var(--raised); }
+.fill-pager .step .icon { width: 16px; height: 16px; }
+.fill-pager .pager-count { min-width: 38px; font-size: 13px; }
 
 /* Scheda Team da torneo: occupa l'altezza del pannello, la griglia scorre dentro. Prima quelli con Pokémon in comune */
 .fill-tournament { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 10px; min-width: 0; min-height: 0; }

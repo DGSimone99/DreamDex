@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { defaultChoice, type Proposal } from '../../src/engine/fillProposals';
+import { defaultChoice, PROPOSALS_PER_ROUND, type Proposal } from '../../src/engine/fillProposals';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
 import type { EngineData } from '../../src/engine/data';
 import { emptySet as defaultSet } from '../../src/engine/sets';
@@ -10,7 +10,7 @@ import { fillData } from '../fixtures/fillData';
 const tick = () => new Promise<void>(resolve => setTimeout(resolve, 0));
 
 describe('streamFill (senza calcolo in sottofondo)', () => {
-  it('consegna da 1 a 5 proposte una alla volta e poi finisce', async () => {
+  it('consegna da 1 a PROPOSALS_PER_ROUND proposte una alla volta e poi finisce', async () => {
     const got: Proposal[] = [];
     const { done } = streamFill([], { archetype: 'stall', style: null }, new Set(), DEFAULT_FORMAT, fillData, p => got.push(p));
     const { exclude, failed, exhausted } = await done;
@@ -18,7 +18,7 @@ describe('streamFill (senza calcolo in sottofondo)', () => {
     // Il giro si è fermato per i tentativi, non perché i Pokémon sono finiti
     expect(exhausted).toBe(false);
     expect(got.length).toBeGreaterThanOrEqual(1);
-    expect(got.length).toBeLessThanOrEqual(5);
+    expect(got.length).toBeLessThanOrEqual(PROPOSALS_PER_ROUND);
     // Le forme proposte finiscono fra gli esclusi: "Altre proposte" non le ripete
     expect(exclude.size).toBeGreaterThanOrEqual(got[0].added.length);
     // Il giro dopo non trova più niente: finiti
