@@ -13,7 +13,7 @@ export interface AdviceParams { team: TeamSet[]; format: Format; problems: Coach
 
 /** I dati del formato per il calcolo in sottofondo: ogni parte grande è un numero (0 = assente), il resto com'è. */
 export interface WorkerData {
-  stats: number; sets: number; fallback: number; presets: number; fallbackPresets: number; fallbackStats: number; userLists: number;
+  stats: number; sets: number; fallback: number; presets: number; fallbackPresets: number; fallbackStats: number; userLists: number; tournamentTeams: number;
   ignoreMeta?: boolean; allowMultipleMegas?: boolean; formatId?: FormatId;
 }
 

@@ -2,6 +2,7 @@ import type { EngineData } from '../engine/data';
 import type { TierOverrides } from '../engine/dex';
 import { DEFAULT_FORMAT, type FormatId } from '../engine/format';
 import { dataSource, type FormatBans } from '../engine/formats';
+import { normalizeTeams } from '../engine/tournamentTeams';
 import type { PresetsData, SetsData } from '../engine/sets';
 import type { FallbackStats, SpeciesStats, StatsData, StatsMeta } from '../engine/stats';
 import type { GameNames } from '../i18n/game';
@@ -22,7 +23,7 @@ export async function readSource(loaders: Loaders, source: string): Promise<Engi
     return loader ? ((await loader()) as T) : null;
   };
   try {
-    const [pokemon, meta, sets, fallback, presets, fallbackPresets, fallbackStats] = await Promise.all([
+    const [pokemon, meta, sets, fallback, presets, fallbackPresets, fallbackStats, teams] = await Promise.all([
       read<Record<string, SpeciesStats>>(source, 'stats'),
       read<StatsMeta>(source, 'meta'),
       read<SetsData>(source, 'sets'),
@@ -30,9 +31,10 @@ export async function readSource(loaders: Loaders, source: string): Promise<Engi
       read<PresetsData>(source, 'presets').catch(() => null),
       read<PresetsData>(FALLBACK_DIR, 'presets').catch(() => null),
       read<FallbackStats>(FALLBACK_DIR, 'stats').catch(() => null),
+      read<unknown>(source, 'teams').catch(() => null),
     ]);
     const stats: StatsData | null = pokemon && meta ? { meta, pokemon } : null;
-    return { ...(stats || sets ? { stats, sets } : { stats: null, sets: null }), fallback, presets, fallbackPresets, fallbackStats };
+    return { ...(stats || sets ? { stats, sets } : { stats: null, sets: null }), fallback, presets, fallbackPresets, fallbackStats, tournamentTeams: teams ? normalizeTeams(teams) : null };
   } catch (error) {
     console.error(`Dati Smogon di ${source} non leggibili, rilancia npm run fetch-data:`, error);
     return EMPTY;

@@ -97,14 +97,14 @@ class RankingClient {
     const wire: WorkerData = {
       stats: this.idOf(data.stats), sets: this.idOf(data.sets), fallback: this.idOf(data.fallback),
       presets: this.idOf(data.presets), fallbackPresets: this.idOf(data.fallbackPresets),
-      fallbackStats: this.idOf(data.fallbackStats), userLists: this.idOf(data.userLists),
+      fallbackStats: this.idOf(data.fallbackStats), tournamentTeams: this.idOf(data.tournamentTeams), userLists: this.idOf(data.userLists),
       ignoreMeta: data.ignoreMeta, allowMultipleMegas: data.allowMultipleMegas, formatId: data.formatId,
     };
     // Le liste dell'utente cambiano spesso (preferiti, bannati): quelle vecchie non servono più
     const drop = this.lists && this.lists !== wire.userLists ? [this.lists] : [];
     if (drop.length) this.values.delete(this.lists);
     this.lists = wire.userLists;
-    const needed = [wire.stats, wire.sets, wire.fallback, wire.presets, wire.fallbackPresets, wire.fallbackStats, wire.userLists].filter(Boolean);
+    const needed = [wire.stats, wire.sets, wire.fallback, wire.presets, wire.fallbackPresets, wire.fallbackStats, wire.tournamentTeams, wire.userLists].filter(Boolean);
     for (const worker of this.workers) {
       const parts = needed.filter(id => !worker.sent.has(id)).map(id => [id, this.values.get(id)] as [number, unknown]);
       for (const [id] of parts) worker.sent.add(id);

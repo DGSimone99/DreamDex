@@ -35,7 +35,7 @@ function engineData(d: WorkerData): EngineData {
   if (!data) {
     data = {
       stats: part(d.stats), sets: part(d.sets), fallback: part(d.fallback), presets: part(d.presets),
-      fallbackPresets: part(d.fallbackPresets), fallbackStats: part(d.fallbackStats), userLists: part(d.userLists) ?? undefined,
+      fallbackPresets: part(d.fallbackPresets), fallbackStats: part(d.fallbackStats), tournamentTeams: part(d.tournamentTeams), userLists: part(d.userLists) ?? undefined,
       ignoreMeta: d.ignoreMeta, allowMultipleMegas: d.allowMultipleMegas, formatId: d.formatId,
     };
     if (datas.size >= 20) datas.clear();
