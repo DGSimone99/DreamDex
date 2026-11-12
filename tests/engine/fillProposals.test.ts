@@ -292,6 +292,35 @@ describe('Completa team 2.0: preferiti in tre modi, coerenza, set dei membri', (
     expect(list.some(p => p.changed.includes(0))).toBe(true);
   });
 
+  it('set sbloccato: se il preset vale meno del set di adesso, il set resta com’è', () => {
+    const strong = { ...set('Garchomp', ['Earthquake', 'Outrage', 'Stealth Rock', 'Swords Dance'], 'Rocky Helmet'), ability: 'Rough Skin' };
+    const data: EngineData = { ...fillData, presets: { Garchomp: [{ name: 'Debole', format: 'gen9nationaldex', set: set('Garchomp', ['Splash']) }] } };
+    const team = [strong, set('Kingambit', ['Kowtow Cleave'])];
+    const list = take(team, { ...any, keepSets: [false, true] }, new Set(), DEFAULT_FORMAT, data);
+    expect(list.length).toBeGreaterThanOrEqual(1);
+    for (const p of list) {
+      expect(p.changed).toEqual([]);
+      expect(p.team[0]).toEqual(strong);
+    }
+  });
+
+  it('set sbloccato: un preset senza trappole non apre il buco delle trappole', () => {
+    // Ting-Lu è l'unico che mette le trappole (gli altri che le mettono sono bannati); il suo preset non ha Stealth Rock
+    const data: EngineData = { ...fillData,
+      userLists: lists([], ['Skarmory', 'Clodsire', 'Gliscor', 'Blissey', 'Torkoal', 'Toxapex', 'Garchomp']),
+      presets: { 'Ting-Lu': [{ name: 'Senza trappole', format: 'gen9nationaldex',
+        set: { ...set('Ting-Lu', ['Earthquake', 'Ruination', 'Payback', 'Heavy Slam'], 'Leftovers'), ability: 'Vessel of Ruin' } }] } };
+    const team = [set('Ting-Lu', ['Stealth Rock', 'Tackle']), set('Kingambit', ['Kowtow Cleave'])];
+    const list = take(team, { ...any, keepSets: [false, true] }, new Set(), DEFAULT_FORMAT, data);
+    expect(list.length).toBeGreaterThanOrEqual(1);
+    for (const p of list) {
+      expect(p.gaps).not.toContainEqual({ kind: 'hazards' });
+      // Il cambio non apre buchi che col set di prima non c'erano
+      const before = coherenceGaps([team[0], ...p.team.slice(1)], rules);
+      for (const gap of p.gaps) expect(before).toContainEqual(gap);
+    }
+  });
+
   it('set tenuti (scelta di partenza): nessun cambio e membri identici', () => {
     const team = [set('Garchomp', ['Protect']), set('Kingambit', ['Kowtow Cleave'])];
     const list = take(team, defaultChoice(team));

@@ -314,7 +314,8 @@ export function* fillProposals(
       yield null;
       continue;
     }
-    // Membri senza "Tieni il set": il preset migliore e sensato, uno dopo l'altro, mai a costo del tipo o dello stile chiesti
+    // Membri senza "Tieni il set": il preset migliore e sensato, uno dopo l'altro, solo se alza il voto del team e mai
+    // a costo del tipo o dello stile chiesti né di un buco di coerenza nuovo (es. Garchomp che perde Stealth Rock)
     const changed: number[] = [];
     let final = full;
     team.forEach((member, i) => {
@@ -324,7 +325,10 @@ export function* fillProposals(
       const aligned = { ...next, moves: alignMoves(member.moves, next.moves) };
       if (sameSet(aligned, member)) return;
       const trial = final.map((s, j) => (j === i ? aligned : s));
+      if (overallOf(trial) <= overallOf(final)) return;
       if (!matchesChoice(trial, choice, format)) return;
+      const before = coherenceGaps(final, rules);
+      if (coherenceGaps(trial, rules).some(gap => !before.some(other => sameGap(gap, other)))) return;
       final = trial;
       changed.push(i);
     });
