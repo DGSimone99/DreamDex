@@ -3,15 +3,15 @@ import { createPortal } from 'react-dom';
 import { family, type SetChange } from '../engine/bestPreset';
 import { improveSetsLater } from './useRanking';
 import type { EngineData } from '../engine/data';
-import { battleAbility, battleSpecies } from '../engine/dex';
+import { battleAbility } from '../engine/dex';
 import { gradeFor, rateTeam } from '../engine/rating';
 import { STAT_IDS, type TeamSet } from '../engine/sets';
-import { gameName, natureName, statShort } from '../i18n/game';
+import { gameName, natureName, statShort, typeName } from '../i18n/game';
 import { useLang, useT } from '../i18n/react';
 import { Icon } from './icons';
 import { ItemIcon } from './ItemIcon';
 import { ModalLock } from './ModalLock';
-import { Sprite, typeColor } from './Sprite';
+import { Sprite } from './Sprite';
 import { EeveeMoment } from './EeveeMoment';
 import { PokemonIcon } from './PokemonName';
 import { MoveName } from './TypeText';
@@ -20,34 +20,47 @@ const evsText = (set: TeamSet, lang: ReturnType<typeof useLang>) =>
   STAT_IDS.filter(stat => (set.evs[stat] ?? 0) > 0).map(stat => `${set.evs[stat]} ${statShort(stat, lang)}`).join(' / ');
 const sameEvs = (a: TeamSet, b: TeamSet) => STAT_IDS.every(stat => (a.evs[stat] ?? 0) === (b.evs[stat] ?? 0));
 
-/** Un pezzo del set: in verde quando nel set nuovo è diverso da adesso. */
-function Part({ fresh, children }: { fresh?: boolean; children: ReactNode }) {
-  return <span className={fresh ? 'is-new' : undefined}>{children}</span>;
+/** Un cambio: cosa (Strumento, Mossa…), com'è adesso e com'è dopo. */
+interface Diff { label: string; from: ReactNode; to: ReactNode }
+
+/** Solo ciò che cambia fra i due set, nell'ordine del set: strumento, abilità, natura, EV, poi le mosse posto per posto. */
+function diffsOf(before: TeamSet, after: TeamSet, t: ReturnType<typeof useT>, lang: ReturnType<typeof useLang>): Diff[] {
+  const none = <span className="improve-none-value">—</span>;
+  const item = (name: string) => (name ? <><ItemIcon item={name} /> {gameName('item', name, lang)}</> : t('improve.noItem'));
+  const out: Diff[] = [];
+  if (before.item !== after.item) out.push({ label: t('improve.item'), from: item(before.item), to: item(after.item) });
+  const [a, b] = [battleAbility(before), battleAbility(after)];
+  if (a !== b) out.push({ label: t('improve.ability'), from: a ? gameName('ability', a, lang) : none, to: b ? gameName('ability', b, lang) : none });
+  if (before.nature !== after.nature) out.push({ label: t('improve.nature'), from: before.nature ? natureName(before.nature, lang) : none, to: after.nature ? natureName(after.nature, lang) : none });
+  if (!sameEvs(before, after)) out.push({ label: t('improve.evs'), from: evsText(before, lang) || none, to: evsText(after, lang) || none });
+  if (before.teraType !== after.teraType) out.push({ label: t('editor.tera'), from: before.teraType ? typeName(before.teraType, lang) : none, to: after.teraType ? typeName(after.teraType, lang) : none });
+  // Le mosse posto per posto (alignMoves: chi resta tiene il suo posto), così ogni riga dice chi lascia il posto a chi
+  const slots = Math.max(before.moves.length, after.moves.length);
+  for (let i = 0; i < slots; i++) {
+    const [from, to] = [before.moves[i] ?? '', after.moves[i] ?? ''];
+    if ((from && to && family(from) === family(to)) || (!from && !to)) continue;
+    out.push({ label: t('improve.move'), from: from ? <MoveName move={from} plain /> : none, to: to ? <MoveName move={to} plain /> : none });
+  }
+  return out;
 }
 
-/** Il set in breve: strumento, abilità · natura, EV, le mosse. `than` = il set di prima (per segnare in verde cosa cambia). */
-function SetBrief({ set, than, label, className }: { set: TeamSet; than?: TeamSet; label: string; className: string }) {
-  const lang = useLang();
+/** La colonna di un membro: solo i cambi, "prima" spento e "→ dopo" in verde; in fondo che il resto non cambia. */
+function ChangeList({ change }: { change: SetChange }) {
   const t = useT();
-  const ability = battleAbility(set);
-  const known = new Set(than?.moves.filter(Boolean).map(family));
+  const lang = useLang();
+  const diffs = diffsOf(change.before, change.after, t, lang);
   return (
-    <div className={`improve-set ${className}`}>
-      {/* Il nome della parte (Adesso / Dopo) per i lettori di schermo: a vista lo dicono il posto e la freccia */}
-      <span className="visually-hidden">{label}</span>
-      <Part fresh={!!than && than.item !== set.item}>
-        {set.item ? <><ItemIcon item={set.item} /> {gameName('item', set.item, lang)}</> : t('improve.noItem')}
-      </Part>
-      <span className="improve-line">
-        {ability && <Part fresh={!!than && battleAbility(than) !== ability}>{gameName('ability', ability, lang)}</Part>}
-        {set.nature && <>{ability && ' · '}<Part fresh={!!than && than.nature !== set.nature}>{natureName(set.nature, lang)}</Part></>}
-      </span>
-      {evsText(set, lang) && <Part fresh={!!than && !sameEvs(than, set)}><span className="improve-evs">{evsText(set, lang)}</span></Part>}
-      <ul className="improve-moves" aria-label={t('editor.moves')}>
-        {set.moves.filter(Boolean).map(move => (
-          <li key={move} className={than && !known.has(family(move)) ? 'is-new' : undefined}><MoveName move={move} plain /></li>
+    <div className="improve-diffs">
+      <dl>
+        {diffs.map((d, i) => (
+          <div key={i} className="improve-diff">
+            <dt>{d.label}</dt>
+            <dd className="from"><span className="visually-hidden">{t('improve.now')}: </span>{d.from}</dd>
+            <dd className="to"><span aria-hidden="true">→ </span><span className="visually-hidden">{t('improve.after')}: </span>{d.to}</dd>
+          </div>
         ))}
-      </ul>
+      </dl>
+      <p className="improve-rest">{t('improve.rest')}</p>
     </div>
   );
 }
@@ -145,10 +158,8 @@ export function ImproveSetsDialog({ team, data, genLimit, onApply, onCancel }: {
                 {changes.map((change, i) => {
                   const name = change.before.species;
                   const on = picked.has(i);
-                  const types = battleSpecies(change.after)?.types ?? [];
-                  const colors = { '--t1': typeColor(types[0] ?? ''), '--t2': typeColor(types[1] ?? types[0] ?? '') } as CSSProperties;
                   return (
-                    <li key={i} className={`improve-col${!change.changed ? ' same' : on ? '' : ' off'}`} style={colors}>
+                    <li key={i} className={`improve-col${!change.changed ? ' same' : on ? '' : ' off'}`}>
                       <div className="improve-col-head">
                         {change.changed
                           ? <input type="checkbox" checked={on} onChange={() => toggle(i)} aria-label={t('improve.include', { name })} />
@@ -161,11 +172,7 @@ export function ImproveSetsDialog({ team, data, genLimit, onApply, onCancel }: {
                             {change.gain > 0 ? `+${change.gain}` : change.gain === 0 ? '±0' : change.gain}</span>
                           : <span className="improve-gain same">{t('improve.sameShort')}</span>}
                       </div>
-                      <SetBrief set={change.before} label={t('improve.now')} className="is-before" />
-                      {change.changed ? <>
-                        <span className="improve-down" aria-hidden="true"><Icon name="arrow" /> {t('improve.after')}</span>
-                        <SetBrief set={change.after} than={change.before} label={t('improve.after')} className="is-after" />
-                      </> : <p className="improve-same"><Icon name="check" /> {t('improve.same')}</p>}
+                      {change.changed ? <ChangeList change={change} /> : <p className="improve-same"><Icon name="check" /> {t('improve.same')}</p>}
                     </li>
                   );
                 })}

@@ -62,6 +62,8 @@ describe('Migliora i set (team pieno): prima una conferma', () => {
     await user.click(toggle);
     expect(toggle).toHaveAttribute('aria-expanded', 'true');
     expect(toggle).toHaveTextContent('Nascondi cambiamenti');
+    // Ogni colonna mostra solo i cambi e dice che il resto non cambia
+    expect(within(dialog()).getAllByText('Il resto è uguale').length).toBeGreaterThan(0);
     const boxes = within(dialog()).getAllByRole('checkbox', { name: /^Includi / });
     expect(boxes.length).toBeGreaterThan(0);
     boxes.forEach(box => expect(box).toBeChecked());
