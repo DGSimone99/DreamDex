@@ -305,10 +305,11 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
       ? { kind: 'paste', from: battleName(before) }
       : { kind: 'replace', from: battleName(before), to: battleName(set) }, after);
   };
-  // Migliora i set (il preset migliore per ogni membro), o team svuotato: si annullano come le altre modifiche
-  const bulk = (kind: 'presets' | 'fill' | 'clear', next: TeamSet[]) => {
+  // Migliora i set (il preset migliore per ogni membro), Completa team, team da torneo caricato o team svuotato: si annullano come le altre modifiche
+  const bulk = (kind: 'presets' | 'fill' | 'clear' | 'tournament', next: TeamSet[]) => {
     const after = changeTeam(next);
     remember(kind === 'clear' ? { kind: 'clear', from: '' }
+      : kind === 'tournament' ? { kind: 'tournament', from: '' }
       : { kind: 'presets', from: String(rating?.overall ?? '—'), to: String(rateTeam(after, data, lang)?.overall ?? ''),
         added: after.length - team.length, created: team.length === 0 }, after);
   };

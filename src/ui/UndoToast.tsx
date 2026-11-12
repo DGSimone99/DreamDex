@@ -8,7 +8,7 @@ export interface UndoAction {
   /** Cambia a ogni nuova azione: riparte il tempo. */
   id: number;
   /** Membro rimosso o sostituito, o team caricato da un link. */
-  kind: 'remove' | 'add' | 'replace' | 'paste' | 'presets' | 'clear' | 'load' | 'clearList' | 'mySetDelete' | 'mySetOverwrite' | 'move' | 'savedDelete';
+  kind: 'remove' | 'add' | 'replace' | 'paste' | 'presets' | 'clear' | 'load' | 'clearList' | 'mySetDelete' | 'mySetOverwrite' | 'move' | 'savedDelete' | 'tournament';
   from: string;
   to?: string;
   /** Completa team: Pokémon aggiunti negli slot vuoti. */
@@ -65,6 +65,7 @@ export function UndoToast({ action, onUndo, onClose }: { action: UndoAction; onU
           : action.kind === 'mySetOverwrite' ? t('undo.mySetOverwritten', { name: action.from })
           : action.kind === 'load' ? t('undo.loaded')
           : action.kind === 'clear' ? t('undo.cleared')
+          : action.kind === 'tournament' ? t('undo.tournament')
           : action.kind === 'presets' && action.created ? t('undo.created', { to: action.to ?? '' })
           : action.kind === 'presets' ? (action.added
             ? t(action.added === 1 ? 'undo.filledOne' : 'undo.filledMany', { n: action.added, from: action.from, to: action.to ?? '' })

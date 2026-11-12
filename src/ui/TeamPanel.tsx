@@ -60,8 +60,8 @@ interface Props {
   collapsed?: boolean;
   /** Set incollato al posto del membro (può essere un altro Pokémon); se manca, si aggiorna solo il team. */
   onPaste?: (index: number, set: TeamSet) => void;
-  /** Azioni sull'intero team, annullabili: preset migliori per tutti, svuota team. */
-  onBulk?: (kind: 'presets' | 'fill' | 'clear', team: TeamSet[]) => void;
+  /** Azioni sull'intero team, annullabili: preset migliori per tutti, Completa team, team da torneo caricato, svuota team. */
+  onBulk?: (kind: 'presets' | 'fill' | 'clear' | 'tournament', team: TeamSet[]) => void;
   /** Clic su uno slot vuoto: porta alla ricerca dei Pokémon. */
   onAddClick?: () => void;
   /** Importa / Esporta: a destra nella testata, prima di Svuota team. */
@@ -590,7 +590,7 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
     const timer = setTimeout(() => prepareFill(team, format, data), 1500);
     return () => clearTimeout(timer);
   }, [team, data, format]);
-  // Completa team: pannello con tipi di team e proposte
+  // Completa team: pannello con le proposte e i team da torneo
   const [filling, setFilling] = useState(false);
   const fillToggle = useRef<HTMLButtonElement>(null);
   // Chiudendo il pannello il focus torna al pulsante
@@ -669,6 +669,10 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
                   setFilling(false);
                   setOpenIndex(null);
                   if (onBulk) onBulk('fill', proposal.team); else onChange(proposal.team);
+                }} onLoadTeam={next => {
+                  setFilling(false);
+                  setOpenIndex(null);
+                  if (onBulk) onBulk('tournament', next); else onChange(next);
                 }} />
               )}
             </span>
