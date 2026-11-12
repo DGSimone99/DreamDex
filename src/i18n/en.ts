@@ -476,7 +476,7 @@ export const en = {
   'fill.gap.removal': "Nobody removes hazards",
   'fill.gap.weakness': "Three Pokémon weak to {type}",
   'fill.gap.weaknessMany': "{n} Pokémon weak to {type}",
-  'fill.tournamentNote': "Most Pokémon in common with your team first",
+  'fill.tournamentNote': "Tournament teams published on Smogon. Those sharing the most Pokémon with your team come first",
   'fill.tournamentNone': "No tournament teams for this format",
   'fill.by': "by {author}",
   'fill.teamBy': "Team by {author}",

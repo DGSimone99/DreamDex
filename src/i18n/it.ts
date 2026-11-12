@@ -478,7 +478,7 @@ export const it: Record<keyof typeof en, string> = {
   'fill.gap.removal': "Manca chi toglie le trappole",
   'fill.gap.weakness': "Tre Pokémon deboli a {type}",
   'fill.gap.weaknessMany': "{n} Pokémon deboli a {type}",
-  'fill.tournamentNote': "Prima quelli con più Pokémon in comune col tuo team",
+  'fill.tournamentNote': "Team da torneo pubblicati su Smogon. Prima quelli con più Pokémon in comune col tuo team",
   'fill.tournamentNone': "Nessun team da torneo per questo formato",
   'fill.by': "di {author}",
   'fill.teamBy': "Team di {author}",
