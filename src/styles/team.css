@@ -59,15 +59,53 @@
 .team-head .team-guide:disabled { opacity: 0.6; }
 /* Il taglio nasconderebbe l'anello del focus: lo si disegna dentro, scuro sul magenta */
 .team-head .team-guide:focus-visible { outline: 2px solid var(--on-accent-2); outline-offset: -4px; }
-/* Team salvati: più leggero (senza fondo), ma con il bordo, così si vede che è un pulsante */
-.team-head > .popover > summary { background: transparent; }
-.team-head .team-action, .team-head .popover > summary { height: 30px; padding: 0 10px; font-size: 13px; white-space: nowrap; }
-.team-head .popover > summary .icon { width: 16px; height: 16px; }
-.team-quick { display: flex; align-items: center; gap: 8px; margin-left: auto; }
-.team-sep { width: 1px; height: 20px; background: var(--line); }
+/* Le altre azioni della testata come linguette di Spada e Scudo: stesso taglio obliquo della guida, fondo Raised, scritte
+   in maiuscolo. Aperta, la linguetta si accende d'azzurro con la riga sotto (come la scheda attiva del riassunto) */
+.team-head .team-action, .team-head .popover > summary {
+  height: 28px;
+  padding: 0 18px 0 16px;
+  gap: 7px;
+  background-color: var(--raised);
+  border: 0;
+  border-radius: 0;
+  color: var(--muted);
+  font: 700 12px/1 var(--display);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+  transition: background-color 0.15s var(--ease), color 0.15s var(--ease);
+}
+/* La riga azzurra della linguetta aperta si allarga da sinistra */
+.team-head .popover > summary {
+  background-image: linear-gradient(var(--accent), var(--accent));
+  background-repeat: no-repeat;
+  background-position: left bottom;
+  background-size: 0 2px;
+  transition: background-color 0.15s var(--ease), color 0.15s var(--ease), background-size 0.2s var(--ease);
+}
+.team-head .team-action .icon, .team-head .popover > summary .icon { width: 14px; height: 14px; }
+.team-head .team-action:hover, .team-head .popover > summary:hover { background-color: color-mix(in srgb, var(--accent) 16%, var(--raised)); color: var(--text); }
+.team-head .popover[open] > summary { background-color: var(--accent-soft); background-size: 100% 2px; color: var(--accent-ink); }
+@media (prefers-reduced-motion: reduce) { .team-head .popover > summary { transition: none; } }
+/* Il taglio nasconderebbe l'anello del focus: lo si disegna dentro */
+.team-head .team-action:focus-visible, .team-head .popover > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: -4px; }
+/* Le scorciatoie a destra; una riga sottile riempie lo spazio vuoto, come nelle testate dei menu del gioco */
+.team-quick { display: flex; flex: 1; align-items: center; justify-content: flex-end; gap: 12px; min-width: 0; }
+/* Team salvati e Showdown come un'unica barra di schede: linguette attaccate, separate da 2px */
+.team-tabs { display: flex; align-items: center; gap: 2px; }
+.team-quick::before { content: ''; flex: 1; height: 1px; margin: 0 4px; background: linear-gradient(90deg, transparent, var(--line)); }
+.team-sep { display: none; }
 /* Menu aperto: sopra la freccia che riduce la squadra */
 .team-head:has(.popover[open]) { z-index: 8; }
-.team-head .clear-team:hover { border-color: var(--bad); color: var(--bad); }
+/* Copiato: la linguetta diventa verde per un attimo, con la spunta */
+.team-head .quick-copy.copied, .team-head .quick-copy.copied:hover { background-color: var(--good-bg); color: var(--good); }
+.team-head .quick-copy.copied .icon { animation: pop 0.25s var(--ease); }
+@keyframes pop { from { transform: scale(0.4); } to { transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .team-head .quick-copy.copied .icon { animation: none; } }
+/* Svuota: più discreta, si accende di rosso solo sotto il mouse */
+.team-head .clear-team { background-color: transparent; color: var(--faint); }
+.team-head .clear-team:hover { background-color: var(--bad-bg); color: var(--bad); }
 /* Menu della testata (Team salvati, Importa / Esporta) come il pannello di Completa team: fondo Ground, angoli 4px, ombra,
    apertura breve. Quello delle scorciatoie si apre allineato a destra, sotto il suo pulsante */
 .team-head .popover[open] > :not(summary) {
@@ -77,6 +115,7 @@
   animation: tip 0.14s var(--ease);
 }
 .team-quick .popover[open] > :not(summary) { left: auto; right: 0; width: 420px; }
+.team-quick .popover[open] > .saved-panel { width: 380px; }
 @media (prefers-reduced-motion: reduce) { .team-head .popover[open] > :not(summary) { animation: none; } }
 .set-editor .best-preset { height: 36px; white-space: nowrap; flex-shrink: 0; }
 .slots { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; }

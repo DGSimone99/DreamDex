@@ -49,7 +49,7 @@ export function SavedTeams({ team, format, onLoad }: {
   return (
     <>
       <details className="popover">
-        <summary title={t('saved.title', { n: saved.length })}><Icon name="save" /><span className="btn-label">{t('saved.title', { n: saved.length })}</span></summary>
+        <summary title={t('saved.title', { n: saved.length })}><Icon name="box" /><span className="btn-label">{t('saved.title', { n: saved.length })}</span></summary>
         <div className="saved-panel">
           {/* Salva: spento finché manca il nome o il team è vuoto */}
           <div className="saved-new">

@@ -27,6 +27,8 @@ const paths = {
   shiny: 'M10 6.5Q10.9 12.1 16.5 13Q10.9 13.9 10 19.5Q9.1 13.9 3.5 13Q9.1 12.1 10 6.5zM18 2.5Q18.5 5.5 21.5 6Q18.5 6.5 18 9.5Q17.5 6.5 14.5 6Q17.5 5.5 18 2.5z',
   // Salvare, sovrascrivere, rinominare un set
   save: 'M5 4h11l3 3v13H5zM8 4v5h7V4M8 20v-6h8v6',
+  // Box del PC: la scatola con il coperchio e la maniglia
+  box: 'M3.5 9.5h17v10h-17zM2.5 5.5h19v4h-19zM10 13h4',
   overwrite: 'M5 4h11l3 3v13H5zM9 14.5a3 3 0 1 0 1-2.2M9 10.5v2.5h2.5',
   edit: 'M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4',
   // Liste dell'utente: preferito e bannato

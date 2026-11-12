@@ -15,6 +15,14 @@ export function ShowdownPanel({ team, format, tera = true, onImport }: { team: T
   // Esito dell'import da dire in una finestra: cosa lo ferma, o le mosse non imparabili (con i set già importati)
   const [review, setReview] = useState<{ review: ImportReview; sets: TeamSet[] } | null>(null);
   const [linkCopied, setLinkCopied] = useState(false);
+  // Copia veloce dalla barra: il testo Showdown del team va negli appunti, la linguetta dice "Copiato" per un attimo
+  const [quickCopied, setQuickCopied] = useState(false);
+  const quickCopy = async () => {
+    if (await copyText(exportShowdown(team, { tera }))) {
+      setQuickCopied(true);
+      setTimeout(() => setQuickCopied(false), 1600);
+    }
+  };
   const copyLink = async () => {
     if (await copyText(shareUrl(team, format))) {
       setLinkCopied(true);
@@ -38,19 +46,28 @@ export function ShowdownPanel({ team, format, tera = true, onImport }: { team: T
   };
 
   return (
-    <details className="popover">
-      <summary title={t('showdown.title')}><Icon name="paste" /><span className="btn-label">{t('showdown.title')}</span></summary>
-      <div>
-        <textarea aria-label={t('showdown.text')} rows={12} value={text} onChange={e => setText(e.target.value)} />
-        <div className="actions">
-          <button type="button" onClick={doImport}>{t('showdown.import')}</button>
-          <button type="button" onClick={() => { setText(exportShowdown(team, { tera })); }}>{t('showdown.export')}</button>
-          <button type="button" onClick={() => copyText(text)}>{t('showdown.copy')}</button>
-          <button type="button" disabled={!team.length} onClick={copyLink}>{t('showdown.copyLink')}</button>
-          {linkCopied && <span className="copied" role="status">{t('showdown.linkCopied')}</span>}
+    <>
+      <details className="popover">
+        <summary title={t('showdown.title')}><Icon name="swap" /><span className="btn-label">{t('showdown.title')}</span></summary>
+        <div>
+          <textarea aria-label={t('showdown.text')} rows={12} value={text} onChange={e => setText(e.target.value)} />
+          <div className="actions">
+            <button type="button" onClick={doImport}>{t('showdown.import')}</button>
+            <button type="button" onClick={() => { setText(exportShowdown(team, { tera })); }}>{t('showdown.export')}</button>
+            <button type="button" onClick={() => copyText(text)}>{t('showdown.copy')}</button>
+            <button type="button" disabled={!team.length} onClick={copyLink}>{t('showdown.copyLink')}</button>
+            {linkCopied && <span className="copied" role="status">{t('showdown.linkCopied')}</span>}
+          </div>
+          {review && <ImportDialog review={review.review} onYes={unlock} onClose={() => setReview(null)} />}
         </div>
-        {review && <ImportDialog review={review.review} onYes={unlock} onClose={() => setReview(null)} />}
-      </div>
-    </details>
+      </details>
+      {team.length > 0 && (
+        <button type="button" className={`team-action quick-copy${quickCopied ? ' copied' : ''}`} title={t('showdown.quickCopyTitle')} onClick={quickCopy}>
+          <Icon name={quickCopied ? 'check' : 'copy'} />
+          <span className="btn-label">{t(quickCopied ? 'showdown.quickCopied' : 'showdown.quickCopy')}</span>
+          {quickCopied && <span className="visually-hidden" role="status">{t('showdown.quickCopied')}</span>}
+        </button>
+      )}
+    </>
   );
 }

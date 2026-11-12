@@ -687,7 +687,6 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
             </button>
           )}
         </div>
-        {saved}
         {confirmPresets && (
           <ImproveSetsDialog team={team} data={data} genLimit={format.genLimit} onCancel={closeConfirm} onApply={next => {
             closeConfirm();
@@ -701,11 +700,13 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
             setAsk(null);
           }} />
         )}
-        {/* Scorciatoie, sempre allo stesso posto a destra: porta dentro un team, ricomincia da zero */}
+        {/* Scorciatoie, sempre allo stesso posto a destra: una striscia di linguette (team salvati, Showdown), poi Svuota a parte */}
         <div className="team-quick">
-          {io}
+          <div className="team-tabs">
+            {saved}
+            {io}
+          </div>
           {team.length > 0 && <>
-            <span className="team-sep" aria-hidden="true" />
             <button type="button" className="team-action clear-team" title={t(lang, 'team.clear')} onClick={() => {
               setOpenIndex(null);
               if (onBulk) onBulk('clear', []); else onChange([]);
