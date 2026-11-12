@@ -76,6 +76,11 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
   const exclude = useRef(new Set<string>());
   const resetKey = useMemo(() => ({}), [team, format, data, choice]);
   const lastReset = useRef(resetKey);
+  // Tutto quello che cambia i controlli dei tipi (non il tipo scelto): partono dopo la prima proposta del calcolo
+  // principale (o la sua fine), così non lo rallentano
+  const checksKey = useMemo(() => ({}), [team, format, data, choice.style, choice.favorites, keepKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  const [checksReady, setChecksReady] = useState<object | null>(null);
+  const lastChecks = useRef(checksKey);
   // Chi è nella lista Ban dell'utente non entra nelle proposte: si dice quanti sono
   const banned = useMemo(() => bannedInPool(team, format, data), [team, format, data]);
   const before = useMemo(() => (team.length ? rateTeam(team, data, lang)?.overall ?? null : null), [team, data, lang]);
@@ -94,13 +99,16 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
     let live = true;
     let found = 0;
     const mode = choice.favorites ?? 'priority';
+    const key = checksKey;
     const call = streamFill(team, choice, exclude.current, format, data, proposal => {
       if (!live) return;
       found++;
       setProposals(list => insertSorted(list, proposal, mode));
+      setChecksReady(key);
     });
     void call.done.then(done => {
       if (!live) return;
+      setChecksReady(key);
       exclude.current = done.exclude;
       setBusy(false);
       setFailed(done.failed);
@@ -111,7 +119,11 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
 
   // Verifica in sottofondo, un tipo alla volta, quali tipi hanno proposte con le altre scelte (una sola basta)
   useEffect(() => {
-    setAvailable({});
+    if (lastChecks.current !== checksKey) {
+      lastChecks.current = checksKey;
+      setAvailable({});
+    }
+    if (checksReady !== checksKey) return;
     let live = true;
     let cancel: () => void = () => undefined;
     let index = 0;
@@ -130,7 +142,7 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
     };
     next();
     return () => { live = false; cancel(); };
-  }, [team, format, data, choice.style, choice.favorites, keepKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [checksKey, checksReady]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Tipo scelto vuoto: si passa al primo che ha proposte (finché il giocatore non sceglie da sé)
   useEffect(() => {
@@ -171,6 +183,8 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
     setRound(0);
   };
   const exhausted = !busy && proposals.length < PROPOSALS_PER_ROUND;
+  // Il magenta (riga e pulsante) solo sulla migliore in assoluto: la prima del primo giro
+  const best = (i: number) => round === 0 && i === 0;
   const onlyFavorites = favorites === 'only';
   const setTitle = (set: TeamSet) => [
     battleName(set),
@@ -287,7 +301,7 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
         <div className="fill-main">
           <ol className="fill-proposals">
             {proposals.map((proposal, i) => (
-              <li key={proposal.added.map(s => `${s.species}@${s.item}`).join('|')} className={`fill-proposal${i === 0 ? ' is-best' : ''}`}>
+              <li key={proposal.added.map(s => `${s.species}@${s.item}`).join('|')} className={`fill-proposal${best(i) ? ' is-best' : ''}`}>
                 <span className="fill-mons">
                   {proposal.team.map((set, j) => {
                     const mine = j < team.length;
@@ -316,7 +330,7 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
                     </span>
                   )}
                 </span>
-                <button type="button" className={`fill-add${i === 0 ? ' primary' : ''}`} aria-label={t('fill.useN', { n: i + 1 })} onClick={() => onApply(proposal)}>
+                <button type="button" className={`fill-add${best(i) ? ' primary' : ''}`} aria-label={t('fill.useN', { n: i + 1 })} onClick={() => onApply(proposal)}>
                   {t('fill.use')}
                 </button>
                 {proposal.gaps.length > 0 && (
@@ -343,9 +357,11 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
           <ul className="fill-cards">
             {tournament.map(({ entry, shared }, i) => {
               const names = entry.team.map(battleName);
+              // Senza nome: quello dell'autore; senza nessuno dei due, un trattino
+              const title = entry.name || (entry.author ? t('fill.teamBy', { author: entry.author }) : '');
               return (
                 <li key={`${entry.name}#${i}`} className="fill-card">
-                  <strong className="fill-card-name" title={entry.name}>{entry.name || '—'}</strong>
+                  <strong className="fill-card-name" title={title}>{title || '—'}</strong>
                   <span className="fill-card-meta">
                     {entry.author && <span>{t('fill.by', { author: entry.author })}</span>}
                     <span className={shared.length ? 'is-shared' : undefined}>{shared.length ? t('fill.shared', { n: shared.length }) : t('fill.sharedNone')}</span>
@@ -356,7 +372,7 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
                         <span key={`${name}#${j}`} className={`fill-card-mon${shared.includes(j) ? ' is-shared' : ''}`} title={name}><PokemonIcon name={name} /></span>
                       ))}
                     </span>
-                    <button type="button" className="fill-load" aria-label={entry.name ? t('fill.loadN', { name: entry.name }) : t('fill.load')}
+                    <button type="button" className="fill-load" aria-label={title ? t('fill.loadN', { name: title }) : t('fill.load')}
                       onClick={() => onLoadTeam(entry.team)}>{t('fill.load')}</button>
                   </span>
                 </li>

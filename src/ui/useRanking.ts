@@ -93,6 +93,8 @@ class RankingClient {
   private values = new Map<number, unknown>();
   private nextPart = 0;
   private lists = 0;
+  /** Completa team in corso sull'ultimo calcolo: intanto i voti della lista vanno agli altri. */
+  private fills = 0;
 
   constructor(make: (lead: boolean) => Worker, count: number) {
     this.workers = Array.from({ length: count }, (_, i) => new EngineWorker(make(i === 0), () => { this.broken = true; }));
@@ -154,9 +156,13 @@ class RankingClient {
     }
   }
 
-  /** I voti richiesti, divisi fra i calcoli in parallelo, come coppie chiave → voto da mettere in cache. */
+  /**
+   * I voti richiesti, divisi fra i calcoli in parallelo, come coppie chiave → voto da mettere in cache. Con Completa
+   * team in corso (e almeno tre calcoli) l'ultimo è occupato: i voti vanno agli altri, senza aspettare dietro di lui.
+   */
   private async gains(jobs: GainJob[], lang: RankingParams['lang'], archetype: RankingParams['archetype'], data: WorkerData): Promise<[string, GainValue][]> {
-    const groups = splitJobs(jobs, this.workers.length);
+    const last = this.workers.length - 1;
+    const groups = splitJobs(jobs, this.workers.length, this.fills > 0 && this.workers.length > 2 ? last : undefined);
     const answers = await Promise.all(groups.map((group, i) => (group.length
       ? this.workers[i].call<'gains'>({ kind: 'gains', jobs: group, lang, archetype, data })
       : Promise.resolve({ values: [] as GainValue[] }))));
@@ -191,6 +197,9 @@ class RankingClient {
     onProposal: (p: Proposal) => void): { done: Promise<void>; cancel: () => void } {
     const { result, cancel } = this.workers[this.workers.length - 1].stream(
       { kind: 'fill', team, choice, exclude: [...exclude], format, data: this.wire(given), max }, item => onProposal(item.proposal));
+    this.fills++;
+    const settle = () => { this.fills--; };
+    result.then(settle, settle);
     return { done: result.then(() => undefined), cancel };
   }
 
@@ -220,8 +229,9 @@ class RankingClient {
 /**
  * I voti divisi fra i calcoli: i voti dello stesso candidato insieme, di solito al calcolo "suo" (che lo ha già in
  * cache dalle liste precedenti); se quello è già pieno, al calcolo più scarico. Così nessuno resta indietro.
+ * `busy` è un calcolo occupato (Completa team): non riceve niente, la sua parte va ai più scarichi.
  */
-function splitJobs(jobs: GainJob[], count: number): GainJob[][] {
+export function splitJobs(jobs: GainJob[], count: number, busy?: number): GainJob[][] {
   const bySpecies = new Map<string, GainJob[]>();
   for (const job of jobs) {
     const list = bySpecies.get(job.set.species);
@@ -229,11 +239,13 @@ function splitJobs(jobs: GainJob[], count: number): GainJob[][] {
     else bySpecies.set(job.set.species, [job]);
   }
   const groups = Array.from({ length: count }, () => [] as GainJob[]);
-  const share = Math.ceil(jobs.length / count);
+  const free = busy === undefined ? count : count - 1;
+  const share = Math.ceil(jobs.length / Math.max(1, free));
+  const start = busy === 0 && count > 1 ? 1 : 0;
   for (const [species, list] of [...bySpecies].sort((a, b) => b[1].length - a[1].length)) {
     const own = affinity(species) % count;
-    const target = groups[own].length + list.length <= share ? own
-      : groups.reduce((best, group, i) => (group.length < groups[best].length ? i : best), 0);
+    const target = own !== busy && groups[own].length + list.length <= share ? own
+      : groups.reduce((best, group, i) => (i !== busy && group.length < groups[best].length ? i : best), start);
     groups[target].push(...list);
   }
   return groups;
@@ -523,7 +535,10 @@ export function streamFill(
   return subscribe(run, exclude, max || Infinity, onProposal);
 }
 
-/** L'ultima preparazione in anticipo: una sola alla volta, quella vecchia (di un team già cambiato) si ferma. */
+/**
+ * L'ultima preparazione in anticipo, finché è in corso: una sola alla volta, quella vecchia (di un team già cambiato)
+ * si ferma. Finita (o rotta) non conta più: se le proposte escono dalla cache, o il calcolo si è rotto, si rifà.
+ */
 let prefetch: { key: string; cancel: () => void } | null = null;
 
 /** Prepara le proposte di partenza di Completa team, solo col calcolo in sottofondo (come prepareImproveSets). */
@@ -533,6 +548,18 @@ export function prepareFill(team: TeamSet[], format: Format, data: EngineData): 
   const choice = defaultChoice(team);
   const key = fillKey(team, choice, format, data);
   if (prefetch?.key === key || fillCache.has(key)) return;
+  cancelPrepareFill();
+  const call = streamFill(team, choice, new Set(), format, data, () => undefined);
+  const entry = { key, cancel: call.cancel };
+  prefetch = entry;
+  void call.done.then(() => { if (prefetch === entry) prefetch = null; });
+}
+
+/**
+ * Ferma subito la preparazione in corso (il team è cambiato): non occupa il calcolo mentre la lista dei candidati
+ * aspetta. Se il pannello è aperto sulle stesse proposte, il calcolo continua per lui.
+ */
+export function cancelPrepareFill(): void {
   prefetch?.cancel();
-  prefetch = { key, cancel: streamFill(team, choice, new Set(), format, data, () => undefined).cancel };
+  prefetch = null;
 }

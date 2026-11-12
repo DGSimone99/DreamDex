@@ -15,7 +15,7 @@ import { copyText } from './clipboard';
 import { setEditing } from './editing';
 import { bestPreset } from '../engine/bestPreset';
 import { ImproveSetsDialog } from './ImproveSetsDialog';
-import { prepareFill, prepareImproveSets } from './useRanking';
+import { cancelPrepareFill, prepareFill, prepareImproveSets } from './useRanking';
 import { ImportDialog } from './ImportDialog';
 import { reviewImport, type ImportReview } from './importReview';
 import { FillPanel } from './FillPanel';
@@ -584,8 +584,10 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
     const timer = setTimeout(() => prepareImproveSets(team, data, format.genLimit), 1500);
     return () => clearTimeout(timer);
   }, [team, data, format.genLimit]);
-  // Team incompleto e fermo da un secondo e mezzo: le proposte di partenza di Completa team si preparano in sottofondo
+  // Team incompleto e fermo da un secondo e mezzo: le proposte di partenza di Completa team si preparano in sottofondo.
+  // Appena il team cambia, la preparazione vecchia si ferma subito (non fa aspettare i voti della lista)
   useEffect(() => {
+    cancelPrepareFill();
     if (team.length >= 6 || !data.stats) return;
     const timer = setTimeout(() => prepareFill(team, format, data), 1500);
     return () => clearTimeout(timer);

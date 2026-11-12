@@ -63,5 +63,14 @@ describe('rankTournamentTeams', () => {
     const T = team('T', ['Charizard']);
     const mega = { ...emptySet('Charizard'), item: 'Charizardite Y' };
     expect(rankTournamentTeams([T], [mega])[0].shared).toEqual([0]);
+    // E al contrario: la Mega scritta come specie combacia con la base
+    expect(rankTournamentTeams([team('M', ['Charizard-Mega-Y'])], [emptySet('Charizard')])[0].shared).toEqual([0]);
+  });
+
+  it('forme diverse non combaciano: Rotom-Wash e Rotom-Heat, Ninetales e Ninetales-Alola, Landorus e Landorus-Therian', () => {
+    for (const [theirs, mine] of [['Rotom-Wash', 'Rotom-Heat'], ['Ninetales', 'Ninetales-Alola'], ['Landorus', 'Landorus-Therian']]) {
+      expect(rankTournamentTeams([team('T', [theirs])], [emptySet(mine)])[0].shared, `${theirs} / ${mine}`).toEqual([]);
+      expect(rankTournamentTeams([team('T', [theirs])], [emptySet(theirs)])[0].shared, theirs).toEqual([0]);
+    }
   });
 });

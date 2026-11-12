@@ -37,6 +37,8 @@
 }
 .fill-tab:hover { color: var(--text); border-bottom-color: var(--line); }
 .fill-tab[aria-selected='true'] { color: var(--text); border-bottom-color: var(--accent); }
+/* Il pannello scorre e non ha spazio sopra le schede: l'anello del focus sta dentro la scheda, come in Analisi */
+.fill-tab:focus-visible { outline-offset: -3px; }
 .fill-tab-count { min-width: 20px; padding: 0 6px; font: 600 12px/18px var(--ui); font-style: normal; font-variant-numeric: tabular-nums; text-align: center; color: var(--muted); background: var(--raised); border-radius: 10px; }
 .fill-tab[aria-selected='true'] .fill-tab-count { color: var(--on-accent); background: var(--accent); }
 

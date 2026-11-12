@@ -215,6 +215,14 @@ describe('Completa team: Team da torneo', () => {
     expect(onLoadTeam).toHaveBeenCalledWith(teams[1].team);
   });
 
+  it('un team senza nome prende quello del suo autore', async () => {
+    const user = userEvent.setup();
+    panel([], vi.fn(), vi.fn(), { ...fillData, tournamentTeams: [tournament('', ['Kingambit', 'Toxapex'])] });
+    await user.click(screen.getByRole('tab', { name: /Team da torneo/ }));
+    expect(screen.getByText('Team di Lameflame')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Carica Team di Lameflame' })).toBeInTheDocument();
+  });
+
   it('senza team da torneo per il formato lo dice', async () => {
     const user = userEvent.setup();
     panel([], vi.fn(), vi.fn(), { ...fillData, tournamentTeams: null });

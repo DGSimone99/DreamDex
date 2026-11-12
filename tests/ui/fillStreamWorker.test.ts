@@ -3,7 +3,8 @@ import { defaultChoice, fillProposals, type Proposal } from '../../src/engine/fi
 import { DEFAULT_FORMAT } from '../../src/engine/format';
 import type { WorkerRequest, WorkerResponse } from '../../src/engine/rankingProtocol';
 import { emptySet } from '../../src/engine/sets';
-import { prepareFill, streamFill } from '../../src/ui/useRanking';
+import type { GainJob } from '../../src/engine/teamGain';
+import { cancelPrepareFill, prepareFill, splitJobs, streamFill } from '../../src/ui/useRanking';
 import { fillData } from '../fixtures/fillData';
 
 /**
@@ -113,5 +114,46 @@ describe('streamFill col calcolo in sottofondo', () => {
     expect(fills()).toHaveLength(before + 2);
     expect(result.failed).toBe(false);
     await tick();
+  });
+
+  it('cancelPrepareFill ferma subito la preparazione in corso (il team è cambiato)', () => {
+    const team = [emptySet('Skarmory')];
+    prepareFill(team, DEFAULT_FORMAT, fillData);
+    const { id } = fills()[fills().length - 1];
+    cancelPrepareFill();
+    expect(cancels()).toContainEqual({ kind: 'cancel', id });
+  });
+
+  it('una preparazione rotta si rifà alla richiesta dopo', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const team = [emptySet('Clodsire')];
+    const before = fills().length;
+    fake.fail = true;
+    prepareFill(team, DEFAULT_FORMAT, fillData);
+    await tick(); await tick();
+    fake.fail = false;
+    error.mockRestore();
+    prepareFill(team, DEFAULT_FORMAT, fillData);
+    expect(fills()).toHaveLength(before + 2);
+    cancelPrepareFill();
+  });
+});
+
+describe('voti della lista divisi fra i calcoli', () => {
+  const jobs = ['Garchomp', 'Toxapex', 'Kingambit', 'Blissey', 'Dragapult', 'Corviknight', 'Gholdengo', 'Great Tusk']
+    .flatMap(name => [0, 1].map(i => ({ key: `${name}#${i}`, set: emptySet(name) }) as unknown as GainJob));
+
+  it('tutti i voti, nessuno ripetuto, e i voti dello stesso candidato insieme', () => {
+    const groups = splitJobs(jobs, 3);
+    expect(groups.flat().map(j => j.key).sort()).toEqual(jobs.map(j => j.key).sort());
+    for (const group of groups) for (const job of group) {
+      expect(groups.filter(g => g.some(other => other.set.species === job.set.species))).toHaveLength(1);
+    }
+  });
+
+  it('il calcolo occupato da Completa team non riceve voti', () => {
+    const groups = splitJobs(jobs, 3, 2);
+    expect(groups[2]).toEqual([]);
+    expect(groups.flat()).toHaveLength(jobs.length);
   });
 });

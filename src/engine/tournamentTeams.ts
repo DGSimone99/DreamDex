@@ -1,4 +1,4 @@
-import { battleName, getSpecies, toID } from './dex';
+import { battleName, battleSpecies, getSpecies, toID } from './dex';
 import { emptySet, STAT_IDS, type StatID, type TeamSet } from './sets';
 
 /** Una squadra da torneo (fonte pkmn): nome, autore e i suoi Pokémon. */
@@ -47,17 +47,31 @@ export function normalizeTeams(raw: unknown): TournamentTeam[] {
   return teams;
 }
 
-/** Specie in battaglia e specie base: Charizard combacia con Charizard-Mega-Y. */
-function identities(set: TeamSet): string[] {
-  const name = battleName(set);
-  return [toID(name), toID(getSpecies(name)?.baseSpecies ?? name)];
+/**
+ * La forma in battaglia e, solo per chi cambia forma in battaglia (Mega, Primal, forme da pietra o da lotta), la
+ * specie da cui parte: Charizard combacia con Charizard-Mega-Y, ma Rotom-Wash non con Rotom-Heat né Ninetales con
+ * Ninetales-Alola.
+ */
+function identity(set: TeamSet): { exact: string; base: string | null } {
+  const battle = battleSpecies(set);
+  const exact = toID(battleName(set));
+  const changes = !!battle && (!!battle.battleOnly || battle.name !== getSpecies(set.species)?.name);
+  const from = battle && (typeof battle.battleOnly === 'string' ? battle.battleOnly : battle.baseSpecies);
+  return { exact, base: changes && from ? toID(from) : null };
 }
+
+/** Lo stesso Pokémon: stessa forma, oppure uno dei due cambia forma in battaglia e parte dall'altro (o dalla stessa specie). */
+const samePokemon = (a: { exact: string; base: string | null }, b: { exact: string; base: string | null }) =>
+  a.exact === b.exact || (!!a.base && (a.base === b.exact || a.base === b.base)) || (!!b.base && b.base === a.exact);
 
 /** Le squadre con gli indici dei loro Pokémon in comune col team attuale, da quelle con più in comune; a parità, ordine della fonte. */
 export function rankTournamentTeams(teams: TournamentTeam[], current: TeamSet[]): { entry: TournamentTeam; shared: number[] }[] {
-  const mine = new Set(current.flatMap(identities));
+  const mine = current.map(identity);
   return teams
-    .map((entry, order) => ({ entry, order, shared: entry.team.flatMap((set, i) => (identities(set).some(id => mine.has(id)) ? [i] : [])) }))
+    .map((entry, order) => ({ entry, order, shared: entry.team.flatMap((set, i) => {
+      const theirs = identity(set);
+      return mine.some(other => samePokemon(theirs, other)) ? [i] : [];
+    }) }))
     .sort((a, b) => b.shared.length - a.shared.length || a.order - b.order)
     .map(({ entry, shared }) => ({ entry, shared }));
 }
