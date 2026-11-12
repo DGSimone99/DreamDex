@@ -209,7 +209,7 @@ describe('Velocità: una scheda a barre', () => {
     const dialog = screen.getByRole('dialog', { name: 'Guida: Velocità' });
     const panel = within(dialog).getByRole('tabpanel');
     expect(panel).toHaveTextContent(/40 Pokémon più usati/);
-    expect(panel).toHaveTextContent(/Sciarpa/);
+    expect(panel).toHaveTextContent(/Stolascelta/);
     // Le quote (setup 50%, priorità e controllo 25%, il controllo breve 12,5%) e i pesi dei membri 30/30/20/10/5/5
     expect(panel).toHaveTextContent(/50%/);
     expect(panel).toHaveTextContent(/25%/);

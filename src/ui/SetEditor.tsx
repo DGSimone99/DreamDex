@@ -92,6 +92,7 @@ function moveOption(name: string, lang: Lang): ComboOption {
     option = {
       value: name,
       label: gameName('move', name, lang),
+      alias: name,
       detail: <MoveDetail name={name} />,
       description: describe.move(name, lang),
       color: move ? typeTextColor(move.type) : undefined,
@@ -104,7 +105,7 @@ const ALL_MOVES = moveNames();
 const ITEMS = itemNames();
 const ALL_ABILITIES = dex.abilities.all().filter(a => a.exists && !a.isNonstandard).map(a => a.name).sort();
 const abilityOption = (name: string, lang: Lang): ComboOption =>
-  ({ value: name, label: gameName('ability', name, lang), description: describe.ability(name, lang) });
+  ({ value: name, label: gameName('ability', name, lang), alias: name, description: describe.ability(name, lang) });
 
 /** Natura ed EV come chiave, per riconoscere lo spread attuale. */
 const spreadKey = (s: Pick<CommonSpread, 'nature' | 'evs'>) => `${s.nature}:${STAT_IDS.map(stat => s.evs[stat] ?? 0).join('/')}`;
@@ -120,7 +121,8 @@ const baseColor = (base: number) => `hsl(${Math.min(180, Math.max(0, (base - 30)
 /** Passo degli EV nei campi e nel cursore. */
 const EV_STEP = 2;
 
-const clampEv = (value: number) => Math.min(252, Math.max(0, Number.isFinite(value) ? value : 0));
+// EV interi tra 0 e 252: un numero con la virgola o fuori scala scritto a mano non entra nel set
+const clampEv = (value: number) => Math.min(252, Math.max(0, Number.isFinite(value) ? Math.floor(value) : 0));
 
 interface Props {
   set: TeamSet;
@@ -164,14 +166,21 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
     const byValue = new Map(options.map(o => [o.value, o]));
     const top = choices.flatMap(c => {
       const option = byValue.get(c.name);
-      return option ? [{ ...option, common: c.share === null ? t('combobox.preset') : formatPercent(lang, c.share, 0) }] : [];
+      return option ? [{
+        ...option,
+        common: c.share === null ? t('combobox.preset') : formatPercent(lang, c.share, 0),
+        ...(c.share === null ? { commonTitle: t('combobox.presetTitle') } : {}),
+      }] : [];
     });
     const picked = new Set(top.map(o => o.value));
     return [...top, ...options.filter(o => !picked.has(o.value))];
   };
   const commonKey = JSON.stringify(common ?? null);
   // Quote da un altro formato (es. Pokémon vietato): l'intestazione dice da quale
-  const commonLabel = common?.source ? t('combobox.commonIn', { format: formatName(common.source) }) : undefined;
+  const sourceLabel = common?.source ? t('combobox.commonIn', { format: formatName(common.source) }) : undefined;
+  // Senza statistiche le scelte in cima vengono dai preset Smogon: l'intestazione lo dice (non "Più usati")
+  const commonLabel = (choices?: { share: number | null }[]) =>
+    sourceLabel ?? (choices?.length && choices.every(c => c.share === null) ? t('combobox.fromPresets') : undefined);
   const shareLabel = (c: { share: number | null }) => (c.share === null ? t('combobox.preset') : formatPercent(lang, c.share, 0));
   const custom = !!set.customSkillset;
   const species = getSpecies(set.species);
@@ -193,7 +202,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
   const itemOptions = useMemo<ComboOption[]>(() => withCommon(ITEMS
     .filter(name => pokedex !== 'sv' || !dex.items.get(name).isNonstandard)
     .map(name => ({
-      value: name, label: gameName('item', name, lang), description: describe.item(name, lang), icon: <ItemIcon item={name} />,
+      value: name, label: gameName('item', name, lang), alias: name, description: describe.item(name, lang), icon: <ItemIcon item={name} />,
     })), common?.items), [pokedex, lang, commonKey]);
   const natureOptions = useMemo<ComboOption[]>(() => withCommon(natureNames().map(name => {
     const { plus, minus } = dex.natures.get(name);
@@ -201,6 +210,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
     return {
       value: name,
       label,
+      alias: name,
       detail: <NatureEffect name={name} />,
       ariaLabel: plus && minus
         ? `${label} (+${statShort(plus as StatID, lang)}, −${statShort(minus as StatID, lang)})`
@@ -209,7 +219,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
   }), common?.natures), [lang, t, commonKey]);
   const teraOptions = useMemo<ComboOption[]>(() => withCommon([
     { value: '', label: t('editor.none'), ariaLabel: t('editor.none') },
-    ...TYPES.map(type => ({ value: type, label: typeName(type, lang), content: <TypeChip type={type} />, ariaLabel: typeName(type, lang) })),
+    ...TYPES.map(type => ({ value: type, label: typeName(type, lang), alias: type, content: <TypeChip type={type} />, ariaLabel: typeName(type, lang) })),
   ], common?.teraTypes), [lang, t, commonKey]);
   const moves = [0, 1, 2, 3].map(i => set.moves[i] ?? '');
   // Una mossa già scelta in un altro slot resta nel menu, grigia e non selezionabile
@@ -335,7 +345,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
                 <Icon name="check" />
                 <strong>{natureName(spread.nature, lang)}</strong>
                 <span className="spread-evs">{spreadText(spread, lang)}</span>
-                <span className="common-share">{shareLabel(spread)}</span>
+                <span className="common-share" title={spread.share === null ? t('combobox.presetTitle') : undefined}>{shareLabel(spread)}</span>
               </button>
             ))}
           </div>
@@ -404,7 +414,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
         <legend>{t('editor.set')}</legend>
         <div className="field" data-tip={itemDesc}>
           <span className="field-head">{t('editor.item')}</span>
-          <Combobox label={t('editor.item')} commonLabel={commonLabel} value={set.item} options={itemOptions} description={itemDesc}
+          <Combobox label={t('editor.item')} commonLabel={commonLabel(common?.items)} value={set.item} options={itemOptions} description={itemDesc}
             leading={set.item ? <ItemIcon item={set.item} /> : undefined}
             onChange={item => update({ item })} />
         </div>
@@ -415,17 +425,17 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
           </span>
           {megaAbility ? (
             <span title={t('editor.megaAbility')}>
-              <Combobox label={t('editor.ability')} commonLabel={commonLabel} value={megaAbility} options={[abilityOption(megaAbility, lang)]} restricted disabled
+              <Combobox label={t('editor.ability')} commonLabel={commonLabel(common?.abilities)} value={megaAbility} options={[abilityOption(megaAbility, lang)]} restricted disabled
                 description={abilityDesc} onChange={() => undefined} />
             </span>
           ) : (
-            <Combobox label={t('editor.ability')} commonLabel={commonLabel} value={set.ability} options={abilityOptions} restricted={!custom}
+            <Combobox label={t('editor.ability')} commonLabel={commonLabel(common?.abilities)} value={set.ability} options={abilityOptions} restricted={!custom}
               description={abilityDesc} onChange={ability => update({ ability })} />
           )}
         </div>
         <div className="field">
           <span className="field-head">{t('editor.nature')}</span>
-          <Combobox label={t('editor.nature')} commonLabel={commonLabel} value={set.nature} options={natureOptions} restricted
+          <Combobox label={t('editor.nature')} commonLabel={commonLabel(common?.natures)} value={set.nature} options={natureOptions} restricted
             display={<><span>{natureName(set.nature, lang)}</span>{set.nature && <NatureEffect name={set.nature} />}</>}
             onChange={nature => update({ nature })} />
         </div>
@@ -434,7 +444,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
             {t('editor.tera')}
             {teraBannedIn && <small className="field-note">{t('editor.teraBanned', { format: teraBannedIn })}</small>}
           </span>
-          <Combobox label={t('editor.tera')} commonLabel={commonLabel} value={set.teraType ?? ''} options={teraOptions} restricted disabled={!!teraBannedIn}
+          <Combobox label={t('editor.tera')} commonLabel={commonLabel(common?.teraTypes)} value={set.teraType ?? ''} options={teraOptions} restricted disabled={!!teraBannedIn}
             display={set.teraType ? <TypeChip type={set.teraType} /> : <span className="faint">{t('editor.none')}</span>}
             onChange={tera => update({ teraType: tera || undefined })} />
         </div>
@@ -451,7 +461,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
               label={t('editor.move', { n: i + 1 })}
               value={move}
               options={moveOptionsFor[i]}
-              commonLabel={commonLabel}
+              commonLabel={commonLabel(common?.moves)}
               description={describe.move(move, lang)}
               onChange={value => {
                 const next = [...moves];

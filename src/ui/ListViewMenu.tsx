@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import type { ListSprite } from './theme';
 import { useT } from '../i18n/react';
 import { Icon } from './icons';
@@ -18,6 +18,7 @@ export function ListViewMenu({ listSprite, onListSpriteChange }: {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const popId = useId();
   useEffect(() => {
     if (!open) return;
     const outside = (e: PointerEvent) => { if (!rootRef.current?.contains(e.target as Node)) setOpen(false); };
@@ -36,11 +37,12 @@ export function ListViewMenu({ listSprite, onListSpriteChange }: {
   return (
     <div className="list-view" ref={rootRef}>
       <button ref={buttonRef} type="button" className="list-view-toggle" aria-label={tr('suggest.view')} title={tr('suggest.view')}
-        aria-expanded={open} aria-haspopup="true" onClick={() => setOpen(o => !o)}>
+        // Niente aria-haspopup: il riquadro è un gruppo di scelte, non un menu
+        aria-expanded={open} aria-controls={open ? popId : undefined} onClick={() => setOpen(o => !o)}>
         <Icon name="roles" />
       </button>
       {open && (
-        <div className="list-view-pop" role="group" aria-label={tr('suggest.view')}>
+        <div id={popId} className="list-view-pop" role="group" aria-label={tr('suggest.view')}>
           <fieldset>
             <legend>{tr('suggest.view.sprite')}</legend>
             {SPRITES.map(choice => (

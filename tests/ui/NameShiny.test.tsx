@@ -45,7 +45,7 @@ describe('testata dell\'editor', () => {
     expect(slot().querySelector('summary .name')).toHaveTextContent('Tusky');
     expect(slot().querySelector('summary .name')).toHaveAttribute('title', 'Tusky (Great Tusk)');
     await user.click(within(slot()).getByRole('button', { name: 'Showdown: importa o esporta il set' }));
-    expect((within(slot()).getByLabelText('Set da incollare (testo Showdown)') as HTMLTextAreaElement).value).toMatch(/^Tusky \(Great Tusk\)/);
+    expect((within(slot()).getByLabelText('Set in testo Showdown') as HTMLTextAreaElement).value).toMatch(/^Tusky \(Great Tusk\)/);
   });
 
   it('il pulsante Shiny cambia lo sprite della carta', async () => {
@@ -67,25 +67,25 @@ describe('testata dell\'editor', () => {
   it('Importa / Esporta si apre sotto il suo pulsante e si chiude cliccando fuori', async () => {
     const { user, slot } = await openEditor();
     await user.click(within(slot()).getByRole('button', { name: 'Showdown: importa o esporta il set' }));
-    expect(within(slot()).getByLabelText('Set da incollare (testo Showdown)').closest('.io-anchor')).not.toBeNull();
+    expect(within(slot()).getByLabelText('Set in testo Showdown').closest('.io-anchor')).not.toBeNull();
     fireEvent.pointerDown(document.body);
-    expect(within(slot()).queryByLabelText('Set da incollare (testo Showdown)')).toBeNull();
+    expect(within(slot()).queryByLabelText('Set in testo Showdown')).toBeNull();
   });
 
   it('Importa / Esporta: se il testo è stato modificato, un clic fuori non lo butta', async () => {
     const { user, slot } = await openEditor();
     await user.click(within(slot()).getByRole('button', { name: 'Showdown: importa o esporta il set' }));
-    const text = within(slot()).getByLabelText('Set da incollare (testo Showdown)');
+    const text = within(slot()).getByLabelText('Set in testo Showdown');
     await user.clear(text);
     await user.type(text, 'Garchomp');
     fireEvent.pointerDown(document.body);
-    expect(within(slot()).getByLabelText('Set da incollare (testo Showdown)')).toHaveValue('Garchomp');
+    expect(within(slot()).getByLabelText('Set in testo Showdown')).toHaveValue('Garchomp');
   });
 
   it('Copia set è a un clic, accanto a Importa / Esporta, senza aprire il riquadro', async () => {
     const { slot } = await openEditor();
     expect(within(slot()).getByRole('button', { name: 'Copia set' }).closest('.io-anchor')).not.toBeNull();
-    expect(within(slot()).queryByLabelText('Set da incollare (testo Showdown)')).toBeNull();
+    expect(within(slot()).queryByLabelText('Set in testo Showdown')).toBeNull();
   });
 
   it('Custom Skillset: la levetta viene dopo il testo, che dice cosa fa adesso', async () => {

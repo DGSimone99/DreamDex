@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties, type FocusEvent } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type FocusEvent, type PointerEvent } from 'react';
 import { getSpecies } from '../engine/dex';
 import { typeName } from '../i18n/game';
 import { useLang } from '../i18n/react';
@@ -7,7 +7,7 @@ import { TypeIcons } from './typeIcons';
 import { CandidateMarks, OutMark, PickButton, Reasons, ResultCell, candidateHandlers, isFavoriteCandidate, isLead, stateClasses, type CandidateProps } from './candidateParts';
 
 /** Quanto il mouse deve restare sulla carta prima che lo sprite esca e parta la GIF (ms): passando sopra la griglia di corsa
- *  non si accende niente e non si scarica nessuna GIF. Lo stesso ritardo nel CSS (--wake) per luce e salto dell'icona. */
+ *  non si accende niente e non si scarica nessuna GIF. Il CSS lo riceve da qui (--wake sulla carta) per la luce. */
 export const CARD_WAKE_MS = 120;
 
 /** Fuoco da tastiera (non dal clic): jsdom e i browser vecchi senza :focus-visible contano come tastiera. */
@@ -31,7 +31,11 @@ export function CandidateCard(props: CandidateProps) {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const stop = () => { if (timer.current !== null) { clearTimeout(timer.current); timer.current = null; } };
   useEffect(() => stop, []);
+  // Solo col mouse: un tocco sul telefono manda anche un "mouse sopra" finto, che lascerebbe la carta sveglia (e la GIF scaricata).
+  // Il tipo di puntatore arriva prima del finto mouseenter; senza (browser vecchi, test) conta come mouse
+  const pointer = useRef<string | null>(null);
   const enter = () => {
+    if (pointer.current && pointer.current !== 'mouse') return;
     stop();
     timer.current = setTimeout(() => { timer.current = null; setHover(true); }, CARD_WAKE_MS);
   };
@@ -42,7 +46,8 @@ export function CandidateCard(props: CandidateProps) {
   const className = ['card', isLead(rank, item) && 'first', stateClasses(props)].filter(Boolean).join(' ');
   return (
     // Bordo inferiore nel colore del tipo primario
-    <li className={className} style={{ '--t1': typeColor(types[0] ?? '') } as CSSProperties} {...candidateHandlers(props)}
+    <li className={className} style={{ '--t1': typeColor(types[0] ?? ''), '--wake': `${CARD_WAKE_MS}ms` } as CSSProperties} {...candidateHandlers(props)}
+      onPointerEnter={(e: PointerEvent<HTMLLIElement>) => { pointer.current = e.pointerType; }}
       onMouseEnter={enter} onMouseLeave={leave}
       onFocus={(e: FocusEvent<HTMLLIElement>) => setFocused(keyboardFocus(e.target))}
       onBlur={(e: FocusEvent<HTMLLIElement>) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setFocused(false); }}>

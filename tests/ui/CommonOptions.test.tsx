@@ -130,3 +130,36 @@ describe('più usati da un altro formato', () => {
     expect(screen.getByRole('listbox')).toHaveTextContent('Più usati · NatDex Ubers');
   });
 });
+
+describe('scelte in cima che vengono dai preset (senza statistiche)', () => {
+  it('l’intestazione dice "Dai preset Smogon" e "Alt" spiega da dove viene', async () => {
+    const { SetEditor } = await import('../../src/ui/SetEditor');
+    const { emptySet } = await import('../../src/engine/sets');
+    const common = { source: null, items: [{ name: 'Life Orb', share: null }], abilities: [], natures: [], moves: [], spreads: [], teraTypes: [] };
+    const user = userEvent.setup();
+    renderIt(<SetEditor set={emptySet('Garchomp')} common={common} genLimit={9} onChange={() => undefined} />);
+    await user.click(screen.getByLabelText('Strumento'));
+    const list = screen.getByRole('listbox');
+    expect(list).toHaveTextContent('Dai preset Smogon');
+    expect(list).not.toHaveTextContent('Più usati');
+    expect(within(list).getByText('Alt')).toHaveAttribute('title', 'Da un preset Smogon');
+  });
+});
+
+describe('ricerca senza accenti e col secondo nome', () => {
+  it('"velocita" trova "Velocità"; il nome inglese (alias) trova la voce', async () => {
+    const user = userEvent.setup();
+    const choices = [
+      { value: 'Speed', label: 'Velocità' },
+      { value: 'Earthquake', label: 'Terremoto', alias: 'Earthquake' },
+      { value: 'Surf', label: 'Surf', alias: 'Surf' },
+    ];
+    renderIt(<Combobox label="Voce" value="" options={choices} onChange={() => undefined} />);
+    const field = screen.getByLabelText('Voce');
+    await user.type(field, 'velocita');
+    expect(within(screen.getByRole('listbox')).getAllByRole('option').map(o => o.textContent)).toEqual(['Velocità']);
+    await user.clear(field);
+    await user.type(field, 'earthq');
+    expect(within(screen.getByRole('listbox')).getAllByRole('option').map(o => o.textContent)).toEqual(['Terremoto']);
+  });
+});

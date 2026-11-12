@@ -9,15 +9,30 @@ const team = () => screen.getByRole('region', { name: 'Team' });
 describe('import / export / salvataggio', () => {
   beforeEach(() => window.localStorage.clear());
 
-  it('importa un team Showdown e mostra gli errori', async () => {
+  it('importa un team Showdown', async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} />);
     await user.click(screen.getByLabelText('Testo Showdown'));
-    await user.paste('Corviknight @ Leftovers\nAbility: Pressure\n- Defog\n\n- Tackle\n\nToxapex\nAbility: Regenerator\n- Toxic');
+    await user.paste('Corviknight @ Leftovers\nAbility: Pressure\n- Defog\n\nToxapex\nAbility: Regenerator\n- Toxic');
     await user.click(screen.getByRole('button', { name: 'Importa' }));
     expect(within(team()).getByRole('heading', { name: 'Team (2/6)' })).toBeInTheDocument();
     expect(within(team()).getByText('Corviknight')).toBeInTheDocument();
-    expect(screen.getByText('Blocco 2 non leggibile: "- Tackle"')).toBeInTheDocument();
+    expect(screen.queryByRole('alertdialog')).toBeNull();
+  });
+
+  it('un set non letto ferma tutto: niente importato, una finestra dice cosa correggere, il testo resta', async () => {
+    const user = userEvent.setup();
+    render(<App initialLang="it" data={fixtureData} />);
+    const text = 'Corviknight @ Leftovers\nAbility: Pressure\n- Defog\n\n- Tackle\n\nToxapex\nAbility: Regenerator\n- Toxic';
+    await user.click(screen.getByLabelText('Testo Showdown'));
+    await user.paste(text);
+    await user.click(screen.getByRole('button', { name: 'Importa' }));
+    const dialog = screen.getByRole('alertdialog', { name: 'Niente importato' });
+    expect(within(dialog).getByText('Set 2 non letto ("- Tackle"): la prima riga deve essere il nome del Pokémon')).toBeInTheDocument();
+    await user.click(within(dialog).getByRole('button', { name: 'OK' }));
+    expect(screen.queryByRole('alertdialog')).toBeNull();
+    expect(within(team()).queryByText('Corviknight')).toBeNull();
+    expect(screen.getByLabelText('Testo Showdown')).toHaveValue(text);
   });
 
   it('esporta il team nel campo di testo', async () => {

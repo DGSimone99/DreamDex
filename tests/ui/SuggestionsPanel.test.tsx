@@ -279,8 +279,12 @@ describe('SuggestionsPanel', () => {
     // ⚔️ + i chip dei due tipi
     expect(reasons[0].querySelector('.sym-emoji')!.textContent).toBe('⚔️');
     expect(reasons[0].querySelectorAll('.sym .type-chip')).toHaveLength(2);
-    // 🛡️: l'immune col suo chip e la parola "immune", poi la resistenza
-    expect([...reasons[1].querySelectorAll('.sym-chip')].map(c => c.querySelector('.sym-immune')?.textContent ?? '')).toEqual(['immune', '']);
+    // 🛡️: l'immune con la "×" davanti al chip (a parole nel tooltip), poi la resistenza
+    const chips = [...reasons[1].querySelectorAll('.sym-chip')];
+    expect(chips.map(c => c.querySelector('.sym-immune')?.textContent ?? '')).toEqual(['×', '']);
+    expect(chips[0].firstElementChild).toHaveClass('sym-immune');
+    expect(chips[0]).toHaveAttribute('title', expect.stringMatching(/^Immune a /));
+    expect(chips[1]).not.toHaveAttribute('title');
     expect(reasons[1].querySelectorAll('.sym .type-chip')).toHaveLength(2);
     // vs: il primo col pallino del tipo e il nome, come nel dettaglio; gli altri "+N" (niente mini sprite)
     expect(reasons[2].querySelector('.sym')!.textContent).toBe('vsZapdos');
@@ -712,6 +716,35 @@ describe('sprite Icona box', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it('Carte: un tocco sul telefono non sveglia la carta (niente sprite fuori, niente GIF); il mouse sì', async () => {
+    const { SuggestionsPanel } = await import('../../src/ui/SuggestionsPanel');
+    const { renderIt } = await import('../helpers/italian');
+    const { tusk } = await import('../fixtures/data');
+    const { fireEvent } = await import('@testing-library/react');
+    renderIt(<SuggestionsPanel team={[tusk] as never} format={DEFAULT_FORMAT} data={fixtureData} replaceIndex={null}
+      onAdd={() => {}} onReplaceWith={() => {}} onCancelReplace={() => {}} />);
+    const cards = [...list().querySelectorAll<HTMLElement>('.card')];
+    vi.useFakeTimers();
+    try {
+      // Il tocco: prima il puntatore (touch), poi il finto mouseenter del browser
+      fireEvent.pointerEnter(cards[1], { pointerType: 'touch' });
+      fireEvent.mouseEnter(cards[1]);
+      act(() => { vi.advanceTimersByTime(CARD_WAKE_MS + 50); });
+      expect(cards[1].querySelector('.card-sprite.popped')).toBeNull();
+      expect(cards[1].querySelector('.sprite-ani')).toBeNull();
+      fireEvent.mouseLeave(cards[1]);
+      // Lo stesso con il mouse: la carta si sveglia
+      fireEvent.pointerEnter(cards[1], { pointerType: 'mouse' });
+      fireEvent.mouseEnter(cards[1]);
+      act(() => { vi.advanceTimersByTime(CARD_WAKE_MS); });
+      expect(cards[1].querySelector('.card-sprite.popped')).not.toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
+    // Il ritardo del CSS arriva dallo stesso numero
+    expect(cards[1].style.getPropertyValue('--wake')).toBe(`${CARD_WAKE_MS}ms`);
   });
 
   it('Set consigliato: sotto le voci i ruoli del set, il principale per primo ed evidenziato', async () => {

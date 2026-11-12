@@ -10,7 +10,7 @@
   padding: 0 14px 12px;
   background: var(--panel);
 }
-.grade-badge .grade-head, .grade-badge .grade-areas, .grade-badge .grade-delta { grid-column: 1 / -1; }
+.grade-badge .grade-head, .grade-badge .grade-areas { grid-column: 1 / -1; }
 .grade-badge .letter { grid-row: 2 / span 2; }
 .grade-badge .overall { align-self: end; }
 .grade-badge .label { align-self: start; }

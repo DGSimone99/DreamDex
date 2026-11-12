@@ -11,10 +11,12 @@
 }
 .team-head { position: relative; z-index: 6; display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
 .fill-anchor { position: relative; }
+/* Stessa targa della fascia "Voto" (misura, spazi, altezza), in alto come lei: le due targhe partono sulla stessa linea */
 .team-head h2 {
+  align-self: flex-start;
   margin: 0;
   padding: 4px 24px 4px 12px;
-  font: 700 15px/1.2 var(--display);
+  font: 700 14px/1.2 var(--display);
   font-style: italic;
   color: var(--on-plate);
   background: var(--stripes), var(--plate);
@@ -108,11 +110,11 @@
   transform-origin: 50% 100%;
   transform: translateX(-50%) scale(min(calc(var(--open-scale, 1.12) * var(--sprite-scale, 1)), calc(var(--fit, 999) / var(--ani-h, 96))));
 }
-/* Il nome va a capo solo agli spazi e ai trattini, mai a metà parola: se la parte più lunga (--name-len, in lettere) non
-   entra nella riga, il nome si rimpicciolisce (fino a 11px). 0.7em ≈ la lettera più larga in media del Kanit corsivo;
-   la larghezza è quella della carta (container) meno l'icona dello strumento */
+/* Il nome va a capo solo agli spazi e ai trattini, mai a metà parola: se la parte più lunga non entra nella riga, il nome
+   si rimpicciolisce (fino a 11px). --name-em = larghezza vera di quella parte scritta a 1px (misurata nel font, senza
+   unità: TeamPanel); la riga è la carta (container) meno l'icona dello strumento */
 .band:not(.collapsed) .slot > summary { container-type: inline-size; }
-.slot .name { --name-fs: 16px; font: 800 var(--name-fs)/1.05 var(--display); font-size: min(var(--name-fs), max(11px, (100cqi - 26px) / (var(--name-len, 8) * 0.7))); font-style: italic; letter-spacing: 0.01em; max-width: 100%; overflow-wrap: normal; word-break: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.slot .name { --name-fs: 16px; font: 800 var(--name-fs)/1.05 var(--display); font-size: min(var(--name-fs), max(11px, (100cqi - 26px) / var(--name-em, 5.6))); font-style: italic; letter-spacing: 0.01em; max-width: 100%; overflow-wrap: normal; word-break: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 /* Icona dello strumento in uno spazio fisso alto quanto la prima riga del nome: icona e nome partono insieme,
    e i nomi restano allineati tra le carte anche senza strumento */
 .slot .name-line { display: flex; align-items: flex-start; gap: 6px; max-width: 100%; margin-top: 4px; }
