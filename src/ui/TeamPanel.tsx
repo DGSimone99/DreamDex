@@ -13,8 +13,8 @@ import { memo, useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, 
 import { flushSync } from 'react-dom';
 import { copyText } from './clipboard';
 import { setEditing } from './editing';
-import { bestPreset, bestPresets } from '../engine/bestPreset';
-import { ConfirmDialog } from './ConfirmDialog';
+import { bestPreset } from '../engine/bestPreset';
+import { ImproveSetsDialog } from './ImproveSetsDialog';
 import { ImportDialog } from './ImportDialog';
 import { reviewImport, type ImportReview } from './importReview';
 import { FillPanel } from './FillPanel';
@@ -571,23 +571,12 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
     setMoveNote(t(lang, 'team.moved', { name: moved.name ? `${moved.name} (${battleName(moved)})` : battleName(moved), n: to + 1, total: team.length }));
     focusCard(to);
   };
-  // Migliora i set: qualche decimo di secondo, il pulsante dice che sta calcolando
-  const [busy, setBusy] = useState(false);
-  // Cambia tutti i membri insieme: prima una conferma che dice cosa fa
+  // Migliora i set: una finestra che calcola i set nuovi, li mostra e chiede conferma
   const [confirmPresets, setConfirmPresets] = useState(false);
   // Dopo un Incolla set: mosse non imparabili (Custom Skillset?) o nomi non trovati del membro incollato
   const [ask, setAsk] = useState<{ index: number; review: ImportReview } | null>(null);
   const presetsButton = useRef<HTMLButtonElement>(null);
   const closeConfirm = () => { setConfirmPresets(false); presetsButton.current?.focus(); };
-  const runPresets = () => {
-    setConfirmPresets(false);
-    setBusy(true);
-    setTimeout(() => {
-      const next = bestPresets(team, data, format.genLimit);
-      setBusy(false);
-      if (onBulk) onBulk('presets', next); else onChange(next);
-    }, 30);
-  };
   // Completa team: pannello con tipi di team e proposte
   const [filling, setFilling] = useState(false);
   const fillToggle = useRef<HTMLButtonElement>(null);
@@ -669,16 +658,18 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
               )}
             </span>
           ) : team.length > 0 && (
-            <button type="button" className="team-guide" disabled={busy} aria-busy={busy || undefined} ref={presetsButton}
+            <button type="button" className="team-guide" ref={presetsButton}
               aria-haspopup="dialog" title={t(lang, 'team.bestPresetsTitle')} onClick={() => setConfirmPresets(true)}>
-              <Icon name="spark" /> <span className="btn-label">{t(lang, busy ? 'team.bestPresetsBusy' : 'team.bestPresets')}</span>
+              <Icon name="spark" /> <span className="btn-label">{t(lang, 'team.bestPresets')}</span>
             </button>
           )}
         </div>
         {saved}
         {confirmPresets && (
-          <ConfirmDialog title={t(lang, 'team.bestPresets')} text={t(lang, 'team.bestPresetsConfirm')} confirm={t(lang, 'team.bestPresetsApply')}
-            onConfirm={() => { runPresets(); presetsButton.current?.focus(); }} onCancel={closeConfirm} />
+          <ImproveSetsDialog team={team} data={data} genLimit={format.genLimit} onCancel={closeConfirm} onApply={next => {
+            closeConfirm();
+            if (onBulk) onBulk('presets', next); else onChange(next);
+          }} />
         )}
         {ask && (
           <ImportDialog review={ask.review} onClose={() => setAsk(null)} onYes={() => {

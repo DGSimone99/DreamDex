@@ -157,3 +157,42 @@ export function bestPresets(team: TeamSet[], data: EngineData, genLimit = 9): Te
   });
   return current;
 }
+
+/** Un membro in Migliora i set: il set di adesso, quello proposto e quanto sale il voto del team cambiando solo lui. */
+export interface SetChange {
+  before: TeamSet;
+  after: TeamSet;
+  /** Il set proposto è diverso da quello di adesso. */
+  changed: boolean;
+  /** Voto del team con solo questo cambio, meno il voto di adesso (0 se non cambia o senza voto). */
+  gain: number;
+}
+
+const sameSet = (a: TeamSet, b: TeamSet) => JSON.stringify(a) === JSON.stringify(b);
+
+/** Le mosse di `after` nell'ordine di `before`: chi resta tiene il suo posto, le nuove prendono i posti liberati. */
+export function alignMoves(before: string[], after: string[]): string[] {
+  const left = after.filter(Boolean);
+  const out: string[] = before.map(move => {
+    const i = move ? left.findIndex(m => family(m) === family(move)) : -1;
+    return i >= 0 ? left.splice(i, 1)[0] : '';
+  });
+  for (let i = 0; i < out.length && left.length; i++) if (!out[i]) out[i] = left.shift()!;
+  return [...out, ...left].filter(Boolean);
+}
+
+/**
+ * Migliora i set: i set proposti per tutto il team (bestPresets) e, per ogni membro, il suo cambio da solo.
+ * I guadagni dei singoli possono non sommarsi al totale: i set lavorano insieme.
+ */
+export function improveSets(team: TeamSet[], data: EngineData, genLimit = 9): SetChange[] {
+  const after = bestPresets(team, data, genLimit);
+  const base = rateTeam(team, data, 'en')?.overall ?? null;
+  return team.map((before, i) => {
+    const proposed = after[i] ?? before;
+    const next = { ...proposed, moves: alignMoves(before.moves, proposed.moves) };
+    const changed = !sameSet(before, next);
+    const overall = changed && base !== null ? rateTeam(team.map((s, j) => (j === i ? next : s)), data, 'en')?.overall ?? base : base;
+    return { before, after: next, changed, gain: overall === null || base === null ? 0 : overall - base };
+  });
+}

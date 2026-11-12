@@ -672,6 +672,9 @@ const STATES: Record<string, State> = {
   'saved-menu': { storage: { 'dreamdex.savedTeams': JSON.stringify([{ name: 'Pioggia NatDex', text: 'Pelipper' }, { name: 'Un nome di team davvero molto lungo per vedere se va a capo', text: 'Garchomp' }]) }, run: async p => { await p.evaluate(() => (document.querySelector('.team-head > details.popover > summary') as HTMLElement | null)?.click()); await wait(400); return true; } },
   'saved-empty': { hash: '', run: async p => { await p.evaluate(() => (document.querySelector('.team-head > details.popover > summary') as HTMLElement | null)?.click()); await wait(400); return true; } },
   'team-three': { hash: hash(TEAM.slice(0, 3)) },
+  'improve-small': { hash: hash(SIX), run: async p => { await p.evaluate(() => (document.querySelector('.team-guide') as HTMLElement | null)?.click()); await p.waitForSelector('.improve-toggle', { timeout: 20000 }); await wait(300); return true; } },
+  'improve-wide': { hash: hash(SIX), run: async p => { await p.evaluate(() => (document.querySelector('.team-guide') as HTMLElement | null)?.click()); await p.waitForSelector('.improve-toggle', { timeout: 20000 }); await p.click('.improve-toggle'); await wait(700); return true; } },
+  'improve-wide-en': { hash: hash(SIX), lang: 'en', run: async p => { await p.evaluate(() => (document.querySelector('.team-guide') as HTMLElement | null)?.click()); await p.waitForSelector('.improve-toggle', { timeout: 20000 }); await p.click('.improve-toggle'); await wait(700); return true; } },
   'team-empty': { hash: '' },
 };
 const chosen = (arg('states') ?? Object.keys(STATES).join(',')).split(',');
