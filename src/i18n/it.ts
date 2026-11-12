@@ -384,6 +384,7 @@ export const it: Record<keyof typeof en, string> = {
   'showdown.quickCopied': "Team copiato in formato Showdown",
   'undo.loaded': "Team caricato dal link",
   'saved.title': "Team salvati ({n})",
+  'saved.changed': "modificato dopo il caricamento",
   'saved.name': "Nome team",
   'saved.namePlaceholder': "Nome del team",
   'saved.save': "Salva team",

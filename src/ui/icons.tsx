@@ -28,6 +28,7 @@ const paths = {
   // Salvare, sovrascrivere, rinominare un set
   save: 'M5 4h11l3 3v13H5zM8 4v5h7V4M8 20v-6h8v6',
   link: 'M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1',
+  down: 'M6.5 9.5 12 15l5.5-5.5',
   // Box del PC: la scatola con il coperchio e la maniglia
   box: 'M3.5 9.5h17v10h-17zM2.5 5.5h19v4h-19zM10 13h4',
   overwrite: 'M5 4h11l3 3v13H5zM9 14.5a3 3 0 1 0 1-2.2M9 10.5v2.5h2.5',

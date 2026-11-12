@@ -382,6 +382,7 @@ export const en = {
   'showdown.quickCopied': "Team copied in Showdown format",
   'undo.loaded': "Team loaded from the link",
   'saved.title': "Saved teams ({n})",
+  'saved.changed': "changed since it was loaded",
   'saved.name': "Team name",
   'saved.namePlaceholder': "Team name",
   'saved.save': "Save team",
