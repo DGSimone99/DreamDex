@@ -2,6 +2,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { Statistics } from 'smogon';
 import type { EngineData } from '../src/engine/data';
+import { normalizeTeams, type TournamentTeam } from '../src/engine/tournamentTeams';
 import { buildFallbackSets, mergePresets, normalizeAnalysisPresets, normalizeAnalysisSets, type PresetsData, type SetsData } from '../src/engine/sets';
 import { buildFallbackStats, reduceChaos, reducePkmnStats, type ChaosFile, type PkmnStatsFile, type StatsMeta } from '../src/engine/stats';
 import { FALLBACK_SETS, FALLBACK_STATS, SOURCES } from './sources';
@@ -49,8 +50,18 @@ async function fetchSets(source: string): Promise<{ sets: SetsData; presets: Pre
   }
 }
 
+/** Squadre da torneo della fonte: se non si scaricano, niente file (l'app funziona senza). */
+async function fetchTeams(source: string): Promise<TournamentTeam[] | null> {
+  try {
+    return normalizeTeams(await (await get(`https://data.pkmn.cc/teams/${source}.json`)).json());
+  } catch (error) {
+    console.warn(`[${source}] Squadre da torneo non disponibili (${(error as Error).message}): continuo senza.`);
+    return null;
+  }
+}
+
 async function fetchSource(source: string, months: string[]): Promise<EngineData> {
-  const [{ meta, chaos }, { sets, presets }] = await Promise.all([fetchStats(source, months), fetchSets(source)]);
+  const [{ meta, chaos }, { sets, presets }, teams] = await Promise.all([fetchStats(source, months), fetchSets(source), fetchTeams(source)]);
   const pokemon = reduceChaos(chaos);
   const outDir = join('data', source);
   await mkdir(outDir, { recursive: true });
@@ -59,12 +70,13 @@ async function fetchSource(source: string, months: string[]): Promise<EngineData
     writeFile(join(outDir, 'meta.json'), JSON.stringify(meta, null, 2)),
     writeFile(join(outDir, 'sets.json'), JSON.stringify(sets)),
     writeFile(join(outDir, 'presets.json'), JSON.stringify(presets)),
+    ...(teams ? [writeFile(join(outDir, 'teams.json'), JSON.stringify(teams))] : []),
   ]);
   console.log(
-    `[${source}] Fatto: ${Object.keys(pokemon).length} Pokémon, ${Object.keys(sets).length} set, ` +
+    `[${source}] Fatto: ${Object.keys(pokemon).length} Pokémon, ${Object.keys(sets).length} set, ${teams?.length ?? 0} squadre da torneo, ` +
       `${meta.battles} battaglie (${meta.month}, rating ${meta.cutoff}+).`,
   );
-  return { stats: { meta, pokemon }, sets, presets };
+  return { stats: { meta, pokemon }, sets, presets, tournamentTeams: teams };
 }
 
 /**

@@ -2,6 +2,7 @@ import type { FormatId } from './format';
 import type { PresetsData, SetsData } from './sets';
 import type { FallbackStats, StatsData } from './stats';
 import type { EffectiveLists } from './lists';
+import type { TournamentTeam } from './tournamentTeams';
 
 export interface EngineData {
   stats: StatsData | null;
@@ -12,6 +13,8 @@ export interface EngineData {
   presets?: PresetsData | null;
   /** Set con nome delle analisi degli altri formati. */
   fallbackPresets?: PresetsData | null;
+  /** Squadre da torneo della fonte (pkmn), per "Team da torneo"; null se non scaricate. */
+  tournamentTeams?: TournamentTeam[] | null;
   /** Statistiche dal formato in cui ogni Pokémon è più giocato, per chi non ne ha in questo (es. i vietati). */
   fallbackStats?: FallbackStats | null;
   /** Valutazione senza meta: tipi tutti uguali, niente minacce né uso dei membri (giochi in single player). */

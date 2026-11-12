@@ -15,7 +15,7 @@ import { copyText } from './clipboard';
 import { setEditing } from './editing';
 import { bestPreset } from '../engine/bestPreset';
 import { ImproveSetsDialog } from './ImproveSetsDialog';
-import { prepareImproveSets } from './useRanking';
+import { cancelPrepareFill, prepareFill, prepareImproveSets } from './useRanking';
 import { ImportDialog } from './ImportDialog';
 import { reviewImport, type ImportReview } from './importReview';
 import { FillPanel } from './FillPanel';
@@ -60,8 +60,8 @@ interface Props {
   collapsed?: boolean;
   /** Set incollato al posto del membro (può essere un altro Pokémon); se manca, si aggiorna solo il team. */
   onPaste?: (index: number, set: TeamSet) => void;
-  /** Azioni sull'intero team, annullabili: preset migliori per tutti, svuota team. */
-  onBulk?: (kind: 'presets' | 'fill' | 'clear', team: TeamSet[]) => void;
+  /** Azioni sull'intero team, annullabili: preset migliori per tutti, Completa team, team da torneo caricato, svuota team. */
+  onBulk?: (kind: 'presets' | 'fill' | 'clear' | 'tournament', team: TeamSet[]) => void;
   /** Clic su uno slot vuoto: porta alla ricerca dei Pokémon. */
   onAddClick?: () => void;
   /** Importa / Esporta: a destra nella testata, prima di Svuota team. */
@@ -584,7 +584,15 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
     const timer = setTimeout(() => prepareImproveSets(team, data, format.genLimit), 1500);
     return () => clearTimeout(timer);
   }, [team, data, format.genLimit]);
-  // Completa team: pannello con tipi di team e proposte
+  // Team incompleto e fermo da un secondo e mezzo: le proposte di partenza di Completa team si preparano in sottofondo.
+  // Appena il team cambia, la preparazione vecchia si ferma subito (non fa aspettare i voti della lista)
+  useEffect(() => {
+    cancelPrepareFill();
+    if (team.length >= 6 || !data.stats) return;
+    const timer = setTimeout(() => prepareFill(team, format, data), 1500);
+    return () => clearTimeout(timer);
+  }, [team, data, format]);
+  // Completa team: pannello con le proposte e i team da torneo
   const [filling, setFilling] = useState(false);
   const fillToggle = useRef<HTMLButtonElement>(null);
   // Chiudendo il pannello il focus torna al pulsante
@@ -653,7 +661,9 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
             // Anche a team vuoto: propone team interi del tipo scelto; il pannello si apre sotto il pulsante
             <span className="fill-anchor">
               <button type="button" className="team-guide" data-fill-toggle aria-expanded={filling} aria-haspopup="dialog" ref={fillToggle}
-                title={t(lang, 'team.fillTitle')} onClick={() => setFilling(open => !open)}>
+                title={t(lang, 'team.fillTitle')} onClick={() => setFilling(open => !open)}
+                // Il calcolo parte già quando ci si avvicina al pulsante: al clic le proposte sono spesso già pronte
+                onPointerEnter={() => prepareFill(team, format, data)} onFocus={() => prepareFill(team, format, data)}>
                 <Icon name="spark" /> <span className="btn-label">{t(lang, 'team.fill')}</span>
               </button>
               {filling && (
@@ -661,6 +671,10 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
                   setFilling(false);
                   setOpenIndex(null);
                   if (onBulk) onBulk('fill', proposal.team); else onChange(proposal.team);
+                }} onLoadTeam={next => {
+                  setFilling(false);
+                  setOpenIndex(null);
+                  if (onBulk) onBulk('tournament', next); else onChange(next);
                 }} />
               )}
             </span>

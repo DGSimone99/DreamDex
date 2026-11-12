@@ -17,6 +17,7 @@ import type { TeamSet } from './sets';
 import { collectGainJobs, computeGains, primeGains } from './teamGain';
 import { coachAdvice } from './coach';
 import { improveSets } from './bestPreset';
+import { fillProposals } from './fillProposals';
 
 const ready = Promise.all([loadTiers().then(initTiers), loadBans().then(initBans)]);
 // I learnset (tanta memoria) servono solo a fare i set dei candidati, cioè a chi decide i voti e fa la lista: chi
@@ -35,7 +36,7 @@ function engineData(d: WorkerData): EngineData {
   if (!data) {
     data = {
       stats: part(d.stats), sets: part(d.sets), fallback: part(d.fallback), presets: part(d.presets),
-      fallbackPresets: part(d.fallbackPresets), fallbackStats: part(d.fallbackStats), userLists: part(d.userLists) ?? undefined,
+      fallbackPresets: part(d.fallbackPresets), fallbackStats: part(d.fallbackStats), tournamentTeams: part(d.tournamentTeams), userLists: part(d.userLists) ?? undefined,
       ignoreMeta: d.ignoreMeta, allowMultipleMegas: d.allowMultipleMegas, formatId: d.formatId,
     };
     if (datas.size >= 20) datas.clear();
@@ -57,7 +58,7 @@ function sameTeam(team: TeamSet[]): TeamSet[] {
 }
 const withTeam = (params: RankingParams): RankingParams => ({ ...params, team: sameTeam(params.team) });
 
-function handle(message: Exclude<WorkerRequest, { kind: 'parts' | 'names' }>): WorkerResponse {
+function handle(message: Exclude<WorkerRequest, { kind: 'parts' | 'names' | 'fill' | 'cancel' }>): WorkerResponse {
   if (message.kind === 'plan') {
     const params = withTeam(message.params);
     const data = engineData(message.data);
@@ -81,8 +82,45 @@ function handle(message: Exclude<WorkerRequest, { kind: 'parts' | 'names' }>): W
   return { id: message.id, ok: true, kind: 'rank', result: rankCandidates(withTeam(message.params), engineData(message.data)) };
 }
 
+/** Le richieste di Completa team arrivate e non ancora finite, e quelle fra loro da fermare. */
+const fills = new Set<number>();
+const cancelled = new Set<number>();
+/** Un attimo di pausa (MessageChannel: più rapido di setTimeout), così fra un passo e l'altro passano le altre richieste. */
+const pause = () => new Promise<void>(resolve => {
+  const channel = new MessageChannel();
+  channel.port1.onmessage = () => { channel.port1.close(); resolve(); };
+  channel.port2.postMessage(null);
+});
+
+/**
+ * Completa team un passo per volta: ogni proposta parte appena trovata; fra un passo e l'altro una pausa, così le altre
+ * richieste (voti della lista, Migliora i set) non aspettano la fine e `cancel` può fermarla. Alla fine la storia delle proposte
+ * e se i Pokémon nuovi sono finiti (solo arrivando in fondo: fermata da `cancel` o da `max` non lo sa).
+ */
+async function fill(message: Extract<WorkerRequest, { kind: 'fill' }>): Promise<WorkerResponse> {
+  const shown = message.shown.map(ids => [...ids]);
+  const steps = fillProposals(sameTeam(message.team), message.choice, shown, message.format, engineData(message.data));
+  let found = 0;
+  let exhausted = false;
+  while (!cancelled.has(message.id)) {
+    const next = steps.next();
+    if (next.done) { exhausted = next.value === 'exhausted'; break; }
+    if (next.value) {
+      self.postMessage({ id: message.id, ok: true, kind: 'fillProposal', proposal: next.value } satisfies WorkerResponse);
+      if (message.max && ++found >= message.max) break;
+    }
+    await pause();
+  }
+  return { id: message.id, ok: true, kind: 'fillDone', shown, exhausted };
+}
+
 self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
   const message = event.data;
+  if (message.kind === 'cancel') {
+    if (fills.has(message.id)) cancelled.add(message.id);
+    return;
+  }
+  if (message.kind === 'fill') fills.add(message.id);
   if (message.kind === 'parts') {
     for (const [id, value] of message.parts) parts.set(id, value);
     for (const id of message.drop) parts.delete(id);
@@ -96,9 +134,10 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
   if (message.kind !== 'gains') await (learnsets ??= initLearnsets());
   let response: WorkerResponse;
   try {
-    response = handle(message);
+    response = message.kind === 'fill' ? await fill(message) : handle(message);
   } catch (error) {
     response = { id: message.id, ok: false, error: String(error) };
   }
+  if (message.kind === 'fill') { fills.delete(message.id); cancelled.delete(message.id); }
   self.postMessage(response);
 };

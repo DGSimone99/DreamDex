@@ -1,3 +1,4 @@
+import { contradictorySet } from './coherence';
 import { commonChoices } from './common';
 import type { EngineData } from './data';
 import { battleSpecies, getSpecies, toID } from './dex';
@@ -106,11 +107,13 @@ export interface BestPreset {
 
 /** Il preset con il voto del team più alto per il membro `index`; a pari voto vince il primo in ordine. */
 /** Solo la scelta tra i preset (senza ritocco), resi legali fino a `genLimit`. */
-function pickPreset(team: TeamSet[], index: number, data: EngineData, genLimit: number): BestPreset {
+/** Con `accept`, i preset scartati non si considerano (il migliore fra i rimasti è "il successivo"). */
+function pickPreset(team: TeamSet[], index: number, data: EngineData, genLimit: number, accept: (set: TeamSet) => boolean = () => true): BestPreset {
   const member = team[index];
   let best: BestPreset = { index: null, set: member, overall: -Infinity };
   presetsForSet(data, member, genLimit).forEach((preset, i) => {
     const set = presetSet(member, preset.set);
+    if (!accept(set)) return;
     const overall = rateTeam(team.map((s, j) => (j === index ? set : s)), data, 'en')?.overall ?? -Infinity;
     if (overall > best.overall) best = { index: i, set, overall };
   });
@@ -129,6 +132,21 @@ export function bestPreset(team: TeamSet[], index: number, data: EngineData, gen
   const tuned = tuneSet(team.map((s, j) => (j === index ? best.set : s)), index, data, genLimit);
   if (tuned === best.set) return best;
   return { ...best, set: tuned, overall: rateTeam(team.map((s, j) => (j === index ? tuned : s)), data, 'en')?.overall ?? best.overall };
+}
+
+/**
+ * Come bestPreset, ma senza set contraddittori (Choice con mosse di stato, Gilet d'assalto con mosse di stato):
+ * i preset contraddittori si saltano e si prova il successivo; se il completamento o il ritocco rendono il set
+ * contraddittorio, si tiene il passo prima. Se nessun preset va bene, il membro resta com'è.
+ */
+export function bestCoherentPreset(team: TeamSet[], index: number, data: EngineData, genLimit = 9): TeamSet {
+  const fine = (set: TeamSet) => !contradictorySet(set);
+  const picked = pickPreset(team, index, data, genLimit, fine);
+  if (picked.index === null) return team[index];
+  const completed = withCoreMoves(picked.set, data, genLimit);
+  const complete = fine(completed) ? completed : picked.set;
+  const tuned = tuneSet(team.map((s, j) => (j === index ? complete : s)), index, data, genLimit);
+  return fine(tuned) ? tuned : complete;
 }
 
 /**

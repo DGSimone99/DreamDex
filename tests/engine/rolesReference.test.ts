@@ -18,8 +18,8 @@ import { REFERENCE_DIRS, ROLES_REFERENCE, type ReferenceFormat, type RoleExpecta
  */
 const STRICT = process.env.ROLES_REFERENCE_STRICT === '1';
 const WRITE_REPORT = process.env.ROLES_REFERENCE_REPORT === '1';
-/** Controlli riusciti con tutti i dati dopo la calibrazione (1139 su 1146), più gli 8 controlli `primary` (Task 11); 2026-11-05: −5 per i set più usati senza mosse di stato bloccate (lockedMoves.ts). */
-const KNOWN_OK = 1142;
+/** Controlli riusciti con tutti i dati dopo la calibrazione (1139 su 1146), più gli 8 controlli `primary` (Task 11); 2026-11-05: −5 per i set più usati senza mosse di stato bloccate (lockedMoves.ts); 2026-11-13: dati di ottobre 2026, 1095 su 1154 (i set più usati sono cambiati, il calcolo dei ruoli no). */
+const KNOWN_OK = 1095;
 /** Discrepanze note e accettate (formato, specie, sotto-ruolo, tipo di controllo). */
 const KNOWN_MISMATCHES = new Set([
   'ubers Groudon-Primal physicalBreaker has',
@@ -42,6 +42,61 @@ const KNOWN_MISMATCHES = new Set([
   'ou Gliscor recovery not',
   'gen9ou Gliscor recovery not',
   'gen9ag Gliscor recovery not',
+  // Dati di ottobre 2026 (fetch-data del 2026-11-13): in questi Pokémon il set più usato è cambiato rispetto a settembre;
+  // il calcolo dei ruoli è lo stesso, cambia il set su cui si misura
+  'ou Alomomola dot present',
+  'ou Hatterene specialBreaker not',
+  'ou Hatterene debuff present',
+  'ou Gliscor recovery not',
+  'ou Samurott-Hisui itemRemoval has',
+  'ou Slowking-Galar debuff present',
+  'ubers Ho-Oh physicalWall has',
+  'ubers Eternatus recovery has',
+  'ubers Arceus-Ground taunt present',
+  'ubers Chansey dot present',
+  'uu Aerodactyl-Mega physicalBreaker has',
+  'uu Aegislash physicalSweeper has',
+  'uu Aegislash physicalBreaker has',
+  'uu Aegislash physicalWall not',
+  'uu Aegislash specialWall not',
+  'uu Rotom-Wash recovery value',
+  'uu Swampert dot present',
+  'uu Salamence physicalSweeper has',
+  'uu Salamence physicalWall not',
+  'uu Jirachi specialSweeper or specialBreaker hasAny',
+  'uu Azumarill itemRemoval has',
+  'uu Archaludon hazards has',
+  'uu Archaludon phazer has',
+  'uu Archaludon specialWall not',
+  'uu Archaludon debuff present',
+  'uu Mew hazards has',
+  'uu Mew physicalSweeper not',
+  'uu Mew physicalBreaker not',
+  'uu Mew physicalWall not',
+  'uu Mew specialWall not',
+  'uu Mew taunt present',
+  'uu Beedrill-Mega itemRemoval has',
+  'uu Blissey pivot has',
+  'gen9ou Iron Valiant encore present',
+  'gen9ou Slowking-Galar physicalWall has',
+  'gen9ou Gliscor recovery not',
+  'gen9ou Garchomp physicalWall not',
+  'gen9ou Hawlucha encore present',
+  'gen9uu Latios pivot has',
+  'gen9uu Scizor physicalBreaker has',
+  'gen9uu Arcanine-Hisui hazards has',
+  'gen9uu Tyranitar specialWall has',
+  'gen9uu Metagross itemRemoval has',
+  'gen9uu Gardevoir specialWall not',
+  'gen9uu Gardevoir itemRemoval value',
+  'gen9uu Hydreigon pivot has',
+  'gen9ag Ho-Oh physicalWall not',
+  'gen9ag Gliscor recovery not',
+  'gen9ag Corviknight pivot has',
+  'gen9ag Eternatus physicalWall has',
+  'gen9ag Deoxys-Speed itemRemoval has',
+  'gen9ag Necrozma-Dusk-Mane physicalSweeper or physicalBreaker hasAny',
+  'gen9ag Basculegion physicalBreaker has',
 ]);
 const REPORT = join('data', 'reports', 'reference-mismatches.md');
 const TOLERANCE = 0.1;

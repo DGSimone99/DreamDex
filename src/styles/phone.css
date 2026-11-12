@@ -429,6 +429,7 @@
     top: auto;
     bottom: 0;
     width: auto;
+    height: 85dvh;
     max-height: 85dvh;
     overflow: auto;
     overscroll-behavior: contain;
@@ -442,20 +443,29 @@
   .fill-panel { left: 50%; right: auto; width: min(640px, 100vw); translate: -50% 0; }
 }
 @media (max-width: 1099px) {
-  .fill-panel { grid-template-columns: minmax(0, 1fr); }
+  /* Le colonne una sotto l'altra: i tuoi Pokémon, le scelte, le proposte */
+  .fill-body { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'mine' 'side' 'main'; }
+  .fill-tabs { position: sticky; top: 0; z-index: 1; background: var(--ground); }
+  .fill-mine-row { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin: 0 -14px; padding: 0 14px; }
+  .fill-keep { flex: none; min-height: 44px; }
   /* I tipi di team in una fila che scorre: le proposte prendono tutta la larghezza */
-  .fill-types { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin: 0 -12px; padding: 0 12px; }
+  .fill-types { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin: 0 -14px; padding: 0 14px; }
   .fill-types .fill-option { flex: none; width: auto; max-width: 200px; }
   .fill-types .fill-option small { display: none; }
+  .fill-side { gap: 12px; }
   .spread-presets { min-width: 0; max-width: calc(100vw - 28px); }
+  .fill-cards { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 599px) {
-  .fill-proposal { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: 'mons mons' 'result action'; gap: 6px 10px; }
-  .fill-mons { grid-area: mons; grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .fill-row { grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: 'mons mons mons' 'kind result action' 'gaps gaps gaps'; gap: 6px 10px; }
+  .fill-mons { grid-template-columns: repeat(6, minmax(0, 1fr)); }
   .fill-mon-name { display: none; }
-  .fill-result { grid-area: result; justify-items: start; text-align: left; }
+  .fill-kind { justify-self: start; }
+  .fill-result { justify-items: start; text-align: left; }
+  .fill-foot { flex-wrap: wrap; }
+  .fill-pager .step { width: 44px; height: 44px; }
 }
 @media (max-width: 1099px) {
   .band:has(.fill-panel, .team-head details[open]) .band-toggle { visibility: hidden; }
-  .fill-result { grid-auto-flow: column; align-items: baseline; gap: 8px; }
+  .fill-result { grid-auto-flow: column; justify-content: start; align-items: baseline; gap: 8px; }
 }
