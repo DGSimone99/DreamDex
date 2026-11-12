@@ -185,6 +185,40 @@ describe('proposte di Completa team', () => {
     expect(steps.length).toBeLessThanOrEqual(MAX_ATTEMPTS);
   });
 
+  it("come finisce il giro: fermato dai tentativi non vuol dire finiti, e il giro dopo ne trova altre", () => {
+    /** Consuma il giro e dà le proposte e come è finito. */
+    const round = (team: TeamSet[], choice: FillChoice, exclude: Set<string>, data: EngineData = fillData) => {
+      const steps = fillProposals(team, choice, exclude, DEFAULT_FORMAT, data, 0);
+      const list: Proposal[] = [];
+      for (let next = steps.next(); ; next = steps.next()) {
+        if (next.done) return { list, end: next.value };
+        if (next.value) list.push(next.value);
+      }
+    };
+    // Manca solo chi toglie le trappole: tanti tentativi finiscono su proposte con il buco, il giro si ferma prima di 5
+    const team = [set('Garchomp', ['Stealth Rock', 'Earthquake']), ...['Toxapex', 'Kingambit', 'Blissey'].map(name => set(name, ['Protect'])),
+      set('Gardevoir', ['Hyper Voice'], 'Gardevoirite')];
+    const exclude = new Set<string>();
+    const first = round(team, any, exclude);
+    expect(first.list.length).toBeGreaterThanOrEqual(1);
+    expect(first.list.length).toBeLessThan(PROPOSALS_PER_ROUND);
+    expect(first.end).toBe('stopped');
+    const second = round(team, any, exclude);
+    expect(second.list.length).toBeGreaterThanOrEqual(1);
+    expect(second.end).not.toBe('exhausted');
+    // Un giro pieno è 'complete'
+    const full = round([set('Great Tusk', ['Rapid Spin', 'Stealth Rock']), ...['Gholdengo', 'Kingambit', 'Dragapult', 'Corviknight'].map(name => set(name, ['Protect']))], any, new Set());
+    expect(full.list).toHaveLength(PROPOSALS_PER_ROUND);
+    expect(full.end).toBe('complete');
+    // Nessun candidato (solo preferiti, e non ce ne sono): finiti
+    const none = round(team.slice(0, 3), { ...any, favorites: 'only' }, new Set());
+    expect(none).toEqual({ list: [], end: 'exhausted' });
+    // Nessuna proposta: con gli stessi esclusi il giro dopo sarebbe identico, quindi anche questo è "finiti"
+    expect(round(['Dragapult', 'Weavile', 'Cinderace', 'Iron Valiant', 'Gholdengo'].map(name => set(name, ['Protect'])),
+      { archetype: 'stall', style: 'snow' }, new Set()).end).toBe('exhausted');
+    expect(fillProposals([], any, new Set(), DEFAULT_FORMAT, { stats: null, sets: {} }).next()).toEqual({ done: true, value: 'exhausted' });
+  }, 60000);
+
   it('senza statistiche non produce nulla', () => {
     expect(take([], any, new Set(), DEFAULT_FORMAT, { stats: null, sets: {} })).toEqual([]);
   });

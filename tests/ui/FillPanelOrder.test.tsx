@@ -11,16 +11,18 @@ import { renderIt } from '../helpers/italian';
 /** streamFill finto: le richieste restano aperte finché il test non manda le proposte e la fine. */
 const calls = vi.hoisted(() => [] as {
   choice: FillChoice; max?: number; cancelled: boolean;
-  push: (p: Proposal) => void; end: () => void;
+  push: (p: Proposal) => void; end: (exhausted?: boolean) => void;
 }[]);
 vi.mock('../../src/ui/useRanking', () => ({
   streamFill: (_team: unknown, choice: FillChoice, exclude: Set<string>, _format: unknown, _data: unknown,
     onProposal: (p: Proposal) => void, options: { max?: number } = {}) => {
-    let resolve!: (done: { exclude: Set<string>; failed: boolean }) => void;
-    const done = new Promise<{ exclude: Set<string>; failed: boolean }>(r => { resolve = r; });
-    const call = { choice, max: options.max, cancelled: false, push: onProposal, end: () => resolve({ exclude, failed: false }) };
+    type Done = { exclude: Set<string>; failed: boolean; exhausted: boolean };
+    let resolve!: (done: Done) => void;
+    const done = new Promise<Done>(r => { resolve = r; });
+    const call = { choice, max: options.max, cancelled: false, push: onProposal,
+      end: (exhausted = false) => resolve({ exclude, failed: false, exhausted }) };
     calls.push(call);
-    return { done, cancel: () => { call.cancelled = true; resolve({ exclude, failed: false }); } };
+    return { done, cancel: () => { call.cancelled = true; resolve({ exclude, failed: false, exhausted: false }); } };
   },
 }));
 
@@ -58,5 +60,27 @@ describe('Completa team: ordine dei calcoli e proposta migliore', () => {
     expect(document.querySelectorAll('.fill-proposal')).toHaveLength(1);
     expect(document.querySelectorAll('.fill-proposal.is-best')).toHaveLength(0);
     expect(document.querySelectorAll('.fill-add.primary')).toHaveLength(0);
+  });
+
+  it('un giro corto fermato dai tentativi lascia attivo "Altre proposte", senza dire che sono finiti', async () => {
+    calls.length = 0;
+    renderIt(<FillPanel team={[]} format={DEFAULT_FORMAT} data={fillData} onApply={vi.fn()} onLoadTeam={vi.fn()} onClose={vi.fn()} />);
+    await act(async () => {
+      for (let i = 0; i < 3; i++) main()[0].push(proposal(i));
+      main()[0].end(false);
+    });
+    expect(screen.getByRole('button', { name: 'Altre proposte' })).toBeEnabled();
+    expect(screen.queryByText('Non ci sono altri Pokémon nuovi per questa scelta')).toBeNull();
+  });
+
+  it('quando i Pokémon nuovi sono finiti "Altre proposte" si spegne e lo si dice', async () => {
+    calls.length = 0;
+    renderIt(<FillPanel team={[]} format={DEFAULT_FORMAT} data={fillData} onApply={vi.fn()} onLoadTeam={vi.fn()} onClose={vi.fn()} />);
+    await act(async () => {
+      for (let i = 0; i < 3; i++) main()[0].push(proposal(i));
+      main()[0].end(true);
+    });
+    expect(screen.getByRole('button', { name: 'Altre proposte' })).toBeDisabled();
+    expect(screen.getByText('Non ci sono altri Pokémon nuovi per questa scelta')).toBeInTheDocument();
   });
 });

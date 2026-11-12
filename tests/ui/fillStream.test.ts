@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { defaultChoice, type Proposal } from '../../src/engine/fillProposals';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
 import type { EngineData } from '../../src/engine/data';
+import { emptySet as defaultSet } from '../../src/engine/sets';
 import { streamFill } from '../../src/ui/useRanking';
 import { fillData } from '../fixtures/fillData';
 
@@ -12,12 +13,17 @@ describe('streamFill (senza calcolo in sottofondo)', () => {
   it('consegna da 1 a 5 proposte una alla volta e poi finisce', async () => {
     const got: Proposal[] = [];
     const { done } = streamFill([], { archetype: 'stall', style: null }, new Set(), DEFAULT_FORMAT, fillData, p => got.push(p));
-    const { exclude, failed } = await done;
+    const { exclude, failed, exhausted } = await done;
     expect(failed).toBe(false);
+    // Il giro si è fermato per i tentativi, non perché i Pokémon sono finiti
+    expect(exhausted).toBe(false);
     expect(got.length).toBeGreaterThanOrEqual(1);
     expect(got.length).toBeLessThanOrEqual(5);
     // Le forme proposte finiscono fra gli esclusi: "Altre proposte" non le ripete
     expect(exclude.size).toBeGreaterThanOrEqual(got[0].added.length);
+    // Il giro dopo non trova più niente: finiti
+    const next = await streamFill([], { archetype: 'stall', style: null }, exclude, DEFAULT_FORMAT, fillData, () => undefined).done;
+    expect(next.exhausted).toBe(true);
   });
 
   it('dopo cancel non arriva più nessuna proposta', async () => {
@@ -44,6 +50,8 @@ describe('streamFill (senza calcolo in sottofondo)', () => {
     expect(got).toHaveLength(1);
     expect(result.failed).toBe(false);
     expect(result.exclude.size).toBe(got[0].added.length);
+    // Fermato da max: non vuol dire finiti
+    expect(result.exhausted).toBe(false);
     // La stessa richiesta senza max riparte da capo: niente arriva durante la chiamata
     const again: Proposal[] = [];
     const full = streamFill([], choice, new Set(), DEFAULT_FORMAT, fillData, p => again.push(p));
@@ -67,10 +75,34 @@ describe('streamFill (senza calcolo in sottofondo)', () => {
     expect(order.indexOf('tick')).toBe(first.length);
     expect(second).toEqual(first);
     expect([...secondDone.exclude]).toEqual([...firstDone.exclude]);
+    expect(secondDone.exhausted).toBe(firstDone.exhausted);
 
     const one: Proposal[] = [];
     streamFill([], choice, new Set(), DEFAULT_FORMAT, fillData, p => one.push(p), { max: 1 });
     expect(one).toEqual([first[0]]);
+  });
+
+  it('"finiti" resta con il risultato in cache; con max più corto della cache no', async () => {
+    const team = [{ ...defaultSet('Garchomp') }];
+    const only = { ...defaultChoice(team), favorites: 'only' as const };
+    const first = await streamFill(team, only, new Set(), DEFAULT_FORMAT, fillData, () => undefined).done;
+    expect(first.exhausted).toBe(true);
+    const replay = streamFill(team, only, new Set(), DEFAULT_FORMAT, fillData, () => undefined);
+    expect((await replay.done).exhausted).toBe(true);
+
+    const choice = defaultChoice([]);
+    const got: Proposal[] = [];
+    await streamFill([], choice, new Set(), DEFAULT_FORMAT, fillData, p => got.push(p)).done;
+    expect((await streamFill([], choice, new Set(), DEFAULT_FORMAT, fillData, () => undefined, { max: 1 }).done).exhausted).toBe(false);
+  });
+
+  it('chi si aggancia a un calcolo in corso riceve anche "finiti"', async () => {
+    const team = [{ ...defaultSet('Toxapex') }];
+    const only = { ...defaultChoice(team), favorites: 'only' as const };
+    const first = streamFill(team, only, new Set(), DEFAULT_FORMAT, fillData, () => undefined);
+    const joined = streamFill(team, only, new Set(), DEFAULT_FORMAT, fillData, () => undefined);
+    expect((await first.done).exhausted).toBe(true);
+    expect((await joined.done).exhausted).toBe(true);
   });
 
   it('un calcolo che si rompe lo dice (failed) invece di sembrare un tipo senza proposte', async () => {

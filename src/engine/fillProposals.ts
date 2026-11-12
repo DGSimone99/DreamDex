@@ -60,6 +60,14 @@ export interface Proposal {
 }
 
 export const PROPOSALS_PER_ROUND = 5;
+
+/**
+ * Come finisce un giro: 'complete' con PROPOSALS_PER_ROUND proposte; 'stopped' con meno, fermato dai tentativi a vuoto
+ * (MAX_ATTEMPTS) o da un buco che i candidati rimasti non chiudono: un altro giro, con più esclusi e tentativi nuovi,
+ * può trovarne altre; 'exhausted' quando non c'è altro (nessun candidato per il primo posto, oppure nessuna proposta:
+ * con gli stessi esclusi il giro dopo sarebbe identico).
+ */
+export type FillEnd = 'complete' | 'stopped' | 'exhausted';
 /** Voto minimo di una proposta: sotto non si mostra, e il motore cerca un'altra strada. */
 export const MIN_OVERALL = 70;
 /** Candidati per slot, dopo le restrizioni di tipo, stile e Mega. */
@@ -129,12 +137,13 @@ const sameSet = (a: TeamSet, b: TeamSet) => JSON.stringify(a) === JSON.stringify
  * cinque membri e nessuno che toglie le trappole), oppure, se nessuna proposta del giro ci riesce, le migliori con la
  * nota (`gaps`). I preferiti seguono `choice.favorites`; i membri con `keepSets[i] === false` prendono il preset
  * migliore e sensato (`changed`).
- * Dopo ogni tentativo a vuoto produce `null`: chi consuma il generatore può rendere il controllo.
+ * Dopo ogni tentativo a vuoto produce `null`: chi consuma il generatore può rendere il controllo. Alla fine restituisce
+ * come è finito il giro (`FillEnd`).
  */
 export function* fillProposals(
   team: TeamSet[], choice: FillChoice, exclude: Set<string>, format: Format, data: EngineData, minOverall = MIN_OVERALL,
-): Generator<Proposal | null, void, undefined> {
-  if (!data.stats || team.length >= 6) return;
+): Generator<Proposal | null, FillEnd, undefined> {
+  if (!data.stats || team.length >= 6) return 'exhausted';
   const rules = formatRules(format.formatId);
   // Già mostrati prima di questo giro: i candidati del giro sono tutti gli altri
   const shownBefore = new Set(exclude);
@@ -360,9 +369,11 @@ export function* fillProposals(
   const held: Proposal[] = [];
   let produced = 0;
   let attempts = 0;
+  // Nessun candidato per il primo posto senza strade scartate in questo giro: i Pokémon nuovi sono davvero finiti
+  let empty = false;
   while (produced < PROPOSALS_PER_ROUND && attempts < MAX_ATTEMPTS) {
     const first = candidates(team, new Set(), team.length === 5);
-    if (!first.length) break;
+    if (!first.length) { empty = !deadEnds.size; break; }
     const full = build(team, new Set(), first);
     if (!full) {
       // Cambia strada: il primo candidato di questo giro non porta a un team valido
@@ -421,7 +432,8 @@ export function* fillProposals(
     produced++;
     yield proposal;
   }
-  if (produced) return;
+  const end = (): FillEnd => (produced >= PROPOSALS_PER_ROUND ? 'complete' : empty || !produced ? 'exhausted' : 'stopped');
+  if (produced) return end();
   // Nessuna proposta senza buchi evitabili: le migliori con la nota, senza Pokémon nuovi in comune (chi porta lo stile può tornare)
   for (const proposal of held.sort((a, b) => b.overall - a.overall)) {
     if (produced >= PROPOSALS_PER_ROUND) break;
@@ -431,4 +443,5 @@ export function* fillProposals(
     produced++;
     yield proposal;
   }
+  return end();
 }

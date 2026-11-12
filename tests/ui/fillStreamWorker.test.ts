@@ -47,7 +47,7 @@ fake.handle = (worker, raw) => {
       if (next.value) reply({ id: message.id, ok: true, kind: 'fillProposal', proposal: next.value });
       if (!next.value || !message.max || ++found < message.max) { setTimeout(step, 0); return; }
     }
-    reply({ id: message.id, ok: true, kind: 'fillDone', exclude: [...exclude] });
+    reply({ id: message.id, ok: true, kind: 'fillDone', exclude: [...exclude], exhausted: next?.done === true && next.value === 'exhausted' });
   };
   setTimeout(step, 0);
 };
@@ -63,6 +63,11 @@ describe('streamFill col calcolo in sottofondo', () => {
     expect(fills()).toHaveLength(1);
     expect(got.length).toBeGreaterThan(0);
     expect(result.failed).toBe(false);
+    // Fermato per i tentativi, non finiti; senza candidati (solo preferiti, nessun preferito) sì
+    expect(result.exhausted).toBe(false);
+    const team = [emptySet('Garchomp')];
+    const none = await streamFill(team, { ...defaultChoice(team), favorites: 'only' }, new Set(), DEFAULT_FORMAT, fillData, () => undefined).done;
+    expect(none.exhausted).toBe(true);
   });
 
   it('max arriva al worker; cancel gli chiede di fermarsi', async () => {
@@ -71,6 +76,7 @@ describe('streamFill col calcolo in sottofondo', () => {
     await streamFill([], { archetype: 'hyperOffense', style: null }, new Set(), DEFAULT_FORMAT, fillData, p => got.push(p), { max: 1 }).done;
     expect(fills()[before].max).toBe(1);
     expect(got).toHaveLength(1);
+    expect((await streamFill([], { archetype: 'hyperOffense', style: null }, new Set(), DEFAULT_FORMAT, fillData, () => undefined, { max: 1 }).done).exhausted).toBe(false);
 
     const run = streamFill([], { archetype: 'balance', style: null }, new Set(), DEFAULT_FORMAT, fillData, () => undefined);
     run.cancel();

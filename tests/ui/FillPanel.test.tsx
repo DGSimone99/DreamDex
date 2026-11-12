@@ -57,15 +57,17 @@ describe('pannello Completa team', () => {
     await vi.waitFor(idle, WAIT);
     const first = shownNames();
     const more = screen.getByRole('button', { name: 'Altre proposte' });
-    // Il fixture ha solo 10 specie: con meno di 5 proposte il giro è finito e il pulsante lo dice
-    if (first.length < 6 * 5 && document.querySelectorAll('.fill-proposal').length < 5) {
-      expect(more).toBeDisabled();
-      expect(screen.getByText('Non ci sono altri Pokémon nuovi per questa scelta')).toBeInTheDocument();
-      return;
-    }
+    // Il primo giro del fixture si ferma prima di 5 per i tentativi, non perché i Pokémon sono finiti: si può chiedere ancora
+    expect(more).toBeEnabled();
+    expect(screen.queryByText('Non ci sono altri Pokémon nuovi per questa scelta')).toBeNull();
     await user.click(more);
     await vi.waitFor(idle, WAIT);
     for (const name of shownNames()) expect(first).not.toContain(name);
+    // Il fixture ha poche specie: il giro dopo non trova più nessuno, e allora il pulsante si spegne e lo dice
+    if (!document.querySelector('.fill-proposal')) {
+      expect(more).toBeDisabled();
+      expect(screen.getByText('Non ci sono altri Pokémon nuovi per questa scelta')).toBeInTheDocument();
+    }
   });
 
   it('cambiando team le proposte si rifanno per il team nuovo', async () => {

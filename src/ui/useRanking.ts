@@ -5,7 +5,7 @@ import type { AdviceParams, GainValue, WorkerData, WorkerProgress, WorkerRequest
 import { coachAdvice, type CoachAdvice } from '../engine/coach';
 import { improveSets, type SetChange } from '../engine/bestPreset';
 import type { TeamSet } from '../engine/sets';
-import { defaultChoice, fillProposals, formeId, type FillChoice, type Proposal } from '../engine/fillProposals';
+import { defaultChoice, fillProposals, formeId, type FillChoice, type FillEnd, type Proposal } from '../engine/fillProposals';
 import type { Format } from '../engine/format';
 import type { GainJob } from '../engine/teamGain';
 import { currentGameNames, gameNamesVersion } from '../i18n/game';
@@ -191,16 +191,17 @@ class RankingClient {
    * Completa team in sottofondo, sull'ultimo calcolo (come Migliora i set; anche i controlli "questo tipo ha proposte?":
    * sugli altri caricherebbero i learnset, tanta memoria). Il worker fa un passo per volta, quindi le richieste in coda
    * non aspettano la fine. Le proposte arrivano una alla volta a `onProposal`; `max` lo ferma dopo tante proposte,
-   * `cancel` al passo dopo. Un errore del calcolo (risposta non ok) non rompe il worker: passa a chi chiama.
+   * `cancel` al passo dopo; `done` dice se i Pokémon nuovi sono finiti. Un errore del calcolo (risposta non ok) non rompe
+   * il worker: passa a chi chiama.
    */
   fill(team: TeamSet[], choice: FillChoice, exclude: Set<string>, format: Format, given: EngineData, max: number | undefined,
-    onProposal: (p: Proposal) => void): { done: Promise<void>; cancel: () => void } {
+    onProposal: (p: Proposal) => void): { done: Promise<boolean>; cancel: () => void } {
     const { result, cancel } = this.workers[this.workers.length - 1].stream(
       { kind: 'fill', team, choice, exclude: [...exclude], format, data: this.wire(given), max }, item => onProposal(item.proposal));
     this.fills++;
     const settle = () => { this.fills--; };
     result.then(settle, settle);
-    return { done: result.then(() => undefined), cancel };
+    return { done: result.then(r => r.exhausted), cancel };
   }
 
   /** I consigli del Coaching in sottofondo: stessi tre passi della lista (voti raccolti, in parallelo, poi i consigli). */
@@ -369,23 +370,31 @@ export interface FillDone {
   exclude: Set<string>;
   /** true se il calcolo si è rotto (errore, già scritto in console): "nessuna proposta" non vuol dire "tipo vuoto". */
   failed: boolean;
+  /**
+   * true solo se il giro è arrivato in fondo e i Pokémon nuovi sono finiti: "Altre proposte" non troverebbe niente. Un
+   * giro più corto fermato dai tentativi, da `max` o da `cancel` dice false.
+   */
+  exhausted: boolean;
 }
 
 /** Chi aspetta le proposte di un calcolo: una alla volta, poi la fine (rotto o no). */
-interface FillListener { push: (p: Proposal) => void; end: (failed: boolean) => void }
+interface FillListener { push: (p: Proposal) => void; end: (failed: boolean, exhausted: boolean) => void }
 
 /** Un calcolo di proposte in corso: quelle già arrivate e chi le aspetta. */
 interface FillRun {
   proposals: Proposal[];
   listeners: Set<FillListener>;
   ended: boolean;
+  /** Arrivato in fondo con i Pokémon nuovi finiti. */
+  exhausted: boolean;
   /** Ferma il calcolo (col worker al passo dopo): quando non lo aspetta più nessuno. */
   stop: () => void;
 }
 
 /** Quante richieste finite (del primo giro) restano pronte da ripetere. */
 const FILL_CACHE = 8;
-const fillCache = new Map<string, Proposal[]>();
+/** Le proposte di una richiesta finita e se dopo di loro i Pokémon nuovi erano finiti. */
+const fillCache = new Map<string, { proposals: Proposal[]; exhausted: boolean }>();
 /** Le richieste del primo giro ancora in corso (senza `max`): una seconda uguale si aggancia invece di ripartire. */
 const fillLive = new Map<string, FillRun>();
 const dataIds = new WeakMap<EngineData, number>();
@@ -416,23 +425,25 @@ function safely(onProposal: (p: Proposal) => void, proposal: Proposal) {
 
 /**
  * Fa partire il calcolo (`max` 0 = tutte): col worker in sottofondo; senza, o se il worker si rompe, qui un passo per
- * volta (setTimeout). `onEnd` dice se è arrivato in fondo (finito, non fermato né rotto).
+ * volta (setTimeout). `onEnd` dice se è arrivato in fondo (finito, non fermato né rotto); `run.exhausted` se lì i
+ * Pokémon nuovi erano finiti.
  */
 function startFill(
   team: TeamSet[], choice: FillChoice, exclude: Set<string>, format: Format, data: EngineData, max: number,
   onEnd: (complete: boolean) => void,
 ): FillRun {
-  const run: FillRun = { proposals: [], listeners: new Set(), ended: false, stop: () => undefined };
+  const run: FillRun = { proposals: [], listeners: new Set(), ended: false, exhausted: false, stop: () => undefined };
   const emit = (proposal: Proposal) => {
     if (run.ended) return;
     run.proposals.push(proposal);
     for (const listener of [...run.listeners]) listener.push(proposal);
   };
-  const end = (complete: boolean, failed: boolean) => {
+  const end = (complete: boolean, failed: boolean, exhausted = false) => {
     if (run.ended) return;
     run.ended = true;
+    run.exhausted = exhausted;
     onEnd(complete);
-    for (const listener of [...run.listeners]) listener.end(failed);
+    for (const listener of [...run.listeners]) listener.end(failed, exhausted);
     run.listeners.clear();
   };
   // Qui, saltando le proposte già consegnate dal worker (il calcolo dà sempre le stesse, nello stesso ordine)
@@ -442,9 +453,9 @@ function startFill(
     let timer: ReturnType<typeof setTimeout>;
     const step = () => {
       if (run.ended) return;
-      let next: IteratorResult<Proposal | null, void>;
+      let next: IteratorResult<Proposal | null, FillEnd>;
       try { next = steps.next(); } catch (error) { console.error(error); end(false, true); return; }
-      if (next.done) { end(true, false); return; }
+      if (next.done) { end(true, false, next.value === 'exhausted'); return; }
       if (next.value) {
         if (++found > skip) emit(next.value);
         if (max && found >= max) { end(true, false); return; }
@@ -458,7 +469,7 @@ function startFill(
   if (!client || client.isBroken) { local(0); return run; }
   const call = client.fill(team, choice, exclude, format, data, max || undefined, emit);
   run.stop = () => { call.cancel(); end(false, false); };
-  call.done.then(() => end(true, false), error => {
+  call.done.then(exhausted => end(true, false, exhausted), error => {
     if (run.ended) return;
     // Il worker si è rotto: si continua qui; un errore del calcolo invece si ripeterebbe uguale
     if (client.isBroken) local(run.proposals.length);
@@ -473,11 +484,11 @@ function subscribe(run: FillRun, start: Set<string>, max: number, onProposal: (p
   let resolve!: (done: FillDone) => void;
   const done = new Promise<FillDone>(r => { resolve = r; });
   let open = true;
-  const close = (failed: boolean) => {
+  const close = (failed: boolean, exhausted = false) => {
     if (!open) return;
     open = false;
     run.listeners.delete(listener);
-    resolve({ exclude: excludeAfter(start, delivered), failed });
+    resolve({ exclude: excludeAfter(start, delivered), failed, exhausted });
     // Nessuno aspetta più: il calcolo si ferma (e non resta in cache)
     if (!run.ended && !run.listeners.size) run.stop();
   };
@@ -498,9 +509,9 @@ function subscribe(run: FillRun, start: Set<string>, max: number, onProposal: (p
 /**
  * Le proposte di Completa team una alla volta, senza fermare la pagina: col worker sull'ultimo calcolo; senza, qui un
  * passo per volta. `options.max` si ferma dopo tante proposte (il controllo "questo tipo ha proposte?" usa `max: 1`).
- * `done` dà le forme escluse dopo le proposte consegnate (per "Altre proposte": `exclude` resta com'è) e `failed`
- * se il calcolo si è rotto. Dopo `cancel` non arriva più niente e `done` si chiude; se non aspetta più nessuno, il
- * calcolo si ferma. Il primo giro (`exclude` vuoto, senza `max`) delle ultime FILL_CACHE richieste finite resta
+ * `done` dà le forme escluse dopo le proposte consegnate (per "Altre proposte": `exclude` resta com'è), `failed`
+ * se il calcolo si è rotto ed `exhausted` se i Pokémon nuovi sono finiti (anche ripetendo dalla cache o agganciandosi).
+ * Dopo `cancel` non arriva più niente e `done` si chiude; se non aspetta più nessuno, il calcolo si ferma. Il primo giro (`exclude` vuoto, senza `max`) delle ultime FILL_CACHE richieste finite resta
  * pronto: la stessa richiesta consegna le proposte già durante la chiamata, e se è ancora in corso ci si aggancia
  * (anche con `max`). Le richieste con `max` non vanno mai in cache.
  */
@@ -515,9 +526,11 @@ export function streamFill(
     // In fondo alla fila: è la più recente
     fillCache.delete(key);
     fillCache.set(key, cached);
-    const shown = max ? cached.slice(0, max) : cached;
+    const shown = max ? cached.proposals.slice(0, max) : cached.proposals;
     for (const proposal of shown) safely(onProposal, proposal);
-    return { done: Promise.resolve({ exclude: excludeAfter(exclude, shown), failed: false }), cancel: () => undefined };
+    // Con max più corto della cache restano proposte: non finiti
+    const exhausted = cached.exhausted && shown.length === cached.proposals.length;
+    return { done: Promise.resolve({ exclude: excludeAfter(exclude, shown), failed: false, exhausted }), cancel: () => undefined };
   }
   let run = key ? fillLive.get(key) : undefined;
   if (!run) {
@@ -526,7 +539,7 @@ export function streamFill(
       if (!shared || fillLive.get(key) !== started) return;
       fillLive.delete(key);
       if (!complete) return;
-      fillCache.set(key, started.proposals);
+      fillCache.set(key, { proposals: started.proposals, exhausted: started.exhausted });
       if (fillCache.size > FILL_CACHE) fillCache.delete(fillCache.keys().next().value!);
     });
     if (shared) fillLive.set(key, started);

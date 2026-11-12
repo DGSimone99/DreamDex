@@ -68,6 +68,9 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [busy, setBusy] = useState(true);
   const [failed, setFailed] = useState(false);
+  // Il giro è arrivato in fondo e i Pokémon nuovi sono finiti: "Altre proposte" non troverebbe niente (un giro più
+  // corto fermato dai tentativi non conta: quello dopo, con più esclusi e tentativi nuovi, può trovarne altre)
+  const [exhausted, setExhausted] = useState(false);
   // Tipi con almeno una proposta per le altre scelte (undefined: ancora da verificare, o calcolo rotto)
   const [available, setAvailable] = useState<Record<string, boolean>>({});
   // Il tipo l'ha scelto il giocatore: il pannello non lo cambia più da solo
@@ -96,6 +99,7 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
     setProposals([]);
     setBusy(true);
     setFailed(false);
+    setExhausted(false);
     let live = true;
     let found = 0;
     const mode = choice.favorites ?? 'priority';
@@ -112,6 +116,7 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
       exclude.current = done.exclude;
       setBusy(false);
       setFailed(done.failed);
+      setExhausted(done.exhausted);
       if (round === 0 && !done.failed) setAvailable(known => ({ ...known, [typeKey(choice.archetype)]: found > 0 }));
     });
     return () => { live = false; call.cancel(); };
@@ -182,7 +187,6 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
     setFavorites(mode);
     setRound(0);
   };
-  const exhausted = !busy && proposals.length < PROPOSALS_PER_ROUND;
   // Il magenta (riga e pulsante) solo sulla migliore in assoluto: la prima del primo giro
   const best = (i: number) => round === 0 && i === 0;
   const onlyFavorites = favorites === 'only';
@@ -222,7 +226,7 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
     : failed ? t('fill.failed')
     : onlyFavorites && round === 0 && proposals.length === 0 ? t('fill.favoritesNone')
     : onlyFavorites && exhausted ? t('fill.favoritesFew')
-    : proposals.length === 0 ? t(round === 0 ? 'fill.none' : 'fill.noMore')
+    : proposals.length === 0 && round === 0 ? t('fill.none')
     : exhausted ? t('fill.noMore') : '';
 
   // Schede: frecce e Home/Fine passano dall'una all'altra
@@ -346,7 +350,7 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
           <div className="fill-foot">
             <p className="fill-status" role="status" aria-live="polite">{status}</p>
             {banned > 0 && <p className="banned-note">{t(banned === 1 ? 'lists.bannedExcludedOne' : 'lists.bannedExcluded', { n: banned })}</p>}
-            <button type="button" className="fill-more" disabled={busy || (exhausted && !failed)} onClick={() => setRound(r => r + 1)}>{t('fill.more')}</button>
+            <button type="button" className="fill-more" disabled={busy || exhausted} onClick={() => setRound(r => r + 1)}>{t('fill.more')}</button>
           </div>
         </div>
       </div>
