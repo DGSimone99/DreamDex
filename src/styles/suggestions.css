@@ -548,6 +548,13 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .fav-heart { display: inline-flex; color: var(--accent); }
 .fav-heart .icon { width: 12px; height: 12px; fill: currentColor; }
 .card.first .tag .fav-heart { color: inherit; }
+/* Chi esce (Migliora · Tutti) nella targhetta, subito dopo il numero: ⇄ [mini icona], centrati sul numero. La ⇄ nel
+   colore del testo della targhetta, un po' più tenue (grigia sullo scuro, scura sul magenta). La mini icona (40×30)
+   rimpicciolita dentro un riquadro 20×16: la targhetta cresce solo a destra quanto basta */
+.card .tag .out { display: flex; align-items: center; gap: 2px; height: 15px; margin-left: 1px; }
+.card .tag .out > .icon { width: 13px; height: 13px; vertical-align: 0; opacity: 0.72; }
+.card .tag .out-mon { position: relative; flex: none; width: 20px; height: 16px; overflow: hidden; }
+.card .tag .out-mon .mon-icon { position: absolute; left: 50%; top: 50%; margin: 0; transform: translate(-50%, -54%) scale(0.56); image-rendering: auto; }
 /* Tipi come icone, in colonna in alto a destra (sotto il taglio) */
 .card .card-types { position: absolute; top: 22px; right: 8px; flex-direction: column; gap: 4px; }
 .card .card-types img { width: 20px; height: 20px; box-shadow: none; }
@@ -607,14 +614,5 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .reason .sym-mon { display: flex; align-items: center; min-width: 0; }
 .reason .sym-mon .type-dot { flex: none; margin-right: 4px; vertical-align: 0; }
 .reason .sym-mon strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-/* Chi esce (Migliora · Tutti): l'ultima riga dei motivi, al posto di "vs": ⇄ [mini icona] nome ("Esce X" nel tooltip).
-   Stesso corpo e colore delle altre righe; la ⇄ grigia come il testo (non è un bonus). La mini icona (40×30) è
-   rimpicciolita dentro un riquadro alto quanto la riga: non sporge sulla riga sopra. Il nome come nel "vs" */
-.reason.out-row { display: flex; align-items: center; height: 16px; }
-.reason .out-sym { display: flex; align-items: center; gap: 3px; min-width: 0; height: 16px; }
-.reason .out-sym .icon { flex: none; width: 13px; height: 13px; color: var(--muted); }
-.reason .out-mon { position: relative; flex: none; width: 20px; height: 16px; overflow: hidden; }
-.reason .out-mon .mon-icon { position: absolute; left: 50%; top: 50%; margin: 0; transform: translate(-50%, -54%) scale(0.56); image-rendering: auto; }
-.reason .out-sym strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; color: var(--text); }
 /* "+N" piccolo e grigio subito dopo l'ultimo elemento: non si confonde col voto */
 .reason .sym-more { flex: none; margin-left: 4px; font: 500 11px/1 var(--ui); color: var(--faint); }

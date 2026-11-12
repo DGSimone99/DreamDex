@@ -111,16 +111,14 @@ const plain = (text: string): Bring => ({ text, short: text });
  * dettaglio non ha). Il malus resta nel dettaglio. Col team vuoto i ruoli principali. Senza voci, se il voto sale,
  * l'area che sale di più come la riga del dettaglio ("Offesa +13"); "nessuna differenza" solo se non cambia niente.
  */
-export function reasonsOf(item: Item, n: number, usage: number | null, format: Format, lang: Lang, out = false): ReasonSummary {
+export function reasonsOf(item: Item, n: number, usage: number | null, format: Format, lang: Lang): ReasonSummary {
   const rules = formatRules(format.formatId);
-  // Con chi esce (Migliora · Tutti) la sua riga prende il posto di quella "vs": una riga in meno per i motivi
-  if (out) n = Math.max(1, n - 1);
   // Col team vuoto l'uso sta già a destra: qui i ruoli principali del Pokémon, col "+" come i bonus
   if (usage !== null) {
     const roles = detectRoles(item.set, rules).slice(0, n).map(role => plain(t(lang, `role.${role}`)));
     return { pros: roles.length > 0, items: roles };
   }
-  const items = bringsOf(item, lang, rules).filter(b => !b.usedWith && !(out && b.symbol?.kind === 'threats')).slice(0, n);
+  const items = bringsOf(item, lang, rules).filter(b => !b.usedWith).slice(0, n);
   if (items.length) return { pros: true, items };
   const gain = item.teamGain;
   if (gain && gain.gain > 0) {
@@ -173,8 +171,9 @@ export function CandidateMarks({ item, format, lists }: { item: Item; format: Fo
 /**
  * Il voto del team col candidato (+7); col primo Pokémon, il suo uso nel meta.
  * Un preferito ha il ♥ davanti e il bordo del colore dei Preferiti: è più in alto per quello (lo dice il tooltip).
+ * Con `out` (Migliora · Tutti) dopo il numero chi esce: ⇄ [mini icona].
  */
-export function ResultCell({ item, usage, favorite = false, className = '' }: { item: Item; usage: number | null; favorite?: boolean; className?: string }) {
+export function ResultCell({ item, usage, favorite = false, className = '', out }: { item: Item; usage: number | null; favorite?: boolean; className?: string; out?: string }) {
   const tr = useT();
   const lang = useLang();
   const result = item.teamGain;
@@ -195,6 +194,7 @@ export function ResultCell({ item, usage, favorite = false, className = '' }: { 
   return (
     <span className={cls} aria-label={label(tr('suggest.teamGrade', { grade: result.grade, n: result.overall, gain }))} title={boost}>
       {heart}<strong className={result.gain < 0 ? 'worse' : result.gain === 0 ? 'same' : undefined}>{gain}</strong>
+      {out && <OutMark member={out} />}
     </span>
   );
 }
@@ -311,11 +311,8 @@ function ReasonBody({ bring }: { bring: Bring }) {
   );
 }
 
-/**
- * I motivi: "+" verde davanti ai bonus (letto anche dagli screen reader), il resto in grigio; i segni col tooltip.
- * Con `out` (Migliora · Tutti) l'ultima riga dice chi esce: ⇄ [icona] Kingambit.
- */
-export function Reasons({ reasons, out }: { reasons: ReasonSummary; out?: string }) {
+/** I motivi: "+" verde davanti ai bonus (letto anche dagli screen reader), il resto in grigio; i segni col tooltip. */
+export function Reasons({ reasons }: { reasons: ReasonSummary }) {
   return (
     <small>
       {reasons.items.map((bring, i) => {
@@ -325,7 +322,6 @@ export function Reasons({ reasons, out }: { reasons: ReasonSummary; out?: string
           ? <span key={i} className={cls} title={title}><b aria-hidden="true">+</b><span className="visually-hidden">+</span><ReasonBody bring={bring} /></span>
           : <span key={i} className={cls} title={title}><ReasonBody bring={bring} /></span>;
       })}
-      {out && <OutRow member={out} />}
     </small>
   );
 }
@@ -353,18 +349,16 @@ export function PickButton({ rank, species, selected, onSelect }: { rank: number
 }
 
 /**
- * Chi esce, come riga dei motivi: ⇄ [icona] nome (la ⇄ dice già lo scambio; la parola "Esce" solo nel tooltip).
- * Il nome si accorcia coi puntini solo se è lunghissimo; agli screen reader "Al posto di X".
+ * Chi esce, nella targhetta del +N (Migliora · Tutti): ⇄ [mini icona], senza nome. "Esce X" nel tooltip,
+ * "Al posto di X" agli screen reader.
  */
-function OutRow({ member }: { member: string }) {
+function OutMark({ member }: { member: string }) {
   const tr = useT();
-  const text = tr('suggest.outFor', { member });
   return (
-    <span className="reason out-row" title={tr('suggest.outShort', { member })}>
-      <span className="visually-hidden">{text}</span>
-      <span className="out-sym" aria-hidden="true">
-        <Icon name="swap" /><span className="out-mon"><PokemonIcon name={member} /></span><strong>{member}</strong>
-      </span>
+    <span className="out" title={tr('suggest.outShort', { member })}>
+      <span className="visually-hidden">{tr('suggest.outFor', { member })}</span>
+      <Icon name="swap" />
+      <span className="out-mon" aria-hidden="true"><PokemonIcon name={member} /></span>
     </span>
   );
 }

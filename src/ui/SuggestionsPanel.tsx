@@ -415,7 +415,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
             const candidate: CandidateProps = {
               rank: page * perPage + i + 1,
               item,
-              reasons: reasonsOf(item, reasons, usage, format, lang, out !== undefined),
+              reasons: reasonsOf(item, reasons, usage, format, lang),
               // Icona del box: mai la GIF (sotto il mouse saltella col CSS)
               sprite: animated => listSprite === 'box'
                 ? <BoxIcon set={item.set} big={teamCollapsed} />
