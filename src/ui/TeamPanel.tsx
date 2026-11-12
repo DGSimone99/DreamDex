@@ -654,9 +654,19 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
   return (
     <section aria-label={t(lang, 'team.region')} className={`team${collapsed ? ' collapsed' : ''}`}>
       <div className="team-head">
-        {/* La targa del team porta la guida: Completa team finché mancano Pokémon, Migliora i set col team pieno */}
+        {/* La targa del team: la parola Team e sei tacche, una per posto, colorate coi tipi di chi c'è (come la barra della
+            squadra nei giochi). Il numero resta per i lettori di schermo */}
         <div className="team-plate">
-          <h2>{t(lang, 'team.title', { n: team.length })}</h2>
+          <h2><span aria-hidden="true">Team</span><span className="visually-hidden">{t(lang, 'team.title', { n: team.length })}</span></h2>
+          <span className={`team-pips${team.length === 6 ? ' full' : ''}`} aria-hidden="true">
+            {Array.from({ length: 6 }, (_, i) => {
+              const types = team[i] ? battleSpecies(team[i])?.types ?? [] : [];
+              return <span key={i} className={`pip${team[i] ? ' on' : ''}`} style={{ '--i': i, ...(team[i] ? { '--t1': typeColor(types[0] ?? ''), '--t2': typeColor(types[1] ?? types[0] ?? '') } : {}) } as React.CSSProperties} />;
+            })}
+          </span>
+        </div>
+        {/* La guida, subito dopo la targa: Completa team finché mancano Pokémon, Migliora i set col team pieno */}
+        <div className="team-guide-slot">
           {canFill ? (
             // Anche a team vuoto: propone team interi del tipo scelto; il pannello si apre sotto il pulsante
             <span className="fill-anchor">
@@ -700,10 +710,11 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
             setAsk(null);
           }} />
         )}
-        {/* Scorciatoie, sempre allo stesso posto a destra: una striscia di linguette (team salvati, Showdown), poi Svuota a parte */}
+        {/* Scorciatoie, sempre allo stesso posto a destra: Team salvati, poi Showdown (Import/Export e Copia team attaccate),
+            poi Svuota a parte */}
         <div className="team-quick">
+          {saved}
           <div className="team-tabs">
-            {saved}
             {io}
           </div>
           {team.length > 0 && <>
