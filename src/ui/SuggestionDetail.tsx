@@ -20,7 +20,7 @@ import type { ListSprite } from './theme';
 import { Icon } from './icons';
 import { ItemIcon } from './ItemIcon';
 import { BoxIcon, bringsOf, formeParts } from './candidateParts';
-import { PokemonIcon, PokemonName } from './PokemonName';
+import { PokemonIcon } from './PokemonName';
 import { battleAbility, battleName, toID } from '../engine/dex';
 import { statsEntry } from '../engine/stats';
 import { Sprite, TypeChip, typeColor } from './Sprite';
@@ -124,19 +124,22 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
             <StatsBadge species={item.species} item={set.item} compare={replacing ? team[replaceIndex] : undefined} />
           </h3>
           <span className="types">{types.map(type => <TypeChip key={type} type={type} />)}</span>
-          {replacing && (
-            <p className="swap-head replaces">
-              <PokemonName name={battleName(team[replaceIndex])} muted />
-              <Icon name="arrow" />
-              <span className="visually-hidden">{tr('coach.with')}</span>
-              <PokemonName name={item.species} />
-            </p>
-          )}
         </div>
+        {/* Sostituendo: dopo nome e tipi, ⇄ e chi esce ingrigito, così si vede subito al posto di chi entra */}
+        {replacing && (
+          <span className="detail-out" title={tr('suggest.outFor', { member: battleName(team[replaceIndex]) })}>
+            <span className="visually-hidden">{tr('suggest.outFor', { member: battleName(team[replaceIndex]) })}</span>
+            <span className="detail-swap-mark" aria-hidden="true"><Icon name="swap" /></span>
+            <span aria-hidden="true" className="detail-sprite out">
+              {listSprite === 'box' ? <Sprite species={team[replaceIndex].species} item={team[replaceIndex].item} size={144} /> : <BoxIcon set={team[replaceIndex]} />}
+            </span>
+          </span>
+        )}
         {result && before ? (
           <div className="detail-score">
             <strong className={result.gain < 0 ? 'worse' : result.gain === 0 ? 'same' : undefined}>{delta(result.gain) || '±0'}</strong>
-            <span>{tr('detail.gradeChange', { from: `${before.grade} ${before.overall}`, to: `${result.grade} ${result.overall}` })}</span>
+            {/* Solo "B 78 → A 86": che è il voto del team lo dice il posto; per i lettori di schermo resta la parola */}
+            <span><span className="visually-hidden">{tr('detail.gradeLabel')} </span>{tr('detail.gradeChange', { from: `${before.grade} ${before.overall}`, to: `${result.grade} ${result.overall}` })}</span>
             {/* Il cambio cambia il tipo di team (pesi e ruoli richiesti diversi): lo si dice, così il salto del voto non sembra un errore */}
             {typeChange && <span className="detail-type">{tr('detail.typeChange', { from: tr(`archetype.${typeChange.from}`), to: tr(`archetype.${typeChange.to}`) })}</span>}
           </div>

@@ -282,6 +282,14 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
   border-bottom: 1px solid var(--line-soft);
 }
 .detail-hero .detail-sprite { --box-scale: 1.9; width: 64px; height: 64px; }
+/* Sostituendo: dopo nome e tipi una colonna in più con ⇄ e chi esce (ingrigito, più piccolo) */
+.detail-hero:has(> .detail-out) { grid-template-columns: auto minmax(0, max-content) minmax(0, 1fr) auto; }
+/* Subito dopo nome, Stats e tipi, centrato in altezza: si legge insieme a chi entra */
+.detail-out { display: flex; align-items: center; justify-self: start; align-self: center; gap: 6px; margin-left: 6px; }
+.detail-hero .detail-sprite.out { --box-scale: 1.4; width: 46px; height: 46px; filter: grayscale(1); opacity: 0.45; }
+.detail-hero .detail-sprite.out .sprite { animation: none; }
+.detail-swap-mark { display: grid; place-items: center; color: var(--faint); }
+.detail-swap-mark .icon { width: 18px; height: 18px; }
 .detail-hero .detail-sprite .sprite-ani { transform: translate(-50%, -50%) scale(0.6667); }
 .detail-hero .detail-id h3 { flex-wrap: wrap; font-size: 24px; }
 .detail-hero .detail-id h3 > span:first-child { white-space: normal; overflow-wrap: break-word; }
