@@ -108,12 +108,63 @@
 .team-sep { display: none; }
 /* Menu aperto: sopra la freccia che riduce la squadra */
 .team-head:has(.popover[open]) { z-index: 8; }
-/* Copiato: la linguetta diventa verde per un attimo, con la spunta */
-.team-head .quick-link { width: 44px; padding: 0; justify-content: center; }
-.team-head :is(.quick-copy, .quick-link).copied, .team-head :is(.quick-copy, .quick-link).copied:hover { background-color: var(--good-bg); color: var(--good); }
-.team-head :is(.quick-copy, .quick-link).copied .icon { animation: pop 0.25s var(--ease); }
+/* Esporta: una linguetta sola (stesso taglio e fondo delle altre) con due pulsanti, il testo e il link, separati da una
+   barretta. Sotto, un fumetto: al passaggio dice cosa farà il clic, dopo il clic cosa si è copiato (verde) */
+.export-wrap { position: relative; display: flex; }
+.export-tab {
+  display: flex;
+  align-items: stretch;
+  height: 28px;
+  background-color: var(--raised);
+  clip-path: polygon(14px 0, 100% 0, calc(100% - 14px) 100%, 0 100%);
+  transition: background-color 0.15s var(--ease);
+}
+.export-tab > button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 100%;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--muted);
+  font: 700 12px/1 var(--display);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  transition: background-color 0.15s var(--ease), color 0.15s var(--ease);
+}
+.export-tab .export-main { padding: 0 12px 0 20px; }
+.export-tab .export-link { position: relative; padding: 0 22px 0 12px; }
+.export-tab .export-link::before { content: ''; position: absolute; left: 0; top: 7px; bottom: 7px; width: 1px; background: var(--line); }
+.export-tab .icon { width: 14px; height: 14px; }
+.export-tab > button:hover { background-color: color-mix(in srgb, var(--accent) 16%, var(--raised)); color: var(--text); }
+.export-tab > button:focus-visible { outline: 2px solid var(--accent); outline-offset: -4px; }
+.export-tab.copied, .export-tab.copied > button:hover { background-color: var(--good-bg); }
+.export-tab.copied > button { color: var(--good); }
+.export-tab.copied .icon { animation: pop 0.25s var(--ease); }
 @keyframes pop { from { transform: scale(0.4); } to { transform: scale(1); } }
-@media (prefers-reduced-motion: reduce) { .team-head :is(.quick-copy, .quick-link).copied .icon { animation: none; } }
+.export-note {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 6px);
+  right: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 4px;
+  background: var(--ground);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
+  color: var(--text);
+  font: 500 12px/1.2 var(--ui);
+  white-space: nowrap;
+  pointer-events: none;
+  animation: tip 0.14s var(--ease);
+}
+.export-note.done { background: var(--good-bg); color: var(--good); }
+.export-note .icon { width: 13px; height: 13px; }
+@media (prefers-reduced-motion: reduce) { .export-tab.copied .icon, .export-note { animation: none; } }
 /* Svuota: più discreta, si accende di rosso solo sotto il mouse */
 .team-head .clear-team { width: 44px; padding: 0; justify-content: center; background-color: transparent; color: var(--faint); }
 /* Solo la ×: il nome resta nel tooltip e per i lettori di schermo */

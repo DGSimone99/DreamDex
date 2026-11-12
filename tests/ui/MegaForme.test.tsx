@@ -46,7 +46,7 @@ describe('la megapietra rende il membro una Mega', () => {
     await user.paste('Garchomp @ Garchompite\nAbility: Rough Skin\n- Earthquake');
     await user.click(screen.getByRole('button', { name: 'Importa' }));
     const copied = spyClipboard();
-    await user.click(screen.getByRole('button', { name: 'Copia team' }));
+    await user.click(screen.getByRole('button', { name: 'Esporta' }));
     expect(copied()).toMatch(/^Garchomp @ Garchompite/);
   });
 

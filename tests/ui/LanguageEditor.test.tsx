@@ -29,7 +29,7 @@ describe('editor in italiano con i nomi del gioco', () => {
     expect(within(team).queryAllByText('Terra').length).toBeGreaterThan(0);
 
     const copied = spyClipboard();
-    await user.click(screen.getByRole('button', { name: 'Copia team' }));
+    await user.click(screen.getByRole('button', { name: 'Esporta' }));
     expect(copied()).toContain('- Earthquake');
   });
 
@@ -40,7 +40,7 @@ describe('editor in italiano con i nomi del gioco', () => {
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Great Tusk{Enter}');
     await user.click(within(screen.getByRole('group', { name: 'Lingua' })).getByRole('button', { name: 'EN' }));
     const copied = spyClipboard();
-    await user.click(screen.getByRole('button', { name: 'Copy team' }));
+    await user.click(screen.getByRole('button', { name: 'Export' }));
     expect(copied()).toMatch(/^Great Tusk/);
   });
 });
