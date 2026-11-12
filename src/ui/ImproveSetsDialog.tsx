@@ -30,7 +30,8 @@ function SetBrief({ set, than, label }: { set: TeamSet; than?: TeamSet; label: s
   const known = new Set(than?.moves.filter(Boolean).map(family));
   return (
     <div className="improve-set">
-      <span className="improve-tag">{label}</span>
+      {/* Il nome della parte (Adesso / Dopo) per i lettori di schermo: a vista lo dicono il posto e la freccia */}
+      <span className="visually-hidden">{label}</span>
       <Part fresh={!!than && than.item !== set.item}>
         {set.item ? <><ItemIcon item={set.item} /> {gameName('item', set.item, lang)}</> : t('improve.noItem')}
       </Part>
@@ -140,6 +141,7 @@ export function ImproveSetsDialog({ team, data, genLimit, onApply, onCancel }: {
                         {change.changed
                           ? <input type="checkbox" checked={on} onChange={() => toggle(i)} aria-label={t('improve.include', { name })} />
                           : <span className="improve-check-spacer" aria-hidden="true" />}
+                        <span className="improve-mini" aria-hidden="true"><Sprite species={name} item={change.after.item} size={44} /></span>
                         <span className="improve-name" title={name}>{name}</span>
                         {change.changed
                           ? <span className={`improve-gain${change.gain > 0 ? ' up' : change.gain < 0 ? ' down' : ''}`}
@@ -147,17 +149,15 @@ export function ImproveSetsDialog({ team, data, genLimit, onApply, onCancel }: {
                             {change.gain > 0 ? `+${change.gain}` : change.gain === 0 ? '±0' : change.gain}</span>
                           : <span className="improve-gain same">{t('improve.sameShort')}</span>}
                       </div>
-                      <div className="improve-sprite"><Sprite species={name} item={change.after.item} size={72} /></div>
                       <SetBrief set={change.before} label={t('improve.now')} />
                       {change.changed ? <>
-                        <span className="improve-down" aria-hidden="true"><Icon name="arrow" /></span>
+                        <span className="improve-down" aria-hidden="true"><Icon name="arrow" /> {t('improve.after')}</span>
                         <SetBrief set={change.after} than={change.before} label={t('improve.after')} />
                       </> : <p className="improve-same">{t('improve.same')}</p>}
                     </li>
                   );
                 })}
               </ol>
-              <p className="improve-note">{t('improve.note')}</p>
             </>
           )}
         </div>
@@ -167,6 +167,8 @@ export function ImproveSetsDialog({ team, data, genLimit, onApply, onCancel }: {
               <span className="improve-chevron" aria-hidden="true" /> {t(open ? 'improve.hide' : 'improve.check')}
             </button>
           )}
+          {/* Accanto a Nascondi: i +N dei singoli e il totale (in alto) possono non tornare */}
+          {open && changes && <p className="improve-note">{t('improve.note')}</p>}
           <span className="improve-grow" />
           <button type="button" onClick={onCancel}>{t('confirm.cancel')}</button>
           <button type="button" className="apply primary" ref={ok} disabled={!changes || picked.size === 0}
