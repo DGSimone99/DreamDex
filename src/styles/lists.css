@@ -159,9 +159,10 @@
 .band.collapsed { grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px; padding-top: 8px; padding-bottom: 20px; }
 .band.collapsed .team-head { display: none; }
 .band.collapsed .slots { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
-.band.collapsed .slot > summary { min-height: 0; height: 48px; padding: 0 10px 0 6px; flex-direction: row; align-items: center; justify-content: flex-start; gap: 6px; }
-/* Pillola: icona del box, nome e icona dello strumento; il membro aperto nell'editor ha il contorno ciano */
-.band.collapsed .slot > summary > .name-line { display: flex; flex-direction: row-reverse; justify-content: flex-end; align-items: center; flex: 1; min-width: 0; margin: 0; }
+.band.collapsed .slot > summary { min-height: 0; height: 48px; padding: 0 6px 0 4px; flex-direction: row; align-items: center; justify-content: flex-start; gap: 4px; }
+/* Pillola: icona del box, nome e icona dello strumento; il membro aperto nell'editor ha il contorno ciano. Margini e spazi
+   stretti: anche a 1280 px nomi come Great Tusk e Corviknight entrano interi */
+.band.collapsed .slot > summary > .name-line { display: flex; flex-direction: row-reverse; justify-content: flex-end; align-items: center; gap: 4px; flex: 1; min-width: 0; margin: 0; }
 .band.collapsed .slot .name-line .name { flex: 1; min-width: 0; font-size: 13px; line-height: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* Nella barra il problema lo dice il puntino: niente bordo colorato attorno alla pillola */
 .band.collapsed .slot.invalid > summary, .band.collapsed .slot.warn > summary { outline: none; }
@@ -278,7 +279,9 @@
 /* Nome nell'editor: grande in corsivo, cliccabile per il soprannome; con un soprannome la specie sta sopra come piccola etichetta */
 .drawer { padding-top: 24px; padding-bottom: 12px; }
 .editor-title { position: relative; gap: 8px; }
-.editor-title .nickname { height: auto; padding: 0; border: 0; background: none; color: var(--text); cursor: text; }
+.editor-title .nickname { height: auto; padding: 0; border: 0; background: none; color: var(--text); cursor: text; min-width: 0; max-width: 100%; }
+/* Un soprannome lunghissimo (da un import) si taglia con i puntini invece di spingere fuori i pulsanti */
+.editor-title .nickname strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; padding: 0.2em 0.15em 0.25em 0; margin: -0.2em -0.15em -0.25em 0; }
 .editor-title .nickname strong { font: 800 26px/1 var(--display); font-style: italic; letter-spacing: 0.01em; }
 .editor-title .nickname strong::before { content: attr(data-name); }
 .editor-title .nickname:hover strong, .editor-title .nickname:focus-visible strong { text-decoration: underline dotted var(--faint); text-underline-offset: 4px; }
@@ -453,9 +456,9 @@
 @media (min-width: 1600px) and (min-height: 1000px) {
   .slot[open] > summary { --fit: 214; }
 }
-/* La variazione del voto (+1/−1) è una piccola pillola nella fascia "Voto": non occupa una riga, non sposta niente */
-.grade-badge { position: relative; }
-.grade-badge .grade-delta { position: absolute; top: 3px; right: 22px; margin: 0; padding: 0 6px; font-size: 12px; line-height: 18px; background: var(--panel); }
+/* La variazione del voto (+1/−1) è una piccola pillola nella fascia "Voto", nella stessa fila dell'aiuto e del segno
+   giallo (.grade-tools, prima di loro): non occupa una riga, non sposta niente e non finisce sotto i segni */
+.grade-badge .grade-delta { flex: none; margin: 0; padding: 0 6px; font-size: 12px; line-height: 18px; background: var(--panel); }
 .grade-badge .grade-delta.up { background: color-mix(in srgb, var(--good) 22%, var(--panel)); }
 .grade-badge .grade-delta.down { background: color-mix(in srgb, var(--bad) 22%, var(--panel)); }
 
@@ -478,14 +481,14 @@
   .band:not(.collapsed) .slot > summary > .ability { display: none; }
   .slot .name-line { margin-top: 2px; }
   .grade-badge { row-gap: 0; padding-bottom: 6px; }
-  .grade-head { margin-bottom: 6px; padding-top: 3px; padding-bottom: 3px; }
+  .grade-head, .team-head h2 { padding-top: 3px; padding-bottom: 3px; }
+  .grade-head { margin-bottom: 6px; }
   .grade-badge .letter { font-size: 46px; }
   .grade-badge .overall { font-size: 17px; }
   .grade-badge .label { font-size: 12px; }
   .grade-badge .grade-rules { margin-top: 2px; }
   .grade-badge .grade-areas { gap: 0; margin-top: 2px; padding-top: 2px; }
   .grade-badge button.grade-area { padding-top: 1px; padding-bottom: 1px; }
-  .grade-badge .grade-delta { top: 2px; }
   /* Meno margini sopra e sotto la sezione: l'altezza va alla lista */
   .tab-body { padding-top: 12px; }
   .suggestions-panel { gap: 8px; padding-bottom: 8px; }

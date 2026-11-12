@@ -9,6 +9,8 @@ import { rankKey } from '../engine/teamGain';
 import { MAX } from '../engine/candidateRanking';
 import { useRanking } from './useRanking';
 import { PHONE, useBackClose } from './useBackClose';
+import { useMediaQuery } from './useMediaQuery';
+import { useSheet } from './useSheet';
 import { battleName } from '../engine/dex';
 import { PokemonIcon } from './PokemonName';
 import { statsEntry } from '../engine/stats';
@@ -284,6 +286,9 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   const closeSheet = useBackClose(sheetOpen, () => setSheetOpen(false), PHONE);
   /** Apre il candidato nel dettaglio. */
   const select = (item: Item) => { setSelectedName(item.species); setSheetOpen(true); };
+  // Sul telefono la scheda è una finestra: il fuoco ci entra, Esc la chiude, la lista sotto non si raggiunge
+  const phone = useMediaQuery(PHONE);
+  const pickerRef = useRef<HTMLDivElement>(null);
 
   // Sostituendo un setter di cui altri membri hanno bisogno, si mostrano solo setter della stessa condizione
   let setterNote: string | null = null;
@@ -304,6 +309,8 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   }
 
   const full = view === 'add' && team.length >= 6;
+  const sheetModal = phone && sheetOpen && !!selected && !full;
+  useSheet(sheetModal, pickerRef, '.sheet-back, .detail', closeSheet);
   const search = full ? null : (
     <>
       <div className="search">
@@ -361,6 +368,10 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   const typeEmpty = !!deferred.archetype && report.excluded > 0 && items.length === 0 && !stale
     ? <p className="note type-empty">{tr(view === 'add' ? 'suggest.typeEmptyAdd' : 'suggest.typeEmpty', { type: tr(`archetype.${deferred.archetype}`) })}</p>
     : null;
+  // Per i lettori di schermo, sempre nella pagina (un annuncio parte solo se la zona c'era già): quanti risultati, o nessuno
+  const resultsText = full || !filtering ? '' : items.length === 0 ? tr('suggest.resultsNone') : tr('suggest.resultsAria', { text: countText });
+  // Le frecce nella ricerca cambiano chi aggiunge Invio: si dice chi è
+  const cursorText = cursor !== null && target ? `${tr('suggest.enter')} ${tr(replacing ? 'suggest.enterReplaces' : 'suggest.enterAdds')} ${target}` : '';
   // Note sopra (a tutta larghezza); sotto, lista e dettaglio partono alla stessa altezza
   let notes = null;
   let body;
@@ -380,7 +391,6 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
   } else {
     notes = (
       <>
-        {filtering && <p className="visually-hidden" aria-live="polite">{tr('suggest.resultsAria', { text: countText })}</p>}
         {setterNote && <p className="note">{setterNote}</p>}
         {typeEmpty}
         {emptyTeam && (
@@ -448,9 +458,11 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
           onAll={() => { setScope('all'); onCancelReplace(); }} onTarget={index => onTarget?.(index)} />
         {search}
       </div>
+      <p className="visually-hidden" aria-live="polite">{resultsText}</p>
+      <p className="visually-hidden" aria-live="polite">{cursorText}</p>
       {!full && <ActiveFilters filters={filters} onChange={setFilters} />}
       {notes}
-      <div className={`picker${!full ? ' has-detail' : ''}${sheetOpen && selected ? ' sheet-open' : ''}`}>
+      <div className={`picker${!full ? ' has-detail' : ''}${sheetOpen && selected ? ' sheet-open' : ''}`} ref={pickerRef}>
         <div className="picker-list" ref={pickerListRef}>
           {!full && items.length > 0 && (
             <div className="list-head" ref={headRef}>
@@ -493,6 +505,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
             onAction={() => act(selected)}
             listSprite={listSprite}
             teamCollapsed={teamCollapsed}
+            sheet={sheetModal}
           />
         )}
       </div>

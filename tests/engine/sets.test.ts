@@ -96,7 +96,7 @@ describe('Showdown', () => {
     ].join('\n\n');
     const result = importShowdown(text);
     expect(result.sets.map(s => s.species)).toEqual(['Corviknight', 'Fakemon-Xyz']);
-    expect(result.errors).toEqual(['Blocco 2 non leggibile: "- Tackle"', 'Pokémon sconosciuto: Fakemon-Xyz']);
+    expect(result.errors).toEqual(['Set 2 non letto ("- Tackle"): la prima riga deve essere il nome del Pokémon', 'Pokémon "Fakemon-Xyz" non trovato: controlla il nome (in inglese, come su Showdown)']);
   });
 
   it('limita gli EV importati a 0–252', () => {
@@ -104,10 +104,10 @@ describe('Showdown', () => {
     expect(result.sets[0].evs).toEqual({ atk: 252, def: 4 });
   });
 
-  it('al massimo 6 Pokémon', () => {
-    const names = ['Great Tusk', 'Gholdengo', 'Kingambit', 'Dragapult', 'Corviknight', 'Toxapex', 'Rotom-Wash'];
+  it('al massimo 6 Pokémon: una riga sola per quelli in più', () => {
+    const names = ['Great Tusk', 'Gholdengo', 'Kingambit', 'Dragapult', 'Corviknight', 'Toxapex', 'Rotom-Wash', 'Ferrothorn'];
     const result = importShowdown(names.join('\n\n'));
     expect(result.sets).toHaveLength(6);
-    expect(result.errors).toEqual(['Più di 6 Pokémon: ignorato Rotom-Wash']);
+    expect(result.errors).toEqual(['Più di 6 Pokémon: Rotom-Wash e gli altri in più non entrano']);
   });
 });

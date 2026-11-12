@@ -45,15 +45,16 @@ export function GradeBadge({ rating, ruleIssues = [], illegalCount = 0, illegalN
       <span className="overall">{rating ? `${rating.overall} / 100` : t('rating.noGrade')}</span>
       <span className="label">{rating ? rating.label : t(blocked === 'ev' ? 'rating.evBlocked' : blocked === 'species' ? 'rating.speciesBlocked' : 'rating.addPokemon')}</span>
       {rating && broken && <span className="grade-rules" title={[who, ...ruleIssues].filter(Boolean).join(' · ')}><Icon name="warning" />{notLegal}</span>}
-      {rating && since !== null && delta !== 0 && (
-        <span className={`grade-delta ${delta > 0 ? 'up' : 'down'}`}>
-          {t('rating.since', { from: since, delta: `${delta > 0 ? '+' : '−'}${Math.abs(delta)}` })}
-        </span>
-      )}
       </span>
       {/* Testa: l'aiuto sul voto e il triangolo delle regole, fuori dal disegno perché si usano */}
       {(rating || blocked) && (
         <span className="grade-tools">
+          {/* Di quanto è cambiato il voto da quando si è aperto l'editor: la prima della fila, così non va mai sotto i segni */}
+          {rating && since !== null && delta !== 0 && (
+            <span className={`grade-delta ${delta > 0 ? 'up' : 'down'}`} aria-hidden="true">
+              {t('rating.since', { from: since, delta: `${delta > 0 ? '+' : '−'}${Math.abs(delta)}` })}
+            </span>
+          )}
           {/* In giallo il voto provvisorio (membro senza mosse, specie, mossa o strumento sconosciuti); le regole sono la
               scritta sotto il giudizio (senza voto, quando il voto è bloccato, restano qui in rosso) */}
           {((!rating && ruleIssues.length > 0) || !!rating?.notes.length) && <AlertMark alerts={[

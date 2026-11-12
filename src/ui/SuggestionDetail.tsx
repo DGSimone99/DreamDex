@@ -32,7 +32,7 @@ import { MoveName, Typed } from './TypeText';
  * Il candidato selezionato nella lista, dall'alto per importanza: chi è e quanto sale il voto, cosa porta e cosa toglie,
  * l'effetto sul team area per area (una riga), il set consigliato, le azioni.
  */
-export function SuggestionDetail({ item, rank, team, replaceIndex, data, format, rating, archetype, usage, banMark, actionLabel, onAction, listSprite = 'normal', teamCollapsed = false }: {
+export function SuggestionDetail({ item, rank, team, replaceIndex, data, format, rating, archetype, usage, banMark, actionLabel, onAction, listSprite = 'normal', teamCollapsed = false, sheet = false }: {
   item: (Suggestion | Replacement) & { teamGain?: TeamGain; alternatives?: SwapOption[] };
   rank: number;
   team: TeamSet[];
@@ -53,6 +53,8 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
   listSprite?: ListSprite;
   /** Team chiuso: c'è altezza per la sezione Meta. */
   teamCollapsed?: boolean;
+  /** Telefono: il dettaglio copre la lista come una finestra (il resto della pagina è inerte finché è aperto). */
+  sheet?: boolean;
 }) {
   const tr = useT();
   const lang = useLang();
@@ -100,7 +102,8 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
   const showLoses = replacing || loses.length > 0;
 
   return (
-    <aside className={`detail${rank === 1 ? ' first' : ''}`} aria-label={tr('detail.region', { species: item.species })}>
+    <aside className={`detail${rank === 1 ? ' first' : ''}`} aria-label={tr('detail.region', { species: item.species })}
+      {...(sheet ? { role: 'dialog', tabIndex: -1 } : {})}>
       <header className="detail-hero">
         {/* Il candidato aperto si muove (idle animato), come il membro aperto nel team */}
         <span className="detail-sprite">

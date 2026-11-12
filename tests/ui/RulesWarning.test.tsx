@@ -45,7 +45,7 @@ describe('coaching', () => {
   it('mosse o abilità non legali sono un problema di regole', () => {
     const team = [{ ...emptySet('Garchomp'), ability: 'Huge Power', moves: ['Earthquake', 'Spore'] }, { ...emptySet('Great Tusk'), ability: 'Protosynthesis', moves: ['Rapid Spin'] }];
     const rules = coachTeam(team, DEFAULT_FORMAT, fixtureData, 'it').problems.filter(p => p.category === 'rules').map(p => p.text);
-    expect(rules).toContain('Garchomp: Mosse non legali: Spore');
-    expect(rules).toContain('Garchomp: Abilità non legale: Huge Power');
+    expect(rules).toContain('Garchomp: Mosse non legali in questo formato: Spore');
+    expect(rules).toContain('Garchomp: Abilità non legale in questo formato: Huge Power');
   });
 });

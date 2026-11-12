@@ -24,6 +24,13 @@ const setMove = async (user: ReturnType<typeof userEvent.setup>, slot: HTMLEleme
 };
 
 describe('I miei set', () => {
+  it('senza set salvati il pulsante dell’elenco è spento e dice perché', async () => {
+    const { slot } = await openEditor();
+    const toggle = within(slot).getByRole('button', { name: 'Mostra i miei set' });
+    expect(toggle).toBeDisabled();
+    expect(toggle).toHaveAttribute('title', 'Nessun set salvato');
+  });
+
   it('il nome scritto nel campo diventa il nome del set salvato', async () => {
     const { user, slot } = await openEditor();
     await user.type(within(slot).getByLabelText('I miei set'), 'Spinner');
@@ -77,7 +84,7 @@ describe('azioni del membro', () => {
   it('un solo pulsante Importa / Esporta set: il testo del set è già pronto da copiare, Applica importa', async () => {
     const { user, slot } = await openEditor();
     await user.click(within(slot).getByRole('button', { name: 'Showdown: importa o esporta il set' }));
-    const text = within(slot).getByLabelText('Set da incollare (testo Showdown)');
+    const text = within(slot).getByLabelText('Set in testo Showdown');
     expect((text as HTMLTextAreaElement).value).toMatch(/^Great Tusk @ /);
     expect(within(slot).getByRole('button', { name: 'Copia set' })).toBeInTheDocument();
     expect(within(slot).queryByRole('button', { name: 'Incolla set' })).toBeNull();

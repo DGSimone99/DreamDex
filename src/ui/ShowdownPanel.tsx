@@ -3,6 +3,8 @@ import type { Format } from '../engine/format';
 import { shareUrl } from '../share';
 import { exportShowdown, importShowdown, type TeamSet } from '../engine/sets';
 import { copyText } from './clipboard';
+import { ImportDialog } from './ImportDialog';
+import { reviewImport, type ImportReview } from './importReview';
 import { Icon } from './icons';
 import { useLang, useT } from '../i18n/react';
 
@@ -10,7 +12,8 @@ export function ShowdownPanel({ team, format, tera = true, onImport }: { team: T
   const t = useT();
   const lang = useLang();
   const [text, setText] = useState('');
-  const [errors, setErrors] = useState<string[]>([]);
+  // Esito dell'import da dire in una finestra: cosa lo ferma, o le mosse non imparabili (con i set già importati)
+  const [review, setReview] = useState<{ review: ImportReview; sets: TeamSet[] } | null>(null);
   const [linkCopied, setLinkCopied] = useState(false);
   const copyLink = async () => {
     if (await copyText(shareUrl(team, format))) {
@@ -21,8 +24,17 @@ export function ShowdownPanel({ team, format, tera = true, onImport }: { team: T
 
   const doImport = () => {
     const result = importShowdown(text, lang);
-    setErrors(result.errors);
-    if (result.sets.length) onImport(result.sets);
+    const next = reviewImport(result, format, lang);
+    // Un problema che lo ferma: non si importa niente, il testo resta lì da correggere
+    if (!next.blocking.length) onImport(result.sets);
+    if (next.blocking.length || next.skill.length || next.info.length) setReview({ review: next, sets: result.sets });
+  };
+  // Sì: Custom Skillset sui soli Pokémon con mosse o abilità non imparabili
+  const unlock = () => {
+    if (!review) return;
+    const marked = new Set(review.review.skill.map(line => line.index));
+    onImport(review.sets.map((set, i) => (marked.has(i) ? { ...set, customSkillset: true } : set)));
+    setReview(null);
   };
 
   return (
@@ -32,14 +44,12 @@ export function ShowdownPanel({ team, format, tera = true, onImport }: { team: T
         <textarea aria-label={t('showdown.text')} rows={12} value={text} onChange={e => setText(e.target.value)} />
         <div className="actions">
           <button type="button" onClick={doImport}>{t('showdown.import')}</button>
-          <button type="button" onClick={() => { setText(exportShowdown(team, { tera })); setErrors([]); }}>{t('showdown.export')}</button>
+          <button type="button" onClick={() => { setText(exportShowdown(team, { tera })); }}>{t('showdown.export')}</button>
           <button type="button" onClick={() => copyText(text)}>{t('showdown.copy')}</button>
           <button type="button" disabled={!team.length} onClick={copyLink}>{t('showdown.copyLink')}</button>
           {linkCopied && <span className="copied" role="status">{t('showdown.linkCopied')}</span>}
         </div>
-        {errors.length > 0 && (
-          <ul className="errors">{errors.map(error => <li key={error}>{error}</li>)}</ul>
-        )}
+        {review && <ImportDialog review={review.review} onYes={unlock} onClose={() => setReview(null)} />}
       </div>
     </details>
   );

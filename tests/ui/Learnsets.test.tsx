@@ -13,6 +13,9 @@ async function importTeam(text: string) {
   await user.click(screen.getByLabelText('Testo Showdown'));
   await user.paste(text);
   await user.click(screen.getByRole('button', { name: 'Importa' }));
+  // Mosse non imparabili: l'import chiede il Custom Skillset; qui si risponde No (si prova la levetta a mano)
+  const ask = screen.queryByRole('alertdialog', { name: 'Mosse non imparabili' });
+  if (ask) await user.click(within(ask).getByRole('button', { name: 'No' }));
   return user;
 }
 
@@ -35,7 +38,7 @@ describe('mosse e abilità legali nel team', () => {
 
   it('mosse non legali: avviso giallo, non cancellate', async () => {
     await importTeam('Drakloak\nAbility: Infiltrator\n- Dragon Darts\n- U-turn');
-    expect(within(team()).getByText('Mosse non legali: Dragon Darts')).toBeInTheDocument();
+    expect(within(team()).getByText('Mosse non legali in questo formato: Dragon Darts')).toBeInTheDocument();
     expect(within(team()).getByText('Drakloak').closest('details')).toHaveClass('warn');
     expect(within(team()).getByLabelText('Mossa 1')).toHaveValue('Dragon Darts');
   });
@@ -45,8 +48,8 @@ describe('mosse e abilità legali nel team', () => {
     const toggle = screen.getByRole('checkbox', { name: 'Custom Skillset Drakloak' });
     expect(toggle.closest('label')).toHaveAttribute('title', expect.stringContaining('anche non imparabili'));
     await user.click(toggle);
-    expect(within(team()).queryByText('Mosse non legali: Dragon Darts', { selector: '.slot:first-child *' })).toBeNull();
-    expect(within(team()).getAllByText('Mosse non legali: Dragon Darts')).toHaveLength(1);
+    expect(within(team()).queryByText('Mosse non legali in questo formato: Dragon Darts', { selector: '.slot:first-child *' })).toBeNull();
+    expect(within(team()).getAllByText('Mosse non legali in questo formato: Dragon Darts')).toHaveLength(1);
     // Lucchetto blu in basso a sinistra dello sprite, solo sul membro sbloccato
     const marks = team().querySelectorAll('.slot .alert-mark.info');
     expect(marks).toHaveLength(1);
@@ -64,13 +67,13 @@ describe('mosse e abilità legali nel team', () => {
   it('abilità: solo quelle legali fino alla gen scelta, libere con Custom Skillset', async () => {
     const user = await importTeam('Ninetales\nAbility: Drought\n- Flamethrower');
     await chooseGen(user, '4');
-    expect(within(team()).getByText('Abilità non legale: Drought')).toBeInTheDocument();
+    expect(within(team()).getByText('Abilità non legale in questo formato: Drought')).toBeInTheDocument();
     expect(within(team()).getByLabelText('Abilità')).toHaveAttribute('readonly');
     expect(await optionsOf(user, 'Abilità')).toEqual(['Drought', 'Flash Fire']);
     await user.click(screen.getByRole('checkbox', { name: 'Custom Skillset Ninetales' }));
     expect(within(team()).getByLabelText('Abilità')).not.toHaveAttribute('readonly');
     expect(await optionsOf(user, 'Abilità', 'Levitate')).toContain('Levitate');
-    expect(within(team()).queryByText('Abilità non legale: Drought')).toBeNull();
+    expect(within(team()).queryByText('Abilità non legale in questo formato: Drought')).toBeNull();
   });
 
   it('Custom Skillset resta nei team salvati', async () => {

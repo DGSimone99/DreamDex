@@ -407,7 +407,9 @@ function fromPkmn(parsed: Partial<PkmnSet>): TeamSet {
     const value = (parsed.ivs as Partial<Record<StatID, number>> | undefined)?.[stat];
     if (typeof value === 'number' && value >= 0 && value < 31) ivs[stat] = value;
   }
-  const teraType = (parsed as { teraType?: string }).teraType;
+  // Il tipo Tera col nome giusto ("fire" → "Fire"); uno sconosciuto resta com'era (segnalato all'import)
+  const rawTera = String((parsed as { teraType?: string }).teraType ?? '').trim();
+  const teraType = rawTera ? (dex.types.get(rawTera).exists ? dex.types.get(rawTera).name : rawTera) : undefined;
   const name = String(parsed.name ?? '').trim();
   const speciesName = species?.name ?? String(parsed.species ?? '');
   // I nomi come li scrive il gioco ("choice band" → "Choice Band"); quelli sconosciuti restano com'erano (segnalati all'import)
@@ -429,14 +431,26 @@ function fromPkmn(parsed: Partial<PkmnSet>): TeamSet {
   };
 }
 
+/** Nome non trovato in un set letto (hackrom o errore di battitura): il set si importa lo stesso, col nome com'era. */
+export interface ImportMissing {
+  /** Posizione del set tra quelli importati */
+  set: number;
+  part: 'move' | 'ability' | 'item' | 'tera' | 'nature';
+  name: string;
+}
+
 export interface ImportResult {
   sets: TeamSet[];
+  /** Problemi che fermano l'import (chi chiama non importa niente): Pokémon non trovato, set non letto, più di 4 mosse, più di 6 Pokémon */
   errors: string[];
+  /** Mosse, abilità, strumenti, tipi Tera e nature che non esistono: non fermano l'import */
+  missing: ImportMissing[];
 }
 
 export function importShowdown(text: string, lang: Lang = 'it'): ImportResult {
   const sets: TeamSet[] = [];
   const errors: string[] = [];
+  const missing: ImportMissing[] = [];
   const blocks = text
     .replace(/\r/g, '')
     .split('\n')
@@ -446,6 +460,7 @@ export function importShowdown(text: string, lang: Lang = 'it'): ImportResult {
     .map(block => block.trim())
     .filter(Boolean);
 
+  let extra = false;
   blocks.forEach((block, i) => {
     const parsed = Sets.importSet(block) as Partial<PkmnSet> | undefined;
     const name = String(parsed?.species ?? '').trim();
@@ -454,17 +469,25 @@ export function importShowdown(text: string, lang: Lang = 'it'): ImportResult {
       return;
     }
     if (sets.length === 6) {
-      errors.push(t(lang, 'import.tooMany', { name }));
+      // Una riga sola per tutti quelli in più: il primo che non entra
+      if (!extra) errors.push(t(lang, 'import.tooMany', { name }));
+      extra = true;
       return;
     }
     const set = fromPkmn(parsed);
+    const at = sets.length;
     if (!getSpecies(set.species)) errors.push(t(lang, 'import.unknown', { name: set.species }));
+    // Più di 4 mosse: l'editor ne mostra 4, le altre conterebbero senza vedersi
+    if (set.moves.length > 4) errors.push(t(lang, 'import.tooManyMoves', { name: set.species }));
+    for (const move of set.moves) if (move && !getMove(move)) missing.push({ set: at, part: 'move', name: move });
+    if (set.ability && !dex.abilities.get(set.ability).exists) missing.push({ set: at, part: 'ability', name: set.ability });
+    if (set.item && !dex.items.get(set.item).exists) missing.push({ set: at, part: 'item', name: set.item });
+    if (set.teraType && !dex.types.get(set.teraType).exists) missing.push({ set: at, part: 'tera', name: set.teraType });
     const nature = String(parsed.nature ?? '');
-    if (nature && !dex.natures.get(nature).exists) errors.push(t(lang, 'import.unknownNature', { name: set.species, nature }));
-    if (set.item && !dex.items.get(set.item).exists) errors.push(t(lang, 'import.unknownItem', { name: set.species, item: set.item }));
+    if (nature && !dex.natures.get(nature).exists) missing.push({ set: at, part: 'nature', name: nature });
     sets.push(set);
   });
-  return { sets, errors };
+  return { sets, errors, missing };
 }
 
 /** Testo Showdown del team; `tera: false` lo toglie per i formati che lo vietano (i salvataggi lo tengono). */

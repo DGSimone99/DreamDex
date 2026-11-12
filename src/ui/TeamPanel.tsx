@@ -15,6 +15,8 @@ import { copyText } from './clipboard';
 import { setEditing } from './editing';
 import { bestPreset, bestPresets } from '../engine/bestPreset';
 import { ConfirmDialog } from './ConfirmDialog';
+import { ImportDialog } from './ImportDialog';
+import { reviewImport, type ImportReview } from './importReview';
 import { FillPanel } from './FillPanel';
 import { SetEditor } from './SetEditor';
 import { PokemonIcon } from './PokemonName';
@@ -22,6 +24,7 @@ import { describe } from './describe';
 import { commonChoices, type CommonChoices } from '../engine/common';
 import { speedTier, type SpeedTier } from '../engine/speed';
 import { ItemIcon } from './ItemIcon';
+import { useNameEm } from './nameWidth';
 import { AlertMark, type Alert } from './AlertMark';
 import { lockedStatusMoves } from '../engine/lockedMoves';
 import { duplicateSpecies, missingFormeItem } from '../engine/legalTeam';
@@ -129,37 +132,59 @@ const IdleSetEditor = memo(
     && a.speed === b.speed && a.genLimit === b.genLimit && a.pokedex === b.pokedex && a.teraBannedIn === b.teraBannedIn,
 );
 
-function TeamSlot({ index, set, subRoles, proposal, onProposalDone, data, format, warning: megaWarning, repeated = false, open, dragging, dropTarget, onToggle, onStep, onMove, onDrag, onPaste, onBest, onIgnoreWarning, onChange, onRemove, onReplace }: {
+/**
+ * Azioni delle carte, una volta sola per tutto il team (prendono la posizione del membro): restano le stesse
+ * a ogni disegno, così una carta si ridisegna solo quando cambia qualcosa di suo (memo).
+ */
+interface SlotActions {
+  toggle: (index: number, open: boolean) => void;
+  /** Frecce sulla card: apre il membro accanto. */
+  step: (index: number, delta: number) => void;
+  /** Alt + frecce: sposta il membro di una posizione. */
+  move: (index: number, delta: number) => void;
+  /** Trascinamento: inizio, passaggio sopra, rilascio, fine. */
+  drag: (index: number, phase: 'start' | 'over' | 'drop' | 'end') => void;
+  /** Set incollato; `review`: mosse non imparabili o nomi non trovati, da chiedere/dire dopo averlo applicato. */
+  paste: (index: number, set: TeamSet, review?: ImportReview) => void;
+  /** Preset con il voto del team più alto per questo membro (null se il membro non ne ha). */
+  best: (index: number) => TeamSet | null;
+  ignoreWarning: () => void;
+  change: (index: number, set: TeamSet) => void;
+  remove: (index: number) => void;
+  replace: (index: number) => void;
+  proposalDone: (applied: boolean) => void;
+}
+
+const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal, data, format, warning: megaWarning, repeated = false, open, dragging, dropTarget, actions }: {
   index: number;
+  /** Membri nel team: la carta dice la sua posizione ("posizione 2 di 6"). */
+  total: number;
   /** Proposta di mossa per questo membro (si mostra solo con il suo editor aperto). */
   proposal?: MoveProposal | null;
-  onProposalDone?: (applied: boolean) => void;
   /** Sotto-ruoli misurati del membro nel team (gli stessi del voto, già in cache): la carta li mostra. */
   subRoles?: SubRoleValues;
   dragging: boolean;
   dropTarget: boolean;
-  /** Alt + frecce: sposta il membro di una posizione. */
-  onMove: (delta: number) => void;
-  /** Trascinamento: inizio, passaggio sopra, rilascio, fine. */
-  onDrag: (phase: 'start' | 'over' | 'drop' | 'end') => void;
-  onPaste: (set: TeamSet) => void;
-  /** Preset con il voto del team più alto per questo membro (null se il membro non ne ha). */
-  onBest: () => TeamSet | null;
   data: EngineData;
   set: TeamSet;
   open: boolean;
-  onToggle: (open: boolean) => void;
-  /** Frecce sulla card: apre il membro accanto. */
-  onStep: (delta: number) => void;
   format: Format;
   warning: string | null;
   /** La specie c'è già prima nel team (Species Clause): problema rosso, voto bloccato. */
   repeated?: boolean;
-  onIgnoreWarning: () => void;
-  onChange: (set: TeamSet) => void;
-  onRemove: () => void;
-  onReplace: () => void;
+  actions: SlotActions;
 }) {
+  const onToggle = (next: boolean) => actions.toggle(index, next);
+  const onStep = (delta: number) => actions.step(index, delta);
+  const onMove = (delta: number) => actions.move(index, delta);
+  const onDrag = (phase: 'start' | 'over' | 'drop' | 'end') => actions.drag(index, phase);
+  const onPaste = (next: TeamSet, review?: ImportReview) => actions.paste(index, next, review);
+  const onBest = () => actions.best(index);
+  const onIgnoreWarning = actions.ignoreWarning;
+  const onChange = (next: TeamSet) => actions.change(index, next);
+  const onRemove = () => actions.remove(index);
+  const onReplace = () => actions.replace(index);
+  const onProposalDone = actions.proposalDone;
   const lang = useLang();
   const tr = useT();
   const card = useRef<HTMLElement>(null);
@@ -177,7 +202,7 @@ function TeamSlot({ index, set, subRoles, proposal, onProposalDone, data, format
   const stable = useMemo(() => ({
     onChange: (next: TeamSet) => live.current.onChange(next),
     onReplace: () => live.current.onReplace(),
-    onPaste: (next: TeamSet) => live.current.onPaste(next),
+    onPaste: (next: TeamSet, review?: ImportReview) => live.current.onPaste(next, review),
     onIgnoreWarning: () => live.current.onIgnoreWarning(),
     onBest: () => live.current.onBest(),
   }), []);
@@ -198,9 +223,10 @@ function TeamSlot({ index, set, subRoles, proposal, onProposalDone, data, format
   const typeList = species?.types ?? ['?'];
   const typesRef = useRef<HTMLSpanElement>(null);
   const typeText = useFitCount(typesRef, 1, `${lang}|${typeList.join('/')}`, undefined, true) > 0;
-  // Nome: va a capo solo agli spazi e ai trattini; la parte più lunga decide quanto si rimpicciolisce (CSS --name-len)
+  // Nome: va a capo solo agli spazi e ai trattini; la larghezza vera della parte più lunga (in em) decide se e quanto si
+  // rimpicciolisce (CSS --name-em)
   const shownName = set.name || name;
-  const nameLen = Math.max(...shownName.split(/\s+|(?<=-)/).map(part => part.length));
+  const nameEm = useNameEm(shownName);
   const ability = battleAbility(set);
   const [copied, setCopied] = useState(false);
   // Soprannome: si scrive cliccando il nome nell'editor; vuoto = il nome della specie
@@ -211,7 +237,9 @@ function TeamSlot({ index, set, subRoles, proposal, onProposalDone, data, format
     if (next !== (set.name ?? '')) stable.onChange({ ...set, name: next || undefined });
   };
   // Incolla set: testo Showdown di un solo membro, applicato per intero
-  const [paste, setPaste] = useState<{ text: string; original: string; error: string | null } | null>(null);
+  // `blocked`: cosa ferma l'incolla (detto in una finestra); il testo resta nel riquadro da correggere
+  const [paste, setPaste] = useState<{ text: string; original: string; blocked: ImportReview | null } | null>(null);
+  const pasteArea = useRef<HTMLTextAreaElement>(null);
   // Importa / Esporta: il riquadro si apre sotto il pulsante e si chiude cliccando fuori
   const ioRef = useRef<HTMLSpanElement>(null);
   const ioOpen = !!paste;
@@ -225,10 +253,10 @@ function TeamSlot({ index, set, subRoles, proposal, onProposalDone, data, format
   const applyPaste = () => {
     if (!paste) return;
     const result = importShowdown(paste.text, lang);
-    const next = result.sets[0];
-    if (!next) { setPaste({ ...paste, error: result.errors[0] ?? tr('team.pasteEmpty') }); return; }
+    const review = reviewImport(result, format, lang, { single: true });
+    if (review.blocking.length) { setPaste({ ...paste, blocked: review }); return; }
     setPaste(null);
-    stable.onPaste({ ...next, favorite: set.favorite });
+    stable.onPaste({ ...result.sets[0], favorite: set.favorite }, review.skill.length || review.info.length ? review : undefined);
   };
   const problems = [...slotProblems(set, format, lang), ...(repeated ? [tr('team.duplicateSpecies')] : [])];
   // Ruolo principale e un supporto, affiancati con il nome breve (il completo nel tooltip); il meteo solo qui
@@ -246,17 +274,21 @@ function TeamSlot({ index, set, subRoles, proposal, onProposalDone, data, format
   // Choice o Assault Vest con mosse di stato: non si usano (anche un malus nel voto)
   const locked = lockedStatusMoves(set);
   const missing = missingFormeItem(set);
+  const illegalMovesText = illegal.moves.length ? tr('team.illegalMoves', { list: illegal.moves.map(m => gameName('move', m, lang)).join(', ') }) : null;
+  const illegalAbilityText = illegal.ability ? tr('team.illegalAbility', { name: gameName('ability', illegal.ability, lang) }) : null;
   const warnings = [
     megaWarning,
     // Forma senza il suo strumento (Zacian-Crowned senza Rusted Sword): il voto la conta come la forma base
     missing ? tr('team.formeItem', { item: gameName('item', missing.item, lang), base: missing.base.name }) : null,
-    illegal.moves.length ? tr('team.illegalMoves', { list: illegal.moves.map(m => gameName('move', m, lang)).join(', ') }) : null,
-    illegal.ability ? tr('team.illegalAbility', { name: gameName('ability', illegal.ability, lang) }) : null,
+    illegalMovesText,
+    illegalAbilityText,
     locked.length ? tr('team.lockedStatus', { item: gameName('item', set.item, lang), moves: locked.map(m => gameName('move', m, lang)).join(', ') }) : null,
   ].filter((w): w is string => !!w);
   // Problemi di legalità in rosso, avvisi in giallo: due triangoli distinti sullo sprite, il dettaglio nei tooltip
   const dangers: Alert[] = problems.map(text => ({ level: 'danger', text }));
-  const warns: Alert[] = warnings.map(text => ({ level: 'warn', text }));
+  // Mosse o abilità non legali: come risolvere sta nel tooltip della riga, non nel testo
+  const hint = (text: string) => (text === illegalMovesText ? tr('team.illegalMovesHint') : text === illegalAbilityText ? tr('team.illegalAbilityHint') : undefined);
+  const warns: Alert[] = warnings.map(text => ({ level: 'warn', text, title: hint(text) }));
   return (
     <details
       className={`slot filled${problems.length ? ' invalid' : warnings.length ? ' warn' : ''}${dragging ? ' dragging' : ''}${dropTarget ? ' drop-target' : ''}`}
@@ -284,7 +316,9 @@ function TeamSlot({ index, set, subRoles, proposal, onProposalDone, data, format
           set.item ? gameName('item', set.item, lang) : tr('team.noItem'),
           problems.length ? tr(problems.length === 1 ? 'team.cardProblem' : 'team.cardProblems', { n: problems.length }) : null,
           warnings.length ? tr(warnings.length === 1 ? 'team.cardWarning' : 'team.cardWarnings', { n: warnings.length }) : null,
+          tr('team.position', { n: index + 1, total }),
         ].filter(Boolean).join(', ')}
+        aria-keyshortcuts="Alt+ArrowLeft Alt+ArrowRight"
         draggable
         title={tr('team.dragTitle')}
         // Apertura e chiusura passano dall'animazione: il clic non apre da solo il details
@@ -353,7 +387,7 @@ function TeamSlot({ index, set, subRoles, proposal, onProposalDone, data, format
           </small>
           {/* Il soprannome, se c'è (la specie nel tooltip) */}
         {/* Il nome intero nel tooltip: nella barra compressa si taglia con i puntini */}
-        <strong className="name" title={set.name ? `${set.name} (${name})` : name} style={{ '--name-len': nameLen } as CSSProperties}>{shownName}</strong>
+        <strong className="name" title={set.name ? `${set.name} (${name})` : name} style={{ '--name-em': nameEm.toFixed(3) } as CSSProperties}>{shownName}</strong>
         </span>
         <small className="ability" title={describe.ability(ability, lang)}>{ability ? gameName('ability', ability, lang) : '—'}</small>
         <span className={`types${typeText ? '' : ' as-icons'}`} ref={typesRef}>
@@ -433,7 +467,7 @@ function TeamSlot({ index, set, subRoles, proposal, onProposalDone, data, format
               onClick={() => setPaste(p => {
                 if (p) return null;
                 const text = exportShowdown([set], { tera: teraAllowed(format) });
-                return { text, original: text, error: null };
+                return { text, original: text, blocked: null };
               })}>
               <Icon name="paste" /> <span className="btn-label">{tr('team.memberIO')}</span>
             </button>
@@ -443,10 +477,11 @@ function TeamSlot({ index, set, subRoles, proposal, onProposalDone, data, format
               }}><Icon name={copied ? 'check' : 'copy'} /></button>
   {paste && (
     <div className="paste-panel" onKeyDown={e => { if (e.key === 'Escape') { e.stopPropagation(); setPaste(null); } }}>
-      <textarea aria-label={tr('team.pasteText')} rows={12} autoFocus value={paste.text} placeholder={tr('team.pastePlaceholder')}
-        onChange={e => setPaste({ text: e.target.value, original: paste.original, error: null })} />
+      <textarea aria-label={tr('team.pasteText')} rows={12} autoFocus ref={pasteArea} value={paste.text} placeholder={tr('team.pastePlaceholder')}
+        onChange={e => setPaste({ text: e.target.value, original: paste.original, blocked: null })} />
       <p className="paste-hint">{tr('team.pasteHint')}</p>
-      {paste.error && <p className="paste-error" role="alert">{paste.error}</p>}
+      {paste.blocked && <ImportDialog review={paste.blocked} onYes={() => {}}
+        onClose={() => { setPaste(p => (p ? { ...p, blocked: null } : p)); pasteArea.current?.focus(); }} />}
       <div className="paste-actions">
         <button type="button" className="apply" disabled={!paste.text.trim()} onClick={applyPaste}>{tr('team.pasteApply')}</button>
         <button type="button" onClick={() => setPaste(null)}>{tr('team.pasteCancel')}</button>
@@ -463,7 +498,7 @@ function TeamSlot({ index, set, subRoles, proposal, onProposalDone, data, format
       </div>
     </details>
   );
-}
+});
 
 /** Slot libero: cerchio tratteggiato al posto dello sprite; il clic porta alla ricerca, col cursore già dentro. */
 function EmptySlot({ onClick }: { onClick: () => void }) {
@@ -512,6 +547,8 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
   };
   // Riordino: trascinando o con Alt + frecce; il membro aperto resta aperto nella nuova posizione
   const [drag, setDrag] = useState<{ from: number; over: number | null } | null>(null);
+  // Per i lettori di schermo: dove è finito il membro spostato
+  const [moveNote, setMoveNote] = useState('');
   const move = (from: number, to: number) => {
     if (to < 0 || to >= team.length || to === from) return;
     const next = [...team];
@@ -519,12 +556,15 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
     next.splice(to, 0, moved);
     const follow = (i: number | null) => (i === null ? null : i === from ? to : from < i && i <= to ? i - 1 : to <= i && i < from ? i + 1 : i);
     animated(() => { onChange(next); setOpenIndex(follow); });
+    setMoveNote(t(lang, 'team.moved', { name: moved.name ? `${moved.name} (${battleName(moved)})` : battleName(moved), n: to + 1, total: team.length }));
     focusCard(to);
   };
   // Preset migliori: qualche decimo di secondo, il pulsante dice che sta calcolando
   const [busy, setBusy] = useState(false);
   // Cambia tutti i membri insieme: prima una conferma che dice cosa fa
   const [confirmPresets, setConfirmPresets] = useState(false);
+  // Dopo un Incolla set: mosse non imparabili (Custom Skillset?) o nomi non trovati del membro incollato
+  const [ask, setAsk] = useState<{ index: number; review: ImportReview } | null>(null);
   const presetsButton = useRef<HTMLButtonElement>(null);
   const closeConfirm = () => { setConfirmPresets(false); presetsButton.current?.focus(); };
   const runPresets = () => {
@@ -551,6 +591,50 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
   const firstMega = team.findIndex(set => !missingFormeItem(set) && isMega(set));
   const warningFor = (set: TeamSet, i: number) =>
     !format.allowMultipleMegas && firstMega !== -1 && i > firstMega && !missingFormeItem(set) && isMega(set) ? t(lang, 'team.secondMega') : null;
+  // Azioni delle carte: chiamano sempre la versione aggiornata (live), ma l'oggetto resta lo stesso (memo delle carte)
+  const live = useRef<SlotActions>(null!);
+  live.current = {
+    toggle: (i, open) => animated(() => setOpenIndex(current => (open ? i : current === i ? null : current))),
+    step,
+    move: (i, delta) => move(i, i + delta),
+    drag: (i, phase) => {
+      if (phase === 'start') setDrag({ from: i, over: null });
+      else if (phase === 'over') setDrag(d => (d && d.over !== i ? { ...d, over: i } : d));
+      else if (phase === 'drop') { if (drag) move(drag.from, i); setDrag(null); }
+      else setDrag(null);
+    },
+    paste: (i, next, review) => {
+      if (onPaste) onPaste(i, next); else onChange(team.map((s, j) => (j === i ? next : s)));
+      if (review) setAsk({ index: i, review });
+    },
+    best: i => { const found = bestPreset(team, i, data, format.genLimit); return found.index === null ? null : found.set; },
+    ignoreWarning: onAllowMultipleMegas,
+    change: (i, next) => onChange(team.map((s, j) => (j === i ? next : s))),
+    remove: i => {
+      setOpenIndex(null);
+      if (onRemove) onRemove(i); else onChange(team.filter((_, j) => j !== i));
+      // Il focus non si perde: va alla carta che prende il posto (o all'ultima, o al primo slot vuoto)
+      requestAnimationFrame(() => {
+        const cards = slotsRef.current?.querySelectorAll<HTMLElement>('.slot > summary');
+        (cards?.[Math.min(i, cards.length - 1)] ?? slotsRef.current?.querySelector<HTMLElement>('.slot.empty'))?.focus();
+      });
+    },
+    replace: i => onReplace(i),
+    proposalDone: applied => onProposalDone?.(applied),
+  };
+  const actions = useMemo<SlotActions>(() => ({
+    toggle: (i, open) => live.current.toggle(i, open),
+    step: (i, delta) => live.current.step(i, delta),
+    move: (i, delta) => live.current.move(i, delta),
+    drag: (i, phase) => live.current.drag(i, phase),
+    paste: (i, next, review) => live.current.paste(i, next, review),
+    best: i => live.current.best(i),
+    ignoreWarning: () => live.current.ignoreWarning(),
+    change: (i, next) => live.current.change(i, next),
+    remove: i => live.current.remove(i),
+    replace: i => live.current.replace(i),
+    proposalDone: applied => live.current.proposalDone(applied),
+  }), []);
   return (
     <section aria-label={t(lang, 'team.region')} className={`team${collapsed ? ' collapsed' : ''}`}>
       <div className="team-head">
@@ -564,6 +648,13 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
         {confirmPresets && (
           <ConfirmDialog title={t(lang, 'team.bestPresets')} text={t(lang, 'team.bestPresetsConfirm')} confirm={t(lang, 'team.bestPresetsApply')}
             onConfirm={() => { runPresets(); presetsButton.current?.focus(); }} onCancel={closeConfirm} />
+        )}
+        {ask && (
+          <ImportDialog review={ask.review} onClose={() => setAsk(null)} onYes={() => {
+            const member = team[ask.index];
+            if (member) onChange(team.map((s, j) => (j === ask.index ? { ...member, customSkillset: true } : s)));
+            setAsk(null);
+          }} />
         )}
         {canFill && (
           // Anche a team vuoto: propone team interi del tipo scelto; il pannello si apre sotto il pulsante
@@ -590,45 +681,24 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
           }}><Icon name="close" /> <span className="btn-label">{t(lang, 'team.clear')}</span></button>
         </>}
       </div>
+      <p className="visually-hidden" aria-live="polite">{moveNote}</p>
       <div className={`slots${openIndex !== null ? ' editing' : ''}`} ref={slotsRef}>
         {team.map((set, i) => (
           <TeamSlot
             key={keys[i]}
             index={i}
+            total={team.length}
             set={set}
             proposal={proposal?.index === i ? proposal : null}
-            onProposalDone={onProposalDone}
             subRoles={subRoles[i]}
             dragging={drag?.from === i}
             dropTarget={drag !== null && drag.over === i && drag.from !== i}
-            onMove={delta => move(i, i + delta)}
-            onPaste={next => (onPaste ? onPaste(i, next) : onChange(team.map((s, j) => (j === i ? next : s))))}
-            onBest={() => { const found = bestPreset(team, i, data, format.genLimit); return found.index === null ? null : found.set; }}
-            onDrag={phase => {
-              if (phase === 'start') setDrag({ from: i, over: null });
-              else if (phase === 'over') setDrag(d => (d && d.over !== i ? { ...d, over: i } : d));
-              else if (phase === 'drop') { if (drag) move(drag.from, i); setDrag(null); }
-              else setDrag(null);
-            }}
             data={data}
             format={format}
             warning={warningFor(set, i)}
             repeated={repeated.includes(i)}
             open={openIndex === i}
-            onToggle={open => animated(() => setOpenIndex(current => (open ? i : current === i ? null : current)))}
-            onStep={delta => step(i, delta)}
-            onIgnoreWarning={onAllowMultipleMegas}
-            onChange={next => onChange(team.map((s, j) => (j === i ? next : s)))}
-            onRemove={() => {
-              setOpenIndex(null);
-              if (onRemove) onRemove(i); else onChange(team.filter((_, j) => j !== i));
-              // Il focus non si perde: va alla carta che prende il posto (o all'ultima, o al primo slot vuoto)
-              requestAnimationFrame(() => {
-                const cards = slotsRef.current?.querySelectorAll<HTMLElement>('.slot > summary');
-                (cards?.[Math.min(i, cards.length - 1)] ?? slotsRef.current?.querySelector<HTMLElement>('.slot.empty'))?.focus();
-              });
-            }}
-            onReplace={() => onReplace(i)}
+            actions={actions}
           />
         ))}
         {Array.from({ length: 6 - team.length }, (_, i) => (

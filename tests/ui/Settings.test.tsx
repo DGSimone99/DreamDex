@@ -106,6 +106,8 @@ describe('sprite della lista', () => {
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Great Tusk{Enter}');
     const panel = screen.getByRole('region', { name: 'Suggerimenti' });
     const toggle = within(panel).getByRole('button', { name: 'Vista della lista' });
+    // Non è un menu: niente aria-haspopup (i lettori annuncerebbero un menu che non c'è)
+    expect(toggle).not.toHaveAttribute('aria-haspopup');
     expect(toggle).toHaveAttribute('aria-expanded', 'false');
     await user.click(toggle);
     const pop = within(panel).getByRole('group', { name: 'Vista della lista' });
