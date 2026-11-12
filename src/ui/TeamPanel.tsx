@@ -13,8 +13,9 @@ import { memo, useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, 
 import { flushSync } from 'react-dom';
 import { copyText } from './clipboard';
 import { setEditing } from './editing';
-import { bestPreset, bestPresets } from '../engine/bestPreset';
-import { ConfirmDialog } from './ConfirmDialog';
+import { bestPreset } from '../engine/bestPreset';
+import { ImproveSetsDialog } from './ImproveSetsDialog';
+import { prepareImproveSets } from './useRanking';
 import { ImportDialog } from './ImportDialog';
 import { reviewImport, type ImportReview } from './importReview';
 import { FillPanel } from './FillPanel';
@@ -63,8 +64,10 @@ interface Props {
   onBulk?: (kind: 'presets' | 'fill' | 'clear', team: TeamSet[]) => void;
   /** Clic su uno slot vuoto: porta alla ricerca dei Pokémon. */
   onAddClick?: () => void;
-  /** Importa / Esporta e Team salvati: al centro della fila sopra la squadra. */
+  /** Importa / Esporta: a destra nella testata, prima di Svuota team. */
   io?: ReactNode;
+  /** Team salvati: subito dopo la targa del team (scegliere quale team si guarda). */
+  saved?: ReactNode;
   /** Proposta di mossa del coach: a ogni nonce nuovo apre l'editor del membro e la mostra con Applica / Annulla. */
   proposal?: MoveProposal | null;
   /** Proposta chiusa: applicata (true) o annullata (false). */
@@ -522,7 +525,7 @@ function EmptySlot({ onClick }: { onClick: () => void }) {
   );
 }
 
-export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRemove, onAllowMultipleMegas, onOpenChange, closeSignal, collapsed = false, onPaste, onBulk, onAddClick, proposal, onProposalDone, io }: Props) {
+export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRemove, onAllowMultipleMegas, onOpenChange, closeSignal, collapsed = false, onPaste, onBulk, onAddClick, proposal, onProposalDone, io, saved }: Props) {
   const lang = useLang();
   // Sotto-ruoli misurati di ogni membro: la carta dice quello che dice il voto (stessa cache dell'area Ruoli)
   const subRoles = useMemo(() => team.map(set => measuredSubRoles(set, team, data)), [team, data]);
@@ -569,23 +572,18 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
     setMoveNote(t(lang, 'team.moved', { name: moved.name ? `${moved.name} (${battleName(moved)})` : battleName(moved), n: to + 1, total: team.length }));
     focusCard(to);
   };
-  // Preset migliori: qualche decimo di secondo, il pulsante dice che sta calcolando
-  const [busy, setBusy] = useState(false);
-  // Cambia tutti i membri insieme: prima una conferma che dice cosa fa
+  // Migliora i set: una finestra che calcola i set nuovi, li mostra e chiede conferma
   const [confirmPresets, setConfirmPresets] = useState(false);
   // Dopo un Incolla set: mosse non imparabili (Custom Skillset?) o nomi non trovati del membro incollato
   const [ask, setAsk] = useState<{ index: number; review: ImportReview } | null>(null);
   const presetsButton = useRef<HTMLButtonElement>(null);
   const closeConfirm = () => { setConfirmPresets(false); presetsButton.current?.focus(); };
-  const runPresets = () => {
-    setConfirmPresets(false);
-    setBusy(true);
-    setTimeout(() => {
-      const next = bestPresets(team, data, format.genLimit);
-      setBusy(false);
-      if (onBulk) onBulk('presets', next); else onChange(next);
-    }, 30);
-  };
+  // Team pieno e fermo da un secondo e mezzo: Migliora i set si prepara in sottofondo, al clic la finestra è già pronta
+  useEffect(() => {
+    if (team.length < 6 || !data.stats) return;
+    const timer = setTimeout(() => prepareImproveSets(team, data, format.genLimit), 1500);
+    return () => clearTimeout(timer);
+  }, [team, data, format.genLimit]);
   // Completa team: pannello con tipi di team e proposte
   const [filling, setFilling] = useState(false);
   const fillToggle = useRef<HTMLButtonElement>(null);
@@ -648,16 +646,39 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
   return (
     <section aria-label={t(lang, 'team.region')} className={`team${collapsed ? ' collapsed' : ''}`}>
       <div className="team-head">
-        <h2>{t(lang, 'team.title', { n: team.length })}</h2>
-        {team.length > 0 && (
-          <button type="button" className="team-action" disabled={busy} aria-busy={busy || undefined} ref={presetsButton}
-            aria-haspopup="dialog" title={t(lang, 'team.bestPresetsTitle')} onClick={() => setConfirmPresets(true)}>
-            <Icon name="spark" /> <span className="btn-label">{t(lang, busy ? 'team.bestPresetsBusy' : 'team.bestPresets')}</span>
-          </button>
-        )}
+        {/* La targa del team porta la guida: Completa team finché mancano Pokémon, Migliora i set col team pieno */}
+        <div className="team-plate">
+          <h2>{t(lang, 'team.title', { n: team.length })}</h2>
+          {canFill ? (
+            // Anche a team vuoto: propone team interi del tipo scelto; il pannello si apre sotto il pulsante
+            <span className="fill-anchor">
+              <button type="button" className="team-guide" data-fill-toggle aria-expanded={filling} aria-haspopup="dialog" ref={fillToggle}
+                title={t(lang, 'team.fillTitle')} onClick={() => setFilling(open => !open)}>
+                <Icon name="spark" /> <span className="btn-label">{t(lang, 'team.fill')}</span>
+              </button>
+              {filling && (
+                <FillPanel team={team} format={format} data={data} onClose={closeFill} onApply={proposal => {
+                  setFilling(false);
+                  setOpenIndex(null);
+                  if (onBulk) onBulk('fill', proposal.team); else onChange(proposal.team);
+                }} />
+              )}
+            </span>
+          ) : team.length > 0 && (
+            <button type="button" className="team-guide" ref={presetsButton}
+              aria-haspopup="dialog" title={t(lang, 'team.bestPresetsTitle')} onClick={() => setConfirmPresets(true)}
+              // Il calcolo parte già quando ci si avvicina al pulsante: al clic la finestra è spesso già pronta
+              onPointerEnter={() => prepareImproveSets(team, data, format.genLimit)} onFocus={() => prepareImproveSets(team, data, format.genLimit)}>
+              <Icon name="spark" /> <span className="btn-label">{t(lang, 'team.bestPresets')}</span>
+            </button>
+          )}
+        </div>
+        {saved}
         {confirmPresets && (
-          <ConfirmDialog title={t(lang, 'team.bestPresets')} text={t(lang, 'team.bestPresetsConfirm')} confirm={t(lang, 'team.bestPresetsApply')}
-            onConfirm={() => { runPresets(); presetsButton.current?.focus(); }} onCancel={closeConfirm} />
+          <ImproveSetsDialog team={team} data={data} genLimit={format.genLimit} onCancel={closeConfirm} onApply={next => {
+            closeConfirm();
+            if (onBulk) onBulk('presets', next); else onChange(next);
+          }} />
         )}
         {ask && (
           <ImportDialog review={ask.review} onClose={() => setAsk(null)} onYes={() => {
@@ -666,30 +687,17 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
             setAsk(null);
           }} />
         )}
-        {canFill && (
-          // Anche a team vuoto: propone team interi del tipo scelto; il pannello si apre sotto il pulsante
-          <span className="fill-anchor">
-            <button type="button" className="team-action" data-fill-toggle aria-expanded={filling} aria-haspopup="dialog" ref={fillToggle}
-              title={t(lang, 'team.fillTitle')} onClick={() => setFilling(open => !open)}>
-              <Icon name="plus" /> <span className="btn-label">{t(lang, 'team.fill')}</span>
-            </button>
-            {filling && (
-              <FillPanel team={team} format={format} data={data} onClose={closeFill} onApply={proposal => {
-                setFilling(false);
-                setOpenIndex(null);
-                if (onBulk) onBulk('fill', proposal.team); else onChange(proposal.team);
-              }} />
-            )}
-          </span>
-        )}
-        {io && <div className="team-io">{io}</div>}
-        {team.length > 0 && <>
-          {/* In fondo a destra, dove finisce l'ultima card */}
-          <button type="button" className="team-action clear-team" title={t(lang, 'team.clear')} onClick={() => {
-            setOpenIndex(null);
-            if (onBulk) onBulk('clear', []); else onChange([]);
-          }}><Icon name="close" /> <span className="btn-label">{t(lang, 'team.clear')}</span></button>
-        </>}
+        {/* Scorciatoie, sempre allo stesso posto a destra: porta dentro un team, ricomincia da zero */}
+        <div className="team-quick">
+          {io}
+          {team.length > 0 && <>
+            <span className="team-sep" aria-hidden="true" />
+            <button type="button" className="team-action clear-team" title={t(lang, 'team.clear')} onClick={() => {
+              setOpenIndex(null);
+              if (onBulk) onBulk('clear', []); else onChange([]);
+            }}><Icon name="close" /> <span className="btn-label">{t(lang, 'team.clear')}</span></button>
+          </>}
+        </div>
       </div>
       <p className="visually-hidden" aria-live="polite">{moveNote}</p>
       <div className={`slots${openIndex !== null ? ' editing' : ''}`} ref={slotsRef}>

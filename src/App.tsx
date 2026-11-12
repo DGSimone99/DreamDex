@@ -305,7 +305,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
       ? { kind: 'paste', from: battleName(before) }
       : { kind: 'replace', from: battleName(before), to: battleName(set) }, after);
   };
-  // Preset migliori per tutto il team, o team svuotato: si annullano come le altre modifiche
+  // Migliora i set (il preset migliore per ogni membro), o team svuotato: si annullano come le altre modifiche
   const bulk = (kind: 'presets' | 'fill' | 'clear', next: TeamSet[]) => {
     const after = changeTeam(next);
     remember(kind === 'clear' ? { kind: 'clear', from: '' }
@@ -373,10 +373,8 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
       )}
       <div className={`band${collapsed ? ' collapsed' : ''}`}>
         <TeamPanel team={team} format={format} data={data}
-          io={<>
-            <ShowdownPanel team={team} format={format} tera={teraAllowed(format)} onImport={changeTeam} />
-            <SavedTeams team={team} format={format} onLoad={(saved, savedFormat) => { changeTeam(saved); if (savedFormat) setFormat({ ...savedFormat, meta: format.meta }); }} />
-          </>}
+          io={<ShowdownPanel team={team} format={format} tera={teraAllowed(format)} onImport={changeTeam} />}
+          saved={<SavedTeams team={team} format={format} onLoad={(saved, savedFormat) => { changeTeam(saved); if (savedFormat) setFormat({ ...savedFormat, meta: format.meta }); }} />}
           onChange={changeTeam} onAdd={addSet} onReplace={startReplace} onRemove={removeAt} onPaste={pasteAt} onBulk={bulk} onAddClick={startAdd}
           onOpenChange={index => { setEditingIndex(index); setMoveProposal(p => (p && p.index === index ? p : null)); }}
           proposal={moveProposal} onProposalDone={finishProposal} closeSignal={closeSignal} collapsed={collapsed}

@@ -5,7 +5,7 @@ import { Icon } from './icons';
 import { useT } from '../i18n/react';
 
 /**
- * Finestra di conferma per un'azione che cambia molte cose insieme (es. Preset migliori su tutto il team):
+ * Finestra di conferma per un'azione che cambia molte cose insieme (es. Migliora i set su tutto il team):
  * titolo, una frase che dice cosa succede, Annulla e il pulsante dell'azione. Esc, Annulla o un clic fuori chiudono
  * senza fare niente; il focus parte dal pulsante dell'azione.
  */

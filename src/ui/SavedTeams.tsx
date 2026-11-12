@@ -50,29 +50,33 @@ export function SavedTeams({ team, format, onLoad }: {
     <>
       <details className="popover">
         <summary title={t('saved.title', { n: saved.length })}><Icon name="save" /><span className="btn-label">{t('saved.title', { n: saved.length })}</span></summary>
-        <div>
-          <div className="actions">
+        <div className="saved-panel">
+          {/* Salva: spento finché manca il nome o il team è vuoto */}
+          <div className="saved-new">
             <input ref={nameRef} aria-label={t('saved.name')} value={name} placeholder={t('saved.namePlaceholder')} onChange={e => setName(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); save(); } }} />
-            <button type="button" onClick={save}>{t('saved.save')}</button>
+            <button type="button" onClick={save} disabled={!name.trim() || team.length === 0}>{t('saved.save')}</button>
           </div>
           {failed && (
             <p role="status" className="errors">
               {t('saved.failed')}
             </p>
           )}
-          <ul>
-            {saved.map(entry => (
-              <li key={entry.name} className="actions">
-                <button type="button" onClick={() => onLoad(importShowdown(entry.text).sets.map((set, i) => ({
-                  ...set,
-                  ...(entry.favorites?.includes(i) ? { favorite: true } : {}),
-                  ...(entry.custom?.includes(i) ? { customSkillset: true } : {}),
-                })), entry.format)}>{entry.name}</button>
-                <button type="button" aria-label={t('saved.delete', { name: entry.name })} onClick={() => remove(entry)}><Icon name="close" /></button>
-              </li>
-            ))}
-          </ul>
+          {saved.length === 0 ? <p className="saved-empty">{t('saved.empty')}</p> : (
+            <ul className="saved-list">
+              {saved.map(entry => (
+                <li key={entry.name}>
+                  <button type="button" className="saved-load" title={entry.name} onClick={() => onLoad(importShowdown(entry.text).sets.map((set, i) => ({
+                    ...set,
+                    ...(entry.favorites?.includes(i) ? { favorite: true } : {}),
+                    ...(entry.custom?.includes(i) ? { customSkillset: true } : {}),
+                  })), entry.format)}>{entry.name}</button>
+                  <button type="button" className="saved-delete" aria-label={t('saved.delete', { name: entry.name })} title={t('saved.delete', { name: entry.name })}
+                    onClick={() => remove(entry)}><Icon name="close" /></button>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </details>
       {overwrite !== null && (

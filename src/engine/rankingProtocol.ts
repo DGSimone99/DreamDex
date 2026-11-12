@@ -6,6 +6,7 @@ import type { GainJob, TeamGain } from './teamGain';
 import type { CoachAdvice, CoachProblem } from './coach';
 import type { Format } from './format';
 import type { TeamSet } from './sets';
+import type { SetChange } from './bestPreset';
 
 /** I consigli del Coaching (coachAdvice) per un team: si calcolano in sottofondo come la lista dei candidati. */
 export interface AdviceParams { team: TeamSet[]; format: Format; problems: CoachProblem[]; lang: Lang }
@@ -29,7 +30,8 @@ export type WorkerRequest =
   | { kind: 'gains'; id: number; jobs: GainJob[]; lang: Lang; archetype?: Archetype; data: WorkerData }
   | { kind: 'rank'; id: number; params: RankingParams; data: WorkerData; primed: [string, GainValue][] }
   | { kind: 'advicePlan'; id: number; params: AdviceParams; data: WorkerData }
-  | { kind: 'advice'; id: number; params: AdviceParams; data: WorkerData; primed: [string, GainValue][] };
+  | { kind: 'advice'; id: number; params: AdviceParams; data: WorkerData; primed: [string, GainValue][] }
+  | { kind: 'improve'; id: number; team: TeamSet[]; genLimit: number; data: WorkerData };
 
 export type WorkerResponse =
   | { id: number; ok: true; kind: 'plan'; jobs: GainJob[] }
@@ -37,4 +39,5 @@ export type WorkerResponse =
   | { id: number; ok: true; kind: 'rank'; result: RankingResult }
   | { id: number; ok: true; kind: 'advicePlan'; jobs: GainJob[] }
   | { id: number; ok: true; kind: 'advice'; advice: CoachAdvice }
+  | { id: number; ok: true; kind: 'improve'; changes: SetChange[] }
   | { id: number; ok: false; error: string };

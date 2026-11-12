@@ -426,10 +426,10 @@
   .set-editor .editor-head .best-preset, .set-editor .editor-head .member-io { width: 38px; padding: 0; justify-content: center; }
 }
 /* Testata del team sotto i 1280 px: i pulsanti a sola icona (prima il testo andava su due righe); il nome resta per i
-   lettori di schermo e nel tooltip */
+   lettori di schermo e nel tooltip. La guida tiene il suo nome: è l'azione principale */
 @media (min-width: 1100px) and (max-width: 1279px) {
-  .team-head .btn-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-  .team-head .team-action, .team-head .team-io .popover > summary { width: 34px; padding: 0; justify-content: center; }
+  .team-head :not(.team-guide) > .btn-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .team-head .team-action, .team-head .popover > summary { width: 34px; padding: 0; justify-content: center; }
 }
 /* Il tooltip di un avviso sulla carta passa sopra la freccia che comprime il team */
 .band:has(.slot .alert-mark:hover, .slot .alert-mark:focus-visible) .band-toggle { z-index: 1; }
@@ -481,7 +481,8 @@
   .band:not(.collapsed) .slot > .slot-card > .ability { display: none; }
   .slot .name-line { margin-top: 2px; }
   .grade-badge { row-gap: 0; padding-bottom: 6px; }
-  .grade-head, .team-head h2 { padding-top: 3px; padding-bottom: 3px; }
+  .grade-head { padding-top: 3px; padding-bottom: 3px; }
+  .team-plate { padding-top: 0; padding-bottom: 0; }
   .grade-head { margin-bottom: 6px; }
   .grade-badge .letter { font-size: 46px; }
   .grade-badge .overall { font-size: 17px; }
