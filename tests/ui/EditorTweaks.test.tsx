@@ -70,8 +70,10 @@ describe('editor del set', () => {
     const slot = await openFirst(user, container);
     const roles = within(slot).getByRole('group', { name: 'Ruoli' });
     const items = within(roles).getAllByRole('listitem').map(li => li.textContent);
-    const all = container.querySelector('.slot .roles')!.getAttribute('title')!.split(' · ');
+    const all = container.querySelector('.slot .roles')!.getAttribute('title')!.split(' · ').map(part => part.split(': ')[0]);
     expect(items).toEqual(all);
+    // Ogni ruolo spiegato nel tooltip
+    expect(within(roles).getAllByRole('listitem')[0]).toHaveAttribute('title', expect.stringMatching(/\S/));
   });
 
   it('niente linguetta Danni finché il calcolo non esiste; preset e I miei set in due gruppi; Custom Skillset fuori dai riquadri (cambia Set e Mosse)', async () => {

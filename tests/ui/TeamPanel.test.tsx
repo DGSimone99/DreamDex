@@ -32,7 +32,8 @@ describe('TeamPanel', () => {
     await addPokemon(user, 'Great Tusk');
     const roles = teamRegion().querySelector('.slot .roles')!;
     expect(roles.textContent).toMatch(/^(Sweeper Fisico|Wallbreaker Fisico|Muro Fisico)$/);
-    expect(roles.getAttribute('title')).toMatch(/^(Sweeper Fisico|Wallbreaker Fisico|Muro Fisico) · /);
+    // Il ruolo mostrato spiegato in una frase, poi gli altri per nome
+    expect(roles.getAttribute('title')).toMatch(/^(Sweeper Fisico|Wallbreaker Fisico|Muro Fisico): [^·]+ · /);
   });
 
   it('la carta non ha il badge Stats e mostra lo strumento come icona prima del nome (nome nel tooltip)', async () => {
@@ -68,7 +69,7 @@ describe('TeamPanel', () => {
     render(<App initialLang="it" data={fixtureData} />);
     const roles = teamRegion().querySelector('.slot .roles')!;
     expect(roles.textContent!.split(' · ')).toHaveLength(1);
-    const all = roles.getAttribute('title')!.split(' · ');
+    const all = roles.getAttribute('title')!.split(' · ').map(part => part.split(': ')[0]);
     expect(all.length).toBeGreaterThan(2);
     expect(all.slice(0, 2)).toEqual(['Sweeper Speciale', 'Controllo Hazard']);
     expect(all).toEqual(expect.arrayContaining(['Muro Speciale']));

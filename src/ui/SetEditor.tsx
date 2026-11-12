@@ -152,12 +152,14 @@ interface Props {
   ioAction?: React.ReactNode;
   /** Tutti i ruoli del membro, il principale per primo: il riquadro in fondo all'editor. */
   roles?: string[];
+  /** La spiegazione di ogni ruolo (stesso ordine di `roles`), nel tooltip. */
+  roleTips?: (string | undefined)[];
   /** Slot di mossa evidenziato perché il coach propone di cambiarlo. */
   proposedSlot?: number;
   onChange: (set: TeamSet) => void;
 }
 
-export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', common, teraBannedIn, speed, title, actions, presetAction, memberAction, notice, smogonAction, ioAction, roles, proposedSlot, onChange }: Props) {
+export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', common, teraBannedIn, speed, title, actions, presetAction, memberAction, notice, smogonAction, ioAction, roles, roleTips, proposedSlot, onChange }: Props) {
   const t = useT();
   const lang = useLang();
   // Le più usate vanno in cima al menu, con la quota d'uso (o "Preset" se vengono dalle analisi)
@@ -480,7 +482,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
             <fieldset className="editor-roles">
               <legend>{t('editor.roles')}</legend>
               <ul>
-                {roles.map((role, i) => <li key={role} className={i === 0 ? 'main' : undefined}>{role}</li>)}
+                {roles.map((role, i) => <li key={role} className={i === 0 ? 'main' : undefined} title={roleTips?.[i]}>{role}</li>)}
               </ul>
             </fieldset>
           )}

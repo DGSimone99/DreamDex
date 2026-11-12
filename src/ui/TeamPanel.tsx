@@ -4,7 +4,7 @@ import { battleAbility, battleName, battleSpecies, getSpecies, isMega, isSelecta
 import { formatLabel, illegalReason, pokedexOf, teraAllowed } from '../engine/formats';
 import type { Format } from '../engine/format';
 import { formatRules } from '../engine/formatRules';
-import { detectRoles, roleLabel } from '../engine/roles';
+import { detectRoles, roleDescription, roleLabel } from '../engine/roles';
 import { cardRoles, weatherOf } from '../engine/archetype';
 import { measuredSubRoles, rolesList, type SubRoleValues } from '../engine/subRoles';
 import { conditionLabel, viaName } from '../engine/synergy';
@@ -273,7 +273,9 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
   const roleLabels = allRoles.map(role => (role === 'weather' && weather
     ? tr('card.weatherTitle', { condition: conditionLabel(weather.condition, lang), via: viaName(weather.via, lang) })
     : role === 'weather' ? tr('card.weather') : roleLabel(role, lang)));
-  const rolesTitle = roleLabels.join(' · ');
+  // Il ruolo mostrato spiegato in una frase, poi gli altri per nome
+  const roleTips = allRoles.map(role => (role === 'weather' ? undefined : roleDescription(role, lang)));
+  const rolesTitle = [roleTips[0] ? `${roleLabels[0]}: ${roleTips[0]}` : roleLabels[0], ...roleLabels.slice(1)].join(' · ');
   const illegal = illegalParts(set, format.genLimit, pokedexOf(format));
   // Choice o Assault Vest con mosse di stato: non si usano (anche un malus nel voto)
   const locked = lockedStatusMoves(set);
@@ -416,7 +418,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
       </div>
       <div className="drawer" id={drawerId}>
       <IdleSetEditor idle={!open} idleKey={`${lang}:${megaWarning ?? ''}`}
-        set={set} presets={presets} common={common} genLimit={format.genLimit} pokedex={pokedexOf(format)} roles={roleLabels}
+        set={set} presets={presets} common={common} genLimit={format.genLimit} pokedex={pokedexOf(format)} roles={roleLabels} roleTips={roleTips}
         teraBannedIn={teraAllowed(format) ? undefined : formatLabel(format, lang)} speed={speed} onChange={stable.onChange}
         presetAction={
           <button type="button" className="best-preset" title={tr('team.bestPresetTitle')} onClick={applyBest}
