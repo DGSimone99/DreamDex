@@ -15,7 +15,7 @@ import { copyText } from './clipboard';
 import { setEditing } from './editing';
 import { bestPreset } from '../engine/bestPreset';
 import { ImproveSetsDialog } from './ImproveSetsDialog';
-import { prepareImproveSets } from './useRanking';
+import { prepareFill, prepareImproveSets } from './useRanking';
 import { ImportDialog } from './ImportDialog';
 import { reviewImport, type ImportReview } from './importReview';
 import { FillPanel } from './FillPanel';
@@ -584,6 +584,12 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
     const timer = setTimeout(() => prepareImproveSets(team, data, format.genLimit), 1500);
     return () => clearTimeout(timer);
   }, [team, data, format.genLimit]);
+  // Team incompleto e fermo da un secondo e mezzo: le proposte di partenza di Completa team si preparano in sottofondo
+  useEffect(() => {
+    if (team.length >= 6 || !data.stats) return;
+    const timer = setTimeout(() => prepareFill(team, format, data), 1500);
+    return () => clearTimeout(timer);
+  }, [team, data, format]);
   // Completa team: pannello con tipi di team e proposte
   const [filling, setFilling] = useState(false);
   const fillToggle = useRef<HTMLButtonElement>(null);
@@ -653,7 +659,9 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
             // Anche a team vuoto: propone team interi del tipo scelto; il pannello si apre sotto il pulsante
             <span className="fill-anchor">
               <button type="button" className="team-guide" data-fill-toggle aria-expanded={filling} aria-haspopup="dialog" ref={fillToggle}
-                title={t(lang, 'team.fillTitle')} onClick={() => setFilling(open => !open)}>
+                title={t(lang, 'team.fillTitle')} onClick={() => setFilling(open => !open)}
+                // Il calcolo parte già quando ci si avvicina al pulsante: al clic le proposte sono spesso già pronte
+                onPointerEnter={() => prepareFill(team, format, data)} onFocus={() => prepareFill(team, format, data)}>
                 <Icon name="spark" /> <span className="btn-label">{t(lang, 'team.fill')}</span>
               </button>
               {filling && (

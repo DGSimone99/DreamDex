@@ -7,6 +7,7 @@ import type { CoachAdvice, CoachProblem } from './coach';
 import type { Format } from './format';
 import type { TeamSet } from './sets';
 import type { SetChange } from './bestPreset';
+import type { FillChoice, Proposal } from './fillProposals';
 
 /** I consigli del Coaching (coachAdvice) per un team: si calcolano in sottofondo come la lista dei candidati. */
 export interface AdviceParams { team: TeamSet[]; format: Format; problems: CoachProblem[]; lang: Lang }
@@ -22,6 +23,7 @@ export type GainValue = TeamGain | 'excluded' | null;
 /**
  * Le richieste a un calcolo in sottofondo. Una lista si fa in tre passi: `plan` (quali voti servono), `gains` (i voti,
  * divisi fra i calcoli in parallelo), `rank` (la lista coi voti già pronti). Con pochi voti basta `rank`.
+ * `fill` (Completa team) risponde più volte con lo stesso id: una `fillProposal` per proposta trovata, poi `fillDone`.
  */
 export type WorkerRequest =
   | { kind: 'parts'; parts: [number, unknown][]; drop: number[] }
@@ -31,7 +33,11 @@ export type WorkerRequest =
   | { kind: 'rank'; id: number; params: RankingParams; data: WorkerData; primed: [string, GainValue][] }
   | { kind: 'advicePlan'; id: number; params: AdviceParams; data: WorkerData }
   | { kind: 'advice'; id: number; params: AdviceParams; data: WorkerData; primed: [string, GainValue][] }
-  | { kind: 'improve'; id: number; team: TeamSet[]; genLimit: number; data: WorkerData };
+  | { kind: 'improve'; id: number; team: TeamSet[]; genLimit: number; data: WorkerData }
+  | { kind: 'fill'; id: number; team: TeamSet[]; choice: FillChoice; exclude: string[]; format: Format; data: WorkerData };
+
+/** Le risposte intermedie: arrivano prima di quella finale (con lo stesso id) e non la chiudono. */
+export type WorkerProgress = { id: number; ok: true; kind: 'fillProposal'; proposal: Proposal };
 
 export type WorkerResponse =
   | { id: number; ok: true; kind: 'plan'; jobs: GainJob[] }
@@ -40,4 +46,6 @@ export type WorkerResponse =
   | { id: number; ok: true; kind: 'advicePlan'; jobs: GainJob[] }
   | { id: number; ok: true; kind: 'advice'; advice: CoachAdvice }
   | { id: number; ok: true; kind: 'improve'; changes: SetChange[] }
+  | WorkerProgress
+  | { id: number; ok: true; kind: 'fillDone'; exclude: string[] }
   | { id: number; ok: false; error: string };

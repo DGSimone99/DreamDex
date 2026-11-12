@@ -17,6 +17,7 @@ import type { TeamSet } from './sets';
 import { collectGainJobs, computeGains, primeGains } from './teamGain';
 import { coachAdvice } from './coach';
 import { improveSets } from './bestPreset';
+import { fillProposals } from './fillProposals';
 
 const ready = Promise.all([loadTiers().then(initTiers), loadBans().then(initBans)]);
 // I learnset (tanta memoria) servono solo a fare i set dei candidati, cioè a chi decide i voti e fa la lista: chi
@@ -57,7 +58,7 @@ function sameTeam(team: TeamSet[]): TeamSet[] {
 }
 const withTeam = (params: RankingParams): RankingParams => ({ ...params, team: sameTeam(params.team) });
 
-function handle(message: Exclude<WorkerRequest, { kind: 'parts' | 'names' }>): WorkerResponse {
+function handle(message: Exclude<WorkerRequest, { kind: 'parts' | 'names' | 'fill' }>): WorkerResponse {
   if (message.kind === 'plan') {
     const params = withTeam(message.params);
     const data = engineData(message.data);
@@ -96,7 +97,14 @@ self.onmessage = async (event: MessageEvent<WorkerRequest>) => {
   if (message.kind !== 'gains') await (learnsets ??= initLearnsets());
   let response: WorkerResponse;
   try {
-    response = handle(message);
+    if (message.kind === 'fill') {
+      // Completa team: ogni proposta parte appena trovata, poi la fine con le forme escluse (per "Altre proposte")
+      const exclude = new Set(message.exclude);
+      for (const proposal of fillProposals(sameTeam(message.team), message.choice, exclude, message.format, engineData(message.data))) {
+        if (proposal) self.postMessage({ id: message.id, ok: true, kind: 'fillProposal', proposal } satisfies WorkerResponse);
+      }
+      response = { id: message.id, ok: true, kind: 'fillDone', exclude: [...exclude] };
+    } else response = handle(message);
   } catch (error) {
     response = { id: message.id, ok: false, error: String(error) };
   }
