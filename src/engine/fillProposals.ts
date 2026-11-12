@@ -109,7 +109,7 @@ const FIT: Partial<Record<Archetype, FitArchetype>> = { stall: 'stall', semiStal
  */
 const PASSIVE_QUOTA: Record<Archetype, number> = { stall: 6, semiStall: 4, balance: 3, hyperOffense: 0, bulkyOffense: 0 };
 /** Un Pokémon si distingue per forma in battaglia: Charizard, Charizard-Mega-X e Charizard-Mega-Y sono tre Pokémon. */
-const formeId = (set: TeamSet) => toID(battleName(set));
+export const formeId = (set: TeamSet) => toID(battleName(set));
 /** Posto vuoto per contare i buchi di un team non ancora pieno: nessun ruolo, nessuna debolezza, nessuna resistenza. */
 const BLANK = emptySet('');
 const sameGap = (a: Gap, b: Gap) => a.kind === b.kind && (a.kind !== 'weakness' || (b.kind === 'weakness' && a.type === b.type));

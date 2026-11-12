@@ -23,7 +23,8 @@ export type GainValue = TeamGain | 'excluded' | null;
 /**
  * Le richieste a un calcolo in sottofondo. Una lista si fa in tre passi: `plan` (quali voti servono), `gains` (i voti,
  * divisi fra i calcoli in parallelo), `rank` (la lista coi voti già pronti). Con pochi voti basta `rank`.
- * `fill` (Completa team) risponde più volte con lo stesso id: una `fillProposal` per proposta trovata, poi `fillDone`.
+ * `fill` (Completa team) risponde più volte con lo stesso id: una `fillProposal` per proposta trovata, poi `fillDone`
+ * (anche dopo `cancel`, che lo ferma al passo dopo; con `max` si ferma dopo tante proposte).
  */
 export type WorkerRequest =
   | { kind: 'parts'; parts: [number, unknown][]; drop: number[] }
@@ -34,7 +35,8 @@ export type WorkerRequest =
   | { kind: 'advicePlan'; id: number; params: AdviceParams; data: WorkerData }
   | { kind: 'advice'; id: number; params: AdviceParams; data: WorkerData; primed: [string, GainValue][] }
   | { kind: 'improve'; id: number; team: TeamSet[]; genLimit: number; data: WorkerData }
-  | { kind: 'fill'; id: number; team: TeamSet[]; choice: FillChoice; exclude: string[]; format: Format; data: WorkerData };
+  | { kind: 'fill'; id: number; team: TeamSet[]; choice: FillChoice; exclude: string[]; format: Format; data: WorkerData; max?: number }
+  | { kind: 'cancel'; id: number };
 
 /** Le risposte intermedie: arrivano prima di quella finale (con lo stesso id) e non la chiudono. */
 export type WorkerProgress = { id: number; ok: true; kind: 'fillProposal'; proposal: Proposal };

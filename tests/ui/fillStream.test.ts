@@ -1,6 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { defaultChoice, type Proposal } from '../../src/engine/fillProposals';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
+import type { EngineData } from '../../src/engine/data';
 import { streamFill } from '../../src/ui/useRanking';
 import { fillData } from '../fixtures/fillData';
 
@@ -11,7 +12,8 @@ describe('streamFill (senza calcolo in sottofondo)', () => {
   it('consegna da 1 a 5 proposte una alla volta e poi finisce', async () => {
     const got: Proposal[] = [];
     const { done } = streamFill([], { archetype: 'stall', style: null }, new Set(), DEFAULT_FORMAT, fillData, p => got.push(p));
-    const exclude = await done;
+    const { exclude, failed } = await done;
+    expect(failed).toBe(false);
     expect(got.length).toBeGreaterThanOrEqual(1);
     expect(got.length).toBeLessThanOrEqual(5);
     // Le forme proposte finiscono fra gli esclusi: "Altre proposte" non le ripete
@@ -34,19 +36,62 @@ describe('streamFill (senza calcolo in sottofondo)', () => {
     expect(got).toHaveLength(1);
   });
 
-  it('la stessa richiesta una seconda volta si ripete subito dalla cache', async () => {
+  it('con max: 1 arriva una proposta sola, e il giro limitato non va in cache', async () => {
+    const choice = { archetype: 'bulkyOffense' as const, style: null };
+    const got: Proposal[] = [];
+    const { done } = streamFill([], choice, new Set(), DEFAULT_FORMAT, fillData, p => got.push(p), { max: 1 });
+    const result = await done;
+    expect(got).toHaveLength(1);
+    expect(result.failed).toBe(false);
+    expect(result.exclude.size).toBe(got[0].added.length);
+    // La stessa richiesta senza max riparte da capo: niente arriva durante la chiamata
+    const again: Proposal[] = [];
+    const full = streamFill([], choice, new Set(), DEFAULT_FORMAT, fillData, p => again.push(p));
+    expect(again).toEqual([]);
+    await full.done;
+    expect(again[0]).toEqual(got[0]);
+  });
+
+  it('la stessa richiesta una seconda volta si ripete subito dalla cache (anche con max)', async () => {
     const choice = defaultChoice([]);
     const first: Proposal[] = [];
-    await streamFill([], choice, new Set(), DEFAULT_FORMAT, fillData, p => first.push(p)).done;
+    const firstDone = await streamFill([], choice, new Set(), DEFAULT_FORMAT, fillData, p => first.push(p)).done;
     expect(first.length).toBeGreaterThan(0);
 
     const order: string[] = [];
     const second: Proposal[] = [];
     const run = streamFill([], { ...choice }, new Set(), DEFAULT_FORMAT, fillData, p => { order.push('proposal'); second.push(p); });
     setTimeout(() => order.push('tick'), 0);
-    await run.done;
+    const secondDone = await run.done;
     await tick();
     expect(order.indexOf('tick')).toBe(first.length);
     expect(second).toEqual(first);
+    expect([...secondDone.exclude]).toEqual([...firstDone.exclude]);
+
+    const one: Proposal[] = [];
+    streamFill([], choice, new Set(), DEFAULT_FORMAT, fillData, p => one.push(p), { max: 1 });
+    expect(one).toEqual([first[0]]);
+  });
+
+  it('un calcolo che si rompe lo dice (failed) invece di sembrare un tipo senza proposte', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const broken: EngineData = { ...fillData, stats: { ...fillData.stats!, pokemon: null as never } };
+    const got: Proposal[] = [];
+    const result = await streamFill([], { archetype: null, style: null }, new Set(), DEFAULT_FORMAT, broken, p => got.push(p)).done;
+    expect(result.failed).toBe(true);
+    expect(got).toEqual([]);
+    expect(error).toHaveBeenCalled();
+    error.mockRestore();
+  });
+
+  it('un errore di chi riceve le proposte non ferma il calcolo', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    let calls = 0;
+    const result = await streamFill([], { archetype: 'stall', style: null }, new Set(['nessuno']), DEFAULT_FORMAT, fillData,
+      () => { calls++; throw new Error('chi riceve'); }).done;
+    expect(result.failed).toBe(false);
+    expect(calls).toBeGreaterThan(0);
+    expect(error).toHaveBeenCalledTimes(calls);
+    error.mockRestore();
   });
 });
