@@ -95,7 +95,7 @@
   .team-head { flex-wrap: nowrap; gap: 8px; margin: 0 0 10px; padding: 0 14px; overflow-x: auto; scrollbar-width: none; }
   .team-head::-webkit-scrollbar { display: none; }
   .team-head h2 { flex: none; }
-  .team-head .team-action, .team-head .popover > summary { flex: none; height: 36px; white-space: nowrap; }
+  .team-head .team-action, .team-quick .popover > summary { flex: none; height: 36px; white-space: nowrap; }
   .team-head { align-items: center; }
   .team-plate, .team-quick { flex: none; }
   .team-head .team-guide { height: 30px; }

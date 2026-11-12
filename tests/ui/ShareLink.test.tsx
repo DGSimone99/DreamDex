@@ -39,7 +39,7 @@ describe('aprire un link con un team', () => {
 });
 
 describe('copiare il link', () => {
-  it('Import/Export → Copia link mette negli appunti l\u2019indirizzo con il team', async () => {
+  it('la linguetta Copia link mette negli appunti l\u2019indirizzo con il team', async () => {
     const user = userEvent.setup();
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });

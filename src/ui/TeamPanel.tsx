@@ -66,8 +66,8 @@ interface Props {
   onAddClick?: () => void;
   /** Importa / Esporta: a destra nella testata, prima di Svuota team. */
   io?: ReactNode;
-  /** Team salvati: subito dopo la targa del team (scegliere quale team si guarda). */
-  saved?: ReactNode;
+  /** Team salvati: è la targa stessa del team (con la freccia) che apre il menu; riceve il contenuto della targa. */
+  saved?: (plate: ReactNode) => ReactNode;
   /** Proposta di mossa del coach: a ogni nonce nuovo apre l'editor del membro e la mostra con Applica / Annulla. */
   proposal?: MoveProposal | null;
   /** Proposta chiusa: applicata (true) o annullata (false). */
@@ -651,12 +651,21 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
     replace: i => live.current.replace(i),
     proposalDone: applied => live.current.proposalDone(applied),
   }), []);
+  // Il titolo della targa: la parola Team e quanti sono (i lettori di schermo sentono "Team (n/6)")
+  const plateTitle = (
+    <h2>
+      <span aria-hidden="true">Team</span>
+      <span className="team-count" aria-hidden="true"><b key={team.length}>{team.length}</b>/6</span>
+      <span className="visually-hidden">{t(lang, 'team.title', { n: team.length })}</span>
+    </h2>
+  );
   return (
     <section aria-label={t(lang, 'team.region')} className={`team${collapsed ? ' collapsed' : ''}`}>
       <div className="team-head">
-        {/* La targa del team porta la guida: Completa team finché mancano Pokémon, Migliora i set col team pieno */}
-        <div className="team-plate">
-          <h2>{t(lang, 'team.title', { n: team.length })}</h2>
+        {/* La targa del team: la parola Team e quanti sono. Con i team salvati la targa è anche il loro menu (freccia ▾) */}
+        {saved ? saved(plateTitle) : <div className="team-plate">{plateTitle}</div>}
+        {/* La guida, subito dopo la targa: Completa team finché mancano Pokémon, Migliora i set col team pieno */}
+        <div className="team-guide-slot">
           {canFill ? (
             // Anche a team vuoto: propone team interi del tipo scelto; il pannello si apre sotto il pulsante
             <span className="fill-anchor">
@@ -687,7 +696,6 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
             </button>
           )}
         </div>
-        {saved}
         {confirmPresets && (
           <ImproveSetsDialog team={team} data={data} genLimit={format.genLimit} onCancel={closeConfirm} onApply={next => {
             closeConfirm();
@@ -701,11 +709,13 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
             setAsk(null);
           }} />
         )}
-        {/* Scorciatoie, sempre allo stesso posto a destra: porta dentro un team, ricomincia da zero */}
+        {/* Scorciatoie, sempre allo stesso posto a destra: Team salvati, poi Showdown (Import/Export e Copia team attaccate),
+            poi Svuota a parte */}
         <div className="team-quick">
-          {io}
+            <div className="team-tabs">
+            {io}
+          </div>
           {team.length > 0 && <>
-            <span className="team-sep" aria-hidden="true" />
             <button type="button" className="team-action clear-team" title={t(lang, 'team.clear')} onClick={() => {
               setOpenIndex(null);
               if (onBulk) onBulk('clear', []); else onChange([]);

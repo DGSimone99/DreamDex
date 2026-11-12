@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { App } from '../../src/App';
 import { fixtureData } from '../fixtures/data';
+import { spyClipboard } from '../helpers/clipboard';
 
 const team = () => screen.getByRole('region', { name: 'Team' });
 
@@ -26,8 +27,9 @@ describe('Tera vietato nel formato (National Dex OU)', () => {
 
   it('export Showdown senza Tera', async () => {
     const user = await importGarchomp();
-    await user.click(screen.getByRole('button', { name: 'Esporta team' }));
-    const text = (screen.getByLabelText('Testo Showdown') as HTMLTextAreaElement).value;
+    const copied = spyClipboard();
+    await user.click(screen.getByRole('button', { name: 'Esporta' }));
+    const text = copied();
     expect(text).toContain('Garchomp @ Rocky Helmet');
     expect(text).not.toContain('Tera Type');
   });
