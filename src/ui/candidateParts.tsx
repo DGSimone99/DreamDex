@@ -313,7 +313,7 @@ function ReasonBody({ bring }: { bring: Bring }) {
 
 /**
  * I motivi: "+" verde davanti ai bonus (letto anche dagli screen reader), il resto in grigio; i segni col tooltip.
- * Con `out` (Migliora · Tutti) l'ultima riga dice chi esce: ⇄ esce [icona] Kingambit.
+ * Con `out` (Migliora · Tutti) l'ultima riga dice chi esce: ⇄ [icona] Kingambit.
  */
 export function Reasons({ reasons, out }: { reasons: ReasonSummary; out?: string }) {
   return (
@@ -352,15 +352,18 @@ export function PickButton({ rank, species, selected, onSelect }: { rank: number
   );
 }
 
-/** Chi esce, come riga dei motivi: ⇄ esce [icona] nome (il nome si accorcia coi puntini); agli screen reader "Al posto di X". */
+/**
+ * Chi esce, come riga dei motivi: ⇄ [icona] nome (la ⇄ dice già lo scambio; la parola "Esce" solo nel tooltip).
+ * Il nome si accorcia coi puntini solo se è lunghissimo; agli screen reader "Al posto di X".
+ */
 function OutRow({ member }: { member: string }) {
   const tr = useT();
   const text = tr('suggest.outFor', { member });
   return (
-    <span className="reason out-row" title={text}>
+    <span className="reason out-row" title={tr('suggest.outShort', { member })}>
       <span className="visually-hidden">{text}</span>
       <span className="out-sym" aria-hidden="true">
-        <Icon name="swap" /><span className="out-word">{tr('suggest.outShort')}</span><PokemonIcon name={member} /><strong>{member}</strong>
+        <Icon name="swap" /><span className="out-mon"><PokemonIcon name={member} /></span><strong>{member}</strong>
       </span>
     </span>
   );

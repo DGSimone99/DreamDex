@@ -607,13 +607,14 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .reason .sym-mon { display: flex; align-items: center; min-width: 0; }
 .reason .sym-mon .type-dot { flex: none; margin-right: 4px; vertical-align: 0; }
 .reason .sym-mon strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-/* Chi esce (Migliora · Tutti): l'ultima riga dei motivi, al posto di "vs": ⇄ esce [mini icona] nome. Stesso corpo e
-   colore delle altre righe; la ⇄ grigia come il testo (non è un bonus), il nome come nel "vs" e coi puntini se non entra */
-.reason.out-row { display: flex; align-items: center; overflow: visible; }
-.reason .out-sym { display: flex; align-items: center; gap: 3px; min-width: 0; }
+/* Chi esce (Migliora · Tutti): l'ultima riga dei motivi, al posto di "vs": ⇄ [mini icona] nome ("Esce X" nel tooltip).
+   Stesso corpo e colore delle altre righe; la ⇄ grigia come il testo (non è un bonus). La mini icona (40×30) è
+   rimpicciolita dentro un riquadro alto quanto la riga: non sporge sulla riga sopra. Il nome come nel "vs" */
+.reason.out-row { display: flex; align-items: center; height: 16px; }
+.reason .out-sym { display: flex; align-items: center; gap: 3px; min-width: 0; height: 16px; }
 .reason .out-sym .icon { flex: none; width: 13px; height: 13px; color: var(--muted); }
-.reason .out-word { flex: none; }
-.reason .out-sym .mon-icon { margin: -4px -8px -10px -8px; }
+.reason .out-mon { position: relative; flex: none; width: 20px; height: 16px; overflow: hidden; }
+.reason .out-mon .mon-icon { position: absolute; left: 50%; top: 50%; margin: 0; transform: translate(-50%, -54%) scale(0.56); image-rendering: auto; }
 .reason .out-sym strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; color: var(--text); }
 /* "+N" piccolo e grigio subito dopo l'ultimo elemento: non si confonde col voto */
 .reason .sym-more { flex: none; margin-left: 4px; font: 500 11px/1 var(--ui); color: var(--faint); }
