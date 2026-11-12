@@ -33,13 +33,14 @@ function normalizeSet(raw: unknown): TeamSet | null {
   };
 }
 
-/** Il JSON della fonte (lista di `{ name, author?, data: Set[] }`): tiene le squadre da 1 a 6 set validi, scarta il resto. */
+/** Il JSON della fonte (lista di `{ name, author?, data: Set[] }`) o quello già salvato da fetch-data (`team: Set[]`): tiene le squadre da 1 a 6 set validi, scarta il resto. */
 export function normalizeTeams(raw: unknown): TournamentTeam[] {
   if (!Array.isArray(raw)) return [];
   const teams: TournamentTeam[] = [];
   for (const entry of raw) {
-    if (!isRecord(entry) || !Array.isArray(entry.data) || entry.data.length < 1 || entry.data.length > 6) continue;
-    const team = entry.data.map(normalizeSet);
+    const sets = isRecord(entry) ? (Array.isArray(entry.data) ? entry.data : entry.team) : null;
+    if (!isRecord(entry) || !Array.isArray(sets) || sets.length < 1 || sets.length > 6) continue;
+    const team = sets.map(normalizeSet);
     if (team.some(set => !set)) continue;
     teams.push({ name: text(entry.name) ?? '', author: text(entry.author) ?? '', team: team as TeamSet[] });
   }

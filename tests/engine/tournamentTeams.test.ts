@@ -29,6 +29,11 @@ describe('normalizeTeams', () => {
     expect(t.team[0].ability).toBe(emptySet('Kingambit').ability);
   });
 
+  it('rilegge il file salvato da fetch-data (campo team al posto di data)', () => {
+    const [t] = normalizeTeams([{ name: 'A', author: 'b', team: [raw('Kingambit'), raw('Toxapex')] }]);
+    expect(t.team.map(s => s.species)).toEqual(['Kingambit', 'Toxapex']);
+  });
+
   it('non un array → []', () => {
     expect(normalizeTeams(null)).toEqual([]);
     expect(normalizeTeams({})).toEqual([]);

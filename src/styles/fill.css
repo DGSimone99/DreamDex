@@ -25,6 +25,8 @@
 .fill-panel [hidden] { display: none !important; }
 /* La targa isola i suoi strati: col pannello aperto sta sopra i pulsanti accanto (Team salvati), anche sul telefono */
 .team-plate:has(.fill-panel) { z-index: 1; }
+/* La freccia che chiude il team galleggia in mezzo al bordo: col pannello aperto finirebbe sopra le proposte */
+.band:has(.fill-panel) .band-toggle { visibility: hidden; }
 /* Schede: come le schede interne di Analisi, la sottolineatura ciano su quella aperta */
 .fill-tabs { display: flex; gap: 4px; margin: 0 -14px; padding: 0 14px; border-bottom: 1px solid var(--line-soft); }
 .fill-tab {
