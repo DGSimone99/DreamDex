@@ -1,12 +1,12 @@
-/* Avviso con Annulla: in basso al centro, 5 secondi (barra che si accorcia, ferma finché ci sei sopra) */
+/* Avviso con Annulla: in basso a sinistra, sopra la lista dei candidati (mai sopra il pulsante della scheda del candidato,
+   a destra); 5 o 10 secondi (barra che si accorcia, ferma finché ci sei sopra). A sinistra: la barra laterale più 24px */
 .undo-toast {
   position: fixed;
   z-index: 80;
-  left: 50%;
+  left: calc(var(--rail-w, 214px) + 24px);
   bottom: 24px;
-  translate: -50% 0;
   min-width: 300px;
-  max-width: calc(100vw - 32px);
+  max-width: min(400px, calc(100vw - 32px));
   padding: 18px 44px 20px;
   overflow: hidden;
   background: var(--panel);

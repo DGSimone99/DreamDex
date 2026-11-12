@@ -241,7 +241,7 @@
   .help-dialog.rating-help, .help-frame.with-peek > .help-dialog.rating-help { height: calc(100dvh - 24px); }
 
   /* L'avviso con Annulla sta sopra le sezioni */
-  .undo-toast { bottom: calc(var(--bottom-h) + var(--safe-b) + 12px); min-width: 0; width: calc(100vw - 24px); }
+  .undo-toast { left: 12px; bottom: calc(var(--bottom-h) + var(--safe-b) + 12px); min-width: 0; width: calc(100vw - 24px); max-width: none; }
 
   /* Il nome per le transizioni fa della colonna un livello a sé: la scheda del candidato resterebbe sotto le barre */
   .tab-body { padding: 16px 14px 24px; view-transition-name: none; }

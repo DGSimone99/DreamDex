@@ -118,6 +118,18 @@ async function focus(page: Page, selector: string): Promise<boolean> {
   }, selector);
 }
 const wait = (ms: number) => new Promise(r => setTimeout(r, ms));
+/** Stampa se l'avviso con Annulla tocca il pulsante della scheda del candidato (overlap in px) e se esce dallo schermo. */
+async function toastClear(page: Page): Promise<boolean> {
+  const m = await page.evaluate(() => {
+    const toast = document.querySelector('.undo-toast')?.getBoundingClientRect();
+    const actions = document.querySelector('.detail-actions')?.getBoundingClientRect();
+    if (!toast) return 'no toast';
+    const over = actions ? Math.max(0, Math.min(toast.right, actions.right) - Math.max(toast.left, actions.left)) * Math.max(0, Math.min(toast.bottom, actions.bottom) - Math.max(toast.top, actions.top)) : -1;
+    return `toast=${Math.round(toast.left)},${Math.round(toast.top)} ${Math.round(toast.width)}x${Math.round(toast.height)} actions=${actions ? `${Math.round(actions.left)},${Math.round(actions.top)}` : '-'} overlap=${over} offscreen=${toast.right > innerWidth || toast.left < 0 ? 1 : 0}`;
+  });
+  console.log(m);
+  return true;
+}
 const tab = (page: Page, id: string) => page.evaluate(i => { document.getElementById(`tab-${i}`)?.click(); }, id);
 
 /** Mouse sulla carta n della lista; dopo l'animazione stampa i bordi della carta inclinata rispetto all'interno della lista. */
@@ -679,6 +691,12 @@ const STATES: Record<string, State> = {
   'improve-wide': { hash: hash(SIX), run: async p => { await p.evaluate(() => (document.querySelector('.team-guide') as HTMLElement | null)?.click()); await p.waitForSelector('.improve-toggle', { timeout: 20000 }); await p.click('.improve-toggle'); await wait(700); return true; } },
   'improve-wide-en': { hash: hash(SIX), lang: 'en', run: async p => { await p.evaluate(() => (document.querySelector('.team-guide') as HTMLElement | null)?.click()); await p.waitForSelector('.improve-toggle', { timeout: 20000 }); await p.click('.improve-toggle'); await wait(700); return true; } },
   'team-empty': { hash: '' },
+  // Team fuori regola (Mewtwo è Ubers in National Dex OU): voto grigio con il motivo sotto
+  // Svuota: il cestino con il fumetto sotto il mouse; poi svuotato, con l'avviso che non copre il pulsante della scheda
+  'clear-hover': { run: async p => { await p.hover('.team-head .clear-team'); await wait(300); return true; } },
+  cleared: { run: async p => { await p.click('.team-head .clear-team'); await wait(1200); return toastClear(p); } },
+  'removed-toast': { run: async p => { if (!await clickText(p, 'button.remove', /Rimuovi/)) return false; await wait(1200); return toastClear(p); } },
+  illegal: { hash: hash([...TEAM, member('Mewtwo', 'Life Orb', 'Pressure', ['Psystrike', 'Ice Beam', 'Aura Sphere', 'Recover'], 'Timid', { spa: 252, spe: 252, hp: 4 })]) },
 };
 const chosen = (arg('states') ?? Object.keys(STATES).join(',')).split(',');
 

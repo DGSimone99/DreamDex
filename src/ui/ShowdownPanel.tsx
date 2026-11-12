@@ -8,7 +8,8 @@ import { reviewImport, type ImportReview } from './importReview';
 import { Icon } from './icons';
 import { useLang, useT } from '../i18n/react';
 
-export function ShowdownPanel({ team, format, tera = true, onImport }: { team: TeamSet[]; format: Format; /** Tera ammesso nel formato */ tera?: boolean; onImport: (team: TeamSet[]) => void }) {
+export function ShowdownPanel({ team, format, tera = true, onImport }: { team: TeamSet[]; format: Format; /** Tera ammesso nel formato */ tera?: boolean; /** `again`: lo stesso import ritoccato (Custom Skillset sbloccato dopo la domanda), non un import nuovo */
+  onImport: (team: TeamSet[], again?: boolean) => void }) {
   const t = useT();
   const lang = useLang();
   const [text, setText] = useState('');
@@ -38,7 +39,8 @@ export function ShowdownPanel({ team, format, tera = true, onImport }: { team: T
   const unlock = () => {
     if (!review) return;
     const marked = new Set(review.review.skill.map(line => line.index));
-    onImport(review.sets.map((set, i) => (marked.has(i) ? { ...set, customSkillset: true } : set)));
+    // Se il team era già entrato (niente che lo fermava), è lo stesso import: l'Annulla riporta al team di prima
+    onImport(review.sets.map((set, i) => (marked.has(i) ? { ...set, customSkillset: true } : set)), !review.review.blocking.length);
     setReview(null);
   };
 

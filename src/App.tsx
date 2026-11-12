@@ -313,6 +313,18 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
       : { kind: 'presets', from: String(rating?.overall ?? '—'), to: String(rateTeam(after, data, lang)?.overall ?? ''),
         added: after.length - team.length, created: team.length === 0 }, after);
   };
+  // Team importato o caricato dai team salvati: si annulla come le altre modifiche (con il formato di prima).
+  // A team vuoto non c'è niente da riavere: niente avviso
+  const loadTeam = (next: TeamSet[], action: Omit<UndoAction, 'id'>, nextFormat?: Format, again = false) => {
+    // Lo stesso import ritoccato (Custom Skillset sbloccato): l'Annulla resta quello del team di prima dell'import
+    const chained = again && undo && undo.kind === 'import' && undo.after === team ? undo : null;
+    if (again && !chained) { changeTeam(next); return; }
+    const before = chained ? chained.before : team;
+    const after = changeTeam(next);
+    if (nextFormat) setFormat({ ...nextFormat, meta: format.meta });
+    if (before.length) setUndo({ ...action, id: ++undoId.current, before, after, format: chained ? chained.format : nextFormat ? format : undefined });
+    else setUndo(null);
+  };
   const removeAt = (index: number) => {
     const after = changeTeam(team.filter((_, i) => i !== index));
     remember({ kind: 'remove', from: battleName(team[index]) }, after);
@@ -375,8 +387,8 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
       )}
       <div className={`band${collapsed ? ' collapsed' : ''}`}>
         <TeamPanel team={team} format={format} data={data}
-          io={<ShowdownPanel team={team} format={format} tera={teraAllowed(format)} onImport={changeTeam} />}
-          saved={plate => <SavedTeams team={team} format={format} plate={plate} onLoad={(saved, savedFormat) => { changeTeam(saved); if (savedFormat) setFormat({ ...savedFormat, meta: format.meta }); }} />}
+          io={<ShowdownPanel team={team} format={format} tera={teraAllowed(format)} onImport={(next, again) => loadTeam(next, { kind: 'import', from: '' }, undefined, again)} />}
+          saved={plate => <SavedTeams team={team} format={format} plate={plate} onLoad={(saved, savedFormat, name) => loadTeam(saved, { kind: 'loadSaved', from: name }, savedFormat)} />}
           onChange={changeTeam} onAdd={addSet} onReplace={startReplace} onRemove={removeAt} onPaste={pasteAt} onBulk={bulk} onAddClick={startAdd}
           onOpenChange={index => { setEditingIndex(index); setMoveProposal(p => (p && p.index === index ? p : null)); }}
           proposal={moveProposal} onProposalDone={finishProposal} closeSignal={closeSignal} collapsed={collapsed}
