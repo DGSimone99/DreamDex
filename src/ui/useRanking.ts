@@ -3,6 +3,8 @@ import { rankCandidates, type RankingParams, type RankingResult } from '../engin
 import type { EngineData } from '../engine/data';
 import type { AdviceParams, GainValue, WorkerData, WorkerRequest, WorkerResponse } from '../engine/rankingProtocol';
 import { coachAdvice, type CoachAdvice } from '../engine/coach';
+import { improveSets, type SetChange } from '../engine/bestPreset';
+import type { TeamSet } from '../engine/sets';
 import type { GainJob } from '../engine/teamGain';
 import { currentGameNames, gameNamesVersion } from '../i18n/game';
 
@@ -144,6 +146,21 @@ class RankingClient {
     return groups.flatMap((group, i) => group.map((job, j) => [job.key, answers[i].values[j]] as [string, GainValue]));
   }
 
+  /**
+   * Migliora i set in sottofondo, sull'ultimo calcolo: non aspetta in coda dietro la lista dei candidati (che fa il
+   * primo). Quel calcolo carica i learnset alla prima richiesta (i ritocchi usano solo mosse legali).
+   */
+  async improve(team: TeamSet[], genLimit: number, given: EngineData): Promise<SetChange[]> {
+    if (this.broken) return improveSets(team, given, genLimit);
+    try {
+      const { changes } = await this.workers[this.workers.length - 1].call<'improve'>({ kind: 'improve', team, genLimit, data: this.wire(given) });
+      return changes;
+    } catch {
+      this.broken = true;
+      return improveSets(team, given, genLimit);
+    }
+  }
+
   /** I consigli del Coaching in sottofondo: stessi tre passi della lista (voti raccolti, in parallelo, poi i consigli). */
   async advise(params: AdviceParams, given: EngineData): Promise<CoachAdvice> {
     // I dati col formato scelto (come fa coachAdvice): così i voti calcolati a parte usano le stesse regole del formato
@@ -278,3 +295,25 @@ function useSyncAdvice(input: AdviceInput | null): CoachAdvice | null {
 }
 
 export const useAdvice: (input: AdviceInput | null) => CoachAdvice | null = rankingClient() ? useWorkerAdvice : useSyncAdvice;
+
+/**
+ * Migliora i set senza fermare la pagina: col worker in sottofondo; senza (test, browser vecchi) qui, dopo un attimo,
+ * così la finestra fa in tempo a disegnarsi.
+ */
+export function improveSetsLater(team: TeamSet[], data: EngineData, genLimit: number): Promise<SetChange[]> {
+  // L'ultimo calcolo resta pronto: passando sul pulsante parte prima del clic, e riaprendo la finestra non si rifà
+  const key = JSON.stringify([team, genLimit]);
+  if (lastImprove && lastImprove.key === key && lastImprove.data === data) return lastImprove.result;
+  const worker = rankingClient();
+  const result = worker ? worker.improve(team, genLimit, data)
+    : new Promise<SetChange[]>(resolve => setTimeout(() => resolve(improveSets(team, data, genLimit)), 30));
+  lastImprove = { key, data, result };
+  result.catch(() => { if (lastImprove?.result === result) lastImprove = null; });
+  return result;
+}
+let lastImprove: { key: string; data: EngineData; result: Promise<SetChange[]> } | null = null;
+
+/** Prepara Migliora i set in anticipo, solo se c'è il calcolo in sottofondo (senza, fermerebbe la pagina a ogni modifica). */
+export function prepareImproveSets(team: TeamSet[], data: EngineData, genLimit: number): void {
+  if (rankingClient()) void improveSetsLater(team, data, genLimit).catch(() => undefined);
+}

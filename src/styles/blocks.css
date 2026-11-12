@@ -404,43 +404,112 @@
 .feedback-done .eevee-moment { width: 96px; height: auto; }
 
 /*
- * Migliora i set: piccola come una conferma (testo, risultato, pulsanti); "Controlla cambiamenti" la allarga quasi a
- * tutto lo schermo con un Pokémon per colonna: adesso, freccia, dopo (in verde ciò che cambia), +N e casella.
+ * Migliora i set: piccola come una conferma (testo, risultato con le icone di chi cambia, pulsanti); "Controlla
+ * cambiamenti" la allarga quasi a tutto lo schermo con un Pokémon per colonna, come le carte del team: testata nel
+ * colore del tipo, il set di adesso (spento), "↓ Dopo" e il set nuovo (più chiaro, in verde ciò che cambia), +N e casella.
  */
-.help-dialog.improve-dialog { width: min(520px, 100%); max-height: calc(100vh - 48px); transition: width 0.28s var(--ease); }
-.help-dialog.improve-dialog.open { width: min(1360px, 100%); }
+.help-dialog.improve-dialog { width: min(540px, 100%); max-height: calc(100vh - 48px); transition: width 0.32s var(--ease); }
+.help-dialog.improve-dialog.open { width: min(1360px, 100%); max-height: calc(100vh - 24px); }
+.help-backdrop:has(> .improve-dialog.open) { padding: 12px; }
 @media (prefers-reduced-motion: reduce) { .help-dialog.improve-dialog { transition: none; } }
 .improve-body { flex: 1; min-height: 0; overflow-y: auto; padding: 14px 18px 2px; }
 .improve-text { margin: 0 0 14px; font-size: 15px; line-height: 1.45; }
-.improve-total { display: flex; align-items: center; gap: 12px; min-height: 46px; padding: 6px 14px; background: var(--panel); border: 1px solid var(--line-soft); border-radius: 4px; }
-.improve-grade { --grade: var(--accent); font: 800 22px/1 var(--display); font-style: italic; color: var(--grade); font-variant-numeric: tabular-nums; }
-.improve-grade.grade-S { --grade: var(--accent-2-ink); }
-.improve-grade.grade-A { --grade: var(--good); }
-.improve-grade.grade-C { --grade: var(--warn); }
-.improve-grade.grade-D { --grade: var(--bad); }
+
+/* Il risultato: voto prima → dopo nei colori della lettera, con il velo del voto nuovo come la carta del Voto */
+.improve-total {
+  --grade: var(--accent);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  min-height: 50px;
+  padding: 7px 14px;
+  background: radial-gradient(120% 140% at 0% 50%, color-mix(in srgb, var(--grade) 14%, transparent), transparent 60%), var(--panel);
+  border: 1px solid var(--line-soft);
+  border-radius: 4px;
+}
+.improve-total:has(.improve-grade.to.grade-S) { --grade: var(--accent-2); }
+.improve-total:has(.improve-grade.to.grade-A) { --grade: var(--good); }
+.improve-total:has(.improve-grade.to.grade-C) { --grade: var(--warn); }
+.improve-total:has(.improve-grade.to.grade-D) { --grade: var(--bad); }
+.improve-grade { --g: var(--accent); font: 800 20px/1 var(--display); font-style: italic; color: var(--g); font-variant-numeric: tabular-nums; }
+.improve-grade.to { font-size: 26px; }
+.improve-grade:not(.to) { opacity: 0.7; }
+.improve-grade.grade-S { --g: var(--accent-2-ink); }
+.improve-grade.grade-A { --g: var(--good); }
+.improve-grade.grade-C { --g: var(--warn); }
+.improve-grade.grade-D { --g: var(--bad); }
 .improve-arrow { color: var(--faint); }
-.improve-count, .improve-busy, .improve-none { color: var(--muted); font-size: 14px; }
-.improve-delta { margin-left: auto; font: 800 26px/1 var(--display); font-style: italic; color: var(--faint); font-variant-numeric: tabular-nums; }
+.improve-count, .improve-none { color: var(--muted); font-size: 14px; }
+.improve-busy { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 14px; }
+.improve-busy .eevee-moment { width: 40px; margin: -6px 0; }
+.improve-delta { margin-left: auto; font: 800 28px/1 var(--display); font-style: italic; color: var(--faint); font-variant-numeric: tabular-nums; }
 .improve-delta.up { color: var(--good); }
 .improve-delta.down { color: var(--bad); }
-/* Le colonne: tante quanti i membri, tutte uguali */
-.improve-cols { display: grid; grid-template-columns: repeat(var(--cols, 6), minmax(0, 1fr)); gap: 8px; margin: 10px 0 0; padding: 0; list-style: none; animation: tip 0.2s var(--ease); }
-.improve-col { display: flex; flex-direction: column; min-width: 0; background: var(--panel); border: 1px solid var(--line-soft); border-radius: 4px; overflow: hidden; transition: opacity 0.15s; }
-.improve-col.off { opacity: 0.5; }
-.improve-col.same { opacity: 0.65; }
-.improve-col-head { display: flex; align-items: center; gap: 6px; height: 42px; padding: 0 10px; background: var(--stripes), var(--band); border-bottom: 1px solid var(--line-soft); }
-.improve-col-head input[type='checkbox'] { flex: none; width: 18px; height: 18px; cursor: pointer; }
+/* Chi cambia: le icone del team, spente quelle che restano uguali; sotto quelle accese un trattino verde */
+.improve-who { flex-basis: 100%; display: flex; gap: 4px; order: 9; }
+.improve-who > span { position: relative; display: grid; place-items: center; width: 40px; height: 34px; border-radius: 3px; opacity: 0.35; filter: grayscale(0.8); }
+.improve-who > span.on { opacity: 1; filter: none; background: color-mix(in srgb, var(--good) 10%, transparent); }
+.improve-who > span.on::after { content: ''; position: absolute; left: 10px; right: 10px; bottom: 1px; height: 2px; border-radius: 1px; background: var(--good); }
+
+/* Le colonne: tante quanti i membri, come le carte del team */
+.improve-cols { display: grid; grid-template-columns: repeat(var(--cols, 6), minmax(0, 1fr)); gap: 8px; margin: 10px 0 0; padding: 0; list-style: none; animation: tip 0.24s var(--ease) both; }
+.improve-col {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--panel);
+  border: 1px solid var(--line-soft);
+  border-radius: 4px;
+  overflow: hidden;
+  transition: opacity 0.18s, filter 0.18s;
+}
+/* La striscia nei colori dei tipi, in fondo alla carta */
+.improve-col::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: linear-gradient(90deg, var(--t1) 50%, var(--t2) 50%); }
+.improve-col.off { opacity: 0.45; filter: grayscale(0.6); }
+.improve-col.same { opacity: 0.7; }
+.improve-col-head {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: 44px;
+  padding: 0 7px 0 9px;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--t1) 46%, var(--panel)) 0%, color-mix(in srgb, var(--t1) 14%, var(--panel)) 70%);
+  border-bottom: 1px solid color-mix(in srgb, var(--t1) 30%, var(--line-soft));
+}
+/* Il riflesso diagonale delle carte Masters */
+.improve-col-head::before { content: ''; position: absolute; inset: 0; background: linear-gradient(115deg, transparent 40%, rgba(255, 255, 255, 0.07) 40% 52%, transparent 52%); pointer-events: none; }
+.improve-col-head input[type='checkbox'] { position: relative; flex: none; width: 18px; height: 18px; cursor: pointer; }
 .improve-check-spacer { flex: none; width: 18px; }
-.improve-name { flex: 1; min-width: 0; font: 800 15px/1.2 var(--display); font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.improve-gain { flex: none; font: 800 20px/1 var(--display); font-style: italic; color: var(--faint); font-variant-numeric: tabular-nums; }
-.improve-gain.up { color: var(--good); }
-.improve-gain.down { color: var(--bad); }
-.improve-gain.same { font: 500 13px/1 var(--ui); }
-/* Lo sprite piccolo accanto al nome: la colonna non spende una riga per lui */
-.improve-mini { flex: none; display: grid; place-items: center; width: 36px; height: 40px; overflow: visible; }
-.improve-mini .sprite { width: 44px; height: 44px; margin: -2px -4px 0; }
+.improve-mini { position: relative; flex: none; display: grid; place-items: center; width: 36px; height: 40px; overflow: hidden; }
+.improve-mini .sprite { width: 42px; height: 42px; margin: -2px -3px 0; filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.45)); }
+.improve-name { position: relative; flex: 1; min-width: 0; font: 800 15px/1.2 var(--display); font-style: italic; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* +N del solo membro: una targhetta, verde se sale */
+.improve-gain {
+  position: relative;
+  flex: none;
+  min-width: 30px;
+  padding: 3px 5px;
+  border-radius: 3px;
+  background: rgba(8, 10, 16, 0.55);
+  color: var(--faint);
+  font: 800 16px/1 var(--display);
+  font-style: italic;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.improve-gain.up { color: var(--good); background: color-mix(in srgb, var(--good-bg) 85%, transparent); }
+.improve-gain.down { color: var(--bad); background: color-mix(in srgb, var(--bad-bg) 85%, transparent); }
+.improve-gain.same { font: 500 12px/1.2 var(--ui); }
+
+/* Le due metà: adesso (spenta) e dopo (più chiara, è il risultato) */
 .improve-set { display: grid; justify-items: start; gap: 2px; padding: 8px 10px; font-size: 13px; line-height: 1.35; color: var(--muted); }
 .improve-set > span { max-width: 100%; }
+.improve-set.is-before { color: var(--faint); }
+.improve-set.is-before .improve-moves li { background: color-mix(in srgb, var(--raised) 60%, transparent); color: var(--muted); }
+.improve-set.is-after { flex: 1; padding-bottom: 11px; background: color-mix(in srgb, var(--raised) 35%, transparent); color: var(--text); }
 .improve-set .item-icon { vertical-align: -4px; }
 .improve-evs { font-variant-numeric: tabular-nums; }
 /* Le mosse come pillole una accanto all'altra (2-3 righe), non quattro righe alte */
@@ -448,36 +517,37 @@
 .improve-moves li { display: block; max-width: 100%; margin: 0; padding: 0 6px; border: 1px solid transparent; border-radius: 3px; background: var(--raised); color: var(--text); font-size: 12px; line-height: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* Ciò che cambia nel set nuovo: testo verde su un velo verde */
 .improve-set .is-new { color: var(--good); background: var(--good-bg); border-radius: 3px; padding: 0 4px; margin-inline: -4px; }
-.improve-moves li.is-new { margin: 0; padding: 0 6px; line-height: 18px; border-color: color-mix(in srgb, var(--good) 45%, transparent); }
-.improve-down { display: flex; align-items: center; justify-content: center; gap: 4px; height: 20px; color: var(--faint); border-block: 1px dashed var(--line-soft);
-  font: 700 11px/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; }
+.improve-moves li.is-new { margin: 0; padding: 0 6px; line-height: 18px; border-color: color-mix(in srgb, var(--good) 50%, transparent); font-weight: 600; }
+.improve-down { display: flex; align-items: center; justify-content: center; gap: 4px; height: 20px; color: var(--good); background: color-mix(in srgb, var(--raised) 35%, transparent);
+  border-top: 1px dashed var(--line-soft); font: 700 11px/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; }
 .improve-down .icon { width: 14px; height: 14px; transform: rotate(90deg); }
-.improve-same { margin: 0; padding: 14px 10px; text-align: center; color: var(--muted); font-size: 13px; }
-.improve-note { flex: 1; min-width: 0; margin: 0; font-size: 12px; line-height: 1.35; color: var(--muted); }
+.improve-same { display: flex; align-items: center; justify-content: center; gap: 6px; flex: 1; margin: 0; padding: 14px 10px; color: var(--muted); font-size: 13px; text-align: center; }
+.improve-same .icon { width: 15px; height: 15px; color: var(--good); }
+
 .improve-actions { display: flex; align-items: center; gap: 12px; padding: 12px 18px 14px; }
-.improve-actions .improve-note + .improve-grow { display: none; }
 .improve-actions button { height: 36px; padding: 0 16px; }
+.improve-note { flex: 1; min-width: 0; margin: 0; font-size: 12px; line-height: 1.35; color: var(--muted); }
 .improve-grow { flex: 1; }
+.improve-actions .improve-note + .improve-grow { display: none; }
 .improve-toggle { background: transparent; border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
 .improve-toggle:hover { background: var(--accent-wash); }
 .improve-chevron { width: 7px; height: 7px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: translateY(-2px) rotate(45deg); transition: transform 0.2s; }
 .improve-toggle[aria-expanded='true'] .improve-chevron { transform: translateY(2px) rotate(225deg); }
-/* Schermi stretti: tre colonne per riga; telefono: una colonna, la lista scorre */
+
 /* Colonne strette (sotto 1366): testata più fitta, il nome resta intero */
 @media (max-width: 1365px) {
-  .improve-col-head { gap: 4px; padding: 0 8px; }
-  .improve-mini { width: 30px; overflow: hidden; }
-  .improve-mini .sprite { margin-inline: -7px; }
+  .improve-col-head { gap: 4px; padding: 0 6px 0 8px; }
+  .improve-mini { width: 30px; }
+  .improve-mini .sprite { width: 38px; height: 38px; margin-inline: -4px; }
   .improve-name { font-size: 14px; }
-  .improve-gain { font-size: 18px; }
+  .improve-gain { min-width: 30px; padding-inline: 4px; font-size: 15px; }
   .improve-set { padding: 7px 8px; }
 }
 /* Sotto i 1200 px: niente sprite nella testata (il nome intero conta di più), mosse un filo più piccole */
 @media (max-width: 1199px) {
   .improve-mini { display: none; }
   .improve-set { padding: 6px 7px; font-size: 12px; }
-  .improve-moves li { font-size: 11px; padding-inline: 5px; }
-  .improve-moves li.is-new { padding-inline: 5px; }
+  .improve-moves li, .improve-moves li.is-new { font-size: 11px; padding-inline: 5px; }
 }
 /* Sotto i 1000 px tre colonne per riga (la finestra scorre) */
 @media (max-width: 999px) { .improve-cols { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
@@ -486,7 +556,5 @@
   .improve-actions { flex-wrap: wrap; }
   .improve-note { flex-basis: 100%; order: 1; }
   .improve-toggle { width: 100%; justify-content: center; }
+  .improve-who > span { width: 34px; }
 }
-/* Allargata: meno margine intorno, così le colonne stanno in uno schermo anche sui portatili bassi */
-.help-backdrop:has(> .improve-dialog.open) { padding: 12px; }
-.help-dialog.improve-dialog.open { max-height: calc(100vh - 24px); }

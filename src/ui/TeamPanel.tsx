@@ -15,6 +15,7 @@ import { copyText } from './clipboard';
 import { setEditing } from './editing';
 import { bestPreset } from '../engine/bestPreset';
 import { ImproveSetsDialog } from './ImproveSetsDialog';
+import { prepareImproveSets } from './useRanking';
 import { ImportDialog } from './ImportDialog';
 import { reviewImport, type ImportReview } from './importReview';
 import { FillPanel } from './FillPanel';
@@ -577,6 +578,12 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
   const [ask, setAsk] = useState<{ index: number; review: ImportReview } | null>(null);
   const presetsButton = useRef<HTMLButtonElement>(null);
   const closeConfirm = () => { setConfirmPresets(false); presetsButton.current?.focus(); };
+  // Team pieno e fermo da un secondo e mezzo: Migliora i set si prepara in sottofondo, al clic la finestra è già pronta
+  useEffect(() => {
+    if (team.length < 6 || !data.stats) return;
+    const timer = setTimeout(() => prepareImproveSets(team, data, format.genLimit), 1500);
+    return () => clearTimeout(timer);
+  }, [team, data, format.genLimit]);
   // Completa team: pannello con tipi di team e proposte
   const [filling, setFilling] = useState(false);
   const fillToggle = useRef<HTMLButtonElement>(null);
@@ -659,7 +666,9 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
             </span>
           ) : team.length > 0 && (
             <button type="button" className="team-guide" ref={presetsButton}
-              aria-haspopup="dialog" title={t(lang, 'team.bestPresetsTitle')} onClick={() => setConfirmPresets(true)}>
+              aria-haspopup="dialog" title={t(lang, 'team.bestPresetsTitle')} onClick={() => setConfirmPresets(true)}
+              // Il calcolo parte già quando ci si avvicina al pulsante: al clic la finestra è spesso già pronta
+              onPointerEnter={() => prepareImproveSets(team, data, format.genLimit)} onFocus={() => prepareImproveSets(team, data, format.genLimit)}>
               <Icon name="spark" /> <span className="btn-label">{t(lang, 'team.bestPresets')}</span>
             </button>
           )}

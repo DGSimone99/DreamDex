@@ -1,8 +1,9 @@
 import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { family, improveSets, type SetChange } from '../engine/bestPreset';
+import { family, type SetChange } from '../engine/bestPreset';
+import { improveSetsLater } from './useRanking';
 import type { EngineData } from '../engine/data';
-import { battleAbility } from '../engine/dex';
+import { battleAbility, battleSpecies } from '../engine/dex';
 import { gradeFor, rateTeam } from '../engine/rating';
 import { STAT_IDS, type TeamSet } from '../engine/sets';
 import { gameName, natureName, statShort } from '../i18n/game';
@@ -10,7 +11,9 @@ import { useLang, useT } from '../i18n/react';
 import { Icon } from './icons';
 import { ItemIcon } from './ItemIcon';
 import { ModalLock } from './ModalLock';
-import { Sprite } from './Sprite';
+import { Sprite, typeColor } from './Sprite';
+import { EeveeMoment } from './EeveeMoment';
+import { PokemonIcon } from './PokemonName';
 import { MoveName } from './TypeText';
 
 const evsText = (set: TeamSet, lang: ReturnType<typeof useLang>) =>
@@ -23,13 +26,13 @@ function Part({ fresh, children }: { fresh?: boolean; children: ReactNode }) {
 }
 
 /** Il set in breve: strumento, abilità · natura, EV, le mosse. `than` = il set di prima (per segnare in verde cosa cambia). */
-function SetBrief({ set, than, label }: { set: TeamSet; than?: TeamSet; label: string }) {
+function SetBrief({ set, than, label, className }: { set: TeamSet; than?: TeamSet; label: string; className: string }) {
   const lang = useLang();
   const t = useT();
   const ability = battleAbility(set);
   const known = new Set(than?.moves.filter(Boolean).map(family));
   return (
-    <div className="improve-set">
+    <div className={`improve-set ${className}`}>
       {/* Il nome della parte (Adesso / Dopo) per i lettori di schermo: a vista lo dicono il posto e la freccia */}
       <span className="visually-hidden">{label}</span>
       <Part fresh={!!than && than.item !== set.item}>
@@ -75,13 +78,14 @@ export function ImproveSetsDialog({ team, data, genLimit, onApply, onCancel }: {
     ok.current?.focus();
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') cancel.current(); };
     document.addEventListener('keydown', onKey);
-    // Il calcolo prende qualche decimo di secondo: prima si disegna la finestra con "Calcolo…"
-    const timer = setTimeout(() => {
-      const next = improveSets(team, data, genLimit);
+    // Il calcolo (fino a qualche secondo la prima volta) va in sottofondo: la finestra si apre subito e resta fluida
+    let live = true;
+    void improveSetsLater(team, data, genLimit).then(next => {
+      if (!live) return;
       setChanges(next);
       setPicked(new Set(next.flatMap((c, i) => (c.changed ? [i] : []))));
-    }, 30);
-    return () => { document.removeEventListener('keydown', onKey); clearTimeout(timer); };
+    });
+    return () => { live = false; document.removeEventListener('keydown', onKey); };
   }, []);
   // Dopo il calcolo il focus resta su Applica (era spento mentre calcolava)
   useEffect(() => { if (changes) ok.current?.focus(); }, [changes]);
@@ -114,18 +118,24 @@ export function ImproveSetsDialog({ team, data, genLimit, onApply, onCancel }: {
           {!open && <p id={`${id}-text`} className="improve-text">{t('team.bestPresetsConfirm')}</p>}
           {/* Il risultato: voto di adesso → con i cambi scelti; si aggiorna con le caselle */}
           <div className="improve-total" role="status" aria-live="polite">
-            {!changes ? <span className="improve-busy">{t('team.bestPresetsBusy')}</span>
+            {!changes ? <span className="improve-busy"><EeveeMoment pose="thinking" /> {t('team.bestPresetsBusy')}</span>
               : changedCount === 0 ? <span className="improve-none">{t('improve.none')}</span>
               : <>
                 {result?.before !== null && result?.after !== null && <>
                   <span className={`improve-grade grade-${grade(result!.before)}`}>{grade(result!.before)} {result!.before}</span>
                   <span className="improve-arrow" aria-hidden="true">→</span>
-                  <span className={`improve-grade grade-${grade(result!.after)}`}>{grade(result!.after)} {result!.after}</span>
+                  <span className={`improve-grade to grade-${grade(result!.after)}`}>{grade(result!.after)} {result!.after}</span>
                 </>}
                 <span className="improve-count">
                   {open ? t('improve.picked', { n: picked.size, total: changedCount })
                     : t(changedCount === 1 ? 'improve.countOne' : 'improve.countMany', { n: changedCount })}
                 </span>
+                {!open && (
+                  // Chi cambia set, a colpo d'occhio: le icone del team, accese quelle che cambiano
+                  <span className="improve-who" aria-hidden="true">
+                    {changes.map((c, i) => <span key={i} className={c.changed ? 'on' : undefined}><PokemonIcon name={c.before.species} /></span>)}
+                  </span>
+                )}
                 {delta !== null && <span className={`improve-delta${delta > 0 ? ' up' : delta < 0 ? ' down' : ''}`}>{delta > 0 ? `+${delta}` : delta === 0 ? '±0' : delta}</span>}
               </>}
           </div>
@@ -135,8 +145,10 @@ export function ImproveSetsDialog({ team, data, genLimit, onApply, onCancel }: {
                 {changes.map((change, i) => {
                   const name = change.before.species;
                   const on = picked.has(i);
+                  const types = battleSpecies(change.after)?.types ?? [];
+                  const colors = { '--t1': typeColor(types[0] ?? ''), '--t2': typeColor(types[1] ?? types[0] ?? '') } as CSSProperties;
                   return (
-                    <li key={i} className={`improve-col${!change.changed ? ' same' : on ? '' : ' off'}`}>
+                    <li key={i} className={`improve-col${!change.changed ? ' same' : on ? '' : ' off'}`} style={colors}>
                       <div className="improve-col-head">
                         {change.changed
                           ? <input type="checkbox" checked={on} onChange={() => toggle(i)} aria-label={t('improve.include', { name })} />
@@ -149,11 +161,11 @@ export function ImproveSetsDialog({ team, data, genLimit, onApply, onCancel }: {
                             {change.gain > 0 ? `+${change.gain}` : change.gain === 0 ? '±0' : change.gain}</span>
                           : <span className="improve-gain same">{t('improve.sameShort')}</span>}
                       </div>
-                      <SetBrief set={change.before} label={t('improve.now')} />
+                      <SetBrief set={change.before} label={t('improve.now')} className="is-before" />
                       {change.changed ? <>
                         <span className="improve-down" aria-hidden="true"><Icon name="arrow" /> {t('improve.after')}</span>
-                        <SetBrief set={change.after} than={change.before} label={t('improve.after')} />
-                      </> : <p className="improve-same">{t('improve.same')}</p>}
+                        <SetBrief set={change.after} than={change.before} label={t('improve.after')} className="is-after" />
+                      </> : <p className="improve-same"><Icon name="check" /> {t('improve.same')}</p>}
                     </li>
                   );
                 })}

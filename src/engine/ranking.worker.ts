@@ -16,6 +16,7 @@ import type { WorkerData, WorkerRequest, WorkerResponse } from './rankingProtoco
 import type { TeamSet } from './sets';
 import { collectGainJobs, computeGains, primeGains } from './teamGain';
 import { coachAdvice } from './coach';
+import { improveSets } from './bestPreset';
 
 const ready = Promise.all([loadTiers().then(initTiers), loadBans().then(initBans)]);
 // I learnset (tanta memoria) servono solo a fare i set dei candidati, cioè a chi decide i voti e fa la lista: chi
@@ -74,6 +75,8 @@ function handle(message: Exclude<WorkerRequest, { kind: 'parts' | 'names' }>): W
     primeGains(message.primed);
     return { id: message.id, ok: true, kind: 'advice', advice: run() };
   }
+  // Migliora i set: i set nuovi e il guadagno di ogni membro (qualche secondo la prima volta: qui non ferma la pagina)
+  if (message.kind === 'improve') return { id: message.id, ok: true, kind: 'improve', changes: improveSets(message.team, engineData(message.data), message.genLimit) };
   primeGains(message.primed);
   return { id: message.id, ok: true, kind: 'rank', result: rankCandidates(withTeam(message.params), engineData(message.data)) };
 }
