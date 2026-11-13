@@ -40,7 +40,7 @@ describe('dashboardData', () => {
     expect(cells.map(c => c.resist)).toEqual(rows.map(r => r.heldBy.length));
     for (const c of cells) {
       const held = rows.find(r => r.type === c.type)!.heldBy;
-      expect(c.defenseNote).toBe(held.length ? `Retto da ${held.join(', ')}` : 'Nessuno lo regge');
+      expect(c.defenseNote).toBe(held.length ? `Coperto da ${held.join(', ')}` : 'Scoperto');
     }
     expect(dash.coverage.defense).toBe(tile('defense').value);
     expect(dash.coverage.offense).toBe(tile('strength').value);
