@@ -50,7 +50,7 @@ describe('il credito', () => {
     expect(SETUP_SHARE).toBeCloseTo(1 / 3, 10);
     expect(ONE_USE_SHARE).toBe(0.25);
     expect(OFFENSE_DEPTH).toEqual([0.5, 0.3, 0.2]);
-    expect(OFFENSE_SHARES).toEqual({ types: 0.7, meta: 0.3 });
+    expect(OFFENSE_SHARES).toEqual({ types: 0.5, meta: 0.5 });
     expect(ROLES_SETUP_SHARE).toBe(0.75);
   });
 });
@@ -156,10 +156,10 @@ describe('memberOffense', () => {
     expect(memberOffense(snorlax, [snorlax], fixtureData)!.setupMove).toBe('Curse');
   });
 
-  it('col meta il totale del membro è 70% il suo valore + 30% la sua Coverage meta; senza meta è il valore', () => {
+  it('col meta il totale del membro è il suo valore e la sua Coverage meta con le quote di Offesa (50/50); senza meta è il valore', () => {
     const m = memberOffense(chomp, [chomp], fixtureData)!;
     expect(m.coverMeta).toBe(teamCoverage([chomp], fixtureData, 'meta').perMember[0]);
-    expect(m.total).toBe(Math.round(0.7 * m.value + 0.3 * m.coverMeta!));
+    expect(m.total).toBe(Math.round(OFFENSE_SHARES.types * m.value + OFFENSE_SHARES.meta * m.coverMeta!));
     const plain = memberOffense(chomp, [chomp], { ...fixtureData, ignoreMeta: true })!;
     expect(plain.coverMeta).toBeNull();
     expect(plain.total).toBe(plain.value);
@@ -205,9 +205,9 @@ describe('teamOffense: il pacchetto dei tipi', () => {
     expect(team.value).toBe(team.types.value);
   });
 
-  it('col meta: Offesa = pacchetto 70% + Coverage meta 30%', () => {
+  it('col meta: Offesa = pacchetto 50% + Coverage meta 50%', () => {
     const team = teamOffense([chomp, tusk], fixtureData);
-    expect(team.value).toBe(Math.round(0.7 * team.types.value + 0.3 * team.coverageMeta!.value));
+    expect(team.value).toBe(Math.round(OFFENSE_SHARES.types * team.types.value + OFFENSE_SHARES.meta * team.coverageMeta!.value));
   });
 
   it('per ogni tipo: il livello del team e i migliori tre con credito; buchi dove nessuno lo manda KO in due colpi', () => {

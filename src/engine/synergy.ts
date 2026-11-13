@@ -143,9 +143,18 @@ export function enables(set: TeamSet): ConditionLink[] {
   return links;
 }
 
+/**
+ * Il Seme di ogni campo (2026-11-13): senza il suo campo non fa niente, col campo alza una difesa e accende Unburden
+ * (Hawlucha con Psychic Seed). Chi lo tiene dipende dal campo come chi ha una mossa che lo sfrutta.
+ */
+const TERRAIN_SEEDS: Partial<Record<Condition, string>> = {
+  electricterrain: 'electricseed', psychicterrain: 'psychicseed', grassyterrain: 'grassyseed', mistyterrain: 'mistyseed',
+};
+
 export function benefits(set: TeamSet): ConditionLink[] {
   const ability = battleAbility(set);
   const moveIds = set.moves.map(toID);
+  const item = toID(set.item);
   const links: ConditionLink[] = [];
   for (const condition of CONDITIONS) {
     const rule = RULES[condition];
@@ -153,6 +162,7 @@ export function benefits(set: TeamSet): ConditionLink[] {
     else {
       const move = moveIds.find(id => rule.benefitMoves.includes(id));
       if (move) links.push({ condition, via: nameOf(move) });
+      else if (item && TERRAIN_SEEDS[condition] === item) links.push({ condition, via: dex.items.get(item).name });
     }
   }
   const species = battleSpecies(set);
@@ -231,11 +241,22 @@ function boostsItself(set: TeamSet, condition: Condition): boolean {
  * Chi sfrutta davvero una condizione: lo stesso criterio per il malus "non usata" e il bonus "usata" (2026-11-08: prima il
  * bonus contava anche Weather Ball e le abilità Paradox, e i due potevano scattare insieme sullo stesso meteo). Non contano
  * Weather Ball e Terrain Pulse (vanno con qualunque meteo o campo) né un Paradox con la Booster Energy (non gli serve).
+ * 2026-11-13: nei campi conta anche chi attacca a terra col tipo che il campo potenzia (Psico nel Campo Psichico, ×1,3):
+ * prima il Campo Psichico aveva solo Expanding Force e un team costruito sul campo non prendeva il bonus. Solo qui, non
+ * in `benefits`: un attaccante Psico senza il campo non ne dipende (niente malus "condizione mancante").
  */
 export function usesCondition(set: TeamSet, condition: Condition): boolean {
   // Con la Booster l'abilità Paradox non conta, le mosse sì (Walking Wake con Hydro Steam sfrutta il sole)
   const booster = toID(set.item) === 'boosterenergy' && PARADOX.has(toID(battleAbility(set)));
-  return benefits(booster ? { ...set, ability: '' } : set).some(b => b.condition === condition && !GENERIC_MOVES.has(toID(b.via)));
+  if (benefits(booster ? { ...set, ability: '' } : set).some(b => b.condition === condition && !GENERIC_MOVES.has(toID(b.via)))) return true;
+  const boosted = condition.endsWith('terrain') ? BOOSTED_TYPE[condition] : undefined;
+  return !!boosted && grounded(set) && attackingMoves(set).some(m => m.type === boosted);
+}
+
+/** A terra per i campi: niente tipo Volante, Levitate o Air Balloon. */
+function grounded(set: TeamSet): boolean {
+  const types = (battleSpecies(set)?.types ?? []) as readonly string[];
+  return !types.includes('Flying') && toID(battleAbility(set)) !== 'levitate' && toID(set.item) !== 'airballoon';
 }
 
 /** Il membro porta la condizione per il team (non Chilly Reception, che serve a cambiare, né un meteo primordiale). */

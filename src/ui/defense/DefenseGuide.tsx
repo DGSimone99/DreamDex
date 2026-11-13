@@ -138,6 +138,7 @@ export function DefenseGuideSection({ section, defense, meta, formatId = DEFAULT
           [g('types.hits'), g('types.hits.rule')],
           [g('types.setup'), g('types.setup.rule')],
           [g('types.weather'), g('types.weather.rule')],
+          [g('types.screens'), g('types.screens.rule')],
           [g('types.firstHit'), g('types.firstHit.rule')],
           [g('types.hole'), g('types.hole.rule')],
         ]} />
@@ -169,6 +170,7 @@ export function DefenseGuideSection({ section, defense, meta, formatId = DEFAULT
         [g('meta.threats'), g('meta.threats.rule', { n: metaRows })],
         [g('meta.hit'), g('meta.hit.rule')],
         [g('types.weather'), g('meta.weather.rule')],
+        [g('types.screens'), g('types.screens.rule')],
       ]} />
 
       <h5>{g('meta.holds')}</h5>

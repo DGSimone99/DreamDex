@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { analyzeTeam } from '../../src/engine/analysis';
-import { COVERED_LEVEL, findProblems, holdSeverity } from '../../src/engine/coach';
+import { COVERED_LEVEL, findProblems, HELD_LEVEL, holdSeverity } from '../../src/engine/coach';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
 import { summarizeTeam } from '../../src/engine/overviewSummary';
 import { rateTeam, ratingThreats } from '../../src/engine/rating';
@@ -28,7 +28,7 @@ describe('summarizeTeam', () => {
     const rows = rating.defense.coverageTypes.rows;
     expect(rows).toHaveLength(18);
     const exposed = rows.filter(r => holdSeverity(rating, r.type) !== null);
-    // Questo team regge tutti i tipi dal livello 50: 18/18
+    // Questo team regge tutti i tipi dal livello HELD_LEVEL: 18/18
     expect(tile('defense').value).toBe(`${18 - exposed.length}/18`);
     expect(exposed).toEqual([]);
     expect(tile('defense').value).toBe('18/18');
@@ -39,14 +39,14 @@ describe('summarizeTeam', () => {
     expect(tile('defense').status).toBe(serious ? 'bad' : exposed.length ? 'mid' : 'good');
   });
 
-  it('Difesa con dei tipi scoperti: mancano i gravi (nessuno regge) e i minori (sotto il livello 50), tessera rossa', () => {
+  it('Difesa con dei tipi scoperti: mancano i gravi (nessuno regge) e i minori (sotto HELD_LEVEL), tessera rossa', () => {
     const two = team.slice(0, 2);
     const analysis = analyzeTeam(two, fixtureData);
     const rating = rateTeam(two, fixtureData)!;
     const problems = findProblems(two, DEFAULT_FORMAT, fixtureData, analysis, [], 'it');
     const defense = summarizeTeam(analysis, rating, problems, fixtureData).find(t => t.key === 'defense')!;
     const { rows, weak } = rating.defense.coverageTypes;
-    const exposed = rows.filter(r => weak.includes(r.type) || r.level < 50).map(r => r.type);
+    const exposed = rows.filter(r => weak.includes(r.type) || r.level < HELD_LEVEL).map(r => r.type);
     expect(weak.length).toBeGreaterThan(0);
     expect(defense.value).toBe(`${18 - exposed.length}/18`);
     expect(defense.missing).toEqual(exposed.map(type => ({ kind: 'type', type })));

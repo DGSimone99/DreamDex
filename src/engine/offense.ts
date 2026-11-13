@@ -35,10 +35,11 @@ const REFERENCE_SCAN = 40;
 const ROLES_WEIGHTS = { power: 0.5, wallbreaking: 0.35 };
 
 /**
- * Offesa del team (2026-11-04): il pacchetto dei tipi 70% e la Coverage del meta 30%; senza meta il pacchetto vale tutto.
+ * Offesa del team: il pacchetto dei tipi 50% e la Coverage del meta 50% (2026-11-13, era 70/30: il meta è quello che si
+ * incontra davvero); senza meta il pacchetto vale tutto.
  * Il pacchetto ha preso il posto di Potenza e Coverage tipi, che misuravano quasi la stessa cosa sugli stessi bersagli.
  */
-export const OFFENSE_SHARES = { types: 0.7, meta: 0.3 };
+export const OFFENSE_SHARES = { types: 0.5, meta: 0.5 };
 /**
  * Il credito di un colpo parte da qui: conta solo il danno sopra il 33% (chi non manda KO nemmeno in tre colpi non è una
  * risposta), pieno con l'OHKO. 50% vale 0,25, 66% vale 0,5. Così i team tipici restano dove stavano senza riferimenti.
@@ -98,7 +99,7 @@ export interface MemberOffense {
   hits: TargetHit[];
   /** Quota (0–100) dei bersagli del meta che il membro manda KO in due colpi da solo (null senza meta). */
   coverMeta: number | null;
-  /** Quanto il membro porta all'Offesa coi pesi della squadra: 70% `value` + 30% `coverMeta`; senza meta `value`. */
+  /** Quanto il membro porta all'Offesa coi pesi della squadra: 50% `value` + 50% `coverMeta`; senza meta `value`. */
   total: number;
 }
 
@@ -120,7 +121,7 @@ export interface CoverageDetail {
 export interface TeamOffense {
   /** Quanti attaccanti fisici, speciali e misti (solo informazione, non entra nel voto). */
   attackers: { physical: number; special: number; mixed: number };
-  /** Pacchetto 70% + Coverage meta 30% (senza meta il pacchetto). */
+  /** Pacchetto 50% + Coverage meta 50% (senza meta il pacchetto). */
   value: number;
   /** Il pacchetto dei tipi: valore, una riga per tipo, e i buchi (i tipi che nessuno manda KO in due colpi). */
   types: { value: number; rows: TypeRow[]; holes: string[] };
@@ -141,7 +142,7 @@ export interface MemberShare {
   types: { ohko: number; strong: number; counts: number };
   /** null senza meta. */
   meta: { covered: number; total: number } | null;
-  /** Punti di Offesa che porta al team: 70% di quanto porta ai tipi + 30% di quanto porta al meta (senza meta solo i tipi). */
+  /** Punti di Offesa che porta al team: 50% di quanto porta ai tipi + 50% di quanto porta al meta (senza meta solo i tipi). */
   points: number;
 }
 
@@ -469,7 +470,7 @@ const packOf = (lists: number[][], targets: number) =>
 
 /**
  * Offesa del team: il pacchetto dei tipi (per ognuno dei 18 Pokémon medi i crediti dei membri con la profondità 50/30/20,
- * poi la media) 70% e la Coverage del meta 30%; senza meta il pacchetto vale tutto. Un membro che non attacca non porta
+ * poi la media) 50% e la Coverage del meta 50%; senza meta il pacchetto vale tutto. Un membro che non attacca non porta
  * crediti ma non abbassa il team.
  */
 export function teamOffense(team: TeamSet[], data: EngineData): TeamOffense {

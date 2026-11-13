@@ -125,7 +125,7 @@ describe('penalità e bonus del meteo', () => {
     const rating = rateTeam(team, fixtureData)!;
     expect(rating.bonus.total).toBe(1);
     expect(rating.bonus.items).toEqual([expect.objectContaining({ text: 'Il sole di Ninetales aiuta il team: Great Tusk', points: 1 })]);
-    expect(rating.overall).toBe(Math.min(100, Math.max(0, rating.base - rating.penalty.total + rating.bonus.total + rating.memberPoints)));
+    expect(rating.overall).toBe(Math.min(100, Math.max(0, rating.base - rating.penalty.total + rating.bonus.total)));
   });
 
   it('bonus: abilitare Clorofilla non conta nel "meteo che protegge" (ma il sole sfruttato da due compagni è un bonus a parte)', () => {
@@ -165,7 +165,7 @@ describe('voto con ridondanze', () => {
     const team = [withMoves('Great Tusk', ['Stealth Rock']), withMoves('Garchomp', ['Stealth Rock'])];
     const rating = rateTeam(team, fixtureData)!;
     expect(rating.penalty.total).toBeGreaterThan(0);
-    expect(rating.overall).toBe(Math.max(0, rating.base - rating.penalty.total + rating.bonus.total + rating.memberPoints));
+    expect(rating.overall).toBe(Math.max(0, rating.base - rating.penalty.total + rating.bonus.total));
   });
 
   it('il coaching segnala i ruoli doppi e i tipi ripetuti', () => {

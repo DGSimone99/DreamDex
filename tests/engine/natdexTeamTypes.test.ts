@@ -119,7 +119,7 @@ describe('tipi di team in National Dex OU (recupero e velocità)', () => {
     const ou = rateTeam(stall, { ...fixtureData, formatId: 'ou' })!;
     const asSemi = rateTeam(stall, { ...fixtureData, formatId: 'ou' }, 'it', { archetype: 'semiStall' })!;
     expect(ou.teamType).toBe('stall');
-    const attack = new Set(['anySweeper', 'anyBreaker', 'anyPhysical', 'anySpecial', 'anyAttacker', 'secondAttacker', ...FAMILIES.attack]);
+    const attack = new Set(['anySweeper', 'anyBreaker', 'sweeperOrBreaker', 'anyPhysical', 'anySpecial', 'anyAttacker', 'secondAttacker', ...FAMILIES.attack]);
     for (const [key, level] of Object.entries(ou.needs.levels)) {
       if (attack.has(key)) expect(level === 'minor' || level === 'ignored').toBe(true);
       else expect(level).toBe((asSemi.needs.levels as Record<string, string>)[key]);
@@ -134,8 +134,8 @@ describe('tipi di team in National Dex OU (recupero e velocità)', () => {
   it('pesi di National Dex OU: somma 100, scala regolare (la Difesa sale, la Velocità scende da HO a stall)', () => {
     const order = ['hyperOffense', 'bulkyOffense', 'balance', 'semiStall', 'stall'] as const;
     for (const row of Object.values(NATDEX_OU_WEIGHTS)) expect(row.defense + row.strength + row.speed).toBe(100);
-    expect(order.map(t => NATDEX_OU_WEIGHTS[t].defense)).toEqual([20, 30, 45, 65, 65]);
-    expect(order.map(t => NATDEX_OU_WEIGHTS[t].speed)).toEqual([30, 25, 15, 10, 10]);
+    expect(order.map(t => NATDEX_OU_WEIGHTS[t].defense)).toEqual([25, 30, 40, 65, 65]);
+    expect(order.map(t => NATDEX_OU_WEIGHTS[t].speed)).toEqual([25, 20, 20, 10, 10]);
     expect(areaWeightTable(NATDEX_OU_RULES)).toBe(NATDEX_OU_WEIGHTS);
     expect(areaWeightTable(DEFAULT_RULES)).toBe(ARCHETYPE_WEIGHTS);
   });
@@ -144,8 +144,8 @@ describe('tipi di team in National Dex OU (recupero e velocità)', () => {
     const ou = rateTeam(sunHO, { ...fixtureData, formatId: 'ou' })!;
     expect(ou.teamType).toBe('hyperOffense');
     expect(ou.weightTable).toBe(NATDEX_OU_WEIGHTS);
-    expect(ou.weights.defense!).toBeCloseTo(0.2);
-    expect(ou.weights.speed!).toBeCloseTo(0.3);
+    expect(ou.weights.defense!).toBeCloseTo(0.25);
+    expect(ou.weights.speed!).toBeCloseTo(0.25);
     const other = rateTeam(sunHO, { ...fixtureData, formatId: 'gen9ou' })!;
     expect(other.weightTable).toBe(ARCHETYPE_WEIGHTS);
   });

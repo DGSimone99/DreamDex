@@ -12,7 +12,7 @@ import { points, type RoleHolder } from './rolesRows';
 export const keyLabel = (key: LevelKey, t: T) => (isGroupKey(key) ? t(`need.${key}`) : t(`role.${key}`));
 
 const thousands = (n: number) => `${Math.round(n / 1000)}k`;
-const ATTACK_KEYS = new Set<LevelKey>(['anySweeper', 'anyBreaker', 'anyPhysical', 'anySpecial', 'anyAttacker', 'secondAttacker', ...FAMILIES.attack]);
+const ATTACK_KEYS = new Set<LevelKey>(['anySweeper', 'anyBreaker', 'sweeperOrBreaker', 'anyPhysical', 'anySpecial', 'anyAttacker', 'secondAttacker', ...FAMILIES.attack]);
 
 /** Il motivo di un sotto-ruolo in parole: quota del gruppo per Taunt, Encore e stati, indice per i muri, colpo per l'Attacco. */
 export function reasonText(r: SubRoleReason, pool: string, t: T): string {

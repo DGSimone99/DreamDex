@@ -12,7 +12,9 @@ const set = (species: string, item: string, ability: string, moves: string[]): T
 const team = [
   set('Garchomp', 'Life Orb', 'Rough Skin', ['Earthquake']), set('Landorus-Therian', 'Choice Band', 'Intimidate', ['Earthquake']),
   set('Dragapult', 'Choice Band', 'Infiltrator', ['Dragon Darts']), set('Tyranitar', 'Leftovers', 'Sand Stream', ['Stone Edge']),
-  set('Rotom-Wash', 'Leftovers', 'Levitate', ['Hydro Pump']), set('Clefable', 'Leftovers', 'Magic Guard', ['Moonblast']),
+  set('Rotom-Wash', 'Leftovers', 'Levitate', ['Hydro Pump']),
+  // Clefable difensivo: il Folletto resta una debolezza comune ma non un buco (col buco conta solo quello, 2026-11-13)
+  { ...set('Clefable', 'Leftovers', 'Magic Guard', ['Moonblast']), nature: 'Bold', evs: { hp: 252, atk: 0, def: 128, spa: 0, spd: 128, spe: 0 } },
 ];
 
 describe('Coaching: debolezza comune', () => {

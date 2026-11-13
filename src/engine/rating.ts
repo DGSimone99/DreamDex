@@ -65,12 +65,14 @@ export type AreaWeightTable = Record<Archetype, Record<BaseArea, number>>;
  * saltava da 20 a 40 fra BO e Balance). Sul banco fra torneo e ladder cambia solo la Difesa (68 contro 61, anche negli HO),
  * ma nelle partite vere vince più spesso chi ha più Offesa: una via di mezzo. Separazione torneo/ladder da 1,00 a 1,16,
  * dentro lo stesso tipo da 1,11 a 1,23, partite vere 54,4% → 54,5%; A o S fra i team da torneo HO 60%, BO 59%, Balance 68%.
- * La Velocità scende regolare (30/25/15/10/10): un HO vince soprattutto perché è veloce.
+ * 2026-11-13: HO 25/50/25, BO 30/50/20, Balance 40/40/20 (era 20/50/30, 30/45/25, 45/40/15), insieme alle nuove quote di
+ * Offesa e Difesa, alla profondità 70/20/10 e senza il punto fisso per membro: su 710 team il livello resta quello di
+ * prima (torneo 81,5 → 81,4, ladder 74,4 → 74,5), partite vere 52,7% → 53,2%.
  */
 export const NATDEX_OU_WEIGHTS: AreaWeightTable = {
-  hyperOffense: { defense: 20, strength: 50, speed: 30 },
-  bulkyOffense: { defense: 30, strength: 45, speed: 25 },
-  balance: { defense: 45, strength: 40, speed: 15 },
+  hyperOffense: { defense: 25, strength: 50, speed: 25 },
+  bulkyOffense: { defense: 30, strength: 50, speed: 20 },
+  balance: { defense: 40, strength: 40, speed: 20 },
   // 2026-11-07: semi-stall come lo stall (era 55/35/10). Col 35 all'Offesa 5 team da torneo su 13 prendevano C; a 65/25
   // ne resta 1, il resto del banco non si muove e il salto fra stall e semi-stall si accorcia (stessi pesi, restano i
   // Ruoli diversi). Il 55% di vittorie nelle partite visto allora veniva da un solo team ripetuto (letto Semi-stall quando
@@ -137,8 +139,6 @@ export interface TeamRating {
   /** Forza dei singoli membri dalle statistiche base. */
   power: MemberPower[];
   overall: number;
-  /** Il punto fisso per membro già dentro `overall` (un team completo +6); non si mostra. */
-  memberPoints: number;
   grade: string;
   label: string;
   /** Meno di 6 specie riconosciute: i ruoli mancanti non tolgono punti (si mostrano senza rosso). */
@@ -312,11 +312,11 @@ export const SHARED_WEAK_POINTS = 1;
  * Buco in Difesa (2026-11-07): −2 per ogni tipo che nessun membro regge nella Coverage di tipi (sul lato peggiore tutti
  * perdono metà vita o più), solo nei team di 6. Sui dati delle partite National Dex è la parte della Difesa che indovina
  * di più chi vince (55%); il 35% dei team ladder ha almeno un buco, contro il 14% dei team da torneo.
- * Si somma a "Debolezza condivisa" (tabella dei tipi): provato al suo posto, prevede peggio.
+ * Resta accanto a "Debolezza condivisa" (tabella dei tipi): provato al suo posto, prevede peggio. Ma sullo stesso tipo non
+ * si pagano tutti e due (2026-11-13): col buco la debolezza condivisa di quel tipo non conta, era lo stesso problema due
+ * volte (un Hyper Offense con 5 buchi perdeva circa 19 punti).
  */
 export const DEFENSE_HOLE_POINTS = 2;
-/** Punto fisso per ogni membro del team nel voto finale (non mostrato): un team completo prende +6. */
-export const MEMBER_POINT = 1;
 /** Un membro che ha bisogno di una condizione (meteo, campo, Trick Room) che il team non porta: −3. */
 export const UNMET_POINTS = 3;
 
@@ -556,10 +556,12 @@ function rateTeamAs(input: TeamSet[], data: EngineData, lang: Lang = 'it', opts:
   const holeItems = complete
     ? defense.coverageTypes.weak.map(type => ({ text: t(lang, 'rating.redundancy.defenseHole', { type: typeName(type, lang) }), points: DEFENSE_HOLE_POINTS, catalog: 'defenseHole' as const, key: `defenseHole:${type}` }))
     : [];
+  // Un tipo che nessuno regge paga solo il buco, non anche la debolezza condivisa dello stesso tipo
+  const holeKeys = new Set(holeItems.map(i => `sharedWeak:${i.key.slice('defenseHole:'.length)}`));
+  const redundantItems = redundant.items.filter(i => !i.key || !holeKeys.has(i.key));
   const extraItems = [...roles.failures, ...roomItems, ...holeItems, ...lockedStatusIssues(input, lang)];
-  const penalty = extraItems.length
-    ? { total: redundant.total + sum(extraItems.map(i => i.points)), items: [...redundant.items, ...extraItems] }
-    : redundant;
+  const allItems = [...redundantItems, ...extraItems];
+  const penalty = { total: sum(allItems.map(i => i.points)), items: allItems };
   // Bonus: le cose fatte bene, senza tetto (core a tre, debolezze coperte, tipi vari, condizione sfruttata, meteo, ruoli minori).
   // 2026-11-07: tolto il bonus Tera (+1 per debolezza coperta da un Tera, fino a +3): lo prendevano quasi tutti allo
   // stesso modo (torneo 2,1, ladder 2,2) e il Tera si usa una volta sola, scelto in partita: troppe variabili
@@ -568,14 +570,13 @@ function rateTeamAs(input: TeamSet[], data: EngineData, lang: Lang = 'it', opts:
     ...weatherBonus(team, lang).items, ...roles.bonuses,
   ];
   const bonus = { total: sum(bonusItems.map(i => i.points)), items: bonusItems };
-  // Ogni membro del team vale un punto a prescindere (un team completo +6): con la media semplice dei membri nessun team
-  // ha sei membri perfetti, e il voto si fermava qualche punto sotto (scelta dell'utente 2026-11-04). Non si mostra.
-  const memberPoints = MEMBER_POINT * team.filter(set => !!battleSpecies(set)).length;
-  const overall = Math.min(100, Math.max(0, base - penalty.total + bonus.total + memberPoints));
+  // 2026-11-13: via il punto fisso per membro (+6 a un team completo, non mostrato). Lo sostituiscono le quote di Offesa e
+  // Difesa, la profondità 70/20/10 e i pesi nuovi: stesso livello di voto, con regole che si spiegano.
+  const overall = Math.min(100, Math.max(0, base - penalty.total + bonus.total));
   // Sulle mosse scritte (input), non su quelle usabili: una Choice con sole mosse di stato ha già il suo avviso
   const notes = provisionalNotes(input, lang);
   return {
-    base, penalty, bonus, memberPoints, power: power.members, overall, ...gradeFor(overall, lang), provisional: !complete, notes, areas, archetype, meta: usesMeta(data),
+    base, penalty, bonus, power: power.members, overall, ...gradeFor(overall, lang), provisional: !complete, notes, areas, archetype, meta: usesMeta(data),
     teamType: analysis.needs.archetype, typeMix: null, trickRoom, needs: analysis.needs,
     weights: areaWeights, weightTable, offense, defense, speed, roles,
   };
