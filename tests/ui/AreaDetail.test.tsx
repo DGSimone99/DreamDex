@@ -109,7 +109,7 @@ describe('dettaglio della Difesa a schede', () => {
     expect(within(dialog).getByRole('tabpanel')).not.toHaveTextContent(/quarto più forte di quel tipo/);
     await user.click(within(dialog).getByRole('button', { name: 'Come funziona Coverage tipi' }));
     const guide = within(screen.getByRole('dialog')).getByRole('tabpanel');
-    for (const text of [/quarto più forte di quel tipo; 252 EV, senza strumento/, "Att. e Att. Sp. dell'attaccante di ogni tipo", '4HKO', '3HKO', '2HKO', '50%']) expect(guide).toHaveTextContent(text);
+    for (const text of [/quarto più forte di quel tipo; 252 EV, senza strumento/, "Att. e Att. Sp. dell'attaccante di ogni tipo", '4HKO', '3HKO', '2HKO', '70%']) expect(guide).toHaveTextContent(text);
     expect(guide).not.toHaveTextContent(/Il voto|uno basta|tre lo reggono/);
     expect(guide).not.toHaveTextContent('+1,5');
   });

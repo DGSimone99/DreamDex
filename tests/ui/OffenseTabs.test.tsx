@@ -57,14 +57,14 @@ describe('Offesa: navigazione e guida', () => {
     expect(help).toHaveFocus();
   });
 
-  it('la guida Generale dice i pesi: tipi 70 e meta 30; senza meta tipi 100 e niente Coverage meta', async () => {
+  it('la guida Generale dice i pesi: tipi 50 e meta 50; senza meta tipi 100 e niente Coverage meta', async () => {
     const user = userEvent.setup();
     const { unmount } = renderIt(<AreaView rating={withMeta()} area="strength" team={team} analysis={analysis} problems={[]} />);
     await user.click(screen.getByRole('button', { name: 'Come funziona Generale' }));
     const dialog = screen.getByRole('dialog', { name: 'Guida: Offesa' });
     expect(within(dialog).getByRole('tab', { name: 'Coverage meta' })).toBeInTheDocument();
-    expect(within(dialog).getByRole('tabpanel')).toHaveTextContent(/Coverage tipi.*70/);
-    expect(within(dialog).getByRole('tabpanel')).toHaveTextContent(/Coverage meta.*30/);
+    expect(within(dialog).getByRole('tabpanel')).toHaveTextContent(/Coverage tipi.*50/);
+    expect(within(dialog).getByRole('tabpanel')).toHaveTextContent(/Coverage meta.*50/);
     expect(within(dialog).getByRole('tabpanel')).not.toHaveTextContent('Potenza');
     expect(within(dialog).getByRole('tabpanel')).not.toHaveTextContent('Statistiche medie');
     unmount();

@@ -35,10 +35,11 @@ const REFERENCE_SCAN = 40;
 const ROLES_WEIGHTS = { power: 0.5, wallbreaking: 0.35 };
 
 /**
- * Offesa del team (2026-11-04): il pacchetto dei tipi 70% e la Coverage del meta 30%; senza meta il pacchetto vale tutto.
+ * Offesa del team: il pacchetto dei tipi 50% e la Coverage del meta 50% (2026-11-13, era 70/30: il meta è quello che si
+ * incontra davvero); senza meta il pacchetto vale tutto.
  * Il pacchetto ha preso il posto di Potenza e Coverage tipi, che misuravano quasi la stessa cosa sugli stessi bersagli.
  */
-export const OFFENSE_SHARES = { types: 0.7, meta: 0.3 };
+export const OFFENSE_SHARES = { types: 0.5, meta: 0.5 };
 /**
  * Il credito di un colpo parte da qui: conta solo il danno sopra il 33% (chi non manda KO nemmeno in tre colpi non è una
  * risposta), pieno con l'OHKO. 50% vale 0,25, 66% vale 0,5. Così i team tipici restano dove stavano senza riferimenti.

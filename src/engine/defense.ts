@@ -322,11 +322,12 @@ export function typedHits(member: TeamSet, data: EngineData, team: TeamSet[] = [
 }
 
 /**
- * Difesa del team: Coverage tipi 40, Coverage meta 30, Sostenibilità 30; senza meta Coverage tipi 70, Sostenibilità 30.
+ * Difesa del team: Coverage tipi 40, Coverage meta 40, Sostenibilità 20 (2026-11-13, era 40/30/30: più peso a cosa il
+ * team regge davvero nel meta); senza meta Coverage tipi 70, Sostenibilità 30.
  * 2026-11-03: Sostenibilità da 20 a 30 (via di mezzo): reggere i colpi senza recupero vale poco (il giudice cieco ha
  * preferito il recupero 8 coppie a 0; gli Hyper Offense con molte resistenze prendevano più Difesa dei core con Regenerator).
  */
-export const DEFENSE_SHARES = { types: 0.4, meta: 0.3, sustain: 0.3 };
+export const DEFENSE_SHARES = { types: 0.4, meta: 0.4, sustain: 0.2 };
 export const DEFENSE_SHARES_NO_META = { types: 0.7, sustain: 0.3 };
 
 const mean = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
@@ -449,10 +450,10 @@ function threatHitsOf(member: TeamSet, data: EngineData, team: TeamSet[] = [memb
 }
 
 /**
- * Quanto vale chi regge un colpo o una minaccia, dal primo al terzo: 50/30/20, come l'Offesa. In Difesa conta avere più
- * risposte: col 70/20/10 metà dei team forti finiva fra 95 e 100.
+ * Quanto vale chi regge un colpo o una minaccia, dal primo al terzo: 70/20/10 (2026-11-13, era 50/30/20), come la Coverage
+ * meta dell'Offesa. Il 50/30/20 serviva quando il punto fisso per membro portava metà dei team forti fra 95 e 100.
  */
-export const DEFENSE_DEPTH = [0.5, 0.3, 0.2];
+export const DEFENSE_DEPTH = [0.7, 0.2, 0.1];
 const depthOf = (credits: number[]) => [...credits].sort((a, b) => b - a).reduce((acc, c, i) => acc + (DEFENSE_DEPTH[i] ?? 0) * c, 0);
 
 /**

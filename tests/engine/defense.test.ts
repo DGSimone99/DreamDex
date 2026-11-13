@@ -123,7 +123,7 @@ describe('memberDefense: quanti colpi di tipo regge (solo informazione)', () => 
     expect(m.metaHold).not.toBeNull();
     expect(m.metaHold!).toBeGreaterThanOrEqual(0);
     expect(m.metaHold!).toBeLessThanOrEqual(100);
-    expect(DEFENSE_SHARES).toEqual({ types: 0.4, meta: 0.3, sustain: 0.3 });
+    expect(DEFENSE_SHARES).toEqual({ types: 0.4, meta: 0.4, sustain: 0.2 });
     expect(m.value).toBe(Math.round(DEFENSE_SHARES.types * m.hold + DEFENSE_SHARES.meta * m.metaHold! + DEFENSE_SHARES.sustain * m.sustain));
     const plain = memberDefense(blissey, [blissey], { ...fixtureData, ignoreMeta: true })!;
     expect(plain.metaHold).toBeNull();
