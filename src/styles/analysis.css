@@ -568,10 +568,8 @@
 .coach-steps { display: grid; gap: 5px; margin: 0 0 4px; padding: 0; list-style: none; }
 .coach-strip { position: relative; display: grid; grid-template-columns: 46px minmax(0, 1.15fr) minmax(0, 2.5fr) minmax(0, 1.25fr); align-items: center; height: var(--step-h); min-width: 0;
   background: var(--panel); border: 1px solid color-mix(in srgb, var(--accent-2) 22%, var(--line)); }
-/* Senza "anche" né mossa alternativa la colonna di destra non c'è: la proposta prende tutta la striscia (niente banda vuota) */
-@media (min-width: 600px) { .coach-strip:not(:has(.coach-strip-extras > :not([hidden]))) { grid-template-columns: 46px minmax(0, 1.3fr) minmax(0, 3.6fr); } }
-/* (il segnaposto di "anche" è uno span hidden) */
-.coach-strip:not(:has(.coach-strip-extras > :not([hidden]))) > .coach-strip-extras { display: none; }
+/* Le colonne sono le stesse in ogni striscia, anche senza "risolve anche" (la colonna di destra resta, vuota):
+   le strisce restano allineate e passando su "oppure" niente si sposta */
 /* Con la mossa alternativa ("oppure") la colonna di destra ha tre righe: la striscia può crescere un po' invece di schiacciarle */
 @media (min-width: 600px) {
   .coach-strip:has(.coach-strip-extras .coach-prop) { height: auto; min-height: var(--step-h); }

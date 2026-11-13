@@ -120,7 +120,8 @@
   .coach-prop.is-main:has(.is-side) { flex-wrap: wrap; }
   .coach-prop.is-main .coach-prop.is-side { order: 3; flex-basis: 100%; margin: 4px 0 8px; padding: 6px 8px; }
   .coach-strip-extras { grid-column: 2; grid-row: 3; padding: 8px 10px 10px; border-left: 0; border-top: 1px solid var(--line-soft); }
-  .coach-strip-extras:empty { display: none; }
+  /* Sul telefono la riga di "risolve anche" vuota non c'è (il segnaposto è uno span hidden) */
+  .coach-strip-extras:not(:has(> :not([hidden]))) { display: none; }
   .coach-also { height: auto; min-height: 18px; }
   /* Lo scambio più compatto: il nome di chi entra resta intero (va a capo se serve) */
   .coach-prop.is-main > .coach-fix { gap: 6px; }

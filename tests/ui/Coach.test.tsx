@@ -731,6 +731,19 @@ describe('CoachingView', () => {
     expect(roles).toHaveTextContent('3 membri di tipo Acciaio');
   });
 
+  it('"risolve anche" non ripete le debolezze in comune: basta l\'icona del tipo', () => {
+    const own: CoachProblem = { severity: 'serious', category: 'rules', text: 'x non è legale', fixes: [], key: 'rules:x' };
+    const ghost: CoachProblem = { severity: 'serious', category: 'defense', text: 'Spettro', fixes: [], key: 'defense:Ghost', subjects: ['Ghost'] };
+    const shared: CoachProblem = { severity: 'minor', category: 'redundancy', text: '2 deboli a Ghost, 0 resistono', fixes: [], key: 'redundancy:sharedWeak:Ghost' };
+    const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], threatFixes: {}, problems: [own, ghost, shared] };
+    const swap = { ...adviceOf(three, DEFAULT_FORMAT, data).fixes[0], solves: [own.key, ghost.key, shared.key] };
+    renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [{ problem: own, swap, move: null, alsoSolves: [], group: [own.key] }] }}
+      members={3} rating={rating(three)} metaOn {...noop} />);
+    const extras = stepsRegion().querySelector('.coach-strip-extras')!;
+    expect(extras.querySelectorAll('.coach-also-item')).toHaveLength(1);
+    expect(extras).not.toHaveTextContent('deboli a Ghost');
+  });
+
   it('aree senza problemi: una riga verde, niente tessera', () => {
     const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], threatFixes: {},
       problems: [{ severity: 'minor', category: 'roles', text: 'Ruoli importanti mancanti: Pivot', fixes: [], key: 'roles:important' }] };

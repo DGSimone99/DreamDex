@@ -162,6 +162,8 @@ function Also({ id, solves, skip, problems, self }: { id: string; solves: string
   const add = (list: string[], value: string) => { if (!list.includes(value)) list.push(value); };
   for (const key of new Set(solves)) {
     if (skip.includes(key)) continue;
+    // Le debolezze in comune ("2 deboli a Spettro, 0 resistono") le dice già l'icona del tipo della Difesa
+    if (key.startsWith('redundancy:sharedWeak:')) continue;
     const problem = problems.find(p => p.key === key);
     if (!problem) continue;
     const subjects = problem.subjects ?? [];
