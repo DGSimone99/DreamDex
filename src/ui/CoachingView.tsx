@@ -69,11 +69,11 @@ function Proposal({ className, label, title, describedBy, solves, onApply, onAlt
 }
 
 /**
- * Un cambio di Pokémon, la proposta principale della striscia: chi esce piccolo e spento, ⇄, chi entra grande (animato
- * solo con la striscia sotto il puntatore o col fuoco: `animated`) col nome e il voto in più (in aggiunta: "Aggiungi" al posto di chi esce). Il suo pulsante copre tutta la striscia.
+ * Un cambio di Pokémon, la proposta principale della striscia: chi esce piccolo e spento, ⇄, chi entra grande (fermo, anche
+ * sotto il puntatore) col nome e il voto in più (in aggiunta: "Aggiungi" al posto di chi esce). Il suo pulsante copre tutta la striscia.
  */
-function SwapProposal({ fix, alsoId, solves, animated, onApply, onFix, onPreview, side, shownGain }: {
-  fix: CoachFix; alsoId: string; solves: string[]; animated: boolean; onApply: (fix: CoachFix) => void; onFix: (fix: CoachFix) => void; onPreview: OnPreview;
+function SwapProposal({ fix, alsoId, solves, onApply, onFix, onPreview, side, shownGain }: {
+  fix: CoachFix; alsoId: string; solves: string[]; onApply: (fix: CoachFix) => void; onFix: (fix: CoachFix) => void; onPreview: OnPreview;
   /** L'alternativa "oppure" (un cambio di mossa) dentro la barra, dopo chi entra; il +N grande va dopo di lei e mostra `shownGain`. */
   side?: ReactNode; shownGain?: number;
 }) {
@@ -94,7 +94,7 @@ function SwapProposal({ fix, alsoId, solves, animated, onApply, onFix, onPreview
           <span className="coach-strip-arrow"><Icon name="swap" /></span>
         </>
       ) : <><span className="coach-strip-add">{tr('coach.steps.add')}</span>{' '}</>}
-      <span className="coach-strip-in"><Sprite species={fix.species} size={64} animated={animated} /></span>
+      <span className="coach-strip-in"><Sprite species={fix.species} size={64} /></span>
       <span className="coach-fix-main"><strong>{fix.species}</strong></span>
       {!side && <span className="coach-gain coach-strip-gain">{gain}</span>}
     </Proposal>
@@ -304,8 +304,6 @@ function Step({ step, index, problems, actions, onCard, onPreview }: {
 }) {
   const tr = useT();
   const alsoId = useId();
-  // Striscia sotto il puntatore o col fuoco dentro: chi entra si anima
-  const [hot, setHot] = useState(false);
   // Puntatore o fuoco sull'alternativa "oppure": "risolve anche" dice cosa risolve lei
   const [altHot, setAltHot] = useState(false);
   // Puntatore sulla barra principale (lo scambio): il suo blocco si illumina
@@ -316,13 +314,12 @@ function Step({ step, index, problems, actions, onCard, onPreview }: {
   const solved = [...new Set([...step.group, ...(swap?.solves ?? []), ...(move?.solves ?? [])])];
   return (
     <li className={`coach-step coach-strip ${problem.severity}${altHot ? ' is-alt-hot' : mainHot ? ' is-main-hot' : ''}`}
-      onMouseEnter={() => { onCard(solved); setHot(true); }} onMouseLeave={() => { onCard(null); setHot(false); }}
-      onFocus={() => setHot(true)} onBlur={() => setHot(false)}>
+      onMouseEnter={() => onCard(solved)} onMouseLeave={() => onCard(null)}>
       <span className="coach-step-num">{index + 1}</span>
       <p className="coach-step-problem">
         <span className="coach-sev">{tr(problem.severity === 'serious' ? 'dash.serious' : 'dash.minor')}</span> <StepTitle step={step} problems={problems} />
       </p>
-      {swap ? <SwapProposal fix={swap} alsoId={alsoId} solves={solved} animated={hot} onApply={actions.onApplyFix} onFix={actions.onFix}
+      {swap ? <SwapProposal fix={swap} alsoId={alsoId} solves={solved} onApply={actions.onApplyFix} onFix={actions.onFix}
         onPreview={keys => { onPreview(keys); setMainHot(keys !== null); }} shownGain={altHot && move ? move.gain : swap.gain}
         side={move && (
           // L'alternativa sta dentro la barra dello scambio: uscendo da lei si resta sulla barra (anteprima dello scambio)

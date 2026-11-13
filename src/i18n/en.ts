@@ -815,7 +815,7 @@ export const en = {
   'coach.steps.move': "Teach {member}",
   'coach.steps.moveFrom': "instead of {from}",
   'coach.steps.moveAria': "Give {move} to {member}, {gain}",
-  'coach.steps.also': "also solves",
+  'coach.steps.also': "also solves:",
   'coach.steps.newMove': "empty slot",
   'coach.steps.or': "or",
   'coach.steps.alternatives': "See alternatives",

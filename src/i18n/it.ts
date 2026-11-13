@@ -817,7 +817,7 @@ export const it: Record<keyof typeof en, string> = {
   'coach.steps.move': "Dai a {member}",
   'coach.steps.moveFrom': "al posto di {from}",
   'coach.steps.moveAria': "Dai {move} a {member}, {gain}",
-  'coach.steps.also': "risolve anche",
+  'coach.steps.also': "risolve anche:",
   'coach.steps.newMove': "slot libero",
   'coach.steps.or': "oppure",
   'coach.steps.alternatives': "Vedi alternative",

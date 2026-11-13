@@ -497,17 +497,15 @@ describe('CoachingView', () => {
       expect(lit()).toEqual([p1.key, p2.key].sort());
     });
 
-    it('scambio: chi esce in piccolo, chi entra animato solo col puntatore (o il fuoco) sulla striscia', async () => {
+    it('scambio: chi esce in piccolo, chi entra fermo anche col puntatore (o il fuoco) sulla striscia', async () => {
       const { li } = strip({});
       expect(li.querySelector('.coach-strip-out .sprite')).not.toBeNull();
       expect(li.querySelector('.coach-strip-in .sprite-ani')).toBeNull();
       const user = userEvent.setup();
       await user.hover(li);
-      expect(li.querySelector('.coach-strip-in .sprite-ani')).not.toBeNull();
-      await user.unhover(li);
       expect(li.querySelector('.coach-strip-in .sprite-ani')).toBeNull();
       act(() => within(li).getByRole('button', { name: /^Al posto di Great Tusk/ }).focus());
-      expect(li.querySelector('.coach-strip-in .sprite-ani')).not.toBeNull();
+      expect(li.querySelector('.coach-strip-in .sprite-ani')).toBeNull();
     });
 
     it('aggiunta: nessuno esce, resta "Aggiungi"', () => {

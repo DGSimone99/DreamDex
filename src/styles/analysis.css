@@ -623,7 +623,7 @@
 .coach-step-subject { white-space: nowrap; }
 .coach-step-subject .type-icons { display: inline-flex; margin-right: 4px; vertical-align: -2px; }
 .coach-step-subject .type-icons img { width: 16px; height: 16px; }
-.coach-step-subject.is-mon .mon-icon { margin: -9px 1px -9px -6px; vertical-align: middle; transform: scale(0.8); }
+.coach-step-subject.is-mon .mon-icon { margin: -9px -2px -9px -6px; vertical-align: middle; transform: scale(0.8); }
 /* Coi Pokémon nel titolo le righe sono un po' più alte: le icone non toccano i nomi della riga sopra o sotto */
 .coach-step-problem:has(.is-mon) { line-height: 1.5; }
 /* Proposta principale: lo scambio su un fondo ciano che sfuma; il suo pulsante si allarga a tutta la striscia (::after) */
@@ -765,7 +765,7 @@
 .coach-group-label { flex: none; line-height: 26px; }
 /* Molte icone vanno a capo: etichetta, quadratino e numeri restano sulla prima fila */
 .coach-prob.coach-group { align-items: flex-start; }
-.coach-prob.coach-group::before { margin-top: 13px; }
+.coach-prob.coach-group::before { margin-top: 10px; }
 .coach-prob.coach-group > .coach-by { margin-top: 5px; }
 .coach-prob-text.coach-group-row { align-items: flex-start; }
 .coach-chips { align-items: center; min-height: 26px; }
