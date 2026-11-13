@@ -5,6 +5,8 @@ const paths = {
   undo: 'M9 7 4.5 11.5 9 16M4.5 11.5H15a4.5 4.5 0 0 1 0 9h-3',
   close: 'M6 6l12 12M18 6 6 18',
   copy: 'M9 9h10v10H9zM5 15V5h10',
+  // Svuota il team: un cestino
+  trash: 'M4 6.5h16M9.5 6.5V4h5v2.5M6.5 6.5l1 13.5h9l1-13.5M10 10.5v6M14 10.5v6',
   spark: 'M12 3v4M12 17v4M3 12h4M17 12h4M6.3 6.3l2.5 2.5M15.2 15.2l2.5 2.5M6.3 17.7l2.5-2.5M15.2 8.8l2.5-2.5',
   paste: 'M8 5H6v15h12V5h-2M9 3h6v4H9zM9 12h6M9 16h4',
   plus: 'M12 5v14M5 12h14',

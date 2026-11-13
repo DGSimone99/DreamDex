@@ -24,7 +24,9 @@ const TEAM = [
   member('Great Tusk', 'Booster Energy', 'Protosynthesis', ['Headlong Rush', 'Ice Spinner', 'Rapid Spin', 'Bulk Up'], 'Jolly', { atk: 252, spe: 252, hp: 4 }),
   member('Kingambit', 'Black Glasses', 'Supreme Overlord', ['Swords Dance', 'Kowtow Cleave', 'Sucker Punch', 'Iron Head'], 'Adamant', { hp: 200, atk: 252, spe: 56 }),
   member('Toxapex', 'Black Sludge', 'Regenerator', ['Surf', 'Haze', 'Recover', 'Toxic Spikes'], 'Bold', { hp: 252, def: 252, spd: 4 }),
-  member('Dragapult', 'Choice Specs', 'Infiltrator', ['Draco Meteor', 'Shadow Ball', 'Flamethrower', 'U-turn'], 'Timid', { spa: 252, spe: 252, hp: 4 }),
+  // Attaccante speciale legale in National Dex OU (Dragapult ora è Ubers: il voto sarebbe grigio in ogni foto; il team
+  // fuori regola ha il suo stato, illegal)
+  member('Iron Valiant', 'Choice Specs', 'Quark Drive', ['Moonblast', 'Focus Blast', 'Thunderbolt', 'Shadow Ball'], 'Timid', { def: 4, spa: 252, spe: 252 }),
   member('Corviknight', 'Leftovers', 'Pressure', ['Brave Bird', 'Defog', 'Roost', 'U-turn'], 'Impish', { hp: 248, def: 168, spd: 92 }),
 ];
 const SIX = [...TEAM, member('Gholdengo', 'Air Balloon', 'Good as Gold', ['Make It Rain', 'Shadow Ball', 'Recover', 'Nasty Plot'], 'Timid', { spa: 252, spe: 252, def: 4 })];
@@ -47,7 +49,7 @@ const LONE = [
   member('Kommo-o', 'Leftovers', 'Soundproof', ['Close Combat', 'Clanging Scales', 'Dragon Dance', 'Iron Head'], 'Adamant', { atk: 252, spe: 252, hp: 4 }),
 ];
 /** Preferiti per gli stati *-fav: Pokémon che di solito compaiono fra i primi candidati. */
-const FAVS = ['Corviknight', 'Dragapult', 'Gholdengo', 'Rotom-Wash', 'Landorus-Therian', 'Iron Valiant', 'Zamazenta', 'Slowking-Galar', 'Heatran', 'Garganacl'];
+const FAVS = ['Corviknight', 'Kyurem', 'Gholdengo', 'Rotom-Wash', 'Landorus-Therian', 'Iron Valiant', 'Zamazenta', 'Slowking-Galar', 'Heatran', 'Garganacl'];
 const LONG = [
   member('Landorus-Therian', 'Rocky Helmet', 'Intimidate', ['Earthquake', 'U-turn', 'Stealth Rock', 'Stone Edge'], 'Impish', { hp: 252, def: 216, spe: 40 }),
   member('Ogerpon-Wellspring', 'Wellspring Mask', 'Water Absorb', ['Ivy Cudgel', 'Horn Leech', 'Knock Off', 'U-turn'], 'Jolly', { atk: 252, spe: 252, hp: 4 }),
@@ -60,7 +62,7 @@ const LONG = [
 const ATTACK = [
   LONG[2],
   TEAM[0],
-  TEAM[3],
+  member('Kyurem', 'Choice Specs', 'Pressure', ['Freeze-Dry', 'Draco Meteor', 'Earth Power', 'Ice Beam'], 'Timid', { def: 4, spa: 252, spe: 252 }),
   member('Iron Valiant', 'Choice Specs', 'Quark Drive', ['Moonblast', 'Focus Blast', 'Thunderbolt', 'Shadow Ball'], 'Timid', { def: 4, spa: 252, spe: 252 }),
   LONG[5],
   member('Victini', 'Choice Band', 'Victory Star', ['V-create', 'U-turn', 'Bolt Strike', 'Zen Headbutt'], 'Jolly', { atk: 252, spd: 4, spe: 252 }),
@@ -118,6 +120,37 @@ async function focus(page: Page, selector: string): Promise<boolean> {
   }, selector);
 }
 const wait = (ms: number) => new Promise(r => setTimeout(r, ms));
+/** Stampa se l'avviso con Annulla tocca il pulsante della scheda del candidato (overlap in px) e se esce dallo schermo. */
+async function toastClear(page: Page): Promise<boolean> {
+  const m = await page.evaluate(() => {
+    const toast = document.querySelector('.undo-toast')?.getBoundingClientRect();
+    const actions = document.querySelector('.detail-actions')?.getBoundingClientRect();
+    if (!toast) return 'no toast';
+    const over = actions ? Math.max(0, Math.min(toast.right, actions.right) - Math.max(toast.left, actions.left)) * Math.max(0, Math.min(toast.bottom, actions.bottom) - Math.max(toast.top, actions.top)) : -1;
+    return `toast=${Math.round(toast.left)},${Math.round(toast.top)} ${Math.round(toast.width)}x${Math.round(toast.height)} actions=${actions ? `${Math.round(actions.left)},${Math.round(actions.top)}` : '-'} overlap=${over} offscreen=${toast.right > innerWidth || toast.left < 0 ? 1 : 0}`;
+  });
+  console.log(m);
+  return true;
+}
+/** Stampa le righe della testata dell'editor (quanti controlli per riga), se qualcosa esce a destra e dove sta il riquadro del testo. */
+async function editorHead(page: Page): Promise<boolean> {
+  const m = await page.evaluate(() => {
+    const head = document.querySelector('.slot.open .editor-head');
+    if (!head) return 'no head';
+    const hb = head.getBoundingClientRect();
+    const items = [...head.querySelectorAll<HTMLElement>('button, a, input, [role="combobox"]')].filter(e => e.offsetParent && !e.closest('.paste-panel'));
+    const rows = new Map<number, number>();
+    for (const e of items) { const top = Math.round(e.getBoundingClientRect().top / 8) * 8; rows.set(top, (rows.get(top) ?? 0) + 1); }
+    const out = items.filter(e => e.getBoundingClientRect().right > hb.right + 1).length;
+    const paste = document.querySelector('.slot.open .paste-panel')?.getBoundingClientRect();
+    const moves = document.querySelector('.slot.open .editor-group.moves')?.getBoundingClientRect();
+    const covers = paste && moves ? Math.max(0, Math.min(paste.right, moves.right) - Math.max(paste.left, moves.left)) * Math.max(0, Math.min(paste.bottom, moves.bottom) - Math.max(paste.top, moves.top)) : -1;
+    const [nameTop, closeTop] = ['.nickname', '.editor-close'].map(sel => Math.round(document.querySelector(`.slot.open ${sel}`)?.getBoundingClientRect().top ?? -1));
+    return `nameTop=${nameTop} closeTop=${closeTop} head=${Math.round(hb.width)}x${Math.round(hb.height)} rows=${[...rows.values()].join('|')} out=${out}${paste ? ` paste=${Math.round(paste.left)},${Math.round(paste.top)} ${Math.round(paste.width)}x${Math.round(paste.height)} coversMoves=${Math.round(covers)}` : ''} hscroll=${document.documentElement.scrollWidth > innerWidth ? 1 : 0}`;
+  });
+  console.log(m);
+  return true;
+}
 const tab = (page: Page, id: string) => page.evaluate(i => { document.getElementById(`tab-${i}`)?.click(); }, id);
 
 /** Mouse sulla carta n della lista; dopo l'animazione stampa i bordi della carta inclinata rispetto all'interno della lista. */
@@ -430,6 +463,17 @@ const STATES: Record<string, State> = {
     await wait(300);
     return clickText(p, '.help-nav [role="tab"]', /^(Come funziona|How it works)$/);
   } },
+  'rating-help-general-en': { lang: 'en', run: async p => {
+    if (!await clickText(p, '.band .grade-tools button.help-button', /./)) return 'no help button';
+    await wait(300);
+    return clickText(p, '.help-nav [role="tab"]', /^How it works$/);
+  } },
+  // Hyper Offense: la frase su Trick Room e le voci dei Ruoli come etichette piatte
+  'rating-help-ho': { hash: hash(SIX), run: async p => {
+    if (!await clickText(p, '.band .grade-tools button.help-button', /./)) return 'no help button';
+    await wait(300);
+    return clickText(p, '.help-nav [role="tab"]', /^Hyper Offense/);
+  } },
   'rating-help-balance': { hash: hash(SIX), run: async p => {
     if (!await clickText(p, '.band .grade-tools button.help-button', /./)) return 'no help button';
     await wait(300);
@@ -632,14 +676,58 @@ const STATES: Record<string, State> = {
   'stats-pop': { run: async p => focus(p, '.stats-badge') },
   alert: { run: async p => focus(p, '.alert-mark') },
   'grade-delta': { run: async p => {
-    if (!await clickText(p, '.slot.filled > .slot-card', /Dragapult/)) return 'no card';
+    if (!await clickText(p, '.slot.filled > .slot-card', /Iron Valiant/)) return 'no card';
     await wait(600);
     return clickText(p, '.slot.open button.best-preset', /./);
   } },
-  'editor-alert': { run: async p => {
-    if (!await clickText(p, '.slot.filled > .slot-card', /Dragapult/)) return 'no card';
+  'editor-alert': { hash: hash(MOVE), run: async p => {
+    // La prima carta con un avviso (Great Tusk con una mossa che non impara)
+    if (!await clickText(p, '.slot.filled:has(.alert-mark) > .slot-card', /./)) return 'no card';
     await wait(600);
     return focus(p, '.slot.open .alert-mark');
+  } },
+  // Nomi lunghi con l'editor aperto: la carta aperta tiene il nome; nella barra compressa i nomi vanno su due righe
+  'editor-long': { hash: hash(LONG), run: async p => { if (!await clickText(p, '.slot.filled > .slot-card', /Urshifu/)) return 'no card'; await wait(600); return true; } },
+  // Testata dell'editor (Great Tusk: preset sia NatDex OU sia Gen 9 OU), il menu dei preset aperto e il riquadro Testo del set
+  'editor-head': { run: async p => { if (!await clickText(p, '.slot.filled > .slot-card', /Great Tusk/)) return 'no card'; await wait(600); return editorHead(p); } },
+  'editor-presets': { run: async p => {
+    if (!await clickText(p, '.slot.filled > .slot-card', /Great Tusk/)) return 'no card';
+    await wait(600);
+    return clickText(p, '.slot.open .preset-field [role="combobox"]', /./);
+  } },
+  // Fumetti delle icone della testata col fuoco (dove cadono, se escono dalla finestra), matita del nome, contrasto di "N liberi"
+  'editor-hints': { run: async p => {
+    if (!await clickText(p, '.slot.filled > .slot-card', /Great Tusk/)) return 'no card';
+    await wait(600);
+    for (const sel of ['.shiny-toggle', '.smogon-link', '.save-set', '.member-copy', '.editor-close', '.nickname']) {
+      await focus(p, `.slot.open ${sel}`);
+      await wait(200);
+      console.log(await p.evaluate(s => {
+        const el = document.querySelector<HTMLElement>(`.slot.open ${s}`);
+        if (!el) return `${s}: missing`;
+        const pencil = el.querySelector<HTMLElement>('.nickname-pencil');
+        if (pencil) return `${s}: pencil opacity=${getComputedStyle(pencil).opacity}`;
+        const bubble = el.closest('.hint-wrap')?.querySelector<HTMLElement>('.hint-bubble');
+        if (!bubble) return `${s}: no bubble`;
+        const r = bubble.getBoundingClientRect();
+        return `${s}: "${bubble.textContent}" ${Math.round(r.left)}..${Math.round(r.right)} shown=${!bubble.hidden} off=${r.right > innerWidth || r.left < 0 ? 1 : 0} desc=${el.getAttribute('aria-describedby') ? 1 : 0}`;
+      }, sel));
+    }
+    console.log(await p.evaluate(() => {
+      const el = document.querySelector<HTMLElement>('.slot.open .ev-left');
+      if (!el) return 'no ev-left';
+      let bg = ''; let n: HTMLElement | null = el;
+      while (n && !bg) { const c = getComputedStyle(n).backgroundColor; if (c !== 'rgba(0, 0, 0, 0)') bg = c; n = n.parentElement; }
+      return `ev-left "${el.textContent}" color=${getComputedStyle(el).color} bg=${bg} size=${getComputedStyle(el).fontSize}`;
+    }));
+    return true;
+  } },
+  'editor-paste': { run: async p => {
+    if (!await clickText(p, '.slot.filled > .slot-card', /Great Tusk/)) return 'no card';
+    await wait(600);
+    if (!await clickText(p, '.slot.open button.member-io', /./)) return 'no set text button';
+    await wait(300);
+    return editorHead(p);
   } },
   undo: { run: async p => clickText(p, 'button.remove', /Rimuovi/) },
   collapsed: { hash: hash(LONG), run: async p => clickText(p, 'button.band-toggle', /./) },
@@ -662,6 +750,10 @@ const STATES: Record<string, State> = {
     });
   } },
   empty: { hash: '' },
+  // Team con 1, 3 o 5 Pokémon: solo il primo slot libero ha la scritta, gli altri sono cornici tenui
+  'team-1': { hash: hash(TEAM.slice(0, 1)) },
+  'team-3': { hash: hash(TEAM.slice(0, 3)) },
+  'team-5': { hash: hash(TEAM) },
   'en-compact': { lang: 'en' },
   'long-names': { hash: hash(LONG) },
   nodata: { run: async () => 'every bundled format has data; the no-data banner is covered by the App test' },
@@ -671,7 +763,6 @@ const STATES: Record<string, State> = {
   'fill-unlocked': { hash: hash(TEAM.slice(0, 3)), run: async p => { await openFill(p); await p.evaluate(() => (document.querySelector('.fill-panel input[type="checkbox"]') as HTMLElement | null)?.click()); await wait(3500); return true; } },
   'filters-open': { run: async p => { await tab(p, 'pokemon'); await p.evaluate(() => (document.querySelector('.toolbar .filters > summary') as HTMLElement | null)?.click()); await wait(400); return true; } },
   'format-menu': { run: async p => { await p.click('.format-card > summary'); await wait(400); return true; } },
-  'io-menu': { run: async p => { await p.evaluate(() => (document.querySelector('.team-quick details.popover > summary') as HTMLElement | null)?.click()); await wait(400); return true; } },
   'saved-menu': { storage: { 'dreamdex.savedTeams': JSON.stringify([{ name: 'Pioggia NatDex', text: 'Pelipper' }, { name: 'Un nome di team davvero molto lungo per vedere se va a capo', text: 'Garchomp' }]) }, run: async p => { await p.evaluate(() => (document.querySelector('.team-head > details.popover > summary') as HTMLElement | null)?.click()); await wait(400); return true; } },
   'saved-empty': { hash: '', run: async p => { await p.evaluate(() => (document.querySelector('.team-head > details.popover > summary') as HTMLElement | null)?.click()); await wait(400); return true; } },
   'team-three': { hash: hash(TEAM.slice(0, 3)) },
@@ -679,6 +770,12 @@ const STATES: Record<string, State> = {
   'improve-wide': { hash: hash(SIX), run: async p => { await p.evaluate(() => (document.querySelector('.team-guide') as HTMLElement | null)?.click()); await p.waitForSelector('.improve-toggle', { timeout: 20000 }); await p.click('.improve-toggle'); await wait(700); return true; } },
   'improve-wide-en': { hash: hash(SIX), lang: 'en', run: async p => { await p.evaluate(() => (document.querySelector('.team-guide') as HTMLElement | null)?.click()); await p.waitForSelector('.improve-toggle', { timeout: 20000 }); await p.click('.improve-toggle'); await wait(700); return true; } },
   'team-empty': { hash: '' },
+  // Team fuori regola (Mewtwo è Ubers in National Dex OU): voto grigio con il motivo sotto
+  // Svuota: il cestino con il fumetto sotto il mouse; poi svuotato, con l'avviso che non copre il pulsante della scheda
+  'clear-hover': { run: async p => { await p.hover('.team-head .clear-team'); await wait(300); return true; } },
+  cleared: { run: async p => { await p.click('.team-head .clear-team'); await wait(1200); return toastClear(p); } },
+  'removed-toast': { run: async p => { if (!await clickText(p, 'button.remove', /Rimuovi/)) return false; await wait(1200); return toastClear(p); } },
+  illegal: { hash: hash([...TEAM, member('Mewtwo', 'Life Orb', 'Pressure', ['Psystrike', 'Ice Beam', 'Aura Sphere', 'Recover'], 'Timid', { spa: 252, spe: 252, hp: 4 })]) },
 };
 const chosen = (arg('states') ?? Object.keys(STATES).join(',')).split(',');
 
@@ -884,9 +981,25 @@ for (const [w, h] of sizes) {
       const spr = ol.querySelector<HTMLElement>('.card-sprite, .pill-sprite');
       return `list2: cardOver=${cardOver} headCollide=${headCollide} headOver=${headOver} hint=${hint && hint.getClientRects().length ? 'shown' : 'hidden'} outOverSprite=${covered} listSprite=${spr ? Math.round(spr.getBoundingClientRect().width) : '-'} listH=${Math.round(r.height)}`;
     });
+    // Come funziona il voto: quanto scorre il pannello a destra (0 = sta tutto) e l'altezza della finestra
+    const ratingHelp = await page.evaluate(() => {
+      const gp = document.querySelector<HTMLElement>('.rating-help .help-panel');
+      const help = gp ? ` helpScroll=${gp.scrollHeight - gp.clientHeight} helpH=${Math.round(gp.closest('.help-dialog')!.getBoundingClientRect().height)}` : '';
+      // Tipo di team nella barra dei candidati: spazio del testo della tendina contro il nome più lungo (negativo = tagliato) e se la barra sborda
+      const tt = document.querySelector<HTMLElement>('.toolbar .team-type');
+      const sel = tt?.querySelector('select');
+      if (!tt || !sel) return help;
+      const cs = getComputedStyle(sel);
+      const ctx = document.createElement('canvas').getContext('2d')!;
+      ctx.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+      const longest = Math.max(...[...sel.options].map(o => ctx.measureText(o.text).width));
+      const room = sel.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+      const bar = tt.parentElement!;
+      return `${help} teamType=w${Math.round(tt.getBoundingClientRect().width)} room${Math.round(room - longest)} barOver=${bar.scrollWidth - bar.clientWidth}`;
+    });
     const file = join(out, `${w}x${h}-${name}.png`);
     await page.screenshot({ path: file });
-    console.log(`${file} pageScroll=${scroll} clipped=${clipped}${panel} ${dash} ${coach} ${list} ${listMore} ${band}`);
+    console.log(`${file} pageScroll=${scroll} clipped=${clipped}${panel}${ratingHelp} ${dash} ${coach} ${list} ${listMore} ${band}`);
     await page.close();
   }
 }

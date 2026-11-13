@@ -44,7 +44,7 @@ describe('selettore del tipo di team nei suggerimenti', () => {
 
   it('team incompleto: Qualunque', async () => {
     const user = await importTeam(STALL.slice(0, 2));
-    await user.click(within(suggestions()).getByRole('button', { name: 'Migliora team' }));
+    await user.click(within(suggestions()).getByRole('button', { name: 'Sostituisci' }));
     expect(pressed()).toEqual(['Qualunque']);
   });
 
@@ -56,7 +56,7 @@ describe('selettore del tipo di team nei suggerimenti', () => {
 
   it('una scelta a mano resta quando il team cambia', async () => {
     const user = await importTeam(STALL.slice(0, 5));
-    await user.click(within(suggestions()).getByRole('button', { name: 'Migliora team' }));
+    await user.click(within(suggestions()).getByRole('button', { name: 'Sostituisci' }));
     expect(pressed()).toEqual(['Qualunque']);
     await user.selectOptions(types(), 'Balance');
     await user.click(within(suggestions()).getByRole('button', { name: 'Aggiungi' }));
@@ -115,7 +115,7 @@ describe('tipo di team in Aggiungi', () => {
 
   it('la tendina ha la sua etichetta visibile', async () => {
     render(<App initialLang="it" data={fixtureData} />);
-    expect(types().closest('label')).toHaveTextContent(/^Team/);
+    expect(types().closest('label')).toHaveTextContent(/^Tipo di team/);
   });
 
   it('Aggiungi: se il tipo esclude tutti, il messaggio parla di costruire il team', async () => {

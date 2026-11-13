@@ -5,15 +5,19 @@ const MENUS = 'details.popover[open], details.filters[open], details.spread-pane
 
 /**
  * I menu aperti si chiudono con un clic in qualunque altro punto della pagina, o con Esc (il fuoco torna al pulsante
- * del menu). Un clic dentro il menu lo lascia aperto; aprirne uno chiude gli altri.
+ * del menu). Un clic dentro il menu lo lascia aperto; aprirne uno chiude gli altri. Un menu con `data-keep-open`
+ * (Importa con del testo scritto) resta aperto al clic fuori, come il pannello del testo di un membro: si chiude con
+ * Annulla, Esc, il suo pulsante o aprendo un altro menu.
  */
 export function useDismissMenus(): void {
   useEffect(() => {
     const onPointerDown = (event: PointerEvent) => {
       const target = event.target as Node | null;
+      const otherMenu = target instanceof Element && !!target.closest('details > summary');
       for (const menu of document.querySelectorAll<HTMLDetailsElement>(MENUS)) {
         // Sul telefono il menu ha uno sfondo scuro (il ::before del menu stesso): toccarlo chiude il menu
         if (target && target !== menu && menu.contains(target)) continue;
+        if (menu.dataset.keepOpen && !otherMenu) continue;
         menu.open = false;
       }
     };

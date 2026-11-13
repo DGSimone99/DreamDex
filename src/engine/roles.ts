@@ -25,6 +25,9 @@ const LEGACY_ORDER: LegacyRole[] = [
 /** Nome del ruolo nella lingua data (anche il setup, che compare sulle carte ma non è un ruolo del voto). */
 export const roleLabel = (role: Role | 'setup', lang: Lang = 'it'): string => t(lang, `role.${role}`);
 
+/** Il ruolo spiegato in una frase semplice, per i tooltip (Sweeper Fisico: "Veloce o potenziato, travolge…"). */
+export const roleDescription = (role: Role | 'setup' | 'priority', lang: Lang = 'it'): string => t(lang, `roleDesc.${role}`);
+
 /** Nome breve del ruolo, per le carte del team (il nome completo va nel tooltip). */
 export const roleShortLabel = (role: Role | 'setup', lang: Lang = 'it'): string => t(lang, `roleShort.${role}`);
 

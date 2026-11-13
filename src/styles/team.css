@@ -81,27 +81,29 @@
   color: var(--on-plate);
   white-space: nowrap;
 }
-/* La guida: il pulsante principale della testata (magenta, inclinato come le azioni principali) */
+/* La guida: la linguetta più in vista della testata, sul fondo azzurro scuro con la scintilla ciano. Non magenta: il
+   magenta resta all'azione migliore del momento (Aggiungi al team del primo candidato) e alla sezione aperta */
 .team-head .team-guide {
   height: 28px;
   padding: 0 22px 0 20px;
   gap: 6px;
-  background: var(--accent-2);
+  background: var(--accent-soft);
   border: 0;
   border-radius: 0;
-  color: var(--on-accent-2);
+  color: var(--text);
   font: 700 12px/1 var(--display);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   white-space: nowrap;
   clip-path: polygon(14px 0, 100% 0, calc(100% - 14px) 100%, 0 100%);
 }
-.team-head .team-guide .icon { width: 14px; height: 14px; }
-.team-head .team-guide:hover { background: var(--accent-2-ink); }
-.team-head .team-guide[aria-expanded='true'] { background: var(--accent-2-ink); box-shadow: inset 0 -3px 0 var(--on-accent-2); }
+.team-head .team-guide .icon { width: 14px; height: 14px; color: var(--accent-ink); }
+.team-head .team-guide:hover { background: color-mix(in srgb, var(--accent) 30%, var(--raised)); }
+/* Aperta: come le altre linguette aperte, la riga azzurra sotto */
+.team-head .team-guide[aria-expanded='true'] { background: color-mix(in srgb, var(--accent) 30%, var(--raised)); box-shadow: inset 0 -2px 0 var(--accent); }
 .team-head .team-guide:disabled { opacity: 0.6; }
-/* Il taglio nasconderebbe l'anello del focus: lo si disegna dentro, scuro sul magenta */
-.team-head .team-guide:focus-visible { outline: 2px solid var(--on-accent-2); outline-offset: -4px; }
+/* Il taglio nasconderebbe l'anello del focus: lo si disegna dentro */
+.team-head .team-guide:focus-visible { outline: 2px solid var(--accent); outline-offset: -4px; }
 /* Le altre azioni della testata come linguette di Spada e Scudo: stesso taglio obliquo della guida, fondo Raised, scritte
    in maiuscolo. Aperta, la linguetta si accende d'azzurro con la riga sotto (come la scheda attiva del riassunto) */
 .team-head .team-action, .team-quick .popover > summary {
@@ -200,11 +202,44 @@
 .export-note.done { background: var(--good-bg); color: var(--good); }
 .export-note .icon { width: 13px; height: 13px; }
 @media (prefers-reduced-motion: reduce) { .export-tab.copied .icon, .export-note { animation: none; } }
-/* Svuota: più discreta, si accende di rosso solo sotto il mouse */
+/* Fumetto dei controlli con sola icona (Hint): lo stesso di Esporta e Svuota, sotto il controllo */
+.hint-wrap { position: relative; display: inline-flex; flex: none; }
+.hint-bubble {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 6px);
+  left: 0;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 4px;
+  background: var(--ground);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
+  color: var(--text);
+  font: 500 12px/1.2 var(--ui);
+  letter-spacing: 0;
+  text-transform: none;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: tip 0.14s var(--ease);
+}
+.hint-bubble[hidden] { display: none; }
+.hint-wrap.end .hint-bubble { left: auto; right: 0; }
+.hint-detail { color: var(--muted); }
+.hint-detail::before { content: '·'; margin-right: 6px; }
+.hint-bubble.done { background: var(--good-bg); color: var(--good); }
+@media (prefers-reduced-motion: reduce) { .hint-bubble { animation: none; } }
+/* Al tocco e sul telefono niente fumetti col nome (il tocco dà il fuoco: coprirebbero i campi); resta solo "Copiato" */
+@media (max-width: 599px), (hover: none) { .hint-bubble:not(.done) { display: none; } }
+/* Svuota: il cestino, più discreto delle altre linguette, si accende di rosso solo sotto il mouse; una barretta lo stacca
+   da Importa ed Esporta (il gap della fila più la barretta) */
+.clear-wrap { position: relative; display: flex; align-items: center; padding-left: 12px; }
+.clear-wrap::before { content: ''; position: absolute; left: 0; top: 6px; bottom: 6px; width: 1px; background: var(--line); }
 .team-head .clear-team { width: 44px; padding: 0; justify-content: center; background-color: transparent; color: var(--faint); }
-/* Solo la ×: il nome resta nel tooltip e per i lettori di schermo */
+/* Solo il cestino: il nome resta nel fumetto e per i lettori di schermo */
 .team-head .clear-team > .btn-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-.team-head .clear-team:hover { background-color: var(--bad-bg); color: var(--bad); }
+.team-head .clear-team:hover, .team-head .clear-team:focus-visible { background-color: var(--bad-bg); color: var(--bad); }
 /* Menu della testata (Team salvati, Importa / Esporta) come il pannello di Completa team: fondo Ground, angoli 4px, ombra,
    apertura breve. Quello delle scorciatoie si apre allineato a destra, sotto il suo pulsante */
 .team-head .popover[open] > :not(summary) {
@@ -213,7 +248,8 @@
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
   animation: tip 0.14s var(--ease);
 }
-.team-quick .popover[open] > :not(summary) { left: auto; right: 0; width: 420px; }
+/* Solo sul computer: sul telefono e sul tablet i menu salgono dal basso a tutta larghezza (phone.css) */
+@media (min-width: 1100px) { .team-quick .popover[open] > :not(summary) { left: auto; right: 0; width: 420px; } }
 /* Importa: una riga di spiegazione, la scatola con l'esempio in grigio (si allunga se serve), Importa a destra in evidenza */
 .import-panel { display: grid; gap: 10px; }
 .import-hint { margin: 0; font: 400 13px/1.4 var(--ui); color: var(--muted); }
@@ -222,8 +258,8 @@
 .import-panel .actions { justify-content: flex-end; }
 .import-panel .apply { display: inline-flex; align-items: center; gap: 7px; background: var(--accent-soft); border-color: var(--accent); color: var(--text); font-weight: 700; }
 .import-panel .apply .icon { width: 15px; height: 15px; color: var(--accent-ink); }
-.import-panel .apply:hover { background: color-mix(in srgb, var(--accent) 30%, var(--raised)); }
-.team-quick .popover[open] > .saved-panel { width: 380px; }
+.import-panel .apply:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 30%, var(--raised)); }
+@media (min-width: 1100px) { .team-quick .popover[open] > .saved-panel { width: 380px; } }
 @media (prefers-reduced-motion: reduce) { .team-head .popover[open] > :not(summary) { animation: none; } }
 .set-editor .best-preset { height: 36px; white-space: nowrap; flex-shrink: 0; }
 .slots { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; }
@@ -291,8 +327,8 @@
 .slot > .slot-card .sprite-wrap { position: relative; align-self: center; }
 /* Le righe della card non si schiacciano: nome e strumento hanno al massimo due righe, l'altezza resta fissa */
 .slot > .slot-card > * { flex-shrink: 0; }
-/* Con l'avviso aperto lo sprite passa sopra nome e righe sotto */
-.slot > .slot-card .sprite-wrap:has(.alert-mark:hover, .alert-mark:focus-visible) { z-index: 6; }
+/* Con l'avviso aperto il suo fumetto passa sopra sprite, nome e righe sotto */
+.slot > .slot-card .slot-alerts:has(.alert-mark:hover, .alert-mark:focus-visible) { z-index: 6; }
 .slot > .slot-card .sprite { display: block; image-rendering: pixelated; transition: transform 0.35s var(--ease); }
 /* Card aperta: lo sprite cresce un poco e gioca l'animazione */
 .slot.open > .slot-card { --open-scale: 1.12; }
@@ -311,15 +347,19 @@
 }
 /* Il nome va a capo solo agli spazi e ai trattini, mai a metà parola: se la parte più lunga non entra nella riga, il nome
    si rimpicciolisce (fino a 11px). --name-em = larghezza vera di quella parte scritta a 1px (misurata nel font, senza
-   unità: TeamPanel); la riga è la carta (container) meno l'icona dello strumento */
+   unità: TeamPanel); la riga è la carta (container) meno l'icona dello strumento e, se ci sono, i triangoli degli avvisi */
 .band:not(.collapsed) .slot > .slot-card { container-type: inline-size; }
-.slot .name { --name-fs: 16px; font: 800 var(--name-fs)/1.05 var(--display); font-size: min(var(--name-fs), max(11px, (100cqi - 26px) / var(--name-em, 5.6))); font-style: italic; letter-spacing: 0.01em; max-width: 100%; overflow-wrap: normal; word-break: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.slot .name { --name-fs: 16px; font: 800 var(--name-fs)/1.05 var(--display); font-size: min(var(--name-fs), max(11px, (100cqi - var(--name-room, 26px)) / var(--name-em, 5.6))); font-style: italic; letter-spacing: 0.01em; max-width: 100%; overflow-wrap: normal; word-break: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 /* Icona dello strumento in uno spazio fisso alto quanto la prima riga del nome: icona e nome partono insieme,
    e i nomi restano allineati tra le carte anche senza strumento */
 .slot .name-line { display: flex; align-items: flex-start; gap: 6px; max-width: 100%; margin-top: 4px; }
 .slot .name-line .held { flex: none; display: grid; place-items: center; width: 20px; height: 20px; }
 .slot .name-line .held .item-icon { width: 20px; height: 20px; }
 .slot .name-line .name { min-width: 0; line-height: 20px; }
+/* Spazio dei triangoli in fondo alla riga: uno 27px, due 54px */
+.slot:has(.slot-alerts) .name-line { align-self: stretch; }
+.slot:has(.slot-alerts) .name { --name-room: 53px; }
+.slot:has(.slot-alerts .alert-mark + .alert-mark) .name { --name-room: 80px; }
 .slot .roles { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 .slot .types { display: flex; gap: 4px; flex-wrap: nowrap; margin: 2px 0; }
 /* I chip devono stare dentro la carta: la fila è larga quanto la carta e, se due chip col nome non entrano, TeamPanel
@@ -364,6 +404,9 @@
 .slot.empty:hover { border-color: var(--accent); color: var(--text); background: color-mix(in srgb, var(--accent) 6%, transparent); }
 .slot.empty:hover .empty-ring { border-color: var(--accent); color: var(--accent); transform: scale(1.06); }
 .slot.empty:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* Gli slot liberi dopo il primo: solo la cornice, più tenue (la scritta e il + stanno sul primo) */
+.slot.empty.quiet { border-color: var(--line-soft); }
+.slot.empty.quiet:hover { border-color: var(--accent); }
 .sprite.missing { display: block; width: 96px; height: 96px; }
 /* Lead: il primo membro, in alto a sinistra (il lucchetto del Custom Skillset gli passa accanto) */
 /* Piastrina scura dietro la scritta: il ciano resta leggibile (>=4.5:1) su ogni colore di tipo */
@@ -394,7 +437,7 @@
 /* Team salvati, come un piccolo Box del PC: in cima (se il team caricato è cambiato) Salva le modifiche, poi nome e Salva
    per un team nuovo; ogni team è una riga con i suoi sei sprite piccoli, il nome e il formato, × a destra. Il team in
    uso ha il fondo azzurrino */
-.team-head .plate-menu[open] > .saved-panel { width: 440px; }
+@media (min-width: 1100px) { .team-head .plate-menu[open] > .saved-panel { width: 440px; } }
 .team-head .saved-panel { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
 .saved-update {
   display: flex;
@@ -412,7 +455,10 @@
 .saved-update > span { overflow: hidden; text-overflow: ellipsis; }
 .saved-update .icon { flex: none; width: 15px; height: 15px; color: var(--accent-ink); }
 .saved-update:hover { background: color-mix(in srgb, var(--accent) 30%, var(--raised)); }
-.saved-new { display: flex; gap: 8px; }
+/* Modifiche non salvate: una riga gialla piccola in cima, non una finestra */
+.saved-unsaved { display: flex; align-items: center; gap: 6px; margin: 0; font: 600 12px/1.3 var(--ui); color: var(--warn); }
+.saved-unsaved .icon { flex: none; width: 13px; height: 13px; }
+.saved-new { position: relative; display: flex; gap: 8px; }
 .saved-new input { flex: 1; min-width: 0; height: 34px; }
 .saved-new button { height: 34px; white-space: nowrap; }
 .saved-new button:disabled { opacity: 0.55; }
@@ -426,8 +472,9 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  height: 48px;
-  padding: 0 10px 0 4px;
+  min-height: 48px;
+  height: auto;
+  padding: 4px 10px 4px 4px;
   text-align: left;
   background: none;
   border-color: transparent;
@@ -435,11 +482,15 @@
 .saved-sprites { flex: none; display: flex; }
 .saved-sprites > * { flex: none; width: 34px; height: 40px; object-fit: contain; object-position: center bottom; margin-right: -2px; transition: transform 0.12s var(--ease); }
 .saved-sprites .saved-gap, .saved-sprites .sprite.missing { width: 34px; }
+/* Posto libero: sei posti fissi, così i nomi partono tutti dalla stessa colonna; un cerchio tratteggiato tenue dice che è vuoto */
+.saved-sprites .saved-gap { display: grid; place-items: center; }
+.saved-sprites .saved-gap::before { content: ''; width: 14px; height: 14px; border: 1px dashed var(--line); border-radius: 50%; }
 .saved-list .saved-load:hover .saved-sprites > * { transform: translateY(-2px); }
 .saved-list .saved-load:hover .saved-sprites > :nth-child(even) { transition-delay: 0.03s; }
 @media (prefers-reduced-motion: reduce) { .saved-sprites > * { transition: none; } .saved-list .saved-load:hover .saved-sprites > * { transform: none; } }
 .saved-text { display: grid; min-width: 0; gap: 2px; }
-.saved-name { font: 600 14px/1.2 var(--ui); color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Nomi lunghi su due righe (il nome intero resta nel tooltip della riga) */
+.saved-name { font: 600 14px/1.2 var(--ui); color: var(--text); overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .saved-format { font: 400 12px/1.2 var(--ui); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .saved-list li.current .saved-name { color: var(--accent-ink); }
 .saved-list .saved-load:hover { background: var(--raised); border-color: var(--accent); }

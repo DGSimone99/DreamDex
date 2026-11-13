@@ -21,7 +21,7 @@ export interface MoveFix {
   from: string;
   to: string;
   set: TeamSet;
-  /** Punti di voto in più, calcolati come il +N di Migliora team. */
+  /** Punti di voto in più, calcolati come il +N di Sostituisci. */
   gain: number;
   solves: string[];
   reduces: string[];

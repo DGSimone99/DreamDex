@@ -148,8 +148,6 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .detail-score strong { display: block; font: 700 46px/0.9 var(--display); font-variant-numeric: tabular-nums; }
 .detail-score span { font-size: 12px; color: var(--muted); }
 /* Il tipo di team cambia: una riga sotto il voto, nel colore d'avviso */
-.detail-score .detail-type { display: block; margin-top: 2px; color: var(--warn); font-weight: 700; }
-.detail.first .detail-score strong { color: var(--accent-2); }
 .detail-score strong.worse { color: var(--bad); }
 .detail-score strong.same { color: var(--muted); }
 .detail-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
@@ -234,7 +232,7 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
   border-radius: 4px;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
 }
-/* Chi esce: la tendina attaccata a Migliora team (un terzo pezzo dello stesso pulsante, con ▾ e l'icona del membro scelto);
+/* Chi esce: la tendina attaccata a Sostituisci (un terzo pezzo dello stesso pulsante, con ▾ e l'icona del membro scelto);
    sotto, Tutti e i membri con icona e nome */
 .mode-switch { position: relative; flex: none; }
 .toolbar .mode-switch > .segmented button { gap: 6px; padding: 8px 14px; font-size: 14px; white-space: nowrap; }
@@ -399,7 +397,7 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .toolbar .team-type:hover, .toolbar .team-type:focus-within { border-color: var(--accent); }
 .toolbar .team-type > span { padding-left: 12px; font: 600 11px/1 var(--ui); text-transform: uppercase; letter-spacing: 0.08em; color: var(--faint); }
 /* Larghezza fissa: cambiare tipo non sposta la ricerca (i nomi lunghi finiscono coi puntini) */
-.toolbar .team-type { width: 220px; }
+.toolbar .team-type { width: 232px; }
 .toolbar .team-type select { flex: 1; min-width: 0; height: 100%; padding: 0 30px 0 8px; border: 0; background-color: transparent; font-size: 14px; text-overflow: ellipsis; }
 
 /* Filtri attivi come chip sotto la barra; la × toglie quel filtro */
@@ -434,7 +432,7 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
   @media (hover: hover) { .picker-list > .suggestions.cards:has(> .card:hover) { z-index: 3; } }
 }
 .list-head .box-head { display: inline-block; flex: none; white-space: nowrap; }
-/* Problemi e bonus: la pillola tratteggiata che spiega la parte del voto fuori dalle aree */
+/* Bonus/Malus: la pillola tratteggiata che spiega la parte del voto fuori dalle aree */
 .detail .effect .detail-areas .extras { border-style: dashed; }
 
 /* Stile "Carte": 6 carte verticali (3 × 2) a forma di carta Masters (misure da usePerPage: --cols, --tile-h, --reasons).
@@ -542,14 +540,15 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
   .card-sprite.popped { animation: none; }
   .card-sprite.popped .box-icon, .card.selected .card-sprite .box-icon { animation: none; }
 }
-/* Targhetta in alto a sinistra: +N (#1 su magenta), −N e ±0 nei loro colori, col team vuoto l'uso nel meta */
+/* Targhetta in alto a sinistra: +N (#1 su azzurro scuro), −N e ±0 nei loro colori, col team vuoto l'uso nel meta */
 .card .tag { --tag-bg: var(--ground); position: absolute; top: 0; left: 0; z-index: 1; display: flex; align-items: center; gap: 4px; margin: 0; padding: 5px 16px 5px 8px; border-radius: 0; background: var(--tag-bg); color: var(--text);
   font: 800 15px/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums; clip-path: polygon(0 0, 100% 0, calc(100% - 9px) 100%, 0 100%); }
 .card .tag strong { font: inherit; }
 .card .tag strong.worse { color: var(--bad); }
 .card .tag strong.same { color: var(--muted); }
 .card .tag small { display: none; }
-.card.first .tag { --tag-bg: var(--accent-2); color: var(--on-accent-2); }
+/* Il #1: targhetta azzurro scuro con la cifra ciano. Il magenta resta al suo Aggiungi al team, l'azione migliore */
+.card.first .tag { --tag-bg: var(--accent-soft); color: var(--accent-ink); }
 /* Preferito: ♥ davanti al numero e bordo di 2px nel colore dei Preferiti (anche sul lato obliquo), sopra la cornice */
 .card .tag.fav { z-index: 4; background: var(--accent); }
 .card .tag.fav::before { content: ''; position: absolute; inset: 2px; z-index: -1; background: var(--tag-bg); clip-path: polygon(0 0, calc(100% - 0.85px) 0, calc(100% - 6.4px) 100%, 0 100%); }

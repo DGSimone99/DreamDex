@@ -25,7 +25,8 @@
 .rail-field { display: grid; gap: 4px; }
 .rail-label { margin: 0; font: 600 11px/1 var(--ui); letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); }
 .rail-field select { width: 100%; font-weight: 500; }
-/* Carta del formato: il Pokédex in grande, il tier in una fascia azzurra, le regole come pastiglie; il clic apre il menu */
+/* Carta del formato: il Pokédex in grande, il tier in una fascia azzurra, le regole in una riga di testo; il clic apre il
+   menu. Il bordo sottile tinto d'azzurro la distingue dalle tessere delle sezioni; sotto il mouse o aperta è azzurro pieno */
 .format-card { margin: 0 16px; }
 .popover.format-card > summary {
   display: grid;
@@ -35,8 +36,7 @@
   gap: 4px 8px;
   width: 100%;
   padding: 10px 10px 10px 12px;
-  border: 1px solid var(--line);
-  border-left: 3px solid var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--line));
   border-radius: 4px;
   background: var(--raised);
   text-align: left;
@@ -47,8 +47,9 @@
 .format-card > summary:hover .format-key .icon, .format-card[open] .format-key .icon { color: var(--accent); }
 .format-tier { grid-area: tier; padding: 2px 12px 2px 8px; font: 800 15px/1.2 var(--display); font-style: italic; color: var(--on-accent); background: var(--accent); clip-path: polygon(0 0, 100% 0, calc(100% - 8px) 100%, 0 100%); }
 .format-name { grid-area: name; overflow: hidden; font: 800 19px/1.1 var(--display); font-style: italic; color: var(--text); white-space: nowrap; text-overflow: ellipsis; }
-.format-pills { grid-area: pills; display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
-.format-pills span { padding: 1px 7px; border-radius: 3px; background: var(--panel); color: var(--muted); font: 600 11px/1.5 var(--ui); }
+.format-pills { grid-area: pills; display: flex; flex-wrap: wrap; gap: 0 6px; color: var(--muted); font: 500 12px/1.4 var(--ui); }
+/* Le regole sono uno stato, non pulsanti: testo semplice separato da puntini */
+.format-pills span + span::before { content: '·'; margin-right: 6px; color: var(--faint); }
 /* Il menu del formato: testata inclinata come i pannelli, poi le scelte come schede, pulsanti e interruttori */
 .popover.format-card[open] > .format-menu { width: 340px; padding: 0; overflow: hidden; }
 .format-menu-head { margin: 0 120px 0 0; padding: 7px 26px 7px 14px; font: 700 15px/1.2 var(--display); font-style: italic; color: var(--on-plate); background: var(--stripes), var(--plate); clip-path: polygon(0 0, 100% 0, calc(100% - 14px) 100%, 0 100%); }

@@ -13,7 +13,8 @@ type Topic = 'general' | Archetype;
 const ARCHETYPES: Archetype[] = ['hyperOffense', 'bulkyOffense', 'balance', 'semiStall', 'stall'];
 const TOPICS: Topic[] = ['general', ...ARCHETYPES];
 /** Le aree col peso: i Ruoli non ne hanno, contano come malus e bonus (spiegati nel loro modale). */
-const WEIGHT_AREAS = ['defense', 'strength', 'speed'] as const;
+/** Offesa prima di Difesa, come nel riquadro del voto (scelta dell'utente, 2026-11-13). */
+const WEIGHT_AREAS = ['strength', 'defense', 'speed'] as const;
 const LEVELS: Exclude<Level, 'ignored'>[] = ['essential', 'important', 'minor'];
 
 const topicLabel = (topic: Topic): MessageKey => (topic === 'general' ? 'help.general' : `archetype.${topic}`);
@@ -92,7 +93,7 @@ export function RatingHelp({ teamType: judgedAs, weights: realWeights = ARCHETYP
                   </button>
                 ))}
               </nav>
-              <section className="help-panel" id="help-panel" role="tabpanel" aria-labelledby={`help-tab-${topic}`}>
+              <section className={`help-panel${topic === 'general' ? ' help-general' : ''}`} id="help-panel" role="tabpanel" aria-labelledby={`help-tab-${topic}`}>
                 <h4>{t(topicLabel(topic))}</h4>
                 {topic === 'general' ? <GeneralTopic teamType={teamType} weights={weights} /> : <TypeTopic type={topic} weights={weights} typeRule={typeRule} />}
               </section>
@@ -123,6 +124,7 @@ function GeneralTopic({ teamType, weights }: { teamType: Archetype | null; weigh
       </ul>
       <p>{t('help.general.1')}</p>
       <p>{t('help.general.2')}</p>
+      {/* Trick Room solo qui, in Come funziona, non nelle schede dei tipi (scelta dell'utente, confermata 2026-11-13) */}
       <p>{t('help.type.trickRoom')}</p>
       <div className="help-table-wrap">
         <table className="help-weights">
@@ -166,10 +168,7 @@ const LADDER: Record<(typeof WEIGHT_AREAS)[number], Record<Archetype, number>> =
 };
 const stepOf = (weights: AreaWeightTable, arch: Archetype, area: (typeof WEIGHT_AREAS)[number]): number =>
   weights[arch][area] <= 0 ? 0 : LADDER[area][arch] / 6;
-/**
- * Il peso di un'area come barra in sesti, senza numeri (stepOf). Ai lettori di schermo una parola dal peso vero:
- * molto dalla metà del voto in su, abbastanza da un quarto, poco sotto.
- */
+/** Il peso di un'area come barra in sesti, senza numeri (stepOf); la parola dal peso vero solo per i lettori di schermo (scelta dell'utente, 2026-11-13). */
 function WeightBar({ weight, step }: { weight: number; step: number }) {
   const t = useT();
   const word = weight <= 0 ? 'help.weight.none' : weight >= 50 ? 'help.weight.high' : weight >= 25 ? 'help.weight.mid' : 'help.weight.low';
@@ -208,7 +207,7 @@ function TypeTopic({ type, weights, typeRule }: { type: Archetype; weights: Area
         return (
           <div key={level} className="help-levels">
             <h6>{t(`rdetail.group.${level}`)}</h6>
-            <ul className="help-points">{keys.map(key => <li key={key}><span>{t(keyLabel(key))}</span></li>)}</ul>
+            <ul className={`help-points ${level}`}>{keys.map(key => <li key={key} title={isGroupKey(key) ? undefined : t(`roleDesc.${key}`)}>{t(keyLabel(key))}</li>)}</ul>
           </div>
         );
       })}

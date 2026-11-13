@@ -21,8 +21,9 @@ describe('avviso seconda Mega', () => {
     const slot = within(team()).getByText('Charizard-Mega-Y').closest('.slot')!;
     expect(slot).toHaveClass('warn');
     expect(slot).not.toHaveClass('invalid');
-    // Triangolo giallo sullo sprite, con la spiegazione nel tooltip
-    const mark = slot.querySelector('.sprite-wrap .alert-mark')!;
+    // Triangolo giallo in fondo alla riga del nome (non sullo sprite), con la spiegazione nel tooltip
+    expect(slot.querySelector('.sprite-wrap .alert-mark')).toBeNull();
+    const mark = slot.querySelector('.name-line .slot-alerts .alert-mark')!;
     expect(mark).toHaveClass('warn');
     expect(within(mark as HTMLElement).getByRole('tooltip')).toHaveTextContent(WARNING);
   });
@@ -48,8 +49,8 @@ describe('avviso seconda Mega', () => {
     await user.paste('Lopunny @ Lopunnite\nAbility: Limber\n- Fake Out\n\nMewtwo @ Mewtwonite Y\nAbility: Pressure\n- Psystrike');
     await user.click(screen.getByRole('button', { name: 'Importa' }));
     const slot = within(team()).getByText('Mewtwo-Mega-Y', { selector: '.name' }).closest('.slot')!;
-    const danger = slot.querySelector('.sprite-alerts .alert-mark.danger') as HTMLElement;
-    const warn = slot.querySelector('.sprite-alerts .alert-mark.warn') as HTMLElement;
+    const danger = slot.querySelector('.slot-alerts .alert-mark.danger') as HTMLElement;
+    const warn = slot.querySelector('.slot-alerts .alert-mark.warn') as HTMLElement;
     expect(within(danger).getByRole('tooltip')).toHaveTextContent(/Tier troppo alto per National Dex OU/);
     expect(within(warn).getByRole('tooltip')).toHaveTextContent(WARNING);
   });

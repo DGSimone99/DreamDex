@@ -7,8 +7,8 @@ import { PokemonIcon } from './PokemonName';
 export interface UndoAction {
   /** Cambia a ogni nuova azione: riparte il tempo. */
   id: number;
-  /** Membro rimosso o sostituito, o team caricato da un link. */
-  kind: 'remove' | 'add' | 'replace' | 'paste' | 'presets' | 'clear' | 'load' | 'clearList' | 'mySetDelete' | 'mySetOverwrite' | 'move' | 'savedDelete' | 'tournament';
+  /** Membro rimosso o sostituito, o team caricato da un link, importato o preso dai team salvati (`loadSaved`, il nome in `from`). */
+  kind: 'remove' | 'add' | 'replace' | 'paste' | 'presets' | 'clear' | 'load' | 'import' | 'loadSaved' | 'clearList' | 'mySetDelete' | 'mySetOverwrite' | 'move' | 'savedDelete' | 'tournament';
   from: string;
   to?: string;
   /** Completa team: Pokémon aggiunti negli slot vuoti. */
@@ -17,13 +17,17 @@ export interface UndoAction {
   created?: boolean;
 }
 
-/** Quanto resta l'avviso, se non ci passi sopra. */
+/** Quanto resta l'avviso, se non ci passi sopra: 5 secondi per un membro solo, 10 quando cambia tutto il team (o una lista intera). */
 export const UNDO_MS = 5000;
+export const UNDO_BIG_MS = 10000;
+const BIG: UndoAction['kind'][] = ['clear', 'load', 'import', 'loadSaved', 'presets', 'tournament', 'clearList', 'savedDelete'];
+export const undoDuration = (kind: UndoAction['kind']) => (BIG.includes(kind) ? UNDO_BIG_MS : UNDO_MS);
 
-/** Avviso in basso con Annulla e ×: sparisce dopo 5 secondi, fermo finché ci sei sopra col mouse o la tastiera. */
+/** Avviso in basso a sinistra con Annulla e ×: sparisce dopo 5 o 10 secondi, fermo finché ci sei sopra col mouse o la tastiera. */
 export function UndoToast({ action, onUndo, onClose }: { action: UndoAction; onUndo: () => void; onClose: () => void }) {
   const t = useT();
-  const remaining = useRef(UNDO_MS);
+  const duration = undoDuration(action.kind);
+  const remaining = useRef(duration);
   const started = useRef(0);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const close = useRef(onClose);
@@ -42,7 +46,7 @@ export function UndoToast({ action, onUndo, onClose }: { action: UndoAction; onU
   };
 
   useEffect(() => {
-    remaining.current = UNDO_MS;
+    remaining.current = duration;
     resume();
     return pause;
   }, [action.id]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -64,6 +68,8 @@ export function UndoToast({ action, onUndo, onClose }: { action: UndoAction; onU
           : action.kind === 'savedDelete' ? t('undo.savedDeleted', { name: action.from })
           : action.kind === 'mySetOverwrite' ? t('undo.mySetOverwritten', { name: action.from })
           : action.kind === 'load' ? t('undo.loaded')
+          : action.kind === 'import' ? t('undo.imported')
+          : action.kind === 'loadSaved' ? t('undo.loadedSaved', { name: action.from })
           : action.kind === 'clear' ? t('undo.cleared')
           : action.kind === 'tournament' ? t('undo.tournament')
           : action.kind === 'presets' && action.created ? t('undo.created', { to: action.to ?? '' })
@@ -85,7 +91,7 @@ export function UndoToast({ action, onUndo, onClose }: { action: UndoAction; onU
         <button type="button" className="undo-button" onClick={onUndo}><Icon name="undo" /> {t('undo.undo')}</button>
         <button type="button" className="undo-close" aria-label={t('undo.close')} onClick={onClose}><Icon name="close" /></button>
       </div>
-      <span className="undo-timer" aria-hidden="true" style={{ animationDuration: `${UNDO_MS}ms` }} />
+      <span className="undo-timer" aria-hidden="true" style={{ animationDuration: `${duration}ms` }} />
     </div>
   );
 }

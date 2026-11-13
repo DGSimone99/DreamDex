@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { DEFAULT_FORMAT } from '../../src/engine/format';
@@ -44,7 +44,7 @@ describe('testata dell\'editor', () => {
     // Sulla carta il soprannome, con la specie nel tooltip
     expect(slot().querySelector('.slot-card .name')).toHaveTextContent('Tusky');
     expect(slot().querySelector('.slot-card .name')).toHaveAttribute('title', 'Tusky (Great Tusk)');
-    await user.click(within(slot()).getByRole('button', { name: 'Showdown: importa o esporta il set' }));
+    await user.click(within(slot()).getByRole('button', { name: 'Testo del set' }));
     expect((within(slot()).getByLabelText('Set in testo Showdown') as HTMLTextAreaElement).value).toMatch(/^Tusky \(Great Tusk\)/);
   });
 
@@ -64,17 +64,21 @@ describe('testata dell\'editor', () => {
     expect(replace.closest('.editor-roles')).toBeNull();
   });
 
-  it('Importa / Esporta si apre sotto il suo pulsante e si chiude cliccando fuori', async () => {
+  it('Testo del set si apre sopra le Statistiche (Set e Mosse restano in vista) e si chiude cliccando fuori', async () => {
     const { user, slot } = await openEditor();
-    await user.click(within(slot()).getByRole('button', { name: 'Showdown: importa o esporta il set' }));
-    expect(within(slot()).getByLabelText('Set in testo Showdown').closest('.io-anchor')).not.toBeNull();
+    await user.click(within(slot()).getByRole('button', { name: 'Testo del set' }));
+    const text = within(slot()).getByLabelText('Set in testo Showdown');
+    expect(text.closest('.stats-cell')).not.toBeNull();
+    // Un clic dentro il riquadro non lo chiude
+    fireEvent.pointerDown(text);
+    expect(within(slot()).getByLabelText('Set in testo Showdown')).toBeInTheDocument();
     fireEvent.pointerDown(document.body);
     expect(within(slot()).queryByLabelText('Set in testo Showdown')).toBeNull();
   });
 
   it('Importa / Esporta: se il testo è stato modificato, un clic fuori non lo butta', async () => {
     const { user, slot } = await openEditor();
-    await user.click(within(slot()).getByRole('button', { name: 'Showdown: importa o esporta il set' }));
+    await user.click(within(slot()).getByRole('button', { name: 'Testo del set' }));
     const text = within(slot()).getByLabelText('Set in testo Showdown');
     await user.clear(text);
     await user.type(text, 'Garchomp');
@@ -82,9 +86,34 @@ describe('testata dell\'editor', () => {
     expect(within(slot()).getByLabelText('Set in testo Showdown')).toHaveValue('Garchomp');
   });
 
-  it('Copia set è a un clic, accanto a Importa / Esporta, senza aprire il riquadro', async () => {
+  it('le icone della testata hanno un fumetto col nome, col mouse e col fuoco', async () => {
+    const { user, slot } = await openEditor();
+    const bubbleOf = (el: HTMLElement) => el.closest('.hint-wrap')!.querySelector('.hint-bubble')!;
+    const copy = within(slot()).getByRole('button', { name: 'Copia il set' });
+    expect(bubbleOf(copy)).not.toBeVisible();
+    await user.hover(copy);
+    expect(bubbleOf(copy)).toBeVisible();
+    expect(bubbleOf(copy)).toHaveTextContent('Copia il set');
+    await user.unhover(copy);
+    expect(bubbleOf(copy)).not.toBeVisible();
+    const shiny = within(slot()).getByRole('button', { name: 'Shiny' });
+    act(() => shiny.focus());
+    expect(bubbleOf(shiny)).toBeVisible();
+    // Il link a Smogon: il nome resta, dove porta è la sua descrizione
+    const smogon = within(slot()).getByRole('link', { name: 'Apri su Smogon' });
+    expect(smogon).toHaveAccessibleDescription(/analisi per|niente analisi/);
+    expect(within(slot()).getByRole('button', { name: 'Chiudi editor' }).closest('.hint-wrap')).not.toBeNull();
+  });
+
+  it('il nome ha una matita (il soprannome si cambia cliccandolo)', async () => {
     const { slot } = await openEditor();
-    expect(within(slot()).getByRole('button', { name: 'Copia set' }).closest('.io-anchor')).not.toBeNull();
+    const name = within(slot()).getByRole('button', { name: 'Soprannome di Great Tusk' });
+    expect(name.querySelector('.nickname-pencil')).not.toBeNull();
+  });
+
+  it('Copia il set è a un clic, accanto a Testo del set, senza aprire il riquadro', async () => {
+    const { slot } = await openEditor();
+    expect(within(slot()).getByRole('button', { name: 'Copia il set' }).closest('.io-anchor')).not.toBeNull();
     expect(within(slot()).queryByLabelText('Set in testo Showdown')).toBeNull();
   });
 

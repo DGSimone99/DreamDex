@@ -169,7 +169,7 @@ export function FilterBar({ filters, onChange, context = 'suggestions' }: Props)
         <h3>{t('filters.role')}</h3>
         <div role="group" aria-label={t('filters.role')} className="chips">
           {ROLES.map(role => (
-            <button key={role} type="button" aria-pressed={filters.roles.includes(role)} onClick={() => set({ roles: toggle(filters.roles, role) })}>
+            <button key={role} type="button" aria-pressed={filters.roles.includes(role)} title={t(`roleDesc.${role}`)} onClick={() => set({ roles: toggle(filters.roles, role) })}>
               {t(`role.${role}`)}
             </button>
           ))}

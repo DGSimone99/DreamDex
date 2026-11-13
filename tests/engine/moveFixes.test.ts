@@ -49,7 +49,7 @@ describe('cambi di mossa del Coaching', () => {
     six.forEach((_, index) => expect(fixes.filter(f => f.index === index).length).toBeLessThanOrEqual(MOVE_FIXES_PER_MEMBER));
   });
 
-  it('stesso +N di Migliora team', () => {
+  it('stesso +N di Sostituisci', () => {
     for (const f of fixes) {
       expect(rankByTeamGain([{ set: f.set, score: 0 }], six, f.index, data, 'it')[0].teamGain!.gain).toBe(f.gain);
     }

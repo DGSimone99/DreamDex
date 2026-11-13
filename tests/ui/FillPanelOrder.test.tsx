@@ -32,7 +32,7 @@ vi.mock('../../src/ui/useRanking', () => ({
 
 const proposal = (n: number): Proposal => {
   const added = Array.from({ length: 6 }, (_, i) => ({ ...emptySet(['Garchomp', 'Toxapex', 'Kingambit', 'Blissey', 'Dragapult', 'Corviknight'][i]), item: `x${n}` }));
-  return { added, team: added, overall: 90 - n, grade: 'A', archetype: 'balance', styles: [], gaps: [], changed: [], favorites: 0 };
+  return { added, team: added, overall: 90 - n, grade: 'A', archetype: 'balance', styles: [], gaps: [], changed: [], favorites: 0, areas: [], roles: { covered: 0, total: 0 } };
 };
 const live = () => calls.filter(c => !c.cancelled);
 const main = () => live().filter(c => c.max === undefined);
@@ -48,7 +48,7 @@ describe('Completa team: ordine dei calcoli e proposta migliore', () => {
     expect(checks().length).toBeGreaterThanOrEqual(1);
   });
 
-  it('il magenta (riga e pulsante) solo sulla migliore del primo giro', async () => {
+  it('la migliore del primo giro: riga segnata e Usa magenta solo lì', async () => {
     calls.length = 0;
     const user = userEvent.setup();
     renderIt(<FillPanel team={[]} format={DEFAULT_FORMAT} data={fillData} onApply={vi.fn()} onLoadTeam={vi.fn()} onClose={vi.fn()} />);
@@ -173,5 +173,38 @@ describe('Completa team: ordine dei calcoli e proposta migliore', () => {
     expect(any).toHaveAttribute('aria-checked', 'true');
     expect(any).toHaveAccessibleDescription('Va bene ogni condizione, anche nessuna');
     expect(screen.queryByRole('radio', { name: 'Nessuna' })).toBeNull();
+  });
+});
+
+describe('Completa team: voto di adesso e perché delle proposte', () => {
+  const withAreas = (n: number, areas: [string, number][], covered: number): Proposal => ({
+    ...proposal(n),
+    areas: areas.map(([key, value]) => ({ key: key as Proposal['areas'][number]['key'], label: key, value })),
+    roles: { covered, total: 14 },
+  });
+
+  it('col team vuoto niente voto di adesso, e il perché dice le due aree più forti', async () => {
+    calls.length = 0;
+    renderIt(<FillPanel team={[]} format={DEFAULT_FORMAT} data={fillData} onApply={vi.fn()} onLoadTeam={vi.fn()} onClose={vi.fn()} />);
+    await act(async () => { main()[0].push(withAreas(0, [['defense', 80], ['strength', 71], ['speed', 60]], 12)); });
+    expect(document.querySelector('.fill-now')).toBeNull();
+    const why = document.querySelector('.fill-proposal .fill-why')!;
+    expect(why).toHaveTextContent('Difesa 80');
+    expect(why).toHaveTextContent('Offesa 71');
+    expect(why).not.toHaveTextContent('Velocità');
+  });
+
+  it('col team il voto di adesso sta in testa e il perché dice il guadagno più grande e i Ruoli in più', async () => {
+    calls.length = 0;
+    const team = [{ ...emptySet('Garchomp'), moves: ['Earthquake', 'Dragon Claw', 'Swords Dance', 'Fire Fang'] }];
+    renderIt(<FillPanel team={team} format={DEFAULT_FORMAT} data={fillData} onApply={vi.fn()} onLoadTeam={vi.fn()} onClose={vi.fn()} />);
+    // Per i lettori di schermo la frase intera, a vista "Ora D 25"
+    expect(screen.getByText(/^Il voto del tuo team adesso: [SABCD] \d+$/)).toBeInTheDocument();
+    expect(document.querySelector('.fill-now [aria-hidden="true"]')).toHaveTextContent(/^Ora [SABCD] \d+$/);
+    await act(async () => { main()[0].push(withAreas(0, [['defense', 100], ['strength', 100], ['speed', 100]], 14)); });
+    const why = document.querySelector('.fill-proposal .fill-why')!;
+    expect(why.querySelectorAll(':scope > span')).toHaveLength(2);
+    expect(why).toHaveTextContent(/(Difesa|Offesa|Velocità) \+\d+/);
+    expect(why).toHaveTextContent('Ruoli 14/14');
   });
 });

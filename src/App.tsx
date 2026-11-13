@@ -313,15 +313,28 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
       : { kind: 'presets', from: String(rating?.overall ?? '—'), to: String(rateTeam(after, data, lang)?.overall ?? ''),
         added: after.length - team.length, created: team.length === 0 }, after);
   };
+  // Team importato o caricato dai team salvati: si annulla come le altre modifiche (con il formato di prima).
+  // A team vuoto non c'è niente da riavere: niente avviso
+  const loadTeam = (next: TeamSet[], action: Omit<UndoAction, 'id'>, nextFormat?: Format, again = false) => {
+    // Lo stesso import ritoccato (Custom Skillset sbloccato): l'Annulla resta quello del team di prima dell'import
+    const chained = again && undo && undo.kind === 'import' && undo.after === team ? undo : null;
+    if (again && !chained) { changeTeam(next); return; }
+    const before = chained ? chained.before : team;
+    const after = changeTeam(next);
+    if (nextFormat) setFormat({ ...nextFormat, meta: format.meta });
+    if (before.length) setUndo({ ...action, id: ++undoId.current, before, after, format: chained ? chained.format : nextFormat ? format : undefined });
+    else setUndo(null);
+  };
   const removeAt = (index: number) => {
     const after = changeTeam(team.filter((_, i) => i !== index));
     remember({ kind: 'remove', from: battleName(team[index]) }, after);
   };
 
-  // Con l'editor aperto la sezione sotto non si vede: la sua riga di stato dice chi stai modificando (chiudendo l'editor torna la sezione)
+  // Con l'editor aperto la sezione sotto non si vede: la sua riga di stato dice chi stai modificando (chiudendo l'editor torna la sezione),
+  // col nome che ha sulla carta (il soprannome, o la forma Mega)
   const editing = editingIndex !== null ? team[editingIndex] : undefined;
   const withEditing = <T extends { id: string; status?: React.ReactNode }>(tabs: T[]): T[] => editing
-    ? tabs.map(tab => (tab.id === shownTab ? { ...tab, status: <span className="info">{t(lang, 'rail.editing', { species: editing.species })}</span> } : tab))
+    ? tabs.map(tab => (tab.id === shownTab ? { ...tab, status: <span className="info">{t(lang, 'rail.editing', { species: editing.name || battleName(editing) })}</span> } : tab))
     : tabs;
   return (
     <LangProvider lang={lang}>
@@ -344,11 +357,12 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
         // Tessere del menu: sotto il nome lo stato della sezione, leggibile senza aprirla
         { id: 'pokemon', label: t(lang, 'tabs.pokemon'), icon: 'team',
           status: replaceIndex !== null && team[replaceIndex]
-            ? <span className="info">{t(lang, 'suggest.replaceTitle', { species: team[replaceIndex].species })}</span>
+            ? <span className="info">{t(lang, 'suggest.replaceTitle', { species: team[replaceIndex].name || battleName(team[replaceIndex]) })}</span>
             : t(lang, team.length ? 'rail.teamCount' : 'rail.teamEmpty', { n: team.length }) },
         { id: 'analysis', label: t(lang, 'tabs.analysis'), icon: 'roles',
           status: rating ? <>
-            <b className={`grade grade-${rating.grade}`}>{rating.grade} {rating.overall}</b>
+            {/* Team non legale nel formato: il voto in grigio, come nella carta del voto */}
+            <b className={`grade grade-${rating.grade}${problems.some(p => p.category === 'rules') ? ' illegal' : ''}`}>{rating.grade} {rating.overall}</b>
             {problems.length > 0 && <>{' · '}<span className={problems.some(p => p.severity === 'serious') ? 'serious' : 'minor'}>
               {t(lang, problems.length === 1 ? 'tabs.problemsOne' : 'tabs.problemsMany', { n: problems.length })}</span></>}
           </> : t(lang, 'rail.noGrade') },
@@ -374,15 +388,15 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
       )}
       <div className={`band${collapsed ? ' collapsed' : ''}`}>
         <TeamPanel team={team} format={format} data={data}
-          io={<ShowdownPanel team={team} format={format} tera={teraAllowed(format)} onImport={changeTeam} />}
-          saved={plate => <SavedTeams team={team} format={format} plate={plate} onLoad={(saved, savedFormat) => { changeTeam(saved); if (savedFormat) setFormat({ ...savedFormat, meta: format.meta }); }} />}
+          io={<ShowdownPanel team={team} format={format} tera={teraAllowed(format)} onImport={(next, again) => loadTeam(next, { kind: 'import', from: '' }, undefined, again)} />}
+          saved={plate => <SavedTeams team={team} format={format} plate={plate} onLoad={(saved, savedFormat, name) => loadTeam(saved, { kind: 'loadSaved', from: name }, savedFormat)} />}
           onChange={changeTeam} onAdd={addSet} onReplace={startReplace} onRemove={removeAt} onPaste={pasteAt} onBulk={bulk} onAddClick={startAdd}
           onOpenChange={index => { setEditingIndex(index); setMoveProposal(p => (p && p.index === index ? p : null)); }}
           proposal={moveProposal} onProposalDone={finishProposal} closeSignal={closeSignal} collapsed={collapsed}
           onAllowMultipleMegas={() => setFormat(f => ({ ...f, allowMultipleMegas: true }))} />
         <GradeBadge rating={rating} blocked={blockedReason(team, format.formatId)} ruleIssues={coaching?.problems.filter(p => p.category === 'rules').map(p => p.text)}
           illegalCount={new Set(coaching?.problems.filter(p => p.category === 'rules').map(p => p.subjects?.[0] ?? p.key)).size}
-          illegalNames={[...new Set(coaching?.problems.filter(p => p.category === 'rules').flatMap(p => p.subjects ?? []))]}
+          illegalNames={[...new Set(coaching?.problems.filter(p => p.category === 'rules').flatMap(p => p.subjects ?? []))]} formatName={formatLabel(format, lang)}
           incomplete={team.length < 6} onOpen={area => { openTab('analysis'); setAnalysisView(area); }} />
         <button type="button" className="band-toggle" aria-expanded={!collapsed} onClick={toggleCollapsed}
           aria-label={t(lang, collapsed ? 'team.expand' : 'team.collapse')} title={t(lang, collapsed ? 'team.expand' : 'team.collapse')}>

@@ -23,6 +23,18 @@ async function setup(...names: string[]) {
 }
 
 describe('SuggestionsPanel', () => {
+  it('"/" fuori da un campo porta il cursore nella ricerca; dentro un campo si scrive e basta', async () => {
+    const user = await setup();
+    const search = screen.getByLabelText('Aggiungi Pokémon');
+    expect(search).toHaveAttribute('placeholder', 'Cerca un Pokémon… ( / )');
+    (document.activeElement as HTMLElement | null)?.blur();
+    await user.keyboard('/');
+    expect(search).toHaveFocus();
+    expect(search).toHaveValue('');
+    await user.keyboard('/');
+    expect(search).toHaveValue('/');
+  });
+
   it('ordina i suggerimenti per il voto che darebbero al team', async () => {
     await setup('Great Tusk', 'Gholdengo');
     // Corviknight, Kingambit, Rotom-Wash, Toxapex (Dragapult è Uber in National Dex)
@@ -43,23 +55,6 @@ describe('SuggestionsPanel', () => {
     expect(within(detail).getByRole('list', { name: 'Mosse' }).children.length).toBeGreaterThan(0);
   });
 
-  it('il dettaglio dice quando il cambio cambia il tipo di team; aggiungendo a un team incompleto mai', async () => {
-    const user = await setup('Great Tusk', 'Gholdengo');
-    for (const row of [...list().querySelectorAll<HTMLElement>(':scope > li')]) {
-      await user.click(row);
-      expect(suggestions().querySelector('.detail-type')).toBeNull();
-    }
-    for (const name of ['Corviknight', 'Kingambit', 'Toxapex', 'Rotom-Wash']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
-    await user.click(within(team()).getAllByRole('button', { name: /^Sostituisci / })[0]);
-    for (const row of [...list().querySelectorAll<HTMLElement>(':scope > li')]) {
-      await user.click(row);
-      const line = suggestions().querySelector('.detail-type');
-      if (!line) continue;
-      const [, to, from] = /^il team diventa (.+) \(era (.+)\)$/.exec(line.textContent!)!;
-      expect(to).not.toBe(from);
-    }
-  });
-
   it('cliccare un altro candidato lo apre nel dettaglio', async () => {
     const user = await setup('Great Tusk');
     const second = rowNames()[1];
@@ -74,13 +69,18 @@ describe('SuggestionsPanel', () => {
 
   it("team vuoto: niente voto da confrontare, si mostra l'uso nel meta", async () => {
     await setup();
-    expect(within(suggestions()).getByText('Aggiungi un Pokémon per vedere come si adatta al team — per ora ordinati per uso nel meta')).toBeInTheDocument();
+    // Nessuna nota sopra la lista: si parte dalla lista stessa
+    expect(within(suggestions()).queryByText(/come si adatta al team/)).toBeNull();
     const usages = within(list()).getAllByLabelText(/^Uso nel meta \d/).map(cell => parseFloat(cell.getAttribute('aria-label')!.replace('Uso nel meta ', '').replace(',', '.')));
     expect(usages).toEqual([...usages].sort((a, b) => b - a));
     const detail = screen.getByRole('complementary', { name: /^Dettaglio di / });
     expect(detail.querySelector('.detail-score')).toHaveTextContent(/uso nel meta$/);
     expect(within(detail).getByText('Voto con lui da solo')).toBeInTheDocument();
     expect(detail.querySelector('.detail-areas .change')!.textContent).toBe('');
+    // Un'area a zero col team vuoto non sembra un errore: si legge "—"
+    expect([...detail.querySelectorAll('.detail-areas .value')].map(v => v.textContent)).not.toContain('0');
+    // I ruoli del set hanno la spiegazione nel tooltip
+    for (const role of within(detail).getByRole('list', { name: 'Ruoli del set' }).querySelectorAll('li')) expect(role.getAttribute('title')).toBeTruthy();
   });
 
   it('mostra i tag sulle righe', async () => {
@@ -109,9 +109,9 @@ describe('SuggestionsPanel', () => {
     const user = await setup('Great Tusk', 'Gholdengo', 'Kingambit', 'Dragapult', 'Corviknight', 'Toxapex');
     // Niente titolo sopra la lista: la modalità scelta lo dice già
     expect(within(suggestions()).queryByRole('heading', { name: 'Migliora il team' })).toBeNull();
-    expect(within(suggestions()).getByRole('button', { name: 'Migliora team' })).toHaveAttribute('aria-pressed', 'true');
+    expect(within(suggestions()).getByRole('button', { name: 'Sostituisci' })).toHaveAttribute('aria-pressed', 'true');
     expect(within(suggestions()).getByRole('button', { name: 'Aggiungi' })).toBeDisabled();
-    // Chi esce: la tendina attaccata a Migliora team dice Tutti; aperta, Tutti è scelto
+    // Chi esce: la tendina attaccata a Sostituisci dice Tutti; aperta, Tutti è scelto
     const toggle = within(suggestions()).getByRole('button', { name: 'Chi sostituire: Tutti' });
     expect(toggle).toHaveTextContent('Tutti');
     await user.click(toggle);
@@ -166,12 +166,12 @@ describe('SuggestionsPanel', () => {
     expect(toggle()).toHaveAccessibleName('Chi sostituire: Tutti');
   }, 30000);
 
-  it('team incompleto: da Aggiungi a Migliora team e ritorno', async () => {
+  it('team incompleto: da Aggiungi a Sostituisci e ritorno', async () => {
     const user = await setup('Great Tusk', 'Gholdengo');
     const mode = (name: string) => within(suggestions()).getByRole('button', { name });
     expect(mode('Aggiungi')).toHaveAttribute('aria-pressed', 'true');
-    await user.click(mode('Migliora team'));
-    expect(mode('Migliora team')).toHaveAttribute('aria-pressed', 'true');
+    await user.click(mode('Sostituisci'));
+    expect(mode('Sostituisci')).toHaveAttribute('aria-pressed', 'true');
     await user.click(mode('Aggiungi'));
     expect(mode('Aggiungi')).toHaveAttribute('aria-pressed', 'true');
   });
@@ -179,7 +179,7 @@ describe('SuggestionsPanel', () => {
   it('sostituzione: modalità, diff e sostituzione del membro', async () => {
     const user = await setup('Great Tusk', 'Gholdengo');
     await user.click(screen.getByRole('button', { name: 'Sostituisci Great Tusk' }));
-    expect(within(suggestions()).getByRole('button', { name: 'Migliora team' })).toHaveAttribute('aria-pressed', 'true');
+    expect(within(suggestions()).getByRole('button', { name: 'Sostituisci' })).toHaveAttribute('aria-pressed', 'true');
     // Ogni riga dice il guadagno principale (e la perdita principale) del cambio
     expect([...list().querySelectorAll('.who small')].some(el => /^[+−]/.test(el.textContent!))).toBe(true);
     expect(within(suggestions()).queryByRole('button', { name: 'Sostituto simile' })).toBeNull();
@@ -209,12 +209,12 @@ describe('SuggestionsPanel', () => {
     expect(within(pager).getByRole('status', { name: 'Pagina 2' })).toBeInTheDocument();
   });
 
-  it('chi esce è una tendina attaccata a Migliora team, nella barra comandi', async () => {
+  it('chi esce è una tendina attaccata a Sostituisci, nella barra comandi', async () => {
     const user = await setup('Great Tusk', 'Gholdengo');
-    await user.click(within(suggestions()).getByRole('button', { name: 'Migliora team' }));
+    await user.click(within(suggestions()).getByRole('button', { name: 'Sostituisci' }));
     const toggle = within(suggestions()).getByRole('button', { name: 'Chi sostituire: Tutti' });
-    // Terzo pezzo dello stesso pulsante di Aggiungi / Migliora team
-    expect(toggle.closest('[role="group"]')).toHaveAccessibleName('Modalità sostituzione');
+    // Terzo pezzo dello stesso pulsante di Aggiungi / Sostituisci
+    expect(toggle.closest('[role="group"]')).toHaveAccessibleName('Aggiungi o sostituisci');
     expect(screen.queryByRole('group', { name: 'Chi sostituire' })).toBeNull();
     await user.click(toggle);
     expect(toggle).toHaveAttribute('aria-expanded', 'true');
@@ -274,7 +274,7 @@ describe('SuggestionsPanel', () => {
     };
     const shorts = (teamGain: object) => reasonsOf({ ...base, teamGain } as never, 2, null, DEFAULT_FORMAT, 'it').items.map(b => b.short);
     expect(shorts({ gain: 9, grade: 'B', overall: 70, areaGains: [{ label: 'Offesa', change: 13 }, { label: 'Difesa', change: 2 }], extras: 0 })).toEqual(['Offesa +13']);
-    expect(shorts({ gain: 3, grade: 'B', overall: 70, areaGains: [], extras: 3 })).toEqual(['Problemi e bonus +3']);
+    expect(shorts({ gain: 3, grade: 'B', overall: 70, areaGains: [], extras: 3 })).toEqual(['Bonus/Malus +3']);
     expect(shorts({ gain: 0, grade: 'B', overall: 70, areaGains: [{ label: 'Offesa', change: 4 }], extras: -4 })).toEqual(['Nessuna differenza rilevante']);
   });
 
