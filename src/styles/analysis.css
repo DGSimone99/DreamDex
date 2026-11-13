@@ -153,7 +153,7 @@
 .overview-empty { display: grid; justify-items: start; gap: 12px; }
 /* Da sistemare: una riga sola in fondo alla Panoramica, rossa a sinistra; il testo lungo finisce coi puntini (tutto nel tooltip) */
 .fix-row {
-  flex: none; display: flex; align-items: center; gap: 12px; min-width: 0; padding: 7px 8px 7px 12px;
+  flex: none; display: flex; align-items: center; gap: 12px; min-width: 0; padding: 2px 4px 2px 12px; line-height: 20px;
   background: linear-gradient(90deg, var(--bad-bg), var(--panel) 70%);
   border: 1px solid color-mix(in srgb, var(--bad) 35%, var(--line)); border-left: 3px solid var(--bad);
   font-size: 13px;
@@ -161,7 +161,9 @@
 .fix-label { flex: none; font: 600 11px/1 var(--display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--bad); }
 .fix-items { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fix-more { flex: none; padding: 0 6px; font-size: 12px; font-weight: 600; color: var(--muted); background: var(--raised); }
-.fix-go { flex: none; margin-left: auto; }
+.fix-go { flex: none; margin-left: auto; padding-top: 0; padding-bottom: 0; line-height: 20px; }
+/* Con la riga in fondo il margine sotto la Panoramica si accorcia: il cruscotto resta alto quanto prima */
+.overview:has(> .fix-row) { gap: 8px; padding-bottom: 4px; }
 .analysis-tabs [role='tab'][aria-disabled='true'] { opacity: 0.45; cursor: not-allowed; }
 
 /* Schede interne a larghezza uguale su tutta la riga; quella aperta come le teste (magenta a righe, inclinata) */

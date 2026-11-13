@@ -19,7 +19,10 @@ describe('analisi in inglese', () => {
     // Uso nel meta e minacce stanno nella scheda Meta
     const meta = screen.getByRole('region', { name: 'Meta' });
     for (const title of ['Meta usage', 'Meta threats']) expect(within(meta).getAllByText(title).length).toBeGreaterThan(0);
-    expect(within(analysis).getByText('Incomplete team')).toBeInTheDocument();
+    // In fondo alla Panoramica la riga dei problemi; nel Voto il tipo di team, ancora da riconoscere
+    const fix = within(analysis).getByRole('region', { name: 'To fix' });
+    expect(within(fix).getByRole('button', { name: 'Go to Coaching' })).toBeInTheDocument();
+    expect(document.querySelector('.grade-badge .grade-type')).toHaveTextContent('In progress');
     // I problemi stanno nel Coaching, nella mappa per area, con i titoli in inglese
     await user.click(within(analysis).getByRole('tab', { name: 'Coaching' }));
     expect(within(analysis).getByRole('region', { name: 'Suggestions' })).toBeInTheDocument();
