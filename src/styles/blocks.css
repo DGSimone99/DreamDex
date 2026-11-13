@@ -294,8 +294,16 @@
 .eevee-peek.at-side.at-left { --dir: -1; left: calc(var(--peek) * -0.38); transform: rotate(-35deg); }
 @media (prefers-reduced-motion: no-preference) {
   /* Non sale dal bordo: spunta di fianco */
-  .eevee-peek.at-side { animation: peek-side-in 0.42s 0.34s cubic-bezier(0.22, 1, 0.36, 1) both; }
-  .eevee-peek.at-side .peek-head { animation: peek-breathe 1.9s 0.9s ease-in-out infinite alternate; }
+  /*
+   * Di lato Eevee torna sempre a finestra già aperta: niente attesa dello screen-on (0,34 s), che qui lo lasciava fermo e
+   * già visibile nella posa di partenza prima dello scatto. Tutto parte subito, i ritmi da fermo scalati di 0,34 s.
+   */
+  .eevee-peek.at-side { animation: peek-side-in 0.42s cubic-bezier(0.22, 1, 0.36, 1) both; }
+  .eevee-peek.at-side .peek-head { animation: peek-breathe 1.9s 0.56s ease-in-out infinite alternate; }
+  .eevee-peek.at-side .peek-head .peek-blink { animation: peek-blink 7s 1.26s step-end infinite; }
+  .eevee-peek.at-side .peek-head .peek-happy { animation: peek-happy-in 0.42s step-end both; }
+  .eevee-peek.at-side .peek-ear.up { animation: peek-ear-up-in 0.75s ease-out both, peek-ear-up 4.6s 0.81s ease-in-out infinite; }
+  .eevee-peek.at-side .peek-ear.side { animation: peek-ear-side-in 0.75s ease-out both, peek-ear-side 4.6s 0.81s ease-in-out infinite; }
   /*
    * Cliccata ride (occhi a > <, bocca aperta) con le orecchie dritte, fa un piccolo scatto fuori e rientra di lato dietro
    * la finestra raddrizzandosi; 0,4 s come RETREAT_MS in EeveePeek.tsx.
