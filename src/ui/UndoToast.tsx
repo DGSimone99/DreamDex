@@ -17,13 +17,14 @@ export interface UndoAction {
   created?: boolean;
 }
 
-/** Quanto resta l'avviso, se non ci passi sopra: 5 secondi per un membro solo, 10 quando cambia tutto il team (o una lista intera). */
-export const UNDO_MS = 5000;
-export const UNDO_BIG_MS = 10000;
+/** Quanto resta l'avviso, se non ci passi sopra: 3 secondi per un membro solo, 6 quando cambia tutto il team (o una lista
+ *  intera). Sta al centro dello schermo: dura poco, e passandoci sopra si ferma (scelta dell'utente, 2026-11-14). */
+export const UNDO_MS = 3000;
+export const UNDO_BIG_MS = 6000;
 const BIG: UndoAction['kind'][] = ['clear', 'load', 'import', 'loadSaved', 'presets', 'tournament', 'clearList', 'savedDelete'];
 export const undoDuration = (kind: UndoAction['kind']) => (BIG.includes(kind) ? UNDO_BIG_MS : UNDO_MS);
 
-/** Avviso in basso a sinistra con Annulla e ×: sparisce dopo 5 o 10 secondi, fermo finché ci sei sopra col mouse o la tastiera. */
+/** Avviso al centro dell'area di lavoro con Annulla e ×: sparisce dopo 3 o 6 secondi, fermo finché ci sei sopra col mouse o la tastiera. */
 export function UndoToast({ action, onUndo, onClose }: { action: UndoAction; onUndo: () => void; onClose: () => void }) {
   const t = useT();
   const duration = undoDuration(action.kind);
