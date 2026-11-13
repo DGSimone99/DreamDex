@@ -186,9 +186,6 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   /** Scegliere chi sostituire (dal coach o da una carta) porta alla scheda Pokémon, dove ci sono i candidati. */
   // Slot vuoto cliccato: scheda Pokémon in modalità Aggiungi, con il cursore nella ricerca
   const [searchRequest, setSearchRequest] = useState(0);
-  // Riga d'inizio a team vuoto (lista Pokémon): apre Completa team o Importa nella barra del team, come i loro pulsanti
-  const [fillRequest, setFillRequest] = useState(0);
-  const [importRequest, setImportRequest] = useState(0);
   const startAdd = () => {
     setReplaceIndex(null);
     setSearchRequest(n => n + 1);
@@ -391,11 +388,11 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
       )}
       <div className={`band${collapsed ? ' collapsed' : ''}`}>
         <TeamPanel team={team} format={format} data={data}
-          io={<ShowdownPanel team={team} format={format} tera={teraAllowed(format)} openRequest={importRequest} onImport={(next, again) => loadTeam(next, { kind: 'import', from: '' }, undefined, again)} />}
+          io={<ShowdownPanel team={team} format={format} tera={teraAllowed(format)} onImport={(next, again) => loadTeam(next, { kind: 'import', from: '' }, undefined, again)} />}
           saved={plate => <SavedTeams team={team} format={format} plate={plate} onLoad={(saved, savedFormat, name) => loadTeam(saved, { kind: 'loadSaved', from: name }, savedFormat)} />}
           onChange={changeTeam} onAdd={addSet} onReplace={startReplace} onRemove={removeAt} onPaste={pasteAt} onBulk={bulk} onAddClick={startAdd}
           onOpenChange={index => { setEditingIndex(index); setMoveProposal(p => (p && p.index === index ? p : null)); }}
-          proposal={moveProposal} onProposalDone={finishProposal} closeSignal={closeSignal} collapsed={collapsed} fillRequest={fillRequest}
+          proposal={moveProposal} onProposalDone={finishProposal} closeSignal={closeSignal} collapsed={collapsed}
           onAllowMultipleMegas={() => setFormat(f => ({ ...f, allowMultipleMegas: true }))} />
         <GradeBadge rating={rating} blocked={blockedReason(team, format.formatId)} ruleIssues={coaching?.problems.filter(p => p.category === 'rules').map(p => p.text)}
           illegalCount={new Set(coaching?.problems.filter(p => p.category === 'rules').map(p => p.subjects?.[0] ?? p.key)).size}
@@ -424,7 +421,6 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
             listSprite={listSprite}
             onListSpriteChange={changeListSprite}
             teamCollapsed={collapsed}
-            onStart={kind => (kind === 'fill' ? setFillRequest : setImportRequest)(n => n + 1)}
           />
         </TabPanel>
         <TabPanel id="analysis" active={shownTab}>

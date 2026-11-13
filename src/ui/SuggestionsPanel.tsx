@@ -63,8 +63,6 @@ interface Props {
   onListSpriteChange?: (sprite: ListSprite) => void;
   /** Team nascosto: la lista ha più spazio, il numero per pagina resta quello a team aperto. */
   teamCollapsed?: boolean;
-  /** Team vuoto: le due altre partenze della riga d'inizio (aprono Completa team o Importa, come la barra del team). */
-  onStart?: (kind: 'fill' | 'import') => void;
 }
 
 /** Un candidato scelto nel Coaching: in modalità Aggiungi o fra i sostituti del membro. */
@@ -89,7 +87,7 @@ export const SEARCH_DELAY = 200;
 /** I tipi di team che si possono scegliere per giudicare i cambi, dopo Nessuno. */
 const TEAM_TYPES: Archetype[] = ['hyperOffense', 'bulkyOffense', 'balance', 'semiStall', 'stall'];
 
-export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onReplaceWith, onCancelReplace, rating = null, onTarget, focusSearch, focus, listSprite = 'normal', onListSpriteChange, teamCollapsed = false, onStart }: Props) {
+export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onReplaceWith, onCancelReplace, rating = null, onTarget, focusSearch, focus, listSprite = 'normal', onListSpriteChange, teamCollapsed = false }: Props) {
   const tr = useT();
   const lang = useLang();
   const [pageState, setPage] = useState(0);
@@ -410,17 +408,6 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
       <>
         {setterNote && <p className="note">{setterNote}</p>}
         {typeEmpty}
-        {/* Team vuoto: si parte da qui (la lista sotto), oppure da Completa team o da Importa */}
-        {team.length === 0 && onStart ? (
-          <p className="note start-note">
-            {tr('suggest.start')} · {tr('suggest.startOr')}{' '}
-            <button type="button" className="link" title={tr('suggest.startFillTitle')} onClick={() => onStart('fill')}>{tr('team.fill')}</button>
-            {' '}{tr('suggest.startAlso')}{' '}
-            <button type="button" className="link" title={tr('suggest.startImportTitle')} onClick={() => onStart('import')}>{tr('suggest.startImport')}</button>
-          </p>
-        ) : emptyTeam && (
-          <p className="note">{tr('suggest.emptyTeam')}</p>
-        )}
         {/* Il numero dei risultati si vede una volta sola, nella fascia "Candidati (N)"; qui solo per i lettori di schermo */}
         {hiddenCount > 0 && (
           <p className="note hidden-note">

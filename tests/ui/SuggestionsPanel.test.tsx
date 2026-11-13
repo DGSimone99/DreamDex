@@ -69,7 +69,8 @@ describe('SuggestionsPanel', () => {
 
   it("team vuoto: niente voto da confrontare, si mostra l'uso nel meta", async () => {
     await setup();
-    expect(suggestions().querySelector('.start-note')).toHaveTextContent('Scegli il primo Pokémon qui sotto, in ordine di uso nel meta · oppure Completa team o Importa da Showdown');
+    // Nessuna nota sopra la lista: si parte dalla lista stessa
+    expect(within(suggestions()).queryByText(/come si adatta al team/)).toBeNull();
     const usages = within(list()).getAllByLabelText(/^Uso nel meta \d/).map(cell => parseFloat(cell.getAttribute('aria-label')!.replace('Uso nel meta ', '').replace(',', '.')));
     expect(usages).toEqual([...usages].sort((a, b) => b - a));
     const detail = screen.getByRole('complementary', { name: /^Dettaglio di / });
@@ -80,23 +81,6 @@ describe('SuggestionsPanel', () => {
     expect([...detail.querySelectorAll('.detail-areas .value')].map(v => v.textContent)).not.toContain('0');
     // I ruoli del set hanno la spiegazione nel tooltip
     for (const role of within(detail).getByRole('list', { name: 'Ruoli del set' }).querySelectorAll('li')) expect(role.getAttribute('title')).toBeTruthy();
-  });
-
-  it("team vuoto: la riga d'inizio apre Completa team o Importa, come la barra del team", async () => {
-    const user = await setup();
-    const start = suggestions().querySelector<HTMLElement>('.start-note')!;
-    await user.click(within(start).getByRole('button', { name: 'Completa team' }));
-    expect(within(team()).getByRole('button', { name: /Completa team/ })).toHaveAttribute('aria-expanded', 'true');
-    await user.keyboard('{Escape}');
-    await user.click(within(start).getByRole('button', { name: 'Importa da Showdown' }));
-    const importMenu = within(team()).getByLabelText('Testo Showdown').closest('details')!;
-    expect(importMenu.open).toBe(true);
-    expect(within(team()).getByLabelText('Testo Showdown')).toHaveFocus();
-  });
-
-  it("con un Pokémon nel team la riga d'inizio sparisce", async () => {
-    await setup('Great Tusk');
-    expect(suggestions().querySelector('.start-note')).toBeNull();
   });
 
   it('mostra i tag sulle righe', async () => {
