@@ -24,7 +24,9 @@ const TEAM = [
   member('Great Tusk', 'Booster Energy', 'Protosynthesis', ['Headlong Rush', 'Ice Spinner', 'Rapid Spin', 'Bulk Up'], 'Jolly', { atk: 252, spe: 252, hp: 4 }),
   member('Kingambit', 'Black Glasses', 'Supreme Overlord', ['Swords Dance', 'Kowtow Cleave', 'Sucker Punch', 'Iron Head'], 'Adamant', { hp: 200, atk: 252, spe: 56 }),
   member('Toxapex', 'Black Sludge', 'Regenerator', ['Surf', 'Haze', 'Recover', 'Toxic Spikes'], 'Bold', { hp: 252, def: 252, spd: 4 }),
-  member('Dragapult', 'Choice Specs', 'Infiltrator', ['Draco Meteor', 'Shadow Ball', 'Flamethrower', 'U-turn'], 'Timid', { spa: 252, spe: 252, hp: 4 }),
+  // Attaccante speciale legale in National Dex OU (Dragapult ora è Ubers: il voto sarebbe grigio in ogni foto; il team
+  // fuori regola ha il suo stato, illegal)
+  member('Iron Valiant', 'Choice Specs', 'Quark Drive', ['Moonblast', 'Focus Blast', 'Thunderbolt', 'Shadow Ball'], 'Timid', { def: 4, spa: 252, spe: 252 }),
   member('Corviknight', 'Leftovers', 'Pressure', ['Brave Bird', 'Defog', 'Roost', 'U-turn'], 'Impish', { hp: 248, def: 168, spd: 92 }),
 ];
 const SIX = [...TEAM, member('Gholdengo', 'Air Balloon', 'Good as Gold', ['Make It Rain', 'Shadow Ball', 'Recover', 'Nasty Plot'], 'Timid', { spa: 252, spe: 252, def: 4 })];
@@ -47,7 +49,7 @@ const LONE = [
   member('Kommo-o', 'Leftovers', 'Soundproof', ['Close Combat', 'Clanging Scales', 'Dragon Dance', 'Iron Head'], 'Adamant', { atk: 252, spe: 252, hp: 4 }),
 ];
 /** Preferiti per gli stati *-fav: Pokémon che di solito compaiono fra i primi candidati. */
-const FAVS = ['Corviknight', 'Dragapult', 'Gholdengo', 'Rotom-Wash', 'Landorus-Therian', 'Iron Valiant', 'Zamazenta', 'Slowking-Galar', 'Heatran', 'Garganacl'];
+const FAVS = ['Corviknight', 'Kyurem', 'Gholdengo', 'Rotom-Wash', 'Landorus-Therian', 'Iron Valiant', 'Zamazenta', 'Slowking-Galar', 'Heatran', 'Garganacl'];
 const LONG = [
   member('Landorus-Therian', 'Rocky Helmet', 'Intimidate', ['Earthquake', 'U-turn', 'Stealth Rock', 'Stone Edge'], 'Impish', { hp: 252, def: 216, spe: 40 }),
   member('Ogerpon-Wellspring', 'Wellspring Mask', 'Water Absorb', ['Ivy Cudgel', 'Horn Leech', 'Knock Off', 'U-turn'], 'Jolly', { atk: 252, spe: 252, hp: 4 }),
@@ -60,7 +62,7 @@ const LONG = [
 const ATTACK = [
   LONG[2],
   TEAM[0],
-  TEAM[3],
+  member('Kyurem', 'Choice Specs', 'Pressure', ['Freeze-Dry', 'Draco Meteor', 'Earth Power', 'Ice Beam'], 'Timid', { def: 4, spa: 252, spe: 252 }),
   member('Iron Valiant', 'Choice Specs', 'Quark Drive', ['Moonblast', 'Focus Blast', 'Thunderbolt', 'Shadow Ball'], 'Timid', { def: 4, spa: 252, spe: 252 }),
   LONG[5],
   member('Victini', 'Choice Band', 'Victory Star', ['V-create', 'U-turn', 'Bolt Strike', 'Zen Headbutt'], 'Jolly', { atk: 252, spd: 4, spe: 252 }),
@@ -674,12 +676,13 @@ const STATES: Record<string, State> = {
   'stats-pop': { run: async p => focus(p, '.stats-badge') },
   alert: { run: async p => focus(p, '.alert-mark') },
   'grade-delta': { run: async p => {
-    if (!await clickText(p, '.slot.filled > .slot-card', /Dragapult/)) return 'no card';
+    if (!await clickText(p, '.slot.filled > .slot-card', /Iron Valiant/)) return 'no card';
     await wait(600);
     return clickText(p, '.slot.open button.best-preset', /./);
   } },
-  'editor-alert': { run: async p => {
-    if (!await clickText(p, '.slot.filled > .slot-card', /Dragapult/)) return 'no card';
+  'editor-alert': { hash: hash(MOVE), run: async p => {
+    // La prima carta con un avviso (Great Tusk con una mossa che non impara)
+    if (!await clickText(p, '.slot.filled:has(.alert-mark) > .slot-card', /./)) return 'no card';
     await wait(600);
     return focus(p, '.slot.open .alert-mark');
   } },
@@ -760,7 +763,6 @@ const STATES: Record<string, State> = {
   'fill-unlocked': { hash: hash(TEAM.slice(0, 3)), run: async p => { await openFill(p); await p.evaluate(() => (document.querySelector('.fill-panel input[type="checkbox"]') as HTMLElement | null)?.click()); await wait(3500); return true; } },
   'filters-open': { run: async p => { await tab(p, 'pokemon'); await p.evaluate(() => (document.querySelector('.toolbar .filters > summary') as HTMLElement | null)?.click()); await wait(400); return true; } },
   'format-menu': { run: async p => { await p.click('.format-card > summary'); await wait(400); return true; } },
-  'io-menu': { run: async p => { await p.evaluate(() => (document.querySelector('.team-quick details.popover > summary') as HTMLElement | null)?.click()); await wait(400); return true; } },
   'saved-menu': { storage: { 'dreamdex.savedTeams': JSON.stringify([{ name: 'Pioggia NatDex', text: 'Pelipper' }, { name: 'Un nome di team davvero molto lungo per vedere se va a capo', text: 'Garchomp' }]) }, run: async p => { await p.evaluate(() => (document.querySelector('.team-head > details.popover > summary') as HTMLElement | null)?.click()); await wait(400); return true; } },
   'saved-empty': { hash: '', run: async p => { await p.evaluate(() => (document.querySelector('.team-head > details.popover > summary') as HTMLElement | null)?.click()); await wait(400); return true; } },
   'team-three': { hash: hash(TEAM.slice(0, 3)) },
