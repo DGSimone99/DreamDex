@@ -6,7 +6,7 @@ import type { AnalysisView } from '../analysisView';
 import { Icon } from '../icons';
 import type { Density } from '../OverviewDashboard';
 import { Sprite } from '../Sprite';
-import { DashCard, DashLink } from './DashCard';
+import { DashCard } from './DashCard';
 import { useFit } from './useFit';
 
 const LEVELS = ['essential', 'important', 'minor'] as const;
@@ -143,7 +143,7 @@ export function RolesSection({ roles, density, onView }: { roles: DashboardData[
   const titles = { essential: t('analysis.essential'), important: t('analysis.important'), minor: t('dash.levelMinor') };
   return (
     <DashCard className="dash-roles" title={t('area.roles')} meta={<b>{roles.value}</b>}
-      links={<DashLink area={t('area.roles')} onClick={() => onView('roles')} />}>
+      onOpen={() => onView('roles')}>
       {density === 'roomy' ? <RoleTable roles={roles} titles={titles} /> : <RoleBands roles={roles} density={density} titles={titles} />}
     </DashCard>
   );

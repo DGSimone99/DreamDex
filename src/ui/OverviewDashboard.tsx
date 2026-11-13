@@ -35,7 +35,7 @@ export function OverviewDashboard({ data, summary, members, onView, teamCollapse
   summary: TeamSummary;
   /** Quanti Pokémon ha il team: con uno solo la riga Tipo non c'è. */
   members: number;
-  onView: (v: AnalysisView) => void;
+  onView: (v: AnalysisView, sub?: string) => void;
   /** Team ridotto: sempre la densità ampia. */
   teamCollapsed?: boolean;
   /** Solo per i test: altrimenti viene dall'altezza disponibile. */

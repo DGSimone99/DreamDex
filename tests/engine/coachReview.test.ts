@@ -54,7 +54,7 @@ describe('difesa retta poco anche se qualcuno regge in parte: i rimedi ci sono',
     expect(row.level).toBeLessThan(HELD_LEVEL);
     expect(row.level).toBeGreaterThan(0);
     const psychic = coachTeam(team, DEFAULT_FORMAT, data).problems.find(p => p.key === 'defense:Psychic')!;
-    expect(psychic).toMatchObject({ severity: 'minor', text: 'Psychic retto poco: pochi membri reggono i suoi colpi' });
+    expect(psychic).toMatchObject({ severity: 'minor', text: 'Coperto poco in difesa contro Psychic: pochi reggono bene i suoi colpi' });
     expect(psychic.fixes).toEqual(['Corviknight']);
   });
 });

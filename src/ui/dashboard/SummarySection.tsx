@@ -232,7 +232,7 @@ export function SummarySection({ summary, members, density, rich = false, onView
                     {t(`teamStyle.${style}`)}
                   </span>
                 ))}
-                <TeamTypeHelp rule={summary.typeRule} />
+                <TeamTypeHelp />
               </div>
             )}
             {makers.length > 0 && (

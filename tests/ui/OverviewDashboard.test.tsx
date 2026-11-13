@@ -367,16 +367,9 @@ describe('Riassunto', () => {
     expect(region().querySelector('.sum-near')).toBeNull();
     await user.click(within(region()).getByRole('button', { name: 'Tipi di team: come si riconoscono' }));
     const dialog = screen.getByRole('dialog', { name: 'Tipi di team' });
-    // National Dex OU: come si riconosce il tipo (recupero e velocità; la Focus Sash non conta più)
-    expect(within(dialog).getByRole('heading', { name: 'Come si riconosce in National Dex OU' })).toBeInTheDocument();
-    expect(dialog).toHaveTextContent('Più è veloce la squadra (velocità base media), più è offensiva');
-    expect(dialog).not.toHaveTextContent('Focus Sash');
-    await user.keyboard('{Escape}');
-    cleanup();
-    // Gli altri formati riconoscono il tipo dai muri: la sezione non c'è
-    mount({ summary: summaryOf({ typeRule: 'walls' }) });
-    await user.click(within(region()).getByRole('button', { name: 'Tipi di team: come si riconoscono' }));
-    expect(within(screen.getByRole('dialog', { name: 'Tipi di team' })).queryByRole('heading', { name: 'Come si riconosce in National Dex OU' })).toBeNull();
+    // La sezione "come si riconosce in National Dex OU" è stata tolta (2026-11-13): solo tipi, legenda e stili
+    expect(within(dialog).queryByRole('heading', { name: 'Come si riconosce in National Dex OU' })).toBeNull();
+    expect(dialog).not.toHaveTextContent('velocità base media');
     await user.keyboard('{Escape}');
     cleanup();
     mount({ summary: summaryOf({ archetype: null }) });

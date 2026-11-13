@@ -71,18 +71,18 @@ describe('coachTeam', () => {
     const minor = coaching.problems.filter(p => p.severity === 'minor' && p.category !== 'meta').map(p => p.text);
     expect(minor).toEqual([
       // In difesa: i tipi sotto il livello 50 della Coverage tipi che qualcuno regge almeno in parte
-      ...['Ice', 'Psychic', 'Dragon', 'Dark', 'Steel', 'Fairy'].map(type => `${type} retto poco: pochi membri reggono i suoi colpi`),
+      ...['Ice', 'Psychic', 'Dragon', 'Dark', 'Steel', 'Fairy'].map(type => `Coperto poco in difesa contro ${type}: pochi reggono bene i suoi colpi`),
       // Le voci essenziali mancanti (nel Balance gli Hazard sono essenziali); Pivot e Rimozione Strumenti sono minori,
       // quindi non c'è la riga delle importanti
       'Ruoli mancanti: Muro Speciale, Hazard',
       // Il pacchetto dei tipi dell'Offesa: un problema per tipo sotto 40, nell'ordine dei tipi (due membri arrivano al massimo a 80)
-      ...['Water', 'Bug', 'Dragon'].map(type => `Coperto poco ${type}: nessuno lo manda KO in un colpo e pochi lo colpiscono forte`),
+      ...['Water', 'Bug', 'Dragon'].map(type => `Coperto poco in attacco contro ${type}: nessuno lo manda KO in un colpo e pochi lo colpiscono forte`),
     ]);
     const rows = rateTeam([tusk, gholdengo], fixtureData, 'it')!.defense.coverageTypes.rows;
     const minorTypes = coaching.problems.filter(p => p.category === 'defense' && p.severity === 'minor').map(p => p.subjects![0]);
     expect(minorTypes.every(type => rows.find(r => r.type === type)!.level < HELD_LEVEL)).toBe(true);
     const fire = coaching.problems.find(p => p.key === 'defense:Fire')!;
-    expect(fire).toMatchObject({ severity: 'serious', text: 'Nessuno regge Fire' });
+    expect(fire).toMatchObject({ severity: 'serious', text: 'Scoperto in difesa contro Fire: nessuno regge bene i suoi colpi' });
     expect([...fire.fixes].sort()).toEqual(['Rotom-Wash', 'Toxapex']);
   });
 
@@ -90,7 +90,7 @@ describe('coachTeam', () => {
     const team = ['Great Tusk', 'Garchomp', 'Dragapult'].map(n => mostCommonSet(fixtureStats, n)!);
     expect(rateTeam(team, fixtureData, 'it')!.defense.coverageTypes.weak).toContain('Ice');
     const ice = coachTeam(team, DEFAULT_FORMAT, fixtureData).problems.find(p => p.key === 'defense:Ice');
-    expect(ice).toMatchObject({ severity: 'serious', text: 'Nessuno regge Ice', counts: { held: 0 } });
+    expect(ice).toMatchObject({ severity: 'serious', text: 'Scoperto in difesa contro Ice: nessuno regge bene i suoi colpi', counts: { held: 0 } });
   });
 
   it('difesa: un tipo retto dal livello 50 in su non è un problema', () => {
@@ -238,9 +238,23 @@ describe('chiavi dei problemi e minacce del meta', () => {
     }
   });
 
+  it("col meta, un Pokémon del meta che nessuno manda KO in due colpi (Coverage meta dell'Offesa) è un problema minore", () => {
+    // Solo Splash: nessuno manda KO nessuno
+    const weak = [junk('Magikarp'), junk('Sunkern')];
+    const coaching = coachTeam(weak, DEFAULT_FORMAT, fixtureData);
+    // I buchi sono combinazioni di tipi: il problema nomina il Pokémon che le rappresenta (come la Coverage meta dell'Offesa)
+    const meta = rateTeam(weak, fixtureData, 'it')?.offense.coverageMeta;
+    const holes = (meta?.holes ?? []).map(label => meta!.rows.find(r => r.label === label)!.species);
+    expect(holes.length).toBeGreaterThan(0);
+    expect(coaching.problems.filter(p => p.category === 'metaHit').map(p => p.key)).toEqual(holes.map(s => `metaHit:${s}`));
+    for (const species of holes) {
+      expect(coaching.problems.find(p => p.key === `metaHit:${species}`)).toMatchObject({ severity: 'minor', subjects: [species], text: `Scoperto in attacco contro ${species}: nessuno lo manda KO in due colpi` });
+    }
+  });
+
   it('senza meta, nessun problema minaccia', () => {
     const { problems } = coachTeam(team, DEFAULT_FORMAT, { ...fixtureData, ignoreMeta: true });
-    expect(problems.some(p => p.category === 'meta')).toBe(false);
+    expect(problems.some(p => p.category === 'meta' || p.category === 'metaHit')).toBe(false);
   });
 
   it("coverage: un problema per tipo del pacchetto dei tipi dell'Offesa (livello sotto 40)", () => {
@@ -257,14 +271,14 @@ describe('chiavi dei problemi e minacce del meta', () => {
       const p = found.find(x => x.key === `coverage:${row.label}`)!;
       expect(p.subjects).toEqual([row.label]);
       if (coverage.holes.includes(row.label)) {
-        expect(p).toMatchObject({ size: 2, text: `Scoperto ${row.label}: nessuno lo manda KO in due colpi`, severity: weights[row.label] >= MIN_COVERAGE_WEIGHT ? 'serious' : 'minor' });
+        expect(p).toMatchObject({ size: 2, text: `Scoperto in attacco contro ${row.label}: nessuno lo manda KO in due colpi`, severity: weights[row.label] >= MIN_COVERAGE_WEIGHT ? 'serious' : 'minor' });
       } else {
-        expect(p).toMatchObject({ size: 1, severity: 'minor', text: `Coperto poco ${row.label}: nessuno lo manda KO in un colpo e pochi lo colpiscono forte` });
+        expect(p).toMatchObject({ size: 1, severity: 'minor', text: `Coperto poco in attacco contro ${row.label}: nessuno lo manda KO in un colpo e pochi lo colpiscono forte` });
       }
     }
     // In inglese
     const en = coachTeam(team, DEFAULT_FORMAT, fixtureData, 'en').problems.filter(p => p.category === 'coverage').map(p => p.text);
-    expect(en.some(text => /^(Uncovered \w+: nobody 2HKOs it|Weakly covered \w+: nobody OHKOs it and few hit it hard)$/.test(text))).toBe(true);
+    expect(en.some(text => /^(Uncovered on offense vs \w+: nobody 2HKOs it|Weakly covered on offense vs \w+: nobody OHKOs it and few hit it hard)$/.test(text))).toBe(true);
   });
 
   it('coverage: i rimedi sono candidati con una mossa super efficace contro il tipo (anche per i coperti a metà)', () => {
@@ -304,6 +318,6 @@ describe('scoperto sotto il 50%', () => {
     const pex = { ...emptySet('Toxapex'), ability: 'Regenerator', moves: ['Surf'], nature: 'Bold', evs: { hp: 252, def: 252 } };
     const wall = { ...emptySet('Blissey'), moves: ['Soft-Boiled', 'Toxic'] };
     const texts = coachTeam([pex, wall], DEFAULT_FORMAT, fixtureData).problems.filter(p => p.category === 'coverage').map(p => p.text);
-    expect(texts).toContain('Scoperto Ground: nessuno lo manda KO in due colpi');
+    expect(texts).toContain('Scoperto in attacco contro Ground: nessuno lo manda KO in due colpi');
   });
 });

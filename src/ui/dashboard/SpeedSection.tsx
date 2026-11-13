@@ -7,7 +7,7 @@ import type { AnalysisView } from '../analysisView';
 import type { Density } from '../OverviewDashboard';
 import { Sprite } from '../Sprite';
 import { MoveName } from '../TypeText';
-import { DashCard, DashLink } from './DashCard';
+import { DashCard } from './DashCard';
 
 /** Sprite sotto le barre: più piccoli quando lo spazio è poco (mai sotto i 24 px). */
 const SPRITE: Record<Density, number> = { tight: 32, normal: 40, roomy: 48 };
@@ -35,7 +35,7 @@ export function SpeedSection({ speed, density, onView }: { speed: DashboardData[
     <DashCard className="dash-speed" title={area}
       tooltip={density === 'tight' ? controlText : undefined}
       meta={<><b>{speed.value}</b> {t(vsMeta ? 'dash.aboveMeta' : 'dash.aboveTier')}</>}
-      links={<DashLink area={area} onClick={() => onView('speed')} />}>
+      onOpen={() => onView('speed')}>
       <div className="dash-ladder" style={{ '--sprite': `${SPRITE[density]}px` } as CSSProperties}>
         <div className="dash-bars">
           {median !== null && (

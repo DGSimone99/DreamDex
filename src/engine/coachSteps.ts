@@ -41,10 +41,12 @@ export type MapColumn = 'defense' | 'offense' | 'roles' | 'rules';
 
 export function columnOf(category: ProblemCategory): MapColumn {
   switch (category) {
-    case 'defense': return 'defense';
-    case 'coverage': return 'offense';
-    case 'rules':
-    case 'meta': return 'rules';
+    // Le minacce del meta: chi nessuno regge sta con la Difesa, chi nessuno manda KO con l'Offesa; le Regole da sole
+    case 'defense':
+    case 'meta': return 'defense';
+    case 'coverage':
+    case 'metaHit': return 'offense';
+    case 'rules': return 'rules';
     default: return 'roles';
   }
 }

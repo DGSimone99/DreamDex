@@ -25,18 +25,23 @@ export const FIX_SHOWN = 2;
  */
 export function fixItems(problems: CoachProblem[], lang: Lang): { shown: string[]; hidden: string[]; more: number } {
   const sorted = [...problems.filter(p => p.severity === 'serious'), ...problems.filter(p => p.severity !== 'serious')];
-  const threats = sorted.filter(p => p.category === 'meta' && p.subjects?.length).flatMap(p => p.subjects!);
+  // Le minacce del meta in una frase sola per tipo (chi nessuno regge, chi nessuno manda KO), al posto della prima di loro
+  const SENTENCES = {
+    meta: ['overview.fix.threats', 'overview.fix.threatsMore'],
+    metaHit: ['overview.fix.metaHit', 'overview.fix.metaHitMore'],
+  } as const;
+  const grouped = (p: CoachProblem): p is CoachProblem & { category: keyof typeof SENTENCES } => (p.category === 'meta' || p.category === 'metaHit') && !!p.subjects?.length;
   const items: string[] = [];
-  let threatsPlaced = false;
+  const placed = new Set<string>();
   for (const p of sorted) {
-    if (p.category === 'meta' && p.subjects?.length) {
-      if (!threatsPlaced) {
-        const list = threats.slice(0, THREAT_NAMES).join(', ');
-        const rest = threats.length - THREAT_NAMES;
-        items.push(rest > 0 ? translate(lang, 'overview.fix.threatsMore', { list, n: rest }) : translate(lang, 'overview.fix.threats', { list }));
-      }
-      threatsPlaced = true;
-    } else items.push(p.text);
+    if (!grouped(p)) { items.push(p.text); continue; }
+    if (placed.has(p.category)) continue;
+    placed.add(p.category);
+    const names = sorted.filter(q => q.category === p.category && q.subjects?.length).flatMap(q => q.subjects!);
+    const list = names.slice(0, THREAT_NAMES).join(', ');
+    const rest = names.length - THREAT_NAMES;
+    const [one, more] = SENTENCES[p.category];
+    items.push(rest > 0 ? translate(lang, more, { list, n: rest }) : translate(lang, one, { list }));
   }
   const shown = items.slice(0, FIX_SHOWN);
   const hidden = items.slice(FIX_SHOWN);

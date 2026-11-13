@@ -1,5 +1,4 @@
 import type { Archetype } from '../engine/archetype';
-import type { FormatRules } from '../engine/formatRules';
 import { useT } from '../i18n/react';
 import { HelpButton } from './AnalysisTabs';
 import { Icon } from './icons';
@@ -20,11 +19,8 @@ function Pip({ slot }: { slot: Slot }) {
   return <span className={`tt-pip ${slot}`}>{slot !== 'x' && <Icon name={slot === 'a' ? 'sword' : 'shield'} />}</span>;
 }
 
-/**
- * La guida ai tipi di team: ogni tipo coi suoi sei posti e una frase corta, poi gli stili come "chi lo porta + chi lo sfrutta".
- * Con la regola di National Dex OU (recupero e velocità, archetype.ts) anche come si riconosce il tipo.
- */
-function TeamTypesGuide({ rule }: { rule: FormatRules['typeRule'] }) {
+/** La guida ai tipi di team: ogni tipo coi suoi sei posti e una frase corta, poi gli stili come "chi lo porta + chi lo sfrutta". */
+function TeamTypesGuide() {
   const t = useT();
   return (
     <div className="tt-guide">
@@ -44,16 +40,6 @@ function TeamTypesGuide({ rule }: { rule: FormatRules['typeRule'] }) {
         <span><Pip slot="w" />{t('teamTypes.wall')}</span>
         <span><Pip slot="x" />{t('teamTypes.either')}</span>
       </p>
-      {rule === 'recoverySpeed' && (
-        <>
-          <h4 className="tt-section">{t('teamTypes.how')}</h4>
-          <ul className="tt-styles tt-how">
-            <li><strong><Icon name="heart" />{t('teamTypes.how.recovery')}</strong><span className="tt-caption">{t('teamTypes.how.recovery.text')}</span></li>
-            <li><strong><Icon name="speed" />{t('teamTypes.how.speed')}</strong><span className="tt-caption">{t('teamTypes.how.speed.text')}</span></li>
-          </ul>
-          <p className="tt-note tt-how-note">{t('teamTypes.how.note')}</p>
-        </>
-      )}
       <h4 className="tt-section">{t('teamTypes.styles')}</h4>
       <ul className="tt-styles">
         <li>
@@ -70,8 +56,8 @@ function TeamTypesGuide({ rule }: { rule: FormatRules['typeRule'] }) {
   );
 }
 
-/** Il "?" che apre la guida ai tipi di team; `rule`: come il formato riconosce il tipo. */
-export function TeamTypeHelp({ rule = 'walls' }: { rule?: FormatRules['typeRule'] }) {
+/** Il "?" che apre la guida ai tipi di team. */
+export function TeamTypeHelp() {
   const tr = useT();
-  return <HelpButton title={tr('teamTypes.title')} label={tr('teamTypes.button')} className="tt-dialog"><TeamTypesGuide rule={rule} /></HelpButton>;
+  return <HelpButton title={tr('teamTypes.title')} label={tr('teamTypes.button')} className="tt-dialog"><TeamTypesGuide /></HelpButton>;
 }

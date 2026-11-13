@@ -56,6 +56,29 @@ describe('Panoramica di Analisi', () => {
     expect(within(views()).getByRole('tab', { name: 'Offesa' })).toHaveAttribute('aria-selected', 'true');
   });
 
+  it('Copertura: Offesa e Difesa aprono la loro Coverage tipi', async () => {
+    const user = await setup();
+    await user.click(within(panel()).getByRole('button', { name: /^Offesa/ }));
+    expect(within(panel()).getByRole('tab', { name: /^Coverage tipi/ })).toHaveAttribute('aria-selected', 'true');
+    await user.click(within(views()).getByRole('tab', { name: 'Panoramica' }));
+    await user.click(within(panel()).getByRole('button', { name: /^Difesa/ }));
+    expect(within(views()).getByRole('tab', { name: 'Difesa' })).toHaveAttribute('aria-selected', 'true');
+    expect(within(panel()).getByRole('tab', { name: /^Coverage tipi/ })).toHaveAttribute('aria-selected', 'true');
+  });
+
+  it("Ruoli e Velocità: tutta la barra del titolo è un link alla scheda", async () => {
+    const user = await setup();
+    for (const [name, tab] of [['Ruoli', 'Ruoli'], ['Velocità', 'Velocità']] as const) {
+      const head = within(panel()).getByRole('region', { name }).querySelector('.dash-head')!;
+      expect(head).toHaveClass('is-link');
+      await user.click(within(head as HTMLElement).getByRole('button', { name: `Apri la scheda ${name}` }));
+      expect(within(views()).getByRole('tab', { name: tab })).toHaveAttribute('aria-selected', 'true');
+      await user.click(within(views()).getByRole('tab', { name: 'Panoramica' }));
+    }
+    // Copertura ha due link: la barra non è un link
+    expect(within(panel()).getByRole('region', { name: 'Copertura' }).querySelector('.dash-head')).not.toHaveClass('is-link');
+  });
+
   it("il Riassunto: un attaccante dell'eroe porta a Offesa", async () => {
     const user = await setup();
     const summary = within(panel()).getByRole('region', { name: 'Riassunto' });
@@ -237,7 +260,7 @@ describe('Panoramica: Da sistemare', () => {
   it('Da sistemare: i problemi coi nomi e il link al Coaching', async () => {
     const user = await setup(['Great Tusk', 'Gholdengo', 'Kingambit']);
     const row = await within(panel()).findByRole('region', { name: 'Da sistemare' }, { timeout: 5000 });
-    expect(row).toHaveTextContent(/Nessuno regge/);
+    expect(row).toHaveTextContent(/Scopert[oi] in difesa contro/);
     // Le minacce del meta in una frase sola, coi nomi
     expect((row.textContent!.match(/del meta/g) ?? []).length).toBeLessThanOrEqual(1);
     await user.click(within(row).getByRole('button', { name: 'Vai al Coaching' }));
@@ -276,22 +299,31 @@ describe('Panoramica: Da sistemare', () => {
     expect(solvable([a, b, c, d], [])).toEqual([]);
   });
 
+  it('fixItems: gli scoperti in attacco in una loro frase, separata dagli scoperti in difesa', () => {
+    const items = fixItems([
+      problem({ text: 'x', category: 'meta', subjects: ['Zapdos'] }),
+      problem({ text: 'y', category: 'metaHit', subjects: ['Corviknight'] }),
+      problem({ text: 'z', category: 'metaHit', subjects: ['Toxapex'] }),
+    ], 'it');
+    expect(items.shown).toEqual(['Scoperti in difesa contro Zapdos del meta', 'Scoperti in attacco contro Corviknight, Toxapex del meta']);
+  });
+
   it('fixItems: più di 3 minacce, i primi 3 nomi e "e altri N"', () => {
     const names = ['Kingambit', 'Raging Bolt', 'Diancie-Mega', 'Tapu Koko', 'Charizard-Mega-Y', 'Charizard-Mega-X', 'Melmetal'];
     const items = fixItems(names.map(n => problem({ text: n, category: 'meta', subjects: [n] })), 'it');
-    expect(items.shown).toEqual(['Nessuno regge Kingambit, Raging Bolt, Diancie-Mega e altri 4 del meta']);
+    expect(items.shown).toEqual(['Scoperti in difesa contro Kingambit, Raging Bolt, Diancie-Mega e altri 4 del meta']);
   });
 
   it('fixItems: i gravi prima, le minacce del meta in una frase coi nomi', () => {
     const items = fixItems([
       problem({ text: 'Ruoli mancanti: Pivot' }),
-      problem({ text: 'Nessuno regge Latios-Mega del meta', category: 'meta', subjects: ['Latios-Mega'] }),
-      problem({ text: 'Nessuno regge Tapu Koko del meta', category: 'meta', subjects: ['Tapu Koko'] }),
-      problem({ text: 'Nessuno regge Diancie-Mega del meta', category: 'meta', subjects: ['Diancie-Mega'] }),
-      problem({ text: 'Nessuno regge Fire', category: 'defense', severity: 'serious' }),
+      problem({ text: 'Scoperto in difesa contro Latios-Mega: nessuno regge bene i suoi colpi', category: 'meta', subjects: ['Latios-Mega'] }),
+      problem({ text: 'Scoperto in difesa contro Tapu Koko: nessuno regge bene i suoi colpi', category: 'meta', subjects: ['Tapu Koko'] }),
+      problem({ text: 'Scoperto in difesa contro Diancie-Mega: nessuno regge bene i suoi colpi', category: 'meta', subjects: ['Diancie-Mega'] }),
+      problem({ text: 'Scoperto in difesa contro Fire: nessuno regge bene i suoi colpi', category: 'defense', severity: 'serious' }),
     ], 'it');
-    expect(items.shown).toEqual(['Nessuno regge Fire', 'Ruoli mancanti: Pivot']);
-    expect(items.hidden).toEqual(['Nessuno regge Latios-Mega, Tapu Koko, Diancie-Mega del meta']);
+    expect(items.shown).toEqual(['Scoperto in difesa contro Fire: nessuno regge bene i suoi colpi', 'Ruoli mancanti: Pivot']);
+    expect(items.hidden).toEqual(['Scoperti in difesa contro Latios-Mega, Tapu Koko, Diancie-Mega del meta']);
     expect(items.more).toBe(1);
   });
 
