@@ -8,7 +8,9 @@ import { reviewImport, type ImportReview } from './importReview';
 import { Icon } from './icons';
 import { useLang, useT } from '../i18n/react';
 
-export function ShowdownPanel({ team, format, tera = true, onImport }: { team: TeamSet[]; format: Format; /** Tera ammesso nel formato */ tera?: boolean; /** `again`: lo stesso import ritoccato (Custom Skillset sbloccato dopo la domanda), non un import nuovo */
+export function ShowdownPanel({ team, format, tera = true, openRequest = 0, onImport }: { team: TeamSet[]; format: Format; /** Tera ammesso nel formato */ tera?: boolean;
+  /** Cambia a ogni richiesta di aprire Importa da fuori (la riga d'inizio della lista a team vuoto). */
+  openRequest?: number; /** `again`: lo stesso import ritoccato (Custom Skillset sbloccato dopo la domanda), non un import nuovo */
   onImport: (team: TeamSet[], again?: boolean) => void }) {
   const t = useT();
   const lang = useLang();
@@ -27,6 +29,15 @@ export function ShowdownPanel({ team, format, tera = true, onImport }: { team: T
     timer.current = setTimeout(() => setCopied(null), 1800);
   };
   useEffect(() => () => clearTimeout(timer.current), []);
+  // Richiesta da fuori: Importa si apre come col clic, col cursore già nella scatola del testo
+  const menu = useRef<HTMLDetailsElement>(null);
+  const lastOpen = useRef(openRequest);
+  useEffect(() => {
+    if (openRequest === lastOpen.current || !menu.current) return;
+    lastOpen.current = openRequest;
+    menu.current.open = true;
+    menu.current.querySelector<HTMLTextAreaElement>('textarea')?.focus();
+  }, [openRequest]);
 
   const doImport = () => {
     const result = importShowdown(text, lang);
@@ -46,7 +57,7 @@ export function ShowdownPanel({ team, format, tera = true, onImport }: { team: T
 
   return (
     <>
-      <details className="popover">
+      <details className="popover" ref={menu}>
         <summary title={t('showdown.importTitle')}><Icon name="paste" /><span className="btn-label">{t('showdown.importTab')}</span></summary>
         {/* Importa: una riga che dice cosa incollare, la scatola con un esempio in grigio, Importa in evidenza */}
         <div className="import-panel">

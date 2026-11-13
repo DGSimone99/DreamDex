@@ -185,7 +185,10 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .list-mark { font-size: 14px; line-height: 1; }
 .list-mark.fav { color: var(--accent); }
 .list-mark.ban { color: var(--bad); }
-.hidden-note .link { padding: 0; border: 0; background: none; color: var(--accent); text-decoration: underline; font: inherit; }
+.hidden-note .link, .start-note .link { padding: 0; border: 0; background: none; color: var(--accent); text-decoration: underline; font: inherit; }
+/* Riga d'inizio a team vuoto: i due collegamenti con un po' di stacco dalla sottolineatura, il testo va a capo sul telefono */
+.start-note .link { text-underline-offset: 3px; cursor: pointer; }
+.start-note .link:hover { color: var(--text); }
 /* Bannati dall'utente esclusi da proposte e sostituzioni */
 .banned-note { margin: 6px 0 0; font-size: 13px; color: var(--muted); }
 .smogon-link { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 4px; background: var(--raised); color: inherit; font-weight: 500; text-decoration: none; white-space: nowrap; transition: border-color 0.15s; }
