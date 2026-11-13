@@ -117,7 +117,7 @@
 .ev-total .ev-used { display: inline-flex; align-items: baseline; gap: 2px; }
 .ev-meter { width: 120px; height: 4px; border-radius: 2px; background: var(--line); overflow: hidden; }
 .ev-meter > span { display: block; height: 100%; background: var(--accent); }
-.ev-total .ev-left { margin-left: auto; color: var(--faint); }
+.ev-total .ev-left { margin-left: auto; color: var(--muted); }
 .ev-total.over strong, .ev-total.over .ev-left { color: var(--bad); }
 .ev-total.over .ev-meter > span { background: var(--bad); }
 .set-editor .evs .speed-line { margin: 0 6px; padding-top: 10px; border-top: 1px solid var(--line-soft); }
