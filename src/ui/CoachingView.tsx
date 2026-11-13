@@ -142,22 +142,55 @@ function MoveProposal({ fix, main, alsoId, solves = fix.solves, skip, problems, 
   );
 }
 
-/** Quanti tipi, minacce e nomi si vedono nella riga "risolve anche"; il resto finisce nel "+N". */
-const ALSO_TYPES = 4;
-const ALSO_THREATS = 2;
+/** Quante icone (tipi e minacce) e quanti nomi si vedono nella riga "risolve anche"; il resto finisce nel "+N". */
+const ALSO_ICONS = 5;
 const ALSO_NAMES = 1;
 
+/** Da che parte sta un problema di copertura: attacco (spada) o difesa (scudo). */
+type Side = 'atk' | 'def';
+/** Un problema di copertura: la parte e se è scoperto (grave) o coperto poco. Null: non è di copertura. */
+function coverOf(p: CoachProblem): { side: Side; uncovered: boolean } | null {
+  if (p.category === 'defense') return { side: 'def', uncovered: p.severity === 'serious' };
+  if (p.category === 'meta') return { side: 'def', uncovered: true };
+  if (p.category === 'coverage') return { side: 'atk', uncovered: p.size === 2 };
+  if (p.category === 'metaHit') return { side: 'atk', uncovered: true };
+  return null;
+}
+
 /**
- * "Risolve anche": cosa risolve la proposta oltre al problema della tappa, in una riga corta: tipi come icone,
- * minacce come "check" + icona (il nome nudo accanto al candidato si leggerebbe come il candidato stesso),
- * ruoli, membri e aree come nomi; quello che non sta va nel "+N". Niente riga se non c'è altro.
- * `skip`: i problemi già nel titolo della tappa. `self`: il candidato della proposta, che non si dice "check" di sé stesso.
+ * L'etichetta di copertura, uguale in caselle, titoli e "risolve anche": spada (attacco) o scudo (difesa) e
+ * "Scoperto" / "Coperto poco" (`n`: quanti, per il plurale). Ai lettori di schermo la parte la dice a parole.
  */
-function Also({ id, solves, skip, problems, self }: { id: string; solves: string[]; skip: string[]; problems: CoachProblem[]; self?: string }) {
+function CoverLabel({ side, uncovered, n = 1 }: { side: Side; uncovered: boolean; n?: number }) {
   const tr = useT();
+  const word = uncovered ? (n === 1 ? 'coach.cover.uncovered1' : 'coach.cover.uncoveredN') : (n === 1 ? 'coach.cover.half1' : 'coach.cover.halfN');
+  return (
+    <span className={`coach-cover is-${side}`}>
+      <span className="coach-side" aria-hidden="true"><Icon name={side === 'atk' ? 'sword' : 'shield'} /></span>
+      <span className="visually-hidden">{tr(side === 'atk' ? 'coach.side.atk' : 'coach.side.def')} </span>
+      {tr(word)}
+    </span>
+  );
+}
+
+/**
+ * "Risolve anche": cosa risolve la proposta oltre al problema della tappa, in una riga corta, con le parole delle caselle:
+ * la copertura come etichetta (spada o scudo e "Scoperto" / "Coperto poco") seguita dalle icone dei tipi e delle minacce;
+ * ruoli, membri e aree come nomi; quello che non sta va nel "+N". Niente riga se non c'è altro.
+ * `skip`: i problemi già nel titolo della tappa. `self`: il candidato della proposta (non risolve la minaccia che è lui).
+ */
+function Also({ id, solves, skip, problems, self, watch }: {
+  id: string; solves: string[]; skip: string[]; problems: CoachProblem[]; self?: string;
+  /** Il contenitore la cui misura non dipende dalle voci (la colonna di destra): quando cambia, si rimisura. */
+  watch?: RefObject<HTMLElement | null>;
+}) {
+  const tr = useT();
+  const ref = useRef<HTMLSpanElement>(null);
   const lang = useLang();
-  const types: string[] = [];
-  const threats: string[] = [];
+  // Le coperture per parte e gravità, ognuna coi suoi soggetti (tipi o minacce); poi i nomi
+  type Item = { subject: string; mon: boolean; text: string };
+  type Segment = { side: Side; uncovered: boolean; items: Item[] };
+  const segments: Segment[] = [];
   const names: string[] = [];
   const add = (list: string[], value: string) => { if (!list.includes(value)) list.push(value); };
   for (const key of new Set(solves)) {
@@ -168,37 +201,51 @@ function Also({ id, solves, skip, problems, self }: { id: string; solves: string
     if (!problem) continue;
     const subjects = problem.subjects ?? [];
     if (problem.category === 'meta' && self && subjects.includes(self)) continue;
+    const cover = coverOf(problem);
     // Senza soggetti, o con soggetti che da soli non dicono niente (un tipo doppione: "Water"): il problema per intero
     if (subjects.length === 0) add(names, problem.text);
-    else if (problem.category === 'defense' || problem.category === 'coverage') subjects.forEach(type => add(types, type));
-    else if (problem.category === 'meta') subjects.forEach(species => add(threats, species));
+    else if (cover) {
+      let segment = segments.find(s => s.side === cover.side && s.uncovered === cover.uncovered);
+      if (!segment) { segment = { ...cover, items: [] }; segments.push(segment); }
+      for (const subject of subjects) {
+        if (!segment.items.some(i => i.subject === subject)) segment.items.push({ subject, mon: isThreat(problem), text: problem.text });
+      }
+    }
     else if (problem.category === 'roles') subjects.forEach(need => add(names, needLabel(need as Need, lang)));
     else if (problem.category === 'rules') subjects.forEach(subject => add(names, subject));
     else add(names, problem.text);
   }
+  // Prima gli scoperti, poi i coperti poco; a parità la difesa prima dell'attacco (l'ordine delle caselle)
+  segments.sort((a, b) => Number(b.uncovered) - Number(a.uncovered) || Number(b.side === 'def') - Number(a.side === 'def'));
+  // In fila: le icone (al più ALSO_ICONS) e i nomi (al più ALSO_NAMES); si vedono quelle che stanno nella riga (o nelle
+  // due righe), le altre vanno nel "+N" col testo intero
+  type Entry = { segment: Segment; item: Item } | { name: string };
+  const capped = segments.flatMap(segment => segment.items.map(item => ({ segment, item })));
+  const entries: Entry[] = [...capped.slice(0, ALSO_ICONS), ...names.slice(0, ALSO_NAMES).map(name => ({ name }))];
+  const fitKey = `${lang}|${entries.map(e => ('name' in e ? e.name : e.item.text)).join('#')}`;
+  const fit = useFitCount(ref, entries.length, fitKey, watch);
   // Niente da dire: un segnaposto vuoto (il pulsante lo cita in aria-describedby)
-  if (types.length + threats.length + names.length === 0) return <span id={id} hidden />;
-  const check = (species: string) => tr('coach.steps.checkTitle', { species });
-  const rest = [...types.slice(ALSO_TYPES).map(type => typeName(type, lang)), ...threats.slice(ALSO_THREATS).map(check), ...names.slice(ALSO_NAMES)];
+  if (entries.length === 0) return <span id={id} hidden />;
+  const shown = entries.slice(0, fit);
+  const shownItems = new Set(shown.flatMap(e => ('item' in e ? [e.item] : [])));
+  const shownNames = shown.flatMap(e => ('name' in e ? [e.name] : []));
+  const rest = [...capped.filter(e => !shownItems.has(e.item)).map(e => e.item.text), ...names.filter(n => !shownNames.includes(n))];
+  const subjectName = (i: Item) => (i.mon ? i.subject : typeName(i.subject, lang));
   return (
-    <span className="coach-also" id={id}>
+    <span ref={ref} className="coach-also" id={id}>
       <span className="coach-also-label">{tr('coach.steps.also')}</span>
-      {types.slice(0, ALSO_TYPES).map(type => (
-        <span key={type} className="coach-also-item" title={typeName(type, lang)}>
-          <TypeIcons types={[type]} /><span className="visually-hidden">{typeName(type, lang)}</span>
-        </span>
-      ))}
-      {threats.length > 0 && (
-        <span className="coach-also-item">
-          <span aria-hidden="true">{tr('coach.steps.check')}</span>
-          {threats.slice(0, ALSO_THREATS).map(species => (
-            <span key={species} className="coach-also-mon" title={check(species)}>
-              <PokemonIcon name={species} /><span className="visually-hidden">{check(species)}</span>
+      {segments.filter(s => s.items.some(i => shownItems.has(i))).map(s => (
+        <span key={`${s.side}:${s.uncovered}`} className="coach-also-item coach-also-cover">
+          <CoverLabel side={s.side} uncovered={s.uncovered} n={s.items.length} />
+          {s.items.filter(i => shownItems.has(i)).map(i => (
+            <span key={i.subject} className={i.mon ? 'coach-also-mon' : 'coach-also-type'} title={i.text}>
+              {i.mon ? <PokemonIcon name={i.subject} /> : <TypeIcons types={[i.subject]} />}
+              <span className="visually-hidden">{subjectName(i)}</span>
             </span>
           ))}
         </span>
-      )}
-      {names.slice(0, ALSO_NAMES).map(name => <span key={name} className="coach-also-item coach-also-name">{name}</span>)}
+      ))}
+      {shownNames.map(name => <span key={name} className="coach-also-item coach-also-name" title={name}>{name}</span>)}
       {rest.length > 0 && (
         <span className="coach-also-more" title={tr('coach.steps.moreTitle', { names: rest.join(' · ') })}>
           <span aria-hidden="true">+{rest.length}</span><span className="visually-hidden">{rest.join(', ')}</span>
@@ -209,9 +256,9 @@ function Also({ id, solves, skip, problems, self }: { id: string; solves: string
 }
 
 /**
- * Il titolo di una tappa: il suo problema e quelli raggruppati con lui (`group`). Le debolezze diventano
- * "Debole a" coi tipi (icona e nome, senza i conteggi, che restano nella mappa), le minacce "Nessun check per" coi
- * Pokémon, i ruoli mancanti "Manca" coi ruoli; le altre categorie il loro testo (più problemi separati da " · ").
+ * Il titolo di una tappa: il suo problema e quelli raggruppati con lui (`group`). I problemi di copertura con l'etichetta
+ * delle caselle (spada o scudo e "Scoperto" / "Coperto poco") e i soggetti (icona e nome del tipo o del Pokémon), un
+ * pezzo per parte e gravità; i ruoli mancanti "Manca" coi ruoli; le altre categorie il loro testo (separati da " · ").
  */
 function StepTitle({ step, problems }: { step: CoachStep; problems: CoachProblem[] }) {
   const tr = useT();
@@ -220,18 +267,23 @@ function StepTitle({ step, problems }: { step: CoachStep; problems: CoachProblem
   const group = step.group.map(key => (key === problem.key ? problem : problems.find(p => p.key === key))).filter(p => p !== undefined);
   const subjects = group.flatMap(p => p.subjects ?? []);
   const list = (items: ReactNode[]) => items.map((item, i) => <Fragment key={i}>{i > 0 && ', '}{item}</Fragment>);
-  if (problem.category === 'defense' && subjects.length === group.length) {
-    return <>{tr('coach.steps.weakTo')} {list(subjects.map(type => (
-      <span className="coach-step-subject"><TypeIcons types={[type]} />{typeName(type, lang)}</span>
-    )))}</>;
+  if (group.every(p => coverOf(p) && p.subjects?.length === 1)) {
+    const pieces: { side: Side; uncovered: boolean; items: CoachProblem[] }[] = [];
+    for (const p of group) {
+      const cover = coverOf(p)!;
+      const piece = pieces.find(x => x.side === cover.side && x.uncovered === cover.uncovered);
+      if (piece) piece.items.push(p); else pieces.push({ ...cover, items: [p] });
+    }
+    return <>{pieces.map((piece, i) => (
+      <Fragment key={`${piece.side}:${piece.uncovered}`}>{i > 0 && ' · '}<CoverLabel side={piece.side} uncovered={piece.uncovered} n={piece.items.length} />{' '}
+        {list(piece.items.map(p => (isThreat(p)
+          ? <span className="coach-step-subject is-mon"><PokemonIcon name={p.subjects![0]} />{p.subjects![0]}</span>
+          : <span className="coach-step-subject"><TypeIcons types={[p.subjects![0]]} />{typeName(p.subjects![0], lang)}</span>)))}
+      </Fragment>
+    ))}</>;
   }
   if (group.every(isMissingRoles)) {
     return <>{tr('coach.steps.missing')} {list(subjects.map(need => needLabel(need as Need, lang)))}</>;
-  }
-  if (problem.category === 'meta' && subjects.length === group.length) {
-    return <>{tr('coach.steps.noCheck')} {list(subjects.map(species => (
-      <span className="coach-step-subject is-mon"><PokemonIcon name={species} />{species}</span>
-    )))}</>;
   }
   return <>{group.map((p, i) => <Fragment key={p.key}>{i > 0 && ' · '}<ProblemText text={p.text} /></Fragment>)}</>;
 }
@@ -258,6 +310,7 @@ function Step({ step, index, problems, actions, onCard, onPreview }: {
   const [altHot, setAltHot] = useState(false);
   // Puntatore sulla barra principale (lo scambio): il suo blocco si illumina
   const [mainHot, setMainHot] = useState(false);
+  const extrasRef = useRef<HTMLDivElement>(null);
   const { problem, swap, move } = step;
   const skip = step.group;
   const solved = [...new Set([...step.group, ...(swap?.solves ?? []), ...(move?.solves ?? [])])];
@@ -278,13 +331,13 @@ function Step({ step, index, problems, actions, onCard, onPreview }: {
         )} />
         : move && <MoveProposal fix={move} main alsoId={alsoId} solves={solved} skip={skip} problems={problems} onApply={actions.onApplyMove} onMoveFix={actions.onMoveFix} onPreview={onPreview} />}
       {/* La colonna di destra fa parte della striscia: un clic fuori dai suoi pulsanti applica la proposta principale (da tastiera c'è il pulsante) */}
-      <div className={`coach-strip-extras${altHot ? ' is-alt' : ''}`} onClick={e => {
+      <div ref={extrasRef} className={`coach-strip-extras${altHot ? ' is-alt' : ''}`} onClick={e => {
         if ((e.target as Element).closest('button')) return;
         if (swap) actions.onApplyFix(swap);
         else if (move) actions.onApplyMove(move);
       }}>
         {/* Sull'alternativa "risolve anche" si svuota (la mappa resta quella dello scambio) */}
-        <Also id={alsoId} solves={altHot ? [] : swap?.solves ?? move?.solves ?? []} skip={skip} problems={problems} self={swap?.species} />
+        <Also id={alsoId} solves={altHot ? [] : swap?.solves ?? move?.solves ?? []} skip={skip} problems={problems} self={swap?.species} watch={extrasRef} />
       </div>
     </li>
   );
@@ -344,7 +397,7 @@ function MapProblem({ problem, step, preview, usage, dim = false, role }: {
  * Col puntatore su una proposta si accendono solo le icone che risolve, le altre si spengono.
  */
 function MapGroup({ id, label, members, stepOf, preview, usage }: {
-  id: string; label: string; members: CoachProblem[]; stepOf: Map<string, number>; preview: Set<string> | null;
+  id: string; label: ReactNode; members: CoachProblem[]; stepOf: Map<string, number>; preview: Set<string> | null;
   /** Uso nel meta (0-1) di una minaccia: nel title della sua icona. */
   usage?: (p: CoachProblem) => number | undefined;
 }) {
@@ -359,7 +412,7 @@ function MapGroup({ id, label, members, stepOf, preview, usage }: {
       className={`coach-prob coach-group ${severity}${steps.length ? ' is-covered' : ''}${lit ? ' is-lit' : ''}`}>
       <span className="coach-sev visually-hidden">{tr(severity === 'serious' ? 'dash.serious' : 'dash.minor')}</span>
       <span className="coach-prob-text coach-group-row">
-        <span className="coach-group-label" aria-hidden="true">{label}</span>
+        <span className="coach-group-label">{label}</span>
         <span className="coach-chips">
           {members.slice(0, MAX_CHIPS).map(m => (
             <span key={m.key} data-key={m.key} title={chipTitle(m)}
@@ -387,21 +440,18 @@ function MapGroup({ id, label, members, stepOf, preview, usage }: {
 /** Icone per riga di problema: le altre nel "+N" della riga. */
 const MAX_CHIPS = 10;
 
-/** In quale riga di tipi va un problema di Difesa o di Offesa (null: riga sua). Stesso tipo di problema e stessa gravità. */
+/**
+ * In quale riga va un problema di copertura (null: riga sua): stessa categoria, "Scoperti" o "Coperti poco" e stessa
+ * gravità. Tipi e minacce (gli sprite) restano in righe diverse: le minacce stanno sotto "Minacce del meta".
+ */
 function typeGroupOf(p: CoachProblem): string | null {
-  if ((p.subjects?.length ?? 0) !== 1) return null;
-  // Difesa: per quanti lo reggono ("0 reggono", "1 regge"); le minacce che nessuno regge, "0 reggono" con gli sprite
-  if (p.category === 'defense') return `defense:held:${p.counts?.held ?? 0}:${p.severity}`;
-  if (p.category === 'meta') return 'meta:held:0';
-  // Offesa: "Scoperti" / "Coperti poco"; le minacce che nessuno manda KO sono "Scoperti" con gli sprite
-  if (p.category === 'coverage') return `coverage:${p.size === 2 ? 'uncovered' : 'halfCovered'}:${p.severity}`;
-  if (p.category === 'metaHit') return 'metaHit:uncovered';
-  return null;
+  const cover = coverOf(p);
+  if (!cover || (p.subjects?.length ?? 0) !== 1) return null;
+  return `${p.category}:${cover.side}:${cover.uncovered ? 'uncovered' : 'half'}:${p.severity}`;
 }
-function groupLabel(group: string, tr: ReturnType<typeof useT>): string {
-  const [, kind, n] = group.split(':');
-  if (kind === 'held') return tr(n === '1' ? 'coach.group.held1' : 'coach.group.heldN', { n: Number(n) });
-  return tr(kind === 'uncovered' ? 'coach.group.uncovered' : 'coach.group.halfCovered');
+function groupLabel(group: string): ReactNode {
+  const [, side, kind] = group.split(':');
+  return <CoverLabel side={side as Side} uncovered={kind === 'uncovered'} n={2} />;
 }
 
 /** I problemi "ruoli mancanti" (essenziali o importanti) coi ruoli come soggetti. */
@@ -465,7 +515,7 @@ function MapTile({ id, name, items, score, count, stepOf, preview, threatUsage, 
   const hidden = priority.slice(fit);
   const hiddenText = (x: typeof pills[number]) => (x.role ? needLabel(x.role as Need, lang) : all(x).map(p => p.text).join('; '));
   const row = ({ p, role, section, members, group }: typeof pills[number]) => members ? (
-    <MapGroup key={group} id={group!} label={groupLabel(group!, tr)} stepOf={stepOf} preview={preview}
+    <MapGroup key={group} id={group!} label={groupLabel(group!)} stepOf={stepOf} preview={preview}
       members={isThreat(members[0]) ? [...members].sort((a, b) => (threatUsage?.[b.subjects![0]] ?? 0) - (threatUsage?.[a.subjects![0]] ?? 0)) : members}
       usage={p => (isThreat(p) ? threatUsage?.[p.subjects?.[0] ?? ''] : undefined)} />
   ) : <MapProblem key={`${p.key}|${p.text}|${role ?? ''}`} problem={p} step={stepOf.get(p.key) ?? null}

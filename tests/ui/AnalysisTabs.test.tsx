@@ -85,7 +85,7 @@ describe('schede interne di Analisi', () => {
   });
 
   it('Coaching: badge con tutti i problemi (lo stesso numero della barra laterale), rosso coi gravi; il nome resta "Coaching"', async () => {
-    // Nessuno regge Fire, Water e Ground (nella Coverage tipi della Difesa): tre problemi gravi (in attacco nessun tipo scoperto)
+    // Scoperti in difesa contro Fire, Water e Ground (nella Coverage tipi della Difesa): tre problemi gravi (in attacco nessun tipo scoperto)
     await setup(['Great Tusk', 'Gholdengo', 'Kingambit']);
     const tab = within(views()).getByRole('tab', { name: 'Coaching' });
     const badge = tab.querySelector('.tab-badge')!;
@@ -112,7 +112,7 @@ describe('schede interne di Analisi', () => {
     await user.click(within(views()).getByRole('tab', { name: 'Coaching' }));
     expect(within(views()).getByRole('tab', { name: 'Coaching' })).toHaveAttribute('aria-selected', 'true');
     expect(within(panel()).getByRole('tabpanel')).toHaveAttribute('aria-labelledby', 'analysis-view-coaching');
-    expect(within(panel()).getByRole('tabpanel')).toHaveTextContent(/Nessuno regge/);
+    expect(within(panel()).getByRole('tabpanel')).toHaveTextContent(/In difesa: Scopert|Scopert[oi] in difesa contro/);
   });
 
   it('Bonus/Malus apre la scheda col catalogo', async () => {

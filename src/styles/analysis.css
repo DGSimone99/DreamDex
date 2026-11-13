@@ -615,6 +615,11 @@
 .coach-step-problem { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; margin: 0; padding: 0 14px 0 10px; font-size: 13.5px; font-weight: 600; line-height: 1.35; color: var(--text); }
 .coach-step-problem .coach-sev { margin-right: 4px; vertical-align: 1px; }
 /* Tipi (o minacce) nel titolo: icona e nome */
+/* L'etichetta di copertura (caselle, titoli, "risolve anche"): spada per l'attacco, scudo per la difesa, e la parola */
+.coach-cover { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.coach-side { display: inline-flex; flex: none; color: var(--accent-ink); }
+.coach-side .icon { width: 14px; height: 14px; }
+.coach-step-problem .coach-cover { vertical-align: -2px; }
 .coach-step-subject { white-space: nowrap; }
 .coach-step-subject .type-icons { display: inline-flex; margin-right: 4px; vertical-align: -2px; }
 .coach-step-subject .type-icons img { width: 16px; height: 16px; }
@@ -675,11 +680,16 @@
 .coach-also-item { display: inline-flex; flex: none; align-items: center; gap: 4px; }
 .coach-also .type-icons img { width: 15px; height: 15px; }
 .coach-also-mon .mon-icon { margin: -9px -2px -8px -4px; }
+/* Una copertura in "risolve anche": l'etichetta e subito le sue icone, più stretta fra di loro */
+.coach-also-cover { gap: 3px; }
+.coach-also-cover .coach-cover { margin-right: 2px; color: var(--muted); }
+.coach-also-type { display: inline-flex; }
 .coach-also-name { display: block; flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 /* "risolve anche" va a capo (due righe al più) invece di tagliare i nomi o uscire dalla striscia */
 @media (min-width: 600px) {
-  .coach-strip-extras .coach-also { flex-wrap: wrap; height: auto; max-height: 40px; row-gap: 2px; white-space: normal; }
-  .coach-strip-extras .coach-also-name { flex: none; max-width: 100%; }
+  /* Altezza fissa di due righe (una riga sola sta al centro): così la misura di quante voci ci stanno non cambia con le voci */
+  .coach-strip-extras .coach-also { flex-wrap: wrap; align-content: center; height: 40px; row-gap: 2px; white-space: normal; }
+  .coach-strip-extras .coach-also-name { flex: 0 1 auto; max-width: 100%; white-space: nowrap; }
 }
 .coach-also-more { flex: none; padding: 0 5px; font: 600 11px/16px var(--ui); color: var(--muted); background: var(--raised); border-radius: 10px; }
 
