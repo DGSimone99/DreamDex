@@ -92,18 +92,20 @@ describe('Svuota team', () => {
 });
 
 describe('durata dell’avviso', () => {
-  it('10 secondi per le azioni su tutto il team, 5 per un membro', () => {
+  it('6 secondi per le azioni su tutto il team, 3 per un membro', () => {
     vi.useFakeTimers();
     const onClose = vi.fn();
     const { unmount } = renderIt(<UndoToast action={{ id: 1, kind: 'clear', from: '' }} onUndo={vi.fn()} onClose={onClose} />);
-    act(() => { vi.advanceTimersByTime(9999); });
+    act(() => { vi.advanceTimersByTime(5999); });
     expect(onClose).not.toHaveBeenCalled();
     act(() => { vi.advanceTimersByTime(1); });
     expect(onClose).toHaveBeenCalledTimes(1);
     unmount();
     const onCloseOne = vi.fn();
     renderIt(<UndoToast action={{ id: 2, kind: 'remove', from: 'Garchomp' }} onUndo={vi.fn()} onClose={onCloseOne} />);
-    act(() => { vi.advanceTimersByTime(5000); });
+    act(() => { vi.advanceTimersByTime(2999); });
+    expect(onCloseOne).not.toHaveBeenCalled();
+    act(() => { vi.advanceTimersByTime(1); });
     expect(onCloseOne).toHaveBeenCalledTimes(1);
   });
 });
