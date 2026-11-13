@@ -130,6 +130,25 @@ async function toastClear(page: Page): Promise<boolean> {
   console.log(m);
   return true;
 }
+/** Stampa le righe della testata dell'editor (quanti controlli per riga), se qualcosa esce a destra e dove sta il riquadro del testo. */
+async function editorHead(page: Page): Promise<boolean> {
+  const m = await page.evaluate(() => {
+    const head = document.querySelector('.slot.open .editor-head');
+    if (!head) return 'no head';
+    const hb = head.getBoundingClientRect();
+    const items = [...head.querySelectorAll<HTMLElement>('button, a, input, [role="combobox"]')].filter(e => e.offsetParent && !e.closest('.paste-panel'));
+    const rows = new Map<number, number>();
+    for (const e of items) { const top = Math.round(e.getBoundingClientRect().top / 8) * 8; rows.set(top, (rows.get(top) ?? 0) + 1); }
+    const out = items.filter(e => e.getBoundingClientRect().right > hb.right + 1).length;
+    const paste = document.querySelector('.slot.open .paste-panel')?.getBoundingClientRect();
+    const moves = document.querySelector('.slot.open .editor-group.moves')?.getBoundingClientRect();
+    const covers = paste && moves ? Math.max(0, Math.min(paste.right, moves.right) - Math.max(paste.left, moves.left)) * Math.max(0, Math.min(paste.bottom, moves.bottom) - Math.max(paste.top, moves.top)) : -1;
+    const [nameTop, closeTop] = ['.nickname', '.editor-close'].map(sel => Math.round(document.querySelector(`.slot.open ${sel}`)?.getBoundingClientRect().top ?? -1));
+    return `nameTop=${nameTop} closeTop=${closeTop} head=${Math.round(hb.width)}x${Math.round(hb.height)} rows=${[...rows.values()].join('|')} out=${out}${paste ? ` paste=${Math.round(paste.left)},${Math.round(paste.top)} ${Math.round(paste.width)}x${Math.round(paste.height)} coversMoves=${Math.round(covers)}` : ''} hscroll=${document.documentElement.scrollWidth > innerWidth ? 1 : 0}`;
+  });
+  console.log(m);
+  return true;
+}
 const tab = (page: Page, id: string) => page.evaluate(i => { document.getElementById(`tab-${i}`)?.click(); }, id);
 
 /** Mouse sulla carta n della lista; dopo l'animazione stampa i bordi della carta inclinata rispetto all'interno della lista. */
@@ -663,6 +682,47 @@ const STATES: Record<string, State> = {
     if (!await clickText(p, '.slot.filled > .slot-card', /Dragapult/)) return 'no card';
     await wait(600);
     return focus(p, '.slot.open .alert-mark');
+  } },
+  // Testata dell'editor (Great Tusk: preset sia NatDex OU sia Gen 9 OU), il menu dei preset aperto e il riquadro Testo del set
+  'editor-head': { run: async p => { if (!await clickText(p, '.slot.filled > .slot-card', /Great Tusk/)) return 'no card'; await wait(600); return editorHead(p); } },
+  'editor-presets': { run: async p => {
+    if (!await clickText(p, '.slot.filled > .slot-card', /Great Tusk/)) return 'no card';
+    await wait(600);
+    return clickText(p, '.slot.open .preset-field [role="combobox"]', /./);
+  } },
+  // Fumetti delle icone della testata col fuoco (dove cadono, se escono dalla finestra), matita del nome, contrasto di "N liberi"
+  'editor-hints': { run: async p => {
+    if (!await clickText(p, '.slot.filled > .slot-card', /Great Tusk/)) return 'no card';
+    await wait(600);
+    for (const sel of ['.shiny-toggle', '.smogon-link', '.save-set', '.member-copy', '.editor-close', '.nickname']) {
+      await focus(p, `.slot.open ${sel}`);
+      await wait(200);
+      console.log(await p.evaluate(s => {
+        const el = document.querySelector<HTMLElement>(`.slot.open ${s}`);
+        if (!el) return `${s}: missing`;
+        const pencil = el.querySelector<HTMLElement>('.nickname-pencil');
+        if (pencil) return `${s}: pencil opacity=${getComputedStyle(pencil).opacity}`;
+        const bubble = el.closest('.hint-wrap')?.querySelector<HTMLElement>('.hint-bubble');
+        if (!bubble) return `${s}: no bubble`;
+        const r = bubble.getBoundingClientRect();
+        return `${s}: "${bubble.textContent}" ${Math.round(r.left)}..${Math.round(r.right)} shown=${!bubble.hidden} off=${r.right > innerWidth || r.left < 0 ? 1 : 0} desc=${el.getAttribute('aria-describedby') ? 1 : 0}`;
+      }, sel));
+    }
+    console.log(await p.evaluate(() => {
+      const el = document.querySelector<HTMLElement>('.slot.open .ev-left');
+      if (!el) return 'no ev-left';
+      let bg = ''; let n: HTMLElement | null = el;
+      while (n && !bg) { const c = getComputedStyle(n).backgroundColor; if (c !== 'rgba(0, 0, 0, 0)') bg = c; n = n.parentElement; }
+      return `ev-left "${el.textContent}" color=${getComputedStyle(el).color} bg=${bg} size=${getComputedStyle(el).fontSize}`;
+    }));
+    return true;
+  } },
+  'editor-paste': { run: async p => {
+    if (!await clickText(p, '.slot.filled > .slot-card', /Great Tusk/)) return 'no card';
+    await wait(600);
+    if (!await clickText(p, '.slot.open button.member-io', /./)) return 'no set text button';
+    await wait(300);
+    return editorHead(p);
   } },
   undo: { run: async p => clickText(p, 'button.remove', /Rimuovi/) },
   collapsed: { hash: hash(LONG), run: async p => clickText(p, 'button.band-toggle', /./) },
