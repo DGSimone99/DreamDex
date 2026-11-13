@@ -53,7 +53,8 @@ describe('Annulla dopo Importa e dopo un team salvato', () => {
     await user.click(screen.getByRole('button', { name: 'Uno' }));
     expect(names()).toEqual(['Great Tusk']);
     expect(plate().querySelector('.plate-name')).toHaveTextContent('Uno');
-    expect(screen.getByRole('status')).toHaveTextContent('Caricato «Uno»');
+    // Anche il fumetto "Team salvato" di poco prima è un avviso: si cerca quello dell'Annulla
+    expect(screen.getAllByRole('status').map(s => s.textContent).join(' ')).toContain('Caricato «Uno»');
     await user.click(screen.getByRole('button', { name: 'Annulla' }));
     expect(names()).toEqual(['Garchomp', 'Gholdengo']);
     expect(plate().querySelector('.plate-name')).toHaveTextContent('Due');
