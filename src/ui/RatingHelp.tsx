@@ -126,6 +126,8 @@ function GeneralTopic({ teamType, weights }: { teamType: Archetype | null; weigh
       </ul>
       <p>{t('help.general.1')}</p>
       <p>{t('help.general.2')}</p>
+      {/* Trick Room solo qui, in Come funziona, non nelle schede dei tipi (scelta dell'utente, confermata 2026-11-13) */}
+      <p>{t('help.type.trickRoom')}</p>
       <div className="help-table-wrap">
         <table className="help-weights">
           <thead>
@@ -224,8 +226,6 @@ function TypeTopic({ type, weights, typeRule }: { type: Archetype; weights: Area
     <>
       <p className="help-note">{t(`archetype.${type}.note`)}</p>
       <p>{t(`help.type.${type}`)}</p>
-      {/* Trick Room è il contrario di un team veloce: la frase sta nella scheda del team più veloce */}
-      {type === 'hyperOffense' && <p>{t('help.type.trickRoom')}</p>}
       <h5>{t('help.type.weights')}</h5>
       <dl className="help-weights-row">
         {WEIGHT_AREAS.map(area => {

@@ -119,12 +119,11 @@ describe('Riquadro Voto', () => {
     expect(stall).not.toHaveTextContent('Non conta nello Stall');
     expect(stall).toHaveTextContent(/Essenziali.*Recupero.*Importanti/);
     expect(stall).not.toHaveTextContent('Il tuo team è giudicato come');
-    // Trick Room: la frase sta solo nella scheda Hyper Offense (il team veloce), non in Come funziona; niente frase sui livelli
+    // Trick Room: la frase sta solo in Come funziona, in nessuna scheda dei tipi; niente frase sui livelli
     for (const name of ['Hyper Offense', 'Bulky Offense', 'Balance', 'Semi-stall', 'Stall']) {
       await user.click(within(dialog).getByRole('tab', { name }));
       const panel = within(dialog).getByRole('tabpanel');
-      if (name === 'Hyper Offense') expect(panel).toHaveTextContent('in un team veloce come questo è un controsenso e costa punti');
-      else expect(panel).not.toHaveTextContent('Trick Room');
+      expect(panel).not.toHaveTextContent('Trick Room');
       expect(panel).not.toHaveTextContent('tre livelli');
       // Le voci dei Ruoli sono etichette con la spiegazione nel tooltip, non pulsanti
       expect(within(panel).queryAllByRole('button')).toHaveLength(0);
@@ -137,7 +136,7 @@ describe('Riquadro Voto', () => {
     expect(general).toHaveTextContent('Bonus/Malus');
     // Le lettere in cima, grandi: la frase intera per gli screen reader
     expect(within(general).getByRole('list', { name: 'Le lettere: S da 90, A da 80, B da 70, C da 60, sotto è D.' })).toHaveTextContent(/S90\+A80\+B70\+C60\+D< 60/);
-    expect(general).not.toHaveTextContent('Trick Room');
+    expect(general).toHaveTextContent('portarla in un team veloce è un controsenso e costa punti');
     expect(general).not.toHaveTextContent('media pesata');
     // I pesi solo come barre: la parola c'è solo per i lettori di schermo; Offesa prima di Difesa
     expect(within(general).getAllByRole('columnheader').map(th => th.textContent)).toEqual(['Tipo di team', 'Offesa', 'Difesa', 'Velocità']);
