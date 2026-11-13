@@ -21,7 +21,7 @@ function TypeBands({ share }: { share: MemberShare }) {
 
 /**
  * La scheda Generale dell'Offesa, nella stessa cornice della Difesa (`def-frame`). Per ogni membro tre barre col numero, come
- * la riga Team Coverage in fondo: il voto tipi, il voto meta e il voto del membro da solo (70/30). Con la squadra chiusa
+ * la riga Team Coverage in fondo: il voto tipi, il voto meta e il voto del membro da solo (50/50). Con la squadra chiusa
  * (`ctx.roomy`) sotto le barre compaiono i tipi per fascia, i Pokémon del meta mandati KO in due colpi e i punti che il
  * membro porta al team (sommati fanno il voto). Le righe seguono il team; chi il motore ha scartato resta con "—".
  */

@@ -114,11 +114,11 @@ describe('memberDefense: quanti colpi di tipo regge (solo informazione)', () => 
     expect(m.physical).toBe(side(0));
     expect(m.special).toBe(side(1));
     expect(m.hold).toBe(Math.round(100 * held.reduce((a, x) => a + holdCredit(x), 0) / 36));
-    // Il valore del membro con i pesi della squadra: senza statistiche niente meta, 70/30
+    // Il valore del membro con i pesi della squadra: senza statistiche niente meta, 80/20
     expect(m.metaHold).toBeNull();
   });
 
-  it('Regge il meta: quota pesata per uso delle minacce che regge; valore 40/30/30 col meta, 70/30 senza', () => {
+  it('Regge il meta: quota pesata per uso delle minacce che regge; valore 40/40/20 col meta, 80/20 senza', () => {
     const m = memberDefense(blissey, [blissey], fixtureData)!;
     expect(m.metaHold).not.toBeNull();
     expect(m.metaHold!).toBeGreaterThanOrEqual(0);
@@ -127,7 +127,7 @@ describe('memberDefense: quanti colpi di tipo regge (solo informazione)', () => 
     expect(m.value).toBe(Math.round(DEFENSE_SHARES.types * m.hold + DEFENSE_SHARES.meta * m.metaHold! + DEFENSE_SHARES.sustain * m.sustain));
     const plain = memberDefense(blissey, [blissey], { ...fixtureData, ignoreMeta: true })!;
     expect(plain.metaHold).toBeNull();
-    expect(DEFENSE_SHARES_NO_META).toEqual({ types: 0.7, sustain: 0.3 });
+    expect(DEFENSE_SHARES_NO_META).toEqual({ types: 0.8, sustain: 0.2 });
     expect(plain.value).toBe(Math.round(DEFENSE_SHARES_NO_META.types * plain.hold + DEFENSE_SHARES_NO_META.sustain * plain.sustain));
   });
 
