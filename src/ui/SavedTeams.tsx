@@ -34,6 +34,10 @@ export function SavedTeams({ team, format, plate, onLoad }: {
   // Team eliminato: si può rimettere con Annulla
   const [undo, setUndo] = useState<(UndoAction & { entry: SavedTeam; index: number }) | null>(null);
   const nameRef = useRef<HTMLInputElement>(null);
+  // Dopo Salva un fumetto verde come quello di Esporta dice per un attimo che il team è salvato
+  const [done, setDone] = useState(0);
+  const doneTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  useEffect(() => () => clearTimeout(doneTimer.current), []);
   const [current, setCurrentState] = useState<Current | null>(readCurrent);
   const setCurrent = (value: Current | null) => { setCurrentState(value); writeCurrent(value); };
   const text = useMemo(() => exportShowdown(team), [team]);
@@ -60,7 +64,12 @@ export function SavedTeams({ team, format, plate, onLoad }: {
   const store = (trimmed: string) => {
     const favorites = team.flatMap((set, i) => (set.favorite ? [i] : []));
     const custom = team.flatMap((set, i) => (set.customSkillset ? [i] : []));
-    if (update([...saved.filter(t => t.name !== trimmed), { name: trimmed, text, favorites, custom, format }])) setCurrent({ name: trimmed, text });
+    if (update([...saved.filter(t => t.name !== trimmed), { name: trimmed, text, favorites, custom, format }])) {
+      setCurrent({ name: trimmed, text });
+      setDone(Date.now());
+      clearTimeout(doneTimer.current);
+      doneTimer.current = setTimeout(() => setDone(0), 1800);
+    }
     setName('');
   };
   const save = () => {
@@ -105,6 +114,7 @@ export function SavedTeams({ team, format, plate, onLoad }: {
             <input ref={nameRef} aria-label={t('saved.name')} value={name} placeholder={t('saved.namePlaceholder')} onChange={e => setName(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); save(); } }} />
             <button type="button" onClick={save} disabled={!name.trim() || team.length === 0}>{t('saved.save')}</button>
+            {done > 0 && <span key={done} className="export-note done" role="status"><Icon name="check" />{t('saved.done')}</span>}
           </div>
           {failed && (
             <p role="status" className="errors">

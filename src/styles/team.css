@@ -458,7 +458,7 @@
 /* Modifiche non salvate: una riga gialla piccola in cima, non una finestra */
 .saved-unsaved { display: flex; align-items: center; gap: 6px; margin: 0; font: 600 12px/1.3 var(--ui); color: var(--warn); }
 .saved-unsaved .icon { flex: none; width: 13px; height: 13px; }
-.saved-new { display: flex; gap: 8px; }
+.saved-new { position: relative; display: flex; gap: 8px; }
 .saved-new input { flex: 1; min-width: 0; height: 34px; }
 .saved-new button { height: 34px; white-space: nowrap; }
 .saved-new button:disabled { opacity: 0.55; }

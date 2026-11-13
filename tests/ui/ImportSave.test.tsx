@@ -52,6 +52,7 @@ describe('import / export / salvataggio', () => {
     await user.type(screen.getByLabelText('Aggiungi Pokémon'), 'Great Tusk{Enter}');
     await user.type(screen.getByLabelText('Nome team'), 'Prova');
     await user.click(screen.getByRole('button', { name: 'Salva team' }));
+    expect(screen.getByText('Team salvato', { selector: '[role="status"]' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Rimuovi Great Tusk' }));
     expect(within(team()).queryByText('Great Tusk')).toBeNull();
     await user.click(screen.getByRole('button', { name: 'Prova' }));
