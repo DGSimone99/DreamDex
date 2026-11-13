@@ -285,7 +285,8 @@
 .dash .dash-cell { height: 22px; padding: 0; text-align: center; border: 1px solid var(--line); border-radius: 3px; background: var(--raised); color: color-mix(in srgb, var(--faint) 40%, var(--raised)); cursor: help; }
 .dash-cell .icon { width: 12px; height: 12px; vertical-align: middle; stroke-width: 2.5; }
 /* Coperto: niente casella, solo la spunta tenue; così le caselle che restano (minori e buchi) saltano all'occhio */
-.dash .dash-cell.ok { background: transparent; border-color: transparent; color: color-mix(in srgb, var(--good) 50%, var(--line)); }
+/* Coperto: senza fondo ma col contorno, così la griglia dei tipi si legge anche quando è tutta a posto */
+.dash .dash-cell.ok { background: transparent; border-color: color-mix(in srgb, var(--good) 22%, var(--line)); color: color-mix(in srgb, var(--good) 50%, var(--line)); }
 .dash .dash-cell.ok .icon { width: 11px; height: 11px; stroke-width: 2.25; }
 .dash .dash-cell.minor { background: var(--warn-bg); color: var(--warn); border-color: color-mix(in srgb, var(--warn) 60%, transparent); }
 .dash .dash-cell.bad { background: color-mix(in srgb, var(--bad) 28%, var(--panel)); color: var(--text); border-color: color-mix(in srgb, var(--bad) 80%, transparent); }
