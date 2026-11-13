@@ -110,6 +110,20 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
     // Dopo il cambio di scheda: lo scorrimento lo fa già la barra delle schede
     requestAnimationFrame(() => searchRef.current?.focus({ preventScroll: true }));
   }, [focusSearch]);
+  // "/" (fuori da un campo di testo e senza finestre aperte) porta il cursore nella ricerca, come in molti siti
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== '/' || event.ctrlKey || event.metaKey || event.altKey || event.defaultPrevented) return;
+      const active = event.target as HTMLElement | null;
+      if (active?.closest('input, textarea, select, [contenteditable="true"], [role="dialog"], [role="alertdialog"]')) return;
+      const input = searchRef.current;
+      if (!input || input.closest('[hidden], [inert]') || document.querySelector('[role="dialog"], [role="alertdialog"]')) return;
+      event.preventDefault();
+      input.focus();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, []);
   const view: View = replacing ? 'member' : team.length >= 2 && (scope === 'all' || team.length >= 6) ? 'all' : 'add';
   // Tipo di team per giudicare i cambi: Qualunque (il voto vero del team) finché non lo scegli a mano
   const [pickedType, setPickedType] = useState<Archetype | null>(null);
@@ -321,6 +335,7 @@ export function SuggestionsPanel({ team, format, data, replaceIndex, onAdd, onRe
           <input
             ref={searchRef}
             aria-label={tr('suggest.search')}
+            aria-keyshortcuts="/"
             aria-describedby={target ? 'search-hint' : undefined}
             placeholder={tr('suggest.searchPlaceholder')}
             value={filters.query}

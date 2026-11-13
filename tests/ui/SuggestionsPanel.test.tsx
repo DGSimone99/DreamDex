@@ -23,6 +23,18 @@ async function setup(...names: string[]) {
 }
 
 describe('SuggestionsPanel', () => {
+  it('"/" fuori da un campo porta il cursore nella ricerca; dentro un campo si scrive e basta', async () => {
+    const user = await setup();
+    const search = screen.getByLabelText('Aggiungi Pokémon');
+    expect(search).toHaveAttribute('placeholder', 'Cerca un Pokémon… ( / )');
+    (document.activeElement as HTMLElement | null)?.blur();
+    await user.keyboard('/');
+    expect(search).toHaveFocus();
+    expect(search).toHaveValue('');
+    await user.keyboard('/');
+    expect(search).toHaveValue('/');
+  });
+
   it('ordina i suggerimenti per il voto che darebbero al team', async () => {
     await setup('Great Tusk', 'Gholdengo');
     // Corviknight, Kingambit, Rotom-Wash, Toxapex (Dragapult è Uber in National Dex)

@@ -1238,7 +1238,7 @@ export const it: Record<keyof typeof en, string> = {
   'suggest.title': "Suggerimenti",
   'suggest.replaceTitle': "Sostituisci {species}",
   'suggest.search': "Aggiungi Pokémon",
-  'suggest.searchPlaceholder': "Cerca un Pokémon…",
+  'suggest.searchPlaceholder': "Cerca un Pokémon… ( / )",
   'suggest.enter': "Invio",
   'suggest.enterAdds': "aggiunge",
   'suggest.enterReplaces': "sostituisce con",

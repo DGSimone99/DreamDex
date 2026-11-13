@@ -1236,7 +1236,7 @@ export const en = {
   'suggest.title': "Suggestions",
   'suggest.replaceTitle': "Replace {species}",
   'suggest.search': "Add Pokémon",
-  'suggest.searchPlaceholder': "Search a Pokémon…",
+  'suggest.searchPlaceholder': "Search a Pokémon… ( / )",
   'suggest.enter': "Enter",
   'suggest.enterAdds': "adds",
   'suggest.enterReplaces': "replaces with",
