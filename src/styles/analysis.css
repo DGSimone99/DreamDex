@@ -264,6 +264,14 @@
 .dash-link { gap: 2px; padding: 2px 6px; font-size: 12px; font-weight: 600; color: var(--accent-ink); background: none; border-color: transparent; }
 .dash-link:hover { background: var(--accent-wash); border-color: transparent; }
 .dash-link .icon { width: 14px; height: 14px; }
+/* Barra del titolo cliccabile: la freccia è il pulsante e copre tutta la barra; la barra si schiarisce al passaggio */
+.dash-head.is-link { position: relative; cursor: pointer; }
+.dash-head.is-link .dash-link::after { content: ''; position: absolute; inset: 0; }
+/* Al passaggio una luce azzurra da destra (dove c'è la freccia) che svanisce verso il titolo */
+.dash-head.is-link:hover { background: linear-gradient(270deg, color-mix(in srgb, var(--accent) 22%, transparent), transparent 75%), var(--stripes), var(--band); }
+.dash-head.is-link:hover .dash-link { background: var(--accent-wash); }
+.dash-head.is-link:has(.dash-link:focus-visible) { outline: 2px solid var(--accent); outline-offset: -2px; }
+.dash-head.is-link .dash-link:focus-visible { outline: none; }
 /* Le voci che si contano (useFit): niente scorrimento, ciò che non sta finisce nel "+N" */
 .dash-fit { position: relative; flex: 1; min-height: 0; overflow: hidden; }
 .dash-note { display: flex; align-items: center; gap: 6px; margin: 0; font-size: 13px; color: var(--muted); }
@@ -662,8 +670,11 @@
 }
 .coach-tile { display: flex; flex-direction: column; min-width: 0; min-height: 0; padding: 0 0 5px; overflow: hidden; background: var(--panel); border: 1px solid var(--line-soft); }
 .coach-more { flex: none; align-self: flex-start; margin: 6px 12px 0; padding: 0 8px; border-radius: 10px; font: 600 12px/20px var(--ui); color: var(--muted); background: var(--raised); cursor: help; }
-.coach-tile-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-right: 12px; }
-.coach-tile-head .dash-meta b { font: 800 24px/1 var(--display); font-style: italic; }
+/* La testata come nella Panoramica: la barra scura a righe su tutta la tessera, il valore a destra */
+.coach-tile-head.dash-head { margin: 0; padding-right: 8px; }
+.coach-tile-head .dash-meta { margin-left: auto; }
+.coach-tile-head .dash-links { margin-left: 0; }
+.coach-tile-head .dash-meta b { font: 800 17px/1 var(--display); font-style: italic; }
 .coach-tile-bar { height: 4px; margin: 9px 12px 9px; background: linear-gradient(90deg, var(--accent) var(--score, 0%), var(--line-soft) var(--score, 0%)); }
 /* Senza voto (Regole · Meta) niente barretta: lo stesso respiro sotto la targa */
 .coach-tile-head + .coach-probs, .coach-tile-head + .coach-sep, .coach-tile-head + .visually-hidden + .coach-probs { margin-top: 10px; }
@@ -737,7 +748,7 @@
   .coach-also { font-size: 12.5px; }
   .coach-map { gap: 12px; margin-bottom: 6px; }
   .coach-tile { padding-bottom: 10px; }
-  .coach-tile-head .dash-meta b { font-size: 28px; }
+  .coach-tile-head .dash-meta b { font-size: 18px; }
   .coach-tile-bar { margin: 11px 12px 12px; }
   .coach-probs { gap: 7px; }
   .coach-prob { padding: 4px 10px 4px 7px; font-size: 13px; }
@@ -760,7 +771,7 @@
   .coach-also, .coach-fix-lead { font-size: 13px; }
   .coach-map { gap: 14px; margin-bottom: 12px; }
   .coach-tile { padding-bottom: 14px; }
-  .coach-tile-head .dash-meta b { font-size: 32px; }
+  .coach-tile-head .dash-meta b { font-size: 20px; }
   .coach-tile-bar { margin: 12px 14px 14px; }
   .coach-probs { gap: 8px; padding: 0 14px; }
   .coach-prob { padding: 5px 11px 5px 8px; font-size: 14px; }

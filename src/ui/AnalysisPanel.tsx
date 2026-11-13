@@ -55,6 +55,11 @@ export function AnalysisPanel({ team, analysis, rating, coaching, advice = null,
   const tr = useT();
   // La sottoscheda scelta in ogni area, solo in memoria: tornando su un'area si ritrova (Generale se non c'è più)
   const [subTabs, setSubTabs] = useState<Partial<Record<AreaKey, string>>>({});
+  // Aprire un'area anche su una sua sotto-scheda (Copertura → Coverage tipi)
+  const openView = (next: AnalysisView, sub?: string) => {
+    if (sub && next !== 'overview' && next !== 'coaching') setSubTabs(tabs => ({ ...tabs, [next]: sub }));
+    onView(next);
+  };
   const area = view !== 'overview' && view !== 'coaching' && rating ? view : null;
   const showCoaching = view === 'coaching' && !!rating;
   // Lo stesso numero della barra laterale (tutti i problemi), rosso se almeno uno è grave
@@ -76,7 +81,7 @@ export function AnalysisPanel({ team, analysis, rating, coaching, advice = null,
       onApplyFix={fix => onApplyFix?.(fix)} onApplyMove={fix => onApplyMove?.(fix)} />;
   } else {
     body = <AnalysisOverview team={team} analysis={analysis} rating={rating} coaching={coaching} advice={advice} data={data}
-      onView={onView} onAdd={onAdd} teamCollapsed={teamCollapsed} />;
+      onView={openView} onAdd={onAdd} teamCollapsed={teamCollapsed} />;
   }
   return (
     <section aria-label={tr('analysis.region')} className="analysis">

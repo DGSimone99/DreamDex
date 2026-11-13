@@ -56,6 +56,29 @@ describe('Panoramica di Analisi', () => {
     expect(within(views()).getByRole('tab', { name: 'Offesa' })).toHaveAttribute('aria-selected', 'true');
   });
 
+  it('Copertura: Offesa e Difesa aprono la loro Coverage tipi', async () => {
+    const user = await setup();
+    await user.click(within(panel()).getByRole('button', { name: /^Offesa/ }));
+    expect(within(panel()).getByRole('tab', { name: /^Coverage tipi/ })).toHaveAttribute('aria-selected', 'true');
+    await user.click(within(views()).getByRole('tab', { name: 'Panoramica' }));
+    await user.click(within(panel()).getByRole('button', { name: /^Difesa/ }));
+    expect(within(views()).getByRole('tab', { name: 'Difesa' })).toHaveAttribute('aria-selected', 'true');
+    expect(within(panel()).getByRole('tab', { name: /^Coverage tipi/ })).toHaveAttribute('aria-selected', 'true');
+  });
+
+  it("Ruoli e Velocità: tutta la barra del titolo è un link alla scheda", async () => {
+    const user = await setup();
+    for (const [name, tab] of [['Ruoli', 'Ruoli'], ['Velocità', 'Velocità']] as const) {
+      const head = within(panel()).getByRole('region', { name }).querySelector('.dash-head')!;
+      expect(head).toHaveClass('is-link');
+      await user.click(within(head as HTMLElement).getByRole('button', { name: `Apri la scheda ${name}` }));
+      expect(within(views()).getByRole('tab', { name: tab })).toHaveAttribute('aria-selected', 'true');
+      await user.click(within(views()).getByRole('tab', { name: 'Panoramica' }));
+    }
+    // Copertura ha due link: la barra non è un link
+    expect(within(panel()).getByRole('region', { name: 'Copertura' }).querySelector('.dash-head')).not.toHaveClass('is-link');
+  });
+
   it("il Riassunto: un attaccante dell'eroe porta a Offesa", async () => {
     const user = await setup();
     const summary = within(panel()).getByRole('region', { name: 'Riassunto' });

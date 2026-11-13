@@ -16,6 +16,7 @@ import { TypeIcons } from './typeIcons';
 import { Typed } from './TypeText';
 import { useFitCount } from './useFit';
 import { rolesValue } from './AreaDetail';
+import { DashLink } from './dashboard/DashCard';
 
 const CATEGORY: Record<ProblemCategory, MessageKey> = {
   rules: 'coach.category.rules', defense: 'coach.category.defense', coverage: 'coach.category.coverage', roles: 'coach.category.roles',
@@ -361,9 +362,11 @@ function MapTile({ id, name, items, score, count, stepOf, preview, threatUsage, 
   return (
     <div ref={ref} role="group" aria-labelledby={id} className="coach-tile"
       style={score !== null ? { '--score': `${Math.max(0, Math.min(100, score))}%` } as CSSProperties : undefined}>
-      <header className="coach-tile-head">
+      <header className={`coach-tile-head dash-head${onMore ? ' is-link' : ''}`}>
         <h4 id={id} className="dash-plate">{name}</h4>
         {score !== null ? <span className="dash-meta"><b>{Math.round(score)}</b></span> : count && <span className="dash-meta"><b>{count}</b></span>}
+        {/* Tutta la barra porta alla scheda dell'area (la freccia è il pulsante) */}
+        {onMore && <span className="dash-links"><DashLink area={name} onClick={onMore} /></span>}
       </header>
       {score !== null && <span className="coach-tile-bar" aria-hidden="true" />}
       {main.length > 0 && <ul className="coach-probs">{main.map(row)}</ul>}

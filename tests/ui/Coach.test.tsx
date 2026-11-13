@@ -650,6 +650,20 @@ describe('CoachingView', () => {
     } finally { restore(); }
   });
 
+  it("tessera: la barra del titolo apre la scheda dell'area; le Regole no", () => {
+    const onOpen = vi.fn();
+    const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], threatFixes: {},
+      problems: [threat('Zapdos'), { severity: 'serious', category: 'rules', text: 'x non è legale', fixes: [], key: 'rules:x' }] };
+    renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [] }} members={3} rating={rating(three)} metaOn onOpen={onOpen} {...noop} />);
+    const head = screen.getByRole('group', { name: 'Difesa' }).querySelector<HTMLElement>('.coach-tile-head')!;
+    expect(head).toHaveClass('dash-head', 'is-link');
+    fireEvent.click(within(head).getByRole('button', { name: 'Apri la scheda Difesa' }));
+    expect(onOpen).toHaveBeenCalledWith('defense');
+    const rules = screen.getByRole('group', { name: 'Regole' }).querySelector<HTMLElement>('.coach-tile-head')!;
+    expect(rules).toHaveClass('dash-head');
+    expect(rules).not.toHaveClass('is-link');
+  });
+
   it('aree senza problemi: una riga verde, niente tessera', () => {
     const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], threatFixes: {},
       problems: [{ severity: 'minor', category: 'roles', text: 'Ruoli importanti mancanti: Pivot', fixes: [], key: 'roles:important' }] };
