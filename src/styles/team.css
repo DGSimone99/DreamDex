@@ -248,7 +248,8 @@
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
   animation: tip 0.14s var(--ease);
 }
-.team-quick .popover[open] > :not(summary) { left: auto; right: 0; width: 420px; }
+/* Solo sul computer: sul telefono e sul tablet i menu salgono dal basso a tutta larghezza (phone.css) */
+@media (min-width: 1100px) { .team-quick .popover[open] > :not(summary) { left: auto; right: 0; width: 420px; } }
 /* Importa: una riga di spiegazione, la scatola con l'esempio in grigio (si allunga se serve), Importa a destra in evidenza */
 .import-panel { display: grid; gap: 10px; }
 .import-hint { margin: 0; font: 400 13px/1.4 var(--ui); color: var(--muted); }
@@ -257,8 +258,8 @@
 .import-panel .actions { justify-content: flex-end; }
 .import-panel .apply { display: inline-flex; align-items: center; gap: 7px; background: var(--accent-soft); border-color: var(--accent); color: var(--text); font-weight: 700; }
 .import-panel .apply .icon { width: 15px; height: 15px; color: var(--accent-ink); }
-.import-panel .apply:hover { background: color-mix(in srgb, var(--accent) 30%, var(--raised)); }
-.team-quick .popover[open] > .saved-panel { width: 380px; }
+.import-panel .apply:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 30%, var(--raised)); }
+@media (min-width: 1100px) { .team-quick .popover[open] > .saved-panel { width: 380px; } }
 @media (prefers-reduced-motion: reduce) { .team-head .popover[open] > :not(summary) { animation: none; } }
 .set-editor .best-preset { height: 36px; white-space: nowrap; flex-shrink: 0; }
 .slots { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; }
@@ -436,7 +437,7 @@
 /* Team salvati, come un piccolo Box del PC: in cima (se il team caricato è cambiato) Salva le modifiche, poi nome e Salva
    per un team nuovo; ogni team è una riga con i suoi sei sprite piccoli, il nome e il formato, × a destra. Il team in
    uso ha il fondo azzurrino */
-.team-head .plate-menu[open] > .saved-panel { width: 440px; }
+@media (min-width: 1100px) { .team-head .plate-menu[open] > .saved-panel { width: 440px; } }
 .team-head .saved-panel { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
 .saved-update {
   display: flex;

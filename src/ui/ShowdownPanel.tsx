@@ -39,6 +39,17 @@ export function ShowdownPanel({ team, format, tera = true, openRequest = 0, onIm
     menu.current.querySelector<HTMLTextAreaElement>('textarea')?.focus();
   }, [openRequest]);
 
+  // Annulla: via il testo scritto e chiude, col fuoco di nuovo su Importa
+  const cancel = () => {
+    setText('');
+    if (!menu.current) return;
+    menu.current.open = false;
+    menu.current.querySelector<HTMLElement>(':scope > summary')?.focus();
+  };
+  const filled = !!text.trim();
+  // Annulla c'è solo a menu aperto: chiuso, il pannello non deve offrire pulsanti
+  const [open, setOpen] = useState(false);
+
   const doImport = () => {
     const result = importShowdown(text, lang);
     const next = reviewImport(result, format, lang);
@@ -57,14 +68,16 @@ export function ShowdownPanel({ team, format, tera = true, openRequest = 0, onIm
 
   return (
     <>
-      <details className="popover" ref={menu}>
+      <details className="popover" ref={menu} data-keep-open={filled || undefined} onToggle={e => setOpen(e.currentTarget.open)}>
         <summary title={t('showdown.importTitle')}><Icon name="paste" /><span className="btn-label">{t('showdown.importTab')}</span></summary>
-        {/* Importa: una riga che dice cosa incollare, la scatola con un esempio in grigio, Importa in evidenza */}
+        {/* Importa: una riga che dice cosa incollare, la scatola con un esempio in grigio, Importa in evidenza (spento finché
+            la scatola è vuota) e Annulla, come nel pannello del testo di un membro */}
         <div className="import-panel">
           <p className="import-hint">{t('showdown.importHint')}</p>
           <textarea aria-label={t('showdown.text')} rows={8} value={text} placeholder={t('showdown.importPlaceholder')} onChange={e => setText(e.target.value)} />
           <div className="actions">
-            <button type="button" className="apply" onClick={doImport}><Icon name="paste" />{t('showdown.import')}</button>
+            <button type="button" className="apply" disabled={!filled} onClick={doImport}><Icon name="paste" />{t('showdown.import')}</button>
+            {open && <button type="button" onClick={cancel}>{t('showdown.cancel')}</button>}
           </div>
           {review && <ImportDialog review={review.review} onYes={unlock} onClose={() => setReview(null)} />}
         </div>

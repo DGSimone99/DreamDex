@@ -98,6 +98,12 @@
   .team-head .team-action, .team-quick .popover > summary { flex: none; height: 36px; white-space: nowrap; }
   .team-head { align-items: center; }
   .team-plate, .team-quick { flex: none; }
+  /* Sotto i 600 px le scorciatoie (Importa, Esporta, Svuota) non stanno accanto alla targa e alla guida: vanno su una
+     riga loro, allineate a destra, invece di uscire dallo schermo */
+  @media (max-width: 599px) {
+    .team-head { flex-wrap: wrap; overflow-x: visible; row-gap: 8px; }
+    .team-quick { flex: 1 1 100%; gap: 8px; }
+  }
   .team-head .team-guide { height: 30px; }
   /* La fila delle carte scorre col dito e si ferma su una carta; i margini laterali restano nella fila */
   .band .slots {
