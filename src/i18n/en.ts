@@ -56,6 +56,7 @@ export const en = {
   'family.utility': "Utility",
   'need.anySweeper': "Sweeper",
   'need.anyBreaker': "Wallbreaker",
+  'need.sweeperOrBreaker': "Sweeper or Wallbreaker",
   'need.anyPhysical': "Physical Attacker",
   'need.anySpecial': "Special Attacker",
   'need.anyAttacker': "Attacker",

@@ -33,8 +33,8 @@ describe('coachTeam', () => {
   it('punti di forza', () => {
     // Nessun tipo retto da due membri; 15 tipi coperti in attacco dal livello 40
     expect(coaching.strengths).toEqual([
-      // Solo le voci essenziali dell'archetipo (balance: Sweeper e Wallbreaker, i muri, Recupero e Hazard); fisico, speciale e rimozione sono importanti
-      'Ruoli coperti: Sweeper, Wallbreaker, Muro Fisico, Recupero',
+      // Solo le voci essenziali dell'archetipo (balance: Sweeper o Wallbreaker, i muri, Recupero e Hazard); fisico, speciale e rimozione sono importanti
+      'Ruoli coperti: Sweeper o Wallbreaker, Muro Fisico, Recupero',
       'Copre 15/18 tipi in attacco',
     ]);
   });

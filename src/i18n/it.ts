@@ -58,6 +58,7 @@ export const it: Record<keyof typeof en, string> = {
   'family.utility': "Utility",
   'need.anySweeper': "Sweeper",
   'need.anyBreaker': "Wallbreaker",
+  'need.sweeperOrBreaker': "Sweeper o Wallbreaker",
   'need.anyPhysical': "Attaccante fisico",
   'need.anySpecial': "Attaccante speciale",
   'need.anyAttacker': "Attaccante",

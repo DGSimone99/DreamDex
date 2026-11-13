@@ -50,8 +50,8 @@ describe('Ruoli a schede: Generale e una per livello', () => {
     expect(tabs[0]).toHaveAttribute('aria-selected', 'true');
     for (const tab of tabs.slice(1, 4)) expect(tab.querySelector('b')!.textContent).toMatch(/^\d+\/\d+$/);
     expect(tabs[4].querySelector('b')!.textContent).toMatch(/^\d+$/);
-    // Il team incompleto si giudica come Balance: sei essenziali (fisico e speciale importanti dal 2026-11-11)
-    expect(tabs[1].querySelector('b')!.textContent).toMatch(/\/6$/);
+    // Il team incompleto si giudica come Balance: cinque essenziali (Sweeper o Wallbreaker è una voce sola dal 2026-11-13)
+    expect(tabs[1].querySelector('b')!.textContent).toMatch(/\/5$/);
     // Il Generale porta i Ruoli coperti sul totale, come la riga del voto
     expect(tabs[0].querySelector('b')!.textContent).toMatch(/^\d+\/\d+$/);
   });
@@ -230,11 +230,11 @@ describe('Generale dei Ruoli', () => {
     // Pivot e Rimozione Strumenti sono minori (2026-11-03): non stanno fra i mancanti, e qui nessuna importante manca (giallo)
     expect(within(missing).getAllByRole('listitem').find(li => li.textContent!.startsWith('Pivot'))).toBeUndefined();
     expect(within(missing).getAllByRole('listitem').some(li => li.classList.contains('warn'))).toBe(false);
-    // Il gruppo dei wallbreaker si chiama "Wallbreaker", con Great Tusk
+    // Nel Balance il gruppo si chiama "Sweeper o Wallbreaker", con Great Tusk
     const covered = within(panel).getByRole('region', { name: 'Ruoli che contano, coperti' });
-    const breaker = within(covered).getAllByRole('listitem').find(li => li.querySelector('.rl-name')!.textContent!.startsWith('Wallbreaker'))!;
+    const breaker = within(covered).getAllByRole('listitem').find(li => li.querySelector('.rl-name')!.textContent!.startsWith('Sweeper o Wallbreaker'))!;
     expect(monsOf(breaker)).toContain('Great Tusk');
-    expect(screen.getByRole('tab', { name: /^Essenziali/ }).querySelector('b')).toHaveTextContent('4/6');
+    expect(screen.getByRole('tab', { name: /^Essenziali/ }).querySelector('b')).toHaveTextContent('3/5');
   });
 
   it("per uno stall i gruppi degli attaccanti sono minori; velocità e priorità non sono ruoli", async () => {

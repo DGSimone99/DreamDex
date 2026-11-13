@@ -119,7 +119,7 @@ describe('tipi di team in National Dex OU (recupero e velocità)', () => {
     const ou = rateTeam(stall, { ...fixtureData, formatId: 'ou' })!;
     const asSemi = rateTeam(stall, { ...fixtureData, formatId: 'ou' }, 'it', { archetype: 'semiStall' })!;
     expect(ou.teamType).toBe('stall');
-    const attack = new Set(['anySweeper', 'anyBreaker', 'anyPhysical', 'anySpecial', 'anyAttacker', 'secondAttacker', ...FAMILIES.attack]);
+    const attack = new Set(['anySweeper', 'anyBreaker', 'sweeperOrBreaker', 'anyPhysical', 'anySpecial', 'anyAttacker', 'secondAttacker', ...FAMILIES.attack]);
     for (const [key, level] of Object.entries(ou.needs.levels)) {
       if (attack.has(key)) expect(level === 'minor' || level === 'ignored').toBe(true);
       else expect(level).toBe((asSemi.needs.levels as Record<string, string>)[key]);
