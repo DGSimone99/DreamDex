@@ -149,15 +149,20 @@ interface Props {
   /** Sotto la testata: i problemi del membro detti per esteso, con la via d'uscita. */
   notice?: React.ReactNode;
   smogonAction?: React.ReactNode;
+  /** Testo del set e Copia il set: un gruppo a sé nella testata. */
   ioAction?: React.ReactNode;
+  /** Il riquadro del Testo del set, aperto: copre le Statistiche, così Set e Mosse restano in vista per confrontare. */
+  textPanel?: React.ReactNode;
   /** Tutti i ruoli del membro, il principale per primo: il riquadro in fondo all'editor. */
   roles?: string[];
+  /** La spiegazione di ogni ruolo (stesso ordine di `roles`), nel tooltip. */
+  roleTips?: (string | undefined)[];
   /** Slot di mossa evidenziato perché il coach propone di cambiarlo. */
   proposedSlot?: number;
   onChange: (set: TeamSet) => void;
 }
 
-export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', common, teraBannedIn, speed, title, actions, presetAction, memberAction, notice, smogonAction, ioAction, roles, proposedSlot, onChange }: Props) {
+export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', common, teraBannedIn, speed, title, actions, presetAction, memberAction, notice, smogonAction, ioAction, textPanel, roles, roleTips, proposedSlot, onChange }: Props) {
   const t = useT();
   const lang = useLang();
   // Le più usate vanno in cima al menu, con la quota d'uso (o "Preset" se vengono dalle analisi)
@@ -229,13 +234,22 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
     return others.size ? moveOptions.map(option => (others.has(toID(option.value)) ? { ...option, disabled: true } : option)) : moveOptions;
   }), [moveOptions, movesKey]); // eslint-disable-line react-hooks/exhaustive-deps
   const update = (patch: Partial<TeamSet>) => onChange({ ...set, ...patch });
-  // Preset: la chiave è la posizione. Se il set coincide con un preset è selezionato quello, altrimenti il campo resta vuoto
-  const presetOptions: ComboOption[] = presets.map((preset, i) => ({
-    value: String(i),
-    label: preset.name,
-    detail: <span className="preset-format">{formatName(preset.format)}</span>,
-    description: preset.set.moves.map(move => gameName('move', move, lang)).join(' · '),
-  }));
+  // Preset: la chiave è la posizione. Se il set coincide con un preset è selezionato quello, altrimenti il campo resta vuoto.
+  // Con preset di più formati il menu li raggruppa sotto il nome del formato, nell'ordine in cui arrivano (prima il formato
+  // scelto, poi gli altri): due "Offensive Utility" non si confondono più. Il formato resta nel nome per i lettori di schermo.
+  const formatOrder = [...new Set(presets.map(p => p.format))];
+  const byFormat = formatOrder.length > 1;
+  const presetOptions: ComboOption[] = presets
+    .map((preset, i) => ({
+      value: String(i),
+      label: preset.name,
+      group: byFormat ? formatName(preset.format) : undefined,
+      detail: byFormat
+        ? <span className="visually-hidden">{formatName(preset.format)}</span>
+        : <span className="preset-format">{formatName(preset.format)}</span>,
+      description: preset.set.moves.map(move => gameName('move', move, lang)).join(' · '),
+    }))
+    .sort((a, b) => formatOrder.indexOf(presets[Number(a.value)].format) - formatOrder.indexOf(presets[Number(b.value)].format));
 
   const appliedIndex = presets.findIndex(p => sameSet(p.set, set));
   const applyPreset = (key: string) => {
@@ -300,8 +314,8 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
         </div>
         <div className="head-group">
         <MySetsField set={set} onApply={saved => onChange(presetSet(set, saved))} />
-        {ioAction}
         </div>
+        {ioAction && <div className="head-group set-text-group">{ioAction}</div>}
         {/* Fuori dai riquadri: cambia le scelte sia del Set sia delle Mosse */}
         <label className={`custom-toggle${custom ? ' on' : ''}`} title={t('editor.customTooltip')}>
           <span className="custom-text">
@@ -318,6 +332,8 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
         </label>
       </div>
       {notice}
+      {/* Le Statistiche e, sopra di loro, il riquadro del Testo del set quando è aperto */}
+      <div className="stats-cell">
       <fieldset className="evs">
         <legend>{t('editor.stats')}</legend>
         {/* Livello a sinistra (due mezze pillole unite), "Spread più usati" a destra, sulla stessa riga */}
@@ -409,6 +425,8 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
         </p>
         {speed && <SpeedLine name={battleSpecies(set)?.name ?? set.species} tier={speed} scarf={speedStat(set).scarf} />}
       </fieldset>
+      {textPanel}
+      </div>
       <div className="editor-side">
       <fieldset className="editor-group">
         <legend>{t('editor.set')}</legend>
@@ -480,7 +498,7 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
             <fieldset className="editor-roles">
               <legend>{t('editor.roles')}</legend>
               <ul>
-                {roles.map((role, i) => <li key={role} className={i === 0 ? 'main' : undefined}>{role}</li>)}
+                {roles.map((role, i) => <li key={role} className={i === 0 ? 'main' : undefined} title={roleTips?.[i]}>{role}</li>)}
               </ul>
             </fieldset>
           )}

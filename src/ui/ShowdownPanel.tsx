@@ -8,7 +8,8 @@ import { reviewImport, type ImportReview } from './importReview';
 import { Icon } from './icons';
 import { useLang, useT } from '../i18n/react';
 
-export function ShowdownPanel({ team, format, tera = true, onImport }: { team: TeamSet[]; format: Format; /** Tera ammesso nel formato */ tera?: boolean; onImport: (team: TeamSet[]) => void }) {
+export function ShowdownPanel({ team, format, tera = true, onImport }: { team: TeamSet[]; format: Format; /** Tera ammesso nel formato */ tera?: boolean; /** `again`: lo stesso import ritoccato (Custom Skillset sbloccato dopo la domanda), non un import nuovo */
+  onImport: (team: TeamSet[], again?: boolean) => void }) {
   const t = useT();
   const lang = useLang();
   const [text, setText] = useState('');
@@ -27,6 +28,18 @@ export function ShowdownPanel({ team, format, tera = true, onImport }: { team: T
   };
   useEffect(() => () => clearTimeout(timer.current), []);
 
+  const menu = useRef<HTMLDetailsElement>(null);
+  // Annulla: via il testo scritto e chiude, col fuoco di nuovo su Importa
+  const cancel = () => {
+    setText('');
+    if (!menu.current) return;
+    menu.current.open = false;
+    menu.current.querySelector<HTMLElement>(':scope > summary')?.focus();
+  };
+  const filled = !!text.trim();
+  // Annulla c'è solo a menu aperto: chiuso, il pannello non deve offrire pulsanti
+  const [open, setOpen] = useState(false);
+
   const doImport = () => {
     const result = importShowdown(text, lang);
     const next = reviewImport(result, format, lang);
@@ -38,20 +51,23 @@ export function ShowdownPanel({ team, format, tera = true, onImport }: { team: T
   const unlock = () => {
     if (!review) return;
     const marked = new Set(review.review.skill.map(line => line.index));
-    onImport(review.sets.map((set, i) => (marked.has(i) ? { ...set, customSkillset: true } : set)));
+    // Se il team era già entrato (niente che lo fermava), è lo stesso import: l'Annulla riporta al team di prima
+    onImport(review.sets.map((set, i) => (marked.has(i) ? { ...set, customSkillset: true } : set)), !review.review.blocking.length);
     setReview(null);
   };
 
   return (
     <>
-      <details className="popover">
+      <details className="popover" ref={menu} data-keep-open={filled || undefined} onToggle={e => setOpen(e.currentTarget.open)}>
         <summary title={t('showdown.importTitle')}><Icon name="paste" /><span className="btn-label">{t('showdown.importTab')}</span></summary>
-        {/* Importa: una riga che dice cosa incollare, la scatola con un esempio in grigio, Importa in evidenza */}
+        {/* Importa: una riga che dice cosa incollare, la scatola con un esempio in grigio, Importa in evidenza (spento finché
+            la scatola è vuota) e Annulla, come nel pannello del testo di un membro */}
         <div className="import-panel">
           <p className="import-hint">{t('showdown.importHint')}</p>
           <textarea aria-label={t('showdown.text')} rows={8} value={text} placeholder={t('showdown.importPlaceholder')} onChange={e => setText(e.target.value)} />
           <div className="actions">
-            <button type="button" className="apply" onClick={doImport}><Icon name="paste" />{t('showdown.import')}</button>
+            <button type="button" className="apply" disabled={!filled} onClick={doImport}><Icon name="paste" />{t('showdown.import')}</button>
+            {open && <button type="button" onClick={cancel}>{t('showdown.cancel')}</button>}
           </div>
           {review && <ImportDialog review={review.review} onYes={unlock} onClose={() => setReview(null)} />}
         </div>

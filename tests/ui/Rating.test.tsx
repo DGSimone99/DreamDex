@@ -119,12 +119,17 @@ describe('Riquadro Voto', () => {
     expect(stall).not.toHaveTextContent('Non conta nello Stall');
     expect(stall).toHaveTextContent(/Essenziali.*Recupero.*Importanti/);
     expect(stall).not.toHaveTextContent('Il tuo team è giudicato come');
-    // Trick Room: la regola sta solo in Come funziona, non più in ogni tab di tipo; niente frase sui livelli
+    // Trick Room: la frase sta solo in Come funziona, in nessuna scheda dei tipi; niente frase sui livelli
     for (const name of ['Hyper Offense', 'Bulky Offense', 'Balance', 'Semi-stall', 'Stall']) {
       await user.click(within(dialog).getByRole('tab', { name }));
-      expect(within(dialog).getByRole('tabpanel')).not.toHaveTextContent('portarla in un team veloce');
-      expect(within(dialog).getByRole('tabpanel')).not.toHaveTextContent('tre livelli');
+      const panel = within(dialog).getByRole('tabpanel');
+      expect(panel).not.toHaveTextContent('Trick Room');
+      expect(panel).not.toHaveTextContent('tre livelli');
+      // Le voci dei Ruoli sono etichette con la spiegazione nel tooltip, non pulsanti
+      expect(within(panel).queryAllByRole('button')).toHaveLength(0);
     }
+    await user.click(within(dialog).getByRole('tab', { name: 'Balance' }));
+    expect(within(within(dialog).getByRole('tabpanel')).getByText('Muro Fisico')).toHaveAttribute('title', 'Regge bene i colpi fisici e resta in campo a lungo');
     // Come funziona: Bonus/Malus, lettere dalle soglie, nessun testo delle vecchie aree
     await user.click(within(dialog).getByRole('tab', { name: 'Come funziona' }));
     const general = within(dialog).getByRole('tabpanel');
@@ -132,6 +137,11 @@ describe('Riquadro Voto', () => {
     // Le lettere in cima, grandi: la frase intera per gli screen reader
     expect(within(general).getByRole('list', { name: 'Le lettere: S da 90, A da 80, B da 70, C da 60, sotto è D.' })).toHaveTextContent(/S90\+A80\+B70\+C60\+D< 60/);
     expect(general).toHaveTextContent('portarla in un team veloce è un controsenso e costa punti');
+    expect(general).not.toHaveTextContent('media pesata');
+    // I pesi solo come barre: la parola c'è solo per i lettori di schermo; Offesa prima di Difesa
+    expect(within(general).getAllByRole('columnheader').map(th => th.textContent)).toEqual(['Tipo di team', 'Offesa', 'Difesa', 'Velocità']);
+    expect(within(general).getByRole('row', { name: /^Stall/ })).toHaveTextContent('Stallabbastanzamoltopoco');
+    expect(general.querySelector('.help-wword')).toBeNull();
     expect(general).not.toHaveTextContent('Pokémon più usati del mese');
     expect(general).not.toHaveTextContent('non hanno un peso proprio');
     for (const tab of within(dialog).getAllByRole('tab')) {

@@ -26,6 +26,8 @@ export interface ComboOption {
   commonTitle?: string;
   /** Voce visibile ma non selezionabile (es. una mossa già scelta in un altro slot). */
   disabled?: boolean;
+  /** Gruppo della voce (es. il formato del preset): le voci di fila con lo stesso gruppo stanno sotto la sua intestazione. */
+  group?: string;
 }
 
 /** Testo da confrontare nella ricerca: minuscolo, senza accenti, spazi e segni. */
@@ -73,6 +75,8 @@ export function Combobox({ label, value, options, onChange, restricted = false, 
   // Le più usate in cima, anche mentre cerchi
   const ordered = useMemo(() => [...options.filter(o => o.common), ...options.filter(o => !o.common)], [options]);
   const hasCommon = ordered.length > 0 && !!ordered[0].common;
+  // Intestazioni dei gruppi solo se ce n'è più d'uno (le frecce le saltano: non sono voci)
+  const grouped = useMemo(() => new Set(options.map(o => o.group).filter(Boolean)).size > 1, [options]);
   const matches = useMemo(() => {
     if (!query) return ordered;
     const q = searchID(query);
@@ -186,8 +190,10 @@ export function Combobox({ label, value, options, onChange, restricted = false, 
           {shown.map((option, i) => [
             hasCommon && i === 0 && option.common
               ? <li key="common-head" role="presentation" className="group-head common-head">{commonLabel ?? t('combobox.common')}</li> : null,
-            hasCommon && !option.common && (i === 0 || shown[i - 1].common)
+            hasCommon && !grouped && !option.common && (i === 0 || shown[i - 1].common)
               ? <li key="all-head" role="presentation" className="group-head">{t('combobox.all')}</li> : null,
+            grouped && !option.common && option.group && (i === 0 || shown[i - 1].common || shown[i - 1].group !== option.group)
+              ? <li key={`group-${option.group}-${i}`} role="presentation" className="group-head format-head">{option.group}</li> : null,
             <li
               key={option.value}
               id={`${listId}-${i}`}

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { App } from '../../src/App';
@@ -17,6 +17,24 @@ describe('menu a tendina', () => {
     expect(importMenu()).toHaveAttribute('open');
     await user.click(document.body);
     expect(importMenu()).not.toHaveAttribute('open');
+  });
+
+  it('Importa con del testo scritto resta aperto al clic fuori; Annulla chiude e svuota; Importa spento a scatola vuota', async () => {
+    const user = userEvent.setup();
+    render(<App initialLang="it" data={fixtureData} />);
+    await user.click(screen.getByTitle('Incolla un team scritto per Showdown'));
+    const panel = within(importMenu());
+    expect(panel.getByRole('button', { name: 'Importa' })).toBeDisabled();
+    await user.type(panel.getByLabelText('Testo Showdown'), '   ');
+    expect(panel.getByRole('button', { name: 'Importa' })).toBeDisabled();
+    await user.type(panel.getByLabelText('Testo Showdown'), 'Toxapex');
+    expect(panel.getByRole('button', { name: 'Importa' })).toBeEnabled();
+    await user.click(document.body);
+    expect(importMenu()).toHaveAttribute('open');
+    await user.click(panel.getByRole('button', { name: 'Annulla' }));
+    expect(importMenu()).not.toHaveAttribute('open');
+    expect(panel.getByLabelText('Testo Showdown')).toHaveValue('');
+    expect(screen.getByTitle('Incolla un team scritto per Showdown')).toHaveFocus();
   });
 
   it('aprirne un altro chiude il primo; Esc chiude e riporta il fuoco al pulsante', async () => {

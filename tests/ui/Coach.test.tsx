@@ -51,7 +51,7 @@ async function openCoaching(team: TeamSet[]) {
 /** Il pulsante "Vedi alternative" accanto alla proposta `button` (fuori dal pulsante della proposta). */
 const alternativesOf = (button: HTMLElement) => within(button.closest<HTMLElement>('.coach-prop')!).getByRole('button', { name: /^Vedi alternative a / });
 
-/** Il "+N" della riga del candidato nella lista di Migliora team. */
+/** Il "+N" della riga del candidato nella lista di Sostituisci. */
 const rowGain = (species: string) => {
   const row = [...suggestions().querySelectorAll<HTMLElement>('.suggestions li')]
     .find(li => li.querySelector('.name-line strong')?.textContent?.replace(/^\d+\. /, '') === species)!;

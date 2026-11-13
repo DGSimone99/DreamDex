@@ -6,7 +6,7 @@ import { Icon } from './icons';
 import { PokemonIcon } from './PokemonName';
 
 /**
- * Aggiungi / Migliora team, e attaccata a Migliora una tendina (▾) con chi esce: Tutti (il motore sceglie per ogni
+ * Aggiungi / Sostituisci, e attaccata a Sostituisci una tendina (▾) con chi esce: Tutti (il motore sceglie per ogni
  * candidato) o un membro preciso. Il pulsante della tendina dice "Tutti" o mostra l'icona del membro scelto; si chiude scegliendo, cliccando fuori
  * o con Esc (il focus torna al pulsante).
  */

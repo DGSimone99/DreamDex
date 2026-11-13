@@ -3,6 +3,7 @@ import type { TeamSet } from '../engine/sets';
 import { gameName } from '../i18n/game';
 import { useLang, useT } from '../i18n/react';
 import { MY_SETS_MAX } from '../storage';
+import { Hint } from './Hint';
 import { Icon } from './icons';
 import {
   deleteMySet, mySetByName, mySetIndex, mySetsOf, overwriteMySet, renameMySet, saveMySet, setMySets, useMySets,
@@ -72,12 +73,15 @@ export function MySetsField({ set, onApply }: { set: TeamSet; onApply: (saved: T
             <Icon name="next" />
           </button>
         </span>
-        <button type="button" className={`save-set${overwrite ? ' overwrite' : ''}${saved ? ' saved' : ''}`} aria-label={saveLabel} disabled={!canSave}
-          title={!canSave && full && !saved ? t('editor.saveSetFull') : saveLabel} onClick={save}>
-          <Icon name={saved ? 'check' : overwrite ? 'overwrite' : 'save'} />
-          {/* Sovrascrivere è un momento da controllare: lo dice anche a parole */}
-          {overwrite && <span className="overwrite-label">{t('editor.overwrite')}</span>}
-        </button>
+        {/* Il dischetto: il nome nel fumetto (sotto il mouse e col fuoco); pieno, il motivo come dettaglio */}
+        <Hint label={saveLabel} detail={!canSave && full && !saved ? t('editor.saveSetFull') : undefined}>
+          <button type="button" className={`save-set${overwrite ? ' overwrite' : ''}${saved ? ' saved' : ''}`} aria-label={saveLabel} disabled={!canSave}
+            onClick={save}>
+            <Icon name={saved ? 'check' : overwrite ? 'overwrite' : 'save'} />
+            {/* Sovrascrivere è un momento da controllare: lo dice anche a parole */}
+            {overwrite && <span className="overwrite-label">{t('editor.overwrite')}</span>}
+          </button>
+        </Hint>
       </div>
       {open && mine.length > 0 && (
         // Un elenco semplice (non listbox): ogni riga ha tre pulsanti veri, applica, rinomina, elimina

@@ -96,7 +96,9 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
   const lastChecks = useRef(checksKey);
   // Chi è nella lista Ban dell'utente non entra nelle proposte: si dice quanti sono
   const banned = useMemo(() => bannedInPool(team, format, data), [team, format, data]);
-  const before = useMemo(() => (team.length ? rateTeam(team, data, lang)?.overall ?? null : null), [team, data, lang]);
+  // Il voto del team attuale (già calcolato qui per il +N delle proposte): in testa al pannello, che copre la carta del voto
+  const current = useMemo(() => (team.length ? rateTeam(team, data, lang) : null), [team, data, lang]);
+  const before = current?.overall ?? null;
   const tournament = useMemo(() => rankTournamentTeams(data.tournamentTeams ?? [], team), [data.tournamentTeams, team]);
   const root = useRef<HTMLDivElement>(null);
   // Il tipo di ogni team da torneo: calcolato solo la prima volta che si apre la scheda (costa poco, ma sono 25 team)
@@ -210,7 +212,7 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
     setFavorites(mode);
     setRound(0);
   };
-  // Il magenta (riga e pulsante) solo sulla migliore in assoluto: la prima del primo giro
+  // La migliore in assoluto (la prima del primo giro): bordo più chiaro e il suo Usa magenta, l'azione migliore
   const best = (i: number) => page === 0 && i === 0;
   const onlyFavorites = favorites === 'only';
   const setTitle = (set: TeamSet) => [
@@ -233,6 +235,24 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
       lines.push(`${t('editor.moves')}: ${moves(now).map(move => gameName('move', move, lang)).join(', ')}`);
     }
     return lines.join('\n');
+  };
+  // Il perché di una proposta, in una riga corta: l'area che guadagna di più e i Ruoli coperti se salgono (altrimenti la
+  // seconda area); col team vuoto le due aree più forti. Solo dai numeri che la proposta porta già, niente calcoli nuovi
+  const why = (proposal: Proposal): { label: string; value: string; gain: boolean }[] => {
+    const areas = proposal.areas.filter(area => !area.inactive && area.value !== null);
+    if (!current) {
+      return [...areas].sort((a, b) => b.value! - a.value!).slice(0, 2)
+        .map(area => ({ label: t(`area.${area.key}`), value: String(area.value), gain: false }));
+    }
+    const gains = areas.flatMap(area => {
+      const was = current.areas.find(other => other.key === area.key);
+      const change = was?.value != null && !was.inactive ? area.value! - was.value : 0;
+      return change > 0 ? [{ label: t(`area.${area.key}`), value: `+${change}`, gain: true, change }] : [];
+    }).sort((a, b) => b.change - a.change);
+    const parts = gains.slice(0, 1);
+    const roles = proposal.roles.covered > current.roles.covered
+      ? { label: t('area.roles'), value: `${proposal.roles.covered}/${proposal.roles.total}`, gain: false, change: 0 } : gains[1];
+    return roles ? [...parts, roles] : parts;
   };
   const gapText = (gap: Gap) => gap.kind === 'weakness'
     ? t(gap.count > 3 ? 'fill.gap.weaknessMany' : 'fill.gap.weakness', { n: gap.count, type: typeName(gap.type, lang) })
@@ -274,9 +294,18 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
 
   return (
     <div className="fill-panel" role="dialog" aria-modal="false" aria-label={t('fill.title')} ref={root}>
-      <div className="fill-tabs" role="tablist" aria-label={t('fill.title')}>
-        {tabButton('proposals', t('fill.tabProposals'))}
-        {tabButton('tournament', t('fill.tabTournament'), data.tournamentTeams?.length ?? 0)}
+      <div className="fill-top">
+        <div className="fill-tabs" role="tablist" aria-label={t('fill.title')}>
+          {tabButton('proposals', t('fill.tabProposals'))}
+          {tabButton('tournament', t('fill.tabTournament'), data.tournamentTeams?.length ?? 0)}
+        </div>
+        {/* Il pannello copre la carta del voto: il voto di adesso resta qui, da confrontare con quello delle proposte */}
+        {current && (
+          <p className="fill-now" title={t('fill.nowTitle', { grade: current.grade, n: current.overall })}>
+            <span className="visually-hidden">{t('fill.nowTitle', { grade: current.grade, n: current.overall })}</span>
+            <span aria-hidden="true">{t('fill.now')} <strong>{current.grade}</strong> {current.overall}</span>
+          </p>
+        )}
       </div>
 
       {/* Le proposte restano montate (e il calcolo va avanti) anche guardando i team da torneo */}
@@ -349,8 +378,17 @@ export function FillPanel({ team, format, data, onApply, onLoadTeam, onClose }: 
                     );
                   })}
                 </span>
-                <span className="fill-kind">
-                  {[t(`archetype.${proposal.archetype}`), ...proposal.styles.map(style => t(`teamStyle.${style}`))].join(' · ')}
+                <span className="fill-about">
+                  <span className="fill-kind">
+                    {[t(`archetype.${proposal.archetype}`), ...proposal.styles.map(style => t(`teamStyle.${style}`))].join(' · ')}
+                  </span>
+                  {why(proposal).length > 0 && (
+                    <span className="fill-why" title={t(current ? 'fill.whyTitle' : 'fill.strongTitle')}>
+                      {why(proposal).map((part, k) => (
+                        <span key={part.label}>{k > 0 && <span className="visually-hidden">, </span>}{part.label} <b className={part.gain ? 'up' : undefined}>{part.value}</b></span>
+                      ))}
+                    </span>
+                  )}
                 </span>
                 <span className="fill-result">
                   <span className="fill-grade"><strong>{proposal.grade}</strong> {proposal.overall}</span>

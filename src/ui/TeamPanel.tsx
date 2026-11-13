@@ -4,7 +4,7 @@ import { battleAbility, battleName, battleSpecies, getSpecies, isMega, isSelecta
 import { formatLabel, illegalReason, pokedexOf, teraAllowed } from '../engine/formats';
 import type { Format } from '../engine/format';
 import { formatRules } from '../engine/formatRules';
-import { detectRoles, roleLabel } from '../engine/roles';
+import { detectRoles, roleDescription, roleLabel } from '../engine/roles';
 import { cardRoles, weatherOf } from '../engine/archetype';
 import { measuredSubRoles, rolesList, type SubRoleValues } from '../engine/subRoles';
 import { conditionLabel, viaName } from '../engine/synergy';
@@ -37,6 +37,7 @@ import { Icon } from './icons';
 import { useFitCount } from './useFit';
 import { typeIconUrl } from './typeIcons';
 import { SmogonLink } from './SmogonLink';
+import { Hint } from './Hint';
 import { illegalParts } from '../engine/learnsets';
 import { t, type Lang } from '../i18n';
 import { gameName, typeName } from '../i18n/game';
@@ -244,13 +245,17 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
   // `blocked`: cosa ferma l'incolla (detto in una finestra); il testo resta nel riquadro da correggere
   const [paste, setPaste] = useState<{ text: string; original: string; blocked: ImportReview | null } | null>(null);
   const pasteArea = useRef<HTMLTextAreaElement>(null);
-  // Importa / Esporta: il riquadro si apre sotto il pulsante e si chiude cliccando fuori
+  // Testo del set: il riquadro si apre sopra le Statistiche (Set e Mosse restano in vista) e si chiude cliccando fuori
   const ioRef = useRef<HTMLSpanElement>(null);
+  const pasteRef = useRef<HTMLDivElement>(null);
   const ioOpen = !!paste;
   useEffect(() => {
     if (!ioOpen) return;
     // Un testo già modificato non si butta con un clic fuori: si chiude solo con Annulla o Esc
-    const away = (e: PointerEvent) => { if (!ioRef.current?.contains(e.target as Node)) setPaste(p => (p && p.text !== p.original ? p : null)); };
+    const away = (e: PointerEvent) => {
+      const target = e.target as Node;
+      if (!ioRef.current?.contains(target) && !pasteRef.current?.contains(target)) setPaste(p => (p && p.text !== p.original ? p : null));
+    };
     document.addEventListener('pointerdown', away);
     return () => document.removeEventListener('pointerdown', away);
   }, [ioOpen]);
@@ -273,7 +278,9 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
   const roleLabels = allRoles.map(role => (role === 'weather' && weather
     ? tr('card.weatherTitle', { condition: conditionLabel(weather.condition, lang), via: viaName(weather.via, lang) })
     : role === 'weather' ? tr('card.weather') : roleLabel(role, lang)));
-  const rolesTitle = roleLabels.join(' · ');
+  // Il ruolo mostrato spiegato in una frase, poi gli altri per nome
+  const roleTips = allRoles.map(role => (role === 'weather' ? undefined : roleDescription(role, lang)));
+  const rolesTitle = [roleTips[0] ? `${roleLabels[0]}: ${roleTips[0]}` : roleLabels[0], ...roleLabels.slice(1)].join(' · ');
   const illegal = illegalParts(set, format.genLimit, pokedexOf(format));
   // Choice o Assault Vest con mosse di stato: non si usano (anche un malus nel voto)
   const locked = lockedStatusMoves(set);
@@ -288,7 +295,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
     illegalAbilityText,
     locked.length ? tr('team.lockedStatus', { item: gameName('item', set.item, lang), moves: locked.map(m => gameName('move', m, lang)).join(', ') }) : null,
   ].filter((w): w is string => !!w);
-  // Problemi di legalità in rosso, avvisi in giallo: due triangoli distinti sullo sprite, il dettaglio nei tooltip
+  // Problemi di legalità in rosso, avvisi in giallo: due triangoli distinti in alto sulla carta, il dettaglio nei tooltip
   const dangers: Alert[] = problems.map(text => ({ level: 'danger', text }));
   // Mosse o abilità non legali: come risolvere sta nel tooltip della riga, non nel testo
   const hint = (text: string) => (text === illegalMovesText ? tr('team.illegalMovesHint') : text === illegalAbilityText ? tr('team.illegalAbilityHint') : undefined);
@@ -357,12 +364,6 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
         </span>
         <span className="sprite-wrap">
           <Sprite species={set.species} item={set.item} animated={open} shiny={!!set.shiny} />
-          {(dangers.length > 0 || warns.length > 0) && (
-            <span className="sprite-alerts">
-              <AlertMark alerts={warns} className="on-sprite" />
-              <AlertMark alerts={dangers} className="on-sprite" />
-            </span>
-          )}
         </span>
         {index === 0 && (
           // Il primo slot è quello che va in campo per primo
@@ -393,14 +394,22 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
           <Icon name="close" />
         </button>
         {/* Lo strumento è la sua icona prima del nome: nome e descrizione nel tooltip (e per i lettori di schermo) */}
-        <span className="name-line" aria-hidden="true">
-          <small className="held" title={set.item ? `${gameName('item', set.item, lang)}: ${describe.item(set.item, lang)}` : tr('team.noItem')}>
+        {/* Strumento e nome li dice già il pulsante della carta; gli avvisi in fondo alla riga del nome restano leggibili */}
+        <span className="name-line">
+          <small className="held" aria-hidden="true" title={set.item ? `${gameName('item', set.item, lang)}: ${describe.item(set.item, lang)}` : tr('team.noItem')}>
             <ItemIcon item={set.item} size={20} />
             <span className="visually-hidden">{set.item ? gameName('item', set.item, lang) : tr('team.noItem')}</span>
           </small>
           {/* Il soprannome, se c'è (la specie nel tooltip) */}
         {/* Il nome intero nel tooltip: nella barra compressa si taglia con i puntini */}
-        <strong className="name" title={set.name ? `${set.name} (${name})` : name} style={{ '--name-em': nameEm.toFixed(3) } as CSSProperties}>{shownName}</strong>
+        <strong className="name" aria-hidden="true" title={set.name ? `${set.name} (${name})` : name} style={{ '--name-em': nameEm.toFixed(3) } as CSSProperties}>{shownName}</strong>
+        {/* Avvisi in fondo alla riga del nome, sotto lo sprite: non lo coprono */}
+        {(dangers.length > 0 || warns.length > 0) && (
+          <span className="slot-alerts">
+            <AlertMark alerts={warns} className="on-card" />
+            <AlertMark alerts={dangers} className="on-card" />
+          </span>
+        )}
         </span>
         <small className="ability" title={describe.ability(ability, lang)} aria-hidden="true">{ability ? gameName('ability', ability, lang) : '—'}</small>
         <span className={`types${typeText ? '' : ' as-icons'}`} ref={typesRef} aria-hidden="true">
@@ -416,7 +425,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
       </div>
       <div className="drawer" id={drawerId}>
       <IdleSetEditor idle={!open} idleKey={`${lang}:${megaWarning ?? ''}`}
-        set={set} presets={presets} common={common} genLimit={format.genLimit} pokedex={pokedexOf(format)} roles={roleLabels}
+        set={set} presets={presets} common={common} genLimit={format.genLimit} pokedex={pokedexOf(format)} roles={roleLabels} roleTips={roleTips}
         teraBannedIn={teraAllowed(format) ? undefined : formatLabel(format, lang)} speed={speed} onChange={stable.onChange}
         presetAction={
           <button type="button" className="best-preset" title={tr('team.bestPresetTitle')} onClick={applyBest}
@@ -441,13 +450,17 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
               <button type="button" className="nickname" aria-label={tr('team.nickname', { species: name })} title={tr('team.nicknameTitle')}
                 onClick={() => setNaming(true)}>
                 <strong data-name={set.name || name} />
+                {/* La matita compare col mouse o col fuoco: il nome si può cambiare */}
+                <span className="nickname-pencil" aria-hidden="true"><Icon name="edit" /></span>
               </button>
             )}
             <span className="types" aria-hidden="true">{species?.types.map(type => <TypeChip key={type} type={type} />)}</span>
-            <button type="button" className="shiny-toggle" aria-pressed={!!set.shiny} aria-label={tr('team.shiny')} title={tr('team.shiny')}
-              onClick={() => stable.onChange({ ...set, shiny: set.shiny ? undefined : true })}>
-              <Icon name="shiny" filled={!!set.shiny} />
-            </button>
+            <Hint label={tr('team.shiny')}>
+              <button type="button" className="shiny-toggle" aria-pressed={!!set.shiny} aria-label={tr('team.shiny')}
+                onClick={() => stable.onChange({ ...set, shiny: set.shiny ? undefined : true })}>
+                <Icon name="shiny" filled={!!set.shiny} />
+              </button>
+            </Hint>
           </div>
         )}
         memberAction={
@@ -476,7 +489,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
         smogonAction={<SmogonLink species={name} format={format} presets={presets} iconOnly />}
         ioAction={
           <span className="io-anchor" ref={ioRef}>
-            <button type="button" className="member-io" aria-expanded={!!paste} title={tr('team.memberIOTitle')} aria-label={tr('team.memberIOName')}
+            <button type="button" className="member-io" aria-expanded={!!paste} title={tr('team.memberIOTitle')}
               onClick={() => setPaste(p => {
                 if (p) return null;
                 const text = exportShowdown([set], { tera: teraAllowed(format) });
@@ -484,12 +497,16 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
               })}>
               <Icon name="paste" /> <span className="btn-label">{tr('team.memberIO')}</span>
             </button>
-            <button type="button" className="member-copy" aria-label={tr(copied ? 'team.copied' : 'team.copySet')} title={tr('team.copySet')}
-              onClick={async () => {
-                if (await copyText(exportShowdown([set], { tera: teraAllowed(format) }))) { setCopied(true); setTimeout(() => setCopied(false), 1500); }
-              }}><Icon name={copied ? 'check' : 'copy'} /></button>
-  {paste && (
-    <div className="paste-panel" onKeyDown={e => { if (e.key === 'Escape') { e.stopPropagation(); setPaste(null); } }}>
+            <Hint label={tr('team.copySet')} done={copied ? tr('team.copied') : undefined}>
+              <button type="button" className="member-copy" aria-label={tr(copied ? 'team.copied' : 'team.copySet')}
+                onClick={async () => {
+                  if (await copyText(exportShowdown([set], { tera: teraAllowed(format) }))) { setCopied(true); setTimeout(() => setCopied(false), 1500); }
+                }}><Icon name={copied ? 'check' : 'copy'} /></button>
+            </Hint>
+          </span>
+        }
+        textPanel={paste && (
+    <div className="paste-panel" ref={pasteRef} onKeyDown={e => { if (e.key === 'Escape') { e.stopPropagation(); setPaste(null); } }}>
       <textarea aria-label={tr('team.pasteText')} rows={12} autoFocus ref={pasteArea} value={paste.text} placeholder={tr('team.pastePlaceholder')}
         onChange={e => setPaste({ text: e.target.value, original: paste.original, blocked: null })} />
       <p className="paste-hint">{tr('team.pasteHint')}</p>
@@ -500,25 +517,31 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
         <button type="button" onClick={() => setPaste(null)}>{tr('team.pasteCancel')}</button>
       </div>
     </div>
-  )}
-          </span>
-        }
+        )}
         actions={<>
           {megaWarning && <button type="button" onClick={stable.onIgnoreWarning}>{tr('team.keepMega')}</button>}
-          <button type="button" className="editor-close" aria-label={tr('team.closeEditor')} title={tr('team.closeEditor')}
-            onClick={() => { onToggle(false); card.current?.focus(); }}><Icon name="close" /></button>
+          <Hint label={tr('team.closeEditor')} end>
+            <button type="button" className="editor-close" aria-label={tr('team.closeEditor')}
+              onClick={() => { onToggle(false); card.current?.focus(); }}><Icon name="close" /></button>
+          </Hint>
         </>} />
       </div>
     </div>
   );
 });
 
-/** Slot libero: cerchio tratteggiato al posto dello sprite; il clic porta alla ricerca, col cursore già dentro. */
-function EmptySlot({ onClick }: { onClick: () => void }) {
+/**
+ * Slot libero: cerchio tratteggiato al posto dello sprite; il clic porta alla ricerca, col cursore già dentro.
+ * Solo il primo slot libero dice "Aggiungi un Pokémon": gli altri sono cornici tratteggiate più tenui, senza scritta
+ * (ma col nome per i lettori di schermo), così l'occhio va a un punto solo.
+ */
+function EmptySlot({ onClick, quiet = false }: { onClick: () => void; quiet?: boolean }) {
   const tr = useT();
-  const card = useRef<HTMLButtonElement>(null);
+  if (quiet) {
+    return <button type="button" className="slot empty quiet" aria-label={tr('team.emptyAdd')} title={tr('team.emptyAddTitle')} onClick={onClick} />;
+  }
   return (
-    <button type="button" className="slot empty" ref={card} title={tr('team.emptyAddTitle')} onClick={onClick}>
+    <button type="button" className="slot empty" title={tr('team.emptyAddTitle')} onClick={onClick}>
       <span className="empty-ring" aria-hidden="true"><Icon name="plus" /></span>
       <span className="empty-label">{tr('team.emptyAdd')}</span>
     </button>
@@ -576,6 +599,9 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
   const [confirmPresets, setConfirmPresets] = useState(false);
   // Dopo un Incolla set: mosse non imparabili (Custom Skillset?) o nomi non trovati del membro incollato
   const [ask, setAsk] = useState<{ index: number; review: ImportReview } | null>(null);
+  // Svuota: sotto il mouse o col fuoco un fumetto dice cosa fa
+  const [clearHint, setClearHint] = useState(false);
+  const clearNote = useId();
   const presetsButton = useRef<HTMLButtonElement>(null);
   const closeConfirm = () => { setConfirmPresets(false); presetsButton.current?.focus(); };
   // Team pieno e fermo da un secondo e mezzo: Migliora i set si prepara in sottofondo, al clic la finestra è già pronta
@@ -651,19 +677,22 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
     replace: i => live.current.replace(i),
     proposalDone: applied => live.current.proposalDone(applied),
   }), []);
-  // Il titolo della targa: la parola Team e quanti sono (i lettori di schermo sentono "Team (n/6)")
-  const plateTitle = (
-    <h2>
+  // Il titolo della targa: la parola Team e quanti sono (i lettori di schermo sentono "Team (n/6)").
+  // Dentro il menu dei team salvati (un <summary>) un titolo non conta come titolo: lì il disegno resta uguale ma è nascosto
+  // ai lettori di schermo, e il titolo vero sta subito prima, fuori dal menu (solo per loro)
+  const title = t(lang, 'team.title', { n: team.length });
+  const plateTitle = (inMenu: boolean) => (
+    <h2 aria-hidden={inMenu || undefined}>
       <span aria-hidden="true">Team</span>
       <span className="team-count" aria-hidden="true"><b key={team.length}>{team.length}</b>/6</span>
-      <span className="visually-hidden">{t(lang, 'team.title', { n: team.length })}</span>
+      {!inMenu && <span className="visually-hidden">{title}</span>}
     </h2>
   );
   return (
     <section aria-label={t(lang, 'team.region')} className={`team${collapsed ? ' collapsed' : ''}`}>
       <div className="team-head">
         {/* La targa del team: la parola Team e quanti sono. Con i team salvati la targa è anche il loro menu (freccia ▾) */}
-        {saved ? saved(plateTitle) : <div className="team-plate">{plateTitle}</div>}
+        {saved ? <><h2 className="visually-hidden">{title}</h2>{saved(plateTitle(true))}</> : <div className="team-plate">{plateTitle(false)}</div>}
         {/* La guida, subito dopo la targa: Completa team finché mancano Pokémon, Migliora i set col team pieno */}
         <div className="team-guide-slot">
           {canFill ? (
@@ -715,12 +744,22 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
             <div className="team-tabs">
             {io}
           </div>
-          {team.length > 0 && <>
-            <button type="button" className="team-action clear-team" title={t(lang, 'team.clear')} onClick={() => {
-              setOpenIndex(null);
-              if (onBulk) onBulk('clear', []); else onChange([]);
-            }}><Icon name="close" /> <span className="btn-label">{t(lang, 'team.clear')}</span></button>
-          </>}
+          {/* Svuota: il cestino, staccato da Importa ed Esporta da una barretta; il fumetto come quello di Esporta */}
+          {team.length > 0 && (
+            <span className="clear-wrap">
+              <button type="button" className="team-action clear-team" aria-describedby={clearHint ? clearNote : undefined}
+                onPointerEnter={() => setClearHint(true)} onPointerLeave={() => setClearHint(false)}
+                onFocus={() => setClearHint(true)} onBlur={() => setClearHint(false)}
+                onClick={event => {
+                  setOpenIndex(null);
+                  setClearHint(false);
+                  if (onBulk) onBulk('clear', []); else onChange([]);
+                  // Da tastiera (clic senza puntatore) il pulsante sparisce: il fuoco va su Annulla dell'avviso, così si annulla subito
+                  if (event.detail === 0) requestAnimationFrame(() => document.querySelector<HTMLElement>('.undo-toast .undo-button')?.focus());
+                }}><Icon name="trash" /> <span className="btn-label">{t(lang, 'team.clear')}</span></button>
+              {clearHint && <span id={clearNote} className="export-note">{t(lang, 'team.clearTitle')}</span>}
+            </span>
+          )}
         </div>
       </div>
       <p className="visually-hidden" aria-live="polite">{moveNote}</p>
@@ -744,7 +783,7 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
           />
         ))}
         {Array.from({ length: 6 - team.length }, (_, i) => (
-          <EmptySlot key={`empty-${i}`} onClick={() => { setOpenIndex(null); onAddClick?.(); }} />
+          <EmptySlot key={`empty-${i}`} quiet={i > 0} onClick={() => { setOpenIndex(null); onAddClick?.(); }} />
         ))}
       </div>
     </section>

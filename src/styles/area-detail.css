@@ -86,9 +86,12 @@
 .help-grades .grade-D { --grade: var(--bad); }
 .help-grades strong { font: 800 30px/0.95 var(--display); color: var(--grade); }
 .help-grades span { font: 600 12px/1 var(--ui); color: var(--muted); font-variant-numeric: tabular-nums; }
-/* Le voci di un livello come i soliti badge dei ruoli (gli stessi della scheda Ruoli, .rl-chip): scelta dell'utente */
+/* Le voci di un livello: etichette piatte, senza bordo né hover (non si cliccano), nel colore del livello come nella
+   scheda Ruoli (.rl-tag): essenziali magenta, importanti ciano, minori grigie. La spiegazione del ruolo nel tooltip */
 .help-points { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-wrap: wrap; gap: 4px; }
-.help-points li { display: inline-flex; align-items: center; padding: 2px 8px; border: 1px solid var(--line); border-radius: 3px; background: var(--raised); font-size: 12px; line-height: 1.35; color: var(--muted); white-space: nowrap; }
+.help-points li { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 2px; background: var(--raised); font-size: 12px; line-height: 1.35; color: var(--muted); white-space: nowrap; cursor: help; }
+.help-points.essential li { background: var(--accent-2-soft); color: var(--text); }
+.help-points.important li { background: var(--accent-soft); color: var(--text); }
 .help-panel .help-note { color: var(--text); }
 .help-panel h5 { margin: 14px 0 6px; font-size: 11px; font-weight: 600; color: var(--faint); text-transform: uppercase; letter-spacing: 0.04em; }
 .help-panel h6 { margin: 8px 0 4px; font-size: 13px; font-weight: 600; color: var(--text); }
@@ -160,7 +163,18 @@
   .bm-points { font-size: 21px; }
 }
 
-/* Peso di un'area come barra continua riempita a sesti, senza numeri (RatingHelp) */
+/* Peso di un'area come barra continua riempita a sesti, senza numeri né parole (RatingHelp) */
 .help-wbar { display: block; min-width: 96px; height: 9px; background: var(--field); border-radius: 2px; overflow: hidden; }
 .help-wbar > i { display: block; height: 100%; background: var(--accent); }
 .help-weights tr.current .help-wbar { background: color-mix(in srgb, var(--field) 70%, var(--accent-soft)); }
+/* Come funziona, pagina generale: le lettere accanto al titolo (non sotto), così la pagina sta tutta nella finestra;
+   righe della tabella dei pesi più basse. Sul telefono di nuovo in colonna */
+.help-panel.help-general { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-auto-rows: max-content; align-content: start; column-gap: 16px; }
+.help-panel.help-general > * { grid-column: 1 / -1; }
+.help-panel.help-general > h4 { grid-column: 1; align-self: center; margin: 0; }
+.help-panel.help-general > .help-grades { grid-column: 2; margin: 0 0 12px; }
+.help-general .help-weights th, .help-general .help-weights td { padding-top: 5px; padding-bottom: 5px; }
+@media (max-width: 599px) {
+  .help-panel.help-general { display: block; }
+  .help-panel.help-general > h4 { margin: 0 0 10px; }
+}

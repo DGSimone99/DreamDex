@@ -85,6 +85,8 @@
 }
 .combobox .group-head.common-head { color: var(--accent); padding-top: 6px; }
 .combobox .group-head:not(.common-head) { margin-top: 4px; border-top: 1px solid var(--line); padding-top: 10px; }
+/* Gruppi per formato (preset): il primo in cima senza filo */
+.combobox [role='listbox'] > .group-head:first-child { margin-top: 0; border-top: 0; padding-top: 6px; }
 .combobox [role='option'].common {
   background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 13%, transparent), color-mix(in srgb, var(--accent) 2%, transparent) 70%);
   box-shadow: inset 2px 0 0 var(--accent);

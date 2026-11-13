@@ -70,16 +70,19 @@ describe('editor del set', () => {
     const slot = await openFirst(user, container);
     const roles = within(slot).getByRole('group', { name: 'Ruoli' });
     const items = within(roles).getAllByRole('listitem').map(li => li.textContent);
-    const all = container.querySelector('.slot .roles')!.getAttribute('title')!.split(' · ');
+    const all = container.querySelector('.slot .roles')!.getAttribute('title')!.split(' · ').map(part => part.split(': ')[0]);
     expect(items).toEqual(all);
+    // Ogni ruolo spiegato nel tooltip
+    expect(within(roles).getAllByRole('listitem')[0]).toHaveAttribute('title', expect.stringMatching(/\S/));
   });
 
-  it('niente linguetta Danni finché il calcolo non esiste; preset e I miei set in due gruppi; Custom Skillset fuori dai riquadri (cambia Set e Mosse)', async () => {
+  it('niente linguetta Danni finché il calcolo non esiste; preset, I miei set e Testo del set in tre gruppi; Custom Skillset fuori dai riquadri (cambia Set e Mosse)', async () => {
     const user = userEvent.setup();
     const { container } = renderTeam();
     const slot = await openFirst(user, container);
     expect(within(slot).queryByRole('tab', { name: /Danni/ })).toBeNull();
-    expect(slot.querySelectorAll('.editor-head .head-group')).toHaveLength(2);
+    expect(slot.querySelectorAll('.editor-head .head-group')).toHaveLength(3);
+    expect(within(slot).getByRole('button', { name: 'Testo del set' }).closest('.set-text-group')).not.toBeNull();
     const custom = within(slot).getByRole('checkbox', { name: /Custom Skillset/ });
     expect(slot.querySelector('.editor-head')).toContainElement(custom);
     expect(within(slot).getByRole('group', { name: 'Set' })).not.toContainElement(custom);
@@ -89,7 +92,7 @@ describe('editor del set', () => {
     const user = userEvent.setup();
     const { container } = renderTeam();
     const slot = await openFirst(user, container);
-    const save = within(slot).getByRole('button', { name: 'Salva set' });
+    const save = within(slot).getByRole('button', { name: 'Salva in I miei set' });
     await user.click(save);
     expect(loadMySets()['Great Tusk']).toHaveLength(1);
     expect(loadMySets()['Great Tusk'][0].name).toBe('Set 1');
@@ -104,13 +107,13 @@ describe('editor del set', () => {
     for (let i = 0; i < 4; i++) {
       await user.clear(within(slot).getByLabelText('Mossa 1'));
       await user.type(within(slot).getByLabelText('Mossa 1'), `${fresh[i]}{Enter}`);
-      await user.click(within(slot).getByRole('button', { name: 'Salva set' }));
+      await user.click(within(slot).getByRole('button', { name: 'Salva in I miei set' }));
     }
     expect(loadMySets()['Great Tusk']).toHaveLength(5);
     // Pieno: un set nuovo (senza nome già usato) non si può salvare
     await user.clear(within(slot).getByLabelText('Mossa 1'));
     await user.type(within(slot).getByLabelText('Mossa 1'), `${fresh[4]}{Enter}`);
-    expect(within(slot).getByRole('button', { name: 'Salva set' })).toBeDisabled();
+    expect(within(slot).getByRole('button', { name: 'Salva in I miei set' })).toBeDisabled();
   }, 30000);
 
 });

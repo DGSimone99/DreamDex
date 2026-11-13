@@ -26,13 +26,32 @@ describe('TeamPanel', () => {
     expect(within(teamRegion()).getByLabelText('Strumento')).toHaveValue('Booster Energy');
   });
 
+  it('solo il primo slot libero ha la scritta: gli altri sono cornici tenui, con lo stesso nome per i lettori di schermo', async () => {
+    const user = userEvent.setup();
+    render(<App initialLang="it" data={fixtureData} />);
+    const check = (free: number) => {
+      const slots = within(teamRegion()).getAllByRole('button', { name: 'Aggiungi un Pokémon' });
+      expect(slots).toHaveLength(free);
+      expect(slots[0]).not.toHaveClass('quiet');
+      expect(slots[0]).toHaveTextContent('Aggiungi un Pokémon');
+      for (const slot of slots.slice(1)) {
+        expect(slot).toHaveClass('quiet');
+        expect(slot).toHaveTextContent('');
+      }
+    };
+    check(6);
+    await addPokemon(user, 'Great Tusk');
+    check(5);
+  });
+
   it('la carta mostra solo il ruolo principale per esteso, con tutti i ruoli nel tooltip', async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} />);
     await addPokemon(user, 'Great Tusk');
     const roles = teamRegion().querySelector('.slot .roles')!;
     expect(roles.textContent).toMatch(/^(Sweeper Fisico|Wallbreaker Fisico|Muro Fisico)$/);
-    expect(roles.getAttribute('title')).toMatch(/^(Sweeper Fisico|Wallbreaker Fisico|Muro Fisico) · /);
+    // Il ruolo mostrato spiegato in una frase, poi gli altri per nome
+    expect(roles.getAttribute('title')).toMatch(/^(Sweeper Fisico|Wallbreaker Fisico|Muro Fisico): [^·]+ · /);
   });
 
   it('la carta non ha il badge Stats e mostra lo strumento come icona prima del nome (nome nel tooltip)', async () => {
@@ -68,7 +87,7 @@ describe('TeamPanel', () => {
     render(<App initialLang="it" data={fixtureData} />);
     const roles = teamRegion().querySelector('.slot .roles')!;
     expect(roles.textContent!.split(' · ')).toHaveLength(1);
-    const all = roles.getAttribute('title')!.split(' · ');
+    const all = roles.getAttribute('title')!.split(' · ').map(part => part.split(': ')[0]);
     expect(all.length).toBeGreaterThan(2);
     expect(all.slice(0, 2)).toEqual(['Sweeper Speciale', 'Controllo Hazard']);
     expect(all).toEqual(expect.arrayContaining(['Muro Speciale']));

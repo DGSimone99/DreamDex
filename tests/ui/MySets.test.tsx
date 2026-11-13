@@ -34,14 +34,14 @@ describe('I miei set', () => {
   it('il nome scritto nel campo diventa il nome del set salvato', async () => {
     const { user, slot } = await openEditor();
     await user.type(within(slot).getByLabelText('I miei set'), 'Spinner');
-    await user.click(within(slot).getByRole('button', { name: 'Salva set' }));
+    await user.click(within(slot).getByRole('button', { name: 'Salva in I miei set' }));
     expect(loadMySets()['Great Tusk'].map(s => s.name)).toEqual(['Spinner']);
   });
 
   it('un nome già usato trasforma il salvataggio in sovrascrittura, annullabile', async () => {
     const { user, slot } = await openEditor();
     await user.type(within(slot).getByLabelText('I miei set'), 'Spinner');
-    await user.click(within(slot).getByRole('button', { name: 'Salva set' }));
+    await user.click(within(slot).getByRole('button', { name: 'Salva in I miei set' }));
     await setMove(user, slot, 'Stone Edge');
     const field = within(slot).getByLabelText('I miei set');
     await user.clear(field);
@@ -55,7 +55,7 @@ describe('I miei set', () => {
 
   it('dall\'elenco si rinomina e si elimina (annullabile)', async () => {
     const { user, slot } = await openEditor();
-    await user.click(within(slot).getByRole('button', { name: 'Salva set' }));
+    await user.click(within(slot).getByRole('button', { name: 'Salva in I miei set' }));
     await user.click(within(slot).getByRole('button', { name: 'Mostra i miei set' }));
     const list = () => screen.getByRole('list', { name: 'I miei set: opzioni' });
     await user.click(within(list()).getByRole('button', { name: 'Rinomina Set 1' }));
@@ -72,7 +72,7 @@ describe('I miei set', () => {
 
   it('scegliere un set dall\'elenco lo applica', async () => {
     const { user, slot } = await openEditor();
-    await user.click(within(slot).getByRole('button', { name: 'Salva set' }));
+    await user.click(within(slot).getByRole('button', { name: 'Salva in I miei set' }));
     await setMove(user, slot, 'Stone Edge');
     await user.click(within(slot).getByRole('button', { name: 'Mostra i miei set' }));
     await user.click(within(screen.getByRole('list', { name: 'I miei set: opzioni' })).getByRole('button', { name: /^Set 1/ }));
@@ -83,10 +83,10 @@ describe('I miei set', () => {
 describe('azioni del membro', () => {
   it('un solo pulsante Importa / Esporta set: il testo del set è già pronto da copiare, Applica importa', async () => {
     const { user, slot } = await openEditor();
-    await user.click(within(slot).getByRole('button', { name: 'Showdown: importa o esporta il set' }));
+    await user.click(within(slot).getByRole('button', { name: 'Testo del set' }));
     const text = within(slot).getByLabelText('Set in testo Showdown');
     expect((text as HTMLTextAreaElement).value).toMatch(/^Great Tusk @ /);
-    expect(within(slot).getByRole('button', { name: 'Copia set' })).toBeInTheDocument();
+    expect(within(slot).getByRole('button', { name: 'Copia il set' })).toBeInTheDocument();
     expect(within(slot).queryByRole('button', { name: 'Incolla set' })).toBeNull();
   });
 

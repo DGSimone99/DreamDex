@@ -94,7 +94,8 @@
 .help-frame { position: relative; width: min(780px, 100%); }
 .help-frame > .help-dialog { position: relative; z-index: 1; width: 100%; }
 .help-frame.with-peek { --peek: 155px; --peek-room: calc(var(--peek) * 0.9); margin-top: var(--peek-room); }
-.help-frame.with-peek > .help-dialog.rating-help { height: min(620px, calc(100vh - 48px - var(--peek-room))); }
+/* Come funziona il voto: più alta delle altre, così la pagina generale (lettere, pesi e come si legge il riquadro) non scorre */
+.help-frame.with-peek > .help-dialog.rating-help { height: min(690px, calc(100vh - 48px - var(--peek-room))); max-height: min(690px, calc(100vh - 48px - var(--peek-room))); }
 /* Tutte le guide "Come funziona": la cornice è larga quanto la sua finestra, e la finestra si accorcia dello spazio di Eevee */
 .help-frame.with-peek { width: min(var(--frame-w, 780px), 100%); }
 .help-frame.with-peek:has(> .area-guide) { --frame-w: 980px; }
@@ -116,6 +117,7 @@
 }
 .help-frame.with-peek:has(> .area-guide-strength, > .area-guide-speed) { --dlg-h: 560px; }
 .help-frame.with-peek:has(> .area-guide-defense) { --dlg-h: 672px; }
+.help-frame.with-peek:has(> .rating-help) { --dlg-h: 690px; }
 /* Schermi piccoli: Eevee più piccolo, la finestra resta grande */
 @media (max-width: 599px), (max-height: 700px) { .help-frame.with-peek { --peek: 110px; } }
 .eevee-peek { position: absolute; top: 0; left: 40px; width: var(--peek); pointer-events: none; user-select: none; }
@@ -292,8 +294,16 @@
 .eevee-peek.at-side.at-left { --dir: -1; left: calc(var(--peek) * -0.38); transform: rotate(-35deg); }
 @media (prefers-reduced-motion: no-preference) {
   /* Non sale dal bordo: spunta di fianco */
-  .eevee-peek.at-side { animation: peek-side-in 0.42s 0.34s cubic-bezier(0.22, 1, 0.36, 1) both; }
-  .eevee-peek.at-side .peek-head { animation: peek-breathe 1.9s 0.9s ease-in-out infinite alternate; }
+  /*
+   * Di lato Eevee torna sempre a finestra già aperta: niente attesa dello screen-on (0,34 s), che qui lo lasciava fermo e
+   * già visibile nella posa di partenza prima dello scatto. Tutto parte subito, i ritmi da fermo scalati di 0,34 s.
+   */
+  .eevee-peek.at-side { animation: peek-side-in 0.42s cubic-bezier(0.22, 1, 0.36, 1) both; }
+  .eevee-peek.at-side .peek-head { animation: peek-breathe 1.9s 0.56s ease-in-out infinite alternate; }
+  .eevee-peek.at-side .peek-head .peek-blink { animation: peek-blink 7s 1.26s step-end infinite; }
+  .eevee-peek.at-side .peek-head .peek-happy { animation: peek-happy-in 0.42s step-end both; }
+  .eevee-peek.at-side .peek-ear.up { animation: peek-ear-up-in 0.75s ease-out both, peek-ear-up 4.6s 0.81s ease-in-out infinite; }
+  .eevee-peek.at-side .peek-ear.side { animation: peek-ear-side-in 0.75s ease-out both, peek-ear-side 4.6s 0.81s ease-in-out infinite; }
   /*
    * Cliccata ride (occhi a > <, bocca aperta) con le orecchie dritte, fa un piccolo scatto fuori e rientra di lato dietro
    * la finestra raddrizzandosi; 0,4 s come RETREAT_MS in EeveePeek.tsx.
@@ -378,6 +388,9 @@
 .settings-credits { justify-self: start; display: inline-flex; align-items: center; gap: 4px; padding: 0; border: 0; background: none; font: 600 13px var(--ui); color: var(--accent-ink); cursor: pointer; }
 .settings-credits .icon { width: 14px; height: 14px; }
 .settings-credits:hover { text-decoration: underline; }
+/* Sul computer Segnala o suggerisci e Crediti stanno già in fondo alla barra laterale: qui solo sul telefono e sul tablet,
+   dove quella riga non c'è */
+@media (min-width: 1100px) { .settings-credits { display: none; } }
 
 /* Segnala o suggerisci: modulo corto, tipo a pillole, invio a destra con GitHub come alternativa */
 .feedback-dialog { width: min(520px, calc(100vw - 32px)); }

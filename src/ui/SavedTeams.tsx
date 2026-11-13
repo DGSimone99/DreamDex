@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { Format } from '../engine/format';
 import { exportShowdown, importShowdown, type TeamSet } from '../engine/sets';
 import { ConfirmDialog } from './ConfirmDialog';
@@ -23,7 +23,7 @@ export function SavedTeams({ team, format, plate, onLoad }: {
   format: Format;
   /** Il titolo della targa del team: se c'è, la targa stessa apre il menu (con il nome del team caricato e la freccia) */
   plate?: ReactNode;
-  onLoad: (team: TeamSet[], format?: Format) => void;
+  onLoad: (team: TeamSet[], format: Format | undefined, name: string) => void;
 }) {
   const t = useT();
   const [saved, setSaved] = useState<SavedTeam[]>(() => loadSavedTeams());
@@ -34,9 +34,21 @@ export function SavedTeams({ team, format, plate, onLoad }: {
   // Team eliminato: si può rimettere con Annulla
   const [undo, setUndo] = useState<(UndoAction & { entry: SavedTeam; index: number }) | null>(null);
   const nameRef = useRef<HTMLInputElement>(null);
+  // Dopo Salva un fumetto verde come quello di Esporta dice per un attimo che il team è salvato
+  const [done, setDone] = useState(0);
+  const doneTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  useEffect(() => () => clearTimeout(doneTimer.current), []);
   const [current, setCurrentState] = useState<Current | null>(readCurrent);
   const setCurrent = (value: Current | null) => { setCurrentState(value); writeCurrent(value); };
   const text = useMemo(() => exportShowdown(team), [team]);
+  // Caricando un team salvato si ricorda il nome di prima: se Annulla riporta il team di prima, torna anche il suo nome
+  const beforeLoad = useRef<{ current: Current | null; text: string; loaded: string } | null>(null);
+  useEffect(() => {
+    const back = beforeLoad.current;
+    if (!back || text === back.loaded) return;
+    beforeLoad.current = null;
+    if (text === back.text) setCurrent(back.current);
+  }, [text]); // eslint-disable-line react-hooks/exhaustive-deps
   // Il nome resta finché nel team c'è qualcuno; il pallino dice che il team non è più quello salvato
   const shown = team.length > 0 ? current : null;
   const changed = !!shown && shown.text !== text;
@@ -52,7 +64,12 @@ export function SavedTeams({ team, format, plate, onLoad }: {
   const store = (trimmed: string) => {
     const favorites = team.flatMap((set, i) => (set.favorite ? [i] : []));
     const custom = team.flatMap((set, i) => (set.customSkillset ? [i] : []));
-    if (update([...saved.filter(t => t.name !== trimmed), { name: trimmed, text, favorites, custom, format }])) setCurrent({ name: trimmed, text });
+    if (update([...saved.filter(t => t.name !== trimmed), { name: trimmed, text, favorites, custom, format }])) {
+      setCurrent({ name: trimmed, text });
+      setDone(Date.now());
+      clearTimeout(doneTimer.current);
+      doneTimer.current = setTimeout(() => setDone(0), 1800);
+    }
     setName('');
   };
   const save = () => {
@@ -72,17 +89,21 @@ export function SavedTeams({ team, format, plate, onLoad }: {
     <>
       <details className={`popover${plate ? ' plate-menu' : ''}`}>
         {plate ? (
+          // Per i lettori di schermo il nome del menu viene prima ("Team salvati (2)"), poi il team caricato; il disegno della
+          // targa (la parola Team e quanti sono) è nascosto: il titolo vero sta fuori dal menu
           <summary className="team-plate" title={t('saved.title', { n: saved.length })}>
+            <span className="visually-hidden">{t('saved.title', { n: saved.length })}</span>
             {plate}
             {shown && <span className="plate-name">{shown.name}{changed && <span className="plate-dot" title={t('saved.changed')}><span className="visually-hidden">{t('saved.changed')}</span></span>}</span>}
-            <span className="visually-hidden">{t('saved.title', { n: saved.length })}</span>
             <span className="plate-arrow"><Icon name="down" /></span>
           </summary>
         ) : (
           <summary title={t('saved.title', { n: saved.length })}><Icon name="box" /><span className="btn-label">{t('saved.title', { n: saved.length })}</span></summary>
         )}
         <div className="saved-panel">
-          {/* Il team caricato è cambiato: si salvano le modifiche sotto lo stesso nome, senza riscriverlo */}
+          {/* Il team caricato è cambiato: una riga lo dice (caricarne un altro si può comunque annullare), e si salvano le
+              modifiche sotto lo stesso nome, senza riscriverlo */}
+          {changed && shown && <p className="saved-unsaved"><Icon name="warning" />{t('saved.unsaved')}</p>}
           {changed && shown && (
             <button type="button" className="saved-update" onClick={() => store(shown.name)}>
               <Icon name="check" /><span>{t('saved.update', { name: shown.name })}</span>
@@ -93,6 +114,7 @@ export function SavedTeams({ team, format, plate, onLoad }: {
             <input ref={nameRef} aria-label={t('saved.name')} value={name} placeholder={t('saved.namePlaceholder')} onChange={e => setName(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); save(); } }} />
             <button type="button" onClick={save} disabled={!name.trim() || team.length === 0}>{t('saved.save')}</button>
+            {done > 0 && <span key={done} className="export-note done" role="status"><Icon name="check" />{t('saved.done')}</span>}
           </div>
           {failed && (
             <p role="status" className="errors">
@@ -109,8 +131,10 @@ export function SavedTeams({ team, format, plate, onLoad }: {
                       ...(entry.favorites?.includes(i) ? { favorite: true } : {}),
                       ...(entry.custom?.includes(i) ? { customSkillset: true } : {}),
                     }));
-                    setCurrent({ name: entry.name, text: exportShowdown(sets) });
-                    onLoad(sets, entry.format);
+                    const loaded = exportShowdown(sets);
+                    beforeLoad.current = { current, text, loaded };
+                    setCurrent({ name: entry.name, text: loaded });
+                    onLoad(sets, entry.format, entry.name);
                   }}>
                     <span className="saved-sprites" aria-hidden="true">
                       {Array.from({ length: 6 }, (_, i) => {

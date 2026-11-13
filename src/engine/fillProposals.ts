@@ -7,7 +7,7 @@ import { battleAbility, battleName, battleSpecies, isMega, toID } from './dex';
 import type { Format } from './format';
 import { formatRules } from './formatRules';
 import { pokedexOf } from './formats';
-import { rateTeam } from './rating';
+import { rateTeam, type RatingArea } from './rating';
 import { detectRoles, isPassive } from './roles';
 import { defensiveMultiplier, type TypeName } from './types';
 import { scoreSets, suggest, type Suggestion } from './scoring';
@@ -57,6 +57,10 @@ export interface Proposal {
   changed: number[];
   /** Quanti dei nuovi sono preferiti dell'utente. */
   favorites: number;
+  /** Le aree del voto del team proposto (per il "perché" della riga: cosa guadagna rispetto al team attuale). */
+  areas: RatingArea[];
+  /** Ruoli coperti sul totale nel team proposto. */
+  roles: { covered: number; total: number };
 }
 
 export const PROPOSALS_PER_ROUND = 6;
@@ -475,7 +479,8 @@ export function* fillProposals(
       continue;
     }
     const proposal: Proposal = { added, team: final, overall: rating.overall, grade: rating.grade, archetype: found.archetype,
-      styles: found.styles, gaps: coherenceGaps(final, rules), changed, favorites: added.filter(favorite).length };
+      styles: found.styles, gaps: coherenceGaps(final, rules), changed, favorites: added.filter(favorite).length,
+      areas: rating.areas, roles: { covered: rating.roles.covered, total: rating.roles.total } };
     const open = avoidable(final);
     if (open.length) {
       // Un buco che un altro candidato poteva chiudere: la proposta resta da parte e si cambia strada; se tra i

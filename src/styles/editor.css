@@ -32,15 +32,16 @@
 .editor-title .types { display: flex; flex-wrap: nowrap; gap: 4px; }
 .editor-top { flex: 1 0 100%; display: flex; align-items: center; gap: 18px; min-width: 0; }
 .editor-actions { display: flex; gap: 8px; margin-left: auto; }
-/* Incolla set: riquadro sotto i pulsanti, sopra l'editor */
 @media (max-width: 1099px) { .drawer { position: relative; grid-column: 1 / -1; grid-row: 3; } }
+/* Testo del set: il riquadro copre le Statistiche (stessa cella), così Set e Mosse restano in vista per confrontare */
+.stats-cell { position: relative; display: grid; min-width: 0; }
 .paste-panel {
   position: absolute;
-  z-index: 30;
-  top: 60px;
-  right: 20px;
-  width: min(440px, calc(100% - 40px));
+  z-index: 6;
+  inset: 0;
+  min-height: 260px;
   display: grid;
+  grid-template-rows: minmax(0, 1fr) auto auto;
   gap: 8px;
   padding: 14px;
   border: 1px solid var(--line);
@@ -49,7 +50,7 @@
   box-shadow: 0 14px 34px rgba(0, 0, 0, 0.5);
   animation: tip 0.18s var(--ease);
 }
-.paste-panel textarea { width: 100%; font: 13px/1.45 var(--ui); resize: vertical; }
+.paste-panel textarea { width: 100%; height: 100%; min-height: 0; font: 13px/1.45 var(--ui); resize: none; }
 .paste-hint { margin: 0; font-size: 12px; color: var(--muted); }
 .paste-actions { display: flex; gap: 8px; justify-content: flex-end; }
 .paste-actions .apply { background: var(--accent-soft); border-color: var(--accent); color: var(--text); }
@@ -117,7 +118,7 @@
 .ev-total .ev-used { display: inline-flex; align-items: baseline; gap: 2px; }
 .ev-meter { width: 120px; height: 4px; border-radius: 2px; background: var(--line); overflow: hidden; }
 .ev-meter > span { display: block; height: 100%; background: var(--accent); }
-.ev-total .ev-left { margin-left: auto; color: var(--faint); }
+.ev-total .ev-left { margin-left: auto; color: var(--muted); }
 .ev-total.over strong, .ev-total.over .ev-left { color: var(--bad); }
 .ev-total.over .ev-meter > span { background: var(--bad); }
 .set-editor .evs .speed-line { margin: 0 6px; padding-top: 10px; border-top: 1px solid var(--line-soft); }

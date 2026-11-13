@@ -18,7 +18,7 @@ export interface CoachFix {
   /** Membro sostituito (indice e nome); null per un'aggiunta. */
   index: number | null;
   member: string | null;
-  /** Punti di voto in più: lo stesso numero che mostra Migliora team. */
+  /** Punti di voto in più: lo stesso numero che mostra Sostituisci. */
   gain: number;
   /** Chiavi dei problemi che il cambio risolve del tutto. */
   solves: string[];
@@ -27,7 +27,7 @@ export interface CoachFix {
 }
 
 /**
- * Classifiche di Migliora team già calcolate: le usano il Coaching e la scheda Pokémon (vista per membro e Aggiungi,
+ * Classifiche di Sostituisci già calcolate: le usano il Coaching e la scheda Pokémon (vista per membro e Aggiungi,
  * senza filtri), così un team si valuta una volta sola. Chiave: team e dati (per identità), formato, lingua, tipo di team,
  * membro (o aggiunta) e quanti candidati. Oltre il limite si svuota.
  */
@@ -58,7 +58,7 @@ function cachedRanking<T>(key: string, make: (report: SwapReport) => T[], report
 const rankingKey = (kind: string, team: TeamSet[], format: Format, data: EngineData, lang: Lang, archetype: Archetype | undefined, pool: number) =>
   `${kind}|${idOf(team)}|${dataKey(data)}|${JSON.stringify(format)}|${lang}|${archetype ?? ''}|${pool}`;
 
-/** I sostituti del membro `index` col voto che darebbero al team, dal più alto (come la vista per membro di Migliora team). */
+/** I sostituti del membro `index` col voto che darebbero al team, dal più alto (come la vista per membro di Sostituisci). */
 export function rankedReplacements(team: TeamSet[], index: number, format: Format, data: EngineData, pool: number, lang: Lang, archetype?: Archetype, report?: SwapReport) {
   return cachedRanking<Replacement & { teamGain?: TeamGain }>(rankingKey(`swap${index}`, team, format, data, lang, archetype, pool),
     own => rankByTeamGain(improveReplacements(team, index, format, data, pool, undefined, lang, archetype), team, index, data, lang, true, archetype, own), report);
@@ -124,7 +124,7 @@ export function problemChanges(team: TeamSet[], format: Format, data: EngineData
 }
 
 /**
- * I cambi che alzano il voto (o a pari voto risolvono senza peggiorare), presi dalla classifica di Migliora team: per
+ * I cambi che alzano il voto (o a pari voto risolvono senza peggiorare), presi dalla classifica di Sostituisci: per
  * membro (stesso set e stesso +N della vista per membro) e, con 2–5 membri, le aggiunte. Per ognuno i problemi che spariscono o si riducono nel team col cambio.
  */
 export function coachFixes(team: TeamSet[], format: Format, data: EngineData, problems: CoachProblem[], lang: Lang): CoachFix[] {

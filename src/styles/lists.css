@@ -86,6 +86,10 @@
 /* Schermi bassi o stretti (portatili 1366×768, 1280×720): tutto resta in una schermata, card e strumenti più compatti */
 @media (min-width: 1100px) and ((max-width: 1279px) or (max-height: 799px)) {
   .app { grid-template-columns: 190px minmax(0, 1fr); }
+  .undo-toast { --rail-w: 190px; }
+  /* Carta del voto stretta: "Non legale: n Pokémon" su una riga sola, senza il triangolo */
+  .grade-badge .grade-rules { padding-inline: 5px; }
+  .grade-badge .grade-rules svg { display: none; }
   .rail { gap: 10px; padding-top: 12px; }
   .rail-logo { padding: 0 14px; }
   .format-card { margin: 0 14px; }
@@ -161,7 +165,10 @@
 /* Pillola: icona del box, nome e icona dello strumento; il membro aperto nell'editor ha il contorno ciano. Margini e spazi
    stretti: anche a 1280 px nomi come Great Tusk e Corviknight entrano interi */
 .band.collapsed .slot > .slot-card > .name-line { display: flex; flex-direction: row-reverse; justify-content: flex-end; align-items: center; gap: 4px; flex: 1; min-width: 0; margin: 0; }
-.band.collapsed .slot .name-line .name { flex: 1; min-width: 0; font-size: 13px; line-height: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Nomi lunghi (Urshifu-Rapid-Strike, Ogerpon-Wellspring) su due righe, a capo dopo il trattino: nella pillola si leggono
+   interi; i puntini solo oltre la seconda riga */
+.band.collapsed .slot .name-line .name { flex: 1; min-width: 0; font-size: 13px; line-height: 14px; white-space: normal; overflow-wrap: anywhere; overflow: hidden; }
+@media (max-width: 1320px) { .band.collapsed .slot .name-line .name { font-size: 12px; } }
 /* Nella barra il problema lo dice il puntino: niente bordo colorato attorno alla pillola */
 .band.collapsed .slot.invalid > .slot-card, .band.collapsed .slot.warn > .slot-card { outline: none; }
 .band.collapsed .slot.open > .slot-card { outline: 2px solid var(--accent); outline-offset: -2px; }
@@ -213,9 +220,10 @@
 .editor-roles ul { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
 .editor-roles li { padding: 3px 10px; border: 1px solid var(--line); background: var(--raised); font-size: 13px; color: var(--text); }
 .editor-roles li.main { border-color: var(--accent); background: var(--accent-wash); font-weight: 600; }
-/* Carta aperta: solo lo sprite animato, grande quanto la carta (nome e set sono nell'editor) */
+/* Carta aperta: lo sprite animato, grande quanto la carta, e sotto il nome (si vede quale membro è aperto); abilità,
+   tipi e ruolo sono nell'editor */
 .slot.open > .slot-card { justify-content: center; --open-scale: 1.5; --fit: 180; }
-.slot.open > .slot-card > :not(.slot-toggle, .sprite-wrap, .favorite, .remove, .slot-custom, .slot-lead, .mini-icon) { display: none; }
+.slot.open > .slot-card > :not(.slot-toggle, .sprite-wrap, .name-line, .favorite, .remove, .slot-custom, .slot-lead, .mini-icon) { display: none; }
 .band:not(.collapsed) .slot.open > .slot-card .sprite-wrap { flex: 1; display: grid; place-items: end center; width: 100%; }
 /* Statico e animato con la stessa scala, quanto lo spazio della carta: la GIF è il riquadro di 96px ritagliato sul Pokémon,
    quindi alta --ani-h/96 dello statico. Senza GIF (es. Urshifu Pluricolpo) lo statico resta grande uguale, non di più */
@@ -234,7 +242,7 @@
 .joined { display: flex; align-items: stretch; min-width: 0; }
 .joined > .combobox, .joined > .my-sets-input { flex: 1; min-width: 0; }
 .joined > .combobox input, .joined > .my-sets-input input { border-top-right-radius: 0; border-bottom-right-radius: 0; }
-.joined > a, .joined > button { width: 38px; height: auto; min-height: 36px; padding: 0; display: grid; place-items: center; margin-left: -1px; border-radius: 0 4px 4px 0; flex: none; }
+.joined > a, .joined > button, .joined > .hint-wrap > a, .joined > .hint-wrap > button { width: 38px; height: auto; min-height: 36px; padding: 0; display: grid; place-items: center; margin-left: -1px; border-radius: 0 4px 4px 0; flex: none; }
 .smogon-link.icon-only { justify-content: center; }
 .my-sets-input { position: relative; display: flex; }
 .my-sets-input input { width: 100%; height: 36px; padding-right: 34px; }
@@ -283,6 +291,12 @@
 .editor-title .nickname strong { font: 800 26px/1 var(--display); font-style: italic; letter-spacing: 0.01em; }
 .editor-title .nickname strong::before { content: attr(data-name); }
 .editor-title .nickname:hover strong, .editor-title .nickname:focus-visible strong { text-decoration: underline dotted var(--faint); text-underline-offset: 4px; }
+/* La matita del soprannome: compare col mouse o col fuoco (come FORMATO ✎ nella barra a sinistra); al tocco resta sempre, tenue */
+.editor-title .nickname { display: inline-flex; align-items: center; gap: 6px; }
+.nickname-pencil { flex: none; display: grid; place-items: center; color: var(--accent); opacity: 0; transition: opacity 0.15s var(--ease); }
+.nickname-pencil .icon { width: 15px; height: 15px; }
+.editor-title .nickname:hover .nickname-pencil, .editor-title .nickname:focus-visible .nickname-pencil { opacity: 1; }
+@media (hover: none) { .nickname-pencil { opacity: 0.6; color: var(--muted); } }
 .editor-title .species-tag {
   position: absolute;
   left: 0;
@@ -298,9 +312,8 @@
 .nickname-input { width: 200px; height: 32px; font: 800 18px/1 var(--display); font-style: italic; }
 .shiny-toggle { width: 32px; height: 32px; padding: 0; display: grid; place-items: center; color: var(--faint); }
 .shiny-toggle[aria-pressed='true'] { color: var(--warn); border-color: var(--warn); background: var(--warn-bg); }
-/* Importa / Esporta: il riquadro si apre sotto il suo pulsante */
+/* Testo del set e Copia il set, attaccati */
 .io-anchor { position: relative; display: inline-flex; }
-.io-anchor .paste-panel { top: calc(100% + 6px); right: auto; left: 0; width: 440px; }
 /* Etichette dei preset più piccole e vicine ai menu; Custom Skillset sul bordo destro, la casella dopo il testo */
 .set-editor .preset-field .field-head, .set-editor .my-sets-field .field-head { font-size: 11px; line-height: 1; }
 .set-editor .preset-field, .set-editor .my-sets-field { gap: 2px; }
@@ -345,8 +358,7 @@
   .set-editor .evs .speed-line { padding-top: 4px; }
   .editor-title .species-tag { bottom: calc(100% + 2px); }
 }
-/* Importa / Esporta allineato al bordo destro del suo pulsante (non esce dallo schermo); Copia set attaccato */
-.io-anchor .paste-panel { left: auto; right: 0; width: min(440px, 80vw); }
+/* Copia il set attaccato a Testo del set */
 .io-anchor .member-io { border-top-right-radius: 0; border-bottom-right-radius: 0; }
 .io-anchor .member-copy { width: 38px; height: 36px; padding: 0; display: grid; place-items: center; margin-left: -1px; border-top-left-radius: 0; border-bottom-left-radius: 0; }
 /* Problemi del membro detti per esteso, con la via d'uscita */
@@ -357,6 +369,8 @@
 /* Testata dell'editor in due gruppi: Preset (Smogon + Preset migliore) e I miei set (nome, salva, Importa/Esporta, Copia) */
 .editor-head .head-group { display: flex; align-items: flex-end; gap: 8px; min-width: 0; }
 .editor-head .head-group + .head-group { margin-left: 12px; padding-left: 20px; border-left: 1px solid var(--line-soft); }
+/* Testo del set: terzo gruppo, dopo la barretta (azioni sul testo, non una fonte del set) */
+.editor-head .set-text-group { align-self: flex-end; }
 /* Custom Skillset a destra nella testata, sopra Set e Mosse (le cambia entrambe) */
 .editor-head > .custom-toggle { margin-left: auto; align-self: flex-end; font-size: 13px; }
 /* Ruoli: tag piatti di sola lettura (non sembrano pulsanti); il principale in grassetto */
@@ -366,7 +380,7 @@
 /* Colori in regola: shiny e chiudi nel ciano del lavoro; sovrascrivere è "da controllare" */
 .shiny-toggle[aria-pressed='true'] { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
 .editor-actions .editor-close:hover { border-color: var(--accent); color: var(--accent); }
-.save-set.overwrite { width: auto; padding: 0 10px; gap: 6px; display: inline-flex; align-items: center; border-color: var(--warn); color: var(--warn); background: var(--warn-bg); }
+.save-set.overwrite, .joined > .hint-wrap > .save-set.overwrite { width: auto; padding: 0 10px; gap: 6px; display: inline-flex; align-items: center; border-color: var(--warn); color: var(--warn); background: var(--warn-bg); }
 .overwrite-label { font-size: 13px; font-weight: 600; }
 /* Voto vuoto: il messaggio a tutta larghezza, non spezzato in colonna */
 .grade-badge.none { display: flex; flex-direction: column; align-items: stretch; }
@@ -388,10 +402,13 @@
 .grade-badge.grade-C { --grade: var(--warn); }
 .grade-badge.grade-D { --grade: var(--bad); }
 .grade-badge.none { --grade: var(--line); }
+/* Team non legale nel formato: lettera e giudizio grigi (il punteggio resta leggibile), finché non torna in regola */
+.grade-badge.rules-broken { --grade: var(--faint); }
+.grade-badge.rules-broken .overall { color: var(--muted); }
 .grade-badge .letter, .grade-badge.grade-C .letter, .grade-badge.grade-D .letter { color: var(--grade); }
 .grade-badge .label { color: var(--grade); font-weight: 600; }
 /* "Eccellente" è testo piccolo: il magenta più chiaro, leggibile sul fondo tinto (la lettera grande resta magenta pieno) */
-.grade-badge.grade-S .label { color: var(--accent-2-ink); }
+.grade-badge.grade-S:not(.rules-broken) .label { color: var(--accent-2-ink); }
 .grade-badge .grade-areas { align-self: stretch; align-content: space-evenly; gap: 1px; margin-top: 4px; padding-top: 6px; border-top: 1px solid var(--line-soft); }
 .grade-area { font-size: 12.5px; }
 .grade-area .meter { height: 7px; }

@@ -30,6 +30,9 @@
   --warn-bg: #362a0d;
   --good: #63e3a8;
   --good-bg: #0f3229;
+  /* Categoria della mossa nell'editor: fisica arancio, speciale lilla (come i simboli del gioco); stato in Faint */
+  --move-physical: #ff9a5c;
+  --move-special: #9aa8ff;
   --display: 'Kanit', system-ui, sans-serif;
   --ui: 'Kanit', system-ui, sans-serif;
   --stripes: repeating-linear-gradient(-60deg, #ffffff0d 0 4px, transparent 4px 10px);
