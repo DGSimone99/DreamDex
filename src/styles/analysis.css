@@ -559,6 +559,10 @@
 .coach-steps { display: grid; gap: 5px; margin: 0 0 4px; padding: 0; list-style: none; }
 .coach-strip { position: relative; display: grid; grid-template-columns: 46px minmax(0, 1.3fr) minmax(0, 2.2fr) minmax(0, 1.4fr); align-items: center; height: var(--step-h); min-width: 0;
   background: var(--panel); border: 1px solid color-mix(in srgb, var(--accent-2) 22%, var(--line)); }
+/* Senza "anche" né mossa alternativa la colonna di destra non c'è: la proposta prende tutta la striscia (niente banda vuota) */
+.coach-strip:not(:has(.coach-strip-extras > :not([hidden]))) { grid-template-columns: 46px minmax(0, 1.3fr) minmax(0, 3.6fr); }
+/* (il segnaposto di "anche" è uno span hidden) */
+.coach-strip:not(:has(.coach-strip-extras > :not([hidden]))) > .coach-strip-extras { display: none; }
 .coach-strip:hover, .coach-strip:focus-within { border-color: var(--accent); background: color-mix(in srgb, var(--raised) 45%, var(--panel)); }
 .coach-strip.skeleton { border-style: dashed; border-color: var(--line); background: color-mix(in srgb, var(--raised) 25%, var(--panel)); }
 .coach-steps-none { display: flex; align-items: center; gap: 10px; height: var(--step-h); margin: 0 0 4px; padding: 0 16px; font-size: 13px; color: var(--muted); border: 1px dashed var(--line); }
@@ -573,7 +577,9 @@
 .coach-step-subject { white-space: nowrap; }
 .coach-step-subject .type-icons { display: inline-flex; margin-right: 4px; vertical-align: -2px; }
 .coach-step-subject .type-icons img { width: 16px; height: 16px; }
-.coach-step-subject.is-mon .mon-icon { margin: -10px -4px -8px -6px; vertical-align: middle; }
+.coach-step-subject.is-mon .mon-icon { margin: -9px -6px -9px -8px; vertical-align: middle; transform: scale(0.8); }
+/* Coi Pokémon nel titolo le righe sono un po' più alte: le icone non toccano i nomi della riga sopra o sotto */
+.coach-step-problem:has(.is-mon) { line-height: 1.5; }
 /* Proposta principale: lo scambio su un fondo ciano che sfuma; il suo pulsante si allarga a tutta la striscia (::after) */
 .coach-prop { display: flex; align-items: center; min-width: 0; }
 .coach-prop.is-main { align-self: stretch; padding: 0 8px 0 12px; background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--accent) 7%, transparent) 40%, color-mix(in srgb, var(--accent) 12%, transparent)); }
@@ -642,6 +648,8 @@
   background: linear-gradient(90deg, var(--good-bg), var(--panel) 60%); border: 1px solid color-mix(in srgb, var(--good) 30%, var(--line-soft)); border-left: 3px solid var(--good); }
 .coach-clean .icon { width: 14px; height: 14px; color: var(--good); }
 .coach-clean b { color: var(--text); font-weight: 600; }
+/* Le tessere non si schiacciano sotto due righe di problemi: prima erano le tessere pulite a dare l'altezza alla fila */
+.coach-map { grid-template-rows: minmax(var(--tile-min, 112px), 1fr); }
 /* Una sola tessera: metà larghezza, i problemi su due colonne */
 .coach-map[data-tiles='1'] { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
 .coach-map[data-tiles='1'] .coach-probs { columns: 2; column-gap: 16px; }
