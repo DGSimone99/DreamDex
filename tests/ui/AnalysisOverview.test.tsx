@@ -237,8 +237,20 @@ describe('Panoramica: Da sistemare', () => {
     const user = await setup(['Great Tusk', 'Gholdengo', 'Kingambit']);
     const row = within(panel()).getByRole('region', { name: 'Da sistemare' });
     expect(row).toHaveTextContent(/Nessuno regge/);
+    // Le minacce del meta in una frase sola, coi nomi
+    expect(row.textContent!.match(/del meta/g)).toHaveLength(1);
     await user.click(within(row).getByRole('button', { name: 'Vai al Coaching' }));
     expect(within(views()).getByRole('tab', { name: 'Coaching' })).toHaveAttribute('aria-selected', 'true');
+  });
+
+  it('meta spento con 2 membri: nella riga nessuna minaccia del meta', async () => {
+    const user = userEvent.setup();
+    render(<App initialLang="it" data={{ ...fixtureData, ignoreMeta: true }} />);
+    for (const name of ['Great Tusk', 'Gholdengo', 'Kingambit']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
+    await user.click(screen.getByRole('tab', { name: /^Analisi/ }));
+    const row = within(panel()).queryByRole('region', { name: 'Da sistemare' });
+    expect(row).not.toBeNull();
+    expect(row).not.toHaveTextContent(/del meta/);
   });
 
   it('con 2 o più membri niente titolo in cima', async () => {

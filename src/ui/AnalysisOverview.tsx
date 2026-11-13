@@ -11,7 +11,7 @@ import type { AnalysisView } from './analysisView';
 import { OverviewDashboard } from './OverviewDashboard';
 import { FixRow } from './dashboard/FixRow';
 
-/** La Panoramica: il giudizio in cima, poi il cruscotto (Riassunto, Copertura, Ruoli, Velocità) che riempie lo spazio. */
+/** La Panoramica: il cruscotto (Riassunto, Copertura, Ruoli, Velocità) che riempie lo spazio, in fondo la riga Da sistemare; il giudizio in cima solo con un membro. */
 export function AnalysisOverview({ team, analysis, rating, coaching, data, onView, onAdd, teamCollapsed = false }: {
   /** Team ridotto: il cruscotto usa la densità ampia. */
   teamCollapsed?: boolean;
