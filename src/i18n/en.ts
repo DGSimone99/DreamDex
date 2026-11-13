@@ -874,6 +874,7 @@ export const en = {
   'help.weight.none': "doesn't count",
   'help.yourTeam': "your team",
   'help.read.title': "How to read the grade card",
+  'help.read.tab': "How to read it",
   'help.read.areas': "Offense, Defense and Speed are the team's areas. Each bar takes the colour of the letter that area would be worth on its own.",
   'help.read.roles': "The roles the team covers, out of the ones its kind of team needs.",
   'help.read.missing': "Missing roles that cost points: essential ones in red, important ones in yellow.",

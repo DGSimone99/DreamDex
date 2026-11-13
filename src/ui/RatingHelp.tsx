@@ -9,14 +9,15 @@ import { EeveePeek } from './EeveePeek';
 import { ModalLock } from './ModalLock';
 import { Icon } from './icons';
 
-type Topic = 'general' | Archetype;
+type Topic = 'general' | 'read' | Archetype;
 const ARCHETYPES: Archetype[] = ['hyperOffense', 'bulkyOffense', 'balance', 'semiStall', 'stall'];
-const TOPICS: Topic[] = ['general', ...ARCHETYPES];
+const TOPICS: Topic[] = ['general', 'read', ...ARCHETYPES];
 /** Le aree col peso: i Ruoli non ne hanno, contano come malus e bonus (spiegati nel loro modale). */
-const WEIGHT_AREAS = ['defense', 'strength', 'speed'] as const;
+/** Offesa prima di Difesa, come nel riquadro del voto (scelta dell'utente, 2026-11-13). */
+const WEIGHT_AREAS = ['strength', 'defense', 'speed'] as const;
 const LEVELS: Exclude<Level, 'ignored'>[] = ['essential', 'important', 'minor'];
 
-const topicLabel = (topic: Topic): MessageKey => (topic === 'general' ? 'help.general' : `archetype.${topic}`);
+const topicLabel = (topic: Topic): MessageKey => (topic === 'general' ? 'help.general' : topic === 'read' ? 'help.read.tab' : `archetype.${topic}`);
 /** Etichetta di una voce della tabella dei livelli ("almeno uno Sweeper / un Wallbreaker" sono gruppi). */
 const keyLabel = (key: LevelKey): MessageKey => (isGroupKey(key) ? `need.${key}` : `role.${key}`);
 
@@ -93,8 +94,10 @@ export function RatingHelp({ teamType: judgedAs, weights: realWeights = ARCHETYP
                 ))}
               </nav>
               <section className={`help-panel${topic === 'general' ? ' help-general' : ''}`} id="help-panel" role="tabpanel" aria-labelledby={`help-tab-${topic}`}>
-                <h4>{t(topicLabel(topic))}</h4>
-                {topic === 'general' ? <GeneralTopic teamType={teamType} weights={weights} /> : <TypeTopic type={topic} weights={weights} typeRule={typeRule} />}
+                <h4>{t(topic === 'read' ? 'help.read.title' : topicLabel(topic))}</h4>
+                {topic === 'general' ? <GeneralTopic teamType={teamType} weights={weights} />
+                  : topic === 'read' ? <ReadTheCard />
+                  : <TypeTopic type={topic} weights={weights} typeRule={typeRule} />}
               </section>
             </div>
           </div>
@@ -138,20 +141,18 @@ function GeneralTopic({ teamType, weights }: { teamType: Archetype | null; weigh
           </tbody>
         </table>
       </div>
-      <ReadTheCard />
     </>
   );
 }
 
 /**
- * Come si legge il riquadro del voto: a sinistra un pezzetto del riquadro com'è (barra, Ruoli, segni dei ruoli che
+ * Come si legge il riquadro del voto, scheda a sé subito dopo Come funziona (scelta dell'utente, 2026-11-13): a sinistra un pezzetto del riquadro com'è (barra, Ruoli, segni dei ruoli che
  * mancano, Bonus/Malus, lettera grigia), a destra una frase semplice. Solo disegno: le frasi dicono tutto da sole.
  */
 function ReadTheCard() {
   const t = useT();
   return (
-    <section className="help-read" aria-labelledby="help-read-title">
-      <h5 id="help-read-title">{t('help.read.title')}</h5>
+    <section className="help-read">
       <dl>
         <div>
           <dt aria-hidden="true"><span>{t('area.strength')}</span><span className="help-read-meter"><i /></span></dt>
@@ -204,17 +205,14 @@ const LADDER: Record<(typeof WEIGHT_AREAS)[number], Record<Archetype, number>> =
 };
 const stepOf = (weights: AreaWeightTable, arch: Archetype, area: (typeof WEIGHT_AREAS)[number]): number =>
   weights[arch][area] <= 0 ? 0 : LADDER[area][arch] / 6;
-/**
- * Il peso di un'area come barra in sesti, senza numeri (stepOf), e accanto una parola dal peso vero, a vista per tutti:
- * molto dalla metà del voto in su, abbastanza da un quarto, poco sotto.
- */
+/** Il peso di un'area come barra in sesti, senza numeri (stepOf); la parola dal peso vero solo per i lettori di schermo (scelta dell'utente, 2026-11-13). */
 function WeightBar({ weight, step }: { weight: number; step: number }) {
   const t = useT();
   const word = weight <= 0 ? 'help.weight.none' : weight >= 50 ? 'help.weight.high' : weight >= 25 ? 'help.weight.mid' : 'help.weight.low';
   return (
-    <span className="help-weight">
-      <span className="help-wbar" aria-hidden="true"><i style={{ width: `${(100 * step).toFixed(2)}%` }} /></span>
-      <span className="help-wword">{t(word)}</span>
+    <span className="help-wbar">
+      <i style={{ width: `${(100 * step).toFixed(2)}%` }} />
+      <span className="visually-hidden">{t(word)}</span>
     </span>
   );
 }

@@ -467,6 +467,12 @@ const STATES: Record<string, State> = {
     return clickText(p, '.help-nav [role="tab"]', /^How it works$/);
   } },
   // Hyper Offense: la frase su Trick Room e le voci dei Ruoli come etichette piatte
+  // Come si legge il riquadro del voto: scheda a sé dopo Come funziona
+  'rating-help-read': { run: async p => {
+    if (!await clickText(p, '.band .grade-tools button.help-button', /./)) return 'no help button';
+    await wait(300);
+    return clickText(p, '.help-nav [role="tab"]', /^(Come si legge|How to read it)$/);
+  } },
   'rating-help-ho': { hash: hash(SIX), run: async p => {
     if (!await clickText(p, '.band .grade-tools button.help-button', /./)) return 'no help button';
     await wait(300);

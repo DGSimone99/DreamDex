@@ -163,14 +163,10 @@
   .bm-points { font-size: 21px; }
 }
 
-/* Peso di un'area come barra continua riempita a sesti, senza numeri, e la parola accanto (RatingHelp) */
-.help-weight { display: flex; align-items: center; gap: 8px; }
-.help-wbar { display: block; flex: none; width: 96px; height: 9px; background: var(--field); border-radius: 2px; overflow: hidden; }
-.help-weights .help-wbar { width: 52px; }
-.help-wword { font: 500 12px/1.2 var(--ui); color: var(--muted); white-space: nowrap; }
-.help-weights tr.current .help-wword { color: var(--text); }
+/* Peso di un'area come barra continua riempita a sesti, senza numeri né parole (RatingHelp) */
+.help-wbar { display: block; min-width: 96px; height: 9px; background: var(--field); border-radius: 2px; overflow: hidden; }
 /* Come si legge il riquadro del voto: a sinistra un pezzetto del riquadro, a destra una frase */
-.help-read { margin-top: 4px; }
+.help-read { margin-top: 2px; }
 .help-read dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 14px; margin: 0; }
 .help-read dl > div { display: contents; }
 .help-read dt { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 26px; padding: 2px 8px; background: var(--panel); border: 1px solid var(--line-soft); border-radius: 3px; font-size: 12px; color: var(--muted); }

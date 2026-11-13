@@ -876,6 +876,7 @@ export const it: Record<keyof typeof en, string> = {
   'help.weight.none': "non conta",
   'help.yourTeam': "il tuo team",
   'help.read.title': "Come si legge il riquadro del voto",
+  'help.read.tab': "Come si legge",
   'help.read.areas': "Offesa, Difesa e Velocità sono le aree del team. Ogni barra ha il colore della lettera che l'area varrebbe da sola.",
   'help.read.roles': "I ruoli che il team copre, su quelli che servono al suo tipo di team.",
   'help.read.missing': "Ruoli che mancano e tolgono punti: in rosso gli essenziali, in giallo gli importanti.",
