@@ -723,6 +723,18 @@
 @media (prefers-reduced-motion: no-preference) {
   .coach-prob { transition: background-color 120ms ease-out, color 120ms ease-out; }
 }
+/* Riga di tipi: l'etichetta e le icone in fila (vanno a capo se tante); col puntatore su una proposta solo le risolte restano accese */
+.coach-prob-text.coach-group-row { display: flex; align-items: center; gap: 4px 10px; overflow: visible; white-space: normal; }
+.coach-group-label { flex: none; }
+.coach-chips { display: flex; flex-wrap: wrap; gap: 3px; min-width: 0; }
+.coach-chip { display: inline-flex; padding: 1px; border-radius: 50%; }
+.coach-chip .type-icons { display: inline-flex; }
+.coach-chip .type-icons img { width: 18px; height: 18px; }
+.coach-chip.is-solved-preview { box-shadow: 0 0 0 2px var(--good); background: var(--good-bg); }
+.coach-group.is-lit .coach-chip:not(.is-solved-preview) { opacity: 0.35; }
+@media (prefers-reduced-motion: no-preference) {
+  .coach-chip { transition: opacity 120ms ease-out, box-shadow 120ms ease-out; }
+}
 .coach-by { flex: none; margin-left: auto; min-width: 16px; padding: 0 4px; font: 800 11px/16px var(--display); font-style: italic; text-align: center; color: var(--on-accent-2); background: var(--accent-2); border-radius: 8px; }
 .coach-sep { margin: 8px 12px 5px; font: 600 11px/1.2 var(--ui); text-transform: uppercase; letter-spacing: 0.08em; color: var(--faint); }
 @media (max-width: 1099px) {

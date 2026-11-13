@@ -310,6 +310,49 @@ function MapProblem({ problem, step, preview, usage, dim = false, role }: {
   );
 }
 
+/**
+ * I tipi con lo stesso problema e la stessa gravità in una riga: l'etichetta ("Nessuno regge", "Scoperti"…) e le icone dei
+ * tipi. Ogni icona ha il suo testo intero (title e lettori di schermo); in fondo i numeri delle tappe che toccano la riga.
+ * Col puntatore su una proposta si accendono solo le icone che risolve, le altre si spengono.
+ */
+function MapGroup({ id, label, members, stepOf, preview }: { id: string; label: string; members: CoachProblem[]; stepOf: Map<string, number>; preview: Set<string> | null }) {
+  const tr = useT();
+  const severity = members[0].severity;
+  const steps = [...new Set(members.map(m => stepOf.get(m.key)).filter((n): n is number => n !== undefined))].sort((a, b) => a - b);
+  const lit = members.some(m => preview?.has(m.key));
+  return (
+    <li data-group={id} title={members.map(m => m.text).join('\n')}
+      className={`coach-prob coach-group ${severity}${steps.length ? ' is-covered' : ''}${lit ? ' is-lit' : ''}`}>
+      <span className="coach-sev visually-hidden">{tr(severity === 'serious' ? 'dash.serious' : 'dash.minor')}</span>
+      <span className="coach-prob-text coach-group-row">
+        <span className="coach-group-label" aria-hidden="true">{label}</span>
+        <span className="coach-chips">
+          {members.map(m => (
+            <span key={m.key} data-key={m.key} title={m.text}
+              className={`coach-chip${stepOf.has(m.key) ? ' is-covered' : ''}${preview?.has(m.key) ? ' is-solved-preview' : ''}`}>
+              <TypeIcons types={m.subjects ?? []} /><span className="visually-hidden">{m.text}</span>
+            </span>
+          ))}
+        </span>
+      </span>
+      {steps.map(n => (
+        <span key={n} className="coach-by"><span aria-hidden="true">{n}</span><span className="visually-hidden">{tr('coach.map.coveredBy', { n })}</span></span>
+      ))}
+    </li>
+  );
+}
+
+/** In quale riga di tipi va un problema di Difesa o di Offesa (null: riga sua). Stesso tipo di problema e stessa gravità. */
+function typeGroupOf(p: CoachProblem): string | null {
+  if ((p.subjects?.length ?? 0) !== 1) return null;
+  if (p.category === 'defense') return `defense:${p.severity === 'serious' ? 'notHeld' : 'halfHeld'}`;
+  if (p.category === 'coverage') return `coverage:${p.size === 2 ? 'uncovered' : 'halfCovered'}:${p.severity}`;
+  return null;
+}
+const GROUP_LABEL: Record<string, MessageKey> = {
+  notHeld: 'coach.group.notHeld', halfHeld: 'coach.group.halfHeld', uncovered: 'coach.group.uncovered', halfCovered: 'coach.group.halfCovered',
+};
+
 /** I problemi "ruoli mancanti" (essenziali o importanti) coi ruoli come soggetti. */
 const isMissingRoles = (p: CoachProblem) => p.category === 'roles' && (p.key === 'roles:essential' || p.key === 'roles:important') && (p.subjects?.length ?? 0) > 0;
 
@@ -346,20 +389,35 @@ function MapTile({ id, name, items, score, count, stepOf, preview, threatUsage, 
   type Section = 'main' | 'redundancy' | 'meta';
   const sectionOf = (p: CoachProblem): Section => (p.category === 'redundancy' ? 'redundancy' : isThreat(p) ? 'meta' : 'main');
   // Ruoli mancanti: una pillola per ruolo (possono riempirli Pokémon diversi), senza la frase davanti
-  const pills = items.flatMap(p => (isMissingRoles(p) ? (p.subjects ?? []).map(role => ({ p, role })) : [{ p, role: undefined as string | undefined }]))
-    .map((pill, i) => ({ ...pill, i, section: sectionOf(pill.p) }));
+  // Ruoli mancanti: una pillola per ruolo; i tipi di Difesa e Offesa con lo stesso problema e gravità: una riga sola
+  type Raw = { p: CoachProblem; role?: string; members?: CoachProblem[]; group?: string };
+  const raw: Raw[] = [];
+  const groups = new Map<string, Raw>();
+  for (const p of items) {
+    if (isMissingRoles(p)) { for (const role of p.subjects ?? []) raw.push({ p, role }); continue; }
+    const group = typeGroupOf(p);
+    if (!group) { raw.push({ p }); continue; }
+    const entry = groups.get(group);
+    if (entry) entry.members!.push(p);
+    else { const fresh: Raw = { p, members: [p], group }; groups.set(group, fresh); raw.push(fresh); }
+  }
+  const pills = raw.map((pill, i) => ({ ...pill, i, section: sectionOf(pill.p) }));
+  const all = (x: Raw) => x.members ?? [x.p];
   const solvable = (p: CoachProblem) => p.fixes.length > 0 || stepOf.has(p.key);
   // Col puntatore su un suggerimento, quello che risolve passa in cima (anche se di solito sta nel "+N")
-  const lit = (p: CoachProblem) => preview?.has(p.key) ?? false;
-  const priority = [...pills].sort((a, b) => Number(lit(b.p)) - Number(lit(a.p)) || Number(solvable(b.p)) - Number(solvable(a.p))
+  const lit = (x: Raw) => all(x).some(p => preview?.has(p.key));
+  const canSolve = (x: Raw) => all(x).some(solvable);
+  const priority = [...pills].sort((a, b) => Number(lit(b)) - Number(lit(a)) || Number(canSolve(b)) - Number(canSolve(a))
     || Number(b.p.severity === 'serious') - Number(a.p.severity === 'serious') || a.i - b.i);
-  const fit = useFitCount(ref, pills.length, `${lang}|${pills.map(x => `${x.p.key}|${x.p.text}|${x.role ?? ''}`).join('#')}`, watch);
+  const fit = useFitCount(ref, pills.length, `${lang}|${pills.map(x => all(x).map(p => `${p.key}|${p.text}`).join('+') + `|${x.role ?? ''}`).join('#')}`, watch);
   const shown = new Set(priority.slice(0, fit).map(x => x.i));
   const hidden = priority.slice(fit);
-  const hiddenText = (x: typeof pills[number]) => (x.role ? needLabel(x.role as Need, lang) : x.p.text);
-  const row = ({ p, role, section }: typeof pills[number]) => <MapProblem key={`${p.key}|${p.text}|${role ?? ''}`} problem={p} step={stepOf.get(p.key) ?? null}
+  const hiddenText = (x: typeof pills[number]) => (x.role ? needLabel(x.role as Need, lang) : all(x).map(p => p.text).join('; '));
+  const row = ({ p, role, section, members, group }: typeof pills[number]) => members ? (
+    <MapGroup key={group} id={group!} label={tr(GROUP_LABEL[group!.split(':')[1]])} members={members} stepOf={stepOf} preview={preview} />
+  ) : <MapProblem key={`${p.key}|${p.text}|${role ?? ''}`} problem={p} step={stepOf.get(p.key) ?? null}
     preview={preview?.has(p.key) ?? false} usage={isThreat(p) ? threatUsage?.[p.subjects?.[0] ?? ''] : undefined} dim={section !== 'main'} role={role} />;
-  const list = (section: Section) => pills.filter(x => x.section === section && shown.has(x.i)).sort((a, b) => Number(lit(b.p)) - Number(lit(a.p)) || a.i - b.i);
+  const list = (section: Section) => pills.filter(x => x.section === section && shown.has(x.i)).sort((a, b) => Number(lit(b)) - Number(lit(a)) || a.i - b.i);
   const [main, redundancy, threats] = [list('main'), list('redundancy'), list('meta')];
   // Difesa: "Nessuno le regge"; Offesa: "Nessuno le manda KO"
   const threatLabel = tr(items.some(p => p.category === 'metaHit') ? 'coach.map.metaHit' : 'dash.todo.threats');

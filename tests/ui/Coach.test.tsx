@@ -405,7 +405,7 @@ describe('CoachingView', () => {
       const move: MoveFix = { index: 1, member: 'Gholdengo', set: three[1], reduces: [], slot: 1, from: '', to: 'Thunderbolt', gain: 1, solves: [p2.key] };
       renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [{ problem: p1, swap, move, alsoSolves: [], group: [p1.key] }] }} members={3}
         rating={rating(three)} metaOn {...noop} />);
-      const lit = () => [...document.querySelectorAll<HTMLElement>('li.coach-prob.is-solved-preview')].map(li => li.dataset.key).sort();
+      const lit = () => [...document.querySelectorAll<HTMLElement>('.is-solved-preview[data-key]')].map(li => li.dataset.key).sort();
       const user = userEvent.setup();
       await user.hover(within(stepsRegion()).getByRole('button', { name: /^Al posto di Great Tusk: Rotom-Wash/ }));
       expect(lit()).toEqual([p1.key, p2.key].sort());
@@ -439,25 +439,23 @@ describe('CoachingView', () => {
     expect(map.compareDocumentPosition(stepsRegion()) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
-  it('pillola di difesa: icona, tipo e quanti lo reggono, testo intero nel title', () => {
+  it('difesa: i tipi in righe per problema e gravità, un\'icona per tipo col testo intero nel title', () => {
     const text = 'Ground retto poco: pochi membri reggono i suoi colpi';
     const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], threatFixes: {},
       problems: [
         { severity: 'minor', category: 'defense', text, fixes: [], key: 'defense:Ground', subjects: ['Ground'], counts: { held: 1 } },
         { severity: 'serious', category: 'defense', text: 'Nessuno regge Ice', fixes: [], key: 'defense:Ice', subjects: ['Ice'], counts: { held: 0 } },
+        { severity: 'serious', category: 'defense', text: 'Nessuno regge Fire', fixes: [], key: 'defense:Fire', subjects: ['Fire'], counts: { held: 0 } },
       ] };
     renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [] }} members={3} rating={rating(three)} metaOn {...noop} />);
     const group = screen.getByRole('group', { name: 'Difesa' });
-    const pill = group.querySelector<HTMLElement>('li[data-key="defense:Ground"]')!;
-    expect(pill.querySelectorAll('.type-icons img')).toHaveLength(1);
-    // Uno che regge: verde, al singolare
-    expect(pill.querySelector('.coach-counts')).toHaveTextContent(/^· solo 1 lo regge$/);
-    expect(pill.querySelector('.count-resist')).not.toBeNull();
-    expect(pill).toHaveAttribute('title', text);
-    // Nessuno: rosso
-    const ice = group.querySelector<HTMLElement>('li[data-key="defense:Ice"]')!;
-    expect(ice.querySelector('.coach-counts')).toHaveTextContent(/^· nessuno lo regge$/);
-    expect(ice.querySelector('.count-weak')).not.toBeNull();
+    const rows = [...group.querySelectorAll<HTMLElement>('li.coach-group')];
+    expect(rows.map(r => r.querySelector('.coach-group-label')!.textContent)).toEqual(['Nessuno regge', 'Retti poco']);
+    expect([...rows[0].querySelectorAll<HTMLElement>('[data-key]')].map(c => c.dataset.key)).toEqual(['defense:Ice', 'defense:Fire']);
+    expect(rows[0]).toHaveClass('serious');
+    const ground = rows[1].querySelector<HTMLElement>('[data-key="defense:Ground"]')!;
+    expect(ground.querySelectorAll('.type-icons img')).toHaveLength(1);
+    expect(ground).toHaveAttribute('title', text);
   });
 
   it('ruoli mancanti nella tessera: una pillola per ruolo con la ×, senza "Ruoli importanti mancanti"', () => {
@@ -490,18 +488,19 @@ describe('CoachingView', () => {
       return this.classList.contains('coach-tile') ? 40 + 30 * this.querySelectorAll('li.coach-prob, .coach-more').length : 0;
     });
     try {
-      const p = (type: string, severity: CoachProblem['severity'], fixes: string[] = []): CoachProblem =>
-        ({ severity, category: 'defense', text: `Nessuno regge ${type}`, fixes, key: `defense:${type}`, subjects: [type] });
+      const p = (name: string, fixes: string[] = []): CoachProblem =>
+        ({ severity: 'minor', category: 'meta', text: `Nessuno regge ${name}`, fixes, key: `meta:${name}`, subjects: [name] });
       const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], threatFixes: {},
-        problems: [p('Fire', 'minor'), p('Ice', 'serious'), p('Water', 'minor', ['Rotom-Wash']), p('Ground', 'minor')] };
+        problems: [p('Zapdos'), p('Kyurem'), p('Heatran', ['Rotom-Wash']), p('Garchomp')] };
       const onOpen = vi.fn();
       renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [] }} members={3} rating={rating(three)} metaOn onOpen={onOpen} {...noop} />);
       const tile = screen.getByRole('group', { name: 'Difesa' });
-      expect([...tile.querySelectorAll('li.coach-prob')].map(li => li.getAttribute('data-key'))).toEqual(['defense:Ice', 'defense:Water']);
-      const more = within(tile).getByRole('button', { name: /^e altri 2/ });
+      // Prima la risolvibile (Heatran), poi l'ordine di partenza
+      expect([...tile.querySelectorAll('li.coach-prob')].map(li => li.getAttribute('data-key'))).toEqual(['meta:Zapdos', 'meta:Heatran']);
+      const more = within(tile).getByRole('button', { name: /^e altre 2/ });
       expect(more).toHaveClass('coach-more');
-      expect(more).toHaveAttribute('title', 'Nessuno regge Fire\nNessuno regge Ground');
-      expect(more.querySelector('.visually-hidden')).toHaveTextContent('Altri 2 problemi: Nessuno regge Fire; Nessuno regge Ground');
+      expect(more).toHaveAttribute('title', 'Nessuno regge Kyurem\nNessuno regge Garchomp');
+      expect(more.querySelector('.visually-hidden')).toHaveTextContent('Altri 2 problemi: Nessuno regge Kyurem; Nessuno regge Garchomp');
       fireEvent.click(more);
       expect(onOpen).toHaveBeenCalledWith('defense');
     } finally {
@@ -517,11 +516,13 @@ describe('CoachingView', () => {
         { severity: 'minor', category: 'coverage', text: 'Coperto a metà Fire: 1 solo in tre colpi', fixes: [], key: 'coverage:Fire', size: 1, subjects: ['Fire'] },
       ] };
     renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [] }} members={3} rating={rating(three)} metaOn {...noop} />);
-    // Un problema per tipo: una riga con l'icona del suo tipo
+    // Una riga per problema ("Scoperti", "Coperti poco") con un'icona per tipo, senza nomi colorati
+    const offense = screen.getByRole('group', { name: 'Offesa' });
+    expect([...offense.querySelectorAll('.coach-group-label')].map(l => l.textContent)).toEqual(['Scoperti', 'Coperti poco']);
     for (const type of ['Water', 'Fire']) {
-      const row = screen.getByRole('group', { name: 'Offesa' }).querySelector(`li[data-key="coverage:${type}"]`)!;
-      expect(row.querySelectorAll('.type-icons img')).toHaveLength(1);
-      expect(row.querySelector('.type-name, .type-dot')).toBeNull();
+      const chip = offense.querySelector(`[data-key="coverage:${type}"]`)!;
+      expect(chip.querySelectorAll('.type-icons img')).toHaveLength(1);
+      expect(chip.querySelector('.type-name, .type-dot')).toBeNull();
     }
   });
 
@@ -582,7 +583,8 @@ describe('CoachingView', () => {
       const group = screen.queryByRole('group', { name: names[col] });
       if (!group) { expect(unique.filter(p => columnOf(p.category) === col)).toHaveLength(0); continue; }
       // I ruoli mancanti hanno una pillola per ruolo, tutte con la chiave del problema: una riga per chiave
-      const rows = [...group.querySelectorAll<HTMLElement>('li[data-key]')].filter((li, i, all) => all.findIndex(o => o.dataset.key === li.dataset.key) === i);
+      // Una riga, o un'icona in una riga di tipi, per chiave
+      const rows = [...group.querySelectorAll<HTMLElement>('[data-key]')].filter((li, i, all) => all.findIndex(o => o.dataset.key === li.dataset.key) === i);
       const expected = unique.filter(p => columnOf(p.category) === col);
       expect(rows).toHaveLength(expected.length);
       total += rows.length;
@@ -590,9 +592,9 @@ describe('CoachingView', () => {
         const p = expected.find(e => e.key === row.dataset.key)!;
         expect(p).toBeTruthy();
         expect(row.classList.contains('is-covered')).toBe(numbers.has(p.key));
-        if (numbers.has(p.key)) expect(row.querySelector('.coach-by')).toHaveTextContent(String(numbers.get(p.key)));
+        if (numbers.has(p.key)) expect(row.closest('li')!.querySelector('.coach-by')?.textContent ?? row.closest('li')!.textContent).toContain(String(numbers.get(p.key)));
       }
-      const sev = rows.map(r => r.classList.contains('serious'));
+      const sev = [...group.querySelectorAll<HTMLElement>('li.coach-prob')].map(r => r.classList.contains('serious'));
       expect(sev).toEqual([...sev].sort((x, y) => Number(y) - Number(x)));
     }
     expect(total).toBe(unique.length);
@@ -784,7 +786,7 @@ describe('CoachingView', () => {
       const step2 = { problem: problems[2], swap: null, move, alsoSolves: [], group: ['defense:Ghost'] };
       renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [step, step2] }} members={3} rating={rating(three)} metaOn {...noop} />);
     };
-    const previewed = () => [...document.querySelectorAll<HTMLElement>('li.coach-prob.is-solved-preview')].map(li => li.dataset.key);
+    const previewed = () => [...document.querySelectorAll<HTMLElement>('.is-solved-preview[data-key]')].map(li => li.dataset.key);
 
     it('titolo: "Difesa debole contro" coi tipi raggruppati, senza conteggi; i raggruppati non sono in "risolve anche"', () => {
       setup();
