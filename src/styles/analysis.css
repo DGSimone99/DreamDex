@@ -683,8 +683,9 @@
 .coach-prob-text.coach-miss { display: flex; align-items: center; gap: 6px; }
 .coach-miss .icon { flex: none; width: 12px; height: 12px; color: var(--warn); }
 .coach-prob.serious .coach-miss .icon { color: var(--bad); }
-.coach-prob-text.is-threat { display: flex; align-items: center; gap: 4px; white-space: nowrap; }
-.coach-prob-text.is-threat .mon-icon { margin: -10px -6px -9px -8px; }
+/* Minacce: l'icona del Pokémon è più alta della riga, quindi la riga non la taglia; i puntini solo sul nome */
+.coach-prob-text.is-threat { display: flex; align-items: center; gap: 4px; overflow: visible; white-space: nowrap; }
+.coach-prob-text.is-threat .mon-icon { flex: none; margin: -10px -4px -9px -8px; }
 .coach-prob-text.is-threat .coach-usage { flex: none; color: inherit; font-variant-numeric: tabular-nums; }
 .coach-prob-text.is-threat .coach-threat-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .coach-prob-text.is-threat .coach-usage { font-weight: 400; color: var(--muted); }
