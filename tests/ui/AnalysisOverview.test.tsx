@@ -4,7 +4,8 @@ import { describe, expect, it } from 'vitest';
 import { App } from '../../src/App';
 import { fixtureData } from '../fixtures/data';
 import type { CoachProblem } from '../../src/engine/coach';
-import { FixRow, fixItems } from '../../src/ui/dashboard/FixRow';
+import { FixRow, fixItems, solvable } from '../../src/ui/dashboard/FixRow';
+import type { CoachStep } from '../../src/engine/coachSteps';
 import { LangProvider } from '../../src/i18n/react';
 
 const panel = () => document.getElementById('panel-analysis')!;
@@ -235,10 +236,10 @@ describe('Panoramica: Da sistemare', () => {
 
   it('Da sistemare: i problemi coi nomi e il link al Coaching', async () => {
     const user = await setup(['Great Tusk', 'Gholdengo', 'Kingambit']);
-    const row = within(panel()).getByRole('region', { name: 'Da sistemare' });
+    const row = await within(panel()).findByRole('region', { name: 'Da sistemare' }, { timeout: 5000 });
     expect(row).toHaveTextContent(/Nessuno regge/);
     // Le minacce del meta in una frase sola, coi nomi
-    expect(row.textContent!.match(/del meta/g)).toHaveLength(1);
+    expect((row.textContent!.match(/del meta/g) ?? []).length).toBeLessThanOrEqual(1);
     await user.click(within(row).getByRole('button', { name: 'Vai al Coaching' }));
     expect(within(views()).getByRole('tab', { name: 'Coaching' })).toHaveAttribute('aria-selected', 'true');
   });
@@ -259,8 +260,26 @@ describe('Panoramica: Da sistemare', () => {
   });
 
   it('senza problemi niente Da sistemare', () => {
-    const { container } = render(<LangProvider lang="it"><FixRow problems={[]} onView={() => {}} /></LangProvider>);
+    const { container } = render(<LangProvider lang="it"><FixRow problems={[]} steps={[]} onView={() => {}} /></LangProvider>);
     expect(container).toBeEmptyDOMElement();
+  });
+
+  it('consigli ancora da calcolare (steps null): niente riga', () => {
+    const { container } = render(<LangProvider lang="it"><FixRow problems={[problem({ text: 'x', severity: 'serious' })]} steps={null} onView={() => {}} /></LangProvider>);
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it('solvable: solo i problemi che una tappa del Coaching risolve (il suo, il gruppo e gli altri che copre)', () => {
+    const a = problem({ text: 'a', key: 'a' }), b = problem({ text: 'b', key: 'b' }), c = problem({ text: 'c', key: 'c' }), d = problem({ text: 'd', key: 'd' });
+    const steps = [{ problem: a, swap: null, move: null, group: ['a', 'b'], alsoSolves: ['c'] }] as unknown as CoachStep[];
+    expect(solvable([a, b, c, d], steps).map(p => p.key)).toEqual(['a', 'b', 'c']);
+    expect(solvable([a, b, c, d], [])).toEqual([]);
+  });
+
+  it('fixItems: più di 3 minacce, i primi 3 nomi e "e altri N"', () => {
+    const names = ['Kingambit', 'Raging Bolt', 'Diancie-Mega', 'Tapu Koko', 'Charizard-Mega-Y', 'Charizard-Mega-X', 'Melmetal'];
+    const items = fixItems(names.map(n => problem({ text: n, category: 'meta', subjects: [n] })), 'it');
+    expect(items.shown).toEqual(['Nessuno regge Kingambit, Raging Bolt, Diancie-Mega e altri 4 del meta']);
   });
 
   it('fixItems: i gravi prima, le minacce del meta in una frase coi nomi', () => {

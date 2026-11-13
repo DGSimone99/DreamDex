@@ -152,6 +152,7 @@ export const en = {
   'coach.addTwo': "Add at least 2 Pokémon to get coaching",
   'overview.fix.title': "To fix",
   'overview.fix.threats': "Nobody takes {list} from the meta",
+  'overview.fix.threatsMore': "Nobody takes {list} and {n} more from the meta",
   'overview.fix.go': "Go to Coaching",
   'overview.fix.more': "+{n}",
   'coach.verdict.incomplete': "Incomplete team",

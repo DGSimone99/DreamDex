@@ -264,8 +264,9 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   // Senza meta la scheda Meta è spenta: si resta sull'Analisi
   const shownTab: TabId = tab === 'meta' && !metaOn ? 'analysis' : tab;
   if (shownTab === 'lists' && !listsOpened) setListsOpened(true);
-  // I consigli (candidati e prima mossa) sono lenti: solo con la scheda Coaching aperta, e dopo che la scheda si è disegnata
-  const coachingOpen = shownTab === 'analysis' && analysisView === 'coaching';
+  // I consigli (candidati e prima mossa) sono lenti: solo col Coaching aperto, o con la Panoramica (la riga Da sistemare
+  // mostra solo ciò che il Coaching risolve), e dopo che la scheda si è disegnata
+  const coachingOpen = shownTab === 'analysis' && (analysisView === 'coaching' || (analysisView === 'overview' && team.length >= 2));
   const adviceInput = useMemo(() => (coachingOpen ? { source: coachSource, problems: coaching.problems } : null), [coachingOpen, coachSource, coaching]);
   // In sottofondo (useAdvice): aprire il Coaching non blocca più l'app
   // Consigli di un team precedente: non si mostrano, si dice che si stanno calcolando

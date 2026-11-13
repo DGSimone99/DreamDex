@@ -154,6 +154,7 @@ export const it: Record<keyof typeof en, string> = {
   'coach.addTwo': "Aggiungi almeno 2 Pokémon per ricevere il coaching",
   'overview.fix.title': "Da sistemare",
   'overview.fix.threats': "Nessuno regge {list} del meta",
+  'overview.fix.threatsMore': "Nessuno regge {list} e altri {n} del meta",
   'overview.fix.go': "Vai al Coaching",
   'overview.fix.more': "+{n}",
   'coach.verdict.incomplete': "Team incompleto",
