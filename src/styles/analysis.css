@@ -560,7 +560,7 @@
 .coach-strip { position: relative; display: grid; grid-template-columns: 46px minmax(0, 1.3fr) minmax(0, 2.2fr) minmax(0, 1.4fr); align-items: center; height: var(--step-h); min-width: 0;
   background: var(--panel); border: 1px solid color-mix(in srgb, var(--accent-2) 22%, var(--line)); }
 /* Senza "anche" né mossa alternativa la colonna di destra non c'è: la proposta prende tutta la striscia (niente banda vuota) */
-.coach-strip:not(:has(.coach-strip-extras > :not([hidden]))) { grid-template-columns: 46px minmax(0, 1.3fr) minmax(0, 3.6fr); }
+@media (min-width: 600px) { .coach-strip:not(:has(.coach-strip-extras > :not([hidden]))) { grid-template-columns: 46px minmax(0, 1.3fr) minmax(0, 3.6fr); } }
 /* (il segnaposto di "anche" è uno span hidden) */
 .coach-strip:not(:has(.coach-strip-extras > :not([hidden]))) > .coach-strip-extras { display: none; }
 .coach-strip:hover, .coach-strip:focus-within { border-color: var(--accent); background: color-mix(in srgb, var(--raised) 45%, var(--panel)); }
@@ -650,9 +650,8 @@
 .coach-clean b { color: var(--text); font-weight: 600; }
 /* Le tessere non si schiacciano sotto due righe di problemi: prima erano le tessere pulite a dare l'altezza alla fila */
 .coach-map { grid-template-rows: minmax(var(--tile-min, 112px), 1fr); }
-/* Una sola tessera: metà larghezza, i problemi su due colonne */
-.coach-map[data-tiles='1'] { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-.coach-map[data-tiles='1'] .coach-probs { columns: 2; column-gap: 16px; }
+/* Una sola tessera: metà larghezza (sul telefono tutta) */
+@media (min-width: 600px) { .coach-map[data-tiles='1'] { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
 .coach-tile { display: flex; flex-direction: column; min-width: 0; min-height: 0; padding: 0 0 5px; overflow: hidden; background: var(--panel); border: 1px solid var(--line-soft); }
 .coach-more { flex: none; align-self: flex-start; margin: 6px 12px 0; padding: 0 7px; border-radius: 10px; font: 600 11px/18px var(--ui); color: var(--muted); background: var(--raised); cursor: help; }
 .coach-tile-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-right: 12px; }

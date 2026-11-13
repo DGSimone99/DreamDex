@@ -310,6 +310,9 @@ function MapProblem({ problem, step, preview, usage, dim = false, role }: {
 /** I problemi "ruoli mancanti" (essenziali o importanti) coi ruoli come soggetti. */
 const isMissingRoles = (p: CoachProblem) => p.category === 'roles' && (p.key === 'roles:essential' || p.key === 'roles:important') && (p.subjects?.length ?? 0) > 0;
 
+/** Cosa mostra la scheda che il "+N" di ogni colonna apre (Regole·Meta: la scheda Meta, solo le minacce). */
+const OPENS: Record<MapColumn, ProblemCategory[]> = { defense: ['defense'], offense: ['coverage'], roles: ['roles'], rules: ['meta'] };
+
 const COLUMNS: { key: MapColumn; area: 'defense' | 'strength' | 'roles' | null }[] = [
   { key: 'defense', area: 'defense' }, { key: 'offense', area: 'strength' }, { key: 'roles', area: 'roles' }, { key: 'rules', area: null },
 ];
@@ -319,10 +322,12 @@ const COLUMNS: { key: MapColumn; area: 'defense' | 'strength' | 'roles' | null }
  * nell'altezza della tessera finiscono in un "+N" (title e testo nascosto con tutte): prima restano quelle risolvibili
  * (rimedi o una tappa mostrata), poi i gravi, poi l'ordine di `items`. Ridondanze e minacce sotto un'etichetta, più quiete.
  */
-function MapTile({ id, name, items, score, count, stepOf, preview, threatUsage, watch, onMore }: {
+function MapTile({ id, name, items, score, count, stepOf, preview, threatUsage, watch, onMore, opens = [] }: {
   id: string; name: string; items: CoachProblem[]; score: number | null;
   /** Il "+N" come link alla scheda dell'area (assente: resta una nota, es. Regole col meta spento). */
   onMore?: () => void;
+  /** Le categorie che la scheda aperta da `onMore` mostra: se un problema nascosto non ci sta, il "+N" resta una nota. */
+  opens?: ProblemCategory[];
   /** Al posto del voto, senza barretta: i Ruoli coperti sul totale ("7/9"). */
   count?: string; stepOf: Map<string, number>; preview: Set<string> | null;
   threatUsage?: Record<string, number>;
@@ -369,8 +374,8 @@ function MapTile({ id, name, items, score, count, stepOf, preview, threatUsage, 
           <ul className="coach-probs">{threats.map(row)}</ul>
         </>
       )}
-      {hidden.length > 0 && (onMore ? (
-        // "e altri N ›": porta alla scheda dell'area, dove ci sono tutti (le minacce: alla scheda Meta)
+      {hidden.length > 0 && (onMore && hidden.every(x => opens.includes(x.p.category)) ? (
+        // "e altri N ›": porta alla scheda dell'area, che li mostra tutti (le minacce: alla scheda Meta)
         <button type="button" className="coach-more is-link" title={hidden.map(hiddenText).join('\n')} onClick={onMore}>
           <span>{tr(hidden.every(x => x.section === 'meta') ? 'coach.map.moreThreats' : 'coach.map.more', { n: hidden.length })}</span><span aria-hidden="true"> ›</span>
           <span className="visually-hidden">{tr(hidden.length === 1 ? 'area.problems.moreOne' : 'area.problems.moreMany', { n: hidden.length })} {hidden.map(hiddenText).join('; ')}</span>
@@ -452,7 +457,7 @@ export function CoachingView({ coaching, advice, members, rating, metaOn, threat
               <MapTile key={key} id={`${id}-${key}`} name={columnName[key]} items={items}
                 score={area ? rating?.areas.find(a => a.key === area)?.value ?? null : null}
                 count={key === 'roles' && rating ? rolesValue(rating) : undefined} stepOf={stepOf} preview={preview} threatUsage={threatUsage} watch={root}
-                onMore={onOpen && (key !== 'rules' || metaOn) ? () => onOpen(key) : undefined} />
+                onMore={onOpen && (key !== 'rules' || metaOn) ? () => onOpen(key) : undefined} opens={OPENS[key]} />
             ))}
           </div>
         </section>

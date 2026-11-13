@@ -619,6 +619,18 @@ describe('CoachingView', () => {
     } finally { restore(); }
   });
 
+  it('il +N è un link solo se la scheda che apre contiene quei problemi (ridondanze nei Ruoli: resta una nota)', () => {
+    const restore = smallTiles();
+    try {
+      const red = (n: string): CoachProblem => ({ severity: 'minor', category: 'redundancy', text: `${n} doppio`, fixes: [], key: `redundancy:${n}` });
+      const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], threatFixes: {}, problems: ['A', 'B', 'C', 'D'].map(red) };
+      renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [] }} members={3} rating={rating(three)} metaOn onOpen={vi.fn()} {...noop} />);
+      const tile = screen.getByRole('group', { name: 'Ruoli' });
+      expect(tile.querySelector('.coach-more')).not.toBeNull();
+      expect(within(tile).queryByRole('button', { name: /^e altri/ })).toBeNull();
+    } finally { restore(); }
+  });
+
   it('aree senza problemi: una riga verde, niente tessera', () => {
     const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], threatFixes: {},
       problems: [{ severity: 'minor', category: 'roles', text: 'Ruoli importanti mancanti: Pivot', fixes: [], key: 'roles:important' }] };
