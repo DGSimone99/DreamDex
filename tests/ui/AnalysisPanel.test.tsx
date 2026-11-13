@@ -41,14 +41,14 @@ describe('tabelle dell\'Analisi', () => {
   it('dettaglio minacce', () => {
     renderPanel();
     expect(row('Kingambit')).toHaveTextContent('20,0%');
-    expect(row('Kingambit')).toHaveTextContent('Retto da Great Tusk');
+    expect(row('Kingambit')).toHaveTextContent('Coperto da Great Tusk');
     expect(row('Kingambit')).not.toHaveClass('bad');
     // Dragapult lo regge Great Tusk (prima, coi check Smogon, era scoperto)
-    expect(row('Dragapult')).toHaveTextContent('Retto da Great Tusk');
+    expect(row('Dragapult')).toHaveTextContent('Coperto da Great Tusk');
     // Gholdengo è anche nell'uso dei membri: la riga è quella delle minacce
     const threatList = screen.getByText('Minacce del meta').closest('details')!;
     const gholdengoThreat = within(threatList).getAllByRole('listitem').find(li => li.querySelector('.who strong')?.textContent === 'Gholdengo')!;
-    expect(gholdengoThreat).toHaveTextContent('Nessuno lo regge');
+    expect(gholdengoThreat).toHaveTextContent('Scoperto');
     expect(gholdengoThreat).toHaveClass('bad');
   });
 });

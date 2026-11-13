@@ -23,7 +23,7 @@ function sample(overrides: Partial<DashboardData> = {}): DashboardData {
         type,
         defense: type === 'Ground' ? 'bad' : type === 'Grass' ? 'minor' : 'ok',
         offense: type === 'Normal' ? 'bad' : 'ok',
-        defenseNote: type === 'Ground' ? 'Nessuno lo regge' : 'Retto da Corviknight, Toxapex',
+        defenseNote: type === 'Ground' ? 'Scoperto' : 'Coperto da Corviknight, Toxapex',
         offenseNote: type === 'Normal' ? 'Nessuno lo colpisce forte' : 'Colpito forte da Great Tusk, Dragapult',
         resist: type === 'Ground' ? 0 : 2,
       })),
@@ -139,8 +139,8 @@ describe('Cruscotto della Panoramica', () => {
     mount();
     const table = screen.getByRole('table', { name: 'Copertura' });
     expect(within(table).getAllByRole('columnheader')).toHaveLength(18);
-    expect(within(table).getByRole('cell', { name: /^(Terra|Ground), difesa: Nessuno lo regge$/i })).toHaveClass('bad');
-    expect(within(table).getByRole('cell', { name: /^(Erba|Grass), difesa: Retto da Corviknight, Toxapex$/i })).toHaveClass('minor');
+    expect(within(table).getByRole('cell', { name: /^(Terra|Ground), difesa: Scoperto$/i })).toHaveClass('bad');
+    expect(within(table).getByRole('cell', { name: /^(Erba|Grass), difesa: Coperto da Corviknight, Toxapex$/i })).toHaveClass('minor');
     expect(within(table).getByRole('cell', { name: /^(Normale|Normal), offesa: Nessuno lo colpisce forte$/i })).toHaveClass('bad');
     expect(within(table).getByRole('rowheader', { name: 'Difesa' })).toBeInTheDocument();
     expect(within(table).getByRole('rowheader', { name: 'Offesa' })).toBeInTheDocument();
