@@ -275,6 +275,34 @@ export function dummyStats(formatId: EngineData['formatId'], type: string): { at
  */
 export const DEFENSE_SETUP_SHARE = 0.75;
 /**
+ * Gli schermi del team (2026-11-13): Reflect dimezza i colpi fisici, Light Screen gli speciali, Aurora Veil tutti e due
+ * (solo se il team porta la neve). Durano 5 turni, 8 con Light Clay, e una partita National Dex OU ne dura in media 27
+ * (games.json, 3000 partite): contano per quella quota, come il setup conta per la sua. Prima la Difesa li ignorava e un
+ * team con gli schermi era giudicato come se non li avesse (in Ruoli valevano solo +1).
+ */
+export const SCREEN_SHARE = 5 / 27;
+export const SCREEN_SHARE_CLAY = 8 / 27;
+/** Quanto toglie uno schermo attivo al colpo: la metà. */
+const SCREEN_CUT = 0.5;
+const SNOW_MOVES = new Set(['snowscape', 'chillyreception']);
+export interface TeamScreens { physical: number; special: number }
+/** La quota di partita in cui i colpi fisici e speciali arrivano dimezzati: lo schermo migliore che il team porta. */
+export function teamScreens(team: TeamSet[]): TeamScreens {
+  const snow = team.some(set => toID(battleAbility(set)) === 'snowwarning' || set.moves.some(m => SNOW_MOVES.has(toID(m))));
+  const out = { physical: 0, special: 0 };
+  for (const set of team) {
+    const ids = set.moves.map(toID);
+    const share = toID(set.item) === 'lightclay' ? SCREEN_SHARE_CLAY : SCREEN_SHARE;
+    const veil = snow && ids.includes('auroraveil');
+    if (veil || ids.includes('reflect')) out.physical = Math.max(out.physical, share);
+    if (veil || ids.includes('lightscreen')) out.special = Math.max(out.special, share);
+  }
+  return out;
+}
+/** Il fattore sul danno ricevuto: 1 senza schermi, meno con (la metà del danno per la quota di partita coperta). */
+const screenFactor = (screens: TeamScreens, category: 'Physical' | 'Special' | string): number =>
+  1 - SCREEN_CUT * (category === 'Physical' ? screens.physical : category === 'Special' ? screens.special : 0);
+/**
  * Il danno sul campo del team: il meteo / terreno che il membro (o la minaccia) porta con l'abilità vale sempre; quello
  * dei compagni a metà, come in Offesa: metà senza, metà con (con più combinazioni possibili, la loro media).
  * Lo calcola la libreria: sole e pioggia su Fuoco e Acqua, Dif. Speciale ×1,5 alle Roccia con la sabbia, Difesa ×1,5
@@ -298,7 +326,8 @@ export function typedHits(member: TeamSet, data: EngineData, team: TeamSet[] = [
   const own = ownConditions(member);
   const combos = fieldCombos(own, conditionsOf(member, team).all);
   const firstHit = firstHitShare(member, team);
-  const key = `${setKey(member)}|${data.formatId ?? 'ou'}|${JSON.stringify(combos)}|${firstHit}`;
+  const screens = teamScreens(team);
+  const key = `${setKey(member)}|${data.formatId ?? 'ou'}|${JSON.stringify(combos)}|${firstHit}|${screens.physical}|${screens.special}`;
   const cachedHits = typedCache.get(key);
   if (cachedHits) return cachedHits;
   if (typedCache.size >= TYPED_LIMIT) typedCache.clear();
@@ -307,7 +336,8 @@ export function typedHits(member: TeamSet, data: EngineData, team: TeamSet[] = [
   const hit = (type: string, category: 'Physical' | 'Special', boosted: boolean) => {
     const attacker = dummyAttacker(data, category === 'Physical' ? 'atk' : 'spa', type);
     const options = { moveType: type, targetBoosts: boosted ? setup?.boosts : undefined, firstHitShare: firstHit };
-    return onField(own, combos, conditions => Math.min(1, standardHit(attacker, target, category, { ...options, conditions })?.expected ?? 0));
+    const cut = screenFactor(screens, category);
+    return onField(own, combos, conditions => Math.min(1, cut * (standardHit(attacker, target, category, { ...options, conditions })?.expected ?? 0)));
   };
   const plain = TYPES.flatMap(type => [hit(type, 'Physical', false), hit(type, 'Special', false)]);
   const held = setup
@@ -439,12 +469,19 @@ function threatHitsOf(member: TeamSet, data: EngineData, team: TeamSet[] = [memb
   const teamField = conditionsOf(member, team).all;
   // Le mosse non contano, salvo per la quota del primo colpo (con un recupero metà invece di un quarto)
   const firstHit = firstHitShare(member, team);
-  const key = `${setKey({ ...member, moves: [] })}|${data.formatId ?? 'ou'}|${usesMeta(data)}|${!!data.stats}|${teamField.join(',')}|${firstHit}`;
+  const screens = teamScreens(team);
+  const key = `${setKey({ ...member, moves: [] })}|${data.formatId ?? 'ou'}|${usesMeta(data)}|${!!data.stats}|${teamField.join(',')}|${firstHit}|${screens.physical}|${screens.special}`;
   let hits = threatCache.get(key);
   if (hits) return hits;
   if (threatCache.size >= TYPED_LIMIT) threatCache.clear();
   const target = member;
-  hits = metaThreats(data).map(({ set }) => threatHit(set, target, data, teamField, firstHit));
+  // Gli schermi del team tolgono la loro parte al colpo migliore della minaccia, dal lato della sua mossa
+  hits = metaThreats(data).map(({ set }) => {
+    const hit = threatHit(set, target, data, teamField, firstHit);
+    if (!hit) return hit;
+    const cut = screenFactor(screens, getMove(hit.move)?.category ?? 'Status');
+    return cut === 1 ? hit : { ...hit, expected: cut * hit.expected, min: cut * hit.min, max: cut * hit.max };
+  });
   threatCache.set(key, hits);
   return hits;
 }

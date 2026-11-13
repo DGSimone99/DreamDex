@@ -983,6 +983,8 @@ export const it: Record<keyof typeof en, string> = {
   'guide.def.types.setup.rule': "I buff difensivi contano per tre quarti del guadagno",
   'guide.def.types.weather': "Meteo",
   'guide.def.types.weather.rule': "Il meteo e i campi del team cambiano l'efficacia dei colpi. Contano di più se li porta il membro stesso, di meno se li porta un compagno.",
+  'guide.def.types.screens': "Schermi",
+  'guide.def.types.screens.rule': "Reflect, Light Screen e Aurora Veil (con la neve) del team dimezzano i colpi per la parte di partita in cui restano attivi: 5 turni, 8 con Light Clay, su una partita di circa 27.",
   'guide.def.types.firstHit': "Primo colpo",
   'guide.def.types.firstHit.rule': "Multiscale, Shadow Shield, Tera Shell e Air Balloon proteggono solo dal primo colpo, quindi contano poco; un po' di più se il membro si cura e torna a vita piena.",
   'guide.def.meta.weather.rule': "Come nei colpi di tipo; il meteo della minaccia conta sempre.",

@@ -981,6 +981,8 @@ export const en = {
   'guide.def.types.setup.rule': "Defensive boosts count for three quarters of the gain",
   'guide.def.types.weather': "Weather",
   'guide.def.types.weather.rule': "The team's weather and terrains change how effective hits are. They count more when the member brings them itself, less when a teammate does.",
+  'guide.def.types.screens': "Screens",
+  'guide.def.types.screens.rule': "The team's Reflect, Light Screen and Aurora Veil (with snow) halve hits for the part of the game they stay up: 5 turns, 8 with Light Clay, out of a game of about 27.",
   'guide.def.types.firstHit': "First hit",
   'guide.def.types.firstHit.rule': "Multiscale, Shadow Shield, Tera Shell and Air Balloon only protect from the first hit, so they count little; a bit more if the member heals back to full.",
   'guide.def.types.hole': "Hole",
