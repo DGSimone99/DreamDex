@@ -269,13 +269,38 @@ function ChipRow({ types, immune = [] }: { types: readonly string[]; immune?: re
 
 /**
  * Il primo Pokémon come nel dettaglio (pallino del tipo + nome), gli altri "+N" subito dopo (la lista intera è nel tooltip).
- * Se il nome non entra intero si accorcia coi puntini, ma il "+N" resta sempre visibile.
+ * Se il nome non entra intero si toglie prima il pallino del tipo (il nome conta di più); solo se ancora non basta il
+ * nome si accorcia coi puntini. Il "+N" resta sempre visibile.
  */
 function MonRow({ species }: { species: readonly string[] }) {
   const [first] = species;
+  const name = useRef<HTMLElement>(null);
+  const [dot, setDot] = useState({ key: first, on: true, v: 0 });
+  if (dot.key !== first) setDot(d => ({ key: first, on: true, v: d.v + 1 }));
+  const showDot = dot.key !== first || dot.on;
+  useLayoutEffect(() => {
+    const el = name.current;
+    if (!el || !showDot || el.clientWidth === 0) return;
+    if (el.scrollWidth - el.clientWidth > 1) setDot(d => ({ ...d, on: false }));
+  }, [dot, showDot]);
+  // La carta cambia larghezza: si rimette il pallino e si rimisura
+  useEffect(() => {
+    const box = name.current?.closest('.reason');
+    if (!box || typeof ResizeObserver === 'undefined') return;
+    let last = box.clientWidth;
+    const observer = new ResizeObserver(() => {
+      if (box.clientWidth === last) return;
+      last = box.clientWidth;
+      setDot(d => ({ ...d, on: true, v: d.v + 1 }));
+    });
+    observer.observe(box);
+    let alive = true;
+    if (document.fonts && document.fonts.status !== 'loaded') void document.fonts.ready.then(() => { if (alive) setDot(d => ({ ...d, on: true, v: d.v + 1 })); });
+    return () => { alive = false; observer.disconnect(); };
+  }, []);
   return (
     <span className="sym-mons">
-      <span className="mon-ref sym-mon"><TypeDot name={first} /><strong>{first}</strong></span>
+      <span className="mon-ref sym-mon">{showDot && <TypeDot name={first} />}<strong ref={name}>{first}</strong></span>
       <More total={species.length} shown={1} />
     </span>
   );
