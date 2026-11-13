@@ -185,7 +185,7 @@ export const it: Record<keyof typeof en, string> = {
   'dash.heldBy': "Retto da {list}",
   'dash.heldNone': "Nessuno lo regge",
   'dash.offenseBy': "Colpito forte da {list}",
-  'coach.problem.metaHit': "Nessuno manda KO {species} del meta in due colpi",
+  'coach.problem.metaHit': "Scoperto {species}",
   'coach.problem.threat': "Nessuno regge {species} del meta",
   'coach.problem.uncovered': "Scoperto {type}: nessuno lo manda KO in due colpi",
   'coach.problem.halfCovered': "Coperto poco {type}: nessuno lo manda KO in un colpo e pochi lo colpiscono forte",

@@ -754,7 +754,14 @@
 }
 /* Riga di tipi: l'etichetta e le icone in fila (vanno a capo se tante); col puntatore su una proposta solo le risolte restano accese */
 .coach-prob-text.coach-group-row { display: flex; align-items: center; gap: 4px 10px; overflow: visible; white-space: normal; }
-.coach-group-label { flex: none; }
+.coach-group-label { flex: none; line-height: 26px; }
+/* Molte icone vanno a capo: etichetta, quadratino e numeri restano sulla prima fila */
+.coach-prob.coach-group { align-items: flex-start; }
+.coach-prob.coach-group::before { margin-top: 13px; }
+.coach-prob.coach-group > .coach-by { margin-top: 5px; }
+.coach-prob-text.coach-group-row { align-items: flex-start; }
+.coach-chips { align-items: center; min-height: 26px; }
+.coach-chip-more { width: auto; height: 22px; padding: 0 7px; border-radius: 11px; font: 600 12px/22px var(--ui); color: var(--muted); background: var(--raised); cursor: help; }
 .coach-chips { display: flex; flex-wrap: wrap; gap: 5px; min-width: 0; }
 /* L'icona al centro di un tondo della sua misura: l'anello verde la circonda senza spazio in più (niente margine delle icone di testo) */
 .coach-chip { display: inline-grid; place-items: center; width: 20px; height: 20px; padding: 0; border-radius: 50%; line-height: 0; }

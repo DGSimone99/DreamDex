@@ -248,7 +248,7 @@ describe('chiavi dei problemi e minacce del meta', () => {
     expect(holes.length).toBeGreaterThan(0);
     expect(coaching.problems.filter(p => p.category === 'metaHit').map(p => p.key)).toEqual(holes.map(s => `metaHit:${s}`));
     for (const species of holes) {
-      expect(coaching.problems.find(p => p.key === `metaHit:${species}`)).toMatchObject({ severity: 'minor', subjects: [species], text: `Nessuno manda KO ${species} del meta in due colpi` });
+      expect(coaching.problems.find(p => p.key === `metaHit:${species}`)).toMatchObject({ severity: 'minor', subjects: [species], text: `Scoperto ${species}` });
     }
   });
 

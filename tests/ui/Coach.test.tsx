@@ -402,7 +402,7 @@ describe('CoachingView', () => {
       expect(li.querySelectorAll('.coach-alt')).toHaveLength(2);
     });
 
-    it('passando sull\'alternativa, "risolve anche" mostra quello che risolve lei; uscendo torna quello dello scambio', () => {
+    it('passando sull\'alternativa la mappa resta com\'è e "risolve anche" si svuota; uscendo torna quello dello scambio', () => {
       const coaching = coachTeam(three, DEFAULT_FORMAT, data);
       const [p1, p2, p3] = coaching.problems;
       const base = adviceOf(three, DEFAULT_FORMAT, data).fixes[0];
@@ -416,8 +416,12 @@ describe('CoachingView', () => {
       // Il +N grande della barra: quello dello scambio, sulla mossa quello della mossa
       const gain = () => li.querySelector('.coach-strip-gain')!.textContent;
       expect(gain()).toBe(`+${swap.gain}`);
+      const lit = () => [...document.querySelectorAll<HTMLElement>('.is-solved-preview[data-key]')].map(e => e.dataset.key).sort();
+      fireEvent.mouseEnter(li.querySelector('.coach-prop.is-main')!);
+      const onSwap = lit();
       fireEvent.mouseEnter(li.querySelector('.coach-prop.is-side')!);
-      expect(also()).not.toBe(before);
+      expect(also()).toBe('');
+      expect(lit()).toEqual(onSwap);
       expect(li.querySelector('.coach-strip-extras')).toHaveClass('is-alt');
       expect(li).toHaveClass('is-alt-hot');
       expect(gain()).toBe('+1');
@@ -426,7 +430,7 @@ describe('CoachingView', () => {
       expect(gain()).toBe(`+${swap.gain}`);
     });
 
-    it('puntatore sul pulsante principale (che copre la striscia): anteprima di tutta la tappa; sulla mossa "oppure": solo la sua', async () => {
+    it('puntatore sul pulsante principale (che copre la striscia): anteprima di tutta la tappa; sulla mossa "oppure" la mappa non cambia', async () => {
       const coaching = coachTeam(three, DEFAULT_FORMAT, data);
       const [p1, p2] = coaching.problems;
       const base = adviceOf(three, DEFAULT_FORMAT, data).fixes[0];
@@ -439,7 +443,7 @@ describe('CoachingView', () => {
       await user.hover(within(stepsRegion()).getByRole('button', { name: /^Al posto di Great Tusk: Rotom-Wash/ }));
       expect(lit()).toEqual([p1.key, p2.key].sort());
       await user.hover(within(stepsRegion()).getByRole('button', { name: /^Dai Thunderbolt/ }));
-      expect(lit()).toEqual([p2.key]);
+      expect(lit()).toEqual([p1.key, p2.key].sort());
     });
 
     it('scambio: chi esce in piccolo, chi entra animato solo col puntatore (o il fuoco) sulla striscia', async () => {
@@ -716,6 +720,17 @@ describe('CoachingView', () => {
     expect(rules).not.toHaveClass('is-link');
   });
 
+  it('le debolezze in comune non stanno nella mappa (lo dice già la Difesa); gli altri doppioni sì', () => {
+    const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], threatFixes: {}, problems: [
+      { severity: 'minor', category: 'redundancy', text: '2 deboli a Ghost, 0 resistono', fixes: [], key: 'redundancy:sharedWeak:Ghost' },
+      { severity: 'minor', category: 'redundancy', text: '3 membri di tipo Acciaio', fixes: [], key: 'redundancy:sameType:Steel' },
+    ] };
+    renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [] }} members={3} rating={rating(three)} metaOn {...noop} />);
+    const roles = screen.getByRole('group', { name: 'Ruoli' });
+    expect(roles).not.toHaveTextContent('deboli a Ghost');
+    expect(roles).toHaveTextContent('3 membri di tipo Acciaio');
+  });
+
   it('aree senza problemi: una riga verde, niente tessera', () => {
     const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], threatFixes: {},
       problems: [{ severity: 'minor', category: 'roles', text: 'Ruoli importanti mancanti: Pivot', fixes: [], key: 'roles:important' }] };
@@ -843,7 +858,7 @@ describe('CoachingView', () => {
       expect(previewed()).toEqual([]);
     });
 
-    it('puntatore sulla tappa: tutto quello che risolvono le sue proposte; su una proposta: solo il suo', async () => {
+    it("puntatore sulla tappa: tutto quello che risolvono le sue proposte; sull'alternativa la mappa resta uguale", async () => {
       const base = adviceOf(three, DEFAULT_FORMAT, data).fixes[0];
       const swap = { ...base, kind: 'swap' as const, member: 'Great Tusk', species: 'Rotom-Wash', solves: ['defense:Water', 'defense:Ice'] };
       const move: MoveFix = { index: 1, member: 'Gholdengo', set: three[1], reduces: [], slot: 1, from: '', to: 'Thunderbolt', gain: 1,
@@ -855,7 +870,7 @@ describe('CoachingView', () => {
       await user.hover(card.querySelector('.coach-step-problem')!);
       expect(previewed().sort()).toEqual(['defense:Ice', 'defense:Water', 'meta:Zapdos']);
       await user.hover(within(card).getByRole('button', { name: /^Dai Thunderbolt/ }));
-      expect(previewed().sort()).toEqual(['defense:Water', 'meta:Zapdos']);
+      expect(previewed().sort()).toEqual(['defense:Ice', 'defense:Water', 'meta:Zapdos']);
       await user.hover(card.querySelector('.coach-step-num')!);
       expect(previewed().sort()).toEqual(['defense:Ice', 'defense:Water', 'meta:Zapdos']);
       await user.unhover(card);

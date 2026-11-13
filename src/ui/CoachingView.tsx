@@ -272,7 +272,7 @@ function Step({ step, index, problems, actions, onCard, onPreview }: {
         side={move && (
           // L'alternativa sta dentro la barra dello scambio: uscendo da lei si resta sulla barra (anteprima dello scambio)
           <MoveProposal fix={move} main={false} alsoId={alsoId} skip={skip} problems={problems} or={tr('coach.steps.or')}
-            onApply={actions.onApplyMove} onMoveFix={actions.onMoveFix} onPreview={keys => { onPreview(keys ?? solved); setAltHot(keys !== null); }} />
+            onApply={actions.onApplyMove} onMoveFix={actions.onMoveFix} onPreview={keys => { onPreview(solved); setAltHot(keys !== null); }} />
         )} />
         : move && <MoveProposal fix={move} main alsoId={alsoId} solves={solved} skip={skip} problems={problems} onApply={actions.onApplyMove} onMoveFix={actions.onMoveFix} onPreview={onPreview} />}
       {/* La colonna di destra fa parte della striscia: un clic fuori dai suoi pulsanti applica la proposta principale (da tastiera c'è il pulsante) */}
@@ -281,7 +281,8 @@ function Step({ step, index, problems, actions, onCard, onPreview }: {
         if (swap) actions.onApplyFix(swap);
         else if (move) actions.onApplyMove(move);
       }}>
-        <Also id={alsoId} solves={(altHot && move ? move.solves : swap?.solves ?? move?.solves) ?? []} skip={skip} problems={problems} self={altHot ? undefined : swap?.species} />
+        {/* Sull'alternativa "risolve anche" si svuota (la mappa resta quella dello scambio) */}
+        <Also id={alsoId} solves={altHot ? [] : swap?.solves ?? move?.solves ?? []} skip={skip} problems={problems} self={swap?.species} />
       </div>
     </li>
   );
@@ -358,13 +359,20 @@ function MapGroup({ id, label, members, stepOf, preview, usage }: {
       <span className="coach-prob-text coach-group-row">
         <span className="coach-group-label" aria-hidden="true">{label}</span>
         <span className="coach-chips">
-          {members.map(m => (
+          {members.slice(0, MAX_CHIPS).map(m => (
             <span key={m.key} data-key={m.key} title={chipTitle(m)}
               className={`coach-chip${isThreat(m) ? ' is-mon' : ''}${stepOf.has(m.key) ? ' is-covered' : ''}${preview?.has(m.key) ? ' is-solved-preview' : ''}`}>
               {isThreat(m) ? <PokemonIcon name={m.subjects![0]} /> : <TypeIcons types={m.subjects ?? []} />}
               <span className="visually-hidden">{chipTitle(m)}</span>
             </span>
           ))}
+          {/* Le altre in un "+N" (nel title e per i lettori di schermo): la riga resta di due file al più */}
+          {members.length > MAX_CHIPS && (
+            <span className="coach-chip coach-chip-more" title={members.slice(MAX_CHIPS).map(chipTitle).join('\n')}>
+              <span aria-hidden="true">+{members.length - MAX_CHIPS}</span>
+              <span className="visually-hidden">{members.slice(MAX_CHIPS).map(chipTitle).join('; ')}</span>
+            </span>
+          )}
         </span>
       </span>
       {steps.map(n => (
@@ -373,6 +381,9 @@ function MapGroup({ id, label, members, stepOf, preview, usage }: {
     </li>
   );
 }
+
+/** Icone per riga di problema: le altre nel "+N" della riga. */
+const MAX_CHIPS = 10;
 
 /** In quale riga di tipi va un problema di Difesa o di Offesa (null: riga sua). Stesso tipo di problema e stessa gravità. */
 function typeGroupOf(p: CoachProblem): string | null {
@@ -532,7 +543,9 @@ export function CoachingView({ coaching, advice, members, rating, threatUsage, o
   // Gravi prima, poi l'ordine delle categorie (regole per prime)
   const ordered = [...problems].sort((a, b) => Number(b.severity === 'serious') - Number(a.severity === 'serious')
     || PROBLEM_CATEGORIES.indexOf(a.category) - PROBLEM_CATEGORIES.indexOf(b.category));
-  const cols = COLUMNS.map(c => ({ ...c, items: ordered.filter(p => columnOf(p.category) === c.key) }));
+  // Le debolezze in comune (un malus di Bonus/Malus) le dice già la Difesa ("0 reggono"): non si ripetono nei Ruoli
+  const mapped = ordered.filter(p => !p.key.startsWith('redundancy:sharedWeak:'));
+  const cols = COLUMNS.map(c => ({ ...c, items: mapped.filter(p => columnOf(p.category) === c.key) }));
   const tiles = cols.filter(c => c.items.length > 0);
   const clean = cols.filter(c => c.items.length === 0 && c.key !== 'rules');
   // Il valore dell'area nella riga verde: il voto, i Ruoli coperti; senza voto solo il nome

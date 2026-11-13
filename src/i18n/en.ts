@@ -183,7 +183,7 @@ export const en = {
   'dash.heldBy': "Taken by {list}",
   'dash.heldNone': "Nobody takes it",
   'dash.offenseBy': "Hit hard by {list}",
-  'coach.problem.metaHit': "Nobody 2HKOs {species} from the meta",
+  'coach.problem.metaHit': "Uncovered {species}",
   'coach.problem.threat': "Nobody takes {species} from the meta",
   'coach.problem.uncovered': "Uncovered {type}: nobody 2HKOs it",
   'coach.problem.halfCovered': "Weakly covered {type}: nobody OHKOs it and few hit it hard",
