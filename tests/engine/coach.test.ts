@@ -242,7 +242,9 @@ describe('chiavi dei problemi e minacce del meta', () => {
     // Solo Splash: nessuno manda KO nessuno
     const weak = [junk('Magikarp'), junk('Sunkern')];
     const coaching = coachTeam(weak, DEFAULT_FORMAT, fixtureData);
-    const holes = rateTeam(weak, fixtureData, 'it')?.offense.coverageMeta?.holes ?? [];
+    // I buchi sono combinazioni di tipi: il problema nomina il Pokémon che le rappresenta (come la Coverage meta dell'Offesa)
+    const meta = rateTeam(weak, fixtureData, 'it')?.offense.coverageMeta;
+    const holes = (meta?.holes ?? []).map(label => meta!.rows.find(r => r.label === label)!.species);
     expect(holes.length).toBeGreaterThan(0);
     expect(coaching.problems.filter(p => p.category === 'metaHit').map(p => p.key)).toEqual(holes.map(s => `metaHit:${s}`));
     for (const species of holes) {

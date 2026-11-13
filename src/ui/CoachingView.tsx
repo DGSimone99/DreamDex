@@ -146,11 +146,13 @@ function Also({ id, solves, skip, problems, self }: { id: string; solves: string
     if (!problem) continue;
     const subjects = problem.subjects ?? [];
     if (problem.category === 'meta' && self && subjects.includes(self)) continue;
-    if (subjects.length === 0) add(names, tr(CATEGORY[problem.category]));
+    // Senza soggetti, o con soggetti che da soli non dicono niente (un tipo doppione: "Water"): il problema per intero
+    if (subjects.length === 0) add(names, problem.text);
     else if (problem.category === 'defense' || problem.category === 'coverage') subjects.forEach(type => add(types, type));
     else if (problem.category === 'meta') subjects.forEach(species => add(threats, species));
     else if (problem.category === 'roles') subjects.forEach(need => add(names, needLabel(need as Need, lang)));
-    else subjects.forEach(subject => add(names, subject));
+    else if (problem.category === 'rules') subjects.forEach(subject => add(names, subject));
+    else add(names, problem.text);
   }
   // Niente da dire: un segnaposto vuoto (il pulsante lo cita in aria-describedby)
   if (types.length + threats.length + names.length === 0) return <span id={id} hidden />;

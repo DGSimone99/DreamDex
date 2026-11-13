@@ -245,7 +245,10 @@ export function findProblems(team: TeamSet[], format: Format, data: EngineData, 
 
   // Pokémon del meta che nessuno manda KO in due colpi, come nella Coverage meta dell'Offesa (vuota senza meta).
   // Nessun rimedio stimato: chi li risolve lo dicono le tappe
-  for (const species of rating?.offense.coverageMeta?.holes ?? []) {
+  // I buchi sono combinazioni di tipi (Volante/Terra): si nomina il Pokémon più usato che le rappresenta, come nella scheda
+  const offenseMeta = rating?.offense.coverageMeta;
+  for (const label of offenseMeta?.holes ?? []) {
+    const species = offenseMeta!.rows.find(row => row.label === label)?.species ?? label;
     add('metaHit', false, t(lang, 'coach.problem.metaHit', { species }), [], `metaHit:${species}`, undefined, [species]);
   }
 

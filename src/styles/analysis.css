@@ -269,7 +269,7 @@
 .dash-head.is-link .dash-link::after { content: ''; position: absolute; inset: 0; }
 /* Al passaggio una luce azzurra da destra (dove c'è la freccia) che svanisce verso il titolo */
 .dash-head.is-link:hover { background: linear-gradient(270deg, color-mix(in srgb, var(--accent) 22%, transparent), transparent 75%), var(--stripes), var(--band); }
-.dash-head.is-link:hover .dash-link { background: var(--accent-wash); }
+.dash-head.is-link .dash-link, .dash-head.is-link .dash-link:hover { background: none; }
 .dash-head.is-link:has(.dash-link:focus-visible) { outline: 2px solid var(--accent); outline-offset: -2px; }
 .dash-head.is-link .dash-link:focus-visible { outline: none; }
 /* Le voci che si contano (useFit): niente scorrimento, ciò che non sta finisce nel "+N" */
@@ -572,6 +572,11 @@
 @media (min-width: 600px) { .coach-strip:not(:has(.coach-strip-extras > :not([hidden]))) { grid-template-columns: 46px minmax(0, 1.3fr) minmax(0, 3.6fr); } }
 /* (il segnaposto di "anche" è uno span hidden) */
 .coach-strip:not(:has(.coach-strip-extras > :not([hidden]))) > .coach-strip-extras { display: none; }
+/* Con la mossa alternativa ("oppure") la colonna di destra ha tre righe: la striscia può crescere un po' invece di schiacciarle */
+@media (min-width: 600px) {
+  .coach-strip:has(.coach-strip-extras .coach-prop) { height: auto; min-height: var(--step-h); }
+  .coach-strip:has(.coach-strip-extras .coach-prop) > .coach-strip-extras { gap: 4px; padding-top: 7px; padding-bottom: 7px; }
+}
 .coach-strip:hover, .coach-strip:focus-within { border-color: var(--accent); background: color-mix(in srgb, var(--raised) 45%, var(--panel)); }
 .coach-strip.skeleton { border-style: dashed; border-color: var(--line); background: color-mix(in srgb, var(--raised) 25%, var(--panel)); }
 .coach-steps-none { display: flex; align-items: center; gap: 10px; height: var(--step-h); margin: 0 0 4px; padding: 0 16px; font-size: 13px; color: var(--muted); border: 1px dashed var(--line); }
@@ -586,7 +591,7 @@
 .coach-step-subject { white-space: nowrap; }
 .coach-step-subject .type-icons { display: inline-flex; margin-right: 4px; vertical-align: -2px; }
 .coach-step-subject .type-icons img { width: 16px; height: 16px; }
-.coach-step-subject.is-mon .mon-icon { margin: -9px -6px -9px -8px; vertical-align: middle; transform: scale(0.8); }
+.coach-step-subject.is-mon .mon-icon { margin: -9px 1px -9px -6px; vertical-align: middle; transform: scale(0.8); }
 /* Coi Pokémon nel titolo le righe sono un po' più alte: le icone non toccano i nomi della riga sopra o sotto */
 .coach-step-problem:has(.is-mon) { line-height: 1.5; }
 /* Proposta principale: lo scambio su un fondo ciano che sfuma; il suo pulsante si allarga a tutta la striscia (::after) */
@@ -614,8 +619,10 @@
 .coach-prop.is-main > .coach-fix > .coach-fix-main { flex: 1; }
 .coach-strip:hover .is-main .coach-fix-main strong { text-decoration: underline; text-decoration-thickness: 1.5px; text-underline-offset: 3px; }
 /* Il voto in più: grande e verde nella proposta principale, piccola etichetta nella mossa "oppure" */
-.coach-gain { flex: none; display: inline-block; padding: 0 5px; border-radius: 2px; font: 700 12px/18px var(--display); font-variant-numeric: tabular-nums; color: var(--good); background: var(--good-bg); }
+.coach-gain { flex: none; display: inline-block; margin-left: 4px; padding: 0 7px; border-radius: 3px; font: 700 13px/20px var(--display); font-variant-numeric: tabular-nums; color: var(--good); background: var(--good-bg); }
 .coach-prop.is-main > .coach-fix > .coach-gain { padding: 0 4px; font: 800 22px/1 var(--display); font-style: italic; background: none; }
+/* Cambio di mossa principale: il +N grande come quello di uno scambio */
+.coach-prop.is-main.is-move .coach-fix-main .coach-gain { margin-left: 8px; padding: 0 4px; font: 800 20px/1 var(--display); font-style: italic; background: none; }
 /* Sopra il pulsante allargato: le icone "alternative" e la colonna di destra restano cliccabili */
 .coach-alt { position: relative; z-index: 1; flex: none; display: grid; place-items: center; width: 26px; height: 28px; padding: 0; color: var(--muted); background: none; border: 1px solid transparent; }
 .coach-alt:hover { color: var(--accent-ink); background: var(--raised); border-color: var(--line); }
@@ -636,15 +643,17 @@
   .coach-strip:hover .coach-step-num { padding: 0 0 0 6px; }
 }
 /* "Risolve anche": una riga sola sotto la proposta, allineata al testo; tipi e minacce come icone, il resto nel "+N" */
-.coach-also { display: flex; align-items: center; gap: 6px; min-width: 0; height: 18px; margin: 0; overflow: hidden; white-space: nowrap; font-size: 12px; color: var(--muted); }
+.coach-also { display: flex; align-items: center; gap: 4px 10px; min-width: 0; height: 18px; margin: 0; overflow: hidden; white-space: nowrap; font-size: 12px; color: var(--muted); }
 .coach-also-label { flex: none; color: var(--faint); }
-.coach-also-item { display: inline-flex; flex: none; align-items: center; gap: 2px; }
+.coach-also-item { display: inline-flex; flex: none; align-items: center; gap: 4px; }
 .coach-also .type-icons img { width: 15px; height: 15px; }
-.coach-also-mon .mon-icon { margin: -9px -6px -8px -6px; }
+.coach-also-mon .mon-icon { margin: -9px -2px -8px -4px; }
 .coach-also-name { display: block; flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-/* Senza mossa alternativa la colonna ha posto: "risolve anche" va a capo invece di tagliare i nomi */
-.coach-strip-extras:not(:has(.coach-prop)) .coach-also { flex-wrap: wrap; height: auto; max-height: 40px; row-gap: 2px; white-space: normal; }
-.coach-strip-extras:not(:has(.coach-prop)) .coach-also-name { flex: none; }
+/* "risolve anche" va a capo (due righe al più) invece di tagliare i nomi o uscire dalla striscia */
+@media (min-width: 600px) {
+  .coach-strip-extras .coach-also { flex-wrap: wrap; height: auto; max-height: 40px; row-gap: 2px; white-space: normal; }
+  .coach-strip-extras .coach-also-name { flex: none; max-width: 100%; }
+}
 .coach-also-more { flex: none; padding: 0 5px; font: 600 11px/16px var(--ui); color: var(--muted); background: var(--raised); border-radius: 10px; }
 
 /*

@@ -75,7 +75,7 @@ export function AnalysisPanel({ team, analysis, rating, coaching, advice = null,
   } else if (showCoaching && coaching) {
     // Il Coaching vince sul profilo di un membro, come le aree
     body = <CoachingView coaching={coaching} advice={advice} members={team.length} rating={rating} metaOn={!data.ignoreMeta && !!data.stats}
-      threatUsage={Object.fromEntries([...ratingThreats(rating, data).map(th => th.name), ...(rating?.offense.coverageMeta?.holes ?? [])].map(name => [name, usageOf(data.stats, name)]))}
+      threatUsage={Object.fromEntries([...ratingThreats(rating, data).map(th => th.name), ...(rating?.offense.coverageMeta?.rows ?? []).map(row => row.species)].map(name => [name, usageOf(data.stats, name)]))}
       onOpen={column => { if (column !== 'rules') onView(column === 'offense' ? 'strength' : column); }}
       onFix={fix => onFix?.(fix)} onMoveFix={fix => onMoveFix?.(fix)}
       onApplyFix={fix => onApplyFix?.(fix)} onApplyMove={fix => onApplyMove?.(fix)} />;

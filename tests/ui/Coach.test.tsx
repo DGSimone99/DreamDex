@@ -262,7 +262,7 @@ describe('CoachingView', () => {
     const problems = [
       problem('roles', 'roles:x'), problem('defense', 'defense:Ground', ['Ground']), problem('coverage', 'coverage', ['Water', 'Fire']),
       problem('roles', 'roles:essential', ['hazards']), problem('meta', 'meta:Zamazenta', ['Zamazenta']), problem('rules', 'rules:x', ['Dragapult']),
-      problem('redundancy', 'redundancy:y'),
+      { ...problem('redundancy', 'redundancy:y', ['Water']), text: '3 membri di tipo Acqua' },
     ];
     const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], threatFixes: {}, problems };
     const swap = { ...adviceOf(three, DEFAULT_FORMAT, data).fixes[0], solves: problems.slice(1).map(p => p.key) };
@@ -273,8 +273,10 @@ describe('CoachingView', () => {
     expect(also).toHaveTextContent('Zamazenta');
     expect(also).toHaveTextContent('Dragapult');
     expect(also).toHaveTextContent(needLabel('hazards' as Need, 'it'));
-    // Senza soggetti: il nome breve dell'area
-    expect(also).toHaveTextContent('Ridondanza');
+    // Doppioni e simili: il problema detto per intero, non il tipo da solo ("Water")
+    expect(also.textContent).toContain('3 membri di tipo Acqua');
+    expect(also.textContent).not.toContain('Ridondanza');
+    expect([...also.querySelectorAll('.coach-also-name')].map(n => n.textContent)).not.toContain('Water');
   });
 
   it('nessun nome di candidato compare due volte nelle tappe, nessun membro riceve due mosse', () => {
