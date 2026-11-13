@@ -81,9 +81,12 @@ describe('preset Smogon nell\'editor', () => {
     ];
     renderIt(<SetEditor set={{ ...set, favorite: true }} presets={presets} genLimit={9} onChange={onChange} />);
     await user.click(screen.getByLabelText('Preset Smogon'));
-    const option = within(screen.getByRole('listbox', { name: 'Preset Smogon: opzioni' })).getAllByRole('option')[1];
+    const list = screen.getByRole('listbox', { name: 'Preset Smogon: opzioni' });
+    const option = within(list).getAllByRole('option')[1];
     expect(option).toHaveTextContent('Nasty Plot');
     expect(option).toHaveTextContent('Gen 8 OU');
+    // Due formati: le voci stanno sotto l'intestazione del loro formato, nell'ordine in cui arrivano
+    expect([...list.querySelectorAll('.format-head')].map(h => h.textContent)).toEqual(['NatDex OU', 'Gen 8 OU']);
     await user.click(option);
     expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ item: 'Life Orb', moves: ['Nasty Plot', 'Fire Blast'], favorite: true, species: 'Ninetales' }));
   });
@@ -123,5 +126,25 @@ describe('preset Smogon nell\'editor', () => {
     await user.type(screen.getByLabelText('Mossa 2'), 'Solar Beam');
     await user.tab();
     expect(field()).toHaveTextContent('Sun Sweeper');
+  });
+});
+
+describe('preset di più formati', () => {
+  it('raggruppati per formato: il formato scelto in cima, le frecce saltano le intestazioni', async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    const mk = (name: string, format: string, move: string) =>
+      ({ name, format, set: { ...emptySet('Ninetales'), item: 'Life Orb', ability: 'Drought', moves: [move, 'Fire Blast'] } });
+    // Un preset di Gen 9 OU arriva in mezzo: il menu lo porta sotto la sua intestazione, dopo quelli NatDex OU
+    const presets = [mk('Offensive Utility', 'gen9nationaldex', 'Nasty Plot'), mk('Offensive Utility', 'gen9ou', 'Solar Beam'), mk('Sun Setter', 'gen9nationaldex', 'Will-O-Wisp')];
+    renderIt(<SetEditor set={set} presets={presets} genLimit={9} onChange={onChange} />);
+    await user.click(screen.getByLabelText('Preset Smogon'));
+    const list = screen.getByRole('listbox', { name: 'Preset Smogon: opzioni' });
+    const rows = [...list.children].map(li => (li.classList.contains('format-head') ? `# ${li.textContent}` : li.querySelector('strong')?.textContent));
+    expect(rows).toEqual(['# NatDex OU', 'Offensive Utility', 'Sun Setter', '# Gen 9 OU', 'Offensive Utility']);
+    // Le intestazioni non sono voci: tre scelte, e due frecce dalla prima portano dritte al preset di Gen 9 OU
+    expect(within(list).getAllByRole('option')).toHaveLength(3);
+    await user.keyboard('{ArrowDown}{ArrowDown}{Enter}');
+    expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({ moves: ['Solar Beam', 'Fire Blast'] }));
   });
 });

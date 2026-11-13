@@ -231,13 +231,22 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
     return others.size ? moveOptions.map(option => (others.has(toID(option.value)) ? { ...option, disabled: true } : option)) : moveOptions;
   }), [moveOptions, movesKey]); // eslint-disable-line react-hooks/exhaustive-deps
   const update = (patch: Partial<TeamSet>) => onChange({ ...set, ...patch });
-  // Preset: la chiave è la posizione. Se il set coincide con un preset è selezionato quello, altrimenti il campo resta vuoto
-  const presetOptions: ComboOption[] = presets.map((preset, i) => ({
-    value: String(i),
-    label: preset.name,
-    detail: <span className="preset-format">{formatName(preset.format)}</span>,
-    description: preset.set.moves.map(move => gameName('move', move, lang)).join(' · '),
-  }));
+  // Preset: la chiave è la posizione. Se il set coincide con un preset è selezionato quello, altrimenti il campo resta vuoto.
+  // Con preset di più formati il menu li raggruppa sotto il nome del formato, nell'ordine in cui arrivano (prima il formato
+  // scelto, poi gli altri): due "Offensive Utility" non si confondono più. Il formato resta nel nome per i lettori di schermo.
+  const formatOrder = [...new Set(presets.map(p => p.format))];
+  const byFormat = formatOrder.length > 1;
+  const presetOptions: ComboOption[] = presets
+    .map((preset, i) => ({
+      value: String(i),
+      label: preset.name,
+      group: byFormat ? formatName(preset.format) : undefined,
+      detail: byFormat
+        ? <span className="visually-hidden">{formatName(preset.format)}</span>
+        : <span className="preset-format">{formatName(preset.format)}</span>,
+      description: preset.set.moves.map(move => gameName('move', move, lang)).join(' · '),
+    }))
+    .sort((a, b) => formatOrder.indexOf(presets[Number(a.value)].format) - formatOrder.indexOf(presets[Number(b.value)].format));
 
   const appliedIndex = presets.findIndex(p => sameSet(p.set, set));
   const applyPreset = (key: string) => {
