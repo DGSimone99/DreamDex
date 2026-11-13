@@ -333,10 +333,11 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
     remember({ kind: 'remove', from: battleName(team[index]) }, after);
   };
 
-  // Con l'editor aperto la sezione sotto non si vede: la sua riga di stato dice chi stai modificando (chiudendo l'editor torna la sezione)
+  // Con l'editor aperto la sezione sotto non si vede: la sua riga di stato dice chi stai modificando (chiudendo l'editor torna la sezione),
+  // col nome che ha sulla carta (il soprannome, o la forma Mega)
   const editing = editingIndex !== null ? team[editingIndex] : undefined;
   const withEditing = <T extends { id: string; status?: React.ReactNode }>(tabs: T[]): T[] => editing
-    ? tabs.map(tab => (tab.id === shownTab ? { ...tab, status: <span className="info">{t(lang, 'rail.editing', { species: editing.species })}</span> } : tab))
+    ? tabs.map(tab => (tab.id === shownTab ? { ...tab, status: <span className="info">{t(lang, 'rail.editing', { species: editing.name || battleName(editing) })}</span> } : tab))
     : tabs;
   return (
     <LangProvider lang={lang}>
@@ -359,7 +360,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
         // Tessere del menu: sotto il nome lo stato della sezione, leggibile senza aprirla
         { id: 'pokemon', label: t(lang, 'tabs.pokemon'), icon: 'team',
           status: replaceIndex !== null && team[replaceIndex]
-            ? <span className="info">{t(lang, 'suggest.replaceTitle', { species: team[replaceIndex].species })}</span>
+            ? <span className="info">{t(lang, 'suggest.replaceTitle', { species: team[replaceIndex].name || battleName(team[replaceIndex]) })}</span>
             : t(lang, team.length ? 'rail.teamCount' : 'rail.teamEmpty', { n: team.length }) },
         { id: 'analysis', label: t(lang, 'tabs.analysis'), icon: 'roles',
           status: rating ? <>

@@ -380,6 +380,9 @@
 .settings-credits { justify-self: start; display: inline-flex; align-items: center; gap: 4px; padding: 0; border: 0; background: none; font: 600 13px var(--ui); color: var(--accent-ink); cursor: pointer; }
 .settings-credits .icon { width: 14px; height: 14px; }
 .settings-credits:hover { text-decoration: underline; }
+/* Sul computer Segnala o suggerisci e Crediti stanno già in fondo alla barra laterale: qui solo sul telefono e sul tablet,
+   dove quella riga non c'è */
+@media (min-width: 1100px) { .settings-credits { display: none; } }
 
 /* Segnala o suggerisci: modulo corto, tipo a pillole, invio a destra con GitHub come alternativa */
 .feedback-dialog { width: min(520px, calc(100vw - 32px)); }
