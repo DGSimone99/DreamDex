@@ -285,7 +285,7 @@ function MapProblem({ problem, step, preview, usage, dim = false, role }: {
       <span className="coach-sev visually-hidden">{tr(problem.severity === 'serious' ? 'dash.serious' : 'dash.minor')}</span>
       {threat ? (
         <span className="coach-prob-text is-threat">
-          <PokemonIcon name={threat} /><span className="visually-hidden">{problem.text}</span>
+          <PokemonIcon name={threat} /><span className="coach-threat-name" aria-hidden="true">{threat}</span><span className="visually-hidden">{problem.text}</span>
           {usage !== undefined && <span className="coach-usage">{formatPercent(lang, usage, 0)}</span>}
         </span>
       ) : role ? (
@@ -319,8 +319,10 @@ const COLUMNS: { key: MapColumn; area: 'defense' | 'strength' | 'roles' | null }
  * nell'altezza della tessera finiscono in un "+N" (title e testo nascosto con tutte): prima restano quelle risolvibili
  * (rimedi o una tappa mostrata), poi i gravi, poi l'ordine di `items`. Ridondanze e minacce sotto un'etichetta, più quiete.
  */
-function MapTile({ id, name, items, score, count, stepOf, preview, threatUsage, watch }: {
+function MapTile({ id, name, items, score, count, stepOf, preview, threatUsage, watch, onMore }: {
   id: string; name: string; items: CoachProblem[]; score: number | null;
+  /** Il "+N" come link alla scheda dell'area (assente: resta una nota, es. Regole col meta spento). */
+  onMore?: () => void;
   /** Al posto del voto, senza barretta: i Ruoli coperti sul totale ("7/9"). */
   count?: string; stepOf: Map<string, number>; preview: Set<string> | null;
   threatUsage?: Record<string, number>;
@@ -367,12 +369,18 @@ function MapTile({ id, name, items, score, count, stepOf, preview, threatUsage, 
           <ul className="coach-probs">{threats.map(row)}</ul>
         </>
       )}
-      {hidden.length > 0 && (
+      {hidden.length > 0 && (onMore ? (
+        // "e altri N ›": porta alla scheda dell'area, dove ci sono tutti (le minacce: alla scheda Meta)
+        <button type="button" className="coach-more is-link" title={hidden.map(hiddenText).join('\n')} onClick={onMore}>
+          <span>{tr(hidden.every(x => x.section === 'meta') ? 'coach.map.moreThreats' : 'coach.map.more', { n: hidden.length })}</span><span aria-hidden="true"> ›</span>
+          <span className="visually-hidden">{tr(hidden.length === 1 ? 'area.problems.moreOne' : 'area.problems.moreMany', { n: hidden.length })} {hidden.map(hiddenText).join('; ')}</span>
+        </button>
+      ) : (
         <p className="coach-more" title={hidden.map(hiddenText).join('\n')}>
           <span aria-hidden="true">+{hidden.length}</span>
           <span className="visually-hidden">{tr(hidden.length === 1 ? 'area.problems.moreOne' : 'area.problems.moreMany', { n: hidden.length })} {hidden.map(hiddenText).join('; ')}</span>
         </p>
-      )}
+      ))}
     </div>
   );
 }
@@ -381,8 +389,10 @@ function MapTile({ id, name, items, score, count, stepOf, preview, threatUsage, 
  * La scheda Coaching: in alto i problemi per area (quattro tessere), sotto fino a 3 tappe (cosa farei per prima).
  * `advice` null: i consigli si stanno calcolando (lo scheletro delle tappe; la mappa si vede già).
  */
-export function CoachingView({ coaching, advice, members, rating, metaOn, threatUsage, onFix, onMoveFix, onApplyFix, onApplyMove }: {
+export function CoachingView({ coaching, advice, members, rating, metaOn, threatUsage, onOpen, onFix, onMoveFix, onApplyFix, onApplyMove }: {
   coaching: Coaching; advice: CoachAdvice | null; members: number; rating: TeamRating | null; metaOn: boolean;
+  /** Il "+N" di una tessera apre la scheda della sua area (Regole·Meta: la scheda Meta, solo col meta acceso). */
+  onOpen?: (column: MapColumn) => void;
   /** Uso in % (0-1) delle minacce per specie, mostrato sulle righe "senza check" */
   threatUsage?: Record<string, number>;
 } & StepActions) {
@@ -441,7 +451,8 @@ export function CoachingView({ coaching, advice, members, rating, metaOn, threat
             {tiles.map(({ key, area, items }) => (
               <MapTile key={key} id={`${id}-${key}`} name={columnName[key]} items={items}
                 score={area ? rating?.areas.find(a => a.key === area)?.value ?? null : null}
-                count={key === 'roles' && rating ? rolesValue(rating) : undefined} stepOf={stepOf} preview={preview} threatUsage={threatUsage} watch={root} />
+                count={key === 'roles' && rating ? rolesValue(rating) : undefined} stepOf={stepOf} preview={preview} threatUsage={threatUsage} watch={root}
+                onMore={onOpen && (key !== 'rules' || metaOn) ? () => onOpen(key) : undefined} />
             ))}
           </div>
         </section>

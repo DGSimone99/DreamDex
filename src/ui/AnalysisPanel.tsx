@@ -27,7 +27,7 @@ export const problemsOf = (problems: CoachProblem[] | undefined, area: AreaKey) 
  * La scheda Analisi: le schede interne (Panoramica e le aree del voto) e il loro contenuto. La Panoramica dice cosa fare;
  * al posto della Panoramica può esserci il profilo di un membro; le aree mostrano sulla pagina sottostatistiche e tabelle complete.
  */
-export function AnalysisPanel({ team, analysis, rating, coaching, advice = null, data, view, onView, onAdd, onFix, onMoveFix, onApplyFix, onApplyMove, teamCollapsed = false }: {
+export function AnalysisPanel({ team, analysis, rating, coaching, advice = null, data, view, onView, onAdd, onOpenMeta, onFix, onMoveFix, onApplyFix, onApplyMove, teamCollapsed = false }: {
   /** Team ridotto: la Panoramica usa la densità ampia. */
   teamCollapsed?: boolean;
   /** Un candidato del Coaching: apre la scheda Pokémon su di lui. */
@@ -37,6 +37,8 @@ export function AnalysisPanel({ team, analysis, rating, coaching, advice = null,
   /** Clic su una proposta del Coaching: il cambio di Pokémon o di mossa si applica subito (annullabile). */
   onApplyFix?: (fix: CoachFix) => void;
   onApplyMove?: (fix: MoveFix) => void;
+  /** Apre la scheda Meta (il "+N" delle minacce nel Coaching). */
+  onOpenMeta?: () => void;
   /** Aggiungere un Pokémon (posti liberi, Panoramica vuota): porta alla scheda Pokémon. */
   onAdd?: () => void;
   team: TeamSet[];
@@ -70,6 +72,7 @@ export function AnalysisPanel({ team, analysis, rating, coaching, advice = null,
     // Il Coaching vince sul profilo di un membro, come le aree
     body = <CoachingView coaching={coaching} advice={advice} members={team.length} rating={rating} metaOn={!data.ignoreMeta && !!data.stats}
       threatUsage={Object.fromEntries(ratingThreats(rating, data).map(th => [th.name, th.usage]))}
+      onOpen={column => (column === 'rules' ? onOpenMeta?.() : onView(column === 'offense' ? 'strength' : column))}
       onFix={fix => onFix?.(fix)} onMoveFix={fix => onMoveFix?.(fix)}
       onApplyFix={fix => onApplyFix?.(fix)} onApplyMove={fix => onApplyMove?.(fix)} />;
   } else {

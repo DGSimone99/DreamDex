@@ -1,4 +1,4 @@
-import { act, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { App } from '../../src/App';
@@ -492,13 +492,16 @@ describe('CoachingView', () => {
         ({ severity, category: 'defense', text: `Nessuno regge ${type}`, fixes, key: `defense:${type}`, subjects: [type] });
       const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], threatFixes: {},
         problems: [p('Fire', 'minor'), p('Ice', 'serious'), p('Water', 'minor', ['Rotom-Wash']), p('Ground', 'minor')] };
-      renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [] }} members={3} rating={rating(three)} metaOn {...noop} />);
+      const onOpen = vi.fn();
+      renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [] }} members={3} rating={rating(three)} metaOn onOpen={onOpen} {...noop} />);
       const tile = screen.getByRole('group', { name: 'Difesa' });
       expect([...tile.querySelectorAll('li.coach-prob')].map(li => li.getAttribute('data-key'))).toEqual(['defense:Ice', 'defense:Water']);
-      const more = tile.querySelector('.coach-more')!;
-      expect(more).toHaveTextContent(/^\+2/);
+      const more = within(tile).getByRole('button', { name: /^e altri 2/ });
+      expect(more).toHaveClass('coach-more');
       expect(more).toHaveAttribute('title', 'Nessuno regge Fire\nNessuno regge Ground');
       expect(more.querySelector('.visually-hidden')).toHaveTextContent('Altri 2 problemi: Nessuno regge Fire; Nessuno regge Ground');
+      fireEvent.click(more);
+      expect(onOpen).toHaveBeenCalledWith('defense');
     } finally {
       tall.mockRestore();
       scroll.mockRestore();
@@ -574,6 +577,48 @@ describe('CoachingView', () => {
     expect(total).toBe(unique.length);
   });
 
+  const threat = (name: string): CoachProblem => ({ severity: 'minor', category: 'meta', text: `Nessuno regge ${name} del meta`, fixes: [], key: `meta:${name}`, subjects: [name] });
+  /** Tessera alta 130px, testata 40px, ogni pillola (e il "+N") 30px: ci stanno 2 pillole e il "+N". */
+  const smallTiles = () => {
+    const tall = vi.spyOn(Element.prototype, 'clientHeight', 'get').mockImplementation(function (this: Element) { return this.classList.contains('coach-tile') ? 130 : 0; });
+    const scroll = vi.spyOn(Element.prototype, 'scrollHeight', 'get').mockImplementation(function (this: Element) {
+      return this.classList.contains('coach-tile') ? 40 + 30 * this.querySelectorAll('li.coach-prob, .coach-more').length : 0;
+    });
+    return () => { tall.mockRestore(); scroll.mockRestore(); };
+  };
+
+  it('minacce col nome: icona, nome e uso', () => {
+    const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], threatFixes: {}, problems: [threat('Latios-Mega')] };
+    renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [] }} members={3} rating={rating(three)} metaOn threatUsage={{ 'Latios-Mega': 0.05 }} {...noop} />);
+    const row = document.querySelector('li[data-key="meta:Latios-Mega"]')!;
+    expect(row.querySelector('.coach-threat-name')).toHaveTextContent('Latios-Mega');
+    expect(row).toHaveTextContent('5%');
+  });
+
+  it('+N delle minacce: "e altre N", apre la scheda Meta', () => {
+    const restore = smallTiles();
+    try {
+      const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], threatFixes: {}, problems: ['A', 'B', 'C', 'D'].map(threat) };
+      const onOpen = vi.fn();
+      renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [] }} members={3} rating={rating(three)} metaOn onOpen={onOpen} {...noop} />);
+      const more = within(screen.getByRole('group', { name: 'Regole · Meta' })).getByRole('button', { name: /^e altre 2/ });
+      fireEvent.click(more);
+      expect(onOpen).toHaveBeenCalledWith('rules');
+    } finally { restore(); }
+  });
+
+  it('meta spento: il +N di Regole resta una nota', () => {
+    const restore = smallTiles();
+    try {
+      const rule = (n: string): CoachProblem => ({ severity: 'serious', category: 'rules', text: `${n} non è legale`, fixes: [], key: `rules:${n}`, subjects: [n] });
+      const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], threatFixes: {}, problems: ['A', 'B', 'C', 'D'].map(rule) };
+      renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [] }} members={3} rating={rating(three)} metaOn={false} onOpen={vi.fn()} {...noop} />);
+      const tile = screen.getByRole('group', { name: 'Regole' });
+      expect(tile.querySelector('.coach-more')).not.toBeNull();
+      expect(within(tile).queryByRole('button', { name: /^e altri/ })).toBeNull();
+    } finally { restore(); }
+  });
+
   it('aree senza problemi: una riga verde, niente tessera', () => {
     const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], threatFixes: {},
       problems: [{ severity: 'minor', category: 'roles', text: 'Ruoli importanti mancanti: Pivot', fixes: [], key: 'roles:important' }] };
@@ -587,7 +632,6 @@ describe('CoachingView', () => {
   });
 
   it('solo minacce del meta: tre aree nella riga verde, una tessera', () => {
-    const threat = (name: string): CoachProblem => ({ severity: 'minor', category: 'meta', text: `Nessuno regge ${name} del meta`, fixes: [], key: `meta:${name}`, subjects: [name] });
     const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], threatFixes: {}, problems: [threat('Latios-Mega'), threat('Tapu Koko')] };
     renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [] }} members={3} rating={rating(three)} metaOn {...noop} />);
     expect(document.querySelector('.coach-clean')).toHaveTextContent(/Difesa.*Offesa.*Ruoli/);

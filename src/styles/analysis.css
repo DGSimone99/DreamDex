@@ -671,6 +671,11 @@
 .coach-prob-text.is-threat { display: flex; align-items: center; gap: 4px; white-space: nowrap; }
 .coach-prob-text.is-threat .mon-icon { margin: -10px -6px -9px -8px; }
 .coach-prob-text.is-threat .coach-usage { flex: none; color: inherit; font-variant-numeric: tabular-nums; }
+.coach-prob-text.is-threat .coach-threat-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.coach-prob-text.is-threat .coach-usage { font-weight: 400; color: var(--muted); }
+/* "e altri N ›": il chip del +N diventa un link alla scheda dell'area */
+.coach-more.is-link { border: 0; color: var(--accent-ink); background: var(--accent-wash); cursor: pointer; font-style: italic; font-weight: 700; }
+.coach-more.is-link:hover { background: var(--accent-soft); }
 /*
  * Coperto da una tappa: il numero della tappa in un tondino magenta. Puntatore o fuoco su una proposta: le pillole
  * che risolve diventano verdi e barrate
