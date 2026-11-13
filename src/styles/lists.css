@@ -497,6 +497,8 @@
   .slot .name-line { margin-top: 2px; }
   .grade-badge { row-gap: 0; padding-bottom: 6px; }
   .grade-head { padding-top: 3px; padding-bottom: 3px; }
+  /* La fascia è più bassa (~23px): il "?" resta a metà */
+  .grade-tools { top: 1.5px; }
   .team-plate { padding-top: 0; padding-bottom: 0; }
   .grade-head { margin-bottom: 6px; }
   .grade-badge .letter { font-size: 46px; }
