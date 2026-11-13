@@ -786,6 +786,9 @@
 /* Minaccia: l'icona del Pokémon in un riquadro piccolo (più larga di un tipo); l'anello verde come per i tipi */
 .coach-chip.is-mon { width: 30px; height: 26px; border-radius: 6px; overflow: visible; }
 .coach-chip.is-mon .mon-icon { margin: -2px -5px -2px -5px; transform: scale(0.8); }
+/* Gli sprite piccoli hanno il disegno in basso nel loro riquadro: un po' più su, a metà delle lettere della riga
+   (in em: segue la grandezza del testo anche sugli schermi grandi) */
+.coach-chip.is-mon .mon-icon, .coach-also-mon .mon-icon, .coach-step-subject.is-mon .mon-icon { position: relative; top: -0.15em; }
 .coach-chip.is-solved-preview { box-shadow: 0 0 0 2px var(--good); background: var(--good-bg); }
 .coach-group.is-lit .coach-chip:not(.is-solved-preview) { opacity: 0.35; }
 @media (prefers-reduced-motion: no-preference) {
