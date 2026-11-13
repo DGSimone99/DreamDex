@@ -683,6 +683,8 @@ const STATES: Record<string, State> = {
     await wait(600);
     return focus(p, '.slot.open .alert-mark');
   } },
+  // Nomi lunghi con l'editor aperto: la carta aperta tiene il nome; nella barra compressa i nomi vanno su due righe
+  'editor-long': { hash: hash(LONG), run: async p => { if (!await clickText(p, '.slot.filled > .slot-card', /Urshifu/)) return 'no card'; await wait(600); return true; } },
   // Testata dell'editor (Great Tusk: preset sia NatDex OU sia Gen 9 OU), il menu dei preset aperto e il riquadro Testo del set
   'editor-head': { run: async p => { if (!await clickText(p, '.slot.filled > .slot-card', /Great Tusk/)) return 'no card'; await wait(600); return editorHead(p); } },
   'editor-presets': { run: async p => {

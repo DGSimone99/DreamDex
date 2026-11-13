@@ -324,8 +324,8 @@
 .slot > .slot-card .sprite-wrap { position: relative; align-self: center; }
 /* Le righe della card non si schiacciano: nome e strumento hanno al massimo due righe, l'altezza resta fissa */
 .slot > .slot-card > * { flex-shrink: 0; }
-/* Con l'avviso aperto lo sprite passa sopra nome e righe sotto */
-.slot > .slot-card .sprite-wrap:has(.alert-mark:hover, .alert-mark:focus-visible) { z-index: 6; }
+/* Con l'avviso aperto il suo fumetto passa sopra sprite, nome e righe sotto */
+.slot > .slot-card .slot-alerts:has(.alert-mark:hover, .alert-mark:focus-visible) { z-index: 6; }
 .slot > .slot-card .sprite { display: block; image-rendering: pixelated; transition: transform 0.35s var(--ease); }
 /* Card aperta: lo sprite cresce un poco e gioca l'animazione */
 .slot.open > .slot-card { --open-scale: 1.12; }
@@ -344,15 +344,19 @@
 }
 /* Il nome va a capo solo agli spazi e ai trattini, mai a metà parola: se la parte più lunga non entra nella riga, il nome
    si rimpicciolisce (fino a 11px). --name-em = larghezza vera di quella parte scritta a 1px (misurata nel font, senza
-   unità: TeamPanel); la riga è la carta (container) meno l'icona dello strumento */
+   unità: TeamPanel); la riga è la carta (container) meno l'icona dello strumento e, se ci sono, i triangoli degli avvisi */
 .band:not(.collapsed) .slot > .slot-card { container-type: inline-size; }
-.slot .name { --name-fs: 16px; font: 800 var(--name-fs)/1.05 var(--display); font-size: min(var(--name-fs), max(11px, (100cqi - 26px) / var(--name-em, 5.6))); font-style: italic; letter-spacing: 0.01em; max-width: 100%; overflow-wrap: normal; word-break: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.slot .name { --name-fs: 16px; font: 800 var(--name-fs)/1.05 var(--display); font-size: min(var(--name-fs), max(11px, (100cqi - var(--name-room, 26px)) / var(--name-em, 5.6))); font-style: italic; letter-spacing: 0.01em; max-width: 100%; overflow-wrap: normal; word-break: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 /* Icona dello strumento in uno spazio fisso alto quanto la prima riga del nome: icona e nome partono insieme,
    e i nomi restano allineati tra le carte anche senza strumento */
 .slot .name-line { display: flex; align-items: flex-start; gap: 6px; max-width: 100%; margin-top: 4px; }
 .slot .name-line .held { flex: none; display: grid; place-items: center; width: 20px; height: 20px; }
 .slot .name-line .held .item-icon { width: 20px; height: 20px; }
 .slot .name-line .name { min-width: 0; line-height: 20px; }
+/* Spazio dei triangoli in fondo alla riga: uno 27px, due 54px */
+.slot:has(.slot-alerts) .name-line { align-self: stretch; }
+.slot:has(.slot-alerts) .name { --name-room: 53px; }
+.slot:has(.slot-alerts .alert-mark + .alert-mark) .name { --name-room: 80px; }
 .slot .roles { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 .slot .types { display: flex; gap: 4px; flex-wrap: nowrap; margin: 2px 0; }
 /* I chip devono stare dentro la carta: la fila è larga quanto la carta e, se due chip col nome non entrano, TeamPanel

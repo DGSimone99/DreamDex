@@ -297,7 +297,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
     illegalAbilityText,
     locked.length ? tr('team.lockedStatus', { item: gameName('item', set.item, lang), moves: locked.map(m => gameName('move', m, lang)).join(', ') }) : null,
   ].filter((w): w is string => !!w);
-  // Problemi di legalità in rosso, avvisi in giallo: due triangoli distinti sullo sprite, il dettaglio nei tooltip
+  // Problemi di legalità in rosso, avvisi in giallo: due triangoli distinti in alto sulla carta, il dettaglio nei tooltip
   const dangers: Alert[] = problems.map(text => ({ level: 'danger', text }));
   // Mosse o abilità non legali: come risolvere sta nel tooltip della riga, non nel testo
   const hint = (text: string) => (text === illegalMovesText ? tr('team.illegalMovesHint') : text === illegalAbilityText ? tr('team.illegalAbilityHint') : undefined);
@@ -366,12 +366,6 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
         </span>
         <span className="sprite-wrap">
           <Sprite species={set.species} item={set.item} animated={open} shiny={!!set.shiny} />
-          {(dangers.length > 0 || warns.length > 0) && (
-            <span className="sprite-alerts">
-              <AlertMark alerts={warns} className="on-sprite" />
-              <AlertMark alerts={dangers} className="on-sprite" />
-            </span>
-          )}
         </span>
         {index === 0 && (
           // Il primo slot è quello che va in campo per primo
@@ -402,14 +396,22 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
           <Icon name="close" />
         </button>
         {/* Lo strumento è la sua icona prima del nome: nome e descrizione nel tooltip (e per i lettori di schermo) */}
-        <span className="name-line" aria-hidden="true">
-          <small className="held" title={set.item ? `${gameName('item', set.item, lang)}: ${describe.item(set.item, lang)}` : tr('team.noItem')}>
+        {/* Strumento e nome li dice già il pulsante della carta; gli avvisi in fondo alla riga del nome restano leggibili */}
+        <span className="name-line">
+          <small className="held" aria-hidden="true" title={set.item ? `${gameName('item', set.item, lang)}: ${describe.item(set.item, lang)}` : tr('team.noItem')}>
             <ItemIcon item={set.item} size={20} />
             <span className="visually-hidden">{set.item ? gameName('item', set.item, lang) : tr('team.noItem')}</span>
           </small>
           {/* Il soprannome, se c'è (la specie nel tooltip) */}
         {/* Il nome intero nel tooltip: nella barra compressa si taglia con i puntini */}
-        <strong className="name" title={set.name ? `${set.name} (${name})` : name} style={{ '--name-em': nameEm.toFixed(3) } as CSSProperties}>{shownName}</strong>
+        <strong className="name" aria-hidden="true" title={set.name ? `${set.name} (${name})` : name} style={{ '--name-em': nameEm.toFixed(3) } as CSSProperties}>{shownName}</strong>
+        {/* Avvisi in fondo alla riga del nome, sotto lo sprite: non lo coprono */}
+        {(dangers.length > 0 || warns.length > 0) && (
+          <span className="slot-alerts">
+            <AlertMark alerts={warns} className="on-card" />
+            <AlertMark alerts={dangers} className="on-card" />
+          </span>
+        )}
         </span>
         <small className="ability" title={describe.ability(ability, lang)} aria-hidden="true">{ability ? gameName('ability', ability, lang) : '—'}</small>
         <span className={`types${typeText ? '' : ' as-icons'}`} ref={typesRef} aria-hidden="true">

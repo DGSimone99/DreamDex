@@ -165,7 +165,10 @@
 /* Pillola: icona del box, nome e icona dello strumento; il membro aperto nell'editor ha il contorno ciano. Margini e spazi
    stretti: anche a 1280 px nomi come Great Tusk e Corviknight entrano interi */
 .band.collapsed .slot > .slot-card > .name-line { display: flex; flex-direction: row-reverse; justify-content: flex-end; align-items: center; gap: 4px; flex: 1; min-width: 0; margin: 0; }
-.band.collapsed .slot .name-line .name { flex: 1; min-width: 0; font-size: 13px; line-height: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Nomi lunghi (Urshifu-Rapid-Strike, Ogerpon-Wellspring) su due righe, a capo dopo il trattino: nella pillola si leggono
+   interi; i puntini solo oltre la seconda riga */
+.band.collapsed .slot .name-line .name { flex: 1; min-width: 0; font-size: 13px; line-height: 14px; white-space: normal; overflow-wrap: anywhere; overflow: hidden; }
+@media (max-width: 1320px) { .band.collapsed .slot .name-line .name { font-size: 12px; } }
 /* Nella barra il problema lo dice il puntino: niente bordo colorato attorno alla pillola */
 .band.collapsed .slot.invalid > .slot-card, .band.collapsed .slot.warn > .slot-card { outline: none; }
 .band.collapsed .slot.open > .slot-card { outline: 2px solid var(--accent); outline-offset: -2px; }
@@ -217,9 +220,10 @@
 .editor-roles ul { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
 .editor-roles li { padding: 3px 10px; border: 1px solid var(--line); background: var(--raised); font-size: 13px; color: var(--text); }
 .editor-roles li.main { border-color: var(--accent); background: var(--accent-wash); font-weight: 600; }
-/* Carta aperta: solo lo sprite animato, grande quanto la carta (nome e set sono nell'editor) */
+/* Carta aperta: lo sprite animato, grande quanto la carta, e sotto il nome (si vede quale membro è aperto); abilità,
+   tipi e ruolo sono nell'editor */
 .slot.open > .slot-card { justify-content: center; --open-scale: 1.5; --fit: 180; }
-.slot.open > .slot-card > :not(.slot-toggle, .sprite-wrap, .favorite, .remove, .slot-custom, .slot-lead, .mini-icon) { display: none; }
+.slot.open > .slot-card > :not(.slot-toggle, .sprite-wrap, .name-line, .favorite, .remove, .slot-custom, .slot-lead, .mini-icon) { display: none; }
 .band:not(.collapsed) .slot.open > .slot-card .sprite-wrap { flex: 1; display: grid; place-items: end center; width: 100%; }
 /* Statico e animato con la stessa scala, quanto lo spazio della carta: la GIF è il riquadro di 96px ritagliato sul Pokémon,
    quindi alta --ani-h/96 dello statico. Senza GIF (es. Urshifu Pluricolpo) lo statico resta grande uguale, non di più */
