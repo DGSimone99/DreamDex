@@ -200,6 +200,36 @@
 .export-note.done { background: var(--good-bg); color: var(--good); }
 .export-note .icon { width: 13px; height: 13px; }
 @media (prefers-reduced-motion: reduce) { .export-tab.copied .icon, .export-note { animation: none; } }
+/* Fumetto dei controlli con sola icona (Hint): lo stesso di Esporta e Svuota, sotto il controllo */
+.hint-wrap { position: relative; display: inline-flex; flex: none; }
+.hint-bubble {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 6px);
+  left: 0;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 4px;
+  background: var(--ground);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
+  color: var(--text);
+  font: 500 12px/1.2 var(--ui);
+  letter-spacing: 0;
+  text-transform: none;
+  white-space: nowrap;
+  pointer-events: none;
+  animation: tip 0.14s var(--ease);
+}
+.hint-bubble[hidden] { display: none; }
+.hint-wrap.end .hint-bubble { left: auto; right: 0; }
+.hint-detail { color: var(--muted); }
+.hint-detail::before { content: '·'; margin-right: 6px; }
+.hint-bubble.done { background: var(--good-bg); color: var(--good); }
+@media (prefers-reduced-motion: reduce) { .hint-bubble { animation: none; } }
+/* Al tocco e sul telefono niente fumetti col nome (il tocco dà il fuoco: coprirebbero i campi); resta solo "Copiato" */
+@media (max-width: 599px), (hover: none) { .hint-bubble:not(.done) { display: none; } }
 /* Svuota: il cestino, più discreto delle altre linguette, si accende di rosso solo sotto il mouse; una barretta lo stacca
    da Importa ed Esporta (il gap della fila più la barretta) */
 .clear-wrap { position: relative; display: flex; align-items: center; padding-left: 12px; }

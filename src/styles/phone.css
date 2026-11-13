@@ -186,6 +186,10 @@
   .set-editor { grid-template-columns: minmax(0, 1fr); }
   .editor-top { flex-wrap: wrap; gap: 10px; }
   .editor-title strong { font-size: 22px; }
+  /* La matita del nome sta sull'angolo del nome, senza prendere spazio: la riga resta nome, tipi, shiny e chiudi */
+  .editor-title .nickname { position: relative; gap: 0; }
+  .editor-title .nickname-pencil { position: absolute; top: -8px; right: -12px; }
+  .editor-title .nickname-pencil .icon { width: 12px; height: 12px; }
 
   /* ── Menu a tendina: salgono dal basso, con lo sfondo scuro ───── */
   :is(details.popover, details.filters, details.spread-panel)[open]::before {

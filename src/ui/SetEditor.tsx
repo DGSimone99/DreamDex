@@ -149,7 +149,10 @@ interface Props {
   /** Sotto la testata: i problemi del membro detti per esteso, con la via d'uscita. */
   notice?: React.ReactNode;
   smogonAction?: React.ReactNode;
+  /** Testo del set e Copia il set: un gruppo a sé nella testata. */
   ioAction?: React.ReactNode;
+  /** Il riquadro del Testo del set, aperto: copre le Statistiche, così Set e Mosse restano in vista per confrontare. */
+  textPanel?: React.ReactNode;
   /** Tutti i ruoli del membro, il principale per primo: il riquadro in fondo all'editor. */
   roles?: string[];
   /** La spiegazione di ogni ruolo (stesso ordine di `roles`), nel tooltip. */
@@ -159,7 +162,7 @@ interface Props {
   onChange: (set: TeamSet) => void;
 }
 
-export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', common, teraBannedIn, speed, title, actions, presetAction, memberAction, notice, smogonAction, ioAction, roles, roleTips, proposedSlot, onChange }: Props) {
+export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', common, teraBannedIn, speed, title, actions, presetAction, memberAction, notice, smogonAction, ioAction, textPanel, roles, roleTips, proposedSlot, onChange }: Props) {
   const t = useT();
   const lang = useLang();
   // Le più usate vanno in cima al menu, con la quota d'uso (o "Preset" se vengono dalle analisi)
@@ -311,8 +314,8 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
         </div>
         <div className="head-group">
         <MySetsField set={set} onApply={saved => onChange(presetSet(set, saved))} />
-        {ioAction}
         </div>
+        {ioAction && <div className="head-group set-text-group">{ioAction}</div>}
         {/* Fuori dai riquadri: cambia le scelte sia del Set sia delle Mosse */}
         <label className={`custom-toggle${custom ? ' on' : ''}`} title={t('editor.customTooltip')}>
           <span className="custom-text">
@@ -329,6 +332,8 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
         </label>
       </div>
       {notice}
+      {/* Le Statistiche e, sopra di loro, il riquadro del Testo del set quando è aperto */}
+      <div className="stats-cell">
       <fieldset className="evs">
         <legend>{t('editor.stats')}</legend>
         {/* Livello a sinistra (due mezze pillole unite), "Spread più usati" a destra, sulla stessa riga */}
@@ -420,6 +425,8 @@ export function SetEditor({ set, presets = [], genLimit, pokedex = 'natdex', com
         </p>
         {speed && <SpeedLine name={battleSpecies(set)?.name ?? set.species} tier={speed} scarf={speedStat(set).scarf} />}
       </fieldset>
+      {textPanel}
+      </div>
       <div className="editor-side">
       <fieldset className="editor-group">
         <legend>{t('editor.set')}</legend>

@@ -238,7 +238,7 @@
 .joined { display: flex; align-items: stretch; min-width: 0; }
 .joined > .combobox, .joined > .my-sets-input { flex: 1; min-width: 0; }
 .joined > .combobox input, .joined > .my-sets-input input { border-top-right-radius: 0; border-bottom-right-radius: 0; }
-.joined > a, .joined > button { width: 38px; height: auto; min-height: 36px; padding: 0; display: grid; place-items: center; margin-left: -1px; border-radius: 0 4px 4px 0; flex: none; }
+.joined > a, .joined > button, .joined > .hint-wrap > a, .joined > .hint-wrap > button { width: 38px; height: auto; min-height: 36px; padding: 0; display: grid; place-items: center; margin-left: -1px; border-radius: 0 4px 4px 0; flex: none; }
 .smogon-link.icon-only { justify-content: center; }
 .my-sets-input { position: relative; display: flex; }
 .my-sets-input input { width: 100%; height: 36px; padding-right: 34px; }
@@ -287,6 +287,12 @@
 .editor-title .nickname strong { font: 800 26px/1 var(--display); font-style: italic; letter-spacing: 0.01em; }
 .editor-title .nickname strong::before { content: attr(data-name); }
 .editor-title .nickname:hover strong, .editor-title .nickname:focus-visible strong { text-decoration: underline dotted var(--faint); text-underline-offset: 4px; }
+/* La matita del soprannome: compare col mouse o col fuoco (come FORMATO ✎ nella barra a sinistra); al tocco resta sempre, tenue */
+.editor-title .nickname { display: inline-flex; align-items: center; gap: 6px; }
+.nickname-pencil { flex: none; display: grid; place-items: center; color: var(--accent); opacity: 0; transition: opacity 0.15s var(--ease); }
+.nickname-pencil .icon { width: 15px; height: 15px; }
+.editor-title .nickname:hover .nickname-pencil, .editor-title .nickname:focus-visible .nickname-pencil { opacity: 1; }
+@media (hover: none) { .nickname-pencil { opacity: 0.6; color: var(--muted); } }
 .editor-title .species-tag {
   position: absolute;
   left: 0;
@@ -302,9 +308,8 @@
 .nickname-input { width: 200px; height: 32px; font: 800 18px/1 var(--display); font-style: italic; }
 .shiny-toggle { width: 32px; height: 32px; padding: 0; display: grid; place-items: center; color: var(--faint); }
 .shiny-toggle[aria-pressed='true'] { color: var(--warn); border-color: var(--warn); background: var(--warn-bg); }
-/* Importa / Esporta: il riquadro si apre sotto il suo pulsante */
+/* Testo del set e Copia il set, attaccati */
 .io-anchor { position: relative; display: inline-flex; }
-.io-anchor .paste-panel { top: calc(100% + 6px); right: auto; left: 0; width: 440px; }
 /* Etichette dei preset più piccole e vicine ai menu; Custom Skillset sul bordo destro, la casella dopo il testo */
 .set-editor .preset-field .field-head, .set-editor .my-sets-field .field-head { font-size: 11px; line-height: 1; }
 .set-editor .preset-field, .set-editor .my-sets-field { gap: 2px; }
@@ -349,8 +354,7 @@
   .set-editor .evs .speed-line { padding-top: 4px; }
   .editor-title .species-tag { bottom: calc(100% + 2px); }
 }
-/* Importa / Esporta allineato al bordo destro del suo pulsante (non esce dallo schermo); Copia set attaccato */
-.io-anchor .paste-panel { left: auto; right: 0; width: min(440px, 80vw); }
+/* Copia il set attaccato a Testo del set */
 .io-anchor .member-io { border-top-right-radius: 0; border-bottom-right-radius: 0; }
 .io-anchor .member-copy { width: 38px; height: 36px; padding: 0; display: grid; place-items: center; margin-left: -1px; border-top-left-radius: 0; border-bottom-left-radius: 0; }
 /* Problemi del membro detti per esteso, con la via d'uscita */
@@ -361,6 +365,8 @@
 /* Testata dell'editor in due gruppi: Preset (Smogon + Preset migliore) e I miei set (nome, salva, Importa/Esporta, Copia) */
 .editor-head .head-group { display: flex; align-items: flex-end; gap: 8px; min-width: 0; }
 .editor-head .head-group + .head-group { margin-left: 12px; padding-left: 20px; border-left: 1px solid var(--line-soft); }
+/* Testo del set: terzo gruppo, dopo la barretta (azioni sul testo, non una fonte del set) */
+.editor-head .set-text-group { align-self: flex-end; }
 /* Custom Skillset a destra nella testata, sopra Set e Mosse (le cambia entrambe) */
 .editor-head > .custom-toggle { margin-left: auto; align-self: flex-end; font-size: 13px; }
 /* Ruoli: tag piatti di sola lettura (non sembrano pulsanti); il principale in grassetto */
@@ -370,7 +376,7 @@
 /* Colori in regola: shiny e chiudi nel ciano del lavoro; sovrascrivere è "da controllare" */
 .shiny-toggle[aria-pressed='true'] { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
 .editor-actions .editor-close:hover { border-color: var(--accent); color: var(--accent); }
-.save-set.overwrite { width: auto; padding: 0 10px; gap: 6px; display: inline-flex; align-items: center; border-color: var(--warn); color: var(--warn); background: var(--warn-bg); }
+.save-set.overwrite, .joined > .hint-wrap > .save-set.overwrite { width: auto; padding: 0 10px; gap: 6px; display: inline-flex; align-items: center; border-color: var(--warn); color: var(--warn); background: var(--warn-bg); }
 .overwrite-label { font-size: 13px; font-weight: 600; }
 /* Voto vuoto: il messaggio a tutta larghezza, non spezzato in colonna */
 .grade-badge.none { display: flex; flex-direction: column; align-items: stretch; }

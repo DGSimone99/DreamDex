@@ -37,6 +37,7 @@ import { Icon } from './icons';
 import { useFitCount } from './useFit';
 import { typeIconUrl } from './typeIcons';
 import { SmogonLink } from './SmogonLink';
+import { Hint } from './Hint';
 import { illegalParts } from '../engine/learnsets';
 import { t, type Lang } from '../i18n';
 import { gameName, typeName } from '../i18n/game';
@@ -244,13 +245,17 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
   // `blocked`: cosa ferma l'incolla (detto in una finestra); il testo resta nel riquadro da correggere
   const [paste, setPaste] = useState<{ text: string; original: string; blocked: ImportReview | null } | null>(null);
   const pasteArea = useRef<HTMLTextAreaElement>(null);
-  // Importa / Esporta: il riquadro si apre sotto il pulsante e si chiude cliccando fuori
+  // Testo del set: il riquadro si apre sopra le Statistiche (Set e Mosse restano in vista) e si chiude cliccando fuori
   const ioRef = useRef<HTMLSpanElement>(null);
+  const pasteRef = useRef<HTMLDivElement>(null);
   const ioOpen = !!paste;
   useEffect(() => {
     if (!ioOpen) return;
     // Un testo già modificato non si butta con un clic fuori: si chiude solo con Annulla o Esc
-    const away = (e: PointerEvent) => { if (!ioRef.current?.contains(e.target as Node)) setPaste(p => (p && p.text !== p.original ? p : null)); };
+    const away = (e: PointerEvent) => {
+      const target = e.target as Node;
+      if (!ioRef.current?.contains(target) && !pasteRef.current?.contains(target)) setPaste(p => (p && p.text !== p.original ? p : null));
+    };
     document.addEventListener('pointerdown', away);
     return () => document.removeEventListener('pointerdown', away);
   }, [ioOpen]);
@@ -443,13 +448,17 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
               <button type="button" className="nickname" aria-label={tr('team.nickname', { species: name })} title={tr('team.nicknameTitle')}
                 onClick={() => setNaming(true)}>
                 <strong data-name={set.name || name} />
+                {/* La matita compare col mouse o col fuoco: il nome si può cambiare */}
+                <span className="nickname-pencil" aria-hidden="true"><Icon name="edit" /></span>
               </button>
             )}
             <span className="types" aria-hidden="true">{species?.types.map(type => <TypeChip key={type} type={type} />)}</span>
-            <button type="button" className="shiny-toggle" aria-pressed={!!set.shiny} aria-label={tr('team.shiny')} title={tr('team.shiny')}
-              onClick={() => stable.onChange({ ...set, shiny: set.shiny ? undefined : true })}>
-              <Icon name="shiny" filled={!!set.shiny} />
-            </button>
+            <Hint label={tr('team.shiny')}>
+              <button type="button" className="shiny-toggle" aria-pressed={!!set.shiny} aria-label={tr('team.shiny')}
+                onClick={() => stable.onChange({ ...set, shiny: set.shiny ? undefined : true })}>
+                <Icon name="shiny" filled={!!set.shiny} />
+              </button>
+            </Hint>
           </div>
         )}
         memberAction={
@@ -478,7 +487,7 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
         smogonAction={<SmogonLink species={name} format={format} presets={presets} iconOnly />}
         ioAction={
           <span className="io-anchor" ref={ioRef}>
-            <button type="button" className="member-io" aria-expanded={!!paste} title={tr('team.memberIOTitle')} aria-label={tr('team.memberIOName')}
+            <button type="button" className="member-io" aria-expanded={!!paste} title={tr('team.memberIOTitle')}
               onClick={() => setPaste(p => {
                 if (p) return null;
                 const text = exportShowdown([set], { tera: teraAllowed(format) });
@@ -486,12 +495,16 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
               })}>
               <Icon name="paste" /> <span className="btn-label">{tr('team.memberIO')}</span>
             </button>
-            <button type="button" className="member-copy" aria-label={tr(copied ? 'team.copied' : 'team.copySet')} title={tr('team.copySet')}
-              onClick={async () => {
-                if (await copyText(exportShowdown([set], { tera: teraAllowed(format) }))) { setCopied(true); setTimeout(() => setCopied(false), 1500); }
-              }}><Icon name={copied ? 'check' : 'copy'} /></button>
-  {paste && (
-    <div className="paste-panel" onKeyDown={e => { if (e.key === 'Escape') { e.stopPropagation(); setPaste(null); } }}>
+            <Hint label={tr('team.copySet')} done={copied ? tr('team.copied') : undefined}>
+              <button type="button" className="member-copy" aria-label={tr(copied ? 'team.copied' : 'team.copySet')}
+                onClick={async () => {
+                  if (await copyText(exportShowdown([set], { tera: teraAllowed(format) }))) { setCopied(true); setTimeout(() => setCopied(false), 1500); }
+                }}><Icon name={copied ? 'check' : 'copy'} /></button>
+            </Hint>
+          </span>
+        }
+        textPanel={paste && (
+    <div className="paste-panel" ref={pasteRef} onKeyDown={e => { if (e.key === 'Escape') { e.stopPropagation(); setPaste(null); } }}>
       <textarea aria-label={tr('team.pasteText')} rows={12} autoFocus ref={pasteArea} value={paste.text} placeholder={tr('team.pastePlaceholder')}
         onChange={e => setPaste({ text: e.target.value, original: paste.original, blocked: null })} />
       <p className="paste-hint">{tr('team.pasteHint')}</p>
@@ -502,13 +515,13 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
         <button type="button" onClick={() => setPaste(null)}>{tr('team.pasteCancel')}</button>
       </div>
     </div>
-  )}
-          </span>
-        }
+        )}
         actions={<>
           {megaWarning && <button type="button" onClick={stable.onIgnoreWarning}>{tr('team.keepMega')}</button>}
-          <button type="button" className="editor-close" aria-label={tr('team.closeEditor')} title={tr('team.closeEditor')}
-            onClick={() => { onToggle(false); card.current?.focus(); }}><Icon name="close" /></button>
+          <Hint label={tr('team.closeEditor')} end>
+            <button type="button" className="editor-close" aria-label={tr('team.closeEditor')}
+              onClick={() => { onToggle(false); card.current?.focus(); }}><Icon name="close" /></button>
+          </Hint>
         </>} />
       </div>
     </div>
