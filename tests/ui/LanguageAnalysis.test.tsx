@@ -10,7 +10,7 @@ describe('analisi in inglese', () => {
     render(<App data={fixtureData} initialLang="en" />);
     await user.click(screen.getByTitle('Paste a team written for Showdown'));
     await user.click(screen.getByLabelText('Showdown text'));
-    await user.paste('Great Tusk\n\nGholdengo');
+    await user.paste('Great Tusk\n\nGholdengo\n\nKingambit');
     await user.click(screen.getByRole('button', { name: 'Import' }));
     const analysis = screen.getByRole('region', { name: 'Analysis' });
     for (const title of ['Overview', 'Coaching', 'Defense', 'Offense', 'Roles', 'Speed']) {
@@ -19,7 +19,12 @@ describe('analisi in inglese', () => {
     // Uso nel meta e minacce stanno nella scheda Meta
     const meta = screen.getByRole('region', { name: 'Meta' });
     for (const title of ['Meta usage', 'Meta threats']) expect(within(meta).getAllByText(title).length).toBeGreaterThan(0);
-    expect(within(analysis).getByText('Incomplete team')).toBeInTheDocument();
+    // In fondo alla Panoramica la riga dei problemi; nel Voto il tipo di team, ancora da riconoscere
+    // I consigli si calcolano solo con l'Analisi aperta
+    await user.click(screen.getByRole('tab', { name: /^Analysis/ }));
+    const fix = await within(analysis).findByRole('region', { name: 'To fix' }, { timeout: 5000 });
+    expect(within(fix).getByRole('button', { name: 'Go to Coaching' })).toBeInTheDocument();
+    expect(document.querySelector('.grade-badge .grade-type')).toHaveTextContent('In progress');
     // I problemi stanno nel Coaching, nella mappa per area, con i titoli in inglese
     await user.click(within(analysis).getByRole('tab', { name: 'Coaching' }));
     expect(within(analysis).getByRole('region', { name: 'Suggestions' })).toBeInTheDocument();

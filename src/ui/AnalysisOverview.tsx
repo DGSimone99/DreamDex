@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { TeamAnalysis } from '../engine/analysis';
-import type { Coaching } from '../engine/coach';
+import type { Coaching, CoachAdvice } from '../engine/coach';
 import type { EngineData } from '../engine/data';
 import { dashboardData } from '../engine/overviewDashboard';
 import type { TeamRating } from '../engine/rating';
@@ -9,9 +9,12 @@ import { teamSummary } from '../engine/teamSummary';
 import { useLang, useT } from '../i18n/react';
 import type { AnalysisView } from './analysisView';
 import { OverviewDashboard } from './OverviewDashboard';
+import { FixRow } from './dashboard/FixRow';
 
-/** La Panoramica: il giudizio in cima, poi il cruscotto (Riassunto, Copertura, Ruoli, Velocità) che riempie lo spazio. */
-export function AnalysisOverview({ team, analysis, rating, coaching, data, onView, onAdd, teamCollapsed = false }: {
+/** La Panoramica: il cruscotto (Riassunto, Copertura, Ruoli, Velocità) che riempie lo spazio, in fondo la riga Da sistemare; il giudizio in cima solo con un membro. */
+export function AnalysisOverview({ team, analysis, rating, coaching, advice = null, data, onView, onAdd, teamCollapsed = false }: {
+  /** I consigli del Coaching (null finché si calcolano): la riga Da sistemare mostra solo ciò che risolvono. */
+  advice?: CoachAdvice | null;
   /** Team ridotto: il cruscotto usa la densità ampia. */
   teamCollapsed?: boolean;
   onAdd?: () => void;
@@ -37,11 +40,10 @@ export function AnalysisOverview({ team, analysis, rating, coaching, data, onVie
   }
   return (
     <div className="overview">
-      {/* Una riga: il giudizio; il tipo di team è nel Riassunto */}
-      <div className="overview-headline">
-        {coaching && <strong>{coaching.verdict}</strong>}
-      </div>
+      {/* Con un membro solo l'invito ad aggiungerne un altro; dopo, prima com'è fatto il team e in fondo cosa sistemare */}
+      {team.length < 2 && coaching && <div className="overview-headline"><strong>{coaching.verdict}</strong></div>}
       {dash && summary && <OverviewDashboard data={dash} summary={summary} members={team.length} onView={onView} teamCollapsed={teamCollapsed} />}
+      {team.length >= 2 && problems && <FixRow problems={problems} steps={advice?.steps ?? null} onView={onView} />}
     </div>
   );
 }
