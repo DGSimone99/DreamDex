@@ -449,12 +449,12 @@ describe('CoachingView', () => {
     const pill = group.querySelector<HTMLElement>('li[data-key="defense:Ground"]')!;
     expect(pill.querySelectorAll('.type-icons img')).toHaveLength(1);
     // Uno che regge: verde, al singolare
-    expect(pill.querySelector('.coach-counts')).toHaveTextContent(/^1 regge$/);
+    expect(pill.querySelector('.coach-counts')).toHaveTextContent(/^· solo 1 lo regge$/);
     expect(pill.querySelector('.count-resist')).not.toBeNull();
     expect(pill).toHaveAttribute('title', text);
-    // Nessuno: rosso, al plurale
+    // Nessuno: rosso
     const ice = group.querySelector<HTMLElement>('li[data-key="defense:Ice"]')!;
-    expect(ice.querySelector('.coach-counts')).toHaveTextContent(/^0 reggono$/);
+    expect(ice.querySelector('.coach-counts')).toHaveTextContent(/^· nessuno lo regge$/);
     expect(ice.querySelector('.count-weak')).not.toBeNull();
   });
 
@@ -543,7 +543,10 @@ describe('CoachingView', () => {
     const roles = screen.getByRole('group', { name: 'Ruoli' });
     expect(roles.querySelector('.dash-meta')).toHaveTextContent(`${r.roles.covered}/${r.roles.total}`);
     expect(roles.querySelector('.coach-tile-bar')).toBeNull();
-    expect(screen.getByRole('group', { name: 'Regole · Meta' }).querySelector('.dash-meta')).toBeNull();
+    // Regole · Meta: nessun voto, al suo posto quanti problemi ha
+    const rules = screen.getByRole('group', { name: 'Regole · Meta' });
+    expect(rules.querySelector('.dash-meta')).toHaveTextContent(String(rules.querySelectorAll('li.coach-prob').length + Number(rules.querySelector('.coach-more')?.textContent?.match(/\d+/)?.[0] ?? 0)));
+    expect(rules.querySelector('.coach-tile-bar')).toBeNull();
   });
 
   it('senza meta il gruppo si chiama Regole', () => {

@@ -293,7 +293,7 @@ function MapProblem({ problem, step, preview, usage, dim = false, role }: {
       ) : counts ? (
         <span className="coach-prob-text">
           <TypeIcons types={subjects} /><span aria-hidden="true">{typeName(subjects[0], lang)}{' '}
-            <span className="coach-counts"><span className={counts.held ? 'count-resist' : 'count-weak'}>{tr(counts.held === 1 ? 'coach.pill.held1' : 'coach.pill.heldN', { n: counts.held })}</span></span>
+            <span className="coach-counts">· <span className={counts.held ? 'count-resist' : 'count-weak'}>{tr(counts.held === 0 ? 'coach.pill.held0' : counts.held === 1 ? 'coach.pill.held1' : 'coach.pill.heldN', { n: counts.held })}</span></span>
           </span><span className="visually-hidden">{problem.text}</span>
         </span>
       ) : (
@@ -370,7 +370,8 @@ function MapTile({ id, name, items, score, count, stepOf, preview, threatUsage, 
       )}
       {threats.length > 0 && (
         <>
-          <h5 className="coach-sep">{tr('dash.todo.threats')}</h5>
+          {/* Solo minacce nella tessera: l'etichetta non serve (lo dice la targa), le righe hanno più posto */}
+          {pills.some(x => x.section !== 'meta') ? <h5 className="coach-sep">{tr('dash.todo.threats')}</h5> : <h5 className="visually-hidden">{tr('dash.todo.threats')}</h5>}
           <ul className="coach-probs">{threats.map(row)}</ul>
         </>
       )}
@@ -382,7 +383,7 @@ function MapTile({ id, name, items, score, count, stepOf, preview, threatUsage, 
         </button>
       ) : (
         <p className="coach-more" title={hidden.map(hiddenText).join('\n')}>
-          <span aria-hidden="true">+{hidden.length}</span>
+          <span aria-hidden="true">{tr(hidden.every(x => x.section === 'meta') ? 'coach.map.moreThreats' : 'coach.map.more', { n: hidden.length })}</span>
           <span className="visually-hidden">{tr(hidden.length === 1 ? 'area.problems.moreOne' : 'area.problems.moreMany', { n: hidden.length })} {hidden.map(hiddenText).join('; ')}</span>
         </p>
       ))}
@@ -456,7 +457,7 @@ export function CoachingView({ coaching, advice, members, rating, metaOn, threat
             {tiles.map(({ key, area, items }) => (
               <MapTile key={key} id={`${id}-${key}`} name={columnName[key]} items={items}
                 score={area ? rating?.areas.find(a => a.key === area)?.value ?? null : null}
-                count={key === 'roles' && rating ? rolesValue(rating) : undefined} stepOf={stepOf} preview={preview} threatUsage={threatUsage} watch={root}
+                count={key === 'roles' && rating ? rolesValue(rating) : key === 'rules' ? String(items.length) : undefined} stepOf={stepOf} preview={preview} threatUsage={threatUsage} watch={root}
                 onMore={onOpen && (key !== 'rules' || metaOn) ? () => onOpen(key) : undefined} opens={OPENS[key]} />
             ))}
           </div>
