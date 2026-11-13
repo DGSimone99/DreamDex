@@ -1197,6 +1197,8 @@ export const en = {
   'guide.roles.c.physical': "a physical Sweeper or Wallbreaker",
   'guide.roles.c.special': "a special Sweeper or Wallbreaker",
   'guide.roles.c.secondAttacker': "another member who attacks, physical or special",
+  'guide.roles.c.sweeper': "a Sweeper",
+  'guide.roles.c.wallbreaker': "a Wallbreaker",
   'guide.roles.c.wallPhys': "Takes physical hits well",
   'guide.roles.c.wallSpec': "Takes special hits well",
   'guide.roles.c.veilSnow': "Aurora Veil with snow",
