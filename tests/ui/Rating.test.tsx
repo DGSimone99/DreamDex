@@ -279,3 +279,35 @@ describe('Bonus/Malus', () => {
     expect(screen.getByRole('tabpanel')).not.toHaveTextContent('Totale massimo');
   });
 });
+
+describe('Tipo di team nel riquadro Voto', () => {
+  const STALL = [
+    `Dondozo @ Leftovers\nAbility: Unaware\nEVs: 252 HP / 252 Def / 4 SpD\nImpish Nature\n- Body Press\n- Liquidation\n- Rest\n- Sleep Talk`,
+    `Blissey @ Leftovers\nAbility: Natural Cure\nEVs: 4 HP / 252 Def / 252 SpD\nBold Nature\n- Protect\n- Seismic Toss\n- Toxic\n- Wish`,
+    `Clodsire @ Leftovers\nAbility: Unaware\nEVs: 252 HP / 4 Def / 252 SpD\nCareful Nature\n- Amnesia\n- Poison Jab\n- Recover\n- Spikes`,
+    `Corviknight @ Leftovers\nAbility: Pressure\nEVs: 252 HP / 168 Def / 88 SpD\nImpish Nature\n- Body Press\n- Defog\n- Iron Defense\n- Roost`,
+    `Gliscor @ Toxic Orb\nAbility: Poison Heal\nEVs: 244 HP / 248 Def / 16 Spe\nImpish Nature\n- Earthquake\n- Protect\n- Stealth Rock\n- Toxic`,
+    `Toxapex @ Rocky Helmet\nAbility: Regenerator\nEVs: 252 HP / 252 Def / 4 SpD\nBold Nature\n- Knock Off\n- Recover\n- Scald\n- Toxic Spikes`,
+  ];
+  const plate = () => band().querySelector<HTMLElement>('.grade-badge .grade-type');
+
+  it('il voto mostra il tipo di team con 6 membri, con la nota al passaggio del mouse', async () => {
+    const user = userEvent.setup();
+    render(<App initialLang="it" data={fixtureData} />);
+    await user.click(screen.getByLabelText('Testo Showdown'));
+    await user.paste(STALL.join('\n\n'));
+    await user.click(screen.getByRole('button', { name: 'Importa' }));
+    expect(plate()).toHaveTextContent(/^(Hyper Offense|Bulky Offense|Balance|Semi-stall|Stall)$/);
+    expect(plate()!.title).toMatch(/muri|Muri|equilibrio|minacce|attacco|Attaccanti/);
+    expect(band().querySelector('.grade-badge .visually-hidden')).toHaveTextContent(new RegExp(`${plate()!.textContent}$`));
+  });
+
+  it('col team incompleto il voto dice In costruzione', async () => {
+    const user = userEvent.setup();
+    render(<App initialLang="it" data={fixtureData} />);
+    for (const name of ['Great Tusk', 'Gholdengo']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
+    expect(plate()).toHaveTextContent('In costruzione');
+    expect(plate()!.title).toBe('Il tipo di team si riconosce con tutti e 6 i membri');
+    expect(band().querySelector('.grade-badge .visually-hidden')).toHaveTextContent(/In costruzione$/);
+  });
+});
