@@ -254,7 +254,7 @@ export const it: Record<keyof typeof en, string> = {
   'catalog.typeVariety.when': "Tanti tipi diversi nel team",
   'catalog.typeVariety.points': "+{variety}",
   'catalog.conditionUsed.name': "Condizione sfruttata",
-  'catalog.conditionUsed.when': "Un meteo, un campo o Trick Room sfruttato da più compagni",
+  'catalog.conditionUsed.when': "Un meteo, un campo o Trick Room sfruttato da più compagni (in un campo contano anche il suo Seme e chi attacca a terra col tipo che potenzia)",
   'catalog.conditionUsed.points': "+{used} per condizione",
   'catalog.weatherHelp.name': "Meteo che protegge",
   'catalog.weatherHelp.when': "Il meteo o il campo del team toglie una debolezza a un compagno",

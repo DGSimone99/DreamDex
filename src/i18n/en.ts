@@ -252,7 +252,7 @@ export const en = {
   'catalog.typeVariety.when': "Many different types in the team",
   'catalog.typeVariety.points': "+{variety}",
   'catalog.conditionUsed.name': "Condition put to use",
-  'catalog.conditionUsed.when': "A weather, terrain or Trick Room used by several teammates",
+  'catalog.conditionUsed.when': "A weather, terrain or Trick Room used by several teammates (for a terrain, its Seed and grounded attackers of the boosted type count too)",
   'catalog.conditionUsed.points': "+{used} per condition",
   'catalog.weatherHelp.name': "Weather that protects",
   'catalog.weatherHelp.when': "The team's weather or terrain removes a teammate's weakness",
