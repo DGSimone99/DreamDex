@@ -7,16 +7,18 @@ export type Level = 'essential' | 'important' | 'minor' | 'ignored';
  * Una voce della tabella: un sotto-ruolo, o un gruppo di attaccanti: "anySweeper" = uno sweeper fisico o speciale,
  * "anyBreaker" = un wallbreaker fisico o speciale, "anyPhysical" / "anySpecial" = un attaccante da quel lato (sweeper,
  * wallbreaker, o chi ha almeno 2 attacchi di quel lato con Offesa almeno 40: physicalAttacker / specialAttacker),
+ * "sweeperOrBreaker" = uno sweeper o un wallbreaker, fisico o speciale (il Balance ne chiede uno dei due),
  * "anyAttacker" = un attaccante fisico o speciale, "secondAttacker" = un secondo membro, diverso, che attacca anche lui
  * (fisico o speciale: il suo valore è il secondo migliore del team, needs.ts).
  */
-export type GroupKey = 'anySweeper' | 'anyBreaker' | 'anyPhysical' | 'anySpecial' | 'anyAttacker' | 'secondAttacker';
+export type GroupKey = 'anySweeper' | 'anyBreaker' | 'sweeperOrBreaker' | 'anyPhysical' | 'anySpecial' | 'anyAttacker' | 'secondAttacker';
 const ATTACKERS: SubRole[] = ['physicalSweeper', 'specialSweeper', 'physicalBreaker', 'specialBreaker', 'physicalAttacker', 'specialAttacker'];
 export type LevelKey = SubRole | GroupKey;
 /** I sotto-ruoli dietro ogni gruppo (scritti per esteso: subRoles.ts è in un ciclo di import). */
 export const GROUP_ROLES: Record<GroupKey, SubRole[]> = {
   anySweeper: ['physicalSweeper', 'specialSweeper'],
   anyBreaker: ['physicalBreaker', 'specialBreaker'],
+  sweeperOrBreaker: ['physicalSweeper', 'specialSweeper', 'physicalBreaker', 'specialBreaker'],
   // Gli attaccanti di un lato per ultimi: a pari valore la fonte mostrata resta quella dello sweeper o del breaker
   anyPhysical: ['physicalSweeper', 'physicalBreaker', 'physicalAttacker'],
   anySpecial: ['specialSweeper', 'specialBreaker', 'specialAttacker'],
@@ -30,7 +32,7 @@ export const isGroupKey = (key: LevelKey): key is GroupKey => key in GROUP_ROLES
  * Scritte per esteso: subRoles.ts è in un ciclo di import e qui servono già al caricamento del modulo.
  */
 export const LEVEL_KEYS: LevelKey[] = [
-  'anySweeper', 'anyBreaker', 'anyPhysical', 'anySpecial', 'anyAttacker', 'secondAttacker', 'physicalSweeper', 'specialSweeper', 'physicalBreaker', 'specialBreaker',
+  'anySweeper', 'anyBreaker', 'sweeperOrBreaker', 'anyPhysical', 'anySpecial', 'anyAttacker', 'secondAttacker', 'physicalSweeper', 'specialSweeper', 'physicalBreaker', 'specialBreaker',
   'physicalWall', 'specialWall', 'recovery',
   'support', 'removal', 'screens', 'speedControl', 'debuff', 'phazer',
   'hazards', 'pivot', 'dot', 'taunt', 'encore', 'itemRemoval',
@@ -86,11 +88,16 @@ const E = 'essential' as const, I = 'important' as const, M = 'minor' as const, 
  * nel Semi-stall un attaccante qualunque importante e un secondo minore (prima fisico importante e speciale minore, solo
  * per la soglia: 83% contro 68% dei team da torneo); nello Stall tutti gli attaccanti minori (prima ignorati, e in
  * National Dex OU quelli del Semi-stall).
+ * 2026-11-13 (utente): nel Balance basta uno Sweeper o un Wallbreaker (essenziale uno dei due, come fisico o speciale):
+ * un Balance pesante vince coi suoi setup (Dragon Dance, Calm Mind) e prendeva −4 per "senza Wallbreaker". Nel
+ * Semi-stall Sweeper e Wallbreaker diventano minori (+1 se ci sono, niente malus se mancano): uno stall con un muro che
+ * attacca è letto Semi-stall e pagava ruoli che non gli servono.
  */
 const ROWS: [LevelKey, Level, Level, Level, Level, Level][] = [
   // Attaccanti: i gruppi (le righe singole restano minori o ignorate)
-  ['anySweeper', E, E, E, I, M],
-  ['anyBreaker', E, E, E, I, M],
+  ['anySweeper', E, E, X, M, M],
+  ['anyBreaker', E, E, X, M, M],
+  ['sweeperOrBreaker', X, X, E, X, X],
   ['anyPhysical', E, E, I, X, X],
   ['anySpecial', E, E, I, X, X],
   ['anyAttacker', X, X, X, I, M],
@@ -143,7 +150,7 @@ export const rolesTypeOf = (archetype: Archetype, typeRule?: 'walls' | 'recovery
   typeRule === 'recoverySpeed' && archetype === 'stall' ? 'semiStall' : archetype;
 
 /** Le voci degli attaccanti: in National Dex OU lo Stall le prende dalla sua colonna (tutte minori), il resto dal Semi-stall. */
-const ATTACK_ROWS = new Set<LevelKey>(['anySweeper', 'anyBreaker', 'anyPhysical', 'anySpecial', 'anyAttacker', 'secondAttacker', ...ATTACKERS]);
+const ATTACK_ROWS = new Set<LevelKey>(['anySweeper', 'anyBreaker', 'sweeperOrBreaker', 'anyPhysical', 'anySpecial', 'anyAttacker', 'secondAttacker', ...ATTACKERS]);
 
 /** Livello della voce per il tipo di team nel formato: rolesTypeOf, tranne gli attaccanti dello Stall (2026-11-11). */
 export const levelFor = (archetype: Archetype, key: LevelKey, typeRule?: 'walls' | 'recoverySpeed'): Level =>

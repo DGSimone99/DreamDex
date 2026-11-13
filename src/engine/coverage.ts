@@ -22,9 +22,12 @@ export const HOLE_HIT = 1 / 3;
 const ONE_USE_COVER = 0.25;
 /** Profondità: il 1°, 2° e 3° membro che copre un bersaglio valgono 70, 20 e 10%. */
 export const COVERAGE_DEPTH = [0.7, 0.2, 0.1];
-/** Nel meta il 2° e il 3° membro contano di più (50/30/20): col 70 al primo un terzo dei team forti stava fra 95 e 100. */
-export const META_DEPTH = [0.5, 0.3, 0.2];
-/** I pesi della profondità per la misura: tipi 70/20/10, meta 50/30/20. */
+/**
+ * Nel meta come nei tipi, 70/20/10 (2026-11-13, era 50/30/20). Il 50/30/20 serviva quando il punto fisso per membro portava
+ * un terzo dei team forti fra 95 e 100; tolto quello, su 710 team National Dex OU il livello resta quello di prima.
+ */
+export const META_DEPTH = [0.7, 0.2, 0.1];
+/** I pesi della profondità per la misura: tipi e meta 70/20/10. */
 export const depthWeights = (kind: CoverageKind): number[] => (kind === 'meta' ? META_DEPTH : COVERAGE_DEPTH);
 
 export interface CoverageTarget {
@@ -128,7 +131,7 @@ export function coverageTargets(data: EngineData, kind: CoverageKind = usesMeta(
 }
 
 export interface TeamCoverage {
-  /** 0–100: quota pesata dei bersagli coperti, con la profondità 70/20/10 nei tipi e 50/30/20 nel meta. */
+  /** 0–100: quota pesata dei bersagli coperti, con la profondità 70/20/10 nei tipi e nel meta. */
   value: number;
   /** Bersagli che nessuno porta al 33%. */
   holes: string[];

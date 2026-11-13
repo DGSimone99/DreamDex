@@ -32,14 +32,17 @@ const hyperOffense = [
 afterEach(() => setRolesCountMeasured(false));
 
 describe('tabella dei livelli per archetipo', () => {
-  it('la tabella dai team da torneo (2026-11-01): attaccanti essenziali fino al balance, importanti nel semi-stall, minori nello stall; muri essenziali da balance in giù', () => {
+  it('la tabella dai team da torneo: Sweeper e Wallbreaker essenziali in HO e BO, uno dei due nel balance (2026-11-13), minori nel semi-stall e nello stall; muri essenziali da balance in giù', () => {
     // La tabella com'è scritta, con l'interruttore acceso (spento di default: vedi "interruttore del doppio conteggio")
     setRolesCountMeasured(true);
     for (const key of ['anySweeper', 'anyBreaker'] as const) {
       expect(levelOf('stall', key)).toBe('minor');
-      for (const a of ['hyperOffense', 'bulkyOffense', 'balance'] as const) expect(levelOf(a, key)).toBe('essential');
-      expect(levelOf('semiStall', key)).toBe('important');
+      for (const a of ['hyperOffense', 'bulkyOffense'] as const) expect(levelOf(a, key)).toBe('essential');
+      expect(levelOf('balance', key)).toBe('ignored');
+      expect(levelOf('semiStall', key)).toBe('minor');
     }
+    expect(levelOf('balance', 'sweeperOrBreaker')).toBe('essential');
+    for (const a of ['hyperOffense', 'bulkyOffense', 'semiStall', 'stall'] as const) expect(levelOf(a, 'sweeperOrBreaker')).toBe('ignored');
     // "Almeno un fisico / uno speciale" essenziali in HO e BO, importanti alla pari nel Balance (2026-11-11); nel
     // semi-stall un Attaccante qualunque importante e un 2° Attaccante minore; nello stall tutti gli attaccanti minori
     expect(levelOf('hyperOffense', 'anyPhysical')).toBe('essential');
@@ -190,7 +193,7 @@ describe('tabella dei livelli per archetipo', () => {
   it("le voci: i gruppi degli attaccanti e poi i sotto-ruoli nell'ordine delle famiglie", () => {
     const { attack, defense, support, utility } = FAMILIES;
     // I gruppi degli attaccanti (Sweeper, Wallbreaker, fisico, speciale, Attaccante, 2° Attaccante) stanno davanti all'Attacco
-    expect(LEVEL_KEYS).toEqual(['anySweeper', 'anyBreaker', 'anyPhysical', 'anySpecial', 'anyAttacker', 'secondAttacker', ...attack, ...defense, ...support, ...utility]);
+    expect(LEVEL_KEYS).toEqual(['anySweeper', 'anyBreaker', 'sweeperOrBreaker', 'anyPhysical', 'anySpecial', 'anyAttacker', 'secondAttacker', ...attack, ...defense, ...support, ...utility]);
   });
 
   it('HO tutto fisico: mancano "almeno uno speciale" (essenziale) e il malus "un solo stile" non si somma', () => {
@@ -283,8 +286,8 @@ describe('bisogni del team dai sotto-ruoli', () => {
     const needs = teamNeeds(team, fixtureData, [{ specialWall: 1, recovery: 0.5 }, { physicalWall: 1, recovery: 1, taunt: 0.3 }]);
     expect(needs.values.recovery).toBe(1);
     expect(needs.values.taunt).toBe(0.3);
-    // Due muri col Recupero: mancano i tre gruppi degli attaccanti e gli Hazard (essenziali nel Balance)
-    expect(needs.essentialMissing).toEqual(['anySweeper', 'anyBreaker', 'hazards']);
+    // Due muri col Recupero: manca Sweeper o Wallbreaker e gli Hazard (essenziali nel Balance)
+    expect(needs.essentialMissing).toEqual(['sweeperOrBreaker', 'hazards']);
     expect(needs.importantMissing.slice(0, 2)).toEqual(['anyPhysical', 'anySpecial']);
     expect(needs.missingRoles.slice(0, 4)).toEqual(FAMILIES.attack);
   });

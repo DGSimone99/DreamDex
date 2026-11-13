@@ -14,7 +14,7 @@ import { TypeIcons } from '../typeIcons';
 export type OffenseSection = 'general' | 'types' | 'coverageMeta';
 type Key = Parameters<ReturnType<typeof useT>>[0];
 
-/** Profondità del pacchetto dei tipi (50/30/20) e della Coverage meta (50/30/20): quelle del motore, in percentuale. */
+/** Profondità del pacchetto dei tipi (50/30/20) e della Coverage meta (70/20/10): quelle del motore, in percentuale. */
 const scaleOf = (d: number[]) => ({ one: d[0], two: d[0] + d[1], three: d[0] + d[1] + d[2] });
 const depthOf = (meta: boolean) => (meta ? depthWeights('meta') : OFFENSE_DEPTH).map(w => Math.round(100 * w));
 

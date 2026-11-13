@@ -98,9 +98,7 @@ describe('rateTeam', () => {
     expect(Object.values(rating.weights).reduce((a, b) => a + b!, 0)).toBeCloseTo(1);
     const base = rating.areas.filter(a => a.key !== 'meta').reduce((acc, a) => acc + rating.weights[a.key]! * a.value!, 0);
     expect(Math.abs(rating.base - Math.round(base))).toBeLessThanOrEqual(1);
-    // Più il punto fisso di ogni membro: due membri, +2
-    expect(rating.memberPoints).toBe(2);
-    expect(rating).toMatchObject({ overall: rating.base + rating.memberPoints, provisional: true });
+    expect(rating).toMatchObject({ overall: rating.base, provisional: true });
   });
 
   it('ordine e nomi delle aree', () => {

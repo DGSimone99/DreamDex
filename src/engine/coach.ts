@@ -22,6 +22,7 @@ import { buildSteps, type CoachStep } from './coachSteps';
 import { moveFixes } from './moveFixes';
 import type { ScoredArea, TeamGain, TypeShift } from './teamGain';
 import { teamOffense } from './offense';
+import { DEFENSE_DEPTH } from './defense';
 import { defensiveMultiplier, superEffectiveMove, type TypeName } from './types';
 import { withUsableMoves } from './lockedMoves';
 import { duplicateSpecies, missingFormeItem, voteTeam } from './legalTeam';
@@ -37,10 +38,11 @@ export const STRONG_COVERAGE = 15;
  */
 export const COVERED_LEVEL = 40;
 /**
- * Un tipo della Coverage tipi della Difesa è retto dal livello 50. Sotto è un problema minore;
+ * Un tipo della Coverage tipi della Difesa è retto quando almeno un membro lo regge bene: il livello del 1° posto della
+ * profondità (DEFENSE_DEPTH, oggi 70; era 50 col 50/30/20, stesso significato). Sotto è un problema minore;
  * grave se nessuno ha credito sul lato peggiore (lo stesso tipo prende il malus "nessuno regge" nel voto).
  */
-export const HELD_LEVEL = 50;
+export const HELD_LEVEL = Math.round(100 * DEFENSE_DEPTH[0]);
 
 /** Categorie dei problemi, nell'ordine in cui si mostrano. */
 export const PROBLEM_CATEGORIES = ['rules', 'defense', 'coverage', 'roles', 'conditions', 'redundancy', 'meta', 'metaHit'] as const;

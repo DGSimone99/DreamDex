@@ -13,13 +13,13 @@ const defense: CoachProblem = { severity: 'serious', category: 'defense', text: 
 const six = Array.from({ length: 6 }, () => emptySet('Great Tusk'));
 
 describe('gravità di un tipo in difesa: come il voto (Coverage tipi della Difesa)', () => {
-  it('grave se il tipo è fra quelli che nessuno regge (weak), minore sotto il livello 50, altrimenti niente', () => {
-    expect(HELD_LEVEL).toBe(50);
+  it('grave se il tipo è fra quelli che nessuno regge (weak), minore sotto il livello del 1° posto della profondità (70), altrimenti niente', () => {
+    expect(HELD_LEVEL).toBe(70);
     expect(holdSeverity(ratingWith(0, true), 'Fairy')).toBe('serious');
     // weak vince sul livello: un lato a zero basta, anche se la media dei due lati è alta
     expect(holdSeverity(ratingWith(60, true), 'Fairy')).toBe('serious');
-    expect(holdSeverity(ratingWith(49, false), 'Fairy')).toBe('minor');
-    expect(holdSeverity(ratingWith(50, false), 'Fairy')).toBeNull();
+    expect(holdSeverity(ratingWith(69, false), 'Fairy')).toBe('minor');
+    expect(holdSeverity(ratingWith(70, false), 'Fairy')).toBeNull();
     expect(holdSeverity(ratingWith(90, false), 'Fairy')).toBeNull();
     // Un tipo senza riga: niente
     expect(holdSeverity(ratingWith(0, false), 'Water')).toBeNull();
