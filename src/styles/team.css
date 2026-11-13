@@ -471,8 +471,9 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  height: 48px;
-  padding: 0 10px 0 4px;
+  min-height: 48px;
+  height: auto;
+  padding: 4px 10px 4px 4px;
   text-align: left;
   background: none;
   border-color: transparent;
@@ -480,11 +481,15 @@
 .saved-sprites { flex: none; display: flex; }
 .saved-sprites > * { flex: none; width: 34px; height: 40px; object-fit: contain; object-position: center bottom; margin-right: -2px; transition: transform 0.12s var(--ease); }
 .saved-sprites .saved-gap, .saved-sprites .sprite.missing { width: 34px; }
+/* Posto libero: sei posti fissi, così i nomi partono tutti dalla stessa colonna; un cerchio tratteggiato tenue dice che è vuoto */
+.saved-sprites .saved-gap { display: grid; place-items: center; }
+.saved-sprites .saved-gap::before { content: ''; width: 14px; height: 14px; border: 1px dashed var(--line); border-radius: 50%; }
 .saved-list .saved-load:hover .saved-sprites > * { transform: translateY(-2px); }
 .saved-list .saved-load:hover .saved-sprites > :nth-child(even) { transition-delay: 0.03s; }
 @media (prefers-reduced-motion: reduce) { .saved-sprites > * { transition: none; } .saved-list .saved-load:hover .saved-sprites > * { transform: none; } }
 .saved-text { display: grid; min-width: 0; gap: 2px; }
-.saved-name { font: 600 14px/1.2 var(--ui); color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Nomi lunghi su due righe (il nome intero resta nel tooltip della riga) */
+.saved-name { font: 600 14px/1.2 var(--ui); color: var(--text); overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .saved-format { font: 400 12px/1.2 var(--ui); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .saved-list li.current .saved-name { color: var(--accent-ink); }
 .saved-list .saved-load:hover { background: var(--raised); border-color: var(--accent); }
