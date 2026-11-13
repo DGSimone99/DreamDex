@@ -203,7 +203,7 @@ export const en = {
   'rating.bonus.minorRole': "{role}: minor role covered",
   'rating.failure.noAttacker': "No attacker",
   'catalog.sharedWeak.name': "Shared weakness",
-  'catalog.sharedWeak.when': "Several members weak to the same type, and nobody resists it",
+  'catalog.sharedWeak.when': "Several members weak to the same type, and nobody resists it (if no member can take it, only the Defensive hole counts)",
   'catalog.sharedWeak.points': "−{shared} for each weak member beyond the first",
   'catalog.sameType.name': "Same type",
   'catalog.sameType.when': "Too many members of the same type",

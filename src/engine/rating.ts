@@ -312,7 +312,9 @@ export const SHARED_WEAK_POINTS = 1;
  * Buco in Difesa (2026-11-07): −2 per ogni tipo che nessun membro regge nella Coverage di tipi (sul lato peggiore tutti
  * perdono metà vita o più), solo nei team di 6. Sui dati delle partite National Dex è la parte della Difesa che indovina
  * di più chi vince (55%); il 35% dei team ladder ha almeno un buco, contro il 14% dei team da torneo.
- * Si somma a "Debolezza condivisa" (tabella dei tipi): provato al suo posto, prevede peggio.
+ * Resta accanto a "Debolezza condivisa" (tabella dei tipi): provato al suo posto, prevede peggio. Ma sullo stesso tipo non
+ * si pagano tutti e due (2026-11-13): col buco la debolezza condivisa di quel tipo non conta, era lo stesso problema due
+ * volte (un Hyper Offense con 5 buchi perdeva circa 19 punti).
  */
 export const DEFENSE_HOLE_POINTS = 2;
 /** Un membro che ha bisogno di una condizione (meteo, campo, Trick Room) che il team non porta: −3. */
@@ -554,10 +556,12 @@ function rateTeamAs(input: TeamSet[], data: EngineData, lang: Lang = 'it', opts:
   const holeItems = complete
     ? defense.coverageTypes.weak.map(type => ({ text: t(lang, 'rating.redundancy.defenseHole', { type: typeName(type, lang) }), points: DEFENSE_HOLE_POINTS, catalog: 'defenseHole' as const, key: `defenseHole:${type}` }))
     : [];
+  // Un tipo che nessuno regge paga solo il buco, non anche la debolezza condivisa dello stesso tipo
+  const holeKeys = new Set(holeItems.map(i => `sharedWeak:${i.key.slice('defenseHole:'.length)}`));
+  const redundantItems = redundant.items.filter(i => !i.key || !holeKeys.has(i.key));
   const extraItems = [...roles.failures, ...roomItems, ...holeItems, ...lockedStatusIssues(input, lang)];
-  const penalty = extraItems.length
-    ? { total: redundant.total + sum(extraItems.map(i => i.points)), items: [...redundant.items, ...extraItems] }
-    : redundant;
+  const allItems = [...redundantItems, ...extraItems];
+  const penalty = { total: sum(allItems.map(i => i.points)), items: allItems };
   // Bonus: le cose fatte bene, senza tetto (core a tre, debolezze coperte, tipi vari, condizione sfruttata, meteo, ruoli minori).
   // 2026-11-07: tolto il bonus Tera (+1 per debolezza coperta da un Tera, fino a +3): lo prendevano quasi tutti allo
   // stesso modo (torneo 2,1, ladder 2,2) e il Tera si usa una volta sola, scelto in partita: troppe variabili

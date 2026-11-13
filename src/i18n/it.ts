@@ -205,7 +205,7 @@ export const it: Record<keyof typeof en, string> = {
   'rating.bonus.minorRole': "{role}: ruolo minore coperto",
   'rating.failure.noAttacker': "Nessun attaccante",
   'catalog.sharedWeak.name': "Debolezza condivisa",
-  'catalog.sharedWeak.when': "Più membri deboli allo stesso tipo, e nessuno che lo resiste",
+  'catalog.sharedWeak.when': "Più membri deboli allo stesso tipo, e nessuno che lo resiste (se nessuno lo regge conta solo il Buco in Difesa)",
   'catalog.sharedWeak.points': "−{shared} per ogni membro debole oltre il primo",
   'catalog.sameType.name': "Stesso tipo",
   'catalog.sameType.when': "Troppi membri dello stesso tipo",

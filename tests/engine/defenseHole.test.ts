@@ -22,6 +22,14 @@ describe('Buco in Difesa', () => {
     expect(new Set(holes.map(i => i.key)).size).toBe(holes.length);
   });
 
+  it('sullo stesso tipo conta solo il buco, non anche la debolezza condivisa', () => {
+    const r = rateTeam(glass, fixtureData)!;
+    const holeTypes = r.penalty.items.filter(i => i.catalog === 'defenseHole').map(i => i.key!.split(':')[1]);
+    const shared = r.penalty.items.filter(i => i.catalog === 'sharedWeak').map(i => i.key!.split(':')[1]);
+    expect(holeTypes.length).toBeGreaterThan(0);
+    expect(shared.filter(type => holeTypes.includes(type))).toEqual([]);
+    expect(r.penalty.total).toBe(r.penalty.items.reduce((a, i) => a + i.points, 0));
+  });
   it('solo nei team di 6: con meno membri non conta', () => {
     const r = rateTeam(glass.slice(0, 5), fixtureData)!;
     expect(r.defense.coverageTypes.weak.length).toBeGreaterThan(0);
