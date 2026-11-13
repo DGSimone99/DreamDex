@@ -652,6 +652,24 @@ describe('CoachingView', () => {
     } finally { restore(); }
   });
 
+  it('passando su un suggerimento, i problemi che risolve salgono in cima alla tessera (anche quelli nel +N)', () => {
+    const restore = smallTiles();
+    try {
+      const own: CoachProblem = { severity: 'serious', category: 'roles', text: 'Ruoli mancanti: Hazard', fixes: [], key: 'roles:essential' };
+      const problems = [own, ...['A', 'B', 'C', 'D'].map(threat)];
+      const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], threatFixes: {}, problems };
+      const swap = { ...adviceOf(three, DEFAULT_FORMAT, data).fixes[0], solves: ['roles:essential', 'meta:D'] };
+      const step = { problem: own, swap, move: null, alsoSolves: [], group: [own.key] };
+      renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [step] }} members={3} rating={rating(three)} metaOn {...noop} />);
+      const keys = () => [...screen.getByRole('group', { name: 'Difesa' }).querySelectorAll('li.coach-prob')].map(li => li.getAttribute('data-key'));
+      expect(keys()).toEqual(['meta:A', 'meta:B']);
+      fireEvent.mouseEnter(stepsRegion().querySelector('li.coach-step')!);
+      expect(keys()[0]).toBe('meta:D');
+      fireEvent.mouseLeave(stepsRegion().querySelector('li.coach-step')!);
+      expect(keys()).toEqual(['meta:A', 'meta:B']);
+    } finally { restore(); }
+  });
+
   it("tessera: la barra del titolo apre la scheda dell'area; le Regole no", () => {
     const onOpen = vi.fn();
     const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], threatFixes: {},

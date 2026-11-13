@@ -349,7 +349,9 @@ function MapTile({ id, name, items, score, count, stepOf, preview, threatUsage, 
   const pills = items.flatMap(p => (isMissingRoles(p) ? (p.subjects ?? []).map(role => ({ p, role })) : [{ p, role: undefined as string | undefined }]))
     .map((pill, i) => ({ ...pill, i, section: sectionOf(pill.p) }));
   const solvable = (p: CoachProblem) => p.fixes.length > 0 || stepOf.has(p.key);
-  const priority = [...pills].sort((a, b) => Number(solvable(b.p)) - Number(solvable(a.p))
+  // Col puntatore su un suggerimento, quello che risolve passa in cima (anche se di solito sta nel "+N")
+  const lit = (p: CoachProblem) => preview?.has(p.key) ?? false;
+  const priority = [...pills].sort((a, b) => Number(lit(b.p)) - Number(lit(a.p)) || Number(solvable(b.p)) - Number(solvable(a.p))
     || Number(b.p.severity === 'serious') - Number(a.p.severity === 'serious') || a.i - b.i);
   const fit = useFitCount(ref, pills.length, `${lang}|${pills.map(x => `${x.p.key}|${x.p.text}|${x.role ?? ''}`).join('#')}`, watch);
   const shown = new Set(priority.slice(0, fit).map(x => x.i));
@@ -357,7 +359,7 @@ function MapTile({ id, name, items, score, count, stepOf, preview, threatUsage, 
   const hiddenText = (x: typeof pills[number]) => (x.role ? needLabel(x.role as Need, lang) : x.p.text);
   const row = ({ p, role, section }: typeof pills[number]) => <MapProblem key={`${p.key}|${p.text}|${role ?? ''}`} problem={p} step={stepOf.get(p.key) ?? null}
     preview={preview?.has(p.key) ?? false} usage={isThreat(p) ? threatUsage?.[p.subjects?.[0] ?? ''] : undefined} dim={section !== 'main'} role={role} />;
-  const list = (section: Section) => pills.filter(x => x.section === section && shown.has(x.i));
+  const list = (section: Section) => pills.filter(x => x.section === section && shown.has(x.i)).sort((a, b) => Number(lit(b.p)) - Number(lit(a.p)) || a.i - b.i);
   const [main, redundancy, threats] = [list('main'), list('redundancy'), list('meta')];
   // Difesa: "Nessuno le regge"; Offesa: "Nessuno le manda KO"
   const threatLabel = tr(items.some(p => p.category === 'metaHit') ? 'coach.map.metaHit' : 'dash.todo.threats');
