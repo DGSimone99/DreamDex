@@ -577,6 +577,24 @@
   .coach-strip:has(.coach-strip-extras .coach-prop) { height: auto; min-height: var(--step-h); }
   .coach-strip:has(.coach-strip-extras .coach-prop) > .coach-strip-extras { gap: 4px; padding-top: 7px; padding-bottom: 7px; }
 }
+/* "Oppure" accanto allo scambio: una colonna sua fra la proposta principale e "risolve anche" */
+@media (min-width: 600px) {
+  .coach-strip:has(> .coach-prop.is-side) { grid-template-columns: 46px minmax(0, 1.2fr) minmax(0, 1.8fr) auto minmax(0, 1.3fr); }
+}
+.coach-prop.is-side { position: relative; z-index: 1; align-self: stretch; display: flex; align-items: center; gap: 8px; padding: 0 6px 0 12px; border-top: 0; border-left: 1px dashed var(--line); }
+.coach-prop.is-side[data-or]::before { content: attr(data-or); flex: none; font: 600 11px/1 var(--ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--faint); }
+.coach-prop.is-side .coach-fix { gap: 8px; }
+.coach-side-mon { flex: none; display: grid; place-items: center; width: 40px; height: 40px; }
+.coach-side-mon .sprite { width: 40px; height: 40px; image-rendering: pixelated; }
+.coach-side-moves { display: grid; justify-items: start; gap: 1px; min-width: 0; }
+.coach-move-old { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: var(--faint); }
+.coach-move-arrow { display: flex; color: var(--accent-ink); }
+.coach-move-arrow .icon { width: 13px; height: 13px; transform: rotate(90deg); }
+.coach-move-new { display: flex; align-items: center; min-width: 0; }
+.coach-move-new strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 700 15px/1.1 var(--display); font-style: italic; color: var(--accent-ink); }
+.coach-prop.is-side .coach-fix:hover .coach-move-new strong { text-decoration: underline; text-underline-offset: 3px; }
+/* "risolve anche" dell'alternativa: un filo azzurro a sinistra dice che è cambiato */
+.coach-strip-extras.is-alt { box-shadow: inset 2px 0 0 var(--accent); }
 .coach-strip:hover, .coach-strip:focus-within { border-color: var(--accent); background: color-mix(in srgb, var(--raised) 45%, var(--panel)); }
 .coach-strip.skeleton { border-style: dashed; border-color: var(--line); background: color-mix(in srgb, var(--raised) 25%, var(--panel)); }
 .coach-steps-none { display: flex; align-items: center; gap: 10px; height: var(--step-h); margin: 0 0 4px; padding: 0 16px; font-size: 13px; color: var(--muted); border: 1px dashed var(--line); }

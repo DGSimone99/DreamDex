@@ -327,14 +327,14 @@ describe('CoachingView', () => {
   });
 
   describe('strisce dei suggerimenti', () => {
-    const strip = (over: { swap?: boolean; move?: boolean; add?: boolean }) => {
+    const strip = (over: { swap?: boolean; move?: boolean; add?: boolean; from?: string }) => {
       const coaching = coachTeam(three, DEFAULT_FORMAT, data);
       const problem = coaching.problems[0];
       const base = adviceOf(three, DEFAULT_FORMAT, data).fixes[0];
       const swap = over.swap === false ? null
         : over.add ? { ...base, kind: 'add' as const, member: null, species: 'Rotom-Wash', solves: [problem.key] }
         : { ...base, kind: 'swap' as const, member: 'Great Tusk', species: 'Rotom-Wash', solves: [problem.key] };
-      const move: MoveFix | null = over.move ? { index: 1, member: 'Gholdengo', set: three[1], reduces: [], slot: 1, from: '', to: 'Thunderbolt', gain: 1, solves: [problem.key] } : null;
+      const move: MoveFix | null = over.move ? { index: 1, member: 'Gholdengo', set: three[1], reduces: [], slot: 1, from: over.from ?? '', to: 'Thunderbolt', gain: 1, solves: [problem.key] } : null;
       const step = { problem, swap, move, alsoSolves: [], group: [problem.key] };
       const handlers = { onFix: vi.fn(), onMoveFix: vi.fn(), onApplyFix: vi.fn(), onApplyMove: vi.fn() };
       renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [step] }} members={3} rating={rating(three)} metaOn {...handlers} />);
@@ -362,7 +362,7 @@ describe('CoachingView', () => {
       await user.click(li.querySelector<HTMLElement>('.coach-strip-extras')!);
       expect(handlers.onApplyFix).toHaveBeenLastCalledWith(step.swap);
       expect(handlers.onApplyMove).not.toHaveBeenCalled();
-      await user.click(within(li.querySelector<HTMLElement>('.coach-strip-extras')!).getByRole('button', { name: /^Dai Thunderbolt/ }));
+      await user.click(within(li.querySelector<HTMLElement>('.coach-prop.is-side')!).getByRole('button', { name: /^Dai Thunderbolt/ }));
       expect(handlers.onApplyMove).toHaveBeenLastCalledWith(step.move);
       expect(handlers.onApplyFix).toHaveBeenCalledTimes(1);
     });
@@ -389,12 +389,34 @@ describe('CoachingView', () => {
       expect(li.querySelector('.coach-strip-extras .coach-prop')).toBeNull();
     });
 
-    it('tappa con scambio e mossa: "oppure" con la mossa nella colonna di destra', () => {
-      const { li } = strip({ move: true });
-      const or = li.querySelector<HTMLElement>('.coach-strip-extras .coach-prop.is-move')!;
+    it('tappa con scambio e mossa: "oppure" accanto al Pokémon suggerito, col membro, la mossa vecchia e la nuova', () => {
+      const { li } = strip({ move: true, from: 'Shadow Ball' });
+      const or = li.querySelector<HTMLElement>(':scope > .coach-prop.is-side')!;
       expect(or).toHaveAttribute('data-or', 'oppure');
+      expect(li.querySelector('.coach-strip-extras .coach-prop')).toBeNull();
       expect(within(or).getByRole('button', { name: /^Dai Thunderbolt/ })).toBeInTheDocument();
+      expect(or.querySelector('.coach-move-old')).toHaveTextContent('Shadow Ball');
+      expect(or.querySelector('.coach-move-new')).toHaveTextContent('Thunderbolt');
+      expect(or.querySelector('.sprite, img')).not.toBeNull();
       expect(li.querySelectorAll('.coach-alt')).toHaveLength(2);
+    });
+
+    it('passando sull\'alternativa, "risolve anche" mostra quello che risolve lei; uscendo torna quello dello scambio', () => {
+      const coaching = coachTeam(three, DEFAULT_FORMAT, data);
+      const [p1, p2, p3] = coaching.problems;
+      const base = adviceOf(three, DEFAULT_FORMAT, data).fixes[0];
+      const swap = { ...base, kind: 'swap' as const, member: 'Great Tusk', species: 'Rotom-Wash', solves: [p1.key, p2.key] };
+      const move: MoveFix = { index: 1, member: 'Gholdengo', set: three[1], reduces: [], slot: 1, from: '', to: 'Thunderbolt', gain: 1, solves: [p1.key, p3.key] };
+      renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [{ problem: p1, swap, move, alsoSolves: [], group: [p1.key] }] }} members={3}
+        rating={rating(three)} metaOn {...noop} />);
+      const li = within(stepsRegion()).getByRole('listitem');
+      const also = () => li.querySelector('.coach-strip-extras')!.textContent;
+      const before = also();
+      fireEvent.mouseEnter(li.querySelector('.coach-prop.is-side')!);
+      expect(also()).not.toBe(before);
+      expect(li.querySelector('.coach-strip-extras')).toHaveClass('is-alt');
+      fireEvent.mouseLeave(li.querySelector('.coach-prop.is-side')!);
+      expect(also()).toBe(before);
     });
 
     it('puntatore sul pulsante principale (che copre la striscia): anteprima di tutta la tappa; sulla mossa "oppure": solo la sua', async () => {

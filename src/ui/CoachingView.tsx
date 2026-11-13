@@ -109,6 +109,20 @@ function MoveProposal({ fix, main, alsoId, solves = fix.solves, skip, problems, 
   const from = fix.from ? tr('coach.steps.moveFrom', { from: gameName('move', fix.from, lang) }) : '';
   const lead = <><Template text={tr('coach.steps.move')} parts={{ member: <b>{fix.member}</b> }} />{from && ` · ${from}`}</>;
   const title = `${tr('coach.steps.move', { member: fix.member })}${from ? ` · ${from}` : ''}`;
+  if (!main) {
+    // "Oppure" accanto allo scambio: il membro, sotto la mossa vecchia (grigia), il simbolo dello scambio e la mossa nuova col +N
+    return (
+      <Proposal className="is-move is-or is-side" or={or} label={tr('coach.steps.moveAria', { move: to, member: fix.member, gain: gainText(fix.gain) })}
+        title={title} describedBy={alsoId} solves={solves} onApply={() => onApply(fix)} onAlternatives={() => onMoveFix(fix)} alternativesFor={to} onPreview={onPreview}>
+        <span className="coach-side-mon"><Sprite species={fix.member} size={40} /></span>
+        <span className="coach-side-moves">
+          <span className="coach-move-old">{fix.from ? gameName('move', fix.from, lang) : tr('coach.steps.newMove')}</span>
+          <span className="coach-move-arrow" aria-hidden="true"><Icon name="swap" /></span>
+          <span className="coach-move-new"><strong>{to}</strong><span className="coach-gain">{gainText(fix.gain)}</span></span>
+        </span>
+      </Proposal>
+    );
+  }
   return (
     <Proposal className={main ? 'is-main is-move' : 'is-move is-or'} or={or} label={tr('coach.steps.moveAria', { move: to, member: fix.member, gain: gainText(fix.gain) })}
       title={main ? title : undefined} describedBy={alsoId} solves={solves} onApply={() => onApply(fix)} onAlternatives={() => onMoveFix(fix)} alternativesFor={to} onPreview={onPreview}>
@@ -230,9 +244,10 @@ function Step({ step, index, problems, actions, onCard, onPreview }: {
 }) {
   const tr = useT();
   const alsoId = useId();
-  const orId = useId();
   // Striscia sotto il puntatore o col fuoco dentro: chi entra si anima
   const [hot, setHot] = useState(false);
+  // Puntatore o fuoco sull'alternativa "oppure": "risolve anche" dice cosa risolve lei
+  const [altHot, setAltHot] = useState(false);
   const { problem, swap, move } = step;
   const skip = step.group;
   const solved = [...new Set([...step.group, ...(swap?.solves ?? []), ...(move?.solves ?? [])])];
@@ -246,17 +261,17 @@ function Step({ step, index, problems, actions, onCard, onPreview }: {
       </p>
       {swap ? <SwapProposal fix={swap} alsoId={alsoId} solves={solved} animated={hot} onApply={actions.onApplyFix} onFix={actions.onFix} onPreview={onPreview} />
         : move && <MoveProposal fix={move} main alsoId={alsoId} solves={solved} skip={skip} problems={problems} onApply={actions.onApplyMove} onMoveFix={actions.onMoveFix} onPreview={onPreview} />}
+      {swap && move && (
+        <MoveProposal fix={move} main={false} alsoId={alsoId} skip={skip} problems={problems} or={tr('coach.steps.or')}
+          onApply={actions.onApplyMove} onMoveFix={actions.onMoveFix} onPreview={keys => { onPreview(keys); setAltHot(keys !== null); }} />
+      )}
       {/* La colonna di destra fa parte della striscia: un clic fuori dai suoi pulsanti applica la proposta principale (da tastiera c'è il pulsante) */}
-      <div className="coach-strip-extras" onClick={e => {
+      <div className={`coach-strip-extras${altHot ? ' is-alt' : ''}`} onClick={e => {
         if ((e.target as Element).closest('button')) return;
         if (swap) actions.onApplyFix(swap);
         else if (move) actions.onApplyMove(move);
       }}>
-        <Also id={alsoId} solves={swap?.solves ?? move?.solves ?? []} skip={skip} problems={problems} self={swap?.species} />
-        {swap && move && (
-          <MoveProposal fix={move} main={false} alsoId={orId} skip={skip} problems={problems} or={tr('coach.steps.or')}
-            onApply={actions.onApplyMove} onMoveFix={actions.onMoveFix} onPreview={onPreview} />
-        )}
+        <Also id={alsoId} solves={(altHot && move ? move.solves : swap?.solves ?? move?.solves) ?? []} skip={skip} problems={problems} self={altHot ? undefined : swap?.species} />
       </div>
     </li>
   );
