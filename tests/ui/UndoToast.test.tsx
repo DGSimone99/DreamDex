@@ -9,18 +9,18 @@ import { fixtureData } from '../fixtures/data';
 afterEach(() => vi.useRealTimers());
 
 describe('avviso con Annulla', () => {
-  it('dura 5 secondi; fermo finché ci sei sopra; × lo chiude', () => {
+  it('dura 3 secondi; fermo finché ci sei sopra; × lo chiude', () => {
     vi.useFakeTimers();
     const onClose = vi.fn();
     renderIt(<UndoToast action={{ id: 1, kind: 'remove', from: 'Garchomp' }} onUndo={vi.fn()} onClose={onClose} />);
     const toast = screen.getByRole('status');
     expect(toast).toHaveTextContent('Garchomp rimosso');
-    act(() => { vi.advanceTimersByTime(3000); });
+    act(() => { vi.advanceTimersByTime(2000); });
     fireEvent.mouseEnter(toast);
     act(() => { vi.advanceTimersByTime(10000); });
     expect(onClose).not.toHaveBeenCalled();
     fireEvent.mouseLeave(toast);
-    act(() => { vi.advanceTimersByTime(1999); });
+    act(() => { vi.advanceTimersByTime(999); });
     expect(onClose).not.toHaveBeenCalled();
     act(() => { vi.advanceTimersByTime(1); });
     expect(onClose).toHaveBeenCalledTimes(1);

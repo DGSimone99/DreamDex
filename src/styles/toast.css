@@ -1,12 +1,12 @@
-/* Avviso con Annulla: al centro dell'area di lavoro (oltre la barra laterale), alzato quanto basta per non coprire il
-   pulsante della scheda del candidato; bordo e alone azzurri leggeri perché si veda subito (scelta dell'utente, 2026-11-13).
-   5 o 10 secondi (barra che si accorcia, ferma finché ci sei sopra) */
+/* Avviso con Annulla: al centro dell'area di lavoro (oltre la barra laterale), in orizzontale e in verticale, così non
+   copre i suggerimenti in fondo al Coaching né il pulsante della scheda del candidato (scelta dell'utente, 2026-11-14);
+   bordo e alone azzurri leggeri perché si veda subito. 3 o 6 secondi (barra che si accorcia, ferma finché ci sei sopra) */
 .undo-toast {
   position: fixed;
   z-index: 80;
   left: calc(var(--rail-w, 214px) + (100vw - var(--rail-w, 214px)) / 2);
-  translate: -50% 0;
-  bottom: var(--undo-lift, 88px);
+  top: 50%;
+  translate: -50% -50%;
   min-width: 300px;
   max-width: min(400px, calc(100vw - 32px));
   padding: 18px 44px 20px;
