@@ -158,6 +158,16 @@ function coverOf(p: CoachProblem): { side: Side; uncovered: boolean } | null {
 }
 
 /**
+ * Il testo intero di un problema per i tooltip: per i tipi della Difesa che qualcuno regge, anche quanti
+ * ("solo 1 membro lo regge bene"); se nessuno lo regge lo dice già il testo.
+ */
+function tipOf(p: CoachProblem, tr: ReturnType<typeof useT>): string {
+  const held = p.counts?.held ?? 0;
+  if (held === 0) return p.text;
+  return `${p.text} · ${tr(held === 1 ? 'coach.pill.held1' : 'coach.pill.heldN', { n: held })}`;
+}
+
+/**
  * L'etichetta di copertura, uguale in caselle, titoli e "risolve anche": spada (attacco) o scudo (difesa) e
  * "Scoperto" / "Coperto poco" (`n`: quanti, per il plurale). Ai lettori di schermo la parte la dice a parole.
  */
@@ -189,7 +199,7 @@ function Also({ id, solves, skip, problems, self, watch }: {
   const lang = useLang();
   // Le coperture per parte e gravità, ognuna coi suoi soggetti (tipi o minacce); poi i nomi
   type Item = { subject: string; mon: boolean; text: string };
-  type Segment = { side: Side; uncovered: boolean; items: Item[] };
+  type Segment = { side: Side; uncovered: boolean; mon: boolean; items: Item[] };
   const segments: Segment[] = [];
   const names: string[] = [];
   const add = (list: string[], value: string) => { if (!list.includes(value)) list.push(value); };
@@ -205,18 +215,20 @@ function Also({ id, solves, skip, problems, self, watch }: {
     // Senza soggetti, o con soggetti che da soli non dicono niente (un tipo doppione: "Water"): il problema per intero
     if (subjects.length === 0) add(names, problem.text);
     else if (cover) {
-      let segment = segments.find(s => s.side === cover.side && s.uncovered === cover.uncovered);
-      if (!segment) { segment = { ...cover, items: [] }; segments.push(segment); }
+      // Tipi e minacce (gli sprite) in pezzi separati, anche con la stessa etichetta
+      const mon = isThreat(problem);
+      let segment = segments.find(s => s.side === cover.side && s.uncovered === cover.uncovered && s.mon === mon);
+      if (!segment) { segment = { ...cover, mon, items: [] }; segments.push(segment); }
       for (const subject of subjects) {
-        if (!segment.items.some(i => i.subject === subject)) segment.items.push({ subject, mon: isThreat(problem), text: problem.text });
+        if (!segment.items.some(i => i.subject === subject)) segment.items.push({ subject, mon, text: tipOf(problem, tr) });
       }
     }
     else if (problem.category === 'roles') subjects.forEach(need => add(names, needLabel(need as Need, lang)));
     else if (problem.category === 'rules') subjects.forEach(subject => add(names, subject));
     else add(names, problem.text);
   }
-  // Prima gli scoperti, poi i coperti poco; a parità la difesa prima dell'attacco (l'ordine delle caselle)
-  segments.sort((a, b) => Number(b.uncovered) - Number(a.uncovered) || Number(b.side === 'def') - Number(a.side === 'def'));
+  // Prima gli scoperti, poi i coperti poco; a parità la difesa prima dell'attacco (l'ordine delle caselle), i tipi prima delle minacce
+  segments.sort((a, b) => Number(b.uncovered) - Number(a.uncovered) || Number(b.side === 'def') - Number(a.side === 'def') || Number(a.mon) - Number(b.mon));
   // In fila: le icone (al più ALSO_ICONS) e i nomi (al più ALSO_NAMES); si vedono quelle che stanno nella riga (o nelle
   // due righe), le altre vanno nel "+N" col testo intero
   type Entry = { segment: Segment; item: Item } | { name: string };
@@ -235,7 +247,7 @@ function Also({ id, solves, skip, problems, self, watch }: {
     <span ref={ref} className="coach-also" id={id}>
       <span className="coach-also-label">{tr('coach.steps.also')}</span>
       {segments.filter(s => s.items.some(i => shownItems.has(i))).map(s => (
-        <span key={`${s.side}:${s.uncovered}`} className="coach-also-item coach-also-cover">
+        <span key={`${s.side}:${s.uncovered}:${s.mon}`} className="coach-also-item coach-also-cover">
           <CoverLabel side={s.side} uncovered={s.uncovered} n={s.items.length} />
           {s.items.filter(i => shownItems.has(i)).map(i => (
             <span key={i.subject} className={i.mon ? 'coach-also-mon' : 'coach-also-type'} title={i.text}>
@@ -279,7 +291,7 @@ function StepTitle({ step, problems }: { step: CoachStep; problems: CoachProblem
       const subject = p.subjects![0];
       const name = isThreat(p) ? subject : typeName(subject, lang);
       return (
-        <span key={p.key} className={`coach-step-subject${isThreat(p) ? ' is-mon' : ''}`} title={named ? undefined : p.text}>
+        <span key={p.key} className={`coach-step-subject${isThreat(p) ? ' is-mon' : ''}`} title={named ? undefined : tipOf(p, tr)}>
           {isThreat(p) ? <PokemonIcon name={subject} /> : <TypeIcons types={[subject]} />}
           {named ? name : <span className="visually-hidden">{name}</span>}
         </span>
@@ -369,7 +381,7 @@ function MapProblem({ problem, step, preview, usage, dim = false, role }: {
   // Difesa e coverage: le icone dei tipi davanti, il testo senza colori (il tipo non si legge due volte)
   const typed = (problem.category === 'defense' || problem.category === 'coverage') && subjects.length > 0;
   const counts = problem.category === 'defense' && subjects.length === 1 ? problem.counts : undefined;
-  const title = covered ? `${problem.text} · ${covered}` : problem.text;
+  const title = covered ? `${tipOf(problem, tr)} · ${covered}` : tipOf(problem, tr);
   return (
     <li data-key={problem.key} title={title}
       className={`coach-prob ${problem.severity}${dim ? ' is-dim' : ''}${step !== null ? ' is-covered' : ''}${preview ? ' is-solved-preview' : ''}`}>
@@ -410,12 +422,12 @@ function MapGroup({ id, label, members, stepOf, preview, usage }: {
 }) {
   const tr = useT();
   const lang = useLang();
-  const chipTitle = (m: CoachProblem) => { const u = usage?.(m); return u === undefined ? m.text : `${m.text} · ${formatPercent(lang, u, 0)}`; };
+  const chipTitle = (m: CoachProblem) => { const u = usage?.(m); return u === undefined ? tipOf(m, tr) : `${tipOf(m, tr)} · ${formatPercent(lang, u, 0)}`; };
   const severity = members[0].severity;
   const steps = [...new Set(members.map(m => stepOf.get(m.key)).filter((n): n is number => n !== undefined))].sort((a, b) => a - b);
   const lit = members.some(m => preview?.has(m.key));
   return (
-    <li data-group={id} title={members.map(m => m.text).join('\n')}
+    <li data-group={id} title={members.map(m => tipOf(m, tr)).join('\n')}
       className={`coach-prob coach-group ${severity}${steps.length ? ' is-covered' : ''}${lit ? ' is-lit' : ''}`}>
       <span className="coach-sev visually-hidden">{tr(severity === 'serious' ? 'dash.serious' : 'dash.minor')}</span>
       <span className="coach-prob-text coach-group-row">
@@ -524,7 +536,7 @@ function MapTile({ id, name, items, score, count, stepOf, preview, threatUsage, 
   const fit = useFitCount(ref, pills.length, `${lang}|${pills.map(x => all(x).map(p => `${p.key}|${p.text}`).join('+') + `|${x.role ?? ''}`).join('#')}`, watch);
   const shown = new Set(priority.slice(0, fit).map(x => x.i));
   const hidden = priority.slice(fit);
-  const hiddenText = (x: typeof pills[number]) => (x.role ? needLabel(x.role as Need, lang) : all(x).map(p => p.text).join('; '));
+  const hiddenText = (x: typeof pills[number]) => (x.role ? needLabel(x.role as Need, lang) : all(x).map(p => tipOf(p, tr)).join('; '));
   const row = ({ p, role, section, members, group }: typeof pills[number]) => members ? (
     <MapGroup key={group} id={group!} label={groupLabel(group!, members.length)} stepOf={stepOf} preview={preview}
       members={isThreat(members[0]) ? [...members].sort((a, b) => (threatUsage?.[b.subjects![0]] ?? 0) - (threatUsage?.[a.subjects![0]] ?? 0)) : members}

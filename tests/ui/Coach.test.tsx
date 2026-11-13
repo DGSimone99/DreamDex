@@ -543,7 +543,27 @@ describe('CoachingView', () => {
     expect(rows[0]).toHaveClass('serious');
     const ground = rows[1].querySelector<HTMLElement>('[data-key="defense:Ground"]')!;
     expect(ground.querySelectorAll('.type-icons img')).toHaveLength(1);
-    expect(ground).toHaveAttribute('title', text);
+    // Nel title anche quanti lo reggono (se qualcuno lo regge)
+    expect(ground).toHaveAttribute('title', `${text} · solo 1 membro lo regge bene`);
+    expect(rows[0].querySelector('[data-key="defense:Ice"]')).toHaveAttribute('title', 'Scoperto in difesa contro Ice: nessuno regge bene i suoi colpi');
+  });
+
+  it('"risolve anche": tipi e minacce scoperti in difesa in due pezzi separati, prima i tipi', () => {
+    const p = (over: Partial<CoachProblem> & Pick<CoachProblem, 'key' | 'category'>): CoachProblem =>
+      ({ severity: 'serious', text: over.key, fixes: [], ...over });
+    const lead = p({ key: 'coverage:Fairy', category: 'coverage', subjects: ['Fairy'], size: 2 });
+    const zapdos = p({ key: 'meta:Zapdos', category: 'meta', subjects: ['Zapdos'] });
+    const ice = p({ key: 'defense:Ice', category: 'defense', subjects: ['Ice'], counts: { held: 0 } });
+    const problems = [lead, zapdos, ice];
+    const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], threatFixes: {}, problems };
+    const swap = { ...adviceOf(three, DEFAULT_FORMAT, data).fixes[0], species: 'Rotom-Wash', solves: problems.map(x => x.key) };
+    renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [{ problem: lead, swap, move: null, alsoSolves: [], group: [lead.key] }] }}
+      members={3} rating={rating(three)} metaOn {...noop} />);
+    const segments = [...stepsRegion().querySelectorAll<HTMLElement>('.coach-also .coach-also-cover')];
+    expect(segments.map(s => s.querySelector('.coach-cover')!.textContent)).toEqual(['In difesa: Scoperto', 'In difesa: Scoperto']);
+    expect(segments[0].querySelector('.coach-also-type')).toHaveAttribute('title', 'defense:Ice');
+    expect(segments[0].querySelector('.coach-also-mon')).toBeNull();
+    expect(segments[1].querySelector('.coach-also-mon')).toHaveAttribute('title', 'meta:Zapdos');
   });
 
   it('ruoli mancanti nella tessera: una pillola per ruolo con la ×, senza "Ruoli importanti mancanti"', () => {
