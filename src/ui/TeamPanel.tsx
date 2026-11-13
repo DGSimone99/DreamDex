@@ -59,6 +59,8 @@ interface Props {
   closeSignal?: number;
   /** Team compresso: ogni carta diventa la sola icona del box (con il puntino degli avvisi). */
   collapsed?: boolean;
+  /** Cambia a ogni richiesta di aprire Completa team da fuori (la riga d'inizio della lista a team vuoto). */
+  fillRequest?: number;
   /** Set incollato al posto del membro (può essere un altro Pokémon); se manca, si aggiorna solo il team. */
   onPaste?: (index: number, set: TeamSet) => void;
   /** Azioni sull'intero team, annullabili: preset migliori per tutti, Completa team, team da torneo caricato, svuota team. */
@@ -528,19 +530,25 @@ const TeamSlot = memo(function TeamSlot({ index, total, set, subRoles, proposal,
   );
 });
 
-/** Slot libero: cerchio tratteggiato al posto dello sprite; il clic porta alla ricerca, col cursore già dentro. */
-function EmptySlot({ onClick }: { onClick: () => void }) {
+/**
+ * Slot libero: cerchio tratteggiato al posto dello sprite; il clic porta alla ricerca, col cursore già dentro.
+ * Solo il primo slot libero dice "Aggiungi un Pokémon": gli altri sono cornici tratteggiate più tenui, senza scritta
+ * (ma col nome per i lettori di schermo), così l'occhio va a un punto solo.
+ */
+function EmptySlot({ onClick, quiet = false }: { onClick: () => void; quiet?: boolean }) {
   const tr = useT();
-  const card = useRef<HTMLButtonElement>(null);
+  if (quiet) {
+    return <button type="button" className="slot empty quiet" aria-label={tr('team.emptyAdd')} title={tr('team.emptyAddTitle')} onClick={onClick} />;
+  }
   return (
-    <button type="button" className="slot empty" ref={card} title={tr('team.emptyAddTitle')} onClick={onClick}>
+    <button type="button" className="slot empty" title={tr('team.emptyAddTitle')} onClick={onClick}>
       <span className="empty-ring" aria-hidden="true"><Icon name="plus" /></span>
       <span className="empty-label">{tr('team.emptyAdd')}</span>
     </button>
   );
 }
 
-export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRemove, onAllowMultipleMegas, onOpenChange, closeSignal, collapsed = false, onPaste, onBulk, onAddClick, proposal, onProposalDone, io, saved }: Props) {
+export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRemove, onAllowMultipleMegas, onOpenChange, closeSignal, collapsed = false, fillRequest = 0, onPaste, onBulk, onAddClick, proposal, onProposalDone, io, saved }: Props) {
   const lang = useLang();
   // Sotto-ruoli misurati di ogni membro: la carta dice quello che dice il voto (stessa cache dell'area Ruoli)
   const subRoles = useMemo(() => team.map(set => measuredSubRoles(set, team, data)), [team, data]);
@@ -618,6 +626,13 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
   const canFill = team.length < 6 && !!data.stats;
   // Team pieno o senza statistiche: il pannello si chiude (e non si riapre da solo dopo)
   useEffect(() => { if (!canFill) setFilling(false); }, [canFill]);
+  // Richiesta da fuori (riga d'inizio a team vuoto): il pannello si apre come col clic sul pulsante
+  const lastFill = useRef(fillRequest);
+  useEffect(() => {
+    if (fillRequest === lastFill.current) return;
+    lastFill.current = fillRequest;
+    if (canFill) setFilling(true);
+  }, [fillRequest, canFill]);
   // Chiave stabile per specie (e occorrenza): riordinando, le card non si ricreano
   const keys = team.map((set, i) => `${set.species}#${team.slice(0, i).filter(s => s.species === set.species).length}`);
   // Una forma senza il suo strumento non è Mega (legalTeam.ts)
@@ -775,7 +790,7 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
           />
         ))}
         {Array.from({ length: 6 - team.length }, (_, i) => (
-          <EmptySlot key={`empty-${i}`} onClick={() => { setOpenIndex(null); onAddClick?.(); }} />
+          <EmptySlot key={`empty-${i}`} quiet={i > 0} onClick={() => { setOpenIndex(null); onAddClick?.(); }} />
         ))}
       </div>
     </section>

@@ -397,6 +397,9 @@
 .slot.empty:hover { border-color: var(--accent); color: var(--text); background: color-mix(in srgb, var(--accent) 6%, transparent); }
 .slot.empty:hover .empty-ring { border-color: var(--accent); color: var(--accent); transform: scale(1.06); }
 .slot.empty:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* Gli slot liberi dopo il primo: solo la cornice, più tenue (la scritta e il + stanno sul primo) */
+.slot.empty.quiet { border-color: var(--line-soft); }
+.slot.empty.quiet:hover { border-color: var(--accent); }
 .sprite.missing { display: block; width: 96px; height: 96px; }
 /* Lead: il primo membro, in alto a sinistra (il lucchetto del Custom Skillset gli passa accanto) */
 /* Piastrina scura dietro la scritta: il ciano resta leggibile (>=4.5:1) su ogni colore di tipo */
