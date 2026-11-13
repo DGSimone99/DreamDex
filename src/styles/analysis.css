@@ -636,17 +636,20 @@
 /* La mappa cede l'altezza alle tappe: il Coaching non scorre, le pillole che non stanno vanno nel "+N" della tessera */
 .coach-map-region { flex: 0 1 auto; min-height: 0; display: flex; flex-direction: column; }
 .coach-steps-region { flex: none; }
-.coach-map { flex: 0 1 auto; min-height: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, 1.2fr); grid-template-rows: minmax(0, 1fr); gap: 10px; align-items: stretch; margin: 0 0 7px; }
+.coach-map { flex: 0 1 auto; min-height: 0; display: grid; grid-template-columns: repeat(var(--tiles, 4), minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr); gap: 10px; align-items: stretch; margin: 0 0 7px; }
+/* Le aree senza problemi: una riga verde sopra la fila */
+.coach-clean { flex: none; display: flex; align-items: center; gap: 6px; margin: 0 0 7px; padding: 5px 12px; font-size: 13px; color: var(--muted);
+  background: linear-gradient(90deg, var(--good-bg), var(--panel) 60%); border: 1px solid color-mix(in srgb, var(--good) 30%, var(--line-soft)); border-left: 3px solid var(--good); }
+.coach-clean .icon { width: 14px; height: 14px; color: var(--good); }
+.coach-clean b { color: var(--text); font-weight: 600; }
+/* Una sola tessera: metà larghezza, i problemi su due colonne */
+.coach-map[data-tiles='1'] { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.coach-map[data-tiles='1'] .coach-probs { columns: 2; column-gap: 16px; }
 .coach-tile { display: flex; flex-direction: column; min-width: 0; min-height: 0; padding: 0 0 5px; overflow: hidden; background: var(--panel); border: 1px solid var(--line-soft); }
 .coach-more { flex: none; align-self: flex-start; margin: 6px 12px 0; padding: 0 7px; border-radius: 10px; font: 600 11px/18px var(--ui); color: var(--muted); background: var(--raised); cursor: help; }
 .coach-tile-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-right: 12px; }
 .coach-tile-head .dash-meta b { font: 800 24px/1 var(--display); font-style: italic; }
 .coach-tile-bar { height: 4px; margin: 9px 12px 9px; background: linear-gradient(90deg, var(--accent) var(--score, 0%), var(--line-soft) var(--score, 0%)); }
-.coach-tile.is-clean { background: linear-gradient(180deg, var(--good-bg), var(--panel) 85%); border-color: color-mix(in srgb, var(--good) 30%, var(--line-soft)); }
-.coach-tile.is-clean .coach-tile-bar { background: linear-gradient(90deg, var(--good) var(--score, 100%), var(--line-soft) var(--score, 100%)); }
-.coach-tile-ok { display: flex; align-items: center; gap: 6px; margin: 4px 12px 0; font-size: 13px; font-weight: 600; color: var(--good); }
-.coach-tile-ok .icon { width: 14px; height: 14px; }
-.coach-tile > .coach-tile-ok:nth-child(2) { margin-top: 12px; }
 /* Senza voto (Regole · Meta) niente barretta: lo stesso respiro sotto la targa */
 .coach-tile-head + .coach-probs, .coach-tile-head + .coach-sep { margin-top: 12px; }
 .coach-probs { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0 12px; list-style: none; }

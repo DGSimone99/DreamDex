@@ -828,7 +828,7 @@ export const it: Record<keyof typeof en, string> = {
   'coach.map.rules': "Regole",
   'coach.map.rulesMeta': "Regole · Meta",
   'coach.map.redundancy': "Ridondanze",
-  'coach.map.none': "Nessun problema",
+  'coach.map.cleanIn': "Nessun problema in",
   'coach.map.coveredBy': "Coperto dalla tappa {n}",
   'coach.computing': "Calcolo dei consigli…",
   'coach.noProblems': "Nessun problema: il team è a posto.",

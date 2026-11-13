@@ -826,7 +826,7 @@ export const en = {
   'coach.map.rules': "Rules",
   'coach.map.rulesMeta': "Rules · Meta",
   'coach.map.redundancy': "Redundancies",
-  'coach.map.none': "No problems",
+  'coach.map.cleanIn': "No problems in",
   'coach.map.coveredBy': "Covered by step {n}",
   'coach.computing': "Working out suggestions…",
   'coach.noProblems': "No problems: the team is in good shape.",

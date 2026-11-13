@@ -574,14 +574,32 @@ describe('CoachingView', () => {
     expect(total).toBe(unique.length);
   });
 
-  it('colonna senza problemi: "Nessun problema"', () => {
+  it('aree senza problemi: una riga verde, niente tessera', () => {
     const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], threatFixes: {},
       problems: [{ severity: 'minor', category: 'roles', text: 'Ruoli importanti mancanti: Pivot', fixes: [], key: 'roles:important' }] };
     renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [] }} members={3} rating={rating(three)} metaOn {...noop} />);
-    expect(within(screen.getByRole('group', { name: 'Difesa' })).getByText('Nessun problema')).toBeInTheDocument();
-    expect(screen.getByRole('group', { name: 'Difesa' })).toHaveClass('is-clean');
-    expect(within(screen.getByRole('group', { name: 'Ruoli' })).queryByText('Nessun problema')).toBeNull();
-    expect(screen.getByRole('group', { name: 'Ruoli' })).not.toHaveClass('is-clean');
+    expect(screen.queryByRole('group', { name: 'Difesa' })).toBeNull();
+    expect(screen.getByRole('group', { name: 'Ruoli' })).toBeInTheDocument();
+    const clean = document.querySelector('.coach-clean')!;
+    expect(clean).toHaveTextContent(/Nessun problema in.*Difesa.*Offesa/);
+    expect(clean).not.toHaveTextContent('Ruoli');
+    expect(document.querySelector('.coach-map')).toHaveAttribute('data-tiles', '1');
+  });
+
+  it('solo minacce del meta: tre aree nella riga verde, una tessera', () => {
+    const threat = (name: string): CoachProblem => ({ severity: 'minor', category: 'meta', text: `Nessuno regge ${name} del meta`, fixes: [], key: `meta:${name}`, subjects: [name] });
+    const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], threatFixes: {}, problems: [threat('Latios-Mega'), threat('Tapu Koko')] };
+    renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [] }} members={3} rating={rating(three)} metaOn {...noop} />);
+    expect(document.querySelector('.coach-clean')).toHaveTextContent(/Difesa.*Offesa.*Ruoli/);
+    expect(document.querySelector('.coach-map')).toHaveAttribute('data-tiles', '1');
+    expect(screen.getByRole('group', { name: 'Regole · Meta' })).toBeInTheDocument();
+  });
+
+  it('senza voto la riga verde dice solo i nomi delle aree', () => {
+    const coaching: Coaching = { verdict: 'x', teamType: null, strengths: [], threatFixes: {},
+      problems: [{ severity: 'minor', category: 'roles', text: 'Ruoli importanti mancanti: Pivot', fixes: [], key: 'roles:important' }] };
+    renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [] }} members={3} rating={null} metaOn {...noop} />);
+    expect(document.querySelector('.coach-clean')!.textContent).not.toMatch(/\d/);
   });
 
   it('ridondanze: sotto un separatore nella colonna Ruoli', () => {

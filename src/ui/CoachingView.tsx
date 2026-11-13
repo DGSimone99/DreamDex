@@ -342,20 +342,18 @@ function MapTile({ id, name, items, score, count, stepOf, preview, threatUsage, 
   const shown = new Set(priority.slice(0, fit).map(x => x.i));
   const hidden = priority.slice(fit);
   const hiddenText = (x: typeof pills[number]) => (x.role ? needLabel(x.role as Need, lang) : x.p.text);
-  const clean = items.length === 0;
   const row = ({ p, role, section }: typeof pills[number]) => <MapProblem key={`${p.key}|${p.text}|${role ?? ''}`} problem={p} step={stepOf.get(p.key) ?? null}
     preview={preview?.has(p.key) ?? false} usage={p.category === 'meta' ? threatUsage?.[p.subjects?.[0] ?? ''] : undefined} dim={section !== 'main'} role={role} />;
   const list = (section: Section) => pills.filter(x => x.section === section && shown.has(x.i));
   const [main, redundancy, threats] = [list('main'), list('redundancy'), list('meta')];
   return (
-    <div ref={ref} role="group" aria-labelledby={id} className={`coach-tile${clean ? ' is-clean' : ''}`}
+    <div ref={ref} role="group" aria-labelledby={id} className="coach-tile"
       style={score !== null ? { '--score': `${Math.max(0, Math.min(100, score))}%` } as CSSProperties : undefined}>
       <header className="coach-tile-head">
         <h4 id={id} className="dash-plate">{name}</h4>
         {score !== null ? <span className="dash-meta"><b>{Math.round(score)}</b></span> : count && <span className="dash-meta"><b>{count}</b></span>}
       </header>
       {score !== null && <span className="coach-tile-bar" aria-hidden="true" />}
-      {clean && <p className="coach-tile-ok"><Icon name="check" />{tr('coach.map.none')}</p>}
       {main.length > 0 && <ul className="coach-probs">{main.map(row)}</ul>}
       {redundancy.length > 0 && (
         <>
@@ -409,6 +407,16 @@ export function CoachingView({ coaching, advice, members, rating, metaOn, threat
   // Gravi prima, poi l'ordine delle categorie (regole per prime)
   const ordered = [...problems].sort((a, b) => Number(b.severity === 'serious') - Number(a.severity === 'serious')
     || PROBLEM_CATEGORIES.indexOf(a.category) - PROBLEM_CATEGORIES.indexOf(b.category));
+  const cols = COLUMNS.map(c => ({ ...c, items: ordered.filter(p => columnOf(p.category) === c.key) }));
+  const tiles = cols.filter(c => c.items.length > 0);
+  const clean = cols.filter(c => c.items.length === 0 && c.key !== 'rules');
+  // Il valore dell'area nella riga verde: il voto, i Ruoli coperti; senza voto solo il nome
+  const valueOf = (c: (typeof cols)[number]): string => {
+    if (!rating) return '';
+    if (c.key === 'roles') return rolesValue(rating);
+    const v = c.area ? rating.areas.find(a => a.key === c.area)?.value : undefined;
+    return v === undefined || v === null ? '' : String(Math.round(v));
+  };
   const columnName: Record<MapColumn, string> = {
     defense: tr('coach.map.defense'), offense: tr('coach.map.offense'), roles: tr('coach.map.roles'), rules: tr(metaOn ? 'coach.map.rulesMeta' : 'coach.map.rules'),
   };
@@ -423,9 +431,15 @@ export function CoachingView({ coaching, advice, members, rating, metaOn, threat
       {problems.length > 0 && (
         <section aria-labelledby={`${id}-map`} className="coach-map-region">
           <h3 id={`${id}-map`} className="coach-sec muted">{tr('coach.map.title')}</h3>
-          <div className="coach-map">
-            {COLUMNS.map(({ key, area }) => (
-              <MapTile key={key} id={`${id}-${key}`} name={columnName[key]} items={ordered.filter(p => columnOf(p.category) === key)}
+          {/* Le aree senza problemi in una riga sola; nella fila restano solo le aree con problemi (Regole·Meta non ha voto: pulita, non si dice) */}
+          {clean.length > 0 && (
+            <p className="coach-clean"><Icon name="check" />{tr('coach.map.cleanIn')}{' '}
+              <b>{clean.map(c => [columnName[c.key], valueOf(c)].filter(Boolean).join(' ')).join(' · ')}</b>
+            </p>
+          )}
+          <div className="coach-map" data-tiles={tiles.length} style={{ '--tiles': tiles.length } as CSSProperties}>
+            {tiles.map(({ key, area, items }) => (
+              <MapTile key={key} id={`${id}-${key}`} name={columnName[key]} items={items}
                 score={area ? rating?.areas.find(a => a.key === area)?.value ?? null : null}
                 count={key === 'roles' && rating ? rolesValue(rating) : undefined} stepOf={stepOf} preview={preview} threatUsage={threatUsage} watch={root} />
             ))}
