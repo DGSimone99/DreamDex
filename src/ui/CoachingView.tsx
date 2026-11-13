@@ -19,7 +19,7 @@ import { rolesValue } from './AreaDetail';
 
 const CATEGORY: Record<ProblemCategory, MessageKey> = {
   rules: 'coach.category.rules', defense: 'coach.category.defense', coverage: 'coach.category.coverage', roles: 'coach.category.roles',
-  conditions: 'coach.category.conditions', redundancy: 'coach.category.redundancy', meta: 'coach.category.meta',
+  conditions: 'coach.category.conditions', redundancy: 'coach.category.redundancy', meta: 'coach.category.meta', metaHit: 'coach.category.metaHit',
 };
 
 // I tipi colorati; `plain`: senza colore (nella mappa l'icona del tipo è già davanti)
@@ -273,7 +273,7 @@ function MapProblem({ problem, step, preview, usage, dim = false, role }: {
   const tr = useT();
   const lang = useLang();
   const subjects = problem.subjects ?? [];
-  const threat = problem.category === 'meta' && subjects.length > 0 ? subjects[0] : null;
+  const threat = isThreat(problem) && subjects.length > 0 ? subjects[0] : null;
   const covered = step !== null ? tr('coach.map.coveredBy', { n: step }) : '';
   // Difesa e coverage: le icone dei tipi davanti, il testo senza colori (il tipo non si legge due volte)
   const typed = (problem.category === 'defense' || problem.category === 'coverage') && subjects.length > 0;
@@ -311,7 +311,10 @@ function MapProblem({ problem, step, preview, usage, dim = false, role }: {
 const isMissingRoles = (p: CoachProblem) => p.category === 'roles' && (p.key === 'roles:essential' || p.key === 'roles:important') && (p.subjects?.length ?? 0) > 0;
 
 /** Cosa mostra la scheda che il "+N" di ogni colonna apre (Regole·Meta: la scheda Meta, solo le minacce). */
-const OPENS: Record<MapColumn, ProblemCategory[]> = { defense: ['defense'], offense: ['coverage'], roles: ['roles'], rules: ['meta'] };
+const OPENS: Record<MapColumn, ProblemCategory[]> = { defense: ['defense', 'meta'], offense: ['coverage', 'metaHit'], roles: ['roles'], rules: [] };
+
+/** Le minacce del meta: chi nessuno regge (Difesa) e chi nessuno manda KO (Offesa), come righe con l'icona del Pokémon. */
+const isThreat = (p: CoachProblem) => p.category === 'meta' || p.category === 'metaHit';
 
 const COLUMNS: { key: MapColumn; area: 'defense' | 'strength' | 'roles' | null }[] = [
   { key: 'defense', area: 'defense' }, { key: 'offense', area: 'strength' }, { key: 'roles', area: 'roles' }, { key: 'rules', area: null },
@@ -338,7 +341,7 @@ function MapTile({ id, name, items, score, count, stepOf, preview, threatUsage, 
   const lang = useLang();
   const ref = useRef<HTMLDivElement>(null);
   type Section = 'main' | 'redundancy' | 'meta';
-  const sectionOf = (p: CoachProblem): Section => (p.category === 'redundancy' ? 'redundancy' : p.category === 'meta' ? 'meta' : 'main');
+  const sectionOf = (p: CoachProblem): Section => (p.category === 'redundancy' ? 'redundancy' : isThreat(p) ? 'meta' : 'main');
   // Ruoli mancanti: una pillola per ruolo (possono riempirli Pokémon diversi), senza la frase davanti
   const pills = items.flatMap(p => (isMissingRoles(p) ? (p.subjects ?? []).map(role => ({ p, role })) : [{ p, role: undefined as string | undefined }]))
     .map((pill, i) => ({ ...pill, i, section: sectionOf(pill.p) }));
@@ -350,9 +353,11 @@ function MapTile({ id, name, items, score, count, stepOf, preview, threatUsage, 
   const hidden = priority.slice(fit);
   const hiddenText = (x: typeof pills[number]) => (x.role ? needLabel(x.role as Need, lang) : x.p.text);
   const row = ({ p, role, section }: typeof pills[number]) => <MapProblem key={`${p.key}|${p.text}|${role ?? ''}`} problem={p} step={stepOf.get(p.key) ?? null}
-    preview={preview?.has(p.key) ?? false} usage={p.category === 'meta' ? threatUsage?.[p.subjects?.[0] ?? ''] : undefined} dim={section !== 'main'} role={role} />;
+    preview={preview?.has(p.key) ?? false} usage={isThreat(p) ? threatUsage?.[p.subjects?.[0] ?? ''] : undefined} dim={section !== 'main'} role={role} />;
   const list = (section: Section) => pills.filter(x => x.section === section && shown.has(x.i));
   const [main, redundancy, threats] = [list('main'), list('redundancy'), list('meta')];
+  // Difesa: "Nessuno le regge"; Offesa: "Nessuno le manda KO"
+  const threatLabel = tr(items.some(p => p.category === 'metaHit') ? 'coach.map.metaHit' : 'dash.todo.threats');
   return (
     <div ref={ref} role="group" aria-labelledby={id} className="coach-tile"
       style={score !== null ? { '--score': `${Math.max(0, Math.min(100, score))}%` } as CSSProperties : undefined}>
@@ -371,7 +376,7 @@ function MapTile({ id, name, items, score, count, stepOf, preview, threatUsage, 
       {threats.length > 0 && (
         <>
           {/* Solo minacce nella tessera: l'etichetta non serve (lo dice la targa), le righe hanno più posto */}
-          {pills.some(x => x.section !== 'meta') ? <h5 className="coach-sep">{tr('dash.todo.threats')}</h5> : <h5 className="visually-hidden">{tr('dash.todo.threats')}</h5>}
+          {pills.some(x => x.section !== 'meta') ? <h5 className="coach-sep">{threatLabel}</h5> : <h5 className="visually-hidden">{threatLabel}</h5>}
           <ul className="coach-probs">{threats.map(row)}</ul>
         </>
       )}
@@ -395,9 +400,9 @@ function MapTile({ id, name, items, score, count, stepOf, preview, threatUsage, 
  * La scheda Coaching: in alto i problemi per area (quattro tessere), sotto fino a 3 tappe (cosa farei per prima).
  * `advice` null: i consigli si stanno calcolando (lo scheletro delle tappe; la mappa si vede già).
  */
-export function CoachingView({ coaching, advice, members, rating, metaOn, threatUsage, onOpen, onFix, onMoveFix, onApplyFix, onApplyMove }: {
+export function CoachingView({ coaching, advice, members, rating, threatUsage, onOpen, onFix, onMoveFix, onApplyFix, onApplyMove }: {
   coaching: Coaching; advice: CoachAdvice | null; members: number; rating: TeamRating | null; metaOn: boolean;
-  /** Il "+N" di una tessera apre la scheda della sua area (Regole·Meta: la scheda Meta, solo col meta acceso). */
+  /** Il "+N" di una tessera apre la scheda della sua area (Regole non ne ha: resta una nota). */
   onOpen?: (column: MapColumn) => void;
   /** Uso in % (0-1) delle minacce per specie, mostrato sulle righe "senza check" */
   threatUsage?: Record<string, number>;
@@ -434,7 +439,7 @@ export function CoachingView({ coaching, advice, members, rating, metaOn, threat
     return v === undefined || v === null ? '' : String(Math.round(v));
   };
   const columnName: Record<MapColumn, string> = {
-    defense: tr('coach.map.defense'), offense: tr('coach.map.offense'), roles: tr('coach.map.roles'), rules: tr(metaOn ? 'coach.map.rulesMeta' : 'coach.map.rules'),
+    defense: tr('coach.map.defense'), offense: tr('coach.map.offense'), roles: tr('coach.map.roles'), rules: tr('coach.map.rules'),
   };
   return (
     <div className="coaching" ref={root}>
@@ -458,7 +463,7 @@ export function CoachingView({ coaching, advice, members, rating, metaOn, threat
               <MapTile key={key} id={`${id}-${key}`} name={columnName[key]} items={items}
                 score={area ? rating?.areas.find(a => a.key === area)?.value ?? null : null}
                 count={key === 'roles' && rating ? rolesValue(rating) : key === 'rules' ? String(items.length) : undefined} stepOf={stepOf} preview={preview} threatUsage={threatUsage} watch={root}
-                onMore={onOpen && (key !== 'rules' || metaOn) ? () => onOpen(key) : undefined} opens={OPENS[key]} />
+                onMore={onOpen && key !== 'rules' ? () => onOpen(key) : undefined} opens={OPENS[key]} />
             ))}
           </div>
         </section>

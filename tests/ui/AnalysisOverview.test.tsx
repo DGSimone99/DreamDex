@@ -276,6 +276,15 @@ describe('Panoramica: Da sistemare', () => {
     expect(solvable([a, b, c, d], [])).toEqual([]);
   });
 
+  it('fixItems: chi nessuno manda KO in una sua frase, separata da chi nessuno regge', () => {
+    const items = fixItems([
+      problem({ text: 'x', category: 'meta', subjects: ['Zapdos'] }),
+      problem({ text: 'y', category: 'metaHit', subjects: ['Corviknight'] }),
+      problem({ text: 'z', category: 'metaHit', subjects: ['Toxapex'] }),
+    ], 'it');
+    expect(items.shown).toEqual(['Nessuno regge Zapdos del meta', 'Nessuno manda KO Corviknight, Toxapex del meta in due colpi']);
+  });
+
   it('fixItems: più di 3 minacce, i primi 3 nomi e "e altri N"', () => {
     const names = ['Kingambit', 'Raging Bolt', 'Diancie-Mega', 'Tapu Koko', 'Charizard-Mega-Y', 'Charizard-Mega-X', 'Melmetal'];
     const items = fixItems(names.map(n => problem({ text: n, category: 'meta', subjects: [n] })), 'it');

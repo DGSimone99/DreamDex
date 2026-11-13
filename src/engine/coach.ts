@@ -43,7 +43,7 @@ export const COVERED_LEVEL = 40;
 export const HELD_LEVEL = 50;
 
 /** Categorie dei problemi, nell'ordine in cui si mostrano. */
-export const PROBLEM_CATEGORIES = ['rules', 'defense', 'coverage', 'roles', 'conditions', 'redundancy', 'meta'] as const;
+export const PROBLEM_CATEGORIES = ['rules', 'defense', 'coverage', 'roles', 'conditions', 'redundancy', 'meta', 'metaHit'] as const;
 export type ProblemCategory = typeof PROBLEM_CATEGORIES[number];
 
 export interface CoachProblem {
@@ -241,6 +241,12 @@ export function findProblems(team: TeamSet[], format: Format, data: EngineData, 
     if (threat.handledBy.length) continue;
     add('meta', false, t(lang, 'coach.problem.threat', { species: threat.name }),
       fixesFor(candidates, s => Number(s.facts.threats.checked.includes(threat.name))), `meta:${threat.name}`, undefined, [threat.name]);
+  }
+
+  // Pokémon del meta che nessuno manda KO in due colpi, come nella Coverage meta dell'Offesa (vuota senza meta).
+  // Nessun rimedio stimato: chi li risolve lo dicono le tappe
+  for (const species of rating?.offense.coverageMeta?.holes ?? []) {
+    add('metaHit', false, t(lang, 'coach.problem.metaHit', { species }), [], `metaHit:${species}`, undefined, [species]);
   }
 
   return [...serious, ...minor];

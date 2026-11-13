@@ -238,9 +238,21 @@ describe('chiavi dei problemi e minacce del meta', () => {
     }
   });
 
+  it("col meta, un Pokémon del meta che nessuno manda KO in due colpi (Coverage meta dell'Offesa) è un problema minore", () => {
+    // Solo Splash: nessuno manda KO nessuno
+    const weak = [junk('Magikarp'), junk('Sunkern')];
+    const coaching = coachTeam(weak, DEFAULT_FORMAT, fixtureData);
+    const holes = rateTeam(weak, fixtureData, 'it')?.offense.coverageMeta?.holes ?? [];
+    expect(holes.length).toBeGreaterThan(0);
+    expect(coaching.problems.filter(p => p.category === 'metaHit').map(p => p.key)).toEqual(holes.map(s => `metaHit:${s}`));
+    for (const species of holes) {
+      expect(coaching.problems.find(p => p.key === `metaHit:${species}`)).toMatchObject({ severity: 'minor', subjects: [species], text: `Nessuno manda KO ${species} del meta in due colpi` });
+    }
+  });
+
   it('senza meta, nessun problema minaccia', () => {
     const { problems } = coachTeam(team, DEFAULT_FORMAT, { ...fixtureData, ignoreMeta: true });
-    expect(problems.some(p => p.category === 'meta')).toBe(false);
+    expect(problems.some(p => p.category === 'meta' || p.category === 'metaHit')).toBe(false);
   });
 
   it("coverage: un problema per tipo del pacchetto dei tipi dell'Offesa (livello sotto 40)", () => {
