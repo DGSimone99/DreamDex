@@ -9,15 +9,15 @@ import { EeveePeek } from './EeveePeek';
 import { ModalLock } from './ModalLock';
 import { Icon } from './icons';
 
-type Topic = 'general' | 'read' | Archetype;
+type Topic = 'general' | Archetype;
 const ARCHETYPES: Archetype[] = ['hyperOffense', 'bulkyOffense', 'balance', 'semiStall', 'stall'];
-const TOPICS: Topic[] = ['general', 'read', ...ARCHETYPES];
+const TOPICS: Topic[] = ['general', ...ARCHETYPES];
 /** Le aree col peso: i Ruoli non ne hanno, contano come malus e bonus (spiegati nel loro modale). */
 /** Offesa prima di Difesa, come nel riquadro del voto (scelta dell'utente, 2026-11-13). */
 const WEIGHT_AREAS = ['strength', 'defense', 'speed'] as const;
 const LEVELS: Exclude<Level, 'ignored'>[] = ['essential', 'important', 'minor'];
 
-const topicLabel = (topic: Topic): MessageKey => (topic === 'general' ? 'help.general' : topic === 'read' ? 'help.read.tab' : `archetype.${topic}`);
+const topicLabel = (topic: Topic): MessageKey => (topic === 'general' ? 'help.general' : `archetype.${topic}`);
 /** Etichetta di una voce della tabella dei livelli ("almeno uno Sweeper / un Wallbreaker" sono gruppi). */
 const keyLabel = (key: LevelKey): MessageKey => (isGroupKey(key) ? `need.${key}` : `role.${key}`);
 
@@ -94,10 +94,8 @@ export function RatingHelp({ teamType: judgedAs, weights: realWeights = ARCHETYP
                 ))}
               </nav>
               <section className={`help-panel${topic === 'general' ? ' help-general' : ''}`} id="help-panel" role="tabpanel" aria-labelledby={`help-tab-${topic}`}>
-                <h4>{t(topic === 'read' ? 'help.read.title' : topicLabel(topic))}</h4>
-                {topic === 'general' ? <GeneralTopic teamType={teamType} weights={weights} />
-                  : topic === 'read' ? <ReadTheCard />
-                  : <TypeTopic type={topic} weights={weights} typeRule={typeRule} />}
+                <h4>{t(topicLabel(topic))}</h4>
+                {topic === 'general' ? <GeneralTopic teamType={teamType} weights={weights} /> : <TypeTopic type={topic} weights={weights} typeRule={typeRule} />}
               </section>
             </div>
           </div>
@@ -144,43 +142,6 @@ function GeneralTopic({ teamType, weights }: { teamType: Archetype | null; weigh
         </table>
       </div>
     </>
-  );
-}
-
-/**
- * Come si legge il riquadro del voto, scheda a sé subito dopo Come funziona (scelta dell'utente, 2026-11-13): a sinistra un pezzetto del riquadro com'è (barra, Ruoli, segni dei ruoli che
- * mancano, Bonus/Malus, lettera grigia), a destra una frase semplice. Solo disegno: le frasi dicono tutto da sole.
- */
-function ReadTheCard() {
-  const t = useT();
-  return (
-    <section className="help-read">
-      <dl>
-        <div>
-          <dt aria-hidden="true"><span>{t('area.strength')}</span><span className="help-read-meter"><i /></span></dt>
-          <dd>{t('help.read.areas')}</dd>
-        </div>
-        <div>
-          <dt aria-hidden="true"><span>{t('area.roles')}</span><b>11/14</b></dt>
-          <dd>{t('help.read.roles')}</dd>
-        </div>
-        <div>
-          <dt aria-hidden="true" className="help-read-marks">
-            <span className="grade-roles-miss bad">2<Icon name="warning" /></span>
-            <span className="grade-roles-miss warn">1<Icon name="warning" /></span>
-          </dt>
-          <dd>{t('help.read.missing')}</dd>
-        </div>
-        <div>
-          <dt aria-hidden="true"><span>{t('area.bonusMalus')}</span><b className="good">+5</b></dt>
-          <dd>{t('help.read.bonusMalus')}</dd>
-        </div>
-        <div>
-          <dt aria-hidden="true"><b className="help-read-grey">A</b><span className="help-read-rules"><Icon name="warning" />{t('help.read.notLegal')}</span></dt>
-          <dd>{t('help.read.grey')}</dd>
-        </div>
-      </dl>
-    </section>
   );
 }
 

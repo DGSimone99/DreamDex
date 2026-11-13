@@ -90,10 +90,10 @@ describe('Riquadro Voto', () => {
     expect(peek).toHaveAttribute('aria-hidden', 'true');
     expect(peek.querySelectorAll('img')).toHaveLength(11);
     expect(dialog.querySelector('.eevee-peek')).toBeNull();
-    // A sinistra gli argomenti: come funziona, come si legge il riquadro del voto e un tab per tipo di team
+    // A sinistra gli argomenti: come funziona e un tab per tipo di team
     const topics = within(dialog).getAllByRole('tab').map(tab => tab.getAttribute('id'));
-    expect(topics).toEqual(['help-tab-general', 'help-tab-read', 'help-tab-hyperOffense', 'help-tab-bulkyOffense', 'help-tab-balance', 'help-tab-semiStall', 'help-tab-stall']);
-    expect(within(dialog).getAllByRole('tab').map(tab => tab.textContent)).toEqual(['Come funziona', 'Come si legge', 'Hyper Offense', 'Bulky Offense', 'Balance', 'Semi-stall', 'Stall']);
+    expect(topics).toEqual(['help-tab-general', 'help-tab-hyperOffense', 'help-tab-bulkyOffense', 'help-tab-balance', 'help-tab-semiStall', 'help-tab-stall']);
+    expect(within(dialog).getAllByRole('tab').map(tab => tab.textContent)).toEqual(['Come funziona', 'Hyper Offense', 'Bulky Offense', 'Balance', 'Semi-stall', 'Stall']);
     // Si apre sempre su come funziona in generale
     expect(within(dialog).getByRole('tab', { name: 'Come funziona' })).toHaveAttribute('aria-selected', 'true');
     // Un team incompleto: nessun tab segnato come il tuo team (e nessuna frase "in analisi")
@@ -142,14 +142,6 @@ describe('Riquadro Voto', () => {
     expect(within(general).getAllByRole('columnheader').map(th => th.textContent)).toEqual(['Tipo di team', 'Offesa', 'Difesa', 'Velocità']);
     expect(within(general).getByRole('row', { name: /^Stall/ })).toHaveTextContent('Stallabbastanzamoltopoco');
     expect(general.querySelector('.help-wword')).toBeNull();
-    expect(general).not.toHaveTextContent('Come si legge il riquadro del voto');
-    // Come si legge il riquadro del voto, scheda a sé: aree, Ruoli, ruoli che mancano, Bonus/Malus e il voto grigio se non legale
-    await user.click(within(dialog).getByRole('tab', { name: 'Come si legge' }));
-    const read = within(dialog).getByRole('tabpanel');
-    expect(read).toHaveTextContent('Come si legge il riquadro del voto');
-    expect(read).toHaveTextContent('su quelli che servono al suo tipo di team');
-    expect(read).toHaveTextContent('in rosso gli essenziali, in giallo gli importanti');
-    expect(read).toHaveTextContent('il voto diventa grigio');
     expect(general).not.toHaveTextContent('Pokémon più usati del mese');
     expect(general).not.toHaveTextContent('non hanno un peso proprio');
     for (const tab of within(dialog).getAllByRole('tab')) {

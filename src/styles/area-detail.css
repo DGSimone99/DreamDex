@@ -165,24 +165,10 @@
 
 /* Peso di un'area come barra continua riempita a sesti, senza numeri né parole (RatingHelp) */
 .help-wbar { display: block; min-width: 96px; height: 9px; background: var(--field); border-radius: 2px; overflow: hidden; }
-/* Come si legge il riquadro del voto: a sinistra un pezzetto del riquadro, a destra una frase */
-.help-read { margin-top: 2px; }
-.help-read dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 14px; margin: 0; }
-.help-read dl > div { display: contents; }
-.help-read dt { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 26px; padding: 2px 8px; background: var(--panel); border: 1px solid var(--line-soft); border-radius: 3px; font-size: 12px; color: var(--muted); }
-.help-read dt b { color: var(--text); font-weight: 700; font-variant-numeric: tabular-nums; }
-.help-read dt b.good { color: var(--good); }
-.help-read dt .grade-roles-miss { margin-left: 0; }
-.help-read dd { align-self: center; margin: 0; font-size: 13px; line-height: 1.4; color: var(--text); }
-.help-read-meter { display: block; width: 40px; height: 5px; background: var(--field); border-radius: 2px; overflow: hidden; }
-.help-read-meter > i { display: block; width: 74%; height: 100%; background: var(--accent); }
-.help-read dt b.help-read-grey { font: 800 italic 19px/1 var(--display); color: var(--faint); }
-.help-read-rules { display: inline-flex; align-items: center; gap: 3px; padding: 0 5px; border-radius: 3px; background: var(--bad-bg); color: var(--bad); font: 700 11px/1.5 var(--display); }
-.help-read-rules svg { width: 11px; height: 11px; }
 .help-wbar > i { display: block; height: 100%; background: var(--accent); }
 .help-weights tr.current .help-wbar { background: color-mix(in srgb, var(--field) 70%, var(--accent-soft)); }
-/* Come funziona, pagina generale: le lettere accanto al titolo (non sotto), così la pagina sta tutta nella finestra
-   insieme a come si legge il riquadro del voto; righe della tabella dei pesi più basse. Sul telefono di nuovo in colonna */
+/* Come funziona, pagina generale: le lettere accanto al titolo (non sotto), così la pagina sta tutta nella finestra;
+   righe della tabella dei pesi più basse. Sul telefono di nuovo in colonna */
 .help-panel.help-general { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-auto-rows: max-content; align-content: start; column-gap: 16px; }
 .help-panel.help-general > * { grid-column: 1 / -1; }
 .help-panel.help-general > h4 { grid-column: 1; align-self: center; margin: 0; }
@@ -192,4 +178,3 @@
   .help-panel.help-general { display: block; }
   .help-panel.help-general > h4 { margin: 0 0 10px; }
 }
-.help-read dt.help-read-marks { justify-content: flex-end; gap: 6px; }
