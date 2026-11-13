@@ -14,7 +14,7 @@ describe('ridondanze', () => {
   it('debolezze accumulate: 2 punti per ogni debole scoperto oltre il primo, anche su un tipo raro nel meta', () => {
     const team = ['Great Tusk', 'Garchomp', 'Dragapult'].map(n => mostCommonSet(fixtureStats, n)!);
     // Ice è raro nella fixture, ma il voto non dipende dal meta del mese
-    expect(items(team)).toContainEqual(expect.objectContaining({ text: '3 membri deboli a Ice, nessuno resiste', points: 2, catalog: 'sharedWeak' }));
+    expect(items(team)).toContainEqual(expect.objectContaining({ text: '3 deboli a Ice, 0 resistono', points: 2, catalog: 'sharedWeak' }));
   });
 
   it('un solo debole non costa niente; tre deboli scoperti costano 2', () => {
@@ -23,7 +23,7 @@ describe('ridondanze', () => {
     expect(items(team).some(i => i.text.includes('Ground'))).toBe(false);
     const water = [withMoves('Great Tusk', []), withMoves('Landorus-Therian', []), withMoves('Hippowdon', [])];
     // Water: 3 deboli scoperti → 1 punto per debole in più
-    expect(items(water)).toContainEqual(expect.objectContaining({ text: '3 membri deboli a Water, nessuno resiste', points: 2 }));
+    expect(items(water)).toContainEqual(expect.objectContaining({ text: '3 deboli a Water, 0 resistono', points: 2 }));
   });
 
   it('stesso hazard da più membri', () => {

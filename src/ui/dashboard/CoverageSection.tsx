@@ -25,7 +25,7 @@ function Cell({ state, label }: { state: CellState; label: string }) {
 }
 
 /** Copertura: i 18 tipi, una riga per l'Offesa e una per la Difesa (l'ordine delle schede); non si comprime mai. */
-export function CoverageSection({ coverage, onView }: { coverage: DashboardData['coverage']; onView: (v: AnalysisView) => void }) {
+export function CoverageSection({ coverage, onView }: { coverage: DashboardData['coverage']; onView: (v: AnalysisView, sub?: string) => void }) {
   const t = useT();
   const lang = useLang();
   const defense = t('dash.rowDefense');
@@ -36,8 +36,9 @@ export function CoverageSection({ coverage, onView }: { coverage: DashboardData[
     <DashCard className="dash-coverage" title={title}
       meta={<>{offense.toLocaleLowerCase()} <b>{coverage.offense}</b> · {defense.toLocaleLowerCase()} <b>{coverage.defense}</b></>}
       links={<>
-        <DashLink label={t('area.strength')} area={t('area.strength')} onClick={() => onView('strength')} />
-        <DashLink label={t('area.defense')} area={t('area.defense')} onClick={() => onView('defense')} />
+        {/* Ognuno porta alla sua Coverage tipi, la stessa griglia per tipo */}
+        <DashLink label={t('area.strength')} area={t('area.strength')} onClick={() => onView('strength', 'types')} />
+        <DashLink label={t('area.defense')} area={t('area.defense')} onClick={() => onView('defense', 'coverageTypes')} />
       </>}>
       <table className="dash-matrix" aria-label={title}>
         <thead>

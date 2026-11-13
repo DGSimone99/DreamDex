@@ -221,9 +221,10 @@
 @keyframes peek-sink { to { transform: translateY(75%); visibility: hidden; } }
 @keyframes peek-sink-tail { from { transform: rotate(14deg); } to { transform: translateY(85%) rotate(14deg); visibility: hidden; } }
 @keyframes screen-off {
-  /* Parte dalla luminosità normale: uno scatto di luce subito farebbe sembrare più scura la finestra aperta */
+  /* Mentre si richiude resta della sua luminosità (prima si schiariva a scatti e sembrava illuminarsi): si accende
+     solo la linea finale al centro, che poi si spegne */
   0% { clip-path: inset(0); filter: none; animation-timing-function: steps(5, end); }
-  70% { clip-path: inset(calc(50% - 1px) 0 calc(50% - 1px) 0); filter: brightness(2.2); animation-timing-function: cubic-bezier(0.6, 0, 0.8, 0.2); }
+  70% { clip-path: inset(calc(50% - 1px) 0 calc(50% - 1px) 0); filter: brightness(1); animation-timing-function: cubic-bezier(0.6, 0, 0.8, 0.2); }
   100% { clip-path: inset(calc(50% - 1px) 50% calc(50% - 1px) 50%); filter: brightness(3); }
 }
 @keyframes screen-on {
@@ -334,7 +335,7 @@
 .tt-pip.x { border: 1.5px dashed var(--line); }
 .tt-caption { font-size: 13px; color: var(--muted); }
 .help-panel .tt-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 10px 0 0; font-size: 12px; color: var(--faint); }
-.tt-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.tt-legend > span { display: inline-flex; align-items: center; gap: 6px; }
 .tt-legend .tt-pip { width: 16px; height: 16px; border-radius: 3px; }
 .tt-legend .tt-pip .icon { width: 10px; height: 10px; }
 .help-panel .tt-section { margin: 18px 0 6px; font: 600 11px/1.2 var(--ui); font-style: normal; text-transform: uppercase; letter-spacing: 0.06em; color: var(--faint); }
@@ -346,8 +347,6 @@
 .tt-formula span { padding: 2px 9px; font-size: 12px; font-weight: 500; color: var(--text); background: var(--raised); border: 1px solid var(--line-soft); border-radius: 4px; }
 .help-panel .tt-note { margin: 18px 0 0; font-size: 12px; color: var(--faint); }
 /* Come si riconosce il tipo (National Dex OU): le righe come gli stili, la nota subito sotto */
-.tt-how { gap: 6px 16px; }
-.help-panel .tt-how-note { margin: 8px 0 0; }
 .help-panel h4 { margin: 0 0 10px; font: 700 18px/1.1 var(--display); font-style: italic; letter-spacing: 0.01em; }
 .help-panel p { margin: 0 0 10px; font-size: 14px; line-height: 1.55; color: var(--muted); max-width: 62ch; }
 .help-table-wrap { overflow-x: auto; }

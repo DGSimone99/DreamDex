@@ -11,9 +11,9 @@ describe('coaching e valutazione in inglese', () => {
     expect(coaching.verdict).toBe('Incomplete team');
     expect(coaching.problems).toContainEqual({ severity: 'serious', category: 'rules', text: 'Mewtwo-Mega-Y is not legal in National Dex OU: tier too high', fixes: [], key: 'rules:Mewtwo-Mega-Y is not legal in National Dex OU: tier too high', subjects: ['Mewtwo-Mega-Y'] });
     // Difesa: grave se nessuno regge il tipo, minore se lo regge poco
-    expect(coaching.problems.some(p => p.category === 'defense' && p.severity === 'serious' && /^Nobody takes \w+$/.test(p.text))).toBe(true);
-    expect(coaching.problems.some(p => p.category === 'defense' && p.severity === 'minor' && /^\w+ barely taken: few members take its hits$/.test(p.text))).toBe(true);
-    expect(coaching.problems.some(p => p.category === 'meta' && /^Nobody takes [\w-]+( [\w-]+)? from the meta$/.test(p.text))).toBe(true);
+    expect(coaching.problems.some(p => p.category === 'defense' && p.severity === 'serious' && /^Uncovered on defense vs \w+: nobody withstands its hits$/.test(p.text))).toBe(true);
+    expect(coaching.problems.some(p => p.category === 'defense' && p.severity === 'minor' && /^Weakly covered on defense vs \w+: few withstand its hits$/.test(p.text))).toBe(true);
+    expect(coaching.problems.some(p => p.category === 'meta' && /^Uncovered on defense vs [\w-]+( [\w-]+)?: nobody withstands its hits$/.test(p.text))).toBe(true);
   });
 
   it('meno di due membri', () => {

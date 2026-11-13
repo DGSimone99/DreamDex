@@ -73,7 +73,8 @@
 .grade-badge button.grade-area .icon { width: 10px; height: 10px; color: var(--faint); }
 .grade-badge button.grade-area:hover .icon { color: var(--accent); }
 /* Aiuto e triangolo delle regole nella testa magenta, a destra */
-.grade-tools { position: absolute; top: 2px; right: 22px; display: flex; align-items: center; gap: 4px; }
+/* A metà della fascia "Voto" (alta ~28px, il "?" 20px): non tocca il bordo in alto */
+.grade-tools { position: absolute; top: 4px; right: 22px; display: flex; align-items: center; gap: 4px; }
 /* Bersagli da almeno 24×24: l'area cliccabile va oltre il disegno (pseudo-elemento), il disegno e la misura restano */
 .grade-tools .help-button::after, .grade-badge button.grade-area::after { content: ''; position: absolute; left: 50%; top: 50%; width: max(100%, 24px); height: max(100%, 24px); translate: -50% -50%; }
 .grade-badge button.grade-area { position: relative; }

@@ -14,10 +14,11 @@ const move = (index: number, gain: number, solves: string[], reduces: string[] =
 
 describe('columnOf', () => {
   it('colonna della mappa per categoria', () => {
-    expect(columnOf('defense')).toBe('defense');
-    expect(columnOf('coverage')).toBe('offense');
+    // Le minacce del meta: chi nessuno regge in Difesa, chi nessuno manda KO in Offesa; le Regole da sole
+    for (const c of ['defense', 'meta'] as const) expect(columnOf(c)).toBe('defense');
+    for (const c of ['coverage', 'metaHit'] as const) expect(columnOf(c)).toBe('offense');
     for (const c of ['roles', 'conditions', 'redundancy'] as const) expect(columnOf(c)).toBe('roles');
-    for (const c of ['rules', 'meta'] as const) expect(columnOf(c)).toBe('rules');
+    expect(columnOf('rules')).toBe('rules');
   });
 });
 

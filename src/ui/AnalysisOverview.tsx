@@ -23,7 +23,7 @@ export function AnalysisOverview({ team, analysis, rating, coaching, advice = nu
   rating: TeamRating | null;
   coaching?: Coaching;
   data: EngineData;
-  onView: (view: AnalysisView) => void;
+  onView: (view: AnalysisView, sub?: string) => void;
 }) {
   const t = useT();
   const lang = useLang();
