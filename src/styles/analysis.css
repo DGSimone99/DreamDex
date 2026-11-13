@@ -147,10 +147,21 @@
 .overview-empty { margin: 24px 0; color: var(--muted); }
 
 
-/* Panoramica: in testa giudizio e tipo di team */
+/* Panoramica: in testa solo con un membro (l'invito ad aggiungerne), in fondo la riga Da sistemare */
 .overview-headline { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; }
 .overview-headline > strong { font: 800 22px/1.1 var(--display); font-style: italic; }
 .overview-empty { display: grid; justify-items: start; gap: 12px; }
+/* Da sistemare: una riga sola in fondo alla Panoramica, rossa a sinistra; il testo lungo finisce coi puntini (tutto nel tooltip) */
+.fix-row {
+  flex: none; display: flex; align-items: center; gap: 12px; min-width: 0; padding: 7px 8px 7px 12px;
+  background: linear-gradient(90deg, var(--bad-bg), var(--panel) 70%);
+  border: 1px solid color-mix(in srgb, var(--bad) 35%, var(--line)); border-left: 3px solid var(--bad);
+  font-size: 13px;
+}
+.fix-label { flex: none; font: 600 11px/1 var(--display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--bad); }
+.fix-items { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fix-more { flex: none; padding: 0 6px; font-size: 12px; font-weight: 600; color: var(--muted); background: var(--raised); }
+.fix-go { flex: none; margin-left: auto; }
 .analysis-tabs [role='tab'][aria-disabled='true'] { opacity: 0.45; cursor: not-allowed; }
 
 /* Schede interne a larghezza uguale su tutta la riga; quella aperta come le teste (magenta a righe, inclinata) */

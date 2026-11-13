@@ -9,6 +9,7 @@ import { teamSummary } from '../engine/teamSummary';
 import { useLang, useT } from '../i18n/react';
 import type { AnalysisView } from './analysisView';
 import { OverviewDashboard } from './OverviewDashboard';
+import { FixRow } from './dashboard/FixRow';
 
 /** La Panoramica: il giudizio in cima, poi il cruscotto (Riassunto, Copertura, Ruoli, Velocità) che riempie lo spazio. */
 export function AnalysisOverview({ team, analysis, rating, coaching, data, onView, onAdd, teamCollapsed = false }: {
@@ -37,11 +38,10 @@ export function AnalysisOverview({ team, analysis, rating, coaching, data, onVie
   }
   return (
     <div className="overview">
-      {/* Una riga: il giudizio; il tipo di team è nel Riassunto */}
-      <div className="overview-headline">
-        {coaching && <strong>{coaching.verdict}</strong>}
-      </div>
+      {/* Con un membro solo l'invito ad aggiungerne un altro; dopo, prima com'è fatto il team e in fondo cosa sistemare */}
+      {team.length < 2 && coaching && <div className="overview-headline"><strong>{coaching.verdict}</strong></div>}
       {dash && summary && <OverviewDashboard data={dash} summary={summary} members={team.length} onView={onView} teamCollapsed={teamCollapsed} />}
+      {team.length >= 2 && problems && <FixRow problems={problems} onView={onView} />}
     </div>
   );
 }
