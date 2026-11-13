@@ -63,7 +63,7 @@ describe('scheda Coaching', () => {
   it('la mappa mette i gravi prima dei minori, nella colonna della loro area', async () => {
     await openCoaching(six);
     expect(within(analysis()).getByRole('group', { name: 'Regole' })).toHaveTextContent('Mosse non legali');
-    expect(within(analysis()).getByRole('group', { name: 'Difesa' })).toHaveTextContent('In difesa: Scoperti');
+    expect(within(analysis()).getByRole('group', { name: 'Difesa' })).toHaveTextContent(/In difesa: Scopert[oi]/);
   });
 
   it('clic su un sostituto: scheda Pokémon, quel membro da sostituire, il candidato aperto, stesso +N', async () => {
@@ -533,7 +533,10 @@ describe('CoachingView', () => {
     const group = screen.getByRole('group', { name: 'Difesa' });
     const rows = [...group.querySelectorAll<HTMLElement>('li.coach-group')];
     // Fire è retto da 1 come Ground, ma è grave: sta con Ice fra gli scoperti
-    expect(rows.map(r => r.querySelector('.coach-group-label')!.textContent)).toEqual(['In difesa: Scoperti', 'In difesa: Coperti poco']);
+    expect(rows.map(r => r.querySelector('.coach-group-label')!.textContent)).toEqual(['In difesa: Scoperti', 'In difesa: Coperto poco']);
+    // Più di un tipo: solo le icone; uno solo: anche il nome
+    expect(rows[0].querySelector('.coach-chip-name')).toBeNull();
+    expect(rows[1].querySelector('.coach-chip-name')).toHaveTextContent('Ground');
     expect(rows.map(r => r.dataset.group)).toEqual(['defense:def:uncovered:serious', 'defense:def:half:minor']);
     expect(rows[0].querySelector('.coach-cover.is-def .coach-side')).toHaveAttribute('aria-hidden', 'true');
     expect([...rows[0].querySelectorAll<HTMLElement>('[data-key]')].map(c => c.dataset.key)).toEqual(['defense:Ice', 'defense:Fire']);
@@ -601,9 +604,9 @@ describe('CoachingView', () => {
         { severity: 'minor', category: 'coverage', text: 'Coperto a metà Fire: 1 solo in tre colpi', fixes: [], key: 'coverage:Fire', size: 1, subjects: ['Fire'] },
       ] };
     renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [] }} members={3} rating={rating(three)} metaOn {...noop} />);
-    // Una riga per problema (spada e "Scoperti", "Coperti poco") con un'icona per tipo, senza nomi colorati
+    // Una riga per problema (spada e "Scoperto", "Coperto poco": un tipo solo per riga) con un'icona per tipo, senza nomi colorati
     const offense = screen.getByRole('group', { name: 'Offesa' });
-    expect([...offense.querySelectorAll('.coach-group-label')].map(l => l.textContent)).toEqual(['In attacco: Scoperti', 'In attacco: Coperti poco']);
+    expect([...offense.querySelectorAll('.coach-group-label')].map(l => l.textContent)).toEqual(['In attacco: Scoperto', 'In attacco: Coperto poco']);
     expect(offense.querySelectorAll('.coach-group-label .coach-cover.is-atk')).toHaveLength(2);
     for (const type of ['Water', 'Fire']) {
       const chip = offense.querySelector(`[data-key="coverage:${type}"]`)!;
@@ -654,7 +657,9 @@ describe('CoachingView', () => {
     renderIt(<CoachingView coaching={coaching} advice={{ fixes: [], steps: [] }} members={3} rating={rating(three)} metaOn threatUsage={{ Corviknight: 0.2 }} {...noop} />);
     const offense = screen.getByRole('group', { name: 'Offesa' });
     const chip = offense.querySelector<HTMLElement>('.coach-chip.is-mon[data-key="metaHit:Corviknight"]')!;
-    expect(chip.closest('li')!.querySelector('.coach-group-label')).toHaveTextContent('Scoperti');
+    // Uno solo nella riga: "Scoperto" e anche il nome
+    expect(chip.closest('li')!.querySelector('.coach-group-label')).toHaveTextContent('Scoperto');
+    expect(chip.closest('li')!.querySelector('.coach-chip-name')).toHaveTextContent('Corviknight');
     expect(chip.getAttribute('title')).toMatch(/Corviknight.*20%/);
   });
 
@@ -901,18 +906,24 @@ describe('CoachingView', () => {
     };
     const previewed = () => [...document.querySelectorAll<HTMLElement>('.is-solved-preview[data-key]')].map(li => li.dataset.key);
 
-    it('titolo: scudo e "Coperti poco" coi tipi raggruppati, senza conteggi; i raggruppati non sono in "risolve anche"', () => {
+    it('titolo: scudo e "Coperti poco" coi tipi raggruppati (più di uno: solo le icone, uno solo: icona e nome); i raggruppati non sono in "risolve anche"', () => {
       setup();
       const [first, second] = within(stepsRegion()).getAllByRole('listitem');
       const title = first.querySelector('.coach-step-problem')!;
-      expect(title).toHaveTextContent('In difesa: Coperti poco Water, Ice');
+      expect(title).toHaveTextContent('In difesa: Coperti poco');
       expect(title).not.toHaveTextContent('regg');
-      expect(title.querySelectorAll('.type-icons img')).toHaveLength(2);
+      // Due tipi: solo le icone, coi nomi per i lettori di schermo e nel title
+      const icons = title.querySelector('.coach-step-icons')!;
+      expect(icons.querySelectorAll('.type-icons img')).toHaveLength(2);
+      expect([...icons.querySelectorAll('.visually-hidden')].map(e => e.textContent)).toEqual(['Water', 'Ice']);
       const also = first.querySelector('.coach-also')!;
       expect(also.querySelectorAll('.type-icons img')).toHaveLength(0);
       expect(also).toHaveTextContent('In difesa: Scoperto');
       expect(also.querySelector('.coach-also-mon')).toHaveAttribute('title', 'Scoperto in difesa contro Zapdos: nessuno regge bene i suoi colpi');
       expect(second.querySelector('.coach-step-problem')).toHaveTextContent('In difesa: Coperto poco Ghost');
+      expect(second.querySelector('.coach-step-icons')).toBeNull();
+      // In "risolve anche" una minaccia sola ha anche il nome
+      expect(also.querySelector('.coach-also-subject')).toHaveTextContent('Zapdos');
       expect(second.querySelector('.coach-also')).toBeNull();
     });
 

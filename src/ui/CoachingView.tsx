@@ -240,7 +240,8 @@ function Also({ id, solves, skip, problems, self, watch }: {
           {s.items.filter(i => shownItems.has(i)).map(i => (
             <span key={i.subject} className={i.mon ? 'coach-also-mon' : 'coach-also-type'} title={i.text}>
               {i.mon ? <PokemonIcon name={i.subject} /> : <TypeIcons types={[i.subject]} />}
-              <span className="visually-hidden">{subjectName(i)}</span>
+              {/* Uno solo nella sua copertura: anche il nome; più di uno: solo le icone */}
+              <span className={s.items.length === 1 ? 'coach-also-subject' : 'visually-hidden'}>{subjectName(i)}</span>
             </span>
           ))}
         </span>
@@ -274,11 +275,20 @@ function StepTitle({ step, problems }: { step: CoachStep; problems: CoachProblem
       const piece = pieces.find(x => x.side === cover.side && x.uncovered === cover.uncovered);
       if (piece) piece.items.push(p); else pieces.push({ ...cover, items: [p] });
     }
+    const subjectOf = (p: CoachProblem, named: boolean) => {
+      const subject = p.subjects![0];
+      const name = isThreat(p) ? subject : typeName(subject, lang);
+      return (
+        <span key={p.key} className={`coach-step-subject${isThreat(p) ? ' is-mon' : ''}`} title={named ? undefined : p.text}>
+          {isThreat(p) ? <PokemonIcon name={subject} /> : <TypeIcons types={[subject]} />}
+          {named ? name : <span className="visually-hidden">{name}</span>}
+        </span>
+      );
+    };
     return <>{pieces.map((piece, i) => (
       <Fragment key={`${piece.side}:${piece.uncovered}`}>{i > 0 && ' · '}<CoverLabel side={piece.side} uncovered={piece.uncovered} n={piece.items.length} />{' '}
-        {list(piece.items.map(p => (isThreat(p)
-          ? <span className="coach-step-subject is-mon"><PokemonIcon name={p.subjects![0]} />{p.subjects![0]}</span>
-          : <span className="coach-step-subject"><TypeIcons types={[p.subjects![0]]} />{typeName(p.subjects![0], lang)}</span>)))}
+        {/* Uno solo: icona e nome; più di uno: solo le icone (il nome nel title e per i lettori di schermo) */}
+        {piece.items.length === 1 ? subjectOf(piece.items[0], true) : <span className="coach-step-icons">{piece.items.map(p => subjectOf(p, false))}</span>}
       </Fragment>
     ))}</>;
   }
@@ -418,6 +428,10 @@ function MapGroup({ id, label, members, stepOf, preview, usage }: {
               <span className="visually-hidden">{chipTitle(m)}</span>
             </span>
           ))}
+          {/* Uno solo nella riga: anche il nome (più di uno: solo le icone) */}
+          {members.length === 1 && (
+            <span className="coach-chip-name" aria-hidden="true">{isThreat(members[0]) ? members[0].subjects![0] : typeName(members[0].subjects?.[0] ?? '', lang)}</span>
+          )}
           {/* Le altre in un "+N" (nel title e per i lettori di schermo): la riga resta di due file al più */}
           {members.length > MAX_CHIPS && (
             <span className="coach-chip coach-chip-more" title={members.slice(MAX_CHIPS).map(chipTitle).join('\n')}>
@@ -446,9 +460,9 @@ function typeGroupOf(p: CoachProblem): string | null {
   if (!cover || (p.subjects?.length ?? 0) !== 1) return null;
   return `${p.category}:${cover.side}:${cover.uncovered ? 'uncovered' : 'half'}:${p.severity}`;
 }
-function groupLabel(group: string): ReactNode {
+function groupLabel(group: string, n: number): ReactNode {
   const [, side, kind] = group.split(':');
-  return <CoverLabel side={side as Side} uncovered={kind === 'uncovered'} n={2} />;
+  return <CoverLabel side={side as Side} uncovered={kind === 'uncovered'} n={n} />;
 }
 
 /** I problemi "ruoli mancanti" (essenziali o importanti) coi ruoli come soggetti. */
@@ -512,7 +526,7 @@ function MapTile({ id, name, items, score, count, stepOf, preview, threatUsage, 
   const hidden = priority.slice(fit);
   const hiddenText = (x: typeof pills[number]) => (x.role ? needLabel(x.role as Need, lang) : all(x).map(p => p.text).join('; '));
   const row = ({ p, role, section, members, group }: typeof pills[number]) => members ? (
-    <MapGroup key={group} id={group!} label={groupLabel(group!)} stepOf={stepOf} preview={preview}
+    <MapGroup key={group} id={group!} label={groupLabel(group!, members.length)} stepOf={stepOf} preview={preview}
       members={isThreat(members[0]) ? [...members].sort((a, b) => (threatUsage?.[b.subjects![0]] ?? 0) - (threatUsage?.[a.subjects![0]] ?? 0)) : members}
       usage={p => (isThreat(p) ? threatUsage?.[p.subjects?.[0] ?? ''] : undefined)} />
   ) : <MapProblem key={`${p.key}|${p.text}|${role ?? ''}`} problem={p} step={stepOf.get(p.key) ?? null}

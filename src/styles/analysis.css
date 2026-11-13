@@ -684,6 +684,12 @@
 .coach-also-cover { gap: 3px; }
 .coach-also-cover .coach-cover { margin-right: 2px; color: var(--muted); }
 .coach-also-type { display: inline-flex; }
+/* Uno solo nella sua copertura: icona e nome */
+.coach-also-type:has(.coach-also-subject), .coach-also-mon:has(.coach-also-subject) { display: inline-flex; align-items: center; gap: 4px; }
+.coach-also-subject { color: var(--text); white-space: nowrap; }
+/* Nel titolo di una tappa, più soggetti: solo le icone, vicine */
+.coach-step-icons { display: inline-flex; align-items: center; gap: 4px; vertical-align: middle; }
+.coach-step-icons .coach-step-subject .type-icons { margin-right: 0; }
 .coach-also-name { display: block; flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 /* "risolve anche" va a capo (due righe al più) invece di tagliare i nomi o uscire dalla striscia */
 @media (min-width: 600px) {
@@ -769,6 +775,8 @@
 .coach-prob.coach-group > .coach-by { margin-top: 5px; }
 .coach-prob-text.coach-group-row { align-items: flex-start; }
 .coach-chips { align-items: center; min-height: 26px; }
+/* Il nome del tipo o del Pokémon quando nella riga ce n'è uno solo */
+.coach-chip-name { align-self: center; margin-left: 1px; font-weight: 600; white-space: nowrap; }
 .coach-chip-more { width: auto; height: 22px; padding: 0 7px; border-radius: 11px; font: 600 12px/22px var(--ui); color: var(--muted); background: var(--raised); cursor: help; }
 .coach-chips { display: flex; flex-wrap: wrap; gap: 5px; min-width: 0; }
 /* L'icona al centro di un tondo della sua misura: l'anello verde la circonda senza spazio in più (niente margine delle icone di testo) */
