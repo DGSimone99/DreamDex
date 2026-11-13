@@ -80,7 +80,7 @@ describe('Svuota team', () => {
     for (const name of ['Great Tusk', 'Gholdengo']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
     const clear = within(team()).getByRole('button', { name: 'Svuota team' });
     act(() => clear.focus());
-    expect(clear).toHaveAccessibleDescription('Svuota il team · si può annullare');
+    expect(clear).toHaveAccessibleDescription('Svuota il team');
     await user.keyboard('{Enter}');
     expect(names()).toEqual([]);
     await act(() => new Promise(resolve => requestAnimationFrame(() => resolve(null))));

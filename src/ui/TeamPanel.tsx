@@ -601,7 +601,7 @@ export function TeamPanel({ team, format, data, onChange, onAdd, onReplace, onRe
   const [confirmPresets, setConfirmPresets] = useState(false);
   // Dopo un Incolla set: mosse non imparabili (Custom Skillset?) o nomi non trovati del membro incollato
   const [ask, setAsk] = useState<{ index: number; review: ImportReview } | null>(null);
-  // Svuota: sotto il mouse o col fuoco un fumetto dice cosa fa (e che si può annullare)
+  // Svuota: sotto il mouse o col fuoco un fumetto dice cosa fa
   const [clearHint, setClearHint] = useState(false);
   const clearNote = useId();
   const presetsButton = useRef<HTMLButtonElement>(null);

@@ -448,7 +448,7 @@ export const en = {
   'team.bestPresets': "Improve sets",
   'team.bestPresetsTitle': "For each member, the Smogon preset that gives the team the highest grade",
   'team.clear': "Clear team",
-  'team.clearTitle': "Clear the team · you can undo",
+  'team.clearTitle': "Clear the team",
   'undo.filledOne': "Added 1 Pokémon: {from} → {to}",
   'undo.filledMany': "Added {n} Pokémon: {from} → {to}",
   'team.bestPresetsBusy': "Working…",
