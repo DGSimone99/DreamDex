@@ -49,15 +49,18 @@ const previewHandlers = (solves: string[], onPreview: OnPreview) => ({
  * Una proposta: il pulsante che applica il cambio (`children`) e, accanto, l'icona piccola che apre le alternative
  * (scheda Pokémon o editor). Puntatore o fuoco: anteprima nella mappa. `describedBy`: la riga "risolve anche".
  */
-function Proposal({ className, label, title, describedBy, solves, onApply, onAlternatives, alternativesFor, onPreview, or, children }: {
+function Proposal({ className, label, title, describedBy, solves, onApply, onAlternatives, alternativesFor, onPreview, or, extra, children }: {
   className: string; label: string; title?: string; describedBy: string; solves: string[]; onApply: () => void; onAlternatives: () => void; alternativesFor: string;
-  onPreview: OnPreview; or?: string; children: ReactNode;
+  onPreview: OnPreview; or?: string;
+  /** Dopo il pulsante, dentro la stessa barra: l'alternativa "oppure" e il +N della barra. */
+  extra?: ReactNode; children: ReactNode;
 }) {
   const tr = useT();
   const alternatives = tr('coach.steps.alternativesAria', { name: alternativesFor });
   return (
     <div className={`coach-prop ${className}`} data-or={or} {...previewHandlers(solves, onPreview)}>
       <button type="button" className="coach-fix" aria-label={label} aria-describedby={describedBy} title={title} onClick={onApply}>{children}</button>
+      {extra}
       <button type="button" className="coach-alt" aria-label={alternatives} title={tr('coach.steps.alternatives')} onClick={onAlternatives}>
         <Icon name="search" />
       </button>
@@ -69,8 +72,10 @@ function Proposal({ className, label, title, describedBy, solves, onApply, onAlt
  * Un cambio di Pokémon, la proposta principale della striscia: chi esce piccolo e spento, ⇄, chi entra grande (animato
  * solo con la striscia sotto il puntatore o col fuoco: `animated`) col nome e il voto in più (in aggiunta: "Aggiungi" al posto di chi esce). Il suo pulsante copre tutta la striscia.
  */
-function SwapProposal({ fix, alsoId, solves, animated, onApply, onFix, onPreview }: {
+function SwapProposal({ fix, alsoId, solves, animated, onApply, onFix, onPreview, side, shownGain }: {
   fix: CoachFix; alsoId: string; solves: string[]; animated: boolean; onApply: (fix: CoachFix) => void; onFix: (fix: CoachFix) => void; onPreview: OnPreview;
+  /** L'alternativa "oppure" (un cambio di mossa) dentro la barra, dopo chi entra; il +N grande va dopo di lei e mostra `shownGain`. */
+  side?: ReactNode; shownGain?: number;
 }) {
   const tr = useT();
   const gain = gainText(fix.gain);
@@ -81,7 +86,8 @@ function SwapProposal({ fix, alsoId, solves, animated, onApply, onFix, onPreview
     // Il pulsante copre la striscia: il suo title dice chi esce (lo sprite spento da solo non lo dice)
     <Proposal className="is-main" label={label} title={fix.kind === 'swap' ? `${tr('coach.steps.swap', { member: fix.member ?? '' })} → ${fix.species}` : `${tr('coach.steps.add')} ${fix.species}`}
       describedBy={alsoId} solves={solves} onApply={() => onApply(fix)} onAlternatives={() => onFix(fix)}
-      alternativesFor={fix.species} onPreview={onPreview}>
+      alternativesFor={fix.species} onPreview={onPreview}
+      extra={side && <>{side}<span className="coach-gain coach-strip-gain" aria-hidden="true">{gainText(shownGain ?? fix.gain)}</span></>}>
       {fix.kind === 'swap' ? (
         <>
           <span className="coach-strip-out"><Sprite species={fix.member ?? ''} size={48} /></span>
@@ -90,7 +96,7 @@ function SwapProposal({ fix, alsoId, solves, animated, onApply, onFix, onPreview
       ) : <><span className="coach-strip-add">{tr('coach.steps.add')}</span>{' '}</>}
       <span className="coach-strip-in"><Sprite species={fix.species} size={64} animated={animated} /></span>
       <span className="coach-fix-main"><strong>{fix.species}</strong></span>
-      <span className="coach-gain">{gain}</span>
+      {!side && <span className="coach-gain coach-strip-gain">{gain}</span>}
     </Proposal>
   );
 }
@@ -118,7 +124,7 @@ function MoveProposal({ fix, main, alsoId, solves = fix.solves, skip, problems, 
         <span className="coach-side-moves">
           <span className="coach-move-old">{fix.from ? gameName('move', fix.from, lang) : tr('coach.steps.newMove')}</span>
           <span className="coach-move-arrow" aria-hidden="true"><Icon name="swap" /></span>
-          <span className="coach-move-new"><strong>{to}</strong><span className="coach-gain">{gainText(fix.gain)}</span></span>
+          <span className="coach-move-new"><strong>{to}</strong></span>
         </span>
       </Proposal>
     );
@@ -248,23 +254,27 @@ function Step({ step, index, problems, actions, onCard, onPreview }: {
   const [hot, setHot] = useState(false);
   // Puntatore o fuoco sull'alternativa "oppure": "risolve anche" dice cosa risolve lei
   const [altHot, setAltHot] = useState(false);
+  // Puntatore sulla barra principale (lo scambio): il suo blocco si illumina
+  const [mainHot, setMainHot] = useState(false);
   const { problem, swap, move } = step;
   const skip = step.group;
   const solved = [...new Set([...step.group, ...(swap?.solves ?? []), ...(move?.solves ?? [])])];
   return (
-    <li className={`coach-step coach-strip ${problem.severity}`}
+    <li className={`coach-step coach-strip ${problem.severity}${altHot ? ' is-alt-hot' : mainHot ? ' is-main-hot' : ''}`}
       onMouseEnter={() => { onCard(solved); setHot(true); }} onMouseLeave={() => { onCard(null); setHot(false); }}
       onFocus={() => setHot(true)} onBlur={() => setHot(false)}>
       <span className="coach-step-num">{index + 1}</span>
       <p className="coach-step-problem">
         <span className="coach-sev">{tr(problem.severity === 'serious' ? 'dash.serious' : 'dash.minor')}</span> <StepTitle step={step} problems={problems} />
       </p>
-      {swap ? <SwapProposal fix={swap} alsoId={alsoId} solves={solved} animated={hot} onApply={actions.onApplyFix} onFix={actions.onFix} onPreview={onPreview} />
+      {swap ? <SwapProposal fix={swap} alsoId={alsoId} solves={solved} animated={hot} onApply={actions.onApplyFix} onFix={actions.onFix}
+        onPreview={keys => { onPreview(keys); setMainHot(keys !== null); }} shownGain={altHot && move ? move.gain : swap.gain}
+        side={move && (
+          // L'alternativa sta dentro la barra dello scambio: uscendo da lei si resta sulla barra (anteprima dello scambio)
+          <MoveProposal fix={move} main={false} alsoId={alsoId} skip={skip} problems={problems} or={tr('coach.steps.or')}
+            onApply={actions.onApplyMove} onMoveFix={actions.onMoveFix} onPreview={keys => { onPreview(keys ?? solved); setAltHot(keys !== null); }} />
+        )} />
         : move && <MoveProposal fix={move} main alsoId={alsoId} solves={solved} skip={skip} problems={problems} onApply={actions.onApplyMove} onMoveFix={actions.onMoveFix} onPreview={onPreview} />}
-      {swap && move && (
-        <MoveProposal fix={move} main={false} alsoId={alsoId} skip={skip} problems={problems} or={tr('coach.steps.or')}
-          onApply={actions.onApplyMove} onMoveFix={actions.onMoveFix} onPreview={keys => { onPreview(keys); setAltHot(keys !== null); }} />
-      )}
       {/* La colonna di destra fa parte della striscia: un clic fuori dai suoi pulsanti applica la proposta principale (da tastiera c'è il pulsante) */}
       <div className={`coach-strip-extras${altHot ? ' is-alt' : ''}`} onClick={e => {
         if ((e.target as Element).closest('button')) return;

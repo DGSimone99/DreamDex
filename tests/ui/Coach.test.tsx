@@ -389,9 +389,10 @@ describe('CoachingView', () => {
       expect(li.querySelector('.coach-strip-extras .coach-prop')).toBeNull();
     });
 
-    it('tappa con scambio e mossa: "oppure" accanto al Pokémon suggerito, col membro, la mossa vecchia e la nuova', () => {
+    it('tappa con scambio e mossa: "oppure" dentro la barra principale, col membro, la mossa vecchia e la nuova, senza +N suo', () => {
       const { li } = strip({ move: true, from: 'Shadow Ball' });
-      const or = li.querySelector<HTMLElement>(':scope > .coach-prop.is-side')!;
+      const or = li.querySelector<HTMLElement>('.coach-prop.is-main .coach-prop.is-side')!;
+      expect(or.querySelector('.coach-gain')).toBeNull();
       expect(or).toHaveAttribute('data-or', 'oppure');
       expect(li.querySelector('.coach-strip-extras .coach-prop')).toBeNull();
       expect(within(or).getByRole('button', { name: /^Dai Thunderbolt/ })).toBeInTheDocument();
@@ -412,11 +413,17 @@ describe('CoachingView', () => {
       const li = within(stepsRegion()).getByRole('listitem');
       const also = () => li.querySelector('.coach-strip-extras')!.textContent;
       const before = also();
+      // Il +N grande della barra: quello dello scambio, sulla mossa quello della mossa
+      const gain = () => li.querySelector('.coach-strip-gain')!.textContent;
+      expect(gain()).toBe(`+${swap.gain}`);
       fireEvent.mouseEnter(li.querySelector('.coach-prop.is-side')!);
       expect(also()).not.toBe(before);
       expect(li.querySelector('.coach-strip-extras')).toHaveClass('is-alt');
+      expect(li).toHaveClass('is-alt-hot');
+      expect(gain()).toBe('+1');
       fireEvent.mouseLeave(li.querySelector('.coach-prop.is-side')!);
       expect(also()).toBe(before);
+      expect(gain()).toBe(`+${swap.gain}`);
     });
 
     it('puntatore sul pulsante principale (che copre la striscia): anteprima di tutta la tappa; sulla mossa "oppure": solo la sua', async () => {

@@ -116,10 +116,10 @@
   .coach-step-num { grid-column: 1; grid-row: 1 / -1; font-size: 26px; }
   .coach-step-problem { grid-column: 2; grid-row: 1; padding: 10px 12px 6px 10px; -webkit-line-clamp: unset; }
   .coach-strip > .coach-prop.is-main { grid-column: 2; grid-row: 2; min-height: 64px; padding: 4px 6px 4px 10px; }
-  /* L'alternativa "oppure" sotto la proposta principale, poi "risolve anche" */
-  .coach-strip > .coach-prop.is-side { grid-column: 2; grid-row: 3; padding: 8px 10px; border-left: 0; border-top: 1px dashed var(--line); }
+  /* L'alternativa "oppure" va a capo dentro la barra della proposta, sotto chi entra */
+  .coach-prop.is-main:has(.is-side) { flex-wrap: wrap; }
+  .coach-prop.is-main .coach-prop.is-side { order: 3; flex-basis: 100%; margin: 4px 0 8px; padding: 6px 8px; }
   .coach-strip-extras { grid-column: 2; grid-row: 3; padding: 8px 10px 10px; border-left: 0; border-top: 1px solid var(--line-soft); }
-  .coach-strip:has(> .coach-prop.is-side) > .coach-strip-extras { grid-row: 4; }
   .coach-strip-extras:empty { display: none; }
   .coach-also { height: auto; min-height: 18px; }
   /* Lo scambio più compatto: il nome di chi entra resta intero (va a capo se serve) */

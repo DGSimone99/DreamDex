@@ -577,13 +577,24 @@
   .coach-strip:has(.coach-strip-extras .coach-prop) { height: auto; min-height: var(--step-h); }
   .coach-strip:has(.coach-strip-extras .coach-prop) > .coach-strip-extras { gap: 4px; padding-top: 7px; padding-bottom: 7px; }
 }
-/* "Oppure" accanto allo scambio: una colonna sua fra la proposta principale e "risolve anche" */
+/* "Oppure" dentro la barra dello scambio, dopo chi entra; il +N grande della barra viene dopo di lei */
+.coach-prop.is-main:has(.is-side) > .coach-fix { flex: 1 1 auto; }
+/* Con l'alternativa la barra principale prende più posto, così il nome di chi entra resta intero */
 @media (min-width: 600px) {
-  .coach-strip:has(> .coach-prop.is-side) { grid-template-columns: 46px minmax(0, 1.2fr) minmax(0, 1.8fr) auto minmax(0, 1.3fr); }
+  .coach-strip:has(.coach-prop.is-side) { grid-template-columns: 46px minmax(0, 1.05fr) minmax(0, 2.9fr) minmax(0, 1.15fr); }
 }
-.coach-prop.is-side { position: relative; z-index: 1; align-self: stretch; display: flex; align-items: center; gap: 8px; padding: 0 6px 0 12px; border-top: 0; border-left: 1px dashed var(--line); }
+.coach-prop.is-side { position: relative; z-index: 1; align-self: stretch; display: flex; align-items: center; gap: 8px; margin: 6px 4px; padding: 0 8px; border: 1px dashed color-mix(in srgb, var(--accent) 30%, var(--line)); border-radius: 4px; }
 .coach-prop.is-side[data-or]::before { content: attr(data-or); flex: none; font: 600 11px/1 var(--ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--faint); }
 .coach-prop.is-side .coach-fix { gap: 8px; }
+.coach-prop.is-main > .coach-strip-gain { position: relative; z-index: 0; flex: none; min-width: 3.2ch; padding: 0 4px; text-align: right; font: 800 22px/1 var(--display); font-style: italic; color: var(--good); background: none; }
+/* Il blocco sotto il puntatore si illumina, l'altro si spegne un po' */
+.coach-strip.is-alt-hot .coach-prop.is-main > .coach-fix > :not(.coach-fix-main) { opacity: 0.45; }
+.coach-strip.is-alt-hot .coach-prop.is-main > .coach-fix > .coach-fix-main { opacity: 0.6; }
+.coach-strip.is-alt-hot .coach-prop.is-side { border-style: solid; border-color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, var(--panel)); }
+.coach-strip.is-main-hot .coach-prop.is-side { opacity: 0.6; }
+@media (prefers-reduced-motion: no-preference) {
+  .coach-prop.is-side, .coach-prop.is-main > .coach-fix > * { transition: opacity 120ms ease-out, background-color 120ms ease-out, border-color 120ms ease-out; }
+}
 .coach-side-mon { flex: none; display: grid; place-items: center; width: 40px; height: 40px; }
 .coach-side-mon .sprite { width: 40px; height: 40px; image-rendering: pixelated; }
 .coach-side-moves { display: grid; justify-items: start; gap: 1px; min-width: 0; }
