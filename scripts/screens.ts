@@ -745,6 +745,10 @@ const STATES: Record<string, State> = {
     });
   } },
   empty: { hash: '' },
+  // Team con 1, 3 o 5 Pokémon: solo il primo slot libero ha la scritta, gli altri sono cornici tenui
+  'team-1': { hash: hash(TEAM.slice(0, 1)) },
+  'team-3': { hash: hash(TEAM.slice(0, 3)) },
+  'team-5': { hash: hash(TEAM) },
   'en-compact': { lang: 'en' },
   'long-names': { hash: hash(LONG) },
   nodata: { run: async () => 'every bundled format has data; the no-data banner is covered by the App test' },
