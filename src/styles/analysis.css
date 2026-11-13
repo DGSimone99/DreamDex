@@ -760,6 +760,9 @@
 .coach-chip { display: inline-grid; place-items: center; width: 20px; height: 20px; padding: 0; border-radius: 50%; line-height: 0; }
 .coach-group-row .coach-chip .type-icons { display: inline-flex; margin: 0; gap: 0; }
 .coach-chip .type-icons img { width: 18px; height: 18px; }
+/* Minaccia: l'icona del Pokémon in un riquadro piccolo (più larga di un tipo); l'anello verde come per i tipi */
+.coach-chip.is-mon { width: 30px; height: 26px; border-radius: 6px; overflow: visible; }
+.coach-chip.is-mon .mon-icon { margin: -2px -5px -2px -5px; transform: scale(0.8); }
 .coach-chip.is-solved-preview { box-shadow: 0 0 0 2px var(--good); background: var(--good-bg); }
 .coach-group.is-lit .coach-chip:not(.is-solved-preview) { opacity: 0.35; }
 @media (prefers-reduced-motion: no-preference) {

@@ -340,8 +340,14 @@ function MapProblem({ problem, step, preview, usage, dim = false, role }: {
  * tipi. Ogni icona ha il suo testo intero (title e lettori di schermo); in fondo i numeri delle tappe che toccano la riga.
  * Col puntatore su una proposta si accendono solo le icone che risolve, le altre si spengono.
  */
-function MapGroup({ id, label, members, stepOf, preview }: { id: string; label: string; members: CoachProblem[]; stepOf: Map<string, number>; preview: Set<string> | null }) {
+function MapGroup({ id, label, members, stepOf, preview, usage }: {
+  id: string; label: string; members: CoachProblem[]; stepOf: Map<string, number>; preview: Set<string> | null;
+  /** Uso nel meta (0-1) di una minaccia: nel title della sua icona. */
+  usage?: (p: CoachProblem) => number | undefined;
+}) {
   const tr = useT();
+  const lang = useLang();
+  const chipTitle = (m: CoachProblem) => { const u = usage?.(m); return u === undefined ? m.text : `${m.text} · ${formatPercent(lang, u, 0)}`; };
   const severity = members[0].severity;
   const steps = [...new Set(members.map(m => stepOf.get(m.key)).filter((n): n is number => n !== undefined))].sort((a, b) => a - b);
   const lit = members.some(m => preview?.has(m.key));
@@ -353,9 +359,10 @@ function MapGroup({ id, label, members, stepOf, preview }: { id: string; label: 
         <span className="coach-group-label" aria-hidden="true">{label}</span>
         <span className="coach-chips">
           {members.map(m => (
-            <span key={m.key} data-key={m.key} title={m.text}
-              className={`coach-chip${stepOf.has(m.key) ? ' is-covered' : ''}${preview?.has(m.key) ? ' is-solved-preview' : ''}`}>
-              <TypeIcons types={m.subjects ?? []} /><span className="visually-hidden">{m.text}</span>
+            <span key={m.key} data-key={m.key} title={chipTitle(m)}
+              className={`coach-chip${isThreat(m) ? ' is-mon' : ''}${stepOf.has(m.key) ? ' is-covered' : ''}${preview?.has(m.key) ? ' is-solved-preview' : ''}`}>
+              {isThreat(m) ? <PokemonIcon name={m.subjects![0]} /> : <TypeIcons types={m.subjects ?? []} />}
+              <span className="visually-hidden">{chipTitle(m)}</span>
             </span>
           ))}
         </span>
@@ -370,13 +377,19 @@ function MapGroup({ id, label, members, stepOf, preview }: { id: string; label: 
 /** In quale riga di tipi va un problema di Difesa o di Offesa (null: riga sua). Stesso tipo di problema e stessa gravità. */
 function typeGroupOf(p: CoachProblem): string | null {
   if ((p.subjects?.length ?? 0) !== 1) return null;
-  if (p.category === 'defense') return `defense:${p.severity === 'serious' ? 'notHeld' : 'halfHeld'}`;
+  // Difesa: per quanti lo reggono ("0 reggono", "1 regge"); le minacce che nessuno regge, "0 reggono" con gli sprite
+  if (p.category === 'defense') return `defense:held:${p.counts?.held ?? 0}:${p.severity}`;
+  if (p.category === 'meta') return 'meta:held:0';
+  // Offesa: "Scoperti" / "Coperti poco"; le minacce che nessuno manda KO sono "Scoperti" con gli sprite
   if (p.category === 'coverage') return `coverage:${p.size === 2 ? 'uncovered' : 'halfCovered'}:${p.severity}`;
+  if (p.category === 'metaHit') return 'metaHit:uncovered';
   return null;
 }
-const GROUP_LABEL: Record<string, MessageKey> = {
-  notHeld: 'coach.group.notHeld', halfHeld: 'coach.group.halfHeld', uncovered: 'coach.group.uncovered', halfCovered: 'coach.group.halfCovered',
-};
+function groupLabel(group: string, tr: ReturnType<typeof useT>): string {
+  const [, kind, n] = group.split(':');
+  if (kind === 'held') return tr(n === '1' ? 'coach.group.held1' : 'coach.group.heldN', { n: Number(n) });
+  return tr(kind === 'uncovered' ? 'coach.group.uncovered' : 'coach.group.halfCovered');
+}
 
 /** I problemi "ruoli mancanti" (essenziali o importanti) coi ruoli come soggetti. */
 const isMissingRoles = (p: CoachProblem) => p.category === 'roles' && (p.key === 'roles:essential' || p.key === 'roles:important') && (p.subjects?.length ?? 0) > 0;
@@ -439,13 +452,14 @@ function MapTile({ id, name, items, score, count, stepOf, preview, threatUsage, 
   const hidden = priority.slice(fit);
   const hiddenText = (x: typeof pills[number]) => (x.role ? needLabel(x.role as Need, lang) : all(x).map(p => p.text).join('; '));
   const row = ({ p, role, section, members, group }: typeof pills[number]) => members ? (
-    <MapGroup key={group} id={group!} label={tr(GROUP_LABEL[group!.split(':')[1]])} members={members} stepOf={stepOf} preview={preview} />
+    <MapGroup key={group} id={group!} label={groupLabel(group!, tr)} stepOf={stepOf} preview={preview}
+      members={isThreat(members[0]) ? [...members].sort((a, b) => (threatUsage?.[b.subjects![0]] ?? 0) - (threatUsage?.[a.subjects![0]] ?? 0)) : members}
+      usage={p => (isThreat(p) ? threatUsage?.[p.subjects?.[0] ?? ''] : undefined)} />
   ) : <MapProblem key={`${p.key}|${p.text}|${role ?? ''}`} problem={p} step={stepOf.get(p.key) ?? null}
     preview={preview?.has(p.key) ?? false} usage={isThreat(p) ? threatUsage?.[p.subjects?.[0] ?? ''] : undefined} dim={section !== 'main'} role={role} />;
   const list = (section: Section) => pills.filter(x => x.section === section && shown.has(x.i)).sort((a, b) => Number(lit(b)) - Number(lit(a)) || a.i - b.i);
   const [main, redundancy, threats] = [list('main'), list('redundancy'), list('meta')];
-  // Difesa: "Nessuno le regge"; Offesa: "Nessuno le manda KO"
-  const threatLabel = tr(items.some(p => p.category === 'metaHit') ? 'coach.map.metaHit' : 'dash.todo.threats');
+  const threatLabel = tr('coach.map.metaThreats');
   return (
     <div ref={ref} role="group" aria-labelledby={id} className="coach-tile"
       style={score !== null ? { '--score': `${Math.max(0, Math.min(100, score))}%` } as CSSProperties : undefined}>
