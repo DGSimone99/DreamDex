@@ -43,23 +43,6 @@ describe('SuggestionsPanel', () => {
     expect(within(detail).getByRole('list', { name: 'Mosse' }).children.length).toBeGreaterThan(0);
   });
 
-  it('il dettaglio dice quando il cambio cambia il tipo di team; aggiungendo a un team incompleto mai', async () => {
-    const user = await setup('Great Tusk', 'Gholdengo');
-    for (const row of [...list().querySelectorAll<HTMLElement>(':scope > li')]) {
-      await user.click(row);
-      expect(suggestions().querySelector('.detail-type')).toBeNull();
-    }
-    for (const name of ['Corviknight', 'Kingambit', 'Toxapex', 'Rotom-Wash']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
-    await user.click(within(team()).getAllByRole('button', { name: /^Sostituisci / })[0]);
-    for (const row of [...list().querySelectorAll<HTMLElement>(':scope > li')]) {
-      await user.click(row);
-      const line = suggestions().querySelector('.detail-type');
-      if (!line) continue;
-      const [, to, from] = /^il team diventa (.+) \(era (.+)\)$/.exec(line.textContent!)!;
-      expect(to).not.toBe(from);
-    }
-  });
-
   it('cliccare un altro candidato lo apre nel dettaglio', async () => {
     const user = await setup('Great Tusk');
     const second = rowNames()[1];

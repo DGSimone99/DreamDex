@@ -148,7 +148,6 @@ kbd { font: 600 11px/1 var(--ui); padding: 2px 6px; border: 1px solid var(--line
 .detail-score strong { display: block; font: 700 46px/0.9 var(--display); font-variant-numeric: tabular-nums; }
 .detail-score span { font-size: 12px; color: var(--muted); }
 /* Il tipo di team cambia: una riga sotto il voto, nel colore d'avviso */
-.detail-score .detail-type { display: block; margin-top: 2px; color: var(--warn); font-weight: 700; }
 .detail-score strong.worse { color: var(--bad); }
 .detail-score strong.same { color: var(--muted); }
 .detail-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }

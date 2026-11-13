@@ -64,10 +64,6 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
   const after = useMemo(() => rateTeam(withCandidate(team, set, replaceIndex), data, lang), [team, replaceIndex, set, data, lang]);
   // Senza altri membri non c'è un voto da confrontare
   const before = item.teamGain ? rating : null;
-  // Tipo di team prima e dopo, solo fra team completi (un team incompleto si giudica sempre come Balance)
-  const full = (members: TeamSet[]) => members.length >= 6;
-  const typeChange = before && after && full(team) && full(withCandidate(team, set, replaceIndex)) && before.teamType !== after.teamType
-    ? { from: before.teamType, to: after.teamType } : null;
   const changes = 'diff' in item && item.diff ? rankedChanges(item.diff, item.teamGain, lang) : null;
   const types = getSpecies(item.species)?.types ?? [];
   const forme = formeParts(item.species);
@@ -140,8 +136,6 @@ export function SuggestionDetail({ item, rank, team, replaceIndex, data, format,
             <strong className={result.gain < 0 ? 'worse' : result.gain === 0 ? 'same' : undefined}>{delta(result.gain) || '±0'}</strong>
             {/* Solo "B 78 → A 86": che è il voto del team lo dice il posto; per i lettori di schermo resta la parola */}
             <span><span className="visually-hidden">{tr('detail.gradeLabel')} </span>{tr('detail.gradeChange', { from: `${before.grade} ${before.overall}`, to: `${result.grade} ${result.overall}` })}</span>
-            {/* Il cambio cambia il tipo di team (pesi e ruoli richiesti diversi): lo si dice, così il salto del voto non sembra un errore */}
-            {typeChange && <span className="detail-type">{tr('detail.typeChange', { from: tr(`archetype.${typeChange.from}`), to: tr(`archetype.${typeChange.to}`) })}</span>}
           </div>
         ) : usage !== null && (
           <div className="detail-score">
