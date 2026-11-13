@@ -1199,6 +1199,8 @@ export const it: Record<keyof typeof en, string> = {
   'guide.roles.c.physical': "uno Sweeper o un Wallbreaker fisico",
   'guide.roles.c.special': "uno Sweeper o un Wallbreaker speciale",
   'guide.roles.c.secondAttacker': "un altro membro che attacca, fisico o speciale",
+  'guide.roles.c.sweeper': "uno Sweeper",
+  'guide.roles.c.wallbreaker': "un Wallbreaker",
   'guide.roles.c.wallPhys': "Regge bene i colpi fisici",
   'guide.roles.c.wallSpec': "Regge bene i colpi speciali",
   'guide.roles.c.veilSnow': "Aurora Veil con la neve",

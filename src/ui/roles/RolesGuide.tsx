@@ -28,6 +28,7 @@ const HOW: Record<'earnA' | 'earnB' | 'earnC', { role: LevelKey; chips: Chip[]; 
   earnA: [
     { role: 'anySweeper', chips: [{ label: 'c.offense', key: true, value: `≥ ${SWEEPER_OFFENSE}` }, { label: 'c.speed', key: true, value: `≥ ${Math.round(100 * SWEEPER_SPEED)}%` }, { label: 'c.speedSetup', key: true }, { label: 'c.setupPriority', key: true }] },
     { role: 'anyBreaker', chips: [{ label: 'c.wallbreaking', key: true, value: `≥ ${BREAKER_WALLBREAKING}` }, { label: 'c.withSetup', key: true }] },
+    { role: 'sweeperOrBreaker', chips: [{ label: 'c.sweeper', key: true }, { label: 'c.wallbreaker', key: true }] },
     { role: 'anyPhysical', chips: [{ label: 'c.physical', key: true }] },
     { role: 'anySpecial', chips: [{ label: 'c.special', key: true }] },
     { role: 'anyAttacker', chips: [{ label: 'c.physical', key: true }, { label: 'c.special', key: true }] },
