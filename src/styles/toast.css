@@ -1,18 +1,20 @@
-/* Avviso con Annulla: in basso a sinistra, sopra la lista dei candidati (mai sopra il pulsante della scheda del candidato,
-   a destra); 5 o 10 secondi (barra che si accorcia, ferma finché ci sei sopra). A sinistra: la barra laterale più 24px */
+/* Avviso con Annulla: al centro dell'area di lavoro (oltre la barra laterale), alzato quanto basta per non coprire il
+   pulsante della scheda del candidato; bordo e alone azzurri leggeri perché si veda subito (scelta dell'utente, 2026-11-13).
+   5 o 10 secondi (barra che si accorcia, ferma finché ci sei sopra) */
 .undo-toast {
   position: fixed;
   z-index: 80;
-  left: calc(var(--rail-w, 214px) + 24px);
-  bottom: 24px;
+  left: calc(var(--rail-w, 214px) + (100vw - var(--rail-w, 214px)) / 2);
+  translate: -50% 0;
+  bottom: var(--undo-lift, 88px);
   min-width: 300px;
   max-width: min(400px, calc(100vw - 32px));
   padding: 18px 44px 20px;
   overflow: hidden;
   background: var(--panel);
-  border: 1px solid var(--line);
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line));
   border-radius: 4px;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 12%, transparent), 0 0 22px color-mix(in srgb, var(--accent) 22%, transparent), 0 16px 40px rgba(0, 0, 0, 0.55);
   animation: tip 0.2s var(--ease);
 }
 .undo-text { margin: 0; display: flex; align-items: center; flex-wrap: wrap; gap: 4px 6px; font-size: 14px; color: var(--muted); }
