@@ -73,7 +73,7 @@ export function AnalysisPanel({ team, analysis, rating, coaching, advice = null,
       onFix={fix => onFix?.(fix)} onMoveFix={fix => onMoveFix?.(fix)}
       onApplyFix={fix => onApplyFix?.(fix)} onApplyMove={fix => onApplyMove?.(fix)} />;
   } else {
-    body = <AnalysisOverview team={team} analysis={analysis} rating={rating} coaching={coaching} data={data}
+    body = <AnalysisOverview team={team} analysis={analysis} rating={rating} coaching={coaching} advice={advice} data={data}
       onView={onView} onAdd={onAdd} teamCollapsed={teamCollapsed} />;
   }
   return (

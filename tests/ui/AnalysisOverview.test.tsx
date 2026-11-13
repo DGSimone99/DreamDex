@@ -3,6 +3,10 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { App } from '../../src/App';
 import { fixtureData } from '../fixtures/data';
+import type { CoachProblem } from '../../src/engine/coach';
+import { FixRow, fixItems, solvable } from '../../src/ui/dashboard/FixRow';
+import type { CoachStep } from '../../src/engine/coachSteps';
+import { LangProvider } from '../../src/i18n/react';
 
 const panel = () => document.getElementById('panel-analysis')!;
 const views = () => within(panel()).getByRole('tablist', { name: 'Sezioni dell\'Analisi' });
@@ -86,12 +90,12 @@ describe('Panoramica di Analisi', () => {
     expect(within(summary).queryByText('Minacce')).toBeNull();
   });
 
-  it('niente più tessera Bonus/Malus né striscia "Vai al Coaching"', async () => {
+  it('niente più tessera Bonus/Malus; "Vai al Coaching" solo nella riga Da sistemare', async () => {
     await setup(['Great Tusk', 'Dragapult']);
     // Le linguette dell'Analisi hanno "Bonus/Malus": si guarda solo la Panoramica
     const overview = panel().querySelector<HTMLElement>('.overview')!;
     expect(overview).not.toHaveTextContent(/Bonus\/Malus/);
-    expect(within(panel()).queryByRole('button', { name: /Vai al Coaching/ })).toBeNull();
+    for (const button of within(panel()).queryAllByRole('button', { name: /Vai al Coaching/ })) expect(button.closest('.fix-row')).not.toBeNull();
     expect(panel().querySelector('.summary-tile, .summary-strip')).toBeNull();
   });
 
@@ -171,10 +175,9 @@ describe('Panoramica: rifinitura', () => {
     expect(screen.getByRole('tab', { name: /^Pokémon/ })).toHaveAttribute('aria-selected', 'true');
   });
 
-  it('giudizio in cima; il tipo di team sta in cima al Riassunto', async () => {
+  it('niente giudizio in cima; il tipo di team sta in cima al Riassunto', async () => {
     await setup(['Great Tusk', 'Gholdengo', 'Kingambit', 'Dragapult', 'Corviknight', 'Toxapex']);
-    const headline = panel().querySelector<HTMLElement>('.overview-headline')!;
-    expect(headline.querySelector('.team-type')).toBeNull();
+    expect(panel().querySelector('.overview-headline')).toBeNull();
     const summary = within(panel()).getByRole('region', { name: 'Riassunto' });
     expect(summary.querySelector('.sum-arch')).not.toBeNull();
     expect(summary.querySelector('.sum-arch')).not.toHaveTextContent('—');
@@ -225,4 +228,79 @@ describe('Panoramica: correzioni della revisione', () => {
     expect(within(views()).getByRole('tab', { name: 'Panoramica' })).toHaveAttribute('aria-selected', 'true');
   });
 
+});
+
+describe('Panoramica: Da sistemare', () => {
+  const problem = (p: Partial<CoachProblem> & Pick<CoachProblem, 'text'>): CoachProblem =>
+    ({ severity: 'minor', category: 'roles', fixes: [], key: p.text, ...p });
+
+  it('Da sistemare: i problemi coi nomi e il link al Coaching', async () => {
+    const user = await setup(['Great Tusk', 'Gholdengo', 'Kingambit']);
+    const row = await within(panel()).findByRole('region', { name: 'Da sistemare' }, { timeout: 5000 });
+    expect(row).toHaveTextContent(/Nessuno regge/);
+    // Le minacce del meta in una frase sola, coi nomi
+    expect((row.textContent!.match(/del meta/g) ?? []).length).toBeLessThanOrEqual(1);
+    await user.click(within(row).getByRole('button', { name: 'Vai al Coaching' }));
+    expect(within(views()).getByRole('tab', { name: 'Coaching' })).toHaveAttribute('aria-selected', 'true');
+  });
+
+  it('meta spento con 2 membri: nella riga nessuna minaccia del meta', async () => {
+    const user = userEvent.setup();
+    render(<App initialLang="it" data={{ ...fixtureData, ignoreMeta: true }} />);
+    for (const name of ['Great Tusk', 'Gholdengo', 'Kingambit']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
+    await user.click(screen.getByRole('tab', { name: /^Analisi/ }));
+    const row = within(panel()).queryByRole('region', { name: 'Da sistemare' });
+    expect(row).not.toBeNull();
+    expect(row).not.toHaveTextContent(/del meta/);
+  });
+
+  it('con 2 o più membri niente titolo in cima', async () => {
+    await setup();
+    expect(panel().querySelector('.overview-headline')).toBeNull();
+  });
+
+  it('senza problemi niente Da sistemare', () => {
+    const { container } = render(<LangProvider lang="it"><FixRow problems={[]} steps={[]} onView={() => {}} /></LangProvider>);
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it('consigli ancora da calcolare (steps null): niente riga', () => {
+    const { container } = render(<LangProvider lang="it"><FixRow problems={[problem({ text: 'x', severity: 'serious' })]} steps={null} onView={() => {}} /></LangProvider>);
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it('solvable: solo i problemi che una tappa del Coaching risolve (il suo, il gruppo e gli altri che copre)', () => {
+    const a = problem({ text: 'a', key: 'a' }), b = problem({ text: 'b', key: 'b' }), c = problem({ text: 'c', key: 'c' }), d = problem({ text: 'd', key: 'd' });
+    const steps = [{ problem: a, swap: null, move: null, group: ['a', 'b'], alsoSolves: ['c'] }] as unknown as CoachStep[];
+    expect(solvable([a, b, c, d], steps).map(p => p.key)).toEqual(['a', 'b', 'c']);
+    expect(solvable([a, b, c, d], [])).toEqual([]);
+  });
+
+  it('fixItems: più di 3 minacce, i primi 3 nomi e "e altri N"', () => {
+    const names = ['Kingambit', 'Raging Bolt', 'Diancie-Mega', 'Tapu Koko', 'Charizard-Mega-Y', 'Charizard-Mega-X', 'Melmetal'];
+    const items = fixItems(names.map(n => problem({ text: n, category: 'meta', subjects: [n] })), 'it');
+    expect(items.shown).toEqual(['Nessuno regge Kingambit, Raging Bolt, Diancie-Mega e altri 4 del meta']);
+  });
+
+  it('fixItems: i gravi prima, le minacce del meta in una frase coi nomi', () => {
+    const items = fixItems([
+      problem({ text: 'Ruoli mancanti: Pivot' }),
+      problem({ text: 'Nessuno regge Latios-Mega del meta', category: 'meta', subjects: ['Latios-Mega'] }),
+      problem({ text: 'Nessuno regge Tapu Koko del meta', category: 'meta', subjects: ['Tapu Koko'] }),
+      problem({ text: 'Nessuno regge Diancie-Mega del meta', category: 'meta', subjects: ['Diancie-Mega'] }),
+      problem({ text: 'Nessuno regge Fire', category: 'defense', severity: 'serious' }),
+    ], 'it');
+    expect(items.shown).toEqual(['Nessuno regge Fire', 'Ruoli mancanti: Pivot']);
+    expect(items.hidden).toEqual(['Nessuno regge Latios-Mega, Tapu Koko, Diancie-Mega del meta']);
+    expect(items.more).toBe(1);
+  });
+
+  it('fixItems: con 5 voci se ne vedono 2, le altre in +3; le regole per prime', () => {
+    const items = fixItems([
+      problem({ text: 'a' }), problem({ text: 'b' }), problem({ text: 'c' }), problem({ text: 'd' }),
+      problem({ text: 'Dragapult non è legale in National Dex OU', category: 'rules', severity: 'serious' }),
+    ], 'it');
+    expect(items.shown).toEqual(['Dragapult non è legale in National Dex OU', 'a']);
+    expect(items.more).toBe(3);
+  });
 });

@@ -264,8 +264,9 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
   // Senza meta la scheda Meta è spenta: si resta sull'Analisi
   const shownTab: TabId = tab === 'meta' && !metaOn ? 'analysis' : tab;
   if (shownTab === 'lists' && !listsOpened) setListsOpened(true);
-  // I consigli (candidati e prima mossa) sono lenti: solo con la scheda Coaching aperta, e dopo che la scheda si è disegnata
-  const coachingOpen = shownTab === 'analysis' && analysisView === 'coaching';
+  // I consigli (candidati e prima mossa) sono lenti: solo col Coaching aperto, o con la Panoramica (la riga Da sistemare
+  // mostra solo ciò che il Coaching risolve), e dopo che la scheda si è disegnata
+  const coachingOpen = shownTab === 'analysis' && (analysisView === 'coaching' || (analysisView === 'overview' && team.length >= 2));
   const adviceInput = useMemo(() => (coachingOpen ? { source: coachSource, problems: coaching.problems } : null), [coachingOpen, coachSource, coaching]);
   // In sottofondo (useAdvice): aprire il Coaching non blocca più l'app
   // Consigli di un team precedente: non si mostrano, si dice che si stanno calcolando
@@ -397,7 +398,7 @@ export function App({ data: initialData, loadSource, storage, initialLang, loadN
         <GradeBadge rating={rating} blocked={blockedReason(team, format.formatId)} ruleIssues={coaching?.problems.filter(p => p.category === 'rules').map(p => p.text)}
           illegalCount={new Set(coaching?.problems.filter(p => p.category === 'rules').map(p => p.subjects?.[0] ?? p.key)).size}
           illegalNames={[...new Set(coaching?.problems.filter(p => p.category === 'rules').flatMap(p => p.subjects ?? []))]} formatName={formatLabel(format, lang)}
-          incomplete={team.length < 6} onOpen={area => { openTab('analysis'); setAnalysisView(area); }} />
+          incomplete={team.length < 6} teamType={coaching?.teamType?.archetype ?? null} onOpen={area => { openTab('analysis'); setAnalysisView(area); }} />
         <button type="button" className="band-toggle" aria-expanded={!collapsed} onClick={toggleCollapsed}
           aria-label={t(lang, collapsed ? 'team.expand' : 'team.collapse')} title={t(lang, collapsed ? 'team.expand' : 'team.collapse')}>
           <Icon name={collapsed ? 'next' : 'prev'} />

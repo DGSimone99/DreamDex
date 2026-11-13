@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useEditing } from './editing';
 import { GRADES, type TeamRating } from '../engine/rating';
+import type { Archetype } from '../engine/archetype';
 import { MISSING_BELOW } from '../engine/needs';
 import { AlertMark } from './AlertMark';
 import { RatingHelp } from './RatingHelp';
@@ -17,9 +18,10 @@ const isDetailArea = (key: string): key is DetailArea => key === 'strength' || k
 /** Voto grande accanto alla fila del team: lettera, punteggio, le tre aree, i Ruoli e Bonus/Malus, che portano alle schede di Analisi. */
 /**
  * `onOpen`: le righe delle aree e di Bonus/Malus portano alla scheda di quell'area in Analisi.
+ * `teamType`: il tipo di team del Riassunto (null finché il team non ha 6 membri: "In costruzione").
  * `ruleIssues`: problemi di regole: la lettera diventa grigia e sotto si scrive perché (`formatName`: il formato). `blocked`: il team ha membri ma il voto non si dà (EV oltre 510, specie doppia): il perché.
  */
-export function GradeBadge({ rating, ruleIssues = [], illegalCount = 0, illegalNames = [], formatName = '', blocked = null, incomplete = false, onOpen }: { rating: TeamRating | null; ruleIssues?: string[]; illegalCount?: number; illegalNames?: string[]; formatName?: string; blocked?: 'ev' | 'species' | null; incomplete?: boolean; onOpen?: (area: AreaKey) => void }) {
+export function GradeBadge({ rating, ruleIssues = [], illegalCount = 0, illegalNames = [], formatName = '', blocked = null, incomplete = false, teamType = null, onOpen }: { rating: TeamRating | null; teamType?: Archetype | null; ruleIssues?: string[]; illegalCount?: number; illegalNames?: string[]; formatName?: string; blocked?: 'ev' | 'species' | null; incomplete?: boolean; onOpen?: (area: AreaKey) => void }) {
   const t = useT();
   // Voto quando si è aperto il membro nell'editor: il badge mostra di quanto è cambiato
   const editing = useEditing();
@@ -33,19 +35,25 @@ export function GradeBadge({ rating, ruleIssues = [], illegalCount = 0, illegalN
   // Nella carta (stretta) la scritta corta; il formato è nel tooltip e nella frase per i lettori di schermo
   const notLegal = broken ? t('rating.notLegalIn', { format: formatName, n: Math.max(1, illegalCount) }) : '';
   const notLegalShort = broken ? t('rating.notLegalShort', { n: Math.max(1, illegalCount) }) : '';
+  // Il tipo di team come nel Riassunto: senza tipo (team incompleto) "In costruzione"
+  const typeLabel = t(teamType ? `archetype.${teamType}` : 'sum.archBuilding');
+  const typeNote = t(teamType ? `archetype.${teamType}.note` : 'sum.archBuildingNote');
   const who = illegalNames.length ? t('rating.notLegalWho', { list: illegalNames.join(', ') }) : '';
   return (
     <div className={`grade-badge${rating ? ` grade-${rating.grade}` : ' none'}${broken ? ' rules-broken' : ''}`}>
       {/* Per i lettori di schermo una frase sola; il disegno qui sotto è solo visivo */}
       <span className="visually-hidden">
-        {rating ? t('rating.badgeSr', { grade: rating.grade, overall: rating.overall, label: rating.label }) + (broken ? `, ${notLegal}${illegalNames.length ? ` (${illegalNames.join(', ')})` : ''}: ${ruleIssues.join('; ')}` : '') + (rating.notes.length ? `, ${t('rating.provisional')}` : '') : `${t('rating.badgeHead')}: ${t('rating.noGrade')}`}
+        {rating ? t('rating.badgeSr', { grade: rating.grade, overall: rating.overall, label: rating.label }) + (broken ? `, ${notLegal}${illegalNames.length ? ` (${illegalNames.join(', ')})` : ''}: ${ruleIssues.join('; ')}` : '') + (rating.notes.length ? `, ${t('rating.provisional')}` : '') + `, ${typeLabel}` : `${t('rating.badgeHead')}: ${t('rating.noGrade')}`}
       </span>
       <span className="grade-visual" aria-hidden="true">
       <span className="grade-head">{t('rating.badgeHead')}</span>
       {rating && <span className="letter">{rating.grade}</span>}
       {!rating && !blocked && <EeveeMoment pose="wave" />}
       <span className="overall">{rating ? `${rating.overall} / 100` : t('rating.noGrade')}</span>
-      <span className="label">{rating ? rating.label : t(blocked === 'ev' ? 'rating.evBlocked' : blocked === 'species' ? 'rating.speciesBlocked' : 'rating.addPokemon')}</span>
+      <span className="label">{rating ? rating.label : t(blocked === 'ev' ? 'rating.evBlocked' : blocked === 'species' ? 'rating.speciesBlocked' : 'rating.addPokemon')}
+        {/* Il tipo di team sulla riga del giudizio, in una targa: la carta non diventa più alta */}
+        {rating && <span className="grade-type" title={typeNote}><span>{typeLabel}</span></span>}
+      </span>
       {rating && broken && <span className="grade-rules" title={[notLegal, who, ...ruleIssues].filter(Boolean).join(' · ')}><Icon name="warning" />{notLegalShort}</span>}
       </span>
       {/* Testa: l'aiuto sul voto e il triangolo delle regole, fuori dal disegno perché si usano */}
