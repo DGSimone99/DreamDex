@@ -566,7 +566,7 @@
  */
 .coach-steps-region { --step-h: 61px; }
 .coach-steps { display: grid; gap: 5px; margin: 0 0 4px; padding: 0; list-style: none; }
-.coach-strip { position: relative; display: grid; grid-template-columns: 46px minmax(0, 1.3fr) minmax(0, 2.2fr) minmax(0, 1.4fr); align-items: center; height: var(--step-h); min-width: 0;
+.coach-strip { position: relative; display: grid; grid-template-columns: 46px minmax(0, 1.15fr) minmax(0, 2.5fr) minmax(0, 1.25fr); align-items: center; height: var(--step-h); min-width: 0;
   background: var(--panel); border: 1px solid color-mix(in srgb, var(--accent-2) 22%, var(--line)); }
 /* Senza "anche" né mossa alternativa la colonna di destra non c'è: la proposta prende tutta la striscia (niente banda vuota) */
 @media (min-width: 600px) { .coach-strip:not(:has(.coach-strip-extras > :not([hidden]))) { grid-template-columns: 46px minmax(0, 1.3fr) minmax(0, 3.6fr); } }
@@ -578,15 +578,15 @@
   .coach-strip:has(.coach-strip-extras .coach-prop) > .coach-strip-extras { gap: 4px; padding-top: 7px; padding-bottom: 7px; }
 }
 /* "Oppure" dentro la barra dello scambio, dopo chi entra; il +N grande della barra viene dopo di lei */
-.coach-prop.is-main:has(.is-side) > .coach-fix { flex: 1 1 auto; }
-/* Con l'alternativa la barra principale prende più posto, così il nome di chi entra resta intero */
-@media (min-width: 600px) {
-  .coach-strip:has(.coach-prop.is-side) { grid-template-columns: 46px minmax(0, 1.05fr) minmax(0, 2.9fr) minmax(0, 1.15fr); }
-}
-.coach-prop.is-side { position: relative; z-index: 1; align-self: stretch; display: flex; align-items: center; gap: 8px; margin: 6px 4px; padding: 0 8px; border: 1px dashed color-mix(in srgb, var(--accent) 30%, var(--line)); border-radius: 4px; }
+/* Il nome di chi entra resta intero: a stringersi (coi puntini sulle mosse) è il riquadro "oppure" */
+.coach-prop.is-main:has(.is-side) > .coach-fix { flex: none; }
+/* Le colonne restano quelle di ogni striscia (sprite e nomi in linea, la barra finisce allo stesso punto): "oppure" subito dopo il nome, il +N in fondo */
+.coach-prop.is-main:has(.is-side) > .coach-fix > .coach-fix-main { flex: 0 1 auto; min-width: 0; }
+.coach-prop.is-main:has(.is-side) > .coach-fix > .coach-fix-main strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.coach-prop.is-side { position: relative; z-index: 1; flex: 0 1 auto; min-width: 0; align-self: stretch; display: flex; align-items: center; gap: 6px; margin: 6px 0 6px 10px; padding: 0 6px; border: 1px dashed color-mix(in srgb, var(--accent) 30%, var(--line)); border-radius: 4px; }
 .coach-prop.is-side[data-or]::before { content: attr(data-or); flex: none; font: 600 11px/1 var(--ui); text-transform: uppercase; letter-spacing: 0.06em; color: var(--faint); }
-.coach-prop.is-side .coach-fix { gap: 8px; }
-.coach-prop.is-main > .coach-strip-gain { position: relative; z-index: 0; flex: none; min-width: 3.2ch; padding: 0 4px; text-align: right; font: 800 22px/1 var(--display); font-style: italic; color: var(--good); background: none; }
+.coach-prop.is-side .coach-fix { gap: 8px; min-width: 0; }
+.coach-prop.is-main > .coach-strip-gain { position: relative; z-index: 0; flex: none; margin-left: auto; min-width: 3.2ch; padding: 0 4px; text-align: right; font: 800 22px/1 var(--display); font-style: italic; color: var(--good); background: none; }
 /* Il blocco sotto il puntatore si illumina, l'altro si spegne un po' */
 .coach-strip.is-alt-hot .coach-prop.is-main > .coach-fix > :not(.coach-fix-main) { opacity: 0.45; }
 .coach-strip.is-alt-hot .coach-prop.is-main > .coach-fix > .coach-fix-main { opacity: 0.6; }
@@ -595,14 +595,14 @@
 @media (prefers-reduced-motion: no-preference) {
   .coach-prop.is-side, .coach-prop.is-main > .coach-fix > * { transition: opacity 120ms ease-out, background-color 120ms ease-out, border-color 120ms ease-out; }
 }
-.coach-side-mon { flex: none; display: grid; place-items: center; width: 40px; height: 40px; }
-.coach-side-mon .sprite { width: 40px; height: 40px; image-rendering: pixelated; }
+.coach-side-mon { flex: none; display: grid; place-items: center; width: 32px; height: 32px; }
+.coach-side-mon .sprite { width: 32px; height: 32px; image-rendering: pixelated; }
 .coach-side-moves { display: grid; justify-items: start; gap: 1px; min-width: 0; }
-.coach-move-old { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: var(--faint); }
+.coach-move-old { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: var(--faint); }
 .coach-move-arrow { display: flex; color: var(--accent-ink); }
 .coach-move-arrow .icon { width: 13px; height: 13px; transform: rotate(90deg); }
-.coach-move-new { display: flex; align-items: center; min-width: 0; }
-.coach-move-new strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 700 15px/1.1 var(--display); font-style: italic; color: var(--accent-ink); }
+.coach-move-new { display: flex; align-items: center; min-width: 0; max-width: 100%; }
+.coach-move-new strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 700 14px/1.1 var(--display); font-style: italic; color: var(--accent-ink); }
 .coach-prop.is-side .coach-fix:hover .coach-move-new strong { text-decoration: underline; text-underline-offset: 3px; }
 /* "risolve anche" dell'alternativa: un filo azzurro a sinistra dice che è cambiato */
 .coach-strip-extras.is-alt { box-shadow: inset 2px 0 0 var(--accent); }
@@ -784,6 +784,10 @@
  * Più spazio (schermo alto o team chiuso): strisce più alte, sprite e nomi più grandi, tessere più ariose.
  * A scatti, secondo l'altezza della scheda, così non cambia mentre la si guarda.
  */
+/* Poco spazio: "oppure" dice solo la mossa nuova (membro e mossa vecchia nel title del pulsante) */
+@container coaching (max-width: 1120px) {
+  .coach-prop.is-side .coach-side-mon, .coach-prop.is-side .coach-move-old, .coach-prop.is-side .coach-move-arrow { display: none; }
+}
 @container coaching (min-height: 540px) {
   .coach-steps-region { --step-h: 82px; }
   .coach-steps { gap: 8px; }
