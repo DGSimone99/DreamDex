@@ -449,7 +449,7 @@
 @media (max-width: 1099px) {
   /* Le colonne una sotto l'altra: i tuoi Pokémon, le scelte, le proposte */
   .fill-body { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'mine' 'side' 'main'; }
-  .fill-tabs { position: sticky; top: 0; z-index: 1; background: var(--ground); }
+  .fill-top { position: sticky; top: 0; z-index: 1; background: var(--ground); }
   .fill-mine-row { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin: 0 -14px; padding: 0 14px; }
   .fill-keep { flex: none; min-height: 44px; }
   /* I tipi di team in una fila che scorre: le proposte prendono tutta la larghezza */
@@ -465,6 +465,7 @@
   .fill-mons { grid-template-columns: repeat(6, minmax(0, 1fr)); }
   .fill-mon-name { display: none; }
   .fill-kind { justify-self: start; }
+  .fill-about, .fill-why { justify-items: start; }
   .fill-result { justify-items: start; text-align: left; }
   .fill-foot { flex-wrap: wrap; }
   .fill-pager .step { width: 44px; height: 44px; }

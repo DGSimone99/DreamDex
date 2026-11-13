@@ -31,7 +31,11 @@
 /* La freccia che chiude il team galleggia in mezzo al bordo: col pannello aperto finirebbe sopra le proposte */
 .band:has(.fill-panel) .band-toggle { visibility: hidden; }
 /* Schede: come le schede interne di Analisi, la sottolineatura ciano su quella aperta */
-.fill-tabs { display: flex; gap: 4px; margin: 0 -14px; padding: 0 14px; border-bottom: 1px solid var(--line-soft); }
+.fill-top { display: flex; align-items: center; gap: 12px; margin: 0 -14px; padding: 0 14px; border-bottom: 1px solid var(--line-soft); }
+.fill-tabs { display: flex; gap: 4px; }
+/* Il voto di adesso, a destra delle schede: il pannello copre la carta del voto, e le proposte si confrontano con questo */
+.fill-now { margin: 0 0 0 auto; padding: 4px 10px; font-size: 13px; font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--muted); background: var(--raised); border-radius: 3px; }
+.fill-now strong { margin: 0 2px 0 4px; font: 700 18px/1 var(--display); font-style: italic; color: var(--text); }
 .fill-tab {
   display: inline-flex; align-items: baseline; gap: 6px;
   padding: 10px 14px 8px; margin-bottom: -1px;
@@ -112,30 +116,37 @@
 /* Posto vuoto a calcolo finito: solo il contorno tratteggiato, alto come una riga */
 .fill-placeholder { background: none; border-style: dashed; opacity: 0.5; }
 .fill-placeholder > * { visibility: hidden; }
-/* La migliore: il magenta del #1 */
-.fill-proposal.is-best { border-color: var(--accent-2); background: linear-gradient(90deg, var(--accent-2-wash), var(--panel) 45%); }
-/* Il team intero in fila: i tuoi Pokémon spenti, i nuovi accesi, il nome sotto lo sprite */
+/* La migliore: solo il bordo più chiaro; il magenta resta al suo pulsante Usa (l'azione migliore) */
+.fill-proposal.is-best { border-color: var(--line); }
+/* Il team intero in fila: i tuoi Pokémon pieni e senza fondo (sono già tuoi, non spenti), i nuovi su un riquadro
+   chiaro col nome acceso, il nome sotto lo sprite */
 .fill-mons { grid-area: mons; display: grid; grid-template-columns: repeat(6, minmax(0, 70px)); gap: 4px; min-width: 0; }
 .fill-mon { position: relative; display: grid; justify-items: center; gap: 2px; min-width: 0; padding: 2px 0; border-radius: 3px; }
 .fill-proposal .fill-mon { cursor: help; }
 .fill-mon-sprite { position: relative; display: grid; place-items: center; height: 40px; }
 .fill-mon .sprite, .fill-card-mon .sprite { image-rendering: pixelated; }
-.fill-mon.is-mine .fill-mon-sprite > .sprite { opacity: 0.5; }
-.fill-mon.is-mine.is-changed .fill-mon-sprite > .sprite { opacity: 0.75; }
+.fill-proposal .fill-mon.is-new { background: var(--raised); }
+/* Solo nello scheletro i tuoi restano spenti: la riga sta ancora arrivando */
+.fill-skeleton .fill-mon.is-mine .fill-mon-sprite > .sprite { opacity: 0.5; }
 .fill-mon-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; line-height: 1.2; color: var(--muted); }
-.fill-mon.is-mine .fill-mon-name { color: var(--faint); }
-.fill-mon.is-new .fill-mon-name { color: var(--text); font-weight: 500; }
+.fill-mon.is-new .fill-mon-name { color: var(--text); font-weight: 600; }
 /* Segni sullo sprite, in alto a destra: la matita (set cambiato) e il cuore (nei tuoi preferiti, come nelle Liste) */
 .fill-mon-mark { position: absolute; top: 2px; right: 0; display: grid; place-items: center; width: 17px; height: 17px; border-radius: 50%; background: var(--ground); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5); }
 .fill-mon-mark .icon { width: 10px; height: 10px; color: var(--accent); }
 .fill-mon-mark.is-edit { border: 1px solid var(--accent); }
 .fill-mon-mark.is-fav { color: var(--on-accent); background: var(--accent); }
 .fill-mon-mark.is-fav .icon { color: inherit; fill: currentColor; }
+/* Tipo di team e, sotto, il perché della proposta (le aree che guadagnano di più) */
+.fill-about { grid-area: kind; display: grid; justify-items: end; gap: 4px; min-width: 108px; }
+/* Una voce per riga: la colonna resta stretta e i nomi dei Pokémon hanno spazio; due righe stanno nell'altezza della riga */
+.fill-why { display: grid; justify-items: end; font-size: 12px; line-height: 1.25; color: var(--muted); cursor: help; }
+.fill-why > span { white-space: nowrap; }
+.fill-why b { font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text); }
+.fill-why b.up { color: var(--good); }
 .fill-kind { grid-area: kind; padding: 2px 7px; font-size: 12px; font-weight: 600; white-space: nowrap; color: var(--text); background: var(--raised); border-radius: 3px; }
 .fill-result { grid-area: result; display: grid; justify-items: end; gap: 2px; min-width: 52px; text-align: right; }
 .fill-grade { font-variant-numeric: tabular-nums; color: var(--muted); white-space: nowrap; }
 .fill-grade strong { font: 700 22px/1 var(--display); font-style: italic; color: var(--text); }
-.fill-proposal.is-best .fill-grade strong { color: var(--accent-2-ink); }
 .fill-delta { font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .fill-delta.up { color: var(--good); }
 .fill-delta.down { color: var(--bad); }
