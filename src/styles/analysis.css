@@ -91,7 +91,6 @@
 .analysis-tabs [role='tab'] { padding: 8px 16px 9px; border: 0; border-bottom: 3px solid transparent; border-radius: 0; background: none; font: 600 15px/1 var(--display); font-style: italic; color: var(--muted); }
 .analysis-tabs [role='tab']:hover { color: var(--text); background: color-mix(in srgb, var(--raised) 55%, transparent); }
 .analysis-tabs [role='tab'][aria-selected='true'] { color: var(--text); border-bottom-color: var(--accent); }
-.analysis-help { position: absolute; top: 50%; transform: translateY(-50%); }
 .analysis-view { flex: 1; min-height: 0; }
 
 /* Un'area sulla pagina: sottostatistiche e problemi a sinistra, il dettaglio a destra; ognuna scorre dentro */
@@ -185,9 +184,6 @@
 .analysis-tabs [role='tab'][aria-selected='true'] .tab-badge { background: var(--on-accent-2); color: var(--accent-2); }
 /* Solo problemi minori: come il contatore della barra laterale */
 .analysis-tabs .tab-badge.minor { background: var(--accent-soft); color: var(--text); }
-/* Il "?" piccolo, dentro la scheda aperta */
-.analysis-help .help-button { width: 18px; height: 18px; min-width: 0; padding: 0; color: var(--on-accent-2); border-color: color-mix(in srgb, var(--on-accent-2) 45%, transparent); background: transparent; }
-.analysis-help .help-button .icon { width: 12px; height: 12px; }
 
 /* Selezione magenta: la forma si allunga. La scheda interna aperta copre col suo taglio inclinato lo spazio e l'inizio
    della scheda vicina (niente vuoto); la sezione aperta della barra si srotola da sinistra. Le colonne non cambiano. */
@@ -230,7 +226,6 @@
   .analysis-tabs [role='tab'][aria-selected='true'], .tabs.vertical [role='tab'][aria-selected='true'] { animation: none; }
   .analysis-tabs [role='tab'], .tabs.vertical [role='tab'] { transition: none; }
 }
-.analysis-help { z-index: 2; }
 
 
 
@@ -862,4 +857,26 @@
   .coach-prob-text .type-icons img { width: 18px; height: 18px; }
   .coach-sep { margin: 12px 14px 7px; }
   .coach-sec { margin-bottom: 8px; font-size: 13px; }
+}
+
+/* Interruttore "Solo superefficaci" / "Solo efficacia": a destra nella striscia delle sottoschede, centrato in altezza
+   (assoluto: la striscia non cambia altezza fra le sottoschede che lo hanno e quelle che no). Neutro e ciano, mai magenta */
+.strip-switch { position: absolute; top: 3px; right: 10px; bottom: 0; display: flex; align-items: center; }
+.eff-switch { display: inline-flex; flex: none; align-items: center; gap: 6px; padding: 2px 4px; border: 0; border-radius: 4px; background: none; color: var(--muted); font: 600 12px/1.2 var(--ui); white-space: nowrap; cursor: pointer; }
+.eff-switch:hover { color: var(--text); }
+.eff-switch-track { position: relative; flex: none; width: 26px; height: 14px; border: 1px solid var(--line); border-radius: 7px; background: var(--raised); transition: background 0.15s ease-out, border-color 0.15s ease-out; }
+.eff-switch-knob { position: absolute; top: 1px; left: 1px; width: 10px; height: 10px; border-radius: 50%; background: var(--muted); transition: transform 0.15s ease-out, background 0.15s ease-out; }
+.eff-switch.on { color: var(--text); }
+.eff-switch.on .eff-switch-track { border-color: var(--accent); background: var(--accent-soft); }
+.eff-switch.on .eff-switch-knob { transform: translateX(12px); background: var(--accent); }
+@media (prefers-reduced-motion: reduce) { .eff-switch-track, .eff-switch-knob { transition: none; } }
+
+/* Portatili bassi (1366×657, 1280×620): striscia, riga dei problemi e margini del pannello più stretti, così ogni
+   sottoscheda delle aree ci sta intera senza scorrere (a 1440×900 e 1536×730 non cambia niente). Le tabelle e i Ruoli
+   hanno le loro regole per gli schermi bassi in fondo a defense.css e roles.css */
+@media (min-width: 1100px) and (max-height: 700px) {
+  .area-view { gap: 6px; }
+  .area-subs [role='tab'] { padding-top: 6px; padding-bottom: 5px; }
+  .area-problems-row { height: 22px; }
+  .area-panel.ad-panel { padding-bottom: 10px; }
 }

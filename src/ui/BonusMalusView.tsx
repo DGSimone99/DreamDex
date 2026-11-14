@@ -4,7 +4,8 @@ import { useT } from '../i18n/react';
 import { Typed } from './TypeText';
 
 type T = ReturnType<typeof useT>;
-const signed = (n: number) => (n > 0 ? `+${n}` : n < 0 ? `−${-n}` : '±0');
+// Lo zero senza segno, come sulla scheda e nella scheda del voto
+const signed = (n: number) => (n > 0 ? `+${n}` : n < 0 ? `−${-n}` : '0');
 
 /** Una voce del catalogo attiva per il team: i punti in tutto e i casi concreti (es. "2 membri deboli a Ghiaccio"). */
 interface ActiveEntry { entry: CatalogEntry; points: number; details: string[] }
@@ -28,7 +29,7 @@ function activeEntries(catalog: CatalogEntry[], kind: CatalogEntry['kind'], item
 /**
  * La scheda Bonus/Malus: in alto le barre di quanto tolgono i malus e aggiungono i bonus; poi le voci che valgono per
  * questo team, sempre in vista, in due colonne (cosa toglie, cosa aggiunge) col caso concreto; sotto le altre voci
- * possibili, a zero, come tessere spente con una frase breve: è l'unica parte che scorre. Le voci attive sono carte
+ * possibili, a zero, come nomi in fila (quando scattano sta nel title): è l'unica parte che scorre. Le voci attive sono carte
  * affiancate (più per riga), così anche un team con tanti malus le mostra tutte senza scorrere.
  */
 export function BonusMalusView({ rating, lang, t }: { rating: TeamRating; lang: Lang; t: T }) {
@@ -43,7 +44,7 @@ export function BonusMalusView({ rating, lang, t }: { rating: TeamRating; lang: 
   const scale = Math.max(10, malusTotal, bonusTotal);
   const column = (kind: CatalogEntry['kind'], list: ActiveEntry[]) => (
     <section className={`bm-col ${kind}`} aria-label={t(kind === 'malus' ? 'catalogue.takes' : 'catalogue.adds')}>
-      <h5>{t(kind === 'malus' ? 'catalogue.takes' : 'catalogue.adds')}</h5>
+      <h4 className="bm-head">{t(kind === 'malus' ? 'catalogue.takes' : 'catalogue.adds')}</h4>
       {list.length === 0 ? <p className="bm-none">{t(kind === 'malus' ? 'catalogue.noMalus' : 'catalogue.noBonus')}</p> : (
         <ul>
           {list.map(({ entry, points, details }) => (
@@ -64,8 +65,9 @@ export function BonusMalusView({ rating, lang, t }: { rating: TeamRating; lang: 
         {([['malus', malusTotal], ['bonus', bonusTotal]] as const).map(([kind, total]) => (
           <div key={kind} className={`bm-bar ${kind}`}>
             <span>{t(`catalogue.${kind}`)}</span>
-            <span className="bm-track" aria-hidden="true"><span style={{ width: `${(100 * total) / scale}%` }} /></span>
-            <b>{signed(kind === 'malus' ? -total : total)}</b>
+            {/* A zero la barra resta vuota (niente tacca) */}
+            <span className="bm-track" aria-hidden="true">{total > 0 && <span style={{ width: `${(100 * total) / scale}%` }} />}</span>
+            <b className={total === 0 ? 'zero' : undefined}>{signed(kind === 'malus' ? -total : total)}</b>
           </div>
         ))}
       </div>
@@ -75,15 +77,16 @@ export function BonusMalusView({ rating, lang, t }: { rating: TeamRating; lang: 
       </div>
       {rest.length > 0 && (
         <section className="bm-rest" aria-label={t('catalogue.rest')}>
-          <h5>
+          <h4 className="bm-head">
             {t('catalogue.rest')}
             <small><i className="malus" />{t('catalogue.restTakes')} · <i className="bonus" />{t('catalogue.restAdds')}</small>
-          </h5>
+          </h4>
+          {/* Solo i nomi, in fila: quando scatta una voce sta nel title (e nel testo nascosto per i lettori di schermo) */}
           <ul>
             {rest.map(entry => (
-              <li key={entry.key} className={`bm-tile ${entry.kind}`}>
-                <b>{entry.name}</b>
-                <span>{entry.when}</span>
+              <li key={entry.key} className={`bm-tile ${entry.kind}`} title={entry.when}>
+                <i aria-hidden="true" />{entry.name}
+                <span className="visually-hidden">: {entry.when}</span>
               </li>
             ))}
           </ul>

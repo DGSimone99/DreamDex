@@ -52,16 +52,21 @@ describe('vista di un\'area sulla pagina', () => {
     expect(within(screen.getByRole('tabpanel')).queryByText('Debole a Fuoco')).toBeNull();
   });
 
-  it('senza problemi la riga resta, con "Nessun problema in quest’area" (anche in Velocità, che non ha categorie)', () => {
-    for (const area of ['defense', 'speed'] as const) {
-      const { container, unmount } = renderIt(<AreaView rating={withMeta()} area={area} team={team} analysis={analysis} problems={[]} />);
-      const row = container.querySelector('.area-problems-row')!;
-      expect(row).toHaveClass('is-clear');
-      expect(within(row as HTMLElement).getByText("Nessun problema in quest'area")).toBeInTheDocument();
-      expect(screen.getByRole('note', { name: /^Problemi in / })).toHaveTextContent("Nessun problema in quest'area");
-      expect(screen.queryByRole('list', { name: /Problemi/ })).toBeNull();
-      unmount();
-    }
+  it('senza problemi la riga resta, con "Nessun problema in quest’area"; in Velocità (niente problemi del Coaching) solo la legenda', () => {
+    const { container, unmount } = renderIt(<AreaView rating={withMeta()} area="defense" team={team} analysis={analysis} problems={[]} />);
+    const row = container.querySelector('.area-problems-row')!;
+    expect(row).toHaveClass('is-clear');
+    expect(within(row as HTMLElement).getByText("Nessun problema in quest'area")).toBeInTheDocument();
+    expect(screen.getByRole('note', { name: /^Problemi in / })).toHaveTextContent("Nessun problema in quest'area");
+    expect(screen.queryByRole('list', { name: /Problemi/ })).toBeNull();
+    unmount();
+    const speed = renderIt(<AreaView rating={withMeta()} area="speed" team={team} analysis={analysis} problems={[]} />);
+    const speedRow = speed.container.querySelector('.area-problems-row')!;
+    expect(speedRow).toHaveClass('is-plain');
+    expect(screen.queryByText("Nessun problema in quest'area")).toBeNull();
+    expect(screen.queryByRole('note', { name: /^Problemi in / })).toBeNull();
+    // Una sottoscheda sola: il "?" porta il nome dell'area
+    expect(screen.getByRole('button', { name: 'Come funziona Velocità' })).toBeInTheDocument();
   });
 
   it('i problemi stanno in una riga: prima i risolvibili, poi i gravi; quelli che non stanno nel "+N" (title e testo nascosto)', () => {
@@ -125,6 +130,7 @@ describe('vista di un\'area: casi particolari', () => {
     const rating = { ...withMeta(), areas: withMeta().areas.map(a => (a.key === 'speed' ? { ...a, inactive: true } : a)) };
     renderIt(<AreaView rating={rating} area="speed" team={team} analysis={analysis} problems={[]} />);
     expect(screen.getByRole('note', { name: '' })).toHaveTextContent(/Non conta nello Stall/);
-    expect(screen.queryByRole('heading', { level: 3 })).toBeNull();
+    // Il titolo dell'area c'è solo per i lettori di schermo (a vista lo dice la scheda aperta)
+    expect(screen.getByRole('heading', { level: 3, name: 'Velocità' })).toHaveClass('visually-hidden');
   });
 });

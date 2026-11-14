@@ -43,15 +43,17 @@
 .sp-bar-btn.warn .sp-seg-raw { background: var(--warn); }
 .sp-bar-btn.bad .sp-seg-raw { background: var(--bad); }
 /* I segmenti dei guadagni staccati dalla velocità pura con una riga scura: si vede dove finisce la velocità propria */
-.sp-stack .sp-seg-own { background: repeating-linear-gradient(135deg, var(--warn) 0 3px, color-mix(in srgb, var(--warn) 55%, var(--panel)) 3px 6px); box-shadow: inset 2px 0 0 var(--ground); }
-.sp-stack .sp-seg-team { background: repeating-linear-gradient(135deg, var(--accent-2) 0 3px, color-mix(in srgb, var(--accent-2) 55%, var(--panel)) 3px 6px); box-shadow: inset 2px 0 0 var(--ground); }
+/* Coi suoi mezzi a righe ciano, col team a righe neutre: i colori di stato (verde/giallo/rosso) restano alla velocità pura
+   e il magenta resta raro (DESIGN.md) */
+.sp-stack .sp-seg-own { background: repeating-linear-gradient(135deg, var(--accent) 0 3px, color-mix(in srgb, var(--accent) 45%, var(--panel)) 3px 6px); box-shadow: inset 2px 0 0 var(--ground); }
+.sp-stack .sp-seg-team { background: repeating-linear-gradient(135deg, var(--muted) 0 3px, color-mix(in srgb, var(--muted) 30%, var(--panel)) 3px 6px); box-shadow: inset 2px 0 0 var(--ground); }
 .sp-total { font: italic 700 17px/1 var(--display); text-align: right; font-variant-numeric: tabular-nums; }
 .sp-total.good { color: var(--good); }
 .sp-total.warn { color: var(--warn); }
 .sp-total.bad { color: var(--bad); }
 .sp-parts { display: flex; gap: 6px; min-width: 9ch; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
-.sp-parts .sp-part-own { color: var(--warn); }
-.sp-parts .sp-part-team { color: var(--accent-2-ink); }
+.sp-parts .sp-part-own { color: var(--accent-ink); }
+.sp-parts .sp-part-team { color: var(--text); }
 .sp-mark { display: inline-block; margin-left: 4px; padding: 1px 5px; border-radius: 3px; background: var(--accent-2-soft); color: var(--text); font: 700 11px/1.3 var(--ui); letter-spacing: 0.02em; vertical-align: middle; }
 .sp-tile { cursor: default; }
 .sp-controls { gap: 6px; flex-wrap: wrap; white-space: normal; }
