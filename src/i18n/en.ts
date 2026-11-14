@@ -957,7 +957,7 @@ export const en = {
   'odetail.cm.page': "Targets {from} to {to}",
   'odetail.cm.noHit': "Nobody hits it super effectively",
   'odetail.wall.legendLess': "less",
-  'odetail.wall.legendSetup': "does better with setup",
+  'odetail.wall.legendSetup': "With setup",
   'guide.def.what': "What it measures",
   'ddetail.level': "Coverage",
   'ddetail.holdTypes': "Holds types",

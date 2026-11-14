@@ -959,7 +959,7 @@ export const it: Record<keyof typeof en, string> = {
   'odetail.cm.page': "Bersagli da {from} a {to}",
   'odetail.cm.noHit': "Nessuno lo colpisce super efficace",
   'odetail.wall.legendLess': "meno",
-  'odetail.wall.legendSetup': "va meglio col setup",
+  'odetail.wall.legendSetup': "Con setup",
   'guide.def.what': "Cosa misura",
   'ddetail.level': "Copertura",
   'ddetail.holdTypes': "Regge i tipi",
