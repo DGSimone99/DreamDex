@@ -30,6 +30,37 @@ const pct = (v: number, of: number) => `${(v / of) * 100}%`;
 /** Il nome di un core: per membro i suoi tipi che parano, uniti col trattino; i membri separati da " / ". */
 export const coreTitle = (core: Core, lang: Lang) => core.names.map(types => types.map(type => typeName(type, lang)).join('-')).join(' / ');
 
+/** Il solo disegno del triangolo (sprite, frecce e icone dei tipi), decorativo: lo usa anche la scheda Bonus/Malus. */
+export function CoreArt({ core, sprite = 40 }: { core: Core; sprite?: number }) {
+  const lang = useLang();
+  const ownId = useId();
+  // Senza i due punti (e simili) di useId: l'id va dentro url(#…)
+  const marker = `${ownId.replace(/[^\w-]/g, '')}-arrow`;
+  const edges = VERTICES.map((v, i) => edge(v, VERTICES[(i + 1) % 3]));
+  return (
+    <span className="sum-tri" aria-hidden="true">
+      <svg className="sum-tri-edges" viewBox={`0 0 ${W} ${H}`}>
+        <defs>
+          <marker id={marker} viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M0 0 10 5 0 10z" />
+          </marker>
+        </defs>
+        {edges.map((e, i) => <line key={i} x1={e.x1} y1={e.y1} x2={e.x2} y2={e.y2} markerEnd={`url(#${marker})`} />)}
+      </svg>
+      {core.members.map((name, i) => (
+        <span key={name} className="sum-tri-v" title={name} style={{ left: pct(VERTICES[i][0], W), top: pct(VERTICES[i][1], H) }}>
+          <Sprite species={name} size={sprite} />
+        </span>
+      ))}
+      {core.sides.map((side, i) => (
+        <span key={side.from} className="sum-tri-badge" title={typeName(side.type, lang)} style={{ left: pct(edges[i].mx, W), top: pct(edges[i].my, H) }}>
+          <img src={typeIconUrl(side.type)} alt="" draggable={false} />
+        </span>
+      ))}
+    </span>
+  );
+}
+
 /**
  * Core da 3 a triangolo: le tre sprite ai vertici su un piedistallo verde, le frecce che girano nel ciclo (A para a B,
  * B a C, C ad A) con l'icona tonda del tipo parato su ogni lato; a destra l'etichetta, il nome dei tipi e le tre righe
@@ -38,33 +69,9 @@ export const coreTitle = (core: Core, lang: Lang) => core.names.map(types => typ
 export function CoreTriangle({ core, size, descId }: { core: Core; size: 'normal' | 'roomy'; descId?: string }) {
   const t = useT();
   const lang = useLang();
-  const ownId = useId();
-  const sprite = size === 'roomy' ? 52 : 40;
-  // Senza i due punti (e simili) di useId: l'id va dentro url(#…)
-  const marker = `${ownId.replace(/[^\w-]/g, '')}-arrow`;
-  const edges = VERTICES.map((v, i) => edge(v, VERTICES[(i + 1) % 3]));
   return (
     <span className={`sum-tri-row ${size}`}>
-      <span className="sum-tri" aria-hidden="true">
-        <svg className="sum-tri-edges" viewBox={`0 0 ${W} ${H}`}>
-          <defs>
-            <marker id={marker} viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-              <path d="M0 0 10 5 0 10z" />
-            </marker>
-          </defs>
-          {edges.map((e, i) => <line key={i} x1={e.x1} y1={e.y1} x2={e.x2} y2={e.y2} markerEnd={`url(#${marker})`} />)}
-        </svg>
-        {core.members.map((name, i) => (
-          <span key={name} className="sum-tri-v" title={name} style={{ left: pct(VERTICES[i][0], W), top: pct(VERTICES[i][1], H) }}>
-            <Sprite species={name} size={sprite} />
-          </span>
-        ))}
-        {core.sides.map((side, i) => (
-          <span key={side.from} className="sum-tri-badge" title={typeName(side.type, lang)} style={{ left: pct(edges[i].mx, W), top: pct(edges[i].my, H) }}>
-            <img src={typeIconUrl(side.type)} alt="" draggable={false} />
-          </span>
-        ))}
-      </span>
+      <CoreArt core={core} sprite={size === 'roomy' ? 52 : 40} />
       <span className="sum-syn-body">
         <span className="sum-syn-head"><em className="sum-syn-tag">{t('sum.link.core')}</em><strong className="sum-syn-title" title={coreTitle(core, lang)}>{coreTitle(core, lang)}</strong></span>
         <span className="sum-cover" aria-hidden="true">

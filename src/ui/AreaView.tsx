@@ -44,15 +44,18 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
   const open = (key: string) => { focusKey.current = key; setPicked(key); };
   // Interruttore dell'efficacia: uno per area, lo stesso per Coverage tipi e Coverage meta (spento all'inizio)
   const [effOnly, setEffOnly] = useState<Partial<Record<AreaKey, boolean>>>({});
-  const tabs = areaTabs(rating, area, t, lang, { team, analysis, open, roomy, formatId, effOnly: !!effOnly[area] });
+  // La guida ha la sua sezione: cambiarla non sposta la sottoscheda dietro (null = chiusa)
+  const [guide, setGuide] = useState<string | null>(null);
+  // Chi ha aperto la guida (il "?" o un link nel pannello): alla chiusura il focus torna lì
+  const opener = useRef<HTMLElement | null>(null);
+  const openGuide = (key: string) => { opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; setGuide(key); };
+  const tabs = areaTabs(rating, area, t, lang, { team, analysis, open, roomy, formatId, effOnly: !!effOnly[area], guide: openGuide });
   // Si parte dalla prima scheda (Generale), anche se la sottoscheda ricordata non c'è più (es. meta spento)
   const index = Math.max(0, picked === null ? 0 : tabs.findIndex(tab => tab.key === picked));
   const current = tabs[index];
   const legend = current.legend && <span className="area-legend" aria-hidden="true">{current.legend}</span>;
   const buttons = useRef<(HTMLButtonElement | null)[]>([]);
   const helpButton = useRef<HTMLButtonElement>(null);
-  // La guida ha la sua sezione: cambiarla non sposta la sottoscheda dietro (null = chiusa)
-  const [guide, setGuide] = useState<string | null>(null);
   const title = t(`area.${area}`);
   // Con una sottoscheda sola (Velocità, Bonus/Malus) il "?" spiega l'area intera: porta il suo nome
   const helpLabel = t('area.guide.button', { tab: tabs.length === 1 ? title : current.label });
@@ -98,10 +101,10 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
     return () => observer.disconnect();
   }, [index, t, hasHelp]);
 
-  // Alla chiusura della guida il focus torna al "?" della sottoscheda su cui si era
+  // Alla chiusura della guida il focus torna a chi l'ha aperta (di solito il "?" della sottoscheda su cui si era)
   const wasOpen = useRef(false);
   useEffect(() => {
-    if (wasOpen.current && guide === null) helpButton.current?.focus();
+    if (wasOpen.current && guide === null) (opener.current?.isConnected ? opener.current : helpButton.current)?.focus();
     wasOpen.current = guide !== null;
   }, [guide]);
 
@@ -154,7 +157,7 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
         {current.help && (
           <span className="area-help" style={helpPlace}>
             <button ref={helpButton} type="button" className="help-button" aria-label={helpLabel}
-              title={helpLabel} onClick={() => setGuide(current.key)}>
+              title={helpLabel} onClick={() => openGuide(current.key)}>
               <Icon name="help" />
             </button>
           </span>
@@ -169,7 +172,8 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
       {/* La riga c'è sempre, anche senza problemi: il pannello sotto parte alla stessa altezza in ogni area (in Velocità
           solo la legenda, a destra).
           A destra la legenda dei colori della scheda aperta (sempre intera: sono i problemi a finire nel "+N") */}
-      {!judged ? (
+      {/* Bonus/Malus: niente riga dei problemi (i malus sono già la scheda): il posto va alle voci */}
+      {area === 'bonusMalus' ? null : !judged ? (
         <div className="area-problems-row is-plain">{legend}</div>
       ) : problems.length === 0 ? (
         <div className="area-problems-row is-clear" role="note" aria-label={t('analysis.areaProblems', { area: title })}>

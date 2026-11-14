@@ -235,48 +235,164 @@ const catalogRating = () => ({
   bonus: { total: 2, items: [{ text: 'Sole aiuta', points: 2, catalog: 'weatherHelp' }] },
 }) as unknown as TeamRating;
 
-async function openCatalog() {
+/** Un core a tre finto: tre membri col giro dei tipi parati. */
+const fakeCore = (members: [string, string, string], types: [string, string, string]) => ({
+  members, names: [[], [], []], strength: 3,
+  sides: members.map((from, i) => ({ from, to: members[(i + 1) % 3], type: types[i], types: [types[i]] })),
+});
+/** (Nei test i tipi restano in inglese: niente dati italiani.) Righe della Coverage tipi: per ogni tipo chi lo regge (qui basta il conto). */
+const holdRows = (held: Record<string, number>) => Object.entries(held).flatMap(([name, n]) => Array.from({ length: n }, (_, i) => ({ type: `${name}${i}`, heldBy: [name] })));
+/** Valutazione con due core: il secondo (Heatran, Landorus, Toxapex) regge più tipi del primo. */
+const coreRating = (cores = [fakeCore(['Pelipper', 'Ferrothorn', 'Great Tusk'], ['Fire', 'Water', 'Electric']), fakeCore(['Heatran', 'Landorus-Therian', 'Toxapex'], ['Fire', 'Ground', 'Poison'])]) => ({
+  ...fakeRating([], []),
+  bonus: { total: 3 * cores.length, items: cores.map(c => ({ text: `Core a tre: ${c.members.join(', ')} si parano le debolezze a giro`, points: 3, catalog: 'coreTrio' })) },
+  cores,
+  defense: { coverageTypes: { rows: [...holdRows({ Pelipper: 4, Heatran: 9 }), ...holdRows({ nobody: 5 })] } },
+}) as unknown as TeamRating;
+
+function renderBm(rating: TeamRating) {
   const user = userEvent.setup();
-  render(<LangProvider lang="it"><AreaView rating={catalogRating()} area="bonusMalus" team={[]} analysis={analyzeTeam([], fixtureData)} problems={[]} /></LangProvider>);
-  return { user, dialog: screen.getByRole('region', { name: 'Bonus/Malus' }) };
+  render(<LangProvider lang="it"><AreaView rating={rating} area="bonusMalus" team={[]} analysis={analyzeTeam([], fixtureData)} problems={[]} /></LangProvider>);
+  return { user, view: screen.getByRole('region', { name: 'Bonus/Malus' }) };
 }
+const onGrade = () => screen.getByRole('region', { name: 'Sul voto' });
+/** Le schede Bonus e Malus sotto netto e core, e le voci della scheda scelta. */
+const groupTab = (name: RegExp) => screen.getByRole('tab', { name });
+const entries = () => within(screen.getByRole('tabpanel', { name: /^(Altri )?(bonus|malus)/i })).queryAllByRole('listitem');
 
 describe('Bonus/Malus', () => {
-  it('una scheda sola col netto sul voto, e le barre di malus e bonus', async () => {
-    const { dialog } = await openCatalog();
-    expect(within(dialog).getAllByRole('tab').map(tab => tab.textContent)).toEqual(['Sul voto −6']);
-    expect(within(dialog).getByText('−8')).toBeInTheDocument();
-    expect(within(dialog).getAllByText('+2').length).toBeGreaterThan(0);
+  it('una scheda sola col netto sul voto (rosso se negativo), e bonus e malus in tutto', () => {
+    const { view } = renderBm(catalogRating());
+    expect(within(view).getAllByRole('tab')[0].textContent).toBe('Generale −6');
+    expect(onGrade().querySelector('.bm-net')).toHaveTextContent('−6');
+    expect(onGrade().querySelector('.bm-net')).toHaveClass('bad');
+    expect(onGrade()).toHaveTextContent('Bonus +2');
+    expect(onGrade()).toHaveTextContent('Malus −8');
   });
 
-  it('cosa toglie: una carta per voce attiva coi suoi casi e i punti in tutto; niente regole a punti', async () => {
-    const { dialog } = await openCatalog();
-    const takes = within(dialog).getByRole('region', { name: 'Cosa toglie' });
-    const cards = within(takes).getAllByRole('listitem');
-    expect(cards).toHaveLength(2);
-    const hazard = cards.find(c => within(c).queryByText('Hazard ripetuto'))!;
-    expect(hazard).toHaveTextContent('−3');
-    expect(hazard).toHaveTextContent('Due setter di Stealth Rock · Due setter di Spikes');
-    expect(cards.find(c => within(c).queryByText('Stesso tipo'))).toHaveTextContent('−5');
-    expect(dialog).not.toHaveTextContent('per ogni');
+  it('le barre di malus e bonus sulla stessa scala (almeno 10), vuota e grigia a zero; decorative', () => {
+    renderBm(catalogRating());
+    const bars = onGrade().querySelector<HTMLElement>('.bm-bars')!;
+    expect(bars).toHaveAttribute('aria-hidden', 'true');
+    expect(bars.querySelector<HTMLElement>('.bm-bar.malus .bm-track > span')!.style.width).toBe('80%');
+    expect(bars.querySelector<HTMLElement>('.bm-bar.bonus .bm-track > span')!.style.width).toBe('20%');
   });
 
-  it('cosa aggiunge: la sola voce attiva; le altre 15 voci come tessere spente con la frase breve; niente Tera', async () => {
-    const { dialog } = await openCatalog();
-    const adds = within(dialog).getByRole('region', { name: 'Cosa aggiunge' });
-    expect(within(adds).getAllByRole('listitem')).toHaveLength(1);
-    expect(within(adds).getByText('Meteo che protegge').closest('li')).toHaveTextContent('+2');
-    const rest = within(dialog).getByRole('region', { name: 'Le altre voci, per ora a zero' });
-    expect(within(rest).getAllByRole('listitem')).toHaveLength(15);
-    expect(within(rest).getByText('Core a tre').closest('li')).toHaveTextContent('Tre membri che si coprono le debolezze a vicenda');
+  it('a zero la barra resta vuota e il valore è grigio', () => {
+    renderBm({ ...catalogRating(), bonus: { total: 0, items: [] } } as unknown as TeamRating);
+    const bonus = onGrade().querySelector<HTMLElement>('.bm-bar.bonus')!;
+    expect(bonus.querySelector('.bm-track > span')).toBeNull();
+    expect(bonus.querySelector('b')).toHaveClass('zero');
+  });
+
+  it('le voci attive in due schede, Bonus e Malus, con quante sono e il totale: prima i bonus; le frecce passano ai malus', async () => {
+    const { user } = renderBm(catalogRating());
+    const bonus = groupTab(/^Bonus\s*1\s*\+2$/);
+    const malus = groupTab(/^Malus\s*2\s*−8$/);
+    expect(bonus).toHaveAttribute('aria-selected', 'true');
+    expect(malus).toHaveAttribute('aria-selected', 'false');
+    expect(entries().map(row => row.querySelector('b')!.textContent)).toEqual(['Scudo del clima']);
+    expect(entries()[0]).toHaveTextContent('+2');
+    expect(entries()[0]).toHaveClass('bonus');
+    bonus.focus();
+    await user.keyboard('{ArrowRight}');
+    expect(malus).toHaveAttribute('aria-selected', 'true');
+    expect(malus).toHaveFocus();
+    const rows = entries();
+    expect(rows.map(row => row.querySelector('b')!.textContent)).toEqual(['Tipi doppioni', 'Hazard doppio']);
+    // Il caso sempre intero, senza pulsanti per aprirlo
+    expect(rows[1]).toHaveTextContent('Due setter di Stealth Rock · Due setter di Spikes');
+    expect(rows[1]).toHaveTextContent('−3');
+    expect(rows[1]).toHaveClass('malus');
+    expect(screen.queryByRole('button', { name: /Mostra tutto il testo/ })).toBeNull();
+    await user.keyboard('{Home}');
+    expect(bonus).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tabpanel', { name: /^Bonus/ })).not.toHaveTextContent('Arcobaleno di tipi');
+    expect(onGrade()).not.toHaveTextContent('per ogni');
+    expect(screen.queryByText('Cosa toglie')).toBeNull();
+  });
+
+  it('senza bonus si parte dai malus; la scheda vuota dice "Nessun altro bonus"; niente riga dei problemi', async () => {
+    const { user } = renderBm({ ...catalogRating(), bonus: { total: 0, items: [] } } as unknown as TeamRating);
+    expect(groupTab(/^Malus/)).toHaveAttribute('aria-selected', 'true');
+    await user.click(groupTab(/^Bonus/));
+    const empty = screen.getByRole('tabpanel', { name: /^Bonus/ });
+    expect(empty).toHaveTextContent('Nessun bonus per ora');
+    // Il link al catalogo, per vedere come guadagnarli; la scheda vuota ha solo lo zero del conto
+    expect(within(empty).getByRole('button', { name: /Tutte le voci possibili/ })).toBeInTheDocument();
+    expect(groupTab(/^Bonus/)).toHaveAccessibleName('Bonus 0');
+    expect(document.querySelector('.area-problems-row')).toBeNull();
+  });
+
+  it('nessun malus: la scheda Malus mostra la medaglia con la spunta e "Il team non perde punti"', async () => {
+    const { user } = renderBm({ ...catalogRating(), penalty: { total: 0, items: [] } } as unknown as TeamRating);
+    await user.click(groupTab(/^Malus/));
+    expect(screen.getByRole('tabpanel', { name: /^Malus/ })).toHaveTextContent('Nessun malusIl team non perde punti');
+  });
+
+  it('netto verde se positivo; senza voci il netto è 0 grigio con "Né bonus né malus per ora"', () => {
+    const { unmount } = render(<LangProvider lang="it"><AreaView rating={coreRating()} area="bonusMalus" team={[]} analysis={analyzeTeam([], fixtureData)} problems={[]} /></LangProvider>);
+    expect(onGrade().querySelector('.bm-net')).toHaveTextContent('+6');
+    expect(onGrade().querySelector('.bm-net')).toHaveClass('good');
+    unmount();
+    renderBm(fakeRating([], []));
+    expect(onGrade().querySelector('.bm-net')).toHaveTextContent(/^0$/);
+    expect(onGrade().querySelector('.bm-net')).toHaveClass('zero');
+    expect(onGrade()).toHaveTextContent('Né bonus né malus per ora');
+    expect(screen.queryByRole('tab', { name: /^(bonus|malus)/i })).toBeNull();
+  });
+
+  it('"Tutte le voci possibili" apre il catalogo (la guida della scheda) sui bonus; all\'uscita il focus torna al link', async () => {
+    const { user } = renderBm(catalogRating());
+    const link = screen.getByRole('button', { name: /Tutte le voci possibili/ });
+    await user.click(link);
+    const dialog = screen.getByRole('dialog', { name: /Bonus\/Malus/ });
+    expect(within(dialog).getByRole('tab', { name: 'Tutti i bonus' })).toHaveAttribute('aria-selected', 'true');
+    const panel = within(dialog).getByRole('tabpanel');
+    expect(within(panel).getAllByRole('listitem')).toHaveLength(6);
+    expect(within(panel).getByText('Core', { selector: 'b' }).closest('li')).toHaveTextContent('Tre membri che si coprono le debolezze a vicenda');
+    expect(within(panel).getByText('Core', { selector: 'b' }).closest('li')).toHaveTextContent('+3 per ogni core');
+    await user.click(within(dialog).getByRole('tab', { name: 'Tutti i malus' }));
+    expect(within(within(dialog).getByRole('tabpanel')).getAllByRole('listitem')).toHaveLength(12);
     expect(dialog).not.toHaveTextContent('Tera');
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(link).toHaveFocus();
   });
 
-  it('senza malus la colonna lo dice; niente tetti né "Totale massimo"', async () => {
-    const r = { ...catalogRating(), penalty: { total: 0, items: [] } } as unknown as TeamRating;
-    render(<LangProvider lang="it"><AreaView rating={r} area="bonusMalus" team={[]} analysis={analyzeTeam([], fixtureData)} problems={[]} /></LangProvider>);
-    expect(screen.getByRole('region', { name: 'Cosa toglie' })).toHaveTextContent('Niente: nessun malus');
-    expect(screen.getByRole('tabpanel')).not.toHaveTextContent('Totale massimo');
+  it('due core a tre: aperto quello che regge più tipi, l\'altro è un pulsante che lo apre', async () => {
+    const { user } = renderBm(coreRating());
+    // Nel titolo quanti sono e quanto valgono, con la medaglia accesa
+    const cores = screen.getByRole('region', { name: '2 Core +6' });
+    expect(cores.querySelector('.bm-head-medal')).not.toHaveClass('off');
+    const strong = within(cores).getByRole('button', { name: 'Core Fire / Ground / Poison' });
+    const weak = within(cores).getByRole('button', { name: 'Core Fire / Water / Electric' });
+    expect(strong).toHaveAttribute('aria-expanded', 'true');
+    expect(weak).toHaveAttribute('aria-expanded', 'false');
+    expect(within(cores).getByText('Reggono 9 tipi su 18')).toBeInTheDocument();
+    expect(within(cores).getByText((_, el) => el?.tagName === 'SPAN' && el.textContent === 'Heatran para Landorus-Therian da Fire')).toBeInTheDocument();
+    await user.click(weak);
+    expect(weak).toHaveAttribute('aria-expanded', 'true');
+    expect(strong).toHaveAttribute('aria-expanded', 'false');
+    expect(weak.closest('li')).toHaveClass('open');
+    expect(within(cores).getByText('Reggono 4 tipi su 18')).toBeInTheDocument();
+    // I core stanno solo nel riquadro in alto: nessuna voce sotto (contano però nel netto e in "Bonus +6")
+    expect(screen.queryByRole('tab', { name: /bonus/i })).toBeNull();
+    expect(onGrade()).toHaveTextContent('Bonus +6');
+  });
+
+  it('un core solo: aperto, senza pulsante; nessun core: una riga su come averne uno', () => {
+    const { unmount } = render(<LangProvider lang="it"><AreaView rating={coreRating([fakeCore(['Heatran', 'Landorus-Therian', 'Toxapex'], ['Fire', 'Ground', 'Poison'])])} area="bonusMalus" team={[]} analysis={analyzeTeam([], fixtureData)} problems={[]} /></LangProvider>);
+    const one = screen.getByRole('region', { name: '1 Core +3' });
+    expect(within(one).queryByRole('button')).toBeNull();
+    expect(within(one).getByRole('heading', { name: /Fire \/ Ground \/ Poison/ })).toBeInTheDocument();
+    unmount();
+    renderBm(catalogRating());
+    const none = screen.getByRole('region', { name: 'Core' });
+    expect(none).toHaveTextContent('Nessun core a tre');
+    // Senza core la medaglia del titolo è spenta
+    expect(none.querySelector('.bm-head-medal')).toHaveClass('off');
+    expect(none).toHaveTextContent('tre membri si coprono le debolezze a giro');
   });
 });
 
