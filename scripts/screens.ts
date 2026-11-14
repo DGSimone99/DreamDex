@@ -39,6 +39,15 @@ const RAIN = [
   member('Kingambit', 'Black Glasses', 'Supreme Overlord', ['Swords Dance', 'Kowtow Cleave', 'Sucker Punch', 'Iron Head'], 'Adamant', { hp: 200, atk: 252, spe: 56 }),
   member('Great Tusk', 'Booster Energy', 'Protosynthesis', ['Headlong Rush', 'Ice Spinner', 'Rapid Spin', 'Bulk Up'], 'Jolly', { atk: 252, spe: 252, hp: 4 }),
 ];
+/** Bonus/Malus sotto sforzo: un core, 3 altri bonus e 7 malus (meteo in conflitto, Trick Room in un team veloce, Choice con mosse di stato, buchi in Difesa…). */
+const STRESS = [
+  member('Pelipper', 'Damp Rock', 'Drizzle', ['Hurricane', 'Surf', 'U-turn', 'Roost'], 'Bold', { hp: 248, def: 252, spd: 8 }),
+  member('Tapu Koko', 'Heavy-Duty Boots', 'Electric Surge', ['Dazzling Gleam', 'U-turn', 'Roost', 'Defog'], 'Timid', { hp: 248, spe: 252, spd: 8 }),
+  member('Hippowdon', 'Choice Specs', 'Sand Stream', ['Trick Room', 'Calm Mind', 'Earth Power', 'Stealth Rock'], 'Quiet', { hp: 252, spa: 252, spd: 4 }),
+  member('Luvdisc', 'Choice Scarf', 'Swift Swim', ['Surf', 'Ice Beam', 'Charm', 'Sweet Kiss'], 'Timid', { atk: 252, spe: 252, hp: 4 }),
+  member('Excadrill', 'Leftovers', 'Sand Rush', ['Earthquake', 'Iron Head', 'Stealth Rock', 'Swords Dance'], 'Jolly', { atk: 252, spe: 252, hp: 4 }),
+  member('Barraskewda', 'Choice Band', 'Swift Swim', ['Liquidation', 'Close Combat', 'Flip Turn', 'Swords Dance'], 'Adamant', { atk: 252, spe: 252, hp: 4 }),
+];
 /** Team senza sinergie né legami (nessun core, nessun pivot): il Riassunto ne mostra le sezioni vuote. */
 const LONE = [
   member('Garchomp', 'Life Orb', 'Rough Skin', ['Earthquake', 'Dragon Claw', 'Stone Edge', 'Swords Dance'], 'Jolly', { atk: 252, spe: 252, hp: 4 }),
@@ -483,6 +492,8 @@ const STATES: Record<string, State> = {
   'analysis-bonus-six-scrolled': bonusState(SIX, async p => { await p.evaluate(() => document.querySelector('.bm')?.scrollIntoView()); await wait(300); return true; }),
   'analysis-bonus-six-cores': bonusState(SIX, async p => { await p.evaluate(() => document.querySelector('.bm-cores')?.scrollIntoView()); await wait(300); const ok = await clickText(p, '.bm-core.shut .bm-core-art', /./); await wait(400); return ok; }),
   'analysis-bonus-rain-open': bonusState(RAIN, async p => { const ok = await clickText(p, 'button.bm-row-toggle', /./); await wait(400); return ok; }),
+  'analysis-bonus-stress': bonusState(STRESS),
+  'analysis-bonus-stress-malus': bonusState(STRESS, async p => { const ok = await clickText(p, '.bm-tab', /malus/i); await wait(400); return ok; }),
   'analysis-bonus-guide': bonusState(SIX, async p => { const ok = await clickText(p, '.bm-more', /./); await wait(400); return ok; }),
   'analysis-overview-three': { hash: hash(TEAM.slice(0, 3)), run: async p => { await tab(p, 'analysis'); return true; } },
   'analysis-meta-off': { hash: hashWith(TEAM, { meta: false }), run: async p => { await tab(p, 'analysis'); return true; } },
@@ -909,7 +920,7 @@ for (const [w, h] of sizes) {
           const shownP = document.querySelectorAll('.area-problems > li:not(.area-problems-more)').length;
           const moreP = document.querySelector('.area-problems-more')?.textContent?.match(/\+(\d+)/)?.[1] ?? '0';
           const legendAt = lg && lgRow ? ` legend=${Math.round(lg.getBoundingClientRect().width)} legendCut=${Math.max(0, Math.round(lg.getBoundingClientRect().right - lgRow.right), lg.scrollWidth - lg.clientWidth)} problems=${shownP}+${moreP} stripH=${Math.round(lgRow.height)}` : '';
-          return `${guide}${roles}${legendAt} panelOverflow=${el.scrollHeight - el.clientHeight} panelX=${el.scrollWidth - el.clientWidth}${(() => { const l = el.querySelector<HTMLElement>('.bm-groups'); return l ? ` bmListScroll=${l.scrollHeight - l.clientHeight} bmBars=${el.querySelector('.bm-bars') ? 1 : 0} bmCut=${[...el.querySelectorAll<HTMLElement>('.bm-row-case')].map(c => { const h = c.getBoundingClientRect().height; c.classList.add('measuring'); const f = c.getBoundingClientRect().height; c.classList.remove('measuring'); return `${Math.round(h)}/${Math.round(f)}`; }).join(',')} bmButtons=${el.querySelectorAll('button.bm-row-toggle').length} bmCores=[${[...el.querySelectorAll('.bm-core, .bm-core-body')].map(c => `${Math.round(c.getBoundingClientRect().width)}x${Math.round(c.getBoundingClientRect().height)}`).join(',')}]` : ''; })()}${memberRows}${below}${labelAt}`; })(),
+          return `${guide}${roles}${legendAt} panelOverflow=${el.scrollHeight - el.clientHeight} panelX=${el.scrollWidth - el.clientWidth}${(() => { const l = el.querySelector<HTMLElement>('.bm-entries'); return l ? ` bmListScroll=${l.scrollHeight - l.clientHeight} bmBars=${el.querySelector('.bm.no-bars') ? 0 : 1} bmCompact=${el.querySelector('.bm-entries.compact') ? 1 : 0} bmCols=${el.querySelector<HTMLElement>('.bm-list')?.style.getPropertyValue('--cols') ?? '-'} bmButtons=${el.querySelectorAll('button.bm-row-toggle').length} bmCores=[${[...el.querySelectorAll('.bm-core, .bm-core-body')].map(c => `${Math.round(c.getBoundingClientRect().width)}x${Math.round(c.getBoundingClientRect().height)}`).join(',')}]` : ''; })()}${memberRows}${below}${labelAt}`; })(),
         dash: box ? `dash=${box.clientHeight}x${box.clientWidth} density=${box.dataset.density} cards=[${heights.join(',')}] cut=${cut} overflow=[${over.join(',')}] sumClip=${sumClip} rows=[${sumRows.join(',')}] sumHidden=${sumHidden} sumFill=${fill}% fitCut=${fitCut} covBand=${covBand} overviewScroll=${(document.querySelector('.overview')?.scrollHeight ?? 0) - (document.querySelector('.overview')?.clientHeight ?? 0)} hScroll=${document.scrollingElement!.scrollWidth - window.innerWidth}` : '',
       };
     });

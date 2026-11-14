@@ -39,9 +39,9 @@ describe('vista di un\'area sulla pagina', () => {
 
   it('Bonus/Malus: una scheda sola col netto sul voto, dentro il netto con le voci del team e i core a tre', () => {
     renderIt(<AreaView rating={withMeta()} area="bonusMalus" team={team} analysis={analysis} problems={[]} />);
-    expect(screen.getAllByRole('tab').map(tab => tab.querySelector('span')!.textContent)).toEqual(['Sul voto']);
+    expect(screen.getAllByRole('tab')[0].querySelector('span')!.textContent).toBe('Generale');
     expect(screen.getByRole('region', { name: 'Sul voto' })).toBeInTheDocument();
-    expect(screen.getByRole('region', { name: /core a tre$/i })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Core' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Tutte le voci possibili/ })).toBeInTheDocument();
   });
 

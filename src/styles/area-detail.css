@@ -168,6 +168,7 @@
 .bm-parts b { font-weight: 700; }
 .bm-parts b.good { color: var(--good); }
 .bm-parts b.bad { color: var(--bad); }
+.bm.no-bars .bm-bars { display: none; }
 .bm-bars { display: grid; gap: 8px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line-soft); }
 .bm-bar { display: grid; grid-template-columns: 52px minmax(0, 1fr) 40px; align-items: center; gap: 10px; font: 600 12px var(--ui); color: var(--muted); }
 .bm-track { height: 8px; background: var(--field); }
@@ -182,14 +183,22 @@
 .bm-more:hover { text-decoration: underline; }
 
 /* Sotto, a tutta larghezza: le voci attive in tre colonne, riga per riga (se proprio non stanno, scorrono) */
-/* Sotto: le voci divise, i bonus a sinistra e i malus a destra (largo in proporzione a quante voci ha il gruppo); se un
-   gruppo manca l'altro prende tutta la larghezza. Scorre solo con una voce aperta per intero che non sta */
-.bm-groups { grid-area: list; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; display: flex; align-items: flex-start; gap: 0 28px; padding-left: 14px; }
-.bm-group { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
-.bm .bm-group-head { margin: 0; font: 600 11px/1.2 var(--ui); letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); }
-.bm-group-head b { margin-left: 4px; font: 800 13px/1 var(--display); font-style: italic; letter-spacing: 0; }
-.bm-group.bonus .bm-group-head b { color: var(--good); }
-.bm-group.malus .bm-group-head b { color: var(--bad); }
+/* Sotto: due schede (Bonus, Malus) e le voci di quella scelta a tutta larghezza; colonne e carte compatte le decide
+   useFitEntries perché non scorrano mai (scorre solo con una voce aperta per intero che non sta) */
+.bm-entries-wrap { grid-area: list; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
+.bm-tabs { flex: none; display: flex; gap: 6px; }
+.bm-tab {
+  --tone: var(--good); display: inline-flex; align-items: center; gap: 8px; min-height: 32px; padding: 4px 14px;
+  background: var(--raised); border: 1px solid var(--line-soft); color: var(--muted); font: 600 13px var(--ui); cursor: pointer;
+}
+.bm-tab.malus { --tone: var(--bad); }
+.bm-tab:hover { color: var(--text); border-color: var(--line); }
+.bm-tab[aria-selected='true'] { color: var(--text); background: color-mix(in srgb, var(--tone) 14%, var(--raised)); border-color: color-mix(in srgb, var(--tone) 55%, var(--line)); }
+.bm-tab-count { min-width: 20px; padding: 1px 6px; background: var(--field); font: 600 11px/1.3 var(--ui); font-style: normal; text-align: center; color: var(--muted); }
+.bm-tab b { font: 800 16px/1 var(--display); font-style: italic; font-variant-numeric: tabular-nums; color: var(--tone); }
+.bm-tab.none b { color: var(--faint); }
+.bm-entries { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; padding-left: 14px; }
+.bm .bm-entries-none { margin: 6px 0 0; font-size: 13px; color: var(--faint); }
 .bm-list { display: grid; grid-template-columns: repeat(var(--cols, 1), minmax(0, 1fr)); align-content: start; gap: 12px 26px; margin: 0; padding: 5px 0; list-style: none; }
 /* Una voce: la medaglia appuntata sul bordo sinistro, la carta lavata nel colore della voce che sfuma a destra, i punti
    su una targhetta inclinata a righe */
@@ -211,9 +220,14 @@
 .bm-row-toggle:focus-visible { outline: none; }
 .bm-row:has(.bm-row-toggle:focus-visible) { outline: 2px solid var(--accent); outline-offset: -2px; }
 .bm-row-tx b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 700 15px/1.15 var(--display); font-style: italic; }
-.bm-row-case { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; font-size: 12.5px; line-height: 1.35; color: var(--muted); }
-.bm-row.open .bm-row-case { display: block; -webkit-line-clamp: unset; overflow: visible; }
-.bm .bm-row-case.measuring { display: block !important; -webkit-line-clamp: unset !important; }
+/* Il caso sempre intero: va a capo quanto serve */
+.bm-row-case { font-size: 12.5px; line-height: 1.35; color: var(--muted); }
+.bm-entries.compact .bm-row { min-height: 34px; padding-left: 32px; }
+.bm-entries.compact .bm-row .bm-medal { left: -10px; width: 34px; height: 38px; }
+.bm-entries.compact .bm-row-tx { padding-top: 2px; padding-bottom: 2px; }
+.bm-entries.compact .bm-row:not(.open) .bm-row-case { display: none; }
+.bm-entries.compact .bm-row-pts { min-width: 46px; font-size: 18px; }
+.bm-entries.compact .bm-list { row-gap: 8px; }
 .bm-row-pts {
   flex: none; display: grid; place-items: center; min-width: 62px; padding: 0 12px 0 22px; color: var(--c);
   background: var(--stripes), color-mix(in srgb, var(--c) 18%, var(--field));
@@ -228,36 +242,45 @@
 }
 
 /* In alto a sinistra: i core a tre */
-.bm-cores { grid-area: cores; align-self: start; min-width: 0; display: flex; flex-direction: column; }
-.bm .sum-tri { --tri-w: 150px; --tri-badge: 22px; }
-.bm-core-row { display: flex; gap: 10px; margin: 0; padding: 0; list-style: none; }
+/* La carta dei core (come le carte della Panoramica): stessa misura con 0, 1 o 2 core. Una superficie sola: con almeno
+   un core lavata di verde; i due core sono due parti della stessa carta, divise da una riga sottile */
+.bm-cores.dash-card {
+  --cores-h: 222px; position: relative; grid-area: cores; align-self: start; height: var(--cores-h); padding: 0 0 0 0; overflow: visible;
+  background: linear-gradient(115deg, color-mix(in srgb, var(--good-bg) 70%, var(--panel)) 0%, var(--panel) 60%);
+  border-color: color-mix(in srgb, var(--good) 22%, var(--line-soft)); box-shadow: 0 6px 14px rgb(0 0 0 / 0.28);
+}
+.bm-cores.dash-card.none { background: var(--panel); border-color: var(--line-soft); }
+.bm-cores .dash-head { margin: 0; padding-left: 50px; }
+.bm-cores .dash-meta b.good { color: var(--good); }
+/* La medaglia del core grande come quelle delle voci, appuntata a cavallo della barra del titolo */
+.bm-head-medal.bm-medal { position: absolute; left: -14px; top: -16px; z-index: 1; width: 54px; height: 61px; }
+.bm-core-row { flex: 1; min-height: 0; display: flex; margin: 0; padding: 0; list-style: none; }
 .bm-core {
   position: relative; display: flex; align-items: center; gap: 16px; min-width: 0; overflow: hidden;
-  flex: 1 1 calc(var(--tri-w, 150px) + 34px); padding: 14px 16px;
-  background: linear-gradient(115deg, color-mix(in srgb, var(--good-bg) 80%, var(--raised)) 0%, var(--raised) 58%);
-  border: 1px solid color-mix(in srgb, var(--good) 22%, var(--line-soft)); box-shadow: 0 6px 14px rgb(0 0 0 / 0.28);
+  flex: 1 1 calc(var(--tri-w, 150px) + 34px); padding: 10px 16px 10px 18px;
   transition: flex-grow 250ms var(--ease);
 }
-.bm-core-row:not(.two) .bm-core { max-width: 680px; }
-.bm-core.shut { flex-grow: 0; }
-.bm-core::before { content: ""; position: absolute; inset: 0 0 auto; height: 3px; background: var(--good); }
-.bm-core.shut::before { background: color-mix(in srgb, var(--good) 40%, transparent); }
-.bm-core.shut { background: linear-gradient(115deg, color-mix(in srgb, var(--good-bg) 45%, var(--raised)) 0%, var(--raised) 70%); }
+.bm-core-row:not(.two) .bm-core { max-width: 720px; }
+/* Il core chiuso: una colonna della stessa carta oltre una riga sottile, triangolo e +3 al centro */
+.bm-core.shut { flex-grow: 0; flex-direction: column; justify-content: center; gap: 4px; padding: 8px 14px; background: rgb(0 0 0 / 0.12); }
+.bm-core + .bm-core { border-left: 1px solid color-mix(in srgb, var(--good) 22%, var(--line-soft)); }
+/* La carta dei core non entra con l'animazione della Panoramica: in questa scheda si muovono solo le medaglie */
+.bm-cores.dash-card { animation: none; }
 .bm-core-art { flex: none; display: flex; padding: 0; background: none; border: 0; color: inherit; font: inherit; }
-.bm-core.shut .bm-core-art { cursor: pointer; opacity: 0.85; }
+.bm-core.shut .bm-core-art { flex-direction: column; align-items: center; gap: 4px; cursor: pointer; opacity: 0.85; }
 /* Tutta la carta chiusa si clicca */
 .bm-core.shut .bm-core-art::after { content: ""; position: absolute; inset: 0; }
-.bm-core.shut:hover { border-color: var(--line); }
+.bm-core.shut:hover { background: rgb(255 255 255 / 0.03); }
 .bm-core.shut:hover .bm-core-art { opacity: 1; }
 .bm-core:has(.bm-core-art:focus-visible) { outline: 2px solid var(--accent); outline-offset: -2px; }
 .bm-core-art:focus-visible { outline: none; }
-.bm-core-mini { position: absolute; top: 9px; right: 10px; font: 800 16px/1 var(--display); font-style: italic; color: var(--good); opacity: 0; transition: opacity 150ms var(--ease); }
-.bm-core.shut .bm-core-mini { opacity: 1; }
+.bm-core-mini { display: none; font: 800 18px/1 var(--display); font-style: italic; color: var(--good); }
+.bm-core.shut .bm-core-mini { display: block; }
 .bm-core-peek { display: none; }
 /* Il testo resta largo uguale mentre la carta si apre o si chiude (niente righe che saltano): lo taglia la carta */
 .bm-core-body { flex: 1 0 220px; min-width: 220px; transition: opacity 200ms var(--ease) 60ms; }
 /* Chiuso: il testo esce dal flusso (non allunga la carta) e resta invisibile */
-.bm-core.shut .bm-core-body { position: absolute; top: 14px; left: calc(var(--tri-w, 150px) + 48px); width: 300px; visibility: hidden; opacity: 0; transition: none; }
+.bm-core.shut .bm-core-body { position: absolute; top: 10px; left: calc(var(--tri-w, 150px) + 48px); width: 300px; visibility: hidden; opacity: 0; transition: none; }
 .bm .bm-core-body h5 { display: flex; align-items: baseline; gap: 10px; margin: 0 0 8px; font: 700 18px/1.15 var(--display); font-style: italic; }
 .bm-core-pts { margin-left: auto; font: 800 22px/1 var(--display); color: var(--good); }
 .bm-core-lines { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; font-size: 13px; color: var(--muted); }
@@ -265,10 +288,8 @@
 .bm-core-lines img { flex: none; width: 16px; height: 16px; }
 .bm-core-lines b { color: var(--text); font-weight: 600; }
 .bm-core-chip { display: inline-block; margin-top: 10px; padding: 2px 8px; background: var(--field); border: 1px solid var(--line-soft); font-size: 12px; color: var(--muted); cursor: help; }
-.bm .bm-hint { margin-top: 6px; font-size: 12px; color: var(--faint); }
-.bm-cores-none { display: flex; align-items: center; gap: 14px; max-width: 560px; padding: 14px 16px; background: var(--raised); border: 1px solid var(--line-soft); box-shadow: 0 6px 14px rgb(0 0 0 / 0.22); }
-.bm-cores-none .bm-medal { width: 40px; height: 45px; }
-.bm-cores-none p { font-size: 13px; line-height: 1.45; color: var(--muted); }
+.bm-cores-none { flex: 1; display: grid; place-items: center; padding: 0 24px; text-align: center; }
+.bm-cores-none p { max-width: 520px; font-size: 13px; line-height: 1.45; color: var(--muted); }
 .bm-cores-none b { display: block; margin-bottom: 2px; font: 700 15px/1.2 var(--display); font-style: italic; color: var(--text); }
 @media (prefers-reduced-motion: reduce) {
   .bm-core, .bm-core-body, .bm-core-mini { transition: none; }
@@ -280,18 +301,16 @@
 @media (max-height: 799px) {
   .bm { row-gap: 12px; }
   .bm .sum-tri { --tri-w: 112px; --tri-badge: 19px; }
-  .bm-core { padding: 9px 14px; }
+  .bm-core { padding: 8px 14px 8px 16px; }
   .bm .bm-core-body h5 { margin-bottom: 5px; font-size: 16px; }
   .bm-core-pts { font-size: 19px; }
   .bm-core-lines { gap: 2px; font-size: 12.5px; }
   .bm-core-chip { margin-top: 6px; }
-  .bm .bm-hint { display: none; }
   .bm .bm-net { font-size: 48px; padding: 5px 26px 6px 12px; }
   .bm-bars { margin-top: 10px; padding-top: 8px; gap: 6px; }
-  .bm-groups { padding-left: 12px; }
+  .bm-cores.dash-card { --cores-h: 196px; }
+  .bm-entries { padding-left: 12px; }
   .bm-list { gap: 10px 22px; }
-  /* Il caso in una riga: quando non sta, la voce si apre col clic */
-  .bm-row:not(.open) .bm-row-case { -webkit-line-clamp: 1; }
   .bm-row { min-height: 44px; padding-left: 40px; }
   .bm-row .bm-medal { left: -12px; width: 44px; height: 50px; }
   .bm-row-tx { padding: 4px 8px 4px 0; }
@@ -301,17 +320,21 @@
 @media (max-height: 679px) {
   .area-panel.ad-panel:has(> .bm) { padding-top: 10px; padding-bottom: 10px; }
   .bm { row-gap: 10px; }
-  .bm .sum-tri { --tri-w: 96px; --tri-badge: 17px; }
-  .bm .bm-core-body h5 { margin-bottom: 3px; }
-  .bm-core-lines { gap: 0; line-height: 1.3; }
-  .bm-core { padding: 7px 12px; gap: 12px; }
+  .bm .sum-tri { --tri-w: 84px; --tri-badge: 16px; }
+  .bm .bm-core-body h5 { margin-bottom: 2px; font-size: 15px; }
+  .bm-core-pts { font-size: 17px; }
+  .bm-core-lines { gap: 0; font-size: 12px; line-height: 1.25; }
+  .bm-core-lines img { width: 14px; height: 14px; }
+  .bm-core { padding: 4px 10px 4px 14px; gap: 10px; }
+  .bm-core.shut .bm-core-body { top: 5px; }
   .bm-core-chip { margin-top: 4px; padding: 1px 6px; }
   .bm .bm-label { margin-bottom: 6px; }
   .bm .bm-net { font-size: 42px; padding: 4px 24px 5px 10px; }
-  .bm-group { gap: 0; }
-  .bm-groups { margin-top: -2px; }
-  /* I nomi dei gruppi restano per i lettori di schermo: li distinguono colore e posto */
-  .bm .bm-group-head { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .bm-cores.dash-card { --cores-h: 136px; }
+  .bm-head-medal.bm-medal { left: -11px; top: -12px; width: 44px; height: 50px; }
+  .bm-cores .dash-head { padding-left: 40px; }
+  .bm-entries-wrap { gap: 4px; }
+  .bm-tab { min-height: 26px; padding: 1px 12px; }
   .bm-list { gap: 6px 22px; padding-top: 3px; padding-bottom: 0; }
   .bm-row { min-height: 37px; padding-left: 34px; }
   .bm-row .bm-medal { left: -11px; width: 38px; height: 43px; }

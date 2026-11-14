@@ -256,13 +256,14 @@ function renderBm(rating: TeamRating) {
   return { user, view: screen.getByRole('region', { name: 'Bonus/Malus' }) };
 }
 const onGrade = () => screen.getByRole('region', { name: 'Sul voto' });
-/** Le voci attive sotto netto e core, divise: la lista dei bonus (o "Altri bonus" coi core) e quella dei malus. */
-const group = (name: RegExp) => screen.getByRole('list', { name });
+/** Le schede Bonus e Malus sotto netto e core, e le voci della scheda scelta. */
+const groupTab = (name: RegExp) => screen.getByRole('tab', { name });
+const entries = () => within(screen.getByRole('tabpanel', { name: /^(Altri )?(bonus|malus)/i })).queryAllByRole('listitem');
 
 describe('Bonus/Malus', () => {
   it('una scheda sola col netto sul voto (rosso se negativo), e bonus e malus in tutto', () => {
     const { view } = renderBm(catalogRating());
-    expect(within(view).getAllByRole('tab').map(tab => tab.textContent)).toEqual(['Sul voto −6']);
+    expect(within(view).getAllByRole('tab')[0].textContent).toBe('Generale −6');
     expect(onGrade().querySelector('.bm-net')).toHaveTextContent('−6');
     expect(onGrade().querySelector('.bm-net')).toHaveClass('bad');
     expect(onGrade()).toHaveTextContent('Bonus +2');
@@ -284,24 +285,39 @@ describe('Bonus/Malus', () => {
     expect(bonus.querySelector('b')).toHaveClass('zero');
   });
 
-  it('solo le voci attive, divise in bonus e malus col loro totale, coi casi e i punti; niente voci a zero né regole a punti', () => {
-    renderBm(catalogRating());
-    const bonus = within(group(/^Bonus \+2$/)).getAllByRole('listitem');
-    expect(bonus.map(row => row.querySelector('b')!.textContent)).toEqual(['Meteo che protegge']);
-    expect(bonus[0]).toHaveTextContent('+2');
-    expect(bonus[0]).toHaveClass('bonus');
-    const malus = within(group(/^Malus −8$/)).getAllByRole('listitem');
-    expect(malus.map(row => row.querySelector('b')!.textContent)).toEqual(['Stesso tipo', 'Hazard ripetuto']);
-    expect(malus[1]).toHaveTextContent('Due setter di Stealth Rock · Due setter di Spikes');
-    expect(malus[1]).toHaveTextContent('−3');
-    expect(malus[1]).toHaveClass('malus');
-    expect(malus[0]).toHaveTextContent('−5');
-    expect(screen.getByRole('tabpanel')).not.toHaveTextContent('Tipi vari');
-    // Testi che stanno: nessun pulsante per aprirli (in jsdom niente misure: mai tagliati)
+  it('le voci attive in due schede, Bonus e Malus, con quante sono e il totale: prima i bonus; le frecce passano ai malus', async () => {
+    const { user } = renderBm(catalogRating());
+    const bonus = groupTab(/^Bonus\s*1\s*\+2$/);
+    const malus = groupTab(/^Malus\s*2\s*−8$/);
+    expect(bonus).toHaveAttribute('aria-selected', 'true');
+    expect(malus).toHaveAttribute('aria-selected', 'false');
+    expect(entries().map(row => row.querySelector('b')!.textContent)).toEqual(['Meteo che protegge']);
+    expect(entries()[0]).toHaveTextContent('+2');
+    expect(entries()[0]).toHaveClass('bonus');
+    bonus.focus();
+    await user.keyboard('{ArrowRight}');
+    expect(malus).toHaveAttribute('aria-selected', 'true');
+    expect(malus).toHaveFocus();
+    const rows = entries();
+    expect(rows.map(row => row.querySelector('b')!.textContent)).toEqual(['Stesso tipo', 'Hazard ripetuto']);
+    // Il caso sempre intero, senza pulsanti per aprirlo
+    expect(rows[1]).toHaveTextContent('Due setter di Stealth Rock · Due setter di Spikes');
+    expect(rows[1]).toHaveTextContent('−3');
+    expect(rows[1]).toHaveClass('malus');
     expect(screen.queryByRole('button', { name: /Mostra tutto il testo/ })).toBeNull();
+    await user.keyboard('{Home}');
+    expect(bonus).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tabpanel', { name: /^Bonus/ })).not.toHaveTextContent('Tipi vari');
     expect(onGrade()).not.toHaveTextContent('per ogni');
     expect(screen.queryByText('Cosa toglie')).toBeNull();
-    expect(screen.queryByText(/per ora a zero/)).toBeNull();
+  });
+
+  it('senza bonus si parte dai malus; la scheda vuota dice "Nessun altro bonus"; niente riga dei problemi', async () => {
+    const { user } = renderBm({ ...catalogRating(), bonus: { total: 0, items: [] } } as unknown as TeamRating);
+    expect(groupTab(/^Malus/)).toHaveAttribute('aria-selected', 'true');
+    await user.click(groupTab(/^Bonus/));
+    expect(screen.getByRole('tabpanel', { name: /^Bonus/ })).toHaveTextContent('Nessun altro bonus per ora');
+    expect(document.querySelector('.area-problems-row')).toBeNull();
   });
 
   it('netto verde se positivo; senza voci il netto è 0 grigio con "Né bonus né malus per ora"', () => {
@@ -313,29 +329,7 @@ describe('Bonus/Malus', () => {
     expect(onGrade().querySelector('.bm-net')).toHaveTextContent(/^0$/);
     expect(onGrade().querySelector('.bm-net')).toHaveClass('zero');
     expect(onGrade()).toHaveTextContent('Né bonus né malus per ora');
-    expect(screen.queryByRole('list', { name: /bonus|malus/i })).toBeNull();
-  });
-
-  it('un caso tagliato (misurato) si apre per intero col clic e si richiude', async () => {
-    // Misura finta: il caso tagliato è alto 16px, intero 40px
-    const real = Element.prototype.getBoundingClientRect;
-    Element.prototype.getBoundingClientRect = function (this: Element) {
-      const box = real.call(this);
-      if (!this.classList.contains('bm-row-case')) return box;
-      return { x: 0, y: 0, top: 0, left: 0, right: box.right, bottom: 0, width: box.width, height: this.classList.contains('measuring') ? 40 : 16, toJSON: () => ({}) } as DOMRect;
-    };
-    try {
-      const { user } = renderBm(catalogRating());
-      const toggle = screen.getByRole('button', { name: 'Mostra tutto il testo: Hazard ripetuto' });
-      expect(toggle).toHaveAttribute('aria-expanded', 'false');
-      await user.click(toggle);
-      expect(toggle).toHaveAttribute('aria-expanded', 'true');
-      expect(toggle.closest('li')).toHaveClass('open');
-      await user.click(toggle);
-      expect(toggle).toHaveAttribute('aria-expanded', 'false');
-    } finally {
-      Element.prototype.getBoundingClientRect = real;
-    }
+    expect(screen.queryByRole('tab', { name: /^(bonus|malus)/i })).toBeNull();
   });
 
   it('"Tutte le voci possibili" apre il catalogo (la guida della scheda) sui bonus; all\'uscita il focus torna al link', async () => {
@@ -358,7 +352,10 @@ describe('Bonus/Malus', () => {
 
   it('due core a tre: aperto quello che regge più tipi, l\'altro è un pulsante che lo apre', async () => {
     const { user } = renderBm(coreRating());
-    const cores = screen.getByRole('region', { name: '2 core a tre' });
+    const cores = screen.getByRole('region', { name: 'Core' });
+    // Nella barra del titolo quanti sono e quanto valgono, con la medaglia accesa
+    expect(cores).toHaveTextContent('2 · +6');
+    expect(cores.querySelector('.bm-head-medal')).not.toHaveClass('off');
     const strong = within(cores).getByRole('button', { name: 'Core Fire / Ground / Poison' });
     const weak = within(cores).getByRole('button', { name: 'Core Fire / Water / Electric' });
     expect(strong).toHaveAttribute('aria-expanded', 'true');
@@ -371,19 +368,21 @@ describe('Bonus/Malus', () => {
     expect(weak.closest('li')).toHaveClass('open');
     expect(within(cores).getByText('Reggono 4 tipi su 18')).toBeInTheDocument();
     // I core stanno solo nel riquadro in alto: nessuna voce sotto (contano però nel netto e in "Bonus +6")
-    expect(screen.queryByRole('list', { name: /bonus/i })).toBeNull();
+    expect(screen.queryByRole('tab', { name: /bonus/i })).toBeNull();
     expect(onGrade()).toHaveTextContent('Bonus +6');
   });
 
   it('un core solo: aperto, senza pulsante; nessun core: una riga su come averne uno', () => {
     const { unmount } = render(<LangProvider lang="it"><AreaView rating={coreRating([fakeCore(['Heatran', 'Landorus-Therian', 'Toxapex'], ['Fire', 'Ground', 'Poison'])])} area="bonusMalus" team={[]} analysis={analyzeTeam([], fixtureData)} problems={[]} /></LangProvider>);
-    const one = screen.getByRole('region', { name: 'Core a tre' });
+    const one = screen.getByRole('region', { name: 'Core' });
     expect(within(one).queryByRole('button')).toBeNull();
     expect(within(one).getByRole('heading', { name: /Fire \/ Ground \/ Poison/ })).toBeInTheDocument();
     unmount();
     renderBm(catalogRating());
-    const none = screen.getByRole('region', { name: 'Core a tre' });
+    const none = screen.getByRole('region', { name: 'Core' });
     expect(none).toHaveTextContent('Nessun core a tre');
+    // Senza core la medaglia del titolo è spenta
+    expect(none.querySelector('.bm-head-medal')).toHaveClass('off');
     expect(none).toHaveTextContent('tre membri si coprono le debolezze a giro');
   });
 });

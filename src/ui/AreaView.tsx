@@ -172,7 +172,8 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
       {/* La riga c'è sempre, anche senza problemi: il pannello sotto parte alla stessa altezza in ogni area (in Velocità
           solo la legenda, a destra).
           A destra la legenda dei colori della scheda aperta (sempre intera: sono i problemi a finire nel "+N") */}
-      {!judged ? (
+      {/* Bonus/Malus: niente riga dei problemi (i malus sono già la scheda): il posto va alle voci */}
+      {area === 'bonusMalus' ? null : !judged ? (
         <div className="area-problems-row is-plain">{legend}</div>
       ) : problems.length === 0 ? (
         <div className="area-problems-row is-clear" role="note" aria-label={t('analysis.areaProblems', { area: title })}>
