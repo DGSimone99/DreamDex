@@ -178,6 +178,11 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
     const { table } = await openTypes();
     const sw = screen.getByRole('switch', { name: 'Solo efficacia' });
     expect(sw).toHaveAttribute('aria-checked', 'false');
+    // Sta nella casella in alto a sinistra della tabella (al posto di "Pokémon", che resta come nome per i lettori di schermo)
+    const corner = table.querySelector('thead th.def-mon-h') as HTMLElement;
+    expect(corner).toContainElement(sw);
+    expect(corner).toHaveTextContent(/^Pokémon/);
+    expect(document.querySelector('.area-problems-row .eff-switch')).toBeNull();
     expect(table.querySelector('.eff-dim')).toBeNull();
     await user.click(sw);
     expect(sw).toHaveAttribute('aria-checked', 'true');
@@ -188,7 +193,10 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
     });
     expect(cells.filter(td => !td.classList.contains('eff-dim')).length).toBeGreaterThan(0);
     await user.click(screen.getByRole('tab', { name: /^Coverage meta/ }));
-    expect(screen.getByRole('switch', { name: 'Solo efficacia' })).toHaveAttribute('aria-checked', 'true');
+    const metaSwitch = screen.getByRole('switch', { name: 'Solo efficacia' });
+    expect(metaSwitch).toHaveAttribute('aria-checked', 'true');
+    // Nel meta accanto alle pagine, sulla stessa riga
+    expect(metaSwitch.closest('.eff-corner-row')).toContainElement(screen.getByRole('navigation', { name: 'Pagine delle minacce' }));
     expect(within(screen.getByRole('tabpanel')).getByRole('table').querySelector('.eff-dim')).not.toBeNull();
   });
 

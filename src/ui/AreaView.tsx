@@ -7,7 +7,6 @@ import type { TeamSet } from '../engine/sets';
 import { useLang, useT } from '../i18n/react';
 import { areaTabs, type AreaKey } from './AreaDetail';
 import { AreaGuide } from './AreaGuide';
-import { EffSwitch } from './effTag';
 import { Icon } from './icons';
 import { Typed } from './TypeText';
 import { useFitCount } from './useFit';
@@ -44,16 +43,12 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
   const open = (key: string) => { focusKey.current = key; setPicked(key); };
   // Interruttore dell'efficacia: uno per area, lo stesso per Coverage tipi e Coverage meta (spento all'inizio)
   const [effOnly, setEffOnly] = useState<Partial<Record<AreaKey, boolean>>>({});
-  const tabs = areaTabs(rating, area, t, lang, { team, analysis, open, roomy, formatId, effOnly: !!effOnly[area] });
+  const tabs = areaTabs(rating, area, t, lang, { team, analysis, open, roomy, formatId, effOnly: !!effOnly[area],
+    setEffOnly: on => setEffOnly(s => ({ ...s, [area]: on })) });
   // Si parte dalla prima scheda (Generale), anche se la sottoscheda ricordata non c'è più (es. meta spento)
   const index = Math.max(0, picked === null ? 0 : tabs.findIndex(tab => tab.key === picked));
   const current = tabs[index];
-  const legend = (current.legend || current.effSide) && (
-    <>
-      {current.legend && <span className="area-legend" aria-hidden="true">{current.legend}</span>}
-      {current.effSide && <EffSwitch side={current.effSide} on={!!effOnly[area]} onChange={on => setEffOnly(s => ({ ...s, [area]: on }))} />}
-    </>
-  );
+  const legend = current.legend && <span className="area-legend" aria-hidden="true">{current.legend}</span>;
   const buttons = useRef<(HTMLButtonElement | null)[]>([]);
   const helpButton = useRef<HTMLButtonElement>(null);
   // La guida ha la sua sezione: cambiarla non sposta la sottoscheda dietro (null = chiusa)

@@ -59,7 +59,10 @@ export function useColumnHover() {
 /** Il nome sotto l'icona dell'intestazione: sopra le righe (assoluto), non sposta niente. Solo per gli occhi: l'intestazione ha già il suo nome. */
 export const ColName = ({ name }: { name: string }) => <span className="col-name" aria-hidden="true">{name}</span>;
 
-/** L'interruttore della riga dei problemi: lascia accese solo le caselle con l'etichetta (superefficaci nell'Offesa, non neutre nella Difesa). */
+/**
+ * L'interruttore dell'efficacia, nella casella in alto a sinistra delle tabelle di Coverage tipi e meta (accanto a ciò che
+ * filtra): lascia accese solo le caselle con l'etichetta (superefficaci nell'Offesa, non neutre nella Difesa).
+ */
 export function EffSwitch({ side, on, onChange }: { side: EffSide; on: boolean; onChange: (on: boolean) => void }) {
   const t = useT();
   return (
@@ -69,4 +72,10 @@ export function EffSwitch({ side, on, onChange }: { side: EffSide; on: boolean; 
       {t(`eff.only.${side}`)}
     </button>
   );
+}
+
+/** L'interruttore dal contesto dell'area (niente se l'area non lo passa, es. la finestra del dettaglio). */
+export function EffCornerSwitch({ side, ctx }: { side: EffSide; ctx: { effOnly?: boolean; setEffOnly?: (on: boolean) => void } }) {
+  if (!ctx.setEffOnly) return null;
+  return <EffSwitch side={side} on={!!ctx.effOnly} onChange={ctx.setEffOnly} />;
 }

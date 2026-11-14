@@ -6,7 +6,7 @@ import type { AreaContext } from '../AreaDetail';
 import { MemberMon } from '../defense/MemberMon';
 import { MetaCount, MetaFrame } from '../MetaFrame';
 import { PokemonIcon } from '../PokemonName';
-import { ColName, EffTag, effClass, effLabel, useColumnHover } from '../effTag';
+import { ColName, EffCornerSwitch, EffTag, effClass, effLabel, useColumnHover } from '../effTag';
 
 type Row = NonNullable<TeamOffense['coverageMeta']>['rows'][number];
 type Bucket = 'ohko' | 'two' | 'three' | 'none';
@@ -70,7 +70,7 @@ export function OffenseMeta({ offense, ctx }: { offense: TeamOffense; ctx: AreaC
           </colgroup>
           <thead>
             <tr>
-              <th scope="col" className="def-mon-h cm-pager-h">{pager}</th>
+              <th scope="col" className="def-mon-h cm-pager-h eff-corner"><div className="eff-corner-row">{pager}<EffCornerSwitch side="offense" ctx={ctx} /></div></th>
               {shown.map((r, k) => (
                 <th key={r.species} scope="col" aria-label={r.species} title={r.species} className={hover.cls(k, 'wall-h')} {...hover.enter(k)}>
                   <span className="def-box"><PokemonIcon name={r.species} /></span>
