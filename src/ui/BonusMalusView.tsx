@@ -78,11 +78,11 @@ export function Medal({ entry, className = '', style, glyph }: { entry: Pick<Cat
 /** Una riga della lista: la voce, il caso concreto e i punti (il core a tre ha una riga per trio). */
 interface ActiveRow { key: string; entry: CatalogEntry; points: number; details: string[] }
 
-/** Il caso concreto senza il nome della voce davanti ("Core a tre: X, Y, Z…" → "X, Y, Z…"). */
+/** Il caso concreto senza il nome della voce davanti ("Core: X, Y, Z…" → "X, Y, Z…"). */
 function detailOf(item: Redundancy, name: string): string {
   const prefix = `${name}:`.toLowerCase();
   const text = item.text.toLowerCase().startsWith(prefix) ? item.text.slice(prefix.length).trim().replace(/^./, c => c.toUpperCase()) : item.text;
-  // E senza il nome dietro ("Pivot: ruolo minore coperto" → "Pivot")
+  // E senza il nome dietro ("Pivot: ruolo extra" → "Pivot")
   const at = text.lastIndexOf(': ');
   return at > 0 && text.slice(at + 2).toLowerCase() === name.toLowerCase() ? text.slice(0, at) : text;
 }

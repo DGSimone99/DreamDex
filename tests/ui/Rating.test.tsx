@@ -291,7 +291,7 @@ describe('Bonus/Malus', () => {
     const malus = groupTab(/^Malus\s*2\s*−8$/);
     expect(bonus).toHaveAttribute('aria-selected', 'true');
     expect(malus).toHaveAttribute('aria-selected', 'false');
-    expect(entries().map(row => row.querySelector('b')!.textContent)).toEqual(['Meteo che protegge']);
+    expect(entries().map(row => row.querySelector('b')!.textContent)).toEqual(['Scudo del clima']);
     expect(entries()[0]).toHaveTextContent('+2');
     expect(entries()[0]).toHaveClass('bonus');
     bonus.focus();
@@ -299,7 +299,7 @@ describe('Bonus/Malus', () => {
     expect(malus).toHaveAttribute('aria-selected', 'true');
     expect(malus).toHaveFocus();
     const rows = entries();
-    expect(rows.map(row => row.querySelector('b')!.textContent)).toEqual(['Stesso tipo', 'Hazard ripetuto']);
+    expect(rows.map(row => row.querySelector('b')!.textContent)).toEqual(['Tipi doppioni', 'Hazard doppio']);
     // Il caso sempre intero, senza pulsanti per aprirlo
     expect(rows[1]).toHaveTextContent('Due setter di Stealth Rock · Due setter di Spikes');
     expect(rows[1]).toHaveTextContent('−3');
@@ -307,7 +307,7 @@ describe('Bonus/Malus', () => {
     expect(screen.queryByRole('button', { name: /Mostra tutto il testo/ })).toBeNull();
     await user.keyboard('{Home}');
     expect(bonus).toHaveAttribute('aria-selected', 'true');
-    expect(screen.getByRole('tabpanel', { name: /^Bonus/ })).not.toHaveTextContent('Tipi vari');
+    expect(screen.getByRole('tabpanel', { name: /^Bonus/ })).not.toHaveTextContent('Arcobaleno di tipi');
     expect(onGrade()).not.toHaveTextContent('per ogni');
     expect(screen.queryByText('Cosa toglie')).toBeNull();
   });
@@ -350,8 +350,8 @@ describe('Bonus/Malus', () => {
     expect(within(dialog).getByRole('tab', { name: 'Tutti i bonus' })).toHaveAttribute('aria-selected', 'true');
     const panel = within(dialog).getByRole('tabpanel');
     expect(within(panel).getAllByRole('listitem')).toHaveLength(6);
-    expect(within(panel).getByText('Core a tre').closest('li')).toHaveTextContent('Tre membri che si coprono le debolezze a vicenda');
-    expect(within(panel).getByText('Core a tre').closest('li')).toHaveTextContent('+3 per ogni trio');
+    expect(within(panel).getByText('Core', { selector: 'b' }).closest('li')).toHaveTextContent('Tre membri che si coprono le debolezze a vicenda');
+    expect(within(panel).getByText('Core', { selector: 'b' }).closest('li')).toHaveTextContent('+3 per ogni core');
     await user.click(within(dialog).getByRole('tab', { name: 'Tutti i malus' }));
     expect(within(within(dialog).getByRole('tabpanel')).getAllByRole('listitem')).toHaveLength(12);
     expect(dialog).not.toHaveTextContent('Tera');
