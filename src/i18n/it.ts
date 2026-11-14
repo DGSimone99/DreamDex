@@ -254,7 +254,7 @@ export const it: Record<keyof typeof en, string> = {
   'catalog.weakCovered.when': "Ogni debolezza condivisa ha chi la resiste",
   'catalog.weakCovered.points': "+{covered}",
   'catalog.typeVariety.name': "Tipi vari",
-  'catalog.typeVariety.when': "Tanti tipi diversi nel team",
+  'catalog.typeVariety.when': "Almeno {varietyMin} tipi diversi nel team",
   'catalog.typeVariety.points': "+{variety}",
   'catalog.conditionUsed.name': "Condizione sfruttata",
   'catalog.conditionUsed.when': "Un meteo, un campo o Trick Room sfruttato da più compagni (in un campo contano anche il suo Seme e chi attacca a terra col tipo che potenzia)",
