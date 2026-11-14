@@ -120,27 +120,15 @@
 .area-help .help-button .icon { width: 18px; height: 18px; }
 
 /* Ruoli e Bonus: due sottoschede grandi, metà striscia ciascuna (Bonus/Malus a sinistra, Ruoli a destra), nome e valore
-   in Kanit corsivo come le schede principali. Quella aperta è magenta a righe come la scheda principale aperta ("sei
-   qui"), col taglio inclinato verso l'altra metà; l'altra resta sul fondo della striscia. Il "?" sta dentro, dopo il valore */
+   in Kanit corsivo come le schede principali. Colori e segno della sottoscheda aperta sono quelli delle altre aree (sopra);
+   cambiano solo misura e carattere. Il "?" sta dentro, dopo il valore */
 .area-view-bonusMalus .area-subs { gap: 4px; }
 .area-view-bonusMalus .area-subs [role='tab'] {
-  flex: 1 1 0; min-width: 0; justify-content: center; align-items: baseline; gap: 10px; padding: 10px 20px 9px;
-  border-bottom: 0; font: 600 18px/1 var(--display); font-style: italic; color: var(--muted);
+  flex: 1 1 0; min-width: 0; justify-content: center; gap: 10px; padding: 10px 20px 9px;
+  font: 600 18px/1 var(--display); font-style: italic;
 }
-.area-view-bonusMalus .area-subs [role='tab'] b { font: 800 22px/1 var(--display); font-style: italic; color: var(--accent-2-ink); }
-.area-view-bonusMalus .area-subs [role='tab']:hover:not([aria-selected='true']) { color: var(--text); background: color-mix(in srgb, var(--accent-2) 10%, transparent); }
-.area-view-bonusMalus .area-subs [role='tab'][aria-selected='true'] {
-  color: var(--on-accent-2); background: var(--stripes), var(--accent-2);
-  clip-path: polygon(0 0, 100% 0, calc(100% - 18px) 100%, 0 100%);
-}
-.area-view-bonusMalus .area-subs [role='tab'][aria-selected='true']:last-child { clip-path: polygon(0 0, 100% 0, 100% 100%, 18px 100%); }
-.area-view-bonusMalus .area-subs [role='tab'][aria-selected='true'] b { color: var(--on-accent-2); }
-/* Niente ingrandimento: le sottoschede sono già grandi */
-.area-view-bonusMalus .area-subs [role='tab'][aria-selected='true'] > span:first-child,
-.area-view-bonusMalus .area-subs [role='tab'][aria-selected='true'] > b { transform: none; font-weight: inherit; }
+.area-view-bonusMalus .area-subs [role='tab'] b { font: 800 22px/1 var(--display); font-style: italic; }
 .area-view-bonusMalus .area-subs [role='tab'][aria-selected='true'] > span:first-child { font-weight: 700; }
-.area-view-bonusMalus .area-help .help-button { color: var(--on-accent-2); }
-.area-view-bonusMalus .area-subs [role='tab']:focus-visible { outline: 2px solid var(--text); outline-offset: -4px; }
 /* Altezza fissa: con o senza problemi il pannello sotto parte dallo stesso punto in ogni area */
 .area-problems-row { display: flex; align-items: center; gap: 12px; padding: 0 2px; flex: none; height: 25px; }
 /* L'etichetta "N problemi" in testa: giallo, rosso se ce n'è almeno uno grave */
