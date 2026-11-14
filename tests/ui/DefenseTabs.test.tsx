@@ -178,10 +178,10 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
     const { table } = await openTypes();
     const sw = screen.getByRole('switch', { name: 'Solo efficacia' });
     expect(sw).toHaveAttribute('aria-checked', 'false');
-    // Sta nella casella in alto a sinistra della tabella (al posto di "Pokémon", che resta come nome per i lettori di schermo)
-    const corner = table.querySelector('thead th.def-mon-h') as HTMLElement;
-    expect(corner).toContainElement(sw);
-    expect(corner).toHaveTextContent(/^Pokémon/);
+    // Sta a destra nella striscia delle sottoschede, non nella tabella né sulla riga dei problemi; la tabella ha di nuovo "Pokémon"
+    expect(sw.closest('.area-strip')).not.toBeNull();
+    expect(table).not.toContainElement(sw);
+    expect(table.querySelector('thead th.def-mon-h')).toHaveTextContent(/^Pokémon$/);
     expect(document.querySelector('.area-problems-row .eff-switch')).toBeNull();
     expect(table.querySelector('.eff-dim')).toBeNull();
     await user.click(sw);
@@ -195,9 +195,11 @@ describe('Difesa: Coverage tipi e Coverage meta', () => {
     await user.click(screen.getByRole('tab', { name: /^Coverage meta/ }));
     const metaSwitch = screen.getByRole('switch', { name: 'Solo efficacia' });
     expect(metaSwitch).toHaveAttribute('aria-checked', 'true');
-    // Nel meta accanto alle pagine, sulla stessa riga
-    expect(metaSwitch.closest('.eff-corner-row')).toContainElement(screen.getByRole('navigation', { name: 'Pagine delle minacce' }));
+    expect(metaSwitch.closest('.area-strip')).not.toBeNull();
     expect(within(screen.getByRole('tabpanel')).getByRole('table').querySelector('.eff-dim')).not.toBeNull();
+    // Sulle sottoschede senza etichette (Sostenibilità) l'interruttore non c'è
+    await user.click(screen.getByRole('tab', { name: /^Sostenibilità/ }));
+    expect(screen.queryByRole('switch')).toBeNull();
   });
 
   it("col puntatore la colonna si accende e sotto l'icona compare il nome del tipo", async () => {

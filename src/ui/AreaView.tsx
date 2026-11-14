@@ -7,6 +7,7 @@ import type { TeamSet } from '../engine/sets';
 import { useLang, useT } from '../i18n/react';
 import { areaTabs, type AreaKey } from './AreaDetail';
 import { AreaGuide } from './AreaGuide';
+import { EffSwitch } from './effTag';
 import { Icon } from './icons';
 import { Typed } from './TypeText';
 import { useFitCount } from './useFit';
@@ -43,8 +44,7 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
   const open = (key: string) => { focusKey.current = key; setPicked(key); };
   // Interruttore dell'efficacia: uno per area, lo stesso per Coverage tipi e Coverage meta (spento all'inizio)
   const [effOnly, setEffOnly] = useState<Partial<Record<AreaKey, boolean>>>({});
-  const tabs = areaTabs(rating, area, t, lang, { team, analysis, open, roomy, formatId, effOnly: !!effOnly[area],
-    setEffOnly: on => setEffOnly(s => ({ ...s, [area]: on })) });
+  const tabs = areaTabs(rating, area, t, lang, { team, analysis, open, roomy, formatId, effOnly: !!effOnly[area] });
   // Si parte dalla prima scheda (Generale), anche se la sottoscheda ricordata non c'è più (es. meta spento)
   const index = Math.max(0, picked === null ? 0 : tabs.findIndex(tab => tab.key === picked));
   const current = tabs[index];
@@ -145,6 +145,12 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
             </button>
           ))}
         </div>
+        {/* L'interruttore dell'efficacia, a destra nella striscia, solo sulle sottoschede con l'etichetta nelle caselle */}
+        {current.effSide && (
+          <span className="strip-switch">
+            <EffSwitch side={current.effSide} on={!!effOnly[area]} onChange={on => setEffOnly(s => ({ ...s, [area]: on }))} />
+          </span>
+        )}
         {current.help && (
           <span className="area-help" style={helpPlace}>
             <button ref={helpButton} type="button" className="help-button" aria-label={helpLabel}

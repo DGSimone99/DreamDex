@@ -6,7 +6,7 @@ import { weatherMitigations } from '../../engine/synergy';
 import { useLang, useT } from '../../i18n/react';
 import { typeName } from '../../i18n/game';
 import { mitigationNote } from '../AnalysisTables';
-import { ColName, EffCornerSwitch, EffTag, effClass, effLabel } from '../effTag';
+import { ColName, EffTag, effClass, effLabel } from '../effTag';
 import type { AreaContext } from '../AreaDetail';
 import { MemberMon } from './MemberMon';
 import { Typed } from '../TypeText';
@@ -53,10 +53,7 @@ export function DefenseTypes({ defense, ctx }: { defense: TeamDefense; ctx: Area
           <colgroup><col className="def-col-mon" />{rows.map(row => <col key={row.type} />)}</colgroup>
           <thead>
             <tr>
-              <th scope="col" className="def-mon-h eff-corner">
-                <span className="visually-hidden">{t('detail.member')}</span>
-                <div className="eff-corner-row"><EffCornerSwitch side="defense" ctx={ctx} /></div>
-              </th>
+              <th scope="col" className="def-mon-h">{t('detail.member')}</th>
               {rows.map((row, i) => {
                 const hole = weak.includes(row.type);
                 return (

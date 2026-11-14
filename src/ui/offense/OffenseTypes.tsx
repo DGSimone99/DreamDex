@@ -3,7 +3,7 @@ import { COVERED_LEVEL } from '../../engine/coach';
 import { battleSpecies } from '../../engine/dex';
 import type { TeamOffense } from '../../engine/offense';
 import { bestAttackMultiplier, teamField, TYPES } from '../../engine/types';
-import { ColName, EffCornerSwitch, EffTag, effClass, effLabel } from '../effTag';
+import { ColName, EffTag, effClass, effLabel } from '../effTag';
 import { useLang, useT } from '../../i18n/react';
 import { typeName } from '../../i18n/game';
 import type { AreaContext } from '../AreaDetail';
@@ -42,10 +42,7 @@ export function OffenseTypes({ offense, ctx }: { offense: TeamOffense; ctx: Area
           <colgroup><col className="def-col-mon" /></colgroup>
           <thead>
             <tr>
-              <th scope="col" className="def-mon-h eff-corner">
-                <span className="visually-hidden">{t('detail.member')}</span>
-                <div className="eff-corner-row"><EffCornerSwitch side="offense" ctx={ctx} /></div>
-              </th>
+              <th scope="col" className="def-mon-h">{t('detail.member')}</th>
               {TYPES.map((type, i) => {
                 const hole = holes.includes(type);
                 return (

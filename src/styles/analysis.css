@@ -859,12 +859,10 @@
   .coach-sec { margin-bottom: 8px; font-size: 13px; }
 }
 
-/* Interruttore "Solo superefficaci" / "Solo efficacia" nella casella in alto a sinistra delle tabelle di Coverage tipi e
-   meta (al posto di "Pokémon"; nel meta accanto alle pagine), vicino alle caselle che filtra */
-.eff-switch { display: inline-flex; flex: none; align-items: center; gap: 6px; padding: 2px 4px 2px 0; border: 0; border-radius: 4px; background: none; color: var(--muted); font: 600 12px/1.2 var(--ui); text-transform: none; letter-spacing: 0; white-space: nowrap; cursor: pointer; }
-.eff-corner-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-/* Sempre a destra nella casella, attaccato alle colonne che filtra (uguale nelle quattro tabelle) */
-.eff-corner-row .eff-switch { margin-left: auto; }
+/* Interruttore "Solo superefficaci" / "Solo efficacia": a destra nella striscia delle sottoschede, centrato in altezza
+   (assoluto: la striscia non cambia altezza fra le sottoschede che lo hanno e quelle che no). Neutro e ciano, mai magenta */
+.strip-switch { position: absolute; top: 3px; right: 10px; bottom: 0; display: flex; align-items: center; }
+.eff-switch { display: inline-flex; flex: none; align-items: center; gap: 6px; padding: 2px 4px; border: 0; border-radius: 4px; background: none; color: var(--muted); font: 600 12px/1.2 var(--ui); white-space: nowrap; cursor: pointer; }
 .eff-switch:hover { color: var(--text); }
 .eff-switch-track { position: relative; flex: none; width: 26px; height: 14px; border: 1px solid var(--line); border-radius: 7px; background: var(--raised); transition: background 0.15s ease-out, border-color 0.15s ease-out; }
 .eff-switch-knob { position: absolute; top: 1px; left: 1px; width: 10px; height: 10px; border-radius: 50%; background: var(--muted); transition: transform 0.15s ease-out, background 0.15s ease-out; }

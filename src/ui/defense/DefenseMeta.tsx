@@ -6,7 +6,7 @@ import type { AreaContext } from '../AreaDetail';
 import { MetaCount, MetaFrame } from '../MetaFrame';
 import { PokemonIcon } from '../PokemonName';
 import { MemberMon } from './MemberMon';
-import { ColName, EffCornerSwitch, EffTag, effClass, effLabel, useColumnHover } from '../effTag';
+import { ColName, EffTag, effClass, effLabel, useColumnHover } from '../effTag';
 
 type Row = NonNullable<TeamDefense['coverageMeta']>['rows'][number];
 type Holder = Row['heldBy'][number];
@@ -96,7 +96,7 @@ export function DefenseMeta({ defense, ctx }: { defense: TeamDefense; ctx: AreaC
             </colgroup>
             <thead>
               <tr>
-                <th scope="col" className="def-mon-h cm-pager-h eff-corner"><div className="eff-corner-row">{pager}<EffCornerSwitch side="defense" ctx={ctx} /></div></th>
+                <th scope="col" className="def-mon-h cm-pager-h">{pager}</th>
                 {shown.map((r, k) => (
                   <th key={r.species} scope="col" aria-label={r.species} title={r.species} className={hover.cls(k, 'dm-h')} {...hover.enter(k)}>
                     <span className="def-box"><PokemonIcon name={r.species} /></span>

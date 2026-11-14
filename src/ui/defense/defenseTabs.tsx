@@ -28,6 +28,6 @@ export function defenseTabs(defense: TeamDefense, meta: boolean, t: T, ctx: Area
   const guide = (section: Parameters<typeof DefenseGuideSection>[0]['section']) => <DefenseGuideSection section={section} defense={defense} meta={meta} formatId={ctx.formatId} />;
   return [
     { key: 'general', label: t('detail.tab.general'), value: defense.value, panel: general, help: guide('general') },
-    ...subs.map(key => ({ key, label: label(key), value: values[key], panel: panels[key]!, help: guide(key), legend: legends[key] })),
+    ...subs.map(key => ({ key, label: label(key), value: values[key], panel: panels[key]!, help: guide(key), legend: legends[key], effSide: key === 'sustain' ? undefined : 'defense' as const })),
   ];
 }
