@@ -18,7 +18,9 @@ async function setup(names = ['Great Tusk', 'Gholdengo']) {
 describe('schede interne di Analisi', () => {
   it('schede interne con Panoramica di default', async () => {
     await setup();
-    expect(within(views()).getAllByRole('tab').map(tab => tab.querySelector('span')!.textContent)).toEqual(['Panoramica', 'Coaching', 'Offesa', 'Difesa', 'Velocità', 'Ruoli', 'Bonus/Malus']);
+    expect(within(views()).getAllByRole('tab').map(tab => tab.querySelector('span')!.textContent)).toEqual(['Panoramica', 'Coaching', 'Offesa', 'Difesa', 'Velocità', 'Ruoli e Bonus']);
+    // I Ruoli non hanno più una scheda loro: stanno in Bonus/Malus, sottoscheda Ruoli
+    expect(within(views()).queryByRole('tab', { name: 'Ruoli' })).toBeNull();
     // Il voto di ogni area nella sua scheda, non nella Panoramica
     expect(within(views()).getByRole('tab', { name: 'Difesa' }).querySelector('.tab-score')).toHaveTextContent(/^\d+$/);
     expect(within(views()).getByRole('tab', { name: 'Panoramica' }).querySelector('.tab-score')).toBeNull();
@@ -32,21 +34,21 @@ describe('schede interne di Analisi', () => {
     expect(within(views()).getByRole('tab', { name: 'Coaching' })).toHaveAttribute('aria-selected', 'true');
     expect(within(views()).getByRole('tab', { name: 'Coaching' })).toHaveFocus();
     await user.keyboard('{End}');
-    expect(within(views()).getByRole('tab', { name: 'Bonus/Malus' })).toHaveAttribute('aria-selected', 'true');
+    expect(within(views()).getByRole('tab', { name: 'Ruoli e Bonus' })).toHaveAttribute('aria-selected', 'true');
     await user.keyboard('{ArrowRight}');
     expect(within(views()).getByRole('tab', { name: 'Panoramica' })).toHaveAttribute('aria-selected', 'true');
     await user.keyboard('{ArrowLeft}');
-    expect(within(views()).getByRole('tab', { name: 'Bonus/Malus' })).toHaveAttribute('aria-selected', 'true');
+    expect(within(views()).getByRole('tab', { name: 'Ruoli e Bonus' })).toHaveAttribute('aria-selected', 'true');
     await user.keyboard('{Home}');
     expect(within(views()).getByRole('tab', { name: 'Panoramica' })).toHaveAttribute('aria-selected', 'true');
   });
 
   it('il ? accanto alla scheda aperta spiega quella scheda', async () => {
     const user = await setup();
-    await user.click(within(views()).getByRole('tab', { name: 'Bonus/Malus' }));
+    await user.click(within(views()).getByRole('tab', { name: 'Ruoli e Bonus' }));
     const help = within(panel()).getByRole('button', { name: 'Come funziona Bonus/Malus' });
     await user.click(help);
-    expect(screen.getByRole('dialog', { name: /Bonus\/Malus/ })).toBeInTheDocument();
+    expect(screen.getByRole('dialog', { name: /Ruoli e Bonus/ })).toBeInTheDocument();
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(help).toHaveFocus();
@@ -54,7 +56,7 @@ describe('schede interne di Analisi', () => {
 
   it("nessuna scheda ha un ? sopra la fila delle schede: ce l'hanno le sottoschede (con una sola, col nome dell'area)", async () => {
     const user = await setup();
-    for (const name of ['Ruoli', 'Velocità', 'Difesa', 'Offesa', 'Bonus/Malus']) {
+    for (const name of ['Velocità', 'Difesa', 'Offesa', 'Ruoli e Bonus']) {
       await user.click(within(views()).getByRole('tab', { name }));
       expect(document.querySelector('.analysis-tabs .help-button')).toBeNull();
     }
@@ -65,7 +67,7 @@ describe('schede interne di Analisi', () => {
     await setup();
     const defense = within(views()).getByRole('tab', { name: 'Difesa' });
     expect(defense).toHaveAccessibleDescription(/^Voto \d+$/);
-    expect(within(views()).getByRole('tab', { name: 'Bonus/Malus' })).toHaveAccessibleDescription(/^Sul voto [+−]?\d+$/);
+    expect(within(views()).getByRole('tab', { name: 'Ruoli e Bonus' })).toHaveAccessibleDescription(/^Sul voto [+−]?\d+$/);
   });
 
   it('ogni area ricorda la sua sottoscheda: Difesa → Sostenibilità → Offesa → Difesa riapre Sostenibilità', async () => {
@@ -121,8 +123,8 @@ describe('schede interne di Analisi', () => {
 
   it('Bonus/Malus apre la scheda col catalogo', async () => {
     const user = await setup();
-    await user.click(within(views()).getByRole('tab', { name: 'Bonus/Malus' }));
-    expect(within(panel()).getByRole('region', { name: 'Bonus/Malus' })).toBeInTheDocument();
+    await user.click(within(views()).getByRole('tab', { name: 'Ruoli e Bonus' }));
+    expect(within(panel()).getByRole('region', { name: 'Ruoli e Bonus' })).toBeInTheDocument();
   });
 
   it('niente blocco Valutazione team', async () => {

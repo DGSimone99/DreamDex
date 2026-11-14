@@ -9,7 +9,7 @@ import { useT } from '../i18n/react';
 import type { Lang } from '../i18n';
 import { defenseTabs } from './defense/defenseTabs';
 import { offenseTabs } from './offense/offenseTabs';
-import { rolesTabs } from './roles/rolesTabs';
+import { rolesTab, type RolesFilter } from './roles/rolesTabs';
 import { speedTabs } from './speed/speedTabs';
 
 /** Una scheda del dettaglio: etichetta, valore e contenuto. */
@@ -35,15 +35,23 @@ export interface AreaContext { team: TeamSet[]; analysis: TeamAnalysis; open?: (
    */
   effOnly?: boolean;
   /** Apre la guida dell'area su una sua sezione (Bonus/Malus: "Tutte le voci possibili" apre il catalogo). */
-  guide?: (key: string) => void }
+  guide?: (key: string) => void;
+  /** Il filtro della sottoscheda Ruoli (Tutti o un livello): ricordato mentre si passa fra Generale e Ruoli. */
+  rolesFilter?: RolesFilter;
+  onRolesFilter?: (filter: RolesFilter) => void }
 
 /**
  * Dettaglio di un'area (Offesa o Difesa): una scheda generale e una per sottostatistica, ognuna con come si calcola
  * e il valore di ogni membro. Stesso guscio del modale "Come funziona il voto", con le schede a sinistra.
  */
-export type DetailArea = 'strength' | 'defense' | 'speed' | 'roles' | 'bonusMalus';
-/** Le aree del voto che hanno una scheda in Analisi (lo stesso insieme di DetailArea). */
-export type AreaKey = DetailArea;
+export type AreaKey = 'strength' | 'defense' | 'speed' | 'bonusMalus';
+/**
+ * Le aree che si possono aprire da un link (voto accanto al team, Panoramica, Coaching): quelle con una scheda in Analisi
+ * e i Ruoli, che non hanno più una scheda loro ma stanno in Bonus/Malus, nella sottoscheda Ruoli.
+ */
+export type DetailArea = AreaKey | 'roles';
+/** La sottoscheda di Bonus/Malus coi Ruoli. */
+export const ROLES_SUB = 'roles';
 
 /** Punti col segno tipografico (meno vero, non il trattino). */
 export const signed = (n: number) => (n < 0 ? `−${-n}` : n > 0 ? `+${n}` : '0');
@@ -53,7 +61,6 @@ export function areaTabs(rating: TeamRating, area: AreaKey, t: T, lang: Lang, ct
   if (area === 'bonusMalus') return catalogueTabs(rating, t, lang, ctx);
   return area === 'strength' ? offenseTabs(rating, t, ctx)
     : area === 'defense' ? defenseTabs(rating.defense, !!rating.meta, t, ctx)
-    : area === 'roles' ? rolesTabs(rating, rolesValue(rating), t, ctx)
     : speedTabs(rating.speed, !!rating.meta, t, ctx);
 }
 
@@ -61,18 +68,20 @@ export function areaTabs(rating: TeamRating, area: AreaKey, t: T, lang: Lang, ct
 export const rolesValue = (rating: TeamRating): string => `${rating.roles.covered}/${rating.roles.total}`;
 
 /** Il valore di un'area per la testa: il netto per Bonus/Malus, coperti/totale per i Ruoli, altrimenti il valore dell'area. */
-export const areaValue = (rating: TeamRating, area: AreaKey): number | string | null =>
+export const areaValue = (rating: TeamRating, area: DetailArea): number | string | null =>
   (area === 'bonusMalus' ? signed(rating.bonus.total - rating.penalty.total)
     : area === 'roles' ? rolesValue(rating) : rating.areas.find(a => a.key === area)?.value ?? null);
 
 /**
- * Bonus e malus: una scheda sola col netto sul voto, le voci che valgono adesso e i core a tre (BonusMalusView). Il
+ * Bonus e malus: la sottoscheda Generale col netto sul voto, le voci che valgono adesso e i core a tre (BonusMalusView). Il
  * catalogo con tutte le voci possibili sta nella guida della scheda (il "?" e il link "Tutte le voci possibili"): due
  * pagine, i bonus e i malus, con quando scattano e quanto valgono.
+ * Poi la sottoscheda Ruoli (coperti/totale): i Ruoli non hanno un peso nel voto, contano solo coi loro bonus e malus.
  */
 function catalogueTabs(rating: TeamRating, t: T, lang: Lang, ctx: AreaContext): DetailTab[] {
   return [{
-    key: 'all', label: t('detail.tab.general'), value: signed(rating.bonus.total - rating.penalty.total),
+    // La scheda si chiama "Ruoli e Bonus": la sottoscheda dei bonus e malus porta il loro nome, Bonus/Malus
+    key: 'all', label: t('area.bonusMalus'), value: signed(rating.bonus.total - rating.penalty.total),
     panel: <BonusMalusView rating={rating} lang={lang} t={t} onCatalogue={ctx.guide && (() => ctx.guide!('bonus'))} />,
     // Il "?" della scheda sta qui, nella striscia, come nelle altre aree (non più sulla scheda di Analisi, dove copriva "Malus")
     help: t('help.view.bonusMalus').split(/\n/).map(line => <p key={line}>{line}</p>),
@@ -80,5 +89,5 @@ function catalogueTabs(rating: TeamRating, t: T, lang: Lang, ctx: AreaContext): 
       { key: 'bonus', label: t('catalogue.allBonus'), content: <CatalogueList lang={lang} kind="bonus" /> },
       { key: 'malus', label: t('catalogue.allMalus'), content: <CatalogueList lang={lang} kind="malus" /> },
     ],
-  }];
+  }, rolesTab(rating, rolesValue(rating), t, ctx)];
 }

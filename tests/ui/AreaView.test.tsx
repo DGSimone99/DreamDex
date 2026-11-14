@@ -39,7 +39,7 @@ describe('vista di un\'area sulla pagina', () => {
 
   it('Bonus/Malus: una scheda sola col netto sul voto, dentro il netto con le voci del team e i core a tre', () => {
     renderIt(<AreaView rating={withMeta()} area="bonusMalus" team={team} analysis={analysis} problems={[]} />);
-    expect(screen.getAllByRole('tab')[0].querySelector('span')!.textContent).toBe('Generale');
+    expect(screen.getAllByRole('tab')[0].querySelector('span')!.textContent).toBe('Bonus/Malus');
     expect(screen.getByRole('region', { name: 'Sul voto' })).toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'Core' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Tutte le voci possibili/ })).toBeInTheDocument();
@@ -104,9 +104,9 @@ describe('vista di un\'area sulla pagina', () => {
     expect(all.at(-1)).toHaveFocus();
   });
 
-  it('i Ruoli e la Velocità hanno il "?" sul Generale', () => {
-    const { unmount } = renderIt(<AreaView rating={withMeta()} area="roles" team={team} analysis={analysis} problems={[]} />);
-    expect(screen.getByRole('button', { name: /^Come funziona/ })).toBeInTheDocument();
+  it('Bonus/Malus → Ruoli e la Velocità hanno il "?"', () => {
+    const { unmount } = renderIt(<AreaView rating={withMeta()} area="bonusMalus" picked="roles" team={team} analysis={analysis} problems={[]} />);
+    expect(screen.getByRole('button', { name: 'Come funziona Ruoli' })).toBeInTheDocument();
     unmount();
     renderIt(<AreaView rating={withMeta()} area="speed" team={team} analysis={analysis} problems={[]} />);
     expect(screen.getByRole('button', { name: /^Come funziona/ })).toBeInTheDocument();

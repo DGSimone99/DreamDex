@@ -66,13 +66,14 @@ describe('Panoramica di Analisi', () => {
     expect(within(panel()).getByRole('tab', { name: /^Coverage tipi/ })).toHaveAttribute('aria-selected', 'true');
   });
 
-  it("Ruoli e Velocità: tutta la barra del titolo è un link alla scheda", async () => {
+  it("Ruoli e Velocità: tutta la barra del titolo è un link (i Ruoli a Bonus/Malus, sottoscheda Ruoli)", async () => {
     const user = await setup();
-    for (const [name, tab] of [['Ruoli', 'Ruoli'], ['Velocità', 'Velocità']] as const) {
+    for (const [name, link, tab] of [['Ruoli', 'Apri i Ruoli nella scheda Ruoli e Bonus', 'Ruoli e Bonus'], ['Velocità', 'Apri la scheda Velocità', 'Velocità']] as const) {
       const head = within(panel()).getByRole('region', { name }).querySelector('.dash-head')!;
       expect(head).toHaveClass('is-link');
-      await user.click(within(head as HTMLElement).getByRole('button', { name: `Apri la scheda ${name}` }));
+      await user.click(within(head as HTMLElement).getByRole('button', { name: link }));
       expect(within(views()).getByRole('tab', { name: tab })).toHaveAttribute('aria-selected', 'true');
+      if (name === 'Ruoli') expect(within(panel()).getByRole('tab', { name: /^Ruoli \d/ })).toHaveAttribute('aria-selected', 'true');
       await user.click(within(views()).getByRole('tab', { name: 'Panoramica' }));
     }
     // Copertura ha due link: la barra non è un link

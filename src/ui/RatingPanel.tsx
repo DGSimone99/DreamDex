@@ -5,11 +5,11 @@ import type { Archetype } from '../engine/archetype';
 import { MISSING_BELOW } from '../engine/needs';
 import { AlertMark } from './AlertMark';
 import { RatingHelp } from './RatingHelp';
-import { type AreaKey, type DetailArea, signed } from './AreaDetail';
+import { type DetailArea, signed } from './AreaDetail';
 import { Icon } from './icons';
 import { useT } from '../i18n/react';
 import { ANALYSIS_VIEWS } from './AnalysisTabs';
-import type { AnalysisView } from './analysisView';
+import type { TabView } from './analysisView';
 import { EeveeMoment } from './EeveeMoment';
 
 const isDetailArea = (key: string): key is DetailArea => key === 'strength' || key === 'defense' || key === 'speed' || key === 'roles' || key === 'bonusMalus';
@@ -17,11 +17,12 @@ const isDetailArea = (key: string): key is DetailArea => key === 'strength' || k
 
 /** Voto grande accanto alla fila del team: lettera, punteggio, le tre aree, i Ruoli e Bonus/Malus, che portano alle schede di Analisi. */
 /**
- * `onOpen`: le righe delle aree e di Bonus/Malus portano alla scheda di quell'area in Analisi.
+ * `onOpen`: le righe delle aree e di Bonus/Malus portano alla scheda di quell'area in Analisi; la riga dei Ruoli a
+ * Bonus/Malus, sottoscheda Ruoli.
  * `teamType`: il tipo di team del Riassunto (null finché il team non ha 6 membri: "In costruzione").
  * `ruleIssues`: problemi di regole: la lettera diventa grigia e sotto si scrive perché (`formatName`: il formato). `blocked`: il team ha membri ma il voto non si dà (EV oltre 510, specie doppia): il perché.
  */
-export function GradeBadge({ rating, ruleIssues = [], illegalCount = 0, illegalNames = [], formatName = '', blocked = null, incomplete = false, teamType = null, onOpen }: { rating: TeamRating | null; teamType?: Archetype | null; ruleIssues?: string[]; illegalCount?: number; illegalNames?: string[]; formatName?: string; blocked?: 'ev' | 'species' | null; incomplete?: boolean; onOpen?: (area: AreaKey) => void }) {
+export function GradeBadge({ rating, ruleIssues = [], illegalCount = 0, illegalNames = [], formatName = '', blocked = null, incomplete = false, teamType = null, onOpen }: { rating: TeamRating | null; teamType?: Archetype | null; ruleIssues?: string[]; illegalCount?: number; illegalNames?: string[]; formatName?: string; blocked?: 'ev' | 'species' | null; incomplete?: boolean; onOpen?: (area: DetailArea) => void }) {
   const t = useT();
   // Voto quando si è aperto il membro nell'editor: il badge mostra di quanto è cambiato
   const editing = useEditing();
@@ -78,7 +79,7 @@ export function GradeBadge({ rating, ruleIssues = [], illegalCount = 0, illegalN
       {/* Le tre aree, i Ruoli e Bonus/Malus: ogni riga porta alla sua scheda in Analisi */}
       {rating && (
         <span className="grade-areas">
-          {[...rating.areas].sort((a, b) => ANALYSIS_VIEWS.indexOf(a.key as AnalysisView) - ANALYSIS_VIEWS.indexOf(b.key as AnalysisView)).map(area => {
+          {[...rating.areas].sort((a, b) => ANALYSIS_VIEWS.indexOf(a.key as TabView) - ANALYSIS_VIEWS.indexOf(b.key as TabView)).map(area => {
             const note = area.inactive ? ` · ${t('rating.notCounted')}` : '';
             return (
               // Ogni barra nel colore della lettera che varrebbe da sola: si vede subito l'area debole

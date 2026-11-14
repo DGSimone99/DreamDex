@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useLayoutEffect, useState } from 'react';
 import type { TeamAnalysis } from '../engine/analysis';
 import type { CoachAdvice, Coaching, CoachProblem, ProblemCategory } from '../engine/coach';
 import type { CoachFix } from '../engine/coachFixes';
@@ -11,8 +11,8 @@ import { formatPercent } from '../i18n';
 import { useLang, useT } from '../i18n/react';
 import { AnalysisOverview } from './AnalysisOverview';
 import { AnalysisTabs } from './AnalysisTabs';
-import type { AnalysisView } from './analysisView';
-import { areaValue, rolesValue, type AreaKey } from './AreaDetail';
+import { resolveView, type AnalysisView, type TabView } from './analysisView';
+import { areaValue, type AreaKey } from './AreaDetail';
 import { AreaView } from './AreaView';
 import { CoachingView } from './CoachingView';
 import { Icon } from './icons';
@@ -20,8 +20,11 @@ import { MetaUsePanel } from './MetaUsePanel';
 import { PokemonList } from './PokemonName';
 import { Sprite } from './Sprite';
 
-/** I problemi del coaching che riguardano ogni area (regole e condizioni restano solo nella Panoramica). */
-const AREA_PROBLEMS: Record<AreaKey, ProblemCategory[]> = { defense: ['defense'], strength: ['coverage'], roles: ['roles'], speed: [], bonusMalus: ['redundancy'] };
+/**
+ * I problemi del coaching che riguardano ogni area (regole e condizioni restano solo nella Panoramica). Bonus/Malus non
+ * mostra una riga di problemi: i malus sono già la scheda, e i ruoli che mancano si vedono nella sottoscheda Ruoli.
+ */
+const AREA_PROBLEMS: Record<AreaKey, ProblemCategory[]> = { defense: ['defense'], strength: ['coverage'], speed: [], bonusMalus: ['redundancy'] };
 export const problemsOf = (problems: CoachProblem[] | undefined, area: AreaKey) => (problems ?? []).filter(p => AREA_PROBLEMS[area].includes(p.category));
 
 /**
@@ -55,28 +58,33 @@ export function AnalysisPanel({ team, analysis, rating, coaching, advice = null,
   const tr = useT();
   // La sottoscheda scelta in ogni area, solo in memoria: tornando su un'area si ritrova (Generale se non c'è più)
   const [subTabs, setSubTabs] = useState<Partial<Record<AreaKey, string>>>({});
-  // Aprire un'area anche su una sua sotto-scheda (Copertura → Coverage tipi)
+  // Aprire un'area anche su una sua sotto-scheda (Copertura → Coverage tipi; i Ruoli → Bonus/Malus, sottoscheda Ruoli)
   const openView = (next: AnalysisView, sub?: string) => {
-    if (sub && next !== 'overview' && next !== 'coaching') setSubTabs(tabs => ({ ...tabs, [next]: sub }));
-    onView(next);
+    const target = resolveView(next);
+    const pick = target.sub ?? sub;
+    if (pick && target.tab !== 'overview' && target.tab !== 'coaching') setSubTabs(tabs => ({ ...tabs, [target.tab]: pick }));
+    onView(target.tab);
   };
-  const area = view !== 'overview' && view !== 'coaching' && rating ? view : null;
+  // Una vista che non è una scheda (i Ruoli, da un link del voto o da uno stato vecchio): si apre la sua scheda con la sottoscheda
+  const target = resolveView(view);
+  useLayoutEffect(() => { if (target.sub) openView(view); }, [view]);
+  const area = target.tab !== 'overview' && target.tab !== 'coaching' && rating ? target.tab : null;
   const showCoaching = view === 'coaching' && !!rating;
   // Lo stesso numero della barra laterale (tutti i problemi), rosso se almeno uno è grave
   const problems = coaching?.problems ?? [];
   const serious = problems.filter(p => p.severity === 'serious').length;
-  const tabView: AnalysisView = area ?? (showCoaching ? 'coaching' : 'overview');
+  const tabView: TabView = area ?? (showCoaching ? 'coaching' : 'overview');
   let body;
   if (area && rating) {
     body = (
       <AreaView key={area} rating={rating} area={area} team={team} analysis={analysis} problems={problemsOf(coaching?.problems, area)} roomy={teamCollapsed} formatId={data.formatId}
-        picked={subTabs[area] ?? null} onPick={key => setSubTabs(tabs => ({ ...tabs, [area]: key }))} />
+        picked={(area === target.tab ? target.sub : undefined) ?? subTabs[area] ?? null} onPick={key => setSubTabs(tabs => ({ ...tabs, [area]: key }))} />
     );
   } else if (showCoaching && coaching) {
     // Il Coaching vince sul profilo di un membro, come le aree
     body = <CoachingView coaching={coaching} advice={advice} members={team.length} rating={rating} metaOn={!data.ignoreMeta && !!data.stats}
       threatUsage={Object.fromEntries([...ratingThreats(rating, data).map(th => th.name), ...(rating?.offense.coverageMeta?.rows ?? []).map(row => row.species)].map(name => [name, usageOf(data.stats, name)]))}
-      onOpen={column => { if (column !== 'rules') onView(column === 'offense' ? 'strength' : column); }}
+      onOpen={column => { if (column !== 'rules') openView(column === 'offense' ? 'strength' : column); }}
       onFix={fix => onFix?.(fix)} onMoveFix={fix => onMoveFix?.(fix)}
       onApplyFix={fix => onApplyFix?.(fix)} onApplyMove={fix => onApplyMove?.(fix)} />;
   } else {
@@ -86,8 +94,8 @@ export function AnalysisPanel({ team, analysis, rating, coaching, advice = null,
   return (
     <section aria-label={tr('analysis.region')} className="analysis">
       <h2>{tr('analysis.region')}</h2>
-      <AnalysisTabs view={tabView} onView={onView} panelId="analysis-view" areasDisabled={!rating} badges={problems.length ? { coaching: { n: problems.length, serious, minor: problems.length - serious } } : {}}
-        scores={{ ...Object.fromEntries((rating?.areas ?? []).map(a => [a.key, a.value])), ...(rating ? { roles: rolesValue(rating), bonusMalus: areaValue(rating, 'bonusMalus') } : {}) }} />
+      <AnalysisTabs view={tabView} onView={openView} panelId="analysis-view" areasDisabled={!rating} badges={problems.length ? { coaching: { n: problems.length, serious, minor: problems.length - serious } } : {}}
+        scores={{ ...Object.fromEntries((rating?.areas ?? []).map(a => [a.key, a.value])), ...(rating ? { bonusMalus: areaValue(rating, 'bonusMalus') } : {}) }} />
       <div id="analysis-view" role="tabpanel" aria-labelledby={`analysis-view-${tabView}`} className="analysis-view">{body}</div>
     </section>
   );
