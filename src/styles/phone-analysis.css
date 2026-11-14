@@ -88,6 +88,7 @@
 
   /* ── Ruoli e Bonus/Malus: la lista intera, senza scorrimento interno ── */
   .rl-frame { height: auto; }
+  .rl-filter button { min-height: 44px; }
   .rl-scroll { overflow: visible; }
   .area-panel:has(> .bm) { overflow: visible; }
   /* Bonus/Malus: prima il netto e le voci, poi i core uno sotto l'altro (il chiuso è una riga col triangolo piccolo) */

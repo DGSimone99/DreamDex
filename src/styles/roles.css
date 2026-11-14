@@ -4,6 +4,22 @@
 .rl-frame { display: flex; flex-direction: column; gap: 8px; height: 100%; min-height: 0; }
 .area-panel:has(> .rl-frame) { padding-top: 10px; padding-bottom: 12px; }
 
+/* Bonus/Malus → Ruoli: il filtro dei livelli in cima, sotto la lista scelta (Tutti o un livello), che ha la sua cornice */
+.rl-sub > .rl-frame { flex: 1; height: auto; }
+/* Una riga: il filtro a sinistra, tipo di team e punti a destra (vanno a capo solo se non stanno) */
+.rl-bar { flex: none; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 16px; }
+.rl-bar > .rl-head { flex: 0 1 auto; gap: 6px 14px; }
+.rl-filter { display: flex; flex-wrap: wrap; gap: 6px; }
+.rl-filter button {
+  display: inline-flex; align-items: baseline; gap: 7px; min-height: 28px; padding: 3px 12px;
+  background: var(--raised); border: 1px solid var(--line-soft); border-radius: 3px; color: var(--muted); font: 600 13px/1.3 var(--ui); cursor: pointer;
+}
+.rl-filter button b { font: 700 14px/1 var(--display); color: var(--faint); font-variant-numeric: tabular-nums; }
+.rl-filter button:hover { color: var(--text); border-color: var(--line); }
+.rl-filter button[aria-pressed='true'] { color: var(--text); background: var(--accent-wash); border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); }
+.rl-filter button[aria-pressed='true'] b { color: var(--accent-ink); }
+.rl-filter button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
 /* Etichetta del livello: lo stesso colore in Generale, sottoschede e guida */
 .rl-tag { display: inline-block; flex: none; padding: 1px 7px; border-radius: 3px; font: 600 11px/1.4 var(--ui); letter-spacing: 0.02em; white-space: nowrap; color: var(--muted); background: var(--raised); }
 .rl-tag.essential { color: var(--text); background: var(--accent-2-soft); }
@@ -121,6 +137,7 @@
 }
 @media (min-width: 1100px) and (max-height: 640px) {
   .area-panel:has(> .rl-frame) { padding-top: 6px; }
+  .rl-filter button { min-height: 24px; padding-block: 1px; }
   .rl-frame { gap: 4px; }
   .rl-covered li { min-height: 28px; }
   .rl-box { height: 24px; }

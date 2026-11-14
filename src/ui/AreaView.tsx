@@ -6,6 +6,7 @@ import type { FormatId } from '../engine/format';
 import type { TeamSet } from '../engine/sets';
 import { useLang, useT } from '../i18n/react';
 import { areaTabs, type AreaKey } from './AreaDetail';
+import type { RolesFilter } from './roles/rolesTabs';
 import { AreaGuide } from './AreaGuide';
 import { EffSwitch } from './effTag';
 import { Icon } from './icons';
@@ -49,7 +50,9 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
   // Chi ha aperto la guida (il "?" o un link nel pannello): alla chiusura il focus torna lì
   const opener = useRef<HTMLElement | null>(null);
   const openGuide = (key: string) => { opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; setGuide(key); };
-  const tabs = areaTabs(rating, area, t, lang, { team, analysis, open, roomy, formatId, effOnly: !!effOnly[area], guide: openGuide });
+  // Bonus/Malus → Ruoli: il filtro dei livelli resta passando fra Generale e Ruoli
+  const [rolesFilter, setRolesFilter] = useState<RolesFilter>('all');
+  const tabs = areaTabs(rating, area, t, lang, { team, analysis, open, roomy, formatId, effOnly: !!effOnly[area], guide: openGuide, rolesFilter, onRolesFilter: setRolesFilter });
   // Si parte dalla prima scheda (Generale), anche se la sottoscheda ricordata non c'è più (es. meta spento)
   const index = Math.max(0, picked === null ? 0 : tabs.findIndex(tab => tab.key === picked));
   const current = tabs[index];
@@ -57,8 +60,9 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
   const buttons = useRef<(HTMLButtonElement | null)[]>([]);
   const helpButton = useRef<HTMLButtonElement>(null);
   const title = t(`area.${area}`);
-  // Con una sottoscheda sola (Velocità, Bonus/Malus) il "?" spiega l'area intera: porta il suo nome
-  const helpLabel = t('area.guide.button', { tab: tabs.length === 1 ? title : current.label });
+  // Con una sottoscheda sola (Velocità) o sul Generale di Bonus/Malus il "?" spiega l'area intera: porta il suo nome
+  const sectionName = (tab: (typeof tabs)[number]) => (tabs.length === 1 || tab.key === 'all' ? title : tab.label);
+  const helpLabel = t('area.guide.button', { tab: sectionName(current) });
   // La Velocità non ha problemi del Coaching (difficile dire quando lo è): niente "Nessun problema", solo la legenda
   const judged = area !== 'speed';
   // Problemi: prima quelli che i Suggerimenti risolvono, poi i gravi, poi l'ordine delle categorie; in riga quelli che stanno
@@ -127,7 +131,7 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
 
   const sections = tabs.filter(tab => tab.help).flatMap(tab => [{
     key: tab.key,
-    label: tab.key === 'general' ? t('area.guide.general') : tab.label,
+    label: tab.key === 'general' ? t('area.guide.general') : tab.key === 'all' ? title : tab.label,
     content: tab.help,
   }, ...(tab.guidePages ?? [])]);
 

@@ -18,7 +18,9 @@ async function setup(names = ['Great Tusk', 'Gholdengo']) {
 describe('schede interne di Analisi', () => {
   it('schede interne con Panoramica di default', async () => {
     await setup();
-    expect(within(views()).getAllByRole('tab').map(tab => tab.querySelector('span')!.textContent)).toEqual(['Panoramica', 'Coaching', 'Offesa', 'Difesa', 'Velocità', 'Ruoli', 'Bonus/Malus']);
+    expect(within(views()).getAllByRole('tab').map(tab => tab.querySelector('span')!.textContent)).toEqual(['Panoramica', 'Coaching', 'Offesa', 'Difesa', 'Velocità', 'Bonus/Malus']);
+    // I Ruoli non hanno più una scheda loro: stanno in Bonus/Malus, sottoscheda Ruoli
+    expect(within(views()).queryByRole('tab', { name: 'Ruoli' })).toBeNull();
     // Il voto di ogni area nella sua scheda, non nella Panoramica
     expect(within(views()).getByRole('tab', { name: 'Difesa' }).querySelector('.tab-score')).toHaveTextContent(/^\d+$/);
     expect(within(views()).getByRole('tab', { name: 'Panoramica' }).querySelector('.tab-score')).toBeNull();
@@ -54,7 +56,7 @@ describe('schede interne di Analisi', () => {
 
   it("nessuna scheda ha un ? sopra la fila delle schede: ce l'hanno le sottoschede (con una sola, col nome dell'area)", async () => {
     const user = await setup();
-    for (const name of ['Ruoli', 'Velocità', 'Difesa', 'Offesa', 'Bonus/Malus']) {
+    for (const name of ['Velocità', 'Difesa', 'Offesa', 'Bonus/Malus']) {
       await user.click(within(views()).getByRole('tab', { name }));
       expect(document.querySelector('.analysis-tabs .help-button')).toBeNull();
     }

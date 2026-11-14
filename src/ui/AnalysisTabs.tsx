@@ -1,15 +1,18 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useT } from '../i18n/react';
-import type { AnalysisView } from './analysisView';
+import type { AnalysisView, TabView } from './analysisView';
 import { ModalLock } from './ModalLock';
 import { EeveePeek } from './EeveePeek';
 import { Icon } from './icons';
 
-/** Le schede interne di Analisi, nell'ordine: Panoramica e Coaching, poi Offesa, Difesa, Velocità e Ruoli, con Bonus/Malus in fondo. */
-export const ANALYSIS_VIEWS: AnalysisView[] = ['overview', 'coaching', 'strength', 'defense', 'speed', 'roles', 'bonusMalus'];
+/**
+ * Le schede interne di Analisi, nell'ordine: Panoramica e Coaching, poi Offesa, Difesa e Velocità, con Bonus/Malus in fondo.
+ * I Ruoli non hanno una scheda loro: stanno in Bonus/Malus, nella sottoscheda Ruoli.
+ */
+export const ANALYSIS_VIEWS: TabView[] = ['overview', 'coaching', 'strength', 'defense', 'speed', 'bonusMalus'];
 
-const viewLabelKey = (view: AnalysisView) => (view === 'overview' || view === 'coaching' ? `analysis.view.${view}` : `area.${view}`) as 'analysis.view.overview';
+const viewLabelKey = (view: TabView) => (view === 'overview' || view === 'coaching' ? `analysis.view.${view}` : `area.${view}`) as 'analysis.view.overview';
 
 /** Un "?" che apre un riquadro di aiuto: un titolo e il contenuto. `label`: il nome del pulsante, se diverso dal titolo. */
 export function HelpButton({ title, label = title, className, children }: { title: string; label?: string; className?: string; children: ReactNode }) {
@@ -56,7 +59,6 @@ export function HelpButton({ title, label = title, className, children }: { titl
   );
 }
 
-/** Le schede con un "?" di pagina: non lo hanno la Panoramica, il Coaching, l'Offesa, la Difesa, la Velocità e i Ruoli (che hanno la loro guida a sezioni). */
 /** Le schede interne: tablist orizzontale (frecce, Home/End). Il "?" di Bonus/Malus sta nella sua striscia (AreaView). */
 /** `areasDisabled`: senza voto (team vuoto) le aree non hanno niente da mostrare: restano visibili ma spente. */
 /** `scores`: il voto di ogni area, scritto nella sua scheda (la Panoramica non ne ha). */
@@ -67,7 +69,7 @@ const badgeTitle = ({ serious, minor }: TabBadge, t: ReturnType<typeof useT>) =>
   minor ? t(minor === 1 ? 'analysis.minorOne' : 'analysis.minorMany', { n: minor }) : null,
 ].filter(Boolean).join(' · ');
 
-export function AnalysisTabs({ view, onView, panelId, areasDisabled = false, scores = {}, badges = {} }: { view: AnalysisView; onView: (view: AnalysisView) => void; panelId: string; areasDisabled?: boolean; scores?: Partial<Record<AnalysisView, number | string | null>>; badges?: Partial<Record<AnalysisView, TabBadge>> }) {
+export function AnalysisTabs({ view, onView, panelId, areasDisabled = false, scores = {}, badges = {} }: { view: TabView; onView: (view: AnalysisView) => void; panelId: string; areasDisabled?: boolean; scores?: Partial<Record<TabView, number | string | null>>; badges?: Partial<Record<TabView, TabBadge>> }) {
 
   const t = useT();
   const buttons = useRef<(HTMLButtonElement | null)[]>([]);

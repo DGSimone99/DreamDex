@@ -3,7 +3,7 @@ import { useT } from '../../i18n/react';
 import { Icon } from '../icons';
 
 /** Una sezione del cruscotto: targhetta magenta obliqua, un riassunto breve, i link alle schede. */
-export function DashCard({ title, meta, links, onOpen, className = '', tooltip, icon, titleExtra, level = 'h3', children }: {
+export function DashCard({ title, meta, links, onOpen, openLabel, className = '', tooltip, icon, titleExtra, level = 'h3', children }: {
   title: string;
   /** Un segno prima della targhetta (es. la medaglia del core in Bonus/Malus), decorativo. */
   icon?: ReactNode;
@@ -13,6 +13,8 @@ export function DashCard({ title, meta, links, onOpen, className = '', tooltip, 
   level?: 'h3' | 'h4';
   /** Una sola scheda di arrivo: tutta la barra del titolo la apre (la freccia è il pulsante, allargato a tutta la barra). */
   onOpen?: () => void;
+  /** Il nome del link di `onOpen` quando non porta alla scheda col nome del titolo (i Ruoli: Bonus/Malus, sottoscheda Ruoli). */
+  openLabel?: string;
   meta?: ReactNode;
   links?: ReactNode;
   className?: string;
@@ -28,7 +30,7 @@ export function DashCard({ title, meta, links, onOpen, className = '', tooltip, 
         {icon}
         <Title id={id} className="dash-plate">{title}{titleExtra}</Title>
         {meta && <span className="dash-meta">{meta}</span>}
-        {(links || onOpen) && <span className="dash-links">{links}{onOpen && <DashLink area={title} onClick={onOpen} />}</span>}
+        {(links || onOpen) && <span className="dash-links">{links}{onOpen && <DashLink area={title} name={openLabel} onClick={onOpen} />}</span>}
       </header>
       {children}
     </section>
@@ -36,10 +38,10 @@ export function DashCard({ title, meta, links, onOpen, className = '', tooltip, 
 }
 
 /** Link a una scheda: col testo ("Difesa ›") o solo la freccia, con il nome per lettori di schermo. */
-export function DashLink({ label, area, onClick }: { label?: string; area: string; onClick: () => void }) {
+export function DashLink({ label, area, name, onClick }: { label?: string; area: string; name?: string; onClick: () => void }) {
   const t = useT();
   return (
-    <button type="button" className="dash-link" onClick={onClick} aria-label={label ? undefined : t('dash.open', { area })}>
+    <button type="button" className="dash-link" onClick={onClick} aria-label={label ? undefined : name ?? t('dash.open', { area })}>
       {label}<Icon name="next" />
     </button>
   );

@@ -197,7 +197,7 @@ const defenseState = (sub: RegExp | null, opts: { team?: unknown[]; format?: Par
     await wait(300);
     if (!await clickText(p, '.band button.grade-area', /^(Difesa|Defense)/)) return 'no defense row';
     await wait(300);
-    if (sub && !await clickText(p, '.area-subs [role="tab"]', sub)) return 'no sub-tab';
+    if (sub && !await clickText(p, '.rl-filter button', sub)) return 'no level filter';
     await wait(500);
     return true;
   },
@@ -211,7 +211,7 @@ const offenseState = (sub: RegExp | null, opts: { collapsed?: boolean; format?: 
     await wait(300);
     if (!await clickText(p, '.band button.grade-area', /^Offe(sa|nse)/)) return 'no offense row';
     await wait(300);
-    if (sub && !await clickText(p, '.area-subs [role="tab"]', sub)) return 'no sub-tab';
+    if (sub && !await clickText(p, '.rl-filter button', sub)) return 'no level filter';
     await wait(500);
     return true;
   },
@@ -256,7 +256,7 @@ const speedState = (sub: RegExp | null, opts: { collapsed?: boolean; format?: Pa
     await wait(300);
     if (!await clickText(p, '.band button.grade-area', /^(Velocit|Speed)/)) return 'no speed row';
     await wait(300);
-    if (sub && !await clickText(p, '.area-subs [role="tab"]', sub)) return 'no sub-tab';
+    if (sub && !await clickText(p, '.rl-filter button', sub)) return 'no level filter';
     await wait(500);
     return true;
   },
@@ -355,7 +355,7 @@ const DEFENSE_STATES: Record<string, State> = {
   } },
 };
 
-// Ruoli: Generale e una scheda per livello (SIX), col team di 5 (incompleto) e con un team a cui mancano ruoli (LONE)
+// Ruoli (Bonus/Malus → Ruoli, dalla riga del voto): Tutti e un filtro per livello (SIX), col team di 5 (incompleto) e con un team a cui mancano ruoli (LONE)
 const rolesState = (sub: RegExp | null, opts: { team?: unknown[]; collapsed?: boolean; lang?: 'it' | 'en' } = {}): State => ({
   hash: hash(opts.team ?? SIX),
   lang: opts.lang,
@@ -366,7 +366,7 @@ const rolesState = (sub: RegExp | null, opts: { team?: unknown[]; collapsed?: bo
     await wait(300);
     if (!await clickText(p, '.band button.grade-area', /^(Ruoli|Roles)/)) return 'no roles row';
     await wait(300);
-    if (sub && !await clickText(p, '.area-subs [role="tab"]', sub)) return 'no sub-tab';
+    if (sub && !await clickText(p, '.rl-filter button', sub)) return 'no level filter';
     await wait(500);
     return true;
   },

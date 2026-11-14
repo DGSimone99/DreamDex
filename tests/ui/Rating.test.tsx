@@ -21,7 +21,7 @@ describe('Riquadro Voto', () => {
     expect(band()).not.toHaveTextContent('Sinergia');
   });
 
-  it("Offesa, Difesa e Ruoli portano alla loro scheda; la Coverage offensiva non è una riga del voto", async () => {
+  it("Offesa e Difesa portano alla loro scheda, Ruoli a Bonus/Malus sulla sottoscheda Ruoli; la Coverage offensiva non è una riga del voto", async () => {
     const user = userEvent.setup();
     render(<App initialLang="it" data={fixtureData} />);
     for (const name of ['Great Tusk', 'Gholdengo']) await user.type(screen.getByLabelText('Aggiungi Pokémon'), `${name}{Enter}`);
@@ -30,7 +30,12 @@ describe('Riquadro Voto', () => {
       const button = within(band()).getByRole('button', { name: new RegExp(`^${area} [\\d/]+, .*apri il dettaglio`) });
       expect(button).not.toHaveAttribute('aria-haspopup');
       await user.click(button);
-      expect(within(document.getElementById('panel-analysis')!).getByRole('region', { name: area })).toBeInTheDocument();
+      const analysis = within(document.getElementById('panel-analysis')!);
+      if (area !== 'Ruoli') { expect(analysis.getByRole('region', { name: area })).toBeInTheDocument(); continue; }
+      expect(analysis.getByRole('region', { name: 'Bonus/Malus' })).toBeInTheDocument();
+      expect(analysis.getByRole('tab', { name: 'Bonus/Malus' })).toHaveAttribute('aria-selected', 'true');
+      expect(analysis.getByRole('tab', { name: /^Ruoli/ })).toHaveAttribute('aria-selected', 'true');
+      expect(analysis.getByRole('group', { name: 'Quali ruoli mostrare' })).toBeInTheDocument();
     }
   });
 
@@ -221,6 +226,8 @@ Bold Nature
 /** Valutazione minima, solo con ciò che serve alla barra Bonus/Malus. */
 const fakeRating = (penalty: [string, number][], bonus: [string, number][], penaltyTotal?: number): TeamRating => ({
   teamType: 'balance', trickRoom: false, grade: 'B', overall: 70, label: 'Buono', archetype: 'balance', meta: false, areas: [],
+  // Bonus/Malus ha anche la sottoscheda Ruoli (coperti/totale e la guida del tipo di team)
+  roles: { covered: 0, total: 0, rows: [], failures: [], bonuses: [], members: [] }, needs: { archetype: 'balance', rules: {} },
   penalty: { total: penaltyTotal ?? penalty.reduce((n, [, p]) => n + p, 0), items: penalty.map(([text, points]) => ({ text, points })) },
   bonus: { total: bonus.reduce((n, [, p]) => n + p, 0), items: bonus.map(([text, points]) => ({ text, points })) },
 }) as unknown as TeamRating;
