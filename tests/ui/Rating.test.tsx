@@ -35,7 +35,7 @@ describe('Riquadro Voto', () => {
       expect(analysis.getByRole('region', { name: 'Ruoli e Bonus' })).toBeInTheDocument();
       expect(analysis.getByRole('tab', { name: 'Ruoli e Bonus' })).toHaveAttribute('aria-selected', 'true');
       expect(analysis.getByRole('tab', { name: /^Ruoli \d/ })).toHaveAttribute('aria-selected', 'true');
-      expect(analysis.getByRole('group', { name: 'Quali ruoli mostrare' })).toBeInTheDocument();
+      expect(analysis.getByRole('region', { name: 'Essenziali' })).toBeInTheDocument();
     }
   });
 

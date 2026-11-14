@@ -1,6 +1,7 @@
 import type { TeamRating } from '../../engine/rating';
 import { keyRoles, keyValue, MISSING_BELOW } from '../../engine/needs';
 import { LEVEL_KEYS, type Level, type LevelKey } from '../../engine/roleLevels';
+import { ESSENTIAL_POINTS, IMPORTANT_POINTS, MINOR_POINTS, type TeamRoles } from '../../engine/rolesArea';
 import { FAMILIES, secondaryRoles, type Family, type SubRoleReason } from '../../engine/subRoles';
 
 /** Chi porta una voce: valore (col credito del secondario), fonte e motivo del sotto-ruolo migliore dietro la voce. */
@@ -43,9 +44,26 @@ export function roleLines(rating: TeamRating): RoleLine[] {
   });
 }
 
-/** Le voci di un livello, raggruppate per famiglia; in ogni famiglia prima quelle che mancano. */
-export function byFamily(lines: RoleLine[]): { family: Family; lines: RoleLine[] }[] {
-  return FAMILY_ORDER
-    .map(family => ({ family, lines: lines.filter(l => l.family === family).sort((a, b) => Number(b.missing) - Number(a.missing)) }))
-    .filter(g => g.lines.length > 0);
+/** Prima le voci che mancano, poi le coperte (a parità resta l'ordine della tabella). */
+export const missingFirst = (lines: RoleLine[]) => [...lines].sort((a, b) => Number(b.missing) - Number(a.missing));
+
+/**
+ * I malus dei Ruoli valgono adesso? Solo in un team di 6 specie riconosciute (rolesArea): allora c'è almeno un malus o
+ * non manca niente, e in tutti e due i casi le voci mancanti sono proprio quelle dei malus.
+ */
+export const rolesMalusOn = (roles: TeamRoles) => roles.failures.length > 0;
+
+/**
+ * Quanto vale una voce sul voto, per la vista (sottoscheda Ruoli e, più avanti, Panoramica):
+ * - essenziale o importante: 'ok' se coperta; se manca 'malus' (−4 / −2) in un team che li conta (`full`), altrimenti
+ *   'missing' (manca, ma per ora non toglie punti);
+ * - minore: 'bonus' (+1) se coperta, 'zero' se no; una voce che non conta: sempre 'zero'.
+ */
+export type RolePointsKind = 'ok' | 'malus' | 'missing' | 'bonus' | 'zero';
+export function rolePoints(line: Pick<RoleLine, 'level' | 'missing'>, full: boolean): { kind: RolePointsKind; points: number } {
+  if (line.level === 'essential' || line.level === 'important') {
+    if (!line.missing) return { kind: 'ok', points: 0 };
+    return full ? { kind: 'malus', points: -(line.level === 'essential' ? ESSENTIAL_POINTS : IMPORTANT_POINTS) } : { kind: 'missing', points: 0 };
+  }
+  return line.level === 'minor' && !line.missing ? { kind: 'bonus', points: MINOR_POINTS } : { kind: 'zero', points: 0 };
 }

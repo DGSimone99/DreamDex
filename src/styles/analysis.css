@@ -129,6 +129,12 @@
 }
 .area-view-bonusMalus .area-subs [role='tab'] b { font: 800 22px/1 var(--display); font-style: italic; }
 .area-view-bonusMalus .area-subs [role='tab'][aria-selected='true'] > span:first-child { font-weight: 700; }
+/* Ruoli: dopo coperti/totale quanti essenziali (rosso) e importanti (giallo) mancano, numero e triangolo, come accanto al team */
+.sub-marks { display: inline-flex; align-self: center; gap: 6px; }
+.sub-miss { display: inline-flex; align-items: center; gap: 1px; font: 700 15px/1 var(--display); font-style: normal; }
+.sub-miss .icon { width: 15px; height: 15px; }
+.sub-miss.bad { color: var(--bad); }
+.sub-miss.warn { color: var(--warn); }
 /* Altezza fissa: con o senza problemi il pannello sotto parte dallo stesso punto in ogni area */
 .area-problems-row { display: flex; align-items: center; gap: 12px; padding: 0 2px; flex: none; height: 25px; }
 /* L'etichetta "N problemi" in testa: giallo, rosso se ce n'è almeno uno grave */

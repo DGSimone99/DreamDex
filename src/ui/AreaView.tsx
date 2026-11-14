@@ -7,7 +7,6 @@ import type { TeamSet } from '../engine/sets';
 import { useLang, useT } from '../i18n/react';
 import { areaTabs, type AreaKey } from './AreaDetail';
 import { viewLabelKey } from './AnalysisTabs';
-import type { RolesFilter } from './roles/rolesTabs';
 import { AreaGuide } from './AreaGuide';
 import { EffSwitch } from './effTag';
 import { Icon } from './icons';
@@ -51,9 +50,7 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
   // Chi ha aperto la guida (il "?" o un link nel pannello): alla chiusura il focus torna lì
   const opener = useRef<HTMLElement | null>(null);
   const openGuide = (key: string) => { opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; setGuide(key); };
-  // Bonus/Malus → Ruoli: il filtro dei livelli resta passando fra Generale e Ruoli
-  const [rolesFilter, setRolesFilter] = useState<RolesFilter>('all');
-  const tabs = areaTabs(rating, area, t, lang, { team, analysis, open, roomy, formatId, effOnly: !!effOnly[area], guide: openGuide, rolesFilter, onRolesFilter: setRolesFilter });
+  const tabs = areaTabs(rating, area, t, lang, { team, analysis, open, roomy, formatId, effOnly: !!effOnly[area], guide: openGuide });
   // Si parte dalla prima scheda (Generale), anche se la sottoscheda ricordata non c'è più (es. meta spento)
   const index = Math.max(0, picked === null ? 0 : tabs.findIndex(tab => tab.key === picked));
   const current = tabs[index];
@@ -145,14 +142,18 @@ export function AreaView({ rating, area, problems, team, analysis, roomy = false
           {tabs.map((tab, i) => (
             <button key={tab.key} ref={el => { buttons.current[i] = el; }} type="button" role="tab" id={`${id}-${tab.key}`}
               aria-selected={tab === current} aria-controls={`${id}-panel`} tabIndex={tab === current ? 0 : -1}
+              aria-describedby={tab.describe ? `${id}-${tab.key}-desc` : undefined}
               onClick={() => setPicked(tab.key)} onKeyDown={e => onKey(e, i)}>
               <span>{tab.label}</span>{' '}
               <b>{tab.value ?? 'n/d'}</b>
+              {/* Segni dopo il valore (Ruoli: quanti mancano), a parole nella descrizione della scheda */}
+              {tab.marks && <span className="sub-marks" aria-hidden="true">{tab.marks}</span>}
               {/* Posto per il "?": aprendo un'altra scheda la striscia non si sposta */}
               {tab.help && <span className="sub-help-room" aria-hidden="true" />}
             </button>
           ))}
         </div>
+        {tabs.filter(tab => tab.describe).map(tab => <span key={tab.key} id={`${id}-${tab.key}-desc`} hidden>{tab.describe}</span>)}
         {/* L'interruttore dell'efficacia, a destra nella striscia, solo sulle sottoschede con l'etichetta nelle caselle */}
         {current.effSide && (
           <span className="strip-switch">

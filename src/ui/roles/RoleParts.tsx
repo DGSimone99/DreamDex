@@ -51,19 +51,20 @@ export function LevelTag({ level, t }: { level: Level; t: T }) {
 }
 
 /**
- * Chi porta la voce: l'icona del box, col valore piccolo sotto solo quando non è pieno (sotto 100); il secondario e chi
- * la porta solo in parte (sotto il pieno) più tenui. Nome, valore e motivo per lo screen reader e nel tooltip.
+ * Chi porta la voce: l'icona del box e, quando non è pieno (sotto 100), il valore in percentuale ("75%"); con `named`
+ * (l'unico che la porta) anche il nome accanto. Il secondario e chi la porta solo in parte più tenui. Nome, valore e
+ * motivo per lo screen reader e nel tooltip.
  */
-export function RoleMon({ h, why, t, mark = false }: { h: RoleHolder; why?: string; t: T; mark?: boolean }) {
+export function RoleMon({ h, why, t, named = false }: { h: RoleHolder; why?: string; t: T; named?: boolean }) {
   const weak = h.secondary || h.value < 1;
   const value = points(h.value);
-  const title = [h.species, h.secondary && t('rdetail.secondary'), why, String(value)].filter(Boolean).join(' · ');
+  const title = [h.species, h.secondary && t('rdetail.secondary'), why, `${value}%`].filter(Boolean).join(' · ');
   return (
-    <span className={`rl-mon${weak ? ' weak' : ''}${h.value < MISSING_BELOW ? ' partial' : ''}`} title={title}>
+    <span className={`rl-mon${weak ? ' weak' : ''}${h.value < MISSING_BELOW ? ' partial' : ''}${named ? ' named' : ''}`} title={title}>
       <span className="rl-box"><PokemonIcon name={h.species} /></span>
-      <span className="visually-hidden">{h.species}{h.secondary ? ` (${t('rdetail.secondary')})` : ''}</span>
-      {value < 100 && <small className="rl-val">{value}</small>}
-      {mark && h.secondary && <small className="rl-sec" aria-hidden="true">{t('rdetail.secondaryShort')}</small>}
+      {named && <b className="rl-mon-name" aria-hidden="true">{h.species}</b>}
+      {value < 100 && <small className="rl-val" aria-hidden="true">{value}%</small>}
+      <span className="visually-hidden">{h.species}{h.secondary ? ` (${t('rdetail.secondary')})` : ''}{value < 100 ? ` ${value}%` : ''}</span>
     </span>
   );
 }

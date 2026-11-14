@@ -9,7 +9,7 @@ import { useT } from '../i18n/react';
 import type { Lang } from '../i18n';
 import { defenseTabs } from './defense/defenseTabs';
 import { offenseTabs } from './offense/offenseTabs';
-import { rolesTab, type RolesFilter } from './roles/rolesTabs';
+import { rolesTab } from './roles/rolesTabs';
 import { speedTabs } from './speed/speedTabs';
 
 /** Una scheda del dettaglio: etichetta, valore e contenuto. */
@@ -20,6 +20,9 @@ export interface DetailTab { key: string; label: string; value: number | string 
   legend?: ReactNode;
   /** Le schede con l'etichetta di efficacia nelle caselle: a destra nella striscia l'interruttore "Solo superefficaci" / "Solo efficacia". */
   effSide?: EffSide;
+  /** Segni dopo il valore (i Ruoli: quanti essenziali e importanti mancano, numero e triangolo) e la loro frase per lo screen reader. */
+  marks?: ReactNode;
+  describe?: string;
   /** Pagine in più della guida dopo quella della scheda (i Ruoli: tipi di team, come si ottiene un ruolo). */
   guidePages?: { key: string; label: string; content: ReactNode }[] }
 
@@ -34,11 +37,11 @@ export interface AreaContext { team: TeamSet[]; analysis: TeamAnalysis; open?: (
    * acceso: le caselle senza etichetta si spengono (restano al loro posto). Uno per area.
    */
   effOnly?: boolean;
-  /** Apre la guida dell'area su una sua sezione (Bonus/Malus: "Tutte le voci possibili" apre il catalogo). */
-  guide?: (key: string) => void;
-  /** Il filtro della sottoscheda Ruoli (Tutti o un livello): ricordato mentre si passa fra Generale e Ruoli. */
-  rolesFilter?: RolesFilter;
-  onRolesFilter?: (filter: RolesFilter) => void }
+  /**
+   * Apre la guida dell'area su una sua sezione (Bonus/Malus: "Tutte le voci possibili" apre il catalogo; Ruoli: "Ruoli
+   * che non contano per questo team" apre la pagina dei tipi di team).
+   */
+  guide?: (key: string) => void }
 
 /**
  * Dettaglio di un'area (Offesa o Difesa): una scheda generale e una per sottostatistica, ognuna con come si calcola
@@ -67,22 +70,18 @@ export function areaTabs(rating: TeamRating, area: AreaKey, t: T, lang: Lang, ct
 /** I Ruoli non hanno un valore 0–100: voci coperte sul totale ("7/9"). */
 export const rolesValue = (rating: TeamRating): string => `${rating.roles.covered}/${rating.roles.total}`;
 
-/** Il valore di un'area per la testa: il netto per Bonus/Malus, coperti/totale per i Ruoli, altrimenti il valore dell'area. */
-export const areaValue = (rating: TeamRating, area: DetailArea): number | string | null =>
-  (area === 'bonusMalus' ? signed(rating.bonus.total - rating.penalty.total)
-    : area === 'roles' ? rolesValue(rating) : rating.areas.find(a => a.key === area)?.value ?? null);
-
 /**
  * Bonus e malus: la sottoscheda Generale col netto sul voto, le voci che valgono adesso e i core a tre (BonusMalusView). Il
  * catalogo con tutte le voci possibili sta nella guida della scheda (il "?" e il link "Tutte le voci possibili"): due
- * pagine, i bonus e i malus, con quando scattano e quanto valgono.
+ * pagine, i bonus e i malus, con quando scattano e quanto valgono. Le voci dei ruoli sono una medaglia sola, "Ruoli", che
+ * apre la sottoscheda Ruoli.
  * Poi la sottoscheda Ruoli (coperti/totale): i Ruoli non hanno un peso nel voto, contano solo coi loro bonus e malus.
  */
 function catalogueTabs(rating: TeamRating, t: T, lang: Lang, ctx: AreaContext): DetailTab[] {
   return [{
     // La scheda si chiama "Ruoli e Bonus": la sottoscheda dei bonus e malus porta il loro nome, Bonus/Malus
     key: 'all', label: t('area.bonusMalus'), value: signed(rating.bonus.total - rating.penalty.total),
-    panel: <BonusMalusView rating={rating} lang={lang} t={t} onCatalogue={ctx.guide && (() => ctx.guide!('bonus'))} />,
+    panel: <BonusMalusView rating={rating} lang={lang} t={t} onCatalogue={ctx.guide && (() => ctx.guide!('bonus'))} onRoles={ctx.open && (() => ctx.open!(ROLES_SUB))} />,
     // Il "?" della scheda sta qui, nella striscia, come nelle altre aree (non più sulla scheda di Analisi, dove copriva "Malus")
     help: t('help.view.bonusMalus').split(/\n/).map(line => <p key={line}>{line}</p>),
     guidePages: [

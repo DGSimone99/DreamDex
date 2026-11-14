@@ -12,7 +12,7 @@ import { useLang, useT } from '../i18n/react';
 import { AnalysisOverview } from './AnalysisOverview';
 import { AnalysisTabs } from './AnalysisTabs';
 import { resolveView, type AnalysisView, type TabView } from './analysisView';
-import { areaValue, type AreaKey } from './AreaDetail';
+import type { AreaKey } from './AreaDetail';
 import { AreaView } from './AreaView';
 import { CoachingView } from './CoachingView';
 import { Icon } from './icons';
@@ -95,7 +95,7 @@ export function AnalysisPanel({ team, analysis, rating, coaching, advice = null,
     <section aria-label={tr('analysis.region')} className="analysis">
       <h2>{tr('analysis.region')}</h2>
       <AnalysisTabs view={tabView} onView={openView} panelId="analysis-view" areasDisabled={!rating} badges={problems.length ? { coaching: { n: problems.length, serious, minor: problems.length - serious } } : {}}
-        scores={{ ...Object.fromEntries((rating?.areas ?? []).map(a => [a.key, a.value])), ...(rating ? { bonusMalus: areaValue(rating, 'bonusMalus') } : {}) }} />
+        scores={Object.fromEntries((rating?.areas ?? []).map(a => [a.key, a.value]))} />
       <div id="analysis-view" role="tabpanel" aria-labelledby={`analysis-view-${tabView}`} className="analysis-view">{body}</div>
     </section>
   );

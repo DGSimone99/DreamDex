@@ -85,15 +85,13 @@
   .def-general .def-gain { position: absolute; top: 100%; right: 0; margin: 1px 0 0; }
   .def-general .def-gain small { font-size: 11px; }
 
-  /* Ruoli, Generale: i coperti su una colonna sola */
-  .rl-covered.two, .rl-covered.three { grid-template-columns: max-content minmax(0, 1fr); }
-  /* Ruoli per livello: l'intestazione resta sotto la barra in alto mentre la pagina scorre */
-  .rl-table thead th { top: var(--top-h); }
+  /* Ruoli: le voci di ogni fascia su una colonna sola; il link alla guida va a capo sotto */
+  .rl-rows { grid-template-columns: max-content minmax(0, 1fr) auto; }
+  .rl-more { margin-left: 0; min-height: 44px; }
 
   /* ── Ruoli e Bonus/Malus: la lista intera, senza scorrimento interno ── */
   .rl-frame { height: auto; }
-  .rl-filter button { min-height: 44px; }
-  .rl-scroll { overflow: visible; }
+  .rl-bands { overflow: visible; }
   .area-panel:has(> .bm) { overflow: visible; }
   /* Bonus/Malus: prima il netto e le voci, poi i core uno sotto l'altro (il chiuso è una riga col triangolo piccolo) */
   .bm, .bm.empty { flex: none; grid-template-columns: minmax(0, 1fr); grid-template-rows: none; grid-template-areas: "grade" "list" "cores"; gap: 18px; }
@@ -161,18 +159,6 @@
   /* Difesa, Generale a squadra chiusa: le due colonne in più (colpo peggiore, recupero) non ci stanno */
   .def-general.roomy .def-members tr > :nth-last-child(-n + 2) { display: none; }
   .def-general.roomy .def-members :is(.def-col-hit, .def-col-rec) { width: 0; }
-
-  /* Ruoli per livello: ogni ruolo come una scheda (nome e valore, sotto chi lo copre e perché) */
-  .rl-table, .rl-table tbody { display: block; }
-  .rl-table colgroup, .rl-table thead { display: none; }
-  .rl-table tbody tr:not(.rl-fam) { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; height: auto; padding: 6px 0 8px; border-bottom: 1px solid var(--line-soft); }
-  .rl-table tbody tr:not(.rl-fam) > * { border-bottom: 0; }
-  .rl-table tbody tr:not(.rl-fam) > th[scope='row'] { grid-column: 1; white-space: normal; }
-  .rl-table tbody tr:not(.rl-fam) > td:nth-child(2) { grid-column: 2; }
-  .rl-table tbody tr:not(.rl-fam) > td:nth-child(n + 3) { grid-column: 1 / -1; padding-left: 13px; }
-  .rl-table .rl-reason { white-space: normal; overflow: visible; }
-  .rl-table tr.rl-fam { display: block; }
-  .rl-table tr.rl-fam th { display: block; }
 
   .coach-map { grid-template-columns: minmax(0, 1fr); }
 }

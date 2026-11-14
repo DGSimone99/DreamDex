@@ -55,10 +55,10 @@ describe('tabelle complete nelle schede d\'area', () => {
     expect(within(view()).getAllByRole('table')).toHaveLength(1);
   });
 
-  it('Ruoli (Bonus/Malus → Ruoli): con Tutti il tipo di team, cosa manca e i ruoli coperti; i livelli nei filtri', async () => {
+  it('Ruoli (Ruoli e Bonus → Ruoli): il tipo di team e le fasce dei livelli, senza filtri', async () => {
     await openTab('Ruoli');
-    expect(within(view()).getByRole('region', { name: 'Ruoli che mancano' })).toBeInTheDocument();
     expect(view()).toHaveTextContent(/[Gg]iudicati come|giudicati come per un/);
-    expect(within(view()).getByRole('button', { name: /^Essenziali/ })).toBeInTheDocument();
+    expect(within(view()).getByRole('region', { name: 'Essenziali' })).toBeInTheDocument();
+    expect(within(view()).queryByRole('group', { name: 'Quali ruoli mostrare' })).toBeNull();
   });
 });

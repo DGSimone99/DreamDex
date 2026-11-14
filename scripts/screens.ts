@@ -355,8 +355,8 @@ const DEFENSE_STATES: Record<string, State> = {
   } },
 };
 
-// Ruoli (Bonus/Malus → Ruoli, dalla riga del voto): Tutti e un filtro per livello (SIX), col team di 5 (incompleto) e con un team a cui mancano ruoli (LONE)
-const rolesState = (sub: RegExp | null, opts: { team?: unknown[]; collapsed?: boolean; lang?: 'it' | 'en' } = {}): State => ({
+// Ruoli (Ruoli e Bonus → Ruoli, dalla riga del voto): una vista sola, con SIX, col team di 5 (incompleto) e con un team a cui mancano ruoli (LONE)
+const rolesState = (opts: { team?: unknown[]; collapsed?: boolean; lang?: 'it' | 'en' } = {}): State => ({
   hash: hash(opts.team ?? SIX),
   lang: opts.lang,
   run: async p => {
@@ -365,15 +365,12 @@ const rolesState = (sub: RegExp | null, opts: { team?: unknown[]; collapsed?: bo
     if (opts.collapsed && !await clickText(p, 'button.band-toggle', /./)) return 'no band toggle';
     await wait(300);
     if (!await clickText(p, '.band button.grade-area', /^(Ruoli|Roles)/)) return 'no roles row';
-    await wait(300);
-    if (sub && !await clickText(p, '.rl-filter button', sub)) return 'no level filter';
-    await wait(500);
+    await wait(800);
     return true;
   },
 });
-const ROLES_SUBS: Record<string, RegExp | null> = { general: null, essential: /^(Essenziali|Essential)/, important: /^(Importanti|Important)/, minor: /^(Minori|Minor)/, ignored: /^(Non contano|Don)/ };
 const rolesGuide = (section?: RegExp, opts: { team?: unknown[]; lang?: 'it' | 'en' } = {}): State => ({ hash: hash(opts.team ?? SIX), lang: opts.lang, run: async p => {
-  const ok = await rolesState(null, opts).run!(p);
+  const ok = await rolesState(opts).run!(p);
   if (ok !== true) return ok;
   if (!await clickText(p, '.area-help button', /./)) return 'no guide button';
   await wait(400);
@@ -382,14 +379,12 @@ const rolesGuide = (section?: RegExp, opts: { team?: unknown[]; lang?: 'it' | 'e
   return true;
 } });
 const ROLES_STATES: Record<string, State> = {
-  ...Object.fromEntries(Object.entries(ROLES_SUBS).flatMap(([k, re]) => [
-    [`analysis-roles-${k}`, rolesState(re)],
-    [`analysis-roles-${k}-five`, rolesState(re, { team: TEAM })],
-    [`analysis-roles-${k}-missing`, rolesState(re, { team: LONE })],
-    [`analysis-roles-${k}-collapsed`, rolesState(re, { collapsed: true })],
-  ])),
-  'analysis-roles-general-en': rolesState(null, { lang: 'en' }),
-  'analysis-roles-general-long': rolesState(null, { team: LONG }),
+  'analysis-roles-general': rolesState(),
+  'analysis-roles-general-five': rolesState({ team: TEAM }),
+  'analysis-roles-general-collapsed': rolesState({ collapsed: true }),
+  'analysis-roles-general-en': rolesState({ lang: 'en' }),
+  'analysis-roles-general-long': rolesState({ team: LONG }),
+  'analysis-roles-missing': rolesState({ team: LONE }),
   'analysis-roles-guide': rolesGuide(),
   'analysis-roles-guide-en': rolesGuide(undefined, { lang: 'en' }),
   'analysis-roles-guide-types': rolesGuide(/^(Ruoli per tipo|Roles per team)/),
@@ -913,10 +908,12 @@ for (const [w, h] of sizes) {
           const pages = gs ? [...gs.querySelectorAll<HTMLElement>(':scope > .help-panel')].map(sec => { const last = sec.lastElementChild?.getBoundingClientRect(); return last ? Math.round(last.bottom - sec.getBoundingClientRect().top + (parseFloat(getComputedStyle(sec).paddingBottom) || 0)) : 0; }) : [];
           const guide = gp ? ` guideScroll=${Math.max(gp.scrollHeight - gp.clientHeight, gs ? gs.scrollHeight - gs.clientHeight : 0)} guideH=${Math.round(gp.closest('.help-dialog')!.getBoundingClientRect().height)}${gs ? ` guidePages=[${pages.join(',')}]/${gs.clientHeight}` : ''}` : '';
           const rl = el.querySelector<HTMLElement>('.rl-frame');
-          const rlScroll = rl?.querySelector<HTMLElement>('.rl-scroll');
-          const rlRows = rl ? rl.querySelectorAll('.rl-covered > li, .rl-table tbody tr:not(.rl-fam)').length : 0;
-          const rlLast = rl ? [...rl.querySelectorAll<HTMLElement>('.rl-covered > li, .rl-missing > li')].reduce((b, li) => Math.max(b, li.getBoundingClientRect().bottom), 0) : 0;
-          const roles = rl ? ` roles: rows=${rlRows} cols=${rl.querySelector('.rl-covered.two') ? 2 : 1} missing=${rl.querySelectorAll('.rl-missing > li').length} listScroll=${rlScroll ? rlScroll.scrollHeight - rlScroll.clientHeight : '-'} lastRowGap=${rlLast ? Math.round(rl.getBoundingClientRect().bottom - rlLast) : '-'} frameH=${Math.round(rl.getBoundingClientRect().height)} parts=[${[...rl.children].map(c => Math.round(c.getBoundingClientRect().height)).join(',')}] reasonCut=${[...rl.querySelectorAll<HTMLElement>('.rl-reason')].filter(e => e.scrollWidth - e.clientWidth > 1).length}` : '';
+          // Ruoli: righe, bande, mancanti, quanto scorrono le fasce (deve essere 0), spazio sotto l'ultima riga, nomi tagliati
+          const rlScroll = rl?.querySelector<HTMLElement>('.rl-bands');
+          const rlRows = rl ? rl.querySelectorAll('.rl-row').length : 0;
+          const rlLast = rl ? [...rl.querySelectorAll<HTMLElement>('.rl-row')].reduce((b, li) => Math.max(b, li.getBoundingClientRect().bottom), 0) : 0;
+          const rlRowH = rl?.querySelector<HTMLElement>('.rl-row')?.getBoundingClientRect().height ?? 0;
+          const roles = rl ? ` roles: rows=${rlRows} bands=${rl.querySelectorAll('.rl-band').length} missing=${rl.querySelectorAll('.rl-row.bad, .rl-row.warn').length} rowH=${Math.round(rlRowH)} listScroll=${rlScroll ? rlScroll.scrollHeight - rlScroll.clientHeight : '-'} lastRowGap=${rlLast ? Math.round(rl.getBoundingClientRect().bottom - rlLast) : '-'} frameH=${Math.round(rl.getBoundingClientRect().height)} headH=${Math.round(rl.querySelector('.rl-head')?.getBoundingClientRect().height ?? 0)} nameCut=${[...rl.querySelectorAll<HTMLElement>('.rl-mon-name, .rl-name')].filter(e => e.scrollWidth - e.clientWidth > 1).length}` : '';
           // Legenda sulla riga dei problemi: larghezza, quanto sborda dalla riga (0 = intera) e problemi mostrati / nel "+N"
           const lg = document.querySelector<HTMLElement>('.area-problems-row .area-legend');
           const lgRow = lg?.parentElement?.getBoundingClientRect();
