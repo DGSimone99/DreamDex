@@ -205,7 +205,7 @@ describe('Velocità: una scheda a barre', () => {
   it('il "?" apre la guida della Velocità: rivali, guadagni con le quote, pesi dei membri, il modale non cambia il voto', async () => {
     const user = userEvent.setup();
     view();
-    await user.click(screen.getByRole('button', { name: 'Come funziona Generale' }));
+    await user.click(screen.getByRole('button', { name: 'Come funziona Velocità' }));
     const dialog = screen.getByRole('dialog', { name: 'Guida: Velocità' });
     const panel = within(dialog).getByRole('tabpanel');
     expect(panel).toHaveTextContent(/40 Pokémon più usati/);
@@ -258,7 +258,7 @@ describe('Velocità: una scheda a barre', () => {
     await user.click(screen.getByRole('button', { name: 'Speed of Dragonite: open the rivals' }));
     expect(screen.getByRole('dialog', { name: 'Speed of Dragonite' })).not.toHaveTextContent('the grade does not change');
     await user.keyboard('{Escape}');
-    await user.click(screen.getByRole('button', { name: 'How General works' }));
+    await user.click(screen.getByRole('button', { name: 'How Speed works' }));
     expect(screen.getByRole('dialog', { name: 'Guide: Speed' })).toHaveTextContent(/Scarf/);
   });
 });

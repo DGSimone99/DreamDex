@@ -57,20 +57,7 @@ export function HelpButton({ title, label = title, className, children }: { titl
 }
 
 /** Le schede con un "?" di pagina: non lo hanno la Panoramica, il Coaching, l'Offesa, la Difesa, la Velocità e i Ruoli (che hanno la loro guida a sezioni). */
-type HelpView = Exclude<AnalysisView, 'overview' | 'coaching' | 'strength' | 'defense' | 'speed' | 'roles'>;
-const hasHelp = (view: AnalysisView): view is HelpView => view !== 'overview' && view !== 'coaching' && view !== 'strength' && view !== 'defense' && view !== 'speed' && view !== 'roles';
-
-/** Il "?" accanto alla scheda aperta: cosa mostra quella scheda e come conta nel voto. */
-export function ViewHelp({ view }: { view: HelpView }) {
-  const t = useT();
-  return (
-    <HelpButton title={t('help.view.button', { view: t(viewLabelKey(view)) })}>
-      {t(`help.view.${view}` as const).split('\n').map(line => <p key={line}>{line}</p>)}
-    </HelpButton>
-  );
-}
-
-/** Le schede interne: tablist orizzontale (frecce, Home/End), col "?" accanto a quella aperta. */
+/** Le schede interne: tablist orizzontale (frecce, Home/End). Il "?" di Bonus/Malus sta nella sua striscia (AreaView). */
 /** `areasDisabled`: senza voto (team vuoto) le aree non hanno niente da mostrare: restano visibili ma spente. */
 /** `scores`: il voto di ogni area, scritto nella sua scheda (la Panoramica non ne ha). */
 /** Il numero sulla scheda: tutti i problemi, quanti gravi e quanti minori (per il suggerimento al passaggio del mouse). */
@@ -84,20 +71,6 @@ export function AnalysisTabs({ view, onView, panelId, areasDisabled = false, sco
 
   const t = useT();
   const buttons = useRef<(HTMLButtonElement | null)[]>([]);
-  // Il "?" sta fuori dal tablist (lì solo schede) ma si vede accanto alla scheda aperta
-  const [helpLeft, setHelpLeft] = useState(0);
-  useLayoutEffect(() => {
-    const tab = buttons.current[ANALYSIS_VIEWS.indexOf(view)];
-    if (!tab) return;
-    // Dentro la scheda aperta, a destra (prima del taglio inclinato)
-    const place = () => setHelpLeft(tab.offsetLeft + tab.offsetWidth - 64);
-    place();
-    // La scheda Analisi può essere nascosta al primo disegno (misure a 0): si riposiziona quando prende le sue dimensioni
-    if (typeof ResizeObserver === 'undefined') return;
-    const observer = new ResizeObserver(place);
-    observer.observe(tab);
-    return () => observer.disconnect();
-  }, [view, t]);
   // Telefono: la fila delle schede scorre col dito; la scheda aperta si porta in vista (sul desktop non scorre: niente)
   useLayoutEffect(() => {
     const tab = buttons.current[ANALYSIS_VIEWS.indexOf(view)];
@@ -127,6 +100,7 @@ export function AnalysisTabs({ view, onView, panelId, areasDisabled = false, sco
           <button key={item} ref={el => { buttons.current[i] = el; }} type="button" role="tab" id={`analysis-view-${item}`}
             aria-selected={item === view} aria-controls={panelId} tabIndex={item === view ? 0 : -1}
             aria-disabled={areasDisabled && item !== 'overview' ? true : undefined}
+            aria-describedby={scores[item] != null || badges[item] ? `analysis-view-${item}-desc` : undefined}
             title={badges[item] ? badgeTitle(badges[item]!, t) : undefined}
             onClick={() => { if (!(areasDisabled && item !== 'overview')) onView(item); }} onKeyDown={e => onKey(e, i)}>
             <span>{t(viewLabelKey(item))}</span>
@@ -137,8 +111,14 @@ export function AnalysisTabs({ view, onView, panelId, areasDisabled = false, sco
           </button>
         ))}
       </div>
-      {/* Panoramica e Coaching non hanno "?" (l'aiuto della Panoramica è accanto al tipo di team) */}
-      {hasHelp(view) && <span className="analysis-help" style={{ left: helpLeft }}><ViewHelp view={view} /></span>}
+      {/* Voto e problemi delle schede per i lettori di schermo: descrizione, così il nome della scheda resta il suo nome */}
+      {ANALYSIS_VIEWS.filter(item => scores[item] != null || badges[item]).map(item => (
+        <span key={item} id={`analysis-view-${item}-desc`} hidden>
+          {[scores[item] != null ? t(item === 'bonusMalus' ? 'analysis.tabNet' : 'analysis.tabScore', { value: scores[item]! }) : null,
+            badges[item] ? `${t(badges[item]!.n === 1 ? 'analysis.tabProblemsOne' : 'analysis.tabProblemsMany', { n: badges[item]!.n })} (${badgeTitle(badges[item]!, t)})` : null,
+          ].filter(Boolean).join(', ')}
+        </span>
+      ))}
     </div>
   );
 }

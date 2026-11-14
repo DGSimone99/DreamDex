@@ -58,7 +58,7 @@ export function RolesGeneral({ rating, ctx }: { rating: TeamRating; ctx: AreaCon
       </header>
 
       <section className="rl-block" aria-label={t('rdetail.missingHead')}>
-        <h5>{t('rdetail.missingHead')}</h5>
+        <h4 className="rl-block-title">{t('rdetail.missingHead')}</h4>
         {missing.length === 0
           ? <p className="rl-allgood"><Icon name="check" />{t('rdetail.allCovered')}</p>
           : (
@@ -80,7 +80,7 @@ export function RolesGeneral({ rating, ctx }: { rating: TeamRating; ctx: AreaCon
 
       {covered.length > 0 && (
         <section className="rl-block rl-block-covered" aria-label={t('rdetail.coveredHead')}>
-          <h5>{t('rdetail.coveredHead')}</h5>
+          <h4 className="rl-block-title">{t('rdetail.coveredHead')}</h4>
           <ul className={`rl-covered${covered.length > TWO_COLUMNS_MAX ? ' three' : covered.length > ONE_COLUMN_MAX ? ' two' : ''}`}>
             {covered.map(l => (
               <li key={l.key}>

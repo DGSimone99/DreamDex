@@ -482,7 +482,7 @@ const STATES: Record<string, State> = {
   'analysis-help': { run: async p => {
     if (!await clickText(p, '.band button.grade-area', /^Difesa/)) return 'no row';
     await wait(300);
-    return clickText(p, '.analysis-help button', /./);
+    return clickText(p, '.area-help button', /./);
   } },
   // Stampa l'altezza della riga delle tappe mentre i consigli si calcolano (scheletro) e dopo: devono coincidere
   'coaching-six': { hash: hash(SIX), run: async p => {

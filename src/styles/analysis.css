@@ -91,7 +91,6 @@
 .analysis-tabs [role='tab'] { padding: 8px 16px 9px; border: 0; border-bottom: 3px solid transparent; border-radius: 0; background: none; font: 600 15px/1 var(--display); font-style: italic; color: var(--muted); }
 .analysis-tabs [role='tab']:hover { color: var(--text); background: color-mix(in srgb, var(--raised) 55%, transparent); }
 .analysis-tabs [role='tab'][aria-selected='true'] { color: var(--text); border-bottom-color: var(--accent); }
-.analysis-help { position: absolute; top: 50%; transform: translateY(-50%); }
 .analysis-view { flex: 1; min-height: 0; }
 
 /* Un'area sulla pagina: sottostatistiche e problemi a sinistra, il dettaglio a destra; ognuna scorre dentro */
@@ -185,9 +184,6 @@
 .analysis-tabs [role='tab'][aria-selected='true'] .tab-badge { background: var(--on-accent-2); color: var(--accent-2); }
 /* Solo problemi minori: come il contatore della barra laterale */
 .analysis-tabs .tab-badge.minor { background: var(--accent-soft); color: var(--text); }
-/* Il "?" piccolo, dentro la scheda aperta */
-.analysis-help .help-button { width: 18px; height: 18px; min-width: 0; padding: 0; color: var(--on-accent-2); border-color: color-mix(in srgb, var(--on-accent-2) 45%, transparent); background: transparent; }
-.analysis-help .help-button .icon { width: 12px; height: 12px; }
 
 /* Selezione magenta: la forma si allunga. La scheda interna aperta copre col suo taglio inclinato lo spazio e l'inizio
    della scheda vicina (niente vuoto); la sezione aperta della barra si srotola da sinistra. Le colonne non cambiano. */
@@ -230,7 +226,6 @@
   .analysis-tabs [role='tab'][aria-selected='true'], .tabs.vertical [role='tab'][aria-selected='true'] { animation: none; }
   .analysis-tabs [role='tab'], .tabs.vertical [role='tab'] { transition: none; }
 }
-.analysis-help { z-index: 2; }
 
 
 
