@@ -262,3 +262,13 @@ describe('Velocità: una scheda a barre', () => {
     expect(screen.getByRole('dialog', { name: 'Guide: Speed' })).toHaveTextContent(/Scarf/);
   });
 });
+
+describe('Velocità: colori dei pezzi della barra', () => {
+  it('coi suoi mezzi e col team non usano il giallo di stato né il magenta', async () => {
+    const { readFileSync } = await import('node:fs');
+    const css = readFileSync('src/styles/speed.css', 'utf8');
+    const rules = css.split('\n').filter(line => /\.sp-(seg|part)-(own|team)\b/.test(line));
+    expect(rules.length).toBe(4);
+    rules.forEach(rule => expect(rule).not.toMatch(/--warn|--accent-2/));
+  });
+});

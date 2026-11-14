@@ -869,3 +869,13 @@
 .eff-switch.on .eff-switch-track { border-color: var(--accent); background: var(--accent-soft); }
 .eff-switch.on .eff-switch-knob { transform: translateX(12px); background: var(--accent); }
 @media (prefers-reduced-motion: reduce) { .eff-switch-track, .eff-switch-knob { transition: none; } }
+
+/* Portatili bassi (1366×657, 1280×620): striscia, riga dei problemi e margini del pannello più stretti, così ogni
+   sottoscheda delle aree ci sta intera senza scorrere (a 1440×900 e 1536×730 non cambia niente). Le tabelle e i Ruoli
+   hanno le loro regole per gli schermi bassi in fondo a defense.css e roles.css */
+@media (min-width: 1100px) and (max-height: 700px) {
+  .area-view { gap: 6px; }
+  .area-subs [role='tab'] { padding-top: 6px; padding-bottom: 5px; }
+  .area-problems-row { height: 22px; }
+  .area-panel.ad-panel { padding-bottom: 10px; }
+}
