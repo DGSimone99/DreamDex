@@ -109,6 +109,10 @@
   color: var(--text); background: var(--stripes), var(--accent-2-soft); border-bottom-color: var(--accent-2-ink);
   clip-path: polygon(0 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
 }
+/* Il taglio segue il posto della sottoscheda: la prima (sul bordo sinistro) solo a destra, quelle in mezzo su entrambi i
+   lati, l'ultima di Ruoli e Bonus (sul bordo destro) solo a sinistra; sempre nello stesso verso (/) */
+.area-subs [role='tab'][aria-selected='true']:not(:first-child) { clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%); }
+.area-view-bonusMalus .area-subs [role='tab'][aria-selected='true']:last-child:not(:first-child) { clip-path: polygon(10px 0, 100% 0, 100% 100%, 0 100%); }
 .area-subs [role='tab'][aria-selected='true'] b { color: var(--text); }
 /* Ingrandimento solo visivo (scale dal centro): la larghezza della scheda non cambia, quindi nulla si sposta */
 .area-subs [role='tab'] > span:first-child, .area-subs [role='tab'] > b { display: inline-block; transform-origin: center; }
@@ -216,16 +220,27 @@
   animation: tab-stretch 0.24s var(--ease) both;
 }
 /* Coaching e Ruoli e Bonus chiudono un gruppo (prima dello stacco, in fondo alla riga): il lato destro resta dritto e la
-   scheda si allunga a sinistra, col taglio inclinato sopra la scheda vicina (Panoramica, Velocità) */
+   scheda si allunga a sinistra, col taglio inclinato nello stesso verso delle altre (/) sopra la scheda vicina */
 .analysis-tabs [role='tab'][aria-selected='true']:is(#analysis-view-coaching, #analysis-view-bonusMalus) {
   margin-right: 0; margin-left: -30px;
   padding-right: 14px; padding-left: 44px;
-  clip-path: polygon(0 0, 100% 0, 100% 100%, 22px 100%);
+  clip-path: polygon(22px 0, 100% 0, 100% 100%, 0 100%);
   animation-name: tab-stretch-left;
 }
+/* Difesa e Velocità stanno in mezzo al gruppo: taglio su entrambi i lati e mezzo allungamento per parte */
+.analysis-tabs [role='tab'][aria-selected='true']:is(#analysis-view-defense, #analysis-view-speed) {
+  margin-left: -15px; margin-right: -15px;
+  padding-left: 29px; padding-right: 29px;
+  clip-path: polygon(22px 0, 100% 0, calc(100% - 22px) 100%, 0 100%);
+  animation-name: tab-stretch-both;
+}
 @keyframes tab-stretch-left {
-  from { clip-path: polygon(22px 0, 100% 0, 100% 100%, 36px 100%); }
-  to { clip-path: polygon(0 0, 100% 0, 100% 100%, 22px 100%); }
+  from { clip-path: polygon(52px 0, 100% 0, 100% 100%, 30px 100%); }
+  to { clip-path: polygon(22px 0, 100% 0, 100% 100%, 0 100%); }
+}
+@keyframes tab-stretch-both {
+  from { clip-path: polygon(37px 0, calc(100% - 15px) 0, calc(100% - 37px) 100%, 15px 100%); }
+  to { clip-path: polygon(22px 0, 100% 0, calc(100% - 22px) 100%, 0 100%); }
 }
 @keyframes tab-stretch {
   from { clip-path: polygon(0 0, calc(100% - 22px) 0, calc(100% - 36px) 100%, 0 100%); }

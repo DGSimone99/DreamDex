@@ -35,7 +35,7 @@
   /* Lo stacco fra Coaching e le aree: un po' di spazio in più */
   .analysis-tabs #analysis-view-strength { margin-left: 10px; }
   .analysis-tabs [role='tab'][aria-selected='true'],
-  .analysis-tabs [role='tab'][aria-selected='true']:is(#analysis-view-coaching, #analysis-view-bonusMalus) {
+  .analysis-tabs [role='tab'][aria-selected='true']:is(#analysis-view-coaching, #analysis-view-defense, #analysis-view-speed, #analysis-view-bonusMalus) {
     width: auto;
     margin: 0;
     padding: 0 30px 0 14px;
@@ -199,7 +199,7 @@
   /* Tablet: le sette schede stanno quasi tutte; si stringono un poco e riempiono la riga */
   .analysis-tabs [role='tablist'] { min-width: 100%; }
   .analysis-tabs [role='tab'] { flex: 1 0 auto; justify-content: center; padding-inline: 10px; }
-  .analysis-tabs [role='tab'][aria-selected='true'], .analysis-tabs [role='tab'][aria-selected='true']:is(#analysis-view-coaching, #analysis-view-bonusMalus) { padding: 0 24px 0 10px; }
+  .analysis-tabs [role='tab'][aria-selected='true'], .analysis-tabs [role='tab'][aria-selected='true']:is(#analysis-view-coaching, #analysis-view-defense, #analysis-view-speed, #analysis-view-bonusMalus) { padding: 0 24px 0 10px; }
   .analysis-tabs [role='tab'][aria-selected='true']#analysis-view-bonusMalus { padding-right: 72px; }
 
   /* Panoramica: Riassunto e Copertura a tutta larghezza, sotto Ruoli e Velocità affiancati */
